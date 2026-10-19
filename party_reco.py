@@ -261,12 +261,16 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
     if boss:
         b = c["bosses"][boss]
         enemies, note = b["enemies"], f'{boss}: {EL[b["enemies"][0]]} {b["role"]} {b["atk"]} {b.get("note", "")}'
+    rest = None  # 속성 제한 콘텐츠(예: 태양 회랑은 태양 속성만)
     if stage:
         hits = find_stages(content, stage)
         if not hits:
             out(f"스테이지 '{stage}' 없음 (콘텐츠 {content})")
             return
         tab, st = hits[0]
+        rest = c.get("restrictTabs", {}).get(tab)
+        if rest:
+            out(f"※ {tab}: {EL[rest]} 속성 구원자만 편성 가능")
         enemies = stage_enemies(st)
         note = (f'{tab} {st["name"]} Lv{st["level"]} 적 {st["enemy_total"]}체 / 지배 속성 '
                 f'{EL.get(st["dominant_element"], "?")} / 광역 {st["aoe_ratio"]:.0%} / 디펜더 {st["defender_ratio"]:.0%}'
@@ -288,7 +292,7 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
     for p in range(1, c.get("parties", 1) + 1):
         cands = []
         for s in roster:
-            if s["key"] in used or (owned is not None and s["key"] not in owned):
+            if s["key"] in used or (owned is not None and s["key"] not in owned) or (rest and s["element"] != rest):
                 continue
             v, parts = score(s, growth, mains, cfg, c["main"], enemies, c.get("boss", False) or bool(boss))
             cands.append({"s": s, "g": growth.get(s["key"]), "score": v, "parts": parts})

@@ -31,6 +31,9 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
 .crown svg{width:34px;height:26px}.crown span{font-size:11px;font-weight:800;color:#ffd24a;letter-spacing:.06em}
 .leadnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid #ffd24a;background:var(--bg)}
 .powinfo{margin-top:6px;font-size:13px}.powinfo .ok{color:var(--good)}.powinfo .warn{color:#ffb454}.powinfo .bad2{color:var(--bad);font-weight:700}
+body:not(.show-why) .why,body:not(.show-why) .tg,body:not(.show-why) .syn,body:not(.show-why) .pairnote,body:not(.show-why) .leadnote,
+body:not(.show-why) .teamtags,body:not(.show-why) .why2,body:not(.show-why) #graphwrap,body:not(.show-why) .bbar .mut:last-child{display:none}
+.whytoggle{display:flex;align-items:center;gap:6px;flex-direction:row!important;color:var(--fg)!important;font-size:13px!important;padding-bottom:6px}
 .pairnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid var(--acc);background:var(--bg)}
 .own{columns:auto!important;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
 .tile{position:relative;display:block!important;cursor:pointer}
@@ -121,6 +124,7 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
   <label>스테이지<select id="stage"></select></label>
   <label>내 파티 전투력<input type="number" id="mypow" min="0" step="100" placeholder="예: 52000" style="min-width:120px"></label>
   <button id="go">추천</button>
+  <label class="whytoggle"><input type="checkbox" id="showwhy"> 추천 근거 보기</label>
  </div>
  <div class="info" id="stinfo"></div><div id="powinfo" class="powinfo"></div>
 </div>
@@ -165,7 +169,7 @@ function refreshStages(){
  const c=contents[$("content").value],t=$("tab").value,q=$("q").value.trim();
  cur=c.stages.filter(s=>(!t||s.tab===t)&&(!q||s.name.includes(q)||s.tabLabel.includes(q))).slice(0,400);
  $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
- showInfo();showPow()}
+ showInfo();showPow();if(window._ready)rerun()}
 function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`${EL[e]} ${n}`).join(" / ")}
 function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$("powinfo");POWK=1;
  if(!s||!(my>0)){el.innerHTML=s&&s.rp?`<span class="mut">권장 전투력 ${s.rp.toLocaleString()} · 내 파티 전투력을 입력하면 보정(패널티)을 보여 줍니다</span>`:"";return}
@@ -173,8 +177,8 @@ function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$(
  if(pp.a>=1){el.innerHTML=`<span class="ok">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 보정 없음(90% 이상)</span>`;return}
  POWK=1+CFG.power.boost*(1-pp.a);
  el.innerHTML=`<span class="${pp.ratio<70?"bad2":"warn"}">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 아군 피해 ×${pp.a.toFixed(3)}, 적 피해 ×${pp.b.toFixed(3)}${pp.warn?` [${pp.warn}]`:""}</span> <span class="mut">· 회복·보호막은 보정 없음 → 생존·지원을 더 중시해 추천(추정) · 보정 없으려면 ${Math.ceil(s.rp*0.9).toLocaleString()} 이상</span>`}
-function showInfo(){const s=cur&&cur[$("stage").value];$("stinfo").innerHTML=s?`${esc(s.tabLabel)} · ${esc(s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`:"해당 스테이지 없음"}
-$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};
+function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`:"해당 스테이지 없음"}
+$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};
 
 function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">
  <span class="fc">${face(s)}${dia(s,34)}</span><span class="tn">${esc(s.name)}</span><span class="ts">${esc(s.sub)}</span>${kindTxt(s)}</span></label>`}
@@ -270,14 +274,15 @@ function run(){
  showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty)*(POWK>1?Math.max(0.1,1-(POWK-1)/CFG.power.boost):1);
  const used=new Set();let html="";const allParties=[];
  for(let p=1;p<=(c.parties||1);p++){
-  const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
+  const rsEl=(CFG.restrict[c.name]||{})[st.tab];
+  const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
   if(cands.length<4){html+=`<div class="party">파티 ${p}: 후보가 4명 미만입니다.</div>`;break}
   const [party,v,got]=bestParty(cands,defPen);party.forEach(x=>used.add(x.s.key));allParties.push(party);
   const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
   const br=pickBreak(party,c.name,have);
-  html+=`<div class="party"><div class="phead"><b>파티 ${p}</b><span class="mut">점수 ${v.toFixed(1)} · 인게임 편성 순서(왼쪽부터)</span></div>${pairNotes(party)}${leadNote(LD)}${synSummary(party)}
-   <div>${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
+  html+=`<div class="party"><div class="phead"><b>파티 ${p}</b><span class="mut why2">점수 ${v.toFixed(1)} · 인게임 편성 순서(왼쪽부터)</span></div>${pairNotes(party)}${leadNote(LD)}${synSummary(party)}
+   <div class="teamtags">${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
    <div class="rowcards">${card(bk[0],"back",alt(bk[0]))}${card(fr[0],"front",alt(fr[0]))}${card(fr[1],"front",alt(fr[1]))}${card(bk[1],"back",alt(bk[1]))}</div>${breakCard(br)}</div>`}
  const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
  if(tl.length)html+=`<div class="party"><b>뉴비 편성 유형</b> <span class="mut">(커뮤니티 공략 기준, 보유 시 참고)</span><ul>${tl.map(([k,t])=>`<li><b>${esc(k)}</b>: ${esc(t.desc)}</li>`).join("")}</ul></div>`;
@@ -288,6 +293,8 @@ function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:chec
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  if(Array.isArray(o)){const s=new Set(o);document.querySelectorAll("#own input").forEach(x=>x.checked=s.has(x.dataset.k))}
  if(Array.isArray(b)){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}})();
+const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").checked=on;LS.set("why",on);if(on)setTimeout(()=>{try{cy.resize();cy.fit(undefined,30)}catch(e){}},50)};
+$("showwhy").onchange=()=>setWhy($("showwhy").checked);setWhy(!!LS.get("why"));
 let _rt=null;const rerun=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
 function updCount(){const n=document.querySelectorAll("#own input:checked").length;$("dcount").textContent=n===R.length?"전체":n+"/"+R.length}
 document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk"))){saveSel();updCount();rerun()}});
@@ -327,5 +334,5 @@ function drawGraph(){
  cy.on("tap",e=>{if(e.target===cy){cy.elements().removeClass("dim");$("cyinfo").textContent="선이나 구원자를 눌러 보세요."}})}
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=drawGraph);
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
-{const sp=LS.get("pow");if(sp)$("mypow").value=sp}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();
+{const sp=LS.get("pow");if(sp)$("mypow").value=sp}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
 </script></body></html>
