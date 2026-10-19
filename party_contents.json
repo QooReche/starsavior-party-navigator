@@ -1,0 +1,201 @@
+{
+ "_note": "콘텐츠 규칙 데이터(사람이 고칠 것). 출처: work/party/research.md (databook foe.js, 나무위키, 게임조선). 확인 안 된 값은 [추정].",
+ "advantage": {
+  "sun": "star",
+  "star": "moon",
+  "moon": "sun",
+  "order": "chaos",
+  "chaos": "order"
+ },
+ "contents": {
+  "작전": {
+   "main": "작전",
+   "enemies": [
+    "chaos"
+   ],
+   "note": "적 대부분 혼돈(어려움 별 1체)"
+  },
+  "회랑": {
+   "main": "회랑",
+   "enemies": [
+    "chaos"
+   ],
+   "note": "혼돈 대다수. 속성별 회랑은 태양/달/별 별도(미반영)"
+  },
+  "플래시 포인트": {
+   "main": "플래시 포인트",
+   "enemies": [],
+   "note": "보스 10종 속성 혼재 - 보스를 지정해야 함(미입력)"
+  },
+  "코스모 게이트": {
+   "main": "코스모 게이트",
+   "parties": 2,
+   "bosses": {
+    "길레": {
+     "enemies": [
+      "chaos"
+     ],
+     "role": "캐스터",
+     "atk": "원소"
+    },
+    "티리아": {
+     "enemies": [
+      "sun"
+     ],
+     "role": "스트라이커",
+     "atk": "참격"
+    },
+    "괴리의 표상": {
+     "enemies": [
+      "order"
+     ],
+     "role": "스트라이커",
+     "atk": "정신"
+    },
+    "데모라이기스: 알파": {
+     "enemies": [
+      "chaos"
+     ],
+     "role": "디펜더",
+     "atk": "공허"
+    },
+    "카넬리아": {
+     "enemies": [
+      "chaos"
+     ],
+     "role": "캐스터",
+     "atk": "정신"
+    },
+    "데모라이기스: 베타": {
+     "enemies": [
+      "chaos"
+     ],
+     "role": "레인저",
+     "atk": "공허"
+    },
+    "오르트로스": {
+     "enemies": [
+      "chaos"
+     ],
+     "role": "스트라이커",
+     "atk": "공허"
+    },
+    "올베로스": {
+     "enemies": [
+      "moon",
+      "chaos"
+     ],
+     "role": "디펜더",
+     "atk": "참격",
+     "note": "본체 달 + 혼돈 하수인 4"
+    },
+    "불사왕 모굴루스": {
+     "enemies": [
+      "chaos"
+     ],
+     "role": "스트라이커",
+     "atk": "참격"
+    },
+    "힐데(타입 지크프리트)": {
+     "enemies": [
+      "chaos"
+     ],
+     "role": "디펜더",
+     "atk": "타격"
+    },
+    "로자리아": {
+     "enemies": [
+      "chaos"
+     ],
+     "role": "레인저",
+     "atk": "원소"
+    }
+   },
+   "defenderPenalty": 3.0
+  }
+ },
+ "tierScore": {
+  "0티어": 11,
+  "0.5티어": 10,
+  "1티어": 8,
+  "2티어": 6,
+  "3티어": 4,
+  "4티어": 2
+ },
+ "weights": {
+  "advantage": 3.0,
+  "disadvantage": 2.0,
+  "notMainContent": 4.0,
+  "supportBonus": 2.0,
+  "defenderPenalty": 0.0
+ },
+ "tagWeights": {
+  "힐": 1.5,
+  "보호막": 1.0,
+  "아군공격력증가": 2.0,
+  "속도증가": 1.0,
+  "적방어력감소": 2.0,
+  "해제": 0.5,
+  "강인도파괴": 1.0,
+  "적행동게이지감소": 0.5,
+  "치명증가": 0.5
+ },
+ "_tagNote": "팀 합집합에 한 번씩만 가산(중복 가산 없음). 값은 임의 가중치.",
+ "breakSkills": {
+  "_note": "출처 starsavior-db.pages.dev/mechanics (work/party/break_skills.md). 추천 규칙은 추정, 행성 정화는 미출시 표기.",
+  "스타피어서": {
+   "bonusRoles": [
+    "스트라이커",
+    "레인저"
+   ],
+   "text": "아군 행동게이지 +20%, 치확·치피 +10%(스트라이커·레인저 +20%)"
+  },
+  "큐브 과부하": {
+   "bonusRoles": [
+    "디펜더",
+    "서포터"
+   ],
+   "text": "광역 회복, 공격력·효과적중 +15%, 속도 +10%(디펜더·서포터 +20%)"
+  },
+  "행성 정화": {
+   "bonusRoles": [
+    "캐스터",
+    "어쌔신"
+   ],
+   "text": "적 방어력 감소, 공격력 +10%(캐스터·어쌔신 +20%) [미출시 표기]",
+   "unreleased": true
+  },
+  "특이점 관측": {
+   "bonusRoles": [],
+   "text": "광역 피해, 공격력·방어력 +20%, 노바포스 +4(범용)"
+  },
+  "차원 강습": {
+   "bonusRoles": [],
+   "text": "광역 피해, 공격력 +15%, 강인도 피해 +1(브레이크 중심)"
+  }
+ },
+ "templates": {
+  "_note": "arca.live/b/starsavior/174374805 요약(work/party/arca_newbie_party.md). 슬롯: 전열2/후열2.",
+  "노탱 레이시": {
+   "need": [
+    "lacy"
+   ],
+   "desc": "레이시 중심, 초반용(후반 보스 약함)"
+  },
+  "노탱 웨르멘": {
+   "need": [
+    "wedding-carmen",
+    "fei|lacy",
+    "gwen"
+   ],
+   "desc": "웨딩 카르멘 보호 + 맞아도 되는 딜러(페이/레이시) + 은신(그웬)"
+  },
+  "딜링 디펜더": {
+   "need": [
+    "wedding-carmen"
+   ],
+   "defender": true,
+   "desc": "공격력 세팅 디펜더 + 웨딩 카르멘(편성 제약 큼)"
+  }
+ }
+}

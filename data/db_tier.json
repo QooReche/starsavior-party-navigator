@@ -1,0 +1,534 @@
+{
+ "growth": {
+  "asherah-voyager": {
+   "tier": "3티어",
+   "level": "tier-3"
+  },
+  "smile": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "luna": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "carnelia": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "bell": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "emily": {
+   "tier": "0.5티어",
+   "level": "tier-05"
+  },
+  "charlotte": {
+   "tier": "3티어",
+   "level": "tier-3"
+  },
+  "carmen": {
+   "tier": "4티어",
+   "level": "tier-4"
+  },
+  "frey": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "seira": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "trish": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "lyn": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "cristelle": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "haydee": {
+   "tier": "0.5티어",
+   "level": "tier-05",
+   "note": "1돌파 이상 필수"
+  },
+  "serpang": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "dana": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "muriel": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "elisa": {
+   "tier": "2티어",
+   "level": "tier-2",
+   "note": "1돌파 이상 권장"
+  },
+  "tyria": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "roberta": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "lugh": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "fei": {
+   "tier": "0.5티어",
+   "level": "tier-05"
+  },
+  "epindel": {
+   "tier": "3티어",
+   "level": "tier-3"
+  },
+  "omega": {
+   "tier": "3티어",
+   "level": "tier-3"
+  },
+  "bunny-charlotte": {
+   "tier": "0.5티어",
+   "level": "tier-05"
+  },
+  "ceres": {
+   "tier": "1티어",
+   "level": "tier-1",
+   "note": "1돌파 이상 권장"
+  },
+  "lydia": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "harley": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "petra": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "scarlet": {
+   "tier": "3티어",
+   "level": "tier-3"
+  },
+  "claire": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "lacy": {
+   "tier": "2티어",
+   "level": "tier-2"
+  },
+  "tanya": {
+   "tier": "3티어",
+   "level": "tier-3"
+  },
+  "lily": {
+   "tier": "3티어",
+   "level": "tier-3"
+  },
+  "kyra": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "waltz-asherah": {
+   "tier": "0티어",
+   "level": "tier-0",
+   "note": "1돌파 이상 필수"
+  },
+  "wedding-carmen": {
+   "tier": "0티어",
+   "level": "tier-0",
+   "note": "한정"
+  },
+  "wedding-epindel": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "bunny-frey": {
+   "tier": "1티어",
+   "level": "tier-1",
+   "note": "1돌파 이상 권장"
+  },
+  "besta": {
+   "tier": "3티어",
+   "level": "tier-3",
+   "note": "개화 필수"
+  },
+  "annah": {
+   "tier": "1티어",
+   "level": "tier-1",
+   "note": "개화 필수"
+  },
+  "marcille": {
+   "tier": "2티어",
+   "level": "tier-2",
+   "note": "개화 필수"
+  },
+  "vera": {
+   "tier": "2티어",
+   "level": "tier-2",
+   "note": "개화 필수"
+  },
+  "naru": {
+   "tier": "2티어",
+   "level": "tier-2",
+   "note": "개화 필수"
+  },
+  "bunny-claire": {
+   "tier": "2티어",
+   "level": "tier-2",
+   "note": "개화 필수"
+  },
+  "bunny-scarlet": {
+   "tier": "2티어",
+   "level": "tier-2",
+   "note": "개화 필수"
+  },
+  "clarissa": {
+   "tier": "0.5티어",
+   "level": "tier-05",
+   "note": "개화 필수"
+  },
+  "hilde": {
+   "tier": "3티어",
+   "level": "tier-3"
+  },
+  "yoo-mina": {
+   "tier": "3티어",
+   "level": "tier-3"
+  },
+  "rosaria": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "white-pearl-luna": {
+   "tier": "1티어",
+   "level": "tier-1"
+  },
+  "sunshine-cat-smile": {
+   "tier": "0.5티어",
+   "level": "tier-05"
+  },
+  "amora": {
+   "tier": "0티어",
+   "level": "tier-0"
+  },
+  "professor-m": {
+   "tier": "0.5티어",
+   "level": "tier-05"
+  }
+ },
+ "mainContents": {
+  "asherah-voyager": [
+   "인자작"
+  ],
+  "charlotte": [
+   "PVP"
+  ],
+  "seira": [
+   "PVP",
+   "코스모 게이트"
+  ],
+  "lyn": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "cristelle": [
+   "작전",
+   "회랑",
+   "플래시 포인트",
+   "코스모 게이트"
+  ],
+  "claire": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "tyria": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "roberta": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "ceres": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "tanya": [
+   "없음"
+  ],
+  "bunny-scarlet": [
+   "작전",
+   "회랑",
+   "코스모 게이트"
+  ],
+  "trish": [
+   "PVP",
+   "작전",
+   "회랑",
+   "코스모 게이트"
+  ],
+  "fei": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "epindel": [
+   "없음"
+  ],
+  "marcille": [
+   "없음"
+  ],
+  "kyra": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "bunny-claire": [
+   "PVP"
+  ],
+  "bunny-charlotte": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "smile": [
+   "인자작",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "bell": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "lugh": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "petra": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "clarissa": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "naru": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "lydia": [
+   "인자작"
+  ],
+  "scarlet": [
+   "없음"
+  ],
+  "yoo-mina": [
+   "없음"
+  ],
+  "lacy": [
+   "작전",
+   "코스모 게이트",
+   "플래시 포인트"
+  ],
+  "rosaria": [
+   "작전",
+   "코스모 게이트",
+   "플래시 포인트"
+  ],
+  "luna": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "플래시 포인트"
+  ],
+  "carnelia": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "플래시 포인트"
+  ],
+  "dana": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "wedding-epindel": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "muriel": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "bunny-frey": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "omega": [
+   "작전",
+   "회랑",
+   "코스모 게이트"
+  ],
+  "lily": [
+   "없음"
+  ],
+  "emily": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "haydee": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "harley": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "hilde": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "besta": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "annah": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "carmen": [
+   "PVP"
+  ],
+  "frey": [
+   "작전",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "serpang": [
+   "작전",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "vera": [
+   "작전",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "elisa": [
+   "PVP"
+  ],
+  "waltz-asherah": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "wedding-carmen": [
+   "PVP",
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ],
+  "white-pearl-luna": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "PVP"
+  ],
+  "sunshine-cat-smile": [
+   "작전",
+   "회랑",
+   "코스모 게이트",
+   "플래시 포인트"
+  ],
+  "amora": [
+   "작전",
+   "회랑",
+   "코스모 게이트",
+   "인자작"
+  ],
+  "professor-m": [
+   "작전",
+   "회랑",
+   "코스모 게이트",
+   "플래시 포인트"
+  ],
+  "gwen": [
+   "작전",
+   "코스모 게이트",
+   "회랑",
+   "플래시 포인트"
+  ]
+ }
+}

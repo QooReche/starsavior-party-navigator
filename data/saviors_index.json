@@ -1,0 +1,1739 @@
+{
+  "1001": {
+    "key": "asherah-voyager",
+    "id": 1001,
+    "file": "./1001.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1001",
+    "capturedAt": "2026-09-03T08:40:16.121Z",
+    "profile": {
+      "name": "아세라",
+      "grade": "SSR",
+      "element": "달",
+      "className": "스트라이커",
+      "attackType": "참격",
+      "description": "별의 구원자를 동경해서 그와 같은 구원자가 되기 위해 여정에 참가한 귀족 아가씨. 고민하는 것보다는 일단 행동으로 저지르고 보는 추진력이 강점이자 단점.",
+      "birthday": "04월 22일",
+      "height": "166cm",
+      "origin": "NOA",
+      "affiliation": "보이저 구원단",
+      "cvKr": "김채린",
+      "cvJp": "타카모리 나츠미",
+      "illustration": "./data/savior-detail-assets/a44f7230b39b982550cd38d5.webp",
+      "portrait": "./data/savior-detail-assets/101c55304ff27df50d32cb94.webp"
+    }
+  },
+  "1002": {
+    "key": "smile",
+    "id": 1002,
+    "file": "./1002.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1002",
+    "capturedAt": "2026-09-03T08:40:20.063Z",
+    "profile": {
+      "name": "스마일",
+      "grade": "SSR",
+      "element": "별",
+      "className": "레인저",
+      "attackType": "충격",
+      "description": "스스로 인간이 아니라 고도의 과학 기술로 만들어진 존재라고 주장하는 과학 신봉자. 태어나서 한 번도 웃어 본 적이 없기 때문에 웃을 수 있는 연구를 위해 단장을 실험체로 삼고 있다.",
+      "birthday": "11월 10일",
+      "height": "148cm",
+      "origin": "NOA",
+      "affiliation": "보이저 구원단",
+      "cvKr": "곽규미",
+      "cvJp": "타무카이 유즈키",
+      "illustration": "./data/savior-detail-assets/18a1952ba5ec3a15fb5037eb.webp",
+      "portrait": "./data/savior-detail-assets/b175a0a29213ca51e122bfdd.webp"
+    }
+  },
+  "1003": {
+    "key": "luna",
+    "id": 1003,
+    "file": "./1003.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1003",
+    "capturedAt": "2026-09-03T08:40:23.796Z",
+    "profile": {
+      "name": "루나",
+      "grade": "SSR",
+      "element": "질서",
+      "className": "캐스터",
+      "attackType": "원소",
+      "description": "꿈의 대마녀 마기의 수제자이자, 그녀의 '달의 지팡이'를 물려받은 자칭 라비스타 최고의 예언자. 그날 생긴 돈은 그날 카지노에서 모두 써버리는 대책 없는 삶을 살고 있다.",
+      "birthday": "03월 18일",
+      "height": "167cm",
+      "origin": "불명",
+      "affiliation": "보이저 구원단",
+      "cvKr": "방시우",
+      "cvJp": "미나토 미야",
+      "illustration": "./data/savior-detail-assets/8d298fa9f704edb1bc8f745e.webp",
+      "portrait": "./data/savior-detail-assets/7198dcb18dc0dec5e3a25417.webp"
+    }
+  },
+  "1005": {
+    "key": "carnelia",
+    "id": 1005,
+    "file": "./1005.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1005",
+    "capturedAt": "2026-09-03T08:40:27.761Z",
+    "profile": {
+      "name": "카넬리아",
+      "grade": "SSR",
+      "element": "혼돈",
+      "className": "캐스터",
+      "attackType": "정신",
+      "description": "캔들 스퀘어의 전임 메이드장이자 리스 가문의 장녀. '불사의 저주'를 안고 있어 죽지 못하며, 생명의 기쁨에 대해 무감각하다. 행방불명 상태였으나, 저주를 풀기 위해 NOA로 돌아왔다.",
+      "birthday": "12월 31일",
+      "height": "166cm",
+      "origin": "NOA",
+      "affiliation": "방랑자",
+      "cvKr": "장예나",
+      "cvJp": "시모지 시노",
+      "illustration": "./data/savior-detail-assets/508741154a81f4d364717806.webp",
+      "portrait": "./data/savior-detail-assets/34191d673f8dfcd0371307eb.webp"
+    }
+  },
+  "1008": {
+    "key": "bell",
+    "id": 1008,
+    "file": "./1008.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1008",
+    "capturedAt": "2026-09-03T08:40:31.354Z",
+    "profile": {
+      "name": "벨 리스",
+      "grade": "SSR",
+      "element": "별",
+      "className": "레인저",
+      "attackType": "정신",
+      "description": "리스 가문의 차녀이자 NOA 공동묘지의 관리인. 행방불명된 언니의 뒤를 이어 가문의 의무를 위해 캔들 스퀘어에서 봉사하고 있는 저주술사.",
+      "birthday": "02월 29일",
+      "height": "156cm",
+      "origin": "NOA",
+      "affiliation": "캔들 스퀘어",
+      "cvKr": "이지현",
+      "cvJp": "스가누마 치사",
+      "illustration": "./data/savior-detail-assets/c64c10ccc24c9caa8f5a0b82.webp",
+      "portrait": "./data/savior-detail-assets/1e0f28d12de6285823e136ff.webp"
+    }
+  },
+  "1009": {
+    "key": "emily",
+    "id": 1009,
+    "file": "./1009.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1009",
+    "capturedAt": "2026-09-03T08:40:35.035Z",
+    "profile": {
+      "name": "에밀리",
+      "grade": "SSR",
+      "element": "달",
+      "className": "디펜더",
+      "attackType": "참격",
+      "description": "언제나 청소도구를 들고 엄격한 전투 청소를 실시하는 캔들 스퀘어의 메이드. 심각한 건망증을 앓고 있어 매번 중요한 일들을 잊어버리거나 아예 거꾸로 기억하곤 한다.",
+      "birthday": "06월 08일",
+      "height": "167cm",
+      "origin": "서부 재난 지대",
+      "affiliation": "캔들 스퀘어",
+      "cvKr": "김도희",
+      "cvJp": "스기우라 시오리",
+      "illustration": "./data/savior-detail-assets/1cb4b5a545098284b97bb76f.webp",
+      "portrait": "./data/savior-detail-assets/71fa81107cc70e6e5516eb96.webp"
+    }
+  },
+  "1010": {
+    "key": "charlotte",
+    "id": 1010,
+    "file": "./1010.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1010",
+    "capturedAt": "2026-09-03T08:40:38.641Z",
+    "profile": {
+      "name": "샤를",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "스트라이커",
+      "attackType": "참격",
+      "description": "모나스티르 공국 기사단의 기사단장. 근엄하고 무게있는 기사단장이 되려고 노력하지만 활달하고 소박한 본래의 성격이 언제나 발목을 잡는다.",
+      "birthday": "10월 20일",
+      "height": "166cm",
+      "origin": "모나스티르 공국",
+      "affiliation": "모나스티르 기사단",
+      "cvKr": "채림",
+      "cvJp": "오오키 사에코",
+      "illustration": "./data/savior-detail-assets/be5768dda2c95ae6a785c291.webp",
+      "portrait": "./data/savior-detail-assets/cf0e430174480efb842c8679.webp"
+    }
+  },
+  "1011": {
+    "key": "carmen",
+    "id": 1011,
+    "file": "./1011.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1011",
+    "capturedAt": "2026-09-03T08:40:42.208Z",
+    "profile": {
+      "name": "카르멘",
+      "grade": "SSR",
+      "element": "달",
+      "className": "디펜더",
+      "attackType": "충격",
+      "description": "모나스티르 공국 기사단의 부단장. 어떠한 어려운 상황에서도 언제나 여유로운 웃음을 잃지 않는 기사단의 방패.",
+      "birthday": "08월 11일",
+      "height": "168cm",
+      "origin": "모나스티르 공국",
+      "affiliation": "모나스티르 기사단",
+      "cvKr": "손정민",
+      "cvJp": "Lynn",
+      "illustration": "./data/savior-detail-assets/89dfb24511073fa40bb28485.webp",
+      "portrait": "./data/savior-detail-assets/67b583356ef42bea7fe07317.webp"
+    }
+  },
+  "1013": {
+    "key": "frey",
+    "id": 1013,
+    "file": "./1013.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1013",
+    "capturedAt": "2026-09-03T08:40:45.733Z",
+    "profile": {
+      "name": "프레이",
+      "grade": "SSR",
+      "element": "별",
+      "className": "서포터",
+      "attackType": "충격",
+      "description": "모나스티르 기사단의 보급관이라고 자칭하는 소녀. 돈 버는 일에 관심이 많기 때문에 언제나 사업 아이템을 구상하고 있지만 대부분 실패로 끝나고 있다.",
+      "birthday": "07월 07일",
+      "height": "156cm",
+      "origin": "모나스티르 공국",
+      "affiliation": "모나스티르 기사단",
+      "cvKr": "이이로",
+      "cvJp": "시부야 아야노",
+      "illustration": "./data/savior-detail-assets/06d3b31bdacb2ec83dc1f2fd.webp",
+      "portrait": "./data/savior-detail-assets/e9e167a2022167c7c8975b18.webp"
+    }
+  },
+  "1014": {
+    "key": "seira",
+    "id": 1014,
+    "file": "./1014.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1014",
+    "capturedAt": "2026-09-03T08:40:49.291Z",
+    "profile": {
+      "name": "세이라",
+      "grade": "SSR",
+      "element": "질서",
+      "className": "스트라이커",
+      "attackType": "정신",
+      "description": "오랜 기간 라비스타를 떠돌고 있는 몽마. 사람들에게 좋은 꿈을 보여주는 능력이 있다. 하지만 그 능력은 때로 사람들을 중독시키기에, 한 곳에 오래 머물지 못하고 있다.",
+      "birthday": "12월 09일",
+      "height": "165cm",
+      "origin": "불명",
+      "affiliation": "환상종",
+      "cvKr": "윤은서",
+      "cvJp": "아이다 리카코",
+      "illustration": "./data/savior-detail-assets/1253040607d911520e5a2cd9.webp",
+      "portrait": "./data/savior-detail-assets/ea76bcb21e21b35936ef8947.webp"
+    }
+  },
+  "1015": {
+    "key": "trish",
+    "id": 1015,
+    "file": "./1015.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1015",
+    "capturedAt": "2026-09-03T08:40:52.681Z",
+    "profile": {
+      "name": "트리쉬",
+      "grade": "SSR",
+      "element": "별",
+      "className": "어쌔신",
+      "attackType": "참격",
+      "description": "아셀루스 헌터 협회에 소속되어 활동하는 능력 좋은 헌터. 그만큼 막대한 현상금을 벌지만 언제나 물쓰듯 쉽게 써서 탕진해 버리는 삶을 살고 있다.",
+      "birthday": "10월 04일",
+      "height": "161cm",
+      "origin": "NOA",
+      "affiliation": "아셀루스 협회",
+      "cvKr": "김예림",
+      "cvJp": "츠키시로 히카",
+      "illustration": "./data/savior-detail-assets/b69a8033a7f6e72cf78bd38d.webp",
+      "portrait": "./data/savior-detail-assets/92bb01f54d3a8c8b1589245b.webp"
+    }
+  },
+  "1016": {
+    "key": "lyn",
+    "id": 1016,
+    "file": "./1016.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1016",
+    "capturedAt": "2026-09-03T08:40:56.124Z",
+    "profile": {
+      "name": "린",
+      "grade": "SSR",
+      "element": "별",
+      "className": "스트라이커",
+      "attackType": "참격",
+      "description": "풍월당의 어린이반 사범. 아이들을 상대로 예의범절과 무공을 가르쳐왔기 때문에 종종 타인을 아이들 다루듯 대한다.",
+      "birthday": "02월 24일",
+      "height": "168cm",
+      "origin": "동대륙",
+      "affiliation": "풍월당",
+      "cvKr": "민아",
+      "cvJp": "우스이 유리",
+      "illustration": "./data/savior-detail-assets/f491f14db5683fd5d950170d.webp",
+      "portrait": "./data/savior-detail-assets/485cf085b453f574e84585d6.webp"
+    }
+  },
+  "1017": {
+    "key": "cristelle",
+    "id": 1017,
+    "file": "./1017.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1017",
+    "capturedAt": "2026-09-03T08:40:59.476Z",
+    "profile": {
+      "name": "크리스텔",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "레인저",
+      "attackType": "원소",
+      "description": "대형 상회인 모렐 해운 상회의 대표. 독특한 언행의 소유자로 사교계의 유명인이다.",
+      "birthday": "03월 15일",
+      "height": "170cm",
+      "origin": "파렌",
+      "affiliation": "모렐 해운상회",
+      "cvKr": "조현정",
+      "cvJp": "아사미 카즈키",
+      "illustration": "./data/savior-detail-assets/d1097261dd1d62c5c77a17af.webp",
+      "portrait": "./data/savior-detail-assets/1c938d95251c9e72478db1c5.webp"
+    }
+  },
+  "1018": {
+    "key": "haydee",
+    "id": 1018,
+    "file": "./1018.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1018",
+    "capturedAt": "2026-09-03T08:41:02.984Z",
+    "profile": {
+      "name": "에데",
+      "grade": "SSR",
+      "element": "별",
+      "className": "디펜더",
+      "attackType": "참격",
+      "description": "대륙 전체를 대상으로 무역업을 하는 모렐 해운 상회의 부대표. 주변 사람들과 늘 거리를 두는 차갑고 쌀쌀한 성격.",
+      "birthday": "01월 20일",
+      "height": "153cm",
+      "origin": "파렌",
+      "affiliation": "모렐 해운상회",
+      "cvKr": "방연지",
+      "cvJp": "츠치야 리오",
+      "illustration": "./data/savior-detail-assets/fbf18dc99c5e095fe5df568c.webp",
+      "portrait": "./data/savior-detail-assets/4b00c64f46460b725721cb6a.webp"
+    }
+  },
+  "1019": {
+    "key": "serpang",
+    "id": 1019,
+    "file": "./1019.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1019",
+    "capturedAt": "2026-09-03T08:41:06.474Z",
+    "profile": {
+      "name": "세르팡",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "서포터",
+      "attackType": "정신",
+      "description": "환상종 토토와 함께 동대륙에서 건너온 풍월당 소속의 소녀. 귀찮은 걸 싫어해서 자주 수련을 빼먹으려 한다.",
+      "birthday": "04월 08일",
+      "height": "149cm",
+      "origin": "동대륙",
+      "affiliation": "풍월당",
+      "cvKr": "유혜지",
+      "cvJp": "히라츠카 사에",
+      "illustration": "./data/savior-detail-assets/ff6abd4cf926465016882e91.webp",
+      "portrait": "./data/savior-detail-assets/be09a8ef3b907d63657ec01c.webp"
+    }
+  },
+  "1021": {
+    "key": "dana",
+    "id": 1021,
+    "file": "./1021.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1021",
+    "capturedAt": "2026-09-03T08:41:09.836Z",
+    "profile": {
+      "name": "다나",
+      "grade": "SSR",
+      "element": "별",
+      "className": "캐스터",
+      "attackType": "원소",
+      "description": "카노푸스 산맥 깊은 곳의 드루이드 마을에서 나고 자란 소녀. 성격이 워낙 긍정적인 탓에 어떤 상황도 긍정적으로 해석한다.",
+      "birthday": "05월 15일",
+      "height": "160cm",
+      "origin": "카노푸스 산맥",
+      "affiliation": "카노푸스 경비대",
+      "cvKr": "이보희",
+      "cvJp": "미카와 하루나",
+      "illustration": "./data/savior-detail-assets/36888cceddc11fb20c9153a9.webp",
+      "portrait": "./data/savior-detail-assets/ec7e2a21b3b1651f8a50d877.webp"
+    }
+  },
+  "1023": {
+    "key": "muriel",
+    "id": 1023,
+    "file": "./1023.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1023",
+    "capturedAt": "2026-09-03T08:41:13.261Z",
+    "profile": {
+      "name": "뮤리엘",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "캐스터",
+      "attackType": "원소",
+      "description": "모노리스 교단의 성녀. 서열은 116번. 서열을 올려 모든 성녀들의 정점인 대성녀가 되는 것이 목표인 사고뭉치 소녀.",
+      "birthday": "03월 02일",
+      "height": "152cm",
+      "origin": "카노푸스 산맥",
+      "affiliation": "모노리스 교단",
+      "cvKr": "박신희",
+      "cvJp": "키토 아카리",
+      "illustration": "./data/savior-detail-assets/a18d95bec33ea53543018816.webp",
+      "portrait": "./data/savior-detail-assets/5068d6d92056e8c8a256b908.webp"
+    }
+  },
+  "1024": {
+    "key": "elisa",
+    "id": 1024,
+    "file": "./1024.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1024",
+    "capturedAt": "2026-09-03T08:41:16.829Z",
+    "profile": {
+      "name": "엘리사",
+      "grade": "SSR",
+      "element": "혼돈",
+      "className": "서포터",
+      "attackType": "정신",
+      "description": "모노리스 교단의 성녀. 서열은 117번. 유물에 대한 지식은 깊지만 낮은 자존감과 팔랑귀 성향 때문에 기를 펴지 못하고 있다.",
+      "birthday": "09월 14일",
+      "height": "169cm",
+      "origin": "NOA",
+      "affiliation": "모노리스 교단",
+      "cvKr": "김서현",
+      "cvJp": "미즈키 린",
+      "illustration": "./data/savior-detail-assets/283709dbcbfec31b4cf12d1c.webp",
+      "portrait": "./data/savior-detail-assets/b5ca71d6fac0949025d287b6.webp"
+    }
+  },
+  "1025": {
+    "key": "tyria",
+    "id": 1025,
+    "file": "./1025.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1025",
+    "capturedAt": "2026-09-03T08:41:20.231Z",
+    "profile": {
+      "name": "티리아",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "스트라이커",
+      "attackType": "참격",
+      "description": "모나스티르에서 온 까탈스러운 소녀. 평소에는 도도하고 우아한 말투를 유지하지만, 화가 나면 거칠고 험한 언사가 튀어나오기도 한다.",
+      "birthday": "불명",
+      "height": "163cm",
+      "origin": "불명",
+      "affiliation": "집행자",
+      "cvKr": "강새봄",
+      "cvJp": "아베 리카",
+      "illustration": "./data/savior-detail-assets/97258edcd6bf18119abaf17b.webp",
+      "portrait": "./data/savior-detail-assets/b18b7b69e0e068a24e0049c2.webp"
+    }
+  },
+  "1026": {
+    "key": "roberta",
+    "id": 1026,
+    "file": "./1026.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1026",
+    "capturedAt": "2026-09-03T08:41:23.565Z",
+    "profile": {
+      "name": "로베르타",
+      "grade": "SSR",
+      "element": "별",
+      "className": "스트라이커",
+      "attackType": "충격",
+      "description": "폴라리스 소속 궤도 수색대의 팀장. 훌륭한 팀장이 되기 위해 애쓰고 있으며 그때마다 쌓이는 스트레스는 음주로 푸는 모양.",
+      "birthday": "11월 20일",
+      "height": "165cm",
+      "origin": "NOA",
+      "affiliation": "궤도 수색대",
+      "cvKr": "권다예",
+      "cvJp": "와타나베 케이코",
+      "illustration": "./data/savior-detail-assets/5b91df1487eed27ef25a3080.webp",
+      "portrait": "./data/savior-detail-assets/06fe552d22d9dbafcf28c323.webp"
+    }
+  },
+  "1027": {
+    "key": "lugh",
+    "id": 1027,
+    "file": "./1027.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1027",
+    "capturedAt": "2026-09-03T08:41:27.086Z",
+    "profile": {
+      "name": "루그",
+      "grade": "SSR",
+      "element": "달",
+      "className": "레인저",
+      "attackType": "정신",
+      "description": "폴라리스 소속 궤도 수색대의 부팀장. 가문 대대로 내려온 특이체질 때문에 고통을 느끼지 못한다. 주위 사람들에게는 철저히 숨기는 취미를 가지고 있다는 소문이.",
+      "birthday": "12월 21일",
+      "height": "167cm",
+      "origin": "동대륙",
+      "affiliation": "궤도 수색대",
+      "cvKr": "장채연",
+      "cvJp": "와타나베 유리나",
+      "illustration": "./data/savior-detail-assets/554a49c45978079f14910133.webp",
+      "portrait": "./data/savior-detail-assets/48128f3cee9f4c5ce32b5c01.webp"
+    }
+  },
+  "1029": {
+    "key": "fei",
+    "id": 1029,
+    "file": "./1029.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1029",
+    "capturedAt": "2026-09-03T08:41:30.516Z",
+    "profile": {
+      "name": "페이",
+      "grade": "SSR",
+      "element": "달",
+      "className": "어쌔신",
+      "attackType": "참격",
+      "description": "풍월당 소속의 무인이었으나 비급 천문서를 훔쳐 탈주한 방랑무사. 환상의 무공 천문을 완성하고 그 멋짐을 세상에 전파하는 것이 목표.",
+      "birthday": "10월 18일",
+      "height": "168cm",
+      "origin": "동대륙",
+      "affiliation": "방랑자",
+      "cvKr": "신나리",
+      "cvJp": "스구타 히나",
+      "illustration": "./data/savior-detail-assets/7d80c88486b906ea6c33bd2f.webp",
+      "portrait": "./data/savior-detail-assets/63fce94ad7036181723e24de.webp"
+    }
+  },
+  "1030": {
+    "key": "epindel",
+    "id": 1030,
+    "file": "./1030.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1030",
+    "capturedAt": "2026-09-03T08:41:33.974Z",
+    "profile": {
+      "name": "에핀델",
+      "grade": "SSR",
+      "element": "달",
+      "className": "어쌔신",
+      "attackType": "참격",
+      "description": "오를랑 가문의 차기 가주. 아세라와는 소꿉친구 사이이지만 본인은 여러모로 아세라를 의식하며 경쟁심을 불태우는 중.",
+      "birthday": "08월 18일",
+      "height": "165cm",
+      "origin": "NOA",
+      "affiliation": "오를랑 가문",
+      "cvKr": "윤아영",
+      "cvJp": "미야시타 사키",
+      "illustration": "./data/savior-detail-assets/fa6e97cafa29a7bcba73044f.webp",
+      "portrait": "./data/savior-detail-assets/1bd319d04ae98e1b91e137b9.webp"
+    }
+  },
+  "1031": {
+    "key": "omega",
+    "id": 1031,
+    "file": "./1031.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1031",
+    "capturedAt": "2026-09-03T08:41:37.411Z",
+    "profile": {
+      "name": "오메가",
+      "grade": "SSR",
+      "element": "별",
+      "className": "캐스터",
+      "attackType": "충격",
+      "description": "단장의 검에 봉인되어 있던 초고대문명의 인공지능. 오래 전 헤어진 가족을 다시 만나기 위해 보이저 구원단에 합류한다.",
+      "birthday": "02월 04일",
+      "height": "131cm",
+      "origin": "스타피어서",
+      "affiliation": "보이저 구원단",
+      "cvKr": "미소",
+      "cvJp": "나가나와 마리아",
+      "illustration": "./data/savior-detail-assets/7c082f40e55fd6f05b592924.webp",
+      "portrait": "./data/savior-detail-assets/79430768eed1f15b6846afc9.webp"
+    }
+  },
+  "1032": {
+    "key": "bunny-charlotte",
+    "id": 1032,
+    "file": "./1032.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1032",
+    "capturedAt": "2026-09-03T08:41:40.705Z",
+    "profile": {
+      "name": "샤를",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "어쌔신",
+      "attackType": "정신",
+      "description": "모나스티르 공국 기사단의 기사단장. 근엄하고 무게있는 기사단장이 되려고 노력하지만 활달하고 소박한 본래의 성격이 언제나 발목을 잡는다.",
+      "birthday": "10월 20일",
+      "height": "166cm",
+      "origin": "모나스티르 공국",
+      "affiliation": "모나스티르 기사단",
+      "cvKr": "채림",
+      "cvJp": "오오키 사에코",
+      "illustration": "./data/savior-detail-assets/c61a0c7db4e02158c670495b.webp",
+      "portrait": "./data/savior-detail-assets/16ecc1420b70b466da4f8e32.webp"
+    }
+  },
+  "1033": {
+    "key": "ceres",
+    "id": 1033,
+    "file": "./1033.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1033",
+    "capturedAt": "2026-09-03T08:41:44.171Z",
+    "profile": {
+      "name": "세레스",
+      "grade": "SSR",
+      "element": "달",
+      "className": "스트라이커",
+      "attackType": "참격",
+      "description": "서부 탈환대의 대장이자 서부 탈환을 꿈꾸는 서부인들의 희망. 강한 무력을 추구하며 나약한 모습을 보이는 것을 용납하지 않는다.",
+      "birthday": "01월 01일",
+      "height": "158cm",
+      "origin": "서부 재난 지대",
+      "affiliation": "서부 탈환대",
+      "cvKr": "이은조",
+      "cvJp": "나츠요시 유우코",
+      "illustration": "./data/savior-detail-assets/4426b095a52349351a5af610.webp",
+      "portrait": "./data/savior-detail-assets/5d0bd23eb7ec31b7c9d55c17.webp"
+    }
+  },
+  "1034": {
+    "key": "lydia",
+    "id": 1034,
+    "file": "./1034.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1034",
+    "capturedAt": "2026-09-03T08:41:47.521Z",
+    "profile": {
+      "name": "리디아",
+      "grade": "SSR",
+      "element": "혼돈",
+      "className": "레인저",
+      "attackType": "정신",
+      "description": "서부 탈환대의 부대장. 언제나 세레스를 옆에서 보좌하고 있다. 언제나 생글생글 웃고 있지만 그 미소의 안쪽에는 어둠이 도사리고 있다.",
+      "birthday": "06월 18일",
+      "height": "156cm",
+      "origin": "서부 재난 지대",
+      "affiliation": "서부 탈환대",
+      "cvKr": "장미",
+      "cvJp": "아이자와 사야",
+      "illustration": "./data/savior-detail-assets/36c708a64cef1ced32859261.webp",
+      "portrait": "./data/savior-detail-assets/97aeb7bf8a03f110319479d1.webp"
+    }
+  },
+  "1039": {
+    "key": "professor-m",
+    "id": 1039,
+    "file": "./1039.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1039",
+    "capturedAt": "2026-09-17T10:43:51.813Z",
+    "profile": {
+      "name": "프로페서M",
+      "grade": "SSR",
+      "element": "달",
+      "className": "레인저",
+      "attackType": "정신",
+      "description": "심리학과 범죄학을 연구하고 있는 사립탐정. 소시오패스적 성향 탓에 공감능력이 결여되어 있으며, 인간을 탐구하고 분석해 이해하려고 한다.",
+      "birthday": "5월 5일",
+      "height": "170cm",
+      "origin": "불명",
+      "affiliation": "람파디스",
+      "cvKr": "전해리",
+      "cvJp": "후지와라 나츠미",
+      "illustration": "./data/savior-detail-assets/프로페서M 일러스트.webp",
+      "portrait": "./data/savior-detail-assets/프로페서M.webp"
+    }
+  },
+  "1040": {
+    "key": "gwen",
+    "id": 1040,
+    "slug": "gwen",
+    "file": "./1040.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1040",
+    "capturedAt": "2026-09-24T17:48:05.932Z",
+    "profile": {
+      "name": "그웬",
+      "grade": "SSR",
+      "element": "별",
+      "className": "스트라이커",
+      "attackType": "타격",
+      "description": "NOA의 민간 조사 업체 람파디스 수사 컨설팅의 사장 겸 조사관. 한눈에 모든 것을 간파하는 천재적인 추리를 꿈꾸지만, 정작 진가를 발휘하는 것은 끝까지 물고 늘어지는 끈기와 근성이다.",
+      "birthday": "5월 25일",
+      "height": "158cm",
+      "origin": "NOA",
+      "affiliation": "람파디스",
+      "cvKr": "김순미",
+      "cvJp": "와쿠노 아이카",
+      "illustration": "./data/savior-detail-assets/1040-illustration.webp",
+      "portrait": "./data/savior-detail-assets/1040-portrait.webp"
+    },
+    "journey": {
+      "source": "https://ss.espr.gg/ko/database/characters/gwen/journey",
+      "baseStats": {
+        "str": 30,
+        "hp": 20,
+        "end": 20,
+        "focus": 10,
+        "prot": 10
+      },
+      "resonances": [
+        {
+          "step": 1,
+          "unlockLevel": 20,
+          "journeyStat": {
+            "type": "str",
+            "value": 30
+          },
+          "stats": [
+            {
+              "type": "atk",
+              "value": 100
+            },
+            {
+              "type": "hp",
+              "value": 720
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 2,
+          "unlockLevel": 40,
+          "journeyStat": {
+            "type": "hp",
+            "value": 30
+          },
+          "stats": [
+            {
+              "type": "atk_rate",
+              "value": 0.02
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 3,
+          "unlockLevel": 60,
+          "journeyStat": null,
+          "stats": [
+            {
+              "type": "atk",
+              "value": 125
+            },
+            {
+              "type": "def",
+              "value": 50
+            }
+          ],
+          "potential": "POTEN_PASSIVE_0001"
+        },
+        {
+          "step": 4,
+          "unlockLevel": 80,
+          "journeyStat": {
+            "type": "str",
+            "value": 40
+          },
+          "stats": [
+            {
+              "type": "hp_rate",
+              "value": 0.02
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 5,
+          "unlockLevel": 100,
+          "journeyStat": {
+            "type": "hp",
+            "value": 40
+          },
+          "stats": [
+            {
+              "type": "hp",
+              "value": 900
+            },
+            {
+              "type": "def",
+              "value": 60
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 6,
+          "unlockLevel": 120,
+          "journeyStat": null,
+          "stats": [
+            {
+              "type": "atk_rate",
+              "value": 0.04
+            }
+          ],
+          "potential": "POTEN_PASSIVE_0002"
+        },
+        {
+          "step": 7,
+          "unlockLevel": 140,
+          "journeyStat": {
+            "type": "str",
+            "value": 40
+          },
+          "stats": [
+            {
+              "type": "atk",
+              "value": 175
+            },
+            {
+              "type": "hp",
+              "value": 1080
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 8,
+          "unlockLevel": 160,
+          "journeyStat": {
+            "type": "str",
+            "value": 40
+          },
+          "stats": [
+            {
+              "type": "hp_rate",
+              "value": 0.04
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 9,
+          "unlockLevel": 180,
+          "journeyStat": {
+            "type": "hp",
+            "value": 50
+          },
+          "stats": [
+            {
+              "type": "atk",
+              "value": 200
+            },
+            {
+              "type": "def",
+              "value": 70
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 10,
+          "unlockLevel": 200,
+          "journeyStat": null,
+          "stats": [
+            {
+              "type": "atk_rate",
+              "value": 0.06
+            }
+          ],
+          "potential": "POTEN_PASSIVE_1001"
+        }
+      ],
+      "classCorrection": {
+        "str": 110,
+        "hp": 100,
+        "end": 90,
+        "focus": 100,
+        "prot": 100
+      },
+      "potentialCodes": [
+        {
+          "step": 3,
+          "code": "POTEN_PASSIVE_0001"
+        },
+        {
+          "step": 6,
+          "code": "POTEN_PASSIVE_0002"
+        },
+        {
+          "step": 10,
+          "code": "POTEN_PASSIVE_1001"
+        }
+      ],
+      "charm": {
+        "name": {
+          "ko": "휴대용 진실 유도기",
+          "en": "Portable Truth Inducer",
+          "ja": "携帯型真実誘導器"
+        },
+        "flavor": {
+          "ko": "그웬이 휴대하고 다니는 전기 충격기. 기기 끝에서 번쩍이는 섬광이 터져 나오면, 누구라도 진실을 말하지 않고는 버티지 못할 것이다.",
+          "en": "A stun gun Gwen carries with her. Once sparks flash from its tip, no one can resist telling the truth.",
+          "ja": "グウェンが持ち歩いているスタンガン。その先端からまばゆい閃光がほとばしれば、誰であろうと真実を語らずにはいられないだろう。"
+        },
+        "effect": {
+          "ko": "타격 시 자신에게 <b><color=#DD982C>전기 충격(해제불가)</color></b>을 1회 발생시킵니다. <b><color=#DD982C>진실을 밝히는 빛!</color></b>을 추가로 발동 시 <b><color=#DD982C>범인은 바로 너!</color></b>의 쿨타임이 1턴 감소합니다. 쿨타임 감소 효과는 1턴에 1번만 발생합니다.",
+          "en": "Grants self 1 instance of <b><color=#DD982C>Electric Shock (Undispellable)</color></b> on attack. When <b><color=#DD982C>Light of Truth!</color></b> is triggered additionally, reduces <b><color=#DD982C>The Culprit Is You!</color></b>'s cooldown by 1 turn. The cooldown reduction effect can only occur once per turn.",
+          "ja": "攻撃時、自身に<b><color=#DD982C>電気衝撃(解除不可)</color></b>を1つ付与する。<b><color=#DD982C>真実を暴く光！</color></b>を追加に発動した場合、<b><color=#DD982C>犯人はあなただ！</color></b>のクールタイムを1ターン短縮する。クールタイム短縮効果は1ターンに1回のみ発生する。"
+        },
+        "image": "./data/savior-detail-assets/1040-charm.webp"
+      }
+    }
+  },
+  "1041": {
+    "key": "harley",
+    "id": 1041,
+    "file": "./1041.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1041",
+    "capturedAt": "2026-09-03T08:41:50.964Z",
+    "profile": {
+      "name": "할리",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "디펜더",
+      "attackType": "충격",
+      "description": "바이크 호그 폭주단, 헬 세이비어의 리더. 여러 범죄를 저질러 수배중이라는 소문이 있다. 무엇보다 의리를 중시하는 호방한 소녀.",
+      "birthday": "07월 13일",
+      "height": "150cm",
+      "origin": "서부 재난 지대",
+      "affiliation": "헬 세이비어",
+      "cvKr": "정유정",
+      "cvJp": "야하기 사유리",
+      "illustration": "./data/savior-detail-assets/cbdeccbd41bdfb08bf2f56aa.webp",
+      "portrait": "./data/savior-detail-assets/149389a07d51a017f8f3399a.webp"
+    }
+  },
+  "1042": {
+    "key": "petra",
+    "id": 1042,
+    "file": "./1042.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1042",
+    "capturedAt": "2026-09-03T08:41:54.440Z",
+    "profile": {
+      "name": "페트라",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "레인저",
+      "attackType": "충격",
+      "description": "철거부터 건설까지, 건축과 관련된 일이라면 뭐든지 수주받는 페트라 조합의 대표. 정확히 목표만 날려버리는 폭탄 개발에 재능이 있다.",
+      "birthday": "10월 21일",
+      "height": "155cm",
+      "origin": "칼라이드",
+      "affiliation": "페트라 조합",
+      "cvKr": "김선주",
+      "cvJp": "미네다 마유",
+      "illustration": "./data/savior-detail-assets/5735078b97f88d56fa847e99.webp",
+      "portrait": "./data/savior-detail-assets/5bf4997bfec6f9b38b4cf171.webp"
+    }
+  },
+  "1043": {
+    "key": "scarlet",
+    "id": 1043,
+    "file": "./1043.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1043",
+    "capturedAt": "2026-09-03T08:41:57.989Z",
+    "profile": {
+      "name": "스칼렛",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "레인저",
+      "attackType": "충격",
+      "description": "대재단사를 꿈꾸는 용족 소녀. 인간 사회의 상식이 부족하기 때문에 사고를 치고 클레어에게 혼나는 일이 잦다.",
+      "birthday": "05월 05일",
+      "height": "155cm",
+      "origin": "용의 계곡",
+      "affiliation": "캔들 스퀘어",
+      "cvKr": "서다혜",
+      "cvJp": "아키야마 미사키",
+      "illustration": "./data/savior-detail-assets/bc9c6ea4b34df07b65600691.webp",
+      "portrait": "./data/savior-detail-assets/15728a572c6ef42fb1213cb7.webp"
+    }
+  },
+  "1044": {
+    "key": "claire",
+    "id": 1044,
+    "file": "./1044.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1044",
+    "capturedAt": "2026-09-03T08:42:01.470Z",
+    "profile": {
+      "name": "클레어",
+      "grade": "SSR",
+      "element": "달",
+      "className": "스트라이커",
+      "attackType": "충격",
+      "description": "캔들 스퀘어의 최선임 메이드이자 메이드장 대행. 계획과 원칙을 중요시 하는 성격으로 언제나 모든 돌발상황에 대비한 계획을 세워두고 있다.",
+      "birthday": "01월 30일",
+      "height": "162cm",
+      "origin": "NOA",
+      "affiliation": "캔들 스퀘어",
+      "cvKr": "오로아",
+      "cvJp": "소노야마 히카리",
+      "illustration": "./data/savior-detail-assets/6c4a58e5d20ffceeda78132a.webp",
+      "portrait": "./data/savior-detail-assets/17d3e11f55b9cbb71da8494e.webp"
+    }
+  },
+  "1045": {
+    "key": "white-pearl-luna",
+    "id": 1045,
+    "file": "./1045.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1045",
+    "capturedAt": "2026-09-03T08:42:04.978Z",
+    "profile": {
+      "name": "루나",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "디펜더",
+      "attackType": "원소",
+      "description": "꿈의 대마녀 마기의 수제자이자, 그녀의 '달의 지팡이'를 물려받은 자칭 라비스타 최고의 예언자. 그날 생긴 돈은 그날 카지노에서 모두 써버리는 대책 없는 삶을 살고 있다.",
+      "birthday": "03월 18일",
+      "height": "167cm",
+      "origin": "불명",
+      "affiliation": "보이저 구원단",
+      "cvKr": "방시우",
+      "cvJp": "미나토 미야",
+      "illustration": "./data/savior-detail-assets/2a3aa9eb5ff1ab74ddd465f9.webp",
+      "portrait": "./data/savior-detail-assets/8400561d40fa293a39aa43b0.webp"
+    }
+  },
+  "1046": {
+    "key": "sunshine-cat-smile",
+    "id": 1046,
+    "file": "./1046.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1046",
+    "capturedAt": "2026-09-03T08:42:08.383Z",
+    "profile": {
+      "name": "스마일",
+      "grade": "SSR",
+      "element": "별",
+      "className": "어쌔신",
+      "attackType": "원소",
+      "description": "스스로 인간이 아니라 고도의 과학 기술로 만들어진 존재라고 주장하는 과학 신봉자. 태어나서 한 번도 웃어 본 적이 없기 때문에 웃을 수 있는 연구를 위해 단장을 실험체로 삼고 있다.",
+      "birthday": "11월 10일",
+      "height": "148cm",
+      "origin": "NOA",
+      "affiliation": "보이저 구원단",
+      "cvKr": "곽규미",
+      "cvJp": "타무카이 유즈키",
+      "illustration": "./data/savior-detail-assets/12feb8a1758318dc2c3ba8a1.webp",
+      "portrait": "./data/savior-detail-assets/4dd0e86c9df0298978452290.webp"
+    }
+  },
+  "1049": {
+    "key": "lacy",
+    "id": 1049,
+    "file": "./1049.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1049",
+    "capturedAt": "2026-09-03T08:42:11.886Z",
+    "profile": {
+      "name": "레이시",
+      "grade": "SSR",
+      "element": "혼돈",
+      "className": "레인저",
+      "attackType": "원소",
+      "description": "동대륙 출신의 용족. 오랜 시간 작가로 활동해 왔으며 큰 성공을 거뒀었지만 최근에는 슬럼프인 듯.",
+      "birthday": "01월 04일",
+      "height": "170cm",
+      "origin": "동대륙",
+      "affiliation": "방랑자",
+      "cvKr": "허예은",
+      "cvJp": "마에다 카오리",
+      "illustration": "./data/savior-detail-assets/36db79a2f50ea051b310219f.webp",
+      "portrait": "./data/savior-detail-assets/4d3a821cc766c9c1510f3ded.webp"
+    }
+  },
+  "1051": {
+    "key": "tanya",
+    "id": 1051,
+    "file": "./1051.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1051",
+    "capturedAt": "2026-09-03T08:42:15.410Z",
+    "profile": {
+      "name": "타냐",
+      "grade": "SSR",
+      "element": "별",
+      "className": "스트라이커",
+      "attackType": "충격",
+      "description": "페트라 조합 소속의 인턴. 남들과 다른 괴력의 소유자로 마르실이 봐주지 않으면 모든 일을 힘으로 해결해 버린다. 좋아하는 것은 튀김.",
+      "birthday": "12월 01일",
+      "height": "173cm",
+      "origin": "불명",
+      "affiliation": "페트라 조합",
+      "cvKr": "최하리",
+      "cvJp": "나카자와 미나",
+      "illustration": "./data/savior-detail-assets/a196ae2403e897d3fff98b3b.webp",
+      "portrait": "./data/savior-detail-assets/1a6c8d2cd96ff6560b03b09b.webp"
+    }
+  },
+  "1052": {
+    "key": "lily",
+    "id": 1052,
+    "file": "./1052.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1052",
+    "capturedAt": "2026-09-03T08:42:19.119Z",
+    "profile": {
+      "name": "릴리",
+      "grade": "SSR",
+      "element": "달",
+      "className": "캐스터",
+      "attackType": "정신",
+      "description": "람파디스 수사 컨설팅의 보조 조사원. 토끼씨라고 불리는 커다란 토끼 인형을 언제나 들고 다니고 있다. 가끔 토끼씨와 대화를 나눠서 주변의 걱정을 사고 있다.",
+      "birthday": "11월 05일",
+      "height": "151cm",
+      "origin": "NOA",
+      "affiliation": "람파디스",
+      "cvKr": "김윤채",
+      "cvJp": "이이다 히카루",
+      "illustration": "./data/savior-detail-assets/5bf35ee52351c1ab6978b106.webp",
+      "portrait": "./data/savior-detail-assets/ec8fec7d8ebd7a620c977e41.webp"
+    }
+  },
+  "1053": {
+    "key": "kyra",
+    "id": 1053,
+    "file": "./1053.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1053",
+    "capturedAt": "2026-09-03T08:42:22.637Z",
+    "profile": {
+      "name": "키라",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "어쌔신",
+      "attackType": "정신",
+      "description": "목소리에 힘을 담는 언령이라는 특별한 능력을 가진 소녀. 어렸을 때부터 언령을 잘 조절하지 못했기 때문에 주변 사람들에게 피해를 끼치고, 점점 내성적인 성격이 되었다.",
+      "birthday": "04월 04일",
+      "height": "155cm",
+      "origin": "NOA",
+      "affiliation": "키라는 친구같은 거 없어",
+      "cvKr": "성예원",
+      "cvJp": "아오노 리코",
+      "illustration": "./data/savior-detail-assets/cc44a3f360e2f9f55a100ff8.webp",
+      "portrait": "./data/savior-detail-assets/69de8c54b64f4ff7b61e1b87.webp"
+    }
+  },
+  "1054": {
+    "key": "waltz-asherah",
+    "id": 1054,
+    "file": "./1054.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1054",
+    "capturedAt": "2026-09-03T08:42:25.925Z",
+    "profile": {
+      "name": "아세라",
+      "grade": "SSR",
+      "element": "질서",
+      "className": "서포터",
+      "attackType": "참격",
+      "description": "별의 구원자를 동경해서 그와 같은 구원자가 되기 위해 여정에 참가한 귀족 아가씨. 고민하는 것보다는 일단 행동으로 저지르고 보는 추진력이 강점이자 단점.",
+      "birthday": "04월 22일",
+      "height": "166cm",
+      "origin": "NOA",
+      "affiliation": "보이저 구원단",
+      "cvKr": "김채린",
+      "cvJp": "타카모리 나츠미",
+      "illustration": "./data/savior-detail-assets/96679578a2cf89e93716d8c4.webp",
+      "portrait": "./data/savior-detail-assets/aa3a30078b35438caf5e6cbd.webp"
+    }
+  },
+  "1055": {
+    "key": "wedding-carmen",
+    "id": 1055,
+    "file": "./1055.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1055",
+    "capturedAt": "2026-09-03T08:42:29.338Z",
+    "profile": {
+      "name": "카르멘",
+      "grade": "SSR",
+      "element": "달",
+      "className": "서포터",
+      "attackType": "충격",
+      "description": "모나스티르 공국 기사단의 부단장. 어떠한 어려운 상황에서도 언제나 여유로운 웃음을 잃지 않는 기사단의 방패.",
+      "birthday": "08월 11일",
+      "height": "168cm",
+      "origin": "모나스티르 공국",
+      "affiliation": "모나스티르 기사단",
+      "cvKr": "손정민",
+      "cvJp": "Lynn",
+      "illustration": "./data/savior-detail-assets/d1b5f48ee2ff3f59402714de.webp",
+      "portrait": "./data/savior-detail-assets/56859b70c67b00ee3ad76393.webp"
+    }
+  },
+  "1056": {
+    "key": "wedding-epindel",
+    "id": 1056,
+    "file": "./1056.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1056",
+    "capturedAt": "2026-09-03T08:42:32.750Z",
+    "profile": {
+      "name": "에핀델",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "캐스터",
+      "attackType": "참격",
+      "description": "오를랑 가문의 차기 가주. 아세라와는 소꿉친구 사이이지만 본인은 여러모로 아세라를 의식하며 경쟁심을 불태우는 중.",
+      "birthday": "08월 18일",
+      "height": "165cm",
+      "origin": "NOA",
+      "affiliation": "오를랑 가문",
+      "cvKr": "윤아영",
+      "cvJp": "미야시타 사키",
+      "illustration": "./data/savior-detail-assets/bb91244307490bf3dfb3c5e7.webp",
+      "portrait": "./data/savior-detail-assets/9c210d4b5dd4ce5a81c921da.webp"
+    }
+  },
+  "1057": {
+    "key": "bunny-frey",
+    "id": 1057,
+    "file": "./1057.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1057",
+    "capturedAt": "2026-09-03T08:42:36.008Z",
+    "profile": {
+      "name": "프레이",
+      "grade": "SSR",
+      "element": "달",
+      "className": "캐스터",
+      "attackType": "충격",
+      "description": "모나스티르 기사단의 보급관이라고 자칭하는 소녀. 돈 버는 일에 관심이 많기 때문에 언제나 사업 아이템을 구상하고 있지만 대부분 실패로 끝나고 있다.",
+      "birthday": "07월 07일",
+      "height": "156cm",
+      "origin": "모나스티르 공국",
+      "affiliation": "모나스티르 기사단",
+      "cvKr": "이이로",
+      "cvJp": "시부야 아야노",
+      "illustration": "./data/savior-detail-assets/99a63c5c8bcdabb5f5f3ecdf.webp",
+      "portrait": "./data/savior-detail-assets/04effd5bf2e4a9055157c823.webp"
+    }
+  },
+  "1058": {
+    "key": "source-1058",
+    "id": 1058,
+    "file": "./1058.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1058",
+    "capturedAt": "2026-09-03T08:42:39.411Z",
+    "profile": {
+      "name": "아모라",
+      "grade": "SSR",
+      "element": "질서",
+      "className": "어쌔신",
+      "attackType": "참격",
+      "description": "스트라니스 백작가의 현 가주이자, 대마녀 알리시아를 따르는 집행자. 여유로운 성격으로 짓궂은 장난을 즐긴다. 술통을 손에서 놓지 않는 애주가지만, 실력 하나만큼은 확실한 편.",
+      "birthday": "03월 16일",
+      "height": "171cm",
+      "origin": "스트라니스 백작령",
+      "affiliation": "스트라니스 백작가",
+      "cvKr": "김도영",
+      "cvJp": "코마가타 유리",
+      "illustration": "./data/savior-detail-assets/8500523b272a250963276f06.webp",
+      "portrait": "./data/savior-detail-assets/992e1469ab25043bbf447a8a.webp"
+    }
+  },
+  "1060": {
+    "key": "lydia-moon-caster",
+    "id": 1060,
+    "slug": "lydia-moon-caster",
+    "file": "./1060.html",
+    "source": "https://ss.espr.gg/ko/database/characters/lydia-moon-caster",
+    "capturedAt": "2026-10-15T03:45:28.701Z",
+    "profile": {
+      "name": "리디아",
+      "grade": "SSR",
+      "element": "달",
+      "className": "캐스터",
+      "attackType": "원소",
+      "description": "서부 탈환대의 부대장. 언제나 세레스를 옆에서 보좌하고 있다. 언제나 생글생글 웃고 있지만 그 미소의 안쪽에는 어둠이 도사리고 있다.",
+      "birthday": "6월 18일",
+      "height": "156cm",
+      "origin": "서부 재난 지대",
+      "affiliation": "서부 탈환대",
+      "cvKr": "장미",
+      "cvJp": "아이자와 사야",
+      "illustration": "./data/savior-detail-assets/1060-illustration.webp",
+      "portrait": "./data/savior-detail-assets/1060-portrait.webp"
+    },
+    "journey": {
+      "source": "https://ss.espr.gg/ko/database/characters/lydia-moon-caster/journey",
+      "baseStats": {
+        "str": 30,
+        "hp": 20,
+        "end": 20,
+        "focus": 10,
+        "prot": 10
+      },
+      "resonances": [
+        {
+          "step": 1,
+          "unlockLevel": 20,
+          "journeyStat": {
+            "type": "str",
+            "value": 30
+          },
+          "stats": [
+            {
+              "type": "atk",
+              "value": 100
+            },
+            {
+              "type": "hp",
+              "value": 720
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 2,
+          "unlockLevel": 40,
+          "journeyStat": {
+            "type": "hp",
+            "value": 30
+          },
+          "stats": [
+            {
+              "type": "atk_rate",
+              "value": 0.02
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 3,
+          "unlockLevel": 60,
+          "journeyStat": null,
+          "stats": [
+            {
+              "type": "atk",
+              "value": 125
+            },
+            {
+              "type": "def",
+              "value": 50
+            }
+          ],
+          "potential": "POTEN_PASSIVE_0001"
+        },
+        {
+          "step": 4,
+          "unlockLevel": 80,
+          "journeyStat": {
+            "type": "str",
+            "value": 40
+          },
+          "stats": [
+            {
+              "type": "crit_rate",
+              "value": 0.03
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 5,
+          "unlockLevel": 100,
+          "journeyStat": {
+            "type": "hp",
+            "value": 40
+          },
+          "stats": [
+            {
+              "type": "hp",
+              "value": 900
+            },
+            {
+              "type": "def",
+              "value": 60
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 6,
+          "unlockLevel": 120,
+          "journeyStat": null,
+          "stats": [
+            {
+              "type": "hp_rate",
+              "value": 0.04
+            }
+          ],
+          "potential": "POTEN_PASSIVE_0005"
+        },
+        {
+          "step": 7,
+          "unlockLevel": 140,
+          "journeyStat": {
+            "type": "str",
+            "value": 40
+          },
+          "stats": [
+            {
+              "type": "atk",
+              "value": 175
+            },
+            {
+              "type": "hp",
+              "value": 1080
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 8,
+          "unlockLevel": 160,
+          "journeyStat": {
+            "type": "str",
+            "value": 40
+          },
+          "stats": [
+            {
+              "type": "crit_rate",
+              "value": 0.06
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 9,
+          "unlockLevel": 180,
+          "journeyStat": {
+            "type": "hp",
+            "value": 50
+          },
+          "stats": [
+            {
+              "type": "atk",
+              "value": 200
+            },
+            {
+              "type": "def",
+              "value": 70
+            }
+          ],
+          "potential": null
+        },
+        {
+          "step": 10,
+          "unlockLevel": 200,
+          "journeyStat": null,
+          "stats": [
+            {
+              "type": "atk_rate",
+              "value": 0.06
+            }
+          ],
+          "potential": "POTEN_PASSIVE_1001"
+        }
+      ],
+      "potentialCodes": [
+        {
+          "step": 3,
+          "code": "POTEN_PASSIVE_0001"
+        },
+        {
+          "step": 6,
+          "code": "POTEN_PASSIVE_0005"
+        },
+        {
+          "step": 10,
+          "code": "POTEN_PASSIVE_1001"
+        }
+      ],
+      "charm": {
+        "name": {
+          "ko": "복종의 초커",
+          "en": "Choker of Obedience",
+          "ja": "服従のチョーカー"
+        },
+        "flavor": {
+          "ko": "수상쩍은 경매에서 비싸게 거래되는 초커. 목줄과 강아지 장난감 모양 장식은 구매자의 취향이라고 한다.",
+          "en": "A choker that fetches a hefty price at a shady auction. Rumor has it that the leash and dog-toy-shaped charm reflect the buyer's tastes.",
+          "ja": "怪しげなオークションで高値で取引されるチョーカー。首輪と骨の形をした犬用のおもちゃをかたどった飾りは、購入者の好みだという。"
+        },
+        "effect": {
+          "ko": "턴 시작 시 자신에게 <b><color=#DD982C>퇴근 재촉(해제불가)</color></b>을 3회 발생시킵니다. 타격 시 자신의 <b><color=#DD982C>퇴근 재촉(해제불가)</color></b> 중첩 횟수가 5회 이상이면 타격 후 최대 생명력이 가장 높은 적에게 <b><color=#DD982C>저리 가라고요!</color></b>를 발동하고 자신의 모든 스킬 쿨타임을 1턴 감소시킵니다.",
+          "en": "At the start of the turn, grants self 3 stacks of <b><color=#DD982C>Clocking Out (Undispellable)</color></b>. On attack, if self has 5 or more stacks of <b><color=#DD982C>Clocking Out (Undispellable)</color></b>, uses <b><color=#DD982C>Shoo!</color></b> on the enemy with the highest Max HP after attacking and reduces all self skill cooldowns by 1 turn.",
+          "ja": "ターン開始時、<b><color=#DD982C>退勤催促(解除不可)</color></b>を3つ付与する。攻撃時、自身の<b><color=#DD982C>退勤催促(解除不可)</color></b>スタック数が5つ以上の場合、攻撃後最大HPが最も高い敵に<b><color=#DD982C>来ないでってば！</color></b>を発動し、自身の全スキルのクールタイムを1ターン短縮する。"
+        },
+        "image": "./data/savior-detail-assets/1060-charm.webp"
+      }
+    }
+  },
+  "1501": {
+    "key": "besta",
+    "id": 1501,
+    "file": "./1501.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1501",
+    "capturedAt": "2026-09-03T08:42:42.851Z",
+    "profile": {
+      "name": "베스타",
+      "grade": "SR",
+      "element": "별",
+      "className": "디펜더",
+      "attackType": "충격",
+      "description": "서부 탈환대의 돌격대원. 어떤 상황에서도 불평불만없이 임무를 수행하기에 서부 전사들 사이에서는 귀감으로 여겨진다.",
+      "birthday": "03월 29일",
+      "height": "162cm",
+      "origin": "서부 재난 지대",
+      "affiliation": "서부 탈환대",
+      "cvKr": "박하진",
+      "cvJp": "츠카다 유이",
+      "illustration": "./data/savior-detail-assets/5bac5f77f4de5c791aace704.webp",
+      "portrait": "./data/savior-detail-assets/7b1729121929cb440b54c4e6.webp"
+    }
+  },
+  "1502": {
+    "key": "annah",
+    "id": 1502,
+    "file": "./1502.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1502",
+    "capturedAt": "2026-09-03T08:42:46.363Z",
+    "profile": {
+      "name": "안나",
+      "grade": "SR",
+      "element": "태양",
+      "className": "디펜더",
+      "attackType": "충격",
+      "description": "NOA의 치안을 지키는 타운가드. 잘 웃고 누구에게나 쉽게 다가가 수다를 떠는 성격이지만 타운가드 일에는 언제나 진지하게 임하고 있다.",
+      "birthday": "09월 07일",
+      "height": "157cm",
+      "origin": "NOA",
+      "affiliation": "NOA 타운가드",
+      "cvKr": "여윤미",
+      "cvJp": "하나사키 미유",
+      "illustration": "./data/savior-detail-assets/7ac1e99f206cefff72c2ae2a.webp",
+      "portrait": "./data/savior-detail-assets/b4a461e47c6863e99abfaf59.webp"
+    }
+  },
+  "1506": {
+    "key": "marcille",
+    "id": 1506,
+    "file": "./1506.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1506",
+    "capturedAt": "2026-09-03T08:42:49.811Z",
+    "profile": {
+      "name": "마르실",
+      "grade": "SR",
+      "element": "태양",
+      "className": "어쌔신",
+      "attackType": "충격",
+      "description": "페트라 조합의 현장 반장. 가족과 함께 운영할 당근 농장을 사들이기 위해 매일 열심히 일하고 있다.",
+      "birthday": "09월 19일",
+      "height": "148cm",
+      "origin": "칼라이드",
+      "affiliation": "페트라 조합",
+      "cvKr": "박시윤",
+      "cvJp": "안도 나나코",
+      "illustration": "./data/savior-detail-assets/d049d3d4f9cc2d2b6b570b01.webp",
+      "portrait": "./data/savior-detail-assets/0a42d986f16d8dbae5fca57e.webp"
+    }
+  },
+  "1507": {
+    "key": "vera",
+    "id": 1507,
+    "file": "./1507.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1507",
+    "capturedAt": "2026-09-03T08:42:53.182Z",
+    "profile": {
+      "name": "베라",
+      "grade": "SR",
+      "element": "달",
+      "className": "서포터",
+      "attackType": "원소",
+      "description": "언제나 부지런한 발걸음으로 NOA를 누비는 배달부 소녀. 돈을 많이 벌어 배달부 전용차 - 크루저를 사는 것이 삶의 목표.",
+      "birthday": "02월 26일",
+      "height": "157cm",
+      "origin": "NOA",
+      "affiliation": "배달부 협회",
+      "cvKr": "김가령",
+      "cvJp": "슈토 유키나",
+      "illustration": "./data/savior-detail-assets/014298260d6a584d3583420a.webp",
+      "portrait": "./data/savior-detail-assets/b02ff2aaf031565ac48f33a5.webp"
+    }
+  },
+  "1508": {
+    "key": "naru",
+    "id": 1508,
+    "file": "./1508.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1508",
+    "capturedAt": "2026-09-03T08:42:56.593Z",
+    "profile": {
+      "name": "나루",
+      "grade": "SR",
+      "element": "별",
+      "className": "레인저",
+      "attackType": "원소",
+      "description": "폴라리스 소속 궤도 수색대의 인턴. 스스로 고안해낸 방정식을 통해 완벽한 미래 관측이 가능해지는 미래를 꿈꾸고 있다.",
+      "birthday": "03월 03일",
+      "height": "158cm",
+      "origin": "NOA",
+      "affiliation": "궤도 수색대",
+      "cvKr": "이주은",
+      "cvJp": "후쿠시마 하루나",
+      "illustration": "./data/savior-detail-assets/532f902f797021b2d564c546.webp",
+      "portrait": "./data/savior-detail-assets/6676da4bbd51dd3d19dd7665.webp"
+    }
+  },
+  "1509": {
+    "key": "bunny-claire",
+    "id": 1509,
+    "file": "./1509.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1509",
+    "capturedAt": "2026-09-03T08:43:00.006Z",
+    "profile": {
+      "name": "클레어",
+      "grade": "SR",
+      "element": "달",
+      "className": "어쌔신",
+      "attackType": "참격",
+      "description": "캔들 스퀘어의 최선임 메이드이자 메이드장 대행. 계획과 원칙을 중요시 하는 성격으로 언제나 모든 돌발상황에 대비한 계획을 세워두고 있다.",
+      "birthday": "01월 30일",
+      "height": "162cm",
+      "origin": "NOA",
+      "affiliation": "캔들 스퀘어",
+      "cvKr": "오로아",
+      "cvJp": "소노야마 히카리",
+      "illustration": "./data/savior-detail-assets/86f59a40f7ffb79888eb5233.webp",
+      "portrait": "./data/savior-detail-assets/d1daccda9d84a9ab8e8ba438.webp"
+    }
+  },
+  "1510": {
+    "key": "bunny-scarlet",
+    "id": 1510,
+    "file": "./1510.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1510",
+    "capturedAt": "2026-09-03T08:43:03.480Z",
+    "profile": {
+      "name": "스칼렛",
+      "grade": "SR",
+      "element": "태양",
+      "className": "스트라이커",
+      "attackType": "원소",
+      "description": "대재단사를 꿈꾸는 용족 소녀. 인간 사회의 상식이 부족하기 때문에 사고를 치고 클레어에게 혼나는 일이 잦다.",
+      "birthday": "05월 05일",
+      "height": "155cm",
+      "origin": "용의 계곡",
+      "affiliation": "캔들 스퀘어",
+      "cvKr": "서다혜",
+      "cvJp": "아키야마 미사키",
+      "illustration": "./data/savior-detail-assets/9146871ba35c6d19023d2c5b.webp",
+      "portrait": "./data/savior-detail-assets/135bffc102aaa919b8ba6ec7.webp"
+    }
+  },
+  "1511": {
+    "key": "clarissa",
+    "id": 1511,
+    "file": "./1511.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/1511",
+    "capturedAt": "2026-09-03T08:43:06.873Z",
+    "profile": {
+      "name": "클라리사",
+      "grade": "SR",
+      "element": "별",
+      "className": "레인저",
+      "attackType": "충격",
+      "description": "카노푸스 산맥에서 사냥꾼으로 활동했던 소녀. 초인적인 시력을 타고 났다. 장난을 좋아하는 활기찬 성격이지만 모두와 일정 거리를 두려 한다.",
+      "birthday": "11월 09일",
+      "height": "166cm",
+      "origin": "카노푸스 산맥",
+      "affiliation": "카노푸스 경비대",
+      "cvKr": "원에스더",
+      "cvJp": "카와세 마키",
+      "illustration": "./data/savior-detail-assets/020ecf944a8b3937aca68b67.webp",
+      "portrait": "./data/savior-detail-assets/1af2d494d3f68d23a90bac27.webp"
+    }
+  },
+  "3001": {
+    "key": "hilde",
+    "id": 3001,
+    "file": "./3001.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/3001",
+    "capturedAt": "2026-09-03T08:43:10.286Z",
+    "profile": {
+      "name": "힐데",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "디펜더",
+      "attackType": "충격",
+      "description": "민간군사기업에서 활동해 온 베테랑. 다른 세계에서는 업계인들에게 언제나 정면 돌파를 제시하는 과격한 지휘관으로 악명 높았다.",
+      "birthday": "불명",
+      "height": "150cm",
+      "origin": "카운터사이드",
+      "affiliation": "펜릴 소대",
+      "cvKr": "문선희",
+      "cvJp": "히카사 요코",
+      "illustration": "./data/savior-detail-assets/f4a9eddc956b39955fcfa94f.webp",
+      "portrait": "./data/savior-detail-assets/2cf296915b5df4802f63c7e3.webp"
+    }
+  },
+  "3002": {
+    "key": "yoo-mina",
+    "id": 3002,
+    "file": "./3002.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/3002",
+    "capturedAt": "2026-09-03T08:43:13.779Z",
+    "profile": {
+      "name": "유미나",
+      "grade": "SSR",
+      "element": "별",
+      "className": "레인저",
+      "attackType": "충격",
+      "description": "불의의 사고로 인해 라비스타에 표류하게 된 다른 세계의 용병. 자신이 살던 세계로 돌아가기 위해 단장과 협력하고 있다.",
+      "birthday": "12월 25일",
+      "height": "168cm",
+      "origin": "카운터사이드",
+      "affiliation": "펜릴 소대",
+      "cvKr": "정유정",
+      "cvJp": "미즈키 나나",
+      "illustration": "./data/savior-detail-assets/9e08d7d042f6dae5dd78489f.webp",
+      "portrait": "./data/savior-detail-assets/1bad9de8b1119ec005b40f46.webp"
+    }
+  },
+  "3003": {
+    "key": "rosaria",
+    "id": 3003,
+    "file": "./3003.html",
+    "source": "https://star-savior-arcana-db.pages.dev/savior/3003",
+    "capturedAt": "2026-09-03T08:43:17.180Z",
+    "profile": {
+      "name": "로자리아",
+      "grade": "SSR",
+      "element": "혼돈",
+      "className": "레인저",
+      "attackType": "원소",
+      "description": "운명을 관장하는 클리포트의 마왕 중 한 명으로, 북의 폭군이라 불리우는 자. 단 한 자루의 검으로 수많은 별을 재로 만들었다.",
+      "birthday": "03월 02일",
+      "height": "150cm",
+      "origin": "카운터사이드",
+      "affiliation": "폴른 호크",
+      "cvKr": "이새아",
+      "cvJp": "쿠기미야 리에",
+      "illustration": "./data/savior-detail-assets/580087a8e20d5ad33243bc57.webp",
+      "portrait": "./data/savior-detail-assets/715cedb33c594df198cda104.webp"
+    }
+  },
+  "_meta": {
+    "sourceRoot": "https://star-savior-arcana-db.pages.dev/savior",
+    "generatedAt": "2026-10-02T07:00:45.905Z",
+    "count": 55,
+    "profileCount": 55,
+    "portraitCount": 55,
+    "illustrationCount": 55,
+    "profileFields": [
+      "name",
+      "grade",
+      "element",
+      "className",
+      "attackType",
+      "description",
+      "birthday",
+      "height",
+      "origin",
+      "affiliation",
+      "cvKr",
+      "cvJp",
+      "portrait",
+      "illustration"
+    ],
+    "assetsRoot": "./data/savior-detail-assets",
+    "excludedSnapshotSections": [
+      "일러스트",
+      "아크 포인트"
+    ],
+    "capturedAt": "2026-10-15T03:45:28.701Z"
+  }
+}

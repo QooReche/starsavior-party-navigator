@@ -1,0 +1,7 @@
+{"common":{"slot":"파티당 1개","points":"일반 1/보스 3, 3포인트 발동","cooldown_turns":8,"domain_turns":4,"unlock":"전술 분석 탭, 브레이크 스킬 지원 계획서(상점), 미해금 50장","confidence":"high"},
+"skills":[
+{"name":"특이점 관측","effect":"광역 피해 팀ATK 70%, 노바포스 +4","domain":"별빛 지평선 공/방 +20%","element":null,"recommend":"미확인","source":"https://starsavior-db.pages.dev/mechanics/","confidence":"medium"},
+{"name":"스타피어서","effect":"광역 피해 팀ATK 50%, 행동게이지 +20%","domain":"전략 사령부 치확/치피 +10%(스트라이커/레인저 +20%)","element":null,"recommend":"커뮤니티: Lv1도 추천","source":"https://starsavior-db.pages.dev/mechanics/","confidence":"medium"},
+{"name":"큐브 과부하","effect":"광역 회복 팀HP 2%, 공격력·효과적중 +15%(2턴)","domain":"치트 매트릭스 속도 +10%(디펜더/서포터 +20%)","element":null,"recommend":"Lv10 힐 강함, 육성비 큼","source":"https://gall.dcinside.com/mgallery/board/view/?id=starsavior&no=59393","confidence":"medium"},
+{"name":"차원 강습","effect":"광역 피해 팀ATK 50%, 노바포스 +4","domain":"CRF 증폭 공격력 +15%, 강인도 피해 +1","element":null,"recommend":"신규, 유망(의견)","source":"https://starsavior-db.pages.dev/mechanics/","confidence":"medium"},
+{"name":"행성 정화","effect":"광역 피해, 적 전체 방어력 감소 1턴(효과저항 무시)","domain":"마녀의 축복 공격력 +10%(캐스터/어쌔신 +20%)","element":null,"recommend":"미확인","source":"https://starsavior-db.pages.dev/mechanics/ (미출시 표기)","confidence":"low"}]}

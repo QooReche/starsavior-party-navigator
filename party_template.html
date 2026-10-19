@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>추천 파티 (시험판)</title>
+<style>
+:root{--bg:#f6f7f9;--fg:#1c2330;--card:#fff;--line:#dfe3ea;--mut:#667085;--acc:#0f8a8a;--good:#1a7f4b;--bad:#b42318}
+@media (prefers-color-scheme:dark){:root{--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "Malgun Gothic",system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 14px;font-size:13px}
+.panel,.party{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
+select,input[type=text]{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit;min-width:150px}
+button{padding:7px 14px;border:0;border-radius:6px;background:var(--acc);color:#fff;font:inherit;cursor:pointer}
+.info{color:var(--mut);font-size:13px;margin-top:8px}
+.mut{color:var(--mut);font-size:12px}.good{color:var(--good)}.bad{color:var(--bad)}
+.tag{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:0 7px;margin:1px;font-size:12px}
+details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.own label{display:block}
+.note{font-size:12px;color:var(--mut);margin-top:10px}
+.own{columns:auto!important;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.tile{position:relative;display:block!important;cursor:pointer}
+.tile input{position:absolute;opacity:0;pointer-events:none}
+.tile .tc{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);opacity:.45;filter:grayscale(.7);transition:.12s;text-align:center;height:100%}
+.tile input:checked+.tc{opacity:1;filter:none;border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.tile .fc{position:relative;width:64px;height:64px}
+.tile .fc img.face{width:64px;height:64px;border-radius:50%;border-width:2px}
+.tile .fc .dia{position:absolute;right:-10px;bottom:-8px;margin:0}
+.tile .tn{font-weight:700;font-size:13px;line-height:1.2;margin-top:4px}.tile .ts{font-size:11px;color:var(--mut);line-height:1.2}
+.party{padding:16px}.phead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}.phead b{font-size:18px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}.col h3,.h3{margin:10px 0 6px;font-size:13px;color:var(--mut);letter-spacing:.05em}
+.slot{display:flex;gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}
+.pic{width:132px;height:132px;flex:none;border-radius:10px;background:var(--line);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:700;color:var(--mut)}
+.pic img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.sinfo{min-width:0;flex:1}.sname{font-size:17px;font-weight:700}.ssub{color:var(--mut);font-size:12px}
+.chips{margin:4px 0}.chip{display:inline-block;border-radius:12px;padding:1px 9px;margin:0 4px 3px 0;font-size:12px;font-weight:600;color:#fff}
+.e-sun{background:#d98a00}.e-moon{background:#6a6fd6}.e-star{background:#2a9d8f}.e-order{background:#8a8f98}.e-chaos{background:#a23b72}.c-role{background:#4a5568}
+.t-0,.t-05{background:#c2410c}.t-1{background:#b7791f}.t-2{background:#2f855a}.t-3{background:#3b82a0}.t-4,.t-q{background:#64748b}
+.why{font-size:13px;margin:3px 0}.alts{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:12px;color:var(--mut);flex-wrap:wrap}
+.alt{display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1px 8px 1px 1px}
+.alt .pic{width:26px;height:26px;border-radius:50%;font-size:13px}
+.brk{display:flex;gap:14px;align-items:center;border:1px solid var(--acc);border-radius:10px;padding:12px;margin-top:6px;background:var(--bg)}
+.bicon{width:96px;height:96px;flex:none;border-radius:16px;background:linear-gradient(135deg,var(--acc),#6a6fd6);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;text-align:center;line-height:1.2;padding:6px}
+.bicon span{font-size:34px}.bicon small{font-size:11px;font-weight:600}.btxt b{font-size:17px}
+.btag{font-size:11px;background:var(--bad);color:#fff;border-radius:8px;padding:0 6px;margin-left:6px}
+.brkopt{display:inline-flex;align-items:center;gap:6px;margin:0 10px 6px 0;padding:4px 10px;border:1px solid var(--line);border-radius:8px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}.pic{width:96px;height:96px;font-size:30px}}
+
+.rowcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:8px}
+.bbar{display:flex;gap:18px;align-items:center;margin-top:12px;padding:14px 16px;border-radius:14px;border:2px solid #5a7bd6;background:linear-gradient(90deg,#1c3470,#0f1d48 70%);color:#fff}
+.bbar img{width:132px;height:132px;border-radius:50%;object-fit:cover;flex:none;border:3px solid #cfd9f2;box-shadow:0 0 0 3px #3b5bb0}
+.bbar .bt{font-size:12px;letter-spacing:.12em;color:#a9bde8}.bbar b{font-size:22px}.bbar .bx{font-size:14px;margin-top:4px}.bbar .mut{color:#a9bde8}
+@media (max-width:760px){.bbar{flex-direction:column;text-align:center}}
+.gc{display:flex;flex-direction:column;min-width:0}
+.card{position:relative;aspect-ratio:3/6.4;border-radius:14px;overflow:hidden;border:2px solid #7a8190;background:#10131a;box-shadow:0 0 0 2px #262b36 inset}
+.card .art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
+.card .fallback{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:30%;font-size:54px;font-weight:700;color:#5b6475}
+.card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(transparent,rgba(8,10,16,.92) 55%)}
+.cinfo{position:absolute;left:0;right:0;bottom:0;z-index:2;text-align:center;padding:0 6px 10px;color:#fff}
+.cls{width:44px;height:44px;margin:0 auto 4px;transform:rotate(45deg);border:2px solid #e8ecf5;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.cls i{transform:rotate(-45deg);font-style:normal;font-size:20px;line-height:1}
+.cls .ri{transform:rotate(-45deg);width:30px;height:30px;object-fit:contain}
+.ico{display:flex;align-items:center;gap:5px}.ai{width:20px;height:20px;object-fit:contain}
+.cls{width:50px;height:50px}
+.cls.e-sun{background:#d98a00}.cls.e-moon{background:#4d52b8}.cls.e-star{background:#1f8b7f}.cls.e-order{background:#6e7480}.cls.e-chaos{background:#8e2f5f}
+.cnm{font-weight:700;font-size:15px;text-shadow:0 1px 3px #000}.csb{font-size:11px;color:#c3cada}
+.tier{display:inline-block;margin-top:2px;padding:0 10px;border-radius:10px;font-weight:700;font-size:13px;color:#fff}
+.slotlbl{margin-top:-1px;text-align:center;font-weight:800;letter-spacing:.08em;font-size:14px;color:var(--fg);padding:5px 0;border-bottom:1px solid var(--line)}
+.slotlbl.back{color:#6aa5ff}.slotlbl.front{color:#ffb454}
+.under{padding:6px 2px;font-size:13px;line-height:1.55}
+.bcard{aspect-ratio:3/6.4;position:relative;border-radius:14px 14px 40px 40px;overflow:hidden;border:2px solid #5a7bd6;background:radial-gradient(circle at 50% 30%,#2f58b3,#0f1d48 70%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px;clip-path:polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)}
+.bcard .big{font-size:64px;line-height:1;text-shadow:0 0 16px #9cc2ff}.bcard b{font-size:15px;margin-top:8px}.bcard small{font-size:11px;letter-spacing:.1em;color:#a9bde8;margin-top:4px}
+.bcard .none{opacity:.6;font-size:13px}
+.altbox{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}
+.altrow{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:13px;line-height:1.25}
+.face{width:46px;height:46px;flex:none;border-radius:50%;object-fit:cover;object-position:top;background:var(--line);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--mut)}
+.dia{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;margin:0 4px;
+ clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:var(--bd)}
+.dia::before{content:"";position:absolute;inset:4px;background:var(--fl);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.dia img{position:relative;z-index:1;object-fit:contain;image-rendering:auto}
+.dia.e-sun{--bd:#ff6b5c;--fl:#b3261e}.dia.e-star{--bd:#8fe05a;--fl:#3f7d1f}.dia.e-moon{--bd:#5aa0ff;--fl:#1f4fb0}
+.dia.e-order{--bd:#f0cf86;--fl:#9a7a33}.dia.e-chaos{--bd:#c58bff;--fl:#6a2f9a}
+.kind{font-weight:800;font-size:12px;letter-spacing:.06em;margin:2px 0 1px;text-shadow:0 1px 3px #000}.k-A{color:#ffb454}.k-C{color:#c58bff}b.k-A,b.k-C{font-size:11px}
+.ico .dia{margin:0 4px 0 2px}
+.cinfo .dia{margin:6px auto 2px}
+.bcard2{display:flex;gap:10px;align-items:center;border:1px solid var(--acc);border-radius:12px;padding:8px;background:var(--bg)}
+.bcard2 img{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:none;border:2px solid #9bb0d8}
+.lead{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:3;font-size:20px}
+@media (max-width:760px){.rowcards{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><main>
+<h1>콘텐츠별 추천 파티 <small style="color:var(--bad)">시험판</small></h1>
+<p class="sub">DB 티어 + 속성 상성 + 팀 기능 태그로 자동 계산한 참고용입니다. 가중치는 임의값이라 검증된 공략이 아닙니다.</p>
+<div class="panel">
+ <div class="row">
+  <label>콘텐츠<select id="content"></select></label>
+  <label>섹터 / 지역<select id="tab"></select></label>
+  <label>스테이지 검색<input type="text" id="q" placeholder="예: 36, 아가논, 길레"></label>
+  <label>스테이지<select id="stage"></select></label>
+  <button id="go">추천</button>
+ </div>
+ <div class="info" id="stinfo"></div>
+ <details style="margin-top:8px"><summary>보유 구원자 한정 (기본: 전체)</summary>
+  <p class="mut"><button id="all" type="button" style="padding:2px 8px">모두 선택</button> <button id="none" type="button" style="padding:2px 8px">모두 해제</button> 체크한 구원자 안에서만 추천합니다.</p>
+  <input type="text" id="oq" placeholder="이름 검색" style="margin:4px 0 8px"><div class="own" id="own"></div></details>
+ <details style="margin-top:8px"><summary>보유 브레이크 스킬 (기본: 전체, 행성 정화는 미출시 표기)</summary>
+  <div id="brk" style="margin-top:6px"></div></details>
+</div>
+<div id="out"></div>
+<div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 초상화는 온라인일 때만 보입니다.</div>
+</main>
+<script>
+const D=/*DATA*/null;
+const EL={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
+const BG={"특이점 관측":"✦","스타피어서":"➶","큐브 과부하":"▣","행성 정화":"◍","차원 강습":"⟁"};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const R=D.roster, CFG=D.cfg, contents=D.contents;
+const TC=tr=>"t-"+(tr?String(tr).replace("티어","").replace(".",""):"q");
+let cur=null;
+
+$("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.name)}</option>`).join("");
+function tabsOf(c){const m=new Map();c.stages.forEach(s=>{if(!m.has(s.tab))m.set(s.tab,s.tabLabel)});return [...m]}
+function refreshTabs(){const c=contents[$("content").value];
+ $("tab").innerHTML=`<option value="">(전체)</option>`+tabsOf(c).map(([t,l])=>`<option value="${esc(t)}">${esc(l)}</option>`).join("");refreshStages()}
+function refreshStages(){
+ const c=contents[$("content").value],t=$("tab").value,q=$("q").value.trim();
+ cur=c.stages.filter(s=>(!t||s.tab===t)&&(!q||s.name.includes(q)||s.tabLabel.includes(q))).slice(0,400);
+ $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
+ showInfo()}
+function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`${EL[e]} ${n}`).join(" / ")}
+function showInfo(){const s=cur&&cur[$("stage").value];$("stinfo").innerHTML=s?`${esc(s.tabLabel)} · ${esc(s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`:"해당 스테이지 없음"}
+$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=showInfo;
+
+function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">
+ <span class="fc">${face(s)}${dia(s,34)}</span><span class="tn">${esc(s.name)}</span><span class="ts">${esc(s.sub)}</span>${kindTxt(s)}</span></label>`}
+function renderOwn(){$("own").innerHTML=R.map(tile).join("")}
+$("oq").oninput=()=>{const q=$("oq").value.trim();document.querySelectorAll("#own .tile").forEach(l=>l.style.display=(!q||l.dataset.n.includes(q))?"":"none")};
+$("all").onclick=()=>document.querySelectorAll("#own input").forEach(x=>x.checked=true);
+$("none").onclick=()=>document.querySelectorAll("#own input").forEach(x=>x.checked=false);
+const bkeys=Object.keys(CFG.breakSkills).filter(k=>!k.startsWith("_"));
+$("brk").innerHTML=bkeys.map(k=>{const u=CFG.breakSkills[k].unreleased;return `<label class="brkopt"><input type="checkbox" data-b="${esc(k)}" ${u?"":"checked"}> ${BG[k]||"◆"} ${esc(k)}${u?'<span class="btag">미출시 표기</span>':""}</label>`}).join("");
+
+function score(s,w,main){
+ const g=CFG.weights,parts={};
+ parts["티어"]=s.tier!=null?(CFG.tierScore[s.tier]??3):3;
+ if(main&&!(s.mains||["미정"]).includes(main))parts["주사용 아님"]=-g.notMainContent;
+ const adv=CFG.advantage,tot=Object.values(w).reduce((a,b)=>a+b,0);
+ if(tot){let win=0,lose=0;for(const [e,n] of Object.entries(w)){if(adv[s.el]===e)win+=n;if(adv[e]===s.el&&adv[s.el]!==e)lose+=n}
+  if(win)parts["상성 유리"]=g.advantage*win/tot;if(lose)parts["상성 불리"]=-g.disadvantage*lose/tot}
+ return [Object.values(parts).reduce((a,b)=>a+b,0),parts]}
+function teamValue(combo,defPen){
+ const g=CFG.weights;let v=combo.reduce((a,x)=>a+x.score,0);const roles=combo.map(x=>x.s.cls);
+ const ns=roles.filter(r=>r==="서포터").length;if(ns)v+=g.supportBonus;if(ns>1)v-=4;
+ v-=defPen*roles.filter(r=>r==="디펜더").length;
+ const got=new Set();combo.forEach(x=>(x.s.tags||[]).forEach(t=>got.add(t)));
+ for(const [t,wt] of Object.entries(CFG.tagWeights))if(got.has(t))v+=wt;
+ return [v,got]}
+function bestParty(c,defPen){
+ const pool=[...c].sort((a,b)=>b.score-a.score).slice(0,14);let best=null,bv=-1e9,bt=null;
+ const n=pool.length;
+ for(let a=0;a<n;a++)for(let b=a+1;b<n;b++)for(let d=b+1;d<n;d++)for(let e=d+1;e<n;e++){
+  const combo=[pool[a],pool[b],pool[d],pool[e]],[v,t]=teamValue(combo,defPen);if(v>bv){bv=v;best=combo;bt=t}}
+ return [best,bv,bt]}
+function place(p){const fr=["디펜더","서포터"];const o=[...p].sort((x,y)=>(fr.includes(x.s.cls)?0:1)-(fr.includes(y.s.cls)?0:1)||y.score-x.score);return [o.slice(0,2),o.slice(2)]}
+function pickBreak(party,content,have){
+ let best=null;const roles=party.map(x=>x.s.cls);
+ for(const k of bkeys){if(!have.includes(k))continue;const b=CFG.breakSkills[k];
+  let n=b.bonusRoles.reduce((a,r)=>a+roles.filter(x=>x===r).length,0);if(k==="차원 강습"&&content==="코스모 게이트")n+=1;
+  if(!best||n>best[0])best=[n,k,b.text]}
+ return best}
+
+const KT=s=>s.kind==="C"?["COSMIC","k-C"]:s.kind==="A"?["ANOTHER","k-A"]:null;
+const kindTxt=s=>{const k=KT(s);return k?`<div class="kind ${k[1]}">${k[0]}</div>`:""};
+const dia=(s,px)=>`<span class="dia e-${s.el}" style="width:${px}px;height:${px}px"><img src="${D.icons[s.cls]}" alt="${esc(s.cls)}" style="width:${Math.round(px*.66)}px;height:${Math.round(px*.66)}px"></span>`;
+const CI={"스트라이커":"⚔","레인저":"➶","캐스터":"✦","어쌔신":"✂","디펜더":"⛨","서포터":"✚"};
+function art(s){const u=s.art||s.img;return u?`<img class="art" src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">`:""}
+function face(s){return s.img?`<img class="face" src="${esc(s.img)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;face&quot;>${esc(s.name[0])}</span>'">`:`<span class="face">${esc(s.name[0])}</span>`}
+function altChips(alt){return alt.length?`<div class="altbox"><div class="mut">대체 후보</div>${alt.map(a=>`<div class="altrow">${face(a.s)}<div><b>${esc(a.s.name)}</b><div class="mut">${esc(a.s.sub)} · ${a.s.tier||"티어 ?"}</div></div></div>`).join("")}</div>`:""}
+function card(x,pos,alt){const s=x.s;
+ const why=Object.entries(x.parts).filter(([k])=>k!=="티어").map(([k,v])=>`<span class="${v>0?"good":"bad"}">${k} ${v>0?"+":""}${Math.round(v)}</span>`).join(" · ");
+ const tg=(s.tags||[]).filter(t=>!["단일","광역"].includes(t)).slice(0,5).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
+ return `<div class="gc"><div class="card"><div class="fallback">${esc(s.name[0])}</div>${art(s)}
+  <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div>
+  <span class="tier ${TC(s.tier)}">${s.tier||"티어 ?"}</span></div></div>
+  <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}</div>
+  <div class="under"><div class="mut ico">${dia(s,26)}${EL[s.el]} · ${esc(s.cls)}${s.kind?` · <b class="k-${s.kind}">${s.kind==="C"?"COSMIC":"ANOTHER"}</b>`:""}</div>${why?`<div class="why">${why}</div>`:""}<div>${tg}</div>${altChips(alt)}</div></div>`}
+function breakCard(br){
+ if(!br)return `<div class="bbar"><div><div class="bt">BREAK SKILL</div><div class="mut">선택한 브레이크 스킬이 없습니다</div></div></div>`;
+ const u=CFG.breakSkills[br[1]].unreleased,im=D.bicons[br[1]];
+ return `<div class="bbar">${im?`<img src="${im}" alt="">`:`<span style="font-size:72px">${BG[br[1]]||"◆"}</span>`}
+  <div><div class="bt">BREAK SKILL</div><b>${esc(br[1])}</b>${u?'<span class="btag">미출시 표기</span>':""}<div class="bx">${esc(br[2])}</div><div class="mut">직업 구성 기준 추정 추천</div></div></div>`}
+function run(){
+ const c=contents[$("content").value],st=cur&&cur[$("stage").value];
+ if(!st){$("out").innerHTML='<div class="party">스테이지를 선택하세요.</div>';return}
+ const own=new Set([...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));
+ const have=[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);
+ const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty);
+ const used=new Set();let html="";
+ for(let p=1;p<=(c.parties||1);p++){
+  const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)).map(s=>{const [v,parts]=score(s,st.w,c.main);return {s,score:v,parts}});
+  if(cands.length<4){html+=`<div class="party">파티 ${p}: 후보가 4명 미만입니다.</div>`;break}
+  const [party,v,got]=bestParty(cands,defPen);party.forEach(x=>used.add(x.s.key));
+  const [fr,bk]=place(party);
+  const alt=m=>cands.filter(x=>x.s.cls===m.s.cls&&!party.includes(x)&&!used.has(x.s.key)).sort((a,b)=>b.score-a.score).slice(0,2);
+  const br=pickBreak(party,c.name,have);
+  html+=`<div class="party"><div class="phead"><b>파티 ${p}</b><span class="mut">점수 ${v.toFixed(1)} · 인게임 편성 순서(왼쪽부터)</span></div>
+   <div>${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
+   <div class="rowcards">${card(bk[0],"back",alt(bk[0]))}${card(fr[0],"front",alt(fr[0]))}${card(fr[1],"front",alt(fr[1]))}${card(bk[1],"back",alt(bk[1]))}</div>${breakCard(br)}</div>`}
+ const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
+ if(tl.length)html+=`<div class="party"><b>뉴비 편성 유형</b> <span class="mut">(커뮤니티 공략 기준, 보유 시 참고)</span><ul>${tl.map(([k,t])=>`<li><b>${esc(k)}</b>: ${esc(t.desc)}</li>`).join("")}</ul></div>`;
+ $("out").innerHTML=html}
+renderOwn();$("go").onclick=run;refreshTabs();run();
+</script></body></html>
