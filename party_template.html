@@ -44,12 +44,12 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
 .brkopt{display:inline-flex;align-items:center;gap:6px;margin:0 10px 6px 0;padding:4px 10px;border:1px solid var(--line);border-radius:8px}
 @media (max-width:760px){.cols{grid-template-columns:1fr}.pic{width:96px;height:96px;font-size:30px}}
 
-.rowcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:8px}
+.rowcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(6,auto);column-gap:12px;row-gap:0;margin-top:8px}
 .bbar{display:flex;gap:18px;align-items:center;margin-top:12px;padding:14px 16px;border-radius:14px;border:2px solid #5a7bd6;background:linear-gradient(90deg,#1c3470,#0f1d48 70%);color:#fff}
 .bbar img{width:132px;height:132px;border-radius:50%;object-fit:cover;flex:none;border:3px solid #cfd9f2;box-shadow:0 0 0 3px #3b5bb0}
 .bbar .bt{font-size:12px;letter-spacing:.12em;color:#a9bde8}.bbar b{font-size:22px}.bbar .bx{font-size:14px;margin-top:4px}.bbar .mut{color:#a9bde8}
 @media (max-width:760px){.bbar{flex-direction:column;text-align:center}}
-.gc{display:flex;flex-direction:column;min-width:0}
+.gc{display:grid;grid-template-rows:subgrid;grid-row:span 6;min-width:0}
 .card{position:relative;aspect-ratio:3/6.4;border-radius:14px;overflow:hidden;border:2px solid #7a8190;background:#10131a;box-shadow:0 0 0 2px #262b36 inset}
 .card .art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
 .card .fallback{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:30%;font-size:54px;font-weight:700;color:#5b6475}
@@ -65,7 +65,10 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
 .tier{display:inline-block;margin-top:2px;padding:0 10px;border-radius:10px;font-weight:700;font-size:13px;color:#fff}
 .slotlbl{margin-top:-1px;text-align:center;font-weight:800;letter-spacing:.08em;font-size:14px;color:var(--fg);padding:5px 0;border-bottom:1px solid var(--line)}
 .slotlbl.back{color:#6aa5ff}.slotlbl.front{color:#ffb454}
-.under{padding:6px 2px;font-size:13px;line-height:1.55}
+.under{display:contents;font-size:13px;line-height:1.55}
+.gc>*:not(.card){padding-left:2px;padding-right:2px}
+.gc .ico,.gc .why,.gc .tg{padding-top:6px;font-size:13px;line-height:1.55}
+.gc .altbox{margin-top:8px}
 .bcard{aspect-ratio:3/6.4;position:relative;border-radius:14px 14px 40px 40px;overflow:hidden;border:2px solid #5a7bd6;background:radial-gradient(circle at 50% 30%,#2f58b3,#0f1d48 70%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px;clip-path:polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)}
 .bcard .big{font-size:64px;line-height:1;text-shadow:0 0 16px #9cc2ff}.bcard b{font-size:15px;margin-top:8px}.bcard small{font-size:11px;letter-spacing:.1em;color:#a9bde8;margin-top:4px}
 .bcard .none{opacity:.6;font-size:13px}
@@ -104,7 +107,7 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
   <div id="brk" style="margin-top:6px"></div></details>
 </div>
 <div id="out"></div>
-<div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 초상화는 온라인일 때만 보입니다.</div>
+<div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 초상화는 온라인일 때만 보입니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</div>
 </main>
 <script>
 const D=/*DATA*/null;
@@ -181,7 +184,7 @@ function card(x,pos,alt){const s=x.s;
   <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div>
   <span class="tier ${TC(s.tier)}">${s.tier||"티어 ?"}</span></div></div>
   <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}</div>
-  <div class="under"><div class="mut ico">${dia(s,26)}${EL[s.el]} · ${esc(s.cls)}${s.kind?` · <b class="k-${s.kind}">${s.kind==="C"?"COSMIC":"ANOTHER"}</b>`:""}</div>${why?`<div class="why">${why}</div>`:""}<div>${tg}</div>${altChips(alt)}</div></div>`}
+  <div class="under"><div class="mut ico">${dia(s,26)}${EL[s.el]} · ${esc(s.cls)}${s.kind?` · <b class="k-${s.kind}">${s.kind==="C"?"COSMIC":"ANOTHER"}</b>`:""}</div><div class="why">${why||"&nbsp;"}</div><div class="tg">${tg||"&nbsp;"}</div>${altChips(alt)||'<div class="altbox" style="border:0"></div>'}</div></div>`}
 function breakCard(br){
  if(!br)return `<div class="bbar"><div><div class="bt">BREAK SKILL</div><div class="mut">선택한 브레이크 스킬이 없습니다</div></div></div>`;
  const u=CFG.breakSkills[br[1]].unreleased,im=D.bicons[br[1]];

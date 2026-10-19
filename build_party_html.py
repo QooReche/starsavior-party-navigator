@@ -17,8 +17,8 @@ CONTENT_META = {  # foe key -> (표시 이름, 주 사용 콘텐츠명, 파티 �
     "equip": ("장비 탐사", None, 1), "cube": ("큐브 팰리스", None, 1)}
 
 
-def main():
-    roster, growth, mains, cfg, tags = pr.load()
+def image_urls(roster):
+    """가이드 DB 의 구원자별 초상화/일러스트 주소 ({key: url}, {key: url})."""
     idx = pr._json(os.path.join(pr.DATA, "saviors_index.json"))
     por = {v["key"]: v["profile"]["portrait"].replace("./", PORTRAIT_ROOT, 1)
            for v in idx.values() if v.get("profile", {}).get("portrait")}
@@ -37,6 +37,18 @@ def main():
                 por[ks[0]] = v["profile"]["portrait"].replace("./", PORTRAIT_ROOT, 1)
             if v["profile"].get("illustration"):
                 art[ks[0]] = v["profile"]["illustration"].replace("./", PORTRAIT_ROOT, 1)
+    return por, art
+
+
+def main():
+    roster, growth, mains, cfg, tags = pr.load()
+    por, art = image_urls(roster)
+    # 저장소에 내려받아 둔 이미지(tools/fetch_images.py)가 있으면 그것을 상대 경로로 쓴다
+    for s in roster:
+        for d, suf in ((por, "face"), (art, "art")):
+            rel = f"assets/savior/{s['key']}_{suf}.webp"
+            if os.path.exists(os.path.join(pr.HERE, rel)):
+                d[s["key"]] = rel
     r = []
     for s in roster:
         g = growth.get(s["key"])
@@ -82,7 +94,7 @@ def main():
     assert html.count("/*DATA*/null") == 1
     html = html.replace("/*DATA*/null", data.replace("</", "<\/"))
     out = sys.argv[1] if len(sys.argv) > 1 else OUT_DEFAULT
-    os.makedirs(os.path.dirname(out), exist_ok=True)
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
     print(out, len(html) // 1024, "KB")

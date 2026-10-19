@@ -24,10 +24,13 @@ python -X utf8 -I build_party_html.py                              # ..\release\
 ## 출처와 주의
 - 구원자·적·티어·편성 정보: 가이드 DB(starsavior-guide.github.io), 팬 데이터북(starsavior-databook.pages.dev), 나무위키, 아카라이브 글, 제3자 DB(브레이크 스킬 효과). 데이터북 재사용은 사용자가 허락받은 것으로 확인되었다(2026-10-19).
 - 직업·속성 아이콘과 브레이크 스킬 이미지는 게임 리소스다. **공개 저장소·사이트에 올리기 전에 이미지 사용 허락을 확인할 것.**
-- 구원자 초상화·일러스트는 가이드 DB 사이트에서 온라인으로 불러온다(저장소에 포함 안 함).
+- 구원자 초상화·일러스트는 가이드 DB 사이트에서 내려받아 줄여서 `assets/savior/` 에 담았다(`tools/fetch_images.py`, 사용자가 이미지 저장을 허락). 웹 페이지(`index.html`)는 이 상대 경로를 쓴다.
 - 게임 화면·실전 편성 효과는 검증하지 못했다.
 
 ## 재생성 메모(저장소에 없는 입력)
 - `synergy_tags.py <databook main.json>`: 데이터북 `data/main.js` 를 JSON 으로 푼 파일이 필요하다.
 - `crop_break_icons.py`: 인게임 브레이크 스킬 스크린샷을 `break_ref/7~11.png` 로 둔다(특이점 관측, 스타피어서, 큐브 과부하, 행성 정화, 차원 강습 순).
 - `tools/build_foe.py`: 데이터북 `data/foe.js` 를 `tools/raw/` 에 내려받아 둔다.
+
+## 공개/테스트
+- GitHub Pages: https://QooReche.github.io/starsavior-party-navigator/ (시험 공개, 점수는 오토 전투 기준을 염두에 둔 참고용이며 가중치 검증 중)
