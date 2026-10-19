@@ -23,6 +23,7 @@ FOE_KEYS = {"작전": "op", "작전어려움": "oph", "일일": "daily", "장비
             "플래시 포인트": "rush", "회랑": "clo", "코스모 게이트": "cosmo"}
 EL = {"sun": "태양", "moon": "달", "star": "별", "order": "질서", "chaos": "혼돈"}
 SUPPORT, DEFENDER = "서포터", "디펜더"
+DEALERS = ("스트라이커", "레인저", "캐스터", "어쌔신")
 FRONT_ROLES = (DEFENDER, SUPPORT)
 
 
@@ -201,6 +202,8 @@ def team_value(combo, cfg, tags, def_pen):
     if SUPPORT in roles:
         v += w["supportBonus"]
     v -= def_pen * max(0, roles.count(DEFENDER) - 1)  # 2번째 디펜더부터 감점
+    n_deal = sum(1 for r in roles if r in DEALERS)
+    v -= w["dealerShortPenalty"] * max(0, w["dealerMin"] - n_deal)  # 화력 부족 방지
     keys = {x["s"]["key"] for x in combo}
     paired = False
     for pr_ in cfg.get("pairs", []):

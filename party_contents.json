@@ -137,7 +137,10 @@
   "supportBonus": 2.0,
   "defenderPenalty": 3.0,
   "advantageMob": 1.5,
-  "disadvantageMob": 1.0
+  "disadvantageMob": 1.0,
+  "dealerMin": 2,
+  "dealerShortPenalty": 5.0,
+  "_dealerNote": "딜러(스트라이커·레인저·캐스터·어쌔신)가 dealerMin 명보다 적으면 모자란 인원 x dealerShortPenalty 감점. 출처: 게임조선(딜러 4 또는 딜러 3+서포터 1), 뉴비 공략 정석(딜러 2 + 디펜더 + 서포터). 값은 임의."
  },
  "tagWeights": {
   "힐": 0.75,

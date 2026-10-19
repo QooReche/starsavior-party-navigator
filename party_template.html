@@ -227,6 +227,7 @@ function teamValue(combo,defPen){
  const g=CFG.weights;let v=combo.reduce((a,x)=>a+x.score,0);const roles=combo.map(x=>x.s.cls);
  const ns=roles.filter(r=>r==="서포터").length;if(ns)v+=g.supportBonus;
  v-=defPen*Math.max(0,roles.filter(r=>r==="디펜더").length-1);
+ v-=g.dealerShortPenalty*Math.max(0,g.dealerMin-roles.filter(r=>["스트라이커","레인저","캐스터","어쌔신"].includes(r)).length);
  const keys=new Set(combo.map(x=>x.s.key));
  let paired=false;for(const p of (CFG.pairs||[]))if(p.keys.every(k=>keys.has(k))){v+=p.bonus;paired=true}
  if(ns>1&&!paired)v-=4;
