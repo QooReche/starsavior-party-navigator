@@ -10,6 +10,9 @@
 ## 구현된 것(요약, 상세는 README)
 콘텐츠/스테이지별 4인 파티(전열2/후열2, 인게임 편성 UI 배치) + 브레이크 스킬 + 리더(속도 +10) 추천 + 대체 후보(이 구원자만 빠졌을 때 팀 점수순), 속성 상성, DB 티어, 스킬 연계 시너지 1,120쌍과 구조도(Cytoscape), 전투력 보정(패널티) 입력, 성간 회랑 속성 제한(태양/달/별 회랑은 해당 속성만, 사용자 확인), 스테이지 적 기믹 44유형 반영(개인 점수 + 필요 슬롯 보너스), 보유 구원자/브레이크 스킬 선택(왼쪽 서랍, localStorage 저장), 추천 근거는 기본 숨김("추천 근거 보기" 체크).
 
+## 다른 PC 에서 이어서
+`docs/PORTING.md` 에 clone 부터 업데이트 절차까지 정리했다. 원본 입력 자료는 `rawdata/` 에 포함.
+
 ## 게임 업데이트 대응
 `python -X utf8 -I tools/update.py <databook main.json>` (태그·연계·분류·전투력 표·기믹 재생성 + 변경 요약). 입력은 저장소에 없음: 데이터북 `data/main.js` 를 JSON 으로 푼 파일, `tools/raw/foe.js`. 가이드 DB 변경(티어·구원자 목록·이미지)은 `data/db_tier.json`·`savior_reco.json`·`saviors_index.json`·`tools/fetch_images.py` 로 따로 갱신. 수동 보정: `data/synergy_overrides.json`(연계), `party_contents.json`(가중치·규칙).
 

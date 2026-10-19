@@ -11,7 +11,7 @@ import json, re, os, collections
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "databook_main.json")  # 데이터북 data/main.js 를 JSON 으로 푼 파일
+SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "rawdata", "databook_main.json")  # 데이터북 data/main.js 를 JSON 으로 푼 파일
 TAGS = os.path.join(ROOT, "data", "synergy_tags.json")
 RECO = os.path.join(ROOT, "data", "savior_reco.json")
 OUT = os.path.join(ROOT, "data")  # synergy_pairs.json (리뷰 md 는 docs/ 로 옮긴다)

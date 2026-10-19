@@ -47,7 +47,10 @@ python -X utf8 -I build_party_html.py                              # ..\release\
 - 구원자 초상화·일러스트는 가이드 DB 사이트에서 내려받아 줄여서 `assets/savior/` 에 담았다(`tools/fetch_images.py`, 사용자가 이미지 저장을 허락). 웹 페이지(`index.html`)는 이 상대 경로를 쓴다.
 - 게임 화면·실전 편성 효과는 검증하지 못했다.
 
-## 재생성 메모(저장소에 없는 입력)
+## 다른 PC 에서 이어서 작업
+`docs/PORTING.md` 참고(원본 입력은 `rawdata/` 에 포함, `tools/update.py` 로 전부 재생성). 아래는 구 메모.
+
+## 재생성 메모(구)
 - `synergy_tags.py <databook main.json>`: 데이터북 `data/main.js` 를 JSON 으로 푼 파일이 필요하다.
 - `crop_break_icons.py`: 인게임 브레이크 스킬 스크린샷을 `break_ref/7~11.png` 로 둔다(특이점 관측, 스타피어서, 큐브 과부하, 행성 정화, 차원 강습 순).
 - `tools/build_foe.py`: 데이터북 `data/foe.js` 를 `tools/raw/` 에 내려받아 둔다.

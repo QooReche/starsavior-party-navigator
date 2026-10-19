@@ -3,9 +3,10 @@ import json, re, os, collections as C
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, '..')  # 저장소 루트
-s = open(os.path.join(HERE, 'raw', 'foe.js'), encoding='utf8').read()  # 데이터북 data/foe.js 를 tools/raw/ 에 내려받아 둔다
+s = open(os.path.join(ROOT, 'rawdata', 'foe.js'), encoding='utf8').read()  # 데이터북 data/foe.js (rawdata/, tools/fetch_sources.py 로 갱신)
 m = re.search(r'__SSD\.foe=', s)
 d, _ = json.JSONDecoder().raw_decode(s[m.end():])
+os.makedirs(os.path.join(HERE, 'raw'), exist_ok=True)
 json.dump(d, open(os.path.join(HERE, 'raw', 'foe_raw.json'), 'w', encoding='utf8'), ensure_ascii=False)  # build_gimmicks.py 의 입력
 
 EL = {'태양': 'sun', '달': 'moon', '별': 'star', '질서': 'order', '혼돈': 'chaos'}

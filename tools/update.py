@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """게임 업데이트 후 데이터를 한 번에 다시 만든다(구조도·추천이 데이터에서 자동 갱신되도록).
-사용: python -X utf8 -I tools/update.py <databook main.json> [--no-html]
+사용: python -X utf8 -I tools/update.py [databook main.json(기본 rawdata/databook_main.json)] [--no-html]
   1) data/kinds.json (어나더/코즈믹)·data/power_penalty.json (전투력 보정 표)   2) synergy_tags.py (기능 태그)   3) tools/build_synergy_pairs.py (스킬 연계)
   4) tools/raw/foe.js 가 있으면 tools/build_foe.py (스테이지별 적 정보)   5) build_party_html.py index.html
 입력(저장소에 없음): 팬 데이터북 data/main.js 를 JSON 으로 푼 파일(`window.__SSD.x={...}` 를 json.JSONDecoder().raw_decode 로 파싱),
@@ -25,9 +25,8 @@ def load(p):
 
 
 def main():
-    if len(sys.argv) < 2:
-        sys.exit(__doc__)
-    src = os.path.abspath(sys.argv[1])
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    src = os.path.abspath(args[0]) if args else os.path.join(ROOT, "rawdata", "databook_main.json")
     old_syn = load(os.path.join(ROOT, "data", "synergy_pairs.json"))
     old_roster = {p["a"] for p in old_syn} | {p["b"] for p in old_syn}
 
@@ -48,12 +47,12 @@ def main():
 
     run("synergy_tags.py", src)
     run(os.path.join("tools", "build_synergy_pairs.py"), src)
-    if os.path.exists(os.path.join(ROOT, "tools", "raw", "foe.js")):
+    if os.path.exists(os.path.join(ROOT, "rawdata", "foe.js")):
         run(os.path.join("tools", "build_foe.py"))
         run(os.path.join("tools", "build_gimmicks.py"), "--savior", src)
         run(os.path.join("tools", "pack_gimmicks.py"))
     else:
-        print("tools/raw/foe.js 없음 -> 적 정보(data/foe_stages.json)는 그대로 둠")
+        print("rawdata/foe.js 없음 -> 적 정보(data/foe_stages.json)는 그대로 둠")
 
     new_syn = load(os.path.join(ROOT, "data", "synergy_pairs.json"))
     key = lambda p: (p["a"], p["b"], p["type"])

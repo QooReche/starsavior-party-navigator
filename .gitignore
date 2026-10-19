@@ -2,5 +2,3 @@ __pycache__/
 *.pyc
 release/
 tools/raw/
-break_ref/
-databook_main.json

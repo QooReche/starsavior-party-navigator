@@ -19,7 +19,7 @@ from collections import defaultdict, Counter
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MAIN = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "databook_main.json")  # 팬 데이터북 data/main.js 를 JSON 으로 푼 파일(저장소에 없음)
+MAIN = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "rawdata", "databook_main.json")  # 팬 데이터북 data/main.js 를 JSON 으로 푼 파일(저장소에 없음)
 RECO = os.path.join(HERE, "data", "savior_reco.json")
 OUT_JSON = os.path.join(HERE, "data", "synergy_tags.json")
 OUT_MD = os.path.join(HERE, "docs", "synergy_tags_review.md")

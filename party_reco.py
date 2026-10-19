@@ -43,6 +43,25 @@ _GIM = [[]]  # 현재 스테이지의 기믹 [(유형코드, 심각도)] (가중
 _GCACHE = {}
 
 
+_SB = [[]]  # 현재 스테이지의 시즌 보너스 [{"cond":..., "text":...}]
+_ELKO = {"sun": "태양", "moon": "달", "star": "별", "order": "질서", "chaos": "혼돈"}
+
+
+def season_part(s, cfg):
+    """코스모 게이트 시즌 보너스: 속성/직업 조건이 맞으면 효과 수치에 비례해 가산."""
+    import re
+    sb, tot = cfg["seasonBonus"], 0.0
+    for b in _SB[0]:
+        if b["cond"] not in (_ELKO[s["element"]], s["className"]):
+            continue
+        m = re.search(r"(\d+(?:\.\d+)?)%", b["text"])
+        if not m:
+            continue
+        k = next((w for kw, w in sb["kinds"] if kw in b["text"]), 0.02)
+        tot += float(m.group(1)) * k
+    return min(tot, sb["cap"])
+
+
 def gimmick_rules():
     if not _GCACHE:
         _GCACHE["r"] = _json(GRULES)
@@ -152,6 +171,9 @@ def score(s, growth, mains, cfg, main_name, enemies, boss=True):
     d_w = w["disadvantage"] if boss else w["disadvantageMob"]
     g = growth.get(s["key"])
     parts = {"티어": cfg["tierScore"].get(g["tier"], 3) if g else 3}
+    sp = season_part(s, cfg) if _SB[0] else 0.0
+    if sp:
+        parts["시즌 보너스"] = sp
     gp = gimmick_part(s["key"], cfg)
     if gp:
         parts["기믹 대응"] = gp
@@ -335,6 +357,12 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
     def_pen = c.get("defenderPenalty", cfg["weights"]["defenderPenalty"])
     _POWK[0] = 1.0
     _GIM[0] = []
+    _SB[0] = []
+    if stage:
+        _SB[0] = (st.get("season_bonus_latest") or {}).get("bonuses", [])
+        if _SB[0]:
+            sbk = st["season_bonus_latest"]
+            out("시즌 보너스(" + str(sbk.get("season", "")) + "): " + " / ".join(f"{b['cond']} {b['text']}" for b in _SB[0]))
     if stage:
         _GIM[0] = stage_gimmicks(f"{FOE_KEYS[content]}|{tab}|{st['name']}", cfg)
         if _GIM[0]:

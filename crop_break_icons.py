@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-REF = os.path.join(HERE, "break_ref")  # 인게임 스크린샷 7~11.png(저장소에 없음)
+REF = os.path.join(HERE, "rawdata", "break_ref")  # 인게임 스크린샷 7~11.png (특이점 관측, 스타피어서, 큐브 과부하, 행성 정화, 차원 강습)
 OUT = os.path.join(HERE, "assets", "break_icons")
 NAMES = {"7": "특이점 관측", "8": "스타피어서", "9": "큐브 과부하", "10": "행성 정화", "11": "차원 강습"}
 SIZE = 168
