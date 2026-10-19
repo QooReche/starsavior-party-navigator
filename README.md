@@ -14,6 +14,12 @@
 - 웹 페이지의 보유 구원자·브레이크 스킬 선택은 브라우저 localStorage 에 자동 저장된다(서버 전송 없음).
 - 가중치 검증 메모: `docs/weight_check.md`(근거가 약해 일부만 반영, 오토 전투 기준은 추정).
 
+## 스킬 연계 시너지와 구조도
+- `data/synergy_pairs.json`: 구원자 스킬 텍스트에서 자동 추출한 연계 1,120쌍(부여→소비, 버프 증폭, 생존, 쿨감·행동 게이지, 속성 공유). 강도 1~3, 신뢰(확인/추정)와 근거 문장 포함. `docs/synergy_pairs_review.md` 에 검수 결과.
+- 팀 점수에 `party_contents.json` 의 `synergy` 가중치(유형별 x 강도 x 신뢰, 합계 상한)로 반영된다. 가중치는 임의값이고 '추정' 쌍은 0.6배.
+- 웹 페이지 하단 구조도(Cytoscape.js, `lib/`): 추천 파티의 연계 / 구원자 중심 / 전체 지도. 선을 누르면 근거 스킬 문장.
+- **게임 업데이트 후:** `python -X utf8 -I tools/update.py <databook main.json>` 한 번이면 태그·연계·분류를 다시 만들고 변경 요약(신규 구원자, 바뀐 쌍)을 출력한다. 자동 추출이 틀렸거나 직접 넣고 싶은 연계는 `data/synergy_overrides.json`(ignore/set/add)에 적으면 재실행해도 유지된다.
+
 ## 사용
 ```
 python -X utf8 -I party_reco.py 작전 --stage "SECTOR 1-1"          # 콘솔

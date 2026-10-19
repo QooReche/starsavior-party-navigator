@@ -12,6 +12,8 @@ DATA = os.path.join(HERE, "data")
 RECO = os.path.join(DATA, "savior_reco.json")
 TIER = os.path.join(DATA, "db_tier.json")
 TAGS = os.path.join(DATA, "synergy_tags.json")
+SYN = os.path.join(DATA, "synergy_pairs.json")
+OVR = os.path.join(DATA, "synergy_overrides.json")
 CONT = os.path.join(HERE, "party_contents.json")
 FOE = os.path.join(DATA, "foe_stages.json")
 FOE_KEYS = {"작전": "op", "작전어려움": "oph", "일일": "daily", "장비": "equip", "큐브": "cube",
@@ -31,6 +33,45 @@ def load():
     t = _json(TIER)
     tags = {a["key"]: a["tags"] for a in _json(TAGS)["saviors"] if "@" not in a["key"]}
     return roster, t["growth"], t["mainContents"], _json(CONT), tags
+
+
+def load_synergy():
+    """자동 추출 쌍 + 수동 보정(ignore/set/add) 을 합쳐 반환. 개화 변형(@) 키는 제외."""
+    pairs = [dict(p) for p in _json(SYN) if "@" not in p["a"] and "@" not in p["b"]]
+    ov = _json(OVR) if os.path.exists(OVR) else {}
+    ign = {frozenset((o["a"], o["b"])) for o in ov.get("ignore", [])}
+    pairs = [p for p in pairs if frozenset((p["a"], p["b"])) not in ign]
+    for o in ov.get("set", []):
+        for p in pairs:
+            if frozenset((p["a"], p["b"])) == frozenset((o["a"], o["b"])):
+                p.update({k: v for k, v in o.items() if k in ("strength", "conf", "reason")})
+    for o in ov.get("add", []):
+        pairs.append({"a": o["a"], "b": o["b"], "type": o.get("type", "3:생존연계"), "strength": o.get("strength", 2),
+                      "directed": o.get("directed", False), "reason": o.get("reason", ""),
+                      "evidence": o.get("evidence", []), "conf": o.get("conf", "사용자")})
+    return pairs
+
+
+_SYN_IDX = {}
+
+
+def synergy_index():
+    if not _SYN_IDX:
+        for p in load_synergy():
+            _SYN_IDX.setdefault(frozenset((p["a"], p["b"])), []).append(p)
+    return _SYN_IDX
+
+
+def party_synergy(keys, cfg):
+    """파티(키 목록) 안의 시너지 쌍 목록 [(점수, 쌍)] 점수 내림차순."""
+    sw = cfg["synergy"]
+    idx, hits = synergy_index(), []
+    for i in range(len(keys)):
+        for j in range(i + 1, len(keys)):
+            for p in idx.get(frozenset((keys[i], keys[j])), []):
+                pts = sw["typeWeight"][p["type"].split(":")[0]] * p["strength"] * sw["confWeight"].get(p.get("conf"), 0.6)
+                hits.append((pts, p))
+    return sorted(hits, key=lambda h: -h[0])
 
 
 def score(s, growth, mains, cfg, main_name, enemies, boss=True):
@@ -73,6 +114,7 @@ def team_value(combo, cfg, tags, def_pen):
     for x in combo:
         got.update(tags.get(x["s"]["key"], []))
     v += sum(wt for t, wt in cfg["tagWeights"].items() if t in got)
+    v += min(sum(h[0] for h in party_synergy([x["s"]["key"] for x in combo], cfg)), cfg["synergy"]["cap"])
     return v, got
 
 
@@ -80,6 +122,16 @@ def best_party(cands, cfg, tags, def_pen, size=4):
     pool = sorted(cands, key=lambda x: -x["score"])[:14]
     for pr_ in cfg.get("pairs", []):  # 시너지 쌍의 구성원은 점수가 낮아도 후보에 넣는다
         pool += [x for x in cands if x["s"]["key"] in pr_["keys"] and x not in pool]
+    # 시너지로 이어진 후보도 풀에 넣는다(개인 점수 상위 14명 밖이어도 연계가 크면 후보, 조합 수 폭증을 막으려 4명까지)
+    top = pool[:14]
+    extra = []
+    for x in cands:
+        if x in pool:
+            continue
+        sy = sum(h[0] for h in party_synergy([x["s"]["key"], *[t["s"]["key"] for t in top]], cfg) if x["s"]["key"] in (h[1]["a"], h[1]["b"]))
+        if sy >= 4:
+            extra.append((sy, x))
+    pool += [x for _, x in sorted(extra, key=lambda e: -e[0])[:4]]
     best, best_v, best_tags = None, -1e9, set()
     for combo in itertools.combinations(pool, size):
         v, got = team_value(combo, cfg, tags, def_pen)

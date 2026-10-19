@@ -69,7 +69,7 @@ def main():
                 stages.append({"tab": tab["tab"], "tabLabel": label, "name": st["name"], "lv": st["level"], "n": st["enemy_total"],
                                "w": w, "aoe": round(st["aoe_ratio"], 2), "def": round(st["defender_ratio"], 2)})
         contents.append({"name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages})
-    out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates", "pairs")}
+    out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates", "pairs", "synergy")}
     out_cfg["defPenByContent"] = {"코스모 게이트": cfg["contents"]["코스모 게이트"].get("defenderPenalty", 3.0)}
     icons = {}
     for kor, fn in {"스트라이커": "role_striker", "레인저": "role_ranger", "캐스터": "role_caster", "어쌔신": "role_assassin",
@@ -89,7 +89,11 @@ def main():
         if fn.endswith(".jpg"):
             with open(os.path.join(bdir, fn), "rb") as f:
                 bicons[fn[:-4]] = "data:image/jpeg;base64," + base64.b64encode(f.read()).decode()
-    data = json.dumps({"roster": r, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons}, ensure_ascii=False, separators=(",", ":"))
+    syn = [{"a": p["a"], "b": p["b"], "t": int(p["type"].split(":")[0]), "tn": p["type"].split(":", 1)[1], "s": p["strength"],
+            "c": p.get("conf", "추정"), "d": bool(p.get("directed")), "r": p.get("reason", ""),
+            "e": [e[:110] for e in p.get("evidence", [])[:2]]}
+           for p in pr.load_synergy()]
+    data = json.dumps({"roster": r, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn}, ensure_ascii=False, separators=(",", ":"))
     html = open(os.path.join(pr.HERE, "party_template.html"), encoding="utf-8").read()
     assert html.count("/*DATA*/null") == 1
     html = html.replace("/*DATA*/null", data.replace("</", "<\/"))
