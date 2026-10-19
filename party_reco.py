@@ -33,8 +33,10 @@ def load():
     return roster, t["growth"], t["mainContents"], _json(CONT), tags
 
 
-def score(s, growth, mains, cfg, main_name, enemies):
+def score(s, growth, mains, cfg, main_name, enemies, boss=True):
     w = cfg["weights"]
+    a_w = w["advantage"] if boss else w["advantageMob"]
+    d_w = w["disadvantage"] if boss else w["disadvantageMob"]
     g = growth.get(s["key"])
     parts = {"티어": cfg["tierScore"].get(g["tier"], 3) if g else 3}
     if main_name and main_name not in mains.get(s["key"], ["미정"]):
@@ -46,9 +48,9 @@ def score(s, growth, mains, cfg, main_name, enemies):
         # 질서↔혼돈은 서로 유리(나무위키 표기)라 불리로 세지 않는다
         lose = sum(1 for e in enemies if adv.get(e) == el and adv.get(el) != e)
         if win:
-            parts["상성 유리"] = w["advantage"] * win / len(enemies)
+            parts["상성 유리"] = a_w * win / len(enemies)
         if lose:
-            parts["상성 불리"] = -w["disadvantage"] * lose / len(enemies)
+            parts["상성 불리"] = -d_w * lose / len(enemies)
     return sum(parts.values()), parts
 
 
@@ -58,9 +60,15 @@ def team_value(combo, cfg, tags, def_pen):
     roles = [x["s"]["className"] for x in combo]
     if SUPPORT in roles:
         v += w["supportBonus"]
-    if roles.count(SUPPORT) > 1:
+    v -= def_pen * max(0, roles.count(DEFENDER) - 1)  # 2번째 디펜더부터 감점
+    keys = {x["s"]["key"] for x in combo}
+    paired = False
+    for pr_ in cfg.get("pairs", []):
+        if all(k in keys for k in pr_["keys"]):
+            v += pr_["bonus"]
+            paired = True
+    if roles.count(SUPPORT) > 1 and not paired:  # 시너지 쌍(예: 웨딩 카르멘+아세라)이면 서포터 2명도 허용
         v -= 4
-    v -= def_pen * roles.count(DEFENDER)
     got = set()
     for x in combo:
         got.update(tags.get(x["s"]["key"], []))
@@ -70,6 +78,8 @@ def team_value(combo, cfg, tags, def_pen):
 
 def best_party(cands, cfg, tags, def_pen, size=4):
     pool = sorted(cands, key=lambda x: -x["score"])[:14]
+    for pr_ in cfg.get("pairs", []):  # 시너지 쌍의 구성원은 점수가 낮아도 후보에 넣는다
+        pool += [x for x in cands if x["s"]["key"] in pr_["keys"] and x not in pool]
     best, best_v, best_tags = None, -1e9, set()
     for combo in itertools.combinations(pool, size):
         v, got = team_value(combo, cfg, tags, def_pen)
@@ -84,10 +94,11 @@ def place(party):
     return order[:2], order[2:]
 
 
-def alts(member, cands, used):
-    same = [x for x in cands if x["s"]["className"] == member["s"]["className"]
-            and x["s"]["key"] not in used]
-    return sorted(same, key=lambda x: -x["score"])[:2]
+def alts(member, party, cands, cfg, tags, def_pen, used):
+    """member 가 없을 때 나머지 3명을 두고 대신 들어갈 후보: 팀 점수가 높은 순 2명(직업 무관)."""
+    rest = [y for y in party if y is not member]
+    pool = [x for x in cands if x["s"]["key"] not in used]
+    return sorted(pool, key=lambda x: -team_value(rest + [x], cfg, tags, def_pen)[0])[:2]
 
 
 def pick_break(party, cfg, content, boss_note, have=None):
@@ -173,7 +184,7 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
         for s in roster:
             if s["key"] in used or (owned is not None and s["key"] not in owned):
                 continue
-            v, parts = score(s, growth, mains, cfg, c["main"], enemies)
+            v, parts = score(s, growth, mains, cfg, c["main"], enemies, c.get("boss", False) or bool(boss))
             cands.append({"s": s, "g": growth.get(s["key"]), "score": v, "parts": parts})
         if len(cands) < 4:
             out(f"-- 파티 {p}: 후보가 4명 미만")
@@ -185,7 +196,7 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
         for label, grp in (("전열", front), ("후열", back)):
             for x in grp:
                 out(f"  [{label}] " + fmt(x))
-                a = alts(x, cands, used | {y["s"]["key"] for y in party})
+                a = alts(x, party, cands, cfg, tags, def_pen, used)
                 if a:
                     out("        대체: " + " > ".join(y["s"]["name"] for y in a))
         bk = pick_break(party, cfg, content, note, have_break)

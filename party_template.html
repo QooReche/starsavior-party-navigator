@@ -16,6 +16,7 @@ button{padding:7px 14px;border:0;border-radius:6px;background:var(--acc);color:#
 .tag{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:0 7px;margin:1px;font-size:12px}
 details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.own label{display:block}
 .note{font-size:12px;color:var(--mut);margin-top:10px}
+.pairnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid var(--acc);background:var(--bg)}
 .own{columns:auto!important;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
 .tile{position:relative;display:block!important;cursor:pointer}
 .tile input{position:absolute;opacity:0;pointer-events:none}
@@ -102,7 +103,7 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
  <div class="info" id="stinfo"></div>
  <details style="margin-top:8px"><summary>보유 구원자 한정 (기본: 전체)</summary>
   <p class="mut"><button id="all" type="button" style="padding:2px 8px">모두 선택</button> <button id="none" type="button" style="padding:2px 8px">모두 해제</button> 체크한 구원자 안에서만 추천합니다.</p>
-  <input type="text" id="oq" placeholder="이름 검색" style="margin:4px 0 8px"><div class="own" id="own"></div></details>
+  <span class="mut" id="saved" style="margin-left:8px"></span><br><input type="text" id="oq" placeholder="이름 검색" style="margin:4px 0 8px"><div class="own" id="own"></div></details>
  <details style="margin-top:8px"><summary>보유 브레이크 스킬 (기본: 전체, 행성 정화는 미출시 표기)</summary>
   <div id="brk" style="margin-top:6px"></div></details>
 </div>
@@ -141,27 +142,32 @@ $("none").onclick=()=>document.querySelectorAll("#own input").forEach(x=>x.check
 const bkeys=Object.keys(CFG.breakSkills).filter(k=>!k.startsWith("_"));
 $("brk").innerHTML=bkeys.map(k=>{const u=CFG.breakSkills[k].unreleased;return `<label class="brkopt"><input type="checkbox" data-b="${esc(k)}" ${u?"":"checked"}> ${BG[k]||"◆"} ${esc(k)}${u?'<span class="btag">미출시 표기</span>':""}</label>`}).join("");
 
-function score(s,w,main){
- const g=CFG.weights,parts={};
+function score(s,w,main,boss){
+ const g=CFG.weights,parts={};const aW=boss?g.advantage:g.advantageMob,dW=boss?g.disadvantage:g.disadvantageMob;
  parts["티어"]=s.tier!=null?(CFG.tierScore[s.tier]??3):3;
  if(main&&!(s.mains||["미정"]).includes(main))parts["주사용 아님"]=-g.notMainContent;
  const adv=CFG.advantage,tot=Object.values(w).reduce((a,b)=>a+b,0);
  if(tot){let win=0,lose=0;for(const [e,n] of Object.entries(w)){if(adv[s.el]===e)win+=n;if(adv[e]===s.el&&adv[s.el]!==e)lose+=n}
-  if(win)parts["상성 유리"]=g.advantage*win/tot;if(lose)parts["상성 불리"]=-g.disadvantage*lose/tot}
+  if(win)parts["상성 유리"]=aW*win/tot;if(lose)parts["상성 불리"]=-dW*lose/tot}
  return [Object.values(parts).reduce((a,b)=>a+b,0),parts]}
 function teamValue(combo,defPen){
  const g=CFG.weights;let v=combo.reduce((a,x)=>a+x.score,0);const roles=combo.map(x=>x.s.cls);
- const ns=roles.filter(r=>r==="서포터").length;if(ns)v+=g.supportBonus;if(ns>1)v-=4;
- v-=defPen*roles.filter(r=>r==="디펜더").length;
+ const ns=roles.filter(r=>r==="서포터").length;if(ns)v+=g.supportBonus;
+ v-=defPen*Math.max(0,roles.filter(r=>r==="디펜더").length-1);
+ const keys=new Set(combo.map(x=>x.s.key));
+ let paired=false;for(const p of (CFG.pairs||[]))if(p.keys.every(k=>keys.has(k))){v+=p.bonus;paired=true}
+ if(ns>1&&!paired)v-=4;
  const got=new Set();combo.forEach(x=>(x.s.tags||[]).forEach(t=>got.add(t)));
  for(const [t,wt] of Object.entries(CFG.tagWeights))if(got.has(t))v+=wt;
  return [v,got]}
 function bestParty(c,defPen){
  const pool=[...c].sort((a,b)=>b.score-a.score).slice(0,14);let best=null,bv=-1e9,bt=null;
+ for(const p of (CFG.pairs||[]))c.forEach(x=>{if(p.keys.includes(x.s.key)&&!pool.includes(x))pool.push(x)});
  const n=pool.length;
  for(let a=0;a<n;a++)for(let b=a+1;b<n;b++)for(let d=b+1;d<n;d++)for(let e=d+1;e<n;e++){
   const combo=[pool[a],pool[b],pool[d],pool[e]],[v,t]=teamValue(combo,defPen);if(v>bv){bv=v;best=combo;bt=t}}
  return [best,bv,bt]}
+function pairNotes(party){const ks=new Set(party.map(x=>x.s.key));return (CFG.pairs||[]).filter(p=>p.keys.every(k=>ks.has(k))).map(p=>`<div class="pairnote">★ 시너지 조합: ${esc(p.note)}</div>`).join("")}
 function place(p){const fr=["디펜더","서포터"];const o=[...p].sort((x,y)=>(fr.includes(x.s.cls)?0:1)-(fr.includes(y.s.cls)?0:1)||y.score-x.score);return [o.slice(0,2),o.slice(2)]}
 function pickBreak(party,content,have){
  let best=null;const roles=party.map(x=>x.s.cls);
@@ -176,7 +182,7 @@ const dia=(s,px)=>`<span class="dia e-${s.el}" style="width:${px}px;height:${px}
 const CI={"스트라이커":"⚔","레인저":"➶","캐스터":"✦","어쌔신":"✂","디펜더":"⛨","서포터":"✚"};
 function art(s){const u=s.art||s.img;return u?`<img class="art" src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">`:""}
 function face(s){return s.img?`<img class="face" src="${esc(s.img)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;face&quot;>${esc(s.name[0])}</span>'">`:`<span class="face">${esc(s.name[0])}</span>`}
-function altChips(alt){return alt.length?`<div class="altbox"><div class="mut">대체 후보</div>${alt.map(a=>`<div class="altrow">${face(a.s)}<div><b>${esc(a.s.name)}</b><div class="mut">${esc(a.s.sub)} · ${a.s.tier||"티어 ?"}</div></div></div>`).join("")}</div>`:""}
+function altChips(alt){return alt.length?`<div class="altbox"><div class="mut">대체 후보 (이 구원자가 없을 때)</div>${alt.map(a=>`<div class="altrow">${face(a.s)}<div><b>${esc(a.s.name)}</b><div class="mut">${esc(a.s.cls)} · ${EL[a.s.el]} · ${a.s.tier||"티어 ?"}</div></div></div>`).join("")}</div>`:""}
 function card(x,pos,alt){const s=x.s;
  const why=Object.entries(x.parts).filter(([k])=>k!=="티어").map(([k,v])=>`<span class="${v>0?"good":"bad"}">${k} ${v>0?"+":""}${Math.round(v)}</span>`).join(" · ");
  const tg=(s.tags||[]).filter(t=>!["단일","광역"].includes(t)).slice(0,5).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
@@ -198,17 +204,25 @@ function run(){
  const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty);
  const used=new Set();let html="";
  for(let p=1;p<=(c.parties||1);p++){
-  const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)).map(s=>{const [v,parts]=score(s,st.w,c.main);return {s,score:v,parts}});
+  const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
   if(cands.length<4){html+=`<div class="party">파티 ${p}: 후보가 4명 미만입니다.</div>`;break}
   const [party,v,got]=bestParty(cands,defPen);party.forEach(x=>used.add(x.s.key));
   const [fr,bk]=place(party);
-  const alt=m=>cands.filter(x=>x.s.cls===m.s.cls&&!party.includes(x)&&!used.has(x.s.key)).sort((a,b)=>b.score-a.score).slice(0,2);
+  const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
   const br=pickBreak(party,c.name,have);
-  html+=`<div class="party"><div class="phead"><b>파티 ${p}</b><span class="mut">점수 ${v.toFixed(1)} · 인게임 편성 순서(왼쪽부터)</span></div>
+  html+=`<div class="party"><div class="phead"><b>파티 ${p}</b><span class="mut">점수 ${v.toFixed(1)} · 인게임 편성 순서(왼쪽부터)</span></div>${pairNotes(party)}
    <div>${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
    <div class="rowcards">${card(bk[0],"back",alt(bk[0]))}${card(fr[0],"front",alt(fr[0]))}${card(fr[1],"front",alt(fr[1]))}${card(bk[1],"back",alt(bk[1]))}</div>${breakCard(br)}</div>`}
  const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
  if(tl.length)html+=`<div class="party"><b>뉴비 편성 유형</b> <span class="mut">(커뮤니티 공략 기준, 보유 시 참고)</span><ul>${tl.map(([k,t])=>`<li><b>${esc(k)}</b>: ${esc(t.desc)}</li>`).join("")}</ul></div>`;
  $("out").innerHTML=html}
-renderOwn();$("go").onclick=run;refreshTabs();run();
+renderOwn();
+const LS={get(k){try{return JSON.parse(localStorage.getItem("pn."+k))}catch(e){return null}},set(k,v){try{localStorage.setItem("pn."+k,JSON.stringify(v))}catch(e){}}};
+function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b));$("saved").textContent="선택은 이 브라우저에 자동 저장됩니다"}
+(function restore(){const o=LS.get("owned"),b=LS.get("brk");
+ if(Array.isArray(o)){const s=new Set(o);document.querySelectorAll("#own input").forEach(x=>x.checked=s.has(x.dataset.k))}
+ if(Array.isArray(b)){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}})();
+document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk")))saveSel()});
+$("all").addEventListener("click",saveSel);$("none").addEventListener("click",saveSel);
+$("go").onclick=run;refreshTabs();run();
 </script></body></html>

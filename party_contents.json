@@ -25,7 +25,8 @@
   "플래시 포인트": {
    "main": "플래시 포인트",
    "enemies": [],
-   "note": "보스 10종 속성 혼재 - 보스를 지정해야 함(미입력)"
+   "note": "보스 10종 속성 혼재 - 보스를 지정해야 함(미입력)",
+   "boss": true
   },
   "코스모 게이트": {
    "main": "코스모 게이트",
@@ -111,7 +112,8 @@
      "atk": "원소"
     }
    },
-   "defenderPenalty": 3.0
+   "defenderPenalty": 3.0,
+   "boss": true
   }
  },
  "tierScore": {
@@ -127,7 +129,9 @@
   "disadvantage": 2.0,
   "notMainContent": 4.0,
   "supportBonus": 2.0,
-  "defenderPenalty": 0.0
+  "defenderPenalty": 3.0,
+  "advantageMob": 1.5,
+  "disadvantageMob": 1.0
  },
  "tagWeights": {
   "힐": 1.5,
@@ -197,5 +201,16 @@
    "defender": true,
    "desc": "공격력 세팅 디펜더 + 웨딩 카르멘(편성 제약 큼)"
   }
- }
+ },
+ "pairs": [
+  {
+   "keys": [
+    "wedding-carmen",
+    "waltz-asherah"
+   ],
+   "bonus": 0.0,
+   "note": "웨딩 카르멘(어나더) + 코즈믹 아세라: 서포터 2명이어도 허용하는 조합(상황에 따라 선택, 점수 가산 없음). 사용자 제안·커뮤니티 언급"
+  }
+ ],
+ "_weightsNote": "advantage/disadvantage 는 보스 콘텐츠용, advantageMob/disadvantageMob 은 잡몹 콘텐츠용(상성 효과가 피해 5% 정도라 작게). defenderPenalty 는 2번째 디펜더부터. 검증 메모: docs/weight_check.md (근거가 약해 일부만 반영)"
 }

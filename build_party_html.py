@@ -68,8 +68,8 @@ def main():
                     w[e["element"]] = w.get(e["element"], 0) + e["count"] * (2 if e["boss"] else 1)
                 stages.append({"tab": tab["tab"], "tabLabel": label, "name": st["name"], "lv": st["level"], "n": st["enemy_total"],
                                "w": w, "aoe": round(st["aoe_ratio"], 2), "def": round(st["defender_ratio"], 2)})
-        contents.append({"name": name, "main": main, "parties": parties, "stages": stages})
-    out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates")}
+        contents.append({"name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages})
+    out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates", "pairs")}
     out_cfg["defPenByContent"] = {"코스모 게이트": cfg["contents"]["코스모 게이트"].get("defenderPenalty", 3.0)}
     icons = {}
     for kor, fn in {"스트라이커": "role_striker", "레인저": "role_ranger", "캐스터": "role_caster", "어쌔신": "role_assassin",
