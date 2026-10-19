@@ -123,12 +123,14 @@ body:not(.show-why) .gimnote{display:none}
   <label>콘텐츠<select id="content"></select></label>
   <label>섹터 / 지역<select id="tab"></select></label>
   <label>스테이지 검색<input type="text" id="q" placeholder="예: 36, 아가논, 길레"></label>
-  <label>스테이지<select id="stage"></select></label>
-  <label>내 파티 전투력<input type="number" id="mypow" min="0" step="100" placeholder="예: 52000" style="min-width:120px"></label>
-  <button id="go">추천</button>
+  <label>스테이지<select id="stage"></select></label>  <button id="go">추천</button>
   <label class="whytoggle"><input type="checkbox" id="showwhy"> 추천 근거 보기</label>
  </div>
- <div class="info" id="stinfo"></div><div id="powinfo" class="powinfo"></div>
+ <div class="info" id="stinfo"></div>
+ <details class="optbox" id="optbox"><summary>옵션 · 전투력 패널티 반영</summary>
+  <p class="mut" style="margin:6px 0">전투력은 파티 구성·육성에 따라 달라지므로 기본은 반영하지 않습니다. 필요할 때만 내 파티 전투력을 입력하세요(비우면 무시).</p>
+  <label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px">내 파티 전투력<input type="number" id="mypow" min="0" step="100" placeholder="예: 52000" style="min-width:140px"></label>
+  <div id="powinfo" class="powinfo"></div></details>
 </div>
 <div id="out"></div>
 <div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">구원자 스킬에서 자동 추출한 시너지(추정 포함). 선을 누르면 근거 스킬 문장이 나옵니다.</span>
@@ -169,17 +171,16 @@ function refreshTabs(){const c=contents[$("content").value];
  $("tab").innerHTML=`<option value="">(전체)</option>`+tabsOf(c).map(([t,l])=>`<option value="${esc(t)}">${esc(l)}</option>`).join("");refreshStages()}
 function refreshStages(){
  const c=contents[$("content").value],t=$("tab").value,q=$("q").value.trim();
- cur=c.stages.filter(s=>(!t||s.tab===t)&&(!q||s.name.includes(q)||s.tabLabel.includes(q))).slice(0,400);
- $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
+ cur=c.stages.filter(s=>(!t||s.tab===t)&&(!q||s.name.includes(q)||(s.label||"").includes(q)||s.tabLabel.includes(q))).slice(0,400);
+ $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
  showInfo();showPow();if(window._ready)rerun()}
 function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`${EL[e]} ${n}`).join(" / ")}
 function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$("powinfo");POWK=1;
  if(!s||!(my>0)){el.innerHTML=s&&s.rp?`<span class="mut">권장 전투력 ${s.rp.toLocaleString()} · 내 파티 전투력을 입력하면 보정(패널티)을 보여 줍니다</span>`:"";return}
  const pp=powPen(my,s.rp);if(!pp){el.innerHTML="";return}
  if(pp.a>=1){el.innerHTML=`<span class="ok">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 보정 없음(90% 이상)</span>`;return}
- POWK=1+CFG.power.boost*(1-pp.a);
  el.innerHTML=`<span class="${pp.ratio<70?"bad2":"warn"}">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 아군 피해 ×${pp.a.toFixed(3)}, 적 피해 ×${pp.b.toFixed(3)}${pp.warn?` [${pp.warn}]`:""}</span> <span class="mut">· 회복·보호막은 보정 없음 → 생존·지원을 더 중시해 추천(추정) · 보정 없으려면 ${Math.ceil(s.rp*0.9).toLocaleString()} 이상</span>`}
-function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`:"해당 스테이지 없음"}
+function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`:"해당 스테이지 없음"}
 $("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};
 
 function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">
@@ -348,5 +349,5 @@ function drawGraph(){
  cy.on("tap",e=>{if(e.target===cy){cy.elements().removeClass("dim");$("cyinfo").textContent="선이나 구원자를 눌러 보세요."}})}
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=drawGraph);
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
-{const sp=LS.get("pow");if(sp)$("mypow").value=sp}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
+{const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
 </script></body></html>

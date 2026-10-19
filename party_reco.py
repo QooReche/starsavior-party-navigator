@@ -347,9 +347,7 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
             ratio, a, b, warn = pp
             out(f"전투력 {power:,} / 권장 {rec:,} = {ratio:.1f}% -> " + (f"아군 피해 x{a:.3f}, 적 피해 x{b:.3f}" + (f" [{warn}]" if warn else "") if a < 1 else "보정 없음 (90% 이상)"))
             if a < 1:
-                _POWK[0] = 1 + cfg["power"]["boost"] * (1 - a)
-                def_pen *= a
-                out("  전투력이 부족해 생존·지원(회복·보호막은 보정 없음)을 더 중시해 추천합니다(추정)")
+                out("  (참고용: 추천 편성은 전투력을 반영하지 않습니다. 편성을 바꾸면 전투력도 달라지므로)")
     out(f"== {content} {boss or ''} (적 속성: {'/'.join(sorted({EL[e] for e in enemies})) or '미지정'}) {note}")
     used = set()
     for p in range(1, c.get("parties", 1) + 1):

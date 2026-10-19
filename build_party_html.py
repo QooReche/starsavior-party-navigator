@@ -17,6 +17,24 @@ CONTENT_META = {  # foe key -> (표시 이름, 주 사용 콘텐츠명, 파티 �
     "equip": ("장비 탐사", None, 1), "cube": ("큐브 팰리스", None, 1)}
 
 
+_UNI = {"\u2160": "I", "\u2161": "II", "\u2162": "III", "\u2163": "IV", "\u2164": "V", "\u2165": "VI", "\u2166": "VII",
+        "\u2167": "VIII", "\u2168": "IX", "\u2169": "X", "\u216a": "XI", "\u216b": "XII", "\u216c": "L", "\u216d": "C"}
+_RV = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100}
+
+
+def numerize(name):
+    """이름 끝의 로마 숫자(유니코드 Ⅰ~Ⅻ 와 ASCII 혼용 가능)를 아라비아 숫자로. 예: '혹한의 습격 XVI' -> '혹한의 습격 16'."""
+    head, _, tail = name.rpartition(" ")
+    t = "".join(_UNI.get(ch, ch) for ch in tail)
+    if not head or not t or any(ch not in _RV for ch in t):
+        return name
+    tot = 0
+    for i, ch in enumerate(t):
+        v = _RV[ch]
+        tot += -v if i + 1 < len(t) and _RV[t[i + 1]] > v else v
+    return f"{head} {tot}"
+
+
 def image_urls(roster):
     """가이드 DB 의 구원자별 초상화/일러스트 주소 ({key: url}, {key: url})."""
     idx = pr._json(os.path.join(pr.DATA, "saviors_index.json"))
@@ -67,7 +85,7 @@ def main():
                 w = {}
                 for e in st["enemies"]:
                     w[e["element"]] = w.get(e["element"], 0) + e["count"] * (2 if e["boss"] else 1)
-                stages.append({"tab": tab["tab"], "tabLabel": label, "name": st["name"], "lv": st["level"], "n": st["enemy_total"], "rp": st.get("recommended_power") or 0,
+                stages.append({"tab": tab["tab"], "tabLabel": label, "name": st["name"], "label": numerize(st["name"]), "lv": st["level"], "n": st["enemy_total"], "rp": st.get("recommended_power") or 0,
                                "w": w, "aoe": round(st["aoe_ratio"], 2), "def": round(st["defender_ratio"], 2)})
         contents.append({"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages})
     out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates", "pairs", "synergy", "power", "gimmick")}
