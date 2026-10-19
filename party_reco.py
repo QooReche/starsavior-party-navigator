@@ -14,6 +14,8 @@ TIER = os.path.join(DATA, "db_tier.json")
 TAGS = os.path.join(DATA, "synergy_tags.json")
 SYN = os.path.join(DATA, "synergy_pairs.json")
 POW = os.path.join(DATA, "power_penalty.json")
+GRULES = os.path.join(DATA, "gimmick_rules.json")
+GSTAGE = os.path.join(DATA, "stage_gimmicks.json")
 OVR = os.path.join(DATA, "synergy_overrides.json")
 CONT = os.path.join(HERE, "party_contents.json")
 FOE = os.path.join(DATA, "foe_stages.json")
@@ -37,6 +39,57 @@ def load():
 
 
 _POWK = [1.0]  # 지원 태그 가중 배수(전투력이 부족할 때만 1 초과)
+_GIM = [[]]  # 현재 스테이지의 기믹 [(유형코드, 심각도)] (가중x심각도 상위 N)
+_GCACHE = {}
+
+
+def gimmick_rules():
+    if not _GCACHE:
+        _GCACHE["r"] = _json(GRULES)
+        _GCACHE["s"] = _json(GSTAGE)
+    return _GCACHE["r"], _GCACHE["s"]
+
+
+def stage_gimmicks(gkey, cfg):
+    """스테이지 키('op|탭|스테이지') -> [(코드, 심각도)] 중요도(가중 x 심각도) 상위 N."""
+    rules, stages = gimmick_rules()
+    items = [(c, sev) for c, sev in stages.get(gkey, {}).items() if c in rules["types"]]
+    items.sort(key=lambda it: -rules["types"][it[0]]["w"] * it[1])
+    return items[:cfg["gimmick"]["topTypes"]]
+
+
+def gimmick_part(key, cfg):
+    """한 구원자의 기믹 대응 점수(선호 태그 +, 기피 태그 -)."""
+    if not _GIM[0]:
+        return 0.0
+    rules, _ = gimmick_rules()
+    tags = set(rules["tags"].get(key, []))
+    g, tot = cfg["gimmick"], 0.0
+    for code, sev in _GIM[0]:
+        t = rules["types"][code]
+        w = t["w"] * sev / 2
+        pre, avo = len(tags & set(t["prefer"])), len(tags & set(t["avoid"]))
+        tot += w * (min(pre, 2) * 0.6 if pre else 0) - w * (min(avo, 2) * 0.6 if avo else 0)
+    return max(-g["cap"], min(g["cap"], tot)) * g["weight"]
+
+
+def gimmick_team(combo, cfg):
+    """필요 슬롯을 파티가 채우면 보너스. (점수, [(유형이름, 슬롯이름, 충족한 구원자 이름 또는 None)])"""
+    if not _GIM[0]:
+        return 0.0, []
+    rules, _ = gimmick_rules()
+    g, bonus, rep = cfg["gimmick"], 0.0, []
+    for code, sev in _GIM[0]:
+        t = rules["types"][code]
+        w = t["w"] * sev / 2
+        for sl in t["slots"]:
+            who = next((x["s"]["name"] for x in combo if set(rules["tags"].get(x["s"]["key"], [])) & set(sl["tags_any"])), None)
+            if who:
+                bonus += g["slotBonus"] * w * 0.5
+            rep.append((t["name"], sl["name"], who))
+    return min(bonus, g["teamCap"]) * g["weight"], rep
+
+
 
 
 def power_penalty(my, rec):
@@ -99,6 +152,9 @@ def score(s, growth, mains, cfg, main_name, enemies, boss=True):
     d_w = w["disadvantage"] if boss else w["disadvantageMob"]
     g = growth.get(s["key"])
     parts = {"티어": cfg["tierScore"].get(g["tier"], 3) if g else 3}
+    gp = gimmick_part(s["key"], cfg)
+    if gp:
+        parts["기믹 대응"] = gp
     if main_name and main_name not in mains.get(s["key"], ["미정"]):
         parts["주사용 아님"] = -w["notMainContent"]
     adv = cfg["advantage"]
@@ -135,6 +191,7 @@ def team_value(combo, cfg, tags, def_pen):
     sus = cfg["power"]["sustainTags"]
     v += sum(wt * (_POWK[0] if t in sus else 1.0) for t, wt in cfg["tagWeights"].items() if t in got)
     v += min(sum(h[0] for h in party_synergy([x["s"]["key"] for x in combo], cfg)), cfg["synergy"]["cap"])
+    v += gimmick_team(combo, cfg)[0]
     return v, got
 
 
@@ -277,6 +334,12 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
                 f' (일치 {len(hits)}건 중 첫 번째)')
     def_pen = c.get("defenderPenalty", cfg["weights"]["defenderPenalty"])
     _POWK[0] = 1.0
+    _GIM[0] = []
+    if stage:
+        _GIM[0] = stage_gimmicks(f"{FOE_KEYS[content]}|{tab}|{st['name']}", cfg)
+        if _GIM[0]:
+            rl, _ = gimmick_rules()
+            out("스테이지 기믹: " + ", ".join(f"{rl['types'][c]['name']}(심각도{sv})" for c, sv in _GIM[0]))
     if stage and power:
         rec = st.get("recommended_power")
         pp = power_penalty(power, rec)
@@ -312,6 +375,9 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
                 a = alts(x, party, cands, cfg, tags, def_pen, used)
                 if a:
                     out("        대체: " + " > ".join(y["s"]["name"] for y in a))
+        if _GIM[0]:
+            for tn, sn, who in gimmick_team(party, cfg)[1]:
+                out(f"  [기믹 슬롯] {tn} / {sn}: " + (who if who else "비어 있음"))
         bk = pick_break(party, cfg, content, note, have_break)
         if bk:
             out(f"  [브레이크 스킬] {bk[1]} - {bk[2]} (직업 구성 기준 추정)")

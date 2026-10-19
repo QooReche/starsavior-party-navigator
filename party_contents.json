@@ -243,5 +243,13 @@
    "자가생존",
    "도발/방어지원"
   ]
+ },
+ "gimmick": {
+  "_note": "스테이지 적 기믹 반영. 개인: 선호 태그 +w, 기피 태그 -w (w=유형가중 x 심각도/2, 유형당 상한 cap) x weight. 팀: 필요 슬롯 충족 시 slotBonus x w, 합계 teamCap. 영향 방향은 대부분 추정이라 weight 를 낮게 둔다.",
+  "weight": 0.8,
+  "cap": 4.0,
+  "slotBonus": 2.0,
+  "teamCap": 8.0,
+  "topTypes": 6
  }
 }

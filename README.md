@@ -20,6 +20,12 @@
 - 웹 페이지 하단 구조도(Cytoscape.js, `lib/`): 추천 파티의 연계 / 구원자 중심 / 전체 지도. 선을 누르면 근거 스킬 문장.
 - **게임 업데이트 후:** `python -X utf8 -I tools/update.py <databook main.json>` 한 번이면 태그·연계·분류를 다시 만들고 변경 요약(신규 구원자, 바뀐 쌍)을 출력한다. 자동 추출이 틀렸거나 직접 넣고 싶은 연계는 `data/synergy_overrides.json`(ignore/set/add)에 적으면 재실행해도 유지된다.
 
+## 스테이지 적 기믹
+- `data/stage_gimmicks.json`(스테이지별 기믹 유형·심각도 3,596개)와 `data/gimmick_rules.json`(유형 44종: 이름, 구원자 태그 선호/기피, 필요 슬롯)을 스킬 원문 분석(`tools/build_gimmicks.py`, 결과 검토는 `docs/gimmick_review.md`)으로 만들었다.
+- 개인 점수: 스테이지 기믹에 유리한 스킬 구조(예: 보호막 파괴/방어 관통, 단일 대형 타격)는 가산, 불리한 구조(예: 다단 히트)는 감산. 팀 점수: 기믹 대응에 필요한 슬롯(예: 보호막 파괴 담당 + 후속 폭딜)을 파티가 채우면 가산. 가중치는 `party_contents.json` 의 `gimmick`.
+- 영향 방향은 대부분 추정이다(피격이 타수 단위인지 스킬 단위인지 원문에 없음). 태그가 많은 구원자(에핀델 등)가 유리해지는 편향이 알려져 있다.
+- `tools/update.py` 가 foe 데이터를 갱신하면 기믹도 다시 만든다(`tools/build_gimmicks.py`, `tools/pack_gimmicks.py`).
+
 ## 사용
 ```
 python -X utf8 -I party_reco.py 작전 --stage "SECTOR 1-1"          # 콘솔

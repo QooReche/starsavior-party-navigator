@@ -43,6 +43,7 @@ def image_urls(roster):
 def main():
     roster, growth, mains, cfg, tags = pr.load()
     por, art = image_urls(roster)
+    grules = pr._json(pr.GRULES)
     # 저장소에 내려받아 둔 이미지(tools/fetch_images.py)가 있으면 그것을 상대 경로로 쓴다
     for s in roster:
         for d, suf in ((por, "face"), (art, "art")):
@@ -54,7 +55,7 @@ def main():
         g = growth.get(s["key"])
         r.append({"key": s["key"], "name": s["name"], "sub": s["subtitle"], "el": s["element"],
                   "cls": s["className"], "tier": g["tier"] if g else None,
-                  "mains": mains.get(s["key"]), "tags": tags.get(s["key"], []), "img": por.get(s["key"], ""), "art": art.get(s["key"], "")})
+                  "mains": mains.get(s["key"]), "tags": tags.get(s["key"], []), "gt": grules["tags"].get(s["key"], []), "img": por.get(s["key"], ""), "art": art.get(s["key"], "")})
     contents = []
     for c in pr._json(pr.FOE)["contents"]:
         name, main, parties = CONTENT_META[c["key"]]
@@ -68,8 +69,8 @@ def main():
                     w[e["element"]] = w.get(e["element"], 0) + e["count"] * (2 if e["boss"] else 1)
                 stages.append({"tab": tab["tab"], "tabLabel": label, "name": st["name"], "lv": st["level"], "n": st["enemy_total"], "rp": st.get("recommended_power") or 0,
                                "w": w, "aoe": round(st["aoe_ratio"], 2), "def": round(st["defender_ratio"], 2)})
-        contents.append({"name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages})
-    out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates", "pairs", "synergy", "power")}
+        contents.append({"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages})
+    out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates", "pairs", "synergy", "power", "gimmick")}
     out_cfg["restrict"] = {"성간 회랑": cfg["contents"]["회랑"]["restrictTabs"]}
     out_cfg["defPenByContent"] = {"코스모 게이트": cfg["contents"]["코스모 게이트"].get("defenderPenalty", 3.0)}
     icons = {}
@@ -95,7 +96,8 @@ def main():
             "e": [e[:110] for e in p.get("evidence", [])[:2]]}
            for p in pr.load_synergy()]
     data = json.dumps({"roster": r, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn,
-                       "pen": pr._json(pr.POW)["pen"], "tribe": pr._json(pr.POW)["tribe"]}, ensure_ascii=False, separators=(",", ":"))
+                       "pen": pr._json(pr.POW)["pen"], "tribe": pr._json(pr.POW)["tribe"],
+                       "grules": grules["types"], "gim": pr._json(pr.GSTAGE)}, ensure_ascii=False, separators=(",", ":"))
     html = open(os.path.join(pr.HERE, "party_template.html"), encoding="utf-8").read()
     assert html.count("/*DATA*/null") == 1
     html = html.replace("/*DATA*/null", data.replace("</", "<\/"))

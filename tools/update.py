@@ -50,6 +50,8 @@ def main():
     run(os.path.join("tools", "build_synergy_pairs.py"), src)
     if os.path.exists(os.path.join(ROOT, "tools", "raw", "foe.js")):
         run(os.path.join("tools", "build_foe.py"))
+        run(os.path.join("tools", "build_gimmicks.py"), "--savior", src)
+        run(os.path.join("tools", "pack_gimmicks.py"))
     else:
         print("tools/raw/foe.js 없음 -> 적 정보(data/foe_stages.json)는 그대로 둠")
 
