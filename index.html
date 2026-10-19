@@ -27,6 +27,9 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
 .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:16px}.dhead button{background:transparent;color:var(--fg);padding:2px 8px;font-size:18px}
 .dtools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dtools button{padding:3px 10px}.dsec{margin:14px 0 4px;padding-top:10px;border-top:1px solid var(--line)}
 #drawer .own{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.crown{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 1px 3px #000)}
+.crown svg{width:34px;height:26px}.crown span{font-size:11px;font-weight:800;color:#ffd24a;letter-spacing:.06em}
+.leadnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid #ffd24a;background:var(--bg)}
 .pairnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid var(--acc);background:var(--bg)}
 .own{columns:auto!important;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
 .tile{position:relative;display:block!important;cursor:pointer}
@@ -211,6 +214,15 @@ function synSummary(party){const hs=partySyn(party.map(x=>x.s.key)).slice(0,5);i
  const nm=Object.fromEntries(R.map(s=>[s.key,s.name]));
  return `<details class="syn"><summary>스킬 연계 ${hs.length}건 (강한 순, 구조도에서 근거 확인)</summary>${hs.map(h=>`<div class="synrow"><b>${esc(nm[h.p.a])}${h.p.d?" → ":" ↔ "}${esc(nm[h.p.b])}</b> <span class="chip ty${h.p.t}">${esc(h.p.tn)}</span> <span class="mut">강도 ${h.p.s} · ${esc(h.p.c)}</span><div class="mut">${esc(h.p.r)}</div></div>`).join("")}</details>`}
 function pairNotes(party){const ks=new Set(party.map(x=>x.s.key));return (CFG.pairs||[]).filter(p=>p.keys.every(k=>ks.has(k))).map(p=>`<div class="pairnote">★ 시너지 조합: ${esc(p.note)}</div>`).join("")}
+let LEADKEY=null;
+const LEAD_TAGS=["힐","보호막","속도증가","적방어력감소","아군공격력증가"];
+function leaderPick(party){
+ const keys=party.map(x=>x.s.key),gain=Object.fromEntries(keys.map(k=>[k,0])),why=Object.fromEntries(keys.map(k=>[k,[]]));
+ for(const h of partySyn(keys)){if(h.p.t>4)continue;const gv=h.p.d?[h.p.a]:[h.p.a,h.p.b];gv.forEach(g=>{gain[g]+=h.pts/gv.length;why[g].push(h.p.r)})}
+ party.forEach(x=>{gain[x.s.key]+=0.3*(x.s.tags||[]).filter(t=>LEAD_TAGS.includes(t)).length});
+ const k=keys.reduce((a,b)=>gain[b]>gain[a]?b:a,keys[0]);if(gain[k]<=0)return null;
+ return {x:party.find(x=>x.s.key===k),g:gain[k],why:why[k].slice(0,2)}}
+function leadNote(L){return L?`<div class="leadnote">👑 리더 추천: <b>${esc(L.x.s.name)}</b> <span class="mut">(${esc(L.x.s.sub)}) · 리더는 속도 +10 → 팀에 줄 효과가 가장 많은 구성원이 먼저 행동 (추정)</span>${L.why.map(w=>`<div class="mut">· ${esc(w)}</div>`).join("")}</div>`:""}
 function place(p){const fr=["디펜더","서포터"];const o=[...p].sort((x,y)=>(fr.includes(x.s.cls)?0:1)-(fr.includes(y.s.cls)?0:1)||y.score-x.score);return [o.slice(0,2),o.slice(2)]}
 function pickBreak(party,content,have){
  let best=null;const roles=party.map(x=>x.s.cls);
@@ -229,7 +241,7 @@ function altChips(alt){return alt.length?`<div class="altbox"><div class="mut">�
 function card(x,pos,alt){const s=x.s;
  const why=Object.entries(x.parts).filter(([k])=>k!=="티어").map(([k,v])=>`<span class="${v>0?"good":"bad"}">${k} ${v>0?"+":""}${Math.round(v)}</span>`).join(" · ");
  const tg=(s.tags||[]).filter(t=>!["단일","광역"].includes(t)).slice(0,5).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
- return `<div class="gc"><div class="card"><div class="fallback">${esc(s.name[0])}</div>${art(s)}
+ return `<div class="gc"><div class="card">${s.key===LEADKEY?'<div class="crown"><svg viewBox="0 0 34 26"><path d="M2 22 L5 6 L12 14 L17 3 L22 14 L29 6 L32 22 Z" fill="#ffd24a" stroke="#8a5a00" stroke-width="1.5" stroke-linejoin="round"/><rect x="2" y="22" width="30" height="3" rx="1" fill="#e6a800"/></svg><span>LEADER</span></div>':""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
   <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div>
   <span class="tier ${TC(s.tier)}">${s.tier||"티어 ?"}</span></div></div>
   <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}</div>
@@ -250,10 +262,10 @@ function run(){
   const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
   if(cands.length<4){html+=`<div class="party">파티 ${p}: 후보가 4명 미만입니다.</div>`;break}
   const [party,v,got]=bestParty(cands,defPen);party.forEach(x=>used.add(x.s.key));allParties.push(party);
-  const [fr,bk]=place(party);
+  const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
   const br=pickBreak(party,c.name,have);
-  html+=`<div class="party"><div class="phead"><b>파티 ${p}</b><span class="mut">점수 ${v.toFixed(1)} · 인게임 편성 순서(왼쪽부터)</span></div>${pairNotes(party)}${synSummary(party)}
+  html+=`<div class="party"><div class="phead"><b>파티 ${p}</b><span class="mut">점수 ${v.toFixed(1)} · 인게임 편성 순서(왼쪽부터)</span></div>${pairNotes(party)}${leadNote(LD)}${synSummary(party)}
    <div>${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
    <div class="rowcards">${card(bk[0],"back",alt(bk[0]))}${card(fr[0],"front",alt(fr[0]))}${card(fr[1],"front",alt(fr[1]))}${card(bk[1],"back",alt(bk[1]))}</div>${breakCard(br)}</div>`}
  const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));

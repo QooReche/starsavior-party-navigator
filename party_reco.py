@@ -118,6 +118,29 @@ def team_value(combo, cfg, tags, def_pen):
     return v, got
 
 
+LEAD_OPEN_TAGS = ("힐", "보호막", "속도증가", "적방어력감소", "아군공격력증가")  # 첫 턴에 먼저 나가면 이득인 효과
+
+
+def leader_pick(party, cfg, tags):
+    """리더(속도 +10) 추천: 팀 동료에게 제공하는 연계(유형 1~4) 점수가 가장 큰 구성원. (구성원, 점수, 이유 목록) 또는 None."""
+    keys = [x["s"]["key"] for x in party]
+    gain = {k: 0.0 for k in keys}
+    why = {k: [] for k in keys}
+    for pts, p in party_synergy(keys, cfg):
+        if int(p["type"].split(":")[0]) > 4:
+            continue
+        givers = [p["a"]] if p.get("directed") else [p["a"], p["b"]]
+        for g in givers:
+            gain[g] += pts / len(givers)
+            why[g].append(p["reason"])
+    for x in party:  # 동률이면 첫 턴 지원 효과(힐·보호막 등)가 있는 쪽
+        gain[x["s"]["key"]] += 0.3 * sum(1 for t in tags.get(x["s"]["key"], []) if t in LEAD_OPEN_TAGS)
+    k = max(keys, key=lambda k: gain[k])
+    if gain[k] <= 0:
+        return None
+    return next(x for x in party if x["s"]["key"] == k), gain[k], why[k][:2]
+
+
 def best_party(cands, cfg, tags, def_pen, size=4):
     pool = sorted(cands, key=lambda x: -x["score"])[:14]
     for pr_ in cfg.get("pairs", []):  # 시너지 쌍의 구성원은 점수가 낮아도 후보에 넣는다
@@ -245,6 +268,9 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
         out(f"-- 파티 {p} (점수 {v:.1f}) 팀 기능: {', '.join(sorted(got)) or '-'}")
         used |= {x["s"]["key"] for x in party}
         front, back = place(party)
+        ld = leader_pick(party, cfg, tags)
+        if ld:
+            out(f"  [리더 추천] {ld[0]['s']['name']}({ld[0]['s']['subtitle']}) - 속도 +10 으로 먼저 행동해 팀에 줄 효과가 가장 많음(추정, 점수 {ld[1]:.1f})")
         for label, grp in (("전열", front), ("후열", back)):
             for x in grp:
                 out(f"  [{label}] " + fmt(x))
