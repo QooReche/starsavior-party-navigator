@@ -20,6 +20,13 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
 .synrow{margin:6px 0;font-size:13px}.chip.ty1{background:#b4452d}.chip.ty2{background:#8a6d1a}.chip.ty3{background:#2d7a5a}.chip.ty4{background:#3b6cb4}.chip.ty5{background:#6b6f78}
 #graphwrap .row{margin-bottom:8px}#cy{width:100%;height:560px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 #cyinfo{margin-top:8px;font-size:13px;min-height:48px}.lg{display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:12px}.lg i{display:inline-block;width:18px;height:4px;border-radius:2px}
+#dbtn{position:fixed;left:0;top:38%;z-index:40;padding:10px 8px;border-radius:0 10px 10px 0;background:var(--acc);color:#fff;font-size:13px;line-height:1.3;box-shadow:2px 2px 8px #0006}
+#dbtn span{display:block;margin-top:2px;font-size:11px;opacity:.9}
+#drawer{position:fixed;left:0;top:0;bottom:0;width:min(460px,94vw);z-index:60;background:var(--card);border-right:1px solid var(--line);box-shadow:4px 0 18px #0006;padding:14px;overflow:auto;transform:translateX(-102%);transition:transform .2s}
+#drawer.open{transform:none}#dback{display:none!important}
+.dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:16px}.dhead button{background:transparent;color:var(--fg);padding:2px 8px;font-size:18px}
+.dtools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dtools button{padding:3px 10px}.dsec{margin:14px 0 4px;padding-top:10px;border-top:1px solid var(--line)}
+#drawer .own{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
 .pairnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid var(--acc);background:var(--bg)}
 .own{columns:auto!important;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
 .tile{position:relative;display:block!important;cursor:pointer}
@@ -105,11 +112,6 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
   <button id="go">추천</button>
  </div>
  <div class="info" id="stinfo"></div>
- <details style="margin-top:8px"><summary>보유 구원자 한정 (기본: 전체)</summary>
-  <p class="mut"><button id="all" type="button" style="padding:2px 8px">모두 선택</button> <button id="none" type="button" style="padding:2px 8px">모두 해제</button> 체크한 구원자 안에서만 추천합니다.</p>
-  <span class="mut" id="saved" style="margin-left:8px"></span><br><input type="text" id="oq" placeholder="이름 검색" style="margin:4px 0 8px"><div class="own" id="own"></div></details>
- <details style="margin-top:8px"><summary>보유 브레이크 스킬 (기본: 전체, 행성 정화는 미출시 표기)</summary>
-  <div id="brk" style="margin-top:6px"></div></details>
 </div>
 <div id="out"></div>
 <div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">구원자 스킬에서 자동 추출한 시너지(추정 포함). 선을 누르면 근거 스킬 문장이 나옵니다.</span>
@@ -121,6 +123,17 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 보세요.</div></div>
 <div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 초상화는 온라인일 때만 보입니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</div>
+<button id="dbtn" type="button" title="보유 구원자·브레이크 스킬 선택">내 구원자<br>선택 ▸<span id="dcount"></span></button>
+<aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
+ <div class="dhead"><b>내 구원자 · 브레이크 스킬</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
+ <div class="mut" style="margin-bottom:6px">체크한 구원자 안에서만 추천합니다(기본: 전체). 바꾸면 추천이 바로 갱신되고 브라우저에 저장됩니다.</div>
+ <div class="dtools"><button id="all" type="button">모두 선택</button><button id="none" type="button">모두 해제</button><span class="mut" id="saved"></span></div>
+ <input type="text" id="oq" placeholder="이름 검색" style="width:100%;margin:6px 0 8px">
+ <div class="own" id="own"></div>
+ <div class="dsec"><b>보유 브레이크 스킬</b> <span class="mut">(행성 정화는 미출시 표기)</span></div>
+ <div id="brk" style="margin-top:6px"></div>
+</aside>
+<div id="dback"></div>
 </main>
 <script src="lib/cytoscape.min.js"></script>
 <script>
@@ -246,8 +259,13 @@ function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:chec
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  if(Array.isArray(o)){const s=new Set(o);document.querySelectorAll("#own input").forEach(x=>x.checked=s.has(x.dataset.k))}
  if(Array.isArray(b)){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}})();
-document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk")))saveSel()});
-$("all").addEventListener("click",saveSel);$("none").addEventListener("click",saveSel);
+let _rt=null;const rerun=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
+function updCount(){const n=document.querySelectorAll("#own input:checked").length;$("dcount").textContent=n===R.length?"전체":n+"/"+R.length}
+document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk"))){saveSel();updCount();rerun()}});
+const setDrawer=o=>{$("drawer").classList.toggle("open",o);$("dback").classList.toggle("on",o)};
+$("dbtn").onclick=()=>setDrawer(!$("drawer").classList.contains("open"));$("dclose").onclick=()=>setDrawer(false);$("dback").onclick=()=>setDrawer(false);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")setDrawer(false)});
+$("all").addEventListener("click",()=>{saveSel();updCount();rerun()});$("none").addEventListener("click",()=>{saveSel();updCount();rerun()});
 const TYC={1:"#e0553a",2:"#d4a72c",3:"#34b37c",4:"#4a86e0",5:"#8d939e"},ELC={sun:"#e0554a",moon:"#5aa0ff",star:"#8fe05a",order:"#f0cf86",chaos:"#c58bff"};
 $("glegend").innerHTML=[[1,"부여→소비"],[2,"버프증폭"],[3,"생존연계"],[4,"쿨감·게이지"],[5,"속성공유"]].map(([t,n])=>`<span class="lg"><i style="background:${TYC[t]}"></i>${n}</span>`).join("")+'<span class="lg mut">화살표 = 제공자→소비자</span>';
 $("gcenter").innerHTML=R.map(s=>`<option value="${esc(s.key)}">${esc(s.name)} (${esc(s.sub)})</option>`).join("");
@@ -280,5 +298,5 @@ function drawGraph(){
  cy.on("tap",e=>{if(e.target===cy){cy.elements().removeClass("dim");$("cyinfo").textContent="선이나 구원자를 눌러 보세요."}})}
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=drawGraph);
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
-$("go").onclick=run;refreshTabs();run();drawGraph();
+updCount();$("go").onclick=run;refreshTabs();run();drawGraph();
 </script></body></html>
