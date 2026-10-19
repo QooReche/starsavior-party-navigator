@@ -293,5 +293,14 @@
     0.03
    ]
   ]
+ },
+ "matchupModes": {
+  "_note": "balanced=기본 weights 그대로. avoid=역상성(불리 속성)만 확실히 피하고 유리 가산은 작게(상성 효과가 피해 ±5%·효과 적중 ±30%이고 강인도 격파는 유리한 쪽만 가능). 값은 임의.",
+  "avoid": {
+   "advantage": 1.0,
+   "disadvantage": 5.0,
+   "advantageMob": 0.5,
+   "disadvantageMob": 4.0
+  }
  }
 }

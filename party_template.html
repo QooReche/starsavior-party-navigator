@@ -130,7 +130,8 @@ body:not(.show-why) .gimnote{display:none}
  <details class="optbox" id="optbox"><summary>옵션 · 전투력 패널티 반영</summary>
   <p class="mut" style="margin:6px 0">전투력은 파티 구성·육성에 따라 달라지므로 기본은 반영하지 않습니다. 필요할 때만 내 파티 전투력을 입력하세요(비우면 무시).</p>
   <label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px">내 파티 전투력<input type="number" id="mypow" min="0" step="100" placeholder="예: 52000" style="min-width:140px"></label>
-  <div id="powinfo" class="powinfo"></div></details>
+  <div id="powinfo" class="powinfo"></div>
+  <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px">상성 방식<select id="mmode"><option value="">균형(기본): 유리 가산 + 불리 감점</option><option value="avoid">역상성 회피 우선: 불리 속성만 확실히 피하고 유리 가산은 작게</option></select></label></div></details>
 </div>
 <div id="out"></div>
 <div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">구원자 스킬에서 자동 추출한 시너지(추정 포함). 선을 누르면 근거 스킬 문장이 나옵니다.</span>
@@ -182,7 +183,7 @@ function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$(
  el.innerHTML=`<span class="${pp.ratio<70?"bad2":"warn"}">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 아군 피해 ×${pp.a.toFixed(3)}, 적 피해 ×${pp.b.toFixed(3)}${pp.warn?` [${pp.warn}]`:""}</span> <span class="mut">· 회복·보호막은 보정 없음 → 생존·지원을 더 중시해 추천(추정) · 보정 없으려면 ${Math.ceil(s.rp*0.9).toLocaleString()} 이상</span>`}
 function sbText(s){return s&&s.sb&&s.sb.length?` · <span class="mut">시즌 보너스(${esc(s.sbn)}): ${s.sb.map(b=>esc(b.cond)+" "+esc(b.text)).join(" / ")}</span>`:""}
 function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s):"해당 스테이지 없음"}
-$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};
+$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);run()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};
 
 function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">
  <span class="fc">${face(s)}${dia(s,34)}</span><span class="tn">${esc(s.name)}</span><span class="ts">${esc(s.sub)}</span>${kindTxt(s)}</span></label>`}
@@ -200,6 +201,7 @@ let SBACT=[];const ELKO={sun:"태양",moon:"달",star:"별",order:"질서",chaos
 function seasonPart(s){if(!SBACT.length)return 0;const sb=CFG.seasonBonus;let tot=0;
  for(const b of SBACT){if(b.cond!==ELKO[s.el]&&b.cond!==s.cls)continue;const m=b.text.match(/(\d+(?:\.\d+)?)%/);if(!m)continue;const k=(sb.kinds.find(([kw])=>b.text.includes(kw))||[0,0.02])[1];tot+=parseFloat(m[1])*k}
  return Math.min(tot,sb.cap)}
+let MM="";
 let GIMACT=[];
 function gimTop(c,st){const m=D.gim[c.key+"|"+st.tab+"|"+st.name]||{};return Object.entries(m).filter(([k])=>D.grules[k]).sort((a,b)=>D.grules[b[0]].w*b[1]-D.grules[a[0]].w*a[1]).slice(0,CFG.gimmick.topTypes)}
 function gimPart(s){if(!GIMACT.length)return 0;const g=CFG.gimmick,tg=new Set(s.gt||[]);let tot=0;
@@ -209,7 +211,7 @@ function gimTeam(combo){if(!GIMACT.length)return [0,[]];const g=CFG.gimmick;let 
  for(const [code,sev] of GIMACT){const t=D.grules[code],w=t.w*sev/2;for(const sl of t.slots){const who=combo.find(x=>(x.s.gt||[]).some(y=>sl.tags_any.includes(y)));if(who)bonus+=g.slotBonus*w*0.5;rep.push([t.name,sl.name,who?who.s.name:null])}}
  return [Math.min(bonus,g.teamCap)*g.weight,rep]}
 function score(s,w,main,boss){
- const g=CFG.weights,parts={};const aW=boss?g.advantage:g.advantageMob,dW=boss?g.disadvantage:g.disadvantageMob;
+ const g=CFG.weights,parts={};const mw=MM==="avoid"?CFG.matchupModes.avoid:g;const aW=boss?mw.advantage:mw.advantageMob,dW=boss?mw.disadvantage:mw.disadvantageMob;
  parts["티어"]=s.tier!=null?(CFG.tierScore[s.tier]??3):3;const sp=seasonPart(s);if(sp)parts["시즌 보너스"]=sp;const gp=gimPart(s);if(gp)parts["기믹 대응"]=gp;
  if(main&&!(s.mains||["미정"]).includes(main))parts["주사용 아님"]=-g.notMainContent;
  const adv=CFG.advantage,tot=Object.values(w).reduce((a,b)=>a+b,0);
@@ -354,5 +356,5 @@ function drawGraph(){
  cy.on("tap",e=>{if(e.target===cy){cy.elements().removeClass("dim");$("cyinfo").textContent="선이나 구원자를 눌러 보세요."}})}
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=drawGraph);
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
-{const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
+{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
 </script></body></html>

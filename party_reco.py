@@ -38,6 +38,7 @@ def load():
     return roster, t["growth"], t["mainContents"], _json(CONT), tags
 
 
+_MM = [None]  # 상성 방식: None(균형) 또는 "avoid"(역상성 회피 우선)
 _POWK = [1.0]  # 지원 태그 가중 배수(전투력이 부족할 때만 1 초과)
 _GIM = [[]]  # 현재 스테이지의 기믹 [(유형코드, 심각도)] (가중x심각도 상위 N)
 _GCACHE = {}
@@ -167,8 +168,9 @@ def party_synergy(keys, cfg):
 
 def score(s, growth, mains, cfg, main_name, enemies, boss=True):
     w = cfg["weights"]
-    a_w = w["advantage"] if boss else w["advantageMob"]
-    d_w = w["disadvantage"] if boss else w["disadvantageMob"]
+    mw = cfg["matchupModes"]["avoid"] if _MM[0] == "avoid" else w
+    a_w = mw["advantage"] if boss else mw["advantageMob"]
+    d_w = mw["disadvantage"] if boss else mw["disadvantageMob"]
     g = growth.get(s["key"])
     parts = {"티어": cfg["tierScore"].get(g["tier"], 3) if g else 3}
     sp = season_part(s, cfg) if _SB[0] else 0.0
@@ -414,6 +416,9 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
 if __name__ == "__main__":
     argv = sys.argv[1:]
     opts = {}
+    if "--avoid-reverse" in argv:
+        _MM[0] = "avoid"
+        argv.remove("--avoid-reverse")
     for flag in ("--owned", "--break", "--stage", "--power"):
         if flag in argv:
             i = argv.index(flag)
