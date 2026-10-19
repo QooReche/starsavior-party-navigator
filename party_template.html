@@ -53,6 +53,12 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
 .bicon{width:96px;height:96px;flex:none;border-radius:16px;background:linear-gradient(135deg,var(--acc),#6a6fd6);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;text-align:center;line-height:1.2;padding:6px}
 .bicon span{font-size:34px}.bicon small{font-size:11px;font-weight:600}.btxt b{font-size:17px}
 .btag{font-size:11px;background:var(--bad);color:#fff;border-radius:8px;padding:0 6px;margin-left:6px}
+#brk{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.btile{position:relative;display:block;cursor:pointer}.btile input{position:absolute;opacity:0;pointer-events:none}
+.btile .tc{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:2px solid var(--line);border-radius:10px;background:var(--bg);opacity:.45;filter:grayscale(.7);text-align:center;height:100%}
+.btile input:checked+.tc{opacity:1;filter:none;border-color:#5a7bd6;box-shadow:0 0 0 1px #5a7bd6 inset}
+.bim{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #9bb0d8;display:flex;align-items:center;justify-content:center;font-size:30px}
+.btile .tn{font-weight:700;font-size:13px;line-height:1.2}
 .brkopt{display:inline-flex;align-items:center;gap:6px;margin:0 10px 6px 0;padding:4px 10px;border:1px solid var(--line);border-radius:8px}
 @media (max-width:760px){.cols{grid-template-columns:1fr}.pic{width:96px;height:96px;font-size:30px}}
 
@@ -130,7 +136,7 @@ details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.o
  <div class="dtools"><button id="all" type="button">모두 선택</button><button id="none" type="button">모두 해제</button><span class="mut" id="saved"></span></div>
  <input type="text" id="oq" placeholder="이름 검색" style="width:100%;margin:6px 0 8px">
  <div class="own" id="own"></div>
- <div class="dsec"><b>보유 브레이크 스킬</b> <span class="mut">(행성 정화는 미출시 표기)</span></div>
+ <div class="dsec"><b>보유 브레이크 스킬</b></div>
  <div id="brk" style="margin-top:6px"></div>
 </aside>
 <div id="dback"></div>
@@ -166,7 +172,7 @@ $("oq").oninput=()=>{const q=$("oq").value.trim();document.querySelectorAll("#ow
 $("all").onclick=()=>document.querySelectorAll("#own input").forEach(x=>x.checked=true);
 $("none").onclick=()=>document.querySelectorAll("#own input").forEach(x=>x.checked=false);
 const bkeys=Object.keys(CFG.breakSkills).filter(k=>!k.startsWith("_"));
-$("brk").innerHTML=bkeys.map(k=>{const u=CFG.breakSkills[k].unreleased;return `<label class="brkopt"><input type="checkbox" data-b="${esc(k)}" ${u?"":"checked"}> ${BG[k]||"◆"} ${esc(k)}${u?'<span class="btag">미출시 표기</span>':""}</label>`}).join("");
+$("brk").innerHTML=bkeys.map(k=>{const u=CFG.breakSkills[k].unreleased,im=D.bicons[k];return `<label class="btile"><input type="checkbox" data-b="${esc(k)}" ${u?"":"checked"}><span class="tc">${im?`<img class="bim" src="${im}" alt="">`:`<span class="bim bph">${BG[k]||"◆"}</span>`}<span class="tn">${esc(k)}</span>${u?'<span class="btag" style="margin:2px 0 0">미출시 표기</span>':""}</span></label>`}).join("");
 
 function score(s,w,main,boss){
  const g=CFG.weights,parts={};const aW=boss?g.advantage:g.advantageMob,dW=boss?g.disadvantage:g.disadvantageMob;

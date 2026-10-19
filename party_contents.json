@@ -146,7 +146,7 @@
  },
  "_tagNote": "팀 합집합에 한 번씩만 가산(중복 가산 없음). 값은 임의 가중치.",
  "breakSkills": {
-  "_note": "출처 starsavior-db.pages.dev/mechanics (work/party/break_skills.md). 추천 규칙은 추정, 행성 정화는 미출시 표기.",
+  "_note": "출처 starsavior-db.pages.dev/mechanics (docs/break_skills.md). 추천 규칙은 직업 구성 기준 추정. 행성 정화는 제3자 DB 가 미출시로 표기했으나 사용자가 출시됨을 확인(2026-10-19).",
   "스타피어서": {
    "bonusRoles": [
     "스트라이커",
@@ -166,8 +166,7 @@
     "캐스터",
     "어쌔신"
    ],
-   "text": "적 방어력 감소, 공격력 +10%(캐스터·어쌔신 +20%) [미출시 표기]",
-   "unreleased": true
+   "text": "적 방어력 감소, 공격력 +10%(캐스터·어쌔신 +20%)"
   },
   "특이점 관측": {
    "bonusRoles": [],
