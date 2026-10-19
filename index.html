@@ -190,7 +190,7 @@ function bestParty(c,defPen){
  return [best,bv,bt]}
 function synSummary(party){const hs=partySyn(party.map(x=>x.s.key)).slice(0,5);if(!hs.length)return "";
  const nm=Object.fromEntries(R.map(s=>[s.key,s.name]));
- return `<details class="syn" open><summary>스킬 연계 ${hs.length}건 (강한 순, 구조도에서 근거 확인)</summary>${hs.map(h=>`<div class="synrow"><b>${esc(nm[h.p.a])}${h.p.d?" → ":" ↔ "}${esc(nm[h.p.b])}</b> <span class="chip ty${h.p.t}">${esc(h.p.tn)}</span> <span class="mut">강도 ${h.p.s} · ${esc(h.p.c)}</span><div class="mut">${esc(h.p.r)}</div></div>`).join("")}</details>`}
+ return `<details class="syn"><summary>스킬 연계 ${hs.length}건 (강한 순, 구조도에서 근거 확인)</summary>${hs.map(h=>`<div class="synrow"><b>${esc(nm[h.p.a])}${h.p.d?" → ":" ↔ "}${esc(nm[h.p.b])}</b> <span class="chip ty${h.p.t}">${esc(h.p.tn)}</span> <span class="mut">강도 ${h.p.s} · ${esc(h.p.c)}</span><div class="mut">${esc(h.p.r)}</div></div>`).join("")}</details>`}
 function pairNotes(party){const ks=new Set(party.map(x=>x.s.key));return (CFG.pairs||[]).filter(p=>p.keys.every(k=>ks.has(k))).map(p=>`<div class="pairnote">★ 시너지 조합: ${esc(p.note)}</div>`).join("")}
 function place(p){const fr=["디펜더","서포터"];const o=[...p].sort((x,y)=>(fr.includes(x.s.cls)?0:1)-(fr.includes(y.s.cls)?0:1)||y.score-x.score);return [o.slice(0,2),o.slice(2)]}
 function pickBreak(party,content,have){
