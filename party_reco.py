@@ -13,6 +13,7 @@ RECO = os.path.join(DATA, "savior_reco.json")
 TIER = os.path.join(DATA, "db_tier.json")
 TAGS = os.path.join(DATA, "synergy_tags.json")
 SYN = os.path.join(DATA, "synergy_pairs.json")
+POW = os.path.join(DATA, "power_penalty.json")
 OVR = os.path.join(DATA, "synergy_overrides.json")
 CONT = os.path.join(HERE, "party_contents.json")
 FOE = os.path.join(DATA, "foe_stages.json")
@@ -33,6 +34,24 @@ def load():
     t = _json(TIER)
     tags = {a["key"]: a["tags"] for a in _json(TAGS)["saviors"] if "@" not in a["key"]}
     return roster, t["growth"], t["mainContents"], _json(CONT), tags
+
+
+_POWK = [1.0]  # 지원 태그 가중 배수(전투력이 부족할 때만 1 초과)
+
+
+def power_penalty(my, rec):
+    """(전투력 비율%, 아군 피해 배율, 적 피해 배율, 경고 등급 이름) 또는 None. 표는 databook 의 것."""
+    if not (my and rec):
+        return None
+    t = _json(POW)
+    ratio = my * 10000 // rec
+    row = next((r for r in t["pen"] if r[0] <= ratio < r[1]), None)
+    a, b = (row[2] / 10000, row[3] / 10000) if row else (1.0, 1.0)
+    deficit = 10000 - ratio
+    tier = None
+    if my < rec:
+        tier = next((x for x in t["tribe"] if x[0] <= deficit < x[1]), t["tribe"][-1] if deficit >= t["tribe"][-1][1] else None)
+    return ratio / 100, a, b, (tier[2] if tier else None)
 
 
 def load_synergy():
@@ -113,7 +132,8 @@ def team_value(combo, cfg, tags, def_pen):
     got = set()
     for x in combo:
         got.update(tags.get(x["s"]["key"], []))
-    v += sum(wt for t, wt in cfg["tagWeights"].items() if t in got)
+    sus = cfg["power"]["sustainTags"]
+    v += sum(wt * (_POWK[0] if t in sus else 1.0) for t, wt in cfg["tagWeights"].items() if t in got)
     v += min(sum(h[0] for h in party_synergy([x["s"]["key"] for x in combo], cfg)), cfg["synergy"]["cap"])
     return v, got
 
@@ -233,7 +253,7 @@ def stage_enemies(st):
     return out
 
 
-def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=None):
+def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=None, power=None):
     roster, growth, mains, cfg, tags = load()
     c = cfg["contents"][content]
     enemies = c.get("enemies", [])
@@ -252,6 +272,17 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
                 f'{EL.get(st["dominant_element"], "?")} / 광역 {st["aoe_ratio"]:.0%} / 디펜더 {st["defender_ratio"]:.0%}'
                 f' (일치 {len(hits)}건 중 첫 번째)')
     def_pen = c.get("defenderPenalty", cfg["weights"]["defenderPenalty"])
+    _POWK[0] = 1.0
+    if stage and power:
+        rec = st.get("recommended_power")
+        pp = power_penalty(power, rec)
+        if pp:
+            ratio, a, b, warn = pp
+            out(f"전투력 {power:,} / 권장 {rec:,} = {ratio:.1f}% -> " + (f"아군 피해 x{a:.3f}, 적 피해 x{b:.3f}" + (f" [{warn}]" if warn else "") if a < 1 else "보정 없음 (90% 이상)"))
+            if a < 1:
+                _POWK[0] = 1 + cfg["power"]["boost"] * (1 - a)
+                def_pen *= a
+                out("  전투력이 부족해 생존·지원(회복·보호막은 보정 없음)을 더 중시해 추천합니다(추정)")
     out(f"== {content} {boss or ''} (적 속성: {'/'.join(sorted({EL[e] for e in enemies})) or '미지정'}) {note}")
     used = set()
     for p in range(1, c.get("parties", 1) + 1):
@@ -287,10 +318,11 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
 if __name__ == "__main__":
     argv = sys.argv[1:]
     opts = {}
-    for flag in ("--owned", "--break", "--stage"):
+    for flag in ("--owned", "--break", "--stage", "--power"):
         if flag in argv:
             i = argv.index(flag)
             opts[flag] = set(argv[i + 1].split(","))
             del argv[i:i + 2]
     recommend(argv[0], argv[1] if len(argv) > 1 else None, opts.get("--owned"), opts.get("--break"),
-              stage=next(iter(opts["--stage"]), None) if "--stage" in opts else None)
+              stage=next(iter(opts["--stage"]), None) if "--stage" in opts else None,
+              power=int(next(iter(opts["--power"]))) if "--power" in opts else None)

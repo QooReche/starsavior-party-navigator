@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """게임 업데이트 후 데이터를 한 번에 다시 만든다(구조도·추천이 데이터에서 자동 갱신되도록).
 사용: python -X utf8 -I tools/update.py <databook main.json> [--no-html]
-  1) data/kinds.json (어나더/코즈믹)   2) synergy_tags.py (기능 태그)   3) tools/build_synergy_pairs.py (스킬 연계)
+  1) data/kinds.json (어나더/코즈믹)·data/power_penalty.json (전투력 보정 표)   2) synergy_tags.py (기능 태그)   3) tools/build_synergy_pairs.py (스킬 연계)
   4) tools/raw/foe.js 가 있으면 tools/build_foe.py (스테이지별 적 정보)   5) build_party_html.py index.html
 입력(저장소에 없음): 팬 데이터북 data/main.js 를 JSON 으로 푼 파일(`window.__SSD.x={...}` 를 json.JSONDecoder().raw_decode 로 파싱),
                     tools/raw/foe.js (데이터북 data/foe.js). 가이드 DB 가 바뀌면 data/db_tier.json·savior_reco.json·saviors_index.json 은 따로 갱신.
@@ -40,6 +40,11 @@ def main():
     with open(os.path.join(ROOT, "data", "kinds.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump(kinds, f, ensure_ascii=False, indent=1)
     print("kinds:", len(kinds))
+    pp = {"_note": "databook topics.pen: [비율하한, 비율상한(만분율), 아군 피해 배율(만분율), 적 피해 배율]. 전투력 비율 = 내 파티 전투력 / 권장 전투력. 90% 이상은 보정 없음. 회복·보호막은 적용 안 됨.",
+          "pen": dbm["topics"]["pen"], "tribe": dbm["topics"]["tribe"]}
+    with open(os.path.join(ROOT, "data", "power_penalty.json"), "w", encoding="utf-8", newline="\n") as f:
+        json.dump(pp, f, ensure_ascii=False, separators=(",", ":"))
+    print("power_penalty:", len(pp["pen"]), "구간")
 
     run("synergy_tags.py", src)
     run(os.path.join("tools", "build_synergy_pairs.py"), src)
