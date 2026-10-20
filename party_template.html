@@ -215,7 +215,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 보세요.</div></div>
-<div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 전투 전망은 장비 없는 Lv200 기준 모델의 확률이며 실전 결과가 아닙니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</div>
+<div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 빠른 계산과 「시뮬로 확인」은 Lv200·표준 육성(가이드 장비 세팅·T2 레전더리 +15·여정·특수 잠재력)의 능력치를 육성 가정 전투력에 맞춰 줄인 모델의 추정이며 실전 결과가 아닙니다(적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정). 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</div>
 <button id="dbtn" type="button" title="보유 구원자·브레이크 스킬 선택" aria-controls="drawer" aria-expanded="false">내 구원자<br>선택 ▸<span id="dcount"></span></button>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 구원자 · 브레이크 스킬</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
@@ -251,7 +251,7 @@ function refreshTabs(){const c=contents[$("content").value];
 function refreshStages(){
  const c=contents[$("content").value],t=$("tab").value,q=$("q").value.trim();
  cur=c.stages.filter(s=>(!t||s.tab===t)&&(!q||s.name.includes(q)||(s.label||"").includes(q)||s.tabLabel.includes(q))).slice(0,400);
- $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}${simHas(c,s)?" ◆":""}</option>`).join("");
+ $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
  showInfo();showPow();if(window._ready)rerun()}
 function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`${EL[e]} ${n}`).join(" / ")}
 function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$("powinfo");POWK=1;
@@ -260,7 +260,7 @@ function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$(
  if(pp.a>=1){el.innerHTML=`<span class="ok">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 보정 없음(90% 이상)</span>`;return}
  el.innerHTML=`<span class="${pp.ratio<70?"bad2":"warn"}">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 아군 피해 ×${pp.a.toFixed(3)}, 적 피해 ×${pp.b.toFixed(3)}${pp.warn?` [${pp.warn}]`:""}</span> <span class="mut">· 회복·보호막은 보정 없음 → 생존·지원을 더 중시해 추천(추정) · 보정 없으려면 ${Math.ceil(s.rp*0.9).toLocaleString()} 이상</span>`}
 function sbText(s){return s&&s.sb&&s.sb.length?` · <span class="mut">시즌 보너스(${esc(s.sbn)}): ${s.sb.map(b=>esc(b.cond)+" "+esc(b.text)).join(" / ")}</span>`:""}
-function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+` <span class="mut">· ◆ = 전투 시뮬 결과가 있는 스테이지</span>`:"해당 스테이지 없음"}
+function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+``:"해당 스테이지 없음"}
 $("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);run()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};$("grow").onchange=()=>{LS.set("grow",$("grow").value);run()};
 
 function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">
@@ -378,78 +378,16 @@ function breakCard(br){
  return `<div class="bbar">${im?`<img src="${im}" alt="">`:`<span style="font-size:72px">${BG[br[1]]||"◆"}</span>`}
   <div><div class="bt">BREAK SKILL</div><b>${esc(br[1])}</b>${u?'<span class="btag">미출시 표기</span>':""}<div class="bx">${esc(br[2])}</div><div class="mut">직업 구성 기준 추정 추천</div></div></div>`}
 
-// ---------------- P4 전투 시뮬 결과(사전 계산 data/sim/*.json, 필요할 때 불러옴)
+// ---------------- 표시 모드(오토/수동)·시험용 훅
 let MODE="auto";
 window.PN={last:null};
-const SIM={idx:null,idxErr:null,files:{}};
-function simLoadIndex(){return fetch("data/sim/index.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{SIM.idx=j}).catch(e=>{SIM.idxErr=String(e)})}
-function simFile(key){if(SIM.files[key]!==undefined)return SIM.files[key];if(!SIM.idx||!SIM.idx.contents[key])return null;
- SIM.files[key]="loading";fetch("data/sim/"+SIM.idx.contents[key].file,{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})
-  .then(j=>{SIM.files[key]=j;refreshStageMarks();rerun()}).catch(e=>{SIM.files[key]={error:String(e)};rerun()});return "loading"}
-function simHas(c,s){const f=SIM.files[c.key];return !!(f&&f.stages&&f.stages[s.tab+"|"+s.name])}
-function refreshStageMarks(){const c=contents[$("content").value],sel=$("stage");if(!cur)return;[...sel.options].forEach((o,i)=>{const s=cur[i];if(!s)return;const t=`${s.label||s.name}${s.lv?" Lv"+s.lv:""}${simHas(c,s)?" ◆":""}`;if(o.textContent!==t)o.textContent=t})}
-function stageSim(c,st){
- if(SIM.idxErr)return {state:"error",msg:location.protocol==="file:"?"로컬 파일(file://)로 열면 시뮬 결과를 불러올 수 없습니다 — 웹 주소나 로컬 서버로 여세요":"시뮬 결과 목록을 불러오지 못했습니다("+SIM.idxErr+")"};
- if(!SIM.idx)return {state:"loading"};
- const f=simFile(c.key);if(f===null)return {state:"nostage"};if(f==="loading")return {state:"loading"};
- if(f.error)return {state:"error",msg:"시뮬 결과 파일을 불러오지 못했습니다("+f.error+")"};
- if(f.schema_version!==SIM.idx.schema_version)return {state:"version",msg:"시뮬 결과 파일 형식이 목록과 달라 표시하지 않습니다"};
- const rec=f.stages[st.tab+"|"+st.name];if(!rec)return {state:"nostage"};
- // 실행 정보는 스테이지마다(부분 재생성 때 다른 실행의 결과가 섞일 수 있음) — 추천 입력 해시가 페이지와 같아야 표시
- if(!rec.meta||rec.meta.sel!==D.selver)return {state:"version",msg:"이 스테이지의 시뮬 결과가 지금 페이지 데이터와 버전이 달라 표시하지 않습니다"};
- return {state:"ok",rec,file:f}}
 const ckey=combo=>combo.map(x=>x.s.key).sort().join(",");
 function arrangeOf(combo){const [fr,bk]=place(combo),L=leaderPick(combo);return {order:[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key),lead:L?L.x.s.key:null}}
 // 관문 순위(build_sim_results.gate_key 와 같은 규칙): 계산 가능 -> 클리어 확률 5%p 묶음 -> 처치 턴 -> 근사 점수
-function gateKey(r,a){if(!r||!r.g)return [1,0,1e9,-a];return [0,-Math.floor(r.c*20+1e-9),r.t!=null?r.t:1e9,-a]}
 function cmpArr(x,y){for(let i=0;i<x.length;i++){if(x[i]<y[i])return -1;if(x[i]>y[i])return 1}return 0}
-function grade(r){if(!r||!r.g)return null;const c=r.c,w=r.w;
- if(c<0.4||w>=0.25)return ["위험","g-risk","✖"];if(c<0.7||w>=0.1)return ["불안","g-shaky","▲"];if(c>=0.9&&w<0.05)return ["안정","g-safe","✔"];return ["보통","g-ok","●"]}
 const pct=v=>Math.round(v*100);
 const fmtT=t=>t==null?"—":(Math.round(t*10)/10).toFixed(1);
-function dBadge(v,unit,goodWhenNeg){if(v==null||Math.abs(v)<(unit==="턴"?0.05:0.005))return "";const good=goodWhenNeg?v<0:v>0;
- const txt=unit==="턴"?`${v>0?"+":"−"}${Math.abs(v).toFixed(1)}턴`:`${v>0?"+":"−"}${Math.abs(Math.round(v*100))}%p`;return `<span class="delta ${good?"up":"down"}">${txt}</span>`}
 const POLTXT={boss_first:"보스 먼저",lowest_hp:"보호막+HP 가장 낮은 적 직접 지정",any_attack:"노바 4개가 모이면 다음 공격 스킬",ult_only:"궁극기에만"};
-function forecast(c,st,ss,t,p,party){
- if(ss.state==="loading")return `<div class="forecast" data-state="loading"><span class="mut">전투 시뮬 결과 불러오는 중…</span></div>`;
- if(ss.state==="error"||ss.state==="version")return `<div class="forecast" data-state="${ss.state}"><span class="nochip">시뮬 결과 없음</span> <span class="mut">${esc(ss.msg)}</span></div>`;
- if(ss.state==="nostage")return `<div class="forecast" data-state="nostage"><span class="nochip">시뮬 미계산 스테이지</span> <span class="mut">이 스테이지는 전투 시뮬을 미리 돌리지 않았습니다(대표 스테이지만 계산 — ◆ 표시). 근사 점수로만 고른 팀입니다.</span></div>`;
- const rec=ss.rec;
- if(rec.gate===false)return `<div class="forecast" data-state="unsupported"><span class="nochip">계산 불가</span> <span class="mut">이 스테이지 적의 생존 기믹을 시뮬레이터가 아직 지원하지 않아 확률을 내지 않습니다: ${esc((rec.why||[]).join(", ")||"미지원 효과")}</span></div>`;
- if(!t.rec)return `<div class="forecast" data-state="nosim"><span class="nochip">근사 점수만 · 시뮬 없음</span> <span class="mut">${t.why==="mismatch"?"편성 순서·리더가 사전 계산과 달라 결과를 쓰지 않습니다.":"보유 구원자 선택으로 바뀐 팀이라 미리 돌린 결과가 없습니다."} 숫자는 지어내지 않습니다.</span></div>`;
- const A=t.rec.auto,M=t.rec.man,man=MODE==="manual";const r=man&&M&&M.g?M:A;
- if(!r||!r.g)return `<div class="forecast" data-state="unsupported"><span class="nochip">계산 불가</span> <span class="mut">${esc(((r&&r.us)||[]).join(", ")||"계산 실패")}</span></div>`;
- const pr=rec.parties[p-1]||{};const g=grade(r);const ci=r.ci||[r.c,r.c];
- const nt=Math.round(r.c*10);
- const d=man&&M&&M.d?M.d:null;
- const fdS=r.fd&&r.nd<0.9?BYKEY[r.fd.k]:null;
- const tlim=rec.tl;const axMax=Math.max(tlim||0,(r.tr?r.tr[1]:r.t||1)*1.3,4);
- const wipe=r.w>=0.1?` <span class="wchip">전멸 위험</span>`:"";
- const hint=!man&&M&&M.g&&M.d&&((M.d.t!=null&&M.d.t<=-0.05)||(M.d.c!=null&&M.d.c>=0.01))?`<div class="fs">수동이면 ${M.d.t!=null&&Math.abs(M.d.t)>=0.05?(M.d.t<0?"−":"+")+Math.abs(M.d.t).toFixed(1)+"턴":""}${M.d.c&&Math.abs(M.d.c)>=0.005?` 클리어 ${M.d.c>0?"+":"−"}${Math.abs(pct(M.d.c))}%p`:""}</div>`:"";
- const tiles=`<div class="ftiles">
-  <div class="ft" data-k="clear"><div class="fl">클리어 확률${wipe}</div><div class="fv">${pct(r.c)}%${d?dBadge(d.c,"%p",false):""}</div>
-   <div class="fs">10판 중 ${nt}판 · <span class="grade ${g[1]}">${g[2]} ${g[0]}</span></div>
-   <div class="bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct(r.c)}" aria-label="클리어 확률 ${pct(r.c)}%"><i style="width:${pct(r.c)}%"></i><span class="ci" style="left:${ci[0]*100}%;width:${Math.max(0.5,(ci[1]-ci[0])*100)}%" title="반복 시뮬의 퍼짐(95% 범위) ${pct(ci[0])}~${pct(ci[1])}%"></span></div></div>
-  <div class="ft" data-k="ttk"><div class="fl">처치 턴</div><div class="fv">${r.t!=null?fmtT(r.t)+"턴":"—"}${d?dBadge(d.t,"턴",true):""}</div>
-   <div class="fs">${r.tr?`보통 ${fmtT(r.tr[0])}~${fmtT(r.tr[1])}턴`:"클리어한 판 없음"}${tlim?` · 제한 ${tlim}턴`:""}</div>
-   ${r.tr?`<div class="axis" aria-hidden="true"><span class="rg" style="left:${r.tr[0]/axMax*100}%;width:${Math.max(1,(r.tr[1]-r.tr[0])/axMax*100)}%"></span><span class="md" style="left:${r.t/axMax*100}%"></span>${tlim&&tlim<=axMax?`<span class="lim" style="left:${tlim/axMax*100}%"></span>`:""}</div>`:""}
-   <div class="fs" style="font-size:12px">모델 기준 턴 · 클리어한 판만</div>${hint}</div>
-  <div class="ft" data-k="death"><div class="fl">먼저 쓰러지는 구원자</div>${fdS?`<div class="fd">${face(fdS)}<div><b>${esc(fdS.name)}</b><div class="fs">${r.fd.t!=null?fmtT(r.fd.t)+"턴쯤 · ":""}${pct(r.fd.p)}%</div></div></div>`:`<div class="fv" style="font-size:16px">아무도 안 쓰러짐</div><div class="fs">${pct(r.nd)}% 판에서 전원 생존</div>`}</div>
-  <div class="ft" data-k="wipe"><div class="fl">전멸 확률</div><div class="fv" style="font-size:20px">${pct(r.w)}%</div><div class="fs">시간 초과 ${pct(r.to)}%</div></div>
- </div>`;
- const notes=[];
- if(t.zeroAll)notes.push(`<div class="assume" data-k="allzero">⚠ 장비 없는 Lv200 모델에서는 지금 보이는 시뮬 후보 ${t.zeroAll}팀 모두 클리어 0판(${man?"수동":"오토"}, 이 팀 0/${r.n}판) — 클리어 추천은 유보합니다(실전에서 못 깬다는 뜻은 아님).</div>`);
- if(pr.close&&t.isPick)notes.push(`<div class="mut">· 1·2위 차이가 반복 시뮬의 퍼짐 안이라 우열이 확실하지 않습니다.</div>`);
- const sens=(pr.sens||[]).filter(s=>!s.man&&s.id!=="base"),base=(pr.sens||[]).find(s=>s.id==="base"),inC=(pr.cont||[]).includes(t.key);
- let asm="";
- if(sens.length&&inC){const fl=sens.filter(s=>s.flip);
-  const rows=sens.map(s=>`<tr><td>${esc(s.label)}</td><td>${base&&base.c[t.key]!=null?pct(base.c[t.key])+"%":"—"} → ${s.c[t.key]!=null?pct(s.c[t.key])+"%":"—"}</td><td>${s.flip?`<b class="bad">바뀜</b> → ${esc(teamName(s.top))}`:"그대로"}</td></tr>`).join("");
-  asm=`<details class="assume ${fl.length?"":"ok"}"><summary>${fl.length?`⚠ 이 추천 순위는 <b>${fl.map(s=>esc(s.label)).join(", ")}</b> 가정에 기댑니다 — 가정을 바꾸면 1위가 바뀝니다`:"✔ 주요 가정을 바꿔도 1위 유지"} · 규칙 보기</summary>
-   <table><tr><th>가정을 바꾸면</th><th>이 팀 클리어(기본 → 변경, ${rec.meta.runs.sens}판)</th><th>1위</th></tr>${rows}</table>
-   <div class="mut">반복 시뮬의 퍼짐(위 막대의 음영)과 규칙을 몰라서 생기는 불확실성(이 표)은 따로 봅니다. 적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정입니다.</div></details>`}
- else asm=`<div class="assume" data-k="assume-generic">⚠ 클리어 확률은 「적 공격에도 ×1.85 피해식」·「전투 시작 때 쿨타임이 꽉 참」 가정에 크게 기댑니다(실측 전).</div>`;
- const meta=`<div class="meta">표본 ${r.n}판(${man?"수동 정책":"오토"}) · 시드 ${rec.meta.seed} · 데이터 ${esc(rec.meta.patch)} · 규칙 ${esc(rec.meta.sv.rules)} · 엔진 ${esc(rec.meta.sv.engine)}${rec.meta.quick?" · 시험용 적은 판 수":""} · ${esc(SIM.idx.conditions)}</div>`;
- return `<div class="forecast" data-state="ok"><div class="fhead"><b>전투 전망</b><span class="mchip ${man?"man":""}">${man?"수동 · 서순 기준":"오토 전투 기준"}</span>${t.keep?`<span class="mchip">보존 후보(${esc({sustain:"회복·보호막",defender:"디펜더",random:"무작위"}[t.keep]||t.keep)})</span>`:""}</div>${tiles}${notes.join("")}${asm}${meta}</div>`}
 function teamName(key){return key.split(",").map(k=>BYKEY[k]?BYKEY[k].name:k).join("·")}
 function seqTable(t,order){
  const rec=t.rec;if(!rec||!rec.man||!rec.man.g)return `<div class="seq" data-state="none"><span class="mut">수동 결과가 없습니다.</span></div>`;
@@ -472,25 +410,12 @@ function seqTable(t,order){
  return `<div class="seq" data-state="ok">${head}<div class="mut" style="margin-bottom:4px">선택 정책의 ${kind} — 최적 순서가 아니라 예시입니다. 행 = 모델 기준 턴(속도 100 유닛이 한 번 행동하는 시간), 칸 = 위 카드 순서. ${sq.turns>12?`${sq.turns}턴 중 12턴까지만 표시.`:""}</div>
   <div class="sgrid" role="table" aria-label="수동 서순">${hd}${vis}</div>${rest?`<details><summary>전체 서순 보기(총 ${Math.min(sq.turns,12)}턴)</summary><div class="sgrid" role="table">${rest}</div></details>`:""}</div>`}
 // 표시 모드의 결과(수동이면 수동 결과, 없으면 오토) — 비교할 때 양쪽에 같은 모드를 쓴다
-const resOf=x=>x&&x.rec?(MODE==="manual"&&x.rec.man&&x.rec.man.g?x.rec.man:x.rec.auto):null;
 // 모바일 서순 칸의 짧은 대상 표시(전체 이름은 title)
 const tgShort=tg=>tg==="전체"||tg==="보스"?tg:tg.startsWith("아군 ")?"아:"+tg.slice(3,5):tg.slice(0,3);
-function candList(p,list,mainKey,approxOnly){
- const main=list.find(x=>x.key===mainKey),mr=resOf(main);
- const rowOf=(x,i)=>{const r=resOf(x);
-  const faces=x.order.map(k=>BYKEY[k]?face(BYKEY[k]):"").join("");
-  const diff=r&&r.g&&mr&&mr.g&&x.key!==mainKey?`${dBadge(r.c-mr.c,"%p",false)||'<span class="mut">±0</span>'} ${r.t!=null&&mr.t!=null?dBadge(r.t-mr.t,"턴",true):""}`:"";
-  return `<tr data-key="${esc(x.key)}"${r&&r.g&&mr&&mr.g?` data-dc="${(r.c-mr.c).toFixed(4)}"`:""}><td>${i+1}</td><td><div class="faces" title="${esc(teamName(x.key))}">${faces}</div></td><td>${r&&r.g?`${pct(r.c)}% · ${fmtT(r.t)}턴`:r?'<span class="nochip">계산 불가</span>':'<span class="nochip">시뮬 없음</span>'} ${diff}</td><td class="mut">근사 ${x.rank!=null?x.rank+1+"위":"-"}${x.keep?" · 보존":""}</td><td>${x.key===mainKey?'<span class="mut">표시 중</span>':`<button type="button" data-pick="${p}" data-key="${esc(x.key)}">이 팀 보기</button>`}</td></tr>`};
- const sim=list.filter(x=>x.rec),apx=approxOnly;
- return `<details class="cands"><summary>다른 후보 ${sim.length+apx.length-1}팀 보기 (시뮬 평가 ${sim.length} · 미계산 근사 ${apx.length})</summary>
-  ${sim.length?`<div class="mut" style="margin-top:6px">시뮬로 평가한 후보(클리어 확률 → 처치 턴 순)</div><table>${sim.map(rowOf).join("")}</table>`:""}
-  ${apx.length?`<div class="mut" style="margin-top:6px">미계산 근사 후보 — 시뮬 결과가 없어 위 후보와 우열을 비교할 수 없습니다</div><table>${apx.map(rowOf).join("")}</table>`:""}</details>`}
 const PICK={};
 // 빠른 계산(재설계 v1): data/quick.json + quick.js. 모든 조합을 평균 육성 가정으로 판정 → 깰만함 > 빠듯함 > 어려움, 남은 생명력, 처치 턴, 근사 점수 순
 const QK={d:null,err:null};
-fetch("data/quick.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{QK.d=j;if(window.renderPw)renderPw();rerun()}).catch(e=>{QK.err=String(e);rerun()});
-// ?pick=sim = 옛 기본 선택(사전 계산 1위)을 화면 아래 상세에 씀 — 사전 계산 화면 시험용(퇴역 전까지)
-const QLEGACY=new URLSearchParams(location.search).get("pick")==="sim";
+fetch("data/quick.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{QK.d=Quick.mergeSm(j);if(window.renderPw)renderPw();rerun()}).catch(e=>{QK.err=String(e);rerun()});
 window.PN_Q_SV=()=>QK.d?QK.d.sv:{};
 const QV={safe:"깰만함",tight:"빠듯함",hard:"어려움"},QO={safe:2,tight:1,hard:0};
 // 「내 구원자」 서랍의 구원자별 전투력(선택). 비우면 육성 가정을 쓴다. 이 브라우저에만 저장
@@ -513,7 +438,7 @@ function quickRank(cands,defPen,qi){
   let best=null;for(const t of out){t.st=Quick.ladderStep(t.ek,qi.qs,sv,D.pen,prm,"tight",best,t.b);if(t.st!=null&&(best==null||t.st<best))best=t.st}
   if(best==null)return out;
   const top=out.filter(t=>t.st===best);top.forEach(t=>{t.ng=Quick.needGrowth(t.ek,qi.qs,sv,D.pen,prm,"tight",t.st,t.b)});
-  top.sort((a,b)=>a.ng*a.q.power-b.ng*b.q.power||b.v-a.v);
+  top.sort((a,b)=>a.ng-b.ng||b.v-a.v);
   const rest=out.filter(t=>t.st!=null&&t.st!==best).sort((a,b)=>a.st-b.st||b.v-a.v).slice(0,2);
   rest.forEach(t=>{t.ng=Quick.needGrowth(t.ek,qi.qs,sv,D.pen,prm,"tight",t.st,t.b)});
   const used=new Set(top.concat(rest));return top.concat(rest,out.filter(t=>!used.has(t)))}
@@ -525,45 +450,53 @@ function quickWeak(t){const sv=QK.d.sv,us=t.ek.map(k=>sv[k]),w=[];
 const r100=x=>(Math.round(x/100)*100).toLocaleString();
 // 보여 줄 팀(기본 3, 「다음 3팀」마다 +3, 최대 9). 모든 팀에 시뮬 결과가 있으면 시뮬 클리어 확률 순으로 다시 세운다(시뮬이 빠른 계산보다 우선)
 const moreKey=(st,p)=>st.tab+"|"+st.name+"|"+p;
-const simCls=r=>r.clear>=0.9?"safe":r.clear>=0.5?"tight":"hard";
+const simCls=r=>{const c=r.clear!=null?r.clear:r.c;return c>=0.9?"safe":c>=0.5?"tight":"hard"};
+const simMain=r=>r&&MODE==="manual"&&r.man?{clear:r.man.c}:r;
 function quickRows(qt,st,p){const n=(SIMQ.more[moreKey(st,p)]||3),rows=[];const seen=new Set();
  for(const t of qt){const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);rows.push(t);if(rows.length>=n)break}
- const sr=rows.map(t=>SIMQ.res[simSig(st,t)]);
- if(sr.every(Boolean)){const ix=rows.map((t,i)=>i);ix.sort((a,b)=>sr[b].clear-sr[a].clear||a-b);return ix.map(i=>rows[i])}
- return rows}
+ const sr=rows.map(t=>simMain(SIMQ.res[simSig(st,t)]));
+ let out=rows;
+ if(sr.every(Boolean)){const ix=rows.map((t,i)=>i);ix.sort((a,b)=>sr[b].clear-sr[a].clear||a-b);out=ix.map(i=>rows[i])}
+ if(JOINT&&JOINT[p]){const i=out.findIndex(t=>t.keys.slice().sort().join(",")===JOINT[p]);if(i>0)out=[out[i]].concat(out.slice(0,i),out.slice(i+1))}
+ return out}
 function quickBox(p,qt,qi,st,pickKey){if(!qt||!qt.length)return "";
  const rows=quickRows(qt,st,p),P0=rows[0].q.power,ratio=st.rp?P0/st.rp*100:100,npw=rows.reduce((a,t)=>Math.max(a,t.b.powers?Object.keys(t.b.powers).length:0),0);
  for(const t of rows)if(t.vd==="hard"&&t.ng===undefined)t.ng=Quick.needGrowth(t.ek,qi.qs,QK.d.sv,D.pen,qi.prm,"tight",null,t.b);
  const uniq=new Set(qt.map(t=>t.keys.slice().sort().join(","))).size;
- const row=(t,i)=>{const k=t.keys.slice().sort().join(","),w=quickWeak(t),need=t.ng!=null?t.ng*t.q.power:null,sr=SIMQ.res[simSig(st,t)],vd=sr?simCls(sr):t.vd;
+ const row=(t,i)=>{const k=t.keys.slice().sort().join(","),w=quickWeak(t),need=t.ng!=null?t.ng*t.q.power:null,sr=simMain(SIMQ.res[simSig(st,t)]),vd=sr?simCls(sr):t.vd;
   const ng=need!=null?` · <b>파티 전투력 약 ${r100(need)}</b>${st.rp?`(권장의 ${Math.round(need/st.rp*100)}%)`:""}면 ${t.vd==="hard"?"깸":"깰만함"}`:(t.vd==="hard"?" · 지금의 4배로도 어려움":"");
   return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?face(BYKEY[x]):"").join("")}</div>
    <span class="qv ${vd}" title="${sr?"전투 시뮬 기준":"빠른 계산 기준"}">${QV[vd]}</span><span class="qt">${sr&&vd!==t.vd?`<span class="mut">빠른 계산 「${QV[t.vd]}」 → 시뮬 결과로 바꿈 · </span>`:""}${t.q.clear?`약 ${t.q.rounds}턴 · 남는 생명력 ${Math.round(t.q.left*100)}%`:`${t.q.rounds}턴째 ${t.q.why==="time"?"시간 초과":"전멸"}`}${ng}${w.length?`<br><span class="mut">${w.map(esc).join(" · ")}</span>`:""}${simCell(p,t,st)}</span>
    ${k===pickKey?'<span class="mut">아래에 표시 중</span>':`<button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">이 팀 보기</button>`}</div>`};
- return `<div class="qbox" data-k="quick"><div class="qh"><b style="color:var(--fg)">이 스테이지 추천 (빠른 계산)</b> · 가정: 1안 파티 전투력 ${Math.round(P0).toLocaleString()}${st.rp?` (권장 ${st.rp.toLocaleString()}의 ${Math.round(ratio)}%)`:""}${npw?` · 구원자별 전투력 입력 ${npw}명 반영`:""}${rows[0].ek.some(k=>k.includes("@"))?" · 개화 반영":""} · 레벨·장비·돌파·스킬 레벨은 이 전투력에 맞춘 평균 육성으로 봄${(()=>{const cb=QK.d.calib,g=cb&&cb.groups&&cb.groups[qi.ck==="cosmo"||qi.ck==="rush"?qi.ck:"base"];return g?` · 이 콘텐츠에서 빠른 계산과 전투 시뮬의 클리어 판정 ${Math.round(g.acc*100)}% 일치(${g.samples.toLocaleString()}건)`:""})()}${QK.d.params?"":' · <b style="color:var(--bad)">계수 없음</b>'}</div>${rows.map(row).join("")}${simBar(p,rows,st,uniq>rows.length)}</div>`}
+ return `<div class="qbox" data-k="quick"><div class="qh"><b style="color:var(--fg)">이 스테이지 추천 (빠른 계산)</b>${JOINT?" · 파티 1·2를 함께 골라 둘 다 깨는 조합 우선":""} · 가정: 1안 파티 전투력 ${Math.round(P0).toLocaleString()}${st.rp?` (권장 ${st.rp.toLocaleString()}의 ${Math.round(ratio)}%)`:""}${npw?` · 구원자별 전투력 입력 ${npw}명 반영`:""}${rows[0].ek.some(k=>k.includes("@"))?" · 개화 반영":""} · 레벨·장비·돌파·스킬 레벨은 이 전투력에 맞춘 평균 육성으로 봄${(()=>{const cb=QK.d.calib,g=cb&&cb.groups&&cb.groups[qi.ck==="cosmo"||qi.ck==="rush"?qi.ck:"base"];return g?` · 이 콘텐츠에서 빠른 계산과 전투 시뮬의 클리어 판정 ${Math.round(g.acc*100)}% 일치(${g.samples.toLocaleString()}건)`:""})()}${QK.d.params?"":' · <b style="color:var(--bad)">계수 없음</b>'}</div>${rows.map(row).join("")}${simBar(p,rows,st,uniq>rows.length)}</div>`}
 
 // ---- 브라우저 시뮬 확인(sim_worker.js + Pyodide): 위 3팀을 확률 전투 엔진으로 다시 돌린다. 누를 때만 내려받는다(처음 약 14MB)
 // 안전장치(codex 상담): 제한 시간·취소(작업자 종료), 실패해도 빠른 계산은 그대로, 결과는 추정치+95% 구간, 입력이 바뀌면 이전 결과 무효
 const SIMQ={w:null,busy:null,res:{},msg:"",err:"",n:100,seed:1,LOAD_MS:180000,RUN_MS:240000,timer:null,more:{},
  auto:(()=>{try{return localStorage.getItem("pn.simauto")==="1"}catch(e){return false}})()};
 function simAuto(on){SIMQ.auto=on;try{localStorage.setItem("pn.simauto",on?"1":"0")}catch(e){}}
-function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv,pen=Quick.penMult(D.pen,t.q.ratio);
- // 육성 가정 = 기준(Lv200·장비 없음) 공·생·방 × k. 역보정은 아군 공격력 ×(아군 배율), 생명력 ÷(적 배율)로 근사(엔진에 역보정이 없음)
+// 시뮬 공통 옵션: 표준 육성(P5 build) 위에 공·생·방만 육성 가정 배수로 바꾸고, 역보정은 엔진이 스탯으로 전투력을 계산해 적용
+const SIMOPT={build:"standard",rules_override:{power_penalty:"model"}};
+function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
+ // 육성 가정 = 기준(Lv200·표준 육성) 공·생·방 × k (전투력이 공·생·방에 비례하는 식이라 엔진이 계산하는 전투력 = 가정한 전투력)
  // 구원자별 전투력 = quick.js evaluate 와 같은 배분(입력값, 없으면 base × 기준 전투력 비율). 반올림 = 버림(x+0.5) — 파이썬 gen_quick_calib 와 같게
  let rs=0;for(const x of t.ek)rs+=sv[x][5];const base=t.base||rs*Quick.MUL;
- const units=ar.order.map(k0=>{const k=ekey(k0),u=sv[k],pw=(t.b.powers&&t.b.powers[k])||null;
+ // 시뮬 칸 = [전열1, 전열2, 후열1, 후열2]. 화면 카드 순서(ar.order) = [후열1, 전열1, 전열2, 후열2] 라 바꿔 넣는다(tools/build_sim_results.arrange 와 같은 규칙)
+ const so=[ar.order[1],ar.order[2],ar.order[0],ar.order[3]];
+ const units=so.map(k0=>{const k=ekey(k0),u=sv[k],pw=(t.b.powers&&t.b.powers[k])||null;
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
-  return {key:k,stats_override:{atk:R(u[1]*kk*pen[0]),hp:R(u[2]*kk/pen[1]),def:R(u[3]*kk)}}});
- return {units,leader:ar.order.indexOf(ar.lead)}}
-const simSig=(st,t)=>JSON.stringify([contents[$("content").value].key,st.tab,st.name,simParty(t),SIMQ.n]);
+  return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
+ const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null}}
+const simSig=(st,t)=>JSON.stringify([contents[$("content").value].key,st.tab,st.name,simParty(t),SIMQ.n,MODE]);
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
+ const mn=r.man?`<br><span class="qsim" data-man="1">수동(서순대로): <b class="qv ${simCls(r.man)}">클리어 ${Math.round(r.man.c*100)}%</b> <span class="mut">(${r.man.n}판${r.man.t!=null?` · 약 ${Math.round(r.man.t)}턴`:""} · 아래 서순 참고)</span></span>`:"";
  const cls=r.clear>=0.9?"safe":r.clear>=0.5?"tight":"hard";
- return `<br><span class="qsim" data-sim="${cls}">시뮬 확인: <b class="qv ${cls}">클리어 ${Math.round(r.clear*100)}%</b> <span class="mut">(95% 구간 ${Math.round(r.ci[0]*100)}~${Math.round(r.ci[1]*100)}%, ${r.n}판${r.ttk!=null?` · 약 ${Math.round(r.ttk)}턴`:""}${r.first?` · 먼저 쓰러짐 ${esc(r.first.split("#")[0])} ${Math.round(r.first_p*100)}%`:""}${r.gate===false?" · 미지원 기믹 있음":""})</span></span>`}
+ return `<br><span class="qsim" data-sim="${cls}">시뮬 확인: <b class="qv ${cls}">클리어 ${Math.round(r.clear*100)}%</b> <span class="mut">(95% 구간 ${Math.round(r.ci[0]*100)}~${Math.round(r.ci[1]*100)}%, ${r.n}판${r.ttk!=null?` · 약 ${Math.round(r.ttk)}턴`:""}${r.first?` · 먼저 쓰러짐 ${esc(r.first.split("#")[0])} ${Math.round(r.first_p*100)}%`:""}${r.gate===false?" · 미지원 기믹 있음":""})</span></span>${mn}`}
 function simBar(p,rows,st,hasMore){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
  const st8=SIMQ.busy===p?`<span class="mut" data-k="simstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
   SIMQ.err&&SIMQ.errP===p?`<span class="bad" data-k="simstate">시뮬 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
-  all?`<span class="mut" data-k="simstate">위 ${rows.length}팀 시뮬 완료 — 확률은 모델 추정이며 «이 ${rows.length}팀 안에서의 비교»입니다</span>${rows.every(t=>SIMQ.res[simSig(st,t)].clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다음 3팀도 시뮬로 확인</button>`:""}${SIMQ.auto?` <button type="button" class="sec" data-simauto="0" title="스테이지를 바꿀 때마다 자동으로 시뮬">자동 확인 끄기</button>`:""}`:
+  all?`<span class="mut" data-k="simstate">위 ${rows.length}팀 시뮬 완료 — 확률은 모델 추정이며 «이 ${rows.length}팀 안에서의 비교»입니다</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다음 3팀도 시뮬로 확인</button>`:""}${SIMQ.auto?` <button type="button" class="sec" data-simauto="0" title="스테이지를 바꿀 때마다 자동으로 시뮬">자동 확인 끄기</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}">위 ${rows.length}팀 시뮬로 확인</button> <span class="mut">팀당 ${SIMQ.n}판 · 처음 한 번 계산 엔진 내려받기(약 14MB) · 보통 10~40초</span>`;
  return `<div class="qrow simbar">${st8}</div>`}
 function simStop(msg){if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);if(msg){SIMQ.err=msg;SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage}SIMQ.busy=null;run()}
@@ -584,24 +517,38 @@ function simStart(p){const c=contents[$("content").value],st=cur&&cur[$("stage")
   if(m.type==="error")simStop(m.msg)};
  SIMQ.w.onerror=e=>simStop("작업자 오류: "+(e.message||"알 수 없음"));
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
- const req={type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:SIMQ.n,seed:SIMQ.seed,
+ const req={type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:SIMQ.n,seed:SIMQ.seed,options:SIMOPT,mode:MODE,
   teams:rows.map(t=>({key:t.keys.slice().sort().join(","),party:simParty(t)}))};
  SIMQ.lastReq={req,sigs};SIMQ.w.postMessage(req);
  run()}
-const LASTQ={};window.PN_SIMQ=SIMQ;   // 시험용(브라우저 결과 = 파이썬 결과 대조)
+const LASTQ={};
+// 2파티 콘텐츠(코스모 게이트): 파티 1을 먼저 고르고 남은 인원으로 2를 고르면 2가 약해진다 → 상위 후보 중 겹치지 않는 두 팀을
+// 「약한 쪽 판정」이 가장 좋은 쌍으로 함께 고른다(같으면 두 팀 판정 합 → 약한 쪽 남는 생명력 → 근사 점수 합)
+let JOINT=null;
+// 팀 점수: 시뮬 결과가 있으면 시뮬(클리어 확률), 없으면 빠른 계산(판정·남는 생명력). 못 깨는 팀은 필요 배수가 작을수록 좋고, 4배로도 못 깨면 가장 나쁨
+function qVd(t,st){const r=simMain(SIMQ.res[simSig(st,t)]);return r?simCls(r):t.vd}
+function qScore(t,st,qi){const r=simMain(SIMQ.res[simSig(st,t)]),vd=qVd(t,st);
+ if(r)return QO[vd]*10+r.clear;
+ if(vd!=="hard")return QO[vd]*10+t.q.left;
+ if(t.ng===undefined)t.ng=Quick.needGrowth(t.ek,qi.qs,QK.d.sv,D.pen,qi.prm,"tight",null,t.b);
+ return t.ng==null?-99:-t.ng}
+function jointPick(c,st,own,defPen){if((c.parties||1)!==2)return null;const qi=quickIn(c,st);if(!qi)return null;
+ const rsEl=(CFG.restrict[c.name]||{})[st.tab];
+ const c0=R.filter(s=>own.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
+ if(c0.length<8)return null;
+ const top=[],seen=new Set();for(const t of quickRank(c0,defPen,qi)){const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);top.push(t);if(top.length>=80)break}
+ let best=null;const sc=new Map(top.map(t=>[t,qScore(t,st,qi)])),vo=new Map(top.map(t=>[t,QO[qVd(t,st)]]));
+ for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++){const a=top[i],b=top[j];if(a.keys.some(k=>b.keys.includes(k)))continue;
+  const sa=sc.get(a),sb=sc.get(b),key=[Math.min(vo.get(a),vo.get(b)),vo.get(a)+vo.get(b),Math.min(sa,sb),a.v+b.v];
+  if(!best||cmpArr(key,best.key)>0)best={key,a:sa>=sb?a:b,b:sa>=sb?b:a}}
+ return best?{1:best.a.keys.slice().sort().join(","),2:best.b.keys.slice().sort().join(",")}:null}
+function jointFirst(qt,p){if(!JOINT||!qt)return;const i=qt.findIndex(t=>t.keys.slice().sort().join(",")===JOINT[p]);if(i>0)qt.unshift(qt.splice(i,1)[0])}window.PN_SIMQ=SIMQ;   // 시험용(브라우저 결과 = 파이썬 결과 대조)
 $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-sim]");if(b){simAuto(true);simStart(+b.dataset.sim);return}
  const mo=e.target.closest("button[data-more]");if(mo){const st=cur&&cur[$("stage").value],p=+mo.dataset.more,k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run();simStart(p);return}
  if(e.target.closest("button[data-simauto]")){simAuto(false);run();return}
  if(e.target.closest("button[data-simcancel]"))simStop("취소함")});
 
-function buildCands(c,st,cands,defPen,ss,p,used){
- const top=topParties(cands,defPen,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i}));
- const seen=new Set(top.map(x=>ckey(x.combo)));
- if(ss.state==="ok"){const kp=(ss.rec.parties[p-1]||{}).keep||[];const byK=Object.fromEntries(cands.map(x=>[x.s.key,x]));
-  for(const [k,kind] of kp){if(seen.has(k))continue;const m=k.split(",").map(x=>byK[x]);if(m.some(x=>!x))continue;seen.add(k);const [v,got]=teamValue(m,defPen);top.push({combo:m,v,got,rank:null,keep:kind})}}
- return top.map(x=>{const key=ckey(x.combo),ar=arrangeOf(x.combo);let rec=null,why=null;
-  if(ss.state==="ok"){const tr=ss.rec.teams[key];if(!tr)why="none";else if(tr.o.join(",")!==ar.order.join(",")||tr.L!==ar.lead)why="mismatch";else rec=tr}
-  return Object.assign(x,{key,order:ar.order,lead:ar.lead,rec,why})})}
+function buildCands(cands,defPen){return topParties(cands,defPen,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
 function run(){
  for(const k in LASTQ)delete LASTQ[k];
  const c=contents[$("content").value],st=cur&&cur[$("stage").value];
@@ -609,41 +556,36 @@ function run(){
  const own=new Set([...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));
  const have=[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);
  GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty)*(POWK>1?Math.max(0.1,1-(POWK-1)/CFG.power.boost):1);
- const ss=stageSim(c,st),sid=c.key+"|"+st.tab+"|"+st.name;
+ const sid=c.key+"|"+st.tab+"|"+st.name;
  const used=new Set();let html="";const allParties=[];
+ JOINT=jointPick(c,st,own,defPen);
  for(let p=1;p<=(c.parties||1);p++){
   const rsEl=(CFG.restrict[c.name]||{})[st.tab];
   const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
   if(cands.length<4){html+=`<div class="party">파티 ${p}: 후보가 4명 미만입니다.</div>`;break}
-  const list=buildCands(c,st,cands,defPen,ss,p,used);
-  const qi=quickIn(c,st),qt=qi?quickRank(cands,defPen,qi):null;LASTQ[p]=qt&&qt.length?{rows:quickRows(qt,st,p)}:null;
+  const list=buildCands(cands,defPen);
+  const qi=quickIn(c,st),qt=qi?quickRank(cands,defPen,qi):null;jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{rows:quickRows(qt,st,p)}:null;
   let qpick=null;
-  if(qt&&qt.length&&!QLEGACY){const q0=LASTQ[p].rows[0],qk=q0.keys.slice().sort().join(",");qpick=list.find(x=>x.key===qk);
-   if(!qpick){const ar=arrangeOf(q0.combo);let rec=null;if(ss.state==="ok"){const tr=ss.rec.teams[qk];if(tr&&tr.o.join(",")===ar.order.join(",")&&tr.L===ar.lead)rec=tr}
-    qpick={combo:q0.combo,v:q0.v,got:q0.got,rank:null,key:qk,order:ar.order,lead:ar.lead,rec,why:rec?null:"none"};list.push(qpick)}
-   for(const t of LASTQ[p].rows.slice(1)){const k=t.keys.slice().sort().join(",");if(list.find(x=>x.key===k))continue;const ar=arrangeOf(t.combo);list.push({combo:t.combo,v:t.v,got:t.got,rank:null,key:k,order:ar.order,lead:ar.lead,rec:null,why:"none"})}}
-  // 동점이면 지금 옵션(역상성 회피·전투력)으로 계산한 근사 점수 x.v (사전 계산과 같은 소수 3자리) — 사전 계산 값 rec.a 는 기본 옵션 점수라 쓰지 않음
-  const r3=v=>Math.round(v*1000)/1000;
-  const simmed=list.filter(x=>x.rec&&x.rec.auto).sort((x,y)=>cmpArr(gateKey(x.rec.auto,r3(x.v)),gateKey(y.rec.auto,r3(y.v)))||(x.key<y.key?-1:1));
-  // 「후보 전부 0판」은 지금 보이는 시뮬 후보·표시 모드로 다시 판단
-  const zr=simmed.map(resOf).filter(r=>r&&r.g),zeroAll=zr.length&&zr.every(r=>r.c===0)?zr.length:0;
-  if(p===1)PN.last={mode:MODE,simmed:simmed.map(x=>({key:x.key,v:x.v,a:x.rec.a,auto:x.rec.auto}))};
-  const approxOnly=list.filter(x=>!(x.rec&&x.rec.auto)).sort((x,y)=>(x.rank??99)-(y.rank??99));
+  if(qt&&qt.length){for(const t of LASTQ[p].rows){const k=t.keys.slice().sort().join(",");if(list.find(x=>x.key===k))continue;list.push({combo:t.combo,v:t.v,got:t.got,rank:null,key:k})}
+   const qk=LASTQ[p].rows[0].keys.slice().sort().join(",");qpick=list.find(x=>x.key===qk)}
+  const approxOnly=list.slice().sort((x,y)=>(x.rank??99)-(y.rank??99));
   const forced=PICK[sid+"|"+p]&&list.find(x=>x.key===PICK[sid+"|"+p]);
-  const pick=forced||qpick||simmed[0]||approxOnly[0];pick.isPick=!forced;pick.zeroAll=pick.rec?zeroAll:0;
+  const pick=forced||qpick||approxOnly[0];pick.isPick=!forced;
   const party=pick.combo;party.forEach(x=>used.add(x.s.key));allParties.push(party);
   const v=pick.v,got=pick.got;
   const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
   const br=pickBreak(party,c.name,have);
-  const r=pick.rec?(MODE==="manual"&&pick.rec.man&&pick.rec.man.g?pick.rec.man:pick.rec.auto):null;
-  const apx1=approxOnly.find(x=>x.rank===0);
-  const apxBox=ss.state==="ok"&&apx1&&apx1.key!==pick.key&&simmed.length?`<div class="approxbox" data-k="approx-top">근사 점수 1위 팀은 시뮬 결과가 없습니다: <b>${esc(teamName(apx1.key))}</b> <span class="nochip">시뮬 없음</span> <button type="button" class="sec" data-pick="${p}" data-key="${esc(apx1.key)}">이 팀 보기</button><div class="mut">위 추천은 「시뮬로 평가한 후보 중」 1위입니다. 두 팀의 우열은 비교할 수 없습니다.</div></div>`:"";
-  const seq=MODE==="manual"&&pick.rec?seqTable(pick,[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key)):"";
+  // 이 팀의 브라우저 시뮬 결과(있으면): 카드에 피해 기여·쓰러질 확률, 수동이면 서순
+  const qr=LASTQ[p]&&LASTQ[p].rows.find(t=>t.keys.slice().sort().join(",")===pick.key),sr=qr&&SIMQ.res[simSig(st,qr)];
+  const r=sr&&sr.u?{g:true,u:sr.u}:null;
+  let seq="";
+  if(MODE==="manual")seq=sr&&sr.man?seqTable({rec:{auto:{c:sr.clear,t:sr.ttk},man:{g:true,c:sr.man.c,t:sr.man.t,pol:sr.man.pol,d:{c:sr.man.c-sr.clear,t:sr.man.t!=null&&sr.ttk!=null?sr.man.t-sr.ttk:null}},seq:sr.man.seq}},[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key))
+   :`<div class="seq" data-state="pending"><span class="mut">수동 서순은 위 「시뮬로 확인」을 누르면 이 팀으로 계산해 보여 줍니다.</span></div>`;
   html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}"><div class="phead"><b>파티 ${p}</b><span class="ordernote">인게임 편성 순서(왼쪽부터) <span class="why2">· 근사 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10(장비 제외 상대 비교)</span></span></div>
-   ${quickBox(p,qt,qi,st,pick.key)}${!QLEGACY&&qt&&qt.length&&!pick.rec?"":forecast(c,st,ss,pick,p,party)}${apxBox}${pairNotes(party)}${leadNote(LD)}${gimNote(party)}${synSummary(party)}
+   ${quickBox(p,qt,qi,st,pick.key)}${pairNotes(party)}${leadNote(LD)}${gimNote(party)}${synSummary(party)}
    <div class="teamtags">${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
-   <div class="rowcards">${card(bk[0],"back",alt(bk[0]),r)}${card(fr[0],"front",alt(fr[0]),r)}${card(fr[1],"front",alt(fr[1]),r)}${card(bk[1],"back",alt(bk[1]),r)}</div>${seq}${list.length>1?candList(p,simmed,pick.key,approxOnly):""}${breakCard(br)}</div>`}
+   <div class="rowcards">${card(bk[0],"back",alt(bk[0]),r)}${card(fr[0],"front",alt(fr[0]),r)}${card(fr[1],"front",alt(fr[1]),r)}${card(bk[1],"back",alt(bk[1]),r)}</div>${seq}${breakCard(br)}</div>`}
  const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
  if(tl.length){const byKey=BYKEY;const gcodes=new Set(GIMACT.map(g=>g[0]));
   html+=`<div class="party"><b>다른 전략</b> <span class="mut">(커뮤니티 편성, 보유 시 참고 · 위 추천과 별개)</span><div class="arch">${tl.map(([k,t])=>{
@@ -661,7 +603,7 @@ document.querySelectorAll('input[name="mode"]').forEach(x=>x.addEventListener("c
 Object.assign(window.PN,{topKeys(ownKeys,k){const c=contents[$("content").value],st=cur[$("stage").value];const own=new Set(ownKeys);GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];
  const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty);const rsEl=(CFG.restrict[c.name]||{})[st.tab];
  const cands=R.filter(s=>own.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
- return topParties(cands,defPen,k).map(x=>({key:ckey(x.combo),v:x.v}))},sim:SIM,mode:()=>MODE});
+ return topParties(cands,defPen,k).map(x=>({key:ckey(x.combo),v:x.v}))},mode:()=>MODE});
 renderOwn();
 function renderPw(){const own=[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k).filter(k=>BYKEY[k]);
  $("pwl").innerHTML=own.map(k=>{const s=BYKEY[k];const bl=QK.d&&QK.d.sv[k+BLV]?`<label class="bl" title="개화(SSR)로 강화했으면 체크"><input type="checkbox" data-bloom="${esc(k)}"${BLOOM[k]?" checked":""}> 개화</label>`:"";
@@ -715,5 +657,4 @@ function drawGraph(){
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
 {const qs=new URLSearchParams(location.search);setMode(qs.get("mode")==="manual"?"manual":qs.get("mode")==="auto"?"auto":(LS.get("mode")==="manual"?"manual":"auto"),false)}
 {const gv=LS.get("grow");if(gv&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
-simLoadIndex().then(()=>{simFile(contents[$("content").value].key);run()});
 </script></body></html>

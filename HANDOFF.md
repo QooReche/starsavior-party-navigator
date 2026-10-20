@@ -7,7 +7,14 @@
 - 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
 - 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
 
-## ▶ 재설계 2단계 완료 (2026-10-20 밤) — 다음 세션은 여기부터
+## ▶ 재설계 3단계 완료 (2026-10-20 밤) — 다음 세션은 여기부터
+- 결과 = `docs/redesign_v1.md` 「3단계 결과」, 남은 일 = `docs/BACKLOG.md`.
+- 엔진에 P5(표준 장비·브레이크·역보정) 합침, 수동 서순·코스모 공동 선택·보스 스테이지 보정, 옛 사전 계산 퇴역(`data/sim` 없음).
+- 브라우저 시뮬 진입점 = `battlesim/web.py`(run_auto·run_manual). 시뮬 칸 순서 = [전열1, 전열2, 후열1, 후열2] — 화면 카드 순서와 다르다(버그였음).
+- 시험: `tests/quick_test.py`·`tests/web_test.py`·`tests/p5_test.py`·`tests/p3_test.py`·`tests/rules_test.py`·`tests/shim_compat_test.py`·`tests/golden_check.py`, 브라우저 `tests/e2e/test_page.py`(12개).
+- 계수 다시 맞추기: `tools/gen_quick_calib.py --runs 40 --per-content 400`(약 15분, 작업자 2) → `tools/calibrate_quick.py --write`.
+
+## ▶ 재설계 2단계 완료 (2026-10-20 밤) — 이전 기록
 - 결과·근거 = `docs/redesign_v1.md` 「2단계 결과」. 브라우저 시뮬(Pyodide `sim_worker.js` + `sim/manifest.json`), 구원자별 전투력·개화 입력, 빠른 계산 재보정(육성 가정 표본 `tools/gen_quick_calib.py` → `tools/calibrate_quick.py --write`, 콘텐츠별 계수 `pc`), 화면 테마.
 - **게임 업데이트 때**: `python -X utf8 -I tools/update.py` 하나면 빠른 계산 재료·시뮬 파일 목록까지 다시 만든다. 엔진(`battlesim/*.py`)을 고치면 `tools/build_simpack.py` 도. 계수를 다시 맞추려면 `gen_quick_calib.py`(6분) → `calibrate_quick.py --write`.
 - 시험: `tests/quick_test.py`, `tests/e2e/test_page.py`(20개, 브라우저 시뮬 시험은 인터넷 필요), 엔진 시험들.

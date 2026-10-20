@@ -1,7 +1,7 @@
 // 빠른 계산(재설계 v1 1단계) — battlesim/quick.py 를 그대로 옮긴 것. 둘을 같이 고친다(tests/quick_test.py 가 같은 입력·같은 결과를 대조).
 // 재료 = data/quick.json(tools/build_quick_data.py), 계수 = quick.json params(tools/calibrate_quick.py).
 (function(g){
- const MUL=1.06,MAX_ROUNDS=50,SAFE=0.5;
+ const MUL=1.0,MAX_ROUNDS=50,SAFE=0.5;
  const dr=d=>d>0?d/(d+3000.0):0.0;
  function penMult(pen,ratio){const r=Math.floor(ratio*10000+1e-6);
   for(const [lo,hi,a,e] of pen)if(lo<=r&&r<hi)return [a/10000,e/10000];
@@ -17,11 +17,11 @@
   let P=0;for(const x of pi)P+=x;
   const ks=units.map((u,i)=>pi[i]/(u[5]*MUL));
   const k=P/ref;const ratio=bp?P/bp:1.0;
-  const [pa,pe]=usePen?penMult(pen,ratio):[1.0,1.0];
+  const [pa,pe]=usePen&&!stage.np?penMult(pen,ratio):[1.0,1.0];
   let hpMax=0;units.forEach((u,i)=>{hpMax+=u[2]*ks[i]});
   let dsum=0;units.forEach((u,i)=>{dsum+=u[3]*ks[i]});const teamDr=dr(dsum/units.length);
-  const sOut=units.map((u,i)=>u[6]*ks[i]*u[4]/100*p.A*pa);
-  const xOut=units.map((u,i)=>Math.max(0.0,(u[7]-u[6])/2)*ks[i]*u[4]/100*p.A*pa);
+  const sOut=units.map((u,i)=>u[6]*ks[i]*p.A*pa);
+  const xOut=units.map((u,i)=>Math.max(0.0,(u[7]-u[6])/2)*ks[i]*p.A*pa);
   const healers=units.filter(u=>u[8].includes("h")||u[8].includes("s")).length;
   const heal=healers*p.H*hpMax;
   let hp=hpMax;const limit=stage.lt||MAX_ROUNDS;let rnd=0;
@@ -36,7 +36,7 @@
      focus[0]-=sOut[i]*(1-dr(focus[1]));
      if(xOut[i])for(const f of alive)if(f!==focus)f[0]-=xOut[i]*(1-dr(f[1]))}
     let dmg=0;for(const f of foes)if(f[0]>0)dmg+=(f[3]+f[4])*f[2]/100;
-    hp-=dmg*1.85*(1-teamDr)*p.B*pe;
+    hp-=dmg*1.85*(1-teamDr)*p.B*pe*(stage.m||1.0);
     if(hp<=0)return {ok:true,clear:false,rounds:rnd,left:0.0,k,power:P,ratio,why:"wipe"};
     hp=Math.min(hpMax,hp+heal)}}
   return {ok:true,clear:true,rounds:rnd,left:hp/hpMax,k,power:P,ratio,why:""}}
@@ -56,6 +56,8 @@
   const a=LADDER[i-1],b=LADDER[i];
   for(let j=1;j<FINE;j++){const g=a+(b-a)*j/FINE;if(ok(ev(keys,stage,sv,pen,params,base,g)))return g}
   return b}
- const Q={MUL,SAFE,LADDER,evaluate,verdict,ladderStep,needGrowth,penMult};
+ // 스테이지별 난이도 보정(sm)을 st 에 m 으로 넣는다 — quick.py merge_sm 과 같게(화면·시험 모두 이걸 쓴다)
+ function mergeSm(q){for(const [ck,d] of Object.entries(q.sm||{}))for(const [sk,m] of Object.entries(d))if(q.st[ck]&&q.st[ck][sk])q.st[ck][sk].m=m;return q}
+ const Q={MUL,SAFE,LADDER,evaluate,verdict,ladderStep,needGrowth,penMult,mergeSm};
  if(typeof module!=="undefined"&&module.exports)module.exports=Q;else g.Quick=Q;
 })(this);

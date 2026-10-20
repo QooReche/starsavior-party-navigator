@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 """빠른 계산 계수(A 아군 피해·B 적 피해·H 회복)를 확률 엔진 결과에 맞춘다.
 
-정답지 두 가지(둘 다 시뮬 오토 클리어 확률 c ≥ 0.5 를 「클리어」로 봄):
- ① data/sim/*.json — P4 사전 계산(Lv200·장비 없음, 육성 배수 k=1, 역보정 없음)
- ② tools/raw/quick_calib.json — tools/gen_quick_calib.py 가 육성 가정 0.7~1.5배로 다시 돌린 표본(화면 시뮬과 같은 스탯 변환)
-②가 없으면 ①만 쓴다. 보스 콘텐츠(코스모 게이트 cosmo, 플래시 포인트 rush)는 성격이 달라 계수를 따로 맞춘다(pc).
+정답지 = tools/raw/quick_calib.json — tools/gen_quick_calib.py 가 육성 가정 0.6~2.0배·표준 육성·엔진 역보정으로 돌린 시뮬 표본
+(화면 브라우저 시뮬과 같은 조건). 시뮬 오토 클리어 확률 c ≥ 0.5 를 「클리어」로 본다. 보스 콘텐츠(코스모 게이트 cosmo, 플래시 포인트 rush)는 성격이 달라 계수를 따로 맞춘다(pc).
 점수 = 균형 정확도(클리어·실패 각각 맞힌 비율의 평균). --write 면 data/quick.json 의 params(기본)·pc(콘텐츠별)·calib 에 쓴다.
 
 사용: python -X utf8 -I tools/calibrate_quick.py [--write]
 """
-import glob
 import itertools
 import json
 import os
@@ -31,31 +28,14 @@ def group(ck):
 
 
 def dataset(q):
-    """-> [(콘텐츠, 스테이지, keys, stage, c, evaluate 인자)]"""
+    """-> [(콘텐츠, 스테이지, keys, stage, c, evaluate 인자)] — tools/gen_quick_calib.py 가 만든 육성 가정별 시뮬 표본"""
     rows = []
-    for fp in sorted(glob.glob(os.path.join(ROOT, 'data', 'sim', '*.json'))):
-        if fp.endswith('index.json'):
+    for r in json.load(open(CALIB, encoding='utf-8'))['rows']:
+        ck, sk, tk, g, c = r[:5]
+        st = q['st'].get(ck, {}).get(sk)
+        if c is None or not st:
             continue
-        d = json.load(open(fp, encoding='utf-8'))
-        ck = d['content']
-        for sk, sd in d['stages'].items():
-            st = q['st'].get(ck, {}).get(sk)
-            if not st:
-                continue
-            for tk, t in sd['teams'].items():
-                a = t.get('auto') or {}
-                keys = tk.split(',')
-                if a.get('c') is None or any(k not in q['sv'] for k in keys):
-                    continue
-                ref = quick._add(q['sv'][k][5] for k in keys) * quick.MUL
-                rows.append((ck, sk, keys, st, a['c'], dict(power=ref, use_pen=False)))
-    if os.path.exists(CALIB):
-        for r in json.load(open(CALIB, encoding='utf-8'))['rows']:
-            ck, sk, tk, g, c = r[:5]
-            st = q['st'].get(ck, {}).get(sk)
-            if c is None or not st:
-                continue
-            rows.append((ck, sk, tk.split(','), st, c, dict(growth=g)))
+        rows.append((ck, sk, tk.split(','), st, c, dict(growth=g)))
     return rows
 
 
@@ -92,11 +72,52 @@ def holdout(rows, q, pen):
     return score(test, q, pen, fit(fit_rows, q, pen)[1])[0]
 
 
+M_GRID = [0.4, 0.55, 0.7, 0.85, 1.0, 1.2, 1.4, 1.7, 2.0, 2.5, 3.0, 4.0]
+SM_MIN = 6          # 스테이지 표본이 이보다 적으면 보정하지 않음
+
+
+def fit_stage_m(srows, q, pen, prm):
+    """한 스테이지 표본으로 적 피해 배수 m 하나를 고른다(맞힌 수 최대, 같으면 1 에 가까운 값)"""
+    best = None
+    for m in M_GRID:
+        hit = 0
+        for ck, sk, keys, st, c, kw in srows:
+            r = quick.evaluate(keys, dict(st, m=m), q['sv'], pen, prm, **kw)
+            hit += (c >= 0.5) == r['clear']
+        key = (hit, -abs(m - 1.0))
+        if best is None or key > best[0]:
+            best = (key, m)
+    return best[1]
+
+
+def stage_factors(gr, q, pen, prm):
+    """보스 콘텐츠: 스테이지마다 m. 검증 = 스테이지 안에서 표본을 번갈아 반으로 나눠 앞 반으로 맞추고 뒤 반에서 잼(같은 스테이지·다른 팀/육성)"""
+    by = {}
+    for r in gr:
+        by.setdefault(r[1], []).append(r)
+    sm, test_before, test_after = {}, [], []
+    for sk, srows in sorted(by.items()):
+        if len(srows) < SM_MIN:
+            continue
+        a, b = srows[0::2], srows[1::2]
+        m_half = fit_stage_m(a, q, pen, prm)
+        for ck, _, keys, st, c, kw in b:
+            test_before.append((c >= 0.5) == quick.evaluate(keys, dict(st, m=1.0), q['sv'], pen, prm, **kw)['clear'])
+            test_after.append((c >= 0.5) == quick.evaluate(keys, dict(st, m=m_half), q['sv'], pen, prm, **kw)['clear'])
+        m = fit_stage_m(srows, q, pen, prm)
+        if m != 1.0:
+            sm[sk] = m
+    n = max(1, len(test_before))
+    return sm, sum(test_before) / n, sum(test_after) / n, len(test_before)
+
+
 def main():
     q, pen = quick.load(ROOT)
+    for d in q['st'].values():          # 보정을 다시 맞추므로 기존 m 은 지운다
+        for st in d.values():
+            st.pop('m', None)
     rows = dataset(q)
-    n2 = sum(1 for r in rows if 'growth' in r[5])
-    print('대조 표본', len(rows), '(Lv200 표본', len(rows) - n2, '+ 육성 가정 표본', n2, ')')
+    print('대조 표본', len(rows))
     out, calib = {}, {}
     for gname in ('base', 'cosmo', 'rush'):
         gr = [r for r in rows if group(r[0]) == gname]
@@ -109,6 +130,17 @@ def main():
                             hold_bacc=round(hold, 3), acc_growth=acc_g and round(acc_g, 3), pos=P, neg=N)
         print('[%s] %s 표본 %d 전체 일치 %.3f 균형 %.3f(반반 검증 %.3f) 클리어 맞힘 %.3f 실패 맞힘 %.3f 육성 가정 표본 일치 %s'
               % (gname, prm, len(gr), acc, bacc, hold, sens, spec, acc_g and '%.3f' % acc_g))
+    sm_all = {}
+    for gname in GROUPS:
+        gr = [r for r in rows if group(r[0]) == gname]
+        sm, before, after, nt = stage_factors(gr, q, pen, out[gname])
+        sm_all[gname] = sm
+        for sk, m in sm.items():
+            q['st'][gname][sk]['m'] = m
+        acc_m = score(gr, q, pen, out[gname])[5]
+        calib[gname].update(acc_stage=round(acc_m, 3), stage_hold_before=round(before, 3), stage_hold_after=round(after, 3), stage_m=len(sm))
+        calib[gname]['acc'] = round(acc_m, 3)
+        print('[%s] 스테이지 보정 %d곳 -> 전체 일치 %.3f / 같은 스테이지 반반 검증 %.3f -> %.3f (%d건)' % (gname, len(sm), acc_m, before, after, nt))
     tot = sum(c['samples'] for c in calib.values())
     acc_all = sum(c['acc'] * c['samples'] for c in calib.values()) / tot
     print('전체 일치(가중) %.3f' % acc_all)
@@ -117,8 +149,9 @@ def main():
         d = json.load(open(path, encoding='utf-8'))
         d['params'] = out['base']
         d['pc'] = {k: out[k] for k in GROUPS}
+        d['sm'] = sm_all
         d['calib'] = dict(samples=tot, acc=round(acc_all, 3), groups=calib,
-                          against='확률 엔진 오토 클리어 확률 ≥ 0.5 — P4(Lv200·장비 없음) + 육성 가정 0.7~1.5배 표본')
+                          against='확률 엔진 오토 클리어 확률 ≥ 0.5 — 표준 육성 + 육성 가정 0.6~2.0배 표본(엔진 역보정)')
         tmp = path + '.tmp'
         with open(tmp, 'w', encoding='utf-8', newline='\n') as f:
             json.dump(d, f, ensure_ascii=False, separators=(',', ':'))

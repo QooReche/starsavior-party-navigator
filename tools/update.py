@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """게임 업데이트 후 데이터를 한 번에 다시 만든다(구조도·추천이 데이터에서 자동 갱신되도록).
-사용: python -X utf8 -I tools/update.py [databook main.json(기본 rawdata/databook_main.json)] [--no-html] [--sim] [--sim-workers N]
+사용: python -X utf8 -I tools/update.py [databook main.json(기본 rawdata/databook_main.json)] [--no-html]
   1) data/kinds.json (어나더/코즈믹)·data/power_penalty.json (전투력 보정 표)   2) synergy_tags.py (기능 태그)   3) tools/build_synergy_pairs.py (스킬 연계)
   4) tools/raw/foe.js 가 있으면 tools/build_foe.py (스테이지별 적 정보)
   5) tools/build_quick_data.py (빠른 계산 재료 data/quick.json, 계수 보존) + tools/build_simpack.py (브라우저 시뮬 파일 목록 sim/manifest.json)
-  6) --sim 이면 tools/build_sim_results.py (옛 사전 계산 data/sim/*.json — 선택. 재설계 뒤 화면은 빠른 계산 + 브라우저 시뮬이 기본이라
-     안 돌려도 된다. 버전이 다른 옛 결과는 화면이 알아서 숨긴다. 빠른 계산 계수를 다시 맞출 때만 정답지로 씀)
-  7) build_party_html.py index.html
+  6) build_party_html.py index.html
+  옛 사전 계산(build_sim_results.py, data/sim)은 2026-10-20 퇴역 — 화면은 빠른 계산 + 브라우저 시뮬.
+  엔진 규칙·적 데이터가 크게 바뀌면 빠른 계산 계수를 다시 맞춘다: tools/gen_quick_calib.py(약 15분) -> tools/calibrate_quick.py --write
 입력(저장소에 없음): 팬 데이터북 data/main.js 를 JSON 으로 푼 파일(`window.__SSD.x={...}` 를 json.JSONDecoder().raw_decode 로 파싱),
                     tools/raw/foe.js (데이터북 data/foe.js). 가이드 DB 가 바뀌면 data/db_tier.json·savior_reco.json·saviors_index.json 은 따로 갱신.
 수동 보정은 data/synergy_overrides.json 에 적으면 다시 돌려도 유지된다."""
@@ -68,9 +68,6 @@ def main():
     print(f"시너지 쌍: {len(old_syn)} -> {len(new_syn)} (추가 {len(set(n) - set(o))}, 삭제 {len(set(o) - set(n))}, 강도/신뢰 변경 {len(changed)}), 신규 구원자 키 {sorted(new_chars) or '없음'}")
     run(os.path.join("tools", "build_quick_data.py"))
     run(os.path.join("tools", "build_simpack.py"))
-    if "--sim" in sys.argv:
-        w = sys.argv[sys.argv.index("--sim-workers") + 1] if "--sim-workers" in sys.argv else "1"
-        run(os.path.join("tools", "build_sim_results.py"), "--workers", w)
     if "--no-html" not in sys.argv:
         run("build_party_html.py", "index.html")
 

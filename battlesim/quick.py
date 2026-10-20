@@ -11,12 +11,13 @@
 - 아군: 매 라운드 단일 피해는 보스 → (없으면) 생명력 가장 낮은 적에게, 광역 몫은 나머지 적 각각에게. 방어율 = def/(def+3000).
 - 적: 살아 있는 적의 압박 합 × 1.85 × 속도/100 × (1 − 아군 평균 방어율)을 파티 생명력 «합»에서 깎는다(개별 사망은 안 봄 → 시뮬 단계 몫).
 - 회복: 힐·보호막 꼬리표 구원자 1명당 매 라운드 최대 생명력의 H.
+- 스테이지 난이도 보정 m(보스 콘텐츠): 그 스테이지의 시뮬 표본으로 맞춘 적 피해 배수(빠른 계산이 못 보는 기믹 몫, quick.json sm).
 """
 import json
 import math
 import os
 
-MUL = 1.06          # 전투력 마지막 배율(돌파 +6%, 스킬 레벨 합 0 가정 — 기준과 입력 양쪽에 같게 들어가 k 에선 상쇄)
+MUL = 1.0           # sv 의 기준 전투력이 이미 엔진 식(돌파·스킬 레벨 배율 포함, api.party_power)이라 추가 배율 없음
 PARAMS = dict(A=1.0, B=1.0, H=0.0)     # tools/calibrate_quick.py 결과로 덮어씀(data/quick.json 의 params)
 MAX_ROUNDS = 50
 SAFE = 0.5          # 남은 생명력 비율이 이 이상이면 「깰만함」
@@ -65,11 +66,12 @@ def evaluate(keys, stage, sv, pen, params=None, growth=1.0, power=None, use_pen=
     ks = [pi[i] / (units[i][5] * MUL) for i in range(len(units))]
     k = P / ref
     ratio = P / bp if bp else 1.0
-    pa, pe = pen_mult(pen, ratio) if use_pen else (1.0, 1.0)
+    pa, pe = pen_mult(pen, ratio) if use_pen and not stage.get('np') else (1.0, 1.0)
     hp_max = _add(units[i][2] * ks[i] for i in range(len(units)))
     team_dr = dr(_add(units[i][3] * ks[i] for i in range(len(units))) / len(units))
-    s_out = [units[i][6] * ks[i] * units[i][4] / 100 * p['A'] * pa for i in range(len(units))]
-    x_out = [max(0.0, (units[i][7] - units[i][6]) / 2) * ks[i] * units[i][4] / 100 * p['A'] * pa for i in range(len(units))]
+    # 턴당 피해(s·a)는 이미 「속도 100 기준 한 턴」 동안의 피해라 속도를 또 곱하지 않는다
+    s_out = [units[i][6] * ks[i] * p['A'] * pa for i in range(len(units))]
+    x_out = [max(0.0, (units[i][7] - units[i][6]) / 2) * ks[i] * p['A'] * pa for i in range(len(units))]
     healers = sum(1 for u in units if ('h' in u[8] or 's' in u[8]))
     heal = healers * p['H'] * hp_max
     hp = hp_max
@@ -91,7 +93,7 @@ def evaluate(keys, stage, sv, pen, params=None, growth=1.0, power=None, use_pen=
                         if f is not focus:
                             f[0] -= x_out[i] * (1 - dr(f[1]))
             dmg = _add((f[3] + f[4]) * f[2] / 100 for f in foes if f[0] > 0)
-            hp -= dmg * 1.85 * (1 - team_dr) * p['B'] * pe
+            hp -= dmg * 1.85 * (1 - team_dr) * p['B'] * pe * (stage.get('m') or 1.0)
             if hp <= 0:
                 return dict(ok=True, clear=False, rounds=rnd, left=0.0, k=k, power=P, ratio=ratio, why='wipe')
             hp = min(hp_max, hp + heal)
@@ -150,4 +152,13 @@ def load(root=None):
     root = root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     q = json.load(open(os.path.join(root, 'data', 'quick.json'), encoding='utf-8'))
     pen = json.load(open(os.path.join(root, 'data', 'power_penalty.json'), encoding='utf-8'))['pen']
+    merge_sm(q)
     return q, pen
+
+
+def merge_sm(q):
+    """스테이지별 난이도 보정(sm, tools/calibrate_quick.py)을 st 에 m 으로 넣는다 — 화면(QK 로딩)도 같게"""
+    for ck, d in (q.get('sm') or {}).items():
+        for sk, m in d.items():
+            if sk in q['st'].get(ck, {}):
+                q['st'][ck][sk]['m'] = m

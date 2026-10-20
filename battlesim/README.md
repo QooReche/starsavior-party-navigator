@@ -42,7 +42,7 @@ python -X utf8 -I tools/sim_damage.py simulate ... --rules "{\"target_defender_m
 - 이벤트 한도를 넘으면 `EventLimitError` 가 나고 결과를 돌려주지 않는다.
 - 기대값 엔진(`engine.Sim`, 웹 화력 지표)은 P3 에서 동결 — 새 규칙은 `mc.py` 에만 넣는다(퇴역 조건은 설계 9절).
 
-### P4 — 추천 연결용 사전 계산·수동 정책
+### P4 — 추천 연결용 사전 계산·수동 정책 (사전 계산은 2026-10-20 퇴역 → 브라우저 시뮬 `battlesim/web.py`)
 - 웹이 읽는 결과는 `tools/build_sim_results.py` 가 만든다(`data/sim/index.json` + 콘텐츠별 `data/sim/<콘텐츠>.json`, 설계 `docs/battlesim_design.md` 10절, 결과 보고 `docs/sim_p4_report.md`). 느리므로 기본은 프로세스 1개·낮은 우선순위(Idle).
 - `simulate` 옵션 추가: `run_offset`(판 번호 시작값 — 대표 판 하나만 다시 돌려 타임라인을 얻을 때), `per_run`(판별 [결과, 처치 턴]), `formula_override`(민감도용 공식 상수 임시 교체, 지금은 `COOP_CAP` 만, 끝나면 원복).
 - 규칙 `mc.manual_burst`: 수동일 때 노바 버스트를 쓰는 스킬(`any_attack` = 4개 모이면 다음 공격, `ult_only` = 궁극기에만). `opts.nova_pool='unit'`(개인 풀)이 확률 엔진에서도 실제로 동작한다(민감도용).

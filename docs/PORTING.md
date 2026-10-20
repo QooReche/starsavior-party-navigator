@@ -1,6 +1,6 @@
 # 다른 PC에서 이어서 작업하기
 
-> 전투 시뮬 사전 계산(`data/sim/`)과 브라우저 시험은 맨 아래 7절.
+> 빠른 계산·브라우저 시뮬·시험은 맨 아래 7절. (옛 사전 계산 `data/sim/` 은 2026-10-20 퇴역)
 
 저장소 하나로 작업을 이어갈 수 있게 원본 입력 자료(`rawdata/`)와 도구를 모두 포함했다. 순서대로 하면 같은 결과가 재현된다(2026-10-20 기준 검증: `tools/update.py` 를 처음부터 돌려 시너지 1,120쌍·기믹 44유형·스테이지 3,596개가 그대로 재생성됨).
 
@@ -52,26 +52,27 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 ## 6. 배포
 - GitHub Pages(`main` 브랜치 루트)가 `index.html` 을 서비스한다: https://QooReche.github.io/starsavior-party-navigator/
 - 변경 후 `python -X utf8 -I build_party_html.py index.html` 로 `index.html` 을 다시 만들어 함께 커밋·푸시한다.
-- 전투 전망 결과(`data/sim/*.json`)도 같이 커밋한다. 페이지는 이 파일을 필요할 때 불러온다(`file://` 로 열면 못 불러옴 — 로컬 서버 필요).
+- `data/quick.json`(빠른 계산 재료·계수)과 `sim/manifest.json`(브라우저 시뮬 파일 목록)도 같이 커밋한다. 페이지는 이 파일들을 불러오므로 `file://` 로는 안 열린다(로컬 서버 필요).
+- 저장소 루트 `.nojekyll` 을 지우지 말 것 — 없으면 Pages 가 `__init__.py` 를 숨겨 브라우저 시뮬이 404 로 실패한다.
 
-## 7. 전투 시뮬 사전 계산과 브라우저 시험(P4)
-### 7-1. 사전 계산(느림)
+## 7. 빠른 계산·브라우저 시뮬·시험
+### 7-1. 데이터 갱신(게임 업데이트 때)
 ```
-python -X utf8 -I tools/build_sim_results.py                        # 대표 스테이지 240개 전부(프로세스 1개, 낮은 우선순위 — 약 2시간)
-python -X utf8 -I tools/build_sim_results.py --workers 2             # 2개(이 PC 규칙상 최대 2) — 2026-10-20 실측 65분
-python -X utf8 -I tools/build_sim_results.py --contents cosmo,rush   # 일부 콘텐츠만(그 콘텐츠 파일만 다시 씀)
-python -X utf8 -I tools/build_sim_results.py --stage "cosmo/길레/길레 2단계" --quick   # 한 스테이지만 빠르게(기존 파일에 그 스테이지만 덮어씀 — 다른 스테이지는 각자 실행 정보 meta 유지, 개발용)
-python -X utf8 -I tools/update.py --sim                              # 데이터 재생성 + 사전 계산 + index.html
+python -X utf8 -I tools/update.py          # 태그·연계·적 정보 + 빠른 계산 재료(data/quick.json, 계수 보존) + 시뮬 파일 목록(sim/manifest.json) + index.html
 ```
-- 도구는 스스로 우선순위를 Idle 로 낮춘다(`--normal-priority` 로 끔). 판 수는 `RUNS`(선별 32 → 확정 200, 수동 탐색 16, 민감도 64), 시드 `--seed`(기본 20261020).
-- **데이터가 바뀌면(게임 업데이트, `party_contents.json` 가중치 수정 등) 반드시 다시 돌린다.** 결과의 스테이지마다 추천 입력 데이터의 해시(`meta.sel`)가 들어 있어, 페이지에 내장된 값과 다르면 페이지가 결과를 숨기고 「시뮬 결과 없음」을 보인다(옛 숫자를 보여 주지 않음).
-- 데이터를 다시 받았으면 `tools/build_sim_results.py` 맨 위 `DATA_PATCH` 라벨(화면 메타 줄에 나옴)도 고친다.
-- 결과 해석·범위·가정 = `docs/sim_p4_report.md`, 설계 = `docs/battlesim_design.md` 10절.
+- 엔진 코드(`battlesim/*.py`)를 고쳤으면 `python -X utf8 -I tools/build_simpack.py` 로 목록(내용 해시)을 다시 만든다.
+- 엔진 규칙·적 데이터가 크게 바뀌면 빠른 계산 계수를 다시 맞춘다(작업자 2개·낮은 우선순위):
+```
+python -X utf8 -I tools/gen_quick_calib.py --runs 40 --per-content 400   # 약 15분, tools/raw/quick_calib.json
+python -X utf8 -I tools/calibrate_quick.py --write                       # 콘텐츠별 계수 + 보스 스테이지 보정(sm)
+```
+- 설계·결과 = `docs/redesign_v1.md`, 남은 일 = `docs/BACKLOG.md`.
 
 ### 7-2. 시험
 ```
-python -X utf8 -I tests/p4_test.py           # 사전 계산 스키마·관문 순위·수동 델타·시드 결정성 등(임시 폴더에만 씀, 1~2분)
-python -X utf8 -I tests/golden_check.py && python -X utf8 -I tests/rules_test.py && python -X utf8 -I tests/shim_compat_test.py && python -X utf8 -I tests/p3_test.py
+python -X utf8 -I tests/quick_test.py        # 빠른 계산 Python = JS(300건), 단조성, 역보정, 계수 보존
+python -X utf8 -I tests/web_test.py          # 브라우저 시뮬 진입점(battlesim/web.py), 시뮬 칸 순서, 서순, 목록 파일만으로 실행
+python -X utf8 -I tests/p5_test.py && python -X utf8 -I tests/p3_test.py && python -X utf8 -I tests/rules_test.py && python -X utf8 -I tests/shim_compat_test.py && python -X utf8 -I tests/golden_check.py
 ```
 브라우저 시험(Playwright, 가상환경·브라우저는 저장소 밖에 — C: 가 좁으면 다른 드라이브로):
 ```
@@ -82,5 +83,5 @@ E:\AI_mk2\venv-pw\Scripts\python -m playwright install chromium
 E:\AI_mk2\venv-pw\Scripts\python -X utf8 tests\e2e\test_page.py --shots E:\AI_mk2\work\p4\shots
 ```
 - 시험이 직접 `python -m http.server` 를 127.0.0.1 빈 포트에 띄우고 끝나면 그 프로세스만 끈다. 시험 프로세스·서버·브라우저는 낮은 우선순위로 돈다.
-- 확인 항목: 콘솔 오류 0, 스테이지 전환 시 전망 변경·화면 팀 = 사전 계산 1위, 오토/수동 토글(숫자·서순 표·localStorage·`?mode=manual`), 보유 서랍으로 결과 없는 팀이 되면 「시뮬 없음」 칩(숫자 없음)·서랍 배경 클릭으로 닫힘, 플래시 포인트, 모바일 390×844 가로 스크롤 없음·카드 4열 인게임 순서, 파이썬/JS 근사 상위 10 일치(3 스테이지 × 3 보유 필터). 스크린샷은 `--shots` 폴더.
+- 확인 항목(12개): 콘솔 오류 0·옛 결과 안 부름, 빠른 계산 추천·보유 필터·육성 가정·구원자별 전투력, 브라우저 시뮬(인터넷 필요 — 결과·입력이 파이썬과 같음), 내려받기 차단 시 실패 표시, 자동 확인·시뮬 기준 판정, 수동 서순, 코스모 두 파티 겹침 없음(시뮬 뒤에도), 모바일 390×844, 파이썬/JS 근사 상위 10 일치. 스크린샷은 `--shots` 폴더.
 - 경로가 다르면 `PLAYWRIGHT_BROWSERS_PATH` 만 맞추면 된다(시험은 `E:\AI_mk2\pw-browsers` 가 있으면 그걸 기본으로 씀).

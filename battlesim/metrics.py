@@ -9,10 +9,10 @@ from .starsavior.data import get_db
 from .starsavior.parser import UnitDef
 
 _CACHE = {}
-def unit_def(key, level=200, res_stage=10, star=0, mode='fixed', db=None):
-    ck = (key, level, res_stage, star, mode)
+def unit_def(key, level=200, res_stage=10, star=0, mode='fixed', db=None, build=None):
+    ck = (key, level, res_stage, star, mode, build)
     if ck not in _CACHE:
-        _CACHE[ck] = UnitDef(db or get_db(), key, level, res_stage, star, mode)
+        _CACHE[ck] = UnitDef(db or get_db(), key, level, res_stage, star, mode, build=build)
     return _CACHE[ck]
 
 # ------------------------------------------------------------------ 시나리오 / 지표
@@ -24,20 +24,20 @@ def ref_enemies(n, opts=None):
                  resist=o['enemy_resist']) for i in range(n)]
 
 
-def solo_run(key, n_enemies, turns=10, opts=None, star=0, partners=3):
-    d = unit_def(key, star=star)
+def solo_run(key, n_enemies, turns=10, opts=None, star=0, partners=3, build=None):
+    d = unit_def(key, star=star, build=build)
     defs = [d] + [DummyDef(name='dummy%d' % i) for i in range(partners)]
     sim = Sim(defs, ref_enemies(n_enemies, opts), turns, opts)
     sim.run()
     return sim
 
 
-def unit_metrics(key, turns=10, opts=None, star=0):
+def unit_metrics(key, turns=10, opts=None, star=0, build=None):
     o = dict(DEFAULT_OPTS)
     if opts:
         o.update(opts)
-    s1 = solo_run(key, 1, turns, o, star)
-    s3 = solo_run(key, o['ref_enemy_count'], turns, o, star)
+    s1 = solo_run(key, 1, turns, o, star, build=build)
+    s3 = solo_run(key, o['ref_enemy_count'], turns, o, star, build=build)
     a1, a3 = s1.party[0], s3.party[0]
     res = dict(
         single_dpt=a1.dmg / turns, aoe_dpt=a3.dmg / turns,

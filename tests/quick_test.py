@@ -53,7 +53,7 @@ def py_side(q, pen, cs):
 
 JS = r"""
 const fs=require('fs');const Q=require(process.argv[2]);
-const q=JSON.parse(fs.readFileSync(process.argv[3],'utf8'));const pen=JSON.parse(fs.readFileSync(process.argv[4],'utf8')).pen;
+const q=Q.mergeSm(JSON.parse(fs.readFileSync(process.argv[3],'utf8')));const pen=JSON.parse(fs.readFileSync(process.argv[4],'utf8')).pen;
 const cs=JSON.parse(fs.readFileSync(process.argv[5],'utf8'));const r9=x=>Math.round(x*1e9)/1e9;
 const out=cs.map(c=>{const st=q.st[c.ck][c.sk];const r=Q.evaluate(c.keys,st,q.sv,pen,q.params,c.growth,null,true,c.powers);const ng=Q.needGrowth(c.keys,st,q.sv,pen,q.params,"safe",null,{growth:c.growth,powers:c.powers});
  return [r.ok,r.ok?r.clear:null,r.ok?r.rounds:null,r9(r.left||0),ng==null?null:r9(ng)]});
