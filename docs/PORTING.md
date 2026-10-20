@@ -25,6 +25,7 @@ python -m http.server 8000 --bind 127.0.0.1                       # http://127.0
 | `data/` | 엔진·웹이 쓰는 생성 데이터 | `tools/update.py` 가 재생성. 수동 보정은 `synergy_overrides.json` |
 | `party_contents.json` | 모든 가중치·콘텐츠 규칙(임의값 포함) | 보정은 여기 |
 | `party_reco.py`, `party_template.html`, `build_party_html.py` | 엔진(콘솔), 웹 템플릿(JS 엔진 포트 포함), 웹 생성기 | **엔진은 py 와 JS 두 곳에 있으므로 점수식을 고치면 둘 다 고칠 것** |
+| `battlesim/` | 전투 시뮬레이터 패키지(화력 지표·파티 시뮬, 규칙 수치 `battlesim/rules/default.json`) | `tools/sim_damage.py` 는 호환 껍데기. 회귀 시험 `tests/golden_check.py`, 설명 `battlesim/README.md` |
 | `tools/` | 데이터 생성 도구 | `update.py` 가 진입점 |
 | `assets/` | 아이콘·초상화·일러스트·브레이크 스킬 이미지 | 이미지 사용은 사용자가 허락 |
 | `docs/` | 조사 자료·검수 문서(`research.md`, `gimmick_review.md`, `weight_check.md`, `corridor_rules.md` 등) | 근거 확인용 |

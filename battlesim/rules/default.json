@@ -1,0 +1,25 @@
+{
+ "_note": "전투 규칙 수치(기본 프로필). 항목마다 value=값, grade=근거 등급(data=게임 데이터·데이터북 계산기 / official=공식 공지 / community=커뮤니티 실측·공략 / assumed=가정), note=근거·설명. 근거 정리는 docs/battlesim_design.md 3절, docs/sim_report.md 2절. 실수형은 소수점을 지켜 적는다(1400.0 처럼; 정수로 바꾸면 출력 JSON 이 달라진다).",
+ "formula": {
+  "BASE_MULT": {"value": 1.85, "grade": "data", "note": "피해식 상수 (databook 계산기)"},
+  "DEF_K": {"value": 3000.0, "grade": "data", "note": "방어율 = def/(def+3000) (PvE, databook 계산기)"},
+  "AOE_DIV": {"value": 4.0, "grade": "data", "note": "전체 대상 스킬은 /4 (대상 1명당, databook 계산기)"},
+  "TICK_PER_TURN": {"value": 100.0, "grade": "assumed", "note": "모델 정의: 속도 100 유닛이 1턴(=1라운드)에 한 번 행동하는 틱 수"},
+  "COOP_CAP": {"value": 0.30, "grade": "data", "note": "stat.cap.NST_RATE_CROSS_ATTACK = 3000 (협공 확률 상한 30%). 왈츠 아세라 문구와 충돌 -> 대안 1.00 은 민감도로", "alt": [1.0]}
+ },
+ "opts": {
+  "unknown_cond_p": {"value": 0.5, "grade": "assumed", "note": "해석 못 한 조건 키의 가중치"},
+  "debuff_success": {"value": 0.9, "grade": "assumed", "note": "디버프 성공률 상수(적 효과 저항을 몰라서). P2 에서 효과 적중 공식으로 교체 예정"},
+  "inf_hp_frac": {"value": 0.6, "grade": "assumed", "note": "적 HP 무한(기준 적)일 때 HP% 조건은 60% 로 취급"},
+  "break_p": {"value": 0.0, "grade": "assumed", "note": "브레이크 상태 확률. 규칙(+15%)은 확인됐으나 빈도를 몰라 0(반영 안 함)"},
+  "kill_p_inf": {"value": 0.15, "grade": "assumed", "note": "적 HP 무한일 때 '적 처치' 조건 확률"},
+  "no_debuff_p": {"value": 0.85, "grade": "assumed", "note": "'자신에게 약화효과 없음' 조건 확률"},
+  "nova": {"value": true, "grade": "assumed", "note": "노바 버스트 사용(개인 4개 -> 다음 공격 스킬 +15%). 팀 공용 풀·오토에서 안 씀 여부는 커뮤니티 정황, 미확정"},
+  "coop": {"value": true, "grade": "assumed", "note": "협공 확률 버프 반영(아군 공격 후 자신 기본기 1회 추가 시전, 추정)"},
+  "forced_coop": {"value": true, "grade": "assumed", "note": "강제 협공 = 대상 아군 기본기 1회 추가 시전(추정)"},
+  "init_cd_frac": {"value": 1.0, "grade": "assumed", "note": "전투 시작 쿨타임 = 최대 쿨타임 x 이 값(시작 만충 가정)"},
+  "enemy_def": {"value": 1400.0, "grade": "assumed", "note": "지표용 기준 적 방어력(코스모 2단계 수준)"},
+  "enemy_spd": {"value": 100.0, "grade": "assumed", "note": "지표용 기준 적 속도"},
+  "ref_enemy_count": {"value": 3, "grade": "assumed", "note": "광역 시나리오 적 수"}
+ }
+}
