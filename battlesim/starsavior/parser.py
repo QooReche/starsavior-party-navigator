@@ -242,13 +242,15 @@ def _perm_apply(stats, passive, eff):
 
 
 class UnitDef:
-    def __init__(self, db, key, level=200, res_stage=10, star=0, mode='fixed', gear=None):
+    def __init__(self, db, key, level=200, res_stage=10, star=0, mode='fixed', gear=None, build=None):
+        """build(P5, 확률 엔진용): None/'none' = 육성 없음(기존과 같음), 'light'·'standard' = 육성 프리셋(starsavior/build.py)."""
         self.key = key
         u = db.units[key]
         self.u = u
         self.id, self.variant, self.name = u['id'], u['v'], u['n']
         self.role, self.element, self.grade, self.attack_kind = u['r'], u['a'], u['g'], u['k']
         self.stats = calc_stats(db, u, level, res_stage, star, mode, gear)
+        self.build = None
         self.skills = {}          # slot -> Skill (활성)
         self.trigger_skills = {}
         self.lines = []
@@ -284,6 +286,24 @@ class UnitDef:
                     self.unmodeled.append('효과 미해석 줄: ' + raw[:70])
         if self.id == 1039 and '특수기' in self.trigger_skills:
             self.manual = 'profM'
+        if build not in (None, 'none'):
+            # 육성 프리셋: 장비·세트·부옵·잠재력 상시 스탯은 databook 순서(Σ%·Σ정수 한 번)로, 여정은 기본값 쪽에 넣어 스탯을 다시 계산.
+            # 특수 잠재력의 나머지 줄(조건부 버프·회복 등)은 이 구원자의 줄로 추가한다(전투 중 passive 배율로 넘기지 않음).
+            from .build import make_build
+            bd = make_build(db, key, u, build, base_stats=self.stats, passive_cr=self.passive['cr'])
+            gear2 = dict(gear or {})
+            for k, v in bd['gear'].items():
+                gear2[k] = gear2.get(k, 0) + v
+            self.stats = calc_stats(db, u, level, res_stage, star, mode, gear2, journey=bd['journey'])
+            self.stats['sa'] = self.stats['sa'] + bd['sa_bonus']
+            for raw in bd['pot_lines']:
+                ln = Line(raw, '잠재력', 'passive')
+                self.lines.append(ln)
+                if ln.kind == 'unmodeled':
+                    self.unmodeled.append('조건 미해석 줄: ' + raw[:70])
+                elif ln.eff['kind'] == 'ignored' and ln.eff.get('why') == '미해석':
+                    self.unmodeled.append('효과 미해석 줄: ' + raw[:70])
+            self.build = bd['summary']
         self.spd_base = self.stats['spd']
         # 장비 확장용
         self.gear_atkp = 0.0

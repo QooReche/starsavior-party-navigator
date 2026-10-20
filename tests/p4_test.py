@@ -59,7 +59,7 @@ def test_schema():
         return False, '콘텐츠 파일 머리 %s' % sorted(doc)
     rec = stage_rec(doc, STAGE_COSMO)
     m = rec.get('meta') or {}
-    if m.get('sel') != pr.selection_version() or set(m.get('sv', {})) != {'engine', 'foe_js', 'databook', 'rules', 'code'} \
+    if m.get('sel') != pr.selection_version() or set(m.get('sv', {})) != {'engine', 'foe_js', 'databook', 'rules', 'guide', 'code'} \
             or m.get('seed') != bsr.DEFAULT_SEED or m.get('runs') != bsr.QUICK_RUNS or m.get('quick') is not True or not m.get('patch'):
         return False, '스테이지 meta 이상 %s' % m
     if len(rec['parties']) != 2:

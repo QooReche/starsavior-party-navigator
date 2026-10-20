@@ -12,13 +12,15 @@ STAT_MODES = {
     'rank': (0.1, 0.0),      # 랭크전(PvP): 성장 능력치 10%만
 }
 
-def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, gear_order=None):
+def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, gear_order=None, journey=None):
     """gear(확장 훅): 정수 {'atk','hp','def','spd','cr','cd','eh','er'}(cr/cd/eh/er 은 1/10000) + 비율 {'atkP','hpP','defP','spdP'}(1/10000).
     gear_order(기본 = rules 의 gear_order): 'databook' = floor(((기본+레벨)x(1+공명%)+공명 정수) x (1+각인%+장비%) + 장비 정수),
-    'legacy' = 각인%만 곱해 버림한 뒤 장비 정수를 더함(장비%는 이 함수가 아니라 UnitDef.gear_atkp 로 전투 중 곱함)."""
+    'legacy' = 각인%만 곱해 버림한 뒤 장비 정수를 더함(장비%는 이 함수가 아니라 UnitDef.gear_atkp 로 전투 중 곱함).
+    journey(P5): 여정 변환 정수 {'hp','atk','def'}(기본값 쪽 — 공명%·Σ% 를 받음) + {'eh','er'}(1/10000, 단순 합). 없으면 교정 전과 같은 연산."""
     if gear_order is None:
         gear_order = DEFAULT_OPTS['gear_order']
     gear = gear or {}
+    journey = journey or {}
     new_order = gear_order == 'databook'
     ST = db.main['stat']
     m = ST['units'][str(u['id'])]
@@ -57,6 +59,8 @@ def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, 
         lv_int = g[k] * n1 if main else 0
         amp_int = (g[k] * n2 + J.get(k, 0)) if main else 0
         v = b[k] + lv_int * sc1 + amp_int * sc2
+        if journey.get(k):
+            v = v + journey[k]
         v = v + rf.get(k, 0) * sc1 + v * (rp.get(k + 'P', 0) * 1e-4)
         if new_order:
             # ⓓ(% 합: 각인% + 장비%)을 한 번 곱하고 ⓑ(장비 정수)를 더한 뒤 버림. 장비가 없으면 교정 전과 같은 연산이 된다.
@@ -70,7 +74,7 @@ def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, 
             v = v + v * starP * 1e-4
         out[k] = max(0, math.floor(v))
     for k in ('cr', 'cd', 'eh', 'er', 'der'):
-        v = math.floor(b[k] + rf.get(k, 0) + (gear.get(k, 0) if new_order else 0))   # 치명·효과 적중/저항은 단순 합
+        v = math.floor(b[k] + rf.get(k, 0) + (gear.get(k, 0) if new_order else 0) + journey.get(k, 0))   # 치명·효과 적중/저항은 단순 합
         cap = ST['cap'].get({'cr': 'NST_RATE_CRITICAL', 'cd': 'NST_RATE_CRITICAL_DAMAGE'}.get(k, ''), 0)
         if cap and v > cap:
             v = cap
