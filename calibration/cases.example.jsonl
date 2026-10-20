@@ -1,0 +1,1 @@
+{"date": "2026-10-21", "patch": "2.50", "content": "코스모 게이트", "stage": "길레 2단계", "party": ["그웬", "아모라", "페이", "프로페서M"], "leader": "페이", "potentials": null, "auto": true, "nova_burst": false, "clear": true, "clear_turn": 6, "deaths": [{"who": "페이", "turn": 4}], "end_hp_pct": [40, 100, 0, 85], "damage_shown": null, "notes": "예시 줄 - 실제 기록이 아님"}

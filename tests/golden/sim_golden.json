@@ -1,0 +1,4054 @@
+{
+ "index": {
+  "amora": {
+   "actions_per_turn": 1.3,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 9989,
+   "combined_dpt": 8752,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.3,
+   "norm_global": 9.66,
+   "norm_role": 10.0,
+   "single_dpt": 7515,
+   "stats": {
+    "atk": 3032,
+    "cd": 50.0,
+    "cr": 17.0,
+    "def_": 1186,
+    "hp": 15985,
+    "passive_atk_pct": 15.0,
+    "spd": 97
+   }
+  },
+  "annah": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 1742,
+   "combined_dpt": 1742,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.7,
+   "norm_global": 1.92,
+   "norm_role": 4.98,
+   "single_dpt": 1742,
+   "stats": {
+    "atk": 2152,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1084,
+    "hp": 14722,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "annah@개화(SSR)": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 2096,
+   "combined_dpt": 2096,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.7,
+   "norm_global": 2.31,
+   "norm_role": 5.99,
+   "single_dpt": 2096,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1300,
+    "hp": 17604,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "asherah-voyager": {
+   "actions_per_turn": 1.1,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 8416,
+   "combined_dpt": 6494,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.1,
+   "norm_global": 7.17,
+   "norm_role": 7.24,
+   "single_dpt": 4572,
+   "stats": {
+    "atk": 2963,
+    "cd": 68.0,
+    "cr": 14.0,
+    "def_": 1190,
+    "hp": 16020,
+    "passive_atk_pct": 15.0,
+    "spd": 100
+   }
+  },
+  "bell": {
+   "actions_per_turn": 1.2,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 6606,
+   "combined_dpt": 5700,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.2,
+   "norm_global": 6.29,
+   "norm_role": 5.31,
+   "single_dpt": 4795,
+   "stats": {
+    "atk": 2830,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16020,
+    "passive_atk_pct": 15.0,
+    "spd": 112
+   }
+  },
+  "besta": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 1692,
+   "combined_dpt": 1692,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 1.87,
+   "norm_role": 4.83,
+   "single_dpt": 1692,
+   "stats": {
+    "atk": 2152,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1084,
+    "hp": 14722,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "besta@개화(SSR)": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 2224,
+   "combined_dpt": 2224,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.0,
+   "norm_global": 2.45,
+   "norm_role": 6.35,
+   "single_dpt": 2224,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1300,
+    "hp": 17604,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "bunny-charlotte": {
+   "actions_per_turn": 1.3,
+   "ally_dmg_gain_pct": 17.6,
+   "aoe_dpt": 6467,
+   "combined_dpt": 6467,
+   "extra_hit_dmg_share": 0.428,
+   "hits_per_turn": 2.0,
+   "norm_global": 7.14,
+   "norm_role": 7.39,
+   "single_dpt": 6467,
+   "stats": {
+    "atk": 3006,
+    "cd": 62.0,
+    "cr": 17.0,
+    "def_": 1185,
+    "hp": 15860,
+    "passive_atk_pct": 15.0,
+    "spd": 90
+   }
+  },
+  "bunny-claire": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 3555,
+   "combined_dpt": 3555,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.0,
+   "norm_global": 3.92,
+   "norm_role": 4.06,
+   "single_dpt": 3555,
+   "stats": {
+    "atk": 2541,
+    "cd": 68.0,
+    "cr": 5.0,
+    "def_": 981,
+    "hp": 13292,
+    "passive_atk_pct": 12.0,
+    "spd": 90
+   }
+  },
+  "bunny-claire@개화(SSR)": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 4852,
+   "combined_dpt": 4852,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.0,
+   "norm_global": 5.35,
+   "norm_role": 5.54,
+   "single_dpt": 4852,
+   "stats": {
+    "atk": 3006,
+    "cd": 68.0,
+    "cr": 5.0,
+    "def_": 1185,
+    "hp": 15860,
+    "passive_atk_pct": 15.0,
+    "spd": 90
+   }
+  },
+  "bunny-frey": {
+   "actions_per_turn": 1.1,
+   "ally_dmg_gain_pct": 9.8,
+   "aoe_dpt": 4772,
+   "combined_dpt": 4266,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 4.71,
+   "norm_role": 6.08,
+   "single_dpt": 3760,
+   "stats": {
+    "atk": 3142,
+    "cd": 68.0,
+    "cr": 5.0,
+    "def_": 1185,
+    "hp": 15860,
+    "passive_atk_pct": 15.0,
+    "spd": 90
+   }
+  },
+  "bunny-scarlet": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 3776,
+   "combined_dpt": 3776,
+   "extra_hit_dmg_share": 0.087,
+   "hits_per_turn": 1.0,
+   "norm_global": 4.17,
+   "norm_role": 4.21,
+   "single_dpt": 3776,
+   "stats": {
+    "atk": 2504,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 986,
+    "hp": 14070,
+    "passive_atk_pct": 0.0,
+    "spd": 100
+   }
+  },
+  "bunny-scarlet@개화(SSR)": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 7891,
+   "combined_dpt": 7891,
+   "extra_hit_dmg_share": 0.369,
+   "hits_per_turn": 1.2,
+   "norm_global": 8.71,
+   "norm_role": 8.8,
+   "single_dpt": 7891,
+   "stats": {
+    "atk": 2963,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16819,
+    "passive_atk_pct": 0.0,
+    "spd": 100
+   }
+  },
+  "carmen": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 2174,
+   "combined_dpt": 2174,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 2.4,
+   "norm_role": 6.21,
+   "single_dpt": 2174,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1300,
+    "hp": 17604,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "carnelia": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 5892,
+   "combined_dpt": 4994,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 5.51,
+   "norm_role": 7.12,
+   "single_dpt": 4096,
+   "stats": {
+    "atk": 3170,
+    "cd": 50.0,
+    "cr": 14.0,
+    "def_": 1186,
+    "hp": 15985,
+    "passive_atk_pct": 15.0,
+    "spd": 93
+   }
+  },
+  "ceres": {
+   "actions_per_turn": 1.4,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 8741,
+   "combined_dpt": 7501,
+   "extra_hit_dmg_share": 0.094,
+   "hits_per_turn": 1.4,
+   "norm_global": 8.28,
+   "norm_role": 8.37,
+   "single_dpt": 6261,
+   "stats": {
+    "atk": 3008,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16020,
+    "passive_atk_pct": 15.0,
+    "spd": 106
+   }
+  },
+  "charlotte": {
+   "actions_per_turn": 1.4,
+   "ally_dmg_gain_pct": 9.6,
+   "aoe_dpt": 4946,
+   "combined_dpt": 4946,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.1,
+   "norm_global": 5.46,
+   "norm_role": 5.52,
+   "single_dpt": 4946,
+   "stats": {
+    "atk": 3008,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16819,
+    "passive_atk_pct": 15.0,
+    "spd": 104
+   }
+  },
+  "claire": {
+   "actions_per_turn": 1.2,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 8055,
+   "combined_dpt": 8055,
+   "extra_hit_dmg_share": 0.187,
+   "hits_per_turn": 1.51,
+   "norm_global": 8.89,
+   "norm_role": 8.98,
+   "single_dpt": 8055,
+   "stats": {
+    "atk": 3008,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16819,
+    "passive_atk_pct": 15.0,
+    "spd": 104
+   }
+  },
+  "clarissa": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 3500,
+   "combined_dpt": 3500,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.0,
+   "norm_global": 3.86,
+   "norm_role": 3.26,
+   "single_dpt": 3500,
+   "stats": {
+    "atk": 2504,
+    "cd": 68.0,
+    "cr": 14.0,
+    "def_": 986,
+    "hp": 13427,
+    "passive_atk_pct": 0.0,
+    "spd": 100
+   }
+  },
+  "clarissa@개화(SSR)": {
+   "actions_per_turn": 1.3,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 6405,
+   "combined_dpt": 6405,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.3,
+   "norm_global": 7.07,
+   "norm_role": 5.96,
+   "single_dpt": 6405,
+   "stats": {
+    "atk": 2963,
+    "cd": 68.0,
+    "cr": 14.0,
+    "def_": 1190,
+    "hp": 16020,
+    "passive_atk_pct": 0.0,
+    "spd": 100
+   }
+  },
+  "cristelle": {
+   "actions_per_turn": 1.3,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 5011,
+   "combined_dpt": 5011,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.3,
+   "norm_global": 5.53,
+   "norm_role": 4.67,
+   "single_dpt": 5011,
+   "stats": {
+    "atk": 3008,
+    "cd": 50.0,
+    "cr": 11.0,
+    "def_": 1190,
+    "hp": 16020,
+    "passive_atk_pct": 15.0,
+    "spd": 100
+   }
+  },
+  "dana": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 6736,
+   "combined_dpt": 5770,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.0,
+   "norm_global": 6.37,
+   "norm_role": 8.22,
+   "single_dpt": 4805,
+   "stats": {
+    "atk": 3006,
+    "cd": 68.0,
+    "cr": 14.0,
+    "def_": 1185,
+    "hp": 15860,
+    "passive_atk_pct": 15.0,
+    "spd": 90
+   }
+  },
+  "elisa": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 2.8,
+   "aoe_dpt": 739,
+   "combined_dpt": 739,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.5,
+   "norm_global": 0.82,
+   "norm_role": 1.5,
+   "single_dpt": 739,
+   "stats": {
+    "atk": 2605,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1303,
+    "hp": 17803,
+    "passive_atk_pct": 0.0,
+    "spd": 98
+   }
+  },
+  "emily": {
+   "actions_per_turn": 1.1,
+   "ally_dmg_gain_pct": 6.7,
+   "aoe_dpt": 3257,
+   "combined_dpt": 3006,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 3.32,
+   "norm_role": 8.59,
+   "single_dpt": 2755,
+   "stats": {
+    "atk": 2590,
+    "cd": 68.0,
+    "cr": 14.0,
+    "def_": 1240,
+    "hp": 17328,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "epindel": {
+   "actions_per_turn": 1.1,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 4907,
+   "combined_dpt": 4907,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 5.41,
+   "norm_role": 5.61,
+   "single_dpt": 4907,
+   "stats": {
+    "atk": 3006,
+    "cd": 50.0,
+    "cr": 14.0,
+    "def_": 1185,
+    "hp": 15860,
+    "passive_atk_pct": 15.0,
+    "spd": 90
+   }
+  },
+  "fei": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 4053,
+   "combined_dpt": 4053,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 4.47,
+   "norm_role": 4.63,
+   "single_dpt": 4053,
+   "stats": {
+    "atk": 3142,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1185,
+    "hp": 15860,
+    "passive_atk_pct": 15.0,
+    "spd": 90
+   }
+  },
+  "frey": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 735,
+   "combined_dpt": 735,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.5,
+   "norm_global": 0.81,
+   "norm_role": 1.49,
+   "single_dpt": 735,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1300,
+    "hp": 17604,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "gwen": {
+   "actions_per_turn": 1.3,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 8966,
+   "combined_dpt": 8966,
+   "extra_hit_dmg_share": 0.402,
+   "hits_per_turn": 2.2,
+   "norm_global": 9.89,
+   "norm_role": 10.0,
+   "single_dpt": 8966,
+   "stats": {
+    "atk": 3097,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16819,
+    "passive_atk_pct": 15.0,
+    "spd": 100
+   }
+  },
+  "harley": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 3612,
+   "combined_dpt": 3129,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.0,
+   "norm_global": 3.45,
+   "norm_role": 8.94,
+   "single_dpt": 2646,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1240,
+    "hp": 17604,
+    "passive_atk_pct": 0.0,
+    "spd": 99
+   }
+  },
+  "haydee": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 2020,
+   "combined_dpt": 2020,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.6,
+   "norm_global": 2.23,
+   "norm_role": 5.77,
+   "single_dpt": 2020,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1300,
+    "hp": 17328,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "hilde": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 3162,
+   "combined_dpt": 2706,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 2.99,
+   "norm_role": 7.73,
+   "single_dpt": 2249,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1300,
+    "hp": 17604,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "kyra": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 4950,
+   "combined_dpt": 4950,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 5.46,
+   "norm_role": 5.66,
+   "single_dpt": 4950,
+   "stats": {
+    "atk": 3051,
+    "cd": 62.0,
+    "cr": 14.0,
+    "def_": 1185,
+    "hp": 15860,
+    "passive_atk_pct": 15.0,
+    "spd": 90
+   }
+  },
+  "lacy": {
+   "actions_per_turn": 1.2,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 6607,
+   "combined_dpt": 5874,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.2,
+   "norm_global": 6.48,
+   "norm_role": 5.47,
+   "single_dpt": 5140,
+   "stats": {
+    "atk": 2855,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1191,
+    "hp": 16160,
+    "passive_atk_pct": 15.0,
+    "spd": 115
+   }
+  },
+  "lily": {
+   "actions_per_turn": 1.1,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 6094,
+   "combined_dpt": 4910,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.8,
+   "norm_global": 5.42,
+   "norm_role": 7.0,
+   "single_dpt": 3726,
+   "stats": {
+    "atk": 3006,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1185,
+    "hp": 16386,
+    "passive_atk_pct": 15.0,
+    "spd": 90
+   }
+  },
+  "lugh": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 3.5,
+   "aoe_dpt": 5536,
+   "combined_dpt": 5536,
+   "extra_hit_dmg_share": 0.226,
+   "hits_per_turn": 1.0,
+   "norm_global": 6.11,
+   "norm_role": 5.15,
+   "single_dpt": 5536,
+   "stats": {
+    "atk": 2963,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16020,
+    "passive_atk_pct": 15.0,
+    "spd": 104
+   }
+  },
+  "luna": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 8201,
+   "combined_dpt": 5468,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 6.03,
+   "norm_role": 7.79,
+   "single_dpt": 2734,
+   "stats": {
+    "atk": 3032,
+    "cd": 68.0,
+    "cr": 14.0,
+    "def_": 1186,
+    "hp": 15985,
+    "passive_atk_pct": 15.0,
+    "spd": 93
+   }
+  },
+  "lydia": {
+   "actions_per_turn": 1.1,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 5383,
+   "combined_dpt": 4645,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.1,
+   "norm_global": 5.12,
+   "norm_role": 4.32,
+   "single_dpt": 3907,
+   "stats": {
+    "atk": 2990,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1191,
+    "hp": 16160,
+    "passive_atk_pct": 0.0,
+    "spd": 107
+   }
+  },
+  "lydia-moon-caster": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 5.3,
+   "aoe_dpt": 3320,
+   "combined_dpt": 3320,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 3.66,
+   "norm_role": 4.73,
+   "single_dpt": 3320,
+   "stats": {
+    "atk": 3051,
+    "cd": 50.0,
+    "cr": 14.0,
+    "def_": 1185,
+    "hp": 16386,
+    "passive_atk_pct": 15.0,
+    "spd": 90
+   }
+  },
+  "lyn": {
+   "actions_per_turn": 1.2,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 6241,
+   "combined_dpt": 5154,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.2,
+   "norm_global": 5.69,
+   "norm_role": 5.75,
+   "single_dpt": 4068,
+   "stats": {
+    "atk": 2963,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16819,
+    "passive_atk_pct": 15.0,
+    "spd": 106
+   }
+  },
+  "marcille": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 3723,
+   "combined_dpt": 3723,
+   "extra_hit_dmg_share": 0.056,
+   "hits_per_turn": 0.9,
+   "norm_global": 4.11,
+   "norm_role": 4.25,
+   "single_dpt": 3723,
+   "stats": {
+    "atk": 2541,
+    "cd": 50.0,
+    "cr": 17.0,
+    "def_": 981,
+    "hp": 13292,
+    "passive_atk_pct": 0.0,
+    "spd": 94
+   }
+  },
+  "marcille@개화(SSR)": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 5518,
+   "combined_dpt": 5518,
+   "extra_hit_dmg_share": 0.089,
+   "hits_per_turn": 1.0,
+   "norm_global": 6.09,
+   "norm_role": 6.3,
+   "single_dpt": 5518,
+   "stats": {
+    "atk": 3006,
+    "cd": 50.0,
+    "cr": 17.0,
+    "def_": 1185,
+    "hp": 15860,
+    "passive_atk_pct": 0.0,
+    "spd": 94
+   }
+  },
+  "muriel": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 3574,
+   "combined_dpt": 3276,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 3.61,
+   "norm_role": 4.67,
+   "single_dpt": 2977,
+   "stats": {
+    "atk": 3006,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1185,
+    "hp": 16386,
+    "passive_atk_pct": 0.0,
+    "spd": 90
+   }
+  },
+  "naru": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 3808,
+   "combined_dpt": 3808,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.0,
+   "norm_global": 4.2,
+   "norm_role": 3.55,
+   "single_dpt": 3808,
+   "stats": {
+    "atk": 2504,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 986,
+    "hp": 14070,
+    "passive_atk_pct": 12.0,
+    "spd": 100
+   }
+  },
+  "naru@개화(SSR)": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 5725,
+   "combined_dpt": 5725,
+   "extra_hit_dmg_share": 0.145,
+   "hits_per_turn": 1.2,
+   "norm_global": 6.32,
+   "norm_role": 5.33,
+   "single_dpt": 5725,
+   "stats": {
+    "atk": 2963,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16819,
+    "passive_atk_pct": 15.0,
+    "spd": 100
+   }
+  },
+  "omega": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 8094,
+   "combined_dpt": 6378,
+   "extra_hit_dmg_share": 0.231,
+   "hits_per_turn": 1.5,
+   "norm_global": 7.04,
+   "norm_role": 9.09,
+   "single_dpt": 4663,
+   "stats": {
+    "atk": 3006,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1185,
+    "hp": 16649,
+    "passive_atk_pct": 15.0,
+    "spd": 96
+   }
+  },
+  "petra": {
+   "actions_per_turn": 1.1,
+   "ally_dmg_gain_pct": 3.7,
+   "aoe_dpt": 4821,
+   "combined_dpt": 4821,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.1,
+   "norm_global": 5.32,
+   "norm_role": 4.49,
+   "single_dpt": 4821,
+   "stats": {
+    "atk": 2963,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16020,
+    "passive_atk_pct": 15.0,
+    "spd": 104
+   }
+  },
+  "professor-m": {
+   "actions_per_turn": 1.6,
+   "ally_dmg_gain_pct": 39.6,
+   "aoe_dpt": 10740,
+   "combined_dpt": 10740,
+   "extra_hit_dmg_share": 0.408,
+   "hits_per_turn": 3.0,
+   "norm_global": 10.0,
+   "norm_role": 10.0,
+   "single_dpt": 10740,
+   "stats": {
+    "atk": 3008,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16020,
+    "passive_atk_pct": 15.0,
+    "spd": 106
+   }
+  },
+  "roberta": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 4229,
+   "combined_dpt": 4229,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.0,
+   "norm_global": 4.67,
+   "norm_role": 4.72,
+   "single_dpt": 4229,
+   "stats": {
+    "atk": 3097,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16819,
+    "passive_atk_pct": 15.0,
+    "spd": 100
+   }
+  },
+  "rosaria": {
+   "actions_per_turn": 1.2,
+   "ally_dmg_gain_pct": 4.3,
+   "aoe_dpt": 6712,
+   "combined_dpt": 5810,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.2,
+   "norm_global": 6.41,
+   "norm_role": 5.41,
+   "single_dpt": 4908,
+   "stats": {
+    "atk": 3035,
+    "cd": 50.0,
+    "cr": 11.0,
+    "def_": 1191,
+    "hp": 16160,
+    "passive_atk_pct": 15.0,
+    "spd": 109
+   }
+  },
+  "scarlet": {
+   "actions_per_turn": 1.3,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 5565,
+   "combined_dpt": 5097,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.3,
+   "norm_global": 5.62,
+   "norm_role": 4.75,
+   "single_dpt": 4629,
+   "stats": {
+    "atk": 2963,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16819,
+    "passive_atk_pct": 0.0,
+    "spd": 100
+   }
+  },
+  "seira": {
+   "actions_per_turn": 1.4,
+   "ally_dmg_gain_pct": 9.8,
+   "aoe_dpt": 4335,
+   "combined_dpt": 4335,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.1,
+   "norm_global": 4.78,
+   "norm_role": 4.83,
+   "single_dpt": 4335,
+   "stats": {
+    "atk": 3035,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1191,
+    "hp": 16967,
+    "passive_atk_pct": 15.0,
+    "spd": 107
+   }
+  },
+  "serpang": {
+   "actions_per_turn": 1.1,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 2417,
+   "combined_dpt": 2417,
+   "extra_hit_dmg_share": 0.365,
+   "hits_per_turn": 0.9,
+   "norm_global": 2.67,
+   "norm_role": 4.89,
+   "single_dpt": 2417,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1240,
+    "hp": 17328,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "smile": {
+   "actions_per_turn": 1.2,
+   "ally_dmg_gain_pct": 5.5,
+   "aoe_dpt": 4291,
+   "combined_dpt": 4291,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.2,
+   "norm_global": 4.73,
+   "norm_role": 4.0,
+   "single_dpt": 4291,
+   "stats": {
+    "atk": 2963,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16819,
+    "passive_atk_pct": 15.0,
+    "spd": 100
+   }
+  },
+  "sunshine-cat-smile": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 2974,
+   "combined_dpt": 2974,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 3.28,
+   "norm_role": 3.4,
+   "single_dpt": 2974,
+   "stats": {
+    "atk": 3006,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1185,
+    "hp": 15860,
+    "passive_atk_pct": 15.0,
+    "spd": 96
+   }
+  },
+  "tanya": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 3.6,
+   "aoe_dpt": 5150,
+   "combined_dpt": 5150,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.0,
+   "norm_global": 5.68,
+   "norm_role": 5.74,
+   "single_dpt": 5150,
+   "stats": {
+    "atk": 2963,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1250,
+    "hp": 16819,
+    "passive_atk_pct": 15.0,
+    "spd": 100
+   }
+  },
+  "trish": {
+   "actions_per_turn": 1.1,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 4177,
+   "combined_dpt": 4177,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.1,
+   "norm_global": 4.61,
+   "norm_role": 4.77,
+   "single_dpt": 4177,
+   "stats": {
+    "atk": 3006,
+    "cd": 50.0,
+    "cr": 14.0,
+    "def_": 1185,
+    "hp": 15860,
+    "passive_atk_pct": 0.0,
+    "spd": 90
+   }
+  },
+  "tyria": {
+   "actions_per_turn": 1.1,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 7069,
+   "combined_dpt": 6629,
+   "extra_hit_dmg_share": 0.353,
+   "hits_per_turn": 1.4,
+   "norm_global": 7.31,
+   "norm_role": 7.39,
+   "single_dpt": 6189,
+   "stats": {
+    "atk": 3097,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1190,
+    "hp": 16819,
+    "passive_atk_pct": 15.0,
+    "spd": 100
+   }
+  },
+  "vera": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 489,
+   "combined_dpt": 489,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.4,
+   "norm_global": 0.54,
+   "norm_role": 0.99,
+   "single_dpt": 489,
+   "stats": {
+    "atk": 2152,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1068,
+    "hp": 14499,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "vera@개화(SSR)": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 755,
+   "combined_dpt": 755,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.5,
+   "norm_global": 0.83,
+   "norm_role": 1.53,
+   "single_dpt": 755,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1280,
+    "hp": 17328,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "waltz-asherah": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 4940,
+   "combined_dpt": 4940,
+   "extra_hit_dmg_share": 0.509,
+   "hits_per_turn": 1.68,
+   "norm_global": 5.45,
+   "norm_role": 10.0,
+   "single_dpt": 4940,
+   "stats": {
+    "atk": 2605,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1303,
+    "hp": 17524,
+    "passive_atk_pct": 0.0,
+    "spd": 104
+   }
+  },
+  "wedding-carmen": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 1990,
+   "combined_dpt": 1990,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.7,
+   "norm_global": 2.2,
+   "norm_role": 4.03,
+   "single_dpt": 1990,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1300,
+    "hp": 17604,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "wedding-epindel": {
+   "actions_per_turn": 1.2,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 8403,
+   "combined_dpt": 7016,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 1.2,
+   "norm_global": 7.74,
+   "norm_role": 10.0,
+   "single_dpt": 5629,
+   "stats": {
+    "atk": 3051,
+    "cd": 50.0,
+    "cr": 14.0,
+    "def_": 1185,
+    "hp": 16386,
+    "passive_atk_pct": 15.0,
+    "spd": 90
+   }
+  },
+  "white-pearl-luna": {
+   "actions_per_turn": 0.9,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 3500,
+   "combined_dpt": 3500,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.9,
+   "norm_global": 3.86,
+   "norm_role": 10.0,
+   "single_dpt": 3500,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1280,
+    "hp": 17604,
+    "passive_atk_pct": 0.0,
+    "spd": 95
+   }
+  },
+  "yoo-mina": {
+   "actions_per_turn": 1.0,
+   "ally_dmg_gain_pct": 0.0,
+   "aoe_dpt": 10870,
+   "combined_dpt": 9064,
+   "extra_hit_dmg_share": 0.397,
+   "hits_per_turn": 1.0,
+   "norm_global": 10.0,
+   "norm_role": 8.44,
+   "single_dpt": 7257,
+   "stats": {
+    "atk": 3008,
+    "cd": 50.0,
+    "cr": 11.0,
+    "def_": 1190,
+    "hp": 16020,
+    "passive_atk_pct": 15.0,
+    "spd": 100
+   }
+  }
+ },
+ "inputs": {
+  "data/foe_stages.json": "41afc4459aef447a",
+  "data/synergy_tags.json": "8cc9a6d44f450246",
+  "rawdata/databook_main.json": "46982efe0330b680",
+  "rawdata/foe.js": "5104c78244bb3433"
+ },
+ "party": [
+  {
+   "hits": 54.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 167678.989,
+    "dot": 4913.99,
+    "extra": 56132.659
+   },
+   "team": [
+    "gwen",
+    "marcille@개화(SSR)",
+    "vera@개화(SSR)",
+    "wedding-epindel"
+   ],
+   "total": 228725.638
+  },
+  {
+   "hits": 49.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 166795.863,
+    "dot": 23177.708,
+    "extra": 30894.641
+   },
+   "team": [
+    "bunny-charlotte",
+    "bunny-frey",
+    "clarissa",
+    "yoo-mina"
+   ],
+   "total": 220868.212
+  },
+  {
+   "hits": 36.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 120625.995,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "bell",
+    "bunny-claire",
+    "frey",
+    "muriel"
+   ],
+   "total": 120625.995
+  },
+  {
+   "hits": 41.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 172964.682,
+    "dot": 1989.826,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-scarlet",
+    "harley",
+    "kyra",
+    "tanya"
+   ],
+   "total": 174954.508
+  },
+  {
+   "hits": 64.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 187817.51,
+    "dot": 0.0,
+    "extra": 64151.61
+   },
+   "team": [
+    "bell",
+    "besta@개화(SSR)",
+    "clarissa@개화(SSR)",
+    "gwen"
+   ],
+   "total": 251969.12
+  },
+  {
+   "hits": 70.538,
+   "src": {
+    "chain": 32036.895,
+    "direct": 173982.071,
+    "dot": 11301.477,
+    "extra": 29616.053
+   },
+   "team": [
+    "carnelia",
+    "cristelle",
+    "lugh",
+    "waltz-asherah"
+   ],
+   "total": 246936.496
+  },
+  {
+   "hits": 41.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 124320.574,
+    "dot": 0.0,
+    "extra": 22355.032
+   },
+   "team": [
+    "frey",
+    "luna",
+    "smile",
+    "tyria"
+   ],
+   "total": 146675.606
+  },
+  {
+   "hits": 36.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 118299.117,
+    "dot": 11820.009,
+    "extra": 0.0
+   },
+   "team": [
+    "besta@개화(SSR)",
+    "bunny-scarlet",
+    "frey",
+    "marcille@개화(SSR)"
+   ],
+   "total": 130119.126
+  },
+  {
+   "hits": 59.0494,
+   "src": {
+    "chain": 0.0,
+    "direct": 102141.874,
+    "dot": 0.0,
+    "extra": 87574.994
+   },
+   "team": [
+    "frey",
+    "gwen",
+    "vera@개화(SSR)",
+    "waltz-asherah"
+   ],
+   "total": 189716.868
+  },
+  {
+   "hits": 43.05,
+   "src": {
+    "chain": 0.0,
+    "direct": 178445.941,
+    "dot": 2759.42,
+    "extra": 15089.207
+   },
+   "team": [
+    "claire",
+    "dana",
+    "marcille",
+    "muriel"
+   ],
+   "total": 196294.568
+  },
+  {
+   "hits": 78.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 175970.012,
+    "dot": 54428.054,
+    "extra": 128681.732
+   },
+   "team": [
+    "besta",
+    "bunny-scarlet",
+    "bunny-scarlet@개화(SSR)",
+    "professor-m"
+   ],
+   "total": 359079.798
+  },
+  {
+   "hits": 43.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 215878.067,
+    "dot": 1989.826,
+    "extra": 0.0
+   },
+   "team": [
+    "amora",
+    "bunny-scarlet",
+    "epindel",
+    "seira"
+   ],
+   "total": 217867.893
+  },
+  {
+   "hits": 64.1,
+   "src": {
+    "chain": 36826.329,
+    "direct": 173199.956,
+    "dot": 8232.668,
+    "extra": 0.0
+   },
+   "team": [
+    "charlotte",
+    "cristelle",
+    "seira",
+    "serpang"
+   ],
+   "total": 218258.953
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 132649.605,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "emily",
+    "frey",
+    "lydia",
+    "wedding-epindel"
+   ],
+   "total": 132649.605
+  },
+  {
+   "hits": 39.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 128186.097,
+    "dot": 0.0,
+    "extra": 21867.138
+   },
+   "team": [
+    "petra",
+    "sunshine-cat-smile",
+    "tyria",
+    "vera@개화(SSR)"
+   ],
+   "total": 150053.234
+  },
+  {
+   "hits": 50.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 137557.275,
+    "dot": 0.0,
+    "extra": 48113.707
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "fei",
+    "gwen",
+    "hilde"
+   ],
+   "total": 185670.982
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 118012.478,
+    "dot": 0.0,
+    "extra": 12782.631
+   },
+   "team": [
+    "bunny-claire",
+    "clarissa",
+    "elisa",
+    "omega"
+   ],
+   "total": 130795.108
+  },
+  {
+   "hits": 44.228,
+   "src": {
+    "chain": 0.0,
+    "direct": 110395.68,
+    "dot": 0.0,
+    "extra": 23443.175
+   },
+   "team": [
+    "besta@개화(SSR)",
+    "carnelia",
+    "elisa",
+    "waltz-asherah"
+   ],
+   "total": 133838.855
+  },
+  {
+   "hits": 61.7,
+   "src": {
+    "chain": 36128.199,
+    "direct": 150350.297,
+    "dot": 25368.848,
+    "extra": 0.0
+   },
+   "team": [
+    "annah",
+    "cristelle",
+    "lydia",
+    "yoo-mina"
+   ],
+   "total": 211847.345
+  },
+  {
+   "hits": 88.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 195612.114,
+    "dot": 0.0,
+    "extra": 158705.469
+   },
+   "team": [
+    "lacy",
+    "luna",
+    "professor-m",
+    "tyria"
+   ],
+   "total": 354317.583
+  },
+  {
+   "hits": 38.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 140654.429,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "harley",
+    "rosaria",
+    "vera",
+    "wedding-epindel"
+   ],
+   "total": 140654.429
+  },
+  {
+   "hits": 44.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 141039.501,
+    "dot": 1989.826,
+    "extra": 21103.754
+   },
+   "team": [
+    "bunny-scarlet",
+    "harley",
+    "naru",
+    "tyria"
+   ],
+   "total": 164133.081
+  },
+  {
+   "hits": 35.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 141661.169,
+    "dot": 11301.477,
+    "extra": 0.0
+   },
+   "team": [
+    "carnelia",
+    "lugh",
+    "wedding-carmen",
+    "white-pearl-luna"
+   ],
+   "total": 152962.646
+  },
+  {
+   "hits": 45.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 194712.261,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "asherah-voyager",
+    "bunny-frey",
+    "rosaria",
+    "scarlet"
+   ],
+   "total": 194712.261
+  },
+  {
+   "hits": 42.05,
+   "src": {
+    "chain": 0.0,
+    "direct": 171955.385,
+    "dot": 0.0,
+    "extra": 15089.207
+   },
+   "team": [
+    "amora",
+    "claire",
+    "harley",
+    "vera"
+   ],
+   "total": 187044.592
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 162185.33,
+    "dot": 28812.068,
+    "extra": 0.0
+   },
+   "team": [
+    "lyn",
+    "trish",
+    "white-pearl-luna",
+    "yoo-mina"
+   ],
+   "total": 190997.398
+  },
+  {
+   "hits": 44.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 149255.379,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "besta",
+    "naru",
+    "scarlet",
+    "smile"
+   ],
+   "total": 149255.379
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 112523.64,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "besta@개화(SSR)",
+    "lydia",
+    "sunshine-cat-smile",
+    "wedding-carmen"
+   ],
+   "total": 112523.64
+  },
+  {
+   "hits": 50.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 186008.718,
+    "dot": 0.0,
+    "extra": 29475.869
+   },
+   "team": [
+    "bunny-charlotte",
+    "bunny-claire",
+    "charlotte",
+    "epindel"
+   ],
+   "total": 215484.588
+  },
+  {
+   "hits": 56.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 206816.981,
+    "dot": 5125.663,
+    "extra": 54384.121
+   },
+   "team": [
+    "epindel",
+    "gwen",
+    "marcille@개화(SSR)",
+    "petra"
+   ],
+   "total": 266326.765
+  },
+  {
+   "hits": 43.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 113465.144,
+    "dot": 0.0,
+    "extra": 12782.631
+   },
+   "team": [
+    "besta@개화(SSR)",
+    "frey",
+    "omega",
+    "trish"
+   ],
+   "total": 126247.774
+  },
+  {
+   "hits": 59.132,
+   "src": {
+    "chain": 28155.561,
+    "direct": 156775.393,
+    "dot": 24716.309,
+    "extra": 11587.872
+   },
+   "team": [
+    "bunny-scarlet@개화(SSR)",
+    "carmen",
+    "cristelle",
+    "marcille"
+   ],
+   "total": 221235.135
+  },
+  {
+   "hits": 58.9,
+   "src": {
+    "chain": 17278.704,
+    "direct": 192749.059,
+    "dot": 0.0,
+    "extra": 24651.963
+   },
+   "team": [
+    "clarissa@개화(SSR)",
+    "cristelle",
+    "lydia-moon-caster",
+    "tyria"
+   ],
+   "total": 234679.726
+  },
+  {
+   "hits": 57.128,
+   "src": {
+    "chain": 0.0,
+    "direct": 159179.33,
+    "dot": 0.0,
+    "extra": 47609.226
+   },
+   "team": [
+    "bell",
+    "naru@개화(SSR)",
+    "omega",
+    "waltz-asherah"
+   ],
+   "total": 206788.556
+  },
+  {
+   "hits": 43.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 110568.029,
+    "dot": 0.0,
+    "extra": 36085.281
+   },
+   "team": [
+    "frey",
+    "gwen",
+    "sunshine-cat-smile",
+    "wedding-carmen"
+   ],
+   "total": 146653.31
+  },
+  {
+   "hits": 47.828,
+   "src": {
+    "chain": 0.0,
+    "direct": 139321.948,
+    "dot": 1989.826,
+    "extra": 25152.692
+   },
+   "team": [
+    "bunny-scarlet",
+    "luna",
+    "seira",
+    "waltz-asherah"
+   ],
+   "total": 166464.467
+  },
+  {
+   "hits": 58.728,
+   "src": {
+    "chain": 0.0,
+    "direct": 173589.754,
+    "dot": 0.0,
+    "extra": 42832.776
+   },
+   "team": [
+    "bell",
+    "omega",
+    "tanya",
+    "waltz-asherah"
+   ],
+   "total": 216422.53
+  },
+  {
+   "hits": 43.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 190091.268,
+    "dot": 0.0,
+    "extra": 8489.27
+   },
+   "team": [
+    "dana",
+    "naru@개화(SSR)",
+    "rosaria",
+    "sunshine-cat-smile"
+   ],
+   "total": 198580.538
+  },
+  {
+   "hits": 45.61,
+   "src": {
+    "chain": 6300.618,
+    "direct": 142399.359,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-claire",
+    "carmen",
+    "clarissa",
+    "cristelle"
+   ],
+   "total": 148699.977
+  },
+  {
+   "hits": 30.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 94128.982,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "annah",
+    "annah@개화(SSR)",
+    "bunny-claire",
+    "haydee"
+   ],
+   "total": 94128.982
+  },
+  {
+   "hits": 47.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 218867.458,
+    "dot": 9470.975,
+    "extra": 0.0
+   },
+   "team": [
+    "ceres",
+    "charlotte",
+    "lydia",
+    "petra"
+   ],
+   "total": 228338.434
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 173833.922,
+    "dot": 0.0,
+    "extra": 8489.27
+   },
+   "team": [
+    "asherah-voyager",
+    "carnelia",
+    "lily",
+    "naru@개화(SSR)"
+   ],
+   "total": 182323.193
+  },
+  {
+   "hits": 50.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 126136.881,
+    "dot": 0.0,
+    "extra": 33723.994
+   },
+   "team": [
+    "bunny-charlotte",
+    "carmen",
+    "elisa",
+    "scarlet"
+   ],
+   "total": 159860.875
+  },
+  {
+   "hits": 50.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 184872.249,
+    "dot": 0.0,
+    "extra": 36176.253
+   },
+   "team": [
+    "bunny-charlotte",
+    "carnelia",
+    "kyra",
+    "naru@개화(SSR)"
+   ],
+   "total": 221048.502
+  },
+  {
+   "hits": 41.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 161270.802,
+    "dot": 10141.848,
+    "extra": 0.0
+   },
+   "team": [
+    "ceres",
+    "frey",
+    "naru",
+    "seira"
+   ],
+   "total": 171412.65
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 171678.791,
+    "dot": 8232.668,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-claire@개화(SSR)",
+    "lacy",
+    "seira",
+    "serpang"
+   ],
+   "total": 179911.459
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 142499.684,
+    "dot": 7068.561,
+    "extra": 0.0
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "ceres",
+    "elisa",
+    "trish"
+   ],
+   "total": 149568.245
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 162640.56,
+    "dot": 12526.417,
+    "extra": 0.0
+   },
+   "team": [
+    "asherah-voyager",
+    "emily",
+    "lugh",
+    "roberta"
+   ],
+   "total": 175166.977
+  },
+  {
+   "hits": 45.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 200236.044,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "lyn",
+    "roberta",
+    "seira",
+    "tanya"
+   ],
+   "total": 200236.044
+  },
+  {
+   "hits": 45.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 190338.69,
+    "dot": 5890.467,
+    "extra": 0.0
+   },
+   "team": [
+    "ceres",
+    "kyra",
+    "lyn",
+    "roberta"
+   ],
+   "total": 196229.157
+  },
+  {
+   "hits": 39.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 185867.226,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-claire",
+    "bunny-frey",
+    "kyra",
+    "petra"
+   ],
+   "total": 185867.226
+  },
+  {
+   "hits": 36.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 143714.952,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "dana",
+    "elisa",
+    "lydia-moon-caster",
+    "lyn"
+   ],
+   "total": 143714.952
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 171613.128,
+    "dot": 8232.668,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-claire@개화(SSR)",
+    "charlotte",
+    "seira",
+    "serpang"
+   ],
+   "total": 179845.796
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 165445.055,
+    "dot": 5228.293,
+    "extra": 0.0
+   },
+   "team": [
+    "carmen",
+    "lydia-moon-caster",
+    "marcille@개화(SSR)",
+    "rosaria"
+   ],
+   "total": 170673.348
+  },
+  {
+   "hits": 84.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 200580.473,
+    "dot": 2076.921,
+    "extra": 156046.925
+   },
+   "team": [
+    "epindel",
+    "marcille",
+    "professor-m",
+    "tyria"
+   ],
+   "total": 358704.319
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 165127.847,
+    "dot": 18505.309,
+    "extra": 12676.936
+   },
+   "team": [
+    "bunny-scarlet@개화(SSR)",
+    "emily",
+    "luna",
+    "rosaria"
+   ],
+   "total": 196310.092
+  },
+  {
+   "hits": 70.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 188303.561,
+    "dot": 2076.921,
+    "extra": 93220.869
+   },
+   "team": [
+    "emily",
+    "marcille",
+    "professor-m",
+    "wedding-epindel"
+   ],
+   "total": 283601.352
+  },
+  {
+   "hits": 44.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 130636.185,
+    "dot": 0.0,
+    "extra": 12782.631
+   },
+   "team": [
+    "emily",
+    "hilde",
+    "omega",
+    "roberta"
+   ],
+   "total": 143418.816
+  },
+  {
+   "hits": 52.42,
+   "src": {
+    "chain": 6583.664,
+    "direct": 174166.634,
+    "dot": 0.0,
+    "extra": 10762.15
+   },
+   "team": [
+    "cristelle",
+    "emily",
+    "omega",
+    "seira"
+   ],
+   "total": 191512.448
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 167610.671,
+    "dot": 49061.278,
+    "extra": 11587.872
+   },
+   "team": [
+    "bunny-scarlet@개화(SSR)",
+    "lydia-moon-caster",
+    "white-pearl-luna",
+    "yoo-mina"
+   ],
+   "total": 228259.82
+  },
+  {
+   "hits": 33.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 134202.941,
+    "dot": 3509.419,
+    "extra": 0.0
+   },
+   "team": [
+    "epindel",
+    "haydee",
+    "marcille",
+    "muriel"
+   ],
+   "total": 137712.36
+  },
+  {
+   "hits": 43.05,
+   "src": {
+    "chain": 0.0,
+    "direct": 148037.566,
+    "dot": 2076.921,
+    "extra": 36956.345
+   },
+   "team": [
+    "claire",
+    "elisa",
+    "marcille",
+    "tyria"
+   ],
+   "total": 187070.832
+  },
+  {
+   "hits": 38.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 147089.695,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-claire",
+    "lacy",
+    "petra",
+    "vera@개화(SSR)"
+   ],
+   "total": 147089.695
+  },
+  {
+   "hits": 46.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 201938.082,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "bell",
+    "charlotte",
+    "lydia",
+    "rosaria"
+   ],
+   "total": 201938.082
+  },
+  {
+   "hits": 35.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 139890.913,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "carnelia",
+    "lily",
+    "trish",
+    "wedding-carmen"
+   ],
+   "total": 139890.913
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 171363.822,
+    "dot": 27821.651,
+    "extra": 12899.707
+   },
+   "team": [
+    "bunny-scarlet@개화(SSR)",
+    "ceres",
+    "tanya",
+    "vera@개화(SSR)"
+   ],
+   "total": 212085.179
+  },
+  {
+   "hits": 82.05,
+   "src": {
+    "chain": 0.0,
+    "direct": 249743.65,
+    "dot": 0.0,
+    "extra": 135240.522
+   },
+   "team": [
+    "bunny-frey",
+    "claire",
+    "petra",
+    "professor-m"
+   ],
+   "total": 384984.172
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 154112.683,
+    "dot": 30177.065,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-frey",
+    "muriel",
+    "white-pearl-luna",
+    "yoo-mina"
+   ],
+   "total": 184289.748
+  },
+  {
+   "hits": 51.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 163009.645,
+    "dot": 0.0,
+    "extra": 36784.468
+   },
+   "team": [
+    "bunny-frey",
+    "lyn",
+    "omega",
+    "tyria"
+   ],
+   "total": 199794.112
+  },
+  {
+   "hits": 47.3,
+   "src": {
+    "chain": 10995.539,
+    "direct": 145946.11,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "cristelle",
+    "lyn",
+    "wedding-carmen",
+    "white-pearl-luna"
+   ],
+   "total": 156941.649
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 181078.543,
+    "dot": 16221.168,
+    "extra": 11587.872
+   },
+   "team": [
+    "bunny-scarlet@개화(SSR)",
+    "dana",
+    "petra",
+    "sunshine-cat-smile"
+   ],
+   "total": 208887.583
+  },
+  {
+   "hits": 33.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 119442.963,
+    "dot": 12526.417,
+    "extra": 0.0
+   },
+   "team": [
+    "elisa",
+    "fei",
+    "lugh",
+    "luna"
+   ],
+   "total": 131969.38
+  },
+  {
+   "hits": 38.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 145083.762,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "charlotte",
+    "clarissa",
+    "scarlet",
+    "vera"
+   ],
+   "total": 145083.762
+  },
+  {
+   "hits": 48.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 171216.815,
+    "dot": 0.0,
+    "extra": 28016.243
+   },
+   "team": [
+    "asherah-voyager",
+    "bunny-charlotte",
+    "haydee",
+    "petra"
+   ],
+   "total": 199233.058
+  },
+  {
+   "hits": 67.1,
+   "src": {
+    "chain": 36826.329,
+    "direct": 161707.564,
+    "dot": 8232.668,
+    "extra": 8489.27
+   },
+   "team": [
+    "cristelle",
+    "naru@개화(SSR)",
+    "scarlet",
+    "serpang"
+   ],
+   "total": 215255.831
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 138448.576,
+    "dot": 0.0,
+    "extra": 10762.15
+   },
+   "team": [
+    "asherah-voyager",
+    "frey",
+    "kyra",
+    "omega"
+   ],
+   "total": 149210.727
+  },
+  {
+   "hits": 50.24,
+   "src": {
+    "chain": 0.0,
+    "direct": 213270.114,
+    "dot": 13005.214,
+    "extra": 30545.488
+   },
+   "team": [
+    "claire",
+    "lugh",
+    "naru@개화(SSR)",
+    "smile"
+   ],
+   "total": 256820.816
+  },
+  {
+   "hits": 31.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 93237.511,
+    "dot": 2076.921,
+    "extra": 0.0
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "besta",
+    "haydee",
+    "marcille"
+   ],
+   "total": 95314.432
+  },
+  {
+   "hits": 44.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 190711.701,
+    "dot": 31274.839,
+    "extra": 11587.872
+   },
+   "team": [
+    "bunny-scarlet@개화(SSR)",
+    "ceres",
+    "epindel",
+    "marcille"
+   ],
+   "total": 233574.412
+  },
+  {
+   "hits": 36.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 160329.566,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "carnelia",
+    "epindel",
+    "fei",
+    "muriel"
+   ],
+   "total": 160329.566
+  },
+  {
+   "hits": 51.0,
+   "src": {
+    "chain": 29670.502,
+    "direct": 109114.528,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "cristelle",
+    "sunshine-cat-smile",
+    "vera"
+   ],
+   "total": 138785.029
+  },
+  {
+   "hits": 35.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 108601.8,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "annah",
+    "besta@개화(SSR)",
+    "bunny-frey",
+    "luna"
+   ],
+   "total": 108601.8
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 172086.868,
+    "dot": 1451.63,
+    "extra": 8489.27
+   },
+   "team": [
+    "bunny-claire",
+    "marcille",
+    "naru@개화(SSR)",
+    "petra"
+   ],
+   "total": 182027.768
+  },
+  {
+   "hits": 43.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 170611.489,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "besta@개화(SSR)",
+    "bunny-claire@개화(SSR)",
+    "seira",
+    "trish"
+   ],
+   "total": 170611.489
+  },
+  {
+   "hits": 111.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 228072.079,
+    "dot": 0.0,
+    "extra": 213007.343
+   },
+   "team": [
+    "asherah-voyager",
+    "bunny-charlotte",
+    "gwen",
+    "professor-m"
+   ],
+   "total": 441079.422
+  },
+  {
+   "hits": 38.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 148758.45,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "hilde",
+    "kyra",
+    "trish",
+    "white-pearl-luna"
+   ],
+   "total": 148758.45
+  },
+  {
+   "hits": 76.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 173795.546,
+    "dot": 0.0,
+    "extra": 112698.094
+   },
+   "team": [
+    "asherah-voyager",
+    "carmen",
+    "clarissa",
+    "professor-m"
+   ],
+   "total": 286493.64
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 174815.406,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "amora",
+    "bunny-frey",
+    "fei",
+    "vera@개화(SSR)"
+   ],
+   "total": 174815.406
+  },
+  {
+   "hits": 50.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 152073.424,
+    "dot": 0.0,
+    "extra": 36176.253
+   },
+   "team": [
+    "besta",
+    "bunny-charlotte",
+    "carnelia",
+    "naru@개화(SSR)"
+   ],
+   "total": 188249.677
+  },
+  {
+   "hits": 38.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 145597.556,
+    "dot": 3634.334,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-scarlet",
+    "harley",
+    "kyra",
+    "marcille"
+   ],
+   "total": 149231.89
+  },
+  {
+   "hits": 47.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 167031.923,
+    "dot": 0.0,
+    "extra": 30724.906
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "bunny-charlotte",
+    "charlotte",
+    "epindel"
+   ],
+   "total": 197756.829
+  },
+  {
+   "hits": 45.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 205430.946,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "amora",
+    "lydia",
+    "rosaria",
+    "white-pearl-luna"
+   ],
+   "total": 205430.946
+  },
+  {
+   "hits": 52.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 184050.451,
+    "dot": 0.0,
+    "extra": 39228.153
+   },
+   "team": [
+    "bunny-charlotte",
+    "lydia-moon-caster",
+    "tanya",
+    "white-pearl-luna"
+   ],
+   "total": 223278.604
+  },
+  {
+   "hits": 86.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 220657.424,
+    "dot": 0.0,
+    "extra": 112609.47
+   },
+   "team": [
+    "professor-m",
+    "rosaria",
+    "sunshine-cat-smile",
+    "tanya"
+   ],
+   "total": 333266.894
+  },
+  {
+   "hits": 31.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 125549.963,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "clarissa@개화(SSR)",
+    "epindel",
+    "vera",
+    "vera@개화(SSR)"
+   ],
+   "total": 125549.963
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 116748.241,
+    "dot": 21931.183,
+    "extra": 11587.872
+   },
+   "team": [
+    "besta@개화(SSR)",
+    "bunny-scarlet@개화(SSR)",
+    "lydia",
+    "vera"
+   ],
+   "total": 150267.296
+  },
+  {
+   "hits": 63.375,
+   "src": {
+    "chain": 30334.805,
+    "direct": 166290.807,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "cristelle",
+    "harley",
+    "lydia",
+    "smile"
+   ],
+   "total": 196625.612
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 173040.103,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "amora",
+    "bell",
+    "haydee",
+    "sunshine-cat-smile"
+   ],
+   "total": 173040.103
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 172559.817,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "carnelia",
+    "hilde",
+    "tanya",
+    "trish"
+   ],
+   "total": 172559.817
+  },
+  {
+   "hits": 39.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 153194.42,
+    "dot": 0.0,
+    "extra": 8489.27
+   },
+   "team": [
+    "carnelia",
+    "emily",
+    "muriel",
+    "naru@개화(SSR)"
+   ],
+   "total": 161683.69
+  },
+  {
+   "hits": 39.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 116469.53,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "besta",
+    "carmen",
+    "lydia",
+    "naru"
+   ],
+   "total": 116469.53
+  },
+  {
+   "hits": 44.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 194715.267,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "amora",
+    "lacy",
+    "muriel",
+    "naru"
+   ],
+   "total": 194715.267
+  },
+  {
+   "hits": 80.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 186328.107,
+    "dot": 6361.705,
+    "extra": 109802.673
+   },
+   "team": [
+    "bell",
+    "ceres",
+    "frey",
+    "professor-m"
+   ],
+   "total": 302492.485
+  },
+  {
+   "hits": 43.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 186721.185,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "bell",
+    "bunny-claire@개화(SSR)",
+    "carnelia",
+    "smile"
+   ],
+   "total": 186721.185
+  },
+  {
+   "hits": 35.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 122092.82,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "bell",
+    "roberta",
+    "vera@개화(SSR)"
+   ],
+   "total": 122092.82
+  },
+  {
+   "hits": 35.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 107218.287,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-claire",
+    "carmen",
+    "emily",
+    "wedding-carmen"
+   ],
+   "total": 107218.287
+  },
+  {
+   "hits": 43.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 208327.397,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "asherah-voyager",
+    "charlotte",
+    "kyra",
+    "wedding-epindel"
+   ],
+   "total": 208327.397
+  },
+  {
+   "hits": 57.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 187472.421,
+    "dot": 0.0,
+    "extra": 56132.659
+   },
+   "team": [
+    "amora",
+    "frey",
+    "gwen",
+    "lacy"
+   ],
+   "total": 243605.08
+  },
+  {
+   "hits": 101.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 206940.67,
+    "dot": 0.0,
+    "extra": 207443.253
+   },
+   "team": [
+    "gwen",
+    "hilde",
+    "professor-m",
+    "seira"
+   ],
+   "total": 414383.923
+  },
+  {
+   "hits": 32.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 82140.283,
+    "dot": 8232.668,
+    "extra": 0.0
+   },
+   "team": [
+    "clarissa",
+    "elisa",
+    "haydee",
+    "serpang"
+   ],
+   "total": 90372.951
+  },
+  {
+   "hits": 44.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 143720.983,
+    "dot": 0.0,
+    "extra": 22842.926
+   },
+   "team": [
+    "besta",
+    "rosaria",
+    "tyria",
+    "white-pearl-luna"
+   ],
+   "total": 166563.909
+  },
+  {
+   "hits": 50.428,
+   "src": {
+    "chain": 0.0,
+    "direct": 184718.323,
+    "dot": 2201.629,
+    "extra": 27585.204
+   },
+   "team": [
+    "amora",
+    "marcille",
+    "petra",
+    "waltz-asherah"
+   ],
+   "total": 214505.157
+  },
+  {
+   "hits": 36.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 141325.106,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "besta",
+    "epindel",
+    "lily",
+    "naru"
+   ],
+   "total": 141325.106
+  },
+  {
+   "hits": 45.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 239941.855,
+    "dot": 17560.083,
+    "extra": 12899.707
+   },
+   "team": [
+    "amora",
+    "bunny-scarlet@개화(SSR)",
+    "epindel",
+    "tanya"
+   ],
+   "total": 270401.645
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 151074.677,
+    "dot": 2076.921,
+    "extra": 0.0
+   },
+   "team": [
+    "asherah-voyager",
+    "bell",
+    "besta@개화(SSR)",
+    "marcille"
+   ],
+   "total": 153151.598
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 151302.345,
+    "dot": 15548.603,
+    "extra": 11587.872
+   },
+   "team": [
+    "annah",
+    "bunny-scarlet@개화(SSR)",
+    "seira",
+    "sunshine-cat-smile"
+   ],
+   "total": 178438.821
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 190119.614,
+    "dot": 15548.603,
+    "extra": 20077.142
+   },
+   "team": [
+    "bunny-scarlet@개화(SSR)",
+    "epindel",
+    "lydia-moon-caster",
+    "naru@개화(SSR)"
+   ],
+   "total": 225745.36
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 165561.009,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "carnelia",
+    "clarissa",
+    "clarissa@개화(SSR)"
+   ],
+   "total": 165561.009
+  },
+  {
+   "hits": 88.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 200043.369,
+    "dot": 0.0,
+    "extra": 164008.499
+   },
+   "team": [
+    "professor-m",
+    "rosaria",
+    "sunshine-cat-smile",
+    "tyria"
+   ],
+   "total": 364051.868
+  },
+  {
+   "hits": 63.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 140927.02,
+    "dot": 0.0,
+    "extra": 76934.241
+   },
+   "team": [
+    "carmen",
+    "gwen",
+    "omega",
+    "sunshine-cat-smile"
+   ],
+   "total": 217861.261
+  },
+  {
+   "hits": 39.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 156352.728,
+    "dot": 25850.579,
+    "extra": 11587.872
+   },
+   "team": [
+    "bunny-scarlet@개화(SSR)",
+    "marcille",
+    "petra",
+    "wedding-carmen"
+   ],
+   "total": 193791.18
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 146298.361,
+    "dot": 40632.077,
+    "extra": 0.0
+   },
+   "team": [
+    "annah",
+    "bunny-scarlet",
+    "marcille@개화(SSR)",
+    "yoo-mina"
+   ],
+   "total": 186930.438
+  },
+  {
+   "hits": 36.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 136867.87,
+    "dot": 5677.72,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-scarlet",
+    "marcille",
+    "tanya",
+    "vera@개화(SSR)"
+   ],
+   "total": 142545.59
+  },
+  {
+   "hits": 46.828,
+   "src": {
+    "chain": 0.0,
+    "direct": 146396.658,
+    "dot": 0.0,
+    "extra": 25152.692
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "asherah-voyager",
+    "dana",
+    "waltz-asherah"
+   ],
+   "total": 171549.35
+  },
+  {
+   "hits": 50.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 153576.649,
+    "dot": 0.0,
+    "extra": 30894.641
+   },
+   "team": [
+    "besta",
+    "bunny-charlotte",
+    "bunny-frey",
+    "lacy"
+   ],
+   "total": 184471.291
+  },
+  {
+   "hits": 39.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 141591.323,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "annah",
+    "emily",
+    "lacy",
+    "lydia"
+   ],
+   "total": 141591.323
+  },
+  {
+   "hits": 41.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 173737.718,
+    "dot": 29924.821,
+    "extra": 11587.872
+   },
+   "team": [
+    "annah",
+    "bunny-scarlet@개화(SSR)",
+    "marcille@개화(SSR)",
+    "wedding-epindel"
+   ],
+   "total": 215250.411
+  },
+  {
+   "hits": 57.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 158088.677,
+    "dot": 0.0,
+    "extra": 64151.61
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "gwen",
+    "lily",
+    "scarlet"
+   ],
+   "total": 222240.287
+  },
+  {
+   "hits": 53.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 180109.763,
+    "dot": 0.0,
+    "extra": 34015.861
+   },
+   "team": [
+    "lacy",
+    "omega",
+    "rosaria",
+    "tyria"
+   ],
+   "total": 214125.624
+  },
+  {
+   "hits": 38.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 148330.793,
+    "dot": 8730.067,
+    "extra": 0.0
+   },
+   "team": [
+    "petra",
+    "seira",
+    "serpang",
+    "wedding-carmen"
+   ],
+   "total": 157060.86
+  },
+  {
+   "hits": 39.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 147591.997,
+    "dot": 5890.467,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-claire@개화(SSR)",
+    "ceres",
+    "clarissa",
+    "frey"
+   ],
+   "total": 153482.465
+  },
+  {
+   "hits": 35.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 140379.971,
+    "dot": 1989.826,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-frey",
+    "bunny-scarlet",
+    "carnelia",
+    "wedding-carmen"
+   ],
+   "total": 142369.797
+  },
+  {
+   "hits": 43.8,
+   "src": {
+    "chain": 4886.906,
+    "direct": 158014.364,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "bunny-claire@개화(SSR)",
+    "clarissa",
+    "cristelle"
+   ],
+   "total": 162901.27
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 166942.141,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "emily",
+    "lydia",
+    "roberta",
+    "seira"
+   ],
+   "total": 166942.141
+  },
+  {
+   "hits": 40.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 189861.918,
+    "dot": 4238.415,
+    "extra": 0.0
+   },
+   "team": [
+    "epindel",
+    "marcille@개화(SSR)",
+    "naru",
+    "petra"
+   ],
+   "total": 194100.333
+  },
+  {
+   "hits": 45.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 165155.654,
+    "dot": 1364.997,
+    "extra": 21867.138
+   },
+   "team": [
+    "epindel",
+    "muriel",
+    "scarlet",
+    "tyria"
+   ],
+   "total": 188387.789
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 133882.411,
+    "dot": 0.0,
+    "extra": 10762.15
+   },
+   "team": [
+    "cristelle",
+    "elisa",
+    "lydia-moon-caster",
+    "omega"
+   ],
+   "total": 144644.561
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 143982.866,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-claire",
+    "frey",
+    "kyra",
+    "smile"
+   ],
+   "total": 143982.866
+  },
+  {
+   "hits": 78.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 204041.445,
+    "dot": 0.0,
+    "extra": 124168.639
+   },
+   "team": [
+    "bunny-frey",
+    "emily",
+    "professor-m",
+    "seira"
+   ],
+   "total": 328210.084
+  },
+  {
+   "hits": 38.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 116343.445,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "clarissa",
+    "emily",
+    "harley",
+    "hilde"
+   ],
+   "total": 116343.445
+  },
+  {
+   "hits": 50.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 192343.585,
+    "dot": 0.0,
+    "extra": 29175.81
+   },
+   "team": [
+    "bunny-charlotte",
+    "carnelia",
+    "kyra",
+    "rosaria"
+   ],
+   "total": 221519.395
+  },
+  {
+   "hits": 39.05,
+   "src": {
+    "chain": 0.0,
+    "direct": 149636.634,
+    "dot": 0.0,
+    "extra": 15089.207
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "bunny-claire@개화(SSR)",
+    "claire",
+    "frey"
+   ],
+   "total": 164725.841
+  },
+  {
+   "hits": 32.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 87889.619,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "besta@개화(SSR)",
+    "frey",
+    "naru",
+    "wedding-carmen"
+   ],
+   "total": 87889.619
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 116849.62,
+    "dot": 0.0,
+    "extra": 8489.27
+   },
+   "team": [
+    "besta",
+    "emily",
+    "naru@개화(SSR)",
+    "wedding-carmen"
+   ],
+   "total": 125338.89
+  },
+  {
+   "hits": 50.7,
+   "src": {
+    "chain": 6457.697,
+    "direct": 148473.563,
+    "dot": 0.0,
+    "extra": 12782.631
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "cristelle",
+    "naru",
+    "omega"
+   ],
+   "total": 167713.891
+  },
+  {
+   "hits": 39.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 155490.474,
+    "dot": 26900.453,
+    "extra": 11587.872
+   },
+   "team": [
+    "bunny-scarlet@개화(SSR)",
+    "carnelia",
+    "muriel",
+    "white-pearl-luna"
+   ],
+   "total": 193978.799
+  },
+  {
+   "hits": 46.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 144560.376,
+    "dot": 0.0,
+    "extra": 12782.631
+   },
+   "team": [
+    "luna",
+    "lydia",
+    "omega",
+    "roberta"
+   ],
+   "total": 157343.007
+  },
+  {
+   "hits": 49.05,
+   "src": {
+    "chain": 0.0,
+    "direct": 219390.95,
+    "dot": 0.0,
+    "extra": 15089.207
+   },
+   "team": [
+    "amora",
+    "claire",
+    "hilde",
+    "wedding-epindel"
+   ],
+   "total": 234480.158
+  },
+  {
+   "hits": 48.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 173445.131,
+    "dot": 23177.708,
+    "extra": 21601.775
+   },
+   "team": [
+    "naru@개화(SSR)",
+    "omega",
+    "roberta",
+    "yoo-mina"
+   ],
+   "total": 218224.614
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 150275.188,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "carmen",
+    "kyra",
+    "lily",
+    "trish"
+   ],
+   "total": 150275.188
+  }
+ ],
+ "stages": [
+  {
+   "name": "4딜덱",
+   "rows": [
+    {
+     "dmg": 56000,
+     "stage": "길레 1단계",
+     "ttk": 2.2222
+    },
+    {
+     "dmg": 84000,
+     "stage": "길레 2단계",
+     "ttk": 3.125
+    },
+    {
+     "dmg": 302690,
+     "stage": "길레 3단계",
+     "ttk": 29.2707
+    },
+    {
+     "dmg": 98800,
+     "stage": "매니저 그레고리 Ⅰ",
+     "ttk": 3.3333
+    },
+    {
+     "dmg": 257399,
+     "stage": "매니저 그레고리 Ⅱ",
+     "ttk": 10.881
+    }
+   ],
+   "team": [
+    "professor-m",
+    "gwen",
+    "fei",
+    "amora"
+   ]
+  },
+  {
+   "name": "rand0",
+   "rows": [
+    {
+     "dmg": 56000,
+     "stage": "길레 1단계",
+     "ttk": 3.3333
+    },
+    {
+     "dmg": 84000,
+     "stage": "길레 2단계",
+     "ttk": 4.8421
+    },
+    {
+     "dmg": 167732,
+     "stage": "길레 3단계",
+     "ttk": null
+    },
+    {
+     "dmg": 98800,
+     "stage": "매니저 그레고리 Ⅰ",
+     "ttk": 5.1852
+    },
+    {
+     "dmg": 140562,
+     "stage": "매니저 그레고리 Ⅱ",
+     "ttk": 17.7778
+    }
+   ],
+   "team": [
+    "gwen",
+    "marcille@개화(SSR)",
+    "vera@개화(SSR)",
+    "wedding-epindel"
+   ]
+  },
+  {
+   "name": "rand1",
+   "rows": [
+    {
+     "dmg": 56000,
+     "stage": "길레 1단계",
+     "ttk": 4.1111
+    },
+    {
+     "dmg": 84000,
+     "stage": "길레 2단계",
+     "ttk": 5.5556
+    },
+    {
+     "dmg": 168537,
+     "stage": "길레 3단계",
+     "ttk": null
+    },
+    {
+     "dmg": 98800,
+     "stage": "매니저 그레고리 Ⅰ",
+     "ttk": 5.8275
+    },
+    {
+     "dmg": 143732,
+     "stage": "매니저 그레고리 Ⅱ",
+     "ttk": 17.0895
+    }
+   ],
+   "team": [
+    "bunny-charlotte",
+    "bunny-frey",
+    "clarissa",
+    "yoo-mina"
+   ]
+  },
+  {
+   "name": "rand2",
+   "rows": [
+    {
+     "dmg": 56000,
+     "stage": "길레 1단계",
+     "ttk": 4.2593
+    },
+    {
+     "dmg": 84000,
+     "stage": "길레 2단계",
+     "ttk": 7.3283
+    },
+    {
+     "dmg": 88459,
+     "stage": "길레 3단계",
+     "ttk": null
+    },
+    {
+     "dmg": 98800,
+     "stage": "매니저 그레고리 Ⅰ",
+     "ttk": 8.8733
+    },
+    {
+     "dmg": 79549,
+     "stage": "매니저 그레고리 Ⅱ",
+     "ttk": 34.768
+    }
+   ],
+   "team": [
+    "bell",
+    "bunny-claire",
+    "frey",
+    "muriel"
+   ]
+  },
+  {
+   "name": "rand3",
+   "rows": [
+    {
+     "dmg": 56000,
+     "stage": "길레 1단계",
+     "ttk": 3.7
+    },
+    {
+     "dmg": 84000,
+     "stage": "길레 2단계",
+     "ttk": 5.5758
+    },
+    {
+     "dmg": 129248,
+     "stage": "길레 3단계",
+     "ttk": null
+    },
+    {
+     "dmg": 98800,
+     "stage": "매니저 그레고리 Ⅰ",
+     "ttk": 6.2758
+    },
+    {
+     "dmg": 105353,
+     "stage": "매니저 그레고리 Ⅱ",
+     "ttk": 25.2974
+    }
+   ],
+   "team": [
+    "bunny-scarlet",
+    "harley",
+    "kyra",
+    "tanya"
+   ]
+  },
+  {
+   "name": "rand4",
+   "rows": [
+    {
+     "dmg": 56000,
+     "stage": "길레 1단계",
+     "ttk": 3.22
+    },
+    {
+     "dmg": 84000,
+     "stage": "길레 2단계",
+     "ttk": 4.8232
+    },
+    {
+     "dmg": 184777,
+     "stage": "길레 3단계",
+     "ttk": null
+    },
+    {
+     "dmg": 98800,
+     "stage": "매니저 그레고리 Ⅰ",
+     "ttk": 5.3797
+    },
+    {
+     "dmg": 151916,
+     "stage": "매니저 그레고리 Ⅱ",
+     "ttk": 17.718
+    }
+   ],
+   "team": [
+    "bell",
+    "besta@개화(SSR)",
+    "clarissa@개화(SSR)",
+    "gwen"
+   ]
+  },
+  {
+   "name": "rand5",
+   "rows": [
+    {
+     "dmg": 56000,
+     "stage": "길레 1단계",
+     "ttk": 2.8846
+    },
+    {
+     "dmg": 84000,
+     "stage": "길레 2단계",
+     "ttk": 4.4587
+    },
+    {
+     "dmg": 177106,
+     "stage": "길레 3단계",
+     "ttk": null
+    },
+    {
+     "dmg": 98800,
+     "stage": "매니저 그레고리 Ⅰ",
+     "ttk": 4.8925
+    },
+    {
+     "dmg": 139393,
+     "stage": "매니저 그레고리 Ⅱ",
+     "ttk": 18.4543
+    }
+   ],
+   "team": [
+    "carnelia",
+    "cristelle",
+    "lugh",
+    "waltz-asherah"
+   ]
+  },
+  {
+   "name": "rand6",
+   "rows": [
+    {
+     "dmg": 56000,
+     "stage": "길레 1단계",
+     "ttk": 4.1
+    },
+    {
+     "dmg": 84000,
+     "stage": "길레 2단계",
+     "ttk": 6.2903
+    },
+    {
+     "dmg": 111637,
+     "stage": "길레 3단계",
+     "ttk": null
+    },
+    {
+     "dmg": 98800,
+     "stage": "매니저 그레고리 Ⅰ",
+     "ttk": 8.2083
+    },
+    {
+     "dmg": 107667,
+     "stage": "매니저 그레고리 Ⅱ",
+     "ttk": 27.0526
+    }
+   ],
+   "team": [
+    "frey",
+    "luna",
+    "smile",
+    "tyria"
+   ]
+  },
+  {
+   "name": "rand7",
+   "rows": [
+    {
+     "dmg": 56000,
+     "stage": "길레 1단계",
+     "ttk": 4.7943
+    },
+    {
+     "dmg": 84000,
+     "stage": "길레 2단계",
+     "ttk": 7.3865
+    },
+    {
+     "dmg": 92733,
+     "stage": "길레 3단계",
+     "ttk": null
+    },
+    {
+     "dmg": 98800,
+     "stage": "매니저 그레고리 Ⅰ",
+     "ttk": 8.3482
+    },
+    {
+     "dmg": 70686,
+     "stage": "매니저 그레고리 Ⅱ",
+     "ttk": 34.5946
+    }
+   ],
+   "team": [
+    "besta@개화(SSR)",
+    "bunny-scarlet",
+    "frey",
+    "marcille@개화(SSR)"
+   ]
+  },
+  {
+   "name": "rand8",
+   "rows": [
+    {
+     "dmg": 56000,
+     "stage": "길레 1단계",
+     "ttk": 3.7587
+    },
+    {
+     "dmg": 84000,
+     "stage": "길레 2단계",
+     "ttk": 5.4502
+    },
+    {
+     "dmg": 151770,
+     "stage": "길레 3단계",
+     "ttk": null
+    },
+    {
+     "dmg": 98800,
+     "stage": "매니저 그레고리 Ⅰ",
+     "ttk": 5.8421
+    },
+    {
+     "dmg": 112062,
+     "stage": "매니저 그레고리 Ⅱ",
+     "ttk": 21.4211
+    }
+   ],
+   "team": [
+    "frey",
+    "gwen",
+    "vera@개화(SSR)",
+    "waltz-asherah"
+   ]
+  }
+ ]
+}

@@ -32,12 +32,15 @@ def main():
     html = get(DB)
     m = re.search(r'src="(data/main\.js[^"]*)"', html) or (None if DRY else sys.exit("databook index.html 에서 main.js 를 찾지 못함"))
     main_url = DB + (m.group(1) if m else "data/main.js")
-    app = get(DB + "app.js") if not DRY else ""
-    mf = re.search(r"data/foe\.js\?v=\w+", app)
-    foe_url = DB + (mf.group(0) if mf else "data/foe.js")
+    main_js = get(main_url)
+    # foe.js 버전 키는 main.js 의 window.__SSV={"foe":"…"} 에 있다(app.js 가 'data/'+key+'.js?v='+__SSV[key] 로 조립). 2026-10 확인
+    mf = re.search(r'__SSV\s*=\s*\{[^}]*"foe"\s*:\s*"(\w+)"', main_js)
+    if not DRY and not mf:
+        sys.exit("main.js 에서 foe.js 버전 키(__SSV.foe)를 찾지 못함 — 사이트 구조 변경 확인 필요")
+    foe_url = DB + "data/foe.js" + ("?v=" + mf.group(1) if mf else "")
     if not DRY:
         tmp = os.path.join(RAW, "_main.js")
-        open(tmp, "w", encoding="utf-8", newline="\n").write(get(main_url))
+        open(tmp, "w", encoding="utf-8", newline="\n").write(main_js)
         subprocess.run([sys.executable, "-X", "utf8", "-I", os.path.join(ROOT, "tools", "unwrap_ssd.py"), tmp], check=True)
         os.remove(tmp)
         open(os.path.join(RAW, "foe.js"), "w", encoding="utf-8", newline="\n").write(get(foe_url))

@@ -3,9 +3,17 @@
 최종 갱신: 2026-10-20. 새 세션은 `AI\CLAUDE.md` → 이 파일 → `README.md` 순으로 읽을 것. 메모리 `party-navigator` 에도 요약 있음.
 
 ## 상태
-- 저장소: https://github.com/QooReche/starsavior-party-navigator (**공개**, GitHub Pages: https://QooReche.github.io/starsavior-party-navigator/). 최신 커밋 `b1b1241`, 원격과 일치.
-- 로컬: `AI\partynavigator\src` (git). 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
+- 저장소: https://github.com/QooReche/starsavior-party-navigator (**공개**, GitHub Pages: https://QooReche.github.io/starsavior-party-navigator/). 최신 커밋은 `git log` 로 확인.
+- 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
 - 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
+
+## 진행 중: 전투 시뮬레이터 분리·고도화 (2026-10-20 시작)
+- 확정 설계 = `docs/battlesim_design.md`(Claude 초안 → codex·Fable 독립 검토 → 합의안). 공식·수치 근거 = `docs/formulas_local.md`(데이터북 계산기 코드·로컬 데이터), `docs/formulas_web.md`(공식 공지 114건·아카·패치 연표).
+- **P0 완료**: `fetch_sources.py` foe.js 버전 키 버그 수정(main.js `__SSV`), 회귀 기준 `tests/golden_check.py`(`--write` 저장 / 인자 없이 대조, 일부러 상수를 바꿔 실패하는 것 확인), 실측 기록 양식 `calibration/`.
+- **다음 = P1**: `battlesim/` 패키지로 구조 분리, 골든 **정확 일치** 유지. 그다음 P2 규칙 교정(효과 적중 공식·감소 상한·카운터·협공 기본기 한정·노바 팀 풀 등).
+- 확인된 현 엔진 오류(P2 대상): 협공이 모든 공격 뒤·여러 명 발동(공식: 아군 기본기 뒤·1명), 노바 개인 단위(팀 공용 정황), 디버프 성공 0.9 고정(실제 효적−효저), 장비 flat 순서.
+- 데이터: 로컬 = 10/15 패치(2.50), 라이브와 동일(10/20 확인). **10/22 작전 26~37 최종보스 공격력 하향 예정 → 이후 `fetch_sources.py` 로 재수집.**
+- 사용자 확인 대기: 오토 전투 위주인지(오토는 노바 버스트를 안 씀 → 기본값 결정).
 
 ## 구현된 것(요약, 상세는 README)
 콘텐츠/스테이지별 4인 파티(전열2/후열2, 인게임 편성 UI 배치) + 브레이크 스킬 + 리더(속도 +10) 추천 + 대체 후보(이 구원자만 빠졌을 때 팀 점수순), 속성 상성, DB 티어, 스킬 연계 시너지 1,120쌍과 구조도(Cytoscape), 전투력 보정(패널티) 입력, 성간 회랑 속성 제한(태양/달/별 회랑은 해당 속성만, 사용자 확인), 스테이지 적 기믹 44유형 반영(개인 점수 + 필요 슬롯 보너스), 보유 구원자/브레이크 스킬 선택(왼쪽 서랍, localStorage 저장), 추천 근거는 기본 숨김("추천 근거 보기" 체크).
