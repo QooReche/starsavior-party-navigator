@@ -76,6 +76,44 @@ def dump_lines(db):
                 counts=dict(units=len(units), lines=sum(len(v) for v in units.values()), unparsed=len(unparsed)))
 
 
+def _cmd_simulate(args):
+    from .api import simulate
+    spec = {}
+    if args.spec:
+        with open(args.spec, encoding='utf-8') as f:
+            spec = json.load(f)
+    party = spec.get('party')
+    if args.party:
+        party = {'units': args.party.split(','), 'leader': args.leader}
+    elif args.leader is not None and party is not None:
+        party = dict(party if isinstance(party, dict) else {'units': party}, leader=args.leader)
+    enc = spec.get('encounter') or {}
+    if args.stage:
+        enc = dict(enc, stage=args.stage)
+    opt = dict(spec.get('options') or {})
+    if args.runs is not None:
+        opt['n_runs'] = args.runs
+    if args.seed is not None:
+        opt['seed'] = args.seed
+    if args.timeline:
+        opt['timeline'] = True
+    if args.rules:
+        opt['rules_override'] = dict(opt.get('rules_override') or {}, **json.loads(args.rules))
+    if party is None or not enc:
+        raise SystemExit('simulate: --party 와 --stage(또는 --spec 의 party·encounter)가 필요')
+    res = _jsonable(simulate(party, enc, opt))
+    text = json.dumps(res, ensure_ascii=False, indent=1)
+    if args.out:
+        tmp = args.out + '.tmp'
+        with open(tmp, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(text)
+        os.replace(tmp, args.out)
+        o = res['outcome']
+        print('wrote', args.out, 'clear_p', o['clear_p'], 'wipe_p', o['wipe_p'], 'ttk_median', o['ttk_median'])
+    else:
+        print(text)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='cmd')
@@ -103,7 +141,20 @@ def main(argv=None):
     p.add_argument('--star', type=int, default=0)
     p = sub.add_parser('lines', help='구원자별 파싱된 스킬 줄(Line) + 해석 못 한 목록을 JSON 으로 덤프')
     p.add_argument('--out', default=os.path.join(OUT_DIR, 'lines.json'))
+    p = sub.add_parser('simulate', help='P3 확률 엔진: 파티 vs 스테이지 n_runs 판 (JSON 입력/출력, battlesim.api.simulate)')
+    p.add_argument('--spec', help='JSON 파일: {"party": ..., "encounter": ..., "options": ...} (아래 인자가 덮어씀)')
+    p.add_argument('--party', help='구원자 key/이름 쉼표 목록(앞 2명 전열, 뒤 2명 후열)')
+    p.add_argument('--leader', type=int, help='리더 칸 번호(0~3, 속도 +10)')
+    p.add_argument('--stage', help='콘텐츠key/탭/스테이지 이름 (예: cosmo/길레/길레 1단계)')
+    p.add_argument('--runs', type=int, help='반복 판 수(기본 100)')
+    p.add_argument('--seed', type=int, help='난수 시드(기본 1)')
+    p.add_argument('--timeline', action='store_true', help='첫 판의 행동 기록 포함')
+    p.add_argument('--rules', help='규칙 덮어쓰기 JSON (예: {"target_defender_mult": 4.0})')
+    p.add_argument('--out', help='결과 JSON 파일(없으면 화면)')
     args = ap.parse_args(argv)
+    if args.cmd == 'simulate':
+        _cmd_simulate(args)
+        return
     db = get_db()
     if args.cmd == 'index':
         idx = build_index(args.turns, None, args.star, db)

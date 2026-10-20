@@ -63,5 +63,31 @@
   "dmg_reduction": {"value": "sum_cap", "legacy": "none", "alt": ["none"], "grade": "data",
                     "note": "대상 감소 합: sum_cap = 피해 x (1 + 증가 합 - min(DEC_CAP, 감소 합 - 브레이크 BREAK_DEC)). 지금 감소 합에 들어가는 것은 구원자가 적에게 거는 '받는 피해 감소' 계열 약화(속박 '전체 대상 피해 감소 -20%', 표적 각인 '특수기 피해 감소 -20%' 등)뿐 — 적 자신의 피해 감소 기믹·스테이지 fx 는 적 행동 모델(P3) 전까지 없음. none = 감소 합 없음, 브레이크는 증가 합 +15%(교정 전)",
                     "source": "databook #d-sum #d-break (docs/formulas_local.md 3장), 상태 효과 사전(속박·표적 각인, formulas_web.md 4.2)"}
+ },
+ "mc": {
+  "_note": "P3 확률(몬테카를로) 엔진 battlesim/mc.py 전용 규칙. 기대값 엔진(engine.Sim)의 opts 와 섞지 않는다(damage_index _meta.opts 가 바뀌지 않게). 근거 = docs/battlesim_design.md 「P3 상세」",
+  "enemy_skill_ai": {"value": "ult_special_basic", "grade": "assumed", "note": "적 스킬 선택: 쿨타임이 찬 궁극기 > 특수기 > 기본기(구원자 오토와 같은 규칙). 침묵이면 쿨타임 있는 스킬 불가, 도발이면 도발자에게 기본기", "source": "설계 3절 표(실측 대상)"},
+  "enemy_init_cd": {"value": 1.0, "grade": "assumed", "note": "적의 시작 쿨타임 = 최대 쿨타임 x 이 값(구원자 init_cd_frac 과 같은 가정)"},
+  "target_row_weight": {"value": [0.8, 0.2], "grade": "community", "note": "적 단일 공격 대상: 전열 칸 몫 0.8 / 후열 칸 몫 0.2(선택 가능한 대상이 있는 열만, 한 열이 비면 다른 열이 전부)", "source": "나무위키(docs/research.md 1.1), formulas_web.md 4.3"},
+  "target_defender_mult": {"value": 2.0, "alt": [1.0, 4.0], "grade": "assumed", "note": "같은 열 안에서 디펜더 가중 배수(디펜더가 더 자주 맞는다는 말만 있고 수치 없음)", "source": "나무위키·아카(수치 미상)"},
+  "target_mode": {"value": "row_then_unit", "alt": ["unit_weight"], "grade": "assumed", "note": "row_then_unit = 열 몫(0.8/0.2)을 먼저 고르고 열 안에서 디펜더 가중 추첨 / unit_weight = 개인 가중(열 몫/열 인원 x 디펜더 배수)을 전체 정규화"},
+  "ally_auto_target": {"value": "boss_first", "alt": ["lowest_hp"], "grade": "user_observation", "note": "구원자 오토 단일 공격 대상: boss_first = 웨이브에 살아 있는 보스가 있으면 보스(보스가 여럿이면 그중 보호막+생명력 합 최저), 없으면 보호막+생명력 합이 가장 낮은 적(같으면 앞 칸) / lowest_hp = 보스 구분 없이 보호막+생명력 합 최저(공식 2026-03-19 개발 중 표기, P3 첫 판 기본값). 결과: 단일 공격만 있는 파티는 보스 옆 쫄몹이 오래 살아 계속 때린다", "source": "사용자 관찰 2026-10-20(calibration/README.md 「사용자 관찰 기록」), 공식 2026-03-19(formulas_web.md 4.3)"},
+  "guard_mode": {"value": "pre_defense_split", "alt": ["final_transfer"], "grade": "data", "note": "수호(피해 분담): pre_defense_split = 방어 적용 전 기본 피해에서 분담 몫을 떼어 수호자 방어·감소로 따로 계산 / final_transfer = 대상 기준 최종 피해의 몫을 그대로 수호자에게. 둘 다 치명·난수는 원 공격 것을 그대로 쓰고(다시 굴리지 않음), 수호자의 피격 반응·재분담·반격은 일어나지 않음. 가장 높은 분담 1개만", "source": "databook #d-formula(「방어 적용 전에 먼저 떼어 감」), 상태 효과 사전 수호(가장 높은 것만)"},
+  "counter_inc": {"value": 0.1, "grade": "data", "note": "카운터: 지금 쓰는 스킬 칸 = 맞는 쪽이 마지막으로 쓴 칸이면 증가 합 +10%. 지속 피해는 시전자가 마지막으로 쓴 칸으로 판정", "source": "databook #d-break (formulas_local.md 3장)"},
+  "leader_speed": {"value": 10.0, "grade": "data", "note": "리더 속도 +10(양 팀). 아군 리더 = party_spec.leader", "source": "databook #s-misc (formulas_local.md 4.5)"},
+  "enemy_leader": {"value": "boss", "alt": ["first", "none"], "grade": "assumed", "note": "적 리더: boss = 웨이브의 첫 보스(없으면 첫 적) / first = 웨이브 첫 적 / none = 없음"},
+  "enemy_same_formula": {"value": true, "alt": [false], "grade": "assumed", "note": "적 공격도 구원자와 같은 피해식(x1.85, 전체 /4, 방어율 def/(def+3000), 치명, 증가·감소 합 상한 50%, 난수). false = 적 스킬 피해에만 x1.85 를 빼는 민감도 프로필", "source": "databook 피해식은 양방향 서술(formulas_local.md 1.2)"},
+  "rand_range": {"value": [0.95, 1.0499], "grade": "data", "note": "피해 난수(0.01% 단위 균등). 지속 피해·연쇄 피해에도 적용(databook #d-dot)"},
+  "turn_ticks": {"value": 100.0, "grade": "assumed", "note": "「모델 기준 턴」 = 시뮬 시간 100틱(속도 100 유닛이 한 번 행동하는 기간). 턴 제한은 이 값으로 비교(시각 <= 제한 x 100 인 행동까지 허용). 추가 턴·협공·웨이브 전환은 시간을 쓰지 않음. 게임의 실제 턴 카운터 정의는 미확인"},
+  "max_events": {"value": 50000, "grade": "assumed", "note": "판당 이벤트(행동·시전·피해) 상한. 넘으면 EventLimitError — 정상 결과를 돌려주지 않는다(설계 5절)"},
+  "max_depth": {"value": 4, "grade": "assumed", "note": "추가 발동·협공·반응의 연쇄 깊이 상한. 넘은 시전은 건너뛰고 unsupported 에 기록"},
+  "unknown_cond": {"value": "skip", "alt": ["roll"], "grade": "assumed", "note": "엔진이 모르는 조건 키가 붙은 줄: skip = 그 줄을 실행하지 않고 기록 / roll = unknown_cond_p 확률로 실행(기대값 엔진과 같은 0.5)"},
+  "check_buff_expiry": {"value": "action", "grade": "assumed", "note": "지속 턴 표기가 없는 「확인용/체크용/카운팅」 버프는 그 행동이 끝나면 사라짐(데이터에 해제 줄이 없는 경우가 있어 영구로 두면 순환 기믹이 멈춤)"},
+  "shield_tick": {"value": "turn_start", "alt": ["turn_end"], "grade": "assumed", "note": "보호막 지속 턴 차감 시점(공식: 「턴 종료 시 차감 안 됨」만 확인). turn_start = 보유자 턴 시작에 차감"},
+  "caster_death": {"value": "keep_buffs", "grade": "assumed", "note": "시전자가 죽어도 남에게 준 강화·약화는 남는다. 도발은 도발자가 죽으면 효과 없음(일반 대상 선택), 수호는 수호자 본인 버프라 함께 사라짐"},
+  "stage_fx_target": {"value": "enemies", "grade": "assumed", "note": "스테이지 효과(fx: 받는 피해 -15% 등)는 그 스테이지의 적에게 적용"},
+  "evade_model": {"value": "rate_minus_acc", "alt": ["off"], "grade": "assumed", "note": "회피 확률 = 대상 회피율(〈회피율 증가〉 +50% 등) - 공격자 명중률 보정(〈명중률 감소〉 -30% 면 +30%p), 공격자가 〈필중〉이면 0. 기본 회피율은 0(데이터 없음). 회피하면 치명 없음·감소 합 +50%(databook #d-sum)·약화 안 걸림(공식 2026-06-04). 반격·선제 방어는 미지원(기본 확률 데이터 없음)"},
+  "wave_carry": {"value": "keep", "grade": "assumed", "note": "웨이브 전환 시 아군 HP·버프·게이지·쿨타임 유지, 새 적은 게이지 0. 아군 「웨이브 시작 시」 줄은 매 웨이브, 「전투 시작 시」는 처음 한 번"},
+  "heal_target": {"value": "lowest_hp_ratio", "grade": "assumed", "note": "「아군 1명(자동 지정)」·아군 단일 대상 회복/보호막/부활 스킬의 대상 = 생명력 비율이 가장 낮은 아군(부활은 쓰러진 아군), 그 밖의 아군 단일 버프 = 공격력이 가장 높은 아군(기대값 엔진과 같음)"}
  }
 }

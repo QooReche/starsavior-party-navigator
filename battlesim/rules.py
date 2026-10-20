@@ -69,3 +69,6 @@ DEFAULT_OPTS = dict(
 )
 # 교정 전(P1) 값: rules/default.json 의 legacy. tests/rank_check.py 가 「교정 전」 프로필로 쓴다.
 LEGACY_OPTS = {k: v['legacy'] for k, v in RULES['opts'].items() if 'legacy' in v}
+# P3 확률 엔진(battlesim/mc.py) 전용 규칙. DEFAULT_OPTS 와 따로 둔다(기대값 엔진·damage_index 출력 불변).
+MC_RULES = {k: v for k, v in RULES.get('mc', {}).items() if not k.startswith('_')}
+MC_OPTS = {k: v['value'] for k, v in MC_RULES.items()}

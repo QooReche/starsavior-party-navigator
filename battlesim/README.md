@@ -12,7 +12,10 @@
 | `starsavior/parser.py` | 스킬 문장(`ef` 줄) 파서 → `Line`, `Skill`, 구원자 정의 `UnitDef` |
 | `engine.py` | 행동 게이지 이벤트 시뮬레이터 `Sim`(기대값), 런타임 개체, 더미 딜러 `DummyDef` |
 | `metrics.py` | 개인 지표·파티 시뮬·대표 스테이지·`build_index`(damage_index) |
-| `cli.py` | 명령줄(index/stats/party/stage/unit/lines) |
+| `cli.py` | 명령줄(index/stats/party/stage/unit/lines/simulate) |
+| `mc.py` | **P3 확률(몬테카를로) 엔진** `Battle`: 양 진영 대칭(적 스킬·쿨·광역·대상 선택, 아군 HP·사망·회복·보호막·도발·수호·피해 감소·피격 반응, 카운터, 리더 속도, 회피), 치명·효과 적중·확률 효과·협공·대상·피해 난수를 실제로 굴림. `support_report`(실행 전 미지원 줄 검사) |
+| `api.py` | 재사용 계약 `simulate(party_spec, encounter_spec, options)`(설계 2절) — `battlesim.simulate` 로도 부름 |
+| `starsavior/foe.py` | 적 로더: `rawdata/foe.js` 에서 스테이지 웨이브의 적 `FoeDef`(스탯 10종·스킬·효과 줄·면역), 스테이지 fx 해석, 상태 효과 사전(무작위 효과용) |
 
 `tools/sim_damage.py` 는 호환용 껍데기다. 예전 import 이름(`sd.get_db`, `sd.build_index` …)과 명령이 그대로 동작한다.
 
@@ -24,6 +27,19 @@ python -X utf8 -I tools/sim_damage.py index                  # tools/raw/damage_
 python -X utf8 -I tools/sim_damage.py lines                  # tools/raw/lines.json: 구원자별 파싱된 Line + unparsed 목록
 python -X utf8 -m battlesim unit 그웬                         # 패키지로 직접 실행(-I 를 빼야 현재 폴더에서 찾음)
 ```
+### 확률 엔진(P3) — 생존·클리어 확률
+```
+python -X utf8 -I tools/sim_damage.py simulate --party gwen,fei,professor-m,amora --leader 0 --stage "cosmo/길레/길레 2단계" --runs 200 --out 결과.json
+python -X utf8 -I tools/sim_damage.py simulate --spec 입력.json        # {"party": ..., "encounter": ..., "options": ...}
+python -X utf8 -I tools/sim_damage.py simulate ... --rules "{\"target_defender_mult\": 4.0}"   # 규칙 민감도
+```
+파이썬: `from battlesim import simulate; simulate({"units": ["gwen", "fei", "professor-m", "amora"], "leader": 0}, {"stage": "rush/매니저 그레고리/매니저 그레고리 Ⅰ"}, {"seed": 1, "n_runs": 200})`.
+입력·출력 형식은 `api.py` 머리말, 규칙·근거는 `rules/default.json` 의 `mc` 절, 설계는 `docs/battlesim_design.md` 9절, 검증은 `docs/sim_p3_report.md`.
+- 편성 칸 0·1 = 전열, 2·3 = 후열. 레벨·공명 기본 Lv200·공명10(fixed 모드, 장비·잠재력·여정 없음).
+- 결과의 턴은 「모델 기준 턴」(100틱)이고 처치 턴은 클리어한 판만 센다. `unsupported` 의 `gate_ok=false` 면 적 생존 기믹이 빠진 결과라 추천 관문에 쓰지 말 것.
+- 이벤트 한도를 넘으면 `EventLimitError` 가 나고 결과를 돌려주지 않는다.
+- 기대값 엔진(`engine.Sim`, 웹 화력 지표)은 P3 에서 동결 — 새 규칙은 `mc.py` 에만 넣는다(퇴역 조건은 설계 9절).
+
 `lines` 의 `unparsed` 는 `reason` 으로 나뉜다: `trigger`(발동 시점 미해석), `effect`(효과 미해석), `condition`(엔진이 모르는 조건 키 — 실행 시 0.5 가중), `skill`(변형·반응 스킬 미반영).
 
 ## 회귀 시험(골든)
@@ -32,6 +48,7 @@ python -X utf8 -I tests/golden_check.py      # 「골든 일치」면 통과(종
 python -X utf8 -I tests/rank_check.py        # 골든 대비 순위 변화(구원자·150팀 Spearman, 상위 20 겹침, 처치 턴)
 python -X utf8 -I tests/rank_check.py --matrix --golden tests/golden/sim_golden_p1.json   # 교정 하나씩 영향
 python -X utf8 -I tests/rules_test.py        # 규칙 스위치마다 뒤집어 기대 방향 확인 + 교정 전 값 = P1 골든 재현
+python -X utf8 -I tests/p3_test.py           # 확률 엔진: 대상 가중·도발·수호·보호막·회복·사망·카운터·리더·시드·이벤트 한도 등 31개(codex 2·3차 검토 회귀 시험 포함)
 ```
 구조만 바꾸는 작업은 정확 일치해야 한다. 규칙을 고치는 단계(P2~)는 `rank_check.py` 결과를 `docs/sim_changes.md` 에 남긴 뒤 `--write` 로 골든을 바꾼다(설계 5절). `tests/golden/sim_golden_p1.json` 은 교정 전(P1) 보관본.
 
