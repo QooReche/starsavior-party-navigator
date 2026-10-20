@@ -27,6 +27,10 @@
 - 영향 방향은 대부분 추정이다(피격이 타수 단위인지 스킬 단위인지 원문에 없음). 태그가 많은 구원자(에핀델 등)가 유리해지는 편향이 알려져 있다.
 - `tools/update.py` 가 foe 데이터를 갱신하면 기믹도 다시 만든다(`tools/build_gimmicks.py`, `tools/pack_gimmicks.py`).
 
+## 화력 지표(시뮬레이터)
+- `tools/sim_damage.py`(행동 게이지 방식 이벤트 시뮬레이터, 설명·검증은 `docs/sim_report.md`)가 구원자별 턴당 기대 피해(단일/광역)와 아군 피해 증가를 계산하고 `data/damage_index.json` 에 압축한다. 팀 화력 점수(0~10)는 `party_contents.json` 의 `damage` 가중치로 파티 점수에 더한다.
+- Lv200·공명10·장비 없음 기준 **상대 비교용**이며 인게임 실측이 아니다. 적의 공격·생존·힐·보호막, 브레이크, 장비·아르카나는 미반영, 협공 규칙은 추정이다.
+
 ## 사용
 ```
 python -X utf8 -I party_reco.py 작전 --stage "SECTOR 1-1"          # 콘솔

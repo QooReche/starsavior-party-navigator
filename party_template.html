@@ -204,6 +204,11 @@ function seasonPart(s){if(!SBACT.length)return 0;const sb=CFG.seasonBonus;let to
  for(const b of SBACT){if(b.cond!==ELKO[s.el]&&b.cond!==s.cls)continue;const m=b.text.match(/(\d+(?:\.\d+)?)%/);if(!m)continue;const k=(sb.kinds.find(([kw])=>b.text.includes(kw))||[0,0.02])[1];tot+=parseFloat(m[1])*k}
  return Math.min(tot,sb.cap)}
 let MM="";
+let DMW=[0.5,0.35];
+function teamDmg(keys,wa){const u=D.dmg.units;let tot=0;
+ keys.forEach((k,i)=>{const e=u[k];if(!e)return;const dpt=e.s*(1-wa)+e.a*wa;let g=0;keys.forEach((o,j)=>{if(j!==i)g+=(u[o]||{}).g||0});tot+=dpt*(1+g/100)});
+ return tot*D.dmg.turns}
+function dmgScore(keys,wa){return Math.min(10,10*teamDmg(keys,wa)/D.dmg.ref95)}
 let GIMACT=[];
 function gimTop(c,st){const m=D.gim[c.key+"|"+st.tab+"|"+st.name]||{};return Object.entries(m).filter(([k])=>D.grules[k]).sort((a,b)=>D.grules[b[0]].w*b[1]-D.grules[a[0]].w*a[1]).slice(0,CFG.gimmick.topTypes)}
 function gimPart(s){if(!GIMACT.length)return 0;const g=CFG.gimmick,tg=new Set(s.gt||[]);let tot=0;
@@ -235,7 +240,7 @@ function teamValue(combo,defPen){
  if(ns>1&&!paired)v-=4;
  const got=new Set();combo.forEach(x=>(x.s.tags||[]).forEach(t=>got.add(t)));
  for(const [t,wt] of Object.entries(CFG.tagWeights))v+=got.has(t)?wt*(CFG.power.sustainTags.includes(t)?POWK:1):0;
- v+=Math.min(partySyn(combo.map(x=>x.s.key)).reduce((a,h)=>a+h.pts,0),CFG.synergy.cap);v+=gimTeam(combo)[0];
+ v+=Math.min(partySyn(combo.map(x=>x.s.key)).reduce((a,h)=>a+h.pts,0),CFG.synergy.cap);v+=gimTeam(combo)[0];v+=DMW[1]*dmgScore(combo.map(x=>x.s.key),DMW[0]);
  return [v,got]}
 function bestParty(c,defPen){
  const pool=[...c].sort((a,b)=>b.score-a.score).slice(0,14);let best=null,bv=-1e9,bt=null;
@@ -296,7 +301,7 @@ function run(){
  if(!st){$("out").innerHTML='<div class="party">스테이지를 선택하세요.</div>';return}
  const own=new Set([...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));
  const have=[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);
- GIMACT=gimTop(c,st);SBACT=st.sb||[];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty)*(POWK>1?Math.max(0.1,1-(POWK-1)/CFG.power.boost):1);
+ GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty)*(POWK>1?Math.max(0.1,1-(POWK-1)/CFG.power.boost):1);
  const used=new Set();let html="";const allParties=[];
  for(let p=1;p<=(c.parties||1);p++){
   const rsEl=(CFG.restrict[c.name]||{})[st.tab];
@@ -306,14 +311,14 @@ function run(){
   const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
   const br=pickBreak(party,c.name,have);
-  html+=`<div class="party"><div class="phead"><b>파티 ${p}</b><span class="mut why2">점수 ${v.toFixed(1)} · 인게임 편성 순서(왼쪽부터)</span></div>${pairNotes(party)}${leadNote(LD)}${gimNote(party)}${synSummary(party)}
+  html+=`<div class="party"><div class="phead"><b>파티 ${p}</b><span class="mut why2">점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10(장비 제외 상대 비교) · 인게임 편성 순서(왼쪽부터)</span></div>${pairNotes(party)}${leadNote(LD)}${gimNote(party)}${synSummary(party)}
    <div class="teamtags">${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
    <div class="rowcards">${card(bk[0],"back",alt(bk[0]))}${card(fr[0],"front",alt(fr[0]))}${card(fr[1],"front",alt(fr[1]))}${card(bk[1],"back",alt(bk[1]))}</div>${breakCard(br)}</div>`}
  const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
  if(tl.length){const byKey=Object.fromEntries(R.map(s=>[s.key,s]));const gcodes=new Set(GIMACT.map(g=>g[0]));
   html+=`<div class="party"><b>다른 전략</b> <span class="mut">(커뮤니티 편성, 보유 시 참고 · 위 추천과 별개)</span><div class="arch">${tl.map(([k,t])=>{
    const bad=(t.badGimmicks||[]).filter(c=>gcodes.has(c)).map(c=>D.grules[c]?D.grules[c].name:c);
-   const comp=bad.length?`<span class="bad">✘ 이 스테이지 기믹과 상충: ${bad.map(esc).join(", ")}</span>`:`<span class="good">✔ 이 스테이지 기믹과 상충하는 것 없음(추정)</span>`;
+   const dsc=t.fixed?`<span class="mut">화력 지표 ${dmgScore(t.fixed,DMW[0]).toFixed(1)}/10</span> `:"";const comp=dsc+(bad.length?`<span class="bad">✘ 이 스테이지 기믹과 상충: ${bad.map(esc).join(", ")}</span>`:`<span class="good">✔ 이 스테이지 기믹과 상충하는 것 없음(추정)</span>`);
    const faces=(t.fixed||[]).map(f=>byKey[f]?`<span class="archf">${face(byKey[f])}<small>${esc(byKey[f].name)}</small></span>`:"").join("");
    return `<div class="archc"><b>${esc(k)}</b> ${comp}<div class="archfs">${faces}</div><div>${esc(t.desc)}</div><div class="mut">잘 맞는 곳: ${esc(t.goodFor||"-")}${t.note?" · "+esc(t.note):""} · 출처 ${esc(t.source||"")}</div></div>`}).join("")}</div></div>`}
  $("out").innerHTML=html;if(window.onParties)onParties(allParties)}

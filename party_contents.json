@@ -139,7 +139,7 @@
   "advantageMob": 1.5,
   "disadvantageMob": 1.0,
   "dealerMin": 2,
-  "dealerShortPenalty": 5.0,
+  "dealerShortPenalty": 3.0,
   "_dealerNote": "딜러(스트라이커·레인저·캐스터·어쌔신)가 dealerMin 명보다 적으면 모자란 인원 x dealerShortPenalty 감점. 출처: 게임조선(딜러 4 또는 딜러 3+서포터 1), 뉴비 공략 정석(딜러 2 + 디펜더 + 서포터). 값은 임의."
  },
  "tagWeights": {
@@ -339,5 +339,10 @@
    "advantageMob": 0.5,
    "disadvantageMob": 4.0
   }
+ },
+ "damage": {
+  "_note": "팀 화력 점수 = 10 x 팀 10턴 기대 피해 / ref95(무작위 4딜러 팀 95백분위), 상한 10. 파티 점수에 weight 를 곱해 더한다. 서포터·디펜더는 직접 화력 대신 아군 피해 증가(g)로 반영. 값은 임의.",
+  "weightBoss": 0.6,
+  "weightMob": 0.35
  }
 }

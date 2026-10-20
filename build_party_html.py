@@ -88,7 +88,7 @@ def main():
                 stages.append({"tab": tab["tab"], "tabLabel": label, "name": st["name"], "label": numerize(st["name"]), "sb": (st.get("season_bonus_latest") or {}).get("bonuses", []), "sbn": (st.get("season_bonus_latest") or {}).get("season", ""), "lv": st["level"], "n": st["enemy_total"], "rp": st.get("recommended_power") or 0,
                                "w": w, "aoe": round(st["aoe_ratio"], 2), "def": round(st["defender_ratio"], 2)})
         contents.append({"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages})
-    out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates", "pairs", "synergy", "power", "gimmick", "seasonBonus", "matchupModes")}
+    out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates", "pairs", "synergy", "power", "gimmick", "seasonBonus", "matchupModes", "damage")}
     out_cfg["restrict"] = {"성간 회랑": cfg["contents"]["회랑"]["restrictTabs"]}
     out_cfg["defPenByContent"] = {"코스모 게이트": cfg["contents"]["코스모 게이트"].get("defenderPenalty", 3.0)}
     icons = {}
@@ -115,7 +115,7 @@ def main():
            for p in pr.load_synergy()]
     data = json.dumps({"roster": r, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn,
                        "pen": pr._json(pr.POW)["pen"], "tribe": pr._json(pr.POW)["tribe"],
-                       "grules": grules["types"], "gim": pr._json(pr.GSTAGE)}, ensure_ascii=False, separators=(",", ":"))
+                       "grules": grules["types"], "gim": pr._json(pr.GSTAGE), "dmg": pr._json(pr.DMG)}, ensure_ascii=False, separators=(",", ":"))
     html = open(os.path.join(pr.HERE, "party_template.html"), encoding="utf-8").read()
     assert html.count("/*DATA*/null") == 1
     html = html.replace("/*DATA*/null", data.replace("</", "<\/"))

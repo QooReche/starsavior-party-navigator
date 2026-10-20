@@ -16,6 +16,7 @@ SYN = os.path.join(DATA, "synergy_pairs.json")
 POW = os.path.join(DATA, "power_penalty.json")
 GRULES = os.path.join(DATA, "gimmick_rules.json")
 GSTAGE = os.path.join(DATA, "stage_gimmicks.json")
+DMG = os.path.join(DATA, "damage_index.json")
 OVR = os.path.join(DATA, "synergy_overrides.json")
 CONT = os.path.join(HERE, "party_contents.json")
 FOE = os.path.join(DATA, "foe_stages.json")
@@ -37,6 +38,34 @@ def load():
     t = _json(TIER)
     tags = {a["key"]: a["tags"] for a in _json(TAGS)["saviors"] if "@" not in a["key"]}
     return roster, t["growth"], t["mainContents"], _json(CONT), tags
+
+
+_DI = {}
+_DM = [0.5, 0.35]  # [광역 비중 wa, 화력 항 가중]
+
+
+def dmg_units():
+    if not _DI:
+        _DI.update(_json(DMG))
+    return _DI["units"]
+
+
+def team_damage(keys, wa):
+    """팀 10턴 기대 피해(근사): sum(개인 dpt x (1 + 다른 멤버가 주는 피해 증가 %)). 협공 같은 세부 시너지는 놓친다."""
+    u = dmg_units()
+    tot = 0.0
+    for i, k in enumerate(keys):
+        e = u.get(k)
+        if not e:
+            continue
+        dpt = e["s"] * (1 - wa) + e["a"] * wa
+        mult = 1 + sum(u.get(keys[j], {}).get("g", 0) for j in range(len(keys)) if j != i) / 100
+        tot += dpt * mult
+    return tot * _DI["turns"]
+
+
+def dmg_score(keys, wa):
+    return min(10.0, 10 * team_damage(keys, wa) / _DI["ref95"])
 
 
 _MM = [None]  # 상성 방식: None(균형) 또는 "avoid"(역상성 회피 우선)
@@ -219,6 +248,7 @@ def team_value(combo, cfg, tags, def_pen):
     v += sum(wt * (_POWK[0] if t in sus else 1.0) for t, wt in cfg["tagWeights"].items() if t in got)
     v += min(sum(h[0] for h in party_synergy([x["s"]["key"] for x in combo], cfg)), cfg["synergy"]["cap"])
     v += gimmick_team(combo, cfg)[0]
+    v += _DM[1] * dmg_score([x["s"]["key"] for x in combo], _DM[0])
     return v, got
 
 
@@ -363,6 +393,8 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
     _POWK[0] = 1.0
     _GIM[0] = []
     _SB[0] = []
+    _DM[0] = min(1.0, (st["enemy_total"] - 1) / 2) if stage else 0.5
+    _DM[1] = cfg["damage"]["weightBoss"] if (c.get("boss", False) or bool(boss)) else cfg["damage"]["weightMob"]
     if stage:
         _SB[0] = (st.get("season_bonus_latest") or {}).get("bonuses", [])
         if _SB[0]:
@@ -397,6 +429,7 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
         out(f"-- 파티 {p} (점수 {v:.1f}) 팀 기능: {', '.join(sorted(got)) or '-'}")
         used |= {x["s"]["key"] for x in party}
         front, back = place(party)
+        out(f"  [화력 지표] {dmg_score([x['s']['key'] for x in party], _DM[0]):.1f}/10 (10턴 기대 피해 근사, 장비 제외 상대 비교용)")
         ld = leader_pick(party, cfg, tags)
         if ld:
             out(f"  [리더 추천] {ld[0]['s']['name']}({ld[0]['s']['subtitle']}) - 속도 +10 으로 먼저 행동해 팀에 줄 효과가 가장 많음(추정, 점수 {ld[1]:.1f})")

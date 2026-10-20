@@ -51,6 +51,8 @@ def main():
         run(os.path.join("tools", "build_foe.py"))
         run(os.path.join("tools", "build_gimmicks.py"), "--savior", src)
         run(os.path.join("tools", "pack_gimmicks.py"))
+        run(os.path.join("tools", "sim_damage.py"), "index", "--out", os.path.join(ROOT, "tools", "raw", "damage_index.json"))
+        run(os.path.join("tools", "pack_damage.py"))
     else:
         print("rawdata/foe.js 없음 -> 적 정보(data/foe_stages.json)는 그대로 둠")
 
