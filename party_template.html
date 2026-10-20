@@ -138,6 +138,11 @@ body:not(.show-why) .gimnote{display:none}
 .cands{margin-top:10px}.cands table{border-collapse:collapse;width:100%;font-size:13px}.cands td,.cands th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
 .cands .faces{display:flex;gap:2px}.cands .face{width:30px;height:30px;font-size:12px}
 .cands button{padding:2px 10px;font-size:12px}
+.qbox{margin:0 0 10px;padding:10px 12px;border:1px solid var(--acc);border-radius:10px;background:rgba(76,194,194,.06)}
+.qbox .qh{font-size:13px;color:var(--mut);margin-bottom:6px}.qrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0;border-top:1px solid var(--line)}
+.qrow:first-of-type{border-top:0}.qrow .qn{min-width:46px;font-weight:700}.qrow .faces{display:flex;gap:2px}.qrow .qt{flex:1;min-width:180px;font-size:13px}
+.qv{display:inline-block;font-weight:700;border-radius:10px;padding:1px 10px;font-size:13px;border:1px solid}.qv.safe{color:var(--good);border-color:var(--good)}
+.qv.tight{color:var(--warn);border-color:var(--warn)}.qv.hard{color:var(--bad);border-color:var(--bad)}
 .approxbox{margin-top:8px;padding:8px 10px;border:1px dashed var(--mut);border-radius:8px;font-size:13px}
 @media (prefers-reduced-motion:reduce){#drawer{transition:none}}
 @media (max-width:760px){
@@ -158,7 +163,7 @@ body:not(.show-why) .gimnote{display:none}
 }
 </style></head><body><main>
 <h1>콘텐츠별 추천 파티 <small style="color:var(--bad)">시험판</small></h1>
-<p class="sub">DB 티어 + 속성 상성 + 팀 기능 태그로 고른 후보를 전투 시뮬레이터로 돌려 클리어 확률·처치 턴을 보여 줍니다. 가중치·시뮬 가정은 검증 전이라 참고용입니다.</p>
+<p class="sub">가진 구원자로 「평균적으로 키웠을 때 이 스테이지를 깰만한 파티」를 바로 계산해 1안과 차선을 보여 줍니다. 못 깨면 얼마나 더 키우면 되는지도 알려 줍니다. 계산은 모델 추정이라 참고용입니다.</p>
 <div class="panel">
  <div class="row">
   <label>콘텐츠<select id="content"></select></label>
@@ -167,6 +172,7 @@ body:not(.show-why) .gimnote{display:none}
   <label>스테이지<select id="stage"></select></label>
   <div class="seg" role="radiogroup" aria-label="전투 방식" title="오토 = 게임 자동 전투 규칙(쿨 찬 궁 > 특수 > 기본, 노바 버스트 안 씀). 수동 = 노바 버스트·대상 지정을 쓰는 정책으로 다시 계산하고 서순(스킬 순서 예시)을 보여 줌.">
    <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div>
+  <label title="레벨·장비·돌파·스킬 레벨을 「전투력」 하나로 묶어 가정합니다. 옵션에 내 파티 전투력을 넣으면 그 값을 씁니다.">육성 가정<select id="grow"><option value="1">평균 (권장 전투력만큼)</option><option value="0.8">덜 키움 (권장의 80%)</option><option value="1.25">넉넉히 (권장의 125%)</option></select></label>
   <button id="go" class="sec" type="button">다시 계산</button>
   <label class="whytoggle"><input type="checkbox" id="showwhy"> 추천 근거 보기</label>
  </div>
@@ -200,6 +206,7 @@ body:not(.show-why) .gimnote{display:none}
 <div id="dback"></div>
 </main>
 <script src="lib/cytoscape.min.js"></script>
+<script src="quick.js"></script>
 <script>
 const D=/*DATA*/null;
 const EL={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
@@ -228,7 +235,7 @@ function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$(
  el.innerHTML=`<span class="${pp.ratio<70?"bad2":"warn"}">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 아군 피해 ×${pp.a.toFixed(3)}, 적 피해 ×${pp.b.toFixed(3)}${pp.warn?` [${pp.warn}]`:""}</span> <span class="mut">· 회복·보호막은 보정 없음 → 생존·지원을 더 중시해 추천(추정) · 보정 없으려면 ${Math.ceil(s.rp*0.9).toLocaleString()} 이상</span>`}
 function sbText(s){return s&&s.sb&&s.sb.length?` · <span class="mut">시즌 보너스(${esc(s.sbn)}): ${s.sb.map(b=>esc(b.cond)+" "+esc(b.text)).join(" / ")}</span>`:""}
 function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+` <span class="mut">· ◆ = 전투 시뮬 결과가 있는 스테이지</span>`:"해당 스테이지 없음"}
-$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);run()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};
+$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);run()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};$("grow").onchange=()=>{LS.set("grow",$("grow").value);run()};
 
 function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">
  <span class="fc">${face(s)}${dia(s,34)}</span><span class="tn">${esc(s.name)}</span><span class="ts">${esc(s.sub)}</span>${kindTxt(s)}</span></label>`}
@@ -453,6 +460,45 @@ function candList(p,list,mainKey,approxOnly){
   ${sim.length?`<div class="mut" style="margin-top:6px">시뮬로 평가한 후보(클리어 확률 → 처치 턴 순)</div><table>${sim.map(rowOf).join("")}</table>`:""}
   ${apx.length?`<div class="mut" style="margin-top:6px">미계산 근사 후보 — 시뮬 결과가 없어 위 후보와 우열을 비교할 수 없습니다</div><table>${apx.map(rowOf).join("")}</table>`:""}</details>`}
 const PICK={};
+// 빠른 계산(재설계 v1): data/quick.json + quick.js. 모든 조합을 평균 육성 가정으로 판정 → 깰만함 > 빠듯함 > 어려움, 남은 생명력, 처치 턴, 근사 점수 순
+const QK={d:null,err:null};
+fetch("data/quick.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{QK.d=j;rerun()}).catch(e=>{QK.err=String(e);rerun()});
+// ?pick=sim = 옛 기본 선택(사전 계산 1위)을 화면 아래 상세에 씀 — 사전 계산 화면 시험용(퇴역 전까지)
+const QLEGACY=new URLSearchParams(location.search).get("pick")==="sim";
+window.PN_Q_SV=()=>QK.d?QK.d.sv:{};
+const QV={safe:"깰만함",tight:"빠듯함",hard:"어려움"},QO={safe:2,tight:1,hard:0};
+function quickIn(c,st){if(!QK.d||!window.Quick)return null;const qs=(QK.d.st[c.key]||{})[st.tab+"|"+st.name];if(!qs)return null;
+ const my=+$("mypow").value;return {qs,power:my>0?my:null,growth:+$("grow").value||1}}
+function quickRank(cands,defPen,qi){
+ const all=topParties(cands,defPen,1e9),sv=QK.d.sv,prm=QK.d.params,out=[];
+ for(const x of all){const keys=x.combo.map(y=>y.s.key);const r=Quick.evaluate(keys,qi.qs,sv,D.pen,prm,qi.growth,qi.power);if(!r.ok)continue;
+  out.push({combo:x.combo,v:x.v,got:x.got,keys,q:r,vd:Quick.verdict(r)})}
+ out.sort((a,b)=>QO[b.vd]-QO[a.vd]||(a.vd==="hard"?b.q.rounds-a.q.rounds:b.q.left-a.q.left)||a.q.rounds-b.q.rounds||b.v-a.v);
+ if(out.length&&out[0].vd==="hard"){   // 아무 팀도 못 깨면 「몇 % 더 키우면 깨는지」가 가장 작은 팀부터 — 모든 후보를 비교(codex 검토)
+  // 사다리 칸으로 거르고(지금까지 최선보다 늦은 칸은 안 봄), 최선 칸에 든 팀만 잘게 다시 잼
+  let best=null;for(const t of out){t.st=Quick.ladderStep(t.keys,qi.qs,sv,D.pen,prm,"tight",best);if(t.st!=null&&(best==null||t.st<best))best=t.st}
+  if(best==null)return out;
+  const top=out.filter(t=>t.st===best);top.forEach(t=>{t.ng=Quick.needGrowth(t.keys,qi.qs,sv,D.pen,prm,"tight",t.st)});
+  top.sort((a,b)=>a.ng-b.ng||b.v-a.v);
+  const rest=out.filter(t=>t.st!=null&&t.st!==best).sort((a,b)=>a.st-b.st||b.v-a.v).slice(0,2);
+  rest.forEach(t=>{t.ng=Quick.needGrowth(t.keys,qi.qs,sv,D.pen,prm,"tight",t.st)});
+  return top.concat(rest)}
+ if(out[0]&&out[0].vd==="tight")out.slice(0,3).forEach(t=>{t.ng=Quick.needGrowth(t.keys,qi.qs,sv,D.pen,prm,"safe")});
+ return out}
+function quickWeak(t){const sv=QK.d.sv,us=t.keys.map(k=>sv[k]),w=[];
+ if(!us.some(u=>u[7]>u[6]*1.3))w.push("광역 없음");if(!us.some(u=>/[hs]/.test(u[8])))w.push("힐러·보호막 없음");
+ if(t.vd==="hard")w.unshift(t.q.why==="time"?"턴 제한 안에 못 깸(화력 부족)":"버티지 못함(생존 부족)");return w}
+function quickBox(p,qt,qi,st,pickKey){if(!qt||!qt.length)return "";
+ const P=qi.power||(st.rp||0)*qi.growth,ratio=st.rp?P/st.rp*100:100;
+ const rows=[];const seen=new Set();
+ for(const t of qt){const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);rows.push(t);if(rows.length>=3)break}
+ const row=(t,i)=>{const k=t.keys.slice().sort().join(","),w=quickWeak(t);
+  const ng=t.ng!=null?` · <b>권장의 약 ${Math.round(t.ng*100)}%</b>(전투력 약 ${Math.round(t.ng*(st.rp||0)/100)*100>0?(Math.round(t.ng*(st.rp||0)/100)*100).toLocaleString():"-"})면 ${t.vd==="hard"?"깸":"깰만함"}`:(t.vd==="hard"?" · 권장의 400%로도 어려움":"");
+  return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?face(BYKEY[x]):"").join("")}</div>
+   <span class="qv ${t.vd}">${QV[t.vd]}</span><span class="qt">${t.q.clear?`약 ${t.q.rounds}턴 · 남는 생명력 ${Math.round(t.q.left*100)}%`:`${t.q.rounds}턴째 ${t.q.why==="time"?"시간 초과":"전멸"}`}${ng}${w.length?`<br><span class="mut">${w.map(esc).join(" · ")}</span>`:""}</span>
+   ${k===pickKey?'<span class="mut">아래에 표시 중</span>':`<button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">이 팀 보기</button>`}</div>`};
+ return `<div class="qbox" data-k="quick"><div class="qh"><b style="color:var(--fg)">이 스테이지 추천 (빠른 계산)</b> · 가정: 파티 전투력 ${Math.round(P).toLocaleString()}${st.rp?` (권장 ${st.rp.toLocaleString()}의 ${Math.round(ratio)}%)`:""} · 레벨·장비·돌파·스킬 레벨은 이 전투력에 맞춘 평균 육성으로 봄${QK.d.calib&&QK.d.calib.acc?` · 전투 시뮬(Lv200·장비 없음 조건)과 클리어 판정 ${Math.round(QK.d.calib.acc*100)}% 일치(${QK.d.calib.samples.toLocaleString()}건)`:""}${QK.d.params?"":' · <b style="color:var(--bad)">계수 없음</b>'}</div>${rows.map(row).join("")}</div>`}
+
 function buildCands(c,st,cands,defPen,ss,p,used){
  const top=topParties(cands,defPen,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i}));
  const seen=new Set(top.map(x=>ckey(x.combo)));
@@ -474,6 +520,12 @@ function run(){
   const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
   if(cands.length<4){html+=`<div class="party">파티 ${p}: 후보가 4명 미만입니다.</div>`;break}
   const list=buildCands(c,st,cands,defPen,ss,p,used);
+  const qi=quickIn(c,st),qt=qi?quickRank(cands,defPen,qi):null;
+  let qpick=null;
+  if(qt&&qt.length&&!QLEGACY){const qk=qt[0].keys.slice().sort().join(",");qpick=list.find(x=>x.key===qk);
+   if(!qpick){const ar=arrangeOf(qt[0].combo);let rec=null;if(ss.state==="ok"){const tr=ss.rec.teams[qk];if(tr&&tr.o.join(",")===ar.order.join(",")&&tr.L===ar.lead)rec=tr}
+    qpick={combo:qt[0].combo,v:qt[0].v,got:qt[0].got,rank:null,key:qk,order:ar.order,lead:ar.lead,rec,why:rec?null:"none"};list.push(qpick)}
+   for(const t of qt.slice(1,3)){const k=t.keys.slice().sort().join(",");if(list.find(x=>x.key===k))continue;const ar=arrangeOf(t.combo);list.push({combo:t.combo,v:t.v,got:t.got,rank:null,key:k,order:ar.order,lead:ar.lead,rec:null,why:"none"})}}
   // 동점이면 지금 옵션(역상성 회피·전투력)으로 계산한 근사 점수 x.v (사전 계산과 같은 소수 3자리) — 사전 계산 값 rec.a 는 기본 옵션 점수라 쓰지 않음
   const r3=v=>Math.round(v*1000)/1000;
   const simmed=list.filter(x=>x.rec&&x.rec.auto).sort((x,y)=>cmpArr(gateKey(x.rec.auto,r3(x.v)),gateKey(y.rec.auto,r3(y.v)))||(x.key<y.key?-1:1));
@@ -482,7 +534,7 @@ function run(){
   if(p===1)PN.last={mode:MODE,simmed:simmed.map(x=>({key:x.key,v:x.v,a:x.rec.a,auto:x.rec.auto}))};
   const approxOnly=list.filter(x=>!(x.rec&&x.rec.auto)).sort((x,y)=>(x.rank??99)-(y.rank??99));
   const forced=PICK[sid+"|"+p]&&list.find(x=>x.key===PICK[sid+"|"+p]);
-  const pick=forced||simmed[0]||approxOnly[0];pick.isPick=!forced;pick.zeroAll=pick.rec?zeroAll:0;
+  const pick=forced||qpick||simmed[0]||approxOnly[0];pick.isPick=!forced;pick.zeroAll=pick.rec?zeroAll:0;
   const party=pick.combo;party.forEach(x=>used.add(x.s.key));allParties.push(party);
   const v=pick.v,got=pick.got;
   const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
@@ -493,7 +545,7 @@ function run(){
   const apxBox=ss.state==="ok"&&apx1&&apx1.key!==pick.key&&simmed.length?`<div class="approxbox" data-k="approx-top">근사 점수 1위 팀은 시뮬 결과가 없습니다: <b>${esc(teamName(apx1.key))}</b> <span class="nochip">시뮬 없음</span> <button type="button" class="sec" data-pick="${p}" data-key="${esc(apx1.key)}">이 팀 보기</button><div class="mut">위 추천은 「시뮬로 평가한 후보 중」 1위입니다. 두 팀의 우열은 비교할 수 없습니다.</div></div>`:"";
   const seq=MODE==="manual"&&pick.rec?seqTable(pick,[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key)):"";
   html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}"><div class="phead"><b>파티 ${p}</b><span class="ordernote">인게임 편성 순서(왼쪽부터) <span class="why2">· 근사 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10(장비 제외 상대 비교)</span></span></div>
-   ${forecast(c,st,ss,pick,p,party)}${apxBox}${pairNotes(party)}${leadNote(LD)}${gimNote(party)}${synSummary(party)}
+   ${quickBox(p,qt,qi,st,pick.key)}${!QLEGACY&&qt&&qt.length&&!pick.rec?"":forecast(c,st,ss,pick,p,party)}${apxBox}${pairNotes(party)}${leadNote(LD)}${gimNote(party)}${synSummary(party)}
    <div class="teamtags">${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
    <div class="rowcards">${card(bk[0],"back",alt(bk[0]),r)}${card(fr[0],"front",alt(fr[0]),r)}${card(fr[1],"front",alt(fr[1]),r)}${card(bk[1],"back",alt(bk[1]),r)}</div>${seq}${list.length>1?candList(p,simmed,pick.key,approxOnly):""}${breakCard(br)}</div>`}
  const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
@@ -561,6 +613,6 @@ function drawGraph(){
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=drawGraph);
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
 {const qs=new URLSearchParams(location.search);setMode(qs.get("mode")==="manual"?"manual":qs.get("mode")==="auto"?"auto":(LS.get("mode")==="manual"?"manual":"auto"),false)}
-{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
+{const gv=LS.get("grow");if(gv&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
 simLoadIndex().then(()=>{simFile(contents[$("content").value].key);run()});
 </script></body></html>

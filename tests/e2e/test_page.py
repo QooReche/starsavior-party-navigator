@@ -41,11 +41,14 @@ def low_priority():
 
 
 def free_port():
-    s = socket.socket()
-    s.bind(("127.0.0.1", 0))
-    p = s.getsockname()[1]
-    s.close()
-    return p
+    """빈 포트. 크롬이 막는 포트(5060·5061·6000·6665~6669 등)를 피하려고 10100 이상만 쓴다."""
+    while True:
+        s = socket.socket()
+        s.bind(("127.0.0.1", 0))
+        p = s.getsockname()[1]
+        s.close()
+        if p >= 10100:
+            return p
 
 
 def load_sim(content):
@@ -85,9 +88,11 @@ def tile_text(page, k, party=1):
     return page.inner_text('.party[data-party="%d"] .ft[data-k="%s"]' % (party, k))
 
 
-def open_page(browser, ctx, query="", viewport=None):
+def open_page(browser, ctx, query="", viewport=None, legacy=True):
     page = browser.new_page(viewport=viewport or {"width": 1280, "height": 900})
     attach(page, ctx)
+    if legacy and "pick=" not in query:      # 사전 계산 화면 시험 = 옛 기본 선택(사전 계산 1위)
+        query = (query + "&" if query else "?") + "pick=sim"
     page.goto(ctx.base + "/index.html" + query)
     page.wait_for_selector("#out .party")
     page.wait_for_function("() => window.PN && window.PN.sim.idx", timeout=20000)
@@ -261,7 +266,7 @@ def test_stage_meta_version(browser, ctx):
         doc["stages"]["매니저 그레고리|매니저 그레고리 Ⅰ"]["meta"]["sel"] = "다른버전"
         route.fulfill(response=resp, body=json.dumps(doc, ensure_ascii=False), headers={"content-type": "application/json"})
     page.route("**/data/sim/rush.json", patch)
-    page.goto(ctx.base + "/index.html")
+    page.goto(ctx.base + "/index.html?pick=sim")
     page.wait_for_function("() => window.PN && window.PN.sim.idx", timeout=20000)
     settle(page)
     choose(page, "플래시 포인트", "매니저 그레고리 Ⅰ")
@@ -344,7 +349,72 @@ def test_mobile_seq_target(browser, ctx):
     return bool(txt) and not bare and all(t[1].startswith("대상: ") for t in txt), "보이는 대상 %d개, 화살표만 %d, 예 %s" % (len(txt), len(bare), txt[:3])
 
 
-TESTS = [test_load_no_errors, test_stage_switch, test_mode_toggle, test_owned_filter_no_sim, test_flash_point, test_mobile_layout,
+def quick_rows(page, party=1):
+    return page.evaluate("""p => [...document.querySelectorAll('.party[data-party="'+p+'"] .qbox .qrow')].map(r => [r.dataset.key, r.querySelector('.qv').className.split(' ')[1], r.innerText])""", party)
+
+
+def test_quick_default(browser, ctx):
+    """새 기본: 맨 위 「이 스테이지 추천(빠른 계산)」에 1안+차선, 아래 상세 팀 = 1안, 콘솔 오류 0"""
+    ctx.errors.clear()
+    page = open_page(browser, ctx, legacy=False)
+    page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
+    rows = quick_rows(page)
+    shown = page.get_attribute('.party[data-party="1"]', "data-team")
+    choose(page, "코스모 게이트", "길레 2단계")
+    rows2 = quick_rows(page)
+    shown2 = page.get_attribute('.party[data-party="1"]', "data-team")
+    page.screenshot(path=os.path.join(ctx.shots, "desktop_quick_cosmo_gille2.png"), full_page=True)
+    errs = list(ctx.errors)
+    page.close()
+    ok = len(rows) >= 2 and shown == rows[0][0] and len(rows2) >= 2 and shown2 == rows2[0][0] and not errs
+    return ok, "1-1 %d안 (%s) / 길레2 %d안 (%s) / 상세 = 1안 %s / 오류 %d" % (len(rows), rows and rows[0][1], len(rows2), rows2 and rows2[0][1],
+                                                                       shown == (rows and rows[0][0]) and shown2 == (rows2 and rows2[0][0]), len(errs))
+
+
+def test_quick_owned_small(browser, ctx):
+    """보유를 6명으로 줄여도 빠른 계산 추천이 뜸(옛 문제 「시뮬 없음」 해소), 추천 팀은 보유 안에서만"""
+    page = open_page(browser, ctx, legacy=False)
+    choose(page, "코스모 게이트", "길레 2단계")
+    page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
+    keep = page.evaluate("() => Object.keys(window.PN_Q_SV()).slice(0, 6)")
+    page.click("#dbtn")
+    page.click("#none")
+    for k in keep:
+        page.click('#own label.tile:has(input[data-k="%s"])' % k)
+    page.click("#dclose")
+    settle(page)
+    rows = quick_rows(page)
+    inside = all(set(r[0].split(",")) <= set(keep) for r in rows)
+    page.click("#dbtn")
+    page.click("#all")
+    page.keyboard.press("Escape")
+    page.close()
+    return len(rows) >= 1 and inside, "보유 6명 -> %d안, 보유 안 %s, 1안 판정 %s" % (len(rows), inside, rows and rows[0][1])
+
+
+def test_quick_growth(browser, ctx):
+    """육성 가정을 바꾸면 가정 전투력이 바뀌고, 어려운 스테이지는 「권장의 약 N%면 깸」을 보여 줌"""
+    page = open_page(browser, ctx, legacy=False)
+    choose(page, "코스모 게이트", "길레 3단계")
+    h1 = page.inner_text('.party[data-party="1"] .qbox .qh')
+    page.select_option("#grow", "0.8")
+    settle(page)
+    h2 = page.inner_text('.party[data-party="1"] .qbox .qh')
+    page.select_option("#grow", "1")
+    settle(page)
+    page.click("#optbox summary")
+    page.fill("#mypow", "20000")
+    settle(page)
+    rows = quick_rows(page)
+    page.fill("#mypow", "")
+    page.evaluate("() => { localStorage.removeItem('pn.pow'); localStorage.removeItem('pn.grow') }")
+    page.close()
+    need = rows and rows[0][1] == "hard" and "권장의 약" in rows[0][2]
+    return h1 != h2 and "20,000" not in h1 and bool(need), "가정 문구 바뀜 %s / 전투력 20,000 일 때 1안 %s %s" % (
+        h1 != h2, rows and rows[0][1], rows and " ".join(rows[0][2].split())[:80])
+
+
+TESTS = [test_quick_default, test_quick_owned_small, test_quick_growth, test_load_no_errors, test_stage_switch, test_mode_toggle, test_owned_filter_no_sim, test_flash_point, test_mobile_layout,
          test_python_js_topk_parity, test_stage_meta_version, test_avoid_mode_tiebreak, test_manual_candidate_diff, test_allzero_recomputed,
          test_mobile_seq_target]
 

@@ -1,0 +1,131 @@
+# -*- coding: utf-8 -*-
+"""빠른 계산(재설계 v1 1단계) — 「평균 육성이면 이 파티로 깰만한가」를 팀당 1ms 안에 판단하는 결정적 근사.
+
+화면(party_template.html 의 Quick)은 이 파일을 그대로 옮긴 JS 다. **둘을 같이 고친다** — tests/quick_test.py 가 같은 입력·같은 결과를 대조한다.
+재료 = data/quick.json(tools/build_quick_data.py). 계수 A·B·H 는 확률 엔진(P4 시뮬 결과)에 맞춰 tools/calibrate_quick.py 로 정했다.
+
+모델(라운드 = 속도 100 유닛이 한 번 행동하는 시간):
+- 육성: 파티 전투력 P(입력, 없으면 권장 전투력 × growth) → 배율 k = P / (Σ 기준 전투력 × MUL). 공·생·방·피해에 k 를 곱한다
+  (전투력이 공·생·방에 비례하는 공식이라 맞아떨어진다). 속도·치명 등은 기준 그대로.
+- 역보정: P / 권장 전투력 비율로 power_penalty 표(아군 주는 피해·적 주는 피해).
+- 아군: 매 라운드 단일 피해는 보스 → (없으면) 생명력 가장 낮은 적에게, 광역 몫은 나머지 적 각각에게. 방어율 = def/(def+3000).
+- 적: 살아 있는 적의 압박 합 × 1.85 × 속도/100 × (1 − 아군 평균 방어율)을 파티 생명력 «합»에서 깎는다(개별 사망은 안 봄 → 시뮬 단계 몫).
+- 회복: 힐·보호막 꼬리표 구원자 1명당 매 라운드 최대 생명력의 H.
+"""
+import json
+import math
+import os
+
+MUL = 1.06          # 전투력 마지막 배율(돌파 +6%, 스킬 레벨 합 0 가정 — 기준과 입력 양쪽에 같게 들어가 k 에선 상쇄)
+PARAMS = dict(A=1.0, B=1.0, H=0.0)     # tools/calibrate_quick.py 결과로 덮어씀(data/quick.json 의 params)
+MAX_ROUNDS = 50
+SAFE = 0.5          # 남은 생명력 비율이 이 이상이면 「깰만함」
+TIGHT = 0.0         # 깼지만 SAFE 미만이면 「빠듯함」
+
+
+def dr(d):
+    return d / (d + 3000.0) if d > 0 else 0.0
+
+
+def pen_mult(pen, ratio):
+    """power_penalty pen 표: [하한, 상한(만분율), 아군×1e4, 적×1e4]. ratio = P/권장."""
+    r = math.floor(ratio * 10000)
+    for lo, hi, a, e in pen:
+        if lo <= r < hi:
+            return a / 10000, e / 10000
+    if r >= 9000:
+        return 1.0, 1.0
+    return pen[0][2] / 10000, pen[0][3] / 10000
+
+
+def evaluate(keys, stage, sv, pen, params=None, growth=1.0, power=None, use_pen=True):
+    """-> dict(ok, clear, rounds, left, k, power, ratio) / 재료 없는 구원자가 있으면 ok=False"""
+    p = dict(PARAMS)
+    if params:
+        p.update(params)
+    units = [sv.get(k) for k in keys]
+    if any(u is None for u in units) or not stage.get('w'):
+        return dict(ok=False)
+    ref = sum(u[5] for u in units) * MUL
+    bp = stage.get('bp') or ref
+    P = power if power else bp * growth
+    k = P / ref
+    ratio = P / bp if bp else 1.0
+    pa, pe = pen_mult(pen, ratio) if use_pen else (1.0, 1.0)
+    hp_max = sum(u[2] for u in units) * k
+    team_dr = dr(sum(u[3] for u in units) / len(units) * k)
+    s_out = [u[6] * k * u[4] / 100 * p['A'] * pa for u in units]
+    x_out = [max(0.0, (u[7] - u[6]) / 2) * k * u[4] / 100 * p['A'] * pa for u in units]
+    healers = sum(1 for u in units if ('h' in u[8] or 's' in u[8]))
+    heal = healers * p['H'] * hp_max
+    hp = hp_max
+    limit = stage.get('lt') or MAX_ROUNDS
+    rnd = 0
+    for wave in stage['w']:
+        foes = [[e[0], e[1], e[2], e[3], e[4], e[5]] for e in wave]     # 현재 생명력, 방어, 속도, 단일, 광역, 보스
+        while any(f[0] > 0 for f in foes):
+            rnd += 1
+            if rnd > limit:
+                return dict(ok=True, clear=False, rounds=limit, left=max(0.0, hp / hp_max), k=k, power=P, ratio=ratio, why='time')
+            alive = [f for f in foes if f[0] > 0]
+            boss = [f for f in alive if f[5]]
+            focus = boss[0] if boss else min(alive, key=lambda f: f[0])
+            for i in range(len(units)):
+                focus[0] -= s_out[i] * (1 - dr(focus[1]))
+                if x_out[i]:
+                    for f in alive:
+                        if f is not focus:
+                            f[0] -= x_out[i] * (1 - dr(f[1]))
+            dmg = sum((f[3] + f[4]) * f[2] / 100 for f in foes if f[0] > 0)
+            hp -= dmg * 1.85 * (1 - team_dr) * p['B'] * pe
+            if hp <= 0:
+                return dict(ok=True, clear=False, rounds=rnd, left=0.0, k=k, power=P, ratio=ratio, why='wipe')
+            hp = min(hp_max, hp + heal)
+    return dict(ok=True, clear=True, rounds=rnd, left=hp / hp_max, k=k, power=P, ratio=ratio, why='')
+
+
+def verdict(r):
+    if not r.get('ok'):
+        return 'na'
+    if not r['clear']:
+        return 'hard'
+    return 'safe' if r['left'] >= SAFE else 'tight'
+
+
+LADDER = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.15, 1.3, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0]
+FINE = 10
+
+
+def ladder_step(keys, stage, sv, pen, params=None, want='safe', upto=None):
+    """LADDER 를 낮은 쪽부터 훑어 처음 성공하는 칸 번호(없으면 None). upto 칸까지만 본다(그보다 늦으면 비교에서 질 팀은 일찍 멈춤).
+    육성이 늘면 집중 대상 순서가 바뀌어 결과가 단조롭지 않을 수 있어 이분 탐색 대신 «처음 성공»을 찾는다(codex 검토)."""
+    ok = (lambda r: verdict(r) == 'safe') if want == 'safe' else (lambda r: r.get('ok') and r['clear'])
+    last = len(LADDER) - 1 if upto is None else min(upto, len(LADDER) - 1)
+    for i in range(last + 1):
+        if ok(evaluate(keys, stage, sv, pen, params, growth=LADDER[i])):
+            return i
+    return None
+
+
+def need_growth(keys, stage, sv, pen, params=None, want='safe', step=None):
+    """깰만함(want='tight' 이면 클리어)이 되는 가장 작은 growth(권장 전투력 대비 배수) 추정. 4.0 에서도 안 되면 None.
+    LADDER 에서 처음 성공한 칸과 그 앞 칸 사이를 FINE 등분해 다시 «처음 성공»을 찾는다. step 을 주면 사다리 훑기를 건너뛴다."""
+    ok = (lambda r: verdict(r) == 'safe') if want == 'safe' else (lambda r: r.get('ok') and r['clear'])
+    i = ladder_step(keys, stage, sv, pen, params, want) if step is None else step
+    if i is None:
+        return None
+    if i == 0:
+        return LADDER[0]
+    a, b = LADDER[i - 1], LADDER[i]
+    for j in range(1, FINE):
+        g = a + (b - a) * j / FINE
+        if ok(evaluate(keys, stage, sv, pen, params, growth=g)):
+            return g
+    return b
+
+
+def load(root=None):
+    root = root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    q = json.load(open(os.path.join(root, 'data', 'quick.json'), encoding='utf-8'))
+    pen = json.load(open(os.path.join(root, 'data', 'power_penalty.json'), encoding='utf-8'))['pen']
+    return q, pen
