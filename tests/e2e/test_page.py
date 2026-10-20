@@ -350,7 +350,7 @@ def test_mobile_seq_target(browser, ctx):
 
 
 def quick_rows(page, party=1):
-    return page.evaluate("""p => [...document.querySelectorAll('.party[data-party="'+p+'"] .qbox .qrow')].map(r => [r.dataset.key, r.querySelector('.qv').className.split(' ')[1], r.innerText])""", party)
+    return page.evaluate("""p => [...document.querySelectorAll('.party[data-party="'+p+'"] .qbox .qrow[data-key]')].map(r => [r.dataset.key, r.querySelector('.qv').className.split(' ')[1], r.innerText])""", party)
 
 
 def test_quick_default(browser, ctx):
@@ -376,7 +376,7 @@ def test_quick_owned_small(browser, ctx):
     page = open_page(browser, ctx, legacy=False)
     choose(page, "코스모 게이트", "길레 2단계")
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
-    keep = page.evaluate("() => Object.keys(window.PN_Q_SV()).slice(0, 6)")
+    keep = page.evaluate("() => Object.keys(window.PN_Q_SV()).filter(k => !k.includes('@')).slice(0, 6)")
     page.click("#dbtn")
     page.click("#none")
     for k in keep:
@@ -395,7 +395,7 @@ def test_quick_owned_small(browser, ctx):
 def test_quick_growth(browser, ctx):
     """육성 가정을 바꾸면 가정 전투력이 바뀌고, 어려운 스테이지는 「권장의 약 N%면 깸」을 보여 줌"""
     page = open_page(browser, ctx, legacy=False)
-    choose(page, "코스모 게이트", "길레 3단계")
+    choose(page, "코스모 게이트", "길레 1단계")
     h1 = page.inner_text('.party[data-party="1"] .qbox .qh')
     page.select_option("#grow", "0.8")
     settle(page)
@@ -409,12 +409,113 @@ def test_quick_growth(browser, ctx):
     page.fill("#mypow", "")
     page.evaluate("() => { localStorage.removeItem('pn.pow'); localStorage.removeItem('pn.grow') }")
     page.close()
-    need = rows and rows[0][1] == "hard" and "권장의 약" in rows[0][2]
+    need = rows and rows[0][1] == "hard" and "권장의" in rows[0][2] and "면 깸" in rows[0][2]
     return h1 != h2 and "20,000" not in h1 and bool(need), "가정 문구 바뀜 %s / 전투력 20,000 일 때 1안 %s %s" % (
         h1 != h2, rows and rows[0][1], rows and " ".join(rows[0][2].split())[:80])
 
 
-TESTS = [test_quick_default, test_quick_owned_small, test_quick_growth, test_load_no_errors, test_stage_switch, test_mode_toggle, test_owned_filter_no_sim, test_flash_point, test_mobile_layout,
+def test_savior_power(browser, ctx):
+    """서랍에 구원자별 전투력을 넣으면 빠른 계산에 반영(가정 줄에 「N명 반영」, 1안 전투력 바뀜), 저장·삭제"""
+    page = open_page(browser, ctx, legacy=False)
+    choose(page, "코스모 게이트", "길레 2단계")
+    page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
+    h1 = page.inner_text('.party[data-party="1"] .qbox .qh')
+    k = quick_rows(page)[0][0].split(",")[0]
+    page.click("#dbtn")
+    page.fill('#pwl input[data-pk="%s"]' % k, "90000")
+    page.click("#dclose")
+    settle(page)
+    h2 = page.inner_text('.party[data-party="1"] .qbox .qh')
+    saved = page.evaluate("() => JSON.parse(localStorage.getItem('pn.pw') || '{}')")
+    page.click("#dbtn")
+    page.fill('#pwl input[data-pk="%s"]' % k, "")
+    page.click("#dclose")
+    settle(page)
+    h3 = page.inner_text('.party[data-party="1"] .qbox .qh')
+    page.close()
+    ok = "1명 반영" in h2 and "반영" not in h1 and h2 != h1 and saved.get(k) == 90000 and "반영" not in h3
+    return ok, "입력 전 %s / 입력 후 %s / 저장 %s / 지운 뒤 %s" % ("반영" in h1, "1명 반영" in h2, saved.get(k), "반영" in h3)
+
+
+def test_browser_sim(browser, ctx):
+    """「위 3팀 시뮬로 확인」: Pyodide 로 파이썬 엔진을 돌려 3팀 모두 클리어 확률·95% 구간 표시, 콘솔 오류 0(인터넷 필요)"""
+    ctx.errors.clear()
+    page = open_page(browser, ctx, legacy=False)
+    page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
+    n = len(quick_rows(page))
+    t0 = time.time()
+    page.click('.party[data-party="1"] button[data-sim="1"]')
+    page.wait_for_function("n => document.querySelectorAll('.party[data-party=\"1\"] .qsim').length >= n", arg=n, timeout=300000)
+    dt = time.time() - t0
+    txt = page.inner_text('.party[data-party="1"] .qsim')
+    state = page.inner_text('.party[data-party="1"] [data-k="simstate"]')
+    page.screenshot(path=os.path.join(ctx.shots, "desktop_browser_sim.png"), full_page=False)
+    last = page.evaluate("() => { const L = window.PN_SIMQ.lastReq; return {req: L.req, res: Object.fromEntries(Object.entries(L.sigs).map(([k, s]) => [k, window.PN_SIMQ.res[s]]))} }")
+    errs = list(ctx.errors)
+    page.close()
+    # 같은 입력·같은 시드로 이 PC 의 파이썬 엔진을 돌려 브라우저(Pyodide) 결과와 대조
+    from battlesim import simulate
+    same = []
+    for t in last["req"]["teams"]:
+        r = simulate(t["party"], {"stage": last["req"]["stage"]}, {"n_runs": last["req"]["n_runs"], "seed": last["req"]["seed"]})
+        b = last["res"][t["key"]]
+        same.append(r["outcome"]["clear_p"] == b["clear"] and r["outcome"]["ttk_median"] == b["ttk"])
+    # 화면이 시뮬에 넘긴 스탯 = 계수 맞춤 표본(tools/gen_quick_calib.party_spec)이 쓰는 스탯(기본 육성 가정 1.0, codex 차단 3)
+    import gen_quick_calib as G
+    from battlesim import quick as Q
+    q, pen = Q.load(ROOT)
+    ck, tab, name = last["req"]["stage"].split("/", 2)
+    st = q["st"][ck][tab + "|" + name]
+    spec_same = []
+    for t in last["req"]["teams"]:
+        order = [u["key"] for u in t["party"]["units"]]
+        lead = order[t["party"]["leader"]]
+        ps = G.party_spec(q, pen, order, lead, t["key"].split(","), 1.0, st)
+        spec_same.append(ps["units"] == t["party"]["units"] and ps["leader"] == t["party"]["leader"])
+    ok = "클리어" in txt and "95% 구간" in txt and "완료" in state and not errs and all(same) and len(same) == n and all(spec_same)
+    txt = txt + " / 입력 같음 %s" % spec_same
+    txt = txt + " / 파이썬과 같음 %s" % same
+    return ok, "%d팀 %.0f초 / %s / %s / 오류 %s" % (n, dt, " ".join(txt.split())[:70], state[:30], errs[:2])
+
+
+def test_browser_sim_blocked(browser, ctx):
+    """엔진 내려받기가 막히면 「시뮬 실패 · 다시 시도」, 빠른 계산 추천은 그대로(codex 안전장치 2)"""
+    page = browser.new_page(viewport={"width": 1280, "height": 900})
+    attach(page, ctx)
+    page.route("**/cdn.jsdelivr.net/**", lambda r: r.abort())
+    page.context.route("**/cdn.jsdelivr.net/**", lambda r: r.abort())
+    page.goto(ctx.base + "/index.html")
+    page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
+    n = len(quick_rows(page))
+    page.click('.party[data-party="1"] button[data-sim="1"]')
+    page.wait_for_function("() => /시뮬 실패/.test((document.querySelector('[data-k=\"simstate\"]')||{}).textContent||'')", timeout=120000)
+    retry = page.locator('.party[data-party="1"] button[data-sim="1"]').count()
+    n2 = len(quick_rows(page))
+    page.close()
+    ctx.errors.clear()
+    return retry == 1 and n2 == n, "실패 표시 + 다시 시도 버튼 %d, 빠른 계산 %d안 유지 %s" % (retry, n2, n2 == n)
+
+
+def test_sim_auto_and_override(browser, ctx):
+    """한 번 시뮬을 누르면 다음 스테이지부터 자동 확인, 시뮬 결과가 있으면 판정 배지가 시뮬 기준(title)으로 바뀜, 「자동 확인 끄기」"""
+    page = open_page(browser, ctx, legacy=False)
+    page.wait_for_selector('.party[data-party="1"] .qbox .qrow[data-key]')
+    page.click('.party[data-party="1"] button[data-sim="1"]')
+    page.wait_for_function("() => document.querySelectorAll('.party[data-party=\"1\"] .qsim').length >= 3", timeout=300000)
+    choose(page, "작전 (일반)", "SECTOR 1-2")
+    page.wait_for_function("() => /완료/.test((document.querySelector('.party[data-party=\"1\"] [data-k=\"simstate\"]')||{}).textContent||'')", timeout=300000)
+    auto = page.locator('.party[data-party="1"] .qsim').count()
+    titles = page.evaluate("() => [...document.querySelectorAll('.party[data-party=\"1\"] .qrow[data-key] .qv[title]')].map(e => e.title)")
+    off = page.locator('button[data-simauto="0"]').count()
+    if off:
+        page.click('button[data-simauto="0"]')
+    flag = page.evaluate("() => localStorage.getItem('pn.simauto')")
+    page.close()
+    ok = auto >= 1 and titles and all(t == "전투 시뮬 기준" for t in titles) and off == 1 and flag == "0"
+    return ok, "자동 시뮬 %d팀, 배지 기준 %s, 끄기 버튼 %d, 끈 뒤 저장값 %s" % (auto, titles[:3], off, flag)
+
+
+TESTS = [test_quick_default, test_quick_owned_small, test_quick_growth, test_savior_power, test_browser_sim, test_browser_sim_blocked, test_sim_auto_and_override, test_load_no_errors, test_stage_switch, test_mode_toggle, test_owned_filter_no_sim, test_flash_point, test_mobile_layout,
          test_python_js_topk_parity, test_stage_meta_version, test_avoid_mode_tiebreak, test_manual_candidate_diff, test_allzero_recomputed,
          test_mobile_seq_target]
 

@@ -16,7 +16,8 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from battlesim.metrics import unit_def                      # noqa: E402
+from battlesim.metrics import unit_def, unit_metrics        # noqa: E402
+from battlesim.starsavior.data import get_db               # noqa: E402
 from battlesim.rules import DEFAULT_OPTS                    # noqa: E402
 from battlesim.starsavior.foe import FoeDef, load_foe, parse_fx   # noqa: E402
 
@@ -42,12 +43,14 @@ def power_base(st):
 
 
 def build_saviors():
-    dmg = json.load(open(os.path.join(DATA, 'damage_index.json'), encoding='utf-8'))
     tags = {s['key']: s for s in json.load(open(os.path.join(DATA, 'synergy_tags.json'), encoding='utf-8'))['saviors']}
     ref_def = DEFAULT_OPTS['enemy_def']
     keep = 1 - ref_def / (ref_def + 3000)          # 기준 적 방어율을 되돌린다
     out = {}
-    for key, m in sorted(dmg['units'].items()):
+    for key in sorted(get_db().units):
+        # damage_index 와 같은 계산(metrics.unit_metrics)을 직접 돌린다 — damage_index 는 개화(SSR) 같은 변형을 빼서 8명이 빠졌었다
+        m = unit_metrics(key)
+        m = dict(s=round(m['single_dpt']), a=round(m['aoe_dpt']))
         d = unit_def(key)
         st = d.stats
         t = tags.get(key, {})
@@ -122,7 +125,7 @@ def main():
     # 맞춘 계수(params·calib, tools/calibrate_quick.py)는 다시 만들어도 보존한다 — 없으면 화면이 조용히 기본 계수로 돌아간다(codex 검토)
     if os.path.exists(dst):
         old = json.load(open(dst, encoding='utf-8'))
-        for k in ('params', 'calib'):
+        for k in ('params', 'pc', 'calib'):
             if k in old:
                 data[k] = old[k]
     if 'params' not in data:

@@ -7,7 +7,13 @@
 - 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
 - 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
 
-## ▶ 재설계 1단계 완료 (2026-10-20 밤) — 다음 세션은 여기부터
+## ▶ 재설계 2단계 완료 (2026-10-20 밤) — 다음 세션은 여기부터
+- 결과·근거 = `docs/redesign_v1.md` 「2단계 결과」. 브라우저 시뮬(Pyodide `sim_worker.js` + `sim/manifest.json`), 구원자별 전투력·개화 입력, 빠른 계산 재보정(육성 가정 표본 `tools/gen_quick_calib.py` → `tools/calibrate_quick.py --write`, 콘텐츠별 계수 `pc`), 화면 테마.
+- **게임 업데이트 때**: `python -X utf8 -I tools/update.py` 하나면 빠른 계산 재료·시뮬 파일 목록까지 다시 만든다. 엔진(`battlesim/*.py`)을 고치면 `tools/build_simpack.py` 도. 계수를 다시 맞추려면 `gen_quick_calib.py`(6분) → `calibrate_quick.py --write`.
+- 시험: `tests/quick_test.py`, `tests/e2e/test_page.py`(20개, 브라우저 시뮬 시험은 인터넷 필요), 엔진 시험들.
+- 다음 후보: 휴대폰 실기 확인(메모리·속도), 인게임 관찰이 생기면 ×1.85·시작 쿨타임 반영, 수동 서순을 브라우저 시뮬로(지금은 옛 사전 계산에만 있음).
+
+## ▶ 재설계 1단계 완료 (2026-10-20 밤) — 이전 기록
 - 설계·결과 = `docs/redesign_v1.md` 맨 위(확정 사항·codex 상담 반영·1단계 결과·한계).
 - **빠른 계산**: `tools/build_quick_data.py`(재료 `data/quick.json`, 1.6초) → `battlesim/quick.py`(기준) = `quick.js`(화면). 계수는 `tools/calibrate_quick.py --write`(P4 시뮬 결과에 맞춤, 전체 일치 92.6%·균형 94.5%·반반 검증 94.8%).
 - 화면: 파티마다 맨 위 「이 스테이지 추천(빠른 계산)」 1안+차선 2, 「육성 가정」(평균/80%/125% 또는 내 전투력), 못 깨면 「권장의 약 N%면 깸」·약점. 아래 상세 = 1안. 옛 기본 선택은 `?pick=sim`.

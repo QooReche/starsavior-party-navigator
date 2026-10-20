@@ -3,9 +3,10 @@
 사용: python -X utf8 -I tools/update.py [databook main.json(기본 rawdata/databook_main.json)] [--no-html] [--sim] [--sim-workers N]
   1) data/kinds.json (어나더/코즈믹)·data/power_penalty.json (전투력 보정 표)   2) synergy_tags.py (기능 태그)   3) tools/build_synergy_pairs.py (스킬 연계)
   4) tools/raw/foe.js 가 있으면 tools/build_foe.py (스테이지별 적 정보)
-  5) --sim 이면 tools/build_sim_results.py (전투 시뮬 사전 계산 data/sim/*.json — 느림: 수 시간, 낮은 우선순위. 기본 프로세스 1개)
-  6) build_party_html.py index.html
-  주의: 데이터가 바뀌었는데 --sim 을 안 돌리면 웹은 버전이 다른 시뮬 결과를 숨기고 「시뮬 결과 없음」을 보인다(가짜 숫자 금지).
+  5) tools/build_quick_data.py (빠른 계산 재료 data/quick.json, 계수 보존) + tools/build_simpack.py (브라우저 시뮬 파일 목록 sim/manifest.json)
+  6) --sim 이면 tools/build_sim_results.py (옛 사전 계산 data/sim/*.json — 선택. 재설계 뒤 화면은 빠른 계산 + 브라우저 시뮬이 기본이라
+     안 돌려도 된다. 버전이 다른 옛 결과는 화면이 알아서 숨긴다. 빠른 계산 계수를 다시 맞출 때만 정답지로 씀)
+  7) build_party_html.py index.html
 입력(저장소에 없음): 팬 데이터북 data/main.js 를 JSON 으로 푼 파일(`window.__SSD.x={...}` 를 json.JSONDecoder().raw_decode 로 파싱),
                     tools/raw/foe.js (데이터북 data/foe.js). 가이드 DB 가 바뀌면 data/db_tier.json·savior_reco.json·saviors_index.json 은 따로 갱신.
 수동 보정은 data/synergy_overrides.json 에 적으면 다시 돌려도 유지된다."""
@@ -65,6 +66,8 @@ def main():
     changed = [k for k in n if k in o and (o[k]["strength"], o[k].get("conf")) != (n[k]["strength"], n[k].get("conf"))]
     new_chars = ({p["a"] for p in new_syn} | {p["b"] for p in new_syn}) - old_roster
     print(f"시너지 쌍: {len(old_syn)} -> {len(new_syn)} (추가 {len(set(n) - set(o))}, 삭제 {len(set(o) - set(n))}, 강도/신뢰 변경 {len(changed)}), 신규 구원자 키 {sorted(new_chars) or '없음'}")
+    run(os.path.join("tools", "build_quick_data.py"))
+    run(os.path.join("tools", "build_simpack.py"))
     if "--sim" in sys.argv:
         w = sys.argv[sys.argv.index("--sim-workers") + 1] if "--sim-workers" in sys.argv else "1"
         run(os.path.join("tools", "build_sim_results.py"), "--workers", w)

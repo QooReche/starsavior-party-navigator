@@ -3,20 +3,25 @@
 (function(g){
  const MUL=1.06,MAX_ROUNDS=50,SAFE=0.5;
  const dr=d=>d>0?d/(d+3000.0):0.0;
- function penMult(pen,ratio){const r=Math.floor(ratio*10000);
+ function penMult(pen,ratio){const r=Math.floor(ratio*10000+1e-6);
   for(const [lo,hi,a,e] of pen)if(lo<=r&&r<hi)return [a/10000,e/10000];
   if(r>=9000)return [1.0,1.0];return [pen[0][2]/10000,pen[0][3]/10000]}
- function evaluate(keys,stage,sv,pen,params,growth,power,usePen){
-  const p=Object.assign({A:1.0,B:1.0,H:0.0},params||{});growth=growth==null?1.0:growth;usePen=usePen!==false;
+ // powers = {구원자 key: 전투력}(선택), scale = 모든 구원자 전투력 배수 — quick.py evaluate 와 같은 뜻
+ function evaluate(keys,stage,sv,pen,params,growth,power,usePen,powers,scale){
+  const p=Object.assign({A:1.0,B:1.0,H:0.0},params||{});growth=growth||1.0;usePen=usePen!==false;scale=scale==null?1.0:scale;
   const units=keys.map(k=>sv[k]);
   if(units.some(u=>u==null)||!stage||!stage.w||!stage.w.length)return {ok:false};
-  let ref=0;for(const u of units)ref+=u[5];ref*=MUL;
-  const bp=stage.bp||ref;const P=power?power:bp*growth;const k=P/ref;const ratio=bp?P/bp:1.0;
+  let rs=0;for(const u of units)rs+=u[5];const ref=rs*MUL;
+  const bp=stage.bp||ref;const base=power?power:bp*growth;
+  const pi=units.map((u,i)=>((powers&&powers[keys[i]])||base*u[5]/rs)*scale);
+  let P=0;for(const x of pi)P+=x;
+  const ks=units.map((u,i)=>pi[i]/(u[5]*MUL));
+  const k=P/ref;const ratio=bp?P/bp:1.0;
   const [pa,pe]=usePen?penMult(pen,ratio):[1.0,1.0];
-  let hpMax=0;for(const u of units)hpMax+=u[2];hpMax*=k;
-  let dsum=0;for(const u of units)dsum+=u[3];const teamDr=dr(dsum/units.length*k);
-  const sOut=units.map(u=>u[6]*k*u[4]/100*p.A*pa);
-  const xOut=units.map(u=>Math.max(0.0,(u[7]-u[6])/2)*k*u[4]/100*p.A*pa);
+  let hpMax=0;units.forEach((u,i)=>{hpMax+=u[2]*ks[i]});
+  let dsum=0;units.forEach((u,i)=>{dsum+=u[3]*ks[i]});const teamDr=dr(dsum/units.length);
+  const sOut=units.map((u,i)=>u[6]*ks[i]*u[4]/100*p.A*pa);
+  const xOut=units.map((u,i)=>Math.max(0.0,(u[7]-u[6])/2)*ks[i]*u[4]/100*p.A*pa);
   const healers=units.filter(u=>u[8].includes("h")||u[8].includes("s")).length;
   const heal=healers*p.H*hpMax;
   let hp=hpMax;const limit=stage.lt||MAX_ROUNDS;let rnd=0;
@@ -39,15 +44,17 @@
  // 육성이 늘면 집중 대상 순서가 바뀌어 결과가 단조롭지 않을 수 있어 이분 탐색 대신 사다리에서 «처음 성공»을 찾는다(quick.py 와 같게)
  const LADDER=[0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.15,1.3,1.5,1.75,2.0,2.5,3.0,3.5,4.0],FINE=10;
  const okOf=want=>want==="safe"?(r=>verdict(r)==="safe"):(r=>r.ok&&r.clear);
- function ladderStep(keys,stage,sv,pen,params,want,upto){want=want||"safe";const ok=okOf(want);
+ // base = {growth, power, powers} = 지금 가정. 사다리는 그 가정에 곱하는 배수
+ const ev=(keys,stage,sv,pen,params,b,x)=>evaluate(keys,stage,sv,pen,params,(b&&b.growth)||1.0,b&&b.power,true,b&&b.powers,x);
+ function ladderStep(keys,stage,sv,pen,params,want,upto,base){want=want||"safe";const ok=okOf(want);
   const last=upto==null?LADDER.length-1:Math.min(upto,LADDER.length-1);
-  for(let i=0;i<=last;i++)if(ok(evaluate(keys,stage,sv,pen,params,LADDER[i])))return i;
+  for(let i=0;i<=last;i++)if(ok(ev(keys,stage,sv,pen,params,base,LADDER[i])))return i;
   return null}
- function needGrowth(keys,stage,sv,pen,params,want,step){want=want||"safe";const ok=okOf(want);
-  const i=step==null?ladderStep(keys,stage,sv,pen,params,want):step;
+ function needGrowth(keys,stage,sv,pen,params,want,step,base){want=want||"safe";const ok=okOf(want);
+  const i=step==null?ladderStep(keys,stage,sv,pen,params,want,null,base):step;
   if(i==null)return null;if(i===0)return LADDER[0];
   const a=LADDER[i-1],b=LADDER[i];
-  for(let j=1;j<FINE;j++){const g=a+(b-a)*j/FINE;if(ok(evaluate(keys,stage,sv,pen,params,g)))return g}
+  for(let j=1;j<FINE;j++){const g=a+(b-a)*j/FINE;if(ok(ev(keys,stage,sv,pen,params,base,g)))return g}
   return b}
  const Q={MUL,SAFE,LADDER,evaluate,verdict,ladderStep,needGrowth,penMult};
  if(typeof module!=="undefined"&&module.exports)module.exports=Q;else g.Quick=Q;

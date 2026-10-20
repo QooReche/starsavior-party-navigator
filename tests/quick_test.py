@@ -33,7 +33,10 @@ def cases(q, n=300, seed=7):
         ck, sk = rnd.choice(stages)
         team = rnd.sample(keys, 4)
         g = rnd.choice([None, 0.5, 0.8, 1.0, 1.3, 2.0])
-        out.append(dict(ck=ck, sk=sk, keys=team, growth=g if g else 1.0))
+        st = q['st'][ck][sk]
+        # 1/3 은 구원자 1~2명에게 개별 전투력(서랍 입력)을 준다
+        pw = {k: round((st.get('bp') or 40000) / 4 * rnd.uniform(0.5, 1.6)) for k in rnd.sample(team, rnd.choice([1, 2]))} if rnd.random() < 0.34 else None
+        out.append(dict(ck=ck, sk=sk, keys=team, growth=g if g else 1.0, powers=pw))
     return out
 
 
@@ -42,8 +45,8 @@ def py_side(q, pen, cs):
     res = []
     for c in cs:
         st = q['st'][c['ck']][c['sk']]
-        r = quick.evaluate(c['keys'], st, q['sv'], pen, prm, growth=c['growth'])
-        ng = quick.need_growth(c['keys'], st, q['sv'], pen, prm)
+        r = quick.evaluate(c['keys'], st, q['sv'], pen, prm, growth=c['growth'], powers=c['powers'])
+        ng = quick.need_growth(c['keys'], st, q['sv'], pen, prm, base=dict(growth=c['growth'], powers=c['powers']))
         res.append([r.get('ok'), r.get('clear'), r.get('rounds'), round(r.get('left', 0) or 0, 9), ng and round(ng, 9)])
     return res
 
@@ -52,7 +55,7 @@ JS = r"""
 const fs=require('fs');const Q=require(process.argv[2]);
 const q=JSON.parse(fs.readFileSync(process.argv[3],'utf8'));const pen=JSON.parse(fs.readFileSync(process.argv[4],'utf8')).pen;
 const cs=JSON.parse(fs.readFileSync(process.argv[5],'utf8'));const r9=x=>Math.round(x*1e9)/1e9;
-const out=cs.map(c=>{const st=q.st[c.ck][c.sk];const r=Q.evaluate(c.keys,st,q.sv,pen,q.params,c.growth);const ng=Q.needGrowth(c.keys,st,q.sv,pen,q.params);
+const out=cs.map(c=>{const st=q.st[c.ck][c.sk];const r=Q.evaluate(c.keys,st,q.sv,pen,q.params,c.growth,null,true,c.powers);const ng=Q.needGrowth(c.keys,st,q.sv,pen,q.params,"safe",null,{growth:c.growth,powers:c.powers});
  return [r.ok,r.ok?r.clear:null,r.ok?r.rounds:null,r9(r.left||0),ng==null?null:r9(ng)]});
 process.stdout.write(JSON.stringify(out));
 """
@@ -81,6 +84,7 @@ def main():
     a, b = py_side(q, pen, cs), js_side(cs)
     a = [[x[0], x[1] if x[0] else None, x[2] if x[0] else None, x[3], x[4]] for x in a]
     diff = [i for i in range(len(cs)) if a[i] != b[i]]
+    check('개별 전투력 입력 사례 포함', sum(1 for c in cs if c['powers']) >= 50)
     check('Python·JS 같은 결과 (%d건)' % len(cs), not diff, 'diff %d건, 첫 건 %s py=%s js=%s' % (len(diff), diff and cs[diff[0]], diff and a[diff[0]], diff and b[diff[0]]))
     prm = q['params']
     order = {'hard': 0, 'tight': 1, 'safe': 2}
