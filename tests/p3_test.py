@@ -317,17 +317,22 @@ def test_skill_heal_hl():
 
 
 def test_enemy_immunity_and_gate():
-    """[차단2] 〈면역〉(약화효과 면역) 이면 기절 등 약화가 안 걸림 / 「불사의 육신·피해 제한」 적(516)은 중요 미지원 -> gate_ok=false"""
+    """[차단2] 〈면역〉(약화효과 면역) 이면 기절 등 약화가 안 걸림 / 표에 없는 「피해 제한」 효과를 가진 적은 중요 미지원 -> gate_ok=false
+    (P5: 적 516 「불사의 육신」은 설명문 동작으로 지원돼 관문을 통과 — tests/p5_test.py test_damage_limit)"""
+    from battlesim.mc import support_report
+    from battlesim.starsavior.foe import FoeDef
     b = battle([unit('a')], [unit('foe')])
     a, f = b.allies[0], b.foes[0]
     give(f, '면역', {}, dur=3)
     b.add_effect(a, f, dict(name='기절', props={}, dur=1, max=None, times=1, judge=False, chance=1.0), None)
     stunned = f.has('기절')
+    fd = FoeDef(load_foe(), 516, None, {}, {'hp': 1})
+    fd.lines = [Line('[웨이브 시작 시] 자신에게 〈미지의 장막〉 (지속 무한 / 피해 제한) 피해 제한 0%', '패시브', 'passive')]
+    crit = [x['raw'][:40] for x in support_report([fd]) if x['critical']]
     r = simulate(['gwen', 'fei', 'professor-m', 'amora'], {'waves': [[{'foe': 516, 'stats_override': {'hp': 1}}]]},
                  {'n_runs': 3})
-    crit = [x['raw'][:40] for x in r['unsupported']['critical']]
-    return (not stunned) and r['unsupported']['gate_ok'] is False and any('피해 제한' in x for x in crit), \
-        '면역 중 기절 %s, gate_ok %s, 중요 미지원 %s' % (stunned, r['unsupported']['gate_ok'], crit)
+    return (not stunned) and any('피해 제한' in x for x in crit) and r['unsupported']['gate_ok'] is True, \
+        '면역 중 기절 %s, 모르는 피해 제한 중요 미지원 %s, 516 gate_ok %s' % (stunned, crit, r['unsupported']['gate_ok'])
 
 
 def test_hp_condition_units():

@@ -81,6 +81,36 @@ def choose(page, content, query):
     settle(page)
 
 
+LABEL = {"op": "작전 (일반)", "oph": "작전 (어려움)", "clo": "성간 회랑", "rush": "플래시 포인트", "cosmo": "코스모 게이트",
+         "daily": "일일 재화 던전", "equip": "장비 탐사", "cube": "큐브 팰리스"}
+
+
+def choose_exact(page, content_key, tab, name):
+    """콘텐츠·스테이지를 (탭, 이름) 으로 정확히 고른다(검색어가 다른 스테이지 이름의 일부일 때도)"""
+    page.select_option("#content", label=LABEL[content_key])
+    settle(page)
+    page.fill("#q", name)
+    settle(page)
+    i = page.evaluate("([t, n]) => cur.findIndex(s => s.tab === t && s.name === n)", [tab, name])
+    if i < 0:
+        raise AssertionError("스테이지 없음 %s/%s/%s" % (content_key, tab, name))
+    page.select_option("#stage", index=i)
+    page.dispatch_event("#stage", "change")
+    settle(page)
+
+
+def find_stage(pred, contents=("rush", "cosmo", "op", "clo", "oph", "cube")):
+    """사전 계산 결과에서 pred(rec, party1, teams) 가 참인 첫 스테이지 -> (content, tab, name, rec) 또는 None"""
+    for c in contents:
+        doc = load_sim(c)
+        for sk, rec in doc["stages"].items():
+            ps = rec.get("parties") or []
+            if ps and ps[0].get("rank") and pred(rec, ps[0], rec["teams"]):
+                tab, name = sk.split("|", 1)
+                return c, tab, name, rec
+    return None
+
+
 def tile_text(page, k, party=1):
     return page.inner_text('.party[data-party="%d"] .ft[data-k="%s"]' % (party, k))
 
@@ -125,8 +155,13 @@ def test_stage_switch(browser, ctx):
 
 def test_mode_toggle(browser, ctx):
     """오토/수동: 숫자(표본 문구·델타)와 서순 표가 바뀌고, localStorage·?mode=manual 로 유지"""
+    pick = find_stage(lambda rec, p, T: T[p["rank"][0]].get("man", {}).get("g") and T[p["rank"][0]]["auto"].get("g")
+                      and round(T[p["rank"][0]]["man"]["c"] * 100) != round(T[p["rank"][0]]["auto"]["c"] * 100)
+                      and "seq" in T[p["rank"][0]])
+    if pick is None:
+        return False, "수동이 클리어 확률을 바꾸는 1위 팀이 있는 스테이지가 없음"
     page = open_page(browser, ctx, "?mode=auto")
-    choose(page, "플래시 포인트", "매니저 그레고리 Ⅰ")   # 수동이 클리어 확률을 바꾸는 스테이지(97% -> 100%)
+    choose_exact(page, *pick[:3])   # 수동이 클리어 확률을 바꾸는 스테이지(데이터에서 찾음)
     auto_meta = page.inner_text('.party[data-party="1"] .meta')
     auto_seq = page.locator('.party[data-party="1"] .seq').count()
     auto_tiles = page.inner_text('.party[data-party="1"] .ft[data-k="clear"] .fv')
@@ -149,8 +184,8 @@ def test_mode_toggle(browser, ctx):
     p2.close()
     ok = (auto_seq == 0 and seq == 1 and rows >= 3 and "수동" in man_meta and "오토" in auto_meta and man_tiles != auto_tiles
           and url_ok and keep == "manual" and from_url)
-    return ok, "서순 오토 %d/수동 %d(보이는 행 %d), 클리어 확률 %s -> %s, URL %s, 새로고침 유지 %s, ?mode=manual %s" % (
-        auto_seq, seq, rows, " ".join(auto_tiles.split()), " ".join(man_tiles.split()), url_ok, keep, from_url)
+    return ok, "%s: 서순 오토 %d/수동 %d(보이는 행 %d), 클리어 확률 %s -> %s, URL %s, 새로고침 유지 %s, ?mode=manual %s" % (
+        "/".join(pick[:3]), auto_seq, seq, rows, " ".join(auto_tiles.split()), " ".join(man_tiles.split()), url_ok, keep, from_url)
 
 
 def test_owned_filter_no_sim(browser, ctx):
@@ -277,15 +312,6 @@ def test_stage_meta_version(browser, ctx):
 
 def test_avoid_mode_tiebreak(browser, ctx):
     """역상성 회피 옵션이면 동점(클리어·처치 턴 같음) 판정에 지금 근사 점수를 씀(사전 계산 rec.a 아님, codex 2 — SECTOR 2-12)"""
-    page = open_page(browser, ctx)
-    choose(page, "작전 (일반)", "SECTOR 2-12")
-    page.click("#optbox summary")      # 옵션은 접힌 상자 안
-    page.select_option("#mmode", "avoid")
-    settle(page)
-    last = page.evaluate("() => window.PN.last")
-    shown = page.get_attribute('.party[data-party="1"]', "data-team")
-    page.evaluate("() => localStorage.removeItem('pn.mm')")
-    page.close()
     import math
 
     def key(x, score):
@@ -293,20 +319,47 @@ def test_avoid_mode_tiebreak(browser, ctx):
         if not a.get("g"):
             return (1, 0, 1e9, -score, x["key"])
         return (0, -math.floor(a["c"] * 20 + 1e-9), a["t"] if a["t"] is not None else 1e9, -score, x["key"])
-    by_v = sorted(last["simmed"], key=lambda x: key(x, round(x["v"], 3)))[0]["key"]
-    by_a = sorted(last["simmed"], key=lambda x: key(x, x["a"]))[0]["key"]
-    return shown == by_v and by_v != by_a, "화면 %s / 지금 점수 기준 %s / 사전 계산 점수 기준 %s" % (shown, by_v, by_a)
+    page = open_page(browser, ctx)
+    page.click("#optbox summary")      # 옵션은 접힌 상자 안
+    page.select_option("#mmode", "avoid")
+    settle(page)
+    doc = load_sim("op")
+    seen, wrong, differ = 0, [], []
+    for sk in list(doc["stages"])[:40]:
+        tab, name = sk.split("|", 1)
+        choose_exact(page, "op", tab, name)
+        last = page.evaluate("() => window.PN.last")
+        if not last or not last.get("simmed"):
+            continue
+        shown = page.get_attribute('.party[data-party="1"]', "data-team")
+        by_v = sorted(last["simmed"], key=lambda x: key(x, round(x["v"], 3)))[0]["key"]
+        by_a = sorted(last["simmed"], key=lambda x: key(x, x["a"]))[0]["key"]
+        seen += 1
+        if shown != by_v:
+            wrong.append(name)
+        if by_v != by_a:
+            differ.append(name)
+            if len(differ) >= 1 and seen >= 5:
+                break
+    page.evaluate("() => localStorage.removeItem('pn.mm')")
+    page.close()
+    return seen > 0 and not wrong and bool(differ), "확인 %d곳, 화면 ≠ 지금 점수 기준 %s, 사전 계산 점수였다면 달라지는 곳 %s" % (seen, wrong, differ[:3])
 
 
 def test_manual_candidate_diff(browser, ctx):
     """수동 화면의 다른 후보 차이 = 후보 수동 - 표시 팀 수동(같은 모드끼리, codex 3 — 그레고리 Ⅰ)"""
+    pick = find_stage(lambda rec, p, T: T[p["rank"][0]].get("man", {}).get("g") and T[p["rank"][0]]["auto"].get("g")
+                      and abs(T[p["rank"][0]]["man"]["c"] - T[p["rank"][0]]["auto"]["c"]) > 0.005
+                      and sum(1 for k in p["top"] if T[k].get("man", {}).get("g")) >= 5)
+    if pick is None:
+        return False, "수동·오토 클리어가 다른 1위 팀이 있는 스테이지가 없음"
     page = open_page(browser, ctx, "?mode=manual")
-    choose(page, "플래시 포인트", "매니저 그레고리 Ⅰ")
+    choose_exact(page, *pick[:3])
     shown = page.get_attribute('.party[data-party="1"]', "data-team")
     rows = page.evaluate("""() => [...document.querySelectorAll('.party[data-party="1"] .cands tr[data-dc]')].map(r => [r.dataset.key, +r.dataset.dc])""")
     page.evaluate("() => localStorage.removeItem('pn.mode')")
     page.close()
-    teams = load_sim("rush")["stages"]["매니저 그레고리|매니저 그레고리 Ⅰ"]["teams"]
+    teams = pick[3]["teams"]
     res = lambda k: teams[k]["man"] if teams[k].get("man", {}).get("g") else teams[k]["auto"]
     bad = [(k, d) for k, d in rows if abs(d - (res(k)["c"] - res(shown)["c"])) > 1e-3]
     mixed = sum(1 for k, _ in rows if abs((res(k)["c"] - res(shown)["c"]) - (res(k)["c"] - teams[shown]["auto"]["c"])) > 1e-3)
@@ -315,13 +368,26 @@ def test_manual_candidate_diff(browser, ctx):
 
 def test_allzero_recomputed(browser, ctx):
     """「후보 전부 0판」은 지금 보이는 후보·모드로 판단(codex 4): 12-36 보유 4명 오토 = 안내 있음, 13-36 보유 4명 수동(1/200) = 안내 없음, 같은 팀 오토 = 있음"""
-    p1 = open_owned(browser, ctx, ["amora", "ceres", "waltz-asherah", "wedding-carmen"], "?mode=auto")
-    choose(p1, "작전 (일반)", "SECTOR 12-36")
+    def team_pick(cond):
+        for c in ("op", "clo", "oph", "rush"):
+            for sk, rec in load_sim(c)["stages"].items():
+                for k, t in rec["teams"].items():
+                    a, m = t.get("auto") or {}, t.get("man") or {}
+                    if a.get("g") and cond(a, m):
+                        tab, name = sk.split("|", 1)
+                        return c, tab, name, k
+        return None
+    t1 = team_pick(lambda a, m: a["c"] == 0)
+    t2 = team_pick(lambda a, m: a["c"] == 0 and m.get("g") and m["c"] > 0)
+    if t1 is None or t2 is None:
+        return False, "조건에 맞는 팀 없음 %s %s" % (t1, t2)
+    p1 = open_owned(browser, ctx, t1[3].split(","), "?mode=auto")
+    choose_exact(p1, *t1[:3])
     a = p1.locator('.party[data-party="1"] [data-k="allzero"]').count()
     st_a = p1.get_attribute('.party[data-party="1"] .forecast', "data-state")
     p1.close()
-    p2 = open_owned(browser, ctx, ["professor-m", "waltz-asherah", "wedding-carmen", "wedding-epindel"], "?mode=manual")
-    choose(p2, "작전 (일반)", "SECTOR 13-36")
+    p2 = open_owned(browser, ctx, t2[3].split(","), "?mode=manual")
+    choose_exact(p2, *t2[:3])
     b = p2.locator('.party[data-party="1"] [data-k="allzero"]').count()
     cb = p2.inner_text('.party[data-party="1"] .ft[data-k="clear"] .fv')
     p2.click('label:has(#m-auto)')
@@ -330,7 +396,8 @@ def test_allzero_recomputed(browser, ctx):
     p2.evaluate("() => localStorage.removeItem('pn.mode')")
     p2.close()
     ok = st_a == "ok" and a == 1 and b == 0 and c == 1
-    return ok, "12-36 오토 안내 %d(상태 %s) / 13-36 수동 안내 %d(클리어 %s) / 13-36 오토 안내 %d" % (a, st_a, b, cb.split()[0] if cb else "", c)
+    return ok, "%s 오토 안내 %d(상태 %s) / %s 수동 안내 %d(클리어 %s) / 같은 팀 오토 안내 %d" % (
+        "/".join(t1[1:3]), a, st_a, "/".join(t2[1:3]), b, cb.split()[0] if cb else "", c)
 
 
 def test_mobile_seq_target(browser, ctx):
@@ -344,9 +411,25 @@ def test_mobile_seq_target(browser, ctx):
     return bool(txt) and not bare and all(t[1].startswith("대상: ") for t in txt), "보이는 대상 %d개, 화살표만 %d, 예 %s" % (len(txt), len(bare), txt[:3])
 
 
+def test_build_display(browser, ctx):
+    """P5: 전망 상자에 육성 가정 줄(「표준 육성」 + 모델 파티 전투력/권장 비율), 메타 줄 조건에 육성 가정, 민감도 표에 「육성 없음」 행"""
+    page = open_page(browser, ctx)
+    choose(page, "코스모 게이트", "길레 2단계")
+    bl = page.inner_text('.party[data-party="1"] [data-k="build"]')
+    meta = page.inner_text('.party[data-party="1"] .meta')
+    page.click('.party[data-party="1"] details.assume summary')
+    sens = page.inner_text('.party[data-party="1"] details.assume table')
+    rec = load_sim("cosmo")["stages"]["길레|길레 2단계"]
+    t = rec["teams"][page.get_attribute('.party[data-party="1"]', "data-team")]["auto"]
+    page.screenshot(path=os.path.join(ctx.shots, "desktop_cosmo_gille2_build.png"), full_page=True)
+    page.close()
+    ok = ("표준 육성" in bl and ("%s" % format(t["pw"], ",")) in bl and "권장" in bl and "표준 육성" in meta and "육성 없음" in sens)
+    return ok, "육성 줄 「%s」 / 메타에 표준 육성 %s / 민감도에 육성 없음 %s" % (" ".join(bl.split())[:120], "표준 육성" in meta, "육성 없음" in sens)
+
+
 TESTS = [test_load_no_errors, test_stage_switch, test_mode_toggle, test_owned_filter_no_sim, test_flash_point, test_mobile_layout,
          test_python_js_topk_parity, test_stage_meta_version, test_avoid_mode_tiebreak, test_manual_candidate_diff, test_allzero_recomputed,
-         test_mobile_seq_target]
+         test_mobile_seq_target, test_build_display]
 
 
 def main():
@@ -357,7 +440,7 @@ def main():
         shots = args[i + 1]
         del args[i:i + 2]
     if not shots:
-        shots = r"E:\AI_mk2\work\p4\shots" if os.path.isdir(r"E:\AI_mk2\work") else tempfile.mkdtemp(prefix="pn_shots_")
+        shots = r"E:\AI_mk2\work\p5\shots" if os.path.isdir(r"E:\AI_mk2\work") else tempfile.mkdtemp(prefix="pn_shots_")
     os.makedirs(shots, exist_ok=True)
     low_priority()
     from playwright.sync_api import sync_playwright

@@ -1,0 +1,22 @@
+{
+  "_note": "P5 육성 프리셋 가정(battlesim/starsavior/build.py). 구원자별 목걸이·반지·세트·잠재력은 가이드 DB(rawdata/guide_app-core.js)에서 읽고, 여기엔 사람이 고칠 수 있는 가정·예외만 둔다. 등급: data = databook 수치, community = 커뮤니티 측정·가이드, assumed = 근거 없는 가정. 바꾸면 사전 계산 버전 해시가 바뀐다.",
+  "grade": {"value": "T2 레전더리 +15", "grade": "assumed", "note": "6부위 모두 최고 등급·최대 강화(엔드게임 가정). 주옵 수치는 databook equip.main(data)"},
+  "sub_max": {"value": {"atk": 45, "hp": 270, "def": 27, "spd": 2, "atkP": 160, "hpP": 160, "defP": 160, "cr": 200, "cd": 300, "eh": 300, "er": 300},
+              "grade": "community", "note": "부옵 1회 부여 최대치(arca 2026-08-20, 08-27 패치 반영). 비율은 1/10000"},
+  "sub_roll": {"value": 0.8, "grade": "assumed", "note": "1회 부여 평균 = 최대치 x 0.8"},
+  "sub_lines": {"value": 4, "grade": "data", "note": "레전더리 시작 4줄(databook equip.subcount), 3·6·9·12·15강에 기존 줄 중 하나가 오름(5회) -> 부위당 9회"},
+  "sub_useful_lines": {"value": 3, "grade": "assumed", "note": "4줄 중 역할에 맞는 줄 수(나머지 1줄은 쓸모없는 줄). 강화 5회는 4줄에 고르게(기대값) -> 쓸모 있는 줄 하나당 1 + 5/4 = 2.25회"},
+  "sub_priority": {"value": {"atk": ["cr", "cd", "atkP", "spd", "atk"], "hp": ["hpP", "spd", "er", "defP", "hp"], "def": ["defP", "spd", "eh", "hpP", "def"], "spd": ["spd", "cr", "atkP", "cd", "eh"]},
+                   "grade": "assumed", "note": "역할 프로필별 부옵 우선순위. 부위마다 그 부위 주옵과 같은 종류는 건너뛰고 앞에서 sub_useful_lines 개"},
+  "journey": {"value": {"stats": [1250, 168, 473, 515, 129], "main_slot": {"atk": 0, "spd": 0, "hp": 1, "def": 2}},
+              "grade": "assumed", "note": "여정 어려움 기록(databook #j-conv 예시: 힘 1,250·체력 168·인내 473·집중 515·보호 129). 순서 = 힘·체력·인내·집중·보호, 프로필의 주 스탯 자리와 힘 자리를 바꿈. 변환 비율·클래스 계수는 data"},
+  "potential_pick": {"value": {"crit_threshold": 9500, "pure": {"AX": "AX1", "BX": "BX2", "CX": "CX3", "DX": "DX4", "EX": "EX5", "FX": "FX6", "GX": "GX7", "HX": "HX8"}},
+                     "grade": "assumed", "note": "가이드 코드 = databook 특수 잠재력 「별빛의 궤적-<코드>호」. 「AX5(치확 부족)/AX6(95% 이상)」은 특수 잠재력을 뺀 치명타 확률(기본+패시브 상시+장비+부옵)로 고름. 번호 없는 코드는 순수형"},
+  "class_default": {"value": {
+      "dealer": {"necklace": "속도", "ring": "공격력%", "sets": ["통찰(4) + 투지(2)"], "potential": "AX5 - 치명타 확률이 부족한 경우\nAX6 - 치명타 확률이 95% 이상인 경우"},
+      "서포터": {"necklace": "속도", "ring": "생명력%", "sets": ["생명(4) + 장벽(2)"], "potential": "BX"},
+      "디펜더": {"necklace": "속도", "ring": "생명력%", "sets": ["생명(4) + 장벽(2)"], "potential": "BX"}},
+    "grade": "assumed", "note": "가이드에 세팅이 없는 구원자(아래 use_class_default)에만 쓰는 클래스 기본값 = 가이드 같은 클래스 다수안"},
+  "use_class_default": {"value": ["gwen", "lydia-moon-caster"], "grade": "assumed", "note": "가이드 DB 에 PVE 세팅이 아직 없는 신규 구원자(2026-10-20 확인). 여기 없는 구원자의 세팅이 없거나 읽히지 않으면 오류"},
+  "overrides": {"value": {}, "grade": "assumed", "note": "구원자 key -> {necklace, ring, sets, potential} 일부를 덮어씀(가이드 값보다 우선)"}
+}

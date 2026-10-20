@@ -34,7 +34,7 @@ from .starsavior.data import _find_key, get_db
 from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves
 from .starsavior.parser import Skill, UnitDef
 
-SCHEMA_VERSION = 'p3-1'
+SCHEMA_VERSION = 'p5-1'   # p5-1: 육성 프리셋(build)·강인도/브레이크·피해 제한·전투력 보정 옵션, result.party.power·breaks·depth_runs
 
 
 class _CustomFoe:
@@ -68,7 +68,7 @@ class _CustomFoe:
         self.spd_base = self.stats['spd']
 
 
-def _norm_party(party_spec, db, mode):
+def _norm_party(party_spec, db, mode, build=None):
     if isinstance(party_spec, dict):
         units, leader = party_spec.get('units', []), party_spec.get('leader')
     else:
@@ -78,7 +78,8 @@ def _norm_party(party_spec, db, mode):
         if isinstance(u, str):
             u = dict(key=u)
         key = _find_key(db, u['key'])
-        d = UnitDef(db, key, u.get('level', 200), u.get('res', 10), u.get('star', 0), u.get('mode', mode))
+        d = UnitDef(db, key, u.get('level', 200), u.get('res', 10), u.get('star', 0), u.get('mode', mode),
+                    build=u.get('build', build))
         if u.get('stats_override'):
             d.stats.update(u['stats_override'])
             d.spd_base = d.stats['spd']
@@ -152,9 +153,42 @@ def assumptions_used(mc, opts):
         r = RULES['opts'].get(k, {})
         out.append(dict(rule='opts.' + k, value=opts.get(k), grade=r.get('grade'), note=r.get('note')))
     out.append(dict(rule='model.not_modeled', value=None, grade='assumed',
-                    note='강인도·브레이크·브레이크 스킬, 반격·선제 방어(회피는 evade_model 로 지원), 피해 제한·불사 효과(실행 전 검사에서 중요 미지원으로 표시), 장비·잠재력·여정, 전투력 보정, 시즌 보너스, 변형 스킬, '
+                    note='브레이크 포인트·브레이크 스킬, 반격·선제 방어(회피는 evade_model 로 지원), 표에 없는 「피해 제한」 효과(실행 전 검사에서 중요 미지원으로 표시), '
+                         '노바 버스트 슬롯 효과(+15% 외), 일반 잠재력(감각·솜씨)·전술 분석·호감도, 시즌 보너스, 변형 스킬, Lv200 초과 성장, '
                          '대부분의 반응 트리거 스킬(웨딩 카르멘 「수호의 기사」·프로페서M 「악에서 악으로」만 지원), 연쇄 피해의 「턴 끝에 발생」 시점'))
     return out
+
+
+def party_power(defs):
+    """databook 전투력 공식으로 4명 합(상시 패시브 % 를 스탯에 반영). 근사 — 스킬 레벨 합 34·전투력 잠재력 0 가정(build.unit_power)."""
+    from .starsavior.build import unit_power
+    tot = 0
+    for d in defs:
+        s = dict(d.stats)
+        p = d.passive
+        s['atk'] = s['atk'] * (1 + p['atkp'])
+        s['hp'] = s['hp'] * (1 + p['hpp'])
+        s['def'] = s['def'] * (1 + p['defp'])
+        s['spd'] = s['spd'] * (1 + p['spdp']) + p['spdf']
+        s['cr'] = s['cr'] + p['cr'] * 10000
+        s['cd'] = s['cd'] + p['cd'] * 10000
+        s['eh'] = s.get('eh', 10000) + p['eh'] * 10000
+        tot += unit_power(s)
+    return tot
+
+
+def power_pen(power, rec, db):
+    """(비율%, 아군 피해 배율, 적 피해 배율) — databook topics.pen(비율 = floor(전투력 x 10000 / 권장))"""
+    if not rec or not power:
+        return None
+    r = math.floor(power * 10000 / rec)
+    for lo, hi, a, e in db.main['topics']['pen']:
+        if lo <= r < hi:
+            return r / 100.0, a / 10000.0, e / 10000.0
+    if r >= max(row[1] for row in db.main['topics']['pen']):
+        return r / 100.0, 1.0, 1.0
+    row = min(db.main['topics']['pen'], key=lambda x: x[0])
+    return r / 100.0, row[2] / 10000.0, row[3] / 10000.0
 
 
 def simulate(party_spec, encounter_spec, options=None):
@@ -185,11 +219,23 @@ def simulate(party_spec, encounter_spec, options=None):
 
 def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     db = get_db()
-    defs, leader = _norm_party(party_spec, db, o.get('stat_mode', 'fixed'))
+    build = o.get('build', 'none')
+    defs, leader = _norm_party(party_spec, db, o.get('stat_mode', 'fixed'), build)
     if not defs:
         raise ValueError('party_spec 이 비어 있음')
     waves, turn_limit, fx, fx_unknown, meta = _norm_encounter(encounter_spec)
     max_turns = encounter_spec.get('max_turns', 50)
+    power = party_power(defs)
+    pp = power_pen(power, meta.get('recommended_power'), db)
+    pen = None
+    pen_note = None
+    if mc['power_penalty'] == 'model' and pp:
+        if meta.get('content') == 'rush':
+            pen_note = '플래시 포인트는 전투력 보정 미적용'
+        else:
+            pen = (pp[1], pp[2])
+    elif mc['power_penalty'] not in ('off', 'model'):
+        raise ValueError('power_penalty 는 off|model: %r' % mc['power_penalty'])
     static = support_report(defs + [d for w in waves for d in w])
     names = ['%s#%d' % (d.name, i) for i, d in enumerate(defs)]
     agg = defaultdict(lambda: defaultdict(list))
@@ -198,6 +244,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     ttk = []
     runtime = defaultdict(int)
     runs_affected = 0
+    depth_runs = 0
+    breaks = [0, 0]
     timeline = None
     first = defaultdict(int)
     offset = int(o.get('run_offset', 0))
@@ -207,7 +255,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         rng = random.Random(seed * 1000003 + offset + r)
         b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {},
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
-                   enemy_lines=o.get('enemy_lines', True), max_turns=max_turns)
+                   enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen)
         b.run()   # EventLimitError 는 그대로 올린다(정상 결과 금지)
         outcomes[b.result] += 1
         if b.result == 'clear':
@@ -236,8 +284,14 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
             foe_agg[k]['seen'].append(1)
         if b.unsup:
             runs_affected += 1
+            if any(k.startswith('depth:') for k in b.unsup):
+                depth_runs += 1
             for k, v in b.unsup.items():
                 runtime[k] += v
+        for u in b.allies:
+            breaks[0] += u.breaks
+        for u in b.all_foes:
+            breaks[1] += u.breaks
         if b.timeline is not None:
             timeline = b.timeline
     elapsed = time.perf_counter() - t0
@@ -256,7 +310,9 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         schema_version=SCHEMA_VERSION,
         encounter=dict(meta, turn_limit=turn_limit, stage_fx=fx, stage_fx_unparsed=fx_unknown,
                        waves=[[d.name for d in w] for w in waves]),
-        party=dict(units=names, leader=leader),
+        party=dict(units=names, leader=leader, build=build, builds=[d.build for d in defs], power=power,
+                   power_ratio=(pp[0] if pp else None), penalty=(list(pen) if pen else None), penalty_note=pen_note),
+        breaks=dict(ally=round(breaks[0] / max(1, n_runs), 3), foe=round(breaks[1] / max(1, n_runs), 3)),
         outcome=dict(
             n_runs=n, n_clear=outcomes['clear'],
             clear_p=round(outcomes['clear'] / n, 4), wipe_p=round(outcomes['wipe'] / n, 4), timeout_p=round(outcomes['timeout'] / n, 4),
@@ -268,7 +324,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         foes={k: dict(dmg=round(sum(v['dmg']) / n), appeared_p=round(len(v['seen']) / n, 4)) for k, v in foe_agg.items()},
         assumptions_used=assumptions_used(mc, opts),
         unsupported=dict(static=static[:300], static_count=len(static), runtime=dict(runtime), runs_affected=runs_affected,
-                         critical=crit_lines[:50], gate_ok=not crit_lines),
+                         depth_runs=depth_runs, critical=crit_lines[:50], gate_ok=not crit_lines),
         runtime_ms_per_run=round(elapsed * 1000 / max(1, n), 2),
         seed=seed,
     )

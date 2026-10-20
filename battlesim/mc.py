@@ -30,6 +30,9 @@ REACT_TRIG = [
     ('아군이 피격될 때', 'hit_ally'), ('아군이 피해 받기 직전', 'prehit_ally'), ('아군이 피해를 받기 직전', 'prehit_ally'),
     ('적 공격 시', 'foe_pre'), ('적 공격 후', 'foe_post'), ('적 비공격 스킬 시', 'foe_pre_na'), ('적 비공격 스킬 후', 'foe_post_na'),
     ('내가 사망할 때', 'death_self'), ('아군 사망 시', 'death_ally'),
+    # P5: 「행동」 시점(공격·비공격 구분 없음) — 잠재력 24줄·마르실/페트라 3줄
+    ('내 행동 시', 'own_pre'), ('내 행동 후', 'own_post'), ('아군 행동 시', 'ally_pre'), ('아군 행동 후', 'ally_post'),
+    ('적 행동 후', 'foe_post_any'),
 ]
 
 
@@ -60,20 +63,40 @@ COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이
                  '대상 HP% 초과', '대상 HP% 미만', '적 처치', '적을 처치하지 못함', '내 턴', '자신 포함', '시전자 속성', '시전자가 보유',
                  '자신에게 약화효과 없음', '자신 약화효과 보유', '자신 강화효과 보유', '스킬 쿨타임 아님', '턴 유닛이 보유',
                  '스킬 대상 유형', '단일 대상 공격', '대상 속성', '적 약화효과 보유', '적 강화효과 보유', '특정 효과 보유 적 존재',
-                 '턴 유닛 속성', 'EnemyAdjustType', 'NotEnemyAdjustType'])
+                 '턴 유닛 속성', 'EnemyAdjustType', 'NotEnemyAdjustType', 'IsTargetSuperArmor',
+                 '피해 증가(조건부)', 'NotTargetPositiveBuff', 'NotEnemyPositiveBuff', 'ExistAllySpecificBuff'])
 
 # 회복·보호막·부활·해제·무작위 효과 원문 해석(parser 는 이 줄들을 'ignored' 로 둔다)
 RX_HEAL = re.compile(r'^(.+?)에게 회복 = (자신|대상) (최대 생명력|생명력|공격력|방어력)×([\d.]+)%')
 RX_SHIELD = re.compile(r'^(.+?)에게 〈([^〉]+)〉\s*\((\d+턴|지속 무한)(?:\s*/\s*([^)]*))?\)\s*보호막 = 자신 (생명력|공격력|방어력)×([\d.]+)%')
 RX_REVIVE = re.compile(r'^(.+?)에게 부활\(생명력 (\d+)%\)')
 RX_HOT = re.compile(r'‹턴마다 회복: 대상 최대 생명력×([\d.]+)%›')
-RX_DISPEL = re.compile(r'^(.+?)에게 〈[^〉]+〉\s*\((약화|강화)효과 해제\)')
-RX_DISPEL_N = re.compile(r'^(.+?)에게 \((약화|강화)효과 해제\) 효과 (\d+)개 해제')
+RX_DISPEL = re.compile(r'^(.+?)에게 (?:\(대상마다 (\d+)% 판정\) )?〈[^〉]+〉\s*\((?:\d+턴 / )?(약화|강화)효과 해제\)')
+RX_DISPEL_N = re.compile(r'^(.+?)에게 (?:(\d+)% 확률로 )?\((약화|강화)효과 해제\) 효과 (\d+)개 해제')
+# P5 적 효과(대표 스테이지에서 자주 나오는 것)
+RX_GAUGE_SET = re.compile(r'^(.+?)에게 행동 게이지를 (\d+)%로 설정')
+RX_CHAIN_T = re.compile(r'^(.+?)에게 연쇄 피해 = 대상 (최대 생명력|생명력)×([\d.]+)% \(×1\.85, 방어력 적용\)(?: ×(\d+))?')
+RX_CD_UP = re.compile(r'^(.+?)에게 스킬 쿨타임 (\d+)턴 증가')
+RX_LOCAL_PER = re.compile(r'^자신에게 능력치 보정 피해 증가 ([+-]?[\d.]+)% \((자신|적 전체|공격 대상|아군 전체)의 (강화|약화) 효과 1개당 위 수치만큼 적용, 개수 상한 없음\)')
+CD_RESET_NAMES = {'궁극기 쿨타임 초기화': '궁극기', '특수기 쿨타임 감소': '특수기'}   # 설명문 「쿨타임이 초기화」·「최대로 감소한 상태로 시작」
 RX_RANDOM = re.compile(r'^(.+?)에게\s*(?:\(대상마다 (\d+)% 판정\)\s*)?무작위 효과 〈[^〉]+〉: \[(.+)\] 중 1개')
 RX_RECV_HEAL = re.compile(r'^(.+?)에게 능력치 보정 받는 회복량 ([+-][\d.]+)%')
 RX_GAUGE_P = re.compile(r'^(.+?)에게 (\d+)% 확률로 행동 게이지 ([\d.]+)%p (증가|감소)')
 RX_EXTRA_P = re.compile(r'^자신에게 (\d+)% 확률로 (기본기|특수기|궁극기) 추가 발동')
-SPECIAL_RX = (RX_SHIELD, RX_HEAL, RX_REVIVE, RX_DISPEL, RX_DISPEL_N, RX_RANDOM, RX_RECV_HEAL, RX_GAUGE_P, RX_EXTRA_P)
+RX_RECAST = re.compile(r'발동 후 (\d+)턴 재발동 불가')
+RX_TOUGH_HEAL = re.compile(r'^(.+?)에게 강인도 (\d+) 회복')          # P5: 「자신에게 강인도 N 회복」(적 42줄)
+RX_HEAL_P = re.compile(r'^(.+?)에게 (\d+)% 확률로 회복 = (자신|대상) (최대 생명력|생명력|공격력|방어력)×([\d.]+)%')   # 잠재력 BX 「25% 확률로 회복」
+SPECIAL_RX = (RX_SHIELD, RX_HEAL, RX_REVIVE, RX_DISPEL, RX_DISPEL_N, RX_RANDOM, RX_RECV_HEAL, RX_GAUGE_P, RX_EXTRA_P, RX_TOUGH_HEAL,
+              RX_HEAL_P, RX_GAUGE_SET, RX_CHAIN_T, RX_CD_UP, RX_LOCAL_PER)
+# P5 「피해 제한」: 효과마다 설명문에 적힌 동작을 그대로(일반화하지 않는다 — codex 설계 상담). 여기 없는 「피해 제한」 효과는 미지원(적이면 중요 미지원).
+#  floor  = 한 번의 피해로 현재 생명력이 pct 아래로 내려가지 않음(로자리아 「대미지 브레이크」: 「현재 생명력이 40% 이하로 떨어지지 않습니다 … 전투 중 1회」)
+#  lethal = 사망에 이르는 피해 -> 최대 생명력 keep 만큼 남기고 〈불사〉 n턴(적 「불사의 육신」·카넬리아 「바큇살」 설명문)
+DAMAGE_LIMIT = {
+    '대미지 브레이크': dict(kind='floor', pct=0.40, once=True, grade='data'),
+    '불사의 육신': dict(kind='lethal', keep=0.01, undying=1, once=True, grade='assumed(1회 소모)'),
+    '바큇살': dict(kind='lethal', keep=0.01, undying=1, once=True, grade='data', then=[('칠흑의 잔향(해제불가)', 3, {'공격력%': 20.0, '효과 저항': 20.0})],
+                 reset_cd=True),
+}
 
 
 def line_rest(ln):
@@ -91,7 +114,7 @@ def _dur(v):
 
 
 TARGET_KEYS = set(['대상 속성', '대상이 보유', '대상이 미보유', '대상 HP% 초과', '대상 HP% 미만', '대상 약화효과 보유',
-                   '대상 강화효과 보유', '대상 효과 중첩수'])
+                   '대상 강화효과 보유', '대상 효과 중첩수', 'NotTargetPositiveBuff'])
 
 
 class _ParamView:
@@ -253,6 +276,10 @@ class Unit:
         self.shield_given = 0.0
         self.death_t = None
         self.nova = 0.0          # 개인 노바 포스(nova_pool='unit' 일 때만 씀)
+        self.sa_max = int(st.get('sa') or 0)    # P5 강인도(적 b[9]+변형 보정, 구원자 3/코즈믹 5 + 잠재력)
+        self.sa = self.sa_max
+        self.broken = False
+        self.breaks = 0
         self._m = None
 
     # ---- 버프 합산(캐시: 효과가 바뀌면 b.dirty())
@@ -261,9 +288,10 @@ class Unit:
             return self._m
         m = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0, er=0.0,
                  der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, inc_single=0.0, inc_aoe=0.0, evade=0.0, acc=0.0,
-                 inc_vs={}, inc_slot={}, red={})
+                 tough=0.0, tough_fixed=0.0, inc_break=0.0, inc_vs={}, inc_slot={}, red={})
+        blocked = '강화 불가' in self.eff and self.eff['강화 불가'].stacks > 0   # 〈강화 불가〉: 모든 강화 효과가 적용되지 않음(gloss)
         for e in self.eff.values():
-            if e.stacks <= 0:
+            if e.stacks <= 0 or (blocked and not e.harmful):
                 continue
             for k, v in e.props.items():
                 _add_prop(m, k, v, e.stacks)
@@ -278,6 +306,18 @@ class Unit:
 
     def has(self, name):
         return self.stack(name) > 0
+
+    def buff_blocked(self):
+        """〈강화 불가〉: 지속 동안 모든 강화 효과가 적용되지 않음(gloss) — 수치(mods)·이름으로 동작하는 강화(불사·면역·은신·보호막 …) 모두"""
+        e = self.eff.get('강화 불가')
+        return e is not None and e.stacks > 0
+
+    def on(self, name):
+        """그 효과가 지금 작동하는가: 있음 + (약화이거나 〈강화 불가〉 상태가 아님)"""
+        e = self.eff.get(name)
+        if e is None or e.stacks <= 0:
+            return False
+        return e.harmful or not self.buff_blocked()
 
     def spd(self):
         m = self.mods()
@@ -328,6 +368,12 @@ def _add_prop(m, k, v, stacks):
         m['inc_single'] += val
     elif k == '전체 대상 피해 증가':
         m['inc_aoe'] += val
+    elif k == '강인도 피해':            # P5: 정수(타격마다 +N)
+        m['tough'] += v * stacks
+    elif k == '강인도 고정 피해':
+        m['tough_fixed'] += v * stacks
+    elif k == '브레이크 대상 피해 증가':
+        m['inc_break'] += val
     elif k in ('받는 피해 감소', '피해 감소'):
         m['red']['all'] = m['red'].get('all', 0.0) + val
     elif k == '전체 대상 피해 감소':
@@ -344,12 +390,14 @@ class Ctx:
     """시전 1회(또는 피격 반응 1회)의 문맥. owner = 줄 주인, src = 시전자(공격자), skill = 시전 스킬, target = 대상."""
     __slots__ = ('owner', 'src', 'skill', 'extra', 'targets', 'target', 'inc', 'atkp', 'cr', 'cd', 'pen', 'eh', 'crit',
                  'kill', 'coop_used', 'heal_give', 'heal_recv', 'local', 'nb', 'hit_victim', 'acc', 'evaded', 'recv_by',
-                 'local_by')
+                 'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit')
 
     def __init__(self, owner, src, skill, extra=False):
         self.owner, self.src, self.skill, self.extra = owner, src, skill, extra
         self.targets, self.target = [], None
         self.inc = self.atkp = self.cr = self.cd = self.pen = self.eh = self.acc = 0.0
+        self.tough = self.tough_fixed = self.inc_break = 0.0   # P5 「이번 스킬에만」 강인도 (고정) 피해·브레이크 대상 피해 증가
+        self.force_crit = False
         self.heal_give = self.heal_recv = 0.0
         self.recv_by = defaultdict(float)      # 대상별 「받는 회복량」 보정(이번 스킬): 대상마다 따로(공유 금지)
         self.local_by = defaultdict(lambda: defaultdict(float))   # 대상별 「이번 스킬에만」 피해 보정(대상 조건이 붙은 줄, 전체 공격)
@@ -365,7 +413,8 @@ class Ctx:
 # ------------------------------------------------------------------ 전투
 class Battle:
     def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None,
-                 timeline=False, enemy_lines=True, max_turns=50):
+                 timeline=False, enemy_lines=True, max_turns=50, pen=None):
+        self.pen = tuple(pen) if pen else (1.0, 1.0)    # P5 전투력 보정(아군이 주는 피해 배율, 적이 주는 피해 배율) — 스킬·지속·연쇄만
         self.opts = dict(DEFAULT_OPTS)
         self.opts.update(opts or {})
         self.mc = dict(MC_OPTS)
@@ -393,6 +442,7 @@ class Battle:
         self.all_foes = []
         self._cur_line = None    # 실행 중인 줄(자동 지정 대상 규칙을 그 스킬 설명에서 찾을 때 씀)
         self.once = set()        # {전투당 1회} 줄 사용 기록
+        self.recast = {}         # {발동 후 N턴 재발동 불가} 줄: (주인, 줄) -> 발동한 때의 주인 행동 횟수
 
     # ---------- 공용
     def tick(self):
@@ -502,6 +552,12 @@ class Battle:
         u.extra_turn = False      # 추가 턴은 이 행동으로 소비(행동 끝에 지우면 다음 차례 판정에서 우선권이 사라짐)
         u.actions += 1
         u.acting = True
+        if u.broken:
+            # 브레이크(강인도 격파)는 그 유닛의 다음 자기 턴 시작에 끝나고 강인도 전회복, 그 턴은 정상 행동(mc.break_recover, assumed)
+            u.broken = False
+            u.sa = u.sa_max
+            self.dirty(u)
+            self.log(recover=u.name)
         if self.mc['shield_tick'] == 'turn_start':
             self._tick_shields(u)
         for k in u.cd:
@@ -588,7 +644,7 @@ class Battle:
     # ---------- 대상
     def targetable(self, side):
         al = self.alive(side)
-        ok = [u for u in al if not any(u.has(n) for n in UNTARGETABLE)]
+        ok = [u for u in al if not any(u.on(n) for n in UNTARGETABLE)]
         return ok or al
 
     def pick_attack_target(self, att):
@@ -763,7 +819,7 @@ class Battle:
         return pool[:k or 1]
 
     # ---------- 시전
-    def cast(self, u, sk, extra=False, target=None, skip_lines=False, via=None):
+    def cast(self, u, sk, extra=False, target=None, skip_lines=False, via=None, local_pre=False):
         if u.dead:
             return None
         if self.incapacitated(u):
@@ -794,6 +850,10 @@ class Battle:
                          tgt_boss=bool(t0 is not None and getattr(t0.d, 'boss', False)))
             if not skip_lines:
                 self.run_own(u, ctx, 'own_pre')
+            elif local_pre:   # 줄을 건너뛰는 트리거 시전이라도 그 스킬의 「이번 스킬에만」 피해 보정은 적용(프로페서M 브레이크 대상 +30%·스킬 레벨 +15%)
+                lines = [ln for ln in self.lines_of(u) if line_kind(ln) == 'own_pre' and ln.eff['kind'] == 'local' and ln.slot == sk.slot]
+                if lines:
+                    self.run_batch(u, lines, ctx)
                 self.fire_side(u, ctx, 'ally_pre')
                 self.fire_foes(u, ctx, 'foe_pre' if sk.is_attack else 'foe_pre_na')
             if sk.is_attack and ctx.targets:
@@ -805,6 +865,7 @@ class Battle:
             if not skip_lines:
                 self.fire_side(u, ctx, 'ally_post')
                 self.fire_foes(u, ctx, 'foe_post' if sk.is_attack else 'foe_post_na')
+                self.fire_foes(u, ctx, 'foe_post_any')      # 「적 행동 후」(공격·비공격 모두)
             if u.side == 0 and not extra and sk.slot in ('특수기', '궁극기'):
                 self.nova_add(u, sk.nv)
             if u.side == 0 and self.opts['coop'] and sk.is_attack and not extra and not u.dead:
@@ -827,8 +888,12 @@ class Battle:
             self.team_nova += v
 
     def incapacitated(self, u):
-        """행동 불능(기절·수면). 강인도 격파는 브레이크 미구현(P5)이라 없음."""
+        """행동 불능(기절·수면). 강인도 격파(브레이크)는 행동 불능이 아니다(게이지 0 초기화로 차례가 늦어질 뿐)."""
         return any(u.has(n) for n in HARD_CC)
+
+    def no_react(self, u):
+        """협공·강제 협공·반응·트리거 스킬 불가: 기절·수면 또는 강인도 격파(공식 2026-09-10 NOA 가이드). 추가 발동은 격파와 무관."""
+        return self.incapacitated(u) or u.broken
 
     def skill_heal(self, u, sk, ctx):
         """스킬 기본 회복(데이터 hl 필드, 예 프레이 특수기 '생명력×21%'). 회복량 = 버림(시전자 최대 생명력 x 계수 x (1+주는+받는)).
@@ -856,7 +921,7 @@ class Battle:
     def run_own(self, u, ctx, kind):
         sk = ctx.skill
         lines = [ln for ln in self.lines_of(u) if line_kind(ln) == kind and not (ln.bound and ln.slot != sk.slot)
-                 and not (ln.trig and ln.na == sk.is_attack)]
+                 and not (ln.trig and '공격' in ln.trig and ln.na == sk.is_attack)]   # 「내 행동 시/후」는 공격·비공격 모두
         if lines:
             self.run_batch(u, lines, ctx)
 
@@ -902,7 +967,7 @@ class Battle:
             return
         cands = []
         for b in self.alive(0):
-            if b is actor or b.d.skills.get('기본기') is None or self.incapacitated(b):
+            if b is actor or b.d.skills.get('기본기') is None or self.no_react(b):
                 continue   # 기절·수면(강인도 격파 포함, 미구현)이면 협공 불가(공식 2026-09-10 NOA 가이드)
             p = min(_rules.COOP_CAP, max(0.0, b.mods()['coop']))
             if p > 0:
@@ -921,13 +986,13 @@ class Battle:
     def prof_m(self, actor, ctx):
         """프로페서M 수동 트리거(기대값 엔진과 같은 규칙): 다른 아군 타격 뒤 [냉각] 5중첩이면 [악에서 악으로] 발동, 냉각 소거, 게이지 +15%."""
         for b in self.alive(0):
-            if b is actor or b.d.manual != 'profM':
+            if b is actor or b.d.manual != 'profM' or b.broken:   # 트리거 스킬은 격파 상태에서 안 나감
                 continue
             if b.stack('냉각') >= 5:
                 sk2 = b.d.trigger_skills['특수기']
                 b.eff.pop('냉각', None)
                 self.dirty(b)
-                self.cast(b, sk2, extra=True, skip_lines=True, target=ctx.target, via='trigger')
+                self.cast(b, sk2, extra=True, skip_lines=True, target=ctx.target, via='trigger', local_pre=True)
                 b.gauge = min(10000.0, b.gauge + 1500)
 
     # ---------- 피해
@@ -971,10 +1036,10 @@ class Battle:
                 continue
             ctx.target = v
             # 회피(가정: 회피율 - 공격자 명중률 보정, 필중이면 0). 회피하면 치명 없음·감소 합 +50%·약화 안 걸림
-            ev = 0.0 if (a.has('필중') or self.mc['evade_model'] == 'off') else v.mods()['evade'] - (m['acc'] + ctx.acc)
+            ev = 0.0 if (a.on('필중') or self.mc['evade_model'] == 'off') else v.mods()['evade'] - (m['acc'] + ctx.acc)
             evaded = ev > 0 and self.rng.random() < ev
             by = ctx.local_by[v]
-            crit = (not evaded) and self.rng.random() < min(1.0, cr + by['cr'])
+            crit = (not evaded) and (self.rng.random() < min(1.0, cr + by['cr']) or ctx.force_crit)
             ctx.crit = ctx.crit or crit
             if evaded:
                 ctx.evaded.add(v)
@@ -1023,7 +1088,7 @@ class Battle:
                 guard, share = w, s
         share = min(1.0, share)
         r = self.rand()
-        if v.has('스킬 피해 무효'):
+        if v.on('스킬 피해 무효'):
             # 〈스킬 피해 무효〉 「스킬 무효화 1회」: 이번 스킬 피해 0, 효과 1회 소모(지속 피해는 스킬이 아니라 그대로)
             del v.eff['스킬 피해 무효']
             self.dirty(v)
@@ -1049,7 +1114,41 @@ class Battle:
             killed = self.apply_damage(a, w, dmg, 'guard' if w is guard else 'hit', shieldable=True) or killed
         if killed and v.dead:
             ctx.kill = True
+        if self.mc['toughness'] == 'on' and not evaded and not v.dead:
+            self.tough_hit(a, v, ctx)      # 피해 처리 뒤(격파시킨 타격 자체는 −15%p 를 받지 않음, assumed). 회피하면 강인도 안 깎임(community)
         reactions.append((v, hctx))
+
+    def tough_hit(self, a, v, ctx):
+        """강인도 피해(타격마다, 대상마다): 스킬 ab + 「강인도 피해 +N」(버프·이번 스킬) — 상성 불리면 0, 유리하면 +1(이 값이 0보다 클 때만,
+        mc.toughness_elem) — 에 「강인도 고정 피해 +N」(상성과 무관, assumed)을 더한다. 기본기는 데이터 ab 가 없어 mc.basic_tough(기본 0).
+        강인도가 0 이 되면 브레이크: 행동 게이지 0, 감소 합 −15%p, 협공·반응·트리거 불가. 〈강인도 피해 무효〉면 0."""
+        if v.broken or v.sa_max <= 0 or v.has('강인도 피해 무효'):
+            return
+        sk = ctx.skill
+        m = a.mods()
+        ab = getattr(sk, 'ab', None)
+        if ab is None:
+            ab = (sk.raw or {}).get('ab') or 0
+        if not ab and sk.slot == '기본기':
+            ab = self.mc['basic_tough']
+        normal = ab + m['tough'] + ctx.tough
+        fixed = m['tough_fixed'] + ctx.tough_fixed
+        if self.mc['toughness_elem'] == 'on' and a.element and v.element:
+            if ELEM_LOSES.get(a.element) == v.element:
+                normal = 0
+            elif ELEM_BEATS.get(a.element) == v.element and normal > 0:
+                normal += 1
+        td = int(round(max(0.0, normal) + max(0.0, fixed)))
+        if td <= 0:
+            return
+        v.sa = max(0, v.sa - td)
+        if v.sa == 0:
+            v.broken = True
+            v.breaks += 1
+            if v.side == 1 or self.mc['ally_break_gauge'] == 'reset':
+                v.gauge = 0.0      # 몬스터는 행동 게이지 0(databook #d-break). 구원자는 문서에 없어 기본 유지(mc.ally_break_gauge)
+            self.dirty(v)
+            self.log(brk=v.name, by=a.name)
 
     def final_dmg(self, a, v, base, ctx, crit, cdv, pen, r, hctx):
         sk = ctx.skill
@@ -1068,17 +1167,21 @@ class Battle:
                 inc -= 0.05
         if v.last_slot is not None and v.last_slot == sk.slot:
             inc += self.mc['counter_inc']
+        if v.broken:
+            inc += m['inc_break'] + ctx.inc_break      # 「브레이크 대상 피해 증가」(공격자 쪽, 증가 합)
         red = vm['red']
         dec = red.get('all', 0.0) + red.get('aoe' if sk.all else 'single', 0.0) + red.get(sk.slot, 0.0)
         if hctx is not None and hctx.local is not None:
             dec += hctx.local[v]['red']      # 피격 직전 「이번 스킬에만」 피해 감소(감소 합에 더함)
         if hctx is not None and v in hctx.evaded:
             dec += 0.5     # 회피 시 감소 합 +50%(databook #d-sum)
+        if v.broken:
+            dec -= _rules.BREAK_DEC          # 브레이크 대상: 감소 합 −15%p 후 상한(databook #d-break)
         dec = min(_rules.DEC_CAP, dec)
         mult = 1 + inc - dec
         if crit:
             mult += max(0.0, cdv - vm['critred'])
-        dmg = base * (1 - dr) * mult * r
+        dmg = base * (1 - dr) * mult * r * self.pen[a.side]
         return max(1.0, math.floor(dmg))
 
     def apply_damage(self, a, v, dmg, kind, shieldable=True):
@@ -1090,7 +1193,7 @@ class Battle:
         if shieldable:
             for name in list(v.eff):
                 e = v.eff[name]
-                if e.shield > 0 and rest > 0:
+                if e.shield > 0 and rest > 0 and not (v.buff_blocked() and not e.harmful):   # 〈강화 불가〉 중엔 보호막도 꺼짐
                     take = min(e.shield, rest)
                     e.shield -= take
                     rest -= take
@@ -1099,7 +1202,12 @@ class Battle:
                         del v.eff[name]
                         self.dirty(v)
         real = min(rest, v.hp)
+        forced = None
+        if real > 0 and (DAMAGE_LIMIT.keys() & v.eff.keys() or '불사' in v.eff):
+            real, forced = self._limit_damage(v, real)
         v.hp -= real
+        if forced is not None:
+            v.hp = forced          # 「최대 생명력의 1% 만큼 강제로 회복」: 지금 생명력이 그보다 낮아도 그 값으로(회복량은 집계 안 함)
         if a is not None:
             a.dmg += real + absorbed        # 넘친 피해(오버킬)는 제외
         v.taken += real + absorbed
@@ -1107,6 +1215,46 @@ class Battle:
             self.kill(v, a)
             return True
         return False
+
+    def _limit_damage(self, v, real):
+        """〈불사〉(지속 동안 사망하지 않음: 생명력 1 남김)와 「피해 제한」 효과(DAMAGE_LIMIT 의 효과별 동작).
+        -> (깎을 생명력, 강제로 맞출 생명력 또는 None). 〈강화 불가〉 중이면 강화 효과인 이것들도 작동하지 않는다."""
+        left = v.hp - real
+        forced = None
+        for name in [n for n in DAMAGE_LIMIT if v.on(n)]:
+            rule = DAMAGE_LIMIT[name]
+            if rule['kind'] == 'floor':
+                floor_hp = math.floor(v.maxhp * rule['pct'])
+                if v.hp > floor_hp and left < floor_hp:
+                    left = floor_hp
+                    self._consume_limit(v, name, rule)
+            elif rule['kind'] == 'lethal' and left <= 1e-9:
+                forced = max(1.0, math.floor(v.maxhp * rule['keep']))
+                left = forced
+                self._consume_limit(v, name, rule)
+                e = Eff('불사', {}, 1, rule['undying'], v, False)
+                e.stacks = 1
+                e.fresh = v.acting
+                v.eff['불사'] = e
+                for nm, dur, props in rule.get('then', ()):
+                    e2 = Eff(nm, dict(props), 1, dur, v, False)
+                    e2.stacks, e2.fixed, e2.fresh = 1, True, v.acting
+                    v.eff[nm] = e2
+                if rule.get('reset_cd'):
+                    for k in v.cd:
+                        v.cd[k] = 0
+                self.dirty(v)
+        if left <= 1e-9 and v.on('불사'):
+            left = 1.0
+        if forced is not None:
+            return v.hp, forced     # 사망 피해는 그대로 받고(지금 생명력 전부) 강제 회복값으로 맞춤
+        return max(0.0, v.hp - left), None
+
+    def _consume_limit(self, v, name, rule):
+        self.log(limit=v.name, eff=name)
+        if rule.get('once'):
+            del v.eff[name]
+            self.dirty(v)
 
     def kill(self, v, a):
         v.hp = 0.0
@@ -1131,7 +1279,7 @@ class Battle:
             if ts is None or not (ts.tg or '').startswith('반응 대상(아군)'):
                 continue
             oath = v.eff.get('사랑의 서약(해제불가)')
-            if oath is None or oath.src is not w or w.cd.get('특수기', 0) > 0:
+            if oath is None or oath.src is not w or w.cd.get('특수기', 0) > 0 or w.broken:
                 continue
             ctx = self.cast(w, ts, extra=True, target=v, via='reaction')
             w.cd['특수기'] = ts.cd or 0
@@ -1155,10 +1303,14 @@ class Battle:
                     if src.last_slot is not None and src.last_slot == u.last_slot:
                         inc += self.mc['counter_inc']
                     vm = u.mods()
-                    dec = min(_rules.DEC_CAP, vm['red'].get('all', 0.0))
+                    dec = vm['red'].get('all', 0.0)
+                    if u.broken:
+                        inc += sm['inc_break']
+                        dec -= _rules.BREAK_DEC
+                    dec = min(_rules.DEC_CAP, dec)
                     de = self.def_stat(u)
                     dr = de / (de + _rules.DEF_K)
-                    dmg = max(1.0, math.floor(val * c * _rules.BASE_MULT * (1 + inc - dec) * (1 - dr) * self.rand()))
+                    dmg = max(1.0, math.floor(val * c * _rules.BASE_MULT * (1 + inc - dec) * (1 - dr) * self.rand() * self.pen[src.side]))
                     self.apply_damage(src, u, dmg, 'dot', shieldable=False)
             if e.hot > 0 and not u.dead:
                 self.heal(e.src or u, u, u.maxhp * e.hot, 0.0)
@@ -1249,8 +1401,24 @@ class Battle:
                 has = tgt is not None and tgt.n_good() > 0
                 if has != (v == '예'):
                     return False
-            elif k in ('대상 강인도 없음', '대상 브레이크'):
-                if v == '예':     # 강인도·브레이크 미구현(P5): 브레이크 상태 없음
+            elif k in ('대상 강인도 없음', '대상 브레이크'):    # P5: 강인도 격파 상태
+                if (tgt is not None and tgt.broken) != (v == '예'):
+                    return False
+            elif k == '피해 증가(조건부)':     # 「이 줄은 조건부 피해 증가」 표지로 봄(값 '예'만 나옴, assumed)
+                pass
+            elif k == 'NotTargetPositiveBuff':   # 대상에게 강화 효과가 없음(내부 키 이름 해석, assumed)
+                if (tgt is not None and tgt.n_good() == 0) != (v == '예'):
+                    return False
+            elif k == 'NotEnemyPositiveBuff':    # 상대(나를 친 적, 없으면 상대 전원)에게 강화 효과가 없음(assumed)
+                pool = [ctx.src] if (ctx.src is not None and ctx.src.side != owner.side) else self.alive(1 - owner.side)
+                if all(x.n_good() == 0 for x in pool) != (v == '예'):
+                    return False
+            elif k == 'ExistAllySpecificBuff':   # 같은 편(나 포함)에 그 효과를 가진 유닛이 있음(assumed)
+                names = [x.strip() for x in v.split(',')]
+                if not any(x.has(n) for x in self.alive(owner.side) for n in names):
+                    return False
+            elif k == 'IsTargetSuperArmor':      # 「강인한 의지」: 대상(피격자)이 강인도 격파 상태가 아니면(내부 키 이름 해석, assumed)
+                if (tgt is not None and not tgt.broken) != (v == '예'):
                     return False
             elif k == '결과':
                 if v == '치명타' and not ctx.crit:
@@ -1356,13 +1524,24 @@ class Battle:
             return False
         if '전투당 1회' in ln.raw and (id(owner), id(ln)) in self.once:
             return False
+        mrc = RX_RECAST.search(ln.raw) if '재발동 불가' in ln.raw else None
+        if mrc and owner.actions < self.recast.get((id(owner), id(ln)), -10 ** 9) + int(mrc.group(1)):
+            return False      # P5 {발동 후 N턴 재발동 불가}: 발동한 자기 턴부터 N턴(주인의 행동 횟수) 동안 다시 안 걸림(설명문 「1턴에 1번만」)
         if ln.params or RX_HP_COND.search(ln.raw):
             ok = self.cond_ok(owner, ln, ctx)
         else:
             ok = True
         if ok and '전투당 1회' in ln.raw:
             self.once.add((id(owner), id(ln)))
+        if ok and mrc and not ('확률로' in ln.raw or '% 판정)' in ln.raw):
+            self.recast[(id(owner), id(ln))] = owner.actions   # 확률 효과는 실제로 발동했을 때 _fired 가 기록(실패하면 같은 턴 재시도 가능)
         return ok
+
+    def _fired(self, owner):
+        """지금 실행 중인 확률 줄이 실제로 발동함 -> {발동 후 N턴 재발동 불가} 기록(재귀 시전 전에 부른다)"""
+        ln = self._cur_line
+        if ln is not None and '재발동 불가' in ln.raw:
+            self.recast[(id(owner), id(ln))] = owner.actions
 
     @staticmethod
     def _is_cast_line(ln):
@@ -1463,6 +1642,15 @@ class Battle:
                 ctx.heal_give += v
             elif st == '명중률':
                 ctx.acc += v
+            elif st == '강인도 피해':
+                ctx.tough += eff['val']
+            elif st == '강인도 고정 피해':
+                ctx.tough_fixed += eff['val']
+            elif st == '브레이크 대상 피해 증가':
+                ctx.inc_break += v
+            elif st == '대상 약화효과 1개당 피해 증가':    # 대상마다 그 대상의 약화 개수(P5)
+                for x in ctx.targets:
+                    ctx.local_by[x]['inc'] += v * x.n_harmful()
             return
         if kd == 'gauge':
             tg = self.resolve(owner, eff['target'], ctx)
@@ -1511,6 +1699,16 @@ class Battle:
                     self.dirty(x)
             return
         if kd == 'buff':
+            if eff['name'] in CD_RESET_NAMES:      # P5 〈궁극기 쿨타임 초기화〉·〈특수기 쿨타임 감소〉 = 그 칸 쿨타임 0(설명문)
+                for x in self.resolve(owner, eff['target'], ctx) or []:
+                    sl = CD_RESET_NAMES[eff['name']]
+                    if sl in x.cd:
+                        x.cd[sl] = 0
+                return
+            if eff['name'] == '강제 치명타 발생':    # 〈강제 치명타 발생〉 (확정 치명타): 이번 스킬은 치명타
+                if ctx.src is owner and ctx.skill is not None:
+                    ctx.force_crit = True
+                return
             if '(' in (paren_after_name(ln.raw)[0] or ''):
                 eff = dict(eff, props=full_props(ln))
             mh = RX_HOT.search(ln.raw)
@@ -1565,10 +1763,13 @@ class Battle:
                     self.log(revive=x.name)
             return
         m = RX_DISPEL.match(rest)
-        if m:
+        if m:   # (P5: 「(1턴 / 약화효과 해제)」·「(대상마다 N% 판정)」·{효과 적중 판정}도 읽음 — 해제는 즉시 1회, 지속 턴은 무시)
             tg = self.resolve(owner, m.group(1), ctx)
-            harmful = m.group(2) == '약화'
+            harmful = m.group(3) == '약화'
+            p = int(m.group(2)) / 100.0 if m.group(2) else 1.0
             for x in tg or []:
+                if not self._dispel_ok(owner, ctx, x, p, rest):
+                    continue
                 for name in list(x.eff):
                     e = x.eff[name]
                     if e.harmful == harmful and not e.fixed and e.shield <= 0:
@@ -1578,13 +1779,63 @@ class Battle:
         m = RX_DISPEL_N.match(rest)
         if m:   # 효과 N개 해제: 해제 가능한 것 중 먼저 붙은 순(가정)
             tg = self.resolve(owner, m.group(1), ctx)
-            harmful = m.group(2) == '약화'
+            harmful = m.group(3) == '약화'
+            p = int(m.group(2)) / 100.0 if m.group(2) else 1.0
             for x in tg or []:
-                names = [n for n, e in x.eff.items() if e.harmful == harmful and not e.fixed and e.shield <= 0][:int(m.group(3))]
+                if not self._dispel_ok(owner, ctx, x, p, rest):
+                    continue
+                names = [n for n, e in x.eff.items() if e.harmful == harmful and not e.fixed and e.shield <= 0][:int(m.group(4))]
                 for n in names:
                     del x.eff[n]
                 self.dirty(x)
             return
+        m = RX_GAUGE_SET.match(rest)
+        if m:   # 행동 게이지를 N%로 설정
+            for x in self.resolve(owner, m.group(1), ctx) or []:
+                if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
+                    continue
+                x.gauge = float(m.group(2)) * 100.0
+            return
+        m = RX_CHAIN_T.match(rest)
+        if m:   # 대상 생명력 비례 연쇄 피해(「대상 생명력」 = 최대 생명력으로 봄, assumed), ×N 이면 N번
+            for _ in range(int(m.group(4) or 1)):
+                self.chain(owner, dict(target=m.group(1), stat='target_hp', coef=float(m.group(3)) / 100.0), ctx)
+            return
+        m = RX_CD_UP.match(rest)
+        if m:   # 스킬 쿨타임 N턴 증가: 대상의 쿨타임 있는 스킬 전부(assumed). 면역 「스킬 쿨타임 증가」면 무시
+            for x in self.resolve(owner, m.group(1), ctx) or []:
+                if '스킬 쿨타임 증가' in getattr(x.d, 'immune', ()):
+                    continue
+                if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
+                    continue
+                for slot, sk in x.d.skills.items():
+                    if sk.cd:
+                        x.cd[slot] = x.cd.get(slot, 0) + int(m.group(2))
+            return
+        m = RX_LOCAL_PER.match(rest)
+        if m:   # 「피해 증가 +N% (○의 강화/약화 효과 1개당 …)」: 이번 스킬, 개수 = 그 시점
+            if ctx.src is owner and ctx.skill is not None:
+                v, who, kind = float(m.group(1)) / 100.0, m.group(2), m.group(3)
+                cnt = (lambda u: u.n_good()) if kind == '강화' else (lambda u: u.n_harmful())
+                if who == '공격 대상':
+                    for x in ctx.targets:
+                        ctx.local_by[x]['inc'] += v * cnt(x)
+                else:
+                    pool = [owner] if who == '자신' else (self.alive(1 - owner.side) if who == '적 전체' else self.alive(owner.side))
+                    ctx.inc += v * sum(cnt(x) for x in pool)
+            return
+        self._run_special_rest(owner, ln, ctx, rest)
+
+    def _dispel_ok(self, owner, ctx, x, p, rest):
+        if p < 1.0 and self.rng.random() >= p:
+            return False
+        if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
+            return False
+        self._fired(owner)
+        return True
+
+    def _run_special_rest(self, owner, ln, ctx, rest):
+        """run_special 의 나머지 분기(무작위 효과·받는 회복량·확률 게이지·확률 추가 발동·강인도 회복·확률 회복)"""
         m = RX_RANDOM.match(rest)
         if m:
             from .starsavior.foe import gloss
@@ -1595,6 +1846,7 @@ class Battle:
             for x in tg or []:
                 if self.rng.random() >= p:
                     continue
+                self._fired(owner)
                 name = self.rng.choice(names)
                 info = g.get(name)
                 if info is None:
@@ -1619,13 +1871,33 @@ class Battle:
                     continue
                 if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
                     continue
+                self._fired(owner)
                 x.gauge = min(10000.0, max(0.0, x.gauge + dv))
             return
         m = RX_EXTRA_P.match(rest)
         if m:
             sk = owner.d.skills.get(m.group(2))
             if sk is not None and self.rng.random() < int(m.group(1)) / 100.0:
+                self._fired(owner)
                 self.cast(owner, sk, extra=True, target=ctx.src if (ctx.src is not None and ctx.src.side != owner.side) else None)
+            return
+        m = RX_TOUGH_HEAL.match(rest)
+        if m:   # 강인도 N 회복(격파 중이면 회복하지 않음 — 격파는 다음 자기 턴에 전회복, assumed)
+            for x in self.resolve(owner, m.group(1), ctx) or []:
+                if self.mc['toughness'] == 'on' and not x.broken:
+                    x.sa = min(x.sa_max, x.sa + int(m.group(2)))
+            return
+        m = RX_HEAL_P.match(rest)
+        if m:   # N% 확률로 회복(잠재력 「별빛의 궤적-BX」 피격 시 25%)
+            tg = self.resolve(owner, m.group(1), ctx, kind='heal')
+            for x in tg or []:
+                if self.rng.random() >= int(m.group(2)) / 100.0:
+                    continue
+                self._fired(owner)
+                base_u = owner if m.group(3) == '자신' else x
+                stat = {'생명력': base_u.maxhp, '최대 생명력': base_u.maxhp, '공격력': self.atk_stat(base_u),
+                        '방어력': self.def_stat(base_u)}[m.group(4)]
+                self.heal(owner, x, stat * float(m.group(5)) / 100.0, owner.mods()['heal_give'])
             return
         self.unsup['effect: ' + rest[:60]] += 1
 
@@ -1634,15 +1906,18 @@ class Battle:
         if not tg:
             return
         m = owner.mods()
-        val = {'atk': self.atk_stat(owner, ctx), 'hp': owner.maxhp, 'def': self.def_stat(owner)}[eff['stat']]
+        tstat = eff['stat'] == 'target_hp'      # P5 「대상 생명력×N%」 연쇄 피해
+        val = 0.0 if tstat else {'atk': self.atk_stat(owner, ctx), 'hp': owner.maxhp, 'def': self.def_stat(owner)}[eff['stat']]
         for v in tg:
             if v.side == owner.side or v.dead:
                 continue
+            if tstat:
+                val = v.maxhp
             de = self.def_stat(v)
             dr = de / (de + _rules.DEF_K)
             dr = max(0.0, dr - dr * min(1.0, m['pen']))
-            inc = m['inc'] + m['inc_vs'].get(v.element, 0.0)
-            dmg = max(1.0, math.floor(val * eff['coef'] * (1 + inc) * _rules.BASE_MULT * (1 - dr) * self.rand()))
+            inc = m['inc'] + m['inc_vs'].get(v.element, 0.0) + (m['inc_break'] if v.broken else 0.0)
+            dmg = max(1.0, math.floor(val * eff['coef'] * (1 + inc) * _rules.BASE_MULT * (1 - dr) * self.rand() * self.pen[owner.side]))
             self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
 
     # ---------- 효과 부여
@@ -1682,6 +1957,7 @@ class Battle:
         for x in tg:
             if self.rng.random() >= eff['chance']:
                 continue
+            self._fired(owner)
             self.add_effect(owner, x, eff, ctx, hot=hot, fixed='해제 불가' in raw)
 
     def add_effect(self, owner, x, eff, ctx, hot=0.0, fixed=False):
@@ -1689,7 +1965,7 @@ class Battle:
         opp = x.side != owner.side
         if opp and ctx is not None and x in ctx.evaded:
             return     # 회피한 대상에는 약화가 걸리지 않음(공식 2026-06-04 오류 수정 공지)
-        if opp and x.has('면역'):
+        if opp and x.on('면역'):
             return     # 〈면역〉 (약화효과 면역): 상대가 거는 효과(약화) 전부 막음
         if opp and (eff.get('judge') or name in getattr(x.d, 'immune', ())):
             if not self.roll_hit(owner, ctx, x, name):
@@ -1738,7 +2014,7 @@ class Battle:
         if not self.opts['forced_coop'] or ctx is None or ctx.extra or ctx.src is not owner:
             return
         pool = [x for x in self.alive(owner.side) if x is not owner and x.d.skills.get('기본기') is not None
-                and not self.incapacitated(x)]
+                and not self.no_react(x)]
         pool.sort(key=lambda x: (-self.live_atk(x), -x.d.stats['atk'], x.pos))
         for x in pool[:n]:
             ctx.coop_used = True
@@ -1747,8 +2023,10 @@ class Battle:
 
 # ------------------------------------------------------------------ 지원성 검사
 # 속성 숫자가 없어도 엔진이 이름으로 동작을 아는 효과
-HANDLED_NAMES = set(['도발', '은신', '현장 대기', '기절', '수면', '침묵', '필중', '면역', '강제 협공', '추가 턴', '보호막', '스킬 피해 무효'])
-LOCAL_OK = ('피해 증가', '공격력%', '치명타 확률', '치명타 피해', '방어 관통', '효과 적중', '주는 회복량', '명중률')
+HANDLED_NAMES = set(['도발', '은신', '현장 대기', '기절', '수면', '침묵', '필중', '면역', '강제 협공', '추가 턴', '보호막', '스킬 피해 무효',
+                     '강인도 피해 무효', '불사', '강화 불가', '강제 치명타 발생']) | set(CD_RESET_NAMES)
+LOCAL_OK = ('피해 증가', '공격력%', '치명타 확률', '치명타 피해', '방어 관통', '효과 적중', '주는 회복량', '명중률',
+            '강인도 피해', '강인도 고정 피해', '브레이크 대상 피해 증가', '대상 약화효과 1개당 피해 증가')
 LOCAL_PREHIT_OK = ('방어력%', '피해 분담(수호)', '피해 감소', '받는 피해 감소')
 
 
@@ -1756,7 +2034,7 @@ def _prop_known(k):
     """Unit.mods() 가 이 속성 이름을 어떤 값으로든 반영하는가"""
     probe = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0,
                  er=0.0, der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, inc_single=0.0, inc_aoe=0.0,
-                 evade=0.0, acc=0.0, inc_vs={}, inc_slot={}, red={})
+                 evade=0.0, acc=0.0, tough=0.0, tough_fixed=0.0, inc_break=0.0, inc_vs={}, inc_slot={}, red={})
     before = repr(probe)
     _add_prop(probe, k, 1.0, 1)
     return repr(probe) != before
@@ -1771,6 +2049,8 @@ def _meaning_gap(ln, k, markers):
     if e['kind'] != 'buff' or e.get('consume'):
         return None
     name = e['name']
+    if name in DAMAGE_LIMIT:
+        return None      # 「피해 제한」: 효과별 동작을 Battle._limit_damage 가 실행
     props = full_props(ln)
     unknown = [p for p in props if not _prop_known(p)]
     if unknown:

@@ -35,9 +35,13 @@ if ROOT not in sys.path:
 import party_reco as pr  # noqa: E402
 from build_party_html import CONTENT_META  # noqa: E402
 
-SCHEMA = "p4-2"   # p4-2: 실행 정보(meta)를 스테이지마다 둔다
+SCHEMA = "p5-1"   # p4-2: 실행 정보(meta)를 스테이지마다 둔다 / p5-1: 육성 프리셋(build)·강인도·전투력 비율(pw·pr)
 DATA_PATCH = "2.50 (2026-10-15 패치)"   # 데이터를 다시 받으면(tools/fetch_sources.py) 이 라벨도 고칠 것
-CONDITIONS = "Lv200 · 공명 10 · 각인 0 · 장비·잠재력·여정 없음 · 브레이크 미구현"
+CONDITIONS = "Lv200 · 공명 10 · 각인 0 · 표준 육성(가정한 엔드게임: T2 레전더리 +15 · 가이드 주옵·세트 · 부옵 평균 · 여정 어려움 · 특수 잠재력) · 강인도·브레이크 반영(브레이크 스킬 없음)"
+# 콘텐츠별 육성 적용(databook 콘텐츠 표 #sx-content: 플래시·코스모의 장비·스텔라 아카이브 칸은 「-」 = 특별 규칙 없음으로 해석, 큐브·회랑 등은 「모두 정상 적용」)
+CONTENT_BUILD = dict(op="standard", oph="standard", clo="standard", cosmo="standard", rush="standard", cube="standard",
+                     daily="standard", equip="standard")
+BUILD_LABEL = dict(none="육성 없음", light="주옵·세트만", standard="표준 육성(가정한 엔드게임)")
 DEFAULT_SEED = 20261020
 RUNS = dict(screen=32, final=200, msearch=16, meval_screen=32, meval_final=200, sens=64)
 QUICK_RUNS = dict(screen=8, final=16, msearch=4, meval_screen=8, meval_final=16, sens=8)
@@ -55,6 +59,12 @@ SENS = [
     ("def_x1", "디펜더 가중 ×1", {"rules_override": {"target_defender_mult": 1.0}}),
     ("def_x4", "디펜더 가중 ×4", {"rules_override": {"target_defender_mult": 4.0}}),
     ("coop_cap_100", "협공 확률 상한 100%", {"formula_override": {"COOP_CAP": 1.0}}),
+    # P5: 육성·강인도·전투력 보정 가정
+    ("build_none", "육성 없음(장비·여정·잠재력 없음)", {"build": "none"}),
+    ("build_light", "주옵·세트만(부옵·여정·잠재력 없음)", {"build": "light"}),
+    ("tough_off", "강인도·브레이크 끔", {"rules_override": {"toughness": "off"}}),
+    ("tough_elem_off", "강인도 상성 규칙 없음", {"rules_override": {"toughness_elem": "off"}}),
+    ("power_pen", "전투력 보정 적용(모델 전투력/권장)", {"rules_override": {"power_penalty": "model"}}),
 ]
 NOVA_SENS = ("nova_unit", "노바 포스 개인 풀(수동)", {"nova_pool": "unit"})
 SEEDS = dict(screen=0, final=1, msearch=2, meval=3, sens=4)
@@ -185,7 +195,7 @@ def keepers(cands, ranked40, def_pen, stage_label):
 def run_sim(stage_str, team, runs, seed, policy=None, extra=None, **kw):
     from battlesim.api import simulate, EventLimitError
     over = {}
-    opts = dict(seed=seed, n_runs=runs)
+    opts = dict(seed=seed, n_runs=runs, build=CONTENT_BUILD.get(stage_str.split("/", 1)[0], "none"))
     if policy:
         over.update(nova_policy="manual", ally_auto_target=policy[0], manual_burst=policy[1])
     for k, v in (extra or {}).items():
@@ -193,6 +203,8 @@ def run_sim(stage_str, team, runs, seed, policy=None, extra=None, **kw):
             over.update(v)
         elif k == "formula_override":
             opts["formula_override"] = v
+        elif k == "build":
+            opts["build"] = v
         else:
             over[k] = v
     opts["rules_override"] = over
@@ -217,6 +229,7 @@ def summarize(res, team, err=None):
     if pu[fdi]["first_death_p"] > 0:
         fd = dict(k=team["sim"][fdi], p=round(pu[fdi]["first_death_p"], 3), t=pu[fdi]["death_turn_median"])
     crit = res["unsupported"]["critical"]
+    dz = res["unsupported"].get("depth_runs", 0)
     us = []
     for x in crit:
         s = "%s 「%s」" % (x["unit"], (x.get("raw") or x.get("reason") or "")[:40])
@@ -224,7 +237,10 @@ def summarize(res, team, err=None):
             us.append(s)
     r = dict(c=o["clear_p"], ci=o["ci95"]["clear"], w=o["wipe_p"], to=o["timeout_p"], t=o["ttk_median"], tr=o["ttk_p10_p90"],
              n=o["n_runs"], nc=o["n_clear"], fd=fd, nd=round(max(0.0, 1 - sum(p["first_death_p"] for p in pu)), 3), u=u,
-             g=bool(res["unsupported"]["gate_ok"]))
+             g=bool(res["unsupported"]["gate_ok"]) and not dz,
+             pw=res["party"].get("power"), pr=res["party"].get("power_ratio"))
+    if dz:   # 연쇄 깊이 한도로 시전을 건너뛴 판이 있으면 정상 결과로 쓰지 않는다(codex P5 설계 상담)
+        us.append("연쇄 깊이 한도로 시전 생략 %d/%d판" % (dz, o["n_runs"]))
     if us:
         r["us"] = us[:3]
     return r
@@ -416,17 +432,27 @@ def stage_job(job):
         for k in cont:
             res, err = run_sim(stage_str, teams[k], runs["sens"], S["sens"])
             basev[k] = summarize(res, teams[k], err)
+        def vals(results, f):   # 계산 불가(g=false: 미지원 기믹·연쇄 깊이 생략) 결과는 숫자를 싣지 않는다(codex P5 리뷰)
+            return {k: (results[k].get(f) if results[k].get("g") else None) for k in cont}
+
+        def any_ok(results):
+            return any(results[k].get("g") for k in cont)
         btop = top_of(basev)
-        sens = [dict(id="base", label="기본 가정", top=btop, c={k: basev[k].get("c") for k in cont}, t={k: basev[k].get("t") for k in cont})]
+        sens = [dict(id="base", label="기본 가정", top=btop, c=vals(basev, "c"), t=vals(basev, "t"))]
         for sid, label, extra in SENS:
             v = {}
             for k in cont:
+                pr0 = basev[k].get("pr")
+                if sid == "power_pen" and (foe_key == "rush" or (pr0 is not None and pr0 >= 90.0)):
+                    v[k] = basev[k]      # 보정 없음(비율 90% 이상 또는 플래시 포인트 미적용) -> 같은 시드 기준 결과와 동일
+                    continue
                 res, err = run_sim(stage_str, teams[k], runs["sens"], S["sens"], extra=extra)
                 v[k] = summarize(res, teams[k], err)
             vtop = top_of(v)
-            sens.append(dict(id=sid, label=label, top=vtop, flip=vtop != btop, c={k: v[k].get("c") for k in cont},
-                             t={k: v[k].get("t") for k in cont}))
-            if vtop != btop:
+            judge = any_ok(basev) and any_ok(v)     # 한쪽이 전부 계산 불가면 1위 역전을 판정하지 않음
+            sens.append(dict(id=sid, label=label, top=vtop if judge else None, flip=bool(judge and vtop != btop), c=vals(v, "c"),
+                             t=vals(v, "t")))
+            if judge and vtop != btop:
                 for kk in (btop, vtop):
                     dep = teams[kk].setdefault("dep", [])
                     if sid not in dep:
@@ -440,7 +466,8 @@ def stage_job(job):
             res0, err0 = run_sim(stage_str, tm, runs["sens"], S["sens"], policy=tuple(tm["man"]["pol"]))
             r0 = summarize(res0, tm, err0)
             sens.append(dict(id=NOVA_SENS[0], label=NOVA_SENS[1], man=1, top=tk, flip=False,
-                             c={tk: r.get("c")}, t={tk: r.get("t")}, c0={tk: r0.get("c")}, t0={tk: r0.get("t")}))
+                             c={tk: r.get("c") if r.get("g") else None}, t={tk: r.get("t") if r.get("g") else None},
+                             c0={tk: r0.get("c") if r0.get("g") else None}, t0={tk: r0.get("t") if r0.get("g") else None}))
         p["sens"] = sens
     for p in parties:
         if p.get("rank"):
@@ -495,7 +522,21 @@ def sim_version():
     foe_src = pr._json(pr.FOE).get("_source", "")
     return dict(engine=SCHEMA_VERSION, foe_js=foe_src.rsplit("v=", 1)[-1] if "v=" in foe_src else _norm_hash([os.path.join(ROOT, "rawdata", "foe.js")]),
                 databook=_norm_hash([os.path.join(ROOT, "rawdata", "databook_main.json")]),
-                rules=_norm_hash([os.path.join(bs, "rules", "default.json")]), code=_norm_hash(code))
+                rules=_norm_hash([os.path.join(bs, "rules", "default.json"), os.path.join(bs, "rules", "builds.json")]),
+                guide=_norm_hash([os.path.join(ROOT, "rawdata", "guide_app-core.js")]), code=_norm_hash(code))
+
+
+def build_presets():
+    """구원자별 표준 육성 요약(화면·문서용): {key: [목걸이, 반지, 세트, 잠재력 코드, 출처]}"""
+    from battlesim.starsavior.data import get_db
+    from battlesim.starsavior.parser import UnitDef
+    db = get_db()
+    out = {}
+    for s in base()["roster"]:
+        b = UnitDef(db, s["key"], build="standard").build or {}
+        out[s["key"]] = [b.get("mains", {}).get("목걸이"), b.get("mains", {}).get("반지"), "+".join(b.get("sets", [])),
+                         b.get("potential"), b.get("source")]
+    return out
 
 
 def low_priority():
@@ -592,6 +633,7 @@ def main(argv=None):
         write_json(path, doc)
         files[k] = dict(file=fn, stages=len(merged), bytes=os.path.getsize(path))
     idx = dict(schema_version=SCHEMA, conditions=CONDITIONS, k_top=K_TOP, clear_bin=CLEAR_BIN,
+               build=dict(by_content=CONTENT_BUILD, labels=BUILD_LABEL, presets=build_presets()),
                policies=[list(p) for p in POLICIES], sens=[[s[0], s[1]] for s in SENS] + [[NOVA_SENS[0], NOVA_SENS[1]]],
                seq_turns=SEQ_TURNS, contents=files,
                last_run=dict(meta, stages=len(jobs), only=bool(a.stage), contents=sorted(by)))
