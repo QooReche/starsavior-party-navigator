@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """가이드 DB 의 구원자 초상화/일러스트를 내려받아 줄여서 assets/savior/<key>_face.webp, <key>_art.webp 로 저장한다.
 원본은 tools/raw/savior/ 에 두고(저장소 제외), 요청 사이에 간격을 둔다.
-사용(cv2 필요): C:\\build\\jh\\.venv\\Scripts\\python.exe -X utf8 -I tools/fetch_images.py"""
+사용(cv2 필요, 가상환경은 저장소 밖): <venv>\\Scripts\\python.exe -X utf8 -I tools/fetch_images.py  (예: E:\\AI_mk2\\venv-img)"""
 import os
 import sys
 import time
@@ -35,7 +35,10 @@ def get(url, dst):
 
 
 def shrink(src, dst, width, q):
-    a = cv2.imdecode(np.fromfile(src, dtype=np.uint8), cv2.IMREAD_COLOR)
+    # 투명 배경(알파)을 살린다. IMREAD_COLOR 로 읽으면 투명 부분이 흰/검 계단 무늬로 깨진다(2026-10-20 수정)
+    a = cv2.imdecode(np.fromfile(src, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+    if a.ndim == 2:
+        a = cv2.cvtColor(a, cv2.COLOR_GRAY2BGR)
     h, w = a.shape[:2]
     a = cv2.resize(a, (width, max(1, round(h * width / w))), interpolation=cv2.INTER_AREA)
     ok, buf = cv2.imencode(".webp", a, [cv2.IMWRITE_WEBP_QUALITY, q])
