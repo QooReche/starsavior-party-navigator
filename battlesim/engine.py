@@ -4,7 +4,23 @@ import math
 import re
 from collections import defaultdict
 
-from .rules import AOE_DIV, BASE_MULT, COOP_CAP, DEF_K, DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, INF_HP, KNOWN_DOT, TICK_PER_TURN  # noqa: F401
+from .rules import (AOE_DIV, BASE_MULT, BREAK_DEC, COOP_CAP, DEC_CAP, DEF_K, DEFAULT_OPTS, ELEM_BEATS, ELEM_HIT, ELEM_LOSES,  # noqa: F401
+                    INF_HP, KNOWN_DOT, TICK_PER_TURN)
+
+# 적에게 거는 약화 중 대상의 「받는 피해 감소」 값을 바꾸는 속성 -> 적용 범위(감소 합, dmg_reduction='sum_cap')
+_RED_PROPS = {'받는 피해 감소': 'all', '피해 감소': 'all', '전체 대상 피해 감소': 'aoe', '단일 대상 피해 감소': 'single',
+              '기본기 피해 감소': '기본기', '특수기 피해 감소': '특수기', '궁극기 피해 감소': '궁극기'}
+
+
+def calc_hit(a, b=0.0):
+    """databook app.js calcHit 최종 판정. a = 효과 적중 - 효과 저항 +-상성, b = 절대 적중 - (절대 저항 + 역상성 절대 저항)."""
+    if (a > 0 and b > a) or (a < 0 and b > 0):
+        f = b
+    elif a > 0 and b < 0:
+        f = min(a, 1 - abs(b))
+    else:
+        f = a
+    return max(0.0, min(1.0, f))
 from .starsavior.parser import Line, Skill, _map_prop
 
 # ------------------------------------------------------------------ 런타임 개체
@@ -46,7 +62,7 @@ class Actor:
 
     # ---- 버프 합산
     def mods(self):
-        m = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0,
+        m = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0,
                  inc_vs={}, inc_slot={})
         for b in self.buffs.values():
             for k, v in b.props.items():
@@ -84,8 +100,17 @@ class Enemy:
         self.boss = spec.get('boss', False)
         self.is_ally = False
         self.gauge = 0.0
-        self.deb = {}      # name -> dict(stacks,dur,defp,spdp,dot)
+        self.deb = {}      # name -> dict(stacks,dur,defp,spdp,er,red,dot)
         self.dead = False
+        self.resist = float(spec.get('resist', 0.0))          # 효과 저항(1.0 = 100%)
+        self.abs_resist = float(spec.get('abs_resist', 0.0))  # 절대 저항(적은 전원 0)
+
+    def resist_eff(self):
+        return self.resist + sum(d.get('er', 0.0) * d['stacks'] for d in self.deb.values())
+
+    def recv_red(self, scope):
+        """약화로 바뀐 받는 피해 감소 합(음수 = 더 받음). scope: 'all'/'aoe'/'single'/슬롯 이름 묶음"""
+        return sum(v * d['stacks'] for d in self.deb.values() for k, v in d.get('red', {}).items() if k in scope)
 
     def defp(self):
         return sum(d.get('defp', 0.0) * d['stacks'] for d in self.deb.values())
@@ -100,11 +125,12 @@ class Enemy:
 
 class Ctx:
     __slots__ = ('owner', 'src', 'skill', 'extra', 'w', 'inc', 'atkp', 'cr', 'cd', 'pen', 'crit_p', 'kill', 'target',
-                 'is_ally_event', 'nb_burst')
+                 'is_ally_event', 'nb_burst', 'eh', 'coop_used')
 
     def __init__(self, owner, src, skill, extra, w):
         self.owner, self.src, self.skill, self.extra, self.w = owner, src, skill, extra, w
-        self.inc = self.atkp = self.cr = self.cd = self.pen = 0.0
+        self.inc = self.atkp = self.cr = self.cd = self.pen = self.eh = 0.0
+        self.coop_used = 0.0   # 이 공격에서 협공 1명 자리가 이미 쓰인 기대 비율(강제 협공이 먼저 차지, forced_coop_slot='shared')
         self.crit_p = 0.0
         self.kill = 0.0
         self.target = None
@@ -133,6 +159,8 @@ class Sim:
         self.applied_buff_names = set()
         self.dummy_cycle = ['기본기', '특수기', '기본기', '기본기', '궁극기']
         self.dummy_i = defaultdict(int)
+        self.team_nova = 0.0      # 노바 포스 파티 공용 풀(nova_pool='team')
+        self.nova_bursts = 0      # 노바 버스트 횟수(확인용)
 
     # ---------- 유틸
     def alive(self):
@@ -190,9 +218,17 @@ class Sim:
         e.gauge = 0.0
         # DoT
         for name, d in list(e.deb.items()):
-            if d.get('dot') and d.get('src') is not None:
-                dmg = d['mult'] * d['stacks'] * (1 - self.dr(e, 0.0))
-                self.hurt(e, dmg, d['src'], 'dot', hit=0.0)
+            if not d.get('dot'):
+                continue
+            # debuff_state='per_caster' 는 시전자별 몫(subs), 교정 전은 마지막 시전자 하나(src)
+            parts = list(d['subs'].values()) if 'subs' in d else ([d] if d.get('src') is not None else [])
+            for part in parts:
+                base, inc = self.dot_parts(part['src'], part['coef']) if self.opts['dot_snapshot'] == 'live' else (part['base'], part['inc'])
+                dec = 0.0
+                if self.opts['dmg_reduction'] == 'sum_cap':   # DoT 는 단일/전체·스킬 종류별 증감이 없어 'all' 감소만
+                    dec = min(DEC_CAP, e.recv_red(('all',)) - BREAK_DEC * self.opts['break_p'])
+                dmg = base * (1 + inc - dec) * part['stacks'] * (1 - self.dr(e, 0.0))
+                self.hurt(e, dmg, part['src'], 'dot', hit=0.0)
         if e.dead:
             return
         # 적 턴 시작 트리거
@@ -203,6 +239,17 @@ class Sim:
         # 디버프 지속 감소
         for name in list(e.deb):
             d = e.deb[name]
+            if 'subs' in d:
+                for k in list(d['subs']):
+                    sub = d['subs'][k]
+                    if sub['dur'] != math.inf:
+                        sub['dur'] -= 1
+                        if sub['dur'] <= 0:
+                            del d['subs'][k]
+                d['stacks'] = sum(sub['stacks'] for sub in d['subs'].values())
+                if not d['subs']:
+                    del e.deb[name]
+                continue
             if d['dur'] != math.inf:
                 d['dur'] -= 1
                 if d['dur'] <= 0:
@@ -299,9 +346,15 @@ class Sim:
             a.cast_count[sk.slot + ('(추가)' if extra else '')] += w
             if not extra and sk.cd:
                 a.cd[sk.slot] = sk.cd
-            # 노바 버스트
-            if self.opts['nova'] and not extra and sk.is_attack and a.nova >= 4:
-                a.nova -= 4
+            # 노바 버스트: 오토(nova_policy='auto')는 쓰지 않는다. 수동이면 풀(팀 공용 또는 개인)에 4개가 있을 때 이 스킬에 +15%
+            team = self.opts['nova_pool'] == 'team'
+            if (self.opts['nova'] and self.opts['nova_policy'] == 'manual' and not extra and sk.is_attack
+                    and (self.team_nova if team else a.nova) >= 4 and not (team and getattr(a.d, 'dummy', False))):
+                if team:
+                    self.team_nova -= 4
+                else:
+                    a.nova -= 4
+                self.nova_bursts += 1
                 ctx.inc += 0.15
                 ctx.nb_burst = True
                 for raw in (a.d.nb.get(sk.slot + ' 사용 시') or []):
@@ -317,7 +370,10 @@ class Sim:
                 self.run_own(a, ctx, 'own_post')
                 self.fire_allies(a, ctx, 'ally_post')
             if not extra and sk.slot in ('특수기', '궁극기'):
-                a.nova += sk.nv
+                if self.opts['nova_pool'] == 'team':
+                    self.team_nova += sk.nv
+                else:
+                    a.nova += sk.nv
             if self.opts['coop'] and sk.is_attack and not extra:
                 self.coop_followups(a, ctx)
         finally:
@@ -364,12 +420,29 @@ class Sim:
                         b.gauge = min(10000.0, b.gauge + 1500 * wt)
 
     def coop_followups(self, actor, ctx):
+        """협공. basic_only: 아군 기본기 뒤에만(이 함수는 추가 발동·협공 시전에서는 불리지 않음).
+        coop_single: 공격 1번에 1명 — 확률 높은 순으로 후보 i 가 p_i x 앞선 후보 전원 미발동 확률만큼(기대값)."""
+        if self.opts['coop_trigger'] == 'basic_only' and ctx.skill.slot != '기본기':
+            return
+        if not self.opts['coop_single']:   # 교정 전: 확률이 있는 아군 전원이 편성 순서대로 각자 협공
+            for b in self.party:
+                if b is actor or getattr(b.d, 'dummy', False):
+                    continue
+                p = clamp(b.mods()['coop'], 0.0, COOP_CAP)
+                if p > 0:
+                    self.cast(b, b.d.skills['기본기'], w=p * ctx.w, extra=True)
+            return
+        cands = []
         for b in self.party:
             if b is actor or getattr(b.d, 'dummy', False):
                 continue
             p = clamp(b.mods()['coop'], 0.0, COOP_CAP)
             if p > 0:
-                self.cast(b, b.d.skills['기본기'], w=p * ctx.w, extra=True)
+                cands.append((b, p))
+        rest = 1.0 - ctx.coop_used   # 강제 협공이 먼저 차지한 몫(forced_coop_slot='shared')
+        for b, p in sorted(cands, key=lambda bp: -bp[1]):   # 같은 확률이면 편성 순서
+            self.cast(b, b.d.skills['기본기'], w=p * rest * ctx.w, extra=True)
+            rest *= 1 - p
 
     # ---------- 피해
     def deal_damage(self, a, ctx):
@@ -406,9 +479,14 @@ class Sim:
                     inc += 0.05
                 elif ELEM_LOSES.get(d.element) == ea:
                     inc -= 0.05
-            if self.opts['break_p']:
+            dec = 0.0
+            if self.opts['dmg_reduction'] == 'sum_cap':
+                # 감소 합: 대상 약화의 받는 피해 감소 값(전체/단일·슬롯별) - 브레이크 15%p, 상한 50%
+                scope = ('all', 'aoe' if sk.all else 'single', sk.slot)
+                dec = min(DEC_CAP, e.recv_red(scope) - BREAK_DEC * self.opts['break_p'])
+            elif self.opts['break_p']:
                 inc += 0.15 * self.opts['break_p']
-            mult = (1 + inc) + cr * cdv
+            mult = (1 + inc - dec) + cr * cdv
             dmg = base * (1 - dr) * mult * w
             before_dead = e.dead
             self.hurt(e, dmg, a, 'extra' if ctx.extra else 'direct', hit=w)
@@ -616,20 +694,28 @@ class Sim:
                 ctx.pen += v * w
             elif st in ('브레이크 대상 피해 증가',):
                 ctx.inc += v * w * 0.0   # 브레이크 미모델(break_p 로 처리)
+            elif st == '효과 적중':
+                ctx.eh += v * w          # 이번 스킬의 효과 적중 판정에만(debuff_model='hit_resist')
             else:
-                pass   # 효과 적중/명중/강인도/주는 회복량/vs 디펜더 등 무시
+                pass   # 명중/강인도/주는 회복량/vs 디펜더 등 무시
             return
         if kd == 'gauge':
             tg = self.resolve_targets(owner, eff['target'], ctx)
             if not tg:
                 return
-            p = self.opts['debuff_success'] if eff.get('judge') else 1.0
+            # gauge_expect='exact': 효과 적중 판정(독립된 성공/실패)만 q x clamp(g+d) + (1-q) x g 로 처리한다.
+            # 조건·시전 가중치(wf)는 대부분 서로 배타적인 갈래(중첩 1~5 줄 등)라 선형 합이 더 가깝다 -> 교정 전처럼 선형.
+            exact = self.opts['gauge_expect'] == 'exact'
             if tg[0] == 'a':
                 for x in tg[1]:
                     x.gauge = clamp(x.gauge + eff['val'] * 100.0 * wf, 0, 10000)
             else:
                 for x in tg[1]:
-                    x.gauge = clamp(x.gauge + eff['val'] * 100.0 * wf * p, 0, 10000)
+                    p = self.hit_chance(owner, ctx, x) if eff.get('judge') else 1.0
+                    if exact:
+                        self.gauge_expect(x, eff['val'] * 100.0 * wf, p)
+                    else:
+                        x.gauge = clamp(x.gauge + eff['val'] * 100.0 * wf * p, 0, 10000)
             return
         if kd == 'cdr':
             sl = ctx.skill.slot if ctx.skill is not None else None
@@ -664,6 +750,8 @@ class Sim:
                 else:
                     if eff['name'] in x.deb:
                         x.deb[eff['name']]['stacks'] *= (1 - wf)
+                        for sub in x.deb[eff['name']].get('subs', {}).values():
+                            sub['stacks'] *= (1 - wf)
             return
         if kd == 'buff':
             self.apply_buff(owner, eff, ctx, wf)
@@ -678,15 +766,30 @@ class Sim:
         if side == 'e':
             if not eff['props'] and not eff.get('dot') and eff['name'] not in KNOWN_DOT and not eff['dur']:
                 pass
-            p = chance * (self.opts['debuff_success'] if eff['judge'] else 1.0)
             for e in targets:
+                p = chance * (self.hit_chance(owner, ctx, e) if eff['judge'] else 1.0)
                 self.apply_debuff(owner, e, eff, p * wf, ctx)
             return
         if eff['name'] == '강제 협공':      # 대상 아군이 기본기로 추가 공격(추정: 협공 = 기본기 1회)
             if not self.opts['forced_coop']:
                 return
+            if self.opts['forced_coop_target'] == 'live_atk':
+                # 공격력 1위 = 그 순간 버프 포함 공격력(같으면 스탯 공격력, 그다음 편성 순서). 대상 수는 문장 그대로
+                pool = [x for x in self.party if x is not owner]
+                targets = sorted(pool, key=lambda x: (-self.live_atk(x), -x.d.stats['atk']))[:len(targets)]
+            shared = self.opts['forced_coop_slot'] == 'shared'
+            if shared and (ctx is None or ctx.extra or ctx.src is not owner or ctx.w <= 1e-12):
+                return   # 추가 발동·협공·강제 협공으로 나간 기본기에서는 강제 협공 없음(협공은 연쇄되지 않음)
             for x in targets:
-                if x.d.skills.get('기본기') is not None:
+                if x.d.skills.get('기본기') is None:
+                    continue
+                if shared:   # 이 공격의 협공 1명 자리를 먼저 차지(기대값), 일반 협공은 남은 몫만
+                    frac = min(1.0 - ctx.coop_used, wf / ctx.w)
+                    if frac <= 1e-12:
+                        continue
+                    ctx.coop_used += frac
+                    self.cast(x, x.d.skills['기본기'], w=frac * ctx.w, extra=True)
+                else:
                     self.cast(x, x.d.skills['기본기'], w=wf, extra=True)
             return
         # 아군 버프
@@ -720,6 +823,9 @@ class Sim:
             coef_kind = dot
         elif name in KNOWN_DOT and not eff['props']:
             coef_kind = KNOWN_DOT[name]
+        if self.opts['debuff_state'] == 'per_caster':
+            self.apply_debuff_pc(owner, e, eff, p, coef_kind)
+            return
         d = e.deb.get(name)
         if d is None:
             d = dict(stacks=0.0, dur=eff['dur'] if eff['dur'] is not None else math.inf)
@@ -733,13 +839,92 @@ class Sim:
                 d['defp'] = v / 100.0
             elif k == '속도%':
                 d['spdp'] = v / 100.0
+            elif k == '효과 저항':
+                d['er'] = v / 100.0
+            elif k in _RED_PROPS:
+                d.setdefault('red', {})[_RED_PROPS[k]] = v / 100.0
         if coef_kind:
-            m = owner.mods()
-            stat, c = coef_kind
-            val = owner.d.stats['atk'] * (1 + owner.d.passive['atkp'] + m['atkp']) if stat == 'atk' else owner.d.stats['hp']
             d['dot'] = True
             d['src'] = owner
-            d['mult'] = val * c * BASE_MULT * (1 + m['inc'])
+            d['coef'] = coef_kind
+            d['base'], d['inc'] = self.dot_parts(owner, coef_kind)   # dot_snapshot='on_apply' 는 이 값 고정
+
+    def apply_debuff_pc(self, owner, e, eff, p, coef_kind):
+        """debuff_state='per_caster': 성공 가중치 p(0~1, 기대값).
+        p=0 이면 아무것도 바꾸지 않는다. 새로 생기면 그 지속 턴으로, 이미 있으면 p>=0.5 일 때만 지속 턴(최댓값)·스냅샷을 갱신한다.
+        지속 피해는 시전자별 몫(subs: 중첩·지속·계수·시전자)을 따로 두고, 전체 중첩(d['stacks'])은 그 합. 중첩 상한은 전체에 적용."""
+        if p <= 1e-12:
+            return
+        name = eff['name']
+        dur = eff['dur'] if eff['dur'] is not None else math.inf
+        d = e.deb.get(name)
+        new = d is None
+        if new:
+            d = dict(stacks=0.0, dur=dur)
+            e.deb[name] = d
+        refresh = new or p >= 0.5
+        if refresh and eff['dur'] is not None:
+            d['dur'] = max(d['dur'], dur)
+        mx = eff['max'] or (5 if coef_kind else 1)
+        add = max(0.0, min(p * eff['times'], mx - d['stacks']))
+        d['stacks'] += add
+        for k, v in eff['props'].items():
+            if k == '방어력%':
+                d['defp'] = v / 100.0
+            elif k == '속도%':
+                d['spdp'] = v / 100.0
+            elif k == '효과 저항':
+                d['er'] = v / 100.0
+            elif k in _RED_PROPS:
+                d.setdefault('red', {})[_RED_PROPS[k]] = v / 100.0
+        if coef_kind:
+            d['dot'] = True
+            subs = d.setdefault('subs', {})
+            sub = subs.get(id(owner))
+            if sub is None:
+                sub = dict(stacks=0.0, dur=dur, src=owner, coef=coef_kind)
+                sub['base'], sub['inc'] = self.dot_parts(owner, coef_kind)
+                subs[id(owner)] = sub
+            elif p >= 0.5:
+                sub['dur'] = max(sub['dur'], dur)
+                sub['coef'] = coef_kind
+                sub['base'], sub['inc'] = self.dot_parts(owner, coef_kind)   # dot_snapshot='on_apply' 스냅샷
+            sub['stacks'] += add
+
+    def gauge_expect(self, x, delta, q):
+        """확률 q 로 게이지 delta 변화의 기대값: q x clamp(g+delta) + (1-q) x g. q>1(추가 발동 x2 등)은 1씩 나눠 적용."""
+        while q > 1e-12:
+            step = min(1.0, q)
+            x.gauge = step * clamp(x.gauge + delta, 0, 10000) + (1 - step) * x.gauge
+            q -= step
+
+    # ---------- P2 규칙 보조
+    def dot_parts(self, src, coef_kind):
+        """지속 피해 1틱(1중첩)의 (기본값, 피해 증가) = 시전자 현재 스탯·버프 기준"""
+        m = src.mods()
+        stat, c = coef_kind
+        val = src.d.stats['atk'] * (1 + src.d.passive['atkp'] + m['atkp']) if stat == 'atk' else src.d.stats['hp']
+        return val * c * BASE_MULT, m['inc']
+
+    def live_atk(self, x):
+        """버프 포함 현재 공격력(강제 협공 대상 선정용)"""
+        return x.d.stats['atk'] * (1 + x.d.passive['atkp'] + x.mods()['atkp'] + x.d.gear_atkp)
+
+    def hit_chance(self, owner, ctx, e):
+        """{효과 적중 판정} 성공률. hit_resist: databook calcHit(적 절대 저항 0, 구원자 절대 적중 0) / constant: debuff_success"""
+        if self.opts['debuff_model'] != 'hit_resist':
+            return self.opts['debuff_success']
+        hit = owner.d.stats.get('eh', 10000) / 10000.0 + owner.d.passive['eh'] + owner.mods()['eh']
+        if ctx is not None and ctx.src is owner:
+            hit += ctx.eh
+        a = hit - e.resist_eff()
+        ea = self.opts['enemy_element'] if e.element is None else e.element
+        if ea and owner.element:
+            if ELEM_BEATS.get(owner.element) == ea:
+                a += ELEM_HIT
+            elif ELEM_LOSES.get(owner.element) == ea:
+                a -= ELEM_HIT
+        return calc_hit(a, 0.0 - e.abs_resist)
 
 # ------------------------------------------------------------------ 더미(개인 지표용 파트너, 합성 딜러)
 class DummyDef:

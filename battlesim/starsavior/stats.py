@@ -3,6 +3,8 @@
 import math
 from collections import defaultdict
 
+from ..rules import DEFAULT_OPTS
+
 # ------------------------------------------------------------------ 스탯 (app.js sCalc 재현)
 STAT_MODES = {
     'normal': (1.0, 1.0),
@@ -10,7 +12,14 @@ STAT_MODES = {
     'rank': (0.1, 0.0),      # 랭크전(PvP): 성장 능력치 10%만
 }
 
-def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None):
+def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, gear_order=None):
+    """gear(확장 훅): 정수 {'atk','hp','def','spd','cr','cd','eh','er'}(cr/cd/eh/er 은 1/10000) + 비율 {'atkP','hpP','defP','spdP'}(1/10000).
+    gear_order(기본 = rules 의 gear_order): 'databook' = floor(((기본+레벨)x(1+공명%)+공명 정수) x (1+각인%+장비%) + 장비 정수),
+    'legacy' = 각인%만 곱해 버림한 뒤 장비 정수를 더함(장비%는 이 함수가 아니라 UnitDef.gear_atkp 로 전투 중 곱함)."""
+    if gear_order is None:
+        gear_order = DEFAULT_OPTS['gear_order']
+    gear = gear or {}
+    new_order = gear_order == 'databook'
     ST = db.main['stat']
     m = ST['units'][str(u['id'])]
     sid = m['sid'] if u['v'] == '기본' else m.get('bsid', m['sid'])
@@ -49,17 +58,25 @@ def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None):
         amp_int = (g[k] * n2 + J.get(k, 0)) if main else 0
         v = b[k] + lv_int * sc1 + amp_int * sc2
         v = v + rf.get(k, 0) * sc1 + v * (rp.get(k + 'P', 0) * 1e-4)
-        if main:
+        if new_order:
+            # ⓓ(% 합: 각인% + 장비%)을 한 번 곱하고 ⓑ(장비 정수)를 더한 뒤 버림. 장비가 없으면 교정 전과 같은 연산이 된다.
+            gp = gear.get(k + 'P', 0)
+            if gp:
+                v = v + v * ((starP if main else 0) + gp) * 1e-4
+            elif main:
+                v = v + v * starP * 1e-4      # 교정 전과 같은 부동소수 연산(버림 경계 보존)
+            v = v + gear.get(k, 0)
+        elif main:
             v = v + v * starP * 1e-4
         out[k] = max(0, math.floor(v))
     for k in ('cr', 'cd', 'eh', 'er', 'der'):
-        v = math.floor(b[k] + rf.get(k, 0))
+        v = math.floor(b[k] + rf.get(k, 0) + (gear.get(k, 0) if new_order else 0))   # 치명·효과 적중/저항은 단순 합
         cap = ST['cap'].get({'cr': 'NST_RATE_CRITICAL', 'cd': 'NST_RATE_CRITICAL_DAMAGE'}.get(k, ''), 0)
         if cap and v > cap:
             v = cap
         out[k] = max(0, v)
     out['sa'] = b['sa']
-    if gear:   # 확장 훅: {'atk':flat,'hp':flat,'def':flat,'spd':flat,'cr':,'cd':}(cr/cd 는 1/10000 단위)
+    if gear and not new_order:   # 교정 전 순서: 버림한 최종값에 정수를 더함(비율 키는 무시)
         for k, v in gear.items():
             if k in out:
                 out[k] += v

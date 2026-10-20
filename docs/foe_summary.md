@@ -266,7 +266,7 @@
 - 최상위: `_source`, `_notes`(필드 의미/추정 명시), `contents[]`
 - contents[]: `key`(op/oph/daily/equip/cube/rush/clo/cosmo), `name`, `tabs[]`(`tab`, `section`, `stages[]`)
 - stage: `name, level, recommended_power, wave_count, enemy_total, dominant_element, element_counts, role_counts, aoe_ratio, defender_ratio, has_boss, enemies[]`, 선택: `fx, fixed_player, turn_limit, season_bonus_latest, star_challenge_ref, star_pick, summons[]`
-- enemy: `name, title, element, role, role_kr, attackType, boss, elite, level, stats{hp,atk,def,spd}, aoe, passives[], adjust[], immune[], count_by_wave[], count`
+- enemy: `name, title, element, role, role_kr, attackType, boss, elite, level, stats{hp,atk,def,spd,crit,critdmg,hit,evade,abs_evade,tough}, aoe, passives[], adjust[], immune[], count_by_wave[], count` (비율 스탯은 1/10000 단위)
 
 ## 한계
 

@@ -234,6 +234,8 @@ def _perm_apply(stats, passive, eff):
         passive['spdp'] += v / 100
     elif st == '속도':
         passive['spdf'] += v
+    elif st == '효과 적중':
+        passive['eh'] += v / 100
     else:
         return False
     return True
@@ -298,6 +300,7 @@ def _map_prop(k):
     if k == '방어력%': return ('defp', None)
     if k == '생명력%': return ('hpp', None)
     if k == '협공 확률': return ('coop', None)
+    if k == '효과 적중': return ('eh', None)
     m = re.match(r'^vs (.+) 속성 피해 증가$', k)
     if m: return ('inc_vs', m.group(1))
     m = re.match(r'^(기본기|특수기|궁극기) 피해 증가$', k)

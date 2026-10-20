@@ -11,9 +11,9 @@
 - 확정 설계 = `docs/battlesim_design.md`(Claude 초안 → codex·Fable 독립 검토 → 합의안). 공식·수치 근거 = `docs/formulas_local.md`(데이터북 계산기 코드·로컬 데이터), `docs/formulas_web.md`(공식 공지 114건·아카·패치 연표).
 - **P0 완료**: `fetch_sources.py` foe.js 버전 키 버그 수정(main.js `__SSV`), 회귀 기준 `tests/golden_check.py`(`--write` 저장 / 인자 없이 대조, 일부러 상수를 바꿔 실패하는 것 확인), 실측 기록 양식 `calibration/`.
 - **P1 완료**: 엔진을 `battlesim/` 패키지로 분리(구성 `battlesim/README.md`), 불확실 수치는 `battlesim/rules/default.json`(값·근거 등급), `tools/sim_damage.py` 는 호환 껍데기(값 교체도 실제 모듈로 전달 — `tests/shim_compat_test.py`). 골든 정확 일치, `tools/update.py` 전체 재생성 시 `data/`·`index.html` 바이트 동일, 브라우저 화면·콘솔 오류 0 확인. codex 검토의 차단 1건(껍데기 상태 전달) 수정 완료. `lines` 명령으로 파싱 결과 덤프(노바 줄 314 중 엔진 반영 76).
-- **다음 = P2** 규칙 교정(효과 적중 공식·감소 상한·카운터·협공 기본기 한정·노바 팀 풀 등) — 이때부터 골든은 순위 안정성 + 변경 사유(`docs/sim_changes.md`)로 관리. 남은 비차단: P1 설계의 이벤트 순서·시드·추적 로그는 P3 확률 엔진과 함께, `Sim.COND_KEYS` 는 `cond_weight` 와 중복 관리(같이 고칠 것).
+- **P2 완료**(미커밋 상태로 검토 대기일 수 있음 — `git status` 확인): 확인된 규칙으로 교정, 교정마다 `battlesim/rules/default.json` 스위치(`legacy` = 교정 전 값). 협공 = 아군 기본기 뒤·1명, 노바 = 오토 기본(버스트 안 씀)·수동이면 팀 공용 풀, 효과 적중 = 적중 - 저항 +-상성(적 저항은 `foe_stages.json` 에 새로 넣음, 기준 적 60%), 강제 협공 대상 = 현재 공격력, DoT 매 틱 재계산, 장비 순서, 감소 합(상한 50%), codex 2차 검토 수정(강제 협공도 협공 1명 자리 공유·추가 시전에서 미발동, 실패한 약화는 상태 불변·지속 피해 시전자별, 적 게이지 감소 기대값). 영향 표·해석 = `docs/sim_changes.md`(구원자 순위 Spearman 0.996, 150팀 0.992, 상위 20팀 19 유지; 왈츠 아세라 -16%, 유미나 -20%). 측정 `tests/rank_check.py`, 스위치 시험 `tests/rules_test.py`(일부러 깨뜨려 실패 확인), P1 골든 보관본 `tests/golden/sim_golden_p1.json`.
+- **다음 = P3** 적 행동(스킬·쿨·광역·대상 선택)·아군 HP·생존, 난수 굴림·seed/n_runs. P2 에서 미룬 것: 카운터 +10%(적이 쓴 칸 필요), 리더 속도 +10(리더 입력 필요), 적 자신의 피해 감소 기믹·스테이지 fx·면역(감소 합 구조만 있음), 브레이크 빈도(P5). 남은 비차단: 이벤트 순서·시드·추적 로그는 P3 확률 엔진과 함께, `Sim.COND_KEYS` 는 `cond_weight` 와 중복 관리(같이 고칠 것).
 - 알려진 잡음: `tools/update.py` 가 `docs/synergy_tags_review.md` 줄 순서(집합 순회)와 일부 파일 줄바꿈(CRLF)을 바꿔 쓴다 — 내용 변경 아님, 커밋 전 `git checkout --` 로 되돌릴 것.
-- 확인된 현 엔진 오류(P2 대상): 협공이 모든 공격 뒤·여러 명 발동(공식: 아군 기본기 뒤·1명), 노바 개인 단위(팀 공용 정황), 디버프 성공 0.9 고정(실제 효적−효저), 장비 flat 순서.
 - 데이터: 로컬 = 10/15 패치(2.50), 라이브와 동일(10/20 확인). **10/22 작전 26~37 최종보스 공격력 하향 예정 → 이후 `fetch_sources.py` 로 재수집.**
 - 사용자 결정(10/20): **오토 기준이 기본**, 화면에 오토/수동 선택, 수동이면 스킬 순서 가이드(서순) 표시 → 설계 4-1절.
 

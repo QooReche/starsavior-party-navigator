@@ -20,7 +20,8 @@ def ref_enemies(n, opts=None):
     o = dict(DEFAULT_OPTS)
     if opts:
         o.update(opts)
-    return [dict(name='ref%d' % i, hp=INF_HP, **{'def': o['enemy_def']}, spd=o['enemy_spd'], element=o['enemy_element']) for i in range(n)]
+    return [dict(name='ref%d' % i, hp=INF_HP, **{'def': o['enemy_def']}, spd=o['enemy_spd'], element=o['enemy_element'],
+                 resist=o['enemy_resist']) for i in range(n)]
 
 
 def solo_run(key, n_enemies, turns=10, opts=None, star=0, partners=3):
@@ -80,7 +81,8 @@ def stage_enemies(db, content, tab, name):
     for e in st['enemies']:
         for _ in range(e.get('count', 1)):
             out.append(dict(name=e['name'], hp=e['stats']['hp'], **{'def': e['stats']['def']}, spd=e['stats']['spd'],
-                            element=FOE_ELEM.get(e['element']), boss=e['boss']))
+                            element=FOE_ELEM.get(e['element']), boss=e['boss'],
+                            resist=e['stats'].get('evade', 0) / 10000.0, abs_resist=e['stats'].get('abs_evade', 0) / 10000.0))
     return st, out
 
 
@@ -174,6 +176,7 @@ def mechanics(d):
 
 def build_index(turns=10, opts=None, star=0, db=None):
     db = db or get_db()
+    o = dict(DEFAULT_OPTS, **(opts or {}))   # 실제로 쓴 옵션(설명·_meta 도 이 값으로)
     out = {}
     for key in db.units:
         d = unit_def(key, star=star, db=db)
@@ -193,7 +196,9 @@ def build_index(turns=10, opts=None, star=0, db=None):
             ally_dependent=bool(d.manual or any(ln.kind in ('ally_pre', 'ally_post', 'ally_ts') for ln in d.lines)
                                 or any(ln.eff['kind'] == 'buff' and '협공 확률' in ln.eff['props'] for ln in d.lines)),
             assumptions=['Lv200/공명10/각인%d/장비 없음/스킬 최대 레벨' % star,
-                         '기준 적: 방어력 %d, 속성 없음, 단일=1체/광역=3체, 10턴(=1000틱)' % DEFAULT_OPTS['enemy_def'],
+                         '기준 적: 방어력 %d, 효과 저항 %d%%, 속성 없음, 단일=1체/광역=3체, 10턴(=1000틱)'
+                         % (o['enemy_def'], round(o['enemy_resist'] * 100)),
+                         '오토 전투(노바 버스트 안 씀)' if o['nova_policy'] == 'auto' else '수동(노바 버스트 사용)',
                          '파트너: 더미 딜러 3명(아군 공격 트리거 공급, 버프 없음)'] +
                         (['반응(피격/회피) 트리거 스킬은 피해에 미반영'] if any('반응' in x for x in d.unmodeled) else []) +
                         (['변형(교체) 스킬 미반영'] if any('변형' in x for x in d.unmodeled) else []),
@@ -219,9 +224,9 @@ def build_index(turns=10, opts=None, star=0, db=None):
         v['norm_aoe_global'] = round(min(10.0, 10 * v['aoe_dpt'] / ra95), 2)
         v['norm_role'] = round(10 * comb[k] / role_max[v['role']], 2) if role_max[v['role']] else 0.0
     out['_meta'] = dict(
-        turns=turns, star=star, level=200, res_stage=10, ref_enemy_def=DEFAULT_OPTS['enemy_def'],
+        turns=turns, star=star, level=200, res_stage=10, ref_enemy_def=o['enemy_def'],
         normalization=dict(norm_global='10 * (0.5*단일+0.5*광역 dpt) / (SSR 딜러 4역할 상위 95% 값), 10 상한',
                            norm_role='10 * dpt / 같은 역할 최대치', ref95_combined=round(ref95)),
-        assumptions=ASSUMPTIONS, opts={k: v for k, v in (dict(DEFAULT_OPTS, **(opts or {}))).items()},
+        assumptions=ASSUMPTIONS, opts=dict(o),
     )
     return out

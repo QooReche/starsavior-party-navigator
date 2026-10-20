@@ -45,7 +45,7 @@ def stats(u, x, st):
         if k in RATE: mul[RATE[k]] += v / 10000
         elif k in SK_NST: b[SK_NST.index(k)] += v
     for i in range(4): b[i] = int(b[i] * mul[i] + 1e-9)
-    return dict(zip(SKEY[:4], b[:4])), L
+    return dict(zip(SKEY, b)), L   # 10개 전부(비율 스탯 crit~abs_evade 는 1/10000 단위, tough 는 강인도)
 
 def enemy(ui, xi, st):
     u = U[ui]; x = X[xi] if xi is not None else None
@@ -107,6 +107,7 @@ notes = [
  "role: 원본 r(스트라이커/캐스터/어쌔신/레인저/디펜더/서포터). attackType: 원본 k(참격/타격/원소/정신/공허). 필드 의미는 앱 표기 기준(확정).",
  "boss: 변형 x.b 또는 유닛 g=='보스'. elite: x.e 또는 g=='정예'. (추정: x.e 는 정예 표시)",
  "level: 변형 x.lv > 스테이지 lv > 1. stats: 앱(app.js)과 같은 공식으로 계산(기본 b + gw*(Lv-1), 변형 a 보정 반영). 생명력/공격력/방어력 gw 성장은 앱 코드 근거. 별의 도전 보정은 미반영.",
+ "stats 키(원본 b 순서): hp, atk, def, spd(정수) / crit=치명 확률, critdmg=치명 피해, hit=효과 적중, evade=효과 저항, abs_evade=절대 저항(이상 1/10000 단위, 10000=100%) / tough=강인도. 정수 보정(x.a 의 효과 적중·강인도 등)은 b 에 더함, % 보정은 hp/atk/def/spd 만.",
  "aoe(적 광역 여부): 해당 유닛 스킬 중 액티브/트리거 대상이 '적 전체'인 것이 하나라도 있으면 true. 스킬 사용 빈도·쿨타임은 반영 안 함(추정 지표).",
  "dominant_element: 스테이지 전 웨이브의 적 수(소환 제외) 기준 최다 속성. 동률이면 먼저 나온 속성. 작전·회랑은 3속성이 균등해 동률이 많음.",
  "aoe_ratio: 광역 스킬 보유 적 수 / 전체 적 수. defender_ratio: 디펜더 수 / 전체 적 수 (필요 역할 힌트).",
@@ -115,7 +116,10 @@ notes = [
  "star_challenge_ref(ch)/star_pick(pick): 별의 도전 EX 참조 키. 의미는 앱 코드 근거, 상세 보정치는 raw star 테이블에 있어 미포함.",
 ]
 res = {'_source': 'https://starsavior-databook.pages.dev/data/foe.js?v=48a4b5df', '_notes': notes, 'contents': contents}
-json.dump(res, open(os.path.join(ROOT, 'data', 'foe_stages.json'), 'w', encoding='utf8'), ensure_ascii=False, indent=None, separators=(',', ':'))
+_out = os.path.join(ROOT, 'data', 'foe_stages.json')
+with open(_out + '.tmp', 'w', encoding='utf8') as f:
+    json.dump(res, f, ensure_ascii=False, indent=None, separators=(',', ':'))
+os.replace(_out + '.tmp', _out)
 
 # ---- 요약
 stages = [(c, t, st) for c in contents for t in c['tabs'] for st in t['stages']]
@@ -151,7 +155,7 @@ lines += ['', '## 스키마 (foe_stages.json)', '',
  '- 최상위: `_source`, `_notes`(필드 의미/추정 명시), `contents[]`',
  '- contents[]: `key`(op/oph/daily/equip/cube/rush/clo/cosmo), `name`, `tabs[]`(`tab`, `section`, `stages[]`)',
  '- stage: `name, level, recommended_power, wave_count, enemy_total, dominant_element, element_counts, role_counts, aoe_ratio, defender_ratio, has_boss, enemies[]`, 선택: `fx, fixed_player, turn_limit, season_bonus_latest, star_challenge_ref, star_pick, summons[]`',
- '- enemy: `name, title, element, role, role_kr, attackType, boss, elite, level, stats{hp,atk,def,spd}, aoe, passives[], adjust[], immune[], count_by_wave[], count`', '',
+ '- enemy: `name, title, element, role, role_kr, attackType, boss, elite, level, stats{hp,atk,def,spd,crit,critdmg,hit,evade,abs_evade,tough}, aoe, passives[], adjust[], immune[], count_by_wave[], count` (비율 스탯은 1/10000 단위)', '',
  '## 한계', '',
  '- 코스모 게이트·성간 회랑 일부는 level 이 없을 수 있음. 별의 도전 EX 보정, 시즌 보너스 전체 이력, 스킬 상세(효과 문구·쿨타임)는 JSON에 넣지 않음(raw foe.js 의 s 테이블 참고).',
  '- aoe_ratio 는 광역 스킬 보유 여부만 본 추정치. 동률 시 먼저 나온 속성이 선택됨.',
