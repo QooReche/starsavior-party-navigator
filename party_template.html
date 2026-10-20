@@ -1,106 +1,87 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="ko" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>추천 파티 (시험판)</title>
 <style>
-:root{--bg:#f6f7f9;--fg:#1c2330;--card:#fff;--line:#dfe3ea;--mut:#667085;--acc:#0f8a8a;--good:#1a7f4b;--bad:#b42318}
-@media (prefers-color-scheme:dark){:root{--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e}}
+:root{color-scheme:dark;--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e;--warn:#ffb454;--gold:#ffd24a;--ult:#7a4fc0;--spc:#3b6cb4;--bas:#4a5568}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "Malgun Gothic",system-ui,sans-serif}
+body.noscroll{overflow:hidden}
 main{max-width:1100px;margin:0 auto;padding:16px}
 h1{font-size:20px;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 14px;font-size:13px}
 .panel,.party{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
-select,input[type=text]{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit;min-width:150px}
+select,input[type=text],input[type=number]{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit;min-width:150px;max-width:100%}
 button{padding:7px 14px;border:0;border-radius:6px;background:var(--acc);color:#fff;font:inherit;cursor:pointer}
+button.sec{background:transparent;color:var(--acc);border:1px solid var(--acc)}
 .info{color:var(--mut);font-size:13px;margin-top:8px}
 .mut{color:var(--mut);font-size:12px}.good{color:var(--good)}.bad{color:var(--bad)}
 .tag{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:0 7px;margin:1px;font-size:12px}
-details summary{cursor:pointer;color:var(--acc)}.own{columns:3;font-size:13px}.own label{display:block}
+details summary{cursor:pointer;color:var(--acc)}
 .note{font-size:12px;color:var(--mut);margin-top:10px}
 .syn{margin:6px 0;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}.syn summary{cursor:pointer;color:var(--acc)}
 .synrow{margin:6px 0;font-size:13px}.chip.ty1{background:#b4452d}.chip.ty2{background:#8a6d1a}.chip.ty3{background:#2d7a5a}.chip.ty4{background:#3b6cb4}.chip.ty5{background:#6b6f78}
-#graphwrap .row{margin-bottom:8px}#cy{width:100%;height:560px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+#graphwrap .row{margin-bottom:8px}#cy{width:100%;height:min(560px,70vh);border:1px solid var(--line);border-radius:10px;background:var(--bg)}
 #cyinfo{margin-top:8px;font-size:13px;min-height:48px}.lg{display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:12px}.lg i{display:inline-block;width:18px;height:4px;border-radius:2px}
 #dbtn{position:fixed;left:0;top:38%;z-index:40;padding:10px 8px;border-radius:0 10px 10px 0;background:var(--acc);color:#fff;font-size:13px;line-height:1.3;box-shadow:2px 2px 8px #0006}
-#dbtn span{display:block;margin-top:2px;font-size:11px;opacity:.9}
-#drawer{position:fixed;left:0;top:0;bottom:0;width:min(460px,94vw);z-index:60;background:var(--card);border-right:1px solid var(--line);box-shadow:4px 0 18px #0006;padding:14px;overflow:auto;transform:translateX(-102%);transition:transform .2s}
-#drawer.open{transform:none}#dback{display:none!important}
+#dbtn span{display:block;margin-top:2px;font-size:12px;opacity:.9}
+#drawer{position:fixed;left:0;top:0;bottom:0;width:min(460px,94vw);z-index:60;background:var(--card);border-right:1px solid var(--line);box-shadow:4px 0 18px #0006;padding:14px;overflow:auto;transform:translateX(-102%);transition:transform .2s;visibility:hidden}
+#drawer.open{transform:none;visibility:visible}
+#dback{display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5)}#dback.on{display:block}
 .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:16px}.dhead button{background:transparent;color:var(--fg);padding:2px 8px;font-size:18px}
 .dtools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dtools button{padding:3px 10px}.dsec{margin:14px 0 4px;padding-top:10px;border-top:1px solid var(--line)}
-#drawer .own{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
-.crown{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 1px 3px #000)}
-.crown svg{width:34px;height:26px}.crown span{font-size:11px;font-weight:800;color:#ffd24a;letter-spacing:.06em}
-.leadnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid #ffd24a;background:var(--bg)}
-.powinfo{margin-top:6px;font-size:13px}.powinfo .ok{color:var(--good)}.powinfo .warn{color:#ffb454}.powinfo .bad2{color:var(--bad);font-weight:700}
+.crown{position:absolute;top:6px;left:6px;z-index:3;display:flex;align-items:center;gap:3px;padding:2px 7px 2px 4px;border-radius:8px;background:rgba(8,10,16,.72);box-shadow:0 1px 4px #0008}
+.crown svg{width:18px;height:14px}.crown span{font-size:12px;font-weight:800;color:var(--gold);letter-spacing:.04em}
+.leadnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid var(--gold);background:var(--bg)}
+.powinfo{margin-top:6px;font-size:13px}.powinfo .ok{color:var(--good)}.powinfo .warn{color:var(--warn)}.powinfo .bad2{color:var(--bad);font-weight:700}
 body:not(.show-why) .why,body:not(.show-why) .tg,body:not(.show-why) .syn,body:not(.show-why) .pairnote,body:not(.show-why) .leadnote,
 body:not(.show-why) .teamtags,body:not(.show-why) .why2,body:not(.show-why) #graphwrap,body:not(.show-why) .bbar .mut:last-child{display:none}
 .whytoggle{display:flex;align-items:center;gap:6px;flex-direction:row!important;color:var(--fg)!important;font-size:13px!important;padding-bottom:6px}
 .gimnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid #c0507a;background:var(--bg)}
 body:not(.show-why) .gimnote{display:none}
-.arch{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin-top:8px}.archc{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);font-size:13px}
-.archfs{display:flex;gap:8px;margin:6px 0}.archf{display:flex;flex-direction:column;align-items:center;font-size:11px;color:var(--mut)}.archf .face{width:44px;height:44px}
+.arch{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:10px;margin-top:8px}.archc{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);font-size:13px}
+.archfs{display:flex;gap:8px;margin:6px 0;flex-wrap:wrap}.archf{display:flex;flex-direction:column;align-items:center;font-size:12px;color:var(--mut)}.archf .face{width:44px;height:44px}
 .pairnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid var(--acc);background:var(--bg)}
-.own{columns:auto!important;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
-.tile{position:relative;display:block!important;cursor:pointer}
+.own{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;font-size:13px}
+#drawer .own{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.tile{position:relative;display:block;cursor:pointer}
 .tile input{position:absolute;opacity:0;pointer-events:none}
 .tile .tc{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px 6px;border:2px solid var(--line);border-radius:10px;background:var(--bg);opacity:.45;filter:grayscale(.7);transition:.12s;text-align:center;height:100%}
 .tile input:checked+.tc{opacity:1;filter:none;border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.tile input:focus-visible+.tc{outline:2px solid var(--gold)}
 .tile .fc{position:relative;width:64px;height:64px}
 .tile .fc img.face{width:64px;height:64px;border-radius:50%;border-width:2px}
 .tile .fc .dia{position:absolute;right:-10px;bottom:-8px;margin:0}
-.tile .tn{font-weight:700;font-size:13px;line-height:1.2;margin-top:4px}.tile .ts{font-size:11px;color:var(--mut);line-height:1.2}
+.tile .tn{font-weight:700;font-size:13px;line-height:1.2;margin-top:4px}.tile .ts{font-size:12px;color:var(--mut);line-height:1.2}
 .party{padding:16px}.phead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}.phead b{font-size:18px}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}.col h3,.h3{margin:10px 0 6px;font-size:13px;color:var(--mut);letter-spacing:.05em}
-.slot{display:flex;gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px}
-.pic{width:132px;height:132px;flex:none;border-radius:10px;background:var(--line);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:700;color:var(--mut)}
-.pic img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
-.sinfo{min-width:0;flex:1}.sname{font-size:17px;font-weight:700}.ssub{color:var(--mut);font-size:12px}
-.chips{margin:4px 0}.chip{display:inline-block;border-radius:12px;padding:1px 9px;margin:0 4px 3px 0;font-size:12px;font-weight:600;color:#fff}
+.chip{display:inline-block;border-radius:12px;padding:1px 9px;margin:0 4px 3px 0;font-size:12px;font-weight:600;color:#fff}
 .e-sun{background:#d98a00}.e-moon{background:#6a6fd6}.e-star{background:#2a9d8f}.e-order{background:#8a8f98}.e-chaos{background:#a23b72}.c-role{background:#4a5568}
 .t-0,.t-05{background:#c2410c}.t-1{background:#b7791f}.t-2{background:#2f855a}.t-3{background:#3b82a0}.t-4,.t-q{background:#64748b}
-.why{font-size:13px;margin:3px 0}.alts{display:flex;gap:6px;align-items:center;margin-top:6px;font-size:12px;color:var(--mut);flex-wrap:wrap}
-.alt{display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1px 8px 1px 1px}
-.alt .pic{width:26px;height:26px;border-radius:50%;font-size:13px}
-.brk{display:flex;gap:14px;align-items:center;border:1px solid var(--acc);border-radius:10px;padding:12px;margin-top:6px;background:var(--bg)}
-.bicon{width:96px;height:96px;flex:none;border-radius:16px;background:linear-gradient(135deg,var(--acc),#6a6fd6);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;text-align:center;line-height:1.2;padding:6px}
-.bicon span{font-size:34px}.bicon small{font-size:11px;font-weight:600}.btxt b{font-size:17px}
-.btag{font-size:11px;background:var(--bad);color:#fff;border-radius:8px;padding:0 6px;margin-left:6px}
+.why{font-size:13px;margin:3px 0}
+.btag{font-size:12px;background:var(--bad);color:#fff;border-radius:8px;padding:0 6px;margin-left:6px}
 #brk{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .btile{position:relative;display:block;cursor:pointer}.btile input{position:absolute;opacity:0;pointer-events:none}
 .btile .tc{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border:2px solid var(--line);border-radius:10px;background:var(--bg);opacity:.45;filter:grayscale(.7);text-align:center;height:100%}
 .btile input:checked+.tc{opacity:1;filter:none;border-color:#5a7bd6;box-shadow:0 0 0 1px #5a7bd6 inset}
 .bim{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #9bb0d8;display:flex;align-items:center;justify-content:center;font-size:30px}
 .btile .tn{font-weight:700;font-size:13px;line-height:1.2}
-.brkopt{display:inline-flex;align-items:center;gap:6px;margin:0 10px 6px 0;padding:4px 10px;border:1px solid var(--line);border-radius:8px}
-@media (max-width:760px){.cols{grid-template-columns:1fr}.pic{width:96px;height:96px;font-size:30px}}
-
-.rowcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(6,auto);column-gap:12px;row-gap:0;margin-top:8px}
+.rowcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(7,auto);column-gap:12px;row-gap:0;margin-top:8px}
 .bbar{display:flex;gap:18px;align-items:center;margin-top:12px;padding:14px 16px;border-radius:14px;border:2px solid #5a7bd6;background:linear-gradient(90deg,#1c3470,#0f1d48 70%);color:#fff}
 .bbar img{width:132px;height:132px;border-radius:50%;object-fit:cover;flex:none;border:3px solid #cfd9f2;box-shadow:0 0 0 3px #3b5bb0}
 .bbar .bt{font-size:12px;letter-spacing:.12em;color:#a9bde8}.bbar b{font-size:22px}.bbar .bx{font-size:14px;margin-top:4px}.bbar .mut{color:#a9bde8}
-@media (max-width:760px){.bbar{flex-direction:column;text-align:center}}
-.gc{display:grid;grid-template-rows:subgrid;grid-row:span 6;min-width:0}
+.gc{display:grid;grid-template-rows:subgrid;grid-row:span 7;min-width:0}
 .card{position:relative;aspect-ratio:3/5.6;border-radius:14px;overflow:hidden;border:2px solid #7a8190;background:#10131a;box-shadow:0 0 0 2px #262b36 inset}
 .card .art{position:absolute;left:0;right:0;bottom:0;width:100%;height:112%;object-fit:cover;object-position:center bottom}
 .card .fallback{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:30%;font-size:54px;font-weight:700;color:#5b6475}
 .card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(transparent,rgba(8,10,16,.92) 55%)}
 .cinfo{position:absolute;left:0;right:0;bottom:0;z-index:2;text-align:center;padding:0 6px 10px;color:#fff}
-.cls{width:44px;height:44px;margin:0 auto 4px;transform:rotate(45deg);border:2px solid #e8ecf5;border-radius:6px;display:flex;align-items:center;justify-content:center}
-.cls i{transform:rotate(-45deg);font-style:normal;font-size:20px;line-height:1}
-.cls .ri{transform:rotate(-45deg);width:30px;height:30px;object-fit:contain}
-.ico{display:flex;align-items:center;gap:5px}.ai{width:20px;height:20px;object-fit:contain}
-.cls{width:50px;height:50px}
-.cls.e-sun{background:#d98a00}.cls.e-moon{background:#4d52b8}.cls.e-star{background:#1f8b7f}.cls.e-order{background:#6e7480}.cls.e-chaos{background:#8e2f5f}
-.cnm{font-weight:700;font-size:15px;text-shadow:0 1px 3px #000}.csb{font-size:11px;color:#c3cada}
+.cls{width:50px;height:50px;margin:0 auto 4px;transform:rotate(45deg);border:2px solid #e8ecf5;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.ico{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.cnm{font-weight:700;font-size:15px;text-shadow:0 1px 3px #000}.csb{font-size:12px;color:#c3cada}
 .tier{display:inline-block;margin-top:2px;padding:0 10px;border-radius:10px;font-weight:700;font-size:13px;color:#fff}
 .slotlbl{margin-top:-1px;text-align:center;font-weight:800;letter-spacing:.08em;font-size:14px;color:var(--fg);padding:5px 0;border-bottom:1px solid var(--line)}
-.slotlbl.back{color:#6aa5ff}.slotlbl.front{color:#ffb454}
+.slotlbl.back{color:#6aa5ff}.slotlbl.front{color:var(--warn)}
 .under{display:contents;font-size:13px;line-height:1.55}
 .gc>*:not(.card){padding-left:2px;padding-right:2px}
 .gc .ico,.gc .why,.gc .tg{padding-top:6px;font-size:13px;line-height:1.55}
-.gc .altbox{margin-top:8px}
-.bcard{aspect-ratio:3/6.4;position:relative;border-radius:14px 14px 40px 40px;overflow:hidden;border:2px solid #5a7bd6;background:radial-gradient(circle at 50% 30%,#2f58b3,#0f1d48 70%);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px;clip-path:polygon(0 0,100% 0,100% 88%,50% 100%,0 88%)}
-.bcard .big{font-size:64px;line-height:1;text-shadow:0 0 16px #9cc2ff}.bcard b{font-size:15px;margin-top:8px}.bcard small{font-size:11px;letter-spacing:.1em;color:#a9bde8;margin-top:4px}
-.bcard .none{opacity:.6;font-size:13px}
 .altbox{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}
 .altrow{display:flex;align-items:center;gap:8px;margin-top:5px;font-size:13px;line-height:1.25}
 .face{width:46px;height:46px;flex:none;border-radius:50%;object-fit:cover;object-position:top;background:var(--line);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--mut)}
@@ -110,22 +91,83 @@ body:not(.show-why) .gimnote{display:none}
 .dia img{position:relative;z-index:1;object-fit:contain;image-rendering:auto}
 .dia.e-sun{--bd:#ff6b5c;--fl:#b3261e}.dia.e-star{--bd:#8fe05a;--fl:#3f7d1f}.dia.e-moon{--bd:#5aa0ff;--fl:#1f4fb0}
 .dia.e-order{--bd:#f0cf86;--fl:#9a7a33}.dia.e-chaos{--bd:#c58bff;--fl:#6a2f9a}
-.kind{font-weight:800;font-size:12px;letter-spacing:.06em;margin:2px 0 1px;text-shadow:0 1px 3px #000}.k-A{color:#ffb454}.k-C{color:#c58bff}b.k-A,b.k-C{font-size:11px}
+.kind{font-weight:800;font-size:12px;letter-spacing:.06em;margin:2px 0 1px;text-shadow:0 1px 3px #000}.k-A{color:var(--warn)}.k-C{color:#c58bff}b.k-A,b.k-C{font-size:12px}
 .ico .dia{margin:0 4px 0 2px}
 .cinfo .dia{margin:6px auto 2px}
-.bcard2{display:flex;gap:10px;align-items:center;border:1px solid var(--acc);border-radius:12px;padding:8px;background:var(--bg)}
-.bcard2 img{width:64px;height:64px;border-radius:50%;object-fit:cover;flex:none;border:2px solid #9bb0d8}
-.lead{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:3;font-size:20px}
-@media (max-width:760px){.rowcards{grid-template-columns:repeat(2,1fr)}}
+/* P4 전투 전망 */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;align-self:end}
+.seg label{flex-direction:row!important;gap:0!important;margin:0;cursor:pointer;color:var(--fg)!important;font-size:13px!important}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:block;padding:6px 14px}.seg input:checked+span{background:var(--acc);color:#06161a;font-weight:700}
+.seg input:focus-visible+span{outline:2px solid var(--gold);outline-offset:-2px}
+.mchip{font-size:12px;padding:1px 9px;border-radius:10px;border:1px solid var(--line);color:var(--mut)}.mchip.man{border-color:var(--gold);color:var(--gold)}
+.ordernote{font-size:12px;color:var(--mut)}
+.forecast{margin:8px 0 6px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.fhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:13px}.fhead b{font-size:14px}
+.ftiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.ft{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card);min-width:0}
+.ft .fl{font-size:12px;color:var(--mut)}.ft .fv{font-size:24px;font-weight:800;line-height:1.2}.ft .fs{font-size:12px;color:var(--mut)}
+.ft .fv small{font-size:13px;font-weight:600;color:var(--mut);margin-left:4px}
+.grade{display:inline-block;font-size:12px;font-weight:700;padding:0 8px;border-radius:10px;border:1px solid currentColor;margin-left:2px}
+.g-safe{color:var(--good)}.g-ok{color:var(--acc)}.g-shaky{color:var(--warn)}.g-risk{color:var(--bad)}
+.bar{position:relative;height:8px;border-radius:4px;background:var(--line);margin:6px 0 2px;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--acc)}.bar .ci{position:absolute;top:0;bottom:0;background:rgba(255,255,255,.28);border-left:1px solid #fff8;border-right:1px solid #fff8}
+.axis{position:relative;height:14px;margin:6px 0 2px}.axis .rg{position:absolute;top:4px;height:6px;border-radius:3px;background:rgba(76,194,194,.45)}
+.axis .md{position:absolute;top:1px;width:4px;height:12px;border-radius:2px;background:var(--acc);transform:translateX(-2px)}
+.axis .lim{position:absolute;top:0;bottom:0;border-left:2px dashed var(--bad)}.axis::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;background:var(--line)}
+.delta{display:inline-block;font-size:12px;font-weight:700;padding:0 6px;border-radius:8px;margin-left:4px;background:var(--line)}.delta.up{color:var(--good)}.delta.down{color:var(--bad)}
+.fd{display:flex;gap:8px;align-items:center}.fd .face{width:40px;height:40px}
+.wchip{display:inline-block;font-size:12px;font-weight:700;color:#fff;background:#b03a2e;border-radius:10px;padding:0 8px}
+.nochip{display:inline-block;font-size:12px;font-weight:700;color:var(--mut);border:1px solid var(--mut);border-radius:10px;padding:1px 9px;background:transparent}
+.assume{font-size:13px;margin:8px 0 2px;padding:4px 10px;border-left:3px solid var(--warn);background:var(--card)}.assume.ok{border-left-color:var(--good)}
+.assume summary{color:var(--fg)}.assume table{border-collapse:collapse;margin-top:6px;font-size:12px;width:100%}.assume td,.assume th{border-bottom:1px solid var(--line);padding:3px 6px;text-align:left}
+.meta{font-size:12px;color:var(--mut);margin-top:6px}
+.simu{font-size:12px;padding-top:6px;min-height:20px}.simu .sb{position:relative;height:6px;border-radius:3px;background:var(--line);margin:3px 0;overflow:hidden}.simu .sb i{position:absolute;left:0;top:0;bottom:0;background:var(--acc)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.d0{background:#6b7280}.d1{background:var(--acc)}.d2{background:var(--warn)}.d3{background:var(--bad)}
+.seq{margin-top:10px;padding:10px;border:1px solid var(--gold);border-radius:10px;background:var(--bg)}
+.seqhead{font-size:13px;margin-bottom:6px}.seqhead .mut{display:block}
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:12px}
+.sgrid>.tl{grid-column:1/-1;font-size:12px;color:var(--mut);border-top:1px solid var(--line);padding-top:2px;margin-top:4px}
+.sgrid>.nova{grid-column:1/-1;font-size:12px;color:var(--gold);border:1px dashed var(--gold);border-radius:8px;padding:2px 8px;margin-top:6px;text-align:center}
+.sgrid>.hd{font-size:12px;font-weight:700;text-align:center;padding-bottom:2px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scell{min-width:0;padding:2px 0}.act{display:flex;flex-wrap:wrap;align-items:center;gap:3px;font-size:12px;line-height:1.3;margin:2px 0}
+.sk{display:inline-block;padding:0 6px;border-radius:6px;color:#fff;font-weight:700;font-size:12px;border:2px solid transparent}
+.sk-B{background:var(--bas)}.sk-S{background:var(--spc)}.sk-U{background:var(--ult)}.sk.nb{border-color:var(--gold)}
+.tgt .tn3{display:none}.act.sub{padding-left:10px;color:var(--mut)}.act.sub .sk{opacity:.85}.tgt{color:var(--mut);font-size:12px;overflow:hidden;text-overflow:ellipsis}
+.cands{margin-top:10px}.cands table{border-collapse:collapse;width:100%;font-size:13px}.cands td,.cands th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.cands .faces{display:flex;gap:2px}.cands .face{width:30px;height:30px;font-size:12px}
+.cands button{padding:2px 10px;font-size:12px}
+.approxbox{margin-top:8px;padding:8px 10px;border:1px dashed var(--mut);border-radius:8px;font-size:13px}
+@media (prefers-reduced-motion:reduce){#drawer{transition:none}}
+@media (max-width:760px){
+ main{padding:12px}
+ select,input[type=text],input[type=number]{font-size:16px;min-width:0}
+ .row label{flex:1 1 140px}
+ .bbar{flex-direction:column;text-align:center}
+ .rowcards{column-gap:6px}.sgrid{column-gap:6px}
+ .card{border-radius:10px}.cinfo{padding:0 2px 6px}.cnm{font-size:12px}.csb{display:none}.cinfo .dia{width:34px!important;height:34px!important}.cinfo .dia img{width:22px!important;height:22px!important}
+ .cinfo .kind{font-size:10px}.tier{font-size:12px;padding:0 6px}
+ .slotlbl{font-size:12px;letter-spacing:.02em}
+ .gc .ico,.gc .why,.gc .tg{font-size:12px}.altrow{font-size:12px}.altrow .face{width:30px;height:30px}
+ .ftiles{grid-template-columns:1fr 1fr}.ft .fv{font-size:22px}
+ .assume.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .sk .sn,.tgt .tn2{display:none}.tgt .tn3{display:inline}
+ .crown span{display:none}
+ #dbtn{top:auto;bottom:12px;left:12px;border-radius:10px}
+}
 </style></head><body><main>
 <h1>콘텐츠별 추천 파티 <small style="color:var(--bad)">시험판</small></h1>
-<p class="sub">DB 티어 + 속성 상성 + 팀 기능 태그로 자동 계산한 참고용입니다. 가중치는 임의값이라 검증된 공략이 아닙니다.</p>
+<p class="sub">DB 티어 + 속성 상성 + 팀 기능 태그로 고른 후보를 전투 시뮬레이터로 돌려 클리어 확률·처치 턴을 보여 줍니다. 가중치·시뮬 가정은 검증 전이라 참고용입니다.</p>
 <div class="panel">
  <div class="row">
   <label>콘텐츠<select id="content"></select></label>
   <label>섹터 / 지역<select id="tab"></select></label>
   <label>스테이지 검색<input type="text" id="q" placeholder="예: 36, 아가논, 길레"></label>
-  <label>스테이지<select id="stage"></select></label>  <button id="go">추천</button>
+  <label>스테이지<select id="stage"></select></label>
+  <div class="seg" role="radiogroup" aria-label="전투 방식" title="오토 = 게임 자동 전투 규칙(쿨 찬 궁 > 특수 > 기본, 노바 버스트 안 씀). 수동 = 노바 버스트·대상 지정을 쓰는 정책으로 다시 계산하고 서순(스킬 순서 예시)을 보여 줌.">
+   <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div>
+  <button id="go" class="sec" type="button">다시 계산</button>
   <label class="whytoggle"><input type="checkbox" id="showwhy"> 추천 근거 보기</label>
  </div>
  <div class="info" id="stinfo"></div>
@@ -144,8 +186,8 @@ body:not(.show-why) .gimnote{display:none}
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 보세요.</div></div>
-<div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 초상화는 온라인일 때만 보입니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</div>
-<button id="dbtn" type="button" title="보유 구원자·브레이크 스킬 선택">내 구원자<br>선택 ▸<span id="dcount"></span></button>
+<div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 전투 전망은 장비 없는 Lv200 기준 모델의 확률이며 실전 결과가 아닙니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</div>
+<button id="dbtn" type="button" title="보유 구원자·브레이크 스킬 선택" aria-controls="drawer" aria-expanded="false">내 구원자<br>선택 ▸<span id="dcount"></span></button>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 구원자 · 브레이크 스킬</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
  <div class="mut" style="margin-bottom:6px">체크한 구원자 안에서만 추천합니다(기본: 전체). 바꾸면 추천이 바로 갱신되고 브라우저에 저장됩니다.</div>
@@ -164,8 +206,9 @@ const EL={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
 const BG={"특이점 관측":"✦","스타피어서":"➶","큐브 과부하":"▣","행성 정화":"◍","차원 강습":"⟁"};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const R=D.roster, CFG=D.cfg, contents=D.contents;
+const R=D.roster, CFG=D.cfg, contents=D.contents, BYKEY=Object.fromEntries(D.roster.map(s=>[s.key,s]));
 const TC=tr=>"t-"+(tr?String(tr).replace("티어","").replace(".",""):"q");
+const LS={get(k){try{return JSON.parse(localStorage.getItem("pn."+k))}catch(e){return null}},set(k,v){try{localStorage.setItem("pn."+k,JSON.stringify(v))}catch(e){}}};
 let cur=null;
 
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.name)}</option>`).join("");
@@ -175,7 +218,7 @@ function refreshTabs(){const c=contents[$("content").value];
 function refreshStages(){
  const c=contents[$("content").value],t=$("tab").value,q=$("q").value.trim();
  cur=c.stages.filter(s=>(!t||s.tab===t)&&(!q||s.name.includes(q)||(s.label||"").includes(q)||s.tabLabel.includes(q))).slice(0,400);
- $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
+ $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}${simHas(c,s)?" ◆":""}</option>`).join("");
  showInfo();showPow();if(window._ready)rerun()}
 function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`${EL[e]} ${n}`).join(" / ")}
 function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$("powinfo");POWK=1;
@@ -184,7 +227,7 @@ function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$(
  if(pp.a>=1){el.innerHTML=`<span class="ok">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 보정 없음(90% 이상)</span>`;return}
  el.innerHTML=`<span class="${pp.ratio<70?"bad2":"warn"}">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 아군 피해 ×${pp.a.toFixed(3)}, 적 피해 ×${pp.b.toFixed(3)}${pp.warn?` [${pp.warn}]`:""}</span> <span class="mut">· 회복·보호막은 보정 없음 → 생존·지원을 더 중시해 추천(추정) · 보정 없으려면 ${Math.ceil(s.rp*0.9).toLocaleString()} 이상</span>`}
 function sbText(s){return s&&s.sb&&s.sb.length?` · <span class="mut">시즌 보너스(${esc(s.sbn)}): ${s.sb.map(b=>esc(b.cond)+" "+esc(b.text)).join(" / ")}</span>`:""}
-function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s):"해당 스테이지 없음"}
+function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+` <span class="mut">· ◆ = 전투 시뮬 결과가 있는 스테이지</span>`:"해당 스테이지 없음"}
 $("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);run()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};
 
 function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">
@@ -194,7 +237,7 @@ $("oq").oninput=()=>{const q=$("oq").value.trim();document.querySelectorAll("#ow
 $("all").onclick=()=>document.querySelectorAll("#own input").forEach(x=>x.checked=true);
 $("none").onclick=()=>document.querySelectorAll("#own input").forEach(x=>x.checked=false);
 const bkeys=Object.keys(CFG.breakSkills).filter(k=>!k.startsWith("_"));
-$("brk").innerHTML=bkeys.map(k=>{const u=CFG.breakSkills[k].unreleased,im=D.bicons[k];return `<label class="btile"><input type="checkbox" data-b="${esc(k)}" ${u?"":"checked"}><span class="tc">${im?`<img class="bim" src="${im}" alt="">`:`<span class="bim bph">${BG[k]||"◆"}</span>`}<span class="tn">${esc(k)}</span>${u?'<span class="btag" style="margin:2px 0 0">미출시 표기</span>':""}</span></label>`}).join("");
+$("brk").innerHTML=bkeys.map(k=>{const u=CFG.breakSkills[k].unreleased,im=D.bicons[k];return `<label class="btile"><input type="checkbox" data-b="${esc(k)}" ${u?"":"checked"}><span class="tc">${im?`<img class="bim" src="${im}" alt="">`:`<span class="bim">${BG[k]||"◆"}</span>`}<span class="tn">${esc(k)}</span>${u?'<span class="btag" style="margin:2px 0 0">미출시 표기</span>':""}</span></label>`}).join("");
 
 let POWK=1;
 function powPen(my,rec){if(!(my>0&&rec>0))return null;const ratio=Math.floor(my*10000/rec);const row=D.pen.find(r=>r[0]<=ratio&&ratio<r[1]);const a=row?row[2]/10000:1,b=row?row[3]/10000:1;
@@ -242,15 +285,17 @@ function teamValue(combo,defPen){
  for(const [t,wt] of Object.entries(CFG.tagWeights))v+=got.has(t)?wt*(CFG.power.sustainTags.includes(t)?POWK:1):0;
  v+=Math.min(partySyn(combo.map(x=>x.s.key)).reduce((a,h)=>a+h.pts,0),CFG.synergy.cap);v+=gimTeam(combo)[0];v+=DMW[1]*dmgScore(combo.map(x=>x.s.key),DMW[0]);
  return [v,got]}
-function bestParty(c,defPen){
- const pool=[...c].sort((a,b)=>b.score-a.score).slice(0,14);let best=null,bv=-1e9,bt=null;
+// 근사 점수 상위 k 팀. party_reco.top_parties 와 같은 규칙(같은 점수면 조합을 만든 순서) — 한쪽을 고치면 다른 쪽도 고칠 것
+function topParties(c,defPen,k){
+ const pool=[...c].sort((a,b)=>b.score-a.score).slice(0,14);
  for(const p of (CFG.pairs||[]))c.forEach(x=>{if(p.keys.includes(x.s.key)&&!pool.includes(x))pool.push(x)});
  {const top=pool.slice(0,14),extra=[];c.forEach(x=>{if(pool.includes(x))return;let sy=0;partySyn([x.s.key,...top.map(t=>t.s.key)]).forEach(h=>{if(h.p.a===x.s.key||h.p.b===x.s.key)sy+=h.pts});if(sy>=4)extra.push([sy,x])});
   extra.sort((a,b)=>b[0]-a[0]).slice(0,4).forEach(e=>pool.push(e[1]))}
- const n=pool.length;
+ const n=pool.length,all=[];let i=0;
  for(let a=0;a<n;a++)for(let b=a+1;b<n;b++)for(let d=b+1;d<n;d++)for(let e=d+1;e<n;e++){
-  const combo=[pool[a],pool[b],pool[d],pool[e]],[v,t]=teamValue(combo,defPen);if(v>bv){bv=v;best=combo;bt=t}}
- return [best,bv,bt]}
+  const combo=[pool[a],pool[b],pool[d],pool[e]],[v,t]=teamValue(combo,defPen);all.push({combo,v,got:t,i:i++})}
+ all.sort((x,y)=>y.v-x.v||x.i-y.i);return all.slice(0,k)}
+function bestParty(c,defPen){const t=topParties(c,defPen,1)[0];return t?[t.combo,t.v,t.got]:[null,-1e9,new Set()]}
 function synSummary(party){const hs=partySyn(party.map(x=>x.s.key)).slice(0,5);if(!hs.length)return "";
  const nm=Object.fromEntries(R.map(s=>[s.key,s.name]));
  return `<details class="syn"><summary>스킬 연계 ${hs.length}건 (강한 순, 구조도에서 근거 확인)</summary>${hs.map(h=>`<div class="synrow"><b>${esc(nm[h.p.a])}${h.p.d?" → ":" ↔ "}${esc(nm[h.p.b])}</b> <span class="chip ty${h.p.t}">${esc(h.p.tn)}</span> <span class="mut">강도 ${h.p.s} · ${esc(h.p.c)}</span><div class="mut">${esc(h.p.r)}</div></div>`).join("")}</details>`}
@@ -279,51 +324,197 @@ function pickBreak(party,content,have){
 const KT=s=>s.kind==="C"?["COSMIC","k-C"]:s.kind==="A"?["ANOTHER","k-A"]:null;
 const kindTxt=s=>{const k=KT(s);return k?`<div class="kind ${k[1]}">${k[0]}</div>`:""};
 const dia=(s,px)=>`<span class="dia e-${s.el}" style="width:${px}px;height:${px}px"><img src="${D.icons[s.cls]}" alt="${esc(s.cls)}" style="width:${Math.round(px*.66)}px;height:${Math.round(px*.66)}px"></span>`;
-const CI={"스트라이커":"⚔","레인저":"➶","캐스터":"✦","어쌔신":"✂","디펜더":"⛨","서포터":"✚"};
 function art(s){const u=s.art||s.img;return u?`<img class="art" src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">`:""}
 function face(s){return s.img?`<img class="face" src="${esc(s.img)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;face&quot;>${esc(s.name[0])}</span>'">`:`<span class="face">${esc(s.name[0])}</span>`}
 function altChips(alt){return alt.length?`<div class="altbox"><div class="mut">대체 후보 (이 구원자가 없을 때)</div>${alt.map(a=>`<div class="altrow">${face(a.s)}<div><b>${esc(a.s.name)}</b><div class="mut">${esc(a.s.cls)} · ${EL[a.s.el]} · ${a.s.tier||"티어 ?"}</div></div></div>`).join("")}</div>`:""}
-function card(x,pos,alt){const s=x.s;
+const CROWN='<svg viewBox="0 0 34 26" aria-hidden="true"><path d="M2 22 L5 6 L12 14 L17 3 L22 14 L29 6 L32 22 Z" fill="#ffd24a" stroke="#8a5a00" stroke-width="1.5" stroke-linejoin="round"/><rect x="2" y="22" width="30" height="3" rx="1" fill="#e6a800"/></svg>';
+function simUnit(r,key){if(!r||!r.g||!r.u||!r.u[key])return '<div class="simu"></div>';const [sh,dp]=r.u[key];const pct=Math.round(sh*100),dpp=Math.round(dp*100);
+ const lv=dp>=0.5?3:dp>=0.2?2:dp>=0.05?1:0;
+ return `<div class="simu"><div class="sb" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="피해 기여 ${pct}%"><i style="width:${pct}%"></i></div>피해 ${pct}% · <span class="dot d${lv}"></span>${lv?`쓰러질 확률 ${dpp}%`:`생존 안정(${dpp}%)`}</div>`}
+function card(x,pos,alt,r){const s=x.s;
  const why=Object.entries(x.parts).filter(([k])=>k!=="티어").map(([k,v])=>`<span class="${v>0?"good":"bad"}">${k} ${v>0?"+":""}${Math.round(v)}</span>`).join(" · ");
  const tg=(s.tags||[]).filter(t=>!["단일","광역"].includes(t)).slice(0,5).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
- return `<div class="gc"><div class="card">${s.key===LEADKEY?'<div class="crown"><svg viewBox="0 0 34 26"><path d="M2 22 L5 6 L12 14 L17 3 L22 14 L29 6 L32 22 Z" fill="#ffd24a" stroke="#8a5a00" stroke-width="1.5" stroke-linejoin="round"/><rect x="2" y="22" width="30" height="3" rx="1" fill="#e6a800"/></svg><span>LEADER</span></div>':""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
+ return `<div class="gc" data-key="${esc(s.key)}"><div class="card">${s.key===LEADKEY?`<div class="crown" title="리더: 속도 +10(먼저 행동)">${CROWN}<span>리더</span></div>`:""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
   <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div>
   <span class="tier ${TC(s.tier)}">${s.tier||"티어 ?"}</span></div></div>
-  <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}</div>
-  <div class="under"><div class="mut ico">${dia(s,26)}${EL[s.el]} · ${esc(s.cls)}${s.kind?` · <b class="k-${s.kind}">${s.kind==="C"?"COSMIC":"ANOTHER"}</b>`:""}</div><div class="why">${why||"&nbsp;"}</div><div class="tg">${tg||"&nbsp;"}</div>${altChips(alt)||'<div class="altbox" style="border:0"></div>'}</div></div>`}
+  <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}${s.key===LEADKEY?" 👑":""}</div>
+  <div class="under">${simUnit(r,s.key)}<div class="mut ico">${dia(s,26)}${EL[s.el]} · ${esc(s.cls)}${s.kind?` · <b class="k-${s.kind}">${s.kind==="C"?"COSMIC":"ANOTHER"}</b>`:""}</div><div class="why">${why||"&nbsp;"}</div><div class="tg">${tg||"&nbsp;"}</div>${altChips(alt)||'<div class="altbox" style="border:0"></div>'}</div></div>`}
 function breakCard(br){
  if(!br)return `<div class="bbar"><div><div class="bt">BREAK SKILL</div><div class="mut">선택한 브레이크 스킬이 없습니다</div></div></div>`;
  const u=CFG.breakSkills[br[1]].unreleased,im=D.bicons[br[1]];
  return `<div class="bbar">${im?`<img src="${im}" alt="">`:`<span style="font-size:72px">${BG[br[1]]||"◆"}</span>`}
   <div><div class="bt">BREAK SKILL</div><b>${esc(br[1])}</b>${u?'<span class="btag">미출시 표기</span>':""}<div class="bx">${esc(br[2])}</div><div class="mut">직업 구성 기준 추정 추천</div></div></div>`}
+
+// ---------------- P4 전투 시뮬 결과(사전 계산 data/sim/*.json, 필요할 때 불러옴)
+let MODE="auto";
+window.PN={last:null};
+const SIM={idx:null,idxErr:null,files:{}};
+function simLoadIndex(){return fetch("data/sim/index.json",{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(j=>{SIM.idx=j}).catch(e=>{SIM.idxErr=String(e)})}
+function simFile(key){if(SIM.files[key]!==undefined)return SIM.files[key];if(!SIM.idx||!SIM.idx.contents[key])return null;
+ SIM.files[key]="loading";fetch("data/sim/"+SIM.idx.contents[key].file,{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error("HTTP "+r.status);return r.json()})
+  .then(j=>{SIM.files[key]=j;refreshStageMarks();rerun()}).catch(e=>{SIM.files[key]={error:String(e)};rerun()});return "loading"}
+function simHas(c,s){const f=SIM.files[c.key];return !!(f&&f.stages&&f.stages[s.tab+"|"+s.name])}
+function refreshStageMarks(){const c=contents[$("content").value],sel=$("stage");if(!cur)return;[...sel.options].forEach((o,i)=>{const s=cur[i];if(!s)return;const t=`${s.label||s.name}${s.lv?" Lv"+s.lv:""}${simHas(c,s)?" ◆":""}`;if(o.textContent!==t)o.textContent=t})}
+function stageSim(c,st){
+ if(SIM.idxErr)return {state:"error",msg:location.protocol==="file:"?"로컬 파일(file://)로 열면 시뮬 결과를 불러올 수 없습니다 — 웹 주소나 로컬 서버로 여세요":"시뮬 결과 목록을 불러오지 못했습니다("+SIM.idxErr+")"};
+ if(!SIM.idx)return {state:"loading"};
+ const f=simFile(c.key);if(f===null)return {state:"nostage"};if(f==="loading")return {state:"loading"};
+ if(f.error)return {state:"error",msg:"시뮬 결과 파일을 불러오지 못했습니다("+f.error+")"};
+ if(f.schema_version!==SIM.idx.schema_version)return {state:"version",msg:"시뮬 결과 파일 형식이 목록과 달라 표시하지 않습니다"};
+ const rec=f.stages[st.tab+"|"+st.name];if(!rec)return {state:"nostage"};
+ // 실행 정보는 스테이지마다(부분 재생성 때 다른 실행의 결과가 섞일 수 있음) — 추천 입력 해시가 페이지와 같아야 표시
+ if(!rec.meta||rec.meta.sel!==D.selver)return {state:"version",msg:"이 스테이지의 시뮬 결과가 지금 페이지 데이터와 버전이 달라 표시하지 않습니다"};
+ return {state:"ok",rec,file:f}}
+const ckey=combo=>combo.map(x=>x.s.key).sort().join(",");
+function arrangeOf(combo){const [fr,bk]=place(combo),L=leaderPick(combo);return {order:[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key),lead:L?L.x.s.key:null}}
+// 관문 순위(build_sim_results.gate_key 와 같은 규칙): 계산 가능 -> 클리어 확률 5%p 묶음 -> 처치 턴 -> 근사 점수
+function gateKey(r,a){if(!r||!r.g)return [1,0,1e9,-a];return [0,-Math.floor(r.c*20+1e-9),r.t!=null?r.t:1e9,-a]}
+function cmpArr(x,y){for(let i=0;i<x.length;i++){if(x[i]<y[i])return -1;if(x[i]>y[i])return 1}return 0}
+function grade(r){if(!r||!r.g)return null;const c=r.c,w=r.w;
+ if(c<0.4||w>=0.25)return ["위험","g-risk","✖"];if(c<0.7||w>=0.1)return ["불안","g-shaky","▲"];if(c>=0.9&&w<0.05)return ["안정","g-safe","✔"];return ["보통","g-ok","●"]}
+const pct=v=>Math.round(v*100);
+const fmtT=t=>t==null?"—":(Math.round(t*10)/10).toFixed(1);
+function dBadge(v,unit,goodWhenNeg){if(v==null||Math.abs(v)<(unit==="턴"?0.05:0.005))return "";const good=goodWhenNeg?v<0:v>0;
+ const txt=unit==="턴"?`${v>0?"+":"−"}${Math.abs(v).toFixed(1)}턴`:`${v>0?"+":"−"}${Math.abs(Math.round(v*100))}%p`;return `<span class="delta ${good?"up":"down"}">${txt}</span>`}
+const POLTXT={boss_first:"보스 먼저",lowest_hp:"보호막+HP 가장 낮은 적 직접 지정",any_attack:"노바 4개가 모이면 다음 공격 스킬",ult_only:"궁극기에만"};
+function forecast(c,st,ss,t,p,party){
+ if(ss.state==="loading")return `<div class="forecast" data-state="loading"><span class="mut">전투 시뮬 결과 불러오는 중…</span></div>`;
+ if(ss.state==="error"||ss.state==="version")return `<div class="forecast" data-state="${ss.state}"><span class="nochip">시뮬 결과 없음</span> <span class="mut">${esc(ss.msg)}</span></div>`;
+ if(ss.state==="nostage")return `<div class="forecast" data-state="nostage"><span class="nochip">시뮬 미계산 스테이지</span> <span class="mut">이 스테이지는 전투 시뮬을 미리 돌리지 않았습니다(대표 스테이지만 계산 — ◆ 표시). 근사 점수로만 고른 팀입니다.</span></div>`;
+ const rec=ss.rec;
+ if(rec.gate===false)return `<div class="forecast" data-state="unsupported"><span class="nochip">계산 불가</span> <span class="mut">이 스테이지 적의 생존 기믹을 시뮬레이터가 아직 지원하지 않아 확률을 내지 않습니다: ${esc((rec.why||[]).join(", ")||"미지원 효과")}</span></div>`;
+ if(!t.rec)return `<div class="forecast" data-state="nosim"><span class="nochip">근사 점수만 · 시뮬 없음</span> <span class="mut">${t.why==="mismatch"?"편성 순서·리더가 사전 계산과 달라 결과를 쓰지 않습니다.":"보유 구원자 선택으로 바뀐 팀이라 미리 돌린 결과가 없습니다."} 숫자는 지어내지 않습니다.</span></div>`;
+ const A=t.rec.auto,M=t.rec.man,man=MODE==="manual";const r=man&&M&&M.g?M:A;
+ if(!r||!r.g)return `<div class="forecast" data-state="unsupported"><span class="nochip">계산 불가</span> <span class="mut">${esc(((r&&r.us)||[]).join(", ")||"계산 실패")}</span></div>`;
+ const pr=rec.parties[p-1]||{};const g=grade(r);const ci=r.ci||[r.c,r.c];
+ const nt=Math.round(r.c*10);
+ const d=man&&M&&M.d?M.d:null;
+ const fdS=r.fd&&r.nd<0.9?BYKEY[r.fd.k]:null;
+ const tlim=rec.tl;const axMax=Math.max(tlim||0,(r.tr?r.tr[1]:r.t||1)*1.3,4);
+ const wipe=r.w>=0.1?` <span class="wchip">전멸 위험</span>`:"";
+ const hint=!man&&M&&M.g&&M.d&&((M.d.t!=null&&M.d.t<=-0.05)||(M.d.c!=null&&M.d.c>=0.01))?`<div class="fs">수동이면 ${M.d.t!=null&&Math.abs(M.d.t)>=0.05?(M.d.t<0?"−":"+")+Math.abs(M.d.t).toFixed(1)+"턴":""}${M.d.c&&Math.abs(M.d.c)>=0.005?` 클리어 ${M.d.c>0?"+":"−"}${Math.abs(pct(M.d.c))}%p`:""}</div>`:"";
+ const tiles=`<div class="ftiles">
+  <div class="ft" data-k="clear"><div class="fl">클리어 확률${wipe}</div><div class="fv">${pct(r.c)}%${d?dBadge(d.c,"%p",false):""}</div>
+   <div class="fs">10판 중 ${nt}판 · <span class="grade ${g[1]}">${g[2]} ${g[0]}</span></div>
+   <div class="bar" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct(r.c)}" aria-label="클리어 확률 ${pct(r.c)}%"><i style="width:${pct(r.c)}%"></i><span class="ci" style="left:${ci[0]*100}%;width:${Math.max(0.5,(ci[1]-ci[0])*100)}%" title="반복 시뮬의 퍼짐(95% 범위) ${pct(ci[0])}~${pct(ci[1])}%"></span></div></div>
+  <div class="ft" data-k="ttk"><div class="fl">처치 턴</div><div class="fv">${r.t!=null?fmtT(r.t)+"턴":"—"}${d?dBadge(d.t,"턴",true):""}</div>
+   <div class="fs">${r.tr?`보통 ${fmtT(r.tr[0])}~${fmtT(r.tr[1])}턴`:"클리어한 판 없음"}${tlim?` · 제한 ${tlim}턴`:""}</div>
+   ${r.tr?`<div class="axis" aria-hidden="true"><span class="rg" style="left:${r.tr[0]/axMax*100}%;width:${Math.max(1,(r.tr[1]-r.tr[0])/axMax*100)}%"></span><span class="md" style="left:${r.t/axMax*100}%"></span>${tlim&&tlim<=axMax?`<span class="lim" style="left:${tlim/axMax*100}%"></span>`:""}</div>`:""}
+   <div class="fs" style="font-size:12px">모델 기준 턴 · 클리어한 판만</div>${hint}</div>
+  <div class="ft" data-k="death"><div class="fl">먼저 쓰러지는 구원자</div>${fdS?`<div class="fd">${face(fdS)}<div><b>${esc(fdS.name)}</b><div class="fs">${r.fd.t!=null?fmtT(r.fd.t)+"턴쯤 · ":""}${pct(r.fd.p)}%</div></div></div>`:`<div class="fv" style="font-size:16px">아무도 안 쓰러짐</div><div class="fs">${pct(r.nd)}% 판에서 전원 생존</div>`}</div>
+  <div class="ft" data-k="wipe"><div class="fl">전멸 확률</div><div class="fv" style="font-size:20px">${pct(r.w)}%</div><div class="fs">시간 초과 ${pct(r.to)}%</div></div>
+ </div>`;
+ const notes=[];
+ if(t.zeroAll)notes.push(`<div class="assume" data-k="allzero">⚠ 장비 없는 Lv200 모델에서는 지금 보이는 시뮬 후보 ${t.zeroAll}팀 모두 클리어 0판(${man?"수동":"오토"}, 이 팀 0/${r.n}판) — 클리어 추천은 유보합니다(실전에서 못 깬다는 뜻은 아님).</div>`);
+ if(pr.close&&t.isPick)notes.push(`<div class="mut">· 1·2위 차이가 반복 시뮬의 퍼짐 안이라 우열이 확실하지 않습니다.</div>`);
+ const sens=(pr.sens||[]).filter(s=>!s.man&&s.id!=="base"),base=(pr.sens||[]).find(s=>s.id==="base"),inC=(pr.cont||[]).includes(t.key);
+ let asm="";
+ if(sens.length&&inC){const fl=sens.filter(s=>s.flip);
+  const rows=sens.map(s=>`<tr><td>${esc(s.label)}</td><td>${base&&base.c[t.key]!=null?pct(base.c[t.key])+"%":"—"} → ${s.c[t.key]!=null?pct(s.c[t.key])+"%":"—"}</td><td>${s.flip?`<b class="bad">바뀜</b> → ${esc(teamName(s.top))}`:"그대로"}</td></tr>`).join("");
+  asm=`<details class="assume ${fl.length?"":"ok"}"><summary>${fl.length?`⚠ 이 추천 순위는 <b>${fl.map(s=>esc(s.label)).join(", ")}</b> 가정에 기댑니다 — 가정을 바꾸면 1위가 바뀝니다`:"✔ 주요 가정을 바꿔도 1위 유지"} · 규칙 보기</summary>
+   <table><tr><th>가정을 바꾸면</th><th>이 팀 클리어(기본 → 변경, ${rec.meta.runs.sens}판)</th><th>1위</th></tr>${rows}</table>
+   <div class="mut">반복 시뮬의 퍼짐(위 막대의 음영)과 규칙을 몰라서 생기는 불확실성(이 표)은 따로 봅니다. 적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정입니다.</div></details>`}
+ else asm=`<div class="assume" data-k="assume-generic">⚠ 클리어 확률은 「적 공격에도 ×1.85 피해식」·「전투 시작 때 쿨타임이 꽉 참」 가정에 크게 기댑니다(실측 전).</div>`;
+ const meta=`<div class="meta">표본 ${r.n}판(${man?"수동 정책":"오토"}) · 시드 ${rec.meta.seed} · 데이터 ${esc(rec.meta.patch)} · 규칙 ${esc(rec.meta.sv.rules)} · 엔진 ${esc(rec.meta.sv.engine)}${rec.meta.quick?" · 시험용 적은 판 수":""} · ${esc(SIM.idx.conditions)}</div>`;
+ return `<div class="forecast" data-state="ok"><div class="fhead"><b>전투 전망</b><span class="mchip ${man?"man":""}">${man?"수동 · 서순 기준":"오토 전투 기준"}</span>${t.keep?`<span class="mchip">보존 후보(${esc({sustain:"회복·보호막",defender:"디펜더",random:"무작위"}[t.keep]||t.keep)})</span>`:""}</div>${tiles}${notes.join("")}${asm}${meta}</div>`}
+function teamName(key){return key.split(",").map(k=>BYKEY[k]?BYKEY[k].name:k).join("·")}
+function seqTable(t,order){
+ const rec=t.rec;if(!rec||!rec.man||!rec.man.g)return `<div class="seq" data-state="none"><span class="mut">수동 결과가 없습니다.</span></div>`;
+ const M=rec.man,A=rec.auto,d=M.d||{};
+ const better=(d.c!=null&&d.c>=0.01)||(d.t!=null&&d.t<=-0.05);
+ const head=`<div class="seqhead"><b>수동 서순</b> — 처치 턴 ${fmtT(A.t)} → ${fmtT(M.t)}${d.t!=null&&Math.abs(d.t)>=0.05?`(${d.t<0?"−":"+"}${Math.abs(d.t).toFixed(1)})`:""} · 클리어 ${pct(A.c)}% → ${pct(M.c)}%${d.c!=null&&Math.abs(d.c)>=0.005?`(${d.c>0?"+":"−"}${Math.abs(pct(d.c))}%p)`:""}
+  ${better?"":`<span class="mut"><b>오토와 차이 없음 — 그대로 오토 권장</b></span>`}
+  <span class="mut">정책: 대상 = ${esc(POLTXT[M.pol[0]]||M.pol[0])} · 노바 버스트 = ${esc(POLTXT[M.pol[1]]||M.pol[1])} (정책 4종을 시험해 고름, 팀은 오토 기준으로 고정)</span>
+  <span class="mut">처치 턴 차는 클리어한 판끼리의 비교라 클리어 확률 차와 함께 보세요.</span></div>`;
+ if(!rec.seq)return `<div class="seq" data-state="noseq">${head}<span class="mut">서순은 순위 상위 3팀만 계산했습니다.</span></div>`;
+ const sq=rec.seq,nm=k=>BYKEY[k]?BYKEY[k].name:k;
+ const lbl={B:["●","기본"],S:["◆","특수"],U:["★","궁극"]},via={coop:"협공",forced_coop:"강제 협공",trigger:"발동",reaction:"반응",extra:"추가"};
+ const act=a=>`<div class="act${a.v?" sub":""}">${a.v?"↳ "+esc(via[a.v]||a.v)+" ":""}<span class="sk sk-${a.k}${a.nb?" nb":""}" title="${lbl[a.k][1]}기${a.nb?" + 노바 버스트":""}">${lbl[a.k][0]}<span class="sn"> ${lbl[a.k][1]}</span>${a.nb?" ✦":""}</span>${a.tg?`<span class="tgt" title="대상: ${esc(a.tg)}">→<span class="tn2"> ${esc(a.tg)}</span><span class="tn3">${esc(tgShort(a.tg))}</span></span>`:""}</div>`;
+ const rows=sq.rows.map(row=>{const nb=(row.nb||[]).map(([c,k])=>`<div class="nova">✦ 노바 4 → ${esc(nm(order[c]))} ${lbl[k][1]}기에 버스트</div>`).join("");
+  return `<div class="tl" role="rowheader">${row.t}턴</div>${nb}${row.c.map(cell=>`<div class="scell" role="cell">${cell.map(act).join("")||'<span class="mut">—</span>'}</div>`).join("")}`});
+ const firstNb=sq.rows.findIndex(r=>r.nb&&r.nb.length);const open=Math.max(3,firstNb>=0&&firstNb<6?firstNb+1:3);
+ const hd=order.map(k=>`<div class="hd" role="columnheader">${esc(nm(k))}</div>`).join("");
+ const vis=rows.slice(0,open).join(""),rest=rows.slice(open).join("");
+ const kind=sq.kind==="clear"?`대표 1판(클리어 판 중 처치 턴 ${fmtT(sq.ttk)} — 중앙값에 가장 가까운 판)`:`실패 예시(클리어한 판 없음, ${sq.kind==="wipe"?"전멸":"시간 초과"})`;
+ return `<div class="seq" data-state="ok">${head}<div class="mut" style="margin-bottom:4px">선택 정책의 ${kind} — 최적 순서가 아니라 예시입니다. 행 = 모델 기준 턴(속도 100 유닛이 한 번 행동하는 시간), 칸 = 위 카드 순서. ${sq.turns>12?`${sq.turns}턴 중 12턴까지만 표시.`:""}</div>
+  <div class="sgrid" role="table" aria-label="수동 서순">${hd}${vis}</div>${rest?`<details><summary>전체 서순 보기(총 ${Math.min(sq.turns,12)}턴)</summary><div class="sgrid" role="table">${rest}</div></details>`:""}</div>`}
+// 표시 모드의 결과(수동이면 수동 결과, 없으면 오토) — 비교할 때 양쪽에 같은 모드를 쓴다
+const resOf=x=>x&&x.rec?(MODE==="manual"&&x.rec.man&&x.rec.man.g?x.rec.man:x.rec.auto):null;
+// 모바일 서순 칸의 짧은 대상 표시(전체 이름은 title)
+const tgShort=tg=>tg==="전체"||tg==="보스"?tg:tg.startsWith("아군 ")?"아:"+tg.slice(3,5):tg.slice(0,3);
+function candList(p,list,mainKey,approxOnly){
+ const main=list.find(x=>x.key===mainKey),mr=resOf(main);
+ const rowOf=(x,i)=>{const r=resOf(x);
+  const faces=x.order.map(k=>BYKEY[k]?face(BYKEY[k]):"").join("");
+  const diff=r&&r.g&&mr&&mr.g&&x.key!==mainKey?`${dBadge(r.c-mr.c,"%p",false)||'<span class="mut">±0</span>'} ${r.t!=null&&mr.t!=null?dBadge(r.t-mr.t,"턴",true):""}`:"";
+  return `<tr data-key="${esc(x.key)}"${r&&r.g&&mr&&mr.g?` data-dc="${(r.c-mr.c).toFixed(4)}"`:""}><td>${i+1}</td><td><div class="faces" title="${esc(teamName(x.key))}">${faces}</div></td><td>${r&&r.g?`${pct(r.c)}% · ${fmtT(r.t)}턴`:r?'<span class="nochip">계산 불가</span>':'<span class="nochip">시뮬 없음</span>'} ${diff}</td><td class="mut">근사 ${x.rank!=null?x.rank+1+"위":"-"}${x.keep?" · 보존":""}</td><td>${x.key===mainKey?'<span class="mut">표시 중</span>':`<button type="button" data-pick="${p}" data-key="${esc(x.key)}">이 팀 보기</button>`}</td></tr>`};
+ const sim=list.filter(x=>x.rec),apx=approxOnly;
+ return `<details class="cands"><summary>다른 후보 ${sim.length+apx.length-1}팀 보기 (시뮬 평가 ${sim.length} · 미계산 근사 ${apx.length})</summary>
+  ${sim.length?`<div class="mut" style="margin-top:6px">시뮬로 평가한 후보(클리어 확률 → 처치 턴 순)</div><table>${sim.map(rowOf).join("")}</table>`:""}
+  ${apx.length?`<div class="mut" style="margin-top:6px">미계산 근사 후보 — 시뮬 결과가 없어 위 후보와 우열을 비교할 수 없습니다</div><table>${apx.map(rowOf).join("")}</table>`:""}</details>`}
+const PICK={};
+function buildCands(c,st,cands,defPen,ss,p,used){
+ const top=topParties(cands,defPen,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i}));
+ const seen=new Set(top.map(x=>ckey(x.combo)));
+ if(ss.state==="ok"){const kp=(ss.rec.parties[p-1]||{}).keep||[];const byK=Object.fromEntries(cands.map(x=>[x.s.key,x]));
+  for(const [k,kind] of kp){if(seen.has(k))continue;const m=k.split(",").map(x=>byK[x]);if(m.some(x=>!x))continue;seen.add(k);const [v,got]=teamValue(m,defPen);top.push({combo:m,v,got,rank:null,keep:kind})}}
+ return top.map(x=>{const key=ckey(x.combo),ar=arrangeOf(x.combo);let rec=null,why=null;
+  if(ss.state==="ok"){const tr=ss.rec.teams[key];if(!tr)why="none";else if(tr.o.join(",")!==ar.order.join(",")||tr.L!==ar.lead)why="mismatch";else rec=tr}
+  return Object.assign(x,{key,order:ar.order,lead:ar.lead,rec,why})})}
 function run(){
  const c=contents[$("content").value],st=cur&&cur[$("stage").value];
  if(!st){$("out").innerHTML='<div class="party">스테이지를 선택하세요.</div>';return}
  const own=new Set([...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));
  const have=[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);
  GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty)*(POWK>1?Math.max(0.1,1-(POWK-1)/CFG.power.boost):1);
+ const ss=stageSim(c,st),sid=c.key+"|"+st.tab+"|"+st.name;
  const used=new Set();let html="";const allParties=[];
  for(let p=1;p<=(c.parties||1);p++){
   const rsEl=(CFG.restrict[c.name]||{})[st.tab];
   const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
   if(cands.length<4){html+=`<div class="party">파티 ${p}: 후보가 4명 미만입니다.</div>`;break}
-  const [party,v,got]=bestParty(cands,defPen);party.forEach(x=>used.add(x.s.key));allParties.push(party);
+  const list=buildCands(c,st,cands,defPen,ss,p,used);
+  // 동점이면 지금 옵션(역상성 회피·전투력)으로 계산한 근사 점수 x.v (사전 계산과 같은 소수 3자리) — 사전 계산 값 rec.a 는 기본 옵션 점수라 쓰지 않음
+  const r3=v=>Math.round(v*1000)/1000;
+  const simmed=list.filter(x=>x.rec&&x.rec.auto).sort((x,y)=>cmpArr(gateKey(x.rec.auto,r3(x.v)),gateKey(y.rec.auto,r3(y.v)))||(x.key<y.key?-1:1));
+  // 「후보 전부 0판」은 지금 보이는 시뮬 후보·표시 모드로 다시 판단
+  const zr=simmed.map(resOf).filter(r=>r&&r.g),zeroAll=zr.length&&zr.every(r=>r.c===0)?zr.length:0;
+  if(p===1)PN.last={mode:MODE,simmed:simmed.map(x=>({key:x.key,v:x.v,a:x.rec.a,auto:x.rec.auto}))};
+  const approxOnly=list.filter(x=>!(x.rec&&x.rec.auto)).sort((x,y)=>(x.rank??99)-(y.rank??99));
+  const forced=PICK[sid+"|"+p]&&list.find(x=>x.key===PICK[sid+"|"+p]);
+  const pick=forced||simmed[0]||approxOnly[0];pick.isPick=!forced;pick.zeroAll=pick.rec?zeroAll:0;
+  const party=pick.combo;party.forEach(x=>used.add(x.s.key));allParties.push(party);
+  const v=pick.v,got=pick.got;
   const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
   const br=pickBreak(party,c.name,have);
-  html+=`<div class="party"><div class="phead"><b>파티 ${p}</b><span class="mut why2">점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10(장비 제외 상대 비교) · 인게임 편성 순서(왼쪽부터)</span></div>${pairNotes(party)}${leadNote(LD)}${gimNote(party)}${synSummary(party)}
+  const r=pick.rec?(MODE==="manual"&&pick.rec.man&&pick.rec.man.g?pick.rec.man:pick.rec.auto):null;
+  const apx1=approxOnly.find(x=>x.rank===0);
+  const apxBox=ss.state==="ok"&&apx1&&apx1.key!==pick.key&&simmed.length?`<div class="approxbox" data-k="approx-top">근사 점수 1위 팀은 시뮬 결과가 없습니다: <b>${esc(teamName(apx1.key))}</b> <span class="nochip">시뮬 없음</span> <button type="button" class="sec" data-pick="${p}" data-key="${esc(apx1.key)}">이 팀 보기</button><div class="mut">위 추천은 「시뮬로 평가한 후보 중」 1위입니다. 두 팀의 우열은 비교할 수 없습니다.</div></div>`:"";
+  const seq=MODE==="manual"&&pick.rec?seqTable(pick,[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key)):"";
+  html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}"><div class="phead"><b>파티 ${p}</b><span class="ordernote">인게임 편성 순서(왼쪽부터) <span class="why2">· 근사 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10(장비 제외 상대 비교)</span></span></div>
+   ${forecast(c,st,ss,pick,p,party)}${apxBox}${pairNotes(party)}${leadNote(LD)}${gimNote(party)}${synSummary(party)}
    <div class="teamtags">${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
-   <div class="rowcards">${card(bk[0],"back",alt(bk[0]))}${card(fr[0],"front",alt(fr[0]))}${card(fr[1],"front",alt(fr[1]))}${card(bk[1],"back",alt(bk[1]))}</div>${breakCard(br)}</div>`}
+   <div class="rowcards">${card(bk[0],"back",alt(bk[0]),r)}${card(fr[0],"front",alt(fr[0]),r)}${card(fr[1],"front",alt(fr[1]),r)}${card(bk[1],"back",alt(bk[1]),r)}</div>${seq}${list.length>1?candList(p,simmed,pick.key,approxOnly):""}${breakCard(br)}</div>`}
  const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
- if(tl.length){const byKey=Object.fromEntries(R.map(s=>[s.key,s]));const gcodes=new Set(GIMACT.map(g=>g[0]));
+ if(tl.length){const byKey=BYKEY;const gcodes=new Set(GIMACT.map(g=>g[0]));
   html+=`<div class="party"><b>다른 전략</b> <span class="mut">(커뮤니티 편성, 보유 시 참고 · 위 추천과 별개)</span><div class="arch">${tl.map(([k,t])=>{
    const bad=(t.badGimmicks||[]).filter(c=>gcodes.has(c)).map(c=>D.grules[c]?D.grules[c].name:c);
    const dsc=t.fixed?`<span class="mut">화력 지표 ${dmgScore(t.fixed,DMW[0]).toFixed(1)}/10</span> `:"";const comp=dsc+(bad.length?`<span class="bad">✘ 이 스테이지 기믹과 상충: ${bad.map(esc).join(", ")}</span>`:`<span class="good">✔ 이 스테이지 기믹과 상충하는 것 없음(추정)</span>`);
    const faces=(t.fixed||[]).map(f=>byKey[f]?`<span class="archf">${face(byKey[f])}<small>${esc(byKey[f].name)}</small></span>`:"").join("");
    return `<div class="archc"><b>${esc(k)}</b> ${comp}<div class="archfs">${faces}</div><div>${esc(t.desc)}</div><div class="mut">잘 맞는 곳: ${esc(t.goodFor||"-")}${t.note?" · "+esc(t.note):""} · 출처 ${esc(t.source||"")}</div></div>`}).join("")}</div></div>`}
  $("out").innerHTML=html;if(window.onParties)onParties(allParties)}
+$("out").addEventListener("click",e=>{const b=e.target.closest("button[data-pick]");if(!b)return;const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st)return;
+ PICK[c.key+"|"+st.tab+"|"+st.name+"|"+b.dataset.pick]=b.dataset.key;run();const el=document.querySelector(`.party[data-party="${b.dataset.pick}"]`);if(el)el.scrollIntoView({block:"start"})});
+function setMode(m,push){MODE=m==="manual"?"manual":"auto";$("m-"+MODE).checked=true;LS.set("mode",MODE);
+ if(push){const u=new URL(location.href);if(MODE==="manual")u.searchParams.set("mode","manual");else u.searchParams.delete("mode");history.replaceState(null,"",u)}}
+document.querySelectorAll('input[name="mode"]').forEach(x=>x.addEventListener("change",()=>{setMode(x.value,true);run()}));
+// 테스트·디버그용(E2E 가 파이썬 top_parties 와 대조)
+Object.assign(window.PN,{topKeys(ownKeys,k){const c=contents[$("content").value],st=cur[$("stage").value];const own=new Set(ownKeys);GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];
+ const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty);const rsEl=(CFG.restrict[c.name]||{})[st.tab];
+ const cands=R.filter(s=>own.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
+ return topParties(cands,defPen,k).map(x=>({key:ckey(x.combo),v:x.v}))},sim:SIM,mode:()=>MODE});
 renderOwn();
-const LS={get(k){try{return JSON.parse(localStorage.getItem("pn."+k))}catch(e){return null}},set(k,v){try{localStorage.setItem("pn."+k,JSON.stringify(v))}catch(e){}}};
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b));$("saved").textContent="선택은 이 브라우저에 자동 저장됩니다"}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  if(Array.isArray(o)){const s=new Set(o);document.querySelectorAll("#own input").forEach(x=>x.checked=s.has(x.dataset.k))}
@@ -333,7 +524,7 @@ $("showwhy").onchange=()=>setWhy($("showwhy").checked);setWhy(!!LS.get("why"));
 let _rt=null;const rerun=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
 function updCount(){const n=document.querySelectorAll("#own input:checked").length;$("dcount").textContent=n===R.length?"전체":n+"/"+R.length}
 document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk"))){saveSel();updCount();rerun()}});
-const setDrawer=o=>{$("drawer").classList.toggle("open",o);$("dback").classList.toggle("on",o)};
+const setDrawer=o=>{$("drawer").classList.toggle("open",o);$("dback").classList.toggle("on",o);document.body.classList.toggle("noscroll",o);$("dbtn").setAttribute("aria-expanded",o?"true":"false");if(o)$("dclose").focus()};
 $("dbtn").onclick=()=>setDrawer(!$("drawer").classList.contains("open"));$("dclose").onclick=()=>setDrawer(false);$("dback").onclick=()=>setDrawer(false);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")setDrawer(false)});
 $("all").addEventListener("click",()=>{saveSel();updCount();rerun()});$("none").addEventListener("click",()=>{saveSel();updCount();rerun()});
@@ -342,7 +533,7 @@ $("glegend").innerHTML=[[1,"부여→소비"],[2,"버프증폭"],[3,"생존연�
 $("gcenter").innerHTML=R.map(s=>`<option value="${esc(s.key)}">${esc(s.name)} (${esc(s.sub)})</option>`).join("");
 let cy=null,lastParties=[];
 function graphData(){
- const mode=$("gmode").value,min=+$("gmin").value,cf=$("gconf").value,byKey=Object.fromEntries(R.map(s=>[s.key,s]));
+ const mode=$("gmode").value,min=+$("gmin").value,cf=$("gconf").value,byKey=BYKEY;
  let ps=D.syn.filter(p=>p.s>=min&&(!cf||p.c===cf||p.c==="사용자")&&byKey[p.a]&&byKey[p.b]);
  const pk=new Set(lastParties.flat().map(x=>x.s.key));
  if(mode==="party"){const grp=lastParties.map(p=>new Set(p.map(x=>x.s.key)));ps=ps.filter(p=>grp.some(g=>g.has(p.a)&&g.has(p.b)));
@@ -358,7 +549,7 @@ function drawGraph(){
  const {nodes,edges,center}=graphData();$("gcw").style.display=$("gmode").value==="center"?"":"none";
  if(cy)cy.destroy();
  cy=cytoscape({container:el,elements:[...nodes,...edges],minZoom:.3,maxZoom:2.5,wheelSensitivity:.25,
-  style:[{selector:"node",style:{width:46,height:46,label:"data(label)","font-size":11,color:"#9aa4b5","text-valign":"bottom","text-margin-y":4,"background-color":"#2c3446","background-image":"data(img)","background-fit":"cover","background-clip":"node","border-width":3,"border-color":"data(c)"}},
+  style:[{selector:"node",style:{width:46,height:46,label:"data(label)","font-size":12,color:"#c3cada","text-valign":"bottom","text-margin-y":4,"text-background-color":"#141820","text-background-opacity":.7,"text-background-padding":2,"background-color":"#2c3446","background-image":"data(img)","background-fit":"cover","background-clip":"node","border-width":3,"border-color":"data(c)"}},
    {selector:"node[inparty = 1]",style:{"border-width":5,"border-color":"#ffd24a"}},{selector:"node[center = 1]",style:{width:72,height:72,"border-width":6}},
    {selector:"edge",style:{width:"data(w)","line-color":"data(col)","target-arrow-color":"data(col)","target-arrow-shape":"data(dir)","curve-style":"bezier",opacity:.75,"arrow-scale":1.2}},
    {selector:".dim",style:{opacity:.12}},{selector:"edge:selected",style:{opacity:1,"overlay-opacity":.15}}],
@@ -369,5 +560,7 @@ function drawGraph(){
  cy.on("tap",e=>{if(e.target===cy){cy.elements().removeClass("dim");$("cyinfo").textContent="선이나 구원자를 눌러 보세요."}})}
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=drawGraph);
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
+{const qs=new URLSearchParams(location.search);setMode(qs.get("mode")==="manual"?"manual":qs.get("mode")==="auto"?"auto":(LS.get("mode")==="manual"?"manual":"auto"),false)}
 {const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
+simLoadIndex().then(()=>{simFile(contents[$("content").value].key);run()});
 </script></body></html>

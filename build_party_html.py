@@ -115,14 +115,17 @@ def main():
            for p in pr.load_synergy()]
     data = json.dumps({"roster": r, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn,
                        "pen": pr._json(pr.POW)["pen"], "tribe": pr._json(pr.POW)["tribe"],
-                       "grules": grules["types"], "gim": pr._json(pr.GSTAGE), "dmg": pr._json(pr.DMG)}, ensure_ascii=False, separators=(",", ":"))
+                       "grules": grules["types"], "gim": pr._json(pr.GSTAGE), "dmg": pr._json(pr.DMG),
+                       "selver": pr.selection_version()}, ensure_ascii=False, separators=(",", ":"))
     html = open(os.path.join(pr.HERE, "party_template.html"), encoding="utf-8").read()
     assert html.count("/*DATA*/null") == 1
-    html = html.replace("/*DATA*/null", data.replace("</", "<\/"))
+    html = html.replace("/*DATA*/null", data.replace("</", "<\\/"))
     out = sys.argv[1] if len(sys.argv) > 1 else OUT_DEFAULT
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
-    with open(out, "w", encoding="utf-8", newline="\n") as f:
+    tmp = out + ".tmp"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
         f.write(html)
+    os.replace(tmp, out)
     print(out, len(html) // 1024, "KB")
 
 

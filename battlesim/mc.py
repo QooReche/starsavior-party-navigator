@@ -252,6 +252,7 @@ class Unit:
         self.healed = 0.0
         self.shield_given = 0.0
         self.death_t = None
+        self.nova = 0.0          # 개인 노바 포스(nova_pool='unit' 일 때만 씀)
         self._m = None
 
     # ---- 버프 합산(캐시: 효과가 바뀌면 b.dirty())
@@ -762,7 +763,7 @@ class Battle:
         return pool[:k or 1]
 
     # ---------- 시전
-    def cast(self, u, sk, extra=False, target=None, skip_lines=False):
+    def cast(self, u, sk, extra=False, target=None, skip_lines=False, via=None):
         if u.dead:
             return None
         if self.incapacitated(u):
@@ -779,14 +780,18 @@ class Battle:
             if not extra and sk.cd:
                 u.cd[sk.slot] = sk.cd
             if (u.side == 0 and self.opts['nova'] and self.opts['nova_policy'] == 'manual' and not extra and sk.is_attack
-                    and self.team_nova >= 4):
-                self.team_nova -= 4
+                    and self.nova_of(u) >= 4 and (self.mc['manual_burst'] == 'any_attack' or sk.slot == '궁극기')):
+                self.nova_add(u, -4)
                 ctx.inc += 0.15
                 ctx.nb = True
             ctx.targets = self.skill_targets(u, sk, target)
             ctx.target = ctx.targets[0] if ctx.targets else None
-            self.log(actor=u.name, side=u.side, skill=sk.slot + ('(추가)' if extra else ''),
-                     targets=[x.name for x in ctx.targets])
+            if self.timeline is not None:
+                t0 = ctx.targets[0] if ctx.targets else None
+                self.log(actor=u.name, side=u.side, pos=u.pos, skill=sk.slot + ('(추가)' if extra else ''),
+                         targets=[x.name for x in ctx.targets], via=via or ('extra' if extra else None), nb=ctx.nb,
+                         all=bool(sk.all), tgt_side=(t0.side if t0 is not None else None),
+                         tgt_boss=bool(t0 is not None and getattr(t0.d, 'boss', False)))
             if not skip_lines:
                 self.run_own(u, ctx, 'own_pre')
                 self.fire_side(u, ctx, 'ally_pre')
@@ -801,7 +806,7 @@ class Battle:
                 self.fire_side(u, ctx, 'ally_post')
                 self.fire_foes(u, ctx, 'foe_post' if sk.is_attack else 'foe_post_na')
             if u.side == 0 and not extra and sk.slot in ('특수기', '궁극기'):
-                self.team_nova += sk.nv
+                self.nova_add(u, sk.nv)
             if u.side == 0 and self.opts['coop'] and sk.is_attack and not extra and not u.dead:
                 self.coop(u, ctx)
             if u.side == 0 and sk.is_attack and not extra:
@@ -810,6 +815,16 @@ class Battle:
             return ctx
         finally:
             self.depth -= 1
+
+    def nova_of(self, u):
+        """버스트 판정용 노바 포스: team = 파티 공용 풀, unit = 구원자 개인(opts.nova_pool)"""
+        return u.nova if self.opts['nova_pool'] == 'unit' else self.team_nova
+
+    def nova_add(self, u, v):
+        if self.opts['nova_pool'] == 'unit':
+            u.nova += v
+        else:
+            self.team_nova += v
 
     def incapacitated(self, u):
         """행동 불능(기절·수면). 강인도 격파는 브레이크 미구현(P5)이라 없음."""
@@ -894,7 +909,7 @@ class Battle:
                 cands.append((b, p))
         for b, p in sorted(cands, key=lambda bp: (-bp[1], bp[0].pos)):
             if self.rng.random() < p:
-                self.cast(b, b.d.skills['기본기'], extra=True, target=self._coop_target(ctx))
+                self.cast(b, b.d.skills['기본기'], extra=True, target=self._coop_target(ctx), via='coop')
                 return
 
     def _coop_target(self, ctx):
@@ -912,7 +927,7 @@ class Battle:
                 sk2 = b.d.trigger_skills['특수기']
                 b.eff.pop('냉각', None)
                 self.dirty(b)
-                self.cast(b, sk2, extra=True, skip_lines=True, target=ctx.target)
+                self.cast(b, sk2, extra=True, skip_lines=True, target=ctx.target, via='trigger')
                 b.gauge = min(10000.0, b.gauge + 1500)
 
     # ---------- 피해
@@ -1118,7 +1133,7 @@ class Battle:
             oath = v.eff.get('사랑의 서약(해제불가)')
             if oath is None or oath.src is not w or w.cd.get('특수기', 0) > 0:
                 continue
-            ctx = self.cast(w, ts, extra=True, target=v)
+            ctx = self.cast(w, ts, extra=True, target=v, via='reaction')
             w.cd['특수기'] = ts.cd or 0
             if ctx is not None:
                 ctx.targets = [v]
@@ -1727,7 +1742,7 @@ class Battle:
         pool.sort(key=lambda x: (-self.live_atk(x), -x.d.stats['atk'], x.pos))
         for x in pool[:n]:
             ctx.coop_used = True
-            self.cast(x, x.d.skills['기본기'], extra=True, target=ctx.target)
+            self.cast(x, x.d.skills['기본기'], extra=True, target=ctx.target, via='forced_coop')
 
 
 # ------------------------------------------------------------------ 지원성 검사

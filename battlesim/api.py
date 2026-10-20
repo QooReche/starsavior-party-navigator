@@ -13,7 +13,10 @@ encounter_spec
   선택: "turn_limit"(스테이지 lt 를 덮어씀), "stage_fx"(문장 목록, 스테이지 fx 를 덮어씀), "max_turns"(턴 제한 없을 때 시간 상한, 50)
 options
   {"seed": 1, "n_runs": 100, "rules_override": {mc·opts 키: 값}, "nova_policy": "auto"|"manual", "timeline": false,
-   "enemy_lines": true}
+   "enemy_lines": true, "run_offset": 0, "per_run": false, "formula_override": {"COOP_CAP": 1.0}}
+  run_offset = 판 번호 시작값(판 r 의 난수 = seed*1000003 + run_offset + r; timeline 은 첫 판 = run_offset 번 판)
+  per_run = true 면 result.runs = [[결과, 처치 턴 또는 null], ...](판 순서)
+  formula_override = 공식 상수 임시 교체(민감도용, 지금은 COOP_CAP 만). 실행이 끝나면 원래 값으로 돌린다
 result
   {schema_version, outcome{clear_p, wipe_p, timeout_p, ci95{...}, n_runs, n_clear, ttk_median, ttk_p10_p90, ttk_basis},
    per_unit{이름#칸: {dmg_share, dmg, dmg_taken, heal, shield, death_p, death_turn_median, first_death_p, actions}},
@@ -24,6 +27,7 @@ import statistics
 import time
 from collections import defaultdict
 
+from . import rules as _rules
 from .mc import Battle, EventLimitError, support_report
 from .rules import DEFAULT_OPTS, MC_OPTS, MC_RULES, RULES
 from .starsavior.data import _find_key, get_db
@@ -165,6 +169,21 @@ def simulate(party_spec, encounter_spec, options=None):
     unknown_keys = [k for k in over if k not in MC_OPTS and k not in DEFAULT_OPTS]
     if unknown_keys:
         raise ValueError('모르는 규칙 키: %s' % ', '.join(unknown_keys))
+    fo = dict(o.get('formula_override') or {})
+    bad = [k for k in fo if k not in ('COOP_CAP',)]
+    if bad:
+        raise ValueError('바꿀 수 없는 공식 상수: %s' % ', '.join(bad))
+    saved = {k: getattr(_rules, k) for k in fo}
+    try:
+        for k, v in fo.items():
+            setattr(_rules, k, v)
+        return _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts)
+    finally:
+        for k, v in saved.items():
+            setattr(_rules, k, v)
+
+
+def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     db = get_db()
     defs, leader = _norm_party(party_spec, db, o.get('stat_mode', 'fixed'))
     if not defs:
@@ -181,9 +200,11 @@ def simulate(party_spec, encounter_spec, options=None):
     runs_affected = 0
     timeline = None
     first = defaultdict(int)
+    offset = int(o.get('run_offset', 0))
+    per_run = [] if o.get('per_run') else None
     t0 = time.perf_counter()
     for r in range(n_runs):
-        rng = random.Random(seed * 1000003 + r)
+        rng = random.Random(seed * 1000003 + offset + r)
         b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {},
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
                    enemy_lines=o.get('enemy_lines', True), max_turns=max_turns)
@@ -191,6 +212,8 @@ def simulate(party_spec, encounter_spec, options=None):
         outcomes[b.result] += 1
         if b.result == 'clear':
             ttk.append(b.clear_t / b.turn_ticks)
+        if per_run is not None:
+            per_run.append([b.result, round(b.clear_t / b.turn_ticks, 3) if b.result == 'clear' else None])
         tot = sum(u.dmg for u in b.allies) or 1.0
         for i, u in enumerate(b.allies):
             a = agg[names[i]]
@@ -251,6 +274,9 @@ def simulate(party_spec, encounter_spec, options=None):
     )
     if timeline is not None:
         res['timeline'] = timeline
+    if per_run is not None:
+        res['runs'] = per_run
+        res['run_offset'] = offset
     return res
 
 

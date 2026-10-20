@@ -275,7 +275,8 @@ def leader_pick(party, cfg, tags):
     return next(x for x in party if x["s"]["key"] == k), gain[k], why[k][:2]
 
 
-def best_party(cands, cfg, tags, def_pen, size=4):
+def party_pool(cands, cfg, tags):
+    """조합을 만들 후보 풀: 개인 점수 상위 14 + 시너지 쌍 구성원 + 연계가 큰 후보 최대 4"""
     pool = sorted(cands, key=lambda x: -x["score"])[:14]
     for pr_ in cfg.get("pairs", []):  # 시너지 쌍의 구성원은 점수가 낮아도 후보에 넣는다
         pool += [x for x in cands if x["s"]["key"] in pr_["keys"] and x not in pool]
@@ -289,12 +290,26 @@ def best_party(cands, cfg, tags, def_pen, size=4):
         if sy >= 4:
             extra.append((sy, x))
     pool += [x for _, x in sorted(extra, key=lambda e: -e[0])[:4]]
-    best, best_v, best_tags = None, -1e9, set()
-    for combo in itertools.combinations(pool, size):
+    return pool
+
+
+def top_parties(cands, cfg, tags, def_pen, k=10, size=4):
+    """근사 점수 상위 k 팀 [(combo, 점수, 팀 태그)]. 같은 점수면 조합을 만든 순서(앞선 것 먼저).
+    웹 JS(party_template.html 의 topParties)와 같은 규칙 — 한쪽을 고치면 다른 쪽도 고칠 것."""
+    pool = party_pool(cands, cfg, tags)
+    scored = []
+    for i, combo in enumerate(itertools.combinations(pool, size)):
         v, got = team_value(combo, cfg, tags, def_pen)
-        if v > best_v:
-            best, best_v, best_tags = combo, v, got
-    return best, best_v, best_tags
+        scored.append((-v, i, combo, got))
+    scored.sort(key=lambda e: (e[0], e[1]))
+    return [(c, -nv, got) for nv, _, c, got in scored[:k]]
+
+
+def best_party(cands, cfg, tags, def_pen, size=4):
+    top = top_parties(cands, cfg, tags, def_pen, 1, size)
+    if not top:
+        return None, -1e9, set()
+    return top[0]
 
 
 def place(party):
@@ -367,11 +382,42 @@ def stage_enemies(st):
     return out
 
 
+def set_stage(foe_key, tab, st, boss, cfg):
+    """웹 JS run() 과 같은 스테이지 문맥(기믹·시즌 보너스·화력 가중, 전투력 보정 없음)을 전역에 잡는다.
+    foe_key = foe_stages.json 콘텐츠 키(op·cosmo 등), boss = 보스 콘텐츠(코스모·플래시) 여부."""
+    _POWK[0] = 1.0
+    _MM[0] = None
+    _GIM[0] = stage_gimmicks(f"{foe_key}|{tab}|{st['name']}", cfg)
+    _SB[0] = (st.get("season_bonus_latest") or {}).get("bonuses", [])
+    _DM[0] = min(1.0, (st["enemy_total"] - 1) / 2)
+    _DM[1] = cfg["damage"]["weightBoss"] if boss else cfg["damage"]["weightMob"]
+
+
+SELECTION_FILES = ("savior_reco.json", "db_tier.json", "synergy_tags.json", "synergy_pairs.json", "synergy_overrides.json",
+                   "gimmick_rules.json", "stage_gimmicks.json", "damage_index.json", "foe_stages.json", "kinds.json")
+
+
+def selection_version():
+    """추천 후보를 정하는 입력(data/*.json + party_contents.json)의 내용 해시 12자리. 줄바꿈·공백 차이는 무시(JSON 정규화).
+    웹 페이지(D.selver)와 시뮬 결과(data/sim/index.json)가 같아야 결과를 보여 준다."""
+    import hashlib
+    h = hashlib.sha1()
+    for p in [os.path.join(DATA, f) for f in SELECTION_FILES] + [CONT]:
+        h.update(os.path.basename(p).encode())
+        h.update(json.dumps(_json(p), ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+    return h.hexdigest()[:12]
+
+
 def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=None, power=None):
     roster, growth, mains, cfg, tags = load()
     c = cfg["contents"][content]
     enemies = c.get("enemies", [])
     note = c.get("note", "")
+    if boss and boss not in c.get("bosses", {}):
+        # 보스 표가 없는 콘텐츠(플래시 포인트 등)는 보스 이름을 스테이지 검색어로 쓴다(이전: KeyError 'bosses')
+        if not stage:
+            stage = boss
+        boss = None
     if boss:
         b = c["bosses"][boss]
         enemies, note = b["enemies"], f'{boss}: {EL[b["enemies"][0]]} {b["role"]} {b["atk"]} {b.get("note", "")}'

@@ -88,6 +88,7 @@
   "stage_fx_target": {"value": "enemies", "grade": "assumed", "note": "스테이지 효과(fx: 받는 피해 -15% 등)는 그 스테이지의 적에게 적용"},
   "evade_model": {"value": "rate_minus_acc", "alt": ["off"], "grade": "assumed", "note": "회피 확률 = 대상 회피율(〈회피율 증가〉 +50% 등) - 공격자 명중률 보정(〈명중률 감소〉 -30% 면 +30%p), 공격자가 〈필중〉이면 0. 기본 회피율은 0(데이터 없음). 회피하면 치명 없음·감소 합 +50%(databook #d-sum)·약화 안 걸림(공식 2026-06-04). 반격·선제 방어는 미지원(기본 확률 데이터 없음)"},
   "wave_carry": {"value": "keep", "grade": "assumed", "note": "웨이브 전환 시 아군 HP·버프·게이지·쿨타임 유지, 새 적은 게이지 0. 아군 「웨이브 시작 시」 줄은 매 웨이브, 「전투 시작 시」는 처음 한 번"},
-  "heal_target": {"value": "lowest_hp_ratio", "grade": "assumed", "note": "「아군 1명(자동 지정)」·아군 단일 대상 회복/보호막/부활 스킬의 대상 = 생명력 비율이 가장 낮은 아군(부활은 쓰러진 아군), 그 밖의 아군 단일 버프 = 공격력이 가장 높은 아군(기대값 엔진과 같음)"}
+  "heal_target": {"value": "lowest_hp_ratio", "grade": "assumed", "note": "「아군 1명(자동 지정)」·아군 단일 대상 회복/보호막/부활 스킬의 대상 = 생명력 비율이 가장 낮은 아군(부활은 쓰러진 아군), 그 밖의 아군 단일 버프 = 공격력이 가장 높은 아군(기대값 엔진과 같음)"},
+  "manual_burst": {"value": "any_attack", "alt": ["ult_only"], "grade": "assumed", "note": "수동(nova_policy=manual)일 때 노바 버스트를 쓰는 스킬: any_attack = 노바 4개가 모이면 다음 공격 스킬(기본기 포함) / ult_only = 궁극기에만. 오토(nova_policy=auto)에서는 버스트가 없어 영향 없음. P4 수동 정책 탐색(tools/build_sim_results.py)이 둘 다 시험한다", "source": "설계 4-1절(수동 서순), P4 상세"}
  }
 }
