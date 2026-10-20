@@ -11,7 +11,7 @@
 - 결과·근거 = `docs/redesign_v1.md` 「2단계 결과」. 브라우저 시뮬(Pyodide `sim_worker.js` + `sim/manifest.json`), 구원자별 전투력·개화 입력, 빠른 계산 재보정(육성 가정 표본 `tools/gen_quick_calib.py` → `tools/calibrate_quick.py --write`, 콘텐츠별 계수 `pc`), 화면 테마.
 - **게임 업데이트 때**: `python -X utf8 -I tools/update.py` 하나면 빠른 계산 재료·시뮬 파일 목록까지 다시 만든다. 엔진(`battlesim/*.py`)을 고치면 `tools/build_simpack.py` 도. 계수를 다시 맞추려면 `gen_quick_calib.py`(6분) → `calibrate_quick.py --write`.
 - 시험: `tests/quick_test.py`, `tests/e2e/test_page.py`(20개, 브라우저 시뮬 시험은 인터넷 필요), 엔진 시험들.
-- 다음 후보: 휴대폰 실기 확인(메모리·속도), 인게임 관찰이 생기면 ×1.85·시작 쿨타임 반영, 수동 서순을 브라우저 시뮬로(지금은 옛 사전 계산에만 있음).
+- **남은 일 전체 = `docs/BACKLOG.md`**(정확도·기능·확인·정리, 규모·추천 순서 포함).
 
 ## ▶ 재설계 1단계 완료 (2026-10-20 밤) — 이전 기록
 - 설계·결과 = `docs/redesign_v1.md` 맨 위(확정 사항·codex 상담 반영·1단계 결과·한계).
