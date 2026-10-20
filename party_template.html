@@ -36,6 +36,8 @@ body:not(.show-why) .teamtags,body:not(.show-why) .why2,body:not(.show-why) #gra
 .whytoggle{display:flex;align-items:center;gap:6px;flex-direction:row!important;color:var(--fg)!important;font-size:13px!important;padding-bottom:6px}
 .gimnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid #c0507a;background:var(--bg)}
 body:not(.show-why) .gimnote{display:none}
+.arch{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin-top:8px}.archc{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);font-size:13px}
+.archfs{display:flex;gap:8px;margin:6px 0}.archf{display:flex;flex-direction:column;align-items:center;font-size:11px;color:var(--mut)}.archf .face{width:44px;height:44px}
 .pairnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid var(--acc);background:var(--bg)}
 .own{columns:auto!important;display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
 .tile{position:relative;display:block!important;cursor:pointer}
@@ -308,7 +310,12 @@ function run(){
    <div class="teamtags">${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
    <div class="rowcards">${card(bk[0],"back",alt(bk[0]))}${card(fr[0],"front",alt(fr[0]))}${card(fr[1],"front",alt(fr[1]))}${card(bk[1],"back",alt(bk[1]))}</div>${breakCard(br)}</div>`}
  const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
- if(tl.length)html+=`<div class="party"><b>뉴비 편성 유형</b> <span class="mut">(커뮤니티 공략 기준, 보유 시 참고)</span><ul>${tl.map(([k,t])=>`<li><b>${esc(k)}</b>: ${esc(t.desc)}</li>`).join("")}</ul></div>`;
+ if(tl.length){const byKey=Object.fromEntries(R.map(s=>[s.key,s]));const gcodes=new Set(GIMACT.map(g=>g[0]));
+  html+=`<div class="party"><b>다른 전략</b> <span class="mut">(커뮤니티 편성, 보유 시 참고 · 위 추천과 별개)</span><div class="arch">${tl.map(([k,t])=>{
+   const bad=(t.badGimmicks||[]).filter(c=>gcodes.has(c)).map(c=>D.grules[c]?D.grules[c].name:c);
+   const comp=bad.length?`<span class="bad">✘ 이 스테이지 기믹과 상충: ${bad.map(esc).join(", ")}</span>`:`<span class="good">✔ 이 스테이지 기믹과 상충하는 것 없음(추정)</span>`;
+   const faces=(t.fixed||[]).map(f=>byKey[f]?`<span class="archf">${face(byKey[f])}<small>${esc(byKey[f].name)}</small></span>`:"").join("");
+   return `<div class="archc"><b>${esc(k)}</b> ${comp}<div class="archfs">${faces}</div><div>${esc(t.desc)}</div><div class="mut">잘 맞는 곳: ${esc(t.goodFor||"-")}${t.note?" · "+esc(t.note):""} · 출처 ${esc(t.source||"")}</div></div>`}).join("")}</div></div>`}
  $("out").innerHTML=html;if(window.onParties)onParties(allParties)}
 renderOwn();
 const LS={get(k){try{return JSON.parse(localStorage.getItem("pn."+k))}catch(e){return null}},set(k,v){try{localStorage.setItem("pn."+k,JSON.stringify(v))}catch(e){}}};
