@@ -23,6 +23,9 @@ def files():
 
 def main():
     fs = files()
+    # GitHub Pages(Jekyll)는 _ 로 시작하는 파일(__init__.py)을 숨긴다 -> 저장소 루트 .nojekyll 필수(2026-10-20 라이브에서 404 로 확인)
+    if any(os.path.basename(p).startswith('_') for p in fs) and not os.path.exists(os.path.join(ROOT, '.nojekyll')):
+        raise SystemExit('.nojekyll 이 없으면 Pages 가 __init__.py 를 404 로 낸다 — 저장소 루트에 빈 .nojekyll 을 만드세요')
     h = hashlib.sha256()
     sizes = 0
     for p in fs:
