@@ -433,13 +433,14 @@ class Ctx:
     __slots__ = ('owner', 'src', 'skill', 'extra', 'targets', 'target', 'inc', 'atkp', 'cr', 'cd', 'pen', 'eh', 'crit',
                  'kill', 'coop_used', 'heal_give', 'heal_recv', 'local', 'nb', 'hit_victim', 'acc', 'evaded', 'recv_by',
                  'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets',
-                 'crit_targets', 'break_targets', 'markers', 'dead_targets')
+                 'crit_targets', 'break_targets', 'markers', 'dead_targets', 'tough_targets')
 
     def __init__(self, owner, src, skill, extra=False):
         self.owner, self.src, self.skill, self.extra = owner, src, skill, extra
         self.via, self.parent = None, None
         self.hit_targets = []    # 실제 피해 처리한 개체: 사망/회피도 포함, 다단 히트는 한 명
         self.crit_targets, self.break_targets = set(), set()
+        self.tough_targets = set()  # video: 시전·대상당 1회. 추가 발동은 별도 Ctx.
         self.markers = {}
         self.dead_targets = set()
         self.targets, self.target = [], None
@@ -1413,11 +1414,19 @@ class Battle:
         reactions.append((v, hctx))
 
     def tough_hit(self, a, v, ctx):
-        """강인도 피해(타격마다, 대상마다): 스킬 ab + 「강인도 피해 +N」(버프·이번 스킬) — 상성 불리면 0, 유리하면 +1(이 값이 0보다 클 때만,
-        mc.toughness_elem) — 에 「강인도 고정 피해 +N」(상성과 무관, assumed)을 더한다. 기본기는 데이터 ab 가 없어 mc.basic_tough(기본 0).
-        강인도가 0 이 되면 브레이크: 행동 게이지 0, 감소 합 −15%p, 협공·반응·트리거 불가. 〈강인도 피해 무효〉면 0."""
+        """video: 구원자 공격 시전·대상당 ab + 상성 기본값 + 강인도 보정 + 버스트 1.
+        기본값은 유리/동일 1, 그 외 0(동일은 ChgzulK7VI4 헤이디 관측으로 추론).
+        협공 0, 추가 발동은 별도 시전. 적 공격은 미측정이므로 종전 db를 유지한다.
+        db/on/off는 종전 타격별 계산을 보존. 상세 근거·미확인 범위는 규칙 파일 참조.
+        〈강인도 피해 무효〉·회피·스킬 피해 무효는 강인도를 깎지 않는다."""
         if v.broken or v.sa_max <= 0 or v.has('강인도 피해 무효'):
             return
+        mode = self.mc['toughness_elem']
+        video = mode == 'video' and a.side == 0
+        if video:
+            if not ctx.skill.is_attack or ctx.via in ('coop', 'forced_coop') or v in ctx.tough_targets:
+                return
+            ctx.tough_targets.add(v)
         sk = ctx.skill
         m = a.mods()
         ab = getattr(sk, 'ab', None)
@@ -1427,11 +1436,15 @@ class Battle:
             ab = self.mc['basic_tough'] if sk.slot == '기본기' else 0
         normal = ab + m['tough'] + ctx.tough
         fixed = m['tough_fixed'] + ctx.tough_fixed
-        if self.mc['toughness_elem'] == 'db':
+        if video:
+            if a.element and v.element and (a.element == v.element or ELEM_BEATS.get(a.element) == v.element):
+                normal += 1
+            fixed += int(ctx.nb)  # 기존 문서의 버스트 +1; 영상 궁 4의 버스트 여부는 미확인
+        elif mode in ('db', 'video'):
             # starsavior-db mechanics(2026-10-21 확인): 기본값(상성 유리 1, 아니면 0) + 강인도 피해(스킬 ab·버프) + 고정 피해 − 감소
             if a.element and v.element and ELEM_BEATS.get(a.element) == v.element:
                 normal += 1
-        elif self.mc['toughness_elem'] == 'on' and a.element and v.element:
+        elif mode == 'on' and a.element and v.element:
             if ELEM_LOSES.get(a.element) == v.element:
                 normal = 0
             elif ELEM_BEATS.get(a.element) == v.element and normal > 0:
