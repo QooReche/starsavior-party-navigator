@@ -320,7 +320,9 @@ def selection_lines(d, lines, raws):
                 ln.kind, ln.trig = 'own_pre', None
                 e.update(target='적 전체', target_state=state[1])
         move = re.search(r'신규 \[([^]]+)\] 발생 시 기존의 \[\1\]을 해제', desc)
-        if move:
+        # 적 표식 이동만 보정한다. 아군 자동 지정 버프의 부여·해제는 원래 줄을 따른다.
+        if move and (e.get('target', '').startswith('적') or e.get('target') == '스킬 대상'
+                     or e['kind'] == 'local'):
             mark = move[1]
             if '체크용' in name or (e['kind'] == 'remove' and name == mark):
                 continue

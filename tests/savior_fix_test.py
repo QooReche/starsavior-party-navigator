@@ -151,6 +151,28 @@ def test_professor_events_target():
     return out == (1, 0, 200, [[b.foes[1].name]]), str(out)
 
 
+def test_professor_analysis_coop():
+    """기본기 자동 지정 버프가 협공 피해와 냉각·게이지 보상에 적용된다."""
+    b, p, f = setup('professor-m', [unit('ally')])
+    ally = b.allies[1]
+    b.cast(p, p.d.skills['기본기'], target=f)
+    out = (ally.has('표본 행동 분석'), round(ally.mods()['inc'], 2),
+           ally.cast_count.get('기본기(추가)', 0), p.stack('냉각'), p.gauge)
+    return out == (True, 0.1, 1, 3, 800), str(out)
+
+
+def test_professor_analysis_move():
+    """자동 지정 대상이 바뀌면 기존 아군의 분석 버프를 해제한다."""
+    b, p, f = setup('professor-m', [unit('first', atk=2000), unit('next', atk=1000)])
+    first, nxt = b.allies[1:]
+    give(first, '표본 행동 분석', {'피해 증가': 10}, src=p, dur=1)
+    give(nxt, '시험 공격력', {'공격력%': 200})
+    b.cast(p, p.d.skills['기본기'], target=f)
+    out = ([u.has('표본 행동 분석') for u in b.allies],
+           [u.cast_count.get('기본기(추가)', 0) for u in (first, nxt)])
+    return out == ([False, False, True], [0, 1]), str(out)
+
+
 def test_bell_death():
     b, a, f = setup('bell', [unit('ally')], [unit('f1'), unit('f2'), unit('f3')])
     b.kill(f, a)

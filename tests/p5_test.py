@@ -207,6 +207,53 @@ def test_ally_break_gauge_and_coop():
     return ok, '결과 %s / 다음 턴 %s' % (res, acted)
 
 
+def test_break_recovery_turn_effects():
+    """연속 회복 턴도 지속 효과·턴 이벤트를 처리하며 스킬/행동 이벤트는 발생하지 않는다."""
+    out = {}
+    for mode in ('skip', 'keep', 'reset'):
+        for shield_tick in ('turn_start', 'turn_end'):
+            b = battle([unit('a', hp=10**9), unit('ally')], [unit('foe', hp=10**9)],
+                       mc=dict(ally_break_gauge=mode, shield_tick=shield_tick), opts=dict(coop=False))
+            a, ally = b.allies
+            f = b.foes[0]
+            a.d.lines = [Line('[턴 종료 시] 자신에게 행동 게이지 1%p 증가', '고유 패시브', 'passive')]
+            for owner, triggers in ((a, ('내 턴 시작 시', '내 행동 시', '내 행동 후')),
+                                    (ally, ('아군 턴 시작 시', '아군 행동 시', '아군 행동 후')),
+                                    (f, ('적 턴 시작 시', '적 행동 후'))):
+                owner.d.lines.extend(Line('[스킬 사용 후] (조건: %s) 자신에게 〈%s〉 (지속 무한) {최대 9중첩}'
+                                          % (trig, trig), '고유 패시브', 'passive') for trig in triggers)
+            give(a, '공격력 증가', {'공격력%': 10}, dur=2)
+            give(a, '무한 효과', dur=math.inf)
+            give(a, '새 효과', dur=1).fresh = True
+            give(a, '보호막', dur=2).shield = 1000
+            dot = give(a, '연소', src=f, harmful=True, dur=2, stacks=2)
+            dot.dot, dot.inst = ('atk', 0.1), [[f, 1], [f, 2]]
+            give(a, '체크용 효과').check = True
+            b.check_pending.append((a, '체크용 효과'))
+            a.cd['특수기'] = 3
+            states, losses = [], []
+            for _ in range(3):
+                a.broken, a.sa = True, 0
+                hp0 = a.hp
+                b.act(a)
+                losses.append(hp0 - a.hp)
+                states.append((a.eff['공격력 증가'].dur if a.has('공격력 증가') else 0,
+                               a.stack('연소'), a.has('새 효과'), a.has('보호막')))
+                assert not a.broken and a.sa == a.sa_max and not a.acting
+            assert states == [(1, 1, True, True), (0, 0, False, False), (0, 0, False, False)], states
+            assert a.has('무한 효과') and not a.has('체크용 효과') and not b.check_pending
+            assert a.gauge == 100, a.gauge
+            assert losses[0] == 2 * losses[1] and losses[1] > 0 and losses[2] == 0, losses
+            assert a.cd['특수기'] == 0
+            assert (a.stack('내 턴 시작 시'), ally.stack('아군 턴 시작 시'), f.stack('적 턴 시작 시')) == (3, 3, 3)
+            actions = 0 if mode == 'skip' else 3
+            assert sum(a.cast_count.values()) == actions, dict(a.cast_count)
+            assert (a.stack('내 행동 시'), a.stack('내 행동 후'), ally.stack('아군 행동 시'),
+                    ally.stack('아군 행동 후'), f.stack('적 행동 후')) == (actions,) * 5
+            out[(mode, shield_tick)] = states
+    return True, str(out)
+
+
 def test_break_conditions():
     """「대상 브레이크: 예」·「대상 강인도 없음: 예」 조건은 격파 상태에서만 참(P4 까지는 늘 거짓)"""
     a, f = unit('a'), unit('foe', hp=10 ** 9, sa=1)
@@ -506,7 +553,8 @@ def test_review_fixes():
 
 # ---------------------------------------------------------------- 사전 계산 연결
 TESTS = [test_build_light_values, test_stat_order_journey, test_potential_pick, test_build_missing_is_error, test_build_speed_range,
-         test_toughness_break, test_tough_elem_and_fixed, test_ally_break_gauge_and_coop, test_break_conditions, test_damage_limit,
+         test_toughness_break, test_tough_elem_and_fixed, test_ally_break_gauge_and_coop, test_break_recovery_turn_effects,
+         test_break_conditions, test_damage_limit,
          test_power_penalty, test_new_enemy_effects, test_new_conditions, test_action_trigger, test_cast_pre_events,
          test_cristelle_stack_trigger, test_cristelle_ignite_amount, test_trigger_support_report,
          test_recast_limit, test_review_fixes]   # 옛 사전 계산 시험(test_precompute_build_and_gate)은 사전 계산 퇴역으로 뺌(2026-10-20)

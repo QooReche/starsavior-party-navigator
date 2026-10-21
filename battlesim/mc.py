@@ -611,7 +611,7 @@ class Battle:
         for k in u.cd:
             u.cd[k] = max(0.0, u.cd[k] - 1)
         self._tick_dot_hot(u)
-        if u.dead or skip:
+        if u.dead:
             u.acting = False
             return
         self.fire(u, 'own_ts', Ctx(u, u, None))
@@ -620,7 +620,8 @@ class Battle:
                 self.fire(v, 'ally_ts', Ctx(v, u, None))
         for v in self.alive(1 - u.side):
             self.fire(v, 'enemy_ts', Ctx(v, u, None))
-        if not u.dead:
+        # 회복 턴도 턴 이벤트·지속 차감은 처리하고, 스킬 행동만 생략한다.
+        if not u.dead and not skip:
             if any(u.has(n) for n in HARD_CC):
                 self.log(actor=u.name, skip='행동 불가')
             else:
