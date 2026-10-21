@@ -439,6 +439,83 @@ def test_break_skill_select(browser, ctx):
         default['recommended'], saved == restored == chosen, fit, options_ok, stale, none_ok, chip, invalidated and removed)
 
 
+def test_break_skill_compare(browser, ctx):
+    """실제 Worker 10판 비교: 미지원 제외, 캐시 장착/재비교, 390px 가로 넘침 없음."""
+    ctx.errors.clear()
+    page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    card = '.party[data-party="1"]'
+    before = page.locator(card + ' .bcompare').count()
+    setup = page.evaluate('''() => {
+      simAuto(false); window.PN_SIMQ.n=10; window.__breakRequests=[];
+      const NativeWorker=window.Worker;
+      window.Worker=class extends NativeWorker {
+        postMessage(req,...args) {if(req.type==='run') window.__breakRequests.push(req);return super.postMessage(req,...args)}
+      };
+      const key=document.querySelector('.party[data-party="1"]').dataset.team;
+      const t=LASTQ[1].rows.find(t=>ckey(t.combo)===key);
+      return {key, party:simParty(t), owned:breakOwned(), supported:CFG.breakSupported};
+    }''')
+    page.click(card + ' button[data-bcompare]')
+    page.wait_for_selector(card + ' .bcompare .bcrow')
+    progress = page.locator(card + ' .bcompare button[data-simcancel]').count()
+    page.wait_for_function('''() => !window.PN_SIMQ.busy &&
+      [...document.querySelectorAll('.party[data-party="1"] .bcrow')].every(r=>!r.textContent.includes('대기'))''', timeout=300000)
+    rows = page.locator(card + ' .bcrow').count()
+    requests = page.evaluate('() => window.__breakRequests')
+    expected = [None] + [n for n in setup['owned'] if n in setup['supported']]
+    actual = [t['options']['break_skill']['name'] if t['options']['break_skill'] else None for t in requests[0]['teams']]
+    unsupported = page.locator(card + ' .bcrow', has_text='미지원').count()
+    names = page.eval_on_selector_all(card + ' .bcrow', 'els => els.map(e=>e.dataset.bname)')
+    chosen = page.eval_on_selector(card + ' .bsel', '(s,names) => names.find(n=>n && n!==s.value)', expected)
+    page.locator(card + ' .bcrow').filter(has=page.locator('button[data-bequip="' + chosen + '"]')).get_by_role('button', name='장착', exact=True).click()
+    settle(page)
+    selected = page.input_value(card + ' .bsel')
+    cache = page.evaluate('''() => {
+      const el=document.querySelector('.party[data-party="1"]'),s=el.querySelector('.bsel');
+      const t=LASTQ[1].rows.find(t=>ckey(t.combo)===el.dataset.team),r=SIMQ.res[simSig(cur[$('stage').value],t)];
+      return !!r && r.bs.name===s.value && JSON.parse(localStorage.getItem('pn.brksel.v1'))[s.dataset.bkey]===s.value;
+    }''')
+    page.click(card + ' button[data-bcompare]')
+    settle(page)
+    count = page.evaluate('() => window.__breakRequests.length')
+    bounds = page.evaluate('''() => ({sw:document.documentElement.scrollWidth, iw:innerWidth,
+      right:Math.max(...[...document.querySelectorAll('.bbar,.bcompare,.bcrow')].map(e=>e.getBoundingClientRect().right))})''')
+    page.screenshot(path=os.path.join(ctx.shots, 'mobile_break_compare.png'), full_page=True)
+    errs = list(ctx.errors)
+    page.close()
+    ok = (before == 0 and progress == 1 and rows == len(setup['owned']) + 1 and names == [''] + setup['owned']
+          and actual == expected and unsupported == len(setup['owned']) + 1 - len(expected)
+          and all(t['party'] == setup['party'] for t in requests[0]['teams'])
+          and selected == chosen and cache and count == 1
+          and bounds['sw'] <= bounds['iw'] and bounds['right'] <= bounds['iw'] and not errs)
+    return ok, '목록 %d/%d, 실행 %d(미지원 %d), 캐시 장착 %s, 요청 %d, 390px %s, 오류 %s' % (
+        rows, len(setup['owned']) + 1, len(actual), unsupported, selected == chosen and cache, count, bounds, errs[:2])
+
+
+def test_break_compare_cancel_after_team_change(browser, ctx):
+    """비교 도중 1안 팀이 바뀌어 비교 목록이 사라져도 취소가 보이고 동작해야 한다(멈춘 busy 회귀)."""
+    ctx.errors.clear()
+    page = open_page(browser, ctx)
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    card = '.party[data-party="1"]'
+    page.evaluate('() => {simAuto(false); window.PN_SIMQ.n=400}')
+    page.click(card + ' button[data-bcompare]')
+    page.wait_for_selector(card + ' [data-k="breakstate"]')
+    other = page.evaluate('''() => {const cur=document.querySelector('.party[data-party="1"]').dataset.team;
+      const b=[...document.querySelectorAll('button[data-pick="1"]')].find(b=>b.dataset.key!==cur);if(!b)return null;b.click();return b.dataset.key}''')
+    settle(page)
+    state = page.evaluate('''() => ({busy:window.PN_SIMQ.busy, list:!!document.querySelector('.party[data-party="1"] .bcompare'),
+      cancel:document.querySelectorAll('.party[data-party="1"] [data-simcancel]').length})''')
+    if state['cancel']:
+        page.click(card + ' [data-simcancel]')
+        settle(page)
+    after = page.evaluate('() => window.PN_SIMQ.busy')
+    errs = list(ctx.errors)
+    page.close()
+    ok = other is not None and state['busy'] == 1 and not state['list'] and state['cancel'] == 1 and after is None and not errs
+    return ok, '다른 팀 %s, 바뀐 뒤 %s, 취소 뒤 busy %s, 오류 %s' % (other is not None, state, after, errs[:2])
+
 def gimmick_slot_audit(page):
     """화면의 전체 슬롯 담당을 페이지 데이터·현재 편성·기존 gimTeam 판정과 대조."""
     return page.evaluate('''() => {
@@ -540,6 +617,8 @@ def test_boss_gimmick_mobile(browser, ctx):
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_quick_growth, test_savior_power, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_break_skill_select)
+TESTS.append(test_break_skill_compare)
+TESTS.append(test_break_compare_cancel_after_team_change)
 TESTS.append(test_gimmick_slot_owned)
 TESTS.append(test_boss_gimmick_mobile)
 

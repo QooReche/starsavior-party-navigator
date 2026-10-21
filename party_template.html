@@ -200,6 +200,9 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 .bbar{gap:8px;padding:7px 10px;margin-top:8px;border-width:1px;border-radius:8px;flex-direction:row;text-align:left}
 .bbar img,.bbar .bicon{width:40px;height:40px;flex:none;border-width:1px;box-shadow:none}.bicon{display:grid;place-items:center;font-size:28px}
 .bbody{flex:0 1 360px;min-width:0}.bsel{width:100%;max-width:360px;min-width:0;font-size:16px;margin:0;padding:6px 4px}.bbar .bschip{flex:0 1 auto;max-width:32%;font-size:11px;margin:0;padding:3px 5px}
+.bbody{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.bbody .bsel{flex:1 1 150px;width:0}.bbody button{flex:none;font-size:12px;padding:5px 7px}
+.bcompare{max-width:640px;margin-top:4px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);font-size:12px}
+.bcrow{display:flex;align-items:center;gap:5px;padding:5px 0;border-bottom:1px solid var(--line);min-width:0}.bcrow:last-child{border-bottom:0}.bcvalue{flex:1;min-width:0;overflow-wrap:anywhere}.bcrow button{flex:none;font-size:12px;padding:4px 7px}.bcrow .bschip{font-size:11px;padding:1px 4px;margin:0}.bcstate{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:4px 0}.bcstate span{overflow-wrap:anywhere;min-width:0}
 .altbox{border:0;padding:0}.scoredata{margin-top:5px;font-size:12px}.whytoggle{padding:4px 0}body:not(.show-why) .scoredata{display:none}
 .manual-details .seg{margin-top:6px}.seq{margin-top:6px}.note{padding:8px 0}.note[open]{line-height:1.7}
 @media(max-width:760px){
@@ -433,9 +436,9 @@ function card(x,pos,r){const s=x.s;
  return `<div class="gc" data-key="${esc(s.key)}"><div class="card">${s.key===LEADKEY?`<div class="crown" title="속도 +10">${CROWN}<span>리더</span></div>`:""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
   <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div><span class="tier ${TC(s.tier)}">${s.tier||"티어 ?"}</span></div></div>
   <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}${s.key===LEADKEY?" 👑":""}</div>${r?simUnit(r,s.key):""}</div>`}
-function breakCard(br,r){
+function breakCard(br,r,p,t,st){
  const b=CFG.breakSkills[br.name],im=D.bicons[br.name],bs=MODE==="manual"&&r?.man?r.man.bs:r?.bs;
- return `<div class="bbar" title="${esc(b?.text||"브레이크 스킬 미장착")}">${im&&br.name?`<img src="${im}" alt="">`:`<span class="bicon">${BG[br.name]||"◆"}</span>`}<div class="bbody"><select class="bsel" data-bkey="${esc(br.key)}" aria-label="장착 브레이크 스킬">${["",...br.have].map(n=>`<option value="${esc(n)}"${n===br.name?" selected":""}>${esc(n||"장착 안 함")}${n&&n===br.rec?" · 추천":""}</option>`).join("")}</select></div>${breakChip(bs)}</div>`}
+ return `<div class="bbar" title="${esc(b?.text||"브레이크 스킬 미장착")}">${im&&br.name?`<img src="${im}" alt="">`:`<span class="bicon">${BG[br.name]||"◆"}</span>`}<div class="bbody"><select class="bsel" data-bkey="${esc(br.key)}" aria-label="장착 브레이크 스킬">${["",...br.have].map(n=>`<option value="${esc(n)}"${n===br.name?" selected":""}>${esc(n||"장착 안 함")}${n&&n===br.rec?" · 추천":""}</option>`).join("")}</select>${t&&br.have.length?`<button type="button" class="sec" data-bcompare="${p}" data-key="${esc(ckey(t.combo))}">스킬별 비교</button>`:""}</div>${breakChip(bs)}</div>${p?breakCompareView(br,p,t,st):""}`}
 
 // ---------------- 표시 모드
 const MODE_CONTROLS=$("mode-controls"),SCORE_CONTROLS=$("score-controls");
@@ -549,41 +552,75 @@ function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
  const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null}}
-const simSig=(st,t)=>{const ck=contents[$("content").value].key,rk=rkOf(ck);return JSON.stringify([ck,st.tab,st.name,simParty(t),SIMQ.n,MODE,teamBreak(t)?.name||null].concat(rk?[rk]:[]))};
+const simSigB=(st,t,bname)=>{const ck=contents[$("content").value].key,rk=rkOf(ck);return JSON.stringify([ck,st.tab,st.name,simParty(t),SIMQ.n,MODE,bname].concat(rk?[rk]:[]))};
+const simSig=(st,t)=>simSigB(st,t,teamBreak(t)?.name||null);
+// 표시 상태는 결과 캐시와 분리한다. 다른 팀/스테이지에서 돌아오면 완성된 비교만 복원한다.
+const BRCMP={seen:new Set(),open:{}};
+const breakTargets=(have=breakOwned())=>[null,...have].map(name=>({name,supported:name===null||CFG.breakSupported.includes(name)}));
+const breakJobs=(st,t,have)=>breakTargets(have).filter(x=>x.supported).map(x=>{
+ const sig=simSigB(st,t,x.name);return {key:sig,sig,t,bname:x.name}});
+const breakMetric=r=>r?{clear:simMain(r).clear,turn:MODE==="manual"&&r.man?r.man.t:r.ttk}:null;
+function breakBest(rows){
+ const valid=rows.filter(x=>x.supported&&x.result).map(x=>({name:x.name,...breakMetric(x.result)}));
+ // web 결과에는 실패 판의 남은 적 HP가 없다. 전부 0%라면 우열을 만들지 않는다.
+ if(!valid.length||!valid.some(x=>x.clear>0))return undefined;
+ valid.sort((a,b)=>b.clear-a.clear||(a.turn??Infinity)-(b.turn??Infinity));return valid[0].name}
+function breakCompareView(br,p,t,st){
+ const key=t&&simSigB(st,t,null),rows=t?breakTargets(br.have).map(x=>({...x,result:SIMQ.res[simSigB(st,t,x.name)]})):[];
+ if(BRCMP.open[p]!==key)delete BRCMP.open[p];
+ if(!t||!br.have.length||!BRCMP.seen.has(key))return "";
+ const all=rows.every(x=>!x.supported||x.result);
+ if(BRCMP.open[p]!==key&&!all)return "";
+ const best=all?breakBest(rows):undefined,busy=SIMQ.busy===p&&SIMQ.compareKey===key;
+ const state=busy?`<div class="bcstate"><span class="mut" data-k="breakstate" role="status">${esc(SIMQ.msg)}</span><button type="button" class="sec" data-simcancel="1">취소</button></div>`:
+  SIMQ.err&&SIMQ.errCompare===key?`<div class="bcstate bad">${esc(SIMQ.err)}</div>`:"";
+ return `<div class="bcompare" aria-label="브레이크 스킬 비교">${state}${rows.map(x=>{const m=breakMetric(x.result),current=(x.name||"")===br.name;
+  return `<div class="bcrow" data-bname="${esc(x.name||"")}"><span class="bcvalue"${m&&x.supported?` data-sim="${simCls({clear:m.clear})}"`:""}>${esc(x.name||"장착 안 함")} · ${!x.supported?"미지원":m?`클리어 ${Math.round(m.clear*100)}% · 약 ${m.turn==null?"—":Math.round(m.turn*10)/10}턴`:"대기"}${best!==undefined&&best===x.name?' <span class="bschip">최고</span>':""}${current?' <span class="mut">장착 중</span>':""}</span><button type="button" class="sec" data-bequip="${esc(x.name||"")}" data-bkey="${esc(br.key)}"${current?" disabled":""}>장착</button></div>`}).join("")}</div>`}
+function breakCompareStart(p,key){
+ if(SIMQ.busy)return;const st=cur&&cur[$("stage").value],t=LASTQ[p]?.rows.find(t=>ckey(t.combo)===key);
+ if(!st||!t||!breakOwned().length)return;
+ const sig=simSigB(st,t,null);BRCMP.seen.add(sig);BRCMP.open[p]=sig;
+ SIMQ.err="";if(!simStart(p,breakJobs(st,t),sig))run(true)}
+function breakEquip(key,name,skipAuto=false){
+ BRSEL[key]=name;saveBreakSel();if(SIMQ.busy)simInvalidate();SIMQ.err="";
+ const c=contents[$("content").value],st=cur&&cur[$("stage").value];
+ const t=Object.values(LASTQ).flatMap(b=>b?.rows||[]).find(t=>c.key+"|"+ckey(t.combo)===key);
+ run(skipAuto||!!(st&&t&&SIMQ.res[simSig(st,t)]))}
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
  const mn=r.man?`<br><span class="qsim" data-man="1">수동 클리어 ${Math.round(r.man.c*100)}%${r.man.t!=null?` · 약 ${Math.round(r.man.t)}턴`:""}</span>`:"";
  return `<br><span class="qsim" data-sim="${simCls(r)}" title="${r.n}판${r.gate===false?" · 미지원 기믹 있음":""}">시뮬 클리어 ${Math.round(r.clear*100)}%${r.ttk!=null?` · 약 ${Math.round(r.ttk)}턴`:""}${r.first?` · 먼저 쓰러짐 ${esc(r.first.split("#")[0])} ${Math.round(r.first_p*100)}%`:""} <small class="mut">95% 구간 ${Math.round(r.ci[0]*100)}~${Math.round(r.ci[1]*100)}%</small></span>${mn}`}
 function simBar(p,rows,st,hasMore){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
- const st8=SIMQ.busy===p?`<span class="mut" data-k="simstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
-  SIMQ.err&&SIMQ.errP===p?`<span class="bad" data-k="simstate">시뮬 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
+ const st8=SIMQ.busy===p&&!SIMQ.compareKey?`<span class="mut" data-k="simstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
+  SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`<span class="bad" data-k="simstate">시뮬 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
   all?`<span class="mut" data-k="simstate">시뮬 완료 · ${SIMQ.n}판</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다음 3팀도 시뮬로 확인</button>`:""}${SIMQ.auto?` <button type="button" class="sec" data-simauto="0" title="스테이지를 바꿀 때마다 자동으로 시뮬">자동 확인 끄기</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">시뮬로 확인(10~40초)</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
-function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.busy=null}
-function simStop(msg){if(msg){SIMQ.err=msg;SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage}simInvalidate();run()}
+function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.busy=null;SIMQ.compareKey=null}
+function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.err=msg;SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simAutoKick(){if(!SIMQ.auto||SIMQ.busy)return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
  for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){setTimeout(()=>simStart(p),0);return}}}
-function simStart(p){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy)return;
- const box=LASTQ[p];if(!box)return;const rows=box.rows.filter(t=>!SIMQ.res[simSig(st,t)]);if(!rows.length)return;
- SIMQ.err="";SIMQ.busy=p;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
+function simStart(p,jobs=null,compareKey=null){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy)return false;
+ const box=LASTQ[p];if(!box)return false;
+ const rows=(jobs||box.rows.map(t=>({key:t.keys.slice().sort().join(","),t,bname:teamBreak(t)?.name||null,sig:simSig(st,t)}))).filter(j=>!SIMQ.res[j.sig]);if(!rows.length)return false;
+ SIMQ.err="";SIMQ.errCompare=null;SIMQ.busy=p;SIMQ.compareKey=compareKey;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
  if(!SIMQ.w){SIMQ.w=new Worker("sim_worker.js");SIMQ.loaded=false}
- const id=SIMQ.requestId=(SIMQ.requestId||0)+1,sigs={};rows.forEach(t=>{sigs[t.keys.slice().sort().join(",")]=simSig(st,t)});
+ const id=SIMQ.requestId=(SIMQ.requestId||0)+1,sigs={};rows.forEach(j=>{sigs[j.key]=j.sig});
  const arm=ms=>{clearTimeout(SIMQ.timer);SIMQ.timer=setTimeout(()=>simStop(ms===SIMQ.LOAD_MS?"엔진 내려받기 시간 초과(네트워크 확인)":"시뮬 시간 초과"),ms)};
  arm(SIMQ.loaded?SIMQ.RUN_MS:SIMQ.LOAD_MS);
  SIMQ.w.onmessage=e=>{const m=e.data;
   if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
-  if(m.type==="stage"){SIMQ.msg=m.msg;if(m.msg==="준비 끝"){SIMQ.loaded=true;arm(SIMQ.RUN_MS)}const el=document.querySelector('[data-k="simstate"]');if(el)el.textContent=m.msg;return}
-  if(m.type==="team"){SIMQ.res[sigs[m.key]]=m.result;run();return}
-  if(m.type==="done"){clearTimeout(SIMQ.timer);SIMQ.busy=null;run();return}
+  if(m.type==="stage"){SIMQ.msg=m.msg;if(m.msg==="준비 끝"){SIMQ.loaded=true;arm(SIMQ.RUN_MS)}const el=document.querySelector(`.party[data-party="${p}"] [data-k="${compareKey?"breakstate":"simstate"}"]`);if(el)el.textContent=m.msg;return}
+  if(m.type==="team"){if(Object.hasOwn(sigs,m.key))SIMQ.res[sigs[m.key]]=m.result;run(!!compareKey);return}
+  if(m.type==="done"){clearTimeout(SIMQ.timer);SIMQ.busy=null;SIMQ.compareKey=null;run(!!compareKey);return}
   if(m.type==="error")simStop(m.msg)};
  SIMQ.w.onerror=e=>{if(SIMQ.requestId===id)simStop("작업자 오류: "+(e.message||"알 수 없음"))};
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
  const req={type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:SIMQ.n,seed:SIMQ.seed,options:simOpt(c.key),mode:MODE,
-  teams:rows.map(t=>({key:t.keys.slice().sort().join(","),party:simParty(t),options:{break_skill:teamBreak(t)}}))};
+  teams:rows.map(j=>({key:j.key,party:simParty(j.t),options:{break_skill:j.bname?{name:j.bname,level:5}:null}}))};
  SIMQ.lastReq={req,sigs};SIMQ.w.postMessage(req);
- run()}
+ run(!!compareKey);return true}
 const LASTQ={};
 // 2파티 콘텐츠(코스모 게이트): 파티 1을 먼저 고르고 남은 인원으로 2를 고르면 2가 약해진다 → 상위 후보 중 겹치지 않는 두 팀을
 // 「약한 쪽 판정」이 가장 좋은 쌍으로 함께 고른다(같으면 두 팀 판정 합 → 약한 쪽 남는 생명력 → 근사 점수 합)
@@ -607,19 +644,21 @@ function jointPick(c,st,own,defPen){if((c.parties||1)!==2)return null;const qi=q
  return best?{1:best.a.keys.slice().sort().join(","),2:best.b.keys.slice().sort().join(",")}:null}
 function jointFirst(qt,p){if(!JOINT||!qt)return;const i=qt.findIndex(t=>t.keys.slice().sort().join(",")===JOINT[p]);if(i>0)qt.unshift(qt.splice(i,1)[0])}window.PN_SIMQ=SIMQ;   // 시험용(브라우저 결과 = 파이썬 결과 대조)
 $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-sim]");if(b){simAuto(true);simStart(+b.dataset.sim);return}
+ const bc=e.target.closest("button[data-bcompare]");if(bc){breakCompareStart(+bc.dataset.bcompare,bc.dataset.key);return}
+ const be=e.target.closest("button[data-bequip]");if(be){breakEquip(be.dataset.bkey,be.dataset.bequip,true);return}
  const mo=e.target.closest("button[data-more]");if(mo){const st=cur&&cur[$("stage").value],p=+mo.dataset.more,k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run();simStart(p);return}
  if(e.target.closest("button[data-simauto]")){simAuto(false);run();return}
  if(e.target.closest("button[data-simcancel]"))simStop("취소함")});
 $("out").addEventListener("change",e=>{const s=e.target.closest("select.bsel");if(!s)return;
- BRSEL[s.dataset.bkey]=s.value;saveBreakSel();if(SIMQ.busy)simInvalidate();SIMQ.err="";run()});
+ breakEquip(s.dataset.bkey,s.value)});
 
 function buildCands(cands,defPen){return topParties(cands,defPen,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
-function run(){
+function run(skipAuto=false){
  const folds=new Map([...document.querySelectorAll("#out details[data-fold]")].map(d=>[d.dataset.fold,d.open]));
  $("control-home").append(MODE_CONTROLS,SCORE_CONTROLS);
  for(const k in LASTQ)delete LASTQ[k];
  const c=contents[$("content").value],st=cur&&cur[$("stage").value];
- if(!st){$("out").innerHTML='<div class="party">스테이지를 선택하세요.</div>';return}
+ if(!st){BRCMP.open={};$("out").innerHTML='<div class="party">스테이지를 선택하세요.</div>';return}
  const own=new Set([...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));
  const have=[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);
  GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty)*(POWK>1?Math.max(0.1,1-(POWK-1)/CFG.power.boost):1);
@@ -649,7 +688,7 @@ function run(){
   let seq="";
   if(MODE==="manual")seq=sr&&sr.man?seqTable({rec:{auto:{c:sr.clear,t:sr.ttk},man:{g:true,c:sr.man.c,t:sr.man.t,pol:sr.man.pol,d:{c:sr.man.c-sr.clear,t:sr.man.t!=null&&sr.ttk!=null?sr.man.t-sr.ttk:null}},seq:sr.man.seq}},[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key))
    :`<div class="seq" data-state="pending"><span class="mut">서순: 시뮬 확인 뒤 표시</span></div>`;
-  const main=`<div class="rowcards">${card(bk[0],"back",r)}${card(fr[0],"front",r)}${card(fr[1],"front",r)}${card(bk[1],"back",r)}</div>${gimNote(party,c,st,p)}${breakCard(br,sr)}`;
+  const main=`<div class="rowcards">${card(bk[0],"back",r)}${card(fr[0],"front",r)}${card(fr[1],"front",r)}${card(bk[1],"back",r)}</div>${gimNote(party,c,st,p)}${breakCard(br,sr,p,qr,st)}`;
   const tail=`${altChips(party,alt,p)}<details class="manual-details" data-fold="manual-${p}"><summary>수동 서순</summary>${p===1?'<div data-controls="mode"></div>':""}${seq||'<div class="mut">서순: 시뮬 확인 뒤 표시</div>'}</details><details class="score-details" data-fold="score-${p}"><summary>점수 상세</summary>${p===1?'<div data-controls="score"></div>':""}<div class="scoredata">근사 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10${party.map(x=>`<div>${esc(x.s.name)}: ${Object.entries(x.parts).map(([k,v])=>`${esc(k)} ${v.toFixed(1)}`).join(" · ")}</div>`).join("")}${synSummary(party)}</div></details>`;
   html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}">${quickBox(p,qt,qi,st,pick.key,main,tail)}</div>`}
 
@@ -661,8 +700,12 @@ function run(){
    const faces=(t.fixed||[]).map(f=>byKey[f]?`<span class="archf">${face(byKey[f])}<small>${esc(byKey[f].name)}</small></span>`:"").join("");
    return `<div class="archc"><b>${esc(k)}</b> ${comp}<div class="archfs">${faces}</div><div>${esc(t.desc)}</div><div class="mut">잘 맞는 곳: ${esc(t.goodFor||"-")}${t.note?" · "+esc(t.note):""} · 출처 ${esc(t.source||"")}</div></div>`}).join("")}</div></details>`}
  $("out").innerHTML=html;
+ for(const p of Object.keys(BRCMP.open))if(!document.querySelector(`.party[data-party="${p}"] .bcompare`))delete BRCMP.open[p];
+ // 비교가 도는 중 1안 팀이 바뀌어 비교 목록이 사라졌으면, 그 파티의 시뮬 줄에 진행 상태와 취소를 대신 보인다(멈춘 채 다른 시뮬이 막히지 않게)
+ if(SIMQ.busy!=null&&SIMQ.compareKey&&!document.querySelector(`.party[data-party="${SIMQ.busy}"] [data-k="breakstate"]`)){const sb=document.querySelector(`.party[data-party="${SIMQ.busy}"] .simbar`)||document.querySelector("#out .simbar");
+  if(sb)sb.innerHTML=`<span class="mut" data-k="breakstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`}
  document.querySelector('[data-controls="mode"]')?.append(MODE_CONTROLS);document.querySelector('[data-controls="score"]')?.append(SCORE_CONTROLS);
- document.querySelectorAll("#out details[data-fold]").forEach(d=>{if(folds.has(d.dataset.fold))d.open=folds.get(d.dataset.fold)});if(window.onParties)onParties(allParties);simAutoKick()}
+ document.querySelectorAll("#out details[data-fold]").forEach(d=>{if(folds.has(d.dataset.fold))d.open=folds.get(d.dataset.fold)});if(window.onParties)onParties(allParties);if(skipAuto!==true)simAutoKick()}
 $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-pick]");if(!b)return;const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st)return;
  PICK[c.key+"|"+st.tab+"|"+st.name+"|"+b.dataset.pick]=b.dataset.key;run();const el=document.querySelector(`.party[data-party="${b.dataset.pick}"]`);if(el)el.scrollIntoView({block:"start"})});
 function setMode(m,push){MODE=m==="manual"?"manual":"auto";$("m-"+MODE).checked=true;LS.set("mode",MODE);
