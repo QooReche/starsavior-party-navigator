@@ -6,7 +6,7 @@
 - 저장소: https://github.com/QooReche/starsavior-party-navigator (**공개**, GitHub Pages: https://QooReche.github.io/starsavior-party-navigator/). 최신 커밋은 `git log` 로 확인.
 - 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
 - **게임 정적 데이터(비공개 저장소)**: `QooReche/starsavior-static-data` (접근: QooReche 계정). 시뮬 강화(임의 가중치 → 실제 값)에 쓴다. 비공개라 이 공개 저장소·Pages 에 원본 표를 복사하지 말 것(가공한 요약 수치만 반영).
-- **내 정보 불러오기**: 페이지가 `내정보.json`(형식 `docs/myinfo_format.md`)을 주소 해시 또는 파일 선택으로 불러와 브라우저 `localStorage` 에만 저장한다(서버 전송 없음). 파일을 만드는 별도 도구와 조사 메모는 비공개 저장소 `QooReche/starsavior-packet-ref` 에 있다(접근: QooReche 계정, 이 공개 저장소에는 두지 않는다). 다른 PC 에서 이어서 할 때는 그 저장소의 `README.md`·`notes/` 부터 읽을 것.
+- **내 정보 불러오기**: 페이지가 `내정보.json`(형식 `docs/myinfo_format.md`)을 주소 해시 또는 파일 선택으로 불러와 브라우저 `localStorage` 에만 저장한다(서버 전송 없음). 파일을 만드는 도구(한 줄 명령, 설치 불필요)는 공개 저장소 `QooReche/starsavior-myinfo` 에 있고, 사이트 서랍 「내 정보를 만드는 방법」에 같은 명령이 안내돼 있다. 도구 소스·조사 메모는 비공개 저장소 `QooReche/starsavior-packet-ref` 에 있다(접근: QooReche 계정, 이 공개 저장소에는 두지 않는다). 다른 PC 에서 이어서 할 때는 시뮬 작업이면 `starsavior-static-data` 의 `SIM_HANDOFF.md`, 도구 작업이면 packet-ref 의 `README.md`·`notes/` 부터 읽을 것.
 - 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
 
 ## ▶ 다음 세션 시작점 (2026-10-21 저녁 갱신)

@@ -13,6 +13,13 @@ const withUid=roster.filter(s=>Number.isInteger(s.uid));
 assert.ok(withUid.length>=roster.length-1,'uid 연결이 너무 적습니다: '+withUid.length+'/'+roster.length);
 assert.equal(new Set(withUid.map(s=>s.uid)).size,withUid.length,'uid 중복');
 
+// 서랍의 한 줄 명령 안내: 공개 도구 저장소 주소를 가리켜야 하고, 복사 버튼·안내가 있어야 한다
+const cmd=/<code id="mi-cmd"[^>]*>([^<]+)<\/code>/.exec(html);
+assert.ok(cmd,'한 줄 명령(mi-cmd)이 없습니다');
+assert.ok(cmd[1].includes('raw.githubusercontent.com/QooReche/starsavior-myinfo/main/myinfo.ps1'),'명령의 도구 주소');
+assert.ok(cmd[1].includes('-OutFile $f')&&cmd[1].includes('-File $f'),'명령 형식');
+assert.ok(html.includes('id="mi-copy"')&&html.includes('https://github.com/QooReche/starsavior-myinfo'),'복사 버튼/도구 저장소 링크');
+
 // 가짜 내 정보(실제 형식)
 const info={format:'ss-myinfo-v1',game_build:'x',exported_at:'2026-10-22T00:00:00+09:00',star_link_level:343,
  tactics:{facility_level:5,common_level:111,groups:{}},

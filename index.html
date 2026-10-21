@@ -256,6 +256,17 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
  <div class="mut" id="mi-status" style="margin:4px 0 6px">불러온 정보 없음</div>
  <div class="dtools"><label class="miFile" style="cursor:pointer"><span class="mibtn">파일 선택</span><input type="file" id="mi-file" accept=".json,application/json" hidden></label><button id="mi-clear" type="button">지우기</button></div>
  <div class="mut" style="margin:4px 0 8px;font-size:11px">내정보.json 파일만 읽습니다. 서버로 보내지 않고 이 브라우저에만 저장합니다. 불러오면 보유 구원자가 자동으로 체크됩니다.</div>
+ <details class="mihow" style="margin:0 0 8px"><summary style="cursor:pointer">내 정보를 만드는 방법 (Windows PC 게임)</summary>
+  <ol class="mut" style="margin:6px 0 6px 18px;padding:0;font-size:12px;line-height:1.55">
+   <li>PowerShell 을 엽니다(시작 메뉴에서 검색).</li>
+   <li>아래 한 줄을 붙여넣고 엔터. 관리자 확인 창이 뜨면 [예].</li>
+   <li>안내가 나오면 <b>게임을 (다시) 실행 → 로그인해서 로비까지 → 10초 대기 → 도구 창에서 엔터</b>.</li>
+   <li>끝나면 이 페이지가 자동으로 열리며 반영됩니다(안 열리면 위 [파일 선택]으로 바탕화면의 내정보.json).</li>
+  </ol>
+  <code id="mi-cmd" style="display:block;font-size:11px;word-break:break-all;background:rgba(127,127,127,.15);padding:6px 8px;border-radius:6px;user-select:all">$f="$env:TEMP\ss_myinfo.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/QooReche/starsavior-myinfo/main/myinfo.ps1 -OutFile $f; powershell -NoProfile -ExecutionPolicy Bypass -File $f</code>
+  <div class="dtools" style="margin-top:6px"><button id="mi-copy" type="button">명령 복사</button></div>
+  <div class="mut" style="margin:6px 0 0;font-size:11px">비공식 도구입니다. 로그인할 때 받는 내 구원자 정보를 읽기만 하며 닉네임·UID·로그인 정보는 저장하지 않습니다. 게임 약관상 보장은 없어 사용은 본인 책임입니다. 소스·설명: <a href="https://github.com/QooReche/starsavior-myinfo" target="_blank" rel="noopener">starsavior-myinfo</a></div>
+ </details>
  <div class="dtools"><button id="all" type="button">모두 선택</button><button id="none" type="button">모두 해제</button></div>
  <input type="text" id="oq" placeholder="이름 검색" style="width:100%;margin:6px 0 8px">
  <div class="own" id="own"></div>
@@ -752,6 +763,9 @@ function miApply(info){
 $("mi-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
  try{miApply(JSON.parse(await f.text()))}catch(err){miStatus("파일을 읽지 못했습니다: "+err.message,true)}});
 $("mi-clear").addEventListener("click",()=>{LS.set("myinfo",null);miStatus("불러온 정보 없음",false)});
+$("mi-copy").addEventListener("click",async()=>{const b=$("mi-copy"),t=$("mi-cmd").textContent.trim();
+ try{await navigator.clipboard.writeText(t);b.textContent="복사됨"}catch(e){const r=document.createRange();r.selectNodeContents($("mi-cmd"));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="선택됨(Ctrl+C)"}
+ setTimeout(()=>{b.textContent="명령 복사"},2000)});
 (function miInit(){
  const saved=LS.get("myinfo");if(saved&&!MyInfoImport.validate(saved))miStatus(miSummary(saved,MyInfoImport.mapOwned(saved,R).unknown.length),false);
  if(!/myinfo=/.test(location.hash))return;
