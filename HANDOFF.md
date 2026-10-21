@@ -5,18 +5,14 @@
 ## 상태
 - 저장소: https://github.com/QooReche/starsavior-party-navigator (**공개**, GitHub Pages: https://QooReche.github.io/starsavior-party-navigator/). 최신 커밋은 `git log` 로 확인.
 - 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
-- **게임 정적 데이터 표(비공개 저장소)**: https://github.com/QooReche/starsavior-static-data — 설치 폴더의 데이터 표 147개(피해 계수 `DAMAGE_TEMPLET`, 능력치·스킬·버프·장비·호감도·보스 스테이지 등, 빌드 25951618)와 추출 스크립트. 시뮬 강화(임의 가중치 → 실제 값, 인게임 대조)와 캡처 인식 기준값에 쓴다. 시작은 그쪽 `README.md`·`TABLES.md`. 비공개라 이 공개 저장소·Pages 에 원본 표를 복사하지 말 것(가공한 요약 수치만 반영). 접근은 QooReche 계정으로.
-- **패킷 해독 참조(비공개 저장소)**: https://github.com/QooReche/starsavior-packet-ref — 「내 정보 불러오기」용. 수동 패킷 캡처(Windows `pktmon`, TCP 9340, 주입·변조·메모리 읽기 없음)로 로그인 응답 `LOGIN_ACK`(403, 사용자 데이터 53필드)를 해독해 보유 구원자·육성 상태를 얻는 방식. 평문 TCP + 8바이트 XOR/LZ4 라 키 교환 없음. 해독기·패킷 스키마 사본과 포맷 요약은 그쪽 `README.md`. 계획: 로컬 보조 도구가 `내정보.json` 생성 → 페이지가 파일로 불러오기(캡처 인식은 최후 수단). 캡처 파일엔 로그인 티켓이 있으니 저장소·OneDrive 에 두지 말 것.
-- **내 정보 불러오기 진행 상태(2026-10-22)**: 방식 = 설치형 추출 도구가 `내정보.json` 생성 → 페이지가 파일 업로드로 불러와 `localStorage` 저장(서버 전송 없음). 형식 `docs/myinfo_format.md`.
-  - 도구(**비공개**): https://github.com/QooReche/starsavior-packet-ref `myinfo/`(소스·빌드)와 `myinfo/dist/`(배포본 `myinfo.ps1` + `내정보_추출.bat`). 이 PC 사본: `AI\partynavigator\release\myinfo\`. 사용자 PC 요구 = 설치 없음(Windows 기본 pktmon + PowerShell 5.1), 관리자 확인창 1회, 실행 → 게임 실행 → 로그인해 로비 → 10초 대기 → 엔터.
-  - 해독·구조 자료: 같은 저장소 `tools/`(`FIELDS.md` 필드 순번, `STATS.md` 능력치 합산 구조, `groundtruth.json` 화면 정답 5명). 정적 표: https://github.com/QooReche/starsavior-static-data (비공개).
-  - **다음 할 일**: (1) 사용자가 `myinfo.ps1` 실제 실행 시험 → 결과 `내정보.json` 확인(미검증: 전체 흐름 e2e, 해독기 C# 은 PS5.1 컴파일만 확인) (2) 페이지에 「내 정보 불러오기」(파일 선택 → 검증 → localStorage → 보유 구원자·내실 반영) (3) 최종 능력치 재현 정확도(공격·생명·방어 곱셈 구조, STATS.md 「미확정」) (4) 게임 업데이트 대응(스키마 재생성, 해독 불일치 메시지 = 신호).
+- **게임 정적 데이터(비공개 저장소)**: `QooReche/starsavior-static-data` (접근: QooReche 계정). 시뮬 강화(임의 가중치 → 실제 값)에 쓴다. 비공개라 이 공개 저장소·Pages 에 원본 표를 복사하지 말 것(가공한 요약 수치만 반영).
+- **내 정보 불러오기**: 페이지가 `내정보.json`(형식 `docs/myinfo_format.md`)을 주소 해시 또는 파일 선택으로 불러와 브라우저 `localStorage` 에만 저장한다(서버 전송 없음). 파일을 만드는 별도 도구와 조사 메모는 비공개 저장소 `QooReche/starsavior-packet-ref` 에 있다(접근: QooReche 계정, 이 공개 저장소에는 두지 않는다). 다른 PC 에서 이어서 할 때는 그 저장소의 `README.md`·`notes/` 부터 읽을 것.
 - 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
 
 ## ▶ 다음 세션 시작점 (2026-10-21 저녁 갱신)
 **이번에 끝낸 것**: 브레이크 스킬 선택칸+엔진 3종(368b967), 화면 정리·기믹 칸(afc825c). 아래 「10-21 저녁」 절.
 **다음 할 일(추천 순서)**
-- **내 정보 불러오기(10-21 밤 준비)**: 게임 설치 PC 에서 `docs/self_import.md` 「설치된 PC 에서 할 일」 순서대로(점검 `tools/probe_local_game.ps1` → `local/` 에 보고서·캡처) → 능력치 화면 캡처 인식 구현(1안). 이 작업 PC 엔 게임 없음
+- **내 정보 불러오기**: 불러오기 기능(`myinfo_import.js`, 「내 구원자」 서랍의 불러오기) 구현됨 → 다음은 불러온 내실(별·공명·스킬·장비)을 시뮬 입력에 반영, 최종 능력치 재현 정확도. 상세·메모는 비공개 저장소.
 0. **보스전 비관 추적(10-21 밤, 영상 분석 결론)**: 영상(36-36 ChgzulK7VI4)과 대조해 **맞음 확인** = 적 쿨 규칙(5f184bb 반영)·보스 스킬 순서·보스 한 방 피해(실제 피해 숫자)·금제 처리·강인도 스킬별 감소(기존 db 규칙). **원인 아님** = 금제 연쇄 회피(수동 정책 후보), 회복 스타버스트(95d025d, nova_policy=heal), 강인도(0b905d3, video 후보는 alt). **남은 가장 큰 차이 = 보스 행동 빈도**: 시뮬 보스 간격 약 5.8행동 vs 영상 약 8(표준 속도 기준). 아군 속도를 267로 올려야 맞는데 그러면 선턴·졸개 간격이 어긋남 → 영상 파티 실제 속도 미상이 걸림. 다음 = (a) 사용자 실측 판에서 보스 행동 횟수 기록 요청(전투 통계·리플레이) 또는 (b) 아군 속도가 화면에 보이는 영상 찾기. 상세 `docs/ingame_samples.md` 맨 아래·`docs/toughness_video.md`
 1. (아래는 영상 확인 전 기록) **37-5 낙관의 주원인 = 적 시작 쿨 가정**(`mc.enemy_init_cd` 1.0, assumed): 37-5 적 망각의 예언자 ×2 가 궁극기(260% 광역+게이지 감소)를 한 번도 못 씀. 0 이면 37-5 3.49(실제 4.17)지만 보스전이 더 비관(36-36 1.13·37-3 0.80) → 전역 변경 금지. **사용자 실측 필요: 37-5 에서 예언자가 첫 궁극기를 언제 쓰는지**(첫 턴? 몇 턴째?). 받은 피해가 실제의 절반(89,895 vs 170,878), 준 피해는 오버킬 포함 시 0.3% 차. 37-4 도 비율은 맞지만 절대값은 시뮬이 큼(505k/87k vs 346k/53k)
 2. 큰 보스전 시뮬 클리어 0%(실제 클리어) — 회복 위주 스타버스트 수동 정책(BACKLOG A9)·도발(A8)

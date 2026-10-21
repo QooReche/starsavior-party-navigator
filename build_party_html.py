@@ -68,10 +68,23 @@ def main():
             rel = f"assets/savior/{s['key']}_{suf}.webp"
             if os.path.exists(os.path.join(pr.HERE, rel)):
                 d[s["key"]] = rel
+    # 게임 구원자 ID(uid): 내 정보 불러오기(myinfo_import.js)가 보유 구원자를 연결할 때 쓴다
+    idx = pr._json(os.path.join(pr.DATA, "saviors_index.json"))
+    idx.pop("_meta", None)
+    uid_by_key = {v["key"]: int(k) for k, v in idx.items() if v.get("key")}
+    uid_by_name = {}
+    for k, v in idx.items():
+        uid_by_name.setdefault(v.get("profile", {}).get("name"), []).append(int(k))
+
+    def uid_of(s):
+        if s["key"] in uid_by_key:
+            return uid_by_key[s["key"]]
+        c = uid_by_name.get(s["name"], [])
+        return c[0] if len(c) == 1 else None
     r = []
     for s in roster:
         g = growth.get(s["key"])
-        r.append({"key": s["key"], "name": s["name"], "sub": s["subtitle"], "el": s["element"],
+        r.append({"key": s["key"], "uid": uid_of(s), "name": s["name"], "sub": s["subtitle"], "el": s["element"],
                   "cls": s["className"], "tier": g["tier"] if g else None,
                   "mains": mains.get(s["key"]), "tags": tags.get(s["key"], []), "gt": grules["tags"].get(s["key"], []), "img": por.get(s["key"], ""), "art": art.get(s["key"], "")})
     contents = []

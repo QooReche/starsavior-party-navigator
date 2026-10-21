@@ -1,0 +1,51 @@
+// 내 정보 불러오기(myinfo_import.js) 시험. node tests/myinfo_import_test.js
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),zlib=require('node:zlib');
+const root=path.resolve(__dirname,'..');
+const M=require(path.join(root,'myinfo_import.js'));
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+// index.html 의 D(데이터)에서 로스터만 꺼낸다
+const m=/const D=(\{[\s\S]*?\});\s*\n/.exec(html);
+let roster;
+try{roster=JSON.parse(m[1]).roster}catch(e){roster=null}
+assert.ok(roster&&roster.length>=50,'로스터를 읽지 못했습니다(index.html 을 build_party_html.py 로 다시 만든 뒤 실행)');
+assert.ok(roster.every(s=>'uid' in s),'로스터에 uid 가 없습니다');
+const withUid=roster.filter(s=>Number.isInteger(s.uid));
+assert.ok(withUid.length>=roster.length-1,'uid 연결이 너무 적습니다: '+withUid.length+'/'+roster.length);
+assert.equal(new Set(withUid.map(s=>s.uid)).size,withUid.length,'uid 중복');
+
+// 가짜 내 정보(실제 형식)
+const info={format:'ss-myinfo-v1',game_build:'x',exported_at:'2026-10-22T00:00:00+09:00',star_link_level:343,
+ tactics:{facility_level:5,common_level:111,groups:{}},
+ units:[{id:1040,star:3,sigil:2,resonance:10,skills:{basic:7,special:7,ultimate:7,passive:4},favor:30,equip:[]},
+        {id:1055,star:3,sigil:0,resonance:10,skills:{basic:7,special:10,ultimate:8,passive:4},favor:50,equip:[{}]},
+        {id:999999,star:1,sigil:0,resonance:0,skills:{basic:1,special:1,ultimate:1,passive:1},favor:1,equip:[]}]};
+assert.equal(M.validate(info),'');
+assert.ok(M.validate({format:'other',units:[{id:1}]}).includes('지원하지 않는'));
+assert.ok(M.validate({format:'ss-myinfo-v1',units:[]}).includes('비어'));
+assert.ok(M.validate(null));
+const r=M.mapOwned(info,roster);
+const keyOf=uid=>(roster.find(s=>s.uid===uid)||{}).key;
+assert.deepEqual(r.keys.sort(),[keyOf(1040),keyOf(1055)].sort());
+assert.deepEqual(r.unknown,[999999]);
+const pu=M.perUnit(info,roster);
+assert.equal(pu[keyOf(1040)].sigil,2);assert.equal(pu[keyOf(1055)].skills.special,10);
+
+// 주소 해시 왕복(gzip + base64url)
+(async()=>{
+  const json=JSON.stringify(info);
+  const b64=zlib.gzipSync(Buffer.from(json,'utf8')).toString('base64').replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const got=await M.fromHash('#myinfo='+b64);
+  assert.deepEqual(got,info);
+  assert.equal(await M.fromHash('#other=1'),null);
+  assert.equal(await M.fromHash(''),null);
+  // 실제로 내보낸 파일이 있으면 그것도 확인(개인 데이터라 저장소에는 없음)
+  const real=process.env.MYINFO_REAL;
+  if(real&&fs.existsSync(real)){
+    const o=JSON.parse(fs.readFileSync(real,'utf8'));
+    assert.equal(M.validate(o),'');
+    const rr=M.mapOwned(o,roster);
+    console.log('real file:',o.units.length,'units; mapped',rr.keys.length,'unknown',rr.unknown.length);
+    assert.ok(rr.keys.length>=o.units.length-3);
+  }
+  console.log('myinfo_import_test OK (roster',roster.length,', uid',withUid.length,')');
+})().catch(e=>{console.error(e);process.exit(1)});

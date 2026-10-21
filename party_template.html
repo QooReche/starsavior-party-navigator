@@ -27,7 +27,7 @@ details summary{cursor:pointer;color:var(--acc)}
 #drawer.open{transform:none;visibility:visible}
 #dback{display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5)}#dback.on{display:block}
 .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:16px}.dhead button{background:transparent;color:var(--fg);padding:2px 8px;font-size:18px}
-.dtools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dtools button{padding:3px 10px}.dsec{margin:14px 0 4px;padding-top:10px;border-top:1px solid var(--line)}
+.dtools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dtools button{padding:3px 10px}.mibtn{display:inline-block;padding:3px 10px;border-radius:6px;background:var(--acc);color:#fff}.dsec{margin:14px 0 4px;padding-top:10px;border-top:1px solid var(--line)}
 .crown{position:absolute;top:6px;left:6px;z-index:3;display:flex;align-items:center;gap:3px;padding:2px 7px 2px 4px;border-radius:8px;background:rgba(8,10,16,.72);box-shadow:0 1px 4px #0008}
 .crown svg{width:18px;height:14px}.crown span{font-size:12px;font-weight:800;color:var(--gold);letter-spacing:.04em}
 .leadnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid var(--gold);background:var(--bg)}
@@ -252,6 +252,10 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 구원자 · 브레이크 스킬</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
  <div class="mut" style="margin-bottom:6px">체크한 구원자만 씁니다(자동 저장)</div>
+ <div class="dsec"><b>내 정보 불러오기</b></div>
+ <div class="mut" id="mi-status" style="margin:4px 0 6px">불러온 정보 없음</div>
+ <div class="dtools"><label class="miFile" style="cursor:pointer"><span class="mibtn">파일 선택</span><input type="file" id="mi-file" accept=".json,application/json" hidden></label><button id="mi-clear" type="button">지우기</button></div>
+ <div class="mut" style="margin:4px 0 8px;font-size:11px">내정보.json 파일만 읽습니다. 서버로 보내지 않고 이 브라우저에만 저장합니다. 불러오면 보유 구원자가 자동으로 체크됩니다.</div>
  <div class="dtools"><button id="all" type="button">모두 선택</button><button id="none" type="button">모두 해제</button></div>
  <input type="text" id="oq" placeholder="이름 검색" style="width:100%;margin:6px 0 8px">
  <div class="own" id="own"></div>
@@ -265,6 +269,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 </main>
 <script src="lib/cytoscape.min.js"></script>
 <script src="quick.js"></script>
+<script src="myinfo_import.js"></script>
 <script>
 const D=/*DATA*/null;
 const EL={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
@@ -735,6 +740,24 @@ const setDrawer=o=>{$("drawer").classList.toggle("open",o);$("dback").classList.
 $("dbtn").onclick=()=>setDrawer(!$("drawer").classList.contains("open"));$("dclose").onclick=()=>setDrawer(false);$("dback").onclick=()=>setDrawer(false);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")setDrawer(false)});
 $("all").addEventListener("click",()=>{saveSel();updCount();rerun()});$("none").addEventListener("click",()=>{saveSel();updCount();rerun()});
+// ---------------- 내 정보 불러오기 (myinfo_import.js, ss-myinfo-v1)
+const miStatus=(t,bad)=>{const e=$("mi-status");e.textContent=t;e.style.color=bad?"#e0553a":""};
+function miSummary(info,unknown){const d=info.exported_at?String(info.exported_at).slice(0,10):"";return `불러옴: 보유 구원자 ${info.units.length}명${d?` · ${d} 추출`:""}${unknown?` · 이 페이지에 없는 구원자 ${unknown}명`:""}`}
+function miApply(info){
+ const bad=MyInfoImport.validate(info);if(bad){miStatus(bad,true);return false}
+ const {keys,unknown}=MyInfoImport.mapOwned(info,R),own=new Set(keys);
+ document.querySelectorAll("#own input").forEach(x=>{x.checked=own.has(x.dataset.k)});
+ LS.set("myinfo",info);saveSel();updCount();rerun();
+ miStatus(miSummary(info,unknown.length),false);return true}
+$("mi-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+ try{miApply(JSON.parse(await f.text()))}catch(err){miStatus("파일을 읽지 못했습니다: "+err.message,true)}});
+$("mi-clear").addEventListener("click",()=>{LS.set("myinfo",null);miStatus("불러온 정보 없음",false)});
+(function miInit(){
+ const saved=LS.get("myinfo");if(saved&&!MyInfoImport.validate(saved))miStatus(miSummary(saved,MyInfoImport.mapOwned(saved,R).unknown.length),false);
+ if(!/myinfo=/.test(location.hash))return;
+ MyInfoImport.fromHash(location.hash).then(info=>{
+  try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
+  if(info&&miApply(info))setDrawer(true)}).catch(err=>{try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}miStatus("불러오기 실패: "+err.message,true);setDrawer(true)})})();
 const TYC={1:"#e0553a",2:"#d4a72c",3:"#34b37c",4:"#4a86e0",5:"#8d939e"},ELC={sun:"#e0554a",moon:"#5aa0ff",star:"#8fe05a",order:"#f0cf86",chaos:"#c58bff"};
 $("glegend").innerHTML=[[1,"부여→소비"],[2,"버프증폭"],[3,"생존연계"],[4,"쿨감·게이지"],[5,"속성공유"]].map(([t,n])=>`<span class="lg"><i style="background:${TYC[t]}"></i>${n}</span>`).join("")+'<span class="lg mut">화살표 = 제공자→소비자</span>';
 $("gcenter").innerHTML=R.map(s=>`<option value="${esc(s.key)}">${esc(s.name)} (${esc(s.sub)})</option>`).join("");
