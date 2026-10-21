@@ -4,7 +4,8 @@
 실측 판마다 사용자 능력치 화면 값(공·생·방·속도·치명 등)을 stats_override 로 넣고(화면이 없는 구원자는 남은 전투력 몫으로 표준 육성 배율),
 재점화 버프는 전투력 보정 배율에 곱한다(api options.rekindle 과 같은 뜻). 규칙을 바꿔 보려면 --ov '{"basic_tough": 1}'.
 
-사용: python -X utf8 -I tools/ingame_check.py [--runs 100] [--ov JSON] [--only 37-3]
+사용: python -X utf8 -I tools/ingame_check.py [--runs 100] [--ov JSON] [--only 37-3] [--bs]
+--bs = 실측 장착 스킬 「큐브 과부하」 Lv.5 활성화(기본 미장착).
 2026-10-21 결과: 37-2(잡몹) 실제 4.13 vs 시뮬 4.11 일치 / 37-3·36-36(큰 보스) 실제 1.82·1.88 vs 시뮬 0.49·0.84 — 보스전만 과대(설명 docs/ingame_samples.md)
 """
 import json
@@ -32,7 +33,7 @@ SAMPLES = {
 }
 
 
-def run(name, runs=100, ov=None, seed=7):
+def run(name, runs=100, ov=None, seed=7, bs=False):
     import gen_quick_calib as G
     from battlesim import quick, simulate
     ck, sk, order, lead, pw, rk, dealt, taken, turn, res = SAMPLES[name]
@@ -44,6 +45,8 @@ def run(name, runs=100, ov=None, seed=7):
             u['stats_override'] = dict(REAL[u['key']])
             u['stats_final'] = True          # 화면 값 = 최종값(상시 패시브 % 를 다시 곱하지 않음)
     opt = dict(G.SIMOPT, n_runs=runs, seed=seed, rekindle=rk)
+    if bs:
+        opt['break_skill'] = {'name': '큐브 과부하', 'level': 5}
     opt['rules_override'] = dict(opt['rules_override'], **(ov or {}))
     tab, nm = sk.split('|', 1)
     r = simulate(spec, {'stage': '%s/%s/%s' % (ck, tab, nm)}, opt)
@@ -51,7 +54,8 @@ def run(name, runs=100, ov=None, seed=7):
     t = sum(v['dmg_taken'] for v in r['per_unit'].values())
     acts = sum(v['actions'] for v in r['per_unit'].values())
     return dict(stage=name, real_ratio=round(dealt / taken, 2), sim_ratio=round(d / max(1.0, t), 2), sim_clear=r['outcome']['clear_p'],
-                real=res, real_turn=turn, sim_ally_actions=round(acts, 1), foe_breaks=r['breaks']['foe'], ally_breaks=r['breaks']['ally'])
+                real=res, real_turn=turn, sim_ally_actions=round(acts, 1), foe_breaks=r['breaks']['foe'], ally_breaks=r['breaks']['ally'],
+                break_skill=r['break_skill'])
 
 
 def main():
@@ -61,7 +65,7 @@ def main():
     for name in SAMPLES:
         if only and name != only:
             continue
-        print(json.dumps(run(name, runs, ov), ensure_ascii=False), flush=True)
+        print(json.dumps(run(name, runs, ov, bs='--bs' in sys.argv), ensure_ascii=False), flush=True)
 
 
 if __name__ == '__main__':

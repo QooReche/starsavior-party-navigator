@@ -228,7 +228,7 @@ def full_props(ln):
 class Eff:
     """유닛에 붙은 효과 1개(강화·약화·보호막·지속 피해·지속 회복). stacks 는 정수."""
     __slots__ = ('name', 'props', 'stacks', 'maxs', 'dur', 'src', 'harmful', 'fresh', 'shield', 'dot', 'inst', 'hot',
-                 'check', 'fixed')
+                 'check', 'fixed', 'clock')
 
     def __init__(self, name, props, maxs, dur, src, harmful):
         self.name, self.props, self.maxs, self.dur, self.src, self.harmful = name, props, maxs, dur, src, harmful
@@ -240,6 +240,7 @@ class Eff:
         self.hot = 0.0       # 턴마다 회복 계수(대상 최대 생명력 비율)
         self.check = False   # 확인용 버프(행동 끝에 사라짐)
         self.fixed = False   # 해제 불가
+        self.clock = 'owner_turn'   # 영역은 파티 공용 ally_turn/round 로 차감
 
 
 class Unit:
@@ -413,7 +414,7 @@ class Ctx:
 # ------------------------------------------------------------------ 전투
 class Battle:
     def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None,
-                 timeline=False, enemy_lines=True, max_turns=50, pen=None):
+                 timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None):
         self.pen = tuple(pen) if pen else (1.0, 1.0)    # P5 전투력 보정(아군이 주는 피해 배율, 적이 주는 피해 배율) — 스킬·지속·연쇄만
         self.opts = dict(DEFAULT_OPTS)
         self.opts.update(opts or {})
@@ -443,6 +444,16 @@ class Battle:
         self._cur_line = None    # 실행 중인 줄(자동 지정 대상 규칙을 그 스킬 설명에서 찾을 때 씀)
         self.once = set()        # {전투당 1회} 줄 사용 기록
         self.recast = {}         # {발동 후 N턴 재발동 불가} 줄: (주인, 줄) -> 발동한 때의 주인 행동 횟수
+        self.break_skill = dict(break_skill or {})
+        self.break_skill_name = self.break_skill.get('name')
+        self.break_skill_enabled = self.break_skill_name == '큐브 과부하'
+        self.break_points = self.break_points_gained = self.break_skill_uses = 0
+        self.break_skill_cd = 0
+        self._break_round = 0
+        if self.break_skill_name and not self.break_skill_enabled:
+            self.unsup['break_skill:' + self.break_skill_name] += 1
+        if self.break_skill_enabled and self.mc['break_skill_cd_unit'] not in ('ally_turn', 'round'):
+            raise ValueError('break_skill_cd_unit 은 ally_turn|round')
 
     # ---------- 공용
     def tick(self):
@@ -516,12 +527,23 @@ class Battle:
                 break
             living = self.alive(0) + self.alive(1)
             best, bt = self.pick_next(living)
+            round_tick = False
+            if self.break_skill_enabled and self.mc['break_skill_cd_unit'] == 'round':
+                boundary = (self._break_round + 1) * self.turn_ticks
+                if boundary <= self.t + bt + 1e-9 and boundary <= horizon:
+                    # 영역 만료 순간부터 새 속도로 게이지를 쌓도록 시간 진행을 나눈다.
+                    bt = max(0.0, boundary - self.t)
+                    round_tick = True
             if self.t + bt > horizon + 1e-9:
                 self.result = 'timeout'
                 break
             for x in living:
                 x.gauge = min(10000.0, x.gauge + x.spd() * bt)
             self.t += bt
+            if round_tick:
+                self._break_round += 1
+                self._tick_break_skill()
+                continue
             self.act(best)
         return self
 
@@ -548,6 +570,10 @@ class Battle:
 
     # ---------- 행동
     def act(self, u):
+        if u.side == 0 and self.break_skill_enabled:
+            if self.mc['break_skill_cd_unit'] == 'ally_turn':
+                self._tick_break_skill()
+            self._use_break_skill()
         u.gauge = 0.0
         u.extra_turn = False      # 추가 턴은 이 행동으로 소비(행동 끝에 지우면 다음 차례 판정에서 우선권이 사라짐)
         u.actions += 1
@@ -588,6 +614,8 @@ class Battle:
             self.fire(u, 'own_te', Ctx(u, u, None))
             for name in list(u.eff):
                 e = u.eff[name]
+                if e.clock != 'owner_turn':
+                    continue
                 if e.fresh:
                     e.fresh = False
                     continue
@@ -612,6 +640,44 @@ class Battle:
             u.gauge = 10000.0     # extra_turn 표시는 실제로 그 턴을 쓸 때(act 시작)까지 유지 -> 동시 100% 판정에서 최우선
         elif u.dead:
             u.extra_turn = False
+
+    def _tick_break_skill(self):
+        """공용 쿨·영역 차감. 발동 턴에는 차감하지 않고 다음 단위 경계부터 센다."""
+        self.break_skill_cd = max(0, self.break_skill_cd - 1)
+        for u in self.allies:
+            for name, e in list(u.eff.items()):
+                if e.clock == self.mc['break_skill_cd_unit']:
+                    e.dur -= 1
+                    if e.dur <= 0:
+                        del u.eff[name]
+                    self.dirty(u)
+
+    def _use_break_skill(self):
+        cost = self.mc['break_skill_cost']
+        if self.break_skill_cd > 0 or self.break_points < cost:
+            return
+        self.break_points -= cost
+        self.break_skill_cd = self.mc['break_skill_cooldown']
+        self.break_skill_uses += 1
+        self.log(bskill=self.break_skill_name)
+        # 사망자를 포함한 편성 전체 최대 HP 합(가정). 회복·버프는 생존자에게만.
+        amount = sum(u.maxhp for u in self.allies) * self.mc['break_skill_heal_ratio']
+        for u in self.alive(0):
+            got = self.heal(None, u, amount, 0.0)
+            self.log(heal=self.break_skill_name, to=u.name, amount=got)
+            speed = self.mc['break_skill_speed_pct']
+            if u.role in ('디펜더', '서포터'):
+                speed += self.mc['break_skill_role_speed_pct']
+            for name, props, dur, clock in (
+                ('오메가 프로토콜', {'공격력%': self.mc['break_skill_atk_pct'],
+                                  '효과 적중': self.mc['break_skill_hit_pct']},
+                 self.mc['break_skill_buff_turns'], 'owner_turn'),
+                ('치트 매트릭스', {'속도%': speed}, self.mc['break_skill_domain_turns'], self.mc['break_skill_cd_unit']),
+            ):
+                e = Eff(name, props, 1, dur, None, False)
+                e.stacks, e.fixed, e.clock = 1, self.mc['break_skill_fixed'], clock
+                u.eff[name] = e
+            self.dirty(u)
 
     def _tick_shields(self, u):
         for name in list(u.eff):
@@ -1145,6 +1211,11 @@ class Battle:
         if v.sa == 0:
             v.broken = True
             v.breaks += 1
+            if v.side == 1 and self.break_skill_enabled:
+                points = self.mc['break_skill_boss_points' if getattr(v.d, 'boss', False) else 'break_skill_normal_points']
+                gained = max(0, min(points, self.mc['break_skill_point_cap'] - self.break_points))
+                self.break_points += gained
+                self.break_points_gained += gained
             if v.side == 1 or self.mc['ally_break_gauge'] == 'reset':
                 v.gauge = 0.0      # 몬스터는 행동 게이지 0(databook #d-break). 구원자도 기본 0(사용자 인게임 확인 2026-10-21, mc.ally_break_gauge)
             self.dirty(v)
