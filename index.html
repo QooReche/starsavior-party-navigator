@@ -204,6 +204,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
   <p class="mut" style="margin:6px 0">전투력은 파티 구성·육성에 따라 달라지므로 기본은 반영하지 않습니다. 필요할 때만 내 파티 전투력을 입력하세요(비우면 무시).</p>
   <label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px">내 파티 전투력<input type="number" id="mypow" min="0" step="100" placeholder="예: 52000" style="min-width:140px"></label>
   <div id="powinfo" class="powinfo"></div>
+  <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됩니다.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px">상성 방식<select id="mmode"><option value="">균형(기본): 유리 가산 + 불리 감점</option><option value="avoid">역상성 회피 우선: 불리 속성만 확실히 피하고 유리 가산은 작게</option></select></label></div></details>
 </div>
 <div id="out"></div>
@@ -241,6 +242,9 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const R=D.roster, CFG=D.cfg, contents=D.contents, BYKEY=Object.fromEntries(D.roster.map(s=>[s.key,s]));
 const TC=tr=>"t-"+(tr?String(tr).replace("티어","").replace(".",""):"q");
+// 작전 재점화 버프(인게임 표, 2026-10-21 사용자 제보): 단계별 x = 주는 피해 +x, 받는 피해 −x. 작전(op)에만
+const REKINDLE=[0,0.03,0.07,0.12,0.18,0.25];
+const rkOf=ck=>ck==="op"?(+(document.getElementById("rk")||{}).value||0):0;
 const LS={get(k){try{return JSON.parse(localStorage.getItem("pn."+k))}catch(e){return null}},set(k,v){try{localStorage.setItem("pn."+k,JSON.stringify(v))}catch(e){}}};
 let cur=null;
 
@@ -261,7 +265,7 @@ function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$(
  el.innerHTML=`<span class="${pp.ratio<70?"bad2":"warn"}">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 아군 피해 ×${pp.a.toFixed(3)}, 적 피해 ×${pp.b.toFixed(3)}${pp.warn?` [${pp.warn}]`:""}</span> <span class="mut">· 회복·보호막은 보정 없음 → 생존·지원을 더 중시해 추천(추정) · 보정 없으려면 ${Math.ceil(s.rp*0.9).toLocaleString()} 이상</span>`}
 function sbText(s){return s&&s.sb&&s.sb.length?` · <span class="mut">시즌 보너스(${esc(s.sbn)}): ${s.sb.map(b=>esc(b.cond)+" "+esc(b.text)).join(" / ")}</span>`:""}
 function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+``:"해당 스테이지 없음"}
-$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);run()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};$("grow").onchange=()=>{LS.set("grow",$("grow").value);run()};
+$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);run()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};$("grow").onchange=()=>{LS.set("grow",$("grow").value);run()};$("rk").onchange=()=>{LS.set("rk",$("rk").value);run()};
 
 function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">
  <span class="fc">${face(s)}${dia(s,34)}</span><span class="tn">${esc(s.name)}</span><span class="ts">${esc(s.sub)}</span>${kindTxt(s)}</span></label>`}
@@ -426,7 +430,9 @@ const BLV="@개화(SSR)";
 const ekey=k=>BLOOM[k]&&QK.d&&QK.d.sv[k+BLV]?k+BLV:k;
 function pwOf(keys){const o={};let n=0;for(const k of keys)if(PW[k]>0){o[ekey(k)]=PW[k];n++}return n?o:null}
 function quickIn(c,st){if(!QK.d||!window.Quick)return null;const qs=(QK.d.st[c.key]||{})[st.tab+"|"+st.name];if(!qs)return null;
- const my=+$("mypow").value;return {qs,power:my>0?my:null,growth:+$("grow").value||1,ck:c.key,prm:(QK.d.pc&&QK.d.pc[c.key])||QK.d.params}}
+ const my=+$("mypow").value,rk=rkOf(c.key),p0=(QK.d.pc&&QK.d.pc[c.key])||QK.d.params;
+ const prm=rk&&p0?Object.assign({},p0,{A:p0.A*(1+REKINDLE[rk]),B:p0.B*(1-REKINDLE[rk])}):p0;   // 재점화 버프 = 아군 피해 ×(1+x)·적 피해 ×(1−x)(시뮬 api rekindle 과 같은 뜻)
+ return {qs,power:my>0?my:null,growth:+$("grow").value||1,ck:c.key,prm,rk}}
 const qBase=(qi,keys)=>({growth:qi.growth,power:qi.power,powers:pwOf(keys)});
 function quickRank(cands,defPen,qi){
  const all=topParties(cands,defPen,1e9),sv=QK.d.sv,prm=qi.prm,out=[];
@@ -468,7 +474,7 @@ function quickBox(p,qt,qi,st,pickKey){if(!qt||!qt.length)return "";
   return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?face(BYKEY[x]):"").join("")}</div>
    <span class="qv ${vd}" title="${sr?"전투 시뮬 기준":"빠른 계산 기준"}">${QV[vd]}</span><span class="qt">${sr&&vd!==t.vd?`<span class="mut">빠른 계산 「${QV[t.vd]}」 → 시뮬 결과로 바꿈 · </span>`:""}${t.q.clear?`약 ${t.q.rounds}턴 · 남는 생명력 ${Math.round(t.q.left*100)}%`:`${t.q.rounds}턴째 ${t.q.why==="time"?"시간 초과":"전멸"}`}${ng}${w.length?`<br><span class="mut">${w.map(esc).join(" · ")}</span>`:""}${simCell(p,t,st)}</span>
    ${k===pickKey?'<span class="mut">아래에 표시 중</span>':`<button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">이 팀 보기</button>`}</div>`};
- return `<div class="qbox" data-k="quick"><div class="qh"><b style="color:var(--fg)">이 스테이지 추천 (빠른 계산)</b>${JOINT?" · 파티 1·2를 함께 골라 둘 다 깨는 조합 우선":""} · 가정: 1안 파티 전투력 ${Math.round(P0).toLocaleString()}${st.rp?` (권장 ${st.rp.toLocaleString()}의 ${Math.round(ratio)}%)`:""}${npw?` · 구원자별 전투력 입력 ${npw}명 반영`:""}${rows[0].ek.some(k=>k.includes("@"))?" · 개화 반영":""} · 레벨·장비·돌파·스킬 레벨은 이 전투력에 맞춘 평균 육성으로 봄${(()=>{const cb=QK.d.calib,g=cb&&cb.groups&&cb.groups[qi.ck==="cosmo"||qi.ck==="rush"?qi.ck:"base"];return g?` · 이 콘텐츠에서 빠른 계산과 전투 시뮬의 클리어 판정 ${Math.round(g.acc*100)}% 일치(${g.samples.toLocaleString()}건)`:""})()}${QK.d.params?"":' · <b style="color:var(--bad)">계수 없음</b>'}</div>${rows.map(row).join("")}${simBar(p,rows,st,uniq>rows.length)}</div>`}
+ return `<div class="qbox" data-k="quick"><div class="qh"><b style="color:var(--fg)">이 스테이지 추천 (빠른 계산)</b>${JOINT?" · 파티 1·2를 함께 골라 둘 다 깨는 조합 우선":""} · 가정: 1안 파티 전투력 ${Math.round(P0).toLocaleString()}${st.rp?` (권장 ${st.rp.toLocaleString()}의 ${Math.round(ratio)}%)`:""}${npw?` · 구원자별 전투력 입력 ${npw}명 반영`:""}${qi.rk?` · 재점화 버프 ${qi.rk}단계 반영`:""}${rows[0].ek.some(k=>k.includes("@"))?" · 개화 반영":""} · 레벨·장비·돌파·스킬 레벨은 이 전투력에 맞춘 평균 육성으로 봄${(()=>{const cb=QK.d.calib,g=cb&&cb.groups&&cb.groups[qi.ck==="cosmo"||qi.ck==="rush"?qi.ck:"base"];return g?` · 이 콘텐츠에서 빠른 계산과 전투 시뮬의 클리어 판정 ${Math.round(g.acc*100)}% 일치(${g.samples.toLocaleString()}건)`:""})()}${QK.d.params?"":' · <b style="color:var(--bad)">계수 없음</b>'}</div>${rows.map(row).join("")}${simBar(p,rows,st,uniq>rows.length)}</div>`}
 
 // ---- 브라우저 시뮬 확인(sim_worker.js + Pyodide): 위 3팀을 확률 전투 엔진으로 다시 돌린다. 누를 때만 내려받는다(처음 약 14MB)
 // 안전장치(codex 상담): 제한 시간·취소(작업자 종료), 실패해도 빠른 계산은 그대로, 결과는 추정치+95% 구간, 입력이 바뀌면 이전 결과 무효
@@ -477,6 +483,7 @@ const SIMQ={w:null,busy:null,res:{},msg:"",err:"",n:100,seed:1,LOAD_MS:180000,RU
 function simAuto(on){SIMQ.auto=on;try{localStorage.setItem("pn.simauto",on?"1":"0")}catch(e){}}
 // 시뮬 공통 옵션: 표준 육성(P5 build) 위에 공·생·방만 육성 가정 배수로 바꾸고, 역보정은 엔진이 스탯으로 전투력을 계산해 적용
 const SIMOPT={build:"standard",rules_override:{power_penalty:"model"}};
+const simOpt=ck=>{const rk=rkOf(ck);return rk?Object.assign({},SIMOPT,{rekindle:rk}):SIMOPT};
 function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
  // 육성 가정 = 기준(Lv200·표준 육성) 공·생·방 × k (전투력이 공·생·방에 비례하는 식이라 엔진이 계산하는 전투력 = 가정한 전투력)
  // 구원자별 전투력 = quick.js evaluate 와 같은 배분(입력값, 없으면 base × 기준 전투력 비율). 반올림 = 버림(x+0.5) — 파이썬 gen_quick_calib 와 같게
@@ -487,7 +494,7 @@ function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
  const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null}}
-const simSig=(st,t)=>JSON.stringify([contents[$("content").value].key,st.tab,st.name,simParty(t),SIMQ.n,MODE]);
+const simSig=(st,t)=>{const ck=contents[$("content").value].key,rk=rkOf(ck);return JSON.stringify([ck,st.tab,st.name,simParty(t),SIMQ.n,MODE].concat(rk?[rk]:[]))};
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
  const mn=r.man?`<br><span class="qsim" data-man="1">수동(서순대로): <b class="qv ${simCls(r.man)}">클리어 ${Math.round(r.man.c*100)}%</b> <span class="mut">(${r.man.n}판${r.man.t!=null?` · 약 ${Math.round(r.man.t)}턴`:""} · 아래 서순 참고)</span></span>`:"";
  const cls=r.clear>=0.9?"safe":r.clear>=0.5?"tight":"hard";
@@ -517,7 +524,7 @@ function simStart(p){const c=contents[$("content").value],st=cur&&cur[$("stage")
   if(m.type==="error")simStop(m.msg)};
  SIMQ.w.onerror=e=>simStop("작업자 오류: "+(e.message||"알 수 없음"));
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
- const req={type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:SIMQ.n,seed:SIMQ.seed,options:SIMOPT,mode:MODE,
+ const req={type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:SIMQ.n,seed:SIMQ.seed,options:simOpt(c.key),mode:MODE,
   teams:rows.map(t=>({key:t.keys.slice().sort().join(","),party:simParty(t)}))};
  SIMQ.lastReq={req,sigs};SIMQ.w.postMessage(req);
  run()}
@@ -656,5 +663,5 @@ function drawGraph(){
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=drawGraph);
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
 {const qs=new URLSearchParams(location.search);setMode(qs.get("mode")==="manual"?"manual":qs.get("mode")==="auto"?"auto":(LS.get("mode")==="manual"?"manual":"auto"),false)}
-{const gv=LS.get("grow");if(gv&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
+{const gv=LS.get("grow");if(gv&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
 </script></body></html>

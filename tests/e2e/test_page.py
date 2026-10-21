@@ -362,8 +362,30 @@ def test_cosmo_joint(browser, ctx):
         t1, t2, disjoint, u1, u2, after, "함께" in note)
 
 
+def test_rekindle_ui(browser, ctx):
+    """작전 재점화 버프: 고르면 머리말에 「재점화 버프 N단계 반영」, 빠른 계산 아군·적 피해 계수에 반영, 시뮬 옵션 rekindle, 다른 콘텐츠엔 안 붙음"""
+    ctx.errors.clear()
+    page = open_page(browser, ctx)
+    choose(page, "작전 (일반)", "36-36")
+    h0 = page.inner_text('.party[data-party="1"] .qbox .qh')
+    page.evaluate("() => { document.getElementById('optbox').open = true }")
+    page.select_option("#rk", "3")
+    settle(page)
+    h1 = page.inner_text('.party[data-party="1"] .qbox .qh')
+    opt = page.evaluate("() => simOpt('op')")
+    cz = page.evaluate("() => simOpt('cosmo')")
+    saved = page.evaluate("() => localStorage.getItem('pn.rk')")
+    page.select_option("#rk", "0")
+    settle(page)
+    errs = list(ctx.errors)
+    page.close()
+    ok = ("재점화" not in h0 and "재점화 버프 3단계 반영" in h1 and opt.get("rekindle") == 3 and "rekindle" not in cz
+          and saved == '"3"' and not errs)
+    return ok, "전 %s / 후 %s / 시뮬 옵션 %s / 코스모 %s / 저장 %s / 오류 %s" % ("재점화" in h0, "3단계 반영" in h1, opt.get("rekindle"), cz.get("rekindle"), saved, errs[:2])
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_quick_growth, test_savior_power, test_browser_sim,
-         test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_mobile_layout, test_python_js_topk_parity]
+         test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 
 
 def main():

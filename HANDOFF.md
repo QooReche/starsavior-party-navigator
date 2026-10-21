@@ -1,13 +1,21 @@
 # 파티 편성 네비게이터 인수인계 (다음 세션용)
 
-최종 갱신: 2026-10-20. 새 세션은 `AI\CLAUDE.md` → 이 파일 → `README.md` 순으로 읽을 것. 메모리 `party-navigator` 에도 요약 있음.
+최종 갱신: 2026-10-21. 새 세션은 `AI\CLAUDE.md` → 이 파일 → `README.md` 순으로 읽을 것. 메모리 `party-navigator` 에도 요약 있음.
 
 ## 상태
 - 저장소: https://github.com/QooReche/starsavior-party-navigator (**공개**, GitHub Pages: https://QooReche.github.io/starsavior-party-navigator/). 최신 커밋은 `git log` 로 확인.
 - 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
 - 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
 
-## ▶ 재설계 3단계 완료 (2026-10-20 밤) — 다음 세션은 여기부터
+## ▶ 2026-10-21 — 다음 세션은 여기부터
+- **첫 인게임 실측**(작전 36-36, 사용자 제보) = `docs/ingame_samples.md`. 시뮬이 실제보다 크게 비관적(준/받은 피해 비율 실제 1.88 vs 시뮬 0.79). 유력 원인 = **적에게도 ×1.85**(`enemy_same_formula`, BACKLOG A7) — 판 1개라 **아직 안 바꿈**, 사용자에게 1~2판 더 요청함. 오면 같은 비율 계산으로 확인 후 결정
+- 구원자 브레이크 = 행동 게이지 0(`mc.ally_break_gauge`=reset, 사용자 확인). 계수 다시 맞춤(일치 92.3%)
+- 작전 재점화 버프(0~5단계) 입력: 화면 옵션 `#rk`, 시뮬 `options.rekindle`(api.REKINDLE), 빠른 계산은 A×(1+x)·B×(1−x)
+- Pyodide 를 `lib/pyodide/` 에 직접 둠(외부 CDN 없음, 해시 시험)
+- 실험만 하고 안 넣은 것: 빠른 계산 상성 항(반반 검증 개선 없음), 「빨리 잡는 팀 먼저」 정렬(시뮬 기준 오히려 약간 나쁨 — 일반 1등 클리어 77.6% vs 75.2%)
+- 브라우저 시험 13개
+
+## ▶ 재설계 3단계 완료 (2026-10-20 밤) — 이전 기록
 - 결과 = `docs/redesign_v1.md` 「3단계 결과」, 남은 일 = `docs/BACKLOG.md`.
 - 엔진에 P5(표준 장비·브레이크·역보정) 합침, 수동 서순·코스모 공동 선택·보스 스테이지 보정, 옛 사전 계산 퇴역(`data/sim` 없음).
 - 브라우저 시뮬 진입점 = `battlesim/web.py`(run_auto·run_manual). 시뮬 칸 순서 = [전열1, 전열2, 후열1, 후열2] — 화면 카드 순서와 다르다(버그였음).

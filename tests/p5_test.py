@@ -175,16 +175,16 @@ def test_tough_elem_and_fixed():
 
 
 def test_ally_break_gauge_and_coop():
-    """구원자 브레이크: 기본은 게이지 유지(몬스터만 0 — databook), 규칙 reset 이면 0. 격파 중에는 협공 후보에서 빠짐"""
+    """구원자 브레이크: 기본은 게이지 0(몬스터와 같이 — 사용자 인게임 확인 2026-10-21), 규칙 keep 이면 유지. 격파 중에는 협공 후보에서 빠짐"""
     res = {}
-    for mode in ('keep', 'reset'):
+    for mode in ('keep', 'reset', None):
         a, f = unit('a', sa=1), unit('foe', hp=10 ** 9)
-        b = battle([a], [f], mc=dict(ally_break_gauge=mode))
+        b = battle([a], [f], mc=dict(ally_break_gauge=mode) if mode else None)
         A, F = b.allies[0], b.foes[0]
         A.gauge = 6000.0
         hit(b, F, A, '기본기', ab=1)
         res[mode] = (A.broken, A.gauge)
-    return res == {'keep': (True, 6000.0), 'reset': (True, 0.0)} and b.no_react(b.allies[0]), '결과 %s' % res
+    return res == {'keep': (True, 6000.0), 'reset': (True, 0.0), None: (True, 0.0)} and b.no_react(b.allies[0]), '결과 %s' % res
 
 
 def test_break_conditions():

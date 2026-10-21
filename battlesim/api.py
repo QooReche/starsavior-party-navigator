@@ -13,7 +13,9 @@ encounter_spec
   선택: "turn_limit"(스테이지 lt 를 덮어씀), "stage_fx"(문장 목록, 스테이지 fx 를 덮어씀), "max_turns"(턴 제한 없을 때 시간 상한, 50)
 options
   {"seed": 1, "n_runs": 100, "rules_override": {mc·opts 키: 값}, "nova_policy": "auto"|"manual", "timeline": false,
-   "enemy_lines": true, "run_offset": 0, "per_run": false, "formula_override": {"COOP_CAP": 1.0}}
+   "enemy_lines": true, "run_offset": 0, "per_run": false, "formula_override": {"COOP_CAP": 1.0}, "rekindle": 0}
+  rekindle = 작전 재점화 버프 단계 0~5(작전 op 에서만): 아군 주는 피해 ×(1+x)·받는 피해 ×(1−x), x = REKINDLE[단계]
+       (인게임 표 2026-10-21 사용자 제보, 전투력 보정과 곱으로 합침 — 곱인지 증감 합인지는 미확인)
   run_offset = 판 번호 시작값(판 r 의 난수 = seed*1000003 + run_offset + r; timeline 은 첫 판 = run_offset 번 판)
   per_run = true 면 result.runs = [[결과, 처치 턴 또는 null], ...](판 순서)
   formula_override = 공식 상수 임시 교체(민감도용, 지금은 COOP_CAP 만). 실행이 끝나면 원래 값으로 돌린다
@@ -217,6 +219,9 @@ def simulate(party_spec, encounter_spec, options=None):
             setattr(_rules, k, v)
 
 
+REKINDLE = [0.0, 0.03, 0.07, 0.12, 0.18, 0.25]     # 작전 재점화 버프 단계별 (주는 피해 +x, 받는 피해 −x) — 인게임 표(2026-10-21 사용자 제보)
+
+
 def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     db = get_db()
     build = o.get('build', 'none')
@@ -236,6 +241,13 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
             pen = (pp[1], pp[2])
     elif mc['power_penalty'] not in ('off', 'model'):
         raise ValueError('power_penalty 는 off|model: %r' % mc['power_penalty'])
+    rk = int(o.get('rekindle') or 0)
+    if rk and meta.get('content') == 'op':
+        if not 0 < rk < len(REKINDLE):
+            raise ValueError('rekindle 은 0~%d: %r' % (len(REKINDLE) - 1, rk))
+        x = REKINDLE[rk]
+        a0, e0 = pen or (1.0, 1.0)
+        pen = (a0 * (1 + x), e0 * (1 - x))
     static = support_report(defs + [d for w in waves for d in w])
     names = ['%s#%d' % (d.name, i) for i, d in enumerate(defs)]
     agg = defaultdict(lambda: defaultdict(list))
@@ -311,7 +323,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         encounter=dict(meta, turn_limit=turn_limit, stage_fx=fx, stage_fx_unparsed=fx_unknown,
                        waves=[[d.name for d in w] for w in waves]),
         party=dict(units=names, leader=leader, build=build, builds=[d.build for d in defs], power=power,
-                   power_ratio=(pp[0] if pp else None), penalty=(list(pen) if pen else None), penalty_note=pen_note),
+                   power_ratio=(pp[0] if pp else None), penalty=(list(pen) if pen else None), penalty_note=pen_note,
+                   rekindle=(rk if rk and meta.get('content') == 'op' else 0)),
         breaks=dict(ally=round(breaks[0] / max(1, n_runs), 3), foe=round(breaks[1] / max(1, n_runs), 3)),
         outcome=dict(
             n_runs=n, n_clear=outcomes['clear'],

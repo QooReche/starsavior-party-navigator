@@ -141,8 +141,26 @@ def test_pyodide_local():
     return n == 5 and not bad and not ext, '파일 %d개, 해시 다름 %s, 작업자에 바깥 주소 %s' % (n, bad, ext)
 
 
+def test_rekindle():
+    """작전 재점화 버프(options.rekindle): 작전에서는 전투력 보정에 (1+x, 1−x)를 곱하고, 다른 콘텐츠·0단계는 그대로"""
+    p, _ = party()
+    o = dict(build='standard', rules_override={'power_penalty': 'model'}, n_runs=3, seed=1)
+    op0 = simulate(p, {'stage': 'op/아가논 시가지/SECTOR 36-36'}, o)['party']
+    op3 = simulate(p, {'stage': 'op/아가논 시가지/SECTOR 36-36'}, dict(o, rekindle=3))['party']
+    cz = simulate(p, {'stage': 'cosmo/길레/길레 1단계'}, dict(o, rekindle=3))['party']
+    a0, e0 = op0['penalty'] or [1.0, 1.0]
+    ok = (op3['rekindle'] == 3 and abs(op3['penalty'][0] - a0 * 1.12) < 1e-9 and abs(op3['penalty'][1] - e0 * 0.88) < 1e-9
+          and cz['rekindle'] == 0 and op0['rekindle'] == 0)
+    try:
+        simulate(p, {'stage': 'op/아가논 시가지/SECTOR 36-36'}, dict(o, rekindle=9))
+        bad = False
+    except ValueError:
+        bad = True
+    return ok and bad, '0단계 %s / 3단계 %s / 코스모 %s / 잘못된 단계 거부 %s' % (op0['penalty'], op3['penalty'], cz['rekindle'], bad)
+
+
 TESTS = [test_seq_from_timeline, test_slot_order, test_run_auto_power_and_determinism, test_run_manual_shape, test_manual_burst_rule,
-         test_formula_override_restored, test_manifest_complete, test_pyodide_local]
+         test_formula_override_restored, test_manifest_complete, test_pyodide_local, test_rekindle]
 
 
 def main():

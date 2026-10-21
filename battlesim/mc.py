@@ -1146,7 +1146,7 @@ class Battle:
             v.broken = True
             v.breaks += 1
             if v.side == 1 or self.mc['ally_break_gauge'] == 'reset':
-                v.gauge = 0.0      # 몬스터는 행동 게이지 0(databook #d-break). 구원자는 문서에 없어 기본 유지(mc.ally_break_gauge)
+                v.gauge = 0.0      # 몬스터는 행동 게이지 0(databook #d-break). 구원자도 기본 0(사용자 인게임 확인 2026-10-21, mc.ally_break_gauge)
             self.dirty(v)
             self.log(brk=v.name, by=a.name)
 
