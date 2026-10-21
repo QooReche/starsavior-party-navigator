@@ -237,6 +237,279 @@ def test_sunshine_target_selection():
     return out == [(0, []), (0, []), (1, [['marked']]), (1, [['marked']])], str(out)
 
 
+def pre(b, a, slot='기본기'):
+    c = Ctx(a, a, a.d.skills[slot])
+    c.targets, c.target = list(b.foes), b.foes[0]
+    b.run_own(a, c, 'own_pre')
+    return c
+
+
+def test_fix2_beneficiary():
+    out = []
+    for slot, mark, name in [('특수기', '청풍(해제불가)', '도약'),
+                             ('궁극기', None, '치명타 피해 증가')]:
+        b, a, _ = setup('lyn', [unit('star', element='별'), unit('moon', element='달'), unit('star2', element='별')])
+        if mark:
+            give(a, mark)
+        b.cast(a, a.d.skills[slot])
+        out.append([x.stack(name) for x in b.allies[1:]])
+    for elem in ['달', '별']:
+        b, a, _ = setup('wedding-carmen', [unit('ally', element=elem)])
+        b.cast(a, a.d.skills['궁극기'], target=b.allies[1])
+        out.append(b.allies[1].stack('냉각'))
+    return out == [[3, 0, 3], [1, 0, 1], 3, 0], str(out)
+
+
+def test_fix2_decimal_hp():
+    out = []
+    for hp in [0.5, 0.49999, 0.4999, 0.49]:
+        b, a, _ = setup('roberta')
+        a.hp = a.maxhp * hp
+        out.append(round(pre(b, a).inc, 3))
+    for hp in [0.5, 0.49999]:
+        b, a, _ = setup('harley', [unit('ally')])
+        a.hp = a.maxhp * hp
+        b.cast(a, a.d.skills['궁극기'])
+        out.append((a.stack('폭주 모드(해제불가)'), b.allies[1].stack('속도 증가')))
+    return out == [0.23, 0.31, 0.31, 0.31, (0, 1), (1, 0)], str(out)
+
+
+def test_fix2_count_damage():
+    out = []
+    for n in [0, 1, 3, 5, 7]:
+        b, a, f = setup('claire')
+        for i in range(n):
+            give(f, 'buff%d' % i)
+        c = pre(b, a, '궁극기')
+        out.append(round(c.inc + c.local_by[f]['inc'], 3))
+        assert not a.on('바니 잭팟')
+        assert round(pre(b, a).inc, 3) == 0.15
+    return out == [0.15, 0.25, 0.45, 0.65, 0.65], str(out)
+
+
+def test_fix2_shield_count():
+    out = []
+    for n in [0, 1, 3, 4]:
+        b, a, _ = setup('wedding-epindel', foes=[unit(str(i), hp=10**9, sa=1000) for i in range(4)])
+        for f in b.foes[:n]:
+            give(f, '보호막').shield = 10000
+        c = pre(b, a, '궁극기')
+        out.append(round(c.inc, 3))
+        assert round(pre(b, a).inc, 3) == 0.15
+        assert not a.mods()['inc']
+    return out == [0.15, 0.3, 0.6, 0.6], str(out)
+
+
+def test_fix2_pre_marker():
+    b, a, f = setup('epindel')
+    a.d.stats['cr'] = 0
+    give(a, '냉각', stacks=5).maxs = 5
+    c = b.cast(a, a.d.skills['기본기'])
+    first = (round(c.inc, 3), a.stack('냉각'), a.stack('귀족의 품격'))
+    c = b.cast(a, a.d.skills['기본기'])
+    return first == (0.4, 0, 0) and round(c.inc, 3) == 0.2, str((first, c.inc))
+
+
+def test_fix2_lacy_marker():
+    b, a, f = setup('lacy')
+    give(a, '격동', stacks=5).maxs = 5
+    give(f, '뒤엉킨 꿈결', harmful=True)
+    b.cast(f, f.d.skills['기본기'], target=a)
+    first = (a.stack('격동'), a.stack('뒤엉킨 꿈결 확인용 버프'))
+    f.eff.pop('뒤엉킨 꿈결', None)
+    b.dirty(f)
+    b.cast(f, f.d.skills['기본기'], target=a)
+    return first == (5, 0) and a.stack('격동') == 0, str((first, a.stack('격동')))
+
+
+def test_fix2_post_dependency():
+    b, a, f = setup('tyria')
+    give(f, '참극의 가시(해제불가)', harmful=True, stacks=2).maxs = 3
+    b.cast(a, a.d.skills['기본기'])
+    out = (casts(a), f.stack('참극의 가시(해제불가)'))
+    return out == (1, 0), str(out)
+
+
+def test_fix2_consume_timing():
+    out = []
+    for key, stack, grant in [('kyra', '점화', '은신'), ('harley', '점화', '효과 적중 증가'),
+                               ('wedding-carmen', '냉각', None)]:
+        for n in [4, 5]:
+            b, a, _ = setup(key)
+            give(a, stack, stacks=n).maxs = 5
+            b.cast(a, a.d.skills['기본기'])
+            out.append((a.stack(stack), a.stack(grant) if grant else 0))
+            assert not any('체크용' in name for name in a.eff)
+    return out == [(5, 0), (1, 1), (5, 0), (1, 1), (5, 0), (1, 0)], str(out)
+
+
+def test_fix2_break_transition():
+    out = []
+    for key in ['petra', 'tanya']:
+        for broken in [False, True]:
+            b, a, f = setup(key, [unit('actor')], [unit('foe', hp=10**9, sa=1)])
+            actor = b.allies[1] if key == 'petra' else a
+            actor.d.skills['기본기'].ab = 1
+            f.broken = broken
+            b.cast(actor, actor.d.skills['기본기'])
+            out.append((a.stack('점화') if key == 'petra' else a.stack('도약'),
+                        a.gauge if key == 'petra' else b.allies[1].gauge))
+    return out == [(1, 2000), (0, 0), (4, 1000), (1, 0)], str(out)
+
+
+def test_fix2_cooldown_slot():
+    b, a, f = setup('lugh', foes=[unit('foe', hp=10**9, skills=[dict(slot='특수기', dm=100, cd=3), dict(slot='궁극기', dm=100, cd=5)])])
+    f.cd = {'특수기': 2, '궁극기': 3}
+    b.cast(a, a.d.skills['궁극기'])
+    return f.cd == {'특수기': 2, '궁극기': 4}, str(f.cd)
+
+
+def test_fix2_cleanse_heal():
+    out = []
+    for debuff in [False, True]:
+        b, a, _ = setup('wedding-carmen', [unit('ally', hp=10**6)])
+        x = b.allies[1]
+        x.hp = 1000
+        if debuff:
+            give(x, '회복 불가', {'받는 회복량': -100}, harmful=True)
+        b.cast(a, a.d.skills['궁극기'], target=x)
+        out.append(x.hp)
+    return out[0] == out[1] and out[0] > 1000, str(out)
+
+
+def test_fix2_extend_scope():
+    out = []
+    for key, slot in [('cristelle', '궁극기'), ('muriel', '특수기')]:
+        b, a, f = setup(key)
+        b.roll_hit = lambda *args: True
+        e = give(f, '연소', harmful=True, dur=2, stacks=2)
+        e.inst = [[a, 1], [a, 2]]
+        give(f, '공격력 감소', harmful=True, dur=2)
+        give(f, '공격력 증가', dur=2)
+        b.cast(a, a.d.skills[slot])
+        out.append(([i[1] for i in e.inst], f.eff['공격력 감소'].dur, f.eff['공격력 증가'].dur))
+    return out == [([2, 3], 2, 2), ([2, 3], 3, 2)], str(out)
+
+
+def test_fix2_critical_targets():
+    out = []
+    for n in [0, 1, 2, 3, 5]:
+        b, a, _ = setup('rosaria', foes=[unit(str(i), hp=1 if i == 0 else 10**9, sa=1000) for i in range(5)])
+        a.d.stats['cr'] = 10000
+        for f in b.foes[n:]:
+            give(f, '회피', {'회피율': 100})
+        b.cast(a, a.d.skills['궁극기'])
+        out.append(a.stack('업화(해제불가)'))
+    return out == [0, 1, 2, 3, 3], str(out)
+
+
+def test_fix2_compound_passive():
+    import math
+    d = UnitDef(get_db(), 'hilde')
+    before = dict(d.passive)
+    b = battle([d], [unit('foe')])
+    a = b.allies[0]
+    out = (a.maxhp, math.floor(d.stats['hp'] * 1.15), dict(d.passive) == before)
+    return out[0] == out[1] and out[2], str(out)
+
+
+def test_fix2_bloom_hp():
+    import math
+    out = []
+    for hp, coef in [(0.5, 0.2), (0.49999, 0.3), (0.49, 0.3)]:
+        b, a, _ = setup('besta@개화(SSR)')
+        a.hp = a.maxhp * hp
+        b.cast(a, a.d.skills['궁극기'])
+        out.append((a.shield_total(), math.floor(a.maxhp * coef)))
+    return all(a == e for a, e in out), str(out)
+
+
+def test_fix2_bloom_counts():
+    out = []
+    for key, slot, coef, cap, kind in [('naru', '기본기', .03, 5, 'harmful'),
+                                      ('bunny-claire', '특수기', .03, 5, 'self'),
+                                      ('bunny-scarlet', '특수기', .15, 3, 'dot')]:
+        for n in [0, 1, 3, 5, 7]:
+            b, a, f = setup(key + '@개화(SSR)')
+            if kind == 'dot' and n:
+                give(f, '연소', harmful=True, stacks=n).inst = [[a, 2] for _ in range(n)]
+            elif kind != 'dot':
+                for i in range(n):
+                    give(a if kind == 'self' else f, 'test%d' % i, harmful=kind != 'self')
+            c = pre(b, a, slot)
+            got = round(c.inc + c.local_by[f]['inc'], 4)
+            exp = round(.15 + coef * min(n, cap), 4)
+            out.append((key, n, got, exp))
+            assert a.mods()['inc'] == 0
+            other = pre(b, a, '궁극기')
+            assert round(other.inc + other.local_by[f]['inc'], 4) == .15
+    return all(g == e for _, _, g, e in out), str(out)
+
+
+def test_fix2_bloom_consume():
+    out = []
+    for own in [False, True]:
+        for n in [4, 5]:
+            b, a, _ = setup('annah@개화(SSR)', [unit('ally')])
+            a.acting = own
+            give(a, '점화', stacks=n).maxs = 5
+            b.cast(a, a.d.skills['궁극기'])
+            out.append((a.stack('점화'), a.stack('강화 반격')))
+    return out == [(5, 0), (5, 0), (5, 0), (3, 1)], str(out)
+
+
+def test_fix2_bloom_break():
+    out = []
+    for own in [False, True]:
+        for broken in [False, True]:
+            b, a, f = setup('marcille@개화(SSR)', [unit('actor')], [unit('foe', hp=10**9, sa=1)])
+            actor = a if own else b.allies[1]
+            actor.d.skills['기본기'].ab = 1
+            f.broken = broken
+            b.cast(actor, actor.d.skills['기본기'])
+            out.append(a.stack('부서진 너트'))
+    return out == [2, 0, 2, 0], str(out)
+
+
+def test_fix2_final_hp():
+    from battlesim.api import _norm_party
+    out = []
+    for final in [False, True]:
+        defs, _ = _norm_party({'units': [dict(key='hilde', stats_override={'hp': 10000}, stats_final=final)]}, get_db(), 'fixed')
+        b = battle(defs, [unit('foe')])
+        out.append(b.allies[0].maxhp)
+    return out == [11500, 10000], str(out)
+
+
+def test_fix2_nested_marker():
+    b, a, _ = setup('epindel')
+    a.d.stats['cr'] = 0
+    give(a, '냉각', stacks=5).maxs = 5
+    out = []
+    original = b.event_triggers
+    def nested(actor, ctx, event):
+        if actor is a and not ctx.extra and event == 'own_post':
+            out.append(round(b.cast(a, a.d.skills['기본기'], extra=True, parent=ctx).inc, 3))
+        return original(actor, ctx, event)
+    b.event_triggers = nested
+    outer = b.cast(a, a.d.skills['기본기'])
+    out.append(round(outer.inc, 3))
+    return out == [0.2, 0.4] and not a.has('귀족의 품격'), str(out)
+
+
+def test_fix2_shield_context():
+    b, a, f = setup('wedding-epindel', foes=[unit('plain', hp=10**9, sa=1000), unit('shield', hp=10**9, sa=1000)])
+    shielded = b.foes[1]
+    give(shielded, '보호막').shield = 1
+    for x in b.foes:
+        x.gauge = 5000
+    b.roll_hit = lambda *args: True
+    c = b.cast(a, a.d.skills['궁극기'])
+    out = (round(c.inc, 3), [x.gauge for x in b.foes], [x.n_harmful() for x in b.foes])
+    c2 = pre(b, a, '궁극기')
+    return out == (0.3, [5000, 3000], [0, 0]) and round(c2.inc, 3) == .15, str((out, c2.inc))
+
+
 TESTS = [v for k, v in list(globals().items()) if k.startswith('test_')]
 
 

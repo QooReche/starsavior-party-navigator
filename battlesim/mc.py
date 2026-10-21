@@ -7,6 +7,7 @@
 - 시간: 시뮬 틱(게이지) / 개체별 행동 횟수(Unit.actions) / 「모델 기준 턴」 = 틱 / turn_ticks(100). 턴 제한은 모델 기준 턴으로 비교.
 - 이벤트 한도 초과는 EventLimitError(정상 결과를 돌려주지 않는다).
 P3 규칙 값은 rules/default.json 의 "mc" 절(MC_OPTS)."""
+import copy
 import math
 import random
 import re
@@ -16,7 +17,7 @@ from . import rules as _rules
 from .engine import calc_hit
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
 from .starsavior.parser import _map_prop, split_head, supported_trigger
-from .starsavior.mc_semantics import normalized_lines, trigger_rule
+from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule
 
 
 class EventLimitError(RuntimeError):
@@ -66,7 +67,7 @@ COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이
                  '자신에게 약화효과 없음', '자신 약화효과 보유', '자신 강화효과 보유', '스킬 쿨타임 아님', '턴 유닛이 보유',
                  '스킬 대상 유형', '단일 대상 공격', '대상 속성', '적 약화효과 보유', '적 강화효과 보유', '특정 효과 보유 적 존재',
                  '턴 유닛 속성', 'EnemyAdjustType', 'NotEnemyAdjustType', 'IsTargetSuperArmor',
-                 '피해 증가(조건부)', 'NotTargetPositiveBuff', 'NotEnemyPositiveBuff', 'ExistAllySpecificBuff'])
+                 '피해 증가(조건부)', 'NotTargetPositiveBuff', 'NotEnemyPositiveBuff', 'ExistAllySpecificBuff', '이번 타격 격파'])
 
 # 회복·보호막·부활·해제·무작위 효과 원문 해석(parser 는 이 줄들을 'ignored' 로 둔다)
 RX_HEAL = re.compile(r'^(.+?)에게 회복 = (자신|대상) (최대 생명력|생명력|공격력|방어력)×([\d.]+)%')
@@ -103,8 +104,8 @@ DAMAGE_LIMIT = {
 
 def line_rest(ln):
     """줄에서 시점·조건 머리를 뗀 효과 문장"""
-    return split_head(ln.raw)[2].strip()
-RX_HP_COND = re.compile(r'\(자신 HP ([\d.]+)% (이상|이하)')
+    return split_head(ln.raw, decimal_hp=True)[2].strip()
+RX_HP_COND = re.compile(r'\(자신 HP ([\d.]+)% (이상|이하|미만)')
 CHECK_NAME = re.compile(r'확인용|체크용|카운팅|확인 용')
 HARD_CC = ('기절', '수면')
 UNTARGETABLE = ('은신', '현장 대기')
@@ -247,6 +248,7 @@ class Eff:
 
 class Unit:
     def __init__(self, d, side, pos, b, leader=False, fx=None):
+        d = normalized_definition(d)
         self.d = d
         self.side, self.pos = side, pos
         self.name = d.name
@@ -393,12 +395,15 @@ class Ctx:
     """시전 1회(또는 피격 반응 1회)의 문맥. owner = 줄 주인, src = 시전자(공격자), skill = 시전 스킬, target = 대상."""
     __slots__ = ('owner', 'src', 'skill', 'extra', 'targets', 'target', 'inc', 'atkp', 'cr', 'cd', 'pen', 'eh', 'crit',
                  'kill', 'coop_used', 'heal_give', 'heal_recv', 'local', 'nb', 'hit_victim', 'acc', 'evaded', 'recv_by',
-                 'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets')
+                 'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets',
+                 'crit_targets', 'break_targets', 'markers')
 
     def __init__(self, owner, src, skill, extra=False):
         self.owner, self.src, self.skill, self.extra = owner, src, skill, extra
         self.via, self.parent = None, None
         self.hit_targets = []    # 실제 피해 처리한 개체: 사망/회피도 포함, 다단 히트는 한 명
+        self.crit_targets, self.break_targets = set(), set()
+        self.markers = {}
         self.targets, self.target = [], None
         self.inc = self.atkp = self.cr = self.cd = self.pen = self.eh = self.acc = 0.0
         self.tough = self.tough_fixed = self.inc_break = 0.0   # P5 「이번 스킬에만」 강인도 (고정) 피해·브레이크 대상 피해 증가
@@ -823,7 +828,8 @@ class Battle:
                 return None
             if ctx.hit_victim is not None and ctx.owner is not ctx.src:
                 return [ctx.hit_victim] if not ctx.hit_victim.dead else []
-            return [x for x in ctx.targets if not x.dead or kind == 'revive']
+            elem = self._cur_line.eff.get('beneficiary_element') if self._cur_line else None
+            return [x for x in ctx.targets if (not x.dead or kind == 'revive') and (not elem or x.element == elem)]
         if t.startswith('적'):
             opp = self.alive(1 - owner.side)
             if not opp:
@@ -847,7 +853,7 @@ class Battle:
         mm = re.search(r'(태양|달|별|질서|혼돈) 속성 아군', t)
         if mm:
             pool = [x for x in pool if x.element == mm.group(1)]
-        if excl or t.startswith('아군'):
+        if excl or t.startswith('아군') or mm:
             if '전체' in t:
                 return pool
             if not pool:
@@ -911,8 +917,16 @@ class Battle:
             return None
         self.tick()
         self.depth += 1
+        previous_cast = getattr(self, '_cast_ctx', None)
+        suspended = {}
+        if previous_cast is not None:
+            for x, name in previous_cast.markers:
+                if name in x.eff:
+                    suspended[(x, name)] = x.eff.pop(name)
+                    self.dirty(x)
         try:
             ctx = Ctx(u, u, sk, extra)
+            self._cast_ctx = ctx
             ctx.via, ctx.parent = via or ('extra' if extra else None), parent
             u.cast_count[sk.slot + ('(추가)' if extra else '')] += 1
             if not extra and sk.cd:
@@ -942,6 +956,8 @@ class Battle:
             if sk.is_attack and ctx.targets:
                 self.deal(u, ctx)
             if not u.dead:
+                if not skip_lines:
+                    self.run_own(u, ctx, 'before_heal')
                 self.skill_heal(u, sk, ctx)
             if not skip_lines and not u.dead:
                 self.run_own(u, ctx, 'own_post')
@@ -956,6 +972,17 @@ class Battle:
             u.last_slot = sk.slot
             return ctx
         finally:
+            for (x, name), old in ctx.markers.items():
+                if old is None or x.dead:
+                    x.eff.pop(name, None)
+                else:
+                    x.eff[name] = old
+                self.dirty(x)
+            for (x, name), effect in suspended.items():
+                if not x.dead:
+                    x.eff[name] = effect
+                    self.dirty(x)
+            self._cast_ctx = previous_cast
             self.depth -= 1
 
     def nova_of(self, u):
@@ -1023,6 +1050,7 @@ class Battle:
             if lines:
                 c2 = Ctx(b, actor, ctx.skill, ctx.extra)
                 c2.targets, c2.target, c2.crit, c2.kill, c2.evaded = ctx.targets, ctx.target, ctx.crit, ctx.kill, ctx.evaded
+                c2.break_targets, c2.crit_targets = ctx.break_targets, ctx.crit_targets
                 c2.hit_targets, c2.via, c2.parent = ctx.hit_targets, ctx.via, ctx.parent
                 self.run_batch(b, lines, c2)
         if kind == 'ally_post' and ctx.skill.is_attack and ctx.targets:
@@ -1171,6 +1199,8 @@ class Battle:
             by = ctx.local_by[v]
             crit = (not evaded) and (self.rng.random() < min(1.0, cr + by['cr']) or ctx.force_crit)
             ctx.crit = ctx.crit or crit
+            if crit:
+                ctx.crit_targets.add(v)
             if evaded:
                 ctx.evaded.add(v)
             self.strike(a, v, base, ctx, crit, min(3.0, cdv + by['cd']), min(1.0, pen + by['pen']), reactions, evaded)
@@ -1278,6 +1308,7 @@ class Battle:
             return
         v.sa = max(0, v.sa - td)
         if v.sa == 0:
+            ctx.break_targets.add(v)
             v.broken = True
             v.breaks += 1
             if v.side == 1 and self.break_skill_enabled:
@@ -1495,6 +1526,8 @@ class Battle:
                 return False
             if mh.group(2) == '이하' and not frac <= thr + 1e-9:
                 return False
+            if mh.group(2) == '미만' and not frac < thr:
+                return False
         last = None
         sk = ctx.skill
         tgt = ctx.target if ctx.target is not None else None
@@ -1570,6 +1603,9 @@ class Battle:
                 last = ('TB', None)
                 has = tgt is not None and tgt.n_good() > 0
                 if has != (v == '예'):
+                    return False
+            elif k == '이번 타격 격파':
+                if bool(ctx.break_targets) != (v == '예'):
                     return False
             elif k in ('대상 강인도 없음', '대상 브레이크'):    # P5: 강인도 격파 상태
                 if (tgt is not None and tgt.broken) != (v == '예'):
@@ -1720,8 +1756,11 @@ class Battle:
     def run_batch(self, owner, lines, ctx):
         """같은 사건(시점·주인)에 걸린 줄 묶음: 조건은 사건 시점 상태로 한꺼번에 판정하고, 효과는 순서대로 실행하되
         추가 발동(시전)은 묶음의 나머지 효과(중첩 소비 등) 뒤에 실행한다(같은 사건에서 자기 자신을 다시 부르는 무한 연쇄 방지)."""
-        # 대상 수에 따른 스택은 이번 타격을 완료한 시점의 값이다.
-        count_grants = [ln for ln in lines if ln.eff.get('per_hit') and ln.eff['kind'] == 'buff']
+        # 같은 시점의 선행 부여를 참조하는 조건은 부여가 끝난 뒤 판정한다.
+        # 나머지 조건은 소거 전에 함께 판정하여 조건부 효과 묶음의 일관성을 지킨다.
+        count_grants = [ln for ln in lines if ln.eff['kind'] == 'buff' and
+                        (ln.eff.get('per_hit') or ln.eff.get('per_crit') or ln.eff.get('cast_marker')
+                         or ln.eff.get('pre_grant'))]
         for ln in count_grants:
             if self.line_ok(owner, ln, ctx):
                 self.exec_line(owner, ln, ctx)
@@ -1788,6 +1827,30 @@ class Battle:
             return
         eff = ln.eff
         kd = eff['kind']
+        if kd == 'count_damage':
+            if ctx.src is owner and ctx.skill is not None:
+                if eff['scope'] == 'shield_all':
+                    n = sum(sum(e.shield > 0 for e in x.eff.values()) for x in self.alive(1 - owner.side))
+                    ctx.inc += min(n, eff['cap']) * eff['val'] / 100
+                elif eff['scope'] == 'self_good':
+                    ctx.inc += min(owner.n_good(), eff['cap']) * eff['val'] / 100
+                else:
+                    for x in ctx.targets:
+                        n = (x.n_harmful() if eff['scope'] == 'target_harmful' else x.stack(eff['name'])
+                             if eff['scope'] == 'target_named' else x.n_good())
+                        ctx.local_by[x]['inc'] += min(n, eff['cap']) * eff['val'] / 100
+            return
+        if kd == 'extend':
+            for x in self.resolve(owner, eff['target'], ctx) or []:
+                if eff['judge'] and not self.roll_hit(owner, ctx, x, None):
+                    continue
+                for name, e in x.eff.items():
+                    if not e.harmful or (eff['name'] and name != eff['name']):
+                        continue
+                    e.dur += eff['val']
+                    for instance in e.inst or []:
+                        instance[1] += eff['val']
+            return
         if kd == 'stack_promote':
             upgrade = eff['upgrade']
             if owner.stack(eff['source']) >= eff['threshold'] and owner.stack(upgrade['name']) < upgrade['max']:
@@ -1795,8 +1858,8 @@ class Battle:
                 self.dirty(owner)
                 self.apply_buff(owner, upgrade, ctx, raw=eff['upgrade_raw'])
             return
-        if eff.get('per_hit'):
-            n = min(eff['hit_cap'], len(set(ctx.hit_targets)))
+        if eff.get('per_hit') or eff.get('per_crit'):
+            n = min(eff['hit_cap'], len(ctx.crit_targets if eff.get('per_crit') else set(ctx.hit_targets)))
             if not n:
                 return
             eff = dict(eff, **({'times': n} if kd == 'buff' else {'val': eff['val'] * n}))
@@ -1856,6 +1919,8 @@ class Battle:
             if not tg:
                 return
             for x in tg:
+                if eff.get('shield_only') and x.shield_total() <= 0:
+                    continue
                 if x.side != owner.side and eff.get('judge') and not self.roll_hit(owner, ctx, x, None):
                     continue
                 x.gauge = min(10000.0, max(0.0, x.gauge + eff['val'] * 100.0))
@@ -2018,7 +2083,7 @@ class Battle:
                 if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
                     continue
                 for slot, sk in x.d.skills.items():
-                    if sk.cd:
+                    if sk.cd and (not ln.eff.get('cd_slot') or slot == ln.eff['cd_slot']):
                         x.cd[slot] = x.cd.get(slot, 0) + int(m.group(2))
             return
         m = RX_LOCAL_PER.match(rest)
@@ -2184,6 +2249,9 @@ class Battle:
             dot = _rules.KNOWN_DOT[name]
         harmful = opp
         e = x.eff.get(name)
+        cast_ctx = getattr(self, '_cast_ctx', None)
+        if eff.get('cast_marker') and cast_ctx is not None and (x, name) not in cast_ctx.markers:
+            cast_ctx.markers[(x, name)] = copy.copy(e) if e is not None else None
         dur = _dur(eff['dur'])
         if e is None:
             mx = eff['max'] or (5 if dot else 1)
@@ -2288,7 +2356,7 @@ def support_report(defs):
         markers[id(d)] = names
     for d in defs:
         foe = getattr(d, 'is_foe', False)
-        for ln in d.lines:
+        for ln in normalized_lines(d):
             k = line_kind(ln)
             rest = line_rest(ln)
             reason = None

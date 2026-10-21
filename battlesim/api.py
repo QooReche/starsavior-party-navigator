@@ -40,6 +40,7 @@ from .rules import DEFAULT_OPTS, MC_OPTS, MC_RULES, RULES
 from .starsavior.data import _find_key, get_db
 from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves
 from .starsavior.parser import Skill, UnitDef
+from .starsavior.mc_semantics import normalized_definition
 
 SCHEMA_VERSION = 'p5-1'   # p5-1: 육성 프리셋(build)·강인도/브레이크·피해 제한·전투력 보정 옵션, result.party.power·breaks·depth_runs
 
@@ -91,6 +92,7 @@ def _norm_party(party_spec, db, mode, build=None):
         key = _find_key(db, u['key'])
         d = UnitDef(db, key, u.get('level', 200), u.get('res', 10), u.get('star', 0), u.get('mode', mode),
                     build=u.get('build', build))
+        d = normalized_definition(d)
         if u.get('stats_override'):
             d.stats.update(u['stats_override'])
             d.spd_base = d.stats['spd']

@@ -9,7 +9,8 @@ from .stats import calc_stats
 # ------------------------------------------------------------------ 줄(ef) 파싱
 NUM = r'[+-]?\d+(?:\.\d+)?'
 
-def split_head(raw):
+def split_head(raw, decimal_hp=False):
+    """decimal_hp는 확률 전투의 정밀 조건용. 기본값은 기대값 계산 호환용."""
     m = re.match(r'^\[([^\]]+)\]\s*(.*)$', raw, re.S)
     if not m:
         return None, None, raw, 1.0
@@ -29,7 +30,9 @@ def split_head(raw):
                         cond = inner[len('조건:'):].strip()
                         rest = rest[i + 1:].strip()
                     else:
-                        hm = re.match(r'^자신 HP (\d+)% (이상|이하)(?:\s*·\s*조건:\s*(.*))?$', inner, re.S)
+                        number = r'\d+(?:\.\d+)?' if decimal_hp else r'\d+'
+                        compare = r'이상|이하|미만' if decimal_hp else r'이상|이하'
+                        hm = re.match(r'^자신 HP (' + number + r')% (' + compare + r')(?:\s*·\s*조건:\s*(.*))?$', inner, re.S)
                         if hm:
                             hpw = 0.8 if hm.group(2) == '이상' else 0.2   # 자신 HP 조건: 대체로 건강하다고 가정(추정)
                             cond = hm.group(3)
@@ -181,9 +184,9 @@ def trig_kind(phase, trig):
 class Line:
     __slots__ = ('raw', 'slot', 'src_kind', 'phase', 'trig', 'params', 'kind', 'eff', 'bound', 'na', 'hpw')
 
-    def __init__(self, raw, slot, src_kind):
+    def __init__(self, raw, slot, src_kind, decimal_hp=False):
         self.raw, self.slot, self.src_kind = raw, slot, src_kind
-        phase, cond, rest, self.hpw = split_head(raw)
+        phase, cond, rest, self.hpw = split_head(raw, decimal_hp=decimal_hp)
         self.phase = phase
         self.trig, self.params = parse_cond(cond)
         self.kind = trig_kind(phase, self.trig)

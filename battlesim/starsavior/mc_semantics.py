@@ -2,8 +2,9 @@
 """설명문에 근거한 확률 전투용 의미 보정. 공유 Line/UnitDef는 변경하지 않는다."""
 import copy
 import re
+from collections import defaultdict
 
-from .parser import Line, ally_stack_trigger
+from .parser import Line, ally_stack_trigger, parse_props, _perm_apply
 
 
 def description(sk):
@@ -91,4 +92,124 @@ def normalized_lines(d):
                     continue
                 new.append(ln)
             lines = new + [count]
-    return lines
+    return description_lines(d, lines)
+
+
+def normalized_definition(d):
+    """공유 정의는 보존하고 쉼표 복합 상시 능력치를 확률 전투에만 적용."""
+    if getattr(d, '_compound_normalized', False):
+        return d
+    compound = [ln for ln in d.lines if ln.kind == 'perm' and ',' in ln.raw]
+    if not compound:
+        return d
+    result = copy.copy(d)
+    result._compound_normalized = True
+    result.passive = copy.copy(d.passive)
+    for ln in compound:
+        _, props = parse_props(ln.raw.split('능력치:', 1)[1])
+        for stat, val in props.items():
+            _perm_apply(result.stats, result.passive, dict(stat=stat, val=val))
+    return result
+
+
+def description_lines(d, lines):
+    """정본에 명시된 범위·순서를 ef에 보충한다. key별 예외를 만들지 않는다."""
+    raws = {s['sl']: s for s in getattr(d, 'u', {}).get('sk', []) if not s['sl'].startswith('변형')}
+    if not raws:
+        return lines
+    out = []
+    for original in lines:
+        if original.kind == 'perm' and ',' in original.raw:
+            _, props = parse_props(original.raw.split('능력치:', 1)[1])
+            for stat, val in props.items():
+                part = Line('[상시] 능력치: %s %+g%%' % (stat, val), original.slot, original.src_kind)
+                if not _perm_apply({}, defaultdict(float), part.eff):
+                    part.eff = dict(kind='ignored', why='상시 능력치 미지원: ' + stat)
+                out.append(part)
+            continue
+        ln = copy.copy(original)
+        ln.eff, ln.params = dict(original.eff), list(original.params)
+        desc = raws.get(ln.slot, {})
+        desc = desc.get('dx') or desc.get('d1') or ''
+        # ef의 49.99 이하 표현은 정본이 명시한 50 미만으로 복원한다.
+        hp = re.search(r'자신의 생명력이 ([\d.]+)% 미만', desc)
+        if hp:
+            ln.raw = re.sub(r'자신 HP ([\d.]+)% 이하',
+                            lambda m: '자신 HP %s%% 미만' % hp[1]
+                            if abs(float(m[1]) - (float(hp[1]) - 0.01)) < 1e-8 else m[0], ln.raw)
+        if re.search(r'\(자신 HP [\d.]+%', ln.raw):
+            ln = Line(ln.raw, ln.slot, ln.src_kind, decimal_hp=True)
+        e = ln.eff
+        name = e.get('name', '')
+        if e['kind'] == 'buff' and name:
+            # 수혜자 속성: 공격 대상 조건/시전자 속성과 독립적으로 필터링한다.
+            for sentence in desc.split('. '):
+                if '[' + name + ']' not in sentence:
+                    continue
+                elem = re.search(r'(태양|달|별|질서|혼돈) 속성 아군 (전체|한명)', sentence)
+                conditional = re.search(r'아군 대상이 (태양|달|별|질서|혼돈) 속성이라면', sentence)
+                if elem and '아군' in e.get('target', ''):
+                    e['target'] = ('자신 제외 ' if '자신을 제외한' in sentence else '') + elem[1] + ' 속성 아군 ' + ('전체' if elem[2] == '전체' else '1명')
+                elif conditional and e.get('target') == '스킬 대상':
+                    e['beneficiary_element'] = conditional[1]
+            crit = re.search(r'치명타가 발생한 대상의 수만큼 자신에게 \[' + re.escape(name) + r'\].*?최대 (\d+)회', desc)
+            if crit:
+                e.update(per_crit=True, hit_cap=int(crit[1]))
+        # 정본과 ef 양쪽에서 확인된 비례 피해만 시전 문맥으로 옮긴다.
+        count = re.search(r'(적이 보유한 (?:강화 효과|약화 효과|\[[^]]+\])|자신이 보유한 강화 효과|적 전체의 \[보호막\])'
+                          r' 개수 당 피해량이 \[?([\d.]+)%\]? 증가하며 최대 (\d+)개', desc)
+        if count and count[1] == '적 전체의 [보호막]':
+            # 실제 보호막으로 직접 판정하므로 간접 카운팅 표지는 생성하지 않는다.
+            if e['kind'] == 'buff' and '카운팅' in name:
+                continue
+            if e['kind'] == 'gauge' and re.search(r'타격 시 \[보호막\] 상태인 대상의 행동 게이지', desc):
+                e.update(target='스킬 대상', shield_only=True)
+                ln.params = []
+                ln.kind, ln.trig = 'own_pre', None
+        if count and '1개당 위 수치만큼 적용' in ln.raw:
+            named = re.search(r'\[([^]]+)\]', count[1])
+            scope = ('shield_all' if count[1].startswith('적 전체') else 'self_good' if count[1].startswith('자신')
+                     else 'target_named' if named else 'target_harmful' if '약화' in count[1] else 'target_good')
+            ln.eff = dict(kind='count_damage', scope=scope, name=named[1] if named else None,
+                          val=float(count[2]), cap=int(count[3]))
+            ln.params = [(k, v) for k, v in ln.params if k not in ('대상 약화효과 보유', '대상이 보유', '특정 효과 보유 적 존재')]
+        if '효과 지속 턴' in ln.raw:
+            ext = re.search(r'(?:\[([^]]+)\]|모든 약화 효과)를 (\d+)턴 연장', desc)
+            if ext:
+                ln.eff = dict(kind='extend', target='스킬 대상', name=ext[1], val=int(ext[2]), judge='효과 적중 판정' in ln.raw)
+        if '스킬 쿨타임' in ln.raw and '증가' in ln.raw:
+            cd = re.search(r'(기본기|특수기|궁극기) 쿨타임을 (\d+)턴 증가', desc)
+            if cd:
+                e['cd_slot'] = cd[1]
+        if re.search(r'강인도 격파 (?:후|시)', desc):
+            ln.params = [('이번 타격 격파' if k == '대상 브레이크' else k, v) for k, v in ln.params]
+        if '약화 효과를 모두 해제하고' in desc and '약화효과 해제' in ln.raw:
+            ln.kind, ln.bound = 'before_heal', True
+        # 사용 시/타격 시 최대 스택 소거와 타격 후 부여는 서로 다른 단계다.
+        if e['kind'] == 'remove' and e.get('target') == '자신' and ln.kind == 'own_post':
+            for sentence in desc.split('. '):
+                before = re.search(r'(?:타격 시|사용 시).*?(?:모두 소거|모두 소거하고)', sentence)
+                if before and e['name'] in before[0] and not re.search(r'(?:타격 후|사용 후)', before[0]):
+                    ln.kind = 'own_pre'
+                    ln.trig = (ln.trig or '').replace('내 공격 후', '내 공격 시')
+                    break
+        out.append(ln)
+    # 표지는 선행 조건용이며 지속 버프가 아니다. 명칭 대신 참조 관계로 식별.
+    references = {n.strip() for ln in out for k, v in ln.params
+                  if k in ('자신이 보유', '자신이 미보유', '대상이 보유', '시전자가 보유') for n in v.split(',')}
+    for ln in out:
+        e = ln.eff
+        if (e['kind'] == 'buff' and e['name'] in references and not e['props']
+                and ln.phase in ('스킬 사용 시작 시', '스킬 사용 후', '피해 처리 직전', '피해 처리 후')
+                and not e.get('max') and e.get('dur') in (None, float('inf'))):
+            e['cast_marker'] = True
+        consumers = [other for other in out if other is not ln and other.kind == ln.kind and other.phase == ln.phase]
+        own = e.get('target') == '자신'
+        refkeys = ('자신이 보유', '자신이 미보유') if own else ('대상이 보유', '대상이 미보유')
+        used_here = any(e.get('name') in [n.strip() for n in v.split(',')]
+                        for other in consumers for k, v in other.params if k in refkeys)
+        if (e['kind'] == 'buff' and used_here and not e.get('consume')
+                and not any(k in ('자신이 보유', '자신이 미보유', '대상이 보유', '대상이 미보유')
+                            and e['name'] in [n.strip() for n in v.split(',')] for k, v in ln.params)):
+            e['pre_grant'] = True
+    return out
