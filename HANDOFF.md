@@ -7,6 +7,10 @@
 - 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
 - **게임 정적 데이터 표(비공개 저장소)**: https://github.com/QooReche/starsavior-static-data — 설치 폴더의 데이터 표 147개(피해 계수 `DAMAGE_TEMPLET`, 능력치·스킬·버프·장비·호감도·보스 스테이지 등, 빌드 25951618)와 추출 스크립트. 시뮬 강화(임의 가중치 → 실제 값, 인게임 대조)와 캡처 인식 기준값에 쓴다. 시작은 그쪽 `README.md`·`TABLES.md`. 비공개라 이 공개 저장소·Pages 에 원본 표를 복사하지 말 것(가공한 요약 수치만 반영). 접근은 QooReche 계정으로.
 - **패킷 해독 참조(비공개 저장소)**: https://github.com/QooReche/starsavior-packet-ref — 「내 정보 불러오기」용. 수동 패킷 캡처(Windows `pktmon`, TCP 9340, 주입·변조·메모리 읽기 없음)로 로그인 응답 `LOGIN_ACK`(403, 사용자 데이터 53필드)를 해독해 보유 구원자·육성 상태를 얻는 방식. 평문 TCP + 8바이트 XOR/LZ4 라 키 교환 없음. 해독기·패킷 스키마 사본과 포맷 요약은 그쪽 `README.md`. 계획: 로컬 보조 도구가 `내정보.json` 생성 → 페이지가 파일로 불러오기(캡처 인식은 최후 수단). 캡처 파일엔 로그인 티켓이 있으니 저장소·OneDrive 에 두지 말 것.
+- **내 정보 불러오기 진행 상태(2026-10-22)**: 방식 = 설치형 추출 도구가 `내정보.json` 생성 → 페이지가 파일 업로드로 불러와 `localStorage` 저장(서버 전송 없음). 형식 `docs/myinfo_format.md`.
+  - 도구(**비공개**): https://github.com/QooReche/starsavior-packet-ref `myinfo/`(소스·빌드)와 `myinfo/dist/`(배포본 `myinfo.ps1` + `내정보_추출.bat`). 이 PC 사본: `AI\partynavigator\release\myinfo\`. 사용자 PC 요구 = 설치 없음(Windows 기본 pktmon + PowerShell 5.1), 관리자 확인창 1회, 실행 → 게임 실행 → 로그인해 로비 → 10초 대기 → 엔터.
+  - 해독·구조 자료: 같은 저장소 `tools/`(`FIELDS.md` 필드 순번, `STATS.md` 능력치 합산 구조, `groundtruth.json` 화면 정답 5명). 정적 표: https://github.com/QooReche/starsavior-static-data (비공개).
+  - **다음 할 일**: (1) 사용자가 `myinfo.ps1` 실제 실행 시험 → 결과 `내정보.json` 확인(미검증: 전체 흐름 e2e, 해독기 C# 은 PS5.1 컴파일만 확인) (2) 페이지에 「내 정보 불러오기」(파일 선택 → 검증 → localStorage → 보유 구원자·내실 반영) (3) 최종 능력치 재현 정확도(공격·생명·방어 곱셈 구조, STATS.md 「미확정」) (4) 게임 업데이트 대응(스키마 재생성, 해독 불일치 메시지 = 신호).
 - 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
 
 ## ▶ 다음 세션 시작점 (2026-10-21 저녁 갱신)
