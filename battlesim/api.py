@@ -14,7 +14,7 @@ encounter_spec
         "skills": [{"slot": "기본기", "dm": 80, "all": false, "cd": null, "tg": "적 단일"}]}
   선택: "turn_limit"(스테이지 lt 를 덮어씀), "stage_fx"(문장 목록, 스테이지 fx 를 덮어씀), "max_turns"(턴 제한 없을 때 시간 상한, 50)
 options
-  {"seed": 1, "n_runs": 100, "rules_override": {mc·opts 키: 값}, "nova_policy": "auto"|"manual", "timeline": false,
+  {"seed": 1, "n_runs": 100, "rules_override": {mc·opts 키: 값}, "nova_policy": "auto"|"manual"|"heal", "timeline": false,
    "enemy_lines": true, "run_offset": 0, "per_run": false, "formula_override": {"COOP_CAP": 1.0}, "rekindle": 0,
    "break_skill": {"name": "큐브 과부하", "level": 5}}
   break_skill = 생략/None 이면 미장착. 큐브 과부하·특이점 관측·스타피어서·차원 강습 지원(모든 레벨 동일 계수), 다른 이름은 unsupported.runtime 에 기록.
@@ -27,6 +27,7 @@ result
   {schema_version, outcome{clear_p, wipe_p, timeout_p, ci95{...}, n_runs, n_clear, ttk_median, ttk_p10_p90, ttk_basis},
    per_unit{이름#칸: {dmg_share, dmg, dmg_taken, heal, shield, death_p, death_turn_median, first_death_p, actions}},
    foes{...}, break_skill{name, uses, dmg, supported, points_gained}(판 평균, dmg 는 개인 기여 제외, points_gained 는 상한 적용 후 실제 적립),
+   nova_burst{total, uses, by_unit{이름#칸: {슬롯: 전체 판 횟수}}}(uses는 판 평균),
    timeline?, assumptions_used[], unsupported{static[], runtime{}, critical, gate_ok}, runtime_ms_per_run}"""
 import math
 import random
@@ -278,6 +279,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     depth_runs = 0
     breaks = [0, 0]
     break_uses = break_points_gained = break_dmg = 0
+    nova_counts = defaultdict(lambda: defaultdict(int))
     timeline = None
     first = defaultdict(int)
     offset = int(o.get('run_offset', 0))
@@ -289,6 +291,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
                    enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'))
         b.run()   # EventLimitError 는 그대로 올린다(정상 결과 금지)
+        for (pos, slot), count in b.nova_bursts.items():
+            nova_counts[names[pos]][slot] += count
         break_uses += b.break_skill_uses
         break_dmg += b.break_skill_dmg
         break_points_gained += b.break_points_gained
@@ -360,6 +364,9 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
             ttk_p10_p90=[round(_pct(ttk, 0.1), 2), round(_pct(ttk, 0.9), 2)] if ttk else None,
             ttk_basis='모델 기준 턴(100틱), 클리어한 판만' + ('' if turn_limit else ', 턴 제한 없음(상한 %d턴)' % max_turns)),
         per_unit=per_unit,
+        nova_burst=dict(total=sum(sum(slots.values()) for slots in nova_counts.values()),
+                        uses=round(sum(sum(slots.values()) for slots in nova_counts.values()) / n, 3),
+                        by_unit={nm: dict(slots) for nm, slots in nova_counts.items()}),
         foes={k: dict(dmg=round(sum(v['dmg']) / n), appeared_p=round(len(v['seen']) / n, 4)) for k, v in foe_agg.items()},
         assumptions_used=assumptions_used(mc, opts),
         unsupported=dict(static=static[:300], static_count=len(static), runtime=dict(runtime), runs_affected=runs_affected,

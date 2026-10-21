@@ -16,7 +16,7 @@ from collections import defaultdict
 from . import rules as _rules
 from .engine import calc_hit
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
-from .starsavior.parser import _map_prop, split_head, supported_trigger
+from .starsavior.parser import Line, _map_prop, split_head, supported_trigger
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules
 
 
@@ -105,6 +105,36 @@ DAMAGE_LIMIT = {
 def line_rest(ln):
     """줄에서 시점·조건 머리를 뗀 효과 문장"""
     return split_head(ln.raw, decimal_hp=True)[2].strip()
+
+
+def heal_burst_rank(d, sk):
+    """2=슬롯별 노바가 회복/보호막 추가·강화, 1=기본 회복/보호막, 0=대상 아님.
+
+    공격 스킬도 노바로 회복이 붙으면 포함. 강인도 회복·보호막 조건·패시브/반응은 제외.
+    조건부 회복은 스킬의 성격으로 판정하고 실제 조건/확률은 시전 중 기존 엔진이 평가한다.
+    """
+    if sk.ty != '액티브':
+        return 0
+
+    def lines(raws):
+        return [ln for raw in raws for ln in [Line(raw, sk.slot, 'active')]
+                if line_kind(ln) in ('own_pre', 'own_post', 'before_heal')]
+
+    def restores(ln):
+        rest = line_rest(ln)
+        return bool(RX_HEAL.match(rest) or RX_HEAL_P.match(rest) or RX_SHIELD.match(rest) or RX_HOT.search(rest))
+
+    base = bool(sk.raw.get('hl')) or any(restores(ln) for ln in lines(sk.raw.get('ef') or []))
+    for ln in lines(getattr(d, 'nb', {}).get(sk.slot + ' 사용 시') or []):
+        eff = ln.eff
+        bonus = (eff.get('kind') == 'local' and eff.get('stat') in ('주는 회복량', '받는 회복량')
+                 and eff.get('val', 0) > 0)
+        recv = RX_RECV_HEAL.match(line_rest(ln))
+        if restores(ln) or (base and (bonus or (recv and float(recv.group(2)) > 0))):
+            return 2
+    return int(base)
+
+
 RX_HP_COND = re.compile(r'\(자신 HP ([\d.]+)% (이상|이하|미만)')
 CHECK_NAME = re.compile(r'확인용|체크용|카운팅|확인 용')
 HARD_CC = ('기절', '수면')
@@ -143,7 +173,8 @@ _ELEM = '(태양|달|별|질서|혼돈)'
 
 def auto_rule(d, ln, kind):
     """자동 지정 대상 규칙을 스킬 설명문에서 읽는다 -> dict(mode, excl_self, element) 또는 None(못 찾음)"""
-    desc = skill_desc(d, ln.slot)
+    desc = ((getattr(d, 'nb', {}).get('desc') or {}).get(ln.slot, '')
+            if ln.src_kind == 'nova' else skill_desc(d, ln.slot))
     if not desc:
         return None
     sents = [x.strip() for x in re.split(r'(?<=다)\.\s*', desc) if x.strip()]
@@ -449,6 +480,7 @@ class Battle:
         self.events = 0
         self.depth = 0
         self.team_nova = 0.0
+        self.nova_bursts = defaultdict(int)  # (아군 칸, 슬롯)별 실제 사용 횟수
         self.unsup = defaultdict(int)
         self.timeline = [] if timeline else None
         self.enemy_lines = enemy_lines
@@ -1014,11 +1046,19 @@ class Battle:
             u.cast_count[sk.slot + ('(추가)' if extra else '')] += 1
             if not extra and sk.cd:
                 u.cd[sk.slot] = sk.cd
-            if (u.side == 0 and self.opts['nova'] and self.opts['nova_policy'] == 'manual' and not extra and sk.is_attack
-                    and self.nova_of(u) >= 4 and (self.mc['manual_burst'] == 'any_attack' or sk.slot == '궁극기')):
+            policy = self.opts['nova_policy']
+            burst_skill = (policy == 'manual' and sk.is_attack
+                           and (self.mc['manual_burst'] == 'any_attack' or sk.slot == '궁극기'))
+            if policy == 'heal' and u.side == 0 and not extra:
+                rank = heal_burst_rank(u.d, sk)
+                pool = self.alive(0) if self.opts['nova_pool'] == 'team' else [u]
+                preferred = any(heal_burst_rank(v.d, s) == 2 for v in pool for s in v.d.skills.values())
+                burst_skill = rank == 2 or (rank == 1 and not preferred)
+            if (u.side == 0 and self.opts['nova'] and not extra and burst_skill and self.nova_of(u) >= 4):
                 self.nova_add(u, -4)
                 ctx.inc += 0.15
                 ctx.nb = True
+                self.nova_bursts[u.pos, sk.slot] += 1
             ctx.targets = self.skill_targets(u, sk, target)
             ctx.target = ctx.targets[0] if ctx.targets else None
             ctx.dead_targets = {x for x in ctx.targets if x.dead}
@@ -1117,12 +1157,16 @@ class Battle:
         source = self.lines_of(u)
         if hasattr(sk, 'semantic_lines'):
             source = [ln for ln in source if not (ln.src_kind == 'active' and ln.slot == sk.slot)] + sk.semantic_lines
+        # 기존 auto/manual 수치를 보존: 슬롯별 노바 효과 연결은 새 heal 정책에 한정.
+        if ctx.nb and self.opts['nova_policy'] == 'heal':
+            source = source + [Line(raw, sk.slot, 'nova')
+                               for raw in (getattr(u.d, 'nb', {}).get(sk.slot + ' 사용 시') or [])]
         lines = [ln for ln in source if line_kind(ln) == kind and not (ln.bound and ln.slot != sk.slot)
                  and not (ln.trig and '공격' in ln.trig and ln.na == sk.is_attack)]   # 「내 행동 시/후」는 공격·비공격 모두
         if kind == 'own_post':
             # 「기본기 사용 후 최대 스택」은 그 기본기의 스택 부여까지 끝낸 상태로 판정.
-            self.run_batch(u, [ln for ln in lines if ln.src_kind in ('active', 'trigger')], ctx)
-            self.run_batch(u, [ln for ln in lines if ln.src_kind not in ('active', 'trigger')], ctx)
+            self.run_batch(u, [ln for ln in lines if ln.src_kind in ('active', 'trigger', 'nova')], ctx)
+            self.run_batch(u, [ln for ln in lines if ln.src_kind not in ('active', 'trigger', 'nova')], ctx)
         elif lines:
             self.run_batch(u, lines, ctx)
 

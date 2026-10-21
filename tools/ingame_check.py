@@ -6,6 +6,8 @@
 
 사용: python -X utf8 -I tools/ingame_check.py [--runs 100] [--ov JSON] [--only 37-3] [--bs]
 --bs = 실측 장착 스킬 「큐브 과부하」 Lv.5 활성화(기본 미장착).
+운영 기본값: 36-36=heal, 37-2~37-5=auto. --ov '{"nova_policy":"auto"}' 로 전부 순수 오토 대조 가능.
+nova_burst.total/by_unit은 전체 판 합계, uses·heal·healing은 판 평균(실제 HP 회복, 초과 회복 제외).
 2026-10-21 결과: 37-2(잡몹) 실제 4.13 vs 시뮬 4.11 일치 / 37-3·36-36(큰 보스) 실제 1.82·1.88 vs 시뮬 0.49·0.84 — 보스전만 과대(설명 docs/ingame_samples.md)
 """
 import json
@@ -38,6 +40,8 @@ SAMPLES = {
     '37-4': ('op', '모나스티르 광장|SECTOR 37-4', TEAM2, 'wedding-carmen', 411163, 0, 346440, 53172, 13, 'clear'),
     '37-5': ('op', '모나스티르 광장|SECTOR 37-5', TEAM2, 'wedding-carmen', 411163, 0, 713329, 170878, 22, 'clear'),
 }
+# 2026-10-21 사용자 확인: 36-36만 오토 선택 + 회복용 수동 버스트, 37구역은 순수 오토.
+NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
 
 def rebalance(spec, pw):
@@ -74,7 +78,8 @@ def run(name, runs=100, ov=None, seed=7, bs=False):
     opt = dict(G.SIMOPT, n_runs=runs, seed=seed, rekindle=rk)
     if bs:
         opt['break_skill'] = {'name': '큐브 과부하', 'level': 5}
-    opt['rules_override'] = dict(opt['rules_override'], **(ov or {}))
+    opt['rules_override'] = dict(opt['rules_override'], nova_policy=NOVA_POLICY[name])
+    opt['rules_override'].update(ov or {})  # --ov가 실측 운영 기본값보다 우선
     tab, nm = sk.split('|', 1)
     r = simulate(spec, {'stage': '%s/%s/%s' % (ck, tab, nm)}, opt)
     d = sum(v['dmg'] for v in r['per_unit'].values())
@@ -82,7 +87,9 @@ def run(name, runs=100, ov=None, seed=7, bs=False):
     acts = sum(v['actions'] for v in r['per_unit'].values())
     return dict(stage=name, real_ratio=round(dealt / taken, 2), sim_ratio=round(d / max(1.0, t), 2), sim_clear=r['outcome']['clear_p'],
                 real=res, real_turn=turn, sim_ally_actions=round(acts, 1), foe_breaks=r['breaks']['foe'], ally_breaks=r['breaks']['ally'],
-                break_skill=r['break_skill'])
+                break_skill=r['break_skill'], nova_policy=opt['rules_override']['nova_policy'],
+                nova_burst=r['nova_burst'], heal=sum(v['heal'] for v in r['per_unit'].values()),
+                healing={nm: dict(heal=v['heal'], shield=v['shield']) for nm, v in r['per_unit'].items()})
 
 
 def main():

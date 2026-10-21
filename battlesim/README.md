@@ -46,6 +46,7 @@ python -X utf8 -I tools/sim_damage.py simulate ... --rules "{\"target_defender_m
 - 웹이 읽는 결과는 `tools/build_sim_results.py` 가 만든다(`data/sim/index.json` + 콘텐츠별 `data/sim/<콘텐츠>.json`, 설계 `docs/battlesim_design.md` 10절, 결과 보고 `docs/sim_p4_report.md`). 느리므로 기본은 프로세스 1개·낮은 우선순위(Idle).
 - `simulate` 옵션 추가: `run_offset`(판 번호 시작값 — 대표 판 하나만 다시 돌려 타임라인을 얻을 때), `per_run`(판별 [결과, 처치 턴]), `formula_override`(민감도용 공식 상수 임시 교체, 지금은 `COOP_CAP` 만, 끝나면 원복).
 - 규칙 `mc.manual_burst`: 수동일 때 노바 버스트를 쓰는 스킬(`any_attack` = 4개 모이면 다음 공격, `ult_only` = 궁극기에만). `opts.nova_pool='unit'`(개인 풀)이 확률 엔진에서도 실제로 동작한다(민감도용).
+- 확률 엔진 `nova_policy='heal'`: 오토 스킬 선택을 유지하고 회복·보호막에만 버스트. 슬롯별 노바 효과로 회복·보호막을 추가/강화하는 생존 아군의 액티브가 있으면 그 스킬을 기다리고, 없으면 `hl`/효과 줄로 판별한 일반 회복·보호막에 사용한다. 조건부 효과는 후보에 포함하되 실제 조건은 시전 때 평가한다. 강인도 회복·반응/협공/추가 시전 제외. 기존 auto/manual·동결 기대값 엔진은 불변이며 슬롯별 노바 효과 실행은 heal에만 추가했다. `result.nova_burst`에 전체 판 횟수와 시전자/슬롯별 합계를 제공한다. `tools/ingame_check.py --runs 60 --bs`는 36-36만 heal, 나머지는 auto이며 `--ov`로 덮어쓴다. 회귀 시험: `tests/heal_burst_test.py`.
 - 타임라인 항목에 `pos`(편성 칸)·`via`(coop/forced_coop/trigger/reaction/extra)·`nb`(노바 버스트)·`all`·`tgt_side`·`tgt_boss` 가 붙는다(서순 표 재료).
 - 시험: `python -X utf8 -I tests/p4_test.py`(사전 계산 스키마·관문 순위·수동 델타·시드 결정성·결과 없음·버스트 규칙·부분 병합 meta 등 10개, 임시 폴더에만 씀), 브라우저 `tests/e2e/test_page.py`(`docs/PORTING.md` 7절).
 
