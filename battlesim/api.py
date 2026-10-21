@@ -75,7 +75,8 @@ class _CustomFoe:
         self.spd_base = self.stats['spd']
 
 
-FINAL_PASSIVE_KEYS = ('atkp', 'hpp', 'defp', 'spdp', 'spdf', 'cr', 'cd', 'eh')   # 능력치 화면에 이미 들어 있는 상시 % (parser._perm_apply)
+# 능력치 화면에 이미 들어 있는 상시 % (parser._perm_apply) — 입력 능력치 -> 뺄 passive 키
+FINAL_PASSIVE_KEYS = {'atk': ('atkp',), 'hp': ('hpp',), 'def': ('defp',), 'spd': ('spdp', 'spdf'), 'cr': ('cr',), 'cd': ('cd',), 'eh': ('eh',)}
 
 
 def _norm_party(party_spec, db, mode, build=None):
@@ -94,8 +95,9 @@ def _norm_party(party_spec, db, mode, build=None):
             d.stats.update(u['stats_override'])
             d.spd_base = d.stats['spd']
             if u.get('stats_final'):
-                for k in FINAL_PASSIVE_KEYS:
-                    d.passive[k] = 0.0
+                for st in u['stats_override']:          # 입력한 능력치에 대응하는 상시 % 만 뺀다(부분 입력 시 나머지는 그대로 — codex 리뷰)
+                    for k in FINAL_PASSIVE_KEYS.get(st, ()):
+                        d.passive[k] = 0.0
         defs.append(d)
     return defs, leader
 

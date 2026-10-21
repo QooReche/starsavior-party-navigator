@@ -33,6 +33,25 @@ SAMPLES = {
 }
 
 
+def rebalance(spec, pw):
+    """화면 능력치가 없는 구원자에게 «남은 전투력»(파티 전투력 − 화면 값 구원자들의 엔진 전투력)을 나눠 준다 — 공·생·방에 같은 배율
+    (전투력 공식이 공·생·방에 선형이라 2번 반복이면 충분). codex 리뷰 2026-10-21: 안 하면 394,578 대신 398,170 으로 돌았다."""
+    from battlesim.api import _norm_party, party_power
+    from battlesim.starsavior.data import get_db
+    db = get_db()
+    fixed = [u for u in spec['units'] if u.get('stats_final')]
+    free = [u for u in spec['units'] if not u.get('stats_final')]
+    if not free:
+        return
+    target = pw - party_power(_norm_party({'units': fixed}, db, 'fixed', 'standard')[0])
+    for _ in range(2):
+        f = target / party_power(_norm_party({'units': free}, db, 'fixed', 'standard')[0])
+        for u in free:
+            so = u['stats_override']
+            for k in ('atk', 'hp', 'def'):
+                so[k] = round(so[k] * f)
+
+
 def run(name, runs=100, ov=None, seed=7, bs=False):
     import gen_quick_calib as G
     from battlesim import quick, simulate
@@ -44,6 +63,7 @@ def run(name, runs=100, ov=None, seed=7, bs=False):
         if u['key'] in REAL:
             u['stats_override'] = dict(REAL[u['key']])
             u['stats_final'] = True          # 화면 값 = 최종값(상시 패시브 % 를 다시 곱하지 않음)
+    rebalance(spec, pw)
     opt = dict(G.SIMOPT, n_runs=runs, seed=seed, rekindle=rk)
     if bs:
         opt['break_skill'] = {'name': '큐브 과부하', 'level': 5}

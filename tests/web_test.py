@@ -182,8 +182,12 @@ def test_stats_final_and_luna_reaction():
         fired += sum(1 for e in r['timeline'] if e.get('via') == 'reaction' and e.get('actor') == '루나')
         if fired:
             break
-    ok = abs(p_final - want) < 1 and p_raw > p_final and fired > 0
-    return ok, '최종값 전투력 %.0f(공식 %.0f) / 재증폭 %.0f / 루나 반응 %d회' % (p_final, want, p_raw, fired)
+    from battlesim.api import _norm_party
+    from battlesim.starsavior.data import get_db
+    part = _norm_party({'units': [dict(key='white-pearl-luna', stats_override={'atk': 12314}, stats_final=True)]}, get_db(), 'fixed', 'standard')[0][0]
+    partial_ok = part.passive['atkp'] == 0 and part.passive['hpp'] > 0      # 공격력만 넣으면 생명력 % 는 그대로(codex 리뷰)
+    ok = abs(p_final - want) < 1 and p_raw > p_final and fired > 0 and partial_ok
+    return ok, '최종값 전투력 %.0f(공식 %.0f) / 재증폭 %.0f / 루나 반응 %d회 / 부분 입력 %s' % (p_final, want, p_raw, fired, partial_ok)
 
 
 TESTS = [test_seq_from_timeline, test_slot_order, test_run_auto_power_and_determinism, test_run_manual_shape, test_manual_burst_rule,
