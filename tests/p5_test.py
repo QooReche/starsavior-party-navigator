@@ -153,16 +153,22 @@ def test_toughness_break():
 
 
 def test_tough_elem_and_fixed():
-    """강인도 상성: 불리하면 ab 몫 0, 유리하면 +1(ab>0 일 때), 「강인도 고정 피해」는 상성과 무관. 회피하면 안 깎임"""
-    out = {}
+    """강인도 상성 옛 규칙(on): 불리하면 ab 몫 0, 유리하면 +1(ab>0 일 때), 「강인도 고정 피해」는 상성과 무관. 회피하면 안 깎임.
+    기본 규칙(db, starsavior-db): 기본값(유리 1, 아니면 0) + ab + 고정 — 유리하면 ab 0 기본기도 1, 불리해도 ab 는 그대로"""
+    out, db = {}, {}
     for el, fixed in (('태양', 0), ('별', 0), ('달', 0), ('달', 1)):
-        a, f = unit('a', element=el), unit('foe', hp=10 ** 9, sa=10, element='별')
-        b = battle([a], [f])
-        A, F = b.allies[0], b.foes[0]
-        if fixed:
-            give(A, '파쇄', {'강인도 고정 피해': 1.0})
-        hit(b, A, F, '기본기', ab=1)
-        out[(el, fixed)] = 10 - F.sa
+        for mode, dst in (('on', out), ('db', db)):
+            a, f = unit('a', element=el), unit('foe', hp=10 ** 9, sa=10, element='별')
+            b = battle([a], [f], mc=dict(toughness_elem=mode))
+            A, F = b.allies[0], b.foes[0]
+            if fixed:
+                give(A, '파쇄', {'강인도 고정 피해': 1.0})
+            hit(b, A, F, '기본기', ab=1)
+            dst[(el, fixed)] = 10 - F.sa
+    a, f = unit('a', element='태양'), unit('foe', hp=10 ** 9, sa=10, element='별')
+    b = battle([a], [f], mc=dict(toughness_elem='db'))
+    hit(b, b.allies[0], b.foes[0], '기본기', ab=0)
+    db_basic0 = 10 - b.foes[0].sa
     a, f = unit('a'), unit('foe', hp=10 ** 9, sa=10)
     b = battle([a], [f])
     A, F = b.allies[0], b.foes[0]
@@ -170,8 +176,9 @@ def test_tough_elem_and_fixed():
     hit(b, A, F, '기본기', ab=2)
     ev = 10 - F.sa
     # 태양 -> 별 유리(+1), 별 -> 별 보통, 달 -> 별 불리(0), 불리 + 고정 1 = 1
-    ok = out == {('태양', 0): 2, ('별', 0): 1, ('달', 0): 0, ('달', 1): 1} and ev == 0
-    return ok, '강인도 피해 %s, 회피 시 %s' % (out, ev)
+    ok = (out == {('태양', 0): 2, ('별', 0): 1, ('달', 0): 0, ('달', 1): 1} and ev == 0
+          and db == {('태양', 0): 2, ('별', 0): 1, ('달', 0): 1, ('달', 1): 2} and db_basic0 == 1)
+    return ok, '옛 규칙 %s, db %s, db 유리 ab0 %s, 회피 시 %s' % (out, db, db_basic0, ev)
 
 
 def test_ally_break_gauge_and_coop():

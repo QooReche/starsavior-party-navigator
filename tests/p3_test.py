@@ -367,6 +367,7 @@ def test_reaction_cdr_slot():
     for aoe in (False, True):
         b = battle([emily, unit('x', hp=10 ** 6)], [unit('foe', atk=10, skills=[dict(slot='기본기', dm=50, all=aoe)])])
         e = b.allies[0]
+        e.cd['궁극기'] = 7          # 확률 엔진은 시작 쿨 0(mc.ally_init_cd, 사용자 확인 2026-10-21) — 쿨이 도는 중인 상태를 직접 만든다
         before = e.cd.get('궁극기')
         b.cast(b.foes[0], b.foes[0].d.skills['기본기'], target=e)
         res.append((before, e.cd.get('궁극기')))

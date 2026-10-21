@@ -20,7 +20,7 @@
   "nova": {"value": true, "grade": "assumed", "note": "노바 버스트 전체 스위치(민감도용). 실제 사용 여부는 nova_policy 가 정한다"},
   "coop": {"value": true, "grade": "assumed", "note": "협공 확률 버프 반영(협공 = 자신 기본기 1회 추가 시전). 발동 조건은 coop_trigger·coop_single"},
   "forced_coop": {"value": true, "grade": "assumed", "note": "강제 협공 = 대상 아군 기본기 1회 추가 시전(추정)"},
-  "init_cd_frac": {"value": 1.0, "grade": "assumed", "note": "전투 시작 쿨타임 = 최대 쿨타임 x 이 값(시작 만충 가정)"},
+  "init_cd_frac": {"value": 1.0, "grade": "assumed", "note": "전투 시작 쿨타임 = 최대 쿨타임 x 이 값(시작 만충 가정) — 기대값 엔진(engine.py·지표·골든)용. 확률 엔진 구원자는 mc.ally_init_cd"},
   "enemy_def": {"value": 1400.0, "grade": "assumed", "note": "지표용 기준 적 방어력(코스모 2단계 수준)"},
   "enemy_spd": {"value": 100.0, "grade": "assumed", "note": "지표용 기준 적 속도"},
   "ref_enemy_count": {"value": 3, "grade": "assumed", "note": "광역 시나리오 적 수"},
@@ -67,6 +67,7 @@
  "mc": {
   "_note": "P3 확률(몬테카를로) 엔진 battlesim/mc.py 전용 규칙. 기대값 엔진(engine.Sim)의 opts 와 섞지 않는다(damage_index _meta.opts 가 바뀌지 않게). 근거 = docs/battlesim_design.md 「P3 상세」",
   "enemy_skill_ai": {"value": "ult_special_basic", "grade": "assumed", "note": "적 스킬 선택: 쿨타임이 찬 궁극기 > 특수기 > 기본기(구원자 오토와 같은 규칙). 침묵이면 쿨타임 있는 스킬 불가, 도발이면 도발자에게 기본기", "source": "설계 3절 표(실측 대상)"},
+  "ally_init_cd": {"value": 0.0, "alt": [1.0], "grade": "user", "note": "확률 엔진 구원자의 시작 쿨타임 = 최대 쿨타임 x 이 값. 0 = 시작부터 특수기·궁극기 사용 가능(쓰면 그때부터 스킬마다 쿨) — 사용자 인게임 확인 2026-10-21. 1.0 = 옛 가정(시작 만충, opts.init_cd_frac 과 같음)"},
   "enemy_init_cd": {"value": 1.0, "grade": "assumed", "note": "적의 시작 쿨타임 = 최대 쿨타임 x 이 값(구원자 init_cd_frac 과 같은 가정)"},
   "target_row_weight": {"value": [0.8, 0.2], "grade": "community", "note": "적 단일 공격 대상: 전열 칸 몫 0.8 / 후열 칸 몫 0.2(선택 가능한 대상이 있는 열만, 한 열이 비면 다른 열이 전부)", "source": "나무위키(docs/research.md 1.1), formulas_web.md 4.3"},
   "target_defender_mult": {"value": 2.0, "alt": [1.0, 4.0], "grade": "assumed", "note": "같은 열 안에서 디펜더 가중 배수(디펜더가 더 자주 맞는다는 말만 있고 수치 없음)", "source": "나무위키·아카(수치 미상)"},
@@ -105,7 +106,7 @@
   "break_skill_role_speed_pct": {"value": 10, "grade": "third_party", "note": "치트 매트릭스 디펜더·서포터 추가 속도% +10%(확실도 중)", "source": "docs/break_skills.md 5종·docs/formulas_web.md 2.3"},
   "break_skill_domain_turns": {"value": 4, "grade": "community", "note": "치트 매트릭스 영역 4턴. 보유자 행동으로 차감하지 않고 break_skill_cd_unit 공용 시계로 차감(가정)", "source": "루리웹: docs/break_skills.md 구조"},
   "break_skill_fixed": {"value": true, "grade": "assumed", "note": "오메가 프로토콜·치트 매트릭스는 Eff 로 표시하며 해제 불가로 가정. 기존 강화 불가 규칙은 그대로 적용, 부활한 유닛에 영역 재부여 없음"},
-  "toughness_elem": {"value": "on", "alt": ["off"], "grade": "community", "note": "강인도 피해 상성: 공격자가 불리하면 스킬 ab·「강인도 피해 +N」 몫이 0, 유리하면 그 몫이 0보다 클 때 +1. 「강인도 고정 피해 +N」은 상성과 무관(assumed)", "source": "나무위키 RESIST 표기(research.md 1.2)"},
+  "toughness_elem": {"value": "db", "alt": ["on", "off"], "grade": "community", "note": "강인도 피해 = 기본값(상성 유리 1, 아니면 0) + 강인도 피해(스킬 ab·「강인도 피해 +N」) + 「강인도 고정 피해 +N」 — 유리 상성이면 기본기(ab 없음)도 타격마다 1. on = 옛 규칙(불리면 ab 몫 0, 유리면 ab>0 일 때만 +1, 나무위키 RESIST)", "source": "starsavior-db.pages.dev/mechanics (2026-10-21 확인): Base(우위 1, 열세·동일 0) + SA Damage + SA True Damage − SA Damage Reduce"},
   "ally_break_gauge": {"value": "reset", "alt": ["keep"], "grade": "user", "note": "구원자가 브레이크될 때 행동 게이지: 몬스터와 같이 0(차례가 밀림) — 사용자 인게임 확인(2026-10-21 「우리가 강인도가 까이면 턴이 밀린다」). databook 문구는 「일반·정예·보스 몬스터」만 적었음. keep = 옛 가정(게이지 유지)"},
   "basic_tough": {"value": 0, "alt": [1], "grade": "data", "note": "기본기의 강인도 파괴량: 구원자 기본기에는 데이터 ab 가 없음(적 기본기는 ab 1). 대안 1 = 설계 3절 민감도"},
   "power_penalty": {"value": "off", "alt": ["model"], "grade": "assumed", "note": "P5 전투력 보정(topics.pen): model = 프리셋 스탯으로 databook 전투력 공식(스킬 레벨 합 34·전투력 잠재력 0 가정)을 계산해 4명 합 / 권장 전투력(bp) 비율로 아군 피해·적 피해 배율(스킬·지속·연쇄, 회복·보호막 제외). 플래시 포인트는 미적용(formulas_web 10절). 공식 입력·콘텐츠 적용 범위가 불확실해 기본은 끔(민감도 행)", "source": "databook topics.pen, app.js calcBP"}

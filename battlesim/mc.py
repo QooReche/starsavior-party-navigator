@@ -260,7 +260,7 @@ class Unit:
         self.gauge = 0.0
         self.eff = {}
         self.cd = {}
-        frac = b.mc['enemy_init_cd'] if side == 1 else b.opts['init_cd_frac']
+        frac = b.mc['enemy_init_cd'] if side == 1 else b.mc['ally_init_cd']
         for slot, sk in d.skills.items():
             self.cd[slot] = (sk.cd * frac) if sk.cd else 0
         self.dead = False
@@ -1199,7 +1199,11 @@ class Battle:
             ab = self.mc['basic_tough'] if sk.slot == '기본기' else 0
         normal = ab + m['tough'] + ctx.tough
         fixed = m['tough_fixed'] + ctx.tough_fixed
-        if self.mc['toughness_elem'] == 'on' and a.element and v.element:
+        if self.mc['toughness_elem'] == 'db':
+            # starsavior-db mechanics(2026-10-21 확인): 기본값(상성 유리 1, 아니면 0) + 강인도 피해(스킬 ab·버프) + 고정 피해 − 감소
+            if a.element and v.element and ELEM_BEATS.get(a.element) == v.element:
+                normal += 1
+        elif self.mc['toughness_elem'] == 'on' and a.element and v.element:
             if ELEM_LOSES.get(a.element) == v.element:
                 normal = 0
             elif ELEM_BEATS.get(a.element) == v.element and normal > 0:
