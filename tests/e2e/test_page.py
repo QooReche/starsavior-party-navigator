@@ -226,9 +226,11 @@ def test_browser_sim(browser, ctx):
     from battlesim import web
     same = []
     for t in last["req"]["teams"]:      # 브라우저와 같은 진입점·옵션(표준 육성·엔진 역보정)으로 이 PC 에서 다시 돌림
-        r = json.loads(web.run_auto(last["req"]["stage"], t["party"], last["req"]["n_runs"], last["req"]["seed"], json.dumps(last["req"]["options"])))
+        opt = dict(last["req"]["options"], **t.get("options", {}))
+        opt['rules_override'] = dict(last["req"]["options"].get('rules_override', {}), **t.get('options', {}).get('rules_override', {}))
+        r = json.loads(web.run_auto(last["req"]["stage"], t["party"], last["req"]["n_runs"], last["req"]["seed"], json.dumps(opt)))
         b = last["res"][t["key"]]
-        same.append(r["clear"] == b["clear"] and r["ttk"] == b["ttk"] and r["u"] == b["u"])
+        same.append(r["clear"] == b["clear"] and r["ttk"] == b["ttk"] and r["u"] == b["u"] and r['bs'] == b['bs'])
     # 화면이 시뮬에 넘긴 스탯 = 계수 맞춤 표본(tools/gen_quick_calib.party_spec)이 쓰는 스탯(기본 육성 가정 1.0, codex 차단 3)
     import gen_quick_calib as G
     from battlesim import quick as Q
@@ -384,8 +386,56 @@ def test_rekindle_ui(browser, ctx):
     return ok, "전 %s / 후 %s / 시뮬 옵션 %s / 코스모 %s / 저장 %s / 오류 %s" % ("재점화" in h0, "3단계 반영" in h1, opt.get("rekindle"), cz.get("rekindle"), saved, errs[:2])
 
 
+def test_break_skill_select(browser, ctx):
+    """390px 선택·추천·저장·보유 해제·팀별 요청·이전 요청 무시. Worker만 가로채며 실제 엔진은 별도 시험."""
+    page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
+    sel = '.party[data-party="1"] .bsel'
+    default = page.eval_on_selector(sel, "s => ({value:s.value, recommended:s.selectedOptions[0].textContent.includes('추천'), key:s.dataset.bkey})")
+    chosen = page.eval_on_selector(sel, "s => [...s.options].find(o => o.value && o.value !== s.value).value")
+    page.select_option(sel, chosen)
+    settle(page)
+    saved = page.evaluate("k => JSON.parse(localStorage.getItem('pn.brksel.v1'))[k]", default['key'])
+    page.reload()
+    page.wait_for_selector(sel)
+    settle(page)
+    restored = page.input_value(sel)
+    fit = page.eval_on_selector(sel, "s => s.getBoundingClientRect().right <= innerWidth && parseFloat(getComputedStyle(s).fontSize) >= 16")
+    page.evaluate("""() => {
+      simAuto(false); window.__bw=[];
+      window.Worker=class {constructor(){window.__bw.push(this)} postMessage(req){this.req=req} terminate(){this.stopped=true}};
+    }""")
+    page.click('button[data-sim="1"]')
+    req = page.evaluate("() => window.__bw[0].req")
+    team_key = default['key'].split('|', 1)[1]
+    team = next(t for t in req['teams'] if t['key'] == team_key)
+    options_ok = team['options']['break_skill'] == {'name': chosen, 'level': 5} and all('break_skill' in t['options'] for t in req['teams'])
+    # 실행 중 선택 변경 후 이전 worker의 지연된 결과를 직접 배달해도 캐시에 넣지 않는다.
+    page.evaluate("() => simAuto(false)")
+    page.select_option(sel, '')
+    stale = page.evaluate("""() => {const w=window.__bw[0],before=Object.keys(SIMQ.res).length;
+      w.onmessage({data:{type:'team',id:w.req.id,key:w.req.teams[0].key,result:{clear:1}}});
+      return w.stopped && Object.keys(SIMQ.res).length===before} """)
+    page.click('button[data-sim="1"]')
+    none_req = page.evaluate("() => window.__bw.at(-1).req")
+    none_ok = next(t for t in none_req['teams'] if t['key'] == team_key)['options']['break_skill'] is None
+    page.evaluate("""key => {simAuto(false);const w=window.__bw.at(-1);w.onmessage({data:{type:'team',id:w.req.id,key,
+      result:{clear:0.5,ci:[0.4,0.6],n:100,bs:{name:null,uses:0,dmg:0,supported:false}}}})}""", team_key)
+    chip = page.locator('.party[data-party="1"] .bbar .bschip').is_visible()
+    page.select_option(sel, chosen)
+    page.evaluate("""name => {const x=[...document.querySelectorAll('#brk input')].find(x=>x.dataset.b===name);
+      x.checked=false;x.dispatchEvent(new Event('change',{bubbles:true}))}""", chosen)
+    settle(page)
+    invalidated = page.evaluate("k => !(k in JSON.parse(localStorage.getItem('pn.brksel.v1')))", default['key'])
+    removed = page.eval_on_selector(sel, "(s,n) => ![...s.options].some(o=>o.value===n)", chosen)
+    page.close()
+    ok = default['recommended'] and saved == chosen and restored == chosen and fit and options_ok and stale and none_ok and chip and invalidated and removed
+    return ok, '추천 %s, 저장/복원 %s, 390px %s, 팀 옵션 %s, 이전 요청 무시 %s, 미장착 %s, 칩 %s, 보유 해제 %s' % (
+        default['recommended'], saved == restored == chosen, fit, options_ok, stale, none_ok, chip, invalidated and removed)
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_quick_growth, test_savior_power, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
+TESTS.append(test_break_skill_select)
 
 
 def main():

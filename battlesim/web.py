@@ -37,6 +37,10 @@ def _unit_map(party, r):
     return out
 
 
+def _break_summary(r):
+    return {k: r['break_skill'][k] for k in ('name', 'uses', 'dmg', 'supported')}
+
+
 def run_auto(stage, party, n, seed, extra=None):
     r = simulate(party, {'stage': stage}, _opts(extra, n_runs=n, seed=seed))
     o = r['outcome']
@@ -44,7 +48,7 @@ def run_auto(stage, party, n, seed, extra=None):
     return json.dumps(dict(clear=o['clear_p'], wipe=o['wipe_p'], timeout=o['timeout_p'], ci=o['ci95']['clear'], n=o['n_runs'],
                            ttk=o['ttk_median'], first=(first[0][1] if first and first[0][0] > 0 else None),
                            first_p=(first[0][0] if first else 0), gate=r['unsupported'].get('gate_ok', True),
-                           power=r.get('party', {}).get('power'), u=_unit_map(party, r)), ensure_ascii=False)
+                           power=r.get('party', {}).get('power'), u=_unit_map(party, r), bs=_break_summary(r)), ensure_ascii=False)
 
 
 def seq_from_timeline(tl, max_turns=SEQ_TURNS):
@@ -102,4 +106,4 @@ def run_manual(stage, party, n, seed, extra=None):
     tl = simulate(party, {'stage': stage}, _opts(extra, pol, n_runs=1, seed=seed, run_offset=idx, timeline=True)).get('timeline')
     sq = seq_from_timeline(tl)
     sq.update(run=idx, kind=kind, ttk=(runs[idx][1] if runs else None))
-    return json.dumps(dict(c=o['clear_p'], ci=o['ci95']['clear'], t=o['ttk_median'], n=o['n_runs'], pol=list(pol), seq=sq), ensure_ascii=False)
+    return json.dumps(dict(c=o['clear_p'], ci=o['ci95']['clear'], t=o['ttk_median'], n=o['n_runs'], pol=list(pol), seq=sq, bs=_break_summary(r)), ensure_ascii=False)

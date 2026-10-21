@@ -67,6 +67,7 @@ body:not(.show-why) .gimnote{display:none}
 .bbar{display:flex;gap:18px;align-items:center;margin-top:12px;padding:14px 16px;border-radius:14px;border:2px solid #5a7bd6;background:linear-gradient(90deg,#1c3470,#0f1d48 70%);color:#fff}
 .bbar img{width:132px;height:132px;border-radius:50%;object-fit:cover;flex:none;border:3px solid #cfd9f2;box-shadow:0 0 0 3px #3b5bb0}
 .bbar .bt{font-size:12px;letter-spacing:.12em;color:#a9bde8}.bbar b{font-size:22px}.bbar .bx{font-size:14px;margin-top:4px}.bbar .mut{color:#a9bde8}
+.bbody{min-width:0;max-width:100%}.bsel{display:block;width:100%;max-width:320px;box-sizing:border-box;font-size:16px;margin:8px 0;padding:8px 10px;background:#132550;color:#fff;border:1px solid #a9bde8;border-radius:8px}.bschip{display:inline-block;font-size:12px;line-height:1.5;padding:3px 8px;margin:4px 0;border-radius:6px;background:var(--bg);color:var(--fg);border:1px solid var(--acc)}
 .gc{display:grid;grid-template-rows:subgrid;grid-row:span 7;min-width:0}
 .card{position:relative;aspect-ratio:3/5.6;border-radius:14px;overflow:hidden;border:2px solid #7a8190;background:#10131a;box-shadow:0 0 0 2px #262b36 inset}
 .card .art{position:absolute;left:0;right:0;bottom:0;width:100%;height:112%;object-fit:cover;object-position:center bottom}
@@ -216,7 +217,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 보세요.</div></div>
-<div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 빠른 계산과 「시뮬로 확인」은 Lv200·표준 육성(가이드 장비 세팅·T2 레전더리 +15·여정·특수 잠재력)의 능력치를 육성 가정 전투력에 맞춰 줄인 모델의 추정이며 실전 결과가 아닙니다(적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정). 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</div>
+<div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 빠른 계산과 「시뮬로 확인」은 Lv200·표준 육성(가이드 장비 세팅·T2 레전더리 +15·여정·특수 잠재력)의 능력치를 육성 가정 전투력에 맞춰 줄인 모델의 추정이며 실전 결과가 아닙니다(적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정). 브레이크 스킬 피해는 생존 아군 공격력 합의 광역 계수(레벨 보정 없음)로 추정하며, 노바 +4는 팀 공용(개인 풀이면 생존자 각 +4, 오토에서는 버스트를 안 써 효과 없음), 게이지 +20%는 발동 유닛 제외·상한 100%로 가정합니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</div>
 <button id="dbtn" type="button" title="보유 구원자·브레이크 스킬 선택" aria-controls="drawer" aria-expanded="false">내 구원자<br>선택 ▸<span id="dcount"></span></button>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 구원자 · 브레이크 스킬</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
@@ -358,6 +359,17 @@ function pickBreak(party,content,have){
   if(!best||n>best[0])best=[n,k,b.text]}
  return best}
 
+const BRSEL=(()=>{try{const v=JSON.parse(localStorage.getItem("pn.brksel.v1")||"{}");return v&&typeof v==="object"&&!Array.isArray(v)?v:{}}catch(e){return {}}})();
+const breakOwned=()=>[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);
+const saveBreakSel=()=>{try{localStorage.setItem("pn.brksel.v1",JSON.stringify(BRSEL))}catch(e){}};
+function pruneBreakSel(){const have=breakOwned();let changed=false;for(const [k,v] of Object.entries(BRSEL))if(v!==""&&!have.includes(v)){delete BRSEL[k];changed=true}if(changed)saveBreakSel()}
+function breakChoice(party,c,have=breakOwned()){
+ const key=c.key+"|"+ckey(party),rec=pickBreak(party,c.name,have),saved=BRSEL[key];
+ const name=saved===""||have.includes(saved)?saved:rec?rec[1]:"";
+ return {key,name,rec:rec?rec[1]:"",have}}
+function teamBreak(t){const c=contents[$("content").value],name=breakChoice(t.combo,c).name;return name?{name,level:5}:null}
+function breakChip(bs){return bs?`<span class="bschip">${bs.supported?`시뮬 반영 · 평균 ${Number(bs.uses).toLocaleString(undefined,{maximumFractionDigits:3})}회 발동`:"시뮬 미반영"}</span>`:""}
+
 const KT=s=>s.kind==="C"?["COSMIC","k-C"]:s.kind==="A"?["ANOTHER","k-A"]:null;
 const kindTxt=s=>{const k=KT(s);return k?`<div class="kind ${k[1]}">${k[0]}</div>`:""};
 const dia=(s,px)=>`<span class="dia e-${s.el}" style="width:${px}px;height:${px}px"><img src="${D.icons[s.cls]}" alt="${esc(s.cls)}" style="width:${Math.round(px*.66)}px;height:${Math.round(px*.66)}px"></span>`;
@@ -376,11 +388,10 @@ function card(x,pos,alt,r){const s=x.s;
   <span class="tier ${TC(s.tier)}">${s.tier||"티어 ?"}</span></div></div>
   <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}${s.key===LEADKEY?" 👑":""}</div>
   <div class="under">${simUnit(r,s.key)}<div class="mut ico">${dia(s,26)}${EL[s.el]} · ${esc(s.cls)}${s.kind?` · <b class="k-${s.kind}">${s.kind==="C"?"COSMIC":"ANOTHER"}</b>`:""}</div><div class="why">${why||"&nbsp;"}</div><div class="tg">${tg||"&nbsp;"}</div>${altChips(alt)||'<div class="altbox" style="border:0"></div>'}</div></div>`}
-function breakCard(br){
- if(!br)return `<div class="bbar"><div><div class="bt">BREAK SKILL</div><div class="mut">선택한 브레이크 스킬이 없습니다</div></div></div>`;
- const u=CFG.breakSkills[br[1]].unreleased,im=D.bicons[br[1]];
- return `<div class="bbar">${im?`<img src="${im}" alt="">`:`<span style="font-size:72px">${BG[br[1]]||"◆"}</span>`}
-  <div><div class="bt">BREAK SKILL</div><b>${esc(br[1])}</b>${u?'<span class="btag">미출시 표기</span>':""}<div class="bx">${esc(br[2])}</div><div class="mut">직업 구성 기준 추정 추천</div></div></div>`}
+function breakCard(br,r){
+ const b=CFG.breakSkills[br.name],im=D.bicons[br.name],bs=MODE==="manual"&&r?.man?r.man.bs:r?.bs;
+ return `<div class="bbar">${br.name?(im?`<img src="${im}" alt="">`:`<span style="font-size:72px">${BG[br.name]||"◆"}</span>`):""}
+  <div class="bbody"><div class="bt">BREAK SKILL</div><label>장착 브레이크 스킬<select class="bsel" data-bkey="${esc(br.key)}" aria-label="장착 브레이크 스킬">${["",...br.have].map(n=>`<option value="${esc(n)}"${n===br.name?" selected":""}>${esc(n||"장착 안 함")}${n&&n===br.rec?" · 추천":""}</option>`).join("")}</select></label>${breakChip(bs)}${b?`<div class="bx">${esc(b.text)}</div>`:""}<div class="mut">직업 구성 기준 추정 추천</div></div></div>`}
 
 // ---------------- 표시 모드(오토/수동)·시험용 훅
 let MODE="auto";
@@ -474,7 +485,7 @@ function quickBox(p,qt,qi,st,pickKey){if(!qt||!qt.length)return "";
   return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?face(BYKEY[x]):"").join("")}</div>
    <span class="qv ${vd}" title="${sr?"전투 시뮬 기준":"빠른 계산 기준"}">${QV[vd]}</span><span class="qt">${sr&&vd!==t.vd?`<span class="mut">빠른 계산 「${QV[t.vd]}」 → 시뮬 결과로 바꿈 · </span>`:""}${t.q.clear?`약 ${t.q.rounds}턴 · 남는 생명력 ${Math.round(t.q.left*100)}%`:`${t.q.rounds}턴째 ${t.q.why==="time"?"시간 초과":"전멸"}`}${ng}${w.length?`<br><span class="mut">${w.map(esc).join(" · ")}</span>`:""}${simCell(p,t,st)}</span>
    ${k===pickKey?'<span class="mut">아래에 표시 중</span>':`<button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">이 팀 보기</button>`}</div>`};
- return `<div class="qbox" data-k="quick"><div class="qh"><b style="color:var(--fg)">이 스테이지 추천 (빠른 계산)</b>${JOINT?" · 파티 1·2를 함께 골라 둘 다 깨는 조합 우선":""} · 가정: 1안 파티 전투력 ${Math.round(P0).toLocaleString()}${st.rp?` (권장 ${st.rp.toLocaleString()}의 ${Math.round(ratio)}%)`:""}${npw?` · 구원자별 전투력 입력 ${npw}명 반영`:""}${qi.rk?` · 재점화 버프 ${qi.rk}단계 반영`:""}${rows[0].ek.some(k=>k.includes("@"))?" · 개화 반영":""} · 레벨·장비·돌파·스킬 레벨은 이 전투력에 맞춘 평균 육성으로 봄${(()=>{const cb=QK.d.calib,g=cb&&cb.groups&&cb.groups[qi.ck==="cosmo"||qi.ck==="rush"?qi.ck:"base"];return g?` · 이 콘텐츠에서 빠른 계산과 전투 시뮬의 클리어 판정 ${Math.round(g.acc*100)}% 일치(${g.samples.toLocaleString()}건)`:""})()}${QK.d.params?"":' · <b style="color:var(--bad)">계수 없음</b>'}</div>${rows.map(row).join("")}${simBar(p,rows,st,uniq>rows.length)}</div>`}
+ return `<div class="qbox" data-k="quick"><div class="qh"><b style="color:var(--fg)">이 스테이지 추천 (빠른 계산)</b>${JOINT?" · 파티 1·2를 함께 골라 둘 다 깨는 조합 우선":""} · 가정: 1안 파티 전투력 ${Math.round(P0).toLocaleString()}${st.rp?` (권장 ${st.rp.toLocaleString()}의 ${Math.round(ratio)}%)`:""}${npw?` · 구원자별 전투력 입력 ${npw}명 반영`:""}${qi.rk?` · 재점화 버프 ${qi.rk}단계 반영`:""}${rows[0].ek.some(k=>k.includes("@"))?" · 개화 반영":""} · 레벨·장비·돌파·스킬 레벨은 이 전투력에 맞춘 평균 육성으로 봄${(()=>{const cb=QK.d.calib,g=cb&&cb.groups&&cb.groups[qi.ck==="cosmo"||qi.ck==="rush"?qi.ck:"base"];return g?` · 이 콘텐츠에서 빠른 계산과 전투 시뮬의 클리어 판정 ${Math.round(g.acc*100)}% 일치(${g.samples.toLocaleString()}건) (브레이크 스킬 미장착 기준)`:""})()}${QK.d.params?"":' · <b style="color:var(--bad)">계수 없음</b>'}</div>${rows.map(row).join("")}${simBar(p,rows,st,uniq>rows.length)}</div>`}
 
 // ---- 브라우저 시뮬 확인(sim_worker.js + Pyodide): 위 3팀을 확률 전투 엔진으로 다시 돌린다. 누를 때만 내려받는다(처음 약 14MB)
 // 안전장치(codex 상담): 제한 시간·취소(작업자 종료), 실패해도 빠른 계산은 그대로, 결과는 추정치+95% 구간, 입력이 바뀌면 이전 결과 무효
@@ -494,11 +505,11 @@ function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
  const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null}}
-const simSig=(st,t)=>{const ck=contents[$("content").value].key,rk=rkOf(ck);return JSON.stringify([ck,st.tab,st.name,simParty(t),SIMQ.n,MODE].concat(rk?[rk]:[]))};
+const simSig=(st,t)=>{const ck=contents[$("content").value].key,rk=rkOf(ck);return JSON.stringify([ck,st.tab,st.name,simParty(t),SIMQ.n,MODE,teamBreak(t)?.name||null].concat(rk?[rk]:[]))};
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
- const mn=r.man?`<br><span class="qsim" data-man="1">수동(서순대로): <b class="qv ${simCls(r.man)}">클리어 ${Math.round(r.man.c*100)}%</b> <span class="mut">(${r.man.n}판${r.man.t!=null?` · 약 ${Math.round(r.man.t)}턴`:""} · 아래 서순 참고)</span></span>`:"";
+ const mn=r.man?`<br><span class="qsim" data-man="1">수동(서순대로): <b class="qv ${simCls(r.man)}">클리어 ${Math.round(r.man.c*100)}%</b> <span class="mut">(${r.man.n}판${r.man.t!=null?` · 약 ${Math.round(r.man.t)}턴`:""} · 아래 서순 참고)</span> ${breakChip(r.man.bs)}</span>`:"";
  const cls=r.clear>=0.9?"safe":r.clear>=0.5?"tight":"hard";
- return `<br><span class="qsim" data-sim="${cls}">시뮬 확인: <b class="qv ${cls}">클리어 ${Math.round(r.clear*100)}%</b> <span class="mut">(95% 구간 ${Math.round(r.ci[0]*100)}~${Math.round(r.ci[1]*100)}%, ${r.n}판${r.ttk!=null?` · 약 ${Math.round(r.ttk)}턴`:""}${r.first?` · 먼저 쓰러짐 ${esc(r.first.split("#")[0])} ${Math.round(r.first_p*100)}%`:""}${r.gate===false?" · 미지원 기믹 있음":""})</span></span>${mn}`}
+ return `<br><span class="qsim" data-sim="${cls}">시뮬 확인: <b class="qv ${cls}">클리어 ${Math.round(r.clear*100)}%</b> <span class="mut">(95% 구간 ${Math.round(r.ci[0]*100)}~${Math.round(r.ci[1]*100)}%, ${r.n}판${r.ttk!=null?` · 약 ${Math.round(r.ttk)}턴`:""}${r.first?` · 먼저 쓰러짐 ${esc(r.first.split("#")[0])} ${Math.round(r.first_p*100)}%`:""}${r.gate===false?" · 미지원 기믹 있음":""})</span></span> ${breakChip(r.bs)}${mn}`}
 function simBar(p,rows,st,hasMore){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
  const st8=SIMQ.busy===p?`<span class="mut" data-k="simstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
@@ -506,7 +517,8 @@ function simBar(p,rows,st,hasMore){
   all?`<span class="mut" data-k="simstate">위 ${rows.length}팀 시뮬 완료 — 확률은 모델 추정이며 «이 ${rows.length}팀 안에서의 비교»입니다</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다음 3팀도 시뮬로 확인</button>`:""}${SIMQ.auto?` <button type="button" class="sec" data-simauto="0" title="스테이지를 바꿀 때마다 자동으로 시뮬">자동 확인 끄기</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}">위 ${rows.length}팀 시뮬로 확인</button> <span class="mut">팀당 ${SIMQ.n}판 · 처음 한 번 계산 엔진 내려받기(약 14MB) · 보통 10~40초</span>`;
  return `<div class="qrow simbar">${st8}</div>`}
-function simStop(msg){if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);if(msg){SIMQ.err=msg;SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage}SIMQ.busy=null;run()}
+function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.busy=null}
+function simStop(msg){if(msg){SIMQ.err=msg;SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage}simInvalidate();run()}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simAutoKick(){if(!SIMQ.auto||SIMQ.busy)return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
  for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){setTimeout(()=>simStart(p),0);return}}}
@@ -514,18 +526,19 @@ function simStart(p){const c=contents[$("content").value],st=cur&&cur[$("stage")
  const box=LASTQ[p];if(!box)return;const rows=box.rows.filter(t=>!SIMQ.res[simSig(st,t)]);if(!rows.length)return;
  SIMQ.err="";SIMQ.busy=p;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
  if(!SIMQ.w){SIMQ.w=new Worker("sim_worker.js");SIMQ.loaded=false}
- const id=Date.now(),sigs={};rows.forEach(t=>{sigs[t.keys.slice().sort().join(",")]=simSig(st,t)});
+ const id=SIMQ.requestId=(SIMQ.requestId||0)+1,sigs={};rows.forEach(t=>{sigs[t.keys.slice().sort().join(",")]=simSig(st,t)});
  const arm=ms=>{clearTimeout(SIMQ.timer);SIMQ.timer=setTimeout(()=>simStop(ms===SIMQ.LOAD_MS?"엔진 내려받기 시간 초과(네트워크 확인)":"시뮬 시간 초과"),ms)};
  arm(SIMQ.loaded?SIMQ.RUN_MS:SIMQ.LOAD_MS);
  SIMQ.w.onmessage=e=>{const m=e.data;
+  if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
   if(m.type==="stage"){SIMQ.msg=m.msg;if(m.msg==="준비 끝"){SIMQ.loaded=true;arm(SIMQ.RUN_MS)}const el=document.querySelector('[data-k="simstate"]');if(el)el.textContent=m.msg;return}
   if(m.type==="team"){SIMQ.res[sigs[m.key]]=m.result;run();return}
   if(m.type==="done"){clearTimeout(SIMQ.timer);SIMQ.busy=null;run();return}
   if(m.type==="error")simStop(m.msg)};
- SIMQ.w.onerror=e=>simStop("작업자 오류: "+(e.message||"알 수 없음"));
+ SIMQ.w.onerror=e=>{if(SIMQ.requestId===id)simStop("작업자 오류: "+(e.message||"알 수 없음"))};
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
  const req={type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:SIMQ.n,seed:SIMQ.seed,options:simOpt(c.key),mode:MODE,
-  teams:rows.map(t=>({key:t.keys.slice().sort().join(","),party:simParty(t)}))};
+  teams:rows.map(t=>({key:t.keys.slice().sort().join(","),party:simParty(t),options:{break_skill:teamBreak(t)}}))};
  SIMQ.lastReq={req,sigs};SIMQ.w.postMessage(req);
  run()}
 const LASTQ={};
@@ -554,6 +567,8 @@ $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-sim]
  const mo=e.target.closest("button[data-more]");if(mo){const st=cur&&cur[$("stage").value],p=+mo.dataset.more,k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run();simStart(p);return}
  if(e.target.closest("button[data-simauto]")){simAuto(false);run();return}
  if(e.target.closest("button[data-simcancel]"))simStop("취소함")});
+$("out").addEventListener("change",e=>{const s=e.target.closest("select.bsel");if(!s)return;
+ BRSEL[s.dataset.bkey]=s.value;saveBreakSel();if(SIMQ.busy)simInvalidate();SIMQ.err="";run()});
 
 function buildCands(cands,defPen){return topParties(cands,defPen,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
 function run(){
@@ -582,7 +597,7 @@ function run(){
   const v=pick.v,got=pick.got;
   const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
-  const br=pickBreak(party,c.name,have);
+  const br=breakChoice(party,c,have);
   // 이 팀의 브라우저 시뮬 결과(있으면): 카드에 피해 기여·쓰러질 확률, 수동이면 서순
   const qr=LASTQ[p]&&LASTQ[p].rows.find(t=>t.keys.slice().sort().join(",")===pick.key),sr=qr&&SIMQ.res[simSig(st,qr)];
   const r=sr&&sr.u?{g:true,u:sr.u}:null;
@@ -592,7 +607,7 @@ function run(){
   html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}"><div class="phead"><b>파티 ${p}</b><span class="ordernote">인게임 편성 순서(왼쪽부터) <span class="why2">· 근사 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10(장비 제외 상대 비교)</span></span></div>
    ${quickBox(p,qt,qi,st,pick.key)}${pairNotes(party)}${leadNote(LD)}${gimNote(party)}${synSummary(party)}
    <div class="teamtags">${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
-   <div class="rowcards">${card(bk[0],"back",alt(bk[0]),r)}${card(fr[0],"front",alt(fr[0]),r)}${card(fr[1],"front",alt(fr[1]),r)}${card(bk[1],"back",alt(bk[1]),r)}</div>${seq}${breakCard(br)}</div>`}
+   <div class="rowcards">${card(bk[0],"back",alt(bk[0]),r)}${card(fr[0],"front",alt(fr[0]),r)}${card(fr[1],"front",alt(fr[1]),r)}${card(bk[1],"back",alt(bk[1]),r)}</div>${seq}${breakCard(br,sr)}</div>`}
  const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
  if(tl.length){const byKey=BYKEY;const gcodes=new Set(GIMACT.map(g=>g[0]));
   html+=`<div class="party"><b>다른 전략</b> <span class="mut">(커뮤니티 편성, 보유 시 참고 · 위 추천과 별개)</span><div class="arch">${tl.map(([k,t])=>{
@@ -620,12 +635,12 @@ $("pwl").addEventListener("input",e=>{const x=e.target.closest("input[data-pk]")
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b));$("saved").textContent="선택은 이 브라우저에 자동 저장됩니다"}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  if(Array.isArray(o)){const s=new Set(o);document.querySelectorAll("#own input").forEach(x=>x.checked=s.has(x.dataset.k))}
- if(Array.isArray(b)){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}})();
+ if(Array.isArray(b)){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}pruneBreakSel()})();
 const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").checked=on;LS.set("why",on);if(on)setTimeout(()=>{try{cy.resize();cy.fit(undefined,30)}catch(e){}},50)};
 $("showwhy").onchange=()=>setWhy($("showwhy").checked);setWhy(!!LS.get("why"));
 let _rt=null;const rerun=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
 function updCount(){const n=document.querySelectorAll("#own input:checked").length;$("dcount").textContent=n===R.length?"전체":n+"/"+R.length;renderPw()}
-document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk"))){saveSel();updCount();rerun()}});
+document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk"))){if(e.target.closest("#brk")){pruneBreakSel();if(SIMQ.busy)simInvalidate();SIMQ.err=""}saveSel();updCount();rerun()}});
 const setDrawer=o=>{$("drawer").classList.toggle("open",o);$("dback").classList.toggle("on",o);document.body.classList.toggle("noscroll",o);$("dbtn").setAttribute("aria-expanded",o?"true":"false");if(o)$("dclose").focus()};
 $("dbtn").onclick=()=>setDrawer(!$("drawer").classList.contains("open"));$("dclose").onclick=()=>setDrawer(false);$("dback").onclick=()=>setDrawer(false);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")setDrawer(false)});

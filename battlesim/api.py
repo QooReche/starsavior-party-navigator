@@ -17,7 +17,7 @@ options
   {"seed": 1, "n_runs": 100, "rules_override": {mc·opts 키: 값}, "nova_policy": "auto"|"manual", "timeline": false,
    "enemy_lines": true, "run_offset": 0, "per_run": false, "formula_override": {"COOP_CAP": 1.0}, "rekindle": 0,
    "break_skill": {"name": "큐브 과부하", "level": 5}}
-  break_skill = 생략/None 이면 미장착. 큐브 과부하만 지원(레벨 보정 미상: 모든 레벨 동일 계수), 다른 이름은 unsupported.runtime 에 기록.
+  break_skill = 생략/None 이면 미장착. 큐브 과부하·특이점 관측·스타피어서·차원 강습 지원(모든 레벨 동일 계수), 다른 이름은 unsupported.runtime 에 기록.
   rekindle = 작전 재점화 버프 단계 0~5(작전 op 에서만): 아군 주는 피해 ×(1+x)·받는 피해 ×(1−x), x = REKINDLE[단계]
        (인게임 표 2026-10-21 사용자 제보, 전투력 보정과 곱으로 합침 — 곱인지 증감 합인지는 미확인)
   run_offset = 판 번호 시작값(판 r 의 난수 = seed*1000003 + run_offset + r; timeline 은 첫 판 = run_offset 번 판)
@@ -26,7 +26,7 @@ options
 result
   {schema_version, outcome{clear_p, wipe_p, timeout_p, ci95{...}, n_runs, n_clear, ttk_median, ttk_p10_p90, ttk_basis},
    per_unit{이름#칸: {dmg_share, dmg, dmg_taken, heal, shield, death_p, death_turn_median, first_death_p, actions}},
-   foes{...}, break_skill{name, uses, points_gained}(판 평균, points_gained 는 상한 적용 후 실제 적립),
+   foes{...}, break_skill{name, uses, dmg, supported, points_gained}(판 평균, dmg 는 개인 기여 제외, points_gained 는 상한 적용 후 실제 적립),
    timeline?, assumptions_used[], unsupported{static[], runtime{}, critical, gate_ok}, runtime_ms_per_run}"""
 import math
 import random
@@ -166,11 +166,13 @@ def assumptions_used(mc, opts):
     for k, v in MC_RULES.items():
         if v.get('grade') != 'data':
             out.append(dict(rule='mc.' + k, value=mc.get(k), grade=v.get('grade'), note=v.get('note')))
+    for k, v in RULES['mc'].get('break_skills', {}).items():
+        out.append(dict(rule='mc.break_skills.' + k, value=mc['break_skills'].get(k), grade=v.get('grade'), note=v.get('note')))
     for k in ('coop_trigger', 'coop_single', 'nova_policy', 'nova_pool', 'forced_coop_target', 'init_cd_frac'):
         r = RULES['opts'].get(k, {})
         out.append(dict(rule='opts.' + k, value=opts.get(k), grade=r.get('grade'), note=r.get('note')))
     out.append(dict(rule='model.not_modeled', value=None, grade='assumed',
-                    note='큐브 과부하 외 브레이크 스킬·레벨 보정, 반격·선제 방어(회피는 evade_model 로 지원), 표에 없는 「피해 제한」 효과(실행 전 검사에서 중요 미지원으로 표시), '
+                    note='행성 정화·브레이크 스킬 레벨 보정, 반격·선제 방어(회피는 evade_model 로 지원), 표에 없는 「피해 제한」 효과(실행 전 검사에서 중요 미지원으로 표시), '
                          '노바 버스트 슬롯 효과(+15% 외), 일반 잠재력(감각·솜씨)·전술 분석·호감도, 시즌 보너스, Lv200 초과 성장, '
                          '대부분의 반응 트리거 스킬(웨딩 카르멘 「수호의 기사」·프로페서M 「악에서 악으로」만 지원), 연쇄 피해의 「턴 끝에 발생」 시점'))
     out.append(dict(rule='model.random_choice', value='uniform', grade='assumed',
@@ -275,7 +277,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     runs_affected = 0
     depth_runs = 0
     breaks = [0, 0]
-    break_uses = break_points_gained = 0
+    break_uses = break_points_gained = break_dmg = 0
     timeline = None
     first = defaultdict(int)
     offset = int(o.get('run_offset', 0))
@@ -288,6 +290,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
                    enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'))
         b.run()   # EventLimitError 는 그대로 올린다(정상 결과 금지)
         break_uses += b.break_skill_uses
+        break_dmg += b.break_skill_dmg
         break_points_gained += b.break_points_gained
         outcomes[b.result] += 1
         if b.result == 'clear':
@@ -347,6 +350,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
                    rekindle=(rk if rk and meta.get('content') == 'op' else 0)),
         breaks=dict(ally=round(breaks[0] / max(1, n_runs), 3), foe=round(breaks[1] / max(1, n_runs), 3)),
         break_skill=dict(name=(o.get('break_skill') or {}).get('name'), uses=round(break_uses / n, 3),
+                         dmg=round(break_dmg / n, 3), supported=b.break_skill_enabled,
                          points_gained=round(break_points_gained / n, 3)),
         outcome=dict(
             n_runs=n, n_clear=outcomes['clear'],

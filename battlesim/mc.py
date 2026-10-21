@@ -459,8 +459,10 @@ class Battle:
         self._triggering = set()  # 쿨이 없는 트리거도 동일 시전 중 재진입 방지
         self.break_skill = dict(break_skill or {})
         self.break_skill_name = self.break_skill.get('name')
-        self.break_skill_enabled = self.break_skill_name == '큐브 과부하'
+        self.break_skill_rule = self._break_skill_rule(self.break_skill_name)
+        self.break_skill_enabled = self.break_skill_rule is not None
         self.break_points = self.break_points_gained = self.break_skill_uses = 0
+        self.break_skill_dmg = 0
         self.break_skill_cd = 0
         self._break_round = 0
         if self.break_skill_name and not self.break_skill_enabled:
@@ -591,7 +593,11 @@ class Battle:
         if u.side == 0 and self.break_skill_enabled:
             if self.mc['break_skill_cd_unit'] == 'ally_turn':
                 self._tick_break_skill()
-            self._use_break_skill()
+            self._use_break_skill(u)
+            if not self.alive(0) or not self.alive(1):
+                # 일반 공격 뒤와 동일하게 run에서 종료/웨이브 전환을 판정한다.
+                # 브레이크는 일반 턴 밖의 행동이므로 게이지·쿨·지속 효과를 소비하지 않는다.
+                return
         u.gauge = 0.0
         u.extra_turn = False      # 추가 턴은 이 행동으로 소비(행동 끝에 지우면 다음 차례 판정에서 우선권이 사라짐)
         u.actions += 1
@@ -675,28 +681,67 @@ class Battle:
                         del u.eff[name]
                     self.dirty(u)
 
-    def _use_break_skill(self):
+    def _break_skill_rule(self, name):
+        """큐브의 기존 평면 규칙/override 계약은 유지하며 신규 표와 같은 모양으로 읽는다."""
+        if name == '큐브 과부하':
+            return dict(heal_ratio=self.mc['break_skill_heal_ratio'], domain='치트 매트릭스',
+                        props={'속도%': self.mc['break_skill_speed_pct']},
+                        bonus_roles=('디펜더', '서포터'), role_props={'속도%': self.mc['break_skill_role_speed_pct']},
+                        domain_turns=self.mc['break_skill_domain_turns'], buff='오메가 프로토콜',
+                        buff_props={'공격력%': self.mc['break_skill_atk_pct'], '효과 적중': self.mc['break_skill_hit_pct']},
+                        buff_turns=self.mc['break_skill_buff_turns'])
+        return self.mc['break_skills'].get(name)
+
+    def _break_dmg(self, v, base):
+        """파티 광역 피해: 공격자·치명·증가 합·피격/강인도 처리 없는 final_dmg 축약판."""
+        de = self.def_stat(v)
+        dr = de / (de + _rules.DEF_K)
+        red = v.mods()['red']
+        dec = red.get('all', 0.0) + red.get('aoe', 0.0)
+        if v.broken:
+            dec -= _rules.BREAK_DEC
+        dec = min(_rules.DEC_CAP, dec)
+        return max(1.0, math.floor(base * (1 - dr) * (1 - dec) * self.rand() * self.pen[0]))
+
+    def _use_break_skill(self, actor=None):
         cost = self.mc['break_skill_cost']
-        if self.break_skill_cd > 0 or self.break_points < cost:
+        if not self.break_skill_enabled or self.break_skill_cd > 0 or self.break_points < cost:
             return
         self.break_points -= cost
         self.break_skill_cd = self.mc['break_skill_cooldown']
         self.break_skill_uses += 1
         self.log(bskill=self.break_skill_name)
-        # 사망자를 포함한 편성 전체 최대 HP 합(가정). 회복·버프는 생존자에게만.
-        amount = sum(u.maxhp for u in self.allies) * self.mc['break_skill_heal_ratio']
+        rule = self.break_skill_rule
+        if rule.get('damage_ratio'):
+            base = sum(self.live_atk(u) for u in self.alive(0)) * rule['damage_ratio'] / _rules.AOE_DIV
+            for v in list(self.alive(1)):
+                before = v.taken
+                self.apply_damage(None, v, self._break_dmg(v, base), 'bskill')
+                dmg = v.taken - before
+                self.break_skill_dmg += dmg
+                self.log(bskill_damage=self.break_skill_name, to=v.name, amount=dmg)
+        nova = rule.get('nova', 0)
+        if self.opts['nova_pool'] == 'team':
+            self.team_nova += nova
+        # 큐브 회복의 합에는 사망자도 포함(기존 가정). 효과는 생존자에게만.
+        amount = sum(u.maxhp for u in self.allies) * rule.get('heal_ratio', 0)
         for u in self.alive(0):
-            got = self.heal(None, u, amount, 0.0)
-            self.log(heal=self.break_skill_name, to=u.name, amount=got)
-            speed = self.mc['break_skill_speed_pct']
-            if u.role in ('디펜더', '서포터'):
-                speed += self.mc['break_skill_role_speed_pct']
-            for name, props, dur, clock in (
-                ('오메가 프로토콜', {'공격력%': self.mc['break_skill_atk_pct'],
-                                  '효과 적중': self.mc['break_skill_hit_pct']},
-                 self.mc['break_skill_buff_turns'], 'owner_turn'),
-                ('치트 매트릭스', {'속도%': speed}, self.mc['break_skill_domain_turns'], self.mc['break_skill_cd_unit']),
-            ):
+            if 'heal_ratio' in rule:
+                got = self.heal(None, u, amount, 0.0)
+                self.log(heal=self.break_skill_name, to=u.name, amount=got)
+            if self.opts['nova_pool'] == 'unit':
+                self.nova_add(u, nova)
+            if u is not actor and rule.get('gauge'):
+                u.gauge = min(10000.0, u.gauge + rule['gauge'])
+            props = dict(rule['props'])
+            if u.role in rule.get('bonus_roles', ()):
+                for k, v in rule['role_props'].items():
+                    props[k] = props.get(k, 0) + v
+            effects = []
+            if rule.get('buff'):
+                effects.append((rule['buff'], rule['buff_props'], rule['buff_turns'], 'owner_turn'))
+            effects.append((rule['domain'], props, rule['domain_turns'], self.mc['break_skill_cd_unit']))
+            for name, props, dur, clock in effects:
                 e = Eff(name, props, 1, dur, None, False)
                 e.stacks, e.fixed, e.clock = 1, self.mc['break_skill_fixed'], clock
                 u.eff[name] = e
@@ -736,7 +781,21 @@ class Battle:
         ok = [u for u in al if not any(u.on(n) for n in UNTARGETABLE)]
         return ok or al
 
-    def pick_attack_target(self, att):
+    def ranked_enemies(self, desc, pool, priority=False):
+        """공격 우선 문구와 효과 자동 지정의 순위 계산을 공유. 동률 후보는 유지한다."""
+        suffix = r'(?:을|에게)?\s*우선' if priority else ''
+        # 긴 조건을 먼저 매칭해 최대 생명력/HP를 현재 HP로 잘못 읽지 않는다.
+        rank = re.search(r'(?<!\w)(최대 생명력|최대 HP|생명력 비율|HP 비율|생명력|HP|공격력|방어력|행동 게이지|속도)[이가]\s*가장 (높은|낮은) 적' + suffix, desc)
+        if not rank or not pool:
+            return None
+        stat = {'최대 생명력': lambda x: x.maxhp, '최대 HP': lambda x: x.maxhp,
+                '생명력 비율': lambda x: x.hp / x.maxhp, 'HP 비율': lambda x: x.hp / x.maxhp,
+                '생명력': lambda x: x.hp, 'HP': lambda x: x.hp, '공격력': self.live_atk,
+                '방어력': self.def_stat, '행동 게이지': lambda x: x.gauge, '속도': lambda x: x.spd()}[rank[1]]
+        best = (max if rank[2] == '높은' else min)(stat(x) for x in pool)
+        return [x for x in pool if stat(x) == best]
+
+    def pick_attack_target(self, att, sk=None):
         pool = self.targetable(1 - att.side)
         if not pool:
             return None
@@ -747,6 +806,8 @@ class Battle:
                 if bosses:
                     pool = bosses
             return min(pool, key=lambda v: (v.hp + v.shield_total(), v.pos))
+        if sk is not None:
+            pool = self.ranked_enemies(skill_desc(att.d, sk.slot), pool, priority=True) or pool
         return self.weighted_pick(pool)
 
     def weighted_pick(self, pool):
@@ -785,7 +846,7 @@ class Battle:
                 return list(self.alive(1 - u.side))
             if target is not None and not target.dead:
                 return [target]
-            v = self.pick_attack_target(u)
+            v = self.pick_attack_target(u, sk)
             return [v] if v else []
         if target is not None:
             return [target]
@@ -842,10 +903,9 @@ class Battle:
                 return [x for x in opp if x.has(cur.eff['target_state'])]
             if '자동 지정' in t and cur is not None:
                 desc = skill_desc(owner.d, cur.slot)
-                rank = re.search(r'(방어력|행동 게이지|속도)[이가] 가장 높은 적', desc)
-                if rank:
-                    stat = {'방어력': self.def_stat, '행동 게이지': lambda x: x.gauge, '속도': lambda x: x.spd()}[rank[1]]
-                    return [max(opp, key=lambda x: (stat(x), -x.pos))]
+                ranked = self.ranked_enemies(desc, opp)
+                if ranked:
+                    return [min(ranked, key=lambda x: x.pos)]
                 self.unsup['selector: 적 자동 지정 규칙 미확인 ' + cur.raw[:50]] += 1
             if '전체' in t:
                 return opp
