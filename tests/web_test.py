@@ -159,8 +159,35 @@ def test_rekindle():
     return ok and bad, '0단계 %s / 3단계 %s / 코스모 %s / 잘못된 단계 거부 %s' % (op0['penalty'], op3['penalty'], cz['rekindle'], bad)
 
 
+def test_stats_final_and_luna_reaction():
+    """stats_final: 화면 최종값이면 상시 패시브 % 를 다시 곱하지 않는다(전투력이 화면 값 그대로의 공식과 같음).
+    화이트 펄 루나 「썸머 템테이션♡」: 다른 아군이 치명타 피격되면 반응 발동(2026-10-21)"""
+    sys.path.insert(0, os.path.join(ROOT, 'tools'))
+    import ingame_check as I
+    from battlesim.starsavior.build import unit_power
+    ov = dict(I.REAL['white-pearl-luna'])
+    p_final = simulate({'units': [dict(key='white-pearl-luna', stats_override=ov, stats_final=True)]},
+                       {'stage': 'op/아가논 시가지/SECTOR 36-36'}, dict(build='standard', n_runs=1, seed=1))['party']['power']
+    p_raw = simulate({'units': [dict(key='white-pearl-luna', stats_override=ov)]},
+                     {'stage': 'op/아가논 시가지/SECTOR 36-36'}, dict(build='standard', n_runs=1, seed=1))['party']['power']
+    want = unit_power(dict(ov))
+    import gen_quick_calib as G
+    from battlesim import quick
+    q, pen = quick.load(ROOT)
+    ck, sk, order, lead, pw, rk = I.SAMPLES['37-2'][:6]          # 실측 37-2 와 같은 파티(긴 잡몹전 — 치명 피격이 충분히 나옴)
+    spec = G.party_spec(q, pen, order, lead, list(order), pw / q['st'][ck][sk]['bp'], q['st'][ck][sk])
+    fired = 0
+    for seed in range(1, 13):
+        r = simulate(spec, {'stage': 'op/모나스티르 광장/SECTOR 37-2'}, dict(G.SIMOPT, n_runs=1, seed=seed, timeline=True))
+        fired += sum(1 for e in r['timeline'] if e.get('via') == 'reaction' and e.get('actor') == '루나')
+        if fired:
+            break
+    ok = abs(p_final - want) < 1 and p_raw > p_final and fired > 0
+    return ok, '최종값 전투력 %.0f(공식 %.0f) / 재증폭 %.0f / 루나 반응 %d회' % (p_final, want, p_raw, fired)
+
+
 TESTS = [test_seq_from_timeline, test_slot_order, test_run_auto_power_and_determinism, test_run_manual_shape, test_manual_burst_rule,
-         test_formula_override_restored, test_manifest_complete, test_pyodide_local, test_rekindle]
+         test_formula_override_restored, test_manifest_complete, test_pyodide_local, test_rekindle, test_stats_final_and_luna_reaction]
 
 
 def main():

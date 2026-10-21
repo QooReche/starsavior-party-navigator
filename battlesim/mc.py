@@ -1058,7 +1058,7 @@ class Battle:
                     c2 = Ctx(w, a, sk, ctx.extra)
                     c2.target, c2.targets, c2.crit, c2.hit_victim = v, [v], hctx.crit, v
                     self.run_batch(w, lines, c2)
-            self.reaction_skills(v, a, sk)
+            self.reaction_skills(v, a, sk, hctx.crit)
         ctx.target = ctx.targets[0] if ctx.targets else None
 
     def strike(self, a, v, base, ctx, crit, cdv, pen, reactions, evaded=False):
@@ -1128,9 +1128,9 @@ class Battle:
         m = a.mods()
         ab = getattr(sk, 'ab', None)
         if ab is None:
-            ab = (sk.raw or {}).get('ab') or 0
-        if not ab and sk.slot == '기본기':
-            ab = self.mc['basic_tough']
+            ab = (sk.raw or {}).get('ab')
+        if ab is None:          # 데이터에 값이 «없을» 때만 가정값(적의 명시적 ab=0 은 그대로 0 — codex 검토 2026-10-21)
+            ab = self.mc['basic_tough'] if sk.slot == '기본기' else 0
         normal = ab + m['tough'] + ctx.tough
         fixed = m['tough_fixed'] + ctx.tough_fixed
         if self.mc['toughness_elem'] == 'on' and a.element and v.element:
@@ -1270,8 +1270,20 @@ class Battle:
         v.gauge = 0.0
         self.dirty(v)
 
-    def reaction_skills(self, v, a, sk):
-        """반응 트리거 스킬(지원 목록): 웨딩 카르멘 「수호의 기사」 — 사랑의 서약 아군이 피격되면 발동(쿨타임 적용)."""
+    def reaction_skills(self, v, a, sk, crit=False):
+        """반응 트리거 스킬(지원 목록): 웨딩 카르멘 「수호의 기사」 — 사랑의 서약 아군이 피격되면 발동(쿨타임 적용).
+        화이트 펄 루나 「썸머 템테이션♡」 — 자신을 제외한 아군이 치명타 피격 후 타격자에게 발동(쿨타임 1, 보호막·방어력 감소, 2026-10-21)."""
+        if crit and a is not None and not a.dead and a.side != v.side:
+            for w in self.alive(v.side):
+                if w is v or self.no_react(w):
+                    continue
+                ts = w.d.trigger_skills.get('특수기')
+                if ts is None or not (ts.tg or '').startswith('반응 대상(적)') or '아군이 치명타 피격 후' not in (ts.raw.get('d1') or ''):
+                    continue
+                if w.cd.get('특수기', 0) > 0:
+                    continue
+                w.cd['특수기'] = ts.cd or 0          # 재진입 전에 쿨타임(codex 진단 2026-10-21)
+                self.cast(w, ts, extra=True, target=a, via='reaction')
         for w in self.alive(v.side):
             if w is v:
                 continue
@@ -2102,7 +2114,8 @@ def support_report(defs):
                                 critical=bool(foe and CRITICAL_RX.search(rest) and '강인도' not in rest)))
         for msg in getattr(d, 'unmodeled', []):
             if msg.startswith('변형') or msg.startswith('반응') or msg.startswith('적 트리거'):
-                if ('수호의 기사' in msg and getattr(d, 'key', '') == 'wedding-carmen') or ('악에서 악으로' in msg and d.manual == 'profM'):
+                if (('수호의 기사' in msg and getattr(d, 'key', '') == 'wedding-carmen') or ('악에서 악으로' in msg and d.manual == 'profM')
+                        or ('썸머 템테이션' in msg and getattr(d, 'key', '') == 'white-pearl-luna')):
                     continue    # 엔진이 직접 지원하는 반응 스킬(Battle.reaction_skills / prof_m)
                 out.append(dict(unit=d.name, foe=foe, slot=None, reason='skill', raw=msg, critical=False))
     return out

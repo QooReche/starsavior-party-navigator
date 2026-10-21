@@ -3,7 +3,9 @@
 
 party_spec
   ["professor-m", "gwen", "fei", "amora"]  또는  {"units": [...], "leader": 0}
-  유닛 = key/이름 문자열 또는 {"key", "level"(200), "res"(10), "star"(0), "stats_override"{hp,atk,def,spd,cr,cd,eh,er}}
+  유닛 = key/이름 문자열 또는 {"key", "level"(200), "res"(10), "star"(0), "stats_override"{hp,atk,def,spd,cr,cd,eh,er}, "stats_final"(false)}
+  stats_final = true 면 stats_override 를 인게임 능력치 화면의 «최종값»으로 보고 상시 패시브 능력치 %(고유 패시브 「능력치: 생명력% +15%」 등)를
+       다시 곱하지 않는다(근거: 화면 값 그대로 넣은 전투력 공식이 화면 전투력에 더 가깝다 — 카르멘 94,650 vs 화면 94,920, 패시브를 곱하면 101,850. docs/ingame_samples.md)
   순서 0·1 = 전열, 2·3 = 후열(인게임 편성 칸). leader = 리더 칸 번호(속도 +10), 없으면 리더 없음.
 encounter_spec
   {"stage": {"content": "cosmo", "tab": "길레", "name": "길레 1단계"}}  또는  {"stage": "cosmo/길레/길레 1단계"}
@@ -70,6 +72,9 @@ class _CustomFoe:
         self.spd_base = self.stats['spd']
 
 
+FINAL_PASSIVE_KEYS = ('atkp', 'hpp', 'defp', 'spdp', 'spdf', 'cr', 'cd', 'eh')   # 능력치 화면에 이미 들어 있는 상시 % (parser._perm_apply)
+
+
 def _norm_party(party_spec, db, mode, build=None):
     if isinstance(party_spec, dict):
         units, leader = party_spec.get('units', []), party_spec.get('leader')
@@ -85,6 +90,9 @@ def _norm_party(party_spec, db, mode, build=None):
         if u.get('stats_override'):
             d.stats.update(u['stats_override'])
             d.spd_base = d.stats['spd']
+            if u.get('stats_final'):
+                for k in FINAL_PASSIVE_KEYS:
+                    d.passive[k] = 0.0
         defs.append(d)
     return defs, leader
 

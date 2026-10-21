@@ -42,6 +42,7 @@ def run(name, runs=100, ov=None, seed=7):
     for u in spec['units']:
         if u['key'] in REAL:
             u['stats_override'] = dict(REAL[u['key']])
+            u['stats_final'] = True          # 화면 값 = 최종값(상시 패시브 % 를 다시 곱하지 않음)
     opt = dict(G.SIMOPT, n_runs=runs, seed=seed, rekindle=rk)
     opt['rules_override'] = dict(opt['rules_override'], **(ov or {}))
     tab, nm = sk.split('|', 1)
