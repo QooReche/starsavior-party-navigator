@@ -4,7 +4,7 @@ import copy
 import re
 from collections import defaultdict
 
-from .parser import Line, ally_stack_trigger, parse_props, _perm_apply
+from .parser import Line, Skill, ally_stack_trigger, parse_props, _perm_apply
 
 
 def description(sk):
@@ -100,8 +100,6 @@ def normalized_definition(d):
     if getattr(d, '_compound_normalized', False):
         return d
     compound = [ln for ln in d.lines if ln.kind == 'perm' and ',' in ln.raw]
-    if not compound:
-        return d
     result = copy.copy(d)
     result._compound_normalized = True
     result.passive = copy.copy(d.passive)
@@ -109,7 +107,74 @@ def normalized_definition(d):
         _, props = parse_props(ln.raw.split('능력치:', 1)[1])
         for stat, val in props.items():
             _perm_apply(result.stats, result.passive, dict(stat=stat, val=val))
+    result.variants = variant_rules(d)
+    result.effect_info = unit_glossary(d)
     return result
+
+
+def variant_rules(d):
+    """정본의 교체 조건과 변형 카드 연결. 원래 슬롯은 쿨타임/패시브 판정에 유지."""
+    out = {}
+    for slot, rule, raw in variant_specs(d):
+        sk = Skill(dict(raw, sl=slot))
+        view = copy.copy(d)
+        view.u = dict(d.u, sk=[dict(raw, sl=slot)])
+        sk.semantic_lines = description_lines(view, [Line(s, slot, 'active') for s in raw['ef']])
+        out[slot] = (rule, sk)
+    return out
+
+
+def variant_specs(d):
+    for raw in getattr(d, 'u', {}).get('sk', []):
+        if not raw['sl'].startswith('변형 '):
+            continue
+        slot = raw['sl'].split(' ', 1)[1]
+        base = d.skills.get(slot)
+        if base is None:
+            continue
+        desc = description(base)
+        m = re.search(r'자신의 턴에 사용 시 자신의 \[([^]]+)\](?:가 최대 중첩이면| 중첩 횟수가 (\d+)회 이상이면)'
+                      r' \[' + re.escape(base.name) + r'\] 대신 \[' + re.escape(raw['n']) + r'\]', desc)
+        if m:
+            caps = [ln.eff.get('max') for ln in d.lines if ln.eff.get('name') == m[1] and ln.eff.get('max')]
+            if not m[2] and not caps:
+                continue
+            rule = dict(name=m[1], count=int(m[2]) if m[2] else max(caps), own=True)
+        else:
+            m = re.search(r'자신이 \[([^]]+)\] 상태이면 단일 대상을 공격', desc)
+            if not m or raw['tg'] != '적 단일' or base.name != raw['n']:
+                continue
+            rule = dict(name=m[1], count=1, own=False)
+        yield slot, rule, raw
+
+
+def unit_glossary(d):
+    """유닛별 gl 우선. 묶음 무작위 효과의 하위 설명도 수치 근거로 사용한다."""
+    from .foe import _gloss_props
+    out = {}
+    for raw in getattr(d, 'u', {}).get('sk', []):
+        for g in raw.get('gl', []):
+            name, kind = g['n'], g.get('k', '')
+            dur, props = _gloss_props(g.get('x'))
+            text = g.get('d', '')
+            category = ('neutral' if '강화/약화 효과와 무관' in text else
+                        'buff' if kind == '강화' else 'debuff' if kind == '약화' else None)
+            if category or props:
+                out[name] = dict(dur=dur, props=props, category=category)
+            if kind == '무작위 효과':
+                for part in g.get('x', '').split(' · '):
+                    m = re.match(r'(.+)\(([^()]*)\)$', part)
+                    if not m:
+                        continue
+                    sub, info = m[1], m[2]
+                    rate = re.search(r'(공격력|방어력|속도|주는 피해량)[이가] ([\d.]+)% 증가', info)
+                    hot = re.search(r'최대 생명력의 ([\d.]+)% 만큼 회복', info)
+                    if rate:
+                        prop = {'공격력': '공격력%', '방어력': '방어력%', '속도': '속도%', '주는 피해량': '피해 증가'}[rate[1]]
+                        out[sub] = dict(dur=None, props={prop: float(rate[2])}, category='buff')
+                    elif hot:
+                        out[sub] = dict(dur=None, props={}, hot=float(hot[1]) / 100, category='buff')
+    return out
 
 
 def description_lines(d, lines):
@@ -140,7 +205,7 @@ def description_lines(d, lines):
         if re.search(r'\(자신 HP [\d.]+%', ln.raw):
             ln = Line(ln.raw, ln.slot, ln.src_kind, decimal_hp=True)
         e = ln.eff
-        name = e.get('name', '')
+        name = e.get('name') or ''
         if e['kind'] == 'buff' and name:
             # 수혜자 속성: 공격 대상 조건/시전자 속성과 독립적으로 필터링한다.
             for sentence in desc.split('. '):
@@ -194,6 +259,7 @@ def description_lines(d, lines):
                     ln.trig = (ln.trig or '').replace('내 공격 후', '내 공격 시')
                     break
         out.append(ln)
+    out = selection_lines(d, out, raws)
     # 표지는 선행 조건용이며 지속 버프가 아니다. 명칭 대신 참조 관계로 식별.
     references = {n.strip() for ln in out for k, v in ln.params
                   if k in ('자신이 보유', '자신이 미보유', '대상이 보유', '시전자가 보유') for n in v.split(',')}
@@ -212,4 +278,80 @@ def description_lines(d, lines):
                 and not any(k in ('자신이 보유', '자신이 미보유', '대상이 보유', '대상이 미보유')
                             and e['name'] in [n.strip() for n in v.split(',')] for k, v in ln.params)):
             e['pre_grant'] = True
+    return out
+
+
+def selection_lines(d, lines, raws):
+    """생사 분기, 상태 필터, 표식 이동, 무작위 효과의 범위/횟수를 정본에서 보충."""
+    out = []
+    variants = {raw['n'] for _, _, raw in variant_specs(d)}
+    references = {v for ln in lines for k, v in ln.params if '보유' in k}
+    random_markers = set()
+    for ln in lines:
+        if '무작위 효과' in ln.raw and re.search(r'중 1개 ×\d+', ln.raw):
+            random_markers.update(v for k, v in ln.params if k == '자신이 미보유' and '카운팅' in v)
+    for ln in lines:
+        desc = raws.get(ln.slot, {})
+        desc = desc.get('dx') or desc.get('d1') or ''
+        e = ln.eff
+        name = e.get('name') or ''
+        # 교체는 시전 진입 때 판정한다. 애니메이션/타겟 판별 표지는 전투 효과가 아니다.
+        if variants and ('애니메이션 변경용 버프' in ln.raw or ('판별용' in name and name not in references)):
+            continue
+        if '스킬 교체:' in ln.raw and any('「' + n + '」' in ln.raw for n in variants):
+            continue
+        if '무작위 적에게' in desc and ('추가 발동' in ln.raw):
+            e['random_enemy'] = True
+        if '사망 상태가 아닌 아군 대상' in desc:
+            if e.get('target') == '스킬 대상' and (e['kind'] == 'buff' or e['kind'] == 'gauge'):
+                e['life_branch'] = 'alive'
+            if e['kind'] == 'gauge' and '자동 지정' in e.get('target', ''):
+                e.update(target='스킬 대상', life_branch='dead')
+            if '부활(생명력' in ln.raw:
+                e['life_branch'] = 'dead'
+            if e['kind'] == 'buff' and e.get('target') == '아군 전체':
+                continue  # 생사 판별용 내부 표지
+        # 타격 시 상태를 검사하고 게이지를 바로 감소: 이후 새로 걸린 상태는 포함하지 않는다.
+        state = re.search(r'타격 시 대상이 \[([^]]+)\] 상태이면.*?행동 게이지를 (\d+)% 감소', desc)
+        if state:
+            if '체크용' in name:
+                continue
+            if e['kind'] == 'gauge' and e.get('val', 0) < 0:
+                ln.kind, ln.trig = 'own_pre', None
+                e.update(target='적 전체', target_state=state[1])
+        move = re.search(r'신규 \[([^]]+)\] 발생 시 기존의 \[\1\]을 해제', desc)
+        if move:
+            mark = move[1]
+            if '체크용' in name or (e['kind'] == 'remove' and name == mark):
+                continue
+            if e['kind'] == 'buff' and name == mark:
+                if ln.phase in ('전투 시작 시', '웨이브 시작 시'):
+                    e.update(unique_enemy=True, ignore_resist=True)
+                elif e.get('target') == '스킬 대상':
+                    ln.params = [(k, v) for k, v in ln.params if k not in ('대상이 보유', '대상이 미보유')]
+                    e['unique_enemy'] = True
+                else:
+                    continue
+            if e['kind'] == 'local' and '타격 시 적이 [' + mark + '] 상태이면' in desc:
+                ln.params = [(k, v) for k, v in ln.params if k != '사용 스킬']
+        if ('체크용' in name and name not in references
+                and re.search(r'(방어력|행동 게이지|속도)[이가] 가장 높은 적', desc)):
+            continue
+        if '무작위 효과' in ln.raw:
+            bundle = re.search(r'〈([^〉]+)〉', ln.raw)[1]
+            duration = re.search(r'(\d+)턴 간 \[' + re.escape(bundle) + r'\]', desc)
+            if duration:
+                e['random_dur'] = int(duration[1])
+            repeat = re.search(r'\[' + re.escape(bundle) + r'\]을 (\d+)회 발생', desc)
+            if repeat:
+                e.update(random_times=int(repeat[1]), pre_grant=True)
+                ln.params = []
+        if name in random_markers and '무작위 효과' not in ln.raw:
+            continue
+        # 역할별 증폭은 다른 대상의 피해에 섞이지 않는다.
+        role = re.match(r'vs (.+) 피해 증가$', e.get('stat', ''))
+        if e['kind'] == 'local' and role and role[1] + ' 클래스이면' in desc:
+            e['stat'] = '피해 증가'
+            ln.params.append(('대상 클래스', role[1]))
+        out.append(ln)
     return out

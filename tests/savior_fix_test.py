@@ -510,6 +510,215 @@ def test_fix2_shield_context():
     return out == (0.3, [5000, 3000], [0, 0]) and round(c2.inc, 3) == .15, str((out, c2.inc))
 
 
+def test_fix3_variants():
+    out = []
+    cases = [('lyn', '궁극기', '명월(해제불가)', 1, 11500, 1, .15),
+             ('bunny-frey', '기본기', '하이 롤러(해제불가)', 5, 6500, 1, 1.2),
+             ('lydia-moon-caster', '특수기', '퇴근 재촉(해제불가)', 5, 20000, 2, 1.45),
+             ('lydia-moon-caster', '궁극기', '퇴근 재촉(해제불가)', 5, 26500, 2, 1.5)]
+    for key, slot, mark, n, coef, targets, inc in cases:
+        for active in [False, True]:
+            b, a, f = setup(key, foes=[unit('one', hp=10**9, sa=1000), unit('two', hp=10**9, sa=1000)])
+            a.acting = True
+            if active:
+                give(a, mark, stacks=n).maxs = n if key != 'lydia-moon-caster' else 10
+            c = b.cast(a, a.d.skills[slot])
+            if active:
+                assert (c.skill.cf[0], len(c.targets), round(c.inc, 2)) == (coef, targets, inc)
+                if key == 'lyn':
+                    assert c.cd == .5 and c.tough == 1 and not a.has('청풍(해제불가)')
+                elif key == 'bunny-frey':
+                    assert a.gauge == 3000 and not a.has(mark) and a.stack('냉각') == 1
+                else:
+                    assert a.stack(mark) == 0 and a.stack('쌓여가는 수치심(해제불가)') == (4 if slot == '특수기' else 6)
+                assert a.cd.get(slot, 0) == (c.skill.cd or 0) - (1 if key == 'lyn' else 0)
+                if key == 'lyn':
+                    a.eff.pop(mark)
+                next_cast = b.cast(a, a.d.skills[slot])
+                assert next_cast.skill is a.d.skills[slot] and not hasattr(a.d.skills[slot], 'semantic_lines')
+            else:
+                assert c.skill.name == a.d.skills[slot].name
+            out.append((key, active, c.skill.name, len(c.targets), round(c.inc, 2)))
+    return True, str(out)
+
+
+def test_fix3_variant_own_turn_only():
+    from battlesim.mc import support_report
+    for key, slot, mark in [('bunny-frey', '기본기', '하이 롤러(해제불가)'),
+                            ('lydia-moon-caster', '궁극기', '퇴근 재촉(해제불가)')]:
+        for own, extra, n in [(False, False, 5), (True, True, 5), (True, False, 4)]:
+            b, a, _ = setup(key)
+            a.acting = own
+            give(a, mark, stacks=n).maxs = 10
+            c = b.cast(a, a.d.skills[slot], extra=extra)
+            assert c.skill.name == a.d.skills[slot].name
+    defs = [UnitDef(get_db(), k) for k in ['lyn', 'bunny-frey', 'lydia-moon-caster', 'hilde']]
+    report = support_report(defs)
+    assert not any('변형' in x['raw'] or '스킬 교체' in x['raw'] for x in report)
+    assert any('선제 방어' in x['raw'] for x in report)
+    assert sum('변형' in x for d in defs for x in d.unmodeled) == 4  # 공유 기대값 정의 보존
+    return True, '자기 정규 턴 + 임계 스택만 교체'
+
+
+def test_fix3_pinball():
+    b, a, _ = setup('scarlet')
+    draws = []
+    def choose(names):
+        draws.append(tuple(names))
+        return names[-1]
+    b.rng.choice = choose
+    base = a.spd()
+    for turn, expected in enumerate([3, 6, 9, 10]):
+        b.fire(a, 'own_ts', Ctx(a, a, None))
+        assert len(draws) == (turn + 1) * 3
+        assert a.stack('세븐볼(해제불가)') == 3
+        assert a.spd() == base + expected
+        assert round(a.mods()['inc'], 2) == .21
+        b.cast(a, a.d.skills['기본기'])
+        assert not a.has('세븐볼(해제불가)')
+    b.rng.choice = lambda names: names[0]
+    b.fire(a, 'own_ts', Ctx(a, a, None))
+    assert a.stack('노멀볼(해제불가)') == 3 and round(a.mods()['inc'], 2) == .03
+    return not b.unsup, str(dict(b.unsup))
+
+
+def test_fix3_tyria_stack_role():
+    out = []
+    for role in ['스트라이커', '디펜더']:
+        for n in range(4):
+            b, a, f = setup('tyria', foes=[unit('foe', role=role, hp=10**9, sa=1000)])
+            if n:
+                give(f, '참극의 가시(해제불가)', harmful=True, stacks=n).maxs = 3
+            c = b.cast(a, a.d.skills['특수기'])
+            val = round(c.inc + c.local_by[f]['inc'], 2)
+            expected = round(.2 + n * (.6 if role == '디펜더' else .1), 2)
+            assert val == expected, (role, n, val, expected)
+            assert not f.has('참극의 가시(해제불가)')
+            out.append(val)
+    return True, str(out)
+
+
+def test_fix3_enemy_rank_selectors():
+    out = []
+    for key, mark, field in [('tyria', '참극의 가시(해제불가)', 'def'), ('hilde', '도발', 'gauge')]:
+        b, a, f = setup(key, foes=[unit('one', hp=10**9, sa=1000), unit('two', hp=10**9, sa=1000)])
+        high = b.foes[1]
+        if field == 'def':
+            high.d.stats['def'] *= 3
+        else:
+            high.gauge = 9000
+        b.roll_hit = lambda *args: True
+        b.cast(a, a.d.skills['궁극기'], target=f)
+        got = [v.stack(mark) for v in b.foes]
+        assert got == ([1, 3] if key == 'tyria' else [0, 1]), got
+        out.append(got)
+    return True, str(out)
+
+
+def test_fix3_enemy_state_filter():
+    b, a, _ = setup('lydia', foes=[unit('plain', hp=10**9, sa=1000), unit('marked', hp=10**9, sa=1000)])
+    for f in b.foes:
+        f.gauge = 5000
+    give(b.foes[1], '미지의 주문', harmful=True)
+    b.roll_hit = lambda *args: True
+    b.cast(a, a.d.skills['특수기'])
+    got = [f.gauge for f in b.foes]
+    return got == [5000, 3500], str(got)
+
+
+def test_fix3_waterbomb_move():
+    b, a, f = setup('sunshine-cat-smile', foes=[unit('slow', hp=10**9, sa=1000), unit('fast', spd=300, hp=10**9, sa=1000)])
+    fast = b.foes[1]
+    give(fast, '면역')
+    fast.d.immune = {'물폭탄'}
+    b.fire(a, 'wave_start', Ctx(a, a, None))
+    assert [v.has('물폭탄') for v in b.foes] == [False, True]
+    b.roll_hit = lambda *args: False
+    b.cast(a, a.d.skills['기본기'], target=f)
+    assert [v.has('물폭탄') for v in b.foes] == [False, True]
+    b.roll_hit = lambda *args: True
+    b.cast(a, a.d.skills['궁극기'], target=f)
+    got = [v.has('물폭탄') for v in b.foes]
+    return got == [True, False] and not a.has('물폭탄'), str(got)
+
+
+def test_fix3_elisa_life_branch():
+    out = []
+    for dead in [False, True]:
+        b, a, _ = setup('elisa', [unit('target'), unit('bystander')])
+        v, other = b.allies[1:]
+        v.hp = 0 if dead else 100
+        v.dead = dead
+        c = b.cast(a, a.d.skills['궁극기'], target=v)
+        assert not v.dead and v.hp > 100
+        assert v.has('성스러운 가호') == (not dead)
+        assert other.gauge == 0 and a.gauge == 0
+        out.append(v.gauge)
+        if dead:
+            assert v.hp == v.maxhp * .5
+    return out == [4000, 8000], str(out)
+
+
+def test_fix3_delivery_duration_hot():
+    out = []
+    for key, dur in [('vera', 1), ('vera@개화(SSR)', 2)]:
+        for selected in ['공격력 증가', '방어력 증가', '속도 증가', '지속 회복']:
+            b, a, _ = setup(key, [unit('buffed'), unit('plain')])
+            v = b.allies[1]
+            give(v, '시험 강화', {'공격력%': 1})
+            b.rng.choice = lambda names: selected
+            b.cast(a, a.d.skills['궁극기'])
+            assert v.eff[selected].dur == dur
+            assert b.allies[2].has(selected) == (dur == 2)
+            if selected == '지속 회복':
+                v.hp = 100
+                b._tick_dot_hot(v)
+                assert v.hp == 1600, v.hp
+                give(v, '강화 불가', harmful=True)
+                b._tick_dot_hot(v)
+                assert v.hp == 1600
+            out.append((key, selected, v.eff[selected].dur))
+    return True, str(out)
+
+
+def test_fix3_random_extra_target():
+    out = []
+    for key in ['carnelia', 'besta@개화(SSR)']:
+        b, a, f = setup(key, foes=[unit('first', atk=1, hp=10**9, sa=1000, skills=[dict(slot='기본기', dm=100, all=True)]),
+                                  unit('last', hp=10**9, sa=1000)])
+        b.rng.choice = lambda pool: pool[-1]
+        b.rng.random = lambda: 0
+        a.acting = True
+        if key == 'carnelia':
+            give(a, '칠흑의 잔향(해제불가)')
+            b.cast(a, a.d.skills['특수기'], target=f)
+        else:
+            b.cast(f, f.d.skills['기본기'], target=a)
+        targets = [e['targets'] for e in b.timeline if e.get('actor') == a.name and e.get('skill') == '특수기(추가)']
+        assert targets == [['last']], targets
+        out.append(targets)
+    return True, str(out)
+
+
+def test_fix3_neutral_boost():
+    b, a, f = setup('luna')
+    b.fire(a, 'battle_start', Ctx(a, a, None))
+    assert a.stack('통찰') == 2 and a.n_good() == 0 and a.n_harmful() == 0
+    give(a, '강화 불가', harmful=True)
+    b.cast(a, a.d.skills['기본기'])
+    assert a.stack('통찰') >= 3 and a.on('통찰')
+    assert a.mods()['inc_vs']['혼돈'] >= .03
+    c = pre(b, a, '궁극기')
+    assert c.cd == 0
+    give(a, '시험 강화', {'공격력%': 10})
+    assert a.n_good() == 1 and a.mods()['atkp'] == 0
+    ctx = Ctx(a, a, a.d.skills['궁극기'])
+    ctx.targets, ctx.target = [f], f
+    b.run_line(a, Line('[스킬 사용 후] 스킬 대상에게 〈시험 카운팅 표지〉', '궁극기', 'active'), ctx)
+    assert f.has('시험 카운팅 표지') and f.n_harmful() == 0 and f.n_good() == 0
+    return True, '중립 스택은 강화 개수·강화 불가와 독립'
+
+
 TESTS = [v for k, v in list(globals().items()) if k.startswith('test_')]
 
 

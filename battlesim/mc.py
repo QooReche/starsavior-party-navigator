@@ -17,7 +17,7 @@ from . import rules as _rules
 from .engine import calc_hit
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
 from .starsavior.parser import _map_prop, split_head, supported_trigger
-from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule
+from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules
 
 
 class EventLimitError(RuntimeError):
@@ -67,7 +67,7 @@ COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이
                  '자신에게 약화효과 없음', '자신 약화효과 보유', '자신 강화효과 보유', '스킬 쿨타임 아님', '턴 유닛이 보유',
                  '스킬 대상 유형', '단일 대상 공격', '대상 속성', '적 약화효과 보유', '적 강화효과 보유', '특정 효과 보유 적 존재',
                  '턴 유닛 속성', 'EnemyAdjustType', 'NotEnemyAdjustType', 'IsTargetSuperArmor',
-                 '피해 증가(조건부)', 'NotTargetPositiveBuff', 'NotEnemyPositiveBuff', 'ExistAllySpecificBuff', '이번 타격 격파'])
+                 '피해 증가(조건부)', 'NotTargetPositiveBuff', 'NotEnemyPositiveBuff', 'ExistAllySpecificBuff', '이번 타격 격파', '대상 클래스'])
 
 # 회복·보호막·부활·해제·무작위 효과 원문 해석(parser 는 이 줄들을 'ignored' 로 둔다)
 RX_HEAL = re.compile(r'^(.+?)에게 회복 = (자신|대상) (최대 생명력|생명력|공격력|방어력)×([\d.]+)%')
@@ -116,7 +116,7 @@ def _dur(v):
     return math.inf if v is None else v
 
 
-TARGET_KEYS = set(['대상 속성', '대상이 보유', '대상이 미보유', '대상 HP% 초과', '대상 HP% 미만', '대상 약화효과 보유',
+TARGET_KEYS = set(['대상 속성', '대상 클래스', '대상이 보유', '대상이 미보유', '대상 HP% 초과', '대상 HP% 미만', '대상 약화효과 보유',
                    '대상 강화효과 보유', '대상 효과 중첩수', 'NotTargetPositiveBuff'])
 
 
@@ -134,7 +134,7 @@ def skill_desc(d, slot):
     if u:
         for sk in u.get('sk', []):
             if sk.get('sl') == slot:
-                return sk.get('d1') or ''
+                return sk.get('dx') or sk.get('d1') or ''
     return (getattr(d, 'desc', None) or {}).get(slot, '')
 
 
@@ -231,10 +231,11 @@ def full_props(ln):
 class Eff:
     """유닛에 붙은 효과 1개(강화·약화·보호막·지속 피해·지속 회복). stacks 는 정수."""
     __slots__ = ('name', 'props', 'stacks', 'maxs', 'dur', 'src', 'harmful', 'fresh', 'shield', 'dot', 'inst', 'hot',
-                 'check', 'fixed', 'clock')
+                 'check', 'fixed', 'clock', 'category')
 
     def __init__(self, name, props, maxs, dur, src, harmful):
         self.name, self.props, self.maxs, self.dur, self.src, self.harmful = name, props, maxs, dur, src, harmful
+        self.category = 'debuff' if harmful else 'buff'
         self.stacks = 0
         self.fresh = False
         self.shield = 0.0
@@ -296,7 +297,7 @@ class Unit:
                  tough=0.0, tough_fixed=0.0, inc_break=0.0, inc_vs={}, inc_slot={}, red={})
         blocked = '강화 불가' in self.eff and self.eff['강화 불가'].stacks > 0   # 〈강화 불가〉: 모든 강화 효과가 적용되지 않음(gloss)
         for e in self.eff.values():
-            if e.stacks <= 0 or (blocked and not e.harmful):
+            if e.stacks <= 0 or (blocked and e.category == 'buff'):
                 continue
             for k, v in e.props.items():
                 _add_prop(m, k, v, e.stacks)
@@ -322,7 +323,7 @@ class Unit:
         e = self.eff.get(name)
         if e is None or e.stacks <= 0:
             return False
-        return e.harmful or not self.buff_blocked()
+        return e.category != 'buff' or not self.buff_blocked()
 
     def spd(self):
         m = self.mods()
@@ -336,10 +337,10 @@ class Unit:
         return sum(e.shield for e in self.eff.values() if e.shield > 0)
 
     def n_harmful(self):
-        return sum(1 for e in self.eff.values() if e.harmful and e.stacks > 0)
+        return sum(1 for e in self.eff.values() if e.category == 'debuff' and e.stacks > 0 and not e.check)
 
     def n_good(self):
-        return sum(1 for e in self.eff.values() if not e.harmful and e.stacks > 0 and not e.check)
+        return sum(1 for e in self.eff.values() if e.category == 'buff' and e.stacks > 0 and not e.check)
 
 
 def _add_prop(m, k, v, stacks):
@@ -396,7 +397,7 @@ class Ctx:
     __slots__ = ('owner', 'src', 'skill', 'extra', 'targets', 'target', 'inc', 'atkp', 'cr', 'cd', 'pen', 'eh', 'crit',
                  'kill', 'coop_used', 'heal_give', 'heal_recv', 'local', 'nb', 'hit_victim', 'acc', 'evaded', 'recv_by',
                  'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets',
-                 'crit_targets', 'break_targets', 'markers')
+                 'crit_targets', 'break_targets', 'markers', 'dead_targets')
 
     def __init__(self, owner, src, skill, extra=False):
         self.owner, self.src, self.skill, self.extra = owner, src, skill, extra
@@ -404,6 +405,7 @@ class Ctx:
         self.hit_targets = []    # 실제 피해 처리한 개체: 사망/회피도 포함, 다단 히트는 한 명
         self.crit_targets, self.break_targets = set(), set()
         self.markers = {}
+        self.dead_targets = set()
         self.targets, self.target = [], None
         self.inc = self.atkp = self.cr = self.cd = self.pen = self.eh = self.acc = 0.0
         self.tough = self.tough_fixed = self.inc_break = 0.0   # P5 「이번 스킬에만」 강인도 (고정) 피해·브레이크 대상 피해 증가
@@ -834,6 +836,16 @@ class Battle:
             opp = self.alive(1 - owner.side)
             if not opp:
                 return []
+            cur = self._cur_line
+            if cur is not None and cur.eff.get('target_state'):
+                return [x for x in opp if x.has(cur.eff['target_state'])]
+            if '자동 지정' in t and cur is not None:
+                desc = skill_desc(owner.d, cur.slot)
+                rank = re.search(r'(방어력|행동 게이지|속도)[이가] 가장 높은 적', desc)
+                if rank:
+                    stat = {'방어력': self.def_stat, '행동 게이지': lambda x: x.gauge, '속도': lambda x: x.spd()}[rank[1]]
+                    return [max(opp, key=lambda x: (stat(x), -x.pos))]
+                self.unsup['selector: 적 자동 지정 규칙 미확인 ' + cur.raw[:50]] += 1
             if '전체' in t:
                 return opp
             if ctx.target is not None and not ctx.target.dead and ctx.target.side != owner.side:
@@ -915,6 +927,11 @@ class Battle:
         if self.depth >= self.mc['max_depth']:
             self.unsup['depth: 연쇄 깊이 상한으로 시전 생략'] += 1
             return None
+        variant = getattr(u.d, 'variants', {}).get(sk.slot)
+        if variant:
+            rule, replacement = variant
+            if u.stack(rule['name']) >= rule['count'] and (not rule['own'] or (u.acting and not extra)):
+                sk = replacement
         self.tick()
         self.depth += 1
         previous_cast = getattr(self, '_cast_ctx', None)
@@ -938,9 +955,10 @@ class Battle:
                 ctx.nb = True
             ctx.targets = self.skill_targets(u, sk, target)
             ctx.target = ctx.targets[0] if ctx.targets else None
+            ctx.dead_targets = {x for x in ctx.targets if x.dead}
             if self.timeline is not None:
                 t0 = ctx.targets[0] if ctx.targets else None
-                self.log(actor=u.name, side=u.side, pos=u.pos, skill=sk.slot + ('(추가)' if extra else ''),
+                self.log(actor=u.name, side=u.side, pos=u.pos, skill=sk.slot + ('(추가)' if extra else ''), skill_name=sk.name,
                          targets=[x.name for x in ctx.targets], via=via or ('extra' if extra else None), nb=ctx.nb,
                          all=bool(sk.all), tgt_side=(t0.side if t0 is not None else None),
                          tgt_boss=bool(t0 is not None and getattr(t0.d, 'boss', False)))
@@ -1023,12 +1041,17 @@ class Battle:
             targets = [x for x in ctx.targets if x.side == u.side and not x.dead]
         give = u.mods()['heal_give'] + ctx.heal_give
         for x in targets:
+            if x in ctx.dead_targets:
+                continue
             got = self.heal(u, x, stat * float(m.group(2)) / 100.0, give + ctx.recv_by.get(x, 0.0))
             self.log(heal=u.name, to=x.name, amount=got)
 
     def run_own(self, u, ctx, kind):
         sk = ctx.skill
-        lines = [ln for ln in self.lines_of(u) if line_kind(ln) == kind and not (ln.bound and ln.slot != sk.slot)
+        source = self.lines_of(u)
+        if hasattr(sk, 'semantic_lines'):
+            source = [ln for ln in source if not (ln.src_kind == 'active' and ln.slot == sk.slot)] + sk.semantic_lines
+        lines = [ln for ln in source if line_kind(ln) == kind and not (ln.bound and ln.slot != sk.slot)
                  and not (ln.trig and '공격' in ln.trig and ln.na == sk.is_attack)]   # 「내 행동 시/후」는 공격·비공격 모두
         if kind == 'own_post':
             # 「기본기 사용 후 최대 스택」은 그 기본기의 스택 부여까지 끝낸 상태로 판정.
@@ -1498,7 +1521,7 @@ class Battle:
                     dr = de / (de + _rules.DEF_K)
                     dmg = max(1.0, math.floor(val * c * _rules.BASE_MULT * (1 + inc - dec) * (1 - dr) * self.rand() * self.pen[src.side]))
                     self.apply_damage(src, u, dmg, 'dot', shieldable=False)
-            if e.hot > 0 and not u.dead:
+            if e.hot > 0 and not u.dead and u.on(name):
                 self.heal(e.src or u, u, u.maxhp * e.hot, 0.0)
 
     # ---------- 회복·보호막
@@ -1571,7 +1594,7 @@ class Battle:
             elif k == '자신 미보유 효과 중첩수':
                 if self._count(owner, ctx, last) >= float(v):
                     return False
-            elif k in ('중첩수', '효과 개수'):
+            elif k in ('중첩수', '효과 개수', '대상 효과 중첩수'):
                 n = float(v)
                 st = self._count(owner, ctx, last)
                 mx = 0
@@ -1582,7 +1605,7 @@ class Battle:
                         return False
                 elif st != n:
                     return False
-            elif k in ('중첩수 이상', '효과 개수 이상', '대상 효과 중첩수'):
+            elif k in ('중첩수 이상', '효과 개수 이상'):
                 if self._count(owner, ctx, last) < float(v):
                     return False
             elif k == '효과 개수 미만':
@@ -1689,6 +1712,9 @@ class Battle:
             elif k == '대상 속성':
                 if tgt is None or tgt.element != v:
                     return False
+            elif k == '대상 클래스':
+                if tgt is None or tgt.role != v:
+                    return False
             elif k in ('적 약화효과 보유', '적 강화효과 보유'):
                 opp = self.alive(1 - owner.side)
                 fn = (lambda x: x.n_harmful() > 0) if k == '적 약화효과 보유' else (lambda x: x.n_good() > 0)
@@ -1728,6 +1754,9 @@ class Battle:
             return False
         if ln.eff['kind'] == 'perm':
             return False
+        branch = ln.eff.get('life_branch')
+        if branch and ((ctx.target in ctx.dead_targets) != (branch == 'dead')):
+            return False
         if '전투당 1회' in ln.raw and (id(owner), id(ln)) in self.once:
             return False
         mrc = RX_RECAST.search(ln.raw) if '재발동 불가' in ln.raw else None
@@ -1758,9 +1787,9 @@ class Battle:
         추가 발동(시전)은 묶음의 나머지 효과(중첩 소비 등) 뒤에 실행한다(같은 사건에서 자기 자신을 다시 부르는 무한 연쇄 방지)."""
         # 같은 시점의 선행 부여를 참조하는 조건은 부여가 끝난 뒤 판정한다.
         # 나머지 조건은 소거 전에 함께 판정하여 조건부 효과 묶음의 일관성을 지킨다.
-        count_grants = [ln for ln in lines if ln.eff['kind'] == 'buff' and
-                        (ln.eff.get('per_hit') or ln.eff.get('per_crit') or ln.eff.get('cast_marker')
-                         or ln.eff.get('pre_grant'))]
+        count_grants = [ln for ln in lines if ln.eff.get('pre_grant') or
+                        (ln.eff['kind'] == 'buff' and
+                         (ln.eff.get('per_hit') or ln.eff.get('per_crit') or ln.eff.get('cast_marker')))]
         for ln in count_grants:
             if self.line_ok(owner, ln, ctx):
                 self.exec_line(owner, ln, ctx)
@@ -1947,6 +1976,11 @@ class Battle:
                 if rule and rule.get('mark'):
                     tgt = next((v for v in self.alive(1 - owner.side) if v.has(rule['mark'])), tgt)
                 for _ in range(eff['times']):
+                    if eff.get('random_enemy'):
+                        pool = self.alive(1 - owner.side)
+                        if not pool:
+                            break
+                        tgt = self.rng.choice(pool)
                     self.cast(owner, sk, extra=True, target=tgt, parent=ctx)
             return
         if kd == 'extra_turn':
@@ -1958,7 +1992,7 @@ class Battle:
         if kd == 'remove':
             # 「아군(자동 지정)에게 'X' 해제」 = 표지 효과를 가진 아군 누구에게서든 해제(가정)
             tg = self.resolve(owner, eff['target'], ctx, kind='remove')
-            if tg and '자동 지정' in eff['target']:
+            if tg and '자동 지정' in eff['target'] and not eff['target'].startswith('적'):
                 tg = [x for x in self.alive(owner.side) if (x is not owner or not eff['target'].startswith('자신 제외'))]
             for x in tg or []:
                 if eff['name'] in x.eff:
@@ -2046,7 +2080,7 @@ class Battle:
                     continue
                 for name in list(x.eff):
                     e = x.eff[name]
-                    if e.harmful == harmful and not e.fixed and e.shield <= 0:
+                    if e.category == ('debuff' if harmful else 'buff') and not e.fixed and e.shield <= 0:
                         del x.eff[name]
                 self.dirty(x)
             return
@@ -2058,7 +2092,7 @@ class Battle:
             for x in tg or []:
                 if not self._dispel_ok(owner, ctx, x, p, rest):
                     continue
-                names = [n for n, e in x.eff.items() if e.harmful == harmful and not e.fixed and e.shield <= 0][:int(m.group(4))]
+                names = [n for n, e in x.eff.items() if e.category == ('debuff' if harmful else 'buff') and not e.fixed and e.shield <= 0][:int(m.group(4))]
                 for n in names:
                     del x.eff[n]
                 self.dirty(x)
@@ -2113,7 +2147,7 @@ class Battle:
         m = RX_RANDOM.match(rest)
         if m:
             from .starsavior.foe import gloss
-            g = gloss()
+            g = dict(gloss(), **getattr(owner.d, 'effect_info', {}))
             tg = self.resolve(owner, m.group(1), ctx)
             names = [x.strip() for x in m.group(3).split(',')]
             p = int(m.group(2)) / 100.0 if m.group(2) else 1.0
@@ -2121,14 +2155,17 @@ class Battle:
                 if self.rng.random() >= p:
                     continue
                 self._fired(owner)
-                name = self.rng.choice(names)
-                info = g.get(name)
-                if info is None:
-                    self.unsup['무작위 효과 사전 없음: ' + name] += 1
-                    continue
-                eff = dict(kind='buff', target='자신', name=name, chance=1.0, dur=info['dur'] or 2, props=info['props'],
-                           max=None, times=1, judge=(x.side != owner.side))
-                self.add_effect(owner, x, eff, ctx)
+                repeats = ln.eff.get('random_times', 1)
+                for _ in range(repeats):
+                    name = self.rng.choice(names)
+                    info = g.get(name)
+                    if info is None:
+                        self.unsup['무작위 효과 사전 없음: ' + name] += 1
+                        continue
+                    eff = dict(kind='buff', target='자신', name=name, chance=1.0,
+                               dur=ln.eff.get('random_dur', info['dur'] or (math.inf if repeats > 1 else 2)),
+                               props=info['props'], max=repeats if repeats > 1 else None, times=1, judge=(x.side != owner.side))
+                    self.add_effect(owner, x, eff, ctx, hot=info.get('hot', 0), fixed='해제불가' in name)
             return
         m = RX_RECV_HEAL.match(rest)
         if m:   # 받는 회복량 보정은 대상마다(대상 조건도 대상마다 판정 — run_batch 의 per_target)
@@ -2153,7 +2190,13 @@ class Battle:
             sk = owner.d.skills.get(m.group(2)) or owner.d.trigger_skills.get(m.group(2))
             if sk is not None and self.rng.random() < int(m.group(1)) / 100.0:
                 self._fired(owner)
-                self.cast(owner, sk, extra=True, target=ctx.src if (ctx.src is not None and ctx.src.side != owner.side) else None, parent=ctx)
+                target = ctx.src if (ctx.src is not None and ctx.src.side != owner.side) else None
+                if ln.eff.get('random_enemy'):
+                    pool = self.alive(1 - owner.side)
+                    if not pool:
+                        return
+                    target = self.rng.choice(pool)
+                self.cast(owner, sk, extra=True, target=target, parent=ctx)
             return
         m = RX_TOUGH_HEAL.match(rest)
         if m:   # 강인도 N 회복(격파 중이면 회복하지 않음 — 격파는 다음 자기 턴에 전회복, assumed)
@@ -2237,17 +2280,26 @@ class Battle:
     def add_effect(self, owner, x, eff, ctx, hot=0.0, fixed=False):
         name = eff['name']
         opp = x.side != owner.side
-        if opp and ctx is not None and x in ctx.evaded:
+        info = getattr(owner.d, 'effect_info', {}).get(name, {})
+        marker = eff.get('cast_marker') or bool(CHECK_NAME.search(name)) or '판별용' in name
+        category = ('marker' if marker else info.get('category')) or ('debuff' if opp else 'buff')
+        resist = category == 'debuff' and not eff.get('ignore_resist')
+        if resist and ctx is not None and x in ctx.evaded:
             return     # 회피한 대상에는 약화가 걸리지 않음(공식 2026-06-04 오류 수정 공지)
-        if opp and x.on('면역'):
+        if resist and x.on('면역'):
             return     # 〈면역〉 (약화효과 면역): 상대가 거는 효과(약화) 전부 막음
-        if opp and (eff.get('judge') or name in getattr(x.d, 'immune', ())):
+        if resist and (eff.get('judge') or name in getattr(x.d, 'immune', ())):
             if not self.roll_hit(owner, ctx, x, name):
                 return
         dot = eff.get('dot')
         if dot is None and name in _rules.KNOWN_DOT and not eff['props']:
             dot = _rules.KNOWN_DOT[name]
-        harmful = opp
+        harmful = category == 'debuff'
+        if eff.get('unique_enemy'):
+            for other in self.alive(x.side):
+                if other is not x and name in other.eff:
+                    del other.eff[name]
+                    self.dirty(other)
         e = x.eff.get(name)
         cast_ctx = getattr(self, '_cast_ctx', None)
         if eff.get('cast_marker') and cast_ctx is not None and (x, name) not in cast_ctx.markers:
@@ -2256,6 +2308,7 @@ class Battle:
         if e is None:
             mx = eff['max'] or (5 if dot else 1)
             e = Eff(name, eff['props'], mx, dur, owner, harmful)
+            e.category = category
             e.fixed = fixed
             transient = eff['dur'] is None and ctx is not None and ctx.local is not None   # 피격 직전에 받은 지속 표기 없는 효과 = 이번 행동만
             if self.mc['check_buff_expiry'] == 'action' and (transient or (eff['dur'] is None and CHECK_NAME.search(name) and not eff['props'])):
@@ -2264,6 +2317,7 @@ class Battle:
             x.eff[name] = e
             e.fresh = (x is owner and owner.acting)
         else:
+            e.category, e.harmful = category, harmful
             if eff['dur'] is not None:
                 e.dur = max(e.dur, dur) if e.dur != math.inf else e.dur
                 if x is owner and owner.acting:
@@ -2381,7 +2435,10 @@ def support_report(defs):
             if not supported_trigger(d, ts):
                 out.append(dict(unit=d.name, foe=foe, slot=ts.slot, reason='skill',
                                 raw='트리거 스킬 미반영: ' + ts.name, critical=False))
+        supported_variants = {sk.name for _, sk in variant_rules(d).values()}
         for msg in getattr(d, 'unmodeled', []):
             if msg.startswith('변형'):
+                if msg.split(': ', 1)[-1] in supported_variants:
+                    continue
                 out.append(dict(unit=d.name, foe=foe, slot=None, reason='skill', raw=msg, critical=False))
     return out
