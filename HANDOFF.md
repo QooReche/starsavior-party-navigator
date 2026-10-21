@@ -7,16 +7,22 @@
 - 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
 - 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
 
-## ▶ 다음 세션 시작점 (2026-10-21 중간 정리)
+## ▶ 다음 세션 시작점 (2026-10-21 저녁 갱신)
+**이번에 끝낸 것**: 브레이크 스킬 선택칸+엔진 3종(368b967), 화면 정리·기믹 칸(afc825c). 아래 「10-21 저녁」 절.
 **다음 할 일(추천 순서)**
-1. 37-5 시뮬 낙관(실제 4.17 / 시뮬 7.60) 원인 — 2차 편성(claire·waltz-asherah·professor-m) 처리 점검. `python -X utf8 -I tools/ingame_check.py --runs 60 --bs --only 37-5`
-2. 화면에 브레이크 스킬 선택칸(엔진 `options.break_skill` 은 있음, 지금은 큐브 과부하만 지원)
-3. 큰 보스전 시뮬 클리어 0%(실제 클리어) — 회복 위주 스타버스트 수동 정책(BACKLOG A9)·도발(A8)
-4. 내실(전술 분석·호감도)을 「평균 육성」에 넣을지(전술 분석은 플래시·코스모 미적용) — 수치 `docs/ingame_samples.md`
-5. BACKLOG 나머지(A2 적 생존 기믹, B5 경계 팀 판 수, B4 공유 링크, B7 모바일)
+1. **37-5 낙관의 주원인 = 적 시작 쿨 가정**(`mc.enemy_init_cd` 1.0, assumed): 37-5 적 망각의 예언자 ×2 가 궁극기(260% 광역+게이지 감소)를 한 번도 못 씀. 0 이면 37-5 3.49(실제 4.17)지만 보스전이 더 비관(36-36 1.13·37-3 0.80) → 전역 변경 금지. **사용자 실측 필요: 37-5 에서 예언자가 첫 궁극기를 언제 쓰는지**(첫 턴? 몇 턴째?). 받은 피해가 실제의 절반(89,895 vs 170,878), 준 피해는 오버킬 포함 시 0.3% 차. 37-4 도 비율은 맞지만 절대값은 시뮬이 큼(505k/87k vs 346k/53k)
+2. 큰 보스전 시뮬 클리어 0%(실제 클리어) — 회복 위주 스타버스트 수동 정책(BACKLOG A9)·도발(A8)
+3. 내실(전술 분석·호감도)을 「평균 육성」에 넣을지 — 수치 `docs/ingame_samples.md`
+4. 화면: 브레이크 스킬 「스킬별 비교」 버튼(보유 스킬마다 시뮬, 비용 ×N), 기믹 대처 문구 표 검수(대부분 추정)
+5. BACKLOG 나머지(A2 적 생존 기믹, B5 경계 팀 판 수, B4 공유 링크)
 - 사용자 쪽: 10/22 패치 뒤 「데이터 갱신해 줘」(36-36 은 패치 전 데이터로 대조했음 — 갱신 뒤 ingame_check 36-36 수치가 바뀌는 건 정상), 실측 화면 추가 제보
 
-**작업 방식(사용자 지시 2026-10-21)**: 최종 결과만 보고. codex 적극 사용(토큰 여유) — 진단·전수 점검은 래퍼 `codex-review.ps1`(읽기 전용), 구현은 브랜치 만들고 `codex exec -m gpt-6-astra -s workspace-write -C <저장소>` 로 위임 → Claude 가 시험 전부(savior_fix·p5·p3·break_skill·web·rules·quick·shim_compat·golden + e2e) 확인 뒤 QooReche 로 커밋·ff 병합·푸시. 엔진 바꾸면 `tools/build_simpack.py` → 계수 재맞춤(`gen_quick_calib.py --per-content 400` → `calibrate_quick.py --write`, 약 15분) → e2e → 실사이트 확인. codex 가 %TEMP% 에 남기는 빈 시험 폴더는 무시해도 됨
+**작업 방식(사용자 지시 2026-10-21)**: 최종 결과만 보고. codex 적극 사용(토큰 여유) — 진단·전수 점검은 래퍼 `codex-review.ps1`(읽기 전용), 구현은 **별도 worktree**(`git worktree add -b <브랜치> E:/AI_mk2/pn-<이름>`)에서 `codex exec -m gpt-6-astra -c model_reasoning_effort=high -s workspace-write -C <worktree>` 로 위임 → codex 2차 리뷰(래퍼) → Claude 가 시험 전부(savior_fix·p5·p3·break_skill·enemy_target·web·rules·quick·shim_compat·golden + e2e) 확인 뒤 QooReche 로 커밋·ff 병합·푸시. 엔진 바꾸면 `tools/build_simpack.py` → 계수 재맞춤(`gen_quick_calib.py --per-content 400` → `calibrate_quick.py --write`, 약 15분) → e2e → 실사이트 확인. 리뷰·화면 의견은 Fable 서브에이전트도 씀(Claude 토큰은 판단해서 Sonnet/Opus 혼용). **화면 확인은 ego**(`C:\Users\yunsu\.local\share\ego\active_version_dir\ego-browser.exe nodejs -e "await import('file:///…/round-NN.mjs')"`, 모바일은 `page.cdp("Emulation.setDeviceMetricsOverride")`). **화면 문구는 최소로**(사용자: 「글이 너무 많다」). codex 가 %TEMP% 에 남기는 빈 시험 폴더는 무시해도 됨. 계수 재맞춤이 메모리 부족으로 자동 중단될 수 있음(다른 탭 작업 때문) — 중단되면 사용자에게 알리고 지시 받아 재시작
+
+## ▶ 2026-10-21 저녁 — 브레이크 스킬 선택·화면 정리
+- **브레이크 스킬(368b967)**: 그전엔 화면 시뮬이 브레이크 스킬을 아예 안 넘겨 늘 미장착이었음. 파티 카드에 선택칸(보유 스킬, 기본 = 추천, `pn.brksel.v1` 키 「콘텐츠|구성원」), 팀별 `options.break_skill`, 결과 칩 「시뮬 반영/미반영」. 엔진에 특이점 관측·스타피어서·차원 강습(전용 피해 = 생존 아군 공격력 합×계수÷4, 방어 적용·치명/상성 제외, 노바 +4(오토는 무효)·게이지 +20%(발동자 제외)·영역 효과), 행성 정화 미지원. 설계 = codex·Fable 독립 상담 합의(피해식은 appmedia 실측 약 4,000 과 자릿수 맞는 Fable 안). 빠른 계산 계수는 미장착 기준 유지(문구에 표기)
+- 같은 커밋: 적 공격 대상에 스킬 우선 타깃(행동 게이지 최고 등) 연결·「최대 생명력」은 maxhp 비교, 브레이크로 적 전멸 시 그 턴 종료(리뷰 blocking 2건). 계수 재맞춤 92.6%, 실측 5판 변화 작음(37-5 7.57)
+- **화면 정리(afc825c)**: Fable 진단(`docs` 없음 — 진단 요지는 커밋 메시지) → 1안 줄 아래 카드 4장, 카드 아래 **기믹 칸**(스테이지 특이사항 │ 기믹 → 대처(슬롯) → 담당 / ✗ 없음 / 대응 미확인, (추정)), 나머지 전부 접기, 문구 대폭 축소, 모바일 3,099→1,223px. 보스 이름은 `D.bosses` 공용 목록 + `stage.bn=[[번호,수]]`. 리뷰 blocking 1건(기믹 담당을 슬롯 합집합으로 골라 오표시) 수정. e2e 16개
 
 ## ▶ 2026-10-21 밤 — 구원자 64명 전수 점검·수정 완료(codex 아스트라 구현, Claude 검증)
 - 크리스텔 3건(8239c11) + 전수 점검 3묶음(27ea856·bdeb375·400dbe6) + 리뷰 2건(8afed79): 트리거 연결·스택 소비/승급·속성 한정·소수 HP·개수 비례·단계 분리·변형 스킬·적 대상 선택 등 약 30항목. 회귀 시험 `tests/savior_fix_test.py`(50개, 각 항목 수정 전 실패 확인)
