@@ -7,6 +7,17 @@
 - 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
 - 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
 
+## ▶ 다음 세션 시작점 (2026-10-21 중간 정리)
+**다음 할 일(추천 순서)**
+1. 37-5 시뮬 낙관(실제 4.17 / 시뮬 7.60) 원인 — 2차 편성(claire·waltz-asherah·professor-m) 처리 점검. `python -X utf8 -I tools/ingame_check.py --runs 60 --bs --only 37-5`
+2. 화면에 브레이크 스킬 선택칸(엔진 `options.break_skill` 은 있음, 지금은 큐브 과부하만 지원)
+3. 큰 보스전 시뮬 클리어 0%(실제 클리어) — 회복 위주 스타버스트 수동 정책(BACKLOG A9)·도발(A8)
+4. 내실(전술 분석·호감도)을 「평균 육성」에 넣을지(전술 분석은 플래시·코스모 미적용) — 수치 `docs/ingame_samples.md`
+5. BACKLOG 나머지(A2 적 생존 기믹, B5 경계 팀 판 수, B4 공유 링크, B7 모바일)
+- 사용자 쪽: 10/22 패치 뒤 「데이터 갱신해 줘」(36-36 은 패치 전 데이터로 대조했음 — 갱신 뒤 ingame_check 36-36 수치가 바뀌는 건 정상), 실측 화면 추가 제보
+
+**작업 방식(사용자 지시 2026-10-21)**: 최종 결과만 보고. codex 적극 사용(토큰 여유) — 진단·전수 점검은 래퍼 `codex-review.ps1`(읽기 전용), 구현은 브랜치 만들고 `codex exec -m gpt-6-astra -s workspace-write -C <저장소>` 로 위임 → Claude 가 시험 전부(savior_fix·p5·p3·break_skill·web·rules·quick·shim_compat·golden + e2e) 확인 뒤 QooReche 로 커밋·ff 병합·푸시. 엔진 바꾸면 `tools/build_simpack.py` → 계수 재맞춤(`gen_quick_calib.py --per-content 400` → `calibrate_quick.py --write`, 약 15분) → e2e → 실사이트 확인. codex 가 %TEMP% 에 남기는 빈 시험 폴더는 무시해도 됨
+
 ## ▶ 2026-10-21 밤 — 구원자 64명 전수 점검·수정 완료(codex 아스트라 구현, Claude 검증)
 - 크리스텔 3건(8239c11) + 전수 점검 3묶음(27ea856·bdeb375·400dbe6) + 리뷰 2건(8afed79): 트리거 연결·스택 소비/승급·속성 한정·소수 HP·개수 비례·단계 분리·변형 스킬·적 대상 선택 등 약 30항목. 회귀 시험 `tests/savior_fix_test.py`(50개, 각 항목 수정 전 실패 확인)
 - 실측 5판(실제/시뮬): 36-36 1.88/1.37 · 37-3 1.82/1.18 · 37-2 4.13/4.88 · 37-4 6.52/5.82 · 37-5 4.17/7.60 — 보스전은 크게 가까워졌고(아침 0.79·0.50), 37-5 는 시뮬이 낙관
