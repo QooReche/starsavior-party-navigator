@@ -234,7 +234,8 @@ def ally_stack_trigger(sk, lines):
 
 def supported_trigger(d, sk):
     """확률 엔진이 시전 조건을 연결한 트리거. 기대값 엔진의 실행 규칙은 바꾸지 않는다."""
-    return bool(ally_stack_trigger(sk, d.lines) or (d.key, sk.name) in {
+    from .mc_semantics import trigger_rule
+    return bool(trigger_rule(sk, d.lines) or (d.key, sk.name) in {
         ('professor-m', '악에서 악으로'),
         ('wedding-carmen', '수호의 기사'),
         ('white-pearl-luna', '썸머 템테이션♡'),

@@ -331,7 +331,7 @@ def test_action_trigger():
 
 
 def test_cast_pre_events():
-    """일반·추가·반응·트리거 시전의 아군/적 사전 이벤트는 own_pre와 같은 skip_lines 규칙을 따른다."""
+    """자기 효과를 생략한 시전도 아군/적 사전 이벤트를 통지한다."""
     out = {}
     for mode in ('normal', 'extra', 'reaction', 'trigger', 'skip', 'local'):
         for attack in (True, False):
@@ -346,7 +346,7 @@ def test_cast_pre_events():
             b.cast(A, A.d.skills['기본기'], extra=mode != 'normal', via=mode,
                    skip_lines=mode in ('skip', 'local'), local_pre=mode == 'local')
             out[(mode, attack)] = (A.stack('표시'), B.stack('표시'), F.stack('표시'), A.stack('중복'))
-    ok = all(v == ((0, 0, 0, 0) if k[0] in ('skip', 'local') else (1, 1, 1, 0)) for k, v in out.items())
+    ok = all(v == ((0, 1, 1, 0) if k[0] in ('skip', 'local') else (1, 1, 1, 0)) for k, v in out.items())
     return ok, '공격/비공격 × 시전 경로 6종: %s' % out
 
 
@@ -421,8 +421,9 @@ def test_cristelle_ignite_amount():
 
 def test_trigger_support_report():
     """연결된 트리거는 미지원에서 제외, 미지원 일반/반응 트리거는 모두 보고."""
-    supported = ['cristelle', 'professor-m', 'wedding-carmen', 'white-pearl-luna']
-    unsupported = ['smile', 'sunshine-cat-smile', 'roberta', 'fei']
+    supported = ['cristelle', 'professor-m', 'wedding-carmen', 'white-pearl-luna',
+                 'smile', 'sunshine-cat-smile', 'roberta', 'fei']
+    unsupported = []
     out = {}
     for key in supported + unsupported:
         d = UnitDef(get_db(), key)

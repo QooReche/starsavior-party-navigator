@@ -15,7 +15,8 @@ from collections import defaultdict
 from . import rules as _rules
 from .engine import calc_hit
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
-from .starsavior.parser import _map_prop, split_head, ally_stack_trigger, supported_trigger
+from .starsavior.parser import _map_prop, split_head, supported_trigger
+from .starsavior.mc_semantics import normalized_lines, trigger_rule
 
 
 class EventLimitError(RuntimeError):
@@ -29,7 +30,7 @@ REACT_TRIG = [
     ('내가 피해를 받기 직전', 'prehit_self'), ('내가 피해 받기 직전', 'prehit_self'),
     ('아군이 피격될 때', 'hit_ally'), ('아군이 피해 받기 직전', 'prehit_ally'), ('아군이 피해를 받기 직전', 'prehit_ally'),
     ('적 공격 시', 'foe_pre'), ('적 공격 후', 'foe_post'), ('적 비공격 스킬 시', 'foe_pre_na'), ('적 비공격 스킬 후', 'foe_post_na'),
-    ('내가 사망할 때', 'death_self'), ('아군 사망 시', 'death_ally'),
+    ('내가 사망할 때', 'death_self'), ('아군 사망 시', 'death_ally'), ('적 사망 시', 'death_enemy'),
     # P5: 「행동」 시점(공격·비공격 구분 없음) — 잠재력 24줄·마르실/페트라 3줄
     ('내 행동 시', 'own_pre'), ('내 행동 후', 'own_post'), ('아군 행동 시', 'ally_pre'), ('아군 행동 후', 'ally_post'),
     ('적 행동 후', 'foe_post_any'),
@@ -57,7 +58,8 @@ def line_kind(ln):
 
 
 # 확률 엔진이 해석하는 조건 키(이 밖의 키가 붙은 줄은 unknown_cond 규칙: 기본 skip + 기록)
-COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이 아님', '자기 추가발동 트리거', '자신이 보유', '자신이 미보유',
+COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이 아님', '자기 추가발동 트리거', '자기 추가발동 트리거 스킬',
+                 '자신 미보유 효과 중첩수', '시전자 턴', '자신이 보유', '자신이 미보유',
                  '중첩수', '효과 개수', '중첩수 이상', '효과 개수 이상', '효과 개수 미만', '대상이 보유', '대상이 미보유',
                  '대상 효과 중첩수', '대상 약화효과 보유', '대상 강화효과 보유', '대상 강인도 없음', '대상 브레이크', '결과',
                  '대상 HP% 초과', '대상 HP% 미만', '적 처치', '적을 처치하지 못함', '내 턴', '자신 포함', '시전자 속성', '시전자가 보유',
@@ -391,10 +393,12 @@ class Ctx:
     """시전 1회(또는 피격 반응 1회)의 문맥. owner = 줄 주인, src = 시전자(공격자), skill = 시전 스킬, target = 대상."""
     __slots__ = ('owner', 'src', 'skill', 'extra', 'targets', 'target', 'inc', 'atkp', 'cr', 'cd', 'pen', 'eh', 'crit',
                  'kill', 'coop_used', 'heal_give', 'heal_recv', 'local', 'nb', 'hit_victim', 'acc', 'evaded', 'recv_by',
-                 'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit')
+                 'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets')
 
     def __init__(self, owner, src, skill, extra=False):
         self.owner, self.src, self.skill, self.extra = owner, src, skill, extra
+        self.via, self.parent = None, None
+        self.hit_targets = []    # 실제 피해 처리한 개체: 사망/회피도 포함, 다단 히트는 한 명
         self.targets, self.target = [], None
         self.inc = self.atkp = self.cr = self.cd = self.pen = self.eh = self.acc = 0.0
         self.tough = self.tough_fixed = self.inc_break = 0.0   # P5 「이번 스킬에만」 강인도 (고정) 피해·브레이크 대상 피해 증가
@@ -444,6 +448,8 @@ class Battle:
         self._cur_line = None    # 실행 중인 줄(자동 지정 대상 규칙을 그 스킬 설명에서 찾을 때 씀)
         self.once = set()        # {전투당 1회} 줄 사용 기록
         self.recast = {}         # {발동 후 N턴 재발동 불가} 줄: (주인, 줄) -> 발동한 때의 주인 행동 횟수
+        self._semantic_lines = {}
+        self._triggering = set()  # 쿨이 없는 트리거도 동일 시전 중 재진입 방지
         self.break_skill = dict(break_skill or {})
         self.break_skill_name = self.break_skill.get('name')
         self.break_skill_enabled = self.break_skill_name == '큐브 과부하'
@@ -481,7 +487,12 @@ class Battle:
     def lines_of(self, u):
         if u.side == 1 and not self.enemy_lines:
             return ()
-        return u.d.lines
+        key = id(u.d)
+        cached = self._semantic_lines.get(key)
+        if cached is None or cached[0] is not u.d.lines or cached[1] != len(u.d.lines):
+            cached = (u.d.lines, len(u.d.lines), normalized_lines(u.d))
+            self._semantic_lines[key] = cached
+        return cached[2]
 
     # ---------- 진행
     def spawn_wave(self):
@@ -889,7 +900,7 @@ class Battle:
         return pool[:k or 1]
 
     # ---------- 시전
-    def cast(self, u, sk, extra=False, target=None, skip_lines=False, via=None, local_pre=False):
+    def cast(self, u, sk, extra=False, target=None, skip_lines=False, via=None, local_pre=False, parent=None):
         if u.dead:
             return None
         if self.incapacitated(u):
@@ -902,6 +913,7 @@ class Battle:
         self.depth += 1
         try:
             ctx = Ctx(u, u, sk, extra)
+            ctx.via, ctx.parent = via or ('extra' if extra else None), parent
             u.cast_count[sk.slot + ('(추가)' if extra else '')] += 1
             if not extra and sk.cd:
                 u.cd[sk.slot] = sk.cd
@@ -920,28 +932,27 @@ class Battle:
                          tgt_boss=bool(t0 is not None and getattr(t0.d, 'boss', False)))
             if not skip_lines:
                 self.run_own(u, ctx, 'own_pre')
-                self.fire_side(u, ctx, 'ally_pre')
-                self.fire_foes(u, ctx, 'foe_pre' if sk.is_attack else 'foe_pre_na')
             elif local_pre:   # 줄을 건너뛰는 트리거 시전이라도 그 스킬의 「이번 스킬에만」 피해 보정은 적용(프로페서M 브레이크 대상 +30%·스킬 레벨 +15%)
                 lines = [ln for ln in self.lines_of(u) if line_kind(ln) == 'own_pre' and ln.eff['kind'] == 'local' and ln.slot == sk.slot]
                 if lines:
                     self.run_batch(u, lines, ctx)
+            # 자기 효과 생략과 타 유닛에 대한 사용 통지는 별개다.
+            self.fire_side(u, ctx, 'ally_pre')
+            self.fire_foes(u, ctx, 'foe_pre' if sk.is_attack else 'foe_pre_na')
             if sk.is_attack and ctx.targets:
                 self.deal(u, ctx)
             if not u.dead:
                 self.skill_heal(u, sk, ctx)
             if not skip_lines and not u.dead:
                 self.run_own(u, ctx, 'own_post')
-            if not skip_lines:
-                self.fire_side(u, ctx, 'ally_post')
-                self.fire_foes(u, ctx, 'foe_post' if sk.is_attack else 'foe_post_na')
-                self.fire_foes(u, ctx, 'foe_post_any')      # 「적 행동 후」(공격·비공격 모두)
+            self.event_triggers(u, ctx, 'own_post')
+            self.fire_side(u, ctx, 'ally_post')
+            self.fire_foes(u, ctx, 'foe_post' if sk.is_attack else 'foe_post_na')
+            self.fire_foes(u, ctx, 'foe_post_any')      # 「적 행동 후」(공격·비공격 모두)
             if u.side == 0 and not extra and sk.slot in ('특수기', '궁극기'):
                 self.nova_add(u, sk.nv)
             if u.side == 0 and self.opts['coop'] and sk.is_attack and not extra and not u.dead:
                 self.coop(u, ctx)
-            if u.side == 0 and sk.is_attack and not extra:
-                self.prof_m(u, ctx)
             u.last_slot = sk.slot
             return ctx
         finally:
@@ -992,7 +1003,11 @@ class Battle:
         sk = ctx.skill
         lines = [ln for ln in self.lines_of(u) if line_kind(ln) == kind and not (ln.bound and ln.slot != sk.slot)
                  and not (ln.trig and '공격' in ln.trig and ln.na == sk.is_attack)]   # 「내 행동 시/후」는 공격·비공격 모두
-        if lines:
+        if kind == 'own_post':
+            # 「기본기 사용 후 최대 스택」은 그 기본기의 스택 부여까지 끝낸 상태로 판정.
+            self.run_batch(u, [ln for ln in lines if ln.src_kind in ('active', 'trigger')], ctx)
+            self.run_batch(u, [ln for ln in lines if ln.src_kind not in ('active', 'trigger')], ctx)
+        elif lines:
             self.run_batch(u, lines, ctx)
 
     def fire(self, u, kind, ctx):
@@ -1008,23 +1023,63 @@ class Battle:
             if lines:
                 c2 = Ctx(b, actor, ctx.skill, ctx.extra)
                 c2.targets, c2.target, c2.crit, c2.kill, c2.evaded = ctx.targets, ctx.target, ctx.crit, ctx.kill, ctx.evaded
+                c2.hit_targets, c2.via, c2.parent = ctx.hit_targets, ctx.via, ctx.parent
                 self.run_batch(b, lines, c2)
         if kind == 'ally_post' and ctx.skill.is_attack and ctx.targets:
             self.ally_stack_triggers(actor, ctx)
 
     def ally_stack_triggers(self, actor, ctx):
-        """다른 아군의 타격이 끝나면 최대 스택 특수기를 시전한다. 재진입 전에 쿨을 건다."""
-        for b in self.alive(actor.side):
-            if b is actor or self.no_react(b) or (b.side == 1 and not self.enemy_lines):
-                continue
-            ts = b.d.trigger_skills.get('특수기')
-            rule = ally_stack_trigger(ts, self.lines_of(b)) if ts is not None else None
-            if rule is None or b.cd.get('특수기', 0) > 0:
-                continue
-            name, cap = rule
-            if b.stack(name) >= cap:
-                b.cd['특수기'] = ts.cd or 0
-                self.cast(b, ts, extra=True, via='trigger')
+        self.event_triggers(actor, ctx, 'ally_post')
+
+    def trigger_cast(self, owner, sk, target=None, **kw):
+        """반응·트리거 공통 진입점: 상태와 쿨 확인 후 재진입 전에 예약."""
+        key = (id(owner), sk.slot)
+        if (owner.dead or self.no_react(owner) or owner.cd.get(sk.slot, 0) > 0
+                or key in self._triggering or (owner.side == 1 and not self.enemy_lines)):
+            return None
+        owner.cd[sk.slot] = sk.cd or 0
+        self._triggering.add(key)
+        try:
+            return self.cast(owner, sk, extra=True, target=target, **kw)
+        finally:
+            self._triggering.remove(key)
+
+    def event_triggers(self, actor, ctx, event):
+        if not ctx.skill.is_attack or not ctx.hit_targets:
+            return
+        for owner in ([actor] if event == 'own_post' else list(self.alive(actor.side))):
+            for sk in owner.d.trigger_skills.values():
+                rule = trigger_rule(sk, self.lines_of(owner))
+                if not rule or rule['event'] != event or (rule.get('exclude_self') and owner is actor):
+                    continue
+                if (self.no_react(owner) or owner.dead or owner.cd.get(sk.slot, 0) > 0
+                        or (id(owner), sk.slot) in self._triggering or (owner.side == 1 and not self.enemy_lines)):
+                    continue
+                if rule.get('skill') and ctx.skill.name != rule['skill']:
+                    continue
+                if 'stack' in rule and owner.stack(rule['stack'][0]) < rule['stack'][1]:
+                    continue
+                target = None
+                if 'hp' in rule or 'mark' in rule:
+                    target = next((v for v in ctx.hit_targets if not v.dead
+                                   and ('hp' not in rule or v.hp <= v.maxhp * rule['hp'])
+                                   and ('mark' not in rule or v.has(rule['mark']))), None)
+                    if target is None:
+                        continue
+                if rule.get('recent'):
+                    target = owner.last_target
+                    if target is not None and target.dead:
+                        target = None
+                # 소거를 먼저 확정해 다른 아군의 연쇄로 같은 스택을 재사용하지 않는다.
+                if rule.get('consume_all'):
+                    owner.eff.pop(rule['stack'][0], None)
+                    self.dirty(owner)
+                self.trigger_cast(owner, sk, target, via='trigger', skip_lines=bool(rule.get('consume_all')),
+                                  local_pre=bool(rule.get('consume_all')))
+                if rule.get('consume_all'):
+                    for ln in self.lines_of(owner):
+                        if ln.slot == sk.slot and ln.src_kind == 'trigger' and line_kind(ln) == 'own_post' and ln.eff['kind'] == 'gauge':
+                            self.run_line(owner, ln, Ctx(owner, owner, sk, True))
 
     def fire_foes(self, actor, ctx, kind):
         for b in self.alive(1 - actor.side):
@@ -1069,18 +1124,6 @@ class Battle:
             return self.rng.choice(al) if al else None
         return ctx.target if (ctx.target is not None and not ctx.target.dead) else None
 
-    def prof_m(self, actor, ctx):
-        """프로페서M 수동 트리거(기대값 엔진과 같은 규칙): 다른 아군 타격 뒤 [냉각] 5중첩이면 [악에서 악으로] 발동, 냉각 소거, 게이지 +15%."""
-        for b in self.alive(0):
-            if b is actor or b.d.manual != 'profM' or b.broken:   # 트리거 스킬은 격파 상태에서 안 나감
-                continue
-            if b.stack('냉각') >= 5:
-                sk2 = b.d.trigger_skills['특수기']
-                b.eff.pop('냉각', None)
-                self.dirty(b)
-                self.cast(b, sk2, extra=True, skip_lines=True, target=ctx.target, via='trigger', local_pre=True)
-                b.gauge = min(10000.0, b.gauge + 1500)
-
     # ---------- 피해
     def atk_stat(self, u, ctx=None):
         m = u.mods()
@@ -1120,6 +1163,7 @@ class Battle:
         for v in list(ctx.targets):
             if v.dead:
                 continue
+            ctx.hit_targets.append(v)
             ctx.target = v
             # 회피(가정: 회피율 - 공격자 명중률 보정, 필중이면 0). 회피하면 치명 없음·감소 합 +50%·약화 안 걸림
             ev = 0.0 if (a.on('필중') or self.mc['evade_model'] == 'off') else v.mods()['evade'] - (m['acc'] + ctx.acc)
@@ -1130,7 +1174,8 @@ class Battle:
             if evaded:
                 ctx.evaded.add(v)
             self.strike(a, v, base, ctx, crit, min(3.0, cdv + by['cd']), min(1.0, pen + by['pen']), reactions, evaded)
-        a.last_target = ctx.targets[0] if ctx.targets else None
+        if ctx.hit_targets:
+            a.last_target = ctx.hit_targets[-1]
         # 피격 반응은 전체 공격의 모든 대상 처리가 끝난 뒤(동시성 규칙)
         for v, hctx in reactions:
             if v.dead:
@@ -1144,7 +1189,7 @@ class Battle:
                     c2 = Ctx(w, a, sk, ctx.extra)
                     c2.target, c2.targets, c2.crit, c2.hit_victim = v, [v], hctx.crit, v
                     self.run_batch(w, lines, c2)
-            self.reaction_skills(v, a, sk, hctx.crit)
+            self.reaction_skills(v, a, sk, hctx.crit, v in hctx.evaded)
         ctx.target = ctx.targets[0] if ctx.targets else None
 
     def strike(self, a, v, base, ctx, crit, cdv, pen, reactions, evaded=False):
@@ -1361,13 +1406,20 @@ class Battle:
         self.fire(v, 'death_self', Ctx(v, a, None))
         for w in self.alive(v.side):
             self.fire(w, 'death_ally', Ctx(w, a, None))
+        for w in self.alive(1 - v.side):
+            self.fire(w, 'death_enemy', Ctx(w, a, None))
         v.eff = {}
         v.gauge = 0.0
         self.dirty(v)
 
-    def reaction_skills(self, v, a, sk, crit=False):
+    def reaction_skills(self, v, a, sk, crit=False, evaded=False):
         """반응 트리거 스킬(지원 목록): 웨딩 카르멘 「수호의 기사」 — 사랑의 서약 아군이 피격되면 발동(쿨타임 적용).
         화이트 펄 루나 「썸머 템테이션♡」 — 자신을 제외한 아군이 치명타 피격 후 타격자에게 발동(쿨타임 1, 보호막·방어력 감소, 2026-10-21)."""
+        if a is not None and not a.dead and a.side != v.side:
+            for ts in v.d.trigger_skills.values():
+                rule = trigger_rule(ts, self.lines_of(v))
+                if rule and rule['event'] == 'hit' and (not rule.get('aoe') or sk.all) and (not rule.get('evade') or evaded):
+                    self.trigger_cast(v, ts, a, via='reaction')
         if crit and a is not None and not a.dead and a.side != v.side:
             for w in self.alive(v.side):
                 if w is v or self.no_react(w):
@@ -1375,10 +1427,7 @@ class Battle:
                 ts = w.d.trigger_skills.get('특수기')
                 if ts is None or not (ts.tg or '').startswith('반응 대상(적)') or '아군이 치명타 피격 후' not in (ts.raw.get('d1') or ''):
                     continue
-                if w.cd.get('특수기', 0) > 0:
-                    continue
-                w.cd['특수기'] = ts.cd or 0          # 재진입 전에 쿨타임(codex 진단 2026-10-21)
-                self.cast(w, ts, extra=True, target=a, via='reaction')
+                self.trigger_cast(w, ts, a, via='reaction')
         for w in self.alive(v.side):
             if w is v:
                 continue
@@ -1386,10 +1435,9 @@ class Battle:
             if ts is None or not (ts.tg or '').startswith('반응 대상(아군)'):
                 continue
             oath = v.eff.get('사랑의 서약(해제불가)')
-            if oath is None or oath.src is not w or w.cd.get('특수기', 0) > 0 or w.broken:
+            if oath is None or oath.src is not w:
                 continue
-            ctx = self.cast(w, ts, extra=True, target=v, via='reaction')
-            w.cd['특수기'] = ts.cd or 0
+            ctx = self.trigger_cast(w, ts, v, via='reaction')
             if ctx is not None:
                 ctx.targets = [v]
 
@@ -1462,18 +1510,33 @@ class Battle:
                 if not (sk is not None and sk.slot == v):
                     return False
             elif k == '추가발동 스킬':
-                if (v == '예') != bool(ctx.extra):
+                if (v == '예') != bool(ctx.extra and ctx.via not in ('trigger', 'reaction')):
                     return False
             elif k == '추가발동 스킬이 아님':
-                if (v == '예') != (not ctx.extra):
+                if (v == '예') != (not ctx.extra or ctx.via in ('trigger', 'reaction')):
                     return False
             elif k == '자기 추가발동 트리거':
-                pass
+                if (v == '예') != bool(ctx.extra and ctx.parent is not None and ctx.parent.src is owner):
+                    return False
+            elif k == '자기 추가발동 트리거 스킬':
+                if ctx.parent is None or ctx.parent.src is not owner or ctx.parent.skill is None or ctx.parent.skill.slot != v:
+                    return False
+            elif k == '시전자 턴':
+                if (v == '예') != bool(ctx.src is not None and ctx.src.acting):
+                    return False
             elif k in ('자신이 보유', '자신이 미보유'):
                 names = [x.strip() for x in v.split(',')]
                 last = ('A', names)
                 pres = any(owner.has(n) for n in names)
+                # 「미보유 + 효과 중첩수 N」는 효과 자체 부재가 아니라 N중첩 미달.
+                if k == '자신이 미보유' and '자신 미보유 효과 중첩수' in dict(ln.params):
+                    if any(owner.stack(n) >= float(dict(ln.params)['자신 미보유 효과 중첩수']) for n in names):
+                        return False
+                    continue
                 if pres != (k == '자신이 보유'):
+                    return False
+            elif k == '자신 미보유 효과 중첩수':
+                if self._count(owner, ctx, last) >= float(v):
                     return False
             elif k in ('중첩수', '효과 개수'):
                 n = float(v)
@@ -1657,8 +1720,15 @@ class Battle:
     def run_batch(self, owner, lines, ctx):
         """같은 사건(시점·주인)에 걸린 줄 묶음: 조건은 사건 시점 상태로 한꺼번에 판정하고, 효과는 순서대로 실행하되
         추가 발동(시전)은 묶음의 나머지 효과(중첩 소비 등) 뒤에 실행한다(같은 사건에서 자기 자신을 다시 부르는 무한 연쇄 방지)."""
+        # 대상 수에 따른 스택은 이번 타격을 완료한 시점의 값이다.
+        count_grants = [ln for ln in lines if ln.eff.get('per_hit') and ln.eff['kind'] == 'buff']
+        for ln in count_grants:
+            if self.line_ok(owner, ln, ctx):
+                self.exec_line(owner, ln, ctx)
         ok = []
         for ln in lines:
+            if ln in count_grants:
+                continue
             if self._per_target(owner, ln, ctx):
                 self.run_per_target(owner, ln, ctx)
             elif self.line_ok(owner, ln, ctx):
@@ -1683,6 +1753,7 @@ class Battle:
         others = [(k, v) for k, v in ln.params if k not in TARGET_KEYS]
         if others or RX_HP_COND.search(ln.raw):
             probe = Ctx(owner, ctx.src, ctx.skill, ctx.extra)
+            probe.via, probe.parent, probe.hit_targets = ctx.via, ctx.parent, ctx.hit_targets
             probe.targets, probe.target, probe.crit, probe.kill = ctx.targets, ctx.target, ctx.crit, ctx.kill
             if not self.cond_ok(owner, _ParamView(ln, others), probe):
                 return
@@ -1691,6 +1762,7 @@ class Battle:
         mrecv = RX_RECV_HEAL.match(rest) if ln.eff['kind'] == 'ignored' else None
         for x in list(ctx.targets):
             probe = Ctx(owner, ctx.src, ctx.skill, ctx.extra)
+            probe.via, probe.parent, probe.hit_targets = ctx.via, ctx.parent, ctx.hit_targets
             probe.targets, probe.target = [x], x
             if not self.cond_ok(owner, _ParamView(ln, tparams), probe):
                 continue
@@ -1716,6 +1788,26 @@ class Battle:
             return
         eff = ln.eff
         kd = eff['kind']
+        if kd == 'stack_promote':
+            upgrade = eff['upgrade']
+            if owner.stack(eff['source']) >= eff['threshold'] and owner.stack(upgrade['name']) < upgrade['max']:
+                owner.eff.pop(eff['source'], None)
+                self.dirty(owner)
+                self.apply_buff(owner, upgrade, ctx, raw=eff['upgrade_raw'])
+            return
+        if eff.get('per_hit'):
+            n = min(eff['hit_cap'], len(set(ctx.hit_targets)))
+            if not n:
+                return
+            eff = dict(eff, **({'times': n} if kd == 'buff' else {'val': eff['val'] * n}))
+        # 조건 발동한 트리거의 소비는 ef에 잘못 기재된 같은 스택 부여를 대체한다.
+        if ctx.skill is not None and ln.src_kind == 'trigger' and ctx.skill.slot == ln.slot:
+            rule = trigger_rule(ctx.skill, self.lines_of(owner))
+            if rule and rule.get('trigger_only') and line_kind(ln) == 'own_post':
+                if ctx.via != 'trigger':
+                    return
+                if kd == 'buff' and eff.get('name') == rule['stack'][0]:
+                    eff = dict(eff, consume=True, times=rule['consume'])
         if kd == 'ignored':
             self.run_special(owner, ln, ctx, line_rest(ln))
             return
@@ -1783,11 +1875,14 @@ class Battle:
                 owner.cd[sl] = max(0.0, owner.cd[sl] - eff['val'])
             return
         if kd == 'extra_cast':
-            sk = owner.d.skills.get(eff['slot'])
+            sk = owner.d.skills.get(eff['slot']) or owner.d.trigger_skills.get(eff['slot'])
             if sk is not None:
                 tgt = owner.last_target if (owner.last_target is not None and not owner.last_target.dead) else None
+                rule = trigger_rule(sk, self.lines_of(owner))
+                if rule and rule.get('mark'):
+                    tgt = next((v for v in self.alive(1 - owner.side) if v.has(rule['mark'])), tgt)
                 for _ in range(eff['times']):
-                    self.cast(owner, sk, extra=True, target=tgt)
+                    self.cast(owner, sk, extra=True, target=tgt, parent=ctx)
             return
         if kd == 'extra_turn':
             owner.extra_turn = True
@@ -1990,10 +2085,10 @@ class Battle:
             return
         m = RX_EXTRA_P.match(rest)
         if m:
-            sk = owner.d.skills.get(m.group(2))
+            sk = owner.d.skills.get(m.group(2)) or owner.d.trigger_skills.get(m.group(2))
             if sk is not None and self.rng.random() < int(m.group(1)) / 100.0:
                 self._fired(owner)
-                self.cast(owner, sk, extra=True, target=ctx.src if (ctx.src is not None and ctx.src.side != owner.side) else None)
+                self.cast(owner, sk, extra=True, target=ctx.src if (ctx.src is not None and ctx.src.side != owner.side) else None, parent=ctx)
             return
         m = RX_TOUGH_HEAL.match(rest)
         if m:   # 강인도 N 회복(격파 중이면 회복하지 않음 — 격파는 다음 자기 턴에 전회복, assumed)
