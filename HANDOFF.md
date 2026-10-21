@@ -24,7 +24,7 @@
   5-1. **내실(전술 분석·호감도)** 미반영 — 표준 육성엔 없고 능력치 화면엔 들어 있음. 전술 분석은 플래시·코스모 미적용(콘텐츠별 적용률). 사용자 계정 수치 = `docs/ingame_samples.md` 맨 아래
   6. 고친 뒤 `tools/gen_quick_calib.py --per-content 400` → `calibrate_quick.py --write` → 시험 전부 → 커밋
 - 참고: 10/22 패치로 26~37-36 최종보스(36-36 공허 순례자 포함) 공격력 하향 → 패치 뒤 「데이터 갱신」(C2) 하면 36-36 실측은 **패치 전 데이터로** 대조해야 함(ingame_check 는 현재 data 를 씀 — 갱신 전에 결과 기록해 둘 것)
-- codex: 사용자가 「필요하면 마음껏」 허락(2026-10-21) — codex 쪽 토큰 여유 많음, 아스트라(gpt-6-astra)·**쓰기 권한(구현 위임)도 허용**. 위임 시 작업 폴더 = 이 저장소 한정, 커밋·푸시는 Claude 가 시험 통과 확인 뒤 QooReche 로. 10/21 변경분(재점화 버프·구원자 브레이크 reset·Pyodide 자체 호스팅)은 아직 codex 검토 전 — 다음 세션 시작 때 한 번 검토 받을 것
+- codex: 사용자가 「필요하면 마음껏」 허락(2026-10-21) — codex 쪽 토큰 여유 많음, 아스트라(gpt-6-astra)·**쓰기 권한(구현 위임)도 허용**. 위임 시 작업 폴더 = 이 저장소 한정, 커밋·푸시는 Claude 가 시험 통과 확인 뒤 QooReche 로. 10/21 변경분 전체 codex 리뷰 완료(blocking 2건 수정: stats_final 부분 입력·ingame_check 전투력 재배분)
 - 구원자 브레이크 = 행동 게이지 0(`mc.ally_break_gauge`=reset, 사용자 확인). 계수 다시 맞춤(일치 92.3%)
 - 작전 재점화 버프(0~5단계) 입력: 화면 옵션 `#rk`, 시뮬 `options.rekindle`(api.REKINDLE), 빠른 계산은 A×(1+x)·B×(1−x)
 - Pyodide 를 `lib/pyodide/` 에 직접 둠(외부 CDN 없음, 해시 시험)
