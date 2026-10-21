@@ -75,6 +75,13 @@ def main():
                   "cls": s["className"], "tier": g["tier"] if g else None,
                   "mains": mains.get(s["key"]), "tags": tags.get(s["key"], []), "gt": grules["tags"].get(s["key"], []), "img": por.get(s["key"], ""), "art": art.get(s["key"], "")})
     contents = []
+    bosses, bpos = [], {}
+
+    def bidx(name, role):
+        if (name, role) not in bpos:
+            bpos[(name, role)] = len(bosses)
+            bosses.append([name, role])
+        return bpos[(name, role)]
     for c in pr._json(pr.FOE)["contents"]:
         name, main, parties = CONTENT_META[c["key"]]
         stages = []
@@ -86,6 +93,9 @@ def main():
                 for e in st["enemies"]:
                     w[e["element"]] = w.get(e["element"], 0) + e["count"] * (2 if e["boss"] else 1)
                 stages.append({"tab": tab["tab"], "tabLabel": label, "name": st["name"], "label": numerize(st["name"]), "sb": (st.get("season_bonus_latest") or {}).get("bonuses", []), "sbn": (st.get("season_bonus_latest") or {}).get("season", ""), "lv": st["level"], "n": st["enemy_total"], "rp": st.get("recommended_power") or 0,
+                               # 보스 = [보스 목록 번호, 수] (이름·직업은 맨 위 "bosses" 에 한 번만)
+                               "bn": [[bidx(e["name"], e["role_kr"]), e["count"]] for e in st["enemies"] if e["boss"]],
+                               "ec": st["element_counts"],
                                "w": w, "aoe": round(st["aoe_ratio"], 2), "def": round(st["defender_ratio"], 2)})
         contents.append({"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages})
     out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates", "pairs", "synergy", "power", "gimmick", "seasonBonus", "matchupModes", "damage")}
@@ -113,7 +123,7 @@ def main():
             "c": p.get("conf", "추정"), "d": bool(p.get("directed")), "r": p.get("reason", ""),
             "e": [e[:110] for e in p.get("evidence", [])[:2]]}
            for p in pr.load_synergy()]
-    data = json.dumps({"roster": r, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn,
+    data = json.dumps({"roster": r, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
                        "pen": pr._json(pr.POW)["pen"], "tribe": pr._json(pr.POW)["tribe"],
                        "grules": grules["types"], "gim": pr._json(pr.GSTAGE), "dmg": pr._json(pr.DMG),
                        "selver": pr.selection_version()}, ensure_ascii=False, separators=(",", ":"))

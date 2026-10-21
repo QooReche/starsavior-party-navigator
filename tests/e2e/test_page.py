@@ -70,11 +70,17 @@ def settle(page):
 def choose(page, content, query):
     page.select_option("#content", label=content)
     settle(page)
+    # 모바일 검색은 접힌 필터 안에 있다. 실제 펼치기 동작 후 입력한다.
+    folded = not page.locator("#q").is_visible()
+    if folded:
+        page.click("#filters > summary")
     page.fill("#q", query)
     settle(page)
     page.select_option("#stage", index=0)
     page.dispatch_event("#stage", "change")
     settle(page)
+    if folded:
+        page.click("#filters > summary")
 
 
 def open_page(browser, ctx, query="", viewport=None, legacy=None):
@@ -433,9 +439,109 @@ def test_break_skill_select(browser, ctx):
         default['recommended'], saved == restored == chosen, fit, options_ok, stale, none_ok, chip, invalidated and removed)
 
 
+def gimmick_slot_audit(page):
+    """화면의 전체 슬롯 담당을 페이지 데이터·현재 편성·기존 gimTeam 판정과 대조."""
+    return page.evaluate('''() => {
+      const errors = []; let checked = 0, compared = 0;
+      for (const party of document.querySelectorAll('.party[data-team]')) {
+        const team = party.dataset.team.split(',').map(key => ({s:BYKEY[key]}));
+        const report = gimTeam(team)[1];
+        for (const row of party.querySelectorAll('.gimrow[data-code]')) {
+          const rule = D.grules[row.dataset.code], slots = rule?.slots || [];
+          const shown = [...row.querySelectorAll('.gimslot')];
+          if (shown.length !== slots.length) errors.push(row.dataset.code + ': 슬롯 수');
+          slots.forEach((slot, i) => {
+            checked++;
+            const el = shown[i];
+            if (!el) return;
+            const expected = team.filter(x => (x.s.gt || []).some(t => slot.tags_any.includes(t)));
+            const actual = [...el.querySelectorAll('[data-savior]')].map(e => e.dataset.savior);
+            const text = slot.name + ': ' + (actual.length
+              ? '담당: ' + actual.map(key => BYKEY[key]?.name || key).join('·') : '✗ 없음');
+            if (el.dataset.slot !== String(i) || el.textContent !== text ||
+                JSON.stringify([...actual].sort()) !== JSON.stringify(expected.map(x => x.s.key).sort()))
+              errors.push(row.dataset.code + '/' + slot.name + ': 담당 불일치');
+            const old = report.find(r => r[0] === rule.name && r[1] === slot.name);
+            if (old) {
+              compared++;
+              if (Boolean(old[2]) !== (actual.length > 0)) errors.push(slot.name + ': gimTeam 불일치');
+            }
+          });
+        }
+      }
+      return {checked, compared, errors};
+    }''')
+
+
+def test_gimmick_slot_owned(browser, ctx):
+    """5-10: DISPEL 없는 4명만 보유하면 강화 해제 없음, 별도 폭딜 슬롯에 리디아."""
+    page = open_page(browser, ctx)
+    choose(page, "작전 (일반)", "SECTOR 5-10")
+    keep = ["lydia-moon-caster", "gwen", "asherah-voyager", "smile"]
+    page.click("#dbtn")
+    page.click("#none")
+    for key in keep:
+        page.click('#own label.tile:has(input[data-k="%s"])' % key)
+    page.click("#dclose")
+    settle(page)
+    team = page.get_attribute('.party[data-party="1"]', "data-team").split(",")
+    row = page.locator('.party[data-party="1"] .gimrow[data-code="SELF_BUFF_DEPENDENT"]')
+    text = row.text_content()
+    no_dispel = page.evaluate("keys => keys.every(k => !BYKEY[k].gt.includes('DISPEL'))", keep)
+    audit = gimmick_slot_audit(page)
+    page.close()
+    ok = (set(team) == set(keep) and no_dispel and "강화 해제: ✗ 없음" in text
+          and "폭딜: 담당: " in text and "리디아" in text.split("폭딜: 담당: ")[-1]
+          and audit["checked"] > 0 and audit["compared"] > 0 and not audit["errors"])
+    return ok, "5-10 %s / 슬롯 대조 %s" % (text, audit)
+
+
+def test_boss_gimmick_mobile(browser, ctx):
+    """37-3: 슬롯별 태그·담당 대조, 모바일 배치·더 보기, 접힌 수동 서순에서 모드 전환."""
+    page = open_page(browser, ctx, viewport={"width": 390, "height": 844})
+    choose(page, "작전 (일반)", "37-3")
+    box = page.locator('.party[data-party="1"] .gimbox')
+    lines = box.locator(".gimlist > .gimrow")
+    n = lines.count()
+    txt = box.inner_text()
+    severities = lines.evaluate_all("els => els.map(e => +e.dataset.severity)")
+    all_n = box.locator(".gimrow").count()
+    more = box.locator("details")
+    folded = more.count() == 0 or not more.evaluate("e => e.open")
+    if more.count():
+        more.locator("summary").click()
+    expanded_n = box.locator(".gimrow:visible").count()
+    audit = gimmick_slot_audit(page)
+    layout = page.evaluate('''() => {
+      const cards = [...document.querySelectorAll('.party[data-party="1"] .card')].map(e => e.getBoundingClientRect());
+      const button = document.querySelector('#dbtn').getBoundingClientRect();
+      const faces = document.querySelector('.party[data-party="1"] .qrow .faces').getBoundingClientRect();
+      return {sw:document.documentElement.scrollWidth, iw:innerWidth,
+        cards:cards.length, same:cards.every(r => Math.abs(r.top-cards[0].top)<1),
+        clear:button.bottom<=faces.top || button.top>=faces.bottom || button.right<=faces.left || button.left>=faces.right};
+    }''')
+    manual = page.locator('.party[data-party="1"] .manual-details')
+    manual_folded = not manual.evaluate("e => e.open") and not page.locator("#m-manual").is_visible()
+    manual.locator("summary").click()
+    page.locator('label:has(#m-manual)').click()
+    settle(page)
+    manual_ok = (manual_folded and manual.evaluate("e => e.open")
+                 and page.locator("#m-manual").is_checked() and "mode=manual" in page.url
+                 and page.evaluate("() => MODE === 'manual' && LS.get('mode') === 'manual'"))
+    page.close()
+    ok = (3 <= n <= 5 and "보스" in txt and "(추정)" in txt
+          and ("대응 미확인" in txt or "담당:" in txt)
+          and severities == sorted(severities, reverse=True) and folded and expanded_n == all_n
+          and audit["checked"] > 0 and audit["compared"] > 0 and not audit["errors"] and manual_ok
+          and layout["sw"] <= layout["iw"] and layout["cards"] == 4 and layout["same"] and layout["clear"])
+    return ok, "기믹 %d/%d줄, 심각도 %s, 더 보기 %s, 모바일 %s, 슬롯 %s, 수동 %s" % (n, all_n, severities, expanded_n == all_n, layout, audit, manual_ok)
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_quick_growth, test_savior_power, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_break_skill_select)
+TESTS.append(test_gimmick_slot_owned)
+TESTS.append(test_boss_gimmick_mobile)
 
 
 def main():

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>추천 파티 (시험판)</title>
+<title>파티 편성 네비게이터 (시험판)</title>
 <style>
 :root{color-scheme:dark;--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e;--warn:#ffb454;--gold:#ffd24a;--ult:#7a4fc0;--spc:#3b6cb4;--bas:#4a5568}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "Malgun Gothic",system-ui,sans-serif}
@@ -185,31 +185,59 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 .qrow .qn{color:var(--gold)}
 .qv{background:rgba(0,0,0,.25)}
 #drawer{background:rgba(10,15,31,.97)}
+
+/* 필요한 편성 정보부터: 카드 → 기믹 → 브레이크 → 접힌 보조 정보 */
+.input-row{gap:8px}.input-row>label,.filterbody>label{flex:1;min-width:0}
+.input-row select,.input-row input{width:100%;min-width:0}.filters,.filterbody{display:contents}.filters::details-content{display:contents}.filters>summary{display:none}
+.input-row>label:first-child{order:0}.tab-filter{order:1}.search-filter{order:2}.stage-filter{order:3;flex:1.5!important}.filterbody>label:last-child{order:4}
+#dbtn{position:static;order:5;flex:none;border-radius:6px;padding:7px 10px;box-shadow:none;line-height:1.5;white-space:nowrap}
+#dbtn span{display:inline;margin:0;font-size:inherit;opacity:1}.optbox{margin-top:6px}
+.qbox{padding:0;border:0;background:transparent;margin:0}.qrow{padding:4px 0}.qrow .qn{min-width:28px}.qrow .face{width:34px;height:34px}.qrow .qt{min-width:0;flex:1 1 240px}.qrow .faces{flex:none}
+.simbar{border:0;margin:2px 0 6px}.qbox>details{margin-top:7px}.qbox>.qh{margin-bottom:2px}
+.rowcards{grid-template-rows:none;margin-top:6px}.gc{grid-template-rows:auto auto auto;grid-row:auto;align-content:start}.simu{font-size:11px}
+.gimbox{margin-top:10px;padding:10px;border:1px solid var(--line);border-left:3px solid #c0507a;border-radius:8px;background:var(--bg);font-size:12px;overflow-wrap:anywhere}
+.gimhead{font-weight:700;margin-bottom:6px}.gimcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:12px}.stagefacts{color:var(--mut)}.gimrow{padding:3px 0;border-bottom:1px solid var(--line)}.gimrow:last-child{border:0}
+.bbar{gap:8px;padding:7px 10px;margin-top:8px;border-width:1px;border-radius:8px;flex-direction:row;text-align:left}
+.bbar img,.bbar .bicon{width:40px;height:40px;flex:none;border-width:1px;box-shadow:none}.bicon{display:grid;place-items:center;font-size:28px}
+.bbody{flex:0 1 360px;min-width:0}.bsel{width:100%;max-width:360px;min-width:0;font-size:16px;margin:0;padding:6px 4px}.bbar .bschip{flex:0 1 auto;max-width:32%;font-size:11px;margin:0;padding:3px 5px}
+.altbox{border:0;padding:0}.scoredata{margin-top:5px;font-size:12px}.whytoggle{padding:4px 0}body:not(.show-why) .scoredata{display:none}
+.manual-details .seg{margin-top:6px}.seq{margin-top:6px}.note{padding:8px 0}.note[open]{line-height:1.7}
+@media(max-width:760px){
+ main{padding:10px}.party{padding:10px}.panel{padding:10px}.input-row>label:first-child,.stage-filter{flex:1 1 40%!important;order:0;min-width:0}
+ .filters{display:block;order:2;flex:1 1 100%;min-width:0}.filters::details-content{display:block}.filters>summary{display:list-item}.filterbody{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.filterbody>label{flex:1 1 100px}
+ #dbtn{order:1;margin-left:auto}.qrow{gap:5px}.qrow .qt{flex-basis:100%}.qrow .qv{padding:1px 7px}.rowcards{column-gap:5px}
+ .gimcols{grid-template-columns:minmax(0,1fr);gap:6px}.gimbox{padding:8px}.bbar{padding:6px;gap:6px}.bbar .bschip{max-width:30%}
+ .crown{left:3px;top:3px;padding:2px}.slotlbl{font-size:10px;letter-spacing:0}.qbox>details{font-size:12px}
+}
 </style></head><body><main>
-<h1>콘텐츠별 추천 파티 <small style="color:var(--bad)">시험판</small></h1>
-<p class="sub">가진 구원자로 「평균적으로 키웠을 때 이 스테이지를 깰만한 파티」를 바로 계산해 1안과 차선을 보여 줍니다. 못 깨면 얼마나 더 키우면 되는지도 알려 줍니다. 계산은 모델 추정이라 참고용입니다.</p>
-<div class="panel">
- <div class="row">
+<h1>파티 편성 네비게이터 <small style="color:var(--bad)">시험판</small></h1>
+<p class="sub">가진 구원자로 이 스테이지를 깰 파티를 찾습니다</p>
+<div class="panel input-panel">
+ <div class="row input-row">
   <label>콘텐츠<select id="content"></select></label>
-  <label>섹터 / 지역<select id="tab"></select></label>
-  <label>스테이지 검색<input type="text" id="q" placeholder="예: 36, 아가논, 길레"></label>
-  <label>스테이지<select id="stage"></select></label>
-  <div class="seg" role="radiogroup" aria-label="전투 방식" title="오토 = 게임 자동 전투 규칙(쿨 찬 궁 > 특수 > 기본, 노바 버스트 안 씀). 수동 = 노바 버스트·대상 지정을 쓰는 정책으로 다시 계산하고 서순(스킬 순서 예시)을 보여 줌.">
-   <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div>
-  <label title="레벨·장비·돌파·스킬 레벨을 「전투력」 하나로 묶어 가정합니다. 옵션에 내 파티 전투력을 넣으면 그 값을 씁니다.">육성 가정<select id="grow"><option value="1">평균 (권장 전투력만큼)</option><option value="0.8">덜 키움 (권장의 80%)</option><option value="1.25">넉넉히 (권장의 125%)</option></select></label>
-  <button id="go" class="sec" type="button">다시 계산</button>
-  <label class="whytoggle"><input type="checkbox" id="showwhy"> 추천 근거 보기</label>
+  <details id="filters" class="filters" open><summary>필터</summary><div class="filterbody">
+  <label class="tab-filter">섹터 / 지역<select id="tab"></select></label>
+  <label class="search-filter">검색<input type="text" id="q" placeholder="예: 36, 아가논, 길레"></label>
+
+
+  <label title="레벨·장비·돌파·스킬 레벨을 「전투력」 하나로 묶어 가정합니다. 옵션에 내 파티 전투력을 넣으면 그 값을 씁니다.">육성<select id="grow"><option value="1">평균 (권장 100%)</option><option value="0.8">덜 키움 (권장의 80%)</option><option value="1.25">넉넉히 (권장의 125%)</option></select></label>
+  </div></details>
+  <label class="stage-filter">스테이지<select id="stage"></select></label>
+  <button id="dbtn" type="button" title="보유 구원자·브레이크 스킬 선택" aria-controls="drawer" aria-expanded="false">내 구원자 <span id="dcount"></span> ▸</button>
+  <button id="go" hidden class="sec" type="button">다시 계산</button>
+
  </div>
- <div class="info" id="stinfo"></div>
- <details class="optbox" id="optbox"><summary>옵션 · 전투력 패널티 반영</summary>
-  <p class="mut" style="margin:6px 0">전투력은 파티 구성·육성에 따라 달라지므로 기본은 반영하지 않습니다. 필요할 때만 내 파티 전투력을 입력하세요(비우면 무시).</p>
+
+ <details class="optbox" id="optbox"><summary>옵션</summary>
   <label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px">내 파티 전투력<input type="number" id="mypow" min="0" step="100" placeholder="예: 52000" style="min-width:140px"></label>
   <div id="powinfo" class="powinfo"></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됩니다.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px">상성 방식<select id="mmode"><option value="">균형(기본): 유리 가산 + 불리 감점</option><option value="avoid">역상성 회피 우선: 불리 속성만 확실히 피하고 유리 가산은 작게</option></select></label></div></details>
 </div>
+<div id="control-home" hidden><div id="stinfo"></div><div id="mode-controls"><div class="seg" role="radiogroup" aria-label="전투 방식" title="오토 = 게임 자동 전투 규칙(쿨 찬 궁 > 특수 > 기본, 노바 버스트 안 씀). 수동 = 노바 버스트·대상 지정을 쓰는 정책으로 다시 계산하고 서순(스킬 순서 예시)을 보여 줌.">
+   <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
 <div id="out"></div>
-<div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">구원자 스킬에서 자동 추출한 시너지(추정 포함). 선을 누르면 근거 스킬 문장이 나옵니다.</span>
+<div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">선이나 구원자를 눌러 보세요</span>
  <div class="row" style="margin-top:8px">
   <label>보기<select id="gmode"><option value="party">추천 파티의 연계</option><option value="center">구원자 중심</option><option value="all">전체 지도(강한 연계만)</option></select></label>
   <label id="gcw" style="display:none">중심 구원자<select id="gcenter"></select></label>
@@ -217,18 +245,17 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 보세요.</div></div>
-<div class="note">출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 빠른 계산과 「시뮬로 확인」은 Lv200·표준 육성(가이드 장비 세팅·T2 레전더리 +15·여정·특수 잠재력)의 능력치를 육성 가정 전투력에 맞춰 줄인 모델의 추정이며 실전 결과가 아닙니다(적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정). 브레이크 스킬 피해는 생존 아군 공격력 합의 광역 계수(레벨 보정 없음)로 추정하며, 노바 +4는 팀 공용(개인 풀이면 생존자 각 +4, 오토에서는 버스트를 안 써 효과 없음), 게이지 +20%는 발동 유닛 제외·상한 100%로 가정합니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</div>
-<button id="dbtn" type="button" title="보유 구원자·브레이크 스킬 선택" aria-controls="drawer" aria-expanded="false">내 구원자<br>선택 ▸<span id="dcount"></span></button>
+<details class="note"><summary>출처·면책</summary>출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 빠른 계산과 「시뮬로 확인」은 Lv200·표준 육성(가이드 장비 세팅·T2 레전더리 +15·여정·특수 잠재력)의 능력치를 육성 가정 전투력에 맞춰 줄인 모델의 추정이며 실전 결과가 아닙니다(적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정). 브레이크 스킬 피해는 생존 아군 공격력 합의 광역 계수(레벨 보정 없음)로 추정하며, 노바 +4는 팀 공용(개인 풀이면 생존자 각 +4, 오토에서는 버스트를 안 써 효과 없음), 게이지 +20%는 발동 유닛 제외·상한 100%로 가정합니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 구원자 · 브레이크 스킬</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
- <div class="mut" style="margin-bottom:6px">체크한 구원자 안에서만 추천합니다(기본: 전체). 바꾸면 추천이 바로 갱신되고 브라우저에 저장됩니다.</div>
- <div class="dtools"><button id="all" type="button">모두 선택</button><button id="none" type="button">모두 해제</button><span class="mut" id="saved"></span></div>
+ <div class="mut" style="margin-bottom:6px">체크한 구원자만 씁니다(자동 저장)</div>
+ <div class="dtools"><button id="all" type="button">모두 선택</button><button id="none" type="button">모두 해제</button></div>
  <input type="text" id="oq" placeholder="이름 검색" style="width:100%;margin:6px 0 8px">
  <div class="own" id="own"></div>
  <div class="dsec"><b>보유 브레이크 스킬</b></div>
  <div id="brk" style="margin-top:6px"></div>
  <div class="dsec"><b>구원자별 전투력 (선택)</b></div>
- <div class="mut" style="margin:4px 0 6px">게임의 구원자 정보 화면에 나오는 전투력을 넣으면 그 값으로 계산합니다. 비우면 위의 「육성 가정」을 씁니다. 체크한 구원자만 보입니다.</div>
+ <div class="mut" style="margin:4px 0 6px">게임 구원자 정보의 전투력. 비우면 육성 가정</div>
  <div id="pwl"></div>
 </aside>
 <div id="dback"></div>
@@ -240,6 +267,8 @@ const D=/*DATA*/null;
 const EL={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
 const BG={"특이점 관측":"✦","스타피어서":"➶","큐브 과부하":"▣","행성 정화":"◍","차원 강습":"⟁"};
 const $=id=>document.getElementById(id);
+const compact=matchMedia("(max-width:760px)");
+const fitFilters=()=>{$("filters").open=!compact.matches};fitFilters();compact.addEventListener("change",fitFilters);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const R=D.roster, CFG=D.cfg, contents=D.contents, BYKEY=Object.fromEntries(D.roster.map(s=>[s.key,s]));
 const TC=tr=>"t-"+(tr?String(tr).replace("티어","").replace(".",""):"q");
@@ -260,10 +289,7 @@ function refreshStages(){
  showInfo();showPow();if(window._ready)rerun()}
 function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`${EL[e]} ${n}`).join(" / ")}
 function showPow(){const s=cur&&cur[$("stage").value],my=+$("mypow").value,el=$("powinfo");POWK=1;
- if(!s||!(my>0)){el.innerHTML=s&&s.rp?`<span class="mut">권장 전투력 ${s.rp.toLocaleString()} · 내 파티 전투력을 입력하면 보정(패널티)을 보여 줍니다</span>`:"";return}
- const pp=powPen(my,s.rp);if(!pp){el.innerHTML="";return}
- if(pp.a>=1){el.innerHTML=`<span class="ok">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 보정 없음(90% 이상)</span>`;return}
- el.innerHTML=`<span class="${pp.ratio<70?"bad2":"warn"}">전투력 ${my.toLocaleString()} / 권장 ${s.rp.toLocaleString()} = ${pp.ratio.toFixed(1)}% → 아군 피해 ×${pp.a.toFixed(3)}, 적 피해 ×${pp.b.toFixed(3)}${pp.warn?` [${pp.warn}]`:""}</span> <span class="mut">· 회복·보호막은 보정 없음 → 생존·지원을 더 중시해 추천(추정) · 보정 없으려면 ${Math.ceil(s.rp*0.9).toLocaleString()} 이상</span>`}
+ const pp=s&&powPen(my,s.rp);el.innerHTML=pp?`<span class="${pp.ratio<70?"bad2":pp.a<1?"warn":"ok"}">내 전투력 ${my.toLocaleString()} = 권장의 ${pp.ratio.toFixed(1)}% → 아군 피해 ×${+pp.a.toFixed(3)} · 적 ×${+pp.b.toFixed(3)}</span>`:""}
 function sbText(s){return s&&s.sb&&s.sb.length?` · <span class="mut">시즌 보너스(${esc(s.sbn)}): ${s.sb.map(b=>esc(b.cond)+" "+esc(b.text)).join(" / ")}</span>`:""}
 function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+``:"해당 스테이지 없음"}
 $("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);run()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);showPow();run()};$("grow").onchange=()=>{LS.set("grow",$("grow").value);run()};$("rk").onchange=()=>{LS.set("rk",$("rk").value);run()};
@@ -336,12 +362,36 @@ function topParties(c,defPen,k){
 function bestParty(c,defPen){const t=topParties(c,defPen,1)[0];return t?[t.combo,t.v,t.got]:[null,-1e9,new Set()]}
 function synSummary(party){const hs=partySyn(party.map(x=>x.s.key)).slice(0,5);if(!hs.length)return "";
  const nm=Object.fromEntries(R.map(s=>[s.key,s.name]));
- return `<details class="syn"><summary>스킬 연계 ${hs.length}건 (강한 순, 구조도에서 근거 확인)</summary>${hs.map(h=>`<div class="synrow"><b>${esc(nm[h.p.a])}${h.p.d?" → ":" ↔ "}${esc(nm[h.p.b])}</b> <span class="chip ty${h.p.t}">${esc(h.p.tn)}</span> <span class="mut">강도 ${h.p.s} · ${esc(h.p.c)}</span><div class="mut">${esc(h.p.r)}</div></div>`).join("")}</details>`}
-function gimNote(party){if(!GIMACT.length)return "";const rep=gimTeam(party)[1];
- const tl=GIMACT.map(([c,s])=>`${esc(D.grules[c].name)}(${s})`).join(", ");
- const sl=rep.map(r=>`<div class="mut">${r[2]?"✔":"✘"} ${esc(r[0])} / ${esc(r[1])}: ${r[2]?esc(r[2]):"비어 있음"}</div>`).join("");
- return `<div class="gimnote"><b>스테이지 기믹</b> <span class="mut">${tl}</span>${sl}<div class="mut">※ 적 스킬 원문에서 자동 분류한 기믹이며 영향 방향은 대부분 추정입니다.</div></div>`}
-function pairNotes(party){const ks=new Set(party.map(x=>x.s.key));return (CFG.pairs||[]).filter(p=>p.keys.every(k=>ks.has(k))).map(p=>`<div class="pairnote">★ 시너지 조합: ${esc(p.note)}</div>`).join("")}
+ return `<details class="syn"><summary>스킬 연계 ${hs.length}건</summary>${hs.map(h=>`<div class="synrow"><b>${esc(nm[h.p.a])}${h.p.d?" → ":" ↔ "}${esc(nm[h.p.b])}</b> <span class="chip ty${h.p.t}">${esc(h.p.tn)}</span> <span class="mut">강도 ${h.p.s} · ${esc(h.p.c)}</span><div class="mut">${esc(h.p.r)}</div></div>`).join("")}</details>`}
+// 표시 전용 대응표. *는 슬롯 없이 성향만으로 추정한 대응이다.
+const GFIX={
+ STEALTH:"광역기",SKILL_NULLIFY:"광역기",SUMMON:"광역기",LINKED_MINIONS:"광역기·브레이커",SELF_DESTRUCT:"광역기*",ALLY_DEATH_TRIGGER:"광역기*",
+ CC_APPLY:"정화·면역",DEBUFF_SCALING:"정화·면역·폭딜",GAUGE_DENIAL:"정화·면역·게이지 복구",RESIST_IGNORE:"정화·면역",BUFF_STRIP:"정화·재부여 또는 자립형 딜러",COOLDOWN_DISRUPT:"정화·면역*",
+ TARGET_PRIORITY:"보호막·힐·도발",HIT_RETALIATION:"보호막·힐·도발",PCT_HP_DAMAGE:"보호막·힐·도발",OPENER_BURST:"보호막·힐·도발",HEAL_BLOCK:"보호막 (힐러 비추천)",TOUGHNESS_PRESSURE:"보호막·힐·도발*",
+ HIT_COUNT_TRIGGER:"폭딜·단일 대형 (다타 비추천)",HIT_STACK_OFFENSE:"폭딜·단일 대형·행동 억제 (다타 비추천)",HIT_STACK_DEFENSE:"폭딜·단일 대형·방관 (다타 비추천)",TURN_HIT_REDUCTION:"폭딜·단일 대형 (다타 비추천)",HP_THRESHOLD_PHASE:"폭딜·단일 대형 (다타 비추천)",ENRAGE_STACK:"폭딜·단일 대형·가속 (다타 비추천)",UNDYING:"폭딜·단일 대형* (다타 비추천)",STANCE_CYCLE:"폭딜·단일 대형* (다타 비추천)",SLOT_DAMAGE_REDUCTION:"폭딜·단일 대형* (다타 비추천)",CONDITIONAL_DAMAGE_REDUCTION:"폭딜·단일 대형* (다타 비추천)",
+ SHIELD_GEN:"브레이크·방관",SHIELD_GATED:"브레이크·방관",TOUGHNESS_BREAK_REACTIVE:"브레이크·방관",TOUGHNESS_IMMUNE_WINDOW:"구간 전후 폭딜·브레이커",HIT_TOUGHNESS_RECOVER:"브레이크·방관*",
+ SELF_BUFF_DEPENDENT:"강화 해제",INVULN_GUARD:"강화 해제*",HIT_GAUGE_GAIN:"행동 억제",EXTRA_ACTION:"행동 억제*",
+ DEBUFF_GATED_POWER:"디버퍼 필요",SELF_CLEANSE:"디버퍼 비추천",BUFF_STATE_PUNISH:"버퍼 의존 비추천",
+ REACTIVE_TO_ATTACK_KIND:"대응 미확인",ELEMENT_RESIST:"대응 미확인",ELEMENT_BIAS_ATTACK:"대응 미확인",NONATTACK_PUNISH:"대응 미확인"
+};
+function gimNote(party,c,st,p){
+ // 점수용 gimTop/gimTeam은 그대로 두고 표시에는 전체 유형을 심각도 순으로 쓴다.
+ const types=Object.entries(D.gim[c.key+"|"+st.tab+"|"+st.name]||{}).sort((a,b)=>b[1]-a[1]||(D.grules[b[0]]?.w||0)-(D.grules[a[0]]?.w||0));
+ const rows=types.map(([code,sev])=>{const t=D.grules[code],slots=t?.slots||[];
+  const assigned=tags=>{const who=party.filter(x=>(x.s.gt||[]).some(tag=>tags.includes(tag)));
+   return who.length?`담당: ${who.map(x=>`<span data-savior="${esc(x.s.key)}">${esc(x.s.name)}</span>`).join("·")}`:"✗ 없음"};
+  // 슬롯명과 담당 조건을 함께 표시한다. GFIX의 성향 추정은 슬롯 없는 유형에만 쓴다.
+  let response;
+  if(slots.length)response=slots.map((sl,i)=>`<span class="gimslot" data-slot="${i}"><b>${esc(sl.name)}</b>: ${assigned(sl.tags_any)}</span>`).join(" · ");
+  else{const fix=GFIX[code]||"대응 미확인",tags=t?.prefer||[];
+   response=`<b>${esc(fix)}</b>${fix==="대응 미확인"?"":!tags.length?" → 대응 미확인":` → ${assigned(tags)}`}`}
+  return `<div class="gimrow" data-code="${esc(code)}" data-severity="${sev}"><span>${esc(t?.name||code)}</span> → ${response}</div>`});
+ const bosses=(st.bn||[]).map(([i,count])=>({name:D.bosses[i][0],role:D.bosses[i][1],count})),mobs=Math.max(0,st.n-bosses.reduce((n,b)=>n+b.count,0));
+ const foe=bosses.length?`보스 ${bosses.map(b=>esc(b.name)+"("+esc(b.role)+")"+(b.count>1?" ×"+b.count:"")).join("·")} · 쫄 ${mobs}`:`적 ${st.n}체`;
+ const matchup=[['유리',true],['불리',false]].map(([label,good])=>{const groups=Object.keys(EL).map(el=>{const hits=Object.keys(st.ec||st.w).filter(e=>good?CFG.advantage[el]===e:CFG.advantage[e]===el&&CFG.advantage[el]!==e);if(!hits.length)return "";const names=party.filter(x=>x.s.el===el).map(x=>esc(x.s.name));return `${EL[el]} ${label}${names.length?" → "+names.join("·"):""}`}).filter(Boolean);return groups.join(" / ")}).filter(Boolean).join(" · ");
+ const rs=(CFG.restrict[c.name]||{})[st.tab],ks=new Set(party.map(x=>x.s.key));
+ const pairs=(CFG.pairs||[]).filter(pair=>pair.keys.every(k=>ks.has(k))).map(pair=>pair.keys.map(k=>esc(BYKEY[k]?.name||k)).join("·"));
+ return `<section class="gimbox"><div class="gimhead">스테이지 특이사항 │ 대처 → 담당 <span class="mut">(추정)</span></div><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}<br>광역 ${Math.round(st.aoe*100)}%${rs?` · 회랑: ${EL[rs]}만 편성`:""}${sbText(st)}${pairs.length?"<br>조합: "+pairs.join(" / "):""}</div><div class="gimlist">${rows.slice(0,5).join("")||'<div class="gimrow">기믹 정보 없음 → 대응 미확인</div>'}${rows.length>5?`<details data-fold="gim-${p}"><summary>기믹 더 보기</summary>${rows.slice(5).join("")}</details>`:""}</div></div></section>`}
 let LEADKEY=null;
 const LEAD_TAGS=["힐","보호막","속도증가","적방어력감소","아군공격력증가"];
 function leaderPick(party){
@@ -350,7 +400,6 @@ function leaderPick(party){
  party.forEach(x=>{gain[x.s.key]+=0.3*(x.s.tags||[]).filter(t=>LEAD_TAGS.includes(t)).length});
  const k=keys.reduce((a,b)=>gain[b]>gain[a]?b:a,keys[0]);if(gain[k]<=0)return null;
  return {x:party.find(x=>x.s.key===k),g:gain[k],why:why[k].slice(0,2)}}
-function leadNote(L){return L?`<div class="leadnote">👑 리더 추천: <b>${esc(L.x.s.name)}</b> <span class="mut">(${esc(L.x.s.sub)}) · 리더는 속도 +10 → 팀에 줄 효과가 가장 많은 구성원이 먼저 행동 (추정)</span>${L.why.map(w=>`<div class="mut">· ${esc(w)}</div>`).join("")}</div>`:""}
 function place(p){const fr=["디펜더","서포터"];const o=[...p].sort((x,y)=>(fr.includes(x.s.cls)?0:1)-(fr.includes(y.s.cls)?0:1)||y.score-x.score);return [o.slice(0,2),o.slice(2)]}
 function pickBreak(party,content,have){
  let best=null;const roles=party.map(x=>x.s.cls);
@@ -375,25 +424,21 @@ const kindTxt=s=>{const k=KT(s);return k?`<div class="kind ${k[1]}">${k[0]}</div
 const dia=(s,px)=>`<span class="dia e-${s.el}" style="width:${px}px;height:${px}px"><img src="${D.icons[s.cls]}" alt="${esc(s.cls)}" style="width:${Math.round(px*.66)}px;height:${Math.round(px*.66)}px"></span>`;
 function art(s){const u=s.art||s.img;return u?`<img class="art" src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">`:""}
 function face(s){return s.img?`<img class="face" src="${esc(s.img)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;face&quot;>${esc(s.name[0])}</span>'">`:`<span class="face">${esc(s.name[0])}</span>`}
-function altChips(alt){return alt.length?`<div class="altbox"><div class="mut">대체 후보 (이 구원자가 없을 때)</div>${alt.map(a=>`<div class="altrow">${face(a.s)}<div><b>${esc(a.s.name)}</b><div class="mut">${esc(a.s.cls)} · ${EL[a.s.el]} · ${a.s.tier||"티어 ?"}</div></div></div>`).join("")}</div>`:""}
+function altChips(party,alt,p){return `<details class="altbox" data-fold="alt-${p}"><summary>없을 때</summary>${party.map(x=>`${esc(x.s.name)}→${alt(x).map(a=>esc(a.s.name)).join("·")||"후보 없음"}`).join(" / ")}</details>`}
 const CROWN='<svg viewBox="0 0 34 26" aria-hidden="true"><path d="M2 22 L5 6 L12 14 L17 3 L22 14 L29 6 L32 22 Z" fill="#ffd24a" stroke="#8a5a00" stroke-width="1.5" stroke-linejoin="round"/><rect x="2" y="22" width="30" height="3" rx="1" fill="#e6a800"/></svg>';
 function simUnit(r,key){if(!r||!r.g||!r.u||!r.u[key])return '<div class="simu"></div>';const [sh,dp]=r.u[key];const pct=Math.round(sh*100),dpp=Math.round(dp*100);
  const lv=dp>=0.5?3:dp>=0.2?2:dp>=0.05?1:0;
  return `<div class="simu"><div class="sb" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="피해 기여 ${pct}%"><i style="width:${pct}%"></i></div>피해 ${pct}% · <span class="dot d${lv}"></span>${lv?`쓰러질 확률 ${dpp}%`:`생존 안정(${dpp}%)`}</div>`}
-function card(x,pos,alt,r){const s=x.s;
- const why=Object.entries(x.parts).filter(([k])=>k!=="티어").map(([k,v])=>`<span class="${v>0?"good":"bad"}">${k} ${v>0?"+":""}${Math.round(v)}</span>`).join(" · ");
- const tg=(s.tags||[]).filter(t=>!["단일","광역"].includes(t)).slice(0,5).map(t=>`<span class="tag">${esc(t)}</span>`).join("");
- return `<div class="gc" data-key="${esc(s.key)}"><div class="card">${s.key===LEADKEY?`<div class="crown" title="리더: 속도 +10(먼저 행동)">${CROWN}<span>리더</span></div>`:""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
-  <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div>
-  <span class="tier ${TC(s.tier)}">${s.tier||"티어 ?"}</span></div></div>
-  <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}${s.key===LEADKEY?" 👑":""}</div>
-  <div class="under">${simUnit(r,s.key)}<div class="mut ico">${dia(s,26)}${EL[s.el]} · ${esc(s.cls)}${s.kind?` · <b class="k-${s.kind}">${s.kind==="C"?"COSMIC":"ANOTHER"}</b>`:""}</div><div class="why">${why||"&nbsp;"}</div><div class="tg">${tg||"&nbsp;"}</div>${altChips(alt)||'<div class="altbox" style="border:0"></div>'}</div></div>`}
+function card(x,pos,r){const s=x.s;
+ return `<div class="gc" data-key="${esc(s.key)}"><div class="card">${s.key===LEADKEY?`<div class="crown" title="속도 +10">${CROWN}<span>리더</span></div>`:""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
+  <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div><span class="tier ${TC(s.tier)}">${s.tier||"티어 ?"}</span></div></div>
+  <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}${s.key===LEADKEY?" 👑":""}</div>${r?simUnit(r,s.key):""}</div>`}
 function breakCard(br,r){
  const b=CFG.breakSkills[br.name],im=D.bicons[br.name],bs=MODE==="manual"&&r?.man?r.man.bs:r?.bs;
- return `<div class="bbar">${br.name?(im?`<img src="${im}" alt="">`:`<span style="font-size:72px">${BG[br.name]||"◆"}</span>`):""}
-  <div class="bbody"><div class="bt">BREAK SKILL</div><label>장착 브레이크 스킬<select class="bsel" data-bkey="${esc(br.key)}" aria-label="장착 브레이크 스킬">${["",...br.have].map(n=>`<option value="${esc(n)}"${n===br.name?" selected":""}>${esc(n||"장착 안 함")}${n&&n===br.rec?" · 추천":""}</option>`).join("")}</select></label>${breakChip(bs)}${b?`<div class="bx">${esc(b.text)}</div>`:""}<div class="mut">직업 구성 기준 추정 추천</div></div></div>`}
+ return `<div class="bbar" title="${esc(b?.text||"브레이크 스킬 미장착")}">${im&&br.name?`<img src="${im}" alt="">`:`<span class="bicon">${BG[br.name]||"◆"}</span>`}<div class="bbody"><select class="bsel" data-bkey="${esc(br.key)}" aria-label="장착 브레이크 스킬">${["",...br.have].map(n=>`<option value="${esc(n)}"${n===br.name?" selected":""}>${esc(n||"장착 안 함")}${n&&n===br.rec?" · 추천":""}</option>`).join("")}</select></div>${breakChip(bs)}</div>`}
 
-// ---------------- 표시 모드(오토/수동)·시험용 훅
+// ---------------- 표시 모드
+const MODE_CONTROLS=$("mode-controls"),SCORE_CONTROLS=$("score-controls");
 let MODE="auto";
 window.PN={last:null};
 const ckey=combo=>combo.map(x=>x.s.key).sort().join(",");
@@ -406,12 +451,8 @@ const POLTXT={boss_first:"보스 먼저",lowest_hp:"보호막+HP 가장 낮은 �
 function teamName(key){return key.split(",").map(k=>BYKEY[k]?BYKEY[k].name:k).join("·")}
 function seqTable(t,order){
  const rec=t.rec;if(!rec||!rec.man||!rec.man.g)return `<div class="seq" data-state="none"><span class="mut">수동 결과가 없습니다.</span></div>`;
- const M=rec.man,A=rec.auto,d=M.d||{};
- const better=(d.c!=null&&d.c>=0.01)||(d.t!=null&&d.t<=-0.05);
- const head=`<div class="seqhead"><b>수동 서순</b> — 처치 턴 ${fmtT(A.t)} → ${fmtT(M.t)}${d.t!=null&&Math.abs(d.t)>=0.05?`(${d.t<0?"−":"+"}${Math.abs(d.t).toFixed(1)})`:""} · 클리어 ${pct(A.c)}% → ${pct(M.c)}%${d.c!=null&&Math.abs(d.c)>=0.005?`(${d.c>0?"+":"−"}${Math.abs(pct(d.c))}%p)`:""}
-  ${better?"":`<span class="mut"><b>오토와 차이 없음 — 그대로 오토 권장</b></span>`}
-  <span class="mut">정책: 대상 = ${esc(POLTXT[M.pol[0]]||M.pol[0])} · 노바 버스트 = ${esc(POLTXT[M.pol[1]]||M.pol[1])} (정책 4종을 시험해 고름, 팀은 오토 기준으로 고정)</span>
-  <span class="mut">처치 턴 차는 클리어한 판끼리의 비교라 클리어 확률 차와 함께 보세요.</span></div>`;
+ const M=rec.man,A=rec.auto;
+ const head=`<div class="seqhead" title="대상: ${esc(POLTXT[M.pol[0]]||M.pol[0])} · 노바: ${esc(POLTXT[M.pol[1]]||M.pol[1])}"><b>수동 서순</b> — 클리어 ${pct(A.c)}→${pct(M.c)}% · ${fmtT(A.t)}→${fmtT(M.t)}턴</div>`;
  if(!rec.seq)return `<div class="seq" data-state="noseq">${head}<span class="mut">서순은 순위 상위 3팀만 계산했습니다.</span></div>`;
  const sq=rec.seq,nm=k=>BYKEY[k]?BYKEY[k].name:k;
  const lbl={B:["●","기본"],S:["◆","특수"],U:["★","궁극"]},via={coop:"협공",forced_coop:"강제 협공",trigger:"발동",reaction:"반응",extra:"추가"};
@@ -422,7 +463,7 @@ function seqTable(t,order){
  const hd=order.map(k=>`<div class="hd" role="columnheader">${esc(nm(k))}</div>`).join("");
  const vis=rows.slice(0,open).join(""),rest=rows.slice(open).join("");
  const kind=sq.kind==="clear"?`대표 1판(클리어 판 중 처치 턴 ${fmtT(sq.ttk)} — 중앙값에 가장 가까운 판)`:`실패 예시(클리어한 판 없음, ${sq.kind==="wipe"?"전멸":"시간 초과"})`;
- return `<div class="seq" data-state="ok">${head}<div class="mut" style="margin-bottom:4px">선택 정책의 ${kind} — 최적 순서가 아니라 예시입니다. 행 = 모델 기준 턴(속도 100 유닛이 한 번 행동하는 시간), 칸 = 위 카드 순서. ${sq.turns>12?`${sq.turns}턴 중 12턴까지만 표시.`:""}</div>
+ return `<div class="seq" data-state="ok">${head}<div class="mut" title="${esc(kind)}" style="margin-bottom:4px">대표 1판 예시</div>
   <div class="sgrid" role="table" aria-label="수동 서순">${hd}${vis}</div>${rest?`<details><summary>전체 서순 보기(총 ${Math.min(sq.turns,12)}턴)</summary><div class="sgrid" role="table">${rest}</div></details>`:""}</div>`}
 // 표시 모드의 결과(수동이면 수동 결과, 없으면 오토) — 비교할 때 양쪽에 같은 모드를 쓴다
 // 모바일 서순 칸의 짧은 대상 표시(전체 이름은 title)
@@ -476,16 +517,19 @@ function quickRows(qt,st,p){const n=(SIMQ.more[moreKey(st,p)]||3),rows=[];const 
  if(sr.every(Boolean)){const ix=rows.map((t,i)=>i);ix.sort((a,b)=>sr[b].clear-sr[a].clear||a-b);out=ix.map(i=>rows[i])}
  if(JOINT&&JOINT[p]){const i=out.findIndex(t=>t.keys.slice().sort().join(",")===JOINT[p]);if(i>0)out=[out[i]].concat(out.slice(0,i),out.slice(i+1))}
  return out}
-function quickBox(p,qt,qi,st,pickKey){if(!qt||!qt.length)return "";
- const rows=quickRows(qt,st,p),P0=rows[0].q.power,ratio=st.rp?P0/st.rp*100:100,npw=rows.reduce((a,t)=>Math.max(a,t.b.powers?Object.keys(t.b.powers).length:0),0);
+function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+tail;
+ const rows=quickRows(qt,st,p),shown=rows.find(t=>ckey(t.combo)===pickKey)||rows[0],P0=shown.q.power,ratio=st.rp?P0/st.rp*100:100,npw=rows.reduce((a,t)=>Math.max(a,t.b.powers?Object.keys(t.b.powers).length:0),0);
  for(const t of rows)if(t.vd==="hard"&&t.ng===undefined)t.ng=Quick.needGrowth(t.ek,qi.qs,QK.d.sv,D.pen,qi.prm,"tight",null,t.b);
  const uniq=new Set(qt.map(t=>t.keys.slice().sort().join(","))).size;
  const row=(t,i)=>{const k=t.keys.slice().sort().join(","),w=quickWeak(t),need=t.ng!=null?t.ng*t.q.power:null,sr=simMain(SIMQ.res[simSig(st,t)]),vd=sr?simCls(sr):t.vd;
-  const ng=need!=null?` · <b>파티 전투력 약 ${r100(need)}</b>${st.rp?`(권장의 ${Math.round(need/st.rp*100)}%)`:""}면 ${t.vd==="hard"?"깸":"깰만함"}`:(t.vd==="hard"?" · 지금의 4배로도 어려움":"");
+  const ng=need!=null?` · <b>전투력 ${r100(need)}</b>${st.rp?`(권장의 ${Math.round(need/st.rp*100)}%)`:""}면 ${t.vd==="hard"?"깸":"깰만함"}`:(t.vd==="hard"?" · 지금의 4배로도 어려움":"");
   return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?face(BYKEY[x]):"").join("")}</div>
-   <span class="qv ${vd}" title="${sr?"전투 시뮬 기준":"빠른 계산 기준"}">${QV[vd]}</span><span class="qt">${sr&&vd!==t.vd?`<span class="mut">빠른 계산 「${QV[t.vd]}」 → 시뮬 결과로 바꿈 · </span>`:""}${t.q.clear?`약 ${t.q.rounds}턴 · 남는 생명력 ${Math.round(t.q.left*100)}%`:`${t.q.rounds}턴째 ${t.q.why==="time"?"시간 초과":"전멸"}`}${ng}${w.length?`<br><span class="mut">${w.map(esc).join(" · ")}</span>`:""}${simCell(p,t,st)}</span>
-   ${k===pickKey?'<span class="mut">아래에 표시 중</span>':`<button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">이 팀 보기</button>`}</div>`};
- return `<div class="qbox" data-k="quick"><div class="qh"><b style="color:var(--fg)">이 스테이지 추천 (빠른 계산)</b>${JOINT?" · 파티 1·2를 함께 골라 둘 다 깨는 조합 우선":""} · 가정: 1안 파티 전투력 ${Math.round(P0).toLocaleString()}${st.rp?` (권장 ${st.rp.toLocaleString()}의 ${Math.round(ratio)}%)`:""}${npw?` · 구원자별 전투력 입력 ${npw}명 반영`:""}${qi.rk?` · 재점화 버프 ${qi.rk}단계 반영`:""}${rows[0].ek.some(k=>k.includes("@"))?" · 개화 반영":""} · 레벨·장비·돌파·스킬 레벨은 이 전투력에 맞춘 평균 육성으로 봄${(()=>{const cb=QK.d.calib,g=cb&&cb.groups&&cb.groups[qi.ck==="cosmo"||qi.ck==="rush"?qi.ck:"base"];return g?` · 이 콘텐츠에서 빠른 계산과 전투 시뮬의 클리어 판정 ${Math.round(g.acc*100)}% 일치(${g.samples.toLocaleString()}건) (브레이크 스킬 미장착 기준)`:""})()}${QK.d.params?"":' · <b style="color:var(--bad)">계수 없음</b>'}</div>${rows.map(row).join("")}${simBar(p,rows,st,uniq>rows.length)}</div>`}
+   <span class="qv ${vd}" title="${sr?"전투 시뮬 기준":"빠른 계산 기준"}">${QV[vd]}</span><span class="qt">${t.q.clear?`약 ${t.q.rounds}턴 · 남는 생명력 ${Math.round(t.q.left*100)}%`:`${t.q.rounds}턴째 ${t.q.why==="time"?"시간 초과":"전멸"}`}${ng}${w.length?`<br><span class="mut">${w.map(esc).join(" · ")}</span>`:""}${simCell(p,t,st)}</span>
+   ${k===pickKey?"":`<button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">이 팀 보기</button>`}</div>`};
+ const selected=rows.findIndex(t=>t.keys.slice().sort().join(",")===pickKey),active=selected<0?0:selected;
+ const assumptions=`<details data-fold="assume-${p}"><summary>가정</summary>전투력에 맞춘 평균 육성${(()=>{const cb=QK.d.calib,g=cb?.groups?.[qi.ck==="cosmo"||qi.ck==="rush"?qi.ck:"base"];return g?` · 판정 일치 ${Math.round(g.acc*100)}% (브레이크 스킬 미장착 기준)`:""})()}</details>`;
+ return `<div class="qbox" data-k="quick"><div class="qh"><b>추천${contents[$("content").value].parties>1?" · 파티 "+p:""}</b> · 전투력 ${Math.round(P0).toLocaleString()} 기준(권장 ${Math.round(ratio)}%)${JOINT?" · 파티 1·2 함께":""}${npw?` <span class="tag">구원자별 전투력 입력 ${npw}명 반영</span>`:""}${qi.rk?` <span class="tag">재점화 버프 ${qi.rk}단계 반영</span>`:""}${rows[0].ek.some(k=>k.includes("@"))?'<span class="tag">개화 반영</span>':""}${QK.d.params?"":' · 계수 없음'}</div>${row(rows[active],active)}${simBar(p,rows,st,uniq>rows.length)}${main}${rows.length>1?`<details class="alternatives" data-fold="alternatives-${p}"><summary>${active?"다른 추천":"차선 2·3"}</summary>${rows.map((t,i)=>i===active?"":row(t,i)).join("")}</details>`:""}${tail}${assumptions}</div>`}
+
 
 // ---- 브라우저 시뮬 확인(sim_worker.js + Pyodide): 위 3팀을 확률 전투 엔진으로 다시 돌린다. 누를 때만 내려받는다(처음 약 14MB)
 // 안전장치(codex 상담): 제한 시간·취소(작업자 종료), 실패해도 빠른 계산은 그대로, 결과는 추정치+95% 구간, 입력이 바뀌면 이전 결과 무효
@@ -507,15 +551,14 @@ function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
  const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null}}
 const simSig=(st,t)=>{const ck=contents[$("content").value].key,rk=rkOf(ck);return JSON.stringify([ck,st.tab,st.name,simParty(t),SIMQ.n,MODE,teamBreak(t)?.name||null].concat(rk?[rk]:[]))};
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
- const mn=r.man?`<br><span class="qsim" data-man="1">수동(서순대로): <b class="qv ${simCls(r.man)}">클리어 ${Math.round(r.man.c*100)}%</b> <span class="mut">(${r.man.n}판${r.man.t!=null?` · 약 ${Math.round(r.man.t)}턴`:""} · 아래 서순 참고)</span> ${breakChip(r.man.bs)}</span>`:"";
- const cls=r.clear>=0.9?"safe":r.clear>=0.5?"tight":"hard";
- return `<br><span class="qsim" data-sim="${cls}">시뮬 확인: <b class="qv ${cls}">클리어 ${Math.round(r.clear*100)}%</b> <span class="mut">(95% 구간 ${Math.round(r.ci[0]*100)}~${Math.round(r.ci[1]*100)}%, ${r.n}판${r.ttk!=null?` · 약 ${Math.round(r.ttk)}턴`:""}${r.first?` · 먼저 쓰러짐 ${esc(r.first.split("#")[0])} ${Math.round(r.first_p*100)}%`:""}${r.gate===false?" · 미지원 기믹 있음":""})</span></span> ${breakChip(r.bs)}${mn}`}
+ const mn=r.man?`<br><span class="qsim" data-man="1">수동 클리어 ${Math.round(r.man.c*100)}%${r.man.t!=null?` · 약 ${Math.round(r.man.t)}턴`:""}</span>`:"";
+ return `<br><span class="qsim" data-sim="${simCls(r)}" title="${r.n}판${r.gate===false?" · 미지원 기믹 있음":""}">시뮬 클리어 ${Math.round(r.clear*100)}%${r.ttk!=null?` · 약 ${Math.round(r.ttk)}턴`:""}${r.first?` · 먼저 쓰러짐 ${esc(r.first.split("#")[0])} ${Math.round(r.first_p*100)}%`:""} <small class="mut">95% 구간 ${Math.round(r.ci[0]*100)}~${Math.round(r.ci[1]*100)}%</small></span>${mn}`}
 function simBar(p,rows,st,hasMore){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
  const st8=SIMQ.busy===p?`<span class="mut" data-k="simstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
   SIMQ.err&&SIMQ.errP===p?`<span class="bad" data-k="simstate">시뮬 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
-  all?`<span class="mut" data-k="simstate">위 ${rows.length}팀 시뮬 완료 — 확률은 모델 추정이며 «이 ${rows.length}팀 안에서의 비교»입니다</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다음 3팀도 시뮬로 확인</button>`:""}${SIMQ.auto?` <button type="button" class="sec" data-simauto="0" title="스테이지를 바꿀 때마다 자동으로 시뮬">자동 확인 끄기</button>`:""}`:
-  `<button type="button" class="sec" data-sim="${p}">위 ${rows.length}팀 시뮬로 확인</button> <span class="mut">팀당 ${SIMQ.n}판 · 처음 한 번 계산 엔진 내려받기(약 14MB) · 보통 10~40초</span>`;
+  all?`<span class="mut" data-k="simstate">시뮬 완료 · ${SIMQ.n}판</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다음 3팀도 시뮬로 확인</button>`:""}${SIMQ.auto?` <button type="button" class="sec" data-simauto="0" title="스테이지를 바꿀 때마다 자동으로 시뮬">자동 확인 끄기</button>`:""}`:
+  `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">시뮬로 확인(10~40초)</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
 function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.busy=null}
 function simStop(msg){if(msg){SIMQ.err=msg;SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage}simInvalidate();run()}
@@ -572,6 +615,8 @@ $("out").addEventListener("change",e=>{const s=e.target.closest("select.bsel");i
 
 function buildCands(cands,defPen){return topParties(cands,defPen,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
 function run(){
+ const folds=new Map([...document.querySelectorAll("#out details[data-fold]")].map(d=>[d.dataset.fold,d.open]));
+ $("control-home").append(MODE_CONTROLS,SCORE_CONTROLS);
  for(const k in LASTQ)delete LASTQ[k];
  const c=contents[$("content").value],st=cur&&cur[$("stage").value];
  if(!st){$("out").innerHTML='<div class="party">스테이지를 선택하세요.</div>';return}
@@ -594,7 +639,7 @@ function run(){
   const forced=PICK[sid+"|"+p]&&list.find(x=>x.key===PICK[sid+"|"+p]);
   const pick=forced||qpick||approxOnly[0];pick.isPick=!forced;
   const party=pick.combo;party.forEach(x=>used.add(x.s.key));allParties.push(party);
-  const v=pick.v,got=pick.got;
+  const v=pick.v;
   const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
   const br=breakChoice(party,c,have);
@@ -603,19 +648,21 @@ function run(){
   const r=sr&&sr.u?{g:true,u:sr.u}:null;
   let seq="";
   if(MODE==="manual")seq=sr&&sr.man?seqTable({rec:{auto:{c:sr.clear,t:sr.ttk},man:{g:true,c:sr.man.c,t:sr.man.t,pol:sr.man.pol,d:{c:sr.man.c-sr.clear,t:sr.man.t!=null&&sr.ttk!=null?sr.man.t-sr.ttk:null}},seq:sr.man.seq}},[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key))
-   :`<div class="seq" data-state="pending"><span class="mut">수동 서순은 위 「시뮬로 확인」을 누르면 이 팀으로 계산해 보여 줍니다.</span></div>`;
-  html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}"><div class="phead"><b>파티 ${p}</b><span class="ordernote">인게임 편성 순서(왼쪽부터) <span class="why2">· 근사 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10(장비 제외 상대 비교)</span></span></div>
-   ${quickBox(p,qt,qi,st,pick.key)}${pairNotes(party)}${leadNote(LD)}${gimNote(party)}${synSummary(party)}
-   <div class="teamtags">${[...got].filter(t=>!["단일","광역"].includes(t)).sort().map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div>
-   <div class="rowcards">${card(bk[0],"back",alt(bk[0]),r)}${card(fr[0],"front",alt(fr[0]),r)}${card(fr[1],"front",alt(fr[1]),r)}${card(bk[1],"back",alt(bk[1]),r)}</div>${seq}${breakCard(br,sr)}</div>`}
+   :`<div class="seq" data-state="pending"><span class="mut">서순: 시뮬 확인 뒤 표시</span></div>`;
+  const main=`<div class="rowcards">${card(bk[0],"back",r)}${card(fr[0],"front",r)}${card(fr[1],"front",r)}${card(bk[1],"back",r)}</div>${gimNote(party,c,st,p)}${breakCard(br,sr)}`;
+  const tail=`${altChips(party,alt,p)}<details class="manual-details" data-fold="manual-${p}"><summary>수동 서순</summary>${p===1?'<div data-controls="mode"></div>':""}${seq||'<div class="mut">서순: 시뮬 확인 뒤 표시</div>'}</details><details class="score-details" data-fold="score-${p}"><summary>점수 상세</summary>${p===1?'<div data-controls="score"></div>':""}<div class="scoredata">근사 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10${party.map(x=>`<div>${esc(x.s.name)}: ${Object.entries(x.parts).map(([k,v])=>`${esc(k)} ${v.toFixed(1)}`).join(" · ")}</div>`).join("")}${synSummary(party)}</div></details>`;
+  html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}">${quickBox(p,qt,qi,st,pick.key,main,tail)}</div>`}
+
  const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
  if(tl.length){const byKey=BYKEY;const gcodes=new Set(GIMACT.map(g=>g[0]));
-  html+=`<div class="party"><b>다른 전략</b> <span class="mut">(커뮤니티 편성, 보유 시 참고 · 위 추천과 별개)</span><div class="arch">${tl.map(([k,t])=>{
+  html+=`<details class="party community" data-fold="community"><summary>커뮤니티 편성 ${tl.length}</summary><div class="arch">${tl.map(([k,t])=>{
    const bad=(t.badGimmicks||[]).filter(c=>gcodes.has(c)).map(c=>D.grules[c]?D.grules[c].name:c);
    const dsc=t.fixed?`<span class="mut">화력 지표 ${dmgScore(t.fixed,DMW[0]).toFixed(1)}/10</span> `:"";const comp=dsc+(bad.length?`<span class="bad">✘ 이 스테이지 기믹과 상충: ${bad.map(esc).join(", ")}</span>`:`<span class="good">✔ 이 스테이지 기믹과 상충하는 것 없음(추정)</span>`);
    const faces=(t.fixed||[]).map(f=>byKey[f]?`<span class="archf">${face(byKey[f])}<small>${esc(byKey[f].name)}</small></span>`:"").join("");
-   return `<div class="archc"><b>${esc(k)}</b> ${comp}<div class="archfs">${faces}</div><div>${esc(t.desc)}</div><div class="mut">잘 맞는 곳: ${esc(t.goodFor||"-")}${t.note?" · "+esc(t.note):""} · 출처 ${esc(t.source||"")}</div></div>`}).join("")}</div></div>`}
- $("out").innerHTML=html;if(window.onParties)onParties(allParties);simAutoKick()}
+   return `<div class="archc"><b>${esc(k)}</b> ${comp}<div class="archfs">${faces}</div><div>${esc(t.desc)}</div><div class="mut">잘 맞는 곳: ${esc(t.goodFor||"-")}${t.note?" · "+esc(t.note):""} · 출처 ${esc(t.source||"")}</div></div>`}).join("")}</div></details>`}
+ $("out").innerHTML=html;
+ document.querySelector('[data-controls="mode"]')?.append(MODE_CONTROLS);document.querySelector('[data-controls="score"]')?.append(SCORE_CONTROLS);
+ document.querySelectorAll("#out details[data-fold]").forEach(d=>{if(folds.has(d.dataset.fold))d.open=folds.get(d.dataset.fold)});if(window.onParties)onParties(allParties);simAutoKick()}
 $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-pick]");if(!b)return;const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st)return;
  PICK[c.key+"|"+st.tab+"|"+st.name+"|"+b.dataset.pick]=b.dataset.key;run();const el=document.querySelector(`.party[data-party="${b.dataset.pick}"]`);if(el)el.scrollIntoView({block:"start"})});
 function setMode(m,push){MODE=m==="manual"?"manual":"auto";$("m-"+MODE).checked=true;LS.set("mode",MODE);
@@ -632,14 +679,14 @@ function renderPw(){const own=[...document.querySelectorAll("#own input:checked"
  return `<label class="pwrow">${face(s)}<span>${esc(s.name)} <small class="mut">${esc(s.sub)}</small></span>${bl}<input type="number" min="0" step="100" inputmode="numeric" placeholder="전투력" data-pk="${esc(k)}" value="${PW[k]>0?PW[k]:""}"></label>`}).join("")||'<span class="mut">체크한 구원자가 없습니다</span>'}
 $("pwl").addEventListener("change",e=>{const x=e.target.closest("input[data-bloom]");if(!x)return;if(x.checked)BLOOM[x.dataset.bloom]=1;else delete BLOOM[x.dataset.bloom];LS.set("bloom",BLOOM);rerun()});
 $("pwl").addEventListener("input",e=>{const x=e.target.closest("input[data-pk]");if(!x)return;const v=+x.value;if(v>0)PW[x.dataset.pk]=v;else delete PW[x.dataset.pk];LS.set("pw",PW);rerun()});
-function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b));$("saved").textContent="선택은 이 브라우저에 자동 저장됩니다"}
+function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b))}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  if(Array.isArray(o)){const s=new Set(o);document.querySelectorAll("#own input").forEach(x=>x.checked=s.has(x.dataset.k))}
  if(Array.isArray(b)){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}pruneBreakSel()})();
 const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").checked=on;LS.set("why",on);if(on)setTimeout(()=>{try{cy.resize();cy.fit(undefined,30)}catch(e){}},50)};
 $("showwhy").onchange=()=>setWhy($("showwhy").checked);setWhy(!!LS.get("why"));
 let _rt=null;const rerun=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
-function updCount(){const n=document.querySelectorAll("#own input:checked").length;$("dcount").textContent=n===R.length?"전체":n+"/"+R.length;renderPw()}
+function updCount(){const n=document.querySelectorAll("#own input:checked").length;$("dcount").textContent=String(n);renderPw()}
 document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk"))){if(e.target.closest("#brk")){pruneBreakSel();if(SIMQ.busy)simInvalidate();SIMQ.err=""}saveSel();updCount();rerun()}});
 const setDrawer=o=>{$("drawer").classList.toggle("open",o);$("dback").classList.toggle("on",o);document.body.classList.toggle("noscroll",o);$("dbtn").setAttribute("aria-expanded",o?"true":"false");if(o)$("dclose").focus()};
 $("dbtn").onclick=()=>setDrawer(!$("drawer").classList.contains("open"));$("dclose").onclick=()=>setDrawer(false);$("dback").onclick=()=>setDrawer(false);
