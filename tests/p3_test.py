@@ -516,7 +516,63 @@ def test_nullify_prehit_reduction_infinite_shield():
     return t0 == 0 and '스킬 피해 무효' not in f.eff and t1 == 693 and sh == 2500, '무효 피해 %d, 감소 뒤 %d, 무한 보호막 %d' % (t0, t1, sh)
 
 
-TESTS = [test_target_weights, test_untargetable, test_taunt, test_ally_target_lowest, test_guard_split, test_guard_highest_only,
+def _pilgrim_cd_trace(mc=None):
+    """실제 36-36 스킬/패시브, 생존용 더미. 자기 턴 사이 아군/다른 적 턴도 실행한다."""
+    _, waves = stage_waves('op', '아가논 시가지', 'SECTOR 36-36')
+    boss = next(d for w in waves for d in w if d.name == '공허순례자')
+    b = battle([unit('dummy', hp=10 ** 9, atk=0)],
+               [boss, unit('other', hp=10 ** 9, atk=0)], mc=mc)
+    f = b.foes[0]
+    initial = dict(f.cd)
+    selected, available, unchanged = [], [], True
+    choose = b.choose_skill
+
+    def record(u):
+        if u is f:
+            available.append({k for k, cd in u.cd.items() if cd == 0})
+        return choose(u)
+
+    b.choose_skill = record
+    for _ in range(5):
+        b.act(f)
+        selected.append(f.last_slot)
+        before = dict(f.cd)
+        b.act(b.allies[0])
+        b.act(b.foes[1])
+        unchanged = unchanged and before == f.cd
+    return boss, initial, selected, available, unchanged
+
+
+def test_enemy_init_cd_pilgrim():
+    """영상 회귀: 특수기 1→4턴, 궁극기 최초 5턴, 남의 턴에는 쿨 불변.
+
+    엔진 내부는 턴 시작 차감이므로 화면 궁극기 4를 5로 저장한다.
+    """
+    d, initial, slots, ready, unchanged = _pilgrim_cd_trace()
+    ok = (d.skills['특수기'].name == '별의 파장' and d.skills['특수기'].cd == 3
+          and d.skills['궁극기'].cd == 4 and initial['특수기'] == 0
+          and initial['궁극기'] == 5
+          and slots == ['특수기', '기본기', '기본기', '특수기', '궁극기']
+          and [i + 1 for i, r in enumerate(ready) if '궁극기' in r] == [5]
+          and [i + 1 for i, r in enumerate(ready) if '특수기' in r] == [1, 4]
+          and unchanged)
+    return ok, '시작 %s / 자기 턴 %s / 남의 턴 불변 %s' % (initial, slots, unchanged)
+
+
+def test_enemy_init_cd_switches():
+    """두 스위치를 각각 되돌려도 영상 기대가 깨지고, 둘 다 옛 값이면 기본기로 시작."""
+    special_old = _pilgrim_cd_trace(dict(enemy_init_cd_special=1.0))
+    tick_old = _pilgrim_cd_trace(dict(enemy_cd_tick='turn_start'))
+    both_old = _pilgrim_cd_trace(dict(enemy_init_cd_special=1.0, enemy_cd_tick='turn_start'))
+    ok = (special_old[1]['특수기'] == 4 and special_old[2][0] == '기본기'
+          and next(i + 1 for i, r in enumerate(tick_old[3]) if '궁극기' in r) == 4
+          and both_old[2] == ['기본기', '기본기', '특수기', '궁극기', '기본기'])
+    return ok, '특수기 옛값 %s / 차감 옛값 %s / 둘 다 옛값 %s' % (
+        special_old[2], tick_old[2], both_old[2])
+
+
+TESTS = [test_enemy_init_cd_pilgrim, test_enemy_init_cd_switches,
+         test_target_weights, test_untargetable, test_taunt, test_ally_target_lowest, test_guard_split, test_guard_highest_only,
          test_shield_sum, test_heal_formula, test_death_stops_actions, test_counter, test_leader_speed, test_determinism,
          test_event_limit, test_foe_loader_matches_stages_json, test_evade, test_check_buff_expiry, test_extra_cast_after_consume,
          test_ev_engine_opts_untouched, test_skill_heal_hl, test_enemy_immunity_and_gate, test_hp_condition_units,

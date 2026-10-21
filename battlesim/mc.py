@@ -267,7 +267,12 @@ class Unit:
         self.cd = {}
         frac = b.mc['enemy_init_cd'] if side == 1 else b.mc['ally_init_cd']
         for slot, sk in d.skills.items():
-            self.cd[slot] = (sk.cd * frac) if sk.cd else 0
+            f = b.mc['enemy_init_cd_special'] if side == 1 and slot == '특수기' else frac
+            self.cd[slot] = (sk.cd * f) if sk.cd else 0
+            # 게임은 쿨을 «자기 턴 끝»에 줄이고(영상 확인) 이 엔진은 «자기 턴 시작»에 줄인다. 쓴 스킬은 둘이 같지만
+            # 시작값은 첫 턴 시작에 한 번 더 깎이므로 +1 해서 맞춘다(시작 화면 「4」 = 다섯 번째 턴에 사용 가능)
+            if side == 1 and self.cd[slot] > 0 and b.mc['enemy_cd_tick'] == 'turn_end':
+                self.cd[slot] += 1
         self.dead = False
         self.last_slot = None
         self.last_target = None
