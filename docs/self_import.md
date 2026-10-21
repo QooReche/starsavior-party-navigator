@@ -36,7 +36,9 @@
 
 - 점검 스크립트: 후보 3곳(`LocalLow\StudioBside\StarSavior`, Steam 설치 폴더). 웹 주소 597종 중 ★ 24종은 전부 내장 브라우저(CEF) 라이브러리·라이선스 문서의 주소. 게임 서버·뽑기 기록 주소 없음.
 - 게임 로그(`LocalLow\StudioBside\StarSavior\Logs\Log-*.txt`)는 **단일 바이트 XOR `0x63`** 인코딩 UTF-8 평문이다(앞서 암호화로 오판). 내용은 장면 전환·전투 상태머신·서버 접속(`star-kr-game.sbside.com:9340`)·CDN 주소 등 클라이언트 동작뿐. `[Send]`/`[Recv]` 는 난독화된 패킷 **이름**만 찍는다(게임 코드 `Bs.ServerLibrary.dll` `SerializableExt.DumpToInfoLog`: `NetworkSetting.PacketDumpType` 이 `Name` 이면 이름만, `All` 이면 JSON 전체. 릴리스는 `Name`). 계정 값(보유 구원자·레벨·능력치)은 로그·레지스트리(PlayerPrefs 는 옵션뿐)·캐시 어디에도 없다 = 서버에만 있다.
-- 값을 얻는 남은 경로는 통신 가로채기나 게임 메모리 읽기(예: starsavior-extractor 의 Frida 기능)뿐이다. **하지 않는다**(약관·제재·안티치트 위험, 업데이트마다 깨짐, 배포 불가). `PacketDumpType` 을 `All` 로 바꾸는 것도 변조라 하지 않는다. → **능력치 화면 캡처 인식(1안)으로 간다.**
+- 메모리 읽기(starsavior-extractor 의 Frida 기능)·프록시/후킹 같은 **개입형 방식과 `PacketDumpType` 변조는 하지 않는다**(약관·제재·안티치트 위험).
+- **정정(같은 날 후속 조사)**: 통신은 TLS 가 아니라 평문 TCP(9300~9400, 게임 서버 9340) + 자체 프레임 + 8바이트 XOR/LZ4 난독화다. **수동 캡처(듣기만)** 로 해독하는 선례가 있다(`jiajizheng/starsavior-collector`, PvP 매치용). 로그인 응답 `LOGIN_ACK`(403)에 53필드 사용자 데이터가 있어 보유 구원자·육성 상태를 얻을 수 있을 것으로 본다(미검증). 사용자가 약관 위험을 감수하기로 함 → 이 방식이 **1안**, 캡처 인식은 최후 수단. 참조 사본: 비공개 `QooReche/starsavior-packet-ref`.
+- 흐름 계획: 로컬 보조 도구(캡처 → 해독 → `내정보.json`) → 페이지 파일 불러오기. 캡처는 `pktmon`(관리자 PowerShell), 파일에 로그인 티켓이 있으므로 OneDrive 밖(`C:\build\ss_capture`)에 두고 쓴 뒤 삭제.
 - 게임은 Unity 6 **Mono** 라 `Data\Managed\*.dll` 이 일반 .NET 어셈블리다(UI 코드 `NKC.dll` 은 이름 약 70% 가독, 전투 로직 `NKM.dll`·`*.Templets.dll` 은 이름 난독화). 읽기 전용 정적 분석만 한다(원본 폴더 밖 사본에서).
 - **정적 데이터 표(능력치·스킬·버프·피해 계수 등)는 비공개 저장소 `QooReche/starsavior-static-data` 에 있다** — 캡처 인식 기준값(이름·기본 능력치)과 시뮬 강화에 쓴다.
 

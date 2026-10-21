@@ -6,6 +6,7 @@
 - 저장소: https://github.com/QooReche/starsavior-party-navigator (**공개**, GitHub Pages: https://QooReche.github.io/starsavior-party-navigator/). 최신 커밋은 `git log` 로 확인.
 - 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
 - **게임 정적 데이터 표(비공개 저장소)**: https://github.com/QooReche/starsavior-static-data — 설치 폴더의 데이터 표 147개(피해 계수 `DAMAGE_TEMPLET`, 능력치·스킬·버프·장비·호감도·보스 스테이지 등, 빌드 25951618)와 추출 스크립트. 시뮬 강화(임의 가중치 → 실제 값, 인게임 대조)와 캡처 인식 기준값에 쓴다. 시작은 그쪽 `README.md`·`TABLES.md`. 비공개라 이 공개 저장소·Pages 에 원본 표를 복사하지 말 것(가공한 요약 수치만 반영). 접근은 QooReche 계정으로.
+- **패킷 해독 참조(비공개 저장소)**: https://github.com/QooReche/starsavior-packet-ref — 「내 정보 불러오기」용. 수동 패킷 캡처(Windows `pktmon`, TCP 9340, 주입·변조·메모리 읽기 없음)로 로그인 응답 `LOGIN_ACK`(403, 사용자 데이터 53필드)를 해독해 보유 구원자·육성 상태를 얻는 방식. 평문 TCP + 8바이트 XOR/LZ4 라 키 교환 없음. 해독기·패킷 스키마 사본과 포맷 요약은 그쪽 `README.md`. 계획: 로컬 보조 도구가 `내정보.json` 생성 → 페이지가 파일로 불러오기(캡처 인식은 최후 수단). 캡처 파일엔 로그인 티켓이 있으니 저장소·OneDrive 에 두지 말 것.
 - 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
 
 ## ▶ 다음 세션 시작점 (2026-10-21 저녁 갱신)
