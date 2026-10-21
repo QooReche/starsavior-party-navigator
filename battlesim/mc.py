@@ -578,18 +578,22 @@ class Battle:
         u.extra_turn = False      # 추가 턴은 이 행동으로 소비(행동 끝에 지우면 다음 차례 판정에서 우선권이 사라짐)
         u.actions += 1
         u.acting = True
+        skip = False
         if u.broken:
             # 브레이크(강인도 격파)는 그 유닛의 다음 자기 턴 시작에 끝나고 강인도 전회복, 그 턴은 정상 행동(mc.break_recover, assumed)
+            # 구원자 + ally_break_gauge=skip: 게이지는 그대로 두었다가, 자기 턴이 오면 회복하는 데 그 턴을 쓴다(행동 없음)
+            # — 사용자 인게임 설명 2026-10-21 「브레이크돼도 턴은 안 밀리는데, 자기 턴 왔을 때 회복되고 턴이 밀린다」
+            skip = u.side == 0 and self.mc['ally_break_gauge'] == 'skip'
             u.broken = False
             u.sa = u.sa_max
             self.dirty(u)
-            self.log(recover=u.name)
+            self.log(recover=u.name, skip=skip)
         if self.mc['shield_tick'] == 'turn_start':
             self._tick_shields(u)
         for k in u.cd:
             u.cd[k] = max(0.0, u.cd[k] - 1)
         self._tick_dot_hot(u)
-        if u.dead:
+        if u.dead or skip:
             u.acting = False
             return
         self.fire(u, 'own_ts', Ctx(u, u, None))

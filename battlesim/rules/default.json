@@ -107,7 +107,7 @@
   "break_skill_domain_turns": {"value": 4, "grade": "community", "note": "치트 매트릭스 영역 4턴. 보유자 행동으로 차감하지 않고 break_skill_cd_unit 공용 시계로 차감(가정)", "source": "루리웹: docs/break_skills.md 구조"},
   "break_skill_fixed": {"value": true, "grade": "assumed", "note": "오메가 프로토콜·치트 매트릭스는 Eff 로 표시하며 해제 불가로 가정. 기존 강화 불가 규칙은 그대로 적용, 부활한 유닛에 영역 재부여 없음"},
   "toughness_elem": {"value": "db", "alt": ["on", "off"], "grade": "community", "note": "강인도 피해 = 기본값(상성 유리 1, 아니면 0) + 강인도 피해(스킬 ab·「강인도 피해 +N」) + 「강인도 고정 피해 +N」 — 유리 상성이면 기본기(ab 없음)도 타격마다 1. on = 옛 규칙(불리면 ab 몫 0, 유리면 ab>0 일 때만 +1, 나무위키 RESIST)", "source": "starsavior-db.pages.dev/mechanics (2026-10-21 확인): Base(우위 1, 열세·동일 0) + SA Damage + SA True Damage − SA Damage Reduce"},
-  "ally_break_gauge": {"value": "reset", "alt": ["keep"], "grade": "user", "note": "구원자가 브레이크될 때 행동 게이지: 몬스터와 같이 0(차례가 밀림) — 사용자 인게임 확인(2026-10-21 「우리가 강인도가 까이면 턴이 밀린다」). databook 문구는 「일반·정예·보스 몬스터」만 적었음. keep = 옛 가정(게이지 유지)"},
+  "ally_break_gauge": {"value": "skip", "alt": ["reset", "keep"], "grade": "user", "note": "구원자가 브레이크될 때: skip = 게이지는 그대로, 자기 턴이 오면 강인도 회복에 그 턴을 쓰고 행동 없음(쿨타임·지속 피해는 돈다) — 사용자 인게임 설명 2026-10-21 「브레이크돼도 턴은 안 밀리는데 자기 턴에 회복되고 결과적으로 턴이 밀린다」(starsavior-db 「아군은 게이지 초기화 안 됨」과도 맞음). reset = 즉시 게이지 0(직전 해석), keep = 게이지 유지·정상 행동(옛 가정)"},
   "basic_tough": {"value": 0, "alt": [1], "grade": "data", "note": "기본기의 강인도 파괴량: 구원자 기본기에는 데이터 ab 가 없음(적 기본기는 ab 1). 대안 1 = 설계 3절 민감도"},
   "power_penalty": {"value": "off", "alt": ["model"], "grade": "assumed", "note": "P5 전투력 보정(topics.pen): model = 프리셋 스탯으로 databook 전투력 공식(스킬 레벨 합 34·전투력 잠재력 0 가정)을 계산해 4명 합 / 권장 전투력(bp) 비율로 아군 피해·적 피해 배율(스킬·지속·연쇄, 회복·보호막 제외). 플래시 포인트는 미적용(formulas_web 10절). 공식 입력·콘텐츠 적용 범위가 불확실해 기본은 끔(민감도 행)", "source": "databook topics.pen, app.js calcBP"}
  }
