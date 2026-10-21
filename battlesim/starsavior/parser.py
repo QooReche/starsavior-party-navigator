@@ -218,6 +218,29 @@ class Skill:
         self.raw = s
 
 
+def ally_stack_trigger(sk, lines):
+    """설명문이 명시한 다른 아군 타격 후 최대 스택 트리거와 스택 상한."""
+    if sk.slot != '특수기' or sk.ty != '트리거':
+        return None
+    desc = sk.raw.get('dx') or sk.raw.get('d1') or ''
+    m = re.match(r'자신을 제외한 아군 누군가 타격 후 자신의 \[([^]]+)\][이가] 최대 스택이면 \['
+                 + re.escape(sk.name) + r'\][을를] 발동합니다\.', desc)
+    if not m:
+        return None
+    name = m.group(1)
+    caps = {ln.eff['max'] for ln in lines if ln.eff.get('name') == name and ln.eff.get('max')}
+    return (name, caps.pop()) if len(caps) == 1 else None
+
+
+def supported_trigger(d, sk):
+    """확률 엔진이 시전 조건을 연결한 트리거. 기대값 엔진의 실행 규칙은 바꾸지 않는다."""
+    return bool(ally_stack_trigger(sk, d.lines) or (d.key, sk.name) in {
+        ('professor-m', '악에서 악으로'),
+        ('wedding-carmen', '수호의 기사'),
+        ('white-pearl-luna', '썸머 템테이션♡'),
+    })
+
+
 def _perm_apply(stats, passive, eff):
     st, v = eff['stat'], eff['val']
     if st == '공격력%':
@@ -269,8 +292,6 @@ class UnitDef:
             elif s['ty'] == '트리거':
                 src = 'trigger'
                 self.trigger_skills[slot] = sk
-                if s['tg'].startswith('반응'):
-                    self.unmodeled.append('반응 트리거 스킬 미반영: %s' % s['n'])
             else:
                 src = 'active'
                 self.skills[slot] = sk
@@ -284,6 +305,10 @@ class UnitDef:
                     self.unmodeled.append('조건 미해석 줄: ' + raw[:70])
                 elif ln.eff['kind'] == 'ignored' and ln.eff.get('why') == '미해석':
                     self.unmodeled.append('효과 미해석 줄: ' + raw[:70])
+        for sk in self.trigger_skills.values():
+            if not supported_trigger(self, sk):
+                prefix = '반응 트리거' if sk.tg.startswith('반응') else '트리거'
+                self.unmodeled.append('%s 스킬 미반영: %s' % (prefix, sk.name))
         if self.id == 1039 and '특수기' in self.trigger_skills:
             self.manual = 'profM'
         if build not in (None, 'none'):

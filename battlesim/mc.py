@@ -15,7 +15,7 @@ from collections import defaultdict
 from . import rules as _rules
 from .engine import calc_hit
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
-from .starsavior.parser import _map_prop, split_head
+from .starsavior.parser import _map_prop, split_head, ally_stack_trigger, supported_trigger
 
 
 class EventLimitError(RuntimeError):
@@ -920,12 +920,12 @@ class Battle:
                          tgt_boss=bool(t0 is not None and getattr(t0.d, 'boss', False)))
             if not skip_lines:
                 self.run_own(u, ctx, 'own_pre')
+                self.fire_side(u, ctx, 'ally_pre')
+                self.fire_foes(u, ctx, 'foe_pre' if sk.is_attack else 'foe_pre_na')
             elif local_pre:   # 줄을 건너뛰는 트리거 시전이라도 그 스킬의 「이번 스킬에만」 피해 보정은 적용(프로페서M 브레이크 대상 +30%·스킬 레벨 +15%)
                 lines = [ln for ln in self.lines_of(u) if line_kind(ln) == 'own_pre' and ln.eff['kind'] == 'local' and ln.slot == sk.slot]
                 if lines:
                     self.run_batch(u, lines, ctx)
-                self.fire_side(u, ctx, 'ally_pre')
-                self.fire_foes(u, ctx, 'foe_pre' if sk.is_attack else 'foe_pre_na')
             if sk.is_attack and ctx.targets:
                 self.deal(u, ctx)
             if not u.dead:
@@ -1009,6 +1009,22 @@ class Battle:
                 c2 = Ctx(b, actor, ctx.skill, ctx.extra)
                 c2.targets, c2.target, c2.crit, c2.kill, c2.evaded = ctx.targets, ctx.target, ctx.crit, ctx.kill, ctx.evaded
                 self.run_batch(b, lines, c2)
+        if kind == 'ally_post' and ctx.skill.is_attack and ctx.targets:
+            self.ally_stack_triggers(actor, ctx)
+
+    def ally_stack_triggers(self, actor, ctx):
+        """다른 아군의 타격이 끝나면 최대 스택 특수기를 시전한다. 재진입 전에 쿨을 건다."""
+        for b in self.alive(actor.side):
+            if b is actor or self.no_react(b) or (b.side == 1 and not self.enemy_lines):
+                continue
+            ts = b.d.trigger_skills.get('특수기')
+            rule = ally_stack_trigger(ts, self.lines_of(b)) if ts is not None else None
+            if rule is None or b.cd.get('특수기', 0) > 0:
+                continue
+            name, cap = rule
+            if b.stack(name) >= cap:
+                b.cd['특수기'] = ts.cd or 0
+                self.cast(b, ts, extra=True, via='trigger')
 
     def fire_foes(self, actor, ctx, kind):
         for b in self.alive(1 - actor.side):
@@ -1790,6 +1806,13 @@ class Battle:
                     self.dirty(x)
             return
         if kd == 'buff':
+            if owner.d.key == 'cristelle' and eff['name'] == '점화':
+                # units.sk d1/dx: 태양 시전자면 기본 1개에 추가 1개(ef의 2회는 합계).
+                # 특수기가 나눠 주는 2개 역시 자신을 제외한 태양 아군에게만 적용.
+                if ln.slot == '고유 패시브' and line_kind(ln) == 'ally_pre' and dict(ln.params).get('시전자 속성') == '태양':
+                    eff = dict(eff, times=1)
+                elif ln.slot == '특수기' and eff['target'] == '자신 제외 아군 전체':
+                    eff = dict(eff, target='자신 제외 태양 속성 아군 전체')
             if eff['name'] in CD_RESET_NAMES:      # P5 〈궁극기 쿨타임 초기화〉·〈특수기 쿨타임 감소〉 = 그 칸 쿨타임 0(설명문)
                 for x in self.resolve(owner, eff['target'], ctx) or []:
                     sl = CD_RESET_NAMES[eff['name']]
@@ -2158,7 +2181,7 @@ def _meaning_gap(ln, k, markers):
 
 
 def support_report(defs):
-    """전투에 나오는 유닛들의 줄 중 확률 엔진이 실행하지 못하는 것(시점·효과·조건) + 반응/변형 스킬. 실행 전 검사."""
+    """전투에 나오는 유닛들의 미지원 줄(시점·효과·조건) + 일반/반응 트리거·변형 스킬. 실행 전 검사."""
     out = []
     markers = {}
     for d in defs:   # 조건에서 이름으로 확인하는 효과(표지용 버프: 낮의 주기 등)는 속성이 없어도 의미가 있다
@@ -2191,10 +2214,11 @@ def support_report(defs):
             if reason:
                 out.append(dict(unit=d.name, foe=foe, slot=ln.slot, reason=reason, raw=ln.raw,
                                 critical=bool(foe and CRITICAL_RX.search(rest) and '강인도' not in rest)))
+        for ts in d.trigger_skills.values():
+            if not supported_trigger(d, ts):
+                out.append(dict(unit=d.name, foe=foe, slot=ts.slot, reason='skill',
+                                raw='트리거 스킬 미반영: ' + ts.name, critical=False))
         for msg in getattr(d, 'unmodeled', []):
-            if msg.startswith('변형') or msg.startswith('반응') or msg.startswith('적 트리거'):
-                if (('수호의 기사' in msg and getattr(d, 'key', '') == 'wedding-carmen') or ('악에서 악으로' in msg and d.manual == 'profM')
-                        or ('썸머 템테이션' in msg and getattr(d, 'key', '') == 'white-pearl-luna')):
-                    continue    # 엔진이 직접 지원하는 반응 스킬(Battle.reaction_skills / prof_m)
+            if msg.startswith('변형'):
                 out.append(dict(unit=d.name, foe=foe, slot=None, reason='skill', raw=msg, critical=False))
     return out

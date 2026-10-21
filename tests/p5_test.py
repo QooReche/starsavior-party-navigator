@@ -16,7 +16,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 from battlesim.api import _CustomFoe, power_pen, simulate  # noqa: E402
-from battlesim.mc import Battle, Ctx, Eff  # noqa: E402
+from battlesim.mc import Battle, Ctx, Eff, support_report  # noqa: E402
 from battlesim.starsavior import build as bld  # noqa: E402
 from battlesim.starsavior.data import get_db  # noqa: E402
 from battlesim.starsavior.parser import Line, UnitDef  # noqa: E402
@@ -330,6 +330,109 @@ def test_action_trigger():
     return (n1, n2) == (1, 2), '비공격 뒤 %d, 공격 뒤 %d (기대 1, 2)' % (n1, n2)
 
 
+def test_cast_pre_events():
+    """일반·추가·반응·트리거 시전의 아군/적 사전 이벤트는 own_pre와 같은 skip_lines 규칙을 따른다."""
+    out = {}
+    for mode in ('normal', 'extra', 'reaction', 'trigger', 'skip', 'local'):
+        for attack in (True, False):
+            a = unit('actor', skills=[dict(slot='기본기', dm=100 if attack else 0, tg='적 단일' if attack else '자신')])
+            b = battle([a, unit('ally')], [unit('foe', hp=10 ** 9)], opts=dict(coop=False))
+            A, B = b.allies
+            F = b.foes[0]
+            for u, trig in ((A, '내 행동 시'), (B, '아군 행동 시'), (F, '적 공격 시' if attack else '적 비공격 스킬 시')):
+                u.d.lines = [Line('[스킬 사용 시작 시] (조건: %s) 자신에게 〈표시〉 (지속 무한)' % trig, '고유 패시브', 'passive')]
+            # 같은 아군 이벤트가 시전자 자신에게도 중복 발송되면 실패.
+            A.d.lines.append(Line('[스킬 사용 시작 시] (조건: 아군 행동 시) 자신에게 〈중복〉 (지속 무한)', '고유 패시브', 'passive'))
+            b.cast(A, A.d.skills['기본기'], extra=mode != 'normal', via=mode,
+                   skip_lines=mode in ('skip', 'local'), local_pre=mode == 'local')
+            out[(mode, attack)] = (A.stack('표시'), B.stack('표시'), F.stack('표시'), A.stack('중복'))
+    ok = all(v == ((0, 0, 0, 0) if k[0] in ('skip', 'local') else (1, 1, 1, 0)) for k, v in out.items())
+    return ok, '공격/비공격 × 시전 경로 6종: %s' % out
+
+
+def test_cristelle_stack_trigger():
+    """아군 타격 완료 뒤 1회 발동·선행 쿨·스택 소거, 쿨/행동불가/자기 타격/비공격은 차단."""
+    out = {}
+    for mode in ('ready', 'below', 'cooldown', 'broken', 'stun', 'sleep', 'self', 'nonattack', 'post_stack', 'extra', 'sun_fill', 'generic'):
+        d = UnitDef(get_db(), 'cristelle')
+        if mode == 'generic':
+            d.key = 'generic-stack-unit'   # 캐릭터 이름에 의존하지 않고 설명문으로 연결.
+        b = battle([unit('actor', element='태양', skills=[dict(slot='기본기', dm=100), dict(slot='특수기', dm=0, tg='자신'),
+                                                       dict(slot='궁극기', dm=100)]), d],
+                   [unit('foe', hp=10 ** 9)], opts=dict(coop=False), timeline=True)
+        A, C = b.allies
+        F = b.foes[0]
+        stacks = 3 if mode == 'sun_fill' else 4 if mode in ('below', 'post_stack') else 5
+        give(C, '점화', stacks=stacks).maxs = 5
+        if mode == 'cooldown':
+            C.cd['특수기'] = 2
+        if mode == 'broken':
+            C.broken = True
+        if mode in ('stun', 'sleep'):
+            give(C, '기절' if mode == 'stun' else '수면', harmful=True)
+        if mode == 'post_stack':
+            C.d.lines.append(Line('[스킬 사용 후] (조건: 아군 공격 후) 자신에게 〈점화〉 (지속 무한) {최대 5중첩}', '고유 패시브', 'passive'))
+        # 진입 순간에 쿨이 이미 걸렸고 원 공격 피해 처리가 끝났는지 확인.
+        calls = []
+        original = b.cast
+        def traced(u, sk, **kw):
+            if kw.get('via') == 'trigger':
+                calls.append((u.cd.get('특수기'), F.hp < F.maxhp, kw.get('extra')))
+            return original(u, sk, **kw)
+        b.cast = traced
+        actor = C if mode == 'self' else A
+        slot = '궁극기' if mode == 'sun_fill' else '특수기' if mode == 'nonattack' else '기본기'
+        b.cast(actor, actor.d.skills[slot], extra=mode == 'extra')
+        expected = mode in ('ready', 'post_stack', 'extra', 'sun_fill', 'generic')
+        first_ok = (C.cast_count['특수기(추가)'] == int(expected)
+                    and calls == ([(d.trigger_skills['특수기'].cd, True, True)] if expected else []))
+        if expected:
+            first_ok = first_ok and C.stack('점화') == 0 and C.has('복수심(해제불가)') and C.gauge == 5000
+            give(C, '점화', stacks=5).maxs = 5
+            b.cast(A, A.d.skills['기본기'])
+            first_ok = first_ok and C.cast_count['특수기(추가)'] == 1 and C.cd['특수기'] == 3
+        out[mode] = first_ok
+    return all(out.values()), '발동·차단 12조건 %s' % out
+
+
+def test_cristelle_ignite_amount():
+    """설명문: 다른 아군 특수기/궁극기 공격 시 태양 +2, 나머지 +1. 특수기 분배는 태양만 +2."""
+    out = {}
+    for element in ('태양', '달', '별'):
+        for slot, attack in (('기본기', True), ('특수기', True), ('궁극기', True), ('특수기', False)):
+            d = UnitDef(get_db(), 'cristelle')
+            a = unit('actor', element=element, skills=[dict(slot=slot, dm=100 if attack else 0, tg='적 단일' if attack else '자신')])
+            b = battle([a, d], [unit('foe', hp=10 ** 9)], opts=dict(coop=False))
+            A, C = b.allies
+            C.cd['특수기'] = 3
+            b.cast(A, A.d.skills[slot])
+            expected = (2 if element == '태양' else 1) if attack and slot != '기본기' else 0
+            out[(element, slot, attack)] = (C.stack('점화'), expected)
+    b = battle([unit('sun', element='태양'), unit('moon', element='달'), UnitDef(get_db(), 'cristelle')],
+               [unit('foe', hp=10 ** 9)], opts=dict(coop=False))
+    S, M, C = b.allies
+    give(C, '점화', stacks=5)
+    b.cast(S, S.d.skills['기본기'])
+    shared = (S.stack('점화'), M.stack('점화'), C.stack('점화'))
+    # 공유 파서의 ef는 그대로여야 기대값 엔진에 영향이 없다.
+    unchanged = [ln.eff['times'] for ln in C.d.lines if ln.slot == '고유 패시브' and dict(ln.params).get('시전자 속성') == '태양'] == [2, 2]
+    return all(got == want for got, want in out.values()) and shared == (2, 0, 0) and unchanged, '획득 12조건 %s / 분배 %s' % (out, shared)
+
+
+def test_trigger_support_report():
+    """연결된 트리거는 미지원에서 제외, 미지원 일반/반응 트리거는 모두 보고."""
+    supported = ['cristelle', 'professor-m', 'wedding-carmen', 'white-pearl-luna']
+    unsupported = ['smile', 'sunshine-cat-smile', 'roberta', 'fei']
+    out = {}
+    for key in supported + unsupported:
+        d = UnitDef(get_db(), key)
+        names = {s.name for s in d.trigger_skills.values()}
+        parsed = any('트리거 스킬 미반영' in msg and any(n in msg for n in names) for msg in d.unmodeled)
+        reported = any(r['reason'] == 'skill' and any(n in r['raw'] for n in names) for r in support_report([d]))
+        out[key] = (parsed, reported)
+    return all(v == ((False, False) if k in supported else (True, True)) for k, v in out.items()), '파서/보고 %s' % out
+
+
 def test_recast_limit():
     """{발동 후 1턴 재발동 불가}: 같은 자기 턴 안에서는 한 번만(추가 발동이 자기 자신을 다시 부르는 연쇄 차단), 다음 자기 턴엔 다시 걸림"""
     a = unit('a', skills=[dict(slot='기본기', dm=100), dict(slot='특수기', dm=100, cd=3)])
@@ -403,7 +506,9 @@ def test_review_fixes():
 # ---------------------------------------------------------------- 사전 계산 연결
 TESTS = [test_build_light_values, test_stat_order_journey, test_potential_pick, test_build_missing_is_error, test_build_speed_range,
          test_toughness_break, test_tough_elem_and_fixed, test_ally_break_gauge_and_coop, test_break_conditions, test_damage_limit,
-         test_power_penalty, test_new_enemy_effects, test_new_conditions, test_action_trigger, test_recast_limit, test_review_fixes]   # 옛 사전 계산 시험(test_precompute_build_and_gate)은 사전 계산 퇴역으로 뺌(2026-10-20)
+         test_power_penalty, test_new_enemy_effects, test_new_conditions, test_action_trigger, test_cast_pre_events,
+         test_cristelle_stack_trigger, test_cristelle_ignite_amount, test_trigger_support_report,
+         test_recast_limit, test_review_fixes]   # 옛 사전 계산 시험(test_precompute_build_and_gate)은 사전 계산 퇴역으로 뺌(2026-10-20)
 
 
 def main():

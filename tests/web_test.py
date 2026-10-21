@@ -58,8 +58,10 @@ def test_run_auto_power_and_determinism():
     b = json.loads(web.run_auto(STAGE, p, 30, 1, OPT))
     c = json.loads(web.run_auto(STAGE, p, 30, 2, OPT))
     want = st['bp'] * 0.8
-    ok = abs(a['power'] - want) / want < 0.002 and a == b and (a['clear'], a['ttk']) != (c['clear'], c['ttk'])
-    return ok, '전투력 %.0f (가정 %.0f) / 같은 시드 같음 %s / 다른 시드 %s vs %s' % (a['power'], want, a == b, (a['clear'], a['ttk']), (c['clear'], c['ttk']))
+    # 클리어율·처치 시간 중앙값은 다른 난수 표본에서도 같을 수 있다. 구원자별 피해/사망도 함께 비교.
+    different = (a['clear'], a['ttk'], a['u']) != (c['clear'], c['ttk'], c['u'])
+    ok = abs(a['power'] - want) / want < 0.002 and a == b and different
+    return ok, '전투력 %.0f (가정 %.0f) / 같은 시드 같음 %s / 다른 시드 피해·사망 포함 결과 다름 %s' % (a['power'], want, a == b, different)
 
 
 def test_run_manual_shape():
