@@ -124,8 +124,25 @@ def test_manifest_complete():
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def test_pyodide_local():
+    """브라우저 엔진(Pyodide)은 lib/pyodide 에서 받고(외부 CDN 금지), 파일은 공식 패키지 해시와 같다(lib/pyodide/SHA256SUMS)"""
+    import hashlib
+    d = os.path.join(ROOT, 'lib', 'pyodide')
+    bad = []
+    n = 0
+    for line in open(os.path.join(d, 'SHA256SUMS'), encoding='utf-8'):
+        h, name = line.split()
+        name = name.lstrip('*')
+        n += 1
+        if hashlib.sha256(open(os.path.join(d, name), 'rb').read()).hexdigest() != h:
+            bad.append(name)
+    w = open(os.path.join(ROOT, 'sim_worker.js'), encoding='utf-8').read()
+    ext = 'https://' in w or 'http://' in w
+    return n == 5 and not bad and not ext, '파일 %d개, 해시 다름 %s, 작업자에 바깥 주소 %s' % (n, bad, ext)
+
+
 TESTS = [test_seq_from_timeline, test_slot_order, test_run_auto_power_and_determinism, test_run_manual_shape, test_manual_burst_rule,
-         test_formula_override_restored, test_manifest_complete]
+         test_formula_override_restored, test_manifest_complete, test_pyodide_local]
 
 
 def main():

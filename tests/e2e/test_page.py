@@ -205,9 +205,11 @@ def test_savior_power(browser, ctx):
 
 
 def test_browser_sim(browser, ctx):
-    """「위 3팀 시뮬로 확인」: Pyodide 로 파이썬 엔진을 돌려 3팀 모두 클리어 확률·95% 구간 표시, 콘솔 오류 0(인터넷 필요)"""
+    """「위 3팀 시뮬로 확인」: Pyodide 로 파이썬 엔진을 돌려 3팀 모두 클리어 확률·95% 구간 표시, 콘솔 오류 0, 이 사이트 밖 요청 0"""
     ctx.errors.clear()
     page = open_page(browser, ctx, legacy=False)
+    ext = []      # 엔진을 이 사이트 밖에서 받으면 안 된다(lib/pyodide, 2026-10-21)
+    page.context.on("request", lambda r: ext.append(r.url) if not r.url.startswith(ctx.base) and not r.url.startswith("data:") and not r.url.startswith("blob:") else None)
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
     n = len(quick_rows(page))
     t0 = time.time()
@@ -240,7 +242,8 @@ def test_browser_sim(browser, ctx):
         lead = so[t["party"]["leader"]] if t["party"]["leader"] is not None else None
         ps = G.party_spec(q, pen, order, lead, t["key"].split(","), 1.0, st)
         spec_same.append(ps["units"] == t["party"]["units"] and ps["leader"] == t["party"]["leader"])
-    ok = "클리어" in txt and "95% 구간" in txt and "완료" in state and not errs and all(same) and len(same) == n and all(spec_same)
+    ok = "클리어" in txt and "95% 구간" in txt and "완료" in state and not errs and all(same) and len(same) == n and all(spec_same) and not ext
+    txt = txt + " / 바깥 요청 %s" % ext[:3]
     txt = txt + " / 입력 같음 %s" % spec_same
     txt = txt + " / 파이썬과 같음 %s" % same
     return ok, "%d팀 %.0f초 / 파이썬 결과 같음 %s / 입력 같음 %s / %s / 오류 %s" % (n, dt, same, spec_same, " ".join(txt.split())[:60], errs[:2])
@@ -250,8 +253,8 @@ def test_browser_sim_blocked(browser, ctx):
     """엔진 내려받기가 막히면 「시뮬 실패 · 다시 시도」, 빠른 계산 추천은 그대로(codex 안전장치 2)"""
     page = browser.new_page(viewport={"width": 1280, "height": 900})
     attach(page, ctx)
-    page.route("**/cdn.jsdelivr.net/**", lambda r: r.abort())
-    page.context.route("**/cdn.jsdelivr.net/**", lambda r: r.abort())
+    page.route("**/lib/pyodide/**", lambda r: r.abort())
+    page.context.route("**/lib/pyodide/**", lambda r: r.abort())
     page.goto(ctx.base + "/index.html")
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
     n = len(quick_rows(page))

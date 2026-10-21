@@ -11,3 +11,6 @@ models/** -text
 *.jpg binary
 *.ico binary
 *.webp binary
+
+# 브라우저 계산 엔진(Pyodide) 원본 그대로 — 변환하면 해시가 달라진다
+lib/pyodide/** -text

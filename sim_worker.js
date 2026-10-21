@@ -2,7 +2,8 @@
 // 메시지: {type:"run", id, stage:"content/tab/name", teams:[{key, party:{units:[{key,stats_override}],leader}}], n_runs, seed, options}
 // 응답: {type:"stage", id, msg} 진행 / {type:"team", id, key, result} 팀 하나 끝 / {type:"done", id} / {type:"error", id, msg}
 // 취소·제한 시간은 화면 쪽이 worker.terminate() 로 처리한다(파이썬 인터럽트는 보안 헤더가 필요해서 쓰지 않음).
-const PYODIDE="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/";
+// Pyodide 0.26.4 는 외부 CDN 이 아니라 이 사이트의 lib/pyodide/ 에서 받는다(같은 주소 = 바깥 서버 의존 없음, 해시 lib/pyodide/SHA256SUMS)
+const PYODIDE=new URL("lib/pyodide/",self.location.href).href;
 let py=null,ready=null;
 async function boot(base){
  postMessage({type:"stage",msg:"계산 엔진 내려받는 중(처음 한 번, 약 10MB)"});
