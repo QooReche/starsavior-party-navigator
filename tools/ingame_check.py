@@ -21,7 +21,12 @@ REAL = {
     'white-pearl-luna': dict(atk=12314, hp=66887, spd=181, cr=6820, cd=7020, eh=17400, er=1500, **{'def': 5206}),
     'wedding-carmen': dict(atk=9972, hp=119367, spd=151, cr=880, cd=6470, eh=10620, er=3216, **{'def': 5811}),
     'cristelle': dict(atk=17903, hp=60168, spd=157, cr=5610, cd=8450, eh=16804, er=2380, **{'def': 4798}),
+    # 2026-10-21 2차(파티 전투력 411,163 = 네 명 화면 전투력 합과 정확히 일치)
+    'claire': dict(atk=16002, hp=65538, spd=187, cr=5720, cd=11900, eh=11012, er=2412, **{'def': 4915}),
+    'professor-m': dict(atk=15196, hp=61258, spd=179, cr=8330, cd=6400, eh=14744, er=2540, **{'def': 5053}),
+    'waltz-asherah': dict(atk=9909, hp=95464, spd=183, cr=8730, cd=9710, eh=12268, er=1308, **{'def': 5522}),
 }
+TEAM2 = ['claire', 'waltz-asherah', 'wedding-carmen', 'professor-m']      # 화면 카드 순서(후열 클레어, 전열 아세라·카르멘, 후열 프로페서M)
 # 실측 판: (콘텐츠, 탭|스테이지, 화면 카드 순서[후열1, 전열1, 전열2, 후열2], 리더, 파티 전투력, 재점화 단계, 준 피해, 받은 피해, TURN, 결과)
 SAMPLES = {
     '36-36': ('op', '아가논 시가지|SECTOR 36-36', ['wedding-epindel', 'white-pearl-luna', 'wedding-carmen', 'cristelle'], None,
@@ -30,6 +35,8 @@ SAMPLES = {
              394578, 0, 1104681, 267286, 52, 'clear'),
     '37-3': ('op', '모나스티르 광장|SECTOR 37-3', ['wedding-epindel', 'white-pearl-luna', 'wedding-carmen', 'cristelle'], 'wedding-carmen',
              394578, 0, 895585, 492422, 43, 'clear'),
+    '37-4': ('op', '모나스티르 광장|SECTOR 37-4', TEAM2, 'wedding-carmen', 411163, 0, 346440, 53172, 13, 'clear'),
+    '37-5': ('op', '모나스티르 광장|SECTOR 37-5', TEAM2, 'wedding-carmen', 411163, 0, 713329, 170878, 22, 'clear'),
 }
 
 
