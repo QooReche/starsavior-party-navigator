@@ -100,7 +100,7 @@ def gauntlet_stats(unit, growth):
 
 
 def final_stats(unit, info, growth, rule="normal"):
-    """Return {stats, missing, power[, build_mismatch]}, or None for an unknown rule.
+    """Return {stats, missing, power, combat[, build_mismatch]}, or None for an unknown rule.
 
     unit is one imported info.units entry (id = roster uid). Absent fields use
     neutral defaults, with diagnostics. Cumulative rows use the last known level;
@@ -247,4 +247,6 @@ def final_stats(unit, info, growth, rule="normal"):
     elif str(info["game_build"]) != str(growth["game_build"]):
         result["build_mismatch"] = True
     result["missing"] = sorted(missing)
+    from .myinfo_combat import combat_input
+    result["combat"] = combat_input(unit)
     return result

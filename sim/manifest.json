@@ -1,6 +1,6 @@
 {
  "_note": "브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시",
- "ver": "ee3e7acccbd5",
+ "ver": "959466b92840",
  "files": [
   "battlesim/__init__.py",
   "battlesim/api.py",
@@ -14,6 +14,7 @@
   "battlesim/starsavior/data.py",
   "battlesim/starsavior/foe.py",
   "battlesim/starsavior/mc_semantics.py",
+  "battlesim/starsavior/myinfo_combat.py",
   "battlesim/starsavior/myinfo_stats.py",
   "battlesim/starsavior/parser.py",
   "battlesim/starsavior/stats.py",
@@ -23,7 +24,8 @@
   "rawdata/databook_main.json",
   "rawdata/foe.js",
   "rawdata/guide_app-core.js",
-  "data/synergy_tags.json"
+  "data/synergy_tags.json",
+  "data/myinfo_combat.json"
  ],
- "bytes": 4748991
+ "bytes": 4789795
 }

@@ -198,6 +198,11 @@
     if (info.game_build == null || growth.game_build == null) missing.add("game_build");
     else if (String(info.game_build) !== String(growth.game_build)) result.build_mismatch = true;
     result.missing = Array.from(missing).sort();
+    result.combat = {
+      skills: Object.fromEntries(["basic", "special", "ultimate", "passive"].filter(k => k in skills).map(k => [k, skills[k]])),
+      potentials: (Array.isArray(unit.gauntlet?.potentials) ? unit.gauntlet.potentials : [])
+        .filter(p => Array.isArray(p) && p.length === 4 && p.every(v => Number.isInteger(v) && v >= 0) && p[1] > 0).map(p => [p[0], p[1]])
+    };
     return result;
   }
   const api = {final_stats, gauntlet_stats, rule_for_content, unit_power};

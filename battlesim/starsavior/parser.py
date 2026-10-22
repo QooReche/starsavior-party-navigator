@@ -269,10 +269,10 @@ def _perm_apply(stats, passive, eff):
 
 
 class UnitDef:
-    def __init__(self, db, key, level=200, res_stage=10, star=0, mode='fixed', gear=None, build=None):
+    def __init__(self, db, key, level=200, res_stage=10, star=0, mode='fixed', gear=None, build=None, unit_data=None):
         """build(P5, 확률 엔진용): None/'none' = 육성 없음(기존과 같음), 'light'·'standard' = 육성 프리셋(starsavior/build.py)."""
         self.key = key
-        u = db.units[key]
+        u = unit_data if unit_data is not None else db.units[key]
         self.u = u
         self.id, self.variant, self.name = u['id'], u['v'], u['n']
         self.role, self.element, self.grade, self.attack_kind = u['r'], u['a'], u['g'], u['k']

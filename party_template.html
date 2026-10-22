@@ -600,7 +600,7 @@ function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
  // 시뮬 칸 = [전열1, 전열2, 후열1, 후열2]. 화면 카드 순서(ar.order) = [후열1, 전열1, 전열2, 후열2] 라 바꿔 넣는다(tools/build_sim_results.arrange 와 같은 규칙)
  const so=[ar.order[1],ar.order[2],ar.order[0],ar.order[3]];
  const units=so.map(k0=>{const k=ekey(k0),u=sv[k],pw=(t.b.powers&&t.b.powers[k])||null;
-  if(t.b.finals?.[k0])return {key:k,build:"none",stats_override:t.b.finals[k0].stats,stats_final:true,power:t.b.finals[k0].power};
+  if(t.b.finals?.[k0])return {key:k,build:"none",stats_override:t.b.finals[k0].stats,stats_final:true,power:t.b.finals[k0].power,myinfo_combat:t.b.finals[k0].combat};
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
  const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null}}

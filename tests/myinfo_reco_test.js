@@ -34,8 +34,8 @@ const tests={
       contents:[{key:'op'}],$:()=>({value:0}),rkOf:()=>0,SIMQ:{n:100},MODE:'auto',miMode:()=>true,MI:{hash:'first'},teamBreak:()=>null});
     vm.runInContext(html.slice(start,end),ctx);ctx.t={combo:[],ek:keys,base:40000,b:finals};ctx.st={tab:'x',name:'y'};
     const party=JSON.parse(JSON.stringify(vm.runInContext('simParty(t)',ctx)));
-    assert.equal(party.leader,0);assert.deepEqual(party.units[0],{key:'1002',build:'none',stats_override:profile.results['1002'].stats,stats_final:true,power:profile.results['1002'].power});
-    assert.deepEqual(party.units[2],{key:'1001',build:'none',stats_override:profile.results['1001'].stats,stats_final:true,power:profile.results['1001'].power});
+    assert.equal(party.leader,0);assert.deepEqual(party.units[0],{key:'1002',build:'none',stats_override:profile.results['1002'].stats,stats_final:true,power:profile.results['1002'].power,myinfo_combat:profile.results['1002'].combat});
+    assert.deepEqual(party.units[2],{key:'1001',build:'none',stats_override:profile.results['1001'].stats,stats_final:true,power:profile.results['1001'].power,myinfo_combat:profile.results['1001'].combat});
     assert.deepEqual(party.units[3],{key:'missing',stats_override:{atk:100,hp:1000,def:50}});
     const before=vm.runInContext('simSig(st,t)',ctx);ctx.MI.hash='second';assert.notEqual(vm.runInContext('simSig(st,t)',ctx),before);
     ctx.miMode=()=>false;assert.notEqual(vm.runInContext('simSig(st,t)',ctx),before);},

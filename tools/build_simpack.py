@@ -13,7 +13,7 @@ import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIXED = ['battlesim/rules/default.json', 'battlesim/rules/builds.json', 'rawdata/databook_main.json', 'rawdata/foe.js',
-         'rawdata/guide_app-core.js', 'data/synergy_tags.json']   # build.py(표준 육성)가 builds.json·가이드 세팅을 읽는다
+         'rawdata/guide_app-core.js', 'data/synergy_tags.json', 'data/myinfo_combat.json']
 
 
 def files():

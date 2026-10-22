@@ -76,9 +76,11 @@ Python `battlesim.starsavior.myinfo_stats.final_stats(unit, info, growth, rule="
 스타링크 추가 성장은 반영하지 않는다. **플래시 포인트 = BossRush 연결은 추정**이다.
 미매핑 콘텐츠 또는 지원하지 않는 rule은 `None`/`null`이므로 호출 쪽에서 기존 가정으로 돌아간다.
 
-시뮬 입력은 `{key, build: "none", stats_override: result.stats, stats_final: true, power: result.power}`이다.
+시뮬 입력은 `{key, build: "none", stats_override: result.stats, stats_final: true, power: result.power, myinfo_combat: result.combat}`이다.
 유닛의 `build`가 전역 옵션보다 우선하여 표준 장비·잠재력·그 조건부 효과를 추가하지 않으며,
 `stats_final`은 입력된 능력치의 상시 패시브 재적용을 막는다.
+`myinfo_combat`은 실제 스킬 레벨과 습득 잠재력의 전투 효과·추가 강인도를 전달한다.
+규칙 `mc.myinfo_combat=false`로 종전 동작을 재현할 수 있다. 감사·중복 제외 기준은 `docs/myinfo_combat_audit.md`에 기록했다.
 `power`는 내정보 스킬 4종 레벨 합(고유 패시브 포함)과 습득 잠재력의 전투력 PP로 계산한다.
 PP는 `potential_pp[ID][a]`의 합이다. 해당 잠재력의 1~a 레벨 중 `PotenBattlePowerCheck`가
 참인 행의 `PotenLevelUpReqPP`를 누적한 값이며 할인 b·축복 레벨 c는 적용하지 않는다.

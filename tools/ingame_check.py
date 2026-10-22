@@ -92,7 +92,7 @@ def myinfo_party(content, order, lead, path):
             raise ValueError('Missing myinfo/growth unit: ' + key)
         result = final_stats(owned[uid], info, growth, rule)
         units.append(dict(key=key, build='none', stats_override=result['stats'],
-                          stats_final=True, power=result['power']))
+                          stats_final=True, power=result['power'], myinfo_combat=result['combat']))
         diagnostics[key] = dict(missing=result['missing'], build_mismatch=result.get('build_mismatch', False))
     return dict(units=units, leader=so.index(lead) if lead in so else None), dict(rule=rule, units=diagnostics)
 

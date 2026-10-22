@@ -1940,7 +1940,7 @@ class Battle:
 
     @staticmethod
     def _is_cast_line(ln):
-        return ln.eff['kind'] == 'extra_cast' or (ln.eff['kind'] == 'ignored' and RX_EXTRA_P.match(line_rest(ln)) is not None)
+        return ln.eff['kind'] in ('extra_cast', 'random_ally_basic') or (ln.eff['kind'] == 'ignored' and RX_EXTRA_P.match(line_rest(ln)) is not None)
 
     def run_batch(self, owner, lines, ctx):
         """같은 사건(시점·주인)에 걸린 줄 묶음: 조건은 사건 시점 상태로 한꺼번에 판정하고, 효과는 순서대로 실행하되
@@ -2016,6 +2016,17 @@ class Battle:
             return
         eff = ln.eff
         kd = eff['kind']
+        if kd == 'random_ally_basic':
+            # AutoTargetId=5 / EnforceAutoTargetId=4: random ally (self allowed),
+            # random enemy. Extra cast, not ordinary cooperation.
+            allies = [u for u in self.alive(owner.side) if '기본기' in u.d.skills]
+            enemies = self.alive(1 - owner.side)
+            if allies and enemies and self.rng.random() < eff['chance']:
+                self._fired(owner)
+                actor = self.rng.choice(allies)
+                self.cast(actor, actor.d.skills['기본기'], extra=True,
+                          target=self.rng.choice(enemies), parent=ctx, via='potential')
+            return
         if kd == 'count_damage':
             if ctx.src is owner and ctx.skill is not None:
                 if eff['scope'] == 'shield_all':
@@ -2385,7 +2396,11 @@ class Battle:
         self.unsup['effect: ' + rest[:60]] += 1
 
     def chain(self, owner, eff, ctx):
-        tg = self.resolve(owner, eff['target'], ctx)
+        if eff.get('random_enemy'):
+            pool = self.alive(1 - owner.side)
+            tg = [self.rng.choice(pool)] if pool else []
+        else:
+            tg = self.resolve(owner, eff['target'], ctx)
         if not tg:
             return
         m = owner.mods()
@@ -2599,7 +2614,7 @@ def support_report(defs):
                 reason = _meaning_gap(ln, k, markers[id(d)])
             tgt = rest.split('에게', 1)[0] if '에게' in rest else ''
             nm = ln.eff.get('name') or ''
-            if (not reason and '자동 지정' in tgt and not tgt.startswith('적') and nm != '강제 협공' and ln.eff['kind'] != 'remove'
+            if (not reason and '자동 지정' in tgt and not tgt.startswith('적') and nm != '강제 협공' and ln.eff['kind'] not in ('remove', 'random_ally_basic')
                     and not (CHECK_NAME.search(nm) or '판별용' in nm) and auto_rule(d, ln, None) is None):
                 reason = 'selector: 자동 지정 대상 규칙을 설명문에서 못 찾음(기본 규칙 사용)'
             bad = [p for p, _ in ln.params if p not in COND_KEYS]
@@ -2614,6 +2629,8 @@ def support_report(defs):
                                 raw='트리거 스킬 미반영: ' + ts.name, critical=False))
         supported_variants = {sk.name for _, sk in variant_rules(d).values()}
         for msg in getattr(d, 'unmodeled', []):
+            if msg.startswith('myinfo '):
+                out.append(dict(unit=d.name, foe=foe, slot='잠재력', reason='data', raw=msg, critical=False))
             if msg.startswith('변형'):
                 if msg.split(': ', 1)[-1] in supported_variants:
                     continue

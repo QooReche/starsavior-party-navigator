@@ -79,7 +79,7 @@ class MyinfoInputTest(unittest.TestCase):
         self.index = {str(i): dict(key=k) for i, k in enumerate('abcd', 1)}
         self.answer = dict(stats=dict(atk=100, hp=1000, **{'def': 100}, spd=170,
                                       cr=1000, cd=5000, eh=10000, er=100), power=12345,
-                           missing=['power_pp'], build_mismatch=True)
+                           missing=['power_pp'], build_mismatch=True, combat=dict(skills=dict(basic=2), potentials=[[900001, 1]]))
 
     def read(self, path, **kw):
         data = self.growth if str(path).endswith('growth.json') else (
@@ -99,6 +99,7 @@ class MyinfoInputTest(unittest.TestCase):
                 self.assertEqual(u['build'], 'none')
                 self.assertTrue(u['stats_final'])
                 self.assertEqual(u['power'], 12345)
+                self.assertEqual(u['myinfo_combat'], self.answer['combat'])
                 self.assertEqual(u['stats_override'], self.answer['stats'])
                 self.assertEqual(diag['units'][u['key']], dict(missing=['power_pp'], build_mismatch=True))
 
