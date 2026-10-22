@@ -1,13 +1,44 @@
 # 파티 편성 네비게이터 인수인계 (다음 세션용)
 
-최종 갱신: 2026-10-21. 새 세션은 `AI\CLAUDE.md` → 이 파일 → `README.md` 순으로 읽을 것. 메모리 `party-navigator` 에도 요약 있음.
+최종 갱신: 2026-10-22. 새 세션은 `AI\CLAUDE.md` → 이 파일 → `README.md` 순으로 읽을 것. 메모리 `party-navigator` 에도 요약 있음.
 
 ## 상태
 - 저장소: https://github.com/QooReche/starsavior-party-navigator (**공개**, GitHub Pages: https://QooReche.github.io/starsavior-party-navigator/). 최신 커밋은 `git log` 로 확인.
 - 로컬: `E:\AI_mk2\starsavior-party-navigator` (2026-10-20 새 PC. 옛 PC 는 `AI\partynavigator\src`). C: 용량 부족이라 작업 폴더는 `E:\AI_mk2\` 아래. 웹 페이지 `index.html` 은 `python -X utf8 -I build_party_html.py index.html` 로 생성해 커밋한다(Pages 가 루트 index.html 서비스).
 - **게임 정적 데이터(비공개 저장소)**: `QooReche/starsavior-static-data` (접근: QooReche 계정). 시뮬 강화(임의 가중치 → 실제 값)에 쓴다. 비공개라 이 공개 저장소·Pages 에 원본 표를 복사하지 말 것(가공한 요약 수치만 반영).
 - **내 정보 불러오기**: 페이지가 `내정보.json`(형식 `docs/myinfo_format.md`)을 주소 해시 또는 파일 선택으로 불러와 브라우저 `localStorage` 에만 저장한다(서버 전송 없음). 파일을 만드는 도구(한 줄 명령, 설치 불필요)는 공개 저장소 `QooReche/starsavior-myinfo` 에 있고, 사이트 서랍 「내 정보를 만드는 방법」에 같은 명령이 안내돼 있다. 도구 소스·조사 메모는 비공개 저장소 `QooReche/starsavior-packet-ref` 에 있다(접근: QooReche 계정, 이 공개 저장소에는 두지 않는다). 다른 PC 에서 이어서 할 때는 시뮬 작업이면 `starsavior-static-data` 의 `SIM_HANDOFF.md`, 도구 작업이면 packet-ref 의 `README.md`·`notes/` 부터 읽을 것.
-- 사용자 허락: databook 재사용, 이미지(아이콘·초상화·브레이크 스킬) 저장·공개 허락 확인됨(2026-10-19).
+
+## ▶ 다음 세션 시작점 (2026-10-22 오후)
+
+### 한 것
+- 전투력 PP 항 반영. 화면 전투력 대비 +0.1~0.2%.
+- 결과 공유 주소(「링크 복사」). `?c=&s=&g=&p=&m=&rk=&b=`. 내 정보·보유 목록은 넣지 않음.
+- 시뮬 판 수 100/300 선택, 클리어 35~65% 팀만 「더 돌리기」.
+- 엔진 규칙(해독 코드 근거, `battlesim/rules/default.json` 스위치)
+  - `mc.gauge_overflow`: 행동 게이지 상한 없음.
+  - `mc.enemy_cd_native`: 적 쿨은 자기 턴 종료에 감소.
+  - `mc.guard_normal_hit`: 수호 분담 피해는 일반 명중(치명 재적용 없음).
+  - `mc.taunt_skill_end_duration`: 적 행동 중 부여한 반응 도발이 그 행동 끝에 바로 만료되지 않음.
+- 적 시작 쿨 규칙 확인: 등장 시 모든 스킬 쿨 꽉 참. 배치 데이터(`UnitSpawnData`)의 All/Special/HyperSkillAvailable 이면 0. 근거 `NKM.decompiled.cs` 1765~1810, 2211~2235.
+- `tools/ingame_check.py --myinfo <내정보 경로>`: 실측 판을 내 정보 능력치로 대조.
+- 데이터북 10/22 수집: 구원자 표시 필드만 바뀜, 적 데이터 미갱신.
+- 빠른 계산 계수 재맞춤.
+
+### 큰 보스전 비관 (미해결)
+- 내 정보로 아군 능력치를 맞춰도 36-36 준÷받은 0.95(실측 1.88), 37-3 0.91(실측 1.82). 클리어 0%(실측 클리어).
+- 원인 아님으로 확인한 것: 아군 능력치, 보스 속도·스킬 수치(게임 표와 일치), 추가 턴, 쿨 감소 시점, 수호 치명, 도발(큰 보스 둘은 도발 면역).
+- 시뮬은 준 피해도 실측의 약 42% — 아군이 일찍 쓰러져 전투가 짧음. 36-36 루나 받은 피해 비중 실측 40% vs 시뮬 22%.
+- 분해 도구: `tools/received_damage_audit.py`, `tools/boss_action_diagnostic.py`. 기록: `docs/boss_action_audit.md`, `docs/received_damage_audit.md`, `docs/taunt_guard_audit.md`.
+- 다음 증거 후보: 실측 판 대상별 받은 피해·회복량(전투 통계 화면), 36-36 영상에서 루나에게 피해가 몰리는 이유(스킬 대상 선택 규칙).
+
+### 37-5 낙관 (미해결)
+- 예언자 둘이 궁극기를 한 번도 못 씀(시작 쿨 꽉 참). 시작 쿨 0 이면 3.41(실측 4.17).
+- 필요한 증거: 37-5 배치 데이터의 HyperSkillAvailable. 게임 설치 PC 에서 BattleScript 추출 필요(이 PC 에 게임 없음).
+
+### 남은 것
+- 10/22 보스 공격력 하향: 데이터북 적 데이터 갱신 뒤 `tools/fetch_sources.py` → `tools/update.py`.
+- 건틀렛 축복(`blessings`) 미해석.
+- BACKLOG: A2 적 생존 기믹, A3 구원자 반응 스킬, A6 파서 빈틈, B3 보스 지정, B6·B7 구조도.
 
 ## ▶ 2026-10-22 — 내 정보 기반 맞춤 추천 (완료)
 
