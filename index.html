@@ -278,7 +278,6 @@ button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
   </div></details>
   <label class="stage-filter">스테이지<select id="stage"></select></label>
   <button id="dbtn" type="button" title="보유 구원자·브레이크 스킬 선택" aria-controls="drawer" aria-expanded="false">내 구원자 <span id="dcount"></span> ▸</button>
-  <button id="go" type="button" title="현재 조건(콘텐츠·섹터·지역·스테이지·육성)으로 추천 편성을 계산하고 시뮬로 확인합니다(첫 실행 시 계산 엔진 약 14MB)">추천 편성 보기</button>
 
  </div>
 
@@ -706,7 +705,9 @@ function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;if(SIMQ.w){SIMQ.w.
 function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.err=msg;SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simAutoKick(){if(!simAutoOn()||SIMQ.busy||(miMode()&&MI.pending))return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
- for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){setTimeout(()=>simStart(p),0);return}}}
+ for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){setTimeout(()=>simStart(p),0);return}
+  // 보여 준 팀이 모두 시뮬에서 클리어 50% 미만이면, 클리어하는 편성이 나오거나 9팀이 될 때까지 다음 3팀을 자동으로 더 시뮬한다(1안이 근사 순위의 앞 3팀에 갇히지 않게)
+  if(b&&b.rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&b.rows.length<9&&b.total>b.rows.length){const k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run(true);setTimeout(()=>simStart(p),0);return}}}
 function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy||(miMode()&&MI.pending))return false;
  const box=LASTQ[p];if(!box)return false;
  const rows=(jobs||box.rows.map(t=>({key:t.keys.slice().sort().join(","),t,bname:teamBreak(t)?.name||null,sig:simSig(st,t)}))).filter(j=>!SIMQ.res[j.sig]);if(!rows.length)return false;
@@ -773,7 +774,7 @@ function buildCands(cands,defPen){return topParties(cands,defPen,10).map((x,i)=>
 // 주소에 ?auto=1 이 있거나 공유 링크로 열면 예전처럼 바로 계산한다(자동 시험·링크 공유용).
 const AUTO=/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
 function idleView(){const t=id=>{const e=$(id);return e&&e.selectedOptions&&e.selectedOptions[0]?e.selectedOptions[0].textContent.trim():""};
- $("out").innerHTML=`<div class="party idle" data-k="idle"><p><b>${esc(t("content"))}</b> · ${esc(t("tab"))} · <b>${esc(t("stage"))}</b> · 육성 ${esc(t("grow"))}</p><p class="mut">조건을 정한 뒤 눌러야 이 조건으로 추천 편성을 계산하고 시뮬로 확인합니다.</p><button type="button" data-go="1">추천 편성 보기</button></div>`}
+ $("out").innerHTML=`<div class="party idle" data-k="idle"><p><b>${esc(t("content"))}</b> · ${esc(t("tab"))} · <b>${esc(t("stage"))}</b> · 육성 ${esc(t("grow"))}</p><p class="mut">조건을 정한 뒤 눌러야 이 조건으로 추천 편성을 계산하고 시뮬로 확인합니다.</p><button type="button" data-go="1" title="현재 조건(콘텐츠·섹터·지역·스테이지·육성)으로 추천 편성을 계산하고 시뮬로 확인합니다(첫 실행 시 계산 엔진 약 14MB)">추천 편성 보기</button></div>`}
 function condChanged(){REQ=false;SIMQ.kick=false;simInvalidate();run()}
 function showReco(){REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
 function run(skipAuto=false){if(!REQ){renderMi();idleView();return}runCore(skipAuto)}
@@ -795,7 +796,7 @@ function runCore(skipAuto=false){
   const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
   if(cands.length<4){html+=`<div class="party">파티 ${p}: 후보가 4명 미만입니다.</div>`;break}
   const list=buildCands(cands,defPen);
-  const qi=quickIn(c,st),qt=qi?quickRank(cands,defPen,qi):null;jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{rows:quickRows(qt,st,p)}:null;
+  const qi=quickIn(c,st),qt=qi?quickRank(cands,defPen,qi):null;jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{rows:quickRows(qt,st,p),total:new Set(qt.map(t=>t.keys.slice().sort().join(","))).size}:null;
   let qpick=null;
   if(qt&&qt.length){for(const t of LASTQ[p].rows){const k=t.keys.slice().sort().join(",");if(list.find(x=>x.key===k))continue;list.push({combo:t.combo,v:t.v,got:t.got,rank:null,key:k})}
    const qk=LASTQ[p].rows[0].keys.slice().sort().join(",");qpick=list.find(x=>x.key===qk)}
@@ -982,5 +983,5 @@ setMode(LS.get("mode")==="manual"?"manual":"auto",false);
  else if(!LS.get("grow.v2")&&(+LS.get("pow")>0||Object.values(PW).some(v=>v>0)))$("grow").value="manual";
  else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
  if(!SHARE.g)LS.set("grow.v2",$("grow").value)}
-{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=showReco;refreshTabs();applyShare();miLoad();REQ=AUTO||!!SHARE.c;SIMQ.kick=REQ&&!AUTO;run();window._ready=true;
+{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();refreshTabs();applyShare();miLoad();REQ=AUTO||!!SHARE.c;SIMQ.kick=REQ&&!AUTO;run();window._ready=true;
 </script></body></html>

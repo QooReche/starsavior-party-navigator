@@ -842,7 +842,7 @@ def test_press_to_compute(browser, ctx):
     page.click('#dbtn')
     page.click('#all')
     assert page.locator('.qrow[data-key]').count() == 0     # 서랍에서 고른 것만으로는 계산하지 않는다
-    page.click('#go')
+    page.click('button[data-go]')
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow[data-key]', timeout=30000)
     assert page.evaluate('() => !document.querySelector("#drawer").classList.contains("open")')   # 서랍은 닫힌다
     assert page.locator('[data-k="approxwarn"]').count() == 1 and page.locator('.qv.approx').count() >= 1   # 시뮬 전에는 「근사」
