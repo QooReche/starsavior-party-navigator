@@ -36,6 +36,9 @@ def select_skills(raw, key, combat):
     Current tables have zero there; SE damage-up effects stay in L.e instead.
     """
     u = copy.deepcopy(raw)
+    if key not in combat_data()['units']:
+        # 계수 표가 없는 구원자(예: 개화 변형): 파티 전체를 실패시키지 않고 기본 스킬 레벨로 계산한다.
+        return u
     rows = combat_data()['units'].get(key, {})
     result = []
     for s in u['sk']:

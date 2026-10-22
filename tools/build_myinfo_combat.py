@@ -20,6 +20,10 @@ def build(static):
     index = read(ROOT / 'data/saviors_index.json')
     keys = {int(k): v['key'] for k, v in index.items()
             if not k.startswith('_') and v.get('key') in db.units}
+    # saviors_index 에 아직 없는 구원자(예: 아모라)는 시뮬 DB 의 id 로 찾는다. 개화 변형('@')은 기본 키와 id 가 같아 제외.
+    for key, row in db.units.items():
+        if '@' not in key and row.get('id') not in keys:
+            keys[row['id']] = key
     skills = {r['m_SkillStrID']: r for n in (1, 2) for r in load(f'SKILL_TEMPLET_{n}')}
     levels = {}
     for n in (1, 2):
@@ -82,6 +86,12 @@ def main():
         ap.error(str(ex))
     low_priority()
     out = build(args.static)
+    # 클라 표에서 사라진 구원자(예: 10/22 에 1060 이 삭제됨)도 공개 DB 에 남아 있으면 이전 계수를 보존한다.
+    old_path = ROOT / 'data/myinfo_combat.json'
+    if old_path.exists():
+        old = json.loads(old_path.read_text(encoding='utf8'))
+        for k, v in old.get('units', {}).items():
+            out['units'].setdefault(k, v)
     atomic_text(ROOT / 'data/myinfo_combat.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
     print('Derived combat adapters:', len(out['units']), 'units,', len(out['potentials']), 'potentials')
 
