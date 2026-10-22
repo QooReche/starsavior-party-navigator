@@ -299,6 +299,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     first = defaultdict(int)
     offset = int(o.get('run_offset', 0))
     per_run = [] if o.get('per_run') else None
+    prog = []   # 판마다 적 진척도(0~1): 끝낸 웨이브 수 + 현재 웨이브에서 깎은 체력 비율, 웨이브 수로 나눔. 클리어 0% 팀끼리 순위를 가르는 데 쓴다
     t0 = time.perf_counter()
     for r in range(n_runs):
         rng = random.Random(seed * 1000003 + offset + r)
@@ -314,6 +315,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         outcomes[b.result] += 1
         if b.result == 'clear':
             ttk.append(b.clear_t / b.turn_ticks)
+        prog.append(b.progress())
         if per_run is not None:
             per_run.append([b.result, round(b.clear_t / b.turn_ticks, 3) if b.result == 'clear' else None])
         tot = sum(u.dmg for u in b.allies) or 1.0
@@ -377,6 +379,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
             ci95=dict(clear=_wilson(outcomes['clear'], n), wipe=_wilson(outcomes['wipe'], n)),
             ttk_median=round(statistics.median(ttk), 2) if ttk else None,
             ttk_p10_p90=[round(_pct(ttk, 0.1), 2), round(_pct(ttk, 0.9), 2)] if ttk else None,
+            progress=round(sum(prog) / n, 4),
             ttk_basis='모델 기준 턴(100틱), 클리어한 판만' + ('' if turn_limit else ', 턴 제한 없음(상한 %d턴)' % max_turns)),
         per_unit=per_unit,
         nova_burst=dict(total=sum(sum(slots.values()) for slots in nova_counts.values()),

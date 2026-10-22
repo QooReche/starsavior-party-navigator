@@ -134,6 +134,7 @@ class HealBurstTest(unittest.TestCase):
                                                        'chain_skill_damage_up': False,
                                                        'debuff_instance_count': False}})
             frozen = {k: v for k, v in r.items() if k in ('per_unit', 'outcome', 'timeline', 'breaks', 'break_skill', 'foes')}
+            frozen['outcome'] = {k: v for k, v in frozen['outcome'].items() if k != 'progress'}   # 나중에 더한 요약 칸(전투 규칙 무관)
             self.assertEqual(hashlib.sha256(json.dumps(frozen, sort_keys=True, ensure_ascii=False).encode()).hexdigest(), digest)
             self.assertEqual(r['nova_burst']['total'] > 0, policy == 'manual')
 

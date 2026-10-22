@@ -569,6 +569,16 @@ class Battle:
                     if line_kind(ln) == 'wave_start':
                         self.run_line(u, ln, Ctx(u, u, None))
 
+    def progress(self):
+        """적 진척도 0~1: (끝낸 웨이브 + 현재 웨이브에서 깎은 체력 비율) / 웨이브 수. 클리어면 1"""
+        if self.result == 'clear':
+            return 1.0
+        if not self.waves or self.wave_i < 0:
+            return 0.0
+        tot = sum(u.maxhp for u in self.foes) or 1.0
+        cur = sum(u.maxhp - max(0.0, u.hp) for u in self.foes) / tot
+        return (self.wave_i + min(1.0, max(0.0, cur))) / len(self.waves)
+
     def run(self):
         if self.wave_i < 0:   # 시험에서 미리 첫 웨이브를 불러 상태를 만든 경우는 건너뜀
             self.spawn_wave()
