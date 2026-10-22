@@ -95,7 +95,7 @@ class BreakSkillTest(unittest.TestCase):
                 for key in props:
                     self.assertEqual(a.mods()[key], 0)
 
-    def test_break_gauge_cap_actor_and_dead(self):
+    def test_break_gauge_overflow_actor_and_dead(self):
         b = setup({'name': '스타피어서'}, roles=('스트라이커',) * 4)
         for u, gauge in zip(b.allies, (10000, 9500, 2500, 0)):
             u.gauge = gauge
@@ -103,7 +103,7 @@ class BreakSkillTest(unittest.TestCase):
         b.kill(b.allies[3], b.foes[0])
         b.break_points = 3
         b.act(b.allies[0])
-        self.assertEqual([u.gauge for u in b.allies], [0, 10000, 4500, 0])
+        self.assertEqual([u.gauge for u in b.allies], [0, 11500, 4500, 0])
         self.assertFalse(b.allies[3].eff)
 
     def test_nova_pool_and_live_atk_only(self):

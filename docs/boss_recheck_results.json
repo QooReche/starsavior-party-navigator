@@ -1,0 +1,399 @@
+{
+  "base_commit": "2bda341a9ad6eac6b2a00b2bacc06a3fa72ef747",
+  "runs": 60,
+  "seed": 7,
+  "break_skill": {"name": "큐브 과부하", "level": 5},
+  "data_sha256": {
+    "data/foe_stages.json": "25a3d10639d7cdcc4cabac770ba647ce875e1514ef163cc6f056ed1b8787bbed",
+    "rawdata/databook_main.json": "46982efe0330b680ebea3e4a728cfc493b8e9de424195dbfd97d1eaec2b0e016",
+    "data/growth.json": "1f2fdb4ebb0815f9be8549e2cdef291ca264f12bcf56bb0bb0157609fb4fb50f"
+  },
+  "profiles": {
+    "before": [
+      {
+        "stage": "36-36",
+        "real_ratio": 1.88,
+        "real_turn": 38,
+        "sim_ratio": 1.07,
+        "sim_dealt": 472165,
+        "sim_taken": 439483,
+        "sim_clear": 0.0,
+        "sim_ally_actions": 15.2,
+        "sim_boss_actions": 6.45,
+        "sim_enemy_actions": 15.1,
+        "enemy_skills": {
+          "공허순례자": {
+            "특수기": 2.5,
+            "기본기": 2.967,
+            "궁극기": 0.983
+          },
+          "은둔자": {
+            "특수기": 3.767,
+            "기본기": 4.883
+          }
+        },
+        "party_power": 394579,
+        "foe_breaks": 0.817,
+        "ally_breaks": 3.933
+      },
+      {
+        "stage": "37-2",
+        "real_ratio": 4.13,
+        "real_turn": 52,
+        "sim_ratio": 4.27,
+        "sim_dealt": 1078315,
+        "sim_taken": 252303,
+        "sim_clear": 1.0,
+        "sim_ally_actions": 41.8,
+        "sim_boss_actions": 3.23,
+        "sim_enemy_actions": 18.68,
+        "enemy_skills": {
+          "추적자": {
+            "특수기": 5.2,
+            "기본기": 5.883
+          },
+          "예언자": {
+            "특수기": 2.05,
+            "기본기": 1.4
+          },
+          "망각의 예언자": {
+            "특수기": 1.15,
+            "기본기": 2.017
+          }
+        },
+        "party_power": 394579,
+        "foe_breaks": 0.0,
+        "ally_breaks": 1.367
+      },
+      {
+        "stage": "37-3",
+        "real_ratio": 1.82,
+        "real_turn": 43,
+        "sim_ratio": 0.93,
+        "sim_dealt": 367433,
+        "sim_taken": 393659,
+        "sim_clear": 0.0,
+        "sim_ally_actions": 18.8,
+        "sim_boss_actions": 9.12,
+        "sim_enemy_actions": 12.95,
+        "enemy_skills": {
+          "공허습격자": {
+            "특수기": 3.267,
+            "기본기": 4.117,
+            "궁극기": 1.733
+          },
+          "예언자": {
+            "기본기": 2.517,
+            "특수기": 1.167
+          }
+        },
+        "party_power": 394579,
+        "foe_breaks": 0.0,
+        "ally_breaks": 3.283
+      },
+      {
+        "stage": "37-4",
+        "real_ratio": 6.52,
+        "real_turn": 13,
+        "sim_ratio": 5.6,
+        "sim_dealt": 505423,
+        "sim_taken": 90313,
+        "sim_clear": 1.0,
+        "sim_ally_actions": 14.7,
+        "sim_boss_actions": 2.0,
+        "sim_enemy_actions": 6.07,
+        "enemy_skills": {
+          "업화의 추적자": {
+            "특수기": 1.0,
+            "기본기": 1.0
+          },
+          "숭배자": {
+            "기본기": 4.067
+          }
+        },
+        "party_power": 419814,
+        "foe_breaks": 1.183,
+        "ally_breaks": 0.0
+      },
+      {
+        "stage": "37-5",
+        "real_ratio": 4.17,
+        "real_turn": 22,
+        "sim_ratio": 6.9,
+        "sim_dealt": 682765,
+        "sim_taken": 98961,
+        "sim_clear": 1.0,
+        "sim_ally_actions": 17.6,
+        "sim_boss_actions": 0.0,
+        "sim_enemy_actions": 5.08,
+        "enemy_skills": {
+          "망각의 예언자": {
+            "특수기": 2.083,
+            "기본기": 3.0
+          }
+        },
+        "party_power": 419814,
+        "foe_breaks": 2.0,
+        "ally_breaks": 0.0
+      }
+    ],
+    "myinfo": [
+      {
+        "stage": "36-36",
+        "real_ratio": 1.88,
+        "real_turn": 38,
+        "sim_ratio": 0.9,
+        "sim_dealt": 382699,
+        "sim_taken": 426164,
+        "sim_clear": 0.0,
+        "sim_ally_actions": 15.5,
+        "sim_boss_actions": 6.37,
+        "sim_enemy_actions": 15.22,
+        "enemy_skills": {
+          "공허순례자": {
+            "특수기": 2.467,
+            "기본기": 2.917,
+            "궁극기": 0.983
+          },
+          "은둔자": {
+            "특수기": 3.867,
+            "기본기": 4.983
+          }
+        },
+        "party_power": 383665,
+        "foe_breaks": 0.833,
+        "ally_breaks": 3.833
+      },
+      {
+        "stage": "37-2",
+        "real_ratio": 4.13,
+        "real_turn": 52,
+        "sim_ratio": 3.45,
+        "sim_dealt": 1074062,
+        "sim_taken": 311035,
+        "sim_clear": 0.95,
+        "sim_ally_actions": 46.8,
+        "sim_boss_actions": 3.9,
+        "sim_enemy_actions": 21.77,
+        "enemy_skills": {
+          "예언자": {
+            "기본기": 2.017,
+            "특수기": 2.417
+          },
+          "추적자": {
+            "특수기": 5.383,
+            "기본기": 7.3
+          },
+          "망각의 예언자": {
+            "특수기": 1.433,
+            "기본기": 2.35,
+            "궁극기": 0.05
+          }
+        },
+        "party_power": 383665,
+        "foe_breaks": 0.033,
+        "ally_breaks": 1.683
+      },
+      {
+        "stage": "37-3",
+        "real_ratio": 1.82,
+        "real_turn": 43,
+        "sim_ratio": 0.89,
+        "sim_dealt": 364822,
+        "sim_taken": 411708,
+        "sim_clear": 0.0,
+        "sim_ally_actions": 21.0,
+        "sim_boss_actions": 9.32,
+        "sim_enemy_actions": 13.0,
+        "enemy_skills": {
+          "공허습격자": {
+            "특수기": 3.35,
+            "기본기": 4.1,
+            "궁극기": 1.867
+          },
+          "예언자": {
+            "기본기": 2.333,
+            "특수기": 1.133
+          }
+        },
+        "party_power": 383665,
+        "foe_breaks": 0.0,
+        "ally_breaks": 3.483
+      },
+      {
+        "stage": "37-4",
+        "real_ratio": 6.52,
+        "real_turn": 13,
+        "sim_ratio": 5.56,
+        "sim_dealt": 505422,
+        "sim_taken": 90894,
+        "sim_clear": 1.0,
+        "sim_ally_actions": 15.6,
+        "sim_boss_actions": 1.98,
+        "sim_enemy_actions": 6.12,
+        "enemy_skills": {
+          "업화의 추적자": {
+            "특수기": 1.0,
+            "기본기": 0.983
+          },
+          "숭배자": {
+            "기본기": 4.133
+          }
+        },
+        "party_power": 404137,
+        "foe_breaks": 1.4,
+        "ally_breaks": 0.0
+      },
+      {
+        "stage": "37-5",
+        "real_ratio": 4.17,
+        "real_turn": 22,
+        "sim_ratio": 6.94,
+        "sim_dealt": 682764,
+        "sim_taken": 98325,
+        "sim_clear": 1.0,
+        "sim_ally_actions": 19.5,
+        "sim_boss_actions": 0.0,
+        "sim_enemy_actions": 5.03,
+        "enemy_skills": {
+          "망각의 예언자": {
+            "특수기": 2.033,
+            "기본기": 3.0
+          }
+        },
+        "party_power": 404137,
+        "foe_breaks": 2.0,
+        "ally_breaks": 0.0
+      }
+    ],
+    "myinfo_fixed": [
+      {
+        "stage": "36-36",
+        "real_ratio": 1.88,
+        "real_turn": 38,
+        "sim_ratio": 0.9,
+        "sim_dealt": 384419,
+        "sim_taken": 428002,
+        "sim_clear": 0.0,
+        "sim_ally_actions": 15.5,
+        "sim_boss_actions": 6.35,
+        "sim_enemy_actions": 15.22,
+        "enemy_skills": {
+          "은둔자": {
+            "특수기": 3.867,
+            "기본기": 5.0
+          },
+          "공허순례자": {
+            "특수기": 2.45,
+            "기본기": 2.917,
+            "궁극기": 0.983
+          }
+        },
+        "party_power": 383665,
+        "foe_breaks": 0.85,
+        "ally_breaks": 3.883
+      },
+      {
+        "stage": "37-2",
+        "real_ratio": 4.13,
+        "real_turn": 52,
+        "sim_ratio": 3.46,
+        "sim_dealt": 1073547,
+        "sim_taken": 309960,
+        "sim_clear": 0.95,
+        "sim_ally_actions": 47.1,
+        "sim_boss_actions": 3.87,
+        "sim_enemy_actions": 21.68,
+        "enemy_skills": {
+          "예언자": {
+            "기본기": 2.033,
+            "특수기": 2.417
+          },
+          "추적자": {
+            "특수기": 5.367,
+            "기본기": 7.333
+          },
+          "망각의 예언자": {
+            "특수기": 1.433,
+            "기본기": 2.283,
+            "궁극기": 0.067
+          }
+        },
+        "party_power": 383665,
+        "foe_breaks": 0.017,
+        "ally_breaks": 1.683
+      },
+      {
+        "stage": "37-3",
+        "real_ratio": 1.82,
+        "real_turn": 43,
+        "sim_ratio": 0.91,
+        "sim_dealt": 368998,
+        "sim_taken": 407552,
+        "sim_clear": 0.0,
+        "sim_ally_actions": 21.1,
+        "sim_boss_actions": 9.3,
+        "sim_enemy_actions": 12.78,
+        "enemy_skills": {
+          "예언자": {
+            "기본기": 2.2,
+            "특수기": 1.067
+          },
+          "공허습격자": {
+            "특수기": 3.333,
+            "기본기": 4.1,
+            "궁극기": 1.867
+          }
+        },
+        "party_power": 383665,
+        "foe_breaks": 0.0,
+        "ally_breaks": 3.433
+      },
+      {
+        "stage": "37-4",
+        "real_ratio": 6.52,
+        "real_turn": 13,
+        "sim_ratio": 5.56,
+        "sim_dealt": 505422,
+        "sim_taken": 90882,
+        "sim_clear": 1.0,
+        "sim_ally_actions": 15.6,
+        "sim_boss_actions": 1.98,
+        "sim_enemy_actions": 6.12,
+        "enemy_skills": {
+          "숭배자": {
+            "기본기": 4.133
+          },
+          "업화의 추적자": {
+            "특수기": 1.0,
+            "기본기": 0.983
+          }
+        },
+        "party_power": 404137,
+        "foe_breaks": 1.4,
+        "ally_breaks": 0.0
+      },
+      {
+        "stage": "37-5",
+        "real_ratio": 4.17,
+        "real_turn": 22,
+        "sim_ratio": 6.94,
+        "sim_dealt": 682763,
+        "sim_taken": 98323,
+        "sim_clear": 1.0,
+        "sim_ally_actions": 19.5,
+        "sim_boss_actions": 0.0,
+        "sim_enemy_actions": 5.03,
+        "enemy_skills": {
+          "망각의 예언자": {
+            "특수기": 2.033,
+            "기본기": 3.0
+          }
+        },
+        "party_power": 404137,
+        "foe_breaks": 2.0,
+        "ally_breaks": 0.0
+      }
+    ]
+  }
+}

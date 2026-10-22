@@ -4,7 +4,9 @@
 실측 판마다 사용자 능력치 화면 값(공·생·방·속도·치명 등)을 stats_override 로 넣고(화면이 없는 구원자는 남은 전투력 몫으로 표준 육성 배율),
 재점화 버프는 전투력 보정 배율에 곱한다(api options.rekindle 과 같은 뜻). 규칙을 바꿔 보려면 --ov '{"basic_tough": 1}'.
 
-사용: python -X utf8 -I tools/ingame_check.py [--runs 100] [--ov JSON] [--only 37-3] [--bs]
+사용: python -X utf8 -I tools/ingame_check.py [--runs 100] [--ov JSON] [--only 37-3] [--bs] [--myinfo PATH]
+--myinfo = 비공개 내정보를 제자리에서 읽어 콘텐츠 규칙으로 최종 능력치·전투력을 계산한다.
+이 경로는 build=none, stats_final=true이며 표준 육성·전투력 재배분을 사용하지 않는다.
 --bs = 실측 장착 스킬 「큐브 과부하」 Lv.5 활성화(기본 미장착).
 운영 기본값: 36-36=heal, 37-2~37-5=auto. --ov '{"nova_policy":"auto"}' 로 전부 순수 오토 대조 가능.
 nova_burst.total/by_unit은 전체 판 합계, uses·heal·healing은 판 평균(실제 HP 회복, 초과 회복 제외).
@@ -13,6 +15,9 @@ nova_burst.total/by_unit은 전체 판 합계, uses·heal·healing은 판 평균
 import json
 import os
 import sys
+import argparse
+from collections import defaultdict
+from unittest.mock import patch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -63,43 +68,120 @@ def rebalance(spec, pw):
                 so[k] = round(so[k] * f)
 
 
-def run(name, runs=100, ov=None, seed=7, bs=False):
+def myinfo_party(content, order, lead, path):
+    """Read the private input in place; return only derived simulation inputs."""
+    from battlesim.starsavior.myinfo_stats import final_stats, rule_for_content
+    rule = rule_for_content(content)
+    if rule is None:
+        raise ValueError('No myinfo rule for content: ' + content)
+    with open(path, encoding='utf-8-sig') as f:
+        info = json.load(f)
+    if info.get('format') != 'ss-myinfo-v1':
+        raise ValueError('Expected ss-myinfo-v1')
+    with open(os.path.join(ROOT, 'data', 'growth.json'), encoding='utf-8') as f:
+        growth = json.load(f)
+    with open(os.path.join(ROOT, 'data', 'saviors_index.json'), encoding='utf-8') as f:
+        index = json.load(f)
+    ids = {v['key']: int(k) for k, v in index.items() if not k.startswith('_') and v.get('key')}
+    owned = {u['id']: u for u in info['units']}
+    so = [order[1], order[2], order[0], order[3]]
+    units, diagnostics = [], {}
+    for key in so:
+        uid = ids.get(key)
+        if uid not in owned or str(uid) not in growth['units']:
+            raise ValueError('Missing myinfo/growth unit: ' + key)
+        result = final_stats(owned[uid], info, growth, rule)
+        units.append(dict(key=key, build='none', stats_override=result['stats'],
+                          stats_final=True, power=result['power']))
+        diagnostics[key] = dict(missing=result['missing'], build_mismatch=result.get('build_mismatch', False))
+    return dict(units=units, leader=so.index(lead) if lead in so else None), dict(rule=rule, units=diagnostics)
+
+
+def low_priority():
+    """Set and verify IDLE priority; explicit HANDLE types are needed on Win64."""
+    if os.name == 'nt':
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel.GetCurrentProcess.restype = wintypes.HANDLE
+        kernel.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel.GetPriorityClass.argtypes = [wintypes.HANDLE]
+        handle = kernel.GetCurrentProcess()
+        if not kernel.SetPriorityClass(handle, 0x40) or kernel.GetPriorityClass(handle) != 0x40:
+            raise ctypes.WinError(ctypes.get_last_error())
+    else:
+        os.nice(19)
+
+
+def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None):
     import gen_quick_calib as G
     from battlesim import quick, simulate
     ck, sk, order, lead, pw, rk, dealt, taken, turn, res = SAMPLES[name]
-    q, pen = quick.load(ROOT)
-    st = q['st'][ck][sk]
-    spec = G.party_spec(q, pen, order, lead, list(order), pw / st['bp'], st)
-    for u in spec['units']:
-        if u['key'] in REAL:
-            u['stats_override'] = dict(REAL[u['key']])
-            u['stats_final'] = True          # 화면 값 = 최종값(상시 패시브 % 를 다시 곱하지 않음)
-    rebalance(spec, pw)
+    diagnostics = None
+    if myinfo is not None:
+        spec, diagnostics = myinfo_party(ck, order, lead, myinfo)
+    else:
+        q, pen = quick.load(ROOT)
+        st = q['st'][ck][sk]
+        spec = G.party_spec(q, pen, order, lead, list(order), pw / st['bp'], st)
+        for u in spec['units']:
+            if u['key'] in REAL:
+                u['stats_override'] = dict(REAL[u['key']])
+                u['stats_final'] = True      # 화면 값 = 최종값(상시 패시브 % 재적용 안 함)
+        rebalance(spec, pw)
     opt = dict(G.SIMOPT, n_runs=runs, seed=seed, rekindle=rk)
     if bs:
         opt['break_skill'] = {'name': '큐브 과부하', 'level': 5}
     opt['rules_override'] = dict(opt['rules_override'], nova_policy=NOVA_POLICY[name])
     opt['rules_override'].update(ov or {})  # --ov가 실측 운영 기본값보다 우선
     tab, nm = sk.split('|', 1)
-    r = simulate(spec, {'stage': '%s/%s/%s' % (ck, tab, nm)}, opt)
+    if myinfo is not None:
+        opt['build'] = 'none'
+    from battlesim import api
+    measured = defaultdict(float)
+    enemy_skills = defaultdict(lambda: defaultdict(int))
+
+    class MeasuredBattle(api.Battle):
+        def run(self):
+            super().run()
+            measured['boss'] += sum(u.actions for u in self.all_foes if u.d.boss)
+            measured['enemy'] += sum(u.actions for u in self.all_foes)
+            for u in self.all_foes:
+                for slot, count in u.cast_count.items():
+                    enemy_skills[u.name][slot] += count
+            return self
+
+    with patch.object(api, 'Battle', MeasuredBattle):
+        r = simulate(spec, {'stage': '%s/%s/%s' % (ck, tab, nm)}, opt)
     d = sum(v['dmg'] for v in r['per_unit'].values())
     t = sum(v['dmg_taken'] for v in r['per_unit'].values())
     acts = sum(v['actions'] for v in r['per_unit'].values())
-    return dict(stage=name, real_ratio=round(dealt / taken, 2), sim_ratio=round(d / max(1.0, t), 2), sim_clear=r['outcome']['clear_p'],
+    return dict(stage=name, runs=runs, seed=seed, real_ratio=round(dealt / taken, 2), sim_ratio=round(d / max(1.0, t), 2), sim_clear=r['outcome']['clear_p'],
                 real=res, real_turn=turn, sim_ally_actions=round(acts, 1), foe_breaks=r['breaks']['foe'], ally_breaks=r['breaks']['ally'],
+                sim_boss_actions=round(measured['boss'] / runs, 2), sim_enemy_actions=round(measured['enemy'] / runs, 2),
+                enemy_skills={k: {s: round(n / runs, 3) for s, n in v.items()} for k, v in enemy_skills.items()},
+                sim_dealt=d, sim_taken=t, party_power=r['party']['power'], myinfo=diagnostics,
                 break_skill=r['break_skill'], nova_policy=opt['rules_override']['nova_policy'],
                 nova_burst=r['nova_burst'], heal=sum(v['heal'] for v in r['per_unit'].values()),
                 healing={nm: dict(heal=v['heal'], shield=v['shield']) for nm, v in r['per_unit'].items()})
 
 
 def main():
-    runs = int(sys.argv[sys.argv.index('--runs') + 1]) if '--runs' in sys.argv else 100
-    ov = json.loads(sys.argv[sys.argv.index('--ov') + 1]) if '--ov' in sys.argv else None
-    only = sys.argv[sys.argv.index('--only') + 1] if '--only' in sys.argv else None
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--runs', type=int, default=100)
+    p.add_argument('--seed', type=int, default=7)
+    p.add_argument('--ov', type=json.loads)
+    p.add_argument('--only', choices=SAMPLES)
+    p.add_argument('--bs', action='store_true')
+    p.add_argument('--myinfo', metavar='PATH', help='Private ss-myinfo-v1 file (no default)')
+    args = p.parse_args()
+    if args.runs < 1:
+        p.error('--runs must be positive')
+    low_priority()
     for name in SAMPLES:
-        if only and name != only:
+        if args.only and name != args.only:
             continue
-        print(json.dumps(run(name, runs, ov, bs='--bs' in sys.argv), ensure_ascii=False), flush=True)
+        print(json.dumps(run(name, args.runs, args.ov, args.seed, args.bs, args.myinfo), ensure_ascii=False), flush=True)
 
 
 if __name__ == '__main__':

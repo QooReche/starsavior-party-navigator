@@ -596,7 +596,7 @@ class Battle:
                 self.result = 'timeout'
                 break
             for x in living:
-                x.gauge = min(10000.0, x.gauge + x.spd() * bt)
+                self.set_gauge(x, x.gauge + x.spd() * bt)
             self.t += bt
             if round_tick:
                 self._break_round += 1
@@ -604,6 +604,16 @@ class Battle:
                 continue
             self.act(best)
         return self
+
+    def set_gauge(self, u, value):
+        """Gauge buffs may exceed 100%; overflow orders already-ready actors.
+
+        NKM.decompiled.cs:3323-3330 (lower clamp only), 4648-4675
+        (buff changes), 12309-12317 (descending gauge), 13821 (actor reset).
+        """
+        u.gauge = max(0.0, value)
+        if not self.mc['gauge_overflow']:
+            u.gauge = min(10000.0, u.gauge)
 
     def pick_next(self, living):
         """다음 행동 유닛과 그때까지 걸리는 틱. 동시 100% 는 _tie_before 순서"""
@@ -770,7 +780,7 @@ class Battle:
             if self.opts['nova_pool'] == 'unit':
                 self.nova_add(u, nova)
             if u is not actor and rule.get('gauge'):
-                u.gauge = min(10000.0, u.gauge + rule['gauge'])
+                self.set_gauge(u, u.gauge + rule['gauge'])
             props = dict(rule['props'])
             if u.role in rule.get('bonus_roles', ()):
                 for k, v in rule['role_props'].items():
@@ -2075,7 +2085,7 @@ class Battle:
                     continue
                 if x.side != owner.side and eff.get('judge') and not self.roll_hit(owner, ctx, x, None):
                     continue
-                x.gauge = min(10000.0, max(0.0, x.gauge + eff['val'] * 100.0))
+                self.set_gauge(x, x.gauge + eff['val'] * 100.0)
             return
         if kd == 'cdr':
             # 내 시전 문맥 = 그 스킬 칸. 피격 반응 등 남의 시전 문맥이면 공격자의 칸이 아니라 줄 주인 쪽 칸:
@@ -2306,7 +2316,7 @@ class Battle:
                 if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
                     continue
                 self._fired(owner)
-                x.gauge = min(10000.0, max(0.0, x.gauge + dv))
+                self.set_gauge(x, x.gauge + dv)
             return
         m = RX_EXTRA_P.match(rest)
         if m:

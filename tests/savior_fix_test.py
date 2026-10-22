@@ -44,8 +44,8 @@ def test_ceres_targets():
         b, a, _ = setup('ceres', foes=[unit(str(i), hp=1 if i == 0 else 10**9, sa=1000) for i in range(n)])
         b.cast(a, a.d.skills['특수기'])
         out.append(a.gauge)
-    # 게이지 자체 상한은 100%: 3명 이상이면 10000.
-    return out == [3500, 7000, 10000, 10000, 10000], str(out)
+    # 대상 개수 상한 5는 유지. 게이지는 100% 초과 보존(NKM.cs:3323).
+    return out == [3500, 7000, 10500, 17500, 17500], str(out)
 
 
 def test_lydia_targets():
