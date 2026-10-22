@@ -84,7 +84,7 @@
     return {journey, potential, power_pp, missing: Array.from(missing).sort()};
   }
 
-  function final_stats(unit, info, growth, rule = "normal") {
+  function final_stats(unit, info, growth, rule = "normal", breakdown = false) {
     if (rule !== "normal" && rule !== "fixed200") return null;
     unit = unit || {}; info = info || {}; growth = growth || {};
     const missing = new Set();
@@ -106,6 +106,11 @@
     }
     function add(dst, src, times = 1) {
       for (const k of ALL) dst[k] = get(dst, k) + get(src, k) * times;
+    }
+    const sources = [], detail = {sources, stats: {}};
+    function record(id, values, meta = {}) {
+      if (breakdown) sources.push({id, values: {...values}, ...meta});
+      return values;
     }
     const stats = Object.fromEntries(KEYS.map(k => [k, 0]));
     const gauntlet = gauntlet_stats(unit, growth);
@@ -131,21 +136,22 @@
       }
       const res = at(template.resonance, unlocked, "growth:resonance");
       const stars = at(template.star, star, "growth:star");
-      const flat = Object.assign({}, stars);
-      add(flat, at(template.favor, favor, "growth:favor"));
+      const flat = Object.assign({}, record("sigil", stars, {level: star}));
+      record("resonance", res, {level: unlocked, imported_level: unit.resonance ?? null});
+      add(flat, record("favor", at(template.favor, favor, "growth:favor"), {level: favor}));
       const tactics = info.tactics || {}, tables = growth.tactics || {};
       const common = number(tactics, "common_level", "tactics.common_level");
-      add(flat, at((tables.TG_COMMON || {}).MAIN, common, "growth:tactics.TG_COMMON.MAIN"));
+      add(flat, record("tactics", at((tables.TG_COMMON || {}).MAIN, common, "growth:tactics.TG_COMMON.MAIN"), {group: "TG_COMMON", field: "level", level: common}));
       const groups = tactics.groups || {};
       for (const group of ["TG_SAVIOR", "TG_ARCANA"].concat(template.tactics_groups || [])) {
         for (const [kind, field] of [["ATTACK", "attack"], ["DEFENSE", "defense"], ["HP", "hp"]]) {
           const label = "tactics." + group + "." + field;
           const lv = number(groups[group] || {}, field, label);
-          add(flat, at((tables[group] || {})[kind], lv, "growth:" + label));
+          add(flat, record("tactics", at((tables[group] || {})[kind], lv, "growth:" + label), {group, field, level: lv}));
         }
       }
       const facility = number(tactics, "facility_level", "tactics.facility_level");
-      add(flat, at(growth.facility, facility, "growth:facility"));
+      add(flat, record("facility", at(growth.facility, facility, "growth:facility"), {level: facility}));
       let equipment = unit.equip;
       if (!Array.isArray(equipment)) { missing.add("equip"); equipment = []; }
       const counts = {};
@@ -156,27 +162,36 @@
         else if (sid) counts[String(sid)] = get(counts, String(sid)) + 1;
         if (!item.main || typeof item.main !== "object" || Array.isArray(item.main)) missing.add("equip.main");
         if (!Array.isArray(item.subs)) missing.add("equip.subs");
-        for (const opt of [item.main || {}].concat(item.subs || [])) {
+        for (const [oi, opt] of [item.main || {}].concat(item.subs || []).entries()) {
           const k = get(NST, opt.stat, null), v = opt.value;
           if (k === null || !Number.isFinite(v)) missing.add("equip.stat:" + String(get(opt, "stat", "missing")));
-          else flat[k] = get(flat, k) + v;
+          else { flat[k] = get(flat, k) + v; record(oi === 0 ? "equipment_main" : "equipment_sub", {[k]: v}); }
         }
       }
       for (const sid of Object.keys(counts).sort()) {
         const effect = (growth.sets || {})[sid];
         if (!effect || !(effect.parts > 0)) missing.add("set:" + sid);
-        else add(flat, effect.stats || {}, Math.floor(counts[sid] / effect.parts));
+        else {
+          const times = Math.floor(counts[sid] / effect.parts);
+          add(flat, effect.stats || {}, times);
+          record("equipment_set", Object.fromEntries(Object.entries(effect.stats || {}).map(([k,v])=>[k,v*times])), {set: sid, count: counts[sid], parts: effect.parts, times});
+        }
       }
       const jf = gauntlet.journey;
       // StatFactorBundle -> FinalStatCombiner: potential flat/R2, separate
       // from journey x1/R1 (March NKM.cs:18263,18344; current reference same).
-      add(flat, gauntlet.potential);
+      add(flat, record("potential", gauntlet.potential));
       // NKM.cs:18563-18608 / 18269-18271: permanent SkillLevelStat joins R2.
       // Absolute learned-level row (Star.Templets.cs:26156-26170), not max level.
       const passiveLevel = number(unit.skills || {}, "passive", "skills.passive");
       if (!template.passive || typeof template.passive !== "object") missing.add("unit_passive");
       else if (!Object.prototype.hasOwnProperty.call(template.passive, String(passiveLevel))) missing.add("unit_passive:level");
-      else add(flat, template.passive[String(passiveLevel)]);
+      else add(flat, record("passive", template.passive[String(passiveLevel)], {level: passiveLevel}));
+      if (breakdown) {
+        record("base", base);
+        record("level", Object.fromEntries(KEYS.map(k=>[k, get(inc,k)*(Math.min(level,200)-1) + get(inc,k)*Math.max(0,level-200)+get(syn,k)])), {level});
+        record("journey", jf);
+      }
       for (const k of KEYS) {
         if (!Object.prototype.hasOwnProperty.call(base, k)) missing.add("growth:base." + k);
         const lvl_a = get(inc, k) * (Math.min(level, 200) - 1);
@@ -188,6 +203,14 @@
         const x = x1 + get(res, k) + x1 * r1;
         const y = x + get(flat, k) + x * (get(flat, k + "P") / 10000);
         stats[k] = Math.max(0, Math.floor(y));
+        if (breakdown) {
+          const components = {};
+          for (const s of sources) components[s.id] = get(components,s.id) + get(s.values,k);
+          components.bundle = x1 * r1 + x * (get(flat,k+"P") / 10000);
+          const subtotal = Object.values(components).reduce((a,b)=>a+b,0);
+          components.rounding = stats[k] - subtotal;
+          detail.stats[k] = {components, x1, r1, x, r2: get(flat,k+"P") / 10000, y, final: stats[k]};
+        }
       }
     }
     const skills = unit.skills || {};
@@ -203,6 +226,7 @@
       potentials: (Array.isArray(unit.gauntlet?.potentials) ? unit.gauntlet.potentials : [])
         .filter(p => Array.isArray(p) && p.length === 4 && p.every(v => Number.isInteger(v) && v >= 0) && p[1] > 0).map(p => [p[0], p[1]])
     };
+    if (breakdown) result.breakdown = detail;
     return result;
   }
   const api = {final_stats, gauntlet_stats, rule_for_content, unit_power};

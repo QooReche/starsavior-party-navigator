@@ -59,6 +59,38 @@
 
 ## 능력치 계산 모듈 (1단계, 2단계 화면 연결)
 
+### 전체 보기와 선택적 분해
+
+구원자 행의 「상세」는 첫 펼침에만 분해를 계산한다. 「스킬」과 독립적으로 열며,
+정렬·접기에서는 계산과 내부 펼침 상태를 재사용한다. 계정·성장표·콘텐츠 규칙 또는
+시뮬 반영 모드가 바뀌면 캐시를 무효화한다. 계정 공통 내실은 탭 상단에서 따로 펼친다.
+
+`final_stats(unit, info, growth, rule, breakdown=True)`(JS는 마지막 인자 `true`)는
+기존 반환에만 `breakdown: {sources, stats}`를 추가한다. 기본 호출의 반환은 변하지 않는다.
+`sources`는 계산에 실제 사용한 고정·비율 수치와 적용 레벨을 기록한다.
+`stats[키]`는 `components`, `x1`, `r1`, `x`, `r2`, `y`, `final`을 담는다.
+출처별 고정 기여에 `bundle = x1*r1 + x*r2`를 더하고, `rounding`으로 버림·0 하한 및
+부동소수점 합산 잔차를 보정하면 최종 정수와 정확히 일치한다. 비율은 출처 옆에 R1/R2로
+표시하며 합계 기여는 「묶음 비율 효과」 한 줄에 표시한다.
+
+장비 6부위와 주·부옵, 완성 세트, 적용 내실 그룹, 여정 상한 1500, 습득 잠재력·전투 효과,
+미해석 축복을 표시한다. 치확·치피·적중·저항과 능력치 비율은 모두 0.01% 단위로 표시한다.
+시뮬 입력 칩은 같은 최종 8종·전투력·스킬 레벨을 사용하며, 평균 모드나 미매핑 콘텐츠는
+「현재 시뮬 미적용」으로 구분한다. 누락 자료는 상세 하단의 진단으로 남는다.
+
+`myinfo_view.js`는 첫 구원자 상세를 열 때만 다음 자료를 읽는다.
+
+- `data/myinfo_view.json`: `build_party_html.py`가 공개 `rawdata/databook_main.json`의
+  잠재력 이름·레벨별 효과 문구, 세트 이름, 부위명을 추출한다.
+- `data/myinfo_slots.json`: `tools/build_myinfo_slots.py`가 아이템 ID → 0~5 슬롯 번호만
+  가공한다. 원본 행·이름 문자열은 포함하지 않는다. 슬롯 순서는 공개 데이터북의
+  무기·장갑·갑옷·신발·목걸이·반지 순서다. 미지 장비는 부위를 추측하지 않는다.
+- `data/myinfo_combat.json`: 엔진이 적용하는 잠재력 효과 행만 선택하여 보여 준다.
+
+검증: `tests/myinfo_breakdown_test.py`는 합성 계정·96개 변형의 Python/JS 결과와
+분해 합을 대조한다. `tests/myinfo_view_test.js`는 단위·부위·세트·공개 이름·전투 효과를
+검사하며, `tests/e2e/test_page.py myinfo_full`은 지연 계산·캐시·키보드·390px을 검사한다.
+
 Python `battlesim.starsavior.myinfo_stats.final_stats(unit, info, growth, rule="normal")`와
 브라우저 `MyInfoStats.final_stats` / Node `require('./myinfo_stats.js').final_stats`는 같은 결과를 낸다.
 `unit`은 `info.units`의 한 항목이며 `id`는 로스터 `uid`와 연결한다.

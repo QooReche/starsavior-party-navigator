@@ -147,6 +147,13 @@ def main():
     skills = json.loads(skill_bytes)
     assert all(str(s["uid"]) in skills for s in r), "Missing public skills for roster uid"
     skill_url = "data/savior_skills.json?v=" + hashlib.sha256(skill_bytes).hexdigest()[:12]
+    # All display names/effect text originate in the already public databook.
+    public = pr._json(os.path.join(pr.HERE, "rawdata", "databook_main.json"))
+    view = {"potentials": {str(p["id"]): {"name": p["n"], "levels": {str(v[0]): v[4] for v in p.get("lv", [])}} for p in public["dict"]["pot"]},
+            "slots": [p[0] for p in public["equip"]["adv"]["parts"]],
+            "sets": {str(s["id"]): s["n"] for s in public["equip"]["sets"]}}
+    with open(os.path.join(pr.DATA, "myinfo_view.json"), "w", encoding="utf8", newline="\n") as f:
+        f.write(json.dumps(view, ensure_ascii=False, separators=(",", ":")) + "\n")
     data = json.dumps({"roster": r, "skillsUrl": skill_url, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
                        "pen": pr._json(pr.POW)["pen"], "tribe": pr._json(pr.POW)["tribe"],
                        "grules": grules["types"], "gim": pr._json(pr.GSTAGE), "dmg": pr._json(pr.DMG),

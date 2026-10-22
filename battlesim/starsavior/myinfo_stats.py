@@ -99,12 +99,14 @@ def gauntlet_stats(unit, growth):
     return dict(journey=journey, potential=potential, power_pp=power_pp, missing=sorted(missing))
 
 
-def final_stats(unit, info, growth, rule="normal"):
+def final_stats(unit, info, growth, rule="normal", breakdown=False):
     """Return {stats, missing, power, combat[, build_mismatch]}, or None for an unknown rule.
 
     unit is one imported info.units entry (id = roster uid). Absent fields use
     neutral defaults, with diagnostics. Cumulative rows use the last known level;
     levels beyond published tables are flagged, never silently extrapolated.
+    breakdown=True adds sources and per-stat R1/R2 arithmetic without changing
+    existing result fields; its components sum to the final integer.
     """
     if rule not in ("normal", "fixed200"):
         return None
@@ -131,6 +133,14 @@ def final_stats(unit, info, growth, rule="normal"):
     def add(dst, src, times=1):
         for k in KEYS + RATE_KEYS:
             dst[k] = dst.get(k, 0) + src.get(k, 0) * times
+
+    sources = []
+    detail = dict(sources=sources, stats={})
+
+    def record(id, values, **meta):
+        if breakdown:
+            sources.append(dict(id=id, values=dict(values), **meta))
+        return values
 
     stats = {k: 0 for k in KEYS}
     gauntlet = gauntlet_stats(unit, growth)
@@ -160,21 +170,22 @@ def final_stats(unit, info, growth, rule="normal"):
                 break
         res = at(template.get("resonance"), unlocked, "growth:resonance")
         stars = at(template.get("star"), star, "growth:star")
-        flat = dict(stars)
-        add(flat, at(template.get("favor"), favor, "growth:favor"))
+        flat = dict(record("sigil", stars, level=star))
+        record("resonance", res, level=unlocked, imported_level=unit.get("resonance"))
+        add(flat, record("favor", at(template.get("favor"), favor, "growth:favor"), level=favor))
 
         tactics = info.get("tactics") or {}
         common = number(tactics, "common_level", "tactics.common_level")
         tables = growth.get("tactics", {})
-        add(flat, at(tables.get("TG_COMMON", {}).get("MAIN"), common, "growth:tactics.TG_COMMON.MAIN"))
+        add(flat, record("tactics", at(tables.get("TG_COMMON", {}).get("MAIN"), common, "growth:tactics.TG_COMMON.MAIN"), group="TG_COMMON", field="level", level=common))
         groups = tactics.get("groups") or {}
         for group in ["TG_SAVIOR", "TG_ARCANA"] + template.get("tactics_groups", []):
             for kind, field in (("ATTACK", "attack"), ("DEFENSE", "defense"), ("HP", "hp")):
                 label = "tactics." + group + "." + field
                 lv = number(groups.get(group) or {}, field, label)
-                add(flat, at(tables.get(group, {}).get(kind), lv, "growth:" + label))
+                add(flat, record("tactics", at(tables.get(group, {}).get(kind), lv, "growth:" + label), group=group, field=field, level=lv))
         facility = number(tactics, "facility_level", "tactics.facility_level")
-        add(flat, at(growth.get("facility"), facility, "growth:facility"))
+        add(flat, record("facility", at(growth.get("facility"), facility, "growth:facility"), level=facility))
 
         equipment = unit.get("equip")
         if not isinstance(equipment, list):
@@ -192,24 +203,28 @@ def final_stats(unit, info, growth, rule="normal"):
                 missing.add("equip.main")
             if not isinstance(item.get("subs"), list):
                 missing.add("equip.subs")
-            for opt in [item.get("main") or {}] + (item.get("subs") or []):
+            for oi, opt in enumerate([item.get("main") or {}] + (item.get("subs") or [])):
                 k = NST_KEY.get(opt.get("stat"))
                 v = opt.get("value")
                 if k is None or not _number(v):
                     missing.add("equip.stat:" + str(opt.get("stat", "missing")))
                 else:
                     flat[k] = flat.get(k, 0) + v
+                    record("equipment_main" if oi == 0 else "equipment_sub", {k: v})
         for sid, count in sorted(counts.items()):
             effect = growth.get("sets", {}).get(sid)
             if not effect or not effect.get("parts", 0) > 0:
                 missing.add("set:" + sid)
             else:
-                add(flat, effect.get("stats", {}), count // effect["parts"])
+                times = count // effect["parts"]
+                add(flat, effect.get("stats", {}), times)
+                record("equipment_set", {k: v * times for k, v in effect.get("stats", {}).items()},
+                       set=sid, count=count, parts=effect["parts"], times=times)
 
         jf = gauntlet["journey"]
         # StatFactorBundle potential bucket -> FinalStatCombiner R2 and flat,
         # NOT journey/R1 (March NKM.cs:18263,18344; current reference same).
-        add(flat, gauntlet["potential"])
+        add(flat, record("potential", gauntlet["potential"]))
         # StatFactorBundle NKM.cs:18563-18608 builds passive / unique passive;
         # FinalStatCombiner 18269-18271 puts their rates in R2 (flat:18346-18347).
         # Current reference StatFactorBundle.cs:118-119 and combiner:193-195
@@ -221,7 +236,11 @@ def final_stats(unit, info, growth, rule="normal"):
         elif str(passive_level) not in passive:
             missing.add("unit_passive:level")
         else:
-            add(flat, passive[str(passive_level)])
+            add(flat, record("passive", passive[str(passive_level)], level=passive_level))
+        if breakdown:
+            record("base", base)
+            record("level", {k: inc.get(k, 0) * (min(level, 200) - 1) + inc.get(k, 0) * max(0, level - 200) + syn.get(k, 0) for k in KEYS}, level=level)
+            record("journey", jf)
         for k in KEYS:
             if k not in base:
                 missing.add("growth:base." + k)
@@ -237,6 +256,17 @@ def final_stats(unit, info, growth, rule="normal"):
             x = x1 + res.get(k, 0) + x1 * r1
             y = x + flat.get(k, 0) + x * (flat.get(k + "P", 0) / 10000)
             stats[k] = max(0, math.floor(y))
+            if breakdown:
+                components = {}
+                for s in sources:
+                    components[s["id"]] = components.get(s["id"], 0) + s["values"].get(k, 0)
+                components["bundle"] = x1 * r1 + x * (flat.get(k + "P", 0) / 10000)
+                subtotal = 0
+                for contribution in components.values():
+                    subtotal += contribution  # Same left-to-right addition as JS reduce.
+                components["rounding"] = stats[k] - subtotal
+                detail["stats"][k] = dict(components=components, x1=x1, r1=r1, x=x,
+                                          r2=flat.get(k + "P", 0) / 10000, y=y, final=stats[k])
     skills = unit.get("skills") or {}
     skill_sum = sum(number(skills, k, "skills." + k) for k in ("basic", "special", "ultimate", "passive"))
     # Exported slots 1..4 include unique passive; do not add star/sigil again.
@@ -249,4 +279,6 @@ def final_stats(unit, info, growth, rule="normal"):
     result["missing"] = sorted(missing)
     from .myinfo_combat import combat_input
     result["combat"] = combat_input(unit)
+    if breakdown:
+        result["breakdown"] = detail
     return result

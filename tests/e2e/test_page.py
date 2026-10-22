@@ -873,7 +873,7 @@ def test_skill_view(browser, ctx):
         assert page.locator('#skills-body .skill-next').count() == 0
         page.keyboard.press('Escape')
         assert not page.locator('#skills-dialog').is_visible()
-        assert face.evaluate('(b) => b === document.activeElement && b.getAttribute("aria-expanded")==="false"')
+        page.wait_for_function("b => b === document.activeElement && b.getAttribute(\"aria-expanded\")===\"false\"", arg=face.element_handle(), timeout=3000)
         choose(page, '작전 (일반)', 'SECTOR 1-3')
         import_synthetic(page)
         page.click('#tab-info')
@@ -956,6 +956,73 @@ TESTS.append(test_boss_gimmick_mobile)
 TESTS.extend([test_myinfo_legacy_power, test_myinfo_import_clear, test_myinfo_rules_mobile, test_myinfo_sim])
 TESTS.extend([test_share_link, test_sim_runs])
 TESTS.extend([test_skill_view, test_skill_retry])
+
+
+def test_myinfo_full(browser, ctx):
+    """Full imported viewer: lazy/cache, exact sim input, keyboard and mobile."""
+    for width in (1280, 390):
+        ctx.errors.clear()
+        page = open_page(browser, ctx, viewport={'width': width, 'height': 900})
+        choose(page, '작전 (일반)', 'SECTOR 1-3')
+        import_synthetic(page)
+        page.evaluate('''() => {window.detailCalls=0;const f=MyInfoStats.final_stats;
+          MyInfoStats.final_stats=(...a)=>{if(a[4])detailCalls++;return f(...a)}}''')
+        page.click('#tab-info')
+        assert page.evaluate('() => detailCalls') == 0
+        assert page.evaluate('() => !performance.getEntriesByType("resource").some(r=>r.name.includes("myinfo_view.json"))')
+        account = page.locator('[data-mi-detail="account"]')
+        account.click()
+        assert page.locator('#mi-detail-account .mi-group-table').is_visible()
+        assert page.evaluate('() => detailCalls') == 0
+        button = page.locator('[data-mi-detail="1001"]')
+        assert button.get_attribute('aria-expanded') == 'false'
+        button.focus()
+        page.keyboard.press('Enter')
+        panel = page.locator('#mi-detail-1001')
+        page.wait_for_selector('#mi-detail-1001 .mi-stat-detail')
+        assert button.get_attribute('aria-expanded') == 'true'
+        assert page.evaluate('() => detailCalls') == 1
+        assert panel.locator('.mi-stat-detail').count() == 8
+        assert panel.locator('.mi-gear').count() == 6  # synthetic item 800001 maps to slot 0 in the public slot table
+        panel.locator('.mi-stat-detail summary').first.focus()
+        page.keyboard.press('Space')
+        assert panel.locator('.mi-stat-detail').first.get_attribute('open') is not None
+        assert '묶음 비율 효과' in panel.inner_text()
+        assert page.evaluate('''() => {const r=miProfile().results[BYKEY[R.find(s=>s.uid===1001).key].key];
+          const text=document.querySelector('#mi-detail-1001 .mi-sim-chips').textContent;
+          return Object.entries(r.stats).every(([k,v])=>text.includes(MyInfoView.value(k,v))) }''')
+        assert page.evaluate('''() => simParty(LASTQ[1].rows[0]).units.every(u=>{
+          const r=Object.values(miProfile().results).find(r=>r.power===u.power);
+          return r&&JSON.stringify(r.stats)===JSON.stringify(u.stats_override)&&JSON.stringify(r.combat)===JSON.stringify(u.myinfo_combat)})''')
+        button.click()
+        assert not panel.is_visible()
+        button.focus()
+        page.keyboard.press('Space')
+        assert page.evaluate('() => detailCalls') == 1
+        page.select_option('#mi-sort', 'name')
+        assert page.evaluate('() => detailCalls') == 1
+        assert panel.locator('.mi-stat-detail').first.get_attribute('open') is not None
+        assert page.evaluate('() => document.documentElement.scrollWidth<=innerWidth')
+        page.locator('.mi-unit[data-uid="1001"]').scroll_into_view_if_needed()
+        page.screenshot(path=os.path.join(ctx.shots, 'myinfo_full_%d.png' % width), full_page=True)
+        # Cache invalidation follows content, account and clear changes.
+        choose(page, '코스모 게이트', '길레 2단계')
+        page.wait_for_function('() => detailCalls===2')
+        assert 'Lv200' in page.inner_text('#mi-meta')
+        choose(page, '일일 재화 던전', '')
+        page.wait_for_function('() => detailCalls===3')
+        assert '현재 시뮬 미적용' in panel.inner_text()
+        page.evaluate('''() => {const i=structuredClone(MI.info);i.units[0].favor=9;miReset(i);renderMi()}''')
+        page.wait_for_function('() => detailCalls===4')
+        assert '호감도 Lv9' in panel.inner_text()
+        page.click('#mi-panel-clear')
+        assert page.locator('.mi-detail-content').count() == 0
+        assert not ctx.errors, ctx.errors
+        page.close()
+    return True, '1280/390px, lazy once/cache invalidation, keyboard, sim values, no overflow'
+
+
+TESTS.append(test_myinfo_full)
 
 
 def main():
