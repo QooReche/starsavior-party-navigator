@@ -15,6 +15,9 @@
     "groups": { "TG_STAR": {"level": 64, "attack": 65, "defense": 64, "hp": 65}, "...": {} }
                                          // TG_SUN/MOON/STAR/ORDER/CHAOS(속성), TG_DEFENDER/STRIKER/RANGER/CASTER/ASSASSIN/SUPPORTER(클래스), TG_ARCANA, TG_SAVIOR
   },
+  "break_skills": [                      // 보유 브레이크 스킬(없는 파일도 있음 → 화면에서 직접 선택)
+    {"id": 101, "level": 1}              // id = 정적 표 ORBITAL_ARRAY_TEMPLET.m_SkillID(101 특이점 관측·102 스타피어서·103 큐브 과부하·104 행성 정화·105 차원 강습), 레벨 1~10
+  ],
   "units": [                             // 보유 구원자만(id 오름차순)
     {
       "id": 1040,                        // 정적 표 UNIT_TEMPLET_BASE1.m_UnitID

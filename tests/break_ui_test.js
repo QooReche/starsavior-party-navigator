@@ -11,12 +11,13 @@ const ctx=vm.createContext({console,URL,JSON,Number,Promise,
  setTimeout:()=>1,clearTimeout:()=>{},location:{href:'https://example.test/index.html'},
  Worker:class{constructor(){workers.push(this)} postMessage(req){this.req=req} terminate(){this.stopped=true}},
  CFG:{breakSkills:{'특이점 관측':{bonusRoles:[],text:'공·방'},'스타피어서':{bonusRoles:['스트라이커','레인저'],text:'치명'},'큐브 과부하':{bonusRoles:['서포터','디펜더'],text:'속도'}}},
- D:{bicons:{}},BG:{},esc:s=>String(s??''),MODE:'auto',miMode:()=>false,
+ D:{bicons:{}},BG:{},esc:s=>String(s??''),MODE:'auto',miMode:()=>false,MI:{},
  contents:[{key:'op',name:'작전 (일반)'}],ckey:party=>party.map(x=>x.s.key).sort().join(','),
  simParty:t=>({units:t.keys}),rkOf:()=>0,simOpt:()=>({build:'standard'}),run:()=>{},
  SIMQ:{n:100,seed:1,res:{},busy:null,LOAD_MS:100,RUN_MS:100},cur:[{tab:'tab',name:'stage'}],LASTQ:{}});
 vm.runInContext('const bkeys=Object.keys(CFG.breakSkills);',ctx);
 ctx.CFG.breakSupported=['큐브 과부하',...Object.keys(rules.mc.break_skills)];
+vm.runInContext(section('function brkLv(', 'function syncBrk('),ctx);
 vm.runInContext(section('function pickBreak(', 'const KT='),ctx);
 vm.runInContext(section('function breakCard(', '// ---------------- 표시 모드'),ctx);
 vm.runInContext(section('const simCls=', 'function quickRows('),ctx);
@@ -37,7 +38,11 @@ assert.notEqual(ev('simSig(cur[0],a)'),initial);
 assert.equal(ev('breakChoice(a.combo,{key:"cosmo",name:"코스모 게이트"}).name'),'스타피어서');
 assert.match(ev('breakCard(breakChoice(a.combo,contents[0]),{bs:{supported:true,uses:1.25}})'),/평균 1.25회 발동/);
 assert.match(ev('breakCard(breakChoice(a.combo,contents[0]),{bs:{supported:false}})'),/시뮬 미반영/);
-console.log('PASS 선택 기본값·팀/콘텐츠 분리·저장·서명·결과 칩');
+// 내 정보의 브레이크 스킬 레벨: 없으면 5, 있으면 그 값
+assert.equal(ev('teamBreak(a).level'),5);
+ev('MI.brkLv={"특이점 관측":8}');
+assert.equal(ev('teamBreak(a).level'),8);ev('MI.brkLv=null');
+console.log('PASS 선택 기본값·팀/콘텐츠 분리·저장·서명·결과 칩·내 정보 레벨');
 ctx.LASTQ[1]={rows:[ctx.a,ctx.b]};ev('simStart(1)');
 const old=workers[0],req=old.req;
 assert.deepEqual(plain(req.teams.map(t=>t.options.break_skill)),[{name:'특이점 관측',level:5},{name:'큐브 과부하',level:5}]);

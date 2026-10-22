@@ -40,6 +40,7 @@
     if (!ints(o,["star_link_level"])) return "스타링크 값이 올바르지 않습니다.";
     if ("tactics" in o && (!obj(o.tactics)||!ints(o.tactics,["facility_level","common_level"])||
         ("groups" in o.tactics&&(!obj(o.tactics.groups)||!Object.values(o.tactics.groups).every(v=>obj(v)&&ints(v,["level","attack","defense","hp"])))))) return "전술 정보가 올바르지 않습니다.";
+    if ("break_skills" in o&&(!Array.isArray(o.break_skills)||!o.break_skills.every(b=>obj(b)&&Number.isInteger(b.id)&&b.id>0&&Number.isInteger(b.level)&&b.level>=1&&b.level<=10))) return "브레이크 스킬 정보가 올바르지 않습니다.";
     const ids=new Set();
     for (const u of o.units) {
       if (!obj(u)||!Number.isInteger(u.id)||u.id<=0||ids.has(u.id)||!ints(u,["star","sigil","resonance","favor"])) return "구원자 항목이 올바르지 않습니다.";
@@ -69,6 +70,15 @@
     return { keys, unknown };
   }
 
+  // 보유 브레이크 스킬: 정적 표 ORBITAL_ARRAY_TEMPLET 의 m_SkillID → 화면 이름. 파일에 break_skills 가 없으면 null(직접 고르기)
+  const BREAK_IDS = { 101: "특이점 관측", 102: "스타피어서", 103: "큐브 과부하", 104: "행성 정화", 105: "차원 강습" };
+  function mapBreak(info) {
+    if (!info || !Array.isArray(info.break_skills)) return null;
+    const levels = {};
+    for (const b of info.break_skills) if (BREAK_IDS[b.id]) levels[BREAK_IDS[b.id]] = b.level;
+    return levels;
+  }
+
   // 공유 링크용: JSON → gzip → base64url (fromHash 의 반대). 브라우저 CompressionStream 필요
   async function toHash(info) {
     if (typeof CompressionStream !== "function") throw new Error("이 브라우저는 압축을 지원하지 않습니다.");
@@ -82,6 +92,6 @@
     return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   }
 
-  const api = { FORMAT, fromHash, toHash, validate, mapOwned, b64urlToBytes };
+  const api = { FORMAT, fromHash, toHash, validate, mapOwned, mapBreak, b64urlToBytes };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.MyInfoImport = api;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -43,6 +43,14 @@ assert.deepEqual(r.unknown,[999999]);
   assert.deepEqual(got,info);
   assert.equal(await M.fromHash('#other=1'),null);
   assert.equal(await M.fromHash(''),null);
+  // 보유 브레이크 스킬: 없으면 null(직접 고르기), 있으면 이름별 레벨, 잘못된 값은 거부
+  const base={format:M.FORMAT,star_link_level:1,units:[{id:1040,star:3,sigil:0,resonance:0,favor:1}]};
+  assert.equal(M.mapBreak(base),null);
+  const bs={...base,break_skills:[{id:101,level:1},{id:103,level:5},{id:105,level:8},{id:999,level:2}]};
+  assert.equal(M.validate(bs),'');
+  assert.deepEqual(M.mapBreak(bs),{'특이점 관측':1,'큐브 과부하':5,'차원 강습':8});
+  assert.notEqual(M.validate({...base,break_skills:[{id:101,level:11}]}),'');
+  assert.notEqual(M.validate({...base,break_skills:[{id:101}]}),'');
   // 실제로 내보낸 파일이 있으면 그것도 확인(개인 데이터라 저장소에는 없음)
   const real=process.env.MYINFO_REAL;
   if(real&&fs.existsSync(real)){

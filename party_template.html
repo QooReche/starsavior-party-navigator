@@ -323,7 +323,7 @@ button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
 <section id="mi-panel" class="panel" aria-label="내 정보" hidden>
  <div class="mi-toolbar"><b>내 정보</b><span class="tag">근사</span><button id="mi-open-import" type="button">불러오기·만드는 방법</button><button id="mi-panel-clear" type="button">지우기</button><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
  <div id="mi-meta"></div><div id="mi-saved" class="mut"></div><div id="mi-account"></div>
- <section id="mi-brk-sec"><b>보유 브레이크 스킬</b> <span class="mut">내 정보 파일에 없어서 직접 고릅니다(추천·시뮬에 씀)</span><div id="brk" style="margin-top:6px"></div></section>
+ <section id="mi-brk-sec"><b>보유 브레이크 스킬</b> <span class="mut" id="brk-note">내 정보 파일에 없어서 직접 고릅니다(추천·시뮬에 씀)</span><div id="brk" style="margin-top:6px"></div></section>
  <div id="mi-excl" class="mut"></div><div id="mi-list"></div>
  <details class="mi-assumptions"><summary>근거·가정</summary>능력치·전투력은 게임 화면과 맞춘 계산입니다(건틀렛 축복만 미해석). 클리어 판정은 근사입니다. Lv200 고정 콘텐츠는 공명 10을 적용합니다. 플래시 포인트의 고정 규칙은 추정입니다. 빠른 계산은 전투력에 맞춘 표준 능력치, 시뮬은 내 최종 능력치를 씁니다.</details>
 </section>
@@ -548,7 +548,7 @@ function breakChoice(party,c,have=breakOwned()){
  const shared=typeof SHARE!=="undefined"&&Object.hasOwn(SHARE,shareKey),saved=shared?(SESSION_BR[key]??SHARE[shareKey]):BRSEL[key];
  const name=saved===""||have.includes(saved)?saved:rec?rec[1]:"";
  return {key,name,rec:rec?rec[1]:"",have}}
-function teamBreak(t){const c=contents[$("content").value],name=breakChoice(t.combo,c).name;return name?{name,level:5}:null}
+function teamBreak(t){const c=contents[$("content").value],name=breakChoice(t.combo,c).name;return name?{name,level:brkLv(name)}:null}
 function breakChip(bs){return bs?`<span class="bschip">${bs.supported?`시뮬 반영 · 평균 ${Number(bs.uses).toLocaleString(undefined,{maximumFractionDigits:3})}회 발동`:"시뮬 미반영"}</span>`:""}
 
 const KT=s=>s.kind==="C"?["COSMIC","k-C"]:s.kind==="A"?["ANOTHER","k-A"]:null;
@@ -767,7 +767,7 @@ function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("c
  SIMQ.w.onerror=e=>{if(SIMQ.requestId===id)simStop("작업자 오류: "+(e.message||"알 수 없음"))};
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
  const req={type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:runs,seed:SIMQ.seed,options:simOpt(c.key),mode:MODE,
-  teams:rows.map(j=>({key:j.key,party:simParty(j.t),options:{break_skill:j.bname?{name:j.bname,level:5}:null}}))};
+  teams:rows.map(j=>({key:j.key,party:simParty(j.t),options:{break_skill:j.bname?{name:j.bname,level:brkLv(j.bname)}:null}}))};
  SIMQ.lastReq={req,sigs};SIMQ.w.postMessage(req);
  run(!!compareKey);return true}
 function simRefine(p,key){const st=cur&&cur[$("stage").value],t=LASTQ[p]?.rows.find(t=>ckey(t.combo)===key);if(!st||!t||SIMQ.busy)return;
@@ -849,7 +849,7 @@ function simScreen(p){const c=contents[$("content").value],st=cur&&cur[$("stage"
    if(m.type==="error"){SIMQ.screening=false;simStop(m.msg)}};
   SIMQ.w.onerror=e=>{if(SIMQ.requestId===id){SIMQ.screening=false;simStop("작업자 오류: "+(e.message||"알 수 없음"))}};
   SIMQ.w.postMessage({type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:R.n,seed:SIMQ.seed,options:simOpt(c.key),mode:"auto",
-   teams:keys.map(key=>{const t=byKey.get(key),bn=teamBreak(t)?.name||null;return {key,party:simParty(t),options:{break_skill:bn?{name:bn,level:5}:null}}})})};
+   teams:keys.map(key=>{const t=byKey.get(key),bn=teamBreak(t)?.name||null;return {key,party:simParty(t),options:{break_skill:bn?{name:bn,level:brkLv(bn)}:null}}})})};
  // 엔진을 내려받는 동안은 내려받기 상한, 준비된 뒤에는 남은 예선 시간
  const arm=()=>{clearTimeout(SIMQ.timer);const left=SIMQ.loaded?Math.max(1000,SCR_MS-(sc.t0?performance.now()-sc.t0:0)):SIMQ.LOAD_MS;
   SIMQ.timer=setTimeout(()=>{if(!SIMQ.loaded){simStop("엔진 내려받기 시간 초과(네트워크 확인)");return}finish(true);simInvalidate();run()},left)};
@@ -945,14 +945,20 @@ function renderPw(){const own=[...document.querySelectorAll("#own input:checked"
 $("pwl").addEventListener("change",e=>{const x=e.target.closest("input[data-bloom]");if(!x)return;if(x.checked)BLOOM[x.dataset.bloom]=1;else delete BLOOM[x.dataset.bloom];LS.set("bloom",BLOOM);rerun()});
 $("pwl").addEventListener("input",e=>{const x=e.target.closest("input[data-pk]");if(!x)return;const v=+x.value;if(v>0)PW[x.dataset.pk]=v;else delete PW[x.dataset.pk];LS.set("pw",PW);manualSelect();rerun()});
 let EXCL=new Set((()=>{const v=LS.get("excl");return Array.isArray(v)?v:[]})());
-function syncOwn(){const ks=MI.info?new Set(MyInfoImport.mapOwned(MI.info,R).keys):new Set();document.querySelectorAll("#own input").forEach(x=>{x.checked=ks.has(x.dataset.k)&&!EXCL.has(x.dataset.k)})}
+function syncOwn(){const ks=MI.info?new Set(MyInfoImport.mapOwned(MI.info,R).keys):new Set();document.querySelectorAll("#own input").forEach(x=>{x.checked=ks.has(x.dataset.k)&&!EXCL.has(x.dataset.k)});syncBrk()}
+// 내 정보에 break_skills 가 있으면 보유 브레이크 스킬을 파일 기준으로 맞추고(칸은 잠금), 없으면 직접 고르기
+function brkLv(name){return MI.brkLv?.[name]||5}
+function syncBrk(){const lv=MI.info?MyInfoImport.mapBreak(MI.info):null;MI.brkLv=lv;
+ document.querySelectorAll("#brk input").forEach(x=>{if(lv){x.checked=Object.hasOwn(lv,x.dataset.b);x.disabled=true}else x.disabled=false;const t=x.parentElement.querySelector(".blv");if(t)t.remove();if(lv&&Object.hasOwn(lv,x.dataset.b))x.parentElement.querySelector(".tn").insertAdjacentHTML("afterend",`<span class="blv mut">Lv.${lv[x.dataset.b]}</span>`)});
+ const n=$("brk-note");if(n)n.textContent=lv?"내 정보 기준(레벨 표시)":"내 정보 파일에 없어서 직접 고릅니다(추천·시뮬에 씀)";
+ pruneBreakSel()}
 function renderChip(){const e=$("mi-chip");if(!e)return;const i=MI.info;e.classList.toggle("none",!i);
  e.innerHTML=i?`${MI.shared?"공유받은 ":""}내 정보 <b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(0,10))}`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"내 정보 없음";
  $("mi-open").textContent=i?"다시 불러오기":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i}
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b))}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  syncOwn();
- if(Array.isArray(b)){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}pruneBreakSel()})();
+ if(Array.isArray(b)&&!MI.brkLv){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}pruneBreakSel()})();
 const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").checked=on;LS.set("why",on);if(on)setTimeout(()=>{drawGraph();if(cy){cy.resize();cy.fit(undefined,30)}},50)};
 $("showwhy").onchange=()=>setWhy($("showwhy").checked);setWhy(!!LS.get("why"));
 let _rt=null;const rerunNow=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
