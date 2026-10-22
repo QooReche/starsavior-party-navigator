@@ -339,20 +339,21 @@ button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
 <details class="note"><summary>출처·면책</summary>출처: 가이드 DB(티어 표시·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성은 나무위키 정리. 추천 점수에는 커뮤니티 티어·편성 유형을 쓰지 않습니다. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 빠른 계산과 「시뮬로 확인」은 Lv200·표준 육성(가이드 장비 세팅·T2 레전더리 +15·여정·특수 잠재력)의 능력치를 육성 가정 전투력에 맞춰 줄인 모델의 추정이며 실전 결과가 아닙니다(적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정). 브레이크 스킬 피해는 생존 아군 공격력 합의 광역 계수(레벨 보정 없음)로 추정하며, 노바 +4는 팀 공용(개인 풀이면 생존자 각 +4, 오토에서는 버스트를 안 써 효과 없음), 게이지 +20%는 발동 유닛 제외·상한 100%로 가정합니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 정보 불러오기</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
- <div class="mut" style="margin-bottom:8px">추천·시뮬은 내 정보(게임에서 뽑은 구원자 레벨·장비·스킬)로만 계산합니다. 처음이면 아래 「만드는 방법」을 따라 내정보.json 을 만든 뒤 [파일 선택]으로 올려 주세요.</div>
+ <div class="mut" style="margin-bottom:10px">추천·시뮬은 내 정보(구원자 레벨·장비·스킬)로만 계산.<br>처음이면 아래 방법으로 내정보.json 을 만든 뒤 [파일 선택]으로 업로드.</div>
  <div class="mut" id="mi-status" style="margin:4px 0 6px">불러온 정보 없음</div>
  <div class="dtools"><label class="miFile" style="cursor:pointer"><span class="mibtn">파일 선택</span><input type="file" id="mi-file" accept=".json,application/json" hidden></label><button id="mi-view" type="button">내 정보 보기</button><button id="mi-clear" type="button">지우기</button></div>
- <div class="mut" style="margin:4px 0 8px;font-size:11px">내정보.json 파일만 읽습니다. 서버로 보내지 않고 이 브라우저에만 저장합니다. 불러오면 보유 구원자가 자동으로 체크됩니다.</div>
+ <div class="mut" style="margin:6px 0 12px;font-size:11px;line-height:1.6">내정보.json 만 읽음. 서버 전송 없이 이 브라우저에만 저장.<br>불러오면 보유 구원자 자동 체크.</div>
  <details class="mihow" style="margin:0 0 8px" open><summary style="cursor:pointer">내 정보를 만드는 방법 (Windows PC 게임)</summary>
-  <ol class="mut" style="margin:6px 0 6px 18px;padding:0;font-size:12px;line-height:1.55">
-   <li>PowerShell 을 엽니다(시작 메뉴에서 검색).</li>
-   <li>아래 한 줄을 붙여넣고 엔터. 관리자 확인 창이 뜨면 [예].</li>
-   <li>안내가 나오면 <b>게임을 (다시) 실행 → 로그인해서 로비까지 → 10초 대기 → 도구 창에서 엔터</b>.</li>
-   <li>끝나면 이 페이지가 자동으로 열리며 반영됩니다(안 열리면 위 [파일 선택]으로 바탕화면의 내정보.json).</li>
+  <ol class="mut" style="margin:8px 0 10px 18px;padding:0;font-size:12px;line-height:1.7">
+   <li>PowerShell 실행(시작 메뉴 검색). 관리자 권한으로 열 필요 없음.</li>
+   <li>아래 명령을 붙여넣고 엔터.<br>관리자 확인 창이 뜨면 [예].</li>
+   <li>새 창에 안내가 나오면 <b>스타세이비어 실행</b>.<br>이미 켜져 있었다면 완전히 종료 후 다시 실행.</li>
+   <li>로비가 뜨면 <b>도구 창에서 엔터</b>.</li>
+   <li>이 페이지가 자동으로 열려 반영됨.<br>안 열리면 바탕화면 내정보.json 을 [파일 선택]으로 업로드.</li>
   </ol>
   <code id="mi-cmd" style="display:block;font-size:11px;word-break:break-all;background:rgba(127,127,127,.15);padding:6px 8px;border-radius:6px;user-select:all">$f="$env:TEMP\ss_myinfo.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/QooReche/starsavior-myinfo/main/myinfo.ps1 -OutFile $f; powershell -NoProfile -ExecutionPolicy Bypass -File $f</code>
   <div class="dtools" style="margin-top:6px"><button id="mi-copy" type="button">명령 복사</button></div>
-  <div class="mut" style="margin:6px 0 0;font-size:11px">비공식 도구입니다. 로그인할 때 받는 내 구원자 정보를 읽기만 하며 닉네임·UID·로그인 정보는 저장하지 않습니다. 게임 약관상 보장은 없어 사용은 본인 책임입니다. 소스·설명: <a href="https://github.com/QooReche/starsavior-myinfo" target="_blank" rel="noopener">starsavior-myinfo</a></div>
+  <div class="mut" style="margin:10px 0 0;font-size:11px;line-height:1.6">비공식 도구. 로그인 때 받는 내 구원자 정보를 읽기만 하며 닉네임·UID·로그인 정보는 저장 안 함.<br>사용은 본인 책임.<br>소스: <a href="https://github.com/QooReche/starsavior-myinfo" target="_blank" rel="noopener">starsavior-myinfo</a></div>
  </details>
  <div hidden><input id="oq"><button id="all" type="button"></button><button id="none" type="button"></button><div class="own" id="own"></div><div id="pwl"></div></div>
 </aside>
