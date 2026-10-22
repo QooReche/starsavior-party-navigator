@@ -130,14 +130,25 @@ def final_stats(unit, info, growth, rule="normal"):
     else:
         level = 200 if rule == "fixed200" else number(info, "star_link_level", "star_link_level", 1, 1)
         resonance = 10 if rule == "fixed200" else number(unit, "resonance", "resonance")
-        star = number(unit, "star", "star") + number(unit, "sigil", "sigil")
+        # NKM.Templets.cs:17837-17842 serializes limit break (star), StarGrade
+        # (sigil), resonance separately. NKM.cs:1979-1982,18553-18556 passes
+        # ONLY StarGrade to STAR_GRADE_TEMPLET, never star + sigil.
+        star = number(unit, "sigil", "sigil")
         favor = number(unit, "favor", "favor")
         base = template.get("base", {})
         inc = template.get("per_level", {})
         syn = {} if rule == "fixed200" else at(growth.get("star_link"), level, "growth:star_link")
-        res = at(template.get("resonance"), resonance, "growth:resonance")
+        # IUnitResonanceTemplet (NKM.Templets.cs:25673-25690) stops at
+        # UnlockLevel. Even an inconsistent imported grade cannot bypass it.
+        unlock = template.get("resonance_unlock", {})
+        unlocked = resonance
+        for grade in sorted(map(int, unlock)):
+            if grade <= resonance and level < unlock[str(grade)]:
+                unlocked = grade - 1
+                break
+        res = at(template.get("resonance"), unlocked, "growth:resonance")
         stars = at(template.get("star"), star, "growth:star")
-        flat = dict(res)
+        flat = dict(stars)
         add(flat, at(template.get("favor"), favor, "growth:favor"))
 
         tactics = info.get("tactics") or {}
@@ -189,7 +200,18 @@ def final_stats(unit, info, growth, rule="normal"):
         # NOT journey/R1 (March NKM.cs:18263,18344; current reference same).
         add(flat, gauntlet["potential"])
         missing.update(gauntlet["missing"])
-        missing.add("unit_passive")
+        # StatFactorBundle NKM.cs:18563-18608 builds passive / unique passive;
+        # FinalStatCombiner 18269-18271 puts their rates in R2 (flat:18346-18347).
+        # Current reference StatFactorBundle.cs:118-119 and combiner:193-195
+        # preserve the same buckets. Use the learned level's absolute stat row.
+        passive_level = int(number(unit.get("skills") or {}, "passive", "skills.passive"))
+        passive = template.get("passive")
+        if not isinstance(passive, dict):
+            missing.add("unit_passive")
+        elif str(passive_level) not in passive:
+            missing.add("unit_passive:level")
+        else:
+            add(flat, passive[str(passive_level)])
         for k in KEYS:
             if k not in base:
                 missing.add("growth:base." + k)
@@ -197,8 +219,12 @@ def final_stats(unit, info, growth, rule="normal"):
             lvl_a = inc.get(k, 0) * (min(level, 200) - 1)
             lvl_b = inc.get(k, 0) * max(0, level - 200) + syn.get(k, 0)
             x1 = base.get(k, 0) + lvl_a + lvl_b + jf.get(k, 0)
-            r1 = (base.get(k + "P", 0) + stars.get(k + "P", 0)) / 10000
-            x = x1 + x1 * r1
+            # NKM.cs:18541-18556 resolves IUnitResonanceTemplet -> R1 bucket
+            # OBF_9851; IUnitStarGradeTemplet -> R2 bucket OBF_3415.
+            # Combiner:18260-18261,18342: resonance flat is AFTER R1 and
+            # BEFORE R2. Facilities/tactics/sets stay in R2 (18265,18846).
+            r1 = (base.get(k + "P", 0) + res.get(k + "P", 0)) / 10000
+            x = x1 + res.get(k, 0) + x1 * r1
             y = x + flat.get(k, 0) + x * (flat.get(k + "P", 0) / 10000)
             stats[k] = max(0, math.floor(y))
     skills = unit.get("skills") or {}

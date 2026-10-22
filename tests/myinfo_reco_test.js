@@ -45,7 +45,7 @@ const tests={
       QK:{d:{sv:Object.fromEntries(keys.map(k=>[k,[0,100,1000,50,100,10000]]))}},
       t:{ek:keys,base:40000,b:M.team(keys,profile,k=>k)}});
     vm.runInContext(html.slice(html.indexOf('function simParty('),html.indexOf('const simSigB=')),ctx);
-    assert.equal(vm.runInContext('simParty(t).units.reduce((n,u)=>n+u.power,0)',ctx),39331);}
+    assert.equal(vm.runInContext('simParty(t).units.reduce((n,u)=>n+u.power,0)',ctx),39000);}
 };
 let failed=0;for(const [name,test] of Object.entries(tests)){try{test();console.log('PASS',name)}catch(e){failed++;console.error('FAIL',name,e.message)}}
 if(failed)process.exit(1);

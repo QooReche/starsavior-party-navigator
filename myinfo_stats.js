@@ -110,13 +110,21 @@
     } else {
       const level = rule === "fixed200" ? 200 : number(info, "star_link_level", "star_link_level", 1, 1);
       const resonance = rule === "fixed200" ? 10 : number(unit, "resonance", "resonance");
-      const star = number(unit, "star", "star") + number(unit, "sigil", "sigil");
+      // NKM.Templets.cs:17837-17842 / NKM.cs:1979-1982: only sigil is
+      // StarGrade; star is limit break and must not be added to it.
+      const star = number(unit, "sigil", "sigil");
       const favor = number(unit, "favor", "favor");
       const base = template.base || {}, inc = template.per_level || {};
       const syn = rule === "fixed200" ? {} : at(growth.star_link, level, "growth:star_link");
-      const res = at(template.resonance, resonance, "growth:resonance");
+      // IUnitResonanceTemplet, NKM.Templets.cs:25673-25690: UnlockLevel gate.
+      const unlock = template.resonance_unlock || {};
+      let unlocked = resonance;
+      for (const grade of Object.keys(unlock).map(Number).sort((a, b) => a - b)) {
+        if (grade <= resonance && level < unlock[String(grade)]) { unlocked = grade - 1; break; }
+      }
+      const res = at(template.resonance, unlocked, "growth:resonance");
       const stars = at(template.star, star, "growth:star");
-      const flat = Object.assign({}, res);
+      const flat = Object.assign({}, stars);
       add(flat, at(template.favor, favor, "growth:favor"));
       const tactics = info.tactics || {}, tables = growth.tactics || {};
       const common = number(tactics, "common_level", "tactics.common_level");
@@ -157,14 +165,21 @@
       // from journey x1/R1 (March NKM.cs:18263,18344; current reference same).
       add(flat, gauntlet.potential);
       for (const label of gauntlet.missing) missing.add(label);
-      missing.add("unit_passive");
+      // NKM.cs:18563-18608 / 18269-18271: permanent SkillLevelStat joins R2.
+      // Absolute learned-level row (Star.Templets.cs:26156-26170), not max level.
+      const passiveLevel = number(unit.skills || {}, "passive", "skills.passive");
+      if (!template.passive || typeof template.passive !== "object") missing.add("unit_passive");
+      else if (!Object.prototype.hasOwnProperty.call(template.passive, String(passiveLevel))) missing.add("unit_passive:level");
+      else add(flat, template.passive[String(passiveLevel)]);
       for (const k of KEYS) {
         if (!Object.prototype.hasOwnProperty.call(base, k)) missing.add("growth:base." + k);
         const lvl_a = get(inc, k) * (Math.min(level, 200) - 1);
         const lvl_b = get(inc, k) * Math.max(0, level - 200) + get(syn, k);
         const x1 = get(base, k) + lvl_a + lvl_b + get(jf, k);
-        const r1 = (get(base, k + "P") + get(stars, k + "P")) / 10000;
-        const x = x1 + x1 * r1;
+        // NKM.cs:18541-18556,18260-18261,18342: resonance rate in R1,
+        // resonance flat after R1, sigil rate in R2. See Python source mapping.
+        const r1 = (get(base, k + "P") + get(res, k + "P")) / 10000;
+        const x = x1 + get(res, k) + x1 * r1;
         const y = x + get(flat, k) + x * (get(flat, k + "P") / 10000);
         stats[k] = Math.max(0, Math.floor(y));
       }

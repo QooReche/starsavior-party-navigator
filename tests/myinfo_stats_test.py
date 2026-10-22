@@ -4,7 +4,7 @@ python -X utf8 -I tests/myinfo_stats_test.py
 python -X utf8 -I tests/myinfo_stats_test.py SyntheticTests
 python -X utf8 -I tests/myinfo_stats_test.py --mutations
 STARSAVIOR_STATIC selects the read-only private checkout; absent checkout -> skip.
-Known accuracy gaps deliberately FAIL, including those listed in missing.
+The five same-date ground truths gate regression; older samples only print.
 """
 from copy import deepcopy
 import json
@@ -27,6 +27,9 @@ from battlesim.starsavior.data import get_db
 from tools.build_growth import build_growth, roster_ids
 
 STATIC = Path(os.environ.get("STARSAVIOR_STATIC", r"E:\AI_mk2\starsavior-static-data"))
+# 2026-10-22 same-date five-unit max error: 0% for each stat + 0.5%p.
+# Frozen limits: never derive the acceptance threshold from the current run.
+REGRESSION_LIMITS = {"atk": 0.005, "hp": 0.005, "def": 0.005}
 
 
 def fixture():
@@ -35,6 +38,9 @@ def fixture():
     template = dict(base=dict(atk=101, hp=1001, **{"def": 53}, spd=97, cr=500, cd=5000, eh=10000, er=0),
                     per_level=dict(atk=2, hp=7, **{"def": 1}), journey_mul=[11000, 9000, 12000],
                     tactics_groups=groups[2:],
+                    passive={"0": {}, "1": {}, "2": dict(atkP=400, hpP=600, defP=800),
+                             "3": dict(atkP=900, hpP=1200, defP=1700, spdP=300,
+                                       cr=170, cd=230, eh=310, er=370)},
                     resonance={"0": {}, "2": dict(atk=17, hp=31, **{"def": 11}, atkP=300, hpP=500, defP=700, spd=2),
                                "10": dict(atk=27, hp=41, **{"def": 13}, atkP=600, hpP=800, defP=900, spd=3)},
                     favor={"0": {}, "3": dict(atk=5, hp=9, **{"def": 3})},
@@ -83,15 +89,60 @@ class SyntheticTests(unittest.TestCase):
     def test_formula(self):
         u, i, g = fixture()
         out = ms.final_stats(u, i, g)
-        self.assertEqual(out["stats"], dict(atk=213, hp=1372, **{"def": 108}, spd=104,
+        # x_atk=(101+2+12)*1.03+17=135.45; R2=.10+.04+.01;
+        # remaining flat=5+7+4*3+23=47. Resonance flat is multiplied by R2.
+        self.assertEqual(out["stats"], dict(atk=202, hp=1259, **{"def": 105}, spd=104,
                                             cr=500, cd=5000, eh=10076, er=92))
         self.assertEqual(out["power"], unit_power(out["stats"], 0, 10))
-        self.assertEqual(out["missing"], ["power_pp", "unit_passive"])
+        self.assertEqual(out["missing"], ["power_pp"])
         # Unknown potential tuples / blessings must not be guessed or change any stat.
         u["gauntlet"].update(potentials=[[999999, 1, 2, 3]], blessings=[999999])
         changed = ms.final_stats(u, i, g)
         self.assertEqual(changed["stats"], out["stats"])
-        self.assertEqual(changed["missing"], ["gauntlet.potential:999999", "gauntlet_blessings", "power_pp", "unit_passive"])
+        self.assertEqual(changed["missing"], ["gauntlet.potential:999999", "gauntlet_blessings", "power_pp"])
+
+    def test_unit_passive(self):
+        u, i, g = fixture()
+        cases = []
+        # Absolute rows: level 3 is not 1+2+3. R2 multiplies x, not flat
+        # equipment/tactics/favor. These distinct rates catch max-level reuse.
+        for level, expected in ((0, (202, 1259, 105)), (1, (202, 1259, 105)),
+                                (2, (208, 1329, 111)), (3, (214, 1399, 118))):
+            u["skills"]["passive"] = level
+            out = ms.final_stats(u, i, g)
+            self.assertEqual(tuple(out["stats"][k] for k in ("atk", "hp", "def")), expected)
+            self.assertFalse(any(s.startswith("unit_passive") for s in out["missing"]))
+            cases.append([deepcopy(u), i, deepcopy(g)])
+        self.assertEqual({k: out["stats"][k] for k in ("spd", "cr", "cd", "eh", "er")},
+                         dict(spd=106, cr=670, cd=5230, eh=10386, er=462))
+        u["skills"]["passive"] = 3.0
+        self.assertEqual(ms.final_stats(u, i, g), out)
+        cases.append([deepcopy(u), i, deepcopy(g)])
+        u["skills"]["passive"] = 99
+        self.assertIn("unit_passive:level", ms.final_stats(u, i, g)["missing"])
+        cases.append([deepcopy(u), i, deepcopy(g)])
+        del g["units"]["900001"]["passive"]
+        self.assertIn("unit_passive", ms.final_stats(u, i, g)["missing"])
+        cases.append([u, i, g])
+        self.assertEqual(node_cases(cases), [ms.final_stats(*args) for args in cases])
+
+    def test_sigil_and_resonance_buckets(self):
+        u, i, g = fixture()
+        original = ms.final_stats(u, i, g)["stats"]
+        for star in (0, 7, 99):
+            u["star"] = star
+            self.assertEqual(ms.final_stats(u, i, g)["stats"], original)
+        del u["star"]
+        self.assertEqual(ms.final_stats(u, i, g)["stats"], original)
+        u["sigil"] = 2
+        # x=135.45, sigil R2=.20; NOT an R1 multiplier of the whole base.
+        self.assertEqual(ms.final_stats(u, i, g)["stats"]["atk"], 216)
+        g["units"]["900001"]["resonance_unlock"] = {"2": 3, "10": 200}
+        self.assertEqual(ms.final_stats(u, i, g)["stats"]["atk"], 190)  # locked
+        i["star_link_level"] = 3
+        self.assertEqual(ms.final_stats(u, i, g)["stats"]["atk"], 218)
+        cases = [[deepcopy(u), deepcopy(i), g, rule] for rule in ("normal", "fixed200")]
+        self.assertEqual(node_cases(cases), [ms.final_stats(*args) for args in cases])
 
     def test_gauntlet_potentials(self):
         u, i, g = fixture()
@@ -106,9 +157,9 @@ class SyntheticTests(unittest.TestCase):
                                                   cr=170, cd=230, eh=310, er=370), missing=[]))
         # Independent formula: journey truncates BEFORE x1; potential flat is
         # outside R1/R2 multiplication; its percentages join R2 additively.
-        # HP: 1078*1.1*(1+.05+.01+.12)+129 = 1528.244
-        # DEF: 64*1.05*(1+.07+.01+.17)+39 = 123
-        expected = dict(atk=232, hp=1528, **{"def": 123}, spd=133,
+        # HP: (1078*1.05+31)*(1+.01+.12)+98 = 1412.947
+        # DEF: (64*1.07+11)*(1+.01+.17)+28 = 121.7864
+        expected = dict(atk=221, hp=1412, **{"def": 121}, spd=133,
                         cr=670, cd=5230, eh=10386, er=462)
         self.assertEqual(ms.final_stats(u, i, g)["stats"], expected)
         u["gauntlet"]["level"] = 1
@@ -173,7 +224,7 @@ class SyntheticTests(unittest.TestCase):
     def test_set_counts(self):
         u, i, g = fixture()
         original = ms.final_stats(u, i, g)["stats"]
-        for sid, stat, amounts in ((900012, "atk", [213, 213, 219, 219, 226, 226, 233]),
+        for sid, stat, amounts in ((900012, "atk", [202, 202, 209, 209, 216, 216, 223]),
                                    (900014, "spd", [104, 104, 104, 104, 113, 113, 113])):
             for n, expected in enumerate(amounts):
                 v = deepcopy(u)
@@ -195,7 +246,7 @@ class SyntheticTests(unittest.TestCase):
         u["equip"][0]["subs"].append(dict(stat="NST_FUTURE", value=99999))
         self.assertIn("equip.stat:NST_FUTURE", ms.final_stats(u, i, g)["missing"])
         out = ms.final_stats(dict(id=900001), {}, g)
-        for label in ("star_link_level", "star", "sigil", "favor", "resonance", "equip", "gauntlet.journey", "skills.basic", "game_build"):
+        for label in ("star_link_level", "sigil", "favor", "resonance", "equip", "gauntlet.journey", "skills.basic", "game_build"):
             self.assertIn(label, out["missing"])
         out = ms.final_stats(dict(id=999998), i, g)
         self.assertEqual(out["stats"], dict.fromkeys(ms.KEYS, 0))
@@ -231,6 +282,7 @@ class SyntheticTests(unittest.TestCase):
             u, i, g = fixture()
             i["star_link_level"] = rng.randrange(1, 401)
             u.update(star=rng.randrange(3), sigil=rng.randrange(3), resonance=rng.randrange(11))
+            u["skills"]["passive"] = rng.randrange(5)
             u["gauntlet"]["journey"] = [rng.randrange(1500) for _ in range(5)]
             u["gauntlet"]["potentials"] = [[900101, rng.randrange(3), rng.randrange(6), rng.randrange(6)],
                                            [900102, rng.randrange(2), 0, rng.randrange(6)]]
@@ -267,6 +319,7 @@ class SyntheticTests(unittest.TestCase):
 
     def test_engine_final_none(self):
         u, i, g = fixture()
+        u["skills"]["passive"] = 3  # calculator result already includes permanent rates
         final = ms.final_stats(u, i, g)["stats"]
         # Real permanent HP passive and actual standard potential lines as controls.
         db = get_db()
@@ -296,6 +349,21 @@ class SyntheticTests(unittest.TestCase):
         self.assertGreater(raw_battle.allies[0].maxhp, final["hp"])
         self.assertEqual(api.party_power(defs), unit_power(final))
 
+        # End-to-end controls for all three multiplicative stats. No turns or
+        # conditional buffs: stats_final must suppress the real DB passive.
+        for key, stat, getter in (("1040", "atk", Battle.atk_stat),
+                                  ("1045", "hp", Battle.hp_stat),
+                                  ("haydee", "def", Battle.def_stat)):
+            for is_final in (True, False):
+                defs, _ = api._norm_party([dict(key=key, build="none", stats_override=final,
+                                               stats_final=is_final)], db, "fixed", "standard")
+                b = Battle(defs, [[api._CustomFoe(dict(hp=100000, atk=1), 0)]], random.Random(1))
+                actual = getter(b, b.allies[0])
+                if is_final:
+                    self.assertEqual(actual, final[stat])
+                else:
+                    self.assertGreater(actual, final[stat])
+
     def test_sim_imported_power(self):
         info = json.loads((ROOT / "tests/fixtures/myinfo_synthetic.json").read_text(encoding="utf-8"))
         growth = json.loads((ROOT / "data/growth.json").read_text(encoding="utf-8"))
@@ -306,7 +374,7 @@ class SyntheticTests(unittest.TestCase):
                 units.append(dict(key=str(u["id"]), build="none", stats_override=final["stats"],
                                   stats_final=True, power=final["power"]))
         self.assertEqual(len(units), 4)
-        self.assertEqual(sum(u["power"] for u in units), 39331)
+        self.assertEqual(sum(u["power"] for u in units), 39000)
         db = get_db()
         # Only one short battle; exercise the public API's operation penalty path.
         encounter = api._norm_encounter(dict(waves=[[dict(name="dummy", hp=100000, atk=1)]], max_turns=1))
@@ -315,16 +383,17 @@ class SyntheticTests(unittest.TestCase):
                           dict(content="op", recommended_power=50000))):
             result = api.simulate(units, dict(max_turns=1),
                                   dict(n_runs=1, build="standard", rules_override=dict(power_penalty="model")))
-        self.assertEqual(result["party"]["power"], 39331)
-        self.assertEqual(result["party"]["penalty"], [0.786, 1.214])
+        self.assertEqual(result["party"]["power"], 39000)
+        self.assertEqual(result["party"]["penalty"], [0.78, 1.22])
         # Omitted fields retain the old skill-level-sum=34 calculation, including mixed parties.
         legacy = [{k: v for k, v in u.items() if k != "power"} for u in units]
         defs, _ = api._norm_party(legacy, db, "fixed", "standard")
-        self.assertEqual(api.party_power(defs), 45886)
+        self.assertEqual(api.party_power(defs), 45501)
         mixed, _ = api._norm_party([units[0], *legacy[1:]], db, "fixed", "standard")
         self.assertEqual(api.party_power(mixed), units[0]["power"] + api.party_power(defs[1:]))
 
     def test_accuracy_gate(self):
+        self.assertEqual(REGRESSION_LIMITS, dict(atk=0.005, hp=0.005, **{"def": 0.005}))
         for key, expected, tolerance in (("hp", 10000, 100), ("spd", 150, 1), ("cr", 6500, 100),
                                          ("cd", 14000, 100), ("eh", 12000, 100), ("er", 2000, 100)):
             for sign in (-1, 1):
@@ -347,14 +416,15 @@ class SyntheticTests(unittest.TestCase):
                 check_stats(row)
 
         for u in g["units"].values():
-            self.assertEqual(set(u), {"base", "per_level", "journey_mul", "tactics_groups", "resonance", "favor", "star"})
+            self.assertEqual(set(u), {"base", "per_level", "journey_mul", "tactics_groups", "resonance", "resonance_unlock", "favor", "star", "passive"})
             self.assertEqual(set(u["base"]), set(ms.KEYS))
             check_stats(u["base"])
             check_stats(u["per_level"])
             self.assertEqual(len(u["journey_mul"]), 3)
             self.assertTrue(all(type(v) in (int, float) for v in u["journey_mul"]))
             self.assertEqual(len(u["tactics_groups"]), 2)
-            for field in ("resonance", "favor", "star"):
+            self.assertTrue(all(k.isdecimal() and type(v) is int for k, v in u["resonance_unlock"].items()))
+            for field in ("resonance", "favor", "star", "passive"):
                 check_table(u[field])
         check_table(g["star_link"])
         check_table(g["facility"])
@@ -416,30 +486,40 @@ class PrivateTests(unittest.TestCase):
                 delta = (actual - want) / want * 100 if key in ("atk", "hp", "def") else actual - want
                 cells.append(f"{key}={actual:g}/{want:g} ({delta:+.2f})")
             print(answer["name"] + " | " + " | ".join(cells), flush=True)
-        # 목표(생명 ±1%·속도 ±1·나머지 ±1%p)는 보고만 한다. 공·생·방은 아직 근사(축복·상시 패시브 미해석, 2026-10-22).
-        # 대신 지금 도달한 오차보다 나빠지면 실패하는 회귀 방지 한도(공·생 ±7%·방 ±3.5%, 나머지는 목표 그대로)를 건다.
-        REG = {"atk": 0.07, "hp": 0.07, "def": 0.035}
+        self.assertEqual(len(truth), 5)
         open_targets = []
         for (uid, answer), result in zip(truth.items(), outputs):
+            self.assertFalse(any(s.startswith("unit_passive") for s in result["missing"]))
             for key in ms.KEYS:
                 expected = round(answer["final"][key.upper()] * (100 if key in ("cr", "cd", "eh", "er") else 1))
                 actual = result["stats"][key]
                 if key in ("hp", "spd", "cr", "cd", "eh", "er") and not within_tolerance(key, actual, expected):
                     open_targets.append(f"{answer['name']}.{key} {actual} vs {expected}")
                 with self.subTest(unit=uid, stat=key):
-                    if key in REG:
-                        self.assertLessEqual(abs(actual - expected), abs(expected) * REG[key],
+                    if key in REGRESSION_LIMITS:
+                        self.assertLessEqual(abs(actual - expected), abs(expected) * REGRESSION_LIMITS[key],
                                              f"{key}: {actual} vs {expected}; missing={result['missing']}")
                     else:
                         self.assertTrue(within_tolerance(key, actual, expected),
                                         f"{key}: {actual} vs {expected}; missing={result['missing']}")
         print("PRIVATE target ±1% not yet met: " + ("; ".join(open_targets) or "none"), flush=True)
+        # Public 10/21 screens vs 10/22 import: report only, never an accuracy gate.
+        for uid, name, observed in (("1044", "클레어", (16002, 65538, 4915)),
+                                     ("1045", "화이트펄 루나", (12314, 66887, 5206)),
+                                     ("1054", "왈츠 아세라", (9909, 95464, 5522))):
+            if uid not in units:
+                print("REFERENCE unavailable:", name)
+                continue
+            actual = ms.final_stats(units[uid], info, growth)["stats"]
+            cells = [f"{k}={actual[k]}/{v} ({(actual[k] / v - 1) * 100:+.2f}%)"
+                     for k, v in zip(("atk", "hp", "def"), observed)]
+            print("REFERENCE 10/21 (not gated): " + name + " | " + " | ".join(cells), flush=True)
 
 
 def mutation_checks():
     """Inject wrong values in memory, prove rejection, restore; no files change.
 
-    An unresolved private final-stat gap stays red; mutation is caught at parity.
+    Each mutation must fail by assertion, and its restored test must pass.
     """
     original_final, original_node = ms.final_stats, node_cases
     original_read, original_build = Path.read_text, build_growth
@@ -487,6 +567,8 @@ def mutation_checks():
     module = sys.modules[__name__]
     mutations = {
         "test_formula": (ms, "final_stats", wrong_stat),
+        "test_unit_passive": (ms, "final_stats", wrong_stat),
+        "test_sigil_and_resonance_buckets": (ms, "final_stats", wrong_stat),
         "test_gauntlet_potentials": (ms, "gauntlet_stats", wrong_gauntlet),
         "test_gauntlet_unknowns_and_blessings": (ms, "final_stats", wrong_stat),
         "test_journey_clamp_and_truncation": (ms, "gauntlet_stats", wrong_gauntlet),
@@ -515,12 +597,11 @@ def mutation_checks():
         if not result.failures or result.errors:
             raise AssertionError(f"Mutation not rejected by an assertion: {name}: {result.errors}")
         detected += 1
-        if name != "test_groundtruth":
-            restored = unittest.TestResult()
-            cls(name).run(restored)
-            if not restored.wasSuccessful():
-                raise AssertionError(f"Restoration failed: {name}: {restored.failures}")
-        print("DETECTED", name, "(restored; accuracy remains red)" if name == "test_groundtruth" else "(restored PASS)")
+        restored = unittest.TestResult()
+        cls(name).run(restored)
+        if not restored.wasSuccessful():
+            raise AssertionError(f"Restoration failed: {name}: {restored.failures}")
+        print("DETECTED", name, "(restored PASS)")
     print(f"{detected} mutations detected; no files changed")
 
 

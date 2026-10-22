@@ -76,22 +76,49 @@ Python `battlesim.starsavior.myinfo_stats.final_stats(unit, info, growth, rule="
 스타링크 추가 성장은 반영하지 않는다. **플래시 포인트 = BossRush 연결은 추정**이다.
 미매핑 콘텐츠 또는 지원하지 않는 rule은 `None`/`null`이므로 호출 쪽에서 기존 가정으로 돌아간다.
 
-시뮬 입력은 `{key, build: "none", stats_override: result.stats, stats_final: true}`이다.
+시뮬 입력은 `{key, build: "none", stats_override: result.stats, stats_final: true, power: result.power}`이다.
 유닛의 `build`가 전역 옵션보다 우선하여 표준 장비·잠재력·그 조건부 효과를 추가하지 않으며,
 `stats_final`은 입력된 능력치의 상시 패시브 재적용을 막는다.
-`power`는 내정보 스킬 4종 레벨 합과 PP=0으로 계산한다. 기존 API의 파티 전투력은 아직
-스킬 레벨 합 34를 가정하므로 이 반환값과 다를 수 있다.
+`power`는 내정보 스킬 4종 레벨 합과 PP=0으로 계산한다. 이 값을 API에 전달하면 파티 전투력에
+반영한다. 생략한 기존 입력은 스킬 레벨 합 34를 가정하므로 계산 결과가 다를 수 있다.
 
-현재 계산은 **정확한 최종 능력치 재현을 완료하지 못했다**. 잠재력의 정적 수치는 해석했고,
+2026-10-22 같은 시점의 정답 5명은 **공·생·방을 포함한 8종 모두 정수 단위까지 일치**한다.
 별도 `blessings[]` 목록(`gauntlet_blessings`, 비어 있지 않을 때), PP(`power_pp`)를 남긴다.
-스킬 데이터를 담지 않는 성장표만으로는 구원자 상시 패시브를 확정할 수 없어 `unit_passive`도 기록한다.
+상시 패시브는 성장표에 가공한 레벨별 정적 수치로 반영한다. 정상 해석한 유닛에서는 `unit_passive`를
+제거하고, 표 누락·미지 레벨에만 `unit_passive` / `unit_passive:level`을 남긴다.
 여정은 각 값을 1500으로 제한하고 공·생·방에 직업 배율을 곱한 뒤 각 환산값의 소수부를 버린다.
 집중·보호는 각각 적중·저항에 ×4로 더한다(화면 단위로 ×0.04%p, 모든 직업 배율 1).
-별 비율은 기준선대로 별+각인 등급의 누적을 사용하며, 레벨 의존 방식은 미확정이다.
-`missing`이 있어도 정답 시험의 허용치를 완화하지 않는다. 건틀렛 탭 정답이 있는 2명은 8종 모두
-정확히 일치하고, 최종 능력치의 속도·치확·치피·적중·저항은 5명 모두 일치한다.
-최종 생명력은 4명에서 목표 ±1%를 벗어난다(기존 18항목 → 4항목).
-현재 정답 시험은 이 목표 미달을 보고하고, 별도의 회귀 한도(공·생 ±7%, 방 ±3.5%)를 검증한다.
+정답 시험의 공·생·방 회귀 한도는 각 ±0.5%(이번 최대 오차 0% + 0.5%p)로 고정했다.
+`missing`을 이유로 한도를 완화하거나 실행 결과에 맞춰 한도를 다시 계산하지 않는다.
+10/21 공개 화면 3명은 10/22 내정보와 시점이 다르므로 출력만 한다(현재 +0.10~+0.20%).
+
+공·생·방의 공통 과대 원인은 돌파 `star`를 각인 `sigil`에 더한 것과 공명·각인 묶음의 오분류였다.
+`STAR_GRADE_TEMPLET.StatData`는 **sigil만** 누적해 R2에 넣는다. 돌파는 이 비율에 더하지 않는다.
+근거: `NKM.Templets.decompiled.cs:17837-17842`의 별도 직렬화 필드,
+`NKM.decompiled.cs:1979-1982,18541-18556`의 각인·공명 전달 경로.
+`IUnitResonanceTemplet`의 `UnlockLevel`도 적용한다(`NKM.Templets.decompiled.cs:25673-25690`).
+
+일반 PvE의 핵심 합산 순서는 다음과 같다. 기존 비공개 분석 메모의 공명·별 이름은 반대로 읽혔으므로
+인터페이스 연결을 기준으로 정정했다(`Star.Templets.decompiled.cs:28603,29184,29214`).
+
+```text
+x1 = 기본 + 레벨 + 스타링크 + 환산 여정
+x  = x1 + 공명 고정 + x1 × 공명 비율(R1)
+y  = x + 장비·잠재력·호감도·전술·패시브 고정 + x × R2
+R2 = 각인 + 장비·세트 + 잠재력 + 시설·전술 + 상시 패시브 비율
+최종 = floor(y)
+```
+
+공명 고정은 R1 뒤, R2 앞에 들어간다(`NKM.decompiled.cs:18260-18271,18342-18354`).
+시설 +5%는 `CENTRAL_FACILITY_TEMPLET.BonusType=TACTICS_COMMON_RATE_TRINITY`의 누적 NV_RATE이며
+기존 R2 처리를 유지한다(`reference/CentralFacilityTactics.cs`, `NKM.decompiled.cs:18846`).
+상시 패시브는 `UNIT_TEMPLET_BASE1.m_listSkill` → `SKILL_TEMPLET_1/2.SkillLevelGroup` →
+`SKILL_LEVEL_GROUP_TEMPLET_1/2.SkillLevelStat`의 실제 습득 레벨 **한 행**이다.
+`SkillLevelStatType`과 `SkillLevelStatRate/Value`를 가공하며, 이전 레벨과 누적하지 않는다.
+근거는 `Star.Templets.decompiled.cs:25785,26156-26170`,
+`NKM.decompiled.cs:18566-18608,18269-18271` 및 현재
+`reference/StatFactorBundle.cs:118-119`, `FinalStatCombiner.cs:193-195`다.
+엔진 DB의 최대 레벨 패시브를 그대로 쓰면 현재 습득 레벨보다 과대해질 수 있다.
 
 `gauntlet_stats(unit, growth)`는 Python/JS 공통으로 `{journey, potential, missing}`을 반환한다.
 화면 탭의 고정 기여는 두 묶음의 같은 키를 더하고, 비율 기여는 `potential`의 `atkP/hpP/defP/spdP`다.
@@ -110,9 +137,9 @@ Python `battlesim.starsavior.myinfo_stats.final_stats(unit, info, growth, rule="
 성장표의 최상위 필드는 `_note`, `game_build`, `units`, `star_link`, `tactics`, `facility`,
 `item_sets`, `sets`, `potentials`다. `potentials`는 ID → 레벨 → 8종 능력치 및 4종 비율의 수치만 담는다.
 전투 전용 효과만 있는 알려진 잠재력은 빈 행으로 남겨 미지 ID와 구분한다.
-유닛에는 `base`, `per_level`, `journey_mul`(3개), `resonance`,
-`favor`, `star` 및 전술 수치를 연결할 최소 메타데이터 `tactics_groups`(속성·직업 2개)가 들어간다.
-원본 텍스트·아이콘·스킬·피해·확률·장비 주부옵션 표는 포함하지 않는다.
+유닛에는 `base`, `per_level`, `journey_mul`(3개), `resonance`, `resonance_unlock`(등급 → 해금 레벨),
+`favor`, `star`, `passive`(레벨 → 상시 능력치) 및 `tactics_groups`(속성·직업 2개)가 들어간다.
+원본 텍스트·아이콘·스킬 효과·피해·확률·장비 주부옵션 표는 포함하지 않는다.
 
 시험: `python -X utf8 -I tests/myinfo_stats_test.py` (비공개 경로 없으면 정답·재생성 시험 skip).
 `SyntheticTests` 인자로 합성 시험만 실행할 수 있다. `--mutations`는 각 새 시험에 잘못된 값을
