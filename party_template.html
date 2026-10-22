@@ -838,7 +838,7 @@ function simScreen(p){const c=contents[$("content").value],st=cur&&cur[$("stage"
  const finish=cut=>{if(sc.done)return;clearTimeout(SIMQ.timer);sc.order=rank();sc.done=true;sc.cut=!!cut;SIMQ.screening=false;SIMQ.busy=null};
  const el=()=>document.querySelector('[data-k="progress"] [data-k="simstate"]'),show=m=>{SIMQ.msg=m;const x=el();if(x)x.textContent=m};
  let id=0;
- const round=(i,keys)=>{const R=SCR_ROUNDS[i];sc.round=i;if(i>0)sc.up=new Set(keys);sc.left=keys.length;sc.got=0;id=SIMQ.requestId=(SIMQ.requestId||0)+1;
+ const round=(i,keys)=>{const R=SCR_ROUNDS[i];sc.round=i;if(i>0)sc.up=new Set(keys);sc.left=keys.length;sc.got=0;{const pv=document.querySelector('[data-k="progress"]');if(pv)pv.outerHTML=simProgress(st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
   SIMQ.w.onmessage=e=>{const m=e.data;if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
    if(m.type==="stage"){if(m.msg==="준비 끝"){SIMQ.loaded=true;sc.t0=performance.now();arm()}if(!/^시뮬 /.test(m.msg))show(m.msg);return}
    if(m.type==="team"){sc.res[m.key]=Object.assign(m.result,{n:R.n});sc.got++;
@@ -1011,7 +1011,7 @@ function miReset(info){simInvalidate();SIMQ.res={};SIMQ.scr={};SIMQ.refined=new 
  MI.info=info;MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
  if(info)$("grow").value="myinfo";else if($("grow").value==="myinfo")$("grow").value="1";
  miSelect();rerun()}
-function miClear(){if(MI.shared){$("shared-back")?.click();return}MI.importId++;MI.invalid=!LS.remove("myinfo");MI.saved=false;miReset(null);miStatus(MI.invalid?"저장 정보 삭제 실패 · 브라우저 사이트 데이터에서 지우기":"불러온 정보 없음",MI.invalid)}
+function miClear(){if(MI.shared){$("shared-back")?.click();return}MI.importId++;MI.invalid=!LS.remove("myinfo");MI.saved=false;miReset(null);syncOwn();miStatus(MI.invalid?"저장 정보 삭제 실패 · 브라우저 사이트 데이터에서 지우기":"불러온 정보 없음",MI.invalid)}
 $("mi-sort").onchange=renderMi;$("tab-reco").onclick=()=>miTab(false);$("tab-info").onclick=()=>miTab(true);
 $("mi-view").onclick=()=>{setDrawer(false);miTab(true)};$("mi-open-import").onclick=()=>setDrawer(true);$("mi-open").onclick=()=>setDrawer(true);$("mi-panel-clear").onclick=miClear;
 const miStatus=(t,bad)=>{const e=$("mi-status");e.textContent=t;e.style.color=bad?"#e0553a":""};
@@ -1023,7 +1023,8 @@ async function miApply(info,opt={}){
  if(id!==MI.importId)return false;
  const {unknown}=MyInfoImport.mapOwned(info,R);
  MI.saved=false;MI.invalid=false;MI.shared=!!opt.shared;miReset(info);syncOwn();
- MI.saved=opt.shared?false:LS.set("myinfo",info);saveSel();updCount();renderMi();sharedBar();rerun();
+ MI.saved=opt.shared?false:LS.set("myinfo",info);if(!opt.shared)saveSel();updCount();renderMi();sharedBar();
+ if(opt.shared&&SHARE.c){REQ=true;SIMQ.kick=true;rerunNow()}else rerun();
  miStatus(miSummary(info,unknown.length)+(MI.saved?"":" · 저장 안 됨"),!MI.saved);return true}
 $("mi-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
  try{await miApply(JSON.parse(await f.text()))}catch(err){miStatus("파일을 읽지 못했습니다: "+err.message,true)}});

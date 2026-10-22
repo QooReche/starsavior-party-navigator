@@ -34,7 +34,8 @@ async function apply(){
  const c=vm.createContext({MI:{importId:0,info:null},MyInfoImport:M,R:[{uid:1,key:'a'}],Set,
   miStatus(t){status=t},miGrowth:async()=>({}),miCheck(){order.push('calculate');if(calculateFails)throw Error('bad')},
   miReset(v){order.push('render');c.MI.info=v},LS:{set(k,v){order.push('save');if(failed)return false;saved=v;return true}},
-  document:{querySelectorAll:()=>[]},saveSel(){},updCount(){},renderMi(){},rerun(){},miSummary:()=>''});
+  document:{querySelectorAll:()=>[]},saveSel(){},updCount(){},renderMi(){},rerun(){},miSummary:()=>'',
+  syncOwn(){},sharedBar(){},rerunNow(){},SHARE:{},SIMQ:{},REQ:false});
  vm.runInContext(part('async function miApply(','$("mi-file").addEventListener'),c);
  calculateFails=true;assert.equal(await c.miApply(info),false);assert.equal(saved,null);assert.equal(c.MI.info,null);
  calculateFails=false;order.length=0;assert.equal(await c.miApply(info),true);assert.deepEqual(order,['calculate','render','save']);
