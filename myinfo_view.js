@@ -7,7 +7,7 @@
   const groups={TG_COMMON:'공통',TG_SAVIOR:'구원자',TG_ARCANA:'아르카나',TG_SUN:'태양',TG_MOON:'달',TG_STAR:'별',TG_ORDER:'질서',TG_CHAOS:'혼돈',TG_DEFENDER:'디펜더',TG_STRIKER:'스트라이커',TG_RANGER:'레인저',TG_CASTER:'캐스터',TG_ASSASSIN:'어쌔신',TG_SUPPORTER:'서포터'};
   const labels={base:'기본',level:'레벨·스타링크',equipment_main:'장비 주옵',equipment_sub:'장비 부옵',equipment_set:'장비 세트',favor:'호감도',tactics:'전술 분석',facility:'시설',journey:'여정',potential:'잠재력',resonance:'공명',sigil:'각인',passive:'고유 패시브',bundle:'묶음 비율 효과',rounding:'버림·하한 보정'};
   const order=Object.keys(labels),keys=Object.keys(names).slice(0,8);
-  const {esc} = typeof module !== 'undefined' && module.exports ? require('./ui_shared.js') : globalThis.UiShared;
+  const {esc,icon} = typeof module !== 'undefined' && module.exports ? require('./ui_shared.js') : globalThis.UiShared;
   const num=v=>Number.isFinite(v)?v.toLocaleString('ko-KR',{maximumFractionDigits:8}):'—';
   const rate=k=>['cr','cd','eh','er'].includes(k)||k.endsWith('P');
   const value=(k,v)=>Number.isFinite(v)?num(rate(k)?v/100:v)+(rate(k)?'%':''):'—';
@@ -36,7 +36,7 @@
     const equip=unit.equip||[],slots=publicData.slots||[],assigned=new Map(),unknown=[];
     for(const item of equip){const slot=publicData.itemSlots?.[item.item_id];if(Number.isInteger(slot)&&slot>=0&&slot<6&&!assigned.has(slot))assigned.set(slot,item);else unknown.push(item)}
     const option=o=>o?`${esc(names[nst[o.stat]]||o.stat)} ${nst[o.stat]?value(nst[o.stat],o.value):num(o.value)}`:'정보 없음';
-    const card=(item,title)=>`<div class="mi-gear"><b>${esc(title)}${item?` · +${level(item.enhance)}`:''}</b>${item?`<small>#${item.item_id}</small><p>주옵 · ${option(item.main)}</p><p class="mut">부옵 · ${(item.subs||[]).map(option).join(' · ')||'없음'}</p>`:'<p class="mut">'+(unknown.length?'부위 확인 불가':'미장착')+'</p>'}</div>`;
+    const card=(item,title)=>`<div class="mi-gear"><b>${esc(title)}${item?` · +${level(item.enhance)}`:''}</b>${item?`<small class="mut"> 아이템 #${item.item_id}</small><p>주옵 · ${option(item.main)}</p><p class="mut">부옵 · ${(item.subs||[]).map(option).join(' · ')||'없음'}</p>`:'<p class="mut">'+(unknown.length?'부위 확인 불가':'미장착')+'</p>'}</div>`;
     const counts={};for(const item of equip){const id=growth.item_sets?.[item.item_id];if(id)counts[id]=(counts[id]||0)+1}
     return `<div class="mi-detail-grid">${Array.from({length:6},(_,i)=>card(assigned.get(i),slots[i]||`부위 ${i+1}`)).join('')}${unknown.map(e=>card(e,'부위 미확인')).join('')}</div>`+
       Object.entries(counts).map(([id,n])=>{const e=growth.sets?.[id],times=e?.parts?Math.floor(n/e.parts):0;
@@ -71,6 +71,31 @@
       section(`건틀렛 Lv${level(gauntlet.level)}`,`<p class="mut">여정 · 각 항목 상한 1,500</p>${journey}<ul class="mi-potentials">${potentials||'<li>습득 잠재력 없음</li>'}</ul>${line('축복 · 미해석',esc((gauntlet.blessings||[]).map(id=>`#${id}`).join(' · ')||'없음'))}`)+
       (result.missing.length?`<details class="mi-diagnostics"><summary>미확인 정보 ${result.missing.length}</summary><p>${result.missing.map(esc).join(' · ')}</p></details>`:'');
   }
+  // 캐릭터 상세 시트(팝업): 칸 나눈 능력치·스킬·장비·건틀렛, 항목마다 아이콘
+  const short={atk:'공격력',hp:'생명력',def:'방어력',spd:'속도',cr:'치명 확률',cd:'치명 피해',eh:'효과 적중',er:'효과 저항'};
+  const tile=(ic,label,val,sub='')=>`<div class="ms-tile">${icon(ic)}<span>${label}</span><b>${val}</b>${sub?`<small>${sub}</small>`:''}</div>`;
+  const block=(ic,title,html,cls='')=>`<section class="ms-block ${cls}"><h3>${icon(ic)}${title}</h3>${html}</section>`;
+  function sheet(unit,info,growth,result,publicData,combat,simulation,savior){
+    const b=result.breakdown,gauntlet=unit.gauntlet||{},learned=result.combat.potentials,sk=result.combat.skills||{};
+    const effects=learned.map(([id,lv])=>combatEffects(id,lv,publicData,combat));
+    const stats=keys.map(k=>tile(k,short[k],value(k,result.stats[k]))).join('');
+    const skills=[['basic','기본기'],['special','특수기'],['ultimate','궁극기'],['passive','패시브']].map(([k,n])=>`<div class="ms-skill ${k}">${icon(k)}<span>${n}</span><b>Lv${level(sk[k])}</b></div>`).join('');
+    const jIcon=['atk','hp','endure','focus','def'];
+    const journey=['공격','생명','인내','집중','보호'].map((n,i)=>{const raw=gauntlet.journey?.[i];return tile(jIcon[i],n,num(raw),raw>1500?'상한 1,500 적용':'')}).join('');
+    const pots=learned.map(([id,lv],i)=>{const e=effects[i],st=growth.potentials?.[id]?.[lv];
+      const txt=esc(e.text).replace(/강인도 \+(\d+)/g,(m)=>`${icon('tough','ic in')}${m}`);
+      return `<li>${icon('gem')}<div><b>${esc(publicData.potentials?.[id]?.name||`잠재력 #${id}`)} · Lv${lv}</b><p>${st?esc(values(st)):'능력치 미해석'}</p>${e.known?`<p class="mut">${e.active?'시뮬 전투 효과: ':''}${txt}</p>`:`<p class="mut">${txt}</p>`}</div></li>`}).join('');
+    const inner=b.sources.filter(s=>['favor','tactics','facility'].includes(s.id)).map(s=>line(`${s.id==='tactics'?esc(groups[s.group]||s.group)+(s.field==='level'?'':` · ${{attack:'공',defense:'방',hp:'생'}[s.field]}`):labels[s.id]} Lv${s.level}`,values(s.values))).join('');
+    return `<div class="ms-head">${savior?.art||''}<div class="ms-id"><div class="ms-name">${savior?.dia||''}<div><h2>${esc(savior?.name||`ID ${unit.id}`)}</h2><small>${esc(savior?.sub||'')}</small></div></div>
+      <div class="ms-power">${icon('power')}<b>${num(result.power)}</b></div>
+      <div class="ms-meta">${tile('ultimate','★',level(unit.star))}${tile('sigil','각인',level(unit.sigil))}${tile('reso','공명',level(unit.resonance))}${tile('hp','호감도',level(unit.favor))}</div>
+      <p class="ms-sim ${simulation?'on':''}">${simulation?'이 수치로 시뮬합니다':'참고값 · 현재 콘텐츠 시뮬에는 쓰지 않음'}</p>${savior?.key?`<button type="button" class="sec" data-skill-open="${esc(savior.key)}" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${icon('special')}스킬 설명 보기</button>`:''}</div></div>
+      <div class="ms-grid">${block('atk','능력치',`<div class="ms-tiles">${stats}</div>`)}${block('special','스킬 레벨',`<div class="ms-skills">${skills}</div>`)}
+      ${block('gear','장비',equipment(unit,growth,publicData),'wide')}
+      ${block('journey',`건틀렛 Lv${level(gauntlet.level)} · 여정`,`<div class="ms-tiles five">${journey}</div><ul class="ms-pots">${pots||'<li class="mut">습득 잠재력 없음</li>'}</ul><p class="mut">축복(미해석): ${esc((gauntlet.blessings||[]).map(id=>`#${id}`).join(' · ')||'없음')}</p>`,'wide')}
+      <details class="ms-block wide"><summary>${icon('tactics')}능력치 출처·내실</summary>${breakdown(result)}${inner||''}</details>
+      ${result.missing.length?`<details class="ms-block wide mi-diagnostics"><summary>미확인 정보 ${result.missing.length}</summary><p>${result.missing.map(esc).join(' · ')}</p></details>`:''}</div>`;
+  }
   function mount(getContext){
     const opened=new Set(),cache=new Map();let contextKey=null,publicData,combat,pending;
     function sync(){const c=getContext();const key=[c.info,c.growth,c.rule,c.simulation];if(!contextKey||key.some((v,i)=>v!==contextKey[i])){cache.clear();contextKey=key}if(!c.info)opened.clear();return c}
@@ -97,6 +122,14 @@
       }catch(e){if(target.isConnected)target.innerHTML=`<p role="status">상세를 불러오지 못했습니다. <button type="button" class="sec" data-mi-retry="${uid}">다시 시도</button></p>`}
     }
     function refresh(){sync();for(const uid of opened)fill(uid)}
+    // 상세 시트 팝업(#mi-dlg). savior = {key,name,sub,art,dia} 표시용 조각
+    async function openSheet(uid,savior){const dlg=document.getElementById('mi-dlg'),body=document.getElementById('mi-dlg-body');if(!dlg||!body)return;
+      const c=sync();body.innerHTML='<p role="status">불러오는 중…</p>';if(!dlg.open)dlg.showModal();
+      if(!c.info||!c.growth){body.innerHTML='<p>성장표를 불러온 뒤 다시 열어 주세요.</p>';return}
+      try{await load();const unit=c.info.units.find(u=>String(u.id)===String(uid));if(!unit){body.textContent='구원자 정보 없음';return}
+        const r=Stats.final_stats(unit,c.info,c.growth,c.rule||'normal',true);
+        body.innerHTML=sheet(unit,c.info,c.growth,r,publicData,combat,c.simulation&&!!c.growth.units?.[unit.id]&&r.power>0,savior)}
+      catch(e){body.innerHTML=`<p role="status">상세를 불러오지 못했습니다. <button type="button" class="sec" data-mi-sheet-retry="${esc(uid)}">다시 시도</button></p>`}}
     document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
       if(b.hasAttribute('data-mi-retry')){fill(b.dataset.miRetry);return}
       if(!b.hasAttribute('data-mi-detail'))return;
@@ -104,8 +137,8 @@
       target.hidden=!open;b.setAttribute('aria-expanded',String(open));b.querySelector('span').textContent=open?'▴':'▾';
       if(open){opened.add(uid);fill(uid)}else opened.delete(uid);
     });
-    return {button,panel,refresh};
+    return {button,panel,refresh,openSheet};
   }
-  const api={names,groups,value,account,breakdown,equipment,combatEffects,render,mount};
+  const api={names,groups,value,account,breakdown,equipment,combatEffects,render,sheet,mount};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.MyInfoView=api;
 })(typeof window!=='undefined'?window:globalThis);

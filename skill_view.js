@@ -42,7 +42,7 @@
   function skillCard(raw,skills,variants=[]){
     const s=select(raw,skills);
     return `<section class="${s.sl.startsWith('변형 ')?'skill-variant':'skill-card'}" data-slot="${s.slot}" data-level="${s.level}">
-      <div class="skill-heading"><span class="skill-badge ${s.slot}">${esc(s.sl)}</span><span class="skill-level">${s.own?'내 레벨':'최대 레벨'} ${s.level} / ${s.mx}</span></div>
+      <div class="skill-heading"><span class="skill-badge ${s.slot}">${(globalThis.UiShared&&globalThis.UiShared.icon)?globalThis.UiShared.icon(s.slot):''}${esc(s.sl)}</span><span class="skill-level">${s.own?'내 레벨':'최대 레벨'} ${s.level} / ${s.mx}</span></div>
       <h3>${esc(s.n)}</h3><div class="skill-meta">${esc([s.tg,s.ty].filter(Boolean).join(' · '))}${s.cooldown==null?'':` · 쿨 ${s.cooldown}턴`}${s.level===0?' · 미습득':''}</div>
       <p class="skill-description">${terms(s.description,s.gl)}</p>
       ${s.next?`<p class="skill-next">다음 강화: Lv${s.next[0]} ${terms(s.next[1],s.gl)}</p>`:''}

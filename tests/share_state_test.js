@@ -39,11 +39,10 @@ function restore(query,info=null){
 }
 const restored=restore('?c=cosmo&s=a%7C길레+2단계&g=manual&p=123456&m=manual&rk=3&b=스타피어서');
 assert.equal(restored.els.content.value,'1');assert.equal(restored.ctx.cur[+restored.els.stage.value].name,'길레 2단계');
-assert.equal(restored.els.grow.value,'manual');assert.equal(restored.els.mypow.value,123456);
+// 추천은 내 정보로만: 옛 링크의 육성(g)·전투력(p)은 적용하지 않고 표시만 남긴다
+assert.equal(restored.els.grow.value,'0.8');assert.equal(restored.els.mypow.value,'77777');assert.equal(restored.ctx.SHARE.oldGrow,true);
 assert.equal(restored.ctx.MODE,'manual');assert.equal(restored.els.rk.value,'3');assert(restored.owned[1].checked);
-assert.equal(restore('?g=myinfo').els.grow.value,'1');
-const ownInfo={units:[{id:7}]},personal=restore('?g=myinfo',ownInfo);
-assert.equal(personal.els.grow.value,'myinfo');assert.equal(personal.ctx.MI.info,ownInfo);
-assert.equal(restore('?g=bad&m=bad&rk=bad').els.grow.value,'1');
+assert.equal(restore('?g=myinfo').els.grow.value,'0.8');assert.equal(restore('?g=myinfo').ctx.SHARE.oldGrow,undefined);
+assert.equal(restore('?g=bad&m=bad&rk=bad').els.grow.value,'0.8');
 assert.equal(restore('?mode=manual&pick=old').ctx.MODE,'manual');
-console.log('PASS actual page restore, no storage writes, recipient profile, legacy mode');
+console.log('PASS actual page restore, no storage writes, old growth ignored, legacy mode');
