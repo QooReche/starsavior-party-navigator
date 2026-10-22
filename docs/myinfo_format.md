@@ -79,11 +79,23 @@ Python `battlesim.starsavior.myinfo_stats.final_stats(unit, info, growth, rule="
 시뮬 입력은 `{key, build: "none", stats_override: result.stats, stats_final: true, power: result.power}`이다.
 유닛의 `build`가 전역 옵션보다 우선하여 표준 장비·잠재력·그 조건부 효과를 추가하지 않으며,
 `stats_final`은 입력된 능력치의 상시 패시브 재적용을 막는다.
-`power`는 내정보 스킬 4종 레벨 합과 PP=0으로 계산한다. 이 값을 API에 전달하면 파티 전투력에
+`power`는 내정보 스킬 4종 레벨 합(고유 패시브 포함)과 습득 잠재력의 전투력 PP로 계산한다.
+PP는 `potential_pp[ID][a]`의 합이다. 해당 잠재력의 1~a 레벨 중 `PotenBattlePowerCheck`가
+참인 행의 `PotenLevelUpReqPP`를 누적한 값이며 할인 b·축복 레벨 c는 적용하지 않는다.
+각인·장비는 최종 능력치에 반영되며 별도 PP를 더하지 않는다. 이 값을 API에 전달하면 파티 전투력에
 반영한다. 생략한 기존 입력은 스킬 레벨 합 34를 가정하므로 계산 결과가 다를 수 있다.
 
+현행 계산은 `floor(능력치 점수 × (1 + PP/10000) × (1.06 + 스킬합/100))`이며
+능력치 점수는 `build.py:unit_power`의 세 방식 최댓값(속도·적중·저항 배율 포함)이다.
+3월 해독 코드 `NKM.decompiled.cs:17259`는 단일 방식과 실제 돌파 등급 × 2%를 쓴다.
+현재 화면과 맞는 데이터북 공식을 구버전으로 교체하지 않는다. PP 누적 근거는
+`Star.Templets.decompiled.cs:21677`, 스킬 전체 합 근거는 `NKM.decompiled.cs:17240`이다.
+현재 roster의 스킬 슬롯이 4개인지는 성장표 생성 시 검사한다.
+
 2026-10-22 같은 시점의 정답 5명은 **공·생·방을 포함한 8종 모두 정수 단위까지 일치**한다.
-별도 `blessings[]` 목록(`gauntlet_blessings`, 비어 있지 않을 때), PP(`power_pp`)를 남긴다.
+별도 `blessings[]` 목록(`gauntlet_blessings`, 비어 있지 않을 때)은 남긴다.
+`power_pp`는 잠재력 목록·항목 또는 성장표의 PP를 해석하지 못할 때만 남긴다.
+확인된 PP는 누적하며 미지 항목은 0으로 처리한다. 빈 목록·레벨 0은 알려진 PP=0이다.
 상시 패시브는 성장표에 가공한 레벨별 정적 수치로 반영한다. 정상 해석한 유닛에서는 `unit_passive`를
 제거하고, 표 누락·미지 레벨에만 `unit_passive` / `unit_passive:level`을 남긴다.
 여정은 각 값을 1500으로 제한하고 공·생·방에 직업 배율을 곱한 뒤 각 환산값의 소수부를 버린다.
@@ -135,7 +147,8 @@ R2 = 각인 + 장비·세트 + 잠재력 + 시설·전술 + 상시 패시브 비
 현재 내보내기의 col13 매핑은 추가 확인이 필요하여 이 목록 자체는 미해석으로 남긴다.
 
 성장표의 최상위 필드는 `_note`, `game_build`, `units`, `star_link`, `tactics`, `facility`,
-`item_sets`, `sets`, `potentials`다. `potentials`는 ID → 레벨 → 8종 능력치 및 4종 비율의 수치만 담는다.
+`item_sets`, `sets`, `potentials`, `potential_pp`다. `potentials`는 ID → 레벨 → 8종 능력치 및 4종 비율의 수치만 담는다.
+`potential_pp`는 ID → 레벨 → 누적 전투력 PP 수치만 담는다(비용 원본·할인표 제외).
 전투 전용 효과만 있는 알려진 잠재력은 빈 행으로 남겨 미지 ID와 구분한다.
 유닛에는 `base`, `per_level`, `journey_mul`(3개), `resonance`, `resonance_unlock`(등급 → 해금 레벨),
 `favor`, `star`, `passive`(레벨 → 상시 능력치) 및 `tactics_groups`(속성·직업 2개)가 들어간다.

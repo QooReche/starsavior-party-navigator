@@ -37,6 +37,7 @@ def gauntlet_stats(unit, growth):
     gauntlet = unit.get("gauntlet") or {}
     template = growth.get("units", {}).get(str(unit.get("id")), {})
     missing, journey, potential = set(), {}, {}
+    power_pp = 0
     raw = gauntlet.get("journey")
     if not isinstance(raw, list) or len(raw) != 5 or any(not _number(v) or v < 0 for v in raw):
         missing.add("gauntlet.journey")
@@ -56,6 +57,7 @@ def gauntlet_stats(unit, growth):
     entries = gauntlet.get("potentials")
     if not isinstance(entries, list):
         missing.add("gauntlet.potentials")
+        missing.add("power_pp")
         entries = []
     for entry in entries:
         # NKM.Templets.cs:18436-18452 OBF_14766.Serialize = id, level,
@@ -64,11 +66,19 @@ def gauntlet_stats(unit, growth):
         if (not isinstance(entry, list) or len(entry) != 4 or
                 any(not _number(v) or v < 0 or v != math.floor(v) for v in entry)):
             missing.add("gauntlet.potentials.entry")
+            missing.add("power_pp")
             continue
         pid, level, _discount, _blessing = entry
         pid, level = int(pid), int(level)  # JSON 1 and 1.0 use the same JS key.
         if level == 0:
             continue  # unlearned, even when discount / inherited blessing > 0
+        # Checked costs are cumulative and undiscounted, unlike stat rows.
+        # Star.Templets.decompiled.cs:21677-21690; NKM.cs:17277-17288.
+        pp = growth.get("potential_pp", {}).get(str(pid), {}).get(str(level))
+        if not _number(pp) or pp < 0 or pp != math.floor(pp):
+            missing.add("power_pp")
+        else:
+            power_pp += pp
         table = growth.get("potentials", {}).get(str(pid))
         label = "gauntlet.potential:" + str(pid)
         if table is None:
@@ -86,7 +96,7 @@ def gauntlet_stats(unit, growth):
     # STAT_POTENTIAL_TEMPLET is JST_* (journey), not a second NST_* bonus.
     if gauntlet.get("blessings") not in (None, []):
         missing.add("gauntlet_blessings")
-    return dict(journey=journey, potential=potential, missing=sorted(missing))
+    return dict(journey=journey, potential=potential, power_pp=power_pp, missing=sorted(missing))
 
 
 def final_stats(unit, info, growth, rule="normal"):
@@ -123,6 +133,8 @@ def final_stats(unit, info, growth, rule="normal"):
             dst[k] = dst.get(k, 0) + src.get(k, 0) * times
 
     stats = {k: 0 for k in KEYS}
+    gauntlet = gauntlet_stats(unit, growth)
+    missing.update(gauntlet["missing"])
     uid = unit.get("id")
     template = growth.get("units", {}).get(str(uid)) if _number(uid) else None
     if template is None:
@@ -194,12 +206,10 @@ def final_stats(unit, info, growth, rule="normal"):
             else:
                 add(flat, effect.get("stats", {}), count // effect["parts"])
 
-        gauntlet = gauntlet_stats(unit, growth)
         jf = gauntlet["journey"]
         # StatFactorBundle potential bucket -> FinalStatCombiner R2 and flat,
         # NOT journey/R1 (March NKM.cs:18263,18344; current reference same).
         add(flat, gauntlet["potential"])
-        missing.update(gauntlet["missing"])
         # StatFactorBundle NKM.cs:18563-18608 builds passive / unique passive;
         # FinalStatCombiner 18269-18271 puts their rates in R2 (flat:18346-18347).
         # Current reference StatFactorBundle.cs:118-119 and combiner:193-195
@@ -229,8 +239,9 @@ def final_stats(unit, info, growth, rule="normal"):
             stats[k] = max(0, math.floor(y))
     skills = unit.get("skills") or {}
     skill_sum = sum(number(skills, k, "skills." + k) for k in ("basic", "special", "ultimate", "passive"))
-    missing.add("power_pp")
-    result = dict(stats=stats, missing=[], power=unit_power(stats, pp=0, skill_level_sum=skill_sum))
+    # Exported slots 1..4 include unique passive; do not add star/sigil again.
+    # Retain current databook formula: March client's one-score formula differs.
+    result = dict(stats=stats, missing=[], power=unit_power(stats, pp=gauntlet["power_pp"], skill_level_sum=skill_sum))
     if info.get("game_build") is None or growth.get("game_build") is None:
         missing.add("game_build")
     elif str(info["game_build"]) != str(growth["game_build"]):

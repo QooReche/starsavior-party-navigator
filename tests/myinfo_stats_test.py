@@ -24,7 +24,7 @@ from battlesim.mc import Battle
 from battlesim.starsavior import myinfo_stats as ms
 from battlesim.starsavior.build import unit_power
 from battlesim.starsavior.data import get_db
-from tools.build_growth import build_growth, roster_ids
+from tools.build_growth import build_growth, roster_ids, potential_power_levels
 
 STATIC = Path(os.environ.get("STARSAVIOR_STATIC", r"E:\AI_mk2\starsavior-static-data"))
 # 2026-10-22 same-date five-unit max error: 0% for each stat + 0.5%p.
@@ -53,6 +53,8 @@ def fixture():
                   star_link={"0": {}, "199": {}, "200": dict(atk=10), "201": dict(atk=30), "400": dict(atk=70)},
                   facility={"0": {}, "1": dict(atkP=100, hpP=100, defP=100)},
                   item_sets={"900011": 0, "900012": 2, "900014": 4},
+                  potential_pp={"900101": {"0": 0, "1": 0, "2": 0},
+                                "900102": {"0": 0, "1": 0}, "900103": {"0": 0, "1": 0}},
                   potentials={"900101": {"1": dict(atkP=500, hpP=700, defP=1100, spdP=1300),
                                          "2": dict(atkP=900, hpP=1200, defP=1700, spdP=1900)},
                               "900102": {"1": dict(atk=7, hp=13, **{"def": 3}, spd=11,
@@ -94,7 +96,7 @@ class SyntheticTests(unittest.TestCase):
         self.assertEqual(out["stats"], dict(atk=202, hp=1259, **{"def": 105}, spd=104,
                                             cr=500, cd=5000, eh=10076, er=92))
         self.assertEqual(out["power"], unit_power(out["stats"], 0, 10))
-        self.assertEqual(out["missing"], ["power_pp"])
+        self.assertEqual(out["missing"], [])
         # Unknown potential tuples / blessings must not be guessed or change any stat.
         u["gauntlet"].update(potentials=[[999999, 1, 2, 3]], blessings=[999999])
         changed = ms.final_stats(u, i, g)
@@ -154,7 +156,7 @@ class SyntheticTests(unittest.TestCase):
         self.assertEqual(out, dict(journey=dict(atk=12, hp=70, **{"def": 10}, eh=76, er=92),
                                    potential=dict(atkP=900, hpP=1200, defP=1700, spdP=1900,
                                                   atk=7, hp=13, **{"def": 3}, spd=11,
-                                                  cr=170, cd=230, eh=310, er=370), missing=[]))
+                                                  cr=170, cd=230, eh=310, er=370), power_pp=0, missing=[]))
         # Independent formula: journey truncates BEFORE x1; potential flat is
         # outside R1/R2 multiplication; its percentages join R2 additively.
         # HP: (1078*1.05+31)*(1+.01+.12)+98 = 1412.947
@@ -183,7 +185,7 @@ class SyntheticTests(unittest.TestCase):
                                 ([[900102, 1]], ["gauntlet.potentials.entry"]),
                                 (None, ["gauntlet.potentials"])):
             u["gauntlet"]["potentials"] = entries
-            self.assertEqual(ms.gauntlet_stats(u, g)["missing"], labels)
+            self.assertEqual(ms.gauntlet_stats(u, g)["missing"], labels + (["power_pp"] if labels else []))
             self.assertEqual(ms.final_stats(u, i, g)["stats"], base)
             cases.append([deepcopy(u), i, g])
         # The v1 list is NOT established as extra stat blessings. Keep it visible
@@ -317,6 +319,60 @@ class SyntheticTests(unittest.TestCase):
                  for spd in (1, 99, 200) for pp in (0, 500) for skills in (0, 10, 34)]
         self.assertEqual(node_cases(cases, "unit_power"), [unit_power(*args) for args in cases])
 
+    def test_pp_cost_accumulation(self):
+        rows = [dict(PotenLevelValue=level, PotenBattlePowerCheck=checked, PotenLevelUpReqPP=cost)
+                for level, checked, cost in ((3, True, 275), (1, True, 125), (2, False, 999))]
+        self.assertEqual(potential_power_levels(rows), {"0": 0, "1": 125, "2": 125, "3": 400})
+        self.assertEqual(potential_power_levels([]), {"0": 0})
+
+    def test_imported_power_pp_and_skills(self):
+        u, i, g = fixture()
+        # Exact 3600 base score, with no stat effects from the test potential.
+        template = g["units"]["900001"]
+        template.update(base=dict(atk=1000, hp=5500, **{"def": 500}, spd=100, cr=0, cd=0, eh=10000, er=0),
+                        per_level={}, tactics_groups=[])
+        i.update(star_link_level=1, tactics={})
+        u.update(sigil=0, resonance=0, favor=0, equip=[])
+        u["gauntlet"].update(journey=[0]*5, potentials=[[900103, 1, 5, 9]])
+        g["potential_pp"]["900103"]["1"] = 400
+        out = ms.final_stats(u, i, g)
+        self.assertEqual(out["power"], 4343)  # floor(3600 * 1.04 * (1.06 + .10))
+        self.assertNotIn("power_pp", out["missing"])
+        cases = [[deepcopy(u), deepcopy(i), deepcopy(g), rule] for rule in ("normal", "fixed200")]
+        # Every exported slot, including passive, contributes once.
+        for skill in ("basic", "special", "ultimate", "passive"):
+            changed = deepcopy(u)
+            changed["skills"][skill] += 1
+            # Neutralize the synthetic passive stat bonus to isolate its level.
+            gg = deepcopy(g)
+            gg["units"]["900001"]["passive"]["2"] = {}
+            self.assertEqual(ms.final_stats(changed, i, gg)["power"], 4380)
+            cases.append([changed, i, gg])
+        # No separate PP from star/sigil, equipment, discount or blessing level.
+        for star in (0, 3):
+            changed = deepcopy(u)
+            changed["star"] = star
+            changed["gauntlet"]["potentials"][0][2:] = [0, 0]
+            self.assertEqual(ms.final_stats(changed, i, g)["power"], 4343)
+            cases.append([changed, i, deepcopy(g)])
+        changed, gg = deepcopy(u), deepcopy(g)
+        changed["gauntlet"]["potentials"].append([900102, 1, 0, 0])
+        gg["potentials"]["900102"]["1"] = {}
+        gg["potential_pp"]["900102"]["1"] = 125
+        self.assertEqual(ms.final_stats(changed, i, gg)["power"], 4395)  # PP=525
+        cases.append([changed, i, gg])
+        for level in (0, 99):
+            changed = deepcopy(u)
+            changed["gauntlet"]["potentials"][0][1] = level
+            result = ms.final_stats(changed, i, g)
+            self.assertEqual(result["power"], 4176)
+            self.assertEqual("power_pp" in result["missing"], level == 99)
+            cases.append([changed, i, deepcopy(g)])
+        del g["potential_pp"]  # stale growth must not silently claim complete PP
+        self.assertIn("power_pp", ms.final_stats(u, i, g)["missing"])
+        cases.append([u, i, g])
+        self.assertEqual(node_cases(cases), [ms.final_stats(*args) for args in cases])
+
     def test_engine_final_none(self):
         u, i, g = fixture()
         u["skills"]["passive"] = 3  # calculator result already includes permanent rates
@@ -402,7 +458,7 @@ class SyntheticTests(unittest.TestCase):
 
     def test_published_schema(self):
         g = json.loads((ROOT / "data/growth.json").read_text(encoding="utf-8"))
-        self.assertEqual(set(g), {"_note", "game_build", "units", "star_link", "tactics", "facility", "item_sets", "sets", "potentials"})
+        self.assertEqual(set(g), {"_note", "game_build", "units", "star_link", "tactics", "facility", "item_sets", "sets", "potentials", "potential_pp"})
         self.assertEqual(set(map(int, g["units"])), roster_ids())
         allowed = set(ms.KEYS) | set(ms.RATE_KEYS)
 
@@ -431,6 +487,12 @@ class SyntheticTests(unittest.TestCase):
         self.assertTrue(all(k.isdecimal() for k in g["potentials"]))
         for levels in g["potentials"].values():
             check_table(levels)
+        self.assertEqual(set(g["potential_pp"]), set(g["potentials"]))
+        for pid, levels in g["potential_pp"].items():
+            self.assertEqual(set(levels), set(g["potentials"][pid]) | {"0"})
+            self.assertTrue(all(k.isdecimal() and type(v) is int and v >= 0 for k, v in levels.items()))
+            values = [levels[k] for k in sorted(levels, key=int)]
+            self.assertEqual(values, sorted(values))
         for kinds in g["tactics"].values():
             for table in kinds.values():
                 check_table(table)
@@ -443,6 +505,26 @@ class SyntheticTests(unittest.TestCase):
 
 @unittest.skipUnless(STATIC.is_dir(), "private STARSAVIOR_STATIC checkout unavailable")
 class PrivateTests(unittest.TestCase):
+    def test_power_reference(self):
+        info = json.loads((STATIC / "samples/myinfo_2026-10-22.json").read_text(encoding="utf-8"))
+        growth = build_growth(STATIC)
+        units = {u["id"]: u for u in info["units"]}
+        cases = []
+        # Older screen observations are reports, not same-date exact targets.
+        for uid, screen, pp in ((1045, 96286, 400), (1044, 100077, 0), (1054, 112926, 0),
+                                (1055, 94920, 400), (1039, 103240, 400)):
+            u = units[uid]
+            out = ms.final_stats(u, info, growth)
+            self.assertEqual(ms.gauntlet_stats(u, growth)["power_pp"], pp)
+            self.assertNotIn("power_pp", out["missing"])
+            before = unit_power(out["stats"], 0, sum(u["skills"].values()))
+            after = out["power"]
+            print(f"POWER reference {uid}: screen={screen}, PP={pp}, "
+                  f"before={before} ({(before/screen-1)*100:+.3f}%), "
+                  f"after={after} ({(after/screen-1)*100:+.3f}%)", flush=True)
+            cases.append([u, info, growth])
+        self.assertEqual(node_cases(cases), [ms.final_stats(*args) for args in cases])
+
     def test_rebuild(self):
         generated = build_growth(STATIC)
         published = json.loads((ROOT / "data/growth.json").read_text(encoding="utf-8"))
@@ -530,6 +612,11 @@ def mutation_checks():
         result["journey"]["atk"] = result["journey"].get("atk", 0) + 1
         return result
 
+    def wrong_pp(*args):
+        result = original_gauntlet(*args)
+        result["power_pp"] += 200
+        return result
+
     def wrong_stat(*args):
         result = original_final(*args)
         if result is not None:
@@ -578,6 +665,9 @@ def mutation_checks():
         "test_build_and_content": (ms, "final_stats", wrong_build),
         "test_python_js_parity": (ms, "final_stats", wrong_stat),
         "test_power": (module, "node_cases", wrong_power),
+        "test_pp_cost_accumulation": (module, "potential_power_levels", lambda rows: {"0": 0}),
+        "test_imported_power_pp_and_skills": (ms, "gauntlet_stats", wrong_pp),
+        "test_power_reference": (ms, "gauntlet_stats", wrong_pp),
         "test_engine_final_none": (api, "FINAL_PASSIVE_KEYS", {}),
         "test_accuracy_gate": (module, "within_tolerance", lambda *a: True),
         "test_published_schema": (Path, "read_text", wrong_schema),
@@ -587,7 +677,7 @@ def mutation_checks():
     }
     detected = 0
     for name, (target, attribute, replacement) in mutations.items():
-        cls = PrivateTests if name in ("test_rebuild", "test_gauntlet_tab", "test_groundtruth") else SyntheticTests
+        cls = PrivateTests if name in ("test_rebuild", "test_gauntlet_tab", "test_groundtruth", "test_power_reference") else SyntheticTests
         if cls is PrivateTests and not STATIC.is_dir():
             print("SKIP mutation", name)
             continue

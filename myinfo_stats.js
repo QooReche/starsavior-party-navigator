@@ -38,6 +38,7 @@
     unit = unit || {}; growth = growth || {};
     const gauntlet = unit.gauntlet || {}, template = get(growth.units || {}, String(unit.id), {});
     const missing = new Set(), journey = {}, potential = {}, raw = gauntlet.journey;
+    let power_pp = 0;
     if (!Array.isArray(raw) || raw.length !== 5 || raw.some(v => !Number.isFinite(v) || v < 0)) {
       missing.add("gauntlet.journey");
     } else {
@@ -53,15 +54,19 @@
       journey.er = Math.floor(Math.min(raw[4], 1500) * 4);
     }
     let entries = gauntlet.potentials;
-    if (!Array.isArray(entries)) { missing.add("gauntlet.potentials"); entries = []; }
+    if (!Array.isArray(entries)) { missing.add("gauntlet.potentials"); missing.add("power_pp"); entries = []; }
     for (const entry of entries) {
       // NKM.Templets.cs:18436-18452 Serialize = id, level(a), discount(b),
       // blessing(c). NKM.cs:18628-18643 only uses a for the exact level row.
       if (!Array.isArray(entry) || entry.length !== 4 || entry.some(v => !Number.isInteger(v) || v < 0)) {
-        missing.add("gauntlet.potentials.entry"); continue;
+        missing.add("gauntlet.potentials.entry"); missing.add("power_pp"); continue;
       }
       const [pid, level] = entry;
       if (level === 0) continue;
+      // Cumulative checked, undiscounted PP costs (Star.Templets:21677-21690).
+      const pp = get(get(growth.potential_pp || {}, String(pid), {}), String(level), null);
+      if (!Number.isInteger(pp) || pp < 0) missing.add("power_pp");
+      else power_pp += pp;
       const table = get(growth.potentials || {}, String(pid), null), label = "gauntlet.potential:" + pid;
       if (table === null) missing.add(label);
       else if (!Object.prototype.hasOwnProperty.call(table, String(level))) missing.add(label + ":level");
@@ -76,7 +81,7 @@
     if (gauntlet.blessings != null && (!Array.isArray(gauntlet.blessings) || gauntlet.blessings.length)) {
       missing.add("gauntlet_blessings");
     }
-    return {journey, potential, missing: Array.from(missing).sort()};
+    return {journey, potential, power_pp, missing: Array.from(missing).sort()};
   }
 
   function final_stats(unit, info, growth, rule = "normal") {
@@ -103,6 +108,8 @@
       for (const k of ALL) dst[k] = get(dst, k) + get(src, k) * times;
     }
     const stats = Object.fromEntries(KEYS.map(k => [k, 0]));
+    const gauntlet = gauntlet_stats(unit, growth);
+    for (const m of gauntlet.missing) missing.add(m);
     const uid = unit.id;
     const template = Number.isFinite(uid) ? get(growth.units || {}, String(uid), null) : null;
     if (!template) {
@@ -160,11 +167,10 @@
         if (!effect || !(effect.parts > 0)) missing.add("set:" + sid);
         else add(flat, effect.stats || {}, Math.floor(counts[sid] / effect.parts));
       }
-      const gauntlet = gauntlet_stats(unit, growth), jf = gauntlet.journey;
+      const jf = gauntlet.journey;
       // StatFactorBundle -> FinalStatCombiner: potential flat/R2, separate
       // from journey x1/R1 (March NKM.cs:18263,18344; current reference same).
       add(flat, gauntlet.potential);
-      for (const label of gauntlet.missing) missing.add(label);
       // NKM.cs:18563-18608 / 18269-18271: permanent SkillLevelStat joins R2.
       // Absolute learned-level row (Star.Templets.cs:26156-26170), not max level.
       const passiveLevel = number(unit.skills || {}, "passive", "skills.passive");
@@ -187,8 +193,8 @@
     const skills = unit.skills || {};
     let skillSum = 0;
     for (const k of ["basic", "special", "ultimate", "passive"]) skillSum += number(skills, k, "skills." + k);
-    missing.add("power_pp");
-    const result = {stats, missing: [], power: unit_power(stats, 0, skillSum)};
+    // Slots 1..4 include unique passive; retain the current databook formula.
+    const result = {stats, missing: [], power: unit_power(stats, gauntlet.power_pp, skillSum)};
     if (info.game_build == null || growth.game_build == null) missing.add("game_build");
     else if (String(info.game_build) !== String(growth.game_build)) result.build_mismatch = true;
     result.missing = Array.from(missing).sort();
