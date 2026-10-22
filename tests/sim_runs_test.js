@@ -18,7 +18,7 @@ ev('simStart(1)');assert.equal(workers[0].req.n_runs,300);
 ctx.SIMQ.busy=null;ctx.SIMQ.n=100;
 for(const rate of [0,0.349,0.35,0.5,0.65,0.651,1]){
  ctx.SIMQ.res[sig100]={n:100,clear:rate,ci:[0,1]};
- assert.equal(ev('simCell(1,t,st)').includes('data-refine'),rate>=0.35&&rate<=0.65);
+ assert.equal(ev('simCell(1,t,st)').includes('data-refine'),false); // 300판 정밀 버튼은 2026-10-22 에 뺐다(100판으로 충분)
 }
 ctx.SIMQ.res[sig100]={n:100,clear:0.5,ci:[0,1]};
 ev('simRefine(1,"a,b,c,d")');const w=workers.at(-1),req=w.req;
@@ -30,4 +30,4 @@ assert.equal(ev('simSig(st,t)'),sig300);
 assert.equal(ctx.SIMQ.res[sig100].n,100);assert.equal(ctx.SIMQ.res[sig300].n,300);
 assert(!ev('simCell(1,t,st)').includes('data-refine'));
 ctx.SIMQ.refined.clear();assert.equal(ev('simSig(st,t)'),sig100);
-console.log('PASS 100/300 requests/cache, inclusive boundary, one-team refinement, success-only promotion');
+console.log('PASS 100/300 requests/cache, no refine button, one-team refinement, success-only promotion');

@@ -146,7 +146,13 @@ class CombatTests(unittest.TestCase):
             static = static_path()
         except ValueError:
             self.skipTest('STARSAVIOR_STATIC 미설정 또는 경로 없음')
-        self.assertEqual(build(static), combat.combat_data())
+        built, artifact = build(static), combat.combat_data()
+        # main() 은 클라 표에서 사라진 구원자(10/22 패치에서 1060 삭제)의 이전 계수를 보존한다 — 같은 규칙으로 비교
+        kept = set(artifact['units']) - set(built['units'])
+        self.assertLessEqual(kept, {'lydia-moon-caster'})
+        for k in kept:
+            built['units'][k] = artifact['units'][k]
+        self.assertEqual(built, artifact)
 
     def test_web_entry_and_manifest_keep_combat_payload(self):
         from battlesim import api, web
