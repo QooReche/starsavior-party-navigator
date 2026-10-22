@@ -306,7 +306,7 @@ def test_load_no_errors(browser, ctx):
     settle(page)
     n = len(quick_rows(page))
     cards = page.locator('.party[data-party="1"] .rowcards .gc').count()
-    old = [u for u in reqs if "/data/sim/" in u]
+    old = [u for u in reqs if "/data/sim/" in u or "/data/growth.json" in u]
     errs = list(ctx.errors)
     page.close()
     return n >= 2 and cards == 4 and not old and not errs, "추천 %d안, 카드 %d, 옛 결과 요청 %d, 오류 %s" % (n, cards, len(old), errs[:2])
@@ -614,6 +614,132 @@ def test_boss_gimmick_mobile(browser, ctx):
     return ok, "기믹 %d/%d줄, 심각도 %s, 더 보기 %s, 모바일 %s, 슬롯 %s, 수동 %s" % (n, all_n, severities, expanded_n == all_n, layout, audit, manual_ok)
 
 
+def import_synthetic(page):
+    page.click('#dbtn')
+    page.set_input_files('#mi-file', os.path.join(ROOT, 'tests', 'fixtures', 'myinfo_synthetic.json'))
+    page.wait_for_function('() => MI.growth && MI.info && !MI.pending')
+    page.click('#dclose')
+    settle(page)
+
+
+def test_myinfo_import_clear(browser, ctx):
+    """파일·기본 모드·내실·추천 칩·저장 복원·수동 우선순위·삭제·캐시 무효화."""
+    ctx.errors.clear()
+    page = open_page(browser, ctx)
+    requests = []
+    page.on('request', lambda r: requests.append(r.url))
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    page.evaluate('() => {PW={"luna":999999}; $("mypow").value=999999}')
+    import_synthetic(page)
+    assert page.input_value('#grow') == 'myinfo'
+    assert len([u for u in requests if '/data/growth.json' in u]) == 1
+    assert page.locator('.party[data-party="1"] .mi-member-power').count() == 4
+    assert page.locator('.party[data-party="1"] .mi-member-star').count() == 4
+    assert '오토 가능' in page.inner_text('.party[data-party="1"] .mi-verdict')
+    audit = page.evaluate('''() => {const t=LASTQ[1].rows[0];
+      return {sum:t.keys.reduce((n,k)=>n+miProfile().results[k].power,0),actual:t.q.power,
+        units:simParty(t).units.every(u=>u.stats_final && u.build==='none'),
+        sig:simSig(cur[$('stage').value],t),hash:MI.hash,busy:SIMQ.busy}}''')
+    assert audit['sum'] == audit['actual'] and audit['units'] and audit['hash'] in audit['sig'] and audit['busy'] is None
+    assert '빌드 다름' in page.inner_text('.party[data-party="1"] .qh')
+    page.click('#tab-info')
+    assert '보유 8명' in page.inner_text('#mi-meta') and '스타링크 Lv120' in page.inner_text('#mi-meta')
+    assert '전술 공통 Lv20' in page.inner_text('#mi-meta') and '2026-10-01' in page.inner_text('#mi-saved')
+    assert page.locator('#mi-list .mi-unit').count() == 8
+    assert all('—' not in t for t in page.locator('#mi-list .mi-power').all_text_contents())
+    powers = page.locator('#mi-list .mi-power').all_text_contents()
+    assert [int(t.replace('전투력 ', '').replace(',', '')) for t in powers] == sorted(
+        [int(t.replace('전투력 ', '').replace(',', '')) for t in powers], reverse=True)
+    page.select_option('#mi-sort', 'name')
+    page.screenshot(path=os.path.join(ctx.shots, 'myinfo_desktop.png'), full_page=True)
+    page.reload()
+    page.wait_for_function('() => MI.growth && !MI.pending && LASTQ[1]?.rows[0]?.b.finals')
+    assert page.input_value('#grow') == 'myinfo'
+    page.select_option('#grow', '1.25')
+    settle(page)
+    assert page.locator('.mi-member-power').count() == 0
+    assert page.evaluate('() => LASTQ[1].rows[0].b.powers === null')
+    page.select_option('#grow', 'myinfo')
+    settle(page)
+    page.evaluate('() => {SIMQ.res.stale={clear:1}; SIMQ.more.stale=9}')
+    page.click('#tab-info')
+    page.click('#mi-panel-clear')
+    settle(page)
+    assert page.input_value('#grow') == '1'
+    assert page.evaluate('() => !LS.get("myinfo") && !Object.keys(SIMQ.res).length && !Object.keys(SIMQ.more).length')
+    assert '불러온 정보 없음' in page.inner_text('#mi-meta')
+    assert page.evaluate('() => !simSig(cur[$("stage").value],LASTQ[1].rows[0]).includes("' + audit['hash'] + '")')
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '보유 8명·합산·최종 스탯·칩·저장 복원·모드 배타·지우기·캐시'
+
+
+def test_myinfo_rules_mobile(browser, ctx):
+    """fixed200·미보유 혼합·미매핑 복귀·부족분·390px 내 정보/추천 카드."""
+    ctx.errors.clear()
+    page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    import_synthetic(page)
+    normal = page.evaluate('() => miProfile().results.luna.power')
+    page.click('#tab-info')
+    assert page.evaluate('() => document.documentElement.scrollWidth <= innerWidth')
+    page.screenshot(path=os.path.join(ctx.shots, 'myinfo_mobile.png'), full_page=True)
+    page.click('#tab-reco')
+    choose(page, '코스모 게이트', '길레 2단계')
+    assert page.evaluate('() => miProfile().rule') == 'fixed200'
+    assert normal != page.evaluate('() => miProfile().results.luna.power')
+    assert 'Lv200 · 공명 10' in page.inner_text('.party[data-party="1"] .qh')
+    assert page.evaluate('() => document.documentElement.scrollWidth <= innerWidth')
+    page.screenshot(path=os.path.join(ctx.shots, 'myinfo_reco_mobile.png'), full_page=True)
+    choose(page, '플래시 포인트', '매니저 그레고리 Ⅰ')
+    assert page.evaluate('() => miProfile().rule') == 'fixed200'
+    choose(page, '작전 (일반)', 'SECTOR 15-3')
+    # Fixture power chosen to require growth; derive +N independently from the existing ladder.
+    extra = page.evaluate('''() => {const t=LASTQ[1].rows[0],qi=quickIn(contents[$('content').value],cur[$('stage').value]);
+      const n=Quick.needGrowth(t.ek,qi.qs,QK.d.sv,D.pen,qi.prm,'tight',null,t.b);
+      return {clear:t.q.clear,extra:n==null?null:Math.max(1000,Math.round((n-1)*t.q.power/1000)*1000)}}''')
+    assert not extra['clear'] and '오토 어려움' in page.inner_text('.mi-verdict')
+    assert extra['extra'] is not None
+    assert ('약 +%s 전투력 필요' % format(extra['extra'], ',')) in page.inner_text('.mi-verdict')
+    mixed = page.evaluate('''() => {const missing=R.find(s=>!MI.info.units.some(u=>u.id===s.uid)&&QK.d.sv[s.key]);
+      const keys=[...Object.keys(miProfile().results).slice(0,3),missing.key];
+      document.querySelectorAll('#own input').forEach(x=>x.checked=keys.includes(x.dataset.k));run();
+      return {assumed:LASTQ[1].rows[0].b.assumed,final:simParty(LASTQ[1].rows[0]).units.filter(u=>u.stats_final).length}}''')
+    assert mixed == {'assumed': 1, 'final': 3} and '일부 가정' in page.inner_text('.qh')
+    choose(page, '일일 재화 던전', '')
+    assert '미매핑 · 평균 가정' in page.inner_text('.qh')
+    assert page.evaluate('() => LASTQ[1].rows[0].b.powers === null')
+    page.click('#tab-info')
+    assert '일반 능력치' in page.inner_text('#mi-meta')
+    assert all('—' not in t for t in page.locator('#mi-list .mi-power').all_text_contents())
+    assert page.evaluate('() => document.documentElement.scrollWidth <= innerWidth')
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, 'fixed200·혼합·미매핑·오토 판정·부족 전투력·390px'
+
+
+def test_myinfo_sim(browser, ctx):
+    """자동 실행 추가 없음, 기존 버튼으로 내 정보 auto/manual 확률과 최종 스탯 요청 검증."""
+    ctx.errors.clear()
+    page = open_page(browser, ctx)
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    import_synthetic(page)
+    assert page.evaluate('() => SIMQ.w === null && SIMQ.busy === null')
+    assert '오토 클리어' not in page.inner_text('.mi-verdict') and '수동 ' not in page.inner_text('.mi-verdict')
+    page.evaluate('() => {SIMQ.n=10;run()}')
+    page.click('.party[data-party="1"] button[data-sim="1"]')
+    page.wait_for_function('() => /시뮬 완료/.test(document.querySelector("[data-k=simstate]")?.textContent||"")', timeout=300000)
+    assert '오토 클리어' in page.inner_text('.mi-verdict') and '수동 ' not in page.inner_text('.mi-verdict')
+    assert page.evaluate('() => SIMQ.lastReq.req.teams.every(t=>t.party.units.every(u=>u.build==="none"&&u.stats_final))')
+    page.click('.manual-details > summary')
+    page.locator('label:has(#m-manual)').click()
+    page.wait_for_function('() => LASTQ[1].rows.every(t=>SIMQ.res[simSig(cur[$("stage").value],t)]?.man)', timeout=300000)
+    assert '수동 ' in page.inner_text('.mi-verdict')
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '버튼 실행·최종 스탯 요청·오토/수동 확률'
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_quick_growth, test_savior_power, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_break_skill_select)
@@ -621,6 +747,7 @@ TESTS.append(test_break_skill_compare)
 TESTS.append(test_break_compare_cancel_after_team_change)
 TESTS.append(test_gimmick_slot_owned)
 TESTS.append(test_boss_gimmick_mobile)
+TESTS.extend([test_myinfo_import_clear, test_myinfo_rules_mobile, test_myinfo_sim])
 
 
 def main():

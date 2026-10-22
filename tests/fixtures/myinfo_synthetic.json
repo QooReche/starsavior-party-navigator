@@ -1,0 +1,302 @@
+{
+  "_note": "Synthetic test data; not a real account.",
+  "format": "ss-myinfo-v1",
+  "game_build": "synthetic-build",
+  "exported_at": "2026-10-01T12:34:56+09:00",
+  "star_link_level": 120,
+  "tactics": {
+    "facility_level": 2,
+    "common_level": 20,
+    "groups": {}
+  },
+  "units": [
+    {
+      "id": 1001,
+      "star": 0,
+      "sigil": 0,
+      "resonance": 0,
+      "favor": 5,
+      "skills": {
+        "basic": 3,
+        "special": 4,
+        "ultimate": 5,
+        "passive": 2
+      },
+      "equip": [
+        {
+          "item_id": 800001,
+          "enhance": 3,
+          "main": {
+            "stat": "NST_ATK",
+            "value": 100
+          },
+          "subs": []
+        }
+      ],
+      "gauntlet": {
+        "journey": [
+          100,
+          200,
+          150,
+          50,
+          40
+        ],
+        "level": 10,
+        "potentials": [],
+        "blessings": []
+      }
+    },
+    {
+      "id": 1002,
+      "star": 1,
+      "sigil": 1,
+      "resonance": 1,
+      "favor": 6,
+      "skills": {
+        "basic": 3,
+        "special": 4,
+        "ultimate": 5,
+        "passive": 2
+      },
+      "equip": [
+        {
+          "item_id": 800001,
+          "enhance": 3,
+          "main": {
+            "stat": "NST_ATK",
+            "value": 110
+          },
+          "subs": []
+        }
+      ],
+      "gauntlet": {
+        "journey": [
+          120,
+          200,
+          150,
+          50,
+          40
+        ],
+        "level": 10,
+        "potentials": [],
+        "blessings": []
+      }
+    },
+    {
+      "id": 1003,
+      "star": 2,
+      "sigil": 2,
+      "resonance": 2,
+      "favor": 7,
+      "skills": {
+        "basic": 3,
+        "special": 4,
+        "ultimate": 5,
+        "passive": 2
+      },
+      "equip": [
+        {
+          "item_id": 800001,
+          "enhance": 3,
+          "main": {
+            "stat": "NST_ATK",
+            "value": 120
+          },
+          "subs": []
+        }
+      ],
+      "gauntlet": {
+        "journey": [
+          140,
+          200,
+          150,
+          50,
+          40
+        ],
+        "level": 10,
+        "potentials": [],
+        "blessings": []
+      }
+    },
+    {
+      "id": 1005,
+      "star": 3,
+      "sigil": 0,
+      "resonance": 3,
+      "favor": 8,
+      "skills": {
+        "basic": 3,
+        "special": 4,
+        "ultimate": 5,
+        "passive": 2
+      },
+      "equip": [
+        {
+          "item_id": 800001,
+          "enhance": 3,
+          "main": {
+            "stat": "NST_ATK",
+            "value": 130
+          },
+          "subs": []
+        }
+      ],
+      "gauntlet": {
+        "journey": [
+          160,
+          200,
+          150,
+          50,
+          40
+        ],
+        "level": 10,
+        "potentials": [],
+        "blessings": []
+      }
+    },
+    {
+      "id": 1008,
+      "star": 0,
+      "sigil": 1,
+      "resonance": 4,
+      "favor": 9,
+      "skills": {
+        "basic": 3,
+        "special": 4,
+        "ultimate": 5,
+        "passive": 2
+      },
+      "equip": [
+        {
+          "item_id": 800001,
+          "enhance": 3,
+          "main": {
+            "stat": "NST_ATK",
+            "value": 140
+          },
+          "subs": []
+        }
+      ],
+      "gauntlet": {
+        "journey": [
+          180,
+          200,
+          150,
+          50,
+          40
+        ],
+        "level": 10,
+        "potentials": [],
+        "blessings": []
+      }
+    },
+    {
+      "id": 1009,
+      "star": 1,
+      "sigil": 2,
+      "resonance": 5,
+      "favor": 10,
+      "skills": {
+        "basic": 3,
+        "special": 4,
+        "ultimate": 5,
+        "passive": 2
+      },
+      "equip": [
+        {
+          "item_id": 800001,
+          "enhance": 3,
+          "main": {
+            "stat": "NST_ATK",
+            "value": 150
+          },
+          "subs": []
+        }
+      ],
+      "gauntlet": {
+        "journey": [
+          200,
+          200,
+          150,
+          50,
+          40
+        ],
+        "level": 10,
+        "potentials": [],
+        "blessings": []
+      }
+    },
+    {
+      "id": 1010,
+      "star": 2,
+      "sigil": 0,
+      "resonance": 0,
+      "favor": 11,
+      "skills": {
+        "basic": 3,
+        "special": 4,
+        "ultimate": 5,
+        "passive": 2
+      },
+      "equip": [
+        {
+          "item_id": 800001,
+          "enhance": 3,
+          "main": {
+            "stat": "NST_ATK",
+            "value": 160
+          },
+          "subs": []
+        }
+      ],
+      "gauntlet": {
+        "journey": [
+          220,
+          200,
+          150,
+          50,
+          40
+        ],
+        "level": 10,
+        "potentials": [],
+        "blessings": []
+      }
+    },
+    {
+      "id": 1011,
+      "star": 3,
+      "sigil": 1,
+      "resonance": 1,
+      "favor": 12,
+      "skills": {
+        "basic": 3,
+        "special": 4,
+        "ultimate": 5,
+        "passive": 2
+      },
+      "equip": [
+        {
+          "item_id": 800001,
+          "enhance": 3,
+          "main": {
+            "stat": "NST_ATK",
+            "value": 170
+          },
+          "subs": []
+        }
+      ],
+      "gauntlet": {
+        "journey": [
+          240,
+          200,
+          150,
+          50,
+          40
+        ],
+        "level": 10,
+        "potentials": [],
+        "blessings": []
+      }
+    }
+  ]
+}
