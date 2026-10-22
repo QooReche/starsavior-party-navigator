@@ -843,22 +843,24 @@ function simScreen(p){const c=contents[$("content").value],st=cur&&cur[$("stage"
  let id=0;
  // 작업자 여럿(scrPool)에 후보를 번갈아 나눠 맡기고, 모두 끝나면 다음 단계로. 0번이 엔진 준비를 알리면 예선 시간을 잰다
  const round=(i,keys)=>{const R=SCR_ROUNDS[i];sc.round=i;if(i>0)sc.up=new Set(keys);sc.left=keys.length;sc.got=0;{const pv=document.querySelector('[data-k="progress"]');if(pv)pv.outerHTML=simProgress(st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
-  const ws=scrPool(),parts=ws.map(()=>[]);keys.forEach((k,j)=>parts[j%ws.length].push(k));let open=parts.filter(x=>x.length).length;
+  const ws=scrPool(),parts=ws.map(()=>[]);
+  // 예선 시간은 작업자가 «모두» 엔진을 준비한 뒤부터 잰다(늦게 뜬 작업자 몫이 시간 초과로 통째로 빠지지 않게)
+  const chk=()=>{if(!sc.allReady&&ws.every(x=>x._ready)){sc.allReady=true;SIMQ.loaded=true;sc.t0=performance.now();arm()}};keys.forEach((k,j)=>parts[j%ws.length].push(k));let open=parts.filter(x=>x.length).length;
   ws.forEach((w,j)=>{if(!parts[j].length)return;
    w.onmessage=e=>{const m=e.data;if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
-    if(m.type==="stage"){if(j)return;if(m.msg==="준비 끝"){SIMQ.loaded=true;sc.t0=performance.now();arm()}if(!/^시뮬 /.test(m.msg))show(m.msg);return}
+    if(m.type==="stage"){if(m.msg==="준비 끝"){w._ready=true;chk()}if(j)return;if(!/^시뮬 /.test(m.msg))show(m.msg);return}
     if(m.type==="team"){sc.res[m.key]=Object.assign(m.result,{n:R.n});sc.got++;
      show(`${i+1}차: 후보 ${keys.length}팀을 ${R.n}판씩 확인 중 ${sc.got}/${keys.length}${ws.length>1?` (작업자 ${ws.length}개)`:""}`);
      const bar=document.querySelector('[data-k="progress"] .pbar i');if(bar)bar.style.width=Math.round(sc.got/keys.length*100)+"%";return}
     if(m.type==="done"){if(--open>0)return;const nx=SCR_ROUNDS[i+1];if(nx){const top=rank().slice(0,nx.top);if(top.length>3){round(i+1,top);return}}finish();run();return}
     if(m.type==="error"){SIMQ.screening=false;simStop(m.msg)}};
    w.onerror=e=>{if(SIMQ.requestId===id){SIMQ.screening=false;simStop("작업자 오류: "+(e.message||"알 수 없음"))}};
-   w.postMessage({type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:R.n,seed:SIMQ.seed,options:simOpt(c.key),mode:"auto",
+   chk();w.postMessage({type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:R.n,seed:SIMQ.seed,options:Object.assign({},simOpt(c.key),{rng_streams:true}),mode:"auto",
     teams:parts[j].map(key=>{const t=byKey.get(key),bn=teamBreak(t)?.name||null;return {key,party:simParty(t),options:{break_skill:bn?{name:bn,level:brkLv(bn)}:null}}})})})};
  // 엔진을 내려받는 동안은 내려받기 상한, 준비된 뒤에는 남은 예선 시간
- const arm=()=>{clearTimeout(SIMQ.timer);const left=SIMQ.loaded?Math.max(1000,SCR_MS-(sc.t0?performance.now()-sc.t0:0)):SIMQ.LOAD_MS;
-  SIMQ.timer=setTimeout(()=>{if(!SIMQ.loaded){simStop("엔진 내려받기 시간 초과(네트워크 확인)");return}finish(true);simInvalidate();run()},left)};
- if(SIMQ.loaded)sc.t0=performance.now();arm();round(0,[...pick.keys()]);
+ const arm=()=>{clearTimeout(SIMQ.timer);const left=sc.allReady?Math.max(1000,SCR_MS-(performance.now()-sc.t0)):SIMQ.LOAD_MS;
+  SIMQ.timer=setTimeout(()=>{if(!sc.allReady){simStop("엔진 내려받기 시간 초과(네트워크 확인)");return}finish(true);simInvalidate();run()},left)};
+ if(SIMQ.loaded&&SIMQ.w)SIMQ.w._ready=true;arm();round(0,[...pick.keys()]);
  return true}
 function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.busy!=null&&!SIMQ.compareKey)return true;
  for(const p of Object.keys(LASTQ)){const b=LASTQ[p];if(!b)continue;if(scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done)return true;if(b.rows.some(t=>!SIMQ.res[simSig(st,t)]))return true;

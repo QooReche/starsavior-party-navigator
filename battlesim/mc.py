@@ -9,6 +9,7 @@
 P3 규칙 값은 rules/default.json 의 "mc" 절(MC_OPTS)."""
 import copy
 import math
+import random
 import re
 from collections import defaultdict
 
@@ -467,13 +468,19 @@ class Ctx:
 # ------------------------------------------------------------------ 전투
 class Battle:
     def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None,
-                 timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None):
+                 timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None, rng_streams=False):
         self.pen = tuple(pen) if pen else (1.0, 1.0)    # P5 전투력 보정(아군이 주는 피해 배율, 적이 주는 피해 배율) — 스킬·지속·연쇄만
         self.opts = dict(DEFAULT_OPTS)
         self.opts.update(opts or {})
         self.mc = dict(MC_OPTS)
         self.mc.update(mc or {})
         self.rng = rng
+        # 공통 난수(선택): 아군 쪽(0)·적 쪽(1) 결정에 서로 다른 흐름을 쓴다. 같은 판 번호면 적의 대상 선택·치명 등이
+        # 아군 행동 수와 무관하게 같은 순서로 나와 팀끼리 비교할 때 운의 차이가 줄어든다(예선 전용, 기본 꺼짐)
+        self._rs = None
+        if rng_streams:
+            base = rng.getrandbits(64)
+            self._rs = (random.Random(base * 2 + 1), random.Random(base * 2 + 2))
         self.allies = [Unit(d, 0, i, self, leader=(leader == i)) for i, d in enumerate(ally_defs)]
         self.waves = waves
         self.wave_i = -1
@@ -776,7 +783,7 @@ class Battle:
         if v.broken:
             dec -= _rules.BREAK_DEC
         dec = min(_rules.DEC_CAP, dec)
-        return max(1.0, math.floor(base * (1 - dr) * (1 - dec) * self.rand() * self.pen[0]))
+        return max(1.0, math.floor(base * (1 - dr) * (1 - dec) * self.rand(0) * self.pen[0]))
 
     def _use_break_skill(self, actor=None):
         cost = self.mc['break_skill_cost']
@@ -885,6 +892,10 @@ class Battle:
             pool = self.ranked_enemies(skill_desc(att.d, sk.slot), pool, priority=True) or pool
         return self.weighted_pick(pool)
 
+    def R(self, side):
+        """결정 주체 쪽(side 0 아군·1 적)의 난수. 공통 난수가 꺼져 있으면 하나뿐인 self.rng"""
+        return self._rs[side] if self._rs is not None and side in (0, 1) else self.rng
+
     def weighted_pick(self, pool):
         rw = self.mc['target_row_weight']
         dm = float(self.mc['target_defender_mult'])
@@ -900,14 +911,14 @@ class Battle:
                 cands = [(v, w(v)) for v in pool]
             return self._roll(cands)
         if front and back:
-            row = front if self.rng.random() < rw[0] / (rw[0] + rw[1]) else back
+            row = front if self.R(1 - pool[0].side).random() < rw[0] / (rw[0] + rw[1]) else back
         else:
             row = front or back
         return self._roll([(v, w(v)) for v in row])
 
     def _roll(self, cands):
         tot = sum(x for _, x in cands)
-        r = self.rng.random() * tot
+        r = self.R(1 - cands[0][0].side if cands else None).random() * tot
         for v, x in cands:
             r -= x
             if r < 0:
@@ -1046,7 +1057,7 @@ class Battle:
         if not pool:
             return []
         if mode == 'random':
-            return [self.rng.choice(pool)]
+            return [self.R(owner.side).choice(pool)]
         if mode == 'lowest_hp':
             pool = sorted(pool, key=lambda v: (v.hp / v.maxhp, v.pos))
         else:
@@ -1322,14 +1333,14 @@ class Battle:
             if p > 0:
                 cands.append((b, p))
         for b, p in sorted(cands, key=lambda bp: (-bp[1], bp[0].pos)):
-            if self.rng.random() < p:
+            if self.R(actor.side).random() < p:
                 self.cast(b, b.d.skills['기본기'], extra=True, target=self._coop_target(ctx), via='coop')
                 return
 
     def _coop_target(self, ctx):
         if ctx.skill.all:
             al = self.alive(1)
-            return self.rng.choice(al) if al else None
+            return self.R(ctx.src.side if ctx.src is not None else None).choice(al) if al else None
         return ctx.target if (ctx.target is not None and not ctx.target.dead) else None
 
     # ---------- 피해
@@ -1344,10 +1355,10 @@ class Battle:
     def hp_stat(self, u):
         return u.maxhp
 
-    def rand(self):
+    def rand(self, side=None):
         lo, hi = self.mc['rand_range']
         steps = int(round((hi - lo) * 10000))
-        return lo + self.rng.randint(0, steps) / 10000.0
+        return lo + self.R(side).randint(0, steps) / 10000.0
 
     def deal(self, a, ctx):
         sk = ctx.skill
@@ -1375,9 +1386,9 @@ class Battle:
             ctx.target = v
             # 회피(가정: 회피율 - 공격자 명중률 보정, 필중이면 0). 회피하면 치명 없음·감소 합 +50%·약화 안 걸림
             ev = 0.0 if (a.on('필중') or self.mc['evade_model'] == 'off') else v.mods()['evade'] - (m['acc'] + ctx.acc)
-            evaded = ev > 0 and self.rng.random() < ev
+            evaded = ev > 0 and self.R(a.side).random() < ev
             by = ctx.local_by[v]
-            crit = (not evaded) and (self.rng.random() < min(1.0, cr + by['cr']) or ctx.force_crit)
+            crit = (not evaded) and (self.R(a.side).random() < min(1.0, cr + by['cr']) or ctx.force_crit)
             ctx.crit = ctx.crit or crit
             if crit:
                 ctx.crit_targets.add(v)
@@ -1428,7 +1439,7 @@ class Battle:
             if s > share + 1e-12:
                 guard, share = w, s
         share = min(1.0, share)
-        r = self.rand()
+        r = self.rand(a.side)
         if v.on('스킬 피해 무효'):
             # 〈스킬 피해 무효〉 「스킬 무효화 1회」: 이번 스킬 피해 0, 효과 1회 소모(지속 피해는 스킬이 아니라 그대로)
             del v.eff['스킬 피해 무효']
@@ -1692,7 +1703,7 @@ class Battle:
                     dec = min(_rules.DEC_CAP, dec)
                     de = self.def_stat(u)
                     dr = de / (de + _rules.DEF_K)
-                    dmg = max(1.0, math.floor(val * c * _rules.BASE_MULT * (1 + inc - dec) * (1 - dr) * self.rand() * self.pen[src.side]))
+                    dmg = max(1.0, math.floor(val * c * _rules.BASE_MULT * (1 + inc - dec) * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
                     self.apply_damage(src, u, dmg, 'dot', shieldable=False)
             if e.hot > 0 and not u.dead and u.on(name):
                 self.heal(e.src or u, u, u.maxhp * e.hot, 0.0)
@@ -1731,7 +1742,7 @@ class Battle:
             if k not in COND_KEYS:
                 self.unsup['cond: ' + k] += 1
                 if self.mc['unknown_cond'] == 'roll':
-                    if self.rng.random() >= self.opts['unknown_cond_p']:
+                    if self.R(owner.side).random() >= self.opts['unknown_cond_p']:
                         return False
                     continue
                 return False
@@ -2034,11 +2045,11 @@ class Battle:
             # random enemy. Extra cast, not ordinary cooperation.
             allies = [u for u in self.alive(owner.side) if '기본기' in u.d.skills]
             enemies = self.alive(1 - owner.side)
-            if allies and enemies and self.rng.random() < eff['chance']:
+            if allies and enemies and self.R(owner.side).random() < eff['chance']:
                 self._fired(owner)
-                actor = self.rng.choice(allies)
+                actor = self.R(owner.side).choice(allies)
                 self.cast(actor, actor.d.skills['기본기'], extra=True,
-                          target=self.rng.choice(enemies), parent=ctx, via='potential')
+                          target=self.R(owner.side).choice(enemies), parent=ctx, via='potential')
             return
         if kd == 'count_damage':
             if ctx.src is owner and ctx.skill is not None:
@@ -2164,7 +2175,7 @@ class Battle:
                         pool = self.alive(1 - owner.side)
                         if not pool:
                             break
-                        tgt = self.rng.choice(pool)
+                        tgt = self.R(owner.side).choice(pool)
                     self.cast(owner, sk, extra=True, target=tgt, parent=ctx)
             return
         if kd == 'extra_turn':
@@ -2325,7 +2336,7 @@ class Battle:
         self._run_special_rest(owner, ln, ctx, rest)
 
     def _dispel_ok(self, owner, ctx, x, p, rest):
-        if p < 1.0 and self.rng.random() >= p:
+        if p < 1.0 and self.R(owner.side).random() >= p:
             return False
         if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
             return False
@@ -2342,12 +2353,12 @@ class Battle:
             names = [x.strip() for x in m.group(3).split(',')]
             p = int(m.group(2)) / 100.0 if m.group(2) else 1.0
             for x in tg or []:
-                if self.rng.random() >= p:
+                if self.R(owner.side).random() >= p:
                     continue
                 self._fired(owner)
                 repeats = ln.eff.get('random_times', 1)
                 for _ in range(repeats):
-                    name = self.rng.choice(names)
+                    name = self.R(owner.side).choice(names)
                     info = g.get(name)
                     if info is None:
                         self.unsup['무작위 효과 사전 없음: ' + name] += 1
@@ -2368,7 +2379,7 @@ class Battle:
             tg = self.resolve(owner, m.group(1), ctx)
             dv = float(m.group(3)) * 100.0 * (1 if m.group(4) == '증가' else -1)
             for x in tg or []:
-                if self.rng.random() >= int(m.group(2)) / 100.0:
+                if self.R(owner.side).random() >= int(m.group(2)) / 100.0:
                     continue
                 if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
                     continue
@@ -2378,14 +2389,14 @@ class Battle:
         m = RX_EXTRA_P.match(rest)
         if m:
             sk = owner.d.skills.get(m.group(2)) or owner.d.trigger_skills.get(m.group(2))
-            if sk is not None and self.rng.random() < int(m.group(1)) / 100.0:
+            if sk is not None and self.R(owner.side).random() < int(m.group(1)) / 100.0:
                 self._fired(owner)
                 target = ctx.src if (ctx.src is not None and ctx.src.side != owner.side) else None
                 if ln.eff.get('random_enemy'):
                     pool = self.alive(1 - owner.side)
                     if not pool:
                         return
-                    target = self.rng.choice(pool)
+                    target = self.R(owner.side).choice(pool)
                 self.cast(owner, sk, extra=True, target=target, parent=ctx)
             return
         m = RX_TOUGH_HEAL.match(rest)
@@ -2398,7 +2409,7 @@ class Battle:
         if m:   # N% 확률로 회복(잠재력 「별빛의 궤적-BX」 피격 시 25%)
             tg = self.resolve(owner, m.group(1), ctx, kind='heal')
             for x in tg or []:
-                if self.rng.random() >= int(m.group(2)) / 100.0:
+                if self.R(owner.side).random() >= int(m.group(2)) / 100.0:
                     continue
                 self._fired(owner)
                 base_u = owner if m.group(3) == '자신' else x
@@ -2411,7 +2422,7 @@ class Battle:
     def chain(self, owner, eff, ctx):
         if eff.get('random_enemy'):
             pool = self.alive(1 - owner.side)
-            tg = [self.rng.choice(pool)] if pool else []
+            tg = [self.R(owner.side).choice(pool)] if pool else []
         else:
             tg = self.resolve(owner, eff['target'], ctx)
         if not tg:
@@ -2433,7 +2444,7 @@ class Battle:
             # incoming attack's modifiers when a defender reacts.
             if self.mc['chain_skill_damage_up'] and ctx is not None and ctx.src is owner:
                 inc += ctx.inc + ctx.local_by[v]['inc']
-            dmg = max(1.0, math.floor(val * eff['coef'] * (1 + inc) * _rules.BASE_MULT * (1 - dr) * self.rand() * self.pen[owner.side]))
+            dmg = max(1.0, math.floor(val * eff['coef'] * (1 + inc) * _rules.BASE_MULT * (1 - dr) * self.rand(owner.side) * self.pen[owner.side]))
             self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
 
     # ---------- 효과 부여
@@ -2452,7 +2463,7 @@ class Battle:
             elif ELEM_LOSES.get(owner.element) == x.element:
                 a -= _rules.ELEM_HIT
         b = 0.0 - (x.d.stats.get('der', 0) / 10000.0 + xm['der'])
-        return self.rng.random() < calc_hit(a, b)
+        return self.R(owner.side).random() < calc_hit(a, b)
 
     def apply_buff(self, owner, eff, ctx, hot=0.0, raw=''):
         tg = self.resolve(owner, eff['target'], ctx)
@@ -2471,7 +2482,7 @@ class Battle:
                     self.dirty(x)
             return
         for x in tg:
-            if self.rng.random() >= eff['chance']:
+            if self.R(owner.side).random() >= eff['chance']:
                 continue
             self._fired(owner)
             self.add_effect(owner, x, eff, ctx, hot=hot, fixed='해제 불가' in raw)
