@@ -1,6 +1,6 @@
 {
  "_note": "브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시",
- "ver": "6e996f372c05",
+ "ver": "693bc30f1449",
  "files": [
   "battlesim/__init__.py",
   "battlesim/api.py",
@@ -25,5 +25,5 @@
   "rawdata/guide_app-core.js",
   "data/synergy_tags.json"
  ],
- "bytes": 4743776
+ "bytes": 4745641
 }
