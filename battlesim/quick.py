@@ -13,19 +13,20 @@
 - 회복: 힐·보호막 꼬리표 구원자 1명당 매 라운드 최대 생명력의 H.
 - 스테이지 난이도 보정 m(보스 콘텐츠): 그 스테이지의 시뮬 표본으로 맞춘 적 피해 배수(빠른 계산이 못 보는 기믹 몫, quick.json sm).
 """
-import json
 import math
 import os
+
+from .fileio import read_json
+from .rules import DEF_K
 
 MUL = 1.0           # sv 의 기준 전투력이 이미 엔진 식(돌파·스킬 레벨 배율 포함, api.party_power)이라 추가 배율 없음
 PARAMS = dict(A=1.0, B=1.0, H=0.0)     # tools/calibrate_quick.py 결과로 덮어씀(data/quick.json 의 params)
 MAX_ROUNDS = 50
 SAFE = 0.5          # 남은 생명력 비율이 이 이상이면 「깰만함」
-TIGHT = 0.0         # 깼지만 SAFE 미만이면 「빠듯함」
 
 
 def dr(d):
-    return d / (d + 3000.0) if d > 0 else 0.0
+    return d / (d + DEF_K) if d > 0 else 0.0
 
 
 def pen_mult(pen, ratio):
@@ -150,8 +151,8 @@ def need_growth(keys, stage, sv, pen, params=None, want='safe', step=None, base=
 
 def load(root=None):
     root = root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    q = json.load(open(os.path.join(root, 'data', 'quick.json'), encoding='utf-8'))
-    pen = json.load(open(os.path.join(root, 'data', 'power_penalty.json'), encoding='utf-8'))['pen']
+    q = read_json(os.path.join(root, 'data', 'quick.json'))
+    pen = read_json(os.path.join(root, 'data', 'power_penalty.json'))['pen']
     merge_sm(q)
     return q, pen
 

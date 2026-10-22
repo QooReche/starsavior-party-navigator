@@ -17,6 +17,7 @@ import json
 import math
 import os
 
+from .fileio import atomic_open
 from .metrics import ally_gain, build_index, describe, simulate_party, stage_report, unit_def, unit_metrics
 from .engine import Sim
 from .starsavior.data import OUT_DIR, _find_key, get_db
@@ -104,17 +105,17 @@ def _cmd_simulate(args):
     res = _jsonable(simulate(party, enc, opt))
     text = json.dumps(res, ensure_ascii=False, indent=1)
     if args.out:
-        tmp = args.out + '.tmp'
-        with open(tmp, 'w', encoding='utf-8', newline='\n') as f:
+
+        with atomic_open(args.out) as f:
             f.write(text)
-        os.replace(tmp, args.out)
+
         o = res['outcome']
         print('wrote', args.out, 'clear_p', o['clear_p'], 'wipe_p', o['wipe_p'], 'ttk_median', o['ttk_median'])
     else:
         print(text)
 
 
-def main(argv=None):
+def _main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='cmd')
     p = sub.add_parser('index', help='damage_index.json 생성')
@@ -158,7 +159,7 @@ def main(argv=None):
     db = get_db()
     if args.cmd == 'index':
         idx = build_index(args.turns, None, args.star, db)
-        with open(args.out, 'w', encoding='utf-8') as f:
+        with atomic_open(args.out) as f:
             json.dump(idx, f, ensure_ascii=False, indent=1)
         print('wrote', args.out, len(idx) - 1, 'units')
     elif args.cmd == 'stats':
@@ -188,14 +189,21 @@ def main(argv=None):
     elif args.cmd == 'lines':
         out = dump_lines(db)
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-        tmp = args.out + '.tmp'
-        with open(tmp, 'w', encoding='utf-8', newline='\n') as f:
+
+        with atomic_open(args.out) as f:
             json.dump(out, f, ensure_ascii=False, indent=1)
-        os.replace(tmp, args.out)
+
         c = out['counts']
         print('wrote', args.out, 'units', c['units'], 'lines', c['lines'], 'unparsed', c['unparsed'])
     else:
         ap.print_help()
+
+
+def main(argv=None):
+    try:
+        return _main(argv)
+    except ValueError as ex:
+        raise SystemExit(str(ex)) from None
 
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@
 python -X utf8 -I tools/build_growth.py --static <private checkout>
 Output is always this checkout's data/growth.json. Rates use 1/10000 units.
 """
+import sys
 import argparse
 from collections import defaultdict
 import json
@@ -11,7 +12,9 @@ from pathlib import Path
 import re
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_STATIC = Path(r"E:\AI_mk2\starsavior-static-data")
+sys.path.insert(0, str(ROOT))
+from tools.runtime import static_path, low_priority
+from battlesim.fileio import atomic_text
 STAT = dict(zip(
     ("NST_ATK", "NST_HP", "NST_DEF", "NST_TURN_SPEED", "NST_RATE_CRITICAL",
      "NST_RATE_CRITICAL_DAMAGE", "NST_RATE_EFFECT_HIT", "NST_RATE_EFFECT_EVADE",
@@ -193,15 +196,17 @@ def build_growth(static, game_build=None):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--static", type=Path, default=Path(os.environ.get("STARSAVIOR_STATIC", DEFAULT_STATIC)))
+    ap.add_argument("--static", type=Path)
     ap.add_argument("--game-build", help="Explicit extraction build if README has no build metadata")
     args = ap.parse_args()
-    if not args.static.is_dir():
-        print("SKIP: private static checkout unavailable")
-        return
+    try:
+        args.static = static_path(args.static)
+    except ValueError as ex:
+        ap.error(str(ex))
+    low_priority()
     growth = build_growth(args.static, args.game_build)
     dst = ROOT / "data/growth.json"
-    dst.write_text(json.dumps(growth, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    atomic_text(dst, json.dumps(growth, ensure_ascii=False, separators=(",", ":")) + "\n")
     print(f"{dst.name}: {dst.stat().st_size} bytes, {len(growth['units'])} units, build {growth['game_build']}")
 
 

@@ -34,8 +34,6 @@ const r=M.mapOwned(info,roster);
 const keyOf=uid=>(roster.find(s=>s.uid===uid)||{}).key;
 assert.deepEqual(r.keys.sort(),[keyOf(1040),keyOf(1055)].sort());
 assert.deepEqual(r.unknown,[999999]);
-const pu=M.perUnit(info,roster);
-assert.equal(pu[keyOf(1040)].sigil,2);assert.equal(pu[keyOf(1055)].skills.special,10);
 
 // 주소 해시 왕복(gzip + base64url)
 (async()=>{

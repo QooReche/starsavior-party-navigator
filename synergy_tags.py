@@ -2,9 +2,9 @@
 """구원자 스킬 텍스트 -> 파티 시너지 기능 태그 분류기.
 
 실행: python -X utf8 -I synergy_tags.py  (인자 없으면 기본 경로 사용)
-입력: work/databook/main.json (units[].sk[].ef = 구조화된 효과 줄, d1 = 설명문)
-      journeyhelper/src/assets/savior_reco.json (key/name/subtitle 매칭)
-출력: work/party/synergy_tags.json, work/party/synergy_tags_review.md
+입력: rawdata/databook_main.json (units[].sk[].ef = 구조화된 효과 줄, d1 = 설명문)
+      data/savior_reco.json (key/name/subtitle 매칭)
+출력: data/synergy_tags.json, docs/synergy_tags_review.md
 
 규칙은 아래 딕셔너리(RULES_*)에서 고친다. 효과 줄은 "대상 범위(scope)"를 먼저 판정한 뒤
 (self=자신, ally=아군(자신 제외 포함), enemy=적) 범위별 정규식 규칙을 적용한다.
@@ -16,10 +16,11 @@ import re
 import sys
 from collections import defaultdict, Counter
 
-import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MAIN = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "rawdata", "databook_main.json")  # 팬 데이터북 data/main.js 를 JSON 으로 푼 파일(저장소에 없음)
+sys.path.insert(0, str(HERE))
+from battlesim.fileio import atomic_open
+MAIN = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "rawdata", "databook_main.json")  # 팬 데이터북 data/main.js 를 JSON 으로 푼 파일(저장소에서 추적함)
 RECO = os.path.join(HERE, "data", "savior_reco.json")
 OUT_JSON = os.path.join(HERE, "data", "synergy_tags.json")
 OUT_MD = os.path.join(HERE, "docs", "synergy_tags_review.md")
@@ -208,7 +209,7 @@ def main():
     unmatched_reco = [f"{r['key']} ({r['name']} 「{r['subtitle']}」)" for r in reco if r["key"] not in used]
 
     os.makedirs(os.path.dirname(OUT_JSON), exist_ok=True)
-    with open(OUT_JSON, "w", encoding="utf-8", newline="\n") as f:
+    with atomic_open(OUT_JSON) as f:
         json.dump({"unmatched_units": unmatched_units, "unmatched_reco": unmatched_reco,
                    "saviors": results}, f, ensure_ascii=False, indent=1)
         f.write("\n")
@@ -238,7 +239,7 @@ def main():
                 L.append(f"- {r['name']} 「{r['subtitle']}」 {t}: {', '.join(r['evidence'][t])}")
     L += ["", "## 매칭 실패", "", "units 에서 reco 를 못 찾음:"] + [f"- {x}" for x in unmatched_units]
     L += ["", "reco 에서 units 를 못 찾음:"] + [f"- {x}" for x in unmatched_reco]
-    with open(OUT_MD, "w", encoding="utf-8", newline="\n") as f:
+    with atomic_open(OUT_MD) as f:
         f.write("\n".join(L) + "\n")
 
     print("units", len(results), "unmatched_units", len(unmatched_units), "unmatched_reco", len(unmatched_reco))

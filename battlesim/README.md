@@ -43,15 +43,15 @@ python -X utf8 -I tools/sim_damage.py simulate ... --rules "{\"target_defender_m
 - 기대값 엔진(`engine.Sim`, 웹 화력 지표)은 P3 에서 동결 — 새 규칙은 `mc.py` 에만 넣는다(퇴역 조건은 설계 9절).
 
 ### P4 — 추천 연결용 사전 계산·수동 정책 (사전 계산은 2026-10-20 퇴역 → 브라우저 시뮬 `battlesim/web.py`)
-- 웹이 읽는 결과는 `tools/build_sim_results.py` 가 만든다(`data/sim/index.json` + 콘텐츠별 `data/sim/<콘텐츠>.json`, 설계 `docs/battlesim_design.md` 10절, 결과 보고 `docs/sim_p4_report.md`). 느리므로 기본은 프로세스 1개·낮은 우선순위(Idle).
+- 웹 시뮬은 `sim_worker.js` → `battlesim/web.py`로 실행함. 파일 목록·내용 해시는 `tools/build_simpack.py`로 생성함. 옛 사전 계산 기록은 `docs/sim_p4_report.md`에 보관했음.
 - `simulate` 옵션 추가: `run_offset`(판 번호 시작값 — 대표 판 하나만 다시 돌려 타임라인을 얻을 때), `per_run`(판별 [결과, 처치 턴]), `formula_override`(민감도용 공식 상수 임시 교체, 지금은 `COOP_CAP` 만, 끝나면 원복).
 - 규칙 `mc.manual_burst`: 수동일 때 노바 버스트를 쓰는 스킬(`any_attack` = 4개 모이면 다음 공격, `ult_only` = 궁극기에만). `opts.nova_pool='unit'`(개인 풀)이 확률 엔진에서도 실제로 동작한다(민감도용).
 - 확률 엔진 `nova_policy='heal'`: 오토 스킬 선택을 유지하고 회복·보호막에만 버스트. 슬롯별 노바 효과로 회복·보호막을 추가/강화하는 생존 아군의 액티브가 있으면 그 스킬을 기다리고, 없으면 `hl`/효과 줄로 판별한 일반 회복·보호막에 사용한다. 조건부 효과는 후보에 포함하되 실제 조건은 시전 때 평가한다. 강인도 회복·반응/협공/추가 시전 제외. 기존 auto/manual·동결 기대값 엔진은 불변이며 슬롯별 노바 효과 실행은 heal에만 추가했다. `result.nova_burst`에 전체 판 횟수와 시전자/슬롯별 합계를 제공한다. `tools/ingame_check.py --runs 60 --bs`는 36-36만 heal, 나머지는 auto이며 `--ov`로 덮어쓴다. 회귀 시험: `tests/heal_burst_test.py`.
 - 타임라인 항목에 `pos`(편성 칸)·`via`(coop/forced_coop/trigger/reaction/extra)·`nb`(노바 버스트)·`all`·`tgt_side`·`tgt_boss` 가 붙는다(서순 표 재료).
-- 시험: `python -X utf8 -I tests/p4_test.py`(사전 계산 스키마·관문 순위·수동 델타·시드 결정성·결과 없음·버스트 규칙·부분 병합 meta 등 10개, 임시 폴더에만 씀), 브라우저 `tests/e2e/test_page.py`(`docs/PORTING.md` 7절).
+- 시험: `python -X utf8 -I tests/run_workspace_test.py tests/web_test.py`, 브라우저 `tests/e2e/test_page.py`(`docs/PORTING.md` 7절).
 
 ### P5 — 육성 프리셋·강인도/브레이크·피해 제한·전투력 보정
-- `simulate(..., options={'build': 'standard'})`: 육성 프리셋(기본 'none' = 예전과 같음, 유닛별 `{'key':..., 'build':...}` 도 됨). 사전 계산은 모든 PvE 콘텐츠에 'standard'(`tools/build_sim_results.py` `CONTENT_BUILD`). 결과 `party.build`·`builds`(구원자별 주옵·세트·잠재력 요약)·`power`(databook 전투력 공식 4명 합)·`power_ratio`(권장 대비 %)·`penalty`.
+- `simulate(..., options={'build': 'standard'})`: 육성 프리셋(기본 'none' = 예전과 같음, 유닛별 `{'key':..., 'build':...}` 도 됨). 브라우저 평균 육성 시뮬은 'standard'를 사용함. 결과 `party.build`·`builds`(구원자별 주옵·세트·잠재력 요약)·`power`(databook 전투력 공식 4명 합)·`power_ratio`(권장 대비 %)·`penalty`.
 - 규칙(`rules/default.json` 의 `mc`): `toughness`(on/off, 강인도·브레이크), `toughness_elem`(강인도 상성), `basic_tough`(기본기 강인도 파괴량, 0), `ally_break_gauge`(구원자 브레이크 때 게이지 keep/reset), `power_penalty`(off/model).
 - 「피해 제한」은 효과별 표 `mc.DAMAGE_LIMIT`(대미지 브레이크·불사의 육신·바큇살)만 지원, 그 밖은 중요 미지원. 〈불사〉 = 생명력 1 남김.
 - 결과 `breaks{ally, foe}`(판당 평균 브레이크 횟수), `unsupported.depth_runs`(연쇄 깊이 한도로 시전을 건너뛴 판 수 — 사전 계산은 1판이라도 있으면 그 팀을 「계산 불가」로).
@@ -92,3 +92,5 @@ python -X utf8 -I tests/p3_test.py           # 확률 엔진: 대상 가중·도
 ## 규칙 수치 바꾸기
 - 수치는 `rules/default.json` 에서 고친다. 실수는 `1400.0` 처럼 소수점을 지켜 적는다(정수로 바꾸면 출력 JSON 표기가 달라진다).
 - 실행 중 실험: 엔진은 `from .rules import BASE_MULT` 로 값을 복사해 쓰므로 `battlesim.engine.BASE_MULT` 를 바꿔야 반영된다. `DEFAULT_OPTS` 는 dict 를 공유하므로 제자리 수정이 반영되고, 보통은 `Sim(..., opts={...})` 로 넘기면 된다.
+
+API의 `n_runs`는 양의 정수만 받음. 입력 오류는 `ValueError`이며 CLI에서만 종료 코드로 처리함.

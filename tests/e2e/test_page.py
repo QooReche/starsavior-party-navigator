@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
-"""웹 페이지(index.html) 실제 브라우저 시험(Playwright + Chromium).
+"""웹 페이지(index.html) Playwright + Chromium 시험.
 
-준비(저장소 밖 가상환경, C: 용량 문제로 브라우저도 E: 에):
-  python -m venv E:\\AI_mk2\\venv-pw
-  E:\\AI_mk2\\venv-pw\\Scripts\\python -m pip install playwright
-  set PLAYWRIGHT_BROWSERS_PATH=E:\\AI_mk2\\pw-browsers
-  E:\\AI_mk2\\venv-pw\\Scripts\\python -m playwright install chromium
-실행(저장소 폴더에서, index.html·data/sim 이 만들어진 상태):
-  E:\\AI_mk2\\venv-pw\\Scripts\\python -X utf8 tests\\e2e\\test_page.py [--shots 폴더] [이름 일부 ...]
+준비: docs/PORTING.md 7절의 PowerShell 가상환경·PLAYWRIGHT_BROWSERS_PATH 안내 참조하기.
+index.html·data/quick.json·sim/manifest.json을 생성한 뒤 해당 가상환경의 Python으로 실행하기.
+실행: python -X utf8 tests/e2e/test_page.py [--shots 폴더] [이름 일부 ...]
 
-스스로 127.0.0.1 의 빈 포트에 `python -m http.server` 를 띄우고 끝나면 그 PID 만 끈다. 이 프로세스와 자식(서버·브라우저)은
-낮은 우선순위(Idle)로 돈다. 스크린샷 기본 저장 위치 = E:\\AI_mk2\\work\\p4\\shots(없으면 저장소 밖 임시 폴더)."""
+127.0.0.1의 빈 포트에 서버를 띄우고 종료 시 그 PID만 끔. 시험·자식 프로세스는 IDLE로 실행함.
+스크린샷은 --shots를 권장하며, 생략하면 임시 디렉터리를 사용함. 필터 0건은 실패함.
+"""
 import traceback
 import json
 import os
@@ -29,16 +26,7 @@ if os.path.isdir(r"E:\AI_mk2\pw-browsers"):
     os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", r"E:\AI_mk2\pw-browsers")
 
 
-def low_priority():
-    try:
-        if os.name == "nt":
-            import ctypes
-            k = ctypes.windll.kernel32
-            k.SetPriorityClass(k.GetCurrentProcess(), 0x40)
-        else:
-            os.nice(19)
-    except Exception:
-        pass
+from tools.runtime import low_priority
 
 
 def free_port():
@@ -84,8 +72,7 @@ def choose(page, content, query):
         page.click("#filters > summary")
 
 
-def open_page(browser, ctx, query="", viewport=None, legacy=None):
-    """legacy 는 옛 사전 계산 화면용 인자(퇴역, 무시)"""
+def open_page(browser, ctx, query="", viewport=None):
     page = browser.new_page(viewport=viewport or {"width": 1280, "height": 900})
     attach(page, ctx)
     page.goto(ctx.base + "/index.html" + query)
@@ -130,7 +117,7 @@ def quick_rows(page, party=1):
 def test_quick_default(browser, ctx):
     """새 기본: 맨 위 「이 스테이지 추천(빠른 계산)」에 1안+차선, 아래 상세 팀 = 1안, 콘솔 오류 0"""
     ctx.errors.clear()
-    page = open_page(browser, ctx, legacy=False)
+    page = open_page(browser, ctx)
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
     rows = quick_rows(page)
     shown = page.get_attribute('.party[data-party="1"]', "data-team")
@@ -147,7 +134,7 @@ def test_quick_default(browser, ctx):
 
 def test_quick_owned_small(browser, ctx):
     """보유를 6명으로 줄여도 빠른 계산 추천이 뜸(옛 문제 「시뮬 없음」 해소), 추천 팀은 보유 안에서만"""
-    page = open_page(browser, ctx, legacy=False)
+    page = open_page(browser, ctx)
     choose(page, "코스모 게이트", "길레 2단계")
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
     keep = page.evaluate("() => Object.keys(window.PN_Q_SV()).filter(k => !k.includes('@')).slice(0, 6)")
@@ -168,7 +155,7 @@ def test_quick_owned_small(browser, ctx):
 
 def test_quick_growth(browser, ctx):
     """육성 가정을 바꾸면 가정 전투력이 바뀌고, 어려운 스테이지는 「권장의 약 N%면 깸」을 보여 줌"""
-    page = open_page(browser, ctx, legacy=False)
+    page = open_page(browser, ctx)
     choose(page, "코스모 게이트", "길레 1단계")
     h1 = page.inner_text('.party[data-party="1"] .qbox .qh')
     page.select_option("#grow", "0.8")
@@ -190,7 +177,7 @@ def test_quick_growth(browser, ctx):
 
 def test_savior_power(browser, ctx):
     """서랍에 구원자별 전투력을 넣으면 빠른 계산에 반영(가정 줄에 「N명 반영」, 1안 전투력 바뀜), 저장·삭제"""
-    page = open_page(browser, ctx, legacy=False)
+    page = open_page(browser, ctx)
     choose(page, "코스모 게이트", "길레 2단계")
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
     h1 = page.inner_text('.party[data-party="1"] .qbox .qh')
@@ -214,7 +201,7 @@ def test_savior_power(browser, ctx):
 def test_browser_sim(browser, ctx):
     """「위 3팀 시뮬로 확인」: Pyodide 로 파이썬 엔진을 돌려 3팀 모두 클리어 확률·95% 구간 표시, 콘솔 오류 0, 이 사이트 밖 요청 0"""
     ctx.errors.clear()
-    page = open_page(browser, ctx, legacy=False)
+    page = open_page(browser, ctx)
     ext = []      # 엔진을 이 사이트 밖에서 받으면 안 된다(lib/pyodide, 2026-10-21)
     page.context.on("request", lambda r: ext.append(r.url) if not r.url.startswith(ctx.base) and not r.url.startswith("data:") and not r.url.startswith("blob:") else None)
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
@@ -249,7 +236,7 @@ def test_browser_sim(browser, ctx):
         so = [u["key"] for u in t["party"]["units"]]           # 시뮬 칸(전열1, 전열2, 후열1, 후열2)
         order = [so[2], so[0], so[1], so[3]]                     # -> 화면 카드 순서(후열1, 전열1, 전열2, 후열2)
         lead = so[t["party"]["leader"]] if t["party"]["leader"] is not None else None
-        ps = G.party_spec(q, pen, order, lead, t["key"].split(","), 1.0, st)
+        ps = G.party_spec(q, order, lead, t["key"].split(","), 1.0, st)
         spec_same.append(ps["units"] == t["party"]["units"] and ps["leader"] == t["party"]["leader"])
     ok = "클리어" in txt and "95% 구간" in txt and "완료" in state and not errs and all(same) and len(same) == n and all(spec_same) and not ext
     txt = txt + " / 바깥 요청 %s" % ext[:3]
@@ -278,7 +265,7 @@ def test_browser_sim_blocked(browser, ctx):
 
 def test_sim_auto_and_override(browser, ctx):
     """한 번 시뮬을 누르면 다음 스테이지부터 자동 확인, 시뮬 결과가 있으면 판정 배지가 시뮬 기준(title)으로 바뀜, 「자동 확인 끄기」"""
-    page = open_page(browser, ctx, legacy=False)
+    page = open_page(browser, ctx)
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow[data-key]')
     page.click('.party[data-party="1"] button[data-sim="1"]')
     page.wait_for_function("() => document.querySelectorAll('.party[data-party=\"1\"] .qsim').length >= 3", timeout=300000)
@@ -1032,8 +1019,12 @@ def main():
         i = args.index("--shots")
         shots = args[i + 1]
         del args[i:i + 2]
+    selected = [t for t in TESTS if not args or any(x in t.__name__ for x in args)]
+    if not selected:
+        print("FAIL: 시험 필터에 일치하는 항목 없음")
+        return 1
     if not shots:
-        shots = r"E:\AI_mk2\work\p4\shots" if os.path.isdir(r"E:\AI_mk2\work") else tempfile.mkdtemp(prefix="pn_shots_")
+        shots = tempfile.mkdtemp(prefix="pn_shots_")
     os.makedirs(shots, exist_ok=True)
     low_priority()
     from playwright.sync_api import sync_playwright
@@ -1054,9 +1045,7 @@ def main():
         with sync_playwright() as p:
             browser = p.chromium.launch()
             try:
-                for t in TESTS:
-                    if args and not any(x in t.__name__ for x in args):
-                        continue
+                for t in selected:
                     try:
                         ok, msg = t(browser, ctx)
                     except Exception as ex:

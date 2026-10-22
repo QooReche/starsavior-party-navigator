@@ -1,13 +1,17 @@
 """foe.js(raw) -> foe_stages.json + foe_summary.md. 실행: python -X utf8 -I build_foe.py (작업 폴더 기준 경로는 이 파일 위치로 계산)"""
 import json, re, os, collections as C
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.dirname(HERE))
+from battlesim.fileio import atomic_json, atomic_open, atomic_text
 ROOT = os.path.join(HERE, '..')  # 저장소 루트
-s = open(os.path.join(ROOT, 'rawdata', 'foe.js'), encoding='utf8').read()  # 데이터북 data/foe.js (rawdata/, tools/fetch_sources.py 로 갱신)
+with open(os.path.join(ROOT, 'rawdata', 'foe.js'), encoding='utf8') as f:
+    s = f.read()  # 공개 데이터북 원본, tools/fetch_sources.py 로 갱신함
 m = re.search(r'__SSD\.foe=', s)
 d, _ = json.JSONDecoder().raw_decode(s[m.end():])
 os.makedirs(os.path.join(HERE, 'raw'), exist_ok=True)
-json.dump(d, open(os.path.join(HERE, 'raw', 'foe_raw.json'), 'w', encoding='utf8'), ensure_ascii=False)  # build_gimmicks.py 의 입력
+atomic_json(os.path.join(HERE, 'raw', 'foe_raw.json'), d)  # build_gimmicks.py 의 입력
 
 EL = {'태양': 'sun', '달': 'moon', '별': 'star', '질서': 'order', '혼돈': 'chaos'}
 SKEY = ['hp', 'atk', 'def', 'spd', 'crit', 'critdmg', 'hit', 'evade', 'abs_evade', 'tough']
@@ -117,9 +121,8 @@ notes = [
 ]
 res = {'_source': 'https://starsavior-databook.pages.dev/data/foe.js?v=48a4b5df', '_notes': notes, 'contents': contents}
 _out = os.path.join(ROOT, 'data', 'foe_stages.json')
-with open(_out + '.tmp', 'w', encoding='utf8') as f:
+with atomic_open(_out) as f:
     json.dump(res, f, ensure_ascii=False, indent=None, separators=(',', ':'))
-os.replace(_out + '.tmp', _out)
 
 # ---- 요약
 stages = [(c, t, st) for c in contents for t in c['tabs'] for st in t['stages']]
@@ -161,5 +164,5 @@ lines += ['', '## 스키마 (foe_stages.json)', '',
  '- aoe_ratio 는 광역 스킬 보유 여부만 본 추정치. 동률 시 먼저 나온 속성이 선택됨.',
  '- 소환되는 적(summons)은 분포·비율 계산에서 제외.',
  '- 일부 콘텐츠(성간 회랑 등)는 스테이지 수가 많아 JSON 크기가 큼.']
-open(os.path.join(ROOT, 'docs', 'foe_summary.md'), 'w', encoding='utf8').write('\n'.join(lines) + '\n')
+atomic_text(os.path.join(ROOT, 'docs', 'foe_summary.md'), '\n'.join(lines) + '\n')
 print(len(contents), len(stages), tot_e, len(boss))

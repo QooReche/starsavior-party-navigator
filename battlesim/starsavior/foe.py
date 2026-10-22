@@ -68,22 +68,22 @@ def _gloss_props(xs):
     return dur, props
 
 
-_GLOSS = None
+_GLOSS = {}
 
 
 def gloss(raw=None):
     """상태 효과 이름 -> dict(kind 강화/약화, props, dur). 적 스킬 gl 사전 + 데이터북 dict.eff 의 사용 예. 무작위 효과(〈데드 스핀〉: [...] 중 1개) 해석용"""
-    global _GLOSS
-    if _GLOSS is None:
-        raw = raw or load_foe()
+    raw = load_foe() if raw is None else raw
+    key = id(raw)
+    if key not in _GLOSS:
         g = {}
         for s in raw['s']:
             for e in s.get('gl') or []:
                 if e.get('n') and e['n'] not in g:
                     dur, props = _gloss_props(e.get('x'))
                     g[e['n']] = dict(kind=e.get('k'), props=props, dur=dur)
-        _GLOSS = g
-    return _GLOSS
+        _GLOSS[key] = (raw, g)  # 원본도 보유하여 id 재사용을 막음
+    return _GLOSS[key][1]
 
 
 class FoeDef:

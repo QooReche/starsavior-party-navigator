@@ -11,9 +11,10 @@ import json, re, os, collections
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+sys.path.insert(0, str(ROOT))
+from battlesim.fileio import atomic_json, atomic_text, read_json
 SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "rawdata", "databook_main.json")  # 데이터북 data/main.js 를 JSON 으로 푼 파일
 TAGS = os.path.join(ROOT, "data", "synergy_tags.json")
-RECO = os.path.join(ROOT, "data", "savior_reco.json")
 OUT = os.path.join(ROOT, "data")  # synergy_pairs.json (리뷰 md 는 docs/ 로 옮긴다)
 
 # ===================== 규칙(여기만 고치면 됨) =====================
@@ -39,19 +40,13 @@ ATK_SHARE_FULL, ATK_SHARE_PART = 0.7, 0.4
 DEDICATED_DEBUFF_KINDS = 2
 # =====================================================================
 
-U = json.load(open(SRC, encoding="utf8"))["units"]
-TG = json.load(open(TAGS, encoding="utf8"))["saviors"]
-RC = json.load(open(RECO, encoding="utf8"))
+U = read_json(SRC)["units"]
+TG = read_json(TAGS)["saviors"]
 assert len(U) == len(TG)
 KEYS = []
 for u, t in zip(U, TG):
     assert (u["n"], u["ti"], u["v"]) == (t["name"], t["subtitle"], t["variant"]), (u["n"], t["name"])
     KEYS.append(t["key"])
-RECO_KEYS = {s["key"] for s in RC["saviors"]}
-
-
-def reco_flag(k):
-    return k in RECO_KEYS
 
 
 # gloss: 상태 이름 -> 분류(강화/약화/속성 스택...)
@@ -425,17 +420,6 @@ for b in units:
                 add(a, b, 1, s, True, "%s 이(가) 아군에게 부여하는 〈%s〉을 %s 이(가) 조건으로 참조" % (lab(a), n, lab(b)), [eva, evb], "확인", "ally_has:" + n)
 
 # ===== 유형 2: 버프 증폭 =====
-def buff_level(b):
-    """ATK 버프 수혜 정도 0~3 (공격력 기여 비율 + 다행동)"""
-    if b.atk_share >= ATK_SHARE_FULL:
-        lv = 2
-    elif b.atk_share >= ATK_SHARE_PART:
-        lv = 1
-    else:
-        return 0
-    if b.multi_action:
-        lv += 1
-    return lv
 
 
 for a, bn, mag, eva, cfa in PROV["ally_atk"]:
@@ -617,7 +601,7 @@ for m in merged.values():
                 "evidence": m["evs"][:4], "conf": m["conf"]})
 out.sort(key=lambda r: (-r["strength"], r["type"], r["a"], r["b"]))
 os.makedirs(OUT, exist_ok=True)
-json.dump(out, open(os.path.join(OUT, "synergy_pairs.json"), "w", encoding="utf8"), ensure_ascii=False, indent=1)
+atomic_json(os.path.join(OUT, "synergy_pairs.json"), out ,indent=1)
 
 # ---------------- 리뷰 문서 ----------------
 nm = {o.key: "%s(%s)" % (o.name, o.ti) for o in units}
@@ -655,5 +639,5 @@ L += ["## 규칙/한계", "",
 ver = os.path.join(ROOT, "docs", "synergy_pairs_verification.md")
 if os.path.exists(ver):
     L += [open(ver, encoding="utf8").read()]
-open(os.path.join(ROOT, "docs", "synergy_pairs_review.md"), "w", encoding="utf8").write("\n".join(L))
+atomic_text(os.path.join(ROOT, "docs", "synergy_pairs_review.md"), "\n".join(L))
 print("pairs", len(out), dict(cnt), dict(conf_c))

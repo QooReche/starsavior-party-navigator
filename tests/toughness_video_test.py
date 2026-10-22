@@ -13,10 +13,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 from battlesim.api import _norm_encounter, _norm_party
 from battlesim.mc import Battle, Ctx, Eff
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
 
-MODE = 'db' if '--legacy' in sys.argv else 'video'   # 기본 규칙은 db, 이 시험은 video 후보 규칙을 검증
+MODE = 'db' if '--legacy' in sys.argv else 'video'   # 현행 video 규칙 검증, --legacy는 db 반례 재현
 if '--legacy' in sys.argv:
     sys.argv.remove('--legacy')
 

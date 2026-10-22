@@ -140,10 +140,13 @@ class CombatTests(unittest.TestCase):
         self.assertEqual(b.nova_of(a), n + 5)  # normal skill 1 + potential 2
 
     def test_builder_reproduces_numeric_artifact(self):
-        from tools.build_myinfo_combat import build, DEFAULT_STATIC
-        if not DEFAULT_STATIC.is_dir():
-            self.skipTest('private tables unavailable')
-        self.assertEqual(build(DEFAULT_STATIC), combat.combat_data())
+        from tools.build_myinfo_combat import build
+        from tools.runtime import static_path
+        try:
+            static = static_path()
+        except ValueError:
+            self.skipTest('STARSAVIOR_STATIC 미설정 또는 경로 없음')
+        self.assertEqual(build(static), combat.combat_data())
 
     def test_web_entry_and_manifest_keep_combat_payload(self):
         from battlesim import api, web

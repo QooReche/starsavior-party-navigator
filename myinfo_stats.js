@@ -4,11 +4,7 @@
   "use strict";
   const KEYS = ["atk", "hp", "def", "spd", "cr", "cd", "eh", "er"];
   const ALL = KEYS.concat(["atkP", "hpP", "defP", "spdP"]);
-  const NST = Object.fromEntries([
-    "NST_ATK", "NST_HP", "NST_DEF", "NST_TURN_SPEED", "NST_RATE_CRITICAL",
-    "NST_RATE_CRITICAL_DAMAGE", "NST_RATE_EFFECT_HIT", "NST_RATE_EFFECT_EVADE",
-    "NST_NV_RATE_ATK", "NST_NV_RATE_HP", "NST_NV_RATE_DEF"
-  ].map((k, i) => [k, ALL[i]]));
+  const {NST} = typeof module !== 'undefined' && module.exports ? require('./ui_shared.js') : root.UiShared;
   const get = (o, k, fallback = 0) => Object.prototype.hasOwnProperty.call(o, k) ? o[k] : fallback;
 
   function rule_for_content(content) {

@@ -8,6 +8,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I 는 스크립트 폴더를 경로에서 뺀다
 import party_reco as pr  # noqa: E402
+from battlesim.fileio import atomic_text
 
 PORTRAIT_ROOT = "https://starsavior-guide.github.io/"  # 가이드 DB 초상화(온라인일 때만 표시, 없으면 글자 배지)
 OUT_DEFAULT = os.path.join(pr.HERE, "..", "release", "party_preview", "index.html")
@@ -36,9 +37,10 @@ def numerize(name):
     return f"{head} {tot}"
 
 
-def image_urls(roster):
+def image_urls(roster, idx=None):
     """가이드 DB 의 구원자별 초상화/일러스트 주소 ({key: url}, {key: url})."""
-    idx = pr._json(os.path.join(pr.DATA, "saviors_index.json"))
+    if idx is None:
+        idx = pr._json(os.path.join(pr.DATA, "saviors_index.json"))
     por = {v["key"]: v["profile"]["portrait"].replace("./", PORTRAIT_ROOT, 1)
            for v in idx.values() if v.get("profile", {}).get("portrait")}
     art = {v["key"]: v["profile"]["illustration"].replace("./", PORTRAIT_ROOT, 1)
@@ -61,7 +63,8 @@ def image_urls(roster):
 
 def main():
     roster, growth, mains, cfg, tags = pr.load()
-    por, art = image_urls(roster)
+    idx = pr._json(os.path.join(pr.DATA, "saviors_index.json"))
+    por, art = image_urls(roster, idx)
     grules = pr._json(pr.GRULES)
     # 저장소에 내려받아 둔 이미지(tools/fetch_images.py)가 있으면 그것을 상대 경로로 쓴다
     for s in roster:
@@ -70,7 +73,6 @@ def main():
             if os.path.exists(os.path.join(pr.HERE, rel)):
                 d[s["key"]] = rel
     # 게임 구원자 ID(uid): 내 정보 불러오기(myinfo_import.js)가 보유 구원자를 연결할 때 쓴다
-    idx = pr._json(os.path.join(pr.DATA, "saviors_index.json"))
     idx.pop("_meta", None)
     uid_by_key = {v["key"]: int(k) for k, v in idx.items() if v.get("key")}
     uid_by_name = {}
@@ -140,34 +142,25 @@ def main():
             "c": p.get("conf", "추정"), "d": bool(p.get("directed")), "r": p.get("reason", ""),
             "e": [e[:110] for e in p.get("evidence", [])[:2]]}
            for p in pr.load_synergy()]
-    # Like growth.json/quick.json, load the larger payload only when it is needed.
+    # 스킬·성장표는 필요할 때 요청함. quick.json은 페이지 시작 시 요청함.
     skill_path = os.path.join(pr.DATA, "savior_skills.json")
     with open(skill_path, "rb") as f:
         skill_bytes = f.read()
     skills = json.loads(skill_bytes)
     assert all(str(s["uid"]) in skills for s in r), "Missing public skills for roster uid"
     skill_url = "data/savior_skills.json?v=" + hashlib.sha256(skill_bytes).hexdigest()[:12]
-    # All display names/effect text originate in the already public databook.
-    public = pr._json(os.path.join(pr.HERE, "rawdata", "databook_main.json"))
-    view = {"potentials": {str(p["id"]): {"name": p["n"], "levels": {str(v[0]): v[4] for v in p.get("lv", [])}} for p in public["dict"]["pot"]},
-            "slots": [p[0] for p in public["equip"]["adv"]["parts"]],
-            "sets": {str(s["id"]): s["n"] for s in public["equip"]["sets"]}}
-    with open(os.path.join(pr.DATA, "myinfo_view.json"), "w", encoding="utf8", newline="\n") as f:
-        f.write(json.dumps(view, ensure_ascii=False, separators=(",", ":")) + "\n")
+    # 별도 생성 단계 tools/build_myinfo_view.py가 공개 설명 자료를 담당함.
+    power = pr._json(pr.POW)
     data = json.dumps({"roster": r, "skillsUrl": skill_url, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
-                       "pen": pr._json(pr.POW)["pen"], "tribe": pr._json(pr.POW)["tribe"],
-                       "grules": grules["types"], "gim": pr._json(pr.GSTAGE), "dmg": pr._json(pr.DMG),
-                       "selver": pr.selection_version()}, ensure_ascii=False, separators=(",", ":"))
-    html = open(os.path.join(pr.HERE, "party_template.html"), encoding="utf-8").read()
+                       "pen": power["pen"], "tribe": power["tribe"],
+                       "grules": grules["types"], "gim": pr._json(pr.GSTAGE), "dmg": pr._json(pr.DMG)}, ensure_ascii=False, separators=(",", ":"))
+    with open(os.path.join(pr.HERE, "party_template.html"), encoding="utf-8") as f:
+        html = f.read()
     assert html.count("/*DATA*/null") == 1
     html = html.replace("/*DATA*/null", data.replace("</", "<\\/"))
     out = sys.argv[1] if len(sys.argv) > 1 else OUT_DEFAULT
-    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
-    tmp = out + ".tmp"
-    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
-        f.write(html)
-    os.replace(tmp, out)
-    print(out, len(html) // 1024, "KB")
+    atomic_text(out, html)
+    print(out, len(html.encode('utf-8')), "bytes (UTF-8)")
 
 
 if __name__ == "__main__":

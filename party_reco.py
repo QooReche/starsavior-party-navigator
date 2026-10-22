@@ -69,13 +69,11 @@ def dmg_score(keys, wa):
 
 
 _MM = [None]  # 상성 방식: None(균형) 또는 "avoid"(역상성 회피 우선)
-_POWK = [1.0]  # 지원 태그 가중 배수(전투력이 부족할 때만 1 초과)
 _GIM = [[]]  # 현재 스테이지의 기믹 [(유형코드, 심각도)] (가중x심각도 상위 N)
 _GCACHE = {}
 
 
 _SB = [[]]  # 현재 스테이지의 시즌 보너스 [{"cond":..., "text":...}]
-_ELKO = {"sun": "태양", "moon": "달", "star": "별", "order": "질서", "chaos": "혼돈"}
 
 
 def season_part(s, cfg):
@@ -83,7 +81,7 @@ def season_part(s, cfg):
     import re
     sb, tot = cfg["seasonBonus"], 0.0
     for b in _SB[0]:
-        if b["cond"] not in (_ELKO[s["element"]], s["className"]):
+        if b["cond"] not in (EL[s["element"]], s["className"]):
             continue
         m = re.search(r"(\d+(?:\.\d+)?)%", b["text"])
         if not m:
@@ -138,8 +136,6 @@ def gimmick_team(combo, cfg):
                 bonus += g["slotBonus"] * w * 0.5
             rep.append((t["name"], sl["name"], who))
     return min(bonus, g["teamCap"]) * g["weight"], rep
-
-
 
 
 def power_penalty(my, rec):
@@ -244,8 +240,7 @@ def team_value(combo, cfg, tags, def_pen):
     got = set()
     for x in combo:
         got.update(tags.get(x["s"]["key"], []))
-    sus = cfg["power"]["sustainTags"]
-    v += sum(wt * (_POWK[0] if t in sus else 1.0) for t, wt in cfg["tagWeights"].items() if t in got)
+    v += sum(wt for t, wt in cfg["tagWeights"].items() if t in got)
     v += min(sum(h[0] for h in party_synergy([x["s"]["key"] for x in combo], cfg)), cfg["synergy"]["cap"])
     v += gimmick_team(combo, cfg)[0]
     v += _DM[1] * dmg_score([x["s"]["key"] for x in combo], _DM[0])
@@ -385,27 +380,11 @@ def stage_enemies(st):
 def set_stage(foe_key, tab, st, boss, cfg):
     """웹 JS run() 과 같은 스테이지 문맥(기믹·시즌 보너스·화력 가중, 전투력 보정 없음)을 전역에 잡는다.
     foe_key = foe_stages.json 콘텐츠 키(op·cosmo 등), boss = 보스 콘텐츠(코스모·플래시) 여부."""
-    _POWK[0] = 1.0
     _MM[0] = None
     _GIM[0] = stage_gimmicks(f"{foe_key}|{tab}|{st['name']}", cfg)
     _SB[0] = (st.get("season_bonus_latest") or {}).get("bonuses", [])
     _DM[0] = min(1.0, (st["enemy_total"] - 1) / 2)
     _DM[1] = cfg["damage"]["weightBoss"] if boss else cfg["damage"]["weightMob"]
-
-
-SELECTION_FILES = ("savior_reco.json", "db_tier.json", "synergy_tags.json", "synergy_pairs.json", "synergy_overrides.json",
-                   "gimmick_rules.json", "stage_gimmicks.json", "damage_index.json", "foe_stages.json", "kinds.json")
-
-
-def selection_version():
-    """추천 후보를 정하는 입력(data/*.json + party_contents.json)의 내용 해시 12자리. 줄바꿈·공백 차이는 무시(JSON 정규화).
-    웹 페이지(D.selver)와 시뮬 결과(data/sim/index.json)가 같아야 결과를 보여 준다."""
-    import hashlib
-    h = hashlib.sha1()
-    for p in [os.path.join(DATA, f) for f in SELECTION_FILES] + [CONT]:
-        h.update(os.path.basename(p).encode())
-        h.update(json.dumps(_json(p), ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
-    return h.hexdigest()[:12]
 
 
 def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=None, power=None):
@@ -436,7 +415,6 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
                 f'{EL.get(st["dominant_element"], "?")} / 광역 {st["aoe_ratio"]:.0%} / 디펜더 {st["defender_ratio"]:.0%}'
                 f' (일치 {len(hits)}건 중 첫 번째)')
     def_pen = c.get("defenderPenalty", cfg["weights"]["defenderPenalty"])
-    _POWK[0] = 1.0
     _GIM[0] = []
     _SB[0] = []
     _DM[0] = min(1.0, (st["enemy_total"] - 1) / 2) if stage else 0.5

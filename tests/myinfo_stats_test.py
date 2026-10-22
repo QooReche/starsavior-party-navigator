@@ -306,6 +306,7 @@ class SyntheticTests(unittest.TestCase):
         self.assertEqual(node_cases(pairs, "gauntlet_stats"), [ms.gauntlet_stats(*args) for args in pairs])
         # Browser UMD path, without CommonJS.
         p = subprocess.run(["node", "-e", "const vm=require('vm'),fs=require('fs'),c={};vm.createContext(c);"
+                            "vm.runInContext(fs.readFileSync('ui_shared.js','utf8'),c);"
                             "vm.runInContext(fs.readFileSync('myinfo_stats.js','utf8'),c);"
                             "if(c.MyInfoStats.rule_for_content('op')!=='normal')process.exit(1);"], cwd=ROOT)
         self.assertEqual(p.returncode, 0)

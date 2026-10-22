@@ -33,7 +33,27 @@
     if (!o || typeof o !== "object") return "파일 내용이 올바르지 않습니다.";
     if (o.format !== FORMAT) return "지원하지 않는 형식입니다(" + String(o.format) + ").";
     if (!Array.isArray(o.units) || !o.units.length) return "구원자 정보가 비어 있습니다.";
-    for (const u of o.units) if (!u || !Number.isInteger(u.id)) return "구원자 항목이 올바르지 않습니다.";
+    const obj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
+    const num=v=>Number.isFinite(v)&&v>=0;
+    const ints=(v,keys)=>keys.every(k=>!(k in v)||(Number.isInteger(v[k])&&v[k]>=0));
+    const option=v=>obj(v)&&(!("stat" in v)||typeof v.stat==="string")&&(!("value" in v)||Number.isFinite(v.value));
+    if (!ints(o,["star_link_level"])) return "스타링크 값이 올바르지 않습니다.";
+    if ("tactics" in o && (!obj(o.tactics)||!ints(o.tactics,["facility_level","common_level"])||
+        ("groups" in o.tactics&&(!obj(o.tactics.groups)||!Object.values(o.tactics.groups).every(v=>obj(v)&&ints(v,["level","attack","defense","hp"])))))) return "전술 정보가 올바르지 않습니다.";
+    const ids=new Set();
+    for (const u of o.units) {
+      if (!obj(u)||!Number.isInteger(u.id)||u.id<=0||ids.has(u.id)||!ints(u,["star","sigil","resonance","favor"])) return "구원자 항목이 올바르지 않습니다.";
+      ids.add(u.id);
+      if ("skills" in u&&(!obj(u.skills)||!ints(u.skills,["basic","special","ultimate","passive"]))) return "스킬 정보가 올바르지 않습니다.";
+      if ("equip" in u&&(!Array.isArray(u.equip)||!u.equip.every(e=>obj(e)&&ints(e,["item_id","level","enhance"])&&
+          (!("main" in e)||option(e.main))&&(!("subs" in e)||(Array.isArray(e.subs)&&e.subs.every(option)))))) return "장비 정보가 올바르지 않습니다.";
+      if ("gauntlet" in u) {
+        const g=u.gauntlet;
+        if (!obj(g)||!ints(g,["level"])||("journey" in g&&(!Array.isArray(g.journey)||g.journey.length!==5||!g.journey.every(num)))||
+            ("potentials" in g&&(!Array.isArray(g.potentials)||!g.potentials.every(p=>Array.isArray(p)&&p.length===4&&p.every(v=>Number.isInteger(v)&&v>=0))))||
+            ("blessings" in g&&(!Array.isArray(g.blessings)||!g.blessings.every(v=>Number.isInteger(v)&&v>=0)))) return "건틀렛 정보가 올바르지 않습니다.";
+      }
+    }
     return "";
   }
 
@@ -49,19 +69,6 @@
     return { keys, unknown };
   }
 
-  // 구원자별 내실 요약(후속: 시뮬 반영용). 지금은 별·공명·스킬·호감도만 정리한다.
-  function perUnit(info, roster) {
-    const byUid = new Map();
-    for (const s of roster) if (Number.isInteger(s.uid)) byUid.set(s.uid, s.key);
-    const out = {};
-    for (const u of info.units) {
-      const k = byUid.get(u.id);
-      if (!k) continue;
-      out[k] = { star: u.star, sigil: u.sigil, resonance: u.resonance, skills: u.skills, favor: u.favor, equip: (u.equip || []).length };
-    }
-    return out;
-  }
-
-  const api = { FORMAT, fromHash, validate, mapOwned, perUnit, b64urlToBytes };
+  const api = { FORMAT, fromHash, validate, mapOwned, b64urlToBytes };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.MyInfoImport = api;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -9,7 +9,6 @@
 P3 규칙 값은 rules/default.json 의 "mc" 절(MC_OPTS)."""
 import copy
 import math
-import random
 import re
 from collections import defaultdict
 
@@ -301,8 +300,8 @@ class Unit:
         for slot, sk in d.skills.items():
             f = b.mc['enemy_init_cd_special'] if side == 1 and slot == '특수기' else frac
             self.cd[slot] = (sk.cd * f) if sk.cd else 0
-            # Legacy approximation only: start decrement requires initial +1.
-            # Native enemy end timing stores the displayed cooldown unchanged.
+            # legacy 근사에서만 시작 감소를 보완하는 +1을 적용함.
+            # 적의 고유 턴 종료 방식은 표시된 쿨타임을 그대로 저장함.
             if (side == 1 and self.cd[slot] > 0 and b.mc['enemy_cd_tick'] == 'turn_end'
                     and not b.mc['enemy_cd_native']):
                 self.cd[slot] += 1
@@ -566,7 +565,7 @@ class Battle:
                     self.run_line(u, ln, Ctx(u, u, None))
         if self.wave_i > 0:
             for u in self.alive(0):
-                for ln in u.d.lines:
+                for ln in self.lines_of(u):
                     if line_kind(ln) == 'wave_start':
                         self.run_line(u, ln, Ctx(u, u, None))
 
@@ -574,7 +573,7 @@ class Battle:
         if self.wave_i < 0:   # 시험에서 미리 첫 웨이브를 불러 상태를 만든 경우는 건너뜀
             self.spawn_wave()
             for u in self.allies:
-                for ln in u.d.lines:
+                for ln in self.lines_of(u):
                     if line_kind(ln) in ('battle_start', 'wave_start'):
                         self.run_line(u, ln, Ctx(u, u, None))
         horizon = (self.turn_limit if self.turn_limit else self.max_turns) * self.turn_ticks

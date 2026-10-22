@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [ROOT, os.path.join(ROOT, 'tools')]
+from battlesim.fileio import atomic_open
 from battlesim import api, quick
 from battlesim.mc import Battle
 import gen_quick_calib as G
@@ -22,7 +23,7 @@ def video_run(mode, runs):
     q, pen = quick.load(ROOT)
     order = ['wedding-epindel', 'waltz-asherah', 'haydee', 'bunny-charlotte']
     st = q['st']['op']['아가논 시가지|SECTOR 36-36']
-    spec = G.party_spec(q, pen, order, None, order, 382000 / st['bp'], st)
+    spec = G.party_spec(q, order, None, order, 382000 / st['bp'], st)
     records = []
 
     class MeasuredBattle(Battle):
@@ -68,7 +69,7 @@ def main():
               ('stage', 'real_ratio', 'sim_ratio', 'sim_clear', 'sim_ally_actions', 'foe_breaks')} for s in samples],
               video={k: v for k, v in video.items() if k != 'records'}), ensure_ascii=False), flush=True)
     if args.output:
-        with open(args.output, 'w', encoding='utf-8', newline='\n') as f:
+        with atomic_open(args.output) as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
             f.write('\n')
 

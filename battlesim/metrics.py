@@ -10,9 +10,10 @@ from .starsavior.parser import UnitDef
 
 _CACHE = {}
 def unit_def(key, level=200, res_stage=10, star=0, mode='fixed', db=None, build=None):
-    ck = (key, level, res_stage, star, mode, build)
+    db = get_db() if db is None else db
+    ck = (db, key, level, res_stage, star, mode, build)
     if ck not in _CACHE:
-        _CACHE[ck] = UnitDef(db or get_db(), key, level, res_stage, star, mode, build=build)
+        _CACHE[ck] = UnitDef(db, key, level, res_stage, star, mode, build=build)
     return _CACHE[ck]
 
 # ------------------------------------------------------------------ 시나리오 / 지표

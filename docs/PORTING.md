@@ -10,7 +10,7 @@ git clone https://github.com/QooReche/starsavior-party-navigator.git
 cd starsavior-party-navigator
 ```
 - Python 3.11 (표준 라이브러리만으로 대부분 동작). 이미지 도구(`tools/fetch_images.py`, `crop_break_icons.py`)만 `pip install -r requirements.txt` (opencv-python, numpy)가 필요하고, 가상환경은 저장소 밖에 둘 것.
-- Node.js (선택, `tools/extract_guide_tier.js` 만 사용).
+- Node.js (가이드 추출기·JS 시험·Python↔JS 동일성 시험에 사용함).
 - 스크립트는 `python -X utf8 -I <스크립트>` 로 실행한다(`-I` 는 스크립트 폴더를 import 경로에서 빼므로 일부 스크립트는 스스로 경로를 추가한다). 한글·백슬래시가 든 코드는 셸 heredoc 으로 넘기지 말고 파일로 만들어 실행할 것(`\n` 이 풀리는 문제가 반복됨).
 
 ## 2. 확인
@@ -70,18 +70,22 @@ python -X utf8 -I tools/calibrate_quick.py --write                       # 콘�
 
 ### 7-2. 시험
 ```
-python -X utf8 -I tests/quick_test.py        # 빠른 계산 Python = JS(300건), 단조성, 역보정, 계수 보존
-python -X utf8 -I tests/web_test.py          # 브라우저 시뮬 진입점(battlesim/web.py), 시뮬 칸 순서, 서순, 목록 파일만으로 실행
-python -X utf8 -I tests/p5_test.py && python -X utf8 -I tests/p3_test.py && python -X utf8 -I tests/rules_test.py && python -X utf8 -I tests/shim_compat_test.py && python -X utf8 -I tests/golden_check.py
+python -X utf8 -I tests/run_workspace_test.py tests/quick_test.py        # 빠른 계산 Python = JS(300건), 단조성, 역보정, 계수 보존
+python -X utf8 -I tests/run_workspace_test.py tests/web_test.py          # 브라우저 시뮬 진입점(battlesim/web.py), 시뮬 칸 순서, 서순, 목록 파일만으로 실행
+python -X utf8 -I tests/p5_test.py && python -X utf8 -I tests/p3_test.py && python -X utf8 -I tests/rules_test.py && python -X utf8 -I tests/run_workspace_test.py tests/shim_compat_test.py && python -X utf8 -I tests/golden_check.py
 ```
 브라우저 시험(Playwright, 가상환경·브라우저는 저장소 밖에 — C: 가 좁으면 다른 드라이브로):
 ```
-python -m venv E:\AI_mk2\venv-pw
-E:\AI_mk2\venv-pw\Scripts\python -m pip install playwright
-set PLAYWRIGHT_BROWSERS_PATH=E:\AI_mk2\pw-browsers
-E:\AI_mk2\venv-pw\Scripts\python -m playwright install chromium
-E:\AI_mk2\venv-pw\Scripts\python -X utf8 tests\e2e\test_page.py --shots E:\AI_mk2\work\p4\shots
+# PowerShell: 저장소 밖의 설치 경로를 지정하기
+$venv = Join-Path $env:LOCALAPPDATA 'pn-venv-pw'
+$env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $env:LOCALAPPDATA 'pn-pw-browsers'
+python -m venv $venv
+& "$venv\Scripts\python" -m pip install playwright
+& "$venv\Scripts\python" -m playwright install chromium
+& "$venv\Scripts\python" -X utf8 tests\e2e\test_page.py --shots local\shots
 ```
 - 시험이 직접 `python -m http.server` 를 127.0.0.1 빈 포트에 띄우고 끝나면 그 프로세스만 끈다. 시험 프로세스·서버·브라우저는 낮은 우선순위로 돈다.
-- 확인 항목(12개): 콘솔 오류 0·옛 결과 안 부름, 빠른 계산 추천·보유 필터·육성 가정·구원자별 전투력, 브라우저 시뮬(인터넷 필요 — 결과·입력이 파이썬과 같음), 내려받기 차단 시 실패 표시, 자동 확인·시뮬 기준 판정, 수동 서순, 코스모 두 파티 겹침 없음(시뮬 뒤에도), 모바일 390×844, 파이썬/JS 근사 상위 10 일치. 스크린샷은 `--shots` 폴더.
-- 경로가 다르면 `PLAYWRIGHT_BROWSERS_PATH` 만 맞추면 된다(시험은 `E:\AI_mk2\pw-browsers` 가 있으면 그걸 기본으로 씀).
+- 확인 항목(27개): 콘솔 오류 0·옛 결과 안 부름, 빠른 계산 추천·보유 필터·육성 가정·구원자별 전투력, 브라우저 시뮬(인터넷 필요 — 결과·입력이 파이썬과 같음), 내려받기 차단 시 실패 표시, 자동 확인·시뮬 기준 판정, 수동 서순, 코스모 두 파티 겹침 없음(시뮬 뒤에도), 모바일 390×844, 파이썬/JS 근사 상위 10 일치. 스크린샷은 `--shots` 폴더.
+- 경로가 다르면 `PLAYWRIGHT_BROWSERS_PATH` 만 맞추면 된다(시험은 기존 로컬 브라우저 경로가 있으면 호환 기본값으로 사용함).
+
+CMD에서는 환경변수를 `set PLAYWRIGHT_BROWSERS_PATH=<경로>`로 지정함. 위 예시는 PowerShell 문법임.

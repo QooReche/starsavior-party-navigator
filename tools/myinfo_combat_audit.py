@@ -5,6 +5,8 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from battlesim.fileio import atomic_text
 sys.path[:0] = [str(ROOT), str(ROOT / 'tools')]
 from ingame_check import low_priority, run, SAMPLES
 
@@ -17,6 +19,7 @@ FIELDS = ('stage', 'runs', 'seed', 'real_ratio', 'sim_ratio', 'sim_clear', 'real
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--myinfo', required=True)
+    ap.add_argument('--output', type=Path, required=True)
     ap.add_argument('--runs', type=int, default=60)
     args = ap.parse_args()
     if args.runs < 1:
@@ -30,7 +33,7 @@ def main():
             result.append({k: r[k] for k in FIELDS})
             print(label, name, 'ratio', r['sim_ratio'], 'clear', r['sim_clear'], flush=True)
         out['profiles'][label] = result
-    (ROOT / 'docs/myinfo_combat_results.json').write_text(json.dumps(out, ensure_ascii=False, indent=2) + '\n', encoding='utf8')
+    atomic_text(args.output, json.dumps(out, ensure_ascii=False, indent=2) + '\n')
 
 
 if __name__ == '__main__':

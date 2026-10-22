@@ -6,8 +6,10 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+from tools.runtime import static_path, low_priority
+from battlesim.fileio import atomic_text
 from battlesim.starsavior.data import get_db
-from tools.build_growth import DEFAULT_STATIC, STAT, read
+from tools.build_growth import STAT, read
 
 
 def build(static):
@@ -72,12 +74,15 @@ def build(static):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--static', type=Path, default=DEFAULT_STATIC)
+    ap.add_argument('--static', type=Path)
     args = ap.parse_args()
-    from tools.ingame_check import low_priority
+    try:
+        args.static = static_path(args.static)
+    except ValueError as ex:
+        ap.error(str(ex))
     low_priority()
     out = build(args.static)
-    (ROOT / 'data/myinfo_combat.json').write_text(json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n', encoding='utf8')
+    atomic_text(ROOT / 'data/myinfo_combat.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
     print('Derived combat adapters:', len(out['units']), 'units,', len(out['potentials']), 'potentials')
 
 

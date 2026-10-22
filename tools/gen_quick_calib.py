@@ -13,9 +13,12 @@ import os
 import random
 import sys
 from multiprocessing import Pool
+from functools import lru_cache
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
+sys.path.insert(0, str(ROOT))
+from battlesim.fileio import atomic_open, read_json
+from tools.runtime import low_priority as low
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
 
 GROWTHS = [0.6, 0.75, 0.9, 1.0, 1.15, 1.3, 1.6, 2.0]
@@ -24,24 +27,12 @@ TEAMS = os.path.join(ROOT, 'tools', 'calib_teams.json')
 OUT = os.path.join(ROOT, 'tools', 'raw', 'quick_calib.json')
 
 
-def low():
-    try:
-        if os.name == 'nt':
-            import ctypes
-            k = ctypes.windll.kernel32
-            k.SetPriorityClass(k.GetCurrentProcess(), 0x40)
-        else:
-            os.nice(19)
-    except Exception:
-        pass
-
-
 def sim_order(order):
-    """화면 카드 순서 [후열1, 전열1, 전열2, 후열2] -> 시뮬 칸 [전열1, 전열2, 후열1, 후열2](build_sim_results.arrange 와 같은 규칙)"""
+    """화면 카드 순서 [후열1, 전열1, 전열2, 후열2] -> 시뮬 칸 [전열1, 전열2, 후열1, 후열2](화면 simParty와 같은 규칙)"""
     return [order[1], order[2], order[0], order[3]]
 
 
-def party_spec(q, pen, order, lead, keys, g, st):
+def party_spec(q, order, lead, keys, g, st):
     """화면 simParty 와 같은 변환(sim_worker 로 보내는 값). order = 화면 카드 순서"""
     from battlesim import quick
     sv = q['sv']
@@ -59,12 +50,18 @@ def party_spec(q, pen, order, lead, keys, g, st):
     return dict(units=units, leader=so.index(lead) if lead in so else None)
 
 
+@lru_cache(maxsize=1)
+def quick_data(root):
+    from battlesim import quick
+    return quick.load(root)
+
+
 def job(a):
     ck, sk, team_key, order, lead, g, runs = a
-    from battlesim import quick, simulate
-    q, pen = quick.load(ROOT)
+    from battlesim import simulate
+    q, _ = quick_data(ROOT)
     st = q['st'][ck][sk]
-    spec = party_spec(q, pen, order, lead, team_key.split(','), g, st)
+    spec = party_spec(q, order, lead, team_key.split(','), g, st)
     tab, name = sk.split('|', 1)
     try:
         r = simulate(spec, {'stage': '%s/%s/%s' % (ck, tab, name)}, dict(SIMOPT, n_runs=runs, seed=7))
@@ -76,7 +73,15 @@ def job(a):
 def teams():
     """표본 팀 목록 [(콘텐츠, 탭|스테이지, 팀 key, 화면 카드 순서, 리더)] = tools/calib_teams.json
     (옛 사전 계산의 스테이지별 근사 상위 후보에서 뽑아 둔 것 — 실제로 추천될 만한 조합, 2026-10-20)"""
-    return [tuple(x) for x in json.load(open(TEAMS, encoding='utf-8'))['teams']]
+    return [tuple(x) for x in read_json(TEAMS)['teams']]
+
+
+def save_samples(out, runs):
+    if not out or any(r[4] is None for r in out):
+        raise ValueError('보정 표본 없음 또는 시뮬 실패: 기존 표본을 보존했음')
+    rows = sorted(out, key=lambda r: (r[0], r[1], r[2], r[3]))
+    with atomic_open(OUT) as f:
+        json.dump(dict(growths=GROWTHS, runs=runs, rows=rows), f, ensure_ascii=False)
 
 
 def main():
@@ -103,13 +108,8 @@ def main():
             out.append(r)
             if (i + 1) % 200 == 0:
                 print(i + 1, flush=True)
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    tmp = OUT + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        json.dump(dict(growths=GROWTHS, runs=runs, rows=out), f, ensure_ascii=False)
-    os.replace(tmp, OUT)
-    bad = [r for r in out if r[4] is None]
-    print('저장', OUT, len(out), '건, 실패', len(bad), bad[:2])
+    save_samples(out, runs)
+    print('저장', OUT, len(out), '건')
 
 
 if __name__ == '__main__':

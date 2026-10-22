@@ -1,8 +1,8 @@
-"""ss-myinfo-v1 -> final PvE stats (reference implementation of myinfo_stats.js).
+"""ss-myinfo-v1 → 최종 PvE 능력치. myinfo_stats.js와 합산 순서를 맞춤.
 
-No file access: only the imported unit, account info, and derived growth are used.
-cr/cd/eh/er and *P use 1/10000, matching UnitDef/stats_override.
-Unknown contributions remain zero and are explicitly listed in missing.
+파일 접근 없이 구원자·계정 정보·가공 성장표만 사용함.
+cr/cd/eh/er와 *P는 UnitDef/stats_override와 같은 1/10000 단위임.
+해석하지 못한 기여는 0으로 두고 missing에 명시함.
 """
 import math
 

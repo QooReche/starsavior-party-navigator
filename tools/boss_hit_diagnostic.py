@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """36-36 첫 별의 파장 계측 + 5개 실측 대조. 엔진 파일 수정 없이 프로세스 안에서만 실험.
 
-python -X utf8 -I tools/boss_hit_diagnostic.py --runs 100 --bs --out docs/enemy_init_cd_diagnostic.json
+보관 도구: 보스 한 타격·11개 가설 민감도 재현용임.
+입력: 공개 전투 자료·tools/ingame_check.py의 실측 요약. 근거: docs/received_damage_audit.md, docs/toughness_video.md.
+python -X utf8 -I tools/boss_hit_diagnostic.py --runs 100 --bs --out local/boss-hit.json
 pre_reduction은 방어율 적용 후, 피해 감소 합/보호막 적용 전이다.
 post_reduction은 보호막 전, hp_loss는 타격 즉시 실제 HP 손실(반응 회복 전)이다.
 """
@@ -16,6 +18,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tools')]
+from battlesim.fileio import atomic_text
 import ingame_check as check
 from battlesim import rules
 from battlesim.mc import Battle
@@ -146,11 +149,12 @@ def main():
                     'no_fx', 'no_gohang', 'no_boss_ramp'])
     ap.add_argument('--out', type=Path, required=True)
     args = ap.parse_args()
+    check.low_priority()
     output = dict(runs=args.runs, seed=7, break_skill=args.bs, experiments=[])
     for mode in args.modes:
         result = experiment(mode, args.runs, args.bs)
         output['experiments'].append(result)
-        args.out.write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding='utf-8')
+        atomic_text(args.out, json.dumps(output, ensure_ascii=False, indent=2))
         print(json.dumps({k: result[k] for k in ('mode', 'battle_mean', 'first_hit')} |
                          {'ratios': [r['sim_ratio'] for r in result['ratios']]}, ensure_ascii=False), flush=True)
 

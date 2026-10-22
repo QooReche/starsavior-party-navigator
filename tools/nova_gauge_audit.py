@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tools')]
+from battlesim.fileio import atomic_text
 import ingame_check as check
 from received_damage_audit import measure
 from battlesim.mc import Battle, RX_SHIELD
@@ -60,7 +61,7 @@ def main():
         results[stage + '/' + policy] = dict(summary=summary, targets=r['targets'], casts=r['casts'])
         print(stage, policy, summary['sim_ratio'], summary['bursts_per_run'], flush=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(results, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    atomic_text(args.output, json.dumps(results, ensure_ascii=False, indent=2) + '\n')
 
 
 if __name__ == '__main__':

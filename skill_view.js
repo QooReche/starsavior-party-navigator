@@ -30,7 +30,7 @@
     return {...s,own,level,cooldown:cooldown(s,level),description:level===s.mx?s.dx:s.d1,
       next:s.lv.find(([lv])=>lv>level)||null};
   }
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const {esc} = typeof module !== 'undefined' && module.exports ? require('./ui_shared.js') : globalThis.UiShared;
   function terms(text,gl){
     return String(text).split(/(\[[^\]]+\])/g).map(part=>{
       const g=gl.find(([name])=>part===`[${name}]`);

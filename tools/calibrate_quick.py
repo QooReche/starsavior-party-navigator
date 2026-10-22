@@ -13,7 +13,9 @@ import os
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
+sys.path.insert(0, str(ROOT))
+from tools.runtime import low_priority
+from battlesim.fileio import atomic_open, read_json
 from battlesim import quick   # noqa: E402
 
 GROUPS = {'cosmo': 'cosmo', 'rush': 'rush'}          # 나머지는 'base'
@@ -27,19 +29,29 @@ def group(ck):
     return GROUPS.get(ck, 'base')
 
 
+def sample_key(row):
+    return row[0], row[1], tuple(row[2]), json.dumps(row[5], sort_keys=True), row[4]
+
+
+def validate_samples(rows):
+    if not rows or not any(r[4] >= 0.5 for r in rows) or not any(r[4] < 0.5 for r in rows):
+        raise ValueError('보정·검증에는 클리어/실패 표본이 각각 1건 이상 필요함')
+
+
 def dataset(q):
     """-> [(콘텐츠, 스테이지, keys, stage, c, evaluate 인자)] — tools/gen_quick_calib.py 가 만든 육성 가정별 시뮬 표본"""
     rows = []
-    for r in json.load(open(CALIB, encoding='utf-8'))['rows']:
+    for r in read_json(CALIB)['rows']:
         ck, sk, tk, g, c = r[:5]
         st = q['st'].get(ck, {}).get(sk)
         if c is None or not st:
             continue
         rows.append((ck, sk, tk.split(','), st, c, dict(growth=g)))
-    return rows
+    return sorted(rows, key=sample_key)
 
 
 def score(rows, q, pen, prm):
+    validate_samples(rows)
     tp = tn = P = N = 0
     for ck, sk, keys, st, c, kw in rows:
         r = quick.evaluate(keys, st, q['sv'], pen, prm, **kw)
@@ -49,12 +61,13 @@ def score(rows, q, pen, prm):
         else:
             N += 1
             tn += not r['clear']
-    sens = tp / P if P else 1.0
-    spec = tn / N if N else 1.0
+    sens = tp / P
+    spec = tn / N
     return (sens + spec) / 2, sens, spec, P, N, (tp + tn) / max(1, P + N)
 
 
 def fit(rows, q, pen):
+    validate_samples(rows)
     best = None
     for a, b, h in itertools.product(GRID_A, GRID_B, GRID_H):
         prm = dict(A=a, B=b, H=h)
@@ -78,6 +91,7 @@ SM_MIN = 6          # 스테이지 표본이 이보다 적으면 보정하지 �
 
 def fit_stage_m(srows, q, pen, prm):
     """한 스테이지 표본으로 적 피해 배수 m 하나를 고른다(맞힌 수 최대, 같으면 1 에 가까운 값)"""
+    validate_samples(srows)
     best = None
     for m in M_GRID:
         hit = 0
@@ -93,13 +107,14 @@ def fit_stage_m(srows, q, pen, prm):
 def stage_factors(gr, q, pen, prm):
     """보스 콘텐츠: 스테이지마다 m. 검증 = 스테이지 안에서 표본을 번갈아 반으로 나눠 앞 반으로 맞추고 뒤 반에서 잼(같은 스테이지·다른 팀/육성)"""
     by = {}
-    for r in gr:
+    for r in sorted(gr, key=sample_key):
         by.setdefault(r[1], []).append(r)
     sm, test_before, test_after = {}, [], []
     for sk, srows in sorted(by.items()):
         if len(srows) < SM_MIN:
             continue
         a, b = srows[0::2], srows[1::2]
+        validate_samples(b)
         m_half = fit_stage_m(a, q, pen, prm)
         for ck, _, keys, st, c, kw in b:
             test_before.append((c >= 0.5) == quick.evaluate(keys, dict(st, m=1.0), q['sv'], pen, prm, **kw)['clear'])
@@ -107,11 +122,14 @@ def stage_factors(gr, q, pen, prm):
         m = fit_stage_m(srows, q, pen, prm)
         if m != 1.0:
             sm[sk] = m
-    n = max(1, len(test_before))
+    n = len(test_before)
+    if not n:
+        raise ValueError('스테이지 검증 표본 없음')
     return sm, sum(test_before) / n, sum(test_after) / n, len(test_before)
 
 
 def main():
+    low_priority()
     q, pen = quick.load(ROOT)
     for d in q['st'].values():          # 보정을 다시 맞추므로 기존 m 은 지운다
         for st in d.values():
@@ -146,16 +164,16 @@ def main():
     print('전체 일치(가중) %.3f' % acc_all)
     if '--write' in sys.argv:
         path = os.path.join(ROOT, 'data', 'quick.json')
-        d = json.load(open(path, encoding='utf-8'))
+        d = read_json(path)
         d['params'] = out['base']
         d['pc'] = {k: out[k] for k in GROUPS}
         d['sm'] = sm_all
         d['calib'] = dict(samples=tot, acc=round(acc_all, 3), groups=calib,
                           against='확률 엔진 오토 클리어 확률 ≥ 0.5 — 표준 육성 + 육성 가정 0.6~2.0배 표본(엔진 역보정)')
-        tmp = path + '.tmp'
-        with open(tmp, 'w', encoding='utf-8', newline='\n') as f:
+
+        with atomic_open(path) as f:
             json.dump(d, f, ensure_ascii=False, separators=(',', ':'))
-        os.replace(tmp, path)
+
         print('저장', path)
 
 

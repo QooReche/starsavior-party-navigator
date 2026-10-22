@@ -4,10 +4,13 @@ python -X utf8 tools/build_skills.py [--check]
 Keys are game unit IDs (roster uid). Effect internals and duplicate text are omitted.
 """
 import json
+import argparse
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from battlesim.fileio import atomic_text
 SOURCE = ROOT / "rawdata/databook_main.json"
 OUTPUT = ROOT / "data/savior_skills.json"
 
@@ -32,14 +35,18 @@ def compact(units):
 
 
 def main():
-    source = json.loads(SOURCE.read_text(encoding="utf-8"))
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument('--source', type=Path, default=SOURCE)
+    ap.add_argument('--check', action='store_true')
+    args = ap.parse_args()
+    source = json.loads(args.source.read_text(encoding="utf-8"))
     rows = compact(source["units"])
     payload = json.dumps(rows, ensure_ascii=False, separators=(",", ":")) + "\n"
-    if "--check" in sys.argv:
+    if args.check:
         if OUTPUT.read_text(encoding="utf-8") != payload:
             raise SystemExit("savior_skills.json is stale; run tools/build_skills.py")
     else:
-        OUTPUT.write_text(payload, encoding="utf-8", newline="\n")
+        atomic_text(OUTPUT, payload)
     print(f"{OUTPUT.name}: {len(rows)} units, {len(payload.encode('utf-8')):,} bytes")
 
 

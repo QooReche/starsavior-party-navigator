@@ -33,7 +33,6 @@ class Buff:
         self.fresh = False
 
 
-
 class Actor:
     """아군 런타임 상태"""
     def __init__(self, d, idx, opts):
@@ -330,11 +329,7 @@ class Sim:
         return a.d.skills.get('기본기')
 
     def cast_dummy(self, a, sk):
-        ctx = Ctx(a, a, sk, False, 1.0)
-        if sk.cd:
-            a.cd[sk.slot] = sk.cd
-        self.fire_allies(a, ctx, 'ally_pre')
-        self.fire_allies(a, ctx, 'ally_post')
+        self.cast(a, sk)
 
     # ---------- 시전
     def cast(self, a, sk, w=1.0, extra=False, force_basic=False, skip_lines=False):
@@ -948,14 +943,9 @@ class DummyDef:
         self.gear_atkp = 0.0
 
 
-
 def dummy_dmg_hook():
-    pass
+    """tools.sim_damage 재수출 호환용. 더미 피해는 Sim.cast 에서 계산함."""
 
 
-# DummyDef 는 실제 데미지를 deal_damage 에서 계산해야 buff 효과를 받는다 -> cast_dummy 대신 일반 cast 사용
 def _patch_dummy():
-    def cast_dummy(self, a, sk):
-        self.cast(a, sk)
-    Sim.cast_dummy = cast_dummy
-_patch_dummy()
+    """옛 재수출 이름 유지. Sim.cast_dummy에 최종 구현이 있어 패치할 필요 없음."""

@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tools')]
+from battlesim.fileio import atomic_text
 from ingame_check import low_priority, run, SAMPLES
 from battlesim.mc import Battle
 
@@ -72,7 +73,7 @@ def main():
             row = measure(stage, args.runs, args.seed, args.myinfo, profile == 'before')
             result['profiles'][profile][stage] = row
             print(profile, stage, row['summary']['sim_ratio'], flush=True)
-    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf8')
+    atomic_text(args.output, json.dumps(result, ensure_ascii=False, indent=2) + '\n')
 
 
 if __name__ == '__main__':

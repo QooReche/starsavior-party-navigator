@@ -229,7 +229,9 @@ def power_pen(power, rec, db):
 def simulate(party_spec, encounter_spec, options=None):
     o = dict(options or {})
     seed = int(o.get('seed', 1))
-    n_runs = int(o.get('n_runs', 100))
+    n_runs = o.get('n_runs', 100)
+    if isinstance(n_runs, bool) or not isinstance(n_runs, int) or n_runs < 1:
+        raise ValueError('n_runs 는 양의 정수여야 함')
     over = dict(o.get('rules_override') or {})
     if 'nova_policy' in o:
         over['nova_policy'] = o['nova_policy']

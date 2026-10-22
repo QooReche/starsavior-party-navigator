@@ -6,12 +6,14 @@
 - 사이트: https://QooReche.github.io/starsavior-party-navigator/
 - 이어서 작업할 때: `HANDOFF.md` → `docs/PORTING.md`
 
+초기 화면 요청은 비압축 기준 HTML 약 2.01MB + quick 약 0.80MB + Cytoscape 약 0.37MB + 화면 JS임(약 3.24MB, 이미지 제외). 시뮬 최초 다운로드와 구분함. 성장표·스킬은 필요할 때 요청함. 실제 전송량은 압축·캐시에 따라 달라짐.
+
 ## 화면 구성
 
 ### 추천 파티
 - 1안 + 차선 2안. 빠른 계산으로 전체 후보의 순위를 바로 매김.
 - 파티 맨 위 판정 줄: 오토 가능 / 오토 어려움, 못 깨면 약 +N 전투력 필요.
-- 「시뮬로 확인」: 상위 3팀을 브라우저 안 전투 시뮬레이터로 다시 돌림(처음 약 14MB 내려받음). 클리어 %·턴·먼저 쓰러지는 구원자 표시.
+- 「시뮬로 확인」: 상위 3팀을 브라우저 안 전투 시뮬레이터로 다시 돌림(시뮬 최초 실행 때 엔진·자료 약 4.79MB와 Pyodide 약 13.78MB를 별도로 내려받음; 합계 비압축 약 18.57MB). 클리어 %·턴·먼저 쓰러지는 구원자 표시.
 - 오토 / 수동: 기본 오토. 수동을 고르면 스킬 순서 예시(서순) 표시.
 - 판 수: 100(기본) / 300. 클리어 35~65% 팀만 「더 돌리기」.
 - 「링크 복사」: 콘텐츠·스테이지·육성 가정·오토/수동·재점화·브레이크를 주소로 공유. 내 정보·보유 목록은 넣지 않음.
@@ -58,7 +60,7 @@
 ## 시험
 ```
 python -X utf8 -I tests/myinfo_stats_test.py      # 능력치 계산기 (비공개 정답은 STARSAVIOR_STATIC 경로 있을 때만)
-python -X utf8 -I tests/quick_test.py
+python -X utf8 -I tests/run_workspace_test.py tests/quick_test.py
 python -X utf8 -I tests/p3_test.py                 # 그 밖 tests/*_test.py, tests/golden_check.py
 node tests/myinfo_reco_test.js                     # JS 시험 tests/*_test.js
 tests/e2e/test_page.py                             # 브라우저 시험(Playwright, 준비는 docs/PORTING.md 7절)
@@ -77,3 +79,5 @@ python -X utf8 -I tools/build_growth.py --static <비공개 표 경로>   # 내 
 - https://github.com/p1021/journeyhelper (전투력 계산 참고)
 - https://namu.wiki , https://arca.live (전투 규칙·공략 글)
 - 직업·속성 아이콘, 브레이크 스킬 이미지: 게임 리소스
+
+Windows 임시 디렉터리 시험인 web·quick·shim_compat는 `tests/run_workspace_test.py`를 경유함. 데이터 갱신에는 공개 스킬·내 정보 설명 생성도 포함함. 비공개 성장표·슬롯·전투 어댑터는 `--static` 또는 `STARSAVIOR_STATIC`을 지정하여 별도 생성함.

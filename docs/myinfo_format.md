@@ -80,7 +80,7 @@
 
 `myinfo_view.js`는 첫 구원자 상세를 열 때만 다음 자료를 읽는다.
 
-- `data/myinfo_view.json`: `build_party_html.py`가 공개 `rawdata/databook_main.json`의
+- `data/myinfo_view.json`: `tools/build_myinfo_view.py`가 공개 `rawdata/databook_main.json`의
   잠재력 이름·레벨별 효과 문구, 세트 이름, 부위명을 추출한다.
 - `data/myinfo_slots.json`: `tools/build_myinfo_slots.py`가 아이템 ID → 0~5 슬롯 번호만
   가공한다. 원본 행·이름 문자열은 포함하지 않는다. 슬롯 순서는 공개 데이터북의
@@ -96,7 +96,7 @@ Python `battlesim.starsavior.myinfo_stats.final_stats(unit, info, growth, rule="
 `unit`은 `info.units`의 한 항목이며 `id`는 로스터 `uid`와 연결한다.
 `growth`는 `tools/build_growth.py --static <비공개 경로>`로 만드는 `data/growth.json`이다.
 빌더는 샘플·정답을 읽지 않고 성장 수치만 추출한다. 경로를 생략하면 `STARSAVIOR_STATIC`,
-그 환경변수도 없으면 `E:\AI_mk2\starsavior-static-data`를 사용하며, 경로가 없으면 skip한다.
+그 환경변수도 없거나 경로가 없으면 안내 후 실패함.
 
 결과는 `{stats: {atk,hp,def,spd,cr,cd,eh,er}, missing: [...], power}`이다.
 치확·치피·적중·저항은 1/10000 단위(12.34% → 1234)이다. 서로 다른 `game_build`이면
@@ -191,3 +191,5 @@ R2 = 각인 + 장비·세트 + 잠재력 + 시설·전술 + 상시 패시브 비
 시험: `python -X utf8 -I tests/myinfo_stats_test.py` (비공개 경로 없으면 정답·재생성 시험 skip).
 `SyntheticTests` 인자로 합성 시험만 실행할 수 있다. `--mutations`는 각 새 시험에 잘못된 값을
 메모리에서 주입해 실패를 확인하고 복원하며 파일을 바꾸지 않는다.
+
+불러오기 때 중첩 필드를 검증하고 성장표 계산에 성공한 뒤 저장함. 저장 실패면 현재 화면에 적용하고 「저장 안 됨」을 표시함. 잘못된 기존 저장값은 지우기 또는 파일 다시 불러오기로 복구함.

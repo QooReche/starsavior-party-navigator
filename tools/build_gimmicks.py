@@ -10,6 +10,9 @@
 import argparse, collections as C, json, os, re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+import sys
+sys.path.insert(0, str(HERE))
+from battlesim.fileio import atomic_json, read_json
 ROOT = os.path.normpath(os.path.join(HERE, '..'))  # 저장소 루트
 D = dict(
     raw=os.path.join(ROOT, 'tools', 'raw', 'foe_raw.json'),            # build_foe.py 가 만든 데이터북 foe.js 원본 파싱
@@ -115,10 +118,6 @@ TYPES = {
 
 # ------------------------------------------------------------------ 적 문구 -> 유형 규칙
 # (code, regex, severity(int|callable(match)->int), subtype, only_slot('패시브'|None))
-def _n(m, i=1): return int(m.group(i))
-def _cnt_sev(m):
-    n = _n(m)
-    return 3 if n <= 3 else 2 if n <= 5 else 1
 
 NOT_HIT = r'(?<!아군이 )(?<!자신을 제외한 아군이 )'
 ENEMY_RULES = [
@@ -273,7 +272,7 @@ def cfg_args():
     for k, v in D.items(): ap.add_argument('--' + k, default=v)
     return ap.parse_args()
 
-def load(p): return json.load(open(p, encoding='utf8'))
+def load(p): return read_json(p)
 
 def norm(t): return re.sub(r'\d+(?:\.\d+)?', 'N', t)
 
@@ -589,14 +588,14 @@ def main():
         noise_excluded=NOISE_NOTE, n_unique_skill_texts=len(total_texts), n_gimmick_records=len(gims),
         residual_unmatched=len(residual), turn_limits=[dict(content=k, turns=v, n=n) for (k, v), n in lt.items()]),
         stage_index_file='stage_gimmicks.json (키 content|tab|stage -> boss_units, types{코드:{sev,units,gids}})', type_catalog=cat, gimmicks=gims, stage_effects=stage_fx)
-    json.dump(out1, open(os.path.join(a.out, 'enemy_gimmicks.json'), 'w', encoding='utf8'), ensure_ascii=False, indent=1)
+    atomic_json(os.path.join(a.out, 'enemy_gimmicks.json'), out1 ,indent=1)
 
     # ---- 구원자 성향
     dist = C.Counter(v['multihit_score'] for v in sav.values())
-    json.dump(dict(_meta=dict(score_def='0=신호 없음, 1~3=추가 발동/연쇄 피해/연속 문구 신호 누적(MH 가중치, 상단 참고). 확인 불가: 스킬당 실제 히트 수.',
+    atomic_json(os.path.join(a.out, 'multihit_traits.json'), dict(_meta=dict(score_def='0=신호 없음, 1~3=추가 발동/연쇄 피해/연속 문구 신호 누적(MH 가중치, 상단 참고). 확인 불가: 스킬당 실제 히트 수.',
                               thresholds=MH['thr'], single_big_def=f"단일 대상 특수기/궁극기에 조건부 피해 증가 >= {MH['big_amp_pct']}%(표준 +15% 제외), multihit<= {MH['big_max_mh']}, 광역 공격 비중<= {MH['big_max_aoe']}. 계수 자체는 슬롯 표준값(기본 65/특수 90/궁극 115, 광역 궁극 225)이라 구분 불가",
                               distribution=dict(sorted(dist.items())), unmatched_with_reco=[list(x) for x in unmatched]),
-                   saviors=sav), open(os.path.join(a.out, 'multihit_traits.json'), 'w', encoding='utf8'), ensure_ascii=False, indent=1)
+                   saviors=sav) ,indent=1)
 
     nS = len(sav_tags)
     for t in set(x for v in sav_tags.values() for x in v):
@@ -647,18 +646,17 @@ def main():
         r['combos'] = best_combos(tmap, sav, sav_tags, indiv, pairs)
         r['unfit_structures'] = {c: SLOT_RULES[c]['bad'] for c in r['type_codes'] if c in SLOT_RULES and tmap[c] >= 2 and TYPES[c]['w'] >= 2}
     slot_pairs = slot_pair_examples(sav, sav_tags, pairs)
-    json.dump(sidx, open(os.path.join(a.out, 'stage_gimmicks.json'), 'w', encoding='utf8'), ensure_ascii=False, separators=(',', ':'))
-    json.dump(dict(_meta=dict(desc='유형 코드 -> 구원자 태그 선호/기피 규칙, 구원자별 태그, 보스/정예 단위 규칙 점수(규칙 합산, 가중치=유형 w * 심각도/2).',
+    atomic_json(os.path.join(a.out, 'stage_gimmicks.json'), sidx ,separators=(',', ':'))
+    atomic_json(os.path.join(a.out, 'gimmick_counters.json'), dict(_meta=dict(desc='유형 코드 -> 구원자 태그 선호/기피 규칙, 구원자별 태그, 보스/정예 단위 규칙 점수(규칙 합산, 가중치=유형 w * 심각도/2).',
                               tag_defs=SAVIOR_TAGS, tag_notes='MULTIHIT=다중 타수 점수>=2, SINGLE_BIG=단일 대형, AOE=적 전체 공격 비중>=0.5, BURST=궁극기 계수>=250%, SUPPORT_HEAVY=공격 스킬<=2'),
                    type_rules={c: dict(prefer=t['prefer'], avoid=t['avoid'], weight=t['w'], param=t.get('param')) for c, t in TYPES.items()},
                    slot_rules={c: dict(slots=[dict(name=n_, tags_any=ts_) for n_, ts_ in r_['slots']], good=r_['good'], bad=r_['bad'], synergy_pair_types=r_['syn']) for c, r_ in SLOT_RULES.items()},
                    combo_scoring=dict(slot_bonus=SLOT_BONUS, syn_bonus=SYN_BONUS, syn_slot_bonus=SYN_SLOT_BONUS, formula='0.5*sum(개인점수) + sum(슬롯 충족 * 2.0 * w*sev/2) + 슬롯 충족자 간 연계 + 0.5*sum(연계 강도*신뢰)*0.5'),
-                   slot_pair_examples=slot_pairs, savior_tags=sav_tags, boss_rules=boss_rules),
-              open(os.path.join(a.out, 'gimmick_counters.json'), 'w', encoding='utf8'), ensure_ascii=False, indent=1)
+                   slot_pair_examples=slot_pairs, savior_tags=sav_tags, boss_rules=boss_rules) ,indent=1)
 
     # ---- 검토 요약용 residual 덤프(작게)
     res = [dict(slot=k[0], skill=k[1], text=k[2], n=v) for k, v in residual.most_common()]
-    json.dump(res, open(os.path.join(a.out, 'gimmick_residual.json'), 'w', encoding='utf8'), ensure_ascii=False, indent=1)
+    atomic_json(os.path.join(a.out, 'gimmick_residual.json'), res ,indent=1)
     print('gimmick records', len(gims), 'types used', len(by), 'residual', len(residual), 'texts', len(total_texts))
     print('savior mh dist', dict(sorted(dist.items())), 'unmatched', unmatched, 'saviors', len(sav))
     print('type counts', {c: len(v) for c, v in sorted(by.items(), key=lambda kv: -len(kv[1]))})

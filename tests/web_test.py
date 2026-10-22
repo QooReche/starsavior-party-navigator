@@ -25,7 +25,7 @@ def party(g=1.0):
     q, pen = quick.load(ROOT)
     st = q['st']['op']['NOA 상업지구|SECTOR 1-3']
     order = ['emily', 'fei', 'professor-m', 'wedding-carmen']     # 화면 카드 순서(후열1, 전열1, 전열2, 후열2)
-    return G.party_spec(q, pen, order, 'fei', order, g, st), st
+    return G.party_spec(q, order, 'fei', order, g, st), st
 
 
 def test_seq_from_timeline():
@@ -177,7 +177,7 @@ def test_stats_final_and_luna_reaction():
     from battlesim import quick
     q, pen = quick.load(ROOT)
     ck, sk, order, lead, pw, rk = I.SAMPLES['37-2'][:6]          # 실측 37-2 와 같은 파티(긴 잡몹전 — 치명 피격이 충분히 나옴)
-    spec = G.party_spec(q, pen, order, lead, list(order), pw / q['st'][ck][sk]['bp'], q['st'][ck][sk])
+    spec = G.party_spec(q, order, lead, list(order), pw / q['st'][ck][sk]['bp'], q['st'][ck][sk])
     fired = 0
     for seed in range(1, 13):
         r = simulate(spec, {'stage': 'op/모나스티르 광장/SECTOR 37-2'}, dict(G.SIMOPT, n_runs=1, seed=seed, timeline=True))

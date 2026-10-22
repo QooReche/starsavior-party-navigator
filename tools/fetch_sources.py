@@ -6,12 +6,14 @@
 주의: 원본 사이트 구조가 바뀌면 정규식이 실패할 수 있다. 데이터북·가이드 DB 재사용은 사용자가 허락받은 것으로 확인됨(2026-10-19)."""
 import os
 import re
-import subprocess
 import sys
 import time
 import urllib.request
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+sys.path.insert(0, ROOT)
+from battlesim.fileio import atomic_json, atomic_text
+from tools.unwrap_ssd import unwrap
 RAW = os.path.join(ROOT, "rawdata")
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36"}
 DB = "https://starsavior-databook.pages.dev/"
@@ -39,18 +41,27 @@ def main():
         sys.exit("main.js 에서 foe.js 버전 키(__SSV.foe)를 찾지 못함 — 사이트 구조 변경 확인 필요")
     foe_url = DB + "data/foe.js" + ("?v=" + mf.group(1) if mf else "")
     if not DRY:
-        tmp = os.path.join(RAW, "_main.js")
-        open(tmp, "w", encoding="utf-8", newline="\n").write(main_js)
-        subprocess.run([sys.executable, "-X", "utf8", "-I", os.path.join(ROOT, "tools", "unwrap_ssd.py"), tmp], check=True)
-        os.remove(tmp)
-        open(os.path.join(RAW, "foe.js"), "w", encoding="utf-8", newline="\n").write(get(foe_url))
+        main_data = unwrap(main_js)
+        if not all(k in main_data for k in ('units', 'dict', 'topics')):
+            raise ValueError('main.js 필수 자료 누락')
+        foe_js = get(foe_url)
+        foe = unwrap(foe_js).get('foe', {})
+        if not all(k in foe for k in ('u', 's', 'g')):
+            raise ValueError('foe.js 필수 자료 누락')
     else:
         print("GET", main_url, "\nGET", foe_url)
     gh = get(GUIDE)
     gm = re.search(r'src="([^"]*app-core\.js[^"]*)"', gh)
     core_url = GUIDE + (gm.group(1).lstrip("./") if gm else "app-core.js")
     if not DRY:
-        open(os.path.join(RAW, "guide_app-core.js"), "w", encoding="utf-8", newline="\n").write(get(core_url))
+        core_js = get(core_url)
+        for name in ('GROWTH_PRIORITY', 'MAIN_CONTENTS'):
+            if not re.search(r'const\s+' + name + r'\s*=\s*\{[\s\S]*?^};', core_js, re.M):
+                raise ValueError('가이드 DB 구조 변경: ' + name)
+        # 모든 수신·구조 확인이 끝난 뒤 각 파일을 교체함.
+        atomic_json(os.path.join(RAW, 'databook_main.json'), main_data)
+        atomic_text(os.path.join(RAW, 'foe.js'), foe_js)
+        atomic_text(os.path.join(RAW, 'guide_app-core.js'), core_js)
     else:
         print("GET", core_url)
     print("다음: node tools/extract_guide_tier.js  ->  python -X utf8 -I tools/update.py")

@@ -339,6 +339,7 @@ button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
 </dialog>
 <script src="lib/cytoscape.min.js"></script>
 <script src="quick.js"></script>
+<script src="ui_shared.js"></script>
 <script src="myinfo_import.js"></script>
 <script src="myinfo_stats.js"></script>
 <script src="myinfo_view.js"></script>
@@ -359,16 +360,20 @@ const TC=tr=>"t-"+(tr?String(tr).replace("티어","").replace(".",""):"q");
 // 작전 재점화 버프(인게임 표, 2026-10-21 사용자 제보): 단계별 x = 주는 피해 +x, 받는 피해 −x. 작전(op)에만
 const REKINDLE=[0,0.03,0.07,0.12,0.18,0.25];
 const rkOf=ck=>ck==="op"?(+(document.getElementById("rk")||{}).value||0):0;
-const LS={get(k){try{return JSON.parse(localStorage.getItem("pn."+k))}catch(e){return null}},set(k,v){try{localStorage.setItem("pn."+k,JSON.stringify(v))}catch(e){}}};
-const MI={info:null,hash:"",growth:null,pending:null,error:"",profiles:{}};
-{const saved=LS.get("myinfo");if(saved&&!MyInfoImport.validate(saved)){MI.info=saved;MI.hash=MyInfoReco.hash(saved)}}
+const LS={errors:{},get(k){try{return JSON.parse(localStorage.getItem("pn."+k))}catch(e){this.errors[k]=true;return null}},set(k,v){try{localStorage.setItem("pn."+k,JSON.stringify(v));return true}catch(e){return false}},remove(k){try{localStorage.removeItem("pn."+k);delete this.errors[k];return true}catch(e){return false}}};
+const MI={info:null,hash:"",growth:null,pending:null,error:"",profiles:{},saved:false,invalid:false,importId:0};
+{const saved=LS.get("myinfo");if(saved&&!MyInfoImport.validate(saved)){MI.info=saved;MI.hash=MyInfoReco.hash(saved);MI.saved=true}else MI.invalid=!!saved||!!LS.errors.myinfo}
 const SKILLS=SkillView.mount({url:D.skillsUrl,getUnit:uid=>MI.info?.units.find(u=>String(u.id)===String(uid)),getSavior:key=>BYKEY[key]});
 const MIFULL=MyInfoView.mount(()=>({info:MI.info,growth:MI.growth,rule:miProfile().rule||'normal',simulation:miMode()&&!!miProfile().rule}));
 const miMode=()=>$("grow").value==="myinfo"&&!!MI.info;
 function miProfile(){const ck=contents[$("content").value].key;
  return MI.profiles[ck]||(MI.profiles[ck]=MyInfoReco.profile(MI.info,R,MI.growth,ck))}
+async function miGrowth(){if(MI.growth)return MI.growth;if(!MI.pending){MI.error="";
+ MI.pending=fetch("data/growth.json").then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(g=>MI.growth=g).catch(e=>{MI.error="성장표 오류";throw e}).finally(()=>{MI.pending=null})}return MI.pending}
+function miCheck(info,g){for(const ck of ["op","cosmo"]){const p=MyInfoReco.profile(info,R,g,ck);
+ for(const r of Object.values(p.results))if(!Number.isFinite(r.power)||!Object.values(r.stats).every(Number.isFinite))throw new Error("능력치 계산값이 올바르지 않음")}}
 function miLoad(){if(!miMode()||MI.growth||MI.pending)return;
- MI.error="";MI.pending=fetch("data/growth.json").then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(g=>{MI.growth=g;MI.profiles={}}).catch(()=>{MI.error="성장표 오류"}).finally(()=>{MI.pending=null;renderMi();rerun()})}
+ miGrowth().then(g=>{try{miCheck(MI.info,g);MI.profiles={}}catch(e){MI.info=null;MI.saved=false;MI.invalid=true;$("grow").value="1";miStatus("저장된 정보 계산 실패 · 지우거나 파일을 다시 불러오기",true)}}).catch(()=>{}).finally(()=>{renderMi();rerun()})}
 // grow.v2 = 배타적 모드, grow = 수동 입력이 없는 구원자에게 적용할 기존 육성 배율.
 function miSelect(){const v=$("grow").value;LS.set("grow.v2",v);if(+v>0)LS.set("grow",v);miLoad();renderMi()}
 function manualSelect(){$("grow").value="manual";if(typeof SHARE!=="undefined")delete SHARE.p;LS.set("grow.v2","manual")}
@@ -384,7 +389,7 @@ function refreshStages(){
  $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
  showInfo();showPow();if(window._ready)rerun()}
 function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`${EL[e]} ${n}`).join(" / ")}
-function showPow(){const s=cur&&cur[$("stage").value],my=$("grow").value==="manual"?+$("mypow").value:0,el=$("powinfo");POWK=1;
+function showPow(){const s=cur&&cur[$("stage").value],my=$("grow").value==="manual"?+$("mypow").value:0,el=$("powinfo");
  const pp=s&&powPen(my,s.rp);el.innerHTML=pp?`<span class="${pp.ratio<70?"bad2":pp.a<1?"warn":"ok"}">내 전투력 ${my.toLocaleString()} = 권장의 ${pp.ratio.toFixed(1)}% → 아군 피해 ×${+pp.a.toFixed(3)} · 적 ×${+pp.b.toFixed(3)}</span>`:""}
 function sbText(s){return s&&s.sb&&s.sb.length?` · <span class="mut">시즌 보너스(${esc(s.sbn)}): ${s.sb.map(b=>esc(b.cond)+" "+esc(b.text)).join(" / ")}</span>`:""}
 function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+``:"해당 스테이지 없음"}
@@ -399,12 +404,11 @@ $("none").onclick=()=>document.querySelectorAll("#own input").forEach(x=>x.check
 const bkeys=Object.keys(CFG.breakSkills).filter(k=>!k.startsWith("_"));
 $("brk").innerHTML=bkeys.map(k=>{const u=CFG.breakSkills[k].unreleased,im=D.bicons[k];return `<label class="btile"><input type="checkbox" data-b="${esc(k)}" ${u?"":"checked"}><span class="tc">${im?`<img class="bim" src="${im}" alt="">`:`<span class="bim">${BG[k]||"◆"}</span>`}<span class="tn">${esc(k)}</span>${u?'<span class="btag" style="margin:2px 0 0">미출시 표기</span>':""}</span></label>`}).join("");
 
-let POWK=1;
 function powPen(my,rec){if(!(my>0&&rec>0))return null;const ratio=Math.floor(my*10000/rec);const row=D.pen.find(r=>r[0]<=ratio&&ratio<r[1]);const a=row?row[2]/10000:1,b=row?row[3]/10000:1;
  let tier=null;if(my<rec){const df=10000-ratio;tier=D.tribe.find(t=>t[0]<=df&&df<t[1])||(df>=D.tribe[D.tribe.length-1][1]?D.tribe[D.tribe.length-1]:null)}return {ratio:ratio/100,a,b,warn:tier?tier[2]:null}}
-let SBACT=[];const ELKO={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
+let SBACT=[];
 function seasonPart(s){if(!SBACT.length)return 0;const sb=CFG.seasonBonus;let tot=0;
- for(const b of SBACT){if(b.cond!==ELKO[s.el]&&b.cond!==s.cls)continue;const m=b.text.match(/(\d+(?:\.\d+)?)%/);if(!m)continue;const k=(sb.kinds.find(([kw])=>b.text.includes(kw))||[0,0.02])[1];tot+=parseFloat(m[1])*k}
+ for(const b of SBACT){if(b.cond!==EL[s.el]&&b.cond!==s.cls)continue;const m=b.text.match(/(\d+(?:\.\d+)?)%/);if(!m)continue;const k=(sb.kinds.find(([kw])=>b.text.includes(kw))||[0,0.02])[1];tot+=parseFloat(m[1])*k}
  return Math.min(tot,sb.cap)}
 let MM="";
 let DMW=[0.5,0.35];
@@ -442,7 +446,7 @@ function teamValue(combo,defPen){
  let paired=false;for(const p of (CFG.pairs||[]))if(p.keys.every(k=>keys.has(k))){v+=p.bonus;paired=true}
  if(ns>1&&!paired)v-=4;
  const got=new Set();combo.forEach(x=>(x.s.tags||[]).forEach(t=>got.add(t)));
- for(const [t,wt] of Object.entries(CFG.tagWeights))v+=got.has(t)?wt*(CFG.power.sustainTags.includes(t)?POWK:1):0;
+ for(const [t,wt] of Object.entries(CFG.tagWeights))v+=got.has(t)?wt:0;
  v+=Math.min(partySyn(combo.map(x=>x.s.key)).reduce((a,h)=>a+h.pts,0),CFG.synergy.cap);v+=gimTeam(combo)[0];v+=DMW[1]*dmgScore(combo.map(x=>x.s.key),DMW[0]);
  return [v,got]}
 // 근사 점수 상위 k 팀. party_reco.top_parties 와 같은 규칙(같은 점수면 조합을 만든 순서) — 한쪽을 고치면 다른 쪽도 고칠 것
@@ -455,7 +459,6 @@ function topParties(c,defPen,k){
  for(let a=0;a<n;a++)for(let b=a+1;b<n;b++)for(let d=b+1;d<n;d++)for(let e=d+1;e<n;e++){
   const combo=[pool[a],pool[b],pool[d],pool[e]],[v,t]=teamValue(combo,defPen);all.push({combo,v,got:t,i:i++})}
  all.sort((x,y)=>y.v-x.v||x.i-y.i);return all.slice(0,k)}
-function bestParty(c,defPen){const t=topParties(c,defPen,1)[0];return t?[t.combo,t.v,t.got]:[null,-1e9,new Set()]}
 function synSummary(party){const hs=partySyn(party.map(x=>x.s.key)).slice(0,5);if(!hs.length)return "";
  const nm=Object.fromEntries(R.map(s=>[s.key,s.name]));
  return `<details class="syn"><summary>스킬 연계 ${hs.length}건</summary>${hs.map(h=>`<div class="synrow"><b>${esc(nm[h.p.a])}${h.p.d?" → ":" ↔ "}${esc(nm[h.p.b])}</b> <span class="chip ty${h.p.t}">${esc(h.p.tn)}</span> <span class="mut">강도 ${h.p.s} · ${esc(h.p.c)}</span><div class="mut">${esc(h.p.r)}</div></div>`).join("")}</details>`}
@@ -772,7 +775,7 @@ function run(skipAuto=false){
  if(!st){BRCMP.open={};$("out").innerHTML='<div class="party">스테이지를 선택하세요.</div>';return}
  const own=new Set([...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));
  const have=[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);
- GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty)*(POWK>1?Math.max(0.1,1-(POWK-1)/CFG.power.boost):1);
+ GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty);
  const sid=c.key+"|"+st.tab+"|"+st.name;
  const used=new Set();let html="";const allParties=[];
  JOINT=jointPick(c,st,own,defPen);
@@ -837,7 +840,7 @@ function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:chec
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  if(Array.isArray(o)){const s=new Set(o);document.querySelectorAll("#own input").forEach(x=>x.checked=s.has(x.dataset.k))}
  if(Array.isArray(b)){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}pruneBreakSel()})();
-const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").checked=on;LS.set("why",on);if(on)setTimeout(()=>{try{cy.resize();cy.fit(undefined,30)}catch(e){}},50)};
+const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").checked=on;LS.set("why",on);if(on)setTimeout(()=>{drawGraph();if(cy){cy.resize();cy.fit(undefined,30)}},50)};
 $("showwhy").onchange=()=>setWhy($("showwhy").checked);setWhy(!!LS.get("why"));
 let _rt=null;const rerun=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
 function updCount(){const n=document.querySelectorAll("#own input:checked").length;$("dcount").textContent=String(n);renderPw()}
@@ -859,15 +862,15 @@ function miVerdict(t,st){const j=MyInfoReco.judgment(t.q,t.ng),bn=teamBreak(t)?.
  const a=SIMQ.res[simSigB(st,t,bn,"auto")],m=SIMQ.res[simSigB(st,t,bn,"manual")],r=a||m;
  return `<div class="mi-verdict" data-k="judgment"><b class="${t.q.clear?"ok":"hard"}">${j.label}</b>${j.extra!=null?`<span class="mi-extra">약 +${miNum(j.extra)} 전투력 필요</span>`:!t.q.clear?'<span class="mut">필요량 산정 불가</span>':""}${r?`<span>오토 클리어 ${Math.round(r.clear*100)}%</span>`:""}${m?.man?`<span>수동 ${Math.round(m.man.c*100)}%</span>`:""}</div>`}
 function miTab(info){$("mi-panel").hidden=!info;$("out").hidden=info;$("graphwrap").hidden=info;
- $("tab-reco").setAttribute("aria-pressed",String(!info));$("tab-info").setAttribute("aria-pressed",String(info));if(info)renderMi();else if(cy)cy.resize()}
+ $("tab-reco").setAttribute("aria-pressed",String(!info));$("tab-info").setAttribute("aria-pressed",String(info));if(info)renderMi();else {drawGraph();if(cy)cy.resize()}}
 function renderMi(){const info=MI.info;$("grow").querySelector('[value="myinfo"]').disabled=!info;
- $("mi-panel-clear").disabled=!info;$("mi-clear").disabled=!info;
- if(!info){$("mi-meta").textContent="불러온 정보 없음";$("mi-saved").textContent="";$("mi-list").innerHTML="";$("mi-account").innerHTML="";MIFULL.refresh();return}
+ $("mi-panel-clear").disabled=!info&&!MI.invalid;$("mi-clear").disabled=!info&&!MI.invalid;
+ if(!info){$("mi-meta").textContent=MI.invalid?"저장된 정보 오류 · 지우거나 파일을 다시 불러오기":"불러온 정보 없음";$("mi-saved").textContent="";$("mi-list").innerHTML="";$("mi-account").innerHTML="";MIFULL.refresh();return}
  const date=String(info.exported_at||"—"),current=miProfile();
  // Unsupported content falls back only in recommendations; the account tab still shows normal stats.
  const p=current.rule?current:(MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(info,R,MI.growth,"op")));
  $("mi-meta").innerHTML=`스타링크 Lv${miNum(info.star_link_level)} · 전술 공통 Lv${miNum(info.tactics?.common_level)} · 전술 시설 Lv${miNum(info.tactics?.facility_level)} ·${esc(date.slice(0,10))} · 보유 ${info.units.length}명 ${[p.mismatch?"빌드 다름":"",p.rule==="fixed200"?"Lv200 · 공명 10":"",!current.rule?"일반 능력치":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("")}`;
- $("mi-saved").textContent=`저장됨: ${date}`;
+ $("mi-saved").textContent=MI.saved?`저장됨: ${date}`:"저장 안 됨 · 현재 화면에만 적용됨";
  $("mi-account").innerHTML=MIFULL.button('account')+MIFULL.panel('account');
  const roster=new Map(R.map(s=>[s.uid,s]));
  const rows=info.units.map(u=>{const s=roster.get(u.id);return {u,s,r:s?p.results[s.key]:null}});
@@ -882,29 +885,33 @@ function miReset(info){simInvalidate();SIMQ.res={};SIMQ.refined=new Set();SIMQ.m
  MI.info=info;MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
  if(info)$("grow").value="myinfo";else if($("grow").value==="myinfo")$("grow").value="1";
  miSelect();rerun()}
-function miClear(){try{localStorage.removeItem("pn.myinfo")}catch(e){}miReset(null);miStatus("불러온 정보 없음",false)}
+function miClear(){MI.importId++;MI.invalid=!LS.remove("myinfo");MI.saved=false;miReset(null);miStatus(MI.invalid?"저장 정보 삭제 실패 · 브라우저 사이트 데이터에서 지우기":"불러온 정보 없음",MI.invalid)}
 $("mi-sort").onchange=renderMi;$("tab-reco").onclick=()=>miTab(false);$("tab-info").onclick=()=>miTab(true);
 $("mi-view").onclick=()=>{setDrawer(false);miTab(true)};$("mi-open-import").onclick=()=>setDrawer(true);$("mi-panel-clear").onclick=miClear;
 const miStatus=(t,bad)=>{const e=$("mi-status");e.textContent=t;e.style.color=bad?"#e0553a":""};
 function miSummary(info,unknown){const d=info.exported_at?String(info.exported_at).slice(0,10):"";return `불러옴: 보유 구원자 ${info.units.length}명${d?` · ${d} 추출`:""}${unknown?` · 이 페이지에 없는 구원자 ${unknown}명`:""}`}
-function miApply(info){
+async function miApply(info){
  const bad=MyInfoImport.validate(info);if(bad){miStatus(bad,true);return false}
+ const id=++MI.importId;
+ try{const g=await miGrowth();miCheck(info,g)}catch(e){miStatus("정보 계산 실패: "+e.message,true);return false}
+ if(id!==MI.importId)return false;
  const {keys,unknown}=MyInfoImport.mapOwned(info,R),own=new Set(keys);
+ MI.saved=false;MI.invalid=false;miReset(info);
  document.querySelectorAll("#own input").forEach(x=>{x.checked=own.has(x.dataset.k)});
- LS.set("myinfo",info);miReset(info);saveSel();updCount();
- miStatus(miSummary(info,unknown.length),false);return true}
+ MI.saved=LS.set("myinfo",info);saveSel();updCount();renderMi();rerun();
+ miStatus(miSummary(info,unknown.length)+(MI.saved?"":" · 저장 안 됨"),!MI.saved);return true}
 $("mi-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
- try{miApply(JSON.parse(await f.text()))}catch(err){miStatus("파일을 읽지 못했습니다: "+err.message,true)}});
+ try{await miApply(JSON.parse(await f.text()))}catch(err){miStatus("파일을 읽지 못했습니다: "+err.message,true)}});
 $("mi-clear").addEventListener("click",miClear);
 $("mi-copy").addEventListener("click",async()=>{const b=$("mi-copy"),t=$("mi-cmd").textContent.trim();
  try{await navigator.clipboard.writeText(t);b.textContent="복사됨"}catch(e){const r=document.createRange();r.selectNodeContents($("mi-cmd"));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="선택됨(Ctrl+C)"}
  setTimeout(()=>{b.textContent="명령 복사"},2000)});
 (function miInit(){
- const saved=LS.get("myinfo");if(saved&&!MyInfoImport.validate(saved))miStatus(miSummary(saved,MyInfoImport.mapOwned(saved,R).unknown.length),false);
+ const saved=LS.get("myinfo");if(MI.invalid){miStatus("저장된 정보 오류 · 지우거나 파일을 다시 불러오기",true);$("mi-clear").disabled=false}else if(saved)miStatus(miSummary(saved,MyInfoImport.mapOwned(saved,R).unknown.length),false);
  if(!/myinfo=/.test(location.hash))return;
- MyInfoImport.fromHash(location.hash).then(info=>{
+ MyInfoImport.fromHash(location.hash).then(async info=>{
   try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
-  if(info&&miApply(info))setDrawer(true)}).catch(err=>{try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}miStatus("불러오기 실패: "+err.message,true);setDrawer(true)})})();
+  if(info&&await miApply(info))setDrawer(true)}).catch(err=>{try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}miStatus("불러오기 실패: "+err.message,true);setDrawer(true)})})();
 const TYC={1:"#e0553a",2:"#d4a72c",3:"#34b37c",4:"#4a86e0",5:"#8d939e"},ELC={sun:"#e0554a",moon:"#5aa0ff",star:"#8fe05a",order:"#f0cf86",chaos:"#c58bff"};
 $("glegend").innerHTML=[[1,"부여→소비"],[2,"버프증폭"],[3,"생존연계"],[4,"쿨감·게이지"],[5,"속성공유"]].map(([t,n])=>`<span class="lg"><i style="background:${TYC[t]}"></i>${n}</span>`).join("")+'<span class="lg mut">화살표 = 제공자→소비자</span>';
 $("gcenter").innerHTML=R.map(s=>`<option value="${esc(s.key)}">${esc(s.name)} (${esc(s.sub)})</option>`).join("");
@@ -921,7 +928,10 @@ function graphData(){
  const nodes=[...keys].map(k=>{const s=byKey[k];return {data:{id:k,label:s.name,img:s.img||"",c:ELC[s.el],inparty:pk.has(k)?1:0,center:k===center?1:0}}});
  const edges=ps.map((p,i)=>({data:{id:"e"+i,source:p.a,target:p.b,t:p.t,w:1+p.s*1.5,col:TYC[p.t],dir:p.d?"triangle":"none",p}}));
  return {nodes,edges,center}}
+let graphDirty=true;
 function drawGraph(){
+ if(!document.body.classList.contains("show-why")||$("graphwrap").hidden){graphDirty=true;return}
+ if(cy&&!graphDirty)return;graphDirty=false;
  const el=$("cy");if(typeof cytoscape==="undefined"){el.innerHTML='<div class="mut" style="padding:12px">구조도 라이브러리를 불러오지 못했습니다.</div>';return}
  const {nodes,edges,center}=graphData();$("gcw").style.display=$("gmode").value==="center"?"":"none";
  if(cy)cy.destroy();
@@ -935,8 +945,8 @@ function drawGraph(){
   $("cyinfo").innerHTML=`<b>${esc(nm[p.a])}${p.d?" → ":" ↔ "}${esc(nm[p.b])}</b> <span class="chip ty${p.t}">${esc(p.tn)}</span> 강도 ${p.s} · ${esc(p.c)}<div>${esc(p.r)}</div>${p.e.map(x=>`<div class="mut">· ${esc(x)}</div>`).join("")}`});
  cy.on("tap","node",e=>{const n=e.target,nb=n.closedNeighborhood();cy.elements().addClass("dim");nb.removeClass("dim");$("cyinfo").innerHTML=`<b>${esc(n.data("label"))}</b> 연결 ${n.connectedEdges().length}개 (다시 빈 곳을 누르면 해제)`});
  cy.on("tap",e=>{if(e.target===cy){cy.elements().removeClass("dim");$("cyinfo").textContent="선이나 구원자를 눌러 보세요."}})}
-["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=drawGraph);
-window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
+["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=()=>{graphDirty=true;drawGraph()});
+window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party"){graphDirty=true;drawGraph()}};
 function shareUrl(){const c=contents[$("content").value],s=cur&&cur[$("stage").value],state={c:c.key,s:s?s.tab+"|"+s.name:"",g:$("grow").value,p:+$("mypow").value,m:MODE,rk:+$("rk").value};
  document.querySelectorAll(".party[data-party] .bsel").forEach(el=>{state[el.closest(".party").dataset.party==="2"?"b2":"b"]=el.value});
  return ShareState.url(location.href,state)}
@@ -959,5 +969,5 @@ setMode(LS.get("mode")==="manual"?"manual":"auto",false);
  else if(!LS.get("grow.v2")&&(+LS.get("pow")>0||Object.values(PW).some(v=>v>0)))$("grow").value="manual";
  else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
  if(!SHARE.g)LS.set("grow.v2",$("grow").value)}
-{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();applyShare();miLoad();run();drawGraph();window._ready=true;
+{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();applyShare();miLoad();run();window._ready=true;
 </script></body></html>

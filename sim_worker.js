@@ -4,17 +4,21 @@
 // 취소·제한 시간은 화면 쪽이 worker.terminate() 로 처리한다(파이썬 인터럽트는 보안 헤더가 필요해서 쓰지 않음).
 // Pyodide 0.26.4 는 외부 CDN 이 아니라 이 사이트의 lib/pyodide/ 에서 받는다(같은 주소 = 바깥 서버 의존 없음, 해시 lib/pyodide/SHA256SUMS)
 const PYODIDE=new URL("lib/pyodide/",self.location.href).href;
-let py=null,ready=null;
+let ready=null;
 async function boot(base){
- postMessage({type:"stage",msg:"계산 엔진 내려받는 중(처음 한 번, 약 10MB)"});
+ postMessage({type:"stage",msg:"계산 엔진 내려받는 중(처음 한 번)"});
  importScripts(PYODIDE+"pyodide.js");
  const p=await loadPyodide({indexURL:PYODIDE});
  postMessage({type:"stage",msg:"전투 데이터 내려받는 중"});
- const man=await (await fetch(base+"sim/manifest.json",{cache:"no-cache"})).json();
- for(const f of man.files){
+ const response=await fetch(base+"sim/manifest.json",{cache:"no-cache"});
+ if(!response.ok)throw new Error("manifest HTTP "+response.status);
+ const man=await response.json();
+ let next=0;
+ async function download(){while(next<man.files.length){const f=man.files[next++];
   const r=await fetch(base+f+"?v="+man.ver);if(!r.ok)throw new Error(f+" HTTP "+r.status);
   const buf=new Uint8Array(await r.arrayBuffer());
-  const dir="/repo/"+f.split("/").slice(0,-1).join("/");p.FS.mkdirTree(dir);p.FS.writeFile("/repo/"+f,buf)}
+  const dir="/repo/"+f.split("/").slice(0,-1).join("/");p.FS.mkdirTree(dir);p.FS.writeFile("/repo/"+f,buf)}}
+ await Promise.all(Array.from({length:Math.min(5,man.files.length)},download));
  p.runPython(`
 import os, sys
 os.environ['PN_SRC'] = '/repo'
@@ -26,7 +30,7 @@ from battlesim.web import run_auto, run_manual
 onmessage=async e=>{const m=e.data;
  try{
   if(!ready)ready=boot(m.base);
-  const {p,ver}=await ready;py=p;
+  const {p,ver}=await ready;
   if(m.type!=="run")return;
   const run=p.globals.get("run_auto"),man=p.globals.get("run_manual");   // battlesim/web.py
   for(let i=0;i<m.teams.length;i++){const t=m.teams[i];

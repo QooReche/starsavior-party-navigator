@@ -63,4 +63,4 @@ def _find_key(db, q):
     cands = [k for k in db.units if q in k]
     if cands:
         return cands[0]
-    raise SystemExit('구원자를 찾을 수 없음: %s (이름 중복은 key 로: %s ...)' % (q, ', '.join(list(db.units)[:6])))
+    raise ValueError('구원자를 찾을 수 없음: %s (이름 중복은 key 로: %s ...)' % (q, ', '.join(list(db.units)[:6])))

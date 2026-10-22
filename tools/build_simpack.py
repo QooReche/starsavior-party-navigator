@@ -6,12 +6,15 @@
 
 사용: python -X utf8 -I tools/build_simpack.py
 """
+import sys
 import glob
 import hashlib
 import json
 import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, str(ROOT))
+from battlesim.fileio import atomic_open
 FIXED = ['battlesim/rules/default.json', 'battlesim/rules/builds.json', 'rawdata/databook_main.json', 'rawdata/foe.js',
          'rawdata/guide_app-core.js', 'data/synergy_tags.json', 'data/myinfo_combat.json']
 
@@ -30,16 +33,17 @@ def main():
     h = hashlib.sha256()
     sizes = 0
     for p in fs:
-        b = open(os.path.join(ROOT, p), 'rb').read()
+        with open(os.path.join(ROOT, p), 'rb') as f:
+            b = f.read()
         h.update(p.encode() + b'\0' + b)
         sizes += len(b)
     out = dict(_note='브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시', ver=h.hexdigest()[:12], files=fs, bytes=sizes)
     os.makedirs(os.path.join(ROOT, 'sim'), exist_ok=True)
     dst = os.path.join(ROOT, 'sim', 'manifest.json')
-    tmp = dst + '.tmp'
-    with open(tmp, 'w', encoding='utf-8', newline='\n') as f:
+
+    with atomic_open(dst) as f:
         json.dump(out, f, ensure_ascii=False, indent=1)
-    os.replace(tmp, dst)
+
     print('저장', dst, '파일', len(fs), '크기', sizes, 'ver', out['ver'])
 
 

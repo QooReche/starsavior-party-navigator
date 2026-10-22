@@ -48,6 +48,8 @@ SAMPLES = {
 # 2026-10-21 사용자 확인: 36-36만 오토 선택 + 회복용 수동 버스트, 37구역은 순수 오토.
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
+from tools.runtime import low_priority
+
 
 def rebalance(spec, pw):
     """화면 능력치가 없는 구원자에게 «남은 전투력»(파티 전투력 − 화면 값 구원자들의 엔진 전투력)을 나눠 준다 — 공·생·방에 같은 배율
@@ -97,22 +99,6 @@ def myinfo_party(content, order, lead, path):
     return dict(units=units, leader=so.index(lead) if lead in so else None), dict(rule=rule, units=diagnostics)
 
 
-def low_priority():
-    """Set and verify IDLE priority; explicit HANDLE types are needed on Win64."""
-    if os.name == 'nt':
-        import ctypes
-        from ctypes import wintypes
-        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
-        kernel.GetCurrentProcess.restype = wintypes.HANDLE
-        kernel.SetPriorityClass.argtypes = [wintypes.HANDLE, wintypes.DWORD]
-        kernel.GetPriorityClass.argtypes = [wintypes.HANDLE]
-        handle = kernel.GetCurrentProcess()
-        if not kernel.SetPriorityClass(handle, 0x40) or kernel.GetPriorityClass(handle) != 0x40:
-            raise ctypes.WinError(ctypes.get_last_error())
-    else:
-        os.nice(19)
-
-
 def turn_comparison(dealt, taken, turn, sim_dealt, sim_taken, ally, enemy):
     """TURN is all selected unit turns, excluding out-of-turn skill casts.
 
@@ -145,7 +131,7 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None):
     else:
         q, pen = quick.load(ROOT)
         st = q['st'][ck][sk]
-        spec = G.party_spec(q, pen, order, lead, list(order), pw / st['bp'], st)
+        spec = G.party_spec(q, order, lead, list(order), pw / st['bp'], st)
         for u in spec['units']:
             if u['key'] in REAL:
                 u['stats_override'] = dict(REAL[u['key']])

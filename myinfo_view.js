@@ -3,11 +3,11 @@
   'use strict';
   const Stats=typeof module!=='undefined'&&module.exports?require('./myinfo_stats.js'):root.MyInfoStats;
   const names={atk:'공격력',hp:'생명력',def:'방어력',spd:'속도',cr:'치명타 확률',cd:'치명타 피해',eh:'효과 적중',er:'효과 저항',atkP:'공격력 비율',hpP:'생명력 비율',defP:'방어력 비율',spdP:'속도 비율'};
-  const nst=Object.fromEntries(['NST_ATK','NST_HP','NST_DEF','NST_TURN_SPEED','NST_RATE_CRITICAL','NST_RATE_CRITICAL_DAMAGE','NST_RATE_EFFECT_HIT','NST_RATE_EFFECT_EVADE','NST_NV_RATE_ATK','NST_NV_RATE_HP','NST_NV_RATE_DEF'].map((k,i)=>[k,Object.keys(names)[i]]));
+  const {NST:nst} = typeof module !== 'undefined' && module.exports ? require('./ui_shared.js') : root.UiShared;
   const groups={TG_COMMON:'공통',TG_SAVIOR:'구원자',TG_ARCANA:'아르카나',TG_SUN:'태양',TG_MOON:'달',TG_STAR:'별',TG_ORDER:'질서',TG_CHAOS:'혼돈',TG_DEFENDER:'디펜더',TG_STRIKER:'스트라이커',TG_RANGER:'레인저',TG_CASTER:'캐스터',TG_ASSASSIN:'어쌔신',TG_SUPPORTER:'서포터'};
   const labels={base:'기본',level:'레벨·스타링크',equipment_main:'장비 주옵',equipment_sub:'장비 부옵',equipment_set:'장비 세트',favor:'호감도',tactics:'전술 분석',facility:'시설',journey:'여정',potential:'잠재력',resonance:'공명',sigil:'각인',passive:'고유 패시브',bundle:'묶음 비율 효과',rounding:'버림·하한 보정'};
   const order=Object.keys(labels),keys=Object.keys(names).slice(0,8);
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const {esc} = typeof module !== 'undefined' && module.exports ? require('./ui_shared.js') : globalThis.UiShared;
   const num=v=>Number.isFinite(v)?v.toLocaleString('ko-KR',{maximumFractionDigits:8}):'—';
   const rate=k=>['cr','cd','eh','er'].includes(k)||k.endsWith('P');
   const value=(k,v)=>Number.isFinite(v)?num(rate(k)?v/100:v)+(rate(k)?'%':''):'—';
