@@ -375,7 +375,11 @@ class Unit:
         return sum(e.shield for e in self.eff.values() if e.shield > 0)
 
     def n_harmful(self):
-        return sum(1 for e in self.eff.values() if e.category == 'debuff' and e.stacks > 0 and not e.check)
+        # Native negative-buff counts enumerate live buff objects, not names.
+        # IsUniqueID DoTs have one object per application (NKM:4123-4139).
+        # Level stacks on a single non-DoT buff must still count only once.
+        return sum(len(e.inst) if self.b.mc['debuff_instance_count'] and e.inst is not None else 1
+                   for e in self.eff.values() if e.category == 'debuff' and e.stacks > 0 and not e.check)
 
     def n_good(self):
         return sum(1 for e in self.eff.values() if e.category == 'buff' and e.stacks > 0 and not e.check)

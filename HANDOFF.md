@@ -32,6 +32,10 @@
 - 이 기준으로 보면 **적 피해 속도는 맞음**(전역 턴당 받은 피해 36-36 실측 13.9k/시뮬 13.5k, 37-3 11.5k/11.8k). 문제는 **아군 피해 과소**: 같은 피해를 시뮬은 더 많은 행동으로 줌(전체 행동/TURN 37-2 1.27, 37-4 1.66). 큰 보스(방어 4,800대)에서 특히 큼(아군 행동당 약 2배).
 - 확인해서 원인 아님: 크리스텔·에핀델·루나·카르멘 계수 12종(표 일치), 재점화·전투력 패널티·브레이크 피해 증가·금제 감소 적용, 적 ×1.85(공통 함수에서 양쪽 모두 적용 — `NKM` 17818·5611). 연쇄 피해에 스킬 한정 피해 증가가 빠지던 오류만 고쳤음(`mc.chain_skill_damage_up`, 효과 +1~4%). 기록 `docs/ally_damage_audit.md`.
 - 방어 상수: 영상 광역기의 보스÷졸개 피해 비로 K ≈ 4,100(범위 3,200~5,200) 판독. 3000 과 크게 다르지 않고 바꿔도 1.2배 수준이라 주원인 아님(값 유지). `docs/ally_damage_audit.md` 끝 절.
+- 내정보 전투 효과(`858c795`, `docs/myinfo_combat_audit.md`): 습득 잠재력의 조건부 전투 효과·추가 강인도가 빠져 있었음 → 반영. 스킬은 최대 레벨 대신 내정보 실제 레벨 사용. 장비 세트·각인·호감도·전술은 화면 능력치에 이미 포함(전투 효과 없음).
+- 웹·DB 단서 점검(`docs/ally_damage_audit.md` 끝 절): 크리스텔 궁극기 「약화 개수당 연쇄」가 연소 여러 개를 1개로 세던 오류 수정(`mc.debuff_instance_count`). 크리스텔 기본기 연쇄·게이지, 자동 특수기, 루나 반응, 에핀델 추가 턴, 점화 +1%, 전체공격 ÷4, 치명 가산, 카운터 +10%, 전투력 보정표는 이미 일치.
+- 현재(60판): 36-36 비율 1.09(실측 1.88), 37-3 1.13(1.82), 37-2 5.14(4.13), 37-4 5.55(6.52), 37-5 7.09(4.17). 37-2 전체 행동/TURN 1.04 로 잡몹전은 맞춰짐. 큰 보스전 클리어 0% 는 남음.
+- 참고 DB: https://star-savior-arcana-db.pages.dev/ (2026-09-03 기준), 피해 공식 https://arca.live/b/starsavior/162831845
 - 다음 증거: 루나·카르멘 같은 디펜더+힐러 편성의 큰 보스전 영상 또는 사용자 판 녹화 — 전역 턴 안의 아군/적 행동 비율, 구원자별 시전 횟수.
 - 참고: https://www.youtube.com/watch?v=AIhOdNCu7Vc , https://www.youtube.com/watch?v=CPeUuTDl1v8 , https://arca.live/b/starsavior/185178864
 - 분해 도구: `tools/received_damage_audit.py`, `tools/boss_action_diagnostic.py`. 기록: `docs/boss_action_audit.md`, `docs/received_damage_audit.md`, `docs/taunt_guard_audit.md`.

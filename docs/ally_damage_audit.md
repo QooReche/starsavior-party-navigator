@@ -135,3 +135,72 @@ after 60판 평균이며, 추가 발동은 TURN에 더하지 않음.
 - K를 4,100으로 바꿔도 아군 피해는 보스 약 1.20배, 잡몹 약 1.16배 늘 뿐이고, 같은 식을 쓰는 적 피해도 함께 늘어 이미 맞는 적 피해 속도가 어긋남. **방어 상수는 2배 격차의 주원인이 아님.** 근거가 범위 수준이라 엔진 값은 바꾸지 않았음.
 - 불확실: 금제·계가 해당 타격에 적용됐는지, 후반 보스 방패 칸의 번개 표시(브레이크 추정) 영향, 대상별 디버프 차이. 같은 타격 안에서도 ±5~8% 난수 흔들림.
 - 다음 증거: 사용자 편성(루나·카르멘)과 같은 디펜더+힐러 편성의 큰 보스전 영상, 또는 사용자 판 녹화 — 전역 턴 안의 아군/적 행동 비율과 구원자별 시전 횟수.
+
+## 추가: 커뮤니티·DB 단서 대조 (2026-10-22, feat/web-leads)
+
+`858c795`에서 시작했음. 웹 단서 파일을 먼저 읽고 9개 항목을 대조했음. **연소 등 지속 피해를 이름 하나로 세어 약화 개수를 줄이던 오류 1건을 수정했음. 큰 보스전 클리어 0%는 해결하지 못했음.** 내정보 잠재력·실제 스킬 레벨 수정이 포함된 기준이므로 위의 이전 감사 전후 값과 직접 섞지 않았음.
+
+표·해독 코드·내정보는 제자리에서 읽었고 원본을 저장하지 않았음. 아래 `ST`는 `E:/AI_mk2/star-savior-decompiled/Star.Templets/Star.Templets.decompiled.cs`, `NT`는 `E:/AI_mk2/star-savior-decompiled/NKM.Templets/NKM.Templets.decompiled.cs`임. NKM·표 경로 약칭은 앞 절과 같음. 표는 10/21 추출본이며 10/22 패치 반영 여부는 미확인임. 별도 SkillCondition·ReactCondition·AutoTarget 정의가 없어 해당 ID의 조건 본문까지 검증했다고 하지 않았음.
+
+### 항목별 판정
+
+|항목|현재 시뮬 동작·위치|표·코드 근거|판정|
+|---|---|---|---|
+|1. 크리스텔 기본기|약화가 있으면 ATK40% 연쇄 1회, 패시브4 게이지 +30%였음. `battlesim/mc.py:1202`, `battlesim/mc.py:1784`, `battlesim/mc.py:2402`, `tests/web_leads_test.py:99`|`SE_TEMPLET_SKILL_1.json:10764`, `SE_TEMPLET_SKILL_1.json:10877`|누락 아님. 기본기 연쇄는 약화가 5개여도 1회임. 일반 타격 65%와 궁극기 90%도 기존 표 대조와 일치했음.|
+|2. 궁극기 약화 개수|기존 `n_harmful`은 연소 스택·시전자가 달라도 이름당 1개였음. `battlesim/mc.py:377`, `battlesim/mc.py:1784`, `battlesim/mc.py:2402`|`BUFF_TEMPLET.json:4885`, `BUFF_TEMPLET.json:4943`, `NKM:4123`, `NKM:4139`, `NKM:9396`, `NT:36356`, `SE_TEMPLET_SKILL_1.json:10484`, `SE_TEMPLET_SKILL_1.json:10556`|오류 수정. 개별 지속 피해 객체를 세고 연쇄 상한5는 유지했음. 연소 연장도 기존에 연소만 대상으로 적용됐음. `battlesim/starsavior/mc_semantics.py:241`, `SE_TEMPLET_SKILL_1.json:10468`|
+|3. 크리스텔 자동 특수기|다른 아군 타격 완료·점화5·쿨 준비 때 발동, 최대 레벨 게이지 +50%, 다른 태양 아군 점화 +2였음. 기본/궁극 게이지 +30%도 존재했음. `battlesim/mc.py:1233`, `battlesim/mc.py:1246`, `battlesim/mc.py:2178`, `tests/p5_test.py:400`, `tests/p5_test.py:446`|`SKILL_TEMPLET_1.json:816`, `SE_TEMPLET_SKILL_1.json:10317`, `SE_TEMPLET_SKILL_1.json:10453`, `SE_TEMPLET_SKILL_1.json:10574`, `SE_TEMPLET_SKILL_1.json:10877`|경로·수치 일치. 초기 점화3·특수/궁극 공격의 태양 +2, 비태양 +1도 기존 구현임. ReactCondition·대상 필터 본문은 별도 미확인임.|
+|4. 루나 반응·점화|다른 아군 피치명 직후 타격자에게 반응, 쿨1, 최대 점화 피해 증가 +100%, 자기/다른 아군 피치명 점화 +1 경로가 있었음. `battlesim/mc.py:1381`, `battlesim/mc.py:1633`, `battlesim/mc.py:1233`|`SKILL_TEMPLET_1.json:2090`, `SE_TEMPLET_SKILL_1.json:27923`, `SE_TEMPLET_SKILL_1.json:28409`, `SE_TEMPLET_SKILL_1.json:28454`|누락 아님. 최대 패시브의 다른 아군 피치명 획득 확률100%도 표와 일치했음. 실제 레벨은 내정보 경로에서 선택했음. 조건 ID 본문은 미확인임.|
+|5. 카르멘 서약·게이지|자신 제외 현재 공격력 최고 아군에게 서약. 단일 피격 패시브 자기 +30%, 반응 특수기는 자기·대상 각각 Lv1 +15%, Lv4 +20%, Lv8 이상 +30%였음. `battlesim/mc.py:213`, `battlesim/mc.py:1011`, `battlesim/mc.py:1655`, `tests/web_leads_test.py:118`|`SE_TEMPLET_SKILL_1.json:33785`, `SE_TEMPLET_SKILL_1.json:33356`, `SE_TEMPLET_SKILL_1.json:33441`, `SE_TEMPLET_SKILL_1.json:33511`, `SE_TEMPLET_SKILL_1.json:33526`, `SE_TEMPLET_SKILL_1.json:33954`|게이지 수치는 로컬 표와 일치했음. 웹 +40%와 불일치하므로 변경하지 않았음. 표는 자기 제외·AutoTargetId23까지 확인됐고, 최고 공격 및 ‘루나 제외’ 필터는 1차 정의 부재로 판정 보류했음. 시뮬에 루나 이름 제외 규칙은 없음.|
+|6. 에핀델 점화·추가 턴|다른 아군 치명 +1, 최대 패시브에서 태양 아군 턴 시작 +2, 자기 턴 +2. 특수기 자기 턴 점화5이면 추가 턴·공격 +30%·소비 경로가 있었음. `battlesim/mc.py:680`, `battlesim/mc.py:1217`, `battlesim/mc.py:1949`, `battlesim/mc.py:2161`|`SE_TEMPLET_SKILL_1.json:34655`, `SE_TEMPLET_SKILL_1.json:34786`, `SE_TEMPLET_SKILL_1.json:34801`, `SE_TEMPLET_SKILL_1.json:34816`, `SE_TEMPLET_SKILL_1.json:34830`, `SE_TEMPLET_SKILL_1.json:34232`, `SE_TEMPLET_SKILL_1.json:34247`, `SE_TEMPLET_SKILL_1.json:34262`|경로·수치 일치. 자기 턴은 아군 턴 통지에서 제외해 +4로 중복하지 않았음. 조건 ID 본문은 미확인임.|
+|7. 점화 별 상대 피해|점화1개당 별 상대 증가합 +1%, 최대5. 36-36의 생성된 적 3체 모두 별이었음. `battlesim/mc.py:1518`, `battlesim/mc.py:2421`, `battlesim/starsavior/foe.py:103`, `tests/web_leads_test.py:126`|`BUFF_TEMPLET.json:21078`, `rawdata/foe.js:1`|피해 수치·실행 경로 일치. 배치의 별 덮어쓰기는 공개 스테이지 입력에서 확인했고, 비공개 BattleScript 대조로 확대 해석하지 않았음.|
+|8. 전체공격·치명·카운터·노바|전체공격 /4, 치명은 증가합 가산, 같은 스킬 슬롯 카운터 +10%, 노바 +15%였음. `battlesim/mc.py:1356`, `battlesim/mc.py:1512`, `battlesim/mc.py:1089`|`NKM:17385`, `NKM:17389`, `NT:29437`, `NKM:17833`, `NKM:17977`, `NKM:18022`, `BUFF_TEMPLET.json:8495`|기존 구현과 일치했음. 카운터 조건은 코드에서 확인했고 +10% 숫자는 기존 공개자료 근거임. 코드가 읽는 상수 원본은 없음. 같은 시전의 연쇄에는 노바 피해 증가도 포함하고 별도 반응에는 상속하지 않는 기존 수정도 유지했음.|
+|9. 전투력 보정|비율86.4%에서 아군0.959/적1.041이었음. `battlesim/api.py:215`, `tests/web_leads_test.py:147`|`BATTLE_POWER_RANGE_TEMPLET.json:1081`|현재 표와 일치했음. 옛 0.5926/1.4074 보정이 원인이라는 가설은 배제했음. 실제 샘플은 계산 전투력 구간을 사용했음.|
+
+### 약화 객체 집계 수정
+
+게임의 약화 정의는 `IsBuff && !IsPositive`였음. `IsUniqueID=true`인 연소·출혈·중독·빙결은 적용마다 목록에 객체를 추가하며, 조건의 약화 개수는 그 목록의 객체 수였음. 시뮬의 `Eff.inst`가 이 개별 지속 피해를 이미 보존하므로 이를 집계에 사용했음. `mc.debuff_instance_count=true`, grade=code, legacy=false를 추가했음. 일반 레벨 중첩 버프는 한 객체로 세고 순간 행동 게이지 감소·연쇄 피해·내부 표지는 약화 개수에 더하지 않았음. 공격/방어/속도 감소는 각각1, 연소2+출혈2는4임. 시전자별 생성·만료 뒤 현재 남은 객체를 세도록 했음. 양 진영에 같은 규칙을 적용했음.
+
+참고: `battlesim/mc.py:377`, `battlesim/rules/default.json:68`, `NT:36356`, `ST:4166`, `NKM:4461`, `NKM:4123`, `NKM:4139`, `NKM:8315`, `NKM:9396`, `NKM:17967`, `BUFF_TEMPLET.json:4885`, `BUFF_TEMPLET.json:4943`, `BUFF_TEMPLET.json:5001`, `BUFF_TEMPLET.json:5059`, `BUFF_TEMPLET.json:6736`, `BUFF_TEMPLET.json:22330`.
+
+크리스텔 궁극기의 연쇄는 기존부터 ATK40%씩 최대5회였으나, 같은 이름의 연소2개를1개로 세어 두 번째 연쇄를 누락했음. 수정 후에는2회였음. 연소5+다른 약화3 조건도 상한5를 넘지 않았음. 기본기는 약화 유무만 검사하므로 연소1개든5개든 연쇄1회였음. 기존 기본기 연쇄를 새로 추가한 수정은 아님.
+
+### 영상 비율과 대조
+
+영상 단서는 17,470/23,790=73.4%였음. 기본 타격 계수만의 65/90도72.2%이므로 그 비율 자체가 기본기 연쇄 누락의 증거는 아니었음. 아래는 같은 내정보 입력으로 60판 전체의 **스킬 본타격+그 시전의 연쇄를 합친 피해 / 해당 시전 수**임. 지속 피해·별도 반응·추가 턴 횟수는 분모에 섞지 않았음. 스킬 레벨·대상·치명·약화·금제가 다른 두 시전의 영상 비율에 맞추는 보정은 하지 않았음.
+
+|판|기본기/궁극기 평균 피해 전→후|수정 후 기본기 / 궁극기 피해|궁극기 연쇄 횟수/판 전→후|
+|---|---:|---:|---:|
+|36-36|88.7%→81.5%|27,491 / 33,712|0.483→0.967|
+|37-2|68.4%→59.2%|25,010 / 42,216|4.700→6.517|
+|37-3|69.5%→58.6%|19,507 / 33,264|2.917→4.883|
+
+참고: `tools/web_leads_audit.py:19`, `docs/web_leads_results.json:1`, https://www.youtube.com/watch?v=mrQNW9z1de8 .
+
+### 5판 전후와 시험
+
+요청한 `tools/ingame_check.py --runs 60 --bs --myinfo <샘플>`을 수정 전후 각각 실행했음. seed7, 내정보 최종값·잠재력·실제 스킬 레벨, build=none, 큐브 과부하5, 36-36 heal/재점화3/리더 없음, 나머지 auto/재점화0/카르멘 리더를 유지했음. IDLE을 설정·확인한 뒤 순차 계산했음. 별도 계측 도구에서 legacy 스위치만 바꿔 재현했으며, 전후 10개 요약 모두 독립 ingame_check 출력과 정확히 일치했음. 가공 결과와 재현용 입력 파일 해시만 저장했음.
+
+|판|실측 비율|시뮬 비율 전→후|클리어% 전→후|아군 행동 전→후|적 행동 전→후|전체 행동 전→후 / TURN|전체/TURN 전→후|
+|---|---:|---:|---:|---:|---:|---:|---:|
+|36-36|1.88|1.09→1.09|0→0|16.8→17.1|16.95→17.02|33.767→34.150 / 38|0.889→0.899|
+|37-2|4.13|4.80→5.14|98.33→98.33|38.5→38.1|17.02→15.83|55.483→53.967 / 52|1.067→1.038|
+|37-3|1.82|1.05→1.13|0→0|23.7→23.9|13.47→13.33|37.150→37.217 / 43|0.864→0.866|
+|37-4|6.52|5.55→5.55|100→100|14.9→14.9|6.12→6.12|21.067→21.067 / 13|1.621→1.621|
+|37-5|4.17|7.09→7.09|100→100|18.4→18.4|5.02→5.02|23.417→23.417 / 22|1.064→1.064|
+
+새 시험12개 통과했음. 다중 시전자·지속 피해 종류·만료·레벨 중첩 구별·궁극기 상한5·기본기 조건·연소만 연장·카르멘 레벨별 게이지·점화 상성·가산식·보정표·계측 불변을 확인했음. `--mutations`로 이전 이름별 집계를 복원하자 4개 시험에서 6개 단언이 의도대로 실패했고 legacy 시험은 통과했음. mutation 검출 결과도 정상 종료했음.
+
+`tests/*.py`의 실행 대상21개(golden_check·rank_check 포함, 실행 래퍼 제외), `tests/*.js` 7개 모두 통과했음. Python은 `tests/run_workspace_test.py` 경유, IDLE·순차 실행했음. golden은 구원자64/파티150/스테이지 팀10 일치했으며 `--write`는 쓰지 않았음. heal_burst의 이전 결과 해시는 바꾸지 않고 `debuff_instance_count=false`를 명시해 이전 동작을 고정했음. `tools/build_simpack.py`로 manifest를 갱신했음.
+
+재현:
+
+```text
+python -X utf8 tools/ingame_check.py --runs 60 --bs --myinfo <비공개 샘플 경로>
+python -X utf8 tools/web_leads_audit.py --runs 60 --myinfo <비공개 샘플 경로>
+python -X utf8 tests/web_leads_test.py
+python -X utf8 tests/web_leads_test.py --mutations
+```
+
+큰 보스전의 추정 아군 행동당 피해 부족은 수정 후 36-36 약1.67배, 37-3 약1.53배로 남았음. 이 값의 실측 아군 비중은 여전히 시뮬 비중으로 추정한 값임. 카르멘 자동 대상 정의, 스킬/반응 조건 본문, 현재 타격 이벤트, 사용자 편성의 실제 시전 횟수는 다음 증거가 필요함. 계수·방어 상수·피해 배율을 실측에 맞추지 않았고 커밋·푸시하지 않았음.
+
+참고: `docs/web_leads_results.json:1`, `tests/web_leads_test.py:1`, `tests/heal_burst_test.py:127`, `sim/manifest.json:1`, https://arca.live/b/starsavior/162831845 , https://arca.live/b/starsavior/180448546 , https://star-savior-arcana-db.pages.dev/data/saviors.json .

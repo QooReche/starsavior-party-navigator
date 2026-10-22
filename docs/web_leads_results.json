@@ -1,0 +1,1463 @@
+{
+  "runs": 60,
+  "seed": 7,
+  "override_before": {
+    "debuff_instance_count": false
+  },
+  "override_after": {},
+  "sha256": {
+    "battlesim/mc.py": "3e89d091c1feab3327243b08d788637e44dea76a7066150030456072a5665f79",
+    "battlesim/rules/default.json": "b90cb40e073d089319ddfb1b2822992e94789235e900e3c8ea0db97b39f8923f",
+    "rawdata/databook_main.json": "69eb2b509a0025225270d049d97780fbc3637576ba4ad8a981e2b9fbe85e8a43",
+    "data/myinfo_combat.json": "7f94ea87b1458275b0f2b5a282530d2045cffcefbb52c4c4f5c0f10f1724354f",
+    "data/growth.json": "773d6121a7497358f316edb9e72a8aec9296f2207531d4b55a5f188b7c60e3db"
+  },
+  "profiles": {
+    "before": {
+      "36-36": {
+        "summary": {
+          "stage": "36-36",
+          "runs": 60,
+          "seed": 7,
+          "real_ratio": 1.88,
+          "sim_ratio": 1.09,
+          "sim_clear": 0.0,
+          "sim_total_actions": 33.767,
+          "sim_total_actions_vs_turn": 0.8885964912280702,
+          "sim_total_actions_minus_turn": -4.233333333333334,
+          "sim_ally_action_share": 0.4980256663376111,
+          "real_estimated_ally_actions": 18.924975320829223,
+          "real_taken_per_global_turn": 13884.947368421053,
+          "sim_taken_per_global_turn": 14387.650542941758,
+          "real_estimated_dealt_per_ally_action": 52358.800114756654,
+          "sim_dealt_per_ally_action": 31438.632309217046,
+          "estimated_ally_damage_ratio": 1.6654286865846362,
+          "real": "clear",
+          "real_turn": 38,
+          "sim_ally_actions": 16.8,
+          "foe_breaks": 0.917,
+          "ally_breaks": 3.767,
+          "sim_boss_actions": 7.25,
+          "sim_enemy_actions": 16.95,
+          "enemy_skills": {
+            "은둔자": {
+              "특수기": 3.917,
+              "기본기": 5.717
+            },
+            "공허순례자": {
+              "특수기": 2.733,
+              "기본기": 3.35,
+              "궁극기": 1.167
+            }
+          },
+          "sim_dealt": 528693,
+          "sim_taken": 485823,
+          "party_power": 395074,
+          "myinfo": {
+            "rule": "normal",
+            "units": {
+              "white-pearl-luna": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-carmen": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-epindel": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "cristelle": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              }
+            }
+          },
+          "party_penalty": [
+            1.0864,
+            0.9064
+          ],
+          "per_unit": {
+            "루나#0": {
+              "dmg": 96948,
+              "dmg_taken": 107253,
+              "actions": 2.35
+            },
+            "카르멘#1": {
+              "dmg": 16093,
+              "dmg_taken": 157974,
+              "actions": 3.75
+            },
+            "에핀델#2": {
+              "dmg": 160405,
+              "dmg_taken": 95605,
+              "actions": 4.53
+            },
+            "크리스텔#3": {
+              "dmg": 255247,
+              "dmg_taken": 124991,
+              "actions": 6.18
+            }
+          },
+          "break_skill": {
+            "name": "큐브 과부하",
+            "uses": 0.917,
+            "dmg": 0.0,
+            "supported": true,
+            "points_gained": 2.75
+          },
+          "nova_policy": "heal",
+          "nova_burst": {
+            "total": 131,
+            "uses": 2.183,
+            "by_unit": {
+              "카르멘#1": {
+                "기본기": 91
+              },
+              "루나#0": {
+                "기본기": 40
+              }
+            }
+          },
+          "heal": 121769,
+          "healing": {
+            "루나#0": {
+              "heal": 0,
+              "shield": 19418
+            },
+            "카르멘#1": {
+              "heal": 121769,
+              "shield": 43820
+            },
+            "에핀델#2": {
+              "heal": 0,
+              "shield": 0
+            },
+            "크리스텔#3": {
+              "heal": 0,
+              "shield": 0
+            }
+          }
+        },
+        "cristelle": {
+          "casts_per_run": {
+            "특수기": 1.9333333333333333,
+            "궁극기": 2.15,
+            "기본기": 3.466666666666667
+          },
+          "hit_and_chain_per_run": {
+            "궁극기": 67760.23333333334,
+            "기본기": 96910.66666666667
+          },
+          "chains_per_run": {
+            "기본기": 2.3666666666666667,
+            "궁극기": 0.48333333333333334
+          },
+          "damage_per_cast": {
+            "특수기": 0.0,
+            "궁극기": 31516.387596899225,
+            "기본기": 27955.0
+          },
+          "basic_ultimate_ratio": 0.8869988641322073
+        }
+      },
+      "37-2": {
+        "summary": {
+          "stage": "37-2",
+          "runs": 60,
+          "seed": 7,
+          "real_ratio": 4.13,
+          "sim_ratio": 4.8,
+          "sim_clear": 0.9833,
+          "sim_total_actions": 55.483,
+          "sim_total_actions_vs_turn": 1.0669871794871795,
+          "sim_total_actions_minus_turn": 3.4833333333333343,
+          "sim_ally_action_share": 0.693301291679183,
+          "real_estimated_ally_actions": 36.05166716731752,
+          "real_taken_per_global_turn": 5140.115384615385,
+          "sim_taken_per_global_turn": 4039.4472814659057,
+          "real_estimated_dealt_per_ally_action": 30641.606527463002,
+          "sim_dealt_per_ally_action": 27990.46793760832,
+          "estimated_ally_damage_ratio": 1.0947157652299404,
+          "real": "clear",
+          "real_turn": 52,
+          "sim_ally_actions": 38.5,
+          "foe_breaks": 0.0,
+          "ally_breaks": 1.117,
+          "sim_boss_actions": 3.1,
+          "sim_enemy_actions": 17.02,
+          "enemy_skills": {
+            "추적자": {
+              "특수기": 5.033,
+              "기본기": 4.833
+            },
+            "예언자": {
+              "특수기": 2.283,
+              "기본기": 1.083
+            },
+            "망각의 예언자": {
+              "특수기": 1.1,
+              "기본기": 1.883,
+              "궁극기": 0.017
+            }
+          },
+          "sim_dealt": 1076700,
+          "sim_taken": 224122,
+          "party_power": 395074,
+          "myinfo": {
+            "rule": "normal",
+            "units": {
+              "white-pearl-luna": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-carmen": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-epindel": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "cristelle": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              }
+            }
+          },
+          "party_penalty": [
+            0.968,
+            1.032
+          ],
+          "per_unit": {
+            "루나#0": {
+              "dmg": 219406,
+              "dmg_taken": 96743,
+              "actions": 7.18
+            },
+            "카르멘#1": {
+              "dmg": 60079,
+              "dmg_taken": 75563,
+              "actions": 8.37
+            },
+            "에핀델#2": {
+              "dmg": 330164,
+              "dmg_taken": 28988,
+              "actions": 10.98
+            },
+            "크리스텔#3": {
+              "dmg": 467051,
+              "dmg_taken": 22828,
+              "actions": 11.93
+            }
+          },
+          "break_skill": {
+            "name": "큐브 과부하",
+            "uses": 0.0,
+            "dmg": 0.0,
+            "supported": true,
+            "points_gained": 0.0
+          },
+          "nova_policy": "auto",
+          "nova_burst": {
+            "total": 0,
+            "uses": 0.0,
+            "by_unit": {}
+          },
+          "heal": 120974,
+          "healing": {
+            "루나#0": {
+              "heal": 0,
+              "shield": 8258
+            },
+            "카르멘#1": {
+              "heal": 120974,
+              "shield": 42227
+            },
+            "에핀델#2": {
+              "heal": 0,
+              "shield": 0
+            },
+            "크리스텔#3": {
+              "heal": 0,
+              "shield": 0
+            }
+          }
+        },
+        "cristelle": {
+          "casts_per_run": {
+            "특수기": 4.2,
+            "궁극기": 4.25,
+            "기본기": 8.183333333333334
+          },
+          "hit_and_chain_per_run": {
+            "궁극기": 156844.41666666666,
+            "기본기": 206675.03333333333
+          },
+          "chains_per_run": {
+            "궁극기": 4.7,
+            "기본기": 5.1
+          },
+          "damage_per_cast": {
+            "특수기": 0.0,
+            "궁극기": 36904.56862745098,
+            "기본기": 25255.604887983707
+          },
+          "basic_ultimate_ratio": 0.6843490068380763
+        }
+      },
+      "37-3": {
+        "summary": {
+          "stage": "37-3",
+          "runs": 60,
+          "seed": 7,
+          "real_ratio": 1.82,
+          "sim_ratio": 1.05,
+          "sim_clear": 0.0,
+          "sim_total_actions": 37.15,
+          "sim_total_actions_vs_turn": 0.863953488372093,
+          "sim_total_actions_minus_turn": -5.850000000000001,
+          "sim_ally_action_share": 0.6375056078959175,
+          "real_estimated_ally_actions": 27.412741139524453,
+          "real_taken_per_global_turn": 11451.67441860465,
+          "sim_taken_per_global_turn": 12249.340511440108,
+          "real_estimated_dealt_per_ally_action": 32670.39204294388,
+          "sim_dealt_per_ally_action": 20262.477128782546,
+          "estimated_ally_damage_ratio": 1.6123592310703254,
+          "real": "clear",
+          "real_turn": 43,
+          "sim_ally_actions": 23.7,
+          "foe_breaks": 0.0,
+          "ally_breaks": 3.383,
+          "sim_boss_actions": 10.45,
+          "sim_enemy_actions": 13.47,
+          "enemy_skills": {
+            "예언자": {
+              "기본기": 1.65,
+              "특수기": 1.217
+            },
+            "공허습격자": {
+              "특수기": 3.833,
+              "기본기": 4.6,
+              "궁극기": 2.017
+            }
+          },
+          "sim_dealt": 479883,
+          "sim_taken": 455063,
+          "party_power": 395074,
+          "myinfo": {
+            "rule": "normal",
+            "units": {
+              "white-pearl-luna": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-carmen": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-epindel": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "cristelle": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              }
+            }
+          },
+          "party_penalty": [
+            0.967,
+            1.033
+          ],
+          "per_unit": {
+            "루나#0": {
+              "dmg": 70982,
+              "dmg_taken": 96282,
+              "actions": 3.12
+            },
+            "카르멘#1": {
+              "dmg": 27085,
+              "dmg_taken": 174126,
+              "actions": 6.02
+            },
+            "에핀델#2": {
+              "dmg": 143382,
+              "dmg_taken": 77501,
+              "actions": 6.15
+            },
+            "크리스텔#3": {
+              "dmg": 238434,
+              "dmg_taken": 107154,
+              "actions": 8.4
+            }
+          },
+          "break_skill": {
+            "name": "큐브 과부하",
+            "uses": 0.0,
+            "dmg": 0.0,
+            "supported": true,
+            "points_gained": 0.0
+          },
+          "nova_policy": "auto",
+          "nova_burst": {
+            "total": 0,
+            "uses": 0.0,
+            "by_unit": {}
+          },
+          "heal": 127151,
+          "healing": {
+            "루나#0": {
+              "heal": 0,
+              "shield": 8035
+            },
+            "카르멘#1": {
+              "heal": 127151,
+              "shield": 39837
+            },
+            "에핀델#2": {
+              "heal": 0,
+              "shield": 0
+            },
+            "크리스텔#3": {
+              "heal": 0,
+              "shield": 0
+            }
+          }
+        },
+        "cristelle": {
+          "casts_per_run": {
+            "궁극기": 2.9,
+            "특수기": 2.5166666666666666,
+            "기본기": 4.65
+          },
+          "hit_and_chain_per_run": {
+            "기본기": 88609.3,
+            "궁극기": 79500.65
+          },
+          "chains_per_run": {
+            "기본기": 2.9,
+            "궁극기": 2.9166666666666665
+          },
+          "damage_per_cast": {
+            "궁극기": 27414.01724137931,
+            "특수기": 0.0,
+            "기본기": 19055.763440860213
+          },
+          "basic_ultimate_ratio": 0.6951102158094885
+        }
+      },
+      "37-4": {
+        "summary": {
+          "stage": "37-4",
+          "runs": 60,
+          "seed": 7,
+          "real_ratio": 6.52,
+          "sim_ratio": 5.55,
+          "sim_clear": 1.0,
+          "sim_total_actions": 21.067,
+          "sim_total_actions_vs_turn": 1.6205128205128205,
+          "sim_total_actions_minus_turn": 8.066666666666666,
+          "sim_ally_action_share": 0.7096518987341772,
+          "real_estimated_ally_actions": 9.225474683544304,
+          "real_taken_per_global_turn": 4090.153846153846,
+          "sim_taken_per_global_turn": 4324.889240506329,
+          "real_estimated_dealt_per_ally_action": 37552.53923334191,
+          "sim_dealt_per_ally_action": 33807.49163879599,
+          "estimated_ally_damage_ratio": 1.1107756716930832,
+          "real": "clear",
+          "real_turn": 13,
+          "sim_ally_actions": 14.9,
+          "foe_breaks": 1.167,
+          "ally_breaks": 0.0,
+          "sim_boss_actions": 2.0,
+          "sim_enemy_actions": 6.12,
+          "enemy_skills": {
+            "숭배자": {
+              "기본기": 4.117
+            },
+            "업화의 추적자": {
+              "특수기": 1.0,
+              "기본기": 1.0
+            }
+          },
+          "sim_dealt": 505422,
+          "sim_taken": 91111,
+          "party_power": 411771,
+          "myinfo": {
+            "rule": "normal",
+            "units": {
+              "waltz-asherah": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-carmen": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "claire": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "professor-m": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              }
+            }
+          },
+          "party_penalty": [
+            1.0,
+            1.0
+          ],
+          "per_unit": {
+            "아세라#0": {
+              "dmg": 48969,
+              "dmg_taken": 41885,
+              "actions": 3.0
+            },
+            "카르멘#1": {
+              "dmg": 19205,
+              "dmg_taken": 33156,
+              "actions": 2.77
+            },
+            "클레어#2": {
+              "dmg": 250986,
+              "dmg_taken": 6737,
+              "actions": 4.0
+            },
+            "프로페서M#3": {
+              "dmg": 186262,
+              "dmg_taken": 9333,
+              "actions": 5.18
+            }
+          },
+          "break_skill": {
+            "name": "큐브 과부하",
+            "uses": 1.0,
+            "dmg": 0.0,
+            "supported": true,
+            "points_gained": 3.167
+          },
+          "nova_policy": "auto",
+          "nova_burst": {
+            "total": 0,
+            "uses": 0.0,
+            "by_unit": {}
+          },
+          "heal": 64274,
+          "healing": {
+            "아세라#0": {
+              "heal": 28623,
+              "shield": 0
+            },
+            "카르멘#1": {
+              "heal": 35651,
+              "shield": 11951
+            },
+            "클레어#2": {
+              "heal": 0,
+              "shield": 0
+            },
+            "프로페서M#3": {
+              "heal": 0,
+              "shield": 0
+            }
+          }
+        },
+        "cristelle": {
+          "casts_per_run": {},
+          "hit_and_chain_per_run": {},
+          "chains_per_run": {},
+          "damage_per_cast": {},
+          "basic_ultimate_ratio": null
+        }
+      },
+      "37-5": {
+        "summary": {
+          "stage": "37-5",
+          "runs": 60,
+          "seed": 7,
+          "real_ratio": 4.17,
+          "sim_ratio": 7.09,
+          "sim_clear": 1.0,
+          "sim_total_actions": 23.417,
+          "sim_total_actions_vs_turn": 1.0643939393939392,
+          "sim_total_actions_minus_turn": 1.4166666666666643,
+          "sim_ally_action_share": 0.7857651245551601,
+          "real_estimated_ally_actions": 17.286832740213523,
+          "real_taken_per_global_turn": 7767.181818181818,
+          "sim_taken_per_global_turn": 4109.722419928826,
+          "real_estimated_dealt_per_ally_action": 41264.29697793149,
+          "sim_dealt_per_ally_action": 37106.684782608696,
+          "estimated_ally_damage_ratio": 1.1120448301884247,
+          "real": "clear",
+          "real_turn": 22,
+          "sim_ally_actions": 18.4,
+          "foe_breaks": 2.0,
+          "ally_breaks": 0.0,
+          "sim_boss_actions": 0.0,
+          "sim_enemy_actions": 5.02,
+          "enemy_skills": {
+            "망각의 예언자": {
+              "특수기": 2.017,
+              "기본기": 3.0
+            }
+          },
+          "sim_dealt": 682763,
+          "sim_taken": 96236,
+          "party_power": 411771,
+          "myinfo": {
+            "rule": "normal",
+            "units": {
+              "waltz-asherah": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-carmen": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "claire": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "professor-m": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              }
+            }
+          },
+          "party_penalty": [
+            1.0,
+            1.0
+          ],
+          "per_unit": {
+            "아세라#0": {
+              "dmg": 57285,
+              "dmg_taken": 33241,
+              "actions": 3.55
+            },
+            "카르멘#1": {
+              "dmg": 22971,
+              "dmg_taken": 28057,
+              "actions": 3.15
+            },
+            "클레어#2": {
+              "dmg": 360326,
+              "dmg_taken": 6579,
+              "actions": 5.02
+            },
+            "프로페서M#3": {
+              "dmg": 242181,
+              "dmg_taken": 28359,
+              "actions": 6.68
+            }
+          },
+          "break_skill": {
+            "name": "큐브 과부하",
+            "uses": 0.0,
+            "dmg": 0.0,
+            "supported": true,
+            "points_gained": 2.0
+          },
+          "nova_policy": "auto",
+          "nova_burst": {
+            "total": 0,
+            "uses": 0.0,
+            "by_unit": {}
+          },
+          "heal": 72689,
+          "healing": {
+            "아세라#0": {
+              "heal": 33953,
+              "shield": 0
+            },
+            "카르멘#1": {
+              "heal": 38736,
+              "shield": 11154
+            },
+            "클레어#2": {
+              "heal": 0,
+              "shield": 0
+            },
+            "프로페서M#3": {
+              "heal": 0,
+              "shield": 0
+            }
+          }
+        },
+        "cristelle": {
+          "casts_per_run": {},
+          "hit_and_chain_per_run": {},
+          "chains_per_run": {},
+          "damage_per_cast": {},
+          "basic_ultimate_ratio": null
+        }
+      }
+    },
+    "after": {
+      "36-36": {
+        "summary": {
+          "stage": "36-36",
+          "runs": 60,
+          "seed": 7,
+          "real_ratio": 1.88,
+          "sim_ratio": 1.09,
+          "sim_clear": 0.0,
+          "sim_total_actions": 34.15,
+          "sim_total_actions_vs_turn": 0.8986842105263158,
+          "sim_total_actions_minus_turn": -3.8500000000000014,
+          "sim_ally_action_share": 0.5017081503172279,
+          "real_estimated_ally_actions": 19.06490971205466,
+          "real_taken_per_global_turn": 13884.947368421053,
+          "sim_taken_per_global_turn": 14373.85065885798,
+          "real_estimated_dealt_per_ally_action": 51974.49214110178,
+          "sim_dealt_per_ally_action": 31178.346303501945,
+          "estimated_ally_damage_ratio": 1.6670060571898906,
+          "real": "clear",
+          "real_turn": 38,
+          "sim_ally_actions": 17.1,
+          "foe_breaks": 0.917,
+          "ally_breaks": 3.817,
+          "sim_boss_actions": 7.28,
+          "sim_enemy_actions": 17.02,
+          "enemy_skills": {
+            "은둔자": {
+              "특수기": 3.933,
+              "기본기": 5.75
+            },
+            "공허순례자": {
+              "특수기": 2.783,
+              "기본기": 3.35,
+              "궁극기": 1.15
+            }
+          },
+          "sim_dealt": 534189,
+          "sim_taken": 490867,
+          "party_power": 395074,
+          "myinfo": {
+            "rule": "normal",
+            "units": {
+              "white-pearl-luna": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-carmen": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-epindel": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "cristelle": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              }
+            }
+          },
+          "party_penalty": [
+            1.0864,
+            0.9064
+          ],
+          "per_unit": {
+            "루나#0": {
+              "dmg": 95243,
+              "dmg_taken": 107856,
+              "actions": 2.38
+            },
+            "카르멘#1": {
+              "dmg": 16341,
+              "dmg_taken": 159866,
+              "actions": 3.88
+            },
+            "에핀델#2": {
+              "dmg": 162998,
+              "dmg_taken": 95493,
+              "actions": 4.6
+            },
+            "크리스텔#3": {
+              "dmg": 259607,
+              "dmg_taken": 127652,
+              "actions": 6.27
+            }
+          },
+          "break_skill": {
+            "name": "큐브 과부하",
+            "uses": 0.917,
+            "dmg": 0.0,
+            "supported": true,
+            "points_gained": 2.75
+          },
+          "nova_policy": "heal",
+          "nova_burst": {
+            "total": 135,
+            "uses": 2.25,
+            "by_unit": {
+              "카르멘#1": {
+                "기본기": 93
+              },
+              "루나#0": {
+                "기본기": 42
+              }
+            }
+          },
+          "heal": 125607,
+          "healing": {
+            "루나#0": {
+              "heal": 0,
+              "shield": 19307
+            },
+            "카르멘#1": {
+              "heal": 125607,
+              "shield": 45414
+            },
+            "에핀델#2": {
+              "heal": 0,
+              "shield": 0
+            },
+            "크리스텔#3": {
+              "heal": 0,
+              "shield": 0
+            }
+          }
+        },
+        "cristelle": {
+          "casts_per_run": {
+            "특수기": 1.9333333333333333,
+            "궁극기": 2.15,
+            "기본기": 3.533333333333333
+          },
+          "hit_and_chain_per_run": {
+            "궁극기": 72481.25,
+            "기본기": 97134.16666666667
+          },
+          "chains_per_run": {
+            "기본기": 2.3833333333333333,
+            "궁극기": 0.9666666666666667
+          },
+          "damage_per_cast": {
+            "특수기": 0.0,
+            "궁극기": 33712.20930232558,
+            "기본기": 27490.80188679245
+          },
+          "basic_ultimate_ratio": 0.8154553633747179
+        }
+      },
+      "37-2": {
+        "summary": {
+          "stage": "37-2",
+          "runs": 60,
+          "seed": 7,
+          "real_ratio": 4.13,
+          "sim_ratio": 5.14,
+          "sim_clear": 0.9833,
+          "sim_total_actions": 53.967,
+          "sim_total_actions_vs_turn": 1.037820512820513,
+          "sim_total_actions_minus_turn": 1.9666666666666686,
+          "sim_ally_action_share": 0.7066090179122915,
+          "real_estimated_ally_actions": 36.74366893143916,
+          "real_taken_per_global_turn": 5140.115384615385,
+          "sim_taken_per_global_turn": 3883.1562693020383,
+          "real_estimated_dealt_per_ally_action": 30064.526274206564,
+          "sim_dealt_per_ally_action": 28235.13986013986,
+          "estimated_ally_damage_ratio": 1.0647911228040094,
+          "real": "clear",
+          "real_turn": 52,
+          "sim_ally_actions": 38.1,
+          "foe_breaks": 0.0,
+          "ally_breaks": 1.017,
+          "sim_boss_actions": 2.97,
+          "sim_enemy_actions": 15.83,
+          "enemy_skills": {
+            "추적자": {
+              "특수기": 4.95,
+              "기본기": 4.267
+            },
+            "예언자": {
+              "특수기": 2.133,
+              "기본기": 0.8
+            },
+            "망각의 예언자": {
+              "특수기": 1.067,
+              "기본기": 1.833,
+              "궁극기": 0.017
+            }
+          },
+          "sim_dealt": 1076700,
+          "sim_taken": 209561,
+          "party_power": 395074,
+          "myinfo": {
+            "rule": "normal",
+            "units": {
+              "white-pearl-luna": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-carmen": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-epindel": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "cristelle": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              }
+            }
+          },
+          "party_penalty": [
+            0.968,
+            1.032
+          ],
+          "per_unit": {
+            "루나#0": {
+              "dmg": 228821,
+              "dmg_taken": 94447,
+              "actions": 7.45
+            },
+            "카르멘#1": {
+              "dmg": 58041,
+              "dmg_taken": 69927,
+              "actions": 8.17
+            },
+            "에핀델#2": {
+              "dmg": 324088,
+              "dmg_taken": 24638,
+              "actions": 10.83
+            },
+            "크리스텔#3": {
+              "dmg": 465750,
+              "dmg_taken": 20549,
+              "actions": 11.68
+            }
+          },
+          "break_skill": {
+            "name": "큐브 과부하",
+            "uses": 0.0,
+            "dmg": 0.0,
+            "supported": true,
+            "points_gained": 0.0
+          },
+          "nova_policy": "auto",
+          "nova_burst": {
+            "total": 0,
+            "uses": 0.0,
+            "by_unit": {}
+          },
+          "heal": 115638,
+          "healing": {
+            "루나#0": {
+              "heal": 0,
+              "shield": 9151
+            },
+            "카르멘#1": {
+              "heal": 115638,
+              "shield": 43024
+            },
+            "에핀델#2": {
+              "heal": 0,
+              "shield": 0
+            },
+            "크리스텔#3": {
+              "heal": 0,
+              "shield": 0
+            }
+          }
+        },
+        "cristelle": {
+          "casts_per_run": {
+            "특수기": 4.15,
+            "궁극기": 4.133333333333334,
+            "기본기": 7.916666666666667
+          },
+          "hit_and_chain_per_run": {
+            "궁극기": 174493.26666666666,
+            "기본기": 197994.71666666667
+          },
+          "chains_per_run": {
+            "궁극기": 6.516666666666667,
+            "기본기": 4.966666666666667
+          },
+          "damage_per_cast": {
+            "특수기": 0.0,
+            "궁극기": 42216.1129032258,
+            "기본기": 25009.858947368422
+          },
+          "basic_ultimate_ratio": 0.5924244850467362
+        }
+      },
+      "37-3": {
+        "summary": {
+          "stage": "37-3",
+          "runs": 60,
+          "seed": 7,
+          "real_ratio": 1.82,
+          "sim_ratio": 1.13,
+          "sim_clear": 0.0,
+          "sim_total_actions": 37.217,
+          "sim_total_actions_vs_turn": 0.8655038759689923,
+          "sim_total_actions_minus_turn": -5.783333333333331,
+          "sim_ally_action_share": 0.6417375727720555,
+          "real_estimated_ally_actions": 27.594715629198383,
+          "real_taken_per_global_turn": 11451.67441860465,
+          "sim_taken_per_global_turn": 12033.318405732198,
+          "real_estimated_dealt_per_ally_action": 32454.94579593957,
+          "sim_dealt_per_ally_action": 21190.341939986043,
+          "estimated_ally_damage_ratio": 1.5315914149878482,
+          "real": "clear",
+          "real_turn": 43,
+          "sim_ally_actions": 23.9,
+          "foe_breaks": 0.0,
+          "ally_breaks": 3.317,
+          "sim_boss_actions": 10.43,
+          "sim_enemy_actions": 13.33,
+          "enemy_skills": {
+            "예언자": {
+              "기본기": 1.3,
+              "특수기": 1.2
+            },
+            "공허습격자": {
+              "특수기": 3.8,
+              "기본기": 4.6,
+              "궁극기": 2.033
+            }
+          },
+          "sim_dealt": 506096,
+          "sim_taken": 447840,
+          "party_power": 395074,
+          "myinfo": {
+            "rule": "normal",
+            "units": {
+              "white-pearl-luna": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-carmen": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-epindel": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "cristelle": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              }
+            }
+          },
+          "party_penalty": [
+            0.967,
+            1.033
+          ],
+          "per_unit": {
+            "루나#0": {
+              "dmg": 65683,
+              "dmg_taken": 95274,
+              "actions": 3.03
+            },
+            "카르멘#1": {
+              "dmg": 25070,
+              "dmg_taken": 170452,
+              "actions": 5.63
+            },
+            "에핀델#2": {
+              "dmg": 154879,
+              "dmg_taken": 78961,
+              "actions": 6.85
+            },
+            "크리스텔#3": {
+              "dmg": 260464,
+              "dmg_taken": 103153,
+              "actions": 8.37
+            }
+          },
+          "break_skill": {
+            "name": "큐브 과부하",
+            "uses": 0.0,
+            "dmg": 0.0,
+            "supported": true,
+            "points_gained": 0.0
+          },
+          "nova_policy": "auto",
+          "nova_burst": {
+            "total": 0,
+            "uses": 0.0,
+            "by_unit": {}
+          },
+          "heal": 121517,
+          "healing": {
+            "루나#0": {
+              "heal": 0,
+              "shield": 7142
+            },
+            "카르멘#1": {
+              "heal": 121517,
+              "shield": 35853
+            },
+            "에핀델#2": {
+              "heal": 0,
+              "shield": 0
+            },
+            "크리스텔#3": {
+              "heal": 0,
+              "shield": 0
+            }
+          }
+        },
+        "cristelle": {
+          "casts_per_run": {
+            "궁극기": 2.9166666666666665,
+            "특수기": 2.5833333333333335,
+            "기본기": 4.783333333333333
+          },
+          "hit_and_chain_per_run": {
+            "기본기": 93308.83333333333,
+            "궁극기": 97019.91666666667
+          },
+          "chains_per_run": {
+            "기본기": 3.05,
+            "궁극기": 4.883333333333334
+          },
+          "damage_per_cast": {
+            "궁극기": 33263.97142857143,
+            "특수기": 0.0,
+            "기본기": 19507.073170731706
+          },
+          "basic_ultimate_ratio": 0.5864324773312093
+        }
+      },
+      "37-4": {
+        "summary": {
+          "stage": "37-4",
+          "runs": 60,
+          "seed": 7,
+          "real_ratio": 6.52,
+          "sim_ratio": 5.55,
+          "sim_clear": 1.0,
+          "sim_total_actions": 21.067,
+          "sim_total_actions_vs_turn": 1.6205128205128205,
+          "sim_total_actions_minus_turn": 8.066666666666666,
+          "sim_ally_action_share": 0.7096518987341772,
+          "real_estimated_ally_actions": 9.225474683544304,
+          "real_taken_per_global_turn": 4090.153846153846,
+          "sim_taken_per_global_turn": 4324.889240506329,
+          "real_estimated_dealt_per_ally_action": 37552.53923334191,
+          "sim_dealt_per_ally_action": 33807.49163879599,
+          "estimated_ally_damage_ratio": 1.1107756716930832,
+          "real": "clear",
+          "real_turn": 13,
+          "sim_ally_actions": 14.9,
+          "foe_breaks": 1.167,
+          "ally_breaks": 0.0,
+          "sim_boss_actions": 2.0,
+          "sim_enemy_actions": 6.12,
+          "enemy_skills": {
+            "숭배자": {
+              "기본기": 4.117
+            },
+            "업화의 추적자": {
+              "특수기": 1.0,
+              "기본기": 1.0
+            }
+          },
+          "sim_dealt": 505422,
+          "sim_taken": 91111,
+          "party_power": 411771,
+          "myinfo": {
+            "rule": "normal",
+            "units": {
+              "waltz-asherah": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-carmen": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "claire": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "professor-m": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              }
+            }
+          },
+          "party_penalty": [
+            1.0,
+            1.0
+          ],
+          "per_unit": {
+            "아세라#0": {
+              "dmg": 48969,
+              "dmg_taken": 41885,
+              "actions": 3.0
+            },
+            "카르멘#1": {
+              "dmg": 19205,
+              "dmg_taken": 33156,
+              "actions": 2.77
+            },
+            "클레어#2": {
+              "dmg": 250986,
+              "dmg_taken": 6737,
+              "actions": 4.0
+            },
+            "프로페서M#3": {
+              "dmg": 186262,
+              "dmg_taken": 9333,
+              "actions": 5.18
+            }
+          },
+          "break_skill": {
+            "name": "큐브 과부하",
+            "uses": 1.0,
+            "dmg": 0.0,
+            "supported": true,
+            "points_gained": 3.167
+          },
+          "nova_policy": "auto",
+          "nova_burst": {
+            "total": 0,
+            "uses": 0.0,
+            "by_unit": {}
+          },
+          "heal": 64274,
+          "healing": {
+            "아세라#0": {
+              "heal": 28623,
+              "shield": 0
+            },
+            "카르멘#1": {
+              "heal": 35651,
+              "shield": 11951
+            },
+            "클레어#2": {
+              "heal": 0,
+              "shield": 0
+            },
+            "프로페서M#3": {
+              "heal": 0,
+              "shield": 0
+            }
+          }
+        },
+        "cristelle": {
+          "casts_per_run": {},
+          "hit_and_chain_per_run": {},
+          "chains_per_run": {},
+          "damage_per_cast": {},
+          "basic_ultimate_ratio": null
+        }
+      },
+      "37-5": {
+        "summary": {
+          "stage": "37-5",
+          "runs": 60,
+          "seed": 7,
+          "real_ratio": 4.17,
+          "sim_ratio": 7.09,
+          "sim_clear": 1.0,
+          "sim_total_actions": 23.417,
+          "sim_total_actions_vs_turn": 1.0643939393939392,
+          "sim_total_actions_minus_turn": 1.4166666666666643,
+          "sim_ally_action_share": 0.7857651245551601,
+          "real_estimated_ally_actions": 17.286832740213523,
+          "real_taken_per_global_turn": 7767.181818181818,
+          "sim_taken_per_global_turn": 4109.722419928826,
+          "real_estimated_dealt_per_ally_action": 41264.29697793149,
+          "sim_dealt_per_ally_action": 37106.684782608696,
+          "estimated_ally_damage_ratio": 1.1120448301884247,
+          "real": "clear",
+          "real_turn": 22,
+          "sim_ally_actions": 18.4,
+          "foe_breaks": 2.0,
+          "ally_breaks": 0.0,
+          "sim_boss_actions": 0.0,
+          "sim_enemy_actions": 5.02,
+          "enemy_skills": {
+            "망각의 예언자": {
+              "특수기": 2.017,
+              "기본기": 3.0
+            }
+          },
+          "sim_dealt": 682763,
+          "sim_taken": 96236,
+          "party_power": 411771,
+          "myinfo": {
+            "rule": "normal",
+            "units": {
+              "waltz-asherah": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "wedding-carmen": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "claire": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              },
+              "professor-m": {
+                "missing": [
+                  "gauntlet_blessings"
+                ],
+                "build_mismatch": false
+              }
+            }
+          },
+          "party_penalty": [
+            1.0,
+            1.0
+          ],
+          "per_unit": {
+            "아세라#0": {
+              "dmg": 57285,
+              "dmg_taken": 33241,
+              "actions": 3.55
+            },
+            "카르멘#1": {
+              "dmg": 22971,
+              "dmg_taken": 28057,
+              "actions": 3.15
+            },
+            "클레어#2": {
+              "dmg": 360326,
+              "dmg_taken": 6579,
+              "actions": 5.02
+            },
+            "프로페서M#3": {
+              "dmg": 242181,
+              "dmg_taken": 28359,
+              "actions": 6.68
+            }
+          },
+          "break_skill": {
+            "name": "큐브 과부하",
+            "uses": 0.0,
+            "dmg": 0.0,
+            "supported": true,
+            "points_gained": 2.0
+          },
+          "nova_policy": "auto",
+          "nova_burst": {
+            "total": 0,
+            "uses": 0.0,
+            "by_unit": {}
+          },
+          "heal": 72689,
+          "healing": {
+            "아세라#0": {
+              "heal": 33953,
+              "shield": 0
+            },
+            "카르멘#1": {
+              "heal": 38736,
+              "shield": 11154
+            },
+            "클레어#2": {
+              "heal": 0,
+              "shield": 0
+            },
+            "프로페서M#3": {
+              "heal": 0,
+              "shield": 0
+            }
+          }
+        },
+        "cristelle": {
+          "casts_per_run": {},
+          "hit_and_chain_per_run": {},
+          "chains_per_run": {},
+          "damage_per_cast": {},
+          "basic_ultimate_ratio": null
+        }
+      }
+    }
+  }
+}
