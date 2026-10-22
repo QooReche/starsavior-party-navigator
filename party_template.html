@@ -247,7 +247,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
   <label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px">내 파티 전투력<input type="number" id="mypow" min="0" step="100" placeholder="예: 52000" style="min-width:140px"></label>
   <div id="powinfo" class="powinfo"></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됩니다.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
-  <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px">상성 방식<select id="mmode"><option value="">균형(기본): 유리 가산 + 불리 감점</option><option value="avoid">역상성 회피 우선: 불리 속성만 확실히 피하고 유리 가산은 작게</option></select></label></div></details>
+  <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성 방식<select id="mmode"><option value="">균형(기본): 유리 가산 + 불리 감점</option><option value="avoid">역상성 회피 우선: 불리 속성만 확실히 피하고 유리 가산은 작게</option></select></label></div></details>
 </div>
 <div id="control-home" hidden><div id="stinfo"></div><div id="mode-controls"><div class="seg" role="radiogroup" aria-label="전투 방식" title="오토 = 게임 자동 전투 규칙(쿨 찬 궁 > 특수 > 기본, 노바 버스트 안 씀). 수동 = 노바 버스트·대상 지정을 쓰는 정책으로 다시 계산하고 서순(스킬 순서 예시)을 보여 줌.">
    <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
@@ -257,6 +257,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
  <div id="mi-meta"></div><div id="mi-saved" class="mut"></div><div id="mi-list"></div>
  <details class="mi-assumptions"><summary>근거·가정</summary>축복·상시 패시브·PP 미해석. 전투력·능력치·클리어 판정은 근사입니다. Lv200 고정 콘텐츠는 공명 10을 적용합니다. 플래시 포인트의 고정 규칙은 추정입니다. 빠른 계산은 전투력에 맞춘 표준 능력치, 시뮬은 내 최종 능력치를 씁니다.</details>
 </section>
+<div class="row" style="justify-content:space-between;margin:8px 0"><button id="share-link" type="button" class="sec" aria-live="polite">링크 복사</button><div class="seg" role="radiogroup" aria-label="시뮬 판 수"><label><input type="radio" name="runs" value="100" checked><span>100판</span></label><label><input type="radio" name="runs" value="300"><span>300판 <small class="tag">정밀</small></span></label></div></div>
 <div id="out"></div>
 <div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">선이나 구원자를 눌러 보세요</span>
  <div class="row" style="margin-top:8px">
@@ -301,6 +302,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 <script src="myinfo_import.js"></script>
 <script src="myinfo_stats.js"></script>
 <script src="myinfo_reco.js"></script>
+<script src="share_state.js"></script>
 <script>
 const D=/*DATA*/null;
 const EL={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
@@ -310,6 +312,7 @@ const compact=matchMedia("(max-width:760px)");
 const fitFilters=()=>{$("filters").open=!compact.matches};fitFilters();compact.addEventListener("change",fitFilters);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const R=D.roster, CFG=D.cfg, contents=D.contents, BYKEY=Object.fromEntries(D.roster.map(s=>[s.key,s]));
+const SHARE=ShareState.parse(location.search,contents,Object.keys(CFG.breakSkills).filter(k=>!k.startsWith("_")));
 const TC=tr=>"t-"+(tr?String(tr).replace("티어","").replace(".",""):"q");
 // 작전 재점화 버프(인게임 표, 2026-10-21 사용자 제보): 단계별 x = 주는 피해 +x, 받는 피해 −x. 작전(op)에만
 const REKINDLE=[0,0.03,0.07,0.12,0.18,0.25];
@@ -324,7 +327,7 @@ function miLoad(){if(!miMode()||MI.growth||MI.pending)return;
  MI.error="";MI.pending=fetch("data/growth.json").then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(g=>{MI.growth=g;MI.profiles={}}).catch(()=>{MI.error="성장표 오류"}).finally(()=>{MI.pending=null;renderMi();rerun()})}
 // grow.v2 = 배타적 모드, grow = 수동 입력이 없는 구원자에게 적용할 기존 육성 배율.
 function miSelect(){const v=$("grow").value;LS.set("grow.v2",v);if(+v>0)LS.set("grow",v);miLoad();renderMi()}
-function manualSelect(){$("grow").value="manual";LS.set("grow.v2","manual")}
+function manualSelect(){$("grow").value="manual";if(typeof SHARE!=="undefined")delete SHARE.p;LS.set("grow.v2","manual")}
 let cur=null;
 
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.name)}</option>`).join("");
@@ -458,11 +461,13 @@ function pickBreak(party,content,have){
  return best}
 
 const BRSEL=(()=>{try{const v=JSON.parse(localStorage.getItem("pn.brksel.v1")||"{}");return v&&typeof v==="object"&&!Array.isArray(v)?v:{}}catch(e){return {}}})();
+const SESSION_BR={};
 const breakOwned=()=>[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);
 const saveBreakSel=()=>{try{localStorage.setItem("pn.brksel.v1",JSON.stringify(BRSEL))}catch(e){}};
 function pruneBreakSel(){const have=breakOwned();let changed=false;for(const [k,v] of Object.entries(BRSEL))if(v!==""&&!have.includes(v)){delete BRSEL[k];changed=true}if(changed)saveBreakSel()}
 function breakChoice(party,c,have=breakOwned()){
- const key=c.key+"|"+ckey(party),rec=pickBreak(party,c.name,have),saved=BRSEL[key];
+ const key=c.key+"|"+ckey(party),rec=pickBreak(party,c.name,have),shareKey=party.shareParty===2?"b2":"b";
+ const shared=typeof SHARE!=="undefined"&&Object.hasOwn(SHARE,shareKey),saved=shared?(SESSION_BR[key]??SHARE[shareKey]):BRSEL[key];
  const name=saved===""||have.includes(saved)?saved:rec?rec[1]:"";
  return {key,name,rec:rec?rec[1]:"",have}}
 function teamBreak(t){const c=contents[$("content").value],name=breakChoice(t.combo,c).name;return name?{name,level:5}:null}
@@ -534,7 +539,7 @@ function quickIn(c,st){if(!QK.d||!window.Quick)return null;const qs=(QK.d.st[c.k
  const my=$("grow").value==="manual"?+$("mypow").value:0,rk=rkOf(c.key),p0=(QK.d.pc&&QK.d.pc[c.key])||QK.d.params;
  const prm=rk&&p0?Object.assign({},p0,{A:p0.A*(1+REKINDLE[rk]),B:p0.B*(1-REKINDLE[rk])}):p0;   // 재점화 버프 = 아군 피해 ×(1+x)·적 피해 ×(1−x)(시뮬 api rekindle 과 같은 뜻)
  return {qs,power:my>0?my:null,growth:+($("grow").value==="manual"?LS.get("grow"):$("grow").value)||1,ck:c.key,prm,rk}}
-const qBase=(qi,keys)=>Object.assign({growth:qi.growth,power:qi.power,powers:$("grow").value==="manual"?pwOf(keys):null},miMode()?MyInfoReco.team(keys,miProfile(),ekey):{});
+const qBase=(qi,keys)=>Object.assign({growth:qi.growth,power:qi.power,powers:$("grow").value==="manual"&&!Object.hasOwn(SHARE,"p")?pwOf(keys):null},miMode()?MyInfoReco.team(keys,miProfile(),ekey):{});
 function quickRank(cands,defPen,qi){
  const all=topParties(cands,defPen,1e9),sv=QK.d.sv,prm=qi.prm,out=[];
  for(const x of all){const keys=x.combo.map(y=>y.s.key),ek=keys.map(ekey),b=qBase(qi,keys);const r=Quick.evaluate(ek,qi.qs,sv,D.pen,prm,b.growth,b.power,true,b.powers);if(!r.ok)continue;
@@ -560,7 +565,7 @@ const moreKey=(st,p)=>st.tab+"|"+st.name+"|"+p;
 const simCls=r=>{const c=r.clear!=null?r.clear:r.c;return c>=0.9?"safe":c>=0.5?"tight":"hard"};
 const simMain=r=>r&&MODE==="manual"&&r.man?{clear:r.man.c}:r;
 function quickRows(qt,st,p){const n=(SIMQ.more[moreKey(st,p)]||3),rows=[];const seen=new Set();
- for(const t of qt){const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);rows.push(t);if(rows.length>=n)break}
+ for(const t of qt){t.combo.shareParty=p;const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);rows.push(t);if(rows.length>=n)break}
  const sr=rows.map(t=>simMain(SIMQ.res[simSig(st,t)]));
  let out=rows;
  if(sr.every(Boolean)){const ix=rows.map((t,i)=>i);ix.sort((a,b)=>sr[b].clear-sr[a].clear||a-b);out=ix.map(i=>rows[i])}
@@ -599,7 +604,9 @@ function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
  const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null}}
-const simSigB=(st,t,bname,mode=MODE)=>{const ck=contents[$("content").value].key,rk=rkOf(ck);return JSON.stringify([ck,st.tab,st.name,simParty(t),SIMQ.n,mode,bname].concat(rk?[rk]:[],miMode()?[MI.hash]:[]))};
+const simSigB=(st,t,bname,mode=MODE,n=SIMQ.n)=>{const ck=contents[$("content").value].key,rk=rkOf(ck),parts=[ck,st.tab,st.name,simParty(t),n,mode,bname].concat(rk?[rk]:[],miMode()?[MI.hash]:[]);
+ // A refined team uses its separate 300-run cache; other teams keep their 100-run results.
+ if(n===100&&SIMQ.refined?.has(JSON.stringify(parts)))parts[4]=300;return JSON.stringify(parts)};
 const simSig=(st,t)=>simSigB(st,t,teamBreak(t)?.name||null);
 // 표시 상태는 결과 캐시와 분리한다. 다른 팀/스테이지에서 돌아오면 완성된 비교만 복원한다.
 const BRCMP={seen:new Set(),open:{}};
@@ -629,18 +636,20 @@ function breakCompareStart(p,key){
  const sig=simSigB(st,t,null);BRCMP.seen.add(sig);BRCMP.open[p]=sig;
  SIMQ.err="";if(!simStart(p,breakJobs(st,t),sig))run(true)}
 function breakEquip(key,name,skipAuto=false){
- BRSEL[key]=name;saveBreakSel();if(SIMQ.busy)simInvalidate();SIMQ.err="";
+ SESSION_BR[key]=name;BRSEL[key]=name;saveBreakSel();if(SIMQ.busy)simInvalidate();SIMQ.err="";
  const c=contents[$("content").value],st=cur&&cur[$("stage").value];
  const t=Object.values(LASTQ).flatMap(b=>b?.rows||[]).find(t=>c.key+"|"+ckey(t.combo)===key);
  run(skipAuto||!!(st&&t&&SIMQ.res[simSig(st,t)]))}
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
  const mn=r.man?`<br><span class="qsim" data-man="1">수동 클리어 ${Math.round(r.man.c*100)}%${r.man.t!=null?` · 약 ${Math.round(r.man.t)}턴`:""}</span>`:"";
- return `<br><span class="qsim" data-sim="${simCls(r)}" title="${r.n}판${r.gate===false?" · 미지원 기믹 있음":""}">시뮬 클리어 ${Math.round(r.clear*100)}%${r.ttk!=null?` · 약 ${Math.round(r.ttk)}턴`:""}${r.first?` · 먼저 쓰러짐 ${esc(r.first.split("#")[0])} ${Math.round(r.first_p*100)}%`:""} <small class="mut">95% 구간 ${Math.round(r.ci[0]*100)}~${Math.round(r.ci[1]*100)}%</small></span>${mn}`}
+ const more=r.n<300&&simMain(r).clear>=0.35&&simMain(r).clear<=0.65?` <button type="button" class="sec" data-refine="${p}" data-key="${esc(ckey(t.combo))}"${SIMQ.busy?" disabled":""}>더 돌리기(300판)</button>`:"";
+ return `<br><span class="qsim" data-sim="${simCls(r)}" title="${r.n}판${r.gate===false?" · 미지원 기믹 있음":""}">시뮬 클리어 ${Math.round(r.clear*100)}%${r.ttk!=null?` · 약 ${Math.round(r.ttk)}턴`:""}${r.first?` · 먼저 쓰러짐 ${esc(r.first.split("#")[0])} ${Math.round(r.first_p*100)}%`:""} <small class="mut">${r.n}판 · 95% 구간 ${Math.round(r.ci[0]*100)}~${Math.round(r.ci[1]*100)}%</small></span>${mn}${more}`}
 function simBar(p,rows,st,hasMore){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
+ const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
  const st8=SIMQ.busy===p&&!SIMQ.compareKey?`<span class="mut" data-k="simstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
   SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`<span class="bad" data-k="simstate">시뮬 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
-  all?`<span class="mut" data-k="simstate">시뮬 완료 · ${SIMQ.n}판</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다음 3팀도 시뮬로 확인</button>`:""}${SIMQ.auto?` <button type="button" class="sec" data-simauto="0" title="스테이지를 바꿀 때마다 자동으로 시뮬">자동 확인 끄기</button>`:""}`:
+  all?`<span class="mut" data-k="simstate">시뮬 완료 · ${counts}판</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다음 3팀도 시뮬로 확인</button>`:""}${SIMQ.auto?` <button type="button" class="sec" data-simauto="0" title="스테이지를 바꿀 때마다 자동으로 시뮬">자동 확인 끄기</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">시뮬로 확인(10~40초)</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
 function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.busy=null;SIMQ.compareKey=null}
@@ -648,7 +657,7 @@ function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.err=msg;SIMQ.
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simAutoKick(){if(!SIMQ.auto||SIMQ.busy||(miMode()&&MI.pending))return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
  for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){setTimeout(()=>simStart(p),0);return}}}
-function simStart(p,jobs=null,compareKey=null){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy||(miMode()&&MI.pending))return false;
+function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy||(miMode()&&MI.pending))return false;
  const box=LASTQ[p];if(!box)return false;
  const rows=(jobs||box.rows.map(t=>({key:t.keys.slice().sort().join(","),t,bname:teamBreak(t)?.name||null,sig:simSig(st,t)}))).filter(j=>!SIMQ.res[j.sig]);if(!rows.length)return false;
  SIMQ.err="";SIMQ.errCompare=null;SIMQ.busy=p;SIMQ.compareKey=compareKey;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
@@ -659,15 +668,24 @@ function simStart(p,jobs=null,compareKey=null){const c=contents[$("content").val
  SIMQ.w.onmessage=e=>{const m=e.data;
   if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
   if(m.type==="stage"){SIMQ.msg=m.msg;if(m.msg==="준비 끝"){SIMQ.loaded=true;arm(SIMQ.RUN_MS)}const el=document.querySelector(`.party[data-party="${p}"] [data-k="${compareKey?"breakstate":"simstate"}"]`);if(el)el.textContent=m.msg;return}
-  if(m.type==="team"){if(Object.hasOwn(sigs,m.key))SIMQ.res[sigs[m.key]]=m.result;run(!!compareKey);return}
-  if(m.type==="done"){clearTimeout(SIMQ.timer);SIMQ.busy=null;SIMQ.compareKey=null;run(!!compareKey);return}
+  if(m.type==="team"){if(Object.hasOwn(sigs,m.key)){SIMQ.res[sigs[m.key]]=m.result;
+    if(jobs&&!compareKey&&runs===300&&SIMQ.n===100){const parts=JSON.parse(sigs[m.key]);parts[4]=100;(SIMQ.refined??=new Set()).add(JSON.stringify(parts))}}
+   run(!!jobs);return}
+  if(m.type==="done"){clearTimeout(SIMQ.timer);SIMQ.busy=null;SIMQ.compareKey=null;run(!!jobs);return}
   if(m.type==="error")simStop(m.msg)};
  SIMQ.w.onerror=e=>{if(SIMQ.requestId===id)simStop("작업자 오류: "+(e.message||"알 수 없음"))};
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
- const req={type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:SIMQ.n,seed:SIMQ.seed,options:simOpt(c.key),mode:MODE,
+ const req={type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:runs,seed:SIMQ.seed,options:simOpt(c.key),mode:MODE,
   teams:rows.map(j=>({key:j.key,party:simParty(j.t),options:{break_skill:j.bname?{name:j.bname,level:5}:null}}))};
  SIMQ.lastReq={req,sigs};SIMQ.w.postMessage(req);
  run(!!compareKey);return true}
+function simRefine(p,key){const st=cur&&cur[$("stage").value],t=LASTQ[p]?.rows.find(t=>ckey(t.combo)===key);if(!st||!t||SIMQ.busy)return;
+ const r=SIMQ.res[simSig(st,t)],rate=r&&simMain(r).clear;if(!r||r.n>=300||rate<0.35||rate>0.65)return;
+ const bname=teamBreak(t)?.name||null,sig=simSigB(st,t,bname,MODE,300);
+ if(SIMQ.res[sig]){const parts=JSON.parse(sig);parts[4]=100;(SIMQ.refined??=new Set()).add(JSON.stringify(parts));run(true);return}
+ simStart(p,[{key,sig,t,bname}],null,300)}
+document.querySelectorAll('input[name="runs"]').forEach(x=>x.addEventListener("change",()=>{
+ simInvalidate();SIMQ.n=x.value==="300"?300:100;SIMQ.refined=new Set();SIMQ.err="";run(true)}));
 const LASTQ={};
 // 2파티 콘텐츠(코스모 게이트): 파티 1을 먼저 고르고 남은 인원으로 2를 고르면 2가 약해진다 → 상위 후보 중 겹치지 않는 두 팀을
 // 「약한 쪽 판정」이 가장 좋은 쌍으로 함께 고른다(같으면 두 팀 판정 합 → 약한 쪽 남는 생명력 → 근사 점수 합)
@@ -691,6 +709,7 @@ function jointPick(c,st,own,defPen){if((c.parties||1)!==2)return null;const qi=q
  return best?{1:best.a.keys.slice().sort().join(","),2:best.b.keys.slice().sort().join(",")}:null}
 function jointFirst(qt,p){if(!JOINT||!qt)return;const i=qt.findIndex(t=>t.keys.slice().sort().join(",")===JOINT[p]);if(i>0)qt.unshift(qt.splice(i,1)[0])}window.PN_SIMQ=SIMQ;   // 시험용(브라우저 결과 = 파이썬 결과 대조)
 $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-sim]");if(b){simAuto(true);simStart(+b.dataset.sim);return}
+ const ref=e.target.closest("button[data-refine]");if(ref){simRefine(+ref.dataset.refine,ref.dataset.key);return}
  const bc=e.target.closest("button[data-bcompare]");if(bc){breakCompareStart(+bc.dataset.bcompare,bc.dataset.key);return}
  const be=e.target.closest("button[data-bequip]");if(be){breakEquip(be.dataset.bkey,be.dataset.bequip,true);return}
  const mo=e.target.closest("button[data-more]");if(mo){const st=cur&&cur[$("stage").value],p=+mo.dataset.more,k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run();simStart(p);return}
@@ -725,7 +744,7 @@ function run(skipAuto=false){
   const approxOnly=list.slice().sort((x,y)=>(x.rank??99)-(y.rank??99));
   const forced=PICK[sid+"|"+p]&&list.find(x=>x.key===PICK[sid+"|"+p]);
   const pick=forced||qpick||approxOnly[0];pick.isPick=!forced;
-  const party=pick.combo;party.forEach(x=>used.add(x.s.key));allParties.push(party);
+  const party=pick.combo;party.shareParty=p;party.forEach(x=>used.add(x.s.key));allParties.push(party);
   const v=pick.v;
   const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
@@ -756,8 +775,8 @@ function run(skipAuto=false){
  document.querySelectorAll("#out details[data-fold]").forEach(d=>{if(folds.has(d.dataset.fold))d.open=folds.get(d.dataset.fold)});if(window.onParties)onParties(allParties);if(skipAuto!==true)simAutoKick()}
 $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-pick]");if(!b)return;const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st)return;
  PICK[c.key+"|"+st.tab+"|"+st.name+"|"+b.dataset.pick]=b.dataset.key;run();const el=document.querySelector(`.party[data-party="${b.dataset.pick}"]`);if(el)el.scrollIntoView({block:"start"})});
-function setMode(m,push){MODE=m==="manual"?"manual":"auto";$("m-"+MODE).checked=true;LS.set("mode",MODE);
- if(push){const u=new URL(location.href);if(MODE==="manual")u.searchParams.set("mode","manual");else u.searchParams.delete("mode");history.replaceState(null,"",u)}}
+function setMode(m,push){MODE=m==="manual"?"manual":"auto";$("m-"+MODE).checked=true;if(push)LS.set("mode",MODE);
+ if(push){const u=new URL(location.href);u.searchParams.delete("m");if(MODE==="manual")u.searchParams.set("mode","manual");else u.searchParams.set("mode","auto");history.replaceState(null,"",u)}}
 document.querySelectorAll('input[name="mode"]').forEach(x=>x.addEventListener("change",()=>{setMode(x.value,true);run()}));
 // 테스트·디버그용(E2E 가 파이썬 top_parties 와 대조)
 Object.assign(window.PN,{topKeys(ownKeys,k){const c=contents[$("content").value],st=cur[$("stage").value];const own=new Set(ownKeys);GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];
@@ -813,7 +832,7 @@ function renderMi(){const info=MI.info;$("grow").querySelector('[value="myinfo"]
   const sets=Object.entries(counts).map(([id,n])=>{const ef=MI.growth.sets[id],names={atk:"공",hp:"생",def:"방",spd:"속도",atkP:"공%",hpP:"생%",defP:"방%",spdP:"속도%",cr:"치확",cd:"치피",eh:"적중",er:"저항"};return `${ef?Object.keys(ef.stats).map(k=>names[k]||k).join("/"):id} ${n}/${ef?.parts||"?"}`}).join(" · ")||"—";
   return `<article class="mi-unit" data-uid="${u.id}"><div class="mi-identity">${s?face(s):""}<div><b>${esc(s?.name||`ID ${u.id}`)}</b><small>${esc(s?.sub||"미등록 구원자")}</small><span>${miStars(u)}</span></div></div><div><b class="mi-power">전투력 ${r?miNum(r.power):"—"}</b><small>공명 ${miNum(u.resonance)} · 호감도 ${miNum(u.favor)}</small><small>스킬 ${["basic","special","ultimate","passive"].map(k=>miNum(u.skills?.[k])).join(" / ")}</small></div><div><div>장비 ${(u.equip||[]).length}/6 · 세트 ${esc(sets)}</div><div class="mi-stats">${[["atk","공"],["hp","생"],["def","방"],["spd","속도"]].map(([k,n])=>`<span>${n} ${miNum(r?.stats[k])}</span>`).join("")}</div></div></article>`}).join("");
  $("mi-activate")?.addEventListener("click",()=>{$("grow").value="myinfo";miSelect();run()})}
-function miReset(info){simInvalidate();SIMQ.res={};SIMQ.more={};SIMQ.err="";BRCMP.seen.clear();BRCMP.open={};for(const k in PICK)delete PICK[k];
+function miReset(info){simInvalidate();SIMQ.res={};SIMQ.refined=new Set();SIMQ.more={};SIMQ.err="";BRCMP.seen.clear();BRCMP.open={};for(const k in PICK)delete PICK[k];
  MI.info=info;MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
  if(info)$("grow").value="myinfo";else if($("grow").value==="myinfo")$("grow").value="1";
  miSelect();rerun()}
@@ -872,11 +891,27 @@ function drawGraph(){
  cy.on("tap",e=>{if(e.target===cy){cy.elements().removeClass("dim");$("cyinfo").textContent="선이나 구원자를 눌러 보세요."}})}
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=drawGraph);
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
-{const qs=new URLSearchParams(location.search);setMode(qs.get("mode")==="manual"?"manual":qs.get("mode")==="auto"?"auto":(LS.get("mode")==="manual"?"manual":"auto"),false)}
+function shareUrl(){const c=contents[$("content").value],s=cur&&cur[$("stage").value],state={c:c.key,s:s?s.tab+"|"+s.name:"",g:$("grow").value,p:+$("mypow").value,m:MODE,rk:+$("rk").value};
+ document.querySelectorAll(".party[data-party] .bsel").forEach(el=>{state[el.closest(".party").dataset.party==="2"?"b2":"b"]=el.value});
+ return ShareState.url(location.href,state)}
+$("share-link").onclick=async()=>{const b=$("share-link"),url=shareUrl();try{await navigator.clipboard.writeText(url);b.textContent="복사됨"}
+ catch(e){const field=document.createElement("textarea");field.value=url;field.style.cssText="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0";document.body.append(field);field.select();
+  try{b.textContent=document.execCommand("copy")?"복사됨":"복사 실패"}catch(e){b.textContent="복사 실패"}field.remove()}
+ setTimeout(()=>b.textContent="링크 복사",2000)};
+function applyShare(){
+ if(SHARE.c){$("content").value=String(contents.findIndex(c=>c.key===SHARE.c));refreshTabs();
+  const stage=contents[$("content").value].stages.find(s=>s.tab+"|"+s.name===SHARE.s);
+  if(stage){$("tab").value=stage.tab;refreshStages();$("stage").value=String(cur.indexOf(stage))}}
+ if(SHARE.g){$("grow").value=SHARE.g==="myinfo"&&!MI.info?"1":SHARE.g;if(SHARE.g==="manual")$("mypow").value=SHARE.p||""}
+ if(SHARE.m)setMode(SHARE.m,false);if(SHARE.rk!=null)$("rk").value=String(SHARE.rk);
+ for(const key of ["b","b2"]){const name=SHARE[key];if(name)document.querySelectorAll("#brk input").forEach(x=>{if(x.dataset.b===name)x.checked=true})}
+ showInfo();showPow();
+}
+setMode(LS.get("mode")==="manual"?"manual":"auto",false);
 {const gv=LS.get("grow.v2")||LS.get("grow");$("grow").querySelector('[value="myinfo"]').disabled=!MI.info;
  if(MI.info)$("grow").value="myinfo";
  else if(!LS.get("grow.v2")&&(+LS.get("pow")>0||Object.values(PW).some(v=>v>0)))$("grow").value="manual";
  else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
- LS.set("grow.v2",$("grow").value);miLoad()}
-{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
+ if(!SHARE.g)LS.set("grow.v2",$("grow").value)}
+{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();applyShare();miLoad();run();drawGraph();window._ready=true;
 </script></body></html>

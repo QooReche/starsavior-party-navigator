@@ -11,6 +11,7 @@
 
 스스로 127.0.0.1 의 빈 포트에 `python -m http.server` 를 띄우고 끝나면 그 PID 만 끈다. 이 프로세스와 자식(서버·브라우저)은
 낮은 우선순위(Idle)로 돈다. 스크린샷 기본 저장 위치 = E:\\AI_mk2\\work\\p4\\shots(없으면 저장소 밖 임시 폴더)."""
+import traceback
 import json
 import os
 import random
@@ -766,6 +767,96 @@ def test_myinfo_sim(browser, ctx):
     return True, '버튼 실행·최종 스탯 요청·오토/수동 확률'
 
 
+def test_share_link(browser, ctx):
+    """Copied public URL restores view, never overwrites recipient preferences or shares account data."""
+    from urllib.parse import urlsplit, parse_qs
+    page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
+    choose(page, '작전 (일반)', '37-3')
+    page.select_option('#grow', 'manual', force=True)
+    page.evaluate('''() => { $('mypow').value='123456'; $('mypow').dispatchEvent(new Event('input'));
+      $('rk').value='3'; $('rk').dispatchEvent(new Event('change'));setMode('manual',true);run();
+      Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>window.copied=text}});
+    }''')
+    page.select_option('.party[data-party="1"] .bsel', '')
+    page.click('#share-link')
+    page.wait_for_function('() => !!window.copied')
+    url = page.evaluate('() => window.copied')
+    params = parse_qs(urlsplit(url).query, keep_blank_values=True)
+    assert set(params) == {'c', 's', 'g', 'p', 'm', 'rk', 'b'}
+    assert params['p'] == ['123456'] and not urlsplit(url).fragment
+    expected = page.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,$("grow").value,$("mypow").value,MODE,$("rk").value]')
+    saved = {'pn.grow.v2': '"0.8"', 'pn.grow': '"0.8"', 'pn.pow': '"77777"', 'pn.rk': '"5"', 'pn.mode': '"auto"',
+             'pn.owned': '["luna","gwen","fei","amora"]', 'pn.pw': '{"luna":999999}'}
+    recipient = browser.new_context(viewport={'width': 390, 'height': 844})
+    target = recipient.new_page()
+    target.add_init_script('for(const [k,v] of Object.entries(%s))localStorage.setItem(k,v)' % json.dumps(saved))
+    target.goto(url)
+    target.wait_for_function('() => window._ready && LASTQ[1]?.rows.length>0')
+    assert target.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,$("grow").value,$("mypow").value,MODE,$("rk").value]') == expected
+    assert target.input_value('.party[data-party="1"] .bsel') == ''
+    assert target.evaluate('() => LASTQ[1].rows.every(t=>t.q.power===123456)')
+    got = target.evaluate('keys=>Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]))', list(saved))
+    assert got == saved, {k: (got[k], v) for k, v in saved.items() if got[k] != v}
+    assert target.evaluate('() => document.documentElement.scrollWidth<=innerWidth')
+    target.goto(ctx.base + '/index.html?c=bad&s=bad&g=bad&m=bad&rk=999&b=bad&pick=old')
+    target.wait_for_function('() => window._ready && LASTQ[1]?.rows.length>0')
+    assert target.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,$("grow").value,MODE,$("rk").value]') == ['op', 'SECTOR 1-1', '1', 'auto', '0']
+    target.goto(ctx.base + '/index.html?mode=manual&pick=old')
+    target.wait_for_function('() => window._ready')
+    assert target.evaluate('() => MODE') == 'manual'
+    target.goto(ctx.base + '/index.html')
+    target.wait_for_function('() => window._ready')
+    assert target.input_value('#grow') == '0.8' and target.input_value('#rk') == '5'
+    recipient.close()
+    # Sharing "myinfo" carries only the mode; each recipient uses their own profile.
+    import_synthetic(page)
+    page.click('#share-link')
+    page.wait_for_function('() => new URL(window.copied).searchParams.get("g")==="myinfo"')
+    mi_url = page.evaluate('() => window.copied')
+    assert set(parse_qs(urlsplit(mi_url).query, keep_blank_values=True)) <= {'c', 's', 'g', 'm', 'rk', 'b', 'b2'}
+    page.goto(mi_url)      # 같은 저장소(내 정보 보유)로 다시 열기 — 기본 컨텍스트 페이지는 새 탭을 못 연다
+    page.wait_for_function('() => window._ready && MI.growth && !MI.pending && LASTQ[1]?.rows.length>0')
+    assert page.evaluate('() => miMode() && LASTQ[1].rows[0].b.finals != null')
+    page.close()
+    return True, '복사·새 페이지·저장 우선순위·개인 정보 제외·잘못된 값·옛 쿼리·390px'
+
+
+def test_sim_runs(browser, ctx):
+    """Mock only Worker computation; real UI, request, result handling and cache signatures."""
+    page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
+    page.evaluate('''() => {simAuto(false);window.requests=[];
+      window.Worker=class {postMessage(req){requests.push(req);this.req=req} terminate(){this.stopped=true}};
+      window.completeSim=()=>{const w=SIMQ.w,r=w.req;r.teams.forEach((t,i)=>w.onmessage({data:{type:'team',id:r.id,key:t.key,
+        result:{n:r.n_runs,clear:[0.35,0.65,0.9][i%3],ci:[0.2,0.8],ttk:10,gate:true}}}));
+        w.onmessage({data:{type:'done',id:r.id}})};
+    }''')
+    page.click('label:has(input[name="runs"][value="300"])')
+    page.click('button[data-sim="1"]')
+    assert page.evaluate('() => requests.at(-1).n_runs') == 300
+    page.evaluate('() => {simAuto(false);completeSim()}')
+    assert page.locator('button[data-refine]').count() == 0
+    sig300 = page.evaluate('() => Object.keys(SIMQ.res)')
+    page.click('label:has(input[name="runs"][value="100"])')
+    assert page.locator('button[data-sim="1"]').count() == 1
+    page.click('button[data-sim="1"]')
+    assert page.evaluate('() => requests.at(-1).n_runs') == 100
+    page.evaluate('() => {simAuto(false);completeSim()}')
+    sig100 = page.evaluate('() => Object.keys(SIMQ.res).filter(k=>JSON.parse(k)[4]===100)')
+    assert sig100 and not set(sig100) & set(sig300)
+    assert page.locator('button[data-refine]').count() == 2  # inclusive 35%, 65%, excludes 90%
+    # Remove the 300 cache to exercise the one-team request rather than its reuse.
+    page.evaluate('() => {for(const k of Object.keys(SIMQ.res))if(JSON.parse(k)[4]===300)delete SIMQ.res[k]}')
+    page.locator('.alternatives > summary').first.click()
+    page.locator('button[data-refine]').first.click()
+    assert page.evaluate('() => [requests.at(-1).n_runs,requests.at(-1).teams.length]') == [300, 1]
+    page.evaluate('() => completeSim()')
+    assert page.locator('button[data-refine]').count() == 1
+    assert page.evaluate('() => document.documentElement.scrollWidth<=innerWidth')
+    page.screenshot(path=os.path.join(ctx.shots, 'share_runs_mobile.png'), full_page=True)
+    page.close()
+    return True, '100/300 요청·캐시 분리·35~65%만 1팀 추가 실행·390px'
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_quick_growth, test_savior_power, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_break_skill_select)
@@ -774,6 +865,7 @@ TESTS.append(test_break_compare_cancel_after_team_change)
 TESTS.append(test_gimmick_slot_owned)
 TESTS.append(test_boss_gimmick_mobile)
 TESTS.extend([test_myinfo_legacy_power, test_myinfo_import_clear, test_myinfo_rules_mobile, test_myinfo_sim])
+TESTS.extend([test_share_link, test_sim_runs])
 
 
 def main():
@@ -811,7 +903,7 @@ def main():
                     try:
                         ok, msg = t(browser, ctx)
                     except Exception as ex:
-                        ok, msg = False, "오류: %r" % (ex,)
+                        ok, msg = False, "오류: %r (줄 %s)" % (ex, traceback.extract_tb(ex.__traceback__)[-1].lineno)
                     print("%s %s - %s" % ("PASS" if ok else "FAIL", t.__name__, msg), flush=True)
                     ok_all = ok_all and ok
             finally:

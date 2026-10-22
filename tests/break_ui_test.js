@@ -22,7 +22,7 @@ vm.runInContext(section('function breakCard(', '// ---------------- 표시 모�
 vm.runInContext(section('const simCls=', 'function quickRows('),ctx);
 vm.runInContext(section('const simSigB=', 'function simCell('),ctx);
 vm.runInContext(section('function simInvalidate(', '// 자동 확인'),ctx);
-vm.runInContext(section('function simStart(', 'const LASTQ='),ctx);
+vm.runInContext(section('function simStart(', 'function simRefine('),ctx);
 vm.runInContext(section('$("out").addEventListener("click",e=>{const b=e.target.closest("button[data-sim]")', '$("out").addEventListener("change"'),ctx);
 vm.runInContext(section('$("out").addEventListener("change"', 'function buildCands('),ctx);
 const ev=src=>vm.runInContext(src,ctx),plain=x=>JSON.parse(JSON.stringify(x));
