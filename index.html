@@ -740,11 +740,11 @@ function simBar(p,rows,st,hasMore){
   all?`<span class="mut" data-k="simstate">시뮬 완료 · ${counts}판</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다음 3팀도 시뮬로 확인</button>`:""}${simAutoOn()?` <button type="button" class="sec" data-simauto="0" title="스테이지를 바꿀 때마다 자동으로 시뮬">자동 확인 끄기</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">시뮬로 확인(10~40초)</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
-function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;SIMQ.screening=false;if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.busy=null;SIMQ.compareKey=null}
+function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;SIMQ.screening=false;for(const k in SIMQ.scr)if(!SIMQ.scr[k].done)delete SIMQ.scr[k];if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.busy=null;SIMQ.compareKey=null}
 function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.err=msg;SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simAutoKick(){if(!simAutoOn()||SIMQ.busy!=null||(miMode()&&MI.pending))return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
- for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&scrOn()&&!SIMQ.scr[scrKey(st,p)]){setTimeout(()=>{if(simScreen(p)===false)run(true)},0);return}if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){setTimeout(()=>simStart(p),0);return}
+ for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done){setTimeout(()=>{if(simScreen(p)===false)run()},0);return}if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){setTimeout(()=>simStart(p),0);return}
   // 보여 준 팀이 모두 시뮬에서 클리어 50% 미만이면, 클리어하는 편성이 나오거나 9팀이 될 때까지 다음 3팀을 자동으로 더 시뮬한다(1안이 근사 순위의 앞 3팀에 갇히지 않게)
   if(b&&b.rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&b.rows.length<9&&b.total>b.rows.length){const k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run(true);setTimeout(()=>simStart(p),0);return}}}
 function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy||(miMode()&&MI.pending))return false;
@@ -834,11 +834,11 @@ function simScreen(p){const c=contents[$("content").value],st=cur&&cur[$("stage"
  SIMQ.err="";SIMQ.busy=p;SIMQ.screening=true;SIMQ.compareKey=null;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
  if(!SIMQ.w){SIMQ.w=new Worker("sim_worker.js");SIMQ.loaded=false}
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
- const rank=()=>Object.entries(sc.res).sort((a,b)=>scrCmp(a[1],b[1])).map(e=>e[0]);
+ const rank=()=>{const up=sc.up||new Set();return Object.entries(sc.res).sort((a,b)=>(up.has(b[0])-up.has(a[0]))||(b[1].n-a[1].n)||scrCmp(a[1],b[1])).map(e=>e[0])};
  const finish=cut=>{if(sc.done)return;clearTimeout(SIMQ.timer);sc.order=rank();sc.done=true;sc.cut=!!cut;SIMQ.screening=false;SIMQ.busy=null};
  const el=()=>document.querySelector('[data-k="progress"] [data-k="simstate"]'),show=m=>{SIMQ.msg=m;const x=el();if(x)x.textContent=m};
  let id=0;
- const round=(i,keys)=>{const R=SCR_ROUNDS[i];sc.round=i;sc.left=keys.length;sc.got=0;id=SIMQ.requestId=(SIMQ.requestId||0)+1;
+ const round=(i,keys)=>{const R=SCR_ROUNDS[i];sc.round=i;if(i>0)sc.up=new Set(keys);sc.left=keys.length;sc.got=0;id=SIMQ.requestId=(SIMQ.requestId||0)+1;
   SIMQ.w.onmessage=e=>{const m=e.data;if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
    if(m.type==="stage"){if(m.msg==="준비 끝"){SIMQ.loaded=true;sc.t0=performance.now();arm()}if(!/^시뮬 /.test(m.msg))show(m.msg);return}
    if(m.type==="team"){sc.res[m.key]=Object.assign(m.result,{n:R.n});sc.got++;
@@ -851,7 +851,7 @@ function simScreen(p){const c=contents[$("content").value],st=cur&&cur[$("stage"
    teams:keys.map(key=>{const t=byKey.get(key),bn=teamBreak(t)?.name||null;return {key,party:simParty(t),options:{break_skill:bn?{name:bn,level:5}:null}}})})};
  // 엔진을 내려받는 동안은 내려받기 상한, 준비된 뒤에는 남은 예선 시간
  const arm=()=>{clearTimeout(SIMQ.timer);const left=SIMQ.loaded?Math.max(1000,SCR_MS-(sc.t0?performance.now()-sc.t0:0)):SIMQ.LOAD_MS;
-  SIMQ.timer=setTimeout(()=>{if(!SIMQ.loaded){simStop("엔진 내려받기 시간 초과(네트워크 확인)");return}simInvalidate();finish(true);run()},left)};
+  SIMQ.timer=setTimeout(()=>{if(!SIMQ.loaded){simStop("엔진 내려받기 시간 초과(네트워크 확인)");return}finish(true);simInvalidate();run()},left)};
  if(SIMQ.loaded)sc.t0=performance.now();arm();round(0,[...pick.keys()]);
  return true}
 function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.busy!=null&&!SIMQ.compareKey)return true;
@@ -876,7 +876,8 @@ function miGuide(){return `<div class="party guide" data-k="miguide"><h3>시뮬�
  <p class="mut">추천 편성은 내 구원자(레벨·장비·스킬)로 전투를 시뮬해서 고릅니다. 게임에서 내 정보를 한 번 뽑아 오면 이 브라우저에 저장되어 다음부터 바로 씁니다.</p>
  <div class="acts"><button type="button" data-miopen="1">내 정보 불러오기</button><button type="button" class="sec" data-miopen="how">만드는 방법</button></div></div>`}
 function showReco(){if(!MI.info){setDrawer(true);return}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
-function run(skipAuto=false){renderChip();if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}if(!REQ){renderMi();idleView();return}runCore(skipAuto)}
+function run(skipAuto=false){renderChip();if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
+ if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}runCore(skipAuto)}
 function runCore(skipAuto=false){
  renderMi();
  const folds=new Map([...document.querySelectorAll("#out details[data-fold]")].map(d=>[d.dataset.fold,d.open]));
@@ -955,7 +956,7 @@ const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").che
 $("showwhy").onchange=()=>setWhy($("showwhy").checked);setWhy(!!LS.get("why"));
 let _rt=null;const rerunNow=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
 const rerun=()=>{clearTimeout(_rt);_rt=setTimeout(AUTO?run:condChanged,150)};   // 조건이 바뀜: 자동 모드가 아니면 결과를 비우고 「추천 편성 보기」 안내
-$("out").addEventListener("click",e=>{if(e.target.closest("button[data-go]"))showReco();const mo=e.target.closest("button[data-miopen]");if(mo){setDrawer(true);if(mo.dataset.miopen==="how")document.querySelector("#drawer .mihow")?.scrollIntoView({block:"start"})}});
+$("out").addEventListener("click",e=>{if(e.target.closest("button[data-miretry]")){MI.error="";miLoad();setTimeout(run,0);return}if(e.target.closest("button[data-go]"))showReco();const mo=e.target.closest("button[data-miopen]");if(mo){setDrawer(true);if(mo.dataset.miopen==="how")document.querySelector("#drawer .mihow")?.scrollIntoView({block:"start"})}});
 function updCount(){const n=document.querySelectorAll("#own input:checked").length;$("dcount").textContent=String(n);renderPw();renderChip()}
 document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk"))){if(e.target.closest("#brk")){pruneBreakSel();if(SIMQ.busy)simInvalidate();SIMQ.err=""}saveSel();updCount();rerun()}});
 const setDrawer=o=>{$("drawer").classList.toggle("open",o);$("dback").classList.toggle("on",o);document.body.classList.toggle("noscroll",o);if(o)$("dclose").focus()};
@@ -1010,7 +1011,7 @@ function miReset(info){simInvalidate();SIMQ.res={};SIMQ.scr={};SIMQ.refined=new 
  MI.info=info;MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
  if(info)$("grow").value="myinfo";else if($("grow").value==="myinfo")$("grow").value="1";
  miSelect();rerun()}
-function miClear(){MI.shared=false;$("shared-bar").hidden=true;MI.importId++;MI.invalid=!LS.remove("myinfo");MI.saved=false;miReset(null);miStatus(MI.invalid?"저장 정보 삭제 실패 · 브라우저 사이트 데이터에서 지우기":"불러온 정보 없음",MI.invalid)}
+function miClear(){if(MI.shared){$("shared-back")?.click();return}MI.importId++;MI.invalid=!LS.remove("myinfo");MI.saved=false;miReset(null);miStatus(MI.invalid?"저장 정보 삭제 실패 · 브라우저 사이트 데이터에서 지우기":"불러온 정보 없음",MI.invalid)}
 $("mi-sort").onchange=renderMi;$("tab-reco").onclick=()=>miTab(false);$("tab-info").onclick=()=>miTab(true);
 $("mi-view").onclick=()=>{setDrawer(false);miTab(true)};$("mi-open-import").onclick=()=>setDrawer(true);$("mi-open").onclick=()=>setDrawer(true);$("mi-panel-clear").onclick=miClear;
 const miStatus=(t,bad)=>{const e=$("mi-status");e.textContent=t;e.style.color=bad?"#e0553a":""};
