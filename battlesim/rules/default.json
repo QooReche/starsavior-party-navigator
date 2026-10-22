@@ -65,6 +65,7 @@
                     "source": "databook #d-sum #d-break (docs/formulas_local.md 3장), 상태 효과 사전(속박·표적 각인, formulas_web.md 4.2)"}
  },
  "mc": {
+  "chain_skill_damage_up": {"value": true, "legacy": false, "alt": [false], "grade": "code", "note": "연쇄 생성 시 시전자의 이번 스킬 피해 증가도 포함. 반응 소유자가 들어오는 공격의 시전자와 다르면 그 공격의 보정을 상속하지 않음. 지속 피해·치명·광역 분할 규칙은 변경하지 않음.", "source": "NKM/NKM.decompiled.cs:4317-4330,5600-5611; SE_TEMPLET_SKILL_1.json:10253,10729; BUFF_TEMPLET.json:51158; docs/ally_damage_audit.md"},
   "nova_skill_gain": {"value": true, "legacy": false, "alt": [false], "grade": "code", "note": "매 스킬 종료에 nv(GetNovaForceValue) 지급. 반응·추가 시전도 포함하며 기본기/피격 자체의 일괄 +1은 없음. false=아군 일반 특수/궁만 지급. 양 진영 풀 분리", "source": "NKM/NKM.decompiled.cs:15325-15331,15487,15706-15709; SKILL_TEMPLET_1.json GetNovaForceValue; docs/nova_gauge_audit.md"},
   "nova_force_effects": {"value": true, "legacy": false, "alt": [false], "grade": "code", "note": "명시적 노바 포스 +/- 효과를 조건·재발동 제한 판정 뒤 대상의 풀에 적용. 감소 하한 0. 최대치 clamp는 해독본에 있으나 MaxNovaForceValue 원본이 없어 숫자를 만들지 않고 기존 상한 미적용 유지. 내정보의 미연결 잠재력·아이템을 임의 장착하지 않음", "source": "NKM/NKM.decompiled.cs:1190-1205,4574-4582; SE_TEMPLET_POTEN.json:612-647,862-875; docs/nova_gauge_audit.md"},
   "nova_slot_effects": {"value": true, "legacy": false, "alt": [false], "grade": "code", "note": "버스트 슬롯 효과는 선택 정책과 독립적으로 실행(manual/heal 공통). false=기존 heal 한정. 카르멘 기본 회복12%, 루나 기본 자신 보호막15%·1턴. 비용4와 auto 미사용 정책은 기존 근거 유지", "source": "NKM/NKM.decompiled.cs:2426,16908-16920; NOVA_BURST_TEMPLET.json; SE_TEMPLET_NOVA_BURST.json:595-621,723-752; docs/nova_gauge_audit.md"},

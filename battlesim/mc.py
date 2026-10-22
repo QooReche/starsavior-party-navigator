@@ -2400,6 +2400,11 @@ class Battle:
             dr = de / (de + _rules.DEF_K)
             dr = max(0.0, dr - dr * min(1.0, m['pen']))
             inc = m['inc'] + m['inc_vs'].get(v.element, 0.0) + (m['inc_break'] if v.broken else 0.0)
+            # AddDamageController reads the caster's live DAMAGE_UP, including
+            # skill-local stat effects (NKM:5601-5611). Do not inherit the
+            # incoming attack's modifiers when a defender reacts.
+            if self.mc['chain_skill_damage_up'] and ctx is not None and ctx.src is owner:
+                inc += ctx.inc + ctx.local_by[v]['inc']
             dmg = max(1.0, math.floor(val * eff['coef'] * (1 + inc) * _rules.BASE_MULT * (1 - dr) * self.rand() * self.pen[owner.side]))
             self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
 

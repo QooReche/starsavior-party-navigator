@@ -113,6 +113,28 @@ def low_priority():
         os.nice(19)
 
 
+def turn_comparison(dealt, taken, turn, sim_dealt, sim_taken, ally, enemy):
+    """TURN is all selected unit turns, excluding out-of-turn skill casts.
+
+    The real ally share is unknown. Its estimate uses the simulation's share;
+    this is a diagnostic assumption, not an observed action count.
+    """
+    total = ally + enemy
+    share = ally / total if total else 0.0
+    estimated = turn * share
+    real_rate = dealt / estimated if estimated else None
+    sim_rate = sim_dealt / ally if ally else None
+    return dict(sim_total_actions=round(total, 3),
+                sim_total_actions_vs_turn=total / turn if turn else None,
+                sim_total_actions_minus_turn=total - turn,
+                sim_ally_action_share=share, real_estimated_ally_actions=estimated,
+                real_taken_per_global_turn=taken / turn if turn else None,
+                sim_taken_per_global_turn=sim_taken / total if total else None,
+                real_estimated_dealt_per_ally_action=real_rate,
+                sim_dealt_per_ally_action=sim_rate,
+                estimated_ally_damage_ratio=real_rate / sim_rate if sim_rate else None)
+
+
 def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None):
     import gen_quick_calib as G
     from battlesim import quick, simulate
@@ -144,6 +166,7 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None):
     class MeasuredBattle(api.Battle):
         def run(self):
             super().run()
+            measured['ally'] += sum(u.actions for u in self.allies)
             measured['boss'] += sum(u.actions for u in self.all_foes if u.d.boss)
             measured['enemy'] += sum(u.actions for u in self.all_foes)
             for u in self.all_foes:
@@ -155,12 +178,15 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None):
         r = simulate(spec, {'stage': '%s/%s/%s' % (ck, tab, nm)}, opt)
     d = sum(v['dmg'] for v in r['per_unit'].values())
     t = sum(v['dmg_taken'] for v in r['per_unit'].values())
-    acts = sum(v['actions'] for v in r['per_unit'].values())
+    acts = measured['ally'] / runs
     return dict(stage=name, runs=runs, seed=seed, real_ratio=round(dealt / taken, 2), sim_ratio=round(d / max(1.0, t), 2), sim_clear=r['outcome']['clear_p'],
+                **turn_comparison(dealt, taken, turn, d, t, acts, measured['enemy'] / runs),
                 real=res, real_turn=turn, sim_ally_actions=round(acts, 1), foe_breaks=r['breaks']['foe'], ally_breaks=r['breaks']['ally'],
                 sim_boss_actions=round(measured['boss'] / runs, 2), sim_enemy_actions=round(measured['enemy'] / runs, 2),
                 enemy_skills={k: {s: round(n / runs, 3) for s, n in v.items()} for k, v in enemy_skills.items()},
                 sim_dealt=d, sim_taken=t, party_power=r['party']['power'], myinfo=diagnostics,
+                party_penalty=r['party']['penalty'],
+                per_unit={k: {f: v[f] for f in ('dmg', 'dmg_taken', 'actions')} for k, v in r['per_unit'].items()},
                 break_skill=r['break_skill'], nova_policy=opt['rules_override']['nova_policy'],
                 nova_burst=r['nova_burst'], heal=sum(v['heal'] for v in r['per_unit'].values()),
                 healing={nm: dict(heal=v['heal'], shield=v['shield']) for nm, v in r['per_unit'].items()})
