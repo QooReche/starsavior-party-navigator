@@ -75,6 +75,9 @@ def choose(page, content, query):
 def open_page(browser, ctx, query="", viewport=None):
     page = browser.new_page(viewport=viewport or {"width": 1280, "height": 900})
     attach(page, ctx)
+    # 화면은 「추천 편성 보기」를 눌러야 계산한다. 시험은 ?auto=1 로 예전처럼 바로 계산하게 연다(버튼 흐름은 test_press_to_compute).
+    if "auto=" not in query:
+        query += ("&" if "?" in query else "?") + "auto=1"
     page.goto(ctx.base + "/index.html" + query)
     page.wait_for_selector("#out .party .qbox .qrow[data-key]", timeout=30000)
     settle(page)
@@ -251,7 +254,7 @@ def test_browser_sim_blocked(browser, ctx):
     attach(page, ctx)
     page.route("**/lib/pyodide/**", lambda r: r.abort())
     page.context.route("**/lib/pyodide/**", lambda r: r.abort())
-    page.goto(ctx.base + "/index.html")
+    page.goto(ctx.base + "/index.html?auto=1")
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
     n = len(quick_rows(page))
     page.click('.party[data-party="1"] button[data-sim="1"]')
@@ -289,7 +292,7 @@ def test_load_no_errors(browser, ctx):
     page = browser.new_page(viewport={"width": 1280, "height": 900})
     attach(page, ctx)
     page.on("request", lambda r: reqs.append(r.url))
-    page.goto(ctx.base + "/index.html")
+    page.goto(ctx.base + "/index.html?auto=1")
     page.wait_for_selector("#out .party .qbox .qrow[data-key]")
     settle(page)
     n = len(quick_rows(page))
@@ -785,7 +788,7 @@ def test_share_link(browser, ctx):
     got = target.evaluate('keys=>Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]))', list(saved))
     assert got == saved, {k: (got[k], v) for k, v in saved.items() if got[k] != v}
     assert target.evaluate('() => document.documentElement.scrollWidth<=innerWidth')
-    target.goto(ctx.base + '/index.html?c=bad&s=bad&g=bad&m=bad&rk=999&b=bad&pick=old')
+    target.goto(ctx.base + '/index.html?c=bad&s=bad&g=bad&m=bad&rk=999&b=bad&pick=old&auto=1')
     target.wait_for_function('() => window._ready && LASTQ[1]?.rows.length>0')
     assert target.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,$("grow").value,MODE,$("rk").value]') == ['op', 'SECTOR 1-1', '1', 'auto', '0']
     target.goto(ctx.base + '/index.html?mode=manual&pick=old')
@@ -817,31 +820,37 @@ def test_sim_runs(browser, ctx):
         result:{n:r.n_runs,clear:[0.35,0.65,0.9][i%3],ci:[0.2,0.8],ttk:10,gate:true}}}));
         w.onmessage({data:{type:'done',id:r.id}})};
     }''')
-    page.click('label:has(input[name="runs"][value="300"])')
-    page.click('button[data-sim="1"]')
-    assert page.evaluate('() => requests.at(-1).n_runs') == 300
-    page.evaluate('() => {simAuto(false);completeSim()}')
-    assert page.locator('button[data-refine]').count() == 0
-    sig300 = page.evaluate('() => Object.keys(SIMQ.res)')
-    page.click('label:has(input[name="runs"][value="100"])')
-    assert page.locator('button[data-sim="1"]').count() == 1
+    assert page.locator('input[name="runs"]').count() == 0      # 시뮬은 100판으로 충분해서 판 수 선택(300판 정밀)을 없앴다
     page.click('button[data-sim="1"]')
     assert page.evaluate('() => requests.at(-1).n_runs') == 100
     page.evaluate('() => {simAuto(false);completeSim()}')
-    sig100 = page.evaluate('() => Object.keys(SIMQ.res).filter(k=>JSON.parse(k)[4]===100)')
-    assert sig100 and not set(sig100) & set(sig300)
-    assert page.locator('button[data-refine]').count() == 2  # inclusive 35%, 65%, excludes 90%
-    # Remove the 300 cache to exercise the one-team request rather than its reuse.
-    page.evaluate('() => {for(const k of Object.keys(SIMQ.res))if(JSON.parse(k)[4]===300)delete SIMQ.res[k]}')
-    page.locator('.alternatives > summary').first.click()
-    page.locator('button[data-refine]').first.click()
-    assert page.evaluate('() => [requests.at(-1).n_runs,requests.at(-1).teams.length]') == [300, 1]
-    page.evaluate('() => completeSim()')
-    assert page.locator('button[data-refine]').count() == 1
+    assert page.locator('button[data-refine]').count() == 0
     assert page.evaluate('() => document.documentElement.scrollWidth<=innerWidth')
     page.screenshot(path=os.path.join(ctx.shots, 'share_runs_mobile.png'), full_page=True)
     page.close()
-    return True, '100/300 요청·캐시 분리·35~65%만 1팀 추가 실행·390px'
+    return True, '100판 요청·300판 옵션 없음·390px'
+
+
+def test_press_to_compute(browser, ctx):
+    """조건을 바꿔도 계산하지 않고, 「추천 편성 보기」를 눌렀을 때만 계산한다(탭은 필터 위, 링크 복사는 탭 줄)."""
+    page = browser.new_page(viewport={"width": 1280, "height": 900})
+    attach(page, ctx)
+    page.goto(ctx.base + "/index.html")          # ?auto=1 없이 연다
+    page.wait_for_function("() => window._ready")
+    assert page.locator('[data-k="idle"]').count() == 1 and page.locator('.qrow[data-key]').count() == 0
+    assert page.evaluate('() => !!document.querySelector(".mi-tabs #share-link") && !!(document.querySelector(".mi-tabs").compareDocumentPosition(document.querySelector(".input-panel")) & Node.DOCUMENT_POSITION_FOLLOWING)')
+    page.click('#dbtn')
+    page.click('#all')
+    assert page.locator('.qrow[data-key]').count() == 0     # 서랍에서 고른 것만으로는 계산하지 않는다
+    page.click('#go')
+    page.wait_for_selector('.party[data-party="1"] .qbox .qrow[data-key]', timeout=30000)
+    assert page.evaluate('() => !document.querySelector("#drawer").classList.contains("open")')   # 서랍은 닫힌다
+    assert page.locator('[data-k="approxwarn"]').count() == 1 and page.locator('.qv.approx').count() >= 1   # 시뮬 전에는 「근사」
+    page.select_option('#stage', index=1)
+    page.wait_for_selector('[data-k="idle"]')               # 조건을 바꾸면 결과를 비우고 안내로 돌아간다
+    assert page.locator('.qrow[data-key]').count() == 0
+    page.close()
+    return True, '조건 변경은 계산 안 함·버튼으로 계산·서랍 닫힘·근사 표시·탭 위치'
 
 
 def test_skill_view(browser, ctx):
@@ -941,7 +950,7 @@ TESTS.append(test_break_compare_cancel_after_team_change)
 TESTS.append(test_gimmick_slot_owned)
 TESTS.append(test_boss_gimmick_mobile)
 TESTS.extend([test_myinfo_legacy_power, test_myinfo_import_clear, test_myinfo_rules_mobile, test_myinfo_sim])
-TESTS.extend([test_share_link, test_sim_runs])
+TESTS.extend([test_share_link, test_sim_runs, test_press_to_compute])
 TESTS.extend([test_skill_view, test_skill_retry])
 
 
