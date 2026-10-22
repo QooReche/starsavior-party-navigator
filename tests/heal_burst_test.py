@@ -124,7 +124,12 @@ class HealBurstTest(unittest.TestCase):
                     'manual': 'c47a35ccae24c19dd5c5e8b6d7e4d7e3202879ebb82bc27913991dbd351030cc'}
         enc = {'waves': [[{'name': 'target', 'hp': 100000000, 'atk': 1000, 'def': 1000, 'spd': 100}]], 'max_turns': 12}
         for policy, digest in expected.items():
-            r = simulate(TEAM, enc, {'n_runs': 3, 'seed': 7, 'nova_policy': policy, 'timeline': True})
+            # Keep the original digest as a legacy regression. Native skill-end
+            # gain and policy-independent slot effects intentionally change manual.
+            r = simulate(TEAM, enc, {'n_runs': 3, 'seed': 7, 'nova_policy': policy, 'timeline': True,
+                                    'rules_override': {'nova_skill_gain': False,
+                                                       'nova_force_effects': False,
+                                                       'nova_slot_effects': False}})
             frozen = {k: v for k, v in r.items() if k in ('per_unit', 'outcome', 'timeline', 'breaks', 'break_skill', 'foes')}
             self.assertEqual(hashlib.sha256(json.dumps(frozen, sort_keys=True, ensure_ascii=False).encode()).hexdigest(), digest)
             self.assertEqual(r['nova_burst']['total'] > 0, policy == 'manual')

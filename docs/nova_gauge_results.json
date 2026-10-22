@@ -1,0 +1,2009 @@
+{
+  "runs": 60,
+  "seed": 7,
+  "baseline": "5ba9855",
+  "before": {
+    "36-36/auto": {
+      "summary": {
+        "stage": "36-36",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 1.88,
+        "sim_ratio": 0.95,
+        "sim_clear": 0.0,
+        "real": "clear",
+        "real_turn": 38,
+        "sim_ally_actions": 15.4,
+        "foe_breaks": 0.767,
+        "ally_breaks": 3.95,
+        "sim_boss_actions": 6.52,
+        "sim_enemy_actions": 15.48,
+        "enemy_skills": {
+          "은둔자": {
+            "특수기": 3.9,
+            "기본기": 5.067
+          },
+          "공허순례자": {
+            "특수기": 2.467,
+            "기본기": 3.033,
+            "궁극기": 1.017
+          }
+        },
+        "sim_dealt": 395062,
+        "sim_taken": 417032,
+        "party_power": 395074,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "white-pearl-luna": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-epindel": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "cristelle": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 0.633,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 2.267
+        },
+        "nova_policy": "auto",
+        "nova_burst": {
+          "total": 0,
+          "uses": 0.0,
+          "by_unit": {}
+        },
+        "heal": 68859,
+        "healing": {
+          "루나#0": {
+            "heal": 0,
+            "shield": 10267
+          },
+          "카르멘#1": {
+            "heal": 68859,
+            "shield": 41032
+          },
+          "에핀델#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "크리스텔#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.0
+      },
+      "targets": {
+        "루나": {
+          "taken": 88590.01666666666,
+          "heal_given": 0.0,
+          "shield_given": 10267.2,
+          "actions": 2.1,
+          "end_hp": 0.0,
+          "max_hp": 66964.0,
+          "deaths": 1.0,
+          "taken_share": 0.21242981552651682,
+          "heal_received": 12097.433333333332,
+          "shield_received": 10267.2
+        },
+        "카르멘": {
+          "taken": 127676.03333333334,
+          "heal_given": 68859.1,
+          "shield_given": 41031.76666666667,
+          "actions": 3.316666666666667,
+          "end_hp": 0.0,
+          "max_hp": 119513.0,
+          "deaths": 1.0,
+          "taken_share": 0.306154093075846,
+          "heal_received": 8163.033333333334,
+          "shield_received": 0.0
+        },
+        "에핀델": {
+          "taken": 85539.0,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 4.166666666666667,
+          "end_hp": 0.0,
+          "max_hp": 66092.0,
+          "deaths": 1.0,
+          "taken_share": 0.20511378904796898,
+          "heal_received": 19447.0,
+          "shield_received": 0.0
+        },
+        "크리스텔": {
+          "taken": 115226.88333333333,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 5.833333333333333,
+          "end_hp": 0.0,
+          "max_hp": 60236.0,
+          "deaths": 1.0,
+          "taken_share": 0.2763023023496682,
+          "heal_received": 39257.28333333333,
+          "shield_received": 41031.76666666667
+        }
+      },
+      "casts": {
+        "루나": {
+          "특수기(추가)": 0.8,
+          "궁극기": 1.0,
+          "기본기": 0.5166666666666667
+        },
+        "카르멘": {
+          "특수기(추가)": 1.7166666666666666,
+          "궁극기": 1.05,
+          "기본기": 0.6333333333333333
+        },
+        "에핀델": {
+          "궁극기": 1.2,
+          "특수기": 1.0166666666666666,
+          "기본기": 1.65
+        },
+        "크리스텔": {
+          "특수기(추가)": 1.6666666666666667,
+          "궁극기": 2.1,
+          "기본기": 3.1166666666666667
+        }
+      }
+    },
+    "36-36/heal": {
+      "summary": {
+        "stage": "36-36",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 1.88,
+        "sim_ratio": 0.95,
+        "sim_clear": 0.0,
+        "real": "clear",
+        "real_turn": 38,
+        "sim_ally_actions": 16.1,
+        "foe_breaks": 0.917,
+        "ally_breaks": 4.067,
+        "sim_boss_actions": 6.62,
+        "sim_enemy_actions": 15.73,
+        "enemy_skills": {
+          "은둔자": {
+            "특수기": 3.967,
+            "기본기": 5.15
+          },
+          "공허순례자": {
+            "특수기": 2.5,
+            "기본기": 3.117,
+            "궁극기": 1.0
+          }
+        },
+        "sim_dealt": 410523,
+        "sim_taken": 431503,
+        "party_power": 395074,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "white-pearl-luna": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-epindel": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "cristelle": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 0.817,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 2.717
+        },
+        "nova_policy": "heal",
+        "nova_burst": {
+          "total": 44,
+          "uses": 0.733,
+          "by_unit": {
+            "카르멘#1": {
+              "기본기": 26
+            },
+            "루나#0": {
+              "기본기": 18
+            }
+          }
+        },
+        "heal": 76469,
+        "healing": {
+          "루나#0": {
+            "heal": 0,
+            "shield": 13504
+          },
+          "카르멘#1": {
+            "heal": 76469,
+            "shield": 41430
+          },
+          "에핀델#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "크리스텔#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.7333333333333333
+      },
+      "targets": {
+        "루나": {
+          "taken": 95982.53333333334,
+          "heal_given": 0.0,
+          "shield_given": 13503.6,
+          "actions": 2.2666666666666666,
+          "end_hp": 0.0,
+          "max_hp": 66964.0,
+          "deaths": 1.0,
+          "taken_share": 0.2224377651875005,
+          "heal_received": 16522.066666666666,
+          "shield_received": 13503.6
+        },
+        "카르멘": {
+          "taken": 130918.38333333333,
+          "heal_given": 76469.16666666667,
+          "shield_given": 41430.13333333333,
+          "actions": 3.433333333333333,
+          "end_hp": 0.0,
+          "max_hp": 119513.0,
+          "deaths": 1.0,
+          "taken_share": 0.30340095847953424,
+          "heal_received": 11405.383333333333,
+          "shield_received": 0.0
+        },
+        "에핀델": {
+          "taken": 88721.2,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 4.366666666666666,
+          "end_hp": 0.0,
+          "max_hp": 66092.0,
+          "deaths": 1.0,
+          "taken_share": 0.20560975801937506,
+          "heal_received": 22629.2,
+          "shield_received": 0.0
+        },
+        "크리스텔": {
+          "taken": 115880.75,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 6.083333333333333,
+          "end_hp": 0.0,
+          "max_hp": 60236.0,
+          "deaths": 1.0,
+          "taken_share": 0.2685515183135902,
+          "heal_received": 40396.98333333333,
+          "shield_received": 41430.13333333333
+        }
+      },
+      "casts": {
+        "루나": {
+          "특수기(추가)": 0.8,
+          "궁극기": 1.0,
+          "기본기": 0.5833333333333334
+        },
+        "카르멘": {
+          "특수기(추가)": 1.7333333333333334,
+          "궁극기": 1.05,
+          "기본기": 0.7
+        },
+        "에핀델": {
+          "궁극기": 1.2,
+          "특수기": 1.0666666666666667,
+          "기본기": 1.7833333333333334
+        },
+        "크리스텔": {
+          "특수기(추가)": 1.7666666666666666,
+          "궁극기": 2.1333333333333333,
+          "기본기": 3.25
+        }
+      }
+    },
+    "37-2/auto": {
+      "summary": {
+        "stage": "37-2",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 4.13,
+        "sim_ratio": 3.69,
+        "sim_clear": 0.9667,
+        "real": "clear",
+        "real_turn": 52,
+        "sim_ally_actions": 45.9,
+        "foe_breaks": 0.0,
+        "ally_breaks": 1.717,
+        "sim_boss_actions": 3.85,
+        "sim_enemy_actions": 21.07,
+        "enemy_skills": {
+          "예언자": {
+            "기본기": 1.75,
+            "특수기": 2.283
+          },
+          "추적자": {
+            "특수기": 5.417,
+            "기본기": 7.033
+          },
+          "망각의 예언자": {
+            "기본기": 2.283,
+            "특수기": 1.5,
+            "궁극기": 0.017
+          }
+        },
+        "sim_dealt": 1076388,
+        "sim_taken": 291825,
+        "party_power": 395074,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "white-pearl-luna": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-epindel": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "cristelle": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 0.0,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 0.0
+        },
+        "nova_policy": "auto",
+        "nova_burst": {
+          "total": 0,
+          "uses": 0.0,
+          "by_unit": {}
+        },
+        "heal": 136695,
+        "healing": {
+          "루나#0": {
+            "heal": 0,
+            "shield": 9151
+          },
+          "카르멘#1": {
+            "heal": 136695,
+            "shield": 57763
+          },
+          "에핀델#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "크리스텔#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.0
+      },
+      "targets": {
+        "루나": {
+          "taken": 106523.3,
+          "heal_given": 0.0,
+          "shield_given": 9151.2,
+          "actions": 7.533333333333333,
+          "end_hp": 13865.983333333334,
+          "max_hp": 66964.0,
+          "deaths": 0.6,
+          "taken_share": 0.3650237527656352,
+          "heal_received": 47740.816666666666,
+          "shield_received": 9151.2
+        },
+        "카르멘": {
+          "taken": 113518.43333333333,
+          "heal_given": 136694.98333333334,
+          "shield_given": 57763.166666666664,
+          "actions": 9.966666666666667,
+          "end_hp": 50053.61666666667,
+          "max_hp": 119513.0,
+          "deaths": 0.16666666666666666,
+          "taken_share": 0.38899399984237165,
+          "heal_received": 44059.05,
+          "shield_received": 0.0
+        },
+        "에핀델": {
+          "taken": 34810.78333333333,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 12.883333333333333,
+          "end_hp": 49802.01666666667,
+          "max_hp": 66092.0,
+          "deaths": 0.03333333333333333,
+          "taken_share": 0.1192862291071039,
+          "heal_received": 18520.8,
+          "shield_received": 0.0
+        },
+        "크리스텔": {
+          "taken": 36973.15,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 15.483333333333333,
+          "end_hp": 55722.8,
+          "max_hp": 60236.0,
+          "deaths": 0.03333333333333333,
+          "taken_share": 0.12669601828488927,
+          "heal_received": 26374.316666666666,
+          "shield_received": 57763.166666666664
+        }
+      },
+      "casts": {
+        "루나": {
+          "궁극기": 2.2666666666666666,
+          "특수기(추가)": 0.6833333333333333,
+          "기본기": 4.5
+        },
+        "카르멘": {
+          "궁극기": 2.8666666666666667,
+          "특수기(추가)": 2.4166666666666665,
+          "기본기": 6.45
+        },
+        "에핀델": {
+          "궁극기": 3.6,
+          "특수기": 3.1666666666666665,
+          "기본기": 6.016666666666667
+        },
+        "크리스텔": {
+          "특수기(추가)": 4.983333333333333,
+          "궁극기": 5.55,
+          "기본기": 9.85
+        }
+      }
+    },
+    "37-3/auto": {
+      "summary": {
+        "stage": "37-3",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 1.82,
+        "sim_ratio": 0.91,
+        "sim_clear": 0.0,
+        "real": "clear",
+        "real_turn": 43,
+        "sim_ally_actions": 22.0,
+        "foe_breaks": 0.0,
+        "ally_breaks": 3.8,
+        "sim_boss_actions": 9.58,
+        "sim_enemy_actions": 12.9,
+        "enemy_skills": {
+          "예언자": {
+            "기본기": 2.167,
+            "특수기": 1.05
+          },
+          "공허습격자": {
+            "특수기": 3.483,
+            "기본기": 4.167,
+            "궁극기": 1.933
+          }
+        },
+        "sim_dealt": 374907,
+        "sim_taken": 410865,
+        "party_power": 395074,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "white-pearl-luna": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-epindel": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "cristelle": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 0.0,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 0.0
+        },
+        "nova_policy": "auto",
+        "nova_burst": {
+          "total": 0,
+          "uses": 0.0,
+          "by_unit": {}
+        },
+        "heal": 83791,
+        "healing": {
+          "루나#0": {
+            "heal": 0,
+            "shield": 7589
+          },
+          "카르멘#1": {
+            "heal": 83791,
+            "shield": 30276
+          },
+          "에핀델#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "크리스텔#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.0
+      },
+      "targets": {
+        "루나": {
+          "taken": 93351.3,
+          "heal_given": 0.0,
+          "shield_given": 7588.8,
+          "actions": 2.8833333333333333,
+          "end_hp": 0.0,
+          "max_hp": 66964.0,
+          "deaths": 1.0,
+          "taken_share": 0.22720672830842828,
+          "heal_received": 19691.3,
+          "shield_received": 7588.8
+        },
+        "카르멘": {
+          "taken": 149561.71666666667,
+          "heal_given": 83791.45,
+          "shield_given": 30275.866666666665,
+          "actions": 5.016666666666667,
+          "end_hp": 0.0,
+          "max_hp": 119513.0,
+          "deaths": 1.0,
+          "taken_share": 0.36401665883630396,
+          "heal_received": 30048.716666666667,
+          "shield_received": 0.0
+        },
+        "에핀델": {
+          "taken": 76683.91666666667,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 6.4,
+          "end_hp": 0.0,
+          "max_hp": 66092.0,
+          "deaths": 1.0,
+          "taken_share": 0.1866401626941402,
+          "heal_received": 10591.916666666666,
+          "shield_received": 0.0
+        },
+        "크리스텔": {
+          "taken": 91268.1,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 7.683333333333334,
+          "end_hp": 0.0,
+          "max_hp": 60236.0,
+          "deaths": 1.0,
+          "taken_share": 0.2221364501611275,
+          "heal_received": 23459.516666666666,
+          "shield_received": 30275.866666666665
+        }
+      },
+      "casts": {
+        "루나": {
+          "궁극기": 1.1166666666666667,
+          "기본기": 1.1166666666666667,
+          "특수기(추가)": 0.5666666666666667
+        },
+        "카르멘": {
+          "특수기(추가)": 1.2666666666666666,
+          "궁극기": 1.4833333333333334,
+          "기본기": 2.2
+        },
+        "에핀델": {
+          "궁극기": 1.85,
+          "특수기": 1.6,
+          "기본기": 2.466666666666667
+        },
+        "크리스텔": {
+          "궁극기": 2.8333333333333335,
+          "특수기(추가)": 2.466666666666667,
+          "기본기": 4.05
+        }
+      }
+    },
+    "37-4/auto": {
+      "summary": {
+        "stage": "37-4",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 6.52,
+        "sim_ratio": 5.63,
+        "sim_clear": 1.0,
+        "real": "clear",
+        "real_turn": 13,
+        "sim_ally_actions": 15.5,
+        "foe_breaks": 1.35,
+        "ally_breaks": 0.0,
+        "sim_boss_actions": 1.98,
+        "sim_enemy_actions": 6.1,
+        "enemy_skills": {
+          "숭배자": {
+            "기본기": 4.117
+          },
+          "업화의 추적자": {
+            "특수기": 1.0,
+            "기본기": 0.983
+          }
+        },
+        "sim_dealt": 505422,
+        "sim_taken": 89764,
+        "party_power": 411771,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "waltz-asherah": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "claire": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "professor-m": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 1.0,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 3.35
+        },
+        "nova_policy": "auto",
+        "nova_burst": {
+          "total": 0,
+          "uses": 0.0,
+          "by_unit": {}
+        },
+        "heal": 59727,
+        "healing": {
+          "아세라#0": {
+            "heal": 28246,
+            "shield": 0
+          },
+          "카르멘#1": {
+            "heal": 31481,
+            "shield": 12748
+          },
+          "클레어#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "프로페서M#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.0
+      },
+      "targets": {
+        "아세라": {
+          "taken": 37162.333333333336,
+          "heal_given": 28245.966666666667,
+          "shield_given": 0.0,
+          "actions": 3.0,
+          "end_hp": 87102.91666666667,
+          "max_hp": 95575.0,
+          "deaths": 0.0,
+          "taken_share": 0.4139991091482748,
+          "heal_received": 28690.25,
+          "shield_received": 0.0
+        },
+        "카르멘": {
+          "taken": 37145.933333333334,
+          "heal_given": 31481.05,
+          "shield_given": 12747.733333333334,
+          "actions": 2.966666666666667,
+          "end_hp": 109023.9,
+          "max_hp": 119513.0,
+          "deaths": 0.0,
+          "taken_share": 0.41381640841931006,
+          "heal_received": 26656.833333333332,
+          "shield_received": 0.0
+        },
+        "클레어": {
+          "taken": 6155.3,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 4.016666666666667,
+          "end_hp": 65495.53333333333,
+          "max_hp": 65614.0,
+          "deaths": 0.0,
+          "taken_share": 0.06857181689005111,
+          "heal_received": 5424.533333333334,
+          "shield_received": 12747.733333333334
+        },
+        "프로페서M": {
+          "taken": 9300.716666666667,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 5.5,
+          "end_hp": 60257.2,
+          "max_hp": 61326.0,
+          "deaths": 0.0,
+          "taken_share": 0.10361266554236401,
+          "heal_received": 8231.916666666666,
+          "shield_received": 0.0
+        }
+      },
+      "casts": {
+        "아세라": {
+          "궁극기": 1.0,
+          "특수기": 1.0,
+          "기본기": 1.0,
+          "기본기(추가)": 1.1166666666666667
+        },
+        "카르멘": {
+          "궁극기": 1.0,
+          "특수기(추가)": 0.5333333333333333,
+          "기본기": 1.9666666666666666
+        },
+        "클레어": {
+          "궁극기": 1.0166666666666666,
+          "기본기(추가)": 3.5,
+          "특수기": 1.0,
+          "특수기(추가)": 2.4166666666666665,
+          "기본기": 2.0
+        },
+        "프로페서M": {
+          "궁극기": 2.0,
+          "기본기": 3.5,
+          "특수기(추가)": 4.616666666666666
+        }
+      }
+    },
+    "37-5/auto": {
+      "summary": {
+        "stage": "37-5",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 4.17,
+        "sim_ratio": 7.03,
+        "sim_clear": 1.0,
+        "real": "clear",
+        "real_turn": 22,
+        "sim_ally_actions": 19.4,
+        "foe_breaks": 2.0,
+        "ally_breaks": 0.0,
+        "sim_boss_actions": 0.0,
+        "sim_enemy_actions": 5.03,
+        "enemy_skills": {
+          "망각의 예언자": {
+            "특수기": 2.033,
+            "기본기": 3.0
+          }
+        },
+        "sim_dealt": 682765,
+        "sim_taken": 97145,
+        "party_power": 411771,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "waltz-asherah": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "claire": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "professor-m": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 0.0,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 2.0
+        },
+        "nova_policy": "auto",
+        "nova_burst": {
+          "total": 0,
+          "uses": 0.0,
+          "by_unit": {}
+        },
+        "heal": 74793,
+        "healing": {
+          "아세라#0": {
+            "heal": 36460,
+            "shield": 0
+          },
+          "카르멘#1": {
+            "heal": 38333,
+            "shield": 10756
+          },
+          "클레어#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "프로페서M#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.0
+      },
+      "targets": {
+        "아세라": {
+          "taken": 33700.51666666667,
+          "heal_given": 36459.63333333333,
+          "shield_given": 0.0,
+          "actions": 3.8666666666666667,
+          "end_hp": 88197.88333333333,
+          "max_hp": 95575.0,
+          "deaths": 0.0,
+          "taken_share": 0.34690984754215054,
+          "heal_received": 26323.4,
+          "shield_received": 0.0
+        },
+        "카르멘": {
+          "taken": 27781.4,
+          "heal_given": 38333.1,
+          "shield_given": 10755.9,
+          "actions": 3.3333333333333335,
+          "end_hp": 113894.96666666666,
+          "max_hp": 119513.0,
+          "deaths": 0.0,
+          "taken_share": 0.28597903509414546,
+          "heal_received": 22163.366666666665,
+          "shield_received": 0.0
+        },
+        "클레어": {
+          "taken": 6104.416666666667,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 5.216666666666667,
+          "end_hp": 65614.0,
+          "max_hp": 65614.0,
+          "deaths": 0.0,
+          "taken_share": 0.06283827266249913,
+          "heal_received": 5681.05,
+          "shield_received": 10755.9
+        },
+        "프로페서M": {
+          "taken": 29558.55,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 6.983333333333333,
+          "end_hp": 52392.36666666667,
+          "max_hp": 61326.0,
+          "deaths": 0.0,
+          "taken_share": 0.30427284470120486,
+          "heal_received": 20624.916666666668,
+          "shield_received": 0.0
+        }
+      },
+      "casts": {
+        "아세라": {
+          "궁극기": 1.0166666666666666,
+          "기본기(추가)": 1.3,
+          "특수기": 1.0,
+          "기본기": 1.85
+        },
+        "카르멘": {
+          "궁극기": 1.0166666666666666,
+          "기본기": 2.316666666666667,
+          "특수기(추가)": 0.45
+        },
+        "클레어": {
+          "궁극기": 2.0,
+          "기본기(추가)": 4.983333333333333,
+          "특수기": 1.2166666666666666,
+          "특수기(추가)": 2.9833333333333334,
+          "기본기": 2.0
+        },
+        "프로페서M": {
+          "궁극기": 2.0,
+          "기본기": 4.983333333333333,
+          "특수기(추가)": 6.233333333333333
+        }
+      }
+    }
+  },
+  "after": {
+    "36-36/auto": {
+      "summary": {
+        "stage": "36-36",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 1.88,
+        "sim_ratio": 0.95,
+        "sim_clear": 0.0,
+        "real": "clear",
+        "real_turn": 38,
+        "sim_ally_actions": 15.4,
+        "foe_breaks": 0.767,
+        "ally_breaks": 3.95,
+        "sim_boss_actions": 6.52,
+        "sim_enemy_actions": 15.48,
+        "enemy_skills": {
+          "은둔자": {
+            "특수기": 3.9,
+            "기본기": 5.067
+          },
+          "공허순례자": {
+            "특수기": 2.467,
+            "기본기": 3.033,
+            "궁극기": 1.017
+          }
+        },
+        "sim_dealt": 395062,
+        "sim_taken": 417032,
+        "party_power": 395074,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "white-pearl-luna": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-epindel": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "cristelle": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 0.633,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 2.267
+        },
+        "nova_policy": "auto",
+        "nova_burst": {
+          "total": 0,
+          "uses": 0.0,
+          "by_unit": {}
+        },
+        "heal": 68859,
+        "healing": {
+          "루나#0": {
+            "heal": 0,
+            "shield": 10267
+          },
+          "카르멘#1": {
+            "heal": 68859,
+            "shield": 41032
+          },
+          "에핀델#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "크리스텔#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.0
+      },
+      "targets": {
+        "루나": {
+          "taken": 88590.01666666666,
+          "heal_given": 0.0,
+          "shield_given": 10267.2,
+          "actions": 2.1,
+          "end_hp": 0.0,
+          "max_hp": 66964.0,
+          "deaths": 1.0,
+          "taken_share": 0.21242981552651682,
+          "heal_received": 12097.433333333332,
+          "shield_received": 10267.2
+        },
+        "카르멘": {
+          "taken": 127676.03333333334,
+          "heal_given": 68859.1,
+          "shield_given": 41031.76666666667,
+          "actions": 3.316666666666667,
+          "end_hp": 0.0,
+          "max_hp": 119513.0,
+          "deaths": 1.0,
+          "taken_share": 0.306154093075846,
+          "heal_received": 8163.033333333334,
+          "shield_received": 0.0
+        },
+        "에핀델": {
+          "taken": 85539.0,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 4.166666666666667,
+          "end_hp": 0.0,
+          "max_hp": 66092.0,
+          "deaths": 1.0,
+          "taken_share": 0.20511378904796898,
+          "heal_received": 19447.0,
+          "shield_received": 0.0
+        },
+        "크리스텔": {
+          "taken": 115226.88333333333,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 5.833333333333333,
+          "end_hp": 0.0,
+          "max_hp": 60236.0,
+          "deaths": 1.0,
+          "taken_share": 0.2763023023496682,
+          "heal_received": 39257.28333333333,
+          "shield_received": 41031.76666666667
+        }
+      },
+      "casts": {
+        "루나": {
+          "특수기(추가)": 0.8,
+          "궁극기": 1.0,
+          "기본기": 0.5166666666666667
+        },
+        "카르멘": {
+          "특수기(추가)": 1.7166666666666666,
+          "궁극기": 1.05,
+          "기본기": 0.6333333333333333
+        },
+        "에핀델": {
+          "궁극기": 1.2,
+          "특수기": 1.0166666666666666,
+          "기본기": 1.65
+        },
+        "크리스텔": {
+          "특수기(추가)": 1.6666666666666667,
+          "궁극기": 2.1,
+          "기본기": 3.1166666666666667
+        }
+      }
+    },
+    "36-36/heal": {
+      "summary": {
+        "stage": "36-36",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 1.88,
+        "sim_ratio": 0.95,
+        "sim_clear": 0.0,
+        "real": "clear",
+        "real_turn": 38,
+        "sim_ally_actions": 16.4,
+        "foe_breaks": 0.917,
+        "ally_breaks": 4.117,
+        "sim_boss_actions": 6.73,
+        "sim_enemy_actions": 16.03,
+        "enemy_skills": {
+          "은둔자": {
+            "특수기": 3.967,
+            "기본기": 5.333
+          },
+          "공허순례자": {
+            "특수기": 2.55,
+            "기본기": 3.167,
+            "궁극기": 1.017
+          }
+        },
+        "sim_dealt": 419370,
+        "sim_taken": 439266,
+        "party_power": 395074,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "white-pearl-luna": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-epindel": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "cristelle": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 0.817,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 2.717
+        },
+        "nova_policy": "heal",
+        "nova_burst": {
+          "total": 74,
+          "uses": 1.233,
+          "by_unit": {
+            "카르멘#1": {
+              "기본기": 41
+            },
+            "루나#0": {
+              "기본기": 33
+            }
+          }
+        },
+        "heal": 81511,
+        "healing": {
+          "루나#0": {
+            "heal": 0,
+            "shield": 16015
+          },
+          "카르멘#1": {
+            "heal": 81511,
+            "shield": 42625
+          },
+          "에핀델#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "크리스텔#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 1.2333333333333334
+      },
+      "targets": {
+        "루나": {
+          "taken": 99940.95,
+          "heal_given": 0.0,
+          "shield_given": 16014.6,
+          "actions": 2.316666666666667,
+          "end_hp": 0.0,
+          "max_hp": 66964.0,
+          "deaths": 1.0,
+          "taken_share": 0.22751824550815664,
+          "heal_received": 18214.483333333334,
+          "shield_received": 16014.6
+        },
+        "카르멘": {
+          "taken": 131846.15,
+          "heal_given": 81511.46666666666,
+          "shield_given": 42625.23333333333,
+          "actions": 3.5,
+          "end_hp": 0.0,
+          "max_hp": 119513.0,
+          "deaths": 1.0,
+          "taken_share": 0.30015128658478074,
+          "heal_received": 12333.15,
+          "shield_received": 0.0
+        },
+        "에핀델": {
+          "taken": 89976.0,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 4.433333333333334,
+          "end_hp": 0.0,
+          "max_hp": 66092.0,
+          "deaths": 1.0,
+          "taken_share": 0.20483277032929845,
+          "heal_received": 23884.0,
+          "shield_received": 0.0
+        },
+        "크리스텔": {
+          "taken": 117502.55,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 6.166666666666667,
+          "end_hp": 0.0,
+          "max_hp": 60236.0,
+          "deaths": 1.0,
+          "taken_share": 0.26749769757776415,
+          "heal_received": 41772.833333333336,
+          "shield_received": 42625.23333333333
+        }
+      },
+      "casts": {
+        "루나": {
+          "특수기(추가)": 0.8,
+          "궁극기": 1.0,
+          "기본기": 0.65
+        },
+        "카르멘": {
+          "특수기(추가)": 1.7833333333333334,
+          "궁극기": 1.0333333333333334,
+          "기본기": 0.7666666666666667
+        },
+        "에핀델": {
+          "궁극기": 1.2833333333333334,
+          "특수기": 1.0333333333333334,
+          "기본기": 1.75
+        },
+        "크리스텔": {
+          "특수기(추가)": 1.7666666666666666,
+          "궁극기": 2.183333333333333,
+          "기본기": 3.283333333333333
+        }
+      }
+    },
+    "37-2/auto": {
+      "summary": {
+        "stage": "37-2",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 4.13,
+        "sim_ratio": 3.69,
+        "sim_clear": 0.9667,
+        "real": "clear",
+        "real_turn": 52,
+        "sim_ally_actions": 45.9,
+        "foe_breaks": 0.0,
+        "ally_breaks": 1.717,
+        "sim_boss_actions": 3.85,
+        "sim_enemy_actions": 21.07,
+        "enemy_skills": {
+          "예언자": {
+            "기본기": 1.75,
+            "특수기": 2.283
+          },
+          "추적자": {
+            "특수기": 5.417,
+            "기본기": 7.033
+          },
+          "망각의 예언자": {
+            "기본기": 2.283,
+            "특수기": 1.5,
+            "궁극기": 0.017
+          }
+        },
+        "sim_dealt": 1076388,
+        "sim_taken": 291825,
+        "party_power": 395074,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "white-pearl-luna": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-epindel": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "cristelle": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 0.0,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 0.0
+        },
+        "nova_policy": "auto",
+        "nova_burst": {
+          "total": 0,
+          "uses": 0.0,
+          "by_unit": {}
+        },
+        "heal": 136695,
+        "healing": {
+          "루나#0": {
+            "heal": 0,
+            "shield": 9151
+          },
+          "카르멘#1": {
+            "heal": 136695,
+            "shield": 57763
+          },
+          "에핀델#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "크리스텔#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.0
+      },
+      "targets": {
+        "루나": {
+          "taken": 106523.3,
+          "heal_given": 0.0,
+          "shield_given": 9151.2,
+          "actions": 7.533333333333333,
+          "end_hp": 13865.983333333334,
+          "max_hp": 66964.0,
+          "deaths": 0.6,
+          "taken_share": 0.3650237527656352,
+          "heal_received": 47740.816666666666,
+          "shield_received": 9151.2
+        },
+        "카르멘": {
+          "taken": 113518.43333333333,
+          "heal_given": 136694.98333333334,
+          "shield_given": 57763.166666666664,
+          "actions": 9.966666666666667,
+          "end_hp": 50053.61666666667,
+          "max_hp": 119513.0,
+          "deaths": 0.16666666666666666,
+          "taken_share": 0.38899399984237165,
+          "heal_received": 44059.05,
+          "shield_received": 0.0
+        },
+        "에핀델": {
+          "taken": 34810.78333333333,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 12.883333333333333,
+          "end_hp": 49802.01666666667,
+          "max_hp": 66092.0,
+          "deaths": 0.03333333333333333,
+          "taken_share": 0.1192862291071039,
+          "heal_received": 18520.8,
+          "shield_received": 0.0
+        },
+        "크리스텔": {
+          "taken": 36973.15,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 15.483333333333333,
+          "end_hp": 55722.8,
+          "max_hp": 60236.0,
+          "deaths": 0.03333333333333333,
+          "taken_share": 0.12669601828488927,
+          "heal_received": 26374.316666666666,
+          "shield_received": 57763.166666666664
+        }
+      },
+      "casts": {
+        "루나": {
+          "궁극기": 2.2666666666666666,
+          "특수기(추가)": 0.6833333333333333,
+          "기본기": 4.5
+        },
+        "카르멘": {
+          "궁극기": 2.8666666666666667,
+          "특수기(추가)": 2.4166666666666665,
+          "기본기": 6.45
+        },
+        "에핀델": {
+          "궁극기": 3.6,
+          "특수기": 3.1666666666666665,
+          "기본기": 6.016666666666667
+        },
+        "크리스텔": {
+          "특수기(추가)": 4.983333333333333,
+          "궁극기": 5.55,
+          "기본기": 9.85
+        }
+      }
+    },
+    "37-3/auto": {
+      "summary": {
+        "stage": "37-3",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 1.82,
+        "sim_ratio": 0.91,
+        "sim_clear": 0.0,
+        "real": "clear",
+        "real_turn": 43,
+        "sim_ally_actions": 22.0,
+        "foe_breaks": 0.0,
+        "ally_breaks": 3.8,
+        "sim_boss_actions": 9.58,
+        "sim_enemy_actions": 12.9,
+        "enemy_skills": {
+          "예언자": {
+            "기본기": 2.167,
+            "특수기": 1.05
+          },
+          "공허습격자": {
+            "특수기": 3.483,
+            "기본기": 4.167,
+            "궁극기": 1.933
+          }
+        },
+        "sim_dealt": 374907,
+        "sim_taken": 410865,
+        "party_power": 395074,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "white-pearl-luna": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-epindel": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "cristelle": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 0.0,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 0.0
+        },
+        "nova_policy": "auto",
+        "nova_burst": {
+          "total": 0,
+          "uses": 0.0,
+          "by_unit": {}
+        },
+        "heal": 83791,
+        "healing": {
+          "루나#0": {
+            "heal": 0,
+            "shield": 7589
+          },
+          "카르멘#1": {
+            "heal": 83791,
+            "shield": 30276
+          },
+          "에핀델#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "크리스텔#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.0
+      },
+      "targets": {
+        "루나": {
+          "taken": 93351.3,
+          "heal_given": 0.0,
+          "shield_given": 7588.8,
+          "actions": 2.8833333333333333,
+          "end_hp": 0.0,
+          "max_hp": 66964.0,
+          "deaths": 1.0,
+          "taken_share": 0.22720672830842828,
+          "heal_received": 19691.3,
+          "shield_received": 7588.8
+        },
+        "카르멘": {
+          "taken": 149561.71666666667,
+          "heal_given": 83791.45,
+          "shield_given": 30275.866666666665,
+          "actions": 5.016666666666667,
+          "end_hp": 0.0,
+          "max_hp": 119513.0,
+          "deaths": 1.0,
+          "taken_share": 0.36401665883630396,
+          "heal_received": 30048.716666666667,
+          "shield_received": 0.0
+        },
+        "에핀델": {
+          "taken": 76683.91666666667,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 6.4,
+          "end_hp": 0.0,
+          "max_hp": 66092.0,
+          "deaths": 1.0,
+          "taken_share": 0.1866401626941402,
+          "heal_received": 10591.916666666666,
+          "shield_received": 0.0
+        },
+        "크리스텔": {
+          "taken": 91268.1,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 7.683333333333334,
+          "end_hp": 0.0,
+          "max_hp": 60236.0,
+          "deaths": 1.0,
+          "taken_share": 0.2221364501611275,
+          "heal_received": 23459.516666666666,
+          "shield_received": 30275.866666666665
+        }
+      },
+      "casts": {
+        "루나": {
+          "궁극기": 1.1166666666666667,
+          "기본기": 1.1166666666666667,
+          "특수기(추가)": 0.5666666666666667
+        },
+        "카르멘": {
+          "특수기(추가)": 1.2666666666666666,
+          "궁극기": 1.4833333333333334,
+          "기본기": 2.2
+        },
+        "에핀델": {
+          "궁극기": 1.85,
+          "특수기": 1.6,
+          "기본기": 2.466666666666667
+        },
+        "크리스텔": {
+          "궁극기": 2.8333333333333335,
+          "특수기(추가)": 2.466666666666667,
+          "기본기": 4.05
+        }
+      }
+    },
+    "37-4/auto": {
+      "summary": {
+        "stage": "37-4",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 6.52,
+        "sim_ratio": 5.63,
+        "sim_clear": 1.0,
+        "real": "clear",
+        "real_turn": 13,
+        "sim_ally_actions": 15.5,
+        "foe_breaks": 1.35,
+        "ally_breaks": 0.0,
+        "sim_boss_actions": 1.98,
+        "sim_enemy_actions": 6.1,
+        "enemy_skills": {
+          "숭배자": {
+            "기본기": 4.117
+          },
+          "업화의 추적자": {
+            "특수기": 1.0,
+            "기본기": 0.983
+          }
+        },
+        "sim_dealt": 505422,
+        "sim_taken": 89764,
+        "party_power": 411771,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "waltz-asherah": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "claire": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "professor-m": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 1.0,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 3.35
+        },
+        "nova_policy": "auto",
+        "nova_burst": {
+          "total": 0,
+          "uses": 0.0,
+          "by_unit": {}
+        },
+        "heal": 59727,
+        "healing": {
+          "아세라#0": {
+            "heal": 28246,
+            "shield": 0
+          },
+          "카르멘#1": {
+            "heal": 31481,
+            "shield": 12748
+          },
+          "클레어#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "프로페서M#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.0
+      },
+      "targets": {
+        "아세라": {
+          "taken": 37162.333333333336,
+          "heal_given": 28245.966666666667,
+          "shield_given": 0.0,
+          "actions": 3.0,
+          "end_hp": 87102.91666666667,
+          "max_hp": 95575.0,
+          "deaths": 0.0,
+          "taken_share": 0.4139991091482748,
+          "heal_received": 28690.25,
+          "shield_received": 0.0
+        },
+        "카르멘": {
+          "taken": 37145.933333333334,
+          "heal_given": 31481.05,
+          "shield_given": 12747.733333333334,
+          "actions": 2.966666666666667,
+          "end_hp": 109023.9,
+          "max_hp": 119513.0,
+          "deaths": 0.0,
+          "taken_share": 0.41381640841931006,
+          "heal_received": 26656.833333333332,
+          "shield_received": 0.0
+        },
+        "클레어": {
+          "taken": 6155.3,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 4.016666666666667,
+          "end_hp": 65495.53333333333,
+          "max_hp": 65614.0,
+          "deaths": 0.0,
+          "taken_share": 0.06857181689005111,
+          "heal_received": 5424.533333333334,
+          "shield_received": 12747.733333333334
+        },
+        "프로페서M": {
+          "taken": 9300.716666666667,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 5.5,
+          "end_hp": 60257.2,
+          "max_hp": 61326.0,
+          "deaths": 0.0,
+          "taken_share": 0.10361266554236401,
+          "heal_received": 8231.916666666666,
+          "shield_received": 0.0
+        }
+      },
+      "casts": {
+        "아세라": {
+          "궁극기": 1.0,
+          "특수기": 1.0,
+          "기본기": 1.0,
+          "기본기(추가)": 1.1166666666666667
+        },
+        "카르멘": {
+          "궁극기": 1.0,
+          "특수기(추가)": 0.5333333333333333,
+          "기본기": 1.9666666666666666
+        },
+        "클레어": {
+          "궁극기": 1.0166666666666666,
+          "기본기(추가)": 3.5,
+          "특수기": 1.0,
+          "특수기(추가)": 2.4166666666666665,
+          "기본기": 2.0
+        },
+        "프로페서M": {
+          "궁극기": 2.0,
+          "기본기": 3.5,
+          "특수기(추가)": 4.616666666666666
+        }
+      }
+    },
+    "37-5/auto": {
+      "summary": {
+        "stage": "37-5",
+        "runs": 60,
+        "seed": 7,
+        "real_ratio": 4.17,
+        "sim_ratio": 7.03,
+        "sim_clear": 1.0,
+        "real": "clear",
+        "real_turn": 22,
+        "sim_ally_actions": 19.4,
+        "foe_breaks": 2.0,
+        "ally_breaks": 0.0,
+        "sim_boss_actions": 0.0,
+        "sim_enemy_actions": 5.03,
+        "enemy_skills": {
+          "망각의 예언자": {
+            "특수기": 2.033,
+            "기본기": 3.0
+          }
+        },
+        "sim_dealt": 682765,
+        "sim_taken": 97145,
+        "party_power": 411771,
+        "myinfo": {
+          "rule": "normal",
+          "units": {
+            "waltz-asherah": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "wedding-carmen": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "claire": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            },
+            "professor-m": {
+              "missing": [
+                "gauntlet_blessings"
+              ],
+              "build_mismatch": false
+            }
+          }
+        },
+        "break_skill": {
+          "name": "큐브 과부하",
+          "uses": 0.0,
+          "dmg": 0.0,
+          "supported": true,
+          "points_gained": 2.0
+        },
+        "nova_policy": "auto",
+        "nova_burst": {
+          "total": 0,
+          "uses": 0.0,
+          "by_unit": {}
+        },
+        "heal": 74793,
+        "healing": {
+          "아세라#0": {
+            "heal": 36460,
+            "shield": 0
+          },
+          "카르멘#1": {
+            "heal": 38333,
+            "shield": 10756
+          },
+          "클레어#2": {
+            "heal": 0,
+            "shield": 0
+          },
+          "프로페서M#3": {
+            "heal": 0,
+            "shield": 0
+          }
+        },
+        "bursts_per_run": 0.0
+      },
+      "targets": {
+        "아세라": {
+          "taken": 33700.51666666667,
+          "heal_given": 36459.63333333333,
+          "shield_given": 0.0,
+          "actions": 3.8666666666666667,
+          "end_hp": 88197.88333333333,
+          "max_hp": 95575.0,
+          "deaths": 0.0,
+          "taken_share": 0.34690984754215054,
+          "heal_received": 26323.4,
+          "shield_received": 0.0
+        },
+        "카르멘": {
+          "taken": 27781.4,
+          "heal_given": 38333.1,
+          "shield_given": 10755.9,
+          "actions": 3.3333333333333335,
+          "end_hp": 113894.96666666666,
+          "max_hp": 119513.0,
+          "deaths": 0.0,
+          "taken_share": 0.28597903509414546,
+          "heal_received": 22163.366666666665,
+          "shield_received": 0.0
+        },
+        "클레어": {
+          "taken": 6104.416666666667,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 5.216666666666667,
+          "end_hp": 65614.0,
+          "max_hp": 65614.0,
+          "deaths": 0.0,
+          "taken_share": 0.06283827266249913,
+          "heal_received": 5681.05,
+          "shield_received": 10755.9
+        },
+        "프로페서M": {
+          "taken": 29558.55,
+          "heal_given": 0.0,
+          "shield_given": 0.0,
+          "actions": 6.983333333333333,
+          "end_hp": 52392.36666666667,
+          "max_hp": 61326.0,
+          "deaths": 0.0,
+          "taken_share": 0.30427284470120486,
+          "heal_received": 20624.916666666668,
+          "shield_received": 0.0
+        }
+      },
+      "casts": {
+        "아세라": {
+          "궁극기": 1.0166666666666666,
+          "기본기(추가)": 1.3,
+          "특수기": 1.0,
+          "기본기": 1.85
+        },
+        "카르멘": {
+          "궁극기": 1.0166666666666666,
+          "기본기": 2.316666666666667,
+          "특수기(추가)": 0.45
+        },
+        "클레어": {
+          "궁극기": 2.0,
+          "기본기(추가)": 4.983333333333333,
+          "특수기": 1.2166666666666666,
+          "특수기(추가)": 2.9833333333333334,
+          "기본기": 2.0
+        },
+        "프로페서M": {
+          "궁극기": 2.0,
+          "기본기": 4.983333333333333,
+          "특수기(추가)": 6.233333333333333
+        }
+      }
+    }
+  }
+}

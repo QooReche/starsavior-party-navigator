@@ -89,8 +89,9 @@ RX_EXTRA_P = re.compile(r'^자신에게 (\d+)% 확률로 (기본기|특수기|�
 RX_RECAST = re.compile(r'발동 후 (\d+)턴 재발동 불가')
 RX_TOUGH_HEAL = re.compile(r'^(.+?)에게 강인도 (\d+) 회복')          # P5: 「자신에게 강인도 N 회복」(적 42줄)
 RX_HEAL_P = re.compile(r'^(.+?)에게 (\d+)% 확률로 회복 = (자신|대상) (최대 생명력|생명력|공격력|방어력)×([\d.]+)%')   # 잠재력 BX 「25% 확률로 회복」
+RX_NOVA = re.compile(r'^(.+?)에게 노바 포스 ([+-]\d+)(?:\s|$)')
 SPECIAL_RX = (RX_SHIELD, RX_HEAL, RX_REVIVE, RX_DISPEL, RX_DISPEL_N, RX_RANDOM, RX_RECV_HEAL, RX_GAUGE_P, RX_EXTRA_P, RX_TOUGH_HEAL,
-              RX_HEAL_P, RX_GAUGE_SET, RX_CHAIN_T, RX_CD_UP, RX_LOCAL_PER)
+              RX_HEAL_P, RX_GAUGE_SET, RX_CHAIN_T, RX_CD_UP, RX_LOCAL_PER, RX_NOVA)
 # P5 「피해 제한」: 효과마다 설명문에 적힌 동작을 그대로(일반화하지 않는다 — codex 설계 상담). 여기 없는 「피해 제한」 효과는 미지원(적이면 중요 미지원).
 #  floor  = 한 번의 피해로 현재 생명력이 pct 아래로 내려가지 않음(로자리아 「대미지 브레이크」: 「현재 생명력이 40% 이하로 떨어지지 않습니다 … 전투 중 1회」)
 #  lethal = 사망에 이르는 피해 -> 최대 생명력 keep 만큼 남기고 〈불사〉 n턴(적 「불사의 육신」·카넬리아 「바큇살」 설명문)
@@ -482,6 +483,7 @@ class Battle:
         self.events = 0
         self.depth = 0
         self.team_nova = 0.0
+        self.enemy_nova = 0.0
         self.nova_bursts = defaultdict(int)  # (아군 칸, 슬롯)별 실제 사용 횟수
         self.unsup = defaultdict(int)
         self.timeline = [] if timeline else None
@@ -1112,7 +1114,9 @@ class Battle:
             self.fire_side(u, ctx, 'ally_post')
             self.fire_foes(u, ctx, 'foe_post' if sk.is_attack else 'foe_post_na')
             self.fire_foes(u, ctx, 'foe_post_any')      # 「적 행동 후」(공격·비공격 모두)
-            if u.side == 0 and not extra and sk.slot in ('특수기', '궁극기'):
+            # GetNovaForceValue is paid at every skill end, including reactions
+            # and extra casts (NKM:15325-15331,15487,15706-15709).
+            if self.mc['nova_skill_gain'] or (u.side == 0 and not extra and sk.slot in ('특수기', '궁극기')):
                 self.nova_add(u, sk.nv)
             if u.side == 0 and self.opts['coop'] and sk.is_attack and not extra and not u.dead:
                 self.coop(u, ctx)
@@ -1134,13 +1138,20 @@ class Battle:
 
     def nova_of(self, u):
         """버스트 판정용 노바 포스: team = 파티 공용 풀, unit = 구원자 개인(opts.nova_pool)"""
-        return u.nova if self.opts['nova_pool'] == 'unit' else self.team_nova
+        return u.nova if self.opts['nova_pool'] == 'unit' else (self.team_nova if u.side == 0 else self.enemy_nova)
 
     def nova_add(self, u, v):
+        value = self.nova_of(u) + v
+        if self.mc['nova_force_effects']:
+            value = max(0, value)  # Native decrease floors at zero (NKM:1199).
+        # Native upper bound exists, but MaxNovaForceValue is absent from the
+        # supplied tables. Do not invent a numeric cap from battle outcomes.
         if self.opts['nova_pool'] == 'unit':
-            u.nova += v
+            u.nova = value
+        elif u.side == 1:
+            self.enemy_nova = value
         else:
-            self.team_nova += v
+            self.team_nova = value
 
     def incapacitated(self, u):
         """행동 불능(기절·수면). 강인도 격파(브레이크)는 행동 불능이 아니다(게이지 0 초기화로 차례가 늦어질 뿐)."""
@@ -1180,8 +1191,8 @@ class Battle:
         source = self.lines_of(u)
         if hasattr(sk, 'semantic_lines'):
             source = [ln for ln in source if not (ln.src_kind == 'active' and ln.slot == sk.slot)] + sk.semantic_lines
-        # 기존 auto/manual 수치를 보존: 슬롯별 노바 효과 연결은 새 heal 정책에 한정.
-        if ctx.nb and self.opts['nova_policy'] == 'heal':
+        # Slot effects depend on activation, not on the selection policy.
+        if ctx.nb and (self.mc['nova_slot_effects'] or self.opts['nova_policy'] == 'heal'):
             source = source + [Line(raw, sk.slot, 'nova')
                                for raw in (getattr(u.d, 'nb', {}).get(sk.slot + ' 사용 시') or [])]
         lines = [ln for ln in source if line_kind(ln) == kind and not (ln.bound and ln.slot != sk.slot)
@@ -1464,7 +1475,8 @@ class Battle:
         if video:
             if a.element and v.element and (a.element == v.element or ELEM_BEATS.get(a.element) == v.element):
                 normal += 1
-            fixed += int(ctx.nb)  # 기존 문서의 버스트 +1; 영상 궁 4의 버스트 여부는 미확인
+            if not self.mc['nova_slot_effects']:
+                fixed += int(ctx.nb)  # Legacy video approximation; native slot lines already add this.
         elif mode in ('db', 'video'):
             # starsavior-db mechanics(2026-10-21 확인): 기본값(상성 유리 1, 아니면 0) + 강인도 피해(스킬 ab·버프) + 고정 피해 − 감소
             if a.element and v.element and ELEM_BEATS.get(a.element) == v.element:
@@ -2172,7 +2184,13 @@ class Battle:
             return
 
     def run_special(self, owner, ln, ctx, rest):
-        """parser 가 무시한 줄 중 확률 엔진이 해석하는 것: 회복·보호막·부활·해제·무작위 효과·받는 회복량"""
+        """Execute effect lines outside the expected-value parser's model."""
+        m = RX_NOVA.match(rest)
+        if m and self.mc['nova_force_effects']:
+            # The effect targets a unit, then changes that unit's team pool.
+            for x in self.resolve(owner, m.group(1), ctx) or []:
+                self.nova_add(x, int(m.group(2)))
+            return
         m = RX_SHIELD.match(rest)
         if m:
             tg = self.resolve(owner, m.group(1), ctx, kind='shield')
