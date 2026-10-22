@@ -69,6 +69,19 @@
     return { keys, unknown };
   }
 
-  const api = { FORMAT, fromHash, validate, mapOwned, b64urlToBytes };
+  // 공유 링크용: JSON → gzip → base64url (fromHash 의 반대). 브라우저 CompressionStream 필요
+  async function toHash(info) {
+    if (typeof CompressionStream !== "function") throw new Error("이 브라우저는 압축을 지원하지 않습니다.");
+    const cs = new CompressionStream("gzip");
+    const w = cs.writable.getWriter();
+    w.write(new TextEncoder().encode(JSON.stringify(info))); w.close();
+    const bytes = new Uint8Array(await new Response(cs.readable).arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    const b64 = (typeof btoa === "function") ? btoa(bin) : Buffer.from(bin, "binary").toString("base64");
+    return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+
+  const api = { FORMAT, fromHash, toHash, validate, mapOwned, b64urlToBytes };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.MyInfoImport = api;
 })(typeof window !== "undefined" ? window : globalThis);
