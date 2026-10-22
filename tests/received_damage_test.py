@@ -67,6 +67,11 @@ class AuditTest(unittest.TestCase):
             self.assertEqual(plain, measured['summary'])
             total = sum(r['taken'] for r in measured['damage'])
             self.assertAlmostEqual(total, sum(u['taken'] for u in measured['targets'].values()))
+            self.assertAlmostEqual(1, sum(u['taken_share'] for u in measured['targets'].values()))
+            self.assertTrue(measured['targeting'])
+            for row in measured['targeting']:
+                self.assertGreater(row['single'] + row['aoe'], 0)
+                self.assertLessEqual(row['taunted'], row['single'] + row['aoe'])
             for row in measured['damage']:
                 self.assertGreaterEqual(row['taken'], 0)
             self.assertTrue(all(r['source'] for r in measured['damage']))

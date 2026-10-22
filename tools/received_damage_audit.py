@@ -18,12 +18,36 @@ from battlesim.mc import Battle
 
 def measure(stage, runs, seed, myinfo, override=None):
     original = {k: getattr(Battle, k) for k in
-                ('deal', 'exec_line', 'apply_damage', 'final_dmg', 'run')}
+                ('deal', 'exec_line', 'apply_damage', 'final_dmg', 'run',
+                 'skill_targets', 'roll_hit')}
     totals = defaultdict(Counter)
     units = defaultdict(Counter)
+    targeting = defaultdict(Counter)
+    taunts = defaultdict(Counter)
+    casts = defaultdict(Counter)
     stack, first_hits = [], []
     serial = 0
     pending = None
+
+    def targets(b, u, sk, target=None):
+        result = original['skill_targets'](b, u, sk, target)
+        if u.side == 1 and sk.is_attack:
+            taunt = u.eff.get('도발')
+            forced = bool(taunt and taunt.stacks > 0 and target is taunt.src
+                          and not target.dead and sk.slot == '기본기' and u.acting)
+            for v in result:
+                targeting[b.wave_i, u.name, u.pos, sk.name, v.name].update(
+                    aoe=int(bool(sk.all)), single=int(not sk.all),
+                    taunted=int(forced))
+        return result
+
+    def roll_hit(b, owner, ctx, x, name):
+        result = original['roll_hit'](b, owner, ctx, x, name)
+        if name == '도발':
+            taunts[b.wave_i, owner.name, x.name, x.pos].update(
+                checks=1, passed=int(result), rejected=int(not result),
+                immune=int(name in getattr(x.d, 'immune', ())))
+        return result
 
     def deal(b, a, ctx):
         stack.append((a, ctx.skill.name))
@@ -86,11 +110,13 @@ def measure(stage, runs, seed, myinfo, override=None):
             units[u.name].update(taken=u.taken, heal_given=u.healed,
                                  shield_given=u.shield_given, actions=u.actions,
                                  end_hp=u.hp, max_hp=u.maxhp, deaths=u.dead)
+            casts[u.name].update(u.cast_count)
         serial += 1
         return result
 
     with ExitStack() as scope:
-        for name, fn in dict(deal=deal, exec_line=line, final_dmg=final, apply_damage=apply, run=run).items():
+        for name, fn in dict(deal=deal, exec_line=line, final_dmg=final, apply_damage=apply,
+                             run=run, skill_targets=targets, roll_hit=roll_hit).items():
             scope.enter_context(patch.object(Battle, name, fn))
         result = check.run(stage, runs, override, seed, True, myinfo)
     rows = [dict(wave=k[0], enemy=k[1], pos=k[2], source=k[3], kind=k[4], target=k[5],
@@ -98,8 +124,18 @@ def measure(stage, runs, seed, myinfo, override=None):
             for k, v in sorted(totals.items())]
     assert abs(sum(r['taken'] for r in rows) - sum(v['taken'] for v in units.values()) / runs) < 1e-6
     assert abs(sum(r['taken'] for r in rows) - result['sim_taken']) <= len(units) * .5
+    total = sum(v['taken'] for v in units.values())
     return dict(summary=result, damage=rows, first_seed_hits=first_hits,
-                targets={k: {f: x / runs for f, x in v.items()} for k, v in units.items()})
+                targeting=[dict(wave=k[0], enemy=k[1], pos=k[2], skill=k[3], target=k[4],
+                                **{f: x / runs for f, x in v.items()})
+                           for k, v in sorted(targeting.items())],
+                taunts=[dict(wave=k[0], caster=k[1], target=k[2], pos=k[3],
+                             **{f: x / runs for f, x in v.items()})
+                        for k, v in sorted(taunts.items())],
+                casts={k: {f: x / runs for f, x in v.items()} for k, v in casts.items()},
+                targets={k: dict(**{f: x / runs for f, x in v.items()},
+                                 taken_share=v['taken'] / total if total else 0)
+                         for k, v in units.items()})
 
 
 def video_comparison(runs=60):

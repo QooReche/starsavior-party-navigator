@@ -65,6 +65,7 @@
                     "source": "databook #d-sum #d-break (docs/formulas_local.md 3장), 상태 효과 사전(속박·표적 각인, formulas_web.md 4.2)"}
  },
  "mc": {
+  "taunt_skill_end_duration": {"value": true, "legacy": false, "alt": [false], "grade": "code", "note": "스킬 사용 후 도발이 현재 행동 중인 대상에게 부여/갱신되면 그 행동 종료 차감을 건너뛴다. 1턴 반응 도발이 다음 자기 행동 전에 즉시 만료되던 오류 수정. 다른 시점/효과의 지속 규칙은 별도이며 전체 버프 시계 동등성은 주장하지 않음. 도발 면역·시전자 사망·광역 기본기 대상 처리는 기존 규칙 유지", "source": "star-savior-decompiled/NKM/NKM.decompiled.cs:1840-1848,3718-3731,4234-4252,5288; SE_TEMPLET_SKILL_1.json:27944-27953,28108-28117 (루나 반응 도발 SKILL_END); docs/taunt_guard_audit.md"},
   "_note": "P3 확률(몬테카를로) 엔진 battlesim/mc.py 전용 규칙. 기대값 엔진(engine.Sim)의 opts 와 섞지 않는다(damage_index _meta.opts 가 바뀌지 않게). 근거 = docs/battlesim_design.md 「P3 상세」",
   "enemy_skill_ai": {"value": "ult_special_basic", "grade": "assumed", "note": "적 스킬 선택: 쿨타임이 찬 궁극기 > 특수기 > 기본기(구원자 오토와 같은 규칙). 침묵이면 쿨타임 있는 스킬 불가, 도발이면 도발자에게 기본기", "source": "설계 3절 표(실측 대상)"},
   "ally_init_cd": {"value": 0.0, "alt": [1.0], "grade": "user", "note": "확률 엔진 구원자의 시작 쿨타임 = 최대 쿨타임 x 이 값. 0 = 시작부터 특수기·궁극기 사용 가능(쓰면 그때부터 스킬마다 쿨) — 사용자 인게임 확인 2026-10-21. 1.0 = 옛 가정(시작 만충, opts.init_cd_frac 과 같음)"},

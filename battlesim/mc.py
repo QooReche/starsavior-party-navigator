@@ -2453,6 +2453,12 @@ class Battle:
         if eff.get('cast_marker') and cast_ctx is not None and (x, name) not in cast_ctx.markers:
             cast_ctx.markers[(x, name)] = copy.copy(e) if e is not None else None
         dur = _dur(eff['dur'])
+        # A reaction's SKILL_END can taunt the unit whose turn is still in
+        # progress. Native duration ticking excludes that application turn
+        # (NKM:3723,4234-4252); otherwise a one-turn taunt never gets used.
+        fresh = (x is owner and owner.acting) or (
+            self.mc['taunt_skill_end_duration'] and name == '도발' and x.acting
+            and self._cur_line is not None and self._cur_line.phase == '스킬 사용 후')
         if e is None:
             mx = eff['max'] or (5 if dot else 1)
             e = Eff(name, eff['props'], mx, dur, owner, harmful)
@@ -2463,12 +2469,12 @@ class Battle:
                 e.check = True
                 self.check_pending.append((x, name))
             x.eff[name] = e
-            e.fresh = (x is owner and owner.acting)
+            e.fresh = fresh
         else:
             e.category, e.harmful = category, harmful
             if eff['dur'] is not None:
                 e.dur = max(e.dur, dur) if e.dur != math.inf else e.dur
-                if x is owner and owner.acting:
+                if fresh:
                     e.fresh = True
             e.props = eff['props'] or e.props
             e.src = owner
