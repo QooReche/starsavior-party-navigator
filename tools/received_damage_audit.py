@@ -1,0 +1,158 @@
+"""Read private inputs in place; aggregate damage by enemy instance/skill/victim.
+
+No combat changes, RNG calls, calibration, or private source copies.
+"""
+import argparse
+from collections import Counter, defaultdict
+from contextlib import ExitStack
+import json
+from pathlib import Path
+import sys
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path[:0] = [str(ROOT), str(ROOT / 'tools')]
+import ingame_check as check
+from battlesim.mc import Battle
+
+
+def measure(stage, runs, seed, myinfo, override=None):
+    original = {k: getattr(Battle, k) for k in
+                ('deal', 'exec_line', 'apply_damage', 'final_dmg', 'run')}
+    totals = defaultdict(Counter)
+    units = defaultdict(Counter)
+    stack, first_hits = [], []
+    serial = 0
+    pending = None
+
+    def deal(b, a, ctx):
+        stack.append((a, ctx.skill.name))
+        try:
+            return original['deal'](b, a, ctx)
+        finally:
+            stack.pop()
+
+    def line(b, a, ln, ctx):
+        # Parsed public databook description, never decompiled source text.
+        stack.append((a, ln.raw))
+        try:
+            return original['exec_line'](b, a, ln, ctx)
+        finally:
+            stack.pop()
+
+    def final(b, a, v, base, ctx, crit, cdv, pen, r, hctx):
+        nonlocal pending
+        result = original['final_dmg'](b, a, v, base, ctx, crit, cdv, pen, r, hctx)
+        if v.side == 0:
+            local = hctx.local[v]['defp'] if hctx is not None and hctx.local is not None else 0
+            pending = dict(target=v.name, source=a.name, skill=ctx.skill.name,
+                           defense=b.def_stat(v, local), crit=crit, broken=v.broken,
+                           base=base, incoming=result, tick=b.t)
+        return result
+
+    def apply(b, a, v, dmg, kind, shieldable=True):
+        nonlocal pending
+        hp, taken, shield = v.hp, v.taken, v.shield_total()
+        # Death clears even an unused shield (e.g. lethal DoT). That is not
+        # absorption. Count only the shields apply_damage can actually spend.
+        usable = sum(e.shield for e in v.eff.values() if e.shield > 0
+                     and not (v.buff_blocked() and not e.harmful))
+        absorbed = min(max(0, dmg), usable) if shieldable and not v.dead else 0
+        info, pending = pending, None
+        result = original['apply_damage'](b, a, v, dmg, kind, shieldable)
+        if v.side != 0:
+            return result
+        source = next((label for actor, label in reversed(stack) if actor is a), kind)
+        if kind == 'dot':
+            # This frame's effect name is diagnostic only, never affects combat.
+            source = sys._getframe(1).f_locals.get('name', 'dot')
+        key = (b.wave_i, a.name if a else 'environment', a.pos if a else -1, source, kind, v.name)
+        c = totals[key]
+        actual = v.taken - taken
+        c.update(hits=1, incoming=dmg, taken=actual, absorbed=absorbed,
+                 hp_loss=actual-absorbed, net_hp_loss=hp-v.hp,
+                 discarded_shield=max(0, shield-v.shield_total()-absorbed),
+                 excess_or_limited=max(0, dmg-actual))
+        if info and kind in ('hit', 'guard'):
+            c['critical_hits'] += info['crit']
+            if serial == 0:
+                first_hits.append(dict(info, kind=kind, taken=actual, absorbed=absorbed))
+        return result
+
+    def run(b):
+        nonlocal serial
+        result = original['run'](b)
+        for u in b.allies:
+            units[u.name].update(taken=u.taken, heal_given=u.healed,
+                                 shield_given=u.shield_given, actions=u.actions,
+                                 end_hp=u.hp, max_hp=u.maxhp, deaths=u.dead)
+        serial += 1
+        return result
+
+    with ExitStack() as scope:
+        for name, fn in dict(deal=deal, exec_line=line, final_dmg=final, apply_damage=apply, run=run).items():
+            scope.enter_context(patch.object(Battle, name, fn))
+        result = check.run(stage, runs, override, seed, True, myinfo)
+    rows = [dict(wave=k[0], enemy=k[1], pos=k[2], source=k[3], kind=k[4], target=k[5],
+                 **{field: value / runs for field, value in v.items()})
+            for k, v in sorted(totals.items())]
+    assert abs(sum(r['taken'] for r in rows) - sum(v['taken'] for v in units.values()) / runs) < 1e-6
+    assert abs(sum(r['taken'] for r in rows) - result['sim_taken']) <= len(units) * .5
+    return dict(summary=result, damage=rows, first_seed_hits=first_hits,
+                targets={k: {f: x / runs for f, x in v.items()} for k, v in units.items()})
+
+
+def video_comparison(runs=60):
+    """Recreate the documented 382k standard build, not the user's myinfo.
+
+    Guard pieces must be summed per cast: Haydee receives her own hit plus
+    three shared pieces. Her floating total is not one ordinary target hit.
+    """
+    import toughness_check
+    from battlesim import rules
+    original = Battle.final_dmg
+    rows = defaultdict(Counter)
+    defenses = defaultdict(set)
+
+    def final(b, a, v, base, ctx, crit, cdv, pen, r, hctx):
+        result = original(b, a, v, base, ctx, crit, cdv, pen, r, hctx)
+        if a.side == 1 and a.d.boss:
+            if not hasattr(b, '_video_first'):
+                b._video_first = ctx
+            if b._video_first is ctx:
+                part = 'direct' if v is ctx.target else 'guard'
+                rows[v.name][part] += result
+                local = hctx.local[v]['defp'] if hctx and hctx.local is not None else 0
+                defenses[v.name].add(b.def_stat(v, local))
+        return result
+
+    with patch.object(Battle, 'final_dmg', final), patch.dict(rules.MC_OPTS, guard_normal_hit=False):
+        toughness_check.video_run('db', runs)
+    return {name: dict(damage=sum(c.values()) / runs,
+                       direct=c['direct'] / runs, guard=c['guard'] / runs,
+                       defense=sorted(defenses[name])) for name, c in rows.items()}
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--myinfo', required=True)
+    p.add_argument('--runs', type=int, default=60)
+    p.add_argument('--seed', type=int, default=7)
+    p.add_argument('--ov', type=json.loads)
+    p.add_argument('--output', type=Path, required=True)
+    args = p.parse_args()
+    if args.runs < 1:
+        p.error('--runs must be positive')
+    if not args.output.resolve().is_relative_to(ROOT):
+        p.error('Output must stay in the workspace')
+    check.low_priority()
+    result = {}
+    for stage in check.SAMPLES:
+        result[stage] = measure(stage, args.runs, args.seed, args.myinfo, args.ov)
+        print(json.dumps(result[stage]['summary'], ensure_ascii=False), flush=True)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+
+if __name__ == '__main__':
+    main()

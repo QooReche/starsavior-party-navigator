@@ -1425,7 +1425,10 @@ class Battle:
             if len(pc) == 3:
                 dmg = max(1.0, math.floor(pc[2]))
             else:
-                dmg = self.final_dmg(a, w, pc[1], ctx, crit, cdv, pen, r, hctx)
+                # Native shared damage re-enters GetFinalDamage with a supplied
+                # base; that path forces NormalHit (NKM:7494,17384,17418).
+                shared_normal = w is guard and self.mc['guard_normal_hit']
+                dmg = self.final_dmg(a, w, pc[1], ctx, crit and not shared_normal, cdv, pen, r, hctx)
             if w is guard:
                 self.log(guard=guard.name, protects=v.name, dmg=dmg)
             killed = self.apply_damage(a, w, dmg, 'guard' if w is guard else 'hit', shieldable=True) or killed
