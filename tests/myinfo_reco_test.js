@@ -34,13 +34,21 @@ const tests={
       contents:[{key:'op'}],$:()=>({value:0}),rkOf:()=>0,SIMQ:{n:100},MODE:'auto',miMode:()=>true,MI:{hash:'first'},teamBreak:()=>null});
     vm.runInContext(html.slice(start,end),ctx);ctx.t={combo:[],ek:keys,base:40000,b:finals};ctx.st={tab:'x',name:'y'};
     const party=JSON.parse(JSON.stringify(vm.runInContext('simParty(t)',ctx)));
-    assert.equal(party.leader,0);assert.deepEqual(party.units[0],{key:'1002',build:'none',stats_override:profile.results['1002'].stats,stats_final:true});
-    assert.deepEqual(party.units[2],{key:'1001',build:'none',stats_override:profile.results['1001'].stats,stats_final:true});
+    assert.equal(party.leader,0);assert.deepEqual(party.units[0],{key:'1002',build:'none',stats_override:profile.results['1002'].stats,stats_final:true,power:profile.results['1002'].power});
+    assert.deepEqual(party.units[2],{key:'1001',build:'none',stats_override:profile.results['1001'].stats,stats_final:true,power:profile.results['1001'].power});
     assert.deepEqual(party.units[3],{key:'missing',stats_override:{atk:100,hp:1000,def:50}});
     const before=vm.runInContext('simSig(st,t)',ctx);ctx.MI.hash='second';assert.notEqual(vm.runInContext('simSig(st,t)',ctx),before);
-    ctx.miMode=()=>false;assert.notEqual(vm.runInContext('simSig(st,t)',ctx),before);}
+    ctx.miMode=()=>false;assert.notEqual(vm.runInContext('simSig(st,t)',ctx),before);},
+  sim_power(){const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
+    const keys=['1001','1002','1003','1005'],profile=M.profile(info,roster,growth,'op');
+    const ctx=vm.createContext({arrangeOf:()=>({order:keys,lead:'1001'}),ekey:k=>k,Quick:Q,
+      QK:{d:{sv:Object.fromEntries(keys.map(k=>[k,[0,100,1000,50,100,10000]]))}},
+      t:{ek:keys,base:40000,b:M.team(keys,profile,k=>k)}});
+    vm.runInContext(html.slice(html.indexOf('function simParty('),html.indexOf('const simSigB=')),ctx);
+    assert.equal(vm.runInContext('simParty(t).units.reduce((n,u)=>n+u.power,0)',ctx),39331);}
 };
-for(const [name,test] of Object.entries(tests)){test();console.log('PASS',name)}
+let failed=0;for(const [name,test] of Object.entries(tests)){try{test();console.log('PASS',name)}catch(e){failed++;console.error('FAIL',name,e.message)}}
+if(failed)process.exit(1);
 if(process.argv.includes('--mutations')){
   const cases=[['mapping',S,'rule_for_content',()=>null],['judgment',M,'judgment',()=>({label:'wrong',extra:0})],
     ['mixed',M,'team',()=>({powers:null,finals:{},assumed:0})],['fixed',M,'profile',()=>({results:{'1001':{power:1}},mismatch:false})],

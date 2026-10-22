@@ -4,7 +4,8 @@
 party_spec
   ["professor-m", "gwen", "fei", "amora"]  또는  {"units": [...], "leader": 0}
   유닛 = key/이름 문자열 또는 {"key", "level"(200), "res"(10), "star"(0), "build", "stats_override"{hp,atk,def,spd,cr,cd,eh,er}, "stats_final"(false)}
-  내정보 계산 결과: {"key": key, "build": "none", "stats_override": final_stats(...)["stats"], "stats_final": true}.
+  내정보 계산 결과: {"key": key, "build": "none", "stats_override": final_stats(...)["stats"], "stats_final": true, "power": final_stats(...)["power"]}.
+  power = 계산기 전투력(선택). 생략하면 기존 스킬 레벨 합 34 가정으로 계산한다.
        유닛 build 는 options.build 보다 우선한다. none 은 표준 장비·잠재력·그 조건부 효과를 추가하지 않는다.
   stats_final = true 면 stats_override 를 인게임 능력치 화면의 «최종값»으로 보고 상시 패시브 능력치 %(고유 패시브 「능력치: 생명력% +15%」 등)를
        다시 곱하지 않는다(근거: 화면 값 그대로 넣은 전투력 공식이 화면 전투력에 더 가깝다 — 카르멘 94,650 vs 화면 94,920, 패시브를 곱하면 101,850. docs/ingame_samples.md)
@@ -96,6 +97,7 @@ def _norm_party(party_spec, db, mode, build=None):
         d = UnitDef(db, key, u.get('level', 200), u.get('res', 10), u.get('star', 0), u.get('mode', mode),
                     build=u.get('build', build))
         d = normalized_definition(d)
+        d.power_override = u.get('power')
         if u.get('stats_override'):
             d.stats.update(u['stats_override'])
             d.spd_base = d.stats['spd']
@@ -184,10 +186,13 @@ def assumptions_used(mc, opts):
 
 
 def party_power(defs):
-    """databook 전투력 공식으로 4명 합(상시 패시브 % 를 스탯에 반영). 근사 — 스킬 레벨 합 34·전투력 잠재력 0 가정(build.unit_power)."""
+    """입력 전투력 또는 databook 공식의 합. 입력 없으면 스킬 레벨 합 34·전투력 잠재력 0 가정."""
     from .starsavior.build import unit_power
     tot = 0
     for d in defs:
+        if getattr(d, 'power_override', None) is not None:
+            tot += d.power_override
+            continue
         s = dict(d.stats)
         p = d.passive
         s['atk'] = s['atk'] * (1 + p['atkp'])

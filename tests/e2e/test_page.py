@@ -622,6 +622,32 @@ def import_synthetic(page):
     settle(page)
 
 
+def test_myinfo_legacy_power(browser, ctx):
+    """Old total/member power survives migration; later explicit average mode survives reload."""
+    for member_power in (False, True):
+        page = open_page(browser, ctx)
+        page.evaluate('''members => {
+          const keys=['luna','gwen','fei','amora'];
+          LS.set('owned',keys); LS.set('grow','1.25');localStorage.removeItem('pn.grow.v2');
+          if(members)LS.set('pw',Object.fromEntries(keys.map(k=>[k,25000])));
+          else LS.set('pow','100000');
+        }''', member_power)
+        page.reload()
+        page.wait_for_function('() => window._ready && LASTQ[1]?.rows.length > 0')
+        assert page.input_value('#grow') == 'manual'
+        assert page.evaluate('() => LASTQ[1].rows.every(t=>t.q.power===100000)')
+        assert page.evaluate('() => quickIn(contents[$("content").value],cur[$("stage").value]).growth') == 1.25
+        page.select_option('#grow', '0.8')
+        page.reload()
+        page.wait_for_function('() => window._ready && LASTQ[1]?.rows.length > 0')
+        assert page.input_value('#grow') == '0.8'
+        page.select_option('#grow', 'manual')
+        settle(page)
+        assert page.evaluate('() => LASTQ[1].rows.every(t=>t.q.power===100000)')
+        page.close()
+    return True, '옛 파티/구원자별 저장값 → 100,000 유지·육성 배율 보존·모드 재저장'
+
+
 def test_myinfo_import_clear(browser, ctx):
     """파일·기본 모드·내실·추천 칩·저장 복원·수동 우선순위·삭제·캐시 무효화."""
     ctx.errors.clear()
@@ -747,7 +773,7 @@ TESTS.append(test_break_skill_compare)
 TESTS.append(test_break_compare_cancel_after_team_change)
 TESTS.append(test_gimmick_slot_owned)
 TESTS.append(test_boss_gimmick_mobile)
-TESTS.extend([test_myinfo_import_clear, test_myinfo_rules_mobile, test_myinfo_sim])
+TESTS.extend([test_myinfo_legacy_power, test_myinfo_import_clear, test_myinfo_rules_mobile, test_myinfo_sim])
 
 
 def main():

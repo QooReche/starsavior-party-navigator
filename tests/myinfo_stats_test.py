@@ -296,6 +296,34 @@ class SyntheticTests(unittest.TestCase):
         self.assertGreater(raw_battle.allies[0].maxhp, final["hp"])
         self.assertEqual(api.party_power(defs), unit_power(final))
 
+    def test_sim_imported_power(self):
+        info = json.loads((ROOT / "tests/fixtures/myinfo_synthetic.json").read_text(encoding="utf-8"))
+        growth = json.loads((ROOT / "data/growth.json").read_text(encoding="utf-8"))
+        units = []
+        for u in info["units"]:
+            if u["id"] in (1001, 1002, 1003, 1005):
+                final = ms.final_stats(u, info, growth, "normal")
+                units.append(dict(key=str(u["id"]), build="none", stats_override=final["stats"],
+                                  stats_final=True, power=final["power"]))
+        self.assertEqual(len(units), 4)
+        self.assertEqual(sum(u["power"] for u in units), 39331)
+        db = get_db()
+        # Only one short battle; exercise the public API's operation penalty path.
+        encounter = api._norm_encounter(dict(waves=[[dict(name="dummy", hp=100000, atk=1)]], max_turns=1))
+        waves, limit, fx, unknown, _ = encounter
+        with patch.object(api, "_norm_encounter", return_value=(waves, limit, fx, unknown,
+                          dict(content="op", recommended_power=50000))):
+            result = api.simulate(units, dict(max_turns=1),
+                                  dict(n_runs=1, build="standard", rules_override=dict(power_penalty="model")))
+        self.assertEqual(result["party"]["power"], 39331)
+        self.assertEqual(result["party"]["penalty"], [0.786, 1.214])
+        # Omitted fields retain the old skill-level-sum=34 calculation, including mixed parties.
+        legacy = [{k: v for k, v in u.items() if k != "power"} for u in units]
+        defs, _ = api._norm_party(legacy, db, "fixed", "standard")
+        self.assertEqual(api.party_power(defs), 45886)
+        mixed, _ = api._norm_party([units[0], *legacy[1:]], db, "fixed", "standard")
+        self.assertEqual(api.party_power(mixed), units[0]["power"] + api.party_power(defs[1:]))
+
     def test_accuracy_gate(self):
         for key, expected, tolerance in (("hp", 10000, 100), ("spd", 150, 1), ("cr", 6500, 100),
                                          ("cd", 14000, 100), ("eh", 12000, 100), ("er", 2000, 100)):

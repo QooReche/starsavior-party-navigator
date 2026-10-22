@@ -322,8 +322,9 @@ function miProfile(){const ck=contents[$("content").value].key;
  return MI.profiles[ck]||(MI.profiles[ck]=MyInfoReco.profile(MI.info,R,MI.growth,ck))}
 function miLoad(){if(!miMode()||MI.growth||MI.pending)return;
  MI.error="";MI.pending=fetch("data/growth.json").then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(g=>{MI.growth=g;MI.profiles={}}).catch(()=>{MI.error="성장표 오류"}).finally(()=>{MI.pending=null;renderMi();rerun()})}
-function miSelect(){LS.set("grow",$("grow").value);miLoad();renderMi()}
-function manualSelect(){$("grow").value="manual";LS.set("grow","manual")}
+// grow.v2 = 배타적 모드, grow = 수동 입력이 없는 구원자에게 적용할 기존 육성 배율.
+function miSelect(){const v=$("grow").value;LS.set("grow.v2",v);if(+v>0)LS.set("grow",v);miLoad();renderMi()}
+function manualSelect(){$("grow").value="manual";LS.set("grow.v2","manual")}
 let cur=null;
 
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.name)}</option>`).join("");
@@ -532,7 +533,7 @@ function pwOf(keys){const o={};let n=0;for(const k of keys)if(PW[k]>0){o[ekey(k)
 function quickIn(c,st){if(!QK.d||!window.Quick)return null;const qs=(QK.d.st[c.key]||{})[st.tab+"|"+st.name];if(!qs)return null;
  const my=$("grow").value==="manual"?+$("mypow").value:0,rk=rkOf(c.key),p0=(QK.d.pc&&QK.d.pc[c.key])||QK.d.params;
  const prm=rk&&p0?Object.assign({},p0,{A:p0.A*(1+REKINDLE[rk]),B:p0.B*(1-REKINDLE[rk])}):p0;   // 재점화 버프 = 아군 피해 ×(1+x)·적 피해 ×(1−x)(시뮬 api rekindle 과 같은 뜻)
- return {qs,power:my>0?my:null,growth:+$("grow").value||1,ck:c.key,prm,rk}}
+ return {qs,power:my>0?my:null,growth:+($("grow").value==="manual"?LS.get("grow"):$("grow").value)||1,ck:c.key,prm,rk}}
 const qBase=(qi,keys)=>Object.assign({growth:qi.growth,power:qi.power,powers:$("grow").value==="manual"?pwOf(keys):null},miMode()?MyInfoReco.team(keys,miProfile(),ekey):{});
 function quickRank(cands,defPen,qi){
  const all=topParties(cands,defPen,1e9),sv=QK.d.sv,prm=qi.prm,out=[];
@@ -594,7 +595,7 @@ function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
  // 시뮬 칸 = [전열1, 전열2, 후열1, 후열2]. 화면 카드 순서(ar.order) = [후열1, 전열1, 전열2, 후열2] 라 바꿔 넣는다(tools/build_sim_results.arrange 와 같은 규칙)
  const so=[ar.order[1],ar.order[2],ar.order[0],ar.order[3]];
  const units=so.map(k0=>{const k=ekey(k0),u=sv[k],pw=(t.b.powers&&t.b.powers[k])||null;
-  if(t.b.finals?.[k0])return {key:k,build:"none",stats_override:t.b.finals[k0].stats,stats_final:true};
+  if(t.b.finals?.[k0])return {key:k,build:"none",stats_override:t.b.finals[k0].stats,stats_final:true,power:t.b.finals[k0].power};
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
  const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null}}
@@ -872,5 +873,10 @@ function drawGraph(){
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=drawGraph);
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party")drawGraph()};
 {const qs=new URLSearchParams(location.search);setMode(qs.get("mode")==="manual"?"manual":qs.get("mode")==="auto"?"auto":(LS.get("mode")==="manual"?"manual":"auto"),false)}
-{const gv=LS.get("grow");$("grow").querySelector('[value="myinfo"]').disabled=!MI.info;if(MI.info)$("grow").value="myinfo";else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;else if(LS.get("pow")||Object.values(PW).some(v=>v>0))$("grow").value="manual";miLoad()}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
+{const gv=LS.get("grow.v2")||LS.get("grow");$("grow").querySelector('[value="myinfo"]').disabled=!MI.info;
+ if(MI.info)$("grow").value="myinfo";
+ else if(!LS.get("grow.v2")&&(+LS.get("pow")>0||Object.values(PW).some(v=>v>0)))$("grow").value="manual";
+ else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
+ LS.set("grow.v2",$("grow").value);miLoad()}
+{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}const sp=LS.get("pow");if(sp){$("mypow").value=sp;$("optbox").open=true}}updCount();$("go").onclick=run;refreshTabs();run();drawGraph();window._ready=true;
 </script></body></html>
