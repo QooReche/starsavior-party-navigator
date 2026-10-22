@@ -12,6 +12,7 @@ import argparse, collections as C, json, os, re
 HERE = os.path.dirname(os.path.abspath(__file__))
 import sys
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, os.path.normpath(os.path.join(HERE, '..')))   # battlesim 패키지(저장소 루트) — -I 실행에서도 찾게
 from battlesim.fileio import atomic_json, read_json
 ROOT = os.path.normpath(os.path.join(HERE, '..'))  # 저장소 루트
 D = dict(

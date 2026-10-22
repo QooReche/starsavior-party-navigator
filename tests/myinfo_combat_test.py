@@ -140,7 +140,7 @@ class CombatTests(unittest.TestCase):
         self.assertEqual(b.nova_of(a), n + 5)  # normal skill 1 + potential 2
 
     def test_builder_reproduces_numeric_artifact(self):
-        from tools.build_myinfo_combat import build
+        from tools.build_myinfo_combat import build, MISMATCH
         from tools.runtime import static_path
         try:
             static = static_path()
@@ -152,6 +152,13 @@ class CombatTests(unittest.TestCase):
         self.assertLessEqual(kept, {'lydia-moon-caster'})
         for k in kept:
             built['units'][k] = artifact['units'][k]
+        # 설명·클라 효과 수가 달라 건너뛴 잠재력 레벨(10/23 기준 11011/1)도 main() 처럼 이전 계수로 채운다
+        self.assertLessEqual(len(MISMATCH), 3, MISMATCH)
+        from tools.build_myinfo_combat import PUBLIC_LINES
+        for (pid, lv), n in PUBLIC_LINES.items():
+            v = artifact['potentials'].get(pid, {}).get(lv)
+            self.assertTrue(v and all(0 <= i < n for i in v['lines']), (pid, lv))
+            built['potentials'].setdefault(pid, {})[lv] = v
         self.assertEqual(built, artifact)
 
     def test_web_entry_and_manifest_keep_combat_payload(self):

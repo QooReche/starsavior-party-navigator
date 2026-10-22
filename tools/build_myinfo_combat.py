@@ -12,7 +12,13 @@ from battlesim.starsavior.data import get_db
 from tools.build_growth import STAT, read
 
 
+MISMATCH = []   # build() 가 건너뛴 잠재력 레벨(설명·클라 효과 수 불일치) '잠재력/레벨: …'
+PUBLIC_LINES = {}   # (잠재력, 레벨) -> 지금 공개 설명 줄 수(보존 가능 여부 검사용)
+
+
 def build(static):
+    MISMATCH.clear()
+    PUBLIC_LINES.clear()
     def load(name):
         return read(Path(static) / 'tables' / (name + '.json'))['Data']
 
@@ -59,7 +65,11 @@ def build(static):
             lines = [i for i, s in enumerate(pub[4]) if not s.startswith(('능력치:', '[상시] 능력치:'))]
             source = [se[s] for s in r.get('PotenLevelSe', [])]
             if len(lines) != len(source):
-                raise ValueError(f'Combat line mapping changed: {p["PotenId"]}/{level}')
+                # 공개 설명 줄 수와 클라 효과 수가 다르면(데이터북이 클라 표보다 새 빌드일 때 등) 이 레벨은 만들지 않고 기록 —
+                # main() 이 이전 계수를 보존한다. 둘 다 없으면 시험(myinfo_combat_test)이 잡는다
+                MISMATCH.append(f'{p["PotenId"]}/{level}: 설명 {len(lines)}줄·클라 효과 {len(source)}개')
+                PUBLIC_LINES[(str(p['PotenId']), str(level))] = len(pub[4])
+                continue
             stats = {s['PotenLevelStatType']: s.get('PotenLevelStatRate', s.get('PotenLevelStatValue', 0))
                      for s in r.get('PotenLevelStat', []) if s['PotenLevelStatType'] not in STAT}
             # Existing public effect text supplies the vocabulary. Only indexes,
@@ -92,6 +102,16 @@ def main():
         old = json.loads(old_path.read_text(encoding='utf8'))
         for k, v in old.get('units', {}).items():
             out['units'].setdefault(k, v)
+        # 불일치로 건너뛴 잠재력 레벨만 이전 계수 보존 — 지금 공개 설명에 그 레벨이 있고 이전 줄 번호가 범위 안일 때만
+        # (지워진 레벨·줄어든 설명은 되살리지 않는다 → 엔진은 그 효과를 「전투 효과 미해석」으로 둔다)
+        for (pid, k), n in PUBLIC_LINES.items():
+            v = old.get('potentials', {}).get(pid, {}).get(k)
+            if v and all(0 <= i < n for i in v.get('lines', [])):
+                out['potentials'].setdefault(pid, {})[k] = v
+            else:
+                print('이전 계수 보존 불가(설명 구조 다름):', pid, k)
+    if MISMATCH:
+        print('설명·클라 효과 수 불일치(이전 계수 보존):', '; '.join(MISMATCH))
     atomic_text(ROOT / 'data/myinfo_combat.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
     print('Derived combat adapters:', len(out['units']), 'units,', len(out['potentials']), 'potentials')
 
