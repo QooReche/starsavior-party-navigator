@@ -114,7 +114,7 @@ def main():
                                "ec": st["element_counts"],
                                "w": w, "aoe": round(st["aoe_ratio"], 2), "def": round(st["defender_ratio"], 2)})
         contents.append({"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages})
-    out_cfg = {k: cfg[k] for k in ("advantage", "tierScore", "weights", "tagWeights", "breakSkills", "templates", "pairs", "synergy", "power", "gimmick", "seasonBonus", "matchupModes", "damage")}
+    out_cfg = {k: cfg[k] for k in ("advantage", "weights", "tagWeights", "breakSkills", "synergy", "power", "gimmick", "seasonBonus", "matchupModes", "damage")}
     out_cfg["restrict"] = {"성간 회랑": cfg["contents"]["회랑"]["restrictTabs"]}
     # mc._break_skill_rule: 표 기반 스킬 + 기존 평면 규칙을 쓰는 큐브 예외.
     mc_rules = pr._json(os.path.join(pr.HERE, "battlesim", "rules", "default.json"))["mc"]

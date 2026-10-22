@@ -2,16 +2,5 @@
  "_note": "자동 추출(data/synergy_pairs.json)이 틀렸거나 사용자 지식을 넣고 싶을 때 여기에 적는다. 갱신해도 유지된다. a=제공자, b=소비자.",
  "ignore": [],
  "set": [],
- "add": [
-  {
-   "a": "wedding-carmen",
-   "b": "waltz-asherah",
-   "type": "3:생존연계",
-   "strength": 2,
-   "conf": "사용자",
-   "directed": false,
-   "reason": "웨딩 카르멘(어나더) + 코즈믹 아세라: 상황에 따라 같이 세우는 조합(사용자 제안, 커뮤니티 '웨르멘 왈세라' 언급)",
-   "evidence": []
-  }
- ]
+ "add": []
 }

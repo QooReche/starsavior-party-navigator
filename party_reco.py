@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """콘텐츠별 추천 파티(초안, 콘솔).
 사용: python -X utf8 -I party_reco.py <콘텐츠> [보스] [--owned key1,key2,..] [--break 스킬1,스킬2]
-점수 = DB 티어 + 속성 상성 + 주 사용 콘텐츠 여부 + 팀 기능 태그(synergy_tags). 규칙값은 party_contents.json."""
+점수 = 속성 상성 + 주 사용 콘텐츠 여부 + 팀 기능 태그(synergy_tags). 규칙값은 party_contents.json."""
 import itertools
 import json
 import os
@@ -24,7 +24,6 @@ FOE_KEYS = {"작전": "op", "작전어려움": "oph", "일일": "daily", "장비
             "플래시 포인트": "rush", "회랑": "clo", "코스모 게이트": "cosmo"}
 EL = {"sun": "태양", "moon": "달", "star": "별", "order": "질서", "chaos": "혼돈"}
 SUPPORT, DEFENDER = "서포터", "디펜더"
-DEALERS = ("스트라이커", "레인저", "캐스터", "어쌔신")
 FRONT_ROLES = (DEFENDER, SUPPORT)
 
 
@@ -197,8 +196,7 @@ def score(s, growth, mains, cfg, main_name, enemies, boss=True):
     mw = cfg["matchupModes"]["avoid"] if _MM[0] == "avoid" else w
     a_w = mw["advantage"] if boss else mw["advantageMob"]
     d_w = mw["disadvantage"] if boss else mw["disadvantageMob"]
-    g = growth.get(s["key"])
-    parts = {"티어": cfg["tierScore"].get(g["tier"], 3) if g else 3}
+    parts = {}
     sp = season_part(s, cfg) if _SB[0] else 0.0
     if sp:
         parts["시즌 보너스"] = sp
@@ -227,15 +225,7 @@ def team_value(combo, cfg, tags, def_pen):
     if SUPPORT in roles:
         v += w["supportBonus"]
     v -= def_pen * max(0, roles.count(DEFENDER) - 1)  # 2번째 디펜더부터 감점
-    n_deal = sum(1 for r in roles if r in DEALERS)
-    v -= w["dealerShortPenalty"] * max(0, w["dealerMin"] - n_deal)  # 화력 부족 방지
-    keys = {x["s"]["key"] for x in combo}
-    paired = False
-    for pr_ in cfg.get("pairs", []):
-        if all(k in keys for k in pr_["keys"]):
-            v += pr_["bonus"]
-            paired = True
-    if roles.count(SUPPORT) > 1 and not paired:  # 시너지 쌍(예: 웨딩 카르멘+아세라)이면 서포터 2명도 허용
+    if roles.count(SUPPORT) > 1:
         v -= 4
     got = set()
     for x in combo:
@@ -270,22 +260,46 @@ def leader_pick(party, cfg, tags):
     return next(x for x in party if x["s"]["key"] == k), gain[k], why[k][:2]
 
 
+POOL_N = 24
+
+
 def party_pool(cands, cfg, tags):
-    """조합을 만들 후보 풀: 개인 점수 상위 14 + 시너지 쌍 구성원 + 연계가 큰 후보 최대 4"""
-    pool = sorted(cands, key=lambda x: -x["score"])[:14]
-    for pr_ in cfg.get("pairs", []):  # 시너지 쌍의 구성원은 점수가 낮아도 후보에 넣는다
-        pool += [x for x in cands if x["s"]["key"] in pr_["keys"] and x not in pool]
-    # 시너지로 이어진 후보도 풀에 넣는다(개인 점수 상위 14명 밖이어도 연계가 크면 후보, 조합 수 폭증을 막으려 4명까지)
-    top = pool[:14]
-    extra = []
-    for x in cands:
-        if x in pool:
-            continue
-        sy = sum(h[0] for h in party_synergy([x["s"]["key"], *[t["s"]["key"] for t in top]], cfg) if x["s"]["key"] in (h[1]["a"], h[1]["b"]))
-        if sy >= 4:
-            extra.append((sy, x))
-    pool += [x for _, x in sorted(extra, key=lambda e: -e[0])[:4]]
-    return pool
+    """조합을 만들 후보 풀(최대 POOL_N명). 티어 같은 개인 서열로 거르지 않고 역할별 상위(단일·광역 화력, 아군 피해 증가, 개인 점수)를
+    고르고, 연계가 강한 쌍은 둘 다 넣는다. 웹 JS(party_template.html 의 partyPool)와 같은 규칙 — 한쪽을 고치면 다른 쪽도 고칠 것."""
+    by_score = sorted(cands, key=lambda x: -x["score"])
+    if len(cands) <= POOL_N:
+        return by_score
+    du = dmg_units()
+    pool = []
+
+    def add(x):
+        if len(pool) < POOL_N and x not in pool:
+            pool.append(x)
+
+    def top(f, n):
+        for x in sorted(cands, key=lambda x: -f(du.get(x["s"]["key"], {})))[:n]:
+            add(x)
+
+    top(lambda e: e.get("s", 0), 6)
+    top(lambda e: e.get("a", 0), 4)
+    top(lambda e: e.get("g", 0) or 0, 3)
+    for x in by_score[:4]:
+        add(x)
+    pr = []
+    for i in range(len(cands)):
+        for j in range(i + 1, len(cands)):
+            pts = sum(h[0] for h in party_synergy([cands[i]["s"]["key"], cands[j]["s"]["key"]], cfg))
+            if pts >= 4:
+                pr.append((pts, i, j))
+    pr.sort(key=lambda e: (-e[0], e[1], e[2]))
+    for _, i, j in pr:
+        if len(pool) > POOL_N - 2:
+            break
+        add(cands[i])
+        add(cands[j])
+    for x in by_score:
+        add(x)
+    return sorted(pool, key=lambda x: -x["score"])
 
 
 def top_parties(cands, cfg, tags, def_pen, k=10, size=4):
@@ -340,19 +354,6 @@ def fmt(x):
     t = x["g"]["tier"] if x["g"] else "?"
     why = ", ".join(f"{k}{v:+.0f}" for k, v in x["parts"].items() if k != "티어")
     return f'{s["name"]}({s["subtitle"]}) {EL[s["element"]]}/{s["className"]} {t}' + (f" [{why}]" if why else "")
-
-
-def templates(cfg, owned, out):
-    shown = False
-    for name, t in cfg["templates"].items():
-        if name.startswith("_"):
-            continue
-        if owned is not None and not all(any(k in owned for k in n.split("|")) for n in t["need"]):
-            continue
-        if not shown:
-            out("-- 뉴비 편성 유형(arca.live 공략 기준, 보유 시 참고)")
-            shown = True
-        out(f"  · {name}: {t['desc']}")
 
 
 def find_stages(content, query):
@@ -469,7 +470,6 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
         bk = pick_break(party, cfg, content, note, have_break)
         if bk:
             out(f"  [브레이크 스킬] {bk[1]} - {bk[2]} (직업 구성 기준 추정)")
-    templates(cfg, owned, out)
     out("(자동 계산한 참고용. 가중치·브레이크 추천은 추정치)")
 
 

@@ -37,8 +37,6 @@ body:not(.show-why) .teamtags,body:not(.show-why) .why2,body:not(.show-why) #gra
 .whytoggle{display:flex;align-items:center;gap:6px;flex-direction:row!important;color:var(--fg)!important;font-size:13px!important;padding-bottom:6px}
 .gimnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid #c0507a;background:var(--bg)}
 body:not(.show-why) .gimnote{display:none}
-.arch{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:10px;margin-top:8px}.archc{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);font-size:13px}
-.archfs{display:flex;gap:8px;margin:6px 0;flex-wrap:wrap}.archf{display:flex;flex-direction:column;align-items:center;font-size:12px;color:var(--mut)}.archf .face{width:44px;height:44px}
 .pairnote{font-size:13px;margin:4px 0;padding:4px 10px;border-left:3px solid var(--acc);background:var(--bg)}
 .own{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px;font-size:13px}
 #drawer .own{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
@@ -303,7 +301,7 @@ button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 보세요.</div></div>
-<details class="note"><summary>출처·면책</summary>출처: 가이드 DB(티어·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성·편성 유형은 나무위키·커뮤니티 정리. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 빠른 계산과 「시뮬로 확인」은 Lv200·표준 육성(가이드 장비 세팅·T2 레전더리 +15·여정·특수 잠재력)의 능력치를 육성 가정 전투력에 맞춰 줄인 모델의 추정이며 실전 결과가 아닙니다(적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정). 브레이크 스킬 피해는 생존 아군 공격력 합의 광역 계수(레벨 보정 없음)로 추정하며, 노바 +4는 팀 공용(개인 풀이면 생존자 각 +4, 오토에서는 버스트를 안 써 효과 없음), 게이지 +20%는 발동 유닛 제외·상한 100%로 가정합니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</details>
+<details class="note"><summary>출처·면책</summary>출처: 가이드 DB(티어 표시·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성은 나무위키 정리. 추천 점수에는 커뮤니티 티어·편성 유형을 쓰지 않습니다. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 빠른 계산과 「시뮬로 확인」은 Lv200·표준 육성(가이드 장비 세팅·T2 레전더리 +15·여정·특수 잠재력)의 능력치를 육성 가정 전투력에 맞춰 줄인 모델의 추정이며 실전 결과가 아닙니다(적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정). 브레이크 스킬 피해는 생존 아군 공격력 합의 광역 계수(레벨 보정 없음)로 추정하며, 노바 +4는 팀 공용(개인 풀이면 생존자 각 +4, 오토에서는 버스트를 안 써 효과 없음), 게이지 +20%는 발동 유닛 제외·상한 100%로 가정합니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 구원자 · 브레이크 스킬</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
  <div class="mut" style="margin-bottom:6px">체크한 구원자만 씁니다(자동 저장)</div>
@@ -426,7 +424,7 @@ function gimTeam(combo){if(!GIMACT.length)return [0,[]];const g=CFG.gimmick;let 
  return [Math.min(bonus,g.teamCap)*g.weight,rep]}
 function score(s,w,main,boss){
  const g=CFG.weights,parts={};const mw=MM==="avoid"?CFG.matchupModes.avoid:g;const aW=boss?mw.advantage:mw.advantageMob,dW=boss?mw.disadvantage:mw.disadvantageMob;
- parts["티어"]=s.tier!=null?(CFG.tierScore[s.tier]??3):3;const sp=seasonPart(s);if(sp)parts["시즌 보너스"]=sp;const gp=gimPart(s);if(gp)parts["기믹 대응"]=gp;
+ const sp=seasonPart(s);if(sp)parts["시즌 보너스"]=sp;const gp=gimPart(s);if(gp)parts["기믹 대응"]=gp;
  if(main&&!(s.mains||["미정"]).includes(main))parts["주사용 아님"]=-g.notMainContent;
  const adv=CFG.advantage,tot=Object.values(w).reduce((a,b)=>a+b,0);
  if(tot){let win=0,lose=0;for(const [e,n] of Object.entries(w)){if(adv[s.el]===e)win+=n;if(adv[e]===s.el&&adv[s.el]!==e)lose+=n}
@@ -441,20 +439,25 @@ function teamValue(combo,defPen){
  const g=CFG.weights;let v=combo.reduce((a,x)=>a+x.score,0);const roles=combo.map(x=>x.s.cls);
  const ns=roles.filter(r=>r==="서포터").length;if(ns)v+=g.supportBonus;
  v-=defPen*Math.max(0,roles.filter(r=>r==="디펜더").length-1);
- v-=g.dealerShortPenalty*Math.max(0,g.dealerMin-roles.filter(r=>["스트라이커","레인저","캐스터","어쌔신"].includes(r)).length);
- const keys=new Set(combo.map(x=>x.s.key));
- let paired=false;for(const p of (CFG.pairs||[]))if(p.keys.every(k=>keys.has(k))){v+=p.bonus;paired=true}
- if(ns>1&&!paired)v-=4;
+ if(ns>1)v-=4;
  const got=new Set();combo.forEach(x=>(x.s.tags||[]).forEach(t=>got.add(t)));
  for(const [t,wt] of Object.entries(CFG.tagWeights))v+=got.has(t)?wt:0;
  v+=Math.min(partySyn(combo.map(x=>x.s.key)).reduce((a,h)=>a+h.pts,0),CFG.synergy.cap);v+=gimTeam(combo)[0];v+=DMW[1]*dmgScore(combo.map(x=>x.s.key),DMW[0]);
  return [v,got]}
+// 조합을 만들 후보 풀(최대 POOL_N명). 티어 같은 개인 서열로 거르지 않고 역할별 상위(단일·광역 화력, 아군 피해 증가, 개인 점수)를 고르고,
+// 연계가 강한 쌍은 둘 다 넣는다(혼자선 약해도 짝이 있으면 강한 팀을 놓치지 않게). 전원을 넣으면 조합이 36만 개라 화면이 수 초 멈춤.
+// party_reco.party_pool 과 같은 규칙 — 한쪽을 고치면 다른 쪽도 고칠 것
+const POOL_N=24;
+function partyPool(c){const byScore=[...c].sort((a,b)=>b.score-a.score);if(c.length<=POOL_N)return byScore;
+ const u=k=>D.dmg.units[k]||{s:0,a:0,g:0},pool=[],add=x=>{if(pool.length<POOL_N&&!pool.includes(x))pool.push(x)};
+ const top=(f,n)=>[...c].sort((a,b)=>f(b)-f(a)).slice(0,n).forEach(add);
+ top(x=>u(x.s.key).s,6);top(x=>u(x.s.key).a,4);top(x=>u(x.s.key).g||0,3);byScore.slice(0,4).forEach(add);
+ const pr=[];for(let i=0;i<c.length;i++)for(let j=i+1;j<c.length;j++){const pts=partySyn([c[i].s.key,c[j].s.key]).reduce((a,h)=>a+h.pts,0);if(pts>=4)pr.push([pts,i,j])}
+ pr.sort((a,b)=>b[0]-a[0]||a[1]-b[1]||a[2]-b[2]);for(const [,i,j] of pr){if(pool.length>POOL_N-2)break;add(c[i]);add(c[j])}
+ byScore.forEach(add);return pool.sort((a,b)=>b.score-a.score)}
 // 근사 점수 상위 k 팀. party_reco.top_parties 와 같은 규칙(같은 점수면 조합을 만든 순서) — 한쪽을 고치면 다른 쪽도 고칠 것
 function topParties(c,defPen,k){
- const pool=[...c].sort((a,b)=>b.score-a.score).slice(0,14);
- for(const p of (CFG.pairs||[]))c.forEach(x=>{if(p.keys.includes(x.s.key)&&!pool.includes(x))pool.push(x)});
- {const top=pool.slice(0,14),extra=[];c.forEach(x=>{if(pool.includes(x))return;let sy=0;partySyn([x.s.key,...top.map(t=>t.s.key)]).forEach(h=>{if(h.p.a===x.s.key||h.p.b===x.s.key)sy+=h.pts});if(sy>=4)extra.push([sy,x])});
-  extra.sort((a,b)=>b[0]-a[0]).slice(0,4).forEach(e=>pool.push(e[1]))}
+ const pool=partyPool(c);
  const n=pool.length,all=[];let i=0;
  for(let a=0;a<n;a++)for(let b=a+1;b<n;b++)for(let d=b+1;d<n;d++)for(let e=d+1;e<n;e++){
   const combo=[pool[a],pool[b],pool[d],pool[e]],[v,t]=teamValue(combo,defPen);all.push({combo,v,got:t,i:i++})}
@@ -488,9 +491,8 @@ function gimNote(party,c,st,p){
  const bosses=(st.bn||[]).map(([i,count])=>({name:D.bosses[i][0],role:D.bosses[i][1],count})),mobs=Math.max(0,st.n-bosses.reduce((n,b)=>n+b.count,0));
  const foe=bosses.length?`보스 ${bosses.map(b=>esc(b.name)+"("+esc(b.role)+")"+(b.count>1?" ×"+b.count:"")).join("·")} · 쫄 ${mobs}`:`적 ${st.n}체`;
  const matchup=[['유리',true],['불리',false]].map(([label,good])=>{const groups=Object.keys(EL).map(el=>{const hits=Object.keys(st.ec||st.w).filter(e=>good?CFG.advantage[el]===e:CFG.advantage[e]===el&&CFG.advantage[el]!==e);if(!hits.length)return "";const names=party.filter(x=>x.s.el===el).map(x=>esc(x.s.name));return `${EL[el]} ${label}${names.length?" → "+names.join("·"):""}`}).filter(Boolean);return groups.join(" / ")}).filter(Boolean).join(" · ");
- const rs=(CFG.restrict[c.name]||{})[st.tab],ks=new Set(party.map(x=>x.s.key));
- const pairs=(CFG.pairs||[]).filter(pair=>pair.keys.every(k=>ks.has(k))).map(pair=>pair.keys.map(k=>esc(BYKEY[k]?.name||k)).join("·"));
- return `<section class="gimbox"><div class="gimhead">스테이지 특이사항 │ 대처 → 담당 <span class="mut">(추정)</span></div><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}<br>광역 ${Math.round(st.aoe*100)}%${rs?` · 회랑: ${EL[rs]}만 편성`:""}${sbText(st)}${pairs.length?"<br>조합: "+pairs.join(" / "):""}</div><div class="gimlist">${rows.slice(0,5).join("")||'<div class="gimrow">기믹 정보 없음 → 대응 미확인</div>'}${rows.length>5?`<details data-fold="gim-${p}"><summary>기믹 더 보기</summary>${rows.slice(5).join("")}</details>`:""}</div></div></section>`}
+ const rs=(CFG.restrict[c.name]||{})[st.tab];
+ return `<section class="gimbox"><div class="gimhead">스테이지 특이사항 │ 대처 → 담당 <span class="mut">(추정)</span></div><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}<br>광역 ${Math.round(st.aoe*100)}%${rs?` · 회랑: ${EL[rs]}만 편성`:""}${sbText(st)}</div><div class="gimlist">${rows.slice(0,5).join("")||'<div class="gimrow">기믹 정보 없음 → 대응 미확인</div>'}${rows.length>5?`<details data-fold="gim-${p}"><summary>기믹 더 보기</summary>${rows.slice(5).join("")}</details>`:""}</div></div></section>`}
 let LEADKEY=null;
 const LEAD_TAGS=["힐","보호막","속도증가","적방어력감소","아군공격력증가"];
 function leaderPick(party){
@@ -611,8 +613,14 @@ const r100=x=>(Math.round(x/100)*100).toLocaleString();
 const moreKey=(st,p)=>st.tab+"|"+st.name+"|"+p;
 const simCls=r=>{const c=r.clear!=null?r.clear:r.c;return c>=0.9?"safe":c>=0.5?"tight":"hard"};
 const simMain=r=>r&&MODE==="manual"&&r.man?{clear:r.man.c}:r;
+// 3팀마다 세 번째 자리는 근사 점수(시너지·팀 화력) 순 최상위 — 빠른 계산은 구원자 수치를 더하기만 해 연계를 못 보므로 시뮬 기회를 나눠 준다(codex 상담: 빠른 계산 2 : 시너지 1)
 function quickRows(qt,st,p){const n=(SIMQ.more[moreKey(st,p)]||3),rows=[];const seen=new Set();
- for(const t of qt){t.combo.shareParty=p;const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);rows.push(t);if(rows.length>=n)break}
+ const syn=qt.slice().sort((a,b)=>b.v-a.v);let qi=0,si=0;
+ const next=(arr,i)=>{for(;i<arr.length;i++){const k=arr[i].keys.slice().sort().join(",");if(!seen.has(k))return i}return i};
+ while(rows.length<n){const want=rows.length%3===2;let t=null;
+  if(want){si=next(syn,si);if(si<syn.length){t=syn[si++];t.src="syn"}}
+  if(!t){qi=next(qt,qi);if(qi>=qt.length)break;t=qt[qi++];if(t.src==="syn"&&!want)t.src=null}
+  t.combo.shareParty=p;seen.add(t.keys.slice().sort().join(","));rows.push(t)}
  const sr=rows.map(t=>simMain(SIMQ.res[simSig(st,t)]));
  let out=rows;
  if(sr.every(Boolean)){const ix=rows.map((t,i)=>i);ix.sort((a,b)=>sr[b].clear-sr[a].clear||a-b);out=ix.map(i=>rows[i])}
@@ -624,7 +632,7 @@ function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+t
  const uniq=new Set(qt.map(t=>t.keys.slice().sort().join(","))).size;
  const row=(t,i)=>{const k=t.keys.slice().sort().join(","),w=quickWeak(t),need=t.ng!=null?t.ng*t.q.power:null,sr=simMain(SIMQ.res[simSig(st,t)]),vd=sr?simCls(sr):t.vd;
   const ng=miMode()?"":need!=null?` · <b>전투력 ${r100(need)}</b>${st.rp?`(권장의 ${Math.round(need/st.rp*100)}%)`:""}면 ${t.vd==="hard"?"깸":"깰만함"}`:(t.vd==="hard"?" · 지금의 4배로도 어려움":"");
-  return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?`<button type="button" class="skill-face" data-skill-open="${esc(x)}" aria-label="${esc(BYKEY[x].name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${face(BYKEY[x])}</button>`:"").join("")}</div>
+  return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}${t.src==="syn"?'<br><span class="tag" title="빠른 계산 순위가 아니라 시너지·팀 화력 점수로 고른 시뮬 후보">시너지</span>':""}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?`<button type="button" class="skill-face" data-skill-open="${esc(x)}" aria-label="${esc(BYKEY[x].name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${face(BYKEY[x])}</button>`:"").join("")}</div>
    <span class="qv ${vd}${sr?"":" approx"}" title="${sr?"전투 시뮬 기준":"빠른 계산 기준 — 시뮬로 확인하기 전에는 실제보다 낙관적일 수 있음"}">${sr?"":"근사 "}${QV[vd]}</span><span class="qt"><span class="mut">근사 </span>${t.q.clear?`약 ${t.q.rounds}턴 · 남는 생명력 ${Math.round(t.q.left*100)}%`:`${t.q.rounds}턴째 ${t.q.why==="time"?"시간 초과":"전멸"}`}${ng}${w.length?`<br><span class="mut">${w.map(esc).join(" · ")}</span>`:""}${simCell(p,t,st)}</span>
    ${k===pickKey?"":`<button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">이 팀 보기</button>`}</div>`};
  const selected=rows.findIndex(t=>t.keys.slice().sort().join(",")===pickKey),active=selected<0?0:selected;
@@ -818,13 +826,6 @@ function runCore(skipAuto=false){
   const tail=`${altChips(party,alt,p)}<details class="manual-details" data-fold="manual-${p}"><summary>수동 서순</summary>${p===1?'<div data-controls="mode"></div>':""}${seq||'<div class="mut">서순: 시뮬 확인 뒤 표시</div>'}</details><details class="score-details" data-fold="score-${p}"><summary>점수 상세</summary>${p===1?'<div data-controls="score"></div>':""}<div class="scoredata">근사 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10${party.map(x=>`<div>${esc(x.s.name)}: ${Object.entries(x.parts).map(([k,v])=>`${esc(k)} ${v.toFixed(1)}`).join(" · ")}</div>`).join("")}${synSummary(party)}</div></details>`;
   html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}">${quickBox(p,qt,qi,st,pick.key,main,tail)}</div>`}
 
- const tl=Object.entries(CFG.templates).filter(([k,t])=>!k.startsWith("_")&&t.need.every(n=>n.split("|").some(x=>own.has(x))));
- if(tl.length){const byKey=BYKEY;const gcodes=new Set(GIMACT.map(g=>g[0]));
-  html+=`<details class="party community" data-fold="community"><summary>커뮤니티 편성 ${tl.length}</summary><div class="arch">${tl.map(([k,t])=>{
-   const bad=(t.badGimmicks||[]).filter(c=>gcodes.has(c)).map(c=>D.grules[c]?D.grules[c].name:c);
-   const dsc=t.fixed?`<span class="mut">화력 지표 ${dmgScore(t.fixed,DMW[0]).toFixed(1)}/10</span> `:"";const comp=dsc+(bad.length?`<span class="bad">✘ 이 스테이지 기믹과 상충: ${bad.map(esc).join(", ")}</span>`:`<span class="good">✔ 이 스테이지 기믹과 상충하는 것 없음(추정)</span>`);
-   const faces=(t.fixed||[]).map(f=>byKey[f]?`<span class="archf">${face(byKey[f])}<small>${esc(byKey[f].name)}</small></span>`:"").join("");
-   return `<div class="archc"><b>${esc(k)}</b> ${comp}<div class="archfs">${faces}</div><div>${esc(t.desc)}</div><div class="mut">잘 맞는 곳: ${esc(t.goodFor||"-")}${t.note?" · "+esc(t.note):""} · 출처 ${esc(t.source||"")}</div></div>`}).join("")}</div></details>`}
  $("out").innerHTML=html;
  for(const p of Object.keys(BRCMP.open))if(!document.querySelector(`.party[data-party="${p}"] .bcompare`))delete BRCMP.open[p];
  // 비교가 도는 중 1안 팀이 바뀌어 비교 목록이 사라졌으면, 그 파티의 시뮬 줄에 진행 상태와 취소를 대신 보인다(멈춘 채 다른 시뮬이 막히지 않게)

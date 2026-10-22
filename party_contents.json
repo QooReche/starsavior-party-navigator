@@ -122,14 +122,6 @@
    "boss": true
   }
  },
- "tierScore": {
-  "0티어": 11,
-  "0.5티어": 10,
-  "1티어": 8,
-  "2티어": 6,
-  "3티어": 4,
-  "4티어": 2
- },
  "weights": {
   "advantage": 3.0,
   "disadvantage": 2.0,
@@ -137,10 +129,7 @@
   "supportBonus": 2.0,
   "defenderPenalty": 3.0,
   "advantageMob": 1.5,
-  "disadvantageMob": 1.0,
-  "dealerMin": 2,
-  "dealerShortPenalty": 3.0,
-  "_dealerNote": "딜러(스트라이커·레인저·캐스터·어쌔신)가 dealerMin 명보다 적으면 모자란 인원 x dealerShortPenalty 감점. 출처: 게임조선(딜러 4 또는 딜러 3+서포터 1), 뉴비 공략 정석(딜러 2 + 디펜더 + 서포터). 값은 임의."
+  "disadvantageMob": 1.0
  },
  "tagWeights": {
   "힐": 0.75,
@@ -186,74 +175,6 @@
    "text": "광역 피해, 공격력 +15%, 강인도 피해 +1(브레이크 중심)"
   }
  },
- "templates": {
-  "_note": "커뮤니티 편성 전략(아키타입). need=보유 조건, fixed=고정 구성원(있으면 얼굴 표시), badGimmicks=상충하는 적 기믹 코드(gimmick_rules), goodFor=잘 맞는 콘텐츠. 출처는 source.",
-  "노탱 레이시": {
-   "need": [
-    "lacy"
-   ],
-   "desc": "레이시 중심, 초반용(후반 보스 약함)",
-   "source": "arca.live/b/starsavior/174374805",
-   "goodFor": "초반 작전",
-   "badGimmicks": []
-  },
-  "노탱 웨르멘": {
-   "need": [
-    "wedding-carmen",
-    "fei|lacy",
-    "gwen"
-   ],
-   "desc": "웨딩 카르멘 보호 + 맞아도 되는 딜러(페이/레이시) + 은신(그웬)",
-   "source": "arca.live/b/starsavior/174374805",
-   "goodFor": "작전(고점 높음, 리트 가능성)",
-   "badGimmicks": []
-  },
-  "딜링 디펜더": {
-   "need": [
-    "wedding-carmen"
-   ],
-   "defender": true,
-   "desc": "공격력 세팅 디펜더 + 웨딩 카르멘(편성 제약 큼)",
-   "source": "arca.live/b/starsavior/174374805",
-   "goodFor": "작전(편성 제약 큼)",
-   "badGimmicks": []
-  },
-  "죽창 4딜덱": {
-   "need": [
-    "professor-m",
-    "gwen",
-    "fei",
-    "amora"
-   ],
-   "fixed": [
-    "professor-m",
-    "gwen",
-    "fei",
-    "amora"
-   ],
-   "desc": "안정성을 버린 4딜 올인. 프로페서M(냉각 스택→2스 발동)·그웬(전열 어그로, 트리거 스택마다 2스 추가타)·페이(회피 반격으로 전열 버팀, 스택 공급)·아모라(명중 감소로 페이 회피 상승, 공업 자버프). 대체 불가·세팅 난이도 높음·초단기 결전.",
-   "goodFor": "작전(하드 포함) - 보스가 광역기를 쓰기 전에 끝내는 딜찍누(글쓴이 검증: 하드 32-6 26턴, 32-9 29턴 클리어)",
-   "badGimmicks": [
-    "HIT_COUNT_TRIGGER",
-    "TURN_HIT_REDUCTION",
-    "HIT_STACK_DEFENSE",
-    "SKILL_NULLIFY",
-    "HIT_RETALIATION"
-   ],
-   "note": "다타 의존이라 타수/피격 횟수 기믹과 2스·3스 제약 보스(공허율자류, 해파리 등)에는 쓸 수 없다고 글쓴이가 명시. 기믹 코드 매핑은 추정.",
-   "source": "arca.live/b/starsavior/186455382"
-  }
- },
- "pairs": [
-  {
-   "keys": [
-    "wedding-carmen",
-    "waltz-asherah"
-   ],
-   "bonus": 0.0,
-   "note": "웨딩 카르멘(어나더) + 코즈믹 아세라: 서포터 2명이어도 허용하는 조합(상황에 따라 선택, 점수 가산 없음). 사용자 제안·커뮤니티 언급"
-  }
- ],
  "_weightsNote": "advantage/disadvantage 는 보스 콘텐츠용, advantageMob/disadvantageMob 은 잡몹 콘텐츠용(상성 효과가 피해 5% 정도라 작게). defenderPenalty 는 2번째 디펜더부터. 검증 메모: docs/weight_check.md (근거가 약해 일부만 반영)",
  "synergy": {
   "_note": "시너지 쌍 점수 = 유형 가중치 x 강도(1~3) x 신뢰 가중치, 팀 합계는 cap 으로 제한. 가중치는 임의값.",
