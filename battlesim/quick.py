@@ -157,6 +157,19 @@ def load(root=None):
     return q, pen
 
 
+BIG_BOSS = 1.2      # 보스 생명력 / 권장 전투력 이 이상이면 「큰 보스전」(화면 bigBoss 와 같은 규칙, 작전만)
+BIG_BOSS_CK = ('op', 'oph')
+
+
+def big_boss(ck, st):
+    """작전에서 보스 생명력이 권장 전투력의 BIG_BOSS 배 이상이면 그 배수, 아니면 0"""
+    if ck not in BIG_BOSS_CK or not st or not st.get('bp'):
+        return 0.0
+    hp = max([e[0] for w in st['w'] for e in w if e[5]] or [0])
+    r = hp / st['bp']
+    return r if r >= BIG_BOSS else 0.0
+
+
 def merge_sm(q):
     """스테이지별 난이도 보정(sm, tools/calibrate_quick.py)을 st 에 m 으로 넣는다 — 화면(QK 로딩)도 같게"""
     for ck, d in (q.get('sm') or {}).items():

@@ -5,7 +5,8 @@
 스탯으로 전투력을 계산해 적용(power_penalty=model), 시뮬 칸 = 화면 카드 순서를 [전열1, 전열2, 후열1, 후열2]로 바꾼 것.
 결과 = tools/raw/quick_calib.json(저장소 제외). 작업자 2개·낮은 우선순위. 다음 = tools/calibrate_quick.py --write
 
-사용: python -X utf8 -I tools/gen_quick_calib.py [--runs 40] [--per-content 400]
+사용: python -X utf8 -I tools/gen_quick_calib.py [--runs 40] [--per-content 400] [--opboss]
+  --opboss: 작전·작전(하드) 큰 보스 스테이지(quick.big_boss)의 표본 팀을 콘텐츠 상한과 별도로 모두 넣는다(근사 보정용)
 """
 import json
 import math
@@ -101,6 +102,10 @@ def main():
         rnd.shuffle(items)
         for sk, tk, o, L in items[:per]:
             jobs.append((ck, sk, tk, o, L, rnd.choice(GROWTHS), runs))
+        if '--opboss' in sys.argv:
+            for sk, tk, o, L in items[per:]:
+                if quick.big_boss(ck, q['st'][ck][sk]):
+                    jobs.append((ck, sk, tk, o, L, rnd.choice(GROWTHS), runs))
     print('작업', len(jobs), '건, 판 수', runs, flush=True)
     out = []
     with Pool(2, initializer=low) as pool:

@@ -86,6 +86,7 @@ def holdout(rows, q, pen):
 
 
 M_GRID = [0.4, 0.55, 0.7, 0.85, 1.0, 1.2, 1.4, 1.7, 2.0, 2.5, 3.0, 4.0]
+OPBOSS_GAIN = 0.01  # 작전 큰 보스 공통 배수: 검증 일치가 이만큼 나아져야 적용
 SM_MIN = 6          # 스테이지 표본이 이보다 적으면 보정하지 않음
 
 
@@ -162,6 +163,34 @@ def main():
         calib[gname].update(acc_stage=round(acc_m, 3), stage_hold_before=round(before, 3), stage_hold_after=round(after, 3), stage_m=len(sm))
         calib[gname]['acc'] = round(acc_m, 3)
         print('[%s] 스테이지 보정 %d곳 -> 전체 일치 %.3f / 같은 스테이지 반반 검증 %.3f -> %.3f (%d건)' % (gname, len(sm), acc_m, before, after, nt))
+    # 작전 큰 보스 스테이지: 스테이지별 표본이 적어 공통 배수 하나를 맞추고 큰 보스 스테이지 전부에 적용(표본 없는 곳 포함).
+    # 검증 = 스테이지 단위로 번갈아 반으로 나눠 앞 반으로 맞추고 뒤 반에서 잼(같은 스테이지가 양쪽에 들어가지 않게)
+    ob = [r for r in rows if quick.big_boss(r[0], r[3])]
+    if ob:
+        prm = out['base']
+        stages = sorted({(r[0], r[1]) for r in ob})
+        half = {s: i % 2 for i, s in enumerate(stages)}
+        a = [r for r in ob if half[(r[0], r[1])] == 0]
+        b = [r for r in ob if half[(r[0], r[1])] == 1]
+        hit = lambda rs, m: sum((c >= 0.5) == quick.evaluate(keys, dict(st, m=m), q['sv'], pen, prm, **kw)['clear'] for _, _, keys, st, c, kw in rs)
+        m_half = fit_stage_m(a, q, pen, prm)
+        before, after = hit(b, 1.0) / max(1, len(b)), hit(b, m_half) / max(1, len(b))
+        m = fit_stage_m(ob, q, pen, prm)
+        acc0, acc1 = hit(ob, 1.0) / len(ob), hit(ob, m) / len(ob)
+        n_st = 0
+        # 스테이지 반반 검증에서 OPBOSS_GAIN 이상 나아질 때만 적용(2026-10-23: 10/22 패치 뒤 표본으로는 0.845 -> 0.845 라 미적용)
+        if m != 1.0 and after - before >= OPBOSS_GAIN:
+            for ck in quick.BIG_BOSS_CK:
+                for sk, st in q['st'].get(ck, {}).items():
+                    if quick.big_boss(ck, st):
+                        st['m'] = m
+                        sm_all.setdefault(ck, {})[sk] = m
+                        n_st += 1
+        calib['base'].update(opboss_samples=len(ob), opboss_m=m, opboss_acc_before=round(acc0, 3), opboss_acc_after=round(acc1, 3),
+                             opboss_hold_before=round(before, 3), opboss_hold_after=round(after, 3), opboss_stages=n_st)
+        calib['base']['acc'] = round(score([r for r in rows if group(r[0]) == 'base'], q, pen, prm)[5], 3)
+        print('[작전 큰 보스] 표본 %d(스테이지 %d) m=%s -> 일치 %.3f -> %.3f / 스테이지 반반 검증 %.3f -> %.3f, 적용 스테이지 %d'
+              % (len(ob), len(stages), m, acc0, acc1, before, after, n_st))
     tot = sum(c['samples'] for c in calib.values())
     acc_all = sum(c['acc'] * c['samples'] for c in calib.values()) / tot
     print('전체 일치(가중) %.3f' % acc_all)
