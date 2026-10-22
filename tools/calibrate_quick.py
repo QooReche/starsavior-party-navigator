@@ -90,8 +90,10 @@ SM_MIN = 6          # 스테이지 표본이 이보다 적으면 보정하지 �
 
 
 def fit_stage_m(srows, q, pen, prm):
-    """한 스테이지 표본으로 적 피해 배수 m 하나를 고른다(맞힌 수 최대, 같으면 1 에 가까운 값)"""
-    validate_samples(srows)
+    """한 스테이지 표본으로 적 피해 배수 m 하나를 고른다(맞힌 수 최대, 같으면 1 에 가까운 값).
+    한쪽 결과만 있는 스테이지도 정상 — 클리어/실패 양쪽 검사는 그룹 단위(main)에서만 한다."""
+    if not srows:
+        raise ValueError('스테이지 표본 없음')
     best = None
     for m in M_GRID:
         hit = 0
@@ -114,7 +116,8 @@ def stage_factors(gr, q, pen, prm):
         if len(srows) < SM_MIN:
             continue
         a, b = srows[0::2], srows[1::2]
-        validate_samples(b)
+        if not b:      # 스테이지 안 표본은 한쪽 결과만 있어도 정상(그룹 단위 검증은 main 에서)
+            continue
         m_half = fit_stage_m(a, q, pen, prm)
         for ck, _, keys, st, c, kw in b:
             test_before.append((c >= 0.5) == quick.evaluate(keys, dict(st, m=1.0), q['sv'], pen, prm, **kw)['clear'])
