@@ -3,7 +3,9 @@
 
 party_spec
   ["professor-m", "gwen", "fei", "amora"]  또는  {"units": [...], "leader": 0}
-  유닛 = key/이름 문자열 또는 {"key", "level"(200), "res"(10), "star"(0), "stats_override"{hp,atk,def,spd,cr,cd,eh,er}, "stats_final"(false)}
+  유닛 = key/이름 문자열 또는 {"key", "level"(200), "res"(10), "star"(0), "build", "stats_override"{hp,atk,def,spd,cr,cd,eh,er}, "stats_final"(false)}
+  내정보 계산 결과: {"key": key, "build": "none", "stats_override": final_stats(...)["stats"], "stats_final": true}.
+       유닛 build 는 options.build 보다 우선한다. none 은 표준 장비·잠재력·그 조건부 효과를 추가하지 않는다.
   stats_final = true 면 stats_override 를 인게임 능력치 화면의 «최종값»으로 보고 상시 패시브 능력치 %(고유 패시브 「능력치: 생명력% +15%」 등)를
        다시 곱하지 않는다(근거: 화면 값 그대로 넣은 전투력 공식이 화면 전투력에 더 가깝다 — 카르멘 94,650 vs 화면 94,920, 패시브를 곱하면 101,850. docs/ingame_samples.md)
   순서 0·1 = 전열, 2·3 = 후열(인게임 편성 칸). leader = 리더 칸 번호(속도 +10), 없으면 리더 없음.
