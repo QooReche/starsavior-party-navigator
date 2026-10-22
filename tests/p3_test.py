@@ -546,12 +546,12 @@ def _pilgrim_cd_trace(mc=None):
 def test_enemy_init_cd_pilgrim():
     """영상 회귀: 특수기 1→4턴, 궁극기 최초 5턴, 남의 턴에는 쿨 불변.
 
-    엔진 내부는 턴 시작 차감이므로 화면 궁극기 4를 5로 저장한다.
+    실제 종료 차감은 화면 궁극기 4를 그대로 저장한다.
     """
     d, initial, slots, ready, unchanged = _pilgrim_cd_trace()
     ok = (d.skills['특수기'].name == '별의 파장' and d.skills['특수기'].cd == 3
           and d.skills['궁극기'].cd == 4 and initial['특수기'] == 0
-          and initial['궁극기'] == 5
+          and initial['궁극기'] == 4
           and slots == ['특수기', '기본기', '기본기', '특수기', '궁극기']
           and [i + 1 for i, r in enumerate(ready) if '궁극기' in r] == [5]
           and [i + 1 for i, r in enumerate(ready) if '특수기' in r] == [1, 4]
@@ -564,7 +564,7 @@ def test_enemy_init_cd_switches():
     special_old = _pilgrim_cd_trace(dict(enemy_init_cd_special=1.0))
     tick_old = _pilgrim_cd_trace(dict(enemy_cd_tick='turn_start'))
     both_old = _pilgrim_cd_trace(dict(enemy_init_cd_special=1.0, enemy_cd_tick='turn_start'))
-    ok = (special_old[1]['특수기'] == 4 and special_old[2][0] == '기본기'
+    ok = (special_old[1]['특수기'] == 3 and special_old[2][0] == '기본기'
           and next(i + 1 for i, r in enumerate(tick_old[3]) if '궁극기' in r) == 4
           and both_old[2] == ['기본기', '기본기', '특수기', '궁극기', '기본기'])
     return ok, '특수기 옛값 %s / 차감 옛값 %s / 둘 다 옛값 %s' % (

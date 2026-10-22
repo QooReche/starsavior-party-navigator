@@ -300,9 +300,10 @@ class Unit:
         for slot, sk in d.skills.items():
             f = b.mc['enemy_init_cd_special'] if side == 1 and slot == '특수기' else frac
             self.cd[slot] = (sk.cd * f) if sk.cd else 0
-            # 게임은 쿨을 «자기 턴 끝»에 줄이고(영상 확인) 이 엔진은 «자기 턴 시작»에 줄인다. 쓴 스킬은 둘이 같지만
-            # 시작값은 첫 턴 시작에 한 번 더 깎이므로 +1 해서 맞춘다(시작 화면 「4」 = 다섯 번째 턴에 사용 가능)
-            if side == 1 and self.cd[slot] > 0 and b.mc['enemy_cd_tick'] == 'turn_end':
+            # Legacy approximation only: start decrement requires initial +1.
+            # Native enemy end timing stores the displayed cooldown unchanged.
+            if (side == 1 and self.cd[slot] > 0 and b.mc['enemy_cd_tick'] == 'turn_end'
+                    and not b.mc['enemy_cd_native']):
                 self.cd[slot] += 1
         self.dead = False
         self.last_slot = None
@@ -662,8 +663,10 @@ class Battle:
             self.log(recover=u.name, skip=skip)
         if self.mc['shield_tick'] == 'turn_start':
             self._tick_shields(u)
-        for k in u.cd:
-            u.cd[k] = max(0.0, u.cd[k] - 1)
+        end_cd = (u.side == 1 and self.mc['enemy_cd_tick'] == 'turn_end'
+                  and self.mc['enemy_cd_native'])
+        if not end_cd:
+            self._tick_cooldowns(u)
         self._tick_dot_hot(u)
         if u.dead:
             u.acting = False
@@ -688,6 +691,10 @@ class Battle:
                     if sk is not None:
                         self.cast(u, sk)
         if not u.dead:
+            if end_cd:
+                # NKM:1840-1848 -> 3348-3360: owner action end, before
+                # NSEAT_TURN_END, including the skill just used this turn.
+                self._tick_cooldowns(u)
             self.fire(u, 'own_te', Ctx(u, u, None))
             for name in list(u.eff):
                 e = u.eff[name]
@@ -717,6 +724,11 @@ class Battle:
             u.gauge = 10000.0     # extra_turn 표시는 실제로 그 턴을 쓸 때(act 시작)까지 유지 -> 동시 100% 판정에서 최우선
         elif u.dead:
             u.extra_turn = False
+
+    @staticmethod
+    def _tick_cooldowns(u):
+        for slot in u.cd:
+            u.cd[slot] = max(0.0, u.cd[slot] - 1)
 
     def _tick_break_skill(self):
         """공용 쿨·영역 차감. 발동 턴에는 차감하지 않고 다음 단위 경계부터 센다."""

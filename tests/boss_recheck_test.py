@@ -125,7 +125,95 @@ class MyinfoInputTest(unittest.TestCase):
         self.assertGreater(result['sim_enemy_actions'], 0)
 
 
+class EnemyTurnTimingTest(unittest.TestCase):
+    def make(self, **mc):
+        return battle([unit('ally', hp=10**9, atk=0)],
+                      [unit('boss', hp=10**9, atk=0, skills=[
+                          dict(slot='기본기', dm=1), dict(slot='특수기', dm=1, cd=3),
+                          dict(slot='궁극기', dm=1, cd=4)])], mc=mc)
+
+    def test_displayed_cooldowns_and_other_units_turns(self):
+        b = self.make()
+        u = b.foes[0]
+        self.assertEqual(u.cd['궁극기'], 4)
+        b.act(u)
+        self.assertEqual((u.cd['특수기'], u.cd['궁극기']), (2, 3))
+        before = dict(u.cd)
+        b.act(b.allies[0])
+        self.assertEqual(u.cd, before)
+
+    def test_one_remaining_cannot_cast_until_next_owner_turn(self):
+        b = self.make()
+        u = b.foes[0]
+        u.cd.update(특수기=2, 궁극기=1)
+        b.act(u)
+        self.assertEqual(u.last_slot, '기본기')
+        self.assertEqual(u.cd['궁극기'], 0)
+        b.act(u)
+        self.assertEqual(u.last_slot, '궁극기')
+        self.assertEqual(u.cd['궁극기'], 3)
+
+    def test_start_effect_reset_ticks_after_use_before_end_effect(self):
+        b = self.make()
+        u = b.foes[0]
+        u.cd.update(특수기=2, 궁극기=1)
+        observed = []
+        fire = b.fire
+        def hook(owner, kind, ctx):
+            if owner is u and kind == 'own_ts':
+                observed.append(('start', u.cd['궁극기']))
+                u.cd['궁극기'] = 0
+            if owner is u and kind == 'own_te':
+                observed.append(('end', u.cd['궁극기']))
+            return fire(owner, kind, ctx)
+        with patch.object(b, 'fire', side_effect=hook):
+            b.act(u)
+        self.assertEqual(observed, [('start', 1), ('end', 3)])
+        self.assertEqual(u.last_slot, '궁극기')
+
+    def test_extra_cast_is_not_a_turn_but_extra_turn_ticks(self):
+        b = self.make()
+        u = b.foes[0]
+        u.cd.update(특수기=3, 궁극기=4)
+        b.cast(u, u.d.skills['기본기'], extra=True)
+        self.assertEqual((u.actions, u.cd['특수기'], u.cd['궁극기']), (0, 3, 4))
+        u.extra_turn, u.gauge = True, 10000
+        b.act(u)
+        self.assertEqual((u.actions, u.cd['특수기'], u.cd['궁극기']), (1, 2, 3))
+        self.assertFalse(u.extra_turn)
+
+    def test_legacy_switch_preserves_regular_pilgrim_sequence(self):
+        from p3_test import _pilgrim_cd_trace
+        native = _pilgrim_cd_trace(dict(enemy_cd_native=True))
+        legacy = _pilgrim_cd_trace(dict(enemy_cd_native=False))
+        self.assertEqual(native[1]['궁극기'], 4)
+        self.assertEqual(legacy[1]['궁극기'], 5)
+        self.assertEqual(native[2:], legacy[2:])
+
+
+class ActionAuditTest(unittest.TestCase):
+    def test_measurement_preserves_result_and_separates_gauge_from_turns(self):
+        from tools.boss_action_diagnostic import measure
+        plain = check.run('37-3', runs=2, seed=7, bs=True)
+        audit = measure('37-3', 2, 7, None)
+        self.assertEqual(plain, audit['result'])
+        boss = audit['per_unit']['1:공허습격자']
+        self.assertEqual(boss['extra_turns'], 0)
+        self.assertGreater(boss['positive_effect_count'], 0)
+        self.assertAlmostEqual(boss['positive_effect_gauge'], 1500 * boss['positive_effect_count'])
+        actions = [r for r in audit['first_seed_log'] if r['event'] == 'action' and r['boss']]
+        self.assertTrue(any(any('15%p' in key for key in r['gains']) for r in actions))
+
+
 if __name__ == '__main__':
+    if '--turn-mutations' in sys.argv:
+        from battlesim.mc import MC_OPTS
+        with patch.dict(MC_OPTS, enemy_cd_native=False):
+            result = unittest.TextTestRunner().run(
+                unittest.defaultTestLoader.loadTestsFromTestCase(EnemyTurnTimingTest))
+        caught = len(result.failures) == 3 and not result.errors
+        print('Legacy-start mutation detected:', caught)
+        sys.exit(0 if caught else 1)
     if '--mutations' in sys.argv:
         def capped(self, u, value):
             u.gauge = min(10000.0, max(0.0, value))
