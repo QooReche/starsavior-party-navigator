@@ -857,6 +857,95 @@ def test_sim_runs(browser, ctx):
     return True, '100/300 요청·캐시 분리·35~65%만 1팀 추가 실행·390px'
 
 
+def test_skill_view(browser, ctx):
+    """Lazy data, owned/max levels, nested folds, glossary, keyboard and 390px layout."""
+    for width in (1280, 390):
+        ctx.errors.clear()
+        page = open_page(browser, ctx, viewport={'width': width, 'height': 900 if width == 1280 else 844})
+        requests = []
+        page.on('request', lambda r: requests.append(r.url) if '/savior_skills.json' in r.url else None)
+        assert page.evaluate('() => !performance.getEntriesByType("resource").some(r=>r.name.includes("savior_skills.json"))')
+        face = page.locator('.party[data-party="1"] .qrow .skill-face').first
+        face.click()
+        page.wait_for_selector('#skills-body .skill-card')
+        assert page.locator('#skills-body .skill-card').count() == 4
+        assert all('최대 레벨' in t for t in page.locator('#skills-body .skill-level').all_text_contents())
+        assert page.locator('#skills-body .skill-next').count() == 0
+        page.keyboard.press('Escape')
+        assert not page.locator('#skills-dialog').is_visible()
+        assert face.evaluate('(b) => b === document.activeElement && b.getAttribute("aria-expanded")==="false"')
+        choose(page, '작전 (일반)', 'SECTOR 1-3')
+        import_synthetic(page)
+        page.click('#tab-info')
+        unit = page.locator('.mi-unit[data-uid="1001"]')
+        toggle = unit.locator('[data-skill-fold]')
+        assert toggle.get_attribute('aria-expanded') == 'false'
+        toggle.click()
+        page.wait_for_selector('#mi-skills-1001 .skill-card')
+        assert unit.locator('.skill-card').count() == 4
+        assert unit.locator('.skill-card').evaluate_all('(cards)=>cards.map(c=>+c.dataset.level)') == [3, 4, 5, 2]
+        assert '쿨 5턴' in unit.locator('[data-slot="special"] .skill-meta').inner_text()
+        assert '다음 강화: Lv5' in unit.locator('[data-slot="special"] .skill-next').inner_text()
+        upgrades = unit.locator('.skill-upgrades').first
+        assert upgrades.get_attribute('open') is None
+        upgrades.locator('summary').click()
+        assert upgrades.locator('.achieved').count() == 3 and upgrades.locator('.unlearned').count() == 7
+        term = unit.locator('.skill-description .skill-term').first
+        term.click()
+        assert term.get_attribute('aria-expanded') == 'true'
+        assert term.locator('..').locator('.skill-tip').is_visible()
+        assert term.get_attribute('title') == term.locator('..').locator('.skill-tip').inner_text()
+        assert page.evaluate('() => document.documentElement.scrollWidth <= innerWidth')
+        unit.scroll_into_view_if_needed()
+        page.screenshot(path=os.path.join(ctx.shots, 'skills_myinfo_%d.png' % width), full_page=True)
+        # Sorting/re-rendering preserves which unit was expanded.
+        page.select_option('#mi-sort', 'name')
+        page.wait_for_selector('#mi-skills-1001 .skill-card')
+        assert toggle.get_attribute('aria-expanded') == 'true'
+        toggle.click()
+        assert not unit.locator('.skill-grid').is_visible()
+        page.click('#tab-reco')
+        if not page.locator('#grow').is_visible():
+            page.click('#filters > summary')
+        page.select_option('#grow', '1')
+        settle(page)
+        # Account levels still apply even when recommendation power uses average mode.
+        card = page.locator('.party[data-party="1"] .skill-open-card').first
+        key = card.get_attribute('data-skill-open')
+        expected = page.evaluate('key => MI.info.units.find(u=>u.id===BYKEY[key].uid).skills', key)
+        card.focus()
+        page.keyboard.press('Enter')
+        page.wait_for_selector('#skills-body .skill-card')
+        assert page.locator('#skills-body .skill-card').evaluate_all('(cards)=>cards.map(c=>+c.dataset.level)') == [expected[k] for k in ('basic', 'special', 'ultimate', 'passive')]
+        assert page.evaluate('''() => {const d=document.querySelector('#skills-dialog');return document.documentElement.scrollWidth<=innerWidth && d.scrollWidth<=d.clientWidth && d.getBoundingClientRect().right<=innerWidth}''')
+        assert page.locator('#skills-dialog').evaluate('(d)=>d.contains(document.activeElement)')
+        modal_term = page.locator('#skills-body .skill-description .skill-term').first
+        modal_term.click()
+        page.evaluate('() => SKILLS.refresh()')
+        assert modal_term.get_attribute('aria-expanded') == 'true'
+        page.screenshot(path=os.path.join(ctx.shots, 'skills_reco_%d.png' % width), full_page=False)
+        page.click('[data-skill-close]')
+        assert card.evaluate('(b)=>b===document.activeElement')
+        assert len(requests) == 1, requests
+        assert not ctx.errors, ctx.errors
+        page.close()
+    return True, 'desktop/390px: 4 slots, owned/max, folds, glossary, keyboard, lazy fetch once, no overflow'
+
+
+def test_skill_retry(browser, ctx):
+    """A failed lazy request can be retried without reloading the page."""
+    page = open_page(browser, ctx)
+    page.route('**/data/savior_skills.json*', lambda route: route.fulfill(status=503, body='unavailable'))
+    page.locator('.skill-open-card').first.click()
+    page.wait_for_selector('[data-skill-retry]')
+    page.unroute('**/data/savior_skills.json*')
+    page.click('[data-skill-retry]')
+    page.wait_for_selector('#skills-body .skill-card')
+    assert page.locator('#skills-body .skill-card').count() == 4
+    page.close()
+    return True, 'failed fetch → retry → skill cards'
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_quick_growth, test_savior_power, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_break_skill_select)
@@ -866,6 +955,7 @@ TESTS.append(test_gimmick_slot_owned)
 TESTS.append(test_boss_gimmick_mobile)
 TESTS.extend([test_myinfo_legacy_power, test_myinfo_import_clear, test_myinfo_rules_mobile, test_myinfo_sim])
 TESTS.extend([test_share_link, test_sim_runs])
+TESTS.extend([test_skill_view, test_skill_retry])
 
 
 def main():

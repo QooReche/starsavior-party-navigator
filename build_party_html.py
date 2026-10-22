@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """party_template.html 에 데이터를 넣어 단일 HTML 을 만든다. 사용: python -X utf8 -I build_party_html.py [출력경로]"""
 import base64
+import hashlib
 import json
 import os
 import sys
@@ -139,7 +140,14 @@ def main():
             "c": p.get("conf", "추정"), "d": bool(p.get("directed")), "r": p.get("reason", ""),
             "e": [e[:110] for e in p.get("evidence", [])[:2]]}
            for p in pr.load_synergy()]
-    data = json.dumps({"roster": r, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
+    # Like growth.json/quick.json, load the larger payload only when it is needed.
+    skill_path = os.path.join(pr.DATA, "savior_skills.json")
+    with open(skill_path, "rb") as f:
+        skill_bytes = f.read()
+    skills = json.loads(skill_bytes)
+    assert all(str(s["uid"]) in skills for s in r), "Missing public skills for roster uid"
+    skill_url = "data/savior_skills.json?v=" + hashlib.sha256(skill_bytes).hexdigest()[:12]
+    data = json.dumps({"roster": r, "skillsUrl": skill_url, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
                        "pen": pr._json(pr.POW)["pen"], "tribe": pr._json(pr.POW)["tribe"],
                        "grules": grules["types"], "gim": pr._json(pr.GSTAGE), "dmg": pr._json(pr.DMG),
                        "selver": pr.selection_version()}, ensure_ascii=False, separators=(",", ":"))

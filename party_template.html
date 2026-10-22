@@ -224,6 +224,28 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 .mi-verdict{font-size:13px;margin-top:0}.mi-verdict .ok{color:var(--good)}.mi-verdict .hard{color:var(--bad)}
 [hidden]{display:none!important}
 @media(max-width:600px){.mi-unit{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.mi-unit>div:last-child{grid-column:1/-1}.mi-toolbar{gap:6px}.mi-toolbar button{padding:6px 9px}.mi-chips{font-size:10px}.mi-chips .tag{font-size:inherit}}
+/* Skill viewer */
+.mi-unit>.mi-skills{grid-column:1/-1}.mi-skills>.sec{font-size:12px;padding:5px 10px}
+.skill-content{margin-top:10px}.skill-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.skill-card{min-width:0;padding:14px;border:1px solid var(--line);border-radius:10px;background:#101a30;overflow-wrap:anywhere}
+.skill-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.skill-badge{font-size:11px;padding:2px 8px;border:1px solid #77849b;border-radius:5px;background:#303c50;color:#e3e8f2}
+.skill-badge.special{background:#183966;border-color:#648fc8;color:#bddcff}.skill-badge.ultimate{background:#43351b;border-color:#a88a4c;color:var(--gold)}
+.skill-badge.passive{background:#35234d;border-color:#9d7bc5;color:#dcc3ff}
+.skill-level{font-size:12px;color:var(--gold)}.skill-card h3{font-size:16px;line-height:1.4;margin:9px 0 4px}
+.skill-meta{font-size:12px;color:var(--mut)}.skill-description{margin:12px 0;white-space:pre-line;line-height:1.7}
+.skill-next{font-size:12px;color:var(--gold);margin:10px 0}.skill-upgrades,.skill-variants{font-size:12px;margin-top:10px}
+.skill-upgrades ul{list-style:none;padding:0;margin:8px 0 0}.skill-upgrades li{margin:5px 0}.skill-upgrades .achieved{color:var(--good)}.skill-upgrades .unlearned{color:var(--mut)}
+.skill-variant{border-top:1px solid var(--line);margin-top:10px;padding-top:12px}
+button.skill-term{display:inline;padding:0;border-radius:2px;color:var(--acc);background:transparent;text-decoration:underline dotted;text-underline-offset:3px;font:inherit;white-space:normal;text-align:left}
+.skill-tip{display:block;padding:8px;margin:6px 0;background:#213454;border-left:2px solid var(--gold);font-size:12px;color:var(--fg);white-space:normal}.skill-tip[hidden]{display:none}
+button.skill-open-card{position:absolute;inset:0;z-index:4;width:100%;height:100%;padding:0;background:transparent;border-radius:inherit}
+button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
+.skill-open-card:focus-visible,.skill-face:focus-visible,.mi-skills button:focus-visible,#skills-dialog button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}.skill-open-card:focus-visible{outline-offset:-4px}
+#skills-dialog{width:min(780px,calc(100% - 24px));max-width:calc(100% - 24px);max-height:88dvh;margin:auto;padding:18px;background:#111b30;color:var(--fg);border:1px solid #8f7950;border-radius:14px;overflow:auto;overscroll-behavior:contain}
+#skills-dialog::backdrop{background:#020615bd}body:has(#skills-dialog[open]){overflow:hidden}
+.skill-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.skill-dialog-head>div{min-width:0;overflow-wrap:anywhere}.skill-dialog-head h2{font-size:19px;margin:0}.skill-dialog-head button{flex:none}
+@media(max-width:600px){.mi-unit>div:nth-child(3){grid-column:1/-1}.skill-grid{grid-template-columns:minmax(0,1fr)}#skills-dialog{padding:12px}.skill-card{padding:12px}.skill-description{font-size:13px}}
 </style></head><body><main>
 <h1>파티 편성 네비게이터 <small style="color:var(--bad)">시험판</small></h1>
 <p class="sub">가진 구원자로 이 스테이지를 깰 파티를 찾습니다</p>
@@ -297,12 +319,17 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 </aside>
 <div id="dback"></div>
 </main>
+<dialog id="skills-dialog" aria-labelledby="skills-title" aria-describedby="skills-subtitle">
+ <div class="skill-dialog-head"><div><h2 id="skills-title">스킬</h2><div id="skills-subtitle" class="mut"></div></div><button type="button" class="sec" data-skill-close autofocus>닫기</button></div>
+ <div id="skills-body" aria-live="polite"></div>
+</dialog>
 <script src="lib/cytoscape.min.js"></script>
 <script src="quick.js"></script>
 <script src="myinfo_import.js"></script>
 <script src="myinfo_stats.js"></script>
 <script src="myinfo_reco.js"></script>
 <script src="share_state.js"></script>
+<script src="skill_view.js"></script>
 <script>
 const D=/*DATA*/null;
 const EL={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
@@ -320,6 +347,7 @@ const rkOf=ck=>ck==="op"?(+(document.getElementById("rk")||{}).value||0):0;
 const LS={get(k){try{return JSON.parse(localStorage.getItem("pn."+k))}catch(e){return null}},set(k,v){try{localStorage.setItem("pn."+k,JSON.stringify(v))}catch(e){}}};
 const MI={info:null,hash:"",growth:null,pending:null,error:"",profiles:{}};
 {const saved=LS.get("myinfo");if(saved&&!MyInfoImport.validate(saved)){MI.info=saved;MI.hash=MyInfoReco.hash(saved)}}
+const SKILLS=SkillView.mount({url:D.skillsUrl,getUnit:uid=>MI.info?.units.find(u=>String(u.id)===String(uid)),getSavior:key=>BYKEY[key]});
 const miMode=()=>$("grow").value==="myinfo"&&!!MI.info;
 function miProfile(){const ck=contents[$("content").value].key;
  return MI.profiles[ck]||(MI.profiles[ck]=MyInfoReco.profile(MI.info,R,MI.growth,ck))}
@@ -484,7 +512,7 @@ function simUnit(r,key){if(!r||!r.g||!r.u||!r.u[key])return '<div class="simu"><
  const lv=dp>=0.5?3:dp>=0.2?2:dp>=0.05?1:0;
  return `<div class="simu"><div class="sb" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="피해 기여 ${pct}%"><i style="width:${pct}%"></i></div>피해 ${pct}% · <span class="dot d${lv}"></span>${lv?`쓰러질 확률 ${dpp}%`:`생존 안정(${dpp}%)`}</div>`}
 function card(x,pos,r){const s=x.s;
- return `<div class="gc" data-key="${esc(s.key)}"><div class="card">${s.key===LEADKEY?`<div class="crown" title="속도 +10">${CROWN}<span>리더</span></div>`:""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
+ return `<div class="gc" data-key="${esc(s.key)}"><div class="card"><button type="button" class="skill-open-card" data-skill-open="${esc(s.key)}" aria-label="${esc(s.name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false"></button>${s.key===LEADKEY?`<div class="crown" title="속도 +10">${CROWN}<span>리더</span></div>`:""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
   <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div><span class="tier ${TC(s.tier)}">${s.tier||"티어 ?"}</span></div></div>
   <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}${s.key===LEADKEY?" 👑":""}</div>${miCard(s.key)}${r?simUnit(r,s.key):""}</div>`}
 function breakCard(br,r,p,t,st){
@@ -577,7 +605,7 @@ function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+t
  const uniq=new Set(qt.map(t=>t.keys.slice().sort().join(","))).size;
  const row=(t,i)=>{const k=t.keys.slice().sort().join(","),w=quickWeak(t),need=t.ng!=null?t.ng*t.q.power:null,sr=simMain(SIMQ.res[simSig(st,t)]),vd=sr?simCls(sr):t.vd;
   const ng=miMode()?"":need!=null?` · <b>전투력 ${r100(need)}</b>${st.rp?`(권장의 ${Math.round(need/st.rp*100)}%)`:""}면 ${t.vd==="hard"?"깸":"깰만함"}`:(t.vd==="hard"?" · 지금의 4배로도 어려움":"");
-  return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?face(BYKEY[x]):"").join("")}</div>
+  return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?`<button type="button" class="skill-face" data-skill-open="${esc(x)}" aria-label="${esc(BYKEY[x].name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${face(BYKEY[x])}</button>`:"").join("")}</div>
    <span class="qv ${vd}" title="${sr?"전투 시뮬 기준":"빠른 계산 기준"}">${QV[vd]}</span><span class="qt">${t.q.clear?`약 ${t.q.rounds}턴 · 남는 생명력 ${Math.round(t.q.left*100)}%`:`${t.q.rounds}턴째 ${t.q.why==="time"?"시간 초과":"전멸"}`}${ng}${w.length?`<br><span class="mut">${w.map(esc).join(" · ")}</span>`:""}${simCell(p,t,st)}</span>
    ${k===pickKey?"":`<button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">이 팀 보기</button>`}</div>`};
  const selected=rows.findIndex(t=>t.keys.slice().sort().join(",")===pickKey),active=selected<0?0:selected;
@@ -830,7 +858,8 @@ function renderMi(){const info=MI.info;$("grow").querySelector('[value="myinfo"]
  $("mi-list").innerHTML=(!MI.growth?`<button type="button" id="mi-activate">${MI.error?"다시 불러오기":MI.pending?"불러오는 중":"내 정보 적용"}</button>`:"")+rows.map(({u,s,r})=>{
   const counts={};for(const e of u.equip||[]){const sid=MI.growth?.item_sets?.[e.item_id];if(sid)counts[sid]=(counts[sid]||0)+1}
   const sets=Object.entries(counts).map(([id,n])=>{const ef=MI.growth.sets[id],names={atk:"공",hp:"생",def:"방",spd:"속도",atkP:"공%",hpP:"생%",defP:"방%",spdP:"속도%",cr:"치확",cd:"치피",eh:"적중",er:"저항"};return `${ef?Object.keys(ef.stats).map(k=>names[k]||k).join("/"):id} ${n}/${ef?.parts||"?"}`}).join(" · ")||"—";
-  return `<article class="mi-unit" data-uid="${u.id}"><div class="mi-identity">${s?face(s):""}<div><b>${esc(s?.name||`ID ${u.id}`)}</b><small>${esc(s?.sub||"미등록 구원자")}</small><span>${miStars(u)}</span></div></div><div><b class="mi-power">전투력 ${r?miNum(r.power):"—"}</b><small>공명 ${miNum(u.resonance)} · 호감도 ${miNum(u.favor)}</small><small>스킬 ${["basic","special","ultimate","passive"].map(k=>miNum(u.skills?.[k])).join(" / ")}</small>${u.gauntlet?`<small>건틀렛 Lv${miNum(u.gauntlet.level)} · 잠재력 ${(u.gauntlet.potentials||[]).filter(x=>x[1]>0).length}개</small>`:""}</div><div><div>장비 ${(u.equip||[]).length}/6 · 세트 ${esc(sets)}</div><div class="mi-stats">${[["atk","공"],["hp","생"],["def","방"],["spd","속도"]].map(([k,n])=>`<span>${n} ${miNum(r?.stats[k])}</span>`).join("")}${[["cr","치확"],["cd","치피"],["eh","적중"],["er","저항"]].map(([k,n])=>`<span>${n} ${Number.isFinite(r?.stats[k])?(r.stats[k]/100).toFixed(1)+"%":"—"}</span>`).join("")}</div></div></article>`}).join("");
+  return `<article class="mi-unit" data-uid="${u.id}"><div class="mi-identity">${s?face(s):""}<div><b>${esc(s?.name||`ID ${u.id}`)}</b><small>${esc(s?.sub||"미등록 구원자")}</small><span>${miStars(u)}</span></div></div><div><b class="mi-power">전투력 ${r?miNum(r.power):"—"}</b><small>공명 ${miNum(u.resonance)} · 호감도 ${miNum(u.favor)}</small>${u.gauntlet?`<small>건틀렛 Lv${miNum(u.gauntlet.level)} · 잠재력 ${(u.gauntlet.potentials||[]).filter(x=>x[1]>0).length}개</small>`:""}</div><div><div>장비 ${(u.equip||[]).length}/6 · 세트 ${esc(sets)}</div><div class="mi-stats">${[["atk","공"],["hp","생"],["def","방"],["spd","속도"]].map(([k,n])=>`<span>${n} ${miNum(r?.stats[k])}</span>`).join("")}${[["cr","치확"],["cd","치피"],["eh","적중"],["er","저항"]].map(([k,n])=>`<span>${n} ${Number.isFinite(r?.stats[k])?(r.stats[k]/100).toFixed(1)+"%":"—"}</span>`).join("")}</div></div>${SKILLS.fold(u.id)}</article>`}).join("");
+ SKILLS.refresh();
  $("mi-activate")?.addEventListener("click",()=>{$("grow").value="myinfo";miSelect();run()})}
 function miReset(info){simInvalidate();SIMQ.res={};SIMQ.refined=new Set();SIMQ.more={};SIMQ.err="";BRCMP.seen.clear();BRCMP.open={};for(const k in PICK)delete PICK[k];
  MI.info=info;MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
