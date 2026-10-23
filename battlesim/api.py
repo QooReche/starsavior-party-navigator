@@ -306,12 +306,15 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     per_run = [] if o.get('per_run') else None
     prog = []   # 판마다 적 진척도(0~1): 끝낸 웨이브 수 + 현재 웨이브에서 깎은 체력 비율, 웨이브 수로 나눔. 클리어 0% 팀끼리 순위를 가르는 데 쓴다
     t0 = time.perf_counter()
+    # 런 간 공유 의미 해석 캐시: 같은 def 객체의 normalized_lines 를 runs 전체에서 한 번만 계산한다.
+    # 전역·모듈 캐시 없음 — _simulate 호출마다 새로 생성해 호출 간 격리를 보장한다.
+    semantic_cache: dict = {}
     for r in range(n_runs):
         rng = random.Random(seed * 1000003 + offset + r)
         b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {},
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
                    enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'), rng_streams=bool(o.get('rng_streams')),
-                   sudden=sudden)
+                   sudden=sudden, semantic_cache=semantic_cache)
         b.run()   # EventLimitError 는 그대로 올린다(정상 결과 금지)
         for (pos, slot), count in b.nova_bursts.items():
             nova_counts[names[pos]][slot] += count
