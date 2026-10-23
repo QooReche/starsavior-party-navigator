@@ -156,7 +156,8 @@ class HealBurstTest(unittest.TestCase):
             self.assertEqual(r['nova_burst']['total'] > 0, policy == 'manual')
 
     def test_ingame_defaults_override_and_all_run_counts(self):
-        self.assertEqual(ingame_check.NOVA_POLICY, {'36-36': 'heal', '37-2': 'auto', '37-3': 'auto', '37-4': 'auto', '37-5': 'auto', '17': 'auto', '17e': 'auto', '17r': 'auto'})
+        self.assertEqual(ingame_check.NOVA_POLICY, {k: ('heal' if k == '36-36' else 'auto') for k in ingame_check.SAMPLES})   # 샘플이 늘어도 36-36 만 heal
+        self.assertEqual(ingame_check.NOVA_POLICY['36-36'], 'heal')
         r = ingame_check.run('36-36', runs=5, bs=True)
         self.assertGreater(r['nova_burst']['total'], 0)
         self.assertEqual(r['nova_burst']['total'], sum(sum(v.values()) for v in r['nova_burst']['by_unit'].values()))
