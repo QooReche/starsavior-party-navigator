@@ -93,14 +93,11 @@ def gauntlet_stats(unit, growth):
             for k, v in table[str(level)].items():
                 if k in KEYS + RATE_KEYS:
                     potential[k] = potential.get(k, 0) + v
-    # ss-myinfo-v1 exports raw gauntlet col13 as 'blessings'. The March client
-    # NKCStellarMemory adapter (NKC.cs:268033-268094) passes journey+SePoten
-    # only; its separate list goes to SetHurdleList (231872). Current export
-    # mapping is not verified, so do not turn these IDs into stat bonuses.
-    # STAT_POTENTIAL_TEMPLET is JST_* (journey), not a second NST_* bonus.
-    if gauntlet.get("blessings") not in (None, []):
-        missing.add("gauntlet_blessings")
-    return dict(journey=journey, potential=potential, power_pp=power_pp, missing=sorted(missing))
+    # ss-myinfo-v1 col13 = 관문 이력(건틀렛 레벨 대응 목표 ID).
+    # 3월 클라 NKC.cs:231872 SetHurdleList 에만 전달, 전투 스탯과 무관.
+    # 여정 값(journey 5칸)에 이미 계승 스탯 포함 → 재가산 금지.
+    hurdles = gauntlet.get("blessings") or []
+    return dict(journey=journey, potential=potential, power_pp=power_pp, missing=sorted(missing), hurdles=hurdles)
 
 
 def final_stats(unit, info, growth, rule="normal", breakdown=False):

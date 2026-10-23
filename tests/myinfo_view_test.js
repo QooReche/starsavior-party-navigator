@@ -16,7 +16,7 @@ const r=Stats.final_stats(u,info,growth,'normal',true);
 const html=View.render(u,info,growth,r,publicData,combat,true);
 assert(html.includes('상한 적용'));
 assert(html.includes('잠재력 #999999'));
-assert(html.includes('축복 · 미해석'));
+assert(html.includes('관문 이력'));
 assert(html.includes('#987654'));
 assert(!html.includes('공격의 감각')); // unlearned potential
 assert(html.includes('묶음 비율 효과'));

@@ -71,14 +71,10 @@
         if (ALL.includes(k)) potential[k] = get(potential, k) + v;
       }
     }
-    // Current export's 'blessings' col13 remains unverified. March client
-    // NKC.cs:268033-268094 passes only journey+SePoten to stats, and its list
-    // goes to SetHurdleList (231872). STAT_POTENTIAL_TEMPLET uses JST_*, so
-    // adding it again to imported journey would risk counting it twice.
-    if (gauntlet.blessings != null && (!Array.isArray(gauntlet.blessings) || gauntlet.blessings.length)) {
-      missing.add("gauntlet_blessings");
-    }
-    return {journey, potential, power_pp, missing: Array.from(missing).sort()};
+    // col13 = 관문 이력(건틀렛 레벨 대응 목표 ID). NKC.cs:231872 SetHurdleList 전용,
+    // 전투 스탯 무관. 여정 값에 이미 계승 스탯 포함 → 재가산 금지.
+    const hurdles = Array.isArray(gauntlet.blessings) ? gauntlet.blessings : [];
+    return {journey, potential, power_pp, missing: Array.from(missing).sort(), hurdles};
   }
 
   function final_stats(unit, info, growth, rule = "normal", breakdown = false) {

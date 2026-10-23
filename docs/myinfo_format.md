@@ -33,7 +33,7 @@
           "subs": [{"stat": "NST_HP", "value": 630}, ...] }
       ],
       "gauntlet": { "journey": [1250, 435, 497, 148, 66], "level": 77,   // 스텔라 아카이브(여정 스탯 5개, UI 순서) — 없을 수 있음
-                    "potentials": [[20001, 0, 3, 0]], "blessings": [10301, 10302] }   // [ID,레벨,비용할인 인덱스,계승 축복 레벨]; blessings 목록 의미 미확정
+                    "potentials": [[20001, 0, 3, 0]], "blessings": [10301, 10302] }   // [ID,레벨,비용할인 인덱스,계승 축복 레벨]; blessings = 관문 이력, 전투 무관 (근거 NKC 231872)
     }
   ]
 }
@@ -130,7 +130,7 @@ PP는 `potential_pp[ID][a]`의 합이다. 해당 잠재력의 1~a 레벨 중 `Po
 현재 roster의 스킬 슬롯이 4개인지는 성장표 생성 시 검사한다.
 
 2026-10-22 같은 시점의 정답 5명은 **공·생·방을 포함한 8종 모두 정수 단위까지 일치**한다.
-별도 `blessings[]` 목록(`gauntlet_blessings`, 비어 있지 않을 때)은 남긴다.
+`blessings[]`는 관문 이력(건틀렛 레벨 대응 목표 ID, 전투 무관). `gauntlet_stats`가 `hurdles`로 반환하며 `missing`에는 포함하지 않는다.
 `power_pp`는 잠재력 목록·항목 또는 성장표의 PP를 해석하지 못할 때만 남긴다.
 확인된 PP는 누적하며 미지 항목은 0으로 처리한다. 빈 목록·레벨 0은 알려진 PP=0이다.
 상시 패시브는 성장표에 가공한 레벨별 정적 수치로 반영한다. 정상 해석한 유닛에서는 `unit_passive`를
@@ -179,9 +179,9 @@ R2 = 각인 + 장비·세트 + 잠재력 + 시설·전술 + 상시 패시브 비
 현재 `reference/StatFactorBundle.cs`, `FinalStatCombiner.cs`다.
 
 `STAT_POTENTIAL_TEMPLET`는 전투 스탯 NST가 아닌 여정 스탯 JST를 준다. 수입된 여정 값에
-재가산하지 않는다. `blessings[]`를 무조건 이 표의 ID로 해석하는 근거도 없다.
-3월 클라이언트의 대응 목록은 관문 이력 표시(`NKC.cs:231872 SetHurdleList`)에 사용된다.
-현재 내보내기의 col13 매핑은 추가 확인이 필요하여 이 목록 자체는 미해석으로 남긴다.
+재가산하지 않는다. `blessings[]`(관문 이력)를 이 표의 ID로 해석하는 근거도 없다.
+3월 클라이언트 `NKC.cs:231872 SetHurdleList`가 이 목록을 관문 이력 UI에만 사용함이 확인됨.
+전투 스탯 기여 없음. `gauntlet_stats` 반환값 `hurdles`에만 담으며 능력치·전투력은 변동 없다.
 
 성장표의 최상위 필드는 `_note`, `game_build`, `units`, `star_link`, `tactics`, `facility`,
 `item_sets`, `sets`, `potentials`, `potential_pp`다. `potentials`는 ID → 레벨 → 8종 능력치 및 4종 비율의 수치만 담는다.
