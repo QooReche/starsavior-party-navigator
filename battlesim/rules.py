@@ -71,5 +71,7 @@ DEFAULT_OPTS = dict(
 LEGACY_OPTS = {k: v['legacy'] for k, v in RULES['opts'].items() if 'legacy' in v}
 # P3 확률 엔진(battlesim/mc.py) 전용 규칙. DEFAULT_OPTS 와 따로 둔다(기대값 엔진·damage_index 출력 불변).
 MC_RULES = {k: v for k, v in RULES.get('mc', {}).items() if not k.startswith('_') and k != 'break_skills'}
-MC_OPTS = {k: v['value'] for k, v in MC_RULES.items()}
+# kind='note' 항목: 설명용이며 엔진 코드가 읽지 않는다. MC_OPTS 에서 제외하되 MC_RULES·assumptions_used 출력엔 유지.
+MC_NOTE_KEYS = frozenset(k for k, v in MC_RULES.items() if v.get('kind') == 'note')
+MC_OPTS = {k: v['value'] for k, v in MC_RULES.items() if k not in MC_NOTE_KEYS}
 MC_OPTS['break_skills'] = {k: v['value'] for k, v in RULES.get('mc', {}).get('break_skills', {}).items()}

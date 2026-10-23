@@ -562,7 +562,8 @@ class Ctx:
 # ------------------------------------------------------------------ 전투
 class Battle:
     def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None,
-                 timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None, rng_streams=False, sudden=None):
+                 timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None, rng_streams=False, sudden=None,
+                 semantic_cache=None):
         self.pen = tuple(pen) if pen else (1.0, 1.0)    # P5 전투력 보정(아군이 주는 피해 배율, 적이 주는 피해 배율) — 스킬·지속·연쇄만
         self.opts = dict(DEFAULT_OPTS)
         self.opts.update(opts or {})
@@ -610,6 +611,9 @@ class Battle:
         self.once = set()        # {전투당 1회} 줄 사용 기록
         self.recast = {}         # {발동 후 N턴 재발동 불가} 줄: (주인, 줄) -> 발동한 때의 주인 행동 횟수
         self._semantic_lines = {}
+        # 호출자(_simulate)가 건네는 런 간 공유 캐시. None 이면 per-Battle 캐시(_semantic_lines)만 쓴다.
+        # {id(def_obj): (lines_ref, len, normalized)} — def 객체가 바뀌거나 lines 가 교체되면 자동 무효화.
+        self._semantic_cache = semantic_cache
         self._triggering = set()  # 쿨이 없는 트리거도 동일 시전 중 재진입 방지
         self.break_skill = dict(break_skill or {})
         self.break_skill_name = self.break_skill.get('name')
@@ -655,6 +659,14 @@ class Battle:
         if u.side == 1 and not self.enemy_lines:
             return ()
         key = id(u.d)
+        sc = self._semantic_cache
+        if sc is not None:
+            cached = sc.get(key)
+            if cached is not None and cached[0] is u.d.lines and cached[1] == len(u.d.lines):
+                return cached[2]
+            result = (u.d.lines, len(u.d.lines), normalized_lines(u.d))
+            sc[key] = result
+            return result[2]
         cached = self._semantic_lines.get(key)
         if cached is None or cached[0] is not u.d.lines or cached[1] != len(u.d.lines):
             cached = (u.d.lines, len(u.d.lines), normalized_lines(u.d))

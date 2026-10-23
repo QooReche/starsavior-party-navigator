@@ -41,7 +41,7 @@ from collections import defaultdict
 
 from . import rules as _rules
 from .mc import Battle, EventLimitError, support_report
-from .rules import DEFAULT_OPTS, MC_OPTS, MC_RULES, RULES
+from .rules import DEFAULT_OPTS, MC_NOTE_KEYS, MC_OPTS, MC_RULES, RULES
 from .starsavior.data import _find_key, get_db
 from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves, sudden_death
 from .starsavior.parser import Skill, UnitDef
@@ -177,7 +177,8 @@ def assumptions_used(mc, opts):
     out = []
     for k, v in MC_RULES.items():
         if v.get('grade') != 'data':
-            out.append(dict(rule='mc.' + k, value=mc.get(k), grade=v.get('grade'), note=v.get('note')))
+            # note 키는 MC_OPTS 에 없으므로 규칙 기본값으로 채워 출력 목록 유지
+            out.append(dict(rule='mc.' + k, value=mc.get(k, v.get('value')), grade=v.get('grade'), note=v.get('note')))
     for k, v in RULES['mc'].get('break_skills', {}).items():
         out.append(dict(rule='mc.break_skills.' + k, value=mc['break_skills'].get(k), grade=v.get('grade'), note=v.get('note')))
     for k in ('coop_trigger', 'coop_single', 'nova_policy', 'nova_pool', 'forced_coop_target', 'init_cd_frac'):
@@ -238,7 +239,8 @@ def simulate(party_spec, encounter_spec, options=None):
         over['nova_policy'] = o['nova_policy']
     mc = dict(MC_OPTS, **{k: v for k, v in over.items() if k in MC_OPTS})
     opts = dict(DEFAULT_OPTS, **{k: v for k, v in over.items() if k in DEFAULT_OPTS})
-    unknown_keys = [k for k in over if k not in MC_OPTS and k not in DEFAULT_OPTS]
+    # MC_NOTE_KEYS 는 설명용이라 무시하고 받아줌(외부 호출 호환). 그 밖의 모르는 키는 오류.
+    unknown_keys = [k for k in over if k not in MC_OPTS and k not in DEFAULT_OPTS and k not in MC_NOTE_KEYS]
     if unknown_keys:
         raise ValueError('모르는 규칙 키: %s' % ', '.join(unknown_keys))
     fo = dict(o.get('formula_override') or {})
@@ -304,12 +306,15 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     per_run = [] if o.get('per_run') else None
     prog = []   # 판마다 적 진척도(0~1): 끝낸 웨이브 수 + 현재 웨이브에서 깎은 체력 비율, 웨이브 수로 나눔. 클리어 0% 팀끼리 순위를 가르는 데 쓴다
     t0 = time.perf_counter()
+    # 런 간 공유 의미 해석 캐시: 같은 def 객체의 normalized_lines 를 runs 전체에서 한 번만 계산한다.
+    # 전역·모듈 캐시 없음 — _simulate 호출마다 새로 생성해 호출 간 격리를 보장한다.
+    semantic_cache: dict = {}
     for r in range(n_runs):
         rng = random.Random(seed * 1000003 + offset + r)
         b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {},
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
                    enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'), rng_streams=bool(o.get('rng_streams')),
-                   sudden=sudden)
+                   sudden=sudden, semantic_cache=semantic_cache)
         b.run()   # EventLimitError 는 그대로 올린다(정상 결과 금지)
         for (pos, slot), count in b.nova_bursts.items():
             nova_counts[names[pos]][slot] += count

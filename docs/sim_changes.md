@@ -174,3 +174,13 @@ python -X utf8 -I tests/rank_check.py --rules-override "{\"enemy_resist\": 0.2}"
 python -X utf8 -I tests/rules_test.py
 ```
 골든: `tests/golden/sim_golden.json` = P2 새 기본값(이 문서 기록 뒤 저장), `tests/golden/sim_golden_p1.json` = P1(교정 전) 보관본.
+
+## 7. MC 규칙 설명값 구분 (2026-10-23)
+
+`rules/default.json` 의 `mc` 절 중 엔진 코드가 직접 읽지 않는 항목 4개(`enemy_skill_ai`, `caster_death`, `wave_carry`, `break_skill_model`)에 `"kind": "note"` 를 추가하고, `rules.py` 에서 `MC_NOTE_KEYS` frozenset 으로 분리했다.
+
+- `MC_OPTS` 에서 제외 → 엔진·`rules_override` 에 전달되지 않음(설명 키를 넘겨도 무시, 외부 호환 유지)
+- `MC_RULES` 와 `assumptions_used` 출력엔 그대로 포함 (문서 목적)
+- `api.py` `unknown_keys` 검사에서 `MC_NOTE_KEYS` 는 무조건 통과
+- `toughness_elem` 의 의미 없는 `"legacy": "db"` 제거 (value == legacy 이므로 P2 교정 없음)
+- 결과 바이트 변화 없음 (골든 64/150/10 전부 일치)

@@ -6,7 +6,7 @@
 | 파일 | 내용 |
 |---|---|
 | `rules.py` | 피해식 상수·가정(ASSUMPTIONS)·속성 상성·DoT 표·`DEFAULT_OPTS`. 값은 `rules/default.json` 에서 읽음 |
-| `rules/default.json` | 불확실하거나 바뀌기 쉬운 수치·규칙 스위치. 항목마다 `value`·`grade`(data/official/community/assumed)·`note`, P2 교정 항목은 `legacy`(교정 전 값)·`source` |
+| `rules/default.json` | 불확실하거나 바뀌기 쉬운 수치·규칙 스위치. 항목마다 `value`·`grade`(data/official/community/assumed)·`note`, P2 교정 항목은 `legacy`(교정 전 값)·`source`. `"kind":"note"` 항목은 설명용이며 엔진이 읽지 않음(`MC_NOTE_KEYS`) |
 | `starsavior/data.py` | 저장소 루트(`SRC`, 환경변수 `PN_SRC` 로 바꿀 수 있음), `DB`·`get_db`, 이름으로 구원자 key 찾기(`_find_key`) |
 | `starsavior/stats.py` | 스탯 계산(데이터북 `sCalc` 재현) |
 | `starsavior/parser.py` | 스킬 문장(`ef` 줄) 파서 → `Line`, `Skill`, 구원자 정의 `UnitDef` |
