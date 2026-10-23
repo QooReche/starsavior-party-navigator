@@ -30,7 +30,7 @@ TT = {'NSTT_ENEMY_ONE': 'enemy_one', 'NSTT_ENEMY_ALL': 'enemy_all', 'NSTT_ALLY_O
       'NSTT_ALLY_ALL': 'ally_all', 'NSTT_MYSELF': 'self'}
 FILTER = {'IsNotInvincible': 'not_invincible', 'IsBoss': 'boss', 'IsElite': 'elite', 'IsAdvantageAdjustType': 'advantage',
           'IsLowHpRate': 'low_hp_rate', 'IsLowMaxHp': 'low_max_hp', 'IsHighDef': 'high_def', 'IsLowDef': 'low_def',
-          'IsAllyOneNotSelf': 'not_self', 'IsRandomDeadAllyOne': 'dead_ally'}
+          'IsAllyOneNotSelf': 'not_self', 'IsRandomDeadAllyOne': 'dead_ally', 'IsNotUnableToAct': 'not_unable_to_act'}
 ELEM = {'SUN': '태양', 'MOON': '달', 'STAR': '별', 'ORDER': '질서', 'CHAOS': '혼돈'}
 # 엔진(battlesim/mc.py RULE1·RULE1001)이 상수로 쓰는 기본 규칙. 표가 바뀌면 빌드가 실패해 엔진을 같이 고치게 한다.
 DEFAULTS = {1: {'IsNotInvincible': True, 'IsBoss': True, 'IsElite': True, 'IsAdvantageAdjustType': True, 'IsLowHpRate': True, 'IsLowMaxHp': True},
@@ -141,6 +141,29 @@ def build(static):
     return units
 
 
+def _dedup_se(rows):
+    """묶음 번호·행 ID 만 다른 SE 행을 하나로(순서 유지)."""
+    out, seen = [], set()
+    for r in rows:
+        k = json.dumps({k: v for k, v in r.items() if k not in ('m_SEStrID', 'm_SEID', 'SEGroupID')}, sort_keys=True, ensure_ascii=False)
+        if k not in seen:
+            seen.add(k)
+            out.append(r)
+    return out
+
+
+def _skip_paren(head):
+    """앞머리 「(조건: …)」 한 덩어리를 짝 맞는 닫는 괄호까지 건너뛴다(조건 안 「보호막(해제불가)」 같은 괄호 포함)."""
+    if not head.startswith('('):
+        return head
+    depth = 0
+    for i, ch in enumerate(head):
+        depth += (ch == '(') - (ch == ')')
+        if depth == 0:
+            return head[i + 1:].lstrip()
+    return head
+
+
 def build_lines(static, report):
     """구원자 효과 줄 자동 대상(SE AutoTargetId) -> {구원자 key: [[칸, 데이터북 원문, {one, ally?, f}], ...]}.
     데이터북 효과 줄에는 게임 SE 행이 아닌 줄(이번 스킬 보정 등)이 섞여 있어 줄 수 대신 「(자동 지정)」 줄 ↔ 게임 자동 지정 행을
@@ -179,27 +202,28 @@ def build_lines(static, report):
             levels = se.get(sid) or se.get(sid.replace('S_', '', 1))
             if not levels:
                 continue
-            # 가운데 번호 01 = 기본 효과 묶음, 02 이상 = 레벨업 때 더해지는 행. 기본 묶음으로 짝짓고, 추가 행에 자동 지정이 있으면 뺀다
+            # 가운데 번호 01 = 기본 효과 묶음, 02 이상 = 레벨업 때 더해지는 행(SKILL_LEVEL_GROUP_TEMPLET).
+            # 기본 묶음의 자동 지정 SE 로 spec(필터)을 정하고, 추가 묶음에도 자동 지정이 있으면
+            # 데이터북 L.e 의 전 레벨 그룹에서 「(자동 지정)」 줄을 열거해 같은 spec 을 등록한다.
             seqs = {lv: [r for _n, r in sorted(rows, key=lambda x: x[0]) if r.get('m_BuffTargetType') in auto_types]
                     for lv, rows in levels.items()}
             base = min(seqs)
             rows = seqs[base]
             where = '%s %s' % (key, s['sl'])
-            if any(v for lv, v in seqs.items() if lv != base):
-                report['레벨업 추가 행에 자동 지정(제외): ' + where] += 1
-                continue
+            has_levelup_auto = any(v for lv, v in seqs.items() if lv != base)
             if not any(r.get('AutoTargetId') for r in rows):
                 continue
             lines = [ln for ln in s.get('ef') or [] if '(자동 지정)' in ln]
+            if len(lines) != len(rows):
+                # 데이터북은 묶음 번호(SEGroupID)만 다른 같은 행을 한 줄(「×5」·「N회 부여」)로 합쳐 적는다 — 첫 행만 남겨 다시 짝짓는다
+                rows = _dedup_se(rows)
             if len(lines) != len(rows):
                 report['자동 지정 줄 수 불일치(제외): ' + where] += 1
                 continue
             got = []
             for ln, r in zip(lines, rows):
                 tt = r['m_BuffTargetType']
-                head = ln.split(']', 1)[-1].lstrip()
-                if head.startswith('('):
-                    head = head.split(')', 1)[-1].lstrip()
+                head = _skip_paren(ln.split(']', 1)[-1].lstrip())
                 ally = not head.startswith('적')
                 one = '1명' in head.split('(자동 지정)')[0]
                 if ally != tt.startswith('NSETT_AUTO_ALLY') or one != tt.endswith(('_ONE', '_ONE_NOT_SELF')):
@@ -221,6 +245,23 @@ def build_lines(static, report):
                 report['아군/적·1명/전체 불일치(제외): ' + where] += 1
                 continue
             out.setdefault(key, []).extend(got)
+            # 레벨업 추가 행에도 자동 지정이 있는 스킬: 데이터북 L.e 전 레벨 그룹에서 「(자동 지정)」 줄을
+            # 같은 spec(기본 묶음 필터)으로 등록한다. 줄 수가 다른 그룹은 건너뛴다(보고만).
+            if has_levelup_auto and got:
+                specs = [g[2] for g in got]
+                L = s.get('L')
+                if L and 'e' in L and 'ln' in L:
+                    seen = {g[1] for g in out.get(key, [])}   # 이미 등록된 원문
+                    for gi, grp in enumerate(L['e']):
+                        grp_lns = [L['ln'][j] for j in grp if j < len(L['ln'])]
+                        grp_auto = [ln for ln in grp_lns if '(자동 지정)' in ln]
+                        if len(grp_auto) != len(specs):
+                            report['레벨 그룹 %d 자동 지정 줄 수 불일치(생략): %s' % (gi, where)] += 1
+                            continue
+                        for ln, spec in zip(grp_auto, specs):
+                            if ln not in seen:
+                                out[key].append([s['sl'], ln, spec])
+                                seen.add(ln)
     return out
 
 

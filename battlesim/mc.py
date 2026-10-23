@@ -1223,6 +1223,9 @@ class Battle:
             return [v for v in pool if getattr(v, 'leader', False)]
         if st in ('broken', 'not_broken'):
             return [v for v in pool if bool(v.broken) == (st == 'broken')]
+        if st == 'not_unable_to_act':
+            # IsNotUnableToAct(NKM 1189~1199): 행동 불가가 아닌 대상만(사망·기절·수면 제외). 풀에서 사망은 이미 빠져 있으므로 기절·수면만.
+            return [v for v in pool if not self.incapacitated(v)]
         if st == 'back':
             return [v for v in pool if v.pos >= 2]
         if st in ROLE_NAMES:
