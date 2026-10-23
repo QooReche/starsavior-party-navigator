@@ -46,7 +46,7 @@ def run_auto(stage, party, n, seed, extra=None):
     o = r['outcome']
     first = sorted(((v.get('first_death_p') or 0, k) for k, v in r['per_unit'].items()), reverse=True)
     return json.dumps(dict(clear=o['clear_p'], prog=o.get('progress'), wipe=o['wipe_p'], timeout=o['timeout_p'], ci=o['ci95']['clear'], n=o['n_runs'],
-                           ttk=o['ttk_median'], first=(first[0][1] if first and first[0][0] > 0 else None),
+                           ttk=o['ttk_median'], ta=o.get('ttk_actions_median'), first=(first[0][1] if first and first[0][0] > 0 else None),
                            first_p=(first[0][0] if first else 0), gate=r['unsupported'].get('gate_ok', True),
                            power=r.get('party', {}).get('power'), u=_unit_map(party, r), bs=_break_summary(r)), ensure_ascii=False)
 

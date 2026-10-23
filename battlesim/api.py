@@ -289,6 +289,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     foe_agg = defaultdict(lambda: defaultdict(list))
     outcomes = defaultdict(int)
     ttk = []
+    ttk_actions = []   # 클리어 판의 전체 행동 수(아군+적) = 게임 결과 화면의 TURN 에 해당(docs/ally_damage_audit.md)
     runtime = defaultdict(int)
     runs_affected = 0
     depth_runs = 0
@@ -315,6 +316,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         outcomes[b.result] += 1
         if b.result == 'clear':
             ttk.append(b.clear_t / b.turn_ticks)
+            ttk_actions.append(sum(u.actions for u in b.allies) + sum(u.actions for u in b.all_foes))
         prog.append(b.progress())
         if per_run is not None:
             per_run.append([b.result, round(b.clear_t / b.turn_ticks, 3) if b.result == 'clear' else None])
@@ -379,6 +381,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
             ci95=dict(clear=_wilson(outcomes['clear'], n), wipe=_wilson(outcomes['wipe'], n)),
             ttk_median=round(statistics.median(ttk), 2) if ttk else None,
             ttk_p10_p90=[round(_pct(ttk, 0.1), 2), round(_pct(ttk, 0.9), 2)] if ttk else None,
+            ttk_actions_median=round(statistics.median(ttk_actions), 1) if ttk_actions else None,
             progress=round(sum(prog) / n, 4),
             ttk_basis='모델 기준 턴(100틱), 클리어한 판만' + ('' if turn_limit else ', 턴 제한 없음(상한 %d턴)' % max_turns)),
         per_unit=per_unit,
