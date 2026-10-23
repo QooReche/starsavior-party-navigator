@@ -69,3 +69,8 @@
 - 새 시험 의도적 오염 1건(assertNotIn → assertIn) 후 실패 확인하고 원복했음.
 - e2e: tests/e2e/test_page.py에 test_graph_evidence 추가(근거 보기 켬 → 그래프 → 선 탭 → syn_detail 로드·캐시 확인). Playwright 환경 외부에서 실행 필요.
 - Python 14개(cleanup_test.py), JS 10개, reco_parity_test, run_workspace_test/web_test 전부 통과했음. 추천 점수·순서 불변.
+
+## 추가 완료 (2026-10-23, feat-rules)
+
+- MC 규칙 설명값 구분(커밋 a176872): `rules/default.json` mc 절 4개 항목(`enemy_skill_ai`, `caster_death`, `wave_carry`, `break_skill_model`)에 `"kind":"note"` 추가. `rules.py` 에 `MC_NOTE_KEYS` frozenset 신설, `MC_OPTS` 에서 제외하되 `MC_RULES`·`assumptions_used` 출력 유지. `api.py` `unknown_keys` 검사 호환. `toughness_elem` 의미 없는 `"legacy"` 제거. 일관성 시험 6개 추가. 골든 결과 변화 없음.
+- MC 의미 해석 캐시(커밋 a9dbdb4): `Battle.__init__`에 `semantic_cache=None` 추가, `lines_of`에서 공유 캐시 우선 조회/기록(is-check 무효화). `api._simulate` 에서 런 루프 앞 `semantic_cache={}` 생성·전달. 전역·모듈 캐시 없음, 호출 간 격리 보장. 시험 8개(`mc_cache_test.py`) 신설 — 해시 고정, 결과 동일, 무효화, 오염 감지. 골든 결과 변화 없음.

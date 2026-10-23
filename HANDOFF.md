@@ -80,10 +80,13 @@
 
 ## 남은 것 (근거는 docs/cleanup_review.md)
 
-- MC 의미 해석 캐시: 난수 순서 보존 시험부터.
 - 추천 후보 평가 재사용(`buildCands`·`quickRank` 중복): 동점 순서·Python 동일성 고정 뒤.
 - Cytoscape 지연 로드·설명 데이터 분리.
-- `rules/default.json` 의 실행 분기 없는 설명값·legacy 스위치 정리(호환 시험에 쓰여 보존 중).
+
+## 완료된 것 (2026-10-23, feat-rules)
+
+- MC 규칙 설명값 구분: `rules/default.json` mc 4개 항목 `"kind":"note"`, `MC_NOTE_KEYS` 신설, 일관성 시험 6개. (커밋 a176872)
+- MC 의미 해석 캐시: `Battle.semantic_cache` 런 간 공유, 결과 바이트 동일, 시험 8개. (커밋 a9dbdb4)
 
 ## 작업 방식
 
