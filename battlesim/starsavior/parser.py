@@ -112,7 +112,8 @@ def parse_effect(rest):
         tgt = m.group(1)
         flags_s = m.group(5) or ''
         # 조건 접두어가 target에 섞인 경우(「(자신 HP 49.99% 이하) 자신에게」 등)는 무시
-        if '이번 스킬' in flags_s and not tgt.startswith('('):
+        # 「받는 회복량」은 대상마다 따로 거는 보정이라 run_special(RX_RECV_HEAL)이 처리한다 — 여기서 가로채지 않음(프레이·세르팡·베라)
+        if '이번 스킬' in flags_s and not tgt.startswith('(') and m.group(3).strip() != '받는 회복량':
             chance = int(m.group(2)) / 100.0 if m.group(2) else 1.0
             return dict(kind='local', stat=m.group(3).strip(), val=float(m.group(4)) * chance, target=tgt)
         return dict(kind='ignored', why='타 대상 능력치 보정')
@@ -165,7 +166,8 @@ def parse_effect(rest):
     # 효과 지속 턴 +N(오르트로스: 적의 약화 지속 연장). 해제/교체/무작위 catch-all 전에 잡는다.
     m = re.match(r'^(.+?)에게 효과 지속 턴 \+?(\d+)', rest)
     if m:
-        return dict(kind='extend', target=m.group(1), val=int(m.group(2)), name='', judge='효과 적중 판정' in rest)
+        # src='parser' = 이 규칙으로 새로 해석한 줄(mc.effect_dur_extend 로 끌 수 있음). 설명문으로 이름을 정하는 연장은 mc_semantics 가 덮어씀
+        return dict(kind='extend', target=m.group(1), val=int(m.group(2)), name='', judge='효과 적중 판정' in rest, src='parser')
     # 행동 게이지 조건부 설정(티리아 시계태엽 인형: 0%보다 높으면 0%로 낮춤)
     m = re.match(r'^(.+?)에게 행동 게이지가? (\d+)%보다 높으면 (\d+)%로 낮춤', rest)
     if m:
@@ -219,20 +221,10 @@ class Line:
         self.kind = trig_kind(phase, self.trig)
         self.na = bool(self.trig and '비공격' in self.trig)
         if self.kind == 'perm':
-            # 쉼표로 구분된 다중 상시 능력치(힐데 「생명력% +15%, 선제 방어 확률 +30%」)
-            inner = re.sub(r'^능력치:\s*', '', rest)
-            parts = [p.strip() for p in inner.split(',') if p.strip()]
-            parsed = []
-            for p in parts:
-                pm = re.match(r'^(.+?)\s+(' + NUM + r')(%?)$', p)
-                if pm:
-                    parsed.append((pm.group(1).strip(), float(pm.group(2))))
-            if len(parsed) == 1:
-                self.eff = dict(kind='perm', stat=parsed[0][0], val=parsed[0][1])
-            elif parsed:
-                self.eff = dict(kind='perm_multi', stats=parsed)
-            else:
-                self.eff = dict(kind='ignored', why='상시미해석')
+            # 쉼표로 구분된 복합 상시(힐데 「생명력% +15%, 선제 방어 확률 +30%」)는 mc_semantics.normalized_definition 이 처리.
+            # 여기서는 마지막 수치만 가져 가는 단순 매칭(복합이면 kind='perm' 실패 → '상시미해석', normalized_definition 이 재파싱).
+            m = re.match(r'^능력치:\s*(.+?)\s+(' + NUM + r')(%?)$', rest)
+            self.eff = dict(kind='perm', stat=m.group(1), val=float(m.group(2))) if m else dict(kind='ignored', why='상시미해석')
         else:
             self.eff = parse_effect(rest)
         self.bound = (src_kind in ('active', 'trigger')) and self.kind in ('own_pre', 'own_post')
@@ -350,9 +342,6 @@ class UnitDef:
                 if ln.kind == 'perm':
                     if ln.eff['kind'] == 'perm':
                         _perm_apply(self.stats, self.passive, ln.eff)
-                    elif ln.eff['kind'] == 'perm_multi':
-                        for st, val in ln.eff['stats']:
-                            _perm_apply(self.stats, self.passive, dict(kind='perm', stat=st, val=val))
                 elif ln.kind == 'unmodeled':
                     self.unmodeled.append('조건 미해석 줄: ' + raw[:70])
                 elif ln.eff['kind'] == 'ignored' and ln.eff.get('why') == '미해석':

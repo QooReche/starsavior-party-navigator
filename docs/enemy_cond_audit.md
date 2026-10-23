@@ -154,17 +154,17 @@
    - 근거: 데이터북 페르세스 패시브 ef, parser.py `_map_prop` 360~361(vs 속성 → inc_vs)
 
 5. **작전 어려움 35-10 맹약결속(해제불가)** (5곳)
-   - 「의미 미해석 효과(속성 없음)」: foe_react 조건에서 맹약결속 중첩수를 확인하는데 마커 수집이 foe_react 조건을 포함하지 않았음. 마커 수집에 `d.react` 의 `buff`·`target_buff` 조건도 추가(mc.py:support_report 3284~3288).
-   - 근거: data/foe_react.json(맹약 회수 조건: 맹약결속 ==3)
+   - 「의미 미해석 효과(속성 없음)」: foe_react 조건에서 맹약결속 중첩수를 확인하는데 마커 수집이 foe_react 조건을 포함하지 않았음. 마커 수집에 `d.react` 조건을 리스트 형식으로 스캔 추가(`self_stack_eq`·`self_has`·`target_has` 등에서 버프 이름 추출, mc.py:support_report 3335~3344).
+   - 근거: data/foe_react.json(맹약 회수 조건: `["self_stack_eq", "맹약결속(해제불가)", 3]`)
 
 6. **큐브 펌웨어 4곳**
    - 「effect: 미해석」: `자신에게 75% 확률로 능력치 보정 피해 증가 +30% {이번 스킬에만 적용}` — 파서 self-target 정규식에 `(?:(\d+)% 확률로 )?` 추가(parser.py:100). 확률은 기대값으로 곱함(val × chance). `kind='local'` 유지.
    - 근거: 데이터북 복제체 리디아 ef
 
 7. **선제 방어 확률(세레스 〈고립〉·힐데 고유 패시브)**
-   - 「속성 미지원 선제 방어 확률 〈고립〉」: `_map_prop` 에 `선제 방어 확률` → `('preempt', None)` 추가(parser.py:387). `_prop_known` 이 인식. `_perm_apply` 에도 추가(parser.py:286~287, 힐데 상시 +10/30%).
-   - 선제 방어 메카닉: 규칙 `mc.preemptive_defense`(on, 옛 off). 적 단일 공격 전 아군 중 선제 방어 확률이 있으면 `max(0, 방어자 확률 - 공격자 reduce)` 확률로 대상 전환(mc.py `_preemptive_check`). 필중이면 무시, 브레이크 상태이면 방어 불가.
-   - 근거: NKM.decompiled.cs 8040~8071(PreemptiveDefenseController), NKM.Templets 28968~28969(NST_RATE_PREEMPTIVE_DEFEND·_REDUCE), docs/formulas_web.md 4.3(고립 -50%·필중 무시·은신 무시)
+   - 「속성 미지원 선제 방어 확률 〈고립〉」: `_map_prop` 에 `선제 방어 확률` → `('preempt', None)` 추가(parser.py:388). `_prop_known` 이 인식. `_perm_apply` 에도 추가(parser.py:295~296). 힐데 고유 패시브가 다중 상시 능력치(「생명력% +15%, 선제 방어 확률 +30%」)라 파서 perm 파싱을 쉼표 분리로 변경(parser.py:219~231, `perm_multi` 타입).
+   - 선제 방어 메카닉: 규칙 `mc.preemptive_defense`(on, 옛 off). 적 단일 공격 전 아군 중 선제 방어 확률이 있으면 `max(0, 방어자 확률 - 공격자 reduce)` 확률로 대상 전환(mc.py `_preemptive_check`). 필중이면 무시, 브레이크 상태이면 방어 불가. 공격자의 reduce 는 고립 등 약화 효과의 선제 방어 확률 감소분(`-attacker.mods()['preempt']`). 힐데 +30% 기준, 고립(-50%) 적에게는 방어 불가(30-50=0).
+   - 근거: NKM.decompiled.cs PreemptiveDefenseController.cs:6~65(rate - reduce, roll 1~10000), NKM.Templets NST_RATE_PREEMPTIVE_DEFEND(라인 357)·_REDUCE(라인 358)
 
 ### 규칙 스위치
 | 규칙 | 기본값 | 옛 동작 | 근거 |

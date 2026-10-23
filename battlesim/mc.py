@@ -2712,10 +2712,10 @@ class Battle:
                         ctx.local_by[x]['inc'] += min(n, eff['cap']) * eff['val'] / 100
             return
         if kd == 'extend':
-            # 이 핸들러는 이전에 파서가 extend 를 만들지 않아 호출된 적 없었음(dead code).
-            # off = 옛 동작(호출 안 됨)과 같음. 오르트로스 「효과 지속 턴 +1」이 최초 사용처.
-            if self.mc.get('effect_dur_extend') == 'off':
-                self.unsup['effect_dur_extend off'] += 1
+            # 설명문으로 효과 이름을 정하는 연장(mc_semantics, 크리스텔 등)은 원래부터 실행됨.
+            # mc.effect_dur_extend 는 파서가 새로 해석한 줄(src='parser', 오르트로스 「적(자동 지정)에게 효과 지속 턴 +1」)만 켜고 끈다.
+            if eff.get('src') == 'parser' and self.mc.get('effect_dur_extend') == 'off':
+                self.run_special(owner, ln, ctx, line_rest(ln))   # 옛 동작 = 미해석 줄로 처리(옛 결과 그대로 재현)
                 return
             for x in self.resolve(owner, eff['target'], ctx) or []:
                 if eff['judge'] and not self.roll_hit(owner, ctx, x, None):
