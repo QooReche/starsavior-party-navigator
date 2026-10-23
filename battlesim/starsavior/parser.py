@@ -95,11 +95,26 @@ def parse_flags(s):
 def parse_effect(rest):
     """효과 문장 -> dict(kind=...). 해석 못 하면 kind='ignored'"""
     rest = rest.strip()
-    m = re.match(r'^자신에게 능력치 보정 (.+?) (' + NUM + r')%?\s*(\{.*\})?$', rest)
+    # 「N% 확률로 능력치 보정」(큐브 펌웨어 복제체 리디아): MC 기대값으로 처리
+    # 「{해제 불가}」(올베로스 하수인 등장 후 속도% -1000%): 영구 버프로 변환
+    m = re.match(r'^자신에게 (?:(\d+)% 확률로 )?능력치 보정 (.+?) (' + NUM + r')%?\s*(\{.*\})?$', rest)
     if m:
-        return dict(kind='local', stat=m.group(1).strip(), val=float(m.group(2)))
-    m = re.match(r'^(.+?)에게 능력치 보정 ', rest)
+        chance = int(m.group(1)) / 100.0 if m.group(1) else 1.0
+        stat, val = m.group(2).strip(), float(m.group(3))
+        flags_s = m.group(4) or ''
+        if '해제 불가' in flags_s and '이번 스킬' not in flags_s:
+            return dict(kind='buff', target='자신', name='능력치보정(%s)' % stat,
+                        chance=1.0, dur=None, props={stat: val}, max=None, times=1, judge=False)
+        return dict(kind='local', stat=stat, val=val * chance)
+    # 타 대상 능력치 보정(오르트로스 「적 전체에게 피해 증가 +30%」 — 이번 스킬에만): 자신과 같은 효과
+    m = re.match(r'^(.+?)에게 (?:(\d+)% 확률로 )?능력치 보정 (.+?) (' + NUM + r')%?\s*(\{.*\})?$', rest)
     if m:
+        tgt = m.group(1)
+        flags_s = m.group(5) or ''
+        # 조건 접두어가 target에 섞인 경우(「(자신 HP 49.99% 이하) 자신에게」 등)는 무시
+        if '이번 스킬' in flags_s and not tgt.startswith('('):
+            chance = int(m.group(2)) / 100.0 if m.group(2) else 1.0
+            return dict(kind='local', stat=m.group(3).strip(), val=float(m.group(4)) * chance, target=tgt)
         return dict(kind='ignored', why='타 대상 능력치 보정')
     m = re.match(r'^(.+?)에게 행동 게이지 ([\d.]+)%p (증가|감소)', rest)
     if m:
@@ -108,9 +123,9 @@ def parse_effect(rest):
     m = re.match(r'^(.+?)에게 스킬 쿨타임 (\d+)턴 감소', rest)
     if m:
         return dict(kind='cdr', target=m.group(1), val=int(m.group(2)))
-    m = re.match(r'^자신에게 (기본기|특수기|궁극기) 추가 발동(?:\s*×(\d+))?', rest)
+    m = re.match(r'^(자신|.+?)에게 (기본기|특수기|궁극기) 추가 발동(?:\s*×(\d+))?', rest)
     if m:
-        return dict(kind='extra_cast', slot=m.group(1), times=int(m.group(2) or 1))
+        return dict(kind='extra_cast', slot=m.group(2), times=int(m.group(3) or 1), target=m.group(1))
     if re.match(r'^자신에게 〈추가 턴〉', rest):
         return dict(kind='extra_turn')
     m = re.match(r'^(.+?)에게 연쇄 피해 = 자신 (공격력|생명력|방어력)×([\d.]+)%', rest)
@@ -147,6 +162,15 @@ def parse_effect(rest):
     m = re.match(r'^(.+?)에게 회복 =|^(.+?)에게 .*보호막 =', rest)
     if m:
         return dict(kind='ignored', why='회복/보호막')
+    # 효과 지속 턴 +N(오르트로스: 적의 약화 지속 연장). 해제/교체/무작위 catch-all 전에 잡는다.
+    m = re.match(r'^(.+?)에게 효과 지속 턴 \+?(\d+)', rest)
+    if m:
+        return dict(kind='extend', target=m.group(1), val=int(m.group(2)), name='', judge='효과 적중 판정' in rest)
+    # 행동 게이지 조건부 설정(티리아 시계태엽 인형: 0%보다 높으면 0%로 낮춤)
+    m = re.match(r'^(.+?)에게 행동 게이지가? (\d+)%보다 높으면 (\d+)%로 낮춤', rest)
+    if m:
+        return dict(kind='gauge_set_if', target=m.group(1), threshold=float(m.group(2)), val=float(m.group(3)),
+                    judge='효과 적중 판정' in rest)
     if '해제' in rest or '스킬 교체' in rest or '효과 지속 턴' in rest or '무작위' in rest:
         return dict(kind='ignored', why='해제/교체/무작위')
     m = re.match(r'^자신에게 소환:\s*(.+?)\s*×\s*(\d+)$', rest)
@@ -159,7 +183,7 @@ def trig_kind(phase, trig):
     """줄의 발동 시점 분류"""
     if phase == '상시':
         return 'perm'
-    if phase in ('전투 시작 시', '웨이브 시작 시'):
+    if phase in ('전투 시작 시', '웨이브 시작 시', '등장 후'):
         return 'battle_start'
     if phase == '즉시':
         return 'ignored'
@@ -195,8 +219,20 @@ class Line:
         self.kind = trig_kind(phase, self.trig)
         self.na = bool(self.trig and '비공격' in self.trig)
         if self.kind == 'perm':
-            m = re.match(r'^능력치:\s*(.+?)\s+(' + NUM + r')(%?)$', rest)
-            self.eff = dict(kind='perm', stat=m.group(1), val=float(m.group(2))) if m else dict(kind='ignored', why='상시미해석')
+            # 쉼표로 구분된 다중 상시 능력치(힐데 「생명력% +15%, 선제 방어 확률 +30%」)
+            inner = re.sub(r'^능력치:\s*', '', rest)
+            parts = [p.strip() for p in inner.split(',') if p.strip()]
+            parsed = []
+            for p in parts:
+                pm = re.match(r'^(.+?)\s+(' + NUM + r')(%?)$', p)
+                if pm:
+                    parsed.append((pm.group(1).strip(), float(pm.group(2))))
+            if len(parsed) == 1:
+                self.eff = dict(kind='perm', stat=parsed[0][0], val=parsed[0][1])
+            elif parsed:
+                self.eff = dict(kind='perm_multi', stats=parsed)
+            else:
+                self.eff = dict(kind='ignored', why='상시미해석')
         else:
             self.eff = parse_effect(rest)
         self.bound = (src_kind in ('active', 'trigger')) and self.kind in ('own_pre', 'own_post')
@@ -270,6 +306,8 @@ def _perm_apply(stats, passive, eff):
         passive['spdf'] += v
     elif st == '효과 적중':
         passive['eh'] += v / 100
+    elif st == '선제 방어 확률':
+        passive['preempt'] += v / 100
     else:
         return False
     return True
@@ -312,6 +350,9 @@ class UnitDef:
                 if ln.kind == 'perm':
                     if ln.eff['kind'] == 'perm':
                         _perm_apply(self.stats, self.passive, ln.eff)
+                    elif ln.eff['kind'] == 'perm_multi':
+                        for st, val in ln.eff['stats']:
+                            _perm_apply(self.stats, self.passive, dict(kind='perm', stat=st, val=val))
                 elif ln.kind == 'unmodeled':
                     self.unmodeled.append('조건 미해석 줄: ' + raw[:70])
                 elif ln.eff['kind'] == 'ignored' and ln.eff.get('why') == '미해석':
@@ -361,4 +402,5 @@ def _map_prop(k):
     if m: return ('inc_vs', m.group(1))
     m = re.match(r'^(기본기|특수기|궁극기) 피해 증가$', k)
     if m: return ('inc_slot', m.group(1))
+    if k == '선제 방어 확률': return ('preempt', None)
     return (None, None)

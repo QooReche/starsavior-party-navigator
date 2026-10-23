@@ -603,13 +603,13 @@
   "hilde": {
    "actions_per_turn": 0.9,
    "ally_dmg_gain_pct": 0.0,
-   "aoe_dpt": 3123,
-   "combined_dpt": 2666,
+   "aoe_dpt": 3262,
+   "combined_dpt": 2786,
    "extra_hit_dmg_share": 0.0,
    "hits_per_turn": 0.9,
-   "norm_global": 2.97,
-   "norm_role": 7.62,
-   "single_dpt": 2210,
+   "norm_global": 3.11,
+   "norm_role": 7.96,
+   "single_dpt": 2309,
    "stats": {
     "atk": 2590,
     "cd": 50.0,
@@ -1282,10 +1282,10 @@
   }
  },
  "inputs": {
-  "data/foe_stages.json": "25a3d10639d7cdcc",
+  "data/foe_stages.json": "37bed3992e41034e",
   "data/synergy_tags.json": "8cc9a6d44f450246",
-  "rawdata/databook_main.json": "46982efe0330b680",
-  "rawdata/foe.js": "5104c78244bb3433"
+  "rawdata/databook_main.json": "536171b3e193c7bc",
+  "rawdata/foe.js": "e22dfe3db41fd385"
  },
  "party": [
   {
@@ -1532,7 +1532,7 @@
    "hits": 50.0,
    "src": {
     "chain": 0.0,
-    "direct": 136604.3,
+    "direct": 137597.365,
     "dot": 0.0,
     "extra": 48113.707
    },
@@ -1542,7 +1542,7 @@
     "gwen",
     "hilde"
    ],
-   "total": 184718.008
+   "total": 185711.073
   },
   {
    "hits": 42.0,
@@ -2204,7 +2204,7 @@
    "hits": 44.0,
    "src": {
     "chain": 0.0,
-    "direct": 130246.756,
+    "direct": 131239.821,
     "dot": 0.0,
     "extra": 12782.631
    },
@@ -2214,7 +2214,7 @@
     "omega",
     "roberta"
    ],
-   "total": 143029.387
+   "total": 144022.452
   },
   {
    "hits": 50.12,
@@ -2652,7 +2652,7 @@
    "hits": 38.0,
    "src": {
     "chain": 0.0,
-    "direct": 147140.242,
+    "direct": 148133.307,
     "dot": 0.0,
     "extra": 0.0
    },
@@ -2662,7 +2662,7 @@
     "trish",
     "white-pearl-luna"
    ],
-   "total": 147140.242
+   "total": 148133.307
   },
   {
    "hits": 76.0,
@@ -2860,7 +2860,7 @@
    "hits": 42.0,
    "src": {
     "chain": 0.0,
-    "direct": 170198.701,
+    "direct": 171339.402,
     "dot": 0.0,
     "extra": 0.0
    },
@@ -2870,7 +2870,7 @@
     "tanya",
     "trish"
    ],
-   "total": 170198.701
+   "total": 171339.402
   },
   {
    "hits": 39.0,
@@ -3020,7 +3020,7 @@
    "hits": 101.0,
    "src": {
     "chain": 0.0,
-    "direct": 206572.205,
+    "direct": 207588.292,
     "dot": 0.0,
     "extra": 216223.459
    },
@@ -3030,7 +3030,7 @@
     "professor-m",
     "seira"
    ],
-   "total": 422795.664
+   "total": 423811.751
   },
   {
    "hits": 33.0,
@@ -3516,7 +3516,7 @@
    "hits": 38.0,
    "src": {
     "chain": 0.0,
-    "direct": 114992.033,
+    "direct": 115985.098,
     "dot": 0.0,
     "extra": 0.0
    },
@@ -3526,7 +3526,7 @@
     "harley",
     "hilde"
    ],
-   "total": 114992.033
+   "total": 115985.098
   },
   {
    "hits": 50.0,
@@ -3644,7 +3644,7 @@
    "hits": 49.05,
    "src": {
     "chain": 0.0,
-    "direct": 217975.237,
+    "direct": 218968.302,
     "dot": 0.0,
     "extra": 15089.207
    },
@@ -3654,7 +3654,7 @@
     "hilde",
     "wedding-epindel"
    ],
-   "total": 233064.444
+   "total": 234057.509
   },
   {
    "hits": 48.0,

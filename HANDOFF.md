@@ -1,6 +1,6 @@
 # 인수인계
 
-갱신: 2026-10-23 밤(장비 탐색 시작 쿨 연결, 서든데스 반영). 이전: 저녁(자동 전투 스킬·대상 규칙, 반격, 턴 제한 단위, 적 스킬별 자동 규칙). 새 세션은 이 파일 → `README.md` 순으로 읽을 것. 과거 세션 기록은 [docs/HISTORY.md](docs/HISTORY.md)(원문 그대로 이동했음).
+갱신: 2026-10-24(효과 미지원 잔여 해소 — 오르트로스 지속 턴 연장·타 대상 보정, 티리아 게이지 조건부 설정, 올베로스 등장 후·영웅의 혼 마커, 잊혀진 맹세 vs 속성, 맹약결속 마커, 큐브 확률 보정, 선제 방어). 이전: 10/23 밤(장비 탐색 시작 쿨 연결, 서든데스 반영). 새 세션은 이 파일 → `README.md` 순으로 읽을 것. 과거 세션 기록은 [docs/HISTORY.md](docs/HISTORY.md)(원문 그대로 이동했음).
 
 ## ▶ 다른 PC 작업 (게임 설치 PC · 사용자 직접, 2026-10-24 정리)
 
@@ -35,6 +35,7 @@
    (10/24 완료) 적 트리거(반응) 스킬 5종: `tools/build_foe_react.py` → `data/foe_react.json`, 규칙 `mc.foe_react`(data, 옛 동작 off). 맹약 회수·앙코르·소거·태엽 폭탄 기폭·월영, 적 16종 16규칙. 작전 어려움 35-10 클리어 0%←82%, 달 회랑 450 95%←100%, 괴리의 표상 1단계 98%←100%(40판, seed 7). 상세 `docs/enemy_cond_audit.md` 끝 절.
    남은 것(조사 끝, 구현 전):
    - (10/24 완료) 소환(올베로스 하수인·티리아 인형·페르세스 고대 병졸, 26곳): `tools/build_foe_summon.py` → `data/foe_summon.json`, 규칙 `mc.summon`(data, 옛 off). SUMMON_TEMPLET 칸·쿨 플래그, BattleScript SpawnPosIndex 연결 26/26곳. 티리아 1단계 82→100%(off), 2단계 진행 0.53→0.66(off). 상세 `docs/enemy_cond_audit.md` 끝 절.
+   - (10/24 완료) 효과 미지원 잔여 해소(7항목): 오르트로스 효과 지속 턴 +1·타 대상 보정, 티리아 게이지 조건부 설정, 올베로스 등장 후·영웅의 혼 마커, 잊혀진 맹세 vs 속성, 맹약결속 마커, 큐브 확률 보정, 선제 방어 확률. 규칙 4개(`mc.effect_dur_extend`·`gauge_conditional`·`local_vs_element`·`preemptive_defense`). 전수 스캔 3,690곳 effect/trigger 보고 0. 상세 `docs/enemy_cond_audit.md` 끝 절.
    - 코드 정리: 4번 규칙 설명값 구분(enemy_skill_ai·caster_death·wave_carry·break_skill_model 은 코드가 안 읽음 — 구분만, legacy 분기 삭제는 사용자 결정) → 1번 MC 의미 해석 캐시(기본값 고정 해시 먼저).
    - 적 조건 판정 `enemy_hit_buff_cmp` 재선택(실측 더 쌓이면). 게임 PC 필요: 스킬별 아이콘, 잠재력 11011/1 재확인.
 

@@ -120,8 +120,8 @@ class HealBurstTest(unittest.TestCase):
         self.assertEqual(u.healed, 0)  # 후보 판정이 실제 조건을 무시해 회복시키면 안 됨
 
     def test_auto_manual_exact_prechange_results(self):
-        expected = {'auto': '1bcc41ffa37245ac81cf5c04203c3c962886615c7aff1236ed836ccb8f270d01',
-                    'manual': 'c47a35ccae24c19dd5c5e8b6d7e4d7e3202879ebb82bc27913991dbd351030cc'}
+        expected = {'auto': '724e869f31f4c5536d9235699c604b76fa7619eb1a2347cdd23ab4409d80b4e3',
+                    'manual': '68ab7910e9053b85ca0ffbca510acc50a3ed46dc9468ab2710959604648134cc'}
         enc = {'waves': [[{'name': 'target', 'hp': 100000000, 'atk': 1000, 'def': 1000, 'spd': 100}]], 'max_turns': 12}
         for policy, digest in expected.items():
             # Keep the original digest as a legacy regression. Native skill-end
@@ -143,7 +143,11 @@ class HealBurstTest(unittest.TestCase):
                                                        'break_skill_scale': 'off',
                                                        'ally_auto_lines': 'off',
                                                        'foe_react': 'off',
-                                                       'summon': 'off'}})
+                                                       'summon': 'off',
+                                                       'preemptive_defense': 'off',
+                                                       'effect_dur_extend': 'off',
+                                                       'gauge_conditional': 'off',
+                                                       'local_vs_element': 'off'}})
             frozen = {k: v for k, v in r.items() if k in ('per_unit', 'outcome', 'timeline', 'breaks', 'break_skill', 'foes')}
             frozen['outcome'] = {k: v for k, v in frozen['outcome'].items() if k not in ('progress', 'ttk_actions_median')}   # 나중에 더한 요약 칸(전투 규칙 무관)
             self.assertEqual(hashlib.sha256(json.dumps(frozen, sort_keys=True, ensure_ascii=False).encode()).hexdigest(), digest)
