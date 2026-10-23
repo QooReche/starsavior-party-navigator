@@ -355,7 +355,7 @@ def test_cosmo_joint(browser, ctx):
 
 
 def test_rekindle_ui(browser, ctx):
-    """작전 재점화 버프: 고르면 머리말에 「재점화 버프 N단계 반영」, 빠른 계산 아군·적 피해 계수에 반영, 시뮬 옵션 rekindle, 다른 콘텐츠엔 안 붙음"""
+    """작전 재점화 버프: 고르면 머리말에 「재점화 N단계」, 빠른 계산 아군·적 피해 계수에 반영, 시뮬 옵션 rekindle, 다른 콘텐츠엔 안 붙음"""
     ctx.errors.clear()
     page = open_page(browser, ctx)
     choose(page, "작전 (일반)", "36-36")
@@ -371,9 +371,9 @@ def test_rekindle_ui(browser, ctx):
     settle(page)
     errs = list(ctx.errors)
     page.close()
-    ok = ("재점화" not in h0 and "재점화 버프 3단계 반영" in h1 and opt.get("rekindle") == 3 and "rekindle" not in cz
+    ok = ("재점화" not in h0 and "재점화 3단계" in h1 and opt.get("rekindle") == 3 and "rekindle" not in cz
           and saved == '"3"' and not errs)
-    return ok, "전 %s / 후 %s / 시뮬 옵션 %s / 코스모 %s / 저장 %s / 오류 %s" % ("재점화" in h0, "3단계 반영" in h1, opt.get("rekindle"), cz.get("rekindle"), saved, errs[:2])
+    return ok, "전 %s / 후 %s / 시뮬 옵션 %s / 코스모 %s / 저장 %s / 오류 %s" % ("재점화" in h0, "재점화 3단계" in h1, opt.get("rekindle"), cz.get("rekindle"), saved, errs[:2])
 
 
 def test_break_skill_select(browser, ctx):
