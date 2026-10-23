@@ -14,7 +14,7 @@
   }
 
   async function gunzipText(bytes) {
-    if (typeof DecompressionStream !== "function") throw new Error("이 브라우저는 압축 해제를 지원하지 않습니다. 파일 선택으로 올려 주세요.");
+    if (typeof DecompressionStream !== "function") throw new Error("자동 반영이 안 됩니다. 바탕화면 내정보.json을 [파일 선택]으로 불러오세요.");
     const ds = new DecompressionStream("gzip");
     const w = ds.writable.getWriter();
     w.write(bytes); w.close();
@@ -31,7 +31,7 @@
 
   function validate(o) {
     if (!o || typeof o !== "object") return "파일 내용이 올바르지 않습니다.";
-    if (o.format !== FORMAT) return "지원하지 않는 형식입니다(" + String(o.format) + ").";
+    if (o.format !== FORMAT) return "내정보.json을 선택해 주세요.";
     if (!Array.isArray(o.units) || !o.units.length) return "구원자 정보가 비어 있습니다.";
     const obj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
     const num=v=>Number.isFinite(v)&&v>=0;
@@ -81,7 +81,7 @@
 
   // 공유 링크용: JSON → gzip → base64url (fromHash 의 반대). 브라우저 CompressionStream 필요
   async function toHash(info) {
-    if (typeof CompressionStream !== "function") throw new Error("이 브라우저는 압축을 지원하지 않습니다.");
+    if (typeof CompressionStream !== "function") throw new Error("링크를 만들 수 없습니다. 다른 브라우저에서 시도해 주세요.");
     const cs = new CompressionStream("gzip");
     const w = cs.writable.getWriter();
     w.write(new TextEncoder().encode(JSON.stringify(info))); w.close();

@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>파티 편성 네비게이터 (시험판)</title>
+<title>파티 편성 네비게이터 (베타)</title>
 <style>
 :root{color-scheme:dark;--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e;--warn:#ffb454;--gold:#ffd24a;--ult:#7a4fc0;--spc:#3b6cb4;--bas:#4a5568}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "Malgun Gothic",system-ui,sans-serif}
@@ -294,10 +294,20 @@ button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
 #skills-dialog::backdrop{background:#020615bd}body:has(#skills-dialog[open]){overflow:hidden}
 .skill-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.skill-dialog-head>div{min-width:0;overflow-wrap:anywhere}.skill-dialog-head h2{font-size:19px;margin:0}.skill-dialog-head button{flex:none}
 @media(max-width:600px){.mi-unit>div:nth-child(3){grid-column:1/-1}.skill-grid{grid-template-columns:minmax(0,1fr)}#skills-dialog{padding:12px}.skill-card{padding:12px}.skill-description{font-size:13px}}
+/* Public controls: touch targets and compact mobile chips. */
+[hidden]{display:none!important}
+button,summary,.mi-use,.whytoggle,.mibtn,.miFile,.seg label{min-height:40px}
+summary{padding:9px 4px}
+.mi-use,.mibtn,.miFile{align-items:center}
+.mibtn{display:inline-flex;padding:8px 12px}
+.dhead button{min-width:40px}button.skill-term{display:inline-flex;align-items:center;min-width:40px;min-height:40px}
+.disclaimer{font-size:12px;color:var(--mut)}
+.mi-verdict{display:block;line-height:1.7}.gim-missing{margin:6px 0}
+@media(max-width:600px){#mi-brk-sec #brk{display:flex;flex-wrap:wrap;gap:5px}#mi-brk-sec .btile .tc{flex-direction:row;min-height:40px;padding:5px 8px}#mi-brk-sec .bim{display:none}#mi-brk-sec .tn{font-size:11px;margin:0}#mi-brk-sec .blv{font-size:10px}.mi-chips .tag{font-size:10px;padding:1px 4px}.mi-tabs{flex-wrap:nowrap;overflow-x:auto}.mi-tabs>*{flex-shrink:0}}
 </style></head><body><main>
-<h1>파티 편성 네비게이터 <small style="color:var(--bad)">시험판</small></h1>
+<h1>파티 편성 네비게이터 <small style="color:var(--bad)">베타</small></h1>
 <p class="sub">가진 구원자로 이 스테이지를 깰 파티를 찾습니다</p>
-<nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천 파티</button><button id="tab-info" type="button" aria-pressed="false">내 정보</button><span class="tabsp"></span><span id="mi-chip" class="mi-chip"></span><button id="mi-open" type="button" class="sec">내 정보 불러오기</button><button id="share-link" type="button" class="sec" aria-live="polite" title="조건과 내 정보(구원자 수치)를 담은 링크 — 받은 사람이 같은 정보로 추천을 볼 수 있음">링크 복사</button><label class="mi-use" title="끄면 조건만 담고 내 정보는 넣지 않음"><input type="checkbox" id="share-mi" checked> 내 정보 포함</label></nav>
+<nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천 파티</button><button id="tab-info" type="button" aria-pressed="false">내 정보</button><span class="tabsp"></span><span id="mi-chip" class="mi-chip"></span><button id="mi-open" type="button" class="sec">내 정보 불러오기</button><button id="share-link" type="button" class="sec" aria-live="polite" title="조건과 내 정보(구원자 수치)를 담은 링크 — 받은 사람이 같은 정보로 추천을 볼 수 있음">링크 복사</button><label class="mi-use" title="끄면 조건만 담고 내 정보는 넣지 않음"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></nav>
 <div id="shared-bar" class="shared-bar" hidden></div>
 <div class="panel input-panel">
  <div class="row input-row">
@@ -315,18 +325,18 @@ button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
  </div>
 
  <details class="optbox" id="optbox"><summary>옵션</summary>
-  <input type="number" id="mypow" hidden><div id="powinfo" class="powinfo" hidden></div>
+  <button type="button" class="sec" id="sim-auto-off" data-simauto="0">자동 확인 끄기</button><input type="number" id="mypow" hidden><div id="powinfo" class="powinfo" hidden></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됩니다.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
-  <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성 방식<select id="mmode"><option value="">균형(기본): 유리 가산 + 불리 감점</option><option value="avoid">역상성 회피 우선: 불리 속성만 확실히 피하고 유리 가산은 작게</option></select></label></div></details>
+  <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성<select id="mmode"><option value="">균형</option><option value="avoid">역상성 회피</option></select></label></div></details>
 </div>
-<div id="control-home" hidden><div id="stinfo"></div><div id="mode-controls"><div class="seg" role="radiogroup" aria-label="전투 방식" title="오토 = 게임 자동 전투 규칙(쿨 찬 궁 > 특수 > 기본, 노바 버스트 안 씀). 수동 = 노바 버스트·대상 지정을 쓰는 정책으로 다시 계산하고 서순(스킬 순서 예시)을 보여 줌.">
+<div id="control-home" hidden><div id="stinfo"></div><div id="mode-controls"><div class="seg" role="radiogroup" aria-label="전투 방식">
    <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
 <section id="mi-panel" class="panel" aria-label="내 정보" hidden>
- <div class="mi-toolbar"><b>내 정보</b><span class="tag">근사</span><button id="mi-open-import" type="button">불러오기·만드는 방법</button><button id="mi-panel-clear" type="button">지우기</button><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
+ <div class="mi-toolbar"><b>내 정보</b><button id="mi-open-import" type="button">불러오기·만드는 방법</button><button id="mi-panel-clear" type="button">지우기</button><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
  <div id="mi-meta"></div><div id="mi-saved" class="mut"></div><div id="mi-account"></div>
- <section id="mi-brk-sec"><b>보유 브레이크 스킬</b> <span class="mut" id="brk-note">내 정보 파일에 없어서 직접 고릅니다(추천·시뮬에 씀)</span><div id="brk" style="margin-top:6px"></div></section>
+ <section id="mi-brk-sec"><b>보유 브레이크 스킬</b> <span class="mut" id="brk-note">직접 선택</span><div id="brk" style="margin-top:6px"></div></section>
  <div id="mi-excl" class="mut"></div><div id="mi-list"></div>
- <details class="mi-assumptions"><summary>근거·가정</summary>능력치·전투력은 게임 화면과 맞춘 계산입니다(건틀렛 축복만 미해석). 클리어 판정은 근사입니다. Lv200 고정 콘텐츠는 공명 10을 적용합니다. 플래시 포인트의 고정 규칙은 추정입니다. 빠른 계산은 전투력에 맞춘 표준 능력치, 시뮬은 내 최종 능력치를 씁니다.</details>
+ <p class="mut">클리어 %는 시뮬 추정입니다</p>
 </section>
 <div id="out"></div>
 <div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">선이나 구원자를 눌러 보세요</span>
@@ -337,25 +347,24 @@ button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 보세요.</div></div>
-<details class="note"><summary>출처·면책</summary>출처: 가이드 DB(티어 표시·주 사용 콘텐츠, 구원자 초상화), databook(적·구원자 스킬 정보), 상성은 나무위키 정리. 추천 점수에는 커뮤니티 티어·편성 유형을 쓰지 않습니다. 브레이크 스킬 추천은 직업 구성 기준 추정입니다. 빠른 계산과 「시뮬로 확인」은 Lv200·표준 육성(가이드 장비 세팅·T2 레전더리 +15·여정·특수 잠재력)의 능력치를 육성 가정 전투력에 맞춰 줄인 모델의 추정이며 실전 결과가 아닙니다(적 공격 ×1.85·전투 시작 쿨타임은 실측 전 가정). 브레이크 스킬 피해는 생존 아군 공격력 합의 광역 계수(레벨 보정 없음)로 추정하며, 노바 +4는 팀 공용(개인 풀이면 생존자 각 +4, 오토에서는 버스트를 안 써 효과 없음), 게이지 +20%는 발동 유닛 제외·상한 100%로 가정합니다. 이 페이지는 게임 '스타 세이비어'의 비영리 팬 프로젝트이며 공식과 무관합니다. 게임 관련 이미지·데이터의 권리는 각 권리자에게 있습니다.</details>
+<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관 · 시뮬은 실제와 다를 수 있음</p><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>구원자·스킬·아이콘 등 게임 이미지의 권리는 원 권리자에게 있습니다.<br>저장소 라이선스는 게임 이미지에 적용되지 않습니다.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 정보 불러오기</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
- <div class="mut" style="margin-bottom:10px">추천·시뮬은 내 정보(구원자 레벨·장비·스킬)로만 계산.<br>처음이면 아래 방법으로 내정보.json 을 만든 뒤 [파일 선택]으로 업로드.</div>
+ <div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장합니다.</div>
  <div class="mut" id="mi-status" style="margin:4px 0 6px">불러온 정보 없음</div>
- <div class="dtools"><label class="miFile" style="cursor:pointer"><span class="mibtn">파일 선택</span><input type="file" id="mi-file" accept=".json,application/json" hidden></label><button id="mi-view" type="button">내 정보 보기</button><button id="mi-clear" type="button">지우기</button></div>
- <div class="mut" style="margin:6px 0 12px;font-size:11px;line-height:1.6">내정보.json 만 읽음. 서버 전송 없이 이 브라우저에만 저장.<br>불러오면 보유 구원자 자동 체크.</div>
- <details class="mihow" style="margin:0 0 8px" open><summary style="cursor:pointer">내 정보를 만드는 방법 (Windows PC 게임)</summary>
-  <ol class="mut" style="margin:8px 0 10px 18px;padding:0;font-size:12px;line-height:1.7">
-   <li>PowerShell 실행(시작 메뉴 검색). 관리자 권한으로 열 필요 없음.</li>
-   <li>아래 명령을 붙여넣고 엔터.<br>관리자 확인 창이 뜨면 [예].</li>
-   <li>새 창에 안내가 나오면 <b>스타세이비어 실행</b>.<br>이미 켜져 있었다면 완전히 종료 후 다시 실행.</li>
-   <li>로비가 뜨면 <b>도구 창에서 엔터</b>.</li>
-   <li>이 페이지가 자동으로 열려 반영됨.<br>안 열리면 바탕화면 내정보.json 을 [파일 선택]으로 업로드.</li>
+ <section class="mihow">
+  <b>Windows PC에서 불러오기</b>
+  <ol class="mut">
+   <li>PowerShell을 열고 <b>명령 복사</b>를 눌러 붙여넣은 뒤 엔터.</li>
+   <li>관리자 확인 <b>[예]</b> 후 스타세이비어에 로그인하고, 로비가 뜨면 <b>도구 창에서 엔터</b>.<br>게임이 켜져 있으면 완전히 종료 후 재실행하세요.</li>
+   <li>사이트가 자동으로 열리며 반영됩니다.<br>안 되거나 다른 기기로 옮길 때는 바탕화면 <b>내정보.json</b>을 <b>[파일 선택]</b>.</li>
   </ol>
-  <code id="mi-cmd" style="display:block;font-size:11px;word-break:break-all;background:rgba(127,127,127,.15);padding:6px 8px;border-radius:6px;user-select:all">$f="$env:TEMP\ss_myinfo.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/QooReche/starsavior-myinfo/main/myinfo.ps1 -OutFile $f; powershell -NoProfile -ExecutionPolicy Bypass -File $f</code>
-  <div class="dtools" style="margin-top:6px"><button id="mi-copy" type="button">명령 복사</button></div>
-  <div class="mut" style="margin:10px 0 0;font-size:11px;line-height:1.6">비공식 도구. 로그인 때 받는 내 구원자 정보를 읽기만 하며 닉네임·UID·로그인 정보는 저장 안 함.<br>사용은 본인 책임.<br>소스: <a href="https://github.com/QooReche/starsavior-myinfo" target="_blank" rel="noopener">starsavior-myinfo</a></div>
- </details>
+  <div class="dtools"><button id="mi-copy" type="button">명령 복사</button></div>
+  <details><summary>명령 보기</summary><code id="mi-cmd" style="display:block;font-size:11px;word-break:break-all;user-select:all">$f="$env:TEMP\ss_myinfo.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/QooReche/starsavior-myinfo/main/myinfo.ps1 -OutFile $f; powershell -NoProfile -ExecutionPolicy Bypass -File $f</code></details>
+  <p class="mut">게임 파일은 건드리지 않고, 내 PC에서만 해독합니다(관리자 확인 1회)</p>
+  <a href="https://github.com/QooReche/starsavior-myinfo" target="_blank" rel="noopener">추출 도구</a>
+ </section>
+ <div class="dtools"><label class="miFile" style="cursor:pointer"><span class="mibtn">파일 선택</span><input type="file" id="mi-file" accept=".json,application/json" hidden></label><button id="mi-view" type="button">내 정보 보기</button><button id="mi-clear" type="button">지우기</button></div>
  <div hidden><input id="oq"><button id="all" type="button"></button><button id="none" type="button"></button><div class="own" id="own"></div><div id="pwl"></div></div>
 </aside>
 <div id="dback"></div>
@@ -430,7 +439,7 @@ $("oq").oninput=()=>{const q=$("oq").value.trim();document.querySelectorAll("#ow
 $("all").onclick=()=>document.querySelectorAll("#own input").forEach(x=>x.checked=true);
 $("none").onclick=()=>document.querySelectorAll("#own input").forEach(x=>x.checked=false);
 const bkeys=Object.keys(CFG.breakSkills).filter(k=>!k.startsWith("_"));
-$("brk").innerHTML=bkeys.map(k=>{const u=CFG.breakSkills[k].unreleased,im=D.bicons[k];return `<label class="btile"><input type="checkbox" data-b="${esc(k)}" ${u?"":"checked"}><span class="tc">${im?`<img class="bim" src="${im}" alt="">`:`<span class="bim">${BG[k]||"◆"}</span>`}<span class="tn">${esc(k)}</span>${u?'<span class="btag" style="margin:2px 0 0">미출시 표기</span>':""}</span></label>`}).join("");
+$("brk").innerHTML=bkeys.map(k=>{const im=D.bicons[k];return `<label class="btile"><input type="checkbox" data-b="${esc(k)}" checked><span class="tc">${im?`<img class="bim" src="${im}" alt="">`:`<span class="bim">${BG[k]||"◆"}</span>`}<span class="tn">${esc(k)}</span></span></label>`}).join("");
 
 function powPen(my,rec){if(!(my>0&&rec>0))return null;const ratio=Math.floor(my*10000/rec);const row=D.pen.find(r=>r[0]<=ratio&&ratio<r[1]);const a=row?row[2]/10000:1,b=row?row[3]/10000:1;
  let tier=null;if(my<rec){const df=10000-ratio;tier=D.tribe.find(t=>t[0]<=df&&df<t[1])||(df>=D.tribe[D.tribe.length-1][1]?D.tribe[D.tribe.length-1]:null)}return {ratio:ratio/100,a,b,warn:tier?tier[2]:null}}
@@ -509,7 +518,7 @@ const GFIX={
 };
 function gimNote(party,c,st,p){
  // 점수용 gimTop/gimTeam은 그대로 두고 표시에는 전체 유형을 심각도 순으로 쓴다.
- const types=Object.entries(D.gim[c.key+"|"+st.tab+"|"+st.name]||{}).sort((a,b)=>b[1]-a[1]||(D.grules[b[0]]?.w||0)-(D.grules[a[0]]?.w||0));
+ const types=Object.entries(D.gim[c.key+"|"+st.tab+"|"+st.name]||{}).filter(([code])=>D.grules[code]).sort((a,b)=>b[1]-a[1]||(D.grules[b[0]]?.w||0)-(D.grules[a[0]]?.w||0));
  const rows=types.map(([code,sev])=>{const t=D.grules[code],slots=t?.slots||[];
   const assigned=tags=>{const who=party.filter(x=>(x.s.gt||[]).some(tag=>tags.includes(tag)));
    return who.length?`담당: ${who.map(x=>`<span data-savior="${esc(x.s.key)}">${esc(x.s.name)}</span>`).join("·")}`:"✗ 없음"};
@@ -517,13 +526,17 @@ function gimNote(party,c,st,p){
   let response;
   if(slots.length)response=slots.map((sl,i)=>`<span class="gimslot" data-slot="${i}"><b>${esc(sl.name)}</b>: ${assigned(sl.tags_any)}</span>`).join(" · ");
   else{const fix=GFIX[code]||"대응 미확인",tags=t?.prefer||[];
-   response=`<b>${esc(fix)}</b>${fix==="대응 미확인"?"":!tags.length?" → 대응 미확인":` → ${assigned(tags)}`}`}
-  return `<div class="gimrow" data-code="${esc(code)}" data-severity="${sev}"><span>${esc(t?.name||code)}</span> → ${response}</div>`});
+   response=`<b>${esc(fix.replace(/\*/g,""))}</b>${fix==="대응 미확인"?"":!tags.length?" → 대응 미확인":` → ${assigned(tags)}`}`}
+  if(response.includes("대응 미확인"))return "";
+  return `<div class="gimrow" data-code="${esc(code)}" data-severity="${sev}"><span>${esc(t?.name||code)}</span> → ${response}</div>`}).filter(Boolean);
  const bosses=(st.bn||[]).map(([i,count])=>({name:D.bosses[i][0],role:D.bosses[i][1],count})),mobs=Math.max(0,st.n-bosses.reduce((n,b)=>n+b.count,0));
  const foe=bosses.length?`보스 ${bosses.map(b=>esc(b.name)+"("+esc(b.role)+")"+(b.count>1?" ×"+b.count:"")).join("·")} · 쫄 ${mobs}`:`적 ${st.n}체`;
  const matchup=[['유리',true],['불리',false]].map(([label,good])=>{const groups=Object.keys(EL).map(el=>{const hits=Object.keys(st.ec||st.w).filter(e=>good?CFG.advantage[el]===e:CFG.advantage[e]===el&&CFG.advantage[el]!==e);if(!hits.length)return "";const names=party.filter(x=>x.s.el===el).map(x=>esc(x.s.name));return `${EL[el]} ${label}${names.length?" → "+names.join("·"):""}`}).filter(Boolean);return groups.join(" / ")}).filter(Boolean).join(" · ");
  const rs=(CFG.restrict[c.name]||{})[st.tab];
- return `<section class="gimbox"><div class="gimhead">스테이지 특이사항 │ 대처 → 담당 <span class="mut">(추정)</span></div><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}<br>광역 ${Math.round(st.aoe*100)}%${rs?` · 회랑: ${EL[rs]}만 편성`:""}${sbText(st)}</div><div class="gimlist">${rows.slice(0,5).join("")||'<div class="gimrow">기믹 정보 없음 → 대응 미확인</div>'}${rows.length>5?`<details data-fold="gim-${p}"><summary>기믹 더 보기</summary>${rows.slice(5).join("")}</details>`:""}</div></div></section>`}
+ const missing=rows.filter(row=>row.includes("✗ 없음"));
+ const chips=missing.map(row=>`<span class="tag">${row.match(/<span>(.*?)<\/span>/)?.[1]||"기믹"} 담당 없음</span>`).join("");
+ return `${chips?`<div class="gim-missing">${chips}</div>`:""}<details class="gimbox" data-fold="gim-${p}"><summary>스테이지 기믹 ${rows.length} · 담당 없음 ${missing.length}</summary><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}${rs?` · ${EL[rs]}만 편성`:""}${sbText(st)}</div><div class="gimlist">${rows.join("")||"기믹 정보 없음"}</div></div></details>`}
+
 let LEADKEY=null;
 const LEAD_TAGS=["힐","보호막","속도증가","적방어력감소","아군공격력증가"];
 function leaderPick(party){
@@ -536,7 +549,7 @@ function place(p){const fr=["디펜더","서포터"];const o=[...p].sort((x,y)=>
 function pickBreak(party,content,have){
  let best=null;const roles=party.map(x=>x.s.cls);
  for(const k of bkeys){if(!have.includes(k))continue;const b=CFG.breakSkills[k];
-  let n=b.bonusRoles.reduce((a,r)=>a+roles.filter(x=>x===r).length,0);if(k==="차원 강습"&&content==="코스모 게이트")n+=1;
+  let n=(b.bonusRoles||[]).reduce((a,r)=>a+roles.filter(x=>x===r).length,0);if(k==="차원 강습"&&content==="코스모 게이트")n+=1;
   if(!best||n>best[0])best=[n,k,b.text]}
  return best}
 
@@ -551,28 +564,28 @@ function breakChoice(party,c,have=breakOwned()){
  const name=saved===""||have.includes(saved)?saved:rec?rec[1]:"";
  return {key,name,rec:rec?rec[1]:"",have}}
 function teamBreak(t){const c=contents[$("content").value],name=breakChoice(t.combo,c).name;return name?{name,level:brkLv(name)}:null}
-function breakChip(bs){return bs?`<span class="bschip">${bs.supported?`시뮬 반영 · 평균 ${Number(bs.uses).toLocaleString(undefined,{maximumFractionDigits:3})}회 발동`:"시뮬 미반영"}</span>`:""}
+function breakChip(bs){return bs?`<span class="bschip">${bs.supported?`발동 ${Number(bs.uses).toLocaleString(undefined,{maximumFractionDigits:1})}회`:"시뮬 미반영"}</span>`:""}
 
 const KT=s=>s.kind==="C"?["COSMIC","k-C"]:s.kind==="A"?["ANOTHER","k-A"]:null;
 const kindTxt=s=>{const k=KT(s);return k?`<div class="kind ${k[1]}">${k[0]}</div>`:""};
 const dia=(s,px)=>`<span class="dia e-${s.el}" style="width:${px}px;height:${px}px"><img src="${D.icons[s.cls]}" alt="${esc(s.cls)}" style="width:${Math.round(px*.66)}px;height:${Math.round(px*.66)}px"></span>`;
 function art(s){const u=s.art||s.img;return u?`<img class="art" src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">`:""}
 function face(s){return s.img?`<img class="face" src="${esc(s.img)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;face&quot;>${esc(s.name[0])}</span>'">`:`<span class="face">${esc(s.name[0])}</span>`}
-function altChips(party,alt,p){return `<details class="altbox" data-fold="alt-${p}"><summary>없을 때</summary>${party.map(x=>`${esc(x.s.name)}→${alt(x).map(a=>esc(a.s.name)).join("·")||"후보 없음"}`).join(" / ")}</details>`}
+function altChips(party,alt,p){return `<details class="altbox" data-fold="alt-${p}"><summary>대체 구원자</summary>${party.map(x=>`${esc(x.s.name)}→${alt(x).map(a=>esc(a.s.name)).join("·")||"후보 없음"}`).join(" / ")}</details>`}
 const CROWN='<svg viewBox="0 0 34 26" aria-hidden="true"><path d="M2 22 L5 6 L12 14 L17 3 L22 14 L29 6 L32 22 Z" fill="#ffd24a" stroke="#8a5a00" stroke-width="1.5" stroke-linejoin="round"/><rect x="2" y="22" width="30" height="3" rx="1" fill="#e6a800"/></svg>';
 function simUnit(r,key){if(!r||!r.g||!r.u||!r.u[key])return '<div class="simu"></div>';const [sh,dp]=r.u[key];const pct=Math.round(sh*100),dpp=Math.round(dp*100);
  const lv=dp>=0.5?3:dp>=0.2?2:dp>=0.05?1:0;
- return `<div class="simu"><div class="sb" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="피해 기여 ${pct}%"><i style="width:${pct}%"></i></div>피해 ${pct}% · <span class="dot d${lv}"></span>${lv?`쓰러질 확률 ${dpp}%`:`생존 안정(${dpp}%)`}</div>`}
+ return `<div class="simu"><div class="sb" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="피해 기여 ${pct}%"><i style="width:${pct}%"></i></div>피해 ${pct}% · <span class="dot d${lv}"></span>탈락 ${dpp}%</div>`}
 function card(x,pos,r){const s=x.s;
  return `<div class="gc" data-key="${esc(s.key)}"><div class="card"><button type="button" class="skill-open-card" data-skill-open="${esc(s.key)}" aria-label="${esc(s.name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false"></button>${s.key===LEADKEY?`<div class="crown" title="속도 +10">${CROWN}<span>리더</span></div>`:""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
-  <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div><span class="tier ${TC(s.tier)}">${s.tier||"티어 ?"}</span></div></div>
-  <div class="slotlbl ${pos}">${pos==="back"?"BACK":"FRONT"}${s.key===LEADKEY?" 👑":""}</div>${miCard(s.key)}${r?simUnit(r,s.key):""}</div>`}
+  <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div></div></div>
+  <div class="slotlbl ${pos}">${pos==="back"?"후열":"전열"}</div>${miCard(s.key)}${r?simUnit(r,s.key):""}</div>`}
 function breakCard(br,r,p,t,st){
  const b=CFG.breakSkills[br.name],im=D.bicons[br.name],bs=MODE==="manual"&&r?.man?r.man.bs:r?.bs;
  return `<div class="bbar" title="${esc(b?.text||"브레이크 스킬 미장착")}">${im&&br.name?`<img src="${im}" alt="">`:`<span class="bicon">${BG[br.name]||"◆"}</span>`}<div class="bbody"><select class="bsel" data-bkey="${esc(br.key)}" aria-label="장착 브레이크 스킬">${["",...br.have].map(n=>`<option value="${esc(n)}"${n===br.name?" selected":""}>${esc(n||"장착 안 함")}${n&&n===br.rec?" · 추천":""}</option>`).join("")}</select>${t&&br.have.length?`<button type="button" class="sec" data-bcompare="${p}" data-key="${esc(ckey(t.combo))}">스킬별 비교</button>`:""}</div>${breakChip(bs)}</div>${p?breakCompareView(br,p,t,st):""}`}
 
 // ---------------- 표시 모드
-const MODE_CONTROLS=$("mode-controls"),SCORE_CONTROLS=$("score-controls");
+const MODE_CONTROLS=$("mode-controls"),SCORE_CONTROLS=$("score-controls"),GRAPH_WRAP=$("graphwrap");
 let MODE="auto";
 window.PN={last:null};
 const ckey=combo=>combo.map(x=>x.s.key).sort().join(",");
@@ -665,19 +678,19 @@ function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+t
  for(const t of rows)if(t.vd==="hard"&&t.ng===undefined)t.ng=Quick.needGrowth(t.ek,qi.qs,QK.d.sv,D.pen,qi.prm,"tight",null,t.b);
  const uniq=new Set(qt.map(t=>t.keys.slice().sort().join(","))).size;
  const row=(t,i)=>{const k=t.keys.slice().sort().join(","),w=quickWeak(t),w2=w.filter(x=>!/턴 제한|버티지/.test(x)),need=t.ng!=null?t.ng*t.q.power:null,sr=simMain(SIMQ.res[simSig(st,t)]),vd=sr?simCls(sr):t.vd;
-  const ng=miMode()?"":need!=null?` · <b>전투력 ${r100(need)}</b>${st.rp?`(권장의 ${Math.round(need/st.rp*100)}%)`:""}면 ${t.vd==="hard"?"깸":"깰만함"}`:(t.vd==="hard"?" · 지금의 4배로도 어려움":"");
-  return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}${t.src==="syn"?'<br><span class="tag" title="빠른 계산 순위가 아니라 시너지·팀 화력 점수로 고른 시뮬 후보">시너지</span>':""}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?`<button type="button" class="skill-face" data-skill-open="${esc(x)}" aria-label="${esc(BYKEY[x].name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${face(BYKEY[x])}</button>`:"").join("")}</div>
-   ${sr?`<span class="qv ${vd}" title="전투 시뮬 기준">${QV[vd]}</span>`:'<span class="qv pending" title="시뮬로 확인하기 전에는 판정을 보이지 않습니다">시뮬 전</span>'}<span class="qt">${sr?simCell(p,t,st).replace(/^<br>/,""):'<span class="mut">아직 시뮬로 확인하지 않은 후보</span>'}${sr&&sr.clear<0.5&&ng?`<br><span class="mut">근사 추정${ng}</span>`:""}${sr&&sr.clear<0.5&&w2.length?`<br><span class="mut">${w2.map(esc).join(" · ")}</span>`:""}</span>
-   ${k===pickKey?"":`<button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">이 팀 보기</button>`}</div>`};
+  return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i?"차선 "+(i+1):"1안"}</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?`<button type="button" class="skill-face" data-skill-open="${esc(x)}" aria-label="${esc(BYKEY[x].name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${face(BYKEY[x])}</button>`:"").join("")}</div>
+   ${k===pickKey?"":`<span class="qt">${sr?simCell(p,t,st):'<span class="mut">시뮬 전</span>'}</span><button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">이 팀 보기</button>`}</div>`};
  const selected=rows.findIndex(t=>t.keys.slice().sort().join(",")===pickKey),active=selected<0?0:selected;
- const assumptions=`<details data-fold="assume-${p}"><summary>근거·가정</summary>${miMode()?"내 정보 능력치(건틀렛 축복 미해석) · 미보유/미매핑은 평균 육성 · 빠른 계산은 전투력 환산, 시뮬은 최종 능력치 · 필요 전투력은 같은 구성의 사다리 첫 성공 추정(1,000 단위)":"전투력에 맞춘 평균 육성"}${(()=>{const cb=QK.d.calib,g=cb?.groups?.[qi.ck==="cosmo"||qi.ck==="rush"?qi.ck:"base"];return g?` · 판정 일치 ${Math.round(g.acc*100)}% (브레이크 스킬 미장착 기준)`:""})()}</details>`;
- return `<div class="qbox" data-k="quick">${miVerdict(shown,st)}<div class="qh"><b>추천${contents[$("content").value].parties>1?" · 파티 "+p:""}</b> · ${miMode()?"팀 ":""}전투력 ${Math.round(P0).toLocaleString()} 기준(권장 ${Math.round(ratio)}%)${JOINT?" · 파티 1·2 함께":""}${miMode()?miFlags(shown.b.assumed):npw?` <span class="tag">구원자별 전투력 입력 ${npw}명 반영</span>`:""}${qi.rk?` <span class="tag">재점화 버프 ${qi.rk}단계 반영</span>`:""}${rows[0].ek.some(k=>k.includes("@"))?'<span class="tag">개화 반영</span>':""}${QK.d.params?"":' · 계수 없음'}</div>${rows.some(t=>!SIMQ.res[simSig(st,t)])?'<div class="qwarn" data-k="approxwarn">시뮬로 확인하지 못한 팀은 판정을 보이지 않습니다. 아래 「시뮬로 확인」으로 다시 돌릴 수 있습니다.</div>':""}${row(rows[active],active)}${simBar(p,rows,st,uniq>rows.length)}${main}${rows.length>1?`<details class="alternatives" data-fold="alternatives-${p}"><summary>${active?"다른 추천":"차선 2·3"}</summary>${rows.map((t,i)=>i===active?"":row(t,i)).join("")}</details>`:""}${tail}${assumptions}</div>`}
+ const assumptions='<p class="mut">클리어 %는 시뮬 추정입니다</p>';
+ const bb=bigBoss(contents[$("content").value],st);
+ return `<div class="qbox" data-k="quick">${miVerdict(shown,st)}${bb?bigBossNote(bb):""}<div class="qh"><b>추천${contents[$("content").value].parties>1?" · 파티 "+p:""}</b> · 전투력 ${Math.round(P0).toLocaleString()}${miMode()?miFlags(shown.b.assumed):""}${qi.rk?` <span class="tag">재점화 ${qi.rk}단계</span>`:""}</div>${row(rows[active],active)}${simBar(p,rows,st,uniq>rows.length)}${main}${rows.length>1?`<details class="alternatives" data-fold="alternatives-${p}" open><summary>${active?"다른 추천":"차선 2·3"}</summary>${rows.map((t,i)=>i===active?"":row(t,i)).join("")}</details>`:""}${tail}${assumptions}</div>`}
 
 
 // ---- 브라우저 시뮬 확인(sim_worker.js + Pyodide): 위 3팀을 확률 전투 엔진으로 다시 돌린다. 누를 때만 내려받는다(처음 약 14MB)
 // 안전장치(codex 상담): 제한 시간·취소(작업자 종료), 실패해도 빠른 계산은 그대로, 결과는 추정치+95% 구간, 입력이 바뀌면 이전 결과 무효
 const SIMQ={w:null,busy:null,res:{},scr:{},screening:false,msg:"",err:"",n:100,seed:1,LOAD_MS:180000,RUN_MS:240000,timer:null,more:{},
  auto:(()=>{try{return localStorage.getItem("pn.simauto")==="1"}catch(e){return false}})()};
+$("sim-auto-off").onclick=()=>{simAuto(false);SIMQ.kick=false;run(true)};
 function simAuto(on){SIMQ.auto=on;try{localStorage.setItem("pn.simauto",on?"1":"0")}catch(e){}}
 // 내 정보 모드는 정확도가 중요해서 시뮬을 기본 자동으로 돌린다(사용자가 「자동 확인 끄기」를 누르면 그 선택을 따른다)
 function simAutoOn(){if(SIMQ.auto||SIMQ.kick)return true;try{return miMode()&&localStorage.getItem("pn.simauto")!=="0"}catch(e){return false}}
@@ -720,7 +733,7 @@ function breakCompareView(br,p,t,st){
  const state=busy?`<div class="bcstate"><span class="mut" data-k="breakstate" role="status">${esc(SIMQ.msg)}</span><button type="button" class="sec" data-simcancel="1">취소</button></div>`:
   SIMQ.err&&SIMQ.errCompare===key?`<div class="bcstate bad">${esc(SIMQ.err)}</div>`:"";
  return `<div class="bcompare" aria-label="브레이크 스킬 비교">${state}${rows.map(x=>{const m=breakMetric(x.result),current=(x.name||"")===br.name;
-  return `<div class="bcrow" data-bname="${esc(x.name||"")}"><span class="bcvalue"${m&&x.supported?` data-sim="${simCls({clear:m.clear})}"`:""}>${esc(x.name||"장착 안 함")} · ${!x.supported?"미지원":m?`클리어 ${Math.round(m.clear*100)}% · 약 ${m.turn==null?"—":Math.round(m.turn*10)/10}턴`:"대기"}${best!==undefined&&best===x.name?' <span class="bschip">최고</span>':""}${current?' <span class="mut">장착 중</span>':""}</span><button type="button" class="sec" data-bequip="${esc(x.name||"")}" data-bkey="${esc(br.key)}"${current?" disabled":""}>장착</button></div>`}).join("")}</div>`}
+  return `<div class="bcrow" data-bname="${esc(x.name||"")}"><span class="bcvalue"${m&&x.supported?` data-sim="${simCls({clear:m.clear})}"`:""}>${esc(x.name||"장착 안 함")} · ${!x.supported?"시뮬 미반영":m?`클리어 ${Math.round(m.clear*100)}% · 약 ${m.turn==null?"—":Math.round(m.turn*10)/10}턴`:"대기"}${best!==undefined&&best===x.name?' <span class="bschip">최고</span>':""}${current?' <span class="mut">장착 중</span>':""}</span><button type="button" class="sec" data-bequip="${esc(x.name||"")}" data-bkey="${esc(br.key)}"${current?" disabled":""}>장착</button></div>`}).join("")}</div>`}
 function breakCompareStart(p,key){
  if(SIMQ.busy)return;const st=cur&&cur[$("stage").value],t=LASTQ[p]?.rows.find(t=>ckey(t.combo)===key);
  if(!st||!t||!breakOwned().length)return;
@@ -731,20 +744,20 @@ function breakEquip(key,name,skipAuto=false){
  const c=contents[$("content").value],st=cur&&cur[$("stage").value];
  const t=Object.values(LASTQ).flatMap(b=>b?.rows||[]).find(t=>c.key+"|"+ckey(t.combo)===key);
  run(skipAuto||!!(st&&t&&SIMQ.res[simSig(st,t)]))}
+function simTitle(r){const m=MODE==="manual"&&r.man,v=m||r;return `${v.n??r.n}판 · 95% 구간 ${(v.ci||[]).map(v=>Math.round(v*100)+"%").join("~")}${m?" · 수동 턴은 시뮬 기준입니다":" · TURN은 전체 행동 수 추정으로 실측과 0.8~1.7배 차이가 날 수 있습니다"}`}
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
- const mn=r.man?`<br><span class="qsim" data-man="1">수동 클리어 ${Math.round(r.man.c*100)}%${r.man.t!=null?` · 약 ${Math.round(r.man.t)}턴`:""}</span>`:"";
- const more="";   // 시뮬은 100판으로 충분해서 300판 정밀 옵션은 뺐다
- return `<br><span class="qsim" data-sim="${simCls(r)}" title="${r.n}판${r.ta!=null?` · 게임 TURN = 결과 화면 TURN(전체 행동 수) 추정, 실측 대조에서 0.8~1.7배 차이 · ttk = 모델 기준 턴(100틱)`:""}${r.gate===false?" · 미지원 기믹 있음":""}">시뮬 클리어 ${Math.round(r.clear*100)}%${r.ttk!=null?(r.ta!=null?` · 게임 TURN 약 ${Math.round(r.ta)} (ttk ${Math.round(r.ttk)}턴)`:` · 약 ${Math.round(r.ttk)}턴`):""}${!r.clear&&r.prog!=null?` · 적 체력 ${Math.round(r.prog*100)}% 깎음`:""}${r.first?` · 먼저 쓰러짐 ${esc(r.first.split("#")[0])} ${Math.round(r.first_p*100)}%`:""} <small class="mut">${r.n}판 · 95% 구간 ${Math.round(r.ci[0]*100)}~${Math.round(r.ci[1]*100)}%</small></span>${mn}${more}`}
+ const m=MODE==="manual"&&r.man;
+ return `<span class="qsim" data-sim="${simCls(m?{clear:m.c}:r)}"${m?' data-man="1"':""} title="${esc(simTitle(r))}">클리어 ${Math.round((m?m.c:r.clear)*100)}%</span>`}
 function simBar(p,rows,st,hasMore){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
  const st8=SIMQ.busy===p&&!SIMQ.compareKey?`<span class="mut" data-k="simstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
   SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`<span class="bad" data-k="simstate">시뮬 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
-  all?`<span class="mut" data-k="simstate">시뮬 완료 · ${counts}판</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다음 3팀도 시뮬로 확인</button>`:""}${simAutoOn()?` <button type="button" class="sec" data-simauto="0" title="스테이지를 바꿀 때마다 자동으로 시뮬">자동 확인 끄기</button>`:""}`:
-  `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">시뮬로 확인(10~40초)</button>`;
+  all?`<span class="mut" data-k="simstate" title="${counts}판">시뮬 완료</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다시 시뮬</button>`:""}`:
+  `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">다시 시뮬</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
 function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;SIMQ.screening=false;if(SIMQ.pool){for(const w of SIMQ.pool.slice(1))w&&w.terminate();SIMQ.pool=null}for(const k in SIMQ.scr)if(!SIMQ.scr[k].done)delete SIMQ.scr[k];if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.busy=null;SIMQ.compareKey=null}
-function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.err=msg;SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
+function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=msg;SIMQ.err=/취소|중단/.test(msg)?"중단함":/시간 초과/.test(msg)?"시간 초과 · 다시 시도해 주세요":"자료를 불러오지 못했습니다. 다시 시도해 주세요";SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simAutoKick(){if(!simAutoOn()||SIMQ.busy!=null||(miMode()&&MI.pending))return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
  for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done){setTimeout(()=>{if(simScreen(p)===false)run()},0);return}if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){setTimeout(()=>simStart(p),0);return}
@@ -760,7 +773,7 @@ function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("c
  arm(SIMQ.loaded?SIMQ.RUN_MS:SIMQ.LOAD_MS);
  SIMQ.w.onmessage=e=>{const m=e.data;
   if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
-  if(m.type==="stage"){SIMQ.msg=m.msg;if(m.msg==="준비 끝"){SIMQ.loaded=true;arm(SIMQ.RUN_MS)}const el=document.querySelector(`.party[data-party="${p}"] [data-k="${compareKey?"breakstate":"simstate"}"]`);if(el)el.textContent=m.msg;return}
+  if(m.type==="stage"){SIMQ.msg=compareKey?"스킬별 확인 중":`상위 팀 확인 중 ${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}`;if(m.msg==="준비 끝"){SIMQ.loaded=true;arm(SIMQ.RUN_MS)}const el=document.querySelector(`.party[data-party="${p}"] [data-k="${compareKey?"breakstate":"simstate"}"]`);if(el){el.title=m.msg;el.textContent=SIMQ.msg;}return}
   if(m.type==="team"){if(Object.hasOwn(sigs,m.key)){SIMQ.res[sigs[m.key]]=m.result;
     if(jobs&&!compareKey&&runs===300&&SIMQ.n===100){const parts=JSON.parse(sigs[m.key]);parts[4]=100;(SIMQ.refined??=new Set()).add(JSON.stringify(parts))}}
    run(!!jobs);return}
@@ -816,9 +829,9 @@ $("out").addEventListener("change",e=>{const s=e.target.closest("select.bsel");i
 // 큰 보스전 경고(B): 작전에서 보스 생명력이 권장 전투력의 1.2배 이상이면 시뮬이 실제보다 비관적이었다
 // (실측 준÷받은 피해: 36-36 1.88/시뮬 0.90, 37-3 1.82/0.91, 37-36 0.50/0.28 — 보스 1.49~1.54배. 맞았던 37-2·37-4 는 0.75배). 근거 docs/ally_damage_audit.md
 const BIGBOSS=1.2;
-function bigBoss(c,st){if(c.key!=="op"&&c.key!=="oph")return 0;const qs=QK.d&&(QK.d.st[c.key]||{})[st.tab+"|"+st.name];if(!qs||!qs.bp)return 0;
- let hp=0;for(const w of qs.w)for(const e of w)if(e[5])hp=Math.max(hp,e[0]);const r=hp/qs.bp;return r>=BIGBOSS?r:0}
-const bigBossNote=r=>`<div class="qwarn bigboss" data-k="bigboss">⚠ <b>큰 보스전</b>(보스 생명력이 권장 전투력의 ${r.toFixed(1)}배)입니다. 이런 스테이지에서는 시뮬이 실제와 <b>다를 수 있습니다</b> — 실측에서 편성에 따라 시뮬이 비관적인 판(아군 피해가 시뮬의 1.5~2배)도, 거의 맞는 판도 있었습니다. 시뮬 클리어 %는 참고로만 보세요.</div>`;
+function bigBoss(c,st){const qs=QK.d&&(QK.d.st[c.key]||{})[st.tab+"|"+st.name];if(!qs||!qs.bp)return 0;
+ let hp=0;for(const w of qs.w)for(const e of w)if(e[5])hp=Math.max(hp,e[0]);const r=hp/qs.bp;return r>=BIGBOSS||(["equip","clo"].includes(c.key)&&hp>0)?r:0}
+const bigBossNote=r=>`<div class="qwarn bigboss" data-k="bigboss" title="보스 생명력은 권장 전투력의 ${r.toFixed(1)}배. 작전·장비 탐사·성간 회랑 등 보스전은 편성에 따라 시뮬이 비관적이거나 낙관적인 실측이 있습니다.">⚠ 큰 보스전 — 시뮬이 실제와 다를 수 있음</div>`;
 // 「추천 편성 보기」 뒤에는 시뮬이 끝날 때까지 결과 대신 진행 화면을 보인다(근사 판정을 먼저 보여 주지 않음). 취소·실패하면 그때까지의 결과를 보인다
 // 예선(시뮬 1단계): 빠른 계산 상위 SCR_Q팀 + 근사 점수(스킬 연계·상성·기믹·팀 화력) 상위 SCR_V팀을 SCR_N판씩 돌려 순위를 정하고,
 // 그 순위의 앞 팀부터 본선(SIMQ.n판)을 돌린다. 전체 조합(보유 56명이면 36만 팀)은 시뮬로 다 못 돌리므로 후보를 넓게 골라 짧게 거르는 방식(단계적 축소).
@@ -852,9 +865,9 @@ function simScreen(p){const c=contents[$("content").value],st=cur&&cur[$("stage"
   const chk=()=>{if(!sc.allReady&&ws.every(x=>x._ready)){sc.allReady=true;SIMQ.loaded=true;sc.t0=performance.now();arm()}};keys.forEach((k,j)=>parts[j%ws.length].push(k));let open=parts.filter(x=>x.length).length;
   ws.forEach((w,j)=>{if(!parts[j].length)return;
    w.onmessage=e=>{const m=e.data;if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
-    if(m.type==="stage"){if(m.msg==="준비 끝"){w._ready=true;chk()}if(j)return;if(!/^시뮬 /.test(m.msg))show(m.msg);return}
+    if(m.type==="stage"){if(m.msg==="준비 끝"){w._ready=true;chk()}if(j)return;show(`후보 거르는 중 ${sc.got||0}/${keys.length}`);return}
     if(m.type==="team"){sc.res[m.key]=Object.assign(m.result,{n:R.n});sc.got++;
-     show(`${i+1}차: 후보 ${keys.length}팀을 ${R.n}판씩 확인 중 ${sc.got}/${keys.length}${ws.length>1?` (작업자 ${ws.length}개)`:""}`);
+     show(`후보 거르는 중 ${sc.got}/${keys.length}`);
      const bar=document.querySelector('[data-k="progress"] .pbar i');if(bar)bar.style.width=Math.round(sc.got/keys.length*100)+"%";return}
     if(m.type==="done"){if(--open>0)return;const nx=SCR_ROUNDS[i+1];if(nx){const top=rank().slice(0,nx.top);if(top.length>3){round(i+1,top);return}}finish();run();return}
     if(m.type==="error"){SIMQ.screening=false;simStop(m.msg)}};
@@ -873,27 +886,28 @@ function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.bus
 function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap(b=>b.rows),p=SIMQ.busy??(Number(Object.keys(LASTQ)[0])||1);
  const sc=SIMQ.screening?SIMQ.scr[scrKey(st,p)]:null,done=sc?sc.got||0:rows.filter(t=>SIMQ.res[simSig(st,t)]).length,all=sc?sc.left:rows.length;
  const pct=all?Math.round(done/all*100):0;
- return `<div class="party progress" data-party="${p}" data-k="progress"><b>추천 편성을 시뮬로 확인하는 중</b><div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${rows.length}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
-  <p><b>${sc?"1단계 예선":"2단계 본선"}</b> · <span data-k="simstate">${esc(SIMQ.busy!=null?SIMQ.msg:miMode()&&MI.pending?"내 정보 계산 준비 중":"후보 고르는 중")}</span>${sc?"":` · 확인한 팀 ${done}/${all}`}</p>
-  <p class="mut">① 예선: 내 구원자로 만들 수 있는 조합 가운데 스킬 연계·상성·기믹·빠른 계산으로 고른 후보 ${sc?sc.n:"100여"}팀을 짧게(${SCR_N}판) 시뮬해 걸러 냅니다(최대 ${SCR_MS/1000}초). ② 본선: 예선 상위 팀을 ${SIMQ.n}판씩 다시 시뮬해 결과를 보여 줍니다(모두 클리어 50% 미만이면 최대 9팀). 처음에는 계산 엔진(약 14MB)을 내려받아 시간이 더 걸립니다.</p>
-  <button type="button" class="sec" data-simcancel="1">취소하고 지금까지 결과 보기</button></div>`}
+ return `<div class="party progress" data-party="${p}" data-k="progress"><b>추천 편성 확인 중</b><div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
+  <p><span data-k="simstate" title="후보 ${SCR_N}판 · 작업자 ${scrWorkers()}개">${sc?"후보 거르는 중":"상위 팀 확인 중"} ${done}/${all}</span></p>
+  <p class="mut">후보를 거른 뒤 상위 팀을 100판씩 시뮬합니다 · 약 30초~1분</p>
+  <button type="button" class="sec" data-simcancel="1">중단하고 결과 보기</button></div>`}
+
 function buildCands(ranked){return ranked.slice(0,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
 // 계산은 「추천 편성 보기」를 눌렀을 때만 한다(조건을 바꿀 때마다 계산·시뮬이 돌지 않게). 조건이 바뀌면 결과를 비우고 안내만 보인다.
 // 주소에 ?auto=1 이 있거나 공유 링크로 열면 예전처럼 바로 계산한다(자동 시험·링크 공유용).
 const AUTO=/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
 function idleView(){const t=id=>{const e=$(id);return e&&e.selectedOptions&&e.selectedOptions[0]?e.selectedOptions[0].textContent.trim():""};
- $("out").innerHTML=`<div class="party idle" data-k="idle"><p><b>${esc(t("content"))}</b> · ${esc(t("tab"))} · <b>${esc(t("stage"))}</b> · 내 정보 기준</p><p class="mut">조건을 정한 뒤 눌러야 이 조건으로 추천 편성을 계산하고 시뮬로 확인합니다.</p><button type="button" data-go="1" title="현재 조건(콘텐츠·섹터·지역·스테이지)과 내 정보로 후보를 시뮬해서 추천합니다(첫 실행 시 계산 엔진 약 14MB)">추천 편성 보기</button></div>`}
+ $("out").innerHTML=`<div class="party idle" data-k="idle"><p><b>${esc(t("content"))}</b> · ${esc(t("tab"))} · <b>${esc(t("stage"))}</b> · 내 정보 기준</p><button type="button" data-go="1" title="현재 조건(콘텐츠·섹터·지역·스테이지)과 내 정보로 후보를 시뮬해서 추천합니다(첫 실행 시 계산 엔진 약 14MB)">추천 편성 보기</button></div>`}
 function condChanged(){REQ=false;SIMQ.kick=false;simInvalidate();run()}
-function miGuide(){return `<div class="party guide" data-k="miguide"><h3>시뮬레이션을 돌리기 전에 내 정보가 필요합니다</h3>
- <p class="mut">추천 편성은 내 구원자(레벨·장비·스킬)로 전투를 시뮬해서 고릅니다. 게임에서 내 정보를 한 번 뽑아 오면 이 브라우저에 저장되어 다음부터 바로 씁니다.</p>
- <div class="acts"><button type="button" data-miopen="1">내 정보 불러오기</button><button type="button" class="sec" data-miopen="how">만드는 방법</button></div></div>`}
+function miGuide(){return `<div class="party guide" data-k="miguide"><h3>먼저 내 정보를 불러오세요</h3>
+ <p class="mut">PowerShell 명령 실행 → 관리자 확인 후 게임 로그인·로비에서 엔터 → 사이트에 자동 반영</p>
+ <div class="acts"><button type="button" data-miopen="1">내 정보 불러오기</button></div></div>`}
 function showReco(){if(!MI.info){setDrawer(true);return}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
-function run(skipAuto=false){renderChip();if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
+function run(skipAuto=false){$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}runCore(skipAuto)}
 function runCore(skipAuto=false){
  renderMi();
  const folds=new Map([...document.querySelectorAll("#out details[data-fold]")].map(d=>[d.dataset.fold,d.open]));
- $("control-home").append(MODE_CONTROLS,SCORE_CONTROLS);
+ $("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);
  for(const k in LASTQ)delete LASTQ[k];
  const c=contents[$("content").value],st=cur&&cur[$("stage").value];
  if(!st){BRCMP.open={};$("out").innerHTML='<div class="party">스테이지를 선택하세요.</div>';return}
@@ -901,7 +915,7 @@ function runCore(skipAuto=false){
  const have=[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);SCROWN=[...own].sort().join(",")+"|"+have.join(",");
  GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty);
  const sid=c.key+"|"+st.tab+"|"+st.name;
- const used=new Set();let html="";const allParties=[];{const bb=bigBoss(c,st);if(bb)html+=bigBossNote(bb)}
+ const used=new Set();let html="";const allParties=[];
  const rsEl0=(CFG.restrict[c.name]||{})[st.tab];
  const cands0=R.filter(s=>own.has(s.key)&&(!rsEl0||s.el===rsEl0)).map(s=>{const[v,parts]=score(s,st.w,c.main,c.boss);return{s,score:v,parts}});
  const qi0=quickIn(c,st),ranked0=cands0.length>=4?rankAll(cands0,defPen):null;
@@ -931,8 +945,8 @@ function runCore(skipAuto=false){
   let seq="";
   if(MODE==="manual")seq=sr&&sr.man?seqTable({rec:{auto:{c:sr.clear,t:sr.ttk},man:{g:true,c:sr.man.c,t:sr.man.t,pol:sr.man.pol,d:{c:sr.man.c-sr.clear,t:sr.man.t!=null&&sr.ttk!=null?sr.man.t-sr.ttk:null}},seq:sr.man.seq}},[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key))
    :`<div class="seq" data-state="pending"><span class="mut">서순: 시뮬 확인 뒤 표시</span></div>`;
-  const main=`<div class="rowcards">${card(bk[0],"back",r)}${card(fr[0],"front",r)}${card(fr[1],"front",r)}${card(bk[1],"back",r)}</div>${gimNote(party,c,st,p)}${breakCard(br,sr,p,qr,st)}`;
-  const tail=`${altChips(party,alt,p)}<details class="manual-details" data-fold="manual-${p}"><summary>수동 서순</summary>${p===1?'<div data-controls="mode"></div>':""}${seq||'<div class="mut">서순: 시뮬 확인 뒤 표시</div>'}</details><details class="score-details" data-fold="score-${p}"><summary>점수 상세</summary>${p===1?'<div data-controls="score"></div>':""}<div class="scoredata">근사 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10${party.map(x=>`<div>${esc(x.s.name)}: ${Object.entries(x.parts).map(([k,v])=>`${esc(k)} ${v.toFixed(1)}`).join(" · ")}</div>`).join("")}${synSummary(party)}</div></details>`;
+  const main=`${gimNote(party,c,st,p)}<div class="rowcards">${card(bk[0],"back",r)}${card(fr[0],"front",r)}${card(fr[1],"front",r)}${card(bk[1],"back",r)}</div>${breakCard(br,sr,p,qr,st)}`;
+  const tail=`${altChips(party,alt,p)}<details class="manual-details" data-fold="manual-${p}"><summary>수동 서순</summary>${p===1?'<div data-controls="mode"></div>':""}${seq||'<div class="mut">서순: 시뮬 확인 뒤 표시</div>'}</details><details class="score-details" data-fold="score-${p}"><summary>자세히</summary>${p===1?'<div data-controls="score"></div><div data-controls="graph"></div>':""}<div class="scoredata">추천 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10${party.map(x=>`<div>${esc(x.s.name)}: ${Object.entries(x.parts).map(([k,v])=>`${esc(k)} ${v.toFixed(1)}`).join(" · ")}</div>`).join("")}${synSummary(party)}</div></details>`;
   html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}">${quickBox(p,qt,qi,st,pick.key,main,tail)}</div>`}
 
  $("out").innerHTML=html;
@@ -942,7 +956,7 @@ function runCore(skipAuto=false){
  // 비교가 도는 중 1안 팀이 바뀌어 비교 목록이 사라졌으면, 그 파티의 시뮬 줄에 진행 상태와 취소를 대신 보인다(멈춘 채 다른 시뮬이 막히지 않게)
  if(SIMQ.busy!=null&&SIMQ.compareKey&&!document.querySelector(`.party[data-party="${SIMQ.busy}"] [data-k="breakstate"]`)){const sb=document.querySelector(`.party[data-party="${SIMQ.busy}"] .simbar`)||document.querySelector("#out .simbar");
   if(sb)sb.innerHTML=`<span class="mut" data-k="breakstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`}
- document.querySelector('[data-controls="mode"]')?.append(MODE_CONTROLS);document.querySelector('[data-controls="score"]')?.append(SCORE_CONTROLS);
+ document.querySelector('[data-controls="mode"]')?.append(MODE_CONTROLS);document.querySelector('[data-controls="score"]')?.append(SCORE_CONTROLS);document.querySelector('[data-controls="graph"]')?.append($("graphwrap"));
  document.querySelectorAll("#out details[data-fold]").forEach(d=>{if(folds.has(d.dataset.fold))d.open=folds.get(d.dataset.fold)});if(window.onParties)onParties(allParties)}
 $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-pick]");if(!b)return;const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st)return;
  PICK[c.key+"|"+st.tab+"|"+st.name+"|"+b.dataset.pick]=b.dataset.key;run();const el=document.querySelector(`.party[data-party="${b.dataset.pick}"]`);if(el)el.scrollIntoView({block:"start"})});
@@ -966,11 +980,11 @@ function syncOwn(){const ks=MI.info?new Set(MyInfoImport.mapOwned(MI.info,R).key
 function brkLv(name){return MI.brkLv?.[name]||5}
 function syncBrk(){const lv=MI.info?MyInfoImport.mapBreak(MI.info):null;MI.brkLv=lv;
  document.querySelectorAll("#brk input").forEach(x=>{if(lv){x.checked=Object.hasOwn(lv,x.dataset.b);x.disabled=true}else x.disabled=false;const t=x.parentElement.querySelector(".blv");if(t)t.remove();if(lv&&Object.hasOwn(lv,x.dataset.b))x.parentElement.querySelector(".tn").insertAdjacentHTML("afterend",`<span class="blv mut">Lv.${lv[x.dataset.b]}</span>`)});
- const n=$("brk-note");if(n)n.textContent=lv?"내 정보 기준(레벨 표시)":"내 정보 파일에 없어서 직접 고릅니다(추천·시뮬에 씀)";
+ const n=$("brk-note");if(n)n.textContent=lv?"내 정보 기준":"직접 선택";
  pruneBreakSel()}
 function renderChip(){const e=$("mi-chip");if(!e)return;const i=MI.info;e.classList.toggle("none",!i);
  e.innerHTML=i?`${MI.shared?"공유받은 ":""}내 정보 <b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(0,10))}`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"내 정보 없음";
- $("mi-open").textContent=i?"다시 불러오기":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i}
+ $("mi-open").textContent=i?"다시 불러오기":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["share-link","mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i}
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b))}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  syncOwn();
@@ -989,19 +1003,21 @@ $("all").addEventListener("click",()=>{saveSel();updCount();rerun()});$("none").
 // ---------------- 내 정보 불러오기 (myinfo_import.js, ss-myinfo-v1)
 const miNum=v=>Number.isFinite(v)?Math.round(v).toLocaleString():"—";
 const miStars=u=>`★${miNum(u.star)} · 각인 ${miNum(u.sigil)}`;
-function miFlags(assumed=0,approx=true){if(!miMode())return "";const p=miProfile(),chips=approx?["근사"]:[];
+function miFlags(assumed=0,approx=true){if(!miMode())return "";const p=miProfile(),chips=[];
  if(!p.rule)chips.push("미매핑 · 평균 가정");else if(MI.error)chips.push("성장표 오류 · 평균 가정");else if(!MI.growth)chips.push("불러오는 중");else if(assumed)chips.push("일부 가정");
  if(p.mismatch)chips.push("빌드 다름");if(p.rule==="fixed200")chips.push("Lv200 · 공명 10");
  return chips.map(x=>`<span class="tag">${x}</span>`).join("")}
 function miCard(key){if(!miMode())return "";const p=miProfile(),u=p.units[key],r=p.results[key];
  return `<div class="mi-chips">${r?`<span class="tag mi-member-power">전투력 ${miNum(r.power)}</span>`:'<span class="tag">평균 가정</span>'}${u?`<span class="tag mi-member-star">${miStars(u)}</span>`:""}</div>`}
-function miVerdict(t,st){const j=MyInfoReco.judgment(t.q,t.ng),bn=teamBreak(t)?.name||null;
- const a=SIMQ.res[simSigB(st,t,bn,"auto")],m=SIMQ.res[simSigB(st,t,bn,"manual")],r=a||m;
+function miVerdict(t,st){const r=SIMQ.res[simSig(st,t)];
  if(!r)return `<div class="mi-verdict" data-k="judgment"><b class="mut">시뮬 전</b></div>`;
- const ok=(m?.man?Math.max(r.clear,m.man.c):r.clear)>=0.5;
- return `<div class="mi-verdict" data-k="judgment"><b class="${ok?"ok":"hard"}">${ok?"깰 수 있음":"어려움"}</b><span>오토 클리어 ${Math.round(r.clear*100)}%</span>${m?.man?`<span>수동 ${Math.round(m.man.c*100)}%</span>`:""}${!ok&&j.extra!=null?`<span class="mi-extra">근사 추정: 약 +${miNum(j.extra)} 전투력이면 깸</span>`:""}</div>`}
+ const m=MODE==="manual"&&r.man,clear=m?m.c:r.clear,turn=m?(m.ta??m.t):(r.ta??r.ttk);
+ const first=m?m.first:r.first,death=m?m.first_p:r.first_p;
+ const risk=first&&Number.isFinite(death)?` · ${esc(first.split("#")[0])} 위험 ${Math.round(death*100)}%`:"";
+ return `<div class="mi-verdict" data-k="judgment" title="${esc(simTitle(r))}"><b class="${clear>=0.5?"ok":"hard"}">${clear>=0.5?"깰 수 있음":"어려움"}</b> · 클리어 ${Math.round(clear*100)}%${turn!=null?` · 약 ${Math.round(turn)}턴`:""}${risk}</div>`}
 function miTab(info){$("mi-panel").hidden=!info;$("out").hidden=info;$("graphwrap").hidden=info;document.querySelector(".input-panel").hidden=info;
  $("tab-reco").setAttribute("aria-pressed",String(!info));$("tab-info").setAttribute("aria-pressed",String(info));if(info)renderMi();else {drawGraph();if(cy)cy.resize()}}
+function savedTime(date){const d=new Date(date);if(!Number.isFinite(+d))return "";const z=v=>String(v).padStart(2,"0");return `${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`}
 function renderMi(){const info=MI.info;$("grow").querySelector('[value="myinfo"]').disabled=!info;
  $("mi-panel-clear").disabled=!info&&!MI.invalid;$("mi-clear").disabled=!info&&!MI.invalid;
  if(!info){$("mi-meta").textContent=MI.invalid?"저장된 정보 오류 · 지우거나 파일을 다시 불러오기":"불러온 정보 없음";$("mi-saved").textContent="";$("mi-list").innerHTML="";$("mi-account").innerHTML="";MIFULL.refresh();return}
@@ -1009,16 +1025,16 @@ function renderMi(){const info=MI.info;$("grow").querySelector('[value="myinfo"]
  // Unsupported content falls back only in recommendations; the account tab still shows normal stats.
  const p=current.rule?current:(MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(info,R,MI.growth,"op")));
  $("mi-meta").innerHTML=`스타링크 Lv${miNum(info.star_link_level)} · 전술 공통 Lv${miNum(info.tactics?.common_level)} · 전술 시설 Lv${miNum(info.tactics?.facility_level)} ·${esc(date.slice(0,10))} · 보유 ${info.units.length}명 ${[p.mismatch?"빌드 다름":"",p.rule==="fixed200"?"Lv200 · 공명 10":"",!current.rule?"일반 능력치":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("")}`;
- $("mi-saved").textContent=MI.saved?`저장됨: ${date}`:"저장 안 됨 · 현재 화면에만 적용됨";
+ $("mi-saved").textContent=MI.saved?`저장됨 ${savedTime(date)}`:"저장 안 됨 · 현재 화면에만 적용됨";
  $("mi-account").innerHTML=MIFULL.button('account')+MIFULL.panel('account');
  const roster=new Map(R.map(s=>[s.uid,s]));
  const rows=info.units.map(u=>{const s=roster.get(u.id);return {u,s,r:s?p.results[s.key]:null}});
  rows.sort($("mi-sort").value==="name"?(a,b)=>(a.s?.name||String(a.u.id)).localeCompare(b.s?.name||String(b.u.id),"ko"):(a,b)=>(b.r?.power||0)-(a.r?.power||0));
  $("mi-list").innerHTML=(!MI.growth?`<button type="button" id="mi-activate">${MI.error?"다시 불러오기":MI.pending?"불러오는 중":"내 정보 적용"}</button>`:"")+`<div class="mi-grid">${rows.filter(({u,s})=>{const q=$("mi-q").value.trim();return !q||(s?(s.name+" "+s.sub):String(u.id)).includes(q)}).map(({u,s,r})=>{
   const use=s?!EXCL.has(s.key):false,eq=(u.equip||[]).length;
-  return `<article class="mi-pick${s&&!use?" off":""}" data-uid="${u.id}"><button type="button" class="mi-open" data-mi-sheet="${u.id}" aria-haspopup="dialog" aria-label="${esc(s?.name||`ID ${u.id}`)} 상세 보기">
+  return `<article class="mi-pick${s&&!use?" off":""}" data-uid="${u.id}"><button type="button" class="mi-open" data-mi-sheet="${u.id}" aria-haspopup="dialog" aria-label="${esc(s?.name||"미등록 구원자")} 상세 보기">
    <span class="mi-art">${s?art(s):""}${s?dia(s,30):""}<span class="mi-star">${"★".repeat(Math.max(0,Math.min(5,u.star|0)))||"☆"}</span></span>
-   <span class="mi-cap"><b>${esc(s?.name||`ID ${u.id}`)}</b><small>${esc(s?.sub||"미등록 구원자")}</small><span class="mi-pw">${UiShared.icon("power")}${r?miNum(r.power):"—"}</span><small class="mi-sub2">공명 ${miNum(u.resonance)} · 각인 ${miNum(u.sigil)} · 장비 ${eq}/6</small></span></button>
+   <span class="mi-cap"><b>${esc(s?.name||"미등록 구원자")}</b><small>${esc(s?.sub||"미등록 구원자")}</small><span class="mi-pw">${UiShared.icon("power")}${r?miNum(r.power):"—"}</span><small class="mi-sub2">공명 ${miNum(u.resonance)} · 각인 ${miNum(u.sigil)} · 장비 ${eq}/6</small></span></button>
    ${s?`<label class="mi-use" title="끄면 추천·시뮬 후보에서 뺍니다"><input type="checkbox" data-use="${esc(s.key)}"${use?" checked":""}> 추천</label>`:""}</article>`}).join("")}</div>`;
  $("mi-excl").innerHTML=EXCL.size?`추천에서 뺀 구원자 ${EXCL.size}명 <button type="button" class="sec" data-exclclear="1">모두 다시 넣기</button>`:"";
  MIFULL.refresh();SKILLS.refresh();
@@ -1042,7 +1058,7 @@ function miSummary(info,unknown){const d=info.exported_at?String(info.exported_a
 async function miApply(info,opt={}){
  const bad=MyInfoImport.validate(info);if(bad){miStatus(bad,true);return false}
  const id=++MI.importId;
- try{const g=await miGrowth();miCheck(info,g)}catch(e){miStatus("정보 계산 실패: "+e.message,true);return false}
+ try{const g=await miGrowth();miCheck(info,g)}catch(e){miStatus("정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",true);return false}
  if(id!==MI.importId)return false;
  const {unknown}=MyInfoImport.mapOwned(info,R);
  MI.saved=false;MI.invalid=false;MI.shared=!!opt.shared;miReset(info);syncOwn();
@@ -1050,23 +1066,23 @@ async function miApply(info,opt={}){
  if(opt.shared&&SHARE.c){REQ=true;SIMQ.kick=true;rerunNow()}else rerun();
  miStatus(miSummary(info,unknown.length)+(MI.saved?"":" · 저장 안 됨"),!MI.saved);return true}
 $("mi-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
- try{await miApply(JSON.parse(await f.text()))}catch(err){miStatus("파일을 읽지 못했습니다: "+err.message,true)}});
+ try{await miApply(JSON.parse(await f.text()))}catch(err){miStatus("바탕화면 내정보.json을 선택해 주세요.",true)}});
 $("mi-clear").addEventListener("click",miClear);
 $("mi-copy").addEventListener("click",async()=>{const b=$("mi-copy"),t=$("mi-cmd").textContent.trim();
- try{await navigator.clipboard.writeText(t);b.textContent="복사됨"}catch(e){const r=document.createRange();r.selectNodeContents($("mi-cmd"));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="선택됨(Ctrl+C)"}
+ try{await navigator.clipboard.writeText(t);b.textContent="복사됨"}catch(e){$("mi-cmd").closest("details").open=true;const r=document.createRange();r.selectNodeContents($("mi-cmd"));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="선택됨(Ctrl+C)"}
  setTimeout(()=>{b.textContent="명령 복사"},2000)});
 function sharedBar(){const b=$("shared-bar");b.hidden=!MI.shared;if(!MI.shared)return;
  b.innerHTML=`<span>🔗 <b>공유받은 내 정보</b>로 보는 중입니다(보유 ${MI.info.units.length}명). 이 브라우저에 저장하지 않으며, 내 정보는 그대로 있습니다.</span><button type="button" class="sec" id="shared-back">${LS.get("myinfo")?"내 정보로 돌아가기":"닫기"}</button>`;
  $("shared-back").onclick=()=>{const mine=LS.get("myinfo");MI.shared=false;b.hidden=true;if(mine&&!MyInfoImport.validate(mine))miApply(mine);else{MI.importId++;MI.saved=false;miReset(null);renderChip()}}}
 (function miShared(){if(!/[#&]shared=/.test(location.hash))return;const h=location.hash.replace(/(^#|&)shared=/,"$1myinfo=");
  try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
- MyInfoImport.fromHash(h).then(info=>{if(info)miApply(info,{shared:true})}).catch(err=>miStatus("공유 링크를 읽지 못했습니다: "+err.message,true))})();
+ MyInfoImport.fromHash(h).then(info=>{if(info)miApply(info,{shared:true})}).catch(err=>miStatus("공유 링크를 읽지 못했습니다. 링크를 다시 받아 주세요.",true))})();
 (function miInit(){
  const saved=LS.get("myinfo");if(MI.invalid){miStatus("저장된 정보 오류 · 지우거나 파일을 다시 불러오기",true);$("mi-clear").disabled=false}else if(saved)miStatus(miSummary(saved,MyInfoImport.mapOwned(saved,R).unknown.length),false);
  if(!/myinfo=/.test(location.hash))return;
  MyInfoImport.fromHash(location.hash).then(async info=>{
   try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
-  if(info&&await miApply(info))setDrawer(true)}).catch(err=>{try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}miStatus("불러오기 실패: "+err.message,true);setDrawer(true)})})();
+  if(info&&await miApply(info))setDrawer(false)}).catch(err=>{try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}miStatus("자동 반영 실패 · 내정보.json을 선택해 주세요. 게임 업데이트 직후에는 도구 갱신이 필요할 수 있습니다.",true);setDrawer(true)})})();
 const TYC={1:"#e0553a",2:"#d4a72c",3:"#34b37c",4:"#4a86e0",5:"#8d939e"},ELC={sun:"#e0554a",moon:"#5aa0ff",star:"#8fe05a",order:"#f0cf86",chaos:"#c58bff"};
 $("glegend").innerHTML=[[1,"부여→소비"],[2,"버프증폭"],[3,"생존연계"],[4,"쿨감·게이지"],[5,"속성공유"]].map(([t,n])=>`<span class="lg"><i style="background:${TYC[t]}"></i>${n}</span>`).join("")+'<span class="lg mut">화살표 = 제공자→소비자</span>';
 $("gcenter").innerHTML=R.map(s=>`<option value="${esc(s.key)}">${esc(s.name)} (${esc(s.sub)})</option>`).join("");

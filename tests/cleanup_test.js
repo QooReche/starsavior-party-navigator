@@ -40,7 +40,7 @@ async function apply(){
  calculateFails=true;assert.equal(await c.miApply(info),false);assert.equal(saved,null);assert.equal(c.MI.info,null);
  calculateFails=false;order.length=0;assert.equal(await c.miApply(info),true);assert.deepEqual(order,['calculate','render','save']);
  failed=true;await c.miApply(info);assert.equal(c.MI.saved,false);assert.match(status,/저장 안 됨/);
- assert.ok(html.includes('MI.saved?`저장됨: ${date}`:"저장 안 됨'));
+ assert.ok(html.includes('MI.saved?`저장됨 ${savedTime(date)}`:"저장 안 됨'));
  const calc=vm.createContext({R:[],MyInfoReco:{profile:()=>({results:{a:{power:Infinity,stats:{atk:1}}}})}});
  vm.runInContext(part('function miCheck(','function miLoad('),calc);
  assert.throws(()=>calc.miCheck(info,{}),/계산값/);

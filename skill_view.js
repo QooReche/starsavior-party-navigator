@@ -35,15 +35,15 @@
     return String(text).split(/(\[[^\]]+\])/g).map(part=>{
       const g=gl.find(([name])=>part===`[${name}]`);
       if(!g)return esc(part);
-      const explanation=[g[1],g[2]].filter(Boolean).join(' · ');
-      return `<span class="skill-term-wrap"><button type="button" class="skill-term" aria-expanded="false" title="${esc(explanation)}">${esc(part)}</button><span class="skill-tip" hidden>${esc(explanation)}</span></span>`;
+      const explanation=[g[1],g[2]].filter(v=>v&&v!=='-'&&!/^[A-Z][A-Z0-9_]*$/.test(v)).join(' · ');
+      return `<span class="skill-term-wrap"><button type="button" class="skill-term" style="min-height:40px;min-width:40px" aria-expanded="false" title="${esc(explanation)}">${esc(part)}</button><span class="skill-tip" hidden>${esc(explanation)}</span></span>`;
     }).join('');
   }
   function skillCard(raw,skills,variants=[],uid=null){
     const s=select(raw,skills);
     return `<section class="${s.sl.startsWith('변형 ')?'skill-variant':'skill-card'}" data-slot="${s.slot}" data-level="${s.level}">
       <div class="skill-heading"><span class="skill-badge ${s.slot}">${(globalThis.UiShared&&globalThis.UiShared.icon)?(uid!=null&&globalThis.UiShared.skillIcon?globalThis.UiShared.skillIcon(uid,s.slot):globalThis.UiShared.icon(s.slot)):''}${esc(s.sl)}</span><span class="skill-level">${s.own?'내 레벨':'최대 레벨'} ${s.level} / ${s.mx}</span></div>
-      <h3>${esc(s.n)}</h3><div class="skill-meta">${esc([s.tg,s.ty].filter(Boolean).join(' · '))}${s.cooldown==null?'':` · 쿨 ${s.cooldown}턴`}${s.level===0?' · 미습득':''}</div>
+      <h3>${esc(s.n)}</h3><div class="skill-meta">${esc([s.tg,s.ty,s.cooldown==null?'':`쿨 ${s.cooldown}턴`,s.level===0?'미습득':''].filter(v=>v&&v!=='-'&&!/^[A-Z][A-Z0-9_]*$/.test(v)).join(' · '))}</div>
       <p class="skill-description">${terms(s.description,s.gl)}</p>
       ${s.next?`<p class="skill-next">다음 강화: Lv${s.next[0]} ${terms(s.next[1],s.gl)}</p>`:''}
       <details class="skill-upgrades"><summary>레벨 강화</summary><ul>${s.lv.map(([lv,t])=>`<li class="${lv<=s.level?'achieved':'unlearned'}"><span aria-label="${lv<=s.level?'달성':'미달성'}">${lv<=s.level?'✓':'○'}</span> Lv${lv} ${terms(t,s.gl)}</li>`).join('')}</ul></details>

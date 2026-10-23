@@ -36,7 +36,7 @@ ev('BRSEL["op|a,b"]="특이점 관측";saveBreakSel()');
 assert.equal(JSON.parse(saved['pn.brksel.v1'])['op|a,b'],'특이점 관측');
 assert.notEqual(ev('simSig(cur[0],a)'),initial);
 assert.equal(ev('breakChoice(a.combo,{key:"cosmo",name:"코스모 게이트"}).name'),'스타피어서');
-assert.match(ev('breakCard(breakChoice(a.combo,contents[0]),{bs:{supported:true,uses:1.25}})'),/평균 1.25회 발동/);
+assert.match(ev('breakCard(breakChoice(a.combo,contents[0]),{bs:{supported:true,uses:1.25}})'),/발동 1.3회/);
 assert.match(ev('breakCard(breakChoice(a.combo,contents[0]),{bs:{supported:false}})'),/시뮬 미반영/);
 // 내 정보의 브레이크 스킬 레벨: 없으면 5, 있으면 그 값
 assert.equal(ev('teamBreak(a).level'),5);
@@ -140,7 +140,7 @@ assert(cancelled.stopped);assert.equal(ctx.SIMQ.busy,null);
 const cached=Object.keys(ctx.SIMQ.res).length;
 cancelled.onmessage({data:{type:'team',id:cancelReq.id,key:cancelReq.teams[0].key,result:{clear:1}}});
 assert.equal(Object.keys(ctx.SIMQ.res).length,cached);
-ev('breakCompareStart(1,"a,b");simStop("취소함")');assert.match(view(),/취소함/);
+ev('breakCompareStart(1,"a,b");simStop("취소함")');assert.match(view(),/중단함/);
 assert.equal(ctx.SIMQ.busy,null);
 console.log('PASS 비교 재표시 범위·부분 캐시 숨김·선택 변경/취소 후 늦은 결과 무시');
 
