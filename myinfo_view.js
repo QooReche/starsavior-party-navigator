@@ -11,7 +11,7 @@
   const num=v=>Number.isFinite(v)?v.toLocaleString('ko-KR',{maximumFractionDigits:8}):'—';
   const rate=k=>['cr','cd','eh','er'].includes(k)||k.endsWith('P');
   const value=(k,v)=>Number.isFinite(v)?num(rate(k)?v/100:v)+(rate(k)?'%':''):'—';
-  const values=v=>Object.entries(v||{}).filter(([,n])=>n!==0).map(([k,n])=>`${names[k]||esc(k)} +${value(k,n)}`).join(' · ')||'추가 없음';
+  const values=v=>Object.entries(v||{}).filter(([,n])=>n!==0).map(([k,n])=>`${names[k]||'시뮬 미반영'} +${value(k,n)}`).join(' · ')||'추가 없음';
   const line=(a,b)=>`<div class="mi-detail-line"><span>${a}</span><b>${b}</b></div>`;
   const section=(title,html)=>`<section class="skill-card"><h3>${title}</h3>${html}</section>`;
   const level=v=>Number.isFinite(v)?num(v):'—';
@@ -19,57 +19,57 @@
   function account(info,growth){
     const t=info.tactics||{},gs=t.groups||{};
     return section('계정 내실',line('공통',`Lv${level(t.common_level)} · ${values(at(growth.tactics?.TG_COMMON?.MAIN,t.common_level))}`)+line('시설',`Lv${level(t.facility_level)} · ${values(at(growth.facility,t.facility_level))}`)+
-      `<table class="mi-group-table"><caption>전술 분석 그룹별 레벨</caption><thead><tr><th scope="col">그룹</th><th scope="col">레벨</th><th scope="col">공</th><th scope="col">방</th><th scope="col">생</th></tr></thead><tbody>${Object.entries(gs).map(([g,v])=>`<tr><th scope="row">${esc(groups[g]||g)}</th>${['level','attack','defense','hp'].map(k=>`<td>${level(v[k])}</td>`).join('')}</tr>`).join('')}</tbody></table>${Object.keys(gs).length?'':'<p class="mut">그룹 정보 없음</p>'}`);
+      `<table class="mi-group-table"><caption>전술 분석 그룹별 레벨</caption><thead><tr><th scope="col">그룹</th><th scope="col">레벨</th><th scope="col">공</th><th scope="col">방</th><th scope="col">생</th></tr></thead><tbody>${Object.entries(gs).map(([g,v])=>`<tr><th scope="row">${esc(groups[g]||'기타')}</th>${['level','attack','defense','hp'].map(k=>`<td>${level(v[k])}</td>`).join('')}</tr>`).join('')}</tbody></table>${Object.keys(gs).length?'':'<p class="mut">그룹 정보 없음</p>'}`);
   }
   function breakdown(result){
     const b=result.breakdown;
-    if(!Object.keys(b.stats).length)return '<p>성장표에 없는 구원자 · 분해 불가</p>';
-    return `<p class="mut mi-formula">기본·레벨·여정 → 공명 비율 R1 → 공명 고정 → 나머지 고정 + R2 → 버림</p><div class="mi-detail-grid">${keys.map(k=>{
+    if(!Object.keys(b.stats).length)return '<p>시뮬 미반영</p>';
+    return `<div class="mi-detail-grid">${keys.map(k=>{
       const s=b.stats[k];
       return `<details class="mi-stat-detail"><summary>${names[k]} <b>${value(k,s.final)}</b></summary>${order.map(id=>{
         const raw=b.sources.filter(t=>t.id===id).reduce((n,t)=>n+(t.values[k+'P']||0),0);
-        return line(labels[id],`${value(k,s.components[id]||0)}${raw?` <small>비율 ${value(k+'P',raw)} (${id==='base'||id==='resonance'?'R1':'R2'})</small>`:''}`);
-      }).join('')}${line('R1 / R2',`${num(s.r1*100)}% / ${num(s.r2*100)}%`)}${line('최종',value(k,s.final))}</details>`;
+        return line(labels[id],`${value(k,s.components[id]||0)}${raw?` <small>비율 ${value(k+'P',raw)}</small>`:''}`);
+      }).join('')}${line('최종',value(k,s.final))}</details>`;
     }).join('')}</div>`;
   }
   function equipment(unit,growth,publicData){
     const equip=unit.equip||[],slots=publicData.slots||[],assigned=new Map(),unknown=[];
     for(const item of equip){const slot=publicData.itemSlots?.[item.item_id];if(Number.isInteger(slot)&&slot>=0&&slot<6&&!assigned.has(slot))assigned.set(slot,item);else unknown.push(item)}
-    const option=o=>o?`${esc(names[nst[o.stat]]||o.stat)} ${nst[o.stat]?value(nst[o.stat],o.value):num(o.value)}`:'정보 없음';
-    const card=(item,title)=>`<div class="mi-gear"><b>${esc(title)}${item?` · +${level(item.enhance)}`:''}</b>${item?`<small class="mut"> 아이템 #${item.item_id}</small><p>주옵 · ${option(item.main)}</p><p class="mut">부옵 · ${(item.subs||[]).map(option).join(' · ')||'없음'}</p>`:'<p class="mut">'+(unknown.length?'부위 확인 불가':'미장착')+'</p>'}</div>`;
+    const option=o=>o?`${esc(names[nst[o.stat]]||'시뮬 미반영')} ${nst[o.stat]?value(nst[o.stat],o.value):num(o.value)}`:'정보 없음';
+    const card=(item,title)=>`<div class="mi-gear"><b>${esc(title)}${item?` · +${level(item.enhance)}`:''}</b>${item?`<p>주옵 · ${option(item.main)}</p><p class="mut">부옵 · ${(item.subs||[]).map(option).join(' · ')||'없음'}</p>`:'<p class="mut">'+(unknown.length?'부위 확인 불가':'미장착')+'</p>'}</div>`;
     const counts={};for(const item of equip){const id=growth.item_sets?.[item.item_id];if(id)counts[id]=(counts[id]||0)+1}
     return `<div class="mi-detail-grid">${Array.from({length:6},(_,i)=>card(assigned.get(i),slots[i]||`부위 ${i+1}`)).join('')}${unknown.map(e=>card(e,'부위 미확인')).join('')}</div>`+
       Object.entries(counts).map(([id,n])=>{const e=growth.sets?.[id],times=e?.parts?Math.floor(n/e.parts):0;
         const total=e?Object.fromEntries(Object.entries(e.stats||{}).map(([k,v])=>[k,v*(times||1)])):null;
-        return line(`${esc(publicData.sets?.[id]||`세트 #${id}`)} ${n}/${e?.parts||'?'}`,`${times?`완성 ×${times}`:'미완성'} · ${e?values(total):'효과 미해석'}${times?'':' (완성 시)'}`)}).join('');
+        return line(`${esc(publicData.sets?.[id]||'세트 정보 없음')} ${n}/${e?.parts||'?'}`,`${times?`완성 ×${times}`:'미완성'} · ${e?values(total):'시뮬 미반영'}${times?'':' (완성 시)'}`)}).join('');
   }
   function combatEffects(pid,lv,publicData,combat){
     const row=combat.potentials?.[pid]?.[lv],pot=publicData.potentials?.[pid];
-    if(!row||!pot)return {known:false,active:false,text:'전투 효과 미해석'};
+    if(!row||!pot)return {known:false,active:false,text:'시뮬 미반영'};
     const lines=pot.levels?.[lv]||[];
-    const effects=(row.lines||[]).map(i=>lines[i]||`효과 #${i}`);
-    for(const [k,n] of Object.entries(row.stats||{}))effects.push(`${k==='NST_SUPER_ARMOR'?'강인도':k} +${n}`);
-    return {known:true,active:effects.length>0,text:effects.join(' · ')||'추가 전투 효과 없음'};
+    const effects=(row.lines||[]).map(i=>lines[i]||'시뮬 미반영');
+    for(const [k,n] of Object.entries(row.stats||{}))effects.push(`${k==='NST_SUPER_ARMOR'?'강인도':'시뮬 미반영'} +${n}`);
+    return {known:true,active:effects.length>0,text:effects.join(' · ')||''};
   }
   function render(unit,info,growth,result,publicData,combat,simulation){
     const b=result.breakdown,gauntlet=unit.gauntlet||{},learned=result.combat.potentials;
     const effects=learned.map(([id,lv])=>combatEffects(id,lv,publicData,combat));
-    const status=effects.some(e=>e.active)?'있음':effects.some(e=>!e.known)?'미해석':'없음';
-    const chips=[simulation?'시뮬 입력':'참고값 · 현재 시뮬 미적용',...keys.map(k=>`${names[k]} ${value(k,result.stats[k])}`),`전투력 ${num(result.power)}`,...[['basic','기본'],['special','특수'],['ultimate','궁극'],['passive','패시브']].map(([k,n])=>`${n} Lv${level(result.combat.skills[k])}`),`잠재력 전투 효과 ${status}`];
+    const status=effects.some(e=>e.active)?'있음':effects.some(e=>!e.known)?'시뮬 미반영':'없음';
+    const chips=[simulation?'시뮬 입력':'시뮬 미반영',...keys.map(k=>`${names[k]} ${value(k,result.stats[k])}`),`전투력 ${num(result.power)}`,...[['basic','기본'],['special','특수'],['ultimate','궁극'],['passive','패시브']].map(([k,n])=>`${n} Lv${level(result.combat.skills[k])}`),`잠재력 전투 효과 ${status}`];
     const seenGroups=new Set();
     const inner=b.sources.filter(s=>['favor','tactics','facility'].includes(s.id)).map(s=>{
       let header='';
       if(s.id==='tactics'&&s.group!=='TG_COMMON'&&!seenGroups.has(s.group)){
-        seenGroups.add(s.group);header=`<h4>${esc(groups[s.group]||s.group)} · Lv${level(info.tactics?.groups?.[s.group]?.level)}</h4>`;
+        seenGroups.add(s.group);header=`<h4>${esc(groups[s.group]||'기타')} · Lv${level(info.tactics?.groups?.[s.group]?.level)}</h4>`;
       }
-      return header+line(`${s.id==='tactics'?esc(groups[s.group]||s.group)+(s.field==='level'?'':` · ${{attack:'공',defense:'방',hp:'생'}[s.field]}`):labels[s.id]} Lv${s.level}`,values(s.values));
+      return header+line(`${s.id==='tactics'?esc(groups[s.group]||'기타')+(s.field==='level'?'':` · ${{attack:'공',defense:'방',hp:'생'}[s.field]}`):labels[s.id]} Lv${s.level}`,values(s.values));
     }).join('');
     const journey=['공격','생명','인내','집중','보호'].map((n,i)=>{const raw=gauntlet.journey?.[i];return line(n,`${num(raw)}${raw>1500?' → 1,500 (상한 적용)':''}`)}).join('');
-    const potentials=learned.map(([id,lv],i)=>`<li><b>${esc(publicData.potentials?.[id]?.name||`잠재력 #${id}`)} · Lv${lv}</b><small>#${id}</small><p>${growth.potentials?.[id]?.[lv]?values(growth.potentials[id][lv]):'능력치 미해석'}</p>${effects[i].active?`<details><summary>시뮬 전투 효과</summary><p class="mut">${esc(effects[i].text)}</p></details>`:`<p class="mut">${esc(effects[i].text)}</p>`}</li>`).join('');
+    const potentials=learned.map(([id,lv],i)=>`<li><b>${esc(publicData.potentials?.[id]?.name||'잠재력 정보 없음')} · Lv${lv}</b><p>${growth.potentials?.[id]?.[lv]?values(growth.potentials[id][lv]):'시뮬 미반영'}</p>${effects[i].active?`<details><summary>시뮬 전투 효과</summary><p class="mut">${esc(effects[i].text)}</p></details>`:`<p class="mut">${esc(effects[i].text)}</p>`}</li>`).join('');
     return `<div class="mi-sim-chips" aria-label="시뮬 반영 값">${chips.map(c=>`<span class="tag">${esc(c)}</span>`).join('')}</div>`+
       section('능력치 출처',breakdown(result))+section('내실',inner||'정보 없음')+section('장비',equipment(unit,growth,publicData))+
-      section(`건틀렛 Lv${level(gauntlet.level)}`,`<p class="mut">여정 · 각 항목 상한 1,500</p>${journey}<ul class="mi-potentials">${potentials||'<li>습득 잠재력 없음</li>'}</ul>${line('관문 이력',esc((gauntlet.blessings||[]).map(id=>`#${id}`).join(' · ')||'없음'))}`)+
-      (result.missing.length?`<details class="mi-diagnostics"><summary>미확인 정보 ${result.missing.length}</summary><p>${result.missing.map(esc).join(' · ')}</p></details>`:'');
+      section(`건틀렛 Lv${level(gauntlet.level)}`,`<p class="mut">여정 · 각 항목 상한 1,500</p>${journey}<ul class="mi-potentials">${potentials||'<li>습득 잠재력 없음</li>'}</ul>${line('관문 이력',(gauntlet.blessings?.length?'시뮬 미반영':'없음'))}`)+
+      (result.missing.length?`<details class="mi-diagnostics"><summary>미확인 정보 ${result.missing.length}</summary><p>일부 정보는 시뮬에 반영되지 않습니다.</p></details>`:'');
   }
   // 캐릭터 상세 시트(팝업): 칸 나눈 능력치·스킬·장비·건틀렛, 항목마다 아이콘
   const short={atk:'공격력',hp:'생명력',def:'방어력',spd:'속도',cr:'치명 확률',cd:'치명 피해',eh:'효과 적중',er:'효과 저항'};
@@ -84,17 +84,17 @@
     const journey=['공격','생명','인내','집중','보호'].map((n,i)=>{const raw=gauntlet.journey?.[i];return tile(jIcon[i],n,num(raw),raw>1500?'상한 1,500 적용':'')}).join('');
     const pots=learned.map(([id,lv],i)=>{const e=effects[i],st=growth.potentials?.[id]?.[lv];
       const txt=esc(e.text).replace(/강인도 \+(\d+)/g,(m)=>`${icon('tough','ic in')}${m}`);
-      return `<li>${icon('gem')}<div><b>${esc(publicData.potentials?.[id]?.name||`잠재력 #${id}`)} · Lv${lv}</b><p>${st?esc(values(st)):'능력치 미해석'}</p>${e.known?`<p class="mut">${e.active?'시뮬 전투 효과: ':''}${txt}</p>`:`<p class="mut">${txt}</p>`}</div></li>`}).join('');
-    const inner=b.sources.filter(s=>['favor','tactics','facility'].includes(s.id)).map(s=>line(`${s.id==='tactics'?esc(groups[s.group]||s.group)+(s.field==='level'?'':` · ${{attack:'공',defense:'방',hp:'생'}[s.field]}`):labels[s.id]} Lv${s.level}`,values(s.values))).join('');
-    return `<div class="ms-head">${savior?.art||''}<div class="ms-id"><div class="ms-name">${savior?.dia||''}<div><h2>${esc(savior?.name||`ID ${unit.id}`)}</h2><small>${esc(savior?.sub||'')}</small></div></div>
+      return `<li>${icon('gem')}<div><b>${esc(publicData.potentials?.[id]?.name||'잠재력 정보 없음')} · Lv${lv}</b><p>${st?esc(values(st)):'시뮬 미반영'}</p>${e.active?`<details><summary>시뮬 전투 효과</summary><p class="mut">${txt}</p></details>`:txt?`<p class="mut">${txt}</p>`:''}</div></li>`}).join('');
+    const inner=b.sources.filter(s=>['favor','tactics','facility'].includes(s.id)).map(s=>line(`${s.id==='tactics'?esc(groups[s.group]||'기타')+(s.field==='level'?'':` · ${{attack:'공',defense:'방',hp:'생'}[s.field]}`):labels[s.id]} Lv${s.level}`,values(s.values))).join('');
+    return `<div class="ms-head">${savior?.art||''}<div class="ms-id"><div class="ms-name">${savior?.dia||''}<div><h2>${esc(savior?.name||'미등록 구원자')}</h2><small>${esc(savior?.sub||'')}</small></div></div>
       <div class="ms-power">${icon('power')}<b>${num(result.power)}</b></div>
       <div class="ms-meta">${tile('ultimate','★',level(unit.star))}${tile('sigil','각인',level(unit.sigil))}${tile('reso','공명',level(unit.resonance))}${tile('hp','호감도',level(unit.favor))}</div>
-      <p class="ms-sim ${simulation?'on':''}">${simulation?'이 수치로 시뮬합니다':'참고값 · 현재 콘텐츠 시뮬에는 쓰지 않음'}</p>${savior?.key?`<button type="button" class="sec" data-skill-open="${esc(savior.key)}" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${icon('special')}스킬 설명 보기</button>`:''}</div></div>
+      <p class="ms-sim ${simulation?'on':''}">${simulation?'이 수치로 시뮬합니다':'시뮬 미반영'}</p>${savior?.key?`<button type="button" class="sec" data-skill-open="${esc(savior.key)}" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${icon('special')}스킬 설명 보기</button>`:''}</div></div>
       <div class="ms-grid">${block('atk','능력치',`<div class="ms-tiles">${stats}</div>`)}${block('special','스킬 레벨',`<div class="ms-skills">${skills}</div>`)}
       ${block('gear','장비',equipment(unit,growth,publicData),'wide')}
-      ${block('journey',`건틀렛 Lv${level(gauntlet.level)} · 여정`,`<div class="ms-tiles five">${journey}</div><ul class="ms-pots">${pots||'<li class="mut">습득 잠재력 없음</li>'}</ul><p class="mut">관문 이력: ${esc((gauntlet.blessings||[]).map(id=>`#${id}`).join(' · ')||'없음')}</p>`,'wide')}
+      ${block('journey',`건틀렛 Lv${level(gauntlet.level)} · 여정`,`<div class="ms-tiles five">${journey}</div><ul class="ms-pots">${pots||'<li class="mut">습득 잠재력 없음</li>'}</ul><p class="mut">관문 이력: ${(gauntlet.blessings?.length?'시뮬 미반영':'없음')}</p>`,'wide')}
       <details class="ms-block wide"><summary>${icon('tactics')}능력치 출처·내실</summary>${breakdown(result)}${inner||''}</details>
-      ${result.missing.length?`<details class="ms-block wide mi-diagnostics"><summary>미확인 정보 ${result.missing.length}</summary><p>${result.missing.map(esc).join(' · ')}</p></details>`:''}</div>`;
+      ${result.missing.length?`<details class="ms-block wide mi-diagnostics"><summary>미확인 정보 ${result.missing.length}</summary><p>일부 정보는 시뮬에 반영되지 않습니다.</p></details>`:''}</div>`;
   }
   function mount(getContext){
     const opened=new Set(),cache=new Map();let contextKey=null,publicData,combat,pending;

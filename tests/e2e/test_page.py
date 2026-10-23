@@ -160,7 +160,7 @@ def test_python_js_topk_parity(browser, ctx):
 
 
 def quick_rows(page, party=1):
-    return page.evaluate("""p => [...document.querySelectorAll('.party[data-party="'+p+'"] .qbox .qrow[data-key]')].map(r => [r.dataset.key, r.querySelector('.qv').className.split(' ')[1], r.innerText])""", party)
+    return page.evaluate("""p => [...document.querySelectorAll('.party[data-party="'+p+'"] .qbox .qrow[data-key]')].map(r => [r.dataset.key, r.querySelector('.qsim')?.dataset.sim || 'pending', r.innerText])""", party)
 
 
 def test_quick_default(browser, ctx):
@@ -223,7 +223,8 @@ def test_browser_sim(browser, ctx):
     dt = time.time() - t0
     n = len(quick_rows(page))
     nsim = page.locator('.party[data-party="1"] .qsim[data-sim]').count()
-    txt = page.inner_text('.party[data-party="1"] .qsim')
+    txt = page.inner_text('.party[data-party="1"] .mi-verdict')
+    stats_title = page.get_attribute('.party[data-party="1"] .mi-verdict', "title")
     state = page.inner_text('.party[data-party="1"] [data-k="simstate"]')
     page.screenshot(path=os.path.join(ctx.shots, "desktop_browser_sim.png"), full_page=False)
     last = page.evaluate("() => { const L = window.PN_SIMQ.lastReq; return {req: L.req, res: Object.fromEntries(Object.entries(L.sigs).map(([k, s]) => [k, window.PN_SIMQ.res[s]]))} }")
@@ -240,7 +241,7 @@ def test_browser_sim(browser, ctx):
         same.append(r["clear"] == b["clear"] and r["ttk"] == b["ttk"] and r["u"] == b["u"] and r['bs'] == b['bs'])
     # 내 정보 모드: 시뮬 입력은 표준 육성 가정이 아니라 내 정보 최종 능력치(build none + stats_final)
     spec_same = [all(u.get("build") == "none" and u.get("stats_final") for u in t["party"]["units"]) for t in last["req"]["teams"]]
-    ok = ("클리어" in txt and "95% 구간" in txt and "완료" in state and not errs and same and all(same) and nsim == n
+    ok = ("클리어" in txt and "95% 구간" in stats_title and "95% 구간" not in txt and "완료" in state and not errs and same and all(same) and nsim == n - 1
           and all(spec_same) and not ext)
     return ok, "%d팀(시뮬 줄 %d) %.0f초 / 파이썬 결과 같음 %s / 최종 능력치 입력 %s / %s / 바깥 요청 %s / 오류 %s" % (
         n, nsim, dt, same, spec_same, " ".join(txt.split())[:60], ext[:3], errs[:2])
@@ -271,13 +272,14 @@ def test_sim_auto_and_override(browser, ctx):
     choose(page, "작전 (일반)", "SECTOR 1-2")
     wait_sim_done(page)
     auto = page.locator('.party[data-party="1"] .qsim').count()
-    titles = page.evaluate("() => [...document.querySelectorAll('.party[data-party=\"1\"] .qrow[data-key] .qv[title]')].map(e => e.title)")
+    titles = page.evaluate("() => [...document.querySelectorAll('.party[data-party=\"1\"] .mi-verdict[title]')].map(e => e.title)")
     off = page.locator('button[data-simauto="0"]').count()
     if off:
+        page.click("#optbox > summary")
         page.click('button[data-simauto="0"]')
     flag = page.evaluate("() => localStorage.getItem('pn.simauto')")
     page.close()
-    ok = auto >= 1 and titles and all(t == "전투 시뮬 기준" for t in titles) and off == 1 and flag == "0"
+    ok = auto >= 1 and titles and all("95% 구간" in t for t in titles) and off == 1 and flag == "0"
     return ok, "자동 시뮬 %d팀, 배지 기준 %s, 끄기 버튼 %d, 끈 뒤 저장값 %s" % (auto, titles[:3], off, flag)
 
 
@@ -348,8 +350,8 @@ def test_cosmo_joint(browser, ctx):
     page.close()
     disjoint = bool(t1 and t2) and not (set(t1.split(",")) & set(t2.split(",")))
     after = bool(u1 and u2) and not (set(u1.split(",")) & set(u2.split(",")))
-    return disjoint and after and "함께" in note and r2 >= 1, "파티1 %s / 파티2 %s 겹침 없음 %s, 시뮬 뒤 %s / %s 겹침 없음 %s, 함께 표시 %s" % (
-        t1, t2, disjoint, u1, u2, after, "함께" in note)
+    return disjoint and after and "파티 1" in note and r2 >= 1, "파티1 %s / 파티2 %s 겹침 없음 %s, 시뮬 뒤 %s / %s 겹침 없음 %s, 파티 표시 %s" % (
+        t1, t2, disjoint, u1, u2, after, "파티 1" in note)
 
 
 def test_rekindle_ui(browser, ctx):
@@ -562,13 +564,12 @@ def test_boss_gimmick_mobile(browser, ctx):
     box = page.locator('.party[data-party="1"] .gimbox')
     lines = box.locator(".gimlist > .gimrow")
     n = lines.count()
-    txt = box.inner_text()
+    txt = box.text_content()
     severities = lines.evaluate_all("els => els.map(e => +e.dataset.severity)")
     all_n = box.locator(".gimrow").count()
-    more = box.locator("details")
-    folded = more.count() == 0 or not more.evaluate("e => e.open")
-    if more.count():
-        more.locator("summary").click()
+    folded = not box.evaluate("e => e.open")
+    assert box.locator(".gimrow:visible").count() == 0
+    box.locator("summary").click()
     expanded_n = box.locator(".gimrow:visible").count()
     audit = gimmick_slot_audit(page)
     layout = page.evaluate('''() => {
@@ -587,8 +588,8 @@ def test_boss_gimmick_mobile(browser, ctx):
                  and page.locator("#m-manual").is_checked() and "mode=manual" in page.url
                  and page.evaluate("() => MODE === 'manual' && LS.get('mode') === 'manual'"))
     page.close()
-    ok = (3 <= n <= 5 and "보스" in txt and "(추정)" in txt
-          and ("대응 미확인" in txt or "담당:" in txt)
+    ok = (n >= 3 and "보스" in txt and "(추정)" not in txt
+          and ("대응 미확인" not in txt and "담당:" in txt)
           and severities == sorted(severities, reverse=True) and folded and expanded_n == all_n
           and audit["checked"] > 0 and audit["compared"] > 0 and not audit["errors"] and manual_ok
           and layout["sw"] <= layout["iw"] and layout["cards"] == 4 and layout["same"] and layout["clear"]
@@ -621,6 +622,12 @@ def test_myinfo_required(browser, ctx):
       busy:SIMQ.busy, worker:SIMQ.w, grow:$('grow').value, pow:$('mypow').value, old:!!SHARE.oldGrow, chip:$('mi-chip').textContent,
       dbtn:!!document.querySelector('#dbtn'), own:document.querySelectorAll('#own input:checked').length})''')
     page.click('#out button[data-miopen="1"]')
+    assert page.locator('.mihow li').count() == 3
+    assert not page.locator('#mi-cmd').is_visible()
+    assert all(page.locator('#' + key).is_hidden() for key in ('share-link', 'mi-view', 'mi-clear'))
+    assert '완전히 종료 후 재실행' in page.inner_text('.mihow')
+    assert '사이트가 자동으로 열리며 반영' in page.inner_text('.mihow')
+    assert page.locator('#dclose').bounding_box()['height'] >= 39.9
     opened = page.evaluate('() => document.querySelector("#drawer").classList.contains("open") && document.activeElement === $("dclose")')
     page.click('#dclose')
     closed = not page.evaluate('() => document.querySelector("#drawer").classList.contains("open")')
@@ -651,6 +658,7 @@ def test_myinfo_import_clear(browser, ctx):
     page.wait_for_selector('#out .party .qbox .qrow[data-key]')
     choose(page, '작전 (일반)', 'SECTOR 1-3')
     assert page.input_value('#grow') == 'myinfo'
+    assert page.locator('#share-mi').is_checked()
     assert len([u for u in requests if '/data/growth.json' in u]) == 1
     keys = page.evaluate('() => MyInfoImport.mapOwned(MI.info, R).keys.sort()')
     own = page.evaluate("() => [...document.querySelectorAll('#own input:checked')].map(x => x.dataset.k).sort()")
@@ -660,7 +668,7 @@ def test_myinfo_import_clear(browser, ctx):
     assert page.locator('.party[data-party="1"] .mi-member-power').count() == 4
     assert page.locator('.party[data-party="1"] .mi-member-star').count() == 4
     assert '시뮬 전' in page.inner_text('.party[data-party="1"] .mi-verdict')      # 시뮬 전에는 판정을 보이지 않는다
-    assert page.locator('.party[data-party="1"] .qv.pending').count() >= 1
+    assert '시뮬 전' in page.locator('.alternatives').inner_text()
     audit = page.evaluate('''() => {const t=LASTQ[1].rows[0];
       return {sum:t.keys.reduce((n,k)=>n+miProfile().results[k].power,0),actual:t.q.power,
         units:simParty(t).units.every(u=>u.stats_final && u.build==='none'),
@@ -669,7 +677,7 @@ def test_myinfo_import_clear(browser, ctx):
     assert '빌드 다름' in page.inner_text('.party[data-party="1"] .qh')
     page.click('#tab-info')
     assert '보유 8명' in page.inner_text('#mi-meta') and '스타링크 Lv120' in page.inner_text('#mi-meta')
-    assert '전술 공통 Lv20' in page.inner_text('#mi-meta') and '2026-10-01' in page.inner_text('#mi-saved')
+    assert '전술 공통 Lv20' in page.inner_text('#mi-meta') and '저장됨 10-01 ' in page.inner_text('#mi-saved')
     assert page.locator('#mi-list .mi-pick').count() == 8
     assert page.locator('#mi-list .mi-pick input[data-use]:checked').count() == 8
     pw = page.locator('#mi-list .mi-pw').all_text_contents()
@@ -778,17 +786,17 @@ def test_myinfo_sim(browser, ctx):
     page = open_page(browser, ctx, info=SYNTH)
     choose(page, '작전 (일반)', 'SECTOR 1-3')
     assert page.evaluate('() => SIMQ.w === null && SIMQ.busy === null')
-    assert '오토 클리어' not in page.inner_text('.mi-verdict') and '수동 ' not in page.inner_text('.mi-verdict')
+    assert '클리어' not in page.inner_text('.mi-verdict') and '수동 ' not in page.inner_text('.mi-verdict')
     page.evaluate('() => {SIMQ.n=10;run()}')
     page.click('.party[data-party="1"] button[data-sim="1"]')
     wait_sim_done(page)
-    assert '오토 클리어' in page.inner_text('.mi-verdict') and '수동 ' not in page.inner_text('.mi-verdict')
+    assert '클리어' in page.inner_text('.mi-verdict') and '수동 ' not in page.inner_text('.mi-verdict')
     assert page.evaluate('() => SIMQ.lastReq.req.teams.every(t=>t.party.units.every(u=>u.build==="none"&&u.stats_final))')
     page.click('.manual-details > summary')
     page.locator('label:has(#m-manual)').click()
     page.wait_for_function('() => !document.querySelector("[data-k=progress]") && LASTQ[1].rows.every(t=>SIMQ.res[simSig(cur[$("stage").value],t)]?.man)', timeout=600000)
     settle(page)
-    assert '수동 ' in page.inner_text('.mi-verdict')
+    assert page.evaluate('''() => {const t=LASTQ[1].rows.find(t=>ckey(t.combo)===document.querySelector('.party').dataset.team),r=SIMQ.res[simSig(cur[$('stage').value],t)];return document.querySelector('.mi-verdict').textContent.includes('클리어 '+Math.round(r.man.c*100)+'%')}''')
     assert not ctx.errors, ctx.errors
     page.close()
     return True, '버튼 실행·최종 스탯 요청·오토/수동 확률'
@@ -908,8 +916,8 @@ def test_press_to_compute(browser, ctx):
     # 진행 중에 결과(.qbox)가 한 번이라도 보이면 기록한다
     page.evaluate('''() => {window.__seen={bad:0,pre:0,main:0,progress:0,mislabel:0};
       new MutationObserver(()=>{const o=document.getElementById('out'),pg=o.querySelector('[data-k="progress"]');
-        if(pg){__seen.progress++;const tx=pg.textContent;if(SIMQ.screening&&/1차: 후보|2차: 후보/.test(tx))__seen.pre++;
-          if(SIMQ.screening&&/2단계 본선/.test(tx))__seen.mislabel++;if(!SIMQ.screening&&/2단계 본선/.test(tx))__seen.main++}
+        if(pg){__seen.progress++;const tx=pg.textContent;if(SIMQ.screening&&/후보 거르는 중/.test(tx))__seen.pre++;
+          if(SIMQ.screening&&/상위 팀 확인 중/.test(tx))__seen.mislabel++;if(!SIMQ.screening&&/상위 팀 확인 중/.test(tx))__seen.main++}
         if(o.querySelector('.party[data-party] .qbox')&&simWaiting(cur[$('stage').value]))__seen.bad++}).observe(document.getElementById('out'),{childList:true,subtree:true,characterData:true})}''')
     t0 = time.time()
     page.click('button[data-go]')
@@ -927,6 +935,7 @@ def test_press_to_compute(browser, ctx):
     page.select_option('#stage', index=1)
     page.wait_for_selector('[data-k="idle"]')               # 조건을 바꾸면 결과를 비우고 안내로 돌아간다
     idle_rows = page.locator('.qrow[data-key]').count()
+    assert page.locator('#gmode').count() == 1  # 결과→대기 전환에도 자세히의 그래프 설정 보존
     errs = list(ctx.errors)
     page.close()
     ok = (first == {'qbox': 0, 'drawer': False} and seen['bad'] == 0 and seen['pre'] > 0 and seen['main'] > 0
@@ -1071,7 +1080,8 @@ def test_graph_evidence(browser, ctx):
     ctx.errors.clear()
     page = open_page(browser, ctx)
     # 근거 보기(show-why) 켜기
-    page.evaluate("() => setWhy(true)")
+    page.click('.party[data-party="1"] .score-details > summary')
+    page.check('#showwhy')
     settle(page)
     # cytoscape가 로드·그려질 때까지 대기(cy 전역이 null이 아님)
     page.wait_for_function("() => typeof cy !== 'undefined' && cy && typeof cy.edges === 'function'", timeout=30000)   # let 전역(window 속성 아님 — cy 는 id=cy 요소)

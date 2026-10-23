@@ -15,9 +15,11 @@ u.gauntlet.blessings=[987654];
 const r=Stats.final_stats(u,info,growth,'normal',true);
 const html=View.render(u,info,growth,r,publicData,combat,true);
 assert(html.includes('상한 적용'));
-assert(html.includes('잠재력 #999999'));
+assert(html.includes('잠재력 정보 없음'));
+assert.doesNotMatch(html.replace(/&#\d+;/g,''), /#[0-9]+|R1|R2|미해석|추가 전투 효과 없음/);
 assert(html.includes('관문 이력'));
-assert(html.includes('#987654'));
+assert(html.includes('시뮬 미반영'));
+assert(!html.includes('#987654'));
 assert(!html.includes('공격의 감각')); // unlearned potential
 assert(html.includes('묶음 비율 효과'));
 assert(html.includes('12.34%')===false);

@@ -27,7 +27,7 @@ const info={format:'ss-myinfo-v1',game_build:'x',exported_at:'2026-10-22T00:00:0
         {id:1055,star:3,sigil:0,resonance:10,skills:{basic:7,special:10,ultimate:8,passive:4},favor:50,equip:[{}]},
         {id:999999,star:1,sigil:0,resonance:0,skills:{basic:1,special:1,ultimate:1,passive:1},favor:1,equip:[]}]};
 assert.equal(M.validate(info),'');
-assert.ok(M.validate({format:'other',units:[{id:1}]}).includes('지원하지 않는'));
+assert.ok(M.validate({format:'other',units:[{id:1}]}).includes('내정보.json'));
 assert.ok(M.validate({format:'ss-myinfo-v1',units:[]}).includes('비어'));
 assert.ok(M.validate(null));
 const r=M.mapOwned(info,roster);

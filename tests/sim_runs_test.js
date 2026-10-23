@@ -9,7 +9,7 @@ const ctx=vm.createContext({console,Set,MODE:'auto',MI:{pending:null},miMode:()=
  document:{querySelector:()=>null},location:{href:'https://test/index.html'},setTimeout:()=>1,clearTimeout(){},run(){},simStop(){},
  Worker:class{constructor(){workers.push(this)}postMessage(req){this.req=req}terminate(){this.stopped=true}}});
 vm.runInContext(section('const simSigB=','// 표시 상태는'),ctx);
-vm.runInContext(section('function simCell(','function simBar('),ctx);
+vm.runInContext(section('function simTitle(','function simBar('),ctx);
 vm.runInContext(section('function simStart(','document.querySelectorAll(\'input[name="runs"]\')'),ctx);
 const ev=s=>vm.runInContext(s,ctx);ctx.t=t;ctx.st=st;
 const sig100=ev('simSig(st,t)');ctx.SIMQ.n=300;const sig300=ev('simSig(st,t)');
