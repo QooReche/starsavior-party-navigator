@@ -50,6 +50,7 @@ details summary{cursor:pointer;color:var(--acc)}
 .ms-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.ms-block{min-width:0;padding:12px;border:1px solid #2c3140;border-radius:12px;background:#12151c}.ms-block.wide{grid-column:1/-1}
 .ms-block h3,.ms-block>summary{display:flex;align-items:center;gap:6px;margin:0 0 10px;font-size:14px;color:#f0d9a8;cursor:pointer}
 .ms-skills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.ms-skill{display:flex;align-items:center;gap:6px;padding:9px;border-radius:9px;background:#151922;border:1px solid #2c3140}.ms-skill b{margin-left:auto;color:var(--gold)}
+.sk-ic{position:relative;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;flex:none}.sk-ic>img{position:absolute;inset:0;width:100%;height:100%;border-radius:6px;opacity:0}.sk-ic.ok>img{opacity:1}.sk-ic.ok>.ic{visibility:hidden}.skill-badge .sk-ic{width:22px;height:22px;margin:-2px 4px -2px -5px;vertical-align:middle}.skill-badge .sk-ic>.ic{margin:0}
 .ms-skill.ultimate .ic{color:#ff8a5c}.ms-skill.special .ic{color:#7fb8ff}.ms-skill.passive .ic{color:#b9a3ff}
 .ms-pots{list-style:none;padding:0;margin:10px 0 0}.ms-pots li{display:flex;gap:8px;padding:8px 0;border-top:1px solid #2c3140}.ms-pots li>.ic{margin-top:2px;color:#7fd3c0}.ms-pots p{margin:3px 0;font-size:12px}
 .skill-badge .ic{width:13px;height:13px;margin-right:3px;color:currentColor}
@@ -374,6 +375,7 @@ button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
 <script src="skill_view.js"></script>
 <script>
 const D=/*DATA*/null;
+UiShared.setSkillIcons?.(D.skillIcons);
 const EL={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
 const BG={"특이점 관측":"✦","스타피어서":"➶","큐브 과부하":"▣","행성 정화":"◍","차원 강습":"⟁"};
 const $=id=>document.getElementById(id);

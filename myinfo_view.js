@@ -7,7 +7,7 @@
   const groups={TG_COMMON:'공통',TG_SAVIOR:'구원자',TG_ARCANA:'아르카나',TG_SUN:'태양',TG_MOON:'달',TG_STAR:'별',TG_ORDER:'질서',TG_CHAOS:'혼돈',TG_DEFENDER:'디펜더',TG_STRIKER:'스트라이커',TG_RANGER:'레인저',TG_CASTER:'캐스터',TG_ASSASSIN:'어쌔신',TG_SUPPORTER:'서포터'};
   const labels={base:'기본',level:'레벨·스타링크',equipment_main:'장비 주옵',equipment_sub:'장비 부옵',equipment_set:'장비 세트',favor:'호감도',tactics:'전술 분석',facility:'시설',journey:'여정',potential:'잠재력',resonance:'공명',sigil:'각인',passive:'고유 패시브',bundle:'묶음 비율 효과',rounding:'버림·하한 보정'};
   const order=Object.keys(labels),keys=Object.keys(names).slice(0,8);
-  const {esc,icon} = typeof module !== 'undefined' && module.exports ? require('./ui_shared.js') : globalThis.UiShared;
+  const {esc,icon,skillIcon} = typeof module !== 'undefined' && module.exports ? require('./ui_shared.js') : globalThis.UiShared;
   const num=v=>Number.isFinite(v)?v.toLocaleString('ko-KR',{maximumFractionDigits:8}):'—';
   const rate=k=>['cr','cd','eh','er'].includes(k)||k.endsWith('P');
   const value=(k,v)=>Number.isFinite(v)?num(rate(k)?v/100:v)+(rate(k)?'%':''):'—';
@@ -79,7 +79,7 @@
     const b=result.breakdown,gauntlet=unit.gauntlet||{},learned=result.combat.potentials,sk=result.combat.skills||{};
     const effects=learned.map(([id,lv])=>combatEffects(id,lv,publicData,combat));
     const stats=keys.map(k=>tile(k,short[k],value(k,result.stats[k]))).join('');
-    const skills=[['basic','기본기'],['special','특수기'],['ultimate','궁극기'],['passive','패시브']].map(([k,n])=>`<div class="ms-skill ${k}">${icon(k)}<span>${n}</span><b>Lv${level(sk[k])}</b></div>`).join('');
+    const skills=[['basic','기본기'],['special','특수기'],['ultimate','궁극기'],['passive','패시브']].map(([k,n])=>`<div class="ms-skill ${k}">${skillIcon(unit.id,k)}<span>${n}</span><b>Lv${level(sk[k])}</b></div>`).join('');
     const jIcon=['atk','hp','endure','focus','def'];
     const journey=['공격','생명','인내','집중','보호'].map((n,i)=>{const raw=gauntlet.journey?.[i];return tile(jIcon[i],n,num(raw),raw>1500?'상한 1,500 적용':'')}).join('');
     const pots=learned.map(([id,lv],i)=>{const e=effects[i],st=growth.potentials?.[id]?.[lv];

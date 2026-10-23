@@ -21,6 +21,16 @@
     sigil:'<path d="M5 22h14M19.27 13.73A2.5 2.5 0 0 0 17.5 13h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-1.5c0-.66-.26-1.3-.73-1.77ZM14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13"/>',
     tactics:'<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>',journey:'<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>'};
   const icon=(k,cls='ic')=>ICON[k]?`<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`:'';
-  const api={NST,esc,ICON,icon};
+  // 스킬별 게임 아이콘(data/skill_icons.json: uid -> [기본기,특수기,궁극기,패시브] 파일명). 없거나 로드 실패면 기존 일반 아이콘 유지.
+  const SLOT_IDX={basic:0,special:1,ultimate:2,passive:3};
+  let skillIcons={};
+  const setSkillIcons=m=>{skillIcons=m||{}};
+  const skillIcon=(uid,slot,cls='ic')=>{
+    const name=skillIcons[String(uid)]?.[SLOT_IDX[slot]];
+    const base=icon(slot,cls);
+    if(!name||!/^[A-Za-z0-9_]+$/.test(name))return base;
+    return `<span class="sk-ic">${base}<img src="assets/skill_icons/${name}.png" alt="" width="128" height="128" loading="lazy" decoding="async" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"></span>`;
+  };
+  const api={NST,esc,ICON,icon,setSkillIcons,skillIcon};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.UiShared=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

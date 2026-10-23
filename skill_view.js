@@ -39,10 +39,10 @@
       return `<span class="skill-term-wrap"><button type="button" class="skill-term" aria-expanded="false" title="${esc(explanation)}">${esc(part)}</button><span class="skill-tip" hidden>${esc(explanation)}</span></span>`;
     }).join('');
   }
-  function skillCard(raw,skills,variants=[]){
+  function skillCard(raw,skills,variants=[],uid=null){
     const s=select(raw,skills);
     return `<section class="${s.sl.startsWith('변형 ')?'skill-variant':'skill-card'}" data-slot="${s.slot}" data-level="${s.level}">
-      <div class="skill-heading"><span class="skill-badge ${s.slot}">${(globalThis.UiShared&&globalThis.UiShared.icon)?globalThis.UiShared.icon(s.slot):''}${esc(s.sl)}</span><span class="skill-level">${s.own?'내 레벨':'최대 레벨'} ${s.level} / ${s.mx}</span></div>
+      <div class="skill-heading"><span class="skill-badge ${s.slot}">${(globalThis.UiShared&&globalThis.UiShared.icon)?(uid!=null&&globalThis.UiShared.skillIcon?globalThis.UiShared.skillIcon(uid,s.slot):globalThis.UiShared.icon(s.slot)):''}${esc(s.sl)}</span><span class="skill-level">${s.own?'내 레벨':'최대 레벨'} ${s.level} / ${s.mx}</span></div>
       <h3>${esc(s.n)}</h3><div class="skill-meta">${esc([s.tg,s.ty].filter(Boolean).join(' · '))}${s.cooldown==null?'':` · 쿨 ${s.cooldown}턴`}${s.level===0?' · 미습득':''}</div>
       <p class="skill-description">${terms(s.description,s.gl)}</p>
       ${s.next?`<p class="skill-next">다음 강화: Lv${s.next[0]} ${terms(s.next[1],s.gl)}</p>`:''}
@@ -50,10 +50,10 @@
       ${variants.length?`<details class="skill-variants"><summary>변형 스킬</summary>${variants.map(v=>skillCard(v,skills)).join('')}</details>`:''}
     </section>`;
   }
-  function render(rows,skills){
+  function render(rows,skills,uid=null){
     if(!rows?.length)return '<p class="mut">공개 스킬 정보 없음</p>';
     const variants=rows.filter(s=>s.sl.startsWith('변형 '));
-    return `<div class="skill-grid">${rows.filter(s=>!s.sl.startsWith('변형 ')).map(s=>skillCard(s,skills,variants.filter(v=>normalize(v).slot===normalize(s).slot))).join('')}</div>`;
+    return `<div class="skill-grid">${rows.filter(s=>!s.sl.startsWith('변형 ')).map(s=>skillCard(s,skills,variants.filter(v=>normalize(v).slot===normalize(s).slot),uid)).join('')}</div>`;
   }
   function mount({url,getUnit,getSavior}){
     const opened=new Set(),rendered=new WeakMap(),dialog=document.getElementById('skills-dialog'),body=document.getElementById('skills-body');
@@ -73,7 +73,7 @@
       try{
         const all=await load();
         if(target.isConnected&&target.dataset.uid===String(uid)){
-          target.innerHTML=render(all[uid],getUnit(uid)?.skills);
+          target.innerHTML=render(all[uid],getUnit(uid)?.skills,uid);
           rendered.set(target,JSON.stringify([String(uid),getUnit(uid)?.skills]));
         }
       }catch(e){
