@@ -161,5 +161,56 @@
 - 남은 근사: 레벨업 추가 행(힐데·웨딩 에핀델 궁극기) — 기본 묶음(01)만 처리, 레벨별 SE 집합 계산은 다음 작업. 줄 수 불일치 3스킬(ceres 고유 패시브·harley 특수기·sunshine-cat-smile 고유 패시브) — 데이터북과 SE 행 수가 달라 짝짓기 실패, 원인 미확인. professor-m 고유 패시브의 IsNotUnableToAct 필터도 미지원(해독 코드 확인 필요).
 - 시험: `tests/sel_targeting_test.py`(10건). 옛 동작 = `enforce=off`, `foe_auto=off`, `ally_auto_lines=off`.
 
+## 추가: 효과 미지원 잔여 해소 (2026-10-24, 규칙 4개)
+
+전수 스캔(3,690 스테이지 support_report)에서 `effect:`·`trigger:` 보고를 전부 없앰. 남은 것은 `selector:` 18건(자동 지정 대상 규칙, 올베로스 초즌 등 — 효과가 아니라 대상 선택 문제).
+
+### 항목별
+
+1. **오르트로스 코스모 1~3단계** (3곳)
+   - 「효과 지속 턴 +1」: 파서가 `효과 지속 턴` 을 해제/교체/무작위로 잡던 것을 `kind='extend'` 로 파싱(parser.py:163~166). 엔진 `_exec_line` 의 기존 extend 핸들러(mc.py:2678)가 처리. 규칙 `mc.effect_dur_extend`(on, 옛 off).
+   - 「타 대상 능력치 보정」: `적 전체에게 능력치 보정 피해 증가 +30% {이번 스킬에만 적용}` — 파서가 `{이번 스킬에만 적용}` 플래그가 있을 때만 `kind='local'`(target 필드 포함), 없으면 종전 ignored(parser.py:109~116). 엔진은 ctx.src 가 owner 이면 자신과 같은 local 경로를 탐.
+   - 근거: 데이터북 오르트로스 패시브 ef(parser:163), mc.py:2678(extend 핸들러)
+
+2. **티리아 코스모 3단계** (1곳, 런타임)
+   - 「행동 게이지가 0%보다 높으면 0%로 낮춤 {효과 적중 판정}」: 시계태엽 인형(소환) 스킬. 파서에 `kind='gauge_set_if'` 추가(parser.py:167~171). 엔진에 게이지 조건부 설정 핸들러 추가(mc.py, gauge_set_if). 규칙 `mc.gauge_conditional`(on, 옛 off).
+   - 근거: 데이터북 시계태엽 인형 ef
+
+3. **올베로스 코스모 1~3단계** (3곳)
+   - 「trigger: 등장 후」: 하수인 `[등장 후] 자신에게 능력치 보정 속도% -1000% {해제 불가}`. 파서 `trig_kind` 에 `'등장 후'` → `'battle_start'` 추가(parser.py:184). 소환 시 battle_start 줄이 실행됨. `{해제 불가}` 능력치 보정은 영구 버프로 변환(parser.py:104~107 — 해제 불가이고 이번 스킬 아니면 buff).
+   - 「영웅의 혼(해제불가)」 의미 미해석: 하수인이 올베로스에게 부여하는 표지. 올베로스 패시브가 `[자신이 보유: 영웅의 혼(해제불가); 중첩수: 4]` 로 조건 확인해 〈혼의 균열〉을 건다. 마커 수집을 전투의 모든 유닛에서 교차 수집하도록 변경(mc.py:support_report — per-def → all-def 마커 합집합). 하수인이 주고 올베로스가 확인하는 교차 참조도 잡힘.
+   - 근거: 데이터북 올베로스의 하수인 ef, NKM.decompiled.cs 5174~5212(소환), parser.py:184(등장 후)
+
+4. **잊혀진 맹세 장비 탐색 20곳**
+   - 「이번 스킬 한정 보정 미지원 vs 달 속성 피해 증가」: `LOCAL_OK` 에 없던 stat. `_meaning_gap` 에서 `_m_vs` 정규식으로 인식(mc.py:3251~3253), `_exec_line` local 분기에서 대상 속성이 맞을 때 `ctx.local_by[target]['inc']` 에 반영(mc.py:2757~2762). 규칙 `mc.local_vs_element`(on, 옛 off).
+   - 근거: 데이터북 페르세스 패시브 ef, parser.py `_map_prop` 360~361(vs 속성 → inc_vs)
+
+5. **작전 어려움 35-10 맹약결속(해제불가)** (5곳)
+   - 「의미 미해석 효과(속성 없음)」: foe_react 조건에서 맹약결속 중첩수를 확인하는데 마커 수집이 foe_react 조건을 포함하지 않았음. 마커 수집에 `d.react` 조건을 리스트 형식으로 스캔 추가(`self_stack_eq`·`self_has`·`target_has` 등에서 버프 이름 추출, mc.py:support_report 3335~3344).
+   - 근거: data/foe_react.json(맹약 회수 조건: `["self_stack_eq", "맹약결속(해제불가)", 3]`)
+
+6. **큐브 펌웨어 4곳**
+   - 「effect: 미해석」: `자신에게 75% 확률로 능력치 보정 피해 증가 +30% {이번 스킬에만 적용}` — 파서 self-target 정규식에 `(?:(\d+)% 확률로 )?` 추가(parser.py:100). 확률은 기대값으로 곱함(val × chance). `kind='local'` 유지.
+   - 근거: 데이터북 복제체 리디아 ef
+
+7. **선제 방어 확률(세레스 〈고립〉·힐데 고유 패시브)**
+   - 「속성 미지원 선제 방어 확률 〈고립〉」: `_map_prop` 에 `선제 방어 확률` → `('preempt', None)` 추가(parser.py:388). `_prop_known` 이 인식. `_perm_apply` 에도 추가(parser.py:295~296). 힐데 고유 패시브가 다중 상시 능력치(「생명력% +15%, 선제 방어 확률 +30%」)라 파서 perm 파싱을 쉼표 분리로 변경(parser.py:219~231, `perm_multi` 타입).
+   - 선제 방어 메카닉: 규칙 `mc.preemptive_defense`(on, 옛 off). 적 단일 공격 전 아군 중 선제 방어 확률이 있으면 `max(0, 방어자 확률 - 공격자 reduce)` 확률로 대상 전환(mc.py `_preemptive_check`). 필중이면 무시, 브레이크 상태이면 방어 불가. 공격자의 reduce 는 고립 등 약화 효과의 선제 방어 확률 감소분(`-attacker.mods()['preempt']`). 힐데 +30% 기준, 고립(-50%) 적에게는 방어 불가(30-50=0).
+   - 근거: NKM.decompiled.cs PreemptiveDefenseController.cs:6~65(rate - reduce, roll 1~10000), NKM.Templets NST_RATE_PREEMPTIVE_DEFEND(라인 357)·_REDUCE(라인 358)
+
+### 규칙 스위치
+| 규칙 | 기본값 | 옛 동작 | 근거 |
+|---|---|---|---|
+| `mc.effect_dur_extend` | on | off | 오르트로스 효과 지속 턴 +1 |
+| `mc.gauge_conditional` | on | off | 티리아 시계태엽 인형 게이지 조건 설정 |
+| `mc.local_vs_element` | on | off | 잊혀진 맹세 페르세스 vs 달 속성 |
+| `mc.preemptive_defense` | on | off | 힐데·고립·침묵의 방패 선제 방어 |
+
+### 전수 스캔 결과
+스캔 3,690 스테이지 support_report: `effect:` 0·`trigger:` 0·`selector:` 18(자동 지정 대상 규칙). 런타임(api.simulate n_runs 2, 표본 5곳): 오르트로스·티리아·35-10·잊혀진 맹세·펌웨어 모두 클린.
+
+### 시험
+`tests/eff_remaining_test.py`(16건): 파서 12 + 마커 2 + 엔진 2. 깨뜨리기(intentional break) 확인 후 원복함.
+
 ## 재현
 `python -X utf8 -I AI\temp\partynavigator\scripts\audit_all.py <src> <내정보.json> out.json` → `audit_report.py <src> out.json`. 스크립트는 일회성(temp)이라 저장소에는 없음. 회귀 시험은 `tests/enemy_cond_test.py`.

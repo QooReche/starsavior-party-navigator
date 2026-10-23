@@ -155,6 +155,7 @@ RX_RECAST = re.compile(r'발동 후 (\d+)턴 재발동 불가')
 RX_TOUGH_HEAL = re.compile(r'^(.+?)에게 강인도 (\d+) 회복')          # P5: 「자신에게 강인도 N 회복」(적 42줄)
 RX_HEAL_P = re.compile(r'^(.+?)에게 (\d+)% 확률로 회복 = (자신|대상) (최대 생명력|생명력|공격력|방어력)×([\d.]+)%')   # 잠재력 BX 「25% 확률로 회복」
 RX_NOVA = re.compile(r'^(.+?)에게 노바 포스 ([+-]\d+)(?:\s|$)')
+_m_vs = re.compile(r'^vs .+ 속성 피해 증가$')   # 이번 스킬 한정 vs 속성 피해 증가 (잊혀진 맹세 페르세스 등)
 SPECIAL_RX = (RX_SHIELD, RX_HEAL, RX_REVIVE, RX_DISPEL, RX_DISPEL_N, RX_RANDOM, RX_RECV_HEAL, RX_GAUGE_P, RX_EXTRA_P, RX_TOUGH_HEAL,
               RX_HEAL_P, RX_GAUGE_SET, RX_CHAIN_T, RX_CD_UP, RX_LOCAL_PER, RX_NOVA)
 # P5 「피해 제한」: 효과마다 설명문에 적힌 동작을 그대로(일반화하지 않는다 — codex 설계 상담). 여기 없는 「피해 제한」 효과는 미지원(적이면 중요 미지원).
@@ -422,7 +423,7 @@ class Unit:
             return self._m
         m = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0, er=0.0,
                  der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, inc_single=0.0, inc_aoe=0.0, evade=0.0, acc=0.0,
-                 tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, barrier_give=0.0, inc_vs={}, inc_slot={}, red={})
+                 tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, barrier_give=0.0, preempt=0.0, inc_vs={}, inc_slot={}, red={})
         blocked = '강화 불가' in self.eff and self.eff['강화 불가'].stacks > 0   # 〈강화 불가〉: 모든 강화 효과가 적용되지 않음(gloss)
         for e in self.eff.values():
             if e.stacks <= 0 or (blocked and e.category == 'buff'):
@@ -1324,6 +1325,38 @@ class Battle:
                 return v
         return cands[-1][0]
 
+    def _preemptive_check(self, attacker, targets, ctx):
+        """선제 방어(NKM 8040~8071): 아군 중 선제 방어 확률이 있으면 대상을 가로챈다.
+        필중이면 무시, 은신이면 무시, 브레이크 상태이면 방어 불가."""
+        if not targets:
+            return targets
+        orig = targets[0]
+        if attacker.on('필중') or attacker.on('은신'):   # 필중·은신은 선제 방어 무시(docs/formulas_web.md 4.3)
+            return targets
+        # attacker 의 reduce (NST_RATE_PREEMPTIVE_DEFEND_REDUCE): 고립 등 공격자 선제 방어 확률 -N% = reduce N%
+        reduce_pct = -attacker.mods().get('preempt', 0.0) * 100.0
+        defenders = []
+        for v in self.alive(orig.side):
+            if v is orig or v.dead:
+                continue
+            if getattr(v, 'broken', False):     # 브레이크 상태는 방어 불가
+                continue
+            if self.incapacitated(v):
+                continue
+            m = v.mods()
+            rate = (v.d.passive.get('preempt', 0.0) + m['preempt']) * 100.0   # 상시 + 버프 합산, 1/100 단위
+            rate -= reduce_pct
+            if rate <= 0:
+                continue
+            defenders.append((v, rate))
+        if not defenders:
+            return targets
+        # 게임은 후보를 순서대로 굴림(첫 성공 시 멈춤). 엔진은 같은 방식.
+        for v, rate in defenders:
+            if self.R(orig.side).random() * 100.0 < rate:
+                return [v]
+        return targets
+
     def skill_targets(self, u, sk, target=None):
         """시전 대상 목록. 공격 = 적(단일은 고른 1명, 전체는 전원) / 비공격 = 아군 쪽 tg 기준."""
         if sk.is_attack:
@@ -1515,6 +1548,10 @@ class Battle:
                 ctx.nb = True
                 self.nova_bursts[u.pos, sk.slot] += 1
             ctx.targets = self.skill_targets(u, sk, target)
+            # 선제 방어: 적 단일 공격 전, 아군 중 선제 방어 확률이 있으면 대상 전환(NKM 8040~8071 PreemptiveDefenseController)
+            if (self.mc.get('preemptive_defense') == 'on' and u.side == 1 and sk.is_attack and not sk.all
+                    and len(ctx.targets) == 1 and not ctx.targets[0].dead):
+                ctx.targets = self._preemptive_check(u, ctx.targets, ctx)
             ctx.target = ctx.targets[0] if ctx.targets else None
             ctx.dead_targets = {x for x in ctx.targets if x.dead}
             if self.timeline is not None:
@@ -2768,6 +2805,11 @@ class Battle:
                         ctx.local_by[x]['inc'] += min(n, eff['cap']) * eff['val'] / 100
             return
         if kd == 'extend':
+            # 설명문으로 효과 이름을 정하는 연장(mc_semantics, 크리스텔 등)은 원래부터 실행됨.
+            # mc.effect_dur_extend 는 파서가 새로 해석한 줄(src='parser', 오르트로스 「적(자동 지정)에게 효과 지속 턴 +1」)만 켜고 끈다.
+            if eff.get('src') == 'parser' and self.mc.get('effect_dur_extend') == 'off':
+                self.run_special(owner, ln, ctx, line_rest(ln))   # 옛 동작 = 미해석 줄로 처리(옛 결과 그대로 재현)
+                return
             for x in self.resolve(owner, eff['target'], ctx) or []:
                 if eff['judge'] and not self.roll_hit(owner, ctx, x, None):
                     continue
@@ -2819,7 +2861,15 @@ class Battle:
                 else:
                     self.unsup['local(피격 직전): ' + st] += 1
                 return
-            if ctx.src is not owner or ctx.skill is None:
+            if ctx.skill is None:
+                if getattr(owner.d, 'is_foe', False):
+                    # 등장 후·웨이브 시작 시 능력치 보정(올베로스의 하수인 속도% -1000% 등): 적 전용, 영구 패시브로 적용
+                    from .starsavior.parser import _perm_apply
+                    _perm_apply(owner.d.stats, owner.d.passive, dict(kind='perm', stat=st, val=eff['val']))
+                    owner.d.spd_base = owner.d.stats['spd']
+                    self.dirty(owner)
+                return
+            if ctx.src is not owner:
                 return
             if st == '피해 증가':
                 ctx.inc += v
@@ -2846,6 +2896,16 @@ class Battle:
             elif st == '대상 약화효과 1개당 피해 증가':    # 대상마다 그 대상의 약화 개수(P5)
                 for x in ctx.targets:
                     ctx.local_by[x]['inc'] += v * x.n_harmful()
+            elif _m_vs and _m_vs.match(st):          # 「vs X 속성 피해 증가」 이번 스킬 한정(잊혀진 맹세 페르세스 등)
+                if self.mc.get('local_vs_element') == 'off':
+                    self.unsup['local_vs_element off: ' + st] += 1
+                else:
+                    elem = st[3:].replace(' 속성 피해 증가', '')
+                    for x in ctx.targets:
+                        if getattr(x, 'element', None) == elem:
+                            ctx.local_by[x]['inc'] += v
+            else:
+                self.unsup['local: ' + st] += 1
             return
         if kd == 'gauge':
             tg = self.resolve(owner, eff['target'], ctx)
@@ -2857,6 +2917,20 @@ class Battle:
                 if x.side != owner.side and eff.get('judge') and not self.roll_hit(owner, ctx, x, None):
                     continue
                 self.set_gauge(x, x.gauge + eff['val'] * 100.0)
+            return
+        if kd == 'gauge_set_if':
+            # 「행동 게이지가 N%보다 높으면 M%로 낮춤」(티리아 시계태엽 인형): 조건부 게이지 설정
+            if self.mc.get('gauge_conditional') == 'off':
+                self.unsup['gauge_conditional off'] += 1
+                return
+            tg = self.resolve(owner, eff['target'], ctx)
+            if not tg:
+                return
+            for x in tg:
+                if x.side != owner.side and eff.get('judge') and not self.roll_hit(owner, ctx, x, None):
+                    continue
+                if x.gauge > eff['threshold'] * 100.0:
+                    self.set_gauge(x, eff['val'] * 100.0)
             return
         if kd == 'cdr':
             # 내 시전 문맥 = 그 스킬 칸. 피격 반응 등 남의 시전 문맥이면 공격자의 칸이 아니라 줄 주인 쪽 칸:
@@ -2873,19 +2947,27 @@ class Battle:
                 owner.cd[sl] = max(0.0, owner.cd[sl] - eff['val'])
             return
         if kd == 'extra_cast':
-            sk = owner.d.skills.get(eff['slot']) or owner.d.trigger_skills.get(eff['slot'])
+            # target 필드가 '자신' 이 아니면(올베로스 「아군 1명(자동 지정)에게 기본기 추가 발동」) 대상 유닛이 시전한다.
+            actor = owner
+            if eff.get('target') and eff['target'] != '자신':
+                tg = self.resolve(owner, eff['target'], ctx)
+                if tg:
+                    actor = tg[0]
+                else:
+                    return
+            sk = actor.d.skills.get(eff['slot']) or actor.d.trigger_skills.get(eff['slot'])
             if sk is not None:
-                tgt = owner.last_target if (owner.last_target is not None and not owner.last_target.dead) else None
-                rule = trigger_rule(sk, self.lines_of(owner))
+                tgt = actor.last_target if (actor.last_target is not None and not actor.last_target.dead) else None
+                rule = trigger_rule(sk, self.lines_of(actor))
                 if rule and rule.get('mark'):
-                    tgt = next((v for v in self.alive(1 - owner.side) if v.has(rule['mark'])), tgt)
+                    tgt = next((v for v in self.alive(1 - actor.side) if v.has(rule['mark'])), tgt)
                 for _ in range(eff['times']):
                     if eff.get('random_enemy'):
-                        pool = self.alive(1 - owner.side)
+                        pool = self.alive(1 - actor.side)
                         if not pool:
                             break
-                        tgt = self.R(owner.side).choice(pool)
-                    self.cast(owner, sk, extra=True, target=tgt, parent=ctx)
+                        tgt = self.R(actor.side).choice(pool)
+                    self.cast(actor, sk, extra=True, target=tgt, parent=ctx)
             return
         if kd == 'extra_turn':
             owner.extra_turn = True
@@ -3328,7 +3410,7 @@ def _prop_known(k):
     """Unit.mods() 가 이 속성 이름을 어떤 값으로든 반영하는가"""
     probe = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0,
                  er=0.0, der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, inc_single=0.0, inc_aoe=0.0,
-                 evade=0.0, acc=0.0, tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, inc_vs={}, inc_slot={}, red={})
+                 evade=0.0, acc=0.0, tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, preempt=0.0, inc_vs={}, inc_slot={}, red={})
     before = repr(probe)
     _add_prop(probe, k, 1.0, 1)
     return repr(probe) != before
@@ -3338,8 +3420,14 @@ def _meaning_gap(ln, k, markers):
     """줄이 파싱은 됐지만 엔진이 그 의미(속성·이름)를 실행하지 못하는 경우의 사유. 없으면 None."""
     e = ln.eff
     if e['kind'] == 'local':
+        if k in ('battle_start', 'wave_start'):
+            return None                     # 등장 후·웨이브 시작 시 능력치 보정은 _perm_apply 로 처리
         ok = LOCAL_PREHIT_OK if k in ('prehit_self', 'prehit_ally') else LOCAL_OK
-        return None if e['stat'] in ok else 'effect: 이번 스킬 한정 보정 미지원 「%s」' % e['stat']
+        if e['stat'] in ok:
+            return None
+        if _m_vs.match(e['stat']):          # 「vs X 속성 피해 증가」 — _exec_line 에서 처리
+            return None
+        return 'effect: 이번 스킬 한정 보정 미지원 「%s」' % e['stat']
     if e['kind'] != 'buff' or e.get('consume'):
         return None
     name = e['name']
@@ -3363,14 +3451,26 @@ def _meaning_gap(ln, k, markers):
 def support_report(defs):
     """전투에 나오는 유닛들의 미지원 줄(시점·효과·조건) + 일반/반응 트리거·변형 스킬. 실행 전 검사."""
     out = []
-    markers = {}
-    for d in defs:   # 조건에서 이름으로 확인하는 효과(표지용 버프: 낮의 주기 등)는 속성이 없어도 의미가 있다
-        names = set()
+    # 조건에서 이름으로 확인하는 효과(표지용 버프)는 속성이 없어도 의미가 있다.
+    # 전투의 모든 유닛에서 모은다(하수인이 주고 보스가 확인하는 교차 참조 포함: 올베로스 영웅의 혼 등).
+    all_marker_names = set()
+    for d in defs:
         for ln in d.lines:
             for p, v in ln.params:
                 if p in ('자신이 보유', '자신이 미보유', '대상이 보유', '대상이 미보유', '시전자가 보유', '턴 유닛이 보유', '특정 효과 보유 적 존재'):
-                    names.update(x.strip() for x in v.split(','))
-        markers[id(d)] = names
+                    all_marker_names.update(x.strip() for x in v.split(','))
+        # foe_react 조건에서 참조하는 버프 이름도 포함(맹약결속 등)
+        for slot, rc in getattr(d, 'react', {}).items():
+            for cond in rc.get('conds', []):
+                if not isinstance(cond, (list, tuple)) or not cond:
+                    continue
+                tag = cond[0]
+                if tag in ('self_stack_eq', 'self_stack_ge') and len(cond) >= 2:
+                    all_marker_names.add(cond[1])
+                elif tag in ('self_has', 'self_not_has', 'target_has') and len(cond) >= 2:
+                    for n in (cond[1] if isinstance(cond[1], list) else [cond[1]]):
+                        all_marker_names.add(n)
+    markers = {id(d): all_marker_names for d in defs}
     for d in defs:
         foe = getattr(d, 'is_foe', False)
         for ln in normalized_lines(d):

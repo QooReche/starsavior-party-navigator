@@ -577,7 +577,7 @@ def test_fix3_variant_own_turn_only():
     defs = [UnitDef(get_db(), k) for k in ['lyn', 'bunny-frey', 'lydia-moon-caster', 'hilde']]
     report = support_report(defs)
     assert not any('변형' in x['raw'] or '스킬 교체' in x['raw'] for x in report)
-    assert any('선제 방어' in x['raw'] for x in report)
+    assert not any('선제 방어' in x['raw'] for x in report)  # 선제 방어 확률 인식 후 미지원 보고 해소
     assert sum('변형' in x for d in defs for x in d.unmodeled) == 4  # 공유 기대값 정의 보존
     return True, '자기 정규 턴 + 임계 스택만 교체'
 

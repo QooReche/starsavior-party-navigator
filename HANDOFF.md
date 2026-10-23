@@ -1,6 +1,6 @@
 # 인수인계
 
-갱신: 2026-10-24 대상 선택 해소(se_of 수정으로 적 601종·효과 줄 359, BI_ENFORCE 강제 추가 행동, NOT_SELF·IsHighDef 필터). 이전: 10/23 밤(장비 탐색 시작 쿨 연결, 서든데스 반영). 새 세션은 이 파일 → `README.md` 순으로 읽을 것. 과거 세션 기록은 [docs/HISTORY.md](docs/HISTORY.md)(원문 그대로 이동했음).
+갱신: 2026-10-24 대상 선택 해소(se_of 수정으로 적 601종·효과 줄 359, BI_ENFORCE 강제 추가 행동, NOT_SELF·IsHighDef 필터). 이전: 10/23 밤(장비 탐색 시작 쿨 연결, 서든데스 반영). 새 세션은 이 파일 → `README.md` 순으로 읽을 것. 과거 세션 기록은 [docs/HISTORY.md](docs/HISTORY.md)(원문 그대로 이동했음). / 2026-10-24(효과 미지원 잔여 해소 — 오르트로스 지속 턴 연장·타 대상 보정, 티리아 게이지 조건부 설정, 올베로스 등장 후·영웅의 혼 마커, 잊혀진 맹세 vs 속성, 맹약결속 마커, 큐브 확률 보정, 선제 방어). 이전: 10/23 밤(장비 탐색 시작 쿨 연결, 서든데스 반영). 새 세션은 이 파일 → `README.md` 순으로 읽을 것. 과거 세션 기록은 [docs/HISTORY.md](docs/HISTORY.md)(원문 그대로 이동했음).
 
 ## ▶ 다른 PC 작업 (게임 설치 PC · 사용자 직접, 2026-10-24 정리)
 
@@ -36,6 +36,7 @@
    남은 것(조사 끝, 구현 전):
    - (10/24 완료) 소환(올베로스 하수인·티리아 인형·페르세스 고대 병졸, 26곳): `tools/build_foe_summon.py` → `data/foe_summon.json`, 규칙 `mc.summon`(data, 옛 off). SUMMON_TEMPLET 칸·쿨 플래그, BattleScript SpawnPosIndex 연결 26/26곳. 티리아 1단계 82→100%(off), 2단계 진행 0.53→0.66(off). 상세 `docs/enemy_cond_audit.md` 끝 절.
    - (10/24 완료) 적 반응 스킬 시점·조건 어휘 확장: `tools/build_foe_react.py` + `mc._check_foe_react` 에 AfterAllyAttack·OnMyAttack·AllyEffectiveHit 시점, DamageResultType·IncludeSelf·TargetNegativeBuff 등 조건, NSTT_REACT_ALLY_TARGET 대상, special/hyper 스킬 인덱스 추가. 규칙 `mc.foe_react_timing`(extended, 옛 legacy). 현재 데이터북 적에 해당 시점 규칙 없어 시뮬 변화 0(WHITEDRAGON·HAPPY68 MAINSTORY·VAGABOND EVENT 는 게임 유닛이 있으나 데이터북 미연결). 상세 `docs/enemy_cond_audit.md` 끝 절.
+   - (10/24 완료) 효과 미지원 잔여 해소(7항목): 오르트로스 효과 지속 턴 +1·타 대상 보정, 티리아 게이지 조건부 설정, 올베로스 등장 후·영웅의 혼 마커, 잊혀진 맹세 vs 속성, 맹약결속 마커, 큐브 확률 보정, 선제 방어 확률. 규칙 4개(`mc.effect_dur_extend`·`gauge_conditional`·`local_vs_element`·`preemptive_defense`). 마무리: 힐데 다중 상시 능력치 파싱(쉼표 분리 `perm_multi`), 맹약결속 마커 수집(foe_react 리스트형 조건 스캔), 등장 후 속도 보정 _meaning_gap 통과, 선제 방어 공격자 reduce(고립 -50%). 전수 스캔 3,690곳 effect/trigger 보고 0. 상세 `docs/enemy_cond_audit.md` 끝 절.
    - 코드 정리: 4번 규칙 설명값 구분(enemy_skill_ai·caster_death·wave_carry·break_skill_model 은 코드가 안 읽음 — 구분만, legacy 분기 삭제는 사용자 결정) → 1번 MC 의미 해석 캐시(기본값 고정 해시 먼저).
    - 적 조건 판정 `enemy_hit_buff_cmp` 재선택(실측 더 쌓이면). 게임 PC 필요: 스킬별 아이콘, 잠재력 11011/1 재확인.
 
