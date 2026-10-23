@@ -19,7 +19,7 @@ from . import rules as _rules
 from .engine import calc_hit
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
 from .starsavior.data import SRC
-from .starsavior.parser import Line, _map_prop, split_head, supported_trigger
+from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules
 
 
@@ -372,6 +372,11 @@ class Unit:
         self.element = d.element
         self.role = d.role
         self.b = b
+        # SkillLevelStat NST_RATE_HIT is permanent, independent of removable buffs.
+        self.permanent_accuracy = sum(
+            parse_props(ln.raw.split('능력치:', 1)[1])[1].get('명중률', 0.0) / 100.0
+            for ln in d.lines if ln.kind == 'perm' and '능력치:' in ln.raw
+        ) if b.mc['permanent_accuracy'] == 'data' else 0.0
         st = d.stats
         self.fx = dict(fx or {})                 # 스테이지 효과(상시)
         hpp = d.passive['hpp'] + self.fx.get('생명력%', 0.0) / 100.0
@@ -452,6 +457,7 @@ class Unit:
             _add_prop(m, k, v, 1)
         for k, v in self.sd.items():
             _add_prop(m, k, v, 1)
+        m['acc'] += self.permanent_accuracy
         self._m = m
         return m
 
@@ -587,12 +593,13 @@ class Ctx:
 class Battle:
     def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None,
                  timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None, rng_streams=False, sudden=None,
-                 semantic_cache=None, mc_overrides=None):
+                 semantic_cache=None, mc_overrides=None, battle_mode='all_kill'):
         self.pen = tuple(pen) if pen else (1.0, 1.0)    # P5 전투력 보정(아군이 주는 피해 배율, 적이 주는 피해 배율) — 스킬·지속·연쇄만
         self.opts = dict(DEFAULT_OPTS)
         self.opts.update(opts or {})
         self.mc = dict(MC_OPTS)
         self.mc.update(mc or {})
+        self.battle_mode = battle_mode if self.mc['battle_end_mode'] == 'data' else 'all_kill'
         self.rng = rng
         # 공통 난수(선택): 아군 쪽(0)·적 쪽(1) 결정에 서로 다른 흐름을 쓴다. 같은 판 번호면 적의 대상 선택·치명 등이
         # 아군 행동 수와 무관하게 같은 순서로 나와 팀끼리 비교할 때 운의 차이가 줄어든다(예선 전용, 기본 꺼짐)
@@ -2209,7 +2216,7 @@ class Battle:
             del v.eff[name]
             self.dirty(v)
 
-    def kill(self, v, a):
+    def kill(self, v, a, *, cascade=True):
         v.hp = 0.0
         v.dead = True
         v.death_t = self.t
@@ -2230,6 +2237,12 @@ class Battle:
         v.eff = {}
         v.gauge = 0.0
         self.dirty(v)
+        # BM_BOSS_KILL removes the boss's surviving teammates without damage.
+        # Their death events still fire (NKM:7543-7582).
+        if cascade and v.side == 1 and getattr(v.d, 'boss', False) and self.battle_mode == 'boss_kill':
+            for other in list(self.alive(v.side)):
+                if not other.dead:
+                    self.kill(other, a, cascade=False)
 
     def _do_summon(self, owner):
         """소환 실행: owner.d.summon_groups 의 빈 칸에 유닛 생성(NKM 5174~5212, 1156~1171 빈 칸만).

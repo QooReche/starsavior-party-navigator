@@ -74,6 +74,18 @@ def foe_summon(src=SRC):
 
 
 _SUDDEN = {}
+_BATTLE_END = {}
+
+
+def battle_end(src=SRC):
+    """Validated BM_BOSS_KILL stages. Missing data retains the previous all-kill behavior."""
+    if src not in _BATTLE_END:
+        p = os.path.join(src, 'data', 'battle_end.json')
+        _BATTLE_END[src] = frozenset()
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                _BATTLE_END[src] = frozenset(json.load(f)['boss_kill'])
+    return _BATTLE_END[src]
 
 
 def sudden_death(src=SRC):
