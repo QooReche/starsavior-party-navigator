@@ -41,7 +41,7 @@ from collections import defaultdict
 
 from . import rules as _rules
 from .mc import Battle, EventLimitError, support_report
-from .rules import DEFAULT_OPTS, MC_OPTS, MC_RULES, RULES
+from .rules import DEFAULT_OPTS, MC_NOTE_KEYS, MC_OPTS, MC_RULES, RULES
 from .starsavior.data import _find_key, get_db
 from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves, sudden_death
 from .starsavior.parser import Skill, UnitDef
@@ -177,7 +177,8 @@ def assumptions_used(mc, opts):
     out = []
     for k, v in MC_RULES.items():
         if v.get('grade') != 'data':
-            out.append(dict(rule='mc.' + k, value=mc.get(k), grade=v.get('grade'), note=v.get('note')))
+            # note 키는 MC_OPTS 에 없으므로 규칙 기본값으로 채워 출력 목록 유지
+            out.append(dict(rule='mc.' + k, value=mc.get(k, v.get('value')), grade=v.get('grade'), note=v.get('note')))
     for k, v in RULES['mc'].get('break_skills', {}).items():
         out.append(dict(rule='mc.break_skills.' + k, value=mc['break_skills'].get(k), grade=v.get('grade'), note=v.get('note')))
     for k in ('coop_trigger', 'coop_single', 'nova_policy', 'nova_pool', 'forced_coop_target', 'init_cd_frac'):
@@ -238,7 +239,8 @@ def simulate(party_spec, encounter_spec, options=None):
         over['nova_policy'] = o['nova_policy']
     mc = dict(MC_OPTS, **{k: v for k, v in over.items() if k in MC_OPTS})
     opts = dict(DEFAULT_OPTS, **{k: v for k, v in over.items() if k in DEFAULT_OPTS})
-    unknown_keys = [k for k in over if k not in MC_OPTS and k not in DEFAULT_OPTS]
+    # MC_NOTE_KEYS 는 설명용이라 무시하고 받아줌(외부 호출 호환). 그 밖의 모르는 키는 오류.
+    unknown_keys = [k for k in over if k not in MC_OPTS and k not in DEFAULT_OPTS and k not in MC_NOTE_KEYS]
     if unknown_keys:
         raise ValueError('모르는 규칙 키: %s' % ', '.join(unknown_keys))
     fo = dict(o.get('formula_override') or {})

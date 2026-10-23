@@ -14,7 +14,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 sys.path.insert(0, ROOT)
 from battlesim.engine import Buff, Ctx, DummyDef, Sim, calc_hit  # noqa: E402
 from battlesim.metrics import ref_enemies, unit_def  # noqa: E402
-from battlesim.rules import DEFAULT_OPTS, LEGACY_OPTS  # noqa: E402
+from battlesim.api import assumptions_used  # noqa: E402
+from battlesim.rules import DEFAULT_OPTS, LEGACY_OPTS, MC_NOTE_KEYS, MC_OPTS, MC_RULES, RULES  # noqa: E402
 from battlesim.starsavior.data import get_db  # noqa: E402
 from battlesim.starsavior.stats import calc_stats  # noqa: E402
 
@@ -297,9 +298,142 @@ def test_index_uses_merged_opts():
     return ok, '설명 %s / _meta 저항 %s' % (a[1:3], idx['_meta']['opts']['enemy_resist'])
 
 
+# ---------------------------------------------------------------- 12. MC_OPTS·assumptions_used 목록 스냅샷 + note/alt/legacy 일관성
+# note 키 4개를 MC_OPTS 에서 뺐을 때 기존 출력이 그대로인지 고정한다.
+# 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
+_EXPECTED_MC_OPTS_KEYS = frozenset([
+    'ally_auto_lines', 'ally_auto_target', 'ally_break_gauge', 'ally_init_cd',
+    'auto_skill', 'basic_tough',
+    'break_skill_atk_pct', 'break_skill_boss_points', 'break_skill_buff_turns',
+    'break_skill_cd_unit', 'break_skill_cooldown', 'break_skill_cost',
+    'break_skill_domain_turns', 'break_skill_fixed', 'break_skill_heal_ratio',
+    'break_skill_hit_pct', 'break_skill_level', 'break_skill_normal_points',
+    'break_skill_point_cap', 'break_skill_role_speed_pct', 'break_skill_scale',
+    'break_skill_speed_pct', 'break_skills',
+    'buff_maxhp', 'chain_skill_damage_up', 'check_buff_expiry', 'counter_inc',
+    'debuff_instance_count', 'enemy_auto_target', 'enemy_cd_native',
+    'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
+    'enemy_leader', 'enemy_same_formula', 'enemy_spawn', 'evade_model',
+    'foe_auto', 'gauge_overflow', 'guard_mode', 'guard_normal_hit',
+    'heal_target', 'instant_damage', 'leader_speed', 'manual_burst',
+    'max_depth', 'max_events', 'myinfo_combat',
+    'nova_force_effects', 'nova_skill_gain', 'nova_slot_effects',
+    'power_penalty', 'rand_range', 'reaction_timing', 'revenge',
+    'shield_tick', 'stage_fx_target', 'sudden_death',
+    'target_defender_mult', 'target_mode', 'target_row_weight',
+    'taunt_skill_end_duration', 'toughness', 'toughness_elem',
+    'turn_limit_unit', 'turn_ticks', 'unknown_cond',
+])
+_NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'wave_carry', 'break_skill_model'})
+
+
+def test_mc_note_not_in_opts():
+    """MC_NOTE_KEYS 가 정확히 4개이며 MC_OPTS 에 없고 MC_RULES 에는 있어야 한다."""
+    wrong_note = MC_NOTE_KEYS ^ _NOTE_KEYS          # 대칭 차: 예상과 다른 키
+    in_opts = [k for k in MC_NOTE_KEYS if k in MC_OPTS]
+    not_in_rules = [k for k in MC_NOTE_KEYS if k not in MC_RULES]
+    ok = not wrong_note and not in_opts and not not_in_rules
+    return ok, 'note 불일치=%s / opts 잔류=%s / rules 누락=%s' % (sorted(wrong_note), in_opts, not_in_rules)
+
+
+def test_mc_opts_keys_snapshot():
+    """MC_OPTS 키 목록이 고정 집합과 일치해야 한다(note 4개 제거 반영)."""
+    got = frozenset(MC_OPTS)
+    extra = sorted(got - _EXPECTED_MC_OPTS_KEYS)
+    missing = sorted(_EXPECTED_MC_OPTS_KEYS - got)
+    ok = not extra and not missing
+    return ok, 'extra=%s missing=%s' % (extra, missing)
+
+
+def test_assumptions_used_note_keys_present():
+    """assumptions_used 출력에 note 키 4개가 여전히 포함되고 값이 규칙 기본값이어야 한다."""
+    mc_for_test = dict(MC_OPTS)   # note 키 없는 상태
+    out = assumptions_used(mc_for_test, dict(DEFAULT_OPTS))
+    rules_in_out = {x['rule'] for x in out}
+    missing = [k for k in _NOTE_KEYS if ('mc.' + k) not in rules_in_out]
+    # 값은 규칙 기본값(MC_OPTS 에 없어서 v['value'] 로 채워야 함)
+    wrong_val = []
+    for x in out:
+        k = x['rule'].replace('mc.', '', 1)
+        if k in _NOTE_KEYS:
+            expected_val = RULES['mc'][k]['value']
+            if x['value'] != expected_val:
+                wrong_val.append('%s:%r!=%r' % (k, x['value'], expected_val))
+    ok = not missing and not wrong_val
+    return ok, 'note 누락=%s / 값 불일치=%s' % (missing, wrong_val)
+
+
+def test_toughness_elem_no_legacy():
+    """toughness_elem 의 legacy==value 표기를 삭제했는지 확인한다."""
+    entry = RULES['mc'].get('toughness_elem', {})
+    ok = 'legacy' not in entry
+    return ok, 'toughness_elem legacy 필드: %s' % entry.get('legacy', '(없음)')
+
+
+def test_note_keys_not_in_code():
+    """note 키 4개는 battlesim/*.py·tools/*.py·sim_worker.js·party_template.html 에서 읽지 않아야 한다.
+    grep 기반: 키 이름이 문자열로 나타나면 안 됨(JSON 의 키 정의 자체는 제외, 파이썬·JS 소비 코드만 체크)."""
+    import re
+    check_dirs = [os.path.join(ROOT, 'battlesim'), os.path.join(ROOT, 'tools')]
+    check_files = [os.path.join(ROOT, 'sim_worker.js'), os.path.join(ROOT, 'party_template.html')]
+    sources = []
+    for d in check_dirs:
+        for fn in os.listdir(d):
+            if fn.endswith('.py'):
+                sources.append(os.path.join(d, fn))
+    for f in check_files:
+        if os.path.exists(f):
+            sources.append(f)
+    # 패턴: self.mc['키'] 또는 mc.get('키') 또는 mc['키'] 형태로 읽는 경우
+    found = []
+    for path in sources:
+        try:
+            text = open(path, encoding='utf-8', errors='replace').read()
+        except OSError:
+            continue
+        for k in _NOTE_KEYS:
+            # 단어 경계 + 따옴표로 둘러싼 키 이름을 소비하는 패턴
+            if re.search(r"""mc\s*[\[.]\s*['"]""" + re.escape(k) + r"""['"]""", text):
+                found.append('%s:%s' % (os.path.basename(path), k))
+    ok = not found
+    return ok, '코드에서 note 키 소비: %s' % found
+
+
+def test_alt_legacy_keys_in_code():
+    """alt 또는 legacy 가 있는 mc 키는 battlesim/*.py·tools/*.py·sim_worker.js·party_template.html 중
+    한 곳 이상에서 읽어야 한다(grep 기반: 코드에 없으면 dead 스위치)."""
+    import re
+    check_dirs = [os.path.join(ROOT, 'battlesim'), os.path.join(ROOT, 'tools')]
+    check_files = [os.path.join(ROOT, 'sim_worker.js'), os.path.join(ROOT, 'party_template.html')]
+    sources = []
+    for d in check_dirs:
+        for fn in os.listdir(d):
+            if fn.endswith('.py'):
+                sources.append(os.path.join(d, fn))
+    for f in check_files:
+        if os.path.exists(f):
+            sources.append(f)
+    combined = ''
+    for path in sources:
+        try:
+            combined += open(path, encoding='utf-8', errors='replace').read()
+        except OSError:
+            pass
+    alt_legacy_keys = [k for k, v in MC_RULES.items()
+                       if ('alt' in v or 'legacy' in v) and k not in MC_NOTE_KEYS]
+    missing = []
+    for k in alt_legacy_keys:
+        if not re.search(r"""['"]""" + re.escape(k) + r"""['"]""", combined):
+            missing.append(k)
+    ok = not missing
+    return ok, 'alt/legacy 키인데 코드에 없음: %s' % missing
+
+
 TESTS = [test_coop_trigger, test_coop_single, test_nova_policy, test_nova_pool, test_debuff_hit_resist, test_forced_coop_target,
          test_dot_snapshot, test_gear_order, test_dmg_reduction, test_forced_coop_slot, test_debuff_state_zero_p,
-         test_debuff_state_multi_caster, test_gauge_expect, test_index_uses_merged_opts, test_legacy_reproduces_p1_golden]
+         test_debuff_state_multi_caster, test_gauge_expect, test_index_uses_merged_opts, test_legacy_reproduces_p1_golden,
+         test_mc_note_not_in_opts, test_mc_opts_keys_snapshot, test_assumptions_used_note_keys_present,
+         test_toughness_elem_no_legacy, test_note_keys_not_in_code, test_alt_legacy_keys_in_code]
 
 
 def main():
