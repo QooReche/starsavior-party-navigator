@@ -1,6 +1,24 @@
 # 인수인계
 
-갱신: 2026-10-22 밤(개편 브랜치 community-removal). 새 세션은 이 파일 → `README.md` 순으로 읽을 것. 과거 세션 기록은 [docs/HISTORY.md](docs/HISTORY.md)(원문 그대로 이동했음).
+갱신: 2026-10-23 오전(main `20a39d6` 기준). 새 세션은 이 파일 → `README.md` 순으로 읽을 것. 과거 세션 기록은 [docs/HISTORY.md](docs/HISTORY.md)(원문 그대로 이동했음).
+
+## ▶ 다음 세션 시작 (2026-10-23 정리)
+
+시작 멘트 예: 「여정 네비게이터 이어서 — HANDOFF 다음 세션 1번(반응·대상 선택 규칙)부터」
+
+시작 절차
+1. 세 저장소 최신 받기: `E:\AI_mk2\starsavior-party-navigator`(main), `E:\AI_mk2\starsavior-static-data`, `E:\AI_mk2\starsavior-packet-ref` 에서 `git pull --ff-only`. 작업 사본 `E:\AI_mk2\pn-community`(worktree, 브랜치 community-removal)는 `git merge --ff-only origin/main`.
+2. 시험 기준선: 단위 `tests/*_test.py`·`node tests/*.js`·`tests/golden_check.py`(STARSAVIOR_STATIC 지정), 브라우저 `E:\AI_mk2\venv-pw\Scripts\python -X utf8 tests\e2e\test_page.py`(27개, 약 4~5분). 10/23 기준 전부 통과.
+3. ⚠ 10/22 밸런스 변경 스테이지(작전 최종 보스 26·27·28·30·35·36·37-36, 토벌)의 패치 전 실측·공략 영상은 참조 금지(사용자 지시). 유효한 실측: 37-2~37-5(10/21), 혹한의 습격 17·17e·17r(10/23).
+
+남은 일(권하는 순서) — 모두 이 PC 에서 가능(자료는 비공개 저장소에 있음)
+1. **반응·대상 선택 규칙**: `static-data/tables/Plain` 의 `SKILL_CONDITION_TEMPLET`·`AUTO_SKILL_TEMPLET`·`AUTO_SKILL_TARGET_TEMPLET` 로 엔진 규칙 대조. 큰 보스전 아군 피해 과소(준÷받은 실측의 약 절반, 혹한의 습격 시뮬 TURN 80~93 vs 실제 66~69)와 「적 자동 지정」 미지원(13-x 영혼 구속 930건 등, `docs/enemy_cond_audit.md`)의 원인 후보.
+2. **반격 확률 미지원**: 「반격 증가」·「경계 모드」·「강화 반격」 약 390 스테이지(작전 14-x 등).
+3. **보스 수치 기준선 대조**: `static-data/analysis/baseline/SUMMARY.md`(보스 공격력 보정 +40/+50%, 서든데스)와 엔진 입력.
+4. **턴 제한 단위**: 표시는 게임 TURN(전체 행동 수)인데 `turn_limit` 판정은 모델 턴 — 제한 초과가 실패인 콘텐츠 점검.
+5. 그 밖: 적 조건 판정 `enemy_hit_buff_cmp` 재선택(실측 더 쌓이면), 소환·즉시 피해·쿨 초기화·트리거 스킬 미지원, 건틀렛 축복·전투력 PP 항, 코드 정리 4건(아래 「남은 것」). 게임 PC 필요: 스킬별 아이콘, 잠재력 11011/1 재확인.
+
+엔진 규칙을 바꾸면: `tools/build_simpack.py` → `tools/gen_quick_calib.py --per-content 400 --opboss`(약 20분) → `tools/calibrate_quick.py --write` → `build_party_html.py index.html` → 시험 → codex 리뷰(래퍼 `codex-review.ps1`) → 커밋·푸시(QooReche noreply).
 
 ## 위치
 
