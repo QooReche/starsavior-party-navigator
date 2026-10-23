@@ -816,7 +816,7 @@ $("out").addEventListener("change",e=>{const s=e.target.closest("select.bsel");i
 const BIGBOSS=1.2;
 function bigBoss(c,st){if(c.key!=="op"&&c.key!=="oph")return 0;const qs=QK.d&&(QK.d.st[c.key]||{})[st.tab+"|"+st.name];if(!qs||!qs.bp)return 0;
  let hp=0;for(const w of qs.w)for(const e of w)if(e[5])hp=Math.max(hp,e[0]);const r=hp/qs.bp;return r>=BIGBOSS?r:0}
-const bigBossNote=r=>`<div class="qwarn bigboss" data-k="bigboss">⚠ <b>큰 보스전</b>(보스 생명력이 권장 전투력의 ${r.toFixed(1)}배)입니다. 이런 스테이지에서는 시뮬이 실제보다 <b>비관적</b>일 수 있습니다 — 실측에서는 아군이 준 피해가 시뮬의 약 2배였습니다. 시뮬 클리어 %가 낮아도 실제로는 깰 수 있습니다.</div>`;
+const bigBossNote=r=>`<div class="qwarn bigboss" data-k="bigboss">⚠ <b>큰 보스전</b>(보스 생명력이 권장 전투력의 ${r.toFixed(1)}배)입니다. 이런 스테이지에서는 시뮬이 실제보다 <b>비관적</b>일 수 있습니다 — 실측에서는 아군이 준 피해가 시뮬의 약 2배였습니다. 시뮬 클리어 %가 낮아도 실제로는 깰 수도 있습니다.</div>`;
 // 「추천 편성 보기」 뒤에는 시뮬이 끝날 때까지 결과 대신 진행 화면을 보인다(근사 판정을 먼저 보여 주지 않음). 취소·실패하면 그때까지의 결과를 보인다
 // 예선(시뮬 1단계): 빠른 계산 상위 SCR_Q팀 + 근사 점수(스킬 연계·상성·기믹·팀 화력) 상위 SCR_V팀을 SCR_N판씩 돌려 순위를 정하고,
 // 그 순위의 앞 팀부터 본선(SIMQ.n판)을 돌린다. 전체 조합(보유 56명이면 36만 팀)은 시뮬로 다 못 돌리므로 후보를 넓게 골라 짧게 거르는 방식(단계적 축소).
