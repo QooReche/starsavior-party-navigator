@@ -760,8 +760,8 @@ def test_myinfo_rules_mobile(browser, ctx):
       return {assumed:LASTQ[1].rows[0].b.assumed,final:simParty(LASTQ[1].rows[0]).units.filter(u=>u.stats_final).length}}''')
     assert mixed == {'assumed': 1, 'final': 3} and '일부 가정' in page.inner_text('.qh'), mixed
     choose(page, '일일 재화 던전', '')
-    assert '미매핑 · 평균 가정' in page.inner_text('.qh')
-    assert page.evaluate('() => LASTQ[1].rows[0].b.powers === null')
+    assert page.evaluate('() => miProfile().rule') == 'normal'
+    assert '미매핑 · 평균 가정' not in page.inner_text('.qh')
     page.click('#tab-info')
     assert '일반 능력치' in page.inner_text('#mi-meta')
     assert all('—' not in t for t in page.locator('#mi-list .mi-pw').all_text_contents())

@@ -16,9 +16,13 @@ def rule_for_content(content):
     """Unmapped content -> None, so callers retain their existing assumptions.
 
     rush / Flash Point -> BossRush is an assumption (no localized table link).
+    equip / daily / oph / cube -> normal: BATTLE_STAT_APPLY_TEMPLET fixes levels only for BossRush, CosmoGate and the PvP
+    scenes, every other listed scene (CubePalace, CubeOverload, Cloister, GuildDungeon) is NORMAL, and these are not listed.
+    The equip stage screen shows Lv.344 (the account level), which matches normal. daily/oph are unlisted, so normal is assumed.
     BossRush/CosmoGate fixed level/resonance are verified in BATTLE_STAT_APPLY.
     """
     return {"op": "normal", "작전": "normal", "clo": "normal", "회랑": "normal", "Cloister": "normal",
+            "oph": "normal", "daily": "normal", "equip": "normal", "cube": "normal",
             "cosmo": "fixed200", "코스모 게이트": "fixed200", "CosmoGate": "fixed200",
             "rush": "fixed200", "플래시 포인트": "fixed200", "BossRush": "fixed200"}.get(content)
 

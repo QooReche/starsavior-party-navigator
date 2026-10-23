@@ -266,7 +266,7 @@ class SyntheticTests(unittest.TestCase):
         self.assertEqual(changed, original)
         self.assertNotIn("build_mismatch", original)
         contents = ["op", "작전", "clo", "회랑", "cosmo", "CosmoGate", "코스모 게이트", "rush", "플래시 포인트", "BossRush", "daily", "__proto__"]
-        expected = ["normal"]*4 + ["fixed200"]*6 + [None]*2
+        expected = ["normal"]*4 + ["fixed200"]*6 + ["normal", None]
         self.assertEqual([ms.rule_for_content(c) for c in contents], expected)
         self.assertEqual(node_cases([[c] for c in contents], "rule_for_content"), expected)
         self.assertIsNone(ms.final_stats(u, i, g, None))

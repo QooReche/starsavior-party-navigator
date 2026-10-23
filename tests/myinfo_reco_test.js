@@ -6,8 +6,9 @@ const roster=info.units.map(u=>({uid:u.id,key:String(u.id)}));
 const tests={
   mapping(){for(const ck of ['op','clo'])assert.equal(S.rule_for_content(ck),'normal');
     for(const ck of ['cosmo','rush'])assert.equal(S.rule_for_content(ck),'fixed200');
-    assert.equal(S.rule_for_content('daily'),null);
-    assert.deepEqual(M.profile(info,roster,growth,'daily').results,{});},
+    for(const ck of ['oph','daily','equip','cube'])assert.equal(S.rule_for_content(ck),'normal');
+    assert.equal(S.rule_for_content('unmapped_content'),null);
+    assert.deepEqual(M.profile(info,roster,growth,'unmapped_content').results,{});},
   judgment(){assert.deepEqual(M.judgment({clear:true,power:100000},2),{label:'오토 가능',extra:null});
     assert.deepEqual(M.judgment({clear:false,power:123456},1.3),{label:'오토 어려움',extra:37000});
     assert.equal(M.judgment({clear:false,power:10000},null).extra,null);

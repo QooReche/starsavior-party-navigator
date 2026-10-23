@@ -10,6 +10,7 @@
   function rule_for_content(content) {
     // Flash Point/rush -> BossRush is assumed; localized mapping is unverified.
     return get({op: "normal", "작전": "normal", clo: "normal", "회랑": "normal", Cloister: "normal",
+      oph: "normal", daily: "normal", equip: "normal", cube: "normal",
       cosmo: "fixed200", "코스모 게이트": "fixed200", CosmoGate: "fixed200",
       rush: "fixed200", "플래시 포인트": "fixed200", BossRush: "fixed200"}, content, null);
   }
