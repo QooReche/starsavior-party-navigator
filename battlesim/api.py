@@ -21,7 +21,7 @@ options
   {"seed": 1, "n_runs": 100, "rules_override": {mc·opts 키: 값}, "nova_policy": "auto"|"manual"|"heal", "timeline": false,
    "enemy_lines": true, "run_offset": 0, "per_run": false, "formula_override": {"COOP_CAP": 1.0}, "rekindle": 0,
    "break_skill": {"name": "큐브 과부하", "level": 5}}
-  break_skill = 생략/None 이면 미장착. 큐브 과부하·특이점 관측·스타피어서·차원 강습 지원(레벨 1~10 = 계수 가산, mc.break_skill_level), 다른 이름은 unsupported.runtime 에 기록.
+  break_skill = 생략/None 이면 미장착. 큐브 과부하·특이점 관측·스타피어서·차원 강습·행성 정화 지원(레벨 1~10 = 계수 가산, mc.break_skill_level), 다른 이름은 unsupported.runtime 에 기록.
   rekindle = 작전 재점화 버프 단계 0~5(작전 op 에서만): 아군 주는 피해 ×(1+x)·받는 피해 ×(1−x), x = REKINDLE[단계]
        (인게임 표 2026-10-21 사용자 제보, 전투력 보정과 곱으로 합침 — 곱인지 증감 합인지는 미확인)
   run_offset = 판 번호 시작값(판 r 의 난수 = seed*1000003 + run_offset + r; timeline 은 첫 판 = run_offset 번 판)
@@ -186,7 +186,7 @@ def assumptions_used(mc, opts):
         r = RULES['opts'].get(k, {})
         out.append(dict(rule='opts.' + k, value=opts.get(k), grade=r.get('grade'), note=r.get('note')))
     out.append(dict(rule='model.not_modeled', value=None, grade='assumed',
-                    note='행성 정화·브레이크 스킬 레벨 보정, 선제 방어(회피는 evade_model, 반격은 mc.revenge 로 지원), 표에 없는 「피해 제한」 효과(실행 전 검사에서 중요 미지원으로 표시), '
+                    note='선제 방어(회피는 evade_model, 반격은 mc.revenge 로 지원), 표에 없는 「피해 제한」 효과(실행 전 검사에서 중요 미지원으로 표시), '
                          '노바 버스트 슬롯 효과(+15% 외), 일반 잠재력(감각·솜씨)·전술 분석·호감도, 시즌 보너스, Lv200 초과 성장, '
                          '대부분의 반응 트리거 스킬(웨딩 카르멘 「수호의 기사」·프로페서M 「악에서 악으로」만 지원), 연쇄 피해의 「턴 끝에 발생」 시점'))
     out.append(dict(rule='model.random_choice', value='uniform', grade='assumed',
@@ -315,7 +315,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {},
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
                    enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'), rng_streams=bool(o.get('rng_streams')),
-                   sudden=sudden, semantic_cache=semantic_cache)
+                   sudden=sudden, semantic_cache=semantic_cache, mc_overrides=o.get('rules_override') or {})
         b.run()   # EventLimitError 는 그대로 올린다(정상 결과 금지)
         for (pos, slot), count in b.nova_bursts.items():
             nova_counts[names[pos]][slot] += count

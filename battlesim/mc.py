@@ -342,7 +342,7 @@ class Eff:
         self.hot = 0.0       # 턴마다 회복 계수(대상 최대 생명력 비율)
         self.check = False   # 확인용 버프(행동 끝에 사라짐)
         self.fixed = False   # 해제 불가
-        self.clock = 'owner_turn'   # 영역은 파티 공용 ally_turn/round 로 차감
+        self.clock = 'owner_turn'   # 영역은 global 또는 legacy의 ally_turn/round로 차감
 
 
 class Unit:
@@ -567,7 +567,7 @@ class Ctx:
 class Battle:
     def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None,
                  timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None, rng_streams=False, sudden=None,
-                 semantic_cache=None):
+                 semantic_cache=None, mc_overrides=None):
         self.pen = tuple(pen) if pen else (1.0, 1.0)    # P5 전투력 보정(아군이 주는 피해 배율, 적이 주는 피해 배율) — 스킬·지속·연쇄만
         self.opts = dict(DEFAULT_OPTS)
         self.opts.update(opts or {})
@@ -628,6 +628,17 @@ class Battle:
         self.break_skill_name = self.break_skill.get('name')
         self.break_skill_rule = self._break_skill_rule(self.break_skill_name)
         self.break_skill_enabled = self.break_skill_rule is not None
+        if self.break_skill_enabled:
+            # API는 기본값까지 합친 mc를 넘기므로 원래 override를 별도로 받는다.
+            explicit = (mc or {}) if mc_overrides is None else mc_overrides
+            self.break_domain_turns = self.break_skill_rule['domain_turns']
+            if self.mc['break_skill_domain_clock'] == 'legacy':
+                turns_override = ('break_skill_domain_turns' in explicit if self.break_skill_name == '큐브 과부하'
+                                  else 'domain_turns' in explicit.get('break_skills', {}).get(self.break_skill_name, {}))
+                if not turns_override:
+                    self.break_domain_turns = 4
+            self.break_domain_clock = ('global' if self.mc['break_skill_domain_clock'] == 'global'
+                                       else self.mc['break_skill_cd_unit'])
         self.break_points = self.break_points_gained = self.break_skill_uses = 0
         self.break_skill_dmg = 0
         self.break_skill_cd = 0
@@ -636,6 +647,8 @@ class Battle:
             self.unsup['break_skill:' + self.break_skill_name] += 1
         if self.break_skill_enabled and self.mc['break_skill_cd_unit'] not in ('ally_turn', 'round'):
             raise ValueError('break_skill_cd_unit 은 ally_turn|round')
+        if self.break_skill_enabled and self.mc['break_skill_domain_clock'] not in ('global', 'legacy'):
+            raise ValueError('break_skill_domain_clock 은 global|legacy')
 
     # ---------- 공용
     def tick(self):
@@ -781,6 +794,8 @@ class Battle:
             self.global_turns += 1
             self._sudden_step()
             self.act(best)
+            if self.break_skill_enabled and self.mc['break_skill_domain_clock'] == 'global':
+                self._tick_break_domain('global')
         return self
 
     def _sudden_step(self):
@@ -974,11 +989,16 @@ class Battle:
             u.cd[slot] = max(0.0, u.cd[slot] - 1)
 
     def _tick_break_skill(self):
-        """공용 쿨·영역 차감. 발동 턴에는 차감하지 않고 다음 단위 경계부터 센다."""
+        """공용 쿨 차감. legacy 영역만 같은 경계에서 차감한다."""
         self.break_skill_cd = max(0, self.break_skill_cd - 1)
+        if self.mc['break_skill_domain_clock'] == 'legacy':
+            self._tick_break_domain(self.mc['break_skill_cd_unit'])
+
+    def _tick_break_domain(self, clock):
+        """영역만 차감. global은 발동 행동을 포함해 act 반환 직후 센다."""
         for u in self.allies:
             for name, e in list(u.eff.items()):
-                if e.clock == self.mc['break_skill_cd_unit']:
+                if name == self.break_skill_rule['domain'] and e.clock == clock:
                     e.dur -= 1
                     if e.dur <= 0:
                         del u.eff[name]
@@ -1064,7 +1084,7 @@ class Battle:
             effects = []
             if rule.get('buff'):
                 effects.append((rule['buff'], rule['buff_props'], rule['buff_turns'], 'owner_turn'))
-            effects.append((rule['domain'], props, rule['domain_turns'], self.mc['break_skill_cd_unit']))
+            effects.append((rule['domain'], props, self.break_domain_turns, self.break_domain_clock))
             for name, props, dur, clock in effects:
                 e = Eff(name, props, 1, dur, None, False)
                 e.stacks, e.fixed, e.clock = 1, self.mc['break_skill_fixed'], clock
@@ -1616,6 +1636,11 @@ class Battle:
             # and extra casts (NKM:15325-15331,15487,15706-15709).
             if self.mc['nova_skill_gain'] or (u.side == 0 and not extra and sk.slot in ('특수기', '궁극기')):
                 self.nova_add(u, sk.nv)
+            if (not extra and not u.dead and self.break_skill_enabled
+                    and u.has(self.break_skill_rule['domain'])):
+                # 조건 8000 본문 미확인: 기본기 포함, 반응·협공·추가 시전 제외(assumed).
+                if self.break_skill_rule.get('skill_nova'):
+                    self.nova_add(u, self.break_skill_rule['skill_nova'])
             if u.side == 0 and self.opts['coop'] and sk.is_attack and not extra and not u.dead:
                 self.coop(u, ctx)
             u.last_slot = sk.slot

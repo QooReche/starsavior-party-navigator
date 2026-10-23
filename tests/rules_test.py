@@ -306,7 +306,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'auto_skill', 'basic_tough', 'enforce',
     'break_skill_atk_pct', 'break_skill_boss_points', 'break_skill_buff_turns',
     'break_skill_cd_unit', 'break_skill_cooldown', 'break_skill_cost',
-    'break_skill_domain_turns', 'break_skill_fixed', 'break_skill_heal_ratio',
+    'break_skill_domain_clock', 'break_skill_domain_turns', 'break_skill_fixed', 'break_skill_heal_ratio',
     'break_skill_hit_pct', 'break_skill_level', 'break_skill_normal_points',
     'break_skill_point_cap', 'break_skill_role_speed_pct', 'break_skill_scale',
     'break_skill_speed_pct', 'break_skills',

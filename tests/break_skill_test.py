@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(ROOT, 'tests'))
 from p5_test import battle, give, hit, unit
 from battlesim.api import simulate
 from battlesim.mc import Ctx
+from battlesim.rules import MC_OPTS
 from battlesim.starsavior.parser import Line
 from battlesim.web import _opts
 from battlesim import web
@@ -29,6 +30,10 @@ def setup(bs=CUBE, mc=None, roles=('스트라이커',), **kw):
     foe = unit('boss', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
     foe.boss = True
     return battle(allies, [foe], break_skill=bs, mc=dict(LEGACY_SCALE, **(mc or {})), timeline=True, **kw)
+
+
+def legacy_setup(bs=CUBE, mc=None, **kw):
+    return setup(bs, mc=dict(break_skill_domain_clock='legacy', **(mc or {})), **kw)
 
 
 class BreakLevelScaleTest(unittest.TestCase):
@@ -60,11 +65,11 @@ class BreakLevelScaleTest(unittest.TestCase):
         self.assertEqual(b._break_level_up(), (0.0, 0.02))                  # 회복 계수 2% -> 4%
 
 
-class BreakSkillTest(unittest.TestCase):
+class BreakSkillLegacyTest(unittest.TestCase):
     def test_last_enemy_break_kill_before_dot(self):
-        for name in ('특이점 관측', '스타피어서', '차원 강습'):
+        for name in ('특이점 관측', '스타피어서', '차원 강습', '행성 정화'):
             with self.subTest(name=name):
-                b = setup({'name': name})
+                b = legacy_setup({'name': name})
                 a, f = b.allies[0], b.foes[0]
                 a.hp, a.gauge, f.hp = 1, 10000, 1
                 bleed = give(a, '출혈', src=f, harmful=True)
@@ -105,7 +110,7 @@ class BreakSkillTest(unittest.TestCase):
             ('차원 강습', .5, 'CRF 증폭', {'atkp': .15, 'tough': 1}),
         ):
             with self.subTest(name=name):
-                b = setup({'name': name}, roles=('스트라이커', '레인저', '서포터'))
+                b = legacy_setup({'name': name}, roles=('스트라이커', '레인저', '서포터'))
                 a, f = b.allies[0], b.foes[0]
                 for u in b.allies:
                     u.d.skills.clear()
@@ -129,7 +134,7 @@ class BreakSkillTest(unittest.TestCase):
                     self.assertEqual(a.mods()[key], 0)
 
     def test_break_gauge_overflow_actor_and_dead(self):
-        b = setup({'name': '스타피어서'}, roles=('스트라이커',) * 4)
+        b = legacy_setup({'name': '스타피어서'}, roles=('스트라이커',) * 4)
         for u, gauge in zip(b.allies, (10000, 9500, 2500, 0)):
             u.gauge = gauge
             u.d.skills.clear()
@@ -143,7 +148,7 @@ class BreakSkillTest(unittest.TestCase):
         for name in ('특이점 관측', '차원 강습'):
             for pool in ('unit', 'team'):
                 with self.subTest(name=name, pool=pool):
-                    b = setup({'name': name}, roles=('스트라이커',) * 3, opts={'nova_pool': pool})
+                    b = legacy_setup({'name': name}, roles=('스트라이커',) * 3, opts={'nova_pool': pool})
                     for u in b.allies:
                         u.d.skills.clear()
                     b.kill(b.allies[2], b.foes[0])
@@ -155,7 +160,7 @@ class BreakSkillTest(unittest.TestCase):
                     self.assertEqual(b.foes[0].taken, int(3000 * (.7 if name == '특이점 관측' else .5) / 4 * .75))
 
     def test_break_formula_and_no_hit_reactions(self):
-        b = setup({'name': '특이점 관측'}, pen=(.8, 1))
+        b = legacy_setup({'name': '특이점 관측'}, pen=(.8, 1))
         a, f = b.allies[0], b.foes[0]
         f.broken = True
         give(f, '피해 감소', {'받는 피해 감소': 40, '전체 대상 피해 감소': 30})
@@ -174,7 +179,7 @@ class BreakSkillTest(unittest.TestCase):
         self.assertEqual(b._break_dmg(f, 1000), 570)  # (20%-15%) 감소
 
     def test_break_damage_shield_kill_and_no_attribution(self):
-        b = setup({'name': '차원 강습'}, roles=('스트라이커',) * 4)
+        b = legacy_setup({'name': '차원 강습'}, roles=('스트라이커',) * 4)
         a, f = b.allies[0], b.foes[0]
         f.hp = 10
         e = give(f, '보호막')
@@ -197,7 +202,7 @@ class BreakSkillTest(unittest.TestCase):
         self.assertEqual(b.break_skill_dmg, 140)
         self.assertEqual(b.foes[1].hp, 1)
         for policy in ('auto', 'manual'):
-            b = setup({'name': '차원 강습'}, opts={'nova_policy': policy})
+            b = legacy_setup({'name': '차원 강습'}, opts={'nova_policy': policy})
             b.break_points = 3
             b.act(b.allies[0])
             bursts = [e for e in b.timeline if e.get('nb')]
@@ -208,7 +213,7 @@ class BreakSkillTest(unittest.TestCase):
         party = {'units': ['fei', 'professor-m', 'wedding-carmen', 'white-pearl-luna']}
         enc = {'waves': [[{'hp': 1000000, 'atk': 100, 'boss': True, 'sa': 1}]], 'max_turns': 5}
         opt = {'n_runs': 3, 'seed': 8, 'rules_override': {'basic_tough': 1}}
-        for name in ('특이점 관측', '스타피어서', '차원 강습'):
+        for name in ('특이점 관측', '스타피어서', '차원 강습', '행성 정화'):
             with self.subTest(name=name):
                 opts = dict(opt, break_skill={'name': name, 'level': 5})
                 r = simulate(party, enc, opts)
@@ -233,10 +238,10 @@ class BreakSkillTest(unittest.TestCase):
                 pol = got.get('pol')
                 expected = simulate(party, {'stage': stage}, _opts(extra, pol, n_runs=2, seed=8))['break_skill']
                 self.assertEqual(got['bs'], {k: expected[k] for k in ('name', 'uses', 'dmg', 'supported')})
-                self.assertEqual(got['bs']['supported'], name not in (None, '행성 정화'))
+                self.assertEqual(got['bs']['supported'], name is not None)
 
     def test_default_disabled(self):
-        b = setup(None)
+        b = legacy_setup(None)
         a, f = b.allies[0], b.foes[0]
         hit(b, a, f, ab=1)
         b.act(a)
@@ -245,7 +250,7 @@ class BreakSkillTest(unittest.TestCase):
         self.assertFalse(a.has(OMEGA) or a.has(MATRIX))
 
     def test_boss_next_ally_heal_and_durations(self):
-        b = setup(roles=('ストライ커', '디펜더', '서포터', '캐스터'))
+        b = legacy_setup(roles=('ストライ커', '디펜더', '서포터', '캐스터'))
         a, f = b.allies[0], b.foes[0]
         for u in b.allies:
             u.hp -= 2000
@@ -279,7 +284,7 @@ class BreakSkillTest(unittest.TestCase):
         self.assertEqual(event, {'bskill': '큐브 과부하', 'turn': 0.0})
 
     def test_cooldown_and_point_cap(self):
-        b = setup()
+        b = legacy_setup()
         a, f = b.allies[0], b.foes[0]
         hit(b, a, f, ab=1)
         b.act(a)
@@ -310,7 +315,7 @@ class BreakSkillTest(unittest.TestCase):
         self.assertEqual((b.break_points_gained, b.break_skill_uses), (3, 1))
 
     def test_heal_reduction_dead_and_dispel(self):
-        b = setup(roles=('ストライ커',) * 4)
+        b = legacy_setup(roles=('ストライ커',) * 4)
         a, f = b.allies[0], b.foes[0]
         for u in b.allies:
             u.hp = 1000
@@ -330,7 +335,7 @@ class BreakSkillTest(unittest.TestCase):
         self.assertTrue(a.has(OMEGA) and a.has(MATRIX))
 
     def test_round_boundaries_and_speed_expiry(self):
-        b = setup(mc={'break_skill_cd_unit': 'round'}, max_turns=8.7)
+        b = legacy_setup(mc={'break_skill_cd_unit': 'round'}, max_turns=8.7)
         a, f = b.allies[0], b.foes[0]
         hit(b, a, f, ab=1)
         b.act(a)  # 시각 0 에 발동
@@ -345,7 +350,7 @@ class BreakSkillTest(unittest.TestCase):
         self.assertEqual((b.break_skill_cd, a.eff[MATRIX].dur), (8, 4))
 
     def test_no_extra_cast_nova_or_coop(self):
-        b = setup(roles=('스트라이커', '서포터'))
+        b = legacy_setup(roles=('스트라이커', '서포터'))
         a, f = b.allies[0], b.foes[0]
         hit(b, a, f, ab=1)
         a.d.skills.clear()
@@ -358,7 +363,7 @@ class BreakSkillTest(unittest.TestCase):
         self.assertEqual(b.team_nova, 3)
 
     def test_wave_carry(self):
-        b = setup()
+        b = legacy_setup()
         a, f = b.allies[0], b.foes[0]
         hit(b, a, f, ab=1)
         b.waves.append(b.waves[0])
@@ -371,9 +376,9 @@ class BreakSkillTest(unittest.TestCase):
         self.assertEqual((b.break_points, b.break_skill_cd, a.eff[MATRIX].dur), (3, 8, 4))
 
     def test_unsupported_names(self):
-        for name in ('행성 정화', '알 수 없는 스킬'):
+        for name in ('알 수 없는 스킬',):
             with self.subTest(name=name):
-                b = setup({'name': name, 'level': 5})
+                b = legacy_setup({'name': name, 'level': 5})
                 hit(b, b.allies[0], b.foes[0], ab=1)
                 b.act(b.allies[0])
                 self.assertEqual((b.break_points, b.break_skill_uses), (0, 0))
@@ -392,8 +397,8 @@ class BreakSkillTest(unittest.TestCase):
         off = dict(opt, rules_override=dict(opt['rules_override'], break_skill_level='off'))
         lv1 = simulate(party, enc, dict(off, break_skill=dict(CUBE, level=1)))
         self.assertEqual(simulate(party, enc, dict(off, break_skill=CUBE))['per_unit'], lv1['per_unit'])   # 옛 동작: 레벨 무관
-        unsupported = simulate(party, enc, dict(opt, break_skill={'name': '행성 정화'}))
-        self.assertEqual(unsupported['unsupported']['runtime']['break_skill:행성 정화'], 3)
+        unsupported = simulate(party, enc, dict(opt, break_skill={'name': '알 수 없는 스킬'}))
+        self.assertEqual(unsupported['unsupported']['runtime']['break_skill:알 수 없는 스킬'], 3)
         self.assertEqual(unsupported['break_skill']['uses'], 0)
         default = simulate(party, enc, opt)
         self.assertEqual(default['break_skill'], dict(name=None, uses=0, points_gained=0, dmg=0, supported=False))
@@ -403,6 +408,204 @@ class BreakSkillTest(unittest.TestCase):
         self.assertEqual(default, explicit_none)
         for policy in (None, ('boss_first', 'any_attack')):
             self.assertEqual(_opts(json.dumps({'break_skill': CUBE}), policy)['break_skill'], CUBE)
+
+
+class BreakSkillGlobalTest(unittest.TestCase):
+    """실제 run/act 경계로 전역 시계·조기 반환·시전 지급을 검증한다."""
+
+    def prepared(self, name='큐브 과부하', turns=6, mc=None, **kw):
+        b = setup({'name': name}, turn_limit=turns,
+                  mc=dict(enemy_leader='none', **(mc or {})), **kw)
+        b.break_points = 3
+        b.allies[0].gauge = b.foes[0].gauge = 10000
+        for u in b.allies + b.foes:
+            u.d.skills.clear()
+        return b
+
+    def observe(self, b, hook=None):
+        rows = []
+        act = b.act
+        domain = b.break_skill_rule['domain']
+
+        def record(u):
+            act(u)
+            a = b.allies[0]
+            rows.append(dict(actor=u, turn=b.global_turns, time=b.t,
+                             left=a.eff[domain].dur if a.has(domain) else 0,
+                             cd=b.break_skill_cd, nova=b.nova_of(a), speed=a.spd()))
+            if hook:
+                hook(u)
+
+        with patch.object(b, 'act', side_effect=record):
+            b.run()
+        return rows
+
+    def test_five_actions_all_domains_and_cooldown_clocks(self):
+        for name in ('큐브 과부하', '특이점 관측', '스타피어서', '차원 강습', '행성 정화'):
+            for cd_unit in ('ally_turn', 'round'):
+                with self.subTest(name=name, cd_unit=cd_unit):
+                    b = self.prepared(name, mc={'break_skill_cd_unit': cd_unit})
+                    unrelated = give(b.allies[0], '별도 효과', dur=20)
+                    unrelated.clock = 'global'
+                    rows = self.observe(b)
+                    self.assertEqual([r['left'] for r in rows], [5, 4, 3, 2, 1, 0])
+                    self.assertEqual([r['actor'].side for r in rows], [0, 1, 0, 1, 0, 1])
+                    self.assertEqual([r['cd'] for r in rows],
+                                     [8, 8, 7, 7, 6, 6] if cd_unit == 'ally_turn' else
+                                     ([8, 8, 8, 7, 7, 6] if name == '큐브 과부하' else [8, 8, 7, 7, 6, 6]))
+                    self.assertEqual(unrelated.dur, 20)  # 영역 외 효과는 차감하지 않음
+                    self.assertFalse(b.allies[0].has(b.break_skill_rule['domain']))
+
+    def test_early_return_break_kill(self):
+        b = self.prepared('행성 정화', roles=('스트라이커', '서포터'))
+        b.foes[0].hp = 1
+        rows = self.observe(b)
+        self.assertEqual((b.result, b.global_turns, len(rows)), ('clear', 1, 1))
+        self.assertEqual([u.eff['마녀의 은총'].dur for u in b.allies], [4, 4])
+        self.assertEqual((b.allies[0].actions, b.team_nova, b.break_skill_cd), (0, 0, 8))
+
+    def test_early_return_dot_death_and_disabled_action(self):
+        for death in (True, False):
+            with self.subTest(death=death):
+                b = self.prepared('행성 정화', turns=1, roles=('스트라이커', '서포터'))
+                a, other = b.allies
+                if death:
+                    a.hp = 1
+                    bleed = give(a, '출혈', src=b.foes[0], harmful=True)
+                    bleed.dot, bleed.inst = ('atk', .3), [[b.foes[0], 3]]
+                else:
+                    give(a, '기절', harmful=True)
+                self.observe(b)
+                self.assertEqual(other.eff['마녀의 은총'].dur, 4)
+                self.assertEqual(a.dead, death)
+                self.assertEqual((b.global_turns, b.team_nova), (1, 0))
+                self.assertFalse(a.cast_count)
+
+    def test_wave_transition_keeps_domain_and_cooldown(self):
+        b = self.prepared('행성 정화', turns=2)
+        b.foes[0].hp = 1
+        b.waves.append([unit('second', hp=10 ** 9)])
+        a = b.allies[0]
+        spawn, carried = b.spawn_wave, []
+
+        def next_wave():
+            before = (a.eff['마녀의 은총'].dur, b.break_skill_cd, b.break_points)
+            spawn()
+            carried.append((before, (a.eff['마녀의 은총'].dur, b.break_skill_cd, b.break_points)))
+
+        with patch.object(b, 'spawn_wave', side_effect=next_wave):
+            rows = self.observe(b)
+        self.assertEqual(carried, [((4, 8, 0), (4, 8, 0))])
+        self.assertEqual([r['left'] for r in rows], [5, 4])
+        self.assertEqual((b.wave_i, a.eff['마녀의 은총'].dur), (1, 3))
+
+    def test_extra_turn_and_speed_expiry_on_enemy_action(self):
+        b = self.prepared()
+        a = b.allies[0]
+
+        def extra(u):
+            if b.global_turns == 1:
+                u.extra_turn, u.gauge = True, 10000
+
+        rows = self.observe(b, extra)
+        self.assertEqual([r['actor'].side for r in rows], [0, 0, 1, 0, 1, 0])
+        self.assertEqual([r['left'] for r in rows], [5, 4, 3, 2, 1, 0])
+        self.assertAlmostEqual(rows[4]['speed'], 110)
+        self.assertEqual(rows[5]['speed'], 100)
+        self.assertAlmostEqual(rows[5]['time'], 100 + (10000 - (100 - 10000 / 110) * 110) / 100)
+        self.assertFalse(a.has(MATRIX))
+
+    def test_planet_damage_and_toughness(self):
+        b = setup({'name': '행성 정화'}, turn_limit=1,
+                  mc={'toughness_elem': 'db'}, opts={'coop': False})
+        a, f = b.allies[0], b.foes[0]
+        a.gauge, b.break_points = 10000, 3
+        f.sa = f.sa_max = 100
+        a.d.skills['기본기'].ab = 1
+        b.run()
+        self.assertEqual(b.break_skill_dmg, int(1000 * 1.0 / 4 * .75))
+        self.assertEqual(f.sa, 98)  # 기본 강인도 1 + 영역 1; 브레이크 피해 자체는 0
+        self.assertEqual((b.team_nova, a.eff['마녀의 은총'].dur), (1, 4))
+
+    def test_planet_nova_basic_special_ultimate_and_last_action(self):
+        for pool in ('team', 'unit'):
+            for slot in ('기본기', '특수기', '궁극기'):
+                with self.subTest(pool=pool, slot=slot):
+                    b = setup({'name': '행성 정화'}, turn_limit=6,
+                              opts={'nova_pool': pool, 'coop': False}, mc={'toughness': 'off'})
+                    a = b.allies[0]
+                    sk = a.d.skills.pop('기본기')
+                    sk.slot, sk.nv = slot, 2
+                    a.d.skills[slot] = sk
+                    a.cd[slot] = 0
+                    b.break_points = 3
+                    # 같은 유닛 6행동: 마지막 영역 행동까지 +1, 만료 후에는 원래 스킬 노바만.
+                    with patch.object(b, 'pick_next', return_value=(a, 0)):
+                        rows = self.observe(b)
+                    self.assertEqual([r['nova'] for r in rows], [3, 6, 9, 12, 15, 17])
+                    self.assertEqual(b.team_nova, 17 if pool == 'team' else 0)
+                    self.assertEqual(a.nova, 17 if pool == 'unit' else 0)
+
+    def test_planet_nova_excludes_extra_casts_and_missing_domain(self):
+        for case in ('reaction', 'coop', 'extra', 'missing', 'dead', 'stun'):
+            with self.subTest(case=case):
+                b = setup({'name': '행성 정화'}, turn_limit=1, opts={'coop': False})
+                a = b.allies[0]
+                b.break_points, a.gauge = 3, 10000
+                original = b.cast
+
+                def cast(u, sk, **kw):
+                    if case == 'missing':
+                        u.eff.pop('마녀의 은총', None)
+                        b.dirty(u)
+                    elif case == 'dead':
+                        # 실제 시전은 시작했지만 시전 종료 이벤트에서 사망하는 경우.
+                        with patch.object(b, 'fire_side', side_effect=lambda *_: b.kill(u, b.foes[0])):
+                            return original(u, sk, **kw)
+                    elif case == 'stun':
+                        give(u, '기절', harmful=True)
+                    else:
+                        kw.update(extra=True, via=case)
+                    return original(u, sk, **kw)
+
+                with patch.object(b, 'cast', side_effect=cast):
+                    b.run()
+                self.assertEqual(b.team_nova, 0)
+
+    def test_duration_override_and_api_legacy(self):
+        for name in ('큐브 과부하', '행성 정화'):
+            for clock in ('global', 'legacy'):
+                for turns in (None, 2, 5):
+                    with self.subTest(name=name, clock=clock, turns=turns):
+                        mc = {'break_skill_domain_clock': clock}
+                        if turns is not None:
+                            if name == '큐브 과부하':
+                                mc['break_skill_domain_turns'] = turns
+                            else:
+                                mc['break_skills'] = {name: dict(MC_OPTS['break_skills'][name], domain_turns=turns)}
+                        b = self.prepared(name, turns=1, mc=mc)
+                        self.observe(b)
+                        expected = turns if turns is not None else (5 if clock == 'global' else 4)
+                        self.assertEqual(b.allies[0].eff[b.break_skill_rule['domain']].dur,
+                                         expected - (clock == 'global'))
+                        # API의 기본값 병합이 명시 override 여부를 잃지 않는지 확인.
+                        from battlesim import api
+                        constructor = api.Battle
+                        made = []
+
+                        def capture(*args, **kw):
+                            result = constructor(*args, **kw)
+                            made.append(result)
+                            return result
+
+                        with patch.object(api, 'Battle', side_effect=capture):
+                            simulate(['fei'], {'waves': [[{'hp': 10 ** 9}]], 'max_turns': .01},
+                                     {'n_runs': 1, 'break_skill': {'name': name}, 'rules_override': mc})
+                        self.assertEqual(made[0].break_domain_turns, expected)
+
+    def test_invalid_clock(self):
+        with self.assertRaisesRegex(ValueError, 'break_skill_domain_clock'):
+            setup(mc={'break_skill_domain_clock': 'unknown'})
 
 
 if __name__ == '__main__':

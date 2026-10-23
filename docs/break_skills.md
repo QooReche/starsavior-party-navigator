@@ -32,3 +32,13 @@
 - https://bbs.ruliweb.com/community/board/300143/read/73206318 (쿨 8턴, 영역 4턴)
 - https://vortexgaming.io/en/postdetail/718128
 - https://arca.live/b/starsavior/166938752 , /154741120 (403, 미열람)
+
+## 2026-10-23 브레이크 스킬 모델 정정
+
+- 클라이언트 표를 근거로 위 조사 기록의 영역 4턴 및 행성 정화 설명을 정정했음. 5종 영역 지속은 `ORBITAL_DOMAIN_TEMPLET.DomainGlobalLifeTurn=5`로 반영했음. 계수·발동 노바·영역 수치는 `ORBITAL_ARRAY_TEMPLET`, `ORBITAL_DOMAIN_TEMPLET`, `BATTLE_EFFECT_TEMPLET`, `SE_TEMPLET_ORBITAL_ARRAY`를 출처로 `code` 등급에 반영했음. 피해·회복 계수 출처에 `DAMAGE_TEMPLET`·`HEAL_TEMPLET`도 기록했음.
+- `mc.break_skill_domain_clock=global`을 기본으로 했음. `run`의 `act(best)` 반환 직후 영역만 1 차감하여 발동 행동 포함 5행동 동안 적용했음. 적 행동·추가 턴·행동 불가·도트 사망·브레이크 스킬 전멸에 따른 조기 반환도 셌음. 반응·협공·추가 시전은 별도 전역 행동으로 세지 않았음. 웨이브 전환에는 초기화나 추가 차감을 하지 않았고, 만료 즉시 능력치 캐시를 무효화하여 다음 게이지 진행에 속도를 반영했음.
+- `legacy`는 기본 지속 4턴과 기존 `break_skill_cd_unit` 시계를 함께 복원하도록 했음. 내부 지속값과 시계는 분리했음. 큐브의 명시적 `mc.break_skill_domain_turns`, 나머지 스킬의 명시적 `mc.break_skills.<이름>.domain_turns`가 모드 기본 지속값보다 우선하도록 했음. 예를 들어 `legacy`만 지정하면 4턴이며 지속값 5도 함께 지정하면 기존 시계의 5턴으로 적용했음. API가 기본값을 병합한 뒤에도 명시 여부를 전달하도록 했음. 쿨 8과 `ally_turn|round` 경계는 유지하고 영역의 이중 차감을 막았음.
+- 행성 정화를 Lv1 피해 계수 1.0, 발동 노바 0, 영역 「마녀의 은총」, 강인도 피해 +1, `skill_nova: 1`로 등록했음. 기존 피해·레벨 가산 경로를 사용했음. 영역 보유자가 살아서 실제 시전을 마치면 기존 `cast` 노바 지급부에서 `nova_add`로 +1을 지급하여 팀·개인 풀을 따르도록 했음. 마지막 영역 행동의 시전까지 지급했음.
+- 스킬 후 노바 +1의 수치·이벤트·SELF 대상은 `SE_TEMPLET_BATTLE_EFFECT 7230021`을 근거로 기록했음. `SkillConditionId 8000` 본문이 없어 기본기·특수기·궁극기를 포함하고 반응·협공·추가 시전(`extra=True`)을 제외하는 해석은 `assumed`로 남겼음. 쿨 단위, 발동·차감 시점, 스타피어서 발동자 게이지 제외 등 대상 해석도 `assumed`로 유지했음. 사망 시 영역 삭제·부활 시 재부여 없음은 기존 가정을 유지했음.
+- 시험을 기존 `act` 기반 legacy 회귀와 `run` 기반 global 검증으로 나눴음. 5행동·적 턴·조기 반환·웨이브 유지·추가 턴·만료 속도·행성 정화 피해와 강인도·노바 지급 및 제외·명시 지속값 우선순위를 검증했음. 전역 차감을 제거하면 10개 하위 사례, 추가 시전 노바 제외를 제거하면 3개 하위 사례가 실패하는 것을 확인하고 구현을 원복했음.
+- `STARSAVIOR_STATIC=E:/AI_mk2/starsavior-static-data`에서 브레이크 시험 33개, 규칙 시험 21개 통과를 확인했음. 골든은 구원자 64·파티 150·스테이지 팀 10의 결과가 일치했음. 기존 입력 자료 해시 3건이 저장 시점과 다르다는 경고는 별도로 확인했음. `data/quick.json`, `sim/manifest.json`, `tests/fixtures/reuse_baseline.json` 및 골든을 재생성하지 않았음.
