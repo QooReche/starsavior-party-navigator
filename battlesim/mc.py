@@ -62,6 +62,23 @@ def ally_auto_lines(src=SRC):
 
 _BLV = {}
 
+_BUFF_COUNT = None
+
+
+def positive_buff(name, legacy):
+    """표의 IsBuff && IsPositive. 미등록·동명 충돌은 기존 분류로 처리한다."""
+    global _BUFF_COUNT
+    if _BUFF_COUNT is None:
+        with open(os.path.join(SRC, 'data', 'buff_count.json'), encoding='utf-8') as f:
+            rows = json.load(f)['buffs']
+        _BUFF_COUNT = {}
+        for key, flags in rows.items():
+            values = {is_buff and is_positive for is_buff, is_positive in flags}
+            if len(values) == 1:
+                _BUFF_COUNT[key] = values.pop()
+    key = re.sub(r'\(해제\s*불가\)$', '', name).strip()
+    return _BUFF_COUNT.get(name, _BUFF_COUNT.get(key, legacy))
+
 
 def break_skill_levels(src=SRC):
     """data/break_skill_levels.json(tools/build_break_levels.py) -> {이름: {dmg, heal}}. 없으면 빈 dict"""
@@ -475,8 +492,11 @@ class Unit:
         return sum(len(e.inst) if self.b.mc['debuff_instance_count'] and e.inst is not None else 1
                    for e in self.eff.values() if e.category == 'debuff' and e.stacks > 0 and not e.check)
 
-    def n_good(self):
-        return sum(1 for e in self.eff.values() if e.category == 'buff' and e.stacks > 0 and not e.check)
+    def n_good(self, dispellable=False):
+        table = self.b.mc['buff_count_source'] == 'table'
+        return sum(1 for e in self.eff.values()
+                   if e.stacks > 0 and not e.check and (not dispellable or not e.fixed)
+                   and (positive_buff(e.name, e.category == 'buff') if table else e.category == 'buff'))
 
 
 def _add_prop(m, k, v, stacks):
@@ -2667,10 +2687,7 @@ class Battle:
                 if (k == '적 강화효과 보유' and v == '예' and lim is not None and cmp_ != 'legacy'
                         and ctx.src is not None and ctx.src.side != owner.side):
                     # 「강화 효과가 N개 이하(미만)인 적에게 피격」: 때린 상대 한 명의 강화 효과 수로 판정(옛 방식은 상대 전원 중 하나라도 있으면 참)
-                    if cmp_.endswith('_disp'):    # 해제 불가 표식(고정 강화)은 세지 않음(실험: 게임이 센다고 보장 못 함)
-                        n = sum(1 for e in ctx.src.eff.values() if e.category == 'buff' and e.stacks > 0 and not e.check and not e.fixed)
-                    else:
-                        n = ctx.src.n_good()
+                    n = ctx.src.n_good(dispellable=cmp_.endswith('_disp'))
                     if not (n < float(lim) if cmp_.startswith('lt') else n <= float(lim)):
                         return False
                     continue
@@ -2762,7 +2779,14 @@ class Battle:
         추가 발동(시전)은 묶음의 나머지 효과(중첩 소비 등) 뒤에 실행한다(같은 사건에서 자기 자신을 다시 부르는 무한 연쇄 방지)."""
         # 같은 시점의 선행 부여를 참조하는 조건은 부여가 끝난 뒤 판정한다.
         # 나머지 조건은 소거 전에 함께 판정하여 조건부 효과 묶음의 일관성을 지킨다.
-        count_grants = [ln for ln in lines if ln.eff.get('pre_grant') or
+        hit_counts = {name.strip() for ln in lines if line_kind(ln) == 'hit_self'
+                      for key, value in ln.params if key == '자신이 보유' for name in value.split(',')}
+        hit_grants = [ln for ln in lines if self.mc['hit_stack_order'] == 'apply_first'
+                      and line_kind(ln) == 'hit_self' and ln.eff['kind'] == 'buff'
+                      and ln.eff.get('target') == '자신' and ln.eff.get('max')
+                      and ln.eff.get('name') in hit_counts and not ln.params
+                      and not ln.eff.get('consume')]
+        count_grants = [ln for ln in lines if ln in hit_grants or ln.eff.get('pre_grant') or
                         (ln.eff['kind'] == 'buff' and
                          (ln.eff.get('per_hit') or ln.eff.get('per_crit') or ln.eff.get('cast_marker')))]
         for ln in count_grants:
