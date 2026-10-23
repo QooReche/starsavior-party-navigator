@@ -7,7 +7,7 @@
 사용: python -X utf8 -I tools/ingame_check.py [--runs 100] [--ov JSON] [--only 37-3] [--bs] [--myinfo PATH]
 --myinfo = 비공개 내정보를 제자리에서 읽어 콘텐츠 규칙으로 최종 능력치·전투력을 계산한다.
 이 경로는 build=none, stats_final=true이며 표준 육성·전투력 재배분을 사용하지 않는다.
---bs = 실측 장착 스킬 「큐브 과부하」 Lv.5 활성화(기본 미장착).
+--bs [LEVEL] = 실측 장착 스킬 「큐브 과부하」 활성화(레벨 생략 시 Lv.5, `--bs 3` 처럼 지정 가능, 기본 미장착).
 운영 기본값: 36-36=heal, 37-2~37-5=auto. --ov '{"nova_policy":"auto"}' 로 전부 순수 오토 대조 가능.
 nova_burst.total/by_unit은 전체 판 합계, uses·heal·healing은 판 평균(실제 HP 회복, 초과 회복 제외).
 2026-10-21 결과: 37-2(잡몹) 실제 4.13 vs 시뮬 4.11 일치 / 37-3·36-36(큰 보스) 실제 1.82·1.88 vs 시뮬 0.49·0.84 — 보스전만 과대(설명 docs/ingame_samples.md)
@@ -169,7 +169,7 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None):
         rebalance(spec, pw)
     opt = dict(G.SIMOPT, n_runs=runs, seed=seed, rekindle=rk)
     if bs:
-        opt['break_skill'] = {'name': '큐브 과부하', 'level': 5}
+        opt['break_skill'] = {'name': '큐브 과부하', 'level': 5 if bs is True else int(bs)}
     opt['rules_override'] = dict(opt['rules_override'], nova_policy=NOVA_POLICY[name])
     opt['rules_override'].update(ov or {})  # --ov가 실측 운영 기본값보다 우선
     tab, nm = sk.split('|', 1)
@@ -214,7 +214,7 @@ def main():
     p.add_argument('--seed', type=int, default=7)
     p.add_argument('--ov', type=json.loads)
     p.add_argument('--only', choices=SAMPLES)
-    p.add_argument('--bs', action='store_true')
+    p.add_argument('--bs', nargs='?', const=True, default=False, type=int, metavar='LEVEL', help='큐브 과부하 레벨(생략 시 5)')
     p.add_argument('--myinfo', metavar='PATH', help='Private ss-myinfo-v1 file (no default)')
     p.add_argument('--include-old', action='store_true', help='패치 전 실측(PRE_PATCH)도 돌린다')
     args = p.parse_args()
