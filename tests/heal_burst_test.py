@@ -144,7 +144,8 @@ class HealBurstTest(unittest.TestCase):
                                                        'ally_auto_lines': 'off',
                                                        'foe_react': 'off',
                                                        'foe_react_timing': 'legacy',
-                                                       'summon': 'off'}})
+                                                       'summon': 'off',
+                                                       'enforce': 'off'}})
             frozen = {k: v for k, v in r.items() if k in ('per_unit', 'outcome', 'timeline', 'breaks', 'break_skill', 'foes')}
             frozen['outcome'] = {k: v for k, v in frozen['outcome'].items() if k not in ('progress', 'ttk_actions_median')}   # 나중에 더한 요약 칸(전투 규칙 무관)
             self.assertEqual(hashlib.sha256(json.dumps(frozen, sort_keys=True, ensure_ascii=False).encode()).hexdigest(), digest)

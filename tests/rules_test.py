@@ -303,7 +303,7 @@ def test_index_uses_merged_opts():
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
     'ally_auto_lines', 'ally_auto_target', 'ally_break_gauge', 'ally_init_cd',
-    'auto_skill', 'basic_tough',
+    'auto_skill', 'basic_tough', 'enforce',
     'break_skill_atk_pct', 'break_skill_boss_points', 'break_skill_buff_turns',
     'break_skill_cd_unit', 'break_skill_cooldown', 'break_skill_cost',
     'break_skill_domain_turns', 'break_skill_fixed', 'break_skill_heal_ratio',

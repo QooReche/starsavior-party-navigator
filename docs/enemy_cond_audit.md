@@ -141,5 +141,25 @@
 - 영향: 현재 데이터북 적에 해당 시점의 반응 규칙이 없어 시뮬 결과 변화 0. `build_foe_react.py` 실행 결과 16 units 16 rules(변화 없음, 어휘 건너뛰기 0건). `support_report` 적 트리거 스킬 미반영 0건(변화 없음).
 - 시험: `tests/foe_react_test.py` 30건(on_my_attack 발동/미발동/off/legacy 5건, after_ally_attack 발동/미발동/wrong_skill/legacy 4건, damage_result 2건(placeholder), 기존 19건). 고의 파괴로 실패 확인 후 원복.
 
+## 추가: 대상 선택 미지원·근사 해소 (2026-10-24, 규칙 `mc.enforce`)
+
+적 피격 반응 패시브 자동 대상 (104곳 해소)
+- 원인: `build_foe_auto.py` 의 `se_of` 가 게임 SE 이름의 두 가지 변형을 찾지 못했음. (1) `NKM_UNIT_MON_` 접두사 전체를 쓰는 SE(공허선도자·공허절멸자 등): COND_NKM_UNIT_MON_BELLWETHER_MANE_BOSS_PASSIVE2_01 → se_of 가 `NKM_UNIT_MON_` 을 벗기지 않아 못 찾음. (2) 게임 유닛 변형 접미사(_01 등)가 스킬 이름에 있지만 SE 이름에는 없음(해피 68호 _RUSH_01_PASSIVE2 → SE _RUSH_PASSIVE2).
+- 수정: `se_of` 에 전체 sid 대조와 변형 접미사 제거 폴백을 추가. 적 473→601종, 효과 줄 218→359개.
+- 게임 규칙 확인: 공허선도자(BELLWETHER_MANE) PASSIVE2 AutoTargetId=17(NSETT_AUTO_ENEMY) = `last_damager`, 공허절멸자(FALLEN_SHIELD) PASSIVE1 AutoTargetId=17(NSETT_AUTO_ENEMY_ONE) = `last_damager`, 해피 68호(HAPPY68) PASSIVE2 AutoTargetId=17 = `last_damager`. 모두 마지막으로 나를 친 적.
+- 근거: SE_TEMPLET_SKILL COND_NKM_UNIT_MON_BELLWETHER_MANE_BOSS_PASSIVE2_01, COND_NKM_UNIT_MON_FALLEN_SHIELD_BOSS_PASSIVE1_01, COND_MON_HAPPY68_PEACE_BLACK_BOSS_RUSH_PASSIVE2_02. AUTO_SKILL_TARGET_TEMPLET 17 = `{IsLastDamageTarget: true}`.
+
+올베로스 코스모 BI_ENFORCE 강제 추가 행동 (3곳 해소, 규칙 `mc.enforce`=data)
+- 게임 SE: COND_MON_OLBERS_JOUST_BLACK_BOSS_COSMO_01_PASSIVE2_02 = BI_ENFORCE, AutoTargetId=1026(초즌 보유 아군), EnforceAutoTargetId=4(무작위 적), EnforceSkillIndex=NSI_SKILL_1_ATTACK(기본기).
+- PASSIVE2_05 = AutoTargetId=5(not_self), 초즌 부여 → 턴 종료 시 자신 제외 아군 1명에게 부여.
+- 엔진: `_run_special_rest` 에서 RX_ENFORCE 패턴으로 「아군 1명(자동 지정)에게 기본기 추가 발동」을 잡고, line_spec 의 enforce 규칙(actor 필터 → enemy 필터 → cast)으로 처리. 시전자 사망·행동 불가면 취소.
+- 근거: NKM.decompiled.cs 4555~4572(BI_ENFORCE SE → 예약), 7955~7992(EnforceSkillBooking: 시전자 사망·스킬 불가→취소).
+
+구원자 효과 줄 근사 해소
+- NOT_SELF(NSETT_AUTO_ALLY_ONE_NOT_SELF): `build_auto_skill.py` 에서 제외 조건 제거. 웨딩 카르멘 고유 패시브(not_self + high_atk), 웨딩 에핀델 특수기(high_atk) 추가. 15→18줄.
+- IsHighDef: 26105710 빌드 해독본에 함수 존재 확인(NKM ആഌഈആ...cs case IsHighDef → 방어력 최고). `build_foe_auto.py`·`build_auto_skill.py`·`mc.py _filter` 에 high_def/low_def 추가. 티리아 궁극기의 체크용 버프 줄이 이제 high_def 필터로 올바르게 연결됨.
+- 남은 근사: 레벨업 추가 행(힐데·웨딩 에핀델 궁극기) — 기본 묶음(01)만 처리, 레벨별 SE 집합 계산은 다음 작업. 줄 수 불일치 3스킬(ceres 고유 패시브·harley 특수기·sunshine-cat-smile 고유 패시브) — 데이터북과 SE 행 수가 달라 짝짓기 실패, 원인 미확인. professor-m 고유 패시브의 IsNotUnableToAct 필터도 미지원(해독 코드 확인 필요).
+- 시험: `tests/sel_targeting_test.py`(10건). 옛 동작 = `enforce=off`, `foe_auto=off`, `ally_auto_lines=off`.
+
 ## 재현
 `python -X utf8 -I AI\temp\partynavigator\scripts\audit_all.py <src> <내정보.json> out.json` → `audit_report.py <src> out.json`. 스크립트는 일회성(temp)이라 저장소에는 없음. 회귀 시험은 `tests/enemy_cond_test.py`.

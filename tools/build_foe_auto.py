@@ -7,7 +7,7 @@
 - 스킬 규칙: 게임 스킬(_ATTACK/_SPECIAL/_HYPER = 기본기/특수기/궁극기)의 AutoSkillId 행을 조건(c)·필터(f) 어휘로. 반응 스킬은 제외.
 - 효과 줄: 그 스킬의 SE 행(COND_<스킬>_NN, 순서대로)과 데이터북 ef 줄을 줄 수가 같고, 줄마다 대상 종류(자신/적 전체/자동 지정 …)가
   맞을 때만 짝짓는다. AutoTargetId 가 있는 「적 자동 지정」 줄만 lines[si:k] = {"one": 단일 대상, "f": [...]}.
-  EnforceAutoTargetId(강제 추가 행동 경로)는 쓰지 않는다.
+  EnforceAutoTargetId(강제 추가 행동 경로): BI_ENFORCE SE 가 아군 자동 대상이면 enforce 규칙을 줄 spec 에 추가한다.
 모르는 어휘가 나온 스킬·줄은 건너뛰고 보고한다(조용히 다른 규칙으로 바꾸지 않음).
 
 사용: python -X utf8 -I tools/build_foe_auto.py [--static <비공개 저장소>]
@@ -33,7 +33,8 @@ ELEM = {'NUAT_SUN': '태양', 'NUAT_MOON': '달', 'NUAT_STAR': '별', 'NUAT_ORDE
 SLOT = {'ATTACK': '기본기', 'SPECIAL': '특수기', 'HYPER': '궁극기'}
 SIMPLE = {'IsNotInvincible': 'not_invincible', 'IsBoss': 'boss', 'IsElite': 'elite', 'IsAdvantageAdjustType': 'advantage',
           'IsLowHpRate': 'low_hp_rate', 'IsLowMaxHp': 'low_max_hp', 'IsHighHpRate': 'high_hp_rate', 'IsHighMaxHp': 'high_max_hp',
-          'IsHighAtk': 'high_atk', 'IsLowAtk': 'low_atk', 'IsHighSpeedGauge': 'high_gauge', 'IsLowSpeedGauge': 'low_gauge',
+          'IsHighAtk': 'high_atk', 'IsLowAtk': 'low_atk', 'IsHighDef': 'high_def', 'IsLowDef': 'low_def',
+          'IsHighSpeedGauge': 'high_gauge', 'IsLowSpeedGauge': 'low_gauge',
           'IsHighTurnSpeed': 'high_spd', 'IsLowTurnSpeed': 'low_spd', 'IsLastHitTarget': 'last_hit', 'IsLastDamageTarget': 'last_damager',
           'IsLeader': 'leader', 'IsAllyOneNotSelf': 'not_self', 'IsSuperArmorBreak': 'broken', 'IsNotSuperArmorBreak': 'not_broken',
           'FollowSkillTargetType': 'follow', 'IsPositiveBuffUnit': 'buffed'}
@@ -44,6 +45,8 @@ COUNT = {'IsPositiveBuffCountOverThan': 'buff_ge', 'IsPositiveBuffCountLessThan'
 AUTO_ENEMY = {'NSETT_AUTO_ENEMY': False, 'NSETT_AUTO_ENEMY_ONE': True}
 # 아군 자동 지정(NKM 6407~6450 같은 함수, 상대 대신 내 편): 전체형·1명형. 「자신 제외 1명」(NOT_SELF)은 이 함수가 다루지 않아 제외
 AUTO_ALLY = {'NSETT_AUTO_ALLY': False, 'NSETT_AUTO_ALLY_ONE': True}
+# BI_ENFORCE 강제 추가 행동: EnforceSkillIndex → 스킬 칸 (NKM 4555~4572)
+ENFORCE_SLOT = {'NSI_SKILL_1_ATTACK': '기본기', 'NSI_SKILL_2_SPECIAL': '특수기', 'NSI_SKILL_3_HYPER': '궁극기'}
 # 데이터북 ef 줄의 대상 머리말 -> SE m_BuffTargetType 묶음(짝짓기 검증용)
 HEAD = [(r'적 1명\(자동 지정\)', {'NSETT_AUTO_ENEMY_ONE'}), (r'적\(자동 지정\)', {'NSETT_AUTO_ENEMY', 'NSETT_AUTO_ENEMY_ONE'}),
         (r'아군[^에]*\(자동 지정\)|자신[^에]*제외[^에]*\(자동 지정\)', {'NSETT_AUTO_ALLY', 'NSETT_AUTO_ALLY_ONE', 'NSETT_AUTO_ALLY_ONE_NOT_SELF'}),
@@ -125,9 +128,17 @@ def se_rows(tables):
 
 
 def se_of(sid, se):
-    for key in (sid.replace('NKM_UNIT_MON_', '', 1), sid.replace('NKM_UNIT_', '', 1)):
+    # SE m_SEStrID 이름은 COND_<skill_key>_<줄번호>. skill_key 가 보통 MON_... 이지만
+    # NKM_UNIT_MON_... 전체를 쓰는 경우도 있어(공허선도자·공허절멸자 등) 세 가지로 시도한다.
+    for key in (sid.replace('NKM_UNIT_MON_', '', 1), sid.replace('NKM_UNIT_', '', 1), sid):
         if key in se:
             return se[key]
+    # 게임 유닛 변형 접미사(예: _01)가 스킬 이름에 붙지만 SE 이름에는 없는 경우(해피 68호 _RUSH_01_PASSIVE2 → SE _RUSH_PASSIVE2)
+    alt = re.sub(r'_\d+(_(?:PASSIVE|ATTACK|SPECIAL|HYPER))', r'\1', sid)
+    if alt != sid:
+        for key in (alt.replace('NKM_UNIT_MON_', '', 1), alt.replace('NKM_UNIT_', '', 1), alt):
+            if key in se:
+                return se[key]
     return None
 
 
@@ -270,6 +281,13 @@ def add_lines(res, si, sid, raw, se, target, bname):
             spec = {'one': AUTO_ENEMY.get(tt, AUTO_ALLY.get(tt)), 'f': filters(target.get(r['AutoTargetId']), bname)}
             if tt in AUTO_ALLY:
                 spec['ally'] = True
+            # BI_ENFORCE: 강제 추가 행동 — 선택된 아군이 지정 스킬을 시전(NKM 4555~4572, 7955~7992)
+            if r.get('m_BuffStrID') == 'BI_ENFORCE':
+                esi = ENFORCE_SLOT.get(r.get('EnforceSkillIndex'))
+                eat = r.get('EnforceAutoTargetId')
+                if esi:
+                    enemy_f = filters(target.get(eat), bname) if eat else []
+                    spec['enforce'] = {'slot': esi, 'enemy_f': enemy_f}
             key = '%d:%d' % (si, k)
             if key in got and got[key] != spec:
                 bad.add(key)        # 펼친 줄끼리 규칙이 다르면 그 줄은 버림
