@@ -378,13 +378,14 @@ def test_note_keys_not_in_code():
     check_files = [os.path.join(ROOT, 'sim_worker.js'), os.path.join(ROOT, 'party_template.html')]
     sources = []
     for d in check_dirs:
-        for fn in os.listdir(d):
-            if fn.endswith('.py'):
-                sources.append(os.path.join(d, fn))
+        for dirpath, _dirs, fnames in os.walk(d):
+            for fn in fnames:
+                if fn.endswith('.py'):
+                    sources.append(os.path.join(dirpath, fn))
     for f in check_files:
         if os.path.exists(f):
             sources.append(f)
-    # 패턴: self.mc['키'] 또는 mc.get('키') 또는 mc['키'] 형태로 읽는 경우
+    # 패턴: mc['키'] / self.mc['키'] / mc.get('키') / self.mc.get('키') 형태로 읽는 경우
     found = []
     for path in sources:
         try:
@@ -392,8 +393,9 @@ def test_note_keys_not_in_code():
         except OSError:
             continue
         for k in _NOTE_KEYS:
-            # 단어 경계 + 따옴표로 둘러싼 키 이름을 소비하는 패턴
-            if re.search(r"""mc\s*[\[.]\s*['"]""" + re.escape(k) + r"""['"]""", text):
+            # mc['key'] 또는 mc.get('key') 두 형태를 모두 검사
+            pat = r"""(?:mc\s*\[|mc\.get\s*\()\s*['"]""" + re.escape(k) + r"""['"]"""
+            if re.search(pat, text):
                 found.append('%s:%s' % (os.path.basename(path), k))
     ok = not found
     return ok, '코드에서 note 키 소비: %s' % found
