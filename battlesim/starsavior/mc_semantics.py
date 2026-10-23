@@ -108,7 +108,7 @@ def normalized_definition(d):
         for stat, val in props.items():
             _perm_apply(result.stats, result.passive, dict(stat=stat, val=val))
     result.variants = variant_rules(d)
-    result.effect_info = unit_glossary(d)
+    result.effect_info = dict(unit_glossary(d), **getattr(d, 'effect_info', {}))
     return result
 
 

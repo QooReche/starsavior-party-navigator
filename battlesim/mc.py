@@ -880,6 +880,10 @@ class Battle:
                 # 일반 공격 뒤와 동일하게 run에서 종료/웨이브 전환을 판정한다.
                 # 브레이크는 일반 턴 밖의 행동이므로 게이지·쿨·지속 효과를 소비하지 않는다.
                 return
+        self._act_turn(u)
+        self._finish_action(u)
+
+    def _act_turn(self, u):
         u.gauge = 0.0
         u.extra_turn = False      # 추가 턴은 이 행동으로 소비(행동 끝에 지우면 다음 차례 판정에서 우선권이 사라짐)
         u.actions += 1
@@ -902,7 +906,6 @@ class Battle:
             self._tick_cooldowns(u)
         self._tick_dot_hot(u)
         if u.dead:
-            u.acting = False
             return
         self.fire(u, 'own_ts', Ctx(u, u, None))
         for v in self.alive(u.side):
@@ -973,6 +976,10 @@ class Battle:
                     if e.dur <= 0:
                         del u.eff[name]
             self.dirty(u)
+
+    def _finish_action(self, u):
+        """정상 행동·행동 불가·지속 피해 사망 모두 한 번 거치는 턴 종료.
+        브레이크 영역(global)은 run의 _tick_break_domain에서 별도로 차감한다."""
         if self.mc['any_turn_clock']:
             self._tick_any_turn()
         self._expire_checks()
@@ -984,7 +991,7 @@ class Battle:
 
     def _tick_any_turn(self):
         """'누군가 턴 종료 시 턴 수가 차감' 효과(BUFF_TEMPLET.GlobalTurnCounting): 어느 진영의 누가 행동을 끝내든 양 진영 전원의 any_turn 효과를 1 차감.
-        효과가 걸린 그 행동에서는 차감하지 않는다(fresh)."""
+        NKM 3723·4240: GlobalTurnCounting이면 효과가 걸린 행동도 차감한다."""
         for side in (0, 1):
             for v in self.alive(side):
                 changed = False
@@ -992,9 +999,7 @@ class Battle:
                     e = v.eff[name]
                     if e.clock != 'any_turn':
                         continue
-                    if e.fresh:
-                        e.fresh = False
-                        continue
+                    e.fresh = False
                     if e.dur != math.inf:
                         e.dur -= 1
                         if e.dur <= 0:
@@ -3433,9 +3438,6 @@ class Battle:
         fresh = (x is owner and owner.acting) or (
             self.mc['taunt_skill_end_duration'] and name == '도발' and x.acting
             and self._cur_line is not None and self._cur_line.phase == '스킬 사용 후')
-        if self.mc['any_turn_clock'] and self._is_any_turn(owner, name):
-            # 누군가의 행동 중에 걸린 효과는 그 행동 끝 차감에서 제외(걸린 턴은 세지 않음)
-            fresh = fresh or any(v.acting for s in (0, 1) for v in self.alive(s))
         if e is None:
             mx = eff['max'] or (5 if dot else 1)
             e = Eff(name, eff['props'], mx, dur, owner, harmful)

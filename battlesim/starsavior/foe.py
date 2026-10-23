@@ -141,6 +141,14 @@ _GLOSS = {}
 ANY_TURN_TEXT = '누군가 턴 종료 시 턴 수가 차감'   # BUFF_TEMPLET.GlobalTurnCounting=true 인 상태 설명의 공통 문구
 
 
+def _gloss_entry(e):
+    dur, props = _gloss_props(e.get('x'))
+    info = dict(kind=e.get('k'), props=props, dur=dur)
+    if ANY_TURN_TEXT in (e.get('d') or ''):
+        info['clock'] = 'any_turn'
+    return info
+
+
 def gloss(raw=None):
     """상태 효과 이름 -> dict(kind 강화/약화, props, dur). 적 스킬 gl 사전 + 데이터북 dict.eff 의 사용 예. 무작위 효과(〈데드 스핀〉: [...] 중 1개) 해석용"""
     raw = load_foe() if raw is None else raw
@@ -150,10 +158,7 @@ def gloss(raw=None):
         for s in raw['s']:
             for e in s.get('gl') or []:
                 if e.get('n') and e['n'] not in g:
-                    dur, props = _gloss_props(e.get('x'))
-                    g[e['n']] = dict(kind=e.get('k'), props=props, dur=dur)
-                    if ANY_TURN_TEXT in (e.get('d') or ''):
-                        g[e['n']]['clock'] = 'any_turn'
+                    g[e['n']] = _gloss_entry(e)
         _GLOSS[key] = (raw, g)  # 원본도 보유하여 id 재사용을 막음
     return _GLOSS[key][1]
 
@@ -189,8 +194,15 @@ class FoeDef:
         self.nb = {}
         self.manual = None
         self.gear_atkp = 0.0
+        self.effect_info = {}
         for si in u['sk']:
             sd = raw['s'][si]
+            for e in sd.get('gl') or []:
+                if e.get('n'):
+                    info = _gloss_entry(e)
+                    # 일반형도 명시해야 동명 전역형의 전체 사전 값으로 대체되지 않는다.
+                    info.setdefault('clock', 'owner_turn')
+                    self.effect_info[e['n']] = info
             slot = sd['sl']
             self.desc[slot] = (self.desc.get(slot, '') + ' ' + (sd.get('d1') or '')).strip()
             dm = sd.get('dm') or ''

@@ -10,8 +10,9 @@
 
 ## 동작
 - 규칙 `mc.any_turn_clock` (기본 **true**, legacy/alt false, grade data). false 면 옛 동작(전부 owner_turn).
-- 효과 설명(`foe.gloss()` / 유닛 `effect_info`)에 위 문구가 있는 이름이 걸리면 `Eff.clock='any_turn'`.
-- `Battle.act` 끝에서 `_tick_any_turn()`: 행동한 유닛과 무관하게 양 진영 생존 유닛의 any_turn 효과 지속 -1. 걸린 행동은 제외(`fresh`).
+- 효과 설명(`foe.gloss()` / 유닛 `effect_info`)에 위 문구가 있는 이름이 걸리면 `Eff.clock='any_turn'`. 적은 자신의 스킬 용어를 우선하며 일반형도 `owner_turn`을 명시한다(집행자 길레·올베로스의 동명 「강인도 피해 무효」 구분).
+- `Battle.act`의 공통 종료 경로 `_finish_action()`에서 `_tick_any_turn()`: 행동한 유닛과 무관하게 양 진영 생존 유닛의 any_turn 효과 지속 -1. NKM 3723·4240의 GlobalTurnCounting 예외대로 부여 행동도 차감하며 `fresh`로 건너뛰지 않는다. 지속 피해로 행동자가 사망해도 동일하게 처리한다.
+- 브레이크 영역의 `global` 시계는 기존대로 `run()`의 `_tick_break_domain()`에서 한 번 차감한다. `any_turn` 차감 대상에 포함하지 않는다.
 - 속도 감소 등 일반 약화는 GlobalTurnCounting=false 이므로 owner_turn 유지.
 
 ## 미반영
