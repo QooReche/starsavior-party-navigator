@@ -974,7 +974,7 @@ function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:chec
  syncOwn();
  if(Array.isArray(b)&&!MI.brkLv){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}pruneBreakSel()})();
 const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").checked=on;LS.set("why",on);if(on)drawGraph()};
-$("showwhy").onchange=()=>setWhy($("showwhy").checked);setWhy(!!LS.get("why"));
+$("showwhy").onchange=()=>setWhy($("showwhy").checked);{const w=!!LS.get("why");document.body.classList.toggle("show-why",w);$("showwhy").checked=w}
 let _rt=null;const rerunNow=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
 const rerun=()=>{clearTimeout(_rt);_rt=setTimeout(AUTO?run:condChanged,150)};   // 조건이 바뀜: 자동 모드가 아니면 결과를 비우고 「추천 편성 보기」 안내
 $("out").addEventListener("click",e=>{if(e.target.closest("button[data-miretry]")){MI.error="";miLoad();setTimeout(run,0);return}if(e.target.closest("button[data-go]"))showReco();const mo=e.target.closest("button[data-miopen]");if(mo){setDrawer(true);if(mo.dataset.miopen==="how")document.querySelector("#drawer .mihow")?.scrollIntoView({block:"start"})}});
@@ -1139,5 +1139,5 @@ setMode(LS.get("mode")==="manual"?"manual":"auto",false);
 
  else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
  if(!SHARE.g)LS.set("grow.v2",$("grow").value)}
-{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}updCount();refreshTabs();applyShare();miLoad();REQ=AUTO||!!SHARE.c;SIMQ.kick=REQ&&!AUTO;run();window._ready=true;
+{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}updCount();refreshTabs();applyShare();miLoad();REQ=AUTO||!!SHARE.c;SIMQ.kick=REQ&&!AUTO;run();window._ready=true;if(LS.get("why"))drawGraph();
 </script></body></html>
