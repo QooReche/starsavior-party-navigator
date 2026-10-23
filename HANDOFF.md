@@ -4,7 +4,7 @@
 
 ## ▶ 다음 세션 시작 (2026-10-23 정리)
 
-시작 멘트 예: 「여정 네비게이터 이어서 — HANDOFF 다음 세션 1번(큰 보스전 아군 피해 부족)부터」
+시작 멘트 예: 「여정 네비게이터 이어서 — HANDOFF 다음 세션 1번(장비 탐색 시작 쿨·서든데스)부터」
 
 시작 절차
 1. 세 저장소 최신 받기: `E:\AI_mk2\starsavior-party-navigator`(main), `E:\AI_mk2\starsavior-static-data`, `E:\AI_mk2\starsavior-packet-ref` 에서 `git pull --ff-only`. 작업 사본 `E:\AI_mk2\pn-community`(worktree, 브랜치 community-removal)는 `git merge --ff-only origin/main`.
@@ -12,12 +12,15 @@
 3. ⚠ 10/22 밸런스 변경 스테이지(작전 최종 보스 26·27·28·30·35·36·37-36, 토벌)의 패치 전 실측·공략 영상은 참조 금지(사용자 지시). 유효한 실측: 37-2~37-5(10/21), 혹한의 습격 17·17e·17r(10/23).
 
 남은 일(권하는 순서) — 모두 이 PC 에서 가능(자료는 비공개 저장소에 있음)
-1. **큰 보스전 아군 피해 부족(37-3 약 1.5배)의 원인 찾기**: 대상·스킬 규칙·보스 수치는 원인이 아니었음(아래 완료 항목). 남은 후보 = 같은 편성 큰 보스전 녹화로 구원자별 시전 횟수·반응 대조(`docs/ally_damage_audit.md`), 서든데스(99~149 TURN 이후 아군 약화, 엔진 미구현).
-2. (10/23 완료) 반격·턴 제한 단위·보스 수치 기준선: 규칙 `mc.revenge`(on, 반격 적 304 스테이지, 표본 클리어 평균 −23%p)·`mc.turn_limit_unit`(actions, 코스모 50 = 전체 행동 50번). 보스 1,151곳 수치는 엔진과 일치(다른 7곳은 패치 뒤 값이 엔진 쪽). 상세 `docs/enemy_cond_audit.md` 끝 절.
+1. **바로 할 수 있는 것(게임 데이터 근거 있음, 권함)**
+   - 장비 탐색(혹한의 습격 등) 배치 연결을 시작 쿨에도: `tools/build_foe_auto.py` 에만 넣은 `NORMAL_BATTLE_EXPLORE_EQUIP<탭>_<단계>` 후보를 `tools/build_foe_spawn.py` `candidates()` 로 옮기고 `data/foe_spawn.json` 재생성(지금 장비 탐색은 등급 규칙으로 대신함).
+   - 서든데스: 비공개 `analysis/baseline/sudden_death.json`(그룹 301~304, 단계별 종료 TURN과 아군 NV_RATE_HP·DEF·HEAL_GIVE·BARRIER_GIVE 감소), 스테이지별 그룹은 `stages.json` 의 `sudden_death`. 전역 턴(`Battle.global_turns`) 기준으로 아군에 적용. 엔진 미구현.
+2. **큰 보스전 아군 피해 부족(37-3 약 1.5배)의 원인 찾기 — 녹화 필요**: 대상·스킬 규칙·보스 수치·반격·턴 제한은 원인이 아니었음. 남은 후보 = 같은 편성 큰 보스전 녹화로 구원자별 시전 횟수·반응 대조(`docs/ally_damage_audit.md`).
+2-1. (10/23 완료) 반격·턴 제한 단위·보스 수치 기준선: 규칙 `mc.revenge`(on, 반격 적 304 스테이지, 표본 클리어 평균 −23%p)·`mc.turn_limit_unit`(actions, 코스모 50 = 전체 행동 50번). 보스 1,151곳 수치는 엔진과 일치(다른 7곳은 패치 뒤 값이 엔진 쪽). 상세 `docs/enemy_cond_audit.md` 끝 절.
 3. (10/23 완료) 적 스킬별 자동 규칙·효과 줄 자동 대상: `tools/build_foe_auto.py` → `data/foe_auto.json`, 규칙 `mc.foe_auto`(data). 적 414종·스킬 규칙 398·효과 줄 167. 혹한의 습격 3판 모두 실측 쪽으로(17r 클리어 98→88%). 남은 것: 짝짓기 실패 10스킬·연결 없는 105스테이지(코스모·플래시 포함)는 옛 근사, `EnforceAutoTargetId`(강제 추가 행동) 미사용, 구원자 쪽 효과 줄 자동 대상(설명문 근사 유지). 상세 `docs/enemy_cond_audit.md` 끝 절.
 4. (2번에 포함, 10/23 완료) 턴 제한 단위.
 5. (10/23 완료) 반응·대상 선택 규칙: 게임 자동 전투 규칙 1(구원자)·1001(적)·구원자 스킬별 규칙(`tools/build_auto_skill.py` → `data/auto_skill.json`, 규칙 `mc.ally_auto_target`·`enemy_auto_target`·`auto_skill`)을 기본으로. 회복 스킬 8개는 75% 이하 아군이 있을 때만, 바니 샤를 궁극기는 점화 5스택일 때만. 실측 대조: 37-2·37-4 는 가까워지고 혹한의 습격 17r(실제 패배)은 클리어 72→98% 로 더 낙관적 — 코드 근거라 실측에 맞추지 않았음. 상세 `docs/ally_damage_audit.md` 끝 절.
-6. 그 밖: 적 조건 판정 `enemy_hit_buff_cmp` 재선택(실측 더 쌓이면), 소환·즉시 피해·쿨 초기화·트리거 스킬 미지원, 건틀렛 축복·전투력 PP 항, 코드 정리 4건(아래 「남은 것」). 게임 PC 필요: 스킬별 아이콘, 잠재력 11011/1 재확인.
+6. 그 밖: 반격은 행동 끝에 모아 처리하는 근사(게임은 본 행동·협공·반응 스킬 직후마다), 적 조건 판정 `enemy_hit_buff_cmp` 재선택(실측 더 쌓이면), 소환·즉시 피해·쿨 초기화·트리거 스킬 미지원, 건틀렛 축복·전투력 PP 항·브레이크 스킬 레벨 효과, 코드 정리 4건(아래 「남은 것」). 게임 PC 필요: 스킬별 아이콘, 잠재력 11011/1 재확인.
 
 엔진 규칙을 바꾸면: `tools/build_simpack.py` → `tools/gen_quick_calib.py --per-content 400 --opboss`(약 20분) → `tools/calibrate_quick.py --write` → `build_party_html.py index.html` → 시험 → codex 리뷰(래퍼 `codex-review.ps1`) → 커밋·푸시(QooReche noreply).
 
