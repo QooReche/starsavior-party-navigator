@@ -238,11 +238,15 @@ def ally_stack_trigger(sk, lines):
 def supported_trigger(d, sk):
     """확률 엔진이 시전 조건을 연결한 트리거. 기대값 엔진의 실행 규칙은 바꾸지 않는다."""
     from .mc_semantics import trigger_rule
-    return bool(trigger_rule(sk, d.lines) or (d.key, sk.name) in {
-        ('professor-m', '악에서 악으로'),
-        ('wedding-carmen', '수호의 기사'),
-        ('white-pearl-luna', '썸머 템테이션♡'),
-    })
+    if trigger_rule(sk, d.lines):
+        return True
+    if (d.key, sk.name) in {('professor-m', '악에서 악으로'), ('wedding-carmen', '수호의 기사'),
+                             ('white-pearl-luna', '썸머 템테이션♡')}:
+        return True
+    # 적 반응 스킬: foe_react.json 데이터가 있으면 지원
+    if getattr(d, 'react', {}).get(sk.slot):
+        return True
+    return False
 
 
 def _perm_apply(stats, passive, eff):

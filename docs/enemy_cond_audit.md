@@ -100,7 +100,20 @@
 - 〈즉시 피해〉(크로넷 「시계태엽 폭탄」 뒤·올베로스의 하수인 〈약화〉 보유 공격 뒤, 일일 거점 조사 4·코스모 올베로스 3곳): 게임 = 공격력 100% + 생명력 1000% 자기 피해(`NKM` 4794~4822·7311~7342, DAMAGE_TEMPLET) = 사실상 자폭. 엔진은 이름뿐인 강화 효과로 남아 크로넷이 폭탄을 판마다 4~5번 반복했음. 규칙 `mc.instant_damage`(self_kill, 옛 off). 수호 분담으로 넘어가는 몫은 근사에서 뺌.
 - 브레이크 스킬 레벨(규칙 `mc.break_skill_level`, `tools/build_break_levels.py` → `data/break_skill_levels.json`): 레벨 L 이하 행의 피해·회복 가산을 계수에 더함(곱 아님). 특이점 관측 Lv10 70%→80%, 스타피어서·차원 강습 50%→60%, 큐브 과부하 회복 2%→4%.
 - 브레이크 스킬 피해 x DamageScale(규칙 `mc.break_skill_scale`=game): 오비탈 시전자도 일반 피해식 끝에서 x 1.85(`NKM` 17742~17817, 브레이크 시전 15373~ = OBF_26964). 옛 가정(1.85 제외)은 근거 없던 assumed. 브레이크 피해가 1.85배로 늘어남 — 큰 보스전 아군 피해 부족의 일부일 수 있음(측정은 계수 재맞춤 결과로).
-- 남은 미지원: 적 트리거 스킬 5종(맹약 회수·앙코르·소거·태엽 폭탄 기폭·월영, 17곳), 소환(올베로스·티리아·페르세스, 26곳) — 조사 결과는 HANDOFF.
+- 남은 미지원: 소환(올베로스·티리아·페르세스, 26곳) — 조사 결과는 HANDOFF.
+
+## 추가: 적 트리거(반응) 스킬 5종 (2026-10-24, 규칙 `mc.foe_react`)
+
+- 게임 코드(`NKM.decompiled.cs` 8097~8160 ReactSkillBooking): 적이 공격 뒤(`AfterMyAttack`) 또는 유효 타격 시(`MyEffectiveHit`) 조건을 판정해 반응 스킬을 예약. 시전자 사망·쿨·행동 불가면 실행 직전에 취소.
+- `tools/build_foe_react.py --static` → `data/foe_react.json`(가공 어휘·한글 효과 이름만). 데이터북 적 ↔ 게임 유닛 연결은 `build_foe_auto.py` 와 같은 방식(스테이지 배치, 역할·속성 일치). SKILL_TEMPLET(`NST_REACT`) + `ReactConditionID` → SKILL_CONDITION_TEMPLET(tables/Plain).
+- 결과: 적 16종, 규칙 16개.
+  - **맹약 회수**(공허맹약자, 궁극기): `AfterMyAttack` + 맹약결속 ==3 + 대상 피의 맹약 보유 + 대상 미처치 → 그 대상에게. 작전 어려움 35-10·회랑 FLOOR 450×3·성간 550.
+  - **앙코르**(공허변주자, 특수기): `AfterMyAttack` + 기본기 + 악상 ≥2 → 적 전체, cd 1. 회랑 FLOOR 420×3·성간 520.
+  - **소거**(괴리의 표상, 특수기): `AfterMyAttack` + 잔재된 괴리 보유 + 체크용 버프 미보유 → 그 대상에게. 코스모 1~3단계.
+  - **태엽 폭탄 기폭**(레디메이드 해피 68호, 특수기): `AfterMyAttack` + 기본기 → 적 전체, cd 4. 플래시 Ⅰ~Ⅳ.
+  - **월영**(복제체 페이, 특수기): `MyEffectiveHit` + 풍호 보유 + 단일 대상 스킬 → 그 대상에게. 큐브 레지스터.
+- 엔진: `FoeDef.react`(foe_react.json)에 칸별 발동 조건. 적 행동의 `cast()` 뒤 `_check_foe_react()`가 조건을 판정하고, 반응 대기열(`_react`)로 예약(기존 `mc.reaction_timing=queue` 경로와 같은 실행 순서). 조건 판정은 예약 시점, 사망·쿨·행동 불가는 `trigger_cast`가 실행 직전에 확인. `foe_react=off`(옛 동작)이면 미반영 표시만.
+- 영향(40판, emily·frey·haydee·gwen 파티, seed 7): 작전 어려움 35-10 클리어 0%←82%(−82%p), 달 회랑 450 95%←100%(−5%p), 별 회랑 420 0%←2%(−2%p), 괴리의 표상 1단계 98%←100%(−3%p), 괴리의 표상 3단계 진척도 0.04←0.08. 맹약 회수가 있는 스테이지의 영향이 큼(보스가 추가 공격을 함). 폭탄 기폭·월영은 시험 파티가 해당 스테이지를 못 깨서 변화 0.
 
 ## 재현
 `python -X utf8 -I AI\temp\partynavigator\scripts\audit_all.py <src> <내정보.json> out.json` → `audit_report.py <src> out.json`. 스크립트는 일회성(temp)이라 저장소에는 없음. 회귀 시험은 `tests/enemy_cond_test.py`.

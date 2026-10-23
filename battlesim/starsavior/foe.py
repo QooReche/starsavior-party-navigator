@@ -44,6 +44,20 @@ def foe_auto(src=SRC):
     return _AUTO[src]
 
 
+_REACT = {}
+
+
+def foe_react(src=SRC):
+    """data/foe_react.json(tools/build_foe_react.py) -> {'foe:유닛[:변형]': {칸: 규칙}}. 없으면 빈 dict"""
+    if src not in _REACT:
+        p = os.path.join(src, 'data', 'foe_react.json')
+        _REACT[src] = {}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                _REACT[src] = json.load(f).get('units', {})
+    return _REACT[src]
+
+
 _SUDDEN = {}
 
 
@@ -170,12 +184,19 @@ class FoeDef:
                 self.skills[slot] = sk
             elif src == 'trigger':
                 self.trigger_skills[slot] = sk
-                self.unmodeled.append('적 트리거 스킬 미반영: %s' % sd['n'])
             if dm and not mm:
                 self.unmodeled.append('적 피해 계수 형식 미해석: %s' % dm)
             for raw_line in sd.get('ef') or []:
                 self.lines.append(Line(raw_line, slot, src))
         self.spd_base = self.stats['spd']
+        # 적 반응(트리거) 스킬 발동 조건(mc.foe_react): 칸 -> {timing, conds, target}
+        react_data = foe_react().get(self.key) or {}
+        self.react = {}
+        for slot, tsk in self.trigger_skills.items():
+            if slot in react_data:
+                self.react[slot] = react_data[slot]
+            else:
+                self.unmodeled.append('적 트리거 스킬 미반영: %s' % tsk.name)
         # 게임 자동 대상 규칙(mc.foe_auto): 스킬 칸 -> 규칙 행, (칸, 효과 줄 원문) -> 효과 줄 자동 대상. 같은 원문에 다른 규칙이면 버림
         rules = foe_auto().get(self.key) or {}
         self.auto = rules.get('skills', {})

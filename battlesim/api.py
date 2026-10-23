@@ -79,6 +79,7 @@ class _CustomFoe:
         self.manual = None
         self.gear_atkp = 0.0
         self.spd_base = self.stats['spd']
+        self.react = {}
 
 
 # 능력치 화면에 이미 들어 있는 상시 % (parser._perm_apply) — 입력 능력치 -> 뺄 passive 키
