@@ -319,7 +319,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'max_depth', 'max_events', 'myinfo_combat',
     'nova_force_effects', 'nova_skill_gain', 'nova_slot_effects',
     'power_penalty', 'rand_range', 'reaction_timing', 'revenge',
-    'shield_tick', 'stage_fx_target', 'sudden_death',
+    'shield_tick', 'stage_fx_target', 'sudden_death', 'summon',
     'target_defender_mult', 'target_mode', 'target_row_weight',
     'taunt_skill_end_duration', 'toughness', 'toughness_elem',
     'turn_limit_unit', 'turn_ticks', 'unknown_cond',

@@ -383,6 +383,8 @@ class Unit:
                     and not b.mc['enemy_cd_native']):
                 self.cd[slot] += 1
         self.dead = False
+        self.slot = None             # 게임 팀 칸(적 0~4, 소환 추적용). None = 추적 안 함
+        self.summoned = False        # 소환으로 생성된 유닛
         self.last_slot = None
         self.last_target = None
         self.extra_turn = False
@@ -607,6 +609,11 @@ class Battle:
         self._revenged = None     # 이번 행동에서 이미 반격한 유닛(행동 전체 공유, NKM 7765~7800)
         self.revenges = [0, 0]    # 진영별 반격 횟수
         self.all_foes = []
+        # 소환 칸 추적(mc.summon=data 이고 웨이브에 소환 그룹이 있을 때만 활성)
+        self._foe_slots = None
+        has_sm = any(hasattr(d, 'summon_groups') for w in waves for d in w)
+        if has_sm and self.mc.get('summon', 'data') == 'data':
+            self._foe_slots = [None] * 5
         self._cur_line = None    # 실행 중인 줄(자동 지정 대상 규칙을 그 스킬 설명에서 찾을 때 씀)
         self.once = set()        # {전투당 1회} 줄 사용 기록
         self.recast = {}         # {발동 후 N턴 재발동 불가} 줄: (주인, 줄) -> 발동한 때의 주인 행동 횟수
@@ -685,6 +692,14 @@ class Battle:
             lead = 0
         self.foes = [Unit(d, 1, i, self, leader=(lead == i), fx=self.fx) for i, d in enumerate(defs)]
         self.all_foes.extend(self.foes)   # 웨이브별 적 기록(피해 집계는 전 웨이브 합)
+        # 소환 칸 추적: 웨이브 적에게 게임 칸을 배정(BattleScript SpawnPosIndex 또는 배열 순서)
+        if self._foe_slots is not None:
+            self._foe_slots = [None] * 5
+            for u in self.foes:
+                slot = getattr(u.d, 'slot', u.pos)
+                if 0 <= slot < 5 and self._foe_slots[slot] is None:
+                    self._foe_slots[slot] = u
+                    u.slot = slot
         for u in self.foes:
             for ln in self.lines_of(u):
                 if line_kind(ln) in ('battle_start', 'wave_start'):
@@ -696,13 +711,15 @@ class Battle:
                         self.run_line(u, ln, Ctx(u, u, None))
 
     def progress(self):
-        """적 진척도 0~1: (끝낸 웨이브 + 현재 웨이브에서 깎은 체력 비율) / 웨이브 수. 클리어면 1"""
+        """적 진척도 0~1: (끝낸 웨이브 + 현재 웨이브에서 깎은 체력 비율) / 웨이브 수. 클리어면 1.
+        소환 유닛은 분모에 넣지 않음(반복 소환으로 진척이 줄어들지 않게)."""
         if self.result == 'clear':
             return 1.0
         if not self.waves or self.wave_i < 0:
             return 0.0
-        tot = sum(u.maxhp for u in self.foes) or 1.0
-        cur = sum(u.maxhp - max(0.0, u.hp) for u in self.foes) / tot
+        wave_foes = [u for u in self.foes if not u.summoned]
+        tot = sum(u.maxhp for u in wave_foes) or 1.0
+        cur = sum(u.maxhp - max(0.0, u.hp) for u in wave_foes) / tot
         return (self.wave_i + min(1.0, max(0.0, cur))) / len(self.waves)
 
     def run(self):
@@ -2073,6 +2090,10 @@ class Battle:
         v.death_n = self.death_seq   # 사망 순서(같은 틱의 광역 사망도 구분 — 게임 사망 목록의 추가 순서)
         if v.side == 0 and self.first_death is None:
             self.first_death = v
+        # 소환 칸 비움(NKM 1037~1050: 사망 시 팀 배열에서 제거)
+        if self._foe_slots is not None and v.slot is not None:
+            if 0 <= v.slot < 5 and self._foe_slots[v.slot] is v:
+                self._foe_slots[v.slot] = None
         self.log(death=v.name)
         self.fire(v, 'death_self', Ctx(v, a, None))
         for w in self.alive(v.side):
@@ -2082,6 +2103,34 @@ class Battle:
         v.eff = {}
         v.gauge = 0.0
         self.dirty(v)
+
+    def _do_summon(self, owner):
+        """소환 실행: owner.d.summon_groups 의 빈 칸에 유닛 생성(NKM 5174~5212, 1156~1171 빈 칸만).
+        시작 쿨 = Unit.__init__ 의 spawn 코드 재사용. 행동 게이지 0(assumed)."""
+        groups = getattr(owner.d, 'summon_groups', None)
+        if not groups or self._foe_slots is None:
+            return
+        for group in groups:
+            for slot_spec in group['slots']:
+                pos = slot_spec['pos']
+                if pos < 0 or pos >= 5:
+                    continue
+                if self._foe_slots[pos] is not None:
+                    continue   # 칸이 차 있으면 건너뜀
+                foe_def = slot_spec['foe_def']
+                u = Unit(foe_def, 1, pos, self, fx=self.fx)
+                u.slot = pos
+                u.summoned = True
+                self._foe_slots[pos] = u
+                self.foes.append(u)
+                self.all_foes.append(u)
+                # 전투 시작 줄(패시브)은 소환 유닛에도 적용
+                for ln in self.lines_of(u):
+                    if line_kind(ln) in ('battle_start', 'wave_start'):
+                        self.run_line(u, ln, Ctx(u, u, None))
+                if self.mc['buff_maxhp'] == 'on' and not u.dead:
+                    u.hp = max(u.hp, u.maxhp)
+                self.log(summon=u.name, pos=pos, summoner=owner.name)
 
     def reaction_skills(self, v, a, sk, crit=False, evaded=False):
         """반응 트리거 스킬(지원 목록): 웨딩 카르멘 「수호의 기사」 — 사랑의 서약 아군이 피격되면 발동(쿨타임 적용).
@@ -2654,6 +2703,12 @@ class Battle:
                     return
                 if kd == 'buff' and eff.get('name') == rule['stack'][0]:
                     eff = dict(eff, consume=True, times=rule['consume'])
+        if kd == 'summon':
+            if self._foe_slots is not None:
+                self._do_summon(owner)
+            else:
+                self.unsup['summon: ' + eff.get('name', '')[:30]] += 1
+            return
         if kd == 'ignored':
             self.run_special(owner, ln, ctx, line_rest(ln))
             return
@@ -3199,6 +3254,8 @@ def support_report(defs):
             reason = None
             if k == 'unmodeled':
                 reason = 'trigger: ' + (ln.trig or ln.phase or '')
+            elif ln.eff['kind'] == 'summon':
+                pass   # mc.summon=data 이면 지원됨 — 여기서는 정적 검사라 unsupported 로 세지 않음
             elif ln.eff['kind'] == 'ignored' and k != 'ignored' and not any(rx.match(rest) for rx in SPECIAL_RX):
                 reason = 'effect: ' + (ln.eff.get('why') or '')
             if not reason and k != 'unmodeled':

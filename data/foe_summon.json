@@ -1,0 +1,982 @@
+{
+ "_source": "tools/build_foe_summon.py --static",
+ "groups": {
+  "9999": {
+   "slots": [
+    {
+     "pos": 1,
+     "flag": "S",
+     "element": "질서",
+     "stats": {
+      "NST_NV_RATE_ATK": -2500,
+      "NST_NV_RATE_HP": -2000,
+      "NST_NV_RATE_TURN_SPEED": -2000
+     }
+    },
+    {
+     "pos": 3,
+     "flag": "S",
+     "element": "질서",
+     "stats": {
+      "NST_NV_RATE_ATK": -2500,
+      "NST_NV_RATE_HP": -2000,
+      "NST_NV_RATE_TURN_SPEED": -2000
+     }
+    }
+   ]
+  },
+  "1001004008": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1001": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1002": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1003": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1004": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1005": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1006": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1007": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1008": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1009": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1010": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1011": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1012": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1013": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1014": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1015": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1016": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1017": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S"
+    },
+    {
+     "pos": 4,
+     "flag": "S"
+    }
+   ]
+  },
+  "1018": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    }
+   ]
+  },
+  "1019": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    }
+   ]
+  },
+  "1020": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    }
+   ]
+  },
+  "1301": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": -1500,
+      "NST_NV_RATE_HP": -6500,
+      "NST_NV_RATE_DEF": -1500
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": -1500,
+      "NST_NV_RATE_HP": -6500,
+      "NST_NV_RATE_DEF": -1500
+     }
+    }
+   ]
+  },
+  "1302": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": -500,
+      "NST_NV_RATE_HP": -5500,
+      "NST_NV_RATE_DEF": -500
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": -500,
+      "NST_NV_RATE_HP": -5500,
+      "NST_NV_RATE_DEF": -500
+     }
+    }
+   ]
+  },
+  "1303": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 3000,
+      "NST_NV_RATE_HP": -2000
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    }
+   ]
+  },
+  "1304": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    }
+   ]
+  },
+  "1305": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "S",
+     "stats": {
+      "NST_NV_RATE_ATK": 5000
+     }
+    }
+   ]
+  },
+  "1100": {
+   "slots": [
+    {
+     "pos": 1,
+     "flag": "S"
+    },
+    {
+     "pos": 3,
+     "flag": "S"
+    }
+   ]
+  },
+  "1200": {
+   "slots": [
+    {
+     "pos": 1,
+     "flag": "N"
+    },
+    {
+     "pos": 3,
+     "flag": "N"
+    }
+   ]
+  },
+  "1201": {
+   "slots": [
+    {
+     "pos": 1,
+     "flag": "N"
+    },
+    {
+     "pos": 3,
+     "flag": "N"
+    }
+   ]
+  },
+  "1202": {
+   "slots": [
+    {
+     "pos": 1,
+     "flag": "N"
+    },
+    {
+     "pos": 3,
+     "flag": "N"
+    }
+   ]
+  },
+  "1210": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000,
+      "NST_SUPER_ARMOR": -1
+     }
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000,
+      "NST_SUPER_ARMOR": -1
+     }
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000,
+      "NST_SUPER_ARMOR": -1
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000,
+      "NST_SUPER_ARMOR": -1
+     }
+    }
+   ]
+  },
+  "1211": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000
+     }
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000
+     }
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000
+     }
+    }
+   ]
+  },
+  "1212": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000
+     }
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000
+     }
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000
+     }
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈",
+     "stats": {
+      "NST_NV_RATE_ATK": -6000,
+      "NST_NV_RATE_HP": -2000
+     }
+    }
+   ]
+  },
+  "1213": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서"
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양"
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별"
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈"
+    }
+   ]
+  },
+  "1214": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서"
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양"
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별"
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈"
+    }
+   ]
+  },
+  "1215": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서"
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양"
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별"
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈"
+    }
+   ]
+  },
+  "1216": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서"
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양"
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별"
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈"
+    }
+   ]
+  },
+  "1217": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서"
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양"
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별"
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈"
+    }
+   ]
+  },
+  "1218": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서"
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양"
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별"
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈"
+    }
+   ]
+  },
+  "1219": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서"
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양"
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별"
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈"
+    }
+   ]
+  },
+  "1220": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서"
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양"
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별"
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈"
+    }
+   ]
+  },
+  "1221": {
+   "slots": [
+    {
+     "pos": 0,
+     "flag": "N",
+     "element": "질서"
+    },
+    {
+     "pos": 1,
+     "flag": "N",
+     "element": "태양"
+    },
+    {
+     "pos": 3,
+     "flag": "N",
+     "element": "별"
+    },
+    {
+     "pos": 4,
+     "flag": "N",
+     "element": "혼돈"
+    }
+   ]
+  }
+ },
+ "stages": {
+  "equip|잊혀진 맹세|잊혀진 맹세 Ⅰ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 Ⅱ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 Ⅲ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 Ⅳ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 Ⅴ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 Ⅵ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 Ⅶ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 Ⅷ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 Ⅸ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 X": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 XⅠ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 XⅡ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 XⅢ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 XⅣ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 XⅤ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 XⅥ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 XⅦ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 XⅧ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 XⅨ": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "equip|잊혀진 맹세|잊혀진 맹세 XX": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "cosmo|올베로스|올베로스 1단계": {
+   "wave_slots": [
+    [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   ]
+  },
+  "cosmo|올베로스|올베로스 2단계": {
+   "wave_slots": [
+    [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   ]
+  },
+  "cosmo|올베로스|올베로스 3단계": {
+   "wave_slots": [
+    [
+     0,
+     1,
+     2,
+     3,
+     4
+    ]
+   ]
+  },
+  "cosmo|티리아|티리아 1단계": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "cosmo|티리아|티리아 2단계": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  },
+  "cosmo|티리아|티리아 3단계": {
+   "wave_slots": [
+    [
+     2
+    ]
+   ]
+  }
+ }
+}

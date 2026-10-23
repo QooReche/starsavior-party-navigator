@@ -19,7 +19,7 @@ FIXED = ['battlesim/rules/default.json', 'battlesim/rules/builds.json', 'rawdata
          'rawdata/guide_app-core.js', 'data/synergy_tags.json', 'data/myinfo_combat.json', 'data/auto_skill.json', 'data/foe_auto.json',
          'data/sudden_death.json',
          'data/break_skill_levels.json',
-         'data/foe_react.json']
+         'data/foe_react.json', 'data/foe_summon.json']
 
 
 def files():
