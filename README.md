@@ -78,6 +78,8 @@ python -X utf8 -I tools/build_growth.py --static <비공개 표 경로>   # 내 
 - https://starsavior-databook.pages.dev (스킬·적 데이터)
 - https://github.com/p1021/journeyhelper (전투력 계산 참고)
 - https://namu.wiki , https://arca.live (전투 규칙·공략 글)
-- 직업·속성 아이콘, 브레이크 스킬 이미지: 게임 리소스
+- 직업·속성 아이콘, 브레이크 스킬 이미지, 스킬 아이콘: 게임 리소스
+
+이 도구는 비공식 팬 도구이며 게임과 관련이 없음. 구원자 카드, 스킬·브레이크 스킬·UI 아이콘 등 게임 이미지의 저작권은 원 권리자에게 있음. 이 저장소의 라이선스는 게임 이미지에는 적용되지 않음.
 
 Windows 임시 디렉터리 시험인 web·quick·shim_compat는 `tests/run_workspace_test.py`를 경유함. 데이터 갱신에는 공개 스킬·내 정보 설명 생성도 포함함. 비공개 성장표·슬롯·전투 어댑터는 `--static` 또는 `STARSAVIOR_STATIC`을 지정하여 별도 생성함.
