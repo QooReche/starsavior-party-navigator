@@ -149,6 +149,9 @@ def parse_effect(rest):
         return dict(kind='ignored', why='회복/보호막')
     if '해제' in rest or '스킬 교체' in rest or '효과 지속 턴' in rest or '무작위' in rest:
         return dict(kind='ignored', why='해제/교체/무작위')
+    m = re.match(r'^자신에게 소환:\s*(.+?)\s*×\s*(\d+)$', rest)
+    if m:
+        return dict(kind='summon', name=m.group(1), count=int(m.group(2)))
     return dict(kind='ignored', why='미해석')
 
 

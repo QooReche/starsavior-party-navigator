@@ -44,6 +44,21 @@ def foe_auto(src=SRC):
     return _AUTO[src]
 
 
+_SUMMON = {}
+
+
+def foe_summon(src=SRC):
+    """data/foe_summon.json(tools/build_foe_summon.py) -> {groups: {gid: {slots:[...]}}, stages: {key: {wave_slots:[[...]]}}}"""
+    if src not in _SUMMON:
+        p = os.path.join(src, 'data', 'foe_summon.json')
+        _SUMMON[src] = {'groups': {}, 'stages': {}}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                d = json.load(f)
+            _SUMMON[src] = {'groups': d.get('groups', {}), 'stages': d.get('stages', {})}
+    return _SUMMON[src]
+
+
 _SUDDEN = {}
 
 
@@ -210,7 +225,11 @@ def stage_waves(content, tab, name, src=SRC):
     """스테이지 -> (스테이지 원본, 웨이브 목록[ [FoeDef, ...], ... ]). 웨이브 안 순서 = 원본 순서(배치 칸)."""
     raw = load_foe(src)
     st = find_raw_stage(content, tab, name, src)
-    flags = spawn_flags(src).get('%s|%s|%s' % (content, tab, name))
+    key = '%s|%s|%s' % (content, tab, name)
+    flags = spawn_flags(src).get(key)
+    # 소환 데이터(칸·쿨 플래그·속성)
+    sm_data = foe_summon(src) if st.get('sm') else None
+    stage_slots = (sm_data['stages'].get(key) or {}).get('wave_slots') if sm_data else None
     waves = []
     for wi, w in enumerate(st['w']):
         row = []
@@ -219,8 +238,42 @@ def stage_waves(content, tab, name, src=SRC):
             d = FoeDef(raw, ui, xi, st)
             # 배치의 시작 쿨 표시(A·S·H·B·N). 없으면 None -> 엔진이 등급 규칙으로 대신함(mc.enemy_spawn)
             d.spawn = flags[wi][pi] if flags and wi < len(flags) and pi < len(flags[wi]) else None
+            # 게임 칸 번호(소환 스테이지: BattleScript SpawnPosIndex, 그 외: 배열 순서)
+            d.slot = stage_slots[wi][pi] if stage_slots and wi < len(stage_slots) and pi < len(stage_slots[wi]) else pi
             row.append(d)
         waves.append(row)
+    # 소환 그룹을 소환자에 부착
+    if st.get('sm') and sm_data:
+        groups = sm_data.get('groups', {})
+        for gid_raw, summoner_name, unit_list in st['sm']:
+            gid = str(gid_raw)
+            group = groups.get(gid)
+            if not group:
+                continue
+            # sm unit_list [[ui, xi, count], ...] 를 펼쳐서 SUMMON_TEMPLET slots 순서와 대응
+            expanded = []
+            for ui, xi, count in unit_list:
+                for _ in range(count):
+                    expanded.append((ui, xi))
+            summon_slots = []
+            for i, slot_spec in enumerate(group['slots']):
+                if i >= len(expanded):
+                    break
+                s_ui, s_xi = expanded[i]
+                sd = FoeDef(raw, s_ui, s_xi, st)
+                sd.spawn = slot_spec['flag']
+                sd.slot = slot_spec['pos']
+                if slot_spec.get('element'):
+                    sd.element = slot_spec['element']
+                summon_slots.append({'pos': slot_spec['pos'], 'foe_def': sd})
+            summon_group = {'group_id': gid, 'slots': summon_slots}
+            # 웨이브에서 소환자 이름이 같은 적에 부착
+            for wave in waves:
+                for d in wave:
+                    if d.name == summoner_name:
+                        if not hasattr(d, 'summon_groups'):
+                            d.summon_groups = []
+                        d.summon_groups.append(summon_group)
     return st, waves
 
 
