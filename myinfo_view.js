@@ -68,7 +68,7 @@
     const potentials=learned.map(([id,lv],i)=>`<li><b>${esc(publicData.potentials?.[id]?.name||`잠재력 #${id}`)} · Lv${lv}</b><small>#${id}</small><p>${growth.potentials?.[id]?.[lv]?values(growth.potentials[id][lv]):'능력치 미해석'}</p>${effects[i].active?`<details><summary>시뮬 전투 효과</summary><p class="mut">${esc(effects[i].text)}</p></details>`:`<p class="mut">${esc(effects[i].text)}</p>`}</li>`).join('');
     return `<div class="mi-sim-chips" aria-label="시뮬 반영 값">${chips.map(c=>`<span class="tag">${esc(c)}</span>`).join('')}</div>`+
       section('능력치 출처',breakdown(result))+section('내실',inner||'정보 없음')+section('장비',equipment(unit,growth,publicData))+
-      section(`건틀렛 Lv${level(gauntlet.level)}`,`<p class="mut">여정 · 각 항목 상한 1,500</p>${journey}<ul class="mi-potentials">${potentials||'<li>습득 잠재력 없음</li>'}</ul>${line('축복 · 미해석',esc((gauntlet.blessings||[]).map(id=>`#${id}`).join(' · ')||'없음'))}`)+
+      section(`건틀렛 Lv${level(gauntlet.level)}`,`<p class="mut">여정 · 각 항목 상한 1,500</p>${journey}<ul class="mi-potentials">${potentials||'<li>습득 잠재력 없음</li>'}</ul>${line('관문 이력',esc((gauntlet.blessings||[]).map(id=>`#${id}`).join(' · ')||'없음'))}`)+
       (result.missing.length?`<details class="mi-diagnostics"><summary>미확인 정보 ${result.missing.length}</summary><p>${result.missing.map(esc).join(' · ')}</p></details>`:'');
   }
   // 캐릭터 상세 시트(팝업): 칸 나눈 능력치·스킬·장비·건틀렛, 항목마다 아이콘
@@ -92,7 +92,7 @@
       <p class="ms-sim ${simulation?'on':''}">${simulation?'이 수치로 시뮬합니다':'참고값 · 현재 콘텐츠 시뮬에는 쓰지 않음'}</p>${savior?.key?`<button type="button" class="sec" data-skill-open="${esc(savior.key)}" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${icon('special')}스킬 설명 보기</button>`:''}</div></div>
       <div class="ms-grid">${block('atk','능력치',`<div class="ms-tiles">${stats}</div>`)}${block('special','스킬 레벨',`<div class="ms-skills">${skills}</div>`)}
       ${block('gear','장비',equipment(unit,growth,publicData),'wide')}
-      ${block('journey',`건틀렛 Lv${level(gauntlet.level)} · 여정`,`<div class="ms-tiles five">${journey}</div><ul class="ms-pots">${pots||'<li class="mut">습득 잠재력 없음</li>'}</ul><p class="mut">축복(미해석): ${esc((gauntlet.blessings||[]).map(id=>`#${id}`).join(' · ')||'없음')}</p>`,'wide')}
+      ${block('journey',`건틀렛 Lv${level(gauntlet.level)} · 여정`,`<div class="ms-tiles five">${journey}</div><ul class="ms-pots">${pots||'<li class="mut">습득 잠재력 없음</li>'}</ul><p class="mut">관문 이력: ${esc((gauntlet.blessings||[]).map(id=>`#${id}`).join(' · ')||'없음')}</p>`,'wide')}
       <details class="ms-block wide"><summary>${icon('tactics')}능력치 출처·내실</summary>${breakdown(result)}${inner||''}</details>
       ${result.missing.length?`<details class="ms-block wide mi-diagnostics"><summary>미확인 정보 ${result.missing.length}</summary><p>${result.missing.map(esc).join(' · ')}</p></details>`:''}</div>`;
   }

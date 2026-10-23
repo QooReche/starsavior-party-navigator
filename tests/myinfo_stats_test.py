@@ -101,7 +101,9 @@ class SyntheticTests(unittest.TestCase):
         u["gauntlet"].update(potentials=[[999999, 1, 2, 3]], blessings=[999999])
         changed = ms.final_stats(u, i, g)
         self.assertEqual(changed["stats"], out["stats"])
-        self.assertEqual(changed["missing"], ["gauntlet.potential:999999", "gauntlet_blessings", "power_pp"])
+        # blessings → hurdles(관문 이력), missing 에는 포함하지 않음 (NKC 231872 확정)
+        self.assertEqual(changed["missing"], ["gauntlet.potential:999999", "power_pp"])
+        self.assertNotIn("gauntlet_blessings", changed["missing"])
 
     def test_unit_passive(self):
         u, i, g = fixture()
@@ -156,7 +158,7 @@ class SyntheticTests(unittest.TestCase):
         self.assertEqual(out, dict(journey=dict(atk=12, hp=70, **{"def": 10}, eh=76, er=92),
                                    potential=dict(atkP=900, hpP=1200, defP=1700, spdP=1900,
                                                   atk=7, hp=13, **{"def": 3}, spd=11,
-                                                  cr=170, cd=230, eh=310, er=370), power_pp=0, missing=[]))
+                                                  cr=170, cd=230, eh=310, er=370), power_pp=0, missing=[], hurdles=[]))
         # Independent formula: journey truncates BEFORE x1; potential flat is
         # outside R1/R2 multiplication; its percentages join R2 additively.
         # HP: (1078*1.05+31)*(1+.01+.12)+98 = 1412.947
@@ -188,11 +190,12 @@ class SyntheticTests(unittest.TestCase):
             self.assertEqual(ms.gauntlet_stats(u, g)["missing"], labels + (["power_pp"] if labels else []))
             self.assertEqual(ms.final_stats(u, i, g)["stats"], base)
             cases.append([deepcopy(u), i, g])
-        # The v1 list is NOT established as extra stat blessings. Keep it visible
-        # as unresolved and never apply arbitrary IDs (or add journey twice).
+        # blessings = 관문 이력(전투 무관, NKC 231872). missing 에 넣지 않고 hurdles 로 반환.
         u["gauntlet"].update(potentials=[], blessings=[900101, 900102])
         self.assertEqual(ms.final_stats(u, i, g)["stats"], base)
-        self.assertEqual(ms.gauntlet_stats(u, g)["missing"], ["gauntlet_blessings"])
+        gs = ms.gauntlet_stats(u, g)
+        self.assertEqual(gs["missing"], [])
+        self.assertEqual(gs["hurdles"], [900101, 900102])
         cases.append([u, i, g])
         self.assertEqual(node_cases(cases), [ms.final_stats(*args) for args in cases])
 
