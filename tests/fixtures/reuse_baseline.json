@@ -1,0 +1,326 @@
+{
+  "cosmo_24": {
+    "bc": [
+      "cristelle,luna,seira,wedding-epindel",
+      "cristelle,professor-m,seira,wedding-epindel",
+      "luna,professor-m,seira,wedding-epindel",
+      "luna,petra,professor-m,seira",
+      "cristelle,petra,seira,wedding-epindel",
+      "cristelle,seira,tyria,wedding-epindel",
+      "petra,professor-m,seira,wedding-epindel",
+      "luna,petra,seira,wedding-epindel",
+      "ceres,cristelle,seira,wedding-epindel",
+      "cristelle,luna,professor-m,seira"
+    ],
+    "qr": [
+      {
+        "keys": "claire,elisa,emily,professor-m",
+        "vd": "safe",
+        "rounds": 2,
+        "left": 0.7738595698473507,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,emily,professor-m,serpang",
+        "vd": "safe",
+        "rounds": 2,
+        "left": 0.7720206672181591,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,elisa,haydee,professor-m",
+        "vd": "safe",
+        "rounds": 2,
+        "left": 0.6781281034047862,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,haydee,professor-m,serpang",
+        "vd": "safe",
+        "rounds": 2,
+        "left": 0.6756533358747038,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "bunny-scarlet,claire,elisa,trish",
+        "vd": "safe",
+        "rounds": 2,
+        "left": 0.6542748610333878,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,clarissa,elisa,trish",
+        "vd": "safe",
+        "rounds": 2,
+        "left": 0.6523370319376723,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "bunny-scarlet,claire,serpang,trish",
+        "vd": "safe",
+        "rounds": 2,
+        "left": 0.651389874578759,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "bunny-scarlet,claire,elisa,wedding-epindel",
+        "vd": "safe",
+        "rounds": 2,
+        "left": 0.6513576540072321,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "bunny-scarlet,claire,elisa,professor-m",
+        "vd": "safe",
+        "rounds": 2,
+        "left": 0.6513428246532358,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,emily,haydee,professor-m",
+        "vd": "safe",
+        "rounds": 2,
+        "left": 0.6510274294288596,
+        "ng": null,
+        "st": null,
+        "src": null
+      }
+    ],
+    "jp": {
+      "1": "claire,clarissa,elisa,wedding-epindel",
+      "2": "bunny-scarlet,professor-m,serpang,trish"
+    }
+  },
+  "rush_40": {
+    "bc": [
+      "ceres,emily,professor-m,wedding-carmen",
+      "ceres,claire,professor-m,wedding-carmen",
+      "ceres,fei,professor-m,wedding-carmen",
+      "ceres,emily,fei,wedding-carmen",
+      "ceres,claire,emily,wedding-carmen",
+      "bunny-charlotte,ceres,professor-m,wedding-carmen",
+      "ceres,emily,professor-m,vera",
+      "ceres,claire,fei,wedding-carmen",
+      "claire,emily,professor-m,wedding-carmen",
+      "ceres,luna,professor-m,wedding-carmen"
+    ],
+    "qr": [
+      {
+        "keys": "ceres,emily,lily,wedding-carmen",
+        "vd": "safe",
+        "rounds": 8,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "emily,lily,professor-m,waltz-asherah",
+        "vd": "safe",
+        "rounds": 8,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,emily,lily,waltz-asherah",
+        "vd": "safe",
+        "rounds": 8,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "hilde,lily,professor-m,waltz-asherah",
+        "vd": "safe",
+        "rounds": 8,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "emily,gwen,lily,waltz-asherah",
+        "vd": "safe",
+        "rounds": 8,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "ceres,emily,hilde,lily",
+        "vd": "safe",
+        "rounds": 8,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "emily,hilde,lily,professor-m",
+        "vd": "safe",
+        "rounds": 8,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,hilde,lily,waltz-asherah",
+        "vd": "safe",
+        "rounds": 8,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,emily,hilde,lily",
+        "vd": "safe",
+        "rounds": 8,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "bunny-charlotte,emily,hilde,lily",
+        "vd": "safe",
+        "rounds": 8,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      }
+    ],
+    "jp": null
+  },
+  "op_24": {
+    "bc": [
+      "claire,fei,wedding-carmen,white-pearl-luna",
+      "ceres,claire,wedding-carmen,white-pearl-luna",
+      "ceres,fei,wedding-carmen,white-pearl-luna",
+      "ceres,claire,fei,wedding-carmen",
+      "claire,luna,wedding-carmen,white-pearl-luna",
+      "ceres,fei,luna,wedding-carmen",
+      "fei,luna,wedding-carmen,white-pearl-luna",
+      "ceres,luna,wedding-carmen,white-pearl-luna",
+      "claire,fei,luna,wedding-carmen",
+      "ceres,claire,luna,wedding-carmen"
+    ],
+    "qr": [
+      {
+        "keys": "serpang,vera,waltz-asherah,wedding-carmen",
+        "vd": "safe",
+        "rounds": 13,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "elisa,serpang,waltz-asherah,wedding-carmen",
+        "vd": "safe",
+        "rounds": 13,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "elisa,serpang,vera,wedding-carmen",
+        "vd": "safe",
+        "rounds": 24,
+        "left": 1,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "elisa,vera,waltz-asherah,wedding-carmen",
+        "vd": "safe",
+        "rounds": 14,
+        "left": 0.967829624765547,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "elisa,serpang,vera,waltz-asherah",
+        "vd": "safe",
+        "rounds": 14,
+        "left": 0.9629323494812445,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,elisa,vera,wedding-carmen",
+        "vd": "safe",
+        "rounds": 5,
+        "left": 0.923398221599217,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,elisa,serpang,wedding-carmen",
+        "vd": "safe",
+        "rounds": 5,
+        "left": 0.92237751194936,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,serpang,vera,wedding-carmen",
+        "vd": "safe",
+        "rounds": 5,
+        "left": 0.9221971215839055,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "claire,elisa,serpang,vera",
+        "vd": "safe",
+        "rounds": 5,
+        "left": 0.9218341740089144,
+        "ng": null,
+        "st": null,
+        "src": null
+      },
+      {
+        "keys": "elisa,lily,waltz-asherah,wedding-carmen",
+        "vd": "safe",
+        "rounds": 6,
+        "left": 0.8927731541531478,
+        "ng": null,
+        "st": null,
+        "src": null
+      }
+    ],
+    "jp": null
+  }
+}
