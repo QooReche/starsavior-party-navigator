@@ -17,6 +17,8 @@
 ## ▶ 이어서 할 것 (2026-10-24 밤, 토큰 한도로 중단)
 
 - 작업 사본 `E:\AI_mk2\pn-tail`(브랜치 r4-tail, **커밋 전 변경 있음**): ①레벨업 추가 행 자동 지정(힐데·웨딩 에핀델 궁극기 — 내 정보 스킬 레벨로 행 선택) ②자동 지정 줄 수 불일치 3스킬(ceres 고유 패시브·harley 특수기·sunshine-cat-smile 고유 패시브) ③프로페서M 고유 패시브 IsNotUnableToAct 필터 ④tests/foe_react_test.py 피해 결과(DamageResultType) 시험이 난수 의존 placeholder. 변경을 검토해 마무리 → codex 리뷰 → 병합 → 계수 재맞춤 → 시험·e2e → 푸시.
+  - 단서(중단된 에이전트가 찾음): 비공개 `SKILL_LEVEL_GROUP_TEMPLET` 이 스킬 레벨 → SE 묶음을 직접 대응시키고, 레벨별 SE 는 누적.
+- **원격 상태**: `main` = 6c95b7a(2차까지, 계수·e2e 검증 끝). 3차(대상 선택·효과·반응 시점 병합, e1714f4·e97bfe8)는 브랜치 `community-removal` 에만 푸시 — 단위 시험 49개·골든·옛 결과 해시는 통과, **계수 재맞춤·e2e 미실행**. 새 세션 순서: r4-tail 마무리(선택) → `gen_quick_calib --per-content 400 --opboss` → `calibrate_quick --write` → `build_party_html index.html` → 전체 시험·e2e → `tests/fixtures/reuse_baseline.json` 은 계수가 바뀌면 리팩터 전 코드로 다시 뽑기(이 세션 방법: d6e0818 의 party_template·index·quick.js + 새 quick.json 으로 tools/capture_reuse.js, buildCands 는 topParties 사용) → `main` 푸시 → 사용자에게 NeoBot 1:1 안내(메모리 pm-name-message-cc-to-pm-channel 경로).
 - 그 밖에 남은 미지원은 전수 스캔 기준 0(스테이지 support_report·실행 중 미지원) — 확인은 `local/runtime_unsup_*.json` 과 같은 방식으로.
 
 ## ▶ 다음 세션 시작 (2026-10-23 정리)
