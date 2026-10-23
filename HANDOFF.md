@@ -14,12 +14,13 @@
 2. **스킬별 게임 아이콘** — 지금 화면은 종류(기본기·특수기·궁극기·패시브) 아이콘. 게임 클라이언트 자원에서 구원자 스킬 아이콘(SKILL_TEMPLET 의 아이콘 이름)을 뽑아 오면 화면에 연결함. 제3자 DB 경로 규칙은 미확인이라 클라 추출이 확실함. 뽑은 그림은 `assets/` 아래 새 폴더, 이름 = 스킬 아이콘 이름.
 3. **잠재력 11011 레벨 1 재확인** — 데이터북 설명 4줄 vs 클라 표(빌드 26105710) 효과 3개 불일치, 이전 계수 보존 중. 새 빌드에서 표를 다시 뽑은 뒤 `python -X utf8 -I tools/build_myinfo_combat.py --static <비공개 저장소>` 가 불일치를 출력하는지 확인, 게임 화면의 그 잠재력 설명(레벨 1 효과 줄 수)을 캡처.
 
-## ▶ 이어서 할 것 (2026-10-24 밤, 토큰 한도로 중단)
+## ▶ 이어서 할 것 (2026-10-23 저녁 갱신 — 위·아래 「10/24」 표기는 실제로는 10/23 작업분)
 
-- 작업 사본 `E:\AI_mk2\pn-tail`(브랜치 r4-tail, **커밋 전 변경 있음**): ①레벨업 추가 행 자동 지정(힐데·웨딩 에핀델 궁극기 — 내 정보 스킬 레벨로 행 선택) ②자동 지정 줄 수 불일치 3스킬(ceres 고유 패시브·harley 특수기·sunshine-cat-smile 고유 패시브) ③프로페서M 고유 패시브 IsNotUnableToAct 필터 ④tests/foe_react_test.py 피해 결과(DamageResultType) 시험이 난수 의존 placeholder. 변경을 검토해 마무리 → codex 리뷰 → 병합 → 계수 재맞춤 → 시험·e2e → 푸시.
-  - 단서(중단된 에이전트가 찾음): 비공개 `SKILL_LEVEL_GROUP_TEMPLET` 이 스킬 레벨 → SE 묶음을 직접 대응시키고, 레벨별 SE 는 누적.
-- **원격 상태**: `main` = 6c95b7a(2차까지, 계수·e2e 검증 끝). 3차(대상 선택·효과·반응 시점 병합, e1714f4·e97bfe8)는 브랜치 `community-removal` 에만 푸시 — 단위 시험 49개·골든·옛 결과 해시는 통과, **계수 재맞춤·e2e 미실행**. 새 세션 순서: r4-tail 마무리(선택) → `gen_quick_calib --per-content 400 --opboss` → `calibrate_quick --write` → `build_party_html index.html` → 전체 시험·e2e → `tests/fixtures/reuse_baseline.json` 은 계수가 바뀌면 리팩터 전 코드로 다시 뽑기(이 세션 방법: d6e0818 의 party_template·index·quick.js + 새 quick.json 으로 tools/capture_reuse.js, buildCands 는 topParties 사용) → `main` 푸시 → 사용자에게 NeoBot 1:1 안내(메모리 pm-name-message-cc-to-pm-channel 경로).
+- (완료) r4-tail 마무리·병합(54c8a0d, 병합 19bda2f): 레벨업 추가 행 자동 지정(힐데·웨딩 에핀델 궁극기 — 데이터북 L 전 레벨 그룹 줄을 기본 묶음 규칙으로 등록, 엔진은 원문으로 조회하므로 내 정보 스킬 레벨 줄도 잡힘), 줄 수 불일치 3스킬(SEGroupID 만 다른 같은 SE 행 합침), 웨딩 에핀델 궁극기(조건 안 괄호 파싱), 프로페서M IsNotUnableToAct(해독본 26105710: 사망·기절·수면 제외), 피해 결과 조건 시험 ctx 주입식. 자동 지정 줄 24→36, 제외 보고 0. codex 리뷰 결함 0.
+- 남은 범위 밖 사안: 데이터북에 기본·개화(SSR) 두 기록이 있는 8명(1501·1502·1506~1511)은 빌더가 id 당 마지막 기록(개화)으로 짝지음 — 게임 표 유닛은 하나이고 스킬은 개화 기록과 맞음. 기본형 베라 궁극기 「특급 배송」 자동 지정 줄은 게임 표 대응 행이 없어 설명문 근사로 남음.
+- 계수 재맞춤(10/23 저녁, 3차+r4 뒤): 전체 일치(가중) 91.3%(base 89.5%, 코스모 스테이지 보정 후 94.0% — 10곳, 플래시 95.5% — 17곳). 작전 큰 보스 공통 배수 검증 개선 0 이라 미적용.
 - 그 밖에 남은 미지원은 전수 스캔 기준 0(스테이지 support_report·실행 중 미지원) — 확인은 `local/runtime_unsup_*.json` 과 같은 방식으로.
+- 추천 재사용 기준값(`tests/fixtures/reuse_baseline.json`) 재생성 방법: 리팩터 전 코드(d6e0818 의 party_template·index·quick.js) + 새 `data/quick.json` 으로 `tools/capture_reuse.js`(buildCands 는 topParties 사용). 계수가 바뀔 때마다. d6e0818 엔 capture_reuse.js 가 없으므로 현재 것을 복사해 3곳만 옛 API 로: buildCands `rankAll(cands,defPen).slice(0,10)`→`topParties(cands,defPen,10)`, 호출 `quickRank(rankAll(cands,defPen),qi)`→`quickRank(cands,defPen,qi)`. 대조군 = 직전 quick.json 으로 뽑아 HEAD 기준값과 바이트 일치 확인(10/23 저녁 일치, 바뀐 것은 cosmo_24 qr·jp 뿐).
 
 ## ▶ 다음 세션 시작 (2026-10-23 정리)
 
@@ -62,7 +63,7 @@
 - 화면: 추천 파티(내 정보 기준, 예선·본선 시뮬이 끝난 뒤 결과), 내 정보 탭(캐릭터 격자 + 상세 팝업), 추천 카드 얼굴 → 스킬 카드, 공유 링크(내 정보 포함 가능).
 - 내 정보 → 최종 능력치는 게임 화면과 일치함(`myinfo_stats.py` = `myinfo_stats.js`). 시뮬은 같은 값 + 잠재력 전투 효과 + 실제 스킬 레벨을 씀.
 - 결과 화면 TURN = 적 포함 전체 행동 수(전역 턴). 영상 판독과 해독 코드로 확인했음.
-- 빠른 계산 계수 재맞춤(10/24 2차, 위 반영 + 적 트리거 스킬·소환·해석 캐시 뒤): 판정 일치 91.6%(base 89.5%, 코스모 95.8%, 플래시 95.5%, 스테이지 보정 후 — 코스모 보정 12곳), 코스모 공통 계수 A 1.0→1.3. (1차 91.5%) (10/23 저녁: 91.8%) 작전 큰 보스 공통 배수는 검증 개선 0(0.842→0.842)이라 미적용(`calibrate_quick.py` OPBOSS_GAIN 1%p 문턱).
+- 빠른 계산 계수 재맞춤(10/23 저녁 3차: 91.3%, 위 「이어서 할 것」) (10/24 2차, 위 반영 + 적 트리거 스킬·소환·해석 캐시 뒤): 판정 일치 91.6%(base 89.5%, 코스모 95.8%, 플래시 95.5%, 스테이지 보정 후 — 코스모 보정 12곳), 코스모 공통 계수 A 1.0→1.3. (1차 91.5%) (10/23 저녁: 91.8%) 작전 큰 보스 공통 배수는 검증 개선 0(0.842→0.842)이라 미적용(`calibrate_quick.py` OPBOSS_GAIN 1%p 문턱).
 - 10/22 리뷰 반영 내역: [docs/cleanup_review.md](docs/cleanup_review.md).
 
 ## 10/22 밤 개편 (브랜치 `community-removal`, worktree `E:/AI_mk2/pn-community`)
