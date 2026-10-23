@@ -485,12 +485,13 @@ function partyPool(c){const byScore=[...c].sort((a,b)=>b.score-a.score);if(c.len
  pr.sort((a,b)=>b[0]-a[0]||a[1]-b[1]||a[2]-b[2]);for(const [,i,j] of pr){if(pool.length>POOL_N-2)break;add(c[i]);add(c[j])}
  byScore.forEach(add);return pool.sort((a,b)=>b.score-a.score)}
 // 근사 점수 상위 k 팀. party_reco.top_parties 와 같은 규칙(같은 점수면 조합을 만든 순서) — 한쪽을 고치면 다른 쪽도 고칠 것
-function topParties(c,defPen,k){
+function rankAll(c,defPen){
  const pool=partyPool(c);
  const n=pool.length,all=[];let i=0;
  for(let a=0;a<n;a++)for(let b=a+1;b<n;b++)for(let d=b+1;d<n;d++)for(let e=d+1;e<n;e++){
   const combo=[pool[a],pool[b],pool[d],pool[e]],[v,t]=teamValue(combo,defPen);all.push({combo,v,got:t,i:i++})}
- all.sort((x,y)=>y.v-x.v||x.i-y.i);return all.slice(0,k)}
+ all.sort((x,y)=>y.v-x.v||x.i-y.i);return all}
+function topParties(c,defPen,k){return rankAll(c,defPen).slice(0,k)}
 function synSummary(party){const hs=partySyn(party.map(x=>x.s.key)).slice(0,5);if(!hs.length)return "";
  const nm=Object.fromEntries(R.map(s=>[s.key,s.name]));
  return `<details class="syn"><summary>스킬 연계 ${hs.length}건</summary>${hs.map(h=>`<div class="synrow"><b>${esc(nm[h.p.a])}${h.p.d?" → ":" ↔ "}${esc(nm[h.p.b])}</b> <span class="chip ty${h.p.t}">${esc(h.p.tn)}</span> <span class="mut">강도 ${h.p.s} · ${esc(h.p.c)}</span><div class="mut">${esc(h.p.r)}</div></div>`).join("")}</details>`}
@@ -618,8 +619,8 @@ function quickIn(c,st){if(!QK.d||!window.Quick)return null;const qs=(QK.d.st[c.k
  const prm=rk&&p0?Object.assign({},p0,{A:p0.A*(1+REKINDLE[rk]),B:p0.B*(1-REKINDLE[rk])}):p0;   // 재점화 버프 = 아군 피해 ×(1+x)·적 피해 ×(1−x)(시뮬 api rekindle 과 같은 뜻)
  return {qs,power:my>0?my:null,growth:+($("grow").value==="manual"?LS.get("grow"):$("grow").value)||1,ck:c.key,prm,rk}}
 const qBase=(qi,keys)=>Object.assign({growth:qi.growth,power:qi.power,powers:$("grow").value==="manual"&&!Object.hasOwn(SHARE,"p")?pwOf(keys):null},miMode()?MyInfoReco.team(keys,miProfile(),ekey):{});
-function quickRank(cands,defPen,qi){
- const all=topParties(cands,defPen,1e9),sv=QK.d.sv,prm=qi.prm,out=[];
+function quickRank(ranked,qi){
+ const all=ranked,sv=QK.d.sv,prm=qi.prm,out=[];
  for(const x of all){const keys=x.combo.map(y=>y.s.key),ek=keys.map(ekey),b=qBase(qi,keys);const r=Quick.evaluate(ek,qi.qs,sv,D.pen,prm,b.growth,b.power,true,b.powers);if(!r.ok)continue;
   out.push({combo:x.combo,v:x.v,got:x.got,keys,ek,b,base:b.power||(qi.qs.bp?qi.qs.bp*b.growth:null),q:r,vd:Quick.verdict(r)})}
  out.sort((a,b)=>QO[b.vd]-QO[a.vd]||(a.vd==="hard"?b.q.rounds-a.q.rounds:b.q.left-a.q.left)||a.q.rounds-b.q.rounds||b.v-a.v);
@@ -788,11 +789,11 @@ function qScore(t,st,qi){const r=simMain(SIMQ.res[simSig(st,t)]),vd=qVd(t,st);
  if(vd!=="hard")return QO[vd]*10+t.q.left;
  if(t.ng===undefined)t.ng=Quick.needGrowth(t.ek,qi.qs,QK.d.sv,D.pen,qi.prm,"tight",null,t.b);
  return t.ng==null?-99:-t.ng}
-function jointPick(c,st,own,defPen){if((c.parties||1)!==2)return null;const qi=quickIn(c,st);if(!qi)return null;
+function jointPick(c,st,own,defPen,qr0=null){if((c.parties||1)!==2)return null;const qi=quickIn(c,st);if(!qi)return null;
  const rsEl=(CFG.restrict[c.name]||{})[st.tab];
  const c0=R.filter(s=>own.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
  if(c0.length<8)return null;
- const top=[],seen=new Set(),qr=quickRank(c0,defPen,qi);for(const t of qr){const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);top.push(t);if(top.length>=80)break}
+ const top=[],seen=new Set(),qr=qr0||quickRank(rankAll(c0,defPen),qi);for(const t of qr){const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);top.push(t);if(top.length>=80)break}
  // 상위 80팀이 모두 같은 구원자를 품으면(예: 코스모 길레 2단계 — 힐데·아세라) 짝이 없다 -> 1위와 겹치지 않는 상위 팀을 80개까지 더 넣는다
  if(top.length){let n=0;for(const t of qr){if(n>=80)break;const k=t.keys.slice().sort().join(",");if(seen.has(k)||t.keys.some(x=>top[0].keys.includes(x)))continue;seen.add(k);top.push(t);n++}}
  let best=null;const sc=new Map(top.map(t=>[t,qScore(t,st,qi)])),vo=new Map(top.map(t=>[t,QO[qVd(t,st)]]));
@@ -875,7 +876,7 @@ function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap
   <p><b>${sc?"1단계 예선":"2단계 본선"}</b> · <span data-k="simstate">${esc(SIMQ.busy!=null?SIMQ.msg:miMode()&&MI.pending?"내 정보 계산 준비 중":"후보 고르는 중")}</span>${sc?"":` · 확인한 팀 ${done}/${all}`}</p>
   <p class="mut">① 예선: 내 구원자로 만들 수 있는 조합 가운데 스킬 연계·상성·기믹·빠른 계산으로 고른 후보 ${sc?sc.n:"100여"}팀을 짧게(${SCR_N}판) 시뮬해 걸러 냅니다(최대 ${SCR_MS/1000}초). ② 본선: 예선 상위 팀을 ${SIMQ.n}판씩 다시 시뮬해 결과를 보여 줍니다(모두 클리어 50% 미만이면 최대 9팀). 처음에는 계산 엔진(약 14MB)을 내려받아 시간이 더 걸립니다.</p>
   <button type="button" class="sec" data-simcancel="1">취소하고 지금까지 결과 보기</button></div>`}
-function buildCands(cands,defPen){return topParties(cands,defPen,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
+function buildCands(ranked){return ranked.slice(0,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
 // 계산은 「추천 편성 보기」를 눌렀을 때만 한다(조건을 바꿀 때마다 계산·시뮬이 돌지 않게). 조건이 바뀌면 결과를 비우고 안내만 보인다.
 // 주소에 ?auto=1 이 있거나 공유 링크로 열면 예전처럼 바로 계산한다(자동 시험·링크 공유용).
 const AUTO=/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
@@ -900,13 +901,18 @@ function runCore(skipAuto=false){
  GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty);
  const sid=c.key+"|"+st.tab+"|"+st.name;
  const used=new Set();let html="";const allParties=[];{const bb=bigBoss(c,st);if(bb)html+=bigBossNote(bb)}
- JOINT=jointPick(c,st,own,defPen);
+ const rsEl0=(CFG.restrict[c.name]||{})[st.tab];
+ const cands0=R.filter(s=>own.has(s.key)&&(!rsEl0||s.el===rsEl0)).map(s=>{const[v,parts]=score(s,st.w,c.main,c.boss);return{s,score:v,parts}});
+ const qi0=quickIn(c,st),ranked0=cands0.length>=4?rankAll(cands0,defPen):null;
+ const qr0=qi0&&ranked0?quickRank(ranked0,qi0):null;
+ JOINT=jointPick(c,st,own,defPen,qr0);
  for(let p=1;p<=(c.parties||1);p++){
   const rsEl=(CFG.restrict[c.name]||{})[st.tab];
   const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
   if(cands.length<4){html+=`<div class="party">파티 ${p}: 후보가 4명 미만입니다.</div>`;break}
-  const list=buildCands(cands,defPen);
-  const qi=quickIn(c,st),qt=qi?quickRank(cands,defPen,qi):null;jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{all:qt,rows:quickRows(qt,st,p),total:new Set(qt.map(t=>t.keys.slice().sort().join(","))).size}:null;
+  const ranked=p===1&&ranked0?ranked0:rankAll(cands,defPen);
+  const list=buildCands(ranked);
+  const qi=qi0,qt=p===1&&qr0?qr0:qi?quickRank(ranked,qi):null;jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{all:qt,rows:quickRows(qt,st,p),total:new Set(qt.map(t=>t.keys.slice().sort().join(","))).size}:null;
   let qpick=null;
   if(qt&&qt.length){for(const t of LASTQ[p].rows){const k=t.keys.slice().sort().join(",");if(list.find(x=>x.key===k))continue;list.push({combo:t.combo,v:t.v,got:t.got,rank:null,key:k})}
    const qk=LASTQ[p].rows[0].keys.slice().sort().join(",");qpick=list.find(x=>x.key===qk)}
