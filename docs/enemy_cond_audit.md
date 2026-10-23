@@ -214,3 +214,28 @@
 
 ## 재현
 `python -X utf8 -I AI\temp\partynavigator\scripts\audit_all.py <src> <내정보.json> out.json` → `audit_report.py <src> out.json`. 스크립트는 일회성(temp)이라 저장소에는 없음. 회귀 시험은 `tests/enemy_cond_test.py`.
+
+## 추가: 강화 효과 개수·피격 중첩 판정 순서 (2026-10-23)
+
+- 강화 효과 개수의 코드 연결을 확인했음. 해독본 루트는 `E:/AI_mk2/star-savior-decompiled`임. `NKM/NKM.decompiled.cs:9387-9389`의 Count가 `8295-8297`의 `OBF_27420`을 사용했음. `NKM.Templets/NKM.Templets.decompiled.cs:36344-36353`에서 `OBF_3108 && OBF_14228`, `Star.Templets/Star.Templets.decompiled.cs:4083-4084`에서 각각 `IsBuff`, `IsPositive`로 읽음을 확인했음. 음성은 `NKM.Templets:36356-36365`의 `IsBuff && !IsPositive`였음. 이번 구현은 강화 효과 개수에 적용했음.
+- 현행 비공개 표 `tables/BUFF_TEMPLET.json:19137-19138`(탄력 가속), `19791-19792`(별빛의 궤적-AX), `20592-20593`(전투의 열기)는 `IsBuff=false, IsPositive=true`였음. 해제 불가 여부를 일괄 제외하는 근거는 없었음.
+- `tools/build_buff_count.py --static E:/AI_mk2/starsavior-static-data`로 이름 843개의 `[IsBuff, IsPositive]` 후보 표를 `data/buff_count.json`에 생성했음. 원본 ID·설명·내정보는 포함하지 않았음. `mc.buff_count_source=table`을 기본, `legacy`를 이전 분류로 추가했음. `Unit.n_good()`에 통합해 적 `cond_ok`, 대상 선택, 자기/대상 강화 효과 개수별 피해 보정 등에 동일 적용했음. 기존 `*_disp` 비교 옵션은 이 분류에 해제 가능 필터를 추가하도록 했음.
+- 피격 중첩 근거는 `NKM/NKM.decompiled.cs:15955-15968`의 효과별 순회, `16158-16171`의 각 효과 조건 검사 후 실행이었음. 현행 `tables/Plain/SKILL_CONDITION_TEMPLET.json:9030-9034`는 공허조율자 11중첩, `9046-9050`은 웬디고 5중첩이었음. `mc.hit_stack_order=apply_first`를 기본, `legacy`를 기존 처리로 추가했음. 같은 피격 묶음에서 조건이 참조하는 무조건 자기 중첩 부여를 먼저 실행하고 나머지 조건을 검사했음. 중첩 해제 후 추가 발동을 실행해 재귀 시전 때 중첩을 재사용하지 않도록 했음. 두 규칙에 grade·note·source를 기록했음.
+- `tools/build_simpack.py`의 입력 목록에 새 표를 추가했음. 요청대로 `sim/manifest.json`은 재생성하지 않았음. 브라우저 배포 시에는 별도 패키지 재생성이 필요함. `data/quick.json`, `tests/fixtures/reuse_baseline.json`, 골든도 재생성하지 않았음.
+
+시험을 수행했음.
+
+- `tests/buff_count_hit_order_test.py` 6건 통과했음. table/legacy의 0·1·2개 경계, 중첩을 한 효과로 세기, 해제 불가·만료·체크 효과, 자기/대상 개수별 피해, 웬디고 5회/6회, 공허조율자 11회/12회와 두 번째 주기, 소비 후 추가 발동을 확인했음.
+- 구현에서 IsBuff 판정을 제거해 5개 실패, IsPositive 판정을 제거해 1개 실패, 선행 중첩 부여를 제거해 2개 실패를 확인한 뒤 원본 바이트로 복구했음.
+- `tests/rules_test.py` 21건, `tests/enemy_cond_test.py` 3건 통과했음. 새 규칙 2개를 rules 시험의 키 스냅샷에 추가했음. `tests/golden_check.py`는 구원자 64·파티 150·스테이지 팀 10 일치했음. 기존 입력 해시 불일치 안내와 foe_spawn 로더의 ResourceWarning은 출력됐음.
+
+각 샘플에 `python -X utf8 -I tools/ingame_check.py --runs 100 --only <샘플> --bs-real --myinfo E:/AI_mk2/starsavior-static-data/samples/myinfo_2026-10-23.json`을 변경 전후 실행했음(seed 7). `sim_taken`은 판당 평균 총 피해이며 전역 턴당 피해와 구분했음. 두 규칙을 함께 legacy로 지정했을 때 변경 전 클리어율·sim_taken이 네 샘플 모두 정확히 재현됐음.
+
+| 샘플 | 클리어율 전→후 | sim_taken 전→후 | 전역 턴당 받은 피해 전→후 |
+|---|---:|---:|---:|
+| 18x-b | 91%→9% | 372,815→448,031 | 7,092→9,987 |
+| 17x-b | 100%→82% | 336,996→392,862 | 6,811→7,916 |
+| corr-a | 99%→96% | 367,478→384,554 | 8,558→8,900 |
+| 37-36r | 0%→0% | 322,854→322,164 | 11,715→12,130 |
+
+미확정: 동명 ‘파쇄’는 양성/음성 표 행이 공존하고 현재 효과 객체에는 원본 ID가 없어 기존 category로 폴백했음. 표에 없는 합성 효과 이름도 기존 분류로 폴백했음. 해독본은 2026-03 구조 자료이므로 최신 빌드의 동일성은 미검증이며 수치는 현행 표를 사용했음. 회랑 실측 실패와 시뮬 클리어 96%의 차이는 남았음.
