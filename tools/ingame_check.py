@@ -49,6 +49,9 @@ SAMPLES = {
     '17': ('equip', '혹한의 습격|혹한의 습격 XⅦ', ['emily', 'frey', 'haydee', 'gwen'], 'frey', 372610, 0, 607294, 700078, 66, 'clear'),
     # 같은 편성, 리더 에밀리: 준 피해 96,894+413,807+82,809+15,511, 받은 피해 143,408+118,794+256,474+229,524, TURN 69, 프레이·에데 쓰러짐
     '17e': ('equip', '혹한의 습격|혹한의 습격 XⅦ', ['emily', 'frey', 'haydee', 'gwen'], 'emily', 372610, 0, 609021, 748200, 69, 'clear'),
+    # 페이지 추천 편성(프로페서M 후·에데 전·에밀리 전 리더·아모라 후, 전투력 411,935)으로 실제 플레이: 패배(전멸), TURN 37, 달성도 77%(보스 체력 604,347 중 137,167 남음)
+    # 준 피해 21,787+114,201+33,316+297,876, 받은 피해 135,315+73,458+207,333+104,318. 회복 0(브레이크 스킬 컷신 +7,817 한 번은 통계에 안 잡힘). 쓰러진 순서: 에밀리·프로페서M(TURN 29 추정) → 에데(TURN 35) → 아모라(TURN 37)
+    '17r': ('equip', '혹한의 습격|혹한의 습격 XⅦ', ['professor-m', 'haydee', 'emily', 'amora'], 'emily', 411935, 0, 467180, 520424, 37, 'fail'),
 }
 # 2026-10-21 사용자 확인: 36-36만 오토 선택 + 회복용 수동 버스트, 37구역은 순수 오토.
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
@@ -90,6 +93,9 @@ def myinfo_party(content, order, lead, path):
     with open(os.path.join(ROOT, 'data', 'saviors_index.json'), encoding='utf-8') as f:
         index = json.load(f)
     ids = {v['key']: int(k) for k, v in index.items() if not k.startswith('_') and v.get('key')}
+    from battlesim.starsavior.data import get_db    # 시뮬 DB 키가 가이드 색인 키와 다른 구원자(예: amora = source-1058)도 받는다
+    for k, u in get_db().units.items():
+        ids.setdefault(k, int(u['id']))
     owned = {u['id']: u for u in info['units']}
     so = [order[1], order[2], order[0], order[3]]
     units, diagnostics = [], {}

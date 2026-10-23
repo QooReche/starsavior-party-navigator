@@ -134,12 +134,12 @@ class HealBurstTest(unittest.TestCase):
                                                        'chain_skill_damage_up': False,
                                                        'debuff_instance_count': False}})
             frozen = {k: v for k, v in r.items() if k in ('per_unit', 'outcome', 'timeline', 'breaks', 'break_skill', 'foes')}
-            frozen['outcome'] = {k: v for k, v in frozen['outcome'].items() if k != 'progress'}   # 나중에 더한 요약 칸(전투 규칙 무관)
+            frozen['outcome'] = {k: v for k, v in frozen['outcome'].items() if k not in ('progress', 'ttk_actions_median')}   # 나중에 더한 요약 칸(전투 규칙 무관)
             self.assertEqual(hashlib.sha256(json.dumps(frozen, sort_keys=True, ensure_ascii=False).encode()).hexdigest(), digest)
             self.assertEqual(r['nova_burst']['total'] > 0, policy == 'manual')
 
     def test_ingame_defaults_override_and_all_run_counts(self):
-        self.assertEqual(ingame_check.NOVA_POLICY, {'36-36': 'heal', '37-2': 'auto', '37-3': 'auto', '37-4': 'auto', '37-5': 'auto'})
+        self.assertEqual(ingame_check.NOVA_POLICY, {'36-36': 'heal', '37-2': 'auto', '37-3': 'auto', '37-4': 'auto', '37-5': 'auto', '17': 'auto', '17e': 'auto', '17r': 'auto'})
         r = ingame_check.run('36-36', runs=5, bs=True)
         self.assertGreater(r['nova_burst']['total'], 0)
         self.assertEqual(r['nova_burst']['total'], sum(sum(v.values()) for v in r['nova_burst']['by_unit'].values()))

@@ -1861,6 +1861,7 @@ class Battle:
             elif k == '시전자가 보유':
                 if ctx.src is None or not ctx.src.has(v):
                     return False
+                last = ('XS', [x.strip() for x in v.split(',')])    # 뒤따르는 「효과 개수/중첩수」는 시전자(나를 친 상대)의 중첩수
             elif k == '자신에게 약화효과 없음':
                 if (owner.n_harmful() == 0) != (v == '예'):
                     return False
@@ -1900,6 +1901,25 @@ class Battle:
                 if tgt is None or tgt.role != v:
                     return False
             elif k in ('적 약화효과 보유', '적 강화효과 보유'):
+                lim = dict(ln.params).get('효과 개수 미만')
+                cmp_ = self.mc['enemy_hit_buff_cmp']
+                if (k == '적 강화효과 보유' and v == '예' and lim is not None and cmp_ != 'legacy'
+                        and ctx.src is not None and ctx.src.side != owner.side):
+                    # 「강화 효과가 N개 이하(미만)인 적에게 피격」: 때린 상대 한 명의 강화 효과 수로 판정(옛 방식은 상대 전원 중 하나라도 있으면 참)
+                    if cmp_.endswith('_disp'):    # 해제 불가 표식(고정 강화)은 세지 않음(실험: 게임이 센다고 보장 못 함)
+                        n = sum(1 for e in ctx.src.eff.values() if e.category == 'buff' and e.stacks > 0 and not e.check and not e.fixed)
+                    else:
+                        n = ctx.src.n_good()
+                    if not (n < float(lim) if cmp_.startswith('lt') else n <= float(lim)):
+                        return False
+                    continue
+                if (k == '적 약화효과 보유' and '효과 개수 이상' in dict(ln.params)
+                        and ctx.src is not None and ctx.src.side != owner.side):
+                    # 「약화 효과가 N개 이상인 적에게 피격」: 때린 상대 한 명의 약화 효과 수로 판정
+                    last = ('XD', None)
+                    if (ctx.src.n_harmful() > 0) != (v == '예'):
+                        return False
+                    continue
                 opp = self.alive(1 - owner.side)
                 fn = (lambda x: x.n_harmful() > 0) if k == '적 약화효과 보유' else (lambda x: x.n_good() > 0)
                 if any(fn(x) for x in opp) != (v == '예'):
@@ -1927,6 +1947,11 @@ class Battle:
             return owner.n_harmful()
         if kind == 'SB':
             return owner.n_good()
+        src = ctx.src
+        if kind == 'XS':
+            return sum(src.stack(n) for n in names) if src is not None else 0
+        if kind == 'XD':
+            return src.n_harmful() if src is not None else 0
         return 0
 
     # ---------- 줄 실행
