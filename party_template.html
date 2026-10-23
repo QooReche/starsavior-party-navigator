@@ -6,7 +6,7 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "Malgun Gothic",system-ui,sans-serif}
 body.noscroll{overflow:hidden}
 main{max-width:1100px;margin:0 auto;padding:16px}
-h1{font-size:20px;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 14px;font-size:13px}
+h1{font-size:20px;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 14px;font-size:13px}.notice{margin:-8px 0 12px;font-size:12px;color:var(--mut);border-left:3px solid var(--acc,#6cf);padding:2px 8px}
 .panel,.party{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
 select,input[type=text],input[type=number]{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit;min-width:150px;max-width:100%}
@@ -307,6 +307,7 @@ summary{padding:9px 4px}
 </style></head><body><main>
 <h1>파티 편성 네비게이터 <small style="color:var(--bad)">베타</small></h1>
 <p class="sub">가진 구원자로 이 스테이지를 깰 파티를 찾습니다</p>
+<p class="notice" data-k="notice">📢 10/23 업데이트 · 게임 빌드 26105710 대응 · 브레이크 스킬 5종 반영, 혹한의 습격 판정 정정</p>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천 파티</button><button id="tab-info" type="button" aria-pressed="false">내 정보</button><span class="tabsp"></span><span id="mi-chip" class="mi-chip"></span><button id="mi-open" type="button" class="sec">내 정보 불러오기</button><button id="share-link" type="button" class="sec" aria-live="polite" title="조건과 내 정보(구원자 수치)를 담은 링크 — 받은 사람이 같은 정보로 추천을 볼 수 있음">링크 복사</button><label class="mi-use" title="끄면 조건만 담고 내 정보는 넣지 않음"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></nav>
 <div id="shared-bar" class="shared-bar" hidden></div>
 <div class="panel input-panel">
@@ -347,7 +348,7 @@ summary{padding:9px 4px}
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 보세요.</div></div>
-<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관 · 시뮬은 실제와 다를 수 있음</p><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>구원자·스킬·아이콘 등 게임 이미지의 권리는 원 권리자에게 있습니다.<br>저장소 라이선스는 게임 이미지에 적용되지 않습니다.</details>
+<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관 · 시뮬은 실제와 다를 수 있음</p><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않습니다(관리자가 자료를 갱신한 뒤 반영).<br>구원자·스킬·아이콘 등 게임 이미지의 권리는 원 권리자에게 있습니다.<br>저장소 라이선스는 게임 이미지에 적용되지 않습니다.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 정보 불러오기</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
  <div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장합니다.</div>
@@ -362,6 +363,8 @@ summary{padding:9px 4px}
   <div class="dtools"><button id="mi-copy" type="button">명령 복사</button></div>
   <details><summary>명령 보기</summary><code id="mi-cmd" style="display:block;font-size:11px;word-break:break-all;user-select:all">$f="$env:TEMP\ss_myinfo.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/QooReche/starsavior-myinfo/main/myinfo.ps1 -OutFile $f; powershell -NoProfile -ExecutionPolicy Bypass -File $f</code></details>
   <p class="mut">게임 파일은 건드리지 않고, 내 PC에서만 해독합니다(관리자 확인 1회)</p>
+  <p class="mut">게임 업데이트 직후엔 추출이 안 될 수 있습니다. 관리자가 도구를 고친 뒤 다시 해 주세요.</p>
+  <p class="mut">실패하면 바탕화면에 생기는 <b>내정보_진단.txt</b> 를 관리자에게 보내 주세요(계정 정보 없음).</p>
   <a href="https://github.com/QooReche/starsavior-myinfo" target="_blank" rel="noopener">추출 도구</a>
  </section>
  <div class="dtools"><label class="miFile" style="cursor:pointer"><span class="mibtn">파일 선택</span><input type="file" id="mi-file" accept=".json,application/json" hidden></label><button id="mi-view" type="button">내 정보 보기</button><button id="mi-clear" type="button">지우기</button></div>
