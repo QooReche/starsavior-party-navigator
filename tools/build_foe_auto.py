@@ -37,7 +37,8 @@ SIMPLE = {'IsNotInvincible': 'not_invincible', 'IsBoss': 'boss', 'IsElite': 'eli
           'IsHighSpeedGauge': 'high_gauge', 'IsLowSpeedGauge': 'low_gauge',
           'IsHighTurnSpeed': 'high_spd', 'IsLowTurnSpeed': 'low_spd', 'IsLastHitTarget': 'last_hit', 'IsLastDamageTarget': 'last_damager',
           'IsLeader': 'leader', 'IsAllyOneNotSelf': 'not_self', 'IsSuperArmorBreak': 'broken', 'IsNotSuperArmorBreak': 'not_broken',
-          'FollowSkillTargetType': 'follow', 'IsPositiveBuffUnit': 'buffed'}
+          'FollowSkillTargetType': 'follow', 'IsPositiveBuffUnit': 'buffed',
+          'IsNotUnableToAct': 'not_unable_to_act'}
 RATE = {'FrontLineTargetRate': 'front', 'BackLineTargetRate': 'back', 'DefenderTargetRate': '디펜더', 'StrikerTargetRate': '스트라이커',
         'RangerTargetRate': '레인저', 'CasterTargetRate': '캐스터', 'AssassinTargetRate': '어쌔신', 'SupporterTargetRate': '서포터'}
 COUNT = {'IsPositiveBuffCountOverThan': 'buff_ge', 'IsPositiveBuffCountLessThan': 'buff_le',

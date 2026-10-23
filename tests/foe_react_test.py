@@ -379,7 +379,9 @@ class TestAfterAllyAttack(unittest.TestCase):
 
 # ================================================================ damage_result (피해 결과 조건)
 class TestDamageResult(unittest.TestCase):
-    """DamageResultType 조건: 회피/치명타/일반 판정."""
+    """DamageResultType 조건: 회피/치명타/일반 판정.
+    ctx.evaded·crit_targets 를 직접 설정해 _check_foe_react 의 조건 판정을 검증한다
+    (난수에 의존하지 않음 — 엔진이 deal() 중 설정하는 집합을 그대로 주입)."""
 
     def _foe_evade(self):
         """MyEffectiveHit + DamageResultType=[Evade] → react_target"""
@@ -388,20 +390,65 @@ class TestDamageResult(unittest.TestCase):
             'conds': [['damage_result', ['Evade']]],
             'target': 'react_target', 'is_attack': True}})
 
-    def test_fires_on_evade(self):
-        b = _battle(self._foe_evade())
+    def _foe_crit(self):
+        """MyEffectiveHit + DamageResultType=[CriticalHit] → react_target"""
+        return _foe({'특수기': {
+            'timing': 'hit',
+            'conds': [['damage_result', ['CriticalHit']]],
+            'target': 'react_target', 'is_attack': True}})
+
+    def _foe_normal(self):
+        """MyEffectiveHit + DamageResultType=[NormalHit] → react_target"""
+        return _foe({'특수기': {
+            'timing': 'hit',
+            'conds': [['damage_result', ['NormalHit']]],
+            'target': 'react_target', 'is_attack': True}})
+
+    def _inject(self, foe_def, evaded=False, crit=False):
+        """배틀을 만들고 ctx 를 직접 구성해 _check_foe_react 를 호출한다."""
+        from battlesim.mc import Ctx
+        b = _battle(foe_def)
         foe = b.foes[0]
         ally = b.allies[0]
-        # 수동으로 evaded 에 대상을 넣어 회피 시뮬레이션
-        ctx = b.cast(foe, foe.d.skills['기본기'])
-        # 회피 여부는 strike 에서 결정되므로 직접 확인이 어려움 — 아래는 통합 시험
-        # 여기서는 조건 판정기의 로직만 단위 시험
-        pass
+        sk = foe.d.skills['기본기']
+        ctx = Ctx(foe, foe, sk)
+        ctx.targets = [ally]
+        ctx.target = ally
+        ctx.hit_targets = [ally]
+        ctx.evaded = {ally} if evaded else set()
+        ctx.crit_targets = {ally} if crit else set()
+        b._react_q = None    # 대기열 없이 바로 실행
+        b._check_foe_react(foe, ctx, timing_filter=None)
+        return b
 
-    def test_not_fires_on_crit(self):
+    def test_fires_on_evade(self):
+        b = self._inject(self._foe_evade(), evaded=True)
+        self.assertGreater(_count_react_casts(b), 0, '회피 시 Evade 조건 충족 → 발동')
+
+    def test_not_fires_on_crit_when_evade_required(self):
         """치명타이면 Evade 조건 미충족."""
-        # 이 시험은 조건 판정의 정확성 확인 (통합 시험은 난수 의존)
-        pass
+        b = self._inject(self._foe_evade(), crit=True)
+        self.assertEqual(_count_react_casts(b), 0, '치명타는 Evade 조건 미충족')
+
+    def test_not_fires_on_normal_when_evade_required(self):
+        b = self._inject(self._foe_evade(), evaded=False, crit=False)
+        self.assertEqual(_count_react_casts(b), 0, '일반 타격은 Evade 조건 미충족')
+
+    def test_fires_on_crit(self):
+        b = self._inject(self._foe_crit(), crit=True)
+        self.assertGreater(_count_react_casts(b), 0, '치명타 시 CriticalHit 조건 충족 → 발동')
+
+    def test_not_fires_on_evade_when_crit_required(self):
+        b = self._inject(self._foe_crit(), evaded=True)
+        self.assertEqual(_count_react_casts(b), 0, '회피는 CriticalHit 조건 미충족')
+
+    def test_fires_on_normal(self):
+        b = self._inject(self._foe_normal(), evaded=False, crit=False)
+        self.assertGreater(_count_react_casts(b), 0, '일반 타격 시 NormalHit 조건 충족 → 발동')
+
+    def test_not_fires_on_evade_when_normal_required(self):
+        b = self._inject(self._foe_normal(), evaded=True)
+        self.assertEqual(_count_react_casts(b), 0, '회피는 NormalHit 조건 미충족')
 
 
 if __name__ == '__main__':
