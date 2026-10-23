@@ -150,7 +150,7 @@ def variant_specs(d):
 
 def unit_glossary(d):
     """유닛별 gl 우선. 묶음 무작위 효과의 하위 설명도 수치 근거로 사용한다."""
-    from .foe import _gloss_props
+    from .foe import _gloss_props, ANY_TURN_TEXT
     out = {}
     for raw in getattr(d, 'u', {}).get('sk', []):
         for g in raw.get('gl', []):
@@ -161,6 +161,8 @@ def unit_glossary(d):
                         'buff' if kind == '강화' else 'debuff' if kind == '약화' else None)
             if category or props:
                 out[name] = dict(dur=dur, props=props, category=category)
+                if ANY_TURN_TEXT in text:
+                    out[name]['clock'] = 'any_turn'
             if kind == '무작위 효과':
                 for part in g.get('x', '').split(' · '):
                     m = re.match(r'(.+)\(([^()]*)\)$', part)

@@ -938,12 +938,35 @@ class Battle:
                     if e.dur <= 0:
                         del u.eff[name]
             self.dirty(u)
+        if self.mc['any_turn_clock']:
+            self._tick_any_turn()
         self._expire_checks()
         u.acting = False
         if u.extra_turn and not u.dead:
             u.gauge = 10000.0     # extra_turn 표시는 실제로 그 턴을 쓸 때(act 시작)까지 유지 -> 동시 100% 판정에서 최우선
         elif u.dead:
             u.extra_turn = False
+
+    def _tick_any_turn(self):
+        """'누군가 턴 종료 시 턴 수가 차감' 효과(BUFF_TEMPLET.GlobalTurnCounting): 어느 진영의 누가 행동을 끝내든 양 진영 전원의 any_turn 효과를 1 차감.
+        효과가 걸린 그 행동에서는 차감하지 않는다(fresh)."""
+        for side in (0, 1):
+            for v in self.alive(side):
+                changed = False
+                for name in list(v.eff):
+                    e = v.eff[name]
+                    if e.clock != 'any_turn':
+                        continue
+                    if e.fresh:
+                        e.fresh = False
+                        continue
+                    if e.dur != math.inf:
+                        e.dur -= 1
+                        if e.dur <= 0:
+                            del v.eff[name]
+                        changed = True
+                if changed:
+                    self.dirty(v)
 
     @staticmethod
     def _tick_cooldowns(u):
@@ -3319,6 +3342,14 @@ class Battle:
             self._fired(owner)
             self.add_effect(owner, x, eff, ctx, hot=hot, fixed='해제 불가' in raw)
 
+    def _is_any_turn(self, owner, name):
+        """효과 설명에 '누군가 턴 종료 시 턴 수가 차감' 이 있는 상태(유닛 사전 우선, 없으면 전체 적 스킬 사전)."""
+        info = getattr(owner.d, 'effect_info', {}).get(name)
+        if info is None or 'clock' not in info:
+            from .starsavior.foe import gloss
+            info = gloss().get(name) or {}
+        return info.get('clock') == 'any_turn'
+
     def add_effect(self, owner, x, eff, ctx, hot=0.0, fixed=False):
         name = eff['name']
         opp = x.side != owner.side
@@ -3353,11 +3384,16 @@ class Battle:
         fresh = (x is owner and owner.acting) or (
             self.mc['taunt_skill_end_duration'] and name == '도발' and x.acting
             and self._cur_line is not None and self._cur_line.phase == '스킬 사용 후')
+        if self.mc['any_turn_clock'] and self._is_any_turn(owner, name):
+            # 누군가의 행동 중에 걸린 효과는 그 행동 끝 차감에서 제외(걸린 턴은 세지 않음)
+            fresh = fresh or any(v.acting for s in (0, 1) for v in self.alive(s))
         if e is None:
             mx = eff['max'] or (5 if dot else 1)
             e = Eff(name, eff['props'], mx, dur, owner, harmful)
             e.category = category
             e.fixed = fixed
+            if self.mc['any_turn_clock'] and self._is_any_turn(owner, name):
+                e.clock = 'any_turn'
             transient = eff['dur'] is None and ctx is not None and ctx.local is not None   # 피격 직전에 받은 지속 표기 없는 효과 = 이번 행동만
             if self.mc['check_buff_expiry'] == 'action' and (transient or (eff['dur'] is None and CHECK_NAME.search(name) and not eff['props'])):
                 e.check = True
