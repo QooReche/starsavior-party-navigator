@@ -73,8 +73,8 @@ console.log('PASS simSig 기존 키 바이트 동일성(auto/manual·재점화·
 owned=['특이점 관측','스타피어서','큐브 과부하','차원 강습','행성 정화'];
 const targets=plain(ev('breakTargets()')),jobs=plain(ev('breakJobs(cur[0],a)'));
 assert.equal(targets.length,owned.length+1);
-assert.deepEqual(targets.filter(x=>!x.supported).map(x=>x.name),['행성 정화']);
-assert.deepEqual(jobs.map(x=>x.bname),[null,...owned.slice(0,-1)]);
+assert.deepEqual(targets.filter(x=>!x.supported).map(x=>x.name),[]);   // 10/23 행성 정화 지원(클라 표)
+assert.deepEqual(jobs.map(x=>x.bname),[null,...owned]);
 assert.equal(new Set(jobs.map(j=>j.key)).size,jobs.length);
 assert(!ev('breakCard(breakChoice(a.combo,contents[0]),null,1,null,cur[0])').includes('data-bcompare'));
 assert(ev('breakCard(breakChoice(a.combo,contents[0]),null,1,a,cur[0])').includes('data-bcompare'));
@@ -107,7 +107,7 @@ const count=workers.length;ev('breakCompareStart(1,"c,d");simStart(1)');assert.e
 const view=()=>ev('breakCompareView(breakChoice(a.combo,contents[0]),1,a,cur[0])');
 assert.match(view(),/data-k="breakstate"/);assert.match(view(),/취소/);
 assert.equal((view().match(/class="bcrow"/g)||[]).length,targets.length);
-assert.match(view(),/행성 정화 · 미지원/);
+assert.match(view(),/행성 정화 · 대기/);assert.doesNotMatch(view(),/미지원/);   // 10/23 행성 정화 지원
 cw.onmessage({data:{type:'team',id:cr.id,key:'not-a-job',result:{clear:1}}});
 assert.equal(Object.keys(ctx.SIMQ.res).length,1);
 for(const t of cr.teams)cw.onmessage({data:{type:'team',id:cr.id,key:t.key,result:{clear:0.8,ttk:2}}});
