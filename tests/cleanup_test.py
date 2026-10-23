@@ -185,6 +185,42 @@ class CleanupTest(unittest.TestCase):
         with patch.object(ctypes, 'WinDLL', return_value=kernel), self.assertRaises(RuntimeError):
             low_priority()
 
+    def test_html_cleanup_checks(self):
+        """생성 HTML에 cytoscape 정적 태그 없음, D.syn에 e 없음, syn_detail 대조, URL 해시."""
+        out = self.tmp / 'index.html'
+        r = subprocess.run([sys.executable, '-X', 'utf8', '-I', str(ROOT / 'build_party_html.py'), str(out)], capture_output=True)
+        self.assertEqual(r.returncode, 0, r.stderr.decode('utf-8'))
+        html = out.read_text(encoding='utf-8')
+        # 1. 정적 cytoscape script 태그 없음
+        self.assertNotIn('<script src="lib/cytoscape', html)
+        # 2. D.syn에 e 없음
+        import re
+        m = re.search(r'const D=(\{.*?\});\s*\n', html)
+        self.assertIsNotNone(m, 'D not found in HTML')
+        d = json.loads(m.group(1))
+        for entry in d['syn']:
+            self.assertNotIn('e', entry, f'D.syn entry must not have e: {entry}')
+        # 3. syn_detail.json 길이·순서 D.syn과 같고 원본과 대조
+        syn_detail_path = ROOT / 'data' / 'syn_detail.json'
+        self.assertTrue(syn_detail_path.exists())
+        detail = json.loads(syn_detail_path.read_text(encoding='utf-8'))
+        self.assertEqual(len(detail), len(d['syn']), 'syn_detail.json length must match D.syn')
+        import sys as _sys
+        _sys.path.insert(0, str(ROOT))
+        import party_reco as pr_mod
+        pairs = pr_mod.load_synergy()
+        self.assertEqual(len(detail), len(pairs))
+        for i, (ev, p) in enumerate(zip(detail, pairs)):
+            expected = [e[:110] for e in p.get('evidence', [])[:2]]
+            self.assertEqual(ev, expected, f'syn_detail[{i}] mismatch')
+        # 4. URL 해시 = 파일 내용 해시
+        detail_bytes = syn_detail_path.read_bytes()
+        expected_hash = hashlib.sha256(detail_bytes).hexdigest()[:12]
+        self.assertIn(f'syn_detail.json?v={expected_hash}', html)
+        cyto_bytes = (ROOT / 'lib' / 'cytoscape.min.js').read_bytes()
+        cyto_hash = hashlib.sha256(cyto_bytes).hexdigest()[:12]
+        self.assertIn(f'cytoscape.min.js?v={cyto_hash}', html)
+
     def test_update_public_steps(self):
         from tools import update
         calls = []

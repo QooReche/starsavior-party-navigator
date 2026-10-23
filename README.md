@@ -6,7 +6,7 @@
 - 사이트: https://QooReche.github.io/starsavior-party-navigator/
 - 이어서 작업할 때: `HANDOFF.md` → `docs/PORTING.md`
 
-초기 화면 요청은 비압축 기준 HTML 약 2.01MB + quick 약 0.80MB + Cytoscape 약 0.37MB + 화면 JS임(약 3.24MB, 이미지 제외). 시뮬 최초 다운로드와 구분함. 성장표·스킬은 필요할 때 요청함. 실제 전송량은 압축·캐시에 따라 달라짐.
+초기 화면 요청은 비압축 기준 HTML 약 1.68MB + quick 약 0.80MB + 화면 JS임(약 2.53MB, 이미지 제외). Cytoscape(약 0.37MB)는 「추천 근거 보기」 켤 때 지연 로드, 근거 문장(약 0.26MB)은 선 탭 시 data/syn_detail.json으로 요청함. 시뮬 최초 다운로드와 구분함. 성장표·스킬은 필요할 때 요청함. 실제 전송량은 압축·캐시에 따라 달라짐.
 
 ## 화면 구성
 

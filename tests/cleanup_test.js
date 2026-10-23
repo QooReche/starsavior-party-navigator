@@ -45,12 +45,40 @@ async function apply(){
  vm.runInContext(part('function miCheck(','function miLoad('),calc);
  assert.throws(()=>calc.miCheck(info,{}),/계산값/);
 }
-function graph(){
- let visible=false,created=0;const els={graphwrap:{hidden:false},cy:{},gcw:{style:{}},gmode:{value:'party'}};
- const c=vm.createContext({cy:null,$:id=>els[id],document:{body:{classList:{contains:()=>visible}}},graphData:()=>({nodes:[],edges:[]}),cytoscape(){created++;return {on(){},destroy(){}}}});
- vm.runInContext(part('let graphDirty=','["gmode","gcenter","gmin","gconf"].forEach'),c);
- c.drawGraph();c.drawGraph();assert.equal(created,0);visible=true;c.drawGraph();assert.equal(created,1);c.drawGraph();assert.equal(created,1);
- visible=false;vm.runInContext('graphDirty=true',c);c.drawGraph();assert.equal(created,1);visible=true;c.drawGraph();assert.equal(created,2);
+async function graph(){
+ let visible=false,created=0,injected=0,scriptEl=null;
+ const els={graphwrap:{hidden:false},cy:{innerHTML:''},gcw:{style:{}},gmode:{value:'party'}};
+ const c=vm.createContext({
+  cy:null,$:id=>els[id],
+  document:{body:{classList:{contains:()=>visible}},
+   createElement(){scriptEl={onload:null,onerror:null,src:''};return scriptEl},
+   head:{appendChild(){injected++}}},
+  D:{cytoUrl:'lib/cytoscape.min.js?v=test'},
+  graphData:()=>({nodes:[],edges:[]}),Promise,setTimeout:()=>{}});
+ vm.runInContext(part('let _cyP=null;','["gmode","gcenter","gmin","gconf"].forEach'),c);
+ // 첫 표시 전: 스크립트 주입 안 함
+ c.drawGraph();assert.equal(injected,0,'not visible: no inject');
+ // 첫 표시: 1회 주입
+ visible=true;c.drawGraph();assert.equal(injected,1,'first inject');
+ // 로드 중 중복 호출: 주입 추가 없음
+ c.drawGraph();c.drawGraph();assert.equal(injected,1,'concurrent: no extra inject');
+ // 로드 완료: cytoscape() 1회 생성
+ c.cytoscape=function(){created++;return {on(){},destroy(){}}};
+ const p=vm.runInContext('_cyP',c);scriptEl.onload();
+ await p;await Promise.resolve();
+ assert.equal(created,1,'concurrent: 1 create');
+ // 반복: 재주입·재생성 없음(cy 있고 graphDirty=false)
+ c.drawGraph();await Promise.resolve();assert.equal(injected,1,'no re-inject');assert.equal(created,1,'no re-create');
+ // graphDirty: 재생성하되 재주입 없음
+ vm.runInContext('graphDirty=true',c);c.drawGraph();await Promise.resolve();
+ assert.equal(injected,1,'dirty: no re-inject');assert.equal(created,2,'dirty: re-create');
+ // 실패: 안내 표시, _cyP 초기화(재시도 가능)
+ vm.runInContext('_cyP=null;graphDirty=true',c);c.cy=null;c.cytoscape=undefined;injected=0;scriptEl=null;
+ visible=true;c.drawGraph();assert.equal(injected,1,'fail: inject');
+ scriptEl.onerror(new Error('fail'));
+ await new Promise(r=>setTimeout(r,0));
+ assert.ok(els.cy.innerHTML.includes('구조도 라이브러리를 불러오지 못했습니다'),'failure msg');
+ assert.equal(vm.runInContext('_cyP',c),null,'promise cleared for retry');
 }
 async function worker(status=200,badFile=false){
  let active=0,max=0,writes=0,python=false;
@@ -64,4 +92,4 @@ async function worker(status=200,badFile=false){
  if(status!==200||badFile){await assert.rejects(c.boot('http://local/'),/HTTP/);assert.equal(python,false)}
  else{await c.boot('http://local/');assert.ok(max>=4&&max<=6);assert.equal(python,true)}
 }
-(async()=>{validation();storage();atomic();await apply();graph();await worker();await worker(404);await worker(200,true);console.log('cleanup JS OK: validation/storage/recovery/atomic/graph/worker')})().catch(e=>{console.error(e);process.exitCode=1});
+(async()=>{validation();storage();atomic();await apply();await graph();await worker();await worker(404);await worker(200,true);console.log('cleanup JS OK: validation/storage/recovery/atomic/graph/worker')})().catch(e=>{console.error(e);process.exitCode=1});

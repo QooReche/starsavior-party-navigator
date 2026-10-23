@@ -44,3 +44,28 @@
 - 추천 동일성은 `tests/reco_parity_test.py`에서 실제 페이지 함수와 Python을 3개 콘텐츠 × 3개 보유 조건으로 대조했음. 상위 10팀 조합·순서·점수가 일치했음. 기존 내 정보 능력치·quick Python↔JS 시험도 통과했음.
 - index.html과 manifest를 최종 재생성했음. manifest: 25파일, 4,793,664바이트, 버전 `1072adeff857`. `tools/build_skills.py --check`, `git diff --check`도 통과했음.
 - 원본 rawdata·생성 data·골든·rules/default.json은 변경하지 않았음. HISTORY 끝에 옛 HANDOFF 전체가 보존되었음을 Git 원문과 대조했음.
+
+## 지연 로드·근거 분리 (cleanup-cy, 2026-10-23)
+
+기준: cleanup 커밋(chore/cleanup 마지막) / 작업: cleanup-cy 브랜치.
+
+### 반영했음
+
+- 웹 5(잔여): Cytoscape(373KB)를 정적 태그에서 제거하고 `loadCy()`(Promise 캐시, 실패 시 캐시 초기화·재시도 가능)로 지연 로드함. `drawGraph`는 cytoscape 미정의 시 loadCy().then(drawGraph)로 분기하며, 로드 중 중복 호출이어도 스크립트 주입 1회·cytoscape() 생성 1회를 보장함.
+- 데이터 분리: D.syn의 e(근거 2줄, 270KB)를 data/syn_detail.json으로 분리함. 빌드가 내용 해시 URL(synDetailUrl)을 D에 넣고, 선 탭 시 fetch 후 표시(로딩 중 문구·실패 안내 포함)함. r(이유)는 D.syn에 유지함.
+- setWhy: setTimeout 제거, drawGraph 직접 호출. cy.resize/fit는 drawGraph 완료 뒤 setTimeout(50ms)으로 이동.
+- lib/cytoscape.min.js도 내용 해시 URL(cytoUrl)로 캐시 무효화 지원함.
+
+### 크기 실측(비압축·이미지 제외)
+
+- 이전 index.html: 2,033,497바이트, 초기 전송(HTML+Cytoscape+quick+화면 JS): 약 3.61MB.
+- 이후 index.html: 1,760,300바이트(-273KB), 초기 전송: 약 2.53MB(-1.08MB 중 Cytoscape 0.37MB + e 0.27MB).
+- data/syn_detail.json: 270,641바이트(선 탭 시만 요청).
+
+### 검증
+
+- 새 회귀: cleanup_test.js graph()를 async로 교체해 지연 로드 동작 7개 항목(첫 표시 전 미주입·첫 표시 1회 주입·중복 호출 1회 생성·재사용·dirty 재생성·실패 메시지·promise 초기화) 검사함.
+- cleanup_test.py에 test_html_cleanup_checks 추가: 생성 HTML에 정적 cytoscape 태그 없음, D.syn에 e 없음, syn_detail.json 길이·순서·내용 원본 대조, URL 해시 일치 확인함.
+- 새 시험 의도적 오염 1건(assertNotIn → assertIn) 후 실패 확인하고 원복했음.
+- e2e: tests/e2e/test_page.py에 test_graph_evidence 추가(근거 보기 켬 → 그래프 → 선 탭 → syn_detail 로드·캐시 확인). Playwright 환경 외부에서 실행 필요.
+- Python 14개(cleanup_test.py), JS 10개, reco_parity_test, run_workspace_test/web_test 전부 통과했음. 추천 점수·순서 불변.

@@ -138,10 +138,21 @@ def main():
         if fn.endswith(".jpg"):
             with open(os.path.join(bdir, fn), "rb") as f:
                 bicons[fn[:-4]] = "data:image/jpeg;base64," + base64.b64encode(f.read()).decode()
+    raw_syn = pr.load_synergy()
     syn = [{"a": p["a"], "b": p["b"], "t": int(p["type"].split(":")[0]), "tn": p["type"].split(":", 1)[1], "s": p["strength"],
-            "c": p.get("conf", "추정"), "d": bool(p.get("directed")), "r": p.get("reason", ""),
-            "e": [e[:110] for e in p.get("evidence", [])[:2]]}
-           for p in pr.load_synergy()]
+            "c": p.get("conf", "추정"), "d": bool(p.get("directed")), "r": p.get("reason", "")}
+           for p in raw_syn]
+    # 근거 문장(e)은 선 탭 시 요청하도록 별도 분리. D.syn에는 포함하지 않음.
+    syn_detail = [[e[:110] for e in p.get("evidence", [])[:2]] for p in raw_syn]
+    syn_detail_str = json.dumps(syn_detail, ensure_ascii=False, separators=(",", ":"))
+    syn_detail_bytes = syn_detail_str.encode("utf-8")
+    syn_detail_url = "data/syn_detail.json?v=" + hashlib.sha256(syn_detail_bytes).hexdigest()[:12]
+    atomic_text(os.path.join(pr.HERE, "data", "syn_detail.json"), syn_detail_str)
+    # Cytoscape 지연 로드용 콘텐츠 해시 URL
+    cyto_path = os.path.join(pr.HERE, "lib", "cytoscape.min.js")
+    with open(cyto_path, "rb") as f:
+        cyto_bytes = f.read()
+    cyto_url = "lib/cytoscape.min.js?v=" + hashlib.sha256(cyto_bytes).hexdigest()[:12]
     # 스킬·성장표는 필요할 때 요청함. quick.json은 페이지 시작 시 요청함.
     skill_path = os.path.join(pr.DATA, "savior_skills.json")
     with open(skill_path, "rb") as f:
@@ -151,7 +162,8 @@ def main():
     skill_url = "data/savior_skills.json?v=" + hashlib.sha256(skill_bytes).hexdigest()[:12]
     # 별도 생성 단계 tools/build_myinfo_view.py가 공개 설명 자료를 담당함.
     power = pr._json(pr.POW)
-    data = json.dumps({"roster": r, "skillsUrl": skill_url, "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
+    data = json.dumps({"roster": r, "skillsUrl": skill_url, "synDetailUrl": syn_detail_url, "cytoUrl": cyto_url,
+                       "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
                        "pen": power["pen"], "tribe": power["tribe"],
                        "grules": grules["types"], "gim": pr._json(pr.GSTAGE), "dmg": pr._json(pr.DMG)}, ensure_ascii=False, separators=(",", ":"))
     with open(os.path.join(pr.HERE, "party_template.html"), encoding="utf-8") as f:

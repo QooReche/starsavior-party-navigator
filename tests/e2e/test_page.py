@@ -1066,6 +1066,40 @@ def test_myinfo_full(browser, ctx):
     return True, '1280/390px: 지연 로드·계산 1회, 능력치·스킬·장비, 시뮬 사용 표시, 닫기·Esc, 가로 넘침 없음'
 
 
+def test_graph_evidence(browser, ctx):
+    """근거 보기 켬 → 그래프 그려짐 → 선 탭 시 syn_detail.json 요청 후 근거 표시."""
+    ctx.errors.clear()
+    page = open_page(browser, ctx)
+    # 근거 보기(show-why) 켜기
+    page.evaluate("() => setWhy(true)")
+    settle(page)
+    # cytoscape가 로드·그려질 때까지 대기(cy 전역이 null이 아님)
+    page.wait_for_function("() => window.cy != null", timeout=30000)
+    cy_drawn = page.evaluate("() => window.cy != null && window.cy.edges().length > 0")
+    # 첫 번째 엣지 탭 — 로딩 중 표시 후 근거로 교체
+    page.evaluate("() => window.cy.edges()[0].trigger('tap')")
+    page.wait_for_function("() => !$('cyinfo').innerHTML.includes('불러오는 중')", timeout=15000)
+    info_text = page.inner_text("#cyinfo")
+    # syn_detail.json이 요청됐는지 확인
+    syn_loaded = page.evaluate("() => window._sd != null")
+    # 두 번째 탭: 이미 _sd 있으므로 다시 요청 안 함(캐시)
+    req_count = page.evaluate("""() => {
+      let n = 0;
+      const orig = window.fetch;
+      window.fetch = (...a) => { if (String(a[0]).includes('syn_detail')) n++; return orig(...a); };
+      window.cy.edges().length > 1 && window.cy.edges()[1].trigger('tap');
+      window.fetch = orig;
+      return n;
+    }""")
+    errs = list(ctx.errors)
+    page.screenshot(path=os.path.join(ctx.shots, "graph_evidence.png"))
+    page.close()
+    ok = (cy_drawn and syn_loaded and info_text and "불러오는 중" not in info_text
+          and "불러오지 못했습니다" not in info_text and req_count == 0 and not errs)
+    return ok, "그래프 그려짐 %s, syn_detail 로드 %s, 근거 표시 %s, 2차 탭 재요청 %d, 오류 %s" % (
+        cy_drawn, syn_loaded, bool(info_text), req_count, errs[:1])
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_break_skill_select)
@@ -1077,6 +1111,7 @@ TESTS.extend([test_myinfo_required, test_myinfo_import_clear, test_myinfo_use_to
 TESTS.extend([test_share_link, test_sim_runs, test_press_to_compute])
 TESTS.extend([test_skill_view, test_skill_retry])
 TESTS.append(test_myinfo_full)
+TESTS.append(test_graph_evidence)
 
 
 def main():
