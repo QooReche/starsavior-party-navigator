@@ -364,7 +364,6 @@ button.skill-face{padding:0;background:transparent;border-radius:50%;flex:none}
  <div class="skill-dialog-head"><div><h2 id="skills-title">스킬</h2><div id="skills-subtitle" class="mut"></div></div><button type="button" class="sec" data-skill-close autofocus>닫기</button></div>
  <div id="skills-body" aria-live="polite"></div>
 </dialog>
-<script src="lib/cytoscape.min.js"></script>
 <script src="quick.js"></script>
 <script src="ui_shared.js"></script>
 <script src="myinfo_import.js"></script>
@@ -459,7 +458,7 @@ function score(s,w,main,boss){
  if(tot){let win=0,lose=0;for(const [e,n] of Object.entries(w)){if(adv[s.el]===e)win+=n;if(adv[e]===s.el&&adv[s.el]!==e)lose+=n}
   if(win)parts["상성 유리"]=aW*win/tot;if(lose)parts["상성 불리"]=-dW*lose/tot}
  return [Object.values(parts).reduce((a,b)=>a+b,0),parts]}
-const SYN=new Map();D.syn.forEach(p=>{const k=p.a<p.b?p.a+"|"+p.b:p.b+"|"+p.a;(SYN.get(k)||SYN.set(k,[]).get(k)).push(p)});
+const SYN=new Map();D.syn.forEach((p,i)=>{p._i=i;const k=p.a<p.b?p.a+"|"+p.b:p.b+"|"+p.a;(SYN.get(k)||SYN.set(k,[]).get(k)).push(p)});
 function partySyn(keys){const sw=CFG.synergy,hits=[];
  for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++){const a=keys[i],b=keys[j],k=a<b?a+"|"+b:b+"|"+a;
   for(const p of (SYN.get(k)||[]))hits.push({p,pts:sw.typeWeight[p.t]*p.s*(sw.confWeight[p.c]??0.6)})}
@@ -968,7 +967,7 @@ function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:chec
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  syncOwn();
  if(Array.isArray(b)&&!MI.brkLv){const s=new Set(b);document.querySelectorAll("#brk input").forEach(x=>x.checked=s.has(x.dataset.b))}pruneBreakSel()})();
-const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").checked=on;LS.set("why",on);if(on)setTimeout(()=>{drawGraph();if(cy){cy.resize();cy.fit(undefined,30)}},50)};
+const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").checked=on;LS.set("why",on);if(on)drawGraph()};
 $("showwhy").onchange=()=>setWhy($("showwhy").checked);setWhy(!!LS.get("why"));
 let _rt=null;const rerunNow=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
 const rerun=()=>{clearTimeout(_rt);_rt=setTimeout(AUTO?run:condChanged,150)};   // 조건이 바뀜: 자동 모드가 아니면 결과를 비우고 「추천 편성 보기」 안내
@@ -1076,11 +1075,23 @@ function graphData(){
  const nodes=[...keys].map(k=>{const s=byKey[k];return {data:{id:k,label:s.name,img:s.img||"",c:ELC[s.el],inparty:pk.has(k)?1:0,center:k===center?1:0}}});
  const edges=ps.map((p,i)=>({data:{id:"e"+i,source:p.a,target:p.b,t:p.t,w:1+p.s*1.5,col:TYC[p.t],dir:p.d?"triangle":"none",p}}));
  return {nodes,edges,center}}
+let _sdP=null,_sd=null;
+function loadSynDetail(){
+ if(_sdP)return _sdP;
+ _sdP=fetch(D.synDetailUrl).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(d=>{_sd=d;return d}).catch(e=>{_sdP=null;throw e});
+ return _sdP}
+let _cyP=null;
+function loadCy(){
+ if(_cyP)return _cyP;
+ _cyP=new Promise((ok,fail)=>{const s=document.createElement('script');s.src=D.cytoUrl;s.onload=ok;s.onerror=()=>{_cyP=null;fail(new Error('cytoscape'))};document.head.appendChild(s)});
+ return _cyP}
 let graphDirty=true;
 function drawGraph(){
  if(!document.body.classList.contains("show-why")||$("graphwrap").hidden){graphDirty=true;return}
- if(cy&&!graphDirty)return;graphDirty=false;
- const el=$("cy");if(typeof cytoscape==="undefined"){el.innerHTML='<div class="mut" style="padding:12px">구조도 라이브러리를 불러오지 못했습니다.</div>';return}
+ if(cy&&!graphDirty)return;
+ if(typeof cytoscape==="undefined"){loadCy().then(()=>drawGraph()).catch(()=>{$("cy").innerHTML='<div class="mut" style="padding:12px">구조도 라이브러리를 불러오지 못했습니다. <button type="button" onclick="loadCy().then(()=>drawGraph())" class="sec">다시 시도</button></div>'});return}
+ graphDirty=false;
+ const el=$("cy");
  const {nodes,edges,center}=graphData();$("gcw").style.display=$("gmode").value==="center"?"":"none";
  if(cy)cy.destroy();
  cy=cytoscape({container:el,elements:[...nodes,...edges],minZoom:.3,maxZoom:2.5,wheelSensitivity:.25,
@@ -1090,9 +1101,12 @@ function drawGraph(){
    {selector:".dim",style:{opacity:.12}},{selector:"edge:selected",style:{opacity:1,"overlay-opacity":.15}}],
   layout:$("gmode").value==="party"?{name:"circle",padding:40,spacingFactor:1.4}:center?{name:"concentric",concentric:n=>n.data("center")?10:1,levelWidth:()=>1,minNodeSpacing:30,padding:20}:{name:"cose",animate:false,padding:20,nodeRepulsion:()=>9000,idealEdgeLength:()=>110}});
  cy.on("tap","edge",e=>{const p=e.target.data("p"),nm=Object.fromEntries(R.map(s=>[s.key,s.name]));
-  $("cyinfo").innerHTML=`<b>${esc(nm[p.a])}${p.d?" → ":" ↔ "}${esc(nm[p.b])}</b> <span class="chip ty${p.t}">${esc(p.tn)}</span> 강도 ${p.s} · ${esc(p.c)}<div>${esc(p.r)}</div>${p.e.map(x=>`<div class="mut">· ${esc(x)}</div>`).join("")}`});
+  const base=`<b>${esc(nm[p.a])}${p.d?" → ":" ↔ "}${esc(nm[p.b])}</b> <span class="chip ty${p.t}">${esc(p.tn)}</span> 강도 ${p.s} · ${esc(p.c)}<div>${esc(p.r)}</div>`;
+  const showEv=ev=>$("cyinfo").innerHTML=base+(ev||[]).map(x=>`<div class="mut">· ${esc(x)}</div>`).join("");
+  if(_sd){showEv(_sd[p._i])}else{$("cyinfo").innerHTML=base+'<div class="mut">불러오는 중…</div>';loadSynDetail().then(d=>showEv(d[p._i])).catch(()=>$("cyinfo").innerHTML=base+'<div class="mut">근거를 불러오지 못했습니다.</div>')}});
  cy.on("tap","node",e=>{const n=e.target,nb=n.closedNeighborhood();cy.elements().addClass("dim");nb.removeClass("dim");$("cyinfo").innerHTML=`<b>${esc(n.data("label"))}</b> 연결 ${n.connectedEdges().length}개 (다시 빈 곳을 누르면 해제)`});
- cy.on("tap",e=>{if(e.target===cy){cy.elements().removeClass("dim");$("cyinfo").textContent="선이나 구원자를 눌러 보세요."}})}
+ cy.on("tap",e=>{if(e.target===cy){cy.elements().removeClass("dim");$("cyinfo").textContent="선이나 구원자를 눌러 보세요."}});
+ setTimeout(()=>{if(cy){cy.resize();cy.fit(undefined,30)}},50)}
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=()=>{graphDirty=true;drawGraph()});
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party"){graphDirty=true;drawGraph()}};
 function shareUrl(){const c=contents[$("content").value],s=cur&&cur[$("stage").value],state={c:c.key,s:s?s.tab+"|"+s.name:"",m:MODE,rk:+$("rk").value};
