@@ -43,7 +43,7 @@ from . import rules as _rules
 from .mc import Battle, EventLimitError, support_report
 from .rules import DEFAULT_OPTS, MC_NOTE_KEYS, MC_OPTS, MC_RULES, RULES
 from .starsavior.data import _find_key, get_db
-from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves, sudden_death
+from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves, sudden_death, battle_end
 from .starsavior.parser import Skill, UnitDef
 from .starsavior.mc_semantics import normalized_definition
 
@@ -130,6 +130,7 @@ def _norm_encounter(enc):
         st, waves = stage_waves(content, tab, name)
         meta = dict(content=content, tab=tab, name=name, level=st.get('lv'), recommended_power=st.get('bp'),
                     wave_count=len(waves), fixed_player=st.get('fix'),
+                    battle_mode='boss_kill' if '%s|%s|%s' % (content, tab, name) in battle_end() else 'all_kill',
                     sudden_death=sudden_death()['stages'].get('%s|%s|%s' % (content, tab, name)))
         if turn_limit is None:
             turn_limit = st.get('lt')
@@ -315,7 +316,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {},
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
                    enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'), rng_streams=bool(o.get('rng_streams')),
-                   sudden=sudden, semantic_cache=semantic_cache, mc_overrides=o.get('rules_override') or {})
+                   sudden=sudden, semantic_cache=semantic_cache, mc_overrides=o.get('rules_override') or {},
+                   battle_mode=meta.get('battle_mode', 'all_kill'))
         b.run()   # EventLimitError 는 그대로 올린다(정상 결과 금지)
         for (pos, slot), count in b.nova_bursts.items():
             nova_counts[names[pos]][slot] += count
