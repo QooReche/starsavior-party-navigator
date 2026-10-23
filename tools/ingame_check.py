@@ -54,6 +54,9 @@ SAMPLES = {
     '17r': ('equip', '혹한의 습격|혹한의 습격 XⅦ', ['professor-m', 'haydee', 'emily', 'amora'], 'emily', 411935, 0, 467180, 520424, 37, 'fail'),
 }
 # 2026-10-21 사용자 확인: 36-36만 오토 선택 + 회복용 수동 버스트, 37구역은 순수 오토.
+# 10/22 패치로 밸런스가 바뀐 스테이지의 패치 전 실측 — 지금 시뮬을 판정하는 근거로 쓰지 않는다(사용자 지시 2026-10-23).
+# 기본 실행에서 빼고 --include-old 나 --only 로 부를 때만 돌린다. 적 수치가 그대로인 37-2~37-5(10/21)는 유효.
+PRE_PATCH = {'36-36': '10/22 패치로 보스 공허순례자 공격력 46,880 -> 39,848(패치 전 10/21 실측·공략 영상)'}
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
 from tools.runtime import low_priority
@@ -197,6 +200,7 @@ def main():
     p.add_argument('--only', choices=SAMPLES)
     p.add_argument('--bs', action='store_true')
     p.add_argument('--myinfo', metavar='PATH', help='Private ss-myinfo-v1 file (no default)')
+    p.add_argument('--include-old', action='store_true', help='패치 전 실측(PRE_PATCH)도 돌린다')
     args = p.parse_args()
     if args.runs < 1:
         p.error('--runs must be positive')
@@ -204,7 +208,12 @@ def main():
     for name in SAMPLES:
         if args.only and name != args.only:
             continue
-        print(json.dumps(run(name, args.runs, args.ov, args.seed, args.bs, args.myinfo), ensure_ascii=False), flush=True)
+        if name in PRE_PATCH and not args.only and not args.include_old:
+            continue
+        out = run(name, args.runs, args.ov, args.seed, args.bs, args.myinfo)
+        if name in PRE_PATCH:
+            out['pre_patch'] = PRE_PATCH[name]
+        print(json.dumps(out, ensure_ascii=False), flush=True)
 
 
 if __name__ == '__main__':

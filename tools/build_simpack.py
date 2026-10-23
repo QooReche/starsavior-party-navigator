@@ -15,7 +15,7 @@ import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, str(ROOT))
 from battlesim.fileio import atomic_open
-FIXED = ['battlesim/rules/default.json', 'battlesim/rules/builds.json', 'rawdata/databook_main.json', 'rawdata/foe.js',
+FIXED = ['battlesim/rules/default.json', 'battlesim/rules/builds.json', 'rawdata/databook_main.json', 'rawdata/foe.js', 'data/foe_spawn.json',
          'rawdata/guide_app-core.js', 'data/synergy_tags.json', 'data/myinfo_combat.json']
 
 

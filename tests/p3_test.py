@@ -561,9 +561,10 @@ def test_enemy_init_cd_pilgrim():
 
 def test_enemy_init_cd_switches():
     """두 스위치를 각각 되돌려도 영상 기대가 깨지고, 둘 다 옛 값이면 기본기로 시작."""
-    special_old = _pilgrim_cd_trace(dict(enemy_init_cd_special=1.0))
+    # enemy_init_cd_special 은 옛 규칙(enemy_spawn=legacy)에서만 쓰인다
+    special_old = _pilgrim_cd_trace(dict(enemy_spawn='legacy', enemy_init_cd_special=1.0))
     tick_old = _pilgrim_cd_trace(dict(enemy_cd_tick='turn_start'))
-    both_old = _pilgrim_cd_trace(dict(enemy_init_cd_special=1.0, enemy_cd_tick='turn_start'))
+    both_old = _pilgrim_cd_trace(dict(enemy_spawn='legacy', enemy_init_cd_special=1.0, enemy_cd_tick='turn_start'))
     ok = (special_old[1]['특수기'] == 3 and special_old[2][0] == '기본기'
           and next(i + 1 for i, r in enumerate(tick_old[3]) if '궁극기' in r) == 4
           and both_old[2] == ['기본기', '기본기', '특수기', '궁극기', '기본기'])
@@ -571,7 +572,27 @@ def test_enemy_init_cd_switches():
         special_old[2], tick_old[2], both_old[2])
 
 
-TESTS = [test_enemy_init_cd_pilgrim, test_enemy_init_cd_switches,
+def test_enemy_spawn_flags():
+    """배치 표시별 시작 쿨(A 전부 0·S 특수기만 0·H 궁극기만 0·B 둘 다 0·N 전부 가득), 표시 없으면 보스 S·그 밖 A, legacy 는 옛 규칙.
+    실제 자료: 37-5 정예 2기 = A(궁극기도 0), 36-36 보스 = S."""
+    sk = [dict(slot='기본기', dm=1), dict(slot='특수기', dm=1, cd=3), dict(slot='궁극기', dm=1, cd=4)]
+    def cds(code, boss=False, mc=None):
+        d = unit('e', hp=10 ** 9, atk=0, skills=sk)
+        d.spawn, d.boss = code, boss
+        f = battle([unit('a', hp=10 ** 9, atk=0)], [d], mc=dict(enemy_cd_native=True, **(mc or {}))).foes[0]
+        return f.cd['특수기'], f.cd['궁극기']
+    got = {c: cds(c) for c in 'ASHBN'}
+    want = {'A': (0, 0), 'S': (0, 4), 'H': (3, 0), 'B': (0, 0), 'N': (3, 4)}
+    fb = (cds(None, boss=True), cds(None, boss=False))
+    legacy = cds('A', mc=dict(enemy_spawn='legacy'))
+    _, w5 = stage_waves('op', '모나스티르 광장', 'SECTOR 37-5')
+    _, w36 = stage_waves('op', '아가논 시가지', 'SECTOR 36-36')
+    real = ([d.spawn for d in w5[0]], [d.spawn for d in w36[0] if d.boss])
+    ok = got == want and fb == ((0, 4), (0, 0)) and legacy == (0, 4) and real == (['A', 'A'], ['S'])
+    return ok, '표시별 %s / 표시 없음 보스·그 밖 %s / legacy %s / 37-5·36-36 %s' % (got, fb, legacy, real)
+
+
+TESTS = [test_enemy_init_cd_pilgrim, test_enemy_init_cd_switches, test_enemy_spawn_flags,
          test_target_weights, test_untargetable, test_taunt, test_ally_target_lowest, test_guard_split, test_guard_highest_only,
          test_shield_sum, test_heal_formula, test_death_stops_actions, test_counter, test_leader_speed, test_determinism,
          test_event_limit, test_foe_loader_matches_stages_json, test_evade, test_check_buff_expiry, test_extra_cast_after_consume,

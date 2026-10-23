@@ -298,8 +298,17 @@ class Unit:
         self.eff = {}
         self.cd = {}
         frac = b.mc['enemy_init_cd'] if side == 1 else b.mc['ally_init_cd']
+        # 적 시작 쿨: 배치 표시(게임 코드 — AllSkillAvailable 이면 전부 0, 아니면 전부 가득, Special/Hyper 는 그 스킬만 0).
+        # 표시가 없는 스테이지는 등급 규칙(보스 S, 그 밖 A — 배치 2만여 기 중 95% 가 이 꼴). legacy = 옛 규칙(enemy_init_cd*)
+        code = None
+        if side == 1 and b.mc.get('enemy_spawn', 'data') == 'data':
+            code = getattr(d, 'spawn', None) or ('S' if getattr(d, 'boss', False) else 'A')
         for slot, sk in d.skills.items():
-            f = b.mc['enemy_init_cd_special'] if side == 1 and slot == '특수기' else frac
+            if code is not None:
+                zero = code == 'A' or (slot == '특수기' and code in 'SB') or (slot == '궁극기' and code in 'HB')
+                f = 0.0 if zero else 1.0
+            else:
+                f = b.mc['enemy_init_cd_special'] if side == 1 and slot == '특수기' else frac
             self.cd[slot] = (sk.cd * f) if sk.cd else 0
             # legacy 근사에서만 시작 감소를 보완하는 +1을 적용함.
             # 적의 고유 턴 종료 방식은 표시된 쿨타임을 그대로 저장함.

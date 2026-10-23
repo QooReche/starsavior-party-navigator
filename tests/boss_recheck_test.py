@@ -128,10 +128,11 @@ class MyinfoInputTest(unittest.TestCase):
 
 class EnemyTurnTimingTest(unittest.TestCase):
     def make(self, **mc):
-        return battle([unit('ally', hp=10**9, atk=0)],
-                      [unit('boss', hp=10**9, atk=0, skills=[
-                          dict(slot='기본기', dm=1), dict(slot='특수기', dm=1, cd=3),
-                          dict(slot='궁극기', dm=1, cd=4)])], mc=mc)
+        boss = unit('boss', hp=10**9, atk=0, skills=[
+            dict(slot='기본기', dm=1), dict(slot='특수기', dm=1, cd=3),
+            dict(slot='궁극기', dm=1, cd=4)])
+        boss.spawn = 'S'   # 보스 배치 표시(특수기만 0, 궁극기 가득)
+        return battle([unit('ally', hp=10**9, atk=0)], [boss], mc=mc)
 
     def test_displayed_cooldowns_and_other_units_turns(self):
         b = self.make()

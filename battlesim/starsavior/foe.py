@@ -19,6 +19,15 @@ RATE = {'NST_NV_RATE_HP': 0, 'NST_NV_RATE_ATK': 1, 'NST_NV_RATE_DEF': 2, 'NST_NV
 ROLE_EN = {'스트라이커': 'striker', '캐스터': 'caster', '어쌔신': 'assassin', '레인저': 'ranger', '디펜더': 'defender', '서포터': 'supporter'}
 
 _FOE = None
+_SPAWN = {}
+
+
+def spawn_flags(src=SRC):
+    """data/foe_spawn.json(tools/build_foe_spawn.py) -> {'콘텐츠|탭|스테이지': ['웨이브별 칸 표시', ...]}. 없으면 빈 dict"""
+    if src not in _SPAWN:
+        p = os.path.join(src, 'data', 'foe_spawn.json')
+        _SPAWN[src] = json.load(open(p, encoding='utf-8')).get('stages', {}) if os.path.exists(p) else {}
+    return _SPAWN[src]
 
 
 def load_foe(src=SRC):
@@ -159,12 +168,16 @@ def stage_waves(content, tab, name, src=SRC):
     """스테이지 -> (스테이지 원본, 웨이브 목록[ [FoeDef, ...], ... ]). 웨이브 안 순서 = 원본 순서(배치 칸)."""
     raw = load_foe(src)
     st = find_raw_stage(content, tab, name, src)
+    flags = spawn_flags(src).get('%s|%s|%s' % (content, tab, name))
     waves = []
-    for w in st['w']:
+    for wi, w in enumerate(st['w']):
         row = []
-        for e in w:
+        for pi, e in enumerate(w):
             ui, xi = e[0], (e[1] if len(e) > 1 else None)
-            row.append(FoeDef(raw, ui, xi, st))
+            d = FoeDef(raw, ui, xi, st)
+            # 배치의 시작 쿨 표시(A·S·H·B·N). 없으면 None -> 엔진이 등급 규칙으로 대신함(mc.enemy_spawn)
+            d.spawn = flags[wi][pi] if flags and wi < len(flags) and pi < len(flags[wi]) else None
+            row.append(d)
         waves.append(row)
     return st, waves
 
