@@ -308,7 +308,7 @@ summary{padding:9px 4px}
 <h1>파티 편성 네비게이터 <small style="color:var(--bad)">베타</small></h1>
 <p class="sub">가진 구원자로 이 스테이지를 깰 파티를 찾습니다</p>
 <p class="notice" data-k="notice">📢 10/23 업데이트 · 게임 빌드 26105710 대응 · 브레이크 스킬 5종 반영, 혹한의 습격·성간 회랑 판정 정정</p>
-<nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천 파티</button><button id="tab-info" type="button" aria-pressed="false">내 정보</button><span class="tabsp"></span><span id="mi-chip" class="mi-chip"></span><button id="mi-open" type="button" class="sec">내 정보 불러오기</button><button id="share-link" type="button" class="sec" aria-live="polite" title="조건과 내 정보(구원자 수치)를 담은 링크 — 받은 사람이 같은 정보로 추천을 볼 수 있음">링크 복사</button><label class="mi-use" title="끄면 조건만 담고 내 정보는 넣지 않음"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></nav>
+<nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천 파티</button><button id="tab-info" type="button" aria-pressed="false">내 정보</button><span class="tabsp"></span><span id="mi-chip" class="mi-chip"></span><button id="mi-open" type="button" class="sec">내 계정 정보 불러오기</button><button id="share-link" type="button" class="sec" aria-live="polite" title="조건과 내 정보(구원자 수치)를 담은 링크 — 받은 사람이 같은 정보로 추천을 볼 수 있음">링크 복사</button><label class="mi-use" title="끄면 조건만 담고 내 정보는 넣지 않음"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></nav>
 <div id="shared-bar" class="shared-bar" hidden></div>
 <div class="panel input-panel">
  <div class="row input-row">
@@ -350,7 +350,7 @@ summary{padding:9px 4px}
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 보세요.</div></div>
 <p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관 · 시뮬은 실제와 다를 수 있음</p><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않습니다(관리자가 자료를 갱신한 뒤 반영).<br>구원자·스킬·아이콘 등 게임 이미지의 권리는 원 권리자에게 있습니다.<br>저장소 라이선스는 게임 이미지에 적용되지 않습니다.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
- <div class="dhead"><b>내 정보 불러오기</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
+ <div class="dhead"><b>내 계정 정보 불러오기</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
  <div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장합니다.</div>
  <div class="mut" id="mi-status" style="margin:4px 0 6px">불러온 정보 없음</div>
  <section class="mihow">
@@ -903,7 +903,7 @@ function idleView(){const t=id=>{const e=$(id);return e&&e.selectedOptions&&e.se
 function condChanged(){REQ=false;SIMQ.kick=false;simInvalidate();run()}
 function miGuide(){return `<div class="party guide" data-k="miguide"><h3>먼저 내 정보를 불러오세요</h3>
  <p class="mut">PowerShell 명령 실행 → 관리자 확인 후 게임 로그인·로비에서 엔터 → 사이트에 자동 반영</p>
- <div class="acts"><button type="button" data-miopen="1">내 정보 불러오기</button></div></div>`}
+ <div class="acts"><button type="button" data-miopen="1">내 계정 정보 불러오기</button></div></div>`}
 function showReco(){if(!MI.info){setDrawer(true);return}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
 function run(skipAuto=false){$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}runCore(skipAuto)}
@@ -987,7 +987,7 @@ function syncBrk(){const lv=MI.info?MyInfoImport.mapBreak(MI.info):null;MI.brkLv
  pruneBreakSel()}
 function renderChip(){const e=$("mi-chip");if(!e)return;const i=MI.info;e.classList.toggle("none",!i);
  e.innerHTML=i?`${MI.shared?"공유받은 ":""}내 정보 <b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(0,10))}`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"내 정보 없음";
- $("mi-open").textContent=i?"다시 불러오기":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["share-link","mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i}
+ $("mi-open").textContent=i?"계정 정보 다시 불러오기":"내 계정 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["share-link","mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i}
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b))}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  syncOwn();
