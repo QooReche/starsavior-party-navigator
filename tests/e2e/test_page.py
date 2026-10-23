@@ -763,7 +763,8 @@ def test_myinfo_rules_mobile(browser, ctx):
     assert page.evaluate('() => miProfile().rule') == 'normal'
     assert '미매핑 · 평균 가정' not in page.inner_text('.qh')
     page.click('#tab-info')
-    assert '일반 능력치' in page.inner_text('#mi-meta')
+    # 10/23 c2a3f20: 일일·장비 탐색·작전 하드·큐브도 내 정보 규칙(normal) — 「일반 능력치(미매핑 대체)」 표지가 없어야 함
+    assert '일반 능력치' not in page.inner_text('#mi-meta')
     assert all('—' not in t for t in page.locator('#mi-list .mi-pw').all_text_contents())
     assert page.evaluate('() => document.documentElement.scrollWidth <= innerWidth')
     assert not ctx.errors, ctx.errors
@@ -1050,13 +1051,13 @@ def test_myinfo_full(browser, ctx):
         page.screenshot(path=os.path.join(ctx.shots, 'myinfo_sheet_%d.png' % width), full_page=False)
         page.click('#mi-dlg [data-mi-dlg-close]')
         assert not dlg.evaluate('d => d.open')
-        # 미매핑 콘텐츠: 같은 상세가 「참고값 · 시뮬에 쓰지 않음」, Esc 로 닫힘
+        # 일일 재화 던전도 내 정보 규칙(10/23 c2a3f20) — 상세가 「이 수치로 시뮬」, Esc 로 닫힘
         page.click('#tab-reco')
         choose(page, '일일 재화 던전', '')
         page.click('#tab-info')
         page.click('#mi-list button[data-mi-sheet="1001"]')
         page.wait_for_selector('#mi-dlg-body .ms-head')
-        assert page.locator('#mi-dlg-body .ms-sim.on').count() == 0 and '참고값' in page.inner_text('#mi-dlg-body .ms-sim')
+        assert page.locator('#mi-dlg-body .ms-sim.on').count() == 1 and '이 수치로 시뮬' in page.inner_text('#mi-dlg-body .ms-sim')
         page.keyboard.press('Escape')
         assert not dlg.evaluate('d => d.open')
         assert page.evaluate('() => document.documentElement.scrollWidth<=innerWidth')
