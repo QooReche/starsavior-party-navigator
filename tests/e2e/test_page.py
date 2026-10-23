@@ -1074,20 +1074,20 @@ def test_graph_evidence(browser, ctx):
     page.evaluate("() => setWhy(true)")
     settle(page)
     # cytoscape가 로드·그려질 때까지 대기(cy 전역이 null이 아님)
-    page.wait_for_function("() => window.cy != null", timeout=30000)
-    cy_drawn = page.evaluate("() => window.cy != null && window.cy.edges().length > 0")
+    page.wait_for_function("() => typeof cy !== 'undefined' && cy && typeof cy.edges === 'function'", timeout=30000)   # let 전역(window 속성 아님 — cy 는 id=cy 요소)
+    cy_drawn = page.evaluate("() => cy != null && cy.edges().length > 0")
     # 첫 번째 엣지 탭 — 로딩 중 표시 후 근거로 교체
-    page.evaluate("() => window.cy.edges()[0].trigger('tap')")
+    page.evaluate("() => cy.edges()[0].trigger('tap')")
     page.wait_for_function("() => !$('cyinfo').innerHTML.includes('불러오는 중')", timeout=15000)
     info_text = page.inner_text("#cyinfo")
     # syn_detail.json이 요청됐는지 확인
-    syn_loaded = page.evaluate("() => window._sd != null")
+    syn_loaded = page.evaluate("() => _sd != null")
     # 두 번째 탭: 이미 _sd 있으므로 다시 요청 안 함(캐시)
     req_count = page.evaluate("""() => {
       let n = 0;
       const orig = window.fetch;
       window.fetch = (...a) => { if (String(a[0]).includes('syn_detail')) n++; return orig(...a); };
-      window.cy.edges().length > 1 && window.cy.edges()[1].trigger('tap');
+      cy.edges().length > 1 && cy.edges()[1].trigger('tap');
       window.fetch = orig;
       return n;
     }""")
