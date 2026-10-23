@@ -307,7 +307,7 @@ summary{padding:9px 4px}
 </style></head><body><main>
 <h1>파티 편성 네비게이터 <small style="color:var(--bad)">베타</small></h1>
 <p class="sub">가진 구원자로 이 스테이지를 깰 파티를 찾습니다</p>
-<p class="notice" data-k="notice">📢 10/23 업데이트 · 게임 빌드 26105710 대응 · 브레이크 스킬 5종 반영, 혹한의 습격·성간 회랑 판정 정정</p>
+<p class="notice" data-k="notice">📢 10/23 업데이트 · 게임 빌드 26105710 대응 · 브레이크 스킬 5종 반영, 혹한의 습격·성간 회랑 판정 정정 · 회랑 400층 넘는 층도 선택 가능</p>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천 파티</button><button id="tab-info" type="button" aria-pressed="false">내 정보</button><span class="tabsp"></span><span id="mi-chip" class="mi-chip"></span><button id="mi-open" type="button" class="sec">내 계정 정보 불러오기</button><button id="share-link" type="button" class="sec" aria-live="polite" title="조건과 내 정보(구원자 수치)를 담은 링크 — 받은 사람이 같은 정보로 추천을 볼 수 있음">링크 복사</button><label class="mi-use" title="끄면 조건만 담고 내 정보는 넣지 않음"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></nav>
 <div id="shared-bar" class="shared-bar" hidden></div>
 <div class="panel input-panel">
@@ -425,7 +425,7 @@ function refreshTabs(){const c=contents[$("content").value];
  $("tab").innerHTML=`<option value="">(전체)</option>`+tabsOf(c).map(([t,l])=>`<option value="${esc(t)}">${esc(l)}</option>`).join("");refreshStages()}
 function refreshStages(){
  const c=contents[$("content").value],t=$("tab").value,q=$("q").value.trim();
- cur=c.stages.filter(s=>(!t||s.tab===t)&&(!q||s.name.includes(q)||(s.label||"").includes(q)||s.tabLabel.includes(q))).slice(0,400);
+ cur=c.stages.filter(s=>(!t||s.tab===t)&&(!q||s.name.includes(q)||(s.label||"").includes(q)||s.tabLabel.includes(q)));
  $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
  showInfo();showPow();if(window._ready)rerun()}
 function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`${EL[e]} ${n}`).join(" / ")}
