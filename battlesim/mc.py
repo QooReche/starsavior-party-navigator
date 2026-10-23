@@ -363,7 +363,7 @@ class Unit:
             return self._m
         m = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0, er=0.0,
                  der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, inc_single=0.0, inc_aoe=0.0, evade=0.0, acc=0.0,
-                 tough=0.0, tough_fixed=0.0, inc_break=0.0, inc_vs={}, inc_slot={}, red={})
+                 tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, inc_vs={}, inc_slot={}, red={})
         blocked = '강화 불가' in self.eff and self.eff['강화 불가'].stacks > 0   # 〈강화 불가〉: 모든 강화 효과가 적용되지 않음(gloss)
         for e in self.eff.values():
             if e.stacks <= 0 or (blocked and e.category == 'buff'):
@@ -459,6 +459,8 @@ def _add_prop(m, k, v, stacks):
         m['red']['aoe'] = m['red'].get('aoe', 0.0) + val
     elif k == '단일 대상 피해 감소':
         m['red']['single'] = m['red'].get('single', 0.0) + val
+    elif k == '반격 확률':                 # NST_RATE_REVENGE_ATTACK(〈반격 증가〉·〈경계 모드〉·〈강화 반격〉)
+        m['revenge'] += val
     else:
         mm = re.match(r'^(기본기|특수기|궁극기) 피해 감소$', k)
         if mm:
@@ -534,6 +536,8 @@ class Battle:
         self.check_pending = []
         self.first_death = None
         self.death_seq = 0
+        self._hit_log = None      # 이번 행동의 유효 타격 [(공격자, 피격자)] — 반격 후보(mc.revenge)
+        self.revenges = [0, 0]    # 진영별 반격 횟수
         self.all_foes = []
         self._cur_line = None    # 실행 중인 줄(자동 지정 대상 규칙을 그 스킬 설명에서 찾을 때 씀)
         self.once = set()        # {전투당 1회} 줄 사용 기록
@@ -625,7 +629,11 @@ class Battle:
                 for ln in self.lines_of(u):
                     if line_kind(ln) in ('battle_start', 'wave_start'):
                         self.run_line(u, ln, Ctx(u, u, None))
-        horizon = (self.turn_limit if self.turn_limit else self.max_turns) * self.turn_ticks
+        # 턴 제한 단위: actions = 게임 전역 턴(유닛 행동마다 +1, 적 포함 — NKM.decompiled.cs 13796~13798·599~623·755~762,
+        # 코스모 게이트 = RANKING_RAID LimitTurn 50·CountEnemyTurnOnly false). model = 옛 동작(모델 기준 턴 = 100틱)
+        by_actions = bool(self.turn_limit) and self.mc['turn_limit_unit'] == 'actions'
+        horizon = (self.turn_limit if (self.turn_limit and not by_actions) else self.max_turns) * self.turn_ticks
+        self.global_turns = 0
         while True:
             self.tick()
             if not self.alive(0):
@@ -657,6 +665,10 @@ class Battle:
                 self._break_round += 1
                 self._tick_break_skill()
                 continue
+            if by_actions and self.global_turns >= self.turn_limit:
+                self.result = 'timeout'   # 게임: 전역 턴이 제한을 넘는 턴은 시작하지 않고 전투 종료
+                break
+            self.global_turns += 1
             self.act(best)
         return self
 
@@ -732,6 +744,8 @@ class Battle:
         for v in self.alive(1 - u.side):
             self.fire(v, 'enemy_ts', Ctx(v, u, None))
         # 회복 턴도 턴 이벤트·지속 차감은 처리하고, 스킬 행동만 생략한다.
+        if self.mc['revenge'] == 'on':
+            self._hit_log = []
         if not u.dead and not skip:
             if any(u.has(n) for n in HARD_CC):
                 self.log(actor=u.name, skip='행동 불가')
@@ -744,6 +758,9 @@ class Battle:
                     sk, tgt = self.choose_skill(u)
                     if sk is not None:
                         self.cast(u, sk, target=tgt)
+        if self._hit_log:
+            self.revenge(self._hit_log)   # 반격에서 이어진 공격(반응·추가 발동)의 타격도 같은 목록에 쌓여 차례로 판정
+        self._hit_log = None
         if not u.dead:
             if end_cd:
                 # NKM:1840-1848 -> 3348-3360: owner action end, before
@@ -1454,6 +1471,48 @@ class Battle:
                 self.cast(b, b.d.skills['기본기'], extra=True, target=self._coop_target(ctx), via='coop')
                 return
 
+    def revenge(self, hits):
+        """반격(NKM.decompiled.cs 11990~12075 판정·15227~15360 처리): 이번 행동에서 유효 타격을 받은 쪽마다 한 번,
+        공격 스킬이고 피격자 생존·브레이크 아님·공격자 생존(적)·기본기 사용 가능이면 반격 확률(NST_RATE_REVENGE_ATTACK)로
+        공격자에게 기본기. 반격에는 반격·협공이 없다. 공격자가 쓰러지면 남은 반격은 끝.
+        공격(시전) 하나의 후보는 추첨을 먼저 모두 끝낸 뒤 차례로 반격하고(NKM 7775~7784 ToArray), 공격자가 쓰러지면 그 공격의 남은 반격만 끝.
+        근사: 게임은 본 행동·협공·반응 스킬마다 그 직후에 반격하지만 엔진은 반응 스킬이 시전 안에 겹쳐 있어 행동 끝에 시전 순서대로 처리."""
+        done = set()
+        order, groups, used = [], {}, set()
+        i = 0
+        while True:
+            # hits 는 반격 중에 늘어날 수 있다(반격에서 이어진 공격). 같은 시전(ctx)의 타격은 사이에 다른 시전이 끼어도 한 묶음
+            while i < len(hits):
+                a, v, c = hits[i]
+                if id(c) not in groups:
+                    groups[id(c)] = []
+                    order.append(id(c))
+                groups[id(c)].append((a, v))
+                i += 1
+            key = next((k for k in order if k not in used), None)
+            if key is None:
+                break
+            used.add(key)
+            picks, seen = [], set()
+            for a, v in groups[key]:
+                if v in done or v in seen or v.dead or v.broken or a.dead or a.side == v.side:
+                    continue
+                seen.add(v)
+                p = v.mods()['revenge']
+                if (p <= 0 or v.d.skills.get('기본기') is None or v.cd.get('기본기', 0) > 0
+                        or self.incapacitated(v)):
+                    continue
+                if self.R(v.side).random() < min(1.0, p):
+                    picks.append((a, v))
+            for a, v in picks:
+                if v.dead or v in done:
+                    continue
+                done.add(v)
+                self.revenges[v.side] += 1
+                self.cast(v, v.d.skills['기본기'], extra=True, target=a, via='revenge')
+                if a.dead:
+                    break
+
     def _coop_target(self, ctx):
         if ctx.skill.all:
             al = self.alive(1)
@@ -1511,7 +1570,11 @@ class Battle:
                 ctx.crit_targets.add(v)
             if evaded:
                 ctx.evaded.add(v)
+            t0 = v.taken
             self.strike(a, v, base, ctx, crit, min(3.0, cdv + by['cd']), min(1.0, pen + by['pen']), reactions, evaded)
+            if self._hit_log is not None and ctx.via != 'revenge' and v.taken > t0:
+                # 반격 후보 = 피해(보호막 흡수 포함)가 0보다 큰 타격(NKM 7203~7215, 회피도 피해가 남으면 포함). 반격으로 낸 타격은 제외
+                self._hit_log.append((a, v, ctx))
         if ctx.hit_targets:
             a.last_target = ctx.hit_targets[-1]
         # 피격 반응은 전체 공격의 모든 대상 처리가 끝난 뒤(동시성 규칙)
@@ -2725,7 +2788,7 @@ def _prop_known(k):
     """Unit.mods() 가 이 속성 이름을 어떤 값으로든 반영하는가"""
     probe = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0,
                  er=0.0, der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, inc_single=0.0, inc_aoe=0.0,
-                 evade=0.0, acc=0.0, tough=0.0, tough_fixed=0.0, inc_break=0.0, inc_vs={}, inc_slot={}, red={})
+                 evade=0.0, acc=0.0, tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, inc_vs={}, inc_slot={}, red={})
     before = repr(probe)
     _add_prop(probe, k, 1.0, 1)
     return repr(probe) != before

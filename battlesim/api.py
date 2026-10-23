@@ -183,7 +183,7 @@ def assumptions_used(mc, opts):
         r = RULES['opts'].get(k, {})
         out.append(dict(rule='opts.' + k, value=opts.get(k), grade=r.get('grade'), note=r.get('note')))
     out.append(dict(rule='model.not_modeled', value=None, grade='assumed',
-                    note='행성 정화·브레이크 스킬 레벨 보정, 반격·선제 방어(회피는 evade_model 로 지원), 표에 없는 「피해 제한」 효과(실행 전 검사에서 중요 미지원으로 표시), '
+                    note='행성 정화·브레이크 스킬 레벨 보정, 선제 방어(회피는 evade_model, 반격은 mc.revenge 로 지원), 표에 없는 「피해 제한」 효과(실행 전 검사에서 중요 미지원으로 표시), '
                          '노바 버스트 슬롯 효과(+15% 외), 일반 잠재력(감각·솜씨)·전술 분석·호감도, 시즌 보너스, Lv200 초과 성장, '
                          '대부분의 반응 트리거 스킬(웨딩 카르멘 「수호의 기사」·프로페서M 「악에서 악으로」만 지원), 연쇄 피해의 「턴 끝에 발생」 시점'))
     out.append(dict(rule='model.random_choice', value='uniform', grade='assumed',

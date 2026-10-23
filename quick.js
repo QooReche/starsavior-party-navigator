@@ -24,13 +24,15 @@
   const xOut=units.map((u,i)=>Math.max(0.0,(u[7]-u[6])/2)*ks[i]*p.A*pa);
   const healers=units.filter(u=>u[8].includes("h")||u[8].includes("s")).length;
   const heal=healers*p.H*hpMax;
-  let hp=hpMax;const limit=stage.lt||MAX_ROUNDS;let rnd=0;
+  // 턴 제한 lt = 게임 전역 턴(아군·적 전체 행동 수) -> 라운드마다 (아군 속도 합 + 살아 있는 적 속도 합)/100 회 행동(quick.py 와 같게)
+  let hp=hpMax;const lt=stage.lt;let allySpd=0;for(const u of units)allySpd+=u[4];let acts=0.0;let rnd=0;
   for(const wave of stage.w){
    const foes=wave.map(e=>[e[0],e[1],e[2],e[3],e[4],e[5]]);
    while(foes.some(f=>f[0]>0)){
     rnd++;
-    if(rnd>limit)return {ok:true,clear:false,rounds:limit,left:Math.max(0.0,hp/hpMax),k,power:P,ratio,why:"time"};
+    if(rnd>MAX_ROUNDS||(lt&&acts>=lt))return {ok:true,clear:false,rounds:rnd-1,left:Math.max(0.0,hp/hpMax),k,power:P,ratio,why:"time"};
     const alive=foes.filter(f=>f[0]>0);const boss=alive.filter(f=>f[5]);
+    let fs=0;for(const f of alive)fs+=f[2];acts+=(allySpd+fs)/100;
     let focus=boss.length?boss[0]:alive.reduce((m,f)=>f[0]<m[0]?f:m,alive[0]);
     for(let i=0;i<units.length;i++){
      focus[0]-=sOut[i]*(1-dr(focus[1]));

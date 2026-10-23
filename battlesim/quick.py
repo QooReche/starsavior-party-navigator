@@ -76,15 +76,19 @@ def evaluate(keys, stage, sv, pen, params=None, growth=1.0, power=None, use_pen=
     healers = sum(1 for u in units if ('h' in u[8] or 's' in u[8]))
     heal = healers * p['H'] * hp_max
     hp = hp_max
-    limit = stage.get('lt') or MAX_ROUNDS
+    # 턴 제한 lt = 게임 전역 턴(아군·적 전체 행동 수, 엔진 mc.turn_limit_unit=actions) -> 라운드마다 (아군 속도 합 + 살아 있는 적 속도 합)/100 회 행동으로 셈
+    lt = stage.get('lt')
+    ally_spd = _add(u[4] for u in units)
+    acts = 0.0
     rnd = 0
     for wave in stage['w']:
         foes = [[e[0], e[1], e[2], e[3], e[4], e[5]] for e in wave]     # 현재 생명력, 방어, 속도, 단일, 광역, 보스
         while any(f[0] > 0 for f in foes):
             rnd += 1
-            if rnd > limit:
-                return dict(ok=True, clear=False, rounds=limit, left=max(0.0, hp / hp_max), k=k, power=P, ratio=ratio, why='time')
+            if rnd > MAX_ROUNDS or (lt and acts >= lt):
+                return dict(ok=True, clear=False, rounds=rnd - 1, left=max(0.0, hp / hp_max), k=k, power=P, ratio=ratio, why='time')
             alive = [f for f in foes if f[0] > 0]
+            acts += (ally_spd + _add(f[2] for f in alive)) / 100
             boss = [f for f in alive if f[5]]
             focus = boss[0] if boss else min(alive, key=lambda f: f[0])
             for i in range(len(units)):
