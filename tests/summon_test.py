@@ -184,6 +184,30 @@ class PersesTest(unittest.TestCase):
 class SummonBehaviorTest(unittest.TestCase):
     """소환 유닛 행동·웨이브·off 스위치."""
 
+    def test_real_stage_positions_are_slots(self):
+        """실제 스테이지(잊혀진 맹세 Ⅰ): 처음 적·소환 적 모두 위치 = 게임 칸, 칸이 겹치지 않음(codex 리뷰)"""
+        _st, waves = stage_waves('equip', '잊혀진 맹세', '잊혀진 맹세 Ⅰ')
+        b = Battle([unit_def(k) for k in TEAM], waves, random.Random(3), mc=dict(summon='data'), max_turns=30)
+        b.spawn_wave()
+        boss = b.foes[0]
+        self.assertEqual((boss.pos, boss.slot), (2, 2))
+        sk = boss.d.skills.get('특수기')
+        b.cast(boss, sk)
+        units = [u for u in b.alive(1)]
+        self.assertGreater(sum(u.summoned for u in units), 0)
+        self.assertEqual([u.pos for u in units], [u.slot for u in units])
+        self.assertEqual(len({u.pos for u in units}), len(units))
+
+    def test_summoned_units_take_turns_in_run(self):
+        """실제 전투에서 소환 유닛이 행동하고 전역 턴에 들어감"""
+        summoner = _make_summoner(slots=[0, 4], summon_hp=10 ** 7, summon_spd=200, hp=10 ** 8)
+        b = Battle([unit_def(k) for k in TEAM], [[summoner]], random.Random(42), mc=dict(summon='data'), turn_limit=40)
+        b.run()
+        summoned = [u for u in b.all_foes + b.foes if u.summoned]
+        self.assertTrue(summoned and any(u.actions > 0 for u in summoned))
+        total = sum(u.actions for u in b.allies) + sum(u.actions for u in set(b.all_foes + b.foes))
+        self.assertEqual(total, b.global_turns)
+
     def test_summoned_unit_acts(self):
         """소환 유닛이 전역 턴에 포함(alive(1)에 들어가 pick_next 로 선택됨)."""
         summoner = _make_summoner(slots=[0, 4], summon_hp=50000, summon_spd=200)

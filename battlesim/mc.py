@@ -700,6 +700,8 @@ class Battle:
                 if 0 <= slot < 5 and self._foe_slots[slot] is None:
                     self._foe_slots[slot] = u
                     u.slot = slot
+                    u.pos = slot   # 소환 추적 전투는 처음 적도 실제 칸을 위치로(소환 적과 같은 기준 — 대상 선택·동률 순서, codex 리뷰)
+            self.foes.sort(key=lambda x: x.pos)
         for u in self.foes:
             for ln in self.lines_of(u):
                 if line_kind(ln) in ('battle_start', 'wave_start'):
