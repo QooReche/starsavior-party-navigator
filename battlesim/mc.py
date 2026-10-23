@@ -850,6 +850,7 @@ class Battle:
             # 게임 순서(NKM 15180~15372): 본 행동 → 협공 → 각 타격의 반격 → 예약된 반응 스킬을 하나씩(각각 직후 그 반격), 최대 11개
             self._react_q, self._react_seen, self._revenged = [], set(), set()
         try:
+            cast_ctx = None
             if not u.dead and not skip:
                 if any(u.has(n) for n in HARD_CC):
                     self.log(actor=u.name, skip='행동 불가')
@@ -857,11 +858,14 @@ class Battle:
                     taunt = u.eff.get('도발')
                     tsrc = taunt.src if (taunt and taunt.stacks > 0) else None
                     if tsrc is not None and not tsrc.dead and u.d.skills.get('기본기') is not None:
-                        self.cast(u, u.d.skills['기본기'], target=tsrc)
+                        cast_ctx = self.cast(u, u.d.skills['기본기'], target=tsrc)
                     else:
                         sk, tgt = self.choose_skill(u)
                         if sk is not None:
-                            self.cast(u, sk, target=tgt)
+                            cast_ctx = self.cast(u, sk, target=tgt)
+            # 적 반응(트리거) 스킬: 공격 뒤(after_attack) / 유효 타격(hit) 조건 판정 → _react 로 예약
+            if cast_ctx is not None and u.side == 1 and self.mc.get('foe_react') == 'data':
+                self._check_foe_react(u, cast_ctx)
             if queue:
                 self._run_reactions()
             if self._hit_log:
@@ -2094,6 +2098,68 @@ class Battle:
                 continue
             self._react(w, ts, v, fixed=[v])
 
+    def _check_foe_react(self, u, ctx):
+        """적 반응(트리거) 스킬: 적이 공격/적중 후 조건 판정 → _react 로 예약.
+        조건 판정은 예약 시점(게임 ReactSkillBooking), 사망·쿨·행동 불가는 실행 직전(trigger_cast)."""
+        if self.mc['foe_react'] != 'data' or u.side != 1 or not self.enemy_lines:
+            return
+        react = getattr(u.d, 'react', None)
+        if not react:
+            return
+        for slot, rule in react.items():
+            ts = u.d.trigger_skills.get(slot)
+            if ts is None:
+                continue
+            timing = rule['timing']
+            if timing == 'after_attack' and not ctx.skill.is_attack:
+                continue
+            if timing == 'hit' and not ctx.hit_targets:
+                continue
+            ok = True
+            for cond in rule.get('conds', []):
+                tag = cond[0]
+                if tag == 'skill_basic':
+                    if ctx.skill.slot != '기본기':
+                        ok = False
+                elif tag == 'self_has':
+                    if not all(u.has(n) for n in cond[1]):
+                        ok = False
+                elif tag == 'self_stack_eq':
+                    if u.stack(cond[1]) != cond[2]:
+                        ok = False
+                elif tag == 'self_stack_ge':
+                    if u.stack(cond[1]) < cond[2]:
+                        ok = False
+                elif tag == 'self_not_has':
+                    if any(u.has(n) for n in cond[1]):
+                        ok = False
+                elif tag == 'target_has':
+                    t = ctx.target
+                    if t is None or t.dead or not all(t.has(n) for n in cond[1]):
+                        ok = False
+                elif tag == 'not_eliminate':
+                    if ctx.target is None or ctx.target.dead:
+                        ok = False
+                elif tag == 'single_target':
+                    if ctx.skill.all:
+                        ok = False
+                elif tag == 'enemy_has':
+                    if not any(v.has(n) for v in self.alive(1 - u.side) for n in cond[1]):
+                        ok = False
+                else:
+                    self.unsup['foe_react: 모르는 조건 ' + tag] += 1
+                    ok = False
+                if not ok:
+                    break
+            if not ok:
+                continue
+            target = None
+            if rule['target'] == 'react_target':
+                target = ctx.target if (ctx.target and not ctx.target.dead) else None
+                if target is None:
+                    continue
+            self._react(u, ts, target)
+
     def _react(self, owner, ts, target, fixed=None):
         """반응 스킬 하나: 대기열이 열려 있으면 예약(발동 조건은 지금 판정 — 호출한 쪽), 아니면 바로 실행(옛 동작·행동 밖)"""
         if self._react_q is None:
@@ -3137,7 +3203,7 @@ def support_report(defs):
                 out.append(dict(unit=d.name, foe=foe, slot=ln.slot, reason=reason, raw=ln.raw,
                                 critical=bool(foe and CRITICAL_RX.search(rest) and '강인도' not in rest)))
         for ts in d.trigger_skills.values():
-            if not supported_trigger(d, ts):
+            if not supported_trigger(d, ts) and ts.slot not in getattr(d, 'react', {}):
                 out.append(dict(unit=d.name, foe=foe, slot=ts.slot, reason='skill',
                                 raw='트리거 스킬 미반영: ' + ts.name, critical=False))
         supported_variants = {sk.name for _, sk in variant_rules(d).values()}
