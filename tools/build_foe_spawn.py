@@ -8,7 +8,8 @@
 출력 stages["콘텐츠|탭|스테이지"] = 웨이브별 문자열 목록, 칸마다 한 글자:
   A = 모든 스킬 0, S = 특수기만 0, H = 궁극기만 0, B = 특수기·궁극기 0, N = 모두 가득.
 데이터북 스테이지와 웨이브 수·웨이브별 적 수가 같고 데이터북 보스 칸이 게임에서도 보스일 때만 적는다(안 맞으면 엔진이 등급 규칙으로 대신함).
-지금 연결하는 콘텐츠: 작전(일반·어려움, 같은 섹터), 성간·태양·달·별 회랑(층 번호), 큐브 팰리스·일일 재화 던전(순서).
+지금 연결하는 콘텐츠: 작전(일반·어려움, 같은 섹터), 성간·태양·달·별 회랑(층 번호), 큐브 팰리스·일일 재화 던전(순서),
+장비 탐색(탭 순서, 권장 전투력·레벨로 거름).
 연결 조건: 권장 전투력(BattlePower)·레벨(BattleLevel)이 같고 웨이브 구성이 맞을 것.
 
 사용: python -X utf8 -I tools/build_foe_spawn.py [--static <비공개 저장소>]
@@ -72,6 +73,10 @@ def candidates(ck, tab, name, i_tab, i_stage, rows=()):
             return ['NORMAL_BATTLE_CLOISTER_%s_%03d' % (CLO[tab], int(m.group(1)))]
     if ck == 'cube':
         return ['NORMAL_BATTLE_CUBE_MATERIAL_%03d' % (i_tab + 1)]
+    if ck == 'equip':
+        # 장비 탐색(혹한의 습격 등): NORMAL_BATTLE_EXPLORE_EQUIP<탭 순서>_<단계> — 단계 번호가 데이터북 순서와 달라 탭 전체를 후보로
+        head = 'NORMAL_BATTLE_EXPLORE_EQUIP%d_' % (i_tab + 1)
+        return sorted(k for k in rows if k.startswith(head))
     if ck == 'daily':
         m = re.search(r'([ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ])$', name)
         lv = ROMAN.get(m.group(1)) if m else i_stage + 1

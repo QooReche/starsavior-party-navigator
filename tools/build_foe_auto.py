@@ -173,10 +173,6 @@ def build(static):
             for si, s in enumerate(t['s']):
                 hits = []
                 cands = SP.candidates(c['k'], t['t'], s['n'], ti, si, rows)
-                if c['k'] == 'equip':
-                    # 장비 탐색(혹한의 습격 등): NORMAL_BATTLE_EXPLORE_EQUIP<탭 순서>_<단계> — 권장 전투력·레벨로 거른다
-                    head = 'NORMAL_BATTLE_EXPLORE_EQUIP%d_' % (ti + 1)
-                    cands = sorted(k for k in rows if k.startswith(head))
                 for sid in cands:
                     row = rows.get(sid)
                     if not row or not row[0].exists() or row[1] != str(s.get('bp')) or row[2] != str(s.get('lv')):
