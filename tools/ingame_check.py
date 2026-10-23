@@ -4,10 +4,11 @@
 실측 판마다 사용자 능력치 화면 값(공·생·방·속도·치명 등)을 stats_override 로 넣고(화면이 없는 구원자는 남은 전투력 몫으로 표준 육성 배율),
 재점화 버프는 전투력 보정 배율에 곱한다(api options.rekindle 과 같은 뜻). 규칙을 바꿔 보려면 --ov '{"basic_tough": 1}'.
 
-사용: python -X utf8 -I tools/ingame_check.py [--runs 100] [--ov JSON] [--only 37-3] [--bs] [--myinfo PATH]
+사용: python -X utf8 -I tools/ingame_check.py [--runs 100] [--ov JSON] [--only 37-3] [--bs [LV]] [--bs-name 이름] [--bs-real] [--myinfo PATH]
 --myinfo = 비공개 내정보를 제자리에서 읽어 콘텐츠 규칙으로 최종 능력치·전투력을 계산한다.
 이 경로는 build=none, stats_final=true이며 표준 육성·전투력 재배분을 사용하지 않는다.
 --bs [LEVEL] = 실측 장착 스킬 「큐브 과부하」 활성화(레벨 생략 시 Lv.5, `--bs 3` 처럼 지정 가능, 기본 미장착).
+--bs-name = --bs 로 장착할 스킬 이름(기본 큐브 과부하). --bs-real = 샘플별 실제 장착(BS_REAL)을 씀(--bs 를 같이 주면 그쪽이 덮어씀).
 운영 기본값: 36-36=heal, 37-2~37-5=auto. --ov '{"nova_policy":"auto"}' 로 전부 순수 오토 대조 가능.
 nova_burst.total/by_unit은 전체 판 합계, uses·heal·healing은 판 평균(실제 HP 회복, 초과 회복 제외).
 2026-10-21 결과: 37-2(잡몹) 실제 4.13 vs 시뮬 4.11 일치 / 37-3·36-36(큰 보스) 실제 1.82·1.88 vs 시뮬 0.49·0.84 — 보스전만 과대(설명 docs/ingame_samples.md)
@@ -73,6 +74,9 @@ SAMPLES = {
 # 10/22 패치로 밸런스가 바뀐 스테이지의 패치 전 실측 — 지금 시뮬을 판정하는 근거로 쓰지 않는다(사용자 지시 2026-10-23).
 # 기본 실행에서 빼고 --include-old 나 --only 로 부를 때만 돌린다. 적 수치가 그대로인 37-2~37-5(10/21)는 유효.
 PRE_PATCH = {'36-36': '10/22 패치로 보스 공허순례자 공격력 46,880 -> 39,848(패치 전 10/21 실측·공략 영상)'}
+# 샘플별 실제 장착 브레이크 스킬 (이름, 레벨) — 2026-10-23 정정. 37-36 = 행성 정화 Lv3(편성 화면·배너 아이콘 확인),
+# 17x = 큐브 과부하 Lv5(사이트 추천, 장착 확실·레벨은 내 정보 보유값). 나머지는 미확인이라 지정 안 함.
+BS_REAL = {'37-36r': ('행성 정화', 3), '37-36r2': ('행성 정화', 3), '17x-a': ('큐브 과부하', 5), '17x-b': ('큐브 과부하', 5)}
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
 from tools.runtime import low_priority
@@ -151,7 +155,7 @@ def turn_comparison(dealt, taken, turn, sim_dealt, sim_taken, ally, enemy):
                 estimated_ally_damage_ratio=real_rate / sim_rate if sim_rate else None)
 
 
-def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None):
+def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 과부하', bs_real=False):
     import gen_quick_calib as G
     from battlesim import quick, simulate
     ck, sk, order, lead, pw, rk, dealt, taken, turn, res = SAMPLES[name]
@@ -169,7 +173,9 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None):
         rebalance(spec, pw)
     opt = dict(G.SIMOPT, n_runs=runs, seed=seed, rekindle=rk)
     if bs:
-        opt['break_skill'] = {'name': '큐브 과부하', 'level': 5 if bs is True else int(bs)}
+        opt['break_skill'] = {'name': bs_name, 'level': 5 if bs is True else int(bs)}
+    elif bs_real and name in BS_REAL:
+        opt['break_skill'] = {'name': BS_REAL[name][0], 'level': BS_REAL[name][1]}
     opt['rules_override'] = dict(opt['rules_override'], nova_policy=NOVA_POLICY[name])
     opt['rules_override'].update(ov or {})  # --ov가 실측 운영 기본값보다 우선
     tab, nm = sk.split('|', 1)
@@ -215,6 +221,8 @@ def main():
     p.add_argument('--ov', type=json.loads)
     p.add_argument('--only', choices=SAMPLES)
     p.add_argument('--bs', nargs='?', const=True, default=False, type=int, metavar='LEVEL', help='큐브 과부하 레벨(생략 시 5)')
+    p.add_argument('--bs-name', default='큐브 과부하', help='--bs 로 장착할 브레이크 스킬 이름')
+    p.add_argument('--bs-real', action='store_true', help='샘플별 실제 장착(BS_REAL) 사용')
     p.add_argument('--myinfo', metavar='PATH', help='Private ss-myinfo-v1 file (no default)')
     p.add_argument('--include-old', action='store_true', help='패치 전 실측(PRE_PATCH)도 돌린다')
     args = p.parse_args()
@@ -226,7 +234,7 @@ def main():
             continue
         if name in PRE_PATCH and not args.only and not args.include_old:
             continue
-        out = run(name, args.runs, args.ov, args.seed, args.bs, args.myinfo)
+        out = run(name, args.runs, args.ov, args.seed, args.bs, args.myinfo, args.bs_name, args.bs_real)
         if name in PRE_PATCH:
             out['pre_patch'] = PRE_PATCH[name]
         print(json.dumps(out, ensure_ascii=False), flush=True)
