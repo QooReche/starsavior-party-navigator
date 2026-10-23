@@ -44,6 +44,21 @@ def foe_auto(src=SRC):
     return _AUTO[src]
 
 
+_SUDDEN = {}
+
+
+def sudden_death(src=SRC):
+    """data/sudden_death.json(tools/build_sudden_death.py) -> {'groups': {그룹: 단계표}, 'stages': {'콘텐츠|탭|스테이지': 그룹}}. 없으면 빈 표"""
+    if src not in _SUDDEN:
+        p = os.path.join(src, 'data', 'sudden_death.json')
+        _SUDDEN[src] = {'groups': {}, 'stages': {}}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                d = json.load(f)
+            _SUDDEN[src] = {'groups': d.get('groups', {}), 'stages': d.get('stages', {})}
+    return _SUDDEN[src]
+
+
 def load_foe(src=SRC):
     """foe.js 원본(dict: g/u/s/ak/x/star). 한 번만 읽는다."""
     global _FOE

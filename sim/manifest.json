@@ -1,6 +1,6 @@
 {
  "_note": "브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시",
- "ver": "680f406831d0",
+ "ver": "9e64de1e6810",
  "files": [
   "battlesim/__init__.py",
   "battlesim/api.py",
@@ -29,7 +29,8 @@
   "data/synergy_tags.json",
   "data/myinfo_combat.json",
   "data/auto_skill.json",
-  "data/foe_auto.json"
+  "data/foe_auto.json",
+  "data/sudden_death.json"
  ],
- "bytes": 5124712
+ "bytes": 5270914
 }

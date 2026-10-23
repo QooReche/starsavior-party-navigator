@@ -317,7 +317,10 @@ class Unit:
         self.fx = dict(fx or {})                 # 스테이지 효과(상시)
         hpp = d.passive['hpp'] + self.fx.get('생명력%', 0.0) / 100.0
         self.maxhp = float(math.floor(st['hp'] * (1 + hpp)))
+        self.maxhp0 = self.maxhp                 # 전투 전 최종 최대 생명력 — 서든데스는 여기에 곱함(NKM 18342~18358 세 번째 묶음)
         self.hp = self.maxhp
+        self.sd = {}                             # 서든데스 단계 효과(전투 효과 층, 버프 아님 — 정화·약화 개수에 안 잡힘)
+        self.sd_hp = 0.0                         # 서든데스 생명력 비율(최대 생명력·피해의 생명력 항에 전투 전 값 x (1 + 이 값)으로 곱함)
         self.gauge = 0.0
         self.eff = {}
         self.cd = {}
@@ -365,7 +368,7 @@ class Unit:
             return self._m
         m = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0, er=0.0,
                  der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, inc_single=0.0, inc_aoe=0.0, evade=0.0, acc=0.0,
-                 tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, inc_vs={}, inc_slot={}, red={})
+                 tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, barrier_give=0.0, inc_vs={}, inc_slot={}, red={})
         blocked = '강화 불가' in self.eff and self.eff['강화 불가'].stacks > 0   # 〈강화 불가〉: 모든 강화 효과가 적용되지 않음(gloss)
         for e in self.eff.values():
             if e.stacks <= 0 or (blocked and e.category == 'buff'):
@@ -373,6 +376,8 @@ class Unit:
             for k, v in e.props.items():
                 _add_prop(m, k, v, e.stacks)
         for k, v in self.fx.items():
+            _add_prop(m, k, v, 1)
+        for k, v in self.sd.items():
             _add_prop(m, k, v, 1)
         self._m = m
         return m
@@ -445,6 +450,8 @@ def _add_prop(m, k, v, stacks):
         m['heal_give'] += val
     elif k == '받는 회복량':
         m['heal_recv'] += val
+    elif k == '주는 보호막량':              # NST_RATE_BARRIER_GIVE(지금은 서든데스만 씀)
+        m['barrier_give'] += val
     elif k == '단일 대상 피해 증가':
         m['inc_single'] += val
     elif k == '전체 대상 피해 증가':
@@ -503,7 +510,7 @@ class Ctx:
 # ------------------------------------------------------------------ 전투
 class Battle:
     def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None,
-                 timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None, rng_streams=False):
+                 timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None, rng_streams=False, sudden=None):
         self.pen = tuple(pen) if pen else (1.0, 1.0)    # P5 전투력 보정(아군이 주는 피해 배율, 적이 주는 피해 배율) — 스킬·지속·연쇄만
         self.opts = dict(DEFAULT_OPTS)
         self.opts.update(opts or {})
@@ -524,6 +531,9 @@ class Battle:
         self.turn_ticks = float(self.mc['turn_ticks'])
         self.turn_limit = turn_limit
         self.max_turns = max_turns
+        # 서든데스(mc.sudden_death): 단계마다 [끝 전역 턴|None, 생명력%, 방어력%, 주는 회복량%, 주는 보호막량%] — data/sudden_death.json
+        self.sudden = list(sudden) if sudden and self.mc['sudden_death'] == 'data' else None
+        self.sd_level = -1
         self.t = 0.0
         self.events = 0
         self.depth = 0
@@ -636,6 +646,7 @@ class Battle:
         by_actions = bool(self.turn_limit) and self.mc['turn_limit_unit'] == 'actions'
         horizon = (self.turn_limit if (self.turn_limit and not by_actions) else self.max_turns) * self.turn_ticks
         self.global_turns = 0
+        self._sudden_step()
         while True:
             self.tick()
             if not self.alive(0):
@@ -671,8 +682,31 @@ class Battle:
                 self.result = 'timeout'   # 게임: 전역 턴이 제한을 넘는 턴은 시작하지 않고 전투 종료
                 break
             self.global_turns += 1
+            self._sudden_step()
             self.act(best)
         return self
+
+    def _sudden_step(self):
+        """서든데스: 지금 전역 턴의 단계(끝 턴이 전역 턴 이상인 첫 단계, 없으면 마지막)를 아군 전원(쓰러진 아군 포함)에 맞춘다.
+        끝 턴 포함·「전역 턴 +1 직후, 그 행동 전」 적용은 추정(컨트롤러 본체는 해독본에 없음 — NKM.decompiled.cs 16989~17013).
+        최대 생명력 = floor(전투 전 최종 최대 생명력 x (1 + 생명력%)), −99% 하한(NKM 18272~18358: 전투 효과·버프는 최종값에 곱하는 묶음).
+        줄면 현재 생명력을 최대로 자르기만 함(피해 아님 — NKM 2828~2839). 버프 생명력%는 원래 최대 생명력에 반영 안 함(엔진 한계, 그대로)."""
+        if not self.sudden:
+            return
+        lv = next((i for i, s in enumerate(self.sudden) if s[0] is None or self.global_turns <= s[0]), len(self.sudden) - 1)
+        if lv == self.sd_level:
+            return
+        self.sd_level = lv
+        _end, hp, df, heal, bar = self.sudden[lv]
+        sd = {k: v for k, v in (('방어력%', df), ('주는 회복량', heal), ('주는 보호막량', bar)) if v}
+        for u in self.allies:
+            u.sd = sd
+            u.sd_hp = hp / 100.0
+            u.maxhp = float(math.floor(u.maxhp0 * max(0.01, 1 + hp / 100.0)))
+            u.hp = min(u.hp, u.maxhp)
+            self.dirty(u)
+        if lv > 0:
+            self.log(sudden=lv + 1, global_turn=self.global_turns)
 
     def set_gauge(self, u, value):
         """Gauge buffs may exceed 100%; overflow orders already-ready actors.
@@ -1615,7 +1649,7 @@ class Battle:
         m = a.mods()
         d = a.d
         A = self.atk_stat(a, ctx)
-        H = d.stats['hp'] * (1 + d.passive['hpp'] + m['hpp'])
+        H = d.stats['hp'] * (1 + d.passive['hpp'] + m['hpp']) * max(0.01, 1 + a.sd_hp)   # 서든데스는 전투 전 값에 곱함(−99% 하한)
         D = d.stats['def'] * (1 + d.passive['defp'] + m['defp'])
         S = a.spd()
         fa, fh, fd, fs = [x / 10000.0 for x in sk.cf]
@@ -1964,7 +1998,8 @@ class Battle:
                     dmg = max(1.0, math.floor(val * c * _rules.BASE_MULT * (1 + inc - dec) * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
                     self.apply_damage(src, u, dmg, 'dot', shieldable=False)
             if e.hot > 0 and not u.dead and u.on(name):
-                self.heal(e.src or u, u, u.maxhp * e.hot, 0.0)
+                # 지속 회복은 원래 주는 회복량 보정을 안 쓰지만, 서든데스 감소는 시전자 기준으로 적용(근사)
+                self.heal(e.src or u, u, u.maxhp * e.hot, (e.src or u).sd.get('주는 회복량', 0.0) / 100.0)
 
     # ---------- 회복·보호막
     def heal(self, src, v, amount, give):
@@ -2513,7 +2548,7 @@ class Battle:
         if m:
             tg = self.resolve(owner, m.group(1), ctx, kind='shield')
             stat = {'생명력': owner.maxhp, '공격력': self.atk_stat(owner), '방어력': self.def_stat(owner)}[m.group(5)]
-            amount = math.floor(stat * float(m.group(6)) / 100.0)
+            amount = math.floor(stat * float(m.group(6)) / 100.0 * max(0.0, 1 + owner.mods()['barrier_give']))
             props = {}
             if m.group(4):
                 for q in m.group(4).split(','):

@@ -43,7 +43,7 @@ from . import rules as _rules
 from .mc import Battle, EventLimitError, support_report
 from .rules import DEFAULT_OPTS, MC_OPTS, MC_RULES, RULES
 from .starsavior.data import _find_key, get_db
-from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves
+from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves, sudden_death
 from .starsavior.parser import Skill, UnitDef
 from .starsavior.mc_semantics import normalized_definition
 
@@ -128,7 +128,8 @@ def _norm_encounter(enc):
             content, tab, name = s['content'], s['tab'], s['name']
         st, waves = stage_waves(content, tab, name)
         meta = dict(content=content, tab=tab, name=name, level=st.get('lv'), recommended_power=st.get('bp'),
-                    wave_count=len(waves), fixed_player=st.get('fix'))
+                    wave_count=len(waves), fixed_player=st.get('fix'),
+                    sudden_death=sudden_death()['stages'].get('%s|%s|%s' % (content, tab, name)))
         if turn_limit is None:
             turn_limit = st.get('lt')
         if fx_texts is None:
@@ -265,6 +266,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         raise ValueError('party_spec 이 비어 있음')
     waves, turn_limit, fx, fx_unknown, meta = _norm_encounter(encounter_spec)
     max_turns = encounter_spec.get('max_turns', 50)
+    sudden = sudden_death()['groups'].get(meta.get('sudden_death')) if meta.get('sudden_death') else None
     power = party_power(defs)
     pp = power_pen(power, meta.get('recommended_power'), db)
     pen = None
@@ -306,7 +308,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         rng = random.Random(seed * 1000003 + offset + r)
         b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {},
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
-                   enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'), rng_streams=bool(o.get('rng_streams')))
+                   enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'), rng_streams=bool(o.get('rng_streams')),
+                   sudden=sudden)
         b.run()   # EventLimitError 는 그대로 올린다(정상 결과 금지)
         for (pos, slot), count in b.nova_bursts.items():
             nova_counts[names[pos]][slot] += count

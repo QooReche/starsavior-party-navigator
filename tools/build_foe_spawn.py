@@ -84,7 +84,8 @@ def candidates(ck, tab, name, i_tab, i_stage, rows=()):
     return []
 
 
-def build(static):
+def build(static, sids=None):
+    """-> (stages, why). sids 에 dict 를 주면 연결된 스테이지마다 「콘텐츠|탭|스테이지」 -> 게임 BattleStrID 를 채운다(tools/build_sudden_death)"""
     raw = F.load_foe(str(ROOT))
     rows = battle_rows(static)
     stages, why = {}, Counter()
@@ -118,6 +119,8 @@ def build(static):
                     why['배치 불일치:' + ck] += 1
                     continue
                 stages['%s|%s|%s' % (ck, t['t'], s['n'])] = hit
+                if sids is not None:
+                    sids['%s|%s|%s' % (ck, t['t'], s['n'])] = sid
                 why['연결:' + ck] += 1
     return stages, why
 
