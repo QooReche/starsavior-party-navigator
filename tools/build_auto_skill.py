@@ -140,6 +140,86 @@ def build(static):
     return units
 
 
+def build_lines(static, report):
+    """구원자 효과 줄 자동 대상(SE AutoTargetId) -> {구원자 key: [[칸, 데이터북 원문, {one, ally?, f}], ...]}.
+    데이터북 효과 줄에는 게임 SE 행이 아닌 줄(이번 스킬 보정 등)이 섞여 있어 줄 수 대신 「(자동 지정)」 줄 ↔ 게임 자동 지정 행을
+    순서대로 짝짓는다(개수·아군/적·1명/전체가 맞을 때만). SE 이름 COND_<스킬>_<묶음>_<줄> 의 묶음 01 = 기본 효과, 그 뒤는 레벨업 추가 행.
+    「자신 제외 1명」(NOT_SELF)은 게임의 자동 대상 함수(NKM 6407~6450)가 다루지 않아 기록하지 않는다(엔진 설명문 근사 유지)."""
+    from tools import build_foe_auto as FA
+    tables = Path(static) / 'tables'
+    target = {r['Id']: r['TargetCondition'] for r in jsonc(tables / 'Plain' / 'AUTO_SKILL_TARGET_TEMPLET.json')['Data']}
+    strings = json.loads((tables / 'Strings' / 'STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
+    bname = {}
+    for r in json.loads((tables / 'BUFF_TEMPLET.json').read_text(encoding='utf-8'))['Data']:
+        ko = (strings.get(r.get('m_BuffName') or '') or {}).get('ko')
+        if ko:
+            bname[r['m_BuffStrID']] = ko
+    se = {}
+    for n in (1, 2):
+        for r in json.loads((tables / ('SE_TEMPLET_SKILL_%d.json' % n)).read_text(encoding='utf-8'))['Data']:
+            m = re.match(r'^COND_(.+)_(\d+)_(\d+)$', r.get('m_SEStrID') or '')
+            if m:
+                se.setdefault(m.group(1), {}).setdefault(int(m.group(2)), []).append((int(m.group(3)), r))
+    index = json.loads((ROOT / 'data' / 'saviors_index.json').read_text(encoding='utf-8'))
+    keys = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
+    book = {u['id']: u for u in json.loads((ROOT / 'rawdata' / 'databook_main.json').read_text(encoding='utf-8'))['units']}
+    slot_of = {'기본기': 0, '특수기': 1, '궁극기': 2, '고유 패시브': 3}
+    auto_types = set(FA.AUTO_ENEMY) | set(FA.AUTO_ALLY) | {'NSETT_AUTO_ALLY_ONE_NOT_SELF'}
+    out = {}
+    for u in json.loads((tables / 'UNIT_TEMPLET_BASE1.json').read_text(encoding='utf-8'))['Data']:
+        key, bu = keys.get(u['m_UnitID']), book.get(u['m_UnitID'])
+        if key is None or bu is None:
+            continue
+        for s in bu['sk']:
+            i = slot_of.get(s['sl'])
+            if i is None or i >= len(u['m_listSkill']):
+                continue
+            sid = u['m_listSkill'][i].replace('NKM_UNIT_', '', 1)
+            levels = se.get(sid) or se.get(sid.replace('S_', '', 1))
+            if not levels:
+                continue
+            # 가운데 번호 01 = 기본 효과 묶음, 02 이상 = 레벨업 때 더해지는 행. 기본 묶음으로 짝짓고, 추가 행에 자동 지정이 있으면 뺀다
+            seqs = {lv: [r for _n, r in sorted(rows, key=lambda x: x[0]) if r.get('m_BuffTargetType') in auto_types]
+                    for lv, rows in levels.items()}
+            base = min(seqs)
+            rows = seqs[base]
+            where = '%s %s' % (key, s['sl'])
+            if any(v for lv, v in seqs.items() if lv != base):
+                report['레벨업 추가 행에 자동 지정(제외): ' + where] += 1
+                continue
+            if not any(r.get('AutoTargetId') for r in rows):
+                continue
+            lines = [ln for ln in s.get('ef') or [] if '(자동 지정)' in ln]
+            if len(lines) != len(rows):
+                report['자동 지정 줄 수 불일치(제외): ' + where] += 1
+                continue
+            got = []
+            for ln, r in zip(lines, rows):
+                tt = r['m_BuffTargetType']
+                head = ln.split(']', 1)[-1].lstrip()
+                if head.startswith('('):
+                    head = head.split(')', 1)[-1].lstrip()
+                ally = not head.startswith('적')
+                one = '1명' in head.split('(자동 지정)')[0]
+                if ally != tt.startswith('NSETT_AUTO_ALLY') or one != tt.endswith(('_ONE', '_ONE_NOT_SELF')):
+                    got = None
+                    break
+                if r.get('AutoTargetId') and tt in FA.AUTO_ENEMY or tt in FA.AUTO_ALLY and r.get('AutoTargetId'):
+                    try:
+                        spec = {'one': FA.AUTO_ENEMY.get(tt, FA.AUTO_ALLY.get(tt)), 'f': FA.filters(target.get(r['AutoTargetId']), bname)}
+                    except FA.Unknown as ex:
+                        report['모르는 필터(그 줄 제외): %s %s' % (where, ex)] += 1
+                        continue
+                    if tt in FA.AUTO_ALLY:
+                        spec['ally'] = True
+                    got.append([s['sl'], ln, spec])
+            if got is None:
+                report['아군/적·1명/전체 불일치(제외): ' + where] += 1
+                continue
+            out.setdefault(key, []).extend(got)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--static', type=Path)
@@ -150,11 +230,20 @@ def main():
         ap.error(str(ex))
     low_priority()
     units = build(static)
+    from collections import Counter
+    report = Counter()
+    lines = build_lines(static, report)
     out = dict(_note='구원자 스킬별 자동 전투 규칙(tools/build_auto_skill.py). 규칙 행 = 조건(c, 모두 참) + 대상 필터(f, 차례로 거름). '
                      '참인 행이 없으면 그 스킬을 건너뜀. 여기 없는 스킬은 엔진 기본 규칙(구원자 1).',
-               units=dict(sorted(units.items())))
+               units=dict(sorted(units.items())),
+               lines_note='구원자 효과 줄 자동 대상(SE AutoTargetId): lines[구원자 key] = [[칸, 데이터북 원문, {one 1명, ally 내 편, f 필터}]]. '
+                          '없는 줄은 엔진 설명문 근사(mc.ally_auto_lines=data 일 때만 씀)',
+               lines=dict(sorted(lines.items())))
     atomic_text(ROOT / 'data' / 'auto_skill.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
-    print('auto_skill.json: 구원자', len(units), '스킬', sum(len(v) for v in units.values()))
+    print('auto_skill.json: 구원자', len(units), '스킬', sum(len(v) for v in units.values()),
+          '효과 줄 자동 대상', sum(len(v) for v in lines.values()), '(구원자 %d)' % len(lines))
+    for k, v in sorted(report.items()):
+        print('  ', v, k)
 
 
 if __name__ == '__main__':

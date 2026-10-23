@@ -37,6 +37,43 @@ RATE_STEPS = ('front', 'back', 'defender') + ROLE_NAMES     # 확률 필터 이�
 _AUTO = {}
 
 
+_ALINES = {}
+
+
+def ally_auto_lines(src=SRC):
+    """data/auto_skill.json 의 lines(구원자 효과 줄 자동 대상) -> {구원자 key: {(칸, 원문): spec}}. 같은 원문에 다른 규칙이면 버림"""
+    if src not in _ALINES:
+        p = os.path.join(src, 'data', 'auto_skill.json')
+        out = {}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                for key, rows in (json.load(f).get('lines') or {}).items():
+                    d, clash = {}, set()
+                    for slot, raw, spec in rows:
+                        if (slot, raw) in d and d[(slot, raw)] != spec:
+                            clash.add((slot, raw))
+                        d[(slot, raw)] = spec
+                    for k in clash:
+                        del d[k]
+                    out[key] = d
+        _ALINES[src] = out
+    return _ALINES[src]
+
+
+_BLV = {}
+
+
+def break_skill_levels(src=SRC):
+    """data/break_skill_levels.json(tools/build_break_levels.py) -> {이름: {dmg, heal}}. 없으면 빈 dict"""
+    if src not in _BLV:
+        p = os.path.join(src, 'data', 'break_skill_levels.json')
+        _BLV[src] = {}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                _BLV[src] = json.load(f).get('skills', {})
+    return _BLV[src]
+
+
 def auto_skill_rules(src=SRC):
     """data/auto_skill.json(tools/build_auto_skill.py) -> {구원자 key: {칸: 규칙}}. 없으면 빈 dict"""
     if src not in _AUTO:
@@ -105,7 +142,10 @@ RX_GAUGE_SET = re.compile(r'^(.+?)에게 행동 게이지를 (\d+)%로 설정')
 RX_CHAIN_T = re.compile(r'^(.+?)에게 연쇄 피해 = 대상 (최대 생명력|생명력)×([\d.]+)% \(×1\.85, 방어력 적용\)(?: ×(\d+))?')
 RX_CD_UP = re.compile(r'^(.+?)에게 스킬 쿨타임 (\d+)턴 증가')
 RX_LOCAL_PER = re.compile(r'^자신에게 능력치 보정 피해 증가 ([+-]?[\d.]+)% \((자신|적 전체|공격 대상|아군 전체)의 (강화|약화) 효과 1개당 위 수치만큼 적용, 개수 상한 없음\)')
-CD_RESET_NAMES = {'궁극기 쿨타임 초기화': '궁극기', '특수기 쿨타임 감소': '특수기'}   # 설명문 「쿨타임이 초기화」·「최대로 감소한 상태로 시작」
+CD_RESET_NAMES = {'궁극기 쿨타임 초기화': '궁극기', '특수기 쿨타임 감소': '특수기',
+                  '특수기 쿨타임 초기화': '특수기'}   # 설명문 「쿨타임이 초기화」·「최대로 감소한 상태로 시작」. 적 「어둠의 맹세」 = BI_SPECIAL_COOL_TURN_DOWN_ALL 감소값 0(NKM 2874~2886)
+SELF_KILL_NAMES = ('즉시 피해',)   # 적 자폭(크로넷 「시계태엽 폭탄」·올베로스의 하수인 「돌격」): InstantDamage = 공격력 100% + 생명력 1000%(NKM 4794~4822·7311~7342, DAMAGE_TEMPLET) → 사망으로
+IGNORED_NAMES = ('별도 사망 애니메이션 트리거 버프',)   # 연출용(전투 효과 없음)
 RX_RANDOM = re.compile(r'^(.+?)에게\s*(?:\(대상마다 (\d+)% 판정\)\s*)?무작위 효과 〈[^〉]+〉: \[(.+)\] 중 1개')
 RX_RECV_HEAL = re.compile(r'^(.+?)에게 능력치 보정 받는 회복량 ([+-][\d.]+)%')
 RX_GAUGE_P = re.compile(r'^(.+?)에게 (\d+)% 확률로 행동 게이지 ([\d.]+)%p (증가|감소)')
@@ -316,11 +356,11 @@ class Unit:
         st = d.stats
         self.fx = dict(fx or {})                 # 스테이지 효과(상시)
         hpp = d.passive['hpp'] + self.fx.get('생명력%', 0.0) / 100.0
-        self.maxhp = float(math.floor(st['hp'] * (1 + hpp)))
-        self.maxhp0 = self.maxhp                 # 전투 전 최종 최대 생명력 — 서든데스는 여기에 곱함(NKM 18342~18358 세 번째 묶음)
-        self.hp = self.maxhp
-        self.sd = {}                             # 서든데스 단계 효과(전투 효과 층, 버프 아님 — 정화·약화 개수에 안 잡힘)
         self.sd_hp = 0.0                         # 서든데스 생명력 비율(최대 생명력·피해의 생명력 항에 전투 전 값 x (1 + 이 값)으로 곱함)
+        self._m = None
+        self.maxhp0 = float(math.floor(st['hp'] * (1 + hpp)))   # 전투 전 최종 최대 생명력 — 버프·서든데스는 여기에 곱함(NKM 18342~18358 세 번째 묶음)
+        self.hp = self.maxhp0
+        self.sd = {}                             # 서든데스 단계 효과(전투 효과 층, 버프 아님 — 정화·약화 개수에 안 잡힘)
         self.gauge = 0.0
         self.eff = {}
         self.cd = {}
@@ -362,6 +402,17 @@ class Unit:
         self.breaks = 0
         self._m = None
 
+    @property
+    def maxhp(self):
+        """최대 생명력 = floor(전투 전 최종값 x (1 + 버프 생명력%(mc.buff_maxhp) + 서든데스 생명력%)), 묶음 합 −99% 하한(NKM 18272~18358).
+        부수효과 없음 — 현재 생명력 자르기는 Battle.dirty 가 한다."""
+        r = self.mods()['hpp_buff'] if self.b.mc['buff_maxhp'] == 'on' else 0.0
+        return float(math.floor(self.maxhp0 * max(0.01, 1 + r + self.sd_hp)))
+
+    @maxhp.setter
+    def maxhp(self, value):          # 시험·외부에서 최대 생명력을 직접 정할 때(전투 전 값으로 둠)
+        self.maxhp0 = float(value)
+
     # ---- 버프 합산(캐시: 효과가 바뀌면 b.dirty())
     def mods(self):
         if self._m is not None:
@@ -375,6 +426,7 @@ class Unit:
                 continue
             for k, v in e.props.items():
                 _add_prop(m, k, v, e.stacks)
+        m['hpp_buff'] = m['hpp']                 # 버프·약화의 생명력%(스테이지 효과 제외 — 그건 전투 전 최대 생명력에 이미 들어 있음)
         for k, v in self.fx.items():
             _add_prop(m, k, v, 1)
         for k, v in self.sd.items():
@@ -549,6 +601,9 @@ class Battle:
         self.first_death = None
         self.death_seq = 0
         self._hit_log = None      # 이번 행동의 유효 타격 [(공격자, 피격자)] — 반격 후보(mc.revenge)
+        self._react_q = None      # 이번 행동의 반응 스킬 예약 [(주인, 스킬, 대상, 고정 대상)] — mc.reaction_timing=queue 일 때만
+        self._react_seen = None   # 이번 행동에 예약된 (주인, 칸) — 불발이면 지워서 다시 예약 가능
+        self._revenged = None     # 이번 행동에서 이미 반격한 유닛(행동 전체 공유, NKM 7765~7800)
         self.revenges = [0, 0]    # 진영별 반격 횟수
         self.all_foes = []
         self._cur_line = None    # 실행 중인 줄(자동 지정 대상 규칙을 그 스킬 설명에서 찾을 때 씀)
@@ -586,6 +641,10 @@ class Battle:
 
     def dirty(self, u):
         u._m = None
+        if self.mc['buff_maxhp'] == 'on' and u.hp > u.maxhp:
+            # 효과가 바뀌어 최대 생명력이 줄면 현재 생명력을 바로 자른다(늘어도 전투 중엔 채우지 않음 — NKM 2828~2839).
+            # 조회(maxhp)에는 부수효과를 두지 않는다 — hp/maxhp 를 읽는 순서에 따라 값이 달라지지 않게(codex 리뷰)
+            u.hp = u.maxhp
 
     def log(self, **kw):
         if self.timeline is not None and len(self.timeline) < 3000:
@@ -641,6 +700,11 @@ class Battle:
                 for ln in self.lines_of(u):
                     if line_kind(ln) in ('battle_start', 'wave_start'):
                         self.run_line(u, ln, Ctx(u, u, None))
+            if self.mc['buff_maxhp'] == 'on':
+                # 전투 시작 단계(Init·Start)에서는 늘어난 최대 생명력만큼 채운다(NKM 2828~2839 — Play 부터는 자르기만)
+                for u in self.allies + self.foes:
+                    if not u.dead:
+                        u.hp = max(u.hp, u.maxhp)
         # 턴 제한 단위: actions = 게임 전역 턴(유닛 행동마다 +1, 적 포함 — NKM.decompiled.cs 13796~13798·599~623·755~762,
         # 코스모 게이트 = RANKING_RAID LimitTurn 50·CountEnemyTurnOnly false). model = 옛 동작(모델 기준 턴 = 100틱)
         by_actions = bool(self.turn_limit) and self.mc['turn_limit_unit'] == 'actions'
@@ -702,9 +766,8 @@ class Battle:
         for u in self.allies:
             u.sd = sd
             u.sd_hp = hp / 100.0
-            u.maxhp = float(math.floor(u.maxhp0 * max(0.01, 1 + hp / 100.0)))
-            u.hp = min(u.hp, u.maxhp)
             self.dirty(u)
+            u.hp = min(u.hp, u.maxhp)
         if lv > 0:
             self.log(sudden=lv + 1, global_turn=self.global_turns)
 
@@ -782,20 +845,29 @@ class Battle:
         # 회복 턴도 턴 이벤트·지속 차감은 처리하고, 스킬 행동만 생략한다.
         if self.mc['revenge'] == 'on':
             self._hit_log = []
-        if not u.dead and not skip:
-            if any(u.has(n) for n in HARD_CC):
-                self.log(actor=u.name, skip='행동 불가')
-            else:
-                taunt = u.eff.get('도발')
-                tsrc = taunt.src if (taunt and taunt.stacks > 0) else None
-                if tsrc is not None and not tsrc.dead and u.d.skills.get('기본기') is not None:
-                    self.cast(u, u.d.skills['기본기'], target=tsrc)
+        queue = self.mc['reaction_timing'] == 'queue'
+        if queue:
+            # 게임 순서(NKM 15180~15372): 본 행동 → 협공 → 각 타격의 반격 → 예약된 반응 스킬을 하나씩(각각 직후 그 반격), 최대 11개
+            self._react_q, self._react_seen, self._revenged = [], set(), set()
+        try:
+            if not u.dead and not skip:
+                if any(u.has(n) for n in HARD_CC):
+                    self.log(actor=u.name, skip='행동 불가')
                 else:
-                    sk, tgt = self.choose_skill(u)
-                    if sk is not None:
-                        self.cast(u, sk, target=tgt)
-        if self._hit_log:
-            self.revenge(self._hit_log)   # 반격에서 이어진 공격(반응·추가 발동)의 타격도 같은 목록에 쌓여 차례로 판정
+                    taunt = u.eff.get('도발')
+                    tsrc = taunt.src if (taunt and taunt.stacks > 0) else None
+                    if tsrc is not None and not tsrc.dead and u.d.skills.get('기본기') is not None:
+                        self.cast(u, u.d.skills['기본기'], target=tsrc)
+                    else:
+                        sk, tgt = self.choose_skill(u)
+                        if sk is not None:
+                            self.cast(u, sk, target=tgt)
+            if queue:
+                self._run_reactions()
+            if self._hit_log:
+                self.revenge(self._hit_log)   # 반격에서 이어진 공격(반응·추가 발동)의 타격도 같은 목록에 쌓여 차례로 판정
+        finally:
+            self._react_q = self._react_seen = self._revenged = None
         self._hit_log = None
         if not u.dead:
             if end_cd:
@@ -870,6 +942,24 @@ class Battle:
         dec = min(_rules.DEC_CAP, dec)
         return max(1.0, math.floor(base * (1 - dr) * (1 - dec) * self.rand(0) * self.pen[0]))
 
+    def _break_level_up(self):
+        """(피해 계수 가산, 회복 계수 가산): 레벨 L 이하 행의 SkillLevelDamageUp·HealUp 합/10000(mc.break_skill_level=data).
+        레벨이 없거나 범위 밖이면 1(가산 0)로 하고 기록."""
+        if self.mc['break_skill_level'] != 'data':
+            return 0.0, 0.0
+        row = break_skill_levels().get(self.break_skill_name)
+        if row is None:
+            self.unsup['break_skill: 레벨 표 없음 ' + str(self.break_skill_name)] += 1
+            return 0.0, 0.0
+        try:
+            lv = int(self.break_skill.get('level') or 1)
+        except (TypeError, ValueError):
+            lv = 0
+        if not 1 <= lv <= len(row['dmg']):
+            self.unsup['break_skill: 레벨 범위 밖(1로 계산) %r' % (self.break_skill.get('level'),)] += 1
+            lv = 1
+        return row['dmg'][lv - 1] / 10000.0, row['heal'][lv - 1] / 10000.0
+
     def _use_break_skill(self, actor=None):
         cost = self.mc['break_skill_cost']
         if not self.break_skill_enabled or self.break_skill_cd > 0 or self.break_points < cost:
@@ -879,8 +969,11 @@ class Battle:
         self.break_skill_uses += 1
         self.log(bskill=self.break_skill_name)
         rule = self.break_skill_rule
+        dmg_up, heal_up = self._break_level_up()
         if rule.get('damage_ratio'):
-            base = sum(self.live_atk(u) for u in self.alive(0)) * rule['damage_ratio'] / _rules.AOE_DIV
+            base = sum(self.live_atk(u) for u in self.alive(0)) * (rule['damage_ratio'] + dmg_up) / _rules.AOE_DIV
+            if self.mc['break_skill_scale'] == 'game':
+                base *= _rules.BASE_MULT   # 오비탈 피해도 일반 피해식 끝의 DamageScale(1.85)을 곱함(NKM 17742~17817, 오비탈 시전자 OBF_26964)
             for v in list(self.alive(1)):
                 before = v.taken
                 self.apply_damage(None, v, self._break_dmg(v, base), 'bskill')
@@ -891,7 +984,7 @@ class Battle:
         if self.opts['nova_pool'] == 'team':
             self.team_nova += nova
         # 큐브 회복의 합에는 사망자도 포함(기존 가정). 효과는 생존자에게만.
-        amount = sum(u.maxhp for u in self.allies) * rule.get('heal_ratio', 0)
+        amount = sum(u.maxhp for u in self.allies) * (rule.get('heal_ratio', 0) + (heal_up if 'heal_ratio' in rule else 0.0))
         for u in self.alive(0):
             if 'heal_ratio' in rule:
                 got = self.heal(None, u, amount, 0.0)
@@ -1016,10 +1109,34 @@ class Battle:
         pool, _ = self.filter_chain(att, pool, steps, ctx)
         return pool[0] if len(pool) == 1 else self.R(att.side).choice(pool)
 
+    def line_spec(self, owner, ln):
+        """그 효과 줄의 게임 자동 대상 규칙(없으면 None): 적 = data/foe_auto.json(mc.foe_auto), 구원자 = auto_skill.json lines(mc.ally_auto_lines)"""
+        if ln is None:
+            return None
+        if owner.side == 1:
+            if self.mc['foe_auto'] != 'data':
+                return None
+            spec = (getattr(owner.d, 'auto_lines', None) or {}).get((ln.slot, ln.raw))
+        else:
+            if self.mc['ally_auto_lines'] != 'data':
+                return None
+            lines = ally_auto_lines()
+            spec = (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {})).get((ln.slot, ln.raw))
+        if spec is not None:
+            # 내부 표지(체크용·판별용 버프)를 찾는 필터인데 그 표지를 가진 유닛이 없으면(표지를 거는 줄을 엔진이 근사로 처리하는 경우)
+            # 데이터 규칙 대신 설명문 근사로 — 무작위로 새지 않게(예: 티리아 궁극기 「티리아 체크용 버프」, 거는 줄의 IsHighDef 는 근거 없음)
+            pool = self.alive(owner.side if spec.get('ally') else 1 - owner.side)
+            for st in spec['f']:
+                if isinstance(st, list) and st[0] == 'has' and all(CHECK_NAME.search(n) or '판별용' in n for n in st[1]):
+                    if not any(v.has(n) for v in pool for n in st[1]):
+                        self.unsup['selector: 표지 보유자 없음(설명문 근사) ' + ln.raw[:50]] += 1
+                        return None
+        return spec
+
     def line_auto_targets(self, owner, spec, ctx):
-        """적 효과 줄 자동 대상(NKM 6390~6450): 단일(one)이면 필터 뒤 1명(1명이 되면 멈춤, 여럿이면 무작위 — 필터가 하나도 안 맞아도),
-        아니면 필터가 하나라도 맞았을 때만 그 목록, 아니면 대상 없음(확정 결과 — 다른 규칙으로 대신하지 않음)."""
-        pool = self.alive(1 - owner.side)
+        """효과 줄 자동 대상(NKM 6390~6450): 단일(one)이면 필터 뒤 1명(1명이 되면 멈춤, 여럿이면 무작위 — 필터가 하나도 안 맞아도),
+        아니면 필터가 하나라도 맞았을 때만 그 목록, 아니면 대상 없음(확정 결과 — 다른 규칙으로 대신하지 않음). ally 면 내 편 중에서."""
+        pool = self.alive(owner.side if spec.get('ally') else 1 - owner.side)
         if not pool:
             return []
         got, ok = self.filter_chain(owner, pool, spec['f'], ctx, stop_at_one=spec['one'])
@@ -1049,6 +1166,8 @@ class Battle:
             if ctx.skill.all:
                 return [v for v in pool if v.side != att.side]
             return [v for v in pool if v in ctx.targets]
+        if st == 'buffed':
+            return [v for v in pool if v.n_good() > 0]      # IsPositiveBuffUnit: 강화 효과가 하나라도 있는 유닛(NKM 6938)
         if st in ('has', 'not_has'):
             return [v for v in pool if any(v.has(n) for n in arg) == (st == 'has')]
         if st in ('buff_ge', 'buff_le', 'debuff_ge', 'debuff_le'):
@@ -1225,9 +1344,9 @@ class Battle:
             cur = self._cur_line
             if cur is not None and cur.eff.get('target_state'):
                 return [x for x in opp if x.has(cur.eff['target_state'])]
-            if '자동 지정' in t and cur is not None and owner.side == 1 and self.mc['foe_auto'] == 'data':
-                spec = (getattr(owner.d, 'auto_lines', None) or {}).get((cur.slot, cur.raw))
-                if spec is not None:
+            if '자동 지정' in t and cur is not None:
+                spec = self.line_spec(owner, cur)
+                if spec is not None and not spec.get('ally'):
                     return self.line_auto_targets(owner, spec, ctx)
             if '자동 지정' in t and cur is not None:
                 desc = skill_desc(owner.d, cur.slot)
@@ -1246,6 +1365,9 @@ class Battle:
         cur = self._cur_line
         if ('자동 지정' in t and (t.startswith('아군') or t.startswith('자신 제외') or t.startswith('자신을 제외'))
                 and not (cur is not None and cur.eff.get('name') == '강제 협공') and kind != 'remove'):
+            spec = self.line_spec(owner, cur)
+            if spec is not None and spec.get('ally'):
+                return self.line_auto_targets(owner, spec, ctx)
             got = self.select_auto(owner, t, ctx, kind)
             if got is not None:
                 return got
@@ -1585,7 +1707,7 @@ class Battle:
         공격자에게 기본기. 반격에는 반격·협공이 없다. 공격자가 쓰러지면 남은 반격은 끝.
         공격(시전) 하나의 후보는 추첨을 먼저 모두 끝낸 뒤 차례로 반격하고(NKM 7775~7784 ToArray), 공격자가 쓰러지면 그 공격의 남은 반격만 끝.
         근사: 게임은 본 행동·협공·반응 스킬마다 그 직후에 반격하지만 엔진은 반응 스킬이 시전 안에 겹쳐 있어 행동 끝에 시전 순서대로 처리."""
-        done = set()
+        done = self._revenged if self._revenged is not None else set()
         order, groups, used = [], {}, set()
         i = 0
         while True:
@@ -1649,7 +1771,10 @@ class Battle:
         m = a.mods()
         d = a.d
         A = self.atk_stat(a, ctx)
-        H = d.stats['hp'] * (1 + d.passive['hpp'] + m['hpp']) * max(0.01, 1 + a.sd_hp)   # 서든데스는 전투 전 값에 곱함(−99% 하한)
+        if self.mc['buff_maxhp'] == 'on':
+            H = a.maxhp    # 생명력 비례 항 = 지금 최대 생명력(전투 전 값 x 버프·서든데스 묶음)
+        else:
+            H = d.stats['hp'] * (1 + d.passive['hpp'] + m['hpp']) * max(0.01, 1 + a.sd_hp)   # 서든데스는 전투 전 값에 곱함(−99% 하한)
         D = d.stats['def'] * (1 + d.passive['defp'] + m['defp'])
         S = a.spd()
         fa, fh, fd, fs = [x / 10000.0 for x in sk.cf]
@@ -1949,7 +2074,7 @@ class Battle:
             for ts in v.d.trigger_skills.values():
                 rule = trigger_rule(ts, self.lines_of(v))
                 if rule and rule['event'] == 'hit' and (not rule.get('aoe') or sk.all) and (not rule.get('evade') or evaded):
-                    self.trigger_cast(v, ts, a, via='reaction')
+                    self._react(v, ts, a)
         if crit and a is not None and not a.dead and a.side != v.side:
             for w in self.alive(v.side):
                 if w is v or self.no_react(w):
@@ -1957,7 +2082,7 @@ class Battle:
                 ts = w.d.trigger_skills.get('특수기')
                 if ts is None or not (ts.tg or '').startswith('반응 대상(적)') or '아군이 치명타 피격 후' not in (ts.raw.get('d1') or ''):
                     continue
-                self.trigger_cast(w, ts, a, via='reaction')
+                self._react(w, ts, a)
         for w in self.alive(v.side):
             if w is v:
                 continue
@@ -1967,9 +2092,47 @@ class Battle:
             oath = v.eff.get('사랑의 서약(해제불가)')
             if oath is None or oath.src is not w:
                 continue
-            ctx = self.trigger_cast(w, ts, v, via='reaction')
-            if ctx is not None:
-                ctx.targets = [v]
+            self._react(w, ts, v, fixed=[v])
+
+    def _react(self, owner, ts, target, fixed=None):
+        """반응 스킬 하나: 대기열이 열려 있으면 예약(발동 조건은 지금 판정 — 호출한 쪽), 아니면 바로 실행(옛 동작·행동 밖)"""
+        if self._react_q is None:
+            ctx = self.trigger_cast(owner, ts, target, via='reaction')
+            if ctx is not None and fixed:
+                ctx.targets = list(fixed)
+            return
+        key = (id(owner), ts.slot)
+        if key in self._react_seen:
+            return
+        self._react_seen.add(key)
+        self._react_q.append((owner, ts, target, fixed))
+
+    def _run_reactions(self):
+        """예약된 반응 스킬을 순서대로: 실행 직전에 상태 재확인(trigger_cast), 대상이 쓰러졌거나 불발이면 예약 이력을 지워 다시 예약 가능.
+        스킬마다 직후에 그 타격의 반격. 실행까지 간 예약 11개에서 멈춤(NKM 15365 ++num <= 10)."""
+        if self._hit_log:
+            self.revenge(self._hit_log)      # 본 행동·협공의 반격이 먼저
+            self._hit_log = []
+        n = 0
+        while self._react_q:
+            if not self.alive(0) or not self.alive(1):
+                break
+            owner, ts, target, fixed = self._react_q.pop(0)
+            ctx = None
+            if target is None or not target.dead:
+                ctx = self.trigger_cast(owner, ts, target, via='reaction')
+            if ctx is None:
+                self._react_seen.discard((id(owner), ts.slot))
+                continue
+            if fixed:
+                ctx.targets = list(fixed)
+            if self._hit_log:
+                self.revenge(self._hit_log)
+                self._hit_log = []
+            n += 1
+            if n > 10:
+                self.unsup['reaction: 한 행동 반응 스킬 11개 초과로 나머지 생략'] += 1
+                break
 
     def _tick_dot_hot(self, u):
         """턴 시작: 지속 피해(시전자별 중첩, 매 틱 시전자 현재 스탯, 보호막 무시)와 지속 회복"""
@@ -2520,6 +2683,14 @@ class Battle:
                     eff = dict(eff, times=1)
                 elif ln.slot == '특수기' and eff['target'] == '자신 제외 아군 전체':
                     eff = dict(eff, target='자신 제외 태양 속성 아군 전체')
+            if eff['name'] in IGNORED_NAMES:
+                return
+            if eff['name'] in SELF_KILL_NAMES and self.mc['instant_damage'] == 'self_kill':
+                # 근사: 수호(피해 분담) 경로는 타지 않고 바로 사망 — 방어·치명 처리 미확인
+                for x in self.resolve(owner, eff['target'], ctx) or []:
+                    if not x.dead:
+                        self.kill(x, owner)
+                return
             if eff['name'] in CD_RESET_NAMES:      # P5 〈궁극기 쿨타임 초기화〉·〈특수기 쿨타임 감소〉 = 그 칸 쿨타임 0(설명문)
                 for x in self.resolve(owner, eff['target'], ctx) or []:
                     sl = CD_RESET_NAMES[eff['name']]
@@ -2889,7 +3060,7 @@ class Battle:
 # ------------------------------------------------------------------ 지원성 검사
 # 속성 숫자가 없어도 엔진이 이름으로 동작을 아는 효과
 HANDLED_NAMES = set(['도발', '은신', '현장 대기', '기절', '수면', '침묵', '필중', '면역', '강제 협공', '추가 턴', '보호막', '스킬 피해 무효',
-                     '강인도 피해 무효', '불사', '강화 불가', '강제 치명타 발생']) | set(CD_RESET_NAMES)
+                     '강인도 피해 무효', '불사', '강화 불가', '강제 치명타 발생']) | set(CD_RESET_NAMES) | set(SELF_KILL_NAMES) | set(IGNORED_NAMES)
 LOCAL_OK = ('피해 증가', '공격력%', '치명타 확률', '치명타 피해', '방어 관통', '효과 적중', '주는 회복량', '명중률',
             '강인도 피해', '강인도 고정 피해', '브레이크 대상 피해 증가', '대상 약화효과 1개당 피해 증가')
 LOCAL_PREHIT_OK = ('방어력%', '피해 분담(수호)', '피해 감소', '받는 피해 감소')

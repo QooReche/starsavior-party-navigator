@@ -21,7 +21,7 @@ options
   {"seed": 1, "n_runs": 100, "rules_override": {mc·opts 키: 값}, "nova_policy": "auto"|"manual"|"heal", "timeline": false,
    "enemy_lines": true, "run_offset": 0, "per_run": false, "formula_override": {"COOP_CAP": 1.0}, "rekindle": 0,
    "break_skill": {"name": "큐브 과부하", "level": 5}}
-  break_skill = 생략/None 이면 미장착. 큐브 과부하·특이점 관측·스타피어서·차원 강습 지원(모든 레벨 동일 계수), 다른 이름은 unsupported.runtime 에 기록.
+  break_skill = 생략/None 이면 미장착. 큐브 과부하·특이점 관측·스타피어서·차원 강습 지원(레벨 1~10 = 계수 가산, mc.break_skill_level), 다른 이름은 unsupported.runtime 에 기록.
   rekindle = 작전 재점화 버프 단계 0~5(작전 op 에서만): 아군 주는 피해 ×(1+x)·받는 피해 ×(1−x), x = REKINDLE[단계]
        (인게임 표 2026-10-21 사용자 제보, 전투력 보정과 곱으로 합침 — 곱인지 증감 합인지는 미확인)
   run_offset = 판 번호 시작값(판 r 의 난수 = seed*1000003 + run_offset + r; timeline 은 첫 판 = run_offset 번 판)

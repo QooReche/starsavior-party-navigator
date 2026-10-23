@@ -20,11 +20,44 @@ CUBE = {'name': '큐브 과부하', 'level': 5}
 OMEGA, MATRIX = '오메가 프로토콜', '치트 매트릭스'
 
 
+# 공식 단위 시험은 옛 계수(레벨 가산 없음·DamageScale 제외)로 고정하고, 레벨·배율은 BreakLevelScaleTest 가 따로 본다
+LEGACY_SCALE = dict(break_skill_level='off', break_skill_scale='off')
+
+
 def setup(bs=CUBE, mc=None, roles=('스트라이커',), **kw):
     allies = [unit('a%d' % i, role=role) for i, role in enumerate(roles)]
     foe = unit('boss', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
     foe.boss = True
-    return battle(allies, [foe], break_skill=bs, mc=mc, timeline=True, **kw)
+    return battle(allies, [foe], break_skill=bs, mc=dict(LEGACY_SCALE, **(mc or {})), timeline=True, **kw)
+
+
+class BreakLevelScaleTest(unittest.TestCase):
+    """레벨 가산(mc.break_skill_level)·DamageScale(mc.break_skill_scale) — NKM 17742~17817, ORBITAL_LEVEL_GROUP"""
+    def dmg(self, name, level, **mc):
+        b = setup({'name': name, 'level': level}, mc=mc)
+        b.break_points = 3
+        b.act(b.allies[0])
+        return b.break_skill_dmg
+
+    def test_level_adds_to_ratio(self):
+        base = self.dmg('특이점 관측', 1, break_skill_level='data')
+        lv10 = self.dmg('특이점 관측', 10, break_skill_level='data')
+        self.assertAlmostEqual(lv10 / base, 0.8 / 0.7, delta=0.01)         # 70% -> 80%(곱이 아니라 가산)
+        self.assertEqual(self.dmg('특이점 관측', 10), base)                  # off: 레벨 무관
+
+    def test_damage_scale(self):
+        off = self.dmg('스타피어서', 1)
+        game = self.dmg('스타피어서', 1, break_skill_scale='game')
+        self.assertAlmostEqual(game / off, 1.85, delta=0.02)          # 정수 내림 오차
+
+    def test_bad_level_is_one(self):
+        b = setup({'name': '차원 강습', 'level': 99}, mc=dict(break_skill_level='data'))
+        self.assertEqual(b._break_level_up(), (0.0, 0.0))
+        self.assertEqual(sum(v for k, v in b.unsup.items() if k.startswith('break_skill: 레벨 범위 밖')), 1)
+
+    def test_cube_heal_level(self):
+        b = setup(dict(CUBE, level=10), mc=dict(break_skill_level='data'))
+        self.assertEqual(b._break_level_up(), (0.0, 0.02))                  # 회복 계수 2% -> 4%
 
 
 class BreakSkillTest(unittest.TestCase):
@@ -154,7 +187,7 @@ class BreakSkillTest(unittest.TestCase):
         self.assertEqual(sum(u.dmg for u in b.allies), 0)
 
     def test_break_aoe_damage_limit_and_nova_policy(self):
-        b = battle([unit()], [unit('f0'), unit('f1')], break_skill={'name': '특이점 관측'})
+        b = battle([unit()], [unit('f0'), unit('f1')], break_skill={'name': '특이점 관측'}, mc=LEGACY_SCALE)
         b.foes[1].hp = 10
         give(b.foes[1], '불사')
         b.allies[0].d.skills.clear()
@@ -185,8 +218,12 @@ class BreakSkillTest(unittest.TestCase):
                 for key in ('uses', 'dmg', 'points_gained'):
                     self.assertEqual(r['break_skill'][key], round(sum(s['break_skill'][key] for s in singles) / 3, 3))
                 lv1 = simulate(party, enc, dict(opts, break_skill={'name': name, 'level': 1}))
-                self.assertEqual(r['per_unit'], lv1['per_unit'])
-                self.assertEqual(r['break_skill'], lv1['break_skill'])
+                self.assertGreater(r['break_skill']['dmg'], lv1['break_skill']['dmg'])   # Lv5 = 계수 +4%p(mc.break_skill_level)
+                off = {'rules_override': dict(opt['rules_override'], break_skill_level='off')}
+                o5 = simulate(party, enc, dict(opts, **off))
+                o1 = simulate(party, enc, dict(opts, break_skill={'name': name, 'level': 1}, **off))
+                self.assertEqual(o5['per_unit'], o1['per_unit'])       # 옛 동작: 모든 레벨 같은 계수
+                self.assertEqual(o5['break_skill'], o1['break_skill'])
         # 웹 진입점의 auto/manual이 실제 엔진 결과의 네 필드를 그대로 돌려준다.
         stage = 'op/NOA 상업지구/SECTOR 1-3'
         for name in ('특이점 관측', '스타피어서', '차원 강습', '큐브 과부하', '행성 정화', None):
@@ -352,9 +389,9 @@ class BreakSkillTest(unittest.TestCase):
             self.assertGreater(r['break_skill'][key], 0)
             self.assertEqual(r['break_skill'][key], round(sum(s['break_skill'][key] for s in singles) / 3, 3))
         self.assertEqual(r['timeline'], singles[0]['timeline'])
-        lv1 = simulate(party, enc, dict(opt, break_skill=dict(CUBE, level=1)))
-        self.assertEqual(r['per_unit'], lv1['per_unit'])
-        self.assertEqual(r['timeline'], lv1['timeline'])
+        off = dict(opt, rules_override=dict(opt['rules_override'], break_skill_level='off'))
+        lv1 = simulate(party, enc, dict(off, break_skill=dict(CUBE, level=1)))
+        self.assertEqual(simulate(party, enc, dict(off, break_skill=CUBE))['per_unit'], lv1['per_unit'])   # 옛 동작: 레벨 무관
         unsupported = simulate(party, enc, dict(opt, break_skill={'name': '행성 정화'}))
         self.assertEqual(unsupported['unsupported']['runtime']['break_skill:행성 정화'], 3)
         self.assertEqual(unsupported['break_skill']['uses'], 0)

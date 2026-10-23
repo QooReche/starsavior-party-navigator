@@ -36,17 +36,21 @@ SIMPLE = {'IsNotInvincible': 'not_invincible', 'IsBoss': 'boss', 'IsElite': 'eli
           'IsHighAtk': 'high_atk', 'IsLowAtk': 'low_atk', 'IsHighSpeedGauge': 'high_gauge', 'IsLowSpeedGauge': 'low_gauge',
           'IsHighTurnSpeed': 'high_spd', 'IsLowTurnSpeed': 'low_spd', 'IsLastHitTarget': 'last_hit', 'IsLastDamageTarget': 'last_damager',
           'IsLeader': 'leader', 'IsAllyOneNotSelf': 'not_self', 'IsSuperArmorBreak': 'broken', 'IsNotSuperArmorBreak': 'not_broken',
-          'FollowSkillTargetType': 'follow'}
+          'FollowSkillTargetType': 'follow', 'IsPositiveBuffUnit': 'buffed'}
 RATE = {'FrontLineTargetRate': 'front', 'BackLineTargetRate': 'back', 'DefenderTargetRate': '디펜더', 'StrikerTargetRate': '스트라이커',
         'RangerTargetRate': '레인저', 'CasterTargetRate': '캐스터', 'AssassinTargetRate': '어쌔신', 'SupporterTargetRate': '서포터'}
 COUNT = {'IsPositiveBuffCountOverThan': 'buff_ge', 'IsPositiveBuffCountLessThan': 'buff_le',
          'IsNegativeBuffCountOverThan': 'debuff_ge', 'IsNegativeBuffCountLessThan': 'debuff_le'}
 AUTO_ENEMY = {'NSETT_AUTO_ENEMY': False, 'NSETT_AUTO_ENEMY_ONE': True}
+# 아군 자동 지정(NKM 6407~6450 같은 함수, 상대 대신 내 편): 전체형·1명형. 「자신 제외 1명」(NOT_SELF)은 이 함수가 다루지 않아 제외
+AUTO_ALLY = {'NSETT_AUTO_ALLY': False, 'NSETT_AUTO_ALLY_ONE': True}
 # 데이터북 ef 줄의 대상 머리말 -> SE m_BuffTargetType 묶음(짝짓기 검증용)
 HEAD = [(r'적 1명\(자동 지정\)', {'NSETT_AUTO_ENEMY_ONE'}), (r'적\(자동 지정\)', {'NSETT_AUTO_ENEMY', 'NSETT_AUTO_ENEMY_ONE'}),
         (r'아군[^에]*\(자동 지정\)|자신[^에]*제외[^에]*\(자동 지정\)', {'NSETT_AUTO_ALLY', 'NSETT_AUTO_ALLY_ONE', 'NSETT_AUTO_ALLY_ONE_NOT_SELF'}),
         (r'적 전체', {'NSETT_ENEMY_ALL'}), (r'아군 전체|자신 제외 아군 전체|자신을 제외한 아군 전체', {'NSETT_MYTEAM_ALL', 'NSETT_MYTEAM_ALL_NOT_SELF'}),
+        (r'자신에게 소환:', {None, 'NSETT_SELF'}),   # 소환 줄은 SE 대상 종류가 비어 있음
         (r'자신에게|자신의', {'NSETT_SELF'}), (r'스킬 대상|대상에게|적에게|적 1명에게', {'NSETT_TARGET'})]
+RX_TIMES = re.compile(r'(\d+)회 부여')
 REPORT = Counter()
 REPORT_HEAD = Counter()      # 대상 머리말을 못 읽은 줄(짝짓기 거절)
 
@@ -128,10 +132,15 @@ def se_of(sid, se):
 
 
 def pair_lines(ef, rows):
-    """데이터북 ef 줄 ↔ SE 행. 줄 수가 같고 줄마다 대상 머리말이 SE 대상 종류와 맞을 때만 {줄 번호: SE 행}"""
-    if len(ef) != len(rows):
+    """데이터북 ef 줄 ↔ SE 행. 줄 수가 같고 줄마다 대상 머리말이 SE 대상 종류와 맞을 때만 [(줄 번호, SE 행)].
+    「{N회 부여}」 줄은 게임에서 같은 행 N개라 N줄로 펼쳐 맞춘다."""
+    exp = []
+    for i, line in enumerate(ef):
+        m = RX_TIMES.search(line)
+        exp += [(i, line)] * (int(m.group(1)) if m else 1)
+    if len(exp) != len(rows):
         return None
-    for line, r in zip(ef, rows):
+    for (_i, line), r in zip(exp, rows):
         tt = r.get('m_BuffTargetType')
         for pat, kinds in HEAD:
             if re.search(pat, line):
@@ -143,7 +152,7 @@ def pair_lines(ef, rows):
             return None               # 대상 머리말을 못 읽은 줄이 있으면 짝짓지 않음
         if ('자동 지정' in line) != (tt or '').startswith('NSETT_AUTO'):
             return None
-    return dict(enumerate(rows))
+    return [(i, r) for (i, _line), r in zip(exp, rows)]
 
 
 def build(static):
@@ -175,7 +184,7 @@ def build(static):
                 cands = SP.candidates(c['k'], t['t'], s['n'], ti, si, rows)
                 for sid in cands:
                     row = rows.get(sid)
-                    if not row or not row[0].exists() or row[1] != str(s.get('bp')) or row[2] != str(s.get('lv')):
+                    if not row or not row[0].exists() or not SP.same_battle(c['k'], s, row, raw, static):
                         continue
                     waves = (SP.jsonc(row[0]).get('Data') or {}).get('Waves') or []
                     lists = [[[sp['UnitStrId'], sp.get('ChangeAdjustType')] for sp in (w.get('TeamBSpawnList') or [])] for w in waves]
@@ -254,10 +263,20 @@ def add_lines(res, si, sid, raw, se, target, bname):
     if pairs is None:
         REPORT['효과 줄 짝짓기 실패'] += 1
         return
-    for k, r in pairs.items():
+    got, bad = {}, set()
+    for k, r in pairs:
         tt = r.get('m_BuffTargetType')
-        if r.get('AutoTargetId') and tt in AUTO_ENEMY:
-            res['lines']['%d:%d' % (si, k)] = {'one': AUTO_ENEMY[tt], 'f': filters(target.get(r['AutoTargetId']), bname)}
+        if r.get('AutoTargetId') and (tt in AUTO_ENEMY or tt in AUTO_ALLY):
+            spec = {'one': AUTO_ENEMY.get(tt, AUTO_ALLY.get(tt)), 'f': filters(target.get(r['AutoTargetId']), bname)}
+            if tt in AUTO_ALLY:
+                spec['ally'] = True
+            key = '%d:%d' % (si, k)
+            if key in got and got[key] != spec:
+                bad.add(key)        # 펼친 줄끼리 규칙이 다르면 그 줄은 버림
+            got[key] = spec
+    for key, spec in got.items():
+        if key not in bad:
+            res['lines'][key] = spec
 
 
 def main():
