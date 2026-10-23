@@ -896,7 +896,11 @@ class Battle:
                             cast_ctx = self.cast(u, sk, target=tgt)
             # 적 반응(트리거) 스킬: 공격 뒤(after_attack) / 유효 타격(hit) 조건 판정 → _react 로 예약
             if cast_ctx is not None and u.side == 1 and self.mc.get('foe_react') == 'data':
-                self._check_foe_react(u, cast_ctx)
+                self._check_foe_react(u, cast_ctx, timing_filter=None)
+                # after_ally_attack / ally_hit: 같은 편 다른 유닛의 반응 규칙 확인
+                if self.mc.get('foe_react_timing', 'extended') == 'extended':
+                    for v in self.alive(u.side):
+                        self._check_foe_react(v, cast_ctx, timing_filter='ally', caster=u)
             if queue:
                 self._run_reactions()
             if self._hit_log:
@@ -1525,6 +1529,11 @@ class Battle:
             # 자기 효과 생략과 타 유닛에 대한 사용 통지는 별개다.
             self.fire_side(u, ctx, 'ally_pre')
             self.fire_foes(u, ctx, 'foe_pre' if sk.is_attack else 'foe_pre_na')
+            # on_my_attack: 적의 공격 시작 전(스트라이크 전) 반응 예약 — 대상 체력·버프가 피해 전 상태
+            if (sk.is_attack and ctx.targets and u.side == 1
+                    and self.mc.get('foe_react') == 'data'
+                    and self.mc.get('foe_react_timing', 'extended') == 'extended'):
+                self._check_foe_react(u, ctx, timing_filter='on_my_attack')
             if sk.is_attack and ctx.targets:
                 self.deal(u, ctx)
             if not u.dead:
@@ -2161,28 +2170,58 @@ class Battle:
                 continue
             self._react(w, ts, v, fixed=[v])
 
-    def _check_foe_react(self, u, ctx):
+    def _check_foe_react(self, u, ctx, timing_filter=None, caster=None):
         """적 반응(트리거) 스킬: 적이 공격/적중 후 조건 판정 → _react 로 예약.
-        조건 판정은 예약 시점(게임 ReactSkillBooking), 사망·쿨·행동 불가는 실행 직전(trigger_cast)."""
+        조건 판정은 예약 시점(게임 ReactSkillBooking), 사망·쿨·행동 불가는 실행 직전(trigger_cast).
+        timing_filter: None = 기존(after_attack/hit), 'on_my_attack' = 내 공격 시(스트라이크 전),
+                       'ally' = after_ally_attack/ally_hit(caster 가 행동한 뒤 같은 편 다른 유닛 확인).
+        caster: timing_filter='ally' 일 때 행동한 유닛(ctx 의 주인)."""
         if self.mc['foe_react'] != 'data' or u.side != 1 or not self.enemy_lines:
             return
         react = getattr(u.d, 'react', None)
         if not react:
             return
+        extended = self.mc.get('foe_react_timing', 'extended') == 'extended'
         for slot, rule in react.items():
             ts = u.d.trigger_skills.get(slot)
             if ts is None:
                 continue
             timing = rule['timing']
+            # 시점 필터: 호출 시점에 맞는 timing 만 처리
+            if timing_filter is None:
+                # 기존: after_attack / hit
+                if timing not in ('after_attack', 'hit'):
+                    continue
+            elif timing_filter == 'on_my_attack':
+                if timing != 'on_my_attack':
+                    continue
+            elif timing_filter == 'ally':
+                if timing not in ('after_ally_attack', 'ally_hit'):
+                    continue
+            else:
+                continue
+            # 시점별 전제 조건
             if timing == 'after_attack' and not ctx.skill.is_attack:
                 continue
             if timing == 'hit' and not ctx.hit_targets:
+                continue
+            if timing == 'on_my_attack' and not ctx.skill.is_attack:
+                continue
+            if timing == 'after_ally_attack' and not ctx.skill.is_attack:
+                continue
+            if timing == 'ally_hit' and not ctx.hit_targets:
                 continue
             ok = True
             for cond in rule.get('conds', []):
                 tag = cond[0]
                 if tag == 'skill_basic':
                     if ctx.skill.slot != '기본기':
+                        ok = False
+                elif tag == 'skill_special':
+                    if ctx.skill.slot != '특수기':
+                        ok = False
+                elif tag == 'skill_hyper':
+                    if ctx.skill.slot != '궁극기':
                         ok = False
                 elif tag == 'self_has':
                     if not all(u.has(n) for n in cond[1]):
@@ -2203,11 +2242,51 @@ class Battle:
                 elif tag == 'not_eliminate':
                     if ctx.target is None or ctx.target.dead:
                         ok = False
+                elif tag == 'eliminate':
+                    if ctx.target is None or not ctx.target.dead:
+                        ok = False
                 elif tag == 'single_target':
                     if ctx.skill.all:
                         ok = False
+                elif tag == 'single_ally_target':
+                    # 아군 대상 단일 스킬인지: all 이 아니고, 대상이 같은 편(아군)이어야 함
+                    if ctx.skill.all or (ctx.target is not None and ctx.target.side != u.side):
+                        ok = False
                 elif tag == 'enemy_has':
                     if not any(v.has(n) for v in self.alive(1 - u.side) for n in cond[1]):
+                        ok = False
+                elif tag == 'include_self':
+                    # cond[1] = True/False. False 면 시전자(caster)가 자신(u)일 때 거부
+                    if not cond[1] and caster is not None and caster is u:
+                        ok = False
+                elif tag == 'damage_result':
+                    # cond[1] = ['NormalHit', 'CriticalHit', 'Evade'] 중 일부
+                    # per-target: ctx.target 기준
+                    t = ctx.target
+                    if t is None:
+                        ok = False
+                    else:
+                        hit_crit = t in getattr(ctx, 'crit_targets', set())
+                        hit_evade = t in getattr(ctx, 'evaded', set())
+                        hit_normal = (not hit_crit and not hit_evade) and t in (ctx.hit_targets or [])
+                        matched = (('CriticalHit' in cond[1] and hit_crit)
+                                   or ('Evade' in cond[1] and hit_evade)
+                                   or ('NormalHit' in cond[1] and hit_normal))
+                        if not matched:
+                            ok = False
+                elif tag == 'target_neg_buff':
+                    t = ctx.target
+                    if t is None or not any(e.harmful for e in t.eff.values() if e.stacks > 0):
+                        ok = False
+                elif tag == 'target_pos_buff':
+                    t = ctx.target
+                    if t is None or not any(not e.harmful for e in t.eff.values() if e.stacks > 0):
+                        ok = False
+                elif tag == 'self_pos_buff':
+                    if not any(not e.harmful for e in u.eff.values() if e.stacks > 0):
+                        ok = False
+                elif tag == 'self_neg_buff':
+                    if not any(e.harmful for e in u.eff.values() if e.stacks > 0):
                         ok = False
                 else:
                     self.unsup['foe_react: 모르는 조건 ' + tag] += 1
@@ -2221,6 +2300,12 @@ class Battle:
                 target = ctx.target if (ctx.target and not ctx.target.dead) else None
                 if target is None:
                     continue
+            elif rule['target'] == 'react_ally_target':
+                # 아군 대상 반응(NSTT_REACT_ALLY_TARGET): 게임은 시전자의 아군 중 대상 선택.
+                # caster 가 있으면(after_ally_attack) caster, 아니면 ctx.target 과 같은 편인 아군.
+                # 현재 적 반응에서는 NSTT_REACT_ALLY_TARGET 을 쓰는 적이 없으므로(구원자만)
+                # 자기 자신을 임시 대상으로 둔다(적 진영에서 실사용 시 재검토).
+                target = caster if caster is not None else u
             self._react(u, ts, target)
 
     def _react(self, owner, ts, target, fixed=None):

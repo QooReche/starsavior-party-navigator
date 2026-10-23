@@ -143,6 +143,7 @@ class HealBurstTest(unittest.TestCase):
                                                        'break_skill_scale': 'off',
                                                        'ally_auto_lines': 'off',
                                                        'foe_react': 'off',
+                                                       'foe_react_timing': 'legacy',
                                                        'summon': 'off'}})
             frozen = {k: v for k, v in r.items() if k in ('per_unit', 'outcome', 'timeline', 'breaks', 'break_skill', 'foes')}
             frozen['outcome'] = {k: v for k, v in frozen['outcome'].items() if k not in ('progress', 'ttk_actions_median')}   # 나중에 더한 요약 칸(전투 규칙 무관)

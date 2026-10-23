@@ -129,5 +129,17 @@
 - 영향(40판 표본, 내 정보 없는 프리셋 4명): 올베로스 1~3단계 변화 없음(하수인이 이미 배치에 있어 리필만). 티리아 1단계 82→100%(off), 2단계 0→5%·진행 0.53→0.66(off), 3단계 진행 0.022→0.034(off). 잊혀진 맹세 Ⅰ~Ⅱ 변화 없음(쉬운 스테이지). 소환은 적을 늘려 전투를 어렵게 함.
 - 시험: `tests/summon_test.py`(13건). `off` 스위치 = 옛 동작(unsupported 집계만).
 
+## 추가: 적 반응 스킬 시점·조건 어휘 확장 (2026-10-24, 규칙 `mc.foe_react_timing`)
+
+- 게임 SKILL_CONDITION_TEMPLET 의 시점 중 `build_foe_react.py` 가 모르던 3종(AfterAllyAttack·OnMyAttack·AllyEffectiveHit)과 조건 DamageResultType·IncludeSelf·TargetNegativeBuff/TargetPositiveBuff·SelfPositiveBuff/SelfNegativeBuff·EliminateEnemy, 대상 NSTT_REACT_ALLY_TARGET, 스킬 인덱스 special/hyper 를 추가했음.
+- 해독 코드 근거: OnMyAttack(`NKM.decompiled.cs` 10029~10088) = 자기 공격 시작 시(스트라이크 전) 판정. reactor == caster, SAT_ATTACK 필수. AfterAllyAttack(`NKM` 11253~11289) = 같은 편 유닛이 공격한 뒤 판정. IncludeSelf=false 면 자기 행동 제외, 같은 팀·SAT_ATTACK 필수. DamageResultType(`NKM.Templets` 38421) = per-strike 피격 결과(NormalHit/CriticalHit/Evade). 엔진은 per-target 근사(다단 히트 개별 결과를 유지하지 않으므로).
+- 현황: NST_REACT 스킬 중 해당 시점을 쓰는 적(MON_) 게임 유닛은 WHITEDRAGON_WINDFAN(AfterAllyAttack 궁극기, 코스모·플래시·성간 보스), WHITEDRAGON_METEORWHIP(AfterAllyAttack 기본기/특수기, 같은 곳), HAPPY68_MAINSTORY(OnMyAttack 기본기+대상 약화, 작전 스토리), INDEPENDENT_VAGABOND_EVENT(MyEffectiveHit+DamageResultType=Evade, 이벤트). 그러나 이들은 현재 데이터북 적과 연결되지 않아 `foe_react.json` 에는 새 규칙 0건. 연결이 생기면 자동 반영됨.
+- 구원자 쪽에도 같은 시점을 쓰는 NST_REACT 스킬이 있음: S_INCOGNITA_LANDGRAVE(AfterAllyAttack), S_DETECTIVE_PROFESSOR(AfterAllyAttack), S_SUMMER_SMILE(AfterAllyAttack), S_SUMMER_ORACLE(AllyEffectiveHit+DamageResultType=CriticalHit), S_WEDDING_SHIELDER(AllyEffectiveHit, NSTT_REACT_ALLY_TARGET). 구원자 반응 스킬은 `supported_trigger` 경로(텍스트 기반)로 처리되며 이번 변경 범위 밖.
+- 엔진: `_check_foe_react(u, ctx, timing_filter, caster)` — timing_filter 로 호출 시점(None=기존 after_attack/hit, 'on_my_attack'=스트라이크 전, 'ally'=같은 편 순회)을 구분. on_my_attack 은 `cast()` 안 `deal()` 직전에 호출(대상 체력·버프가 피해 전 상태). after_ally_attack/ally_hit 은 `act()` 뒤 같은 편 생존 유닛 전체를 순회.
+- 레거시 스위치 `mc.foe_react_timing`: extended(기본, 새 시점 포함) / legacy(after_attack+hit 만). `foe_react=off` 이면 시점 무관 전부 꺼짐.
+- 미확인: on_my_attack 이 게임에서 정확히 어느 시점에 react 를 예약하는지(스트라이크 전으로 추정 — TargetHpRate 조건이 피해 전이어야 의미가 있으므로). DamageResultType 이 per-strike 인지 per-target 인지(per-target 근사). IncludeSelf=true 인 적은 0종(false 만 사용).
+- 영향: 현재 데이터북 적에 해당 시점의 반응 규칙이 없어 시뮬 결과 변화 0. `build_foe_react.py` 실행 결과 16 units 16 rules(변화 없음, 어휘 건너뛰기 0건). `support_report` 적 트리거 스킬 미반영 0건(변화 없음).
+- 시험: `tests/foe_react_test.py` 30건(on_my_attack 발동/미발동/off/legacy 5건, after_ally_attack 발동/미발동/wrong_skill/legacy 4건, damage_result 2건(placeholder), 기존 19건). 고의 파괴로 실패 확인 후 원복.
+
 ## 재현
 `python -X utf8 -I AI\temp\partynavigator\scripts\audit_all.py <src> <내정보.json> out.json` → `audit_report.py <src> out.json`. 스크립트는 일회성(temp)이라 저장소에는 없음. 회귀 시험은 `tests/enemy_cond_test.py`.

@@ -35,6 +35,7 @@
    (10/24 완료) 적 트리거(반응) 스킬 5종: `tools/build_foe_react.py` → `data/foe_react.json`, 규칙 `mc.foe_react`(data, 옛 동작 off). 맹약 회수·앙코르·소거·태엽 폭탄 기폭·월영, 적 16종 16규칙. 작전 어려움 35-10 클리어 0%←82%, 달 회랑 450 95%←100%, 괴리의 표상 1단계 98%←100%(40판, seed 7). 상세 `docs/enemy_cond_audit.md` 끝 절.
    남은 것(조사 끝, 구현 전):
    - (10/24 완료) 소환(올베로스 하수인·티리아 인형·페르세스 고대 병졸, 26곳): `tools/build_foe_summon.py` → `data/foe_summon.json`, 규칙 `mc.summon`(data, 옛 off). SUMMON_TEMPLET 칸·쿨 플래그, BattleScript SpawnPosIndex 연결 26/26곳. 티리아 1단계 82→100%(off), 2단계 진행 0.53→0.66(off). 상세 `docs/enemy_cond_audit.md` 끝 절.
+   - (10/24 완료) 적 반응 스킬 시점·조건 어휘 확장: `tools/build_foe_react.py` + `mc._check_foe_react` 에 AfterAllyAttack·OnMyAttack·AllyEffectiveHit 시점, DamageResultType·IncludeSelf·TargetNegativeBuff 등 조건, NSTT_REACT_ALLY_TARGET 대상, special/hyper 스킬 인덱스 추가. 규칙 `mc.foe_react_timing`(extended, 옛 legacy). 현재 데이터북 적에 해당 시점 규칙 없어 시뮬 변화 0(WHITEDRAGON·HAPPY68 MAINSTORY·VAGABOND EVENT 는 게임 유닛이 있으나 데이터북 미연결). 상세 `docs/enemy_cond_audit.md` 끝 절.
    - 코드 정리: 4번 규칙 설명값 구분(enemy_skill_ai·caster_death·wave_carry·break_skill_model 은 코드가 안 읽음 — 구분만, legacy 분기 삭제는 사용자 결정) → 1번 MC 의미 해석 캐시(기본값 고정 해시 먼저).
    - 적 조건 판정 `enemy_hit_buff_cmp` 재선택(실측 더 쌓이면). 게임 PC 필요: 스킬별 아이콘, 잠재력 11011/1 재확인.
 

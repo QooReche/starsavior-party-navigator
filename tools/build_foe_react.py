@@ -28,9 +28,12 @@ from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior import foe as F   # noqa: E402
 
 SLOT = {'ATTACK': '기본기', 'SPECIAL': '특수기', 'HYPER': '궁극기'}
-TARGET_TYPE = {'NSTT_REACT_ENEMY_TARGET': 'react_target', 'NSTT_ENEMY_ALL': 'all', 'NSTT_MYSELF': 'self'}
-TIMING = {'AfterMyAttack': 'after_attack', 'MyEffectiveHit': 'hit'}
-SKILL_IDX = {'NSI_SKILL_1_ATTACK': 'basic'}
+TARGET_TYPE = {'NSTT_REACT_ENEMY_TARGET': 'react_target', 'NSTT_ENEMY_ALL': 'all', 'NSTT_MYSELF': 'self',
+               'NSTT_REACT_ALLY_TARGET': 'react_ally_target', 'NSTT_ALLY_ALL': 'ally_all'}
+TIMING = {'AfterMyAttack': 'after_attack', 'MyEffectiveHit': 'hit',
+          'AfterAllyAttack': 'after_ally_attack', 'OnMyAttack': 'on_my_attack',
+          'AllyEffectiveHit': 'ally_hit'}
+SKILL_IDX = {'NSI_SKILL_1_ATTACK': 'basic', 'NSI_SKILL_2_SPECIAL': 'special', 'NSI_SKILL_3_HYPER': 'hyper'}
 REPORT = Counter()
 
 
@@ -64,12 +67,23 @@ def translate_conds(timing_data, bname):
     d = dict(timing_data)
     si = d.pop('SkillIndex', None)
     if si:
-        if si in SKILL_IDX:
-            out.append(['skill_basic'])
+        tag = SKILL_IDX.get(si)
+        if tag:
+            out.append(['skill_' + tag])
         else:
             return None
+    # IncludeSelf (AfterAllyAttack / AllyEffectiveHit): false = 자기 행동에는 발동 안 함
+    inc_self = d.pop('IncludeSelf', None)
+    if inc_self is not None:
+        out.append(['include_self', bool(inc_self)])
     if d.pop('IsSingleEnemyTargetType', False):
         out.append(['single_target'])
+    if d.pop('IsSingleAllyTargetType', False):
+        out.append(['single_ally_target'])
+    # DamageResultType: ['NormalHit', 'CriticalHit', 'Evade'] 중 일치하는 것
+    drt = d.pop('DamageResultType', None)
+    if drt:
+        out.append(['damage_result', list(drt)])
     self_buffs = d.pop('SelfBuffStrId', None)
     stack_eq = d.pop('SelfBuffLevelCount', None)
     stack_ge = d.pop('SelfBuffLevelCountOver', None)
@@ -104,6 +118,17 @@ def translate_conds(timing_data, bname):
         out.append(['target_has', ns])
     if d.pop('NotEliminateEnemy', False):
         out.append(['not_eliminate'])
+    if d.pop('EliminateEnemy', False):
+        out.append(['eliminate'])
+    # 대상 강화/약화 효과 보유 여부
+    if d.pop('TargetNegativeBuff', False):
+        out.append(['target_neg_buff'])
+    if d.pop('TargetPositiveBuff', False):
+        out.append(['target_pos_buff'])
+    if d.pop('SelfPositiveBuff', False):
+        out.append(['self_pos_buff'])
+    if d.pop('SelfNegativeBuff', False):
+        out.append(['self_neg_buff'])
     if d:
         return None
     return out
@@ -231,8 +256,11 @@ def main():
     units = build(static)
     note = ('react rules for foe trigger skills (tools/build_foe_react.py). '
             'units[foe:N[:M]][slot] = {timing, conds, target}. '
-            'timing: after_attack / hit. target: react_target / all. '
-            'conds: self_has/self_not_has/self_stack_ge/self_stack_eq/target_has/not_eliminate/skill_basic/single_target.')
+            'timing: after_attack / hit / after_ally_attack / on_my_attack / ally_hit. '
+            'target: react_target / all / self / react_ally_target / ally_all. '
+            'conds: self_has/self_not_has/self_stack_ge/self_stack_eq/target_has/not_eliminate/eliminate'
+            '/skill_basic/skill_special/skill_hyper/single_target/single_ally_target'
+            '/include_self/damage_result/target_neg_buff/target_pos_buff/self_pos_buff/self_neg_buff.')
     doc = dict(_note=note, units=units)
     atomic_text(ROOT / 'data' / 'foe_react.json', json.dumps(doc, ensure_ascii=False, separators=(',', ':')) + '\n')
     n_rules = sum(len(v) for v in units.values())
