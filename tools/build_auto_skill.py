@@ -29,7 +29,8 @@ SLOTS = ('기본기', '특수기', '궁극기', '패시브')
 TT = {'NSTT_ENEMY_ONE': 'enemy_one', 'NSTT_ENEMY_ALL': 'enemy_all', 'NSTT_ALLY_ONE': 'ally_one',
       'NSTT_ALLY_ALL': 'ally_all', 'NSTT_MYSELF': 'self'}
 FILTER = {'IsNotInvincible': 'not_invincible', 'IsBoss': 'boss', 'IsElite': 'elite', 'IsAdvantageAdjustType': 'advantage',
-          'IsLowHpRate': 'low_hp_rate', 'IsLowMaxHp': 'low_max_hp', 'IsAllyOneNotSelf': 'not_self', 'IsRandomDeadAllyOne': 'dead_ally'}
+          'IsLowHpRate': 'low_hp_rate', 'IsLowMaxHp': 'low_max_hp', 'IsHighDef': 'high_def', 'IsLowDef': 'low_def',
+          'IsAllyOneNotSelf': 'not_self', 'IsRandomDeadAllyOne': 'dead_ally'}
 ELEM = {'SUN': '태양', 'MOON': '달', 'STAR': '별', 'ORDER': '질서', 'CHAOS': '혼돈'}
 # 엔진(battlesim/mc.py RULE1·RULE1001)이 상수로 쓰는 기본 규칙. 표가 바뀌면 빌드가 실패해 엔진을 같이 고치게 한다.
 DEFAULTS = {1: {'IsNotInvincible': True, 'IsBoss': True, 'IsElite': True, 'IsAdvantageAdjustType': True, 'IsLowHpRate': True, 'IsLowMaxHp': True},
@@ -144,7 +145,7 @@ def build_lines(static, report):
     """구원자 효과 줄 자동 대상(SE AutoTargetId) -> {구원자 key: [[칸, 데이터북 원문, {one, ally?, f}], ...]}.
     데이터북 효과 줄에는 게임 SE 행이 아닌 줄(이번 스킬 보정 등)이 섞여 있어 줄 수 대신 「(자동 지정)」 줄 ↔ 게임 자동 지정 행을
     순서대로 짝짓는다(개수·아군/적·1명/전체가 맞을 때만). SE 이름 COND_<스킬>_<묶음>_<줄> 의 묶음 01 = 기본 효과, 그 뒤는 레벨업 추가 행.
-    「자신 제외 1명」(NOT_SELF)은 게임의 자동 대상 함수(NKM 6407~6450)가 다루지 않아 기록하지 않는다(엔진 설명문 근사 유지)."""
+    「자신 제외 1명」(NSETT_AUTO_ALLY_ONE_NOT_SELF)도 기록한다 — 실제 필터 체인에 IsAllyOneNotSelf(AutoTargetId=5)가 있어 not_self 로 처리된다."""
     from tools import build_foe_auto as FA
     tables = Path(static) / 'tables'
     target = {r['Id']: r['TargetCondition'] for r in jsonc(tables / 'Plain' / 'AUTO_SKILL_TARGET_TEMPLET.json')['Data']}
@@ -204,14 +205,17 @@ def build_lines(static, report):
                 if ally != tt.startswith('NSETT_AUTO_ALLY') or one != tt.endswith(('_ONE', '_ONE_NOT_SELF')):
                     got = None
                     break
-                if r.get('AutoTargetId') and tt in FA.AUTO_ENEMY or tt in FA.AUTO_ALLY and r.get('AutoTargetId'):
+                if r.get('AutoTargetId') and (tt in FA.AUTO_ENEMY or tt in FA.AUTO_ALLY or tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF'):
                     try:
-                        spec = {'one': FA.AUTO_ENEMY.get(tt, FA.AUTO_ALLY.get(tt)), 'f': FA.filters(target.get(r['AutoTargetId']), bname)}
+                        spec = {'one': FA.AUTO_ENEMY.get(tt, FA.AUTO_ALLY.get(tt, True)), 'f': FA.filters(target.get(r['AutoTargetId']), bname)}
                     except FA.Unknown as ex:
                         report['모르는 필터(그 줄 제외): %s %s' % (where, ex)] += 1
                         continue
-                    if tt in FA.AUTO_ALLY:
+                    if tt.startswith('NSETT_AUTO_ALLY'):
                         spec['ally'] = True
+                    # NSETT_AUTO_ALLY_ONE_NOT_SELF: 대상 종류 자체가 자신 제외를 함의 — 필터에 not_self 추가
+                    if tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF' and 'not_self' not in spec['f']:
+                        spec['f'] = ['not_self'] + spec['f']
                     got.append([s['sl'], ln, spec])
             if got is None:
                 report['아군/적·1명/전체 불일치(제외): ' + where] += 1

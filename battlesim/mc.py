@@ -150,6 +150,7 @@ RX_RANDOM = re.compile(r'^(.+?)에게\s*(?:\(대상마다 (\d+)% 판정\)\s*)?�
 RX_RECV_HEAL = re.compile(r'^(.+?)에게 능력치 보정 받는 회복량 ([+-][\d.]+)%')
 RX_GAUGE_P = re.compile(r'^(.+?)에게 (\d+)% 확률로 행동 게이지 ([\d.]+)%p (증가|감소)')
 RX_EXTRA_P = re.compile(r'^자신에게 (\d+)% 확률로 (기본기|특수기|궁극기) 추가 발동')
+RX_ENFORCE = re.compile(r'^(.+?)에게 (기본기|특수기|궁극기) 추가 발동')
 RX_RECAST = re.compile(r'발동 후 (\d+)턴 재발동 불가')
 RX_TOUGH_HEAL = re.compile(r'^(.+?)에게 강인도 (\d+) 회복')          # P5: 「자신에게 강인도 N 회복」(적 42줄)
 RX_HEAL_P = re.compile(r'^(.+?)에게 (\d+)% 확률로 회복 = (자신|대상) (최대 생명력|생명력|공격력|방어력)×([\d.]+)%')   # 잠재력 BX 「25% 확률로 회복」
@@ -1182,9 +1183,11 @@ class Battle:
     def _filter(self, att, pool, st, arg=None, ctx=None):
         if st == 'not_invincible':
             return None
-        if st in ('high_hp_rate', 'high_max_hp', 'high_atk', 'low_atk', 'high_gauge', 'low_gauge', 'high_spd', 'low_spd'):
+        if st in ('high_hp_rate', 'high_max_hp', 'high_atk', 'low_atk', 'high_def', 'low_def', 'high_gauge', 'low_gauge', 'high_spd', 'low_spd'):
             key = {'high_hp_rate': lambda v: int(v.hp / v.maxhp * 10000), 'high_max_hp': lambda v: v.maxhp,
-                   'high_atk': self.live_atk, 'low_atk': self.live_atk, 'high_gauge': lambda v: v.gauge, 'low_gauge': lambda v: v.gauge,
+                   'high_atk': self.live_atk, 'low_atk': self.live_atk,
+                   'high_def': lambda v: self.def_stat(v), 'low_def': lambda v: self.def_stat(v),
+                   'high_gauge': lambda v: v.gauge, 'low_gauge': lambda v: v.gauge,
                    'high_spd': lambda v: v.spd(), 'low_spd': lambda v: v.spd()}[st]
             best = (max if st.startswith('high') else min)(key(v) for v in pool)
             return [v for v in pool if key(v) == best]
@@ -2574,7 +2577,12 @@ class Battle:
 
     @staticmethod
     def _is_cast_line(ln):
-        return ln.eff['kind'] in ('extra_cast', 'random_ally_basic') or (ln.eff['kind'] == 'ignored' and RX_EXTRA_P.match(line_rest(ln)) is not None)
+        if ln.eff['kind'] in ('extra_cast', 'random_ally_basic'):
+            return True
+        if ln.eff['kind'] == 'ignored':
+            rest = line_rest(ln)
+            return RX_EXTRA_P.match(rest) is not None or RX_ENFORCE.match(rest) is not None
+        return False
 
     def run_batch(self, owner, lines, ctx):
         """같은 사건(시점·주인)에 걸린 줄 묶음: 조건은 사건 시점 상태로 한꺼번에 판정하고, 효과는 순서대로 실행하되
@@ -3040,6 +3048,36 @@ class Battle:
                 stat = {'생명력': base_u.maxhp, '최대 생명력': base_u.maxhp, '공격력': self.atk_stat(base_u),
                         '방어력': self.def_stat(base_u)}[m.group(4)]
                 self.heal(owner, x, stat * float(m.group(5)) / 100.0, owner.mods()['heal_give'])
+            return
+        m = RX_ENFORCE.match(rest)
+        if m:   # BI_ENFORCE 강제 추가 행동: 「아군 1명(자동 지정)에게 기본기 추가 발동」 (NKM 4555~4572, 7955~7992)
+            if self.mc['enforce'] != 'data':
+                self.unsup['effect: ' + rest[:60]] += 1
+                return
+            cur = self._cur_line
+            spec = self.line_spec(owner, cur) if cur is not None else None
+            if spec is None or not spec.get('enforce'):
+                self.unsup['effect: enforce 규칙 없음 ' + rest[:50]] += 1
+                return
+            actors = self.line_auto_targets(owner, spec, ctx)
+            if not actors:
+                return
+            actor = actors[0]
+            enforce = spec['enforce']
+            sk = actor.d.skills.get(enforce['slot'])
+            if sk is None or actor.dead or self.incapacitated(actor):
+                return      # 시전자 사망·스킬 불가면 취소
+            enemy_f = enforce.get('enemy_f', [])
+            enemies = self.alive(1 - owner.side)
+            if not enemies:
+                return
+            if enemy_f:
+                target, _ = self.filter_chain(actor, enemies, enemy_f, ctx)
+                target = target[0] if len(target) == 1 else self.R(owner.side).choice(target)
+            else:
+                target = self.R(owner.side).choice(enemies)
+            self._fired(owner)
+            self.cast(actor, sk, extra=True, target=target, parent=ctx, via='enforce')
             return
         self.unsup['effect: ' + rest[:60]] += 1
 
