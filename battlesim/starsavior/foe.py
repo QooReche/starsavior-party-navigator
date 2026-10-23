@@ -30,6 +30,20 @@ def spawn_flags(src=SRC):
     return _SPAWN[src]
 
 
+_AUTO = {}
+
+
+def foe_auto(src=SRC):
+    """data/foe_auto.json(tools/build_foe_auto.py) -> {'foe:유닛[:변형]': {skills, lines}}. 없으면 빈 dict"""
+    if src not in _AUTO:
+        p = os.path.join(src, 'data', 'foe_auto.json')
+        _AUTO[src] = {}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                _AUTO[src] = json.load(f).get('units', {})
+    return _AUTO[src]
+
+
 def load_foe(src=SRC):
     """foe.js 원본(dict: g/u/s/ak/x/star). 한 번만 읽는다."""
     global _FOE
@@ -147,6 +161,19 @@ class FoeDef:
             for raw_line in sd.get('ef') or []:
                 self.lines.append(Line(raw_line, slot, src))
         self.spd_base = self.stats['spd']
+        # 게임 자동 대상 규칙(mc.foe_auto): 스킬 칸 -> 규칙 행, (칸, 효과 줄 원문) -> 효과 줄 자동 대상. 같은 원문에 다른 규칙이면 버림
+        rules = foe_auto().get(self.key) or {}
+        self.auto = rules.get('skills', {})
+        self.auto_lines, clash = {}, set()
+        for k, spec in rules.get('lines', {}).items():
+            si, li = (int(x) for x in k.split(':'))
+            sd = raw['s'][si]
+            key = (sd['sl'], (sd.get('ef') or [])[li])
+            if key in self.auto_lines and self.auto_lines[key] != spec:
+                clash.add(key)
+            self.auto_lines[key] = spec
+        for key in clash:
+            del self.auto_lines[key]
 
 
 def find_raw_stage(content, tab, name, src=SRC):

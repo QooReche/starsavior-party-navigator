@@ -32,6 +32,8 @@ class EventLimitError(RuntimeError):
 # tools/build_auto_skill.py 가 표의 규칙 1·1001 이 아래와 같은지 확인한다(다르면 빌드 실패).
 RULE1 = ('not_invincible', 'boss', 'elite', 'advantage', 'low_hp_rate', 'low_max_hp')
 RULE1001 = (('front', 0.8), ('defender', 0.8))
+ROLE_NAMES = ('스트라이커', '캐스터', '어쌔신', '레인저', '디펜더', '서포터')
+RATE_STEPS = ('front', 'back', 'defender') + ROLE_NAMES     # 확률 필터 이름([이름, p])
 _AUTO = {}
 
 
@@ -908,6 +910,8 @@ class Battle:
             # 개화 변형(key@...)은 규칙이 기본 키에 있다(비공개 표에서 변형 스킬도 같은 AutoSkillId 확인)
             rules = auto_skill_rules()
             specs = rules.get(u.key) or rules.get(u.key.split('@')[0], {})
+        elif u.side == 1 and self.mc['foe_auto'] == 'data':
+            specs = getattr(u.d, 'auto', None) or {}   # data/foe_auto.json(tools/build_foe_auto.py) — 적 스킬별 규칙 행
         for slot in ('궁극기', '특수기', '기본기'):
             sk = u.d.skills.get(slot)
             if sk is None or u.cd.get(slot, 0) > 0:
@@ -919,6 +923,12 @@ class Battle:
                 return sk, None
             for row in spec['rows']:
                 if all(self.auto_cond_ok(u, c) for c in row['c']):
+                    if u.side == 1:
+                        # 적: 단일 공격이면 그 행의 필터로 대상을 정함(설명문 근사·규칙 1001 대신)
+                        if sk.is_attack and not sk.all:
+                            pool = self.targetable(0)
+                            return sk, (self.filter_pick(u, pool, row['f']) if pool else None)
+                        return sk, None
                     if spec['t'] != 'ally_one':
                         return sk, None
                     v = self.auto_pick_ally(u, row['f'])
@@ -934,6 +944,11 @@ class Battle:
             return any(v.dead for v in self.side_units(u.side))
         if c[0] == 'self_stack_eq':
             return u.stack(c[1]) == c[2]
+        if c[0] in ('self_has', 'self_not_has'):
+            return any(u.has(n) for n in c[1]) == (c[0] == 'self_has')
+        if c[0] in ('enemy_has', 'ally_has'):
+            side = 1 - u.side if c[0] == 'enemy_has' else u.side
+            return any(v.has(n) for v in self.alive(side) for n in c[1])
         raise ValueError('auto_skill 조건 미지원: %r' % (c,))
 
     def auto_pick_ally(self, u, steps):
@@ -943,25 +958,80 @@ class Battle:
             return None
         return self.filter_pick(u, pool, steps)
 
-    def filter_pick(self, att, pool, steps):
-        """게임 대상 필터 사슬(NKM.decompiled.cs 6500~6536): 차례로 거르고, 결과가 0명이면 목록 유지, 1명이 되면 멈춤, 끝에 여럿이면 무작위.
-        확률 필터((이름, p))는 주사위가 성공할 때만 거른다. 무적(not_invincible)은 엔진에 무적 상태가 없어 거르지 않는다."""
+    def filter_chain(self, att, pool, steps, ctx=None, stop_at_one=True):
+        """게임 대상 필터 사슬(NKM.decompiled.cs 6500~6536·6390~6450) -> (후보, 맞은 필터가 있었나).
+        차례로 거르고, 결과가 0명이면 목록 유지, stop_at_one 이면 1명이 되면 멈춤. 확률 필터([이름, p])는 주사위가 성공할 때만 거른다.
+        무적(not_invincible)은 엔진에 무적 상태가 없어 거르지 않는다."""
         rng = self.R(att.side)
+        ok = False
         for st in steps:
-            if isinstance(st, tuple):
-                st, p = st
-                if rng.random() >= p:
+            arg = None
+            if isinstance(st, (list, tuple)):
+                st, arg = st[0], st[1]
+                if st in RATE_STEPS and rng.random() >= arg:
                     continue
-            got = self._filter(att, pool, st)
+            got = self._filter(att, pool, st, arg, ctx)
             if got:
-                pool = got
-                if len(pool) == 1:
-                    return pool[0]
-        return pool[0] if len(pool) == 1 else rng.choice(pool)
+                pool, ok = got, True
+                if stop_at_one and len(pool) == 1:
+                    break
+        return pool, ok
 
-    def _filter(self, att, pool, st):
+    def filter_pick(self, att, pool, steps, ctx=None):
+        """필터 사슬 뒤 1명(여럿이면 무작위)"""
+        pool, _ = self.filter_chain(att, pool, steps, ctx)
+        return pool[0] if len(pool) == 1 else self.R(att.side).choice(pool)
+
+    def line_auto_targets(self, owner, spec, ctx):
+        """적 효과 줄 자동 대상(NKM 6390~6450): 단일(one)이면 필터 뒤 1명(1명이 되면 멈춤, 여럿이면 무작위 — 필터가 하나도 안 맞아도),
+        아니면 필터가 하나라도 맞았을 때만 그 목록, 아니면 대상 없음(확정 결과 — 다른 규칙으로 대신하지 않음)."""
+        pool = self.alive(1 - owner.side)
+        if not pool:
+            return []
+        got, ok = self.filter_chain(owner, pool, spec['f'], ctx, stop_at_one=spec['one'])
+        if spec['one']:
+            return [got[0] if len(got) == 1 else self.R(owner.side).choice(got)]
+        return got if ok else []
+
+    def _filter(self, att, pool, st, arg=None, ctx=None):
         if st == 'not_invincible':
             return None
+        if st in ('high_hp_rate', 'high_max_hp', 'high_atk', 'low_atk', 'high_gauge', 'low_gauge', 'high_spd', 'low_spd'):
+            key = {'high_hp_rate': lambda v: int(v.hp / v.maxhp * 10000), 'high_max_hp': lambda v: v.maxhp,
+                   'high_atk': self.live_atk, 'low_atk': self.live_atk, 'high_gauge': lambda v: v.gauge, 'low_gauge': lambda v: v.gauge,
+                   'high_spd': lambda v: v.spd(), 'low_spd': lambda v: v.spd()}[st]
+            best = (max if st.startswith('high') else min)(key(v) for v in pool)
+            return [v for v in pool if key(v) == best]
+        if st == 'last_hit':
+            t = getattr(att, 'last_target', None)
+            return [t] if t is not None and not t.dead else None
+        if st == 'last_damager':
+            t = getattr(att, 'last_damager', None)
+            return [t] if t is not None and not t.dead else None
+        if st == 'follow':
+            # 시전 중인 스킬의 대상 종류: 단일이면 그 대상, 전체면 상대 전원(NKM FollowSkillTargetType)
+            if ctx is None or ctx.skill is None:
+                return None
+            if ctx.skill.all:
+                return [v for v in pool if v.side != att.side]
+            return [v for v in pool if v in ctx.targets]
+        if st in ('has', 'not_has'):
+            return [v for v in pool if any(v.has(n) for n in arg) == (st == 'has')]
+        if st in ('buff_ge', 'buff_le', 'debuff_ge', 'debuff_le'):
+            cnt = (lambda v: v.n_good()) if st.startswith('buff') else (lambda v: v.n_harmful())
+            return [v for v in pool if (cnt(v) >= arg if st.endswith('ge') else cnt(v) <= arg)]
+        if st in ('elem', 'not_elem'):
+            return [v for v in pool if (v.element == arg) == (st == 'elem')]
+        if st in ('role', 'not_role'):
+            return [v for v in pool if (v.role == arg) == (st == 'role')]
+        if st == 'leader':
+            return [v for v in pool if getattr(v, 'leader', False)]
+        if st in ('broken', 'not_broken'):
+            return [v for v in pool if bool(v.broken) == (st == 'broken')]
+        if st == 'back':
+            return [v for v in pool if v.pos >= 2]
+        if st in ROLE_NAMES:
+            return [v for v in pool if v.role == st]
         if st == 'boss':
             return [v for v in pool if getattr(v.d, 'boss', False)]
         if st == 'elite':
@@ -1121,6 +1191,10 @@ class Battle:
             cur = self._cur_line
             if cur is not None and cur.eff.get('target_state'):
                 return [x for x in opp if x.has(cur.eff['target_state'])]
+            if '자동 지정' in t and cur is not None and owner.side == 1 and self.mc['foe_auto'] == 'data':
+                spec = (getattr(owner.d, 'auto_lines', None) or {}).get((cur.slot, cur.raw))
+                if spec is not None:
+                    return self.line_auto_targets(owner, spec, ctx)
             if '자동 지정' in t and cur is not None:
                 desc = skill_desc(owner.d, cur.slot)
                 ranked = self.ranked_enemies(desc, opp)
@@ -1571,6 +1645,8 @@ class Battle:
             if evaded:
                 ctx.evaded.add(v)
             t0 = v.taken
+            if a.side != v.side:
+                v.last_damager = a    # 게임 IsLastDamageTarget: 스킬 타격 때 피해 계산 전에 기록(NKM 15563~15579, 피해 무효여도)
             self.strike(a, v, base, ctx, crit, min(3.0, cdv + by['cd']), min(1.0, pen + by['pen']), reactions, evaded)
             if self._hit_log is not None and ctx.via != 'revenge' and v.taken > t0:
                 # 반격 후보 = 피해(보호막 흡수 포함)가 0보다 큰 타격(NKM 7203~7215, 회피도 피해가 남으면 포함). 반격으로 낸 타격은 제외
