@@ -95,8 +95,8 @@ def test_taunt():
 
 
 def test_ally_target_lowest():
-    """구원자 오토 단일 공격 = 보호막+HP 합이 가장 낮은 적"""
-    b = battle([unit('a')], [unit('f0', hp=5000), unit('f1', hp=3000)])
+    """옛 규칙(lowest_hp): 구원자 오토 단일 공격 = 보호막+HP 합이 가장 낮은 적"""
+    b = battle([unit('a')], [unit('f0', hp=5000), unit('f1', hp=3000)], mc=dict(ally_auto_target='lowest_hp'))
     e = give(b.foes[1], '보호막')
     e.shield = 3000
     pick = b.pick_attack_target(b.allies[0])

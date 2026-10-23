@@ -8,7 +8,9 @@
 - 이벤트 한도 초과는 EventLimitError(정상 결과를 돌려주지 않는다).
 P3 규칙 값은 rules/default.json 의 "mc" 절(MC_OPTS)."""
 import copy
+import json
 import math
+import os
 import random
 import re
 from collections import defaultdict
@@ -16,12 +18,32 @@ from collections import defaultdict
 from . import rules as _rules
 from .engine import calc_hit
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
+from .starsavior.data import SRC
 from .starsavior.parser import Line, _map_prop, split_head, supported_trigger
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules
 
 
 class EventLimitError(RuntimeError):
     """판당 이벤트 상한(max_events) 초과 — 무한 연쇄 의심. 결과를 돌려주지 않는다."""
+
+
+# ------------------------------------------------------------------ 자동 전투 대상 규칙(게임 AutoSkillController)
+# NKM.decompiled.cs 6561~6587: 스킬에 AutoSkillId 가 없으면 구원자 = 규칙 1, 적 = 규칙 1001. 필터 본문 6786~7130.
+# tools/build_auto_skill.py 가 표의 규칙 1·1001 이 아래와 같은지 확인한다(다르면 빌드 실패).
+RULE1 = ('not_invincible', 'boss', 'elite', 'advantage', 'low_hp_rate', 'low_max_hp')
+RULE1001 = (('front', 0.8), ('defender', 0.8))
+_AUTO = {}
+
+
+def auto_skill_rules(src=SRC):
+    """data/auto_skill.json(tools/build_auto_skill.py) -> {구원자 key: {칸: 규칙}}. 없으면 빈 dict"""
+    if src not in _AUTO:
+        p = os.path.join(src, 'data', 'auto_skill.json')
+        _AUTO[src] = {}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                _AUTO[src] = json.load(f).get('units', {})
+    return _AUTO[src]
 
 
 # ------------------------------------------------------------------ 줄 분류(반응 트리거)
@@ -511,6 +533,7 @@ class Battle:
         self.clear_t = None
         self.check_pending = []
         self.first_death = None
+        self.death_seq = 0
         self.all_foes = []
         self._cur_line = None    # 실행 중인 줄(자동 지정 대상 규칙을 그 스킬 설명에서 찾을 때 씀)
         self.once = set()        # {전투당 1회} 줄 사용 기록
@@ -718,9 +741,9 @@ class Battle:
                 if tsrc is not None and not tsrc.dead and u.d.skills.get('기본기') is not None:
                     self.cast(u, u.d.skills['기본기'], target=tsrc)
                 else:
-                    sk = self.choose_skill(u)
+                    sk, tgt = self.choose_skill(u)
                     if sk is not None:
-                        self.cast(u, sk)
+                        self.cast(u, sk, target=tgt)
         if not u.dead:
             if end_cd:
                 # NKM:1840-1848 -> 3348-3360: owner action end, before
@@ -856,15 +879,93 @@ class Battle:
         self.check_pending = []
 
     def choose_skill(self, u):
+        """(스킬, 미리 고른 대상 또는 None). 게임 자동 전투(NKM.decompiled.cs 6360~6390·6588~6620): 침묵이면 기본기,
+        아니면 궁극기 -> 특수기 -> 기본기 중 쿨이 찼고 규칙 행(data/auto_skill.json)의 조건이 맞고 대상이 있는 첫 스킬.
+        다 안 되면 기본기(조건 무시). auto_skill=off 는 옛 동작(쿨만 보고, 침묵이면 쿨 있는 스킬만 건너뜀)."""
         silenced = u.has('침묵')
+        table = self.mc['auto_skill'] == 'data'
+        if silenced and table:
+            return u.d.skills.get('기본기'), None
+        specs = {}
+        if table and u.side == 0:
+            # 개화 변형(key@...)은 규칙이 기본 키에 있다(비공개 표에서 변형 스킬도 같은 AutoSkillId 확인)
+            rules = auto_skill_rules()
+            specs = rules.get(u.key) or rules.get(u.key.split('@')[0], {})
         for slot in ('궁극기', '특수기', '기본기'):
             sk = u.d.skills.get(slot)
             if sk is None or u.cd.get(slot, 0) > 0:
                 continue
             if silenced and sk.cd:
                 continue
-            return sk
-        return u.d.skills.get('기본기')
+            spec = specs.get(slot)
+            if spec is None or spec.get('react'):
+                return sk, None
+            for row in spec['rows']:
+                if all(self.auto_cond_ok(u, c) for c in row['c']):
+                    if spec['t'] != 'ally_one':
+                        return sk, None
+                    v = self.auto_pick_ally(u, row['f'])
+                    if v is not None:
+                        return sk, v
+                    break
+        return u.d.skills.get('기본기'), None
+
+    def auto_cond_ok(self, u, c):
+        if c[0] == 'ally_hp_le_bp':
+            return any(int(v.hp / v.maxhp * 10000) <= c[1] for v in self.alive(u.side))
+        if c[0] == 'ally_dead':
+            return any(v.dead for v in self.side_units(u.side))
+        if c[0] == 'self_stack_eq':
+            return u.stack(c[1]) == c[2]
+        raise ValueError('auto_skill 조건 미지원: %r' % (c,))
+
+    def auto_pick_ally(self, u, steps):
+        """아군 단일 스킬의 주 대상(게임 대상 필터). 후보 = 살아 있는 아군, dead_ally 는 마지막으로 쓰러진 아군으로 바꾼다."""
+        pool = self.alive(u.side)
+        if not pool:
+            return None
+        return self.filter_pick(u, pool, steps)
+
+    def filter_pick(self, att, pool, steps):
+        """게임 대상 필터 사슬(NKM.decompiled.cs 6500~6536): 차례로 거르고, 결과가 0명이면 목록 유지, 1명이 되면 멈춤, 끝에 여럿이면 무작위.
+        확률 필터((이름, p))는 주사위가 성공할 때만 거른다. 무적(not_invincible)은 엔진에 무적 상태가 없어 거르지 않는다."""
+        rng = self.R(att.side)
+        for st in steps:
+            if isinstance(st, tuple):
+                st, p = st
+                if rng.random() >= p:
+                    continue
+            got = self._filter(att, pool, st)
+            if got:
+                pool = got
+                if len(pool) == 1:
+                    return pool[0]
+        return pool[0] if len(pool) == 1 else rng.choice(pool)
+
+    def _filter(self, att, pool, st):
+        if st == 'not_invincible':
+            return None
+        if st == 'boss':
+            return [v for v in pool if getattr(v.d, 'boss', False)]
+        if st == 'elite':
+            return [v for v in pool if getattr(v.d, 'grade', '') == '정예']
+        if st == 'advantage':
+            good = [v for v in pool if att.element and ELEM_BEATS.get(att.element) == v.element]
+            return good or [v for v in pool if not (att.element and ELEM_BEATS.get(v.element) == att.element)]
+        if st in ('low_hp_rate', 'low_max_hp'):
+            key = (lambda v: int(v.hp / v.maxhp * 10000)) if st == 'low_hp_rate' else (lambda v: v.maxhp)
+            best = min(key(v) for v in pool)
+            return [v for v in pool if key(v) == best]
+        if st == 'not_self':
+            return [v for v in pool if v is not att]
+        if st == 'dead_ally':
+            dead = [v for v in self.side_units(att.side) if v.dead]
+            return [max(dead, key=lambda v: getattr(v, 'death_n', 0))] if dead else None
+        if st == 'front':
+            return [v for v in pool if v.pos < 2]
+        if st == 'defender':
+            return [v for v in pool if v.role == '디펜더']
+        raise ValueError('auto_skill 필터 미지원: %r' % (st,))
 
     # ---------- 대상
     def targetable(self, side):
@@ -891,15 +992,22 @@ class Battle:
         if not pool:
             return None
         if att.side == 0:
-            # 구원자 오토: boss_first = 살아 있는 보스가 있으면 보스(사용자 관찰 2026-10-20), 그다음 보호막+HP 합 최저(같으면 앞 칸)
+            # 구원자 오토: table = 게임 규칙 1(보스 -> 정예 -> 유리 속성 -> 생명력 비율 최저 -> 최대 생명력 최저 -> 무작위)
+            if self.mc['ally_auto_target'] == 'table':
+                return self.filter_pick(att, pool, RULE1)
+            # boss_first = 살아 있는 보스가 있으면 보스(사용자 관찰 2026-10-20), 그다음 보호막+HP 합 최저(같으면 앞 칸)
             if self.mc['ally_auto_target'] == 'boss_first':
                 bosses = [v for v in pool if getattr(v.d, 'boss', False)]
                 if bosses:
                     pool = bosses
             return min(pool, key=lambda v: (v.hp + v.shield_total(), v.pos))
-        if sk is not None:
-            pool = self.ranked_enemies(skill_desc(att.d, sk.slot), pool, priority=True) or pool
-        return self.weighted_pick(pool)
+        ranked = self.ranked_enemies(skill_desc(att.d, sk.slot), pool, priority=True) if sk is not None else None
+        if self.mc['enemy_auto_target'] == 'table':
+            # 설명문 「~가 가장 높은 적 우선」 = 그 스킬 고유 규칙의 근사(게임은 고유 규칙이 있으면 1001 을 안 씀) -> 동률은 무작위
+            if ranked:
+                return ranked[0] if len(ranked) == 1 else self.R(att.side).choice(ranked)
+            return self.filter_pick(att, pool, RULE1001)
+        return self.weighted_pick(ranked or pool)
 
     def R(self, side):
         """결정 주체 쪽(side 0 아군·1 적)의 난수. 공통 난수가 꺼져 있으면 하나뿐인 self.rng"""
@@ -1647,6 +1755,8 @@ class Battle:
         v.hp = 0.0
         v.dead = True
         v.death_t = self.t
+        self.death_seq += 1
+        v.death_n = self.death_seq   # 사망 순서(같은 틱의 광역 사망도 구분 — 게임 사망 목록의 추가 순서)
         if v.side == 0 and self.first_death is None:
             self.first_death = v
         self.log(death=v.name)

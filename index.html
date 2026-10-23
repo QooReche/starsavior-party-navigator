@@ -792,7 +792,9 @@ function jointPick(c,st,own,defPen){if((c.parties||1)!==2)return null;const qi=q
  const rsEl=(CFG.restrict[c.name]||{})[st.tab];
  const c0=R.filter(s=>own.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
  if(c0.length<8)return null;
- const top=[],seen=new Set();for(const t of quickRank(c0,defPen,qi)){const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);top.push(t);if(top.length>=80)break}
+ const top=[],seen=new Set(),qr=quickRank(c0,defPen,qi);for(const t of qr){const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);top.push(t);if(top.length>=80)break}
+ // 상위 80팀이 모두 같은 구원자를 품으면(예: 코스모 길레 2단계 — 힐데·아세라) 짝이 없다 -> 1위와 겹치지 않는 상위 팀을 80개까지 더 넣는다
+ if(top.length){let n=0;for(const t of qr){if(n>=80)break;const k=t.keys.slice().sort().join(",");if(seen.has(k)||t.keys.some(x=>top[0].keys.includes(x)))continue;seen.add(k);top.push(t);n++}}
  let best=null;const sc=new Map(top.map(t=>[t,qScore(t,st,qi)])),vo=new Map(top.map(t=>[t,QO[qVd(t,st)]]));
  for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++){const a=top[i],b=top[j];if(a.keys.some(k=>b.keys.includes(k)))continue;
   const sa=sc.get(a),sb=sc.get(b),key=[Math.min(vo.get(a),vo.get(b)),vo.get(a)+vo.get(b),Math.min(sa,sb),a.v+b.v];
