@@ -248,6 +248,18 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
     per_battle = []     # 판별 결과·전체 행동 수·보스 남은 생명력·먼저 쓰러진 구원자(분포 판정용)
 
     class MeasuredBattle(api.Battle):
+        def apply_damage(self, a, v, dmg, kind, shieldable=True):
+            # 넘친 피해(오버킬): 엔진 집계(dmg·taken)는 빼지만 게임 결과 화면은 넣는다(18x2-b 준 피해 = 보스 HP + 8,875).
+            # 집계 의미는 그대로 두고 대조용으로만 따로 센다
+            if v.dead or dmg <= 0:
+                return super().apply_damage(a, v, dmg, kind, shieldable)
+            hp0, sh0 = v.hp, sum(e.shield for e in v.eff.values())
+            died = super().apply_damage(a, v, dmg, kind, shieldable)
+            if died:
+                over = max(0.0, dmg - (sh0 - sum(e.shield for e in v.eff.values())) - hp0)
+                measured['overkill_taken' if v.side == 0 else 'overkill_dealt'] += over
+            return died
+
         def act(self, u):
             r = super().act(u)
             order = self.__dict__.setdefault('_down', [])
@@ -276,6 +288,7 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
     d = sum(v['dmg'] for v in r['per_unit'].values())
     t = sum(v['dmg_taken'] for v in r['per_unit'].values())
     acts = measured['ally'] / runs
+    ok_d, ok_t = measured['overkill_dealt'] / runs, measured['overkill_taken'] / runs
     return dict(stage=name, runs=runs, seed=seed, real_ratio=round(dealt / taken, 2), sim_ratio=round(d / max(1.0, t), 2), sim_clear=r['outcome']['clear_p'],
                 **turn_comparison(dealt, taken, turn, d, t, acts, measured['enemy'] / runs),
                 real=res, real_turn=turn, real_extra=REAL_EXTRA.get(name), sim_ally_actions=round(acts, 1), foe_breaks=r['breaks']['foe'], ally_breaks=r['breaks']['ally'],
@@ -287,7 +300,11 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
                 break_skill=r['break_skill'], nova_policy=opt['rules_override']['nova_policy'],
                 nova_burst=r['nova_burst'], heal=sum(v['heal'] for v in r['per_unit'].values()),
                 healing={nm: dict(heal=v['heal'], shield=v['shield']) for nm, v in r['per_unit'].items()},
-                dist=distribution(per_battle, res, turn))
+                dist=distribution(per_battle, res, turn),
+                # 오버킬 포함 대조(게임 결과 화면 기준). 받은 피해 쪽 포함은 준 피해 쪽 증거에서의 대칭 가정(assumed)
+                sim_overkill_dealt=round(ok_d), sim_overkill_taken=round(ok_t),
+                dealt_ratio_with_overkill=round((d + ok_d) / dealt, 3) if dealt else None,
+                taken_ratio_with_overkill=round((t + ok_t) / taken, 3) if taken else None)
 
 
 def _q(xs, ps=(0.1, 0.5, 0.9)):
