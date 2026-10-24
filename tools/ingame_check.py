@@ -84,7 +84,18 @@ SAMPLES = {
     # 판 B: 패배(전멸), TURN 42, 달성도 91%, 보스 HP 4,310 남김(T36·39 확인). 준 / 받은 / 회복: 프로페서M 178,234/73,878/0 · 클레어 217,700/87,792/0 · 카르멘 33,543/176,014/226,273 · 페이 188,607/208,486/28,289
     # 쓰러진 순서(추정): 프로페서M T23~24 -> 클레어 T29~30 -> 카르멘 T34~36 -> 페이 T42. 1웨이브 잔상의 감시자 T6 부근 처치
     'corr-b': ('clo', '달 회랑|FLOOR 355', ['professor-m', 'wedding-carmen', 'fei', 'claire'], 'professor-m', 394126, 0, 618084, 546170, 42, 'fail'),
+    # 2026-10-24 영상 판독(성간 회랑 FLOOR 440 Lv3254, 권장 506,820, 오토, 전원 Lv.344, 재점화 0): 그웬(후, gwen)·힐데(전, hilde)·아모라(전, amora)·프로페서M(후, 리더), 팀 전투력 408,032
+    # 브레이크 스킬 스타피어서 Lv3(배너 은발 남성 Lv.3, 아이콘 대조는 불확실). 보스 공허말살자, 1웨이브 처치 후 2웨이브(보스 HP 527,926 시작)
+    # 판 A: 패배(전멸), TURN 41, 달성도 81%, 보스 약 15% 남김(수치 미확인, 판독 근사). 준 / 받은 / 회복: 힐데 26,685/208,389/28,404 · 그웬 242,397/76,185/0 · 아모라 309,536/77,941/0 · 프로페서M 222,401/73,492/0
+    # 1웨이브 T16 처치. 4명 모두 T41 보스 「전장 파괴」 직후 전멸(개별 사망 순서·시점 불확실). 4초 간격 샘플이라 스킬 횟수·브레이크 스킬 발동은 확인 못 함
+    'corr440-a': ('clo', '성간 회랑|FLOOR 440', ['gwen', 'hilde', 'amora', 'professor-m'], 'professor-m', 408032, 0, 801019, 436007, 41, 'fail'),
+    # 판 B: 패배(전멸), TURN 44, 달성도 89%, 보스 잔여 HP 50,861. 준 / 받은 / 회복: 힐데 30,477/238,845/66,276 · 그웬 226,601/81,609/0 · 아모라 440,690/71,897/0 · 프로페서M 191,469/84,966/0
+    # 1웨이브 T12 처치. T43 까지 4명 생존, 3명(그웬·프로페서M·힐데)이 T43~44 경계에 동시 사망 추정, 아모라가 마지막. 개별 순서 불확실
+    'corr440-b': ('clo', '성간 회랑|FLOOR 440', ['gwen', 'hilde', 'amora', 'professor-m'], 'professor-m', 408032, 0, 889237, 477317, 44, 'fail'),
 }
+# 보스 잔여 HP·달성도 같은 부가 실측: SAMPLES 튜플에는 못 넣고(형식 고정) 여기에 둔다 — 도구가 출력에 real_extra 로 붙인다
+REAL_EXTRA = {'corr440-a': dict(achieve=0.81, boss_left_frac=0.15, heal=28404, boss_hp_start=527926),
+              'corr440-b': dict(achieve=0.89, boss_left_hp=50861, heal=66276, boss_hp_start=527926)}
 # 2026-10-21 사용자 확인: 36-36만 오토 선택 + 회복용 수동 버스트, 37구역은 순수 오토.
 # 10/22 패치로 밸런스가 바뀐 스테이지의 패치 전 실측 — 지금 시뮬을 판정하는 근거로 쓰지 않는다(사용자 지시 2026-10-23).
 # 기본 실행에서 빼고 --include-old 나 --only 로 부를 때만 돌린다. 적 수치가 그대로인 37-2~37-5(10/21)는 유효.
@@ -92,7 +103,8 @@ PRE_PATCH = {'36-36': '10/22 패치로 보스 공허순례자 공격력 46,880 -
 # 샘플별 실제 장착 브레이크 스킬 (이름, 레벨) — 2026-10-23 정정. 37-36 = 행성 정화 Lv3(편성 화면·배너 아이콘 확인),
 # 17x = 큐브 과부하 Lv5(사이트 추천, 장착 확실·레벨은 내 정보 보유값). 나머지는 미확인이라 지정 안 함.
 BS_REAL = {'37-36r': ('행성 정화', 3), '37-36r2': ('행성 정화', 3), '17x-a': ('큐브 과부하', 5), '17x-b': ('큐브 과부하', 5),
-           '18x-a': ('큐브 과부하', 5), '18x-b': ('큐브 과부하', 5), 'corr-a': ('스타피어서', 3), 'corr-b': ('스타피어서', 3)}
+           '18x-a': ('큐브 과부하', 5), '18x-b': ('큐브 과부하', 5), 'corr-a': ('스타피어서', 3), 'corr-b': ('스타피어서', 3),
+           'corr440-a': ('스타피어서', 3), 'corr440-b': ('스타피어서', 3)}
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
 from tools.runtime import low_priority
@@ -219,7 +231,7 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
     acts = measured['ally'] / runs
     return dict(stage=name, runs=runs, seed=seed, real_ratio=round(dealt / taken, 2), sim_ratio=round(d / max(1.0, t), 2), sim_clear=r['outcome']['clear_p'],
                 **turn_comparison(dealt, taken, turn, d, t, acts, measured['enemy'] / runs),
-                real=res, real_turn=turn, sim_ally_actions=round(acts, 1), foe_breaks=r['breaks']['foe'], ally_breaks=r['breaks']['ally'],
+                real=res, real_turn=turn, real_extra=REAL_EXTRA.get(name), sim_ally_actions=round(acts, 1), foe_breaks=r['breaks']['foe'], ally_breaks=r['breaks']['ally'],
                 sim_boss_actions=round(measured['boss'] / runs, 2), sim_enemy_actions=round(measured['enemy'] / runs, 2),
                 enemy_skills={k: {s: round(n / runs, 3) for s, n in v.items()} for k, v in enemy_skills.items()},
                 sim_dealt=d, sim_taken=t, party_power=r['party']['power'], myinfo=diagnostics,
