@@ -237,7 +237,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 .fixname{color:var(--mut)}.fixname::before{content:"대처: ";font-size:11px}.fixwho{display:inline-flex;flex-wrap:wrap;gap:4px}
 .gimwho{display:inline-flex;align-items:center;gap:4px;padding:1px 8px 1px 2px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--fg);font-weight:600}
 .gimwho .face{width:20px;height:20px;border-width:1px;font-size:11px}
-.nobody{color:var(--bad)}.nobody::before{content:"✗ "}
+.guess{margin-left:4px;padding:0 5px;border:1px dashed var(--mut);border-radius:8px;font-size:10px;color:var(--mut)}.nobody{color:var(--bad)}.nobody::before{content:"✗ "}
 .gimq{display:inline-block;margin-left:4px;width:15px;height:15px;line-height:15px;text-align:center;border:1px solid var(--mut);border-radius:50%;font-size:10px;font-weight:700;color:var(--mut);cursor:help;vertical-align:middle}
 .gimbox.has-miss{border-left-color:var(--bad)}.gimbox>summary{font-weight:600}
 .bbar{gap:8px;padding:7px 10px;margin-top:8px;border-width:1px;border-radius:8px;flex-direction:row;text-align:left}
@@ -316,7 +316,7 @@ summary{padding:9px 4px}
 </style></head><body><main>
 <h1>파티 편성 네비게이터 <small style="color:var(--bad)">베타</small></h1>
 <p class="sub">가진 구원자로 이 스테이지를 깰 파티를 찾습니다</p>
-<p class="notice" data-k="notice">📢 10/23 업데이트 · 게임 빌드 26105710 대응 · 브레이크 스킬 5종 반영, 혹한의 습격·성간 회랑 판정 정정 · 회랑 400층 넘는 층도 선택 가능</p>
+<p class="notice" data-k="notice">📢 10/24 업데이트 · 시뮬 남은 시간 표시, 느린 PC 에서 시간 초과로 끊기던 문제 개선 · 스테이지 특징 설명을 쉬운 말로 · 회랑 400층 넘는 층도 선택 가능</p>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천 파티</button><button id="tab-info" type="button" aria-pressed="false">내 정보</button><span class="tabsp"></span><span id="mi-chip" class="mi-chip"></span><button id="mi-open" type="button" class="sec">내 계정 정보 불러오기</button><button id="share-link" type="button" class="sec" aria-live="polite" title="조건과 내 정보(구원자 수치)를 담은 링크 — 받은 사람이 같은 정보로 추천을 볼 수 있음">링크 복사</button><label class="mi-use" title="끄면 조건만 담고 내 정보는 넣지 않음"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></nav>
 <div id="shared-bar" class="shared-bar" hidden></div>
 <div class="panel input-panel">
@@ -535,13 +535,13 @@ function gimNote(party,c,st,p){
  // 기믹 하나 = 블록 하나: 첫 줄 「무슨 일이 일어나는지」, 아래 대처 방법마다 한 줄(방법 이름 + 가능한 우리 팀 구원자 칩 / 없으면 「대처할 구원자 없음」)
  const rows=types.map(([code,sev])=>{const t=D.grules[code],slots=t?.slots||[],pl=PL.gimmicks?.[code];
   const holders=tags=>party.filter(x=>(x.s.gt||[]).some(tag=>tags.includes(tag)));
-  const fixLine=(i,name,tip,who,guess)=>`<div class="gimfix${i==null?"":" gimslot"} ${who.length?"ok":"none"}"${i==null?"":` data-slot="${i}"`}><span class="fixname" title="${esc(tip)}">${esc(name)}${guess?q("슬롯 없이 성향만으로 추정한 대처입니다."):""}</span><span class="fixwho">${who.length?who.map(x=>`<span class="gimwho" data-savior="${esc(x.s.key)}">${face(x.s)}${esc(x.s.name)}</span>`).join(""):`<b class="nobody">대처할 구원자 없음</b>`}</span></div>`;
+  const fixLine=(i,name,tip,who,guess)=>`<div class="gimfix${i==null?"":" gimslot"} ${who.length?"ok":"none"}"${i==null?"":` data-slot="${i}"`}><span class="fixname" title="${esc(tip)}">${esc(name)}${guess?`<span class="guess">추정</span>${q(guess)}`:""}</span><span class="fixwho">${who.length?who.map(x=>`<span class="gimwho" data-savior="${esc(x.s.key)}">${face(x.s)}${esc(x.s.name)}</span>`).join(""):`<b class="nobody">대처할 구원자 없음</b>`}</span></div>`;
   let lines;
-  if(slots.length)lines=slots.map((sl,i)=>{const p=PL.fixes?.[sl.name];return fixLine(i,p?.name||sl.name,(p?.tip||"")+(p?` (원래 이름: ${sl.name})`:""),holders(sl.tags_any))});
+  if(slots.length)lines=slots.map((sl,i)=>{const p=PL.fixes?.[sl.name];return fixLine(i,p?.name||sl.name,(p?.tip||"")+(p?` (원래 이름: ${sl.name})`:""),holders(sl.tags_any),p?.guess)});
   else{const fix=GFIX[code]||"대응 미확인",tags=t?.prefer||[];
    if(fix==="대응 미확인"||!tags.length)return "";
    const plain=fix.replace(/\*/g,""),p=PL.gfix?.[plain];
-   lines=[fixLine(null,p?.name||plain,(p?.tip||"")+(p?` (원래 이름: ${plain})`:""),holders(tags),fix.includes("*"))]}
+   lines=[fixLine(null,p?.name||plain,(p?.tip||"")+(p?` (원래 이름: ${plain})`:""),holders(tags),fix.includes("*")&&"슬롯 없이 성향만으로 추정한 대처입니다.")]}
   const tech=t?.name||code;
   return `<div class="gimrow" data-code="${esc(code)}" data-severity="${sev}"><div class="gimwhat" title="원래 이름: ${esc(tech)}">${esc(pl?.what||tech)}${t?.conf==="추정"?q("스킬 문구로 영향을 추정한 항목이라 실제와 다를 수 있습니다."):""}</div>${lines.join("")}</div>`}).filter(Boolean);
  const bosses=(st.bn||[]).map(([i,count])=>({name:D.bosses[i][0],role:D.bosses[i][1],count})),mobs=Math.max(0,st.n-bosses.reduce((n,b)=>n+b.count,0));
@@ -550,7 +550,7 @@ function gimNote(party,c,st,p){
  const rs=(CFG.restrict[c.name]||{})[st.tab];
  const missing=rows.filter(row=>row.includes('class="nobody"'));
  const chips=missing.map(row=>`<span class="tag">${esc(PL.gimmicks?.[row.match(/data-code="(\w+)"/)?.[1]]?.name||"특징")}: 대처할 구원자 없음</span>`).join("");
- const title=!rows.length?"이 스테이지의 특징 정보 없음":missing.length?`이 스테이지의 특징 ${rows.length}개 중 ${missing.length}개는 우리 팀이 대처하기 어려움`:`이 스테이지의 특징 ${rows.length}개 모두 대처 가능`;
+ const title=!rows.length?"이 스테이지의 특징 정보 없음":missing.length?`이 스테이지의 특징 ${rows.length}개 중 ${missing.length}개는 우리 팀이 대처하기 어려움`:`이 스테이지의 특징 ${rows.length}개 모두 대처할 구원자 있음`;
  const hint=rows.length?`<p class="gimhint">윗줄은 적에게 일어나는 일, 아랫줄은 그 대처 방법과 우리 팀에서 할 수 있는 구원자입니다. ${q("? 표시는 스킬 문구로 추정한 항목입니다. 줄에 마우스를 올리면 원래 용어가 보입니다.")}</p>`:"";
  return `${chips?`<div class="gim-missing">${chips}</div>`:""}<details class="gimbox${missing.length?" has-miss":""}" data-fold="gim-${p}"><summary>${title}</summary><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}${rs?` · ${EL[rs]}만 편성`:""}${sbText(st)}</div><div class="gimlist">${hint}${rows.join("")||"기믹 정보 없음"}</div></div></details>`}
 
@@ -747,7 +747,7 @@ function breakCompareView(br,p,t,st){
  const all=rows.every(x=>!x.supported||x.result);
  if(BRCMP.open[p]!==key&&!all)return "";
  const best=all?breakBest(rows):undefined,busy=SIMQ.busy===p&&SIMQ.compareKey===key;
- const state=busy?`<div class="bcstate"><span class="mut" data-k="breakstate" role="status">${esc(SIMQ.msg)}</span><button type="button" class="sec" data-simcancel="1">취소</button></div>`:
+ const state=busy?`<div class="bcstate"><span class="mut" data-k="breakstate" role="status">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span><button type="button" class="sec" data-simcancel="1">취소</button></div>`:
   SIMQ.err&&SIMQ.errCompare===key?`<div class="bcstate bad">${esc(SIMQ.err)}</div>`:"";
  return `<div class="bcompare" aria-label="브레이크 스킬 비교">${state}${rows.map(x=>{const m=breakMetric(x.result),current=(x.name||"")===br.name;
   return `<div class="bcrow" data-bname="${esc(x.name||"")}"><span class="bcvalue"${m&&x.supported?` data-sim="${simCls({clear:m.clear})}"`:""}>${esc(x.name||"장착 안 함")} · ${!x.supported?"시뮬 미반영":m?`클리어 ${Math.round(m.clear*100)}% · 약 ${m.turn==null?"—":Math.round(m.turn*10)/10}턴`:"대기"}${best!==undefined&&best===x.name?' <span class="bschip">최고</span>':""}${current?' <span class="mut">장착 중</span>':""}</span><button type="button" class="sec" data-bequip="${esc(x.name||"")}" data-bkey="${esc(br.key)}"${current?" disabled":""}>장착</button></div>`}).join("")}</div>`}
@@ -768,13 +768,13 @@ function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
 function simBar(p,rows,st,hasMore){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
- const st8=SIMQ.busy===p&&!SIMQ.compareKey?`<span class="mut" data-k="simstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
+ const st8=SIMQ.busy===p&&!SIMQ.compareKey?`<span class="mut" data-k="simstate">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
   SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`<span class="bad" data-k="simstate">시뮬 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
   all?`<span class="mut" data-k="simstate" title="${counts}판">시뮬 완료</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">다시 시뮬</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">다시 시뮬</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
-function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;SIMQ.screening=false;if(SIMQ.pool){for(const w of SIMQ.pool.slice(1))w&&w.terminate();SIMQ.pool=null}for(const k in SIMQ.scr)if(!SIMQ.scr[k].done)delete SIMQ.scr[k];if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.busy=null;SIMQ.compareKey=null}
-function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=msg;SIMQ.err=/취소|중단/.test(msg)?"중단함":/시간 초과/.test(msg)?"시간 초과 · 다시 시도해 주세요":"자료를 불러오지 못했습니다. 다시 시도해 주세요";SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
+function simInvalidate(){SIMQ.requestId=(SIMQ.requestId||0)+1;SIMQ.screening=false;if(SIMQ.pool){for(const w of SIMQ.pool.slice(1))w&&w.terminate();SIMQ.pool=null}for(const k in SIMQ.scr)if(!SIMQ.scr[k].done)delete SIMQ.scr[k];if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
+function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=msg;SIMQ.err=/취소|중단/.test(msg)?"중단함":/엔진 준비 시간 초과/.test(msg)?"계산 엔진 준비가 오래 걸려 멈췄어요 · 네트워크를 확인하고 다시 시도해 주세요":/시간 초과/.test(msg)?"계산이 오래 걸려 멈췄어요 · 다시 시도하면 끝난 팀은 이어서 계산해요":"자료를 불러오지 못했습니다. 다시 시도해 주세요";SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simAutoKick(){if(!simAutoOn()||SIMQ.busy!=null||(miMode()&&MI.pending))return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
  for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done){setTimeout(()=>{if(simScreen(p)===false)run()},0);return}if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){setTimeout(()=>simStart(p),0);return}
@@ -786,15 +786,32 @@ function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("c
  SIMQ.err="";SIMQ.errCompare=null;SIMQ.busy=p;SIMQ.compareKey=compareKey;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
  if(!SIMQ.w){SIMQ.w=new Worker("sim_worker.js");SIMQ.loaded=false}
  const id=SIMQ.requestId=(SIMQ.requestId||0)+1,sigs={};rows.forEach(j=>{sigs[j.key]=j.sig});
- const arm=ms=>{clearTimeout(SIMQ.timer);SIMQ.timer=setTimeout(()=>simStop(ms===SIMQ.LOAD_MS?"엔진 내려받기 시간 초과(네트워크 확인)":"시뮬 시간 초과"),ms)};
- arm(SIMQ.loaded?SIMQ.RUN_MS:SIMQ.LOAD_MS);
+ // 시간 상한은 «마지막 진행 뒤» 기준: 팀이 시작·끝날 때마다 다시 잰다(느린 기기라도 진행 중이면 끊지 않음).
+ // 엔진 준비 전 = LOAD_MS, 준비 뒤 = 팀 하나 상한(simTeamLimit: 이 기기에서 잰 속도의 3배, 최소 RUN_MS)
+ // 수동 모드는 팀마다 자동+수동 서순을 돌려 오래 걸리므로 속도를 모드별로 따로 잰다
+ const md=MODE;let lastProg=Date.now(),teamT0=0;
+ const lim=()=>SIMQ.loaded?simTeamLimit(runs,md):SIMQ.LOAD_MS;
+ const arm=()=>{clearTimeout(SIMQ.timer);const wait=Math.max(1000,lim()-(Date.now()-lastProg)),due=Date.now()+wait;
+  SIMQ.timer=setTimeout(()=>{if(SIMQ.requestId!==id)return;
+  // 가려진 탭이거나, 타이머가 예정보다 크게 늦게 돌았으면(탭 동결·절전에서 복귀) 그동안은 계산이 멈췄던 것이라 실패로 끝내지 않고 다시 잰다
+  if((typeof document!=="undefined"&&document.hidden)||Date.now()-due>5000){if(Date.now()-due>5000)teamT0=0;lastProg=Date.now();arm();return}   // 멈춘 동안 잰 팀 시간은 속도 표본에서 뺀다
+  if(Date.now()-lastProg<lim()){arm();return}
+  simStop(SIMQ.loaded?"시뮬 시간 초과":"엔진 준비 시간 초과")},wait)};
+ const eta=()=>{const left=rows.filter(j=>!SIMQ.res[j.sig]).length,r=simRate(md);
+  const done=rows.filter(j=>SIMQ.res[j.sig]),more=!jobs&&box.total>box.rows.length&&box.rows.length<9&&done.length&&done.every(j=>simMain(SIMQ.res[j.sig]).clear<0.5)?Math.ceil((Math.min(9,box.total)-box.rows.length)/3):0;
+  SIMQ.eta=r&&SIMQ.loaded?Date.now()+Math.max(0,left*runs*r-(teamT0?Date.now()-teamT0:0))+(SIMQ.runMs||0)+more*simBatchMs(runs,r):null};
+ SIMQ.eta=null;arm();
  SIMQ.w.onmessage=e=>{const m=e.data;
   if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
-  if(m.type==="stage"){SIMQ.msg=compareKey?"스킬별 확인 중":`상위 팀 확인 중 ${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}`;if(m.msg==="준비 끝"){SIMQ.loaded=true;arm(SIMQ.RUN_MS)}const el=document.querySelector(`.party[data-party="${p}"] [data-k="${compareKey?"breakstate":"simstate"}"]`);if(el){el.title=m.msg;el.textContent=SIMQ.msg;}return}
-  if(m.type==="team"){if(Object.hasOwn(sigs,m.key)){SIMQ.res[sigs[m.key]]=m.result;
+  if(m.type==="stage"){SIMQ.msg=compareKey?"스킬별 확인 중":`상위 팀 확인 중 ${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}`;
+   if(m.id===id)lastProg=Date.now();
+   if(m.msg==="준비 끝"){SIMQ.loaded=true;lastProg=Date.now();arm()}
+   if(/^시뮬 \d+\//.test(m.msg||"")){teamT0=lastProg=Date.now();eta()}const el=document.querySelector(`.party[data-party="${p}"] [data-k="${compareKey?"breakstate":"simstate"}"]`);if(el){el.title=m.msg;el.textContent=SIMQ.msg;}return}
+  if(m.type==="team"){lastProg=Date.now();if(teamT0)simRateAdd((lastProg-teamT0)/runs,md);teamT0=0;
+   if(Object.hasOwn(sigs,m.key)){SIMQ.res[sigs[m.key]]=m.result;
     if(jobs&&!compareKey&&runs===300&&SIMQ.n===100){const parts=JSON.parse(sigs[m.key]);parts[4]=100;(SIMQ.refined??=new Set()).add(JSON.stringify(parts))}}
-   run(!!jobs);return}
-  if(m.type==="done"){clearTimeout(SIMQ.timer);SIMQ.busy=null;SIMQ.compareKey=null;run(!!jobs);return}
+   eta();if(!jobs&&simPaintProgress())return;run(!!jobs);return}
+  if(m.type==="done"){clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null;run(!!jobs);return}
   if(m.type==="error")simStop(m.msg)};
  SIMQ.w.onerror=e=>{if(SIMQ.requestId===id)simStop("작업자 오류: "+(e.message||"알 수 없음"))};
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
@@ -802,6 +819,23 @@ function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("c
   teams:rows.map(j=>({key:j.key,party:simParty(j.t),options:{break_skill:j.bname?{name:j.bname,level:brkLv(j.bname)}:null}}))};
  SIMQ.lastReq={req,sigs};SIMQ.w.postMessage(req);
  run(!!compareKey);return true}
+// 이 기기의 시뮬 속도(1판당 ms, 최근 값 쪽으로 평균). 예선·본선 팀이 끝날 때마다 갱신
+// 자동 = SIMQ.rate, 수동(자동+수동 서순) = SIMQ.rateM
+function simRateAdd(r,mode){if(!(r>0))return;const k=mode==="manual"?"rateM":mode==="scr"?"rateS":"rate";SIMQ[k]=SIMQ[k]?SIMQ[k]*0.5+r*0.5:r}
+function simRate(mode){return mode==="manual"?SIMQ.rateM:SIMQ.rate}
+// 화면 다시 계산(run) 한 번의 시간 — 저사양 기기에서는 이것도 길다
+// 본선 한 묶음(3팀) 예상 시간 = 계산 + 화면 다시 계산 2번
+function simBatchMs(runs,rate){return 3*runs*rate+2*(SIMQ.runMs||0)}
+function simRunAdd(ms){if(ms>=0)SIMQ.runMs=SIMQ.runMs?SIMQ.runMs*0.5+ms*0.5:ms}
+// 진행 화면이 떠 있으면 진행 칸만 다시 그린다(없으면 false — 호출한 쪽이 전체를 다시 그림)
+function simPaintProgress(){const pv=typeof document!=="undefined"&&document.querySelector('#out [data-k="progress"]');if(!pv)return false;
+ const st=cur&&cur[$("stage").value];if(!st)return false;pv.outerHTML=simProgress(st);return true}
+// 팀 하나의 시간 상한: 잰 속도로 예상한 시간의 3배(저사양 기기 배려), 최소 RUN_MS. 수동 속도를 아직 못 쟀으면 자동 속도의 4배로 어림
+function simTeamLimit(runs,mode){const r=simRate(mode)||(mode==="manual"&&SIMQ.rate?SIMQ.rate*4:0);return Math.max(SIMQ.RUN_MS,r?3*r*runs:0)}
+function fmtDur(ms){const s=Math.ceil(ms/1000);if(s<60)return s+"초";const m=Math.floor(s/60),r=Math.round((s%60)/10)*10;return r>=60?(m+1)+"분":m+"분"+(r?" "+r+"초":"")}
+function simEtaText(){if(SIMQ.busy==null)return "";if(!SIMQ.loaded)return "계산 엔진 준비 중(처음 한 번 · 기기·네트워크에 따라 1~3분)";
+ if(!SIMQ.eta)return "남은 시간 계산 중";const left=SIMQ.eta-Date.now();
+ return left<-30000?"예상보다 오래 걸리고 있어요 · 계산은 계속 진행 중이에요":left<5000?"곧 끝나요":`완료까지 약 ${fmtDur(left)}`+(left>120000?" · 이 기기에서는 오래 걸릴 수 있어요. 탭을 연 채로 기다려 주세요":"")}
 function simRefine(p,key){const st=cur&&cur[$("stage").value],t=LASTQ[p]?.rows.find(t=>ckey(t.combo)===key);if(!st||!t||SIMQ.busy)return;
  const r=SIMQ.res[simSig(st,t)],rate=r&&simMain(r).clear;if(!r||r.n>=300||rate<0.35||rate>0.65)return;
  const bname=teamBreak(t)?.name||null,sig=simSigB(st,t,bname,MODE,300);
@@ -878,12 +912,19 @@ function simScreen(p){const c=contents[$("content").value],st=cur&&cur[$("stage"
  // 작업자 여럿(scrPool)에 후보를 번갈아 나눠 맡기고, 모두 끝나면 다음 단계로. 0번이 엔진 준비를 알리면 예선 시간을 잰다
  const round=(i,keys)=>{const R=SCR_ROUNDS[i];sc.round=i;if(i>0)sc.up=new Set(keys);sc.left=keys.length;sc.got=0;{const pv=document.querySelector('[data-k="progress"]');if(pv)pv.outerHTML=simProgress(st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
   const ws=scrPool(),parts=ws.map(()=>[]);
+  // 남은 시간 = 예선 남은 몫(작업자 수로 나눔, SCR_MS 상한 안) + 본선(보이는 팀 수 × 본선 판 수, 작업자 1개)
+  // 본선 = 보이는 팀 수 × 판 수 × 본선 속도(모르면 예선 속도) + 화면 다시 계산 2번(예선 끝·본선 끝)
+  const scrEta=()=>{const rs=SIMQ.rateS;if(!rs||!sc.allReady){SIMQ.eta=null;return}const nw=ws.length,nx=SCR_ROUNDS[i+1];
+   let ms=(keys.length-(sc.got||0))*R.n*rs/nw+(nx?Math.min(nx.top,keys.length)*nx.n*rs/nw:0);
+   ms=Math.min(ms,Math.max(0,SCR_MS-(performance.now()-sc.t0)));
+   const ord=rank(),k=ord.findIndex(x=>sc.res[x].clear>=0.5),nb=Math.max(1,Math.min(k<0?3:Math.floor(k/3)+1,Math.ceil(Math.min(9,box.total||3)/3)));
+   SIMQ.eta=Date.now()+ms+nb*simBatchMs(SIMQ.n,simRate(MODE)||rs*(MODE==="manual"?4:1))};
   // 예선 시간은 작업자가 «모두» 엔진을 준비한 뒤부터 잰다(늦게 뜬 작업자 몫이 시간 초과로 통째로 빠지지 않게)
   const chk=()=>{if(!sc.allReady&&ws.every(x=>x._ready)){sc.allReady=true;SIMQ.loaded=true;sc.t0=performance.now();arm()}};keys.forEach((k,j)=>parts[j%ws.length].push(k));let open=parts.filter(x=>x.length).length;
   ws.forEach((w,j)=>{if(!parts[j].length)return;
    w.onmessage=e=>{const m=e.data;if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
-    if(m.type==="stage"){if(m.msg==="준비 끝"){w._ready=true;chk()}if(j)return;show(`후보 거르는 중 ${sc.got||0}/${keys.length}`);return}
-    if(m.type==="team"){sc.res[m.key]=Object.assign(m.result,{n:R.n});sc.got++;
+    if(m.type==="stage"){if(m.msg==="준비 끝"){w._ready=true;chk()}if(/^시뮬 \d+\//.test(m.msg||""))w._t=Date.now();if(j)return;show(`후보 거르는 중 ${sc.got||0}/${keys.length}`);return}
+    if(m.type==="team"){sc.res[m.key]=Object.assign(m.result,{n:R.n});sc.got++;if(w._t){simRateAdd((Date.now()-w._t)/R.n,"scr");w._t=0}scrEta();
      show(`후보 거르는 중 ${sc.got}/${keys.length}`);
      const bar=document.querySelector('[data-k="progress"] .pbar i');if(bar)bar.style.width=Math.round(sc.got/keys.length*100)+"%";return}
     if(m.type==="done"){if(--open>0)return;const nx=SCR_ROUNDS[i+1];if(nx){const top=rank().slice(0,nx.top);if(top.length>3){round(i+1,top);return}}finish();run();return}
@@ -893,7 +934,11 @@ function simScreen(p){const c=contents[$("content").value],st=cur&&cur[$("stage"
     teams:parts[j].map(key=>{const t=byKey.get(key),bn=teamBreak(t)?.name||null;return {key,party:simParty(t),options:{break_skill:bn?{name:bn,level:brkLv(bn)}:null}}})})})};
  // 엔진을 내려받는 동안은 내려받기 상한, 준비된 뒤에는 남은 예선 시간
  const arm=()=>{clearTimeout(SIMQ.timer);const left=sc.allReady?Math.max(1000,SCR_MS-(performance.now()-sc.t0)):SIMQ.LOAD_MS;
-  SIMQ.timer=setTimeout(()=>{if(!sc.allReady){simStop("엔진 내려받기 시간 초과(네트워크 확인)");return}finish(true);simInvalidate();run()},left)};
+  const due=performance.now()+left;
+  SIMQ.timer=setTimeout(()=>{const late=performance.now()-due;
+   // 예정보다 크게 늦게 돌았으면(탭 동결·절전 복귀) 멈춘 시간은 예선 시간에서 빼고, 그동안 잰 팀 시간은 속도 표본에서 버린다
+   if(late>5000){if(sc.allReady)sc.t0+=late;(SIMQ.pool||[SIMQ.w]).forEach(x=>{if(x)x._t=0});arm();return}
+   if(!sc.allReady){if(document.hidden){arm();return}simStop("엔진 준비 시간 초과");return}finish(true);simInvalidate();run()},left)};
  if(SIMQ.loaded&&SIMQ.w)SIMQ.w._ready=true;arm();round(0,[...pick.keys()]);
  return true}
 function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.busy!=null&&!SIMQ.compareKey)return true;
@@ -905,10 +950,12 @@ function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap
  const pct=all?Math.round(done/all*100):0;
  return `<div class="party progress" data-party="${p}" data-k="progress"><b>추천 편성 확인 중</b><div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
   <p><span data-k="simstate" title="후보 ${SCR_N}판 · 작업자 ${scrWorkers()}개">${sc?"후보 거르는 중":"상위 팀 확인 중"} ${done}/${all}</span></p>
-  <p class="mut">후보를 거른 뒤 상위 팀을 100판씩 시뮬합니다 · 약 30초~1분</p>
+  <p class="mut">후보를 거른 뒤 상위 팀을 100판씩 시뮬합니다</p><p data-k="eta">${esc(simEtaText())}</p>
   <button type="button" class="sec" data-simcancel="1">중단하고 결과 보기</button></div>`}
 
 function buildCands(ranked){return ranked.slice(0,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
+// 남은 시간 표시는 1초마다 다시 그린다(화면 전체를 다시 그리지 않고 글자만)
+setInterval(()=>{if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
 // 계산은 「추천 편성 보기」를 눌렀을 때만 한다(조건을 바꿀 때마다 계산·시뮬이 돌지 않게). 조건이 바뀌면 결과를 비우고 안내만 보인다.
 // 주소에 ?auto=1 이 있거나 공유 링크로 열면 예전처럼 바로 계산한다(자동 시험·링크 공유용).
 const AUTO=/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
@@ -920,7 +967,7 @@ function miGuide(){return `<div class="party guide" data-k="miguide"><h3>먼저 
  <div class="acts"><button type="button" data-miopen="1">내 계정 정보 불러오기</button></div></div>`}
 function showReco(){if(!MI.info){setDrawer(true);return}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
 function run(skipAuto=false){$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
- if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}runCore(skipAuto)}
+ if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);simRunAdd(Date.now()-t0)}
 function runCore(skipAuto=false){
  renderMi();
  const folds=new Map([...document.querySelectorAll("#out details[data-fold]")].map(d=>[d.dataset.fold,d.open]));
@@ -972,7 +1019,7 @@ function runCore(skipAuto=false){
  for(const p of Object.keys(BRCMP.open))if(!document.querySelector(`.party[data-party="${p}"] .bcompare`))delete BRCMP.open[p];
  // 비교가 도는 중 1안 팀이 바뀌어 비교 목록이 사라졌으면, 그 파티의 시뮬 줄에 진행 상태와 취소를 대신 보인다(멈춘 채 다른 시뮬이 막히지 않게)
  if(SIMQ.busy!=null&&SIMQ.compareKey&&!document.querySelector(`.party[data-party="${SIMQ.busy}"] [data-k="breakstate"]`)){const sb=document.querySelector(`.party[data-party="${SIMQ.busy}"] .simbar`)||document.querySelector("#out .simbar");
-  if(sb)sb.innerHTML=`<span class="mut" data-k="breakstate">${esc(SIMQ.msg)}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`}
+  if(sb)sb.innerHTML=`<span class="mut" data-k="breakstate">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`}
  document.querySelector('[data-controls="mode"]')?.append(MODE_CONTROLS);document.querySelector('[data-controls="score"]')?.append(SCORE_CONTROLS);document.querySelector('[data-controls="graph"]')?.append($("graphwrap"));
  document.querySelectorAll("#out details[data-fold]").forEach(d=>{if(folds.has(d.dataset.fold))d.open=folds.get(d.dataset.fold)});if(window.onParties)onParties(allParties)}
 $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-pick]");if(!b)return;const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st)return;
