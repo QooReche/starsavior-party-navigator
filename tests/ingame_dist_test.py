@@ -22,3 +22,31 @@ f = ic.distribution(B, 'fail', 55)
 assert f['same_result_runs'] == 2 and f['real_turn_pct'] == 0.5, f       # 실패 판 50·60 중 55 이하 1개
 assert ic.distribution([], 'clear', 10)['real_turn_pct'] is None
 print('PASS ingame_check.distribution')
+
+# 오버킬 집계: 보호막이 사망 정리로 지워져도 taken 증가분 기준, 브레이크(a=None) 오버킬은 준 피해 쪽에 넣지 않음
+from battlesim import api  # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, 'tests'))
+from p3_test import battle, give, unit  # noqa: E402
+from collections import defaultdict  # noqa: E402
+measured = defaultdict(float)
+
+
+class _B(api.Battle):
+    pass
+
+
+src = open(os.path.join(ROOT, 'tools', 'ingame_check.py'), encoding='utf-8').read()
+start = src.index('        def apply_damage(self, a, v, dmg, kind, **kw):')
+end = src.index('        def act(self, u):', start)
+ns = {'api': api, 'measured': measured}
+exec('class _M(api.Battle):\n' + src[start:end], ns)
+b = battle([unit('a', hp=100)], [unit('f', hp=100)])
+b.__class__ = ns['_M']
+ally, foe = b.allies[0], b.foes[0]
+e = give(ally, '보호막', dur=5)
+e.shield = 50.0
+b.apply_damage(foe, ally, 200, 'hit', shieldable=False)       # 보호막 무시 경로: HP 100 → 넘친 100
+assert round(measured['overkill_taken']) == 100, dict(measured)
+b.apply_damage(None, foe, 300, 'break')                        # 브레이크 피해(a=None)
+assert measured['overkill_dealt'] == 0, dict(measured)
+print('PASS ingame_check 오버킬 집계')

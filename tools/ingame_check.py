@@ -248,16 +248,20 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
     per_battle = []     # 판별 결과·전체 행동 수·보스 남은 생명력·먼저 쓰러진 구원자(분포 판정용)
 
     class MeasuredBattle(api.Battle):
-        def apply_damage(self, a, v, dmg, kind, shieldable=True):
+        def apply_damage(self, a, v, dmg, kind, **kw):
             # 넘친 피해(오버킬): 엔진 집계(dmg·taken)는 빼지만 게임 결과 화면은 넣는다(18x2-b 준 피해 = 보스 HP + 8,875).
-            # 집계 의미는 그대로 두고 대조용으로만 따로 센다
+            # 집계 의미는 그대로 두고 대조용으로만 따로 센다. 다른 감사 도구가 Battle.apply_damage 를 바꿔 끼우므로 인자는 그대로 넘긴다
             if v.dead or dmg <= 0:
-                return super().apply_damage(a, v, dmg, kind, shieldable)
-            hp0, sh0 = v.hp, sum(e.shield for e in v.eff.values())
-            died = super().apply_damage(a, v, dmg, kind, shieldable)
+                return super().apply_damage(a, v, dmg, kind, **kw)
+            taken0 = v.taken
+            died = super().apply_damage(a, v, dmg, kind, **kw)
             if died:
-                over = max(0.0, dmg - (sh0 - sum(e.shield for e in v.eff.values())) - hp0)
-                measured['overkill_taken' if v.side == 0 else 'overkill_dealt'] += over
+                # 넘친 양 = 들어온 피해 - 실제 집계 증가분(사망 정리로 지워지는 보호막에 영향받지 않게 taken 증가분으로)
+                over = max(0.0, dmg - (v.taken - taken0))
+                if v.side == 0:
+                    measured['overkill_taken'] += over          # 받은 피해 합(t)은 출처와 무관하게 v.taken 이라 전부
+                elif a is not None and a.side == 0:
+                    measured['overkill_dealt'] += over          # 준 피해 합(d)은 구원자 a.dmg 만(브레이크 피해 a=None 제외)
             return died
 
         def act(self, u):
