@@ -100,12 +100,21 @@ SAMPLES = {
     # 판 B: 패배(전멸), TURN 46, 달성도 69%, 보스 잔여 67,671(달성도와 불일치, 이유 미확인). 준 / 받은 / 회복: 에밀리 49,472/140,439/0 · 아모라 389,616/97,610/0 · 카르멘 44,870/296,424/234,055 · 프로페서M 235,796/261,919/0
     # 사망 순서: 에밀리 T19~22 -> 아모라 T35~40 -> 카르멘 T41 -> 프로페서M T46. 큐브 과부하 T26 직후 1회(오메가 프로토콜 +6,519x3), 보스 BREAK T27 1회(T41 배너는 판독 불확실)
     'op3736b-b': ('op', '모나스티르 광장|SECTOR 37-36', ['amora', 'wedding-carmen', 'emily', 'professor-m'], 'emily', 400989, 1, 719754, 796392, 46, 'fail'),
+    # 2026-10-24 09:53/09:57 영상 판독(같은 스테이지·같은 4명·같은 큐브 과부하 Lv6, 리더만 카르멘; 팀 전투력 401,457): 리더 카르멘(편성 화면 왕관 = 2번째 카드)
+    # 판 C1: 패배(전멸), TURN 39, 달성도 62%, 보스 잔여 약 137k('?' 연출 중 표시, 724,190 기준 약 19%). 준 / 받은 / 회복: 에밀리 36,556/119,611/0 · 아모라 327,182/173,984/0 · 카르멘 59,427/212,192/192,780 · 프로페서M 226,244/169,493/0
+    # 사망 순서(불확실): 에밀리 최초(T9~T27) -> 아모라 T33 추정 -> 카르멘 T37~38 추정 -> 프로페서M T39. 큐브 과부하 T27~28 1회(회복 6,503/6,531/6,531, 3명), 보스 브레이크 T27 1회(파랑), 수호의 기사 트리거 T17·T28. 2초 간격 샘플이라 시전 횟수는 최소치
+    'op3736c-a': ('op', '모나스티르 광장|SECTOR 37-36', ['amora', 'wedding-carmen', 'emily', 'professor-m'], 'wedding-carmen', 401457, 1, 649409, 675280, 39, 'fail'),
+    # 판 C2: 패배(전멸), TURN 44, 달성도 69%, 보스 잔여 109,749. 준 / 받은 / 회복: 에밀리 95,559/200,589/0 · 아모라 330,412/129,577/0 · 카르멘 52,361/223,496/195,778 · 프로페서M 243,082/248,048/0
+    # 사망 순서(불확실): 에밀리 T23~25 추정 -> 아모라 T32~33 추정 -> 카르멘/프로페서M 순서 불확실 -> T44 전멸. 큐브 과부하 T26 1회(회복 약 9,105~9,109 x4), 보스 브레이크 T25 1회(파랑), 에밀리 EXTRA TURN T7, 수호의 기사 T37(최소)
+    'op3736c-b': ('op', '모나스티르 광장|SECTOR 37-36', ['amora', 'wedding-carmen', 'emily', 'professor-m'], 'wedding-carmen', 401457, 1, 721414, 801710, 44, 'fail'),
 }
 # 보스 잔여 HP·달성도 같은 부가 실측: SAMPLES 튜플에는 못 넣고(형식 고정) 여기에 둔다 — 도구가 출력에 real_extra 로 붙인다
 REAL_EXTRA = {'corr440-a': dict(achieve=0.81, boss_left_frac=0.15, heal=28404, boss_hp_start=527926),
               'corr440-b': dict(achieve=0.89, boss_left_hp=50861, heal=66276, boss_hp_start=527926),
               'op3736b-a': dict(achieve=0.62, boss_left_hp=179496, heal=161915, boss_hp_start=724190, rekindle=1, boss_breaks=4, cube_overload_uses=1),
-              'op3736b-b': dict(achieve=0.69, boss_left_hp=67671, heal=234055, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1)}
+              'op3736b-b': dict(achieve=0.69, boss_left_hp=67671, heal=234055, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1),
+              'op3736c-a': dict(achieve=0.62, boss_left_hp=137334, heal=192780, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1),
+              'op3736c-b': dict(achieve=0.69, boss_left_hp=109749, heal=195778, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1)}
 # 2026-10-21 사용자 확인: 36-36만 오토 선택 + 회복용 수동 버스트, 37구역은 순수 오토.
 # 10/22 패치로 밸런스가 바뀐 스테이지의 패치 전 실측 — 지금 시뮬을 판정하는 근거로 쓰지 않는다(사용자 지시 2026-10-23).
 # 기본 실행에서 빼고 --include-old 나 --only 로 부를 때만 돌린다. 적 수치가 그대로인 37-2~37-5(10/21)는 유효.
@@ -115,7 +124,8 @@ PRE_PATCH = {'36-36': '10/22 패치로 보스 공허순례자 공격력 46,880 -
 BS_REAL = {'37-36r': ('행성 정화', 3), '37-36r2': ('행성 정화', 3), '17x-a': ('큐브 과부하', 5), '17x-b': ('큐브 과부하', 5),
            '18x-a': ('큐브 과부하', 5), '18x-b': ('큐브 과부하', 5), 'corr-a': ('스타피어서', 3), 'corr-b': ('스타피어서', 3),
            'corr440-a': ('스타피어서', 3), 'corr440-b': ('스타피어서', 3),
-           'op3736b-a': ('큐브 과부하', 6), 'op3736b-b': ('큐브 과부하', 6)}
+           'op3736b-a': ('큐브 과부하', 6), 'op3736b-b': ('큐브 과부하', 6),
+           'op3736c-a': ('큐브 과부하', 6), 'op3736c-b': ('큐브 과부하', 6)}
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
 from tools.runtime import low_priority
