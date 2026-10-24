@@ -26,6 +26,7 @@ from tools.runtime import static_path, low_priority   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 
 SLOTS = ('기본기', '특수기', '궁극기', '패시브')
+NSI = {'NSI_SKILL_1_ATTACK': '기본기', 'NSI_SKILL_2_SPECIAL': '특수기', 'NSI_SKILL_3_HYPER': '궁극기'}
 TT = {'NSTT_ENEMY_ONE': 'enemy_one', 'NSTT_ENEMY_ALL': 'enemy_all', 'NSTT_ALLY_ONE': 'ally_one',
       'NSTT_ALLY_ALL': 'ally_all', 'NSTT_MYSELF': 'self'}
 FILTER = {'IsNotInvincible': 'not_invincible', 'IsBoss': 'boss', 'IsElite': 'elite', 'IsAdvantageAdjustType': 'advantage',
@@ -118,11 +119,17 @@ def build(static):
     index = json.loads((ROOT / 'data' / 'saviors_index.json').read_text(encoding='utf-8'))
     keys = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
     desc = json.loads((ROOT / 'data' / 'savior_skills.json').read_text(encoding='utf-8'))
-    units = {}
+    units, order = {}, {}
     for u in json.loads((tables / 'UNIT_TEMPLET_BASE1.json').read_text(encoding='utf-8'))['Data']:
         key = keys.get(u['m_UnitID'])
         if key is None:
             continue
+        if u.get('SkillOrderList'):
+            # 오토 스킬 시도 순서(NKM.decompiled.cs 6378 루프, 없으면 기본 [궁극기, 특수기, 기본기] — NKM.Templets 25744~25751)
+            try:
+                order[key] = [NSI[x] for x in u['SkillOrderList']]
+            except KeyError as ex:
+                raise SystemExit('모르는 SkillOrderList 칸 %s: %s' % (key, ex))
         stacks = elem_stack_names(desc.get(str(u['m_UnitID'])))
         for slot, sid in zip(SLOTS, u['m_listSkill']):
             sk = skills.get(sid) or {}
@@ -138,7 +145,7 @@ def build(static):
             rows = [{'c': conds(r['Condition'], stacks, where), 'f': filters(target.get(r['TargetConditionId']), where)}
                     for r in auto[aid]['SkillConditions']]
             units.setdefault(key, {})[slot] = {'t': TT[sk['m_TARGET_TYPE']], 'rows': rows}
-    return units
+    return units, order
 
 
 def _dedup_se(rows):
@@ -274,18 +281,20 @@ def main():
     except ValueError as ex:
         ap.error(str(ex))
     low_priority()
-    units = build(static)
+    units, order = build(static)
     from collections import Counter
     report = Counter()
     lines = build_lines(static, report)
     out = dict(_note='구원자 스킬별 자동 전투 규칙(tools/build_auto_skill.py). 규칙 행 = 조건(c, 모두 참) + 대상 필터(f, 차례로 거름). '
                      '참인 행이 없으면 그 스킬을 건너뜀. 여기 없는 스킬은 엔진 기본 규칙(구원자 1).',
                units=dict(sorted(units.items())),
+               order_note='오토 스킬 시도 순서(UNIT_TEMPLET_BASE1.SkillOrderList). 여기 없는 구원자는 기본 순서 궁극기->특수기->기본기',
+               order=dict(sorted(order.items())),
                lines_note='구원자 효과 줄 자동 대상(SE AutoTargetId): lines[구원자 key] = [[칸, 데이터북 원문, {one 1명, ally 내 편, f 필터}]]. '
                           '없는 줄은 엔진 설명문 근사(mc.ally_auto_lines=data 일 때만 씀)',
                lines=dict(sorted(lines.items())))
     atomic_text(ROOT / 'data' / 'auto_skill.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
-    print('auto_skill.json: 구원자', len(units), '스킬', sum(len(v) for v in units.values()),
+    print('auto_skill.json: 구원자', len(units), '스킬', sum(len(v) for v in units.values()), '스킬 순서', len(order),
           '효과 줄 자동 대상', sum(len(v) for v in lines.values()), '(구원자 %d)' % len(lines))
     for k, v in sorted(report.items()):
         print('  ', v, k)

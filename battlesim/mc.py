@@ -35,6 +35,7 @@ RULE1001 = (('front', 0.8), ('defender', 0.8))
 ROLE_NAMES = ('스트라이커', '캐스터', '어쌔신', '레인저', '디펜더', '서포터')
 RATE_STEPS = ('front', 'back', 'defender') + ROLE_NAMES     # 확률 필터 이름([이름, p])
 _AUTO = {}
+_AUTO_ORDER = {}
 
 
 _ALINES = {}
@@ -89,6 +90,17 @@ def break_skill_levels(src=SRC):
             with open(p, encoding='utf-8') as f:
                 _BLV[src] = json.load(f).get('skills', {})
     return _BLV[src]
+
+
+def auto_skill_order(src=SRC):
+    """data/auto_skill.json 의 order -> {구원자 key: [칸, ...]}(게임 SkillOrderList). 없으면 빈 dict"""
+    if src not in _AUTO_ORDER:
+        p = os.path.join(src, 'data', 'auto_skill.json')
+        _AUTO_ORDER[src] = {}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                _AUTO_ORDER[src] = json.load(f).get('order', {})
+    return _AUTO_ORDER[src]
 
 
 def auto_skill_rules(src=SRC):
@@ -1146,7 +1158,7 @@ class Battle:
 
     def choose_skill(self, u):
         """(스킬, 미리 고른 대상 또는 None). 게임 자동 전투(NKM.decompiled.cs 6360~6390·6588~6620): 침묵이면 기본기,
-        아니면 궁극기 -> 특수기 -> 기본기 중 쿨이 찼고 규칙 행(data/auto_skill.json)의 조건이 맞고 대상이 있는 첫 스킬.
+        아니면 궁극기 -> 특수기 -> 기본기(유닛에 SkillOrderList 가 있으면 그 순서, mc.skill_order) 중 쿨이 찼고 규칙 행(data/auto_skill.json)의 조건이 맞고 대상이 있는 첫 스킬.
         다 안 되면 기본기(조건 무시). auto_skill=off 는 옛 동작(쿨만 보고, 침묵이면 쿨 있는 스킬만 건너뜀)."""
         silenced = u.has('침묵')
         table = self.mc['auto_skill'] == 'data'
@@ -1159,7 +1171,12 @@ class Battle:
             specs = rules.get(u.key) or rules.get(u.key.split('@')[0], {})
         elif u.side == 1 and self.mc['foe_auto'] == 'data':
             specs = getattr(u.d, 'auto', None) or {}   # data/foe_auto.json(tools/build_foe_auto.py) — 적 스킬별 규칙 행
-        for slot in ('궁극기', '특수기', '기본기'):
+        slots = ('궁극기', '특수기', '기본기')
+        if table and u.side == 0 and self.mc['skill_order'] == 'data':
+            # 게임 SkillOrderList(에밀리 등 9명 = 특수기 -> 궁극기 -> 기본기). 개화 변형은 기본 키 순서
+            orders = auto_skill_order()
+            slots = orders.get(u.key) or orders.get(u.key.split('@')[0]) or slots
+        for slot in slots:
             sk = u.d.skills.get(slot)
             if sk is None or u.cd.get(slot, 0) > 0:
                 continue
