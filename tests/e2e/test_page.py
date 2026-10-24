@@ -519,9 +519,12 @@ def gimmick_slot_audit(page):
             if (!el) return;
             const expected = team.filter(x => (x.s.gt || []).some(t => slot.tags_any.includes(t)));
             const actual = [...el.querySelectorAll('[data-savior]')].map(e => e.dataset.savior);
-            const text = slot.name + ': ' + (actual.length
-              ? '담당: ' + actual.map(key => BYKEY[key]?.name || key).join('·') : '✗ 없음');
-            if (el.dataset.slot !== String(i) || el.textContent !== text ||
+            // 쉬운 말 개편: 한 줄 = .gimfix(대처 이름 + 구원자 칩 또는 「대처할 구원자 없음」)
+            const names = [...el.querySelectorAll('.gimwho')].map(e => e.textContent);
+            if (el.dataset.slot !== String(i) || !el.classList.contains(actual.length ? 'ok' : 'none') ||
+                !el.querySelector('.fixname')?.textContent ||
+                (actual.length ? JSON.stringify(names) !== JSON.stringify(actual.map(key => BYKEY[key]?.name || key))
+                               : !el.querySelector('.nobody')) ||
                 JSON.stringify([...actual].sort()) !== JSON.stringify(expected.map(x => x.s.key).sort()))
               errors.push(row.dataset.code + '/' + slot.name + ': 담당 불일치');
             const old = report.find(r => r[0] === rule.name && r[1] === slot.name);
@@ -547,9 +550,16 @@ def test_gimmick_slot_owned(browser, ctx):
     text = row.text_content()
     no_dispel = page.evaluate("keys => keys.every(k => !BYKEY[k].gt.includes('DISPEL'))", keep)
     audit = gimmick_slot_audit(page)
+    fixes = row.locator(".gimfix")
+    dispel_line, dealer_line = fixes.nth(0), fixes.nth(1)
+    dispel_txt, dealer_txt = dispel_line.text_content(), dealer_line.text_content()
+    dispel_nobody, dealer_nobody = dispel_line.locator(".nobody").count(), dealer_line.locator(".nobody").count()
+    dispel_none = dispel_line.evaluate("e => e.classList.contains('none')")
     page.close()
-    ok = (set(team) == set(keep) and no_dispel and "강화 해제: ✗ 없음" in text
-          and "폭딜: 담당: " in text and "리디아" in text.split("폭딜: 담당: ")[-1]
+    ok = (set(team) == set(keep) and no_dispel
+          and "적 버프 지우기" in dispel_txt and dispel_nobody == 1
+          and dispel_none
+          and "리디아" in dealer_txt and dealer_nobody == 0
           and audit["checked"] > 0 and audit["compared"] > 0 and not audit["errors"])
     return ok, "5-10 %s / 슬롯 대조 %s" % (text, audit)
 
@@ -589,7 +599,7 @@ def test_boss_gimmick_mobile(browser, ctx):
                  and page.evaluate("() => MODE === 'manual' && LS.get('mode') === 'manual'"))
     page.close()
     ok = (n >= 3 and "보스" in txt and "(추정)" not in txt
-          and ("대응 미확인" not in txt and "담당:" in txt)
+          and ("대응 미확인" not in txt and "대처" in txt)
           and severities == sorted(severities, reverse=True) and folded and expanded_n == all_n
           and audit["checked"] > 0 and audit["compared"] > 0 and not audit["errors"] and manual_ok
           and layout["sw"] <= layout["iw"] and layout["cards"] == 4 and layout["same"] and layout["clear"]

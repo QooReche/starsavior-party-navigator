@@ -230,7 +230,16 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 .simbar{border:0;margin:2px 0 6px}.qbox>details{margin-top:7px}.qbox>.qh{margin-bottom:2px}
 .rowcards{grid-template-rows:none;margin-top:6px}.gc{grid-template-rows:auto auto auto;grid-row:auto;align-content:start}.simu{font-size:11px}
 .gimbox{margin-top:10px;padding:10px;border:1px solid var(--line);border-left:3px solid #c0507a;border-radius:8px;background:var(--bg);font-size:12px;overflow-wrap:anywhere}
-.gimhead{font-weight:700;margin-bottom:6px}.gimcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:12px}.stagefacts{color:var(--mut)}.gimrow{padding:3px 0;border-bottom:1px solid var(--line)}.gimrow:last-child{border:0}
+.gimhead{font-weight:700;margin-bottom:6px}.gimcols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:12px}.stagefacts{color:var(--mut)}.gimrow{padding:8px 0;border-bottom:1px solid var(--line)}.gimrow:first-of-type{padding-top:2px}.gimrow:last-child{border:0}
+.gimhint{margin:0 0 6px;color:var(--mut);font-size:11px}.gimwhat{font-weight:600;line-height:1.5}
+.gimfix{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:4px 0 0 6px;padding:3px 8px;border-left:3px solid var(--good);border-radius:4px;background:rgba(95,211,154,.08)}
+.gimfix.none{border-left-color:var(--bad);background:rgba(255,139,126,.12)}
+.fixname{color:var(--mut)}.fixname::before{content:"대처: ";font-size:11px}.fixwho{display:inline-flex;flex-wrap:wrap;gap:4px}
+.gimwho{display:inline-flex;align-items:center;gap:4px;padding:1px 8px 1px 2px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--fg);font-weight:600}
+.gimwho .face{width:20px;height:20px;border-width:1px;font-size:11px}
+.nobody{color:var(--bad)}.nobody::before{content:"✗ "}
+.gimq{display:inline-block;margin-left:4px;width:15px;height:15px;line-height:15px;text-align:center;border:1px solid var(--mut);border-radius:50%;font-size:10px;font-weight:700;color:var(--mut);cursor:help;vertical-align:middle}
+.gimbox.has-miss{border-left-color:var(--bad)}.gimbox>summary{font-weight:600}
 .bbar{gap:8px;padding:7px 10px;margin-top:8px;border-width:1px;border-radius:8px;flex-direction:row;text-align:left}
 .bbar img,.bbar .bicon{width:40px;height:40px;flex:none;border-width:1px;box-shadow:none}.bicon{display:grid;place-items:center;font-size:28px}
 .bbody{flex:0 1 360px;min-width:0}.bsel{width:100%;max-width:360px;min-width:0;font-size:16px;margin:0;padding:6px 4px}.bbar .bschip{flex:0 1 auto;max-width:32%;font-size:11px;margin:0;padding:3px 5px}
@@ -522,23 +531,28 @@ const GFIX={
 function gimNote(party,c,st,p){
  // 점수용 gimTop/gimTeam은 그대로 두고 표시에는 전체 유형을 심각도 순으로 쓴다.
  const types=Object.entries(D.gim[c.key+"|"+st.tab+"|"+st.name]||{}).filter(([code])=>D.grules[code]).sort((a,b)=>b[1]-a[1]||(D.grules[b[0]]?.w||0)-(D.grules[a[0]]?.w||0));
- const rows=types.map(([code,sev])=>{const t=D.grules[code],slots=t?.slots||[];
-  const assigned=tags=>{const who=party.filter(x=>(x.s.gt||[]).some(tag=>tags.includes(tag)));
-   return who.length?`담당: ${who.map(x=>`<span data-savior="${esc(x.s.key)}">${esc(x.s.name)}</span>`).join("·")}`:"✗ 없음"};
-  // 슬롯명과 담당 조건을 함께 표시한다. GFIX의 성향 추정은 슬롯 없는 유형에만 쓴다.
-  let response;
-  if(slots.length)response=slots.map((sl,i)=>`<span class="gimslot" data-slot="${i}"><b>${esc(sl.name)}</b>: ${assigned(sl.tags_any)}</span>`).join(" · ");
+ const PL=D.plain||{},q=tip=>`<span class="gimq" tabindex="0" title="${esc(tip)}">?</span>`;
+ // 기믹 하나 = 블록 하나: 첫 줄 「무슨 일이 일어나는지」, 아래 대처 방법마다 한 줄(방법 이름 + 가능한 우리 팀 구원자 칩 / 없으면 「대처할 구원자 없음」)
+ const rows=types.map(([code,sev])=>{const t=D.grules[code],slots=t?.slots||[],pl=PL.gimmicks?.[code];
+  const holders=tags=>party.filter(x=>(x.s.gt||[]).some(tag=>tags.includes(tag)));
+  const fixLine=(i,name,tip,who,guess)=>`<div class="gimfix${i==null?"":" gimslot"} ${who.length?"ok":"none"}"${i==null?"":` data-slot="${i}"`}><span class="fixname" title="${esc(tip)}">${esc(name)}${guess?q("슬롯 없이 성향만으로 추정한 대처입니다."):""}</span><span class="fixwho">${who.length?who.map(x=>`<span class="gimwho" data-savior="${esc(x.s.key)}">${face(x.s)}${esc(x.s.name)}</span>`).join(""):`<b class="nobody">대처할 구원자 없음</b>`}</span></div>`;
+  let lines;
+  if(slots.length)lines=slots.map((sl,i)=>{const p=PL.fixes?.[sl.name];return fixLine(i,p?.name||sl.name,(p?.tip||"")+(p?` (원래 이름: ${sl.name})`:""),holders(sl.tags_any))});
   else{const fix=GFIX[code]||"대응 미확인",tags=t?.prefer||[];
-   response=`<b>${esc(fix.replace(/\*/g,""))}</b>${fix==="대응 미확인"?"":!tags.length?" → 대응 미확인":` → ${assigned(tags)}`}`}
-  if(response.includes("대응 미확인"))return "";
-  return `<div class="gimrow" data-code="${esc(code)}" data-severity="${sev}"><span>${esc(t?.name||code)}</span> → ${response}</div>`}).filter(Boolean);
+   if(fix==="대응 미확인"||!tags.length)return "";
+   const plain=fix.replace(/\*/g,""),p=PL.gfix?.[plain];
+   lines=[fixLine(null,p?.name||plain,(p?.tip||"")+(p?` (원래 이름: ${plain})`:""),holders(tags),fix.includes("*"))]}
+  const tech=t?.name||code;
+  return `<div class="gimrow" data-code="${esc(code)}" data-severity="${sev}"><div class="gimwhat" title="원래 이름: ${esc(tech)}">${esc(pl?.what||tech)}${t?.conf==="추정"?q("스킬 문구로 영향을 추정한 항목이라 실제와 다를 수 있습니다."):""}</div>${lines.join("")}</div>`}).filter(Boolean);
  const bosses=(st.bn||[]).map(([i,count])=>({name:D.bosses[i][0],role:D.bosses[i][1],count})),mobs=Math.max(0,st.n-bosses.reduce((n,b)=>n+b.count,0));
  const foe=bosses.length?`보스 ${bosses.map(b=>esc(b.name)+"("+esc(b.role)+")"+(b.count>1?" ×"+b.count:"")).join("·")} · 쫄 ${mobs}`:`적 ${st.n}체`;
  const matchup=[['유리',true],['불리',false]].map(([label,good])=>{const groups=Object.keys(EL).map(el=>{const hits=Object.keys(st.ec||st.w).filter(e=>good?CFG.advantage[el]===e:CFG.advantage[e]===el&&CFG.advantage[el]!==e);if(!hits.length)return "";const names=party.filter(x=>x.s.el===el).map(x=>esc(x.s.name));return `${EL[el]} ${label}${names.length?" → "+names.join("·"):""}`}).filter(Boolean);return groups.join(" / ")}).filter(Boolean).join(" · ");
  const rs=(CFG.restrict[c.name]||{})[st.tab];
- const missing=rows.filter(row=>row.includes("✗ 없음"));
- const chips=missing.map(row=>`<span class="tag">${row.match(/<span>(.*?)<\/span>/)?.[1]||"기믹"} 담당 없음</span>`).join("");
- return `${chips?`<div class="gim-missing">${chips}</div>`:""}<details class="gimbox" data-fold="gim-${p}"><summary>스테이지 기믹 ${rows.length} · 담당 없음 ${missing.length}</summary><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}${rs?` · ${EL[rs]}만 편성`:""}${sbText(st)}</div><div class="gimlist">${rows.join("")||"기믹 정보 없음"}</div></div></details>`}
+ const missing=rows.filter(row=>row.includes('class="nobody"'));
+ const chips=missing.map(row=>`<span class="tag">${esc(PL.gimmicks?.[row.match(/data-code="(\w+)"/)?.[1]]?.name||"특징")}: 대처할 구원자 없음</span>`).join("");
+ const title=!rows.length?"이 스테이지의 특징 정보 없음":missing.length?`이 스테이지의 특징 ${rows.length}개 중 ${missing.length}개는 우리 팀이 대처하기 어려움`:`이 스테이지의 특징 ${rows.length}개 모두 대처 가능`;
+ const hint=rows.length?`<p class="gimhint">윗줄은 적에게 일어나는 일, 아랫줄은 그 대처 방법과 우리 팀에서 할 수 있는 구원자입니다. ${q("? 표시는 스킬 문구로 추정한 항목입니다. 줄에 마우스를 올리면 원래 용어가 보입니다.")}</p>`:"";
+ return `${chips?`<div class="gim-missing">${chips}</div>`:""}<details class="gimbox${missing.length?" has-miss":""}" data-fold="gim-${p}"><summary>${title}</summary><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}${rs?` · ${EL[rs]}만 편성`:""}${sbText(st)}</div><div class="gimlist">${hint}${rows.join("")||"기믹 정보 없음"}</div></div></details>`}
 
 let LEADKEY=null;
 const LEAD_TAGS=["힐","보호막","속도증가","적방어력감소","아군공격력증가"];
