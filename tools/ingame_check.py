@@ -11,6 +11,7 @@
 --bs-name = --bs 로 장착할 스킬 이름(기본 큐브 과부하). --bs-real = 샘플별 실제 장착(BS_REAL)을 씀(--bs 를 같이 주면 그쪽이 덮어씀).
 운영 기본값: 36-36=heal, 37-2~37-5=auto. --ov '{"nova_policy":"auto"}' 로 전부 순수 오토 대조 가능.
 nova_burst.total/by_unit은 전체 판 합계, uses·heal·healing은 판 평균(실제 HP 회복, 초과 회복 제외).
+출력 dist = 판별 분포(결과 비율·행동 수 분위수·실측 TURN 위치 real_turn_pct·진 판의 보스 남은 생명력·먼저 쓰러진 구원자) — 「실측이 시뮬 분포 안인가」 판정용.
 2026-10-21 결과: 37-2(잡몹) 실제 4.13 vs 시뮬 4.11 일치 / 37-3·36-36(큰 보스) 실제 1.82·1.88 vs 시뮬 0.49·0.84 — 보스전만 과대(설명 docs/ingame_samples.md)
 """
 import json
@@ -244,10 +245,24 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
     from battlesim import api
     measured = defaultdict(float)
     enemy_skills = defaultdict(lambda: defaultdict(int))
+    per_battle = []     # 판별 결과·전체 행동 수·보스 남은 생명력·먼저 쓰러진 구원자(분포 판정용)
 
     class MeasuredBattle(api.Battle):
+        def act(self, u):
+            r = super().act(u)
+            order = self.__dict__.setdefault('_down', [])
+            for v in self.allies:
+                if v.dead and v.name not in order:
+                    order.append(v.name)
+            return r
+
         def run(self):
             super().run()
+            bosses = [u for u in self.all_foes if u.d.boss and not u.summoned]
+            boss_left = sum(max(0.0, u.hp) for u in bosses) / sum(u.maxhp for u in bosses) if bosses else None
+            down = self.__dict__.get('_down', [])
+            per_battle.append(dict(result=self.result, actions=sum(u.actions for u in self.allies) + sum(u.actions for u in self.all_foes),
+                                   boss_left=boss_left, progress=self.progress(), first_down=down[0] if down else None))
             measured['ally'] += sum(u.actions for u in self.allies)
             measured['boss'] += sum(u.actions for u in self.all_foes if u.d.boss)
             measured['enemy'] += sum(u.actions for u in self.all_foes)
@@ -271,7 +286,40 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
                 per_unit={k: {f: v[f] for f in ('dmg', 'dmg_taken', 'actions')} for k, v in r['per_unit'].items()},
                 break_skill=r['break_skill'], nova_policy=opt['rules_override']['nova_policy'],
                 nova_burst=r['nova_burst'], heal=sum(v['heal'] for v in r['per_unit'].values()),
-                healing={nm: dict(heal=v['heal'], shield=v['shield']) for nm, v in r['per_unit'].items()})
+                healing={nm: dict(heal=v['heal'], shield=v['shield']) for nm, v in r['per_unit'].items()},
+                dist=distribution(per_battle, res, turn))
+
+
+def _q(xs, ps=(0.1, 0.5, 0.9)):
+    """분위수(최근접 순위). 빈 목록은 None."""
+    if not xs:
+        return None
+    xs = sorted(xs)
+    return [round(xs[min(len(xs) - 1, int(p * len(xs)))], 3) for p in ps]
+
+
+def distribution(per_battle, real_result, real_turn):
+    """판별 분포: 결과 비율, 전체 행동 수(TURN 대응) 분위수, 보스 남은 생명력, 먼저 쓰러진 구원자 비율.
+    real_turn_pct = 실측과 같은 결과(클리어/실패) 판들 중 행동 수가 실측 TURN 이하인 비율 — 0.05 미만·0.95 초과면 실측이 시뮬 분포 바깥."""
+    n = len(per_battle)
+    res = defaultdict(int)
+    for b in per_battle:
+        res[b['result']] += 1
+    won = real_result == 'clear'
+    same = [b for b in per_battle if (b['result'] == 'clear') == won]
+    first = defaultdict(int)
+    for b in per_battle:
+        if b['first_down']:
+            first[b['first_down']] += 1
+    lost = [b for b in per_battle if b['result'] != 'clear']
+    return dict(n=n, result={k: round(v / n, 3) for k, v in res.items()} if n else {},
+                actions_q10_50_90=_q([b['actions'] for b in per_battle]),
+                same_result_runs=len(same),
+                real_turn_pct=round(sum(1 for b in same if b['actions'] <= real_turn) / len(same), 3) if same else None,
+                boss_left_q10_50_90_when_lost=_q([b['boss_left'] for b in lost if b['boss_left'] is not None]),
+                progress_q10_50_90_when_lost=_q([b['progress'] for b in lost]),
+                no_death_rate=round(sum(1 for b in per_battle if not b['first_down']) / n, 3) if n else None,
+                first_down={k: round(v / n, 3) for k, v in sorted(first.items(), key=lambda kv: -kv[1])})
 
 
 def main():
