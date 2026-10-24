@@ -342,6 +342,10 @@ def full_props(ln):
     return parse_props(inner)[1]
 
 
+# 공격 시 해제 효과(BUFF_TEMPLET DispelCondition=DC_ATTACK 중 엔진 콘텐츠에 나오는 것). 규칙 mc.dispel_on_attack
+DISPEL_ON_ATTACK = ('여유로운 응수', '헥사 너트')
+
+
 # ------------------------------------------------------------------ 런타임 개체
 class Eff:
     """유닛에 붙은 효과 1개(강화·약화·보호막·지속 피해·지속 회복). stacks 는 정수."""
@@ -1979,6 +1983,11 @@ class Battle:
                 self._hit_log.append((a, v, ctx))
         if ctx.hit_targets:
             a.last_target = ctx.hit_targets[-1]
+        # 〈공격 시 해제〉(DispelCondition=DC_ATTACK): 공격 스킬의 모든 타격·대상 처리 뒤, 피격 반응 전에 시전자에게서 지움(NKM 15580). 반격·협공도 이 경로
+        if self.mc['dispel_on_attack'] == 'on':
+            for nm in DISPEL_ON_ATTACK:
+                if a.eff.pop(nm, None) is not None:
+                    self.dirty(a)
         # 피격 반응은 전체 공격의 모든 대상 처리가 끝난 뒤(동시성 규칙)
         for v, hctx in reactions:
             if v.dead:
