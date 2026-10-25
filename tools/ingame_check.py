@@ -134,6 +134,11 @@ SAMPLES = {
     # 2026-10-25 09:22 영상 판독(성간 회랑 = 달 회랑 FLOOR 360 Lv2282, 사이트 1안 그대로, 오토, 전원 Lv.345, 권장 356,160, 팀 전투력 402,222): 프레이(후, 노블 프린세스, 리더 추정)·카르멘(전, 이터널 프로미스)·클레어(전, 플로리스 블루 로즈)·프로페서M(후)
     # 승리, TURN 36, 달성도 100%, 쓰러진 구원자 0, 웨이브 2/2(보스 공허멸시자 189초 처치). 브레이크 스킬 미발동(Lv.4 슬롯 1개, 컷인 없음 -> BS_REAL 에 안 넣음). BREAK! 연출 146초 1회. 통계 원해상도 확인: 준 / 받은 / 회복: 프레이 325,304/54,039/0 · 카르멘 31,571/60,298/150,988 · 클레어 165,325/57,742/0 · 프로페서M 189,884/13,894/0
     'corr360-a': ('clo', '달 회랑|FLOOR 360', ['bunny-frey', 'wedding-carmen', 'claire', 'professor-m'], 'bunny-frey', 402222, 0, 712084, 185973, 36, 'clear'),
+    # 2026-10-25 17:01/17:04 영상 판독(작전 SECTOR 38-36 Lv3184 고요한 호숫가, 사이트 1안 그대로, 오토, 전원 Lv.346, 권장 495,970, 팀 전투력 419,510, 재점화 표시 없음=0): 아모라(후)·아세라(전, 왈츠 오브 스타라이트, 왕관 리더)·힐데(전)·프로페서M(후). 보스 공허개척자, 웨이브 1/1, 졸개 추적자
+    # 판 F1(17:01): 패배(전멸 약 179초), TURN 34, 달성도 57%, 보스 잔여 211,709(T33 값, 최종 미판독). **브레이크 스킬 미발동**(컷인·영역 없음; Lv.6 슬롯 큐브 과부하 추정 -> BS_REAL 에 안 넣음). BREAK! 연출 95초 1회(대상 불명). 준 / 받은 / 회복: 힐데 30,295/223,313/38,012 · 아모라 353,858/130,387/0 · 프로페서M 196,951/107,109/0 · 아세라 41,085/122,539/67,112
+    'op3836-a': ('op', '고요한 호숫가|SECTOR 38-36', ['amora', 'waltz-asherah', 'hilde', 'professor-m'], 'waltz-asherah', 419510, 0, 622189, 583348, 34, 'fail'),
+    # 판 F2(17:04): 패배(전멸 약 193초), TURN 38, 달성도 65%, 보스 잔여 175,128(187초). **큐브 과부하 1회 발동**(TURN 34, 컷인·영역 5->1 카운트다운 T34~T38, 프레임 확인). BREAK! 연출 129초(아군 쪽?)·169초(보스 추정) 각 1회. 준 / 받은 / 회복: 힐데 36,652/232,616/28,509 · 프로페서M 160,850/99,694/0 · 아세라 40,815/126,394/67,112 · 아모라 467,626/125,474/0
+    'op3836-b': ('op', '고요한 호숫가|SECTOR 38-36', ['amora', 'waltz-asherah', 'hilde', 'professor-m'], 'waltz-asherah', 419510, 0, 705943, 584178, 38, 'fail'),
 }
 # 보스 잔여 HP·달성도 같은 부가 실측: SAMPLES 튜플에는 못 넣고(형식 고정) 여기에 둔다 — 도구가 출력에 real_extra 로 붙인다
 REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, rekindle=0, boss_breaks=3, cube_overload_uses=3),
@@ -145,6 +150,8 @@ REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, r
               'op3736c-a': dict(achieve=0.62, boss_left_hp=137334, heal=192780, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1),
               'op3736c-b': dict(achieve=0.69, boss_left_hp=109749, heal=195778, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1),
               'corr360-a': dict(achieve=1.0, heal=150988, rekindle=0),
+              'op3836-a': dict(achieve=0.57, boss_left_hp=211709, heal=105124, rekindle=0),
+              'op3836-b': dict(achieve=0.65, boss_left_hp=175128, heal=95621, rekindle=0, cube_overload_uses=1),
               'corr450-a': dict(heal=353308, rekindle=0),
               'corr450-b': dict(achieve=0.61, heal=295511, rekindle=0),
               'op3736d-a': dict(boss_left_hp=171645, heal=156205, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1),
@@ -160,7 +167,8 @@ BS_REAL = {'37-36r': ('행성 정화', 3), '37-36r2': ('행성 정화', 3), '17x
            'corr440-a': ('스타피어서', 3), 'corr440-b': ('스타피어서', 3),
            'op3736b-a': ('큐브 과부하', 6), 'op3736b-b': ('큐브 과부하', 6),
            'op3736c-a': ('큐브 과부하', 6), 'op3736c-b': ('큐브 과부하', 6),
-           'op3736d-a': ('큐브 과부하', 6), 'op3736d-b': ('큐브 과부하', 6)}
+           'op3736d-a': ('큐브 과부하', 6), 'op3736d-b': ('큐브 과부하', 6),
+           'op3836-b': ('큐브 과부하', 6)}
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
 from tools.runtime import low_priority
