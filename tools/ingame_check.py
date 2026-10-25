@@ -131,6 +131,9 @@ SAMPLES = {
     # 2026-10-25 09:12 영상 판독(성간 회랑 FLOOR 350, 사이트 1안 그대로, 오토, 전원 Lv.345, 팀 전투력 404,110): 샤를(후, 하트 오브 모나스티르)·루나(전, 화이트 펄 트랩, 리더)·에핀델(전, 블레싱 인 블룸)·크리스텔(후)
     # 패배, TURN 44, 달성도 99%(보스 거의 잔여 없음), 웨이브 2/2. 브레이크 스킬 미발동(추천 스타피어서 Lv4 슬롯, 발동 장면·컷인 없음). 회복 0. 준 / 받은: 샤를 160,326/89,535 · 루나 98,937/72,399 · 에핀델 156,596/79,461 · 크리스텔 324,395/83,284 (마지막 자리 일부 불확실)
     'corr350-a': ('clo', '성간 회랑|FLOOR 350', ['bunny-charlotte', 'white-pearl-luna', 'wedding-epindel', 'cristelle'], 'white-pearl-luna', 404110, 0, 740254, 324679, 44, 'fail'),
+    # 2026-10-25 09:22 영상 판독(성간 회랑 = 달 회랑 FLOOR 360 Lv2282, 사이트 1안 그대로, 오토, 전원 Lv.345, 권장 356,160, 팀 전투력 402,222): 프레이(후, 노블 프린세스, 리더 추정)·카르멘(전, 이터널 프로미스)·클레어(전, 플로리스 블루 로즈)·프로페서M(후)
+    # 승리, TURN 36, 달성도 100%, 쓰러진 구원자 0, 웨이브 2/2(보스 공허멸시자 189초 처치). 브레이크 스킬 미발동(Lv.4 슬롯 1개, 컷인 없음 -> BS_REAL 에 안 넣음). BREAK! 연출 146초 1회. 통계 원해상도 확인: 준 / 받은 / 회복: 프레이 325,304/54,039/0 · 카르멘 31,571/60,298/150,988 · 클레어 165,325/57,742/0 · 프로페서M 189,884/13,894/0
+    'corr360-a': ('clo', '달 회랑|FLOOR 360', ['bunny-frey', 'wedding-carmen', 'claire', 'professor-m'], 'bunny-frey', 402222, 0, 712084, 185973, 36, 'clear'),
 }
 # 보스 잔여 HP·달성도 같은 부가 실측: SAMPLES 튜플에는 못 넣고(형식 고정) 여기에 둔다 — 도구가 출력에 real_extra 로 붙인다
 REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, rekindle=0, boss_breaks=3, cube_overload_uses=3),
@@ -141,6 +144,7 @@ REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, r
               'op3736b-b': dict(achieve=0.69, boss_left_hp=67671, heal=234055, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1),
               'op3736c-a': dict(achieve=0.62, boss_left_hp=137334, heal=192780, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1),
               'op3736c-b': dict(achieve=0.69, boss_left_hp=109749, heal=195778, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1),
+              'corr360-a': dict(achieve=1.0, heal=150988, rekindle=0),
               'corr450-a': dict(heal=353308, rekindle=0),
               'corr450-b': dict(achieve=0.61, heal=295511, rekindle=0),
               'op3736d-a': dict(boss_left_hp=171645, heal=156205, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1),
