@@ -155,10 +155,11 @@ for (const [label, exp] of Object.entries(EXPECTED)) {
   })()`, ctx);
   const allRanked = JSON.parse(JSON.stringify(allRankedRaw));
 
-  // Find groups of ties (same v to 9 decimal places)
+  // Find groups of ties (exactly the same v). topParties sorts by exact v then i, so near-equal values
+  // (same to 9 decimals, differing in float noise) are legitimately ordered by v, not i (2026-10-29)
   const groups = new Map();
   for (const t of allRanked) {
-    const vk = t.v.toFixed(9);
+    const vk = String(t.v);
     if (!groups.has(vk)) groups.set(vk, []);
     groups.get(vk).push(t);
   }

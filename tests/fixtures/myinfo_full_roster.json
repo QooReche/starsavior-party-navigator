@@ -1919,6 +1919,42 @@
    }
   },
   {
+   "id": 1059,
+   "star": 0,
+   "sigil": 1,
+   "resonance": 4,
+   "favor": 9,
+   "skills": {
+    "basic": 3,
+    "special": 4,
+    "ultimate": 5,
+    "passive": 2
+   },
+   "equip": [
+    {
+     "item_id": 800001,
+     "enhance": 3,
+     "main": {
+      "stat": "NST_ATK",
+      "value": 140
+     },
+     "subs": []
+    }
+   ],
+   "gauntlet": {
+    "journey": [
+     180,
+     200,
+     150,
+     50,
+     40
+    ],
+    "level": 10,
+    "potentials": [],
+    "blessings": []
+   }
+  },
+  {
    "id": 3001,
    "star": 1,
    "sigil": 2,

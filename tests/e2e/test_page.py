@@ -74,7 +74,7 @@ def choose(page, content, query):
 
 FIXTURES = os.path.join(ROOT, "tests", "fixtures")
 SYNTH = os.path.join(FIXTURES, "myinfo_synthetic.json")         # 8명(가상 계정)
-FULL = os.path.join(FIXTURES, "myinfo_full_roster.json")         # 페이지 로스터 56명 전원(가상 값). 로스터가 늘면 다시 만들 것
+FULL = os.path.join(FIXTURES, "myinfo_full_roster.json")         # 페이지 로스터 57명 전원(가상 값). 로스터가 늘면 다시 만들 것
 # 새 탭의 첫 문서에서만 localStorage 를 채운다(sessionStorage 표지) — 새로고침·같은 탭 이동 때 화면이 쓴 값을 덮지 않게
 SEED_JS = """(s => { try { if (sessionStorage.getItem('__pn_seed')) return; sessionStorage.setItem('__pn_seed', '1');
   for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v) } catch (e) {} })(%s)"""
@@ -202,7 +202,7 @@ def test_quick_owned_small(browser, ctx):
     settle(page)
     back = page.evaluate("() => [EXCL.size, JSON.parse(localStorage.getItem('pn.excl')), document.querySelectorAll('#own input:checked').length]")
     page.close()
-    ok = len(rows) >= 1 and inside and sorted(own) == sorted(keep) and "제외 50명" in chip and off == 50 and back == [0, [], 56]
+    ok = len(rows) >= 1 and inside and sorted(own) == sorted(keep) and "제외 51명" in chip and off == 51 and back == [0, [], 57]
     return ok, "남긴 6명 -> %d안, 6명 안 %s, 보유 %d, 칩 %s, 꺼진 카드 %d, 다시 넣기 %s" % (len(rows), inside, len(own), chip, off, back)
 
 
@@ -879,7 +879,7 @@ def test_share_link(browser, ctx):
     target.wait_for_function('() => window._ready')
     assert target.input_value('#rk') == '5'
     recipient.close()
-    # 받는 쪽 B: 자기 내 정보(56명)가 있음 → 공유 정보로 보다가 「내 정보로 돌아가기」, 저장된 자기 정보는 그대로
+    # 받는 쪽 B: 자기 내 정보(57명)가 있음 → 공유 정보로 보다가 「내 정보로 돌아가기」, 저장된 자기 정보는 그대로
     recipient = browser.new_context(viewport={'width': 390, 'height': 844})
     target = recipient.new_page()
     attach(target, ctx)
@@ -888,8 +888,8 @@ def test_share_link(browser, ctx):
     target.wait_for_function('() => window._ready && MI.shared && MI.info.units.length===8 && MI.growth && !MI.pending', timeout=60000)
     mine = target.evaluate('() => JSON.parse(localStorage.getItem("pn.myinfo")).units.length')
     target.click('#shared-back')
-    target.wait_for_function('() => !MI.shared && MI.info && MI.info.units.length===56 && !MI.pending', timeout=60000)
-    assert mine == 56 and target.is_hidden('#shared-bar')
+    target.wait_for_function('() => !MI.shared && MI.info && MI.info.units.length===57 && !MI.pending', timeout=60000)
+    assert mine == 57 and target.is_hidden('#shared-bar')
     recipient.close()
     return True, '받는 쪽 첫 화면 %s · ' % shared_view + '조건만/내 정보 포함 링크·받는 쪽 저장 안 함·공유 표시·자기 정보 복귀·잘못된 값·옛 g/p 무시·390px'
 
