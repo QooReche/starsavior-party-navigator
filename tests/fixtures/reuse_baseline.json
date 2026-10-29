@@ -1,16 +1,16 @@
 {
   "cosmo_24": {
     "bc": [
+      "cristelle,lugh,seira,wedding-epindel",
       "cristelle,luna,seira,wedding-epindel",
+      "cristelle,lugh,luna,seira",
       "cristelle,professor-m,seira,wedding-epindel",
       "luna,professor-m,seira,wedding-epindel",
       "luna,petra,professor-m,seira",
+      "lugh,luna,seira,wedding-epindel",
       "cristelle,petra,seira,wedding-epindel",
       "cristelle,seira,tyria,wedding-epindel",
-      "petra,professor-m,seira,wedding-epindel",
-      "luna,petra,seira,wedding-epindel",
-      "ceres,cristelle,seira,wedding-epindel",
-      "cristelle,luna,professor-m,seira"
+      "petra,professor-m,seira,wedding-epindel"
     ],
     "qr": [
       {
@@ -71,7 +71,7 @@
         "keys": "claire,elisa,lugh,professor-m",
         "vd": "tight",
         "rounds": 3,
-        "left": 0.3501972949935355,
+        "left": 0.3495928651772508,
         "ng": null,
         "st": null,
         "src": null

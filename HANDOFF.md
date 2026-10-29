@@ -1,6 +1,22 @@
 # 인수인계
 
-갱신: 2026-10-24 저녁 — DC_ATTACK·스킬 순서 반영·대조 도구 보강(맨 위 절). 그 전: 기믹 박스 병합·시뮬 시간 초과·남은 시간 표시. 이전: 2026-10-23 밤(다른 PC) 엔진 정정 4건·공개 전 화면 정리·main 병합. 새 세션은 이 파일 → `README.md`(사용자용) → `docs/DEVELOPMENT.md`(개발) 순. 과거 기록은 [docs/HISTORY.md](docs/HISTORY.md), 아래 옛 절들은 시간 역순.
+갱신: 2026-10-29 — 게임 패치(빌드 26291832) 반영(맨 위 절). 그 전: 2026-10-24 저녁 — DC_ATTACK·스킬 순서 반영·대조 도구 보강. 그 전: 기믹 박스 병합·시뮬 시간 초과·남은 시간 표시. 이전: 2026-10-23 밤(다른 PC) 엔진 정정 4건·공개 전 화면 정리·main 병합. 새 세션은 이 파일 → `README.md`(사용자용) → `docs/DEVELOPMENT.md`(개발) 순. 과거 기록은 [docs/HISTORY.md](docs/HISTORY.md), 아래 옛 절들은 시간 역순.
+
+## ▶ 2026-10-29 게임 패치 반영 (빌드 26105710 → 26291832, 브랜치 `patch-20261029`, 푸시 전)
+
+공지: https://www.starsavior.com/kr/news/01a17c9e-5aa3-7019-a3e5-f17694bf2e1e (신규 구원자 세레스, 루그 스킬 리워크, 작전 일반 45·어려움 40단계, 성간 회랑 심도 확장[무한 600·그 외 500], 오버로드 큐브 7주차, 길드 방어전 시즌 4). 코스모 게이트 변경 없음.
+
+- **패치 절차 수행 결과**(비공개 `static-data` 커밋 1e56c10, `packet-ref` 커밋 311b344 — 둘 다 푸시 전): 표 23개 변경, 배치 스크립트 431개 추가(변경 0). 내 정보 도구는 스키마 구조 변경 0이라 빌드 번호만 새로(실캡처는 사용자가 에러 없이 통과 확인).
+- **데이터북은 이미 10/29판**(`rel.asOf` 2026-10-29)이라 `tools/fetch_sources.py` → `node tools/extract_guide_tier.js` → `tools/update.py` → 클라 표 기반 빌더(`--static`) 순으로 반영. 구원자 65명, 스테이지 4120(+430).
+- **update.py 에 안 들어 있는 빌더**: `build_foe_react.py` 등 `--static` 이 필요한 15개는 패치마다 따로 돌릴 것(안 돌리면 `eff_remaining_test` 가 깨짐). 순서: `build_growth`·`build_myinfo_combat`·`build_myinfo_slots`·`build_auto_skill`·`build_buff_count`·`build_battle_end`·`build_sudden_death`·`build_foe_spawn`·`build_foe_summon`·`build_foe_auto`·`build_foe_react`·`build_break_levels` → `build_simpack` → 재맞춤.
+- **세레스(1059)는 임시 키 `id1059`**: 가이드 사이트에 아직 없어 `synergy_tags.py` 가 키를 못 얻음 → 폴백 키를 줌, 세팅은 `battlesim/rules/builds.json` `use_class_default`(서포터 기본, assumed). 가이드에 올라오면 실제 key 로 바꿀 것(`id1059` 전 파일 검색). 카드 그림 없음(`assets/savior/` — 로드 실패 시 이름 첫 글자로 대체됨). 기존 `ceres_*.webp` 는 **다른 캐릭터(1033)**.
+- **클라에 없는 것(확정)**: 세레스·리디아(1060)의 유닛·스킬·SE 행은 이번 빌드 클라 번들에 없음(2,526개 표 전수 확인, 서버 전송으로 추정). 루그 리워크 수치(쿨 5/10)도 클라 표엔 구값(4/6). 그래서 이 셋은 **데이터북 값에만 의존, 실측 영상 전까지 미검증**. 10/22 빌드 행(저장소 `HEAD~1`)의 세레스·리디아 쿨·노바는 데이터북과 일치. `myinfo_combat_test` 는 루그만 예외(리워크 수치가 클라 표에 오르면 예외 삭제).
+- **신규 스테이지 430개(작전 일반 180·어려움 50·회랑 200)는 클라 `BATTLE_TEMPLET` 에 행이 없어** 배치 스크립트와 연결 안 됨(`build_foe_spawn` 「배치 불일치」). 적 정보는 데이터북만 사용. 보스 `OP_41~45` 능력치는 OP_39~45 가 모두 같음. 파일 이름(`SECTOR41_036` 등)으로 연결하는 작업은 안 했음 — 서버 편성과 같은지 검증 불가.
+- 폭주 효과 `BATTLE_EFFECT` 9400701(속도 게이지 500→1000)·9401201(슈퍼아머 무한)은 별의 도전 EX 「폭주」 보스용(길드 방어전 쪽) — 이 도구 범위 밖.
+- 기준값 재생성: 계수 재맞춤 전체 일치 0.919(작전 0.900·코스모 0.960·플래시 0.953), `reuse_baseline.json`(대조군 바이트 일치 확인, `cmd /c` 로 저장 — PS5.1 `>` 는 UTF-16), `golden_check.py --write`, **P1 보관본**은 legacy 규칙 + 새 자료로 갱신(`AI\temp\partynavigator\scripts\regen_p1_golden.py`; 루그 등 자료 변경으로 정확 일치가 깨져서). 추천 변화: `cosmo_24` 상위 후보에 루그 추가.
+- 시험: Python 44·골든·JS 13 통과, e2e 28 중 27(`test_load_no_errors` 는 `main` 에서도 같은 `favicon.ico` 404).
+- 남은 일: ① 푸시·Pages 반영(사용자 승인) ② 가이드 사이트에 세레스가 올라오면 키 교체 ③ 세레스·루그 편성 영상 대조 ④ 오버로드 큐브 복제 코드·길드 방어전은 도구 범위 밖(필요하면 추가) ⑤ 공개 `starsavior-myinfo` 에 새 `myinfo.ps1` 배포는 선택(구조 변경 없어 기존 도구도 동작).
+- 이 PC 임시물: `C:\build\partynavigator\venv-extract`·`venv-pw`·`wt_main`(worktree) — 작업 끝나면 삭제.
 
 ## ▶ 2026-10-25 저녁 작전 38-36 오토 2판 추가 (샘플 `op3836-a/b`, 로컬 커밋, 푸시 전)
 
