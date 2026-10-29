@@ -320,6 +320,26 @@
     "spd": 106
    }
   },
+  "ceres-sun-supporter": {
+   "actions_per_turn": 1.2,
+   "ally_dmg_gain_pct": 17.6,
+   "aoe_dpt": 970,
+   "combined_dpt": 970,
+   "extra_hit_dmg_share": 0.0,
+   "hits_per_turn": 0.6,
+   "norm_global": 1.08,
+   "norm_role": 2.35,
+   "single_dpt": 970,
+   "stats": {
+    "atk": 2590,
+    "cd": 50.0,
+    "cr": 5.0,
+    "def_": 1300,
+    "hp": 17328,
+    "passive_atk_pct": 0.0,
+    "spd": 101
+   }
+  },
   "charlotte": {
    "actions_per_turn": 1.4,
    "ally_dmg_gain_pct": 9.6,
@@ -618,26 +638,6 @@
     "hp": 17604,
     "passive_atk_pct": 0.0,
     "spd": 95
-   }
-  },
-  "id1059": {
-   "actions_per_turn": 1.2,
-   "ally_dmg_gain_pct": 17.6,
-   "aoe_dpt": 970,
-   "combined_dpt": 970,
-   "extra_hit_dmg_share": 0.0,
-   "hits_per_turn": 0.6,
-   "norm_global": 1.08,
-   "norm_role": 2.35,
-   "single_dpt": 970,
-   "stats": {
-    "atk": 2590,
-    "cd": 50.0,
-    "cr": 5.0,
-    "def_": 1300,
-    "hp": 17328,
-    "passive_atk_pct": 0.0,
-    "spd": 101
    }
   },
   "kyra": {
@@ -1303,250 +1303,250 @@
  },
  "inputs": {
   "data/foe_stages.json": "1c758a95a096100c",
-  "data/synergy_tags.json": "7dd215e6a13c8145",
+  "data/synergy_tags.json": "ed17e229f8c0eb97",
   "rawdata/databook_main.json": "729b0fa71d38584c",
   "rawdata/foe.js": "9863f23595b4dd2b"
  },
  "party": [
   {
-   "hits": 45.0,
+   "hits": 25.0,
    "src": {
     "chain": 0.0,
-    "direct": 109266.02,
+    "direct": 66734.023,
     "dot": 846.153,
-    "extra": 52123.183
+    "extra": 0.0
    },
    "team": [
-    "gwen",
+    "frey",
     "marcille",
     "vera",
     "wedding-carmen"
    ],
-   "total": 162235.356
+   "total": 67580.176
   },
   {
-   "hits": 48.0,
+   "hits": 54.05,
    "src": {
     "chain": 0.0,
-    "direct": 161125.413,
+    "direct": 195346.415,
     "dot": 0.0,
-    "extra": 30894.641
+    "extra": 46318.083
    },
    "team": [
     "bunny-charlotte",
     "bunny-frey",
-    "clarissa",
+    "claire",
     "white-pearl-luna"
    ],
-   "total": 192020.055
+   "total": 241664.497
   },
   {
-   "hits": 38.0,
+   "hits": 41.0,
    "src": {
     "chain": 0.0,
-    "direct": 143178.636,
+    "direct": 172775.813,
     "dot": 2092.996,
     "extra": 0.0
    },
    "team": [
     "bell",
     "bunny-claire",
-    "frey",
+    "fei",
     "marcille@개화(SSR)"
    ],
-   "total": 145271.632
+   "total": 174868.809
+  },
+  {
+   "hits": 49.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 135451.105,
+    "dot": 1896.968,
+    "extra": 36085.281
+   },
+   "team": [
+    "bunny-scarlet",
+    "gwen",
+    "hilde",
+    "sunshine-cat-smile"
+   ],
+   "total": 173433.353
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 111429.952,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "bell",
+    "besta@개화(SSR)",
+    "clarissa",
+    "frey"
+   ],
+   "total": 111429.952
   },
   {
    "hits": 35.0,
    "src": {
     "chain": 0.0,
-    "direct": 108517.367,
-    "dot": 1322.129,
-    "extra": 0.0
-   },
-   "team": [
-    "bunny-scarlet",
-    "harley",
-    "id1059",
-    "sunshine-cat-smile"
-   ],
-   "total": 109839.496
-  },
-  {
-   "hits": 64.0,
-   "src": {
-    "chain": 0.0,
-    "direct": 186627.221,
-    "dot": 0.0,
-    "extra": 64151.61
-   },
-   "team": [
-    "bell",
-    "besta@개화(SSR)",
-    "clarissa@개화(SSR)",
-    "gwen"
-   ],
-   "total": 250778.831
-  },
-  {
-   "hits": 38.4488,
-   "src": {
-    "chain": 6019.272,
-    "direct": 134106.801,
+    "direct": 147963.734,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "carnelia",
-    "cristelle",
+    "clarissa@개화(SSR)",
     "lily",
     "vera@개화(SSR)"
    ],
-   "total": 140126.073
+   "total": 147963.734
   },
   {
-   "hits": 36.0,
+   "hits": 39.0,
    "src": {
     "chain": 0.0,
-    "direct": 107634.813,
+    "direct": 134723.273,
     "dot": 5740.385,
     "extra": 0.0
    },
    "team": [
-    "frey",
+    "fei",
     "lugh",
     "serpang",
     "trish"
    ],
-   "total": 113375.199
+   "total": 140463.658
   },
   {
-   "hits": 34.0,
+   "hits": 38.0,
    "src": {
     "chain": 0.0,
-    "direct": 97602.424,
+    "direct": 130783.097,
     "dot": 2743.121,
     "extra": 0.0
    },
    "team": [
     "besta@개화(SSR)",
     "bunny-scarlet",
-    "frey",
+    "fei",
     "marcille"
    ],
-   "total": 100345.545
+   "total": 133526.218
   },
   {
-   "hits": 44.0,
+   "hits": 28.0,
    "src": {
     "chain": 0.0,
-    "direct": 108725.321,
+    "direct": 95678.99,
     "dot": 15660.485,
-    "extra": 48113.707
-   },
-   "team": [
-    "frey",
-    "gwen",
-    "vera",
-    "yoo-mina"
-   ],
-   "total": 172499.514
-  },
-  {
-   "hits": 37.0,
-   "src": {
-    "chain": 0.0,
-    "direct": 146985.37,
-    "dot": 1789.663,
     "extra": 0.0
    },
    "team": [
-    "dana",
+    "fei",
+    "frey",
+    "vera",
+    "yoo-mina"
+   ],
+   "total": 111339.476
+  },
+  {
+   "hits": 43.04,
+   "src": {
+    "chain": 5305.784,
+    "direct": 147078.515,
+    "dot": 2092.996,
+    "extra": 0.0
+   },
+   "team": [
+    "cristelle",
     "lyn",
     "marcille@개화(SSR)",
     "vera@개화(SSR)"
    ],
-   "total": 148775.033
+   "total": 154477.294
   },
   {
-   "hits": 45.05,
+   "hits": 41.0,
    "src": {
     "chain": 0.0,
-    "direct": 164901.701,
+    "direct": 158324.779,
     "dot": 1929.431,
-    "extra": 15382.566
+    "extra": 0.0
    },
    "team": [
     "besta",
     "bunny-scarlet",
-    "claire",
+    "charlotte",
     "petra"
    ],
-   "total": 182213.698
+   "total": 160254.21
   },
   {
    "hits": 44.0,
    "src": {
     "chain": 0.0,
-    "direct": 178011.502,
-    "dot": 12690.638,
-    "extra": 11587.872
+    "direct": 158361.771,
+    "dot": 13399.814,
+    "extra": 12924.934
    },
    "team": [
     "bunny-scarlet",
     "bunny-scarlet@개화(SSR)",
-    "epindel",
+    "emily",
     "scarlet"
    ],
-   "total": 202290.012
+   "total": 184686.519
   },
   {
    "hits": 43.0,
    "src": {
     "chain": 0.0,
-    "direct": 222859.416,
+    "direct": 205381.204,
     "dot": 12996.97,
     "extra": 0.0
    },
    "team": [
     "amora",
-    "epindel",
+    "emily",
     "seira",
     "yoo-mina"
    ],
-   "total": 235856.386
+   "total": 218378.174
   },
   {
-   "hits": 57.18,
+   "hits": 44.0,
    "src": {
-    "chain": 16022.071,
-    "direct": 204104.943,
+    "chain": 0.0,
+    "direct": 197513.017,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
-    "charlotte",
-    "cristelle",
+    "ceres-sun-supporter",
+    "clarissa@개화(SSR)",
     "scarlet",
     "seira"
    ],
-   "total": 220127.014
+   "total": 197513.017
   },
   {
    "hits": 30.0,
    "src": {
     "chain": 0.0,
-    "direct": 87293.587,
+    "direct": 95602.383,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
-    "emily",
-    "frey",
+    "elisa",
+    "fei",
     "luna",
     "wedding-carmen"
    ],
-   "total": 87293.587
+   "total": 95602.383
   },
   {
    "hits": 43.0,
@@ -1565,68 +1565,68 @@
    "total": 139649.019
   },
   {
-   "hits": 50.0,
+   "hits": 29.0,
    "src": {
     "chain": 0.0,
-    "direct": 136604.3,
+    "direct": 108198.695,
     "dot": 0.0,
-    "extra": 48113.707
+    "extra": 0.0
    },
    "team": [
     "annah@개화(SSR)",
-    "fei",
-    "gwen",
-    "hilde"
+    "epindel",
+    "frey",
+    "haydee"
    ],
-   "total": 184718.008
+   "total": 108198.695
   },
   {
-   "hits": 40.0,
+   "hits": 47.05,
    "src": {
     "chain": 0.0,
-    "direct": 130135.795,
+    "direct": 197864.519,
     "dot": 0.0,
-    "extra": 16978.541
+    "extra": 23367.126
    },
    "team": [
     "bunny-claire",
-    "clarissa",
-    "elisa",
+    "claire",
+    "dana",
     "naru@개화(SSR)"
    ],
-   "total": 147114.335
+   "total": 221231.645
   },
   {
-   "hits": 31.0,
+   "hits": 34.0,
    "src": {
     "chain": 0.0,
-    "direct": 86208.784,
+    "direct": 122761.227,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "besta@개화(SSR)",
     "carnelia",
-    "elisa",
+    "dana",
     "vera@개화(SSR)"
    ],
-   "total": 86208.784
+   "total": 122761.227
   },
   {
-   "hits": 43.5,
+   "hits": 38.0,
    "src": {
-    "chain": 9599.28,
-    "direct": 128806.915,
+    "chain": 0.0,
+    "direct": 142663.848,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "annah",
-    "cristelle",
+    "clarissa@개화(SSR)",
     "luna",
     "white-pearl-luna"
    ],
-   "total": 138406.195
+   "total": 142663.848
   },
   {
    "hits": 41.0,
@@ -1645,36 +1645,36 @@
    "total": 176867.124
   },
   {
-   "hits": 41.0,
+   "hits": 54.0,
    "src": {
     "chain": 0.0,
-    "direct": 127726.323,
+    "direct": 151562.831,
     "dot": 0.0,
-    "extra": 21867.138
+    "extra": 65971.37
    },
    "team": [
-    "harley",
+    "gwen",
     "roberta",
     "tyria",
     "wedding-carmen"
    ],
-   "total": 149593.461
+   "total": 217534.201
   },
   {
-   "hits": 41.0,
+   "hits": 56.0,
    "src": {
     "chain": 0.0,
-    "direct": 136962.633,
-    "dot": 2171.461,
-    "extra": 0.0
+    "direct": 158265.211,
+    "dot": 2746.299,
+    "extra": 52123.183
    },
    "team": [
     "bunny-scarlet",
-    "harley",
+    "gwen",
     "muriel",
     "trish"
    ],
-   "total": 139134.094
+   "total": 213134.693
   },
   {
    "hits": 42.928,
@@ -1709,20 +1709,20 @@
    "total": 185570.454
   },
   {
-   "hits": 52.05,
+   "hits": 68.0,
    "src": {
     "chain": 0.0,
-    "direct": 207050.83,
+    "direct": 224396.247,
     "dot": 0.0,
-    "extra": 36192.961
+    "extra": 108075.991
    },
    "team": [
     "amora",
-    "claire",
-    "harley",
+    "charlotte",
+    "gwen",
     "tyria"
    ],
-   "total": 243243.791
+   "total": 332472.237
   },
   {
    "hits": 43.0,
@@ -1773,132 +1773,132 @@
    "total": 153286.369
   },
   {
-   "hits": 43.828,
+   "hits": 38.528,
    "src": {
     "chain": 0.0,
-    "direct": 160840.922,
+    "direct": 105152.876,
     "dot": 0.0,
-    "extra": 16605.107
+    "extra": 17746.504
    },
    "team": [
     "bunny-claire",
-    "charlotte",
-    "epindel",
+    "ceres-sun-supporter",
+    "emily",
     "waltz-asherah"
    ],
-   "total": 177446.029
+   "total": 122899.38
   },
   {
-   "hits": 61.0,
+   "hits": 46.0,
    "src": {
     "chain": 0.0,
-    "direct": 179033.217,
+    "direct": 117288.232,
     "dot": 923.076,
-    "extra": 75975.015
+    "extra": 36222.068
    },
    "team": [
     "bunny-charlotte",
-    "epindel",
-    "gwen",
+    "emily",
+    "frey",
     "marcille"
    ],
-   "total": 255931.309
+   "total": 154433.375
   },
   {
-   "hits": 41.0,
+   "hits": 45.0,
    "src": {
     "chain": 0.0,
-    "direct": 108221.842,
+    "direct": 141237.578,
     "dot": 15660.485,
-    "extra": 13112.505
+    "extra": 12782.631
    },
    "team": [
     "besta@개화(SSR)",
-    "frey",
+    "fei",
     "omega",
     "yoo-mina"
    ],
-   "total": 136994.832
+   "total": 169680.694
   },
   {
-   "hits": 49.0,
+   "hits": 46.0,
    "src": {
-    "chain": 5235.971,
-    "direct": 179868.553,
+    "chain": 0.0,
+    "direct": 195959.432,
     "dot": 0.0,
-    "extra": 8277.919
+    "extra": 8489.27
    },
    "team": [
     "carmen",
-    "cristelle",
+    "clarissa@개화(SSR)",
     "naru@개화(SSR)",
     "tanya"
    ],
-   "total": 193382.443
+   "total": 204448.702
   },
   {
-   "hits": 48.0,
+   "hits": 45.0,
    "src": {
     "chain": 0.0,
-    "direct": 191396.299,
-    "dot": 9000.439,
+    "direct": 162426.034,
+    "dot": 15806.461,
     "extra": 11587.872
    },
    "team": [
     "bunny-scarlet@개화(SSR)",
-    "clarissa@개화(SSR)",
+    "clarissa",
     "lydia",
     "lyn"
    ],
-   "total": 211984.611
+   "total": 189820.368
   },
   {
-   "hits": 40.04,
+   "hits": 39.0,
    "src": {
-    "chain": 1815.137,
-    "direct": 135364.122,
+    "chain": 0.0,
+    "direct": 149475.753,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
-    "cristelle",
+    "clarissa@개화(SSR)",
     "naru",
     "trish",
     "vera@개화(SSR)"
    ],
-   "total": 137179.258
+   "total": 149475.753
   },
   {
-   "hits": 64.9544,
+   "hits": 43.628,
    "src": {
     "chain": 0.0,
-    "direct": 174529.664,
+    "direct": 132621.974,
     "dot": 0.0,
-    "extra": 83126.081
+    "extra": 21675.344
    },
    "team": [
     "bell",
-    "gwen",
+    "frey",
     "naru@개화(SSR)",
     "waltz-asherah"
    ],
-   "total": 257655.745
+   "total": 154297.318
   },
   {
-   "hits": 34.0,
+   "hits": 36.0,
    "src": {
     "chain": 0.0,
-    "direct": 96791.349,
+    "direct": 126348.65,
     "dot": 1957.014,
     "extra": 0.0
    },
    "team": [
     "bunny-scarlet",
-    "frey",
+    "fei",
     "smile",
     "vera@개화(SSR)"
    ],
-   "total": 98748.363
+   "total": 128305.664
   },
   {
    "hits": 40.0,
@@ -1933,52 +1933,52 @@
    "total": 171203.568
   },
   {
-   "hits": 48.3568,
+   "hits": 51.4208,
    "src": {
-    "chain": 6150.11,
-    "direct": 192116.409,
+    "chain": 6282.23,
+    "direct": 201686.132,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
+    "clarissa@개화(SSR)",
     "cristelle",
-    "dana",
     "roberta",
     "smile"
    ],
-   "total": 198266.52
+   "total": 207968.362
   },
   {
-   "hits": 36.0,
+   "hits": 41.05,
    "src": {
     "chain": 0.0,
-    "direct": 108325.214,
+    "direct": 139216.129,
     "dot": 0.0,
-    "extra": 0.0
+    "extra": 15089.207
    },
    "team": [
     "annah",
     "bunny-claire",
     "carmen",
-    "clarissa"
+    "claire"
    ],
-   "total": 108325.214
+   "total": 154305.337
   },
   {
-   "hits": 33.0,
+   "hits": 32.0,
    "src": {
     "chain": 0.0,
-    "direct": 121747.031,
+    "direct": 92879.81,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "annah@개화(SSR)",
-    "charlotte",
-    "haydee",
+    "ceres-sun-supporter",
+    "harley",
     "luna"
    ],
-   "total": 121747.031
+   "total": 92879.81
   },
   {
    "hits": 50.0,
@@ -1997,20 +1997,20 @@
    "total": 198719.305
   },
   {
-   "hits": 35.0,
+   "hits": 40.0,
    "src": {
     "chain": 0.0,
-    "direct": 111973.912,
+    "direct": 153905.646,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "asherah-voyager",
     "carmen",
-    "elisa",
+    "dana",
     "naru"
    ],
-   "total": 111973.912
+   "total": 153905.646
   },
   {
    "hits": 51.0,
@@ -2029,20 +2029,20 @@
    "total": 205759.03
   },
   {
-   "hits": 34.0,
+   "hits": 41.0,
    "src": {
     "chain": 0.0,
-    "direct": 115839.669,
-    "dot": 4446.131,
+    "direct": 149969.305,
+    "dot": 3990.914,
     "extra": 0.0
    },
    "team": [
     "ceres",
-    "frey",
-    "id1059",
+    "fei",
+    "hilde",
     "muriel"
    ],
-   "total": 120285.8
+   "total": 153960.219
   },
   {
    "hits": 43.0,
@@ -2061,36 +2061,36 @@
    "total": 196878.465
   },
   {
-   "hits": 42.0,
+   "hits": 43.0,
    "src": {
     "chain": 0.0,
-    "direct": 162165.26,
-    "dot": 4398.216,
+    "direct": 195348.2,
+    "dot": 3933.808,
     "extra": 0.0
    },
    "team": [
     "annah@개화(SSR)",
     "ceres",
-    "elisa",
+    "dana",
     "tanya"
    ],
-   "total": 166563.476
+   "total": 199282.008
   },
   {
-   "hits": 72.0,
+   "hits": 67.0,
    "src": {
     "chain": 0.0,
-    "direct": 185442.738,
+    "direct": 159404.212,
     "dot": 0.0,
-    "extra": 104973.237
+    "extra": 97236.388
    },
    "team": [
     "asherah-voyager",
-    "emily",
+    "elisa",
     "lily",
     "professor-m"
    ],
-   "total": 290415.974
+   "total": 256640.6
   },
   {
    "hits": 77.0,
@@ -2109,68 +2109,68 @@
    "total": 286025.174
   },
   {
-   "hits": 74.0,
+   "hits": 71.0,
    "src": {
     "chain": 0.0,
-    "direct": 196764.436,
-    "dot": 3715.263,
-    "extra": 105611.239
+    "direct": 182448.982,
+    "dot": 3551.354,
+    "extra": 90611.322
    },
    "team": [
     "ceres",
-    "id1059",
+    "hilde",
     "lydia-moon-caster",
     "professor-m"
    ],
-   "total": 306090.938
+   "total": 276611.658
   },
   {
-   "hits": 40.0,
+   "hits": 43.0,
    "src": {
     "chain": 0.0,
-    "direct": 132163.708,
+    "direct": 138283.948,
     "dot": 0.0,
     "extra": 11751.773
    },
    "team": [
     "bunny-claire",
     "bunny-frey",
-    "id1059",
+    "hilde",
     "omega"
    ],
-   "total": 143915.482
+   "total": 150035.722
   },
   {
-   "hits": 35.0,
+   "hits": 56.4,
    "src": {
-    "chain": 0.0,
-    "direct": 137525.011,
+    "chain": 26437.859,
+    "direct": 180572.026,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
+    "cristelle",
     "dana",
-    "elisa",
     "lydia",
     "lydia-moon-caster"
    ],
-   "total": 137525.011
+   "total": 207009.885
   },
   {
-   "hits": 45.0,
+   "hits": 41.0,
    "src": {
     "chain": 0.0,
-    "direct": 202201.321,
+    "direct": 177345.802,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "bunny-claire@개화(SSR)",
-    "charlotte",
+    "ceres-sun-supporter",
     "scarlet",
     "seira"
    ],
-   "total": 202201.321
+   "total": 177345.802
   },
   {
    "hits": 39.0,
@@ -2192,81 +2192,81 @@
    "hits": 43.0,
    "src": {
     "chain": 0.0,
-    "direct": 180216.729,
+    "direct": 161209.458,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
-    "epindel",
+    "emily",
     "lyn",
     "petra",
     "trish"
    ],
-   "total": 180216.729
+   "total": 161209.458
   },
   {
-   "hits": 41.0,
+   "hits": 38.0,
    "src": {
     "chain": 0.0,
-    "direct": 159175.146,
-    "dot": 27599.044,
+    "direct": 140671.23,
+    "dot": 24899.657,
     "extra": 11587.872
    },
    "team": [
     "bunny-scarlet@개화(SSR)",
-    "emily",
+    "elisa",
     "lugh",
     "yoo-mina"
    ],
-   "total": 198362.062
+   "total": 177158.759
   },
   {
-   "hits": 42.0,
+   "hits": 39.0,
    "src": {
     "chain": 0.0,
-    "direct": 163677.56,
+    "direct": 144595.509,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
-    "emily",
+    "elisa",
     "lyn",
     "petra",
     "roberta"
    ],
-   "total": 163677.56
+   "total": 144595.509
   },
   {
-   "hits": 37.0,
+   "hits": 33.0,
    "src": {
     "chain": 0.0,
-    "direct": 120546.523,
+    "direct": 100292.562,
     "dot": 0.0,
-    "extra": 8277.919
+    "extra": 16978.541
    },
    "team": [
-    "emily",
-    "hilde",
+    "elisa",
+    "haydee",
     "naru@개화(SSR)",
     "wedding-carmen"
    ],
-   "total": 128824.442
+   "total": 117271.103
   },
   {
-   "hits": 105.7216,
+   "hits": 82.0,
    "src": {
-    "chain": 33460.677,
-    "direct": 224770.876,
+    "chain": 0.0,
+    "direct": 200294.796,
     "dot": 0.0,
-    "extra": 115549.284
+    "extra": 110404.035
    },
    "team": [
-    "cristelle",
-    "emily",
+    "clarissa@개화(SSR)",
+    "elisa",
     "professor-m",
     "scarlet"
    ],
-   "total": 373780.837
+   "total": 310698.831
   },
   {
    "hits": 45.0,
@@ -2285,52 +2285,52 @@
    "total": 219944.2
   },
   {
-   "hits": 40.0,
+   "hits": 44.0,
    "src": {
     "chain": 0.0,
-    "direct": 151909.185,
-    "dot": 2557.777,
+    "direct": 159781.96,
+    "dot": 2443.573,
     "extra": 0.0
    },
    "team": [
-    "haydee",
+    "harley",
     "lydia",
     "lyn",
     "marcille@개화(SSR)"
    ],
-   "total": 154466.963
+   "total": 162225.532
   },
   {
-   "hits": 38.0,
+   "hits": 42.0,
    "src": {
     "chain": 0.0,
-    "direct": 146996.081,
+    "direct": 161970.79,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
-    "elisa",
-    "epindel",
+    "dana",
+    "emily",
     "lyn",
     "trish"
    ],
-   "total": 146996.081
+   "total": 161970.79
   },
   {
-   "hits": 44.05,
+   "hits": 40.0,
    "src": {
     "chain": 0.0,
-    "direct": 141286.212,
+    "direct": 126674.986,
     "dot": 0.0,
-    "extra": 25851.358
+    "extra": 11999.179
    },
    "team": [
     "bunny-claire",
-    "claire",
+    "charlotte",
     "omega",
     "vera"
    ],
-   "total": 167137.57
+   "total": 138674.165
   },
   {
    "hits": 32.0,
@@ -2349,20 +2349,20 @@
    "total": 123254.507
   },
   {
-   "hits": 46.228,
+   "hits": 40.628,
    "src": {
     "chain": 0.0,
-    "direct": 173566.951,
+    "direct": 138961.775,
     "dot": 0.0,
-    "extra": 14895.591
+    "extra": 13851.459
    },
    "team": [
     "bell",
     "carnelia",
-    "charlotte",
+    "ceres-sun-supporter",
     "waltz-asherah"
    ],
-   "total": 188462.541
+   "total": 152813.233
   },
   {
    "hits": 37.0,
@@ -2381,20 +2381,20 @@
    "total": 140800.378
   },
   {
-   "hits": 52.05,
+   "hits": 48.0,
    "src": {
     "chain": 0.0,
-    "direct": 221932.959,
-    "dot": 12965.372,
-    "extra": 26970.438
+    "direct": 214314.832,
+    "dot": 13129.28,
+    "extra": 11587.872
    },
    "team": [
     "bunny-scarlet@개화(SSR)",
     "ceres",
-    "claire",
+    "charlotte",
     "petra"
    ],
-   "total": 261868.77
+   "total": 239031.985
   },
   {
    "hits": 43.0,
@@ -2429,20 +2429,20 @@
    "total": 195066.615
   },
   {
-   "hits": 47.428,
+   "hits": 46.528,
    "src": {
     "chain": 0.0,
-    "direct": 165361.217,
+    "direct": 180484.521,
     "dot": 0.0,
-    "extra": 19568.27
+    "extra": 16890.027
    },
    "team": [
     "bunny-frey",
-    "cristelle",
+    "clarissa@개화(SSR)",
     "lydia-moon-caster",
     "waltz-asherah"
    ],
-   "total": 184929.487
+   "total": 197374.548
   },
   {
    "hits": 52.0,
@@ -2461,36 +2461,36 @@
    "total": 221936.626
   },
   {
-   "hits": 34.0,
+   "hits": 42.32,
    "src": {
-    "chain": 0.0,
-    "direct": 138348.349,
+    "chain": 631.352,
+    "direct": 188464.835,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
+    "cristelle",
     "dana",
-    "elisa",
-    "fei",
+    "epindel",
     "lugh"
    ],
-   "total": 138348.349
+   "total": 189096.187
   },
   {
-   "hits": 41.0,
+   "hits": 41.05,
    "src": {
     "chain": 0.0,
-    "direct": 179265.031,
+    "direct": 166503.215,
     "dot": 0.0,
-    "extra": 0.0
+    "extra": 15481.997
    },
    "team": [
-    "charlotte",
-    "clarissa",
+    "ceres-sun-supporter",
+    "claire",
     "lily",
     "rosaria"
    ],
-   "total": 179265.031
+   "total": 181985.212
   },
   {
    "hits": 60.0,
@@ -2509,132 +2509,132 @@
    "total": 231743.609
   },
   {
-   "hits": 45.92,
+   "hits": 45.0,
    "src": {
-    "chain": 10377.846,
-    "direct": 163698.101,
+    "chain": 0.0,
+    "direct": 187075.124,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
-    "cristelle",
-    "haydee",
+    "clarissa@개화(SSR)",
+    "harley",
     "naru",
     "seira"
    ],
-   "total": 174075.947
+   "total": 187075.124
   },
   {
-   "hits": 39.0,
+   "hits": 43.0,
    "src": {
     "chain": 0.0,
-    "direct": 149945.925,
+    "direct": 183678.971,
     "dot": 14090.908,
     "extra": 8489.27
    },
    "team": [
-    "frey",
+    "fei",
     "naru@개화(SSR)",
     "rosaria",
     "yoo-mina"
    ],
-   "total": 172526.103
+   "total": 206259.149
   },
   {
-   "hits": 38.0,
+   "hits": 41.0,
    "src": {
     "chain": 0.0,
-    "direct": 127998.972,
-    "dot": 6045.653,
+    "direct": 133265.036,
+    "dot": 5548.557,
     "extra": 8489.27
    },
    "team": [
     "asherah-voyager",
-    "id1059",
+    "hilde",
     "naru@개화(SSR)",
     "serpang"
    ],
-   "total": 142533.896
+   "total": 147302.864
   },
   {
-   "hits": 40.05,
+   "hits": 36.0,
    "src": {
     "chain": 0.0,
-    "direct": 159903.67,
+    "direct": 146581.311,
     "dot": 0.0,
-    "extra": 15089.207
+    "extra": 0.0
    },
    "team": [
     "annah@개화(SSR)",
-    "claire",
+    "charlotte",
     "lily",
     "naru"
    ],
-   "total": 174992.878
+   "total": 146581.311
   },
   {
-   "hits": 42.0,
+   "hits": 46.0,
    "src": {
     "chain": 0.0,
-    "direct": 137073.456,
-    "dot": 3141.583,
+    "direct": 145827.524,
+    "dot": 2513.266,
     "extra": 0.0
    },
    "team": [
     "besta",
     "ceres",
-    "haydee",
+    "harley",
     "lyn"
    ],
-   "total": 140215.039
+   "total": 148340.79
   },
   {
    "hits": 47.0,
    "src": {
     "chain": 0.0,
-    "direct": 195289.646,
-    "dot": 12638.966,
+    "direct": 180464.907,
+    "dot": 13130.692,
     "extra": 11587.872
    },
    "team": [
     "bunny-scarlet@개화(SSR)",
     "ceres",
-    "epindel",
+    "emily",
     "lyn"
    ],
-   "total": 219516.484
+   "total": 205183.471
   },
   {
    "hits": 38.0,
    "src": {
     "chain": 0.0,
-    "direct": 173385.359,
+    "direct": 181387.8,
     "dot": 14786.633,
     "extra": 0.0
    },
    "team": [
     "carnelia",
-    "fei",
+    "epindel",
     "marcille@개화(SSR)",
     "yoo-mina"
    ],
-   "total": 188171.992
+   "total": 196174.433
   },
   {
-   "hits": 57.8,
+   "hits": 43.0,
    "src": {
-    "chain": 25830.79,
-    "direct": 158108.731,
+    "chain": 0.0,
+    "direct": 155916.469,
     "dot": 0.0,
-    "extra": 21867.138
+    "extra": 25577.184
    },
    "team": [
     "annah@개화(SSR)",
-    "cristelle",
-    "epindel",
+    "clarissa@개화(SSR)",
+    "emily",
     "tyria"
    ],
-   "total": 205806.658
+   "total": 181493.653
   },
   {
    "hits": 38.0,
@@ -2701,116 +2701,116 @@
    "total": 242358.39
   },
   {
-   "hits": 57.0,
+   "hits": 36.0,
    "src": {
     "chain": 0.0,
-    "direct": 175007.634,
+    "direct": 122896.165,
     "dot": 0.0,
-    "extra": 71714.557
+    "extra": 0.0
    },
    "team": [
     "asherah-voyager",
-    "gwen",
-    "id1059",
+    "frey",
+    "hilde",
     "petra"
    ],
-   "total": 246722.191
+   "total": 122896.165
   },
   {
-   "hits": 44.0,
+   "hits": 41.0,
    "src": {
     "chain": 0.0,
-    "direct": 168672.866,
+    "direct": 165903.079,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "carmen",
-    "hilde",
+    "haydee",
     "tanya",
     "wedding-epindel"
    ],
-   "total": 168672.866
+   "total": 165903.079
   },
   {
-   "hits": 45.0,
+   "hits": 50.05,
    "src": {
     "chain": 0.0,
-    "direct": 204684.863,
+    "direct": 235452.011,
     "dot": 0.0,
-    "extra": 0.0
+    "extra": 15382.566
    },
    "team": [
     "amora",
     "asherah-voyager",
-    "clarissa",
+    "claire",
     "petra"
    ],
-   "total": 204684.863
+   "total": 250834.577
   },
   {
    "hits": 32.0,
    "src": {
     "chain": 0.0,
-    "direct": 135016.051,
+    "direct": 142020.093,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "bunny-frey",
     "carnelia",
-    "fei",
+    "epindel",
     "vera"
    ],
-   "total": 135016.051
+   "total": 142020.093
   },
   {
-   "hits": 45.0,
+   "hits": 48.0,
    "src": {
     "chain": 0.0,
-    "direct": 105299.798,
+    "direct": 120316.186,
     "dot": 0.0,
     "extra": 27686.983
    },
    "team": [
     "besta",
     "bunny-charlotte",
-    "id1059",
+    "hilde",
     "naru"
    ],
-   "total": 132986.781
+   "total": 148003.168
   },
   {
-   "hits": 53.0,
+   "hits": 68.0,
    "src": {
     "chain": 0.0,
-    "direct": 150725.977,
-    "dot": 1494.581,
-    "extra": 28321.251
+    "direct": 174795.572,
+    "dot": 2241.871,
+    "extra": 84279.039
    },
    "team": [
     "bunny-charlotte",
     "bunny-scarlet",
-    "harley",
+    "gwen",
     "lyn"
    ],
-   "total": 180541.809
+   "total": 261316.482
   },
   {
-   "hits": 40.0,
+   "hits": 35.0,
    "src": {
     "chain": 0.0,
-    "direct": 200567.023,
+    "direct": 143917.033,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "amora",
     "annah@개화(SSR)",
-    "charlotte",
-    "epindel"
+    "ceres-sun-supporter",
+    "emily"
    ],
-   "total": 200567.023
+   "total": 143917.033
   },
   {
    "hits": 51.0,
@@ -2845,116 +2845,116 @@
    "total": 163397.003
   },
   {
-   "hits": 44.0,
+   "hits": 41.0,
    "src": {
     "chain": 0.0,
-    "direct": 182218.791,
-    "dot": 12935.25,
+    "direct": 152439.789,
+    "dot": 13403.487,
     "extra": 0.0
    },
    "team": [
-    "clarissa@개화(SSR)",
+    "clarissa",
     "smile",
     "sunshine-cat-smile",
     "yoo-mina"
    ],
-   "total": 195154.041
+   "total": 165843.275
   },
   {
    "hits": 37.0,
    "src": {
     "chain": 0.0,
-    "direct": 114834.016,
+    "direct": 98999.113,
     "dot": 0.0,
-    "extra": 21867.138
+    "extra": 23722.161
    },
    "team": [
     "besta@개화(SSR)",
-    "epindel",
+    "emily",
     "tyria",
     "vera"
    ],
-   "total": 136701.153
+   "total": 122721.274
   },
   {
-   "hits": 45.0,
+   "hits": 63.0,
    "src": {
     "chain": 0.0,
-    "direct": 143189.038,
-    "dot": 9497.383,
-    "extra": 32691.626
+    "direct": 169389.302,
+    "dot": 10793.67,
+    "extra": 93597.144
    },
    "team": [
     "bunny-scarlet@개화(SSR)",
-    "harley",
+    "gwen",
     "luna",
     "tyria"
    ],
-   "total": 185378.047
+   "total": 273780.117
   },
   {
-   "hits": 60.195,
+   "hits": 44.0,
    "src": {
-    "chain": 28265.516,
-    "direct": 167498.823,
-    "dot": 5707.983,
+    "chain": 0.0,
+    "direct": 181575.838,
+    "dot": 5548.557,
     "extra": 0.0
    },
    "team": [
     "amora",
-    "cristelle",
+    "clarissa@개화(SSR)",
     "luna",
     "serpang"
    ],
-   "total": 201472.323
+   "total": 187124.395
   },
   {
-   "hits": 42.0,
+   "hits": 47.0,
    "src": {
     "chain": 0.0,
-    "direct": 172662.909,
+    "direct": 183988.684,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "bell",
-    "haydee",
+    "harley",
     "smile",
     "tanya"
    ],
-   "total": 172662.909
+   "total": 183988.684
   },
   {
-   "hits": 37.0,
+   "hits": 34.0,
    "src": {
     "chain": 0.0,
-    "direct": 130156.038,
+    "direct": 128260.23,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "carnelia",
-    "hilde",
+    "haydee",
     "naru",
     "sunshine-cat-smile"
    ],
-   "total": 130156.038
+   "total": 128260.23
   },
   {
-   "hits": 37.0,
+   "hits": 34.0,
    "src": {
     "chain": 0.0,
-    "direct": 131606.762,
-    "dot": 3124.327,
+    "direct": 112086.204,
+    "dot": 3033.327,
     "extra": 0.0
    },
    "team": [
     "carmen",
-    "emily",
+    "elisa",
     "marcille@개화(SSR)",
     "muriel"
    ],
-   "total": 134731.089
+   "total": 115119.531
   },
   {
    "hits": 40.0,
@@ -2989,10 +2989,10 @@
    "total": 211933.423
   },
   {
-   "hits": 37.0,
+   "hits": 40.0,
    "src": {
     "chain": 0.0,
-    "direct": 147660.453,
+    "direct": 176243.425,
     "dot": 0.0,
     "extra": 0.0
    },
@@ -3000,9 +3000,9 @@
     "bell",
     "bunny-claire@개화(SSR)",
     "carnelia",
-    "frey"
+    "fei"
    ],
-   "total": 147660.453
+   "total": 176243.425
   },
   {
    "hits": 66.0,
@@ -3021,100 +3021,100 @@
    "total": 202100.047
   },
   {
-   "hits": 43.228,
+   "hits": 41.928,
    "src": {
     "chain": 0.0,
-    "direct": 125354.278,
+    "direct": 107932.781,
     "dot": 0.0,
-    "extra": 14895.591
+    "extra": 14040.832
    },
    "team": [
     "bell",
     "carmen",
-    "emily",
+    "elisa",
     "waltz-asherah"
    ],
-   "total": 140249.868
+   "total": 121973.613
   },
   {
-   "hits": 39.0,
+   "hits": 34.0,
    "src": {
     "chain": 0.0,
-    "direct": 162838.641,
+    "direct": 121352.978,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "asherah-voyager",
     "bunny-claire",
-    "charlotte",
+    "ceres-sun-supporter",
     "wedding-carmen"
    ],
-   "total": 162838.641
+   "total": 121352.978
   },
   {
-   "hits": 57.0,
+   "hits": 37.0,
    "src": {
     "chain": 0.0,
-    "direct": 192074.258,
-    "dot": 16548.324,
-    "extra": 66417.835
+    "direct": 147078.021,
+    "dot": 15660.485,
+    "extra": 0.0
    },
    "team": [
     "amora",
-    "gwen",
-    "id1059",
+    "frey",
+    "hilde",
     "yoo-mina"
    ],
-   "total": 275040.418
+   "total": 162738.507
   },
   {
-   "hits": 54.0,
+   "hits": 36.0,
    "src": {
     "chain": 0.0,
-    "direct": 155757.908,
+    "direct": 142711.577,
     "dot": 0.0,
-    "extra": 56132.659
+    "extra": 0.0
    },
    "team": [
+    "fei",
     "frey",
-    "gwen",
     "kyra",
     "scarlet"
    ],
-   "total": 211890.566
+   "total": 142711.577
   },
   {
-   "hits": 35.0,
+   "hits": 42.05,
    "src": {
     "chain": 0.0,
-    "direct": 112229.787,
+    "direct": 183476.66,
     "dot": 0.0,
-    "extra": 0.0
+    "extra": 15103.177
    },
    "team": [
-    "clarissa",
-    "elisa",
-    "hilde",
+    "claire",
+    "dana",
+    "haydee",
     "petra"
    ],
-   "total": 112229.787
+   "total": 198579.837
   },
   {
-   "hits": 40.0,
+   "hits": 44.0,
    "src": {
     "chain": 0.0,
-    "direct": 173996.041,
+    "direct": 179840.41,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
-    "haydee",
+    "harley",
     "roberta",
     "seira",
     "wedding-epindel"
    ],
-   "total": 173996.041
+   "total": 179840.41
   },
   {
    "hits": 41.0,
@@ -3152,17 +3152,17 @@
    "hits": 46.0,
    "src": {
     "chain": 0.0,
-    "direct": 221842.665,
+    "direct": 206656.881,
     "dot": 10793.67,
     "extra": 11587.872
    },
    "team": [
     "amora",
     "bunny-scarlet@개화(SSR)",
-    "epindel",
+    "emily",
     "lacy"
    ],
-   "total": 244224.207
+   "total": 229038.424
   },
   {
    "hits": 42.0,
@@ -3200,65 +3200,65 @@
    "hits": 39.0,
    "src": {
     "chain": 0.0,
-    "direct": 153087.15,
+    "direct": 137955.575,
     "dot": 10594.666,
     "extra": 11587.872
    },
    "team": [
     "annah",
     "bunny-scarlet@개화(SSR)",
-    "epindel",
+    "emily",
     "lydia"
    ],
-   "total": 175269.688
+   "total": 160138.113
   },
   {
-   "hits": 40.0,
+   "hits": 37.0,
    "src": {
     "chain": 0.0,
-    "direct": 166477.117,
+    "direct": 137634.2,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "annah@개화(SSR)",
     "carnelia",
-    "clarissa@개화(SSR)",
+    "clarissa",
     "naru"
    ],
-   "total": 166477.117
+   "total": 137634.2
   },
   {
-   "hits": 42.0,
+   "hits": 47.05,
    "src": {
     "chain": 0.0,
-    "direct": 167993.493,
+    "direct": 198760.641,
     "dot": 0.0,
-    "extra": 0.0
+    "extra": 15382.566
    },
    "team": [
-    "clarissa",
+    "claire",
     "petra",
     "roberta",
     "trish"
    ],
-   "total": 167993.493
+   "total": 214143.207
   },
   {
-   "hits": 55.0,
+   "hits": 39.0,
    "src": {
     "chain": 0.0,
-    "direct": 166914.38,
+    "direct": 125542.977,
     "dot": 0.0,
-    "extra": 50702.692
+    "extra": 9074.845
    },
    "team": [
     "carmen",
-    "gwen",
+    "frey",
     "naru@개화(SSR)",
     "smile"
    ],
-   "total": 217617.072
+   "total": 134617.823
   },
   {
    "hits": 52.628,
@@ -3309,20 +3309,20 @@
    "total": 110462.127
   },
   {
-   "hits": 33.0,
+   "hits": 37.8,
    "src": {
-    "chain": 0.0,
-    "direct": 120535.797,
+    "chain": 1396.259,
+    "direct": 126254.089,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "annah@개화(SSR)",
     "asherah-voyager",
-    "dana",
+    "cristelle",
     "vera@개화(SSR)"
    ],
-   "total": 120535.797
+   "total": 127650.348
   },
   {
    "hits": 47.0,
@@ -3341,20 +3341,20 @@
    "total": 183852.595
   },
   {
-   "hits": 34.0,
+   "hits": 30.0,
    "src": {
     "chain": 0.0,
-    "direct": 123354.484,
+    "direct": 100422.667,
     "dot": 0.0,
     "extra": 0.0
    },
    "team": [
     "annah",
-    "emily",
+    "elisa",
     "kyra",
     "luna"
    ],
-   "total": 123354.484
+   "total": 100422.667
   },
   {
    "hits": 35.0,
@@ -3373,20 +3373,20 @@
    "total": 143601.685
   },
   {
-   "hits": 61.0,
+   "hits": 38.0,
    "src": {
     "chain": 0.0,
-    "direct": 176659.481,
+    "direct": 131482.121,
     "dot": 0.0,
-    "extra": 65584.107
+    "extra": 0.0
    },
    "team": [
     "annah@개화(SSR)",
-    "gwen",
+    "frey",
     "lacy",
     "rosaria"
    ],
-   "total": 242243.588
+   "total": 131482.121
   },
   {
    "hits": 42.0,
@@ -3421,20 +3421,20 @@
    "total": 191188.971
   },
   {
-   "hits": 39.0,
+   "hits": 48.05,
    "src": {
     "chain": 0.0,
-    "direct": 148718.053,
-    "dot": 2513.266,
-    "extra": 0.0
+    "direct": 211344.514,
+    "dot": 3141.583,
+    "extra": 15089.207
    },
    "team": [
     "bunny-claire@개화(SSR)",
     "ceres",
-    "clarissa",
-    "frey"
+    "claire",
+    "fei"
    ],
-   "total": 151231.319
+   "total": 229575.304
   },
   {
    "hits": 41.928,
@@ -3453,154 +3453,10 @@
    "total": 163838.738
   },
   {
-   "hits": 42.2,
-   "src": {
-    "chain": 2094.388,
-    "direct": 155856.787,
-    "dot": 0.0,
-    "extra": 0.0
-   },
-   "team": [
-    "annah@개화(SSR)",
-    "bunny-claire@개화(SSR)",
-    "clarissa",
-    "cristelle"
-   ],
-   "total": 157951.175
-  },
-  {
-   "hits": 74.0,
+   "hits": 45.05,
    "src": {
     "chain": 0.0,
-    "direct": 179727.938,
-    "dot": 0.0,
-    "extra": 76919.096
-   },
-   "team": [
-    "emily",
-    "luna",
-    "professor-m",
-    "scarlet"
-   ],
-   "total": 256647.034
-  },
-  {
-   "hits": 42.0,
-   "src": {
-    "chain": 0.0,
-    "direct": 148774.618,
-    "dot": 1695.485,
-    "extra": 10762.15
-   },
-   "team": [
-    "epindel",
-    "marcille",
-    "muriel",
-    "omega"
-   ],
-   "total": 161232.253
-  },
-  {
-   "hits": 42.0,
-   "src": {
-    "chain": 0.0,
-    "direct": 188758.411,
-    "dot": 2148.387,
-    "extra": 0.0
-   },
-   "team": [
-    "epindel",
-    "marcille@개화(SSR)",
-    "rosaria",
-    "trish"
-   ],
-   "total": 190906.798
-  },
-  {
-   "hits": 56.325,
-   "src": {
-    "chain": 25001.761,
-    "direct": 149224.145,
-    "dot": 0.0,
-    "extra": 8489.27
-   },
-   "team": [
-    "cristelle",
-    "elisa",
-    "lydia",
-    "naru@개화(SSR)"
-   ],
-   "total": 182715.176
-  },
-  {
-   "hits": 30.0,
-   "src": {
-    "chain": 0.0,
-    "direct": 75198.152,
-    "dot": 6309.36,
-    "extra": 0.0
-   },
-   "team": [
-    "bunny-claire",
-    "frey",
-    "id1059",
-    "serpang"
-   ],
-   "total": 81507.512
-  },
-  {
-   "hits": 42.0,
-   "src": {
-    "chain": 0.0,
-    "direct": 168917.254,
-    "dot": 0.0,
-    "extra": 0.0
-   },
-   "team": [
-    "bunny-frey",
-    "emily",
-    "petra",
-    "scarlet"
-   ],
-   "total": 168917.254
-  },
-  {
-   "hits": 38.0,
-   "src": {
-    "chain": 0.0,
-    "direct": 114992.033,
-    "dot": 0.0,
-    "extra": 0.0
-   },
-   "team": [
-    "clarissa",
-    "emily",
-    "harley",
-    "hilde"
-   ],
-   "total": 114992.033
-  },
-  {
-   "hits": 45.0,
-   "src": {
-    "chain": 0.0,
-    "direct": 136892.209,
-    "dot": 0.0,
-    "extra": 27686.983
-   },
-   "team": [
-    "bunny-charlotte",
-    "carnelia",
-    "id1059",
-    "roberta"
-   ],
-   "total": 164579.192
-  },
-  {
-   "hits": 39.05,
-   "src": {
-    "chain": 0.0,
-    "direct": 148330.871,
+    "direct": 197187.074,
     "dot": 0.0,
     "extra": 15089.207
    },
@@ -3608,57 +3464,201 @@
     "annah@개화(SSR)",
     "bunny-claire@개화(SSR)",
     "claire",
-    "frey"
+    "clarissa@개화(SSR)"
    ],
-   "total": 163420.078
+   "total": 212276.281
   },
   {
-   "hits": 38.628,
+   "hits": 69.0,
    "src": {
     "chain": 0.0,
-    "direct": 87208.772,
+    "direct": 152079.888,
     "dot": 0.0,
-    "extra": 13186.074
+    "extra": 69626.754
    },
    "team": [
-    "besta@개화(SSR)",
-    "frey",
-    "muriel",
-    "waltz-asherah"
+    "elisa",
+    "luna",
+    "professor-m",
+    "scarlet"
    ],
-   "total": 100394.846
+   "total": 221706.642
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 133748.135,
+    "dot": 1822.884,
+    "extra": 10762.15
+   },
+   "team": [
+    "emily",
+    "marcille",
+    "muriel",
+    "omega"
+   ],
+   "total": 146333.17
+  },
+  {
+   "hits": 42.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 174501.048,
+    "dot": 2148.387,
+    "extra": 0.0
+   },
+   "team": [
+    "emily",
+    "marcille@개화(SSR)",
+    "rosaria",
+    "trish"
+   ],
+   "total": 176649.435
+  },
+  {
+   "hits": 46.0121,
+   "src": {
+    "chain": 0.0,
+    "direct": 202119.825,
+    "dot": 0.0,
+    "extra": 8540.817
+   },
+   "team": [
+    "clarissa@개화(SSR)",
+    "dana",
+    "lydia",
+    "naru@개화(SSR)"
+   ],
+   "total": 210660.642
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 112847.854,
+    "dot": 5707.983,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-claire",
+    "fei",
+    "hilde",
+    "serpang"
+   ],
+   "total": 118555.837
+  },
+  {
+   "hits": 38.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 144495.801,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "bunny-frey",
+    "elisa",
+    "petra",
+    "scarlet"
+   ],
+   "total": 144495.801
+  },
+  {
+   "hits": 50.8022,
+   "src": {
+    "chain": 0.0,
+    "direct": 146636.159,
+    "dot": 0.0,
+    "extra": 62209.532
+   },
+   "team": [
+    "claire",
+    "elisa",
+    "gwen",
+    "haydee"
+   ],
+   "total": 208845.692
+  },
+  {
+   "hits": 48.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 149338.236,
+    "dot": 0.0,
+    "extra": 27686.983
+   },
+   "team": [
+    "bunny-charlotte",
+    "carnelia",
+    "hilde",
+    "roberta"
+   ],
+   "total": 177025.219
+  },
+  {
+   "hits": 37.0,
+   "src": {
+    "chain": 0.0,
+    "direct": 165920.089,
+    "dot": 0.0,
+    "extra": 0.0
+   },
+   "team": [
+    "annah@개화(SSR)",
+    "bunny-claire@개화(SSR)",
+    "charlotte",
+    "fei"
+   ],
+   "total": 165920.089
   },
   {
    "hits": 40.928,
    "src": {
     "chain": 0.0,
-    "direct": 108166.338,
+    "direct": 116070.132,
     "dot": 0.0,
-    "extra": 15205.256
+    "extra": 14040.832
+   },
+   "team": [
+    "besta@개화(SSR)",
+    "fei",
+    "muriel",
+    "waltz-asherah"
+   ],
+   "total": 130110.964
+  },
+  {
+   "hits": 39.628,
+   "src": {
+    "chain": 0.0,
+    "direct": 90881.499,
+    "dot": 0.0,
+    "extra": 13186.074
    },
    "team": [
     "besta",
-    "emily",
+    "elisa",
     "naru",
     "waltz-asherah"
    ],
-   "total": 123371.594
+   "total": 104067.572
   },
   {
-   "hits": 55.285,
+   "hits": 44.0,
    "src": {
-    "chain": 19695.977,
-    "direct": 172506.43,
-    "dot": 14881.956,
+    "chain": 0.0,
+    "direct": 186672.822,
+    "dot": 16296.77,
     "extra": 8489.27
    },
    "team": [
-    "cristelle",
+    "clarissa@개화(SSR)",
     "muriel",
     "naru@개화(SSR)",
     "yoo-mina"
    ],
-   "total": 215573.634
+   "total": 211458.862
   },
   {
    "hits": 39.0,
@@ -3693,20 +3693,20 @@
    "total": 389750.99
   },
   {
-   "hits": 43.05,
+   "hits": 36.0,
    "src": {
     "chain": 0.0,
-    "direct": 152942.302,
+    "direct": 139923.895,
     "dot": 0.0,
-    "extra": 15089.207
+    "extra": 0.0
    },
    "team": [
-    "claire",
-    "hilde",
+    "charlotte",
+    "haydee",
     "lugh",
     "luna"
    ],
-   "total": 168031.509
+   "total": 139923.895
   }
  ],
  "stages": [
@@ -3752,31 +3752,31 @@
     {
      "dmg": 56000,
      "stage": "길레 1단계",
-     "ttk": 4.197
+     "ttk": 7.1706
     },
     {
-     "dmg": 84000,
+     "dmg": 68003,
      "stage": "길레 2단계",
-     "ttk": 6.25
+     "ttk": 12.1053
     },
     {
-     "dmg": 118973,
+     "dmg": 49559,
      "stage": "길레 3단계",
      "ttk": null
     },
     {
-     "dmg": 98800,
+     "dmg": 67259,
      "stage": "매니저 그레고리 Ⅰ",
-     "ttk": 7.0158
+     "ttk": 14.1991
     },
     {
-     "dmg": 97521,
+     "dmg": 39208,
      "stage": "매니저 그레고리 Ⅱ",
-     "ttk": 26.2458
+     "ttk": null
     }
    ],
    "team": [
-    "gwen",
+    "frey",
     "marcille",
     "vera",
     "wedding-carmen"
@@ -3788,33 +3788,33 @@
     {
      "dmg": 56000,
      "stage": "길레 1단계",
-     "ttk": 4.1111
+     "ttk": 4.0889
     },
     {
      "dmg": 84000,
      "stage": "길레 2단계",
-     "ttk": 5.5556
+     "ttk": 5.2222
     },
     {
-     "dmg": 145296,
+     "dmg": 181673,
      "stage": "길레 3단계",
      "ttk": null
     },
     {
      "dmg": 98800,
      "stage": "매니저 그레고리 Ⅰ",
-     "ttk": 6.3158
+     "ttk": 6.0
     },
     {
-     "dmg": 122335,
+     "dmg": 154218,
      "stage": "매니저 그레고리 Ⅱ",
-     "ttk": 19.7778
+     "ttk": 15.7548
     }
    ],
    "team": [
     "bunny-charlotte",
     "bunny-frey",
-    "clarissa",
+    "claire",
     "white-pearl-luna"
    ]
   },
@@ -3824,33 +3824,33 @@
     {
      "dmg": 56000,
      "stage": "길레 1단계",
-     "ttk": 4.1667
+     "ttk": 3.4226
     },
     {
      "dmg": 84000,
      "stage": "길레 2단계",
-     "ttk": 6.4355
+     "ttk": 5.8036
     },
     {
-     "dmg": 106399,
+     "dmg": 128606,
      "stage": "길레 3단계",
      "ttk": null
     },
     {
      "dmg": 98800,
      "stage": "매니저 그레고리 Ⅰ",
-     "ttk": 7.6316
+     "ttk": 6.5476
     },
     {
-     "dmg": 88271,
+     "dmg": 108615,
      "stage": "매니저 그레고리 Ⅱ",
-     "ttk": 30.0063
+     "ttk": 24.5536
     }
    ],
    "team": [
     "bell",
     "bunny-claire",
-    "frey",
+    "fei",
     "marcille@개화(SSR)"
    ]
   },
@@ -3860,33 +3860,33 @@
     {
      "dmg": 56000,
      "stage": "길레 1단계",
-     "ttk": 4.9824
+     "ttk": 4.0579
     },
     {
      "dmg": 84000,
      "stage": "길레 2단계",
-     "ttk": 8.1706
+     "ttk": 5.7579
     },
     {
-     "dmg": 80138,
+     "dmg": 126773,
      "stage": "길레 3단계",
      "ttk": null
     },
     {
      "dmg": 98800,
      "stage": "매니저 그레고리 Ⅰ",
-     "ttk": 9.2593
+     "ttk": 6.3158
     },
     {
-     "dmg": 68752,
+     "dmg": 109578,
      "stage": "매니저 그레고리 Ⅱ",
-     "ttk": 37.7997
+     "ttk": 23.0
     }
    ],
    "team": [
     "bunny-scarlet",
-    "harley",
-    "id1059",
+    "gwen",
+    "hilde",
     "sunshine-cat-smile"
    ]
   },
@@ -3896,34 +3896,34 @@
     {
      "dmg": 56000,
      "stage": "길레 1단계",
-     "ttk": 3.22
+     "ttk": 4.8333
     },
     {
      "dmg": 84000,
      "stage": "길레 2단계",
-     "ttk": 4.8232
+     "ttk": 7.6316
     },
     {
-     "dmg": 183904,
+     "dmg": 81715,
      "stage": "길레 3단계",
      "ttk": null
     },
     {
      "dmg": 98800,
      "stage": "매니저 그레고리 Ⅰ",
-     "ttk": 5.3797
+     "ttk": 9.4211
     },
     {
-     "dmg": 151218,
+     "dmg": 71561,
      "stage": "매니저 그레고리 Ⅱ",
-     "ttk": 17.718
+     "ttk": 38.7368
     }
    ],
    "team": [
     "bell",
     "besta@개화(SSR)",
-    "clarissa@개화(SSR)",
-    "gwen"
+    "clarissa",
+    "frey"
    ]
   },
   {
@@ -3937,27 +3937,27 @@
     {
      "dmg": 84000,
      "stage": "길레 2단계",
-     "ttk": 6.5263
+     "ttk": 6.1836
     },
     {
-     "dmg": 100337,
+     "dmg": 108507,
      "stage": "길레 3단계",
      "ttk": null
     },
     {
      "dmg": 98800,
      "stage": "매니저 그레고리 Ⅰ",
-     "ttk": 7.3
+     "ttk": 7.1498
     },
     {
-     "dmg": 95505,
+     "dmg": 101598,
      "stage": "매니저 그레고리 Ⅱ",
-     "ttk": 28.9247
+     "ttk": 27.3527
     }
    ],
    "team": [
     "carnelia",
-    "cristelle",
+    "clarissa@개화(SSR)",
     "lily",
     "vera@개화(SSR)"
    ]
@@ -3968,31 +3968,31 @@
     {
      "dmg": 56000,
      "stage": "길레 1단계",
-     "ttk": 4.9474
+     "ttk": 3.8889
     },
     {
      "dmg": 84000,
      "stage": "길레 2단계",
-     "ttk": 7.8042
+     "ttk": 6.6667
     },
     {
-     "dmg": 78486,
+     "dmg": 102067,
      "stage": "길레 3단계",
      "ttk": null
     },
     {
-     "dmg": 98767,
+     "dmg": 98800,
      "stage": "매니저 그레고리 Ⅰ",
-     "ttk": 10.3158
+     "ttk": 7.7778
     },
     {
-     "dmg": 63466,
+     "dmg": 88041,
      "stage": "매니저 그레고리 Ⅱ",
-     "ttk": 36.231
+     "ttk": 28.4232
     }
    ],
    "team": [
-    "frey",
+    "fei",
     "lugh",
     "serpang",
     "trish"
@@ -4004,33 +4004,33 @@
     {
      "dmg": 56000,
      "stage": "길레 1단계",
-     "ttk": 5.1013
+     "ttk": 4.4444
     },
     {
      "dmg": 84000,
      "stage": "길레 2단계",
-     "ttk": 8.6842
+     "ttk": 7.0
     },
     {
-     "dmg": 73176,
+     "dmg": 98010,
      "stage": "길레 3단계",
      "ttk": null
     },
     {
-     "dmg": 92661,
+     "dmg": 98800,
      "stage": "매니저 그레고리 Ⅰ",
-     "ttk": 10.3158
+     "ttk": 8.394
     },
     {
-     "dmg": 57234,
+     "dmg": 75603,
      "stage": "매니저 그레고리 Ⅱ",
-     "ttk": null
+     "ttk": 33.576
     }
    ],
    "team": [
     "besta@개화(SSR)",
     "bunny-scarlet",
-    "frey",
+    "fei",
     "marcille"
    ]
   },
@@ -4040,32 +4040,32 @@
     {
      "dmg": 56000,
      "stage": "길레 1단계",
-     "ttk": 4.2105
+     "ttk": 5.0
     },
     {
      "dmg": 84000,
      "stage": "길레 2단계",
-     "ttk": 6.1279
+     "ttk": 8.125
     },
     {
-     "dmg": 127743,
+     "dmg": 80455,
      "stage": "길레 3단계",
      "ttk": null
     },
     {
-     "dmg": 98800,
+     "dmg": 95310,
      "stage": "매니저 그레고리 Ⅰ",
-     "ttk": 7.2105
+     "ttk": 10.3596
     },
     {
-     "dmg": 100440,
+     "dmg": 65497,
      "stage": "매니저 그레고리 Ⅱ",
-     "ttk": 25.2856
+     "ttk": null
     }
    ],
    "team": [
+    "fei",
     "frey",
-    "gwen",
     "vera",
     "yoo-mina"
    ]
