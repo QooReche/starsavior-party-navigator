@@ -1,7 +1,5 @@
 {
- "unmatched_units": [
-  "세레스 「샤프 앤 스위트」 [기본] id=1059"
- ],
+ "unmatched_units": [],
  "unmatched_reco": [],
  "saviors": [
   {
@@ -1594,7 +1592,7 @@
    "notes": []
   },
   {
-   "key": "id1059",
+   "key": "ceres-sun-supporter",
    "name": "세레스",
    "subtitle": "샤프 앤 스위트",
    "variant": "기본",

@@ -196,7 +196,8 @@ def main():
             used.add(rs[0]["key"])   # 기본형이 안 잡히는 경우 대비
         else:
             unmatched_units.append(f"{name} 「{sub}」 [{variant}] id={u['id']}")
-            # 가이드 사이트에 아직 없는 신규 구원자: 키가 None 이면 이후 단계(쌍·빠른 계산)가 죽으므로 임시 키
+            # reco(가이드 구원자 목록)에 없는 유닛: 키가 None 이면 이후 단계(쌍·빠른 계산)가 죽으므로 id<번호> 로 이어 간다.
+            # 이 보고(unmatched_units)가 나오면 savior_reco.json 을 갱신할 것(docs/PORTING.md)
             key = "id%s" % u["id"] if variant == "기본" else "id%s@%s" % (u["id"], variant)
         tags, derived, notes = classify_unit(u, eff_desc)
         order = ["힐", "보호막", "아군공격력증가", "속도증가", "치명증가", "피해증가", "적방어력감소", "디버프부여",

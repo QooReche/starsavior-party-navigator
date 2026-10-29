@@ -1706,6 +1706,23 @@
       "portrait": "./data/savior-detail-assets/715cedb33c594df198cda104.webp"
     }
   },
+  "1059": {
+    "key": "ceres-sun-supporter",
+    "id": 1059,
+    "slug": "ceres-sun-supporter",
+    "source": "https://ss.espr.gg/ko/database/characters/ceres-sun-supporter",
+    "capturedAt": "2026-10-29T00:00:00.000Z",
+    "profile": {
+      "name": "세레스",
+      "grade": "SSR",
+      "element": "태양",
+      "className": "서포터",
+      "attackType": "참격",
+      "affiliation": "서부 탈환대",
+      "illustration": "./data/savior-detail-assets/1059-illustration.webp",
+      "portrait": "./data/savior-detail-assets/1059-portrait.webp"
+    }
+  },
   "_meta": {
     "sourceRoot": "https://star-savior-arcana-db.pages.dev/savior",
     "generatedAt": "2026-10-02T07:00:45.905Z",

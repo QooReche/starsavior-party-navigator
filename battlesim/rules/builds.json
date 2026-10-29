@@ -17,6 +17,6 @@
       "서포터": {"necklace": "속도", "ring": "생명력%", "sets": ["생명(4) + 장벽(2)"], "potential": "BX"},
       "디펜더": {"necklace": "속도", "ring": "생명력%", "sets": ["생명(4) + 장벽(2)"], "potential": "BX"}},
     "grade": "assumed", "note": "가이드에 세팅이 없는 구원자(아래 use_class_default)에만 쓰는 클래스 기본값 = 가이드 같은 클래스 다수안"},
-  "use_class_default": {"value": ["gwen", "lydia-moon-caster", "id1059"], "grade": "assumed", "note": "가이드 DB 에 PVE 세팅이 아직 없는 신규 구원자(2026-10-20 확인; id1059 = 세레스 「샤프 앤 스위트」, 가이드 사이트에 아직 없어 임시 키 — 가이드에 올라오면 실제 key 로 교체, 2026-10-29). 여기 없는 구원자의 세팅이 없거나 읽히지 않으면 오류"},
+  "use_class_default": {"value": ["gwen", "lydia-moon-caster", "ceres-sun-supporter"], "grade": "assumed", "note": "가이드 DB 에 PVE 세팅이 아직 없는 신규 구원자(2026-10-20 확인). 여기 없는 구원자의 세팅이 없거나 읽히지 않으면 오류. ceres-sun-supporter(2026-10-29): 가이드 app-core.js 의 STANDARD_SUPPORTER_BUILD_IDS 가 세레스에 표준 서포터 세팅(속도·생명력%·생명4+장벽2·BX)을 코드로 적용하며 이는 아래 class_default 서포터와 같음. 내 정보를 불러온 경우는 실제 장비·스탯으로 돌리므로 이 가정과 무관"},
   "overrides": {"value": {}, "grade": "assumed", "note": "구원자 key -> {necklace, ring, sets, potential} 일부를 덮어씀(가이드 값보다 우선)"}
 }

@@ -72,11 +72,6 @@ def roster_ids():
             uid = candidates[0]
         if uid is not None:
             out.add(uid)
-    # 가이드 사이트에 아직 없는 신규 구원자는 synergy_tags.py 가 임시 키 id<번호> 를 준다(2026-10-29 세레스)
-    for s in read(ROOT / "data/synergy_tags.json")["saviors"]:
-        m = re.fullmatch(r"id(\d+)", s.get("key") or "")
-        if m:
-            out.add(int(m.group(1)))
     return out
 
 
