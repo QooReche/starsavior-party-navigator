@@ -39,6 +39,7 @@ python -X utf8 -I tools/fetch_sources.py                 # 데이터북·가이�
 node tools/extract_guide_tier.js                          # 가이드 DB 티어·주 사용 콘텐츠 -> data/db_tier.json
 python -X utf8 -I tools/update.py                         # 태그·연계·분류·전투력 표·적 정보·기믹 재생성 + 변경 요약 + index.html
 ```
+- **패치 때마다 먼저 확인(2026-10-29 누락 사고)**: 신규 구원자가 나왔으면 가이드 사이트(`rawdata/guide_app-core.js` 의 `SAVIORS`)에 이미 있는지 본다. 있으면 아래 `savior_reco.json`·`saviors_index.json`·그림 갱신이 **필수**(`update.py` 는 이 파일들을 자동 갱신하지 않음). 안 하면 신규 구원자가 «가이드에 없음»으로 보이고 쌍 빌더가 키 None 으로 죽는다. 그림은 가이드 `data/savior-detail-assets/<id>-portrait|illustration.webp` 를 `fetch_images.py` 규격(얼굴 160px·일러스트 420px)으로 줄여 `assets/savior/<키>_face|art.webp` 로. 클라 표 기반 빌더(`--static` 15개)는 `static-data` 재추출이 «중복 번들 최신 우선»으로 끝난 뒤(`static-data/INDEX.md` 2b) 돌릴 것.
 - 가이드 DB 가 구원자를 추가했으면 `data/savior_reco.json`(구원자 목록·추천 세팅)은 여정 내비게이터 저장소(`QooReche/starsavior-journey-lite`)의 `assets/savior_reco.json` 에서 갱신하고, `data/saviors_index.json`(이미지 경로)은 가이드 DB 의 `saviors_index.json` 을 받아 갱신한 뒤 `python -X utf8 -I tools/fetch_images.py`(opencv 필요)로 초상화·일러스트를 받는다.
 - `fetch_sources.py` 는 사이트 구조가 바뀌면 정규식이 실패할 수 있다(`--dry` 로 주소만 확인 가능). 실패하면 브라우저로 직접 받아 `rawdata/` 에 넣고 `tools/unwrap_ssd.py <main.js>` 를 쓴다.
 - 이어서 `docs/gimmick_review.md`·`docs/synergy_pairs_review.md` 의 변경 요약을 확인해 새 구원자/기믹을 검수한다.
