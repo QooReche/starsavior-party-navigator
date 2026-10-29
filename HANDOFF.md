@@ -16,7 +16,7 @@
 - 기준값 재생성: 계수 재맞춤 전체 일치 0.919(작전 0.900·코스모 0.960·플래시 0.953), `reuse_baseline.json`(대조군 바이트 일치 확인, `cmd /c` 로 저장 — PS5.1 `>` 는 UTF-16), `golden_check.py --write`, **P1 보관본**은 legacy 규칙 + 새 자료로 갱신(`AI\temp\partynavigator\scripts\regen_p1_golden.py`; 루그 등 자료 변경으로 정확 일치가 깨져서). 추천 변화: `cosmo_24` 상위 후보에 루그 추가.
 - 시험: Python 44·골든·JS 13 통과, e2e 28 중 27(`test_load_no_errors` 는 `main` 에서도 같은 `favicon.ico` 404).
 - 남은 일: ① 푸시·Pages 반영(사용자 승인) ② 가이드 사이트에 세레스가 올라오면 키 교체 ③ 세레스·루그 편성 영상 대조 ④ 오버로드 큐브 복제 코드·길드 방어전은 도구 범위 밖(필요하면 추가) ⑤ 공개 `starsavior-myinfo` 에 새 `myinfo.ps1` 배포는 선택(구조 변경 없어 기존 도구도 동작).
-- 이 PC 임시물: `C:\build\partynavigator\venv-extract`·`venv-pw`·`wt_main`(worktree) — 작업 끝나면 삭제.
+- 이 PC 임시물은 10/29 에 모두 삭제함(`venv-extract`·`venv-pw`·`wt_main`). 다시 필요하면 `AI\temp\partynavigator\INDEX.md` 의 재생성 방법 참고. 세레스 임시 키 교체 방법: 가이드 사이트에 세레스가 올라온 날 `fetch_sources.py` → `node tools/extract_guide_tier.js` → `update.py` 를 돌리면 키가 자동으로 실제 값이 됨(이름+부제로 매칭). 수동으로 할 일은 `battlesim/rules/builds.json` 의 `use_class_default` 에서 `id1059` 지우기(가이드에 PVE 세팅이 생기면 불필요)와 `assets/savior/<키>_art.webp`·`_face.webp` 추가.
 
 ## ▶ 2026-10-25 저녁 작전 38-36 오토 2판 추가 (샘플 `op3836-a/b`, 로컬 커밋, 푸시 전)
 
