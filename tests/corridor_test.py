@@ -112,7 +112,7 @@ class CorridorTest(unittest.TestCase):
         self.assertFalse(limit)  # 119 is a sudden-death boundary, not a turn limit.
         self.assertIn('clo|달 회랑|FLOOR 355', battle_end())
         sd = sudden_death()
-        self.assertEqual(sum(k.startswith('clo|') for k in sd['stages']), 1900)
+        self.assertEqual(sum(k.startswith('clo|') for k in sd['stages']), 2100)   # 10/29 패치: 1900 -> 2100(새 층 200개도 서든데스 연결)
         b = Battle([unit()], waves, random.Random(7), sudden=sd['groups'][meta['sudden_death']])
         for turn, hp in [(36, 0), (42, 0), (119, 0), (120, -.1)]:
             b.global_turns = turn

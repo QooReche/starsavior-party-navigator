@@ -187,10 +187,6 @@ class CombatTests(unittest.TestCase):
             levels = {slot: max(map(int, rows)) for slot, rows in slots.items()}
             raw = get_db().units[key]
             selected = combat.select_skills(raw, key, dict(skills=levels))
-            if key == 'lugh':
-                # 2026-10-29 루그 스킬 리워크: 데이터북은 새 값(쿨 5/10), 클라 표(빌드 26291832)는 구값(쿨 4/6)이 그대로라 어긋남.
-                # 리워크 수치가 클라 표에 올라오면(서버 쪽 적용으로 보임) 이 예외를 지울 것. HANDOFF 「10/29 패치」 참고.
-                continue
             for old, new in zip(raw['sk'], selected['sk']):
                 self.assertEqual(old['ef'], new['ef'], (key, old['sl']))
                 self.assertEqual(old.get('cdm', old.get('cd')) or 0, new.get('cdm', new.get('cd')) or 0, key)
