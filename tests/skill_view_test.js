@@ -50,5 +50,5 @@ assert(html.includes('변형 스킬'));
 const escaped=View.render([{...custom,n:'<img onerror="bad">',d1:'[용어] <script>',dx:'',gl:[['용어','강화','<img>']],lv:[[1,'<script>']]}],{special:1});
 assert(!escaped.includes('<img'));assert(!escaped.includes('<script>'));
 assert(escaped.includes('aria-expanded="false"'));assert(escaped.includes('&lt;img&gt;'));
-assert.equal(raw.length,56);assert.equal(all.length-raw.length,8);
-console.log('PASS: 56 public units, base/bloom separation, compact conversion, levels, cumulative cooldowns, descriptions, variants, escaping');
+assert.equal(raw.length,57);assert.equal(all.length-raw.length,8);
+console.log('PASS: 57 public units, base/bloom separation, compact conversion, levels, cumulative cooldowns, descriptions, variants, escaping');

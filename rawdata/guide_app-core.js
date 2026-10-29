@@ -738,6 +738,7 @@ const EQUIPMENT_SET_IMAGE_NAMES = new Set([
 ]);
 
 const SAVIOR_DETAIL_IDS = {
+  "ceres-sun-supporter": 1059,
   "lydia-moon-caster": 1060,
   "gwen": 1040,
   "asherah-voyager": 1001,
@@ -1406,6 +1407,11 @@ I18N_DATA.saviorNames.en["리디아"] = "Lydia";
 I18N_DATA.saviorNames.ja["리디아"] = "リディア";
 I18N_DATA.subtitles.en["레디 메이드 퍼피"] = "Ready-Made Puppy";
 I18N_DATA.subtitles.ja["레디 메이드 퍼피"] = "レディーメイド・パピー";
+
+I18N_DATA.subtitles.en["샤프 앤 스위트"] = "Sharp & Sweet";
+I18N_DATA.subtitles.ja["샤프 앤 스위트"] = "シャープ＆スイーツ";
+I18N_DATA.ui.en["출시 예정"] = "Upcoming";
+I18N_DATA.ui.ja["출시 예정"] = "近日登場";
 
 const SAVIORS = [
   {
@@ -3055,11 +3061,11 @@ const SAVIORS = [
           "necklace": "속도",
           "ring": "공격력%",
           "sets": [
-            "파괴(4) + 적중(2)",
-            "통찰(4) + 적중(2)"
+            "파괴(4) + 투지(2)",
+            "통찰(4) + 투지(2)"
           ],
           "potential": "AX5 - 치명타 확률이 부족한 경우\nAX6 - 치명타 확률이 95% 이상인 경우",
-          "note": "정밀(4) 사용시 적중(2) 대신 투지(2) 사용 가능"
+          "note": ""
         },
         "pvp": {
           "necklace": "해당 엑셀에 없음",
@@ -3073,14 +3079,11 @@ const SAVIORS = [
       },
       "arcana": {
         "pve": [
-          {
-            "name": "공용 아르카나",
-            "note": ""
-          },
-          null,
-          null,
-          null,
-          null
+          { "name": "단점 보완 맞춤 훈련", "note": "" },
+          { "name": "불굴의 역작", "note": "" },
+          { "name": "탐닉자의 유흥거리", "note": "" },
+          { "name": "꽃들에게 죽음을", "note": "" },
+          { "name": "영원 속박의 굴레", "note": "" }
         ],
         "pvp": [
           null,
@@ -3090,9 +3093,9 @@ const SAVIORS = [
           null
         ],
         "alternatives": [
-          null,
-          null,
-          null,
+          { "name": "노 페인, 노 게인", "note": "단점 보완 맞춤 훈련 대체" },
+          { "name": "메이드 바이 페트라♡ or 별을 보며 꿈을 or 깊은 애도", "note": "꽃들에게 죽음을 대체" },
+          { "name": "하얀 달의 온기는 햇빛처럼 or 완벽한 바니걸 or 어느 한 기사의 맹세", "note": "부족한 자리 대체" },
           null,
           null
         ]
@@ -4318,26 +4321,11 @@ const SAVIORS = [
       },
       "arcana": {
         "pve": [
-          {
-            "name": "왈세라",
-            "note": ""
-          },
-          {
-            "name": "웨딩 카르멘",
-            "note": ""
-          },
-          {
-            "name": "린(인내)",
-            "note": ""
-          },
-          {
-            "name": "바니걸 클레어",
-            "note": ""
-          },
-          {
-            "name": "프레이 or 할리",
-            "note": "엑셀 선택 추천"
-          }
+          { "name": "스트라니스의 영애", "note": "" },
+          { "name": "가혹한 시련", "note": "" },
+          { "name": "나른한 오후의 틈새", "note": "" },
+          { "name": "하얀 달의 온기는 햇빛처럼", "note": "" },
+          { "name": "꽃들에게 죽음을", "note": "" }
         ],
         "pvp": [
           null,
@@ -4347,9 +4335,9 @@ const SAVIORS = [
           null
         ],
         "alternatives": [
-          null,
-          null,
-          null,
+          { "name": "어느 한 기사의 맹세", "note": "하얀 달의 온기는 햇빛처럼 대체" },
+          { "name": "공녀, 왕좌에 오르다 or 본 투 비 와일드 or 완벽한 바니걸 or 누구보다 프로페셔널 or 언더커버 캅", "note": "부족한 자리 대체" },
+          { "name": "하늘의 시련 or 금단의 기록물 Vol. 1", "note": "부족한 자리 대체" },
           null,
           null
         ]
@@ -5764,8 +5752,64 @@ const SAVIORS = [
         }
       }
     }
+  },
+  {
+    "id": "ceres-sun-supporter",
+    "name": "세레스",
+    "subtitle": "샤프 앤 스위트",
+    "affiliation": "서부 탈환대",
+    "grade": "SSR",
+    "element": "sun",
+    "className": "서포터",
+    "role": "서포터",
+    "attackType": "참격",
+    "image": "./data/savior-detail-assets/1059-portrait.webp",
+    "summary": "ESPR 구원자 정보를 반영했습니다. PVE 세팅 정보는 미정입니다.",
+    "guideUrl": "https://ss.espr.gg/ko/database/characters/ceres-sun-supporter"
   }
 ];
+
+const STANDARD_SUPPORTER_BUILD_IDS = new Set([
+  "vera",
+  "elisa",
+  "frey",
+  "ceres-sun-supporter"
+]);
+
+SAVIORS.forEach((savior) => {
+  if (!STANDARD_SUPPORTER_BUILD_IDS.has(savior.id)) return;
+
+  savior.detail = {
+    ...(savior.detail || {}),
+    equipment: {
+      ...(savior.detail?.equipment || {}),
+      pve: {
+        necklace: "속도",
+        ring: "생명력%",
+        sets: ["생명(4) + 장벽(2)"],
+        potential: "BX",
+        note: ""
+      }
+    },
+    arcana: {
+      ...(savior.detail?.arcana || {}),
+      pve: [
+        { name: "스트라니스의 영애", note: "" },
+        { name: "가혹한 시련", note: "" },
+        { name: "공녀, 왕좌에 오르다 or 본 투 비 와일드 or 완벽한 바니걸", note: "" },
+        { name: "하얀 달의 온기는 햇빛처럼", note: "" },
+        { name: "꽃들에게 죽음을", note: "" }
+      ],
+      alternatives: [
+        { name: "어느 한 기사의 맹세", note: "하얀 달의 온기는 햇빛처럼 대체" },
+        { name: "누구보다 프로페셔널", note: "공녀, 왕좌에 오르다 대체" },
+        { name: "언더커버 캅", note: "본 투 비 와일드 대체" },
+        { name: "하늘의 시련 or 금단의 기록물 Vol. 1", note: "부족한 자리 대체" },
+        null
+      ]
+    }
+  };
+});
 
 const ARCANA_CATEGORIES = ["공격", "생명", "방어", "집중", "보호", "속도", "파괴", "통찰"];
 
@@ -5899,6 +5943,19 @@ SAVIORS.forEach((savior) => {
   savior.detail.arcana.alternatives = createStrikerAlternativeArcana();
 });
 
+const seiraBuild = SAVIORS.find((savior) => savior.id === "seira");
+if (seiraBuild?.detail?.arcana) {
+  seiraBuild.detail.arcana.pve[4] = {
+    name: "수마의 나들이",
+    note: ""
+  };
+  seiraBuild.detail.arcana.alternatives[2] = {
+    name: "하얀 달의 온기는 햇빛처럼 or 어느 한 기사의 맹세 or 완벽한 바니걸 or 자칭 베테랑 탐정의 수사법",
+    note: "부족한 자리 대체"
+  };
+  seiraBuild.detail.arcana.alternatives[3] = null;
+}
+
 const clarissaBuild = SAVIORS.find((savior) => savior.id === "clarissa");
 if (clarissaBuild?.detail?.arcana) {
   clarissaBuild.detail.arcana.pve = [
@@ -5958,6 +6015,7 @@ const SAVIOR_LAUNCH_DATE = 20251120;
 const SAVIOR_SOURCE_INDEX = new Map(SAVIORS.map((savior, index) => [savior.id, index]));
 
 function getSaviorReleaseSortValue(savior) {
+  if (savior.upcoming) return Number.MAX_SAFE_INTEGER;
   if (Object.prototype.hasOwnProperty.call(SAVIOR_RELEASE_DATE, savior.id)) {
     return SAVIOR_RELEASE_DATE[savior.id];
   }
@@ -6115,6 +6173,7 @@ function createSaviorCard(savior) {
       <span class="card-subtitle" data-i18n-kind="subtitle" data-i18n-source="${escapeHtml(savior.subtitle)}">${escapeHtml(localizedSubtitle)}</span>
       <div class="card-tags">
         <span class="mini-tag">${escapeHtml(localizedClass)}</span>
+        ${savior.upcoming ? `<span class="mini-tag">${escapeHtml(translateString("출시 예정"))}</span>` : ""}
       </div>
     </div>
   `;
@@ -6247,8 +6306,10 @@ function resolveSaviorDetailId(savior) {
 
 function getLocalSaviorProfile(savior) {
   const detailId = resolveSaviorDetailId(savior);
-  const profile = saviorProfileIndex?.[String(detailId)]?.profile;
-  if (!profile) return null;
+  const storedProfile = saviorProfileIndex?.[String(detailId)]?.profile;
+  if (!storedProfile) return null;
+  const localizedProfile = storedProfile.localized?.[currentLanguage];
+  const profile = localizedProfile ? { ...storedProfile, ...localizedProfile } : storedProfile;
 
   const normalizeLocalAsset = (value) => String(value || "")
     .replace(/^\.\.\/savior-detail-assets\//, "./data/savior-detail-assets/")
@@ -7730,7 +7791,12 @@ function buildAlternativeArcana(savior, pveArcana, existingAlternatives) {
     );
   }
 
-  if (savior.id === "clarissa") {
+  if (
+    savior.id === "clarissa" ||
+    savior.id === "lugh" ||
+    savior.id === "wedding-carmen" ||
+    STANDARD_SUPPORTER_BUILD_IDS.has(savior.id)
+  ) {
     return Array.from(
       { length: 5 },
       (_, index) => existingAlternatives?.[index] || null
@@ -7974,6 +8040,7 @@ function createDetailMarkup(savior) {
           <span class="detail-badge">${escapeHtml(savior.className)}</span>
           ${roleBadge}
           ${attackTypeBadge}
+          ${savior.upcoming ? `<span class="detail-badge">${escapeHtml(translateString("출시 예정"))}</span>` : ""}
         </div>
 
         <h1 class="detail-title" data-i18n-kind="savior" data-i18n-source="${escapeHtml(savior.name)}">${escapeHtml(getLocalizedSaviorName(savior.name))}</h1>
@@ -9649,14 +9716,16 @@ function updateJourneyArchiveLanguage() {
 }
 
 const ARCANA_ARCHIVE_URL = "./data/arcanas/arcanas.json";
+I18N_DATA.arcana.en["가혹한 시련"] = "Maid for Hardship";
+I18N_DATA.arcana.ja["가혹한 시련"] = "過酷な試練";
 const ARCANA_LEVELS = [35, 40, 45, 50];
 const ARCANA_MAIN_STAT_ORDER = ["힘", "체력", "인내", "집중", "보호"];
 const ARCANA_DUMMY_MAIN_STATS = new Set(["구원자"]);
 const ARCANA_RARITY_ORDER = { SSR: 0, SR: 1, R: 2 };
-// ESPR 한국어 아르카나 목록의 실제 표시 순서 (2026-10-22 확인).
+// ESPR 한국어 아르카나 목록의 실제 표시 순서 (2026-10-29 확인).
 // ID 크기나 이름으로 출시 순서를 추정하지 않는다.
 const ARCANA_RELEASE_ORDER = new Map([
-  7101401, 7106001, 7104001, 7103901, 7105801, 7101701, 7104601, 7104501, 7100301, 7103302,
+  7105901, 7101401, 7106001, 7104001, 7103901, 7105801, 7101701, 7104601, 7104501, 7100301, 7103302,
   7100501, 7105601, 7105501, 7102501, 7102901, 7101602, 7300301,
   7300201, 7300101, 7102601, 7105701, 7103201, 7100901, 7100801,
   7105401, 7103101, 7104301, 7104401, 7101001, 7150101, 7102101,
