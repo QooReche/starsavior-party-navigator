@@ -314,6 +314,10 @@ summary{padding:9px 4px}
 .disclaimer{font-size:12px;color:var(--mut)}
 .mi-verdict{display:block;line-height:1.7}.gim-missing{margin:6px 0}
 @media(max-width:600px){#mi-brk-sec #brk{display:flex;flex-wrap:wrap;gap:5px}#mi-brk-sec .btile .tc{flex-direction:row;min-height:40px;padding:5px 8px}#mi-brk-sec .bim{display:none}#mi-brk-sec .tn{font-size:11px;margin:0}#mi-brk-sec .blv{font-size:10px}.mi-chips .tag{font-size:10px;padding:1px 4px}.mi-tabs{flex-wrap:wrap;row-gap:6px}.mi-tabs>*{flex-shrink:0}}
+#guild-panel{font-size:13px}#guild-panel .gd-head{font-size:15px;margin-bottom:4px}#guild-panel .gd-small{font-size:12px;margin:4px 0}.gd-state{display:inline-block;font-size:12px;font-weight:700;border:1px solid currentColor;border-radius:10px;padding:0 8px;margin-left:4px}.gd-state.active{color:var(--good)}.gd-state.settling,.gd-state.upcoming{color:var(--warn)}.gd-state.ended{color:var(--bad)}
+.gd-est{display:inline-block;font-size:11px;font-weight:700;color:var(--warn);border:1px dashed var(--warn);border-radius:8px;padding:0 6px;margin-left:3px;white-space:nowrap}.gd-warn{margin:6px 0;padding:6px 10px;border:1px solid var(--warn);border-radius:8px;color:var(--warn)}
+.gd-best,.gd-now{margin:8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);line-height:1.6}.gd-sel{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.gd-sel label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px;min-width:0;flex:1 1 150px}.gd-sel select{max-width:100%;font-size:14px}
+.gd-scroll{overflow-x:auto;max-width:100%;margin:6px 0}.gd-scroll table{border-collapse:collapse;width:100%;min-width:420px}.gd-scroll th,.gd-scroll td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;font-size:12px}.gd-scroll tr.cur td{background:rgba(111,211,255,.1);font-weight:700}.gd-fx{min-width:190px;color:var(--mut)}.gd-rules{margin:8px 0;padding-left:18px;line-height:1.6}.gd-comm ul{margin:4px 0;padding-left:18px}
 </style></head><body><main>
 <h1>파티 편성 네비게이터 <small style="color:var(--bad)">베타</small></h1>
 <p class="sub">가진 구원자로 이 스테이지를 깰 파티를 찾습니다</p>
@@ -349,6 +353,7 @@ summary{padding:9px 4px}
  <div id="mi-excl" class="mut"></div><div id="mi-list"></div>
  <p class="mut">클리어 %는 시뮬 추정입니다</p>
 </section>
+<section id="guild-panel" class="panel" aria-label="길드 방어전 안내" hidden></section>
 <div id="out"></div>
 <div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">선이나 구원자를 눌러 보세요</span>
  <div class="row" style="margin-top:8px">
@@ -394,6 +399,7 @@ summary{padding:9px 4px}
 <script src="myinfo_view.js"></script>
 <script src="myinfo_reco.js"></script>
 <script src="share_state.js"></script>
+<script src="guild_view.js"></script>
 <script src="skill_view.js"></script>
 <script>
 const D=/*DATA*/null;
@@ -428,6 +434,16 @@ function miLoad(){if(!miMode()||MI.growth||MI.pending)return;
 function miSelect(){const v=$("grow").value;LS.set("grow.v2",v);if(+v>0)LS.set("grow",v);miLoad();renderMi()}
 function manualSelect(){$("grow").value="manual";if(typeof SHARE!=="undefined")delete SHARE.p;LS.set("grow.v2","manual")}
 let cur=null;
+// 길드 방어전(시즌제) 안내 패널: 선택(별의 도전 단계·선택 효과)은 이 브라우저에만 기억. 처음엔 최고 점수 조합
+const GS={sel:null};
+function renderGuild(){const c=contents[$("content").value],p=$("guild-panel"),s=cur&&cur[$("stage").value];
+ if(!c||!c.seasonal||!s||!window.GuildView||!D.guild){p.hidden=true;p.innerHTML="";return}
+ if(!GS.sel)GS.sel=LS.get("guild");
+ p.hidden=false;p.innerHTML=GuildView.panelHtml(D.guild,GS.sel,parseInt(s.name,10),Date.now(),esc)}
+$("guild-panel").addEventListener("change",e=>{const t=e.target.closest("select[data-g]");if(!t)return;
+ const sel=GuildView.normSel(D.guild,GS.sel);if(t.dataset.g==="level")sel.level=+t.value;else sel.tiers[+t.dataset.i]=+t.value;
+ GS.sel=sel;LS.set("guild",sel);renderGuild()});
+$("guild-panel").addEventListener("click",e=>{if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove("guild");renderGuild()});
 
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.name)}</option>`).join("");
 function tabsOf(c){const m=new Map();c.stages.forEach(s=>{if(!m.has(s.tab))m.set(s.tab,s.tabLabel)});return [...m]}
@@ -442,7 +458,7 @@ function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>
 function showPow(){const s=cur&&cur[$("stage").value],my=$("grow").value==="manual"?+$("mypow").value:0,el=$("powinfo");
  const pp=s&&powPen(my,s.rp);el.innerHTML=pp?`<span class="${pp.ratio<70?"bad2":pp.a<1?"warn":"ok"}">내 전투력 ${my.toLocaleString()} = 권장의 ${pp.ratio.toFixed(1)}% → 아군 피해 ×${+pp.a.toFixed(3)} · 적 ×${+pp.b.toFixed(3)}</span>`:""}
 function sbText(s){return s&&s.sb&&s.sb.length?` · <span class="mut">시즌 보너스(${esc(s.sbn)}): ${s.sb.map(b=>esc(b.cond)+" "+esc(b.text)).join(" / ")}</span>`:""}
-function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+``:"해당 스테이지 없음"}
+function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+``:"해당 스테이지 없음";renderGuild()}
 $("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);rerun()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);manualSelect();showPow();rerun()};$("grow").onchange=()=>{miSelect();rerun()};$("rk").onchange=()=>{LS.set("rk",$("rk").value);rerun()};
 
 function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">

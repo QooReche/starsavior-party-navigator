@@ -7,6 +7,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I 는 스크립트 폴더를 경로에서 뺀다
+import guild_defense as gd  # noqa: E402
 import party_reco as pr  # noqa: E402
 from battlesim.fileio import atomic_text
 
@@ -61,7 +62,7 @@ def image_urls(roster, idx=None):
     return por, art
 
 
-def main():
+def main(out=None):
     roster, growth, mains, cfg, tags = pr.load()
     idx = pr._json(os.path.join(pr.DATA, "saviors_index.json"))
     por, art = image_urls(roster, idx)
@@ -98,8 +99,7 @@ def main():
             bpos[(name, role)] = len(bosses)
             bosses.append([name, role])
         return bpos[(name, role)]
-    for c in pr._json(pr.FOE)["contents"]:
-        name, main, parties = CONTENT_META[c["key"]]
+    def stages_of(c):
         stages = []
         for tab in c["tabs"]:
             # 작전은 게임 화면의 '섹터 변경' 처럼 번호로 표시(예: SECTOR 36 · 아가논 시가지)
@@ -113,7 +113,16 @@ def main():
                                "bn": [[bidx(e["name"], e["role_kr"]), e["count"]] for e in st["enemies"] if e["boss"]],
                                "ec": st["element_counts"],
                                "w": w, "aoe": round(st["aoe_ratio"], 2), "def": round(st["defender_ratio"], 2)})
-        contents.append({"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages})
+        return stages
+    for c in pr._json(pr.FOE)["contents"]:
+        name, main, parties = CONTENT_META[c["key"]]
+        contents.append({"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages_of(c)})
+    # 길드 방어전(시즌제): 시즌·단계 자료(data/guild_defense.json)에서 만든다. 일관성 검사를 통과해야 빌드된다
+    gdef = gd.load()
+    problems = gd.validate(gdef, grules["types"])
+    assert not problems, "guild_defense.json 오류: " + "; ".join(problems)
+    contents.append({"key": gd.CONTENT_KEY, "name": gd.content_title(gdef), "main": cfg["contents"][gd.CONTENT_NAME]["main"], "parties": gdef["rules"]["partyCount"],
+                     "boss": True, "seasonal": True, "stages": stages_of(gd.foe_content(gdef))})
     out_cfg = {k: cfg[k] for k in ("advantage", "weights", "tagWeights", "breakSkills", "synergy", "power", "gimmick", "seasonBonus", "matchupModes", "damage")}
     out_cfg["restrict"] = {"성간 회랑": cfg["contents"]["회랑"]["restrictTabs"]}
     # mc._break_skill_rule: 표 기반 스킬 + 기존 평면 규칙을 쓰는 큐브 예외.
@@ -165,12 +174,12 @@ def main():
     data = json.dumps({"roster": r, "skillsUrl": skill_url, "skillIcons": pr._json(os.path.join(pr.DATA, "skill_icons.json"))["units"], "synDetailUrl": syn_detail_url, "cytoUrl": cyto_url,
                        "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
                        "pen": power["pen"], "tribe": power["tribe"],
-                       "grules": grules["types"], "plain": pr._json(os.path.join(pr.DATA, "gimmick_plain.json")), "gim": pr._json(pr.GSTAGE), "dmg": pr._json(pr.DMG)}, ensure_ascii=False, separators=(",", ":"))
+                       "grules": grules["types"], "plain": pr._json(os.path.join(pr.DATA, "gimmick_plain.json")), "gim": pr.gimmick_rules()[1],"dmg": pr._json(pr.DMG), "guild": gd.page_payload(gdef)}, ensure_ascii=False, separators=(",", ":"))
     with open(os.path.join(pr.HERE, "party_template.html"), encoding="utf-8") as f:
         html = f.read()
     assert html.count("/*DATA*/null") == 1
     html = html.replace("/*DATA*/null", data.replace("</", "<\\/"))
-    out = sys.argv[1] if len(sys.argv) > 1 else OUT_DEFAULT
+    out = out or (sys.argv[1] if len(sys.argv) > 1 else OUT_DEFAULT)
     atomic_text(out, html)
     print(out, len(html.encode('utf-8')), "bytes (UTF-8)")
 

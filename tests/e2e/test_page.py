@@ -1120,6 +1120,46 @@ def test_graph_evidence(browser, ctx):
         cy_drawn, syn_loaded, bool(info_text), req_count, errs[:1])
 
 
+def test_guild_defense(browser, ctx):
+    """길드방어전(시즌제): 콘텐츠 이름에 시즌 기간, 기본 스테이지=EX, 안내 패널(최고 점수 조합·가설 A/B·추정 배지·재사용 제한·기준일),
+    단계 선택 반영, 시즌 종료 뒤 「갱신 대기」, 다른 콘텐츠로 바꾸면 패널 숨김, 추천 4명이 나오고 콘솔 오류 0"""
+    ctx.errors.clear()
+    page = open_page(browser, ctx)
+    names = page.eval_on_selector("#content", "s => [...s.options].map(o => o.textContent)")
+    name = next(n for n in names if n.startswith("길드방어전"))
+    page.select_option("#content", label=name)
+    settle(page)
+    page.wait_for_selector('#out .party[data-party="1"] .rowcards .gc', timeout=30000)
+    first_stage = page.eval_on_selector("#stage", "s => s.selectedOptions[0].textContent")
+    panel = page.locator("#guild-panel")
+    shown = panel.is_visible()
+    text = panel.inner_text()
+    cards = page.locator('.party[data-party="1"] .rowcards .gc').count()
+    gim = page.locator('.party[data-party="1"] .gimrow[data-code="TARGET_PRIORITY"]').count()
+    page.select_option('#guild-panel select[data-g="level"]', "6")
+    page.wait_for_function("() => document.querySelector('#guild-panel .gd-now').textContent.includes('추가 점수 120%')")
+    sel6 = panel.locator('[data-k="gd-now"]').inner_text()
+    page.click('#guild-panel button[data-g="best"]')
+    best_back = "(최고 조합)" in panel.locator('[data-k="gd-now"]').inner_text()
+    # 시즌 종료 뒤 표시: 화면 함수에 시즌 끝난 시각을 넣어 본다(실제 오늘 날짜와 무관하게 판정)
+    stale = page.evaluate("() => GuildView.panelHtml(D.guild, null, 7, Date.parse('2026-11-06T00:00:00+09:00'), esc)")
+    live = page.evaluate("() => GuildView.panelHtml(D.guild, null, 7, Date.parse('2026-10-30T12:00:00+09:00'), esc)")
+    page.select_option("#stage", index=1)
+    page.dispatch_event("#stage", "change")
+    settle(page)
+    lower = panel.inner_text()
+    choose(page, "작전 (일반)", "36")
+    hidden = not panel.is_visible()
+    errs = list(ctx.errors)
+    page.close()
+    ok = (name == "길드방어전(시즌4 10/29~11/05)" and first_stage.startswith("7단계 EX") and shown and cards == 4 and gim == 1
+          and "최고 점수가 나오는 조합" in text and "가설 A" in text and "가설 B" in text and "추정" in text
+          and "일일 초기화 전까지" in text and "기준" in text and "추가 점수 120%" in sel6 and best_back
+          and "갱신 대기" in stale and "갱신 대기" not in live and "6단계에는 별의 도전이 없습니다" in lower
+          and hidden and not errs)
+    return ok, "%s / %s / 카드 %d / 기믹줄 %d / 패널 %s / 오류 %s" % (name, first_stage, cards, gim, shown, errs[:2])
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_break_skill_select)
@@ -1132,6 +1172,7 @@ TESTS.extend([test_share_link, test_sim_runs, test_press_to_compute])
 TESTS.extend([test_skill_view, test_skill_retry])
 TESTS.append(test_myinfo_full)
 TESTS.append(test_graph_evidence)
+TESTS.append(test_guild_defense)
 
 
 def main():

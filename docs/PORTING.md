@@ -44,6 +44,13 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 - `fetch_sources.py` 는 사이트 구조가 바뀌면 정규식이 실패할 수 있다(`--dry` 로 주소만 확인 가능). 실패하면 브라우저로 직접 받아 `rawdata/` 에 넣고 `tools/unwrap_ssd.py <main.js>` 를 쓴다.
 - 이어서 `docs/gimmick_review.md`·`docs/synergy_pairs_review.md` 의 변경 요약을 확인해 새 구원자/기믹을 검수한다.
 
+### 4-1. 길드 방어전 시즌 갱신(시즌제 콘텐츠)
+길드 방어전은 시즌이 바뀌면 보스·단계 점수·별의 도전이 달라질 수 있어, 시즌 정의를 `data/guild_defense.json` **한 곳**에만 둔다(시즌 id·기간·결산·단계 표·별의 도전·선택 효과·점수 가설·출처/신뢰도). 콘텐츠 이름의 «(시즌4 10/29~11/05)» 는 이 파일의 시작·끝 날짜에서 자동으로 만든다.
+- 화면은 열 때의 시각을 시즌 끝(`season.end`)과 비교해 «진행 중 / 결산 중 / 종료», 끝난 뒤에는 «갱신 대기» 경고를 띄운다(`guild_view.js`, 파이썬 쪽 `guild_defense.season_state`). «이 시즌 정보는 ○/○ 기준» 은 `asOf`.
+- 갱신 절차: `data/guild_defense.json` 의 `howToUpdate` 참고(시즌·날짜, 단계 표, 별의 도전, 보스, 점수 가설) → `python -X utf8 -I tests/guild_defense_test.py`(일관성·화면 계산 일치·만든 index.html 최신 여부) → `python -X utf8 -I build_party_html.py index.html`.
+- 단계 표 값은 클라 표 `GUILD_DUNGEON` 전투 표의 새 시즌 행(`static-data/tables`)에서, 날짜·별의 도전 문구는 공식 공지에서 확인한다. 점수 계산식이 확인되면 `score.hypotheses` 를 하나로 줄이고 `conf` 를 «확인» 으로.
+- 추천 연결: 콘텐츠는 `party_contents.json` 의 «길드방어전»(`seasonal`, 보스 BFB 질서), 스테이지·기믹은 시즌 파일에서 만든다(`guild_defense.foe_content`, `stage_gimmicks`). `data/foe_stages.json`·`stage_gimmicks.json` 은 건드리지 않는다.
+
 ## 5. 저장소에 없는 것(다른 PC에서 다시 설정)
 - Claude 의 메모리·`AI\CLAUDE.md` 규약은 저장소에 없다. 이 저장소의 `HANDOFF.md` 와 이 문서가 같은 내용을 담았다.
 - GitHub 로그인(`gh auth login`)과 git 사용자 설정(개인 메일 대신 noreply: `git config user.email 87477643+QooReche@users.noreply.github.com`).
