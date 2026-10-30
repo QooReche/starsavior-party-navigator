@@ -66,6 +66,28 @@ const tests = {
     const h = V.panelHtml(evil, null, 7, T('2026-10-30T12:00:00+09:00'), esc);
     assert(!h.includes('<img src=x') && h.includes('&lt;img'));
   },
+  sim() {
+    // 화면 자료 = guild_defense.page_payload 의 sim(tools/build_guild_sim.py 결과를 줄인 것)
+    const raw = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_sim.json'), 'utf8'));
+    const S = {runs: raw.runs, recPower: raw.recPower, growth: raw.growth, levels: raw.levels, passP: raw.pass_p, basis: raw.basis,
+      summary: raw.summary, teams: raw.teams.map(t => ({names: t.names, src: t.src, rates: t.rates}))};
+    // summary 는 rates 에서 다시 계산한 것과 같아야 한다(최고 단계 = 클리어율 passP 이상인 가장 높은 단계)
+    for (const g of S.growth) {
+      let best = null;
+      S.teams.forEach((t, i) => { const r = t.rates[String(g)]; let top = -1; r.forEach((p, lv) => { if (p >= S.passP) top = lv; });
+        if (top >= 0 && (!best || top > best.level || (top === best.level && r[top] > best.p))) best = {level: top, team: i, p: r[top]}; });
+      assert.deepEqual(V.simBest(S, g), best, 'summary ' + g);
+    }
+    const h = V.panelHtml({...P, sim: S}, null, 7, T('2026-10-30T12:00:00+09:00'), esc);
+    assert(h.includes('data-k="gd-sim"') && h.includes('시뮬 추정: 깰 수 있는 최고 단계') && h.includes('실제 플레이·점수와 대조하지 않았습니다'));
+    assert(h.includes('data-k="gd-dev"'), '개발 중 배너 유지');
+    const none = {...S, summary: Object.fromEntries(S.growth.map(g => [String(g), null]))};
+    assert(V.panelHtml({...P, sim: none}, null, 7, T('2026-10-30T12:00:00+09:00'), esc).includes('EX도 어려움'));
+    const one = {...S, summary: {[String(S.growth[0])]: {level: 3, team: 0, p: 0.7}}};
+    const h3 = V.simBox({...P, sim: one}, esc);
+    assert(h3.includes('별의 도전 3단계</b>까지') && h3.includes(V.rangeText(V.score(P, V.extraPct(P, 3, [0, 0, 0, 0])))) && h3.includes('클리어 70%'));
+    assert.equal(V.simBox(P, esc), '', '시뮬 자료가 없으면 표시 안 함');
+  },
   mutation() {
     const orig = V.score;
     for (const [key, bad] of [['score', () => ({A: 1, B: 1})], ['seasonState', () => ({state: 'active', needsUpdate: false})]]) {

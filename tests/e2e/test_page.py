@@ -1154,6 +1154,7 @@ def test_guild_defense(browser, ctx):
     page.close()
     ok = (name == "길드방어전(시즌4 10/29~11/05)" and first_stage.startswith("7단계 EX") and shown and cards == 4 and gim == 1
           and "최고 점수가 나오는 조합" in text and "가설 A" in text and "가설 B" in text and "추정" in text
+          and "시뮬 추정: 깰 수 있는 최고 단계" in text and "개발 중" in text
           and "일일 초기화 전까지" in text and "기준" in text and "추가 점수 120%" in sel6 and best_back
           and "갱신 대기" in stale and "갱신 대기" not in live and "6단계에는 별의 도전이 없습니다" in lower
           and hidden and not errs)

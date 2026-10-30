@@ -118,6 +118,27 @@ def test_existing_contents_unchanged():
     assert open(ref).read().strip() == h, "기존 콘텐츠 추천 출력이 달라짐 " + h
 
 
+def test_sim_payload():
+    """시뮬 추정 표: 같은 시즌만 화면에 싣고, 요약(최고 단계)이 클리어율 표와 맞는다. 다른 시즌 파일이면 싣지 않는다."""
+    s = gd.sim_payload(G)
+    assert s and set(s["summary"]) == {str(g) for g in s["growth"]} and len(s["levels"]) == 13
+    for g in s["growth"]:
+        best = None
+        for i, t in enumerate(s["teams"]):
+            r = t["rates"][str(g)]
+            ok = [lv for lv, p in zip(s["levels"], r) if p >= s["passP"]]
+            if ok and (best is None or max(ok) > best[0] or (max(ok) == best[0] and r[max(ok)] > best[2])):
+                best = (max(ok), i, r[max(ok)])
+        assert gd.sim_best(s, str(g)) == best, (g, best)
+    with tempfile.TemporaryDirectory() as d:
+        p = os.path.join(d, "s.json")
+        raw = json.load(open(gd.SIM_PATH, encoding="utf-8"))
+        raw["season"] = 1
+        json.dump(raw, open(p, "w", encoding="utf-8"))
+        assert gd.sim_payload(G, p) is None, "다른 시즌 결과를 실음"
+    assert "sim" in gd.page_payload(G)
+
+
 def node_json(code):
     p = subprocess.run(["node", "-e", code], capture_output=True, text=True, encoding="utf-8", cwd=ROOT)
     assert p.returncode == 0, p.stderr

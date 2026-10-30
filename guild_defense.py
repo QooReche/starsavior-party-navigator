@@ -195,4 +195,29 @@ def page_payload(g):
     keep["bestSet"] = list(best_selection(g)[1])
     keep["baseTotal"] = base_total(g)
     keep["sources"] = {k: {"name": v["name"], "url": v["url"]} for k, v in g["sources"].items() if k != "client"}
+    sim = sim_payload(g)
+    if sim:
+        keep["sim"] = sim
     return keep
+
+
+SIM_PATH = os.path.join(HERE, "data", "guild_sim.json")
+
+
+def sim_payload(g, path=SIM_PATH):
+    """시뮬 추정 표(tools/build_guild_sim.py 결과)를 화면용으로 줄임. 같은 시즌이 아니면 싣지 않는다(옛 시즌 결과 표시 금지)."""
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as f:
+        s = json.load(f)
+    if s.get("season") != g["season"]["id"]:
+        return None
+    return {"runs": s["runs"], "recPower": s["recPower"], "growth": s["growth"], "levels": s["levels"], "passP": s["pass_p"],
+            "basis": s["basis"], "summary": s["summary"],
+            "teams": [{"names": t["names"], "src": t["src"], "rates": t["rates"]} for t in s["teams"]]}
+
+
+def sim_best(sim, growth_key):
+    """(최고 단계, 팀 번호, 클리어율) 또는 None — guild_view.js simBest 와 같은 규칙"""
+    b = (sim or {}).get("summary", {}).get(growth_key)
+    return (b["level"], b["team"], b["p"]) if b else None
