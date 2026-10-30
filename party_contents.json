@@ -120,6 +120,21 @@
    },
    "defenderPenalty": 3.0,
    "boss": true
+  },
+  "길드방어전": {
+   "main": null,
+   "bosses": {
+    "BFB": {
+     "enemies": [
+      "order"
+     ],
+     "role": "레인저",
+     "atk": "미확인",
+     "note": "시즌4 보스. 졸개 2기 웨이브 뒤 보스(졸개 속성 미확인). 시즌·단계 자료는 data/guild_defense.json"
+    }
+   },
+   "boss": true,
+   "seasonal": true
   }
  },
  "weights": {

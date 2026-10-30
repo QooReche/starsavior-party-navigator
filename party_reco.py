@@ -8,6 +8,9 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:  # -I 는 스크립트 폴더를 경로에서 뺀다
+    sys.path.insert(0, HERE)
+import guild_defense as gd  # noqa: E402
 DATA = os.path.join(HERE, "data")
 RECO = os.path.join(DATA, "savior_reco.json")
 TIER = os.path.join(DATA, "db_tier.json")
@@ -21,7 +24,7 @@ OVR = os.path.join(DATA, "synergy_overrides.json")
 CONT = os.path.join(HERE, "party_contents.json")
 FOE = os.path.join(DATA, "foe_stages.json")
 FOE_KEYS = {"작전": "op", "작전어려움": "oph", "일일": "daily", "장비": "equip", "큐브": "cube",
-            "플래시 포인트": "rush", "회랑": "clo", "코스모 게이트": "cosmo"}
+            "플래시 포인트": "rush", "회랑": "clo", "코스모 게이트": "cosmo", "길드방어전": "guild"}
 EL = {"sun": "태양", "moon": "달", "star": "별", "order": "질서", "chaos": "혼돈"}
 SUPPORT, DEFENDER = "서포터", "디펜더"
 FRONT_ROLES = (DEFENDER, SUPPORT)
@@ -94,6 +97,7 @@ def gimmick_rules():
     if not _GCACHE:
         _GCACHE["r"] = _json(GRULES)
         _GCACHE["s"] = _json(GSTAGE)
+        _GCACHE["s"].update(gd.stage_gimmicks(gd.load()))  # 길드 방어전(시즌제) 특징은 data/guild_defense.json 에서
     return _GCACHE["r"], _GCACHE["s"]
 
 
@@ -360,7 +364,7 @@ def find_stages(content, query):
     """foe_stages.json 에서 이름(탭 포함)에 query 가 들어 있는 스테이지를 찾는다(최대 5개 반환)."""
     key = FOE_KEYS.get(content)
     hits = []
-    for c in _json(FOE)["contents"]:
+    for c in _json(FOE)["contents"] + [gd.foe_content(gd.load())]:  # 길드 방어전은 시즌 파일에서 만든 콘텐츠
         if c["key"] != key:
             continue
         for tab in c["tabs"]:
@@ -401,6 +405,8 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
     if boss:
         b = c["bosses"][boss]
         enemies, note = b["enemies"], f'{boss}: {EL[b["enemies"][0]]} {b["role"]} {b["atk"]} {b.get("note", "")}'
+    if c.get("seasonal") and not stage:
+        stage = "7단계"  # 시즌제 콘텐츠(길드 방어전)는 스테이지를 안 주면 최고 단계(EX)
     rest = None  # 속성 제한 콘텐츠(예: 태양 회랑은 태양 속성만)
     if stage:
         hits = find_stages(content, stage)

@@ -1,0 +1,138 @@
+{
+ "_note": "길드 방어전 시즌 자료. 시즌이 바뀌면 이 파일 한 곳만 고친다(절차: docs/PORTING.md 「길드 방어전 시즌 갱신」). conf = 확인(공식 공지·게임 표) / 추정(해석·가설) / 낮음(커뮤니티 주장). src = sources 의 키.",
+ "asOf": "2026-10-30",
+ "gameBuild": "26291832",
+ "sources": {
+  "notice1029": {"name": "공식 공지 2026-10-29 (길드 방어전 시즌 4)", "url": "https://www.starsavior.com/kr/news/01a17c9e-5aa3-7019-a3e5-f17694bf2e1e"},
+  "notice1001": {"name": "공식 공지 2026-10-01 (별의 도전 효과 표, 이미지)", "url": ""},
+  "notice0319": {"name": "공식 공지 2026-03-19 (갤럭시 시즌 1, 별의 도전 도입)", "url": "https://starsavior.com/kr/news/019cff63-c160-7433-b65b-22746f0a08be"},
+  "client": {"name": "게임 클라이언트 표(빌드 26291832): 길드 방어전 전투·시즌·난이도·전투효과 표", "url": ""},
+  "arca187413171": {"name": "아카라이브 187413171 (EX 12단 클리어 조합 글)", "url": "https://arca.live/b/starsavior/187413171"},
+  "arca187456382": {"name": "아카라이브 187456382 (EX 만점 사례 글)", "url": "https://arca.live/b/starsavior/187456382"},
+  "arca187484690": {"name": "아카라이브 187484690 (난이도 후기 글)", "url": "https://arca.live/b/starsavior/187484690"},
+  "arca187430822": {"name": "아카라이브 187430822 (댓글 공략)", "url": "https://arca.live/b/starsavior/187430822"}
+ },
+ "season": {
+  "id": 30111,
+  "label": "시즌4",
+  "name": "프리즘 시즌 4",
+  "start": "2026-10-29",
+  "end": "2026-11-05T04:00:00+09:00",
+  "settleEnd": "2026-11-12T04:00:00+09:00",
+  "conf": "확인",
+  "src": ["notice1029", "client"],
+  "note": "시작은 10/29 점검 후(시각 미확인). 결산 중에는 플레이할 수 없고, 04:00 를 넘기면 진행 중이던 전투는 무효(갤럭시 시즌 1 공지 기준).",
+  "boss": {"name": "BFB", "element": "order", "role": "레인저", "conf": "확인", "src": ["notice1029", "client"]}
+ },
+ "rules": {
+  "turnLimit": 50,
+  "partyCount": 1,
+  "partySize": 4,
+  "entryDaysEx": ["화", "목", "토"],
+  "entryItemEx": 2,
+  "skipEx": false,
+  "reuse": "쓴 구원자·장비·알리시아 지원은 일일 초기화 전까지 다시 쓸 수 없음",
+  "abandon": "중도 포기·재도전은 포인트를 받지 못하고 입장 재화는 돌려받음",
+  "conf": "확인",
+  "src": ["notice1029", "client"]
+ },
+ "steps": [
+  {"step": 1, "ex": false, "battleLevel": 45, "power": 8300, "base": 2000, "bossKill": 375, "kill": 500},
+  {"step": 2, "ex": false, "battleLevel": 120, "power": 21000, "base": 2000, "bossKill": 750, "kill": 500},
+  {"step": 3, "ex": false, "battleLevel": 175, "power": 29500, "base": 2000, "bossKill": 1500, "kill": 500},
+  {"step": 4, "ex": false, "battleLevel": 400, "power": 64500, "base": 2000, "bossKill": 3000, "kill": 500},
+  {"step": 5, "ex": false, "battleLevel": 665, "power": 105500, "base": 2000, "bossKill": 6000, "kill": 500},
+  {"step": 6, "ex": false, "battleLevel": 1047, "power": 164800, "base": 2000, "bossKill": 12000, "kill": 500},
+  {"step": 7, "ex": true, "battleLevel": 1275, "power": 200075, "base": 2500, "bossKill": 25000, "kill": 1250}
+ ],
+ "stepsMeta": {
+  "minions": 2,
+  "minionsNote": "모든 단계가 1웨이브 졸개 2기 → 2웨이브 보스. 졸개 속성은 미확인(처치 점수만 계산).",
+  "conf": "확인",
+  "src": ["client"]
+ },
+ "exBoss": {
+  "hp": 260000, "speed": 230, "atk": 17000, "def": 4650, "superArmor": 14,
+  "conf": "추정",
+  "src": ["client"],
+  "note": "게임 표의 EX 보스 기준값. 별도로 단계 스크립트에 보스 배율 항목(속도 -25%, 공격 -17.5%, 생명력 +80%)이 있으나 적용 여부 미확인이라 반영하지 않음."
+ },
+ "challenge": {
+  "scope": "EX(7단계)",
+  "group": 2001,
+  "cumulative": true,
+  "conf": "확인",
+  "src": ["notice1001", "client"],
+  "note": "단계마다 앞 단계 효과가 이어집니다(공지 표는 새로 생긴 효과만 적음).",
+  "statNote": "7~12단계 능력치 상승폭은 게임 표 값이며 공지 표(공격 +70~120%, 생명력·방어 +35~60%)와 다릅니다. 10/29 상향 가능성이 있어 추정으로 표시합니다.",
+  "levels": [
+   {"level": 1, "atk": 10, "hp": 5, "def": 5, "score": 10, "skillStack": 3, "hpDrain": 0, "speed": 0, "immune": 0},
+   {"level": 2, "atk": 20, "hp": 10, "def": 10, "score": 20, "skillStack": 4, "hpDrain": 0, "speed": 0, "immune": 0},
+   {"level": 3, "atk": 30, "hp": 15, "def": 15, "score": 30, "skillStack": 5, "hpDrain": 0, "speed": 0, "immune": 0},
+   {"level": 4, "atk": 40, "hp": 20, "def": 20, "score": 40, "skillStack": 5, "hpDrain": 3, "speed": 0, "immune": 0},
+   {"level": 5, "atk": 50, "hp": 25, "def": 25, "score": 50, "skillStack": 5, "hpDrain": 4, "speed": 0, "immune": 0},
+   {"level": 6, "atk": 60, "hp": 30, "def": 30, "score": 60, "skillStack": 5, "hpDrain": 5, "speed": 0, "immune": 0},
+   {"level": 7, "atk": 80, "hp": 40, "def": 40, "score": 70, "skillStack": 5, "hpDrain": 5, "speed": 10, "immune": 0, "noticeAtk": 70, "noticeHp": 35},
+   {"level": 8, "atk": 100, "hp": 50, "def": 50, "score": 80, "skillStack": 5, "hpDrain": 5, "speed": 20, "immune": 0, "noticeAtk": 80, "noticeHp": 40},
+   {"level": 9, "atk": 120, "hp": 60, "def": 60, "score": 90, "skillStack": 5, "hpDrain": 5, "speed": 30, "immune": 0, "noticeAtk": 90, "noticeHp": 45},
+   {"level": 10, "atk": 140, "hp": 70, "def": 70, "score": 100, "skillStack": 5, "hpDrain": 5, "speed": 30, "immune": 1, "noticeAtk": 100, "noticeHp": 50},
+   {"level": 11, "atk": 160, "hp": 80, "def": 80, "score": 110, "skillStack": 5, "hpDrain": 5, "speed": 30, "immune": 2, "noticeAtk": 110, "noticeHp": 55},
+   {"level": 12, "atk": 180, "hp": 90, "def": 90, "score": 120, "skillStack": 5, "hpDrain": 5, "speed": 30, "immune": 3, "noticeAtk": 120, "noticeHp": 60}
+  ],
+  "effectText": {
+   "skillStack": "보스가 스킬을 쓸 때마다 이후 주는 피해 +{v}%씩 쌓임(최대 10회)",
+   "hpDrain": "보스에게 맞은 뒤 때린 쪽의 최대 생명력 -{v}%씩 쌓임(최대 10회)",
+   "speed": "보스 속도 +{v}%",
+   "immune": "전투 시작 시 보스가 {v}턴 면역(해제 불가)"
+  }
+ },
+ "sets": {
+  "scope": "EX(7단계) 선택 효과",
+  "conf": "확인",
+  "src": ["notice1001", "client"],
+  "note": "각 효과를 켜면 추가 점수가 붙습니다(단계별 5/10/15%). 4개를 모두 최대로 켰을 때 +60%. 허무는 10단계 이상 고정 효과(면역)와 겹쳐 따로 켤 수 있는지 미확인.",
+  "items": [
+   {"name": "소멸", "tiers": [{"add": 5, "text": "보스가 주는 피해 +10%"}, {"add": 10, "text": "보스가 주는 피해 +20%"}, {"add": 15, "text": "보스가 주는 피해 +30%"}]},
+   {"name": "불멸", "tiers": [{"add": 5, "text": "보스가 받는 피해 -20%"}, {"add": 10, "text": "보스가 받는 피해 -30%"}, {"add": 15, "text": "보스가 받는 피해 -40%"}]},
+   {"name": "쇠락", "tiers": [{"add": 5, "text": "보스에게 맞은 뒤 최대 생명력 -3%"}, {"add": 10, "text": "보스에게 맞은 뒤 최대 생명력 -4%"}, {"add": 15, "text": "보스에게 맞은 뒤 최대 생명력 -5%"}]},
+   {"name": "허무", "tiers": [{"add": 5, "text": "보스가 1턴 면역"}, {"add": 10, "text": "보스가 2턴 면역"}, {"add": 15, "text": "보스가 3턴 면역"}]}
+  ]
+ },
+ "score": {
+  "conf": "추정",
+  "src": ["notice0319", "client"],
+  "note": "점수 계산식은 공개되지 않았습니다. 별의 도전 효과 적용 후 클리어하면 점수 보너스가 붙는다는 것만 공식입니다. 아래 두 가설을 범위로 보여 줍니다.",
+  "hypotheses": [
+   {"id": "A", "name": "가설 A", "desc": "기본·졸개·보스 처치 점수 합계 전체에 추가 점수를 곱함", "bossExcluded": false},
+   {"id": "B", "name": "가설 B", "desc": "보스 처치 점수를 뺀 나머지에만 추가 점수를 곱함", "bossExcluded": true}
+  ]
+ },
+ "gimmicks": {
+  "conf": "낮음",
+  "note": "추천 점수에 약하게 반영하는 특징(커뮤니티 주장). 심각도 1~3.",
+  "items": [
+   {"code": "TARGET_PRIORITY", "steps": [1, 2, 3, 4, 5, 6], "severity": 2, "src": ["arca187413171", "arca187484690"], "text": "보스가 1명을 강제로 지정해 공격(피해 감소·보호가 없으면 딜러가 한 번에 쓰러짐)"},
+   {"code": "TARGET_PRIORITY", "steps": [7], "severity": 3, "src": ["arca187413171", "arca187484690"], "text": "보스가 1명을 강제로 지정해 공격(피해 감소·보호가 없으면 딜러가 한 번에 쓰러짐)"},
+   {"code": "SHIELD_GEN", "steps": [7], "severity": 2, "src": ["arca187484690", "arca187456382"], "text": "보스 보호막이 매우 큼"},
+   {"code": "PCT_HP_DAMAGE", "steps": [7], "severity": 2, "src": ["client"], "text": "별의 도전 4단계부터 맞은 뒤 최대 생명력이 줄어듦"}
+  ]
+ },
+ "community": {
+  "conf": "낮음",
+  "note": "아카라이브 글쓴이 주장이며 직접 검증하지 못했습니다.",
+  "items": [
+   {"text": "BFB는 1명을 강제 지정해 공격하는 보스라 피해 감소·보호 수단(웨르멘의 서약 등)이 사실상 필요하다는 후기가 많음", "src": ["arca187413171", "arca187484690"]},
+   {"text": "10단계부터 3턴 면역이 있어 명중 깎기(적중 세트)는 의미가 없다는 주장", "src": ["arca187413171"]},
+   {"text": "고득점·클리어 사례: 웨르멘 + 아모라 + 메레스 + 티리아 또는 바샤를 계열(EX 12단 클리어, 파티 전투력 약 39만)", "src": ["arca187413171", "arca187456382"]},
+   {"text": "9단계 이하는 기믹을 무시하고 가능하다는 댓글, 10단계부터는 다른 방식이 필요하다는 의견", "src": ["arca187430822"]}
+  ]
+ },
+ "howToUpdate": [
+  "시즌 id 가 바뀌면 season(id·label·name·start·end·settleEnd)과 asOf 를 고친다. 날짜는 공식 공지 기준",
+  "단계 표(steps)는 게임 표 GUILD_DUNGEON 전투 표의 새 시즌 행(BasePoint·BossKillPoint·KillPoint·BattleLevel·BattlePower)으로 바꾼다",
+  "별의 도전 단계(challenge.levels)와 선택 효과(sets)는 공지·난이도 표로 확인하고 바뀐 점이 있으면 고친다",
+  "보스(season.boss)와 졸개 구성이 바뀌면 season.boss·exBoss·stepsMeta 와 gimmicks 를 고친다",
+  "공지로 점수 계산식이 확인되면 score.hypotheses 를 하나로 줄이고 conf 를 확인으로 바꾼다",
+  "python -X utf8 -I tests/guild_defense_test.py 로 일관성을 확인하고 python -X utf8 -I build_party_html.py index.html 로 화면을 다시 만든다"
+ ]
+}

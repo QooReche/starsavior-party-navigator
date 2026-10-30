@@ -1,0 +1,112 @@
+// 길드 방어전 안내 패널(순수 함수: 저장소·네트워크 접근 없음). 규칙은 guild_defense.py 와 같다(tests/guild_defense_test.py 가 일치 확인).
+(function (root) {
+  "use strict";
+  const MAX_TIER = 3;
+  const num = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  function parseTime(s) { return Date.parse(/T/.test(s) ? s : s + "T00:00:00+09:00"); }
+  function md(s) { const d = new Date(parseTime(s) + 9 * 3600 * 1000); return String(d.getUTCMonth() + 1).padStart(2, "0") + "/" + String(d.getUTCDate()).padStart(2, "0"); }
+  // state: upcoming / active / settling / ended, needsUpdate = 시즌 종료 시각이 지남(갱신 대기)
+  function seasonState(season, nowMs) {
+    const s = parseTime(season.start), e = parseTime(season.end), d = parseTime(season.settleEnd);
+    const state = nowMs < s ? "upcoming" : nowMs < e ? "active" : nowMs < d ? "settling" : "ended";
+    return {state, needsUpdate: nowMs >= e};
+  }
+  function exStep(G) { return G.steps.find(s => s.ex); }
+  function baseTotal(G) { const ex = exStep(G); return ex.base + G.stepsMeta.minions * ex.kill + ex.bossKill; }
+  function extraPct(G, level, tiers) {
+    let pct = level ? G.challenge.levels[level - 1].score : 0;
+    G.sets.items.forEach((it, i) => { const t = (tiers || [])[i] || 0; if (t) pct += it.tiers[t - 1].add; });
+    return pct;
+  }
+  function score(G, pct) {
+    const ex = exStep(G), total = baseTotal(G), out = {};
+    for (const h of G.score.hypotheses)
+      out[h.id] = Math.round(h.bossExcluded ? (total - ex.bossKill) * (100 + pct) / 100 + ex.bossKill : total * (100 + pct) / 100);
+    return out;
+  }
+  function bestSelection(G) { return {level: G.challenge.levels.length, tiers: G.sets.items.map(() => MAX_TIER)}; }
+  function normSel(G, sel) {
+    const b = bestSelection(G);
+    const level = Number.isInteger(sel && sel.level) && sel.level >= 0 && sel.level <= b.level ? sel.level : b.level;
+    const tiers = G.sets.items.map((_, i) => { const t = sel && sel.tiers && sel.tiers[i]; return Number.isInteger(t) && t >= 0 && t <= MAX_TIER ? t : b.tiers[i]; });
+    return {level, tiers};
+  }
+  function range(sc) { const v = Object.values(sc); return [Math.min(...v), Math.max(...v)]; }
+  function rangeText(sc) { const [a, b] = range(sc); return a === b ? num(a) : num(a) + " ~ " + num(b); }
+  function levelEffects(G, lv) {
+    const T = G.challenge.effectText, out = [];
+    if (lv.skillStack) out.push(T.skillStack.replace("{v}", lv.skillStack));
+    if (lv.hpDrain) out.push(T.hpDrain.replace("{v}", lv.hpDrain));
+    if (lv.speed) out.push(T.speed.replace("{v}", lv.speed));
+    if (lv.immune) out.push(T.immune.replace("{v}", lv.immune));
+    return out;
+  }
+  const STATE_TEXT = {upcoming: "시작 전", active: "진행 중", settling: "결산 중(플레이 불가)", ended: "종료"};
+  const EL = {sun: "태양", moon: "달", star: "별", order: "질서", chaos: "혼돈"};
+  const EST = '<span class="gd-est" title="공식 수치가 아니라 계산·해석으로 얻은 값입니다">추정</span>';
+
+  function seasonBox(G, nowMs, esc) {
+    const st = seasonState(G.season, nowMs), s = G.season;
+    const stale = st.needsUpdate
+      ? `<div class="gd-warn" data-k="gd-stale"><b>갱신 대기</b> · 이 시즌(${esc(G.tab)})은 ${md(s.end)} 04:00에 끝났습니다. 아래 수치는 지난 시즌 기준이며 새 시즌에는 달라질 수 있습니다.</div>` : "";
+    return `<div class="gd-head"><b>${esc(G.title)}</b> <span class="gd-state ${st.state}">${STATE_TEXT[st.state]}</span><span class="mut"> · 이 시즌 정보는 ${md(G.asOf)} 기준</span></div>${stale}
+<div class="mut gd-small">진행 ${md(s.start)} ~ ${md(s.end)} 04:00 · 결산 ~${md(s.settleEnd)} 04:00 · 보스 ${esc(s.boss.name)}(${EL[s.boss.element] || ""} ${esc(s.boss.role)})</div>`;
+  }
+  function rulesBox(G, esc) {
+    const r = G.rules;
+    return `<ul class="gd-rules" data-k="gd-rules"><li>한 판 최대 ${r.turnLimit}턴 · 파티 ${r.partyCount}개(${r.partySize}명)</li>
+<li><b>${esc(r.reuse)}</b> — 같은 구원자를 여러 번 쓸 수 없으니 날마다 쓸 구원자를 나눠 정하세요</li>
+<li>${esc(r.abandon)}</li>
+<li>EX는 ${r.entryDaysEx.join("·")}요일만 입장 · 입장 재화 ${r.entryItemEx}개${r.skipEx ? "" : " · 전투 건너뛰기 불가"}</li></ul>`;
+  }
+  function stepsTable(G, cur, esc) {
+    const rows = G.steps.slice().reverse().map(s => {
+      const total = s.base + G.stepsMeta.minions * s.kill + s.bossKill;
+      return `<tr${s.step === cur ? ' class="cur"' : ""}><td>${s.step}단계${s.ex ? " EX" : ""}</td><td>${num(s.power)}</td><td>${num(total)}</td></tr>`;
+    }).join("");
+    return `<details class="gd-steps"><summary>단계별 기본 점수</summary><div class="gd-scroll"><table><thead><tr><th>단계</th><th>권장 전투력</th><th>기본+졸개+보스 처치</th></tr></thead><tbody>${rows}</tbody></table></div><div class="mut gd-small">${esc(G.stepsMeta.minionsNote)}</div></details>`;
+  }
+  function levelTable(G, sel, esc) {
+    const rows = G.challenge.levels.map(lv => {
+      const sc = score(G, extraPct(G, lv.level, [0, 0, 0, 0]));
+      const big = lv.level >= 7;
+      const tip = big ? ` title="공지 표: 공격 +${lv.noticeAtk}%, 생명력·방어 +${lv.noticeHp}%"` : "";
+      return `<tr${lv.level === sel.level ? ' class="cur"' : ""}><td>${lv.level}</td><td${tip}>공격 +${lv.atk}% · 생명력·방어 +${lv.hp}%${big ? " " + EST : ""}</td><td>+${lv.score}%</td><td>${rangeText(sc)}</td><td class="gd-fx">${levelEffects(G, lv).map(esc).join("<br>")}</td></tr>`;
+    }).join("");
+    return `<div class="gd-scroll"><table class="gd-levels" data-k="gd-levels"><thead><tr><th>단계</th><th>보스 능력치</th><th>추가 점수</th><th>점수 ${EST}</th><th>누적 효과</th></tr></thead><tbody>${rows}</tbody></table></div>
+<div class="mut gd-small">${esc(G.challenge.note)} ${esc(G.challenge.statNote)}</div>`;
+  }
+  function selectBox(G, sel) {
+    const opt = (n, cur, label) => `<option value="${n}"${n === cur ? " selected" : ""}>${label}</option>`;
+    const lv = `<label>별의 도전<select data-g="level">${opt(0, sel.level, "없음")}${G.challenge.levels.map(l => opt(l.level, sel.level, l.level + "단계")).join("")}</select></label>`;
+    const sets = G.sets.items.map((it, i) => `<label>${it.name}<select data-g="set" data-i="${i}">${opt(0, sel.tiers[i], "끔")}${it.tiers.map((t, j) => opt(j + 1, sel.tiers[i], (j + 1) + "단계 +" + t.add + "% · " + t.text)).join("")}</select></label>`).join("");
+    return `<div class="gd-sel">${lv}${sets}<button type="button" class="sec" data-g="best">최고 점수 조합으로</button></div>`;
+  }
+  function panelHtml(G, sel0, step, nowMs, esc) {
+    const sel = normSel(G, sel0), ex = exStep(G);
+    let html = seasonBox(G, nowMs, esc);
+    if (step === ex.step) {
+      const pct = extraPct(G, sel.level, sel.tiers), sc = score(G, pct), b = bestSelection(G), bsc = score(G, extraPct(G, b.level, b.tiers));
+      const hyp = G.score.hypotheses.map(h => `${h.name} ${num(sc[h.id])}`).join(" · ");
+      const isBest = sel.level === b.level && sel.tiers.every((t, i) => t === b.tiers[i]);
+      html += `<div class="gd-best" data-k="gd-best"><b>최고 점수가 나오는 조합</b>: 별의 도전 ${b.level}단계 + 선택 효과 모두 최대 단계(추가 점수 ${extraPct(G, b.level, b.tiers)}%) → 점수 ${rangeText(bsc)} ${EST}<br>
+<span class="mut">단, 보스를 쓰러뜨려야 보스 처치 점수(${num(ex.bossKill)})를 받습니다. 못 깨는 단계라면 깰 수 있는 가장 높은 단계가 최선입니다. 추천 파티는 단계와 관계없이 보스 속성·특징 기준이며 단계별 생존·화력은 계산하지 않습니다.</span></div>
+${selectBox(G, sel)}
+<div class="gd-now" data-k="gd-now">고른 조합: 추가 점수 ${pct}% → <b>${rangeText(sc)}</b> ${EST}${isBest ? " (최고 조합)" : ""}<br><span class="mut">${esc(hyp)} · ${esc(G.score.hypotheses.map(h => h.name + ": " + h.desc).join(" / "))}</span></div>
+<div class="mut gd-small">${esc(G.score.note)} ${esc(G.sets.note)}</div>${levelTable(G, sel, esc)}`;
+    } else {
+      const s = G.steps.find(x => x.step === step);
+      const total = s.base + G.stepsMeta.minions * s.kill + s.bossKill;
+      html += `<div class="gd-now" data-k="gd-now">${step}단계에는 별의 도전이 없습니다. 기본 ${num(s.base)} + 졸개 처치 ${num(G.stepsMeta.minions * s.kill)} + 보스 처치 ${num(s.bossKill)} = <b>${num(total)}</b><br><span class="mut">최고 점수는 EX(${ex.step}단계)에서 나옵니다. 스테이지에서 EX를 고르세요.</span></div>`;
+    }
+    html += rulesBox(G, esc) + stepsTable(G, step, esc);
+    const b = G.exBoss;
+    html += `<div class="mut gd-small" data-k="gd-boss">EX 보스 기준값(별의 도전 전) 생명력 ${num(b.hp)} · 속도 ${b.speed} · 공격 ${num(b.atk)} · 방어 ${num(b.def)} · 슈퍼아머 ${b.superArmor} ${EST}</div>`;
+    const src = Object.values(G.sources).filter(s => s.url).map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`).join("<br>");
+    html += `<details class="gd-comm" data-k="gd-comm"><summary>커뮤니티 정보 <span class="gd-est">추정·낮은 신뢰</span></summary><ul>${G.community.items.map(i => `<li>${esc(i.text)}</li>`).join("")}</ul><div class="mut gd-small">${esc(G.community.note)}</div></details>
+<details class="gd-src"><summary>출처</summary><div class="gd-small">${src}</div></details>`;
+    return html;
+  }
+  const api = {num, parseTime, seasonState, baseTotal, extraPct, score, bestSelection, normSel, rangeText, levelEffects, panelHtml};
+  if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildView = api;
+})(typeof window !== "undefined" ? window : globalThis);
