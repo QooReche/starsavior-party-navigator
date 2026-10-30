@@ -30,6 +30,14 @@ def test_valid():
     assert gd.content_title(G) == "길드방어전(시즌4 10/29~11/05)"
 
 
+def test_boss_element_is_star():
+    # 배치 ChangeAdjustType = NUAT_STAR 이 실제 속성(유닛 표의 질서는 무시). 엔진 자료(guild_bfb.json)와 같아야 한다.
+    EN = {"별": "star", "질서": "order", "태양": "sun", "달": "moon", "혼돈": "chaos"}
+    bfb = json.load(open(os.path.join(ROOT, "data", "guild_bfb.json"), encoding="utf-8"))
+    assert G["season"]["boss"]["element"] == "star"
+    assert EN[bfb["boss"]["element"]] == EN[bfb["minion"]["element"]] == G["season"]["boss"]["element"]
+
+
 def test_validate_catches_bad_data():
     def mutate(fn):
         g = copy.deepcopy(G)
@@ -77,7 +85,7 @@ def test_season_state_and_update_flag():
 def test_content_registration():
     cfg = pr._json(pr.CONT)
     c = cfg["contents"][gd.CONTENT_NAME]
-    assert c.get("seasonal") and c["boss"] and "BFB" in c["bosses"] and c["bosses"]["BFB"]["enemies"] == ["order"]
+    assert c.get("seasonal") and c["boss"] and "BFB" in c["bosses"] and c["bosses"]["BFB"]["enemies"] == ["star"]
     assert pr.FOE_KEYS[gd.CONTENT_NAME] == gd.CONTENT_KEY
     hits = pr.find_stages(gd.CONTENT_NAME, "EX")
     assert len(hits) == 1 and hits[0][1]["name"] == "7단계 EX" and hits[0][1]["level"] == 1275
@@ -92,11 +100,11 @@ def test_content_registration():
     gk = f"guild|{gd.range_label(G)}|7단계 EX"
     assert merged[gk] == {"TARGET_PRIORITY": 3, "SHIELD_GEN": 2, "PCT_HP_DAMAGE": 2}, merged.get(gk)
     assert len(merged) - len(base) == 7 and not (set(base) & set(gd.stage_gimmicks(G)))
-    # 추천이 실제로 돈다(보스 속성 질서, 기믹 줄 포함)
+    # 추천이 실제로 돈다(보스 속성 별, 기믹 줄 포함)
     lines = []
     pr.recommend(gd.CONTENT_NAME, out=lines.append)
     txt = "\n".join(lines)
-    assert "적 속성: 질서" in txt and "우선 공격 대상 지정" in txt and txt.count("[전열]") == 2 and txt.count("[후열]") == 2, txt
+    assert "적 속성: 별" in txt and "우선 공격 대상 지정" in txt and txt.count("[전열]") == 2 and txt.count("[후열]") == 2, txt
     lines2 = []
     pr.recommend(gd.CONTENT_NAME, stage="3단계", out=lines2.append)
     assert "3단계" in "\n".join(lines2) and "보호막 생성" not in "\n".join(lines2)

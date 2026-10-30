@@ -126,11 +126,11 @@
    "bosses": {
     "BFB": {
      "enemies": [
-      "order"
+      "star"
      ],
      "role": "레인저",
      "atk": "미확인",
-     "note": "시즌4 보스. 졸개 2기 웨이브 뒤 보스(졸개 속성 미확인). 시즌·단계 자료는 data/guild_defense.json"
+     "note": "시즌4 보스. 졸개 2기 웨이브 뒤 보스(졸개·보스 속성 모두 별: 배치 BFB_01~07 ChangeAdjustType=NUAT_STAR, 유닛 표 질서는 무시). 시즌·단계 자료는 data/guild_defense.json"
     }
    },
    "boss": true,

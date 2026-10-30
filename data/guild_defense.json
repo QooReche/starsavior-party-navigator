@@ -22,7 +22,7 @@
   "conf": "확인",
   "src": ["notice1029", "client"],
   "note": "시작은 10/29 점검 후(시각 미확인). 결산 중에는 플레이할 수 없고, 04:00 를 넘기면 진행 중이던 전투는 무효(갤럭시 시즌 1 공지 기준).",
-  "boss": {"name": "BFB", "element": "order", "role": "레인저", "conf": "확인", "src": ["notice1029", "client"]}
+  "boss": {"name": "BFB", "element": "star", "role": "레인저", "conf": "확인", "src": ["notice1029", "client"]}
  },
  "rules": {
   "turnLimit": 50,
