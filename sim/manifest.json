@@ -1,6 +1,6 @@
 {
  "_note": "브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시",
- "ver": "749f78f3daa5",
+ "ver": "15ff8f84a9bc",
  "files": [
   "battlesim/__init__.py",
   "battlesim/api.py",
@@ -14,6 +14,7 @@
   "battlesim/starsavior/build.py",
   "battlesim/starsavior/data.py",
   "battlesim/starsavior/foe.py",
+  "battlesim/starsavior/guild_bfb.py",
   "battlesim/starsavior/mc_semantics.py",
   "battlesim/starsavior/myinfo_combat.py",
   "battlesim/starsavior/myinfo_stats.py",
@@ -35,7 +36,9 @@
   "data/break_skill_levels.json",
   "data/buff_count.json",
   "data/foe_react.json",
-  "data/foe_summon.json"
+  "data/foe_summon.json",
+  "data/guild_bfb.json",
+  "data/guild_defense.json"
  ],
- "bytes": 5821672
+ "bytes": 5857035
 }

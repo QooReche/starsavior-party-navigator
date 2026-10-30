@@ -121,6 +121,15 @@ def _norm_encounter(enc):
     meta = {}
     turn_limit = enc.get('turn_limit')
     fx_texts = enc.get('stage_fx')
+    if 'guild' in enc:
+        # 길드 방어전 EX(BFB): {"guild": {"level": 0~12(별의 도전), "sets": [소멸, 불멸, 쇠락, 허무](0~3)}} — starsavior/guild_bfb.py
+        from .starsavior.guild_bfb import build_waves
+        g = enc['guild'] or {}
+        waves, meta = build_waves(int(g.get('level', 0)), g.get('sets'))
+        if turn_limit is None:
+            turn_limit = meta['turn_limit']
+        fx, unknown = parse_fx(fx_texts or [])
+        return waves, turn_limit, fx, unknown, meta
     if 'stage' in enc:
         s = enc['stage']
         if isinstance(s, str):
@@ -269,6 +278,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     if not defs:
         raise ValueError('party_spec 이 비어 있음')
     waves, turn_limit, fx, fx_unknown, meta = _norm_encounter(encounter_spec)
+    if meta.get('guild') and 'guild_boss' not in (o.get('rules_override') or {}):
+        mc = dict(mc, guild_boss='on')     # 길방 전투에서만 BFB 상태 기계를 켠다(명시하면 그 값)
     max_turns = encounter_spec.get('max_turns', 50)
     sudden = sudden_death()['groups'].get(meta.get('sudden_death')) if meta.get('sudden_death') else None
     power = party_power(defs)

@@ -442,6 +442,7 @@ class Unit:
         self.sa = self.sa_max
         self.broken = False
         self.breaks = 0
+        self.zero_stats = False      # 길방 BFB 〈들러리〉: 공격력·방어력·속도 0 고정, 행동 게이지 증가 무효(guild_bfb, mc.guild_boss=on 일 때만 켜짐)
         self._m = None
 
     @property
@@ -497,6 +498,8 @@ class Unit:
         return e.category != 'buff' or not self.buff_blocked()
 
     def spd(self):
+        if self.zero_stats:
+            return 1.0
         m = self.mods()
         p = self.d.passive
         s = self.d.spd_base * (1 + m['spdp'] + p['spdp']) + m['spdf'] + p['spdf']
@@ -692,6 +695,13 @@ class Battle:
             raise ValueError('break_skill_cd_unit 은 ally_turn|round')
         if self.break_skill_enabled and self.mc['break_skill_domain_clock'] not in ('global', 'legacy'):
             raise ValueError('break_skill_domain_clock 은 global|legacy')
+        # 길드 방어전 BFB 상태 기계(starsavior/guild_bfb.py): 스위치가 켜져 있고 BFB 정의가 웨이브에 있을 때만
+        self.gb = None
+        if self.mc['guild_boss'] == 'on' and any(getattr(d, 'bfb', None) for w in waves for d in w):
+            from .starsavior.guild_bfb import Controller
+            self.gb = Controller(self)
+        elif self.mc['guild_boss'] not in ('on', 'off'):
+            raise ValueError('guild_boss 는 on|off')
 
     # ---------- 공용
     def tick(self):
@@ -760,6 +770,8 @@ class Battle:
                     u.slot = slot
                     u.pos = slot   # 소환 추적 전투는 처음 적도 실제 칸을 위치로(소환 적과 같은 기준 — 대상 선택·동률 순서, codex 리뷰)
             self.foes.sort(key=lambda x: x.pos)
+        if self.gb is not None:
+            self.gb.on_wave()
         for u in self.foes:
             for ln in self.lines_of(u):
                 if line_kind(ln) in ('battle_start', 'wave_start'):
@@ -868,6 +880,8 @@ class Battle:
         NKM.decompiled.cs:3323-3330 (lower clamp only), 4648-4675
         (buff changes), 12309-12317 (descending gauge), 13821 (actor reset).
         """
+        if u.zero_stats and value > u.gauge:
+            return      # 〈들러리〉: 행동 게이지 증가 무효(BUFF_TEMPLET ImmuneSpeedGaugeUp)
         u.gauge = max(0.0, value)
         if not self.mc['gauge_overflow']:
             u.gauge = min(10000.0, u.gauge)
@@ -1383,7 +1397,9 @@ class Battle:
                 if bosses:
                     pool = bosses
             return min(pool, key=lambda v: (v.hp + v.shield_total(), v.pos))
-        ranked = self.ranked_enemies(skill_desc(att.d, sk.slot), pool, priority=True) if sk is not None else None
+        if self.gb is not None and self.gb.is_boss(att):
+            return self.gb.pick_target(att, sk, pool)
+        ranked =self.ranked_enemies(skill_desc(att.d, sk.slot), pool, priority=True) if sk is not None else None
         if self.mc['enemy_auto_target'] == 'table':
             # 설명문 「~가 가장 높은 적 우선」 = 그 스킬 고유 규칙의 근사(게임은 고유 규칙이 있으면 1001 을 안 씀) -> 동률은 무작위
             if ranked:
@@ -1685,6 +1701,8 @@ class Battle:
             self.fire_side(u, ctx, 'ally_post')
             self.fire_foes(u, ctx, 'foe_post' if sk.is_attack else 'foe_post_na')
             self.fire_foes(u, ctx, 'foe_post_any')      # 「적 행동 후」(공격·비공격 모두)
+            if self.gb is not None:
+                self.gb.after_cast(u, sk, ctx, extra)
             # GetNovaForceValue is paid at every skill end, including reactions
             # and extra casts (NKM:15325-15331,15487,15706-15709).
             if self.mc['nova_skill_gain'] or (u.side == 0 and not extra and sk.slot in ('특수기', '궁극기')):
@@ -1939,10 +1957,14 @@ class Battle:
 
     # ---------- 피해
     def atk_stat(self, u, ctx=None):
+        if u.zero_stats:
+            return 0.0
         m = u.mods()
         return u.d.stats['atk'] * (1 + u.d.passive['atkp'] + m['atkp'] + (ctx.atkp if ctx else 0.0) + u.d.gear_atkp)
 
     def def_stat(self, u, local=0.0):
+        if u.zero_stats:
+            return 0.0
         m = u.mods()
         return max(0.0, u.d.stats['def'] * (1 + u.d.passive['defp'] + m['defp'] + local))
 
@@ -2063,6 +2085,8 @@ class Battle:
         else:
             pieces = [(v, base * (1 - share)), (guard, base * share)]
         killed = False
+        if self.gb is not None:
+            self.gb.pre_hit(a, v)
         for pc in pieces:
             w = pc[0]
             if len(pc) == 3:
@@ -2079,6 +2103,8 @@ class Battle:
             ctx.kill = True
         if self.mc['toughness'] == 'on' and not evaded and not v.dead:
             self.tough_hit(a, v, ctx)      # 피해 처리 뒤(격파시킨 타격 자체는 −15%p 를 받지 않음, assumed). 회피하면 강인도 안 깎임(community)
+        if self.gb is not None:
+            self.gb.post_hit(a, v)
         reactions.append((v, hctx))
 
     def tough_hit(self, a, v, ctx):
