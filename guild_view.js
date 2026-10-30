@@ -49,7 +49,8 @@
     const st = seasonState(G.season, nowMs), s = G.season;
     const stale = st.needsUpdate
       ? `<div class="gd-warn" data-k="gd-stale"><b>갱신 대기</b> · 이 시즌(${esc(G.tab)})은 ${md(s.end)} 04:00에 끝났습니다. 아래 수치는 지난 시즌 기준이며 새 시즌에는 달라질 수 있습니다.</div>` : "";
-    return `<div class="gd-head"><b>${esc(G.title)}</b> <span class="gd-state ${st.state}">${STATE_TEXT[st.state]}</span><span class="mut"> · 이 시즌 정보는 ${md(G.asOf)} 기준</span></div>${stale}
+    const dev = `<div class="gd-dev" data-k="gd-dev" role="note"><b>⚠ 개발 중 · 테스트 중인 기능입니다</b><br>점수 계산과 고단계 수치는 확인되지 않았고, 추천은 아직 시뮬로 검증하지 않았습니다. 참고용으로만 봐 주세요.</div>`;
+    return `${dev}<div class="gd-head"><b>${esc(G.title)}</b> <span class="gd-state ${st.state}">${STATE_TEXT[st.state]}</span><span class="mut"> · 이 시즌 정보는 ${md(G.asOf)} 기준</span></div>${stale}
 <div class="mut gd-small">진행 ${md(s.start)} ~ ${md(s.end)} 04:00 · 결산 ~${md(s.settleEnd)} 04:00 · 보스 ${esc(s.boss.name)}(${EL[s.boss.element] || ""} ${esc(s.boss.role)})</div>`;
   }
   function rulesBox(G, esc) {
