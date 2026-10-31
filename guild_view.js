@@ -84,7 +84,25 @@
     return `<div class="gd-sel">${lv}${sets}<button type="button" class="sec" data-g="best">최고 점수 조합으로</button></div>`;
   }
   // 시뮬 추정(tools/build_guild_sim.py → G.sim): 육성 배수마다 클리어율 passP 이상인 최고 단계와 그 단계 점수 범위(선택 효과 끔)
-  function simBest(S, g) { const b = S && S.summary && S.summary[String(g)]; return b ? {level: b.level, team: b.team, p: b.p} : null; }
+  const SUP_NAME = {none: "지원 안 고름", gust: "격돌의 돌풍", focus: "날카로운 집중력", strike: "강인한 타격", mountain: "태산의 의지", fire: "불의 고동"};
+  function simBest(S, g) { const b = S && S.summary && S.summary[String(g)]; return b ? {level: b.level, team: b.team, p: b.p, support: b.support || "none"} : null; }
+  // 팀·지원별 클리어율 행(구버전 자료는 rates 만 있음 = 지원 안 고름)
+  function simRates(S, t, sup, g) { const bs = t.bySupport; const r = bs ? (bs[sup] || {})[String(g)] : (sup === "none" ? t.rates[String(g)] : null); return r || null; }
+  // 기대 점수 최대 조합: 클리어율 × 점수(실패하면 0점 가정 — 실패 시 점수 인정 여부는 미확인). 가설 A/B 평균이 가장 큰 조합을 고르고, 두 가설 값을 범위로 보여 줌
+  function simExpect(G, S, g) {
+    let best = null;
+    S.teams.forEach((t, ti) => (S.supports || ["none"]).forEach(sup => {
+      const r = simRates(S, t, sup, g);
+      if (!r) return;
+      S.levels.forEach((lv, i) => {
+        const sc = score(G, extraPct(G, lv, [0, 0, 0, 0])), e = {};
+        for (const k of Object.keys(sc)) e[k] = Math.round(sc[k] * r[i]);
+        const m = Object.values(e).reduce((a, b) => a + b, 0) / Object.keys(e).length;
+        if (r[i] > 0 && (!best || m > best.m)) best = {m, team: ti, support: sup, level: lv, p: r[i], e};
+      });
+    }));
+    return best;
+  }
   const pct = p => Math.round(p * 100) + "%";
   function simBox(G, esc) {
     const S = G.sim;
@@ -93,13 +111,29 @@
       const b = simBest(S, g), pw = "권장 전투력 ×" + g + " (약 " + Math.round(S.recPower * g / 10000) + "만)";
       if (!b) return `<li>${pw}: <b>EX도 어려움</b> <span class="mut">(모든 후보 클리어율 ${pct(S.passP)} 미만)</span></li>`;
       const t = S.teams[b.team], lv = b.level ? "별의 도전 " + b.level + "단계" : "별의 도전 없이(0단계)";
-      return `<li>${pw}: <b>${lv}</b>까지 · 점수 <b>${rangeText(score(G, extraPct(G, b.level, [0, 0, 0, 0])))}</b> ${EST}<br><span class="mut">${esc(t.names.join(" · "))} 클리어 ${pct(b.p)}</span></li>`;
+      return `<li>${pw}: <b>${lv}</b>까지 · 점수 <b>${rangeText(score(G, extraPct(G, b.level, [0, 0, 0, 0])))}</b> ${EST}<br><span class="mut">${esc(t.names.join(" · "))} · 알리시아 지원 «${SUP_NAME[b.support]}» · 클리어 ${pct(b.p)}</span></li>`;
+    }).join("");
+    const ex = S.growth.map(g => {
+      const e = simExpect(G, S, g);
+      if (!e) return "";
+      const t = S.teams[e.team];
+      return `<li>×${g}: 별의 도전 <b>${e.level}단계</b> · 기대 점수 <b>${rangeText(e.e)}</b> <span class="mut">(${esc(t.names.join("·"))} · «${SUP_NAME[e.support]}» · 클리어 ${pct(e.p)})</span></li>`;
     }).join("");
     const head = S.levels.map(l => `<th>${l}</th>`).join("");
-    const rows = S.teams.map(t => S.growth.map(g => `<tr><td>${esc(t.names.join("·"))}${t.src === "community" ? " (커뮤니티 사례 근사)" : ""}</td><td>×${g}</td>${t.rates[String(g)].map(p => `<td>${pct(p)}</td>`).join("")}</tr>`).join("")).join("");
+    const sups = S.supports || ["none"];
+    // 후보별 표: 지원이 여러 개면 팀마다 클리어 가능한 최고 단계가 가장 높은 지원 한 줄만(전체 비교는 아래 «지원별»)
+    const topLv = r => { let m = -1; r.forEach((p, i) => { if (p >= S.passP) m = i; }); return m; };
+    const rows = S.teams.map(t => S.growth.map(g => {
+      const sup = sups.reduce((a, s) => { const ra = simRates(S, t, a, g), rs = simRates(S, t, s, g); return ra && rs && topLv(rs) > topLv(ra) ? s : a; }, sups[0]);
+      return `<tr><td>${esc(t.names.join("·"))}${t.src === "community" ? " (커뮤니티 사례 근사)" : ""}</td><td>×${g}</td><td>${SUP_NAME[sup]}</td>${simRates(S, t, sup, g).map(p => `<td>${pct(p)}</td>`).join("")}</tr>`;
+    }).join("")).join("");
+    const gMid = S.growth[S.growth.length - 1];
+    const supRows = S.teams.map(t => `<tr><td>${esc(t.names.join("·"))}</td>${sups.map(s => { const r = simRates(S, t, s, gMid); const m = r ? topLv(r) : -1; return `<td>${m < 0 ? "-" : m + "단계"}</td>`; }).join("")}</tr>`).join("");
+    const supTab = sups.length > 1 ? `<details class="gd-simtab"><summary>알리시아 지원별 클리어 가능 최고 단계 (×${gMid})</summary><div class="gd-scroll"><table><thead><tr><th>파티</th>${sups.map(s => `<th>${SUP_NAME[s]}</th>`).join("")}</tr></thead><tbody>${supRows}</tbody></table></div></details>` : "";
     return `<div class="gd-sim" data-k="gd-sim"><b>시뮬 추정: 깰 수 있는 최고 단계</b> ${EST}<ul>${lines}</ul>
-<div class="mut gd-small">${esc(S.basis)} · 단계당 ${S.runs}판 · 클리어율 ${pct(S.passP)} 이상을 «깰 수 있음»으로 봄 · 점수는 가설 A/B 범위(선택 효과 끔). 실제 플레이·점수와 대조하지 않았습니다. 수동 조작(행동 게이지 조절·브레이크 타이밍)은 반영하지 않아 실제보다 낮게 나올 수 있습니다.</div>
-<details class="gd-simtab"><summary>후보별 단계 클리어율</summary><div class="gd-scroll"><table><thead><tr><th>파티</th><th>육성</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></details></div>`;
+${ex ? `<b>기대 점수가 가장 큰 단계</b> ${EST}<ul>${ex}</ul>` : ""}
+<div class="mut gd-small">${esc(S.basis)} · 오토 전투 기준 · 단계당 ${S.runs}판(표본이 작아 한 단계쯤은 오차) · 클리어율 ${pct(S.passP)} 이상을 «깰 수 있음»으로 봄 · 점수는 가설 A/B 범위(선택 효과 끔) · 기대 점수는 «클리어율 × 점수»이고 실패하면 0점으로 계산(실패 시 점수 인정 여부는 확인 안 됨). 실제 플레이·점수와 대조하지 않았습니다. 수동 조작(행동 게이지 조절·브레이크 타이밍)은 반영하지 않아 실제보다 낮게 나올 수 있습니다. 알리시아 지원은 게임 표 값으로 넣었고 일부 해석(발동 확률·경계값)은 추정입니다.</div>
+${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율</summary><div class="gd-scroll"><table><thead><tr><th>파티</th><th>육성</th><th>지원</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></details></div>`;
   }
   function panelHtml(G, sel0, step, nowMs, esc) {
     const sel = normSel(G, sel0), ex = exStep(G);
@@ -126,6 +160,6 @@ ${simBox(G, esc)}${selectBox(G, sel)}
 <details class="gd-src"><summary>출처</summary><div class="gd-small">${src}</div></details>`;
     return html;
   }
-  const api = {num, parseTime, seasonState, baseTotal, extraPct, score, bestSelection, normSel, rangeText, levelEffects, simBest, simBox, panelHtml};
+  const api = {num, parseTime, seasonState, baseTotal, extraPct, score, bestSelection, normSel, rangeText, levelEffects, simBest, simExpect, simBox, panelHtml};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildView = api;
 })(typeof window !== "undefined" ? window : globalThis);

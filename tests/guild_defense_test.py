@@ -133,11 +133,13 @@ def test_sim_payload():
     for g in s["growth"]:
         best = None
         for i, t in enumerate(s["teams"]):
-            r = t["rates"][str(g)]
-            ok = [lv for lv, p in zip(s["levels"], r) if p >= s["passP"]]
-            if ok and (best is None or max(ok) > best[0] or (max(ok) == best[0] and r[max(ok)] > best[2])):
-                best = (max(ok), i, r[max(ok)])
+            for sup in s["supports"]:      # 알리시아 지원까지 포함해 가장 높은 단계
+                r = t["bySupport"][sup][str(g)]
+                ok = [lv for lv, p in zip(s["levels"], r) if p >= s["passP"]]
+                if ok and (best is None or max(ok) > best[0] or (max(ok) == best[0] and r[max(ok)] > best[2])):
+                    best = (max(ok), i, r[max(ok)])
         assert gd.sim_best(s, str(g)) == best, (g, best)
+    assert s["supports"][0] == "none" and all(t["rates"] == t["bySupport"]["none"] for t in s["teams"])
     with tempfile.TemporaryDirectory() as d:
         p = os.path.join(d, "s.json")
         raw = json.load(open(gd.SIM_PATH, encoding="utf-8"))

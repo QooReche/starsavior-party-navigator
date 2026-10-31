@@ -70,16 +70,25 @@ const tests = {
     // 화면 자료 = guild_defense.page_payload 의 sim(tools/build_guild_sim.py 결과를 줄인 것)
     const raw = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_sim.json'), 'utf8'));
     const S = {runs: raw.runs, recPower: raw.recPower, growth: raw.growth, levels: raw.levels, passP: raw.pass_p, basis: raw.basis,
-      summary: raw.summary, teams: raw.teams.map(t => ({names: t.names, src: t.src, rates: t.rates}))};
+      summary: raw.summary, supports: raw.supports, teams: raw.teams.map(t => ({names: t.names, src: t.src, rates: t.rates, bySupport: t.bySupport}))};
     // summary 는 rates 에서 다시 계산한 것과 같아야 한다(최고 단계 = 클리어율 passP 이상인 가장 높은 단계)
     for (const g of S.growth) {
       let best = null;
-      S.teams.forEach((t, i) => { const r = t.rates[String(g)]; let top = -1; r.forEach((p, lv) => { if (p >= S.passP) top = lv; });
-        if (top >= 0 && (!best || top > best.level || (top === best.level && r[top] > best.p))) best = {level: top, team: i, p: r[top]}; });
+      S.teams.forEach((t, i) => S.supports.forEach(sup => { const r = t.bySupport[sup][String(g)]; let top = -1; r.forEach((p, lv) => { if (p >= S.passP) top = lv; });
+        if (top >= 0 && (!best || top > best.level || (top === best.level && r[top] > best.p))) best = {level: top, team: i, p: r[top], support: sup}; }));
       assert.deepEqual(V.simBest(S, g), best, 'summary ' + g);
+      // 기대 점수 최대 조합: 모든 (팀·지원·단계) 를 직접 훑은 값과 같아야 함
+      let bm = -1;
+      S.teams.forEach(t => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
+        const r = t.bySupport[sup][String(g)][i], sc = V.score(P, V.extraPct(P, lv, [0, 0, 0, 0])), v = Object.values(sc).map(x => Math.round(x * r));
+        if (r > 0) bm = Math.max(bm, v.reduce((a, b) => a + b, 0) / v.length);
+      })));
+      const ex = V.simExpect(P, S, g);
+      assert(ex && Math.abs(ex.m - bm) < 1e-9, 'expect ' + g);
     }
     const h = V.panelHtml({...P, sim: S}, null, 7, T('2026-10-30T12:00:00+09:00'), esc);
     assert(h.includes('data-k="gd-sim"') && h.includes('시뮬 추정: 깰 수 있는 최고 단계') && h.includes('실제 플레이·점수와 대조하지 않았습니다'));
+    assert(h.includes('기대 점수가 가장 큰 단계') && h.includes('알리시아 지원 «') && h.includes('지원별 클리어 가능 최고 단계'), '지원·기대 점수 표시');
     assert(h.includes('data-k="gd-dev"'), '개발 중 배너 유지');
     const none = {...S, summary: Object.fromEntries(S.growth.map(g => [String(g), null]))};
     assert(V.panelHtml({...P, sim: none}, null, 7, T('2026-10-30T12:00:00+09:00'), esc).includes('EX도 어려움'));

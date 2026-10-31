@@ -28,6 +28,7 @@ CONTENT = '길드방어전'
 COMMUNITY =['wedding-carmen', 'ceres-sun-supporter', 'amora', 'tyria']
 LEVELS = list(range(0, 13))
 PASS = 0.5     # «클리어 가능» = 클리어율 50% 이상(표시 기준, 가정)
+SUPPORTS = ['none', 'gust', 'focus', 'strike', 'mountain', 'fire']   # 알리시아의 지원(none = 안 고름)
 
 
 def reco_teams(k):
@@ -70,6 +71,7 @@ def main():
     ap.add_argument('--teams', type=int, default=4)
     ap.add_argument('--growth', default='1,1.5,2')
     ap.add_argument('--seed', type=int, default=7)
+    ap.add_argument('--supports', default=','.join(SUPPORTS))
     ap.add_argument('--out', default=str(ROOT / 'data' / 'guild_sim.json'))
     a = ap.parse_args()
     db = get_db()
@@ -77,36 +79,43 @@ def main():
     bfb = json.load(open(ROOT / 'data' / 'guild_bfb.json', encoding='utf-8'))
     rec = bfb['power']
     growth = ['%g' % float(x) for x in a.growth.split(',')]   # 키 = '1', '1.5', '2'(JS String(숫자) 와 같게 문자열로 둠)
+    sups = [s for s in a.supports.split(',') if s]
+    if any(s not in SUPPORTS for s in sups) or 'none' not in sups:
+        raise SystemExit('--supports 는 none 을 포함한 %s 의 부분집합' % SUPPORTS)
     teams = reco_teams(a.teams)
     if COMMUNITY not in [t['keys'] for t in teams]:
         teams.append(dict(src='community', keys=COMMUNITY, leader=0))
     t0 = time.time()
     for t in teams:
         t['names'] = [db.units[k]['n'] for k in t['keys']]
-        t['rates'] = {}
+        t['bySupport'] = {s: {} for s in sups}
         for g in growth:
             units = scaled_units(db, t['keys'], t['leader'], rec * float(g))
-            row = []
-            for lv in LEVELS:
-                r = simulate({'units': units, 'leader': t['leader']}, {'guild': {'level': lv}},
-                             {'seed': a.seed, 'n_runs': a.runs, 'build': 'standard', 'rules_override': {'power_penalty': 'model'}})
-                row.append(r['outcome']['clear_p'])
-            t['rates'][str(g)] = row
-            print(t['src'], ','.join(t['keys']), 'x' + g, row, '%.0fs' % (time.time() - t0), flush=True)
+            for sup in sups:
+                row = []
+                for lv in LEVELS:
+                    r = simulate({'units': units, 'leader': t['leader']}, {'guild': {'level': lv, 'support': sup}},
+                                 {'seed': a.seed, 'n_runs': a.runs, 'build': 'standard', 'rules_override': {'power_penalty': 'model'}})
+                    row.append(r['outcome']['clear_p'])
+                t['bySupport'][sup][str(g)] = row
+                print(t['src'], ','.join(t['keys']), 'x' + g, sup, row, '%.0fs' % (time.time() - t0), flush=True)
+        t['rates'] = t['bySupport']['none']      # 호환: 지원을 안 고른 경우
     summary = {}
     for g in growth:
         best = None
         for i, t in enumerate(teams):
-            ok = [lv for lv, p in zip(LEVELS, t['rates'][str(g)]) if p >= PASS]
-            top = max(ok) if ok else None
-            if top is not None and (best is None or top > best['level'] or (top == best['level'] and t['rates'][str(g)][top] > best['p'])):
-                best = dict(level=top, team=i, p=t['rates'][str(g)][top])
+            for sup in sups:
+                rr = t['bySupport'][sup][str(g)]
+                ok = [lv for lv, p in zip(LEVELS, rr) if p >= PASS]
+                top = max(ok) if ok else None
+                if top is not None and (best is None or top > best['level'] or (top == best['level'] and rr[top] > best['p'])):
+                    best = dict(level=top, team=i, p=rr[top], support=sup)
         summary[str(g)] = best
     out = dict(
-        _note='tools/build_guild_sim.py 가 만든 시뮬 추정(실측 대조 없음). rates[육성 배수] = 별의 도전 0~12단계 클리어율(0단계 = 별의 도전 없음).',
+        _note='tools/build_guild_sim.py 가 만든 시뮬 추정(실측 대조 없음). rates[육성 배수] = 별의 도전 0~12단계 클리어율(0단계 = 별의 도전 없음, 알리시아 지원 안 고름), bySupport[지원][육성 배수] = 같은 값을 지원별로.',
         asOf=gd['asOf'], season=gd['season']['id'], runs=a.runs, seed=a.seed, recPower=rec, growth=growth, levels=LEVELS, pass_p=PASS,
         basis='표준 육성을 파티 전투력 = 권장 전투력 x 배수로 맞춤, 오토 전투, 선택 효과 끔, 전투력 보정 적용',
-        teams=teams, summary=summary)
+        supports=sups, teams=teams, summary=summary)
     atomic_json(a.out, out, indent=1)
     print('저장', a.out, '%.0fs' % (time.time() - t0))
 

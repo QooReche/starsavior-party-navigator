@@ -213,8 +213,8 @@ def sim_payload(g, path=SIM_PATH):
     if s.get("season") != g["season"]["id"]:
         return None
     return {"runs": s["runs"], "recPower": s["recPower"], "growth": s["growth"], "levels": s["levels"], "passP": s["pass_p"],
-            "basis": s["basis"], "summary": s["summary"],
-            "teams": [{"names": t["names"], "src": t["src"], "rates": t["rates"]} for t in s["teams"]]}
+            "basis": s["basis"], "summary": s["summary"], "supports": s.get("supports", ["none"]),
+            "teams": [{"names": t["names"], "src": t["src"], "rates": t["rates"], "bySupport": t.get("bySupport")} for t in s["teams"]]}
 
 
 def sim_best(sim, growth_key):
