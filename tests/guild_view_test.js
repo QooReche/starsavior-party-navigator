@@ -9,10 +9,10 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', 
 const T = s => Date.parse(s);
 const tests = {
   score() {
-    assert.deepEqual(V.score(P, V.extraPct(P, 12, [0, 0, 0, 0])), {A: 66000, B: 36000});
-    assert.deepEqual(V.score(P, V.extraPct(P, 12, [3, 3, 3, 3])), {A: 84000, B: 39000});
-    assert.deepEqual(V.score(P, 0), {A: 30000, B: 30000});
-    assert.equal(V.rangeText({A: 66000, B: 36000}), '36,000 ~ 66,000');
+    assert.deepEqual(V.score(P, V.extraPct(P, 12, [0, 0, 0, 0])), {A: 66000});
+    assert.deepEqual(V.score(P, V.extraPct(P, 12, [3, 3, 3, 3])), {A: 84000});
+    assert.deepEqual(V.score(P, 0), {A: 30000});
+    assert.equal(V.rangeText({A: 66000, B: 36000}), '36,000 ~ 66,000');   // 범위 표시 함수 자체는 그대로(값이 둘일 때)
     assert.equal(V.rangeText({A: 5, B: 5}), '5');
     assert.deepEqual(V.normSel(P, null), {level: 12, tiers: [3, 3, 3, 3]});
     assert.deepEqual(V.normSel(P, {level: 99, tiers: [9, -1, 'x', 2]}), {level: 12, tiers: [3, 3, 3, 2]});
@@ -36,13 +36,15 @@ const tests = {
   ex() {
     const h = V.panelHtml(P, null, 7, T('2026-10-30T12:00:00+09:00'), esc);
     assert(h.includes('최고 점수가 나오는 조합') && h.includes('별의 도전 12단계'));
-    assert(h.includes('39,000 ~ 84,000'), '최고 조합 범위');
-    assert(h.includes('가설 A 84,000') && h.includes('가설 B 39,000'));
+    assert(h.includes('보스를 다 깎으면 점수 84,000'), '최고 조합 점수');
+    assert(h.includes('클리어(보스 100% 처치) 84,000') && !h.includes('가설 B'));
+    assert.equal(V.scoreAt(P, 60, 0.999), 47960, '영상으로 확인한 점수식: 29,975 x 1.6');
+    assert.equal(V.scoreAt(P, 60, 1), 48000);
     assert(h.includes('gd-est') && h.includes('추정'));
     assert(h.includes('일일 초기화 전까지 다시 쓸 수 없음') && h.includes('화·목·토') && h.includes('50턴'));
     assert(h.includes('(최고 조합)'));
     const low = V.panelHtml(P, {level: 6, tiers: [0, 0, 0, 0]}, 7, T('2026-10-30T12:00:00+09:00'), esc);
-    assert(low.includes('추가 점수 60%') && low.includes('<b>33,000 ~ 48,000</b>'), '도전 6단계: 가설 B 33,000 ~ 가설 A 48,000');
+    assert(low.includes('추가 점수 60%') && low.includes('<b>48,000</b>'), '도전 6단계: 클리어 점수 48,000');
     assert(low.includes('<option value="6" selected>') && !low.includes('(최고 조합)'));
     // 7~12단계 능력치는 게임 화면으로 확인(2026-11-01)돼 추정 배지가 없고, 옛 공지 값은 툴팁으로만
     assert(h.match(/title="공지 표\(옛 값\): 공격 \+70%, 생명력·방어 \+35%"/));
@@ -70,24 +72,25 @@ const tests = {
     // 화면 자료 = guild_defense.page_payload 의 sim(tools/build_guild_sim.py 결과를 줄인 것)
     const raw = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_sim.json'), 'utf8'));
     const S = {runs: raw.runs, recPower: raw.recPower, growth: raw.growth, levels: raw.levels, passP: raw.pass_p, basis: raw.basis,
-      summary: raw.summary, supports: raw.supports, teams: raw.teams.map(t => ({names: t.names, src: t.src, rates: t.rates, bySupport: t.bySupport}))};
+      summary: raw.summary, supports: raw.supports, teams: raw.teams.map(t => ({names: t.names, src: t.src, rates: t.rates, bySupport: t.bySupport, progBySupport: t.progBySupport}))};
     // summary 는 rates 에서 다시 계산한 것과 같아야 한다(최고 단계 = 클리어율 passP 이상인 가장 높은 단계)
     for (const g of S.growth) {
       let best = null;
       S.teams.forEach((t, i) => S.supports.forEach(sup => { const r = t.bySupport[sup][String(g)]; let top = -1; r.forEach((p, lv) => { if (p >= S.passP) top = lv; });
         if (top >= 0 && (!best || top > best.level || (top === best.level && r[top] > best.p))) best = {level: top, team: i, p: r[top], support: sup}; }));
       assert.deepEqual(V.simBest(S, g), best, 'summary ' + g);
-      // 기대 점수 최대 조합: 모든 (팀·지원·단계) 를 직접 훑은 값과 같아야 함
-      let bm = -1;
-      S.teams.forEach(t => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
-        const r = t.bySupport[sup][String(g)][i], sc = V.score(P, V.extraPct(P, lv, [0, 0, 0, 0])), v = Object.values(sc).map(x => Math.round(x * r));
-        if (r > 0) bm = Math.max(bm, v.reduce((a, b) => a + b, 0) / v.length);
-      })));
       const ex = V.simExpect(P, S, g);
-      assert(ex && Math.abs(ex.m - bm) < 1e-9, 'expect ' + g);
+      assert(ex, 'expect ' + g);
+      // 진행도(= 0.5 + 0.5 x 보스 깎은 비율)로 확인된 점수식에 넣은 최댓값과 같아야 함
+      let bv = -1;
+      S.teams.forEach(t => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
+        const f = Math.max(0, Math.min(1, 2 * t.progBySupport[sup][String(g)][i] - 1));
+        bv = Math.max(bv, V.scoreAt(P, V.extraPct(P, lv, [0, 0, 0, 0]), f));
+      })));
+      assert.equal(ex.m, bv, 'expected score ' + g);
     }
     const h = V.panelHtml({...P, sim: S}, null, 7, T('2026-10-30T12:00:00+09:00'), esc);
-    assert(h.includes('data-k="gd-sim"') && h.includes('시뮬 추정: 깰 수 있는 최고 단계') && h.includes('실제 플레이·점수와 대조하지 않았습니다'));
+    assert(h.includes('data-k="gd-sim"') && h.includes('시뮬 추정: 깰 수 있는 최고 단계') && h.includes('시뮬 결과는 아직 실제와 대조 중입니다'));
     assert(h.includes('기대 점수가 가장 큰 단계') && h.includes('알리시아 지원 «') && h.includes('지원별 클리어 가능 최고 단계'), '지원·기대 점수 표시');
     assert(h.includes('data-k="gd-dev"'), '개발 중 배너 유지');
     const none = {...S, summary: Object.fromEntries(S.growth.map(g => [String(g), null]))};

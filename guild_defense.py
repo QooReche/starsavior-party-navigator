@@ -75,8 +75,15 @@ def extra_pct(g, level, tiers=(0, 0, 0, 0)):
     return pct
 
 
+def score_at(g, pct, boss_frac=1.0):
+    """보스 생명력을 boss_frac(0~1)만큼 깎은 판의 최종 점수(영상으로 확인한 식): (기본 + 졸개 + 보스 점수 x boss_frac) x (1+pct%). 졸개 2기 처치 전제."""
+    ex = ex_step(g)
+    raw = ex["base"] + g["stepsMeta"]["minions"] * ex["kill"] + ex["bossKill"] * max(0.0, min(1.0, boss_frac))
+    return round(raw * (100 + pct) / 100)
+
+
 def score(g, pct):
-    """{가설 id: 점수}. A = 합계 전체 x (1+pct%), B = 보스 처치 점수를 뺀 나머지만 x (1+pct%)."""
+    """{가설 id: 클리어(보스 100% 처치) 점수}. 현재는 확인된 식 A 하나."""
     ex = ex_step(g)
     boss = ex["bossKill"]
     total = base_total(g)
@@ -214,7 +221,7 @@ def sim_payload(g, path=SIM_PATH):
         return None
     return {"runs": s["runs"], "recPower": s["recPower"], "growth": s["growth"], "levels": s["levels"], "passP": s["pass_p"],
             "basis": s["basis"], "summary": s["summary"], "supports": s.get("supports", ["none"]),
-            "teams": [{"names": t["names"], "src": t["src"], "rates": t["rates"], "bySupport": t.get("bySupport")} for t in s["teams"]]}
+            "teams": [{"names": t["names"], "src": t["src"], "rates": t["rates"], "bySupport": t.get("bySupport"), "progBySupport": t.get("progBySupport")} for t in s["teams"]]}
 
 
 def sim_best(sim, growth_key):

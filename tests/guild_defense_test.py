@@ -58,16 +58,20 @@ def test_score_range():
     assert gd.base_total(G) == 30000          # 기본 2500 + 졸개 2 x 1250 + 보스 25000
     lv12 = gd.extra_pct(G, 12)
     assert lv12 == 120
-    assert gd.score(G, lv12) == {"A": 66000, "B": 36000}, gd.score(G, lv12)
+    assert gd.score(G, lv12) == {"A": 66000}, gd.score(G, lv12)
     best_level, best_tiers = gd.best_selection(G)
     pct = gd.extra_pct(G, best_level, best_tiers)
-    assert pct == 180 and gd.score(G, pct) == {"A": 84000, "B": 39000}, gd.score(G, pct)
-    assert gd.score(G, 0) == {"A": 30000, "B": 30000}
-    # 단조: 단계·세트가 오르면 두 가설 모두 점수가 줄지 않는다(그래서 최고 조합 = 최대 선택)
+    assert pct == 180 and gd.score(G, pct) == {"A": 84000}, gd.score(G, pct)
+    assert gd.score(G, 0) == {"A": 30000}
+    # 영상(2026-11-01)으로 확인한 식: 보스 99.9% 깎고 패배 → 전투 중 점수 29,975 x 1.6(6단계) = 47,960
+    assert gd.score_at(G, 60, 0.999) == 47960 and gd.score_at(G, 60, 1.0) == 48000
+    assert gd.score_at(G, 0, 0.0) == 5000 and gd.score_at(G, 0, 1.5) == 30000     # 보스를 안 깎아도 기본·졸개 5,000, 비율은 0~1 로 제한
+    assert G["score"]["conf"] == "확인" and len(G["score"]["hypotheses"]) == 1
+    # 단조: 단계·세트가 오르면 점수가 줄지 않는다(그래서 최고 조합 = 최대 선택)
     last = None
     for lv in range(0, 13):
         s = gd.score(G, gd.extra_pct(G, lv))
-        assert last is None or (s["A"] >= last["A"] and s["B"] >= last["B"])
+        assert last is None or s["A"] >= last["A"]
         last = s
     for ex in G["challenge"]["levels"]:  # 효과 단계가 누적이라 표 값과 단계 효과 문구 수가 줄지 않는다
         assert ex["score"] == ex["level"] * 10 if ex["level"] <= 6 else ex["score"] == 60 + (ex["level"] - 6) * 10

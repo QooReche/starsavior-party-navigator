@@ -89,15 +89,18 @@ def main():
     for t in teams:
         t['names'] = [db.units[k]['n'] for k in t['keys']]
         t['bySupport'] = {s: {} for s in sups}
+        t['progBySupport'] = {s: {} for s in sups}      # 진행도(= 0.5 + 0.5 x 보스 깎은 비율, 클리어 1) — 기대 점수 계산용
         for g in growth:
             units = scaled_units(db, t['keys'], t['leader'], rec * float(g))
             for sup in sups:
-                row = []
+                row, prow = [], []
                 for lv in LEVELS:
                     r = simulate({'units': units, 'leader': t['leader']}, {'guild': {'level': lv, 'support': sup}},
                                  {'seed': a.seed, 'n_runs': a.runs, 'build': 'standard', 'rules_override': {'power_penalty': 'model'}})
                     row.append(r['outcome']['clear_p'])
+                    prow.append(r['outcome']['progress'])
                 t['bySupport'][sup][str(g)] = row
+                t['progBySupport'][sup][str(g)] = prow
                 print(t['src'], ','.join(t['keys']), 'x' + g, sup, row, '%.0fs' % (time.time() - t0), flush=True)
         t['rates'] = t['bySupport']['none']      # 호환: 지원을 안 고른 경우
     summary = {}
@@ -114,7 +117,7 @@ def main():
     out = dict(
         _note='tools/build_guild_sim.py 가 만든 시뮬 추정(실측 대조 없음). rates[육성 배수] = 별의 도전 0~12단계 클리어율(0단계 = 별의 도전 없음, 알리시아 지원 안 고름), bySupport[지원][육성 배수] = 같은 값을 지원별로.',
         asOf=gd['asOf'], season=gd['season']['id'], runs=a.runs, seed=a.seed, recPower=rec, growth=growth, levels=LEVELS, pass_p=PASS,
-        basis='표준 육성을 파티 전투력 = 권장 전투력 x 배수로 맞춤, 오토 전투, 선택 효과 끔, 전투력 보정 적용',
+        basis='표준 육성을 파티 전투력 = 권장 전투력 x 배수로 맞춤, 오토 전투, 선택 효과 끔, 전투력 보정 적용, 브레이크 스킬 미장착',
         supports=sups, teams=teams, summary=summary)
     atomic_json(a.out, out, indent=1)
     print('저장', a.out, '%.0fs' % (time.time() - t0))

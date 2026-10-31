@@ -18,10 +18,14 @@
     G.sets.items.forEach((it, i) => { const t = (tiers || [])[i] || 0; if (t) pct += it.tiers[t - 1].add; });
     return pct;
   }
+  // 확인된 점수식(영상 2026-11-01): (기본 + 졸개 + 보스 점수 × 보스 깎은 비율) × (1 + 추가 점수%)
+  function scoreAt(G, pct, f) {
+    const ex = exStep(G), frac = Math.max(0, Math.min(1, f));
+    return Math.round((ex.base + G.stepsMeta.minions * ex.kill + ex.bossKill * frac) * (100 + pct) / 100);
+  }
   function score(G, pct) {
-    const ex = exStep(G), total = baseTotal(G), out = {};
-    for (const h of G.score.hypotheses)
-      out[h.id] = Math.round(h.bossExcluded ? (total - ex.bossKill) * (100 + pct) / 100 + ex.bossKill : total * (100 + pct) / 100);
+    const out = {};
+    for (const h of G.score.hypotheses) out[h.id] = scoreAt(G, pct, 1);
     return out;
   }
   function bestSelection(G) { return {level: G.challenge.levels.length, tiers: G.sets.items.map(() => MAX_TIER)}; }
@@ -74,7 +78,7 @@
       const tip = big ? ` title="공지 표(옛 값): 공격 +${lv.noticeAtk}%, 생명력·방어 +${lv.noticeHp}%"` : "";
       return `<tr${lv.level === sel.level ? ' class="cur"' : ""}><td>${lv.level}</td><td${tip}>공격 +${lv.atk}% · 생명력·방어 +${lv.hp}%</td><td>+${lv.score}%</td><td>${rangeText(sc)}</td><td class="gd-fx">${levelEffects(G, lv).map(esc).join("<br>")}</td></tr>`;
     }).join("");
-    return `<div class="gd-scroll"><table class="gd-levels" data-k="gd-levels"><thead><tr><th>단계</th><th>보스 능력치</th><th>추가 점수</th><th>점수 ${EST}</th><th>누적 효과</th></tr></thead><tbody>${rows}</tbody></table></div>
+    return `<div class="gd-scroll"><table class="gd-levels" data-k="gd-levels"><thead><tr><th>단계</th><th>보스 능력치</th><th>추가 점수</th><th>점수(보스 다 깎음)</th><th>누적 효과</th></tr></thead><tbody>${rows}</tbody></table></div>
 <div class="mut gd-small">${esc(G.challenge.note)} ${esc(G.challenge.statNote)}</div>`;
   }
   function selectBox(G, sel) {
@@ -88,17 +92,19 @@
   function simBest(S, g) { const b = S && S.summary && S.summary[String(g)]; return b ? {level: b.level, team: b.team, p: b.p, support: b.support || "none"} : null; }
   // 팀·지원별 클리어율 행(구버전 자료는 rates 만 있음 = 지원 안 고름)
   function simRates(S, t, sup, g) { const bs = t.bySupport; const r = bs ? (bs[sup] || {})[String(g)] : (sup === "none" ? t.rates[String(g)] : null); return r || null; }
-  // 기대 점수 최대 조합: 클리어율 × 점수(실패하면 0점 가정 — 실패 시 점수 인정 여부는 미확인). 가설 A/B 평균이 가장 큰 조합을 고르고, 두 가설 값을 범위로 보여 줌
+  // 팀·지원별 진행도 행(= 0.5 + 0.5 × 보스 깎은 비율, 클리어 1). 구버전 자료는 없음
+  function simProg(S, t, sup, g) { const ps = t.progBySupport; return ps && ps[sup] ? ps[sup][String(g)] || null : null; }
+  // 기대 점수 최대 조합: 시뮬이 보스를 깎은 평균 비율 f = 2×진행도−1 로 확인된 점수식에 대입(패배해도 깎은 만큼 받음). 진행도가 없는 자료는 클리어율 × 클리어 점수(실패 0점)로 대체
   function simExpect(G, S, g) {
     let best = null;
     S.teams.forEach((t, ti) => (S.supports || ["none"]).forEach(sup => {
-      const r = simRates(S, t, sup, g);
+      const r = simRates(S, t, sup, g), pr = simProg(S, t, sup, g);
       if (!r) return;
       S.levels.forEach((lv, i) => {
-        const sc = score(G, extraPct(G, lv, [0, 0, 0, 0])), e = {};
-        for (const k of Object.keys(sc)) e[k] = Math.round(sc[k] * r[i]);
-        const m = Object.values(e).reduce((a, b) => a + b, 0) / Object.keys(e).length;
-        if (r[i] > 0 && (!best || m > best.m)) best = {m, team: ti, support: sup, level: lv, p: r[i], e};
+        const pc = extraPct(G, lv, [0, 0, 0, 0]);
+        const f = pr ? Math.max(0, Math.min(1, 2 * pr[i] - 1)) : r[i];
+        const v = pr ? scoreAt(G, pc, f) : Math.round(scoreAt(G, pc, 1) * r[i]);
+        if (r[i] >= 0 && (!best || v > best.m)) best = {m: v, team: ti, support: sup, level: lv, p: r[i], f, e: {A: v}};
       });
     }));
     return best;
@@ -117,7 +123,7 @@
       const e = simExpect(G, S, g);
       if (!e) return "";
       const t = S.teams[e.team];
-      return `<li>×${g}: 별의 도전 <b>${e.level}단계</b> · 기대 점수 <b>${rangeText(e.e)}</b> <span class="mut">(${esc(t.names.join("·"))} · «${SUP_NAME[e.support]}» · 클리어 ${pct(e.p)})</span></li>`;
+      return `<li>×${g}: 별의 도전 <b>${e.level}단계</b> · 기대 점수 <b>${rangeText(e.e)}</b> <span class="mut">(${esc(t.names.join("·"))} · «${SUP_NAME[e.support]}» · 보스 평균 ${pct(e.f)} 깎음 · 클리어 ${pct(e.p)})</span></li>`;
     }).join("");
     const head = S.levels.map(l => `<th>${l}</th>`).join("");
     const sups = S.supports || ["none"];
@@ -132,7 +138,7 @@
     const supTab = sups.length > 1 ? `<details class="gd-simtab"><summary>알리시아 지원별 클리어 가능 최고 단계 (×${gMid})</summary><div class="gd-scroll"><table><thead><tr><th>파티</th>${sups.map(s => `<th>${SUP_NAME[s]}</th>`).join("")}</tr></thead><tbody>${supRows}</tbody></table></div></details>` : "";
     return `<div class="gd-sim" data-k="gd-sim"><b>시뮬 추정: 깰 수 있는 최고 단계</b> ${EST}<ul>${lines}</ul>
 ${ex ? `<b>기대 점수가 가장 큰 단계</b> ${EST}<ul>${ex}</ul>` : ""}
-<div class="mut gd-small">${esc(S.basis)} · 오토 전투 기준 · 단계당 ${S.runs}판(표본이 작아 한 단계쯤은 오차) · 클리어율 ${pct(S.passP)} 이상을 «깰 수 있음»으로 봄 · 점수는 가설 A/B 범위(선택 효과 끔) · 기대 점수는 «클리어율 × 점수»이고 실패하면 0점으로 계산(실패 시 점수 인정 여부는 확인 안 됨). 실제 플레이·점수와 대조하지 않았습니다. 수동 조작(행동 게이지 조절·브레이크 타이밍)은 반영하지 않아 실제보다 낮게 나올 수 있습니다. 알리시아 지원은 게임 표 값으로 넣었고 일부 해석(발동 확률·경계값)은 추정입니다.</div>
+<div class="mut gd-small">${esc(S.basis)} · 오토 전투 기준 · 단계당 ${S.runs}판(표본이 작아 한 단계쯤은 오차) · 클리어율 ${pct(S.passP)} 이상을 «깰 수 있음»으로 봄 · 기대 점수 = 시뮬에서 보스를 깎은 평균 비율을 영상으로 확인한 점수식에 넣은 값(선택 효과 끔, 패배해도 깎은 만큼 받음). 점수식은 실제 플레이 1판으로 확인했지만 시뮬 결과는 아직 실제와 대조 중입니다(실제 1판: 시뮬 클리어 64%·보스 평균 94% 깎음, 실제는 99.9% 깎고 패배). 수동 조작(행동 게이지 조절·브레이크 타이밍)은 반영하지 않아 실제보다 낮게 나올 수 있습니다. 알리시아 지원은 게임 표 값으로 넣었고 일부 해석(발동 확률·경계값)은 추정입니다.</div>
 ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율</summary><div class="gd-scroll"><table><thead><tr><th>파티</th><th>육성</th><th>지원</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></details></div>`;
   }
   function panelHtml(G, sel0, step, nowMs, esc) {
@@ -140,12 +146,12 @@ ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율</summ
     let html = seasonBox(G, nowMs, esc);
     if (step === ex.step) {
       const pct = extraPct(G, sel.level, sel.tiers), sc = score(G, pct), b = bestSelection(G), bsc = score(G, extraPct(G, b.level, b.tiers));
-      const hyp = G.score.hypotheses.map(h => `${h.name} ${num(sc[h.id])}`).join(" · ");
+      const hyp = G.score.hypotheses.map(h => `${h.name} ${num(sc[h.id])}`).join(" · ");   // 보스를 다 깎았을 때 점수
       const isBest = sel.level === b.level && sel.tiers.every((t, i) => t === b.tiers[i]);
-      html += `<div class="gd-best" data-k="gd-best"><b>최고 점수가 나오는 조합</b>: 별의 도전 ${b.level}단계 + 선택 효과 모두 최대 단계(추가 점수 ${extraPct(G, b.level, b.tiers)}%) → 점수 ${rangeText(bsc)} ${EST}<br>
-<span class="mut">단, 보스를 쓰러뜨려야 보스 처치 점수(${num(ex.bossKill)})를 받습니다. 못 깨는 단계라면 깰 수 있는 가장 높은 단계가 최선입니다. 추천 파티는 단계와 관계없이 보스 속성·특징 기준입니다. 단계별 클리어 가능성은 아래 «시뮬 추정»을 보세요.</span></div>
+      html += `<div class="gd-best" data-k="gd-best"><b>최고 점수가 나오는 조합</b>: 별의 도전 ${b.level}단계 + 선택 효과 모두 최대 단계(추가 점수 ${extraPct(G, b.level, b.tiers)}%) → 보스를 다 깎으면 점수 ${rangeText(bsc)}<br>
+<span class="mut">패배해도 보스를 깎은 비율만큼 보스 점수(최대 ${num(ex.bossKill)})를 받고, 추가 점수는 합계 전체에 곱해집니다(실제 영상으로 확인). 그래서 못 깰 단계라도 높은 단계가 점수에 유리할 수 있어요. 추천 파티는 단계와 관계없이 보스 속성·특징 기준입니다. 단계별 기대 점수는 아래 «시뮬 추정»을 보세요.</span></div>
 ${simBox(G, esc)}${selectBox(G, sel)}
-<div class="gd-now" data-k="gd-now">고른 조합: 추가 점수 ${pct}% → <b>${rangeText(sc)}</b> ${EST}${isBest ? " (최고 조합)" : ""}<br><span class="mut">${esc(hyp)} · ${esc(G.score.hypotheses.map(h => h.name + ": " + h.desc).join(" / "))}</span></div>
+<div class="gd-now" data-k="gd-now">고른 조합: 추가 점수 ${pct}% → 보스를 다 깎으면 <b>${rangeText(sc)}</b>${isBest ? " (최고 조합)" : ""}<br><span class="mut">${esc(hyp)} · ${esc(G.score.hypotheses.map(h => h.name + ": " + h.desc).join(" / "))}</span></div>
 <div class="mut gd-small">${esc(G.score.note)} ${esc(G.sets.note)}</div>${levelTable(G, sel, esc)}`;
     } else {
       const s = G.steps.find(x => x.step === step);
@@ -160,6 +166,6 @@ ${simBox(G, esc)}${selectBox(G, sel)}
 <details class="gd-src"><summary>출처</summary><div class="gd-small">${src}</div></details>`;
     return html;
   }
-  const api = {num, parseTime, seasonState, baseTotal, extraPct, score, bestSelection, normSel, rangeText, levelEffects, simBest, simExpect, simBox, panelHtml};
+  const api = {num, parseTime, seasonState, baseTotal, extraPct, score, scoreAt, bestSelection, normSel, rangeText, levelEffects, simBest, simExpect, simBox, panelHtml};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildView = api;
 })(typeof window !== "undefined" ? window : globalThis);
