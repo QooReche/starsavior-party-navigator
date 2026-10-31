@@ -52,6 +52,13 @@ SPEED = '속도 비율 스탯(별의 도전)'
 SET_DMG = '피해량 증가율(소멸)'
 SET_RED = '피해량 감소율(불멸)'
 
+# 알리시아의 지원(시즌 선택 1종, 표 근거: AI/temp/partynavigator/work/guild_defense/support_spec.md)
+SUPPORTS = ('none', 'gust', 'focus', 'strike', 'mountain', 'fire')
+SUP_STAT = '알리시아 지원(능력치)'
+SUP_HIT = '알리시아 지원(불의 고동 적중)'
+SUP_TMP_INC = '알리시아 지원(임시 피해 증가)'
+SUP_TMP_RED = '알리시아 지원(임시 받는 피해 감소)'
+
 
 class GuildFoe:
     """FoeDef 와 같은 모양의 길방 적 정의(시험·api 의 _CustomFoe 와 같은 계약)."""
@@ -110,8 +117,12 @@ def level_row(level, src=SRC):
     return rows[level - 1]
 
 
-def build_waves(level=0, sets=None, src=SRC):
-    """EX(7단계) 배치 -> (waves[[GuildFoe]], meta). level = 별의 도전 0~12, sets = 선택 효과 단계 [소멸, 불멸, 쇠락, 허무](0~3)."""
+def build_waves(level=0, sets=None, src=SRC, support=None):
+    """EX(7단계) 배치 -> (waves[[GuildFoe]], meta). level = 별의 도전 0~12, sets = 선택 효과 단계 [소멸, 불멸, 쇠락, 허무](0~3),
+    support = 알리시아의 지원 none|gust|focus|strike|mountain|fire(None = none)."""
+    support = support or 'none'
+    if support not in SUPPORTS:
+        raise ValueError('지원은 %s: %r' % ('|'.join(SUPPORTS), support))
     bfb, gd = load(src)
     lv = level_row(level, src)
     sets = list(sets or [0, 0, 0, 0])
@@ -147,12 +158,12 @@ def build_waves(level=0, sets=None, src=SRC):
             '[스킬 사용 후] 자신에게 행동 게이지 %g%%p 증가' % (h2['gaugeUp'] / 100)]),
     }
     items = gd['sets']['items']
-    cfg = dict(data=b, alt=alt, level=level, row=lv, sets=sets,
+    cfg = dict(data=b, alt=alt, level=level, row=lv, sets=sets, support=support,
                set_dmg=_set_value(items[0], sets[0]), set_red=_set_value(items[1], sets[1]),
                set_drain=_set_value(items[2], sets[2]), set_immune=_set_value(items[3], sets[3]))
     waves[1].append(GuildFoe('guild:bfb', b['name'], b, st, skills, [], True, bfb=cfg))
     meta = dict(content='guild', tab='길드 방어전', name='EX 별의 도전 %d단계' % level, level=bfb['battleLevel'],
-                recommended_power=bfb['power'], wave_count=2, battle_mode='boss_kill', guild=dict(level=level, sets=sets),
+                recommended_power=bfb['power'], wave_count=2, battle_mode='boss_kill', guild=dict(level=level, sets=sets, support=support),
                 turn_limit=bfb['limitTurn'])
     return waves, meta
 
@@ -177,6 +188,9 @@ class Controller:
         self.shield_hits = 0    # 보호막 중 공격 수(BOSS_3)
         self.mark = None        # 보호막 중 우선 공격 대상(BOSS_6)
         self.stats = dict(appeal=0, shield_break=0, shield_timeout=0, punish=0)
+        self.support = next((d.bfb['support'] for w in b.waves for d in w if getattr(d, 'bfb', None)), 'none')
+        self.sup_done = False
+        self.focus_turn = {}    # 날카로운 집중력: 유닛별 «1턴에 1번» 기록
 
     # ---------- 효과 도우미
     def _put(self, x, name, props, dur=math.inf, cat='buff', fixed=True, maxs=1, add=1):
@@ -201,9 +215,78 @@ class Controller:
         e = self.boss.eff.get(B8) if self.boss is not None else None
         return e is not None and e.shield > 0
 
+    # ---------- 알리시아의 지원
+    def _sup_has(self, u):
+        """이 유닛에 걸리는 지원인가(직업 전용은 해당 직업만. 대상 필터는 TargetRoleType 근거, 표 해석은 추정)"""
+        s = self.support
+        if s in ('mountain', 'fire'):
+            return True
+        return u.role == {'gust': '서포터', 'focus': '캐스터', 'strike': '스트라이커'}.get(s)
+
+    def _sup_put(self, x, name, props, maxs=1):
+        """지원 효과. 강화 효과 개수에 안 세도록 marker(보스 관통 표지와 같은 방식)"""
+        from ..mc import Eff
+        e = x.eff.get(name)
+        if e is None:
+            e = Eff(name, dict(props), maxs, math.inf, x, False)
+            e.category, e.fixed = 'marker', True
+            e.fresh = x.acting
+            x.eff[name] = e
+        e.stacks = min(e.maxs, e.stacks + 1)
+        self.b.dirty(x)
+
+    def _sup_start(self):
+        """전투 시작 시 한 번: 방어·치명·공격 상승(40152 방어 +50%, 40031 치명 +30%, 40111 치명 피해 +30%, 45011 공격 +15%)"""
+        if self.sup_done or self.support == 'none':
+            return
+        self.sup_done = True
+        props = {'gust': {'방어력%': 50}, 'focus': {'치명타 확률': 30}, 'strike': {'치명타 피해': 30},
+                 'fire': {'공격력%': 15}}.get(self.support)
+        if props:
+            for u in self.b.allies:
+                if self._sup_has(u):
+                    self._sup_put(u, SUP_STAT, props)
+
+    def _sup_after_cast(self, u, sk, extra):
+        s = self.support
+        if u.side != 0 or u.dead or not self._sup_has(u):
+            return
+        if s == 'gust' and not sk.is_attack:
+            for x in self.b.alive(0):         # 4015202: 비타격 스킬 후 자신 제외 아군 전체 행동 게이지 +30%
+                if x is not u:
+                    self.b.set_gauge(x, x.gauge + 3000)
+        elif s == 'focus' and sk.slot == '기본기' and self.focus_turn.get(id(u)) != self.b.global_turns:
+            self.focus_turn[id(u)] = self.b.global_turns
+            for slot in u.cd:                 # 기본기 사용 시 모든 스킬 쿨 -1(1턴에 1번)
+                u.cd[slot] = max(0.0, u.cd[slot] - 1)
+        elif s == 'fire':
+            self._sup_put(u, SUP_HIT, {'효과 적중': 6}, maxs=5)
+
+    def _sup_pre_hit(self, a, v):
+        s = self.support
+        if s == 'strike' and a is not None and a.side == 0 and self._sup_has(a):
+            n = a.n_good()                    # 강인한 타격: 강화 효과 개수당 피해 +10%(발동 확률 5000 은 미확인 -> 100% 로 가정)
+            if n:
+                self._sup_put_tmp(a, SUP_TMP_INC, {'피해 증가': 10 * n})
+        elif s == 'mountain':
+            if a is not None and a.side == 0 and a.hp * 2 > a.maxhp:
+                self._sup_put_tmp(a, SUP_TMP_INC, {'피해 증가': 10})              # 45041: 생명력 50% 초과면 피해 +10%
+            if v.side == 0 and v.hp * 2 < v.maxhp:
+                self._sup_put_tmp(v, SUP_TMP_RED, {'받는 피해 감소': 10})         # 피격 시 50% 미만이면 받는 피해 -10%
+
+    def _sup_put_tmp(self, x, name, props):
+        x.eff.pop(name, None)
+        self._sup_put(x, name, props)
+
+    def _sup_post_hit(self, a, v):
+        for x in (a, v):
+            if x is not None and (x.eff.pop(SUP_TMP_INC, None) is not None or x.eff.pop(SUP_TMP_RED, None) is not None):
+                self.b.dirty(x)
+
     # ---------- 웨이브
     def on_wave(self):
         b = self.b
+        self._sup_start()
         boss = next((u for u in b.foes if getattr(u.d, 'bfb', None)), None)
         if boss is None:
             return
@@ -238,6 +321,8 @@ class Controller:
 
     # ---------- 시전 후
     def after_cast(self, u, sk, ctx, extra):
+        if self.support != 'none':
+            self._sup_after_cast(u, sk, extra)
         boss = self.boss
         if boss is None or boss.dead:
             return
@@ -348,6 +433,8 @@ class Controller:
     # ---------- 피격
     def pre_hit(self, a, v):
         """신부의 응징(55521): 보호막 중 들러리에게 맞으면 들러리 전원에게 연쇄 피해"""
+        if self.support != 'none':
+            self._sup_pre_hit(a, v)
         if v is not self.boss or a.side != 0 or not self.barrier() or not a.has(B2):
             return
         self.stats['punish'] += 1
@@ -356,6 +443,8 @@ class Controller:
             self._chain(v, x, coef, v)
 
     def post_hit(self, a, v):
+        if self.support != 'none':
+            self._sup_post_hit(a, v)
         boss = self.boss
         if v is not boss or a is None or a.side != 0 or boss.dead:
             return

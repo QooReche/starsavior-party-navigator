@@ -44,10 +44,10 @@ const tests = {
     const low = V.panelHtml(P, {level: 6, tiers: [0, 0, 0, 0]}, 7, T('2026-10-30T12:00:00+09:00'), esc);
     assert(low.includes('추가 점수 60%') && low.includes('<b>33,000 ~ 48,000</b>'), '도전 6단계: 가설 B 33,000 ~ 가설 A 48,000');
     assert(low.includes('<option value="6" selected>') && !low.includes('(최고 조합)'));
-    // 7~12단계 능력치는 추정 배지 + 공지 값 툴팁, 1~6단계는 없음
-    assert(h.match(/title="공지 표: 공격 \+70%, 생명력·방어 \+35%"/));
+    // 7~12단계 능력치는 게임 화면으로 확인(2026-11-01)돼 추정 배지가 없고, 옛 공지 값은 툴팁으로만
+    assert(h.match(/title="공지 표\(옛 값\): 공격 \+70%, 생명력·방어 \+35%"/));
     const row1 = h.split('<tr').find(r => r.includes('<td>1</td>')), row7 = h.split('<tr').find(r => r.includes('<td>7</td>'));
-    assert(!row1.includes('gd-est') && row7.includes('gd-est'));
+    assert(!row1.includes('gd-est') && !row7.split('</td>')[1].includes('gd-est'));
     assert(h.includes('보스가 3턴 면역(해제 불가)') && h.includes('스킬을 쓸 때마다'));
   },
   lower_step() {

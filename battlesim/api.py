@@ -125,7 +125,7 @@ def _norm_encounter(enc):
         # 길드 방어전 EX(BFB): {"guild": {"level": 0~12(별의 도전), "sets": [소멸, 불멸, 쇠락, 허무](0~3)}} — starsavior/guild_bfb.py
         from .starsavior.guild_bfb import build_waves
         g = enc['guild'] or {}
-        waves, meta = build_waves(int(g.get('level', 0)), g.get('sets'))
+        waves, meta = build_waves(int(g.get('level', 0)), g.get('sets'), support=g.get('support'))
         if turn_limit is None:
             turn_limit = meta['turn_limit']
         fx, unknown = parse_fx(fx_texts or [])

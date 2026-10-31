@@ -71,8 +71,8 @@
     const rows = G.challenge.levels.map(lv => {
       const sc = score(G, extraPct(G, lv.level, [0, 0, 0, 0]));
       const big = lv.level >= 7;
-      const tip = big ? ` title="공지 표: 공격 +${lv.noticeAtk}%, 생명력·방어 +${lv.noticeHp}%"` : "";
-      return `<tr${lv.level === sel.level ? ' class="cur"' : ""}><td>${lv.level}</td><td${tip}>공격 +${lv.atk}% · 생명력·방어 +${lv.hp}%${big ? " " + EST : ""}</td><td>+${lv.score}%</td><td>${rangeText(sc)}</td><td class="gd-fx">${levelEffects(G, lv).map(esc).join("<br>")}</td></tr>`;
+      const tip = big ? ` title="공지 표(옛 값): 공격 +${lv.noticeAtk}%, 생명력·방어 +${lv.noticeHp}%"` : "";
+      return `<tr${lv.level === sel.level ? ' class="cur"' : ""}><td>${lv.level}</td><td${tip}>공격 +${lv.atk}% · 생명력·방어 +${lv.hp}%</td><td>+${lv.score}%</td><td>${rangeText(sc)}</td><td class="gd-fx">${levelEffects(G, lv).map(esc).join("<br>")}</td></tr>`;
     }).join("");
     return `<div class="gd-scroll"><table class="gd-levels" data-k="gd-levels"><thead><tr><th>단계</th><th>보스 능력치</th><th>추가 점수</th><th>점수 ${EST}</th><th>누적 효과</th></tr></thead><tbody>${rows}</tbody></table></div>
 <div class="mut gd-small">${esc(G.challenge.note)} ${esc(G.challenge.statNote)}</div>`;

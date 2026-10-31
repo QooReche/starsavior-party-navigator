@@ -23,9 +23,9 @@ from battlesim.starsavior.data import get_db              # noqa: E402
 from battlesim.starsavior.parser import UnitDef           # noqa: E402
 
 CONTENT = '길드방어전'
-# 커뮤니티 EX 12단 클리어 사례(arca 187456382: 웨딩 카르멘 + 아모라 + 메레스 + 티리아). «메레스»는 도구 구원자 이름과 대응을 못 찾아
-# 같은 글 계열 공략(187413171)의 대체 후보 바니 샤를로 둔다(추정).
-COMMUNITY = ['wedding-carmen', 'bunny-charlotte', 'amora', 'tyria']
+# 커뮤니티 EX 12단 클리어 사례(arca 187456382: 웨딩 카르멘 + 아모라 + 메레스 + 티리아). «메레스» = 신규 구원자 메이드 세레스
+# (세레스, 유닛 1059, 키 ceres-sun-supporter; 사용자 확인 2026-10-30).
+COMMUNITY =['wedding-carmen', 'ceres-sun-supporter', 'amora', 'tyria']
 LEVELS = list(range(0, 13))
 PASS = 0.5     # «클리어 가능» = 클리어율 50% 이상(표시 기준, 가정)
 
