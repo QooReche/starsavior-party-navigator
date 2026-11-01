@@ -1040,6 +1040,8 @@ class Battle:
         u.acting = False
         if u.extra_turn and not u.dead:
             u.gauge = 10000.0     # extra_turn 표시는 실제로 그 턴을 쓸 때(act 시작)까지 유지 -> 동시 100% 판정에서 최우선
+            # set_gauge 를 안 거치는 것이 클라와 같음: 추가 턴은 게이지 증가가 아니라 턴 관리자 예약(BattleBuff.cs:177 «추가 턴 부여», 해독본 അഌഌഉ….cs:170-173)이고,
+            # ImmuneSpeedGaugeUp(길방 들러리 300872)은 SpeedGaugeUp 플래그 버프만 거부한다(버프 부여 함수 ഌഈഌഌ….cs:673, 참조 유일). BI_EXTRA_TURN 은 SpeedGaugeUp 없음.
         elif u.dead:
             u.extra_turn = False
 

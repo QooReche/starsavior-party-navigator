@@ -2,6 +2,14 @@
 
 갱신: 2026-10-30 — 길드방어전(브랜치 `guild-defense`, 맨 위 세 절: 중간 저장 → 2차 → 1차). 그 전: 2026-10-29 — 게임 패치(빌드 26291832) 반영. 그 전: 2026-10-24 저녁 — DC_ATTACK·스킬 순서 반영·대조 도구 보강. 그 전: 기믹 박스 병합·시뮬 시간 초과·남은 시간 표시. 이전: 2026-10-23 밤(다른 PC) 엔진 정정 4건·공개 전 화면 정리·main 병합. 새 세션은 이 파일 → `README.md`(사용자용) → `docs/DEVELOPMENT.md`(개발) 순. 과거 기록은 [docs/HISTORY.md](docs/HISTORY.md), 아래 옛 절들은 시간 역순.
 
+## ▶ 2026-11-01 밤 — BUFF_BAN 분리·무적/협공 조사·엔진 확인 (로컬 커밋, 푸시 전)
+
+- **기믹 `BUFF_BAN` 분리**(`tools/build_gimmicks.py` → `tools/pack_gimmicks.py`, `data/gimmick_rules.json`·`stage_gimmicks.json`·`gimmick_plain.json`): `BUFF_STRIP` 의 〈강화 불가〉를 새 유형으로(w2, conf 확인, 기피 `BUFFER_DEP`, 선호 `SELF_SUSTAIN`, 슬롯 자립형 폭딜·클렌즈/재부여). 영향 52곳(45곳은 이름만 바뀌고 값 동일). 기존 콘텐츠 추천 해시(`tests/fixtures/guild_existing_reco.sha`)는 기믹 이름 문구 한 줄만 바뀌어 갱신(추천 편성은 그대로, 골든 일치). **미결: 해제와 강화 불가가 둘 다 붙는 7곳(코스모 데모라이기스 1~3·로자리아 1~3단계·큐브 레지스터)은 가중치가 두 번 들어감 → `party_reco.py`·`gimTop` 에서 한 번만 세는 처리(권장)를 할지 사용자 결정 대기.**
+- **3단계 조사 결과(유형 추가 안 함)**: ① 무적 웨이브 — 몬스터 쪽은 클라 표로 확인(웨이브 시작 시 〈생멸의 씨앗〉 `BI_TOMB_CROSS_COSMO_1` 자신에게, **전투 내내 무적**·해제 불가·사망해도 안 지워짐, 이전 «1턴» 은 틀림, 지우는 SE·조건이 표 전체에 없음). 그러나 실제 배치는 65402/65403 의 이벤트 «습격» `JSON_NORMAL_BATTLE_EVENT_WESTERN_NORMAL_001~008` 뿐, 코스모 게이트용(105021~33·110121~23)은 표에만 있고 전투 파일 없음(다음 보스 선탑재로 추정) → 연결할 스테이지 0개. 실제 기믹은 응집된 생기(최대 5중첩) 순환(피격 시 감소, 소진 시 아군 보상·영양 과잉 10턴). 상세 `...\work\common_rules
+otes_invincible.md`. 패치로 전투 파일이 생기면 재조사. ② 협공/추가타 — 길방 밖에 근거 없음(데이터북 적 스킬 원문에 협공·추가타 없음, `BI_DISABLE_CROSS_ATTACK` 을 거는 SE 없음).
+- **엔진 확인(수정 없음, 주석·시험만)**: 들러리 추가 턴은 게이지 증가가 아니라 턴 예약이라 들러리도 받음(엔진이 이미 클라와 같음, `test_maid_extra_turn_not_blocked`). 브레이크 스킬은 질투의 시선 58801 카운트에 안 들어감(시전자가 유닛 클래스가 아님, DoSkill:3654) → audit A3 의 «카운트 대상» 정정, `test_break_skill_not_counted`.
+- 전체 Python·JS 시험·골든·quick·web 통과(e2e 미실행).
+
 ## ▶ 2026-11-01 저녁 — 기믹 박스 «불리한 구원자»(1단계)·엔진 불일치 수정 (로컬 커밋, 푸시 전)
 
 - **기믹 박스 «이 스테이지에서 불리한 구원자»**(`party_template.html gimAvoid`, `data/gimmick_plain.json avoid`): 현재 편성 구원자 태그(gt) 중 스테이지 기믹의 기피 태그(MULTIHIT·BUFFER_DEP 등 7종)와 겹치는 구원자를 접이식(기본 닫힘)으로 나열, 이유 문구·«추정»(conf 추정)·«점수에 반영됨»(GIMACT 기믹) 배지. 점수 코드·골든 불변. 실제 페이지 확인(코스모 게이트 로자리아 3단계 → 클레어 1명, 버프 의존형). 시험 `tests/gim_avoid_test.js`, `gimmick_plain_test.py`. 한계: 구원자 태그가 거칠어 넓게 걸릴 수 있음, e2e 항목 없음. 다음 2단계: `BUFF_STRIP` 에서 〈강화 불가〉를 `BUFF_BAN` 으로 분리(`tools/build_gimmicks.py`), 3단계: 무적 웨이브·협공/추가타 유형(근거 조사 먼저).

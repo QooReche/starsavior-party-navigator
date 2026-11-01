@@ -269,6 +269,45 @@ def test_break_skill_breaks_barrier():
     print('OK test_break_skill_breaks_barrier')
 
 
+def test_break_skill_not_counted():
+    """브레이크 스킬은 질투의 시선(58801) 카운트에 안 들어간다: 클라 After*Action 발행(DoSkill:3654)은 유닛 시전자만, 오비탈 시전자는 별도 클래스"""
+    waves, meta = G.build_waves(0)
+    defs, _ = _norm_party({'units': PARTY}, DB, 'fixed', 'standard')
+    b = Battle(defs, waves, random.Random(1), mc=dict(MC_OPTS, guild_boss='on'), leader=0, turn_limit=meta['turn_limit'],
+               battle_mode='boss_kill', break_skill={'name': '차원 강습'})
+    to_boss(b)
+    gb = b.gb
+    assert b.break_skill_enabled
+    b.break_skill_cd = 0
+    b.break_points = 10 ** 6
+    n = gb.count
+    uses = b.break_skill_uses
+    b._use_break_skill(b.alive(0)[0])
+    assert b.break_skill_uses == uses + 1, '브레이크 스킬이 시전되지 않음'
+    assert gb.count == n and not any(v.has(G.B1) for v in b.alive(0)), (gb.count, n)
+    print('OK test_break_skill_not_counted')
+
+
+def test_maid_extra_turn_not_blocked():
+    """들러리(ImmuneSpeedGaugeUp)라도 추가 턴은 막히지 않는다: 클라 추가 턴은 턴 관리자 예약이고 면역 검사는 SpeedGaugeUp 버프에만 있음"""
+    b, _ = battle(mc={'guild_count': 'main'})
+    to_boss(b)
+    gb, allies = b.gb, b.alive(0)
+    for i in range(5):
+        gb.after_cast(allies[i % 4], allies[i % 4].d.skills['기본기'], _Ctx(), False)
+    gb.after_cast(gb.boss, gb.boss.d.skills['기본기'], _Ctx(), False)
+    maid = next(v for v in allies if v.zero_stats)
+    maid.gauge = 0.0
+    b.set_gauge(maid, 5000.0)
+    assert maid.gauge == 0.0, '게이지 증가는 무효'
+    maid.extra_turn = True
+    b._finish_action(maid)
+    assert maid.gauge == 10000.0
+    best, bt = b.pick_next(b.alive(0) + b.alive(1))
+    assert bt == 0.0 and maid.extra_turn and (best is maid or best.extra_turn), (best.name, bt)
+    print('OK test_maid_extra_turn_not_blocked')
+
+
 def test_simulate_runs():
     r = simulate(PARTY, {'guild': {'level': 0}}, {'seed': 1, 'n_runs': 3, 'build': 'standard', 'timeline': True})
     assert r['encounter']['content'] == 'guild' and r['encounter']['turn_limit'] == 50
@@ -302,7 +341,7 @@ class _Ctx:
 
 
 TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
-         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_break_skill_breaks_barrier, test_revive_clears_maid, test_maid_speed_def_zero, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
+         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_break_skill_breaks_barrier, test_break_skill_not_counted, test_maid_extra_turn_not_blocked, test_revive_clears_maid, test_maid_speed_def_zero, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
 
 if __name__ == '__main__':
     bad = 0

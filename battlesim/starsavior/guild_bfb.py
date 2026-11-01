@@ -481,7 +481,9 @@ class Controller:
 
     def after_break_skill(self, had_barrier):
         """브레이크 스킬(오비탈) 피해 뒤: 클라는 같은 시전 경로(DoSkill:2974)라 보호막이 깨지면 부케(55148)가 나온다.
-        피해는 apply_damage 직접 호출이라 pre_hit/post_hit 을 안 거치므로 보호막 파괴 판정만 여기서 한다(드레인·쇠락은 캐스터가 없어 생략)"""
+        피해는 apply_damage 직접 호출이라 pre_hit/post_hit 을 안 거치므로 보호막 파괴 판정만 여기서 한다(드레인·쇠락은 캐스터가 없어 생략).
+        질투의 시선(58801 AfterEnemyAction) 카운트는 하지 않는다: 클라 SKILL_END 처리(DoSkill:3232)가 부르는 After*Action 발행 함수(DoSkill:3654)는
+        시전자가 유닛 클래스(sealed ഉഈഅഇ…)가 아니면 바로 반환하는데, 브레이크 스킬 시전자는 별도 클래스(ഌഇആഅ…, DoSkill:2958)다."""
         boss = self.boss
         if boss is None or boss.dead or not (had_barrier and self.anim and not self.barrier()):
             return
