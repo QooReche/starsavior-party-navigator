@@ -2,6 +2,15 @@
 
 갱신: 2026-10-30 — 길드방어전(브랜치 `guild-defense`, 맨 위 세 절: 중간 저장 → 2차 → 1차). 그 전: 2026-10-29 — 게임 패치(빌드 26291832) 반영. 그 전: 2026-10-24 저녁 — DC_ATTACK·스킬 순서 반영·대조 도구 보강. 그 전: 기믹 박스 병합·시뮬 시간 초과·남은 시간 표시. 이전: 2026-10-23 밤(다른 PC) 엔진 정정 4건·공개 전 화면 정리·main 병합. 새 세션은 이 파일 → `README.md`(사용자용) → `docs/DEVELOPMENT.md`(개발) 순. 과거 기록은 [docs/HISTORY.md](docs/HISTORY.md), 아래 옛 절들은 시간 역순.
 
+## ▶ 2026-11-01 중간 저장 — 다음에 이어서 할 일 (사용자 요청으로 푸시함)
+
+1. **기믹 박스에 «불리한 구원자» 표시(다른 콘텐츠도 길방 목록처럼)**: 조사 `AI	emp\partynavigator\work\gimmick_notes\survey.md`. 1단계(쉬움): `data/gimmick_rules.json` 의 기피 태그(연타형 MULTIHIT·버프 의존 BUFFER_DEP)로 기믹 박스 제목 아래에 «불리한 유형» 한 줄 + 접이식 구원자별 이유(근거 배지 클라/커뮤니티/추정, `gimmick_plain.json` 의 `guess` 배지 재사용). 기존 감점은 유지하고 «점수 반영됨» 배지로 구분(사용자 확인 대기였음, 권장안으로 진행하면 됨). 수정 파일: `party_template.html`(gimNote 591~613·gimPart 529), `data/gimmick_plain.json`, `build_party_html.py`, `tests/gimmick_plain_test.py`, e2e, HANDOFF. 2단계(중간): `BUFF_STRIP` 에서 〈강화 불가〉를 `BUFF_BAN` 으로 분리(`tools/build_gimmicks.py` 재추출, 골든 영향 확인). 3단계(어려움): 무적 웨이브·협공/추가타 유형은 근거 조사 먼저.
+2. **BFB 감사 남은 항목**(`...\work\guild_defenseudit_bfb.md`): 브레이크 스킬이 BFB 훅을 안 거침, 부활한 들러리 zero_stats 안 지워짐, 들러리 속도 1.0(클라 0)·방어 0 미적용·추가 턴의 게이지 무효 우회. 보스에 〈강화 불가〉일 때 BFB 보호막 처리(mc:2214 는 정정됨 — audit A5 재확인).
+3. **공용 엔진 불일치(미수정)**: 엔진에 «무적» 상태 없음(`TOMB_CROSS_COSMO`·`WEAPON_BLADE_COSMO` 웨이브 시작 1턴), 자폭 «즉시 피해»(mc ~3155)가 보호막·불사 무시, 클라는 강제 시전을 예약 큐에서 실행(엔진은 즉시). 상세 `...\work\common_rules
+otes_damagetype.md`.
+4. **검증 못 한 것**: 브라우저 e2e(이 PC 에 playwright 없음 — `docs/PORTING.md` 7절로 준비), 편성 찾기 끝까지 돌린 «걸러낸 팀 N개» 표시, 영상 대조(선택 효과·점수식·질투의 시선 카운트·정실 어필 시점), 저사양 PC 소요 시간. 크리스텔을 넣은 팀이 보호막 시간 초과로 0% 나오는 이유 미확인.
+5. **사용자 정보**: 내 정보는 `바탕 화면\내정보.json`(최신 11/01 14:12), 비공개 사본 `static-data/samples/myinfo_2026-11-01_1412.json`(커밋 안 함). 임시 스크립트 `AI	emp\partynavigator\scripts\`(gd_timing_cmp2.py·buffban_cmp2.py 등).
+
 ## ▶ 2026-11-01(PC 날짜 기준) 협공 자동 배제 + 특수 잠재력 조사 (`main` f18de32 로컬 커밋, **푸시 전**)
 
 - **협공 자동 배제 완료**: 시뮬이 아군 시전 경로별 판당 평균(`ally_via`: coop·forced_coop·trigger·potential·enforce·revenge·reaction)을 결과 **최상위**에 싣는다(`mc.py` `Battle.ally_via`, `api.py`, `web.py run_auto` 의 `via`). `outcome` 안에 넣으면 해시 고정 시험(mc_cache·heal_burst)이 깨지므로 밖에 둠. `guild_search.js` `coopHit`: `coop`·`forced_coop` 이 판당 0.05회 이상이면 예선 선발(`pickTop`)·최종 순위(`rank`)에서 제외(`S.banCoop=false` 면 끔, `S.banVia` 로 경로 변경). 프로페서M 팀은 forced_coop 2.0 으로 잡히고 그웬 팀은 0 → 그웬은 계속 `excludeKeys`. 시험 `test_ally_via_reported`, `guild_search_test.js`. 전체 Python·JS·골든·web·quick 통과, **e2e 미실행(이 PC 에 playwright 없음)**.
