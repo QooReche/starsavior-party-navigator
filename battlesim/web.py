@@ -27,6 +27,12 @@ def _opts(extra, pol=None, **kw):
     return o
 
 
+def _enc(stage, o):
+    """길방 EX 선택(options.guild = {level, sets, support})이 있으면 BFB 전투, 없으면 기존 스테이지. guild 키는 simulate 옵션에서 뺀다."""
+    g = o.pop('guild', None)
+    return {'guild': g} if g else {'stage': stage}
+
+
 def _unit_map(party, r):
     """화면 카드용 {구원자 key: [피해 기여, 쓰러질 확률]} — per_unit 은 「이름#칸」 순서가 시뮬 칸 순서"""
     keys = [u['key'] if isinstance(u, dict) else u for u in party['units']]
@@ -42,7 +48,8 @@ def _break_summary(r):
 
 
 def run_auto(stage, party, n, seed, extra=None):
-    r = simulate(party, {'stage': stage}, _opts(extra, n_runs=n, seed=seed))
+    op = _opts(extra, n_runs=n, seed=seed)
+    r = simulate(party, _enc(stage, op), op)
     o = r['outcome']
     first = sorted(((v.get('first_death_p') or 0, k) for k, v in r['per_unit'].items()), reverse=True)
     return json.dumps(dict(clear=o['clear_p'], prog=o.get('progress'), wipe=o['wipe_p'], timeout=o['timeout_p'], ci=o['ci95']['clear'], n=o['n_runs'],
@@ -87,12 +94,14 @@ def seq_from_timeline(tl, max_turns=SEQ_TURNS):
 def run_manual(stage, party, n, seed, extra=None):
     best = None
     for pol in POLICIES:
-        o = simulate(party, {'stage': stage}, _opts(extra, pol, n_runs=max(10, n // 3), seed=seed + 11))['outcome']
+        op = _opts(extra, pol, n_runs=max(10, n // 3), seed=seed + 11)
+        o = simulate(party, _enc(stage, op), op)['outcome']
         key = (o['clear_p'], -(o['ttk_median'] if o['ttk_median'] is not None else 1e9))
         if best is None or key > best[0]:
             best = (key, pol)
     pol = best[1]
-    r = simulate(party, {'stage': stage}, _opts(extra, pol, n_runs=n, seed=seed, per_run=True))
+    op = _opts(extra, pol, n_runs=n, seed=seed, per_run=True)
+    r = simulate(party, _enc(stage, op), op)
     o = r['outcome']
     runs = r.get('runs') or []
     clears = [(i, t) for i, (res, t) in enumerate(runs) if res == 'clear']
@@ -103,7 +112,8 @@ def run_manual(stage, party, n, seed, extra=None):
         kind = 'clear'
     else:
         idx, kind = 0, (runs[0][0] if runs else 'wipe')
-    tl = simulate(party, {'stage': stage}, _opts(extra, pol, n_runs=1, seed=seed, run_offset=idx, timeline=True)).get('timeline')
+    op = _opts(extra, pol, n_runs=1, seed=seed, run_offset=idx, timeline=True)
+    tl = simulate(party, _enc(stage, op), op).get('timeline')
     sq = seq_from_timeline(tl)
     sq.update(run=idx, kind=kind, ttk=(runs[idx][1] if runs else None))
     return json.dumps(dict(c=o['clear_p'], ci=o['ci95']['clear'], t=o['ttk_median'], n=o['n_runs'], pol=list(pol), seq=sq, bs=_break_summary(r)), ensure_ascii=False)

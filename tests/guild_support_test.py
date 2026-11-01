@@ -93,7 +93,21 @@ def test_invalid_support():
     raise AssertionError('잘못된 지원 이름이 통과함')
 
 
+def test_web_run_auto_guild():
+    """화면(sim_worker → web.run_auto)이 options.guild 를 넘기면 길방 BFB 전투로 돈다(스테이지 문자열은 무시). guild 가 없으면 기존 스테이지."""
+    import json
+    from battlesim import web
+    party = {'units': TEAM, 'leader': 0}
+    extra = json.dumps({'build': 'standard', 'guild': {'level': 1, 'sets': [0, 0, 0, 0], 'support': 'fire'}})
+    r1 = json.loads(web.run_auto('길드방어전/x/7', party, 4, 3, extra))
+    r2 = json.loads(web.run_auto('길드방어전/x/7', party, 4, 3, extra))
+    assert r1['n'] == 4 and r1 == r2, '같은 시드 → 같은 결과'
+    r0 = json.loads(web.run_auto('op/NOA 상업지구/SECTOR 1-3', party, 4, 3, json.dumps({'build': 'standard'})))
+    assert r0['n'] == 4 and r0 != r1
+    print('OK test_web_run_auto_guild')
+
+
 if __name__ == '__main__':
-    for t in (test_none_changes_nothing, test_role_filter, test_party_wide_start, test_gust_gauge, test_temp_damage_effects, test_invalid_support):
+    for t in (test_none_changes_nothing, test_role_filter, test_party_wide_start, test_gust_gauge, test_temp_damage_effects, test_invalid_support, test_web_run_auto_guild):
         t()
-    print('ALL OK 6')
+    print('ALL OK 7')
