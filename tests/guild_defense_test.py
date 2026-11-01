@@ -210,6 +210,18 @@ def test_search_excluded():
     assert gd.excluded_units([], []) == []
 
 
+def test_search_notes():
+    """제외·주의 구원자 목록(화면 표시용): 키는 실제 구원자, 종류·근거 수준은 정해진 값, 실제로 빠지는 구원자는 모두 설명이 있어야 한다."""
+    from battlesim.starsavior.data import get_db
+    notes = G["search"]["notes"]
+    assert notes and set(get_db().units) >= {n["key"] for n in notes}, "없는 구원자 키"
+    assert all(n["kind"] in ("exclude", "caution") and n["basis"] in ("client", "community", "inference") and n["why"] for n in notes)
+    ex = set(gd.excluded_units(G["search"]["excludeText"], G["search"]["excludeKeys"]))
+    assert ex <= {n["key"] for n in notes if n["kind"] == "exclude"}, "설명 없는 제외 구원자: %s" % (ex - {n["key"] for n in notes})
+    assert {n["key"] for n in notes if n["kind"] == "exclude"} <= ex, "목록엔 제외인데 실제로는 안 빠짐"
+    assert gd.page_payload(G)["search"]["notes"] == notes
+
+
 if __name__ == "__main__":
     n = 0
     for name, fn in sorted(globals().items()):

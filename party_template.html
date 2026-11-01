@@ -453,7 +453,7 @@ const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild")).tiers;
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
 function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
- p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsTiers().join(""),label:gsLabel,esc,excluded:D.guild.search.excluded})}
+ p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsTiers().join(""),label:gsLabel,esc,excluded:D.guild.search.excluded,notes:D.guild.search.notes})}
 async function guildSearchStart(){
  if(!MI.info||GSR.phase==="run")return;
  const S=D.guild.search;S.banCoop=GSR.banCoop;const V=GuildView,G=D.guild,id=++GSR.id,c=contents[$("content").value],st=cur&&cur[$("stage").value];
@@ -479,7 +479,7 @@ async function guildSearchStart(){
   GSR.msg=`3단계: 상위 ${fin.length}팀을 단계·지원별로 확인 중`;GSR.done=0;GSR.total=jobsB.length;paint();
   const hB=GuildSearch.runPhase({makeWorker:mk,jobs:jobsB,workers,runs:S.final.runs,seed:2,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
   GSR.handle=hB;const resB=await hB.promise;if(stale())return;
-  GSR.rows=GuildSearch.rank(V,G,jobsB,resB,tiers,5,S);GSR.sig=tiers.join("");GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=S.final.runs;
+  GSR.dropped=GuildSearch.countDropped(S,[[jobsA,resA],[jobsA2,resA2],[jobsB,resB]]);GSR.rows=GuildSearch.rank(V,G,jobsB,resB,tiers,5,S);GSR.sig=tiers.join("");GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=S.final.runs;
   GSR.phase="done";GSR.handle=null;paint()
  }catch(e){if(stale())return;GSR.handle=null;GSR.phase=/^취소$/.test(e.message)?"idle":"err";GSR.msg=e.message||String(e);paint()}}
 $("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;if(GSR.phase!=="run")renderGuildSearch(true)});

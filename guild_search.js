@@ -80,6 +80,13 @@
     return (S.banVia || COOP_VIA).some(k => (via[k] || 0) >= COOP_EPS);
   }
 
+  // 협공 때문에 걸러진 팀 수(조합 기준 중복 제거). 화면에 «시뮬에서 협공이 나가 제외된 팀 N개» 로 보여 줌
+  function countDropped(S, pairs) {
+    const ids = new Set();
+    for (const [jobs, res] of pairs) for (const j of jobs) if (coopHit(S, res[j.key])) ids.add(j.keys.slice().sort().join("+"));
+    return ids.size;
+  }
+
   // 예선 결과 → 상위 n 팀(기대 점수 큰 순, 같으면 키 순). res = {jobKey: {prog, clear}}
   function pickTop(V, G, jobs, res, tiers, n, S) {
     const sc = jobs.filter(j => res[j.key] && !coopHit(S || {}, res[j.key])).map(j => ({keys: j.keys, v: expected(V, G, j.level, tiers, res[j.key].prog)}));
@@ -123,6 +130,17 @@
     return {promise: p, cancel() { dead = true; ws.forEach(x => x.terminate()); rejectFn(new Error("취소")); }};
   }
 
+  const BASIS = {client: "클라 자료 확인", community: "커뮤니티 근거(중간 신뢰)", inference: "추정"};
+  // «제외·주의 구원자» 접이식 목록. notes = [{key, kind: exclude|caution, basis, why}], 제외는 체크박스를 켠 때만 실제로 빠진다
+  function notesHtml(st, cx) {
+    const notes = cx.notes || [];
+    if (!notes.length) return "";
+    const esc = cx.esc, on = st.banCoop !== false;
+    const row = n => `<li data-k="gd-note-${esc(n.key)}"><b>${esc(cx.label(n.key))}</b> <span class="mut">[${n.kind === "exclude" ? (on ? "제외" : "제외 해제됨") : "주의"} · ${esc(BASIS[n.basis] || n.basis)}]</span><br>${esc(n.why)}</li>`;
+    const dropped = st.dropped ? `<div class="gd-small" data-k="gd-search-dropped">시뮬에서 협공이 나가 결과에서 뺀 팀: ${st.dropped}개</div>` : "";
+    return `<details class="gd-small" data-k="gd-notes"><summary>제외·주의 구원자 ${notes.length}명 (보스·맵 기믹 때문)</summary><ul>${notes.map(row).join("")}</ul>${dropped}<div class="mut">길방 보스는 정실 어필 뒤 신부 경쟁 보유자 한 명만 정상이고 나머지는 «들러리»가 됩니다. 보호막이 있는 보스를 들러리가 치면 들러리 전원이 큰 연쇄 피해를 받아서, 내 턴이 아닐 때 공격하는 구원자가 위험합니다. 클라 표에 «협공 금지» 규칙 자체는 없고 이 기믹의 결과입니다. 시즌이 바뀌면 보스가 달라져 이 목록도 다시 봐야 합니다.</div></details>`;
+  }
+
   const SUP_NAME = {none: "지원 안 고름", gust: "격돌의 돌풍", focus: "날카로운 집중력", strike: "강인한 타격", mountain: "태산의 의지", fire: "불의 고동"};
   const num = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   // 화면 조각. st = {phase: idle|run|done|err, msg, done, total, rows, sig}, cx = {hasInfo, sig(현재 고른 선택 효과), label(key), esc}
@@ -133,7 +151,8 @@
     if (!cx.hasInfo) return `<div class="gd-search" data-k="gd-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자를 불러오세요. 불러온 구원자 중에서 기대 점수가 가장 큰 4인 편성을 찾습니다.</div></div>`;
     const btn = (label) => `<button type="button" data-gs="start">${label}</button>`;
     const ex = cx.excluded || [];
-    const coop = ex.length ? `<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 길방 EX는 협공 금지라는 글이 많음(스킬 문구로 먼저 빼고, 시뮬에서 협공이 나간 팀도 거름)</span></label>` : "";
+    const notes = notesHtml(st, cx);
+    const coop = ex.length ? `${notes}<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 길방 EX는 협공 금지라는 글이 많음(스킬 문구로 먼저 빼고, 시뮬에서 협공이 나간 팀도 거름)</span></label>` : "";
     let body;
     if (st.phase === "run") body = `<div data-k="gd-search-progress">${esc(st.msg || "")}${st.total ? ` · ${st.done}/${st.total}` : ""} <button type="button" class="sec" data-gs="cancel">취소</button></div>`;
     else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">찾지 못했습니다: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;
@@ -146,6 +165,6 @@
     return `<div class="gd-search" data-k="gd-search">${head}${body}${warn}</div>`;
   }
 
-  const api = {FRONT, pool, combos, party, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, runPhase, html, SUP_NAME};
+  const api = {FRONT, pool, combos, party, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, runPhase, html, SUP_NAME, countDropped, notesHtml, BASIS};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

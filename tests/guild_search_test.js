@@ -96,6 +96,9 @@ const tests = {
     assert.deepEqual(S.pickTop(V, G, jobsA, resC, tiers, 2, {...SE, banCoop: false}), [list[1], list[0]]);
     const resD = {}; jobsB.forEach(j => { resD[j.key] = {prog: 0.9, clear: 0, n: 1, via: j.keys === list[1] ? {coop: 1} : {reaction: 3}}; });
     assert.deepEqual(S.rank(V, G, jobsB, resD, tiers, 5, SE).map(t => t.keys), [list[0]]);
+    // 걸러낸 팀 수: 단계마다 같은 팀이 또 걸려도 한 번만 센다
+    assert.equal(S.countDropped(SE, [[jobsA, resC], [jobsA, resC]]), 1);
+    assert.equal(S.countDropped({...SE, banCoop: false}, [[jobsA, resC]]), 0);
     // 기대 점수 = 확인된 식: 진행도 0.5 → 보스 0% 깎음, 1 → 100%
     assert.equal(S.expected(V, G, 4, tiers, 0.5), V.scoreAt(G, V.extraPct(G, 4, tiers), 0));
     assert.equal(S.expected(V, G, 4, tiers, 1), V.scoreAt(G, V.extraPct(G, 4, tiers), 1));
@@ -145,6 +148,13 @@ const tests = {
     const hc = S.html({phase: 'idle'}, {...cx, excluded: ['d0']});
     assert(hc.includes('data-gs="coop"') && /data-gs="coop" checked/.test(hc) && hc.includes('이름-d0'), '협공 제외 체크(기본 켬)');
     assert(!/data-gs="coop" checked/.test(S.html({phase: 'idle', banCoop: false}, {...cx, excluded: ['d0']})), '끄면 체크 해제');
+    // 제외·주의 구원자 목록: 이유·근거 수준 표시, 걸러낸 팀 수, 체크 해제 시 «제외 해제됨»
+    const notes = [{key: 'd0', kind: 'exclude', basis: 'client', why: '이유-가'}, {key: 'd1', kind: 'caution', basis: 'community', why: '이유-나'}];
+    const hn = S.html({phase: 'done', rows, sig: '3333', pool: 1, combos: 1, finalists: 1, runs: 1, dropped: 7}, {...cx, excluded: ['d0'], notes});
+    assert(hn.includes('data-k="gd-notes"') && hn.includes('이유-가') && hn.includes('이유-나') && hn.includes('클라 자료 확인') && hn.includes('커뮤니티 근거') && hn.includes('[제외 ·') && hn.includes('[주의 ·'));
+    assert(hn.includes('data-k="gd-search-dropped"') && hn.includes('7개'), '걸러낸 팀 수');
+    assert(S.html({phase: 'idle', banCoop: false}, {...cx, excluded: ['d0'], notes}).includes('제외 해제됨'));
+    assert(!S.html({phase: 'idle'}, {...cx, excluded: ['d0'], notes}).includes('gd-search-dropped'), '0이면 숨김');
     assert(!S.html({phase: 'idle'}, cx).includes('data-gs="coop"'), '제외 대상 없으면 체크 없음');
   },
 };
