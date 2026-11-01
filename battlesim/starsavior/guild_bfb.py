@@ -351,8 +351,21 @@ class Controller:
             self.stats['shield_timeout'] += 1
             self._end_phase()                       # 52094 / 52095
             return
-        if self.count >= self.cfg['data']['bridal']['trigger'] and any(v.has(B1) for v in self.b.alive(0)):
-            self._appeal()                          # 52093
+        if self._appeal_ready():
+            # 정실 어필은 반응 스킬: 보스 시전이 끝날 때 예약되고 반응 큐에서 실행된다(DoSkill:3234~3245, 큐 2833~).
+            # 이번 행동에 대한 반격은 그보다 먼저 나가므로 반격하는 아군은 아직 들러리·보호막이 없는 상태로 친다.
+            self._defer(lambda: self._appeal() if self._appeal_ready() and not self.boss.dead else None)    # 52093
+
+    def _appeal_ready(self):
+        return self.count >= self.cfg['data']['bridal']['trigger'] and any(v.has(B1) for v in self.b.alive(0))
+
+    def _defer(self, fn):
+        """반응 큐가 열려 있으면 예약(큐 밖이면 바로 실행) — mc.reaction_timing=queue 일 때만 큐가 있음"""
+        q = getattr(self.b, '_react_q', None)
+        if q is None:
+            fn()
+        else:
+            q.append((None, fn, None, None))
 
     def _compete(self):
         """질투의 시선(58801·1021): 신부 경쟁 보유자 중(없으면 전원 중) 공격력 최고에게 +1, 카운트 +1"""
@@ -421,9 +434,13 @@ class Controller:
             self._drop(boss, n)
         self.shield_hits = 0
         boss.d.skills['궁극기'] = self.cfg['alt']['hyper2']
-        self.b.cast(boss, self.cfg['alt']['hyper2'], extra=True, via='enforce')
-        if not boss.dead and boss.d.skills.get('궁극기') is self.cfg['alt']['hyper2']:
-            self._restore(full=True)
+
+        def cast():
+            self.b.cast(boss, self.cfg['alt']['hyper2'], extra=True, via='enforce')
+            if not boss.dead and boss.d.skills.get('궁극기') is self.cfg['alt']['hyper2']:
+                self._restore(full=True)
+        # 상태 해제(52094)는 즉시, 축복의 대피로연 강제 시전은 예약 큐: 이번 행동에 대한 반격이 먼저 나가 보호막이 없는 보스를 치면 부케가 나온다
+        self._defer(cast)
 
     def _restore(self, full=False):
         """37201(특수기만) / 2144(궁극기·특수기): 원래 스킬, ANIMSET2 해제"""
@@ -460,8 +477,7 @@ class Controller:
             self._drop(boss, TOUGH_BAN)
             if boss.eff.get(B8) is not None:
                 self._drop(boss, B8)
-            if self.mark is not None or any(x.has(B1) or x.has(B2) for x in self.b.alive(0)):
-                self._bouquet(a)                    # 55148
+            self._bouquet(a)                        # 55148 (표에 타격자·신부 경쟁 조건 없음)
 
     def _bouquet(self, a):
         b, boss, bq = self.b, self.boss, self.cfg['data']['bouquet']

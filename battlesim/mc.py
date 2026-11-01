@@ -2519,6 +2519,12 @@ class Battle:
             if not self.alive(0) or not self.alive(1):
                 break
             owner, ts, target, fixed = self._react_q.pop(0)
+            if owner is None:        # 상태 기계가 맡긴 예약 동작(길방 정실 어필·대피로연 강제 시전): 반응 큐 순서대로 실행, 직후 그 타격의 반격
+                ts()
+                if self._hit_log:
+                    self.revenge(self._hit_log)
+                    self._hit_log = []
+                continue
             ctx = None
             if target is None or not target.dead:
                 ctx = self.trigger_cast(owner, ts, target, via='reaction')

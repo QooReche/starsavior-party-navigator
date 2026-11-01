@@ -173,6 +173,27 @@ def test_challenge_effects():
     assert boss.stack(G.STACK) == 1 and boss.eff[G.STACK].props['피해 증가'] == 5
 
 
+def test_appeal_deferred_to_reaction_queue():
+    """정실 어필은 반응 스킬: 반응 큐가 열려 있으면 보스 시전 직후 바로 실행하지 않고 예약(반격이 먼저 나감). 큐 밖이면 바로 실행."""
+    for queued in (True, False):
+        b, _ = battle(mc={'guild_count': 'main'})
+        boss = to_boss(b)
+        gb, allies = b.gb, b.alive(0)
+        for i in range(5):
+            gb.after_cast(allies[i % 4], allies[i % 4].d.skills['기본기'], _Ctx(), False)
+        assert gb.count == 5
+        b._react_q = [] if queued else None
+        gb.after_cast(boss, boss.d.skills['기본기'], _Ctx(), False)
+        if queued:
+            assert not gb.anim and not gb.barrier() and len(b._react_q) == 1 and b._react_q[0][0] is None
+            assert not any(v.has(G.B2) for v in allies), '예약 전에는 들러리 없음'
+            b._run_reactions()
+            assert gb.anim and gb.barrier() and any(v.has(G.B2) for v in allies)
+        else:
+            assert gb.anim and gb.barrier()
+    print('OK test_appeal_deferred_to_reaction_queue')
+
+
 def test_simulate_runs():
     r = simulate(PARTY, {'guild': {'level': 0}}, {'seed': 1, 'n_runs': 3, 'build': 'standard', 'timeline': True})
     assert r['encounter']['content'] == 'guild' and r['encounter']['turn_limit'] == 50
@@ -206,7 +227,7 @@ class _Ctx:
 
 
 TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
-         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_ally_via_reported, test_data_matches_tables]
+         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
 
 if __name__ == '__main__':
     bad = 0
