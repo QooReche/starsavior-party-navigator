@@ -196,7 +196,7 @@ def validate(g, grules=None):
 
 def page_payload(g):
     """화면에 실을 자료(출처 이름은 화면용으로 풀어 둠). 내부 표 이름·코드는 싣지 않는다."""
-    keep = {k: g[k] for k in ("asOf", "season", "rules", "steps", "stepsMeta", "exBoss", "challenge", "sets", "score", "community")}
+    keep = {k: g[k] for k in ("asOf", "season", "rules", "steps", "stepsMeta", "exBoss", "challenge", "sets", "score", "community", "search")}
     keep["title"] = content_title(g)
     keep["tab"] = range_label(g)
     keep["bestSet"] = list(best_selection(g)[1])

@@ -354,6 +354,7 @@ summary{padding:9px 4px}
  <p class="mut">클리어 %는 시뮬 추정입니다</p>
 </section>
 <section id="guild-panel" class="panel" aria-label="길드 방어전 안내" hidden></section>
+<section id="guild-search" class="panel" aria-label="길드 방어전 편성 찾기" hidden></section>
 <div id="out"></div>
 <div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">선이나 구원자를 눌러 보세요</span>
  <div class="row" style="margin-top:8px">
@@ -400,6 +401,7 @@ summary{padding:9px 4px}
 <script src="myinfo_reco.js"></script>
 <script src="share_state.js"></script>
 <script src="guild_view.js"></script>
+<script src="guild_search.js"></script>
 <script src="skill_view.js"></script>
 <script>
 const D=/*DATA*/null;
@@ -437,13 +439,52 @@ let cur=null;
 // 길드 방어전(시즌제) 안내 패널: 선택(별의 도전 단계·선택 효과)은 이 브라우저에만 기억. 처음엔 최고 점수 조합
 const GS={sel:null};
 function renderGuild(){const c=contents[$("content").value],p=$("guild-panel"),s=cur&&cur[$("stage").value];
- if(!c||!c.seasonal||!s||!window.GuildView||!D.guild){p.hidden=true;p.innerHTML="";return}
+ if(!c||!c.seasonal||!s||!window.GuildView||!D.guild){p.hidden=true;p.innerHTML="";renderGuildSearch(false);return}
  if(!GS.sel)GS.sel=LS.get("guild");
- p.hidden=false;p.innerHTML=GuildView.panelHtml(D.guild,GS.sel,parseInt(s.name,10),Date.now(),esc)}
+ p.hidden=false;p.innerHTML=GuildView.panelHtml(D.guild,GS.sel,parseInt(s.name,10),Date.now(),esc);
+ const ex=D.guild.steps.find(x=>x.ex);renderGuildSearch(!!ex&&parseInt(s.name,10)===ex.step)}
 $("guild-panel").addEventListener("change",e=>{const t=e.target.closest("select[data-g]");if(!t)return;
  const sel=GuildView.normSel(D.guild,GS.sel);if(t.dataset.g==="level")sel.level=+t.value;else sel.tiers[+t.dataset.i]=+t.value;
  GS.sel=sel;LS.set("guild",sel);renderGuild()});
 $("guild-panel").addEventListener("click",e=>{if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove("guild");renderGuild()});
+// ── 길방 «내 정보로 최고 점수 편성 찾기»(guild_search.js): 예선(전 조합 짧게) → 본선(상위 팀을 단계·지원별로). 작업자는 시뮬 창구(sim_worker.js)를 그대로 쓴다
+const GSR={phase:"idle",msg:"",done:0,total:0,rows:[],sig:"",handle:null,id:0};
+const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild")).tiers;
+const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
+function renderGuildSearch(on){const p=$("guild-search");
+ if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
+ p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsTiers().join(""),label:gsLabel,esc})}
+async function guildSearchStart(){
+ if(!MI.info||GSR.phase==="run")return;
+ const S=D.guild.search,V=GuildView,G=D.guild,id=++GSR.id,c=contents[$("content").value],st=cur&&cur[$("stage").value];
+ const stale=()=>GSR.id!==id,paint=()=>renderGuildSearch(true);
+ try{
+  GSR.phase="run";GSR.msg="내 구원자 능력치 계산 중";GSR.done=0;GSR.total=0;paint();
+  const growth=await miGrowth();if(stale())return;
+  const profile=MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
+  const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers();
+  const rows=GuildSearch.pool(S,results,R),list=GuildSearch.combos(S,rows.map(r=>r));
+  if(list.length<1)throw new Error("편성할 수 있는 구원자가 부족합니다(내 정보에 육성된 구원자 4명 이상 필요)");
+  const combos=list.map(k=>k),workers=Math.max(2,Math.min(8,(navigator.hardwareConcurrency||4)-1));
+  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>new Worker("sim_worker.js");
+  const jobsA=GuildSearch.screenJobs(S,G,V,combos,results,cls,tiers);
+  GSR.msg=`1단계: 조합 ${jobsA.length}개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다)`;GSR.total=jobsA.length;paint();
+  const hA=GuildSearch.runPhase({makeWorker:mk,jobs:jobsA,workers,runs:S.screen.runs,seed:1,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
+  GSR.handle=hA;const resA=await hA.promise;if(stale())return;
+  const keep2=GuildSearch.pickTop(V,G,jobsA,resA,tiers,S.screen2.keep),jobsA2=GuildSearch.screenJobs(S,G,V,keep2,results,cls,tiers);
+  GSR.msg=`2단계: 상위 ${jobsA2.length}팀을 더 정확히 확인 중`;GSR.done=0;GSR.total=jobsA2.length;paint();
+  const hA2=GuildSearch.runPhase({makeWorker:mk,jobs:jobsA2,workers,runs:S.screen2.runs,seed:3,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
+  GSR.handle=hA2;const resA2=await hA2.promise;if(stale())return;
+  const fin=GuildSearch.pickFinalists(S,V,G,jobsA2,resA2,tiers),jobsB=GuildSearch.finalJobs(S,G,V,fin,results,cls,tiers);
+  GSR.msg=`3단계: 상위 ${fin.length}팀을 단계·지원별로 확인 중`;GSR.done=0;GSR.total=jobsB.length;paint();
+  const hB=GuildSearch.runPhase({makeWorker:mk,jobs:jobsB,workers,runs:S.final.runs,seed:2,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
+  GSR.handle=hB;const resB=await hB.promise;if(stale())return;
+  GSR.rows=GuildSearch.rank(V,G,jobsB,resB,tiers,5);GSR.sig=tiers.join("");GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=S.final.runs;
+  GSR.phase="done";GSR.handle=null;paint()
+ }catch(e){if(stale())return;GSR.handle=null;GSR.phase=/^취소$/.test(e.message)?"idle":"err";GSR.msg=e.message||String(e);paint()}}
+$("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[data-gs]");if(!b)return;
+ if(b.dataset.gs==="start")guildSearchStart();
+ else if(b.dataset.gs==="cancel"){GSR.id++;if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";renderGuildSearch(true)}});
 
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.name)}</option>`).join("");
 function tabsOf(c){const m=new Map();c.stages.forEach(s=>{if(!m.has(s.tab))m.set(s.tab,s.tabLabel)});return [...m]}

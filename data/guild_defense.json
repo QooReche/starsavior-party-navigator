@@ -128,6 +128,19 @@
    {"text": "9단계 이하는 기믹을 무시하고 가능하다는 댓글, 10단계부터는 다른 방식이 필요하다는 의견", "src": ["arca187430822"]}
   ]
  },
+ "search": {
+  "_note": "내 정보로 최고 점수 편성 찾기(guild_search.js). 시즌이 바뀌어 보스·규칙이 달라지면 이 값과 battlesim/starsavior/guild_bfb.py 를 같이 검토한다. 협공 금지 같은 커뮤니티 주장은 구원자 태그가 없어 아직 거르지 않음",
+  "poolSize": 40,
+  "minPowerRatio": 0.8,
+  "minRole": {"서포터": 6, "디펜더": 3},
+  "minFront": 1,
+  "minDealer": 1,
+  "screen": {"level": 6, "runs": 2, "supporter": "gust", "other": "fire"},
+  "screen2": {"keep": 400, "runs": 10},
+  "finalists": 12,
+  "final": {"runs": 40, "levels": [2, 4, 6, 8, 10, 12], "supports": ["fire", "gust", "focus", "strike", "mountain"]},
+  "supportRole": {"gust": "서포터", "focus": "캐스터", "strike": "스트라이커"}
+ },
  "howToUpdate": [
   "시즌 id 가 바뀌면 season(id·label·name·start·end·settleEnd)과 asOf 를 고친다. 날짜는 공식 공지 기준",
   "단계 표(steps)는 게임 표 GUILD_DUNGEON 전투 표의 새 시즌 행(BasePoint·BossKillPoint·KillPoint·BattleLevel·BattlePower)으로 바꾼다",

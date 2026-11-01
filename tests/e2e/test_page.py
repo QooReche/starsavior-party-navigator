@@ -1161,8 +1161,39 @@ def test_guild_defense(browser, ctx):
     return ok, "%s / %s / 카드 %d / 기믹줄 %d / 패널 %s / 오류 %s" % (name, first_stage, cards, gim, shown, errs[:2])
 
 
+def test_guild_search(browser, ctx):
+    """길방 «내 정보로 최고 점수 편성 찾기»: 내 정보가 없으면 버튼 없음 안내, 있으면 예선→본선을 브라우저 작업자로 끝까지 돌려
+    기대 점수 순위 표가 나오고, 위에서 선택 효과를 바꾸면 낡은 결과 경고, 길방이 아닌 스테이지에서는 숨김. (시험 속도를 위해 탐색 크기만 줄여 돌린다)"""
+    ctx.errors.clear()
+    page = open_page(browser, ctx)
+    names = page.eval_on_selector("#content", "s => [...s.options].map(o => o.textContent)")
+    page.select_option("#content", label=next(n for n in names if n.startswith("길드방어전")))
+    settle(page)
+    shown = page.locator("#guild-search").is_visible()
+    has_btn = page.locator('#guild-search button[data-gs="start"]').count()
+    # 탐색 크기를 줄인다(풀 8명·상위 2팀·단계 4 하나·판수 2) — 로직은 그대로
+    page.evaluate("""() => {const S=D.guild.search;S.poolSize=8;S.minRole={'서포터':1,'디펜더':1};S.minPowerRatio=0;S.screen2={keep:3,runs:2};S.finalists=2;S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['fire','gust']}""")
+    page.click('#guild-search button[data-gs="start"]')
+    page.wait_for_selector('#guild-search [data-k="gd-search-table"]', timeout=540000)
+    rows = page.locator('#guild-search [data-k="gd-search-table"] tbody tr').count()
+    txt = page.locator('#guild-search').inner_text()
+    score_ok = page.evaluate("""() => [...document.querySelectorAll('#guild-search tbody tr')].every(tr => /^[0-9,]+$/.test(tr.children[4].innerText.trim()) && +tr.children[4].innerText.replace(/,/g,'') > 0)""")
+    # 선택 효과를 바꾸면 낡은 결과 경고
+    page.select_option('#guild-panel select[data-g="set"][data-i="0"]', "1")
+    page.wait_for_function("() => !!document.querySelector('#guild-search [data-k=gd-search-stale]')")
+    page.select_option("#stage", index=1)
+    page.dispatch_event("#stage", "change")
+    settle(page)
+    hidden = not page.locator("#guild-search").is_visible()
+    errs = list(ctx.errors)
+    page.close()
+    ok = shown and has_btn == 1 and 1 <= rows <= 5 and score_ok and "추정" in txt and hidden and not errs
+    return ok, "패널 %s / 버튼 %d / 결과 %d줄 / 점수 %s / 숨김 %s / 오류 %s" % (shown, has_btn, rows, score_ok, hidden, errs[:2])
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
+TESTS.append(test_guild_search)
 TESTS.append(test_break_skill_select)
 TESTS.append(test_break_skill_compare)
 TESTS.append(test_break_compare_cancel_after_team_change)
