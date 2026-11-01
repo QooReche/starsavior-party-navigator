@@ -797,6 +797,9 @@ class Battle:
                 for ln in self.lines_of(u):
                     if line_kind(ln) == 'wave_start':
                         self.run_line(u, ln, Ctx(u, u, None))
+            if self.mc.get('wave_ally_gauge', 'keep') == 'reset':   # 클라 BattleHostSingle 웨이브 전환: OnWaveStart 뒤 생존 아군 게이지 전원 0
+                for u in self.alive(0):
+                    u.gauge = 0.0
 
     def progress(self):
         """적 진척도 0~1: (끝낸 웨이브 + 현재 웨이브에서 깎은 체력 비율) / 웨이브 수. 클리어면 1.
