@@ -220,7 +220,8 @@
   "cap": 4.0,
   "slotBonus": 2.0,
   "teamCap": 8.0,
-  "topTypes": 6
+  "topTypes": 6,
+  "sameSource": [["BUFF_BAN", "BUFF_STRIP"]]
  },
  "seasonBonus": {
   "_note": "시즌 보너스 효과 문구의 첫 % 수치 x 효과 종류별 계수 = 점수(조건에 맞는 속성/직업 구성원에게). 구원자당 합계는 cap. 효과 종류별 계수는 임의값.",

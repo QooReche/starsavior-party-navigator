@@ -106,6 +106,12 @@ def stage_gimmicks(gkey, cfg):
     rules, stages = gimmick_rules()
     items = [(c, sev) for c, sev in stages.get(gkey, {}).items() if c in rules["types"]]
     items.sort(key=lambda it: -rules["types"][it[0]]["w"] * it[1])
+    # 같은 보스 스킬에서 나온 기믹(예: 강화 해제 + 강화 불가)은 점수에 한 번만: 목록 앞쪽(sameSource 순서 우선)만 남긴다
+    for grp in cfg["gimmick"].get("sameSource", []):
+        have = [c for c, _ in items if c in grp]
+        if len(have) > 1:
+            keep = min(have, key=lambda c: (-rules["types"][c]["w"] * dict(items)[c], grp.index(c)))
+            items = [it for it in items if it[0] not in grp or it[0] == keep]
     return items[:cfg["gimmick"]["topTypes"]]
 
 

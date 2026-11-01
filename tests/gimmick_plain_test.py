@@ -57,6 +57,24 @@ else:
         if not rules[c]["slots"] and c not in gcodes:
             fails.append("슬롯도 GFIX 도 없는 기믹: " + c)
 
+# 같은 보스 스킬에서 나온 기믹(강화 해제 + 강화 불가)은 추천 점수·상위 목록에 한 번만 들어간다(party_contents.json gimmick.sameSource)
+import json as _json
+_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+sys.path.insert(0, _ROOT)
+import party_reco as _pr
+_cfg = _json.load(open(os.path.join(_ROOT, "party_contents.json"), encoding="utf-8"))
+_both = [k for k, v in _pr._json(_pr.GSTAGE).items() if "BUFF_STRIP" in v and "BUFF_BAN" in v]
+if not _both:
+    fails.append("강화 해제·강화 불가가 함께 붙은 스테이지가 없음(시험 전제)")
+for _k in _both:
+    _codes = [c for c, _ in _pr.stage_gimmicks(_k, _cfg)]
+    if ("BUFF_STRIP" in _codes) == ("BUFF_BAN" in _codes) or "BUFF_BAN" not in _codes:
+        fails.append("같은 출처 기믹이 한 번만 세어지지 않음: %s %s" % (_k, _codes))
+_c2 = _json.loads(_json.dumps(_cfg))
+_c2["gimmick"]["sameSource"] = []
+if _both and not all({"BUFF_STRIP", "BUFF_BAN"} <= {c for c, _ in _pr.stage_gimmicks(k, _c2)} for k in _both):
+    fails.append("sameSource 를 비우면 둘 다 세어져야 함")
+
 if fails:
     print("\n".join(fails))
     sys.exit(1)
