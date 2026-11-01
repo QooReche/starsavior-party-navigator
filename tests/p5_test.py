@@ -343,7 +343,7 @@ def test_new_enemy_effects():
     out['blocked'] = (round(atk0, 2), round(F.mods()['atkp'], 2))
     b.run_line(A, Line('[웨이브 시작 시] 자신에게 〈궁극기 쿨타임 초기화〉', '고유 패시브', 'passive'), Ctx(A, A, None))
     out['reset'] = A.cd['궁극기']
-    exp = dict(gauge=0.0, chain=math.floor(10000 * 0.03 * 1.85 * (1 - 1000 / 4000)), cd=3, per=0.2, blocked=(0.2, 0.0), reset=0)
+    exp = dict(gauge=0.0, chain=math.floor(10000 * 0.03 * 1.85 * (1 - 1000 / 4000)), cd=3, per=0.2, blocked=(0.2, 0.2), reset=0)   # 〈강화 불가〉는 걸린 강화를 끄지 않음(클라, buff_ban=refuse) — 옛 동작 (0.2, 0.0) 은 test_buff_ban_refuse 의 suppress
     return out == exp, '%s (기대 %s)' % (out, exp)
 
 
@@ -504,7 +504,7 @@ def test_review_fixes():
     확률 줄의 재발동 제한은 실제 발동 때 기록 / NotTargetPositiveBuff 는 광역에서 대상마다 / 프로페서M 트리거도 「이번 스킬」 보정"""
     out = {}
     a, f = unit('a'), unit('foe', hp=10000)
-    b = battle([a], [f])
+    b = battle([a], [f], mc={'buff_ban': 'suppress'})   # 옛 동작(걸린 강화도 끔)을 고정하는 시험 — 클라 동작은 test_buff_ban_refuse
     A, F = b.allies[0], b.foes[0]
     give(F, '불사', {})
     give(F, '보호막', {})
@@ -551,13 +551,34 @@ def test_review_fixes():
     return out == exp, '%s (기대 %s)' % (out, exp)
 
 
+def test_buff_ban_refuse():
+    """〈강화 불가〉 클라 동작(buff_ban=refuse, 기본): 이미 걸린 보호막·공격력 버프는 그대로 작동하고 새 강화만 거부 /
+    suppress(옛 동작)는 걸린 강화를 끄고 새 강화는 받아 둠 (NKM 버프 부여 함수 650줄, work/common_rules/notes_buffban.md)"""
+    out = {}
+    for mode in ('refuse', 'suppress'):
+        a, f = unit('a'), unit('foe', hp=10000)
+        b = battle([a], [f], mc={'buff_ban': mode})
+        A, F = b.allies[0], b.foes[0]
+        give(F, '보호막', {})
+        F.eff['보호막'].shield = 5000.0
+        give(F, '시험 강화', {'공격력%': 10.0})
+        give(F, '강화 불가', {}, src=A, harmful=True)
+        b.dirty(F)
+        atk = round(F.mods()['atkp'], 2)
+        b.apply_damage(A, F, 3000, 'hit')
+        b.add_effect(F, F, dict(name='새 강화', props={'공격력%': 5.0}, dur=2, max=None, times=1, judge=False, chance=1.0), None)
+        out[mode] = (atk, round(F.eff['보호막'].shield), round(F.hp), F.has('새 강화'))
+    ok = out['refuse'] == (0.1, 2000, 10000, False) and out['suppress'] == (0.0, 5000, 7000, True)
+    return ok, str(out)
+
+
 # ---------------------------------------------------------------- 사전 계산 연결
 TESTS = [test_build_light_values, test_stat_order_journey, test_potential_pick, test_build_missing_is_error, test_build_speed_range,
          test_toughness_break, test_tough_elem_and_fixed, test_ally_break_gauge_and_coop, test_break_recovery_turn_effects,
          test_break_conditions, test_damage_limit,
          test_power_penalty, test_new_enemy_effects, test_new_conditions, test_action_trigger, test_cast_pre_events,
          test_cristelle_stack_trigger, test_cristelle_ignite_amount, test_trigger_support_report,
-         test_recast_limit, test_review_fixes]   # 옛 사전 계산 시험(test_precompute_build_and_gate)은 사전 계산 퇴역으로 뺌(2026-10-20)
+         test_recast_limit, test_review_fixes, test_buff_ban_refuse]   # 옛 사전 계산 시험(test_precompute_build_and_gate)은 사전 계산 퇴역으로 뺌(2026-10-20)
 
 
 def main():

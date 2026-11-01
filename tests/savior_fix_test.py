@@ -7,9 +7,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from p5_test import battle, give, unit, Ctx, Line, UnitDef, get_db
 
 
-def setup(key, allies=(), foes=None):
+def setup(key, allies=(), foes=None, mc=None):
     b = battle([UnitDef(get_db(), key), *allies], foes or [unit('foe', hp=10**9, sa=1000)],
-               opts={'coop': False, 'nova': False}, timeline=True)
+               opts={'coop': False, 'nova': False}, timeline=True, mc=mc)
     return b, b.allies[0], b.foes[0]
 
 
@@ -685,7 +685,7 @@ def test_fix3_delivery_duration_hot():
     out = []
     for key, dur in [('vera', 1), ('vera@개화(SSR)', 2)]:
         for selected in ['공격력 증가', '방어력 증가', '속도 증가', '지속 회복']:
-            b, a, _ = setup(key, [unit('buffed'), unit('plain')])
+            b, a, _ = setup(key, [unit('buffed'), unit('plain')], mc={'buff_ban': 'suppress'})   # 옛 동작(걸린 강화도 끔)을 고정하는 시험 — 클라 동작은 test_buff_ban_refuse
             v = b.allies[1]
             give(v, '시험 강화', {'공격력%': 1})
             b.rng.choice = lambda names: selected
@@ -723,7 +723,7 @@ def test_fix3_random_extra_target():
 
 
 def test_fix3_neutral_boost():
-    b, a, f = setup('luna')
+    b, a, f = setup('luna', mc={'buff_ban': 'suppress'})   # 옛 동작(걸린 강화도 끔)을 고정하는 시험
     b.fire(a, 'battle_start', Ctx(a, a, None))
     assert a.stack('통찰') == 2 and a.n_good() == 0 and a.n_harmful() == 0
     give(a, '강화 불가', harmful=True)

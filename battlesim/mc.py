@@ -393,6 +393,7 @@ class Unit:
             parse_props(ln.raw.split('능력치:', 1)[1])[1].get('명중률', 0.0) / 100.0
             for ln in d.lines if ln.kind == 'perm' and '능력치:' in ln.raw
         ) if b.mc['permanent_accuracy'] == 'data' else 0.0
+        self.ban_refuse = b.mc['buff_ban'] == 'refuse'   # 〈강화 불가〉: 새 강화만 거부(클라) / 걸린 강화도 끔(옛 동작)
         st = d.stats
         self.fx = dict(fx or {})                 # 스테이지 효과(상시)
         hpp = d.passive['hpp'] + self.fx.get('생명력%', 0.0) / 100.0
@@ -463,7 +464,7 @@ class Unit:
         m = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0, er=0.0,
                  der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, inc_single=0.0, inc_aoe=0.0, evade=0.0, acc=0.0,
                  tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, barrier_give=0.0, preempt=0.0, inc_vs={}, inc_slot={}, red={})
-        blocked = '강화 불가' in self.eff and self.eff['강화 불가'].stacks > 0   # 〈강화 불가〉: 모든 강화 효과가 적용되지 않음(gloss)
+        blocked = self.buff_blocked()            # 〈강화 불가〉(suppress 모드만): 걸린 강화 효과를 전부 끔 — refuse(클라)에서는 새 강화 부여만 거부
         for e in self.eff.values():
             if e.stacks <= 0 or (blocked and e.category == 'buff'):
                 continue
@@ -485,10 +486,14 @@ class Unit:
     def has(self, name):
         return self.stack(name) > 0
 
-    def buff_blocked(self):
-        """〈강화 불가〉: 지속 동안 모든 강화 효과가 적용되지 않음(gloss) — 수치(mods)·이름으로 동작하는 강화(불사·면역·은신·보호막 …) 모두"""
+    def buff_banned(self):
+        """〈강화 불가〉 상태인가(새 강화 효과를 받을 수 없음)"""
         e = self.eff.get('강화 불가')
         return e is not None and e.stacks > 0
+
+    def buff_blocked(self):
+        """이미 걸린 강화 효과를 끄는가 — suppress(옛 동작)에서만. 클라는 새로 들어오는 강화만 거부한다(NKM 버프 부여 함수 650줄)"""
+        return (not self.ban_refuse) and self.buff_banned()
 
     def on(self, name):
         """그 효과가 지금 작동하는가: 있음 + (약화이거나 〈강화 불가〉 상태가 아님)"""
@@ -3194,6 +3199,8 @@ class Battle:
                     if mm:
                         props[mm.group(1).strip()] = float(mm.group(2))
             for x in tg or []:
+                if x.ban_refuse and x.buff_banned():
+                    continue     # 〈강화 불가〉: 보호막도 강화 효과라 새로 받지 못함(합산 포함)
                 e = x.eff.get(m.group(2))
                 if e is None:
                     e = Eff(m.group(2), props, 1, _shield_dur(m.group(3)), owner, False)
@@ -3487,6 +3494,8 @@ class Battle:
         info = getattr(owner.d, 'effect_info', {}).get(name, {})
         marker = eff.get('cast_marker') or bool(CHECK_NAME.search(name)) or '판별용' in name
         category = ('marker' if marker else info.get('category')) or ('debuff' if opp else 'buff')
+        if category == 'buff' and x.ban_refuse and x.buff_banned():
+            return     # 〈강화 불가〉: 새 강화 효과(갱신·합산 포함)는 거부(클라 버프 부여 함수 650줄)
         resist = category == 'debuff' and not eff.get('ignore_resist')
         if resist and ctx is not None and x in ctx.evaded:
             return     # 회피한 대상에는 약화가 걸리지 않음(공식 2026-06-04 오류 수정 공지)
