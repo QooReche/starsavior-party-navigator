@@ -72,19 +72,27 @@
     return jobs;
   }
 
+  // 시뮬에서 협공류(S.banVia, 기본 coop·forced_coop)가 판당 평균 0.05회 이상 나간 팀은 «협공 금지» 규칙에 걸린 것으로 보고 거른다. 장비·조합으로 붙는 협공까지 잡는다.
+  const COOP_VIA = ["coop", "forced_coop"], COOP_EPS = 0.05;
+  function coopHit(S, r) {
+    if (!r || S.banCoop === false) return false;
+    const via = r.via || {};
+    return (S.banVia || COOP_VIA).some(k => (via[k] || 0) >= COOP_EPS);
+  }
+
   // 예선 결과 → 상위 n 팀(기대 점수 큰 순, 같으면 키 순). res = {jobKey: {prog, clear}}
-  function pickTop(V, G, jobs, res, tiers, n) {
-    const sc = jobs.filter(j => res[j.key]).map(j => ({keys: j.keys, v: expected(V, G, j.level, tiers, res[j.key].prog)}));
+  function pickTop(V, G, jobs, res, tiers, n, S) {
+    const sc = jobs.filter(j => res[j.key] && !coopHit(S || {}, res[j.key])).map(j => ({keys: j.keys, v: expected(V, G, j.level, tiers, res[j.key].prog)}));
     sc.sort((a, b) => b.v - a.v || (a.keys.join() < b.keys.join() ? -1 : 1));
     return sc.slice(0, n).map(x => x.keys);
   }
-  const pickFinalists = (S, V, G, jobs, res, tiers) => pickTop(V, G, jobs, res, tiers, S.finalists);
+  const pickFinalists = (S, V, G, jobs, res, tiers) => pickTop(V, G, jobs, res, tiers, S.finalists, S);
 
   // 본선 결과 → 팀마다 가장 높은 기대 점수 한 줄, 큰 순
-  function rank(V, G, jobs, res, tiers, top) {
+  function rank(V, G, jobs, res, tiers, top, S) {
     const best = new Map();
     for (const j of jobs) {
-      const r = res[j.key]; if (!r) continue;
+      const r = res[j.key]; if (!r || coopHit(S || {}, r)) continue;
       const v = expected(V, G, j.level, tiers, r.prog), id = j.keys.slice().sort().join("+"), cur = best.get(id);
       if (!cur || v > cur.score) best.set(id, {keys: j.keys, order: j.order, level: j.level, sup: j.sup, score: v, clear: r.clear, prog: r.prog, frac: Math.max(0, Math.min(1, 2 * r.prog - 1)), n: r.n});
     }
@@ -103,7 +111,7 @@
         const w = makeWorker(); ws.push(w);
         w.onmessage = e => {
           const m = e.data; if (dead) return;
-          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n}; done++; if (onProgress) onProgress(done, jobs.length); }
+          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}}; done++; if (onProgress) onProgress(done, jobs.length); }
           else if (m.type === "done") { if (++finished === parts.length) { ws.forEach(x => x.terminate()); resolve(res); } }
           else if (m.type === "error") { dead = true; ws.forEach(x => x.terminate()); reject(new Error(m.msg || "작업자 오류")); }
         };
@@ -125,7 +133,7 @@
     if (!cx.hasInfo) return `<div class="gd-search" data-k="gd-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자를 불러오세요. 불러온 구원자 중에서 기대 점수가 가장 큰 4인 편성을 찾습니다.</div></div>`;
     const btn = (label) => `<button type="button" data-gs="start">${label}</button>`;
     const ex = cx.excluded || [];
-    const coop = ex.length ? `<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 길방 EX는 협공 금지라는 글이 많음(스킬 문구 기준, 장비로 붙는 협공은 못 봄)</span></label>` : "";
+    const coop = ex.length ? `<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 길방 EX는 협공 금지라는 글이 많음(스킬 문구로 먼저 빼고, 시뮬에서 협공이 나간 팀도 거름)</span></label>` : "";
     let body;
     if (st.phase === "run") body = `<div data-k="gd-search-progress">${esc(st.msg || "")}${st.total ? ` · ${st.done}/${st.total}` : ""} <button type="button" class="sec" data-gs="cancel">취소</button></div>`;
     else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">찾지 못했습니다: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;

@@ -471,7 +471,7 @@ async function guildSearchStart(){
   GSR.msg=`1단계: 조합 ${jobsA.length}개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다)`;GSR.total=jobsA.length;paint();
   const hA=GuildSearch.runPhase({makeWorker:mk,jobs:jobsA,workers,runs:S.screen.runs,seed:1,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
   GSR.handle=hA;const resA=await hA.promise;if(stale())return;
-  const keep2=GuildSearch.pickTop(V,G,jobsA,resA,tiers,S.screen2.keep),jobsA2=GuildSearch.screenJobs(S,G,V,keep2,results,cls,tiers);
+  const keep2=GuildSearch.pickTop(V,G,jobsA,resA,tiers,S.screen2.keep,S),jobsA2=GuildSearch.screenJobs(S,G,V,keep2,results,cls,tiers);
   GSR.msg=`2단계: 상위 ${jobsA2.length}팀을 더 정확히 확인 중`;GSR.done=0;GSR.total=jobsA2.length;paint();
   const hA2=GuildSearch.runPhase({makeWorker:mk,jobs:jobsA2,workers,runs:S.screen2.runs,seed:3,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
   GSR.handle=hA2;const resA2=await hA2.promise;if(stale())return;
@@ -479,7 +479,7 @@ async function guildSearchStart(){
   GSR.msg=`3단계: 상위 ${fin.length}팀을 단계·지원별로 확인 중`;GSR.done=0;GSR.total=jobsB.length;paint();
   const hB=GuildSearch.runPhase({makeWorker:mk,jobs:jobsB,workers,runs:S.final.runs,seed:2,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
   GSR.handle=hB;const resB=await hB.promise;if(stale())return;
-  GSR.rows=GuildSearch.rank(V,G,jobsB,resB,tiers,5);GSR.sig=tiers.join("");GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=S.final.runs;
+  GSR.rows=GuildSearch.rank(V,G,jobsB,resB,tiers,5,S);GSR.sig=tiers.join("");GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=S.final.runs;
   GSR.phase="done";GSR.handle=null;paint()
  }catch(e){if(stale())return;GSR.handle=null;GSR.phase=/^취소$/.test(e.message)?"idle":"err";GSR.msg=e.message||String(e);paint()}}
 $("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;if(GSR.phase!=="run")renderGuildSearch(true)});

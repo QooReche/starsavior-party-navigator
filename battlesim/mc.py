@@ -686,6 +686,7 @@ class Battle:
             self.break_domain_clock = ('global' if self.mc['break_skill_domain_clock'] == 'global'
                                        else self.mc['break_skill_cd_unit'])
         self.break_points = self.break_points_gained = self.break_skill_uses = 0
+        self.ally_via = {}   # 아군 시전 경로별 횟수(coop·forced_coop·trigger·potential·enforce·revenge·reaction) — 길방 편성 찾기가 협공 발생 팀을 거르는 데 씀
         self.break_skill_dmg = 0
         self.break_skill_cd = 0
         self._break_round = 0
@@ -1637,6 +1638,8 @@ class Battle:
             if u.stack(rule['name']) >= rule['count'] and (not rule['own'] or (u.acting and not extra)):
                 sk = replacement
         self.tick()
+        if via and u.side == 0:
+            self.ally_via[via] = self.ally_via.get(via, 0) + 1
         self.depth += 1
         previous_cast = getattr(self, '_cast_ctx', None)
         suspended = {}

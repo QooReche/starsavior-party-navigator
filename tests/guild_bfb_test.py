@@ -180,6 +180,14 @@ def test_simulate_runs():
     assert r['unsupported']['gate_ok']
 
 
+def test_ally_via_reported():
+    """결과 outcome.ally_via 에 아군 시전 경로별 판당 평균이 실린다(길방 편성 찾기가 협공 발생 팀을 거르는 데 씀)"""
+    r = simulate(PARTY + [], {'guild': {'level': 0}}, {'seed': 1, 'n_runs': 4, 'build': 'standard'})
+    v = r['ally_via']
+    assert isinstance(v, dict) and all(isinstance(x, float) or isinstance(x, int) for x in v.values()), v
+    print('OK test_ally_via_reported', v)
+
+
 def test_data_matches_tables():
     static = os.environ.get('STARSAVIOR_STATIC') or os.path.join(ROOT, '..', 'static-data')
     if not os.path.isdir(os.path.join(static, 'tables')):
@@ -198,7 +206,7 @@ class _Ctx:
 
 
 TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
-         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_data_matches_tables]
+         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_ally_via_reported, test_data_matches_tables]
 
 if __name__ == '__main__':
     bad = 0

@@ -90,6 +90,12 @@ const tests = {
     assert.equal(top.length, 2);
     assert(top.every(t => t.level === 4 && t.sup === 'fire'));
     assert(top[0].score >= top[1].score);
+    // 시뮬에서 협공이 나간 팀은 예선 선발·최종 순위에서 빠진다(banCoop 끄면 포함)
+    const resC = {[jobsA[0].key]: {prog: 0.6, clear: 0}, [jobsA[1].key]: {prog: 0.9, clear: 0.1, via: {forced_coop: 2}}};
+    assert.deepEqual(S.pickTop(V, G, jobsA, resC, tiers, 2, SE), [list[0]]);
+    assert.deepEqual(S.pickTop(V, G, jobsA, resC, tiers, 2, {...SE, banCoop: false}), [list[1], list[0]]);
+    const resD = {}; jobsB.forEach(j => { resD[j.key] = {prog: 0.9, clear: 0, n: 1, via: j.keys === list[1] ? {coop: 1} : {reaction: 3}}; });
+    assert.deepEqual(S.rank(V, G, jobsB, resD, tiers, 5, SE).map(t => t.keys), [list[0]]);
     // 기대 점수 = 확인된 식: 진행도 0.5 → 보스 0% 깎음, 1 → 100%
     assert.equal(S.expected(V, G, 4, tiers, 0.5), V.scoreAt(G, V.extraPct(G, 4, tiers), 0));
     assert.equal(S.expected(V, G, 4, tiers, 1), V.scoreAt(G, V.extraPct(G, 4, tiers), 1));

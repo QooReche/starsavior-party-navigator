@@ -318,6 +318,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     offset = int(o.get('run_offset', 0))
     per_run = [] if o.get('per_run') else None
     prog = []   # 판마다 적 진척도(0~1): 끝낸 웨이브 수 + 현재 웨이브에서 깎은 체력 비율, 웨이브 수로 나눔. 클리어 0% 팀끼리 순위를 가르는 데 쓴다
+    via_tot = defaultdict(int)   # 아군 시전 경로별 합계(coop 등), 결과에는 판당 평균
     t0 = time.perf_counter()
     # 런 간 공유 의미 해석 캐시: 같은 def 객체의 normalized_lines 를 runs 전체에서 한 번만 계산한다.
     # 전역·모듈 캐시 없음 — _simulate 호출마다 새로 생성해 호출 간 격리를 보장한다.
@@ -340,6 +341,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
             ttk.append(b.clear_t / b.turn_ticks)
             ttk_actions.append(sum(u.actions for u in b.allies) + sum(u.actions for u in b.all_foes))
         prog.append(b.progress())
+        for k, v in getattr(b, 'ally_via', {}).items():
+            via_tot[k] += v
         if per_run is not None:
             per_run.append([b.result, round(b.clear_t / b.turn_ticks, 3) if b.result == 'clear' else None])
         tot = sum(u.dmg for u in b.allies) or 1.0
@@ -407,6 +410,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
             progress=round(sum(prog) / n, 4),
             ttk_basis='모델 기준 턴(100틱), 클리어한 판만' + ('' if turn_limit else ', 턴 제한 없음(상한 %d턴)' % max_turns)),
         per_unit=per_unit,
+        ally_via={k: round(v / n, 3) for k, v in sorted(via_tot.items())},   # outcome 밖: 결과 해시 고정 시험이 outcome 전체를 봄
         nova_burst=dict(total=sum(sum(slots.values()) for slots in nova_counts.values()),
                         uses=round(sum(sum(slots.values()) for slots in nova_counts.values()) / n, 3),
                         by_unit={nm: dict(slots) for nm, slots in nova_counts.items()}),
