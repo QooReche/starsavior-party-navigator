@@ -3232,6 +3232,10 @@ class Battle:
                     x.hp = float(math.floor(x.maxhp * int(m.group(2)) / 100.0))
                     x.gauge = 0.0
                     x.death_t = None
+                    if x.zero_stats:          # 길방 〈들러리〉(300872)는 사망 시 사라진다: 부활하면 정상 능력치·표지 없음
+                        x.zero_stats = False
+                        x.eff.pop('들러리(해제불가)', None)
+                        self.dirty(x)
                     self.log(revive=x.name)
             return
         m = RX_DISPEL.match(rest)

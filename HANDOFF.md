@@ -5,7 +5,7 @@
 ## ▶ 2026-11-01 중간 저장 — 다음에 이어서 할 일 (사용자 요청으로 푸시함)
 
 1. **기믹 박스에 «불리한 구원자» 표시(다른 콘텐츠도 길방 목록처럼)**: 조사 `AI	emp\partynavigator\work\gimmick_notes\survey.md`. 1단계(쉬움): `data/gimmick_rules.json` 의 기피 태그(연타형 MULTIHIT·버프 의존 BUFFER_DEP)로 기믹 박스 제목 아래에 «불리한 유형» 한 줄 + 접이식 구원자별 이유(근거 배지 클라/커뮤니티/추정, `gimmick_plain.json` 의 `guess` 배지 재사용). 기존 감점은 유지하고 «점수 반영됨» 배지로 구분(사용자 확인 대기였음, 권장안으로 진행하면 됨). 수정 파일: `party_template.html`(gimNote 591~613·gimPart 529), `data/gimmick_plain.json`, `build_party_html.py`, `tests/gimmick_plain_test.py`, e2e, HANDOFF. 2단계(중간): `BUFF_STRIP` 에서 〈강화 불가〉를 `BUFF_BAN` 으로 분리(`tools/build_gimmicks.py` 재추출, 골든 영향 확인). 3단계(어려움): 무적 웨이브·협공/추가타 유형은 근거 조사 먼저.
-2. **BFB 감사 남은 항목**(`...\work\guild_defenseudit_bfb.md`): 브레이크 스킬이 BFB 훅을 안 거침, 부활한 들러리 zero_stats 안 지워짐, 들러리 속도 1.0(클라 0)·방어 0 미적용·추가 턴의 게이지 무효 우회. 보스에 〈강화 불가〉일 때 BFB 보호막 처리(mc:2214 는 정정됨 — audit A5 재확인).
+2. **BFB 감사 남은 항목**(`...\work\guild_defenseudit_bfb.md`): 브레이크 스킬이 BFB 훅을 안 거침, (부활한 들러리 zero_stats·표지는 11/01 수정 완료, `test_revive_clears_maid`), 들러리 속도 1.0(클라 0)·방어 0 미적용·추가 턴의 게이지 무효 우회. 보스에 〈강화 불가〉일 때 BFB 보호막 처리(mc:2214 는 정정됨 — audit A5 재확인).
 3. **공용 엔진 불일치(미수정)**: 엔진에 «무적» 상태 없음(`TOMB_CROSS_COSMO`·`WEAPON_BLADE_COSMO` 웨이브 시작 1턴), 자폭 «즉시 피해»(mc ~3155)가 보호막·불사 무시, 클라는 강제 시전을 예약 큐에서 실행(엔진은 즉시). 상세 `...\work\common_rules
 otes_damagetype.md`.
 4. **검증 못 한 것**: 브라우저 e2e(이 PC 에 playwright 없음 — `docs/PORTING.md` 7절로 준비), 편성 찾기 끝까지 돌린 «걸러낸 팀 N개» 표시, 영상 대조(선택 효과·점수식·질투의 시선 카운트·정실 어필 시점), 저사양 PC 소요 시간. 크리스텔을 넣은 팀이 보호막 시간 초과로 0% 나오는 이유 미확인.

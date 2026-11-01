@@ -194,6 +194,24 @@ def test_appeal_deferred_to_reaction_queue():
     print('OK test_appeal_deferred_to_reaction_queue')
 
 
+def test_revive_clears_maid():
+    """부활한 들러리는 정상 능력치로 돌아온다(클라 들러리 300872 는 사망 시 사라짐)"""
+    b, _ = battle(mc={'guild_count': 'main'})
+    to_boss(b)
+    gb, allies = b.gb, b.alive(0)
+    for i in range(5):
+        gb.after_cast(allies[i % 4], allies[i % 4].d.skills['기본기'], _Ctx(), False)
+    gb.after_cast(gb.boss, gb.boss.d.skills['기본기'], _Ctx(), False)
+    maid = next(v for v in allies if v.has(G.B2))
+    assert maid.zero_stats
+    maid.dead = True
+    ctx = _Ctx()
+    b.resolve = lambda owner, tgt, c, kind=None: [maid]       # 대상 해석만 고정
+    b.run_special(allies[0], None, ctx, '자신에게 부활(생명력 50%)')
+    assert not maid.dead and not maid.zero_stats and not maid.has(G.B2)
+    print('OK test_revive_clears_maid')
+
+
 def test_simulate_runs():
     r = simulate(PARTY, {'guild': {'level': 0}}, {'seed': 1, 'n_runs': 3, 'build': 'standard', 'timeline': True})
     assert r['encounter']['content'] == 'guild' and r['encounter']['turn_limit'] == 50
@@ -227,7 +245,7 @@ class _Ctx:
 
 
 TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
-         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
+         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_revive_clears_maid, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
 
 if __name__ == '__main__':
     bad = 0
