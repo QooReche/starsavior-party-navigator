@@ -1887,12 +1887,19 @@ class Battle:
                 if rule.get('consume_all'):
                     owner.eff.pop(rule['stack'][0], None)
                     self.dirty(owner)
-                self.trigger_cast(owner, sk, target, via='trigger', skip_lines=bool(rule.get('consume_all')),
-                                  local_pre=bool(rule.get('consume_all')))
-                if rule.get('consume_all'):
-                    for ln in self.lines_of(owner):
-                        if ln.slot == sk.slot and ln.src_kind == 'trigger' and line_kind(ln) == 'own_post' and ln.eff['kind'] == 'gauge':
-                            self.run_line(owner, ln, Ctx(owner, owner, sk, True))
+
+                def fire_trigger(owner=owner, sk=sk, target=target, rule=rule):
+                    if target is not None and target.dead and ('hp' in rule or 'mark' in rule):
+                        return None
+                    c = self.trigger_cast(owner, sk, target if (target is None or not target.dead) else None, via='trigger',
+                                          skip_lines=bool(rule.get('consume_all')), local_pre=bool(rule.get('consume_all')))
+                    if rule.get('consume_all'):
+                        for ln in self.lines_of(owner):
+                            if ln.slot == sk.slot and ln.src_kind == 'trigger' and line_kind(ln) == 'own_post' and ln.eff['kind'] == 'gauge':
+                                self.run_line(owner, ln, Ctx(owner, owner, sk, True))
+                    return c
+                if not self._defer_extra(fire_trigger, key=(id(owner), sk.slot)):
+                    fire_trigger()
 
     def fire_foes(self, actor, ctx, kind):
         for b in self.alive(1 - actor.side):
@@ -2549,6 +2556,34 @@ class Battle:
         self._react_seen.add(key)
         self._react_q.append((owner, ts, target, fixed))
 
+    def _live_or_random(self, target, side):
+        """예약 때 고른 적이 실행 전에 쓰러졌으면 살아 있는 적 중 무작위(즉시 실행이면 그대로)"""
+        if target is None or not target.dead:
+            return target
+        pool = self.alive(1 - side)
+        return self.R(side).choice(pool) if pool else None
+
+    def _defer_extra(self, fn, key=None):
+        """추가 발동(엔포스·잠재력·트리거 스킬) 시전 fn 을 반응 큐에 예약(mc.enforce_timing=queue 이고 행동 안일 때). 예약했으면 True.
+        클라: BI_ENFORCE(EnforceSkillBooking)·반응형(ReactSkillBooking)은 같은 FIFO 큐에 들어가 본 행동 → 협공 → 반격 뒤 실행(DoSkill 2827~2926).
+        key 가 있으면 반응형처럼 한 행동에 유닛·칸당 1개(실행 불발이면 fn 이 None 을 돌려 다시 예약 가능)."""
+        if self.mc.get('enforce_timing', 'nested') != 'queue' or self._react_q is None:
+            return False
+        if key is not None:
+            if key in self._react_seen:
+                return True
+            self._react_seen.add(key)
+
+            def run(fn=fn, key=key):
+                ctx = fn()
+                if ctx is None:
+                    self._react_seen.discard(key)
+                return ctx
+            self._react_q.append((None, run, None, 'extra'))
+        else:
+            self._react_q.append((None, fn, None, 'extra'))
+        return True
+
     def _run_reactions(self):
         """예약된 반응 스킬을 순서대로: 실행 직전에 상태 재확인(trigger_cast), 대상이 쓰러졌거나 불발이면 예약 이력을 지워 다시 예약 가능.
         스킬마다 직후에 그 타격의 반격. 실행까지 간 예약 11개에서 멈춤(NKM 15365 ++num <= 10)."""
@@ -2561,10 +2596,15 @@ class Battle:
                 break
             owner, ts, target, fixed = self._react_q.pop(0)
             if owner is None:        # 상태 기계가 맡긴 예약 동작(길방 정실 어필·대피로연 강제 시전): 반응 큐 순서대로 실행, 직후 그 타격의 반격
-                ts()
+                done = ts()
                 if self._hit_log:
                     self.revenge(self._hit_log)
                     self._hit_log = []
+                if fixed == 'extra' and done is not None:   # 추가 발동 예약(mc.enforce_timing=queue)은 실행 상한 11개에 포함
+                    n += 1
+                    if n > 10:
+                        self.unsup['reaction: 한 행동 반응 스킬 11개 초과로 나머지 생략'] += 1
+                        break
                 continue
             ctx = None
             if target is None or not target.dead:
@@ -2986,8 +3026,11 @@ class Battle:
             if allies and enemies and self.R(owner.side).random() < eff['chance']:
                 self._fired(owner)
                 actor = self.R(owner.side).choice(allies)
-                self.cast(actor, actor.d.skills['기본기'], extra=True,
-                          target=self.R(owner.side).choice(enemies), parent=ctx, via='potential')
+                tgt = self.R(owner.side).choice(enemies)
+                fn = lambda: self.cast(actor, actor.d.skills['기본기'], extra=True,
+                                       target=self._live_or_random(tgt, owner.side), parent=ctx, via='potential')
+                if not self._defer_extra(fn):
+                    fn()
             return
         if kd == 'count_damage':
             if ctx.src is owner and ctx.skill is not None:
@@ -3165,7 +3208,10 @@ class Battle:
                         if not pool:
                             break
                         tgt = self.R(actor.side).choice(pool)
-                    self.cast(actor, sk, extra=True, target=tgt, parent=ctx)
+                    fn = (lambda actor=actor, sk=sk, tgt=tgt:
+                          self.cast(actor, sk, extra=True, target=tgt if (tgt is None or not tgt.dead) else None, parent=ctx))
+                    if not self._defer_extra(fn):
+                        fn()
             return
         if kd == 'extra_turn':
             owner.extra_turn = True
@@ -3403,7 +3449,9 @@ class Battle:
                     if not pool:
                         return
                     target = self.R(owner.side).choice(pool)
-                self.cast(owner, sk, extra=True, target=target, parent=ctx)
+                fn = lambda: self.cast(owner, sk, extra=True, target=target if (target is None or not target.dead) else None, parent=ctx)
+                if not self._defer_extra(fn):
+                    fn()
             return
         m = RX_TOUGH_HEAL.match(rest)
         if m:   # 강인도 N 회복(격파 중이면 회복하지 않음 — 격파는 다음 자기 턴에 전회복, assumed)
@@ -3451,7 +3499,9 @@ class Battle:
             else:
                 target = self.R(owner.side).choice(enemies)
             self._fired(owner)
-            self.cast(actor, sk, extra=True, target=target, parent=ctx, via='enforce')
+            fn = lambda: self.cast(actor, sk, extra=True, target=self._live_or_random(target, owner.side), parent=ctx, via='enforce')
+            if not self._defer_extra(fn):
+                fn()
             return
         self.unsup['effect: ' + rest[:60]] += 1
 

@@ -2,6 +2,15 @@
 
 갱신: 2026-10-30 — 길드방어전(브랜치 `guild-defense`, 맨 위 세 절: 중간 저장 → 2차 → 1차). 그 전: 2026-10-29 — 게임 패치(빌드 26291832) 반영. 그 전: 2026-10-24 저녁 — DC_ATTACK·스킬 순서 반영·대조 도구 보강. 그 전: 기믹 박스 병합·시뮬 시간 초과·남은 시간 표시. 이전: 2026-10-23 밤(다른 PC) 엔진 정정 4건·공개 전 화면 정리·main 병합. 새 세션은 이 파일 → `README.md`(사용자용) → `docs/DEVELOPMENT.md`(개발) 순. 과거 기록은 [docs/HISTORY.md](docs/HISTORY.md), 아래 옛 절들은 시간 역순.
 
+## ▶ 2026-11-01 심야 — 추가 발동 시점 규칙·부케 귀속·딜 분배 조사 (로컬 커밋, 푸시 전)
+
+- **`enforce_timing` 규칙 추가(기본 `nested`=옛 동작, `queue`=클라 순서)**: 클라는 추가 발동·엔포스·잠재력(via potential/enforce/extra/trigger)을 전부 예약 큐에서 늦게 실행(본 행동 → 협공 → 반격 → 예약 큐, 큐 시전마다 직후 그 반격, 11개 상한; DoSkill 2719~2928)하는데 엔진은 즉시 실행. 측정(내 정보, 200판, 28칸): 25칸 잡음 수준, 추가 발동 판당 15회 이상 편성에서만 ±10%p(프로페서M·클레어·아세라·카르멘 태양 회랑 450 클리어 83~86→93~97%, 그웬·스마일·크리스텔·힐데 코스모 힐데 3단계 95~97→80~90%). 실측 샘플 30판은 방향 가르지 못함. **기본값 전환 전 할 일**: 차이 난 두 칸 타임라인 비교, «N% 확률로 추가 발동»·`extra_cast` 줄이 클라에서 실제 엔포스인지(스마일·클레어·그웬·카넬리아), 골든·해시(mc_cache 등) 재기록, 추가 발동 많은 편성 영상. 미확인: 예약 대상이 실행 전에 죽으면 재선택하는지, 트리거 스택 소모 시점. 상세 `...\work\common_rules
+otes_enforce_queue.md`(+diff·비교 json). 시험 `tests/enforce_timing_test.py`(기본값·두 모드 실행).
+- **부케 자해 연쇄 귀속 수정**(`guild_bfb._bouquet`): 보스가 자기에게 주는 15% 연쇄 피해를 보호막 깬 아군(아모라) 딜로 세던 것을 None 으로(영상 전투 통계 합계 대조: 아모라 과대 13.2만 중 약 8.9만 설명). 보스 생명력·진행도·클리어 불변(1위 팀 93.75%·반격 편성 53.75% 동일), 통계상 딜 분배만 바뀜. 시험 `test_bouquet_chain_not_ally_damage`. 근거 `...\work\guild_defense\dmg_split.md`(분해 스크립트 `scripts\gd_dmgsplit.py`), 영상 1판 + 전제(통계에 보호막 흡수분 포함)라 확정은 아님.
+- **스칼렛 행동 횟수**(영상 약 8회·궁극기 약 4회 vs 시뮬 4.0회·1.46회): 고유 패시브 «하이 스코어!»(세븐볼) 반영 여부 조사 중/후속(`...\work\guild_defense\scarlet_highscore.md`). 스칼렛이 과소평가라면 스칼렛 포함 팀이 편성 찾기에서 실제보다 낮게 나옴.
+- **반응형 보호막**(`notes_reactive_barrier.md`): 클라 표에 켜진 항목 0개 → 엔진 불필요, 패치마다 `grep '"ReactiveBarrier" : true'` 로 감시.
+- 전체 Python·JS 시험·골든·quick·web 통과, e2e 미실행.
+
 ## ▶ 2026-11-01 밤 — BUFF_BAN 분리·무적/협공 조사·엔진 확인 (로컬 커밋, 푸시 전)
 
 - **기믹 `BUFF_BAN` 분리**(`tools/build_gimmicks.py` → `tools/pack_gimmicks.py`, `data/gimmick_rules.json`·`stage_gimmicks.json`·`gimmick_plain.json`): `BUFF_STRIP` 의 〈강화 불가〉를 새 유형으로(w2, conf 확인, 기피 `BUFFER_DEP`, 선호 `SELF_SUSTAIN`, 슬롯 자립형 폭딜·클렌즈/재부여). 영향 52곳(45곳은 이름만 바뀌고 값 동일). 기존 콘텐츠 추천 해시(`tests/fixtures/guild_existing_reco.sha`)는 기믹 이름 문구 한 줄만 바뀌어 갱신(추천 편성은 그대로, 골든 일치). 해제와 강화 불가가 둘 다 붙는 7곳(코스모 데모라이기스 1~3·로자리아 1~3단계·큐브 레지스터)은 같은 보스 스킬 출처라 점수·상위 목록에 한 번만 세도록 처리함(`party_contents.json gimmick.sameSource`, `party_reco.stage_gimmicks`·`gimTop`, BUFF_BAN 을 남김, 기믹 박스 줄은 둘 다 표시). 시험 `gimmick_plain_test.py`, Python·JS 결과 일치 확인.

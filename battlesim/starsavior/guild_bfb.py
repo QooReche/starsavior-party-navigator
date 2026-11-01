@@ -502,7 +502,7 @@ class Controller:
         b.set_gauge(boss, boss.gauge - bq['selfGaugeDown'])
         self.shield_hits = 0
         self._drop(boss, B9)
-        self._chain(boss, boss, bq['selfChainHp'] / 10000, a)
+        self._chain(boss, boss, bq['selfChainHp'] / 10000, None)     # 보스가 자기에게 주는 연쇄: 아군 딜로 세지 않음(영상 전투 통계 합계 대조, work/guild_defense/dmg_split.md)
 
     def _chain(self, owner, v, coef, credit):
         """연쇄 피해: mc.Battle.chain 과 같은 식(시전자 최대 생명력 x 계수 x 피해 증가 x 1.85 x 방어 감소 x 난수 x 전투력 보정)"""

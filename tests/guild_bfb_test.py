@@ -308,6 +308,18 @@ def test_maid_extra_turn_not_blocked():
     print('OK test_maid_extra_turn_not_blocked')
 
 
+def test_bouquet_chain_not_ally_damage():
+    """부케 자해 연쇄(보스 최대 생명력 15%)는 보호막을 깬 아군의 딜로 세지 않는다(보스 생명력은 그대로 깎임)"""
+    b, _ = battle(mc={'guild_count': 'main'})
+    boss = to_boss(b)
+    gb, allies = b.gb, b.alive(0)
+    a = allies[0]
+    d0, hp0 = a.dmg, boss.hp
+    gb._bouquet(a)
+    assert a.dmg == d0 and boss.hp < hp0, (a.dmg, d0, boss.hp, hp0)
+    print('OK test_bouquet_chain_not_ally_damage')
+
+
 def test_simulate_runs():
     r = simulate(PARTY, {'guild': {'level': 0}}, {'seed': 1, 'n_runs': 3, 'build': 'standard', 'timeline': True})
     assert r['encounter']['content'] == 'guild' and r['encounter']['turn_limit'] == 50
@@ -341,7 +353,7 @@ class _Ctx:
 
 
 TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
-         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_break_skill_breaks_barrier, test_break_skill_not_counted, test_maid_extra_turn_not_blocked, test_revive_clears_maid, test_maid_speed_def_zero, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
+         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_bouquet_chain_not_ally_damage, test_break_skill_breaks_barrier, test_break_skill_not_counted, test_maid_extra_turn_not_blocked, test_revive_clears_maid, test_maid_speed_def_zero, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
 
 if __name__ == '__main__':
     bad = 0
