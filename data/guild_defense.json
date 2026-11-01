@@ -129,7 +129,7 @@
   ]
  },
  "search": {
-  "_note": "내 정보로 최고 점수 편성 찾기(guild_search.js). 시즌이 바뀌어 보스·규칙이 달라지면 이 값과 battlesim/starsavior/guild_bfb.py 를 같이 검토한다. 협공 금지 같은 커뮤니티 주장은 구원자 태그가 없어 아직 거르지 않음",
+  "_note": "내 정보로 최고 점수 편성 찾기(guild_search.js). 시즌이 바뀌어 보스·규칙이 달라지면 이 값과 battlesim/starsavior/guild_bfb.py 를 같이 검토한다. 협공 구원자는 excludeText 로 스킬 문구를 보고 뺀다(장비로 붙는 협공은 못 봄)",
   "poolSize": 40,
   "minPowerRatio": 0.8,
   "minRole": {"서포터": 6, "디펜더": 3},
@@ -139,7 +139,10 @@
   "screen2": {"keep": 400, "runs": 10},
   "finalists": 12,
   "final": {"runs": 40, "levels": [2, 4, 6, 8, 10, 12], "supports": ["fire", "gust", "focus", "strike", "mountain"]},
-  "supportRole": {"gust": "서포터", "focus": "캐스터", "strike": "스트라이커"}
+  "supportRole": {"gust": "서포터", "focus": "캐스터", "strike": "스트라이커"},
+  "excludeText": ["협공"],
+  "excludeKeys": ["gwen"],
+  "excludeWhy": "길방 EX는 협공 구원자 금지(아카라이브 글 187421752 등, 중간 신뢰). 스킬 문구에 excludeText 단어가 있거나 excludeKeys 에 적힌 구원자(아군 타격에 맞춰 같이 공격하는 그웬 등, 사용자 지정)를 탐색에서 뺀다. 세레스는 같은 «추가 발동» 문구 형태지만 커뮤니티가 필수로 쓰므로 뺀 것이 아님. 시즌이 바뀌어 규칙이 달라지면 비우기"
  },
  "howToUpdate": [
   "시즌 id 가 바뀌면 season(id·label·name·start·end·settleEnd)과 asOf 를 고친다. 날짜는 공식 공지 기준",

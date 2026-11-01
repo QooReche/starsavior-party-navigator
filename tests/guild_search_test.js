@@ -34,6 +34,10 @@ const tests = {
     // 전투력 하한: 최고의 0.985배 이상만(= d0,d1) + 역할 보충
     const r3 = S.pool({poolSize: 99, minPowerRatio: 0.985, minRole: {'서포터': 1}}, results, roster).map(r => r.key);
     assert(r3.includes('d0') && r3.includes('d1') && !r3.includes('d5') && r3.includes('s0'), r3.join());
+    // 협공 구원자 제외(S.excluded), 끄면(banCoop=false) 포함
+    const ex = S.pool({poolSize: 99, excluded: ['d0', 's1']}, results, roster).map(r => r.key);
+    assert(!ex.includes('d0') && !ex.includes('s1') && ex.includes('d1'));
+    assert(S.pool({poolSize: 99, excluded: ['d0'], banCoop: false}, results, roster).map(r => r.key).includes('d0'));
     // 능력치 없는 구원자(미보유)는 뺀다
     const r2 = S.pool({poolSize: 99}, {d0: results.d0}, roster);
     assert.deepEqual(r2.map(r => r.key), ['d0']);
@@ -132,6 +136,10 @@ const tests = {
     assert(h.includes('59,500') && h.includes('불의 고동') && h.includes('이름-a') && h.includes('93%') && !h.includes('gd-search-stale'));
     assert(S.html({phase: 'done', rows, sig: '2222', pool: 14, combos: 9, finalists: 1, runs: 1}, cx).includes('gd-search-stale'), '선택 효과가 바뀌면 낡은 결과 표시');
     assert(h.includes('추정') && h.includes('새 시즌'), '추정·시즌 경고');
+    const hc = S.html({phase: 'idle'}, {...cx, excluded: ['d0']});
+    assert(hc.includes('data-gs="coop"') && /data-gs="coop" checked/.test(hc) && hc.includes('이름-d0'), '협공 제외 체크(기본 켬)');
+    assert(!/data-gs="coop" checked/.test(S.html({phase: 'idle', banCoop: false}, {...cx, excluded: ['d0']})), '끄면 체크 해제');
+    assert(!S.html({phase: 'idle'}, cx).includes('data-gs="coop"'), '제외 대상 없으면 체크 없음');
   },
 };
 (async () => {

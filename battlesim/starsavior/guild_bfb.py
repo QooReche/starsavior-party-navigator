@@ -13,7 +13,7 @@
   보호막을 깬 뒤 맞으면(55148) -> 상태 해제·아군 부케(공격 +30% 2턴)·아군 게이지 +100%·보스 게이지 -100%·보스 자신에게 최대 생명력 15% 연쇄 피해.
 - 신부의 응징(55521): 보호막 중 들러리에게 맞으면 들러리 전원에게 보스 생명력 30% 연쇄 피해.
 - 별의 도전(보스에게만): 스킬 후 피해 증가 중첩, 피격 후 타격자 최대 생명력 감소 중첩, 속도 증가, 시작 면역(약화 면역), 능력치 배율.
-가정(추정): 「스킬 사용」은 본 행동만 셈(협공·추가 발동 제외), 연쇄 피해 = 엔진 chain 공식(최대 생명력 x 계수 x 1.85 x 방어 감소),
+가정(추정): 「스킬 사용」은 본 행동만 셈(협공·추가 발동 제외 — guild_count=all 이면 포함, 클라 코드 근거), 연쇄 피해 = 엔진 chain 공식(최대 생명력 x 계수 x 1.85 x 방어 감소),
 능력치 배율 = 1 + 표값/10000 을 배치 AddStat 보정 뒤에 곱함, 선택 효과 «쇠락»은 단계 효과와 별도 중첩."""
 import copy
 import json
@@ -327,7 +327,10 @@ class Controller:
         if boss is None or boss.dead:
             return
         if u.side == 0:
-            if not extra and ctx.via is None and not self.anim:
+            # 질투의 시선(58801 AfterEnemyAction): 클라 코드상 시전이 끝날 때마다 발행되고 협공·반격·반응·엔포스(추가 발동)도 같은 경로라
+            # 시전 종류를 가리지 않는다(DoSkill.cs:3025·3695, 조건에 IsNotEnforceSkill 없음 — work/guild_defense/coop_analysis.md).
+            # guild_count=main 이면 옛 가정(본 행동만) 재현
+            if not self.anim and (not extra and ctx.via is None or self.b.guild_count == 'all'):
                 self._compete()
             if sk.is_attack and self.anim and not self.barrier():
                 self._restore()                     # 37201

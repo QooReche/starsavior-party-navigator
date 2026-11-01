@@ -702,6 +702,9 @@ class Battle:
             self.gb = Controller(self)
         elif self.mc['guild_boss'] not in ('on', 'off'):
             raise ValueError('guild_boss 는 on|off')
+        self.guild_count = self.mc['guild_count']      # BFB 질투의 시선이 세는 시전: all(협공·추가 발동 포함, 클라 코드) | main(본 행동만, 옛 가정)
+        if self.guild_count not in ('all', 'main'):
+            raise ValueError('guild_count 는 all|main')
 
     # ---------- 공용
     def tick(self):

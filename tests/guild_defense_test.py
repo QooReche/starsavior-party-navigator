@@ -200,6 +200,16 @@ def test_built_page_is_current():
     assert '<script src="guild_view.js"></script>' in built
 
 
+def test_search_excluded():
+    """편성 찾기 제외 목록: 스킬 문구 «협공» 구원자 + 직접 지정(그웬). 키는 모두 실제 구원자여야 하고 화면 자료에 실린다."""
+    from battlesim.starsavior.data import get_db
+    ex = gd.excluded_units(G["search"]["excludeText"], G["search"]["excludeKeys"])
+    assert {"professor-m", "waltz-asherah", "gwen"} <= set(ex), ex
+    assert set(ex) <= set(get_db().units), "없는 구원자 키"
+    assert gd.page_payload(G)["search"]["excluded"] == ex
+    assert gd.excluded_units([], []) == []
+
+
 if __name__ == "__main__":
     n = 0
     for name, fn in sorted(globals().items()):

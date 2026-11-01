@@ -315,7 +315,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'debuff_instance_count', 'effect_dur_extend', 'enemy_auto_target', 'enemy_cd_native',
     'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
     'enemy_leader', 'enemy_same_formula', 'enemy_spawn', 'evade_model',
-    'foe_auto', 'foe_react', 'foe_react_timing', 'gauge_conditional', 'guild_boss', 'gauge_overflow', 'guard_mode', 'guard_normal_hit',
+    'foe_auto', 'foe_react', 'foe_react_timing', 'gauge_conditional', 'guild_boss', 'guild_count', 'gauge_overflow', 'guard_mode', 'guard_normal_hit',
     'heal_target', 'instant_damage', 'leader_speed', 'local_vs_element', 'manual_burst',
     'max_depth', 'max_events', 'myinfo_combat',
     'nova_force_effects', 'nova_skill_gain', 'nova_slot_effects',

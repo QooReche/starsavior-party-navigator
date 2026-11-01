@@ -196,16 +196,30 @@ def validate(g, grules=None):
 
 def page_payload(g):
     """화면에 실을 자료(출처 이름은 화면용으로 풀어 둠). 내부 표 이름·코드는 싣지 않는다."""
-    keep = {k: g[k] for k in ("asOf", "season", "rules", "steps", "stepsMeta", "exBoss", "challenge", "sets", "score", "community", "search")}
+    keep = {k: g[k] for k in ("asOf", "season", "rules", "steps", "stepsMeta", "exBoss", "challenge", "sets", "score", "community")}
     keep["title"] = content_title(g)
     keep["tab"] = range_label(g)
     keep["bestSet"] = list(best_selection(g)[1])
     keep["baseTotal"] = base_total(g)
     keep["sources"] = {k: {"name": v["name"], "url": v["url"]} for k, v in g["sources"].items() if k != "client"}
+    keep["search"] = dict(g["search"], excluded=excluded_units(g["search"].get("excludeText") or [], g["search"].get("excludeKeys") or []))
     sim = sim_payload(g)
     if sim:
         keep["sim"] = sim
     return keep
+
+
+def excluded_units(words, keys=()):
+    """탐색에서 뺄 구원자 키: 스킬 문구(스킬·패시브 설명)에 words 중 하나라도 들어 있거나 keys 에 직접 적힌 구원자. 장비로 붙는 효과는 못 본다."""
+    out = list(keys)
+    if not words:
+        return sorted(set(out))
+    from battlesim.starsavior.data import get_db
+    for k, u in get_db().units.items():
+        txt = json.dumps(u.get("sk"), ensure_ascii=False)
+        if any(w in txt for w in words):
+            out.append(k)
+    return sorted(set(out))
 
 
 SIM_PATH = os.path.join(HERE, "data", "guild_sim.json")

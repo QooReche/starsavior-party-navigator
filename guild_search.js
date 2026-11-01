@@ -7,7 +7,8 @@
 
   // 후보 풀: 내 최종 전투력이 최고의 minPowerRatio 배 이상인 구원자(최대 poolSize 명) + 역할별 최소 인원(minRole: 서포터·디펜더는 전투력이 낮아도 역할 때문에 쓰이므로 따로 보충). rows = [{key, cls, power}]
   function pool(S, results, roster) {
-    const rows = roster.filter(s => results[s.key] && results[s.key].power > 0).map(s => ({key: s.key, cls: s.cls, power: results[s.key].power}));
+    const ban = new Set(S.banCoop === false ? [] : (S.excluded || []));
+    const rows = roster.filter(s => results[s.key] && results[s.key].power > 0 && !ban.has(s.key)).map(s => ({key: s.key, cls: s.cls, power: results[s.key].power}));
     rows.sort((a, b) => b.power - a.power || (a.key < b.key ? -1 : 1));
     const floor = rows.length ? rows[0].power * (S.minPowerRatio || 0) : 0;
     const keep = new Set(rows.filter(r => r.power >= floor).slice(0, S.poolSize).map(r => r.key));
@@ -123,15 +124,17 @@
     const head = '<b>내 정보로 최고 점수 편성 찾기</b> <span class="gd-est" title="시뮬 기반 추정입니다">추정</span>';
     if (!cx.hasInfo) return `<div class="gd-search" data-k="gd-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자를 불러오세요. 불러온 구원자 중에서 기대 점수가 가장 큰 4인 편성을 찾습니다.</div></div>`;
     const btn = (label) => `<button type="button" data-gs="start">${label}</button>`;
+    const ex = cx.excluded || [];
+    const coop = ex.length ? `<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 길방 EX는 협공 금지라는 글이 많음(스킬 문구 기준, 장비로 붙는 협공은 못 봄)</span></label>` : "";
     let body;
     if (st.phase === "run") body = `<div data-k="gd-search-progress">${esc(st.msg || "")}${st.total ? ` · ${st.done}/${st.total}` : ""} <button type="button" class="sec" data-gs="cancel">취소</button></div>`;
     else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">찾지 못했습니다: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;
     else if (st.phase === "done") {
       const stale = st.sig !== cx.sig ? '<div class="gd-warn" data-k="gd-search-stale">위에서 고른 선택 효과가 바뀌었습니다. 아래 결과는 이전 선택 기준이니 다시 찾아 주세요.</div>' : "";
       const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))).join("<br>")}</td><td>${r.level}단계</td><td>${esc(SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td></tr>`).join("");
-      body = `${stale}<div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>별의 도전</th><th>알리시아 지원</th><th>기대 점수</th><th>클리어</th><th>보스 깎음</th></tr></thead><tbody>${rows || '<tr><td colspan="7">결과 없음</td></tr>'}</tbody></table></div>
+      body = `${stale}${coop}<div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>별의 도전</th><th>알리시아 지원</th><th>기대 점수</th><th>클리어</th><th>보스 깎음</th></tr></thead><tbody>${rows || '<tr><td colspan="7">결과 없음</td></tr>'}</tbody></table></div>
 <div class="mut gd-small">후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값입니다(표본이 작아 한두 단계·수천 점은 오차). 위에서 고른 선택 효과 기준이고, 기대 점수 = 보스를 깎은 평균 비율을 확인된 점수식에 넣은 값.</div>${btn("다시 찾기")}`;
-    } else body = btn("최고 점수 편성 찾기") + '<span class="mut gd-small"> 몇 분 걸릴 수 있어요. 탭을 연 채로 기다려 주세요.</span>';
+    } else body = coop + "<br>" + btn("최고 점수 편성 찾기") + '<span class="mut gd-small"> 몇 분 걸릴 수 있어요. 탭을 연 채로 기다려 주세요.</span>';
     return `<div class="gd-search" data-k="gd-search">${head}${body}${warn}</div>`;
   }
 

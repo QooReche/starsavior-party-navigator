@@ -70,8 +70,29 @@ def test_switch_off_no_controller():
     assert a == c, (a, c)
 
 
+def test_count_all_casts():
+    """질투의 시선(58801)은 시전 종류를 가리지 않는다(클라 DoSkill.cs:3025·3695): guild_count=all(기본)이면 협공·반격·추가 발동도 카운트, main 이면 본 행동만"""
+    for mode, extra_counts in (('all', True), ('main', False)):
+        b, _ = battle(mc={'guild_count': mode})
+        to_boss(b)
+        gb, a = b.gb, b.alive(0)[0]
+        gb.after_cast(a, a.d.skills['기본기'], _Ctx(), False)
+        assert gb.count == 1, mode
+        for via in ('coop', 'forced_coop', 'revenge', 'trigger', 'reaction'):
+            c = _Ctx(); c.via = via
+            gb.after_cast(a, a.d.skills['기본기'], c, True)
+        assert gb.count == (6 if extra_counts else 1), (mode, gb.count)
+    try:
+        battle(mc={'guild_count': 'x'})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError('잘못된 guild_count 통과')
+    print('OK test_count_all_casts')
+
+
 def test_compete_and_appeal():
-    b, _ = battle()
+    b, _ = battle(mc={'guild_count': 'main'})     # 옛 가정(본 행동만 셈)으로 고정 — all 은 test_count_all_casts
     boss = to_boss(b)
     gb = b.gb
     allies = b.alive(0)
@@ -80,7 +101,7 @@ def test_compete_and_appeal():
     holder = [v for v in allies if v.has(G.B1)]
     assert len(holder) == 1 and holder[0].stack(G.B1) == 5 and gb.count == 5
     assert b.live_atk(holder[0]) == max(b.live_atk(v) for v in allies)
-    # 협공·추가 발동(extra)은 세지 않음(추정 규칙)
+    # main 모드: 협공·추가 발동(extra)은 세지 않음
     gb.after_cast(allies[0], allies[0].d.skills['기본기'], _Ctx(), True)
     assert gb.count == 5
     gb.after_cast(boss, boss.d.skills['기본기'], _Ctx(), False)       # 보스 공격 후 52093
@@ -176,7 +197,7 @@ class _Ctx:
     kill = False
 
 
-TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
+TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
          test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_data_matches_tables]
 
 if __name__ == '__main__':
