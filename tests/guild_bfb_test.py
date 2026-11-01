@@ -212,6 +212,24 @@ def test_revive_clears_maid():
     print('OK test_revive_clears_maid')
 
 
+def test_break_skill_breaks_barrier():
+    """브레이크 스킬이 보호막을 깨면 부케(55148)가 나와 들러리·신부 경쟁이 풀린다. 보호막이 없었으면 아무 일 없음"""
+    b, _ = battle(mc={'guild_count': 'main'})
+    boss = to_boss(b)
+    gb, allies = b.gb, b.alive(0)
+    for i in range(5):
+        gb.after_cast(allies[i % 4], allies[i % 4].d.skills['기본기'], _Ctx(), False)
+    gb.after_cast(boss, boss.d.skills['기본기'], _Ctx(), False)
+    assert gb.anim and gb.barrier() and any(v.has(G.B2) for v in allies)
+    gb.after_break_skill(False)                                   # 보호막이 원래 없었다고 알린 경우: 변화 없음
+    assert gb.barrier()
+    boss.eff[G.B8].shield = 0.0                                   # 브레이크 스킬 피해로 보호막이 사라진 상태
+    n = gb.stats['shield_break']
+    gb.after_break_skill(True)
+    assert gb.stats['shield_break'] == n + 1 and not any(v.has(G.B2) for v in allies) and not any(v.has(G.B1) for v in allies)
+    print('OK test_break_skill_breaks_barrier')
+
+
 def test_simulate_runs():
     r = simulate(PARTY, {'guild': {'level': 0}}, {'seed': 1, 'n_runs': 3, 'build': 'standard', 'timeline': True})
     assert r['encounter']['content'] == 'guild' and r['encounter']['turn_limit'] == 50
@@ -245,7 +263,7 @@ class _Ctx:
 
 
 TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
-         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_revive_clears_maid, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
+         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_break_skill_breaks_barrier, test_revive_clears_maid, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
 
 if __name__ == '__main__':
     bad = 0

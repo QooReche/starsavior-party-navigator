@@ -1129,12 +1129,15 @@ class Battle:
             base = sum(self.live_atk(u) for u in self.alive(0)) * (rule['damage_ratio'] + dmg_up) / _rules.AOE_DIV
             if self.mc['break_skill_scale'] == 'game':
                 base *= _rules.BASE_MULT   # 오비탈 피해도 일반 피해식 끝의 DamageScale(1.85)을 곱함(NKM 17742~17817, 오비탈 시전자 OBF_26964)
+            had_barrier = self.gb is not None and self.gb.barrier()
             for v in list(self.alive(1)):
                 before = v.taken
                 self.apply_damage(None, v, self._break_dmg(v, base), 'bskill')
                 dmg = v.taken - before
                 self.break_skill_dmg += dmg
                 self.log(bskill_damage=self.break_skill_name, to=v.name, amount=dmg)
+            if self.gb is not None:
+                self.gb.after_break_skill(had_barrier)      # 길방: 브레이크 스킬이 보호막을 깨면 부케(55148)
         nova = rule.get('nova', 0)
         if self.opts['nova_pool'] == 'team':
             self.team_nova += nova

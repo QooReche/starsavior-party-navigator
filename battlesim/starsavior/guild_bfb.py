@@ -479,6 +479,17 @@ class Controller:
                 self._drop(boss, B8)
             self._bouquet(a)                        # 55148 (표에 타격자·신부 경쟁 조건 없음)
 
+    def after_break_skill(self, had_barrier):
+        """브레이크 스킬(오비탈) 피해 뒤: 클라는 같은 시전 경로(DoSkill:2974)라 보호막이 깨지면 부케(55148)가 나온다.
+        피해는 apply_damage 직접 호출이라 pre_hit/post_hit 을 안 거치므로 보호막 파괴 판정만 여기서 한다(드레인·쇠락은 캐스터가 없어 생략)"""
+        boss = self.boss
+        if boss is None or boss.dead or not (had_barrier and self.anim and not self.barrier()):
+            return
+        self._drop(boss, TOUGH_BAN)
+        if boss.eff.get(B8) is not None:
+            self._drop(boss, B8)
+        self._bouquet(None)
+
     def _bouquet(self, a):
         b, boss, bq = self.b, self.boss, self.cfg['data']['bouquet']
         self.stats['shield_break'] += 1
