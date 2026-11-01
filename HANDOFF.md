@@ -2,6 +2,13 @@
 
 갱신: 2026-10-30 — 길드방어전(브랜치 `guild-defense`, 맨 위 세 절: 중간 저장 → 2차 → 1차). 그 전: 2026-10-29 — 게임 패치(빌드 26291832) 반영. 그 전: 2026-10-24 저녁 — DC_ATTACK·스킬 순서 반영·대조 도구 보강. 그 전: 기믹 박스 병합·시뮬 시간 초과·남은 시간 표시. 이전: 2026-10-23 밤(다른 PC) 엔진 정정 4건·공개 전 화면 정리·main 병합. 새 세션은 이 파일 → `README.md`(사용자용) → `docs/DEVELOPMENT.md`(개발) 순. 과거 기록은 [docs/HISTORY.md](docs/HISTORY.md), 아래 옛 절들은 시간 역순.
 
+## ▶ 2026-11-01 저녁 — 기믹 박스 «불리한 구원자»(1단계)·엔진 불일치 수정 (로컬 커밋, 푸시 전)
+
+- **기믹 박스 «이 스테이지에서 불리한 구원자»**(`party_template.html gimAvoid`, `data/gimmick_plain.json avoid`): 현재 편성 구원자 태그(gt) 중 스테이지 기믹의 기피 태그(MULTIHIT·BUFFER_DEP 등 7종)와 겹치는 구원자를 접이식(기본 닫힘)으로 나열, 이유 문구·«추정»(conf 추정)·«점수에 반영됨»(GIMACT 기믹) 배지. 점수 코드·골든 불변. 실제 페이지 확인(코스모 게이트 로자리아 3단계 → 클레어 1명, 버프 의존형). 시험 `tests/gim_avoid_test.js`, `gimmick_plain_test.py`. 한계: 구원자 태그가 거칠어 넓게 걸릴 수 있음, e2e 항목 없음. 다음 2단계: `BUFF_STRIP` 에서 〈강화 불가〉를 `BUFF_BAN` 으로 분리(`tools/build_gimmicks.py`), 3단계: 무적 웨이브·협공/추가타 유형(근거 조사 먼저).
+- **엔진(Opus)**: ① 자폭 «즉시 피해»가 `apply_damage(kind='instant')` 를 거침(무적→무효화→보호막→불사, 규칙 `instant_damage` 값 `damage` 기본 / `self_kill` 옛 동작 / `off`). 영향 스테이지 7곳 전후 동일. ② 무적 상태 추가(`INVINCIBLE_NAMES`, `Unit.invincible()`, `apply_damage` 앞단 차단) — 그러나 엔진 적 자료에 «무적»/«생멸의 씨앗» 줄이 없어 **아직 적용 대상 없음**. 정정: `BI_TOMB_CROSS_COSMO_1` 은 1턴이 아니라 `TurnInfinite` + 속도 0 고정 + 강인도 피해 무효까지 있는 복합 기믹(응집된 생기 5중첩·영양 과잉), 해제 조건 미확인 → 코스모 기록자·처단자 연결은 후속. ③ 길방 들러리 속도 0(클라 FixStats)·방어 항 0, `pick_next` 속도 0 은 무한대 처리. 추가 턴의 게이지 무효 우회는 클라 처리 미확인으로 보류. 길방 전후(단계 6·불의 고동 80판) 어필·응징·클리어 동일, 골든 불변.
+- **브레이크 스킬 부케**(`53182cd`): 브레이크 스킬이 보호막을 깨면 부케(55148). 카운트 58801 은 미반영.
+- 전체 Python·JS 시험·골든·quick·web 통과, e2e 미실행(playwright 없음).
+
 ## ▶ 2026-11-01 중간 저장 — 다음에 이어서 할 일 (사용자 요청으로 푸시함)
 
 1. **기믹 박스에 «불리한 구원자» 표시(다른 콘텐츠도 길방 목록처럼)**: 조사 `AI	emp\partynavigator\work\gimmick_notes\survey.md`. 1단계(쉬움): `data/gimmick_rules.json` 의 기피 태그(연타형 MULTIHIT·버프 의존 BUFFER_DEP)로 기믹 박스 제목 아래에 «불리한 유형» 한 줄 + 접이식 구원자별 이유(근거 배지 클라/커뮤니티/추정, `gimmick_plain.json` 의 `guess` 배지 재사용). 기존 감점은 유지하고 «점수 반영됨» 배지로 구분(사용자 확인 대기였음, 권장안으로 진행하면 됨). 수정 파일: `party_template.html`(gimNote 591~613·gimPart 529), `data/gimmick_plain.json`, `build_party_html.py`, `tests/gimmick_plain_test.py`, e2e, HANDOFF. 2단계(중간): `BUFF_STRIP` 에서 〈강화 불가〉를 `BUFF_BAN` 으로 분리(`tools/build_gimmicks.py` 재추출, 골든 영향 확인). 3단계(어려움): 무적 웨이브·협공/추가타 유형은 근거 조사 먼저.

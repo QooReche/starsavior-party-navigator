@@ -44,6 +44,54 @@ class EnemyEffectsTest(unittest.TestCase):
         self.assertTrue(watch.dead)
         self.assertFalse(mob.dead)
 
+    def test_instant_damage_blocked(self):
+        """damage(기본) = 클라 DAMAGE_INSTANT: 무적·스킬 피해 무효·보호막·불사를 거침 / self_kill 은 무시하고 사망"""
+        from p3_test import give
+        for name, props, alive in (('무적', {}, True), ('스킬 피해 무효', {}, True), ('불사', {}, True)):
+            b, watch, mob = self.setup()
+            give(watch, name, props)
+            self.fire_line(b, watch, BOMB)
+            self.assertEqual(not watch.dead, alive, name)
+            if name == '스킬 피해 무효':
+                self.assertNotIn(name, watch.eff)       # 1회 소모
+            if name == '불사':
+                self.assertEqual(watch.hp, 1.0)
+            b, watch, mob = self.setup(mc=dict(instant_damage='self_kill'))
+            give(watch, name, props)
+            self.fire_line(b, watch, BOMB)
+            self.assertTrue(watch.dead, name + ' (self_kill)')
+        # 보호막: 생명력 10배 + 공격력 넘게 막으면 생존, 모자라면 사망
+        b, watch, mob = self.setup()
+        give(watch, '보호막').shield = 10 ** 8
+        self.fire_line(b, watch, BOMB)
+        self.assertFalse(watch.dead)
+        self.assertEqual(watch.hp, 10 ** 6)
+        b, watch, mob = self.setup()
+        give(watch, '보호막').shield = 10 ** 6
+        self.fire_line(b, watch, BOMB)
+        self.assertTrue(watch.dead)
+        self.assertEqual(watch.dmg, 0.0)                # 자기 피해는 적 피해 집계에서 뺌
+
+    def test_invincible_blocks_all(self):
+        """〈무적〉: 일반 타격·지속 피해·연쇄 피해 모두 0, 무효화보다 먼저(무효화 소모 안 됨)"""
+        from p3_test import give
+        b, watch, mob = self.setup()
+        give(watch, '무적')
+        for kind, sh in (('hit', True), ('dot', False), ('chain', True), ('bskill', True)):
+            self.assertFalse(b.apply_damage(b.allies[0], watch, 10 ** 9, kind, shieldable=sh))
+        self.assertEqual(watch.hp, 10 ** 6)
+        give(watch, '스킬 피해 무효')
+        a = b.allies[0]
+        ctx = Ctx(a, a, a.d.skills['기본기'])
+        ctx.targets = [watch]
+        b.deal(a, ctx)
+        self.assertEqual(watch.hp, 10 ** 6)
+        self.assertIn('스킬 피해 무효', watch.eff)
+        del watch.eff['무적']
+        watch._m = None
+        b.deal(a, ctx)
+        self.assertNotIn('스킬 피해 무효', watch.eff)
+
     def test_instant_damage_off_legacy(self):
         b, watch, mob = self.setup(mc=dict(instant_damage='off'))
         self.fire_line(b, watch, BOMB)

@@ -240,6 +240,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 .gimwho .face{width:20px;height:20px;border-width:1px;font-size:11px}
 .guess{margin-left:4px;padding:0 5px;border:1px dashed var(--mut);border-radius:8px;font-size:10px;color:var(--mut)}.nobody{color:var(--bad)}.nobody::before{content:"✗ "}
 .gimq{display:inline-block;margin-left:4px;width:15px;height:15px;line-height:15px;text-align:center;border:1px solid var(--mut);border-radius:50%;font-size:10px;font-weight:700;color:var(--mut);cursor:help;vertical-align:middle}
+.gimavoid{margin-top:10px;padding:8px 10px;border:1px solid var(--line);border-left:3px solid var(--bad);border-radius:8px;background:var(--bg);font-size:12px;overflow-wrap:anywhere}.gimavoid>summary{font-weight:600}.gimavoid ul{margin:6px 0;padding-left:18px}.gimavoid li{margin:4px 0}.avoidwhy{margin:2px 0 0 4px;color:var(--mut)}.guess.scored{border-style:solid;color:var(--fg)}
 .gimbox.has-miss{border-left-color:var(--bad)}.gimbox>summary{font-weight:600}
 .bbar{gap:8px;padding:7px 10px;margin-top:8px;border-width:1px;border-radius:8px;flex-direction:row;text-align:left}
 .bbar img,.bbar .bicon{width:40px;height:40px;flex:none;border-width:1px;box-shadow:none}.bicon{display:grid;place-items:center;font-size:28px}
@@ -587,6 +588,16 @@ const GFIX={
  DEBUFF_GATED_POWER:"디버퍼 필요",SELF_CLEANSE:"디버퍼 비추천",BUFF_STATE_PUNISH:"버퍼 의존 비추천",
  REACTIVE_TO_ATTACK_KIND:"대응 미확인",ELEMENT_RESIST:"대응 미확인",ELEMENT_BIAS_ATTACK:"대응 미확인",NONATTACK_PUNISH:"대응 미확인"
 };
+// 이 스테이지 기믹의 기피 태그(avoid)를 가진 편성 구원자. 점수 감점(gimPart)과 같은 규칙을 화면에 보여 줄 뿐 점수는 바꾸지 않는다.
+function gimAvoid(party,types,p){
+ const PL=(D.plain||{}).avoid||{},GP=(D.plain||{}).gimmicks||{},act=new Set(GIMACT.map(x=>x[0]));
+ const per=party.map(x=>{const tg=new Set(x.s.gt||[]),why=[];
+  for(const [code] of types){const t=D.grules[code];for(const tag of (t.avoid||[]))if(tg.has(tag)&&PL[tag])why.push({code,tag,t,scored:act.has(code)})}
+  return {x,why}}).filter(r=>r.why.length);
+ if(!per.length)return "";
+ const kinds=[...new Set(per.flatMap(r=>r.why.map(w=>PL[w.tag].name)))];
+ const li=r=>`<li data-savior="${esc(r.x.s.key)}"><span class="gimwho">${face(r.x.s)}${esc(r.x.s.name)}</span> <span class="mut">${esc(r.x.s.cls||"")}</span>${r.why.map(w=>`<div class="avoidwhy"><b>${esc(GP[w.code]?.name||w.t.name)}</b>: ${esc(PL[w.tag].name)} — ${esc(PL[w.tag].why)}${w.t.conf==="추정"?`<span class="guess">추정</span>`:""}${w.scored?`<span class="guess scored">점수에 반영됨</span>`:""}</div>`).join("")}</li>`;
+ return `<details class="gimavoid" data-fold="gimavoid-${p}"><summary>이 스테이지에서 불리한 구원자 ${per.length}명 <span class="mut">(${kinds.map(esc).join("·")})</span></summary><ul>${per.map(li).join("")}</ul><div class="mut">스테이지 특징과 구원자 성향이 맞지 않는 경우입니다. «추정»은 스킬 문구로 영향을 짐작한 항목이라 실제와 다를 수 있고, «점수에 반영됨»은 추천 점수에 이미 감점이 들어갔다는 뜻입니다.</div></details>`}
 function gimNote(party,c,st,p){
  // 점수용 gimTop/gimTeam은 그대로 두고 표시에는 전체 유형을 심각도 순으로 쓴다.
  const types=Object.entries(D.gim[c.key+"|"+st.tab+"|"+st.name]||{}).filter(([code])=>D.grules[code]).sort((a,b)=>b[1]-a[1]||(D.grules[b[0]]?.w||0)-(D.grules[a[0]]?.w||0));
@@ -611,7 +622,7 @@ function gimNote(party,c,st,p){
  const chips=missing.map(row=>`<span class="tag">${esc(PL.gimmicks?.[row.match(/data-code="(\w+)"/)?.[1]]?.name||"특징")}: 대처할 구원자 없음</span>`).join("");
  const title=!rows.length?"이 스테이지의 특징 정보 없음":missing.length?`이 스테이지의 특징 ${rows.length}개 중 ${missing.length}개는 우리 팀이 대처하기 어려움`:`이 스테이지의 특징 ${rows.length}개 모두 대처할 구원자 있음`;
  const hint=rows.length?`<p class="gimhint">윗줄은 적에게 일어나는 일, 아랫줄은 그 대처 방법과 우리 팀에서 할 수 있는 구원자입니다. ${q("? 표시는 스킬 문구로 추정한 항목입니다. 줄에 마우스를 올리면 원래 용어가 보입니다.")}</p>`:"";
- return `${chips?`<div class="gim-missing">${chips}</div>`:""}<details class="gimbox${missing.length?" has-miss":""}" data-fold="gim-${p}"><summary>${title}</summary><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}${rs?` · ${EL[rs]}만 편성`:""}${sbText(st)}</div><div class="gimlist">${hint}${rows.join("")||"기믹 정보 없음"}</div></div></details>`}
+ return `${chips?`<div class="gim-missing">${chips}</div>`:""}${gimAvoid(party,types,p)}<details class="gimbox${missing.length?" has-miss":""}" data-fold="gim-${p}"><summary>${title}</summary><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}${rs?` · ${EL[rs]}만 편성`:""}${sbText(st)}</div><div class="gimlist">${hint}${rows.join("")||"기믹 정보 없음"}</div></div></details>`}
 
 let LEADKEY=null;
 const LEAD_TAGS=["힐","보호막","속도증가","적방어력감소","아군공격력증가"];

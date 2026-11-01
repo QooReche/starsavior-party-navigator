@@ -175,6 +175,9 @@ CD_RESET_NAMES = {'궁극기 쿨타임 초기화': '궁극기', '특수기 쿨�
                   '특수기 쿨타임 초기화': '특수기'}   # 설명문 「쿨타임이 초기화」·「최대로 감소한 상태로 시작」. 적 「어둠의 맹세」 = BI_SPECIAL_COOL_TURN_DOWN_ALL 감소값 0(NKM 2874~2886)
 SELF_KILL_NAMES = ('즉시 피해',)   # 적 자폭(크로넷 「시계태엽 폭탄」·올베로스의 하수인 「돌격」): InstantDamage = 공격력 100% + 생명력 1000%(NKM 4794~4822·7311~7342, DAMAGE_TEMPLET) → 사망으로
 IGNORED_NAMES = ('별도 사망 애니메이션 트리거 버프',)   # 연출용(전투 효과 없음)
+# 〈무적〉(BUFF_TEMPLET Invincible: BI_INVINCIBLE 1037 「무적」·BI_TOMB_CROSS_COSMO_1 「생멸의 씨앗(해제불가)」): 피해 종류와 무관하게 0
+# (NKM 유닛 피해 함수 ഉഈഅഇആ….cs:1113 — 무효화·보호막·불사보다 먼저, 지속 피해도). 지금 엔진 적 자료(데이터북)에는 이 효과를 거는 줄이 없다.
+INVINCIBLE_NAMES = ('무적', '생멸의 씨앗(해제불가)')
 RX_RANDOM = re.compile(r'^(.+?)에게\s*(?:\(대상마다 (\d+)% 판정\)\s*)?무작위 효과 〈[^〉]+〉: \[(.+)\] 중 1개')
 RX_RECV_HEAL = re.compile(r'^(.+?)에게 능력치 보정 받는 회복량 ([+-][\d.]+)%')
 RX_GAUGE_P = re.compile(r'^(.+?)에게 (\d+)% 확률로 행동 게이지 ([\d.]+)%p (증가|감소)')
@@ -502,9 +505,13 @@ class Unit:
             return False
         return e.category != 'buff' or not self.buff_blocked()
 
+    def invincible(self):
+        """〈무적〉: 모든 피해(지속 피해 포함) 0 — 클라 유닛 피해 함수 첫 검사(INVINCIBLE_NAMES 참고)"""
+        return any(self.on(n) for n in INVINCIBLE_NAMES if n in self.eff)
+
     def spd(self):
         if self.zero_stats:
-            return 1.0
+            return 0.0      # 〈들러리〉 300872 FixStats NST_TURN_SPEED 0 — pick_next 는 속도 0 이면 게이지가 차지 않는 것으로 처리
         m = self.mods()
         p = self.d.passive
         s = self.d.spd_base * (1 + m['spdp'] + p['spdp']) + m['spdf'] + p['spdf']
@@ -899,7 +906,8 @@ class Battle:
         """다음 행동 유닛과 그때까지 걸리는 틱. 동시 100% 는 _tie_before 순서"""
         best, bt = None, None
         for x in living:
-            need = 0.0 if x.gauge >= 10000 else (10000 - x.gauge) / x.spd()
+            sp = x.spd()
+            need = 0.0 if x.gauge >= 10000 else ((10000 - x.gauge) / sp if sp > 0 else math.inf)
             if bt is None or need < bt - 1e-9:
                 best, bt = x, need
             elif abs(need - bt) <= 1e-9 and self._tie_before(x, best):
@@ -1251,7 +1259,7 @@ class Battle:
     def filter_chain(self, att, pool, steps, ctx=None, stop_at_one=True):
         """게임 대상 필터 사슬(NKM.decompiled.cs 6500~6536·6390~6450) -> (후보, 맞은 필터가 있었나).
         차례로 거르고, 결과가 0명이면 목록 유지, stop_at_one 이면 1명이 되면 멈춤. 확률 필터([이름, p])는 주사위가 성공할 때만 거른다.
-        무적(not_invincible)은 엔진에 무적 상태가 없어 거르지 않는다."""
+        무적(not_invincible)은 거르지 않는다(〈무적〉 상태는 피해 쪽만 반영 — 이 효과를 거는 적 자료가 아직 없고, 거르면 ok 판정이 바뀌어 대상 선택이 흔들림)."""
         rng = self.R(att.side)
         ok = False
         for st in steps:
@@ -1999,7 +2007,7 @@ class Battle:
             H = a.maxhp    # 생명력 비례 항 = 지금 최대 생명력(전투 전 값 x 버프·서든데스 묶음)
         else:
             H = d.stats['hp'] * (1 + d.passive['hpp'] + m['hpp']) * max(0.01, 1 + a.sd_hp)   # 서든데스는 전투 전 값에 곱함(−99% 하한)
-        D = d.stats['def'] * (1 + d.passive['defp'] + m['defp'])
+        D = 0.0 if a.zero_stats else d.stats['def'] * (1 + d.passive['defp'] + m['defp'])   # 〈들러리〉 FixStats NST_DEF 0
         S = a.spd()
         fa, fh, fd, fs = [x / 10000.0 for x in sk.cf]
         base = (A * fa + H * fh + D * fd) * (1 + S / 100.0 * fs) * _rules.BASE_MULT
@@ -2084,7 +2092,7 @@ class Battle:
                 guard, share = w, s
         share = min(1.0, share)
         r = self.rand(a.side)
-        if v.on('스킬 피해 무효'):
+        if v.on('스킬 피해 무효') and not v.invincible():    # 〈무적〉이 먼저 막으면 무효화는 소모 안 됨(클라 피해 함수 1113 → 1118)
             # 〈스킬 피해 무효〉 「스킬 무효화 1회」: 이번 스킬 피해 0, 효과 1회 소모(지속 피해는 스킬이 아니라 그대로)
             del v.eff['스킬 피해 무효']
             self.dirty(v)
@@ -2214,6 +2222,9 @@ class Battle:
         """보호막 -> HP 순. 사망하면 True."""
         if v.dead or dmg <= 0:
             return False
+        if v.invincible():
+            self.log(invincible=v.name, kind=kind)
+            return False
         rest = dmg
         absorbed = 0.0
         if shieldable:
@@ -2241,6 +2252,26 @@ class Battle:
             self.kill(v, a)
             return True
         return False
+
+    def _instant_damage(self, owner, x):
+        """〈즉시 피해〉 DAMAGE_INSTANT(클라 피해 컨트롤러 ഊഉഋഈ….cs:181 → 유닛 피해 함수 (a=T, b=T)):
+        무적 → 〈스킬 피해 무효〉(1회 소모) → 보호막 → 불사 순으로 거친다(apply_damage).
+        피해량 = DT_BUFF_INSTANT(AtkFactor 10000·HpFactor 100000) = 시전자 공격력 100% + 최대 생명력 1000%, 대상 방어율만 적용
+        (근사: 치명·난수·피해 증감·수호 분담 없음 — 생명력 10배라 결과는 사실상 같음)."""
+        if x.invincible():
+            self.log(invincible=x.name, kind='instant')
+            return
+        if x.on('스킬 피해 무효'):
+            del x.eff['스킬 피해 무효']
+            self.dirty(x)
+            self.log(nullify=x.name)
+            return
+        de = self.def_stat(x)
+        dmg = max(1.0, math.floor((self.atk_stat(owner) + owner.maxhp * 10.0) * (1 - de / (de + _rules.DEF_K))))
+        dealt = owner.dmg
+        self.apply_damage(owner, x, dmg, 'instant', shieldable=True)
+        if x is owner:
+            owner.dmg = dealt     # 자폭은 자기 피해 — 적 피해 집계(per_foe)에 넣지 않음
 
     def _limit_damage(self, v, real):
         """〈불사〉(지속 동안 사망하지 않음: 생명력 1 남김)와 「피해 제한」 효과(DAMAGE_LIMIT 의 효과별 동작).
@@ -3160,11 +3191,14 @@ class Battle:
                     eff = dict(eff, target='자신 제외 태양 속성 아군 전체')
             if eff['name'] in IGNORED_NAMES:
                 return
-            if eff['name'] in SELF_KILL_NAMES and self.mc['instant_damage'] == 'self_kill':
-                # 근사: 수호(피해 분담) 경로는 타지 않고 바로 사망 — 방어·치명 처리 미확인
+            if eff['name'] in SELF_KILL_NAMES and self.mc['instant_damage'] in ('damage', 'self_kill'):
                 for x in self.resolve(owner, eff['target'], ctx) or []:
-                    if not x.dead:
-                        self.kill(x, owner)
+                    if x.dead:
+                        continue
+                    if self.mc['instant_damage'] == 'self_kill':
+                        self.kill(x, owner)       # 옛 근사: 무적·무효화·보호막·불사 무시하고 사망
+                        continue
+                    self._instant_damage(owner, x)
                 return
             if eff['name'] in CD_RESET_NAMES:      # P5 〈궁극기 쿨타임 초기화〉·〈특수기 쿨타임 감소〉 = 그 칸 쿨타임 0(설명문)
                 for x in self.resolve(owner, eff['target'], ctx) or []:
@@ -3583,7 +3617,8 @@ class Battle:
 # ------------------------------------------------------------------ 지원성 검사
 # 속성 숫자가 없어도 엔진이 이름으로 동작을 아는 효과
 HANDLED_NAMES = set(['도발', '은신', '현장 대기', '기절', '수면', '침묵', '필중', '면역', '강제 협공', '추가 턴', '보호막', '스킬 피해 무효',
-                     '강인도 피해 무효', '불사', '강화 불가', '강제 치명타 발생']) | set(CD_RESET_NAMES) | set(SELF_KILL_NAMES) | set(IGNORED_NAMES)
+                     '강인도 피해 무효', '불사', '강화 불가', '강제 치명타 발생']) | set(CD_RESET_NAMES) | set(SELF_KILL_NAMES) | set(IGNORED_NAMES) \
+    | set(INVINCIBLE_NAMES)
 LOCAL_OK = ('피해 증가', '공격력%', '치명타 확률', '치명타 피해', '방어 관통', '효과 적중', '주는 회복량', '명중률',
             '강인도 피해', '강인도 고정 피해', '브레이크 대상 피해 증가', '대상 약화효과 1개당 피해 증가')
 LOCAL_PREHIT_OK = ('방어력%', '피해 분담(수호)', '피해 감소', '받는 피해 감소')

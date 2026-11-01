@@ -37,6 +37,11 @@ for n in sorted(slot_names):
     if not e or not e.get("name") or not e.get("tip"):
         fails.append("대처(슬롯) 사전 누락: " + n)
 
+for tag in sorted({a for r in rules.values() for a in r.get("avoid", [])}):
+    e = plain.get("avoid", {}).get(tag)
+    if not e or not e.get("name") or not e.get("why"):
+        fails.append("불리한 구원자(avoid 태그) 사전 누락: " + tag)
+
 m = re.search(r"const GFIX=\{(.*?)\n\};", tpl, re.S)
 if not m:
     fails.append("party_template.html 에서 GFIX 를 찾지 못함")

@@ -13,7 +13,7 @@ import tempfile
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.insert(0, ROOT)
 from battlesim import simulate                                   # noqa: E402
-from battlesim.mc import Battle                                  # noqa: E402
+from battlesim.mc import Battle, Ctx                             # noqa: E402
 from battlesim.rules import MC_OPTS                              # noqa: E402
 from battlesim.api import _norm_party                            # noqa: E402
 from battlesim.starsavior.data import get_db                     # noqa: E402
@@ -109,7 +109,7 @@ def test_compete_and_appeal():
     assert boss.eff[G.B8].shield == math.floor(boss.maxhp * 0.225)
     maids = [v for v in allies if v is not holder[0]]
     assert all(v.has(G.B2) and v.zero_stats for v in maids)
-    assert all(b.atk_stat(v) == 0 and b.def_stat(v) == 0 and v.spd() == 1.0 for v in maids)
+    assert all(b.atk_stat(v) == 0 and b.def_stat(v) == 0 and v.spd() == 0.0 for v in maids)
     before = maids[0].gauge
     b.set_gauge(maids[0], before + 5000)
     assert maids[0].gauge == before, '들러리 게이지 증가 무효'
@@ -212,6 +212,45 @@ def test_revive_clears_maid():
     print('OK test_revive_clears_maid')
 
 
+def test_maid_speed_def_zero():
+    """들러리(300872 FixStats ATK·DEF·TURN_SPEED 0): 속도 0 이면 게이지가 차지 않고(0 나눗셈 없음), 방어력 비례 항도 0"""
+    b, _ = battle(mc={'guild_count': 'main'})
+    to_boss(b)
+    gb, allies = b.gb, b.alive(0)
+    for i in range(5):
+        gb.after_cast(allies[i % 4], allies[i % 4].d.skills['기본기'], _Ctx(), False)
+    gb.after_cast(gb.boss, gb.boss.d.skills['기본기'], _Ctx(), False)
+    maids = [v for v in allies if v.zero_stats]
+    assert maids
+    for v in maids:
+        v.gauge = 0.0
+    best, bt = b.pick_next(maids)
+    assert bt == math.inf, '속도 0 들러리만 있으면 다음 행동까지 무한'
+    best, bt = b.pick_next(b.alive(0) + b.alive(1))
+    assert not best.zero_stats and math.isfinite(bt)
+    for v in maids:
+        b.set_gauge(v, v.gauge + v.spd() * bt)
+        assert v.gauge == 0.0
+    # 방어력 비례 스킬도 0: 계수를 방어력 100% 로 바꿔 deal 의 base 를 확인
+    m = maids[0]
+    sk = m.d.skills['기본기']
+    seen = {}
+    orig = b.final_dmg
+    b.final_dmg = lambda a, v, base, *rest: seen.setdefault('base', base) or 1.0
+    old_cf = sk.cf
+    try:
+        sk.cf = [0, 0, 10000, 0]
+        ctx = Ctx(m, m, sk)
+        ctx.targets = [gb.boss]
+        b.deal(m, ctx)
+    finally:
+        sk.cf = old_cf
+        b.final_dmg = orig
+    assert 'base' in seen and seen['base'] == 0.0, seen
+    assert m.d.stats['def'] > 0             # 원래 방어력이 있어도 0 으로 고정
+    print('OK test_maid_speed_def_zero')
+
+
 def test_break_skill_breaks_barrier():
     """브레이크 스킬이 보호막을 깨면 부케(55148)가 나와 들러리·신부 경쟁이 풀린다. 보호막이 없었으면 아무 일 없음"""
     b, _ = battle(mc={'guild_count': 'main'})
@@ -263,7 +302,7 @@ class _Ctx:
 
 
 TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
-         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_break_skill_breaks_barrier, test_revive_clears_maid, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
+         test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_break_skill_breaks_barrier, test_revive_clears_maid, test_maid_speed_def_zero, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
 
 if __name__ == '__main__':
     bad = 0
