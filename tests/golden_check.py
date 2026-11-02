@@ -86,11 +86,14 @@ def main():
     # capture() 자체는 현재 규칙을 따라야 rank_check의 민감도 비교가 유효하다.
     import battlesim.engine as engine
     saved = engine.COOP_CAP
+    saved_order = engine.DEFAULT_OPTS['coop_order']
     try:
         engine.COOP_CAP = 0.30
+        engine.DEFAULT_OPTS['coop_order'] = 'capped'
         cur = capture()
     finally:
         engine.COOP_CAP = saved
+        engine.DEFAULT_OPTS['coop_order'] = saved_order
     if a.write:
         os.makedirs(os.path.dirname(GOLDEN), exist_ok=True)
         tmp = GOLDEN + '.tmp'

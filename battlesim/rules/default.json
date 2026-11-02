@@ -27,6 +27,7 @@
   "coop_trigger": {"value": "basic_only", "legacy": "any_attack", "alt": ["any_attack"], "grade": "official",
                    "note": "협공이 일어나는 공격: basic_only = 아군이 기본기를 쓴 뒤에만(추가 발동·협공·반격으로 나간 기본기 제외) / any_attack = 아군의 모든 공격 스킬 뒤(교정 전)",
                    "source": "공식 2025-12-18 업데이트 가이드 정정, 2026-09-10 NOA 가이드 (docs/formulas_web.md 7.1)"},
+  "coop_order": {"value": "stat", "legacy": "capped", "alt": ["capped"], "grade": "code", "note": "MC·기대값 엔진 공통 협공 후보 선정: stat = 기본기 액티브·쿨 확인 후 최종 협공 능력치 내림차순, 동점은 슬롯/편성 순서, 첫 성공 1명만. 확률에만 COOP_CAP 적용. capped = 옛 상한 적용 뒤 정렬·액티브/쿨 검사 생략. MC의 생존·자신 제외·기절/수면/브레이크 제외는 공통. 기대값 엔진 coop_single=false의 옛 전원 협공은 유지", "source": "star-savior-decompiled/NKM/NKM.decompiled.cs:937·972·1149 (생존 슬롯 순서), :2072-2087·2757-2773 (기본기 사용), :15835-15870 (최종 능력치 정렬·첫 성공 반환); star-savior-decompiled/Cs.UnityShare/Cs.UnityShare.decompiled.cs:1860-1864 (RollDice); docs/coop_order_audit.md"},
   "coop_single": {"value": true, "legacy": false, "alt": [false], "grade": "official",
                   "note": "공격 1번에 협공은 아군 1명만. 기대값 처리: 협공 확률이 높은 순으로 후보 i 가 p_i x (앞선 후보들이 모두 안 한 확률)만큼 협공. false = 확률이 있는 아군 전원이 각자 협공(교정 전)",
                   "source": "공식 2026-09-10 NOA 가이드 (docs/formulas_web.md 7.1)"},

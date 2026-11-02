@@ -416,7 +416,7 @@ class Sim:
 
     def coop_followups(self, actor, ctx):
         """협공. basic_only: 아군 기본기 뒤에만(이 함수는 추가 발동·협공 시전에서는 불리지 않음).
-        coop_single: 공격 1번에 1명 — 확률 높은 순으로 후보 i 가 p_i x 앞선 후보 전원 미발동 확률만큼(기대값)."""
+        coop_single: 공격 1번에 1명 — 최종 능력치 순으로 p_i x 앞선 후보 전원 미발동 확률(기대값)."""
         if self.opts['coop_trigger'] == 'basic_only' and ctx.skill.slot != '기본기':
             return
         if not self.opts['coop_single']:   # 교정 전: 확률이 있는 아군 전원이 편성 순서대로 각자 협공
@@ -427,15 +427,20 @@ class Sim:
                 if p > 0:
                     self.cast(b, b.d.skills['기본기'], w=p * ctx.w, extra=True)
             return
+        stat_order = self.opts['coop_order'] == 'stat'
         cands = []
         for b in self.party:
             if b is actor or getattr(b.d, 'dummy', False):
                 continue
-            p = clamp(b.mods()['coop'], 0.0, COOP_CAP)
+            if stat_order and (b.d.skills.get('기본기') is None
+                               or b.d.skills['기본기'].ty != '액티브' or b.cd.get('기본기', 0) > 0):
+                continue
+            stat = b.mods()['coop']
+            p = clamp(stat, 0.0, COOP_CAP)
             if p > 0:
-                cands.append((b, p))
+                cands.append((b, p, stat if stat_order else p))
         rest = 1.0 - ctx.coop_used   # 강제 협공이 먼저 차지한 몫(forced_coop_slot='shared')
-        for b, p in sorted(cands, key=lambda bp: -bp[1]):   # 같은 확률이면 편성 순서
+        for b, p, _ in sorted(cands, key=lambda bp: -bp[2]):   # 같은 능력치이면 편성 순서(안정 정렬)
             self.cast(b, b.d.skills['기본기'], w=p * rest * ctx.w, extra=True)
             rest *= 1 - p
 
