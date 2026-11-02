@@ -42,17 +42,27 @@ _AUTO_ORDER = {}
 
 
 _ALINES = {}
+_NO_PREEMPTIVE = None
 
 
-def ally_auto_lines(src=SRC, *, variants=False):
-    """auto_skill.json의 lines(옛 매핑)/variant_lines(형태별) -> {key: {(칸, 원문): spec}}. 충돌은 버림."""
-    cache_key = (src, variants)
+def no_preemptive():
+    global _NO_PREEMPTIVE
+    if _NO_PREEMPTIVE is None:
+        with open(os.path.join(SRC, 'data', 'auto_skill.json'), encoding='utf8') as f:
+            _NO_PREEMPTIVE = json.load(f)['no_preemptive']
+    return _NO_PREEMPTIVE
+
+
+def ally_auto_lines(src=SRC, *, variants=False, client=False):
+    """옛/형태별 매핑과 client 대상 의미를 독립 선택. {key: {(칸, 원문): spec}}, 충돌은 버림."""
+    cache_key = (src, variants, client)
+    field = ('client_' if client else '') + ('variant_lines' if variants else 'lines')
     if cache_key not in _ALINES:
         p = os.path.join(src, 'data', 'auto_skill.json')
         out = {}
         if os.path.exists(p):
             with open(p, encoding='utf-8') as f:
-                for key, rows in (json.load(f).get('variant_lines' if variants else 'lines') or {}).items():
+                for key, rows in (json.load(f).get(field) or {}).items():
                     d, clash = {}, set()
                     for slot, raw, spec in rows:
                         if (slot, raw) in d and d[(slot, raw)] != spec:
@@ -1305,10 +1315,10 @@ class Battle:
                 return None
             spec = (getattr(owner.d, 'auto_lines', None) or {}).get((ln.slot, ln.raw))
         else:
-            if self.mc['ally_auto_lines'] != 'data':
+            if self.mc['ally_auto_lines'] not in ('data', 'client'):
                 return None
             variants = self.mc['ally_variant_mapping'] == 'data'
-            lines = ally_auto_lines(variants=variants)
+            lines = ally_auto_lines(variants=variants, client=self.mc['ally_auto_lines'] == 'client')
             rows = lines.get(owner.key, {}) if variants else (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {}))
             spec = rows.get((ln.slot, ln.raw))
         if spec is not None:
@@ -1323,9 +1333,12 @@ class Battle:
         return spec
 
     def line_auto_targets(self, owner, spec, ctx):
-        """효과 줄 자동 대상(NKM 6390~6450): 단일(one)이면 필터 뒤 1명(1명이 되면 멈춤, 여럿이면 무작위 — 필터가 하나도 안 맞아도),
+        """효과 줄 자동 대상(build 26314877 NKM:7001-7050): 단일(one)이면 필터 뒤 1명(1명이 되면 멈춤, 여럿이면 무작위 — 필터가 하나도 안 맞아도),
         아니면 필터가 하나라도 맞았을 때만 그 목록, 아니면 대상 없음(확정 결과 — 다른 규칙으로 대신하지 않음). ally 면 내 편 중에서."""
         pool = self.alive(owner.side if spec.get('ally') else 1 - owner.side)
+        # build 26314877 NKM:7013-7019: 대상형의 자신 제외는 우선 필터보다 먼저 적용.
+        if spec.get('exclude_self'):
+            pool = [u for u in pool if u is not owner]
         if not pool:
             return []
         got, ok = self.filter_chain(owner, pool, spec['f'], ctx, stop_at_one=spec['one'])
@@ -1479,11 +1492,17 @@ class Battle:
         return cands[-1][0]
 
     def _preemptive_check(self, attacker, targets, ctx):
-        """선제 방어(NKM 8040~8071): 아군 중 선제 방어 확률이 있으면 대상을 가로챈다.
+        """선제 방어(build 26314877 NKM:8697-8754): 방어 확률이 있으면 대상을 가로챈다.
         필중이면 무시, 은신이면 무시, 브레이크 상태이면 방어 불가."""
         if not targets:
             return targets
         orig = targets[0]
+        if self.mc['preemptive_defense'] == 'client':
+            rule = no_preemptive()
+            if any(attacker.on(name) for name in rule['buffs']):
+                return targets
+            if ctx.skill and ctx.skill.slot in rule['skills'].get(attacker.key, []):
+                return targets
         if attacker.on('필중') or attacker.on('은신'):   # 필중·은신은 선제 방어 무시(docs/formulas_web.md 4.3)
             return targets
         # attacker 의 reduce (NST_RATE_PREEMPTIVE_DEFEND_REDUCE): 고립 등 공격자 선제 방어 확률 -N% = reduce N%
@@ -1704,7 +1723,7 @@ class Battle:
                 self.nova_bursts[u.pos, sk.slot] += 1
             ctx.targets = self.skill_targets(u, sk, target)
             # 선제 방어: 적 단일 공격 전, 아군 중 선제 방어 확률이 있으면 대상 전환(NKM 8040~8071 PreemptiveDefenseController)
-            if (self.mc.get('preemptive_defense') == 'on' and u.side == 1 and sk.is_attack and not sk.all
+            if (self.mc.get('preemptive_defense') in ('on', 'client') and u.side == 1 and sk.is_attack and not sk.all
                     and len(ctx.targets) == 1 and not ctx.targets[0].dead):
                 ctx.targets = self._preemptive_check(u, ctx.targets, ctx)
             ctx.target = ctx.targets[0] if ctx.targets else None
