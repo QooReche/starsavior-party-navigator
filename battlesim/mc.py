@@ -44,14 +44,15 @@ _AUTO_ORDER = {}
 _ALINES = {}
 
 
-def ally_auto_lines(src=SRC):
-    """data/auto_skill.json 의 lines(구원자 효과 줄 자동 대상) -> {구원자 key: {(칸, 원문): spec}}. 같은 원문에 다른 규칙이면 버림"""
-    if src not in _ALINES:
+def ally_auto_lines(src=SRC, *, variants=False):
+    """auto_skill.json의 lines(옛 매핑)/variant_lines(형태별) -> {key: {(칸, 원문): spec}}. 충돌은 버림."""
+    cache_key = (src, variants)
+    if cache_key not in _ALINES:
         p = os.path.join(src, 'data', 'auto_skill.json')
         out = {}
         if os.path.exists(p):
             with open(p, encoding='utf-8') as f:
-                for key, rows in (json.load(f).get('lines') or {}).items():
+                for key, rows in (json.load(f).get('variant_lines' if variants else 'lines') or {}).items():
                     d, clash = {}, set()
                     for slot, raw, spec in rows:
                         if (slot, raw) in d and d[(slot, raw)] != spec:
@@ -60,8 +61,8 @@ def ally_auto_lines(src=SRC):
                     for k in clash:
                         del d[k]
                     out[key] = d
-        _ALINES[src] = out
-    return _ALINES[src]
+        _ALINES[cache_key] = out
+    return _ALINES[cache_key]
 
 
 _BLV = {}
@@ -1300,8 +1301,10 @@ class Battle:
         else:
             if self.mc['ally_auto_lines'] != 'data':
                 return None
-            lines = ally_auto_lines()
-            spec = (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {})).get((ln.slot, ln.raw))
+            variants = self.mc['ally_variant_mapping'] == 'data'
+            lines = ally_auto_lines(variants=variants)
+            rows = lines.get(owner.key, {}) if variants else (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {}))
+            spec = rows.get((ln.slot, ln.raw))
         if spec is not None:
             # 내부 표지(체크용·판별용 버프)를 찾는 필터인데 그 표지를 가진 유닛이 없으면(표지를 거는 줄을 엔진이 근사로 처리하는 경우)
             # 데이터 규칙 대신 설명문 근사로 — 무작위로 새지 않게(예: 티리아 궁극기 「티리아 체크용 버프」, 거는 줄의 IsHighDef 는 근거 없음)

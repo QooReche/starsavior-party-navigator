@@ -42,7 +42,7 @@ class AllyAutoLinesTest(unittest.TestCase):
 
     def test_data_shape(self):
         d = json.loads((ROOT / 'data' / 'auto_skill.json').read_text(encoding='utf-8'))
-        rows = [r for v in d['lines'].values() for r in v]
+        rows = [r for field in ('lines', 'variant_lines') for v in d[field].values() for r in v]
         self.assertGreater(len(rows), 10)
         for slot, raw, spec in rows:
             self.assertIn('(자동 지정)', raw)
@@ -55,20 +55,20 @@ class AllyAutoLinesTest(unittest.TestCase):
         d = json.loads((ROOT / 'data' / 'auto_skill.json').read_text(encoding='utf-8'))
         index = json.loads((ROOT / 'data' / 'saviors_index.json').read_text(encoding='utf-8'))
         key_of = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
-        # 빌더와 같이 id 당 마지막 기록(개화 변형이 있으면 그쪽 — 게임 표 스킬과 맞는 쪽)만 본다
-        book = {u['id']: u for u in json.loads((ROOT / 'rawdata' / 'databook_main.json').read_text(encoding='utf-8'))['units']}
+        book = json.loads((ROOT / 'rawdata' / 'databook_main.json').read_text(encoding='utf-8'))['units']
         missing = []
-        for u in book.values():
-            got = {(sl, raw) for sl, raw, _ in d['lines'].get(key_of.get(u['id']), [])}
+        for u in book:
+            key = key_of.get(u['id'], '') + ('' if u['v'] == '기본' else '@' + u['v'])
+            got = {(sl, raw) for sl, raw, _ in d['variant_lines'].get(key, [])}
             for s in u['sk']:
                 L = s.get('L')
                 if not L or not any(sl == s['sl'] for sl, _ in got):
                     continue
                 for grp in L['e']:
-                    missing += [(key_of[u['id']], s['sl'], L['ln'][j][:40]) for j in grp
+                    missing += [(key, s['sl'], L['ln'][j][:40]) for j in grp
                                 if '(자동 지정)' in L['ln'][j] and (s['sl'], L['ln'][j]) not in got]
         self.assertEqual(missing, [])
-        hilde = [raw for sl, raw, _ in d['lines']['hilde'] if sl == '궁극기']
+        hilde = [raw for sl, raw, _ in d['variant_lines']['hilde'] if sl == '궁극기']
         self.assertEqual(len(hilde), 3)                  # 도발 기본·75%·85% 판정
 
     def test_foe_ally_lines_exist(self):

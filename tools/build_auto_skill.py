@@ -7,6 +7,8 @@
 대상 필터(6786~7130): 차례로 거르고, 거른 결과가 0명이면 목록 유지, 1명이 되면 멈춤, 끝에 여럿이면 무작위.
 
 출력 units[구원자 key][칸] = {"t": 대상 종류, "rows": [{"c": [조건...], "f": [필터...]}, ...]} 또는 {"react": true}(반응 스킬 — 엔진은 반응 문구로 처리).
+기본/개화는 (id, variant)로 구분하고 개화 스킬은 BLOSSOM_TEMPLET에서 읽는다.
+효과 줄은 variant_lines가 현행이며 lines는 옛 매핑 재현용이다.
   조건: ["ally_hp_le_bp", 7500] = 생명력 int(비율x10000) <= 값인 아군이 있음, ["ally_dead"] = 쓰러진 아군이 있음,
         ["self_stack_eq", 이름, n] = 자신의 그 스택이 정확히 n.
   필터: not_invincible, boss, elite, advantage, low_hp_rate, low_max_hp, not_self, dead_ally(쓰러진 아군 중 마지막으로 쓰러진 1명).
@@ -104,6 +106,34 @@ def filters(t, where):
     return out
 
 
+def form_bindings(tables, keys, book):
+    """공개 (id, variant)를 기본/개화 스킬 목록과 명시적으로 연결한다.
+
+    BLOSSOM_TEMPLET.BlossomListSkill이 정본이며 _SSR 이름을 추측하지 않는다.
+    같은 id의 마지막 설명을 기본 스킬에 붙이면 베라의 두 자동 대상이 뒤섞인다.
+    """
+    variants = {}
+    for row in book:
+        pair = (row['id'], row['v'])
+        if pair in variants:
+            raise ValueError('중복 구원자 형태: %r' % (pair,))
+        variants[pair] = row
+    blossom = {r['UnitId']: r for r in json.loads((tables / 'BLOSSOM_TEMPLET.json').read_text(encoding='utf-8'))['Data']}
+    for u in json.loads((tables / 'UNIT_TEMPLET_BASE1.json').read_text(encoding='utf-8'))['Data']:
+        uid = u['m_UnitID']
+        if uid not in keys:
+            continue
+        for variant, field in (('기본', 'm_listSkill'), ('개화(SSR)', 'BlossomListSkill')):
+            bu = variants.get((uid, variant))
+            if bu is None:
+                continue
+            source = u if variant == '기본' else blossom.get(uid)
+            if source is None:
+                raise ValueError('개화 스킬 연결 없음: %s' % uid)
+            key = keys[uid] + ('' if variant == '기본' else '@' + variant)
+            yield key, bu, u, source[field]
+
+
 def build(static):
     tables = Path(static) / 'tables'
     auto = {r['Id']: r for r in jsonc(tables / 'Plain' / 'AUTO_SKILL_TEMPLET.json')['Data']}
@@ -120,10 +150,8 @@ def build(static):
     keys = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
     desc = json.loads((ROOT / 'data' / 'savior_skills.json').read_text(encoding='utf-8'))
     units, order = {}, {}
-    for u in json.loads((tables / 'UNIT_TEMPLET_BASE1.json').read_text(encoding='utf-8'))['Data']:
-        key = keys.get(u['m_UnitID'])
-        if key is None:
-            continue
+    book = json.loads((ROOT / 'rawdata/databook_main.json').read_text(encoding='utf-8'))['units']
+    for key, _bu, u, skill_ids in form_bindings(tables, keys, book):
         if u.get('SkillOrderList'):
             # 오토 스킬 시도 순서(NKM.decompiled.cs 6378 루프, 없으면 기본 [궁극기, 특수기, 기본기] — NKM.Templets 25744~25751)
             try:
@@ -131,7 +159,7 @@ def build(static):
             except KeyError as ex:
                 raise SystemExit('모르는 SkillOrderList 칸 %s: %s' % (key, ex))
         stacks = elem_stack_names(desc.get(str(u['m_UnitID'])))
-        for slot, sid in zip(SLOTS, u['m_listSkill']):
+        for slot, sid in zip(SLOTS, skill_ids):
             sk = skills.get(sid) or {}
             aid = sk.get('AutoSkillId')
             if not aid:
@@ -171,7 +199,7 @@ def _skip_paren(head):
     return head
 
 
-def build_lines(static, report):
+def build_lines(static, report, *, legacy=False):
     """구원자 효과 줄 자동 대상(SE AutoTargetId) -> {구원자 key: [[칸, 데이터북 원문, {one, ally?, f}], ...]}.
     데이터북 효과 줄에는 게임 SE 행이 아닌 줄(이번 스킬 보정 등)이 섞여 있어 줄 수 대신 「(자동 지정)」 줄 ↔ 게임 자동 지정 행을
     순서대로 짝짓는다(개수·아군/적·1명/전체가 맞을 때만). SE 이름 COND_<스킬>_<묶음>_<줄> 의 묶음 01 = 기본 효과, 그 뒤는 레벨업 추가 행.
@@ -193,19 +221,23 @@ def build_lines(static, report):
                 se.setdefault(m.group(1), {}).setdefault(int(m.group(2)), []).append((int(m.group(3)), r))
     index = json.loads((ROOT / 'data' / 'saviors_index.json').read_text(encoding='utf-8'))
     keys = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
-    book = {u['id']: u for u in json.loads((ROOT / 'rawdata' / 'databook_main.json').read_text(encoding='utf-8'))['units']}
+    book = json.loads((ROOT / 'rawdata' / 'databook_main.json').read_text(encoding='utf-8'))['units']
     slot_of = {'기본기': 0, '특수기': 1, '궁극기': 2, '고유 패시브': 3}
     auto_types = set(FA.AUTO_ENEMY) | set(FA.AUTO_ALLY) | {'NSETT_AUTO_ALLY_ONE_NOT_SELF'}
     out = {}
-    for u in json.loads((tables / 'UNIT_TEMPLET_BASE1.json').read_text(encoding='utf-8'))['Data']:
-        key, bu = keys.get(u['m_UnitID']), book.get(u['m_UnitID'])
-        if key is None or bu is None:
-            continue
+    bindings = form_bindings(tables, keys, book)
+    if legacy:
+        # 규칙의 옛 값·고정 해시 재현용. 새 자료는 반드시 위 형태별 연결을 쓴다.
+        last = {u['id']: u for u in book}
+        bindings = ((keys[u['m_UnitID']], last[u['m_UnitID']], u, u['m_listSkill'])
+                    for u in json.loads((tables / 'UNIT_TEMPLET_BASE1.json').read_text(encoding='utf-8'))['Data']
+                    if u['m_UnitID'] in keys and u['m_UnitID'] in last)
+    for key, bu, _u, skill_ids in bindings:
         for s in bu['sk']:
             i = slot_of.get(s['sl'])
-            if i is None or i >= len(u['m_listSkill']):
+            if i is None or i >= len(skill_ids):
                 continue
-            sid = u['m_listSkill'][i].replace('NKM_UNIT_', '', 1)
+            sid = skill_ids[i].replace('NKM_UNIT_', '', 1)
             levels = se.get(sid) or se.get(sid.replace('S_', '', 1))
             if not levels:
                 continue
@@ -230,6 +262,11 @@ def build_lines(static, report):
             got = []
             for ln, r in zip(lines, rows):
                 tt = r['m_BuffTargetType']
+                if not legacy and bu['v'] != '기본' and tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF':
+                    # 현 디컴파일본에 없는 대상형. 새 개화 연결에서는 기존 설명문 선택을 유지한다.
+                    # not_self 우선 필터로 대체하면 아군이 혼자일 때 자신을 다시 선택하게 된다.
+                    report['개화 대상형 런타임 미확인(설명문 유지): ' + where] += 1
+                    continue
                 head = _skip_paren(ln.split(']', 1)[-1].lstrip())
                 ally = not head.startswith('적')
                 one = '1명' in head.split('(자동 지정)')[0]
@@ -251,7 +288,8 @@ def build_lines(static, report):
             if got is None:
                 report['아군/적·1명/전체 불일치(제외): ' + where] += 1
                 continue
-            out.setdefault(key, []).extend(got)
+            if got:
+                out.setdefault(key, []).extend(got)
             # 레벨업 추가 행에도 자동 지정이 있는 스킬: 데이터북 L.e 전 레벨 그룹에서 「(자동 지정)」 줄을
             # 같은 spec(기본 묶음 필터)으로 등록한다. 줄 수가 다른 그룹은 건너뛴다(보고만).
             if has_levelup_auto and got:
@@ -284,18 +322,22 @@ def main():
     units, order = build(static)
     from collections import Counter
     report = Counter()
-    lines = build_lines(static, report)
+    lines = build_lines(static, Counter(), legacy=True)
+    variant_lines = build_lines(static, report)
     out = dict(_note='구원자 스킬별 자동 전투 규칙(tools/build_auto_skill.py). 규칙 행 = 조건(c, 모두 참) + 대상 필터(f, 차례로 거름). '
                      '참인 행이 없으면 그 스킬을 건너뜀. 여기 없는 스킬은 엔진 기본 규칙(구원자 1).',
                units=dict(sorted(units.items())),
                order_note='오토 스킬 시도 순서(UNIT_TEMPLET_BASE1.SkillOrderList). 여기 없는 구원자는 기본 순서 궁극기->특수기->기본기',
                order=dict(sorted(order.items())),
-               lines_note='구원자 효과 줄 자동 대상(SE AutoTargetId): lines[구원자 key] = [[칸, 데이터북 원문, {one 1명, ally 내 편, f 필터}]]. '
-                          '없는 줄은 엔진 설명문 근사(mc.ally_auto_lines=data 일 때만 씀)',
-               lines=dict(sorted(lines.items())))
+               lines_note='옛 구원자 효과 줄 자동 대상(SE AutoTargetId): lines[구원자 key] = [[칸, 데이터북 원문, {one 1명, ally 내 편, f 필터}]]. '
+                          'mc.ally_variant_mapping=legacy 재현용. 없는 줄은 엔진 설명문 근사(mc.ally_auto_lines=data 일 때만 씀)',
+               lines=dict(sorted(lines.items())),
+               variant_lines_note='형태별 자동 대상: 기본은 UNIT_TEMPLET_BASE1, 개화는 BLOSSOM_TEMPLET의 스킬에 연결. '
+                                  'mc.ally_variant_mapping=data에서 사용. lines는 legacy 재현용.',
+               variant_lines=dict(sorted(variant_lines.items())))
     atomic_text(ROOT / 'data' / 'auto_skill.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
     print('auto_skill.json: 구원자', len(units), '스킬', sum(len(v) for v in units.values()), '스킬 순서', len(order),
-          '효과 줄 자동 대상', sum(len(v) for v in lines.values()), '(구원자 %d)' % len(lines))
+          '효과 줄 자동 대상', sum(len(v) for v in variant_lines.values()), '(구원자 %d)' % len(variant_lines))
     for k, v in sorted(report.items()):
         print('  ', v, k)
 
