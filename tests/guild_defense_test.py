@@ -124,7 +124,7 @@ def test_existing_contents_unchanged():
     # 공개 화력표는 새 규칙으로 재생성되므로, 이 고정 해시만 옛 협공 상한으로
     # 추천 입력(s/a/g)을 계산한다. ref95·turns는 pack_damage처럼 그대로 둔다.
     legacy_damage = pr._json(pr.DMG)
-    with patch.object(engine, 'COOP_CAP', 0.30):
+    with patch.object(engine, 'COOP_CAP', 0.30), patch.dict(engine.DEFAULT_OPTS, coop_order='capped'):
         index = build_index()
     for key, unit in legacy_damage['units'].items():
         row = index[key]

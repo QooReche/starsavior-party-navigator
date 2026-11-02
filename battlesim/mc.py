@@ -1928,19 +1928,24 @@ class Battle:
         return True
 
     def coop(self, actor, ctx):
-        """협공: 아군 기본기 뒤에만, 공격 1번에 1명(확률 높은 순으로 굴림), 원 공격과 같은 대상(전체면 무작위 적)."""
+        """협공: 최종 능력치 내림차순·동점은 슬롯순, 첫 성공 1명만. capped는 옛 후보 선정."""
         if self.opts['coop_trigger'] == 'basic_only' and ctx.skill.slot != '기본기':
             return
         if ctx.coop_used:
             return
+        stat_order = self.opts['coop_order'] == 'stat'
         cands = []
         for b in self.alive(0):
             if b is actor or b.d.skills.get('기본기') is None or self.no_react(b):
-                continue   # 기절·수면(강인도 격파 포함, 미구현)이면 협공 불가(공식 2026-09-10 NOA 가이드)
-            p = min(_rules.COOP_CAP, max(0.0, b.mods()['coop']))
+                continue   # NKM 15840~15850: 브레이크·기본기 사용 불가 제외
+            if stat_order and (b.d.skills['기본기'].ty != '액티브' or b.cd.get('기본기', 0) > 0):
+                continue   # NKM 2072~2087·2757~2773: 액티브·쿨·기절·수면 검사(침묵은 기본기 허용)
+            stat = b.mods()['coop']
+            p = min(_rules.COOP_CAP, max(0.0, stat))
             if p > 0:
-                cands.append((b, p))
-        for b, p in sorted(cands, key=lambda bp: (-bp[1], bp[0].pos)):
+                cands.append((b, p, stat if stat_order else p))
+        # NKM 937·972·1149·15835~15870: 생존 슬롯 배열의 안정 정렬, 성공하면 즉시 반환.
+        for b, p, _ in sorted(cands, key=lambda bp: (-bp[2], bp[0].pos)):
             if self.R(actor.side).random() < p:
                 self.cast(b, b.d.skills['기본기'], extra=True, target=self._coop_target(ctx), via='coop')
                 return

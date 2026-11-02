@@ -66,6 +66,7 @@ DEFAULT_OPTS = dict(
     debuff_model=_O['debuff_model'], enemy_resist=_O['enemy_resist'], forced_coop_target=_O['forced_coop_target'],
     dot_snapshot=_O['dot_snapshot'], gear_order=_O['gear_order'], dmg_reduction=_O['dmg_reduction'],
     forced_coop_slot=_O['forced_coop_slot'], debuff_state=_O['debuff_state'], gauge_expect=_O['gauge_expect'],
+    coop_order=_O['coop_order'],
 )
 # 교정 전(P1) 값: rules/default.json 의 legacy. tests/rank_check.py 가 「교정 전」 프로필로 쓴다.
 LEGACY_OPTS = {k: v['legacy'] for k, v in RULES['opts'].items() if 'legacy' in v}
