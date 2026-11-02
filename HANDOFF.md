@@ -6,6 +6,7 @@
 
 - 근거(조사 `AI	emp\partynavigator\work\common_rules\enforce_client_check.md`·`enforce_order_check.md`·`enforce_tl.md`): 스마일(선샤인 캣)·클레어·그웬·카넬리아의 추가 발동은 전부 `BI_ENFORCE`(SE_TEMPLET_SKILL_1, NSEAT_SKILL_END), 반응형 아님, 확률 줄 없음(m_fActiveRate 10000 = 조건 맞으면 100%; 엔진 RX_EXTRA_P 는 베스타·공용 잠재력용). 클라는 시전 함수(DoSkill:3025) 안에서 SKILL_END SE 처리(스킬 후 해제 — 예: AX 스택 SEID 4000102, 조건 8003 궁극기 종료 — 와 엔포스 예약 등록)를 끝낸 뒤 반환하고 예약 루프(2827~2926)가 돈다 → 해제가 먼저, 추가 발동은 그 뒤. 엔진 queue 가 이 순서와 같음(nested 는 해제 전에 시전해 힐데 3 에서 과대평가).
 - 영향(1000판, wave_ally_gauge=reset): 태양 회랑 450 클리어 nested 58.8% → queue 88.6%, 코스모 힐데 3(그웬·스마일·크리스텔·힐데) 95.0% → 82.0%. 원인은 11개 상한·반격 순서가 아니라 지연 시전 때의 버프·표지 상태 차이.
+- **편성 찾기 재실행(reset+queue 기본, 내 정보 11/02, 선택 효과 최대, 6단계·불의 고동)**: 1위 루나(화이트 펄 트랩)·로자리아(폴른 호크)·아모라·스마일(선샤인 캣) 기대 64,614·클리어 80%, 2위 에밀리·샤를·아모라·스마일 64,460(40%), 3위 에데·클레어·아모라·스마일 63,965(20%). 로그 `...\work\guild_defense\gs_full_out_1102_queue.txt`. 11/03 촬영 추천 = 1위(전열 루나·로자리아 / 후열 아모라·스마일).
 - 시험: `enforce_timing_test` 기본 queue 로 갱신, `mc_cache_test` 해시는 `wave_ally_gauge=keep`·`enforce_timing=nested` 로 고정(캐시 동일성 시험). 골든 불변, 전체 시험 통과.
 - **미반영 클라 차이(엔진 수정 후보, 미확인 부분 있음)**: ① 엔포스는 예약 중복 제한 없음·불발 시 재예약 없음(엔진은 행동당 1개 제한, `_defer_extra` key) ② 대상은 실행 직전에 자동 대상 규칙(4/6/47)으로 선택(엔진은 예약 때 선택, 죽으면 무작위) ③ 스택 소모 시점 구원자별: 스마일·클레어 = 실행(SKILL_START), 선샤인 캣 = 예약(SKILL_END), 그웬 = 예약 추정. 영상 대조 전이라 아직 안 고침.
 
