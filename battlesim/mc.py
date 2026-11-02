@@ -797,9 +797,10 @@ class Battle:
                 for ln in self.lines_of(u):
                     if line_kind(ln) == 'wave_start':
                         self.run_line(u, ln, Ctx(u, u, None))
-            if self.mc.get('wave_ally_gauge', 'keep') == 'reset':   # 클라 BattleHostSingle 웨이브 전환: OnWaveStart 뒤 생존 아군 게이지 전원 0
+            if self.mc.get('wave_ally_gauge', 'reset') == 'reset':   # 클라 BattleHostSingle 웨이브 전환: OnWaveStart 뒤 생존 아군 게이지 전원 0
                 for u in self.alive(0):
-                    u.gauge = 0.0
+                    if not u.extra_turn:   # 클라 추가 턴은 게이지가 아니라 턴 예약(정렬 최우선)이라 전환에서 안 지워짐 — 엔진은 게이지 10000+표시로 구현하므로 유지
+                        u.gauge = 0.0
 
     def progress(self):
         """적 진척도 0~1: (끝낸 웨이브 + 현재 웨이브에서 깎은 체력 비율) / 웨이브 수. 클리어면 1.

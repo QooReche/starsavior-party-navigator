@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""웨이브 전환 아군 게이지 규칙 wave_ally_gauge: 기본 keep(옛 동작), reset(클라: 전환 시 아군 게이지 0). 실행: python -X utf8 -I tests/wave_gauge_test.py"""
+"""웨이브 전환 아군 게이지 규칙 wave_ally_gauge: 기본 reset(클라: 전환 시 아군 게이지 0), keep(옛 이월). 실행: python -X utf8 -I tests/wave_gauge_test.py"""
 import os
 import sys
 
@@ -11,8 +11,8 @@ from battlesim.rules import MC_OPTS                              # noqa: E402
 PARTY = ['sunshine-cat-smile', 'cristelle', 'white-pearl-luna', 'wedding-carmen']
 
 
-def test_default_is_keep():
-    assert MC_OPTS['wave_ally_gauge'] == 'keep'
+def test_default_is_reset():
+    assert MC_OPTS['wave_ally_gauge'] == 'reset'
 
 
 def test_both_modes_run():
@@ -25,7 +25,7 @@ def test_both_modes_run():
     print('  ', out)
 
 
-TESTS = [test_default_is_keep, test_both_modes_run]
+TESTS = [test_default_is_reset, test_both_modes_run]
 
 if __name__ == '__main__':
     for t in TESTS:
