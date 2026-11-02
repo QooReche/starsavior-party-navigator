@@ -9,9 +9,9 @@
 - 그 밖의 새 기본값: `mc.enemy_cd_end_order=after_effects`, `revenge_rate=hit`, `nova_force_cap=12`, `ally_auto_lines=client`. 기존 병합분 `foe_skill_order=data`, `empty_attack=process`, `ally_variant_mapping=data`도 반영했음. 선제 방어 실험용 `client`는 차단 조건을 보강했고 기본 `preemptive_defense=recognize`는 유지했음.
 - 기존 기본값은 `enforce_timing=queue`, `enforce_target=exec`, `wave_ally_gauge=reset`, `buff_ban=refuse`, `buff_ban_force=client`, `guild_count=all`, `instant_damage=damage`, `reaction_timing=queue`, `skill_order=data`, `dispel_on_attack=on`, `turn_limit_unit=actions`, `break_skill_domain_clock=global`, `break_skill_domain_turns=5`, `toughness_elem=db`, `enemy_hit_buff_cmp=le`임. 정본은 `battlesim/rules/default.json`임.
 - 길드방어전 시즌4(BFB·별 속성)는 11/05 04:00 KST 종료, 결산은 11/12 04:00까지임(`data/guild_defense.json`). BFB 상태 기계·지원 5종·선택 효과 4종·부분 점수식·내 정보 편성 탐색을 구현했음. `guild_boss=off`가 기본이고 길방 진입에서만 켬.
-- `data/guild_sim.json`은 현재 규칙으로 off/max·육성 ×1·×1.5·×2·×2.5·×3, **234,000판**을 다시 계산했음. 이전 공개 파일과 모든 항목이 정확히 같았음. 기존 필드·최고 클리어 단계는 off, `bySets`·`summaryBySets`는 max를 보존함. 공개 표준 육성만 썼으며 실제 플레이 대조는 남았음.
+- `data/guild_sim.json`은 현재 규칙으로 off/max·육성 ×1·×1.5·×2·×2.5·×3, **234,000판**을 다시 계산했음. 이전 공개 파일과 모든 항목이 정확히 같았음(표의 5팀은 표준 육성에서 협공·반격이 한 번도 안 일어나 이번 규칙 변경이 닿지 않음 — 11/03 Claude 확인. 협공 많은 팀은 결과가 달라짐: 태양 회랑 250 에밀리·왈츠 아세라·힐데·메이드 세레스 판당 협공 6.0→6.8). 기존 필드·최고 클리어 단계는 off, `bySets`·`summaryBySets`는 max를 보존함. 공개 표준 육성만 썼으며 실제 플레이 대조는 남았음.
 - 빠른 계산 표본 2,323건×40판을 다시 생성하고 계수를 재보정했음. 계수·콘텐츠/스테이지 보정값은 이전과 같고 검증 요약만 갱신됐음. 공개 화력 지표의 변경 구원자는 0명임.
-- 저장소: **11/03 커밋 완료·푸시 대기**임. 이번 작업은 한 커밋으로 정리했고 푸시는 하지 않았음. Claude 확인 뒤 푸시하기로 함. Pages 최신 반영 여부는 확인하지 않았음. 주소: https://QooReche.github.io/starsavior-party-navigator/
+- 저장소: 11/03 커밋·푸시 완료, Pages 반영 확인했음. 주소: https://QooReche.github.io/starsavior-party-navigator/
 - 최근 검증: 최종 `run_tests.py --rebuild` **78 통과/0 실패**, `run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe` **79 통과/0 실패**(브라우저 35개 포함), `git diff --check` 통과했음. 독립 리뷰 지적 3건을 반영하고 고정 커밋 범위로 재확인했음. 계정 자료·8899 포트·골든/해시 `--write`는 쓰지 않았음.
 
 ## 남은 일
@@ -29,7 +29,7 @@
 11. 서부 탈환대 세레스 스킬·기본 베라 자동 지정 근사, 기믹 추정 대처·무적 웨이브 실제 배치·길방 밖 협공/추가타·ReactiveBarrier 활성 표를 추가 확인하기로 함. 기본/개화 매핑과 적 SkillOrderList·빈 공격 처리는 완료했음.
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
 
-## ▶ 2026-11-03 (회사 PC, codex 병렬) — 현재 빌드 디컴파일본으로 규칙 재확인·대형 재생성 (푸시 대기)
+## ▶ 2026-11-03 (회사 PC, codex 병렬) — 현재 빌드 디컴파일본으로 규칙 재확인·대형 재생성 (푸시 완료)
 
 ### A — 협공·강제 적용·효과 순서
 
