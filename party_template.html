@@ -588,11 +588,11 @@ function synSummary(party){const hs=partySyn(party.map(x=>x.s.key)).slice(0,5);i
 // 표시 전용 대응표. *는 슬롯 없이 성향만으로 추정한 대응이다.
 const GFIX={
  STEALTH:"광역기",SKILL_NULLIFY:"광역기",SUMMON:"광역기",LINKED_MINIONS:"광역기·브레이커",SELF_DESTRUCT:"광역기*",ALLY_DEATH_TRIGGER:"광역기*",
- CC_APPLY:"정화·면역",DEBUFF_SCALING:"정화·면역·폭딜",GAUGE_DENIAL:"정화·면역·게이지 복구",RESIST_IGNORE:"정화·면역",BUFF_STRIP:"정화·재부여 또는 자립형 딜러",COOLDOWN_DISRUPT:"정화·면역*",
+ CC_APPLY:"정화·면역",DEBUFF_SCALING:"정화·면역·폭딜",GAUGE_DENIAL:"정화·면역·게이지 복구",RESIST_IGNORE:"정화·면역",BUFF_STRIP:"정화·재부여 또는 자립형 딜러",COOLDOWN_DISRUPT:"면역·쿨타임 감소*",
  TARGET_PRIORITY:"보호막·힐·도발",HIT_RETALIATION:"보호막·힐·도발",PCT_HP_DAMAGE:"보호막·힐·도발",OPENER_BURST:"보호막·힐·도발",HEAL_BLOCK:"보호막 (힐러 비추천)",TOUGHNESS_PRESSURE:"보호막·힐·도발*",
  HIT_COUNT_TRIGGER:"폭딜·단일 대형 (다타 비추천)",HIT_STACK_OFFENSE:"폭딜·단일 대형·행동 억제 (다타 비추천)",HIT_STACK_DEFENSE:"폭딜·단일 대형·방관 (다타 비추천)",TURN_HIT_REDUCTION:"폭딜·단일 대형 (다타 비추천)",HP_THRESHOLD_PHASE:"폭딜·단일 대형 (다타 비추천)",ENRAGE_STACK:"폭딜·단일 대형·가속 (다타 비추천)",UNDYING:"폭딜·단일 대형* (다타 비추천)",STANCE_CYCLE:"폭딜·단일 대형* (다타 비추천)",SLOT_DAMAGE_REDUCTION:"폭딜·단일 대형* (다타 비추천)",CONDITIONAL_DAMAGE_REDUCTION:"폭딜·단일 대형* (다타 비추천)",
  SHIELD_GEN:"브레이크·방관",SHIELD_GATED:"브레이크·방관",TOUGHNESS_BREAK_REACTIVE:"브레이크·방관",TOUGHNESS_IMMUNE_WINDOW:"구간 전후 폭딜·브레이커",HIT_TOUGHNESS_RECOVER:"브레이크·방관*",
- SELF_BUFF_DEPENDENT:"강화 해제",INVULN_GUARD:"강화 해제*",HIT_GAUGE_GAIN:"행동 억제",EXTRA_ACTION:"행동 억제*",
+ SELF_BUFF_DEPENDENT:"강화 해제",INVULN_GUARD:"해제 가능한 강화만*",HIT_GAUGE_GAIN:"행동 억제",EXTRA_ACTION:"행동 억제*",
  DEBUFF_GATED_POWER:"디버퍼 필요",SELF_CLEANSE:"디버퍼 비추천",BUFF_STATE_PUNISH:"버퍼 의존 비추천",
  REACTIVE_TO_ATTACK_KIND:"대응 미확인",ELEMENT_RESIST:"대응 미확인",ELEMENT_BIAS_ATTACK:"대응 미확인",NONATTACK_PUNISH:"대응 미확인"
 };

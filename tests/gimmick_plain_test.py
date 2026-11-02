@@ -62,6 +62,16 @@ import json as _json
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 sys.path.insert(0, _ROOT)
 import party_reco as _pr
+from tools.build_gimmicks import TYPES, SLOT_RULES
+
+# 클라로 확인한 표시 판정이 재생성 때 다시 추정으로 돌아가지 않게 원본과 대조.
+for _code in ("STEALTH", "SKILL_NULLIFY"):
+    if rules[_code]["conf"] != "확인" or TYPES[_code]["impact_conf"] != "확인":
+        fails.append("확인된 대처가 추정으로 돌아감: " + _code)
+    for _field in ("good", "bad"):
+        if rules[_code][_field] != SLOT_RULES[_code][_field]:
+            fails.append("빌더와 공개 문구 불일치: " + _code + "/" + _field)
+
 _cfg = _json.load(open(os.path.join(_ROOT, "party_contents.json"), encoding="utf-8"))
 _both = [k for k, v in _pr._json(_pr.GSTAGE).items() if "BUFF_STRIP" in v and "BUFF_BAN" in v]
 if not _both:
