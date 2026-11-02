@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """협공 후보 순서: 상한 전 능력치·동점 슬롯순·첫 성공·실제 전투 경로."""
 import math
+import itertools
 import os
 import sys
 import unittest
@@ -36,14 +37,15 @@ class CoopOrderTest(unittest.TestCase):
         return [c.args[0].pos for c in cast.call_args_list], rng.random.call_count
 
     def test_defaults_and_rank_check_legacy(self):
-        self.assertEqual(rules.DEFAULT_OPTS['coop_order'], 'stat')
+        self.assertEqual(rules.DEFAULT_OPTS['coop_order'], 'random_success')
+        self.assertIn('stat', rules.RULES['opts']['coop_order']['alt'])
         self.assertEqual(rules.RULES['opts']['coop_order']['legacy'], 'capped')
         self.assertNotIn('coop_order', rules.MC_OPTS)  # 공통 opts와 MC 전용 키는 중복시키지 않음
         try:
             rank_check.apply_rules('legacy')
             self.assertEqual(rules.DEFAULT_OPTS['coop_order'], 'capped')
             rank_check.apply_rules('default')
-            self.assertEqual(rules.DEFAULT_OPTS['coop_order'], 'stat')
+            self.assertEqual(rules.DEFAULT_OPTS['coop_order'], 'random_success')
             rank_check.apply_rules('default', {'coop_order': 'capped'})
             self.assertEqual(rules.DEFAULT_OPTS['coop_order'], 'capped')
         finally:
@@ -97,7 +99,7 @@ class CoopOrderTest(unittest.TestCase):
         ctx.coop_used = True
         self.assertEqual(self.pick(b, a, ctx, ()), ([], 0))
 
-    def expected_casts(self, rates, mode='stat', cap=1.0, unavailable=None):
+    def expected_casts(self, rates, mode='stat', cap=1.0, unavailable=None, used=0.0):
         defs = [engine.DummyDef(name='a%d' % i) for i in range(len(rates) + 1)]
         for d in defs:
             d.dummy = False  # 독립 합성 유닛: 실 구원자 캐시/계정 자료를 바꾸지 않음
@@ -112,9 +114,15 @@ class CoopOrderTest(unittest.TestCase):
             s.party[2].d.skills['기본기'].ty = '패시브'
         elif unavailable == 'missing':
             del s.party[2].d.skills['기본기']
+        elif unavailable == 'disabled':
+            buff = engine.Buff('협공 불가', {}, 1, math.inf)
+            buff.stacks = 1
+            s.party[2].buffs[buff.name] = buff
         a = s.party[0]
         with patch.object(engine, 'COOP_CAP', cap), patch.object(s, 'cast') as cast:
-            s.coop_followups(a, engine.Ctx(a, a, a.d.skills['기본기'], False, 1.0))
+            ctx = engine.Ctx(a, a, a.d.skills['기본기'], False, 1.0)
+            ctx.coop_used = used
+            s.coop_followups(a, ctx)
         return [(c.args[0].idx, c.kwargs['w']) for c in cast.call_args_list if c.kwargs['w'] > 0]
 
     def test_expected_above_cap_and_legacy(self):
@@ -137,6 +145,124 @@ class CoopOrderTest(unittest.TestCase):
         for reason in ('cooldown', 'passive', 'missing'):
             with self.subTest(reason=reason):
                 self.assertEqual(self.expected_casts([1.2, 1.8, 1.4], unavailable=reason), [(3, 1.0)])
+
+    def test_random_success_rolls_every_candidate_in_slot_order(self):
+        b, a, ctx = self.make_battle([0.5, 0.8, 0.2], 'random_success')
+        b.allies.reverse()
+        rng = Mock()
+        rng.random.side_effect = [0.49, 0.8, 0.19]  # slots 1/3 성공, 2는 경계 실패
+        rng.choice.side_effect = lambda seq: seq[-1]
+        with patch.object(b, 'R', return_value=rng), patch.object(b, 'cast') as cast:
+            b.coop(a, ctx)
+        self.assertEqual(rng.random.call_count, 3)
+        rng.choice.assert_called_once()
+        self.assertEqual([u.pos for u in rng.choice.call_args.args[0]], [1, 3])
+        self.assertEqual(cast.call_count, 1)
+        self.assertEqual(cast.call_args.args[0].pos, 3)
+        self.assertEqual(cast.call_args.kwargs['via'], 'coop')
+        self.assertIs(cast.call_args.kwargs['target'], ctx.target)
+
+    def test_random_success_empty_and_single_pool(self):
+        for rolls, expected in [([0.6, 0.9], []), ([0.6, 0.1], [2])]:
+            b, a, ctx = self.make_battle([0.5, 0.8], 'random_success')
+            rng = Mock()
+            rng.random.side_effect = rolls
+            rng.choice.side_effect = lambda seq: seq[0]
+            with patch.object(b, 'R', return_value=rng), patch.object(b, 'cast') as cast:
+                b.coop(a, ctx)
+            self.assertEqual(rng.random.call_count, 2)
+            self.assertEqual(rng.choice.call_count, bool(expected))
+            self.assertEqual([c.args[0].pos for c in cast.call_args_list], expected)
+        b, a, ctx = self.make_battle([0, -0.1], 'random_success')
+        self.assertEqual(self.pick(b, a, ctx, ()), ([], 0))
+        b, a, ctx = self.make_battle([1.2, 1.8], 'random_success')
+        ctx.coop_used = True
+        self.assertEqual(self.pick(b, a, ctx, ()), ([], 0))
+
+    def test_random_success_filters_before_rolling(self):
+        for reason in ('dead', 'broken', 'stun', 'sleep', 'missing', 'cooldown', 'passive', 'disabled'):
+            b, a, ctx = self.make_battle([1.8, 1.2], 'random_success')
+            u = b.allies[1]
+            if reason == 'dead':
+                u.dead = True
+            elif reason == 'broken':
+                u.broken = True
+            elif reason in ('stun', 'sleep', 'disabled'):
+                give(u, {'stun': '기절', 'sleep': '수면', 'disabled': '협공 불가'}[reason], harmful=True)
+            elif reason == 'missing':
+                del u.d.skills['기본기']
+            elif reason == 'cooldown':
+                u.cd['기본기'] = 1
+            else:
+                u.d.skills['기본기'].ty = '패시브'
+            rng = Mock()
+            rng.random.return_value = 0.0
+            rng.choice.side_effect = lambda seq: seq[0]
+            with self.subTest(reason=reason), patch.object(b, 'R', return_value=rng), patch.object(b, 'cast') as cast:
+                b.coop(a, ctx)
+                self.assertEqual(rng.random.call_count, 1)
+                self.assertEqual([u.pos for u in rng.choice.call_args.args[0]], [2])
+                self.assertEqual(cast.call_args.args[0].pos, 2)
+
+    def test_random_success_weights_match_all_success_sets(self):
+        # 엔진의 성공자 수 분포와 독립적으로 모든 성공/실패 집합을 열거.
+        for rates, cap in [([0.5, 0.8, 0.2], 1.0), ([1.2, 1.8, 1.4], 1.0),
+                           ([1.2, 1.8, 1.4], 0.3), ([0, 1, 0.5], 1.0), ([0, -0.1], 1.0)]:
+            probs = [min(cap, max(0, p)) for p in rates]
+            expected = [0.0] * len(probs)
+            for flags in itertools.product([False, True], repeat=len(probs)):
+                if not any(flags):
+                    continue
+                mass = math.prod(p if yes else 1-p for p, yes in zip(probs, flags))
+                for i, yes in enumerate(flags):
+                    if yes:
+                        expected[i] += mass / sum(flags)
+            for used in (0, 0.25, 1):
+                got = dict(self.expected_casts(rates, 'random_success', cap, used=used))
+                for i, weight in enumerate(expected):
+                    self.assertAlmostEqual(got.get(i+1, 0), weight * (1-used))
+                self.assertAlmostEqual(sum(got.values()), (1-math.prod(1-p for p in probs)) * (1-used))
+
+    def test_random_success_expected_unavailable_basic(self):
+        for reason in ('cooldown', 'passive', 'missing', 'disabled'):
+            self.assertEqual(self.expected_casts([1.2, 1.8, 1.4], 'random_success', unavailable=reason),
+                             [(1, 0.5), (3, 0.5)])
+
+    def test_random_success_standard_battle_uses_new_default(self):
+        original_coop, original_cast = Battle.coop, Battle.cast
+        checked = []
+
+        def spy(b, actor, ctx):
+            eligible = sorted([u for u in b.alive(0) if u is not actor and not b.no_react(u)
+                               and u.d.skills.get('기본기') and u.d.skills['기본기'].ty == '액티브'
+                               and u.cd.get('기본기', 0) <= 0 and not u.has('협공 불가')], key=lambda u: u.pos)
+            if ctx.coop_used or ctx.skill.slot != '기본기' or len(eligible) < 2:
+                return original_coop(b, actor, ctx)
+            for u in eligible:
+                give(u, '새 협공 시험', props={'협공 확률': 180 - u.pos * 10})
+            selected = []
+
+            def cast(u, skill, *args, **kwargs):
+                if kwargs.get('via') == 'coop':
+                    selected.append(u)
+                return original_cast(b, u, skill, *args, **kwargs)
+
+            with patch.object(b, 'cast', cast), patch.object(b.R(actor.side), 'choice', side_effect=lambda seq: seq[-1]):
+                result = original_coop(b, actor, ctx)
+            self.assertEqual(selected, [eligible[-1]])  # stat/capped면 앞 후보여서 실패
+            checked.append(1)
+            return result
+
+        with patch.object(Battle, 'coop', spy):
+            result = simulate(['emily', 'waltz-asherah', 'hilde', 'ceres-sun-supporter'],
+                              {'stage': 'clo/달 회랑/FLOOR 100'},
+                              {'seed': 17, 'n_runs': 2, 'build': 'standard'})
+        self.assertGreater(len(checked), 0)
+        self.assertGreater(result['outcome']['progress'], 0)
+        self.assertGreater(result['ally_via'].get('coop', 0), 0)
+        self.assertEqual(next(r['value'] for r in result['assumptions_used']
+                              if r['rule'] == 'opts.coop_order'), 'random_success')
+        print('random_success: 새 후보 분기 %d회, progress=%.4f' % (len(checked), result['outcome']['progress']))
 
     def test_standard_battle_reaches_above_cap_branch(self):
         original_coop, original_cast = Battle.coop, Battle.cast
