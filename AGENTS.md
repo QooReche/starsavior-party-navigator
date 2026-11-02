@@ -11,7 +11,8 @@
 
 ## 엔진 규칙을 바꿀 때
 
-- **근거는 클라 코드·표의 파일:줄.** 디컴파일본(`star-savior-decompiled/NKM/NKM.decompiled.cs` 등)이나 static-data 표에서 확인한 것만 «클라와 같음»으로 씀. 확인 못 한 부분은 «미확인»으로 남기고 추측으로 확정하지 않음.
+- **근거는 클라 코드·표의 파일:줄.** 디컴파일본(비공개 static-data `decompiled/NKM/NKM.decompiled.cs` 등, 빌드는 `decompiled/BUILD.md`)이나 static-data 표에서 확인한 것만 «클라와 같음»으로 씀. 확인 못 한 부분은 «미확인»으로 남기고 추측으로 확정하지 않음.
+  - ⚠ 외부 `star-savior-decompiled` 는 2026-03-28판이라 근거로 쓰지 않음(11/02 현재 빌드 디컴파일로 대체). 패치 때 static-data `DECOMPILE.md` 로 다시 뽑고, 근거 줄은 빌드가 바뀌면 다시 찾음(`OBF_` 번호도 바뀜).
 - **스위치로 넣음**: `battlesim/rules/default.json` 에 `value`(새 기본)·`legacy`(옛 동작)·`alt`·`grade`·`note`·`source`. 새 키는 `tests/rules_test.py` 의 `_EXPECTED_MC_OPTS_KEYS` 에도 추가. 근거가 불완전하면 기본값은 옛 동작으로 둠.
 - 결과 해시를 고정하는 시험(`mc_cache_test` 등)은 새 규칙의 옛 값으로 고정(`_KEEP`). 해시를 새 값으로 다시 박아 시험을 «맞추지» 말 것.
 - 패치 노트·게임 내 수치가 표와 다르면 날짜를 확인(예: 격돌의 돌풍 게이지 11/01 패치로 2000→3000). 옛 표로 «틀렸다» 판단하지 않음.
