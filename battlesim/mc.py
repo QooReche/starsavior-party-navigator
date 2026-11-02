@@ -1219,6 +1219,9 @@ class Battle:
             # 게임 SkillOrderList(에밀리 등 9명 = 특수기 -> 궁극기 -> 기본기). 개화 변형은 기본 키 순서
             orders = auto_skill_order()
             slots = orders.get(u.key) or orders.get(u.key.split('@')[0]) or slots
+        elif u.side == 1 and self.mc['foe_skill_order'] == 'data':
+            # 적도 같은 SkillOrderList 순회(NKM:6378). 배치별 연결은 foe_auto 빌더에서 검증함.
+            slots = getattr(u.d, 'skill_order', ()) or slots
         for slot in slots:
             sk = u.d.skills.get(slot)
             if sk is None or u.cd.get(slot, 0) > 0:
@@ -1720,7 +1723,9 @@ class Battle:
                     and self.mc.get('foe_react') == 'data'
                     and self.mc.get('foe_react_timing', 'extended') == 'extended'):
                 self._check_foe_react(u, ctx, timing_filter='on_my_attack')
-            if sk.is_attack and ctx.targets:
+            # 이미 시작한 공격은 대상 목록이 비어도 DAMAGE_END 전 DC_ATTACK을 해제함.
+            # NKM:15552의 조기 반환은 대상이 아니라 UnitState 공격 이벤트가 없는 경우임.
+            if sk.is_attack and (ctx.targets or self.mc['empty_attack'] == 'process'):
                 self.deal(u, ctx)
             if not u.dead:
                 if not skip_lines:

@@ -5,6 +5,7 @@
 - 데이터북 적(유닛 ui·변형 xi) ↔ 게임 유닛은 tools/build_foe_spawn 의 스테이지 연결을 쓰되, 조건에 맞는 배치가 하나뿐인 스테이지만,
   칸마다 역할·속성·보스 여부가 같을 때만 모은다. 한 (ui, xi) 에 게임 유닛이 여럿이면 가공 규칙이 모두 같을 때만 쓴다(다르면 제외·보고).
 - 스킬 규칙: 게임 스킬(_ATTACK/_SPECIAL/_HYPER = 기본기/특수기/궁극기)의 AutoSkillId 행을 조건(c)·필터(f) 어휘로. 반응 스킬은 제외.
+- 시도 순서: 같은 배치 연결로 SkillOrderList를 칸 이름(order)으로 변환. 여러 게임 유닛의 순서가 다르면 그 연결을 제외함.
 - 효과 줄: 그 스킬의 SE 행(COND_<스킬>_NN, 순서대로)과 데이터북 ef 줄을 줄 수가 같고, 줄마다 대상 종류(자신/적 전체/자동 지정 …)가
   맞을 때만 짝짓는다. AutoTargetId 가 있는 「적 자동 지정」 줄만 lines[si:k] = {"one": 단일 대상, "f": [...]}.
   EnforceAutoTargetId(강제 추가 행동 경로): BI_ENFORCE SE 가 아군 자동 대상이면 enforce 규칙을 줄 spec 에 추가한다.
@@ -22,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
-from tools.build_auto_skill import jsonc   # noqa: E402
+from tools.build_auto_skill import NSI, jsonc   # noqa: E402
 from tools import build_foe_spawn as SP   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior import foe as F   # noqa: E402
@@ -235,13 +236,18 @@ def build(static):
             REPORT['한 유닛에 다른 규칙(제외)' if None not in variants else '모르는 어휘로 유닛 제외'] += 1
             continue
         rules = json.loads(variants[0])
-        if rules['skills'] or rules['lines']:
+        if rules['skills'] or rules['lines'] or rules.get('order'):
             out['foe:%d' % ui + (':%d' % xi if xi is not None else '')] = rules
     return out
 
 
 def unit_rules(u, raw, gu, skills, auto, target, se, bname):
     res = {'skills': {}, 'lines': {}}
+    if gu.get('SkillOrderList'):
+        try:
+            res['order'] = [NSI[s] for s in gu['SkillOrderList']]
+        except KeyError as ex:
+            raise Unknown('SkillOrderList 칸 %s' % ex)
     db = {raw['s'][si]['sl']: si for si in u['sk'] if raw['s'][si]['sl'] in SLOT.values()}
     for sid in gu.get('m_listSkill') or []:
         m = re.search(r'_(ATTACK|SPECIAL|HYPER)\d*$', sid)
@@ -309,7 +315,8 @@ def main():
     low_priority()
     units = build(static)
     out = dict(_note='적 자동 대상 규칙(tools/build_foe_auto.py). units[foe:유닛[:변형]] = {skills[칸] = 규칙 행(c 조건, f 필터), '
-                     'lines["스킬번호:줄번호"] = 효과 줄 자동 대상(one = 1명, f 필터)}. 없는 적·줄은 엔진 기본(설명문 근사 -> 규칙 1001).',
+                     'lines["스킬번호:줄번호"] = 효과 줄 자동 대상(one = 1명, f 필터), order = SkillOrderList 시도 순서}. '
+                     '없는 적·줄은 엔진 기본(설명문 근사 -> 규칙 1001), 없는 순서는 궁극기->특수기->기본기.',
                units=units)
     atomic_text(ROOT / 'data' / 'foe_auto.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
     n_sk = sum(len(v['skills']) for v in units.values())

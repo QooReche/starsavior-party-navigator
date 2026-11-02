@@ -244,6 +244,7 @@ class FoeDef:
         # 게임 자동 대상 규칙(mc.foe_auto): 스킬 칸 -> 규칙 행, (칸, 효과 줄 원문) -> 효과 줄 자동 대상. 같은 원문에 다른 규칙이면 버림
         rules = foe_auto().get(self.key) or {}
         self.auto = rules.get('skills', {})
+        self.skill_order = rules.get('order', ())
         self.auto_lines, clash = {}, set()
         for k, spec in rules.get('lines', {}).items():
             si, li = (int(x) for x in k.split(':'))
