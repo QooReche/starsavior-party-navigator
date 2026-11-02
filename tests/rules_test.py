@@ -188,13 +188,13 @@ def test_dmg_reduction():
 
 # ---------------------------------------------------------------- 0. 교정 전 = P1 골든
 def test_legacy_reproduces_p1_golden():
-    """rules 의 legacy 값만 모으면 P1 골든(tests/golden/sim_golden_p1.json)을 정확히 재현해야 한다."""
+    """P1 입력은 강제 협공 stat_atk로 고정. 현 legacy는 직전 기본 live_atk임."""
     sys.path.insert(0, os.path.join(ROOT, 'tests'))
     import rank_check as rc
     with open(os.path.join(ROOT, 'tests', 'golden', 'sim_golden_p1.json'), encoding='utf-8') as f:
         golden = json.load(f)
     try:
-        r = rc.run_one(golden, DB, 'legacy', None, 3)
+        r = rc.run_one(golden, DB, 'legacy', {'forced_coop_target': 'stat_atk'}, 3)
     finally:
         rc.apply_rules('default', None)
     return r['exact'], '골든 정확 일치 %s (지표 Spearman %.4f, 150팀 %.4f, 처치 턴 바뀐 칸 %d)' % (
@@ -207,7 +207,7 @@ def test_forced_coop_slot():
     프로페서M 기본기가 추가 시전(협공·추가 발동)이면 강제 협공이 다시 일어나지 않아야 한다. independent(교정 전)는 둘 다 일어남."""
     out = {}
     for mode in ('independent', 'shared'):
-        o = dict(DEFAULT_OPTS, forced_coop_slot=mode)
+        o = dict(DEFAULT_OPTS, forced_coop_slot=mode, forced_coop_target='live_atk')
         s = Sim([unit_def(k) for k in ('professor-m', 'gwen', 'fei', 'waltz-asherah')], ref_enemies(1), 10, o)
         pm, fei, wa = s.party[0], s.party[2], s.party[3]
         coop_buff(wa, 0.3)

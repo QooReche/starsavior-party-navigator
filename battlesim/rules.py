@@ -66,9 +66,9 @@ DEFAULT_OPTS = dict(
     debuff_model=_O['debuff_model'], enemy_resist=_O['enemy_resist'], forced_coop_target=_O['forced_coop_target'],
     dot_snapshot=_O['dot_snapshot'], gear_order=_O['gear_order'], dmg_reduction=_O['dmg_reduction'],
     forced_coop_slot=_O['forced_coop_slot'], debuff_state=_O['debuff_state'], gauge_expect=_O['gauge_expect'],
-    coop_order=_O['coop_order'],
+    coop_order=_O['coop_order'], coop_dead_target=_O['coop_dead_target'],
 )
-# 교정 전(P1) 값: rules/default.json 의 legacy. tests/rank_check.py 가 「교정 전」 프로필로 쓴다.
+# 교정 전 값: rules/default.json의 legacy. P1 골든은 이후 갱신된 legacy 키를 당시 입력으로 별도 고정한다.
 LEGACY_OPTS = {k: v['legacy'] for k, v in RULES['opts'].items() if 'legacy' in v}
 LEGACY_FORMULA = {k: v['legacy'] for k, v in RULES['formula'].items() if 'legacy' in v}
 # P3 확률 엔진(battlesim/mc.py) 전용 규칙. DEFAULT_OPTS 와 따로 둔다(기대값 엔진·damage_index 출력 불변).

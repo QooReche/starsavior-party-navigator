@@ -2,6 +2,9 @@
 """행동 게이지 방식 이벤트 시뮬레이터(기대값). 런타임 개체(Buff/Actor/Enemy/Ctx), Sim, 더미 딜러(DummyDef)."""
 import math
 import re
+import json
+import os
+from functools import lru_cache
 from collections import defaultdict
 
 from .rules import (AOE_DIV, BASE_MULT, BREAK_DEC, COOP_CAP, DEC_CAP, DEF_K, DEFAULT_OPTS, ELEM_BEATS, ELEM_HIT, ELEM_LOSES,  # noqa: F401
@@ -22,6 +25,16 @@ def calc_hit(a, b=0.0):
         f = a
     return max(0.0, min(1.0, f))
 from .starsavior.parser import Line, Skill, _map_prop
+from .starsavior.data import SRC
+
+
+@lru_cache(maxsize=1)
+def _forced_coop_lines():
+    """강제 협공의 대상 표지/해제/강화/부여에 쓰는 공개 자동 대상 규칙."""
+    with open(os.path.join(SRC, 'data', 'auto_skill.json'), encoding='utf8') as f:
+        rows = json.load(f)['client_variant_lines']
+    return {(key, slot, raw): spec for key, lines in rows.items() for slot, raw, spec in lines
+            if '표본 행동 분석' in raw or '〈강제 협공〉' in raw}
 
 # ------------------------------------------------------------------ 런타임 개체
 class Buff:
@@ -52,6 +65,7 @@ class Actor:
         self.cast_count = defaultdict(float)
         self.actions = 0
         self.acting = False
+        self.forced_coop = 0.0  # ForceCrossAttack 존재 확률. 턴 종료 때 초기화(NKM:13569–13572).
         for slot, sk in d.skills.items():
             if sk.cd:
                 self.cd[slot] = sk.cd * opts['init_cd_frac']
@@ -229,6 +243,8 @@ class Sim:
                 dmg = base * (1 + inc - dec) * part['stacks'] * (1 - self.dr(e, 0.0))
                 self.hurt(e, dmg, part['src'], 'dot', hit=0.0)
         if e.dead:
+            for a in self.party:
+                a.forced_coop = 0.0
             return
         # 적 턴 시작 트리거
         for a in self.party:
@@ -253,6 +269,8 @@ class Sim:
                 d['dur'] -= 1
                 if d['dur'] <= 0:
                     del e.deb[name]
+        for a in self.party:
+            a.forced_coop = 0.0
 
     def dr(self, e, pen):
         de = e.def_eff()
@@ -310,6 +328,8 @@ class Sim:
                 if b.dur <= 0:
                     del a.buffs[name]
         a.acting = False
+        for b in self.party:
+            b.forced_coop = 0.0
         if a.extra_turn:
             a.extra_turn = False
             a.gauge = 10000.0
@@ -369,7 +389,8 @@ class Sim:
                     self.team_nova += sk.nv
                 else:
                     a.nova += sk.nv
-            if self.opts['coop'] and sk.is_attack and not extra:
+            if (sk.is_attack and not extra and (self.opts['coop']
+                    or (self.opts['forced_coop'] and self.opts['forced_coop_target'] == 'random'))):
                 self.coop_followups(a, ctx)
         finally:
             self.depth -= 1
@@ -419,13 +440,29 @@ class Sim:
         coop_single: 공격 1번에 1명. random_success는 성공 집합에서 균등 추첨한 기대값."""
         if self.opts['coop_trigger'] == 'basic_only' and ctx.skill.slot != '기본기':
             return
+        if (self.opts['coop_dead_target'] == 'cancel' and not ctx.skill.all
+                and ctx.target is not None and ctx.target.dead):
+            return  # NKM:15495-15504: 단일 본대상 사망 시 협공 취소
+        forced_rest = 1.0
+        if self.opts['forced_coop_target'] == 'random' and self.opts['forced_coop']:
+            forced = [(b, clamp(b.forced_coop)) for b in self.party
+                      if b is not actor and b.forced_coop > 0 and self._coop_available(b)]
+            weights = self._uniform_success_weights(forced)
+            for (b, _), weight in zip(forced, weights):
+                self.cast(b, b.d.skills['기본기'], w=weight * ctx.w, extra=True)
+            if self.opts['forced_coop_slot'] == 'shared':
+                forced_rest = max(0.0, 1.0 - sum(weights))
+            if forced_rest <= 1e-12:
+                return
+        if not self.opts['coop']:
+            return
         if not self.opts['coop_single']:   # 교정 전: 확률이 있는 아군 전원이 편성 순서대로 각자 협공
             for b in self.party:
                 if b is actor or getattr(b.d, 'dummy', False):
                     continue
                 p = clamp(b.mods()['coop'], 0.0, COOP_CAP)
                 if p > 0:
-                    self.cast(b, b.d.skills['기본기'], w=p * ctx.w, extra=True)
+                    self.cast(b, b.d.skills['기본기'], w=p * forced_rest * ctx.w, extra=True)
             return
         stat_order = self.opts['coop_order'] == 'stat'
         random_success = self.opts['coop_order'] == 'random_success'
@@ -436,32 +473,78 @@ class Sim:
             if (stat_order or random_success) and (b.d.skills.get('기본기') is None
                                or b.d.skills['기본기'].ty != '액티브' or b.cd.get('기본기', 0) > 0):
                 continue
-            if random_success and b.stack('협공 불가') > 0:
+            if random_success and not self._coop_available(b):
                 continue
             stat = b.mods()['coop']
             p = clamp(stat, 0.0, COOP_CAP)
             if p > 0:
                 cands.append((b, p, stat if stat_order else p))
-        rest = 1.0 - ctx.coop_used   # 강제 협공이 먼저 차지한 몫(forced_coop_slot='shared')
+        rest = (1.0 - ctx.coop_used) * forced_rest
         if random_success:
             # i가 성공하고 다른 성공자가 k명일 확률 × 1/(k+1).
             # 성공자 수의 분포를 합성해 확률 평균을 비선형 선택식에 넣지 않는다.
-            for i, (b, p, _) in enumerate(cands):
-                counts = [1.0]
-                for j, (_, q, _) in enumerate(cands):
-                    if i == j:
-                        continue
-                    updated = [0.0] * (len(counts) + 1)
-                    for k, mass in enumerate(counts):
-                        updated[k] += mass * (1 - q)
-                        updated[k + 1] += mass * q
-                    counts = updated
-                weight = p * sum(mass / (k + 1) for k, mass in enumerate(counts))
+            weights = self._uniform_success_weights([(b, p) for b, p, _ in cands])
+            for (b, p, _), weight in zip(cands, weights):
                 self.cast(b, b.d.skills['기본기'], w=weight * rest * ctx.w, extra=True)
             return
         for b, p, _ in sorted(cands, key=lambda bp: -bp[2]):   # 같은 능력치이면 편성 순서(안정 정렬)
             self.cast(b, b.d.skills['기본기'], w=p * rest * ctx.w, extra=True)
             rest *= 1 - p
+
+    @staticmethod
+    def _uniform_success_weights(cands):
+        """독립 존재/성공 확률을 성공 집합별 1/N으로 합산한다(평균 N으로 나누지 않음)."""
+        weights = []
+        for i, (_, p) in enumerate(cands):
+            counts = [1.0]
+            for j, (_, q) in enumerate(cands):
+                if i == j:
+                    continue
+                updated = [0.0] * (len(counts) + 1)
+                for k, mass in enumerate(counts):
+                    updated[k] += mass * (1 - q)
+                    updated[k + 1] += mass * q
+                counts = updated
+            weights.append(p * sum(mass / (k + 1) for k, mass in enumerate(counts)))
+        return weights
+
+    @staticmethod
+    def _coop_available(b):
+        # 기대값 모델에서 표현되는 상태만 검사. 아군 HP/브레이크 상태기는 MC에 있음.
+        sk = b.d.skills.get('기본기')
+        return (not getattr(b, 'dead', False) and not getattr(b, 'broken', False)
+                and sk is not None and sk.ty == '액티브' and b.cd.get('기본기', 0) <= 0
+                and not any(b.stack(name) > 0 for name in ('기절', '수면', '협공 불가')))
+
+    def _forced_effect_targets(self, owner, ln):
+        """효과 부여 대상을 먼저 고른다. 최종 강제 후보 균등 추첨과 별개임."""
+        if self.opts['forced_coop_target'] != 'random':
+            return None
+        if '표본 행동 분석' not in ln.raw and '〈강제 협공〉' not in ln.raw:
+            return None
+        spec = _forced_coop_lines().get((owner.d.key, ln.slot, ln.raw))
+        if spec is None:
+            return None
+        pool = [b for b in self.party if not getattr(b, 'dead', False)
+                and (not spec.get('exclude_self') or b is not owner)]
+        matched = False
+        for filt in spec['f']:
+            if filt == 'not_unable_to_act':
+                got = [b for b in pool if not any(b.stack(n) > 0 for n in ('기절', '수면'))]
+            elif filt == 'high_atk':
+                high = max((self.live_atk(b) for b in pool), default=0)
+                got = [b for b in pool if self.live_atk(b) == high]
+            elif isinstance(filt, list) and filt[0] in ('has', 'not_has'):
+                got = [b for b in pool if any(b.stack(n) > 0 for n in filt[1]) == (filt[0] == 'has')]
+            else:
+                raise ValueError('강제 협공 대상 필터 미지원: %r' % (filt,))
+            # 클라 우선 필터: 0명이면 이전 풀 유지, 단일 대상에서 1명이 되면 중단.
+            if got:
+                pool, matched = got, True
+                if spec['one'] and len(pool) == 1:
+                    break
+        # 동률/확률 상태의 상관은 기대값 엔진의 기존 대상 근사(슬롯순)를 유지한다.
+        return ('a', pool[:1] if spec['one'] else (pool if matched else []))
 
     # ---------- 피해
     def deal_damage(self, a, ctx):
@@ -756,7 +839,9 @@ class Sim:
             self.chain_damage(owner, eff, ctx, wf)
             return
         if kd == 'remove':
-            tg = self.resolve_targets(owner, eff['target'], ctx)
+            tg = self._forced_effect_targets(owner, ln)
+            if tg is None:
+                tg = self.resolve_targets(owner, eff['target'], ctx)
             if not tg:
                 return
             for x in tg[1]:
@@ -773,11 +858,11 @@ class Sim:
                             sub['stacks'] *= (1 - wf)
             return
         if kd == 'buff':
-            self.apply_buff(owner, eff, ctx, wf)
+            self.apply_buff(owner, eff, ctx, wf, targets=self._forced_effect_targets(owner, ln))
             return
 
-    def apply_buff(self, owner, eff, ctx, wf):
-        tg = self.resolve_targets(owner, eff['target'], ctx)
+    def apply_buff(self, owner, eff, ctx, wf, targets=None):
+        tg = targets if targets is not None else self.resolve_targets(owner, eff['target'], ctx)
         if not tg:
             return
         side, targets = tg
@@ -791,6 +876,11 @@ class Sim:
             return
         if eff['name'] == '강제 협공':      # 대상 아군이 기본기로 추가 공격(추정: 협공 = 기본기 1회)
             if not self.opts['forced_coop']:
+                return
+            if self.opts['forced_coop_target'] == 'random':
+                # NKM:5230–5232는 플래그만 부여. 15508–15521에서 본행동 뒤 추첨.
+                for x in targets:
+                    x.forced_coop = 1 - (1 - x.forced_coop) * (1 - clamp(chance * wf))
                 return
             if self.opts['forced_coop_target'] == 'live_atk':
                 # 공격력 1위 = 그 순간 버프 포함 공격력(같으면 스탯 공격력, 그다음 편성 순서). 대상 수는 문장 그대로

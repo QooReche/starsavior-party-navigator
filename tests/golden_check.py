@@ -87,13 +87,19 @@ def main():
     import battlesim.engine as engine
     saved = engine.COOP_CAP
     saved_order = engine.DEFAULT_OPTS['coop_order']
+    saved_forced = engine.DEFAULT_OPTS['forced_coop_target']
+    saved_dead = engine.DEFAULT_OPTS['coop_dead_target']
     try:
         engine.COOP_CAP = 0.30
         engine.DEFAULT_OPTS['coop_order'] = 'capped'
+        engine.DEFAULT_OPTS['forced_coop_target'] = 'live_atk'
+        engine.DEFAULT_OPTS['coop_dead_target'] = 'retarget'
         cur = capture()
     finally:
         engine.COOP_CAP = saved
         engine.DEFAULT_OPTS['coop_order'] = saved_order
+        engine.DEFAULT_OPTS['forced_coop_target'] = saved_forced
+        engine.DEFAULT_OPTS['coop_dead_target'] = saved_dead
     if a.write:
         os.makedirs(os.path.dirname(GOLDEN), exist_ok=True)
         tmp = GOLDEN + '.tmp'

@@ -74,12 +74,12 @@ python -X utf8 -I tests/p3_test.py           # 확률 엔진: 대상 가중·도
 | 스위치 | 기본값 | 교정 전 | 뜻 |
 |---|---|---|---|
 | `coop_trigger` | basic_only | any_attack | 협공은 아군 기본기 뒤에만 |
-| `coop_single` | true | false | 공격 1번에 협공 1명(확률 높은 순 기대값) |
+| `coop_single` | true | false | 공격 1번에 협공 1명(전원 판정 후 성공 후보 중 균등 추첨) |
 | `nova_policy` | auto | manual | 오토 = 노바 버스트 안 씀 / 수동 = 4개면 다음 공격 스킬에 버스트 |
 | `nova_pool` | team | unit | 노바 포스 파티 공용(수동일 때만 차이) |
 | `debuff_model` | hit_resist | constant | 효과 적중 판정 = 적중 - 저항 +-상성 30%p (constant 는 `debuff_success`) |
 | `enemy_resist` | 0.6 | - | 지표용 기준 적 효과 저항(대표 스테이지 보스 중앙값, 가정) |
-| `forced_coop_target` | live_atk | stat_atk | 프로페서M 강제 협공 대상 = 버프 포함 현재 공격력 1위 |
+| `forced_coop_target` | random | live_atk | 효과 대상에게 플래그 부여 후 유효 강제 후보 중 균등 1명. 교수M 효과 대상의 공격력·표식 필터는 별도 |
 | `dot_snapshot` | live | on_apply | 지속 피해를 매 틱 현재 스탯으로 |
 | `gear_order` | databook | legacy | 장비 훅 반영 순서(지금 장비 미사용이라 결과 같음) |
 | `dmg_reduction` | sum_cap | none | 감소 합(상한 50%), 브레이크는 감소 합 -15%p |

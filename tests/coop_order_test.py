@@ -236,7 +236,8 @@ class CoopOrderTest(unittest.TestCase):
             eligible = sorted([u for u in b.alive(0) if u is not actor and not b.no_react(u)
                                and u.d.skills.get('기본기') and u.d.skills['기본기'].ty == '액티브'
                                and u.cd.get('기본기', 0) <= 0 and not u.has('협공 불가')], key=lambda u: u.pos)
-            if ctx.coop_used or ctx.skill.slot != '기본기' or len(eligible) < 2:
+            if (ctx.coop_used or ctx.skill.slot != '기본기' or len(eligible) < 2
+                    or (not ctx.skill.all and ctx.target is not None and ctx.target.dead)):
                 return original_coop(b, actor, ctx)
             for u in eligible:
                 give(u, '새 협공 시험', props={'협공 확률': 180 - u.pos * 10})
@@ -274,7 +275,8 @@ class CoopOrderTest(unittest.TestCase):
                 eligible = [u for u in b.alive(0) if u is not actor and not b.no_react(u)
                             and u.d.skills.get('기본기') and u.d.skills['기본기'].ty == '액티브'
                             and u.cd.get('기본기', 0) <= 0]
-                if ctx.coop_used or ctx.skill.slot != '기본기' or len(eligible) < 2:
+                if (ctx.coop_used or ctx.skill.slot != '기본기' or len(eligible) < 2
+                        or (not ctx.skill.all and ctx.target is not None and ctx.target.dead)):
                     return original_coop(b, actor, ctx)
                 for u in eligible:
                     give(u, '순서 경계 시험', props={'협공 확률': (120, 180, 140, 160)[u.pos]})

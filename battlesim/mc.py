@@ -713,6 +713,7 @@ class Battle:
                                        else self.mc['break_skill_cd_unit'])
         self.break_points = self.break_points_gained = self.break_skill_uses = 0
         self.ally_via = {}   # 아군 시전 경로별 횟수(coop·forced_coop·trigger·potential·enforce·revenge·reaction) — 길방 편성 찾기가 협공 발생 팀을 거르는 데 씀
+        self._forced_coop_candidates = set()  # ForceCrossAttack: 효과 대상에 부여, 턴 끝 초기화
         self.break_skill_dmg = 0
         self.break_skill_cd = 0
         self._break_round = 0
@@ -1058,6 +1059,7 @@ class Battle:
         if self.mc['any_turn_clock']:
             self._tick_any_turn()
         self._expire_checks()
+        self._forced_coop_candidates.clear()  # build 26314877 NKM:13569-13572
         u.acting = False
         if u.extra_turn and not u.dead:
             u.gauge = 10000.0     # extra_turn 표시는 실제로 그 턴을 쓸 때(act 시작)까지 유지 -> 동시 100% 판정에서 최우선
@@ -1171,7 +1173,7 @@ class Battle:
                 self.gb.after_break_skill(had_barrier)      # 길방: 브레이크 스킬이 보호막을 깨면 부케(55148)
         nova = rule.get('nova', 0)
         if self.opts['nova_pool'] == 'team':
-            self.team_nova += nova
+            self.nova_add(self.allies[0], nova)  # 공용 풀도 NovaForceUp의 상한을 거침
         # 큐브 회복의 합에는 사망자도 포함(기존 가정). 효과는 생존자에게만.
         amount = sum(u.maxhp for u in self.allies) * (rule.get('heal_ratio', 0) + (heal_up if 'heal_ratio' in rule else 0.0))
         for u in self.alive(0):
@@ -1611,7 +1613,8 @@ class Battle:
             return [v] if v else []
         cur = self._cur_line
         if ('자동 지정' in t and (t.startswith('아군') or t.startswith('자신 제외') or t.startswith('자신을 제외'))
-                and not (cur is not None and cur.eff.get('name') == '강제 협공') and kind != 'remove'):
+                and not (cur is not None and cur.eff.get('name') == '강제 협공'
+                         and self.opts['forced_coop_target'] != 'random') and kind != 'remove'):
             spec = self.line_spec(owner, cur)
             if spec is not None and spec.get('ally'):
                 return self.line_auto_targets(owner, spec, ctx)
@@ -1773,7 +1776,9 @@ class Battle:
                 # 조건 8000 본문 미확인: 기본기 포함, 반응·협공·추가 시전 제외(assumed).
                 if self.break_skill_rule.get('skill_nova'):
                     self.nova_add(u, self.break_skill_rule['skill_nova'])
-            if u.side == 0 and self.opts['coop'] and sk.is_attack and not extra and not u.dead:
+            if (u.side == 0 and sk.is_attack and not extra and not u.dead
+                    and (self.opts['coop'] or (self.opts['forced_coop']
+                         and self.opts['forced_coop_target'] == 'random'))):
                 self.coop(u, ctx)
             u.last_slot = sk.slot
             return ctx
@@ -1965,6 +1970,21 @@ class Battle:
             return
         if ctx.coop_used:
             return
+        if (self.opts['coop_dead_target'] == 'cancel' and not ctx.skill.all
+                and ctx.target is not None and ctx.target.dead):
+            return  # NKM:15495-15504: 저장한 단일 대상 사망이면 추첨도 생략
+        if self.opts['forced_coop_target'] == 'random' and self.opts['forced_coop']:
+            forced = [b for b in self.alive(actor.side)
+                      if b in self._forced_coop_candidates and b is not actor
+                      and self._coop_eligible(b)]
+            if forced:
+                b = self.R(actor.side).choice(forced)
+                ctx.coop_used = True
+                self.cast(b, b.d.skills['기본기'], extra=True,
+                          target=self._coop_target(ctx), via='forced_coop')
+                return  # NKM:15508-15521: 일반 후보의 확률도 굴리지 않음
+        if not self.opts['coop']:
+            return
         stat_order = self.opts['coop_order'] == 'stat'
         random_success = self.opts['coop_order'] == 'random_success'
         cands = []
@@ -1992,6 +2012,13 @@ class Battle:
             if self.R(actor.side).random() < p:
                 self.cast(b, b.d.skills['기본기'], extra=True, target=self._coop_target(ctx), via='coop')
                 return
+
+    def _coop_eligible(self, u):
+        """build 26314877 NKM:15645-15667: 강제/일반 협공 공통 사용 조건."""
+        sk = u.d.skills.get('기본기')
+        return (not u.dead and not self.no_react(u) and sk is not None
+                and sk.ty == '액티브' and u.cd.get('기본기', 0) <= 0
+                and not u.has('협공 불가'))
 
     def revenge(self, hits):
         """반격(NKM.decompiled.cs 11990~12075 판정·15227~15360 처리): 이번 행동에서 유효 타격을 받은 쪽마다 한 번,
@@ -3677,7 +3704,15 @@ class Battle:
         if not tg:
             return
         if eff['name'] == '강제 협공':
-            self.forced_coop(owner, ctx, len(tg))
+            if self.opts['forced_coop_target'] == 'random':
+                if self.opts['forced_coop']:
+                    # NKM:5230-5232: 효과를 받은 유닛에 플래그만 부여함.
+                    # 교수M의 high_atk/체크용 버프 필터는 resolve에서 처리함.
+                    for x in tg:
+                        if eff['chance'] >= 1 or self.R(owner.side).random() < eff['chance']:
+                            self._forced_coop_candidates.add(x)
+            else:
+                self.forced_coop(owner, ctx, len(tg))
             return
         # LevelBuffDecrease: 표에서 «5회 부여»로 적힌 먼지 포착(해제불가)는 실제로 5 감소(level_buff_decrease 규칙)
         if (self.mc['level_buff_decrease'] == 'on' and not eff.get('consume')
@@ -3785,12 +3820,13 @@ class Battle:
         self.dirty(x)
 
     def forced_coop(self, owner, ctx, n):
-        """프로페서M 〈강제 협공〉: 버프 포함 현재 공격력 1위 아군(자신 제외)이 같은 대상에게 기본기. 협공 1명 자리를 차지, 추가 시전에선 없음."""
+        """live_atk/stat_atk 재현용 즉시 강제 협공. random은 효과 대상 플래그를 coop에서 읽음."""
         if not self.opts['forced_coop'] or ctx is None or ctx.extra or ctx.src is not owner:
             return
         pool = [x for x in self.alive(owner.side) if x is not owner and x.d.skills.get('기본기') is not None
                 and not self.no_react(x)]
-        pool.sort(key=lambda x: (-self.live_atk(x), -x.d.stats['atk'], x.pos))
+        pool.sort(key=lambda x: (-(x.d.stats['atk'] if self.opts['forced_coop_target'] == 'stat_atk'
+                                 else self.live_atk(x)), -x.d.stats['atk'], x.pos))
         for x in pool[:n]:
             ctx.coop_used = True
             self.cast(x, x.d.skills['기본기'], extra=True, target=ctx.target, via='forced_coop')

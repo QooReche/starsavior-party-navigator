@@ -192,7 +192,7 @@ def assumptions_used(mc, opts):
             out.append(dict(rule='mc.' + k, value=mc.get(k, v.get('value')), grade=v.get('grade'), note=v.get('note')))
     for k, v in RULES['mc'].get('break_skills', {}).items():
         out.append(dict(rule='mc.break_skills.' + k, value=mc['break_skills'].get(k), grade=v.get('grade'), note=v.get('note')))
-    for k in ('coop_trigger', 'coop_single', 'coop_order', 'nova_policy', 'nova_pool', 'forced_coop_target', 'init_cd_frac'):
+    for k in ('coop_trigger', 'coop_single', 'coop_order', 'coop_dead_target', 'nova_policy', 'nova_pool', 'forced_coop_target', 'init_cd_frac'):
         r = RULES['opts'].get(k, {})
         out.append(dict(rule='opts.' + k, value=opts.get(k), grade=r.get('grade'), note=r.get('note')))
     out.append(dict(rule='model.not_modeled', value=None, grade='assumed',

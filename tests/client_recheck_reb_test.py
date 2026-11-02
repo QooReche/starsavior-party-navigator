@@ -126,6 +126,23 @@ class NovaCapTest(unittest.TestCase):
         b.nova_add(b.allies[0], 20)
         self.assertEqual(b.team_nova, 20)
 
+    def test_break_skill_uses_cap_for_team_and_unit_pools(self):
+        for pool in ('team', 'unit'):
+            for cap, expected in ((12, 12), (0, 15)):
+                with self.subTest(pool=pool, cap=cap):
+                    b = battle([unit('a'), unit('b')], [unit('v', hp=10**9)],
+                               opts={'nova_pool': pool}, mc={'nova_force_cap': cap},
+                               break_skill={'name': '차원 강습'})
+                    b.team_nova = 11
+                    for u in b.allies:
+                        u.nova = 11
+                    b.break_points = b.mc['break_skill_cost']
+                    b._use_break_skill()
+                    self.assertEqual(b.break_skill_uses, 1)
+                    self.assertGreater(b.break_skill_dmg, 0)
+                    self.assertGreater(b.progress(), 0)
+                    self.assertEqual([b.nova_of(u) for u in b.allies], [expected, expected])
+
     def test_unit_pool_also_capped_without_affecting_other_units(self):
         b = battle([unit('a'), unit('b')], [unit('v')], opts={'nova_pool': 'unit'})
         b.nova_add(b.allies[0], 20)
