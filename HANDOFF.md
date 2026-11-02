@@ -2,10 +2,11 @@
 
 갱신 2026-11-02. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙(시험·근거·공개 금지)은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md).
 
-## ⏸ 보류 중 (2026-11-02 심야, 회사 PC) — 먼저 읽을 것
+## ⏸ 재확인 대기 (2026-11-02 심야, 회사 PC) — 먼저 읽을 것
 
-- codex 5명 병렬 작업(협공 후보 순서 `coop_order`·적 스킬 순서 `foe_skill_order`/빈 대상 공격 `empty_attack`·기본/개화 매핑 `ally_variant_mapping`·기믹 재조사·e2e 서버 격리)을 로컬 main 에 병합했음. 병합 뒤 `run_tests.py --rebuild` 73 통과/0 실패. **푸시하지 않았음**(회사 PC 로컬만, origin 보다 앞섬).
-- 근거로 쓴 디컴파일본이 외부 3월판(`star-savior-decompiled` 2026-03-28)임이 드러나 보류했음. 게임 PC 에서 현재 빌드를 디컴파일해 비공개 static-data `decompiled/` 에 올리기로 함(절차 = static-data `DECOMPILE.md`).
+- codex 5명 병렬 작업(협공 후보 순서 `coop_order`·적 스킬 순서 `foe_skill_order`/빈 대상 공격 `empty_attack`·기본/개화 매핑 `ally_variant_mapping`·기믹 재조사·e2e 서버 격리)을 로컬 main 에 병합했음. 병합 뒤 `run_tests.py --rebuild`·e2e 통과를 확인하고 이 상태로 푸시했음.
+- ⚠ 대형 재생성은 아직 안 했음: 화력표·빠른 계산 계수·`data/guild_sim.json` 은 병합 전 엔진(11/02 길방 표 커밋 시점) 결과임. 화면의 실시간 시뮬은 새 규칙, 빠른 계산·길방 시뮬 표는 옛 엔진이라 둘이 조금 어긋날 수 있음.
+- 근거로 쓴 디컴파일본이 외부 3월판(`star-savior-decompiled` 2026-03-28)임이 드러나 재생성을 보류했음. 게임 PC 에서 현재 빌드를 디컴파일해 비공개 static-data `decompiled/` 에 올리기로 함(절차 = static-data `DECOMPILE.md`).
 - 재개 순서: static-data pull → 새 `decompiled/` 로 이번 4규칙과 3월판 근거로 넣은 기존 규칙(COOP_CAP·enforce_timing/target·buff_ban_force·level_buff_decrease 등) 재확인 → 그웬 `LevelBuffDecrease` 확인 → 대형 재생성(화력표·빠른 계산·길방 시뮬 표) → 시험·e2e → HANDOFF 정리 → 푸시.
 - 중단한 통합 작업의 HANDOFF 초안·부분 재생성물은 `git stash` 의 «regen-paused-20261102» 에 있음(재생성은 처음부터 다시 돌릴 것). 작업자별 보고는 `E:\AI_mk2\codex-par\*.out.md`.
 
