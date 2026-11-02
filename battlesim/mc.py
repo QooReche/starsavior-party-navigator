@@ -3625,6 +3625,10 @@ class Battle:
         if eff['name'] == '강제 협공':
             self.forced_coop(owner, ctx, len(tg))
             return
+        # LevelBuffDecrease: 표에서 «5회 부여»로 적힌 먼지 포착(해제불가)는 실제로 5 감소(level_buff_decrease 규칙)
+        if (self.mc['level_buff_decrease'] == 'on' and not eff.get('consume')
+                and (eff['name'], eff.get('times')) in LEVEL_DECREASE_EFFECTS):
+            eff = dict(eff, consume=True)
         if eff.get('consume'):
             for x in tg:
                 e = x.eff.get(eff['name'])
@@ -3736,6 +3740,10 @@ class Battle:
         for x in pool[:n]:
             ctx.coop_used = True
             self.cast(x, x.d.skills['기본기'], extra=True, target=ctx.target, via='forced_coop')
+
+
+# 표의 LevelBuffDecrease=true 인 «N회 부여» (이름, N). 근거: SE_TEMPLET_SKILL_1.json:38328-38343 (세레스 샤프 앤 스위트, SE 10594016)
+LEVEL_DECREASE_EFFECTS = frozenset([('먼지 포착(해제불가)', 5)])
 
 
 # ------------------------------------------------------------------ 지원성 검사

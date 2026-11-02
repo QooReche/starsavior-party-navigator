@@ -128,6 +128,9 @@ SAMPLES = {
     'corr450-a': ('clo', '성간 회랑|FLOOR 450', ['emily', 'wedding-carmen', 'hilde', 'amora'], 'hilde', 397725, 0, 733524, 851352, 70, 'fail'),
     # 판 E2: 패배(전멸), TURN 64, 달성도 61%, 웨이브 1 T40 처치·보스 약 65~70% 잔여('?'). 힐데 51,569/291,022/56,850 · 카르멘 31,498/155,509/238,661 · 에밀리 163,864/188,094/0 · 아모라 475,463/167,725/0
     'corr450-b': ('clo', '성간 회랑|FLOOR 450', ['emily', 'wedding-carmen', 'hilde', 'amora'], 'hilde', 397725, 0, 722394, 802350, 64, 'fail'),
+    # 2026-11-02 18:54 영상(성간 회랑 FLOOR 450 Lv3352, 사이트 1안 그대로, 오토, 전원 Lv.350, 재점화 5단계(편성 화면 「경계 Ⅴ」), 권장 522,010, 팀 전투력 417,860 = 내 정보 계산과 확인 필요): 에밀리(후, 캔들 스퀘어)·아세라(전, 리더)·힐데(전)·세레스(후, ANOTHER 샤프 앤 스위트). 큐브 과부하 Lv6 슬롯
+    # 판 E3: 패배, TURN 97, 달성도 61%. 준 / 받은 / 회복(결과 화면): 힐데 84,083/412,080/9,592 · 아세라 278,950/241,901/309,446 · 에밀리 225,034/278,906/0 · 세레스 39,356/310,703/595,584 (합 627,423 / 1,243,590 / 914,622)
+    'corr450-c': ('clo', '성간 회랑|FLOOR 450', ['emily', 'waltz-asherah', 'hilde', 'ceres-sun-supporter'], 'waltz-asherah', 417860, 5, 627423, 1243590, 97, 'fail'),
     # 2026-10-25 09:12 영상 판독(성간 회랑 FLOOR 350, 사이트 1안 그대로, 오토, 전원 Lv.345, 팀 전투력 404,110): 샤를(후, 하트 오브 모나스티르)·루나(전, 화이트 펄 트랩, 리더)·에핀델(전, 블레싱 인 블룸)·크리스텔(후)
     # 패배, TURN 44, 달성도 99%(보스 거의 잔여 없음), 웨이브 2/2. 브레이크 스킬 미발동(추천 스타피어서 Lv4 슬롯, 발동 장면·컷인 없음). 회복 0. 준 / 받은: 샤를 160,326/89,535 · 루나 98,937/72,399 · 에핀델 156,596/79,461 · 크리스텔 324,395/83,284 (마지막 자리 일부 불확실)
     'corr350-a': ('clo', '성간 회랑|FLOOR 350', ['bunny-charlotte', 'white-pearl-luna', 'wedding-epindel', 'cristelle'], 'white-pearl-luna', 404110, 0, 740254, 324679, 44, 'fail'),
@@ -139,8 +142,11 @@ SAMPLES = {
     'op3836-a': ('op', '고요한 호숫가|SECTOR 38-36', ['amora', 'waltz-asherah', 'hilde', 'professor-m'], 'waltz-asherah', 419510, 0, 622189, 583348, 34, 'fail'),
     # 판 F2(17:04): 패배(전멸 약 193초), TURN 38, 달성도 65%, 보스 잔여 175,128(187초). **큐브 과부하 1회 발동**(TURN 34, 컷인·영역 5->1 카운트다운 T34~T38, 프레임 확인). BREAK! 연출 129초(아군 쪽?)·169초(보스 추정) 각 1회. 준 / 받은 / 회복: 힐데 36,652/232,616/28,509 · 프로페서M 160,850/99,694/0 · 아세라 40,815/126,394/67,112 · 아모라 467,626/125,474/0
     'op3836-b': ('op', '고요한 호숫가|SECTOR 38-36', ['amora', 'waltz-asherah', 'hilde', 'professor-m'], 'waltz-asherah', 419510, 0, 705943, 584178, 38, 'fail'),
+    # 판 F3(2026-11-02 18:45 영상, 같은 편성, 팀 전투력 425,053 = 내 정보 11/02 계산과 일치, 전원 Lv.350, 재점화(편성 화면 「경계 Ⅲ」) 3단계, 오토): 패배(전멸 약 181초), TURN 36, 달성도 63%. **큐브 과부하 미발동**(컷인 없음 -> BS_REAL 에 안 넣음). 보스 강인도 18->1(브레이크 못 함)
+    # 준 / 받은 / 회복(결과 화면): 아모라 389,113/97,489/0 · 힐데 39,753/223,107/28,776 · 프로페서M 196,218/118,227/0 · 아세라 55,921/127,956/72,120. 쓰러진 순서·시각 미판독(174초 보스 광역기로 3명 CRITICAL 약 3만씩)
+    'op3836-c': ('op', '고요한 호숫가|SECTOR 38-36', ['amora', 'waltz-asherah', 'hilde', 'professor-m'], 'waltz-asherah', 425053, 3, 681005, 566779, 36, 'fail'),
 }
-# 보스 잔여 HP·달성도 같은 부가 실측: SAMPLES 튜플에는 못 넣고(형식 고정) 여기에 둔다 — 도구가 출력에 real_extra 로 붙인다
+# 보스 잔여 HP·달성도 같은 부가 실측:SAMPLES 튜플에는 못 넣고(형식 고정) 여기에 둔다 — 도구가 출력에 real_extra 로 붙인다
 REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, rekindle=0, boss_breaks=3, cube_overload_uses=3),
               '18x2-b': dict(achieve=1.0, boss_left_hp=0, heal=0, boss_hp_start=652064, rekindle=0, boss_breaks=3, cube_overload_uses=3),
               'corr440-a': dict(achieve=0.81, boss_left_frac=0.15, heal=28404, boss_hp_start=527926),
@@ -152,8 +158,10 @@ REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, r
               'corr360-a': dict(achieve=1.0, heal=150988, rekindle=0),
               'op3836-a': dict(achieve=0.57, boss_left_hp=211709, heal=105124, rekindle=0),
               'op3836-b': dict(achieve=0.65, boss_left_hp=175128, heal=95621, rekindle=0, cube_overload_uses=1),
+              'op3836-c': dict(achieve=0.63, heal=100896, rekindle=3, cube_overload_uses=0),
               'corr450-a': dict(heal=353308, rekindle=0),
               'corr450-b': dict(achieve=0.61, heal=295511, rekindle=0),
+              'corr450-c': dict(achieve=0.61, heal=914622, rekindle=5),
               'op3736d-a': dict(boss_left_hp=171645, heal=156205, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1),
               'op3736d-b': dict(achieve=0.57, boss_left_hp=188970, heal=138816, boss_hp_start=724190, rekindle=1, boss_breaks=1, cube_overload_uses=1)}
 # 2026-10-21 사용자 확인: 36-36만 오토 선택 + 회복용 수동 버스트, 37구역은 순수 오토.

@@ -117,6 +117,7 @@
   "max_events": {"value": 50000, "grade": "assumed", "note": "판당 이벤트(행동·시전·피해) 상한. 넘으면 EventLimitError — 정상 결과를 돌려주지 않는다(설계 5절)"},
   "max_depth": {"value": 4, "grade": "assumed", "note": "추가 발동·협공·반응의 연쇄 깊이 상한. 넘은 시전은 건너뛰고 unsupported 에 기록"},
   "unknown_cond": {"value": "skip", "alt": ["roll"], "grade": "assumed", "note": "엔진이 모르는 조건 키가 붙은 줄: skip = 그 줄을 실행하지 않고 기록 / roll = unknown_cond_p 확률로 실행(기대값 엔진과 같은 0.5)"},
+  "level_buff_decrease": {"value": "on", "legacy": "off", "alt": ["off"], "grade": "data", "note": "표의 LevelBuffDecrease=true 인 「N회 부여」는 스택을 N 더하지 않고 N 줄인다. 지금은 세레스(샤프 앤 스위트) 〈손님 맞이 청소〉의 먼지 포착(해제불가) 5회만 적용(그웬·카넬리아는 감소 시점 미확인이라 제외). 영상 11/02 성간 회랑 450: 추가 발동 전후 중첩 5건 중 4건이 정확히 -5(6→1·9→4·7→2·6→1), 1건 7→4(원인 불명). off = 옛 동작(5를 더함)", "source": "static-data tables/SE_TEMPLET_SKILL_1.json:38328-38343 (SE 10594016 RepeatBuffCount 5, LevelBuffDecrease true); docs/ingame_samples.md 2026-11-02 성간 회랑 450"},
   "check_buff_expiry": {"value": "action", "grade": "assumed", "note": "지속 턴 표기가 없는 「확인용/체크용/카운팅」 버프는 그 행동이 끝나면 사라짐(데이터에 해제 줄이 없는 경우가 있어 영구로 두면 순환 기믹이 멈춤)"},
   "shield_tick": {"value": "turn_start", "alt": ["turn_end"], "grade": "assumed", "note": "보호막 지속 턴 차감 시점(공식: 「턴 종료 시 차감 안 됨」만 확인). turn_start = 보유자 턴 시작에 차감"},
   "caster_death": {"value": "keep_buffs", "grade": "assumed", "note": "시전자가 죽어도 남에게 준 강화·약화는 남는다. 도발은 도발자가 죽으면 효과 없음(일반 대상 선택), 수호는 수호자 본인 버프라 함께 사라짐", "kind": "note"},
