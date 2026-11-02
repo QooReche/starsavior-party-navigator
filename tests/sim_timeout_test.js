@@ -80,3 +80,78 @@ ctx.MODE='auto';
 assert.equal(ev('fmtDur(42000)'),'42초');assert.equal(ev('fmtDur(150000)'),'2분 30초');assert.equal(ev('fmtDur(599000)'),'10분');
 assert.match((ctx.SIMQ.busy=1,ctx.SIMQ.loaded=true,ctx.SIMQ.eta=now-60000,ev('simEtaText()')),/예상보다 오래/);ctx.SIMQ.busy=null;
 console.log('PASS 엔진 준비 초과·느린 기기 완료·속도 비례 상한·남은 시간·무진행 초과·완료 팀 재사용·늦은 메시지 무시·가려진 탭·동결 복귀·수동 모드·예상 초과');
+
+// 별도 상태로 실제 simStop/simInvalidate와 예선 콜백까지 실행한다(중단을 가짜 함수로 대체하지 않음).
+function screeningHarness(){
+ let clock=1000,queue=[];
+ const ws=[],teams=['d','e','f','g','h','i'].map((k,i)=>({...mk(['a','b','c',k]),v:10-i}));
+ const c=vm.createContext({console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
+  SIMQ:{n:100,seed:1,busy:null,res:{},scr:{},LOAD_MS:180000,RUN_MS:240000},LASTQ:{1:{rows:teams.slice(0,3),all:teams,total:6}},cur:[st],
+  contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
+  simMain:r=>r,simCls:()=>'',esc:String,simOpt:()=>({}),document:{querySelector:()=>null,hidden:false},
+  navigator:{hardwareConcurrency:4,deviceMemory:8},location:{href:'https://test/index.html'},
+  Date:{now:()=>clock},performance:{now:()=>clock},
+  setTimeout:(fn,ms)=>{const t={fn,at:clock+ms};queue.push(t);return t},clearTimeout:t=>{queue=queue.filter(x=>x!==t)},run(){},
+  Worker:class{constructor(){ws.push(this)}postMessage(req){this.req=req}terminate(){this.stopped=true}}});
+ for(const [a,b] of [['const simSigB=','// 표시 상태는'],['function simInvalidate()','// 자동 확인'],
+  ['function simStart(',"document.querySelectorAll('input[name=\"runs\"]')"],['const SCR_ROUNDS=','function simWaiting(']])vm.runInContext(section(a,b),c);
+ const evalJS=s=>vm.runInContext(s,c);
+ const tick=ms=>{const end=clock+ms;for(;;){queue.sort((a,b)=>a.at-b.at);if(!queue[0]||queue[0].at>end)break;const t=queue.shift();clock=t.at;t.fn()}clock=end};
+ const freeze=ms=>{queue.sort((a,b)=>a.at-b.at);assert(queue.length);clock=queue[0].at+ms;queue.shift().fn()};
+ const send=(w,m)=>w.onmessage({data:{id:w.req.id,...m}});
+ const ready=()=>ws.forEach(w=>send(w,{type:'stage',id:undefined,msg:'준비 끝'}));
+ const result=(w,i,clear,prog)=>send(w,{type:'team',key:w.req.teams[i].key,result:{n:w.req.n_runs,clear,prog,progs:[prog],via:{coop:0},ttk:20}});
+ return {c,ws,teams,ev:evalJS,tick,freeze,send,ready,result,sc:()=>Object.values(c.SIMQ.scr)[0]};
+}
+
+// 9) 가장 늦은 작업자 준비 뒤부터 예선 60초를 잰다. 준비 실패는 실제 중단/풀 정리로 끝난다.
+{
+ const h=screeningHarness();assert.equal(h.ev('simScreen(1)'),true);assert.equal(h.ws.length,3);
+ h.send(h.ws[0],{type:'stage',msg:'준비 끝'});h.tick(61000);assert.equal(h.sc().done,false);
+ h.ready();h.tick(59000);assert.equal(h.sc().done,false);h.tick(1000);
+ assert.equal(h.sc().done,true);assert.equal(h.sc().cut,true);assert.equal(h.sc().order.length,0);
+ assert(h.ws.every(w=>w.stopped));assert.equal(h.c.SIMQ.busy,null);
+ const stalled=screeningHarness();stalled.ev('simScreen(1)');stalled.tick(180000);
+ assert.match(stalled.c.SIMQ.err,/계산 엔진 준비/);assert.equal(Object.keys(stalled.c.SIMQ.scr).length,0);
+ assert(stalled.ws.every(w=>w.stopped));
+}
+
+// 10) 예선 동결 복귀: 남은 계산 시간 보존, 멈춘 시간은 속도에서 제외, 완료 팀만 순위에 남김.
+{
+ const h=screeningHarness();h.ev('simScreen(1)');h.ready();h.tick(10000);
+ const [a,b,c]=h.ws;h.send(a,{type:'stage',msg:'시뮬 1/2팀 (8판)'});
+ h.tick(800);h.result(a,0,0.5,0.8);const rate=h.c.SIMQ.rateS;assert(rate>0);
+ h.send(b,{type:'stage',msg:'시뮬 1/2팀 (8판)'});h.freeze(600000);
+ assert.equal(h.sc().done,false);h.result(b,0,0.9,0.95);assert.equal(h.c.SIMQ.rateS,rate);
+ h.tick(999);assert.equal(h.sc().done,false);h.tick(1);
+ assert.equal(h.sc().cut,true);assert.deepEqual(Array.from(h.sc().order),[b.req.teams[0].key,a.req.teams[0].key]);
+ assert(h.ws.every(w=>w.stopped));assert.equal(h.c.SIMQ.screening,false);
+ const saved=JSON.stringify(h.sc());h.result(c,0,1,1);h.send(a,{type:'done'});
+ assert.equal(JSON.stringify(h.sc()),saved,'시간 초과 뒤 늦은 예선 결과는 무시');
+ h.ev('simInvalidate()');assert.equal(JSON.stringify(h.sc()),saved,'완료된 부분 예선 순위는 재시도에 보존');
+}
+
+// 11) 2차 예선 도중 시간 초과: 승격한 팀의 이전 결과와 완료된 32판 결과를 함께 보존.
+{
+ const h=screeningHarness();h.ev('simScreen(1)');h.ready();
+ h.ws.slice().forEach(w=>{w.req.teams.forEach((_,i)=>h.result(w,i,0.5,0.7));h.send(w,{type:'done'})});
+ assert.equal(h.sc().round,1);assert(h.ws.every(w=>w.req.n_runs===32));
+ h.result(h.ws[0],0,0.6,0.8);const winner=h.ws[0].req.teams[0].key;h.tick(60000);
+ assert.equal(h.sc().cut,true);assert.equal(h.sc().order.length,6);assert.equal(h.sc().order[0],winner);
+ assert.equal(h.sc().res[winner].n,32);assert.equal(Object.values(h.sc().res).filter(r=>r.n===8).length,5);
+}
+
+// 12) 실제 본선 시간 초과: 완료 결과 유지 → 미완료 팀만 재시도, 이전 작업자의 늦은 메시지는 무시.
+{
+ const h=screeningHarness();h.ev('simStart(1)');const w=h.ws[0],oldSend=w.onmessage,req=w.req;
+ h.send(w,{type:'stage',msg:'준비 끝'});h.result(w,0,0.9,0.95);h.tick(240000);
+ assert.match(h.c.SIMQ.err,/끝난 팀은 이어서/);assert.equal(h.c.SIMQ.busy,null);assert(w.stopped);
+ assert.equal(Object.keys(h.c.SIMQ.res).length,1);
+ h.ev('simStart(1)');assert.equal(h.ws[1].req.teams.length,2);
+ assert(!h.ws[1].req.teams.some(t=>t.key===req.teams[0].key));
+ oldSend({data:{id:req.id,type:'team',key:req.teams[1].key,result:{clear:1,prog:1}}});
+ oldSend({data:{id:req.id,type:'done'}});assert.equal(Object.keys(h.c.SIMQ.res).length,1);assert.equal(h.c.SIMQ.busy,1);
+ h.ws[1].req.teams.forEach((_,i)=>h.result(h.ws[1],i,0.8,0.9));h.send(h.ws[1],{type:'done'});
+ assert.equal(Object.keys(h.c.SIMQ.res).length,3);assert.equal(h.c.SIMQ.busy,null);h.tick(1000000);assert.equal(h.c.SIMQ.err,'');
+}
+console.log('PASS 실제 예선 준비 지연/실패·동결·부분 순위·2차 예선 시간 초과·본선 부분 결과 재시도');
