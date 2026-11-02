@@ -12,8 +12,8 @@ from battlesim.rules import MC_OPTS                              # noqa: E402
 PARTY = ['sunshine-cat-smile', 'cristelle', 'white-pearl-luna', 'wedding-carmen']
 
 
-def test_default_is_nested():
-    assert MC_OPTS['enforce_timing'] == 'nested'
+def test_default_is_queue():
+    assert MC_OPTS['enforce_timing'] == 'queue'
 
 
 def test_both_modes_run():
@@ -27,7 +27,7 @@ def test_both_modes_run():
     print('  ', out)
 
 
-TESTS = [test_default_is_nested, test_both_modes_run]
+TESTS = [test_default_is_queue, test_both_modes_run]
 
 if __name__ == '__main__':
     for t in TESTS:

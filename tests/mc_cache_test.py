@@ -41,7 +41,7 @@ def _unit(name='u', role='스트라이커', hp=10000, atk=1000, df=500, spd=100,
     )
 
 
-_KEEP = {'wave_ally_gauge': 'keep'}   # 해시는 옛 이월 동작 기준(캐시 동일성 시험이 목적, 웨이브 게이지 규칙과 무관)
+_KEEP = {'wave_ally_gauge': 'keep', 'enforce_timing': 'nested'}   # 해시는 옛 이월 동작 기준(캐시 동일성 시험이 목적, 웨이브 게이지 규칙과 무관)
 
 
 def _sig(r):

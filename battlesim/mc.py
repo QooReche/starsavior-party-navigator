@@ -2571,7 +2571,7 @@ class Battle:
         """추가 발동(엔포스·잠재력·트리거 스킬) 시전 fn 을 반응 큐에 예약(mc.enforce_timing=queue 이고 행동 안일 때). 예약했으면 True.
         클라: BI_ENFORCE(EnforceSkillBooking)·반응형(ReactSkillBooking)은 같은 FIFO 큐에 들어가 본 행동 → 협공 → 반격 뒤 실행(DoSkill 2827~2926).
         key 가 있으면 반응형처럼 한 행동에 유닛·칸당 1개(실행 불발이면 fn 이 None 을 돌려 다시 예약 가능)."""
-        if self.mc.get('enforce_timing', 'nested') != 'queue' or self._react_q is None:
+        if self.mc.get('enforce_timing', 'queue') != 'queue' or self._react_q is None:
             return False
         if key is not None:
             if key in self._react_seen:

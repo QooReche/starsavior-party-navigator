@@ -2,6 +2,13 @@
 
 갱신: 2026-10-30 — 길드방어전(브랜치 `guild-defense`, 맨 위 세 절: 중간 저장 → 2차 → 1차). 그 전: 2026-10-29 — 게임 패치(빌드 26291832) 반영. 그 전: 2026-10-24 저녁 — DC_ATTACK·스킬 순서 반영·대조 도구 보강. 그 전: 기믹 박스 병합·시뮬 시간 초과·남은 시간 표시. 이전: 2026-10-23 밤(다른 PC) 엔진 정정 4건·공개 전 화면 정리·main 병합. 새 세션은 이 파일 → `README.md`(사용자용) → `docs/DEVELOPMENT.md`(개발) 순. 과거 기록은 [docs/HISTORY.md](docs/HISTORY.md), 아래 옛 절들은 시간 역순.
 
+## ▶ 2026-11-02 밤 — `enforce_timing` 기본을 `queue` 로 전환 (로컬 커밋, 푸시 전)
+
+- 근거(조사 `AI	emp\partynavigator\work\common_rules\enforce_client_check.md`·`enforce_order_check.md`·`enforce_tl.md`): 스마일(선샤인 캣)·클레어·그웬·카넬리아의 추가 발동은 전부 `BI_ENFORCE`(SE_TEMPLET_SKILL_1, NSEAT_SKILL_END), 반응형 아님, 확률 줄 없음(m_fActiveRate 10000 = 조건 맞으면 100%; 엔진 RX_EXTRA_P 는 베스타·공용 잠재력용). 클라는 시전 함수(DoSkill:3025) 안에서 SKILL_END SE 처리(스킬 후 해제 — 예: AX 스택 SEID 4000102, 조건 8003 궁극기 종료 — 와 엔포스 예약 등록)를 끝낸 뒤 반환하고 예약 루프(2827~2926)가 돈다 → 해제가 먼저, 추가 발동은 그 뒤. 엔진 queue 가 이 순서와 같음(nested 는 해제 전에 시전해 힐데 3 에서 과대평가).
+- 영향(1000판, wave_ally_gauge=reset): 태양 회랑 450 클리어 nested 58.8% → queue 88.6%, 코스모 힐데 3(그웬·스마일·크리스텔·힐데) 95.0% → 82.0%. 원인은 11개 상한·반격 순서가 아니라 지연 시전 때의 버프·표지 상태 차이.
+- 시험: `enforce_timing_test` 기본 queue 로 갱신, `mc_cache_test` 해시는 `wave_ally_gauge=keep`·`enforce_timing=nested` 로 고정(캐시 동일성 시험). 골든 불변, 전체 시험 통과.
+- **미반영 클라 차이(엔진 수정 후보, 미확인 부분 있음)**: ① 엔포스는 예약 중복 제한 없음·불발 시 재예약 없음(엔진은 행동당 1개 제한, `_defer_extra` key) ② 대상은 실행 직전에 자동 대상 규칙(4/6/47)으로 선택(엔진은 예약 때 선택, 죽으면 무작위) ③ 스택 소모 시점 구원자별: 스마일·클레어 = 실행(SKILL_START), 선샤인 캣 = 예약(SKILL_END), 그웬 = 예약 추정. 영상 대조 전이라 아직 안 고침.
+
 ## ▶ 2026-11-02 웨이브 전환 아군 게이지 규칙 `wave_ally_gauge` (로컬 커밋, 푸시 전)
 
 - 클라 `BattleHostSingle.cs` 391~421: 웨이브 전환 때 OnWaveStart 트리거 실행 **뒤** 생존 아군 전원 게이지 `Set(0)`(적 신규 웨이브도 0, 보스 웨이브 전용 속도 보정·행동 대기 못 찾음). 엔진은 이월. 규칙 `wave_ally_gauge`(기본 `keep`=옛, `reset`=클라; `mc.spawn_wave`). 기본값은 영상 검증 전이라 keep. 시험 `tests/wave_gauge_test.py`, 근거 `AI	emp\partynavigator\work\guild_defense\wave_gauge.md`, 비교 `scripts\gd_wavegauge_cmp.py`.
