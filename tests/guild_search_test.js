@@ -103,6 +103,10 @@ const tests = {
     assert.equal(S.expected(V, G, 4, tiers, 0.5), V.scoreAt(G, V.extraPct(G, 4, tiers), 0));
     assert.equal(S.expected(V, G, 4, tiers, 1), V.scoreAt(G, V.extraPct(G, 4, tiers), 1));
     assert(S.expected(V, G, 4, tiers, 0.9) > S.expected(V, G, 4, tiers, 0.6));
+    // 판별 진행도: 졸개전 패배(0.25) + 클리어(1) 반반 → 평균 진행도(0.625)로 낸 값보다 큼(판마다 점수식 후 평균)
+    const pc = V.extraPct(G, 4, tiers), mix = S.expected(V, G, 4, tiers, 0.625, [0.25, 1]);
+    assert.equal(mix, Math.round((V.scoreAt(G, pc, 0) + V.scoreAt(G, pc, 1)) / 2));
+    assert(mix > S.expected(V, G, 4, tiers, 0.625));
   },
   async runPhase() {
     // 가짜 작업자: 받은 팀마다 결과를 돌려주고 done
@@ -111,7 +115,7 @@ const tests = {
       made++;
       const w = {terminate() { terminated++; }, onmessage: null, postMessage(m) {
         setTimeout(() => {
-          for (const t of m.teams) w.onmessage({data: {type: 'team', id: m.id, key: t.key, result: {prog: 0.7, clear: 0.2, n: m.n_runs}}});
+          for (const t of m.teams) w.onmessage({data: {type: 'team', id: m.id, key: t.key, result: {prog: 0.7, clear: 0.2, n: m.n_runs, progs: [0.5, 0.9], via: t.key === 'k3' ? {coop: 1.5} : {}}}});
           w.onmessage({data: {type: 'done', id: m.id}});
         }, 1);
       }};
@@ -124,6 +128,9 @@ const tests = {
     assert.equal(Object.keys(res).length, 7);
     assert.equal(made, 3); assert.equal(terminated, 3);
     assert.deepEqual(seen[seen.length - 1], [7, 7]);
+    // 작업자 결과의 via·progs 가 끊기지 않고 실려 협공 배제까지 이어짐(끊기면 이 줄이 실패)
+    assert.deepEqual(res.k3.via, {coop: 1.5}); assert.deepEqual(res.k0.progs, [0.5, 0.9]);
+    assert(S.coopHit({banCoop: true}, res.k3) && !S.coopHit({banCoop: true}, res.k0), '협공 난 팀만 걸러짐');
     // 작업자 오류 → reject
     const bad = () => ({terminate() {}, onmessage: null, postMessage(m) { setTimeout(() => this.onmessage({data: {type: 'error', msg: '터짐'}}), 1); }});
     await assert.rejects(S.runPhase({makeWorker: bad, jobs, workers: 2, runs: 5, seed: 1, stage: 'x', base: ''}).promise, /터짐/);

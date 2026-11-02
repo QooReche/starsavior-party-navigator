@@ -3,3 +3,9 @@ __pycache__/
 release/
 tools/raw/
 local/
+
+# 내 정보(계정 수치)는 공개 저장소에 올리지 않는다 — 루트·samples 에 복사해도 git add 에 안 걸리게
+/내정보*.json
+/myinfo*.json
+/samples/
+/static-data/

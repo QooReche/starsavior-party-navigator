@@ -42,9 +42,12 @@
   const finalSupports = (S, keys, cls) => S.final.supports.filter(s => !(S.supportRole || {})[s] || keys.some(k => cls[k] === S.supportRole[s]));
 
   // 기대 점수(영상으로 확인한 식): (기본+졸개+보스 × 깎은 비율) × (1+추가%). 진행도 prog = 0.5 + 0.5 × 깎은 비율(클리어 1)
-  function expected(V, G, level, tiers, prog) {
-    const f = Math.max(0, Math.min(1, 2 * prog - 1));
-    return V.scoreAt(G, V.extraPct(G, level, tiers), f);
+  // progs(판별 진행도)가 있으면 판마다 점수를 내 평균한다 — 평균 진행도를 넣으면 «졸개전 패배 + 클리어» 섞인 팀을 크게 낮춰 봄.
+  // 졸개전에서 진 판도 졸개 점수는 다 받은 것으로 둠(근사, 판당 최대 졸개 점수만큼 높게 봄)
+  function expected(V, G, level, tiers, prog, progs) {
+    const pct = V.extraPct(G, level, tiers), one = p => V.scoreAt(G, pct, Math.max(0, Math.min(1, 2 * p - 1)));
+    if (Array.isArray(progs) && progs.length) return Math.round(progs.reduce((a, p) => a + one(p), 0) / progs.length);
+    return one(prog);
   }
 
   const jobKey = (keys, level, sup, tiers) => [keys.join("+"), level, sup, (tiers || []).join("")].join("|");
@@ -89,7 +92,7 @@
 
   // 예선 결과 → 상위 n 팀(기대 점수 큰 순, 같으면 키 순). res = {jobKey: {prog, clear}}
   function pickTop(V, G, jobs, res, tiers, n, S) {
-    const sc = jobs.filter(j => res[j.key] && !coopHit(S || {}, res[j.key])).map(j => ({keys: j.keys, v: expected(V, G, j.level, tiers, res[j.key].prog)}));
+    const sc = jobs.filter(j => res[j.key] && !coopHit(S || {}, res[j.key])).map(j => ({keys: j.keys, v: expected(V, G, j.level, tiers, res[j.key].prog, res[j.key].progs)}));
     sc.sort((a, b) => b.v - a.v || (a.keys.join() < b.keys.join() ? -1 : 1));
     return sc.slice(0, n).map(x => x.keys);
   }
@@ -100,7 +103,7 @@
     const best = new Map();
     for (const j of jobs) {
       const r = res[j.key]; if (!r || coopHit(S || {}, r)) continue;
-      const v = expected(V, G, j.level, tiers, r.prog), id = j.keys.slice().sort().join("+"), cur = best.get(id);
+      const v = expected(V, G, j.level, tiers, r.prog, r.progs), id = j.keys.slice().sort().join("+"), cur = best.get(id);
       if (!cur || v > cur.score) best.set(id, {keys: j.keys, order: j.order, level: j.level, sup: j.sup, score: v, clear: r.clear, prog: r.prog, frac: Math.max(0, Math.min(1, 2 * r.prog - 1)), n: r.n});
     }
     return [...best.values()].sort((a, b) => b.score - a.score || (a.order.join() < b.order.join() ? -1 : 1)).slice(0, top || 5);
@@ -118,7 +121,7 @@
         const w = makeWorker(); ws.push(w);
         w.onmessage = e => {
           const m = e.data; if (dead) return;
-          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}}; done++; if (onProgress) onProgress(done, jobs.length); }
+          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}, progs: m.result.progs || null}; done++; if (onProgress) onProgress(done, jobs.length); }
           else if (m.type === "done") { if (++finished === parts.length) { ws.forEach(x => x.terminate()); resolve(res); } }
           else if (m.type === "error") { dead = true; ws.forEach(x => x.terminate()); reject(new Error(m.msg || "작업자 오류")); }
         };
@@ -165,6 +168,6 @@
     return `<div class="gd-search" data-k="gd-search">${head}${body}${warn}</div>`;
   }
 
-  const api = {FRONT, pool, combos, party, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, runPhase, html, SUP_NAME, countDropped, notesHtml, BASIS};
+  const api = {FRONT, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, runPhase, html, SUP_NAME, countDropped, notesHtml, BASIS};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

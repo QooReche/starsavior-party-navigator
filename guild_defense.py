@@ -5,6 +5,7 @@
 (tests/guild_defense_test.py 가 두 구현의 일치를 확인)."""
 import datetime
 import json
+import math
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -79,7 +80,7 @@ def score_at(g, pct, boss_frac=1.0):
     """보스 생명력을 boss_frac(0~1)만큼 깎은 판의 최종 점수(영상으로 확인한 식): (기본 + 졸개 + 보스 점수 x boss_frac) x (1+pct%). 졸개 2기 처치 전제."""
     ex = ex_step(g)
     raw = ex["base"] + g["stepsMeta"]["minions"] * ex["kill"] + ex["bossKill"] * max(0.0, min(1.0, boss_frac))
-    return round(raw * (100 + pct) / 100)
+    return math.floor(raw * (100 + pct) / 100 + 0.5)   # JS Math.round 와 같은 반올림(Python round 는 짝수 반올림)
 
 
 def score(g, pct):

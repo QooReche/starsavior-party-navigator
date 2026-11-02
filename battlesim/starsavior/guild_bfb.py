@@ -191,6 +191,7 @@ class Controller:
         self.support = next((d.bfb['support'] for w in b.waves for d in w if getattr(d, 'bfb', None)), 'none')
         self.sup_done = False
         self.focus_turn = {}    # 날카로운 집중력: 유닛별 «1턴에 1번» 기록
+        self.strike_roll = {}   # 강인한 타격: 유닛별 이번 시전 발동 여부(50%)
 
     # ---------- 효과 도우미
     def _put(self, x, name, props, dur=math.inf, cat='buff', fixed=True, maxs=1, add=1):
@@ -265,9 +266,18 @@ class Controller:
     def _sup_pre_hit(self, a, v):
         s = self.support
         if s == 'strike' and a is not None and a.side == 0 and self._sup_has(a):
-            n = a.n_good()                    # 강인한 타격: 강화 효과 개수당 피해 +10%(발동 확률 5000 은 미확인 -> 100% 로 가정)
+            # 강인한 타격(4011102): 스킬 시작 때 m_fActiveRate 5000 = 50% 로 굴려(NKM 16466 BuffActivateRate) 그 시전 동안 강화 효과 개수당 피해 +10%.
+            # 시전마다 한 번 굴림 — 지금 시전(Battle._cast_ctx)이 바뀌면 다시 굴림(겹친 추가 발동도 따로)
+            cur = getattr(self.b, '_cast_ctx', None)
+            got = self.strike_roll.get(id(a))
+            if got is None or got[0] is not cur:
+                got = self.strike_roll[id(a)] = (cur, self.b.R(0).random() < 0.5)
+            ok = got[1]
+            n = a.n_good() if ok else 0
             if n:
                 self._sup_put_tmp(a, SUP_TMP_INC, {'피해 증가': 10 * n})
+            else:
+                a.eff.pop(SUP_TMP_INC, None)
         elif s == 'mountain':
             if a is not None and a.side == 0 and a.hp * 2 > a.maxhp:
                 self._sup_put_tmp(a, SUP_TMP_INC, {'피해 증가': 10})              # 45041: 생명력 50% 초과면 피해 +10%
@@ -511,10 +521,10 @@ class Controller:
         m = owner.mods()
         de = b.def_stat(v)
         dr = de / (de + R.DEF_K)
-        inc, pen = 0.0, 1.0
+        inc, pen = m['inc'], 1.0          # 시전자 피해 증가는 대상 진영과 무관하게 반영(NKM 5605 연쇄 피해 계산) — 부케 보스 자해에도
         if v.side != owner.side:
             dr = max(0.0, dr - dr * min(1.0, m['pen']))
-            inc, pen = m['inc'], b.pen[owner.side]
+            pen = b.pen[owner.side]
         dmg = max(1.0, math.floor(owner.maxhp * coef * (1 + inc) * R.BASE_MULT * (1 - dr) * b.rand(owner.side) * pen))
         b.log(chain=owner.name, to=v.name, dmg=dmg)
         b.apply_damage(credit, v, dmg, 'chain', shieldable=True)

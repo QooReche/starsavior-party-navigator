@@ -2567,6 +2567,11 @@ class Battle:
         pool = self.alive(1 - side)
         return self.R(side).choice(pool) if pool else None
 
+    def _exec_pick(self):
+        """추가 발동 대상을 실행 직전에 고르는가(mc.enforce_target=exec, 예약 큐를 쓸 때만)"""
+        return (self.mc.get('enforce_target', 'exec') == 'exec' and self.mc.get('enforce_timing', 'queue') == 'queue'
+                and self._react_q is not None)
+
     def _defer_extra(self, fn, key=None):
         """추가 발동(엔포스·잠재력·트리거 스킬) 시전 fn 을 반응 큐에 예약(mc.enforce_timing=queue 이고 행동 안일 때). 예약했으면 True.
         클라: BI_ENFORCE(EnforceSkillBooking)·반응형(ReactSkillBooking)은 같은 FIFO 큐에 들어가 본 행동 → 협공 → 반격 뒤 실행(DoSkill 2827~2926).
@@ -3030,6 +3035,16 @@ class Battle:
             if allies and enemies and self.R(owner.side).random() < eff['chance']:
                 self._fired(owner)
                 actor = self.R(owner.side).choice(allies)
+                if self._exec_pick():     # 클라: 예약엔 시전자·자동 대상 규칙만, 적은 실행 직전에 고름(NKM 7973·13181~13189)
+                    def fn(actor=actor):
+                        pool = self.alive(1 - owner.side)
+                        if not pool or actor.dead:
+                            return None
+                        return self.cast(actor, actor.d.skills['기본기'], extra=True,
+                                         target=self.R(owner.side).choice(pool), parent=ctx, via='potential')
+                    if not self._defer_extra(fn):
+                        fn()
+                    return
                 tgt = self.R(owner.side).choice(enemies)
                 fn = lambda: self.cast(actor, actor.d.skills['기본기'], extra=True,
                                        target=self._live_or_random(tgt, owner.side), parent=ctx, via='potential')
@@ -3206,6 +3221,22 @@ class Battle:
                 rule = trigger_rule(sk, self.lines_of(actor))
                 if rule and rule.get('mark'):
                     tgt = next((v for v in self.alive(1 - actor.side) if v.has(rule['mark'])), tgt)
+                if self._exec_pick():     # 클라: 대상은 예약 실행 직전에 고름(NKM 7973) — 표지·최근 타격 대상·무작위를 그때 다시 계산
+                    def fn(actor=actor, sk=sk, rule=rule):
+                        pool = self.alive(1 - actor.side)
+                        if not pool:
+                            return None
+                        if eff.get('random_enemy'):
+                            t = self.R(actor.side).choice(pool)
+                        else:
+                            t = actor.last_target if (actor.last_target is not None and not actor.last_target.dead) else None
+                            if rule and rule.get('mark'):
+                                t = next((v for v in pool if v.has(rule['mark'])), t)
+                        return self.cast(actor, sk, extra=True, target=t, parent=ctx)
+                    for _ in range(eff['times']):
+                        if not self._defer_extra(fn):
+                            fn()
+                    return
                 for _ in range(eff['times']):
                     if eff.get('random_enemy'):
                         pool = self.alive(1 - actor.side)
@@ -3448,6 +3479,16 @@ class Battle:
             if sk is not None and self.R(owner.side).random() < int(m.group(1)) / 100.0:
                 self._fired(owner)
                 target = ctx.src if (ctx.src is not None and ctx.src.side != owner.side) else None
+                if self._exec_pick():     # 클라: 대상은 실행 직전에(NKM 7973) — 타격자가 살아 있으면 그대로, 무작위는 그때 굴림
+                    def fn(src=target, rnd=bool(ln.eff.get('random_enemy'))):
+                        pool = self.alive(1 - owner.side)
+                        if not pool:
+                            return None
+                        t = self.R(owner.side).choice(pool) if rnd else (src if (src is not None and not src.dead) else None)
+                        return self.cast(owner, sk, extra=True, target=t, parent=ctx)
+                    if not self._defer_extra(fn):
+                        fn()
+                    return
                 if ln.eff.get('random_enemy'):
                     pool = self.alive(1 - owner.side)
                     if not pool:
@@ -3496,6 +3537,22 @@ class Battle:
             enemy_f = enforce.get('enemy_f', [])
             enemies = self.alive(1 - owner.side)
             if not enemies:
+                return
+            if self._exec_pick():     # 클라: 예약엔 시전자·스킬·자동 대상 규칙, 적은 실행 검사에서 고름(NKM 7973·13181~13189)
+                self._fired(owner)
+
+                def fn(actor=actor, sk=sk):
+                    pool = self.alive(1 - owner.side)
+                    if not pool or actor.dead or self.incapacitated(actor):
+                        return None
+                    if enemy_f:
+                        t, _ = self.filter_chain(actor, pool, enemy_f, ctx)
+                        t = t[0] if len(t) == 1 else (self.R(owner.side).choice(t) if t else self.R(owner.side).choice(pool))
+                    else:
+                        t = self.R(owner.side).choice(pool)
+                    return self.cast(actor, sk, extra=True, target=t, parent=ctx, via='enforce')
+                if not self._defer_extra(fn):
+                    fn()
                 return
             if enemy_f:
                 target, _ = self.filter_chain(actor, enemies, enemy_f, ctx)

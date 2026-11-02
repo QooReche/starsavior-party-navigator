@@ -464,7 +464,7 @@ async function guildSearchStart(){
   const growth=await miGrowth();if(stale())return;
   const profile=MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
   const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers();
-  const rows=GuildSearch.pool(S,results,R),list=GuildSearch.combos(S,rows.map(r=>r));
+  const rows=GuildSearch.pool(S,results,R.filter(s=>!EXCL.has(s.key))),list=GuildSearch.combos(S,rows.map(r=>r));
   if(list.length<1)throw new Error("편성할 수 있는 구원자가 부족합니다(내 정보에 육성된 구원자 4명 이상 필요)");
   const combos=list.map(k=>k),workers=Math.max(2,Math.min(8,(navigator.hardwareConcurrency||4)-1));
   const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>new Worker("sim_worker.js");
@@ -1180,9 +1180,10 @@ $("mi-list").addEventListener("click",e=>{const b=e.target.closest("button[data-
 document.addEventListener("click",e=>{const b=e.target.closest("button[data-mi-sheet-retry]");if(b)miSheet(b.dataset.miSheetRetry);if(e.target.closest("[data-mi-dlg-close]"))$("mi-dlg").close()});
 $("mi-q").oninput=()=>renderMi();
 $("mi-list").addEventListener("change",e=>{const x=e.target.closest("input[data-use]");if(!x)return;if(x.checked)EXCL.delete(x.dataset.use);else EXCL.add(x.dataset.use);
- LS.set("excl",[...EXCL]);syncOwn();saveSel();updCount();renderMi();rerun()});
-$("mi-excl").addEventListener("click",e=>{if(!e.target.closest("button[data-exclclear]"))return;EXCL.clear();LS.set("excl",[]);syncOwn();saveSel();updCount();renderMi();rerun()});
-function miReset(info){simInvalidate();SIMQ.res={};SIMQ.scr={};SIMQ.refined=new Set();SIMQ.more={};SIMQ.err="";BRCMP.seen.clear();BRCMP.open={};for(const k in PICK)delete PICK[k];
+ gsReset();LS.set("excl",[...EXCL]);syncOwn();saveSel();updCount();renderMi();rerun()});
+$("mi-excl").addEventListener("click",e=>{if(!e.target.closest("button[data-exclclear]"))return;gsReset();EXCL.clear();LS.set("excl",[]);syncOwn();saveSel();updCount();renderMi();rerun()});
+function gsReset(){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.id++;GSR.phase="idle";GSR.rows=[];GSR.msg=""}   // 내 정보·추천 제외가 바뀌면 이전 편성 찾기 결과·진행을 버림
+function miReset(info){simInvalidate();gsReset();SIMQ.res={};SIMQ.scr={};SIMQ.refined=new Set();SIMQ.more={};SIMQ.err="";BRCMP.seen.clear();BRCMP.open={};for(const k in PICK)delete PICK[k];
  MI.info=info;MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
  if(info)$("grow").value="myinfo";else if($("grow").value==="myinfo")$("grow").value="1";
  miSelect();rerun()}
