@@ -2,6 +2,13 @@
 
 갱신 2026-11-02. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙(시험·근거·공개 금지)은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md).
 
+## ⏸ 보류 중 (2026-11-02 심야, 회사 PC) — 먼저 읽을 것
+
+- codex 5명 병렬 작업(협공 후보 순서 `coop_order`·적 스킬 순서 `foe_skill_order`/빈 대상 공격 `empty_attack`·기본/개화 매핑 `ally_variant_mapping`·기믹 재조사·e2e 서버 격리)을 로컬 main 에 병합했음. 병합 뒤 `run_tests.py --rebuild` 73 통과/0 실패. **푸시하지 않았음**(회사 PC 로컬만, origin 보다 앞섬).
+- 근거로 쓴 디컴파일본이 외부 3월판(`star-savior-decompiled` 2026-03-28)임이 드러나 보류했음. 게임 PC 에서 현재 빌드를 디컴파일해 비공개 static-data `decompiled/` 에 올리기로 함(절차 = static-data `DECOMPILE.md`).
+- 재개 순서: static-data pull → 새 `decompiled/` 로 이번 4규칙과 3월판 근거로 넣은 기존 규칙(COOP_CAP·enforce_timing/target·buff_ban_force·level_buff_decrease 등) 재확인 → 그웬 `LevelBuffDecrease` 확인 → 대형 재생성(화력표·빠른 계산·길방 시뮬 표) → 시험·e2e → HANDOFF 정리 → 푸시.
+- 중단한 통합 작업의 HANDOFF 초안·부분 재생성물은 `git stash` 의 «regen-paused-20261102» 에 있음(재생성은 처음부터 다시 돌릴 것). 작업자별 보고는 `E:\AI_mk2\codex-par\*.out.md`.
+
 ## 현재 상태
 
 - `formula.COOP_CAP=1.0`이 기본임(`legacy/alt=0.30`). 현 클라의 `CLIENT_CONST_TEMPLET.StatDataCap`에는 협공 상한이 없고 최종 능력치로 확률을 판정함. 버프 포함 협공 확률을 30%로 자르던 옛 동작을 해제했음.
