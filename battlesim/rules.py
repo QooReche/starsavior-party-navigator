@@ -23,7 +23,7 @@ DEF_K = _F['DEF_K']                    # 방어율 = def/(def+3000) (PvE)
 AOE_DIV = _F['AOE_DIV']                # 전체 대상 스킬은 /4 (대상 1명당)
 TICK_PER_TURN = _F['TICK_PER_TURN']    # 속도 100 유닛이 1턴(=1라운드)에 한 번 행동하는 틱 수
 INF_HP = 1e15
-COOP_CAP = _F['COOP_CAP']              # stat.cap.NST_RATE_CROSS_ATTACK = 3000 (협공 확률 상한 30%)
+COOP_CAP = _F['COOP_CAP']              # 현 CLIENT_CONST_TEMPLET에는 협공 상한 없음(RollDice 10000 = 100%)
 DEC_CAP = _F['DEC_CAP']                # 감소 합 상한 50%
 BREAK_DEC = _F['BREAK_DEC']            # 브레이크 대상 감소 합 -15%p
 ELEM_HIT = _F['ELEM_HIT']              # 효과 적중 판정 상성 보정 +-30%p
@@ -69,6 +69,7 @@ DEFAULT_OPTS = dict(
 )
 # 교정 전(P1) 값: rules/default.json 의 legacy. tests/rank_check.py 가 「교정 전」 프로필로 쓴다.
 LEGACY_OPTS = {k: v['legacy'] for k, v in RULES['opts'].items() if 'legacy' in v}
+LEGACY_FORMULA = {k: v['legacy'] for k, v in RULES['formula'].items() if 'legacy' in v}
 # P3 확률 엔진(battlesim/mc.py) 전용 규칙. DEFAULT_OPTS 와 따로 둔다(기대값 엔진·damage_index 출력 불변).
 MC_RULES = {k: v for k, v in RULES.get('mc', {}).items() if not k.startswith('_') and k != 'break_skills'}
 # kind='note' 항목: 설명용이며 엔진 코드가 읽지 않는다. MC_OPTS 에서 제외하되 MC_RULES·assumptions_used 출력엔 유지.

@@ -82,7 +82,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--write', action='store_true')
     a = ap.parse_args()
-    cur = capture()
+    # 이 골든은 P2 기본 옵션 + 공식 상수 COOP_CAP=0.30으로 고정한다.
+    # capture() 자체는 현재 규칙을 따라야 rank_check의 민감도 비교가 유효하다.
+    import battlesim.engine as engine
+    saved = engine.COOP_CAP
+    try:
+        engine.COOP_CAP = 0.30
+        cur = capture()
+    finally:
+        engine.COOP_CAP = saved
     if a.write:
         os.makedirs(os.path.dirname(GOLDEN), exist_ok=True)
         tmp = GOLDEN + '.tmp'

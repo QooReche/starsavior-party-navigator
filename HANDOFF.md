@@ -4,13 +4,14 @@
 
 ## 현재 상태
 
+- `formula.COOP_CAP=1.0`이 기본임(`legacy/alt=0.30`). 현 클라의 `CLIENT_CONST_TEMPLET.StatDataCap`에는 협공 상한이 없고 최종 능력치로 확률을 판정함. 버프 포함 협공 확률을 30%로 자르던 옛 동작을 해제했음.
 - 기본 규칙은 `battlesim/rules/default.json`의 실제 `mc.*.value` 기준임: `enforce_timing=queue`, `enforce_target=exec`, `wave_ally_gauge=reset`, `buff_ban=refuse`, `buff_ban_force=client`, `guild_count=all`, `instant_damage=damage`.
 - 그 밖의 기본값: `reaction_timing=queue`, `skill_order=data`, `dispel_on_attack=on`, `turn_limit_unit=actions`, `break_skill_domain_clock=global`, `break_skill_domain_turns=5`, `toughness_elem=db`, `enemy_hit_buff_cmp=le`, `preemptive_defense=recognize`(실제 가로채기 판정은 꺼짐).
 - 길드방어전 시즌4(BFB·별 속성)는 11/05 04:00 KST 종료, 결산은 11/12 04:00까지임(`data/guild_defense.json`). BFB 상태 기계·알리시아 지원 5종·선택 효과 4종·영상으로 확인한 부분 점수식 반영했음.
 - 내 정보로 3단계 편성 탐색·기대 점수 순위·협공 자동 배제·추천 제외 연동 구현했음. `guild_boss=off`가 기본이며 길방 진입에서만 자동으로 켬. 브레이크 스킬 입력·최신 규칙 영상 검증은 남았음.
-- `data/guild_sim.json`은 11/02 최신 엔진(강인한 타격 50%·부케 피해 증가·강제 적용 포함)으로 다시 만들었음. 판별 «보스 깎은 비율» 평균 `fracBySupport` 를 같이 저장해 패널 기대 점수(`guild_view.js simExpect`)도 판별 기준으로 계산함(점수식이 이 값에 선형). 열어 둔 화면은 시즌 시작·종료·결산 종료 시각과 탭 복귀 때 패널을 다시 그림(e2e `test_guild_season_rollover`, 가짜 시계).
-- 배포: `main`·원격 main 모두 `5cd0b75`임(11/02 조회). Pages 응답 200 및 서비스 HTML과 로컬 `index.html` 내용 일치 확인했음. 주소: https://QooReche.github.io/starsavior-party-navigator/
-- 최근 검증(11/02 회사 PC): `tools/run_tests.py --rebuild` 전부 통과, e2e 는 연속 3회 전부 통과. 일괄 실행 중 e2e 가 한 번 실패했으나 어느 항목인지 출력이 잘려 못 봄(재실행 3회 통과 → 부하 때 시간 의존 항목의 흔들림으로 봄). 이후 `run_tests.py` 는 실패 시 FAIL 줄을 먼저 보여 줌. 아래 기록은 날짜 역순이며 같은 날짜는 후속 작업 순서임. 문장 끝의 화살표는 이후 변경을 뜻함.
+- `data/guild_sim.json`은 11/02 밤 최신 엔진(강인한 타격 50%·부케 피해 증가·강제 적용·COOP_CAP=1.0 포함)으로 다시 만들었음. 판별 «보스 깎은 비율» 평균 `fracBySupport` 를 같이 저장해 패널 기대 점수(`guild_view.js simExpect`)도 판별 기준으로 계산함(점수식이 이 값에 선형). 열어 둔 화면은 시즌 시작·종료·결산 종료 시각과 탭 복귀 때 패널을 다시 그림(e2e `test_guild_season_rollover`, 가짜 시계).
+- 저장소: 로컬 HEAD·원격 main 모두 `684ed40`임(11/02 밤 조회). 이번 COOP_CAP 변경은 e2e 재확인 전 중간 저장으로 커밋·푸시했음. Pages 응답 200·HTML 일치 확인은 이전 작업 기록임. 주소: https://QooReche.github.io/starsavior-party-navigator/
+- 최근 검증(11/02 밤 회사 PC): `python -X utf8 -I tools/run_tests.py --rebuild` 시험 파일 69 통과 / 실패 0, 독립 리뷰·`git diff --check` 통과했음. 이어서 `--rebuild --e2e` 한 번 돌렸을 때 e2e 는 `test_load_no_errors` 1건만 첫 페이지 로드 30초 시간 초과로 실패하고 나머지 화면 시험은 모두 통과했음(부하 흔들림 추정, 재실행은 재부팅으로 중단 — 다음에 e2e 재확인할 것). 실제 영상 재대조는 하지 않았음. 아래 기록은 날짜 역순이며 같은 날짜는 후속 작업 순서임. 문장 끝의 화살표는 이후 변경을 뜻함.
 
 ## 남은 일
 
@@ -32,8 +33,22 @@
 16. 기믹 박스의 추정 대처 문구를 확인하고, 패치 때 무적 웨이브의 실제 배치·길방 밖 협공/추가타 근거·ReactiveBarrier 활성 행이 생기는지 재조사하기로 함(10/24 기믹 박스·11/01 밤/심야).
 17. 게임 PC의 11/01 클라 표 수정본 보존·비공개 저장소 동기화를 확인하기로 함(11/01 패치 절; 회사 PC static-data HEAD f1953d9에는 해당 표 변경 없음).
 18. 10/29 아카라이브 원고의 «게임 파일에 새 수치가 없어» 문단을 정정하고, 새 myinfo.ps1 배포 필요 여부를 확인하기로 함(10/29 패치 정정; 게임 PC `release/arca_post/`, 이 PC에는 원고 없음).
-19. 낮은 우선순위 후보는 추가 근거가 생기면 판단하기로 함: 작전 보스 근사 보정(기존 실험 개선 0), rankAll/quickRank 입력 캐시 확대, legacy 분기 정리(10/22 화면 변경·10/23 다음 세션·10/24 시간 초과).
-20. 협공 확률 상한 `COOP_CAP` 0.30 이 전투 중 버프(아세라 뤼니송 통찰 스택당 +20%, 최대 5개)에도 걸리는지 클라 코드로 확인한 뒤 기본값을 정하기로 함(회사 PC `E:/AI_mk2/star-savior-decompiled/NKM/NKM.decompiled.cs` 에서 `m_StatDataCap`·`NST_RATE_CROSS_ATTACK` 사용처, 상한 적용이 기본 능력치 합산에만인지 전투 중 버프 합산에도 인지; 11/02 저녁). 표는 `static-data/tables/Plain/JSON_STAT_DATA_CAP.json`(치명 10000·치명 피해 30000·협공 3000). 영상 근거: 450 에서 아세라 협공 70% 이상, 상한을 1.0 으로 풀면 450 은 실제에 가까워지고 38-36 은 변화 없음. 대조 스크립트 `AI	emp\partynavigator\workideo_1102_corr450\investigate\coop_cap_cmp.py`. 확인 전에는 기본값을 바꾸지 않음.
+19. 낮은 우선순위 후보는 추가 근거가 생기면 판단하기로 함: 작전 보스 근사 보정(기존 실험 개선 0), rankAll/quickRank 입력 캐시 확대, legacy 분기 정리(10/22 화면 변경·10/23 다음 세션·10/24 시간 초과). 협공 확률 100% 초과 후보가 여러 명일 때 클라와 후보 우선순위가 다른 기존 근사도 남았음(11/02 밤, `mc.py:1943`의 상한 적용 뒤 정렬).
+
+## ▶ 2026-11-02 밤 (회사 PC, codex) — 협공 확률 상한 해제 `COOP_CAP` (중간 저장, 푸시 완료)
+
+- `formula.COOP_CAP` 기본값을 1.0으로 바꿨음(`legacy=0.30`, `alt=[0.30]`, `grade=data`). `rules.py` 주석과 규칙 근거를 맞췄음.
+- 근거: `star-savior-decompiled/NKM/NKM.decompiled.cs:15835-15951`은 최종 협공 능력치 내림차순으로 `RollDice(value, 10000)` 판정함. `:2171-2201`·`:3611-3618`에서 버프 능력치 합을 넣어 `:18244` 이후 최종 능력치를 다시 계산하며, `:18462-18476`은 `StatDataCap`의 양수 상한만 적용함.
+- `NKM.Templets/NKM.Templets.decompiled.cs:27064`가 읽는 표는 `starsavior-static-data/tables/Plain/CLIENT_CONST_TEMPLET.json:125-142`임. `:138-142`의 치명·치명 피해 상한은 활성이고 협공 3000은 주석 처리돼 있음. `JSON_STAT_DATA_CAP`·`m_StatDataCap`은 현 디컴파일본 검색 0건임. 상한이 있었다면 버프에도 걸리는 구조지만, 현 표에는 협공 상한 자체가 없음.
+- `LEGACY_FORMULA`를 모으고 `rank_check.apply_rules(base='legacy')`가 기대값 엔진 상수에도 적용하도록 했음. `--base legacy --golden tests/golden/sim_golden_p1.json`에서 구원자 65명·파티 150팀·스테이지 50칸 정확히 일치했음.
+- 고정 결과 시험은 0.30을 명시했음: `mc_cache_test`·`heal_burst_test`는 `formula_override`, `golden_check`는 기대값 엔진 상수, `guild_defense_test`의 추천 출력 해시는 옛 상한으로 만든 화력 입력을 씀. 저장된 골든·해시는 바꾸지 않았음. `web_test`의 임시 교체값도 0.30으로 바꿔 새 기본값 1.0 복원을 검사함.
+- `coop_cap_test.py`를 추가했음. 공개 표의 에밀리·왈츠 아세라·힐데·메이드 세레스, standard 육성, 태양 회랑 250층, seed=17, 20판에서 협공 버프 30% 초과 경로와 양쪽 진행도>0·협공>0을 확인했음. 판당 협공은 0.30에서 2.45회, 새 기본값에서 6.10회였음. 기본값을 메모리에서 0.30으로 되돌리자 `2.45 not greater than 2.45`로 실패했으며 1.0으로 원복했음. 계정 자료는 쓰지 않았음.
+- `tools/update.py`로 화력 지표(`sim_damage.py index` → `pack_damage.py`)와 빠른 계산 재료를 재생성했음. 화력 지표의 변경 구원자는 왈츠 아세라 1명임. `gen_quick_calib.py --per-content 400 --opboss`로 표준 육성 표본 2,323건×40판을 새 엔진으로 생성한 뒤 `calibrate_quick.py --write`로 `data/quick.json`의 계수·콘텐츠/스테이지 보정·검증 요약을 다시 맞췄음. `update.py`가 만든 태그 문서의 순서만 바뀐 차이는 원복했음.
+- `tools/build_guild_sim.py` 기본 인자로 `data/guild_sim.json`을 재생성했음(5편성×3육성×6지원×13단계×60판=70,200판, 805초). 선택 효과 끔·브레이크 미장착·표준 육성 가정을 유지했음. `rates`·`bySupport`·`progBySupport`·`fracBySupport`·`summary`가 새 엔진 결과임. 재생성을 생략한 요청 자료는 없음.
+- 새 자료로 첫 전체 재빌드 시험은 67 통과 / 2 실패였음(`reco_parity_test.py`, `reco_reuse_test.js`). 수정 전 기준선은 68 통과 / 실패 0이므로 새 자료가 드러낸 차이임. 고정 추천 결과는 새 화력표·재보정 계수에 영향을 받았음. `tests/fixtures/reuse_legacy_inputs.json`에 `684ed40`의 이전 공개 입력(0.30 화력·빠른 계산 계수)만 고정했고 `reuse_baseline.json`의 기대값은 유지했음.
+- 순서 대조 실패는 Python 3.13의 `sum()` 보상 합산과 JS 순차 합산의 끝자리 차이(25.310000000000002와 25.31)가 원인이었음. `party_reco.py team_value`의 점수·시너지 합산과 태그 가산 순서를 JS와 맞췄음. 기존 상위 200 조합·동점 순서 시험이 변경 전 실패하고 변경 후 통과했음. 길방 빌더의 후보 4편성·리더가 생성 때와 그대로임도 확인해 앞서 만든 시뮬 표를 유지했음.
+- 최종 `python -X utf8 -I tools/run_tests.py --rebuild`: 시험 파일 69 통과 / 실패 0. `build_simpack.py`·`build_party_html.py index.html`을 다시 실행했고 `git diff --check`도 통과했음. 골든·해시 기대값 변경 없음. e2e·실제 영상 재대조는 하지 않았음. 작업 트리만 수정했으며 커밋·푸시하지 않았음.
+- 독립 리뷰는 커밋 없이 HEAD `684ed40` 기준 diff와 수정 파일의 불변 사본으로 했음. 추가 추천 합산·fixture 수정까지 리뷰했고 수정 필요 지적은 없었음. fixture 값이 이전 공개 입력과 일치함도 확인했음. 기존 근사로 `mc.py:1943`이 상한 적용 뒤 확률로 정렬하므로, 서로 다른 100% 초과 후보가 여러 명이면 클라의 원래 능력치 순서와 달라질 수 있음. 이번에는 상한 기본값과 재현 경로만 바꾸고 이 경계는 남은 일 19번에 기록했음.
 
 ## ▶ 2026-11-02 저녁 (집 PC) — 세레스 먼지 포착 `level_buff_decrease` (푸시 전)
 
@@ -41,7 +56,7 @@
 - 450 대조 중 구원자 키를 잘못 넣어(`ceres` 스트라이커 대신 `ceres-sun-supporter` 서포터) 「세레스 회복 미구현」으로 오판했다가 정정했음. 동명 구원자는 이름·부제·직업으로 키를 확인할 것.
 - 올바른 키에서 시뮬이 실제보다 오래 버팀(행동 수가 실제 TURN 97 보다 큼). 원인 조사(Opus, 읽기 전용): ① 먼지 포착 «5회 부여»는 표상 `LevelBuffDecrease` 5 감소(`SE_TEMPLET_SKILL_1.json:38328-38343`)인데 엔진이 5를 더했음, ② 협공 상한 0.30(후보).
 - ① 을 `level_buff_decrease`(기본 on, off=옛 동작)로 반영: 영상에서 추가 발동 전후 중첩 5건 중 4건이 정확히 -5(1건 7→4 원인 불명, 4건은 후 값 미판독). 450 대조 수치는 내 정보 기반이라 비공개 작업 폴더에만 둠(행동 수·회복·받은 피해가 실제에 가까워짐). 그웬·카넬리아 `LevelBuffDecrease` 는 감소 시점 미확인이라 제외. 시험 `tests/level_buff_decrease_test.py`.
-- ② 는 보류: 아세라 뤼니송 문구는 「통찰 스택당 협공 확률 20%, 최대 5개」(최대 100%)인데 `COOP_CAP` 0.30(클라 `NST_RATE_CROSS_ATTACK` 3000)이 막음. 영상: 38-36 에서 프로페서M 기본기 뒤는 강제 협공(아모라)이 협공 자리를 차지해 아세라 협공이 안 붙고, 힐데 기본기 뒤 2/2 발생, 450 에서 70% 이상. 클라 상한이 스킬 증가분에도 걸리는지 확인 필요.
+- ② 는 보류: 아세라 뤼니송 문구는 「통찰 스택당 협공 확률 20%, 최대 5개」(최대 100%)인데 `COOP_CAP` 0.30(클라 `NST_RATE_CROSS_ATTACK` 3000)이 막음. 영상: 38-36 에서 프로페서M 기본기 뒤는 강제 협공(아모라)이 협공 자리를 차지해 아세라 협공이 안 붙고, 힐데 기본기 뒤 2/2 발생, 450 에서 70% 이상. 클라 상한이 스킬 증가분에도 걸리는지 확인 필요. (→ 11/02 밤 회사 PC: 클라에 상한 없음 확인, 기본 1.0)
 - 남은 차이: 450 웨이브 2 길이(시뮬이 실제보다 김)·첫 사망 시점. 후보는 출혈 겹침·보호막. 조사물 `AI	emp\partynavigator\workideo_1102_corr450\investigate\`.
 
 ## ▶ 2026-11-02 (회사 PC, codex) — 강제 적용·스택 시점·소환체

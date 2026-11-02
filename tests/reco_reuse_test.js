@@ -10,7 +10,14 @@ const ROOT     = path.resolve(__dirname, '..');
 const EXPECTED = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'reuse_baseline.json'), 'utf8'));
 const html     = fs.readFileSync(path.join(ROOT, 'party_template.html'), 'utf8');
 const D        = JSON.parse(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').match(/const D=(\{.*?\});\s*\n/)[1]);
-const qdata    = Q.mergeSm(JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'quick.json'), 'utf8')));
+// Keep pre-refactor outputs fixed when engine data/calibration is rebuilt.
+// These public inputs were captured with COOP_CAP=0.30, before this rebuild.
+const legacy   = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'reuse_legacy_inputs.json'), 'utf8'));
+Object.assign(D.dmg.units, legacy.damageUnits);
+const rawQuick = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'quick.json'), 'utf8'));
+Object.assign(rawQuick.sv, legacy.quick.sv);
+for (const key of ['params', 'pc', 'sm']) rawQuick[key] = legacy.quick[key];
+const qdata    = Q.mergeSm(rawQuick);
 
 const sec  = (s, e) => html.slice(html.indexOf(s), html.indexOf(e, html.indexOf(s)));
 const prep = code => code

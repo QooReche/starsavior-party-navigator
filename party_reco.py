@@ -228,9 +228,17 @@ def score(s, growth, mains, cfg, main_name, enemies, boss=True):
     return sum(parts.values()), parts
 
 
+def _sum_in_order(values):
+    # Python 3.12+ sum의 보상 합산은 JS reduce와 끝자리·동점 순서가 달라진다.
+    total = 0
+    for value in values:
+        total += value
+    return total
+
+
 def team_value(combo, cfg, tags, def_pen):
     w = cfg["weights"]
-    v = sum(x["score"] for x in combo)
+    v = _sum_in_order(x["score"] for x in combo)
     roles = [x["s"]["className"] for x in combo]
     if SUPPORT in roles:
         v += w["supportBonus"]
@@ -240,8 +248,10 @@ def team_value(combo, cfg, tags, def_pen):
     got = set()
     for x in combo:
         got.update(tags.get(x["s"]["key"], []))
-    v += sum(wt for t, wt in cfg["tagWeights"].items() if t in got)
-    v += min(sum(h[0] for h in party_synergy([x["s"]["key"] for x in combo], cfg)), cfg["synergy"]["cap"])
+    for tag, weight in cfg["tagWeights"].items():
+        if tag in got:
+            v += weight
+    v += min(_sum_in_order(h[0] for h in party_synergy([x["s"]["key"] for x in combo], cfg)), cfg["synergy"]["cap"])
     v += gimmick_team(combo, cfg)[0]
     v += _DM[1] * dmg_score([x["s"]["key"] for x in combo], _DM[0])
     return v, got

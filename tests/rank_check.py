@@ -53,6 +53,8 @@ def apply_rules(base='default', override=None):
         setattr(engine, k, v)
     if base == 'legacy':
         rules.DEFAULT_OPTS.update(rules.LEGACY_OPTS)
+        for k, v in rules.LEGACY_FORMULA.items():
+            setattr(engine, k, v)
     for k, v in (override or {}).items():
         if k in PRISTINE:
             rules.DEFAULT_OPTS[k] = v

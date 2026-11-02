@@ -42,6 +42,7 @@ def _unit(name='u', role='스트라이커', hp=10000, atk=1000, df=500, spd=100,
 
 
 _KEEP = {'wave_ally_gauge': 'keep', 'enforce_timing': 'nested', 'enforce_target': 'book', 'buff_ban_force': 'off'}   # 해시는 옛 규칙 기준(캐시 동일성 시험이 목적)
+_KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 
 def _sig(r):
@@ -63,17 +64,17 @@ class CacheIdentityTest(unittest.TestCase):
 
     def test_gwen_multiwave_hash_locked(self):
         """[캐시-1] gwen 2웨이브 결과 해시 고정 — 캐시 때문에 바뀌면 안 된다."""
-        r = simulate([{'key': 'gwen'}], _ENC, {'n_runs': 10, 'seed': 7, 'rules_override': _KEEP})
+        r = simulate([{'key': 'gwen'}], _ENC, {'n_runs': 10, 'seed': 7, 'rules_override': _KEEP, 'formula_override': _KEEP_FORMULA})
         self.assertEqual(_h(_sig(r)), self._H_GWEN_MULTIWAVE)
 
     def test_pm_gwen_multiwave_hash_locked(self):
         """[캐시-2] professor-m + gwen 2웨이브 해시 고정 — 반응 스킬 포함 시나리오."""
-        r = simulate(['professor-m', 'gwen'], _ENC, {'n_runs': 10, 'seed': 7, 'rules_override': _KEEP})
+        r = simulate(['professor-m', 'gwen'], _ENC, {'n_runs': 10, 'seed': 7, 'rules_override': _KEEP, 'formula_override': _KEEP_FORMULA})
         self.assertEqual(_h(_sig(r)), self._H_PM_GWEN_MULTIWAVE)
 
     def test_gwen_rng_streams_hash_locked(self):
         """[캐시-3] rng_streams=True 해시 고정 — 스트림 분리 모드에서도 캐시 안전."""
-        r = simulate([{'key': 'gwen'}], _ENC, {'n_runs': 10, 'seed': 7, 'rng_streams': True, 'rules_override': _KEEP})
+        r = simulate([{'key': 'gwen'}], _ENC, {'n_runs': 10, 'seed': 7, 'rng_streams': True, 'rules_override': _KEEP, 'formula_override': _KEEP_FORMULA})
         self.assertEqual(_h(_sig(r)), self._H_GWEN_RNG_STREAMS)
 
 

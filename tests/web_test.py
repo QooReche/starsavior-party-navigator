@@ -91,7 +91,7 @@ def test_manual_burst_rule():
 def test_formula_override_restored():
     """민감도용 공식 상수 교체(COOP_CAP)는 실행 뒤 원래 값으로, 모르는 상수는 거부"""
     before = brules.COOP_CAP
-    simulate(['gwen', 'fei', 'professor-m', 'amora'], {'stage': 'cosmo/길레/길레 1단계'}, dict(seed=1, n_runs=1, formula_override={'COOP_CAP': 1.0}))
+    simulate(['gwen', 'fei', 'professor-m', 'amora'], {'stage': 'cosmo/길레/길레 1단계'}, dict(seed=1, n_runs=1, formula_override={'COOP_CAP': 0.30}))
     try:
         simulate(['gwen', 'fei', 'professor-m', 'amora'], {'stage': 'cosmo/길레/길레 1단계'}, dict(seed=1, n_runs=1, formula_override={'BASE_MULT': 2}))
         rejected = False

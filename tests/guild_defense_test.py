@@ -117,11 +117,24 @@ def test_content_registration():
 def test_existing_contents_unchanged():
     # 기존 콘텐츠 추천 출력이 길드 방어전 추가 전과 같다(golden 은 별도). 고정 입력 2건의 출력 해시를 확인한다.
     import hashlib
+    from unittest.mock import patch
+    import battlesim.engine as engine
+    from battlesim.metrics import build_index
+
+    # 공개 화력표는 새 규칙으로 재생성되므로, 이 고정 해시만 옛 협공 상한으로
+    # 추천 입력(s/a/g)을 계산한다. ref95·turns는 pack_damage처럼 그대로 둔다.
+    legacy_damage = pr._json(pr.DMG)
+    with patch.object(engine, 'COOP_CAP', 0.30):
+        index = build_index()
+    for key, unit in legacy_damage['units'].items():
+        row = index[key]
+        unit.update(s=round(row['single_dpt']), a=round(row['aoe_dpt']), g=row['ally_dmg_gain_pct'])
     outs = []
-    for content, kw in (("작전", {"stage": "36-36"}), ("코스모 게이트", {"boss": "길레"})):
-        lines = []
-        pr.recommend(content, out=lines.append, **kw)
-        outs.append("\n".join(lines))
+    with patch.object(pr, '_DI', legacy_damage):
+        for content, kw in (("작전", {"stage": "36-36"}), ("코스모 게이트", {"boss": "길레"})):
+            lines = []
+            pr.recommend(content, out=lines.append, **kw)
+            outs.append("\n".join(lines))
     assert all("== " in o for o in outs)
     h = hashlib.sha256("\n".join(outs).encode("utf-8")).hexdigest()[:16]
     ref = os.path.join(ROOT, "tests", "fixtures", "guild_existing_reco.sha")
