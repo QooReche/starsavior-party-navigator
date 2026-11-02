@@ -236,7 +236,7 @@ def sim_payload(g, path=SIM_PATH):
         return None
     return {"runs": s["runs"], "recPower": s["recPower"], "growth": s["growth"], "levels": s["levels"], "passP": s["pass_p"],
             "basis": s["basis"], "summary": s["summary"], "supports": s.get("supports", ["none"]),
-            "teams": [{"names": t["names"], "src": t["src"], "rates": t["rates"], "bySupport": t.get("bySupport"), "progBySupport": t.get("progBySupport")} for t in s["teams"]]}
+            "teams": [{"names": t["names"], "src": t["src"], "rates": t["rates"], "bySupport": t.get("bySupport"), "progBySupport": t.get("progBySupport"), "fracBySupport": t.get("fracBySupport")} for t in s["teams"]]}
 
 
 def sim_best(sim, growth_key):

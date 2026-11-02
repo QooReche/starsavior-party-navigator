@@ -4,39 +4,63 @@
 
 ## 현재 상태
 
-- 기본 규칙은 `battlesim/rules/default.json`의 실제 `mc.*.value` 기준임: `enforce_timing=queue`, `enforce_target=exec`, `wave_ally_gauge=reset`, `buff_ban=refuse`, `guild_count=all`, `instant_damage=damage`.
+- 기본 규칙은 `battlesim/rules/default.json`의 실제 `mc.*.value` 기준임: `enforce_timing=queue`, `enforce_target=exec`, `wave_ally_gauge=reset`, `buff_ban=refuse`, `buff_ban_force=client`, `guild_count=all`, `instant_damage=damage`.
 - 그 밖의 기본값: `reaction_timing=queue`, `skill_order=data`, `dispel_on_attack=on`, `turn_limit_unit=actions`, `break_skill_domain_clock=global`, `break_skill_domain_turns=5`, `toughness_elem=db`, `enemy_hit_buff_cmp=le`, `preemptive_defense=recognize`(실제 가로채기 판정은 꺼짐).
 - 길드방어전 시즌4(BFB·별 속성)는 11/05 04:00 KST 종료, 결산은 11/12 04:00까지임(`data/guild_defense.json`). BFB 상태 기계·알리시아 지원 5종·선택 효과 4종·영상으로 확인한 부분 점수식 반영했음.
 - 내 정보로 3단계 편성 탐색·기대 점수 순위·협공 자동 배제·추천 제외 연동 구현했음. `guild_boss=off`가 기본이며 길방 진입에서만 자동으로 켬. 브레이크 스킬 입력·최신 규칙 영상 검증은 남았음.
-- `data/guild_sim.json`은 `39052c9` 생성본이라 이후 엔진 수정 전 값임. 표 기반 `guild_view.js simExpect`의 평균 진행도 점수 근사도 남았음(편성 찾기는 판별 점수 평균으로 수정했음).
+- `data/guild_sim.json`은 11/02 최신 엔진(강인한 타격 50%·부케 피해 증가·강제 적용 포함)으로 다시 만들었음. 판별 «보스 깎은 비율» 평균 `fracBySupport` 를 같이 저장해 패널 기대 점수(`guild_view.js simExpect`)도 판별 기준으로 계산함(점수식이 이 값에 선형). 열어 둔 화면은 시즌 시작·종료·결산 종료 시각과 탭 복귀 때 패널을 다시 그림(e2e `test_guild_season_rollover`, 가짜 시계).
 - 배포: `main`·원격 main 모두 `5cd0b75`임(11/02 조회). Pages 응답 200 및 서비스 HTML과 로컬 `index.html` 내용 일치 확인했음. 주소: https://QooReche.github.io/starsavior-party-navigator/
-- 최근 코드 검증은 11/02 회사 PC 절의 Python·JS·골든·e2e 통과 기록 기준임. 아래 기록은 날짜 역순이며 같은 날짜는 후속 작업 순서임. 문장 끝의 화살표는 이후 변경을 뜻함.
+- 최근 검증(11/02 회사 PC): `tools/run_tests.py --rebuild` 전부 통과, e2e 는 연속 3회 전부 통과. 일괄 실행 중 e2e 가 한 번 실패했으나 어느 항목인지 출력이 잘려 못 봄(재실행 3회 통과 → 부하 때 시간 의존 항목의 흔들림으로 봄). 이후 `run_tests.py` 는 실패 시 FAIL 줄을 먼저 보여 줌. 아래 기록은 날짜 역순이며 같은 날짜는 후속 작업 순서임. 문장 끝의 화살표는 이후 변경을 뜻함.
 
 ## 남은 일
 
-1. `ForceApplyEffect` 한글명↔BuffStrID 표를 추출해 강제 강화 예외와 `_limit_damage`의 신규 불사·후속 강화 직접 삽입을 함께 정정하기로 함(11/02 회사 PC; `battlesim/mc.py add_effect/_limit_damage`).
-2. 최신 엔진으로 길방 시뮬 표를 재생성하면서 판별 점수 평균·선택 효과 차원·육성 ×2.5 이상을 반영하기로 함(`tools/build_guild_sim.py`, `guild_view.js simExpect`; 11/01 지원·11/02 회사 PC).
-3. 강인한 타격의 시전별 50% 발생 비율을 검증하는 시험을 추가하기로 함(`tests/guild_support_test.py`는 횟수 출력만 함; 11/02 회사 PC).
-4. 최신 내 정보·reset+queue+exec 편성으로 영상 대조하기로 함: 선택 효과·질투의 시선·정실 어필·보호막·웨이브 게이지·스칼렛 행동 수, 하이 스코어 속도 버프 해제·부케 수정 뒤 남은 딜 분배 차이(11/01 심야·11/02 웨이브·밤).
-5. 그웬·카넬리아 스택 소모 시점을 확인한 뒤 구원자별 시점 반영, 크리스텔·프로페서M `fire_trigger`가 반응/엔포스 중 어느 경로인지 확인하기로 함(11/02 회사 PC; `battlesim/mc.py`).
-6. 질투의 시선 카운트에서 소환체를 어떻게 취급하는지 확인하기로 함(11/02 길방 편성 찾기; `battlesim/starsavior/guild_bfb.py`).
-7. 길방 추천에 보유 브레이크 스킬 입력을 연결하고, 편성·지원·단계를 직접 고르는 시뮬 UI와 수동 비교 범위를 정하기로 함(11/01 점수식·지원; `guild_search.js`의 직업별 지원 선별은 구현됐음).
-8. 길방 미확정 규칙을 확인하기로 함: 허무와 10단계 면역 동시 선택, 하루 도전·점수 합산 방식·1~6단계 요일, 보스 속도/공격 AddStat·지원 배치 순서·시즌 길드 버프, 졸개전 패배 부분 점수 근사(10/30·11/01 지원·11/02 회사 PC; `data/guild_defense.json`).
-9. 11/05 종료 뒤 다음 시즌 자료·보스 명세·search 설정을 갱신하고 빌더 검증을 확인하기로 함(`docs/PORTING.md`, `tools/build_guild_bfb.py`; 11/02 길방 편성 찾기).
-10. 열어 둔 화면도 시즌 종료 시각에 상태를 갱신하도록 고치기로 함(11/02 회사 PC; `guild_view.js`·`party_template.html`).
-11. 협공으로 걸러낸 팀 수·불리한 구원자 표시의 브라우저 확인과 예선 동결·시간 초과/부분 결과 전용 검증을 보강하기로 함(11/01 중간·저녁, 10/24 시간 초과; `tests/e2e/test_page.py`, `tests/sim_timeout_test.js`).
-12. 저사양 PC에서 길방 탐색 시간을 재고 예상 시간·탐색 축소(`minPowerRatio`/가볍게 계산)·부분 결과·진단 정보 표시를 검토하기로 함(11/02 길방 편성 찾기, 10/24 시간 초과; `guild_search.js`, `party_template.html`).
-13. 같은 시점 내 정보와 영상으로 37-3 비관·37-2 에핀델 편성·37-36 샤를 첫 행동·38-36 생존/행동 수·트리쉬 피해·세레스/루그 동작을 재대조하기로 함(10/23~29; `docs/ingame_samples.md`, `docs/ally_damage_audit.md`).
-14. 달 회랑 360층 등 영상에서 낙인 아이콘·보스 기본기 대상을 판독해 대상 선택 분산 가설을 검증하기로 함(10/25 영상 실측·38-36; `docs/ingame_samples.md`).
-15. 브레이크 자동 발동 시점·쿨 단위·발동자 게이지·큐브 외 영역 효과·웨이브/추가 턴/재발동 지속·행성 정화 노바 조건을 영상으로 확인하기로 함(10/23~24 브레이크 조사; `docs/break_skills.md`).
-16. 보스 브레이크 지속·미측정 궁극기 강인도·db 모드 불리 상성 강인도 처리와 `enemy_hit_buff_cmp`를 추가 실측으로 점검하기로 함(10/23~24; `docs/toughness_video.md`, `battlesim/mc.py tough_hit`).
-17. 적 4종의 SkillOrderList 미반영과 대상이 없어 deal을 건너뛸 때 DC_ATTACK 효과가 남는 경계를 점검하기로 함(10/24 저녁; `battlesim/mc.py`, `data/auto_skill.json`).
-18. 성간 회랑 카르멘 리더 `corr-c` 판독 노트를 샘플로 추가하기로 함(10/23 게임 PC; `tools/ingame_check.py`에 corr-a/b만 있음).
-19. 서부 탈환대 세레스(`ceres`, 스트라이커) 스킬을 확인하고, 기본/개화 8명 매핑·기본 베라 궁극기 자동 지정 근사의 범위를 점검하기로 함(11/02 길방 편성 찾기·10/23 이어서 할 것).
-20. 기믹 박스의 추정 대처 문구를 확인하고, 패치 때 무적 웨이브의 실제 배치·길방 밖 협공/추가타 근거·ReactiveBarrier 활성 행이 생기는지 재조사하기로 함(10/24 기믹 박스·11/01 밤/심야).
-21. 게임 PC의 11/01 클라 표 수정본 보존·비공개 저장소 동기화를 확인하기로 함(11/01 패치 절; 회사 PC static-data HEAD f1953d9에는 해당 표 변경 없음).
-22. 10/29 아카라이브 원고의 «게임 파일에 새 수치가 없어» 문단을 정정하고, 새 myinfo.ps1 배포 필요 여부를 확인하기로 함(10/29 패치 정정; 게임 PC `release/arca_post/`, 이 PC에는 원고 없음).
-23. 낮은 우선순위 후보는 추가 근거가 생기면 판단하기로 함: 작전 보스 근사 보정(기존 실험 개선 0), rankAll/quickRank 입력 캐시 확대, legacy 분기 정리(10/22 화면 변경·10/23 다음 세션·10/24 시간 초과).
+1. 길방 시뮬 표에 선택 효과 차원·육성 ×2.5 이상을 추가하기로 함(`tools/build_guild_sim.py --growth`, 화면 표가 새 배수를 받는지 확인; 11/01 지원). 판별 점수·최신 엔진 재생성은 11/02 끝냈음.
+2. 최신 내 정보·reset+queue+exec 편성으로 영상 대조하기로 함: 선택 효과·질투의 시선·정실 어필·보호막·웨이브 게이지·스칼렛 행동 수, 하이 스코어 속도 버프 해제·부케 수정 뒤 남은 딜 분배 차이(11/01 심야·11/02 웨이브·밤).
+3. 그웬 `LevelBuffDecrease`를 읽는 최신 클라 런타임으로 감소 시점을 확인하기로 함. 현 디컴파일본에 해당 필드 로더가 없어 미확인으로 남겼음. 카넬리아는 잔향 소모 없이 SKILL_END 추가 발동·SE 쿨 1턴, 크리스텔·프로페서M은 NST_REACT로 확인했음(아래 codex 절).
+4. 길방 추천에 보유 브레이크 스킬 입력을 연결하고, 편성·지원·단계를 직접 고르는 시뮬 UI와 수동 비교 범위를 정하기로 함(11/01 점수식·지원; `guild_search.js`의 직업별 지원 선별은 구현됐음).
+5. 길방 미확정 규칙을 확인하기로 함: 허무와 10단계 면역 동시 선택, 하루 도전·점수 합산 방식·1~6단계 요일, 보스 속도/공격 AddStat·지원 배치 순서·시즌 길드 버프, 졸개전 패배 부분 점수 근사(10/30·11/01 지원·11/02 회사 PC; `data/guild_defense.json`).
+6. 11/05 종료 뒤 다음 시즌 자료·보스 명세·search 설정을 갱신하고 빌더 검증을 확인하기로 함(`docs/PORTING.md`, `tools/build_guild_bfb.py`; 11/02 길방 편성 찾기).
+7. 협공으로 걸러낸 팀 수·불리한 구원자 표시의 브라우저 확인과 예선 동결·시간 초과/부분 결과 전용 검증을 보강하기로 함(11/01 중간·저녁, 10/24 시간 초과; `tests/e2e/test_page.py`, `tests/sim_timeout_test.js`).
+8. 저사양 PC에서 길방 탐색 시간을 재고 예상 시간·탐색 축소(`minPowerRatio`/가볍게 계산)·부분 결과·진단 정보 표시를 검토하기로 함(11/02 길방 편성 찾기, 10/24 시간 초과; `guild_search.js`, `party_template.html`).
+9. 같은 시점 내 정보와 영상으로 37-3 비관·37-2 에핀델 편성·37-36 샤를 첫 행동·38-36 생존/행동 수·트리쉬 피해·세레스/루그 동작을 재대조하기로 함(10/23~29; `docs/ingame_samples.md`, `docs/ally_damage_audit.md`).
+10. 달 회랑 360층 등 영상에서 낙인 아이콘·보스 기본기 대상을 판독해 대상 선택 분산 가설을 검증하기로 함(10/25 영상 실측·38-36; `docs/ingame_samples.md`).
+11. 브레이크 자동 발동 시점·쿨 단위·발동자 게이지·큐브 외 영역 효과·웨이브/추가 턴/재발동 지속·행성 정화 노바 조건을 영상으로 확인하기로 함(10/23~24 브레이크 조사; `docs/break_skills.md`).
+12. 보스 브레이크 지속·미측정 궁극기 강인도·db 모드 불리 상성 강인도 처리와 `enemy_hit_buff_cmp`를 추가 실측으로 점검하기로 함(10/23~24; `docs/toughness_video.md`, `battlesim/mc.py tough_hit`).
+13. 적 4종의 SkillOrderList 미반영과 대상이 없어 deal을 건너뛸 때 DC_ATTACK 효과가 남는 경계를 점검하기로 함(10/24 저녁; `battlesim/mc.py`, `data/auto_skill.json`).
+14. 성간 회랑 카르멘 리더 `corr-c` 판독 노트를 샘플로 추가하기로 함(10/23 게임 PC; `tools/ingame_check.py`에 corr-a/b만 있음).
+15. 서부 탈환대 세레스(`ceres`, 스트라이커) 스킬을 확인하고, 기본/개화 8명 매핑·기본 베라 궁극기 자동 지정 근사의 범위를 점검하기로 함(11/02 길방 편성 찾기·10/23 이어서 할 것).
+16. 기믹 박스의 추정 대처 문구를 확인하고, 패치 때 무적 웨이브의 실제 배치·길방 밖 협공/추가타 근거·ReactiveBarrier 활성 행이 생기는지 재조사하기로 함(10/24 기믹 박스·11/01 밤/심야).
+17. 게임 PC의 11/01 클라 표 수정본 보존·비공개 저장소 동기화를 확인하기로 함(11/01 패치 절; 회사 PC static-data HEAD f1953d9에는 해당 표 변경 없음).
+18. 10/29 아카라이브 원고의 «게임 파일에 새 수치가 없어» 문단을 정정하고, 새 myinfo.ps1 배포 필요 여부를 확인하기로 함(10/29 패치 정정; 게임 PC `release/arca_post/`, 이 PC에는 원고 없음).
+19. 낮은 우선순위 후보는 추가 근거가 생기면 판단하기로 함: 작전 보스 근사 보정(기존 실험 개선 0), rankAll/quickRank 입력 캐시 확대, legacy 분기 정리(10/22 화면 변경·10/23 다음 세션·10/24 시간 초과).
+
+## ▶ 2026-11-02 (회사 PC, codex) — 강제 적용·스택 시점·소환체
+
+- Claude 가 검토·시험 후 커밋·푸시함. 같은 때 Claude 는 시즌 경계 화면 갱신(`party_template.html gsWatch`, e2e)과 길방 시뮬 표 재생성(`fracBySupport`)을 함.
+
+### 강제 적용·피해 제한
+
+- `buff_ban_force=client`를 새 기본값으로 넣었음(`legacy/alt=off`). `add_effect`·보호막 부여·`_limit_damage`의 신규 불사/후속 강화가 공통 `refuse_buff` 판정을 씀. 기존 강화는 유지하며 기존 바큇살의 생명력 회복·쿨 초기화도 그대로임. `off`는 강제 강화까지 거부하고 피해 제한은 직접 삽입하던 옛 동작임.
+- 근거: `NKM/NKM.decompiled.cs:4053`의 CantGetMoreBuff + IsBuff + !ForceApplyEffect. `BUFF_TEMPLET.json:2224`의 BI_IMMORTAL과 `:22339`의 BI_MAID_LANTERN_1은 IsBuff=true, ForceApplyEffect=false임. 조율은 `:37175`의 BI_TUNER_CROWN_2(IsBuff/ForceApplyEffect=true)임.
+- `tools/build_buff_force.py --static E:/AI_mk2/starsavior-static-data`로 BUFF_TEMPLET의 m_BuffName을 `Strings/STRING_COMMON_ko_en.json:1`의 ko와 연결했음. 공개 `data/buff_force.json`에는 동명 충돌 없는 강제 강화 이름 77개만 저장했음. IsBuff/ForceApplyEffect가 다른 동명 효과 17종은 경고 후 제외했음(지속 회복·참극의 가시·용의 역린·타임 패러독스 등). BuffStrID·원문 표는 복사하지 않았음. 브라우저 manifest에 새 자료를 추가했음.
+- standard, seed=17, 편성·스테이지·규칙별 100판 비교했음. A=카넬리아·그웬·화이트 펄 루나·웨딩 카르멘, B=카넬리아·아모라·힐데·웨딩 카르멘. 어려움 34-6: A 클리어 0→0%, 진행도 0.0269→0.0269, B 0→0%, 0.0343→0.0343. 어려움 39-3: A 0→0%, 0.0182→0.0182, B 0→0%, 0.0278→0.0278. 모두 `off→client` 순서임. 강화 불가 중 부여 판정이 0회였으므로 이 비교는 규칙 영향 없음의 근거로 쓰지 않기로 함. 직접 효과 부여·치명 피해 경계 시험으로 변경 경로를 검증했음.
+
+### 강인한 타격·소환체
+
+- 강인한 타격: `guild_support_test.test_strike_cast_probability` 추가했음. 고정 시드 731, 400시전×3타에서 192시전 발동(48%), 한 시전의 모든 타격 판정 일치 확인했음. 기존 50% 기본 동작은 유지했음. 근거: `SE_TEMPLET_BATTLE_EFFECT.json:901`의 SE 4011102(m_fActiveRate=5000), `NKM/NKM.decompiled.cs:16284`의 시점 확인 뒤 확률 판정.
+- 질투의 시선: `Plain/SKILL_CONDITION_TEMPLET.json:10427`(58801)은 AfterEnemyAction·보스 비변신 조건뿐임. 소환은 `NKM/NKM.decompiled.cs:5198`에서 OBF_26401을 생성하며, `:15662` SKILL_END → `:15705` → `:16040` 유닛 클래스 검사 → `:16079` 적 행동 후 SE 발행 경로에 포함됨. 기본 `guild_count=all`과 같아서 동작 수정 없이 근거 주석과 `test_summoned_cast_count`를 추가했음. 실제 소환 표지 Unit의 cast·피해·카운트/신부 경쟁 증가 및 같은 편·변신 중 제외를 확인했음. 아군 소환 자동 생성 기능을 새로 넣은 것은 아님.
+
+### 스택·예약 경로 조사
+
+- 그웬: 현 표 기준 `SE_TEMPLET_SKILL_1.json:24523`(10404015)는 SKILL_END 엔포스 예약, `:24541`(10404016)은 AfterActiveSkillSe=true·RepeatBuffCount=5·LevelBuffDecrease=true임(이전 기록 23868은 현 파일 줄과 다름). `NKM:2635`는 액티브 SE 뒤 AfterActiveSkillSe를 배치하고 `:15662`·`:15955`·`:16158`에서 종료 SE를 실행함. 엔진은 `run_batch`가 consume 줄을 extra_cast보다 먼저 실행하며 `apply_buff`가 5개 감소시킴. 다만 현 `Star.Templets.decompiled.cs:25257` 로더는 AfterActiveSkillSe·RepeatBuffCount를 읽지만 `LevelBuffDecrease`는 전체 디컴파일본에 없음. 감소 런타임을 확인하지 못했으므로 시점 변경·새 규칙 도입 없이 미확인으로 남겼음.
+- 카넬리아: `SE_TEMPLET_SKILL_1.json:2815`(10052014), `Plain/SKILL_CONDITION_TEMPLET.json:8560`(52123)으로 칠흑의 잔향 보유·내 턴·SKILL_END 특수기 추가 발동 및 SeCoolTurn=1 확인했음. 잔향은 IsLevel=false(`BUFF_TEMPLET.json:22339`)이고 이 SE에 삭제·감소 설정이 없음. `NKM:15662`·`:15955`·`:16280`에서 종료/쿨 검사, `:16319`에서 쿨 등록(`:3277`의 SeCoolTurn 저장) 후 예약함. 엔진도 extra_cast의 줄 쿨로 재발동을 막으며 잔향·격동을 소모하지 않음. 격동은 own_pre에서 공격력 보정에 읽고 사용 후 부여함. count_damage 경로는 카넬리아 정규화 줄에 없음. 소모 시점 수정 없음.
+- 크리스텔·프로페서M: `SKILL_TEMPLET_1.json:816`(10172)·`:860`(10175 변형)·`:1746`(10392)은 모두 NST_REACT, ReactConditionID=10413/10418/10419임. `NKM:15672` 이후 반응 예약, `:15306` 이후 ReactAttack 불발 때만 예약 이력 초기화 경로와 맞음. fire_trigger의 key(중복 제한·불발 재예약)를 유지했음. 이전 기록의 크리스텔 엔포스 표현은 이 두 반응 스킬에는 적용하지 않음.
+
+### 검증
+
+- 새 시험 6개(강제 강화 4·타격 확률 1·소환체 1)를 추가했음. 메모리에서 구현을 바꾸어 동명 충돌 경고 제거·강제 예외 제거·보호막 예외 제거·불사 우회·후속 강화 우회·타격 확률 100%·타격마다 재추첨·유닛별 확률 고정·소환체 제외의 9가지 오류가 모두 시험을 실패시키는 것을 확인한 뒤 원복했음.
+- 기준선은 65 통과/1 실패(index.html 최신성)였음. 수정 전 HEAD bbdc21e를 별도 폴더에 git archive하여 `guild_defense_test.py` 12개 통과를 확인했음. 기존 커밋 결함이 아니라 동시 화면 작업 중 생성본 불일치였으며 재생성 후 해소됐음.
+- 최종 `python -X utf8 -I tools/run_tests.py --rebuild`: 통과 67 / 실패 0. 골든·캐시 해시 변경 없음, `--write` 쓰지 않았음. mc_cache·heal_burst의 고정 해시 시험에는 새 규칙을 off로 명시했음. `git diff --check` 통과했음. e2e는 이번 작업에서 실행하지 않았음.
 
 ## 환경·주의
 
@@ -56,7 +80,7 @@
 
 - **엔포스 대상 `enforce_target`(기본 `exec`=클라, `book`=옛 동작)**: 클라는 예약에 시전자·스킬·자동 대상 규칙만 저장하고 적은 실행 검사에서 고름(NKM.decompiled.cs 7973·6390~6397·13181~13189). 엔진은 예약 때 골랐음 → `exec` 면 엔포스(`RX_ENFORCE`)·추가 시전 줄(`extra_cast`, 그웬 등)·공용 잠재력(`random_ally_basic`)·확률 추가 발동(`RX_EXTRA_P`, 개화 베스타 등)의 적을 실행 직전에 다시 고름(표지·최근 타격 대상·무작위). 시전자(아군)는 둘 다 예약 때. `enforce_timing=queue` 이고 행동 안 예약일 때만 차이. `mc_cache_test` 해시는 `book` 고정.
 - 측정(standard 육성, 200판, 태양 회랑 200·250층, 그웬·선샤인 캣·크리스텔·힐데 / 프로페서M·클레어·아셰라·카르멘): exec·book 결과 동일(84.5%·42.0%, 진행도 0.616·0.629). 예약 뒤 실행 전에 대상이 죽는 경우가 드물어 영향 거의 없음. exec 경로가 실제로 타는 것은 확인(20판에 78회).
-- **클라 확인 결과 중 반영 안 한 것**: ① 엔포스는 예약 중복 검사 없음·불발 시 재예약 없음(NKM 13174, 불발 이력 초기화는 ReactAttack 만 15306~15314) — 엔진의 엔포스·추가 시전 줄은 이미 key 없이 예약해 같음. key 를 쓰는 건 트리거 경로(크리스텔·프로페서M `fire_trigger`)뿐이고 이 경로가 클라에서 엔포스인지 반응인지 구원자별 미확인이라 그대로 둠. ③ 스택 소모 시점(SE_TEMPLET_SKILL_1): 스마일 도약 SKILL_START(1811)·클레어 냉각 SKILL_START(27623)·선샤인 캣 스파클라 SKILL_END 예약 후 삭제(28903~28965)·그웬 SKILL_END 5회 감소 설정만 확인(23868, 런타임 경로 미확인)·카넬리아 SKILL_END 추가 발동·쿨 1턴(2815, 스택 소모 미확인). 엔진 반영은 그웬·카넬리아 확인 뒤.
+- **클라 확인 결과 중 반영 안 한 것**: ① 엔포스는 예약 중복 검사 없음·불발 시 재예약 없음(NKM 13174, 불발 이력 초기화는 ReactAttack 만 15306~15314) — 엔진의 엔포스·추가 시전 줄은 이미 key 없이 예약해 같음. key 를 쓰는 건 트리거 경로(크리스텔·프로페서M `fire_trigger`)뿐이고 이 경로가 클라에서 엔포스인지 반응인지 구원자별 미확인이라 그대로 둠. ③ 스택 소모 시점(SE_TEMPLET_SKILL_1): 스마일 도약 SKILL_START(1811)·클레어 냉각 SKILL_START(27623)·선샤인 캣 스파클라 SKILL_END 예약 후 삭제(28903~28965)·그웬 SKILL_END 5회 감소 설정만 확인(23868, 런타임 경로 미확인)·카넬리아 SKILL_END 추가 발동·쿨 1턴(2815, 스택 소모 미확인). 엔진 반영은 그웬·카넬리아 확인 뒤. (→ 이후 11/02 codex: 카넬리아는 소모 없음·크리스텔/프로페서M은 반응으로 확인, 그웬 감소 런타임은 미확인)
 - **시험 보강**: `enforce_timing_test` 의 `test_both_modes_run` 이 standard 육성으로 진행도 0 인 스테이지(43-36)를 써서 아무것도 검증 못 했음 → 달 회랑 100층으로, 진행도 0 이면 실패하게 함. 새 시험 4개(기본값·두 값 실행·실행 때 대상 있음·예약 함수가 대상을 묶지 않음 — `_exec_pick` 을 끄면 실패하는 것 확인).
 - **게임 PC 커밋 52개(c85c8d1..70dd48d) 리뷰(codex 영역별 2명 + Claude) 반영**:
   - 공개 화면 «제외·주의 구원자» 문구에 내 계정 시뮬 수치(클리어 96%→28% 등)가 있었음 → 수치 뺌(`data/guild_defense.json search.notes`).
@@ -71,7 +95,8 @@
   - `wave_gauge_test` 도 진행도 0 스테이지라 웨이브 전환이 한 번도 안 일어났음 → 태양 회랑 250층 + 전환 직후 아군 게이지(reset 0 / keep 이월)를 직접 확인하는 시험 추가.
   - **다음에 할 것(리뷰로 확인된 결함, 데이터 작업 필요)**: ① 〈강화 불가〉 중에도 `ForceApplyEffect` 강화는 걸림(NKM 4053, BUFF_TEMPLET 351개가 True) — 엔진은 전부 거부해서 공허조율자 «조율»(어려움 34-6·39-3) 같은 강제 적용 중첩을 막음. 효과 한글 이름 ↔ BuffStrID ↔ ForceApplyEffect 표를 `tools/` 로 뽑아 `add_effect` 거부 조건에 넣어야 함. ② `_limit_damage`(mc.py ~2305)가 치명 피해 때 새 〈불사〉·후속 강화(카넬리아 칠흑의 잔향 등)를 `add_effect` 없이 직접 넣어 〈강화 불가〉를 우회함 — ①의 표로 같이 처리. ③ 강인한 타격 50% 시험(발생 비율 확인)이 아직 없음.
   - 반영 안 한 리뷰 지적: 격돌의 돌풍 게이지 3,000 이 2,000 이어야 한다는 지적은 틀림 — 11/01 패치로 2000→3000(위 11/01 절). 이 PC 의 static-data 에 11/01 표가 없어 생긴 오판.
-- 수정분은 codex 로 한 번 더 검토(지적 3건: 확률 추가 발동 경로 누락·강인한 타격 판정 재사용·시험이 기능 제거를 못 잡음 → 모두 반영). 전체 Python·JS 시험·골든·e2e(Playwright, `E:\AI_mk2env-pw`) 통과. (→ 경로는 새 «환경·주의»의 E:\AI_mk2\venv-pw 기준)
+- 수정분은 codex 로 한 번 더 검토(지적 3건: 확률 추가 발동 경로 누락·강인한 타격 판정 재사용·시험이 기능 제거를 못 잡음 → 모두 반영). 전체 Python·JS 시험·골든·e2e(Playwright, `E:\AI_mk2
+env-pw`) 통과. (→ 경로는 새 «환경·주의»의 E:\AI_mk2\venv-pw 기준)
 - 이 PC 의 `starsavior-static-data` 가 10/22 빌드라 `myinfo_stats_test` 가 실패했음 → pull 후 통과. 새 PC·오랜만의 PC 에서는 두 저장소 다 pull 부터.
 
 ## ▶ 2026-11-02 밤 — `enforce_timing` 기본을 `queue` 로 전환 (푸시 완료)
@@ -149,11 +174,11 @@ otes_damagetype.md`. (→ 11/01 무적 상태·즉시 피해 경로 구현, 11/0
 
 - **협공 자동 배제 완료**: 시뮬이 아군 시전 경로별 판당 평균(`ally_via`: coop·forced_coop·trigger·potential·enforce·revenge·reaction)을 결과 **최상위**에 싣는다(`mc.py` `Battle.ally_via`, `api.py`, `web.py run_auto` 의 `via`). `outcome` 안에 넣으면 해시 고정 시험(mc_cache·heal_burst)이 깨지므로 밖에 둠. `guild_search.js` `coopHit`: `coop`·`forced_coop` 이 판당 0.05회 이상이면 예선 선발(`pickTop`)·최종 순위(`rank`)에서 제외(`S.banCoop=false` 면 끔, `S.banVia` 로 경로 변경). 프로페서M 팀은 forced_coop 2.0 으로 잡히고 그웬 팀은 0 → 그웬은 계속 `excludeKeys`. 시험 `test_ally_via_reported`, `guild_search_test.js`. 전체 Python·JS·골든·web·quick 통과, **e2e 미실행(이 PC 에 playwright 없음)**. (→ 그웬 제외는 이후 철회해 주의로 이동, e2e는 11/02 회사 PC 통과)
 - **특수 잠재력 40401~40408 조사 결과**(`AI\temp\partynavigator\work\potential_trace\notes.md`): 특정 구원자 것이 아니라 공용 여정 잠재력 «별빛의 궤적-EX n호»(PLR_PUBLIC). 내 턴 기본기 치명타 시 25%, 턴당 1회, BI_ENFORCE 로 무작위 아군 기본기를 무작위 적에게 추가 시전. 질투의 시선 카운트에는 포함(guild_count=all 과 일치), 협공 아님 → 협공 배제 대상 아님. 미확인: 엔진 `random_ally_basic` 안에서 치명타·내 턴·턴당 1회 조건 처리 위치, 실제 attackType, 영상 대조. (→ 같은 절의 엔포스 검증에서 조건·쿨·attackType 확인 완료, 영상 대조는 남음)
-- **협공 발생원 클라 전수(`...\work\coop_sources\notes.md`)**: 협공은 조건 40400/40401 이 아니라 스탯 `NST_RATE_CROSS_ATTACK`(상한 3000). 출처 = 왈츠 아세라 패시브, 공용 잠재력 22009 «협공의 재능», 프로페서M 강제 협공뿐(장비·세트·소울링크 없음). 그웬·크리스텔·스마일(선샤인 캣)은 협공이 아니라 «아군 타격 후 추가 발동»(엔포스). 클라 표에 길방 협공 금지 규칙은 없음 → «협공 금지»는 신부의 응징(들러리가 보호막 보스를 치면 들러리 전원 30% 연쇄 피해)의 줄임말로 봄, 엔진이 이미 시뮬. 내 계정(11/01 14:12)엔 22009 없음.
+- **협공 발생원 클라 전수(`...\work\coop_sources\notes.md`)**: 협공은 조건 40400/40401 이 아니라 스탯 `NST_RATE_CROSS_ATTACK`(상한 3000). 출처 = 왈츠 아세라 패시브, 공용 잠재력 22009 «협공의 재능», 프로페서M 강제 협공뿐(장비·세트·소울링크 없음). 그웬·크리스텔·스마일(선샤인 캣)은 협공이 아니라 «아군 타격 후 추가 발동»(엔포스). 클라 표에 길방 협공 금지 규칙은 없음 → «협공 금지»는 신부의 응징(들러리가 보호막 보스를 치면 들러리 전원 30% 연쇄 피해)의 줄임말로 봄, 엔진이 이미 시뮬. 내 계정(11/01 14:12)엔 22009 없음. (→ 이후 11/02 codex: 크리스텔 특수기는 NST_REACT로 확인, 엔포스 표현 정정)
 - **엔포스 검증(`notes2.md`)**: 공용 잠재력 조건·쿨은 엔진에 전부 있음. 엔포스 attackType=EnforceAttack, 질투의 시선 카운트 포함, 협공 아님. 클라는 강제 시전을 예약 큐에서 실행(엔진은 즉시, 영향 작아 보임·미조치). (→ 11/02 queue 기본 전환 완료)
 - **BFB 감사(Opus, `audit_bfb.md`)와 1·2번 수정(이 커밋 이후)**: 정실 어필을 반응 큐로(`guild_bfb._defer`, `mc._run_reactions` 가 owner=None 예약 실행), 대피로연은 상태 해제 즉시·강제 시전만 예약, 55148 부케의 «표에 없는 조건» 제거. 전후(내 정보, 단계 6·불의 고동, 80판): 상위 팀 변화 없음, 반격 편성(힐데·카르메·아모라·웨딩 에핀델) 부케 1.77→1.85회·클리어 52.5→53.8%. 비교 스크립트 `AI\temp\partynavigator\scripts\gd_timing_cmp2.py`. **남은 감사 항목**: ③ 브레이크 스킬이 BFB 훅을 안 거침 ④ 부활한 들러리 zero_stats 안 지워짐 ⑤ 강화 불가 중 보호막 무효(공용 규칙, 클라 확인 전 보류) ⑥ 들러리 속도 1.0(클라 0)·방어 0 미적용·추가 턴의 게이지 무효 우회. 공용 규칙에 영향: ⑤와 지속 피해 보호막 무시(mc:2563) — 모든 콘텐츠 시뮬에 영향, 클라 확인 필요. 시험 `test_appeal_deferred_to_reaction_queue`. (→ ③·④·⑥ 후속 수정·시험 완료, ⑤ refuse 정정 완료; 지속 피해는 같은 절 아래 조사에서 엔진 일치 확인)
 - **편성 찾기 제외 목록 정정(사용자 지적: 시뮬이 판단하게)**: 그웬을 `excludeKeys` 에서 빼고 `notes` 의 «주의» 로 옮김(커뮤니티 근거뿐, 클라에 금지 규칙 없음). 제외는 협공 스탯을 거는 프로페서M·왈츠 아세라만. 시뮬 근거(내 정보, 단계 6·불의 고동, 120판): 상위 팀 클리어 96% / 그웬 넣으면 응징 0.28회·28% / 프로페서M 넣으면 응징 0.93회·7.5% / 크리스텔 넣으면 보호막 시간 초과로 0% — 시뮬이 알아서 깎음. 화면 «제외·주의 구원자» 접이식 목록(`search.notes`, 근거 수준 표시)과 «협공으로 걸러낸 팀 수» 추가(`guild_search.js notesHtml/countDropped`). 다음: 다른 콘텐츠 기믹 박스에 «불리한 구원자» 표시(조사 `...\work\gimmick_notes\survey.md`). (→ 기믹 박스 표시는 11/01 저녁 완료, 공개 화면의 계정 수치는 11/02 회사 PC에서 제거)
-- **〈강화 불가〉 규칙 정정(공용 규칙, 모든 콘텐츠)**: 클라(NKM 버프 부여 함수 650줄, 플래그를 읽는 유일한 곳)는 **새 강화 효과만 거부**하고 이미 걸린 보호막·버프·불사·면역은 그대로. 엔진은 걸린 강화를 전부 끄고 새 것은 저장해 뒀다가 끝나면 작동시켰음(DB 설명문 해석, 근거·검증 없었음). 규칙 `buff_ban`(기본 `refuse`=클라, `suppress`=옛 동작). `mc.py` `buff_banned()/buff_blocked()`, `add_effect`·보호막 부여에서 거부. 조사 원문 `...\work\common_rules
+- **〈강화 불가〉 규칙 정정(공용 규칙, 모든 콘텐츠)**: 클라(NKM 버프 부여 함수 650줄, 플래그를 읽는 유일한 곳)는 **새 강화 효과만 거부**하고 이미 걸린 보호막·버프·불사·면역은 그대로. 엔진은 걸린 강화를 전부 끄고 새 것은 저장해 뒀다가 끝나면 작동시켰음(DB 설명문 해석, 근거·검증 없었음). 규칙 `buff_ban`(기본 `refuse`=클라, `suppress`=옛 동작). `mc.py` `buff_banned()/buff_blocked()`, `add_effect`·보호막 부여에서 거부. 조사 원문 `...\work\common_rules (→ 이후 11/02 codex: buff_ban_force=client로 강제 강화 예외·피해 제한 신규 강화 거부 추가)
 otes_buffban.md`·`notes.md`·`notes_damagetype.md`. 전후 비교(내 정보 능력치, 해당 보스 나오는 스테이지 15곳, 40판): 대부분 동일, 로자리아 3단계 클리어 5→7.5%, 회랑 570·550·레디메이드 해피 진행도 +0.2%p 안팎 — **영향 작음**. 골든·기준값 불변. 옛 동작을 고정하던 시험 3개는 `suppress` 로 돌리게 하고(`p5 test_review_fixes`, `savior_fix` 2개), `test_buff_ban_refuse` 추가, `p5 test_new_enemy_effects` 기대값 (0.2,0.2). 비교 스크립트 `AI	emp\partynavigator\scriptsuffban_cmp2.py`. 36-36 공허순례자 실측 대조(실측 1.88 vs 시뮬 0.78~1.37)는 영상에 강화 불가 장면이 없어 미검증. 영향 스테이지 전수: 코스모 게이트 데모라이기스:알파(장막 6개 이상)·로자리아 RAID_18, 회랑 9층·태양/달/별 4층·21층, 작전 12판, 플래시 포인트 BOSS_RUSH_06, 큐브 007, 탐사 거점 조사. 구원자 1005 «인도하는 어스름»(적 강화 불가)은 이제 적의 기존 버프를 못 끈다. 길방 다음 시즌 보스(심해의 폭군·시엔)도 전체 2턴 강화 불가.
 - **지속 피해·보호막 조사 결과**(`notes_damagetype.md`): 지속 피해는 보호막 비흡수·불사 적용 — 엔진 일치. **미수정 불일치 2개**: ① 엔진에 «무적» 상태 없음(몬스터 `TOMB_CROSS_COSMO`·`WEAPON_BLADE_COSMO` 웨이브 시작 1턴, 지속 피해도 막음) ② 자폭 «즉시 피해»(`mc.py` ~3155)가 `kill()` 로 보호막·불사를 무시(클라 INSTANT 는 거침, 크로넷 시계태엽 폭탄·올베로스 하수인). 반응형 보호막(순서·이월)은 현재 표에 0개라 영향 없음. (→ 11/01 저녁 무적 상태·즉시 피해 경로 구현, 밤 조사에서 «1턴» 전제를 정정하고 현행 코스모 배치 없음 확인)
 - 남은 일 1·2번(아래 목록)은 위로 완료. 다음: 내 정보 최신본으로 편성 찾기를 다시 돌려 1위 변화 확인, 영상 검증. (→ 11/02 최신 내 정보·reset+queue로 재탐색 완료, 영상 검증은 남음)

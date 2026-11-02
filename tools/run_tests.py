@@ -64,7 +64,9 @@ def main():
     print('\n통과 %d / 실패 %d' % (len(tests) - len(fails), len(fails)))
     for name, out in fails:
         print('\n--- %s ---' % name)
-        print('\n'.join(out.strip().splitlines()[-15:]))
+        lines = out.strip().splitlines()
+        flagged = [l for l in lines if l.lstrip().startswith(('FAIL', 'ERROR', 'Traceback', 'AssertionError'))]
+        print('\n'.join(flagged[:20] + ['...'] + lines[-10:] if flagged else lines[-15:]))
     return 1 if fails else 0
 
 

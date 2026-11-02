@@ -72,7 +72,7 @@ const tests = {
     // 화면 자료 = guild_defense.page_payload 의 sim(tools/build_guild_sim.py 결과를 줄인 것)
     const raw = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_sim.json'), 'utf8'));
     const S = {runs: raw.runs, recPower: raw.recPower, growth: raw.growth, levels: raw.levels, passP: raw.pass_p, basis: raw.basis,
-      summary: raw.summary, supports: raw.supports, teams: raw.teams.map(t => ({names: t.names, src: t.src, rates: t.rates, bySupport: t.bySupport, progBySupport: t.progBySupport}))};
+      summary: raw.summary, supports: raw.supports, teams: raw.teams.map(t => ({names: t.names, src: t.src, rates: t.rates, bySupport: t.bySupport, progBySupport: t.progBySupport, fracBySupport: t.fracBySupport}))};
     // summary 는 rates 에서 다시 계산한 것과 같아야 한다(최고 단계 = 클리어율 passP 이상인 가장 높은 단계)
     for (const g of S.growth) {
       let best = null;
@@ -84,10 +84,16 @@ const tests = {
       // 진행도(= 0.5 + 0.5 x 보스 깎은 비율)로 확인된 점수식에 넣은 최댓값과 같아야 함
       let bv = -1;
       S.teams.forEach(t => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
-        const f = Math.max(0, Math.min(1, 2 * t.progBySupport[sup][String(g)][i] - 1));
+        const f = t.fracBySupport ? t.fracBySupport[sup][String(g)][i] : Math.max(0, Math.min(1, 2 * t.progBySupport[sup][String(g)][i] - 1));
         bv = Math.max(bv, V.scoreAt(P, V.extraPct(P, lv, [0, 0, 0, 0]), f));
       })));
       assert.equal(ex.m, bv, 'expected score ' + g);
+      // 판별 평균(fracBySupport)이 있어야 하고, 평균의 절단 ≤ 절단의 평균(졸개전 패배 섞인 팀을 낮춰 보지 않음)
+      S.teams.forEach(t => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
+        assert(t.fracBySupport, 'fracBySupport 없음 — tools/build_guild_sim.py 재실행');
+        const fm = t.fracBySupport[sup][String(g)][i], pm = Math.max(0, Math.min(1, 2 * t.progBySupport[sup][String(g)][i] - 1));
+        assert(fm >= pm - 1e-3, 'frac ' + fm + ' < ' + pm);
+      })));
     }
     const h = V.panelHtml({...P, sim: S}, null, 7, T('2026-10-30T12:00:00+09:00'), esc);
     assert(h.includes('data-k="gd-sim"') && h.includes('시뮬 추정: 깰 수 있는 최고 단계') && h.includes('시뮬 결과는 아직 실제와 대조 중입니다'));

@@ -93,6 +93,34 @@ def test_invalid_support():
     raise AssertionError('잘못된 지원 이름이 통과함')
 
 
+def test_strike_cast_probability():
+    """고정 시드 400시전×3타: 시전별 50%, 같은 시전의 모든 타격은 같은 판정."""
+    import random
+    from battlesim.api import _CustomFoe
+    from battlesim.mc import Battle, Ctx, Eff
+    waves, _ = gb.build_waves(0, support='strike')
+    d = _CustomFoe(dict(name='striker', role='스트라이커', hp=10000, atk=1000, spd=100), 0)
+    b = Battle([d], waves, random.Random(731), mc={'guild_boss': 'on'})
+    b.spawn_wave()
+    a, v = b.allies[0], b.foes[0]
+    e = Eff('공격력 증가', {}, 1, 999, a, False)
+    e.stacks = 1
+    a.eff[e.name] = e
+    activated = 0
+    for _ in range(400):
+        b._cast_ctx = Ctx(a, a, a.d.skills['기본기'])
+        hits = []
+        for _ in range(3):
+            b.gb._sup_pre_hit(a, v)
+            hits.append(gb.SUP_TMP_INC in a.eff)
+            b.gb._sup_post_hit(a, v)
+        assert len(set(hits)) == 1, hits
+        activated += hits[0]
+    ratio = activated / 400
+    assert .35 < ratio < .65, (activated, ratio)
+    print('OK test_strike_cast_probability', activated, '/400 =', ratio)
+
+
 def test_web_run_auto_guild():
     """화면(sim_worker → web.run_auto)이 options.guild 를 넘기면 길방 BFB 전투로 돈다(스테이지 문자열은 무시). guild 가 없으면 기존 스테이지."""
     import json
@@ -108,6 +136,6 @@ def test_web_run_auto_guild():
 
 
 if __name__ == '__main__':
-    for t in (test_none_changes_nothing, test_role_filter, test_party_wide_start, test_gust_gauge, test_temp_damage_effects, test_invalid_support, test_web_run_auto_guild):
+    for t in (test_none_changes_nothing, test_role_filter, test_party_wide_start, test_gust_gauge, test_temp_damage_effects, test_invalid_support, test_web_run_auto_guild, test_strike_cast_probability):
         t()
-    print('ALL OK 7')
+    print('ALL OK 8')

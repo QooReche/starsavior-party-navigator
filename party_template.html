@@ -442,12 +442,18 @@ const GS={sel:null};
 function renderGuild(){const c=contents[$("content").value],p=$("guild-panel"),s=cur&&cur[$("stage").value];
  if(!c||!c.seasonal||!s||!window.GuildView||!D.guild){p.hidden=true;p.innerHTML="";renderGuildSearch(false);return}
  if(!GS.sel)GS.sel=LS.get("guild");
+ if(!GS.watch){GS.watch=1;gsWatch()}
  p.hidden=false;p.innerHTML=GuildView.panelHtml(D.guild,GS.sel,parseInt(s.name,10),Date.now(),esc);
  const ex=D.guild.steps.find(x=>x.ex);renderGuildSearch(!!ex&&parseInt(s.name,10)===ex.step)}
 $("guild-panel").addEventListener("change",e=>{const t=e.target.closest("select[data-g]");if(!t)return;
  const sel=GuildView.normSel(D.guild,GS.sel);if(t.dataset.g==="level")sel.level=+t.value;else sel.tiers[+t.dataset.i]=+t.value;
  GS.sel=sel;LS.set("guild",sel);renderGuild()});
 $("guild-panel").addEventListener("click",e=>{if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove("guild");renderGuild()});
+// 시즌 시작·종료·결산 종료 시각이 지나면 열어 둔 화면도 패널을 다시 그림(종료 뒤 «갱신 대기» 경고). 탭 복귀 때도 다시 판정
+function gsWatch(){if(!D.guild||!D.guild.season||!window.GuildView)return;const s=D.guild.season,now=Date.now();
+ const next=[s.start,s.end,s.settleEnd].map(GuildView.parseTime).filter(t=>t>now).sort((x,y)=>x-y)[0];
+ if(next)setTimeout(()=>{if(!$("guild-panel").hidden)renderGuild();gsWatch()},Math.min(next-now+1000,2147483000))}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!$("guild-panel").hidden)renderGuild()});
 // ── 길방 «내 정보로 최고 점수 편성 찾기»(guild_search.js): 예선(전 조합 짧게) → 본선(상위 팀을 단계·지원별로). 작업자는 시뮬 창구(sim_worker.js)를 그대로 쓴다
 const GSR={banCoop:true,phase:"idle",msg:"",done:0,total:0,rows:[],sig:"",handle:null,id:0};
 const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild")).tiers;

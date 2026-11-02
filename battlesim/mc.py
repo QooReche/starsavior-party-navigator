@@ -22,6 +22,9 @@ from .starsavior.data import SRC
 from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules
 
+with open(os.path.join(SRC, 'data', 'buff_force.json'), encoding='utf-8') as _f:
+    FORCE_BUFF_NAMES = frozenset(json.load(_f))
+
 
 class EventLimitError(RuntimeError):
     """판당 이벤트 상한(max_events) 초과 — 무한 연쇄 의심. 결과를 돌려주지 않는다."""
@@ -2288,7 +2291,7 @@ class Battle:
 
     def _limit_damage(self, v, real):
         """〈불사〉(지속 동안 사망하지 않음: 생명력 1 남김)와 「피해 제한」 효과(DAMAGE_LIMIT 의 효과별 동작).
-        -> (깎을 생명력, 강제로 맞출 생명력 또는 None). 〈강화 불가〉 중이면 강화 효과인 이것들도 작동하지 않는다."""
+        -> (깎을 생명력, 강제로 맞출 생명력 또는 None). refuse에서는 기존 효과는 유지하고 신규 강화만 거부한다."""
         left = v.hp - real
         forced = None
         for name in [n for n in DAMAGE_LIMIT if v.on(n)]:
@@ -2302,11 +2305,14 @@ class Battle:
                 forced = max(1.0, math.floor(v.maxhp * rule['keep']))
                 left = forced
                 self._consume_limit(v, name, rule)
-                e = Eff('불사', {}, 1, rule['undying'], v, False)
-                e.stacks = 1
-                e.fresh = v.acting
-                v.eff['불사'] = e
+                if self.mc['buff_ban_force'] == 'off' or not self.refuse_buff(v, '불사'):
+                    e = Eff('불사', {}, 1, rule['undying'], v, False)
+                    e.stacks = 1
+                    e.fresh = v.acting
+                    v.eff['불사'] = e
                 for nm, dur, props in rule.get('then', ()):
+                    if self.mc['buff_ban_force'] != 'off' and self.refuse_buff(v, nm):
+                        continue
                     e2 = Eff(nm, dict(props), 1, dur, v, False)
                     e2.stacks, e2.fixed, e2.fresh = 1, True, v.acting
                     v.eff[nm] = e2
@@ -3319,7 +3325,7 @@ class Battle:
                     if mm:
                         props[mm.group(1).strip()] = float(mm.group(2))
             for x in tg or []:
-                if x.ban_refuse and x.buff_banned():
+                if self.refuse_buff(x, m.group(2)):
                     continue     # 〈강화 불가〉: 보호막도 강화 효과라 새로 받지 못함(합산 포함)
                 e = x.eff.get(m.group(2))
                 if e is None:
@@ -3642,13 +3648,18 @@ class Battle:
             info = gloss().get(name) or {}
         return info.get('clock') == 'any_turn'
 
+    def refuse_buff(self, x, name):
+        """NKM 4053: 신규 강화 거부에 ForceApplyEffect 예외를 적용한다."""
+        return (x.ban_refuse and x.buff_banned()
+                and not (self.mc['buff_ban_force'] == 'client' and name in FORCE_BUFF_NAMES))
+
     def add_effect(self, owner, x, eff, ctx, hot=0.0, fixed=False):
         name = eff['name']
         opp = x.side != owner.side
         info = getattr(owner.d, 'effect_info', {}).get(name, {})
         marker = eff.get('cast_marker') or bool(CHECK_NAME.search(name)) or '판별용' in name
         category = ('marker' if marker else info.get('category')) or ('debuff' if opp else 'buff')
-        if category == 'buff' and x.ban_refuse and x.buff_banned():
+        if category == 'buff' and self.refuse_buff(x, name):
             return     # 〈강화 불가〉: 새 강화 효과(갱신·합산 포함)는 거부(클라 버프 부여 함수 650줄)
         resist = category == 'debuff' and not eff.get('ignore_resist')
         if resist and ctx is not None and x in ctx.evaded:

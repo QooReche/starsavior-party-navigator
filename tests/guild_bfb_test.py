@@ -91,6 +91,31 @@ def test_count_all_casts():
     print('OK test_count_all_casts')
 
 
+def test_summoned_cast_count():
+    """소환체도 Unit이며 실제 cast의 SKILL_END에서 질투의 시선에 포함된다."""
+    from battlesim.api import _CustomFoe
+    from battlesim.mc import Unit
+    b, _ = battle()
+    boss = to_boss(b)
+    d = _CustomFoe(dict(name='summon', hp=10000, atk=100, spd=100), 0)
+    ally = Unit(d, 0, len(b.allies), b)
+    ally.summoned = True
+    b.allies.append(ally)
+    before = boss.hp
+    b.cast(ally, ally.d.skills['기본기'], extra=True, target=boss, via='enforce')
+    assert boss.hp < before, '소환체 타격 경로가 실행되지 않음'
+    assert b.gb.count == 1, b.gb.count
+    assert sum(u.stack(G.B1) for u in b.allies) == 1
+    # 같은 편 소환체의 시전과 정실 어필 중 시전은 카운트하지 않는다.
+    ally.side = 1
+    b.gb.after_cast(ally, ally.d.skills['기본기'], _Ctx(), False)
+    assert b.gb.count == 1
+    ally.side = 0
+    b.gb.anim = True
+    b.gb.after_cast(ally, ally.d.skills['기본기'], _Ctx(), False)
+    assert b.gb.count == 1
+
+
 def test_compete_and_appeal():
     b, _ = battle(mc={'guild_count': 'main'})     # 옛 가정(본 행동만 셈)으로 고정 — all 은 test_count_all_casts
     boss = to_boss(b)
@@ -352,7 +377,7 @@ class _Ctx:
     kill = False
 
 
-TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
+TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_summoned_cast_count, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
          test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_bouquet_chain_not_ally_damage, test_break_skill_breaks_barrier, test_break_skill_not_counted, test_maid_extra_turn_not_blocked, test_revive_clears_maid, test_maid_speed_def_zero, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
 
 if __name__ == '__main__':

@@ -94,15 +94,17 @@
   function simRates(S, t, sup, g) { const bs = t.bySupport; const r = bs ? (bs[sup] || {})[String(g)] : (sup === "none" ? t.rates[String(g)] : null); return r || null; }
   // 팀·지원별 진행도 행(= 0.5 + 0.5 × 보스 깎은 비율, 클리어 1). 구버전 자료는 없음
   function simProg(S, t, sup, g) { const ps = t.progBySupport; return ps && ps[sup] ? ps[sup][String(g)] || null : null; }
+  // 판별 «보스 깎은 비율» 평균(build_guild_sim fracBySupport). 있으면 이것을 점수식에 넣는다(점수가 이 값에 선형이라 정확)
+  function simFrac(S, t, sup, g) { const fs = t.fracBySupport; return fs && fs[sup] ? fs[sup][String(g)] || null : null; }
   // 기대 점수 최대 조합: 시뮬이 보스를 깎은 평균 비율 f = 2×진행도−1 로 확인된 점수식에 대입(패배해도 깎은 만큼 받음). 진행도가 없는 자료는 클리어율 × 클리어 점수(실패 0점)로 대체
   function simExpect(G, S, g) {
     let best = null;
     S.teams.forEach((t, ti) => (S.supports || ["none"]).forEach(sup => {
-      const r = simRates(S, t, sup, g), pr = simProg(S, t, sup, g);
+      const r = simRates(S, t, sup, g), pr = simProg(S, t, sup, g), fr = simFrac(S, t, sup, g);
       if (!r) return;
       S.levels.forEach((lv, i) => {
         const pc = extraPct(G, lv, [0, 0, 0, 0]);
-        const f = pr ? Math.max(0, Math.min(1, 2 * pr[i] - 1)) : r[i];
+        const f = fr ? fr[i] : pr ? Math.max(0, Math.min(1, 2 * pr[i] - 1)) : r[i];
         const v = pr ? scoreAt(G, pc, f) : Math.round(scoreAt(G, pc, 1) * r[i]);
         if (r[i] >= 0 && (!best || v > best.m)) best = {m: v, team: ti, support: sup, level: lv, p: r[i], f, e: {A: v}};
       });

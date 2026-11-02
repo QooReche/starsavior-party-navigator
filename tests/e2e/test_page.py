@@ -8,6 +8,7 @@ index.html·data/quick.json·sim/manifest.json을 생성한 뒤 해당 가상환
 127.0.0.1의 빈 포트에 서버를 띄우고 종료 시 그 PID만 끔. 시험·자식 프로세스는 IDLE로 실행함.
 스크린샷은 --shots를 권장하며, 생략하면 임시 디렉터리를 사용함. 필터 0건은 실패함.
 """
+import datetime as _dt
 import traceback
 import json
 import os
@@ -1161,6 +1162,23 @@ def test_guild_defense(browser, ctx):
     return ok, "%s / %s / 카드 %d / 기믹줄 %d / 패널 %s / 오류 %s" % (name, first_stage, cards, gim, shown, errs[:2])
 
 
+def test_guild_season_rollover(browser, ctx):
+    """시즌 종료 시각(11/05 04:00)을 넘기면 열어 둔 화면도 «갱신 대기»로 바뀜(가짜 시계로 03:59:50 에 열고 20초 진행)"""
+    ctx.errors.clear()
+    page = open_page(browser, ctx, setup=lambda pg: pg.clock.install(time=_dt.datetime(2026, 11, 5, 3, 59, 50, tzinfo=_dt.timezone(_dt.timedelta(hours=9)))))
+    names = page.eval_on_selector("#content", "s => [...s.options].map(o => o.textContent)")
+    page.select_option("#content", label=next(n for n in names if n.startswith("길드방어전")))
+    settle(page)
+    page.wait_for_selector("#guild-panel [data-k=gd-dev]", timeout=30000)
+    before = page.locator("#guild-panel [data-k=gd-stale]").count()
+    page.clock.fast_forward(20000)
+    page.wait_for_selector("#guild-panel [data-k=gd-stale]", timeout=10000)
+    after = page.locator("#guild-panel [data-k=gd-stale]").count()
+    errs = list(ctx.errors)
+    page.close()
+    return before == 0 and after == 1 and not errs, "전 %d / 후 %d / 오류 %s" % (before, after, errs[:2])
+
+
 def test_guild_search(browser, ctx):
     """길방 «내 정보로 최고 점수 편성 찾기»: 내 정보가 없으면 버튼 없음 안내, 있으면 예선→본선을 브라우저 작업자로 끝까지 돌려
     기대 점수 순위 표가 나오고, 위에서 선택 효과를 바꾸면 낡은 결과 경고, 길방이 아닌 스테이지에서는 숨김. (시험 속도를 위해 탐색 크기만 줄여 돌린다)"""
@@ -1194,6 +1212,7 @@ def test_guild_search(browser, ctx):
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_guild_search)
+TESTS.append(test_guild_season_rollover)
 TESTS.append(test_break_skill_select)
 TESTS.append(test_break_skill_compare)
 TESTS.append(test_break_compare_cancel_after_team_change)

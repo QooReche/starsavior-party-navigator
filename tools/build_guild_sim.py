@@ -90,17 +90,21 @@ def main():
         t['names'] = [db.units[k]['n'] for k in t['keys']]
         t['bySupport'] = {s: {} for s in sups}
         t['progBySupport'] = {s: {} for s in sups}      # 진행도(= 0.5 + 0.5 x 보스 깎은 비율, 클리어 1) — 기대 점수 계산용
+        t['fracBySupport'] = {s: {} for s in sups}      # 판마다 보스 깎은 비율 max(0, 2p-1) 의 평균 — 점수식이 이 값에 선형이라 기대 점수가 정확(평균 진행도로 내면 졸개전 패배 섞인 팀을 낮춰 봄)
         for g in growth:
             units = scaled_units(db, t['keys'], t['leader'], rec * float(g))
             for sup in sups:
-                row, prow = [], []
+                row, prow, frow = [], [], []
                 for lv in LEVELS:
                     r = simulate({'units': units, 'leader': t['leader']}, {'guild': {'level': lv, 'support': sup}},
                                  {'seed': a.seed, 'n_runs': a.runs, 'build': 'standard', 'rules_override': {'power_penalty': 'model'}})
                     row.append(r['outcome']['clear_p'])
                     prow.append(r['outcome']['progress'])
+                    pr = r.get('prog_runs') or [r['outcome']['progress']]
+                    frow.append(round(sum(max(0.0, min(1.0, 2 * p - 1)) for p in pr) / len(pr), 4))
                 t['bySupport'][sup][str(g)] = row
                 t['progBySupport'][sup][str(g)] = prow
+                t['fracBySupport'][sup][str(g)] = frow
                 print(t['src'], ','.join(t['keys']), 'x' + g, sup, row, '%.0fs' % (time.time() - t0), flush=True)
         t['rates'] = t['bySupport']['none']      # 호환: 지원을 안 고른 경우
     summary = {}

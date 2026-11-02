@@ -1,6 +1,6 @@
 {
  "_note": "브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시",
- "ver": "4a9c6030419c",
+ "ver": "060da9b28a42",
  "files": [
   "battlesim/__init__.py",
   "battlesim/api.py",
@@ -35,10 +35,11 @@
   "data/battle_end.json",
   "data/break_skill_levels.json",
   "data/buff_count.json",
+  "data/buff_force.json",
   "data/foe_react.json",
   "data/foe_summon.json",
   "data/guild_bfb.json",
   "data/guild_defense.json"
  ],
- "bytes": 5886265
+ "bytes": 5889910
 }

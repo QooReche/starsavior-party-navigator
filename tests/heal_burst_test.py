@@ -128,7 +128,7 @@ class HealBurstTest(unittest.TestCase):
             # gain, slot effects, skill-local chain damage and debuff-object
             # counting change later rules.
             r = simulate(TEAM, enc, {'n_runs': 3, 'seed': 7, 'nova_policy': policy, 'timeline': True,
-                                    'rules_override': {'nova_skill_gain': False,
+                                    'rules_override': {'buff_ban_force': 'off', 'nova_skill_gain': False,
                                                        'nova_force_effects': False,
                                                        'nova_slot_effects': False,
                                                        'chain_skill_damage_up': False,
