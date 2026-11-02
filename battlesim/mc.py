@@ -667,7 +667,7 @@ class Battle:
         self.check_pending = []
         self.first_death = None
         self.death_seq = 0
-        self._hit_log = None      # 이번 행동의 유효 타격 [(공격자, 피격자)] — 반격 후보(mc.revenge)
+        self._hit_log = None      # 유효 타격 [(공격자, 피격자, 시전, 피격 시 반격 확률)]
         self._react_q = None      # 이번 행동의 반응 스킬 예약 [(주인, 스킬, 대상, 고정 대상)] — mc.reaction_timing=queue 일 때만
         self._react_seen = None   # 이번 행동에 예약된 (주인, 칸) — 불발이면 지워서 다시 예약 가능
         self._revenged = None     # 이번 행동에서 이미 반격한 유닛(행동 전체 공유, NKM 7765~7800)
@@ -1011,9 +1011,7 @@ class Battle:
             self._react_q = self._react_seen = self._revenged = None
         self._hit_log = None
         if not u.dead:
-            if end_cd:
-                # NKM:1840-1848 -> 3348-3360: owner action end, before
-                # NSEAT_TURN_END, including the skill just used this turn.
+            if end_cd and self.mc['enemy_cd_end_order'] == 'before_effects':
                 self._tick_cooldowns(u)
             self.fire(u, 'own_te', Ctx(u, u, None))
             for name in list(u.eff):
@@ -1038,6 +1036,11 @@ class Battle:
                     if e.dur <= 0:
                         del u.eff[name]
             self.dirty(u)
+
+            if end_cd and self.mc['enemy_cd_end_order'] == 'after_effects':
+                # Build 26314877 NKM:2013-2021: TURN_END effects, buff
+                # durations, then all cooldowns (including newly used skills).
+                self._tick_cooldowns(u)
 
     def _finish_action(self, u):
         """정상 행동·행동 불가·지속 피해 사망 모두 한 번 거치는 턴 종료.
@@ -1777,8 +1780,10 @@ class Battle:
         value = self.nova_of(u) + v
         if self.mc['nova_force_effects']:
             value = max(0, value)  # Native decrease floors at zero (NKM:1199).
-        # Native upper bound exists, but MaxNovaForceValue is absent from the
-        # supplied tables. Do not invent a numeric cap from battle outcomes.
+        # Build 26314877 NKM:1258-1264; CLIENT_CONST_TEMPLET NovaBurst.
+        cap = self.mc['nova_force_cap']
+        if cap > 0 and v > 0:
+            value = min(cap, value)
         if self.opts['nova_pool'] == 'unit':
             u.nova = value
         elif u.side == 1:
@@ -1970,18 +1975,18 @@ class Battle:
         while True:
             # hits 는 반격 중에 늘어날 수 있다(반격에서 이어진 공격). 같은 시전(ctx)의 타격은 사이에 다른 시전이 끼어도 한 묶음
             while i < len(hits):
-                a, v, c = hits[i]
+                a, v, c, rate = hits[i]
                 if id(c) not in groups:
                     groups[id(c)] = []
                     order.append(id(c))
-                groups[id(c)].append((a, v))
+                groups[id(c)].append((a, v, rate))
                 i += 1
             key = next((k for k in order if k not in used), None)
             if key is None:
                 break
             used.add(key)
             picks, seen = [], set()
-            for a, v in groups[key]:
+            for a, v, hit_rate in groups[key]:
                 if v in done or v in seen or v.dead or v.broken or a.dead or a.side == v.side:
                     continue
                 seen.add(v)
@@ -1989,6 +1994,12 @@ class Battle:
                 if (p <= 0 or v.d.skills.get('기본기') is None or v.cd.get('기본기', 0) > 0
                         or self.incapacitated(v)):
                     continue
+                if self.mc['revenge_rate'] == 'hit':
+                    # Build 26314877 NKM:7857,11627-11638: current stat
+                    # can cancel a counter; its probability comes from the hit.
+                    p = hit_rate
+                    if p <= 0:
+                        continue
                 if self.R(v.side).random() < min(1.0, p):
                     picks.append((a, v))
             for a, v in picks:
@@ -2070,7 +2081,7 @@ class Battle:
             self.strike(a, v, base, ctx, crit, min(3.0, cdv + by['cd']), min(1.0, pen + by['pen']), reactions, evaded)
             if self._hit_log is not None and ctx.via != 'revenge' and v.taken > t0:
                 # 반격 후보 = 피해(보호막 흡수 포함)가 0보다 큰 타격(NKM 7203~7215, 회피도 피해가 남으면 포함). 반격으로 낸 타격은 제외
-                self._hit_log.append((a, v, ctx))
+                self._hit_log.append((a, v, ctx, v.mods()['revenge']))
         if ctx.hit_targets:
             a.last_target = ctx.hit_targets[-1]
         # 〈공격 시 해제〉(DispelCondition=DC_ATTACK): 공격 스킬의 모든 타격·대상 처리 뒤, 피격 반응 전에 시전자에게서 지움(NKM 15580). 반격·협공도 이 경로
