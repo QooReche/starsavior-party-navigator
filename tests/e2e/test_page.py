@@ -5,19 +5,22 @@
 index.html·data/quick.json·sim/manifest.json을 생성한 뒤 해당 가상환경의 Python으로 실행하기.
 실행: python -X utf8 tests/e2e/test_page.py [--shots 폴더] [이름 일부 ...]
 
-127.0.0.1의 빈 포트에 서버를 띄우고 종료 시 그 PID만 끔. 시험·자식 프로세스는 IDLE로 실행함.
+127.0.0.1의 포트를 직접 소유하는 서버를 띄우고 브라우저 종료 뒤 닫음. 시험·자식 프로세스는 IDLE로 실행함.
 스크린샷은 --shots를 권장하며, 생략하면 임시 디렉터리를 사용함. 필터 0건은 실패함.
 """
 import datetime as _dt
+from contextlib import contextmanager
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import traceback
 import json
 import os
 import random
 import socket
-import subprocess
 import sys
 import tempfile
 import time
+import threading
 import urllib.request
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
@@ -30,26 +33,77 @@ if os.path.isdir(r"E:\AI_mk2\pw-browsers"):
 from tools.runtime import low_priority
 
 
-def free_port():
-    """빈 포트. 크롬이 막는 포트(5060·5061·6000·6665~6669 등)를 피하려고 10100 이상만 쓴다."""
-    while True:
-        s = socket.socket()
-        s.bind(("127.0.0.1", 0))
-        p = s.getsockname()[1]
-        s.close()
-        if p >= 10100:
-            return p
+class TestHTTPServer(ThreadingHTTPServer):
+    # Windows SO_REUSEADDR can let two servers bind the same port. Own it until close.
+    allow_reuse_address = False
+    request_queue_size = 128
+
+    def server_bind(self):
+        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+        super().server_bind()
+
+
+class TestHandler(SimpleHTTPRequestHandler):
+    def log_message(self, fmt, *args):
+        pass
+
+    def handle(self):
+        try:
+            super().handle()
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            pass  # Browser cancellation / page close during a download.
+
+
+@contextmanager
+def test_server():
+    # Bind once, without the free-port probe / child startup race. Avoid Chromium's blocked ports.
+    for _ in range(100):
+        try:
+            srv = TestHTTPServer(("127.0.0.1", random.SystemRandom().randint(20000, 60000)),
+                                 partial(TestHandler, directory=ROOT))
+            break
+        except OSError as ex:
+            if ex.errno not in (13, 98, 10013, 10048):
+                raise
+    else:
+        raise RuntimeError("시험 서버 포트를 확보하지 못했음")
+    thread = threading.Thread(target=srv.serve_forever, daemon=True)
+    thread.start()
+    base = "http://127.0.0.1:%d" % srv.server_port
+    try:
+        with urllib.request.urlopen(urllib.request.Request(base + "/index.html", method="HEAD"), timeout=10) as response:
+            assert response.status == 200
+        yield base
+    finally:
+        srv.shutdown()
+        srv.server_close()
+        thread.join(timeout=5)
+        assert not thread.is_alive(), "시험 서버 종료 실패"
 
 
 class Ctx:
     def __init__(self, base, shots):
         self.base, self.shots = base, shots
         self.errors = []
+        self.requests = {}
+        self.network = []
 
 
 def attach(page, ctx):
-    page.on("console", lambda m: ctx.errors.append("console: " + m.text) if m.type == "error" else None)
+    page.on("console", lambda m: ctx.errors.append("console: %s [%s]" % (m.text, m.location)) if m.type == "error" else None)
     page.on("pageerror", lambda e: ctx.errors.append("pageerror: %s" % e))
+    # Context events include worker requests; page-only listeners miss engine downloads.
+    def finished(request):
+        ctx.requests.pop(request, None)
+
+    def failed(request):
+        ctx.network.append("%s %s (%s): %s" % (request.method, request.url, request.resource_type, request.failure))
+        finished(request)
+
+    page.context.on("request", lambda r: ctx.requests.update({r: "%s %s (%s)" % (r.method, r.url, r.resource_type)}))
+    page.context.on("requestfinished", finished)
+    page.context.on("requestfailed", failed)
 
 
 def settle(page):
@@ -264,6 +318,57 @@ def test_browser_sim_blocked(browser, ctx):
     return retry == 1 and n2 == n, "실패 표시 + 다시 시도 버튼 %d, 빠른 계산 %d안 유지 %s" % (retry, n2, n2 == n)
 
 
+def test_sim_timeout_partial(browser, ctx):
+    """실제 UI 중단 경로: 한 팀 완료 뒤 시간 초과→부분 결과 표시→남은 팀만 재시도."""
+    page = open_page(browser, ctx)
+    page.clock.install()
+    page.evaluate("""() => {
+      window.__workers=[];
+      window.Worker=class {
+        constructor(){__workers.push(this)}
+        postMessage(req){this.req=req}
+        terminate(){this.stopped=true}
+      };
+      window.__finishTeam=(w,i)=>w.onmessage({data:{type:'team',id:w.req.id,key:w.req.teams[i].key,
+        result:{n:w.req.n_runs,clear:0.75,prog:0.9,progs:[0.8,1],via:{coop:0},ci:[0.65,0.85],ttk:10}}});
+      if(!simScreen(1))throw Error('예선 시작 실패');
+      __workers.forEach(w=>w.onmessage({data:{type:'stage',id:w.req.id,msg:'준비 끝'}}));
+      __finishTeam(__workers[0],0);
+    }""")
+    page.clock.run_for(60000)
+    assert page.evaluate("""() => Object.values(SIMQ.scr).some(s=>s.done && s.cut && s.order.length===1)
+      && __workers.every(w=>w.stopped) && Object.keys(SIMQ.res).length===0""")
+    page.evaluate('() => {window.__workers=[]}')
+    page.click('.party[data-party="1"] [data-sim="1"]')
+    page.evaluate("""() => {
+      const w=__workers[0];w.onmessage({data:{type:'stage',id:w.req.id,msg:'준비 끝'}});__finishTeam(w,0);
+    }""")
+    assert page.evaluate('() => Object.keys(SIMQ.res).length') == 1
+    page.clock.run_for(240000)
+    page.wait_for_selector('[data-k="simstate"]:has-text("시뮬 실패")')
+    assert '끝난 팀은 이어서 계산해요' in page.locator('[data-k="simstate"]').inner_text()
+    assert page.locator('[data-k="progress"]').count() == 0
+    assert '75%' in page.locator('.party[data-party="1"] .mi-verdict').inner_text()
+    assert page.locator('.party[data-party="1"] .alternatives .qrow .qt:has-text("시뮬 전")').count() == 2
+    assert page.evaluate('() => __workers[0].stopped && SIMQ.busy===null')
+    page.click('.party[data-party="1"] [data-sim="1"]')
+    assert page.evaluate("""() => __workers[1].req.teams.length===__workers[0].req.teams.length-1
+      && !__workers[1].req.teams.some(t=>t.key===__workers[0].req.teams[0].key)""")
+    page.evaluate("""() => {
+      const old=__workers[0],w=__workers[1];__finishTeam(old,1);
+      old.onmessage({data:{type:'done',id:old.req.id}});
+      if(Object.keys(SIMQ.res).length!==1 || SIMQ.busy!==1)throw Error('늦은 결과가 현재 요청을 바꿈');
+      w.onmessage({data:{type:'stage',id:w.req.id,msg:'준비 끝'}});
+      w.req.teams.forEach((_,i)=>__finishTeam(w,i));w.onmessage({data:{type:'done',id:w.req.id}});
+    }""")
+    wait_sim_done(page, timeout=10000)
+    assert page.locator('.party[data-party="1"] .qrow[data-key] .qsim').count() == 2
+    assert '75%' in page.locator('.party[data-party="1"] .mi-verdict').inner_text()
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '예선 부분 순위→본선 시간 초과→1팀 결과·안내→2팀 재시도 완료, 늦은 메시지 무시'
+
+
 def test_sim_auto_and_override(browser, ctx):
     """한 번 시뮬을 누르면 다음 스테이지부터 자동 확인, 시뮬 결과가 있으면 판정 배지가 시뮬 기준(title)으로 바뀜, 「자동 확인 끄기」"""
     page = open_page(browser, ctx)
@@ -282,6 +387,22 @@ def test_sim_auto_and_override(browser, ctx):
     page.close()
     ok = auto >= 1 and titles and all("95% 구간" in t for t in titles) and off == 1 and flag == "0"
     return ok, "자동 시뮬 %d팀, 배지 기준 %s, 끄기 버튼 %d, 끈 뒤 저장값 %s" % (auto, titles[:3], off, flag)
+
+
+def test_request_diagnostics(browser, ctx):
+    """실제 닫힌 서버 요청으로 ERR_CONNECTION_REFUSED URL 수집을 검증한다."""
+    diagnostic = Ctx(ctx.base, ctx.shots)
+    page = browser.new_page()
+    attach(page, diagnostic)
+    page.goto(ctx.base + '/README.md')
+    with test_server() as closed:
+        url = closed + '/intentionally-closed-server'
+    page.evaluate('url => fetch(url).catch(() => null)', url)
+    assert any(url in line and 'ERR_CONNECTION_REFUSED' in line for line in diagnostic.network), diagnostic.network
+    assert any(url in line and 'ERR_CONNECTION_REFUSED' in line for line in diagnostic.errors), diagnostic.errors
+    assert not diagnostic.requests, diagnostic.requests
+    page.close()
+    return True, '실제 연결 거부의 URL·요청 종류·오류 수집'
 
 
 def test_load_no_errors(browser, ctx):
@@ -563,6 +684,38 @@ def test_gimmick_slot_owned(browser, ctx):
           and "리디아" in dealer_txt and dealer_nobody == 0
           and audit["checked"] > 0 and audit["compared"] > 0 and not audit["errors"])
     return ok, "5-10 %s / 슬롯 대조 %s" % (text, audit)
+
+
+def test_gimmick_avoid(browser, ctx):
+    """실제 스테이지/가상 보유 4명: 불리한 2명의 이유·추정·점수 배지, 접기·조건 변경."""
+    keep = ['smile', 'gwen', 'bell', 'asherah-voyager']
+    for width in (1280, 390):
+        page = open_page(browser, ctx, viewport={'width': width, 'height': 900},
+                         excl=[k for k in roster_keys() if k not in keep])
+        assert page.locator('.gimavoid').count() == 0  # 1-1: 기피 태그 없음
+        choose(page, '작전 (일반)', 'SECTOR 1-2')
+        box = page.locator('.party[data-party="1"] .gimavoid')
+        assert box.locator('summary').inner_text().startswith('이 스테이지에서 불리한 구원자 2명')
+        assert not box.evaluate('e => e.open')
+        box.locator('summary').click()
+        assert set(box.locator('li[data-savior]').evaluate_all('els => els.map(e=>e.dataset.savior)')) == {'smile', 'gwen'}
+        for key in ('smile', 'gwen'):
+            row = box.locator('li[data-savior="%s"]' % key)
+            assert row.is_visible()
+            assert page.evaluate('k => BYKEY[k].name', key) in row.inner_text()
+            why = row.locator('.avoidwhy').first
+            assert '연타형' in why.inner_text()
+            assert page.evaluate('() => D.plain.avoid.MULTIHIT.why') in why.inner_text()
+            assert why.locator('.guess:not(.scored)').inner_text() == '추정'
+            assert why.locator('.scored').inner_text() == '점수에 반영됨'
+        assert page.evaluate('() => document.documentElement.scrollWidth <= innerWidth + 1')
+        box.locator('summary').click()
+        assert not box.locator('li').first.is_visible()
+        choose(page, '작전 (일반)', 'SECTOR 1-1')
+        assert page.locator('.gimavoid').count() == 0
+        page.close()
+    assert not ctx.errors, ctx.errors
+    return True, '1280/390px: 불리한 2명·이유·추정/점수 배지·접기·조건 변경'
 
 
 def test_boss_gimmick_mobile(browser, ctx):
@@ -1216,14 +1369,72 @@ def test_guild_search(browser, ctx):
     return ok, "패널 %s / 버튼 %d / 결과 %d줄 / 점수 %s / 숨김 %s / 오류 %s" % (shown, has_btn, rows, score_ok, hidden, errs[:2])
 
 
+def test_guild_search_dropped(browser, ctx):
+    """Worker 메시지→3단계 탐색→협공 제외 수/점수/화면. 제외 해제하면 해당 팀도 복귀."""
+    page = open_page(browser, ctx)
+    names = page.locator('#content option').all_text_contents()
+    page.select_option('#content', label=next(n for n in names if n.startswith('길드방어전')))
+    settle(page)
+    page.evaluate("""() => {
+      const S=D.guild.search;
+      Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,
+        screen2:{keep:5,runs:2},finalists:5});
+      S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['fire','gust'];
+      window.__jobs=[];window.__banned=null;
+      window.Worker=class {
+        postMessage(req){
+          __jobs.push(req);
+          for(const t of req.teams){
+            const key=t.party.units.map(u=>u.key).sort().join(',');
+            if(!__banned)__banned=key;
+            const banned=key===__banned;
+            const result={n:req.n_runs,clear:banned?1:0.5,prog:banned?1:0.5,
+              progs:banned?[1,1]:[0,1],via:banned?{forced_coop:0.1}:{trigger:1}};
+            setTimeout(()=>{if(!this.dead)this.onmessage({data:{id:req.id,type:'team',key:t.key,result}})},0);
+          }
+          setTimeout(()=>{if(!this.dead)this.onmessage({data:{id:req.id,type:'done'}})},0);
+        }
+        terminate(){this.dead=true}
+      };
+    }""")
+    page.click('#guild-search [data-gs="start"]')
+    page.wait_for_selector('#guild-search [data-k="gd-search-table"]')
+    notes = page.locator('#guild-search [data-k="gd-notes"]')
+    notes.locator('summary').click()
+    dropped = notes.locator('[data-k="gd-search-dropped"]')
+    assert dropped.is_visible() and dropped.inner_text().endswith('팀: 1개')
+    state = page.evaluate("""() => ({dropped:GSR.dropped,rows:GSR.rows.length,
+      banned:GSR.rows.some(r=>r.keys.slice().sort().join(',')===__banned),
+      phases:[...new Set(__jobs.map(j=>j.seed))].sort(),
+      scores:GSR.rows.map(r=>r.score),
+      expected:Math.round((GuildView.scoreAt(D.guild,GuildView.extraPct(D.guild,4,gsTiers()),0)
+        +GuildView.scoreAt(D.guild,GuildView.extraPct(D.guild,4,gsTiers()),1))/2)})""")
+    assert state['dropped'] == 1 and state['rows'] == 4 and not state['banned'], state
+    assert state['phases'] == [1, 2, 3] and all(s == state['expected'] and s > 0 for s in state['scores']), state
+    shown = page.locator('#guild-search tbody tr').all_text_contents()
+    assert len(shown) == 4 and all(format(state['expected'], ',') in row for row in shown), shown
+    page.uncheck('#guild-search [data-gs="coop"]')
+    page.click('#guild-search [data-gs="start"]')
+    page.wait_for_selector('#guild-search [data-k="gd-search-table"]')
+    assert page.evaluate("() => GSR.dropped===0 && GSR.rows.length===5 && GSR.rows.some(r=>r.keys.slice().sort().join(',')===__banned)")
+    assert page.locator('[data-k="gd-search-dropped"]').count() == 0
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '협공 1팀 제외→4팀/판별 기대 점수 표시, 제외 해제→5팀 복귀'
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_guild_search)
+TESTS.append(test_request_diagnostics)
+TESTS.append(test_sim_timeout_partial)
+TESTS.append(test_guild_search_dropped)
 TESTS.append(test_guild_season_rollover)
 TESTS.append(test_break_skill_select)
 TESTS.append(test_break_skill_compare)
 TESTS.append(test_break_compare_cancel_after_team_change)
 TESTS.append(test_gimmick_slot_owned)
+TESTS.append(test_gimmick_avoid)
 TESTS.append(test_boss_gimmick_mobile)
 TESTS.extend([test_myinfo_required, test_myinfo_import_clear, test_myinfo_use_toggle, test_myinfo_rules_mobile, test_myinfo_sim])
 TESTS.extend([test_share_link, test_sim_runs, test_press_to_compute])
@@ -1249,38 +1460,32 @@ def main():
     os.makedirs(shots, exist_ok=True)
     low_priority()
     from playwright.sync_api import sync_playwright
-    port = free_port()
-    srv = subprocess.Popen([sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1"], cwd=ROOT,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    base = "http://127.0.0.1:%d" % port
     ok_all = True
-    try:
-        for _ in range(50):
-            try:
-                urllib.request.urlopen(base + "/index.html", timeout=1).close()
-                break
-            except Exception:
-                time.sleep(0.2)
-        print("서버 PID %d %s, 스크린샷 %s" % (srv.pid, base, shots), flush=True)
-        ctx = Ctx(base, shots)
+    with test_server() as base:
+        print("서버 PID %d %s, 스크린샷 %s" % (os.getpid(), base, shots), flush=True)
         with sync_playwright() as p:
             browser = p.chromium.launch()
             try:
                 for t in selected:
+                    ctx = Ctx(base, shots)
                     try:
                         ok, msg = t(browser, ctx)
                     except Exception as ex:
                         ok, msg = False, "오류: %r (줄 %s)" % (ex, [f.lineno for f in traceback.extract_tb(ex.__traceback__) if f.filename == __file__][-1])
+                    finally:
+                        # Also close pages/workers left behind when an assertion or navigation fails.
+                        pending = list(ctx.requests.values())
+                        network = list(ctx.network)
+                        for context in browser.contexts:
+                            context.close()
+                    if not ok:
+                        msg += " / 콘솔 %s / 실패 요청 %s / 미완료 요청 %s" % (ctx.errors, network, pending)
+                        with open(os.path.join(shots, t.__name__ + "_network.json"), "w", encoding="utf-8") as f:
+                            json.dump({"base": base, "errors": ctx.errors, "failed": network, "pending": pending}, f, ensure_ascii=False, indent=2)
                     print("%s %s - %s" % ("PASS" if ok else "FAIL", t.__name__, msg), flush=True)
                     ok_all = ok_all and ok
             finally:
                 browser.close()
-    finally:
-        srv.terminate()      # 내가 띄운 서버 PID 만 종료
-        try:
-            srv.wait(timeout=5)
-        except Exception:
-            srv.kill()
     print("ALL", "OK" if ok_all else "FAILED")
     return 0 if ok_all else 1
 
