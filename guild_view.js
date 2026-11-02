@@ -91,22 +91,27 @@
   const SUP_NAME = {none: "지원 안 고름", gust: "격돌의 돌풍", focus: "날카로운 집중력", strike: "강인한 타격", mountain: "태산의 의지", fire: "불의 고동"};
   function simBest(S, g) { const b = S && S.summary && S.summary[String(g)]; return b ? {level: b.level, team: b.team, p: b.p, support: b.support || "none"} : null; }
   // 팀·지원별 클리어율 행(구버전 자료는 rates 만 있음 = 지원 안 고름)
-  function simRates(S, t, sup, g) { const bs = t.bySupport; const r = bs ? (bs[sup] || {})[String(g)] : (sup === "none" ? t.rates[String(g)] : null); return r || null; }
+  function simRates(S, t, sup, g) { const bs = t.bySupport; const r = bs ? (bs[sup] || {})[String(g)] : (sup === "none" && t.rates ? t.rates[String(g)] : null); return r || null; }
   // 팀·지원별 진행도 행(= 0.5 + 0.5 × 보스 깎은 비율, 클리어 1). 구버전 자료는 없음
   function simProg(S, t, sup, g) { const ps = t.progBySupport; return ps && ps[sup] ? ps[sup][String(g)] || null : null; }
   // 판별 «보스 깎은 비율» 평균(build_guild_sim fracBySupport). 있으면 이것을 점수식에 넣는다(점수가 이 값에 선형이라 정확)
   function simFrac(S, t, sup, g) { const fs = t.fracBySupport; return fs && fs[sup] ? fs[sup][String(g)] || null : null; }
-  // 기대 점수 최대 조합: 시뮬이 보스를 깎은 평균 비율 f = 2×진행도−1 로 확인된 점수식에 대입(패배해도 깎은 만큼 받음). 진행도가 없는 자료는 클리어율 × 클리어 점수(실패 0점)로 대체
+  // 프리셋·팀·지원·단계 중 기대 점수 최대. 판별 frac 우선, 옛 자료는 진행도 → 클리어율 순으로 대체.
   function simExpect(G, S, g) {
     let best = null;
-    S.teams.forEach((t, ti) => (S.supports || ["none"]).forEach(sup => {
-      const r = simRates(S, t, sup, g), pr = simProg(S, t, sup, g), fr = simFrac(S, t, sup, g);
-      if (!r) return;
-      S.levels.forEach((lv, i) => {
-        const pc = extraPct(G, lv, [0, 0, 0, 0]);
-        const f = fr ? fr[i] : pr ? Math.max(0, Math.min(1, 2 * pr[i] - 1)) : r[i];
-        const v = pr ? scoreAt(G, pc, f) : Math.round(scoreAt(G, pc, 1) * r[i]);
-        if (r[i] >= 0 && (!best || v > best.m)) best = {m: v, team: ti, support: sup, level: lv, p: r[i], f, e: {A: v}};
+    const presets = S.sets || {off: [0, 0, 0, 0]};
+    S.teams.forEach((t, ti) => Object.entries(presets).forEach(([set, tiers]) => {
+      const tab = set === "off" ? t : (t.bySets || {})[set];
+      if (!tab) return;
+      (S.supports || ["none"]).forEach(sup => {
+        const r = simRates(S, tab, sup, g), pr = simProg(S, tab, sup, g), fr = simFrac(S, tab, sup, g);
+        if (!r) return;
+        S.levels.forEach((lv, i) => {
+          const pc = extraPct(G, lv, tiers);
+          const f = fr ? fr[i] : pr ? Math.max(0, Math.min(1, 2 * pr[i] - 1)) : r[i];
+          const v = fr || pr ? scoreAt(G, pc, f) : Math.round(scoreAt(G, pc, 1) * r[i]);
+          if (r[i] >= 0 && (!best || v > best.m)) best = {m: v, team: ti, support: sup, level: lv, set, p: r[i], f, e: {A: v}};
+        });
       });
     }));
     return best;
@@ -125,7 +130,8 @@
       const e = simExpect(G, S, g);
       if (!e) return "";
       const t = S.teams[e.team];
-      return `<li>×${g}: 별의 도전 <b>${e.level}단계</b> · 기대 점수 <b>${rangeText(e.e)}</b> <span class="mut">(${esc(t.names.join("·"))} · «${SUP_NAME[e.support]}» · 보스 평균 ${pct(e.f)} 깎음 · 클리어 ${pct(e.p)})</span></li>`;
+      const label = e.set === "off" ? "선택 효과 끔" : e.set === "max" ? "모두 최대" : "선택 효과 " + S.sets[e.set].join("·");
+      return `<li>×${g}: 별의 도전 <b>${e.level}단계</b> · 기대 점수 <b>${rangeText(e.e)}</b> <span class="gd-state" data-k="gd-sim-set">${esc(label)}</span> <span class="mut">(${esc(t.names.join("·"))} · «${SUP_NAME[e.support]}» · 보스 평균 ${pct(e.f)} 깎음 · 클리어 ${pct(e.p)})</span></li>`;
     }).join("");
     const head = S.levels.map(l => `<th>${l}</th>`).join("");
     const sups = S.supports || ["none"];
@@ -135,13 +141,13 @@
       const sup = sups.reduce((a, s) => { const ra = simRates(S, t, a, g), rs = simRates(S, t, s, g); return ra && rs && topLv(rs) > topLv(ra) ? s : a; }, sups[0]);
       return `<tr><td>${esc(t.names.join("·"))}${t.src === "community" ? " (커뮤니티 사례 근사)" : ""}</td><td>×${g}</td><td>${SUP_NAME[sup]}</td>${simRates(S, t, sup, g).map(p => `<td>${pct(p)}</td>`).join("")}</tr>`;
     }).join("")).join("");
-    const gMid = S.growth[S.growth.length - 1];
+    const gMid = S.growth.find(g => Number(g) === 2) || S.growth[S.growth.length - 1]; // 지원 비교는 기존 ×2 유지
     const supRows = S.teams.map(t => `<tr><td>${esc(t.names.join("·"))}</td>${sups.map(s => { const r = simRates(S, t, s, gMid); const m = r ? topLv(r) : -1; return `<td>${m < 0 ? "-" : m + "단계"}</td>`; }).join("")}</tr>`).join("");
-    const supTab = sups.length > 1 ? `<details class="gd-simtab"><summary>알리시아 지원별 클리어 가능 최고 단계 (×${gMid})</summary><div class="gd-scroll"><table><thead><tr><th>파티</th>${sups.map(s => `<th>${SUP_NAME[s]}</th>`).join("")}</tr></thead><tbody>${supRows}</tbody></table></div></details>` : "";
-    return `<div class="gd-sim" data-k="gd-sim"><b>시뮬 추정: 깰 수 있는 최고 단계</b> ${EST}<ul>${lines}</ul>
-${ex ? `<b>기대 점수가 가장 큰 단계</b> ${EST}<ul>${ex}</ul>` : ""}
-<div class="mut gd-small">${esc(S.basis)} · 오토 전투 기준 · 단계당 ${S.runs}판(표본이 작아 한 단계쯤은 오차) · 클리어율 ${pct(S.passP)} 이상을 «깰 수 있음»으로 봄 · 기대 점수 = 시뮬에서 보스를 깎은 평균 비율을 영상으로 확인한 점수식에 넣은 값(선택 효과 끔, 패배해도 깎은 만큼 받음). 점수식은 실제 플레이 1판으로 확인했지만 시뮬 결과는 아직 실제와 대조 중입니다(실제 1판: 시뮬 클리어 64%·보스 평균 94% 깎음, 실제는 99.9% 깎고 패배). 수동 조작(행동 게이지 조절·브레이크 타이밍)은 반영하지 않아 실제보다 낮게 나올 수 있습니다. 알리시아 지원은 게임 표 값으로 넣었고 일부 해석(발동 확률·경계값)은 추정입니다.</div>
-${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율</summary><div class="gd-scroll"><table><thead><tr><th>파티</th><th>육성</th><th>지원</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></details></div>`;
+    const supTab = sups.length > 1 ? `<details class="gd-simtab"><summary>알리시아 지원별 클리어 가능 최고 단계 (×${gMid}) · 선택 효과 끔</summary><div class="gd-scroll"><table><thead><tr><th>파티</th>${sups.map(s => `<th>${SUP_NAME[s]}</th>`).join("")}</tr></thead><tbody>${supRows}</tbody></table></div></details>` : "";
+    return `<div class="gd-sim" data-k="gd-sim"><b>시뮬 추정: 깰 수 있는 최고 단계</b> ${EST} <span class="mut">선택 효과 끔</span><ul>${lines}</ul>
+${ex ? `<b>기대 점수가 가장 큰 단계</b> ${EST} <span class="mut">비교한 선택 효과 중</span><ul>${ex}</ul>` : ""}
+<div class="mut gd-small">${esc(S.basis)} · 오토 전투 기준 · 단계당 ${S.runs}판(표본이 작아 한 단계쯤은 오차) · 클리어율 ${pct(S.passP)} 이상을 «깰 수 있음»으로 봄 · 기대 점수 = 시뮬에서 보스를 깎은 평균 비율을 영상으로 확인한 점수식에 넣은 값(패배해도 깎은 만큼 받음). 점수식은 실제 플레이 1판으로 확인했지만 시뮬 결과는 아직 실제와 대조 중입니다. 수동 조작(행동 게이지 조절·브레이크 타이밍)은 반영하지 않아 실제보다 낮게 나올 수 있습니다. 알리시아 지원은 게임 표 값으로 넣었고 일부 해석(발동 확률·경계값)은 추정입니다.</div>
+${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율 (선택 효과 끔)</summary><div class="gd-scroll"><table><thead><tr><th>파티</th><th>육성</th><th>지원</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></details></div>`;
   }
   function panelHtml(G, sel0, step, nowMs, esc) {
     const sel = normSel(G, sel0), ex = exStep(G);

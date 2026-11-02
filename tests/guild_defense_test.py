@@ -166,6 +166,41 @@ def test_sim_payload():
     assert "sim" in gd.page_payload(G)
 
 
+def test_sim_presets_payload():
+    raw = json.load(open(gd.SIM_PATH, encoding='utf-8'))
+    s = gd.sim_payload(G)
+    assert s['growth'] == ['1', '1.5', '2', '2.5', '3']
+    assert s['sets'] == raw['sets'] == {'off': [0]*4, 'max': [3]*4}
+    assert s['summaryBySets'] == raw['summaryBySets']
+    for name in s['sets']:
+        summary = s['summary'] if name == 'off' else s['summaryBySets'][name]
+        for g in s['growth']:
+            candidates = []
+            for i, (t, rt) in enumerate(zip(s['teams'], raw['teams'])):
+                assert t['bySets'] == rt['bySets'], '화면 전달 중 프리셋 누락'
+                tab = t if name == 'off' else t['bySets'][name]
+                for sup in s['supports']:
+                    rr, pp, ff = [tab[k][sup][g] for k in ('bySupport', 'progBySupport', 'fracBySupport')]
+                    assert len(rr) == len(pp) == len(ff) == len(s['levels'])
+                    assert all(0 <= v <= 1 for row in (rr, pp, ff) for v in row)
+                    assert all(f >= max(0, 2*p-1) - 1e-3 for p, f in zip(pp, ff))
+                    candidates += [(lv, p, i, sup) for lv, p in zip(s['levels'], rr) if p >= s['passP']]
+            best = max(candidates, key=lambda x: (x[0], x[1])) if candidates else None
+            expected = dict(zip(('level', 'p', 'team', 'support'), best)) if best else None
+            assert summary[g] == expected, (name, g, summary[g], expected)
+    with tempfile.TemporaryDirectory() as d:
+        path = os.path.join(d, 'old.json')
+        for k in ('sets', 'summaryBySets'):
+            raw.pop(k)
+        for t in raw['teams']:
+            t.pop('bySets')
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(raw, f)
+        old = gd.sim_payload(G, path)
+        assert old['sets'] == {'off': [0]*4} and old['summaryBySets'] == {}
+        assert all(t['bySets'] == {} for t in old['teams'])
+
+
 def node_json(code):
     p = subprocess.run(["node", "-e", code], capture_output=True, text=True, encoding="utf-8", cwd=ROOT)
     assert p.returncode == 0, p.stderr
@@ -186,6 +221,12 @@ def test_js_parity():
     for (lv, t), (p, s) in zip(combos, js):
         pp = gd.extra_pct(G, lv, tuple(t))
         assert p == pp and s == gd.score(G, pp), (lv, t, p, s, pp)
+    fractions = [-1, 0, 0.00002, 0.5, 0.999, 1, 2]  # 0.00002는 5000.5점 경계
+    pcs = [gd.extra_pct(G, lv, tiers) for lv in (0, 6, 12) for tiers in ([0]*4, [3]*4, [3,3,3,0])]
+    values = node_json("const V=require('./guild_view.js'),G=require('./data/guild_defense.json');"
+                       + "console.log(JSON.stringify(" + json.dumps(pcs) + ".map(p=>"
+                       + json.dumps(fractions) + ".map(f=>V.scoreAt(G,p,f)))))")
+    assert values == [[gd.score_at(G, pc, f) for f in fractions] for pc in pcs]
     st = node_json("const V=require('./guild_view.js'),G=JSON.parse(require('fs').readFileSync('data/guild_defense.json','utf8'));"
                    "const T=['2026-10-28T12:00:00+09:00','2026-10-29T00:00:00+09:00','2026-11-05T03:59:59+09:00','2026-11-05T04:00:00+09:00','2026-11-12T03:59:59+09:00','2026-11-12T04:00:00+09:00'];"
                    "console.log(JSON.stringify(T.map(t=>V.seasonState(G.season,Date.parse(t)))))")

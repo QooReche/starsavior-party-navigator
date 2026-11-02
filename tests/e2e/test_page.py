@@ -1135,6 +1135,11 @@ def test_guild_defense(browser, ctx):
     panel = page.locator("#guild-panel")
     shown = panel.is_visible()
     text = panel.inner_text()
+    sim_sets = panel.locator('[data-k="gd-sim-set"]').all_text_contents()
+    sim_data_ok = page.evaluate("""() => D.guild.sim.growth.join(',') === '1,1.5,2,2.5,3'
+        && D.guild.sim.sets.max.join(',') === '3,3,3,3'
+        && D.guild.sim.teams.every(t => !!t.bySets.max.fracBySupport)
+        && D.guild.sim.growth.every(g => ['off','max'].includes(GuildView.simExpect(D.guild,D.guild.sim,g).set))""")
     cards = page.locator('.party[data-party="1"] .rowcards .gc').count()
     gim = page.locator('.party[data-party="1"] .gimrow[data-code="TARGET_PRIORITY"]').count()
     page.select_option('#guild-panel select[data-g="level"]', "6")
@@ -1156,6 +1161,8 @@ def test_guild_defense(browser, ctx):
     ok = (name == "길드방어전(시즌4 10/29~11/05)" and first_stage.startswith("7단계 EX") and shown and cards == 4 and gim == 1
           and "최고 점수가 나오는 조합" in text and "보스를 깎은 비율" in text and "가설 B" not in text and "추정" in text
           and "시뮬 추정: 깰 수 있는 최고 단계" in text and "개발 중" in text
+          and sim_data_ok and len(sim_sets) == 5 and all(s in ('선택 효과 끔', '모두 최대') for s in sim_sets)
+          and '×2.5' in text and '×3' in text and '지원별 클리어 가능 최고 단계 (×2)' in text
           and "일일 초기화 전까지" in text and "기준" in text and "추가 점수 120%" in sel6 and best_back
           and "갱신 대기" in stale and "갱신 대기" not in live and "6단계에는 별의 도전이 없습니다" in lower
           and hidden and not errs)

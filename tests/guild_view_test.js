@@ -72,7 +72,7 @@ const tests = {
     // 화면 자료 = guild_defense.page_payload 의 sim(tools/build_guild_sim.py 결과를 줄인 것)
     const raw = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_sim.json'), 'utf8'));
     const S = {runs: raw.runs, recPower: raw.recPower, growth: raw.growth, levels: raw.levels, passP: raw.pass_p, basis: raw.basis,
-      summary: raw.summary, supports: raw.supports, teams: raw.teams.map(t => ({names: t.names, src: t.src, rates: t.rates, bySupport: t.bySupport, progBySupport: t.progBySupport, fracBySupport: t.fracBySupport}))};
+      summary: raw.summary, sets: raw.sets, summaryBySets: raw.summaryBySets, supports: raw.supports, teams: raw.teams};
     // summary 는 rates 에서 다시 계산한 것과 같아야 한다(최고 단계 = 클리어율 passP 이상인 가장 높은 단계)
     for (const g of S.growth) {
       let best = null;
@@ -83,10 +83,11 @@ const tests = {
       assert(ex, 'expect ' + g);
       // 진행도(= 0.5 + 0.5 x 보스 깎은 비율)로 확인된 점수식에 넣은 최댓값과 같아야 함
       let bv = -1;
-      S.teams.forEach(t => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
-        const f = t.fracBySupport ? t.fracBySupport[sup][String(g)][i] : Math.max(0, Math.min(1, 2 * t.progBySupport[sup][String(g)][i] - 1));
-        bv = Math.max(bv, V.scoreAt(P, V.extraPct(P, lv, [0, 0, 0, 0]), f));
-      })));
+      S.teams.forEach(t => Object.entries(S.sets || {off: [0, 0, 0, 0]}).forEach(([set, tiers]) => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
+        const tab = set === 'off' ? t : t.bySets[set];
+        const f = tab.fracBySupport[sup][String(g)][i];
+        bv = Math.max(bv, V.scoreAt(P, V.extraPct(P, lv, tiers), f));
+      }))));
       assert.equal(ex.m, bv, 'expected score ' + g);
       // 판별 평균(fracBySupport)이 있어야 하고, 평균의 절단 ≤ 절단의 평균(졸개전 패배 섞인 팀을 낮춰 보지 않음)
       S.teams.forEach(t => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
@@ -105,6 +106,32 @@ const tests = {
     const h3 = V.simBox({...P, sim: one}, esc);
     assert(h3.includes('별의 도전 3단계</b>까지') && h3.includes(V.rangeText(V.score(P, V.extraPct(P, 3, [0, 0, 0, 0])))) && h3.includes('클리어 70%'));
     assert.equal(V.simBox(P, esc), '', '시뮬 자료가 없으면 표시 안 함');
+  },
+  sim_presets() {
+    // 클리어율과 평균 진행도를 같게 둬도 판별 frac와 선택 효과 가산으로 승자가 바뀐다.
+    const tab = f => ({bySupport: {none: {'2': [0.5]}}, progBySupport: {none: {'2': [0.6]}}, fracBySupport: {none: {'2': [f]}}});
+    const t = {...tab(0.7), rates: {'2': [0.5]}, names: ['시험 팀'], src: 'reco', bySets: {max: tab(0.6)}};
+    const S = {teams: [t], growth: ['2'], levels: [0], supports: ['none'], sets: {off: [0,0,0,0], max: [3,3,3,3]},
+      summary: {'2': {level: 0, team: 0, p: 0.5}}, passP: 0.5, runs: 2, recPower: 1, basis: ''};
+    assert.equal(V.simExpect(P, S, 2).set, 'max');
+    assert.equal(V.simExpect(P, S, 2).m, V.scoreAt(P, 60, 0.6));
+    assert(V.simBox({...P, sim:S}, esc).includes('>모두 최대</span>'));
+    t.bySets.max = tab(0.1);
+    assert.equal(V.simExpect(P, S, 2).set, 'off', 'max의 실제 frac로 평가해야 함');
+    assert(V.simBox({...P, sim:S}, esc).includes('>선택 효과 끔</span>'));
+    S.sets.no_void = [3,3,3,0]; t.bySets.no_void = tab(1);
+    assert.equal(V.simExpect(P, S, 2).set, 'no_void', '추가 프리셋도 비교');
+    assert.equal(V.simExpect(P, S, 2).m, V.scoreAt(P, V.extraPct(P, 0, S.sets.no_void), 1));
+    delete t.bySets;
+    assert.equal(V.simExpect(P, S, 2).set, 'off', '새 메타+옛 팀 자료는 max에 off 자료를 재사용하지 않음');
+    delete S.sets;
+    assert.equal(V.simExpect(P, S, 2).m, V.scoreAt(P, 0, 0.7));
+    delete t.progBySupport;
+    assert.equal(V.simExpect(P, S, 2).m, V.scoreAt(P, 0, 0.7), 'frac만 있어도 사용');
+    delete t.fracBySupport;
+    assert.equal(V.simExpect(P, S, 2).m, 15000, '옛 클리어율 전용 자료');
+    delete t.bySupport;
+    assert.equal(V.simExpect(P, S, 2).m, 15000, 'rates 전용 자료');
   },
   mutation() {
     const orig = V.score;
