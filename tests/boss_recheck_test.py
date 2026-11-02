@@ -155,7 +155,7 @@ class EnemyTurnTimingTest(unittest.TestCase):
         self.assertEqual(u.last_slot, '궁극기')
         self.assertEqual(u.cd['궁극기'], 3)
 
-    def test_start_effect_reset_ticks_after_use_before_end_effect(self):
+    def test_start_effect_reset_ticks_after_end_effect(self):
         b = self.make()
         u = b.foes[0]
         u.cd.update(특수기=2, 궁극기=1)
@@ -170,7 +170,8 @@ class EnemyTurnTimingTest(unittest.TestCase):
             return fire(owner, kind, ctx)
         with patch.object(b, 'fire', side_effect=hook):
             b.act(u)
-        self.assertEqual(observed, [('start', 1), ('end', 3)])
+        self.assertEqual(observed, [('start', 1), ('end', 4)])
+        self.assertEqual(u.cd['궁극기'], 3)
         self.assertEqual(u.last_slot, '궁극기')
 
     def test_extra_cast_is_not_a_turn_but_extra_turn_ticks(self):

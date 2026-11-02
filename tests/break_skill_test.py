@@ -532,14 +532,16 @@ class BreakSkillGlobalTest(unittest.TestCase):
             for slot in ('기본기', '특수기', '궁극기'):
                 with self.subTest(pool=pool, slot=slot):
                     b = setup({'name': '행성 정화'}, turn_limit=6,
-                              opts={'nova_pool': pool, 'coop': False}, mc={'toughness': 'off'})
+                              opts={'nova_pool': pool, 'coop': False},
+                              mc={'toughness': 'off', 'nova_force_cap': 0})
                     a = b.allies[0]
                     sk = a.d.skills.pop('기본기')
                     sk.slot, sk.nv = slot, 2
                     a.d.skills[slot] = sk
                     a.cd[slot] = 0
                     b.break_points = 3
-                    # 같은 유닛 6행동: 마지막 영역 행동까지 +1, 만료 후에는 원래 스킬 노바만.
+                    # 상한을 끄고 마지막 영역 행동까지 +1, 만료 후 원래 스킬 노바만인지 검사.
+                    # 상한12를 켜면 5~6행동의 잘못된 충전도 가려짐(client_recheck_reb_test에서 상한 검사).
                     with patch.object(b, 'pick_next', return_value=(a, 0)):
                         rows = self.observe(b)
                     self.assertEqual([r['nova'] for r in rows], [3, 6, 9, 12, 15, 17])

@@ -302,7 +302,7 @@ def test_index_uses_merged_opts():
 # note 키 4개를 MC_OPTS 에서 뺐을 때 기존 출력이 그대로인지 고정한다.
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
-    'foe_skill_order', 'empty_attack',
+    'foe_skill_order', 'empty_attack', 'enemy_cd_end_order', 'revenge_rate',
     'buff_ban', 'buff_ban_force', 'enforce_timing', 'enforce_target', 'wave_ally_gauge', 'buff_count_source', 'dispel_on_attack', 'skill_order', 'hit_stack_order', 'permanent_accuracy', 'battle_end_mode',
     'ally_auto_lines', 'ally_auto_target', 'ally_break_gauge', 'ally_init_cd', 'ally_variant_mapping', 'any_turn_clock',
     'auto_skill', 'basic_tough', 'enforce',
@@ -319,7 +319,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'foe_auto', 'foe_react', 'foe_react_timing', 'gauge_conditional', 'guild_boss', 'guild_count', 'gauge_overflow', 'guard_mode', 'guard_normal_hit',
     'heal_target', 'instant_damage', 'leader_speed', 'level_buff_decrease', 'local_vs_element', 'manual_burst',
     'max_depth', 'max_events', 'myinfo_combat',
-    'nova_force_effects', 'nova_skill_gain', 'nova_slot_effects',
+    'nova_force_effects', 'nova_skill_gain', 'nova_slot_effects', 'nova_force_cap',
     'power_penalty', 'preemptive_defense', 'rand_range', 'reaction_timing', 'revenge',
     'shield_tick', 'stage_fx_target', 'sudden_death', 'summon',
     'target_defender_mult', 'target_mode', 'target_row_weight',
