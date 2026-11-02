@@ -62,6 +62,7 @@
 - 가중치는 `party_contents.json`. 대부분 임의값.
 
 ## 시험
+전부 한 번에: `python -X utf8 -I tools/run_tests.py`(`--rebuild` = 시뮬 파일 목록·index.html 먼저, `--e2e <Playwright python>` = 브라우저 시험까지, 낱말을 주면 그 시험만). AI 작업 규칙은 `AGENTS.md`.
 ```
 python -X utf8 -I tests/myinfo_stats_test.py      # 능력치 계산기 (비공개 정답은 STARSAVIOR_STATIC 경로 있을 때만)
 python -X utf8 -I tests/run_workspace_test.py tests/quick_test.py
