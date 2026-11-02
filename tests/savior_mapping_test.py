@@ -19,7 +19,7 @@ from battlesim.mc import Battle
 from battlesim.metrics import unit_def
 from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
-from tools.build_auto_skill import build, build_lines, form_bindings
+from tools.build_auto_skill import build, build_lines, build_no_preemptive, form_bindings
 
 FORMS = {1501: 'besta', 1502: 'annah', 1506: 'marcille', 1507: 'vera',
          1508: 'naru', 1509: 'bunny-claire', 1510: 'bunny-scarlet', 1511: 'clarissa'}
@@ -112,12 +112,11 @@ class SaviorMappingTest(unittest.TestCase):
             self.assertEqual(len(got), 1)
             recipients.update(got)
         self.assertEqual(recipients, {1, 2})
-        # AUTO_ALLY_ONE_NOT_SELF의 런타임이 없는 해독본: 필터로 추측하지 않고
-        # 기존 설명문 선택을 유지. 혼자 남으면 자신에게 게이지를 주지 않는다.
+        # build 26314877은 후보 생성 때 자신을 제외함. 혼자면 대상 없음.
         b = battle([unit_def('annah' + BLOOM)], [unit('foe', hp=10**9)])
         a = b.allies[0]
         ln = auto_line(a, '고유 패시브', '행동 게이지 15%p 증가')
-        self.assertIsNone(b.line_spec(a, ln))
+        self.assertTrue(b.line_spec(a, ln)['exclude_self'])
         b.cast(a, a.d.skills['기본기'])
         self.assertEqual(a.gauge, 0)
 
@@ -201,6 +200,9 @@ class StaticMappingTest(unittest.TestCase):
         self.assertEqual((units, order), (data['units'], data['order']))
         self.assertEqual(build_lines(static, Counter()), data['variant_lines'])
         self.assertEqual(build_lines(static, Counter(), legacy=True), data['lines'])
+        self.assertEqual(build_lines(static, Counter(), client=True), data['client_variant_lines'])
+        self.assertEqual(build_lines(static, Counter(), legacy=True, client=True), data['client_lines'])
+        self.assertEqual(build_no_preemptive(static), data['no_preemptive'])
 
     def test_skill_numbers_match_client_for_ceres_and_sixteen_forms(self):
         tables = Path(os.environ['CERES_AUDIT_STATIC']) / 'tables'

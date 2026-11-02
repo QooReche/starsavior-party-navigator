@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from p3_test import battle, unit   # noqa: E402
-from battlesim.mc import Ctx   # noqa: E402
+from battlesim.mc import Ctx, ally_auto_lines   # noqa: E402
 from battlesim.metrics import unit_def   # noqa: E402
 from tools.build_auto_skill import _skip_paren   # noqa: E402
 
@@ -20,6 +20,45 @@ def line_of(u, slot, head):
 
 
 class AllyAutoLinesTest(unittest.TestCase):
+    def test_client_not_self_type_does_not_fall_back_to_caster(self):
+        # 실제 공개 스킬의 전투 시작 효과로 검증: 혼자 남은 리디아에게 책임 전가 금지.
+        for mode, expected in [('client', False), ('data', True)]:
+            b = battle([unit_def('lydia-moon-caster')], [unit('boss', hp=10**9)],
+                       mc={'ally_auto_lines': mode})
+            a = b.allies[0]
+            ln = line_of(a, '고유 패시브', '책임 전가(해제불가)')
+            spec = b.line_spec(a, ln)
+            self.assertEqual(bool(spec.get('exclude_self')), mode == 'client')
+            b.run_line(a, ln, Ctx(a, a, None))
+            b.cast(a, a.d.skills['기본기'])
+            self.assertGreater(b.progress(), 0)
+            self.assertEqual(a.has('책임 전가(해제불가)'), expected)
+            self.assertEqual(a.cast_count['기본기'], 1)
+
+    def test_client_not_self_excludes_before_priorities_and_keeps_legacy(self):
+        for variants in (False, True):
+            old = ally_auto_lines(variants=variants)
+            current = ally_auto_lines(variants=variants, client=True)
+            key = 'wedding-epindel'
+            slot, raw = next(k for k, s in current[key].items() if s.get('exclude_self'))
+            b = battle([unit_def(key), unit('other', atk=1)], [unit('foe', hp=10**9)])
+            a, other = b.allies
+            a.d.stats['atk'] = 10**7
+            ctx = Ctx(a, a, a.d.skills['특수기'])
+            self.assertEqual(b.line_auto_targets(a, current[key][slot, raw], ctx), [other])
+            other.hp = 0
+            other.dead = True
+            self.assertEqual(b.line_auto_targets(a, current[key][slot, raw], ctx), [])
+            self.assertEqual(b.line_auto_targets(a, old[key][slot, raw], ctx), [a])
+
+    def test_client_mapping_registers_bloom_annah_all_levels(self):
+        d = json.loads((ROOT / 'data/auto_skill.json').read_text(encoding='utf8'))
+        rows = d['client_variant_lines']['annah@개화(SSR)']
+        self.assertEqual(len(rows), 3)
+        for slot, raw, spec in rows:
+            self.assertEqual(spec, {'one': True, 'f': [], 'ally': True, 'exclude_self': True})
+        self.assertNotIn('annah@개화(SSR)', d['variant_lines'])
+
     def setup(self, mc=None):
         b = battle([unit_def('dana'), unit('low_atk', atk=100), unit('high_atk', atk=5000), unit('mid', atk=3000)],
                    [unit('boss', hp=10 ** 9)], mc=mc)

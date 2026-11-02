@@ -199,11 +199,12 @@ def _skip_paren(head):
     return head
 
 
-def build_lines(static, report, *, legacy=False):
+def build_lines(static, report, *, legacy=False, client=False):
     """구원자 효과 줄 자동 대상(SE AutoTargetId) -> {구원자 key: [[칸, 데이터북 원문, {one, ally?, f}], ...]}.
     데이터북 효과 줄에는 게임 SE 행이 아닌 줄(이번 스킬 보정 등)이 섞여 있어 줄 수 대신 「(자동 지정)」 줄 ↔ 게임 자동 지정 행을
     순서대로 짝짓는다(개수·아군/적·1명/전체가 맞을 때만). SE 이름 COND_<스킬>_<묶음>_<줄> 의 묶음 01 = 기본 효과, 그 뒤는 레벨업 추가 행.
-    「자신 제외 1명」(NSETT_AUTO_ALLY_ONE_NOT_SELF)도 기록한다 — 실제 필터 체인에 IsAllyOneNotSelf(AutoTargetId=5)가 있어 not_self 로 처리된다."""
+    client=True는 build 26314877 NKM:7013-7019의 대상형 자신 제외를 필터 체인 앞에 적용한다.
+    client=False는 3월판 근거의 기존 자료(개화 제외·기본형 not_self 우선 필터)를 재현한다."""
     from tools import build_foe_auto as FA
     tables = Path(static) / 'tables'
     target = {r['Id']: r['TargetCondition'] for r in jsonc(tables / 'Plain' / 'AUTO_SKILL_TARGET_TEMPLET.json')['Data']}
@@ -262,10 +263,10 @@ def build_lines(static, report, *, legacy=False):
             got = []
             for ln, r in zip(lines, rows):
                 tt = r['m_BuffTargetType']
-                if not legacy and bu['v'] != '기본' and tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF':
-                    # 현 디컴파일본에 없는 대상형. 새 개화 연결에서는 기존 설명문 선택을 유지한다.
+                if not client and not legacy and bu['v'] != '기본' and tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF':
+                    # 3월판 근거의 옛 동작 재현: 개화 연결에서 설명문 선택을 유지한다.
                     # not_self 우선 필터로 대체하면 아군이 혼자일 때 자신을 다시 선택하게 된다.
-                    report['개화 대상형 런타임 미확인(설명문 유지): ' + where] += 1
+                    report['옛 data 모드 개화 대상형 제외(설명문 유지): ' + where] += 1
                     continue
                 head = _skip_paren(ln.split(']', 1)[-1].lstrip())
                 ally = not head.startswith('적')
@@ -281,9 +282,11 @@ def build_lines(static, report, *, legacy=False):
                         continue
                     if tt.startswith('NSETT_AUTO_ALLY'):
                         spec['ally'] = True
-                    # NSETT_AUTO_ALLY_ONE_NOT_SELF: 대상 종류 자체가 자신 제외를 함의 — 필터에 not_self 추가
-                    if tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF' and 'not_self' not in spec['f']:
-                        spec['f'] = ['not_self'] + spec['f']
+                    if tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF':
+                        if client:
+                            spec['exclude_self'] = True
+                        elif 'not_self' not in spec['f']:
+                            spec['f'] = ['not_self'] + spec['f']
                     got.append([s['sl'], ln, spec])
             if got is None:
                 report['아군/적·1명/전체 불일치(제외): ' + where] += 1
@@ -310,6 +313,31 @@ def build_lines(static, report, *, legacy=False):
     return out
 
 
+def build_no_preemptive(static):
+    """build 26314877의 버프/스킬 NoPreemptiveDefend를 공개 이름·칸으로 연결."""
+    tables = Path(static) / 'tables'
+    strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf8'))
+    buffs = sorted({strings[r['m_BuffName']]['ko']
+                    for r in json.loads((tables / 'BUFF_TEMPLET.json').read_text(encoding='utf8'))['Data']
+                    if r.get('NoPreemptiveDefend')})
+    skills = {r['m_SkillStrID']: r for n in (1, 2) for r in json.loads(
+        (tables / ('SKILL_TEMPLET_%d.json' % n)).read_text(encoding='utf8'))['Data']}
+    index = json.loads((ROOT / 'data/saviors_index.json').read_text(encoding='utf8'))
+    keys = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
+    book = json.loads((ROOT / 'rawdata/databook_main.json').read_text(encoding='utf8'))['units']
+    out = {}
+    for key, _bu, _u, ids in form_bindings(tables, keys, book):
+        slots = [slot for slot, sid in zip(SLOTS, ids) if skills[sid].get('NoPreemptiveDefend')]
+        if slots:
+            out[key] = slots
+    # 현 표의 적 스킬에는 플래그가 없음. 생기면 적 스킬 매핑도 구현해야 함.
+    flagged = {sid for sid, sk in skills.items() if sk.get('NoPreemptiveDefend')}
+    mapped = {sid for _k, _b, _u, ids in form_bindings(tables, keys, book) for sid in ids}
+    if flagged - mapped:
+        raise ValueError('NoPreemptiveDefend 스킬 매핑 확대 필요')
+    return {'buffs': buffs, 'skills': dict(sorted(out.items()))}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--static', type=Path)
@@ -324,6 +352,8 @@ def main():
     report = Counter()
     lines = build_lines(static, Counter(), legacy=True)
     variant_lines = build_lines(static, report)
+    client_lines = build_lines(static, Counter(), legacy=True, client=True)
+    client_variant_lines = build_lines(static, report, client=True)
     out = dict(_note='구원자 스킬별 자동 전투 규칙(tools/build_auto_skill.py). 규칙 행 = 조건(c, 모두 참) + 대상 필터(f, 차례로 거름). '
                      '참인 행이 없으면 그 스킬을 건너뜀. 여기 없는 스킬은 엔진 기본 규칙(구원자 1).',
                units=dict(sorted(units.items())),
@@ -334,7 +364,12 @@ def main():
                lines=dict(sorted(lines.items())),
                variant_lines_note='형태별 자동 대상: 기본은 UNIT_TEMPLET_BASE1, 개화는 BLOSSOM_TEMPLET의 스킬에 연결. '
                                   'mc.ally_variant_mapping=data에서 사용. lines는 legacy 재현용.',
-               variant_lines=dict(sorted(variant_lines.items())))
+               variant_lines=dict(sorted(variant_lines.items())),
+               client_lines_note='build 26314877 자동 대상. exclude_self는 필터 전에 시전자 제거. '
+                                 'mc.ally_auto_lines=client에서 사용하며 client_lines는 옛 형태 연결, client_variant_lines는 기본/개화 연결.',
+               client_lines=dict(sorted(client_lines.items())),
+               client_variant_lines=dict(sorted(client_variant_lines.items())),
+               no_preemptive=build_no_preemptive(static))
     atomic_text(ROOT / 'data' / 'auto_skill.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
     print('auto_skill.json: 구원자', len(units), '스킬', sum(len(v) for v in units.values()), '스킬 순서', len(order),
           '효과 줄 자동 대상', sum(len(v) for v in variant_lines.values()), '(구원자 %d)' % len(variant_lines))
