@@ -1777,8 +1777,8 @@ class Battle:
         value = self.nova_of(u) + v
         if self.mc['nova_force_effects']:
             value = max(0, value)  # Native decrease floors at zero (NKM:1199).
-        # Native upper bound exists, but MaxNovaForceValue is absent from the
-        # supplied tables. Do not invent a numeric cap from battle outcomes.
+        # Current CLIENT_CONST_TEMPLET:117 confirms MaxNovaForceValue=12.
+        # Numeric-cap support remains separate from the nova_pool recheck.
         if self.opts['nova_pool'] == 'unit':
             u.nova = value
         elif u.side == 1:
@@ -1936,23 +1936,34 @@ class Battle:
         return True
 
     def coop(self, actor, ctx):
-        """협공: 최종 능력치 내림차순·동점은 슬롯순, 첫 성공 1명만. capped는 옛 후보 선정."""
+        """협공: random_success는 전원 판정 뒤 성공 후보 중 1명 추첨. stat/capped는 옛 순차 선정."""
         if self.opts['coop_trigger'] == 'basic_only' and ctx.skill.slot != '기본기':
             return
         if ctx.coop_used:
             return
         stat_order = self.opts['coop_order'] == 'stat'
+        random_success = self.opts['coop_order'] == 'random_success'
         cands = []
         for b in self.alive(0):
             if b is actor or b.d.skills.get('기본기') is None or self.no_react(b):
-                continue   # NKM 15840~15850: 브레이크·기본기 사용 불가 제외
-            if stat_order and (b.d.skills['기본기'].ty != '액티브' or b.cd.get('기본기', 0) > 0):
-                continue   # NKM 2072~2087·2757~2773: 액티브·쿨·기절·수면 검사(침묵은 기본기 허용)
+                continue
+            if (stat_order or random_success) and (b.d.skills['기본기'].ty != '액티브' or b.cd.get('기본기', 0) > 0):
+                continue   # static-data NKM:2250-2265·2982-2996: 기본기 사용 검사
+            if random_success and b.has('협공 불가'):
+                continue   # static-data NKM:15619-15623, DisableCrossAttack
             stat = b.mods()['coop']
             p = min(_rules.COOP_CAP, max(0.0, stat))
             if p > 0:
                 cands.append((b, p, stat if stat_order else p))
-        # NKM 937·972·1149·15835~15870: 생존 슬롯 배열의 안정 정렬, 성공하면 즉시 반환.
+        if random_success:
+            # static-data NKM:15515-15518·15606-15641: 슬롯순 전원 RollDice 후 균등 추첨.
+            passed = [b for b, p, _ in sorted(cands, key=lambda bp: bp[0].pos)
+                      if self.R(actor.side).random() < p]
+            if passed:
+                b = self.R(actor.side).choice(passed)
+                self.cast(b, b.d.skills['기본기'], extra=True, target=self._coop_target(ctx), via='coop')
+            return
+        # 3월판 stat 및 교정 전 capped의 첫 성공 선정은 재현용으로 보존.
         for b, p, _ in sorted(cands, key=lambda bp: (-bp[2], bp[0].pos)):
             if self.R(actor.side).random() < p:
                 self.cast(b, b.d.skills['기본기'], extra=True, target=self._coop_target(ctx), via='coop')
@@ -3762,7 +3773,7 @@ LEVEL_DECREASE_EFFECTS = frozenset([('먼지 포착(해제불가)', 5)])
 # ------------------------------------------------------------------ 지원성 검사
 # 속성 숫자가 없어도 엔진이 이름으로 동작을 아는 효과
 HANDLED_NAMES = set(['도발', '은신', '현장 대기', '기절', '수면', '침묵', '필중', '면역', '강제 협공', '추가 턴', '보호막', '스킬 피해 무효',
-                     '강인도 피해 무효', '불사', '강화 불가', '강제 치명타 발생']) | set(CD_RESET_NAMES) | set(SELF_KILL_NAMES) | set(IGNORED_NAMES) \
+                     '강인도 피해 무효', '불사', '강화 불가', '협공 불가', '강제 치명타 발생']) | set(CD_RESET_NAMES) | set(SELF_KILL_NAMES) | set(IGNORED_NAMES) \
     | set(INVINCIBLE_NAMES)
 LOCAL_OK = ('피해 증가', '공격력%', '치명타 확률', '치명타 피해', '방어 관통', '효과 적중', '주는 회복량', '명중률',
             '강인도 피해', '강인도 고정 피해', '브레이크 대상 피해 증가', '대상 약화효과 1개당 피해 증가')
