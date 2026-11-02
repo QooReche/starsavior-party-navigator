@@ -1,5 +1,7 @@
 # 적 기믹 유형 발견 + 구원자 성향 매칭 검토
 
+2026-11-02 후속: [클라·표 재확인](gimmick_recheck.md)에서 은신·피해 무효의 추정을 해제하고 면역·수호·쿨타임 대처를 정정했음. 아래는 최초 조사 기록임.
+
 생성: `build_gimmicks.py` (실행 `python -X utf8 -I build_gimmicks.py`). 산출: `enemy_gimmicks.json`(유형 카탈로그+기믹 레코드), `multihit_traits.json`(구원자 다중 타수/단일 대형), `gimmick_counters.json`(구원자 태그, 유형별 선호/기피 규칙, 보스별 점수), `stage_gimmicks.json`(스테이지 키별 기믹 인덱스), `gimmick_residual.json`(유형 미매칭 문구 156종, 재검토용).
 원칙: 확인 = 원문에 메커니즘이 명시됨. 추정 = 원문은 명확하나 "다중 타수에 불리한가"는 엔진 규칙(피격이 타수 단위인지 스킬 단위인지)을 알 수 없어 해석에 의존.
 
