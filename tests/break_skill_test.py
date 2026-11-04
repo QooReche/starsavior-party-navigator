@@ -465,9 +465,11 @@ class BreakSkillGlobalTest(unittest.TestCase):
         self.assertEqual((b.allies[0].actions, b.team_nova, b.break_skill_cd), (0, 0, 8))
 
     def test_early_return_dot_death_and_disabled_action(self):
+        # 기절 턴의 발동은 옛 동작(break_auto_blocked_cc=off, legacy) 기준. 기본 on 은 아래 시험이 지킴.
         for death in (True, False):
             with self.subTest(death=death):
-                b = self.prepared('행성 정화', turns=1, roles=('스트라이커', '서포터'))
+                b = self.prepared('행성 정화', turns=1, roles=('스트라이커', '서포터'),
+                                  mc={'break_auto_blocked_cc': 'off'})
                 a, other = b.allies
                 if death:
                     a.hp = 1
@@ -480,6 +482,16 @@ class BreakSkillGlobalTest(unittest.TestCase):
                 self.assertEqual(a.dead, death)
                 self.assertEqual((b.global_turns, b.team_nova), (1, 0))
                 self.assertFalse(a.cast_count)
+
+    def test_stunned_turn_blocks_by_default(self):
+        """기본 break_auto_blocked_cc=on: 턴 유닛이 기절이면 그 턴엔 발동 안 함(포인트 유지, NKM:1484-1487)."""
+        b = self.prepared('행성 정화', turns=1, roles=('스트라이커', '서포터'))
+        a, other = b.allies
+        give(a, '기절', harmful=True)
+        self.observe(b)
+        self.assertNotIn('마녀의 은총', other.eff)
+        self.assertEqual((b.break_skill_uses, b.break_points), (0, 3))
+        self.assertGreater(b.rule_hits['break_auto_blocked_cc'], 0)
 
     def test_wave_transition_keeps_domain_and_cooldown(self):
         b = self.prepared('행성 정화', turns=2)

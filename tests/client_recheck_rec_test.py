@@ -14,7 +14,7 @@ from battlesim.rules import MC_OPTS
 
 class PreemptiveClientTest(unittest.TestCase):
     def test_buff_gate_reaches_actual_attack(self):
-        self.assertEqual(MC_OPTS['preemptive_defense'], 'recognize')
+        self.assertEqual(MC_OPTS['preemptive_defense'], 'client_main')   # 2026-11-04 기본 전환(legacy recognize)
         for mode, blocked in [('client', True), ('on', False)]:
             b = battle([unit('victim', hp=10**7), unit('guard', hp=10**7)],
                        [unit('attacker', hp=10**7)], mc={'preemptive_defense': mode})

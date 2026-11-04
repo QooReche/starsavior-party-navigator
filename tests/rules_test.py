@@ -325,7 +325,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'target_defender_mult', 'target_mode', 'target_row_weight',
     'taunt_skill_end_duration', 'toughness', 'toughness_elem',
     'turn_limit_unit', 'turn_ticks', 'unknown_cond',
-    # 2026-11-04 클라 후보 스위치(기본 = 현재 동작)
+    # 2026-11-04 클라 후보 스위치(break_point_hits·break_auto_blocked_cc 는 같은 날 기본 = 클라 값으로 전환)
     'break_point_hits', 'dot_formula', 'react_hist_unit', 'immune_force_apply', 'break_auto_blocked_cc',
 ])
 _NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'wave_carry', 'break_skill_model'})
@@ -368,10 +368,10 @@ def test_assumptions_used_note_keys_present():
 
 
 def test_toughness_elem_no_legacy():
-    """toughness_elem 의 legacy==value 표기를 삭제했는지 확인한다."""
+    """toughness_elem 의 legacy 는 value 와 같으면 안 된다(2026-11-04 기본 client 전환 뒤 legacy = 옛 기본 db)."""
     entry = RULES['mc'].get('toughness_elem', {})
-    ok = 'legacy' not in entry
-    return ok, 'toughness_elem legacy 필드: %s' % entry.get('legacy', '(없음)')
+    ok = entry.get('legacy') == 'db' and entry.get('value') != entry.get('legacy')
+    return ok, 'toughness_elem value=%s legacy=%s' % (entry.get('value'), entry.get('legacy', '(없음)'))
 
 
 def test_note_keys_not_in_code():

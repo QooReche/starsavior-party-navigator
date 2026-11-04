@@ -152,6 +152,8 @@ class HealBurstTest(unittest.TestCase):
                                                        'summon': 'off',
                                                        'enforce': 'off',
                                                        'preemptive_defense': 'off',
+                                                       'toughness_elem': 'db', 'break_point_hits': 'once',   # 2026-11-04 기본 전환분은 옛 값
+                                                       'break_auto_blocked_cc': 'off',
                                                        'effect_dur_extend': 'off',
                                                        'gauge_conditional': 'off',
                                                        'local_vs_element': 'off'}})

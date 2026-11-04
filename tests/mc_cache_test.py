@@ -44,7 +44,9 @@ def _unit(name='u', role='스트라이커', hp=10000, atk=1000, df=500, spd=100,
 _KEEP = {'ally_auto_lines': 'data', 'ally_variant_mapping': 'legacy', 'wave_ally_gauge': 'keep', 'enforce_timing': 'nested', 'enforce_target': 'book', 'buff_ban_force': 'off', 'coop_order': 'capped',
          'foe_skill_order': 'default', 'empty_attack': 'skip',
          'enemy_cd_end_order': 'before_effects', 'revenge_rate': 'current',
-         'nova_force_cap': 0, 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget'}   # 해시는 옛 규칙 기준(캐시 동일성 시험이 목적)
+         'nova_force_cap': 0, 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget',
+         # 2026-11-04 기본 전환분은 legacy 로 고정
+         'preemptive_defense': 'recognize', 'toughness_elem': 'db', 'break_point_hits': 'once', 'break_auto_blocked_cc': 'off'}   # 해시는 옛 규칙 기준(캐시 동일성 시험이 목적)
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 
