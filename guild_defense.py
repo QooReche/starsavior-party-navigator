@@ -76,11 +76,42 @@ def extra_pct(g, level, tiers=(0, 0, 0, 0)):
     return pct
 
 
-def score_at(g, pct, boss_frac=1.0):
-    """보스 생명력을 boss_frac(0~1)만큼 깎은 판의 최종 점수(영상으로 확인한 식): (기본 + 졸개 + 보스 점수 x boss_frac) x (1+pct%). 졸개 2기 처치 전제."""
+RATIO_UNIT = 10000   # 클라 실시간 점수는 보스 깎은 비율을 1/10000 단위로 내림(NKM OBF_25483.OBF_31276)
+
+
+def boss_points(g, boss_frac):
+    """보스 점수(정수): 비율을 1/10000 단위로 내리고, 보스 점수 x 비율을 정수 나눗셈(내림). guild_view.js bossPoints 와 같다.
+    1e-9 는 0.29 x 10000 = 2899.9999… 같은 부동소수 오차 보정."""
+    q = math.floor(max(0.0, min(1.0, boss_frac)) * RATIO_UNIT + 1e-9)
+    return ex_step(g)["bossKill"] * q // RATIO_UNIT
+
+
+def score_at(g, pct, boss_frac=1.0, kills=None):
+    """보스를 boss_frac(0~1)만큼 깎고 졸개를 kills 기(기본 = 전부)만 처치한 판의 최종 점수:
+    (기본 + 졸개 처치 x kills + 보스 점수) x (1+pct%). 영상으로 확인(6단계 상한 48,000 등), 클라 식과 같은 쪽은 괄호 안.
+    괄호 밖 단계 보너스 곱셈 뒤 반올림(여기선 JS Math.round 와 같은 사사오입)은 서버 계산이라 미확인."""
     ex = ex_step(g)
-    raw = ex["base"] + g["stepsMeta"]["minions"] * ex["kill"] + ex["bossKill"] * max(0.0, min(1.0, boss_frac))
-    return math.floor(raw * (100 + pct) / 100 + 0.5)   # JS Math.round 와 같은 반올림(Python round 는 짝수 반올림)
+    n = g["stepsMeta"]["minions"]
+    k = n if kills is None else max(0, min(n, int(kills)))
+    raw = ex["base"] + k * ex["kill"] + boss_points(g, boss_frac)
+    return (raw * (100 + pct) + 50) // 100   # 정수 연산(Python round 는 짝수 반올림이라 JS Math.round 와 다름)
+
+
+def prog_parts(g, prog):
+    """시뮬 판별 진행도 prog(0~1; 졸개전 = 0~0.5, 보스전 = 0.5 + 0.5 x 깎은 비율, 클리어 1) -> (처치 졸개 수, 보스 깎은 비율).
+    시뮬 결과에 처치 수가 따로 없어서 졸개전의 깎은 체력 비율 d = 2 x prog 에서 k = floor(졸개 수 x d)로 근사한다
+    (졸개 체력이 같고 한 기씩 차례로 잡는다고 가정. 실제는 분산해 때리면 k 가 더 작을 수 있어 졸개전 패배 점수는 상한에 가까운 근사).
+    졸개전에서 지면 보스 비율은 0. guild_view.js progParts 와 같다."""
+    n = g["stepsMeta"]["minions"]
+    p = max(0.0, min(1.0, prog))
+    if p >= 0.5:
+        return n, max(0.0, min(1.0, 2 * p - 1))
+    return min(n, math.floor(n * 2 * p + 1e-9)), 0.0
+
+
+def score_from_prog(g, pct, prog):
+    k, f = prog_parts(g, prog)
+    return score_at(g, pct, f, k)
 
 
 def score(g, pct):
@@ -98,8 +129,8 @@ def score(g, pct):
 
 
 def best_selection(g):
-    """점수가 가장 높은 선택(두 가설 모두 단조 증가): 도전 최고 단계 + 선택 효과 모두 최대 단계."""
-    return len(g["challenge"]["levels"]), tuple(MAX_SET_TIER for _ in g["sets"]["items"])
+    """점수가 가장 높은 선택: 도전 최고 단계. 선택 효과는 클라에서 길방에 연결돼 있지 않아(서버 처리는 미확인) 기본 끔."""
+    return len(g["challenge"]["levels"]), tuple(0 for _ in g["sets"]["items"])
 
 
 def foe_content(g):

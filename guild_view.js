@@ -19,16 +19,31 @@
     return pct;
   }
   // 확인된 점수식(영상 2026-11-01): (기본 + 졸개 + 보스 점수 × 보스 깎은 비율) × (1 + 추가 점수%)
-  function scoreAt(G, pct, f) {
-    const ex = exStep(G), frac = Math.max(0, Math.min(1, f));
-    return Math.round((ex.base + G.stepsMeta.minions * ex.kill + ex.bossKill * frac) * (100 + pct) / 100);
+  // 보스 점수(정수): 클라 실시간 점수처럼 비율을 1/10000 내림 + 정수 나눗셈 내림. guild_defense.py boss_points 와 같다(1e-9 = 부동소수 보정)
+  function bossPoints(G, f) {
+    const q = Math.floor(Math.max(0, Math.min(1, f)) * 10000 + 1e-9);
+    return Math.floor(exStep(G).bossKill * q / 10000);
   }
+  // kills = 처치한 졸개 수(생략 = 전부). 단계 보너스 곱셈 뒤 반올림은 서버 계산이라 미확인(기존 사사오입 유지)
+  function scoreAt(G, pct, f, kills) {
+    const ex = exStep(G), n = G.stepsMeta.minions;
+    const k = kills == null ? n : Math.max(0, Math.min(n, Math.trunc(kills)));
+    return Math.floor(((ex.base + k * ex.kill + bossPoints(G, f)) * (100 + pct) + 50) / 100);
+  }
+  // 판별 진행도 -> {k, f}. 졸개전(prog<0.5)은 깎은 체력 d=2p 에서 k=floor(졸개 수×d)로 근사(같은 체력·차례로 처치 가정), 보스 비율 0
+  function progParts(G, prog) {
+    const n = G.stepsMeta.minions, p = Math.max(0, Math.min(1, prog));
+    if (p >= 0.5) return {k: n, f: Math.max(0, Math.min(1, 2 * p - 1))};
+    return {k: Math.min(n, Math.floor(n * 2 * p + 1e-9)), f: 0};
+  }
+  function scoreFromProg(G, pct, prog) { const r = progParts(G, prog); return scoreAt(G, pct, r.f, r.k); }
   function score(G, pct) {
     const out = {};
     for (const h of G.score.hypotheses) out[h.id] = scoreAt(G, pct, 1);
     return out;
   }
-  function bestSelection(G) { return {level: G.challenge.levels.length, tiers: G.sets.items.map(() => MAX_TIER)}; }
+  // 선택 효과는 클라에서 길방에 연결돼 있지 않아(서버 처리 미확인) 기본·최고 조합 모두 끔
+  function bestSelection(G) { return {level: G.challenge.levels.length, tiers: G.sets.items.map(() => 0)}; }
   function normSel(G, sel) {
     const b = bestSelection(G);
     const level = Number.isInteger(sel && sel.level) && sel.level >= 0 && sel.level <= b.level ? sel.level : b.level;
@@ -97,9 +112,12 @@
   // 판별 «보스 깎은 비율» 평균(build_guild_sim fracBySupport). 있으면 이것을 점수식에 넣는다(점수가 이 값에 선형이라 정확)
   function simFrac(S, t, sup, g) { const fs = t.fracBySupport; return fs && fs[sup] ? fs[sup][String(g)] || null : null; }
   // 프리셋·팀·지원·단계 중 기대 점수 최대. 판별 frac 우선, 옛 자료는 진행도 → 클리어율 순으로 대체.
-  function simExpect(G, S, g) {
+  // 선택 효과는 길방에 없으므로(클라 확인) 기본은 off 만 비교. opts.allSets 로 옛 데이터의 다른 프리셋(가정)도 비교할 수 있다
+  // 시뮬 표는 평균값(fracBySupport)뿐이라 처치 졸개 수 k 가 없다 -> 졸개 전부 처치로 계산(졸개전 패배 판이 있으면 조금 높게 봄)
+  function simExpect(G, S, g, opts) {
     let best = null;
-    const presets = S.sets || {off: [0, 0, 0, 0]};
+    const all = S.sets || {off: [0, 0, 0, 0]};
+    const presets = opts && opts.allSets ? all : {off: all.off || [0, 0, 0, 0]};
     S.teams.forEach((t, ti) => Object.entries(presets).forEach(([set, tiers]) => {
       const tab = set === "off" ? t : (t.bySets || {})[set];
       if (!tab) return;
@@ -130,7 +148,7 @@
       const e = simExpect(G, S, g);
       if (!e) return "";
       const t = S.teams[e.team];
-      const label = e.set === "off" ? "선택 효과 끔" : e.set === "max" ? "모두 최대" : "선택 효과 " + S.sets[e.set].join("·");
+      const label = e.set === "off" ? "선택 효과 끔" : e.set === "max" ? "모두 최대(가정)" : "선택 효과 " + S.sets[e.set].join("·") + "(가정)";
       return `<li>×${g}: 별의 도전 <b>${e.level}단계</b> · 기대 점수 <b>${rangeText(e.e)}</b> <span class="gd-state" data-k="gd-sim-set">${esc(label)}</span> <span class="mut">(${esc(t.names.join("·"))} · «${SUP_NAME[e.support]}» · 보스 평균 ${pct(e.f)} 깎음 · 클리어 ${pct(e.p)})</span></li>`;
     }).join("");
     const head = S.levels.map(l => `<th>${l}</th>`).join("");
@@ -145,7 +163,7 @@
     const supRows = S.teams.map(t => `<tr><td>${esc(t.names.join("·"))}</td>${sups.map(s => { const r = simRates(S, t, s, gMid); const m = r ? topLv(r) : -1; return `<td>${m < 0 ? "-" : m + "단계"}</td>`; }).join("")}</tr>`).join("");
     const supTab = sups.length > 1 ? `<details class="gd-simtab"><summary>알리시아 지원별 클리어 가능 최고 단계 (×${gMid}) · 선택 효과 끔</summary><div class="gd-scroll"><table><thead><tr><th>파티</th>${sups.map(s => `<th>${SUP_NAME[s]}</th>`).join("")}</tr></thead><tbody>${supRows}</tbody></table></div></details>` : "";
     return `<div class="gd-sim" data-k="gd-sim"><b>시뮬 추정: 깰 수 있는 최고 단계</b> ${EST} <span class="mut">선택 효과 끔</span><ul>${lines}</ul>
-${ex ? `<b>기대 점수가 가장 큰 단계</b> ${EST} <span class="mut">비교한 선택 효과 중</span><ul>${ex}</ul>` : ""}
+${ex ? `<b>기대 점수가 가장 큰 단계</b> ${EST} <span class="mut">선택 효과 없음(클라 기준) · 졸개 2기 처치로 계산</span><ul>${ex}</ul>` : ""}
 <div class="mut gd-small">${esc(S.basis)} · 오토 전투 기준 · 단계당 ${S.runs}판(표본이 작아 한 단계쯤은 오차) · 클리어율 ${pct(S.passP)} 이상을 «깰 수 있음»으로 봄 · 기대 점수 = 시뮬에서 보스를 깎은 평균 비율을 영상으로 확인한 점수식에 넣은 값(패배해도 깎은 만큼 받음). 점수식은 실제 플레이 1판으로 확인했지만 시뮬 결과는 아직 실제와 대조 중입니다. 수동 조작(행동 게이지 조절·브레이크 타이밍)은 반영하지 않아 실제보다 낮게 나올 수 있습니다. 알리시아 지원은 게임 표 값으로 넣었고 일부 해석(발동 확률·경계값)은 추정입니다.</div>
 ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율 (선택 효과 끔)</summary><div class="gd-scroll"><table><thead><tr><th>파티</th><th>육성</th><th>지원</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></details></div>`;
   }
@@ -156,7 +174,7 @@ ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율 (선�
       const pct = extraPct(G, sel.level, sel.tiers), sc = score(G, pct), b = bestSelection(G), bsc = score(G, extraPct(G, b.level, b.tiers));
       const hyp = G.score.hypotheses.map(h => `${h.name} ${num(sc[h.id])}`).join(" · ");   // 보스를 다 깎았을 때 점수
       const isBest = sel.level === b.level && sel.tiers.every((t, i) => t === b.tiers[i]);
-      html += `<div class="gd-best" data-k="gd-best"><b>최고 점수가 나오는 조합</b>: 별의 도전 ${b.level}단계 + 선택 효과 모두 최대 단계(추가 점수 ${extraPct(G, b.level, b.tiers)}%) → 보스를 다 깎으면 점수 ${rangeText(bsc)}<br>
+      html += `<div class="gd-best" data-k="gd-best"><b>최고 점수가 나오는 조합</b>: 별의 도전 ${b.level}단계 + 선택 효과 없음(클라 확인, 서버 처리는 미확인; 추가 점수 ${extraPct(G, b.level, b.tiers)}%) → 보스를 다 깎으면 점수 ${rangeText(bsc)}<br>
 <span class="mut">패배해도 보스를 깎은 비율만큼 보스 점수(최대 ${num(ex.bossKill)})를 받고, 추가 점수는 합계 전체에 곱해집니다(실제 영상으로 확인). 그래서 못 깰 단계라도 높은 단계가 점수에 유리할 수 있어요. 추천 파티는 단계와 관계없이 보스 속성·특징 기준입니다. 단계별 기대 점수는 아래 «시뮬 추정»을 보세요.</span></div>
 ${simBox(G, esc)}${selectBox(G, sel)}
 <div class="gd-now" data-k="gd-now">고른 조합: 추가 점수 ${pct}% → 보스를 다 깎으면 <b>${rangeText(sc)}</b>${isBest ? " (최고 조합)" : ""}<br><span class="mut">${esc(hyp)} · ${esc(G.score.hypotheses.map(h => h.name + ": " + h.desc).join(" / "))}</span></div>
@@ -174,6 +192,6 @@ ${simBox(G, esc)}${selectBox(G, sel)}
 <details class="gd-src"><summary>출처</summary><div class="gd-small">${src}</div></details>`;
     return html;
   }
-  const api = {num, parseTime, seasonState, baseTotal, extraPct, score, scoreAt, bestSelection, normSel, rangeText, levelEffects, simBest, simExpect, simBox, panelHtml};
+  const api = {num, parseTime, seasonState, baseTotal, extraPct, score, scoreAt, bossPoints, progParts, scoreFromProg, bestSelection, normSel, rangeText, levelEffects, simBest, simExpect, simBox, panelHtml};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildView = api;
 })(typeof window !== "undefined" ? window : globalThis);

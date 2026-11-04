@@ -325,6 +325,8 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'target_defender_mult', 'target_mode', 'target_row_weight',
     'taunt_skill_end_duration', 'toughness', 'toughness_elem',
     'turn_limit_unit', 'turn_ticks', 'unknown_cond',
+    # 2026-11-04 클라 후보 스위치(기본 = 현재 동작)
+    'break_point_hits', 'dot_formula', 'react_hist_unit', 'immune_force_apply', 'break_auto_blocked_cc',
 ])
 _NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'wave_carry', 'break_skill_model'})
 

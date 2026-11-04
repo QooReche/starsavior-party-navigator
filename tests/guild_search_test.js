@@ -99,14 +99,38 @@ const tests = {
     // 걸러낸 팀 수: 단계마다 같은 팀이 또 걸려도 한 번만 센다
     assert.equal(S.countDropped(SE, [[jobsA, resC], [jobsA, resC]]), 1);
     assert.equal(S.countDropped({...SE, banCoop: false}, [[jobsA, resC]]), 0);
-    // 기대 점수 = 확인된 식: 진행도 0.5 → 보스 0% 깎음, 1 → 100%
+    // 기대 점수(평균) = 확인된 식: 진행도 0.5 → 보스 0% 깎음, 1 → 100%
     assert.equal(S.expected(V, G, 4, tiers, 0.5), V.scoreAt(G, V.extraPct(G, 4, tiers), 0));
     assert.equal(S.expected(V, G, 4, tiers, 1), V.scoreAt(G, V.extraPct(G, 4, tiers), 1));
     assert(S.expected(V, G, 4, tiers, 0.9) > S.expected(V, G, 4, tiers, 0.6));
     // 판별 진행도: 졸개전 패배(0.25) + 클리어(1) 반반 → 평균 진행도(0.625)로 낸 값보다 큼(판마다 점수식 후 평균)
     const pc = V.extraPct(G, 4, tiers), mix = S.expected(V, G, 4, tiers, 0.625, [0.25, 1]);
-    assert.equal(mix, Math.round((V.scoreAt(G, pc, 0) + V.scoreAt(G, pc, 1)) / 2));
+    assert.equal(mix, Math.round((V.scoreAt(G, pc, 0, 1) + V.scoreAt(G, pc, 1)) / 2), '졸개전 패배 판(0.25)은 졸개 1기만 처치');
     assert(mix > S.expected(V, G, 4, tiers, 0.625));
+  },
+  rank_top_and_cap() {
+    // 순위 기준 = 상위 20% 판 평균(상위 점수) -> 상한 도달률 -> 평균. 평균을 점수식에 넣지 않고 판마다 계산.
+    const tiers = [0, 0, 0, 0], pc = V.extraPct(G, 4, tiers), cap = V.scoreAt(G, pc, 1), lo = V.scoreAt(G, pc, 0);
+    // 10판: A = 2판 클리어 + 8판 졸개전 패배(prog 0), B = 1판 클리어 + 9판 보스 0.5 깎음
+    const A = [1, 1, ...Array(8).fill(0)], B = [1, ...Array(9).fill(0.75)];
+    const sa = S.rankStats(V, G, 4, tiers, 0.5, A), sb = S.rankStats(V, G, 4, tiers, 0.5, B);
+    assert.equal(sa.top, cap, '상위 20% = 2판 모두 상한'); assert.equal(sb.top, Math.round((cap + V.scoreAt(G, pc, 0.5)) / 2));
+    assert.equal(sa.cap, 0.2); assert.equal(sb.cap, 0.1);
+    assert(sa.mean < sb.mean, '평균은 B가 높지만 순위는 A가 위(상위 점수)');
+    const list = [['d0', 'd1', 's0', 'f0'], ['d2', 'd3', 's1', 'f1']];
+    const jobs = S.finalJobs({...SE, final: {...SE.final, levels: [4], supports: ['fire']}}, G, V, list, results, cls, tiers);
+    const res = {[jobs[0].key]: {prog: 0.5, clear: 0.1, progs: B, n: 10}, [jobs[1].key]: {prog: 0.5, clear: 0.2, progs: A, n: 10}};
+    const top = S.rank(V, G, jobs, res, tiers, 5);
+    assert.deepEqual(top.map(t => t.keys), [list[1], list[0]]);
+    assert.equal(top[0].score, cap); assert.equal(top[0].cap, 0.2); assert.equal(top[0].mean, sa.mean);
+    assert.deepEqual(S.pickTop(V, G, jobs, res, tiers, 1), [list[1]]);
+    // 상한 동점이면 상한 도달률, 그다음 평균
+    const C = Array(10).fill(1), D2 = [...Array(3).fill(1), ...Array(7).fill(0.5)];
+    const sc = S.rankStats(V, G, 4, tiers, 1, C), sd = S.rankStats(V, G, 4, tiers, 1, D2);
+    assert.equal(sc.top, sd.top); assert(sc.cap > sd.cap);
+    // progs 없으면 prog·clear 로 대체
+    const one = S.rankStats(V, G, 4, tiers, 0.25, null, 0.1);
+    assert.equal(one.top, V.scoreAt(G, pc, 0, 1)); assert.equal(one.cap, 0.1); assert(lo > 0);
   },
   async runPhase() {
     // 가짜 작업자: 받은 팀마다 결과를 돌려주고 done
@@ -149,6 +173,7 @@ const tests = {
     assert(S.html({phase: 'err', msg: '<x>'}, cx).includes('&lt;x&gt;'), '이스케이프');
     const rows = [{order: ['a', 'b', 'c', 'd'], level: 4, sup: 'fire', score: 59500, clear: 0.93, frac: 1}];
     const h = S.html({phase: 'done', rows, sig: '3333', pool: 14, combos: 900, finalists: 12, runs: 40}, cx);
+    assert(h.includes('상위 점수') && h.includes('상한 도달률') && h.includes('평균 점수') && h.includes('상위 20%'), '순위 기준 설명');
     assert(h.includes('59,500') && h.includes('불의 고동') && h.includes('이름-a') && h.includes('93%') && !h.includes('gd-search-stale'));
     assert(S.html({phase: 'done', rows, sig: '2222', pool: 14, combos: 9, finalists: 1, runs: 1}, cx).includes('gd-search-stale'), '선택 효과가 바뀌면 낡은 결과 표시');
     assert(h.includes('추정') && h.includes('새 시즌'), '추정·시즌 경고');

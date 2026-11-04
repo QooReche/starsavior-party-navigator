@@ -61,7 +61,9 @@ def test_score_range():
     assert gd.score(G, lv12) == {"A": 66000}, gd.score(G, lv12)
     best_level, best_tiers = gd.best_selection(G)
     pct = gd.extra_pct(G, best_level, best_tiers)
-    assert pct == 180 and gd.score(G, pct) == {"A": 84000}, gd.score(G, pct)
+    assert best_tiers == (0, 0, 0, 0), "선택 효과는 길방에 없어(클라 확인) 최고 조합에서도 끔"
+    assert pct == 120 and gd.score(G, pct) == {"A": 66000}, gd.score(G, pct)
+    assert gd.score(G, gd.extra_pct(G, 12, (3, 3, 3, 3))) == {"A": 84000}   # 가정 계산용으로는 남아 있음
     assert gd.score(G, 0) == {"A": 30000}
     # 영상(2026-11-01)으로 확인한 식: 보스 99.9% 깎고 패배 → 전투 중 점수 29,975 x 1.6(6단계) = 47,960
     assert gd.score_at(G, 60, 0.999) == 47960 and gd.score_at(G, 60, 1.0) == 48000
@@ -75,6 +77,31 @@ def test_score_range():
         last = s
     for ex in G["challenge"]["levels"]:  # 효과 단계가 누적이라 표 값과 단계 효과 문구 수가 줄지 않는다
         assert ex["score"] == ex["level"] * 10 if ex["level"] <= 6 else ex["score"] == 60 + (ex["level"] - 6) * 10
+
+
+def test_score_kills_and_ratio_floor():
+    """졸개 처치 수 k·보스 비율 1/10000 내림·정수 점수(클라 실시간 점수). 단계 보너스 반올림은 서버 계산이라 미확인(기존 사사오입)."""
+    assert [gd.score_at(G, 0, 0, k) for k in (0, 1, 2)] == [2500, 3750, 5000]
+    assert gd.score_at(G, 0, 1.0, 2) == 30000 and gd.score_at(G, 0, 1.0, 0) == 27500
+    assert gd.score_at(G, 0, 1.0) == 30000, "kills 생략 = 졸개 전부"
+    assert gd.score_at(G, 0, 1.0, 9) == 30000 and gd.score_at(G, 0, 1.0, -3) == 27500, "k 는 0~졸개 수로 제한"
+    assert gd.score_at(G, 0, 0.5, 2) == 17500
+    assert gd.score_at(G, 0, 0.00005, 2) == 5000, "1/10000 미만은 내림(0.5/10000 -> 0)"
+    assert gd.score_at(G, 0, 0.0001, 2) == 5002 and gd.score_at(G, 0, 0.00015, 2) == 5002
+    assert gd.score_at(G, 0, 0.29, 2) == 12250, "0.29x10000 부동소수 오차(2899.99…)에도 2900"
+    assert gd.score_at(G, 60, 0.999) == 47960 and gd.score_at(G, 60, 1.0, 1) == 46000
+    # 단계 보너스 곱셈 뒤 .5 반올림(올림): 합산 10 x 1.05 = 10.5 -> 11, 10 x 1.15 = 11.5 -> 12, 10 x 1.04 = 10.4 -> 10
+    g2 = json.loads(json.dumps(G))
+    ex = next(x for x in g2["steps"] if x["ex"]); ex["base"], ex["kill"], ex["bossKill"] = 10, 0, 0
+    assert [gd.score_at(g2, p) for p in (0, 4, 5, 15)] == [10, 10, 11, 12]
+    # 진행도 -> (처치 졸개, 보스 비율)
+    cases = [(-1, (0, 0.0)), (0, (0, 0.0)), (0.24, (0, 0.0)), (0.25, (1, 0.0)), (0.4999, (1, 0.0)), (0.5, (2, 0.0)),
+             (0.75, (2, 0.5)), (1, (2, 1.0)), (2, (2, 1.0))]
+    for p, want in cases:
+        got = gd.prog_parts(G, p)
+        assert got[0] == want[0] and abs(got[1] - want[1]) < 1e-12, (p, got, want)
+    assert gd.score_from_prog(G, 0, 0.3) == 3750, "졸개 1기만 처치하고 진 판"
+    assert gd.score_from_prog(G, 0, 0.1) == 2500 and gd.score_from_prog(G, 0, 1) == 30000
 
 
 def test_season_state_and_update_flag():
@@ -227,6 +254,18 @@ def test_js_parity():
                        + "console.log(JSON.stringify(" + json.dumps(pcs) + ".map(p=>"
                        + json.dumps(fractions) + ".map(f=>V.scoreAt(G,p,f)))))")
     assert values == [[gd.score_at(G, pc, f) for f in fractions] for pc in pcs]
+    ks = [None, 0, 1, 2, 5]
+    fr2 = [0, 0.00005, 0.0001, 0.00015, 0.29, 0.5, 0.9999, 1]
+    vals = node_json("const V=require('./guild_view.js'),G=require('./data/guild_defense.json');"
+                     "const out=[];for(const p of [0,60,120])for(const k of " + json.dumps(ks) + ")for(const f of " + json.dumps(fr2) + ")out.push(V.scoreAt(G,p,f,k));"
+                     "console.log(JSON.stringify(out))")
+    assert vals == [gd.score_at(G, p, f, k) for p in (0, 60, 120) for k in ks for f in fr2]
+    progs = [-1, 0, 0.1, 0.24, 0.25, 0.3, 0.4999, 0.5, 0.75, 0.999, 1, 2]
+    pv = node_json("const V=require('./guild_view.js'),G=require('./data/guild_defense.json');"
+                   "console.log(JSON.stringify(" + json.dumps(progs) + ".map(p=>[V.progParts(G,p),V.scoreFromProg(G,60,p)])))")
+    for p, (parts, sc) in zip(progs, pv):
+        k, f = gd.prog_parts(G, p)
+        assert parts["k"] == k and abs(parts["f"] - f) < 1e-12 and sc == gd.score_from_prog(G, 60, p), (p, parts, sc)
     st = node_json("const V=require('./guild_view.js'),G=JSON.parse(require('fs').readFileSync('data/guild_defense.json','utf8'));"
                    "const T=['2026-10-28T12:00:00+09:00','2026-10-29T00:00:00+09:00','2026-11-05T03:59:59+09:00','2026-11-05T04:00:00+09:00','2026-11-12T03:59:59+09:00','2026-11-12T04:00:00+09:00'];"
                    "console.log(JSON.stringify(T.map(t=>V.seasonState(G.season,Date.parse(t)))))")

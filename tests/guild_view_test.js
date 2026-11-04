@@ -14,8 +14,9 @@ const tests = {
     assert.deepEqual(V.score(P, 0), {A: 30000});
     assert.equal(V.rangeText({A: 66000, B: 36000}), '36,000 ~ 66,000');   // 범위 표시 함수 자체는 그대로(값이 둘일 때)
     assert.equal(V.rangeText({A: 5, B: 5}), '5');
-    assert.deepEqual(V.normSel(P, null), {level: 12, tiers: [3, 3, 3, 3]});
-    assert.deepEqual(V.normSel(P, {level: 99, tiers: [9, -1, 'x', 2]}), {level: 12, tiers: [3, 3, 3, 2]});
+    assert.deepEqual(V.normSel(P, null), {level: 12, tiers: [0, 0, 0, 0]}, '선택 효과는 길방에 없어 기본 끔');
+    assert.deepEqual(V.normSel(P, {level: 99, tiers: [9, -1, 'x', 2]}), {level: 12, tiers: [0, 0, 0, 2]});
+    assert.deepEqual(V.bestSelection(P), {level: 12, tiers: [0, 0, 0, 0]});
   },
   state() {
     const s = (t) => V.seasonState(P.season, T(t));
@@ -36,10 +37,17 @@ const tests = {
   ex() {
     const h = V.panelHtml(P, null, 7, T('2026-10-30T12:00:00+09:00'), esc);
     assert(h.includes('최고 점수가 나오는 조합') && h.includes('별의 도전 12단계'));
-    assert(h.includes('보스를 다 깎으면 점수 84,000'), '최고 조합 점수');
-    assert(h.includes('클리어(보스 100% 처치) 84,000') && !h.includes('가설 B'));
+    assert(h.includes('보스를 다 깎으면 점수 66,000'), '최고 조합 점수(선택 효과 없음)');
+    assert(h.includes('클리어(보스 100% 처치) 66,000') && !h.includes('가설 B'));
     assert.equal(V.scoreAt(P, 60, 0.999), 47960, '영상으로 확인한 점수식: 29,975 x 1.6');
     assert.equal(V.scoreAt(P, 60, 1), 48000);
+    // 졸개 처치 수 k, 보스 비율 1/10000 내림, 정수 점수 (guild_defense_test.py 와 같은 경계값)
+    assert.deepEqual([0, 1, 2].map(k => V.scoreAt(P, 0, 0, k)), [2500, 3750, 5000]);
+    assert.equal(V.scoreAt(P, 0, 1), 30000); assert.equal(V.scoreAt(P, 0, 1, 9), 30000); assert.equal(V.scoreAt(P, 0, 1, -3), 27500);
+    assert.equal(V.scoreAt(P, 0, 0.5, 2), 17500); assert.equal(V.scoreAt(P, 0, 0.00005, 2), 5000);
+    assert.equal(V.scoreAt(P, 0, 0.0001, 2), 5002); assert.equal(V.scoreAt(P, 0, 0.29, 2), 12250);
+    assert.equal(V.scoreFromProg(P, 0, 0.3), 3750, '졸개 1기만 잡고 진 판'); assert.equal(V.scoreFromProg(P, 0, 0.1), 2500);
+    assert.deepEqual(V.progParts(P, 0.25), {k: 1, f: 0}); assert.deepEqual(V.progParts(P, 0.5), {k: 2, f: 0}); assert.deepEqual(V.progParts(P, 1), {k: 2, f: 1});
     assert(h.includes('gd-est') && h.includes('추정'));
     assert(h.includes('일일 초기화 전까지 다시 쓸 수 없음') && h.includes('화·목·토') && h.includes('50턴'));
     assert(h.includes('(최고 조합)'));
@@ -83,12 +91,13 @@ const tests = {
       assert(ex, 'expect ' + g);
       // 진행도(= 0.5 + 0.5 x 보스 깎은 비율)로 확인된 점수식에 넣은 최댓값과 같아야 함
       let bv = -1;
-      S.teams.forEach(t => Object.entries(S.sets || {off: [0, 0, 0, 0]}).forEach(([set, tiers]) => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
+      S.teams.forEach(t => Object.entries({off: [0, 0, 0, 0]}).forEach(([set, tiers]) => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
         const tab = set === 'off' ? t : t.bySets[set];
         const f = tab.fracBySupport[sup][String(g)][i];
         bv = Math.max(bv, V.scoreAt(P, V.extraPct(P, lv, tiers), f));
       }))));
       assert.equal(ex.m, bv, 'expected score ' + g);
+      assert.equal(ex.set, 'off', '기본 비교는 선택 효과 끔만');
       // 판별 평균(fracBySupport)이 있어야 하고, 평균의 절단 ≤ 절단의 평균(졸개전 패배 섞인 팀을 낮춰 보지 않음)
       S.teams.forEach(t => S.supports.forEach(sup => S.levels.forEach((lv, i) => {
         assert(t.fracBySupport, 'fracBySupport 없음 — tools/build_guild_sim.py 재실행');
@@ -113,17 +122,19 @@ const tests = {
     const t = {...tab(0.7), rates: {'2': [0.5]}, names: ['시험 팀'], src: 'reco', bySets: {max: tab(0.6)}};
     const S = {teams: [t], growth: ['2'], levels: [0], supports: ['none'], sets: {off: [0,0,0,0], max: [3,3,3,3]},
       summary: {'2': {level: 0, team: 0, p: 0.5}}, passP: 0.5, runs: 2, recPower: 1, basis: ''};
-    assert.equal(V.simExpect(P, S, 2).set, 'max');
-    assert.equal(V.simExpect(P, S, 2).m, V.scoreAt(P, 60, 0.6));
-    assert(V.simBox({...P, sim:S}, esc).includes('>모두 최대</span>'));
+    assert.equal(V.simExpect(P, S, 2).set, 'off', '기본은 선택 효과 끔만 비교(길방에 선택 효과 없음)');
+    assert.equal(V.simExpect(P, S, 2, {allSets: true}).set, 'max');
+    assert.equal(V.simExpect(P, S, 2, {allSets: true}).m, V.scoreAt(P, 60, 0.6));
+    assert(V.simBox({...P, sim:S}, esc).includes('>선택 효과 끔</span>') && !V.simBox({...P, sim:S}, esc).includes('모두 최대'));
     t.bySets.max = tab(0.1);
-    assert.equal(V.simExpect(P, S, 2).set, 'off', 'max의 실제 frac로 평가해야 함');
+    assert.equal(V.simExpect(P, S, 2, {allSets: true}).set, 'off', 'max의 실제 frac로 평가해야 함');
     assert(V.simBox({...P, sim:S}, esc).includes('>선택 효과 끔</span>'));
     S.sets.no_void = [3,3,3,0]; t.bySets.no_void = tab(1);
-    assert.equal(V.simExpect(P, S, 2).set, 'no_void', '추가 프리셋도 비교');
-    assert.equal(V.simExpect(P, S, 2).m, V.scoreAt(P, V.extraPct(P, 0, S.sets.no_void), 1));
+    assert.equal(V.simExpect(P, S, 2).set, 'off');
+    assert.equal(V.simExpect(P, S, 2, {allSets: true}).set, 'no_void', '추가 프리셋도 비교(옵션)');
+    assert.equal(V.simExpect(P, S, 2, {allSets: true}).m, V.scoreAt(P, V.extraPct(P, 0, S.sets.no_void), 1));
     delete t.bySets;
-    assert.equal(V.simExpect(P, S, 2).set, 'off', '새 메타+옛 팀 자료는 max에 off 자료를 재사용하지 않음');
+    assert.equal(V.simExpect(P, S, 2, {allSets: true}).set, 'off', '새 메타+옛 팀 자료는 max에 off 자료를 재사용하지 않음');
     delete S.sets;
     assert.equal(V.simExpect(P, S, 2).m, V.scoreAt(P, 0, 0.7));
     delete t.progBySupport;

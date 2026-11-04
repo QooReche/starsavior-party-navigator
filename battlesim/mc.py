@@ -587,6 +587,8 @@ def _add_prop(m, k, v, stacks):
         m['tough'] += v * stacks
     elif k == '강인도 고정 피해':
         m['tough_fixed'] += v * stacks
+    elif k == '강인도 피해 감소':         # NST_SUPER_ARMOR_DAMAGE_REDUCE(toughness_elem=client만 읽음, 현 데이터 부여원 없음)
+        m['tough_red'] = m.get('tough_red', 0.0) + v * stacks
     elif k == '브레이크 대상 피해 증가':
         m['inc_break'] += val
     elif k in ('받는 피해 감소', '피해 감소'):
@@ -670,6 +672,7 @@ class Battle:
         self.enemy_nova = 0.0
         self.nova_bursts = defaultdict(int)  # (아군 칸, 슬롯)별 실제 사용 횟수
         self.unsup = defaultdict(int)
+        self.rule_hits = defaultdict(int)    # 2026-11-04 클라 후보 스위치가 실제로 탄 횟수(시험용, 결과에 싣지 않음)
         self.timeline = [] if timeline else None
         self.enemy_lines = enemy_lines
         self.result = None
@@ -1152,6 +1155,11 @@ class Battle:
         cost = self.mc['break_skill_cost']
         if not self.break_skill_enabled or self.break_skill_cd > 0 or self.break_points < cost:
             return
+        if (self.mc['break_auto_blocked_cc'] == 'on' and actor is not None
+                and (self.incapacitated(actor) or actor.has('도발'))):
+            # build 26314877 NKM:1480-1491: 턴 유닛이 도발·기절·수면이면 오비탈 사용 불가(포인트·쿨 유지)
+            self.rule_hits['break_auto_blocked_cc'] += 1
+            return
         self.break_points -= cost
         self.break_skill_cd = self.mc['break_skill_cooldown']
         self.break_skill_uses += 1
@@ -1499,13 +1507,15 @@ class Battle:
         if not targets:
             return targets
         orig = targets[0]
-        if self.mc['preemptive_defense'] == 'client':
+        mode = self.mc['preemptive_defense']
+        if mode in ('client', 'client_main'):
             rule = no_preemptive()
             if any(attacker.on(name) for name in rule['buffs']):
                 return targets
             if ctx.skill and ctx.skill.slot in rule['skills'].get(attacker.key, []):
                 return targets
-        if attacker.on('필중') or attacker.on('은신'):   # 필중·은신은 선제 방어 무시(docs/formulas_web.md 4.3)
+        if attacker.on('필중') or attacker.on('은신'):
+            # 필중·은신은 선제 방어 무시(docs/formulas_web.md 4.3). 클라는 별도 분기 없이 두 버프의 NoPreemptiveDefend 플래그로 막음(no_preemptive 목록)
             return targets
         # attacker 의 reduce (NST_RATE_PREEMPTIVE_DEFEND_REDUCE): 고립 등 공격자 선제 방어 확률 -N% = reduce N%
         reduce_pct = -attacker.mods().get('preempt', 0.0) * 100.0
@@ -1518,7 +1528,7 @@ class Battle:
             if self.incapacitated(v):
                 continue
             m = v.mods()
-            rate = (v.d.passive.get('preempt', 0.0) + m['preempt']) * 100.0   # 상시 + 버프 합산, 1/100 단위
+            rate = ((getattr(v.d, 'passive', None) or {}).get('preempt', 0.0) + m['preempt']) * 100.0   # 상시 + 버프 합산, 1/100 단위
             rate -= reduce_pct
             if rate <= 0:
                 continue
@@ -1528,6 +1538,8 @@ class Battle:
         # 게임은 후보를 순서대로 굴림(첫 성공 시 멈춤). 엔진은 같은 방식.
         for v, rate in defenders:
             if self.R(orig.side).random() * 100.0 < rate:
+                if mode == 'client_main':
+                    self.rule_hits['preemptive_client_main'] += 1
                 return [v]
         return targets
 
@@ -1726,8 +1738,13 @@ class Battle:
                 self.nova_bursts[u.pos, sk.slot] += 1
             ctx.targets = self.skill_targets(u, sk, target)
             # 선제 방어: 적 단일 공격 전, 아군 중 선제 방어 확률이 있으면 대상 전환(NKM 8040~8071 PreemptiveDefenseController)
-            if (self.mc.get('preemptive_defense') in ('on', 'client') and u.side == 1 and sk.is_attack and not sk.all
+            pd_mode = self.mc.get('preemptive_defense')
+            if (pd_mode in ('on', 'client') and u.side == 1 and sk.is_attack and not sk.all
                     and len(ctx.targets) == 1 and not ctx.targets[0].dead):
+                ctx.targets = self._preemptive_check(u, ctx.targets, ctx)
+            elif (pd_mode == 'client_main' and not extra and u.acting and sk.is_attack and not sk.all
+                    and len(ctx.targets) == 1 and not ctx.targets[0].dead):
+                # build 26314877 NKM:14855: 턴 본행동(ProcessTurn_DoSkill)에서만 호출, 진영 구분 없음
                 ctx.targets = self._preemptive_check(u, ctx.targets, ctx)
             ctx.target = ctx.targets[0] if ctx.targets else None
             ctx.dead_targets = {x for x in ctx.targets if x.dead}
@@ -1942,7 +1959,7 @@ class Battle:
                             if ln.slot == sk.slot and ln.src_kind == 'trigger' and line_kind(ln) == 'own_post' and ln.eff['kind'] == 'gauge':
                                 self.run_line(owner, ln, Ctx(owner, owner, sk, True))
                     return c
-                if not self._defer_extra(fire_trigger, key=(id(owner), sk.slot)):
+                if not self._defer_extra(fire_trigger, key=self._react_key(owner, sk.slot)):
                     fire_trigger()
 
     def fire_foes(self, actor, ctx, kind):
@@ -2232,6 +2249,13 @@ class Battle:
         협공 0, 추가 발동은 별도 시전. 적 공격은 미측정이므로 종전 db를 유지한다.
         db/on/off는 종전 타격별 계산을 보존. 상세 근거·미확인 범위는 규칙 파일 참조.
         〈강인도 피해 무효〉·회피·스킬 피해 무효는 강인도를 깎지 않는다."""
+        if (v.broken and v in ctx.break_targets and self.mc['break_point_hits'] == 'window'
+                and v.side == 1 and self.break_skill_enabled):
+            # build 26314877 NKM:8139-8149·16796-16811·15586-15596: 격파 뒤 강인도 -1은 이 스킬 종료까지 유지되고,
+            # 그동안 같은 대상을 맞히는 타격마다 포인트를 다시 적립(상한은 break_skill_point_cap)
+            self.rule_hits['break_point_window'] += 1
+            self._add_break_points(v)
+            return
         if v.broken or v.sa_max <= 0 or v.has('강인도 피해 무효'):
             return
         mode = self.mc['toughness_elem']
@@ -2263,7 +2287,17 @@ class Battle:
                 normal = 0
             elif ELEM_BEATS.get(a.element) == v.element and normal > 0:
                 normal += 1
-        td = int(round(max(0.0, normal) + max(0.0, fixed)))
+        if mode == 'client':
+            # build 26314877 NKM:16754-16769: 불리 = 스킬값·강인도 피해 0(고정 피해만), 유리 = +1, 그 뒤 고정 피해 더하고
+            # 대상 강인도 피해 감소를 뺀 합이 0보다 클 때만 깎음. 유리/불리 판정 NKM:17486-17508.
+            if a.element and v.element and ELEM_LOSES.get(a.element) == v.element:
+                normal = 0
+                self.rule_hits['tough_client_lose'] += 1
+            elif a.element and v.element and ELEM_BEATS.get(a.element) == v.element:
+                normal += 1
+            td = int(round(normal + fixed - v.mods().get('tough_red', 0.0)))
+        else:
+            td = int(round(max(0.0, normal) + max(0.0, fixed)))
         if td <= 0:
             return
         v.sa = max(0, v.sa - td)
@@ -2272,14 +2306,17 @@ class Battle:
             v.broken = True
             v.breaks += 1
             if v.side == 1 and self.break_skill_enabled:
-                points = self.mc['break_skill_boss_points' if getattr(v.d, 'boss', False) else 'break_skill_normal_points']
-                gained = max(0, min(points, self.mc['break_skill_point_cap'] - self.break_points))
-                self.break_points += gained
-                self.break_points_gained += gained
+                self._add_break_points(v)
             if v.side == 1 or self.mc['ally_break_gauge'] == 'reset':
                 v.gauge = 0.0      # 몬스터는 행동 게이지 0(databook #d-break). 구원자도 기본 0(사용자 인게임 확인 2026-10-21, mc.ally_break_gauge)
             self.dirty(v)
             self.log(brk=v.name, by=a.name)
+
+    def _add_break_points(self, v):
+        points = self.mc['break_skill_boss_points' if getattr(v.d, 'boss', False) else 'break_skill_normal_points']
+        gained = max(0, min(points, self.mc['break_skill_point_cap'] - self.break_points))
+        self.break_points += gained
+        self.break_points_gained += gained
 
     def final_dmg(self, a, v, base, ctx, crit, cdv, pen, r, hctx):
         sk = ctx.skill
@@ -2641,11 +2678,17 @@ class Battle:
             if ctx is not None and fixed:
                 ctx.targets = list(fixed)
             return
-        key = (id(owner), ts.slot)
+        key = self._react_key(owner, ts.slot)
         if key in self._react_seen:
+            if key[1] is None:
+                self.rule_hits['react_hist_unit'] += 1
             return
         self._react_seen.add(key)
         self._react_q.append((owner, ts, target, fixed))
+
+    def _react_key(self, owner, slot):
+        """반응 예약 이력 키. unit = build 26314877 NKM:15534(HashSet<유닛>, 칸 무관) / slot = 기존 (유닛, 칸)."""
+        return (id(owner), None if self.mc['react_hist_unit'] == 'unit' else slot)
 
     def _live_or_random(self, target, side):
         """예약 때 고른 적이 실행 전에 쓰러졌으면 살아 있는 적 중 무작위(즉시 실행이면 그대로)"""
@@ -2667,6 +2710,8 @@ class Battle:
             return False
         if key is not None:
             if key in self._react_seen:
+                if key[1] is None:
+                    self.rule_hits['react_hist_unit'] += 1
                 return True
             self._react_seen.add(key)
 
@@ -2706,7 +2751,7 @@ class Battle:
             if target is None or not target.dead:
                 ctx = self.trigger_cast(owner, ts, target, via='reaction')
             if ctx is None:
-                self._react_seen.discard((id(owner), ts.slot))
+                self._react_seen.discard(self._react_key(owner, ts.slot))
                 continue
             if fixed:
                 ctx.targets = list(fixed)
@@ -2726,9 +2771,12 @@ class Battle:
                 continue
             if e.inst:
                 stat, c = e.dot
+                dot_client = self.mc['dot_formula'] == 'client'
                 for src, _left in list(e.inst):
                     if u.dead:
                         return
+                    if dot_client and src.side == u.side and src is not u:
+                        continue      # NKM:17278-17281: 같은 편 다른 유닛의 피해는 0
                     sm = src.mods()
                     val = self.atk_stat(src) if stat == 'atk' else src.maxhp
                     inc = sm['inc']
@@ -2742,6 +2790,15 @@ class Battle:
                     dec = min(_rules.DEC_CAP, dec)
                     de = self.def_stat(u)
                     dr = de / (de + _rules.DEF_K)
+                    if dot_client:
+                        # NKM:17314,17786-17816: 방어율 관통(시전자 방어 관통) / NKM:17545-17561,17918-17922: 상성 ±5%
+                        dr = max(0.0, dr - dr * min(1.0, sm['pen']))
+                        if src.element and u.element:
+                            if ELEM_BEATS.get(src.element) == u.element:
+                                inc += 0.05
+                            elif ELEM_LOSES.get(src.element) == u.element:
+                                inc -= 0.05
+                        self.rule_hits['dot_client'] += 1
                     dmg = max(1.0, math.floor(val * c * _rules.BASE_MULT * (1 + inc - dec) * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
                     self.apply_damage(src, u, dmg, 'dot', shieldable=False)
             if e.hot > 0 and not u.dead and u.on(name):
@@ -3757,7 +3814,15 @@ class Battle:
         resist = category == 'debuff' and not eff.get('ignore_resist')
         if resist and ctx is not None and x in ctx.evaded:
             return     # 회피한 대상에는 약화가 걸리지 않음(공식 2026-06-04 오류 수정 공지)
-        if resist and x.on('면역'):
+        if self.mc['immune_force_apply'] == 'client':
+            # build 26314877 NKM:4339-4343: CantGetMoreDebuff는 비양성·비DeleteBuff·비ForceApply 효과만 IMMUNE 거부
+            # (효과 저항 무시 여부와 무관). 강제 적용 이름 = data/buff_force.json(IsBuff+ForceApplyEffect)
+            if category == 'debuff' and x.on('면역'):
+                if name in FORCE_BUFF_NAMES:
+                    self.rule_hits['immune_force_pass'] += 1
+                else:
+                    return
+        elif resist and x.on('면역'):
             return     # 〈면역〉 (약화효과 면역): 상대가 거는 효과(약화) 전부 막음
         if resist and (eff.get('judge') or name in getattr(x.d, 'immune', ())):
             if not self.roll_hit(owner, ctx, x, name):
