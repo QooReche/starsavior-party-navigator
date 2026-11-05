@@ -10,7 +10,7 @@ const mk=keys=>({keys,combo:[]}),st={tab:'1',name:'1-1'};
 const ctx=vm.createContext({console,Set,Object,JSON,Math,MODE:'auto',MI:{pending:null},miMode:()=>false,
  Date:{now:()=>now},
  SIMQ:{n:100,seed:1,busy:null,res:{},LOAD_MS:180000,RUN_MS:240000,loaded:false},LASTQ:{},cur:[st],
- contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
+ contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,starOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
  ckey:t=>t.keys.join(','),simMain:r=>r,simCls:()=>'',esc:String,simOpt:()=>({}),
  document:{querySelector:()=>null,hidden:false},location:{href:'https://test/index.html'},
  setTimeout:(fn,ms)=>{const t={fn,at:now+ms};timers.push(t);return t},clearTimeout:t=>{timers=timers.filter(x=>x!==t)},run(){},
@@ -87,7 +87,7 @@ function screeningHarness(){
  const ws=[],teams=['d','e','f','g','h','i'].map((k,i)=>({...mk(['a','b','c',k]),v:10-i}));
  const c=vm.createContext({console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
   SIMQ:{n:100,seed:1,busy:null,res:{},scr:{},LOAD_MS:180000,RUN_MS:240000},LASTQ:{1:{rows:teams.slice(0,3),all:teams,total:6}},cur:[st],
-  contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
+  contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,starOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
   simMain:r=>r,simCls:()=>'',esc:String,simOpt:()=>({}),document:{querySelector:()=>null,hidden:false},
   navigator:{hardwareConcurrency:4,deviceMemory:8},location:{href:'https://test/index.html'},
   Date:{now:()=>clock},performance:{now:()=>clock},

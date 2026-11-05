@@ -31,11 +31,12 @@
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
 13. (11/05 반영 완료, 절 «60턴 이내 승리») 남은 것: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있음 — 필요하면 `STAR_TURNS` 확장. 65턴(2별 추정)은 표시 안 함.
 
-## ▶ 2026-11-05 오후 (게임 PC, Claude) — 장비 탐사 «60턴 이내 승리» 반영 (푸시 전, 커밋 19e94ff·da23e26)
+## ▶ 2026-11-05 오후 (게임 PC, Claude) — 장비 탐사 «60턴 이내 승리» 반영 (푸시 완료)
 
 - 근거: 표 `BATTLE_TEMPLET_NORMAL`의 `BattleMissionData`에 `BMT_LIMIT_TURN` 65·60이 탐사(EXPLORE) 60개 스테이지에 걸려 있음(큐브·이벤트·일일은 각각 65/60·50/45). 클라 `NKC` 미션 판정은 `턴 > 한도`면 실패(NKC:590576-590598), 영상 샘플 결과 화면 «TURN 52 (52/60)»과 같은 단위 → 엔진 `turn_limit_unit=actions`(전역 행동 수, `ttk_actions`)와 일치. 클라 카운터가 전역 턴과 같은지는 코드로 끝까지 추적하지 않았고 영상 샘플로만 확인.
 - 구현: `api.simulate`에 옵션 `star_turns`(N) → 결과 `star_turn{limit,p}`(outcome 밖, 해시 시험 영향 없음). `web.run_auto`가 `t60`으로 전달. 화면은 `STAR_TURNS={equip:60}`일 때 옵션을 넣고, 순위(`scrCmp`·표시 순서·브레이크 비교)를 «60턴 내 비율 → 클리어율 → 진행도 → 턴» 순으로 가르며 칩에 «60턴 내 N%»를 붙임. 시험 `tests/star_turn_test.py`(한도 1·무한·중앙값·outcome 불변, 비교 방향을 뒤집으면 실패하는 것 확인).
-- 시험: `run_tests.py --rebuild --e2e C:uildenv-pw\Scripts\python.exe` **81 통과/0 실패**. 중간에 `breakMetric`에 `t60: null`이 항상 붙어 JS 단위 시험이 깨졌고 값이 있을 때만 붙도록 고침.
+- 옵션 «장비 탐사 목표»(60턴 안에 클리어 / 클리어만, 기본 60턴, 장비 탐사에서만 표시·`pn.goal` 저장): 60턴 기준이면 카드에 «3별(소탕) 조건 60턴 이내 승리 가능성 기준, 턴 수는 시뮬 추정» 안내를 붙이고, «클리어만»이면 옵션을 시뮬에 안 넘겨 기존 순위로 돌아감. e2e `test_equip_goal_option` 추가.
+- 시험: `run_tests.py --rebuild --e2e C:uildenv-pw\Scripts\python.exe` **81 통과(e2e 36개 포함)/0 실패**. 중간에 `breakMetric`에 `t60: null`이 항상 붙어 JS 단위 시험이 깨졌고 값이 있을 때만 붙도록 고침.
 - 미검증: 실제 장비 탐사 영상으로 60턴 판정 대조, 순위 변화가 사용자 체감과 맞는지(화면 확인 안 함).
 - 같은 날 영상 한 판 기록: 작전 39-33 승리 TURN 71 vs 사이트 예측 클리어 30%·79턴([docs/ingame_samples.md](docs/ingame_samples.md) 맨 아래).
 

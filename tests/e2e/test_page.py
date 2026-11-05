@@ -1422,6 +1422,27 @@ def test_guild_search_dropped(browser, ctx):
     return True, '협공 1팀 제외→4팀/판별 기대 점수 표시, 제외 해제→5팀 복귀'
 
 
+def test_equip_goal_option(browser, ctx):
+    """장비 탐사 목표 옵션: 장비 탐사에서만 보이고, «60턴 안에 클리어»면 안내 문구가 있고 «클리어만»이면 사라짐"""
+    ctx.errors.clear()
+    page = open_page(browser, ctx)
+    page.evaluate("() => { document.getElementById('optbox').open = true }")
+    hidden_op = page.locator("#goalbox").is_hidden()
+    choose(page, "장비 탐사", "혹한")
+    page.wait_for_selector('.party[data-party="1"] .qbox')
+    vis = page.locator("#goalbox").is_visible()
+    note_on = page.locator('.qbox [data-k="starnote"]').count() > 0
+    page.select_option("#goal", "0")
+    settle(page)
+    page.wait_for_selector('.party[data-party="1"] .qbox')
+    note_off = page.locator('.qbox [data-k="starnote"]').count() == 0
+    saved = page.evaluate("() => localStorage.getItem('pn.goal')")
+    errs = list(ctx.errors)
+    page.close()
+    ok = hidden_op and vis and note_on and note_off and saved == '"0"' and not errs
+    return ok, "작전에서 숨김 %s / 장비 탐사 표시 %s / 안내 켬 %s / 끔 %s / 저장 %s / 오류 %d" % (hidden_op, vis, note_on, note_off, saved, len(errs))
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_guild_search)
@@ -1440,6 +1461,7 @@ TESTS.extend([test_share_link, test_sim_runs, test_press_to_compute])
 TESTS.extend([test_skill_view, test_skill_retry])
 TESTS.append(test_myinfo_full)
 TESTS.append(test_graph_evidence)
+TESTS.append(test_equip_goal_option)
 TESTS.append(test_guild_defense)
 
 

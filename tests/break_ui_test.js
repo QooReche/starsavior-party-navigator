@@ -13,7 +13,7 @@ const ctx=vm.createContext({console,URL,JSON,Number,Promise,
  CFG:{breakSkills:{'특이점 관측':{bonusRoles:[],text:'공·방'},'스타피어서':{bonusRoles:['스트라이커','레인저'],text:'치명'},'큐브 과부하':{bonusRoles:['서포터','디펜더'],text:'속도'}}},
  D:{bicons:{}},BG:{},esc:s=>String(s??''),MODE:'auto',miMode:()=>false,MI:{},
  contents:[{key:'op',name:'작전 (일반)'}],ckey:party=>party.map(x=>x.s.key).sort().join(','),
- simParty:t=>({units:t.keys}),rkOf:()=>0,simOpt:()=>({build:'standard'}),run:()=>{},
+ simParty:t=>({units:t.keys}),rkOf:()=>0,starOf:()=>0,simOpt:()=>({build:'standard'}),run:()=>{},
  SIMQ:{n:100,seed:1,res:{},busy:null,LOAD_MS:100,RUN_MS:100},cur:[{tab:'tab',name:'stage'}],LASTQ:{}});
 vm.runInContext('const bkeys=Object.keys(CFG.breakSkills);',ctx);
 ctx.CFG.breakSupported=['큐브 과부하',...Object.keys(rules.mc.break_skills)];

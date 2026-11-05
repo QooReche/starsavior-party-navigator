@@ -343,7 +343,8 @@ summary{padding:9px 4px}
  <details class="optbox" id="optbox"><summary>옵션</summary>
   <button type="button" class="sec" id="sim-auto-off" data-simauto="0">자동 확인 끄기</button><input type="number" id="mypow" hidden><div id="powinfo" class="powinfo" hidden></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됩니다.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
-  <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성<select id="mmode"><option value="">균형</option><option value="avoid">역상성 회피</option></select></label></div></details>
+  <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성<select id="mmode"><option value="">균형</option><option value="avoid">역상성 회피</option></select></label></div>
+  <div id="goalbox" style="margin-top:10px" hidden><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px" title="장비 탐사는 60턴 안에 이겨야 3별이 되어 소탕이 열립니다. 시뮬의 턴 수는 실제와 차이가 있을 수 있습니다.">장비 탐사 목표<select id="goal"><option value="60">60턴 안에 클리어 (3별·소탕)</option><option value="0">클리어만 하면 됨 (턴 무관)</option></select></label></div></details>
 </div>
 <div id="control-home" hidden><div id="stinfo"></div><div id="mode-controls"><div class="seg" role="radiogroup" aria-label="전투 방식">
    <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
@@ -496,7 +497,7 @@ $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[
 
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.name)}</option>`).join("");
 function tabsOf(c){const m=new Map();c.stages.forEach(s=>{if(!m.has(s.tab))m.set(s.tab,s.tabLabel)});return [...m]}
-function refreshTabs(){const c=contents[$("content").value];
+function refreshTabs(){const c=contents[$("content").value];$("goalbox").hidden=c.key!=="equip";
  $("tab").innerHTML=`<option value="">(전체)</option>`+tabsOf(c).map(([t,l])=>`<option value="${esc(t)}">${esc(l)}</option>`).join("");refreshStages()}
 function refreshStages(){
  const c=contents[$("content").value],t=$("tab").value,q=$("q").value.trim();
@@ -508,7 +509,7 @@ function showPow(){const s=cur&&cur[$("stage").value],my=$("grow").value==="manu
  const pp=s&&powPen(my,s.rp);el.innerHTML=pp?`<span class="${pp.ratio<70?"bad2":pp.a<1?"warn":"ok"}">내 전투력 ${my.toLocaleString()} = 권장의 ${pp.ratio.toFixed(1)}% → 아군 피해 ×${+pp.a.toFixed(3)} · 적 ×${+pp.b.toFixed(3)}</span>`:""}
 function sbText(s){return s&&s.sb&&s.sb.length?` · <span class="mut">시즌 보너스(${esc(s.sbn)}): ${s.sb.map(b=>esc(b.cond)+" "+esc(b.text)).join(" / ")}</span>`:""}
 function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+``:"해당 스테이지 없음";renderGuild()}
-$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);rerun()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);manualSelect();showPow();rerun()};$("grow").onchange=()=>{miSelect();rerun()};$("rk").onchange=()=>{LS.set("rk",$("rk").value);rerun()};
+$("content").onchange=refreshTabs;$("tab").onchange=refreshStages;$("q").oninput=refreshStages;$("stage").onchange=()=>{showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);rerun()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);manualSelect();showPow();rerun()};$("grow").onchange=()=>{miSelect();rerun()};$("goal").onchange=()=>{LS.set("goal",$("goal").value);rerun()};$("rk").onchange=()=>{LS.set("rk",$("rk").value);rerun()};
 
 function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">
  <span class="fc">${face(s)}${dia(s,34)}</span><span class="tn">${esc(s.name)}</span><span class="ts">${esc(s.sub)}</span>${kindTxt(s)}</span></label>`}
@@ -778,7 +779,7 @@ function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+t
  const selected=rows.findIndex(t=>t.keys.slice().sort().join(",")===pickKey),active=selected<0?0:selected;
  const assumptions='<p class="mut">클리어 %는 시뮬 추정입니다</p>';
  const bb=bigBoss(contents[$("content").value],st);
- return `<div class="qbox" data-k="quick">${miVerdict(shown,st)}${bb?bigBossNote(bb):""}<div class="qh"><b>추천${contents[$("content").value].parties>1?" · 파티 "+p:""}</b> · 전투력 ${Math.round(P0).toLocaleString()}${miMode()?miFlags(shown.b.assumed):""}${qi.rk?` <span class="tag">재점화 ${qi.rk}단계</span>`:""}</div>${row(rows[active],active)}${simBar(p,rows,st,uniq>rows.length)}${main}${rows.length>1?`<details class="alternatives" data-fold="alternatives-${p}" open><summary>${active?"다른 추천":"차선 2·3"}</summary>${rows.map((t,i)=>i===active?"":row(t,i)).join("")}</details>`:""}${tail}${assumptions}</div>`}
+ return `<div class="qbox" data-k="quick">${miVerdict(shown,st)}${starNote(contents[$("content").value].key)}${bb?bigBossNote(bb):""}<div class="qh"><b>추천${contents[$("content").value].parties>1?" · 파티 "+p:""}</b> · 전투력 ${Math.round(P0).toLocaleString()}${miMode()?miFlags(shown.b.assumed):""}${qi.rk?` <span class="tag">재점화 ${qi.rk}단계</span>`:""}</div>${row(rows[active],active)}${simBar(p,rows,st,uniq>rows.length)}${main}${rows.length>1?`<details class="alternatives" data-fold="alternatives-${p}" open><summary>${active?"다른 추천":"차선 2·3"}</summary>${rows.map((t,i)=>i===active?"":row(t,i)).join("")}</details>`:""}${tail}${assumptions}</div>`}
 
 
 // ---- 브라우저 시뮬 확인(sim_worker.js + Pyodide): 위 3팀을 확률 전투 엔진으로 다시 돌린다. 누를 때만 내려받는다(처음 약 14MB)
@@ -792,7 +793,9 @@ function simAutoOn(){if(SIMQ.auto||SIMQ.kick)return true;try{return miMode()&&lo
 // 시뮬 공통 옵션: 표준 육성(P5 build) 위에 공·생·방만 육성 가정 배수로 바꾸고, 역보정은 엔진이 스탯으로 전투력을 계산해 적용
 const SIMOPT={build:"standard",rules_override:{power_penalty:"model"}};
 const STAR_TURNS={equip:60};   // 3별 미션 «N턴 이내 승리»(BMT_LIMIT_TURN, 표 BATTLE_TEMPLET_NORMAL 탐사 60곳은 65·60턴). 3별이 돼야 소탕이 열림
-const simOpt=ck=>{const rk=rkOf(ck),o=STAR_TURNS[ck]?Object.assign({},SIMOPT,{star_turns:STAR_TURNS[ck]}):SIMOPT;return rk?Object.assign({},o,{rekindle:rk}):o};
+const starOf=ck=>STAR_TURNS[ck]&&(document.getElementById("goal")||{}).value!=="0"?STAR_TURNS[ck]:0;   // 옵션 «장비 탐사 목표»가 «클리어만»이면 0
+const starNote=ck=>{const n=starOf(ck);return n?`<div class="mut" data-k="starnote" style="font-size:12px">장비 탐사 3별(소탕) 조건인 «${n}턴 이내 승리» 가능성을 먼저 보고 순위를 매깁니다. 턴 수는 시뮬 추정이라 실제와 다를 수 있습니다. 클리어만 하면 되면 옵션 → 장비 탐사 목표에서 바꾸세요.</div>`:""};
+const simOpt=ck=>{const rk=rkOf(ck),st=starOf(ck),o=st?Object.assign({},SIMOPT,{star_turns:st}):SIMOPT;return rk?Object.assign({},o,{rekindle:rk}):o};
 function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
  // 육성 가정 = 기준(Lv200·표준 육성) 공·생·방 × k (전투력이 공·생·방에 비례하는 식이라 엔진이 계산하는 전투력 = 가정한 전투력)
  // 구원자별 전투력 = quick.js evaluate 와 같은 배분(입력값, 없으면 base × 기준 전투력 비율). 반올림 = 버림(x+0.5) — 파이썬 gen_quick_calib 와 같게
@@ -804,7 +807,7 @@ function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
  const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null}}
-const simSigB=(st,t,bname,mode=MODE,n=SIMQ.n)=>{const ck=contents[$("content").value].key,rk=rkOf(ck),parts=[ck,st.tab,st.name,simParty(t),n,mode,bname].concat(rk?[rk]:[],miMode()?[MI.hash]:[]);
+const simSigB=(st,t,bname,mode=MODE,n=SIMQ.n)=>{const ck=contents[$("content").value].key,rk=rkOf(ck),sn=starOf(ck),parts=[ck,st.tab,st.name,simParty(t),n,mode,bname].concat(rk?[rk]:[],sn?["t"+sn]:[],miMode()?[MI.hash]:[]);
  // A refined team uses its separate 300-run cache; other teams keep their 100-run results.
  if(n===100&&SIMQ.refined?.has(JSON.stringify(parts)))parts[4]=300;return JSON.stringify(parts)};
 const simSig=(st,t)=>simSigB(st,t,teamBreak(t)?.name||null);
@@ -843,7 +846,7 @@ function breakEquip(key,name,skipAuto=false){
 function simTitle(r){const m=MODE==="manual"&&r.man,v=m||r;return `${v.n??r.n}판 · 95% 구간 ${(v.ci||[]).map(v=>Math.round(v*100)+"%").join("~")}${m?" · 수동 턴은 시뮬 기준입니다":" · TURN은 전체 행동 수 추정으로 실측과 0.8~1.7배 차이가 날 수 있습니다"}`}
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
  const m=MODE==="manual"&&r.man;
- return `<span class="qsim" data-sim="${simCls(m?{clear:m.c}:r)}"${m?' data-man="1"':""} title="${esc(simTitle(r))}">클리어 ${Math.round((m?m.c:r.clear)*100)}%${!m&&r.t60!=null?` · ${STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:""}</span>`}
+ return `<span class="qsim" data-sim="${simCls(m?{clear:m.c}:r)}"${m?' data-man="1"':""} title="${esc(simTitle(r))}">클리어 ${Math.round((m?m.c:r.clear)*100)}%${!m&&r.t60!=null?` · ${r.t60n||STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:""}</span>`}
 function simBar(p,rows,st,hasMore){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
@@ -1301,5 +1304,5 @@ setMode(LS.get("mode")==="manual"?"manual":"auto",false);
 
  else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
  if(!SHARE.g)LS.set("grow.v2",$("grow").value)}
-{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}updCount();refreshTabs();applyShare();miLoad();REQ=AUTO||!!SHARE.c;SIMQ.kick=REQ&&!AUTO;run();window._ready=true;if(LS.get("why"))drawGraph();
+{const gv=LS.get("goal");if(gv==="0"||gv==="60"){$("goal").value=gv;if(gv==="0")$("optbox").open=true}}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}updCount();refreshTabs();applyShare();miLoad();REQ=AUTO||!!SHARE.c;SIMQ.kick=REQ&&!AUTO;run();window._ready=true;if(LS.get("why"))drawGraph();
 </script></body></html>

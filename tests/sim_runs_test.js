@@ -4,7 +4,7 @@ const section=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a)))
 const workers=[],t={keys:['a','b','c','d'],combo:[]},st={tab:'1',name:'1-1'};
 const ctx=vm.createContext({console,Set,MODE:'auto',MI:{pending:null},miMode:()=>false,
  SIMQ:{n:100,seed:1,busy:null,res:{},LOAD_MS:100,RUN_MS:100},LASTQ:{1:{rows:[t]}},cur:[st],
- contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,
+ contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,starOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,
  ckey:()=>t.keys.join(','),simMain:r=>r,simCls:()=>'',esc:String,simOpt:()=>({}),
  document:{querySelector:()=>null},location:{href:'https://test/index.html'},setTimeout:()=>1,clearTimeout(){},run(){},simStop(){},
  Worker:class{constructor(){workers.push(this)}postMessage(req){this.req=req}terminate(){this.stopped=true}}});

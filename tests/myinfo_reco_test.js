@@ -32,7 +32,7 @@ const tests={
     const profile=M.profile(info,roster,growth,'op'),keys=['1001','1002','1003','missing'];
     const finals=M.team(keys,profile,k=>k),sv=Object.fromEntries(keys.map(k=>[k,[0,100,1000,50,100,10000]]));
     const ctx=vm.createContext({arrangeOf:()=>({order:keys,lead:'1002'}),QK:{d:{sv}},Quick:Q,ekey:k=>k,
-      contents:[{key:'op'}],$:()=>({value:0}),rkOf:()=>0,SIMQ:{n:100},MODE:'auto',miMode:()=>true,MI:{hash:'first'},teamBreak:()=>null});
+      contents:[{key:'op'}],$:()=>({value:0}),rkOf:()=>0,starOf:()=>0,SIMQ:{n:100},MODE:'auto',miMode:()=>true,MI:{hash:'first'},teamBreak:()=>null});
     vm.runInContext(html.slice(start,end),ctx);ctx.t={combo:[],ek:keys,base:40000,b:finals};ctx.st={tab:'x',name:'y'};
     const party=JSON.parse(JSON.stringify(vm.runInContext('simParty(t)',ctx)));
     assert.equal(party.leader,0);assert.deepEqual(party.units[0],{key:'1002',build:'none',stats_override:profile.results['1002'].stats,stats_final:true,power:profile.results['1002'].power,myinfo_combat:profile.results['1002'].combat});
