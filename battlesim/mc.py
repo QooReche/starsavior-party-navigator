@@ -455,6 +455,7 @@ class Unit:
         self.dmg = 0.0
         self.taken = 0.0
         self.healed = 0.0
+        self.healed_raw = 0.0     # 게임 통계의 «회복»과 같은 집계: 방어·증감 반영 뒤 원래 회복량(초과 회복 포함, 클라 SkillEffectHeal NKM:5472-5483 num3 를 그대로 합산)
         self.shield_given = 0.0
         self.death_t = None
         self.nova = 0.0          # 개인 노바 포스(nova_pool='unit' 일 때만 씀)
@@ -2845,6 +2846,7 @@ class Battle:
         v.hp += real
         if src is not None:
             src.healed += real
+            src.healed_raw += max(0, h)
         return real
 
     # ---------- 조건

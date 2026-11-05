@@ -39,5 +39,19 @@ class StarTurnTest(unittest.TestCase):
         self.assertEqual(run()['outcome'], run(star_turns=60)['outcome'])   # 해시 고정 시험이 outcome 을 보므로 불변
 
 
+class HealRawTest(unittest.TestCase):
+    """게임 결과 화면의 «회복»은 초과 회복을 포함한 원래 회복량(클라 SkillEffectHeal NKM:5472-5483). 시뮬 heal 은 채워진 양만 셈 -> heal_raw 가 따로 있어야 함"""
+
+    def test_raw_includes_overheal(self):
+        units = [{'key': k, 'stats_override': {'atk': 12000, 'hp': 40000, 'def': 3000, 'spd': 170}} for k in ('trish', 'haydee', 'ceres-sun-supporter', 'gwen')]
+        r = simulate({'units': units, 'leader': 2}, {'stage': 'equip/혹한의 습격/혹한의 습격 XⅨ'}, {'n_runs': 8, 'seed': 3})   # 약한 능력치로 피해를 받아야 회복이 일어남
+        eff = sum(v['heal'] for v in r['per_unit'].values())
+        raw = sum(r['heal_raw'].values())
+        self.assertGreater(eff, 0, '시험 전제: 회복이 일어나야 함')
+        self.assertGreater(raw, eff, '초과 회복이 있으면 원래 회복량이 채워진 양보다 커야 함')
+        for nm, v in r['per_unit'].items():
+            self.assertGreaterEqual(r['heal_raw'][nm] + 1, v['heal'], nm)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -352,6 +352,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
             a['share'].append(u.dmg / tot)
             a['taken'].append(u.taken)
             a['heal'].append(u.healed)
+            a['heal_raw'].append(u.healed_raw)
             a['shield'].append(u.shield_given)
             a['dead'].append(1 if u.dead else 0)
             a['actions'].append(u.actions)
@@ -412,6 +413,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         per_unit=per_unit,
         star_turn=({'limit': int(o['star_turns']), 'p': round(sum(1 for a in ttk_actions if a <= int(o['star_turns'])) / n, 4)}
                    if o.get('star_turns') else None),   # N턴 이내 클리어율(미션 BMT_LIMIT_TURN: 전역 행동 수 <= 한도). outcome 밖: 결과 해시 시험이 outcome 전체를 봄
+        heal_raw={nm: round(statistics.fmean(agg[nm]['heal_raw'])) for nm in names},   # per_unit 밖(해시 고정 시험이 per_unit 전체를 봄): 게임 통계 «회복»과 같은 집계(초과 회복 포함)
         prog_runs=[round(x, 4) for x in prog],   # 판별 진행도(outcome 밖): 길방 기대 점수는 판마다 점수식에 넣어 평균(평균 진행도를 넣으면 비선형 절단으로 틀림)
         ally_via={k: round(v / n, 3) for k, v in sorted(via_tot.items())},   # outcome 밖: 결과 해시 고정 시험이 outcome 전체를 봄
         nova_burst=dict(total=sum(sum(slots.values()) for slots in nova_counts.values()),
