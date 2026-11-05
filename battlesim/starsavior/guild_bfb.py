@@ -204,7 +204,8 @@ class Controller:
         boss.d.stats = dict(boss.d.stats)
         boss.d.stats['atk'] = math.floor(s['atk'] * (1 + (lv['atk'] * 100 if lv else 0) / 10000))
         boss.d.spd_base = s['spd']
-        self._put(boss, NV_ADD, {'속도%': a['spdp'] / 100, '공격력%': a['atkp'] / 100})
+        # marker: 강화 효과 개수(n_good)에 세지 않음(합산은 mods() 가 category 와 무관하게 더함)
+        self._put(boss, NV_ADD, {'속도%': a['spdp'] / 100, '공격력%': a['atkp'] / 100}, cat='marker')
 
     def _put(self, x, name, props, dur=math.inf, cat='buff', fixed=True, maxs=1, add=1):
         from ..mc import Eff

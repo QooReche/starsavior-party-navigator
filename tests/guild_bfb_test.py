@@ -380,17 +380,21 @@ class _Ctx:
 def test_boss_nv_sum():
     """11/05: 보스 AddStat 속도(-25%)를 별의 도전 속도 버프와 한 합에 더해 floor(기본×(1+합)) (NKM:18200-18280).
     기본 230: 7단계 +10% -> 195, 9단계 이상 +30% -> 241. 옛 방식(bake)은 172 에 (1+버프)를 또 곱해 7단계 189.2·9단계 223.6."""
-    got = {}
+    got, good = {}, {}
     for mode in ('client', 'bake'):
         for level in (0, 7, 9):
             b, _ = battle(level=level, mc={'guild_boss_nv_sum': mode})
             boss = to_boss(b)
             got[(mode, level)] = (boss.spd(), b.atk_stat(boss) if hasattr(b, 'atk_stat') else None)
+            good[(mode, level)] = boss.n_good()
     flat = got[('client', 0)][0] - 172            # 보스에 붙는 평탄 속도 가산(클라 식은 평탄합을 같은 floor 안에 넣음)
     assert flat >= 0 and got[('bake', 0)][0] == 172 + flat, got            # 버프 없는 0단계는 같음
     assert got[('client', 7)][0] == 195 + flat, got
     assert got[('client', 9)][0] == 241 + flat, got
     assert abs(got[('bake', 7)][0] - (189.2 + flat)) < 1e-6 and abs(got[('bake', 9)][0] - (223.6 + flat)) < 1e-6, got
+    # 합산용 고정 효과가 보스의 강화 효과 개수(질투의 시선 등이 세는 n_good)를 바꾸지 않는다(리뷰 지적: marker)
+    for level in (0, 7, 9):
+        assert good[('client', level)] == good[('bake', level)], (level, good)
     # 공격력은 어필 밖에서 두 방식이 같다(-17.5% 한 번)
     for level in (0, 7, 9):
         a, c = got[('bake', level)][1], got[('client', level)][1]
