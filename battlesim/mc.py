@@ -2821,8 +2821,10 @@ class Battle:
                             base -= share_base
                             self.rule_hits['dot_guard'] += 1
                     self.apply_damage(src, u, dot_dmg(u, base), 'dot', shieldable=False)
-                    if guard is not None and share_base >= 1.0 and not guard.dead:
+                    if (guard is not None and share_base >= 1.0 and not guard.dead
+                            and not (src.side == guard.side and src is not guard)):
                         # NKM:7925-7928,8153-8171,17368-17409: 수호자 몫은 수호자 방어·증감·상성·별도 난수로 다시 계산, 보호막 무시
+                        # (NKM:17376-17379: 시전자가 수호자와 같은 편이면서 수호자 본인이 아니면 수호자 몫 0 — 자기 지속 피해)
                         self.apply_damage(src, guard, dot_dmg(guard, share_base), 'dot', shieldable=False)
             if e.hot > 0 and not u.dead and u.on(name):
                 # 지속 회복은 원래 주는 회복량 보정을 안 쓰지만, 서든데스 감소는 시전자 기준으로 적용(근사)

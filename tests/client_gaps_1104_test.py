@@ -222,6 +222,47 @@ class DotGuardTest(unittest.TestCase):
         _f2, g_low, _ = self.tick('client', g_def=0)
         self.assertGreater(g_low, g)
 
+    def test_self_cast_dot_guardian_takes_nothing(self):
+        """NKM:17376-17379: 시전자가 수호자와 같은 편이면(자기 지속 피해) 수호자 몫 0, 대상 몫은 그대로 줆"""
+        b = battle([unit('a')], [unit('f', hp=10 ** 8, df=3000), unit('g', hp=10 ** 8, df=3000)],
+                   mc={'dot_formula': 'client', 'rand_range': [1.0, 1.0]})
+        f, g = b.foes
+        give(g, '수호', {'피해 분담(수호)': 30})
+        e = give(f, '연소', harmful=True)
+        e.dot, e.inst = ('atk', 0.2), [[f, 3]]          # 시전자 = 대상 자신
+        f0, g0 = f.hp, g.hp
+        b._tick_dot_hot(f)
+        self.assertGreater(f0 - f.hp, 0)
+        self.assertEqual(g0 - g.hp, 0)
+        # 같은 편 다른 유닛이 시전자면 피해 자체가 0(기존 규칙)
+        e.inst = [[g, 3]]
+        f1 = f.hp
+        b._tick_dot_hot(f)
+        self.assertEqual(f1 - f.hp, 0)
+
+    def test_skill_nullify_and_small_share(self):
+        """스킬 피해 무효 대상은 분담 없음, 분담 몫이 1 미만이면 수호자 몫 생략(대상 몫은 감액)"""
+        b = battle([unit('a')], [unit('f', hp=10 ** 8, df=3000), unit('g', hp=10 ** 8, df=3000)],
+                   mc={'dot_formula': 'client', 'rand_range': [1.0, 1.0]})
+        a, f, g = b.allies[0], b.foes[0], b.foes[1]
+        give(g, '수호', {'피해 분담(수호)': 30})
+        give(f, '스킬 피해 무효')
+        e = give(f, '연소', harmful=True)
+        e.dot, e.inst = ('atk', 0.2), [[a, 3]]
+        g0 = g.hp
+        b._tick_dot_hot(f)
+        self.assertEqual((g0 - g.hp, b.rule_hits['dot_guard']), (0, 0))
+        # 몫 < 1: 피해 기본값이 작으면 수호자는 맞지 않음
+        b2 = battle([unit('a', atk=1)], [unit('f', hp=10 ** 8, df=3000), unit('g', hp=10 ** 8, df=3000)],
+                    mc={'dot_formula': 'client', 'rand_range': [1.0, 1.0]})
+        a2, f2, g2 = b2.allies[0], b2.foes[0], b2.foes[1]
+        give(g2, '수호', {'피해 분담(수호)': 30})
+        e2 = give(f2, '연소', harmful=True)
+        e2.dot, e2.inst = ('atk', 0.2), [[a2, 3]]
+        g20 = g2.hp
+        b2._tick_dot_hot(f2)
+        self.assertEqual((g20 - g2.hp, b2.rule_hits['dot_guard']), (0, 1))
+
     def test_invincible_target_not_shared(self):
         f, g, n = self.tick('client', invincible=True)
         self.assertEqual((f, g, n), (0, 0, 0))                          # 무적 대상은 지속 피해 0, 분담 없음
@@ -270,6 +311,20 @@ class ImmuneForceTest(unittest.TestCase):
         for name in ('버프 해제', '행동 게이지 감소'):
             b.add_effect(a, f, dict(eff(name), ignore_resist=False), Ctx(a, a, a.d.skills['기본기']))
         self.assertTrue('버프 해제' in f.eff and '행동 게이지 감소' not in f.eff, list(f.eff))
+
+    def test_pass_list_matches_table(self):
+        """data/buff_immune_pass.json 이 표(BUFF_TEMPLET)에서 만든 결과와 일치(표가 있는 PC에서만; 없으면 건너뜀)"""
+        table = r'C:\build\static-data\tables\BUFF_TEMPLET.json'
+        strings = r'C:\build\static-data\tables\Strings\STRING_COMMON_ko_en.json'
+        if not (os.path.exists(table) and os.path.exists(strings)):
+            self.skipTest('표 없음')
+        import json
+        from tools.build_buff_force import extract_immune_pass
+        from tools.build_foe_spawn import jsonc
+        rows = jsonc(table)['Data']
+        with open(strings, encoding='utf-8') as f:
+            names = json.load(f)
+        self.assertEqual(sorted(mcmod.IMMUNE_PASS_NAMES), extract_immune_pass(rows, names, lambda m: None))
 
     def test_wave_start_mark_passes(self):
         """전투·웨이브 시작 표식(unique_enemy+ignore_resist, 물폭탄 SE 강제 행)은 면역을 통과"""
