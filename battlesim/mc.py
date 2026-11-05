@@ -24,6 +24,8 @@ from .starsavior.mc_semantics import normalized_lines, normalized_definition, tr
 
 with open(os.path.join(SRC, 'data', 'buff_force.json'), encoding='utf-8') as _f:
     FORCE_BUFF_NAMES = frozenset(json.load(_f))
+with open(os.path.join(SRC, 'data', 'buff_immune_pass.json'), encoding='utf-8') as _f:
+    IMMUNE_PASS_NAMES = frozenset(json.load(_f))
 
 
 class EventLimitError(RuntimeError):
@@ -2779,28 +2781,49 @@ class Battle:
                         continue      # NKM:17278-17281: 같은 편 다른 유닛의 피해는 0
                     sm = src.mods()
                     val = self.atk_stat(src) if stat == 'atk' else src.maxhp
-                    inc = sm['inc']
-                    if src.last_slot is not None and src.last_slot == u.last_slot:
-                        inc += self.mc['counter_inc']
-                    vm = u.mods()
-                    dec = vm['red'].get('all', 0.0)
-                    if u.broken:
-                        inc += sm['inc_break']
-                        dec -= _rules.BREAK_DEC
-                    dec = min(_rules.DEC_CAP, dec)
-                    de = self.def_stat(u)
-                    dr = de / (de + _rules.DEF_K)
-                    if dot_client:
-                        # NKM:17314,17786-17816: 방어율 관통(시전자 방어 관통) / NKM:17545-17561,17918-17922: 상성 ±5%
-                        dr = max(0.0, dr - dr * min(1.0, sm['pen']))
-                        if src.element and u.element:
-                            if ELEM_BEATS.get(src.element) == u.element:
-                                inc += 0.05
-                            elif ELEM_LOSES.get(src.element) == u.element:
-                                inc -= 0.05
-                        self.rule_hits['dot_client'] += 1
-                    dmg = max(1.0, math.floor(val * c * _rules.BASE_MULT * (1 + inc - dec) * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
-                    self.apply_damage(src, u, dmg, 'dot', shieldable=False)
+                    base = val * c * _rules.BASE_MULT
+
+                    def dot_dmg(v, b, src=src, sm=sm):
+                        """대상 v 가 기본 피해 b 를 받을 때의 최종 피해(방어·증감·상성·난수는 v 기준)"""
+                        inc = sm['inc']
+                        if src.last_slot is not None and src.last_slot == v.last_slot:
+                            inc += self.mc['counter_inc']
+                        dec = v.mods()['red'].get('all', 0.0)
+                        if v.broken:
+                            inc += sm['inc_break']
+                            dec -= _rules.BREAK_DEC
+                        dec = min(_rules.DEC_CAP, dec)
+                        de = self.def_stat(v)
+                        dr = de / (de + _rules.DEF_K)
+                        if dot_client:
+                            # NKM:17314,17786-17816: 방어율 관통(시전자 방어 관통) / NKM:17545-17561,17918-17922: 상성 ±5%
+                            dr = max(0.0, dr - dr * min(1.0, sm['pen']))
+                            if src.element and v.element:
+                                if ELEM_BEATS.get(src.element) == v.element:
+                                    inc += 0.05
+                                elif ELEM_LOSES.get(src.element) == v.element:
+                                    inc -= 0.05
+                            self.rule_hits['dot_client'] += 1
+                        return max(1.0, math.floor(b * (1 + inc - dec) * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
+
+                    guard, share_base = None, 0.0
+                    if dot_client and not u.invincible() and not u.on('스킬 피해 무효'):
+                        # NKM:1286-1308,17315-17319: 대상 제외 같은 편 중 분담 비율 최대 1명, 분담 몫은 방어 적용 전 기본 피해에서 뗌
+                        # (무적·스킬 무효인 대상은 분담 없음). 동률은 먼저 본 쪽(클라 동률 규칙 OBF_9827 은 미확인).
+                        gs = 0.0
+                        for w in self.alive(u.side):
+                            if w is not u:
+                                s = w.mods()['guard']
+                                if s > gs + 1e-12:
+                                    guard, gs = w, s
+                        if guard is not None:
+                            share_base = base * min(1.0, gs)
+                            base -= share_base
+                            self.rule_hits['dot_guard'] += 1
+                    self.apply_damage(src, u, dot_dmg(u, base), 'dot', shieldable=False)
+                    if guard is not None and share_base >= 1.0 and not guard.dead:
+                        # NKM:7925-7928,8153-8171,17368-17409: 수호자 몫은 수호자 방어·증감·상성·별도 난수로 다시 계산, 보호막 무시
+                        self.apply_damage(src, guard, dot_dmg(guard, share_base), 'dot', shieldable=False)
             if e.hot > 0 and not u.dead and u.on(name):
                 # 지속 회복은 원래 주는 회복량 보정을 안 쓰지만, 서든데스 감소는 시전자 기준으로 적용(근사)
                 self.heal(e.src or u, u, u.maxhp * e.hot, (e.src or u).sd.get('주는 회복량', 0.0) / 100.0)
@@ -3816,9 +3839,12 @@ class Battle:
             return     # 회피한 대상에는 약화가 걸리지 않음(공식 2026-06-04 오류 수정 공지)
         if self.mc['immune_force_apply'] == 'client':
             # build 26314877 NKM:4339-4343: CantGetMoreDebuff는 비양성·비DeleteBuff·비ForceApply 효과만 IMMUNE 거부
-            # (효과 저항 무시 여부와 무관). 강제 적용 이름 = data/buff_force.json(IsBuff+ForceApplyEffect)
+            # (효과 저항 무시 여부와 무관). 통과 이름 = data/buff_immune_pass.json(IsPositive|DeleteBuff|ForceApplyEffect,
+            # 같은 이름 행이 모두 통과일 때만). 이름만으로 못 가르는 혼재 이름·표에 없는 효과·SE 행 강제 4건은 거부로 둠.
             if category == 'debuff' and x.on('면역'):
-                if name in FORCE_BUFF_NAMES:
+                # 전투·웨이브 시작에 거는 «기존 표식 해제» 표식(물폭탄 등, unique_enemy+ignore_resist)은 SE 행 ForceApplyEffect
+                # (SE_TEMPLET_SKILL_1 COND_SUMMER_SMILE_UNIQUE_PASSIVE_01_01)로 통과로 본다(엔진은 SE 행 ID 를 몰라 이 경로로 대신 식별).
+                if name in IMMUNE_PASS_NAMES or (eff.get('unique_enemy') and eff.get('ignore_resist')):
                     self.rule_hits['immune_force_pass'] += 1
                 else:
                     return

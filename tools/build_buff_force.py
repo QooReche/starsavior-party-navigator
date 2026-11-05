@@ -35,10 +35,29 @@ def extract(rows, strings, warn=print):
     return out
 
 
+def extract_immune_pass(rows, strings, warn=print):
+    """〈면역〉(CantGetMoreDebuff)이 거부하지 않는 효과 이름(NKM:4339-4343): IsPositive 이거나 DeleteBuff 이거나 ForceApplyEffect.
+    같은 이름의 행이 모두 통과일 때만 담는다(일부만 통과하는 이름은 이름만으로 구분 못 해 제외 = 거부로 둠)."""
+    names = defaultdict(set)
+    for row in rows:
+        name = strings.get(row.get('m_BuffName'), {}).get('ko')
+        if not name:
+            continue
+        names[name].add(bool(row.get('IsPositive')) or bool(row.get('DeleteBuff')) or bool(row.get('ForceApplyEffect')))
+    out = []
+    for name, flags in sorted(names.items()):
+        if flags == {True}:
+            out.append(name)
+        elif len(flags) > 1:
+            warn('WARNING: 동명 효과 면역 통과 여부 혼재, 제외(거부 처리): ' + name)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--static')
     ap.add_argument('--out', default=str(ROOT / 'data/buff_force.json'))
+    ap.add_argument('--out-immune', default=str(ROOT / 'data/buff_immune_pass.json'))
     args = ap.parse_args()
     tables = static_path(args.static) / 'tables'
     rows = jsonc(tables / 'BUFF_TEMPLET.json')['Data']
@@ -46,6 +65,9 @@ def main():
     names = extract(rows, strings, lambda msg: print(msg, file=sys.stderr))
     atomic_json(args.out, names)
     print('강제 적용 강화 이름', len(names), '저장:', args.out)
+    passed = extract_immune_pass(rows, strings, lambda msg: print(msg, file=sys.stderr))
+    atomic_json(args.out_immune, passed)
+    print('면역 통과 효과 이름', len(passed), '저장:', args.out_immune)
 
 
 if __name__ == '__main__':

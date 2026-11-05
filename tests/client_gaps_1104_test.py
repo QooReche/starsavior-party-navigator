@@ -17,9 +17,12 @@ from battlesim.rules import MC_OPTS, MC_RULES      # noqa: E402
 
 # 기본 = 클라 값으로 전환한 스위치: (기본, legacy)
 SWITCHED = {'preemptive_defense': ('client_main', 'recognize'), 'toughness_elem': ('client', 'db'),
-            'break_point_hits': ('window', 'once'), 'break_auto_blocked_cc': ('on', 'off')}
-# 옛 값 유지(기본 == legacy)
-KEPT = {'dot_formula': 'legacy', 'react_hist_unit': 'slot', 'immune_force_apply': 'legacy'}
+            'break_point_hits': ('window', 'once'), 'break_auto_blocked_cc': ('on', 'off'),
+            # 11/05 전환(dot_formula·react_hist_unit·immune_force_apply)
+            'dot_formula': ('client', 'legacy'), 'react_hist_unit': ('unit', 'slot'),
+            'immune_force_apply': ('client', 'legacy')}
+# 옛 값 유지(기본 == legacy): 없음
+KEPT = {}
 CUBE = {'name': '큐브 과부하', 'level': 1}
 PARTY = ['sunshine-cat-smile', 'cristelle', 'white-pearl-luna', 'wedding-carmen']
 
@@ -61,7 +64,7 @@ class DefaultsTest(unittest.TestCase):
             self.assertEqual(MC_OPTS[k], v, k)
             self.assertEqual(MC_RULES[k]['legacy'], v, k)
             self.assertTrue(MC_RULES[k]['source'] and MC_RULES[k]['note'], k)
-        self.assertIn('client', MC_RULES['immune_force_apply']['alt'])
+        self.assertIn('legacy', MC_RULES['immune_force_apply']['alt'])
 
 
 class PreemptiveClientMainTest(unittest.TestCase):
@@ -189,6 +192,41 @@ class DotClientTest(unittest.TestCase):
         self.assertEqual(self.tick('client', same_side=True)[0], 0)    # 같은 편 다른 유닛 지속 피해 0
 
 
+class DotGuardTest(unittest.TestCase):
+    """11/05: 지속 피해 수호 분담(NKM:1286-1308,7925-7928,17315-17319). 대상 몫은 방어 전 기본 피해에서 뗌, 수호자 몫은 수호자 기준."""
+
+    def tick(self, mode, share=30, invincible=False, g_def=3000):    # share 는 퍼센트 단위(30 = 30%)
+        b = battle([unit('a')], [unit('f', hp=10 ** 8, df=3000), unit('g', hp=10 ** 8, df=g_def)],
+                   mc={'dot_formula': mode, 'rand_range': [1.0, 1.0]})
+        a, f, g = b.allies[0], b.foes[0], b.foes[1]
+        if share:
+            give(g, '수호', {'피해 분담(수호)': share})
+        if invincible:
+            give(f, '무적')
+        e = give(f, '연소', harmful=True)
+        e.dot, e.inst = ('atk', 0.2), [[a, 3]]
+        f0, g0 = f.hp, g.hp
+        b._tick_dot_hot(f)
+        return f0 - f.hp, g0 - g.hp, b.rule_hits['dot_guard']
+
+    def test_split(self):
+        none_f, none_g, _ = self.tick('client', share=0)
+        legacy_f, legacy_g, n0 = self.tick('legacy')
+        f, g, n1 = self.tick('client')
+        self.assertGreater(none_f, 0)
+        self.assertEqual((legacy_f, legacy_g, n0), (none_f, 0, 0))     # legacy 는 분담 없음
+        self.assertEqual(n1, 1)
+        self.assertAlmostEqual(f / none_f, 0.7, delta=0.01)             # 대상 몫 70%
+        self.assertAlmostEqual(g / none_f, 0.3, delta=0.01)             # 같은 방어면 수호자 몫 30%
+        # 수호자 몫은 수호자 방어로 다시 계산(방어가 낮으면 더 아픔)
+        _f2, g_low, _ = self.tick('client', g_def=0)
+        self.assertGreater(g_low, g)
+
+    def test_invincible_target_not_shared(self):
+        f, g, n = self.tick('client', invincible=True)
+        self.assertEqual((f, g, n), (0, 0, 0))                          # 무적 대상은 지속 피해 0, 분담 없음
+
+
 class ReactHistTest(unittest.TestCase):
     def test_unit_blocks_other_slot(self):
         got = {}
@@ -219,6 +257,28 @@ class ImmuneForceTest(unittest.TestCase):
             got[mode] = (force in f.eff, '표적' in f.eff, b.rule_hits['immune_force_pass'])
         self.assertEqual(got['legacy'], (False, True, 0))   # 현재: 저항 판정 약화만 거부
         self.assertEqual(got['client'], (True, False, 1))   # 클라: 강제 적용 통과, 그 밖 비양성 거부
+
+    def test_pass_list_covers_delete_and_mixed_rejected(self):
+        """11/05 통과 목록(IsPositive|DeleteBuff|ForceApplyEffect): 버프 해제(DeleteBuff)는 통과, 혼재 이름은 거부"""
+        self.assertIn('버프 해제', mcmod.IMMUNE_PASS_NAMES)
+        self.assertEqual(FORCE_BUFF_NAMES - mcmod.IMMUNE_PASS_NAMES, set())      # 기존 강제 강화 이름은 전부 포함
+        self.assertNotIn('행동 게이지 감소', mcmod.IMMUNE_PASS_NAMES)      # 같은 이름에 거부 행(X)과 통과 행(X_FORCE) 혼재
+        self.assertNotIn('공격력 감소', mcmod.IMMUNE_PASS_NAMES)
+        b = battle([unit('a')], [unit('f')], mc={'immune_force_apply': 'client'})
+        a, f = b.allies[0], b.foes[0]
+        give(f, '면역')
+        for name in ('버프 해제', '행동 게이지 감소'):
+            b.add_effect(a, f, dict(eff(name), ignore_resist=False), Ctx(a, a, a.d.skills['기본기']))
+        self.assertTrue('버프 해제' in f.eff and '행동 게이지 감소' not in f.eff, list(f.eff))
+
+    def test_wave_start_mark_passes(self):
+        """전투·웨이브 시작 표식(unique_enemy+ignore_resist, 물폭탄 SE 강제 행)은 면역을 통과"""
+        b = battle([unit('a')], [unit('f')], mc={'immune_force_apply': 'client'})
+        a, f = b.allies[0], b.foes[0]
+        give(f, '면역')
+        b.add_effect(a, f, dict(eff('표시'), ignore_resist=True, unique_enemy=True), Ctx(a, a, None))
+        b.add_effect(a, f, dict(eff('표시2'), ignore_resist=True), Ctx(a, a, None))
+        self.assertTrue('표시' in f.eff and '표시2' not in f.eff, list(f.eff))
 
 
 class BreakBlockedCcTest(unittest.TestCase):

@@ -6,6 +6,7 @@
 
 - 근거 코드는 비공개 static-data `decompiled/`의 Steam 빌드 **26314877**임(`decompiled/BUILD.md`). 외부 3월판 근거 규칙을 A/B/C/D 묶음으로 재확인했음. 표 기록 빌드 26291832와 DLL의 내용 동일성은 게임 PC 확인 대상으로 남겼음.
 - 협공 기본값: `formula.COOP_CAP=1.0`, `opts.coop_trigger=basic_only`, `coop_single=true`, `coop_order=random_success`, `forced_coop_target=random`, `forced_coop_slot=shared`, `coop_dead_target=cancel`. 강제 효과 대상을 먼저 정하고 유효 강제 후보 중 균등 1명을 고름. 강제 후보가 없으면 일반 후보 전원 판정 후 성공자 중 균등 1명임. 단일 본대상 사망 시 협공을 취소함.
+- 11/05 기본 전환: `dot_formula=client`, `react_hist_unit=unit`, `immune_force_apply=client`(절 «2026-11-05»). 11/04 전환 4개는 `preemptive_defense=client_main`, `toughness_elem=client`, `break_point_hits=window`, `break_auto_blocked_cc=on`.
 - 그 밖의 새 기본값: `mc.enemy_cd_end_order=after_effects`, `revenge_rate=hit`, `nova_force_cap=12`, `ally_auto_lines=client`. 기존 병합분 `foe_skill_order=data`, `empty_attack=process`, `ally_variant_mapping=data`도 반영했음. 선제 방어 실험용 `client`는 차단 조건을 보강했고 기본 `preemptive_defense=recognize`는 유지했음.
 - 기존 기본값은 `enforce_timing=queue`, `enforce_target=exec`, `wave_ally_gauge=reset`, `buff_ban=refuse`, `buff_ban_force=client`, `guild_count=all`, `instant_damage=damage`, `reaction_timing=queue`, `skill_order=data`, `dispel_on_attack=on`, `turn_limit_unit=actions`, `break_skill_domain_clock=global`, `break_skill_domain_turns=5`, `toughness_elem=db`, `enemy_hit_buff_cmp=le`임. 정본은 `battlesim/rules/default.json`임.
 - 길드방어전 시즌4(BFB·별 속성)는 11/05 04:00 KST 종료, 결산은 11/12 04:00까지임(`data/guild_defense.json`). BFB 상태 기계·지원 5종·선택 효과 4종·부분 점수식·내 정보 편성 탐색을 구현했음. `guild_boss=off`가 기본이고 길방 진입에서만 켬.
@@ -28,6 +29,17 @@
 10. 브레이크 자동 발동·쿨 단위·발동자 게이지·영역 지속·재발동·행성 정화 조건, 보스 브레이크 지속·미측정 궁극기 강인도·불리 상성 강인도·`enemy_hit_buff_cmp`를 영상으로 확인하기로 함.
 11. 서부 탈환대 세레스 스킬·기본 베라 자동 지정 근사, 기믹 추정 대처·무적 웨이브 실제 배치·길방 밖 협공/추가타·ReactiveBarrier 활성 표를 추가 확인하기로 함. 기본/개화 매핑과 적 SkillOrderList·빈 공격 처리는 완료했음.
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
+13. 장비 탐사 추천에 «60턴 이내 승리» 조건을 반영하기로 함(사용자 메모 2026-11-05): 60턴 안에 이겨야 3별이 되고 소탕이 열리므로, 클리어 가능성만이 아니라 «60턴 안에 잡을 수 있는 조합»이 더 유리함. 시뮬 결과의 턴 수(`turn_limit_unit=actions` 기준과 클라의 «턴» 정의가 같은지 먼저 확인)로 순위·표시를 가르기.
+
+## ▶ 2026-11-05 (게임 PC, Claude) — 남은 클라 맞추기 3개 기본 전환 (푸시 전)
+
+- `dot_formula=client`, `react_hist_unit=unit`, `immune_force_apply=client`를 기본으로 전환했음(legacy=옛 값). 근거 빌드 26314877, 이 PC의 `C:\build\decompile-20261102\clean`(줄 번호가 기록과 일치)과 `C:\build\static-data`(비공개 저장소 clone, 표 153개).
+- DoT 수호 분담: 대상 제외 같은 편 `DAMAGE_SHARE` 최대 1명, 분담 몫을 방어 전 기본 피해에서 떼고 수호자 몫은 수호자 방어·증감·상성·별도 난수로 계산, 보호막 무시, 무적·스킬 무효 대상은 분담 없음, 몫 1 이상일 때만(NKM:1286-1308,7925-7928,8153-8171,17315-17319,17368-17409). 관통 저항(`PENETRATE_DEF_RESIST`)은 표에 부여원 0건, 상성 가산(`DAMAGE_UP_ADJUST`)은 장비 패시브뿐이라 구현하지 않았음. 수호자 동률 규칙(`OBF_9827`)·수호자 사망 처리는 미확인.
+- 반응 이력: 클라는 `HashSet<유닛ID>` 하나(NKM:8374,15534)이고 엔진 트리거 스킬은 `build_foe_react.py`가 클라 `NST_REACT`에 연결하므로 `unit`이 맞음. 코드 변경 없음. 불발 삭제 범위(엔진은 ctx 없으면 항상 삭제, 클라는 ReactAttack 실패 때만)는 차이가 남았음.
+- 면역: 통과 이름 `data/buff_immune_pass.json`(`tools/build_buff_force.py`가 생성, IsPositive|DeleteBuff|ForceApplyEffect, 같은 이름 행이 모두 통과인 811개). 혼재 13개·표에 없는 효과·SE 행 강제 중 연소/기절(보스 HYPER)/착란 체크용은 거부로 둠(엔진이 SE 행 ID를 모름). 물폭탄은 전투·웨이브 시작 부여(`unique_enemy`+`ignore_resist`)를 통과로 봄 — 이름 목록만으로는 `test_fix3_waterbomb_move`가 깨져 보강했음.
+- 재생성: simpack → update → 빠른 계산 표본(400/콘텐츠, opboss) → 보정 → 길방 시뮬(234,000판, 1,244초) → html. 빠른 계산 일치율 0.916 그대로, 길방 최고 단계·요약은 이전과 같고 진행도만 소수 넷째 자리에서 움직였음.
+- 시험: 최종 `run_tests.py --rebuild` **79 통과/0 실패**, `git diff --check` 통과. 새 시험 `DotGuardTest`·면역 통과 목록 시험을 일부러 깨뜨려 실패하는 것을 확인했음. e2e는 이 PC에 Playwright가 없어 미실행.
+- 남은 일(위 목록에 반영): 서든데스 사망자, 길방 보스 속도 합산, 9·10단계 낙관 원인(ATK 배율 적용 위치·보스 대상 선택), 영상 대조.
 
 ## ▶ 2026-11-04 (게임 PC, Claude) — 길방 선택 효과 끔·점수식·순위 기준, 엔진 후보 스위치 7개 (푸시 완료)
 
@@ -37,7 +49,7 @@
 - 클라(26314877) 근거 후보 스위치 7개를 MC 엔진에 추가했음. 모두 기본은 현재 동작이며 영상 대조 전임: `preemptive_defense=client_main`, `break_point_hits=window`, `toughness_elem=client`, `dot_formula=client`, `react_hist_unit=unit`, `immune_force_apply=client`, `break_auto_blocked_cc=on`. 시험 `tests/client_gaps_1104_test.py`. window·CC 차단은 엔진에 다타수 모델이 없어 실전 영향이 거의 없음. DoT 수호 분담은 미구현.
 - 같은 날 사용자 판단(시뮬은 클라 기준이 우선, 영상 대조는 확인용)으로 4개를 기본 전환했음(legacy=옛 값): `preemptive_defense=client_main`, `toughness_elem=client`, `break_point_hits=window`, `break_auto_blocked_cc=on`. `immune_force_apply`는 `buff_force.json`이 IsBuff 행만 담아 IsBuff=false 강제 적용 효과 90행을 거꾸로 거부할 수 있어 보류(데이터 보강 필요). `dot_formula`(수호 분담·관통 저항 미구현)·`react_hist_unit`(부작용 클라 일치 미확인)도 옛 값 유지. (→ 위 "스위치 7개 … 기본은 현재 동작" 문장은 이 4개에 한해 바뀜)
 - 전환 후 재생성: 화력 지표 변경 구원자 0명, 빠른 계산 일치율 91.8→91.6%, 길방 off 최고 단계 ×1.5/×2/×2.5/×3 = 2→4 / 6→7 / 7→8 / 8→9, max ×3은 6단계 클리어율 81.7→100%. 원인은 `toughness_elem` 하나(불리 상성 공격의 강인도 몫 0 → 적이 아군을 덜 깨뜨림)이고 `preemptive_defense`는 힐데 편성에서만 발동(7단계 .85→.73). **11/03 영상(8단계 3승·9단계 0승 2패)과는 더 낙관적이 됨** — 클라 식 해석이 틀렸거나 9·10단계 원인이 다른 곳(ATK 배율 적용 위치·보스 대상 선택)일 가능성. 되돌리려면 `toughness_elem=db`. 측정 `AI\temp\partynavigator\work\switch_1104\switch_hits.json`. 시험 79/0, e2e 미실행.
-- 남은 클라 맞추기: `dot_formula` 수호 분담·관통 저항 구현 후 전환, `react_hist_unit` 확인, `immune_force_apply` 데이터 보강, 길방 보스 속도 합산 추적, 서든데스 사망자, 회복 턴 건너뛰기 코드 근거 재탐색.
+- 남은 클라 맞추기: `dot_formula` 수호 분담·관통 저항 구현 후 전환, `react_hist_unit` 확인, `immune_force_apply` 데이터 보강, 길방 보스 속도 합산 추적, 서든데스 사망자, 회복 턴 건너뛰기 코드 근거 재탐색. (→ 11/05 앞의 3개 기본 전환 완료)
 - (11/04 밤 중간 저장) Opus 조사·구현 에이전트 2개가 진행 중이었음: toughness 클라 식 재검증+9단계 원인(`AI\temp\partynavigator\work\decomp_1104\toughness_recheck.md`), dot 분담·반응 이력·면역 데이터 구현. 작업 트리에 미커밋 변경이 있으면 시험 통과 확인 후 커밋.
 - 보류: 길방 보스 속도 합산(`기본×(1+합)` 추정, 합산 경로 미추적 — 클라 식이면 7~12단계 보스가 약 8% 빠름), 서든데스 사망자 처리(근거 부족). 보호막(22.5%)·흡수 방식은 클라와 일치 확인 → 9·10단계 낙관의 원인은 미확정(남은 후보: ATK 배율 적용 위치, 보스 대상 선택). 시작 게이지 근거는 표·코드에 없음.
 - 표 26291832 vs 설치본 26314877: 10/29 이후 바뀐 번들 5개(11/01 00:30)의 CLIENT_* 표 14개는 `tables/`와 MD5 일치, 나머지는 연출 스크립트라 재추출 불필요. 기록 `AI\temp\partynavigator\work\decomp_1104\check5_tables_vs_dll.md`.
