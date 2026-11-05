@@ -377,7 +377,35 @@ class _Ctx:
     kill = False
 
 
-TESTS = [test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_summoned_cast_count, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
+def test_boss_nv_sum():
+    """11/05: 보스 AddStat 속도(-25%)를 별의 도전 속도 버프와 한 합에 더해 floor(기본×(1+합)) (NKM:18200-18280).
+    기본 230: 7단계 +10% -> 195, 9단계 이상 +30% -> 241. 옛 방식(bake)은 172 에 (1+버프)를 또 곱해 7단계 189.2·9단계 223.6."""
+    got = {}
+    for mode in ('client', 'bake'):
+        for level in (0, 7, 9):
+            b, _ = battle(level=level, mc={'guild_boss_nv_sum': mode})
+            boss = to_boss(b)
+            got[(mode, level)] = (boss.spd(), b.atk_stat(boss) if hasattr(b, 'atk_stat') else None)
+    flat = got[('client', 0)][0] - 172            # 보스에 붙는 평탄 속도 가산(클라 식은 평탄합을 같은 floor 안에 넣음)
+    assert flat >= 0 and got[('bake', 0)][0] == 172 + flat, got            # 버프 없는 0단계는 같음
+    assert got[('client', 7)][0] == 195 + flat, got
+    assert got[('client', 9)][0] == 241 + flat, got
+    assert abs(got[('bake', 7)][0] - (189.2 + flat)) < 1e-6 and abs(got[('bake', 9)][0] - (223.6 + flat)) < 1e-6, got
+    # 공격력은 어필 밖에서 두 방식이 같다(-17.5% 한 번)
+    for level in (0, 7, 9):
+        a, c = got[('bake', level)][1], got[('client', level)][1]
+        if a is not None:
+            assert abs(a - c) <= 1.0, (level, a, c)
+    try:
+        b, _ = battle(mc={'guild_boss_nv_sum': 'wrong'})
+        to_boss(b)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError('잘못된 guild_boss_nv_sum 통과')
+
+
+TESTS = [test_boss_nv_sum, test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_summoned_cast_count, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,
          test_shield_break_bouquet, test_punish_maids, test_challenge_effects, test_simulate_runs, test_bouquet_chain_not_ally_damage, test_break_skill_breaks_barrier, test_break_skill_not_counted, test_maid_extra_turn_not_blocked, test_revive_clears_maid, test_maid_speed_def_zero, test_appeal_deferred_to_reaction_queue, test_ally_via_reported, test_data_matches_tables]
 
 if __name__ == '__main__':

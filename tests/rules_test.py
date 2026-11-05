@@ -327,6 +327,8 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'turn_limit_unit', 'turn_ticks', 'unknown_cond',
     # 2026-11-04 클라 후보 스위치(break_point_hits·break_auto_blocked_cc 는 같은 날 기본 = 클라 값으로 전환)
     'break_point_hits', 'dot_formula', 'react_hist_unit', 'immune_force_apply', 'break_auto_blocked_cc',
+    # 2026-11-05 길방 보스 속도·공격력 NV 합산
+    'guild_boss_nv_sum',
 ])
 _NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'wave_carry', 'break_skill_model'})
 

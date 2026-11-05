@@ -394,7 +394,7 @@ def test_request_diagnostics(browser, ctx):
     diagnostic = Ctx(ctx.base, ctx.shots)
     page = browser.new_page()
     attach(page, diagnostic)
-    page.goto(ctx.base + '/README.md')
+    page.goto(ctx.base + '/index.html')     # (.md 는 새 Chromium 에서 «다운로드 시작»으로 이동이 실패함 — 출처만 필요)
     with test_server() as closed:
         url = closed + '/intentionally-closed-server'
     page.evaluate('url => fetch(url).catch(() => null)', url)

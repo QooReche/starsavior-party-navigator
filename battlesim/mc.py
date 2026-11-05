@@ -531,6 +531,8 @@ class Unit:
         m = self.mods()
         p = self.d.passive
         s = self.d.spd_base * (1 + m['spdp'] + p['spdp']) + m['spdf'] + p['spdf']
+        if getattr(self.d, 'bfb', None) and self.b.mc['guild_boss_nv_sum'] == 'client':
+            s = math.floor(s + 1e-9)       # 클라 최종 스탯 (int)Math.Floor (NKM:18268-18280)
         if self.leader:
             s += self.b.mc['leader_speed']
         return max(1.0, s)

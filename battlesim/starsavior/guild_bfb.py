@@ -50,6 +50,7 @@ DRAIN_SET = '폭주 : 쇠락(선택)'
 BOUQUET = '부케'
 IMMUNE = '면역'
 SPEED = '속도 비율 스탯(별의 도전)'
+NV_ADD = '보스 능력치 비율(AddStat)'
 SET_DMG = '피해량 증가율(소멸)'
 SET_RED = '피해량 감소율(불멸)'
 
@@ -195,6 +196,16 @@ class Controller:
         self.strike_roll = {}   # 강인한 타격: 유닛별 이번 시전 발동 여부(50%)
 
     # ---------- 효과 도우미
+    def _nv_sum_client(self, boss, d):
+        """클라(NKM:18200-18280): 보스 AddStat 의 속도·공격력 비율은 버프의 NV 비율(별의 도전 속도, 정실 어필 감소, 독점 선언 등)과
+        한 합에 더해 최종값 = floor(기본 × (1 + 합)). 굳혀서 곱하던 옛 방식(bake)은 보스 속도를 약 7.7%(9~12단계) 느리게 봄.
+        생명력은 NV 버프가 없고 단계 배율이 곱이라 그대로(_stats)."""
+        a, s, lv = d['addStat'], d['stats'], self.cfg['row']
+        boss.d.stats = dict(boss.d.stats)
+        boss.d.stats['atk'] = math.floor(s['atk'] * (1 + (lv['atk'] * 100 if lv else 0) / 10000))
+        boss.d.spd_base = s['spd']
+        self._put(boss, NV_ADD, {'속도%': a['spdp'] / 100, '공격력%': a['atkp'] / 100})
+
     def _put(self, x, name, props, dur=math.inf, cat='buff', fixed=True, maxs=1, add=1):
         from ..mc import Eff
         e = x.eff.get(name)
@@ -307,6 +318,10 @@ class Controller:
         self.boss, self.cfg = boss, boss.d.bfb
         self.base = dict(boss.d.skills)
         d = self.cfg['data']
+        if self.b.mc['guild_boss_nv_sum'] == 'client':
+            self._nv_sum_client(boss, d)
+        elif self.b.mc['guild_boss_nv_sum'] != 'bake':
+            raise ValueError('guild_boss_nv_sum 은 client|bake')
         self._put(boss, PEN, {'방어 관통': d['pen'] / 100}, cat='marker')
         row = self.cfg['row']
         if row and row['speed']:
