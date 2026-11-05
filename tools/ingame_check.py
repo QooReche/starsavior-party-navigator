@@ -151,6 +151,9 @@ SAMPLES = {
     # 2026-11-05 21:01 영상(작전 SECTOR 40-3 버려진 요새, 사이트 1안 그대로, 오토, 전원 Lv.352, 권장 519,840, 팀 전투력 436,545, 재점화 없음. 편성 화면의 「경계 Ⅳ」는 재점화가 아님): 카넬리아(후)·아세라(전)·에밀리(전, 리더)·프로페서M(후), 큐브 과부하 Lv.6
     # 패배, 달성도 81%, 보스(공허몰락자) 남은 175,303, 마지막 HUD 턴 47. 준/받은 피해는 통계 창 로딩 중이라 미판독 -> 아래 1·1 은 자리표시자(비율 무의미)
     'op403': ('op', '버려진 요새|SECTOR 40-3', ['carnelia', 'waltz-asherah', 'emily', 'professor-m'], 'emily', 436545, 0, 1, 1, 47, 'fail'),
+    # 2026-11-05 21:09 영상(장비 탐사 뒤틀린 감정 XIX, 사이트 1안 그대로, 오토, 전원 Lv.352, 권장 481,865, 팀 전투력 424,305, 브레이크 스킬 스타피어서 Lv.4): 프로페서M(후)·카르멘(전, 이터널 프로미스, 리더)·아세라(전, 왈츠 오브 스타라이트)·클레어(후, 플로리스 블루 로즈)
+    # 승리, TURN 35, 달성도 100%, 「60턴 이내 승리 (35/60)」·「65턴 이내 승리 (35/65)」 달성, 아군 전원 생존. 준 / 받은 / 회복: 프로페서M 255,170/103,073/0 · 카르멘 24,651/49,658/170,255 · 아세라 71,813/94,695/130,480 · 클레어(MVP) 343,979/65,959/0
+    'eq3019': ('equip', '뒤틀린 감정|뒤틀린 감정 XⅨ', ['professor-m', 'wedding-carmen', 'waltz-asherah', 'claire'], 'wedding-carmen', 424305, 0, 695613, 313385, 35, 'clear'),
 }
 # 보스 잔여 HP·달성도 같은 부가 실측:SAMPLES 튜플에는 못 넣고(형식 고정) 여기에 둔다 — 도구가 출력에 real_extra 로 붙인다
 REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, rekindle=0, boss_breaks=3, cube_overload_uses=3),
@@ -166,6 +169,7 @@ REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, r
               'op3836-b': dict(achieve=0.65, boss_left_hp=175128, heal=95621, rekindle=0, cube_overload_uses=1),
               'op3933': dict(achieve=1.0, boss_left_hp=0, heal=939819, rekindle=0, boss_breaks=2, cube_overload_uses=2),
               'op403': dict(achieve=0.81, boss_left_hp=175303, rekindle=0),
+              'eq3019': dict(achieve=1.0, boss_left_hp=0, heal=300735),
               'op3836-c': dict(achieve=0.63, heal=100896, rekindle=3, cube_overload_uses=0),
               'corr450-a': dict(heal=353308, rekindle=0),
               'corr450-b': dict(achieve=0.61, heal=295511, rekindle=0),
@@ -184,7 +188,7 @@ BS_REAL = {'37-36r': ('행성 정화', 3), '37-36r2': ('행성 정화', 3), '17x
            'op3736b-a': ('큐브 과부하', 6), 'op3736b-b': ('큐브 과부하', 6),
            'op3736c-a': ('큐브 과부하', 6), 'op3736c-b': ('큐브 과부하', 6),
            'op3736d-a': ('큐브 과부하', 6), 'op3736d-b': ('큐브 과부하', 6),
-           'op3836-b': ('큐브 과부하', 6), 'op3933': ('큐브 과부하', 6), 'op403': ('큐브 과부하', 6)}
+           'op3836-b': ('큐브 과부하', 6), 'op3933': ('큐브 과부하', 6), 'op403': ('큐브 과부하', 6), 'eq3019': ('스타피어서', 4)}
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
 from tools.runtime import low_priority
