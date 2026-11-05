@@ -38,7 +38,7 @@
 - 옵션 «장비 탐사 목표»(60턴 안에 클리어 / 클리어만, 기본 60턴, 장비 탐사에서만 표시·`pn.goal` 저장): 60턴 기준이면 카드에 «3별(소탕) 조건 60턴 이내 승리 가능성 기준, 턴 수는 시뮬 추정» 안내를 붙이고, «클리어만»이면 옵션을 시뮬에 안 넘겨 기존 순위로 돌아감. e2e `test_equip_goal_option` 추가.
 - 시험: `run_tests.py --rebuild --e2e C:uildenv-pw\Scripts\python.exe` **81 통과(e2e 36개 포함)/0 실패**. 중간에 `breakMetric`에 `t60: null`이 항상 붙어 JS 단위 시험이 깨졌고 값이 있을 때만 붙도록 고침.
 - 미검증: 실제 장비 탐사 영상으로 60턴 판정 대조, 순위 변화가 사용자 체감과 맞는지(화면 확인 안 함).
-- 같은 날 영상 한 판 기록: 작전 39-33 승리 TURN 71 vs 사이트 예측 클리어 30%·79턴([docs/ingame_samples.md](docs/ingame_samples.md) 맨 아래).
+- 같은 날 영상 한 판 기록: 작전 39-33 승리 TURN 71, 작전 40-3 패배(달성도 81%). 시뮬과의 비교 수치는 내 정보 기준이라 비공개 `AI	emp\partynavigator\workideo_1105\COMPARE.md`([docs/ingame_samples.md](docs/ingame_samples.md) 맨 아래).
 
 ## ▶ 2026-11-05 오전 (게임 PC, Claude) — 길방 보스 속도·공격력 NV 합산 `guild_boss_nv_sum=client` (푸시 전)
 
