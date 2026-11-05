@@ -145,6 +145,12 @@ SAMPLES = {
     # 판 F3(2026-11-02 18:45 영상, 같은 편성, 팀 전투력 425,053 = 내 정보 11/02 계산과 일치, 전원 Lv.350, 재점화(편성 화면 「경계 Ⅲ」) 3단계, 오토): 패배(전멸 약 181초), TURN 36, 달성도 63%. **큐브 과부하 미발동**(컷인 없음 -> BS_REAL 에 안 넣음). 보스 강인도 18->1(브레이크 못 함)
     # 준 / 받은 / 회복(결과 화면): 아모라 389,113/97,489/0 · 힐데 39,753/223,107/28,776 · 프로페서M 196,218/118,227/0 · 아세라 55,921/127,956/72,120. 쓰러진 순서·시각 미판독(174초 보스 광역기로 3명 CRITICAL 약 3만씩)
     'op3836-c': ('op', '고요한 호숫가|SECTOR 38-36', ['amora', 'waltz-asherah', 'hilde', 'professor-m'], 'waltz-asherah', 425053, 3, 681005, 566779, 36, 'fail'),
+    # 2026-11-05 20:08 영상(작전 SECTOR 39-33 고대 지하 유적, 사이트 1안 그대로, 오토, 전원 Lv.352, 권장 515,965, 팀 전투력 418,599 = 내 정보 계산, 편성 화면 「경계 Ⅴ」 = 재점화 5단계): 세레스(후, 샤프 앤 스위트 서포터)·아세라(전, 왈츠 오브 스타라이트, 리더)·힐데(전)·아모라(후), 큐브 과부하 Lv.6
+    # 승리, TURN 71, 달성도 100%, 아군 전원 생존. 준 / 받은 / 회복: 세레스 27,959/95,736/656,751 · 아세라 230,613/98,072/254,172 · 힐데 88,481/447,848/28,896 · 아모라 622,192/89,702/0. 보스 행동 11회, 큐브 과부하 2회(T28·약 285초), 보스 브레이크 약 2회
+    'op3933': ('op', '고대 지하 유적|SECTOR 39-33', ['ceres-sun-supporter', 'waltz-asherah', 'hilde', 'amora'], 'waltz-asherah', 418599, 5, 969245, 731358, 71, 'clear'),
+    # 2026-11-05 21:01 영상(작전 SECTOR 40-3 버려진 요새, 사이트 1안 그대로, 오토, 전원 Lv.352, 권장 519,840, 팀 전투력 436,545, 「경계 Ⅳ」 = 재점화 4단계): 카넬리아(후)·아세라(전)·에밀리(전, 리더)·프로페서M(후), 큐브 과부하 Lv.6
+    # 패배, 달성도 81%, 보스(공허몰락자) 남은 175,303, 마지막 HUD 턴 47. 준/받은 피해는 통계 창 로딩 중이라 미판독 -> 아래 1·1 은 자리표시자(비율 무의미)
+    'op403': ('op', '버려진 요새|SECTOR 40-3', ['carnelia', 'waltz-asherah', 'emily', 'professor-m'], 'emily', 436545, 4, 1, 1, 47, 'fail'),
 }
 # 보스 잔여 HP·달성도 같은 부가 실측:SAMPLES 튜플에는 못 넣고(형식 고정) 여기에 둔다 — 도구가 출력에 real_extra 로 붙인다
 REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, rekindle=0, boss_breaks=3, cube_overload_uses=3),
@@ -158,6 +164,8 @@ REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, r
               'corr360-a': dict(achieve=1.0, heal=150988, rekindle=0),
               'op3836-a': dict(achieve=0.57, boss_left_hp=211709, heal=105124, rekindle=0),
               'op3836-b': dict(achieve=0.65, boss_left_hp=175128, heal=95621, rekindle=0, cube_overload_uses=1),
+              'op3933': dict(achieve=1.0, boss_left_hp=0, heal=939819, rekindle=5, boss_breaks=2, cube_overload_uses=2),
+              'op403': dict(achieve=0.81, boss_left_hp=175303, rekindle=4),
               'op3836-c': dict(achieve=0.63, heal=100896, rekindle=3, cube_overload_uses=0),
               'corr450-a': dict(heal=353308, rekindle=0),
               'corr450-b': dict(achieve=0.61, heal=295511, rekindle=0),
@@ -176,7 +184,7 @@ BS_REAL = {'37-36r': ('행성 정화', 3), '37-36r2': ('행성 정화', 3), '17x
            'op3736b-a': ('큐브 과부하', 6), 'op3736b-b': ('큐브 과부하', 6),
            'op3736c-a': ('큐브 과부하', 6), 'op3736c-b': ('큐브 과부하', 6),
            'op3736d-a': ('큐브 과부하', 6), 'op3736d-b': ('큐브 과부하', 6),
-           'op3836-b': ('큐브 과부하', 6)}
+           'op3836-b': ('큐브 과부하', 6), 'op3933': ('큐브 과부하', 6), 'op403': ('큐브 과부하', 6)}
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
 from tools.runtime import low_priority
