@@ -1,6 +1,6 @@
 # 인수인계
 
-갱신 2026-11-03. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md).
+갱신 2026-11-05. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md).
 
 ## 현재 상태
 
@@ -29,7 +29,15 @@
 10. 브레이크 자동 발동·쿨 단위·발동자 게이지·영역 지속·재발동·행성 정화 조건, 보스 브레이크 지속·미측정 궁극기 강인도·불리 상성 강인도·`enemy_hit_buff_cmp`를 영상으로 확인하기로 함.
 11. 서부 탈환대 세레스 스킬·기본 베라 자동 지정 근사, 기믹 추정 대처·무적 웨이브 실제 배치·길방 밖 협공/추가타·ReactiveBarrier 활성 표를 추가 확인하기로 함. 기본/개화 매핑과 적 SkillOrderList·빈 공격 처리는 완료했음.
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
-13. 장비 탐사 추천에 «60턴 이내 승리» 조건을 반영하기로 함(사용자 메모 2026-11-05): 60턴 안에 이겨야 3별이 되고 소탕이 열리므로, 클리어 가능성만이 아니라 «60턴 안에 잡을 수 있는 조합»이 더 유리함. 시뮬 결과의 턴 수(`turn_limit_unit=actions` 기준과 클라의 «턴» 정의가 같은지 먼저 확인)로 순위·표시를 가르기.
+13. (11/05 반영 완료, 절 «60턴 이내 승리») 남은 것: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있음 — 필요하면 `STAR_TURNS` 확장. 65턴(2별 추정)은 표시 안 함.
+
+## ▶ 2026-11-05 오후 (게임 PC, Claude) — 장비 탐사 «60턴 이내 승리» 반영 (푸시 전, 커밋 19e94ff·da23e26)
+
+- 근거: 표 `BATTLE_TEMPLET_NORMAL`의 `BattleMissionData`에 `BMT_LIMIT_TURN` 65·60이 탐사(EXPLORE) 60개 스테이지에 걸려 있음(큐브·이벤트·일일은 각각 65/60·50/45). 클라 `NKC` 미션 판정은 `턴 > 한도`면 실패(NKC:590576-590598), 영상 샘플 결과 화면 «TURN 52 (52/60)»과 같은 단위 → 엔진 `turn_limit_unit=actions`(전역 행동 수, `ttk_actions`)와 일치. 클라 카운터가 전역 턴과 같은지는 코드로 끝까지 추적하지 않았고 영상 샘플로만 확인.
+- 구현: `api.simulate`에 옵션 `star_turns`(N) → 결과 `star_turn{limit,p}`(outcome 밖, 해시 시험 영향 없음). `web.run_auto`가 `t60`으로 전달. 화면은 `STAR_TURNS={equip:60}`일 때 옵션을 넣고, 순위(`scrCmp`·표시 순서·브레이크 비교)를 «60턴 내 비율 → 클리어율 → 진행도 → 턴» 순으로 가르며 칩에 «60턴 내 N%»를 붙임. 시험 `tests/star_turn_test.py`(한도 1·무한·중앙값·outcome 불변, 비교 방향을 뒤집으면 실패하는 것 확인).
+- 시험: `run_tests.py --rebuild --e2e C:uildenv-pw\Scripts\python.exe` **81 통과/0 실패**. 중간에 `breakMetric`에 `t60: null`이 항상 붙어 JS 단위 시험이 깨졌고 값이 있을 때만 붙도록 고침.
+- 미검증: 실제 장비 탐사 영상으로 60턴 판정 대조, 순위 변화가 사용자 체감과 맞는지(화면 확인 안 함).
+- 같은 날 영상 한 판 기록: 작전 39-33 승리 TURN 71 vs 사이트 예측 클리어 30%·79턴([docs/ingame_samples.md](docs/ingame_samples.md) 맨 아래).
 
 ## ▶ 2026-11-05 오전 (게임 PC, Claude) — 길방 보스 속도·공격력 NV 합산 `guild_boss_nv_sum=client` (푸시 전)
 
