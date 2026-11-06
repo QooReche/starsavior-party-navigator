@@ -1443,6 +1443,53 @@ def test_equip_goal_option(browser, ctx):
     return ok, "작전에서 숨김 %s / 장비 탐사 표시 %s / 안내 켬 %s / 끔 %s / 저장 %s / 오류 %d" % (hidden_op, vis, note_on, note_off, saved, len(errs))
 
 
+def test_cosmo_search(browser, ctx):
+    """코스모 게이트 «3보스 최고 점수 편성 찾기»(가상 계정 전원 로스터): 코스모에서만 패널 표시, 난이도 선택 뒤 찾기 -> 완료,
+    표에 보스 3행 + 합계, 12명 모두 다름, 합계 = 세 팀 점수 합, 취소 버튼, 콘솔 오류 0. (시험 속도를 위해 탐색 크기만 줄인다)"""
+    ctx.errors.clear()
+    page = open_page(browser, ctx)
+    panel = page.locator("#cosmo-search")
+    hidden_first = not panel.is_visible()
+    choose(page, "코스모 게이트", "길레 2단계")
+    shown = panel.is_visible()
+    has_btn = page.locator('#cosmo-search button[data-cs="start"]').count()
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.poolSize=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2}""")
+    page.select_option('#cosmo-search select[data-cs="level"]', "3")
+    lvl = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value")
+    # 취소: 진행 표시가 보이면 눌러 처음 상태로 돌아가고, 잠시 뒤에도 결과가 끼어들지 않아야 함
+    page.click('#cosmo-search button[data-cs="start"]')
+    page.wait_for_selector('#cosmo-search [data-k="cs-progress"]', timeout=30000)
+    page.click('#cosmo-search button[data-cs="cancel"]')
+    page.wait_for_selector('#cosmo-search button[data-cs="start"]', timeout=5000)
+    page.wait_for_timeout(1500)
+    cancel_ok = page.evaluate("() => CSR.phase === 'idle' && !CSR.handle") and page.locator('#cosmo-search [data-k="cs-table"]').count() == 0
+    # 실제 완주
+    page.click('#cosmo-search button[data-cs="start"]')
+    page.wait_for_selector('#cosmo-search [data-k="cs-table"], #cosmo-search [data-k="cs-err"]', timeout=300000)
+    err_txt = page.locator('#cosmo-search [data-k="cs-err"]').all_text_contents()
+    assert not err_txt, err_txt
+    rows = page.locator('#cosmo-search [data-k="cs-best"] tbody tr').count()
+    state = page.evaluate("""() => { const r = CSR.rows[0]; const keys = r.teams.flatMap(t => t.keys);
+      return {n: CSR.rows.length, bosses: r.teams.map(t => t.boss), uniq: new Set(keys).size, nkeys: keys.length, sum: r.sum,
+              parts: r.teams.reduce((a, t) => a + CosmoSearch.metric(t.st, CSR.mode), 0), level: CSR.level, phase: CSR.phase,
+              shown: document.querySelector('[data-k=cs-sum]').textContent.replace(/,/g, '')} }""")
+    names = page.locator('#cosmo-search [data-k="cs-best"] tbody tr td:first-child').all_text_contents()[:3]
+    # 난이도를 바꾸면 낡은 결과 경고
+    page.select_option('#cosmo-search select[data-cs="level"]', "4")
+    stale = page.locator('#cosmo-search [data-k="cs-stale"]').count()
+    choose(page, "작전 (일반)", "36")
+    hidden_after = not panel.is_visible()
+    errs = list(ctx.errors)
+    page.close()
+    ok = (hidden_first and shown and has_btn == 1 and lvl == "3" and cancel_ok and rows == 4
+          and state["bosses"] == ["belgras", state["bosses"][1], state["bosses"][2]] and len(set(state["bosses"])) == 3 and len(set(names)) == 3
+          and state["nkeys"] == 12 and state["uniq"] == 12 and state["sum"] > 0 and abs(state["sum"] - state["parts"]) < 1e-6
+          and state["shown"] == str(round(state["sum"])) and state["level"] == 3 and state["phase"] == "done"
+          and stale == 1 and hidden_after and not errs)
+    return ok, "처음 숨김 %s / 코스모 표시 %s / 취소 %s / 표 %d줄 %s / 12명 중복 없음 %s / 합계 %s / 낡은 경고 %d / 숨김 %s / 오류 %s" % (
+        hidden_first, shown, cancel_ok, rows, names, state["uniq"] == 12, state["sum"], stale, hidden_after, errs[:2])
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_guild_search)
@@ -1463,6 +1510,7 @@ TESTS.append(test_myinfo_full)
 TESTS.append(test_graph_evidence)
 TESTS.append(test_equip_goal_option)
 TESTS.append(test_guild_defense)
+TESTS.append(test_cosmo_search)
 
 
 def main():
