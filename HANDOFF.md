@@ -35,7 +35,8 @@
 
 - 사용 한도로 구현 에이전트가 중간에 끊겨 WIP 커밋으로 저장했음. 전체 시험은 JS `cosmo_search_test.js`의 `mergeSummary_exact_for_two_single_runs`(평균 2.5→3, 상위 1판=큰 쪽) 1개만 실패. 나머지 통과 확인.
 - 사용자 결정: ① 순위는 상위 점수(재도전·하루 횟수 제한 없음) ② 풀은 전수(16명 컷 없음), 빠른 모드(풀 축소)는 만들지 않음 ③ 안전 가속만: 엔진 캐시(결과 동일 확인, 메모리 상한)·워커 수 PC별 자동(`hardwareConcurrency`·`deviceMemory`)·1판 반감 상위 10% ④ 남은 시간 ETA는 실행 중 측정 속도 기반(단계 가중치·재보정).
-- 끊긴 에이전트가 이미 넣은 것(WIP, 검증 전): 엔진 캐시(`battlesim/api.py`·`mc.py`, 새 시험 `tests/engine_cache_test.py`), 워커 수·ETA 함수와 시험, `search` 설정 확장(`tools/build_cosmo_raid.py` SEARCH 상수). 아직 안 한 것: 리뷰 지적 5건 확인(12~13명 즉시 오류·keep 확대·낡은 결과 취소·하드코딩 제거), 순위 기본값을 상위 점수로, HUD 점수 내림 규칙, 전수 실측과 ETA 오차 측정, 실패 시험 수정, e2e.
+- 이미 커밋된 것(`dbb4ad1`): 전수 풀, 시작 전 사전 검사(12~13명 즉시 오류), 남은 시간 표시, 상위 점수 기본, 작업 큐 배분, HUD 내림 규칙, keep 확대(`effKeep`). 자세히는 `docs/cosmo_raid.md` 2단계 절.
+- 이번 WIP 커밋(`0554da5`, 검증 전): 엔진 캐시(`battlesim/api.py`·`mc.py`, 새 시험 `tests/engine_cache_test.py`는 통과), 워커 수 자동·ETA 시험, `search` 설정(`tools/build_cosmo_raid.py` SEARCH 상수). 아직 안 한 것: 실패 시험 수정, 1판 반감 구현 여부 확인, 낡은 결과 취소·하드코딩 제거 반영 여부 확인, e2e(`--e2e C:\build\venv-pw\Scripts\python.exe`), 전수 실측과 ETA 오차 측정.
 - 클라 코드 추적 결론(근거는 코스모 절): 최종 점수·3보스 합산·순위·도전 횟수·시즌 날짜는 서버. 클라 HUD 식은 `Base+MaxDamage×(깎은비율 1/10000 내림)`을 정수 내림. 고정 레벨 200·공명 10과 스타링크 가산 없음은 시뮬이 이미 반영(`fixed200`), 서버 동작은 미확인. 시즌 버프(BCT_*)의 전투 적용 코드는 클라에서 못 찾음.
 - 다음: 사용자가 추천 편성으로 직접 뛰고 영상(편성 화면·결과 화면의 점수·남은 턴·생존 수·레벨)으로 점수식 대조. 한국 커뮤니티 조사는 사용자가 보류함(Chrome 확장 연결 안 됨).
 
