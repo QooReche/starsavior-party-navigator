@@ -37,7 +37,8 @@ import math
 import random
 import statistics
 import time
-from collections import defaultdict
+import json
+from collections import OrderedDict, defaultdict
 
 from . import rules as _rules
 from .mc import Battle, EventLimitError, support_report
@@ -86,7 +87,81 @@ class _CustomFoe:
 FINAL_PASSIVE_KEYS = {'atk': ('atkp',), 'hp': ('hpp',), 'def': ('defp',), 'spd': ('spdp', 'spdf'), 'cr': ('cr',), 'cd': ('cd',), 'eh': ('eh',)}
 
 
+class _LRU:
+    """크기 제한 LRU. 키는 호출 입력(구원자 설정·인카운터 설정)이라 시전마다 새로 생기지 않지만, 입력이 계속 달라져도 maxsize 를 넘지 못한다."""
+
+    def __init__(self, maxsize):
+        self.maxsize = maxsize
+        self.d = OrderedDict()
+
+    def get(self, k):
+        v = self.d.get(k)
+        if v is not None:
+            self.d.move_to_end(k)
+        return v
+
+    def put(self, k, v):
+        self.d[k] = v
+        self.d.move_to_end(k)
+        while len(self.d) > self.maxsize:
+            self.d.popitem(last=False)
+
+    def clear(self):
+        self.d.clear()
+
+    def __len__(self):
+        return len(self.d)
+
+
+# 구원자 정의(파티 한 칸) 캐시: 코스모 전수 탐색은 같은 40명을 수만 번 정규화한다. 정의는 전투에서 읽기 전용(한 simulate 의 n_runs 판이 이미 공유)이라 호출 간 공유해도 결과가 같다.
+UNIT_CACHE_MAX = 256
+ENC_CACHE_MAX = 64
+_UNIT_CACHE = _LRU(UNIT_CACHE_MAX)
+_ENC_CACHE = _LRU(ENC_CACHE_MAX)
+
+
+def clear_engine_caches():
+    _UNIT_CACHE.clear()
+    _ENC_CACHE.clear()
+
+
+def _cache_on():
+    from . import mc as _mc
+    return _mc.ENGINE_CACHE
+
+
+def _unit_key(u, db, mode, build, use_combat):
+    """한 칸의 정의를 정하는 입력 전부(칸 번호·리더는 정의에 영향 없음). JSON 으로 못 만들면 None(캐시 안 함)."""
+    try:
+        return (id(db), json.dumps(u, sort_keys=True, ensure_ascii=False), mode, build, bool(use_combat))
+    except (TypeError, ValueError):
+        return None
+
+
 def _norm_party(party_spec, db, mode, build=None, mc=None):
+    if isinstance(party_spec, dict):
+        units, leader = party_spec.get('units', []), party_spec.get('leader')
+    else:
+        units, leader = list(party_spec), None
+    if not _cache_on():
+        return _norm_party_raw(party_spec, db, mode, build, mc)
+    use_combat = (mc or MC_OPTS).get('myinfo_combat', True)
+    defs = []
+    for u in units:
+        uu = dict(key=u) if isinstance(u, str) else u
+        k = _unit_key(uu, db, mode, build, use_combat)
+        hit = _UNIT_CACHE.get(k) if k is not None else None
+        if hit is not None and hit[0] is db and not any(hit[1] is x for x in defs):     # 같은 파티에 같은 구원자가 두 번이면 객체를 나눈다
+            defs.append(hit[1])
+            continue
+        d = _norm_party_raw({'units': [u], 'leader': None}, db, mode, build, mc)[0][0]
+        if k is not None and hit is None:
+            _UNIT_CACHE.put(k, (db, d))
+        defs.append(d)
+    return defs, leader
+
+
+def _norm_party_raw(party_spec, db, mode, build=None, mc=None):
     if isinstance(party_spec, dict):
         units, leader = party_spec.get('units', []), party_spec.get('leader')
     else:
@@ -117,7 +192,22 @@ def _norm_party(party_spec, db, mode, build=None, mc=None):
 
 
 def _norm_encounter(enc):
-    """-> (waves[[def]], turn_limit, fx_props, fx_unknown, stage_meta)"""
+    """-> (waves[[def]], turn_limit, fx_props, fx_unknown, stage_meta). 코스모·길방 시즌 전투만 입력(JSON)별로 캐시(보스·난이도·세트 조합뿐이라 키가 적다)."""
+    if not _cache_on() or not isinstance(enc, dict) or not ('cosmo_raid' in enc or 'guild' in enc):
+        return _norm_encounter_raw(enc)
+    try:
+        k = json.dumps(enc, sort_keys=True, ensure_ascii=False)
+    except (TypeError, ValueError):
+        return _norm_encounter_raw(enc)
+    hit = _ENC_CACHE.get(k)
+    if hit is None:
+        hit = _norm_encounter_raw(enc)
+        _ENC_CACHE.put(k, hit)
+    waves, turn_limit, fx, unknown, meta = hit
+    return [list(w) for w in waves], turn_limit, (dict(fx) if isinstance(fx, dict) else fx), unknown, dict(meta)
+
+
+def _norm_encounter_raw(enc):
     meta = {}
     turn_limit = enc.get('turn_limit')
     fx_texts = enc.get('stage_fx')

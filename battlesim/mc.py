@@ -144,6 +144,25 @@ REACT_TRIG = [
 ]
 
 
+ENGINE_CACHE = True      # 정의(UnitDef) 단위 의미 해석 캐시 사용 여부(동일성 시험이 끈 결과와 비교)
+
+
+def norm_lines_cached(d):
+    """normalized_lines(d) 를 정의 객체에 붙여 둔다. 정의 객체가 사라지면 같이 사라지므로 키가 쌓이지 않는다(전역 사전 없음).
+    d.lines 가 바뀌거나(참조·길이) 복사본(copy.copy)에 딸려 온 값이면 다시 계산한다."""
+    if not ENGINE_CACHE:
+        return normalized_lines(d)
+    e = d.__dict__.get('_pn_nl') if hasattr(d, '__dict__') else None
+    if e is not None and e[0] == id(d) and e[1] is d.lines and e[2] == len(d.lines):
+        return e[3]
+    r = normalized_lines(d)
+    try:
+        d._pn_nl = (id(d), d.lines, len(d.lines), r)
+    except AttributeError:
+        pass
+    return r
+
+
 def line_kind(ln):
     """확률 엔진에서 쓰는 줄 시점. 기대값 엔진의 kind 에 반응 시점을 더한다."""
     if ln.kind != 'unmodeled':
@@ -784,14 +803,28 @@ class Battle:
             cached = sc.get(key)
             if cached is not None and cached[0] is u.d.lines and cached[1] == len(u.d.lines):
                 return cached[2]
-            result = (u.d.lines, len(u.d.lines), normalized_lines(u.d))
+            result = (u.d.lines, len(u.d.lines), norm_lines_cached(u.d))
             sc[key] = result
             return result[2]
         cached = self._semantic_lines.get(key)
         if cached is None or cached[0] is not u.d.lines or cached[1] != len(u.d.lines):
-            cached = (u.d.lines, len(u.d.lines), normalized_lines(u.d))
+            cached = (u.d.lines, len(u.d.lines), norm_lines_cached(u.d))
             self._semantic_lines[key] = cached
         return cached[2]
+
+    def kind_lines(self, u, kind):
+        """lines_of(u) 중 line_kind == kind 인 줄(색인, tuple). 색인은 lines_of 와 같은 캐시 사전(런 간 공유 또는 per-Battle)에 두고,
+        lines_of 가 돌려준 목록 객체가 바뀌면 다시 만든다."""
+        src = self.lines_of(u)
+        if not ENGINE_CACHE:
+            return [ln for ln in src if line_kind(ln) == kind]
+        store = self._semantic_cache if self._semantic_cache is not None else self._semantic_lines
+        k = ('kind', id(u.d), kind)
+        hit = store.get(k)
+        if hit is None or hit[0] is not src:
+            hit = (src, tuple(ln for ln in src if line_kind(ln) == kind))
+            store[k] = hit
+        return hit[1]
 
     # ---------- 진행
     def spawn_wave(self):
@@ -1895,14 +1928,14 @@ class Battle:
             self.run_batch(u, lines, ctx)
 
     def fire(self, u, kind, ctx):
-        lines = [ln for ln in self.lines_of(u) if line_kind(ln) == kind]
+        lines = list(self.kind_lines(u, kind))
         if lines:
             self.run_batch(u, lines, ctx)
 
     def fire_side(self, actor, ctx, kind):
         for b in self.alive(actor.side):
-            lines = [ln for ln in self.lines_of(b) if line_kind(ln) == kind
-                     and not (b is actor and dict(ln.params).get('자신 포함') != '예')
+            lines = [ln for ln in self.kind_lines(b, kind)
+                     if not (b is actor and dict(ln.params).get('자신 포함') != '예')
                      and self._trig_matches_skill(ln, ctx.skill)]
             if lines:
                 c2 = Ctx(b, actor, ctx.skill, ctx.extra)
@@ -1975,7 +2008,7 @@ class Battle:
 
     def fire_foes(self, actor, ctx, kind):
         for b in self.alive(1 - actor.side):
-            lines = [ln for ln in self.lines_of(b) if line_kind(ln) == kind]
+            lines = list(self.kind_lines(b, kind))
             if lines:
                 c2 = Ctx(b, actor, ctx.skill, ctx.extra)
                 c2.targets, c2.target, c2.crit, c2.evaded = ctx.targets, ctx.target, ctx.crit, ctx.evaded
@@ -3991,13 +4024,46 @@ def _meaning_gap(ln, k, markers):
     return None
 
 
+def _def_memo(d, attr, stamp, compute):
+    """정의 객체에 붙이는 작은 메모(정의가 사라지면 같이 사라짐). stamp = 입력이 같은지 판별하는 값. 복사본에 딸려 온 값은 id 로 걸러낸다."""
+    if not ENGINE_CACHE:
+        return compute()
+    e = d.__dict__.get(attr) if hasattr(d, '__dict__') else None
+    if e is not None and e[0] == id(d) and e[1] is d.lines and e[2] == len(d.lines):
+        hit = e[3].get(stamp)
+        if hit is not None:
+            return hit
+        memo = e[3]
+        if len(memo) >= 8:
+            memo.clear()
+    else:
+        memo = {}
+        try:
+            setattr(d, attr, (id(d), d.lines, len(d.lines), memo))
+        except AttributeError:
+            return compute()
+    memo[stamp] = r = compute()
+    return r
+
+
 def support_report(defs):
-    """전투에 나오는 유닛들의 미지원 줄(시점·효과·조건) + 일반/반응 트리거·변형 스킬. 실행 전 검사."""
+    """전투에 나오는 유닛들의 미지원 줄(시점·효과·조건) + 일반/반응 트리거·변형 스킬. 실행 전 검사.
+    정의마다 «표지 이름 목록»과 «보고 줄»을 정의 객체에 메모한다(같은 구원자를 수만 번 검사하지 않도록). 결과는 메모가 없을 때와 같다."""
     out = []
     # 조건에서 이름으로 확인하는 효과(표지용 버프)는 속성이 없어도 의미가 있다.
     # 전투의 모든 유닛에서 모은다(하수인이 주고 보스가 확인하는 교차 참조 포함: 올베로스 영웅의 혼 등).
     all_marker_names = set()
     for d in defs:
+        all_marker_names |= _def_memo(d, '_pn_mk', 0, lambda d=d: _marker_names(d))
+    fz = frozenset(all_marker_names)
+    for d in defs:
+        out.extend(dict(x) for x in _def_memo(d, '_pn_sr', fz, lambda d=d: _support_one(d, fz)))
+    return out
+
+
+def _marker_names(d):
+    all_marker_names = set()
+    if True:
         for ln in d.lines:
             for p, v in ln.params:
                 if p in ('자신이 보유', '자신이 미보유', '대상이 보유', '대상이 미보유', '시전자가 보유', '턴 유닛이 보유', '특정 효과 보유 적 존재'):
@@ -4013,10 +4079,15 @@ def support_report(defs):
                 elif tag in ('self_has', 'self_not_has', 'target_has') and len(cond) >= 2:
                     for n in (cond[1] if isinstance(cond[1], list) else [cond[1]]):
                         all_marker_names.add(n)
-    markers = {id(d): all_marker_names for d in defs}
-    for d in defs:
+    return all_marker_names
+
+
+def _support_one(d, markers_all):
+    out = []
+    markers = {id(d): markers_all}
+    if True:
         foe = getattr(d, 'is_foe', False)
-        for ln in normalized_lines(d):
+        for ln in norm_lines_cached(d):
             k = line_kind(ln)
             rest = line_rest(ln)
             reason = None

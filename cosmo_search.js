@@ -32,6 +32,37 @@
     return n == null ? rows : rows.slice(0, n);
   }
 
+  // 1단계 «순차 반감»: 모든 조합을 firstRuns 판만 돌려 순위를 매긴 뒤 상위 n 팀(경계 동점은 전부 포함)만 남은 판을 더 돌린다.
+  // 통과 = (가) 순위 상위 n 팀 + 경계와 순위 값(기준 점수·반대 점수·클리어율)이 똑같은 팀 전부, (나) 구원자마다 «그 구원자가 든 상위 m 팀»(역시 경계 동점 포함).
+  // (가)만 쓰면 «한 구원자가 3보스 모두 1위권»일 때 통과팀이 전부 그 구원자를 포함해 겹치지 않는 삼중이 없어지므로(pickDiverse 와 같은 이유) (나)로 구원자별 대안을 보장한다.
+  // 동점을 자르면 «같은 점수인데 운으로 탈락»이 되므로 모두 통과시킨다(예: 벨그라스는 59~64% 팀이 최저 점수 동률이라 경계가 그 동률 안에 들어오면 사실상 전부 통과 = 안전).
+  function pickPass(jobs, res, mode, n) {
+    const all = pickTop(jobs, res, mode);
+    if (all.length <= n) return all;
+    const cmp = byRank(mode), keep = new Array(all.length).fill(false), edge = all[Math.max(0, n - 1)];
+    for (let i = 0; i < all.length && (i < n || cmp(all[i], edge) === 0); i++) keep[i] = true;
+    const units = new Set(); all.forEach(e => e.keys.forEach(k => units.add(k)));
+    const m = Math.max(1, Math.ceil(0.25 * n / Math.max(1, units.size))), cnt = new Map(), edgeOf = new Map();
+    all.forEach((e, i) => {
+      for (const k of e.keys) {
+        const c = cnt.get(k) || 0;
+        if (c < m) { cnt.set(k, c + 1); if (c + 1 === m) edgeOf.set(k, i); keep[i] = true; }
+        else if (cmp(e, all[edgeOf.get(k)]) === 0) keep[i] = true;
+      }
+    });
+    return all.filter((e, i) => keep[i]);
+  }
+  const halfUp = x => Math.floor(x + 0.5);
+  // 같은 팀의 두 요약(각각 n 판)을 하나로: 평균·클리어율·깎음은 판 수 가중 평균, 상위 점수는 두 요약이 모두 1판일 때 정확히(상위 판 수 m = ceil(2q) 가 1 이면 큰 쪽, 2 이면 평균),
+  // 그 밖의 판 수 조합은 상위 점수의 가중 평균으로 근사한다(기본 설정은 1판+1판이라 근사를 쓰지 않는다).
+  function mergeSummary(a, b, q) {
+    const n = a.n + b.n, w = (x, y) => (x * a.n + y * b.n) / n;
+    let top;
+    if (a.n === 1 && b.n === 1) { const m = Math.max(1, Math.ceil(2 * q - 1e-9)); top = m === 1 ? Math.max(a.top, b.top) : halfUp((a.top + b.top) / 2); }
+    else top = halfUp(w(a.top, b.top));
+    return {mean: halfUp(w(a.mean, b.mean)), top, clear: Math.round(w(a.clear || 0, b.clear || 0) * 1e4) / 1e4, frac: Math.round(w(a.frac || 0, b.frac || 0) * 1e4) / 1e4, n};
+  }
+
   // 1단계 -> 2단계로 넘길 상위 n 팀. 그냥 상위 n 개만 자르면 «1위 구원자 X 가 든 팀»만 남아 보스 3명이 모두 X 를 원할 때 겹치지 않는 삼중이 없거나 나빠진다.
   // 그래서 절반(올림)은 순위대로, 나머지는 구원자마다 «그 구원자가 든 가장 좋은 팀»을 돌려 가며 채운다(다양성 확보). n 이상이면 전부.
   function pickDiverse(jobs, res, mode, n) {
@@ -141,12 +172,21 @@
   }
   // 2단계로 넘길 팀 수: 조합 수가 keep 의 2배 이하면 «상위 자르기+다양성 채우기»가 거의 의미가 없고 분할이 불발하므로 조합 전체를 넘긴다
   const effKeep = (S, L) => L <= 2 * S.rerank.keep ? L : S.rerank.keep;
+  // 순차 반감에서 보스마다 두 번째 판을 돌릴 팀 수(동점 포함 전의 기준 수). 반감을 쓰지 않으면(firstRuns 가 없거나 판 수 이상) 조합 전체.
+  // 2단계 후보가 keep 보다 적어지면 «상위 자르기+다양성 채우기»가 불발하므로 최소 passMinMult×keep 팀은 통과시킨다.
+  function passCount(S, L, keep) {
+    const sc = S.screen || {}, fr = sc.firstRuns | 0;
+    if (!(fr >= 1 && fr < sc.runs)) return L;
+    return Math.min(L, Math.max(Math.ceil((sc.passFrac > 0 ? sc.passFrac : 0.1) * L), (sc.passMinMult > 0 ? sc.passMinMult : 3) * keep));
+  }
   // 단계별 판 수 계획(시작 전에 알 수 있음). 3단계 팀 수는 삼중이 정해져야 알 수 있어 상한(topTriples×3팀)으로 두고 단계 전환 때 바로잡는다.
   function plan(S, rows) {
-    const L = countCombos(S, rows), keep = effKeep(S, L), t3 = BOSSES * S.combine.topTriples;
-    const stages = [{id: 1, teams: BOSSES * L, runs: S.screen.runs}, {id: 2, teams: BOSSES * Math.min(keep, L), runs: S.rerank.runs}, {id: 3, teams: t3, runs: S.final.runs, upper: true}];
+    const L = countCombos(S, rows), keep = effKeep(S, L), t4 = BOSSES * S.combine.topTriples, pass = passCount(S, L, keep), halved = pass < L, fr = halved ? S.screen.firstRuns | 0 : 0;
+    // 단계: 0 = 1단계 첫 판(전 조합), 1 = 1단계 보충 판(상위 pass 팀, 동점이면 더 많아져 단계 전환 때 바로잡음), 2 = 상위 keep 팀 정밀, 3 = 삼중 팀 재시뮬
+    const stages = [{id: 1, teams: BOSSES * L, runs: halved ? fr : S.screen.runs}, {id: 2, teams: halved ? BOSSES * pass : 0, runs: halved ? S.screen.runs - fr : 0, upper: true},
+      {id: 3, teams: BOSSES * Math.min(keep, L), runs: S.rerank.runs}, {id: 4, teams: t4, runs: S.final.runs, upper: true}];
     stages.forEach(s => { s.games = s.teams * s.runs; });
-    return {pool: rows.length, combos: L, keep, stages, total: stages.reduce((a, s) => a + s.games, 0)};
+    return {pool: rows.length, combos: L, keep, pass, halved, stages, total: stages.reduce((a, s) => a + s.games, 0)};
   }
 
   // 남은 시간 계산(순수). 단계마다 한 판 비용이 다르므로 단계 가중치 w[s] 로 아직 안 해 본 단계의 속도를 현재 속도에서 추정하고, 자기 단계 속도가 측정되면 그 값으로 바꾼다.
@@ -154,7 +194,8 @@
   //  - 속도 = 최근 window 초의 이동 구간 (처음 결과가 도착한 뒤 warmup 초까지는 측정값을 쓰지 않는다: 작업자가 제각각 시작해 초반 속도가 흔들림)
   //  - 단계 전환: 새 단계가 자기 속도를 얻기 전에는 이전 단계 실측 × (w[새]/w[이전])을 쓰고, 단계 시작~첫 결과 지연(엔진 준비)을 남은 단계 수만큼 더한다.
   //  - prior(저장된 이 PC 속도, 단계별 초/판)가 있으면 실측 전에 그 값을 쓴다.
-  const DEF_W = [1, 1, 1];
+  const DEF_W = [1, 1, 0.6, 0.25];
+  const NSTAGE = 4;
   function etaNew(o) {
     const W = (o.weights || DEF_W).slice(), warm = o.warmup == null ? 3 : o.warmup, win = o.window == null ? 20 : o.window, prior = o.prior || null, GAP = 0.25, blend = o.blend == null ? 0 : o.blend, frac = o.winFrac == null ? 0 : o.winFrac;
     const st = o.stages.map(s => ({games: s.games, done: 0, samples: [], cur: null, first: null, c: null, cAvg: null, lat: null, startT: null}));
@@ -215,7 +256,7 @@
   }
   // 저장된 {sec:[3], workers} -> 지금 작업자 수에 맞춰 환산한 단계별 초/판. 값이 이상하면 null
   function priorFrom(saved, workers) {
-    if (!saved || !Array.isArray(saved.sec) || saved.sec.length !== 3 || !(saved.workers > 0) || !(workers > 0)) return null;
+    if (!saved || !Array.isArray(saved.sec) || saved.sec.length !== NSTAGE || !(saved.workers > 0) || !(workers > 0)) return null;      // 단계 구성이 다른 옛 저장값(3단계)은 버린다
     if (!saved.sec.every(x => typeof x === "number" && isFinite(x) && x > 0)) return null;
     return saved.sec.map(x => x * saved.workers / workers);
   }
@@ -270,19 +311,40 @@
     };
     const stale = () => cx.stale && cx.stale();
     const jobsA = [].concat(...bosses.map(b => bossJobs(S, b, level, list, results, cls)));
-    const resA = await run(shuffled(jobsA, 20261106), S.screen.runs, 1, `1단계: 보스 3명 × 조합 ${list.length}개를 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다)`, 0);
-    if (stale()) return null;
-    const keep = bosses.map(b => pickDiverse(jobsA.filter(j => j.boss === b), resA, mode, pl.keep));
+    let resA, jobsK, passed = list.length;      // jobsK = 2단계 후보를 뽑을 작업 목록(반감이면 보충 판을 돌린 팀만), resA = 그 팀들의 결과
+    if (!pl.halved) {
+      resA = await run(shuffled(jobsA, 20261106), S.screen.runs, 1, `1단계: 보스 3명 × 조합 ${list.length}개를 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다)`, 0);
+      if (stale()) return null;
+      jobsK = jobsA;
+    } else {
+      const fr = S.screen.firstRuns, more = S.screen.runs - fr;
+      const res1 = await run(shuffled(jobsA, 20261106), fr, 1, `1단계 (1/2): 보스 3명 × 조합 ${list.length}개를 ${fr}판씩 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다)`, 0);
+      if (stale()) return null;
+      // 보스마다 첫 판 순위 상위 pl.pass 팀(경계 동점 포함)만 남은 판을 돌린다. 시드는 첫 판과 다른 값(같은 난수로 같은 판을 되풀이하지 않도록)
+      const keepJobs = bosses.map(b => { const jb = jobsA.filter(j => j.boss === b), ks = new Set(pickPass(jb, res1, mode, pl.pass).map(e => idOf(e.keys))); return jb.filter(j => ks.has(idOf(j.keys))); });
+      jobsK = [].concat(...keepJobs);
+      passed = Math.max(...keepJobs.map(k => k.length));
+      const res2 = await run(shuffled(jobsK, 20261108), more, 4, `1단계 (2/2): 첫 판 상위 약 ${num(pl.pass)}팀(동점 포함 보스당 최대 ${num(passed)}팀)을 ${more}판 더 확인 중`, 1);
+      if (stale()) return null;
+      resA = {};
+      for (const j of jobsK) {
+        const a = res1[j.key], b = res2[j.key];
+        if (a && a.cosmo && b && b.cosmo) resA[j.key] = Object.assign({}, b, {cosmo: mergeSummary(a.cosmo, b.cosmo, S.topQ)});
+        else if (a && a.cosmo) resA[j.key] = a;
+      }
+    }
+    const keep = bosses.map(b => pickDiverse(jobsK.filter(j => j.boss === b), resA, mode, pl.keep));
     const jobsB = [].concat(...keep.map((k, i) => bossJobs(S, bosses[i], level, k.map(e => e.keys), results, cls)));
-    const resB = await run(shuffled(jobsB, 20261107), S.rerank.runs, 3, `2단계: 보스별 상위 ${pl.keep}팀을 더 정확히 확인 중`, 1);
+    const resB = await run(shuffled(jobsB, 20261107), S.rerank.runs, 3, `2단계: 보스별 상위 ${pl.keep}팀을 더 정확히 확인 중`, 2);
     if (stale()) return null;
     const lists = bosses.map(b => pickTop(jobsB.filter(j => j.boss === b), resB, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
     const triples = bestTriples(lists, S.combine.topTriples);
     if (!triples.length) throw new Error("겹치지 않는 3팀을 찾지 못했습니다(후보가 서로 겹침). 내 정보에 육성된 구원자를 늘려 보세요");
     const jobsC = finalJobs(S, triples, bosses, level, results, cls);
-    const resC = await run(jobsC, S.final.runs, 2, `3단계: 합이 큰 ${triples.length}개 편성의 팀 ${jobsC.length}개를 ${S.final.runs}판씩 확인 중`, 2);
+    const resC = await run(jobsC, S.final.runs, 2, `3단계: 합이 큰 ${triples.length}개 편성의 팀 ${jobsC.length}개를 ${S.final.runs}판씩 확인 중`, 3);
     if (stale()) return null;
-    return {rows: finalRank(triples, bosses, level, resC, mode, S.combine.show), pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: pl.keep, triples: triples.length, runs: S.final.runs, level, mode, bosses: bosses.slice()};
+    return {rows: finalRank(triples, bosses, level, resC, mode, S.combine.show), pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: pl.keep, triples: triples.length, runs: S.final.runs, level, mode, bosses: bosses.slice(),
+      halved: pl.halved, firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed};
   }
 
   const num = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -314,11 +376,25 @@
       const rows = st.rows || [];
       const first = rows.length ? `<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : '<div class="mut">결과 없음</div>';
       const rest = rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx)}</details>`).join("");
-      body = `${old}${stale}${opt}${first}${rest}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → 보스마다 조합 ${num(st.combos)}개를 짧게 훑고, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값입니다(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순입니다. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있습니다.</div>${pre}${btn("다시 찾기")}`;
+      const scr = st.halved ? `보스마다 조합 ${num(st.combos)}개를 ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
+      body = `${old}${stale}${opt}${first}${rest}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값입니다(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순입니다. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있습니다.</div>${pre}${btn("다시 찾기")}`;
     } else body = `${opt}${pre}${btn("3보스 최고 점수 편성 찾기")}<span class="mut gd-small"> 보유 구원자가 많으면 오래 걸립니다. 탭을 연 채로 기다려 주세요.</span>`;
     return `<div class="gd-search" data-k="cs-search">${head}${body}${warn}</div>`;
   }
 
-  const api = {MODES, shuffled, poolAll, countCombos, feasibility, effKeep, plan, etaNew, priorFrom, fmtDur, etaLine, preText, progText, metric, idOf, jobKey, bossJobs, pickTop, pickDiverse, bestTriples, finalJobs, finalRank, search, html, table};
+  // 작업자 수 자동 결정(순수 함수, 시험 대상). env = {cores: 논리 코어 수(navigator.hardwareConcurrency, 없으면 null), memGB: navigator.deviceMemory(없으면 null), mobile: 모바일 여부}
+  // 설정 W = S.workers(data/cosmo_raid.json): coreFrac(논리 코어 중 쓰는 비율. 나머지는 화면·다른 프로그램용), memFrac·perWorkerMB(메모리의 몇 %를 작업자당 몇 MB로 나눠 쓰는가),
+  // unknownMemGB(deviceMemory 를 모르는 브라우저의 보수적 기본), min·max(하한·상한), mobileMax(모바일 상한).
+  // deviceMemory 는 브라우저가 최대 8 로 잘라서 알려 주므로 8 이상 기계도 8 로 계산된다(보수적).
+  function workerCount(S, env) {
+    const W = Object.assign({coreFrac: 0.75, memFrac: 0.5, perWorkerMB: 250, unknownMemGB: 4, min: 1, max: 24, mobileMax: 2}, (S && S.workers) || {}), e = env || {};
+    const cores = e.cores > 0 ? Math.floor(e.cores) : 4, mem = e.memGB > 0 ? e.memGB : W.unknownMemGB;
+    const byCore = Math.floor(cores * W.coreFrac), byMem = Math.floor(mem * 1024 * W.memFrac / W.perWorkerMB);
+    let n = Math.min(byCore, byMem, W.max);
+    if (e.mobile) n = Math.min(n, W.mobileMax);
+    return Math.max(W.min, Math.floor(n));
+  }
+
+  const api = {MODES, workerCount, pickPass, passCount, mergeSummary, shuffled, poolAll, countCombos, feasibility, effKeep, plan, etaNew, priorFrom, fmtDur, etaLine, preText, progText, metric, idOf, jobKey, bossJobs, pickTop, pickDiverse, bestTriples, finalJobs, finalRank, search, html, table};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.CosmoSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

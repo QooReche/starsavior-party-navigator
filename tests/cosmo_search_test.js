@@ -69,7 +69,7 @@ const tests = {
     for (const k of ['maxPool', 'maxCombos', 'minPowerRatio', 'minRole', 'minFront', 'minDealer', 'screen', 'rerank', 'combine', 'final', 'topQ', 'defaultMode', 'defaultLevel', 'etaWeights', 'etaWarmupSec', 'etaWindowSec', 'etaBlendSec']) assert(k in SE, k);
     assert.equal(SE.maxPool, null, '기본은 전수(풀 제한 없음)');
     assert(SE.maxCombos >= 1000, '안전 상한은 설정으로 있고 기본은 충분히 큼');
-    assert(SE.etaWeights.length === 3 && SE.etaWeights.every(w => w > 0) && SE.etaWarmupSec >= 0 && SE.etaWindowSec > SE.etaWarmupSec);
+    assert(SE.etaWeights.length === 4 && SE.etaWeights.every(w => w > 0) && SE.etaWarmupSec >= 0 && SE.etaWindowSec > SE.etaWarmupSec);
     assert(SE.screen.runs >= 1 && SE.rerank.keep >= 1 && SE.rerank.runs >= 1 && SE.final.runs >= 1 && SE.combine.topTriples >= 1 && SE.combine.show >= 1 && SE.combine.show <= SE.combine.topTriples);
     assert(SE.topQ > 0 && SE.topQ <= 1 && C.MODES[SE.defaultMode]);
     assert(Number.isInteger(SE.defaultLevel) && SE.defaultLevel >= 0 && SE.defaultLevel <= G.bosses[0].levels.length);
@@ -144,7 +144,7 @@ const tests = {
       assert.equal(idOfTriple({teams: out.rows[0].teams}), want[0].id);
       // 판 수·옵션: 1단계 2판(전 조합), 2단계·3단계 판 수는 S 설정대로. 모든 작업이 Step 3·고른 레벨·보스 키로 나감
       const runs = [...new Set(log.map(m => m.n_runs))];
-      assert.deepEqual(runs, [S.screen.runs, S.rerank.runs, S.final.runs]);
+      assert.deepEqual(runs, [S.screen.runs, S.rerank.runs, S.final.runs], 'keep 이 조합 수 이상이면 반감 없이 1단계가 한 번에 screen.runs 판');
       const sent = log.flatMap(m => m.teams);
       assert(sent.every(t => t.options.cosmo_raid.step === 3 && t.options.cosmo_raid.level === 6 && BOSSES.includes(t.options.cosmo_raid.boss) && t.options.cosmo_top_q === SE.topQ));
       assert(sent.every(t => t.party.units.length === 4 && t.party.units.every(u => u.stats_final === true && u.stats_override === results[u.key].stats)), '내 최종 능력치가 그대로 작업자에게 감');
@@ -290,13 +290,18 @@ const tests = {
     const S = mkS({rerank: {keep: 200, runs: 10}}), log = [], phases = [], done = [];
     let planned;
     const out = await C.search(cxOf(S, log, {onPlan: p => { planned = p; }, onPhase: (m, t, info) => phases.push(info), onProgress: (d, t) => done.push([d, t])}));
-    assert(planned && planned.stages.length === 3 && planned.total === planned.stages.reduce((a, s) => a + s.games, 0));
-    // 1·2단계 판 수는 시작 전 계획과 정확히 같고, 3단계는 상한 이하
+    assert(planned && planned.stages.length === 4 && planned.total === planned.stages.reduce((a, s) => a + s.games, 0));
+    // 반감(keep 200 < 조합 665/2 라 적용): 단계 0 = 전 조합 firstRuns 판, 단계 1 = 상위 pass 팀(+동점)의 나머지 판. 단계 0·2 판 수는 시작 전 계획과 정확히 같고,
+    // 단계 1·3 은 상한 계획(동점이면 실제가 더 많거나 3단계는 적음)
+    assert.equal(planned.halved, true);
+    assert.equal(planned.pass, Math.max(Math.ceil(S.screen.passFrac * 665), S.screen.passMinMult * 200));
     assert.equal(phases[0].games, planned.stages[0].games);
-    assert.equal(phases[1].games, planned.stages[1].games);
-    assert(phases[2].games <= planned.stages[2].games && phases[2].games > 0);
-    assert.deepEqual(phases.map(p => p.stage), [0, 1, 2]);
-    assert.equal(planned.stages[0].games, 3 * 665 * S.screen.runs);
+    assert(phases[1].games >= planned.stages[1].games && phases[1].games <= 3 * 665 * (S.screen.runs - S.screen.firstRuns), '동점이면 계획보다 늘 수 있음');
+    assert.equal(phases[2].games, planned.stages[2].games);
+    assert(phases[3].games <= planned.stages[3].games && phases[3].games > 0);
+    assert.deepEqual(phases.map(p => p.stage), [0, 1, 2, 3]);
+    assert.equal(planned.stages[0].games, 3 * 665 * S.screen.firstRuns);
+    assert.equal(planned.stages[0].games + planned.stages[1].games, 3 * 665 * S.screen.firstRuns + 3 * planned.pass * (S.screen.runs - S.screen.firstRuns));
     assert.equal(planned.combos, 665);
     assert.equal(out.combos, 665);
     // 진행 콜백의 마지막 값 = 단계 팀 수
@@ -315,6 +320,130 @@ const tests = {
     assert(new Set(first.map(t => t.options.cosmo_raid.boss)).size === 3, '초반 작업에 보스 3명이 섞임');
     const rank = t => t.party.units.reduce((acc, u) => acc + parseInt(u.key.slice(1), 10), 0);
     assert(first.some((t, i) => i && rank(t) < rank(first[i - 1])) && first.some((t, i) => i && rank(t) > rank(first[i - 1])), '정렬되어 있지 않음');
+  },
+  // ---- 순차 반감(1단계 첫 판 → 상위만 보충 판) ----
+  pickPass_includes_boundary_ties() {
+    // 모든 팀이 같은 구원자 4명을 공유하는 데이터(구원자별 대안 통과가 개입하지 않음)로 순위+경계 동률만 확인
+    const scores = [100, 90, 80, 80, 80, 80, 70, 60, 50, 40, 30, 20, 10, 5, 4, 3, 2, 1];
+    const shared = scores.map((s, i) => ({key: 's' + i, keys: ['p', 'q', 'r', 's'], boss: 'b', cosmo: {mean: s, top: s, clear: 0, frac: 0, n: 1}}));
+    const rs = Object.fromEntries(shared.map(j => [j.key, {cosmo: j.cosmo}]));
+    const picked = n => C.pickPass(shared, rs, 'mean', n).map(e => e.st.mean);
+    assert.deepEqual(picked(2), [100, 90], '경계(2번째)가 동률이 아니면 정확히 n 개');
+    assert.deepEqual(picked(3), [100, 90, 80, 80, 80, 80], '3번째 경계(80)가 4팀 동률이면 4팀 모두 통과');
+    assert.deepEqual(picked(5), [100, 90, 80, 80, 80, 80], '경계가 동률 한가운데여도 동률 전부');
+    assert.deepEqual(picked(6), [100, 90, 80, 80, 80, 80]);
+    assert.deepEqual(picked(7), [100, 90, 80, 80, 80, 80, 70]);
+    assert.equal(picked(99).length, scores.length, 'n 이 전체 이상이면 전부');
+    // 순위 값은 기준 점수 -> 반대 점수 -> 클리어율: 기준(mean)이 같아도 top 이 다르면 동률이 아님
+    const mixed = [[80, 90], [80, 70], [80, 70], [50, 50]].map((v, i) => ({key: 'm' + i, keys: ['p', 'q', 'r', 's'], boss: 'b', cosmo: {mean: v[0], top: v[1], clear: 0, frac: 0, n: 1}}));
+    const rm = Object.fromEntries(mixed.map(j => [j.key, {cosmo: j.cosmo}]));
+    assert.deepEqual(C.pickPass(mixed, rm, 'mean', 2).map(e => e.st.top), [90, 70, 70], '2번째 (80,70) 와 3번째 (80,70) 는 동률이라 같이 통과, 마지막(50)은 탈락');
+    assert.deepEqual(C.pickPass(mixed, rm, 'mean', 1).map(e => e.st.top), [90], '1번째 (80,90) 은 다음 팀과 값이 달라 동률 아님');
+  },
+  pickPass_keeps_unit_alternatives() {
+    // 구원자 x 가 든 팀이 상위를 독점해도, x 없는 팀 중 구원자별 최고 팀은 통과해야 한다
+    const teams = [];
+    for (let i = 0; i < 5; i++) for (let j = i + 1; j < 6; j++) teams.push(['x', 'u' + i, 'u' + j, 'g']);       // x 포함 15팀(높은 점수)
+    const xs = teams.length;
+    teams.push(['a', 'b', 'c', 'd'], ['c', 'd', 'e', 'f'], ['a', 'e', 'f', 'g']);                                   // x 없는 팀 3개(낮은 점수)
+    const jobs = teams.map((ks, i) => ({key: 'k' + i, keys: ks, boss: 'b', cosmo: {mean: 1000 - i, top: 1000 - i, clear: 0, frac: 0, n: 1}}));
+    const res = Object.fromEntries(jobs.map(j => [j.key, {cosmo: j.cosmo}]));
+    const got = C.pickPass(jobs, res, 'mean', 4).map(e => teams.findIndex(t => t.join() === e.keys.join()));
+    assert(got.slice(0, 4).every(i => i < xs), '상위 4팀은 모두 x 포함');
+    assert(got.some(i => i >= xs), 'x 없는 팀(구원자별 대안)이 통과해야 함: ' + got.join());
+  },
+  mergeSummary_exact_for_two_single_runs() {
+    // 파이썬 web.cosmo_summary([s1, s2], q) 와 같은 값(tests/cosmo_web_test.py 와 같은 경계: 사사오입, 상위 판 수 올림)
+    const one = (s, c, f) => ({mean: s, top: s, clear: c, frac: f, n: 1});
+    const m = (a, b, q) => C.mergeSummary(one(...a), one(...b), q);
+    assert.deepEqual(m([2, 0, 0.5], [3, 1, 1], 0.2), {mean: 3, top: 3, clear: 0.5, frac: 0.75, n: 2}, '평균 2.5 -> 3, 상위 1판 = 큰 쪽');
+    assert.deepEqual(m([10, 0, 0], [0, 0, 0], 0.2), {mean: 5, top: 10, clear: 0, frac: 0, n: 2});
+    assert.equal(m([4, 0, 0], [3, 0, 0], 0.5).top, 4, 'q=0.5 이면 2판의 50% = 1판 -> 큰 쪽');
+    assert.equal(m([4, 0, 0], [3, 0, 0], 1).top, 4, 'q=1 이면 상위 2판 평균 3.5 -> 사사오입 4');
+    assert.equal(m([3, 0, 0], [2, 0, 0], 1).top, 3, '2.5 -> 3 (짝수 반올림이면 2 가 되어 틀림)');
+    assert.deepEqual(m([5, 0, 0], [5, 0, 0], 0.2), {mean: 5, top: 5, clear: 0, frac: 0, n: 2});
+  },
+  async halving_flow_and_equivalence() {
+    // keep 200, passMinMult 1 -> 통과 200팀 / 조합 665 라 반감 적용. 순서·시드·판 수·통과 팀 구성 확인, 반감을 끈 같은 설정과 결과가 같다(가짜 점수는 판마다 같은 값 = 잡음 없음)
+    const S = mkS({rerank: {keep: 200, runs: 10}}), log = [], plan = [];
+    const out = await C.search(cxOf(S, log, {onPlan: p => plan.push(p)}));
+    const pl = plan[0];
+    assert.equal(pl.halved, true);
+    const phase = (nr, seed) => log.filter(m => m.n_runs === nr && m.seed === seed).flatMap(m => m.teams);
+    const p1 = phase(1, 1), p2 = phase(1, 4);
+    assert.equal(p1.length, 3 * pl.combos, '첫 판: 보스 3 × 전 조합');
+    assert(p2.length >= 3 * pl.pass && p2.length < p1.length, '보충 판은 일부 팀만: ' + p2.length + ' / ' + p1.length);
+    assert(new Set(p2.map(t => t.key)).size === p2.length && p2.every(t => p1.some(u => u.key === t.key)), '보충 판 팀은 첫 판 팀의 부분집합(중복 없음)');
+    assert(log.every(m => m.n_runs !== S.screen.runs || m.n_runs === S.rerank.runs), '반감이면 1단계는 한 판 단위로만 나감');
+    // 통과 팀: 각 보스에서 첫 판 점수 상위 pass 팀을 모두 포함
+    const set = new Set(p2.map(t => t.key));
+    for (const b of BOSSES) {
+      const rankd = p1.filter(t => t.options.cosmo_raid.boss === b).map(t => ({key: t.key, s: fakeScore(b, t.party.units.map(u => u.key))})).sort((x, y) => y.s - x.s);
+      assert(rankd.slice(0, pl.pass).every(r => set.has(r.key)), b + ': 상위 pass 팀이 전부 통과해야 함');
+    }
+    // 반감 끄기(firstRuns 제거) = 같은 최적
+    const S2 = mkS({rerank: {keep: 200, runs: 10}}); delete S2.screen.firstRuns;
+    const out2 = await C.search(cxOf(S2, []));
+    assert.deepEqual(out.rows.map(r => r.sum), out2.rows.map(r => r.sum), '잡음 없는 점수에서는 반감 유무와 결과가 같다');
+    assert.deepEqual(out.rows.map(r => idOfTriple(r)), out2.rows.map(r => idOfTriple(r)));
+    assert(out.rows.every(r => disjoint(r.teams)));
+    assert.equal(out.halved, true); assert.equal(out2.halved, false);
+  },
+  async halving_keeps_optimal_triple_when_best_unit_dominates() {
+    // d0 는 3보스 모두에서 압도적(fakeScore 의 val=5000) -> 보스별 1위권이 전부 d0 팀이라, 최적 삼중(d0 는 한 보스에만)의 나머지 두 팀은 보스 목록에서 순위가 낮다.
+    // 그 팀들이 반감의 통과 범위 안에 있고 반감을 끈 결과와 같은 1위가 나오는지 확인한다.
+    const S = mkS({rerank: {keep: 200, runs: 10}});
+    const rows = C.poolAll(S, results, roster), list = GS.combos(S, rows), pl = C.plan(S, rows);
+    assert.equal(pl.halved, true);
+    for (const mode of ['mean', 'top']) {
+      // 기준 = 반감을 끈(전 조합 screen.runs 판) 같은 설정의 1위. keep 200 이 전수 최적(brute)보다 낮은 합을 낼 수 있어(keep 한계, 반감과 무관) brute 와는 비교하지 않는다
+      const S0 = mkS({rerank: {keep: 200, runs: 10}}); delete S0.screen.firstRuns;
+      const base = await C.search(cxOf(S0, [], {mode})), want = {sum: base.rows[0].sum, id: idOfTriple(base.rows[0])}, teams = want.id.split('/');
+      let lowRanked = 0;
+      BOSSES.forEach((b, i) => {
+        const f = keys => (mode === 'top' ? fakeTop : x => x)(fakeScore(b, keys));
+        const sorted = list.map(k => ({id: C.idOf(k), s: f(k)})).sort((x, y) => y.s - x.s), rank = sorted.findIndex(x => x.id === teams[i]);
+        assert(rank < pl.pass, `${b}: 최적 삼중의 팀 순위 ${rank} 가 통과 범위(${pl.pass}) 밖이면 이 시험 설계가 틀림`);
+        if (rank >= 5) lowRanked++;
+      });
+      assert(lowRanked >= 1, '최적 삼중에 «보스 목록 1위권이 아닌» 팀이 있어야 시험이 의미 있음');
+      const out = await C.search(cxOf(S, [], {mode}));
+      assert.equal(out.rows[0].sum, want.sum, mode + ': 반감을 끈 결과와 같은 합');
+      assert.equal(idOfTriple(out.rows[0]), want.id);
+    }
+  },
+  // ---- 작업자 수 자동 결정 ----
+  workerCount_table() {
+    const S0 = {workers: {coreFrac: 0.75, memFrac: 0.5, perWorkerMB: 250, unknownMemGB: 4, min: 1, max: 24, mobileMax: 2}};
+    const f = (cores, memGB, mobile) => C.workerCount(S0, {cores, memGB, mobile});
+    assert.equal(f(24, 8, false), 16, '코어 18, 메모리 16 -> 16');
+    assert.equal(f(24, undefined, false), 8, 'deviceMemory 를 모르면 4GB 가정 -> 메모리 8');
+    assert.equal(f(16, 8, false), 12);
+    assert.equal(f(8, 8, false), 6);
+    assert.equal(f(4, 4, false), 3);
+    assert.equal(f(2, 2, false), 1);
+    assert.equal(f(1, 8, false), 1, '최소 1');
+    assert.equal(f(64, 8, false), 16, '메모리가 먼저 막음');
+    assert.equal(f(96, 8, false), 16);
+    assert.equal(f(64, 8, true), 2, '모바일 상한');
+    assert.equal(f(12, 1, false), 2, '메모리 1GB -> 2');
+    assert.equal(f(12, 0.5, false), 1);
+    assert.equal(f(undefined, undefined, false), 3, '코어도 모르면 4코어 -> 3');
+    assert.equal(f(3.9, 8, false), 2, '코어 3.9 -> 3 -> 2');
+    assert.equal(C.workerCount(S0, null), 3);
+    const big = {workers: Object.assign({}, S0.workers, {memFrac: 4, max: 10})};
+    assert.equal(C.workerCount(big, {cores: 64, memGB: 8}), 10, 'max 상한');
+    const full = {workers: Object.assign({}, S0.workers, {coreFrac: 1})};
+    assert.equal(C.workerCount(full, {cores: 8, memGB: 8}), 8, 'coreFrac 설정이 반영됨');
+    assert.equal(C.workerCount({}, {cores: 8, memGB: 8}), 6, 'S.workers 가 없으면 내장 기본');
+    // 더 좋은 PC가 더 적게 쓰지 않는다(단조)
+    for (const mem of [1, 2, 4, 8]) { let prev = 0; for (let c = 1; c <= 64; c++) { const w = f(c, mem, false); assert(w >= prev, `코어 ${c} 메모리 ${mem}`); prev = w; } }
+  },
+  workers_config_in_data() {
+    const W = SE.workers;
+    assert(W && W.coreFrac > 0 && W.coreFrac <= 1 && W.memFrac > 0 && W.memFrac <= 1 && W.perWorkerMB >= 50 && W.unknownMemGB > 0 && W.min >= 1 && W.max >= W.min && W.mobileMax >= 1);
+    assert(C.workerCount(SE, {cores: 24, memGB: 8}) > 8, '이 PC 급(24코어·8GB)이 이전 상한 8 보다 많이 씀');
+    assert(C.workerCount(SE, {cores: 8, memGB: 2, mobile: true}) <= W.mobileMax);
   },
   // ---- 남은 시간 ----
   eta_blend_with_prior() {
@@ -409,13 +538,14 @@ const tests = {
     const line = C.etaLine({ready: true, remainSec: 125}, now);
     assert(line.includes('남은 시간 약 2분 5초') && line.includes('전체 완료 예상 14:07'), line);
     assert(C.etaLine({ready: false}, now).includes('계산 중'));
-    assert.deepEqual(C.priorFrom({sec: [0.1, 0.2, 0.2], workers: 4}, 8), [0.05, 0.1, 0.1], '작업자 수 비례 환산');
-    assert.equal(C.priorFrom({sec: [0.1, 0, 0.2], workers: 4}, 8), null);
+    assert.deepEqual(C.priorFrom({sec: [0.1, 0.1, 0.2, 0.2], workers: 4}, 8), [0.05, 0.05, 0.1, 0.1], '작업자 수 비례 환산');
+    assert.equal(C.priorFrom({sec: [0.1, 0, 0.2, 0.2], workers: 4}, 8), null);
     assert.equal(C.priorFrom({sec: [0.1, 0.2], workers: 4}, 8), null);
+    assert.equal(C.priorFrom({sec: [0.1, 0.2, 0.2], workers: 4}, 8), null, '단계 구성이 다른 옛 저장값(3단계)은 버림');
     assert.equal(C.priorFrom(null, 8), null);
-    const pl = {combos: 1820, total: 20000, stages: [{games: 10000}, {games: 9000}, {games: 1000}]};
+    const pl = {combos: 1820, total: 20000, stages: [{games: 10000}, {games: 0}, {games: 9000}, {games: 1000}]};
     assert(/시작하면 몇 초 뒤 예상 시간이 표시됩니다/.test(C.preText(pl, null)));
-    const t = C.preText(pl, [0.01, 0.02, 0.02]);    // 100 + 180 + 20 = 300초
+    const t = C.preText(pl, [0.01, 0.01, 0.02, 0.02]);    // 100 + 0 + 180 + 20 = 300초
     assert(t.includes('예상 약 5분') && t.includes('20,000판'), t);
   },
   html() {
