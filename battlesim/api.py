@@ -130,6 +130,15 @@ def _norm_encounter(enc):
             turn_limit = meta['turn_limit']
         fx, unknown = parse_fx(fx_texts or [])
         return waves, turn_limit, fx, unknown, meta
+    if 'cosmo_raid' in enc:
+        # 코스모 게이트 시즌 전투: {"cosmo_raid": {"boss": "벨그라스|티리아|카넬리아"(또는 belgras|tyria|carnelia), "step": 1~3, "level": 0~18(Step 3 만)}} — starsavior/cosmo_raid.py
+        from .starsavior.cosmo_raid import build_waves as cosmo_waves
+        c = enc['cosmo_raid'] or {}
+        waves, meta = cosmo_waves(c.get('boss', '벨그라스'), int(c.get('step', 3)), int(c.get('level', 0)))
+        if turn_limit is None:
+            turn_limit = meta['turn_limit']
+        fx, unknown = parse_fx(fx_texts or [])
+        return waves, turn_limit, fx, unknown, meta
     if 'stage' in enc:
         s = enc['stage']
         if isinstance(s, str):
@@ -201,6 +210,19 @@ def assumptions_used(mc, opts):
                          '대부분의 반응 트리거 스킬(웨딩 카르멘 「수호의 기사」·프로페서M 「악에서 악으로」만 지원), 연쇄 피해의 「턴 끝에 발생」 시점'))
     out.append(dict(rule='model.random_choice', value='uniform', grade='assumed',
                     note='가중치가 명시되지 않은 무작위 효과·무작위 적은 균등 추첨. 핀볼 타임!·특급 배송의 실제 개별 확률은 자료 미기재로 미확인'))
+    return out
+
+
+def cosmo_approx(boss):
+    """결과에 싣는 «근사/추정» 목록(docs/cosmo_raid.md 와 같은 항목)"""
+    out = ['점수 합산식: 서버 계산이라 추정(남은 턴·생존 항은 클리어일 때만, 배율 사사오입, 달성 점수 배율 미적용)',
+           '난이도 레벨 배율: 능력치 x (1 + ScaleFactor/10000) (추정)',
+           '시즌 버프: 속성/직업 조건 아군에게 상시 효과 (BCT_* 해석 추정)',
+           '전투력 보정(power_penalty)은 기존 코스모 N단계와 같은 권장 전투력으로 적용']
+    if boss == 'belgras':
+        out += ['벨그라스: 썩은 의지 발생 체크 버프(BOSS_6)는 변화 전 상태로 판정하는 근사',
+                '벨그라스: 공허 붕괴 추가 고정 피해를 타격한 아군 각각에게 방어 무시·보호막 적용으로 근사(범위·보호막 적용 미확인)',
+                '벨그라스: 기록자·처단자 응집된 생기 재충전은 영양 과잉이 끝난 뒤 다음 시전 종료 때로 근사']
     return out
 
 
@@ -277,9 +299,13 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     defs, leader = _norm_party(party_spec, db, o.get('stat_mode', 'fixed'), build, mc)
     if not defs:
         raise ValueError('party_spec 이 비어 있음')
+    if o.get('cosmo_raid') and 'cosmo_raid' not in encounter_spec:
+        encounter_spec = dict(encounter_spec, cosmo_raid=o['cosmo_raid'])     # options.cosmo_raid 로도 받음(encounter 가 우선)
     waves, turn_limit, fx, fx_unknown, meta = _norm_encounter(encounter_spec)
     if meta.get('guild') and 'guild_boss' not in (o.get('rules_override') or {}):
         mc = dict(mc, guild_boss='on')     # 길방 전투에서만 BFB 상태 기계를 켠다(명시하면 그 값)
+    if meta.get('cosmo_raid') and 'cosmo_raid_boss' not in (o.get('rules_override') or {}):
+        mc = dict(mc, cosmo_raid_boss='on')    # 코스모 시즌 전투에서만 난이도 레벨·챌린지·벨그라스 상태 기계를 켠다(명시하면 그 값)
     max_turns = encounter_spec.get('max_turns', 50)
     sudden = sudden_death()['groups'].get(meta.get('sudden_death')) if meta.get('sudden_death') else None
     power = party_power(defs)
@@ -317,6 +343,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     first = defaultdict(int)
     offset = int(o.get('run_offset', 0))
     per_run = [] if o.get('per_run') else None
+    raid_runs = [] if meta.get('cosmo_raid') else None     # 판별 점수 재료: 깎은 보스 HP 비율·남은 턴·생존 구원자 수·클리어
+    raid_ctl = defaultdict(int)                             # 컨트롤러 경로 횟수 합계(시험이 «경로가 실제로 탔는지» 확인하는 용도)
     prog = []   # 판마다 적 진척도(0~1): 끝낸 웨이브 수 + 현재 웨이브에서 깎은 체력 비율, 웨이브 수로 나눔. 클리어 0% 팀끼리 순위를 가르는 데 쓴다
     via_tot = defaultdict(int)   # 아군 시전 경로별 합계(coop 등), 결과에는 판당 평균
     t0 = time.perf_counter()
@@ -341,6 +369,14 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
             ttk.append(b.clear_t / b.turn_ticks)
             ttk_actions.append(sum(u.actions for u in b.allies) + sum(u.actions for u in b.all_foes))
         prog.append(b.progress())
+        if raid_runs is not None:
+            for k, v in getattr(b.gb, 'stats', {}).items():
+                raid_ctl[k] += v
+            boss_u = getattr(b.gb, 'boss', None)
+            frac = 1.0 if b.result == 'clear' else (0.0 if boss_u is None else max(0.0, min(1.0, 1 - max(0.0, boss_u.hp) / boss_u.maxhp)))
+            clear = b.result == 'clear'
+            raid_runs.append((round(frac, 6), max(0, turn_limit - b.global_turns) if (clear and turn_limit) else 0,
+                              sum(1 for u in b.allies if not u.dead), clear, b.global_turns))
         for k, v in getattr(b, 'ally_via', {}).items():
             via_tot[k] += v
         if per_run is not None:
@@ -426,6 +462,15 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         runtime_ms_per_run=round(elapsed * 1000 / max(1, n), 2),
         seed=seed,
     )
+    if raid_runs is not None:
+        from .starsavior.cosmo_raid import cosmo_score, load as cosmo_load
+        cr = meta['cosmo_raid']
+        G = cosmo_load()
+        res['cosmo_raid'] = dict(
+            cr, damage_frac_runs=[r[0] for r in raid_runs], remain_turns_runs=[r[1] for r in raid_runs],
+            survivors_runs=[r[2] for r in raid_runs], clear_runs=[r[3] for r in raid_runs], turns_used_runs=[r[4] for r in raid_runs],
+            score_runs=[cosmo_score(G, cr['level'], r[0], r[1], r[2], r[3], cr['boss'], cr['step']) for r in raid_runs],
+            score_conf='추정', approx=cosmo_approx(cr['boss']), ctl=dict(raid_ctl))
     if timeline is not None:
         res['timeline'] = timeline
     if per_run is not None:

@@ -51,6 +51,13 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 - 단계 표 값은 클라 표 `GUILD_DUNGEON` 전투 표의 새 시즌 행(`static-data/tables`)에서, 날짜·별의 도전 문구는 공식 공지에서 확인한다. 점수 계산식이 확인되면 `score.hypotheses` 를 하나로 줄이고 `conf` 를 «확인» 으로.
 - 추천 연결: 콘텐츠는 `party_contents.json` 의 «길드방어전»(`seasonal`, 보스 BFB 별(배치 ChangeAdjustType)), 스테이지·기믹은 시즌 파일에서 만든다(`guild_defense.foe_content`, `stage_gimmicks`). `data/foe_stages.json`·`stage_gimmicks.json` 은 건드리지 않는다.
 
+### 4-2. 코스모 게이트 시즌 갱신(시즌제 콘텐츠)
+시즌 값(보스 3종·Step 스탯·난이도 레벨 표·챌린지 효과·시즌 전투 버프·점수 상수·벨그라스 수치)은 `data/cosmo_raid.json` **한 곳**에 있고 코드(`battlesim/starsavior/cosmo_raid.py`, `cosmo_raid.js`)는 시즌 공통이다. 자세한 근사 목록은 `docs/cosmo_raid.md`.
+- 새 시즌 표를 추출한 폴더(파일명 `CLIENT_` 접두, 문자열 `hard/STRING_COMMON.json`, 배치 스크립트 `plain/`)를 만든다. 비공개 static-data 에 새 표를 반영하는 일과는 별개이며 빌더는 폴더를 인자로 받는다.
+- `python -X utf8 -I tools/build_cosmo_raid.py --tables <폴더> --season <RankingRaidSeasonId> --build <빌드>` → `data/cosmo_raid.json`. 기대한 표 구조(벨그라스 스킬·버프·SE)와 다르면 `Changed` 로 멈춘다 — 그때는 상태 기계(`Controller`)를 사람이 다시 확인한다. 새 챌린지 효과 번호(`SET_NN`)는 `EFFECT_KIND` 에 추가하고 엔진 처리(`on_wave`/`after_cast`/`post_hit`)를 넣는다(없으면 `kind=null` → 시뮬 결과 `unsupported.runtime` 에 «미지원 챌린지 효과» 로 남음).
+- 보스가 바뀌면(벨그라스가 아닌 새 보스) `build()` 의 보스 key 매핑과 엔진의 보스 정의(`build_waves`)를 추가한다. 티리아·카넬리아처럼 databook 에 스킬 줄이 있는 보스는 기존 `cosmo` 콘텐츠 N단계를 재사용한다(`tools/update.py` 로 foe 자료를 먼저 갱신).
+- `python -X utf8 -I tools/build_simpack.py`(`data/cosmo_raid.json` 은 시뮬 파일 목록에 포함) → `python -X utf8 -I tests/cosmo_raid_test.py`(`COSMO_TABLES=<폴더>` 를 주면 표에서 다시 뽑은 값과 대조) → `tools/run_tests.py --rebuild`.
+
 ## 5. 저장소에 없는 것(다른 PC에서 다시 설정)
 - Claude 의 메모리·`AI\CLAUDE.md` 규약은 저장소에 없다. 이 저장소의 `HANDOFF.md` 와 이 문서가 같은 내용을 담았다.
 - GitHub 로그인(`gh auth login`)과 git 사용자 설정(개인 메일 대신 noreply: `git config user.email 87477643+QooReche@users.noreply.github.com`).

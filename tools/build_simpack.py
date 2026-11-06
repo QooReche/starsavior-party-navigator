@@ -20,7 +20,7 @@ FIXED = ['battlesim/rules/default.json', 'battlesim/rules/builds.json', 'rawdata
          'data/sudden_death.json', 'data/battle_end.json',
          'data/break_skill_levels.json', 'data/buff_count.json', 'data/buff_force.json', 'data/buff_immune_pass.json',
          'data/foe_react.json', 'data/foe_summon.json',
-         'data/guild_bfb.json', 'data/guild_defense.json']   # 길드 방어전 BFB(starsavior/guild_bfb.py)
+         'data/guild_bfb.json', 'data/guild_defense.json', 'data/cosmo_raid.json']   # 길드 방어전 BFB(starsavior/guild_bfb.py)
 
 
 def files():

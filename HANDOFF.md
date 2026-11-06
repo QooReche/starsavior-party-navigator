@@ -31,6 +31,13 @@
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
 13. (11/05 반영 완료, 절 «60턴 이내 승리») 남은 것: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있음 — 필요하면 `STAR_TURNS` 확장. 65턴(2별 추정)은 표시 안 함.
 
+## ▶ 2026-11-06 (Claude) — 코스모 게이트 시즌 1022 시뮬 1단계: 데이터+엔진+점수 (푸시 전)
+
+- `tools/build_cosmo_raid.py`(새 표 폴더를 인자로 받음, static-data 는 건드리지 않음) → `data/cosmo_raid.json`(빌드 26429597). 엔진 `battlesim/starsavior/cosmo_raid.py`, 스위치 `mc.cosmo_raid_boss`(기본 off, 새 키는 rules_test 목록에 추가), 점수 `cosmo_score`/`cosmo_raid.js` `cosmoScore`.
+- api: `encounter.cosmo_raid = {boss, step, level}` → 결과 최상위 `cosmo_raid`(판별 깎은 비율·남은 턴·생존 수·점수·경로 횟수). 기존 해시 시험 영향 없음.
+- 점수 합산식·난이도 배율·시즌 버프 대상·벨그라스 일부 규칙은 «추정/근사». 목록은 `docs/cosmo_raid.md`. 갱신 절차 `docs/PORTING.md` 4-2.
+- 남은 일: 2단계(3보스 분할 탐색·UI), 영상 대조, 근사 항목 확인, 티리아·카넬리아 스킬 줄과 새 표의 대조.
+
 ## ▶ 2026-11-05 오후 (게임 PC, Claude) — 장비 탐사 «60턴 이내 승리» 반영 (푸시 완료)
 
 - 근거: 표 `BATTLE_TEMPLET_NORMAL`의 `BattleMissionData`에 `BMT_LIMIT_TURN` 65·60이 탐사(EXPLORE) 60개 스테이지에 걸려 있음(큐브·이벤트·일일은 각각 65/60·50/45). 클라 `NKC` 미션 판정은 `턴 > 한도`면 실패(NKC:590576-590598), 영상 샘플 결과 화면 «TURN 52 (52/60)»과 같은 단위 → 엔진 `turn_limit_unit=actions`(전역 행동 수, `ttk_actions`)와 일치. 클라 카운터가 전역 턴과 같은지는 코드로 끝까지 추적하지 않았고 영상 샘플로만 확인.

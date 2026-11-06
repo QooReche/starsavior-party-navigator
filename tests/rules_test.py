@@ -329,6 +329,8 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'break_point_hits', 'dot_formula', 'react_hist_unit', 'immune_force_apply', 'break_auto_blocked_cc',
     # 2026-11-05 길방 보스 속도·공격력 NV 합산
     'guild_boss_nv_sum',
+    # 2026-11-06 코스모 게이트 시즌 전투(벨그라스·난이도 레벨·챌린지 효과)
+    'cosmo_raid_boss',
 ])
 _NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'wave_carry', 'break_skill_model'})
 
