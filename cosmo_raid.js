@@ -17,7 +17,7 @@
   // HUD = 기본 + 최대 피해 점수 × (깎은 HP 비율; 1/10000 내림, 정수 나눗셈 내림). 클리어면 + 남은 턴 점수 × 남은 턴 + 생존 구원자 점수 × 생존 수(추정).
   // 최종 = (합) × (1 + 난이도 점수/10000) 사사오입(정수 연산) + 달성 점수(깎은 비율 ≥ 0.5: half, 클리어: kill; 배율 미적용). step 1·2 는 난이도 없음.
   function cosmoScore(G, level, damageFrac, remainTurns, survivors, clear, boss, step) {
-    const b = bossOf(G, boss || "belgras"), st = b.steps[(step || 3) - 1];
+    const b = bossOf(G, boss || G.season.bossOrder[0]), st = b.steps[(step || 3) - 1];
     const f = Math.max(0, Math.min(1, clear ? 1 : damageFrac));
     const q = Math.floor(f * RATIO_UNIT + 1e-9);
     let raw = st.base + Math.floor(st.maxDamage * q / RATIO_UNIT);

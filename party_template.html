@@ -497,7 +497,26 @@ $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[
  if(b.dataset.gs==="start")guildSearchStart();
  else if(b.dataset.gs==="cancel"){GSR.id++;if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";renderGuildSearch(true)}});
 // ── 코스모 게이트 «3보스 최고 점수 편성 찾기»(cosmo_search.js): 보스별 전 조합 짧게 → 상위 팀 정확히 → 겹침 없는 3팀 최대 합 → 상위 편성 재확인. 난이도 레벨(Step 3)은 사용자가 고름
-const CSR={phase:"idle",msg:"",done:0,total:0,rows:[],handle:null,id:0,optLevel:null,optMode:null};
+const CSR={phase:"idle",msg:"",done:0,total:0,rows:[],handle:null,id:0,optLevel:null,optMode:null,sig:"",etaText:"",eta:null,runs:1};
+const csSig=()=>(MI.hash||"")+"|"+[...EXCL].sort().join(",");   // 내 정보·추천 제외가 바뀌었는지 비교하는 서명
+const csNow=()=>performance.now()/1000;
+const csWorkers=()=>Math.max(2,Math.min(8,(navigator.hardwareConcurrency||4)-1));
+const csProfile=()=>MI.info&&MI.growth?(MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,MI.growth,"cosmo"))):null;
+function csPre(){   // 시작 전 «예상 시간» 안내(저장된 이 PC 속도가 있으면 예상 시간, 없으면 안내 문구)
+ try{const S=D.cosmoRaid.search,pf=csProfile();if(!pf)return "시작하면 몇 초 뒤 예상 시간이 표시됩니다";
+  const rows=CosmoSearch.poolAll(S,pf.results,R.filter(s=>!EXCL.has(s.key)));if(CosmoSearch.feasibility(S,rows))return "";
+  return CosmoSearch.preText(CosmoSearch.plan(S,rows),CosmoSearch.priorFrom(LS.get("cosmo.speed"),csWorkers()))}catch(e){return ""}}
+let csLast=0,csTimer=0;
+function csTick(force){   // 진행 글자만 200ms 이상 간격으로 갱신(취소 버튼 등 DOM 은 다시 만들지 않음)
+ const now=performance.now();
+ if(!force&&now-csLast<200){if(!csTimer)csTimer=setTimeout(()=>{csTimer=0;csTick(true)},200-(now-csLast));return}
+ if(csTimer){clearTimeout(csTimer);csTimer=0}
+ csLast=now;if(CSR.phase!=="run")return;
+ if(CSR.eta)CSR.etaText=CosmoSearch.etaLine(CSR.eta.estimate(csNow()),Date.now());
+ const a=document.querySelector('#cosmo-search [data-k="cs-prog"]'),b=document.querySelector('#cosmo-search [data-k="cs-eta"]');
+ if(a)a.textContent=CosmoSearch.progText(CSR);if(b)b.textContent=CSR.etaText}
+function csReset(){   // 내 정보 다시 불러오기·제외 목록 변경: 진행 중인 검색은 취소(끝난 결과는 남기되 서명이 달라 «낡은 결과»로 표시)
+ if(CSR.phase==="run"){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.id++;CSR.phase="idle";CSR.eta=null}}
 function csOpt(){const C=D.cosmoRaid;
  if(CSR.optLevel==null){const v=LS.get("cosmo.level");CSR.optLevel=Number.isInteger(v)&&v>=0&&v<=C.levelMax?v:C.search.defaultLevel}
  if(CSR.optMode==null){const v=LS.get("cosmo.mode");CSR.optMode=CosmoSearch.MODES[v]?v:C.search.defaultMode}}
@@ -505,27 +524,32 @@ const csBoss=k=>((D.cosmoRaid.bosses.find(b=>b.key===k))||{}).name||k;
 function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").value];
  if(!c||c.key!=="cosmo"||!D.cosmoRaid||!window.CosmoSearch){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}if(CSR.phase==="run"){CSR.phase="idle";CSR.id++}p.hidden=true;p.innerHTML="";return}
  csOpt();p.hidden=false;
- p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode})}
+ if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
+ if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
+ p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,sig:csSig(),preEta:MI.info?csPre():""})}
 async function cosmoSearchStart(){
  if(!MI.info||CSR.phase==="run")return;
  const C=D.cosmoRaid,id=++CSR.id,stale=()=>CSR.id!==id,paint=()=>renderCosmoSearch(),level=CSR.optLevel,mode=CSR.optMode;
  try{
-  CSR.phase="run";CSR.msg="내 구원자 능력치 계산 중";CSR.done=0;CSR.total=0;paint();
+  CSR.phase="run";CSR.sig=csSig();CSR.msg="내 구원자 능력치 계산 중";CSR.done=0;CSR.total=0;CSR.eta=null;CSR.etaText="";CSR.runs=1;paint();
   const growth=await miGrowth();if(stale())return;
   const profile=MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,growth,"cosmo"));
-  const workers=Math.max(2,Math.min(8,(navigator.hardwareConcurrency||4)-1)),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
-  const out=await CosmoSearch.search({S:C.search,bosses:C.bosses.map(b=>b.key),level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
+  const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=C.search;
+  const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
    makeWorker:()=>new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,
-   onPhase:(m,t)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;paint()},onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;paint()},onHandle:h=>{CSR.handle=h}});
+   onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed"),workers)})},
+   onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();csTick(true)},
+   onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());csTick(false)},onHandle:h=>{CSR.handle=h}});
   if(!out||stale())return;
-  Object.assign(CSR,out,{phase:"done",handle:null});paint()
- }catch(e){if(stale())return;CSR.handle=null;CSR.phase=/^취소$/.test(e.message)?"idle":"err";CSR.msg=e.message||String(e);paint()}}
+  const sum=CSR.eta&&CSR.eta.summary();if(sum)LS.set("cosmo.speed",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
+  Object.assign(CSR,out,{phase:"done",handle:null,eta:null});paint()
+ }catch(e){if(stale())return;CSR.handle=null;CSR.eta=null;CSR.phase=/^취소$/.test(e.message)?"idle":"err";CSR.msg=e.message||String(e);paint()}}
 $("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("select[data-cs]");if(!t)return;
  if(t.dataset.cs==="level"){CSR.optLevel=+t.value;LS.set("cosmo.level",CSR.optLevel)}else{CSR.optMode=t.value;LS.set("cosmo.mode",CSR.optMode)}
  if(CSR.phase!=="run")renderCosmoSearch()});
 $("cosmo-search").addEventListener("click",e=>{const b=e.target.closest("button[data-cs]");if(!b)return;
  if(b.dataset.cs==="start")cosmoSearchStart();
- else if(b.dataset.cs==="cancel"){CSR.id++;if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.phase="idle";renderCosmoSearch()}});
+ else if(b.dataset.cs==="cancel"){CSR.id++;if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.phase="idle";CSR.eta=null;renderCosmoSearch()}});
 
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.name)}</option>`).join("");
 function tabsOf(c){const m=new Map();c.stages.forEach(s=>{if(!m.has(s.tab))m.set(s.tab,s.tabLabel)});return [...m]}
@@ -1224,7 +1248,7 @@ $("mi-q").oninput=()=>renderMi();
 $("mi-list").addEventListener("change",e=>{const x=e.target.closest("input[data-use]");if(!x)return;if(x.checked)EXCL.delete(x.dataset.use);else EXCL.add(x.dataset.use);
  gsReset();LS.set("excl",[...EXCL]);syncOwn();saveSel();updCount();renderMi();rerun()});
 $("mi-excl").addEventListener("click",e=>{if(!e.target.closest("button[data-exclclear]"))return;gsReset();EXCL.clear();LS.set("excl",[]);syncOwn();saveSel();updCount();renderMi();rerun()});
-function gsReset(){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.id++;GSR.phase="idle";GSR.rows=[];GSR.msg=""}   // 내 정보·추천 제외가 바뀌면 이전 편성 찾기 결과·진행을 버림
+function gsReset(){try{csReset()}catch(e){}if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.id++;GSR.phase="idle";GSR.rows=[];GSR.msg=""}   // 내 정보·추천 제외가 바뀌면 이전 편성 찾기 결과·진행을 버림
 function miReset(info){simInvalidate();gsReset();SIMQ.res={};SIMQ.scr={};SIMQ.refined=new Set();SIMQ.more={};SIMQ.err="";BRCMP.seen.clear();BRCMP.open={};for(const k in PICK)delete PICK[k];
  MI.info=info;MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
  if(info)$("grow").value="myinfo";else if($("grow").value==="myinfo")$("grow").value="1";

@@ -322,12 +322,14 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
 
 
 # «3보스 최고 점수 편성 찾기»(cosmo_search.js) 설정 — 표에서 오는 값이 아니라 탐색 비용 정책이라 여기에 고정해 data 에 싣는다.
-# poolSize 는 3팀 12명 이상이어야 하고, 조합 수 C(poolSize,4)×3보스가 1단계 판 수를 정한다(docs/cosmo_raid.md 2단계).
+# 기본은 전수 탐색: 보유 육성 구원자 전부가 후보(maxPool=None). 조합 수 C(후보,4)×3보스가 1단계 판 수를 정한다(docs/cosmo_raid.md 2단계).
+# maxPool(숫자)을 주면 그때만 전투력 상위 maxPool 명 + minRole 보충(minPowerRatio 이상)으로 자른다. maxCombos 는 보스당 조합 수 안전 상한(넘으면 시작하지 않고 안내).
+# etaWeights = 단계별 «한 판 상대 비용»(남은 시간 계산에서 아직 안 해 본 단계의 속도를 추정할 때 쓰는 초기값, 실측으로 조정).
 SEARCH = dict(
-    _note='3보스 구원자 겹침 금지 편성 찾기(cosmo_search.js) 설정. 풀 크기·판 수는 브라우저 계산 시간(판당 약 0.1초 안팎)과 정밀도의 절충이라 실측으로 조정한다.',
-    poolSize=16, minPowerRatio=0.6, minRole={'서포터': 2, '디펜더': 2}, minFront=1, minDealer=1,
-    screen=dict(runs=2), rerank=dict(keep=300, runs=10), combine=dict(topTriples=10, show=5), final=dict(runs=40),
-    topQ=0.2, defaultMode='mean', defaultLevel=0)
+    _note='3보스 구원자 겹침 금지 편성 찾기(cosmo_search.js) 설정. 기본은 보유 육성 구원자 전수 탐색이고, 판 수·keep 은 정밀도와 계산 시간의 절충이라 실측으로 조정한다.',
+    maxPool=None, maxCombos=300000, minPowerRatio=0.6, minRole={'서포터': 2, '디펜더': 2}, minFront=1, minDealer=1,
+    screen=dict(runs=2), rerank=dict(keep=300, runs=20), combine=dict(topTriples=10, show=5), final=dict(runs=40),
+    topQ=0.2, defaultMode='top', defaultLevel=0, etaWeights=[1, 0.6, 0.25], etaWarmupSec=10, etaWindowSec=20, etaWinFrac=0, etaBlendSec=30)
 
 
 def main():

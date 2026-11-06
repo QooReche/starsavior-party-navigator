@@ -90,12 +90,14 @@ def effect_table(src=SRC):
 RATIO_UNIT = 10000
 
 
-def cosmo_score(G, level, damage_frac, remain_turns, survivors, clear, boss='belgras', step=3):
-    """코스모 게이트 최종 점수(정수). **합산식은 서버 계산이라 «추정»**, 클라 HUD 식은 기본 + 최대 피해 점수 x 깎은 HP 비율.
+def cosmo_score(G, level, damage_frac, remain_turns, survivors, clear, boss=None, step=3):
+    """코스모 게이트 최종 점수(정수). **합산식은 서버 계산이라 «추정»**, 클라 HUD 식은 clamp(기본 + 최대 피해 점수 x floor((maxHP-HP)x10000/maxHP)/10000 내림, 0, 기본+최대 피해 점수)로 매번 내림(NKM:16914 확인).
       HUD    = BasePoint + MaxDamagePoint x (깎은 HP 비율)            (비율은 1/10000 내림 후 정수 나눗셈 내림, 길방 boss_points 와 같은 방식)
       클리어 = HUD + RemainTurnPoint x 남은 턴 + RemainingSaviorPoint x 생존 구원자 수   (남은 턴·생존 항은 클리어일 때만: 추정)
       최종   = (위 합) x (1 + DifficultyValue/10000) 를 사사오입(정수 연산) + 달성 점수(HalfHPScore: 깎은 비율 >= 0.5 / KillScore: 클리어, 배율 미적용)
     level = Step 3 난이도 레벨(0 = 난이도 없음 → 배율·달성 점수 0). step 1·2 는 level 을 무시한다(난이도 그룹 없음)."""
+    if boss is None:                     # 기본 보스 = 시즌 데이터의 첫 보스(시즌마다 달라질 수 있어 이름을 코드에 고정하지 않음)
+        boss = G['season']['bossOrder'][0]
     b = boss if isinstance(boss, dict) else _boss_of(G, boss)
     st = b['steps'][step - 1]
     f = max(0.0, min(1.0, 1.0 if clear else damage_frac))
@@ -166,9 +168,14 @@ class CosmoFoe:
         self.cosmo = cosmo
 
 
-def _tyria_immune(src):
+def _donor_immune(b, src):
+    """벨그라스 모델 보스는 면역 목록 표가 따로 없어 «같은 면역 그룹(immuneGroup)의 기존 databook 보스 마지막 단계»의 면역을 쓴다.
+    그 보스는 데이터(bosses)에서 찾는다(이름·단계 수를 코드에 고정하지 않음)."""
     from .foe import stage_waves
-    return stage_waves('cosmo', '티리아', '티리아 3단계', src)[1][0][0].immune
+    for o in load(src)['bosses']:
+        if o['key'] != b['key'] and o.get('immuneGroup') == b.get('immuneGroup'):
+            return stage_waves('cosmo', o['name'], '%s %d단계' % (o['name'], len(o['steps'])), src)[1][0][0].immune
+    raise ValueError('면역 목록을 빌려 올 같은 면역 그룹 보스가 없음: %r' % (b['key'],))
 
 
 def build_waves(boss, step, level=0, src=SRC):
@@ -193,7 +200,7 @@ def build_waves(boss, step, level=0, src=SRC):
                   '궁극기': _skill('궁극기', '공허 붕괴', sk['hyper']['coef'], sk['hyper']['cd'], sk['hyper']['tough'], all_=True)}
         spawn = 'B' if st['bossSpecial'] and st['bossHyper'] else ('S' if st['bossSpecial'] else 'H' if st['bossHyper'] else 'N')
         boss_def = CosmoFoe('cosmo:belgras', '벨그라스', dict(role=b['role'], element=b['element'], attackKind=b['attackKind']),
-                            _scale_stats(st['stats'], row), skills, True, spawn, 2, immune=_tyria_immune(src), cosmo=cfg)
+                            _scale_stats(st['stats'], row), skills, True, spawn, 2, immune=_donor_immune(b, src), cosmo=cfg)
         mm = bm['minions']
         foes = []
         for kind, nm in (('recorder', '기록자'), ('executioner', '처단자')):

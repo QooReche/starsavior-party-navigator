@@ -1453,12 +1453,22 @@ def test_cosmo_search(browser, ctx):
     choose(page, "코스모 게이트", "길레 2단계")
     shown = panel.is_visible()
     has_btn = page.locator('#cosmo-search button[data-cs="start"]').count()
-    page.evaluate("""() => {const S=D.cosmoRaid.search;S.poolSize=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2}""")
+    # 기본은 전수 탐색이라 시험에서만 풀을 12명으로 제한(maxPool)하고 저장된 이 PC 속도를 지운다
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed')}catch(e){}}""")
     page.select_option('#cosmo-search select[data-cs="level"]', "3")
     lvl = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value")
+    # 시작 전 안내: 이 PC 속도를 모르면 «시작하면 몇 초 뒤 예상 시간이 표시됩니다»
+    pre0 = page.locator('#cosmo-search [data-k="cs-eta-pre"]').all_text_contents()
+    pre0_ok = len(pre0) == 1 and "시작하면 몇 초 뒤 예상 시간이 표시됩니다" in pre0[0]
     # 취소: 진행 표시가 보이면 눌러 처음 상태로 돌아가고, 잠시 뒤에도 결과가 끼어들지 않아야 함
     page.click('#cosmo-search button[data-cs="start"]')
     page.wait_for_selector('#cosmo-search [data-k="cs-progress"]', timeout=30000)
+    eta_run = page.locator('#cosmo-search [data-k="cs-eta"]').all_text_contents()
+    eta_run_ok = len(eta_run) == 1 and "남은 시간" in eta_run[0]
+    # 진행 갱신 때 취소 버튼을 다시 만들지 않음(같은 요소가 유지되는지)
+    page.evaluate("""() => { window.__cancelBtn = document.querySelector('#cosmo-search button[data-cs="cancel"]') }""")
+    page.wait_for_timeout(600)
+    keep_btn = page.evaluate("""() => CSR.phase !== 'run' || document.querySelector('#cosmo-search button[data-cs="cancel"]') === window.__cancelBtn""")
     page.click('#cosmo-search button[data-cs="cancel"]')
     page.wait_for_selector('#cosmo-search button[data-cs="start"]', timeout=5000)
     page.wait_for_timeout(1500)
@@ -1474,6 +1484,17 @@ def test_cosmo_search(browser, ctx):
               parts: r.teams.reduce((a, t) => a + CosmoSearch.metric(t.st, CSR.mode), 0), level: CSR.level, phase: CSR.phase,
               shown: document.querySelector('[data-k=cs-sum]').textContent.replace(/,/g, '')} }""")
     names = page.locator('#cosmo-search [data-k="cs-best"] tbody tr td:first-child').all_text_contents()[:3]
+    # 완주하면 이 PC 속도가 저장되고, 끝난 화면의 시작 전 안내가 «예상 약 …»(저장 속도 기준)으로 바뀜
+    speed = page.evaluate("() => { try { return JSON.parse(localStorage.getItem('pn.cosmo.speed')) } catch (e) { return null } }")
+    speed_ok = bool(speed) and len(speed.get("sec", [])) == 3 and all(x > 0 for x in speed["sec"]) and speed.get("workers", 0) > 0
+    pre1 = page.locator('#cosmo-search [data-k="cs-eta-pre"]').all_text_contents()
+    pre1_ok = len(pre1) == 1 and "지난 실행 속도 기준 예상 약" in pre1[0]
+    # 추천 제외 목록이 바뀌면 «낡은 결과»
+    old0 = page.locator('#cosmo-search [data-k="cs-old"]').count()
+    page.evaluate("() => { EXCL.add(R[0].key); renderCosmoSearch() }")
+    old1 = page.locator('#cosmo-search [data-k="cs-old"]').count()
+    page.evaluate("() => { EXCL.delete(R[0].key); renderCosmoSearch() }")
+    old2 = page.locator('#cosmo-search [data-k="cs-old"]').count()
     # 난이도를 바꾸면 낡은 결과 경고
     page.select_option('#cosmo-search select[data-cs="level"]', "4")
     stale = page.locator('#cosmo-search [data-k="cs-stale"]').count()
@@ -1485,9 +1506,11 @@ def test_cosmo_search(browser, ctx):
           and state["bosses"] == ["belgras", state["bosses"][1], state["bosses"][2]] and len(set(state["bosses"])) == 3 and len(set(names)) == 3
           and state["nkeys"] == 12 and state["uniq"] == 12 and state["sum"] > 0 and abs(state["sum"] - state["parts"]) < 1e-6
           and state["shown"] == str(round(state["sum"])) and state["level"] == 3 and state["phase"] == "done"
-          and stale == 1 and hidden_after and not errs)
-    return ok, "처음 숨김 %s / 코스모 표시 %s / 취소 %s / 표 %d줄 %s / 12명 중복 없음 %s / 합계 %s / 낡은 경고 %d / 숨김 %s / 오류 %s" % (
-        hidden_first, shown, cancel_ok, rows, names, state["uniq"] == 12, state["sum"], stale, hidden_after, errs[:2])
+          and stale == 1 and hidden_after and not errs
+          and pre0_ok and eta_run_ok and keep_btn and speed_ok and pre1_ok and (old0, old1, old2) == (0, 1, 0))
+    return ok, "처음 숨김 %s / 코스모 표시 %s / 취소 %s / 표 %d줄 %s / 12명 중복 없음 %s / 합계 %s / 낡은 경고 %d / 숨김 %s / 오류 %s / 시작 전 안내 %s %s / 남은 시간 칸 %s %s / 취소 버튼 유지 %s / 속도 저장 %s / 낡은 결과 %s" % (
+        hidden_first, shown, cancel_ok, rows, names, state["uniq"] == 12, state["sum"], stale, hidden_after, errs[:2],
+        pre0_ok, pre0[:1], eta_run_ok, eta_run[:1], keep_btn, speed_ok, (old0, old1, old2))
 
 
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,

@@ -129,21 +129,28 @@
 
   // 작업자 풀로 한 단계 실행. makeWorker() → Worker 호환 객체(postMessage/onmessage/terminate). 결과 res[key] = {prog, clear, n}
   // 진행·취소: onProgress(done, total), handle.cancel(). 작업자가 오류를 내면 reject.
-  function runPhase({makeWorker, jobs, workers, runs, seed, stage, base, onProgress}) {
-    const parts = split(jobs, workers), res = {}, ws = [];
-    let done = 0, finished = 0, dead = false, rejectFn;
+  // chunk(숫자, 선택): 주면 정적 분할 대신 «작업 큐»로 chunk 팀씩 끝나는 작업자에게 나눠 준다(빠른 작업자가 더 많이 처리, 끝 꼬리 지연 감소).
+  // 작업자는 run 메시지를 여러 번 받을 수 있다(sim_worker.js 가 메시지마다 처리). 안 주면 예전처럼 정적 분할.
+  function runPhase({makeWorker, jobs, workers, runs, seed, stage, base, onProgress, chunk}) {
+    const dyn = chunk > 0;
+    const parts = dyn ? Array.from({length: Math.max(1, Math.min(workers, Math.ceil(jobs.length / chunk)))}, () => []) : split(jobs, workers), res = {}, ws = [];
+    let done = 0, finished = 0, dead = false, rejectFn, next = 0, seq = 0;
     const p = new Promise((resolve, reject) => {
       rejectFn = reject;
       if (!jobs.length) { resolve(res); return; }
       parts.forEach((part, wi) => {
         const w = makeWorker(); ws.push(w);
+        const send = list => w.postMessage({type: "run", id: ++seq, base, stage, n_runs: runs, seed, options: {build: "standard", rules_override: {power_penalty: "model"}},
+          teams: list.map(j => ({key: j.key, party: j.party, options: j.options}))});
         w.onmessage = e => {
           const m = e.data; if (dead) return;
           if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}, progs: m.result.progs || null, cosmo: m.result.cosmo || null}; done++; if (onProgress) onProgress(done, jobs.length); }
+          else if (m.type === "done" && dyn && next < jobs.length) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); }
           else if (m.type === "done") { if (++finished === parts.length) { ws.forEach(x => x.terminate()); resolve(res); } }
           else if (m.type === "error") { dead = true; ws.forEach(x => x.terminate()); reject(new Error(m.msg || "작업자 오류")); }
         };
         w.onerror = ev => { if (dead) return; dead = true; ws.forEach(x => x.terminate()); reject(new Error("작업자 오류: " + (ev && ev.message || "알 수 없음"))); };
+        if (dyn) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); return; }
         w.postMessage({type: "run", id: wi + 1, base, stage, n_runs: runs, seed, options: {build: "standard", rules_override: {power_penalty: "model"}},
           teams: part.map(j => ({key: j.key, party: j.party, options: j.options}))});
       });

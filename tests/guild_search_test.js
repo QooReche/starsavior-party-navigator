@@ -165,6 +165,34 @@ const tests = {
     await assert.rejects(hc.promise, /취소/);
     assert.deepEqual(await S.runPhase({makeWorker: mk, jobs: [], workers: 2, runs: 5, seed: 1, stage: 'x', base: ''}).promise, {});
   },
+  async runPhaseChunk() {
+    // 작업 큐(chunk): 느린 작업자 1명 + 빠른 작업자 3명 -> 빠른 쪽이 더 많이 처리(정적 분할이면 모두 같은 수). 결과는 전부 나옴.
+    const per = [];
+    let n = 0;
+    const mk = () => {
+      const me = n++, cnt = (per[me] = {teams: 0, runs: 0});
+      const w = {terminate() {}, onmessage: null, postMessage(m) {
+        cnt.runs++;
+        setTimeout(() => {
+          for (const t of m.teams) { cnt.teams++; w.onmessage({data: {type: 'team', id: m.id, key: t.key, result: {prog: 0.5, clear: 0, n: m.n_runs}}}); }
+          w.onmessage({data: {type: 'done', id: m.id}});
+        }, me === 0 ? 20 : 1);
+      }};
+      return w;
+    };
+    const jobs = Array.from({length: 120}, (_, i) => ({key: 'k' + i, party: {}, options: {}}));
+    const seen = [];
+    const res = await S.runPhase({makeWorker: mk, jobs, workers: 4, runs: 2, seed: 1, stage: 'x', base: '', chunk: 3, onProgress: (d, t) => seen.push(d)}).promise;
+    assert.equal(Object.keys(res).length, 120);
+    assert.deepEqual(seen, Array.from({length: 120}, (_, i) => i + 1), '진행 수가 1씩 늘어 120');
+    assert.equal(per.reduce((a, c) => a + c.teams, 0), 120);
+    assert(per[0].teams < 30 && per[1].teams > 30, '느린 작업자가 덜 받음 ' + JSON.stringify(per));
+    assert(per[1].runs > 1, '작업자가 run 메시지를 여러 번 받음');
+    // 작업이 chunk 보다 적으면 작업자도 필요한 만큼만 띄움
+    n = 0; per.length = 0;
+    await S.runPhase({makeWorker: mk, jobs: jobs.slice(0, 5), workers: 4, runs: 2, seed: 1, stage: 'x', base: '', chunk: 3}).promise;
+    assert.equal(per.length, 2);
+  },
   html() {
     const cx = {hasInfo: true, sig: '3333', label: k => '이름-' + k, esc};
     assert(S.html({phase: 'idle'}, cx).includes('data-gs="start"'));

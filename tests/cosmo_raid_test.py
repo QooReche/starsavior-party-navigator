@@ -348,6 +348,50 @@ def test_score_values_and_bounds():
         raise AssertionError('잘못된 레벨 통과')
 
 
+def test_data_driven_defaults():
+    """보스 이름을 코드에 고정하지 않음: 기본 보스는 시즌 데이터의 첫 보스, 면역 목록 빌릴 보스는 데이터(같은 immuneGroup)에서 고른다"""
+    import copy
+    from battlesim.starsavior import foe
+    d = copy.deepcopy(G)
+    d['season']['bossOrder'] = ['tyria', 'belgras', 'carnelia']
+    next(b for b in d['bosses'] if b['key'] == 'tyria')['steps'][2]['base'] += 1234        # 보스마다 점수표가 같아서 구분되게 바꿈
+    a = C.cosmo_score(d, 0, 0.5, 0, 0, False)
+    assert a == C.cosmo_score(d, 0, 0.5, 0, 0, False, boss='tyria') and a != C.cosmo_score(d, 0, 0.5, 0, 0, False, boss='belgras'), '기본 보스가 데이터 순서를 따름'
+    assert C.cosmo_score(G, 0, 0.5, 0, 0, False) == C.cosmo_score(G, 0, 0.5, 0, 0, False, boss='belgras')
+    calls = []
+    real = foe.stage_waves
+
+    def spy(content, tab, name, src=C.SRC):
+        calls.append((content, tab, name))
+        return real(content, tab, name, src)
+    foe.stage_waves = spy
+    try:
+        C._donor_immune(C.boss_data('belgras'), C.SRC)
+        assert calls[-1] == ('cosmo', '티리아', '티리아 3단계'), calls
+        # 데이터를 바꾸면(티리아 면역 그룹 변경 -> 카넬리아가 빌려 줌) 다른 보스를 고른다
+        other = copy.deepcopy(G)
+        for b in other['bosses']:
+            if b['key'] == 'tyria':
+                b['immuneGroup'] = 9999
+        C._DATA['fake-src'] = other
+        try:
+            C._donor_immune(next(b for b in other['bosses'] if b['key'] == 'belgras'), 'fake-src')
+        except Exception:
+            pass       # 가짜 src 로는 databook 줄을 못 읽음: 호출 인자만 본다
+        assert calls[-1][1:] == ('카넬리아', '카넬리아 3단계'), calls
+        for b in other['bosses']:
+            b['immuneGroup'] = b['raidGroupId']          # 같은 면역 그룹이 없으면 분명한 오류
+        try:
+            C._donor_immune(next(b for b in other['bosses'] if b['key'] == 'belgras'), 'fake-src')
+        except ValueError as e:
+            assert '면역' in str(e)
+        else:
+            raise AssertionError('빌려 줄 보스가 없는데 통과')
+    finally:
+        foe.stage_waves = real
+        C._DATA.pop('fake-src', None)
+
+
 def node_json(code):
     p = subprocess.run(['node', '-e', code], capture_output=True, text=True, encoding='utf-8', cwd=ROOT)
     assert p.returncode == 0, p.stderr
@@ -397,7 +441,7 @@ TESTS = [test_data_shape, test_stage_stats_match_existing_cosmo, test_build_wave
          test_challenge_effects_attached, test_drain_rewind_backflow_direct, test_pressure_march_bleed_thorn_punish_direct,
          test_belgras_erosion_and_rot, test_belgras_thorn_gauge_growth, test_minions, test_simulate_clear_step1_step2,
          test_simulate_belgras_path_taken, test_simulate_challenge_paths_and_level_scale, test_existing_results_unchanged_fields,
-         test_score_values_and_bounds, test_js_parity, test_data_matches_tables]
+         test_score_values_and_bounds, test_data_driven_defaults, test_js_parity, test_data_matches_tables]
 
 if __name__ == '__main__':
     bad = 0
