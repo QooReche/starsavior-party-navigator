@@ -139,7 +139,7 @@
         const w = makeWorker(); ws.push(w);
         w.onmessage = e => {
           const m = e.data; if (dead) return;
-          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}, progs: m.result.progs || null}; done++; if (onProgress) onProgress(done, jobs.length); }
+          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}, progs: m.result.progs || null, cosmo: m.result.cosmo || null}; done++; if (onProgress) onProgress(done, jobs.length); }
           else if (m.type === "done") { if (++finished === parts.length) { ws.forEach(x => x.terminate()); resolve(res); } }
           else if (m.type === "error") { dead = true; ws.forEach(x => x.terminate()); reject(new Error(m.msg || "작업자 오류")); }
         };

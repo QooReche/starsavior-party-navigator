@@ -62,6 +62,13 @@ def image_urls(roster, idx=None):
     return por, art
 
 
+def cosmo_raid_payload():
+    """코스모 게이트 «3보스 최고 점수 편성 찾기» 화면 자료: 시즌·보스 이름·난이도 최대 레벨·탐색 설정(data/cosmo_raid.json 의 search). 스탯·챌린지 표 등은 싣지 않는다(시뮬 쪽이 읽음)."""
+    g = pr._json(os.path.join(pr.DATA, "cosmo_raid.json"))
+    return {"season": g["season"]["id"], "bosses": [{"key": b["key"], "name": b["name"]} for b in g["bosses"]],
+            "levelMax": min(len(b["levels"]) for b in g["bosses"]), "search": g["search"], "scoreConf": g["score"]["conf"]}
+
+
 def main(out=None):
     roster, growth, mains, cfg, tags = pr.load()
     idx = pr._json(os.path.join(pr.DATA, "saviors_index.json"))
@@ -174,7 +181,7 @@ def main(out=None):
     data = json.dumps({"roster": r, "skillsUrl": skill_url, "skillIcons": pr._json(os.path.join(pr.DATA, "skill_icons.json"))["units"], "synDetailUrl": syn_detail_url, "cytoUrl": cyto_url,
                        "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
                        "pen": power["pen"], "tribe": power["tribe"],
-                       "grules": grules["types"], "plain": pr._json(os.path.join(pr.DATA, "gimmick_plain.json")), "gim": pr.gimmick_rules()[1],"dmg": pr._json(pr.DMG), "guild": gd.page_payload(gdef)}, ensure_ascii=False, separators=(",", ":"))
+                       "grules": grules["types"], "plain": pr._json(os.path.join(pr.DATA, "gimmick_plain.json")), "gim": pr.gimmick_rules()[1],"dmg": pr._json(pr.DMG), "guild": gd.page_payload(gdef), "cosmoRaid": cosmo_raid_payload()}, ensure_ascii=False, separators=(",", ":"))
     with open(os.path.join(pr.HERE, "party_template.html"), encoding="utf-8") as f:
         html = f.read()
     assert html.count("/*DATA*/null") == 1

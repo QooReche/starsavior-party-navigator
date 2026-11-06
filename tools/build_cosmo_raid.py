@@ -321,6 +321,15 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
     )
 
 
+# «3보스 최고 점수 편성 찾기»(cosmo_search.js) 설정 — 표에서 오는 값이 아니라 탐색 비용 정책이라 여기에 고정해 data 에 싣는다.
+# poolSize 는 3팀 12명 이상이어야 하고, 조합 수 C(poolSize,4)×3보스가 1단계 판 수를 정한다(docs/cosmo_raid.md 2단계).
+SEARCH = dict(
+    _note='3보스 구원자 겹침 금지 편성 찾기(cosmo_search.js) 설정. 풀 크기·판 수는 브라우저 계산 시간(판당 약 0.1초 안팎)과 정밀도의 절충이라 실측으로 조정한다.',
+    poolSize=16, minPowerRatio=0.6, minRole={'서포터': 2, '디펜더': 2}, minFront=1, minDealer=1,
+    screen=dict(runs=2), rerank=dict(keep=300, runs=10), combine=dict(topTriples=10, show=5), final=dict(runs=40),
+    topQ=0.2, defaultMode='mean', defaultLevel=0)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--tables', required=True, help='추출한 클라 표 폴더(CLIENT_ 접두 파일, hard/, plain/)')
@@ -347,7 +356,7 @@ def main():
             note='HUD(전투 중 점수) 식은 클라 코드 기준, 합산식(남은 턴·생존 구원자 항, 배율 순서, 반올림, 달성 점수 합산)은 서버 계산이라 «추정»입니다. '
                  'Step 1·2 는 난이도 레벨이 없어 배율 0, 달성 점수 없음으로 둡니다(미확인).',
             rounding='floor'),
-        belgras=bel,
+        belgras=bel, search=SEARCH,
         howToUpdate=['새 시즌 표를 추출한 폴더로: python -X utf8 -I tools/build_cosmo_raid.py --tables <폴더> --season <RankingRaidSeasonId> --build <빌드>',
                      'Changed 오류가 나면 표 구조(벨그라스 스킬/버프/SE)가 바뀐 것이니 battlesim/starsavior/cosmo_raid.py 의 상태 기계를 사람이 다시 확인한다',
                      '보스가 벨그라스가 아닌 시즌은 bosses 의 key 가 다르므로 build() 의 key 매핑과 엔진 보스 정의를 추가한다',

@@ -30,7 +30,21 @@ def _opts(extra, pol=None, **kw):
 def _enc(stage, o):
     """길방 EX 선택(options.guild = {level, sets, support})이 있으면 BFB 전투, 없으면 기존 스테이지. guild 키는 simulate 옵션에서 뺀다."""
     g = o.pop('guild', None)
-    return {'guild': g} if g else {'stage': stage}
+    if g:
+        return {'guild': g}
+    c = o.pop('cosmo_raid', None)       # 코스모 게이트 시즌 전투: {boss, step, level} — api 의 encounter.cosmo_raid
+    return {'cosmo_raid': c} if c else {'stage': stage}
+
+
+def cosmo_summary(cr, top_q=0.2):
+    """코스모 판별 점수(score_runs 등) -> 요약값만(판별 배열은 작업자 밖으로 내지 않음): 평균·상위 점수·클리어율·깎은 비율.
+    상위 점수 = 판별 점수 상위 top_q 비율(올림) 판의 평균. 반올림은 사사오입(JS Math.round 와 같게; 파이썬 round 는 짝수 반올림)"""
+    sc = sorted(cr['score_runs'], reverse=True)
+    n = len(sc)
+    m = max(1, math.ceil(n * top_q - 1e-9))
+    half_up = lambda x: int(math.floor(x + 0.5))
+    return dict(mean=half_up(sum(sc) / n), top=half_up(sum(sc[:m]) / m), clear=round(sum(1 for c in cr['clear_runs'] if c) / n, 4),
+                frac=round(sum(cr['damage_frac_runs']) / n, 4), n=n)
 
 
 def _unit_map(party, r):
@@ -49,14 +63,16 @@ def _break_summary(r):
 
 def run_auto(stage, party, n, seed, extra=None):
     op = _opts(extra, n_runs=n, seed=seed)
+    top_q = op.pop('cosmo_top_q', 0.2)
     r = simulate(party, _enc(stage, op), op)
     o = r['outcome']
+    extra_out = {'cosmo': cosmo_summary(r['cosmo_raid'], top_q)} if r.get('cosmo_raid') else {}
     first = sorted(((v.get('first_death_p') or 0, k) for k, v in r['per_unit'].items()), reverse=True)
     st = r.get('star_turn')
     return json.dumps(dict(clear=o['clear_p'], t60=(st['p'] if st else None), prog=o.get('progress'), progs=r.get('prog_runs'), via=r.get('ally_via') or {}, wipe=o['wipe_p'], timeout=o['timeout_p'], ci=o['ci95']['clear'], n=o['n_runs'],
                            ttk=o['ttk_median'], ta=o.get('ttk_actions_median'), first=(first[0][1] if first and first[0][0] > 0 else None),
                            first_p=(first[0][0] if first else 0), gate=r['unsupported'].get('gate_ok', True),
-                           power=r.get('party', {}).get('power'), u=_unit_map(party, r), bs=_break_summary(r)), ensure_ascii=False)
+                           power=r.get('party', {}).get('power'), u=_unit_map(party, r), bs=_break_summary(r), **extra_out), ensure_ascii=False)
 
 
 def seq_from_timeline(tl, max_turns=SEQ_TURNS):

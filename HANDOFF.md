@@ -31,12 +31,18 @@
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
 13. (11/05 반영 완료, 절 «60턴 이내 승리») 남은 것: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있음 — 필요하면 `STAR_TURNS` 확장. 65턴(2별 추정)은 표시 안 함.
 
+## ▶ 2026-11-06 (Claude) — 코스모 게이트 2단계: 3보스 겹침 금지 편성 찾기+최소 화면 (푸시 전)
+
+- `cosmo_search.js`(보스별 작업·점수 순위·겹침 금지 삼중 분기한정·화면 조각·전체 흐름 `search`), `battlesim/web.py`(`options.cosmo_raid` 분기·`cosmo_summary` 요약), 화면 패널(`party_template.html`, 코스모 콘텐츠에서만), `build_party_html.py` 가 `cosmoRaid` 주입. 설정은 `data/cosmo_raid.json` 의 `search`(빌더 `SEARCH`). 상세·판 수 근거는 `docs/cosmo_raid.md` 2단계 절.
+- 시험 `tests/cosmo_search_test.js`·`tests/cosmo_web_test.py`(겹침 판정을 끄거나 web 분기를 되돌리면 실패하는 것 확인). 미검증: 브라우저 화면·Pyodide 실제 시간·실제 내 정보 결과.
+- 남은 일: 실제 브라우저 확인(e2e 추가 후보), 시간이 길면 `search` 설정 조정, 점수식 추정 항목.
+
 ## ▶ 2026-11-06 (Claude) — 코스모 게이트 시즌 1022 시뮬 1단계: 데이터+엔진+점수 (푸시 전)
 
 - `tools/build_cosmo_raid.py`(새 표 폴더를 인자로 받음, static-data 는 건드리지 않음) → `data/cosmo_raid.json`(빌드 26429597). 엔진 `battlesim/starsavior/cosmo_raid.py`, 스위치 `mc.cosmo_raid_boss`(기본 off, 새 키는 rules_test 목록에 추가), 점수 `cosmo_score`/`cosmo_raid.js` `cosmoScore`.
 - api: `encounter.cosmo_raid = {boss, step, level}` → 결과 최상위 `cosmo_raid`(판별 깎은 비율·남은 턴·생존 수·점수·경로 횟수). 기존 해시 시험 영향 없음.
 - 점수 합산식·난이도 배율·시즌 버프 대상·벨그라스 일부 규칙은 «추정/근사». 목록은 `docs/cosmo_raid.md`. 갱신 절차 `docs/PORTING.md` 4-2.
-- 남은 일: 2단계(3보스 분할 탐색·UI), 영상 대조, 근사 항목 확인, 티리아·카넬리아 스킬 줄과 새 표의 대조.
+- 남은 일: (2단계는 위 절에서 완료) 영상 대조, 근사 항목 확인, 티리아·카넬리아 스킬 줄과 새 표의 대조.
 
 ## ▶ 2026-11-05 오후 (게임 PC, Claude) — 장비 탐사 «60턴 이내 승리» 반영 (푸시 완료)
 
