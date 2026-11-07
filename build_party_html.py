@@ -123,7 +123,12 @@ def main(out=None):
         return stages
     for c in pr._json(pr.FOE)["contents"]:
         name, main, parties = CONTENT_META[c["key"]]
-        contents.append({"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages_of(c)})
+        entry = {"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages_of(c)}
+        if c["key"] == "cosmo":
+            # 시즌제 화면: 목록에는 «코스모 게이트(시즌 N)» 로 보이고, 섹터·스테이지 선택 없이 시즌 패널만 쓴다. name 은 설정 키라 그대로 둔다
+            entry["raid"] = True
+            entry["title"] = f'{name}(시즌 {pr._json(os.path.join(pr.DATA, "cosmo_raid.json"))["season"]["id"] % 1000})'
+        contents.append(entry)
     # 길드 방어전(시즌제): 시즌·단계 자료(data/guild_defense.json)에서 만든다. 일관성 검사를 통과해야 빌드된다
     gdef = gd.load()
     problems = gd.validate(gdef, grules["types"])

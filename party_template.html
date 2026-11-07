@@ -552,9 +552,11 @@ $("cosmo-search").addEventListener("click",e=>{const b=e.target.closest("button[
  if(b.dataset.cs==="start")cosmoSearchStart();
  else if(b.dataset.cs==="cancel"){CSR.id++;if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.phase="idle";CSR.eta=null;renderCosmoSearch()}});
 
-$("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.name)}</option>`).join("");
+$("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.title||c.name)}</option>`).join("");
+const raidUi=c=>!!c.raid&&!window.__legacyRaid;   // 시즌제 화면(코스모): 섹터·스테이지 선택과 보스별 추천을 숨김. 시험만 __legacyRaid 로 옛 화면을 씀
 function tabsOf(c){const m=new Map();c.stages.forEach(s=>{if(!m.has(s.tab))m.set(s.tab,s.tabLabel)});return [...m]}
 function refreshTabs(){const c=contents[$("content").value];$("goalbox").hidden=c.key!=="equip";
+ $("filters").hidden=raidUi(c);document.querySelector(".stage-filter").hidden=raidUi(c);
  $("tab").innerHTML=`<option value="">(전체)</option>`+tabsOf(c).map(([t,l])=>`<option value="${esc(t)}">${esc(l)}</option>`).join("");refreshStages()}
 function refreshStages(){
  const c=contents[$("content").value],t=$("tab").value,q=$("q").value.trim();
@@ -1105,7 +1107,7 @@ function miGuide(){return `<div class="party guide" data-k="miguide"><h3>먼저 
  <p class="mut">PowerShell 명령 실행 → 관리자 확인 후 게임 로그인·로비에서 엔터 → 사이트에 자동 반영</p>
  <div class="acts"><button type="button" data-miopen="1">내 계정 정보 불러오기</button></div></div>`}
 function showReco(){if(!MI.info){setDrawer(true);return}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
-function run(skipAuto=false){$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
+function run(skipAuto=false){$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";return}if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);simRunAdd(Date.now()-t0)}
 function runCore(skipAuto=false){
  renderMi();

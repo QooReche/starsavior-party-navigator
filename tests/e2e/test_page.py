@@ -112,7 +112,8 @@ def settle(page):
 
 
 def choose(page, content, query):
-    page.select_option("#content", label=content)
+    labels = page.eval_on_selector_all("#content option", "o => o.map(x => x.textContent)")
+    page.select_option("#content", label=next(l for l in labels if l == content or l.startswith(content + "(")))
     settle(page)
     # 모바일 검색은 접힌 필터 안에 있다. 실제 펼치기 동작 후 입력한다.
     folded = not page.locator("#q").is_visible()
@@ -163,13 +164,15 @@ def wait_sim_done(page, parties=(1,), timeout=600000):
     page.wait_for_function(SIM_DONE_JS, arg=list(parties), timeout=timeout)
 
 
-def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", excl=None, setup=None, wait=True):
+def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", excl=None, setup=None, wait=True, raid_ui=False):
     """내 정보(기본: 로스터 전원 가상 계정)를 넣고 연다. 추천은 내 정보가 있어야만 계산한다.
     ?auto=1 = 버튼 없이 바로 계산(버튼 흐름은 test_press_to_compute). simauto "0" 이면 결과를 바로 보이고(판정 「시뮬 전」),
     시뮬은 시험이 「시뮬로 확인」을 누를 때만 돈다."""
     page = browser.new_page(viewport=viewport or {"width": 1280, "height": 900})
     attach(page, ctx)
     seed(page, info, simauto, excl)
+    if not raid_ui:
+        page.add_init_script("window.__legacyRaid = 1")   # 코스모 시즌 화면 대신 옛 스테이지 화면(보스별 추천 시험용)
     if setup:
         setup(page)
     if "auto=" not in query:
@@ -1447,10 +1450,13 @@ def test_cosmo_search(browser, ctx):
     """코스모 게이트 «3보스 최고 점수 편성 찾기»(가상 계정 전원 로스터): 코스모에서만 패널 표시, 난이도 선택 뒤 찾기 -> 완료,
     표에 보스 3행 + 합계, 12명 모두 다름, 합계 = 세 팀 점수 합, 취소 버튼, 콘솔 오류 0. (시험 속도를 위해 탐색 크기만 줄인다)"""
     ctx.errors.clear()
-    page = open_page(browser, ctx)
+    page = open_page(browser, ctx, raid_ui=True)
     panel = page.locator("#cosmo-search")
     hidden_first = not panel.is_visible()
-    choose(page, "코스모 게이트", "길레 2단계")
+    page.select_option("#content", label=next(l for l in page.eval_on_selector_all("#content option", "o => o.map(x => x.textContent)") if l.startswith("코스모 게이트(시즌")))
+    settle(page)
+    season_ui = page.evaluate("() => [document.getElementById('filters').hidden, document.querySelector('.stage-filter').hidden, document.getElementById('out').innerText.trim()]")
+    assert season_ui[0] and season_ui[1] and season_ui[2] == "", "시즌 화면에 섹터·스테이지 선택이나 보스별 추천이 남아 있음: %r" % (season_ui,)
     shown = panel.is_visible()
     has_btn = page.locator('#cosmo-search button[data-cs="start"]').count()
     # 기본은 전수 탐색이라 시험에서만 풀을 12명으로 제한(maxPool)하고 저장된 이 PC 속도를 지운다
