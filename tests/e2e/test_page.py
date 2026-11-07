@@ -1486,7 +1486,9 @@ def test_cosmo_search(browser, ctx):
     names = page.locator('#cosmo-search [data-k="cs-best"] tbody tr td:first-child').all_text_contents()[:3]
     # 완주하면 이 PC 속도가 저장되고, 끝난 화면의 시작 전 안내가 «예상 약 …»(저장 속도 기준)으로 바뀜
     speed = page.evaluate("() => { try { return JSON.parse(localStorage.getItem('pn.cosmo.speed')) } catch (e) { return null } }")
-    speed_ok = bool(speed) and len(speed.get("sec", [])) == 3 and all(x > 0 for x in speed["sec"]) and speed.get("workers", 0) > 0
+    want_w = page.evaluate("() => csWorkers()")        # 작업자 수 자동 결정(코어·메모리·모바일): 저장된 속도의 작업자 수와 같아야 하고 코어 수를 넘지 않음
+    cores = page.evaluate("() => navigator.hardwareConcurrency || 4")
+    speed_ok = bool(speed) and len(speed.get("sec", [])) == 4 and all(x > 0 for x in speed["sec"]) and speed.get("workers", 0) > 0 and speed["workers"] == want_w and 1 <= want_w <= cores
     pre1 = page.locator('#cosmo-search [data-k="cs-eta-pre"]').all_text_contents()
     pre1_ok = len(pre1) == 1 and "지난 실행 속도 기준 예상 약" in pre1[0]
     # 추천 제외 목록이 바뀌면 «낡은 결과»

@@ -1,4 +1,4 @@
-# 인수인계
+﻿# 인수인계
 
 갱신 2026-11-05. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md).
 
@@ -31,13 +31,15 @@
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
 13. (11/05 반영 완료, 절 «60턴 이내 승리») 남은 것: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있음 — 필요하면 `STAR_TURNS` 확장. 65턴(2별 추정)은 표시 안 함.
 
-## ▶ 2026-11-06 (Claude) — 코스모 게이트 중간 저장(WIP, 푸시 전, 시험 1개 실패 상태)
+## ▶ 2026-11-06 밤 (Claude) — 코스모 전수 탐색 안전 가속 3종 (푸시 완료)
 
-- 사용 한도로 구현 에이전트가 중간에 끊겨 WIP 커밋으로 저장했음. 전체 시험은 JS `cosmo_search_test.js`의 `mergeSummary_exact_for_two_single_runs`(평균 2.5→3, 상위 1판=큰 쪽) 1개만 실패. 나머지 통과 확인.
-- 사용자 결정: ① 순위는 상위 점수(재도전·하루 횟수 제한 없음) ② 풀은 전수(16명 컷 없음), 빠른 모드(풀 축소)는 만들지 않음 ③ 안전 가속만: 엔진 캐시(결과 동일 확인, 메모리 상한)·워커 수 PC별 자동(`hardwareConcurrency`·`deviceMemory`)·1판 반감 상위 10% ④ 남은 시간 ETA는 실행 중 측정 속도 기반(단계 가중치·재보정).
-- 이미 커밋된 것(`dbb4ad1`): 전수 풀, 시작 전 사전 검사(12~13명 즉시 오류), 남은 시간 표시, 상위 점수 기본, 작업 큐 배분, HUD 내림 규칙, keep 확대(`effKeep`). 자세히는 `docs/cosmo_raid.md` 2단계 절.
-- 이번 WIP 커밋(`0554da5`, 검증 전): 엔진 캐시(`battlesim/api.py`·`mc.py`, 새 시험 `tests/engine_cache_test.py`는 통과), 워커 수 자동·ETA 시험, `search` 설정(`tools/build_cosmo_raid.py` SEARCH 상수). 아직 안 한 것: 실패 시험 수정, 1판 반감 구현 여부 확인, 낡은 결과 취소·하드코딩 제거 반영 여부 확인, e2e(`--e2e C:\build\venv-pw\Scripts\python.exe`), 전수 실측과 ETA 오차 측정.
+- 사용자 결정: 풀 축소 «빠른 모드»는 만들지 않음(최적 조합을 놓치면 안 됨), 정확도 손실 0 이어야 함, 효과가 PC마다 다르니 고정값 금지·자동 적응.
+- ① 엔진 캐시(`battlesim/api.py`·`mc.py`): 구원자 정의 LRU(256)·시즌 인카운터 LRU(64)·정의 객체에 붙인 의미 해석/지원 보고 메모·줄 종류 색인(`Battle.kind_lines`). 스위치 `mc.ENGINE_CACHE`. 시험 `tests/engine_cache_test.py`(캐시 끔/켬 84전투+run_auto 결과 동일, LRU 상한, 틀린 키·낡은 색인 주입 시 실패 확인).
+- ② 작업자 수 자동(`cosmo_search.js workerCount`, 설정 `data/cosmo_raid.json search.workers` = 빌더 SEARCH 상수): min(논리 코어×0.75, 메모리×0.5÷250MB, 24), 모바일 2. 길방 워커 수는 건드리지 않음.
+- ③ 1단계 순차 반감(`pickPass`·`mergeSummary`·`passCount`): 전 조합 1판 → 보스별 상위 10%(경계 동점 포함, 구원자별 상위 대안 포함, 최소 3×keep 팀)만 1판 더 → 2판 평균으로 기존 2단계. ETA 단계 4개로 확장(옛 저장 속도는 버림).
+- 측정·예상 시간·남은 일은 `docs/cosmo_raid.md` 「전수 탐색 가속」 절. 미검증: 실제 브라우저(Pyodide) 워커 메모리, 24코어 이상에서의 실측 확장, 사용자 PC 시간.
 - 클라 코드 추적 결론(근거는 코스모 절): 최종 점수·3보스 합산·순위·도전 횟수·시즌 날짜는 서버. 클라 HUD 식은 `Base+MaxDamage×(깎은비율 1/10000 내림)`을 정수 내림. 고정 레벨 200·공명 10과 스타링크 가산 없음은 시뮬이 이미 반영(`fixed200`), 서버 동작은 미확인. 시즌 버프(BCT_*)의 전투 적용 코드는 클라에서 못 찾음.
+- 11/08 확인: `run_tests.py --rebuild --e2e C:\build\venv-pw\Scripts\python.exe` **85 통과/0 실패**(e2e 포함, 11/06에 실패하던 `mergeSummary` 시험도 통과). e2e `test_cosmo_search`는 작업자 수 자동·ETA 4단계 저장을 검사하도록 고쳐져 있음. 40명 전수 실측과 ETA 오차는 아직 안 쟀음.
 - 다음: 사용자가 추천 편성으로 직접 뛰고 영상(편성 화면·결과 화면의 점수·남은 턴·생존 수·레벨)으로 점수식 대조. 한국 커뮤니티 조사는 사용자가 보류함(Chrome 확장 연결 안 됨).
 
 ## ▶ 2026-11-06 (Claude) — 코스모 게이트 2단계: 3보스 겹침 금지 편성 찾기+최소 화면 (푸시 전)
