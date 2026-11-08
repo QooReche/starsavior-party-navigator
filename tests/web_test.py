@@ -150,9 +150,12 @@ def test_rekindle():
     op0 = simulate(p, {'stage': 'op/아가논 시가지/SECTOR 36-36'}, o)['party']
     op3 = simulate(p, {'stage': 'op/아가논 시가지/SECTOR 36-36'}, dict(o, rekindle=3))['party']
     cz = simulate(p, {'stage': 'cosmo/길레/길레 1단계'}, dict(o, rekindle=3))['party']
+    oh0 = simulate(p, {'stage': 'oph/플로라/SECTOR 13-10'}, o)['party']
+    oh1 = simulate(p, {'stage': 'oph/플로라/SECTOR 13-10'}, dict(o, rekindle=1))['party']   # 작전(어려움)도 재점화 대상(2026-11-08 영상 판: 13-10 에서 1단계가 붙어 있었음, 사용자 확인)
     a0, e0 = op0['penalty'] or [1.0, 1.0]
     ok = (op3['rekindle'] == 3 and abs(op3['penalty'][0] - a0 * 1.12) < 1e-9 and abs(op3['penalty'][1] - e0 * 0.88) < 1e-9
-          and cz['rekindle'] == 0 and op0['rekindle'] == 0)
+          and cz['rekindle'] == 0 and op0['rekindle'] == 0
+          and oh1['rekindle'] == 1 and oh0['rekindle'] == 0 and abs(oh1['penalty'][0] - (oh0['penalty'] or [1.0, 1.0])[0] * 1.03) < 1e-9)
     try:
         simulate(p, {'stage': 'op/아가논 시가지/SECTOR 36-36'}, dict(o, rekindle=9))
         bad = False

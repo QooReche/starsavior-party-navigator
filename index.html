@@ -421,7 +421,7 @@ const SHARE=ShareState.parse(location.search,contents,Object.keys(CFG.breakSkill
 const TC=tr=>"t-"+(tr?String(tr).replace("티어","").replace(".",""):"q");
 // 작전 재점화 버프(인게임 표, 2026-10-21 사용자 제보): 단계별 x = 주는 피해 +x, 받는 피해 −x. 작전(op)에만
 const REKINDLE=[0,0.03,0.07,0.12,0.18,0.25];
-const rkOf=ck=>ck==="op"?(+(document.getElementById("rk")||{}).value||0):0;
+const rkOf=ck=>ck==="op"||ck==="oph"?(+(document.getElementById("rk")||{}).value||0):0;
 const LS={errors:{},get(k){try{return JSON.parse(localStorage.getItem("pn."+k))}catch(e){this.errors[k]=true;return null}},set(k,v){try{localStorage.setItem("pn."+k,JSON.stringify(v));return true}catch(e){return false}},remove(k){try{localStorage.removeItem("pn."+k);delete this.errors[k];return true}catch(e){return false}}};
 const MI={info:null,hash:"",growth:null,pending:null,error:"",profiles:{},saved:false,invalid:false,importId:0};
 {const saved=LS.get("myinfo");if(saved&&!MyInfoImport.validate(saved)){MI.info=saved;MI.hash=MyInfoReco.hash(saved);MI.saved=true}else MI.invalid=!!saved||!!LS.errors.myinfo}

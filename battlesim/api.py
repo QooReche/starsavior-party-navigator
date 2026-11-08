@@ -410,7 +410,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     elif mc['power_penalty'] not in ('off', 'model'):
         raise ValueError('power_penalty 는 off|model: %r' % mc['power_penalty'])
     rk = int(o.get('rekindle') or 0)
-    if rk and meta.get('content') == 'op':
+    if rk and meta.get('content') in ('op', 'oph'):
         if not 0 < rk < len(REKINDLE):
             raise ValueError('rekindle 은 0~%d: %r' % (len(REKINDLE) - 1, rk))
         x = REKINDLE[rk]
@@ -522,7 +522,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
                        waves=[[d.name for d in w] for w in waves]),
         party=dict(units=names, leader=leader, build=build, builds=[d.build for d in defs], power=power,
                    power_ratio=(pp[0] if pp else None), penalty=(list(pen) if pen else None), penalty_note=pen_note,
-                   rekindle=(rk if rk and meta.get('content') == 'op' else 0)),
+                   rekindle=(rk if rk and meta.get('content') in ('op', 'oph') else 0)),
         breaks=dict(ally=round(breaks[0] / max(1, n_runs), 3), foe=round(breaks[1] / max(1, n_runs), 3)),
         break_skill=dict(name=(o.get('break_skill') or {}).get('name'), uses=round(break_uses / n, 3),
                          dmg=round(break_dmg / n, 3), supported=b.break_skill_enabled,
