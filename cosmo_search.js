@@ -297,6 +297,7 @@
     const {S, bosses, mode, results, roster} = cx;
     const auto = cx.level === AUTO, level = auto ? (S.auto && S.auto.screenLevel) || 6 : cx.level;   // 자동이면 1·2단계는 대표 난이도로
     if (bosses.length !== BOSSES) throw new Error("보스는 3명이어야 합니다");
+    if (auto && !(Number.isInteger(cx.levelMax) && cx.levelMax >= 1)) throw new Error("난이도 최대값(levelMax)이 없습니다");   // 긴 계산을 돌리기 전에 막는다
     const rows = poolAll(S, results, roster);
     const bad = feasibility(S, rows);
     if (bad) throw new Error(bad);

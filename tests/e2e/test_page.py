@@ -1521,8 +1521,29 @@ def test_cosmo_search(browser, ctx):
         pre0_ok, pre0[:1], eta_run_ok, eta_run[:1], keep_btn, speed_ok, (old0, old1, old2))
 
 
+def test_cosmo_auto_level(browser, ctx):
+    """코스모 난이도 «자동»(기본값) 실제 화면 경로: 기본 선택이 자동이고, 끝까지 돌아 오류 없이 «점수가 가장 높은 난이도»가 표시됨.
+    (2026-11-08: 화면이 levelMax 를 안 넘겨 35분 계산 뒤 오류가 난 사고 — 시험이 화면 호출을 안 거쳐 놓쳤음)"""
+    ctx.errors.clear()
+    page = open_page(browser, ctx, raid_ui=True)
+    page.select_option("#content", label=next(l for l in page.eval_on_selector_all("#content option", "o => o.map(x => x.textContent)") if l.startswith("코스모 게이트(시즌")))
+    settle(page)
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;S.auto.probeRuns=1;try{localStorage.removeItem('pn.cosmo.speed')}catch(e){}}""")
+    default_auto = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value") == "-1"
+    page.click('#cosmo-search button[data-cs="start"]')
+    page.wait_for_selector('#cosmo-search [data-k="cs-table"], #cosmo-search [data-k="cs-err"]', timeout=300000)
+    err_txt = page.locator('#cosmo-search [data-k="cs-err"]').all_text_contents()
+    assert not err_txt, err_txt
+    info = page.locator('#cosmo-search [data-k="cs-level"]').all_text_contents()
+    lv = page.evaluate("() => [CSR.level, CSR.reqLevel, (CSR.probe || []).length, D.cosmoRaid.levelMax]")
+    stale = page.locator('#cosmo-search [data-k="cs-stale"]').count()
+    ok = default_auto and len(info) == 1 and "점수가 가장 높은 난이도" in info[0] and lv[1] == -1 and 0 <= lv[0] <= lv[3] and lv[2] == lv[3] + 1 and stale == 0 and not ctx.errors
+    return ok, "기본 자동 %s / 표시 %s / 고른 난이도 %s 요청 %s 비교 %d개(최대 %s) / 낡은 경고 %d / 오류 %s" % (default_auto, info[:1], lv[0], lv[1], lv[2], lv[3], stale, ctx.errors[:2])
+
+
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
+TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)
 TESTS.append(test_request_diagnostics)
 TESTS.append(test_sim_timeout_partial)

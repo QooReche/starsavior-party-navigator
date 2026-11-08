@@ -376,6 +376,8 @@ const tests = {
     assert(lv(6) > 0 && lv(10) > 0 && lv(0) > 0, '대표 난이도·최고 난이도·비교 난이도 모두 돌렸음');
     assert(out.rows[0].teams.every(t => t.st.mean > 0));
     assert.deepEqual(phases.slice(-3).map(x => x == null), [true, true, true], '마무리 단계는 ETA 단계 없음(null)');
+    // levelMax 가 없으면 긴 계산 전에 바로 오류(화면이 값을 안 넘겨 35분 뒤 터진 사고 재발 방지)
+    await assert.rejects(C.search(cxOf(mkS({}), [], {level: -1, levelMax: undefined})), /levelMax/);
     // 고정 난이도는 그대로: 비교 단계 없음, probe 없음
     const o2 = await C.search(cxOf(mkS({rerank: {keep: 200, runs: 10}}), [], {level: 7}));
     assert.equal(o2.level, 7); assert.equal(o2.probe, null);
