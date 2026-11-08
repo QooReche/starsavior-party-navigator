@@ -34,7 +34,7 @@ function factory(log, score = fakeScore) {
       log.push(m);
       setTimeout(() => {
         for (const t of m.teams) {
-          const keys = t.party.units.map(u => u.key), boss = t.options.cosmo_raid.boss, s = score(boss, keys, t.options.cosmo_raid.level);
+          const keys = t.party.units.map(u => u.key), boss = t.options.cosmo_raid.boss, s = score(boss, keys, t.options.cosmo_raid.level, t.options.break_skill && t.options.break_skill.name);
           this.onmessage({data: {type: 'team', key: t.key, result: {prog: 0.5, clear: 0.4, n: m.n_runs, via: {}, progs: null, cosmo: {mean: s, top: fakeTop(s), clear: 0.4, frac: 0.5, n: m.n_runs}}}});
         }
         this.onmessage({data: {type: 'done'}});
@@ -364,23 +364,32 @@ const tests = {
     assert.deepEqual(m([5, 0, 0], [5, 0, 0], 0.2), {mean: 5, top: 5, clear: 0, frac: 0, n: 2});
   },
   async auto_level_picks_best_level() {
-    // 난이도 자동(level -1): 1·2단계는 대표 난이도(6), 모든 난이도 비교, 최고 난이도에서 최종 확인. 가짜 점수는 난이도 10까지 오르다 11부터 급락
+    // 난이도 자동(level -1): 1·2단계는 대표 난이도(6), 보스마다 점수가 가장 큰 난이도를 따로 고름(보스별 정점이 다름), 팀마다 가장 점수가 큰 브레이크 스킬을 고름
     const S = mkS({rerank: {keep: 200, runs: 10}}), log = [], phases = [];
-    const sc = (b, k, lv) => fakeScore(b, k) * (lv <= 10 ? 1 + lv : 0.1);
-    const out = await C.search(cxOf(S, log, {level: -1, makeWorker: factory(log, sc), levelMax: 18, onPhase: (m, t, info) => phases.push(info.stage)}));
+    const peak = {belgras: 6, tyria: 12, carnelia: 15};
+    const sc = (b, k, lv, brk) => fakeScore(b, k) * (lv <= peak[b] ? 1 + lv : 0.1) * (brk === '큐브 과부하' ? 1.2 : brk === '특이점 관측' ? 1.1 : 1);
+    const breaks = [{name: '특이점 관측', level: 3}, {name: '큐브 과부하', level: 5}];
+    const out = await C.search(cxOf(S, log, {level: -1, makeWorker: factory(log, sc), levelMax: 18, breaks, onPhase: (m, t, info) => phases.push(info.stage)}));
     assert.equal(out.reqLevel, -1);
-    assert.equal(out.level, 10, '최고 점수 난이도');
+    assert.equal(out.level, null, '자동이면 단일 난이도 없음');
     assert.equal(out.probe.length, 19);
-    assert(out.probe.every(p => p.sum === out.probe.find(q => q.level === p.level).sum) && out.probe[10].sum > out.probe[11].sum && out.probe[10].sum > out.probe[9].sum);
+    for (const r of out.rows) for (const t of r.teams) {
+      assert.equal(t.level, peak[t.boss], '보스별 최고 점수 난이도: ' + t.boss);
+      assert.equal(t.brk, '큐브 과부하', '팀별 최고 브레이크 스킬');
+      assert.equal(t.brkLv, 5);
+    }
     const lv = l => log.filter(m => m.teams.some(t => t.options.cosmo_raid.level === l)).length;
-    assert(lv(6) > 0 && lv(10) > 0 && lv(0) > 0, '대표 난이도·최고 난이도·비교 난이도 모두 돌렸음');
+    assert(lv(6) > 0 && lv(12) > 0 && lv(15) > 0 && lv(0) > 0, '대표·보스별 최고·비교 난이도 모두 돌렸음');
+    assert(log.some(m => m.teams.some(t => t.options.break_skill && t.options.break_skill.name === '특이점 관측' && t.options.break_skill.level === 3)), '브레이크 스킬 후보를 시뮬에 넘김');
+    assert(!log.some(m => m.teams.some(t => t.options.break_skill && t.options.cosmo_raid.level === 0)), '난이도 비교 단계에는 브레이크 스킬 없음');
     assert(out.rows[0].teams.every(t => t.st.mean > 0));
-    assert.deepEqual(phases.slice(-3).map(x => x == null), [true, true, true], '마무리 단계는 ETA 단계 없음(null)');
+    assert.deepEqual(phases.slice(-2).map(x => x == null), [true, true], '비교·마무리 단계는 ETA 단계 없음(null)');
     // levelMax 가 없으면 긴 계산 전에 바로 오류(화면이 값을 안 넘겨 35분 뒤 터진 사고 재발 방지)
     await assert.rejects(C.search(cxOf(mkS({}), [], {level: -1, levelMax: undefined})), /levelMax/);
-    // 고정 난이도는 그대로: 비교 단계 없음, probe 없음
+    // 고정 난이도는 그대로: 비교 단계 없음, probe 없음, 팀 난이도 = 고른 값, 브레이크 후보 없으면 장착 안 함
     const o2 = await C.search(cxOf(mkS({rerank: {keep: 200, runs: 10}}), [], {level: 7}));
     assert.equal(o2.level, 7); assert.equal(o2.probe, null);
+    assert(o2.rows[0].teams.every(t => t.level === 7 && t.brk === null));
   },
   async halving_flow_and_equivalence() {
     // keep 200, passMinMult 1 -> 통과 200팀 / 조합 665 라 반감 적용. 순서·시드·판 수·통과 팀 구성 확인, 반감을 끈 같은 설정과 결과가 같다(가짜 점수는 판마다 같은 값 = 잡음 없음)

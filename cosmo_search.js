@@ -14,14 +14,14 @@
   const idOf = keys => keys.slice().sort().join("+");
 
   const AUTO = -1;   // 난이도 선택값: 자동(가장 점수가 높은 난이도)
-  const jobKey = (boss, keys, level) => [boss, idOf(keys), level].join("|");
+  const jobKey = (boss, keys, level, brk) => [boss, idOf(keys), level].concat(brk ? [brk.name] : []).join("|");
 
   // 보스 하나의 작업 목록. 구원자 칸 순서·능력치는 guild_search.party 와 같다(리더 0번)
-  function bossJobs(S, boss, level, list, results, cls) {
+  function bossJobs(S, boss, level, list, results, cls, brk) {
     return list.map(keys => {
       const p = GS.party(keys, results, cls);
-      return {key: jobKey(boss, keys, level), boss, keys, order: p.order, level, party: p.spec,
-        options: {cosmo_raid: {boss, step: 3, level}, cosmo_top_q: S.topQ}};
+      return {key: jobKey(boss, keys, level, brk), boss, keys, order: p.order, level, brk: brk || null, party: p.spec,
+        options: Object.assign({cosmo_raid: {boss, step: 3, level}, cosmo_top_q: S.topQ}, brk ? {break_skill: {name: brk.name, level: brk.level}} : {})};
     });
   }
 
@@ -133,6 +133,23 @@
       jobs.push(...bossJobs(S, b, level, list, results, cls));
     });
     return jobs;
+  }
+
+  // 팀마다 난이도(levelOf)와 브레이크 스킬(brks 중 점수가 큰 것, 같으면 앞쪽 = 장착 안 함)을 고른 마지막 순위. 결과가 빠진 삼중은 뺀다
+  function finalRankBrk(triples, bosses, levelOf, brks, res, mode, show) {
+    const out = [];
+    for (const t of triples) {
+      const teams = t.teams.map((e, i) => {
+        const lv = levelOf(bosses[i], e.keys);
+        let pick = null;
+        for (const b of brks) { const r = res[jobKey(bosses[i], e.keys, lv, b)]; if (r && r.cosmo && (!pick || metric(r.cosmo, mode) > metric(pick.st, mode))) pick = {st: r.cosmo, brk: b ? b.name : null, brkLv: b ? b.level : null, bs: r.bs || null}; }
+        return pick ? {boss: bosses[i], keys: e.keys, order: e.order, level: lv, st: pick.st, brk: pick.brk, brkLv: pick.brkLv} : null;
+      });
+      if (teams.some(x => !x)) continue;
+      out.push({sum: teams.reduce((a, x) => a + metric(x.st, mode), 0), sum2: teams.reduce((a, x) => a + other(x.st, mode), 0), teams});
+    }
+    out.sort((a, b) => b.sum - a.sum || b.sum2 - a.sum2 || (a.teams.map(x => idOf(x.keys)).join() < b.teams.map(x => idOf(x.keys)).join() ? -1 : 1));
+    return out.slice(0, show);
   }
 
   // 마지막 재시뮬 결과로 삼중을 다시 매김. 합 = 세 팀 기준 점수의 합. 결과가 빠진 삼중은 뺀다
@@ -343,29 +360,37 @@
     const lists = bosses.map(b => pickTop(jobsB.filter(j => j.boss === b), resB, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
     let triples = bestTriples(lists, S.combine.topTriples);
     if (!triples.length) throw new Error("겹치지 않는 3팀을 찾지 못했습니다(후보가 서로 겹침). 내 정보에 육성된 구원자를 늘려 보세요");
-    // 난이도 자동: 대표 난이도에서 뽑은 삼중을 모든 난이도에서 짧게 돌려 합이 가장 큰 난이도를 고른다. 그 난이도가 다르면 2단계(상위 팀 정밀)를 그 난이도로 다시 하고 삼중을 다시 만든다.
-    // 이 뒤 단계는 시간 안내(ETA) 단계에 없어 stage=null 로 알린다(화면은 안내를 끈다)
-    let probe = null, lv = level;
+    // 난이도 자동: 보스마다 난이도를 따로 고를 수 있으므로(게임이 허용), 뽑은 삼중의 모든 팀을 난이도 0~최대에서 짧게 돌려 팀별로 점수가 가장 큰 난이도를 정하고
+    // 그 합이 큰 순으로 삼중을 다시 매긴다. 이 뒤 단계는 시간 안내(ETA) 단계에 없어 stage=null 로 알린다(화면은 안내를 끈다)
+    let probe = null, levelOf = () => level;
     if (auto) {
       const lvls = Array.from({length: cx.levelMax + 1}, (_, i) => i), pr = S.auto.probeRuns | 0 || 10;
       const jobsP = [].concat(...lvls.map(l => finalJobs(S, triples, bosses, l, results, cls)));
       const resP = await run(jobsP, pr, 5, `난이도 비교: 후보 편성을 난이도 0~${cx.levelMax}에서 ${pr}판씩 확인 중`, null);
       if (stale()) return null;
+      const best = new Map();   // 보스|조합 -> 점수가 가장 큰 난이도(같으면 낮은 난이도)
+      for (const t of triples) t.teams.forEach((e, i) => {
+        const id = bosses[i] + "|" + idOf(e.keys);
+        if (best.has(id)) return;
+        let bl = 0, bv = -1;
+        for (const l of lvls) { const r = resP[jobKey(bosses[i], e.keys, l)]; const v = r && r.cosmo ? metric(r.cosmo, mode) : -1; if (v > bv) { bv = v; bl = l; } }
+        best.set(id, {level: bl, v: bv});
+      });
+      levelOf = (b, keys) => best.get(b + "|" + idOf(keys)).level;
+      const sumOf = t => t.teams.reduce((a, e, i) => a + best.get(bosses[i] + "|" + idOf(e.keys)).v, 0);
+      triples = triples.slice().sort((x, y) => sumOf(y) - sumOf(x));
       probe = lvls.map(l => { const f = finalRank(triples, bosses, l, resP, mode, 1)[0]; return {level: l, sum: f ? f.sum : 0}; });
-      lv = probe.reduce((b, x) => x.sum > b.sum ? x : b, probe[0]).level;
-      if (lv !== level) {
-        const jobsB2 = [].concat(...keep.map((k, i) => bossJobs(S, bosses[i], lv, k.map(e => e.keys), results, cls)));
-        const resB2 = await run(shuffled(jobsB2, 20261107), S.rerank.runs, 3, `난이도 ${lv}에서 보스별 상위 ${pl.keep}팀을 다시 확인 중`, null);
-        if (stale()) return null;
-        const lists2 = bosses.map(b => pickTop(jobsB2.filter(j => j.boss === b), resB2, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
-        const t2 = bestTriples(lists2, S.combine.topTriples);
-        if (t2.length) triples = t2;
-      }
     }
-    const jobsC = finalJobs(S, triples, bosses, lv, results, cls);
-    const resC = await run(jobsC, S.final.runs, 2, `${auto ? "마지막 확인(난이도 " + lv + ")" : "3단계"}: 합이 큰 ${triples.length}개 편성의 팀 ${jobsC.length}개를 ${S.final.runs}판씩 확인 중`, auto ? null : 3);
+    // 마지막 확인: 팀마다 (고른 난이도) × (브레이크 스킬 없음 + 보유·시뮬 지원 스킬 각각). 팀별로 점수가 큰 브레이크 스킬을 고른다
+    const brks = [null].concat(cx.breaks || []);
+    const seen = new Map();
+    triples.forEach(t => t.teams.forEach((e, i) => { const l = levelOf(bosses[i], e.keys), k = jobKey(bosses[i], e.keys, l); if (!seen.has(k)) seen.set(k, {boss: bosses[i], keys: e.keys, level: l}); }));
+    const jobsC = [];
+    seen.forEach(v => brks.forEach(b => jobsC.push(...bossJobs(S, v.boss, v.level, [v.keys], results, cls, b))));
+    const resC = await run(jobsC, S.final.runs, 2, `${auto ? "마지막 확인" : "3단계"}: 합이 큰 ${triples.length}개 편성의 팀 ${seen.size}개${brks.length > 1 ? "를 브레이크 스킬 " + (brks.length - 1) + "종과 함께" : ""} ${S.final.runs}판씩 확인 중`, auto ? null : 3);
     if (stale()) return null;
-    return {rows: finalRank(triples, bosses, lv, resC, mode, S.combine.show), pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: pl.keep, triples: triples.length, runs: S.final.runs, level: lv, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
+    const rows2 = finalRankBrk(triples, bosses, levelOf, brks, resC, mode, S.combine.show);
+    return {rows: rows2, pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: pl.keep, triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
       halved: pl.halved, firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed};
   }
 
@@ -374,7 +399,11 @@
   // 화면 조각. st = {phase: idle|run|done|err, msg, done, total, rows, level, mode, bosses, ...}, cx = {hasInfo, label(key), esc, bossName(key), levelMax, level, mode}
   function table(r, mode, cx) {
     const esc = cx.esc;
-    const body = r.teams.map(t => `<tr><td>${esc(cx.bossName(t.boss))}</td><td>${t.order.map(k => esc(cx.label(k))).join("<br>")}</td><td><b>${num(metric(t.st, mode))}</b></td><td>${num(other(t.st, mode))}</td><td>${pct(t.st.clear)}</td><td>${pct(t.st.frac)}</td></tr>`).join("");
+    if (cx.team) {   // 화면이 카드 모양(앞열·뒤열·리더·브레이크 스킬)을 그려 준다: 보스마다 한 덩어리
+      const blocks = r.teams.map(t => `<div class="cs-boss" data-k="cs-team"><div class="cs-bh"><b>${esc(cx.bossName(t.boss))}</b>${t.level != null ? ` <span class="cs-lv">난이도 ${t.level}</span>` : ""}<span class="cs-sc">${MODES[mode]} <b>${num(metric(t.st, mode))}</b> · ${MODES[mode === "top" ? "mean" : "top"]} ${num(other(t.st, mode))} · 클리어율 ${pct(t.st.clear)} · 보스 깎음 ${pct(t.st.frac)}</span></div>${cx.team(t)}</div>`).join("");
+      return `<div data-k="cs-table">${blocks}<div class="cs-sum"><b>합계 <span data-k="cs-sum">${num(r.sum)}</span></b></div></div>`;
+    }
+    const body = r.teams.map(t => `<tr><td>${esc(cx.bossName(t.boss))}${t.level != null ? "<br>난이도 " + t.level : ""}${t.brk ? "<br>" + esc(t.brk) : ""}</td><td>${t.order.map(k => esc(cx.label(k))).join("<br>")}</td><td><b>${num(metric(t.st, mode))}</b></td><td>${num(other(t.st, mode))}</td><td>${pct(t.st.clear)}</td><td>${pct(t.st.frac)}</td></tr>`).join("");
     return `<div class="gd-scroll"><table data-k="cs-table"><thead><tr><th>보스</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>${MODES[mode]}(순위 기준)</th><th>${MODES[mode === "top" ? "mean" : "top"]}</th><th>클리어율</th><th>보스 깎음</th></tr></thead><tbody>${body}<tr><td colspan="2"><b>합계</b></td><td colspan="4"><b data-k="cs-sum">${num(r.sum)}</b></td></tr></tbody></table></div>`;
   }
   const progText = st => `${st.msg || ""}${st.total ? ` · ${num(st.done)}/${num(st.total)}` : ""}`;
@@ -396,7 +425,7 @@
       const stale = (st.reqLevel != null ? st.reqLevel : st.level) !== cx.level || st.mode !== cx.mode ? '<div class="gd-warn" data-k="cs-stale">위에서 고른 난이도·순위 기준이 바뀌었습니다. 아래 결과는 이전 선택 기준이니 다시 찾아 주세요.</div>' : "";
       const old = cx.sig != null && st.sig !== cx.sig ? '<div class="gd-warn" data-k="cs-old">낡은 결과: 내 정보를 다시 불러왔거나 추천에서 뺄 구원자 목록이 바뀌었습니다. 아래 결과는 이전 기준이니 다시 찾아 주세요.</div>' : "";
       const rows = st.rows || [];
-      const lvInfo = st.probe ? `<div data-k="cs-level"><b>점수가 가장 높은 난이도: 레벨 ${st.level}</b> <span class="mut gd-small">(난이도별 최고 합: ${st.probe.map(p => p.level + "→" + num(p.sum)).join(", ")}; 짧은 표본이라 참고용)</span></div>` : "";
+      const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐습니다(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
       const first = rows.length ? `${lvInfo}<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : '<div class="mut">결과 없음</div>';
       const rest = rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx)}</details>`).join("");
       const scr = st.halved ? `보스마다 조합 ${num(st.combos)}개를 ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
@@ -418,6 +447,6 @@
     return Math.max(W.min, Math.floor(n));
   }
 
-  const api = {MODES, workerCount, pickPass, passCount, mergeSummary, shuffled, poolAll, countCombos, feasibility, effKeep, plan, etaNew, priorFrom, fmtDur, etaLine, preText, progText, metric, idOf, jobKey, bossJobs, pickTop, pickDiverse, bestTriples, finalJobs, finalRank, search, html, table};
+  const api = {MODES, workerCount, pickPass, passCount, mergeSummary, shuffled, poolAll, countCombos, feasibility, effKeep, plan, etaNew, priorFrom, fmtDur, etaLine, preText, progText, metric, idOf, jobKey, bossJobs, pickTop, pickDiverse, bestTriples, finalJobs, finalRank, finalRankBrk, search, html, table};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.CosmoSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

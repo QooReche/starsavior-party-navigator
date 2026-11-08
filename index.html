@@ -96,7 +96,7 @@ body:not(.show-why) .gimnote{display:none}
 .btile input:checked+.tc{opacity:1;filter:none;border-color:#5a7bd6;box-shadow:0 0 0 1px #5a7bd6 inset}
 .bim{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #9bb0d8;display:flex;align-items:center;justify-content:center;font-size:30px}
 .btile .tn{font-weight:700;font-size:13px;line-height:1.2}
-.rowcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(7,auto);column-gap:12px;row-gap:0;margin-top:8px}
+.cs-boss{border-top:1px solid var(--line);padding:8px 0}.cs-bh{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline}.cs-lv{font-weight:700;color:var(--acc)}.cs-sc{font-size:12px;color:var(--mut)}.cs-sum{border-top:1px solid var(--line);padding-top:6px;font-size:15px}.rowcards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(7,auto);column-gap:12px;row-gap:0;margin-top:8px}
 .bbar{display:flex;gap:18px;align-items:center;margin-top:12px;padding:14px 16px;border-radius:14px;border:2px solid #5a7bd6;background:linear-gradient(90deg,#1c3470,#0f1d48 70%);color:#fff}
 .bbar img{width:132px;height:132px;border-radius:50%;object-fit:cover;flex:none;border:3px solid #cfd9f2;box-shadow:0 0 0 3px #3b5bb0}
 .bbar .bt{font-size:12px;letter-spacing:.12em;color:#a9bde8}.bbar b{font-size:22px}.bbar .bx{font-size:14px;margin-top:4px}.bbar .mut{color:#a9bde8}
@@ -521,13 +521,20 @@ function csReset(){   // 내 정보 다시 불러오기·제외 목록 변경: �
 function csOpt(){const C=D.cosmoRaid;
  if(CSR.optLevel==null){const v=LS.get("cosmo.level");CSR.optLevel=Number.isInteger(v)&&v>=-1&&v<=C.levelMax?v:C.search.defaultLevel}
  if(CSR.optMode==null){const v=LS.get("cosmo.mode");CSR.optMode=CosmoSearch.MODES[v]?v:C.search.defaultMode}}
+// 코스모 결과 한 팀: 기존 추천 카드와 같은 모양(앞열 2·뒤열 2, 리더 왕관, 브레이크 스킬 줄). 시뮬이 가정한 칸 순서 = order(앞열 먼저, 첫 구원자가 리더)
+function csTeam(t){LEADKEY=t.order[0];const xs=t.order.map(k=>({s:BYKEY[k]}));
+ const cards=`<div class="rowcards cs-cards">${card(xs[2],"back")}${card(xs[0],"front")}${card(xs[1],"front")}${card(xs[3],"back")}</div>`;
+ const b=t.brk,info=b&&CFG.breakSkills[b],im=b&&D.bicons[b];
+ const bar=`<div class="bbar" title="${esc(info?info.text:"브레이크 스킬 미장착")}">${im?`<img src="${im}" alt="">`:`<span class="bicon">${b&&BG[b]||"◆"}</span>`}<div class="bbody"><b>${esc(b||"브레이크 스킬 장착 안 함")}</b>${b?` <span class="mut">Lv.${t.brkLv}</span>`:""}${info?` <span class="mut">${esc(info.text)}</span>`:""}</div></div>`;
+ return cards+bar}
+function csBreaks(){const lv=MI.brkLv||null,have=lv?Object.keys(lv):breakOwned();return have.filter(n=>CFG.breakSupported.includes(n)).map(n=>({name:n,level:brkLv(n)}))}
 const csBoss=k=>((D.cosmoRaid.bosses.find(b=>b.key===k))||{}).name||k;
 function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").value];
  if(!c||c.key!=="cosmo"||!D.cosmoRaid||!window.CosmoSearch){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}if(CSR.phase==="run"){CSR.phase="idle";CSR.id++}p.hidden=true;p.innerHTML="";return}
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
- p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,sig:csSig(),preEta:MI.info?csPre():""})}
+ p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,sig:csSig(),preEta:MI.info?csPre():""})}
 async function cosmoSearchStart(){
  if(!MI.info||CSR.phase==="run")return;
  const C=D.cosmoRaid,id=++CSR.id,stale=()=>CSR.id!==id,paint=()=>renderCosmoSearch(),level=CSR.optLevel,mode=CSR.optMode;
@@ -537,7 +544,7 @@ async function cosmoSearchStart(){
   const profile=MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,growth,"cosmo"));
   const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=C.search;
   const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
-   makeWorker:()=>new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,
+   makeWorker:()=>new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,breaks:csBreaks(),
    onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed"),workers)})},
    onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm)LS.set("cosmo.speed",{sec:sm,workers});CSR.eta=null;CSR.etaText="마무리 단계(난이도 비교·최종 확인)는 남은 시간을 따로 계산하지 않습니다"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();csTick(true)},
    onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());csTick(false)},onHandle:h=>{CSR.handle=h}});

@@ -1484,12 +1484,12 @@ def test_cosmo_search(browser, ctx):
     page.wait_for_selector('#cosmo-search [data-k="cs-table"], #cosmo-search [data-k="cs-err"]', timeout=300000)
     err_txt = page.locator('#cosmo-search [data-k="cs-err"]').all_text_contents()
     assert not err_txt, err_txt
-    rows = page.locator('#cosmo-search [data-k="cs-best"] tbody tr').count()
+    rows = page.locator('#cosmo-search [data-k="cs-best"] [data-k="cs-team"]').count()
     state = page.evaluate("""() => { const r = CSR.rows[0]; const keys = r.teams.flatMap(t => t.keys);
       return {n: CSR.rows.length, bosses: r.teams.map(t => t.boss), uniq: new Set(keys).size, nkeys: keys.length, sum: r.sum,
               parts: r.teams.reduce((a, t) => a + CosmoSearch.metric(t.st, CSR.mode), 0), level: CSR.level, phase: CSR.phase,
               shown: document.querySelector('[data-k=cs-sum]').textContent.replace(/,/g, '')} }""")
-    names = page.locator('#cosmo-search [data-k="cs-best"] tbody tr td:first-child').all_text_contents()[:3]
+    names = page.locator('#cosmo-search [data-k="cs-best"] .cs-bh > b').all_text_contents()[:3]
     # 완주하면 이 PC 속도가 저장되고, 끝난 화면의 시작 전 안내가 «예상 약 …»(저장 속도 기준)으로 바뀜
     speed = page.evaluate("() => { try { return JSON.parse(localStorage.getItem('pn.cosmo.speed')) } catch (e) { return null } }")
     want_w = page.evaluate("() => csWorkers()")        # 작업자 수 자동 결정(코어·메모리·모바일): 저장된 속도의 작업자 수와 같아야 하고 코어 수를 넘지 않음
@@ -1510,7 +1510,7 @@ def test_cosmo_search(browser, ctx):
     hidden_after = not panel.is_visible()
     errs = list(ctx.errors)
     page.close()
-    ok = (hidden_first and shown and has_btn == 1 and lvl == "3" and cancel_ok and rows == 4
+    ok = (hidden_first and shown and has_btn == 1 and lvl == "3" and cancel_ok and rows == 3
           and state["bosses"] == ["belgras", state["bosses"][1], state["bosses"][2]] and len(set(state["bosses"])) == 3 and len(set(names)) == 3
           and state["nkeys"] == 12 and state["uniq"] == 12 and state["sum"] > 0 and abs(state["sum"] - state["parts"]) < 1e-6
           and state["shown"] == str(round(state["sum"])) and state["level"] == 3 and state["phase"] == "done"
@@ -1535,10 +1535,17 @@ def test_cosmo_auto_level(browser, ctx):
     err_txt = page.locator('#cosmo-search [data-k="cs-err"]').all_text_contents()
     assert not err_txt, err_txt
     info = page.locator('#cosmo-search [data-k="cs-level"]').all_text_contents()
-    lv = page.evaluate("() => [CSR.level, CSR.reqLevel, (CSR.probe || []).length, D.cosmoRaid.levelMax]")
+    lv = page.evaluate("() => [CSR.level, CSR.reqLevel, (CSR.probe || []).length, D.cosmoRaid.levelMax, CSR.rows[0].teams.map(t => t.level)]")
     stale = page.locator('#cosmo-search [data-k="cs-stale"]').count()
-    ok = default_auto and len(info) == 1 and "점수가 가장 높은 난이도" in info[0] and lv[1] == -1 and 0 <= lv[0] <= lv[3] and lv[2] == lv[3] + 1 and stale == 0 and not ctx.errors
-    return ok, "기본 자동 %s / 표시 %s / 고른 난이도 %s 요청 %s 비교 %d개(최대 %s) / 낡은 경고 %d / 오류 %s" % (default_auto, info[:1], lv[0], lv[1], lv[2], lv[3], stale, ctx.errors[:2])
+    # 기존 추천 양식: 보스마다 카드 4장(전열 2·후열 2), 리더 왕관 1개, 난이도 표시, 브레이크 스킬 줄
+    shape = page.evaluate("""() => [...document.querySelectorAll('#cosmo-search [data-k="cs-best"] [data-k="cs-team"]')].map(b => ({
+      cards: b.querySelectorAll('.gc').length, front: b.querySelectorAll('.slotlbl.front').length, back: b.querySelectorAll('.slotlbl.back').length,
+      crown: b.querySelectorAll('.crown').length, imgs: b.querySelectorAll('.gc img, .gc .fallback').length, bbar: b.querySelectorAll('.bbar').length,
+      lvtxt: (b.querySelector('.cs-lv') || {}).textContent || ''}))""")
+    shape_ok = len(shape) == 3 and all(x["cards"] == 4 and x["front"] == 2 and x["back"] == 2 and x["crown"] == 1 and x["bbar"] == 1 and x["imgs"] >= 4 and x["lvtxt"].startswith("난이도 ") for x in shape)
+    ok = (default_auto and len(info) == 1 and "보스마다" in info[0] and lv[1] == -1 and lv[0] is None and lv[2] == lv[3] + 1 and all(0 <= x <= lv[3] for x in lv[4])
+          and shape_ok and stale == 0 and not ctx.errors)
+    return ok, "기본 자동 %s / 안내 %s / 보스별 난이도 %s 요청 %s 비교 %d개(최대 %s) / 카드 양식 %s %s / 낡은 경고 %d / 오류 %s" % (default_auto, info[:1], lv[4], lv[1], lv[2], lv[3], shape_ok, shape[:1], stale, ctx.errors[:2])
 
 
 TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
