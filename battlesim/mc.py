@@ -90,7 +90,7 @@ def global_turn_buff(name):
     global _GLOBAL_TURN
     if _GLOBAL_TURN is None:
         with open(os.path.join(SRC, 'data', 'buff_global_turn.json'), encoding='utf-8') as f:
-            _GLOBAL_TURN = set(json.load(f))
+            _GLOBAL_TURN = {re.sub(r'\(해제\s*불가\)$', '', n).strip() for n in json.load(f)}   # 양쪽 모두 꼬리표를 뗀 이름으로 비교
     return re.sub(r'\(해제\s*불가\)$', '', name).strip() in _GLOBAL_TURN
 
 
