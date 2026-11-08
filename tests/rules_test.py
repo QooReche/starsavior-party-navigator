@@ -304,7 +304,7 @@ def test_index_uses_merged_opts():
 _EXPECTED_MC_OPTS_KEYS = frozenset([
     'foe_skill_order', 'empty_attack', 'enemy_cd_end_order', 'revenge_rate',
     'buff_ban', 'buff_ban_force', 'enforce_timing', 'enforce_target', 'wave_ally_gauge', 'buff_count_source', 'dispel_on_attack', 'skill_order', 'hit_stack_order', 'permanent_accuracy', 'battle_end_mode',
-    'ally_auto_lines', 'ally_auto_target', 'ally_break_gauge', 'ally_init_cd', 'ally_variant_mapping', 'any_turn_clock',
+    'ally_auto_lines', 'ally_auto_target', 'ally_break_gauge', 'ally_init_cd', 'ally_variant_mapping', 'any_turn_clock', 'any_turn_source',
     'auto_skill', 'basic_tough', 'enforce',
     'break_skill_atk_pct', 'break_skill_boss_points', 'break_skill_buff_turns',
     'break_skill_cd_unit', 'break_skill_cooldown', 'break_skill_cost',

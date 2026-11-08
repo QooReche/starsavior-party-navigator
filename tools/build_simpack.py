@@ -18,7 +18,7 @@ from battlesim.fileio import atomic_open
 FIXED = ['battlesim/rules/default.json', 'battlesim/rules/builds.json', 'rawdata/databook_main.json', 'rawdata/foe.js', 'data/foe_spawn.json',
          'rawdata/guide_app-core.js', 'data/synergy_tags.json', 'data/myinfo_combat.json', 'data/auto_skill.json', 'data/foe_auto.json',
          'data/sudden_death.json', 'data/battle_end.json',
-         'data/break_skill_levels.json', 'data/buff_count.json', 'data/buff_force.json', 'data/buff_immune_pass.json',
+         'data/break_skill_levels.json', 'data/buff_count.json', 'data/buff_force.json', 'data/buff_immune_pass.json', 'data/buff_global_turn.json',
          'data/foe_react.json', 'data/foe_summon.json',
          'data/guild_bfb.json', 'data/guild_defense.json', 'data/cosmo_raid.json']   # 길드 방어전 BFB(starsavior/guild_bfb.py)
 

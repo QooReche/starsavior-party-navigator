@@ -53,11 +53,29 @@ def extract_immune_pass(rows, strings, warn=print):
     return out
 
 
+def extract_global_turn(rows, strings, warn=print):
+    """BUFF_TEMPLET.GlobalTurnCounting 이 참인 효과 이름. 클라는 이런 효과를 «모든 행동이 끝날 때마다 전원 차감, 걸린 행동도 차감»한다
+    (NKM:3973-3983 틱 함수, 13546 호출, 4571 예외 판정 = 게임 빌드 26314877). 같은 이름의 행이 모두 참일 때만 담는다(일부만 참인 이름은 이름만으로 구분 못 해 제외)."""
+    names = defaultdict(set)
+    for row in rows:
+        name = strings.get(row.get('m_BuffName'), {}).get('ko')
+        if name:
+            names[name].add(bool(row.get('GlobalTurnCounting')))
+    out = []
+    for name, flags in sorted(names.items()):
+        if flags == {True}:
+            out.append(name)
+        elif len(flags) > 1:
+            warn('WARNING: 동명 효과 GlobalTurnCounting 혼재, 제외: ' + name)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--static')
     ap.add_argument('--out', default=str(ROOT / 'data/buff_force.json'))
     ap.add_argument('--out-immune', default=str(ROOT / 'data/buff_immune_pass.json'))
+    ap.add_argument('--out-clock', default=str(ROOT / 'data/buff_global_turn.json'))
     args = ap.parse_args()
     tables = static_path(args.static) / 'tables'
     rows = jsonc(tables / 'BUFF_TEMPLET.json')['Data']
@@ -68,6 +86,9 @@ def main():
     passed = extract_immune_pass(rows, strings, lambda msg: print(msg, file=sys.stderr))
     atomic_json(args.out_immune, passed)
     print('면역 통과 효과 이름', len(passed), '저장:', args.out_immune)
+    clock = extract_global_turn(rows, strings, lambda msg: print(msg, file=sys.stderr))
+    atomic_json(args.out_clock, clock)
+    print('전체 턴 시계 효과 이름', len(clock), '저장:', args.out_clock)
 
 
 if __name__ == '__main__':

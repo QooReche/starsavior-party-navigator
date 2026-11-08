@@ -82,6 +82,18 @@ _BLV = {}
 _BUFF_COUNT = None
 
 
+_GLOBAL_TURN = None
+
+
+def global_turn_buff(name):
+    """표 BUFF_TEMPLET.GlobalTurnCounting 이 참인 효과 이름인가(data/buff_global_turn.json, tools/build_buff_force.py). (해제불가) 꼬리표는 떼고 비교한다."""
+    global _GLOBAL_TURN
+    if _GLOBAL_TURN is None:
+        with open(os.path.join(SRC, 'data', 'buff_global_turn.json'), encoding='utf-8') as f:
+            _GLOBAL_TURN = set(json.load(f))
+    return re.sub(r'\(해제\s*불가\)$', '', name).strip() in _GLOBAL_TURN
+
+
 def positive_buff(name, legacy):
     """표의 IsBuff && IsPositive. 미등록·동명 충돌은 기존 분류로 처리한다."""
     global _BUFF_COUNT
@@ -3864,7 +3876,10 @@ class Battle:
         if info is None or 'clock' not in info:
             from .starsavior.foe import gloss
             info = gloss().get(name) or {}
-        return info.get('clock') == 'any_turn'
+        if info.get('clock') == 'any_turn':
+            return True
+        # 설명문에 문구가 없는 상태(2회·3회 피격 카운팅 버프·규제 등)도 표의 GlobalTurnCounting 으로 판정한다(any_turn_source=table)
+        return self.mc['any_turn_source'] == 'table' and global_turn_buff(name)
 
     def refuse_buff(self, x, name):
         """NKM 4053: 신규 강화 거부에 ForceApplyEffect 예외를 적용한다."""
