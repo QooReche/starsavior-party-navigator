@@ -201,10 +201,19 @@ def test_counter():
 def test_leader_speed():
     """리더 속도 +10(아군 리더 칸, 적은 웨이브의 보스)"""
     b = Battle([unit('a', spd=100), unit('b', spd=100)], [[unit('f0', spd=100), unit('boss', spd=100, boss=True)]],
-               random.Random(1), mc=FIXED, leader=1)
+               random.Random(1), mc=dict(FIXED, enemy_leader='boss'), leader=1)
     b.spawn_wave()
     s = [u.spd() for u in b.allies] + [u.spd() for u in b.foes]
     return s == [100, 110, 100, 110], '속도 %s' % s
+
+
+def test_enemy_leader_default_none():
+    """적 리더 속도 +10 은 클라 근거가 없어 기본 none(적 속도 그대로), 옛 가정 boss 는 옵션"""
+    b = Battle([unit('a', spd=100), unit('b', spd=100)], [[unit('f0', spd=100), unit('boss', spd=100, boss=True)]],
+               random.Random(1), mc=FIXED, leader=1)
+    b.spawn_wave()
+    s = [u.spd() for u in b.allies] + [u.spd() for u in b.foes]
+    return s == [100, 110, 100, 100], '속도 %s' % s
 
 
 # ---------------------------------------------------------------- 결정성·한도·로더
@@ -594,7 +603,7 @@ def test_enemy_spawn_flags():
 
 TESTS = [test_enemy_init_cd_pilgrim, test_enemy_init_cd_switches, test_enemy_spawn_flags,
          test_target_weights, test_untargetable, test_taunt, test_ally_target_lowest, test_guard_split, test_guard_highest_only,
-         test_shield_sum, test_heal_formula, test_death_stops_actions, test_counter, test_leader_speed, test_determinism,
+         test_shield_sum, test_heal_formula, test_death_stops_actions, test_counter, test_leader_speed, test_enemy_leader_default_none, test_determinism,
          test_event_limit, test_foe_loader_matches_stages_json, test_evade, test_check_buff_expiry, test_extra_cast_after_consume,
          test_ev_engine_opts_untouched, test_skill_heal_hl, test_enemy_immunity_and_gate, test_hp_condition_units,
          test_reaction_cdr_slot, test_extra_turn_priority, test_no_coop_when_stunned, test_multiwave_foe_damage,

@@ -96,7 +96,7 @@ class GlobalTurnClockTest(unittest.TestCase):
             for src in ('table', 'text'):
                 count.clear()
                 r = api.simulate(p, {'stage': 'oph/플로라/SECTOR 13-10'},
-                                 dict(build='standard', n_runs=30, seed=3, rules_override={'any_turn_source': src}))
+                                 dict(build='standard', n_runs=30, seed=3, rules_override={'any_turn_source': src, 'enemy_leader': 'boss'}))
                 out[src] = (count['chain'] / max(1, count['hit']), r['outcome']['progress'], count['hit'] / 30.0)      # (보스 피격 1회당 연쇄, 진행도, 판당 피격)
         finally:
             api.Battle.chain, api.Battle.strike = orig, orig_strike

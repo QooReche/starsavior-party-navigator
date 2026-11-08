@@ -129,7 +129,7 @@ class HealBurstTest(unittest.TestCase):
             # counting change later rules.
             r = simulate(TEAM, enc, {'n_runs': 3, 'seed': 7, 'nova_policy': policy, 'timeline': True,
                                     'formula_override': {'COOP_CAP': 0.30},
-                                    'rules_override': {'coop_order': 'capped', 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget', 'buff_ban_force': 'off', 'nova_skill_gain': False,
+                                    'rules_override': {'enemy_leader': 'boss', 'coop_order': 'capped', 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget', 'buff_ban_force': 'off', 'nova_skill_gain': False,
                                                        'foe_skill_order': 'default', 'empty_attack': 'skip',
                                                        'nova_force_effects': False,
                                                        'enemy_cd_end_order': 'before_effects',
