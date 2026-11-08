@@ -13,6 +13,7 @@
   const byRank = mode => (a, b) => metric(b.st, mode) - metric(a.st, mode) || other(b.st, mode) - other(a.st, mode) || (b.st.clear || 0) - (a.st.clear || 0);
   const idOf = keys => keys.slice().sort().join("+");
 
+  const AUTO = -1;   // 난이도 선택값: 자동(가장 점수가 높은 난이도)
   const jobKey = (boss, keys, level) => [boss, idOf(keys), level].join("|");
 
   // 보스 하나의 작업 목록. 구원자 칸 순서·능력치는 guild_search.party 와 같다(리더 0번)
@@ -293,7 +294,8 @@
   // 전체 흐름. 1) 보스별 전 조합 짧게 -> 2) 보스별 상위 K 를 더 정확히 -> 3) 겹침 없는 삼중 최대 합 -> 4) 상위 삼중의 팀을 길게 재시뮬
   // cx = {S, bosses:[boss key 3개], level, mode, results, roster, makeWorker, workers, stage, base, onPlan(plan), onPhase(msg,total,{stage,teams,runs,games}), onProgress(done,total), onHandle(handle), stale()}
   async function search(cx) {
-    const {S, bosses, level, mode, results, roster} = cx;
+    const {S, bosses, mode, results, roster} = cx;
+    const auto = cx.level === AUTO, level = auto ? (S.auto && S.auto.screenLevel) || 6 : cx.level;   // 자동이면 1·2단계는 대표 난이도로
     if (bosses.length !== BOSSES) throw new Error("보스는 3명이어야 합니다");
     const rows = poolAll(S, results, roster);
     const bad = feasibility(S, rows);
@@ -338,12 +340,31 @@
     const resB = await run(shuffled(jobsB, 20261107), S.rerank.runs, 3, `2단계: 보스별 상위 ${pl.keep}팀을 더 정확히 확인 중`, 2);
     if (stale()) return null;
     const lists = bosses.map(b => pickTop(jobsB.filter(j => j.boss === b), resB, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
-    const triples = bestTriples(lists, S.combine.topTriples);
+    let triples = bestTriples(lists, S.combine.topTriples);
     if (!triples.length) throw new Error("겹치지 않는 3팀을 찾지 못했습니다(후보가 서로 겹침). 내 정보에 육성된 구원자를 늘려 보세요");
-    const jobsC = finalJobs(S, triples, bosses, level, results, cls);
-    const resC = await run(jobsC, S.final.runs, 2, `3단계: 합이 큰 ${triples.length}개 편성의 팀 ${jobsC.length}개를 ${S.final.runs}판씩 확인 중`, 3);
+    // 난이도 자동: 대표 난이도에서 뽑은 삼중을 모든 난이도에서 짧게 돌려 합이 가장 큰 난이도를 고른다. 그 난이도가 다르면 2단계(상위 팀 정밀)를 그 난이도로 다시 하고 삼중을 다시 만든다.
+    // 이 뒤 단계는 시간 안내(ETA) 단계에 없어 stage=null 로 알린다(화면은 안내를 끈다)
+    let probe = null, lv = level;
+    if (auto) {
+      const lvls = Array.from({length: cx.levelMax + 1}, (_, i) => i), pr = S.auto.probeRuns | 0 || 10;
+      const jobsP = [].concat(...lvls.map(l => finalJobs(S, triples, bosses, l, results, cls)));
+      const resP = await run(jobsP, pr, 5, `난이도 비교: 후보 편성을 난이도 0~${cx.levelMax}에서 ${pr}판씩 확인 중`, null);
+      if (stale()) return null;
+      probe = lvls.map(l => { const f = finalRank(triples, bosses, l, resP, mode, 1)[0]; return {level: l, sum: f ? f.sum : 0}; });
+      lv = probe.reduce((b, x) => x.sum > b.sum ? x : b, probe[0]).level;
+      if (lv !== level) {
+        const jobsB2 = [].concat(...keep.map((k, i) => bossJobs(S, bosses[i], lv, k.map(e => e.keys), results, cls)));
+        const resB2 = await run(shuffled(jobsB2, 20261107), S.rerank.runs, 3, `난이도 ${lv}에서 보스별 상위 ${pl.keep}팀을 다시 확인 중`, null);
+        if (stale()) return null;
+        const lists2 = bosses.map(b => pickTop(jobsB2.filter(j => j.boss === b), resB2, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
+        const t2 = bestTriples(lists2, S.combine.topTriples);
+        if (t2.length) triples = t2;
+      }
+    }
+    const jobsC = finalJobs(S, triples, bosses, lv, results, cls);
+    const resC = await run(jobsC, S.final.runs, 2, `${auto ? "마지막 확인(난이도 " + lv + ")" : "3단계"}: 합이 큰 ${triples.length}개 편성의 팀 ${jobsC.length}개를 ${S.final.runs}판씩 확인 중`, auto ? null : 3);
     if (stale()) return null;
-    return {rows: finalRank(triples, bosses, level, resC, mode, S.combine.show), pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: pl.keep, triples: triples.length, runs: S.final.runs, level, mode, bosses: bosses.slice(),
+    return {rows: finalRank(triples, bosses, lv, resC, mode, S.combine.show), pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: pl.keep, triples: triples.length, runs: S.final.runs, level: lv, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
       halved: pl.halved, firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed};
   }
 
@@ -361,7 +382,7 @@
     const head = '<b>3보스 최고 점수 편성 찾기</b> <span class="gd-est" title="시뮬 기반 추정입니다">추정</span>';
     const warn = '<div class="mut gd-small">오토 전투 기준 · 내 정보의 실제 최종 능력치 · 같은 구원자를 여러 보스에 쓰지 않는 3팀(12명) · 점수 합산식은 서버 계산이라 추정이고 시뮬 전체가 아직 실제 플레이와 충분히 대조되지 않았습니다(참고용). 협공 제외는 적용하지 않습니다. 시즌이 바뀌면 새 시즌 값이 반영된 뒤에 쓰세요.</div>';
     if (!cx.hasInfo) return `<div class="gd-search" data-k="cs-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자를 불러오세요. 불러온 구원자 중에서 3보스 점수 합이 가장 큰 3팀을 찾습니다.</div></div>`;
-    const lv = Array.from({length: cx.levelMax + 1}, (_, i) => `<option value="${i}"${i === cx.level ? " selected" : ""}>${i === 0 ? "레벨 0(없음)" : "레벨 " + i}</option>`).join("");
+    const lv = [`<option value="-1"${cx.level === AUTO ? " selected" : ""}>자동 (최고 점수 난이도)</option>`].concat(Array.from({length: cx.levelMax + 1}, (_, i) => `<option value="${i}"${i === cx.level ? " selected" : ""}>${i === 0 ? "레벨 0(없음)" : "레벨 " + i}</option>`)).join("");
     const md = Object.entries(MODES).map(([k, v]) => `<option value="${k}"${k === cx.mode ? " selected" : ""}>${v}</option>`).join("");
     const opt = `<div class="gd-small"><label>난이도 <select data-cs="level">${lv}</select></label> <label>순위 기준 <select data-cs="mode">${md}</select></label> <span class="mut">— 3단계(Step 3) 기준. 상위 점수 = 판별 점수 상위 20%의 평균</span></div>`;
     const btn = label => `<button type="button" data-cs="start">${label}</button>`;
@@ -371,10 +392,11 @@
     if (st.phase === "run") body = `<div data-k="cs-progress"><span data-k="cs-prog">${esc(progText(st))}</span><div class="mut gd-small" data-k="cs-eta">${esc(st.etaText || "")}</div><button type="button" class="sec" data-cs="cancel">취소</button></div>`;
     else if (st.phase === "err") body = `${opt}<div class="bad" data-k="cs-err">찾지 못했습니다: ${esc(st.msg || "")}</div>${pre}${btn("다시 시도")}`;
     else if (st.phase === "done") {
-      const stale = st.level !== cx.level || st.mode !== cx.mode ? '<div class="gd-warn" data-k="cs-stale">위에서 고른 난이도·순위 기준이 바뀌었습니다. 아래 결과는 이전 선택 기준이니 다시 찾아 주세요.</div>' : "";
+      const stale = (st.reqLevel != null ? st.reqLevel : st.level) !== cx.level || st.mode !== cx.mode ? '<div class="gd-warn" data-k="cs-stale">위에서 고른 난이도·순위 기준이 바뀌었습니다. 아래 결과는 이전 선택 기준이니 다시 찾아 주세요.</div>' : "";
       const old = cx.sig != null && st.sig !== cx.sig ? '<div class="gd-warn" data-k="cs-old">낡은 결과: 내 정보를 다시 불러왔거나 추천에서 뺄 구원자 목록이 바뀌었습니다. 아래 결과는 이전 기준이니 다시 찾아 주세요.</div>' : "";
       const rows = st.rows || [];
-      const first = rows.length ? `<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : '<div class="mut">결과 없음</div>';
+      const lvInfo = st.probe ? `<div data-k="cs-level"><b>점수가 가장 높은 난이도: 레벨 ${st.level}</b> <span class="mut gd-small">(난이도별 최고 합: ${st.probe.map(p => p.level + "→" + num(p.sum)).join(", ")}; 짧은 표본이라 참고용)</span></div>` : "";
+      const first = rows.length ? `${lvInfo}<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : '<div class="mut">결과 없음</div>';
       const rest = rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx)}</details>`).join("");
       const scr = st.halved ? `보스마다 조합 ${num(st.combos)}개를 ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
       body = `${old}${stale}${opt}${first}${rest}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값입니다(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순입니다. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있습니다.</div>${pre}${btn("다시 찾기")}`;

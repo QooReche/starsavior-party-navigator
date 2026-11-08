@@ -332,7 +332,7 @@ SEARCH = dict(
     screen=dict(runs=2, firstRuns=1, passFrac=0.10, passMinMult=3), rerank=dict(keep=300, runs=20), combine=dict(topTriples=10, show=5), final=dict(runs=40),
     # 작업자 수 자동 결정(cosmo_search.js workerCount): 논리 코어의 coreFrac, 메모리(deviceMemory, 모르면 unknownMemGB)의 memFrac 을 perWorkerMB 로 나눈 수, max 상한, 모바일은 mobileMax. 고정값이 아니라 PC마다 달라지는 값
     workers=dict(coreFrac=0.75, memFrac=0.5, perWorkerMB=250, unknownMemGB=4, min=1, max=24, mobileMax=2),
-    topQ=0.2, defaultMode='top', defaultLevel=0, etaWeights=[1, 1, 0.6, 0.25], etaWarmupSec=10, etaWindowSec=20, etaWinFrac=0, etaBlendSec=30)
+    topQ=0.2, defaultMode='top', defaultLevel=-1, auto=dict(screenLevel=6, probeRuns=10), etaWeights=[1, 1, 0.6, 0.25], etaWarmupSec=10, etaWindowSec=20, etaWinFrac=0, etaBlendSec=30)
 
 
 def main():

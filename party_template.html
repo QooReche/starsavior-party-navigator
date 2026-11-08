@@ -519,7 +519,7 @@ function csTick(force){   // 진행 글자만 200ms 이상 간격으로 갱신(�
 function csReset(){   // 내 정보 다시 불러오기·제외 목록 변경: 진행 중인 검색은 취소(끝난 결과는 남기되 서명이 달라 «낡은 결과»로 표시)
  if(CSR.phase==="run"){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.id++;CSR.phase="idle";CSR.eta=null}}
 function csOpt(){const C=D.cosmoRaid;
- if(CSR.optLevel==null){const v=LS.get("cosmo.level");CSR.optLevel=Number.isInteger(v)&&v>=0&&v<=C.levelMax?v:C.search.defaultLevel}
+ if(CSR.optLevel==null){const v=LS.get("cosmo.level");CSR.optLevel=Number.isInteger(v)&&v>=-1&&v<=C.levelMax?v:C.search.defaultLevel}
  if(CSR.optMode==null){const v=LS.get("cosmo.mode");CSR.optMode=CosmoSearch.MODES[v]?v:C.search.defaultMode}}
 const csBoss=k=>((D.cosmoRaid.bosses.find(b=>b.key===k))||{}).name||k;
 function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").value];
@@ -539,7 +539,7 @@ async function cosmoSearchStart(){
   const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
    makeWorker:()=>new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,
    onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed"),workers)})},
-   onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();csTick(true)},
+   onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm)LS.set("cosmo.speed",{sec:sm,workers});CSR.eta=null;CSR.etaText="마무리 단계(난이도 비교·최종 확인)는 남은 시간을 따로 계산하지 않습니다"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();csTick(true)},
    onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());csTick(false)},onHandle:h=>{CSR.handle=h}});
   if(!out||stale())return;
   const sum=CSR.eta&&CSR.eta.summary();if(sum)LS.set("cosmo.speed",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)

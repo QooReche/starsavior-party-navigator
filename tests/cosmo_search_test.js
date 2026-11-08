@@ -34,7 +34,7 @@ function factory(log, score = fakeScore) {
       log.push(m);
       setTimeout(() => {
         for (const t of m.teams) {
-          const keys = t.party.units.map(u => u.key), boss = t.options.cosmo_raid.boss, s = score(boss, keys);
+          const keys = t.party.units.map(u => u.key), boss = t.options.cosmo_raid.boss, s = score(boss, keys, t.options.cosmo_raid.level);
           this.onmessage({data: {type: 'team', key: t.key, result: {prog: 0.5, clear: 0.4, n: m.n_runs, via: {}, progs: null, cosmo: {mean: s, top: fakeTop(s), clear: 0.4, frac: 0.5, n: m.n_runs}}}});
         }
         this.onmessage({data: {type: 'done'}});
@@ -72,7 +72,7 @@ const tests = {
     assert(SE.etaWeights.length === 4 && SE.etaWeights.every(w => w > 0) && SE.etaWarmupSec >= 0 && SE.etaWindowSec > SE.etaWarmupSec);
     assert(SE.screen.runs >= 1 && SE.rerank.keep >= 1 && SE.rerank.runs >= 1 && SE.final.runs >= 1 && SE.combine.topTriples >= 1 && SE.combine.show >= 1 && SE.combine.show <= SE.combine.topTriples);
     assert(SE.topQ > 0 && SE.topQ <= 1 && C.MODES[SE.defaultMode]);
-    assert(Number.isInteger(SE.defaultLevel) && SE.defaultLevel >= 0 && SE.defaultLevel <= G.bosses[0].levels.length);
+    assert(Number.isInteger(SE.defaultLevel) && SE.defaultLevel >= -1 && SE.defaultLevel <= G.bosses[0].levels.length);
     assert.deepEqual(BOSSES, ['belgras', 'tyria', 'carnelia']);
     // 앞열 역할 최소 인원 × 3팀 = 풀의 앞열 역할이 3명 이상이어야 3팀이 나온다
     assert((SE.minRole['서포터'] || 0) + (SE.minRole['디펜더'] || 0) >= 3 * (SE.minFront || 0));
@@ -362,6 +362,23 @@ const tests = {
     assert.equal(m([4, 0, 0], [3, 0, 0], 1).top, 4, 'q=1 이면 상위 2판 평균 3.5 -> 사사오입 4');
     assert.equal(m([3, 0, 0], [2, 0, 0], 1).top, 3, '2.5 -> 3 (짝수 반올림이면 2 가 되어 틀림)');
     assert.deepEqual(m([5, 0, 0], [5, 0, 0], 0.2), {mean: 5, top: 5, clear: 0, frac: 0, n: 2});
+  },
+  async auto_level_picks_best_level() {
+    // 난이도 자동(level -1): 1·2단계는 대표 난이도(6), 모든 난이도 비교, 최고 난이도에서 최종 확인. 가짜 점수는 난이도 10까지 오르다 11부터 급락
+    const S = mkS({rerank: {keep: 200, runs: 10}}), log = [], phases = [];
+    const sc = (b, k, lv) => fakeScore(b, k) * (lv <= 10 ? 1 + lv : 0.1);
+    const out = await C.search(cxOf(S, log, {level: -1, makeWorker: factory(log, sc), levelMax: 18, onPhase: (m, t, info) => phases.push(info.stage)}));
+    assert.equal(out.reqLevel, -1);
+    assert.equal(out.level, 10, '최고 점수 난이도');
+    assert.equal(out.probe.length, 19);
+    assert(out.probe.every(p => p.sum === out.probe.find(q => q.level === p.level).sum) && out.probe[10].sum > out.probe[11].sum && out.probe[10].sum > out.probe[9].sum);
+    const lv = l => log.filter(m => m.teams.some(t => t.options.cosmo_raid.level === l)).length;
+    assert(lv(6) > 0 && lv(10) > 0 && lv(0) > 0, '대표 난이도·최고 난이도·비교 난이도 모두 돌렸음');
+    assert(out.rows[0].teams.every(t => t.st.mean > 0));
+    assert.deepEqual(phases.slice(-3).map(x => x == null), [true, true, true], '마무리 단계는 ETA 단계 없음(null)');
+    // 고정 난이도는 그대로: 비교 단계 없음, probe 없음
+    const o2 = await C.search(cxOf(mkS({rerank: {keep: 200, runs: 10}}), [], {level: 7}));
+    assert.equal(o2.level, 7); assert.equal(o2.probe, null);
   },
   async halving_flow_and_equivalence() {
     // keep 200, passMinMult 1 -> 통과 200팀 / 조합 665 라 반감 적용. 순서·시드·판 수·통과 팀 구성 확인, 반감을 끈 같은 설정과 결과가 같다(가짜 점수는 판마다 같은 값 = 잡음 없음)
