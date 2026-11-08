@@ -30,6 +30,9 @@
 10. 브레이크 자동 발동·쿨 단위·발동자 게이지·영역 지속·재발동·행성 정화 조건, 보스 브레이크 지속·미측정 궁극기 강인도·불리 상성 강인도·`enemy_hit_buff_cmp`를 영상으로 확인하기로 함.
 11. 서부 탈환대 세레스 스킬·기본 베라 자동 지정 근사, 기믹 추정 대처·무적 웨이브 실제 배치·길방 밖 협공/추가타·ReactiveBarrier 활성 표를 추가 확인하기로 함. 기본/개화 매핑과 적 SkillOrderList·빈 공격 처리는 완료했음.
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
+13. 장비 탐사 외 «N턴 이내 승리» 미션 확장은 낮은 우선순위: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있으므로 필요하면 `STAR_TURNS` 확장함. 65턴(2별 추정)은 표시 안 함.
+14. 점검(11/08)에서 보류한 것: 비공개 표 경로가 시험마다 달라(`tools/runtime.static_path` 통일 후보) 이 PC에서 일부 시험이 건너뛰는 문제, node 가 없으면 `print` 후 통과로 집계되는 시험(`cosmo_raid_test`·`guild_defense_test`·`guild_bfb_test`), 생성물(`guild_sim.json`·`quick.json`)에 규칙 해시가 없어 기본값 변경 뒤 재생성을 잊어도 시험이 못 잡는 문제, 단계 그룹 버프(`BUFF_STEP_TEMPLET`)의 엔진 미구현(영향 작음).
+15. (중간 저장 11/08) 중복 코드 점검(Opus, 읽기 전용)을 돌리던 중 사용량 한도로 멈춤: 결과는 `AI	emp\partynavigator\workudit_1108\dup\` 에 있을 수 있음(없으면 다시 돌릴 것). 독립 리뷰(`bd3ffda..9f8b101`) 지적 7건 중 6건은 이 커밋에서 반영(HANDOFF 절 정정, 제어문자 시험에 탭 금지, 깨진 참조·낡은 문서 표시, enemy_leader 등급 `code`·출처 접두). 반영 안 한 것: enemy_leader 근거가 로컬 전투 호스트 경로뿐이라 서버 동작은 미확인(AGENTS 의 «근거 불완전하면 옛 동작» 과 긴장, note 에 미확인 명시), `guild_sim.json` 234,000판은 이 변경 뒤 재계산 안 함.
 ## 환경·주의
 
 - 회사 PC는 공개 저장소와 `E:\AI_mk2\starsavior-static-data`를 함께 pull하기로 함. 추출 도구 작업이면 `starsavior-packet-ref`도 확인.
@@ -44,9 +47,9 @@
 - PowerShell 한글 읽기는 `Get-Content -Encoding utf8`, git dubious ownership은 설정 변경 없이 `git -c safe.directory=<저장소 경로> ...` 조회로 처리하기로 함.
 - 문체는 존칭 없이 「했음·하기로 함」으로, 짧은 문장·줄바꿈·소제목으로 구분하기로 함.
 
-## ▶ 2026-11-08 밤 (Claude) — 문서 유지보수 정리 (코드 변경 없음, 푸시 전)
+## ▶ 2026-11-08 밤 (Claude) — 문서 유지보수 정리 (코드 변경 없음, 푸시 완료)
 
-- 내 정보 기반 결과 JSON 4개(`docs/ally_damage·taunt_guard·boss_action·received_damage_results.json`)를 비공개 `AI\temp\partynavigator\private_results\` 로 옮기고 `.gitignore` 에 `docs/*_results.json`(예외 `toughness_results.json`) 추가. 남은 추적 파일 `boss_recheck·myinfo_combat·nova_gauge·web_leads_results.json` 도 내 정보 기반이라 옮길지 결정 필요.
+- 내 정보 기반 결과 JSON 8개(`docs/ally_damage·taunt_guard·boss_action·received_damage·boss_recheck·myinfo_combat·nova_gauge·web_leads_results.json`)를 비공개 `AI\temp\partynavigator\private_results\` 로 옮기고 `.gitignore` 에 `docs/*_results.json`(예외 `toughness_results.json`) 추가. 과거 커밋 기록에는 남아 있음(기록 재작성은 하지 않음).
 - HANDOFF·HISTORY·audit 문서의 계정 기준 시뮬 수치 일부를 «수치는 비공개 폴더» 로 바꿈. 제어문자로 깨진 경로(`AI<탭>emp`, `work<VT>ideo` 등)를 복원하고 시험 `tests/md_control_chars_test.py` 추가(옛 HANDOFF 로 되돌리면 실패 확인). HANDOFF BOM 제거, 11/01 절은 HISTORY 로 옮김, `docs/README.md` 색인 추가.
 
 ## ▶ 2026-11-08 밤 (Claude) — 틱 제외 조건·카넬리아 기믹 클라 대조 (코드 변경 없음, 푸시 완료)

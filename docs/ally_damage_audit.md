@@ -168,7 +168,7 @@ after 60판 평균이며, 추가 발동은 TURN에 더하지 않음.
 
 영상 단서는 17,470/23,790=73.4%였음. 기본 타격 계수만의 65/90도72.2%이므로 그 비율 자체가 기본기 연쇄 누락의 증거는 아니었음. 같은 내정보 입력으로 60판 전체의 **스킬 본타격+그 시전의 연쇄를 합친 피해 / 해당 시전 수**를 비교했음(36-36·37-2·37-3). 수정 뒤 기본기/궁극기 평균 피해 비율은 세 판 모두 낮아지고 궁극기 연쇄 횟수는 늘었음. 지속 피해·별도 반응·추가 턴 횟수는 분모에 섞지 않았음. 스킬 레벨·대상·치명·약화·금제가 다른 두 시전의 영상 비율에 맞추는 보정은 하지 않았음. 수치는 비공개 폴더, 공개 저장소에는 두지 않음.
 
-참고: `tools/web_leads_audit.py:19`, `docs/web_leads_results.json:1`, https://www.youtube.com/watch?v=mrQNW9z1de8 .
+참고: `tools/web_leads_audit.py:19`, `docs/web_leads_results.json:1`(11/08 비공개 `private_results` 로 이동), https://www.youtube.com/watch?v=mrQNW9z1de8 .
 
 ### 5판 전후와 시험
 
@@ -197,7 +197,7 @@ python -X utf8 tests/web_leads_test.py --mutations
 
 큰 보스전의 추정 아군 행동당 피해 부족은 수정 후 36-36 약1.67배, 37-3 약1.53배로 남았음. 이 값의 실측 아군 비중은 여전히 시뮬 비중으로 추정한 값임. 카르멘 자동 대상 정의, 스킬/반응 조건 본문, 현재 타격 이벤트, 사용자 편성의 실제 시전 횟수는 다음 증거가 필요함. 계수·방어 상수·피해 배율을 실측에 맞추지 않았고 커밋·푸시하지 않았음.
 
-참고: `docs/web_leads_results.json:1`, `tests/web_leads_test.py:1`, `tests/heal_burst_test.py:127`, `sim/manifest.json:1`, https://arca.live/b/starsavior/162831845 , https://arca.live/b/starsavior/180448546 , https://star-savior-arcana-db.pages.dev/data/saviors.json .
+참고: `docs/web_leads_results.json:1`(11/08 비공개 `private_results` 로 이동), `tests/web_leads_test.py:1`, `tests/heal_burst_test.py:127`, `sim/manifest.json:1`, https://arca.live/b/starsavior/162831845 , https://arca.live/b/starsavior/180448546 , https://star-savior-arcana-db.pages.dev/data/saviors.json .
 
 ## 추가: 자동 전투 스킬·대상 규칙 (2026-10-23, auto-target)
 

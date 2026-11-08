@@ -2,14 +2,14 @@
 
 2026-11-08 정리 때 HANDOFF.md·docs/ingame_samples.md 의 경로가 `AI\\temp` → `AI<탭>emp`,
 `work\\video` → `work<VT>ideo`, `C:\\build\\new-extract` → 줄바꿈으로 깨져 있었음
-(파이썬 문자열에 넣은 백슬래시가 이스케이프로 풀린 것). 탭(\\x09)·개행(\\x0a)·CR(\\x0d)은 허용하고
-그 밖의 C0 제어문자(\\x00-\\x08, \\x0b, \\x0c, \\x0e-\\x1f)를 막음. BOM 도 막음(다른 md 와 맞춤)."""
+(파이썬 문자열에 넣은 백슬래시가 이스케이프로 풀린 것). 개행(\\x0a)·CR(\\x0d)만 허용하고
+탭을 포함한 C0 제어문자(\\x00-\\x09, \\x0b, \\x0c, \\x0e-\\x1f)를 막음. 줄바꿈으로 깨진 경로는 시험으로 못 잡음(Edit 도구로만 수정). BOM 도 막음(다른 md 와 맞춤)."""
 from pathlib import Path
 import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-BAD = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f]')
+BAD = re.compile(r'[\x00-\x09\x0b\x0c\x0e-\x1f]')       # 탭 포함: 문서에 실제 탭은 없고, 깨진 경로(\t)가 탭으로 들어왔었음
 
 
 def md_files():
@@ -48,7 +48,8 @@ class MdControlCharsTest(unittest.TestCase):
         self.assertTrue(find_bad('`AI\\temp\\partynavigator\\work\x0bideo_1108\\`'))
         self.assertTrue(find_bad('C:\x08uild'))
         self.assertTrue(find_bad('leader_1108\x07fter'))
-        self.assertFalse(find_bad('표\t탭은 허용\r\n'))
+        self.assertTrue(find_bad('`AI\temp\\partynavigator`'))      # 백슬래시가 풀려 탭이 된 경로
+        self.assertFalse(find_bad('줄바꿈과 CR 은 허용\r\n'))
 
 
 if __name__ == '__main__':
