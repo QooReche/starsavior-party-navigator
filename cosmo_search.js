@@ -198,8 +198,8 @@
     return Math.min(L, Math.max(Math.ceil((sc.passFrac > 0 ? sc.passFrac : 0.1) * L), (sc.passMinMult > 0 ? sc.passMinMult : 3) * keep));
   }
   // 단계별 판 수 계획(시작 전에 알 수 있음). 3단계 팀 수는 삼중이 정해져야 알 수 있어 상한(topTriples×3팀)으로 두고 단계 전환 때 바로잡는다.
-  function plan(S, rows) {
-    const L = countCombos(S, rows), keep = effKeep(S, L), t4 = BOSSES * S.combine.topTriples, pass = passCount(S, L, keep), halved = pass < L, fr = halved ? S.screen.firstRuns | 0 : 0;
+  function plan(S, rows, nBrk) {   // nBrk = 브레이크 스킬 후보 수(마지막 단계는 팀마다 «장착 안 함 + 후보» 각각을 돌림)
+    const L = countCombos(S, rows), keep = effKeep(S, L), t4 = BOSSES * S.combine.topTriples * (1 + (nBrk | 0)), pass = passCount(S, L, keep), halved = pass < L, fr = halved ? S.screen.firstRuns | 0 : 0;
     // 단계: 0 = 1단계 첫 판(전 조합), 1 = 1단계 보충 판(상위 pass 팀 + 경계 동점 + 구원자별 대안이라 실제 팀 수는 달라질 수 있어 단계 전환 때 바로잡음), 2 = 상위 keep 팀 정밀, 3 = 삼중 팀 재시뮬
     const stages = [{id: 1, teams: BOSSES * L, runs: halved ? fr : S.screen.runs}, {id: 2, teams: halved ? BOSSES * pass : 0, runs: halved ? S.screen.runs - fr : 0, upper: true},
       {id: 3, teams: BOSSES * Math.min(keep, L), runs: S.rerank.runs}, {id: 4, teams: t4, runs: S.final.runs, upper: true}];
@@ -318,7 +318,7 @@
     const rows = poolAll(S, results, roster);
     const bad = feasibility(S, rows);
     if (bad) throw new Error(bad);
-    const pl = plan(S, rows);
+    const pl = plan(S, rows, (cx.breaks || []).length);
     if (!pl.combos) throw new Error("조건에 맞는 4인 조합이 없습니다");
     if (S.maxCombos > 0 && pl.combos > S.maxCombos) throw new Error(`4인 조합이 ${num(pl.combos)}개로 안전 상한(${num(S.maxCombos)}개)을 넘습니다. 추천에서 뺄 구원자를 늘리거나 설정의 maxPool/maxCombos 를 조정하세요`);
     const list = GS.combos(S, rows), cls = Object.fromEntries(roster.map(s => [s.key, s.cls]));
@@ -377,8 +377,6 @@
         best.set(id, {level: bl, v: bv});
       });
       levelOf = (b, keys) => best.get(b + "|" + idOf(keys)).level;
-      const sumOf = t => t.teams.reduce((a, e, i) => a + best.get(bosses[i] + "|" + idOf(e.keys)).v, 0);
-      triples = triples.slice().sort((x, y) => sumOf(y) - sumOf(x));
       probe = lvls.map(l => { const f = finalRank(triples, bosses, l, resP, mode, 1)[0]; return {level: l, sum: f ? f.sum : 0}; });
     }
     // 마지막 확인: 팀마다 (고른 난이도) × (브레이크 스킬 없음 + 보유·시뮬 지원 스킬 각각). 팀별로 점수가 큰 브레이크 스킬을 고른다

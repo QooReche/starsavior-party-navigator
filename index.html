@@ -506,7 +506,7 @@ const csProfile=()=>MI.info&&MI.growth?(MI.profiles.cosmo||(MI.profiles.cosmo=My
 function csPre(){   // 시작 전 «예상 시간» 안내(저장된 이 PC 속도가 있으면 예상 시간, 없으면 안내 문구)
  try{const S=D.cosmoRaid.search,pf=csProfile();if(!pf)return "시작하면 몇 초 뒤 예상 시간이 표시됩니다";
   const rows=CosmoSearch.poolAll(S,pf.results,R.filter(s=>!EXCL.has(s.key)));if(CosmoSearch.feasibility(S,rows))return "";
-  return CosmoSearch.preText(CosmoSearch.plan(S,rows),CosmoSearch.priorFrom(LS.get("cosmo.speed"),csWorkers()))}catch(e){return ""}}
+  return CosmoSearch.preText(CosmoSearch.plan(S,rows,csBreaks().length),CosmoSearch.priorFrom(LS.get("cosmo.speed"),csWorkers()))}catch(e){return ""}}
 let csLast=0,csTimer=0;
 function csTick(force){   // 진행 글자만 200ms 이상 간격으로 갱신(취소 버튼 등 DOM 은 다시 만들지 않음)
  const now=performance.now();

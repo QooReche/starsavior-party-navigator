@@ -384,6 +384,9 @@ const tests = {
     assert(!log.some(m => m.teams.some(t => t.options.break_skill && t.options.cosmo_raid.level === 0)), '난이도 비교 단계에는 브레이크 스킬 없음');
     assert(out.rows[0].teams.every(t => t.st.mean > 0));
     assert.deepEqual(phases.slice(-2).map(x => x == null), [true, true], '비교·마무리 단계는 ETA 단계 없음(null)');
+    // 동점 규칙: 점수가 모두 같으면 난이도는 가장 낮은 값(0), 브레이크 스킬은 «장착 안 함»
+    const o3 = await C.search(cxOf(mkS({rerank: {keep: 200, runs: 10}}), [], {level: -1, makeWorker: factory([], (b, k) => fakeScore(b, k)), levelMax: 18, breaks}));
+    assert(o3.rows[0].teams.every(t => t.level === 0 && t.brk === null && t.brkLv === null), '동점이면 낮은 난이도·장착 안 함');
     // levelMax 가 없으면 긴 계산 전에 바로 오류(화면이 값을 안 넘겨 35분 뒤 터진 사고 재발 방지)
     await assert.rejects(C.search(cxOf(mkS({}), [], {level: -1, levelMax: undefined})), /levelMax/);
     // 고정 난이도는 그대로: 비교 단계 없음, probe 없음, 팀 난이도 = 고른 값, 브레이크 후보 없으면 장착 안 함
