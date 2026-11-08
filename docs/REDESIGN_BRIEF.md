@@ -26,7 +26,7 @@
 | 기존 추천(근사 점수) | 티어·상성·스킬 연계·기믹 점수, **브라우저에서 즉시 계산·보유 필터 지원** | `party_reco.py`(콘솔), `party_template.html`(JS 포트) |
 | 평균값 엔진 | 구원자별 기대 피해 → 화력 지표 | `battlesim/engine.py`, `metrics.py` |
 | 확률 전투 엔진 | 적 공격·대상 선택, 아군 HP·회복·보호막·도발·수호·회피, 보스 우선 오토, 반복 실행 → 클리어 확률 | `battlesim/mc.py`, `api.py`, `starsavior/foe.py` |
-| 화면(P4) | 전투 전망(클리어 확률·처치 턴·먼저 쓰러지는 구원자), 오토/수동, 서순 표 — **사전 계산 결과** 사용 | `party_template.html`, `data/sim/*.json`, `tools/build_sim_results.py` |
+| 화면(P4) | 전투 전망(클리어 확률·처치 턴·먼저 쓰러지는 구원자), 오토/수동, 서순 표 — **사전 계산 결과** 사용 | `party_template.html`, `data/sim/*.json`, `tools/build_sim_results.py`(2026-10-20 삭제됨) |
 | 검증 | 결과 변화 감지(골든), 규칙·엔진 시험 ~60건, 브라우저 시험 12건 | `tests/` (`tests/e2e/test_page.py` 는 Playwright) |
 | 실측 양식 | 인게임 기록 양식 + 사용자 관찰(오토는 보스부터 침 → 단일 공격 파티는 쫄몹이 오래 산다) | `calibration/` |
 

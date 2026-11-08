@@ -2,7 +2,7 @@
 
 **숨은 추가 턴·보스 중복 집계는 없었다. 현재 모델의 빠른 보스 속도, 37-3 동료 피격 게이지, 아군 브레이크 회복 턴·사망으로 행동 수가 설명된다. 실전과 남는 격차의 근본 원인은 미확정이며, 속도·계수를 역산해서 맞추지 않았다.** 적 쿨타임의 실제 차감 시점은 코드 근거로 교정했지만 이번 5판 결과는 바뀌지 않는다.
 
-기준 `feat/boss-recheck` / `0c0ce2c`. 단일 작업자, Python IDLE 우선순위, 순차 실행. 커밋·푸시·원본 복사·계수 재맞춤 없음. [가공 결과와 첫 seed 행동 로그](boss_action_results.json), [재현 도구](../tools/boss_action_diagnostic.py).
+기준 `feat/boss-recheck` / `0c0ce2c`. 단일 작업자, Python IDLE 우선순위, 순차 실행. 커밋·푸시·원본 복사·계수 재맞춤 없음. 가공 결과와 첫 seed 행동 로그(`boss_action_results.json`)는 수치는 비공개 폴더, 공개 저장소에는 두지 않음(2026-11-08 제거). [재현 도구](../tools/boss_action_diagnostic.py).
 
 ## 비교 기준의 정정
 

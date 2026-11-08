@@ -2,7 +2,7 @@
 
 **수호 피해에 치명타가 재적용되는 오류 1건을 코드 근거로 수정했다. 큰 보스전 조기 전멸의 주원인은 미해결이다.** `feat/recv-dmg`, 기준 `7781ac4`. 단일 작업자·IDLE 우선순위·순차 실행. 쓰기는 이 폴더만 사용. 커밋·푸시·비공개 원본 복사·계수 재맞춤 없음.
 
-각 60판, seed=7, `--myinfo E:/AI_mk2/starsavior-static-data/samples/myinfo_2026-10-22.json`, 큐브 과부하 Lv5. 36-36=heal/재점화3/리더 없음, 나머지=auto/재점화0/카르멘 리더. [가공 결과 JSON](received_damage_results.json), [재현 도구](../tools/received_damage_audit.py).
+각 60판, seed=7, `--myinfo E:/AI_mk2/starsavior-static-data/samples/myinfo_2026-10-22.json`, 큐브 과부하 Lv5. 36-36=heal/재점화3/리더 없음, 나머지=auto/재점화0/카르멘 리더. 가공 결과 JSON(`received_damage_results.json`)은 수치는 비공개 폴더, 공개 저장소에는 두지 않음(2026-11-08 제거). [재현 도구](../tools/received_damage_audit.py).
 
 ## 전제와 대상별 대조
 
@@ -109,7 +109,7 @@
 - web/quick/shim_compat 모두 `tests/run_workspace_test.py`로 통과. `tests/*_test.js` **6개** 전부 통과.
 - 신규 received_damage6/6: 아군/적 수호, 확정 치명, 방어·감소·보호막, legacy, 계측 결과 불변·합계 보존. `--mutations`로 옛 치명 재적용을 강제하여 **4개 실패** 확인(변이 탐지 성공).
 - golden_check: 구원자64/파티150/스테이지팀10 정확히 일치. golden 수정 및 `--write` 없음. 수정 전 실제 실행과 수정 후 legacy 재실행은 5판 모든 요약 필드 일치.
-- 정상 시험 로그: `local/recv-tests/`, 상세 가공 집계: `docs/received_damage_results.json`. 진단 도구도 전투 결과를 바꾸지 않는 시험 통과.
+- 정상 시험 로그: `local/recv-tests/`, 상세 가공 집계: `received_damage_results.json`(비공개 폴더, 공개 저장소에는 두지 않음). 진단 도구도 전투 결과를 바꾸지 않는 시험 통과.
 
 ```powershell
 python -X utf8 -I tools/received_damage_audit.py --runs 60 --seed 7 --myinfo E:/AI_mk2/starsavior-static-data/samples/myinfo_2026-10-22.json --output local/received_after.json
