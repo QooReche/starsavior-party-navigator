@@ -2693,19 +2693,16 @@ class Battle:
                                    or ('NormalHit' in cond[1] and hit_normal))
                         if not matched:
                             ok = False
-                elif tag == 'target_neg_buff':
-                    t = ctx.target
-                    if t is None or not any(e.harmful for e in t.eff.values() if e.stacks > 0):
+                elif tag in ('target_neg_buff', 'target_pos_buff', 'self_pos_buff', 'self_neg_buff'):
+                    holder = ctx.target if tag.startswith('target_') else u
+                    neg = tag.endswith('_neg_buff')
+                    if holder is None:
                         ok = False
-                elif tag == 'target_pos_buff':
-                    t = ctx.target
-                    if t is None or not any(not e.harmful for e in t.eff.values() if e.stacks > 0):
-                        ok = False
-                elif tag == 'self_pos_buff':
-                    if not any(not e.harmful for e in u.eff.values() if e.stacks > 0):
-                        ok = False
-                elif tag == 'self_neg_buff':
-                    if not any(e.harmful for e in u.eff.values() if e.stacks > 0):
+                    elif self.mc['foe_react_buff_count'] == 'client':
+                        # 클라: 강화/약화 개수(IsBuff 와 IsPositive 기준, 표시 효과 제외)가 0 보다 커야 함
+                        if not (holder.n_harmful() if neg else holder.n_good()) > 0:
+                            ok = False
+                    elif not any((e.harmful == neg) for e in holder.eff.values() if e.stacks > 0):
                         ok = False
                 else:
                     self.unsup['foe_react: 모르는 조건 ' + tag] += 1

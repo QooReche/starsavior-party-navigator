@@ -451,5 +451,52 @@ class TestDamageResult(unittest.TestCase):
         self.assertEqual(_count_react_casts(b), 0, '회피는 NormalHit 조건 미충족')
 
 
+class TestBuffPresence(unittest.TestCase):
+    """target_pos_buff/self_neg_buff 등: 강화·약화 «있음» 판정이 개수 함수(표 기준)를 따르는지.
+    확인용(check) 효과는 강화로 세지 않음(클라 개수 기준). foe_react_buff_count=harmful 이면 옛 동작."""
+
+    def _fires(self, cond, setup, **mc):
+        from battlesim.mc import Ctx
+        foe_def = _foe({'특수기': {'timing': 'hit', 'conds': [[cond]],
+                                   'target': 'react_target', 'is_attack': True}})
+        b = _battle(foe_def, **mc)
+        foe, ally = b.foes[0], b.allies[0]
+        setup(foe, ally)
+        ctx = Ctx(foe, foe, foe.d.skills['기본기'])
+        ctx.targets = [ally]
+        ctx.target = ally
+        ctx.hit_targets = [ally]
+        ctx.evaded = set()
+        ctx.crit_targets = set()
+        b._react_q = None
+        b._check_foe_react(foe, ctx, timing_filter=None)
+        return _count_react_casts(b) > 0
+
+    @staticmethod
+    def _marker(unit):
+        _set_buff(unit, '표지', harmful=False)
+        unit.eff['표지'].check = True
+
+    def test_real_buff_counts(self):
+        self.assertTrue(self._fires('target_pos_buff', lambda f, a: _set_buff(a, '공격력 증가')))
+
+    def test_check_marker_not_a_buff(self):
+        self.assertFalse(self._fires('target_pos_buff', lambda f, a: self._marker(a)))
+
+    def test_check_marker_counted_in_legacy(self):
+        self.assertTrue(self._fires('target_pos_buff', lambda f, a: self._marker(a),
+                                    foe_react_buff_count='harmful'))
+
+    def test_self_neg_and_target_neg(self):
+        self.assertTrue(self._fires('self_neg_buff', lambda f, a: _set_buff(f, '공격력 감소', harmful=True)))
+        self.assertFalse(self._fires('self_neg_buff', lambda f, a: None))
+        self.assertTrue(self._fires('target_neg_buff', lambda f, a: _set_buff(a, '방어력 감소', harmful=True)))
+        self.assertFalse(self._fires('target_neg_buff', lambda f, a: _set_buff(a, '공격력 증가')))
+
+    def test_self_pos(self):
+        self.assertTrue(self._fires('self_pos_buff', lambda f, a: _set_buff(f, '공격력 증가')))
+        self.assertFalse(self._fires('self_pos_buff', lambda f, a: _set_buff(f, '공격력 감소', harmful=True)))
+
+
 if __name__ == '__main__':
     unittest.main()
