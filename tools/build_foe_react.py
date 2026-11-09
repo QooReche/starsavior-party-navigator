@@ -21,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
+from tools.tables import UnknownName, buff_names, names_of   # noqa: E402,F401
 from tools.build_auto_skill import jsonc   # noqa: E402
 from tools import build_foe_spawn as SP   # noqa: E402
 from tools.build_foe_auto import ROLE, ELEM   # noqa: E402
@@ -37,29 +38,7 @@ SKILL_IDX = {'NSI_SKILL_1_ATTACK': 'basic', 'NSI_SKILL_2_SPECIAL': 'special', 'N
 REPORT = Counter()
 
 
-class Unknown(Exception):
-    pass
-
-
-def buff_names(tables):
-    strings = json.loads((tables / 'Strings' / 'STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
-    out = {}
-    for r in json.loads((tables / 'BUFF_TEMPLET.json').read_text(encoding='utf-8'))['Data']:
-        ko = (strings.get(r.get('m_BuffName') or '') or {}).get('ko')
-        if ko:
-            out[r['m_BuffStrID']] = ko
-    return out
-
-
-def names_of(ids, bname):
-    out = []
-    for i in ids:
-        n = bname.get(i)
-        if not n:
-            raise Unknown('buff name missing: ' + i)
-        if n not in out:
-            out.append(n)
-    return out
+Unknown = UnknownName
 
 
 def translate_conds(timing_data, bname):

@@ -397,6 +397,9 @@ def build_savior(a):
     d = load(a.savior); U = d['units']
     reco = load(a.reco)['saviors']
     key_of = {(s['name'], s['subtitle']): s['key'] for s in reco}
+    dup = [k for k, n in C.Counter((s['name'], s['subtitle']) for s in reco).items() if n > 1]
+    if dup:      # 동명 구원자가 생기면 dict 가 마지막 항목으로 조용히 덮어씀 — 키를 정할 수 없으니 멈춤
+        raise SystemExit('savior_reco 에 (이름, 부제)가 같은 구원자가 있음: %s' % dup)
     byk = C.defaultdict(list)
     for u in U: byk[(u['n'], u['ti'])].append(u)
     out = {}; tags_out = {}; unmatched = []

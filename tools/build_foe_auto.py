@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
 from tools.build_auto_skill import NSI, jsonc   # noqa: E402
+from tools.tables import UnknownName, buff_names, names_of   # noqa: E402,F401
 from tools import build_foe_spawn as SP   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior import foe as F   # noqa: E402
@@ -60,19 +61,7 @@ REPORT = Counter()
 REPORT_HEAD = Counter()      # 대상 머리말을 못 읽은 줄(짝짓기 거절)
 
 
-class Unknown(Exception):
-    pass
-
-
-def names_of(ids, bname):
-    out = []
-    for i in ids:
-        n = bname.get(i)
-        if not n:
-            raise Unknown('효과 이름 없음 ' + i)
-        if n not in out:
-            out.append(n)
-    return out
+Unknown = UnknownName        # 시험·다른 빌더가 이 이름으로 가져다 씀
 
 
 def filters(t, bname):
@@ -180,12 +169,7 @@ def build(static):
             skills[r['m_SkillStrID']] = r
     auto = {r['Id']: r for r in jsonc(tables / 'Plain' / 'AUTO_SKILL_TEMPLET.json')['Data']}
     target = {r['Id']: r['TargetCondition'] for r in jsonc(tables / 'Plain' / 'AUTO_SKILL_TARGET_TEMPLET.json')['Data']}
-    strings = json.loads((tables / 'Strings' / 'STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
-    bname = {}
-    for r in json.loads((tables / 'BUFF_TEMPLET.json').read_text(encoding='utf-8'))['Data']:
-        ko = (strings.get(r.get('m_BuffName') or '') or {}).get('ko')
-        if ko:
-            bname[r['m_BuffStrID']] = ko
+    bname = buff_names(tables)
     se = se_rows(tables)
     raw = F.load_foe(str(ROOT))
     rows = SP.battle_rows(static)

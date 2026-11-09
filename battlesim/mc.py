@@ -801,6 +801,25 @@ class Battle:
             # 조회(maxhp)에는 부수효과를 두지 않는다 — hp/maxhp 를 읽는 순서에 따라 값이 달라지지 않게(codex 리뷰)
             u.hp = u.maxhp
 
+    def put_eff(self, x, name, props, dur=math.inf, maxs=1, add=1, src=None, cat='buff', fixed=True,
+                refresh_props=False):
+        """기믹 모듈(길방 BFB·코스모)이 쓰는 저수준 효과 부여. add_effect 와 달리 거부·면역 판정이 없다.
+        새 효과면 만들고(category=cat, harmful 은 cat=='debuff'), 있으면 지속을 늘림(refresh_props 면 수치도 갱신).
+        중첩은 add 만큼 더하고 0..maxs 로 자름."""
+        e = x.eff.get(name)
+        if e is None:
+            e = Eff(name, dict(props), maxs, dur, src or x, cat == 'debuff')
+            e.category, e.fixed = cat, fixed
+            e.fresh = x.acting
+            x.eff[name] = e
+        else:
+            e.dur = max(e.dur, dur)
+            if refresh_props:
+                e.props = dict(props)
+        e.stacks = max(0, min(e.maxs, e.stacks + add))
+        self.dirty(x)
+        return e
+
     def log(self, **kw):
         if self.timeline is not None and len(self.timeline) < 3000:
             kw['turn'] = round(self.turn_now(), 2)

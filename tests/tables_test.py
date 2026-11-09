@@ -7,7 +7,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from tools.tables import jsonc, rows
+import json
+
+from tools.tables import UnknownName, buff_names, jsonc, names_of, rows
 
 
 class TablesTest(unittest.TestCase):
@@ -28,6 +30,22 @@ class TablesTest(unittest.TestCase):
     def test_rows_unwrap_and_bom(self):
         self.assertEqual(rows(self.write('{"Data": [1, 2]}', bom=True)), [1, 2])
         self.assertEqual(rows(self.write('[3, 4]')), [3, 4])
+
+    def test_names_of_dedupes_and_rejects_unknown(self):
+        bname = {'A': '공격력 증가', 'B': '공격력 증가', 'C': '방어력 증가'}
+        self.assertEqual(names_of(['A', 'B', 'C'], bname), ['공격력 증가', '방어력 증가'])
+        with self.assertRaises(UnknownName):
+            names_of(['A', 'Z'], bname)
+
+    def test_buff_names_skips_buffs_without_korean_name(self):
+        d = Path(tempfile.mkdtemp())
+        (d / 'Strings').mkdir()
+        (d / 'Strings' / 'STRING_COMMON_ko_en.json').write_text(
+            json.dumps({'S1': {'ko': '공격력 증가'}, 'S2': {'en': 'x'}}), encoding='utf-8')
+        (d / 'BUFF_TEMPLET.json').write_text(json.dumps({'Data': [
+            {'m_BuffStrID': 'B1', 'm_BuffName': 'S1'}, {'m_BuffStrID': 'B2', 'm_BuffName': 'S2'},
+            {'m_BuffStrID': 'B3'}, {'m_BuffStrID': 'B4', 'm_BuffName': None}]}), encoding='utf-8')
+        self.assertEqual(buff_names(d), {'B1': '공격력 증가'})
 
 
 if __name__ == '__main__':

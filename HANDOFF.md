@@ -32,7 +32,7 @@
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
 13. 장비 탐사 외 «N턴 이내 승리» 미션 확장은 낮은 우선순위: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있으므로 필요하면 `STAR_TURNS` 확장함. 65턴(2별 추정)은 표시 안 함.
 14. 점검(11/08)에서 보류한 것(비공개 표 경로 통일·건너뜀 표시·생성물 규칙 도장은 11/09 완료, 절 «2026-11-09»): 단계 그룹 버프(`BUFF_STEP_TEMPLET`)의 엔진 미구현(영향 작음).
-15. 중복 코드 점검 결과(11/08, Opus, 읽기 전용, 상세 `AI\temp\partynavigator\work\audit_1108\dup\duplication_audit.md`): 공통화 우선순위 ① (11/09 완료) 비공개 표 경로 통일 ② (11/09 완료) 구원자 키↔게임 id 매핑 7곳 ③ (11/09 일부 완료: jsonc·rows 만, 아래 절) B2 적 반응 강화/약화 판정(11/09 완료, 위 절) ④ (11/09 완료) `tests/simkit.py`. 이미 어긋난 곳: 길방 `score()` Python(짝수 반올림·가설 B)↔JS(사사오입·B 무시), 길방·코스모 `_put`, 적 반응 조건(mc.py:2697-2709)만 강화/약화를 따로 세어 표식이 «강화 있음»으로 잡힘, 분위수 정의 3가지, `savior_reco.json` 수동 복사. 아직 코드는 안 고침. 독립 리뷰(`bd3ffda..9f8b101`) 지적 7건 중 6건은 이 커밋에서 반영(HANDOFF 절 정정, 제어문자 시험에 탭 금지, 깨진 참조·낡은 문서 표시, enemy_leader 등급 `code`·출처 접두). 반영 안 한 것: enemy_leader 근거가 로컬 전투 호스트 경로뿐이라 서버 동작은 미확인(AGENTS 의 «근거 불완전하면 옛 동작» 과 긴장, note 에 미확인 명시), `guild_sim.json` 234,000판은 이 변경 뒤 재계산 안 함.
+15. 중복 코드 점검 결과(11/08, Opus, 읽기 전용, 상세 `AI\temp\partynavigator\work\audit_1108\dup\duplication_audit.md`): 공통화 우선순위 ① (11/09 완료) 비공개 표 경로 통일 ② (11/09 완료) 구원자 키↔게임 id 매핑 7곳 ③ (11/09 일부 완료: jsonc·rows 만, 아래 절) B2 적 반응 강화/약화 판정(11/09 완료, 위 절) ④ (11/09 완료) `tests/simkit.py`. 이미 어긋난 곳: 길방 `score()` Python(짝수 반올림·가설 B)↔JS(사사오입·B 무시), 길방·코스모 `_put`, 적 반응 조건(mc.py:2697-2709)만 강화/약화를 따로 세어 표식이 «강화 있음»으로 잡힘, 분위수 정의 3가지, `savior_reco.json` 수동 복사. (→ 이후 11/09 에 대부분 정리, 절 «중복 코드 점검 나머지 정리») 독립 리뷰(`bd3ffda..9f8b101`) 지적 7건 중 6건은 이 커밋에서 반영(HANDOFF 절 정정, 제어문자 시험에 탭 금지, 깨진 참조·낡은 문서 표시, enemy_leader 등급 `code`·출처 접두). 반영 안 한 것: enemy_leader 근거가 로컬 전투 호스트 경로뿐이라 서버 동작은 미확인(AGENTS 의 «근거 불완전하면 옛 동작» 과 긴장, note 에 미확인 명시), `guild_sim.json` 234,000판은 이 변경 뒤 재계산 안 함.
 ## 환경·주의
 
 - 회사 PC는 공개 저장소와 `E:\AI_mk2\starsavior-static-data`를 함께 pull하기로 함. 추출 도구 작업이면 `starsavior-packet-ref`도 확인.
@@ -46,6 +46,16 @@
 - 영상은 촬영 시점 내 정보·실제 장착 브레이크·왕관의 리더·부제/직업/키를 맞춰 판독하기로 함. 촬영은 사용자, 판독은 AI 몫임. 10/22 밸런스 변경 스테이지·토벌의 패치 전 영상은 대조 근거로 쓰지 않기로 함.
 - PowerShell 한글 읽기는 `Get-Content -Encoding utf8`, git dubious ownership은 설정 변경 없이 `git -c safe.directory=<저장소 경로> ...` 조회로 처리하기로 함.
 - 문체는 존칭 없이 「했음·하기로 함」으로, 짧은 문장·줄바꿈·소제목으로 구분하기로 함.
+
+## ▶ 2026-11-09 (Claude) — 중복 코드 점검 나머지 정리 (푸시 전)
+
+- **`Battle.put_eff`**(mc.py): 길방 BFB `_put`·`_sup_put`, 코스모 `_put` 의 효과 직접 생성을 한 함수로 모음. 옛 차이는 인자로 그대로 살림(코스모만 `refresh_props=True`, src 기본값, 길방은 수치 갱신 안 함, `_sup_put` 은 marker·src=대상). 중첩 하한 `max(0, …)` 은 길방에도 적용되나 길방은 음수 add 를 쓰지 않아 동작 같음. mc.py 안 직접 생성 4곳(브레이크 영역·불사·잔향·보호막)은 거부·면역 규칙이 경로마다 달라 근거 확인 전이라 안 옮김. 시험 `tests/put_eff_test.py`(코스모/길방 래퍼의 갱신 여부를 뒤집으면 실패 확인; 기존 시험은 이 차이를 못 잡았음).
+- 분위수: `boss_hit_diagnostic` 의 `pct` 를 `api._pct` 로 교체(같은 식). `ingame_check._q`(최근접 순위)는 docs/ingame_samples.md 의 옛 수치와 맞추려고 그대로 두고 정의 차이를 docstring 에 적음.
+- `build_gimmicks`: `savior_reco` 에 (이름, 부제) 중복이 생기면 조용히 덮어쓰지 않고 중단.
+- `tests/savior_reco_sync_test.py`: 옆 `journeyhelper/src/assets/savior_reco.json` 이 있으면 `data/savior_reco.json` 과 같은지(줄바꿈 무시) 확인, 없으면 건너뜀 표식. 지금은 같음.
+- `tests/nodejs.py`(`node_json`·`node_available`): cosmo·guild_defense 시험의 중복 제거. `tools/tables.py` 에 `buff_names`·`names_of`·`UnknownName` 추가, build_auto_skill·foe_auto·foe_react 의 복사본 제거(`--static ../static-data` 로 세 빌더 재실행 -> `git status data` 변화 없음). 시험은 `tables_test`.
+- 점검 문서(11/08)가 이미 낡았던 항목: 직접 `json.dump` 는 모두 `atomic_open` 안에서 쓰고 있었고(C2 할 일 없음), 칸 순서 변환은 `gen_quick_calib.party_spec` 하나로 모여 있었음(`ingame_check`·`toughness_check` 도 그것을 씀).
+- 안 한 것: `m_BuffStrID→이름` 의 나머지 복사본(`build_buff_count`·`build_break_levels` 등은 용도가 달라 보류), `SKILL_TEMPLET_{1,2}` 읽기 20여 줄, 길방·코스모 `_put` 과 mc.py 직접 생성 4곳 통일, 위 C1·C3 의 함수화. 전체 91/0(건너뜀 1건) + e2e 통과.
 
 ## ▶ 2026-11-09 (Claude) — 적 반응 강화/약화 판정 정렬·건너뜀 표시·생성물 규칙 도장 (푸시 완료)
 

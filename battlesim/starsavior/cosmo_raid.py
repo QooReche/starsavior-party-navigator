@@ -243,19 +243,8 @@ class Controller:
 
     # ---------- 효과 도우미
     def _put(self, x, name, props, dur=math.inf, cat='marker', maxs=1, add=1, fixed=True, src=None):
-        from ..mc import Eff
-        e = x.eff.get(name)
-        if e is None:
-            e = Eff(name, dict(props), maxs, dur, src or self.boss or x, cat == 'debuff')
-            e.category, e.fixed = cat, fixed
-            e.fresh = x.acting
-            x.eff[name] = e
-        else:
-            e.dur = max(e.dur, dur)
-            e.props = dict(props)
-        e.stacks = max(0, min(e.maxs, e.stacks + add))
-        self.b.dirty(x)
-        return e
+        return self.b.put_eff(x, name, props, dur=dur, maxs=maxs, add=add, src=src or self.boss or x, cat=cat,
+                              fixed=fixed, refresh_props=True)
 
     def _gt(self):
         return getattr(self.b, 'global_turns', 0)        # run() 이 시작하기 전(시험이 직접 cast)에는 속성이 없음

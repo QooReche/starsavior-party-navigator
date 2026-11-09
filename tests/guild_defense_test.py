@@ -12,6 +12,8 @@ import tempfile
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.join(ROOT, 'tests'))
+from nodejs import node_available, node_json                      # noqa: E402
 import guild_defense as gd  # noqa: E402
 import party_reco as pr  # noqa: E402
 
@@ -229,16 +231,8 @@ def test_sim_presets_payload():
         assert all(t['bySets'] == {} for t in old['teams'])
 
 
-def node_json(code):
-    p = subprocess.run(["node", "-e", code], capture_output=True, text=True, encoding="utf-8", cwd=ROOT)
-    assert p.returncode == 0, p.stderr
-    return json.loads(p.stdout)
-
-
 def test_js_parity():
-    try:
-        subprocess.run(["node", "-v"], capture_output=True, check=True)
-    except (OSError, subprocess.CalledProcessError):
+    if not node_available():
         from tools.runtime import skip_note
         skip_note("guild_defense_test.test_js_parity: node 없음")
         return

@@ -27,7 +27,7 @@ sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior.savior_ids import keys_by_id   # noqa: E402
-from tools.tables import jsonc   # noqa: E402,F401  (다른 빌더가 여기서 가져다 씀)
+from tools.tables import jsonc, buff_names   # noqa: E402,F401  (jsonc: 다른 빌더가 여기서 가져다 씀)
 
 SLOTS = ('기본기', '특수기', '궁극기', '패시브')
 NSI = {'NSI_SKILL_1_ATTACK': '기본기', 'NSI_SKILL_2_SPECIAL': '특수기', 'NSI_SKILL_3_HYPER': '궁극기'}
@@ -184,12 +184,7 @@ def build_lines(static, report, *, legacy=False, client=False):
     from tools import build_foe_auto as FA
     tables = Path(static) / 'tables'
     target = {r['Id']: r['TargetCondition'] for r in jsonc(tables / 'Plain' / 'AUTO_SKILL_TARGET_TEMPLET.json')['Data']}
-    strings = json.loads((tables / 'Strings' / 'STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
-    bname = {}
-    for r in json.loads((tables / 'BUFF_TEMPLET.json').read_text(encoding='utf-8'))['Data']:
-        ko = (strings.get(r.get('m_BuffName') or '') or {}).get('ko')
-        if ko:
-            bname[r['m_BuffStrID']] = ko
+    bname = buff_names(tables)
     se = {}
     for n in (1, 2):
         for r in json.loads((tables / ('SE_TEMPLET_SKILL_%d.json' % n)).read_text(encoding='utf-8'))['Data']:

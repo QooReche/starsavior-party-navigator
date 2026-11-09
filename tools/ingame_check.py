@@ -375,7 +375,9 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
 
 
 def _q(xs, ps=(0.1, 0.5, 0.9)):
-    """분위수(최근접 순위). 빈 목록은 None."""
+    """분위수(최근접 순위). 빈 목록은 None.
+    주의: battlesim.api._pct(선형 보간)와 정의가 달라 같은 판 묶음에서도 p10·p90 값이 다를 수 있음.
+    행동 수 같은 정수 지표를 실측 값과 나란히 읽으려고 최근접 순위를 씀(정의를 바꾸면 docs/ingame_samples.md 의 옛 수치와 안 맞음)."""
     if not xs:
         return None
     xs = sorted(xs)

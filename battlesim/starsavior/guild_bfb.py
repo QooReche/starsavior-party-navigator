@@ -208,18 +208,7 @@ class Controller:
         self._put(boss, NV_ADD, {'속도%': a['spdp'] / 100, '공격력%': a['atkp'] / 100}, cat='marker')
 
     def _put(self, x, name, props, dur=math.inf, cat='buff', fixed=True, maxs=1, add=1):
-        from ..mc import Eff
-        e = x.eff.get(name)
-        if e is None:
-            e = Eff(name, dict(props), maxs, dur, self.boss, cat == 'debuff')
-            e.category, e.fixed = cat, fixed
-            e.fresh = x.acting
-            x.eff[name] = e
-        else:
-            e.dur = max(e.dur, dur)
-        e.stacks = min(e.maxs, e.stacks + add)
-        self.b.dirty(x)
-        return e
+        return self.b.put_eff(x, name, props, dur=dur, maxs=maxs, add=add, src=self.boss, cat=cat, fixed=fixed)
 
     def _drop(self, x, name):
         if x.eff.pop(name, None) is not None:
@@ -239,15 +228,7 @@ class Controller:
 
     def _sup_put(self, x, name, props, maxs=1):
         """지원 효과. 강화 효과 개수에 안 세도록 marker(보스 관통 표지와 같은 방식)"""
-        from ..mc import Eff
-        e = x.eff.get(name)
-        if e is None:
-            e = Eff(name, dict(props), maxs, math.inf, x, False)
-            e.category, e.fixed = 'marker', True
-            e.fresh = x.acting
-            x.eff[name] = e
-        e.stacks = min(e.maxs, e.stacks + 1)
-        self.b.dirty(x)
+        self.b.put_eff(x, name, props, maxs=maxs, src=x, cat='marker')
 
     def _sup_start(self):
         """전투 시작 시 한 번: 방어·치명·공격 상승(40152 방어 +50%, 40031 치명 +30%, 40111 치명 피해 +30%, 45011 공격 +15%)"""

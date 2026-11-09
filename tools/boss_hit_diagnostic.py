@@ -22,14 +22,13 @@ from battlesim.fileio import atomic_text
 import ingame_check as check
 from battlesim import rules
 from battlesim.mc import Battle
+from battlesim.api import _pct
 from battlesim.starsavior.foe import load_foe, foe_stats
 
 
 def summary(xs):
     xs = sorted(xs)
-    def pct(p):
-        i = (len(xs) - 1) * p
-        return xs[math.floor(i)] * (1 - i % 1) + xs[math.ceil(i)] * (i % 1)
+    pct = lambda p: _pct(xs, p)       # api 결과와 같은 정의(선형 보간)
     return dict(n=len(xs), mean=round(statistics.mean(xs), 3),
                 p10=round(pct(.1), 3), p90=round(pct(.9), 3),
                 min=round(xs[0], 3), max=round(xs[-1], 3))
