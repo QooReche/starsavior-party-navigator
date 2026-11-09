@@ -47,14 +47,14 @@
 - PowerShell 한글 읽기는 `Get-Content -Encoding utf8`, git dubious ownership은 설정 변경 없이 `git -c safe.directory=<저장소 경로> ...` 조회로 처리하기로 함.
 - 문체는 존칭 없이 「했음·하기로 함」으로, 짧은 문장·줄바꿈·소제목으로 구분하기로 함.
 
-## ▶ 2026-11-09 (Claude) — 단계 그룹 버프·오비탈 감소·연쇄 관통 (푸시 전)
+## ▶ 2026-11-09 (Claude) — 단계 그룹 버프·오비탈 감소·연쇄 관통 (푸시 완료)
 
 - **단계 그룹 버프** `buff_step_group`(새 기본 client, legacy=off): 같은 BuffStepGroup 에서 더 높은 단계가 있으면 새 효과는 걸리지 않고(새 지속이 같거나 길 때만) 기존 지속을 늘린 뒤 다음 차감 1회를 건너뜀(`Eff.skip_tick`), 아니면 같은 그룹의 낮은 단계를 지우고 새로 걸림. 근거 NKM:4283-4305(지속 비교 4934-4937 `새 지속 >= 기존 지속`), 4450-4458(그룹 삭제). 표 `BUFF_STEP_TEMPLET.json` -> `data/buff_step.json`(`tools/build_buff_step.py`, 22개 이름, 이름만으로 단계를 못 가르는 10001 그룹 제외), simpack 목록에 추가. 데이터상 해당 버프는 세이라(1014)의 «상급 공격력 증가» 하나뿐. 미확인: 높은 단계가 이미 있을 때 새 효과의 props 를 병합하는지(여기선 지속만 늘림). 시험 `tests/buff_step_test.py`(9개).
 - **오비탈(브레이크 스킬) 피해** `break_skill_reduce`(client/legacy=all): 클라 피해 감소 합(NKM:17773)의 5항(전체·역할·상성·브레이크·유닛 종류)이 모두 «공격자가 유닛일 때만» 값을 가짐(18028-18033, 18078-18083, 18090-18095, 17563-17578)이고 오비탈은 유닛이 아니라 0. 엔진은 전체·광역 감소와 브레이크 -15%p(=브레이크된 대상이 15% 더 맞음)를 적용해 과대였음. 방어율은 그대로 적용(클라 방어 항의 오비탈 취급은 미확인). 시험 `break_skill_test.BreakReduceClientTest`, 기존 시험은 legacy(`all`)로 고정.
 - **연쇄(추가 고정량) 피해** `chain_pen`(client/legacy=attacker): 클라 추가 피해 경로(OBF_0763, NKM:17335-17356)는 방어율에 대상 방어력과 대상의 관통 저항만 쓰고(17837-17855) 공격자 관통(`NST_RATE_PENETRATE_DEF`, 일반 타격 17812)을 안 씀. 시험 `tests/chain_pen_test.py`.
 - 생성물: `guild_sim` 은 60칸(팀 5·육성 1.5/3·단계 0/6/12·지원 2) 새/옛 규칙 결과 동일이라 인정(이유 기록, 스크립트 `AI\temp\partynavigator\scripts\guild_sens_1109.py`). `quick` 은 표본 재생성·재보정(결과는 절 끝 «quick 재생성»).
 
-## ▶ 2026-11-09 (Claude) — 추가 규칙 후보 조사 (읽기 전용 3건 + 직접 확인 일부, 푸시 전)
+## ▶ 2026-11-09 (Claude) — 추가 규칙 후보 조사 (읽기 전용 3건 + 직접 확인 일부, 푸시 완료)
 
 보고서(비공개 작업 폴더) `AI\temp\partynavigator\work\extra_1109\damage.md`·`state.md`·`nova_break.md`. Sonnet 조사라 아래는 **직접 확인한 것과 못 한 것**을 나눠 적음.
 - 직접 확인해 구현함: 오비탈 감소 없음, 연쇄 공격자 관통 없음(위 절).
