@@ -1,6 +1,6 @@
 # 인수인계
 
-갱신 2026-11-08. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md).
+갱신 2026-11-09. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md).
 
 ## 현재 상태
 
@@ -13,8 +13,11 @@
 - 길드방어전 시즌4(BFB·별 속성)는 11/05 04:00 KST 종료, 결산은 11/12 04:00까지임(`data/guild_defense.json`). BFB 상태 기계·지원 5종·선택 효과 4종·부분 점수식·내 정보 편성 탐색을 구현했음. `guild_boss=off`가 기본이고 길방 진입에서만 켬.
 - `data/guild_sim.json`은 11/08 `810dc37`에서 `enemy_leader=none` 기본으로 다시 계산했음(off/max·육성 ×1·×1.5·×2·×2.5·×3, **234,000판**). off 최고 단계 ×1.5 5→6, ×2 7→8, ×2.5·×3 유지, max 쪽은 오르내림이 섞임. 그 뒤 `any_turn_source=table` 은 길방 결과 해시가 같아 재생성하지 않았음. 기존 필드·최고 클리어 단계는 off, `bySets`·`summaryBySets`는 max를 보존함. 공개 표준 육성만 썼으며 실제 플레이 대조는 남았음.
 - 빠른 계산 표본 2,323건×40판을 11/08 `810dc37`에서 다시 생성하고 재보정했음. 전체 일치 **0.920**(이전 0.916, `data/quick.json calib.acc`).
-- 저장소: 11/08 `21e1c8e`까지 커밋·푸시 완료(`git status -sb` ahead 0). 주소: https://QooReche.github.io/starsavior-party-navigator/
-- 최근 검증: 11/08 `run_tests.py --rebuild --e2e` **86 통과/0 실패**(e2e 포함). 계정 자료·8899 포트·골든/해시 `--write`는 쓰지 않았음.
+- 11/09 새 기본값: `foe_react_buff_count=client`, `buff_step_group=client`(단계 그룹 버프), `break_skill_reduce=client`(오비탈은 피해 감소 항 0), `chain_pen=client`(연쇄 피해는 공격자 관통 미적용). 모두 legacy 로 되돌릴 수 있음(절 «2026-11-09»). `guild_sim.json` 은 60칸 비교로 불변 확인해 도장만 인정, `quick.json` 은 재생성·재보정(전체 일치 **0.919**).
+- 생성물 규칙 도장: `tools/rules_stamp.py`·`tools/gen_rules_stamp.json`. 규칙 기본값을 바꾸면 `tests/gen_rules_stamp_test.py` 가 `guild_sim`·`quick` 이 낡았다고 실패하므로 다시 만들거나 `--ack 이름 --reason "…"` 로 이유를 적어 인정함. 건너뜀 표시는 `run_tests.py --strict`.
+- 11/09 코스모 실제 플레이(난이도 8, 추천 편성 그대로): 티리아·카넬리아는 엔진 예측이 잘 맞고 **벨그라스만 크게 비관적**(내 정보로 돌리면 전투력은 실제와 정확히 일치, 점수 3.76M 대 실제 7.62M, 약 3라운드 만에 전멸). 절 «코스모 추천 편성 실제 플레이»·남은 일 16.
+- 저장소: 11/09 `c20cffc`까지 커밋·푸시 완료(`git status -sb` ahead 0). 주소: https://QooReche.github.io/starsavior-party-navigator/
+- 최근 검증: 11/09 `run_tests.py --rebuild --e2e` **94 통과/0 실패**(건너뜀 1건: `COSMO_TABLES` 없음). 계정 자료·8899 포트·골든/해시 `--write`는 쓰지 않았음(11/09 늦게 벨그라스 조사만 내정보 사용, 결과는 비공개 폴더).
 
 ## 남은 일
 
@@ -33,6 +36,12 @@
 13. 장비 탐사 외 «N턴 이내 승리» 미션 확장은 낮은 우선순위: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있으므로 필요하면 `STAR_TURNS` 확장함. 65턴(2별 추정)은 표시 안 함.
 14. 점검(11/08)에서 보류한 것은 모두 11/09 에 완료함(절 «2026-11-09»). 단계 그룹 버프는 `buff_step_group=client` 로 구현함.
 15. 중복 코드 점검 결과(11/08, Opus, 읽기 전용, 상세 `AI\temp\partynavigator\work\audit_1108\dup\duplication_audit.md`): 공통화 우선순위 ① (11/09 완료) 비공개 표 경로 통일 ② (11/09 완료) 구원자 키↔게임 id 매핑 7곳 ③ (11/09 일부 완료: jsonc·rows 만, 아래 절) B2 적 반응 강화/약화 판정(11/09 완료, 위 절) ④ (11/09 완료) `tests/simkit.py`. 이미 어긋난 곳: 길방 `score()` Python(짝수 반올림·가설 B)↔JS(사사오입·B 무시), 길방·코스모 `_put`, 적 반응 조건(mc.py:2697-2709)만 강화/약화를 따로 세어 표식이 «강화 있음»으로 잡힘, 분위수 정의 3가지, `savior_reco.json` 수동 복사. (→ 이후 11/09 에 대부분 정리, 절 «중복 코드 점검 나머지 정리») 독립 리뷰(`bd3ffda..9f8b101`) 지적 7건 중 6건은 이 커밋에서 반영(HANDOFF 절 정정, 제어문자 시험에 탭 금지, 깨진 참조·낡은 문서 표시, enemy_leader 등급 `code`·출처 접두). 반영 안 한 것: enemy_leader 근거가 로컬 전투 호스트 경로뿐이라 서버 동작은 미확인(AGENTS 의 «근거 불완전하면 옛 동작» 과 긴장, note 에 미확인 명시), `guild_sim.json` 234,000판은 이 변경 뒤 재계산 안 함.
+16. **(우선) 코스모 벨그라스 엔진 비관 원인**: 내 정보(바탕화면 `내정보.json`, 11/09 갱신)로 같은 편성을 돌리면 벨그라스만 점수·깎음이 실제의 절반 이하(로그: 보스가 시작 1라운드에 기본기 3번, 궁극기 «공허 붕괴» 한 방에 3명 사망). 실제는 큰 공격이 약 T39·T23·T13, 50턴 2명 생존. 보스 속도·궁극기 준비 조건·전체 공격 피해량·«폭주: 쇠락»(TurnInfinite·누적)·벨그라스 기믹(`cfg['bel']` erosion)을 하나씩 껐다 켜는 민감도 실험 -> 클라 코드·표로 확인 -> 스위치. 스크립트 `AI\temp\partynavigator\scripts\belgras_myinfo_1109.py`·`belgras_timeline_1109.py`. 티리아·카넬리아는 엔진이 약 -14~-18% 낮음(전역 소폭 비관, 별도).
+17. **코스모 탐색 시간 단축**: 조사 3건(`AI\temp\partynavigator\work\cosmo_speed_1109\research*.md`). 게임 커뮤니티 선행 사례는 못 찾았고(중국 4·영어·인도 3회 검색 0건), 일반 기법만: ① 같은 시드 팀 간 점수차 분산 측정(CRN) ② 신뢰구간 기반 탈락으로 1단계 «상위 10% 고정» 대체 ③ 구원자 단위 탈락(조합 수 감소, 조건부 시너지 위험) ④ 2단계 이후 다중 라운드 반감 ⑤ Pyodide 버전 비교·워커 부팅 측정·mypyc 시험(Pyodide 는 네이티브의 약 2~3배 느림). 현실적 이득 1.1~1.5배. 11/09 프로파일 기반으로 `_map_prop` 메모·`run_own` 줄 종류 색인 재사용은 적용(결과 동일), 큰 병목은 `mods`(~20%)·`dirty`->`maxhp` 즉시 재계산·`line_kind`. 다음: ① 측정 ② 안전한 마이크로 최적화 추가(`dirty` 지연, `mods` 캐시) ③ 워커 부팅 비용 측정.
+18. **코스모 난이도 자동**: 선택 로직에 상한은 없음(0~18 비교). 난이도 9 부터 «폭주: 시공»(보스 속도 +30%)이 붙어 엔진 점수가 꺾이고 이후는 기본 점수×배율이 지배(8과 18이 비슷). 실제 9 이상 데이터가 없어 엔진 9+ 구간은 미검증 -> 사용자가 9~12단계 결과(턴·생존·깎음)를 주면 보정. 후보 선정이 대표 난이도 6 기준이라 고난이도 전용 팀을 놓칠 수 있음 -> 고난이도(12 등) 추가 스크리닝·probeRuns 증가는 계산 시간과 맞바꿈.
+19. 추가 규칙 후보 직접 확인(남은 일 3): stage_fx_target(플래시 포인트 스테이지 효과 대상, 영향 큼 가능)·wave_carry(웨이브 전환 지속 차감)·일반 버프 부여 턴 차감 제외·스타피어서 발동자 게이지·오메가 해제 불가·행성 정화 조건 8000·counter_inc 지속 피해·shield_tick·check_buff_expiry·부활 처리 등.
+20. 코스모 영상 대조는 난이도 8 한 판씩뿐이라 전역 가정을 바꾸지 않음. 카넬리아·티리아 판은 11/09 데이터가 남아 있음(비공개 `video_1109`).
+
 ## 환경·주의
 
 - 회사 PC는 공개 저장소와 `E:\AI_mk2\starsavior-static-data`를 함께 pull하기로 함. 추출 도구 작업이면 `starsavior-packet-ref`도 확인.
