@@ -22,26 +22,14 @@ from battlesim.starsavior.data import get_db  # noqa: E402
 from battlesim.starsavior.parser import Line, UnitDef  # noqa: E402
 from battlesim.starsavior.stats import calc_stats  # noqa: E402
 
-FIXED = dict(rand_range=[1.0, 1.0])
+sys.path.insert(0, os.path.join(ROOT, 'tests'))
+import simkit  # noqa: E402
+from simkit import FIXED, battle, give  # noqa: E402,F401
 
 
 def unit(name='u', role='스트라이커', hp=10000, atk=1000, df=1000, spd=100, cr=0, element=None, sa=10, skills=None):
-    return _CustomFoe(dict(name=name, role=role, hp=hp, atk=atk, **{'def': df}, spd=spd, cr=cr, cd=0, er=0, der=0, element=element,
-                           sa=sa, skills=skills or [dict(slot='기본기', dm=100)]), 0)
-
-
-def battle(allies, foes, mc=None, seed=1, **kw):
-    b = Battle(allies, [foes], random.Random(seed), mc=dict(FIXED, **(mc or {})), **kw)
-    b.spawn_wave()
-    return b
-
-
-def give(u, name, props=None, src=None, harmful=False, dur=3, stacks=1):
-    e = Eff(name, props or {}, 1, dur, src or u, harmful)
-    e.stacks = stacks
-    u.eff[name] = e
-    u._m = None
-    return e
+    """p5 판: element·sa 를 항상 dict 에 넣는다(simkit.unit 은 넘긴 것만)"""
+    return simkit.unit(name, role, hp, atk, df, spd, cr, skills, element=element, sa=sa)
 
 
 def hit(b, a, v, slot='기본기', ab=None):
