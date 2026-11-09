@@ -375,7 +375,18 @@ class UnitDef:
         self.gear_atkp = 0.0
 
 
+_PROP_MAP = {}
+
+
 def _map_prop(k):
+    """속성 이름 -> (키, 부키). 순수 함수라 결과를 기억한다(정규식 비용 제거)."""
+    r = _PROP_MAP.get(k)
+    if r is None:
+        r = _PROP_MAP[k] = _map_prop_raw(k)
+    return r
+
+
+def _map_prop_raw(k):
     if k == '공격력%': return ('atkp', None)
     if k == '속도%': return ('spdp', None)
     if k == '속도': return ('spdf', None)

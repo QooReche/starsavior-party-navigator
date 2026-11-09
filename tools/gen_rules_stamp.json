@@ -1,19 +1,31 @@
 {
  "guild_sim": {
-  "hash": "3cf4df693ae2594d",
+  "hash": "e645473f925c9c92",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
     "reason": "도입 기준선(11/09). 11/08 810dc37 재생성 뒤 추가된 any_turn_source=table 은 길방 결과 해시 동일 확인(HANDOFF 11/08), foe_react_buff_count=client 는 적 반응 표에 해당 조건 줄이 없어 결과 불변"
+   },
+   {
+    "hash": "256589eb9ba20ac1",
+    "reason": "buff_step_group=client 추가(11/09). 단계 그룹 버프를 쓰는 구원자는 세이라(1014) 하나이고 guild_sim 팀 5개(ceres-sun-supporter·wedding-epindel·bunny-charlotte 등)에 없어 결과 불변"
+   },
+   {
+    "hash": "e645473f925c9c92",
+    "reason": "buff_step_group·break_skill_reduce·chain_pen 추가(11/09). 팀 5개 x 육성 1.5·3 x 단계 0·6·12 x 지원 2종 60칸을 새 규칙/옛 규칙으로 20판씩 비교해 클리어율·진행도 모두 동일(temp/partynavigator/scripts/guild_sens_1109.py)"
    }
   ]
  },
  "quick": {
-  "hash": "3cf4df693ae2594d",
+  "hash": "e645473f925c9c92",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
     "reason": "도입 기준선(11/09). 11/08 any_turn_source 변경 때 표본 재생성·재보정 결과 동일(0.916), foe_react_buff_count 는 적 반응 표에 해당 조건 줄이 없어 결과 불변"
+   },
+   {
+    "hash": "e645473f925c9c92",
+    "reason": "calibrate_quick --write 재보정"
    }
   ]
  }

@@ -33,7 +33,26 @@ def setup(bs=CUBE, mc=None, roles=('스트라이커',), **kw):
 
 
 def legacy_setup(bs=CUBE, mc=None, **kw):
-    return setup(bs, mc=dict(break_skill_domain_clock='legacy', **(mc or {})), **kw)
+    return setup(bs, mc=dict(break_skill_domain_clock='legacy', break_skill_reduce='all', **(mc or {})), **kw)
+
+
+class BreakReduceClientTest(unittest.TestCase):
+    """break_skill_reduce=client: 오비탈 피해는 대상의 피해 감소·브레이크 -15%p 를 받지 않는다(NKM:17773,18028-18033,18078-18083)."""
+    def _dmg(self, reduce, buffs):
+        b = setup(CUBE, mc=dict(break_skill_reduce=reduce))
+        f = b.foes[0]
+        f.broken = True
+        if buffs:
+            give(f, '피해 감소', {'받는 피해 감소': 40, '전체 대상 피해 감소': 30})
+        return b._break_dmg(f, 1000)
+
+    def test_client_ignores_reduction_and_break_bonus(self):
+        plain = self._dmg('client', False)
+        self.assertEqual(self._dmg('client', True), plain)
+
+    def test_all_applies_reduction(self):
+        self.assertLess(self._dmg('all', True), self._dmg('client', True))
+        self.assertGreater(self._dmg('all', False), self._dmg('client', False))   # 브레이크 대상 +15% 가 옛 동작에만 있음
 
 
 class BreakLevelScaleTest(unittest.TestCase):

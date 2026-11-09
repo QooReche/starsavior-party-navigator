@@ -94,6 +94,19 @@ def global_turn_buff(name):
     return re.sub(r'\(해제\s*불가\)$', '', name).strip() in _GLOBAL_TURN
 
 
+_BUFF_STEP = None
+
+
+def buff_step(name):
+    """표 BUFF_STEP_TEMPLET 의 단계 그룹 버프면 (그룹 id, 단계), 아니면 None(data/buff_step.json, tools/build_buff_step.py).
+    (해제불가) 꼬리표는 떼고 비교한다. 이름만으로 단계를 못 가르는 효과는 담지 않았다."""
+    global _BUFF_STEP
+    if _BUFF_STEP is None:
+        with open(os.path.join(SRC, 'data', 'buff_step.json'), encoding='utf-8') as f:
+            _BUFF_STEP = {re.sub(r'\(해제\s*불가\)$', '', n).strip(): tuple(v) for n, v in json.load(f)['names'].items()}
+    return _BUFF_STEP.get(re.sub(r'\(해제\s*불가\)$', '', name).strip())
+
+
 def positive_buff(name, legacy):
     """표의 IsBuff && IsPositive. 미등록·동명 충돌은 기존 분류로 처리한다."""
     global _BUFF_COUNT
@@ -412,7 +425,7 @@ DISPEL_ON_ATTACK = ('여유로운 응수', '헥사 너트')
 class Eff:
     """유닛에 붙은 효과 1개(강화·약화·보호막·지속 피해·지속 회복). stacks 는 정수."""
     __slots__ = ('name', 'props', 'stacks', 'maxs', 'dur', 'src', 'harmful', 'fresh', 'shield', 'dot', 'inst', 'hot',
-                 'check', 'fixed', 'clock', 'category')
+                 'check', 'fixed', 'clock', 'category', 'skip_tick')
 
     def __init__(self, name, props, maxs, dur, src, harmful):
         self.name, self.props, self.maxs, self.dur, self.src, self.harmful = name, props, maxs, dur, src, harmful
@@ -425,6 +438,7 @@ class Eff:
         self.hot = 0.0       # 턴마다 회복 계수(대상 최대 생명력 비율)
         self.check = False   # 확인용 버프(행동 끝에 사라짐)
         self.fixed = False   # 해제 불가
+        self.skip_tick = False   # 단계 그룹: 더 낮은 단계가 지속만 늘린 뒤 다음 차감 1회를 건너뜀(NKM:4297-4305, 3978-3988)
         self.clock = 'owner_turn'   # 영역은 global 또는 legacy의 ally_turn/round로 차감
 
 
@@ -1110,6 +1124,9 @@ class Battle:
                 if e.fresh:
                     e.fresh = False
                     continue
+                if e.skip_tick:
+                    e.skip_tick = False
+                    continue
                 if e.inst is not None:
                     for it in e.inst:
                         it[1] -= 1
@@ -1157,6 +1174,9 @@ class Battle:
                     if e.clock != 'any_turn':
                         continue
                     e.fresh = False
+                    if e.skip_tick:
+                        e.skip_tick = False
+                        continue
                     if e.dur != math.inf:
                         e.dur -= 1
                         if e.dur <= 0:
@@ -1201,11 +1221,14 @@ class Battle:
         """파티 광역 피해: 공격자·치명·증가 합·피격/강인도 처리 없는 final_dmg 축약판."""
         de = self.def_stat(v)
         dr = de / (de + _rules.DEF_K)
-        red = v.mods()['red']
-        dec = red.get('all', 0.0) + red.get('aoe', 0.0)
-        if v.broken:
-            dec -= _rules.BREAK_DEC
-        dec = min(_rules.DEC_CAP, dec)
+        if self.mc['break_skill_reduce'] == 'client':
+            dec = 0.0       # 오비탈은 유닛이 아니라 피해 감소 항(전체·역할·브레이크 등)이 모두 0(NKM:17773,18028-18033,18078-18083)
+        else:
+            red = v.mods()['red']
+            dec = red.get('all', 0.0) + red.get('aoe', 0.0)
+            if v.broken:
+                dec -= _rules.BREAK_DEC
+            dec = min(_rules.DEC_CAP, dec)
         return max(1.0, math.floor(base * (1 - dr) * (1 - dec) * self.rand(0) * self.pen[0]))
 
     def _break_level_up(self):
@@ -1943,13 +1966,15 @@ class Battle:
     def run_own(self, u, ctx, kind):
         sk = ctx.skill
         source = self.lines_of(u)
+        plain = source        # 추가 줄이 없으면 줄 종류 색인(kind_lines)을 그대로 쓴다
         if hasattr(sk, 'semantic_lines'):
             source = [ln for ln in source if not (ln.src_kind == 'active' and ln.slot == sk.slot)] + sk.semantic_lines
         # Slot effects depend on activation, not on the selection policy.
         if ctx.nb and (self.mc['nova_slot_effects'] or self.opts['nova_policy'] == 'heal'):
             source = source + [Line(raw, sk.slot, 'nova')
                                for raw in (getattr(u.d, 'nb', {}).get(sk.slot + ' 사용 시') or [])]
-        lines = [ln for ln in source if line_kind(ln) == kind and not (ln.bound and ln.slot != sk.slot)
+        cand = self.kind_lines(u, kind) if source is plain else [ln for ln in source if line_kind(ln) == kind]
+        lines = [ln for ln in cand if not (ln.bound and ln.slot != sk.slot)
                  and not (ln.trig and '공격' in ln.trig and ln.na == sk.is_attack)]   # 「내 행동 시/후」는 공격·비공격 모두
         if kind == 'own_post':
             # 「기본기 사용 후 최대 스택」은 그 기본기의 스택 부여까지 끝낸 상태로 판정.
@@ -3824,7 +3849,8 @@ class Battle:
                 val = v.maxhp
             de = self.def_stat(v)
             dr = de / (de + _rules.DEF_K)
-            dr = max(0.0, dr - dr * min(1.0, m['pen']))
+            if self.mc['chain_pen'] != 'client':
+                dr = max(0.0, dr - dr * min(1.0, m['pen']))     # client: 추가 피해는 공격자 관통을 쓰지 않음(NKM:17356,17837-17855)
             inc = m['inc'] + m['inc_vs'].get(v.element, 0.0) + (m['inc_break'] if v.broken else 0.0)
             # AddDamageController reads the caster's live DAMAGE_UP, including
             # skill-local stat effects (NKM:5601-5611). Do not inherit the
@@ -3949,6 +3975,26 @@ class Battle:
         fresh = (x is owner and owner.acting) or (
             self.mc['taunt_skill_end_duration'] and name == '도발' and x.acting
             and self._cur_line is not None and self._cur_line.phase == '스킬 사용 후')
+        step = buff_step(name) if self.mc['buff_step_group'] == 'client' else None
+        if step is not None:
+            # 같은 단계 그룹: 더 높은 단계가 이미 있으면 새 효과는 걸리지 않고(지속이 더 길 때만) 기존 지속을 늘린 뒤 다음 차감을 건너뜀,
+            # 아니면 같은 그룹의 낮은 단계를 지우고 새로 걸림(NKM:4283-4305,4450-4458)
+            same = [(n, v) for n, v in x.eff.items() if n != name and v.stacks > 0
+                    and (buff_step(n) or (None,))[0] == step[0]]
+            higher = [(n, v) for n, v in same if buff_step(n)[1] > step[1]]
+            if higher:
+                _, top = max(higher, key=lambda nv: buff_step(nv[0])[1])
+                if dur < top.dur:
+                    return
+                top.dur = max(top.dur, dur)
+                top.skip_tick = True
+                self.rule_hits['buff_step_keep'] += 1
+                self.dirty(x)
+                return
+            for n, _ in same:
+                del x.eff[n]
+                self.rule_hits['buff_step_replace'] += 1
+            e = x.eff.get(name)
         if e is None:
             mx = eff['max'] or (5 if dot else 1)
             e = Eff(name, eff['props'], mx, dur, owner, harmful)
