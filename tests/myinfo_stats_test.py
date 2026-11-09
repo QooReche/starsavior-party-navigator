@@ -26,7 +26,8 @@ from battlesim.starsavior.build import unit_power
 from battlesim.starsavior.data import get_db
 from tools.build_growth import build_growth, roster_ids, potential_power_levels
 
-STATIC = Path(os.environ.get("STARSAVIOR_STATIC", r"E:\AI_mk2\starsavior-static-data"))
+from tools.runtime import static_path_or_none
+STATIC = static_path_or_none(ROOT) or ROOT / ".no-static-data"  # 없으면 is_dir() 거짓 -> 건너뜀
 # 2026-10-22 same-date five-unit max error: 0% for each stat + 0.5%p.
 # Frozen limits: never derive the acceptance threshold from the current run.
 REGRESSION_LIMITS = {"atk": 0.005, "hp": 0.005, "def": 0.005}

@@ -314,8 +314,12 @@ class ImmuneForceTest(unittest.TestCase):
 
     def test_pass_list_matches_table(self):
         """data/buff_immune_pass.json 이 표(BUFF_TEMPLET)에서 만든 결과와 일치(표가 있는 PC에서만; 없으면 건너뜀)"""
-        table = r'C:\build\static-data\tables\BUFF_TEMPLET.json'
-        strings = r'C:\build\static-data\tables\Strings\STRING_COMMON_ko_en.json'
+        from tools.runtime import static_path_or_none
+        static = static_path_or_none(ROOT)
+        if static is None:
+            self.skipTest('표 없음')
+        table = str(static / 'tables' / 'BUFF_TEMPLET.json')
+        strings = str(static / 'tables' / 'Strings' / 'STRING_COMMON_ko_en.json')
         if not (os.path.exists(table) and os.path.exists(strings)):
             self.skipTest('표 없음')
         import json

@@ -3,7 +3,6 @@
 import os, sys, unittest, random
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-os.environ.setdefault('STARSAVIOR_STATIC', os.path.join(ROOT, '..', 'starsavior-static-data'))
 
 from battlesim.starsavior.parser import parse_effect, trig_kind, _map_prop, _perm_apply
 from battlesim.mc import support_report, Battle, _m_vs

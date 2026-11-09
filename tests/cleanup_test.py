@@ -158,6 +158,19 @@ class CleanupTest(unittest.TestCase):
         self.assertNotEqual(r.returncode, 0)
         self.assertIn('필터'.encode(), r.stdout)
 
+    def test_static_path_or_none(self):
+        from tools.runtime import static_path_or_none
+        (self.tmp / 'tables').mkdir(exist_ok=True)
+        with patch.dict(os.environ, {'STARSAVIOR_STATIC': str(self.tmp)}):
+            self.assertEqual(static_path_or_none(ROOT), self.tmp)
+        empty = self.tmp / 'empty'
+        empty.mkdir(exist_ok=True)
+        with patch.dict(os.environ, {'STARSAVIOR_STATIC': str(empty)}):  # tables 없는 폴더는 후보 아님
+            self.assertNotEqual(static_path_or_none(ROOT), empty)
+        with patch.dict(os.environ, {}, clear=True):
+            r = static_path_or_none(self.tmp / 'src')  # <tmp>/static-data 없음
+            self.assertIsNone(r)
+
     def test_static_path(self):
         with patch.dict(os.environ, {'STARSAVIOR_STATIC': str(self.tmp)}):
             self.assertEqual(static_path(), self.tmp)

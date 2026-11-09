@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""세레스·기본/개화 자동 대상 회귀. 선택: CERES_AUDIT_STATIC=<표 저장소>로 원본 대조.
+"""세레스·기본/개화 자동 대상 회귀. 비공개 표 저장소가 있으면 원본 대조(STARSAVIOR_STATIC 또는 ../static-data).
 
 원본 대조는 표만 읽으며 계정 자료를 사용하지 않는다.
 """
@@ -20,6 +20,7 @@ from battlesim.metrics import unit_def
 from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
 from tools.build_auto_skill import build, build_lines, build_no_preemptive, form_bindings
+from tools.runtime import static_path_or_none
 
 FORMS = {1501: 'besta', 1502: 'annah', 1506: 'marcille', 1507: 'vera',
          1508: 'naru', 1509: 'bunny-claire', 1510: 'bunny-scarlet', 1511: 'clarissa'}
@@ -178,10 +179,12 @@ class SaviorMappingTest(unittest.TestCase):
                 self.assertGreater(damage[1], damage[0])
 
 
-@unittest.skipUnless(os.environ.get('CERES_AUDIT_STATIC'), '선택: 비공개 표 대조 경로 없음')
+STATIC = static_path_or_none(ROOT)
+
+@unittest.skipUnless(STATIC, '비공개 표 저장소 없음(STARSAVIOR_STATIC 또는 ../static-data)')
 class StaticMappingTest(unittest.TestCase):
     def test_builder_reproduces_public_data_and_all_eight_pairs(self):
-        static = Path(os.environ['CERES_AUDIT_STATIC'])
+        static = STATIC
         data = json.loads((ROOT / 'data/auto_skill.json').read_text(encoding='utf8'))
         index = json.loads((ROOT / 'data/saviors_index.json').read_text(encoding='utf8'))
         keys = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
@@ -205,7 +208,7 @@ class StaticMappingTest(unittest.TestCase):
         self.assertEqual(build_no_preemptive(static), data['no_preemptive'])
 
     def test_skill_numbers_match_client_for_ceres_and_sixteen_forms(self):
-        tables = Path(os.environ['CERES_AUDIT_STATIC']) / 'tables'
+        tables = STATIC / 'tables'
 
         def load(name):
             return json.loads((tables / (name + '.json')).read_text(encoding='utf8'))['Data']

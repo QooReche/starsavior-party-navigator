@@ -361,10 +361,12 @@ def test_ally_via_reported():
 
 
 def test_data_matches_tables():
-    static = os.environ.get('STARSAVIOR_STATIC') or os.path.join(ROOT, '..', 'static-data')
-    if not os.path.isdir(os.path.join(static, 'tables')):
-        print('  (비공개 표 없음 — 건너뜀)')
+    from tools.runtime import static_path_or_none
+    static = static_path_or_none(ROOT)
+    if static is None:
+        print('  SKIP test_data_matches_tables (비공개 표 없음)')
         return
+    static = str(static)
     out = os.path.join(tempfile.mkdtemp(), 'g.json')
     subprocess.run([sys.executable, '-X', 'utf8', '-I', os.path.join(ROOT, 'tools', 'build_guild_bfb.py'), '--static', static, '--out', out],
                    check=True, capture_output=True)

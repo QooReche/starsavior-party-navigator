@@ -141,11 +141,10 @@ class CombatTests(unittest.TestCase):
 
     def test_builder_reproduces_numeric_artifact(self):
         from tools.build_myinfo_combat import build, MISMATCH
-        from tools.runtime import static_path
-        try:
-            static = static_path()
-        except ValueError:
-            self.skipTest('STARSAVIOR_STATIC 미설정 또는 경로 없음')
+        from tools.runtime import static_path_or_none
+        static = static_path_or_none()
+        if static is None:
+            self.skipTest('비공개 표 저장소 없음(STARSAVIOR_STATIC 또는 ../static-data)')
         built, artifact = build(static), combat.combat_data()
         # main() 은 클라 표에서 사라진 구원자(10/22 패치에서 1060 삭제)의 이전 계수를 보존한다 — 같은 규칙으로 비교
         kept = set(artifact['units']) - set(built['units'])
