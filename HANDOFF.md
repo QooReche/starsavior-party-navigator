@@ -73,6 +73,11 @@ ew-extract`·시즌 1022·빌드 26429597 로 임시 출력과 `data/cosmo_raid.
 - 사고와 정정: 앞 절을 쓸 때 heredoc 안 파이썬 문자열의 백슬래시+b 가 백스페이스 문자가 되어 HANDOFF 의 코스모 표 경로가 깨진 채 푸시됐음(`md_control_chars_test` 가 잡음). 이번 커밋에서 복원함. 교훈: HANDOFF 수정은 Edit 도구로 하기.
 - 남음: 지역 `battle()` 7개(용도별이라 그대로), 항목 15의 ③ 나머지.
 
+## ▶ 2026-11-09 (Claude) — 길방 `score()` 반올림 정렬 (푸시 완료)
+
+- `guild_defense.score()` 가 Python `round`(짝수 반올림)와 가설 B 분기를 쓰던 것을 `score_at(g, pct, 1.0)`(정수 사사오입)으로 바꿔 `guild_view.js score()` 와 같게 함. 현재 가설은 A 하나라 값은 바뀌지 않음. 시험: `guild_defense_test` 에 합산 10.5 -> 11 단정 추가(옛 코드로 되돌리면 실패 확인). 전체 88/0(e2e 제외).
+- 항목 15의 B3 중 이 부분만 완료. `node_json`/node 없을 때 통과로 보이는 문제, 칸 순서 변환 공통화는 남음.
+
 ## ▶ 2026-11-08 밤 (Claude) — 문서 유지보수 정리 (코드 변경 없음, 푸시 완료)
 
 - 내 정보 기반 결과 JSON 8개(`docs/ally_damage·taunt_guard·boss_action·received_damage·boss_recheck·myinfo_combat·nova_gauge·web_leads_results.json`)를 비공개 `AI\temp\partynavigator\private_results\` 로 옮기고 `.gitignore` 에 `docs/*_results.json`(예외 `toughness_results.json`) 추가. 과거 커밋 기록에는 남아 있음(기록 재작성은 하지 않음).

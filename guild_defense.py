@@ -115,17 +115,8 @@ def score_from_prog(g, pct, prog):
 
 
 def score(g, pct):
-    """{가설 id: 클리어(보스 100% 처치) 점수}. 현재는 확인된 식 A 하나."""
-    ex = ex_step(g)
-    boss = ex["bossKill"]
-    total = base_total(g)
-    out = {}
-    for h in g["score"]["hypotheses"]:
-        if h["bossExcluded"]:
-            out[h["id"]] = round((total - boss) * (100 + pct) / 100 + boss)
-        else:
-            out[h["id"]] = round(total * (100 + pct) / 100)
-    return out
+    """{가설 id: 클리어(보스 100% 처치) 점수}. 현재는 확인된 식 A 하나. guild_view.js score 와 같게 모든 가설을 score_at(보스 100%)로 셈."""
+    return {h["id"]: score_at(g, pct, 1.0) for h in g["score"]["hypotheses"]}
 
 
 def best_selection(g):

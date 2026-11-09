@@ -94,6 +94,7 @@ def test_score_kills_and_ratio_floor():
     g2 = json.loads(json.dumps(G))
     ex = next(x for x in g2["steps"] if x["ex"]); ex["base"], ex["kill"], ex["bossKill"] = 10, 0, 0
     assert [gd.score_at(g2, p) for p in (0, 4, 5, 15)] == [10, 10, 11, 12]
+    assert [gd.score(g2, p)['A'] for p in (0, 4, 5, 15)] == [10, 10, 11, 12], 'score() 도 사사오입(Python round 는 10.5 -> 10)'
     # 진행도 -> (처치 졸개, 보스 비율)
     cases = [(-1, (0, 0.0)), (0, (0, 0.0)), (0.24, (0, 0.0)), (0.25, (1, 0.0)), (0.4999, (1, 0.0)), (0.5, (2, 0.0)),
              (0.75, (2, 0.5)), (1, (2, 1.0)), (2, (2, 1.0))]
