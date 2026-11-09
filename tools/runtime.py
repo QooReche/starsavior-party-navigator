@@ -17,6 +17,15 @@ def low_priority():
         os.nice(19 - os.nice(0))
 
 
+SKIP_MARK = '[건너뜀]'
+
+
+def skip_note(reason):
+    """환경 때문에 못 돌린 검사를 알린다. tools/run_tests.py 가 이 표식을 모아 «건너뜀 N개» 로 보이고,
+    --strict 이면 실패로 센다. 조용히 return 해서 통과로 보이게 하지 말 것."""
+    print('  %s %s' % (SKIP_MARK, reason), flush=True)
+
+
 def static_path_or_none(root=None):
     """시험용: 비공개 표 저장소를 찾는다. STARSAVIOR_STATIC -> <root>/../static-data 순. 없으면 None(시험은 SkipTest)."""
     root = Path(root) if root else Path(__file__).resolve().parents[1]

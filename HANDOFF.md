@@ -31,8 +31,8 @@
 11. 서부 탈환대 세레스 스킬·기본 베라 자동 지정 근사, 기믹 추정 대처·무적 웨이브 실제 배치·길방 밖 협공/추가타·ReactiveBarrier 활성 표를 추가 확인하기로 함. 기본/개화 매핑과 적 SkillOrderList·빈 공격 처리는 완료했음.
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
 13. 장비 탐사 외 «N턴 이내 승리» 미션 확장은 낮은 우선순위: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있으므로 필요하면 `STAR_TURNS` 확장함. 65턴(2별 추정)은 표시 안 함.
-14. 점검(11/08)에서 보류한 것(비공개 표 경로 통일은 11/09 완료, 절 «2026-11-09»): node 가 없으면 `print` 후 통과로 집계되는 시험(`cosmo_raid_test`·`guild_defense_test`·`guild_bfb_test`), 생성물(`guild_sim.json`·`quick.json`)에 규칙 해시가 없어 기본값 변경 뒤 재생성을 잊어도 시험이 못 잡는 문제, 단계 그룹 버프(`BUFF_STEP_TEMPLET`)의 엔진 미구현(영향 작음).
-15. 중복 코드 점검 결과(11/08, Opus, 읽기 전용, 상세 `AI\temp\partynavigator\work\audit_1108\dup\duplication_audit.md`): 공통화 우선순위 ① (11/09 완료) 비공개 표 경로 통일 ② (11/09 완료) 구원자 키↔게임 id 매핑 7곳 ③ (11/09 일부 완료: jsonc·rows 만, 아래 절) ④ (11/09 완료) `tests/simkit.py`. 이미 어긋난 곳: 길방 `score()` Python(짝수 반올림·가설 B)↔JS(사사오입·B 무시), 길방·코스모 `_put`, 적 반응 조건(mc.py:2697-2709)만 강화/약화를 따로 세어 표식이 «강화 있음»으로 잡힘, 분위수 정의 3가지, `savior_reco.json` 수동 복사. 아직 코드는 안 고침. 독립 리뷰(`bd3ffda..9f8b101`) 지적 7건 중 6건은 이 커밋에서 반영(HANDOFF 절 정정, 제어문자 시험에 탭 금지, 깨진 참조·낡은 문서 표시, enemy_leader 등급 `code`·출처 접두). 반영 안 한 것: enemy_leader 근거가 로컬 전투 호스트 경로뿐이라 서버 동작은 미확인(AGENTS 의 «근거 불완전하면 옛 동작» 과 긴장, note 에 미확인 명시), `guild_sim.json` 234,000판은 이 변경 뒤 재계산 안 함.
+14. 점검(11/08)에서 보류한 것(비공개 표 경로 통일·건너뜀 표시·생성물 규칙 도장은 11/09 완료, 절 «2026-11-09»): 단계 그룹 버프(`BUFF_STEP_TEMPLET`)의 엔진 미구현(영향 작음).
+15. 중복 코드 점검 결과(11/08, Opus, 읽기 전용, 상세 `AI\temp\partynavigator\work\audit_1108\dup\duplication_audit.md`): 공통화 우선순위 ① (11/09 완료) 비공개 표 경로 통일 ② (11/09 완료) 구원자 키↔게임 id 매핑 7곳 ③ (11/09 일부 완료: jsonc·rows 만, 아래 절) B2 적 반응 강화/약화 판정(11/09 완료, 위 절) ④ (11/09 완료) `tests/simkit.py`. 이미 어긋난 곳: 길방 `score()` Python(짝수 반올림·가설 B)↔JS(사사오입·B 무시), 길방·코스모 `_put`, 적 반응 조건(mc.py:2697-2709)만 강화/약화를 따로 세어 표식이 «강화 있음»으로 잡힘, 분위수 정의 3가지, `savior_reco.json` 수동 복사. 아직 코드는 안 고침. 독립 리뷰(`bd3ffda..9f8b101`) 지적 7건 중 6건은 이 커밋에서 반영(HANDOFF 절 정정, 제어문자 시험에 탭 금지, 깨진 참조·낡은 문서 표시, enemy_leader 등급 `code`·출처 접두). 반영 안 한 것: enemy_leader 근거가 로컬 전투 호스트 경로뿐이라 서버 동작은 미확인(AGENTS 의 «근거 불완전하면 옛 동작» 과 긴장, note 에 미확인 명시), `guild_sim.json` 234,000판은 이 변경 뒤 재계산 안 함.
 ## 환경·주의
 
 - 회사 PC는 공개 저장소와 `E:\AI_mk2\starsavior-static-data`를 함께 pull하기로 함. 추출 도구 작업이면 `starsavior-packet-ref`도 확인.
@@ -46,6 +46,13 @@
 - 영상은 촬영 시점 내 정보·실제 장착 브레이크·왕관의 리더·부제/직업/키를 맞춰 판독하기로 함. 촬영은 사용자, 판독은 AI 몫임. 10/22 밸런스 변경 스테이지·토벌의 패치 전 영상은 대조 근거로 쓰지 않기로 함.
 - PowerShell 한글 읽기는 `Get-Content -Encoding utf8`, git dubious ownership은 설정 변경 없이 `git -c safe.directory=<저장소 경로> ...` 조회로 처리하기로 함.
 - 문체는 존칭 없이 「했음·하기로 함」으로, 짧은 문장·줄바꿈·소제목으로 구분하기로 함.
+
+## ▶ 2026-11-09 (Claude) — 적 반응 강화/약화 판정 정렬·건너뜀 표시·생성물 규칙 도장 (푸시 전)
+
+- 적 반응 조건 4개(`target_neg_buff`·`target_pos_buff`·`self_pos_buff`·`self_neg_buff`)를 `e.harmful` 직접 셈에서 `n_harmful()`/`n_good()` 로 바꿈. 스위치 `foe_react_buff_count`(새 기본 `client`, legacy=`harmful`). 근거: 클라 조건이 «IsBuff && IsPositive / IsBuff && !IsPositive» 개수(NKM.Templets:40116-40137, 42099-42270)를 쓰고 `buff_count_source` 와 같은 기준임. 현재 `data/foe_react.json` 에 이 4개 조건을 쓰는 줄이 없어 **결과는 안 바뀜**(잠재 결함 정리). 클라가 세는 효과 목록의 세부(표시 효과 등)는 미확인. 시험 `foe_react_test.TestBuffPresence`(기본을 harmful 로 돌리면 실패 확인), `rules_test` 키 목록.
+- 건너뜀 표시: 환경 때문에 못 돌린 검사(node 없음·`COSMO_TABLES`/비공개 표 없음)를 `tools/runtime.skip_note()` 로 표식(`[건너뜀]`)을 남기고, `run_tests.py` 가 표식과 unittest `skipped=N` 을 모아 끝에 «건너뜀 N건» 으로 보임. `--strict` 이면 실패로 침. 이 PC 는 node 있음, `COSMO_TABLES` 없어 1건 건너뜀.
+- 생성물 규칙 도장: `tools/rules_stamp.py`·`tools/gen_rules_stamp.json`(지문 = formula·opts·mc 기본값 해시). `guild_sim`·`quick` 이 만들어진 규칙과 지금 규칙이 다르면 `tests/gen_rules_stamp_test.py` 가 실패. 다시 만들거나(빌더 `build_guild_sim.py`·`calibrate_quick.py --write` 가 도장을 새로 찍음) `rules_stamp.py --ack <이름> --reason "…"` 로 이유를 적어 인정함. 지금 도장은 11/09 기준선(두 파일 다시 만들지 않음, 이유는 json 에 기록). 전체 89/0 + e2e 통과(`--rebuild`).
+- 안 한 것: 규칙을 조건별로 나눠 «어느 키가 이 생성물에 영향 주는지» 판정하지 않음(키 하나만 바꿔도 낡았다고 뜨므로 인정 절차를 거침).
 
 ## ▶ 2026-11-09 (Claude) — 비공개 표 경로 통일 (푸시 전)
 

@@ -402,7 +402,8 @@ def test_js_parity():
     try:
         subprocess.run(['node', '-v'], capture_output=True, check=True)
     except (OSError, subprocess.CalledProcessError):
-        print('  (node 없음: JS 일치 시험 건너뜀)')
+        from tools.runtime import skip_note
+        skip_note('cosmo_raid_test.test_js_parity: node 없음')
         return
     cases = []
     for boss in ('belgras', 'tyria', 'carnelia'):
@@ -427,7 +428,8 @@ def test_js_parity():
 def test_data_matches_tables():
     tables = os.environ.get('COSMO_TABLES')
     if not tables or not os.path.isdir(tables):
-        print('  (COSMO_TABLES 없음: 표 대조 건너뜀)')
+        from tools.runtime import skip_note
+        skip_note('cosmo_raid_test.test_data_matches_tables: COSMO_TABLES 없음')
         return
     out = os.path.join(tempfile.mkdtemp(), 'c.json')
     p = subprocess.run([sys.executable, '-X', 'utf8', '-I', os.path.join(ROOT, 'tools', 'build_cosmo_raid.py'), '--tables', tables, '--season', '1022',

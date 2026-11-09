@@ -239,7 +239,8 @@ def test_js_parity():
     try:
         subprocess.run(["node", "-v"], capture_output=True, check=True)
     except (OSError, subprocess.CalledProcessError):
-        print("  (node 없음: JS 일치 시험 건너뜀)")
+        from tools.runtime import skip_note
+        skip_note("guild_defense_test.test_js_parity: node 없음")
         return
     combos = [[lv, list(t)] for lv in range(0, 13) for t in itertools.product(range(4), repeat=4)]
     js = node_json("const V=require('./guild_view.js'),G=JSON.parse(require('fs').readFileSync('data/guild_defense.json','utf8'));"

@@ -186,6 +186,9 @@ def main():
         summaryBySets={name: summarize(teams, growth, sups, name) for name in a.sets if name != 'off'})
     atomic_json(a.out, out, indent=1)
     print('저장', a.out, '%.0fs' % (time.time() - t0))
+    if os.path.abspath(a.out) == str(ROOT / 'data' / 'guild_sim.json'):
+        from tools.rules_stamp import stamp
+        print('규칙 도장', stamp('guild_sim', 'build_guild_sim 재생성'))
 
 
 if __name__ == '__main__':

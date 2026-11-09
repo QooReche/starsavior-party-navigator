@@ -1,0 +1,20 @@
+{
+ "guild_sim": {
+  "hash": "3cf4df693ae2594d",
+  "history": [
+   {
+    "hash": "3cf4df693ae2594d",
+    "reason": "도입 기준선(11/09). 11/08 810dc37 재생성 뒤 추가된 any_turn_source=table 은 길방 결과 해시 동일 확인(HANDOFF 11/08), foe_react_buff_count=client 는 적 반응 표에 해당 조건 줄이 없어 결과 불변"
+   }
+  ]
+ },
+ "quick": {
+  "hash": "3cf4df693ae2594d",
+  "history": [
+   {
+    "hash": "3cf4df693ae2594d",
+    "reason": "도입 기준선(11/09). 11/08 any_turn_source 변경 때 표본 재생성·재보정 결과 동일(0.916), foe_react_buff_count 는 적 반응 표에 해당 조건 줄이 없어 결과 불변"
+   }
+  ]
+ }
+}

@@ -207,6 +207,8 @@ def main():
             json.dump(d, f, ensure_ascii=False, separators=(',', ':'))
 
         print('저장', path)
+        from tools.rules_stamp import stamp
+        print('규칙 도장', stamp('quick', 'calibrate_quick --write 재보정'))
 
 
 if __name__ == '__main__':

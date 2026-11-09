@@ -11,12 +11,14 @@
 web·quick·shim_compat 시험은 tests/run_workspace_test.py 를 거친다(Windows 임시 폴더 문제)."""
 import argparse
 import os
+import re
 import subprocess
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 WORKSPACE = {'quick_test.py', 'web_test.py', 'shim_compat_test.py'}
 SKIP = {'run_workspace_test.py'}
+SKIP_RE = re.compile(r'\[건너뜀\][^\n]*|OK \(skipped=\d+\)|FAILED \([^)]*skipped=\d+[^)]*\)')
 
 
 def run(cmd, timeout):
@@ -32,6 +34,7 @@ def main():
     ap.add_argument('only', nargs='*', help='이 낱말이 이름에 들어간 시험만')
     ap.add_argument('--rebuild', action='store_true', help='tools/build_simpack.py, build_party_html.py index.html 먼저')
     ap.add_argument('--e2e', metavar='PYTHON', help='Playwright 가 깔린 python 경로(예: E:\\AI_mk2\\venv-pw\\Scripts\\python.exe)')
+    ap.add_argument('--strict', action='store_true', help='환경 때문에 건너뛴 검사가 하나라도 있으면 실패로 침')
     ap.add_argument('--timeout', type=int, default=900)
     a = ap.parse_args()
     py = [sys.executable, '-X', 'utf8', '-I']
@@ -56,18 +59,25 @@ def main():
     if a.e2e:
         tests.append(('e2e/test_page.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_page.py', '--shots', 'local/shots']))
     fails = []
+    skipped = []
     for name, cmd in tests:
         code, out = run(cmd, a.timeout)
-        print(('ok   ' if code == 0 else 'FAIL ') + name, flush=True)
+        marks = [m.group(0).strip() for m in SKIP_RE.finditer(out)]
+        print(('ok   ' if code == 0 else 'FAIL ') + name + ('  (건너뜀 있음)' if marks else ''), flush=True)
+        skipped += [(name, m) for m in marks]
         if code:
             fails.append((name, out))
     print('\n통과 %d / 실패 %d' % (len(tests) - len(fails), len(fails)))
+    if skipped:
+        print('건너뜀 %d건 (이 PC 에서 검사하지 못함%s):' % (len(skipped), ', --strict 라 실패 처리' if a.strict else ''))
+        for name, m in skipped:
+            print('  %s: %s' % (name, m))
     for name, out in fails:
         print('\n--- %s ---' % name)
         lines = out.strip().splitlines()
         flagged = [l for l in lines if l.lstrip().startswith(('FAIL', 'ERROR', 'Traceback', 'AssertionError'))]
         print('\n'.join(flagged[:20] + ['...'] + lines[-10:] if flagged else lines[-15:]))
-    return 1 if fails else 0
+    return 1 if (fails or (a.strict and skipped)) else 0
 
 
 if __name__ == '__main__':

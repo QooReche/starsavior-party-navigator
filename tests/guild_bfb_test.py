@@ -364,7 +364,8 @@ def test_data_matches_tables():
     from tools.runtime import static_path_or_none
     static = static_path_or_none(ROOT)
     if static is None:
-        print('  SKIP test_data_matches_tables (비공개 표 없음)')
+        from tools.runtime import skip_note
+        skip_note('guild_bfb_test.test_data_matches_tables: 비공개 표 없음')
         return
     static = str(static)
     out = os.path.join(tempfile.mkdtemp(), 'g.json')
