@@ -47,7 +47,7 @@
 - PowerShell 한글 읽기는 `Get-Content -Encoding utf8`, git dubious ownership은 설정 변경 없이 `git -c safe.directory=<저장소 경로> ...` 조회로 처리하기로 함.
 - 문체는 존칭 없이 「했음·하기로 함」으로, 짧은 문장·줄바꿈·소제목으로 구분하기로 함.
 
-## ▶ 2026-11-09 (Claude) — 적 반응 강화/약화 판정 정렬·건너뜀 표시·생성물 규칙 도장 (푸시 전)
+## ▶ 2026-11-09 (Claude) — 적 반응 강화/약화 판정 정렬·건너뜀 표시·생성물 규칙 도장 (푸시 완료)
 
 - 적 반응 조건 4개(`target_neg_buff`·`target_pos_buff`·`self_pos_buff`·`self_neg_buff`)를 `e.harmful` 직접 셈에서 `n_harmful()`/`n_good()` 로 바꿈. 스위치 `foe_react_buff_count`(새 기본 `client`, legacy=`harmful`). 근거: 클라 조건이 «IsBuff && IsPositive / IsBuff && !IsPositive» 개수(NKM.Templets:40116-40137, 42099-42270)를 쓰고 `buff_count_source` 와 같은 기준임. 현재 `data/foe_react.json` 에 이 4개 조건을 쓰는 줄이 없어 **결과는 안 바뀜**(잠재 결함 정리). 클라가 세는 효과 목록의 세부(표시 효과 등)는 미확인. 시험 `foe_react_test.TestBuffPresence`(기본을 harmful 로 돌리면 실패 확인), `rules_test` 키 목록.
 - 건너뜀 표시: 환경 때문에 못 돌린 검사(node 없음·`COSMO_TABLES`/비공개 표 없음)를 `tools/runtime.skip_note()` 로 표식(`[건너뜀]`)을 남기고, `run_tests.py` 가 표식과 unittest `skipped=N` 을 모아 끝에 «건너뜀 N건» 으로 보임. `--strict` 이면 실패로 침. 이 PC 는 node 있음, `COSMO_TABLES` 없어 1건 건너뜀.
