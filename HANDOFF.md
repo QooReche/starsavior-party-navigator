@@ -47,9 +47,9 @@
 - PowerShell 한글 읽기는 `Get-Content -Encoding utf8`, git dubious ownership은 설정 변경 없이 `git -c safe.directory=<저장소 경로> ...` 조회로 처리하기로 함.
 - 문체는 존칭 없이 「했음·하기로 함」으로, 짧은 문장·줄바꿈·소제목으로 구분하기로 함.
 
-## ▶ 2026-11-09 (Claude) — 중복 코드 점검 나머지 정리 (푸시 전)
+## ▶ 2026-11-09 (Claude) — 중복 코드 점검 나머지 정리 (푸시 완료)
 
-- **`Battle.put_eff`**(mc.py): 길방 BFB `_put`·`_sup_put`, 코스모 `_put` 의 효과 직접 생성을 한 함수로 모음. 옛 차이는 인자로 그대로 살림(코스모만 `refresh_props=True`, src 기본값, 길방은 수치 갱신 안 함, `_sup_put` 은 marker·src=대상). 중첩 하한 `max(0, …)` 은 길방에도 적용되나 길방은 음수 add 를 쓰지 않아 동작 같음. mc.py 안 직접 생성 4곳(브레이크 영역·불사·잔향·보호막)은 거부·면역 규칙이 경로마다 달라 근거 확인 전이라 안 옮김. 시험 `tests/put_eff_test.py`(코스모/길방 래퍼의 갱신 여부를 뒤집으면 실패 확인; 기존 시험은 이 차이를 못 잡았음).
+- **`Battle.put_eff`**(mc.py): 길방 BFB `_put`·`_sup_put`, 코스모 `_put` 의 효과 직접 생성을 한 함수로 모음. 옛 차이는 인자로 그대로 살림(코스모만 `refresh_props=True`, src 기본값, 길방은 수치 갱신 안 함, `_sup_put` 은 marker·src=대상). 중첩 하한 `max(0, …)` 은 길방에도 적용되나 길방은 음수 add 를 쓰지 않아 동작 같음. mc.py 안 직접 생성 4곳(브레이크 영역:1279 · 불사·잔향:2502,2509 · 보호막:3566)은 11/09 에 읽어 보고 옮기지 않기로 함: 덮어쓰기·시계(clock)·합산(shield)·거부 검사 유무가 모두 달라 put_eff 에 넣으면 인자만 늘어남. 시험 `tests/put_eff_test.py`(코스모/길방 래퍼의 갱신 여부를 뒤집으면 실패 확인; 기존 시험은 이 차이를 못 잡았음).
 - 분위수: `boss_hit_diagnostic` 의 `pct` 를 `api._pct` 로 교체(같은 식). `ingame_check._q`(최근접 순위)는 docs/ingame_samples.md 의 옛 수치와 맞추려고 그대로 두고 정의 차이를 docstring 에 적음.
 - `build_gimmicks`: `savior_reco` 에 (이름, 부제) 중복이 생기면 조용히 덮어쓰지 않고 중단.
 - `tests/savior_reco_sync_test.py`: 옆 `journeyhelper/src/assets/savior_reco.json` 이 있으면 `data/savior_reco.json` 과 같은지(줄바꿈 무시) 확인, 없으면 건너뜀 표식. 지금은 같음.
