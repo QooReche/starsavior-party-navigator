@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority
 from battlesim.fileio import atomic_text
+from battlesim.starsavior.savior_ids import uid_resolver
 STAT = dict(zip(
     ("NST_ATK", "NST_HP", "NST_DEF", "NST_TURN_SPEED", "NST_RATE_CRITICAL",
      "NST_RATE_CRITICAL_DAMAGE", "NST_RATE_EFFECT_HIT", "NST_RATE_EFFECT_EVADE",
@@ -58,21 +59,9 @@ def potential_power_levels(rows):
 
 
 def roster_ids():
-    # Same key/unique-name resolution as build_party_html.py's roster uid.
-    idx = {k: v for k, v in read(ROOT / "data/saviors_index.json").items() if not k.startswith("_")}
-    by_key = {v["key"]: int(k) for k, v in idx.items() if v.get("key")}
-    by_name = defaultdict(list)
-    for k, v in idx.items():
-        by_name[v.get("profile", {}).get("name")].append(int(k))
-    out = set()
-    for u in read(ROOT / "data/savior_reco.json")["saviors"]:
-        uid = by_key.get(u["key"])
-        candidates = by_name[u["name"]]
-        if uid is None and len(candidates) == 1:
-            uid = candidates[0]
-        if uid is not None:
-            out.add(uid)
-    return out
+    resolve = uid_resolver(read(ROOT / "data/saviors_index.json"))
+    uids = (resolve(u["key"], u["name"]) for u in read(ROOT / "data/savior_reco.json")["saviors"])
+    return {uid for uid in uids if uid is not None}
 
 
 def build_growth(static, game_build=None):

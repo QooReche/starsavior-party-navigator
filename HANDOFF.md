@@ -32,7 +32,7 @@
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
 13. 장비 탐사 외 «N턴 이내 승리» 미션 확장은 낮은 우선순위: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있으므로 필요하면 `STAR_TURNS` 확장함. 65턴(2별 추정)은 표시 안 함.
 14. 점검(11/08)에서 보류한 것(비공개 표 경로 통일은 11/09 완료, 절 «2026-11-09»): node 가 없으면 `print` 후 통과로 집계되는 시험(`cosmo_raid_test`·`guild_defense_test`·`guild_bfb_test`), 생성물(`guild_sim.json`·`quick.json`)에 규칙 해시가 없어 기본값 변경 뒤 재생성을 잊어도 시험이 못 잡는 문제, 단계 그룹 버프(`BUFF_STEP_TEMPLET`)의 엔진 미구현(영향 작음).
-15. 중복 코드 점검 결과(11/08, Opus, 읽기 전용, 상세 `AI\temp\partynavigator\work\audit_1108\dup\duplication_audit.md`): 공통화 우선순위 ① (11/09 완료) 비공개 표 경로 통일 ② 구원자 키↔게임 id 매핑 7곳(채우는 방식 3가지, 아모라 source-1058 이 build_auto_skill 에서 빠짐, 고치면 auto_skill.json 이 바뀜) ③ 빌더 표 읽기 `tools/tables.py`(주석 표 파서 3개, build_foe_spawn 판은 문자열 안 `//` 까지 지움) ④ `tests/simkit.py`(p3_test/p5_test 를 40개 시험이 공용 모듈처럼 씀). 이미 어긋난 곳: 길방 `score()` Python(짝수 반올림·가설 B)↔JS(사사오입·B 무시), 길방·코스모 `_put`, 적 반응 조건(mc.py:2697-2709)만 강화/약화를 따로 세어 표식이 «강화 있음»으로 잡힘, 분위수 정의 3가지, `savior_reco.json` 수동 복사. 아직 코드는 안 고침. 독립 리뷰(`bd3ffda..9f8b101`) 지적 7건 중 6건은 이 커밋에서 반영(HANDOFF 절 정정, 제어문자 시험에 탭 금지, 깨진 참조·낡은 문서 표시, enemy_leader 등급 `code`·출처 접두). 반영 안 한 것: enemy_leader 근거가 로컬 전투 호스트 경로뿐이라 서버 동작은 미확인(AGENTS 의 «근거 불완전하면 옛 동작» 과 긴장, note 에 미확인 명시), `guild_sim.json` 234,000판은 이 변경 뒤 재계산 안 함.
+15. 중복 코드 점검 결과(11/08, Opus, 읽기 전용, 상세 `AI\temp\partynavigator\work\audit_1108\dup\duplication_audit.md`): 공통화 우선순위 ① (11/09 완료) 비공개 표 경로 통일 ② (11/09 완료) 구원자 키↔게임 id 매핑 7곳 ③ 빌더 표 읽기 `tools/tables.py`(주석 표 파서 3개, build_foe_spawn 판은 문자열 안 `//` 까지 지움) ④ `tests/simkit.py`(p3_test/p5_test 를 40개 시험이 공용 모듈처럼 씀). 이미 어긋난 곳: 길방 `score()` Python(짝수 반올림·가설 B)↔JS(사사오입·B 무시), 길방·코스모 `_put`, 적 반응 조건(mc.py:2697-2709)만 강화/약화를 따로 세어 표식이 «강화 있음»으로 잡힘, 분위수 정의 3가지, `savior_reco.json` 수동 복사. 아직 코드는 안 고침. 독립 리뷰(`bd3ffda..9f8b101`) 지적 7건 중 6건은 이 커밋에서 반영(HANDOFF 절 정정, 제어문자 시험에 탭 금지, 깨진 참조·낡은 문서 표시, enemy_leader 등급 `code`·출처 접두). 반영 안 한 것: enemy_leader 근거가 로컬 전투 호스트 경로뿐이라 서버 동작은 미확인(AGENTS 의 «근거 불완전하면 옛 동작» 과 긴장, note 에 미확인 명시), `guild_sim.json` 234,000판은 이 변경 뒤 재계산 안 함.
 ## 환경·주의
 
 - 회사 PC는 공개 저장소와 `E:\AI_mk2\starsavior-static-data`를 함께 pull하기로 함. 추출 도구 작업이면 `starsavior-packet-ref`도 확인.
@@ -52,7 +52,13 @@
 - `tools/runtime.static_path_or_none(root)` 추가: `STARSAVIOR_STATIC` → `<저장소>/../static-data`(`tables/` 가 있어야 인정) → None. 시험 6개(`myinfo_stats`·`myinfo_combat`·`savior_mapping`·`guild_bfb`·`client_gaps_1104`·`eff_remaining`)가 이 규칙을 씀. `C:\build\static-data` 고정 경로·다른 PC 경로(`E:\AI_mk2\...`)·`CERES_AUDIT_STATIC` 별칭은 없앰. `cosmo_raid_test` 의 `COSMO_TABLES`(추출본 형식이 달라) 는 그대로.
 - 이 PC 에서 그동안 건너뛰던 `myinfo_stats` 비공개 정답 대조·`myinfo_combat` 재현·`savior_mapping` 원본 대조가 실제로 돌았고 **모두 통과**(새로 깨진 시험 없음). 사본은 `AI\partynavigator\static-data`(0e16db1, 11/02)를 씀.
 - 시험 `cleanup_test.test_static_path_or_none`(함수를 깨면 실패 확인). 전체 `run_tests.py` 86/0(e2e 안 돌림).
-- 남음: node 없을 때 print 후 통과하는 시험 3개(항목 14), 건너뜀 방식 통일(guild_bfb 는 print 유지). 다음 공통화 후보는 항목 15의 ②~④.
+- 남음: node 없을 때 print 후 통과하는 시험 3개(항목 14), 건너뜀 방식 통일(guild_bfb 는 print 유지). 다음 공통화 후보는 항목 15의 ③~④.
+
+## ▶ 2026-11-09 (Claude) — 구원자 키↔게임 id 매핑 공통화 (푸시 전)
+
+- `battlesim/starsavior/savior_ids.py` 추가: `keys_by_id(index, db=None, only_db=False)`(id→키), `ids_by_key(index, db=None)`(키→id, DB 키는 setdefault), `uid_resolver(index)`(키 우선, 이름은 유일할 때만). 규칙은 «색인 key → 시뮬 DB id → 유일한 이름».
+- 쓰는 곳으로 바꿈: `build_auto_skill`(3곳)·`savior_mapping_test`·`build_myinfo_combat`·`ingame_check`·`build_growth.roster_ids`·`build_party_html` uid. 지금 시뮬 DB 에는 색인에 없는 구원자가 0명이라 `auto_skill.json` 은 바뀌지 않음(아모라는 색인에 있음). 앞으로 색인에 없는 구원자가 생기면 `build_auto_skill` 은 키를 채우지 않고 `build_myinfo_combat` 은 채움(`only_db` 때문에 규칙은 그대로 두었음, 통일 여부 미정).
+- 확인: `--static` 으로 build_auto_skill·build_growth·build_myinfo_combat·build_party_html 재실행 -> `git diff data index.html` 0. 시험 `savior_ids_test`(DB 변형 제외를 지우면 실패 확인). `sim/manifest.json` 에 새 파일이 목록에 들어감(브라우저 시뮬 묶음). 전체 87/0(e2e 제외).
 
 ## ▶ 2026-11-08 밤 (Claude) — 문서 유지보수 정리 (코드 변경 없음, 푸시 완료)
 

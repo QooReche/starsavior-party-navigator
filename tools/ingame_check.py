@@ -240,10 +240,9 @@ def myinfo_party(content, order, lead, path):
         growth = json.load(f)
     with open(os.path.join(ROOT, 'data', 'saviors_index.json'), encoding='utf-8') as f:
         index = json.load(f)
-    ids = {v['key']: int(k) for k, v in index.items() if not k.startswith('_') and v.get('key')}
     from battlesim.starsavior.data import get_db    # 시뮬 DB 키가 가이드 색인 키와 다른 구원자(예: amora = source-1058)도 받는다
-    for k, u in get_db().units.items():
-        ids.setdefault(k, int(u['id']))
+    from battlesim.starsavior.savior_ids import ids_by_key
+    ids = ids_by_key(index, get_db())
     owned = {u['id']: u for u in info['units']}
     so = [order[1], order[2], order[0], order[3]]
     units, diagnostics = [], {}

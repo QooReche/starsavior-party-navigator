@@ -9,6 +9,7 @@ sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority
 from battlesim.fileio import atomic_text
 from battlesim.starsavior.data import get_db
+from battlesim.starsavior.savior_ids import keys_by_id
 from tools.build_growth import STAT, read
 
 
@@ -24,12 +25,8 @@ def build(static):
 
     db = get_db()
     index = read(ROOT / 'data/saviors_index.json')
-    keys = {int(k): v['key'] for k, v in index.items()
-            if not k.startswith('_') and v.get('key') in db.units}
-    # saviors_index 에 아직 없는 구원자(예: 아모라)는 시뮬 DB 의 id 로 찾는다. 개화 변형('@')은 기본 키와 id 가 같아 제외.
-    for key, row in db.units.items():
-        if '@' not in key and row.get('id') not in keys:
-            keys[row['id']] = key
+    # saviors_index 에 아직 없는 구원자(예: 아모라)는 시뮬 DB 의 id 로 채움(개화 변형 '@' 제외)
+    keys = keys_by_id(index, db, only_db=True)
     skills = {r['m_SkillStrID']: r for n in (1, 2) for r in load(f'SKILL_TEMPLET_{n}')}
     levels = {}
     for n in (1, 2):

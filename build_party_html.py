@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I 는 스크�
 import guild_defense as gd  # noqa: E402
 import party_reco as pr  # noqa: E402
 from battlesim.fileio import atomic_text
+from battlesim.starsavior.savior_ids import uid_resolver
 
 PORTRAIT_ROOT = "https://starsavior-guide.github.io/"  # 가이드 DB 초상화(온라인일 때만 표시, 없으면 글자 배지)
 OUT_DEFAULT = os.path.join(pr.HERE, "..", "release", "party_preview", "index.html")
@@ -82,16 +83,10 @@ def main(out=None):
                 d[s["key"]] = rel
     # 게임 구원자 ID(uid): 내 정보 불러오기(myinfo_import.js)가 보유 구원자를 연결할 때 쓴다
     idx.pop("_meta", None)
-    uid_by_key = {v["key"]: int(k) for k, v in idx.items() if v.get("key")}
-    uid_by_name = {}
-    for k, v in idx.items():
-        uid_by_name.setdefault(v.get("profile", {}).get("name"), []).append(int(k))
+    resolve_uid = uid_resolver(idx)
 
     def uid_of(s):
-        if s["key"] in uid_by_key:
-            return uid_by_key[s["key"]]
-        c = uid_by_name.get(s["name"], [])
-        return c[0] if len(c) == 1 else None
+        return resolve_uid(s["key"], s["name"])
     r = []
     for s in roster:
         g = growth.get(s["key"])

@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
+from battlesim.starsavior.savior_ids import keys_by_id   # noqa: E402
 
 SLOTS = ('기본기', '특수기', '궁극기', '패시브')
 NSI = {'NSI_SKILL_1_ATTACK': '기본기', 'NSI_SKILL_2_SPECIAL': '특수기', 'NSI_SKILL_3_HYPER': '궁극기'}
@@ -147,7 +148,7 @@ def build(static):
         for r in json.loads((tables / ('SKILL_TEMPLET_%d.json' % n)).read_text(encoding='utf-8'))['Data']:
             skills[r['m_SkillStrID']] = r
     index = json.loads((ROOT / 'data' / 'saviors_index.json').read_text(encoding='utf-8'))
-    keys = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
+    keys = keys_by_id(index)
     desc = json.loads((ROOT / 'data' / 'savior_skills.json').read_text(encoding='utf-8'))
     units, order = {}, {}
     book = json.loads((ROOT / 'rawdata/databook_main.json').read_text(encoding='utf-8'))['units']
@@ -221,7 +222,7 @@ def build_lines(static, report, *, legacy=False, client=False):
             if m:
                 se.setdefault(m.group(1), {}).setdefault(int(m.group(2)), []).append((int(m.group(3)), r))
     index = json.loads((ROOT / 'data' / 'saviors_index.json').read_text(encoding='utf-8'))
-    keys = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
+    keys = keys_by_id(index)
     book = json.loads((ROOT / 'rawdata' / 'databook_main.json').read_text(encoding='utf-8'))['units']
     slot_of = {'기본기': 0, '특수기': 1, '궁극기': 2, '고유 패시브': 3}
     auto_types = set(FA.AUTO_ENEMY) | set(FA.AUTO_ALLY) | {'NSETT_AUTO_ALLY_ONE_NOT_SELF'}
@@ -323,7 +324,7 @@ def build_no_preemptive(static):
     skills = {r['m_SkillStrID']: r for n in (1, 2) for r in json.loads(
         (tables / ('SKILL_TEMPLET_%d.json' % n)).read_text(encoding='utf8'))['Data']}
     index = json.loads((ROOT / 'data/saviors_index.json').read_text(encoding='utf8'))
-    keys = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
+    keys = keys_by_id(index)
     book = json.loads((ROOT / 'rawdata/databook_main.json').read_text(encoding='utf8'))['units']
     out = {}
     for key, _bu, _u, ids in form_bindings(tables, keys, book):

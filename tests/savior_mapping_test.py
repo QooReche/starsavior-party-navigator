@@ -21,6 +21,7 @@ from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
 from tools.build_auto_skill import build, build_lines, build_no_preemptive, form_bindings
 from tools.runtime import static_path_or_none
+from battlesim.starsavior.savior_ids import keys_by_id
 
 FORMS = {1501: 'besta', 1502: 'annah', 1506: 'marcille', 1507: 'vera',
          1508: 'naru', 1509: 'bunny-claire', 1510: 'bunny-scarlet', 1511: 'clarissa'}
@@ -187,7 +188,7 @@ class StaticMappingTest(unittest.TestCase):
         static = STATIC
         data = json.loads((ROOT / 'data/auto_skill.json').read_text(encoding='utf8'))
         index = json.loads((ROOT / 'data/saviors_index.json').read_text(encoding='utf8'))
-        keys = {int(k): v['key'] for k, v in index.items() if not k.startswith('_') and v.get('key')}
+        keys = keys_by_id(index)
         book = json.loads((ROOT / 'rawdata/databook_main.json').read_text(encoding='utf8'))['units']
         bindings = list(form_bindings(static / 'tables', keys, list(reversed(book))))
         bloom = {bu['id']: ids for key, bu, u, ids in bindings if key.endswith(BLOOM)}
