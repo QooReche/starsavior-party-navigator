@@ -49,10 +49,7 @@ def main():
 
     # --- SUMMON_TEMPLET ---
     p = static / 'tables' / 'Plain' / 'SUMMON_TEMPLET.json'
-    t = p.read_text(encoding='utf-8', errors='replace')
-    t = re.sub(r'(?m)//.*$', '', t)
-    t = re.sub(r',(\s*[}\]])', r'\1', t)
-    tpl = json.loads(t)
+    tpl = jsonc(p)
     data = tpl.get('Data', tpl)
 
     groups = {}

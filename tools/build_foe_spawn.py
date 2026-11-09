@@ -28,16 +28,10 @@ sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior import foe as F   # noqa: E402
+from tools.tables import jsonc   # noqa: E402,F401  (다른 빌더가 여기서 가져다 씀)
 
 CLO = {'성간 회랑': 'INTERSTELLAR', '태양 회랑': 'SUN', '달 회랑': 'MOON', '별 회랑': 'STAR'}
 ROMAN = {'Ⅰ': 1, 'Ⅱ': 2, 'Ⅲ': 3, 'Ⅳ': 4, 'Ⅴ': 5, 'Ⅵ': 6, 'Ⅶ': 7, 'Ⅷ': 8, 'Ⅸ': 9, 'Ⅹ': 10}
-
-
-def jsonc(path):
-    t = Path(path).read_text(encoding='utf-8', errors='replace')
-    t = re.sub(r'(?m)//.*$', '', t)
-    t = re.sub(r',(\s*[}\]])', r'\1', t)
-    return json.loads(t)
 
 
 def flag(u):

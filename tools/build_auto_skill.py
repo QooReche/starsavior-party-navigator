@@ -27,6 +27,7 @@ sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior.savior_ids import keys_by_id   # noqa: E402
+from tools.tables import jsonc   # noqa: E402,F401  (다른 빌더가 여기서 가져다 씀)
 
 SLOTS = ('기본기', '특수기', '궁극기', '패시브')
 NSI = {'NSI_SKILL_1_ATTACK': '기본기', 'NSI_SKILL_2_SPECIAL': '특수기', 'NSI_SKILL_3_HYPER': '궁극기'}
@@ -39,32 +40,6 @@ ELEM = {'SUN': '태양', 'MOON': '달', 'STAR': '별', 'ORDER': '질서', 'CHAOS
 # 엔진(battlesim/mc.py RULE1·RULE1001)이 상수로 쓰는 기본 규칙. 표가 바뀌면 빌드가 실패해 엔진을 같이 고치게 한다.
 DEFAULTS = {1: {'IsNotInvincible': True, 'IsBoss': True, 'IsElite': True, 'IsAdvantageAdjustType': True, 'IsLowHpRate': True, 'IsLowMaxHp': True},
             1001: {'FrontLineTargetRate': 8000, 'DefenderTargetRate': 8000}}
-
-
-def jsonc(path):
-    """주석(//) 달린 표. 문자열 안의 // 는 건드리지 않는다."""
-    s = Path(path).read_text(encoding='utf-8')
-    out, i, n, ins = [], 0, len(s), False
-    while i < n:
-        c = s[i]
-        if ins:
-            out.append(c)
-            if c == '\\':
-                out.append(s[i + 1])
-                i += 2
-                continue
-            ins = c != '"'
-            i += 1
-            continue
-        if c == '"':
-            ins = True
-        elif s.startswith('//', i):
-            j = s.find('\n', i)
-            i = n if j < 0 else j
-            continue
-        out.append(c)
-        i += 1
-    return json.loads(re.sub(r',(\s*[\]}])', r'\1', ''.join(out)))
 
 
 def elem_stack_names(ui):

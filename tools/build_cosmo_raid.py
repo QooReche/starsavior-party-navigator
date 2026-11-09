@@ -21,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import low_priority   # noqa: E402
+from tools.tables import rows   # noqa: E402
 from battlesim.fileio import atomic_json  # noqa: E402
 
 NUAT = {'NUAT_ORDER': '질서', 'NUAT_SUN': '태양', 'NUAT_MOON': '달', 'NUAT_STAR': '별', 'NUAT_CHAOS': '혼돈'}
@@ -69,26 +70,8 @@ def need(cond, msg):
         raise Changed(msg)
 
 
-def strip_jsonc(t):
-    out = []
-    for line in t.splitlines():
-        inq = False
-        i = 0
-        while i < len(line):
-            c = line[i]
-            if c == '"' and (i == 0 or line[i - 1] != '\\'):
-                inq = not inq
-            elif not inq and line.startswith('//', i):
-                line = line[:i]
-                break
-            i += 1
-        out.append(line)
-    return re.sub(r',(\s*[}\]])', r'\1', '\n'.join(out))
-
-
 def load(p):
-    d = json.loads(strip_jsonc(Path(p).read_text(encoding='utf-8-sig')))
-    return d['Data'] if isinstance(d, dict) and 'Data' in d else d
+    return rows(p)
 
 
 def build(T, season_id, game_build):
