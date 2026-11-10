@@ -118,6 +118,29 @@ class WaveTest(unittest.TestCase):
         b.spawn_wave()
         self.assertEqual((a.extra_turn, a.gauge), (True, 10000))
 
+    def test_both_teams_wave_start_after_carry(self):
+        for mode in ('client', 'keep'):
+            with self.subTest(mode=mode):
+                b, a = self.setup_wave(mode)
+                give(a, '기존 효과', dur=2)
+                a.d.lines = [Line('[웨이브 시작 시] 자신에게 〈아군 새 효과〉 (2턴 / 공격력% +10%)',
+                                  '고유 패시브', 'passive')]
+                b.waves[1][0].lines = [
+                    Line('[웨이브 시작 시] 적 전체에게 〈적 새 효과〉 (2턴 / 방어력% -10%)',
+                         '고유 패시브', 'passive')]
+                events = []
+                run_line = b.run_line
+
+                def watch(owner, ln, ctx):
+                    events.append((owner.side, a.eff['기존 효과'].dur))
+                    return run_line(owner, ln, ctx)
+
+                with patch.object(b, 'run_line', watch):
+                    b.spawn_wave()
+                self.assertEqual(events, [(0, 1), (1, 1)] if mode == 'client' else [(1, 2), (0, 2)])
+                self.assertEqual(a.eff['아군 새 효과'].dur, 2)
+                self.assertEqual(a.eff['적 새 효과'].dur, 2)
+
     def test_standard_wave_path(self):
         old, _ = run_stage('keep')
         new, battles = run_stage('client')
@@ -181,10 +204,41 @@ class ShieldTest(unittest.TestCase):
 
     def test_standard_owner_absorption_path(self):
         # FLOOR 200은 이 편성에서 보유자 턴 흡수 0회. 250/40판은 실제 흡수 경로를 탐.
-        # 이 표본에서는 두 모드 결과가 같음. 차감 경계의 차이는 위 직접 시험으로 검증.
-        result, battles = run_stage('keep', 40, shield_tick='turn_end')
+        # 결과 집계가 같아도 실제 보호막의 턴 시작 유지·턴 끝 차감을 직접 검사한다.
+        boundaries = {'start': 0, 'end': 0}
+        act, fire = Battle._act_turn, Battle.fire
+
+        def watch_act(b, u):
+            initial = {name: (e, e.dur) for name, e in u.eff.items()
+                       if e.shield > 0 and e.clock == 'owner_turn' and math.isfinite(e.dur)}
+            ending = []
+
+            def watch_fire(owner, kind, ctx):
+                if owner is u and kind == 'own_ts':
+                    for name, (e, dur) in initial.items():
+                        self.assertIs(u.eff.get(name), e)
+                        self.assertEqual(e.dur, dur)  # 시전 시작 전에 미리 차감하면 실패
+                        boundaries['start'] += 1
+                result = fire(b, owner, kind, ctx)
+                if owner is u and kind == 'own_te':
+                    ending.extend((e, e.dur) for e in u.eff.values()
+                                  if e.shield > 0 and e.clock == 'owner_turn' and math.isfinite(e.dur)
+                                  and not e.fresh and not e.skip_tick and e.inst is None)
+                return result
+
+            with patch.object(b, 'fire', watch_fire):
+                result = act(b, u)
+            for e, dur in ending:
+                self.assertEqual(e.dur, dur - 1)  # 종료 차감을 지우면 실패
+                boundaries['end'] += 1
+            return result
+
+        with patch.object(Battle, '_act_turn', watch_act):
+            result, battles = run_stage('keep', 40, shield_tick='turn_end')
         self.assertGreater(result['outcome']['progress'], 0)
         self.assertGreater(sum(b.rule_hits['shield_owner_absorb'] for b in battles), 0)
+        self.assertGreater(boundaries['start'], 0)
+        self.assertGreater(boundaries['end'], 0)
 
 
 class ReviveTest(unittest.TestCase):

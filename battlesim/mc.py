@@ -210,7 +210,7 @@ def line_kind(ln):
 
 # 확률 엔진이 해석하는 조건 키(이 밖의 키가 붙은 줄은 unknown_cond 규칙: 기본 skip + 기록)
 COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이 아님', '자기 추가발동 트리거', '자기 추가발동 트리거 스킬',
-                 'TurnUnitNegativeBuff',
+                 'TurnUnitNegativeBuff', 'NotTurnUnitNegativeBuff',
                  '자신 미보유 효과 중첩수', '시전자 턴', '자신이 보유', '자신이 미보유',
                  '중첩수', '효과 개수', '중첩수 이상', '효과 개수 이상', '효과 개수 미만', '대상이 보유', '대상이 미보유',
                  '대상 효과 중첩수', '대상 약화효과 보유', '대상 강화효과 보유', '대상 강인도 없음', '대상 브레이크', '결과',
@@ -913,16 +913,18 @@ class Battle:
             self.foes.sort(key=lambda x: x.pos)
         if self.gb is not None:
             self.gb.on_wave()
+        client_carry = self.wave_i > 0 and self.mc['wave_carry'] == 'client'
         for u in self.foes:
             for ln in self.lines_of(u):
-                if line_kind(ln) in ('battle_start', 'wave_start'):
+                kind = line_kind(ln)
+                if kind in ('battle_start', 'wave_start') and not (client_carry and kind == 'wave_start'):
                     self.run_line(u, ln, Ctx(u, u, None))
         if self.wave_i > 0:
-            client_carry = self.mc['wave_carry'] == 'client'
             if client_carry:
                 self._carry_wave_effects()
                 self._reset_wave_gauge()
-            for u in self.alive(0):
+            # NKM:819-832,12618-12621: 아군 차감 뒤 양 팀(아군 -> 적) WAVE_START.
+            for u in self.alive(0) + (self.alive(1) if client_carry else []):
                 for ln in self.lines_of(u):
                     if line_kind(ln) == 'wave_start':
                         self.run_line(u, ln, Ctx(u, u, None))
@@ -936,7 +938,7 @@ class Battle:
                     u.gauge = 0.0
 
     def _carry_wave_effects(self):
-        """NKM:813-832,3973-3989,4030-4056: 새 전역 턴, 아군 WAVE_START 전에 지속 -1."""
+        """NKM:813-832,3973-3989,4030-4056: 새 전역 턴, 양 팀 WAVE_START 전에 지속 -1."""
         domain = self.break_skill_rule['domain'] if self.break_skill_enabled else None
         self.rule_hits['wave_carry'] += 1
         for u in self.alive(0):
@@ -3089,7 +3091,8 @@ class Battle:
         sk = ctx.skill
         tgt = ctx.target if ctx.target is not None else None
         for k, v in ln.params:
-            if k not in COND_KEYS or (k == 'TurnUnitNegativeBuff' and self.mc['turn_unit_debuff_cond'] != 'client'):
+            if k not in COND_KEYS or (k in ('TurnUnitNegativeBuff', 'NotTurnUnitNegativeBuff')
+                                      and self.mc['turn_unit_debuff_cond'] != 'client'):
                 self.unsup['cond: ' + k] += 1
                 if self.mc['unknown_cond'] == 'roll':
                     if self.R(owner.side).random() >= self.opts['unknown_cond_p']:
@@ -3233,9 +3236,10 @@ class Battle:
             elif k == '턴 유닛이 보유':
                 if ctx.src is None or not ctx.src.has(v):
                     return False
-            elif k == 'TurnUnitNegativeBuff':
-                # NKM:9028, NKM.Templets:42375-42407,42828-42847.
-                if ctx.src is None or (ctx.src.n_harmful() > 0) != (v == '예'):
+            elif k in ('TurnUnitNegativeBuff', 'NotTurnUnitNegativeBuff'):
+                # NKM.Templets:41816-41818,42375-42407: GetBool false는 검사 안 함.
+                if v == '예' and (ctx.src is None or
+                                  (ctx.src.n_harmful() > 0) != (k == 'TurnUnitNegativeBuff')):
                     return False
             elif k == '스킬 대상 유형':
                 tgv = (sk.tg if sk is not None else '') or ''

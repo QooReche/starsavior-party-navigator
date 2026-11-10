@@ -22,6 +22,7 @@ from battlesim.mc import Battle, Ctx, ally_auto_lines, normalized_lines
 from battlesim.metrics import unit_def
 from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
+from battlesim.starsavior.parser import Line
 
 SNOW = '설중화(해제불가)'
 STATE = '급급여율령(해제불가)'
@@ -144,6 +145,26 @@ class LughTest(unittest.TestCase):
 
 
 class CeresTest(unittest.TestCase):
+    def test_turn_unit_debuff_boolean_flags(self):
+        for key in ('TurnUnitNegativeBuff', 'NotTurnUnitNegativeBuff'):
+            for value in ('예', '아니오', ''):
+                for state in ('none', 'clean', 'debuff', 'marker'):
+                    with self.subTest(key=key, value=value, state=state):
+                        b = battle([unit('owner'), unit('turn')], [unit('foe')])
+                        owner, turn = b.allies
+                        if state in ('debuff', 'marker'):
+                            give(turn, '약화', harmful=True).check = state == 'marker'
+                        ctx = Ctx(owner, None if state == 'none' else turn, None)
+                        ln = Line('[턴 시작 시] 자신에게 행동 게이지 10%p 증가', '고유 패시브', 'passive')
+                        ln.params = [(key, value)]
+                        expected = value != '예' or (state != 'none' and
+                                   (state == 'debuff') == (key == 'TurnUnitNegativeBuff'))
+                        self.assertEqual(b.cond_ok(owner, ln, ctx), expected)
+                        self.assertNotIn('cond: ' + key, b.unsup)
+                        b.mc['turn_unit_debuff_cond'] = 'skip'
+                        self.assertFalse(b.cond_ok(owner, ln, ctx))
+                        self.assertGreater(b.unsup['cond: ' + key], 0)
+
     def test_turn_unit_debuff(self):
         for mode in (None, 'skip'):
             b = battle([unit_def('ceres-sun-supporter'), unit('ally')], [unit(hp=10**9)],
