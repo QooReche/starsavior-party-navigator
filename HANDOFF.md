@@ -59,7 +59,7 @@
 - PowerShell 한글 읽기는 `Get-Content -Encoding utf8`, git dubious ownership은 설정 변경 없이 `git -c safe.directory=<저장소 경로> ...` 조회로 처리하기로 함.
 - 문체는 존칭 없이 「했음·하기로 함」으로, 짧은 문장·줄바꿈·소제목으로 구분하기로 함.
 
-## ▶ 2026-11-10 오후 (Claude+codex) — 먼저 할 것 3건: 벨그라스 자기 피해·흡혈, 스킬 효과 3종, 외부 문서 규칙 3종 (푸시 전)
+## ▶ 2026-11-10 오후 (Claude+codex) — 먼저 할 것 3건: 벨그라스 자기 피해·흡혈, 스킬 효과 3종, 외부 문서 규칙 3종 (푸시 완료)
 
 - **리뷰 권고 후속 반영(11/10)**: 1~4 모두 반영, 기각 없음. ① `wave_carry=client`에서 아군 차감 뒤 양 팀 WAVE_START(아군→적), keep 유지·note 정정(NKM:819-832·12618-12621). ② TurnUnitNegativeBuff는 예일 때만 검사하고 NotTurnUnitNegativeBuff도 지원했음(NKM.Templets:41814-41818·42375-42407, `tables/Plain/SKILL_CONDITION_TEMPLET.json:10849-10855` 조건 59207 존재, 공개 실행 데이터에는 아직 없음). ③ standard 보호막 시험이 실제 턴 시작 유지·턴 끝 차감과 각 경계 도달을 검사하게 고쳤음. ④ 흡혈 note에 이번 스킬 한정 보정 미연결을 명시했음(`mc.py`의 `_vampirism_hit`·`LOCAL_OK`, `data/myinfo_view.json` 잠재력 11026). 관련 시험 28개 통과, 이전 웨이브 순서·이전 조건 처리·Not 지원 제거·보호막 시작 조기 차감·종료 차감 제거 5종 변형 모두 assertion 실패 확인. 공개 standard 9개 조합·72판 결과 불변(실행 시간 제외), 기본값·quick/guild_sim·골든 유지, simpack만 재생성했음. 사용자 조건에 따라 e2e는 재실행하지 않았음.
 - **후속 검증(11/10)**: 수정 전·후 전체 98 통과/0 실패(`STARSAVIOR_STATIC` 지정), 마지막 note·simpack 변경 뒤 cleanup·rules·생성물 도장 4개 재검증도 통과했음. 독립 리뷰는 고정 범위 `5fbbfa0..42463c5`로 수행했고 문구 누락 지적을 반영한 뒤 추가 지적 없음으로 완료했음. 비공개 저장소는 쓰지 않고 원격 HEAD와 로컬 `64e4fad` 일치를 확인했음.
@@ -72,7 +72,7 @@
 - **기준선**: `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data`, 전체 96 통과/2 실패. 실패는 simpack manifest·quick/guild_sim 도장뿐이었음. `COSMO_TABLES`·옆 journeyhelper 없음으로 2건 건너뜀. 골든 `--write`·계정 자료는 쓰지 않았음.
 - **최종 검증**: 같은 `STARSAVIOR_STATIC`으로 `python -X utf8 -I tools/run_tests.py` **98 통과/0 실패**, `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe` **99 통과/0 실패**(e2e 파일을 1건으로 센 수, 브라우저 38개 모두 통과). 기준선의 두 실패는 재생성으로 해소했으며 환경 건너뜀 2건은 같음. HTML의 데이터 밖 내용은 동일하고 데이터 변경은 `guild.sim`뿐임. 11/03·11/02의 오래된 절은 원문 그대로 `docs/HISTORY.md`로 옮겼음. 로컬 QooReche/noreply 신원을 유지해 생성물·문서를 한 커밋으로 묶으며 푸시는 하지 않음.
 
-## ▶ 2026-11-10 (Claude) — 새 빌드 확인·표 재추출·벨그라스 조사·외부 문서 대조 (푸시 전)
+## ▶ 2026-11-10 (Claude) — 새 빌드 확인·표 재추출·벨그라스 조사·외부 문서 대조 (푸시 완료)
 
 - **빌드**: 설치본 26429597(11/05 20:03). DLL 변경 5개(NKM·NKC·Assembly-CSharp·NKM.Templets·Star.Templets)는 로직 동일(식별자 재난독화). 직접 검증: 새 NKM 을 옛 번호 체계로 맞춰 옛 파일과 비교하면 숫자 유지·CR 정규화 diff 89줄(전부 로그 문자열 속 변수명 접미사). 상세·해시는 static-data `decompiled/BUILD.md`.
 - **표 재추출**(static-data `64e4fad`): 신규 구원자 0. 코스모 시즌 22(벨그라스·티리아·카넬리아) 표 + BattleScript 3개, 길드 레이드 속도 게이지 아이템 2000→3000(`SE_TEMPLET_BATTLE_EFFECT` 4015202, 11/01 이전 수정분 포함), 인코그니타 랜드그레이브 charm 발동 시점(BATTLE_START→AFTER_SPAWN), EX 효과 4개, 미니건 패시브 SE 1개(남은 일 24). 연출·이벤트 포인트 참조·목록 순서는 수치 아님. 패치 노트 대조는 미확인.
