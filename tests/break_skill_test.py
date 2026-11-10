@@ -103,7 +103,7 @@ class BreakSkillLegacyTest(unittest.TestCase):
     def test_break_kill_wave_transition_preserves_ultimate(self):
         b = battle([unit('ally', skills=[dict(slot='궁극기', dm=100, cd=5)])],
                    [unit('first', hp=1)], break_skill={'name': '차원 강습'},
-                   opts={'nova_policy': 'manual'}, timeline=True, max_turns=.1)
+                   opts={'nova_policy': 'manual'}, mc={'wave_extra_turn': 'keep'}, timeline=True, max_turns=.1)
         b.waves.append([unit('second', hp=10 ** 9)])
         a = b.allies[0]
         a.gauge, a.extra_turn, b.break_points = 10000, True, 3

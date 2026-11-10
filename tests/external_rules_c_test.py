@@ -104,7 +104,7 @@ class WaveTest(unittest.TestCase):
     def test_wave_start_order_and_gauge_switch(self):
         for mode, gauge, expected in [('client', 'reset', 2000), ('keep', 'reset', 0),
                                       ('client', 'keep', 7000)]:
-            b, a = self.setup_wave(mode, wave_ally_gauge=gauge)
+            b, a = self.setup_wave(mode, wave_ally_gauge=gauge, wave_extra_turn='keep')
             a.d.lines = [Line('[웨이브 시작 시] 자신에게 행동 게이지 20%p 증가', '고유 패시브', 'passive'),
                          Line('[웨이브 시작 시] 자신에게 〈새 버프〉 (1턴 / 공격력% +10%)', '고유 패시브', 'passive')]
             a.gauge = 5000
@@ -113,7 +113,7 @@ class WaveTest(unittest.TestCase):
             self.assertEqual(a.eff['새 버프'].dur, 1)
 
     def test_extra_turn_survives(self):
-        b, a = self.setup_wave('client')
+        b, a = self.setup_wave('client', wave_extra_turn='keep')
         a.extra_turn, a.gauge = True, 10000
         b.spawn_wave()
         self.assertEqual((a.extra_turn, a.gauge), (True, 10000))
