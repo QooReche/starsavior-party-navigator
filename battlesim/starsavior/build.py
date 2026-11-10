@@ -144,7 +144,7 @@ def guide_entry(db, key, u):
     return gb, src
 
 
-def make_build(db, key, u, level='standard', base_stats=None, passive_cr=0.0):
+def setting_spec(db, key, u, level='standard', base_stats=None, passive_cr=0.0):
     """구원자 1명의 프리셋 -> dict(gear{...}, journey{...}, potential(이름 or None), pot_lines[raw], sa_bonus, summary{...}).
     gear/journey 는 stats.calc_stats 의 gear/journey 인자 형식. base_stats = 장비 없는 스탯(치명타 확률 판정용),
     passive_cr = 고유 패시브 상시 치명타 확률(비율, 0.3 = 30%)."""
@@ -164,12 +164,14 @@ def make_build(db, key, u, level='standard', base_stats=None, passive_cr=0.0):
     ring = first_option(gb['ring'])
     mains = [('무기', '공격력'), ('장갑', '생명력'), ('갑옷', '방어력'), ('신발', '속도'), ('목걸이', neck), ('반지', ring)]
     piece_main = []
+    pieces = []
     for slot, st in mains:
         k, v = _main_value(db, slot, st)
         if k is None:
             raise BuildError('%s %s 주옵을 읽지 못함: %r' % (key, slot, st))
         add(k, v)
         piece_main.append(k)
+        pieces.append(dict(slot=slot, main=dict(stat=k, value=v), subs={}))
     summary['mains'] = {slot: st for slot, st in mains}
     sets = parse_sets(gb['sets'][0] if gb['sets'] else '')
     if not sets or sum(n for _, n in sets) > 6:
@@ -183,26 +185,32 @@ def make_build(db, key, u, level='standard', base_stats=None, passive_cr=0.0):
             for _lbl, _txt, nst, val in sd['stats']:
                 add(NST_KEY[nst], val)
     summary['sets'] = ['%s(%d)' % s for s in sets]
+    piece_sets = [sdef[name]['id'] for name, n in sets for _ in range(n)]
+    for i, piece in enumerate(pieces):
+        piece['set'] = piece_sets[i] if i < len(piece_sets) else 0
     codes = potential_codes(gb['potential'])
     if not codes:
         raise BuildError('%s 잠재력 코드를 읽지 못함: %r' % (key, gb['potential']))
     profile = _profile(codes[0][0], MAIN_KEY.get(ring))
     summary['profile'] = profile
-    out = dict(gear=gear, journey={}, potential=None, pot_lines=[], sa_bonus=0, summary=summary)
+    out = dict(gear=gear, journey={}, potential=None, pot_lines=[], sa_bonus=0, summary=summary,
+               equipment=pieces, journey_raw=[], potential_entry=None)
     if level == 'light':
         return out
     # 부옵: 부위마다 주옵과 같은 종류를 빼고 우선순위 앞에서 useful 줄, 줄마다 (1 + 강화 5회/4줄) 회 x 최대치 x 평균 비율
     smax, roll = R['sub_max'], R['sub_roll']
     per_line = 1 + 5.0 / R['sub_lines']
     subs = {}
-    for pm in piece_main:
+    for piece, pm in zip(pieces, piece_main):
         lines = [k for k in R['sub_priority'][profile] if k != pm][:R['sub_useful_lines']]
         for k in lines:
             subs[k] = subs.get(k, 0) + per_line * smax[k] * roll
+            piece['subs'][k] = per_line * smax[k] * roll
     # 여정: 어려움 기록 예시, 주 스탯 자리 바꿈, 클래스 계수
     js = list(R['journey']['stats'])
     mi = R['journey']['main_slot'][profile]
     js[0], js[mi] = js[mi], js[0]
+    out['journey_raw'] = js
     role = next((r for r in db.main['topics']['roles'] if r['n'] == u['r']), None)
     mul = role['mul'] if role else [1, 1, 1, 1, 1]
     out['journey'] = dict(atk=math.floor(js[0] * 1 * mul[0]), hp=math.floor(js[1] * 6 * mul[1]), **{'def': math.floor(js[2] * 0.5 * mul[2])},
@@ -228,6 +236,7 @@ def make_build(db, key, u, level='standard', base_stats=None, passive_cr=0.0):
     if pot is None:
         raise BuildError('%s 잠재력 데이터 없음: %s' % (key, name))
     out['potential'] = pot['n']
+    out['potential_entry'] = [pot['id'], pot['lv'][-1][0], 0, 0]
     summary['potential'] = code
     for raw in pot['lv'][-1][4]:
         m = re.match(r'^능력치:\s*(.+)$', raw.strip())
@@ -248,12 +257,26 @@ def make_build(db, key, u, level='standard', base_stats=None, passive_cr=0.0):
     cr_total = (base_stats or {}).get('cr', 500) + passive_cr * 10000 + gear.get('cr', 0) + subs.get('cr', 0)
     if cr_total > 10000 and subs.get('cr'):
         over = min(subs['cr'], cr_total - 10000)
+        # Keep equipment separate from the permanent potential stats in gear.
+        fraction = over / subs['cr']
+        for piece in pieces:
+            moved = piece['subs'].get('cr', 0) * fraction
+            if moved:
+                piece['subs']['cr'] -= moved
+                piece['subs']['cd'] = piece['subs'].get('cd', 0) + moved / smax['cr'] * smax['cd']
         subs['cr'] -= over
         subs['cd'] = subs.get('cd', 0) + over / smax['cr'] * smax['cd']
     for k, v in subs.items():
         add(k, v)
     summary['subs'] = {k: round(v, 1) for k, v in subs.items()}
     return out
+
+
+def make_build(db, key, u, level='standard', base_stats=None, passive_cr=0.0):
+    """Legacy engine projection of the shared setting specification (same arithmetic)."""
+    spec = setting_spec(db, key, u, level, base_stats, passive_cr)
+    return None if spec is None else {k: spec[k] for k in
+                                    ('gear', 'journey', 'potential', 'pot_lines', 'sa_bonus', 'summary')}
 
 
 def unit_power(stats, pp=0, skill_level_sum=34):

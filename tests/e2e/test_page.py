@@ -987,7 +987,8 @@ def test_share_link(browser, ctx):
     page.wait_for_function('() => !!window.copied')
     url = page.evaluate('() => window.copied')
     params = parse_qs(urlsplit(url).query, keep_blank_values=True)
-    assert set(params) == {'c', 's', 'm', 'rk', 'b'}, params
+    assert set(params) == {'c', 's', 'm', 'rk', 'b', 'ag', 'ae', 'ao'}, params
+    assert params['ag'] == ['0'] and params['ae'] == ['0'] and params['ao'] == ['1']
     assert not urlsplit(url).fragment
     # 2) 「내 정보 포함」: 해시 #shared=
     page.check('#share-mi')
@@ -995,7 +996,7 @@ def test_share_link(browser, ctx):
     page.click('#share-link')
     page.wait_for_function('() => !!window.copied')
     mi_url = page.evaluate('() => window.copied')
-    assert set(parse_qs(urlsplit(mi_url).query, keep_blank_values=True)) == {'c', 's', 'm', 'rk', 'b'}
+    assert parse_qs(urlsplit(mi_url).query, keep_blank_values=True) == params
     assert urlsplit(mi_url).fragment.startswith('shared=')
     page.close()
     prefs = {'pn.rk': '"5"', 'pn.mode': '"auto"', 'pn.excl': '[]', 'pn.simauto': '0'}
@@ -1548,7 +1549,139 @@ def test_cosmo_auto_level(browser, ctx):
     return ok, "기본 자동 %s / 안내 %s / 보스별 난이도 %s 요청 %s 비교 %d개(최대 %s) / 카드 양식 %s %s / 낡은 경고 %d / 오류 %s" % (default_auto, info[:1], lv[4], lv[1], lv[2], lv[3], shape_ok, shape[:1], stale, ctx.errors[:2])
 
 
-TESTS = [test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
+def test_assumed_growth(browser, ctx):
+    """Real Pyodide: checkbox -> owned search -> one-savior stage -> comparison table.
+
+    Only SYNTH supplies account values. Its intentionally absent tactics fields
+    are explicitly zeroed in memory to exercise the strict missing-data gate.
+    PN_DISABLE_ASSUMED=1 deliberately disconnects the feature; this test MUST fail.
+    """
+    page = open_page(browser, ctx, info=SYNTH)
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    page.evaluate('''async () => {
+      const info=JSON.parse(JSON.stringify(MI.info));
+      for(const group of Object.keys(MI.growth.tactics))info.tactics.groups[group]={level:0,attack:0,defense:0,hp:0};
+      await miApply(info);window.assumedOriginal=JSON.stringify(info);
+    }''')
+    settle(page)
+    if os.environ.get('PN_DISABLE_ASSUMED') == '1':
+        page.evaluate('growthMaybe=()=>{}')
+    page.click('#tab-info')
+    assert page.locator('label:has(#assume-growth)').inner_text().strip() == '육성 가이드(미보유·덜 키운 구원자 가정)'
+    assert page.locator('label:has(#assume-equipment)').inner_text().strip() == '장비 가정(가이드 기본 세트 +15)'
+    page.check('#assume-growth')
+    page.check('#assume-equipment')
+    page.click('#tab-reco')
+    page.click('button[data-go]')
+    page.wait_for_function("() => GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
+    assert page.evaluate("GROW.phase") == 'done', page.evaluate('GROW.msg')
+    page.wait_for_selector('[data-k="growth-table"]')
+    result = page.evaluate('''() => ({
+      runs:GROW.result.runs, ms:GROW.result.ms, scope:GROW.result.scope,
+      rows:GROW.result.rows.filter(r=>r.result).slice(0,5).map(r=>({key:r.key,kind:r.kind,clear:r.result.clear,
+        prog:r.result.prog,n:r.result.n,delta:r.delta,ci:r.ci})),
+      baseline:GROW.result.baseline,
+      owned:JSON.stringify(MI.info)===window.assumedOriginal,
+      one:GROW.result.rows.filter(r=>r.team).every(r=>r.team.party.units.filter(u=>
+        u.key===r.key).length===1&&r.team.party.units.every(u=>u.stats_final&&u.build==='none')),
+      history:localStorage.getItem('pn.growth.history')
+    })''')
+    assert result['runs'] > 0 and result['runs'] <= 7200, result
+    assert result['scope']['evaluated'] > 0 and result['rows'], result
+    assert all(r['prog'] > 0 and r['n'] == result['baseline']['n'] for r in result['rows']), result
+    assert result['owned'] and result['one'], result
+    assert page.locator('[data-k="assumed-badge"]').count() == 1
+    assert result['history'] and 'progs' not in result['history'] and 'item_id' not in result['history']
+    # Full share payload must remain the original account, while options travel in search.
+    shared = page.evaluate('''async () => {const url=await shareUrlMi();
+      const u=new URL(url),decoded=await MyInfoImport.fromHash(u.hash.replace('#shared=','#myinfo='));
+      return {same:JSON.stringify(decoded)===window.assumedOriginal,ag:u.searchParams.get('ag'),ae:u.searchParams.get('ae')};}''')
+    assert shared == dict(same=True, ag='1', ae='1'), shared
+    # Shared mode storage guard uses the actual page completion path's helper.
+    unchanged = page.evaluate('''() => {const old=LS.get('growth.history');MI.shared=true;
+      const entry=GrowthGuide.summary(GROW.result,'op/shared/test','new',MI.hash,'other');
+      GrowthGuide.save(LS,MI.shared,entry);MI.shared=false;
+      return JSON.stringify(old)===JSON.stringify(LS.get('growth.history'));}''')
+    assert unchanged
+    # Deadline covers candidate generation too; no quick/combination work after expiry.
+    assert page.evaluate('''async () => {const c=contents[$('content').value],st=cur[$('stage').value];
+      const targets=await growthCandidates(c,st,()=>true,Date.now()-1);
+      return targets.length>0&&targets.every(t=>t.limited&&t.candidates.length===0);}''')
+    page.screenshot(path=os.path.join(ctx.shots, 'assumed_growth.png'), full_page=True)
+    with open(os.path.join(ctx.shots, 'assumed_measurement.json'), 'w', encoding='utf8') as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
+    # Complete an actual shared-account search; completion must not write local history.
+    saved_history = page.evaluate("localStorage.getItem('pn.growth.history')")
+    page.evaluate('''async () => {await miApply(JSON.parse(JSON.stringify(MI.info)),{shared:true});condChanged();showReco();}''')
+    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
+    assert page.evaluate("GROW.phase==='done' && Object.keys(GROW.history).length>0")
+    assert page.evaluate("localStorage.getItem('pn.growth.history')") == saved_history
+    page.evaluate('MI.shared=false')
+    page.click('#tab-info')
+    page.uncheck('#assume-growth')
+    page.uncheck('#assume-equipment')
+    assert page.evaluate("GROW.phase==='idle' && GROW.result===null && SIMQ.busy===null")
+    page.click('#mi-panel-clear')
+    assert page.evaluate("localStorage.getItem('pn.growth.history')===null")
+    assert not ctx.errors, ctx.errors
+    return True, '합성 계정 1-3: %.1f초 / %d판 / 평가 %s명 / 원본·출처·공유·기록 삭제' % (result['ms']/1000, result['runs'], result['scope']['evaluated'])
+
+
+def test_assumed_manual(browser, ctx):
+    page = open_page(browser, ctx, info=SYNTH)
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    page.evaluate('''async () => {const info=JSON.parse(JSON.stringify(MI.info));
+      for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
+      await miApply(info);setMode('manual',true);condChanged();}''')
+    settle(page)
+    page.click('#tab-info')
+    page.check('#assume-equipment')
+    page.click('#tab-reco')
+    page.click('button[data-go]')
+    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
+    assert page.evaluate('''() => {const r=GROW.result;return r&&r.runs<=7200&&r.baseline.n===100&&
+      r.rows.some(x=>x.result)&&r.rows.filter(x=>x.result).every(x=>x.result.n===100&&x.result.prog>0&&
+        x.result.prog===x.result.man.prog&&x.result.progs.length===100);}''')
+    # In-flight invalidation: a new option change must discard the entire scenario.
+    page.evaluate('''() => {growthCancel();growthStart(contents[$('content').value],cur[$('stage').value]);}''')
+    page.click('#tab-info')
+    page.uncheck('#assume-equipment')
+    settle(page)
+    assert page.evaluate("GROW.result===null&&GROW.phase==='idle'&&SIMQ.busy===null")
+    assert not ctx.errors, ctx.errors
+    return True, '수동 진행도·100판 재평가·정책 탐색 판수 상한·진행 중 무효화'
+
+
+def test_assumed_corridor(browser, ctx):
+    page = open_page(browser, ctx, info=SYNTH)
+    page.select_option('#content', value=page.evaluate("String(contents.findIndex(c=>c.key==='clo'))"))
+    settle(page)
+    page.select_option('#tab', label='달 회랑')
+    settle(page)
+    page.select_option('#stage', value=page.evaluate("String(cur.findIndex(s=>s.name==='FLOOR 100'))"))
+    settle(page)
+    page.evaluate('''async () => {const info=JSON.parse(JSON.stringify(MI.info));
+      for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
+      await miApply(info);}''')
+    settle(page)
+    page.click('#tab-info')
+    page.check('#assume-growth')
+    page.click('#tab-reco')
+    page.click('button[data-go]')
+    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
+    result = page.evaluate('''() => {const r=GROW.result;return r&&{baseline:r.baseline,runs:r.runs,ms:r.ms,
+      rows:r.rows.filter(x=>x.result).map(x=>({key:x.key,n:x.result.n,prog:x.result.prog,delta:x.delta,
+        valid:x.team.party.units.every(u=>BYKEY[u.key].el==='moon')&&x.team.party.units.filter(u=>
+          miProfile().units[u.key]).length===3}))};}''')
+    assert result and result['baseline'] is None and result['runs'] > 0, result
+    assert result['rows'] and all(r['valid'] and r['delta'] is None and r['n'] == 100 for r in result['rows']), result
+    assert any(r['prog'] > 0 for r in result['rows']), result
+    assert page.locator('[data-k="growth-table"]').count() == 1
+    assert not ctx.errors, ctx.errors
+    return True, '합성 계정 달 회랑 100: %.1f초 / %d판 / 보유 3명+가정 1명·속성 제한·기준 없음' % (result['ms']/1000, result['runs'])
+
+
+TESTS = [test_assumed_growth, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)

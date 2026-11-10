@@ -463,7 +463,7 @@ class SyntheticTests(unittest.TestCase):
 
     def test_published_schema(self):
         g = json.loads((ROOT / "data/growth.json").read_text(encoding="utf-8"))
-        self.assertEqual(set(g), {"_note", "game_build", "units", "star_link", "tactics", "facility", "item_sets", "sets", "potentials", "potential_pp"})
+        self.assertEqual(set(g), {"_note", "game_build", "units", "star_link", "tactics", "facility", "item_sets", "sets", "potentials", "potential_pp", "assumed"})
         self.assertEqual(set(map(int, g["units"])), roster_ids())
         allowed = set(ms.KEYS) | set(ms.RATE_KEYS)
 
