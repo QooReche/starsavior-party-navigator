@@ -210,6 +210,7 @@ def line_kind(ln):
 
 # 확률 엔진이 해석하는 조건 키(이 밖의 키가 붙은 줄은 unknown_cond 규칙: 기본 skip + 기록)
 COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이 아님', '자기 추가발동 트리거', '자기 추가발동 트리거 스킬',
+                 'TurnUnitNegativeBuff',
                  '자신 미보유 효과 중첩수', '시전자 턴', '자신이 보유', '자신이 미보유',
                  '중첩수', '효과 개수', '중첩수 이상', '효과 개수 이상', '효과 개수 미만', '대상이 보유', '대상이 미보유',
                  '대상 효과 중첩수', '대상 약화효과 보유', '대상 강화효과 보유', '대상 강인도 없음', '대상 브레이크', '결과',
@@ -1498,7 +1499,8 @@ class Battle:
             spec = rows.get((ln.slot, ln.raw))
         if spec is not None:
             # 내부 표지(체크용·판별용 버프)를 찾는 필터인데 그 표지를 가진 유닛이 없으면(표지를 거는 줄을 엔진이 근사로 처리하는 경우)
-            # 데이터 규칙 대신 설명문 근사로 — 무작위로 새지 않게(예: 티리아 궁극기 「티리아 체크용 버프」, 거는 줄의 IsHighDef 는 근거 없음)
+            # 데이터 규칙 대신 설명문 근사로(티리아는 auto_marker_lines=drop의 옛 동작).
+            # IsHighDef 자체는 NKM:7605-7607에 있으며 동률은 모두 남긴다(6740-6757).
             pool = self.alive(owner.side if spec.get('ally') else 1 - owner.side)
             for st in spec['f']:
                 if isinstance(st, list) and st[0] == 'has' and all(CHECK_NAME.search(n) or '판별용' in n for n in st[1]):
@@ -1868,7 +1870,8 @@ class Battle:
         variant = getattr(u.d, 'variants', {}).get(sk.slot)
         if variant:
             rule, replacement = variant
-            if u.stack(rule['name']) >= rule['count'] and (not rule['own'] or (u.acting and not extra)):
+            enabled = rule.get('kind') != 'self_state' or self.mc['variant_self_state'] == 'client'
+            if enabled and u.stack(rule['name']) >= rule['count'] and (not rule['own'] or (u.acting and not extra)):
                 sk = replacement
         self.tick()
         if via and u.side == 0:
@@ -1901,6 +1904,14 @@ class Battle:
                 ctx.inc += 0.15
                 ctx.nb = True
                 self.nova_bursts[u.pos, sk.slot] += 1
+                # 루그 InstantNovaBurstSe 10270002: 슬롯 SE보다 먼저 확인용 부여.
+                # 공통 피해 +15%는 위 ctx.inc에 이미 반영하므로 중복 실행하지 않는다.
+                if self.mc['variant_self_state'] == 'client':
+                    for raw in (getattr(u.d, 'nb', {}).get('발동 즉시') or []):
+                        instant = Line(raw, sk.slot, 'nova')
+                        if (instant.eff['kind'] == 'buff'
+                                and instant.eff.get('name') == '노바 버스트 발동 확인용 버프'):
+                            self.exec_line(u, instant, ctx)
             ctx.targets = self.skill_targets(u, sk, target)
             # 선제 방어: 적 단일 공격 전, 아군 중 선제 방어 확률이 있으면 대상 전환(NKM 8040~8071 PreemptiveDefenseController)
             pd_mode = self.mc.get('preemptive_defense')
@@ -3032,7 +3043,7 @@ class Battle:
         sk = ctx.skill
         tgt = ctx.target if ctx.target is not None else None
         for k, v in ln.params:
-            if k not in COND_KEYS:
+            if k not in COND_KEYS or (k == 'TurnUnitNegativeBuff' and self.mc['turn_unit_debuff_cond'] != 'client'):
                 self.unsup['cond: ' + k] += 1
                 if self.mc['unknown_cond'] == 'roll':
                     if self.R(owner.side).random() >= self.opts['unknown_cond_p']:
@@ -3176,6 +3187,10 @@ class Battle:
             elif k == '턴 유닛이 보유':
                 if ctx.src is None or not ctx.src.has(v):
                     return False
+            elif k == 'TurnUnitNegativeBuff':
+                # NKM:9028, NKM.Templets:42375-42407,42828-42847.
+                if ctx.src is None or (ctx.src.n_harmful() > 0) != (v == '예'):
+                    return False
             elif k == '스킬 대상 유형':
                 tgv = (sk.tg if sk is not None else '') or ''
                 if not (tgv == v or (v == '적 전체' and sk is not None and sk.all)):
@@ -3253,6 +3268,15 @@ class Battle:
         self.run_batch(owner, [ln], ctx)
 
     def line_ok(self, owner, ln, ctx):
+        if ln.eff.get('auto_marker_candidate'):
+            if self.mc['auto_marker_lines'] != 'keep' or owner.side != 0 or self.mc['ally_auto_lines'] not in ('data', 'client'):
+                return False
+            variants = self.mc['ally_variant_mapping'] == 'data'
+            mapping = ally_auto_lines(variants=variants, client=self.mc['ally_auto_lines'] == 'client')
+            rows = mapping.get(owner.key, {}) if variants else (mapping.get(owner.key) or mapping.get(owner.key.split('@')[0], {}))
+            if not any(isinstance(f, list) and f[0] == 'has' and ln.eff['name'] in f[1]
+                       for spec in rows.values() for f in spec['f']):
+                return False
         if owner.dead and line_kind(ln) not in ('death_self',):
             return False
         if ln.eff['kind'] == 'perm':

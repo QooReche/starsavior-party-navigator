@@ -120,6 +120,20 @@ def variant_rules(d):
         view = copy.copy(d)
         view.u = dict(d.u, sk=[dict(raw, sl=slot)])
         sk.semantic_lines = description_lines(view, [Line(s, slot, 'active') for s in raw['ef']])
+        # SE 10275016: 데이터북은 부여로 적지만 변형 기본기의 설중화는 1 감소.
+        # 일반 기본기/패시브의 같은 이름 부여 줄에는 적용하지 않는다.
+        if rule.get('kind') == 'self_state' and raw['n'] == '제압부·참':
+            for ln in sk.semantic_lines:
+                if (ln.kind == 'own_pre' and ln.eff['kind'] == 'remove'
+                        and ln.eff.get('name') == '기본기2 피해 증가 중첩'):
+                    # 노바 미발동의 중첩 삭제도 뒤의 피해 조건 판정보다 먼저.
+                    ln.eff['pre_grant'] = True
+                if (ln.kind == 'own_pre' and ln.eff['kind'] == 'buff'
+                        and ln.eff.get('name') == '설중화(해제불가)'):
+                    ln.eff.update(consume=True, times=1)
+                # SE 10275013~15: 이 기본기 시전의 피해 +10/30/60%.
+                if ln.eff['kind'] == 'local' and ln.eff.get('stat') == '기본기 피해 증가':
+                    ln.eff['stat'] = '피해 증가'
         out[slot] = (rule, sk)
     return out
 
@@ -141,6 +155,11 @@ def variant_specs(d):
                 continue
             rule = dict(name=m[1], count=int(m[2]) if m[2] else max(caps), own=True)
         else:
+            m = re.search(r'자신의 턴에 사용 시 자신이 \[([^]]+)\] 상태이면 \['
+                          + re.escape(base.name) + r'\] 대신 \[' + re.escape(raw['n']) + r'\]', desc)
+            if m:
+                yield slot, dict(name=m[1], count=1, own=True, kind='self_state'), raw
+                continue
             m = re.search(r'자신이 \[([^]]+)\] 상태이면 단일 대상을 공격', desc)
             if not m or raw['tg'] != '적 단일' or base.name != raw['n']:
                 continue
@@ -340,7 +359,11 @@ def selection_lines(d, lines, raws):
                 ln.params = [(k, v) for k, v in ln.params if k != '사용 스킬']
         if ('체크용' in name and name not in references
                 and re.search(r'(방어력|행동 게이지|속도)[이가] 가장 높은 적', desc)):
-            continue
+            # 정규화 캐시는 규칙과 독립적이다. 실행 때 선택된 auto_skill 매핑의
+            # has 참조와 auto_marker_lines 스위치를 함께 확인한다.
+            # 뒤의 중첩 부여가 pre_grant 묶음에서 먼저 실행되므로 표지도 같은
+            # 묶음에 넣어 원문 SE 순서(전체 가시→표지→표지 대상 가시)를 유지한다.
+            e.update(auto_marker_candidate=True, pre_grant=True)
         if '무작위 효과' in ln.raw:
             bundle = re.search(r'〈([^〉]+)〉', ln.raw)[1]
             duration = re.search(r'(\d+)턴 간 \[' + re.escape(bundle) + r'\]', desc)
