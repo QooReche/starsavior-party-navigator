@@ -41,7 +41,7 @@ def _unit(name='u', role='스트라이커', hp=10000, atk=1000, df=500, spd=100,
     )
 
 
-_KEEP = {'cosmo_hyper_true_target': 'enemy_all', 'damage_vampirism': 'off', 'cosmo_drain_category': 'debuff', 'cosmo_speed_floor': False,
+_KEEP = {'wave_extra_turn': 'keep', 'turn_start_order': 'dot_first', 'guard_skip_immune': 'off', 'cosmo_hyper_true_target': 'enemy_all', 'damage_vampirism': 'off', 'cosmo_drain_category': 'debuff', 'cosmo_speed_floor': False,
          'variant_self_state': 'off', 'turn_unit_debuff_cond': 'skip', 'auto_marker_lines': 'drop',
          'shield_tick': 'turn_start', 'wave_carry': 'keep', 'break_domain_revive': 'none',
          'enemy_leader': 'boss', 'any_turn_source': 'text', 'ally_auto_lines': 'data', 'ally_variant_mapping': 'legacy', 'wave_ally_gauge': 'keep', 'enforce_timing': 'nested', 'enforce_target': 'book', 'buff_ban_force': 'off', 'coop_order': 'capped',

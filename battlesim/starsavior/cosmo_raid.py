@@ -258,7 +258,20 @@ class Controller:
             if target.dead:
                 continue
             hp, shield = target.hp, target.shield_total()
+            guard, shared = None, 0.0
+            if self.b.mc['add_damage_guard'] == 'client' and not target.invincible() and not target.on('스킬 피해 무효'):
+                share = 0.0
+                for u in self.b.alive(target.side):
+                    if u is not target and u.mods()['guard'] > share:
+                        guard, share = u, u.mods()['guard']
+                if guard is not None:
+                    shared = damage * min(1.0, share)
+                    damage -= shared
+                    self.b.rule_hits['add_damage_guard'] += 1
+            # apply_damage는 무효를 소비하지 않음. 무적·보호막은 대상/수호자 각각 적용.
             self.b.apply_damage(None, target, damage, 'true', shieldable=True)
+            if guard is not None and shared >= 1 and not guard.dead:
+                self.b.apply_damage(None, guard, shared, 'guard', shieldable=True)
             self.stats['true_damage_hits'] += 1
             self.stats['self_damage_hp'] += hp - target.hp
             self.stats['self_damage_shield'] += shield - target.shield_total()
@@ -266,9 +279,9 @@ class Controller:
                        absorbed=shield - target.shield_total())
 
     # ---------- 효과 도우미
-    def _put(self, x, name, props, dur=math.inf, cat='marker', maxs=1, add=1, fixed=True, src=None):
+    def _put(self, x, name, props, dur=math.inf, cat='marker', maxs=1, add=1, fixed=True, src=None, dead_keep=False):
         return self.b.put_eff(x, name, props, dur=dur, maxs=maxs, add=add, src=src or self.boss or x, cat=cat,
-                              fixed=fixed, refresh_props=True)
+                              fixed=fixed, refresh_props=True, dead_keep=dead_keep)
 
     def _gt(self):
         return getattr(self.b, 'global_turns', 0)        # run() 이 시작하기 전(시험이 직접 cast)에는 속성이 없음
@@ -525,7 +538,7 @@ class Controller:
             fx = self.fx
             if 'drain' in fx and not a.dead:
                 self.stats['drain'] += 1
-                self._put(a, CH_DRAIN, {'생명력%': -fx['drain']['pct']}, cat=b.mc['cosmo_drain_category'], maxs=fx['drain']['max'], fixed=True)
+                self._put(a, CH_DRAIN, {'생명력%': -fx['drain']['pct']}, cat=b.mc['cosmo_drain_category'], maxs=fx['drain']['max'], fixed=True, dead_keep=True)
             if 'rewind' in fx and boss.has(fx['rewind']['state']):
                 self.stats['rewind'] += 1
                 b.set_gauge(boss, boss.gauge + fx['rewind']['pct'] * 100)

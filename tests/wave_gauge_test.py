@@ -19,7 +19,7 @@ def test_both_modes_run():
     out = {}
     for mode in ('keep', 'reset'):
         r = simulate(PARTY, {'stage': 'clo/태양 회랑/FLOOR 250'}, {'seed': 3, 'n_runs': 6, 'build': 'standard',
-                                                                   'rules_override': {'wave_ally_gauge': mode}})
+                                                                   'rules_override': {'wave_ally_gauge': mode, 'wave_extra_turn': 'keep'}})
         out[mode] = (r['outcome']['clear_p'], r['outcome']['progress'])
         assert 0 < out[mode][1] <= 1, out   # 진행도 0 이면 웨이브 전환이 안 일어나 아무것도 검증 못 함(옛 43-36 은 standard 로 0)
     print('  ', out)
@@ -40,7 +40,7 @@ def test_reset_zeroes_ally_gauge_on_wave_change():
     try:
         for mode in ('keep', 'reset'):
             simulate(PARTY, {'stage': 'clo/태양 회랑/FLOOR 250'}, {'seed': 3, 'n_runs': 4, 'build': 'standard',
-                                                                  'rules_override': {'wave_ally_gauge': mode}})
+                                                                  'rules_override': {'wave_ally_gauge': mode, 'wave_extra_turn': 'keep'}})
     finally:
         mc.Battle.spawn_wave = orig
     assert seen.get('reset') and seen.get('keep'), seen
