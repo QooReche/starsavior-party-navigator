@@ -41,7 +41,8 @@ def _unit(name='u', role='스트라이커', hp=10000, atk=1000, df=500, spd=100,
     )
 
 
-_KEEP = {'enemy_leader': 'boss', 'any_turn_source': 'text', 'ally_auto_lines': 'data', 'ally_variant_mapping': 'legacy', 'wave_ally_gauge': 'keep', 'enforce_timing': 'nested', 'enforce_target': 'book', 'buff_ban_force': 'off', 'coop_order': 'capped',
+_KEEP = {'variant_self_state': 'off', 'turn_unit_debuff_cond': 'skip', 'auto_marker_lines': 'drop',
+         'enemy_leader': 'boss', 'any_turn_source': 'text', 'ally_auto_lines': 'data', 'ally_variant_mapping': 'legacy', 'wave_ally_gauge': 'keep', 'enforce_timing': 'nested', 'enforce_target': 'book', 'buff_ban_force': 'off', 'coop_order': 'capped',
          'foe_skill_order': 'default', 'empty_attack': 'skip',
          'enemy_cd_end_order': 'before_effects', 'revenge_rate': 'current',
          'nova_force_cap': 0, 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget',
