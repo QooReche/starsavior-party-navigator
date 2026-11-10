@@ -14,6 +14,7 @@ import os
 import random
 import re
 from collections import defaultdict
+from functools import lru_cache
 
 from . import rules as _rules
 from .engine import calc_hit
@@ -194,16 +195,22 @@ def line_kind(ln):
         if ln.phase == '웨이브 시작 시' and ln.kind == 'battle_start':
             return 'wave_start'
         return ln.kind
-    if ln.trig:
+    return _react_line_kind(ln.phase, ln.trig)
+
+
+@lru_cache(maxsize=512)
+def _react_line_kind(phase, trig):
+    """반응 시점은 문자열만으로 결정된다. 줄 객체·전투 상태를 보관하지 않는다."""
+    if trig:
         for k, v in REACT_TRIG:
-            if ln.trig.startswith(k):
+            if trig.startswith(k):
                 return v
         return 'unmodeled'
-    if ln.phase == '피해 처리 직전':
+    if phase == '피해 처리 직전':
         return 'prehit_self'
-    if ln.phase == '피해 처리 후':
+    if phase == '피해 처리 후':
         return 'hit_self'      # 조건 없는 「피해 처리 후」 = 내가 피격된 뒤(적 설명문 「피격 후 …」와 일치, 가정)
-    if ln.phase == '피격 시':
+    if phase == '피격 시':
         return 'hit_self'
     return 'unmodeled'
 
@@ -828,10 +835,21 @@ class Battle:
 
     def dirty(self, u):
         u._m = None
-        if self.mc['buff_maxhp'] == 'on' and u.hp > u.maxhp:
+        if self.mc['buff_maxhp'] == 'on':
+            # mods 전체는 다음 능력치 조회까지 지연한다. HP 절단 시점은 그대로 유지.
+            # _map_prop에서 hpp로 가는 키는 생명력% 하나. mods와 같은 효과 순서·연산 순서.
+            hpp = 0.0
+            blocked = u.buff_blocked()
+            for e in u.eff.values():
+                if e.stacks <= 0 or (blocked and e.category == 'buff'):
+                    continue
+                if '생명력%' in e.props:
+                    hpp += e.props['생명력%'] / 100.0 * e.stacks
+            maxhp = float(math.floor(u.maxhp0 * max(0.01, 1 + hpp + u.sd_hp)))
             # 효과가 바뀌어 최대 생명력이 줄면 현재 생명력을 바로 자른다(늘어도 전투 중엔 채우지 않음 — NKM 2828~2839).
             # 조회(maxhp)에는 부수효과를 두지 않는다 — hp/maxhp 를 읽는 순서에 따라 값이 달라지지 않게(codex 리뷰)
-            u.hp = u.maxhp
+            if u.hp > maxhp:
+                u.hp = maxhp
 
     def put_eff(self, x, name, props, dur=math.inf, maxs=1, add=1, src=None, cat='buff', fixed=True,
                 refresh_props=False):
