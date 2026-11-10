@@ -2942,6 +2942,12 @@ class Battle:
         return real
 
     # ---------- 조건
+    def cosmo_boss_barrier_pct(self, mm):
+        """코스모 벨그라스: 처단자가 보스에게 주는 보호막 비율(최대 HP %). cosmo_boss_barrier=legacy 면 아군용 값을 그대로 씀."""
+        if self.mc['cosmo_boss_barrier'] == 'legacy':
+            return mm['barrierHpPct']
+        return mm.get('bossBarrierHpPct', mm['barrierHpPct'])
+
     def cond_ok(self, owner, ln, ctx):
         mh = RX_HP_COND.search(ln.raw)
         if mh:

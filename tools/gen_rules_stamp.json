@@ -1,6 +1,6 @@
 {
  "guild_sim": {
-  "hash": "2e770586886fac1e",
+  "hash": "255fc05813a448b7",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -21,11 +21,15 @@
    {
     "hash": "2e770586886fac1e",
     "reason": "11/10 cond_count_bind(루그 설중사우 후 게이지 줄의 중첩수 대상) 추가: data/guild_sim.json 에 lugh(루그) 가 팀으로 들어 있지 않아(JSON 문자열 검사 0건) 결과에 영향 없음"
+   },
+   {
+    "hash": "255fc05813a448b7",
+    "reason": "11/10 cosmo_boss_barrier 추가: 코스모 게이트(cosmo_raid_boss=on, 시즌 전투 meta.cosmo_raid)에서만 읽는 스위치라 길방 생성기(build_guild_sim)는 쓰지 않음(grep 0건)"
    }
   ]
  },
  "quick": {
-  "hash": "2e770586886fac1e",
+  "hash": "255fc05813a448b7",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -38,6 +42,10 @@
    {
     "hash": "2e770586886fac1e",
     "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "255fc05813a448b7",
+    "reason": "11/10 cosmo_boss_barrier 추가: 코스모 게이트 벨그라스 전용 스위치. quick 표본 생성기(gen_quick_calib/calibrate_quick)는 cosmo_raid_boss 를 켜지 않아(grep 0건) 결과 무관, quick 의 cosmo 항목은 코스모 회랑"
    }
   ]
  }

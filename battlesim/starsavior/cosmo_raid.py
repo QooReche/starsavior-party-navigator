@@ -440,7 +440,7 @@ class Controller:
                 self._put(boss, AMP, {'공격력%': mm['attackAmpPct']}, dur=mm['attackAmpTurnsBoss'], cat='buff', fixed=False)
             if exe is not None and self._stacks(exe, STACKS) > 0:
                 e = self._put(boss, BARRIER + '(처단자)', {}, dur=mm['barrierTurns'], cat='buff', fixed=False)
-                e.shield = max(e.shield, math.floor(boss.maxhp * mm['barrierHpPct'] / 100.0))
+                e.shield = max(e.shield, math.floor(boss.maxhp * self.b.cosmo_boss_barrier_pct(mm) / 100.0))
         if sk.slot == '특수기' and not sk.is_attack:
             self._put(boss, ERO, {'속도%': bm['erosion']['speedPct'], '방어력%': bm['erosion']['defPct'],
                                   '궁극기 피해 증가': bm['erosion']['hyperIncPct']}, maxs=bm['erosion']['max'], add=bm['erosion']['perSpecial'])

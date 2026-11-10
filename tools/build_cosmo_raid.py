@@ -280,6 +280,10 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
     wp = sk_ses('NKM_UNIT_MON_WEAPON_BLADE_COSMO_PASSIVE')
     barrier = next(x for x in wp if x['m_BuffStrID'] == 'BI_BARRIER')
     need(barrier['BarrierStatType'] == 'NST_HP', '보호막 기준 스탯 변경')
+    # 보스에게 주는 보호막은 «아군이 타격 후»(조건 60414, 대상 NSETT_AUTO_ALLY) 줄이고 비율이 아군용(ENEMY_ALL 25%)과 다름(11/10).
+    boss_barrier = next(x for x in wp if x['m_BuffStrID'] == 'BI_BARRIER' and x['m_BuffTargetType'] == 'NSETT_AUTO_ALLY')
+    need(boss_barrier['BarrierStatType'] == 'NST_HP' and boss_barrier['m_BuffLifeTurn'] == barrier['m_BuffLifeTurn'],
+         '보스 보호막 기준 스탯·지속 변경')
     amp_turns_hit = next(x for x in rp if x['m_BuffStrID'] == 'BI_ATTACK_AMPLIFICATION' and x['m_BuffTargetType'] == 'NSETT_AUTO_ENEMY')['m_BuffLifeTurn']
     amp_turns_boss = next(x for x in rp if x['m_BuffStrID'] == 'BI_ATTACK_AMPLIFICATION' and x['m_BuffTargetType'] == 'NSETT_AUTO_ALLY')['m_BuffLifeTurn']
     return dict(
@@ -300,7 +304,7 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
             recorder=dict(unit=unit_meta(rec_u), stats=rec_s, pos=0), executioner=dict(unit=unit_meta(exe_u), stats=exe_s, pos=4),
             stacks=c2['BuffLevelMax'], initStacks=5, decaySingle=1, decayAoe=3, regen=5, overfeedTurns=10,
             attackAmpPct=amp / 100.0, attackAmpTurnsHit=amp_turns_hit, attackAmpTurnsBoss=amp_turns_boss,
-            barrierHpPct=barrier['BarrierRate'] / 100.0, barrierTurns=barrier['m_BuffLifeTurn'], invincible=True, speedFixed=0),
+            barrierHpPct=barrier['BarrierRate'] / 100.0, bossBarrierHpPct=boss_barrier['BarrierRate'] / 100.0, barrierTurns=barrier['m_BuffLifeTurn'], invincible=True, speedFixed=0),
     )
 
 

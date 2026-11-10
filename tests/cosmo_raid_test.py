@@ -262,7 +262,11 @@ def test_minions():
     b = battle('벨그라스', 3, 0)
     boss = boss_of(b)
     b.cast(boss, boss.d.skills['기본기'])
-    assert boss.mods()['atkp'] >= 0.5 and boss.shield_total() >= 0.25 * boss.maxhp - 1
+    assert boss.mods()['atkp'] >= 0.5 and 0.01 * boss.maxhp - 1 <= boss.shield_total() < 0.02 * boss.maxhp   # cosmo_boss_barrier=client: 1%
+    b = battle('벨그라스', 3, 0, mc=dict(cosmo_boss_barrier='legacy'))
+    boss = boss_of(b)
+    b.cast(boss, boss.d.skills['기본기'])
+    assert boss.shield_total() >= 0.25 * boss.maxhp - 1                                     # legacy: 25%
 
 
 # ---------------------------------------------------------------- 시뮬 경로
