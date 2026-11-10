@@ -527,7 +527,7 @@ class Unit:
         if self._m is not None:
             return self._m
         m = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0, er=0.0,
-                 der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, inc_single=0.0, inc_aoe=0.0, evade=0.0, acc=0.0,
+                 der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, vampirism=0.0, inc_single=0.0, inc_aoe=0.0, evade=0.0, acc=0.0,
                  tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, barrier_give=0.0, preempt=0.0, inc_vs={}, inc_slot={}, red={})
         blocked = self.buff_blocked()            # 〈강화 불가〉(suppress 모드만): 걸린 강화 효과를 전부 끔 — refuse(클라)에서는 새 강화 부여만 거부
         for e in self.eff.values():
@@ -541,6 +541,7 @@ class Unit:
         for k, v in self.sd.items():
             _add_prop(m, k, v, 1)
         m['acc'] += self.permanent_accuracy
+        m['vampirism'] += self.d.stats.get('vampirism', 0) / 10000.0 + self.d.passive.get('vampirism', 0)
         self._m = m
         return m
 
@@ -581,6 +582,8 @@ class Unit:
             s = math.floor(s + 1e-9)       # 클라 최종 스탯 (int)Math.Floor (NKM:18268-18280)
         if self.leader:
             s += self.b.mc['leader_speed']
+        if getattr(self.d, 'cosmo', None) and self.b.mc['cosmo_speed_floor']:
+            s = math.floor(s + 1e-9)       # NKM:18293, 코스모 보스 최종 스탯
         return max(1.0, s)
 
     def shield_total(self):
@@ -627,6 +630,10 @@ def _add_prop(m, k, v, stacks):
         m['heal_give'] += val
     elif k == '받는 회복량':
         m['heal_recv'] += val
+    elif k in ('피해 흡혈', '생명력 흡수율'):
+        m['vampirism'] += val
+    elif k == 'NST_RATE_DAMAGE_VAMPIRISM':
+        m['vampirism'] += v / 10000.0 * stacks
     elif k == '주는 보호막량':              # NST_RATE_BARRIER_GIVE(지금은 서든데스만 씀)
         m['barrier_give'] += val
     elif k == '단일 대상 피해 증가':
@@ -660,7 +667,7 @@ class Ctx:
     __slots__ = ('owner', 'src', 'skill', 'extra', 'targets', 'target', 'inc', 'atkp', 'cr', 'cd', 'pen', 'eh', 'crit',
                  'kill', 'coop_used', 'heal_give', 'heal_recv', 'local', 'nb', 'hit_victim', 'acc', 'evaded', 'recv_by',
                  'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets',
-                 'crit_targets', 'break_targets', 'markers', 'dead_targets', 'tough_targets')
+                 'crit_targets', 'break_targets', 'markers', 'dead_targets', 'tough_targets', 'vamp_damage')
 
     def __init__(self, owner, src, skill, extra=False):
         self.owner, self.src, self.skill, self.extra = owner, src, skill, extra
@@ -670,6 +677,7 @@ class Ctx:
         self.tough_targets = set()  # video: 시전·대상당 1회. 추가 발동은 별도 Ctx.
         self.markers = {}
         self.dead_targets = set()
+        self.vamp_damage = defaultdict(float)
         self.targets, self.target = [], None
         self.inc = self.atkp = self.cr = self.cd = self.pen = self.eh = self.acc = 0.0
         self.tough = self.tough_fixed = self.inc_break = 0.0   # P5 「이번 스킬에만」 강인도 (고정) 피해·브레이크 대상 피해 증가
@@ -1121,6 +1129,8 @@ class Battle:
         finally:
             self._react_q = self._react_seen = self._revenged = None
         self._hit_log = None
+        if self.gb is not None and hasattr(self.gb, 'flush_damage'):
+            self.gb.flush_damage()
         if not u.dead:
             if end_cd and self.mc['enemy_cd_end_order'] == 'before_effects':
                 self._tick_cooldowns(u)
@@ -1826,6 +1836,8 @@ class Battle:
             ctx = Ctx(u, u, sk, extra)
             self._cast_ctx = ctx
             ctx.via, ctx.parent = via or ('extra' if extra else None), parent
+            if self.gb is not None and hasattr(self.gb, 'before_cast'):
+                self.gb.before_cast(u, sk, ctx)
             u.cast_count[sk.slot + ('(추가)' if extra else '')] += 1
             if not extra and sk.cd:
                 u.cd[sk.slot] = sk.cd
@@ -2319,6 +2331,9 @@ class Battle:
             del v.eff['스킬 피해 무효']
             self.dirty(v)
             self.log(nullify=v.name)
+            # NKM:7841-7859: 피해 동기화 값은 무효·보호막·HP 차감 반환값과 별개.
+            if self.mc['damage_vampirism'] == 'client':
+                self._vampirism_hit(a, v, ctx, self.final_dmg(a, v, base, ctx, crit, cdv, pen, r, hctx))
             reactions.append((v, hctx))
             return
         if guard is None or share <= 0:
@@ -2343,6 +2358,11 @@ class Battle:
             if w is guard:
                 self.log(guard=guard.name, protects=v.name, dmg=dmg)
             killed = self.apply_damage(a, w, dmg, 'guard' if w is guard else 'hit', shieldable=True) or killed
+            if w is v:
+                # 스킬 1회·대상별 총 피해를 한 strike로 모델링한다. 수호 분담은 별도 흡혈 대상이 아니다.
+                sync_damage = (self.final_dmg(a, v, base, ctx, crit, cdv, pen, r, hctx)
+                               if v.invincible() and guard is not None else dmg)
+                self._vampirism_hit(a, v, ctx, sync_damage)
         if killed and v.dead:
             ctx.kill = True
         if self.mc['toughness'] == 'on' and not evaded and not v.dead:
@@ -2934,6 +2954,32 @@ class Battle:
                 self.heal(e.src or u, u, u.maxhp * e.hot, (e.src or u).sd.get('주는 회복량', 0.0) / 100.0)
 
     # ---------- 회복·보호막
+    def _vampirism_hit(self, a, target, ctx, damage, last=True):
+        """NKM:7845-7859,8123-8134: 대상별 마지막 스킬 타격에서만 회복.
+
+        동기화 피해(보호막·과잉 피해 포함, 수호 분담 제외)를 사용한다.
+        현재 strike는 시각적 다단 타격을 대상별 총 피해 한 건으로 나타낸다.
+        """
+        if self.mc['damage_vampirism'] != 'client':
+            return
+        ctx.vamp_damage[target] += damage
+        if not last:
+            return
+        total = ctx.vamp_damage.pop(target)
+        rate = a.mods()['vampirism']
+        if damage <= 0 or total <= 0 or rate <= 0 or a.dead:
+            return
+        raw = math.floor(total * rate * (1 + a.mods()['heal_recv']))
+        if raw <= 0:
+            return
+        real = max(0, min(raw, a.maxhp - a.hp))
+        a.hp += real
+        a.healed += real
+        a.healed_raw += raw
+        self.rule_hits['damage_vampirism'] += 1
+        self.rule_hits['damage_vampirism_heal'] += real
+        self.log(vampirism=a.name, target=target.name, damage=total, heal=real)
+
     def heal(self, src, v, amount, give):
         if v.dead:
             return 0.0
@@ -4080,7 +4126,7 @@ LOCAL_PREHIT_OK = ('방어력%', '피해 분담(수호)', '피해 감소', '받�
 def _prop_known(k):
     """Unit.mods() 가 이 속성 이름을 어떤 값으로든 반영하는가"""
     probe = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0,
-                 er=0.0, der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, inc_single=0.0, inc_aoe=0.0,
+                 er=0.0, der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, vampirism=0.0, inc_single=0.0, inc_aoe=0.0,
                  evade=0.0, acc=0.0, tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, preempt=0.0, inc_vs={}, inc_slot={}, red={})
     before = repr(probe)
     _add_prop(probe, k, 1.0, 1)

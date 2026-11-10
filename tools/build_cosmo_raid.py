@@ -228,6 +228,22 @@ def build(T, season_id, game_build):
     return season, bosses, effects, belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row, unit_meta, plain, ko, need, sk_coef, sk_ses)
 
 
+def hyper_true_damage(h_ses, conditions):
+    """고정 피해량뿐 아니라 대상·시점·정확한 중첩 조건까지 검증한다."""
+    effects = [x for x in h_ses if x['m_BuffStrID'] == 'BI_ADD_TRUE_DAMAGE']
+    need(len(effects) == 50, '공허 붕괴 고정 피해 단계 수 변경')
+    for n, e in enumerate(effects, 1):
+        need(e.get('AddTrueDamageValue') == 5000 * n, '공허 붕괴 고정 피해량 변경')
+        need(e.get('m_BuffTargetType') == 'NSETT_SELF', '공허 붕괴 고정 피해 대상 변경')
+        need(e.get('m_Condition') == {'m_ActiveType': 'NSEAT_SKILL_START', 'm_fActiveRate': 10000},
+             '공허 붕괴 고정 피해 발동 시점/확률 변경')
+        cond = conditions.get(e.get('SkillConditionId'), {})
+        need(cond == {'Id': e.get('SkillConditionId'), 'OnMyAttack': {
+            'SkillIndex': 'NSI_SKILL_3_HYPER', 'SelfBuffStrId': ['BI_CORRUPTED_TREE_BOSS_3'], 'SelfBuffLevelCount': n}},
+             '공허 붕괴 고정 피해 궁극기/중첩 조건 변경')
+    return dict(perStack=5000, max=50, target='self', timing='skill_start', condition='rot_stacks_equal')
+
+
 def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row, unit_meta, plain, ko, need, sk_coef, sk_ses):
     """벨그라스 상태 기계 수치. 구조가 기대와 다르면 Changed."""
     P = 'NKM_UNIT_MON_CORRUPTED_TREE_BOSS_COSMO_01_'
@@ -242,8 +258,8 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
          '특수기 SE 변경(침식 7회 + 해제)')
     erosion_per_special = sum(x.get('RepeatBuffCount', 1) for x in s_ses[:7])
     # 공허 붕괴: 앞쪽 AddTrueDamage 단계(5000 x n), 뒤쪽 효과(게이지 등)
-    true_dmg = [x['AddTrueDamageValue'] for x in h_ses if x['m_BuffStrID'] == 'BI_ADD_TRUE_DAMAGE']
-    need(true_dmg == [5000 * (i + 1) for i in range(len(true_dmg))] and true_dmg, '공허 붕괴 추가 고정 피해가 5000 x n 배열이 아님')
+    conditions = {x['Id']: x for x in load(T / 'plain' / 'SKILL_CONDITION_TEMPLET.json')}
+    true_damage = hyper_true_damage(h_ses, conditions)
     rest = [x for x in h_ses if x['m_BuffStrID'] != 'BI_ADD_TRUE_DAMAGE']
     gauge = {x['m_BuffTargetType']: x.get('SpeedGaugeRate') for x in rest if x['m_BuffStrID'] == 'BI_SPEED_GAUGE_UP'}
     need(gauge.get('NSETT_SELF') and gauge.get('NSETT_ENEMY_ALL') is not None or True, '')
@@ -295,7 +311,7 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
                      decaySingle=1, decayNonAttack=5, decayAoe=17),
         rot=dict(max=b3['BuffLevelMax'], defPct=b3['Stats'][0]['NKM_STAT_TYPE_RATE'] / 100.0, gainSingle=1, gainAoe=5),
         root=dict(turns=root['m_BuffLifeTurn'], speedPct=b5['Stats'][0]['NKM_STAT_TYPE_RATE'] / 100.0),
-        hyperTrueDamage=dict(perStack=true_dmg[0], max=len(true_dmg)),
+        hyperTrueDamage=true_damage,
         hyperGauge=dict(self=hy_self_up / 100.0, enemy=-abs(hy_enemy_dn) / 100.0),
         thorn=dict(atkRatePct=thorn / 100.0, turns=a_ses[0]['m_BuffLifeTurn']),
         growth=dict(incPct=sorted(grow)[0] / 100.0, max=99),

@@ -300,6 +300,8 @@ def _perm_apply(stats, passive, eff):
         passive['eh'] += v / 100
     elif st == '선제 방어 확률':
         passive['preempt'] += v / 100
+    elif st in ('피해 흡혈', '생명력 흡수율'):
+        passive['vampirism'] += v / 100
     else:
         return False
     return True

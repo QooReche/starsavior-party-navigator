@@ -226,11 +226,14 @@ def test_belgras_erosion_and_rot():
     nonatk = C._skill('특수기', 'buff', 0, 0, 0, attack=False, tg='자신')
     b.cast(b.allies[0], nonatk)                               # 적의 비공격 스킬: 썩은 의지 +5
     assert boss.stack(C.ROT) == 11
-    hp0 = [u.hp for u in b.allies]
     b.cast(boss, boss.d.skills['궁극기'])                      # 공허 붕괴: 추가 고정 피해 5000 x 11
-    assert gp.stats['true_damage_hits'] == len(b.allies)
+    assert gp.stats['true_damage_hits'] == 0 and len(gp.pending_damage) == 1
+    hp = boss.hp
+    shield = boss.shield_total()
+    gp.flush_damage()
+    assert gp.stats['true_damage_hits'] == 1
+    assert hp - boss.hp == max(0, 55000 - shield)
     assert boss.stack(C.ERO) == 0 and boss.stack(C.ROT) == 0 and boss.has(C.ROOT) and boss.has(C.TOUGH_BAN)
-    assert all(u.dead or u.taken >= 55000 for u in b.allies), [(hp0[i], u.hp, u.taken, u.dead) for i, u in enumerate(b.allies)]   # 받은 피해(보호막 포함) >= 5000 x 11
     assert abs(boss.mods()['spdp'] - 0.5) < 1e-9
 
 

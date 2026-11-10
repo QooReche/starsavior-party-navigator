@@ -207,7 +207,9 @@ def final_stats(unit, info, growth, rule="normal", breakdown=False):
             for oi, opt in enumerate([item.get("main") or {}] + (item.get("subs") or [])):
                 k = NST_KEY.get(opt.get("stat"))
                 v = opt.get("value")
-                if k is None or not _number(v):
+                # 빌드 엔진의 확장 스탯(흡혈 등)은 이 화면의 8종 스탯이 아니다.
+                # 값을 버리면서 지원한 것으로 표시하지 않도록 missing을 유지한다.
+                if k not in KEYS + RATE_KEYS or not _number(v):
                     missing.add("equip.stat:" + str(opt.get("stat", "missing")))
                 else:
                     flat[k] = flat.get(k, 0) + v
