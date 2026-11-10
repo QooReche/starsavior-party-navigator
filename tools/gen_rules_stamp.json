@@ -1,6 +1,6 @@
 {
  "guild_sim": {
-  "hash": "ab0c0aa44391ff86",
+  "hash": "fc85dd2714434381",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -33,11 +33,15 @@
    {
     "hash": "ab0c0aa44391ff86",
     "reason": "build_guild_sim 재생성"
+   },
+   {
+    "hash": "fc85dd2714434381",
+    "reason": "build_guild_sim 재생성"
    }
   ]
  },
  "quick": {
-  "hash": "ab0c0aa44391ff86",
+  "hash": "fc85dd2714434381",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -61,6 +65,10 @@
    },
    {
     "hash": "ab0c0aa44391ff86",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "fc85dd2714434381",
     "reason": "calibrate_quick --write 재보정"
    }
   ]
