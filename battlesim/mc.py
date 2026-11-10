@@ -761,6 +761,7 @@ class Battle:
         self.break_skill_name = self.break_skill.get('name')
         self.break_skill_rule = self._break_skill_rule(self.break_skill_name)
         self.break_skill_enabled = self.break_skill_rule is not None
+        self.break_domain_remaining = 0   # 팀 주입기 수명: 사망·개별 효과 제거와 독립(NKM:13555-13567)
         if self.break_skill_enabled:
             # API는 기본값까지 합친 mc를 넘기므로 원래 override를 별도로 받는다.
             explicit = (mc or {}) if mc_overrides is None else mc_overrides
@@ -908,14 +909,52 @@ class Battle:
                 if line_kind(ln) in ('battle_start', 'wave_start'):
                     self.run_line(u, ln, Ctx(u, u, None))
         if self.wave_i > 0:
+            client_carry = self.mc['wave_carry'] == 'client'
+            if client_carry:
+                self._carry_wave_effects()
+                self._reset_wave_gauge()
             for u in self.alive(0):
                 for ln in self.lines_of(u):
                     if line_kind(ln) == 'wave_start':
                         self.run_line(u, ln, Ctx(u, u, None))
-            if self.mc.get('wave_ally_gauge', 'reset') == 'reset':   # 클라 BattleHostSingle 웨이브 전환: OnWaveStart 뒤 생존 아군 게이지 전원 0
-                for u in self.alive(0):
-                    if not u.extra_turn:   # 클라 추가 턴은 게이지가 아니라 턴 예약(정렬 최우선)이라 전환에서 안 지워짐 — 엔진은 게이지 10000+표시로 구현하므로 유지
-                        u.gauge = 0.0
+            if not client_carry:
+                self._reset_wave_gauge()
+
+    def _reset_wave_gauge(self):
+        if self.mc['wave_ally_gauge'] == 'reset':
+            for u in self.alive(0):
+                if not u.extra_turn:   # 추가 턴 예약은 엔진의 게이지 10000+표시로 보존
+                    u.gauge = 0.0
+
+    def _carry_wave_effects(self):
+        """NKM:813-832,3973-3989,4030-4056: 새 전역 턴, 아군 WAVE_START 전에 지속 -1."""
+        domain = self.break_skill_rule['domain'] if self.break_skill_enabled else None
+        self.rule_hits['wave_carry'] += 1
+        for u in self.alive(0):
+            for name, e in list(u.eff.items()):
+                if name == domain:   # 영역은 팀 주입기이며 버프 차감 대상이 아님
+                    continue
+                e.fresh = False
+                if name == '도발' and e.src is not None and e.src.dead:
+                    del u.eff[name]
+                    continue
+                if e.skip_tick and not (e.dot or e.hot):
+                    e.skip_tick = False
+                    continue
+                if e.dur == math.inf:
+                    continue
+                if e.inst is not None:
+                    for it in e.inst:
+                        it[1] -= 1
+                    e.inst = [it for it in e.inst if it[1] > 0]
+                    e.stacks = len(e.inst)
+                    if not e.inst:
+                        del u.eff[name]
+                else:
+                    e.dur -= 1
+                    if e.dur <= 0:
+                        del u.eff[name]
+            self.dirty(u)
 
     def progress(self):
         """적 진척도 0~1: (끝낸 웨이브 + 현재 웨이브에서 깎은 체력 비율) / 웨이브 수. 클리어면 1.
@@ -1206,6 +1245,8 @@ class Battle:
 
     def _tick_break_domain(self, clock):
         """영역만 차감. global은 발동 행동을 포함해 act 반환 직후 센다."""
+        if self.break_skill_enabled and clock == self.break_domain_clock:
+            self.break_domain_remaining = max(0, self.break_domain_remaining - 1)
         for u in self.allies:
             for name, e in list(u.eff.items()):
                 if name == self.break_skill_rule['domain'] and e.clock == clock:
@@ -1290,6 +1331,7 @@ class Battle:
             self.nova_add(self.allies[0], nova)  # 공용 풀도 NovaForceUp의 상한을 거침
         # 큐브 회복의 합에는 사망자도 포함(기존 가정). 효과는 생존자에게만.
         amount = sum(u.maxhp for u in self.allies) * (rule.get('heal_ratio', 0) + (heal_up if 'heal_ratio' in rule else 0.0))
+        self.break_domain_remaining = self.break_domain_turns
         for u in self.alive(0):
             if 'heal_ratio' in rule:
                 got = self.heal(None, u, amount, 0.0)
@@ -1298,10 +1340,7 @@ class Battle:
                 self.nova_add(u, nova)
             if u is not actor and rule.get('gauge'):
                 self.set_gauge(u, u.gauge + rule['gauge'])
-            props = dict(rule['props'])
-            if u.role in rule.get('bonus_roles', ()):
-                for k, v in rule['role_props'].items():
-                    props[k] = props.get(k, 0) + v
+            props = self._domain_props(u)
             effects = []
             if rule.get('buff'):
                 effects.append((rule['buff'], rule['buff_props'], rule['buff_turns'], 'owner_turn'))
@@ -1311,6 +1350,26 @@ class Battle:
                 e.stacks, e.fixed, e.clock = 1, self.mc['break_skill_fixed'], clock
                 u.eff[name] = e
             self.dirty(u)
+
+    def _domain_props(self, u):
+        rule = self.break_skill_rule
+        props = dict(rule['props'])
+        if u.role in rule.get('bonus_roles', ()):
+            for k, v in rule['role_props'].items():
+                props[k] = props.get(k, 0) + v
+        return props
+
+    def _restore_break_domain(self, u):
+        """부활 시 살아 있는 팀 주입기 재등록(NKM:1927-1939,8263-8287). 일반 버프는 제외."""
+        if (self.mc['break_domain_revive'] != 'client' or u.side != 0
+                or not self.break_skill_enabled or self.break_domain_remaining <= 0):
+            return
+        name = self.break_skill_rule['domain']
+        e = Eff(name, self._domain_props(u), 1, self.break_domain_remaining, None, False)
+        e.stacks, e.fixed, e.clock = 1, self.mc['break_skill_fixed'], self.break_domain_clock
+        u.eff[name] = e
+        self.dirty(u)
+        self.rule_hits['break_domain_revive'] += 1
 
     def _tick_shields(self, u):
         for name in list(u.eff):
@@ -2474,6 +2533,8 @@ class Battle:
                 e = v.eff[name]
                 if e.shield > 0 and rest > 0 and not (v.buff_blocked() and not e.harmful):   # 〈강화 불가〉 중엔 보호막도 꺼짐
                     take = min(e.shield, rest)
+                    if take > 0 and v.acting:
+                        self.rule_hits['shield_owner_absorb'] += 1
                     e.shield -= take
                     rest -= take
                     absorbed += take
@@ -3609,7 +3670,12 @@ class Battle:
                     e = Eff(m.group(2), props, 1, _shield_dur(m.group(3)), owner, False)
                     e.stacks = 1
                     x.eff[m.group(2)] = e
-                    e.fresh = (x is owner and owner.acting and self.mc['shield_tick'] != 'turn_start')
+                if self.mc['shield_tick'] == 'turn_end':
+                    # NKM:4565-4583,4739-4746: 재부여도 생성 시점 갱신. 시작 이벤트는 같은 턴에 차감.
+                    e.clock = 'any_turn' if self.mc['any_turn_clock'] and self._is_any_turn(owner, e.name) else 'owner_turn'
+                    e.fresh = (x.acting and e.clock == 'owner_turn' and line_kind(ln) not in
+                               ('own_pre', 'ally_pre', 'foe_pre', 'foe_pre_na', 'own_ts', 'ally_ts',
+                                'enemy_ts', 'battle_start', 'wave_start'))
                 e.shield += amount      # 같은 보호막 재부여 = 합산, 지속은 긴 쪽
                 e.dur = max(e.dur, _shield_dur(m.group(3)))
                 owner.shield_given += amount
@@ -3639,6 +3705,7 @@ class Battle:
                         x.zero_stats = False
                         x.eff.pop('들러리(해제불가)', None)
                         self.dirty(x)
+                    self._restore_break_domain(x)
                     self.log(revive=x.name)
             return
         m = RX_DISPEL.match(rest)

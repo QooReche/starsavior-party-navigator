@@ -308,7 +308,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'auto_skill', 'basic_tough', 'enforce',
     'break_skill_atk_pct', 'break_skill_boss_points', 'break_skill_buff_turns',
     'break_skill_cd_unit', 'break_skill_cooldown', 'break_skill_cost',
-    'break_skill_domain_clock', 'break_skill_domain_turns', 'break_skill_fixed', 'break_skill_heal_ratio',
+    'break_domain_revive', 'wave_carry', 'break_skill_domain_clock', 'break_skill_domain_turns', 'break_skill_fixed', 'break_skill_heal_ratio',
     'break_skill_hit_pct', 'break_skill_level', 'break_skill_normal_points',
     'break_skill_point_cap', 'break_skill_role_speed_pct', 'break_skill_scale',
     'break_skill_speed_pct', 'break_skills',
@@ -332,11 +332,11 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     # 2026-11-06 코스모 게이트 시즌 전투(벨그라스·난이도 레벨·챌린지 효과)
     'cosmo_raid_boss',
 ])
-_NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'wave_carry', 'break_skill_model'})
+_NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'break_skill_model'})
 
 
 def test_mc_note_not_in_opts():
-    """MC_NOTE_KEYS 가 정확히 4개이며 MC_OPTS 에 없고 MC_RULES 에는 있어야 한다."""
+    """MC_NOTE_KEYS 가 정확히 3개이며 MC_OPTS 에 없고 MC_RULES 에는 있어야 한다."""
     wrong_note = MC_NOTE_KEYS ^ _NOTE_KEYS          # 대칭 차: 예상과 다른 키
     in_opts = [k for k in MC_NOTE_KEYS if k in MC_OPTS]
     not_in_rules = [k for k in MC_NOTE_KEYS if k not in MC_RULES]
