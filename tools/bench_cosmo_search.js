@@ -74,6 +74,12 @@ C.search({S,bosses:G.season.bossOrder,mode,level:6,results,roster,workers,makeWo
  const report={signature,size,repeat,variant:variant.replace('-replay',''),replay,resumed,mode,workers,search:S,phases,seconds:phases.reduce((s,p)=>s+p.seconds,0),
   wallSeconds:replay||resumed?null:(performance.now()-started)/1000-instrumentationSeconds,instrumentationSeconds,result};
  report.resultHash=crypto.createHash('sha256').update(JSON.stringify(result)).digest('hex');
- fs.writeFileSync(path.join(dir,'result.json'),JSON.stringify(report));
+ const reportFile=path.join(dir,'result.json');
+ const previous=fs.existsSync(reportFile)?JSON.parse(fs.readFileSync(reportFile,'utf8')):null;
+ // 완료한 같은 실행을 캐시로 검증해도 원래 시간 표본은 그대로 둔다.
+ if(previous && previous.signature===signature){
+  if(previous.resultHash!==report.resultHash)throw new Error('completed result mismatch: '+reportFile);
+  console.log(JSON.stringify({size,repeat,variant,preserved:true,resultHash:report.resultHash}));
+ }else fs.writeFileSync(reportFile,JSON.stringify(report));
  console.log(JSON.stringify({size,repeat,variant,seconds:report.seconds,resultHash:report.resultHash}));
 }).catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>{for(const p of children)p.kill();children.clear();});

@@ -517,7 +517,7 @@ const csProfile=()=>MI.info&&MI.growth?(MI.profiles.cosmo||(MI.profiles.cosmo=My
 function csPre(){   // 시작 전 «예상 시간» 안내(저장된 이 PC 속도가 있으면 예상 시간, 없으면 안내 문구)
  try{const S=CosmoSearch.searchSettings(D.cosmoRaid.search,CSR.optFast),pf=csProfile();if(!pf)return "시작하면 몇 초 뒤 예상 시간이 표시됩니다";
   const rows=CosmoSearch.poolAll(S,pf.results,R.filter(s=>!EXCL.has(s.key)));if(CosmoSearch.feasibility(S,rows))return "";
-  return CosmoSearch.preText(CosmoSearch.plan(S,rows,csBreaks().length),CosmoSearch.priorFrom(LS.get("cosmo.speed"),csWorkers()))}catch(e){return ""}}
+  return CosmoSearch.preText(CosmoSearch.plan(S,rows,csBreaks().length),CosmoSearch.priorFrom(LS.get("cosmo.speed.v2"),csWorkers()))}catch(e){return ""}}
 let csLast=0,csTimer=0;
 function csTick(force){   // 진행 글자만 200ms 이상 간격으로 갱신(취소 버튼 등 DOM 은 다시 만들지 않음)
  const now=performance.now();
@@ -557,12 +557,12 @@ async function cosmoSearchStart(){
   const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=CosmoSearch.searchSettings(C.search,CSR.optFast);
   const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
    makeWorker:()=>new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,breaks:csBreaks(),
-   onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed"),workers)})},
-   onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm)LS.set("cosmo.speed",{sec:sm,workers});CSR.eta=null;CSR.etaText="마무리 단계(난이도 비교·최종 확인)는 남은 시간을 따로 계산하지 않습니다"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();csTick(true)},
+   onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed.v2"),workers)})},
+   onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm)LS.set("cosmo.speed.v2",{sec:sm,workers});CSR.eta=null;CSR.etaText="마무리 단계(난이도 비교·최종 확인)는 남은 시간을 따로 계산하지 않습니다"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();csTick(true)},
    onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());csTick(false)},onHandle:h=>{CSR.handle=h}});
   if(!out||stale())return;
-  const sum=CSR.eta&&CSR.eta.summary();if(sum)LS.set("cosmo.speed",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
-  Object.assign(CSR,{fast:false,audit:null},out,{phase:"done",handle:null,eta:null});paint()
+  const sum=CSR.eta&&CSR.eta.summary();if(sum)LS.set("cosmo.speed.v2",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
+  Object.assign(CSR,{fast:false,fastSkipped:false,audit:null},out,{phase:"done",handle:null,eta:null});paint()
  }catch(e){if(stale())return;CSR.handle=null;CSR.eta=null;CSR.phase=/^취소$/.test(e.message)?"idle":"err";CSR.msg=e.message||String(e);paint()}}
 $("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("[data-cs]");if(!t)return;
  if(t.dataset.cs==="fast")CSR.optFast=t.checked;

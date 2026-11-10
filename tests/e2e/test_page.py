@@ -1476,7 +1476,7 @@ def test_cosmo_search(browser, ctx):
     fast.uncheck()
     assert page.evaluate('() => !CSR.optFast')
     # 기본은 전수 탐색이라 시험에서만 풀을 12명으로 제한(maxPool)하고 저장된 이 PC 속도를 지운다
-    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed')}catch(e){}}""")
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed.v2');localStorage.setItem('pn.cosmo.speed',JSON.stringify({sec:[999,999,999,999],workers:4}))}catch(e){}}""")
     page.select_option('#cosmo-search select[data-cs="level"]', "3")
     lvl = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value")
     # 시작 전 안내: 이 PC 속도를 모르면 «시작하면 몇 초 뒤 예상 시간이 표시됩니다»
@@ -1496,12 +1496,12 @@ def test_cosmo_search(browser, ctx):
     page.wait_for_timeout(1500)
     cancel_ok = page.evaluate("() => CSR.phase === 'idle' && !CSR.handle") and page.locator('#cosmo-search [data-k="cs-table"]').count() == 0
     # 실제 완주
-    page.evaluate('() => { CSR.fast=true; CSR.audit=[]; }')  # 앞선 실험 결과의 선택적 필드
+    page.evaluate('() => { CSR.fast=true; CSR.fastSkipped=true; CSR.audit=[]; }')  # 앞선 실험 결과의 선택적 필드
     page.click('#cosmo-search button[data-cs="start"]')
     page.wait_for_selector('#cosmo-search [data-k="cs-table"], #cosmo-search [data-k="cs-err"]', timeout=300000)
     err_txt = page.locator('#cosmo-search [data-k="cs-err"]').all_text_contents()
     assert not err_txt, err_txt
-    assert page.evaluate('() => CSR.fast===false && CSR.audit===null'), '일반 탐색 완료 시 옛 실험 상태 제거'
+    assert page.evaluate('() => CSR.fast===false && CSR.fastSkipped===false && CSR.audit===null'), '일반 탐색 완료 시 옛 실험 상태 제거'
     rows = page.locator('#cosmo-search [data-k="cs-best"] [data-k="cs-team"]').count()
     state = page.evaluate("""() => { const r = CSR.rows[0]; const keys = r.teams.flatMap(t => t.keys);
       return {n: CSR.rows.length, bosses: r.teams.map(t => t.boss), uniq: new Set(keys).size, nkeys: keys.length, sum: r.sum,
@@ -1509,7 +1509,7 @@ def test_cosmo_search(browser, ctx):
               shown: document.querySelector('[data-k=cs-sum]').textContent.replace(/,/g, '')} }""")
     names = page.locator('#cosmo-search [data-k="cs-best"] .cs-bh > b').all_text_contents()[:3]
     # 완주하면 이 PC 속도가 저장되고, 끝난 화면의 시작 전 안내가 «예상 약 …»(저장 속도 기준)으로 바뀜
-    speed = page.evaluate("() => { try { return JSON.parse(localStorage.getItem('pn.cosmo.speed')) } catch (e) { return null } }")
+    speed = page.evaluate("() => { try { return JSON.parse(localStorage.getItem('pn.cosmo.speed.v2')) } catch (e) { return null } }")
     want_w = page.evaluate("() => csWorkers()")        # 작업자 수 자동 결정(코어·메모리·모바일): 저장된 속도의 작업자 수와 같아야 하고 코어 수를 넘지 않음
     cores = page.evaluate("() => navigator.hardwareConcurrency || 4")
     speed_ok = bool(speed) and len(speed.get("sec", [])) == 4 and all(x > 0 for x in speed["sec"]) and speed.get("workers", 0) > 0 and speed["workers"] == want_w and 1 <= want_w <= cores
@@ -1550,7 +1550,7 @@ def test_cosmo_auto_level(browser, ctx):
     page = open_page(browser, ctx, raid_ui=True)
     page.select_option("#content", label=next(l for l in page.eval_on_selector_all("#content option", "o => o.map(x => x.textContent)") if l.startswith("코스모 게이트(시즌")))
     settle(page)
-    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;S.auto.probeRuns=1;try{localStorage.removeItem('pn.cosmo.speed')}catch(e){}}""")
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;S.auto.probeRuns=1;try{localStorage.removeItem('pn.cosmo.speed.v2')}catch(e){}}""")
     default_auto = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value") == "-1"
     page.click('#cosmo-search button[data-cs="start"]')
     page.wait_for_selector('#cosmo-search [data-k="cs-table"], #cosmo-search [data-k="cs-err"]', timeout=300000)

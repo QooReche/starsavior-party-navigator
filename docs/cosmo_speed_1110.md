@@ -58,7 +58,7 @@ python -X utf8 -I tools/bench_cosmo_speed.py --mode all --output local/cosmo-all
 
 ## 워커 부팅 측정
 
-요청한 `E:\AI_mk2\venv-pw\Scripts\python.exe`와 실제 Chromium 156.0.8078.4에서 `sim_worker.js`를 실행했음. localhost 서버·실제 Pyodide 0.26.4·기존 manifest에 열거된 현재 소스 파일을 사용했음. 생성물 재생성은 하지 않았음. 팀 목록이 빈 `run` 메시지의 `done`까지 재므로 전투 실행 시간은 제외함. 화면·가짜 작업자를 거치지 않는 실제 워커 통합 측정임.
+요청한 `.\venv-pw\Scripts\python.exe`와 실제 Chromium 156.0.8078.4에서 `sim_worker.js`를 실행했음. localhost 서버·실제 Pyodide 0.26.4·기존 manifest에 열거된 현재 소스 파일을 사용했음. 생성물 재생성은 하지 않았음. 팀 목록이 빈 `run` 메시지의 `done`까지 재므로 전투 실행 시간은 제외함. 화면·가짜 작업자를 거치지 않는 실제 워커 통합 측정임.
 
 | 조건 | 1회 | 2회 | 3회 | 평균 |
 |---|---:|---:|---:|---:|
@@ -71,7 +71,7 @@ python -X utf8 -I tools/bench_cosmo_speed.py --mode all --output local/cosmo-all
 측정 도구는 `계산 엔진 내려받는 중`·`전투 데이터 내려받는 중`·`준비 끝`의 타임스탬프를 JSON에 기록함. 각각 워커 시작, Pyodide 로드, 자료 다운로드·FS 배치·Python import 구간을 구분할 수 있음. 생성자 실행 자체는 타이머 직전이라 포함하지 않음. 실제 인터넷 지연, 4/8/16개 워커 동시 부팅, 메모리, Pyodide 버전 비교, 전투 실행의 브라우저 가속률은 미측정임. 이 측정은 배포 manifest의 해시 일치를 검증하지 않음.
 
 ```powershell
-E:\AI_mk2\venv-pw\Scripts\python.exe -X utf8 -I tools/bench_cosmo_boot.py --output local/cosmo-boot.json
+.\venv-pw\Scripts\python.exe -X utf8 -I tools/bench_cosmo_boot.py --output local/cosmo-boot.json
 ```
 
 확장 측정은 새 브라우저 프로세스로 반복하고, 같은 컨텍스트에서 워커 4/8/16개를 동시에 만든 뒤 마지막 `준비 끝`까지의 시간·메모리를 비교하기로 함. 준비된 워커 재사용으로 줄일 수 있는 초기 비용은 이번 단일 워커 조건에서 약 1.36초이며, 전체 탐색이 `T`초면 기대 개선율은 대략 `1.36/T`임. 여러 워커가 병렬 부팅하므로 워커 수를 곱해 절약 시간을 계산하면 안 됨. 워커 수명 정책은 변경하지 않았음.
@@ -89,5 +89,5 @@ CRN은 난수 상관 자체가 속도를 높이지 않으며 같은 정확도에
 - HP 감소 직후 절단, 증가 시 미회복, suppress/refuse·강화 불가·0중첩·buff_maxhp off·서든데스·−99% 하한을 직접 검사했음. 줄 필드 변경과 캐시 상한도 검사했음.
 - 의도적 결함 검출: HP를 1로 자르는 식과 반응 분류를 항상 unmodeled로 돌리는 코드를 각각 주입했을 때 동일성 assertion이 실패하는 것을 확인했음. 이전 dirty로 되돌리면 지연 재계산 검사(`_m is None`)도 실패함.
 - 수정 전 전체 기준선: **97 통과 / 1 실패**, 환경 건너뜀 2건. `cleanup_test.py::test_manifest`는 기존 manifest 해시 `b9856c570ed0`와 기대 `57df51f438a9`의 불일치로 이미 실패했음. 생성물 파일 내용 해시이므로 규칙 legacy `_KEEP`로 해결하는 종류가 아님. 재생성 금지에 따라 그대로 두었음.
-- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py`: **98 통과 / 1 실패**, 환경 건너뜀 2건(`COSMO_TABLES`·옆 `journeyhelper` 없음). 실패는 같은 manifest 검사이며 변경 후 기대 해시는 `40f256d026a2`임. 골든·`mc_cache`·규칙 도장 시험은 통과했음. 전체 화면 e2e는 실행하지 않았고 워커 부팅 측정을 따로 수행했음.
+- 최종 `STARSAVIOR_STATIC=<private-static-data>` 지정 `python -X utf8 -I tools/run_tests.py`: **98 통과 / 1 실패**, 환경 건너뜀 2건(`COSMO_TABLES`·옆 `journeyhelper` 없음). 실패는 같은 manifest 검사이며 변경 후 기대 해시는 `40f256d026a2`임. 골든·`mc_cache`·규칙 도장 시험은 통과했음. 전체 화면 e2e는 실행하지 않았고 워커 부팅 측정을 따로 수행했음.
 - 독립 리뷰는 `git diff 93d300f..3a558c1d35fbfe818cffcef8a1fd6287683ad466`의 고정 스냅샷으로 수행했음. 엔진 동치성 결함은 발견하지 못했음. 지원 보고가 이전 모드의 정의 캐시를 재사용할 수 있다는 시험 공백 1건을 반영해 모드 시작마다 정의 캐시와 반응 캐시를 비웠음. 보완 뒤 새 시험 5개를 다시 통과했고, 이전 dirty로 되돌렸을 때 지연 검사 1개가 실제 실패하는 것도 별도 확인했음. 기각한 지적은 없음. 사용자 지시에 따라 HANDOFF 대신 이 문서에 기록했음.

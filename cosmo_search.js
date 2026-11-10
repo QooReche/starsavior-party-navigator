@@ -245,12 +245,14 @@
   function plan(S, rows, nBrk) {   // nBrk = 브레이크 스킬 후보 수(마지막 단계는 팀마다 «장착 안 함 + 후보» 각각을 돌림)
     const L = countCombos(S, rows), keep = effKeep(S, L), t4 = BOSSES * S.combine.topTriples * (1 + (nBrk | 0)), pass = passCount(S, L, keep), halved = pass < L, fr = halved ? S.screen.firstRuns | 0 : 0;
     // 단계: 0 = 1단계 첫 판(전 조합), 1 = 1단계 보충 판(상위 pass 팀 + 경계 동점 + 구원자별 대안이라 실제 팀 수는 달라질 수 있어 단계 전환 때 바로잡음), 2 = 상위 keep 팀 정밀, 3 = 삼중 팀 재시뮬
-    const fast = speedValue(S, "surrogate", false) && halved, cfg = fast ? S.speed.surrogate : null;
+    const requested = speedValue(S, "surrogate", false), cfg = requested ? S.speed.surrogate : null;
+    // 통과 경계가 대리 core 끝에 닿는 작은 풀은 선별 이득이 없어 전수 확인한다.
+    const fast = requested && halved && pass < Math.ceil(cfg.ratio * L);
     const first = fast ? Math.min(L, Math.ceil(cfg.ratio * L) + rows.length * cfg.minPerUnit + Math.max(cfg.minAudit, Math.ceil(cfg.auditFrac * L))) : L;
     const stages = [{id: 1, teams: BOSSES * first, runs: halved ? fr : S.screen.runs}, {id: 2, teams: halved ? BOSSES * pass : 0, runs: halved ? S.screen.runs - fr : 0, upper: true},
       {id: 3, teams: BOSSES * Math.min(keep, L), runs: S.rerank.runs}, {id: 4, teams: t4, runs: S.final.runs, upper: true}];
     stages.forEach(s => { s.games = s.teams * s.runs; });
-    return {pool: rows.length, combos: L, keep, pass, halved, stages, ...(fast ? {fast: true} : {}), total: stages.reduce((a, s) => a + s.games, 0)};
+    return {pool: rows.length, combos: L, keep, pass, halved, stages, ...(fast ? {fast: true} : requested ? {fastSkipped: true} : {}), total: stages.reduce((a, s) => a + s.games, 0)};
   }
 
   // 남은 시간 계산(순수). 단계마다 한 판 비용이 다르므로 단계 가중치 w[s] 로 아직 안 해 본 단계의 속도를 현재 속도에서 추정하고, 자기 단계 속도가 측정되면 그 값으로 바꾼다.
@@ -340,7 +342,7 @@
   }
   // 시작 전 안내. pl = plan(), prior = priorFrom(...) 또는 null
   function preText(pl, prior) {
-    const g = `조합 ${num(pl.combos)}개 · ${pl.fast ? "선별 예상 " : "총 "}${num(pl.total)}판${pl.fast ? " · 놓침 감지 시 전수 확인으로 늘어남" : ""}`;
+    const g = `조합 ${num(pl.combos)}개 · ${pl.fast ? "선별 예상 " : "총 "}${num(pl.total)}판${pl.fast ? " · 놓침 감지 시 전수 확인으로 늘어남" : pl.fastSkipped ? " · 조합 수가 적어 빠른 탐색을 적용하지 않고 전수 확인" : ""}`;
     if (!prior) return `시작하면 몇 초 뒤 예상 시간이 표시됩니다 (${g})`;
     const sec = pl.stages.reduce((a, s, i) => a + s.games * prior[i], 0);
     return `이 PC의 지난 실행 속도 기준 예상 ${fmtDur(sec)} (${g})`;
@@ -391,16 +393,17 @@
       const fr = S.screen.firstRuns, more = S.screen.runs - fr;
       const selection = pl.fast ? bosses.map((b, i) => surrogateSelect(S, jobsA.filter(j => j.boss === b), results, 20261110 + i)) : null;
       const firstJobs = selection ? [].concat(...selection.map(s => s.jobs)) : jobsA;
-      const res1 = await run(shuffled(firstJobs, 20261106), fr, 1, `1단계 (1/2): ${selection ? "빠른 탐색·무작위 놓침 확인" : "전체 조합 확인"} · ${num(firstJobs.length)}팀을 ${fr}판씩 훑는 중`, 0);
+      const res1 = await run(shuffled(firstJobs, 20261106), fr, 1, `1단계 (1/2): ${selection ? "빠른 탐색·무작위 놓침 확인" : "전체 조합 확인"} · ${num(firstJobs.length)}팀을 ${fr}판씩 훑는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다)`, 0);
       if (stale()) return null;
       if (selection) {
         auditInfo = selection.map((s, i) => Object.assign({boss: bosses[i]}, surrogateAudit(S, s, res1, mode, pl.pass)));
         const fallback = new Set(auditInfo.filter(a => a.fallback).map(a => a.boss));
-        const done = new Set(firstJobs.map(j => j.key));
+        const done = new Set(firstJobs.filter(j => res1[j.key] && res1[j.key].cosmo).map(j => j.key));
         const missing = jobsA.filter(j => fallback.has(j.boss) && !done.has(j.key));
         if (missing.length) {
           Object.assign(res1, await run(shuffled(missing, 20261106), fr, 1, "놓침 감지: 해당 보스의 나머지 조합을 전수 확인 중", 0, firstJobs.length));
           if (stale()) return null;
+          if (missing.some(j => !res1[j.key] || !res1[j.key].cosmo)) throw new Error("전수 확인 결과가 누락되었습니다. 다시 시도해 주세요");
         }
         jobsA = jobsA.filter(j => fallback.has(j.boss) || done.has(j.key));
       }
@@ -454,7 +457,7 @@
     const rows2 = finalRankBrk(triples, bosses, levelOf, brks, resC, mode, S.combine.show);
     return {rows: rows2, pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: pl.keep, triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
       halved: pl.halved, firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed,
-      ...(speedValue(S, "surrogate", false) ? {fast: true, audit: auditInfo || []} : {})};
+      ...(speedValue(S, "surrogate", false) ? {fast: true, audit: auditInfo || [], ...(pl.fastSkipped ? {fastSkipped: true} : {})} : {})};
     } finally { if (workersPool) workersPool.close(); }
   }
 
@@ -492,7 +495,7 @@
       const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐습니다(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
       const first = rows.length ? `${lvInfo}<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : '<div class="mut">결과 없음</div>';
       const rest = rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx)}</details>`).join("");
-      const scr = st.halved ? `${st.fast ? "대리 선별·무작위 확인" + (st.audit.some(a => a.fallback) ? "·놓침 보스 전수 복귀" : "") + " 뒤" : "보스마다 조합 " + num(st.combos) + "개를"} ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
+      const scr = st.halved ? `${st.fast && !st.fastSkipped ? "대리 선별·무작위 확인" + (st.audit.some(a => a.fallback) ? "·놓침 보스 전수 복귀" : "") + " 뒤" : "보스마다 조합 " + num(st.combos) + "개를"} ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
       body = `${old}${stale}${opt}${first}${rest}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값입니다(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순입니다. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있습니다.</div>${pre}${btn("다시 찾기")}`;
     } else body = `${opt}${pre}${btn("3보스 최고 점수 편성 찾기")}<span class="mut gd-small"> 보유 구원자가 많으면 오래 걸립니다. 탭을 연 채로 기다려 주세요.</span>`;
     return `<div class="gd-search" data-k="cs-search">${head}${body}${warn}</div>`;

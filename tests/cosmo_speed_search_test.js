@@ -40,7 +40,8 @@ async function main(){
  assert.equal(C.surrogateAudit(s,selected,res,'top',50).fallback,false);
  delete res[selected.audit[0].key];assert(C.surrogateAudit(s,selected,res,'top',50).fallback,'missing result cannot pass');
  const legacy=settings(), reused=settings();reused.speed.workerReuse.value=true;
- const a=state(),b=state();const before=await search(legacy,a),after=await search(reused,b);
+ const a=state(),b=state(),messages=[];const before=await search(legacy,a,false,{onPhase:m=>messages.push(m)}),after=await search(reused,b);
+ assert(messages[0].includes('처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다'),'halved screening explains first download');
  assert.deepEqual(after,before,'worker reuse leaves every result unchanged');
  assert(a.created>b.created);assert.equal(b.created,3);assert.equal(b.closed,b.created);
  const streams=settings();streams.speed.rngStreams.value=true;
@@ -52,11 +53,42 @@ async function main(){
  fallback.speed.surrogate.missThreshold=-1;
  const f=state(),l=state();const fast=await search(fallback,f),full=await search(legacy,l);
  assert(fast.audit.every(x=>x.fallback),'audit triggers full fallback');
- assert.deepEqual(fast.rows,full.rows,'fallback uses identical seeds and full candidate set');
+ assert.deepEqual(fast.rows,full.rows,'fallback preserves final ranking with the full candidate set');
  assert.equal(f.closed,f.created);
  const first=f.sent.filter(m=>m.seed===1).flatMap(m=>m.teams.map(t=>t.key));
  assert.equal(first.length,new Set(first).size,'no duplicate initial battles on fallback');
  assert.equal(first.length,3*jobs.length);
+ const firstAssignments=st=>st.sent.filter(m=>m.seed===1).flatMap(m=>m.teams.map(t=>[t.key,m.seed,m.n_runs])).sort((x,y)=>x[0].localeCompare(y[0]));
+ assert.deepEqual(firstAssignments(f),firstAssignments(l),'every first battle keeps its seed and run count on fallback');
+ // Drop one otherwise winning core result after workers finish. It must be retried,
+ // then reach the supplementary phase; testing the audit flag alone misses this bug.
+ for(const kind of ['absent','no-cosmo','repeated']){
+  const originalRun=GS.runPhase,calls=[];let dropped;
+  GS.runPhase=o=>{
+   calls.push(o);const h=originalRun(o);
+   return {...h,promise:h.promise.then(res=>{
+    if(calls.length===1){
+     dropped=o.jobs.filter(j=>j.boss===G.season.bossOrder[0]).sort((x,y)=>res[y.key].cosmo.top-res[x.key].cosmo.top)[0];
+     if(kind==='no-cosmo')res[dropped.key]={prog:.5,n:o.runs};else delete res[dropped.key];
+    }else if(kind==='repeated'&&o.seed===1)delete res[dropped.key];
+    return res;
+   })};
+  };
+  const st=state();
+  try{
+   if(kind==='repeated')await assert.rejects(search(fallback,st),/전수 확인 결과가 누락/);
+   else{
+    const recovered=await search(fallback,st);
+    assert(recovered.audit.find(x=>x.boss===dropped.boss).fallback,'missing result triggers recovery');
+    const retried=calls.filter(o=>o.seed===1&&o.jobs.some(j=>j.key===dropped.key));
+    assert.equal(retried.length,2,'missing team is actually evaluated again: '+kind);
+    assert(retried.every(o=>o.runs===fallback.screen.firstRuns),'retry preserves first run count');
+    assert(calls.some(o=>o.seed===4&&o.jobs.some(j=>j.key===dropped.key)),'recovered winning team reaches supplementary phase');
+    assert.deepEqual(recovered.rows,full.rows,'missing response recovery restores final ranking');
+   }
+   assert.equal(st.closed,st.created,'recovery releases workers');
+  }finally{GS.runPhase=originalRun;}
+ }
  fallback.speed.surrogate.missThreshold=.02;
  const pruned=state();const p=await search(fallback,pruned);
  assert(p.audit.some(x=>!x.fallback),'nonfallback path is exercised');
@@ -64,7 +96,18 @@ async function main(){
  assert(p.rows.length>0);
  const small=settings();small.screen.runs=1;small.speed.surrogate.value=true;
  const noPrune=await search(small,state());
- assert(noPrune.fast&&noPrune.audit.length===0,'requested experiment remains selected when no halving is needed');
+ assert(noPrune.fast&&noPrune.fastSkipped&&noPrune.audit.length===0,'requested experiment stays selected but is explicitly skipped without halving');
+ const near=settings();near.rerank.keep=120;near.speed.surrogate.value=true;
+ const smallRoster=roster.slice(0,12),smallPlan=C.plan(near,smallRoster,0);
+ assert(smallPlan.halved&&!smallPlan.fast&&smallPlan.fastSkipped,'small pool skips surrogate when pass reaches core boundary');
+ const nearLegacy=settings(),nearState=state();nearLegacy.rerank.keep=120;
+ assert.equal(smallPlan.total,C.plan(nearLegacy,smallRoster,0).total,'small pool estimate uses exhaustive work');
+ assert(C.preText(smallPlan,null).includes('적어 빠른 탐색을 적용하지 않고 전수 확인'));
+ const nearResult=await search(near,nearState,false,{roster:smallRoster});
+ const nearFull=await search(nearLegacy,state(),false,{roster:smallRoster});
+ assert.deepEqual(nearResult.rows,nearFull.rows,'small pool result stays exhaustive');
+ assert.equal(nearState.sent.filter(m=>m.seed===1).flatMap(m=>m.teams).length,3*smallPlan.combos,'no extra audit or fallback phase in small pool');
+ assert(!C.html({...nearResult,phase:'done'},{hasInfo:true,esc:x=>x,bossName:x=>x,label:x=>x,level:6,mode:'top',fast:true,levelMax:12}).includes('대리 선별·무작위 확인'),'skipped experiment is not described as pruned');
  const pl=C.plan(fallback,roster,0);assert(pl.fast&&pl.total<C.plan(legacy,roster,0).total);
  assert(C.preText(pl,null).includes('전수'));
  // Error, cancellation, stale return, and synchronous construction failure release every worker.
