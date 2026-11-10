@@ -960,8 +960,10 @@ class Battle:
                 for u in self.alive(0):
                     if u.extra_turn:
                         self.rule_hits['wave_extra_turn'] += 1
-                    u.extra_turn = False
-                    u.gauge = 0.0
+                        u.extra_turn = False
+                        u.gauge = 0.0  # 추가 턴 예약의 10000 표시도 제거.
+                # 일반 게이지는 별도 규칙(NKM:822). reset의 기존 이벤트 전 순서 유지.
+                self._reset_wave_gauge()
             if client_carry:
                 self._carry_wave_effects()
                 self._reset_wave_gauge()
@@ -2058,7 +2060,8 @@ class Battle:
                     self.nova_add(u, self.break_skill_rule['skill_nova'])
                     if extra:
                         self.rule_hits['purify_extra'] += 1
-                    self.log(purify_nova=u.name, via=ctx.via, nova=self.nova_of(u))
+                    if purify == 'all_casts':
+                        self.log(purify_nova=u.name, via=ctx.via, nova=self.nova_of(u))
             if self.mc['check_buff_expiry'] == 'skill':
                 # NKM:15394-15396,15586-15593: SKILL_END 뒤, 협공보다 먼저 전원 정리.
                 self._expire_checks(skill=True)

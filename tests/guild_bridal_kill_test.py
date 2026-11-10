@@ -11,6 +11,15 @@ from tools.build_guild_bfb import validate_kill_reset, Changed
 
 
 class BridalKillTest(unittest.TestCase):
+    def test_standard_encounter_reaches_kill_reset(self):
+        # 실제 1단계·공개 standard·seed 1. HP/피해/보스 진입을 조작하지 않음.
+        b, _ = battle(level=1, seed=1)
+        b.run()
+        self.assertEqual(b.wave_i, 1)
+        self.assertGreater(b.progress(), .5)
+        self.assertGreater(b.rule_hits['guild_bridal_kill_reset'], 0)
+        self.assertGreater(b.gb.boss.actions, 0)
+
     def test_actual_casts_and_cast_scope(self):
         for mode in ('client', 'off'):
             for marked, lethal, via in ((True, True, None), (True, True, 'enforce'),

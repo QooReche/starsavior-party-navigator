@@ -13,7 +13,7 @@
 
 | 키 | value | legacy | 직접 확인한 근거 | 동작·남은 한계 |
 |---|---|---|---|---|
-| `wave_extra_turn` | `clear` | `keep` | NKM:813-828,3849,4947-4951,5742-5775,11862-11891,12215 | 생존 아군 예약·게이지 초기화. WAVE_START에서 새로 받은 예약 유지. clear는 `wave_ally_gauge=keep`보다 우선함. |
+| `wave_extra_turn` | `clear` | `keep` | NKM:813-828,3849,4947-4951,5742-5775,11862-11891,12215 | 생존 아군 예약·게이지 초기화. WAVE_START에서 새로 받은 예약 유지. clear는 `wave_ally_gauge=keep`보다 우선함. (→ 이후 11/10 리뷰 R2: 예약 없는 아군 게이지는 `wave_ally_gauge`를 따르도록 분리했음.) |
 | `turn_start_order` | `client` | `dot_first` | NKM:2008-2011,13421-13433,13483-13503,15831-15855 | 자신의 SE → 아군 SE → 적 SE → 지속 틱. 틱 사망 전 SE 발동. |
 | `guard_skip_immune` | `client` | `off` | NKM:2693-2710,7841-7870,17315-17318,17358-17361 | 무적·무효 본 대상의 분담 없음. 흡혈 전액 기준 유지. |
 | `wave_foe_battle_start` | `all` | `all` | NKM:1959,813-832,12829-12836 | alt `after_spawn_only`는 2웨이브 이후 전투 시작 줄 생략. 데이터북 문구↔SE 전수 대응 미확인이라 기본 유지. |

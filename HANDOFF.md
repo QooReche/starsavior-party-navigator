@@ -4,6 +4,7 @@
 
 ## 현재 상태
 
+- 11/10 밤 리뷰 후속: R1 정화 legacy 시간선·R2 웨이브 게이지 독립성을 고쳤음. R3~R5 미확인 경계를 note에 구체화하고 R6 실제 standard 길방 시험을 추가했음. «guild_sim 미재계산» 지적은 a732566에서 이미 재계산했으므로 기각했음. 93d300f 대비 legacy 14사례 일치, a732566 대비 기본값 72판 결과 불변. 상세 `docs/review_followup_1110.md`.
 - 11/10 밤 병합: `guild_bridal_kill_reset=client`, `wave_extra_turn=clear`, `turn_start_order=client`, `guard_skip_immune=client`, `buff_fresh_scope=client`, `break_gauge_actor=client`, `purify_nova_scope=all_casts`, `preemptive_reduce=client`, `omega_dispel=client`로 기본 전환했음. 근거가 불완전한 D 5개·E 2개는 옛 기본을 유지했음. 정본은 `battlesim/rules/default.json`, 상세는 아래 «11/10 밤» 절. 코스모 가속은 규칙·시드·후보·판 수를 바꾸지 않음.
 - 11/10 오후 병합 기본값: `cosmo_hyper_true_target=self`, `damage_vampirism=client`, `cosmo_drain_category=marker`, `cosmo_speed_floor=true`, `variant_self_state=client`, `turn_unit_debuff_cond=client`, `auto_marker_lines=keep`, `shield_tick=turn_end`, `break_domain_revive=client`. `wave_carry`는 새 `client` 선택지를 넣고 기본/legacy `keep` 유지했음. 오전 `cond_count_bind=holding`, `cosmo_boss_barrier=client`, `stage_fx_target=allies`도 반영됨. 정본·근거는 `battlesim/rules/default.json`, 상세는 아래 «11/10 오후» 절.
 - 근거 코드는 비공개 static-data `decompiled/`(디컴파일 빌드 26314877)임. 11/10 설치본이 **26429597**(11/05 갱신)인 것을 확인했고 DLL 5개 해시가 바뀌었으나 내용 비교 결과 **전투 로직 변화 없음**(식별자 재난독화만, 근거 줄 163건 이동 0, `decompiled/BUILD.md` 11/10 절). 표(`tables/`)는 11/10 에 26429597 로 다시 뽑아 덮어썼음(절 «2026-11-10»).
@@ -19,7 +20,7 @@
 - 생성물 규칙 도장: `tools/rules_stamp.py`·`tools/gen_rules_stamp.json`. 규칙 기본값을 바꾸면 `tests/gen_rules_stamp_test.py` 가 `guild_sim`·`quick` 이 낡았다고 실패하므로 다시 만들거나 `--ack 이름 --reason "…"` 로 이유를 적어 인정함. 건너뜀 표시는 `run_tests.py --strict`.
 - 11/09 코스모 실제 플레이에서는 벨그라스가 특히 비관적이었음. 11/10 보호막·자기 피해·흡혈을 수정했으며 같은 시점 자료로 재대조하기로 함(남은 일 16, 계정 수치는 비공개 보고서).
 - 저장소: `origin/main=93d300f` 이후 코스모 가속·길방 BFB·후속 D·규칙 E를 main에 합쳤음. 충돌 정리 병합 커밋은 `22a6235`이며 생성물·교차 시험·HANDOFF를 후속 커밋으로 묶음(푸시 전). 주소: https://QooReche.github.io/starsavior-party-navigator/
-- 최근 검증: 11/10 밤 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정, `run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe` **104 통과/0 실패**(일반 103개 파일 + e2e 1개 파일, 브라우저 38개 모두 통과). 환경 건너뜀 2건: COSMO_TABLES·옆 journeyhelper 저장소 없음. 골든/결과 해시 `--write`는 쓰지 않았음.
+- 최근 검증: 11/10 밤 리뷰 후속 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정, `run_tests.py` **104 통과/0 실패**(일반 104개 파일). 환경 건너뜀 2건: COSMO_TABLES·옆 journeyhelper 저장소 없음. 직전 a732566의 e2e는 브라우저 38개 모두 통과했으며 이번에는 기본값 결과 불변으로 재실행하지 않았음. 골든/결과 해시 `--write`는 쓰지 않았음.
 
 ## 남은 일
 
@@ -39,7 +40,7 @@
 16. **코스모 벨그라스 남은 대조**: 침식 체크 수명 0의 초기 대입·ROOT와 BOSS_5 대응, 영상의 브레이크 피해량이 미확인임. 시전 시작 판정·SKILL_END 정리는 확인했으나 다단 타격을 분리하면 시전 시작 스냅숏이 필요함. 쇠락 사망 보존은 `dead_keep_dnp=client` 선택지로 구현했으며 동명 충돌·전체 부여 경로 미확인으로 기본 off 유지했음. 같은 시점 내 정보·영상 재대조는 남았음(계정 수치는 비공개 폴더).
 17. **코스모 탐색 시간 단축 남은 측정**: 실제 전체 탐색 가속률, 다중 워커 4/8/16개 동시 부팅·메모리·인터넷 지연, Pyodide 버전 비교는 미측정임. CRN 점수차 분산·신뢰구간 탈락·추가 반감의 순위 오류/시간 이득도 미확인임. 후보·판 수를 줄이는 기법은 적용하지 않았음. 완료한 가속·단일 워커 측정은 `docs/cosmo_speed_1110.md`.
 18. **코스모 난이도 자동**: 선택 로직에 상한은 없음(0~18 비교). 난이도 9 부터 «폭주: 시공»(보스 속도 +30%)이 붙어 엔진 점수가 꺾이고 이후는 기본 점수×배율이 지배(8과 18이 비슷). 실제 9 이상 데이터가 없어 엔진 9+ 구간은 미검증 -> 사용자가 9~12단계 결과(턴·생존·깎음)를 주면 보정. 후보 선정이 대표 난이도 6 기준이라 고난이도 전용 팀을 놓칠 수 있음 -> 고난이도(12 등) 추가 스크리닝·probeRuns 증가는 계산 시간과 맞바꿈.
-19. 추가 규칙 후보의 남은 경계: 엔진 `dur=None`과 클라 0턴 전수 대응(`check_buff_expiry=action`, `check_buff_scope=name` 유지), 행성 정화의 대상은 있지만 실제 이력이 없는 시전·사망 시전자 SKILL_END, 영역 해제·강화 개수 집계는 미확인임.
+19. 추가 규칙 후보의 남은 경계: 엔진 `dur=None`과 클라 0턴 전수 대응(`check_buff_expiry=action`, `check_buff_scope=name` 유지), 행성 정화의 대상은 있지만 실제 이력이 없는 시전·사망 시전자 SKILL_END, 영역 해제·강화 개수 집계는 미확인임. 11/10 리뷰 R3~R5: 아군·적 턴 시작 SE와 틱 뒤 반응 예약 전수 대응, `skill` 만료의 중첩 시전 외부 효과 제거, 부활 등장 HP 0에서의 회복·조건·자해 경계는 기본 전환 전에 검증하기로 함.
 23. **구원자 스킬 효과 남은 확인**: DoT/HoT 사이 순서·수명 차감 시점·아군 쿨 차감, 능력치 최종 정수화/반올림, 린 실제 서버 덱의 초기 쿨은 미확인임. `stat_select_int=float`, `ally_init_cd=0.0`·grade=user 유지. 실제 플레이 대조는 남았음.
 20. 코스모 영상 대조는 난이도 8 한 판씩뿐이라 전역 가정을 바꾸지 않음. 카넬리아·티리아 판은 11/09 데이터가 남아 있음(비공개 `video_1109`).
 21. **외부 문서 규칙 남은 확인**: NKM:826 두 필드 초기화 의미, 서버의 스테이지 효과 주입기 구성, AFTER_SPAWN 문구↔SE 전수 대응·HP 조건부 등장 효과, DeadNotDispel 동명 충돌·전체 생성 경로가 미확인임. `wave_carry=keep`, `wave_foe_battle_start=all`, `revive_after_spawn=off`, `dead_keep_dnp=off` 기본 유지. 전투력 산출식·적용 콘텐츠·재점화 결합·전투력 공식 일치, `wave_carry=client` 영상 대조·외부 문서와 같은 입력 결과 대조는 남았음(`power_penalty=off` 유지).
@@ -61,6 +62,8 @@
 
 ## ▶ 2026-11-10 밤 (Claude+codex) — 미확인 마무리·규칙 후보 7종·길방 BFB 새 패시브·코스모 가속 (푸시 전)
 
+- **리뷰 권고 반영(11/10)**: R1·R2 수정, R3~R5 미확인 경계 note 반영, R6 실제 standard 길방 시험 반영·«guild_sim 미재계산»은 a732566 재생성 기록/데이터 변경으로 기각했음. 93d300f legacy 14사례 상태·시간선·난수 일치, 기본값은 a732566와 72판 API 결과 불변, 결함 재주입 4종 assertion 실패 확인. simpack 재생성·HTML 동일, quick/guild_sim·골든 유지, e2e는 기본값 결과 불변이라 재실행하지 않았음. 상세 `docs/review_followup_1110.md`.
+- 리뷰 후속 검증: 기준선 일반 103/0 → 최종 일반 104/0, 환경 건너뜀 2건 동일. 독립 리뷰는 고정 범위 `a732566..e4428ead70b71b99a4b2e4924ad483ebc87b5a8c`(브랜치에 연결하지 않은 검토 스냅숏)의 엔진·시험·note와 클라 근거를 대조했으며 수정 필요 지적 없음.
 - 묶음은 `93d300f` 이후 `dad6846` 코스모 가속, `3e43e9e` BFB, `6c1e847` 후속 D, `5b4dd4d` 규칙 E임. `22a6235`에서 main의 병합 충돌 3파일을 정리했음. 비공개 static-data `64e4fad`는 읽기만 했고 시험에는 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data`를 지정했음. 병합 진행 중이라 pull하지 않았음.
 - 충돌: default의 양쪽 키를 전부 보존하고, 부활 영역 note는 D의 주입기 근거 보완·오메가 note는 E의 해제 분리를 합쳤음. `_KEEP`는 양쪽 legacy 고정 키 합집합이며 각 부모의 키/값 포함을 자동 검사했음. 기존 브레이크 시험은 legacy 계약이므로 `wave_extra_turn=keep`·`break_gauge_actor=exclude`를 함께 고정했음. 새 기본값에서는 브레이크 발동자 +2000을 보존한 뒤 다음 웨이브에서 게이지·예약을 초기화함. 이 경계는 별도 교차 시험으로 검사했음. 골든 값은 변경하지 않았음.
 - 후속 D 8종: 기본 전환은 `wave_extra_turn=clear`, `turn_start_order=client`, `guard_skip_immune=client`임. `wave_foe_battle_start=all`, `dead_keep_dnp=off`, `revive_after_spawn=off`, `add_damage_guard=off`, `stat_select_int=float`는 미확인 경계를 남기고 기존 기본을 유지했음. 상세·클라 파일:줄은 `docs/followup_d_1110.md`.
