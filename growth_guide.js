@@ -2,6 +2,8 @@
 (function(root){
   'use strict';
   const LIMITS=Object.freeze({screenRuns:4, finalRuns:100, finalists:48, maxRuns:7200, maxMs:120000, companions:16});
+  const COMPONENTS=Object.freeze({level:['level'],equipment:['equip'],skills:['skills'],potential:['resonance','journey','potentials']});
+  function options(saved={},shared={}) {return {growth:!!(shared.ag??saved.growth),owned:(shared.ao??saved.owned)!==false};}
   const cmp=(a,b)=>b.clear-a.clear||(b.prog??0)-(a.prog??0)||(a.ttk??Infinity)-(b.ttk??Infinity);
   // sim_worker.run_auto + web.run_manual: 4 policy probes, selected policy, replay.
   const finalCost=(n,mode)=>mode==='manual'?2*n+4*Math.max(10,Math.floor(n/3))+1:n;
@@ -39,7 +41,10 @@
     const rankedOwned=[...controls.values()].filter(j=>j.result&&j.id!==established?.id).sort((a,b)=>cmp(a.result,b.result));
     const bestOwned=(established?[established,...rankedOwned]:rankedOwned).slice(0,Math.min(3,Math.max(0,Math.floor((L.maxRuns-runs)/cost)-1)));
     const slots=Math.max(0,Math.floor((L.maxRuns-runs)/cost)-bestOwned.length);
-    const finalists=chosen.filter(t=>t.best).sort((a,b)=>cmp(sr[a.best.id],sr[b.best.id])).slice(0,Math.min(L.finalists,slots));
+    const ranked=chosen.filter(t=>t.best).sort((a,b)=>cmp(sr[a.best.id],sr[b.best.id]));
+    const bundles=ranked.filter(t=>!t.component),first=bundles.slice(0,Math.min(24,slots));
+    const components=first.flatMap(t=>Object.keys(COMPONENTS).map(k=>ranked.find(x=>x.parentId===t.id&&x.component===k)).filter(Boolean));
+    const finalists=[...first,...components,...bundles.slice(first.length)].slice(0,Math.min(L.finalists,slots));
     progress('선발 완료 · 같은 판 수로 재평가');
     const jobs=bestOwned.concat(finalists.map(t=>t.best));
     const fr=now()-start<L.maxMs?await evaluate(jobs,L.finalRuns,900001):{};
@@ -49,14 +54,14 @@
     const baselineJob=baselinePending?null:bestOwned.filter(j=>fr[j.id]).sort((a,b)=>cmp(fr[a.id],fr[b.id]))[0];
     const baseline=baselineJob?fr[baselineJob.id]:null;
     const rows=chosen.map(t=>{const result=t.best&&fr[t.best.id];return {id:t.id,key:t.key,kind:t.kind,source:t.source,
-      changedFields:t.changedFields,presetId:t.presetId,status:result?'evaluated':t.error?'unsupported':t.best?'screened':'unevaluated',
+      component:t.component,parentId:t.parentId,changes:t.changes,changedFields:t.changedFields,presetId:t.presetId,status:result?'evaluated':t.error?'unsupported':t.best?'screened':'unevaluated',
       error:t.error,result:result||null,team:result?t.best:null,screened:(t.candidates||[]).filter(j=>sr[j.id]).length,
       ...(result?compare(result,baseline):{delta:null,ci:null,confirmed:false})}});
     return {rows,baseline,baselineJob,baselinePending,runs,ms:now()-start,scope:{targets:targets.length,evaluated:rows.filter(r=>r.result).length,
       screened:Object.keys(sr).length,companions:L.companions,maxRuns:L.maxRuns,maxMs:L.maxMs}};
   }
   function summary(result,content,signature,account,version){return {content,signature,account,version,at:Date.now(),
-    scope:result.scope,rows:result.rows.map(({key,kind,delta,ci,confirmed,status})=>({key,kind,delta,ci,confirmed,status}))};}
+    scope:result.scope,rows:result.rows.filter(r=>!r.component).map(({key,kind,delta,ci,confirmed,status})=>({key,kind,delta,ci,confirmed,status}))};}
   function save(storage,shared,entry){if(shared)return false;
     const old=storage.get('growth.history')||{},next=Object.fromEntries(Object.entries(old).filter(([,v])=>v.account===entry.account&&v.version===entry.version));
     next[entry.content]=entry;const latest=Object.entries(next).sort((a,b)=>b[1].at-a[1].at).slice(0,30);
@@ -67,6 +72,6 @@
     return [...by.values()].map(r=>({...r,count:new Set(r.contents.filter(c=>c.confirmed).map(c=>c.content.split('/')[0])).size}))
       .sort((a,b)=>b.count-a.count||Math.max(...b.contents.map(c=>c.delta??-Infinity))-Math.max(...a.contents.map(c=>c.delta??-Infinity))||a.key.localeCompare(b.key));
   }
-  const api={LIMITS,cmp,finalCost,signature,interval,compare,screenPlan,search,summary,save,priority};
+  const api={VERSION:'bundle-slots-v2',LIMITS,COMPONENTS,options,cmp,finalCost,signature,interval,compare,screenPlan,search,summary,save,priority};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GrowthGuide=api;
 })(typeof window!=='undefined'?window:globalThis);

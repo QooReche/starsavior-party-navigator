@@ -3,7 +3,9 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23223'/%3E%3Cpath d='M16 5l3.3 7.2 7.7.8-5.8 5.2 1.7 7.6L16 21.8 9.1 25.8l1.7-7.6L5 13l7.7-.8z' fill='%23fc4'/%3E%3C/svg%3E">
 <title>파티 편성 네비게이터 (베타)</title>
 <style>
-:root{color-scheme:dark;--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e;--warn:#ffb454;--gold:#ffd24a;--ult:#7a4fc0;--spc:#3b6cb4;--bas:#4a5568}
+:root{color-scheme:dark;--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e;--warn:#ffb454;--gold:#ffd24a;--ult:#7a4fc0;--spc:#3b6cb4;--bas:#4a5568;--assumed:#cba6ff;--assumed-bg:#332544}
+[data-theme="light"]{--assumed:#7540a1;--assumed-bg:#f4eaff}
+.assumed-card .card{border:2px dashed var(--assumed)}.assumed-label{color:var(--assumed);background:var(--assumed-bg);font-weight:700;font-size:11px;display:inline-block;padding:3px 5px;border-radius:5px}.assumed-card .cinfo .assumed-label{white-space:normal;line-height:1.4;margin-top:4px}.assumed-mark{color:var(--assumed);font-weight:bold;margin-left:3px}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 "Malgun Gothic",system-ui,sans-serif}
 body.noscroll{overflow:hidden}
 main{max-width:1100px;margin:0 auto;padding:16px}
@@ -350,7 +352,7 @@ summary{padding:9px 4px}
    <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
 <section id="mi-panel" class="panel" aria-label="내 정보" hidden>
  <div class="mi-toolbar"><b>내 정보</b><button id="mi-open-import" type="button">불러오기·만드는 방법</button><button id="mi-panel-clear" type="button">지우기</button><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
- <div class="mi-assume"><label><input type="checkbox" id="assume-growth"> 육성 가이드(미보유·덜 키운 구원자 가정)</label> <label><input type="checkbox" id="assume-equipment"> 장비 가정(가이드 기본 세트 +15)</label><details><summary>가정 기준</summary><p>작전·회랑에서 한 명씩 목표 세팅을 적용합니다. 클리어 확률 차이(%p)는 이번 탐색 범위의 보유 최고와 비교한 추정치이며, 육성 비용 대비 효율은 아닙니다. 표준 세팅·평균 부옵은 실제 장비 보유 여부와 무관합니다. 음수는 성능 하락, 미평가는 비교하지 못한 후보입니다.</p><label>육성 대상 <select id="assume-owned"><option value="all">미보유 + 보유 목표 육성</option><option value="missing">미보유만</option></select></label></details></div>
+ <div class="mi-assume"><label><input type="checkbox" id="assume-growth"> 육성 가이드</label><details><summary>가정 기준</summary><p>작전·회랑에서 한 명씩 레벨(스타링크 등록)·장비 +15·스킬 최대·공명·목표 잠재력을 함께 적용합니다. 묶음 전체 개선과 각 항목만 바꾼 값을 비교합니다. 클리어 차이(%p)는 탐색 범위의 보유 최고와 비교한 추정치입니다. 표준 세팅·평균 부옵은 실제 장비 보유 여부와 무관합니다. 음수도 표시하며 미평가는 확인 부족으로 남깁니다.</p><label>육성 대상 <select id="assume-owned"><option value="all">미보유 + 보유 목표 육성</option><option value="missing">미보유만</option></select></label></details></div>
 <div id="mi-meta"></div><div id="mi-saved" class="mut"></div><div id="mi-account"></div>
  <section id="mi-brk-sec"><b>보유 브레이크 스킬</b> <span class="mut" id="brk-note">직접 선택</span><div id="brk" style="margin-top:6px"></div></section>
  <div id="mi-excl" class="mut"></div><div id="mi-list"></div>
@@ -405,6 +407,8 @@ summary{padding:9px 4px}
 <script src="myinfo_reco.js"></script>
 <script src="growth_guide.js"></script>
 <script src="growth_ui.js"></script>
+<script src="star_link.js"></script>
+<script src="star_link_ui.js"></script>
 <script src="share_state.js"></script>
 <script src="guild_view.js"></script>
 <script src="guild_search.js"></script>
@@ -743,8 +747,8 @@ function simUnit(r,key){if(!r||!r.g||!r.u||!r.u[key])return '<div class="simu"><
  const lv=dp>=0.5?3:dp>=0.2?2:dp>=0.05?1:0;
  return `<div class="simu"><div class="sb" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="피해 기여 ${pct}%"><i style="width:${pct}%"></i></div>피해 ${pct}% · <span class="dot d${lv}"></span>탈락 ${dpp}%</div>`}
 function card(x,pos,r,assumption=null){const s=x.s;
- return `<div class="gc" data-key="${esc(s.key)}"><div class="card"><button type="button" class="skill-open-card" data-skill-open="${esc(s.key)}" aria-label="${esc(s.name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false"></button>${s.key===LEADKEY?`<div class="crown" title="속도 +10">${CROWN}<span>리더</span></div>`:""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
-  <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div></div></div>
+ return `<div class="gc${assumption?' assumed-card':''}" data-assumed="${assumption?assumption.kind:''}" data-key="${esc(s.key)}"><div class="card"><button type="button" class="skill-open-card" data-skill-open="${esc(s.key)}" aria-label="${esc(s.name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false"></button>${s.key===LEADKEY?`<div class="crown" title="속도 +10">${CROWN}<span>리더</span></div>`:""}<div class="fallback">${esc(s.name[0])}</div>${art(s)}
+  <div class="cinfo">${dia(s,68)}${kindTxt(s)}<div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub)}</div>${assumption?growthBadge(assumption):""}</div></div>
   <div class="slotlbl ${pos}">${pos==="back"?"후열":"전열"}</div>${miCard(s.key,assumption)}${r?simUnit(r,s.key):""}</div>`}
 function breakCard(br,r,p,t,st){
  const b=CFG.breakSkills[br.name],im=D.bicons[br.name],bs=MODE==="manual"&&r?.man?r.man.bs:r?.bs;
@@ -1169,7 +1173,7 @@ function runCore(skipAuto=false){
  $("out").innerHTML=html;
  if(skipAuto!==true)simAutoKick();
  if(SIMQ.busy!=="growth"&&simWaiting(st)){$("out").innerHTML=simProgress(st);if(window.onParties)onParties(allParties);return}
- growthMaybe(c,st);
+ slotRemember(c,st);growthMaybe(c,st);slotPaint();
  for(const p of Object.keys(BRCMP.open))if(!document.querySelector(`.party[data-party="${p}"] .bcompare`))delete BRCMP.open[p];
  // 비교가 도는 중 1안 팀이 바뀌어 비교 목록이 사라졌으면, 그 파티의 시뮬 줄에 진행 상태와 취소를 대신 보인다(멈춘 채 다른 시뮬이 막히지 않게)
  if(SIMQ.busy!=null&&SIMQ.compareKey&&!document.querySelector(`.party[data-party="${SIMQ.busy}"] [data-k="breakstate"]`)){const sb=document.querySelector(`.party[data-party="${SIMQ.busy}"] .simbar`)||document.querySelector("#out .simbar");
@@ -1225,7 +1229,7 @@ function miFlags(assumed=0,approx=true){if(!miMode())return "";const p=miProfile
  if(!p.rule)chips.push("미매핑 · 평균 가정");else if(MI.error)chips.push("성장표 오류 · 평균 가정");else if(!MI.growth)chips.push("불러오는 중");else if(assumed)chips.push("일부 가정");
  if(p.mismatch)chips.push("빌드 다름");if(p.rule==="fixed200")chips.push("Lv200 · 공명 10");
  return chips.map(x=>`<span class="tag">${x}</span>`).join("")}
-function miCard(key,assumption=null){if(assumption)return `<div class="mi-chips"><span class="tag" data-k="assumed-badge">${esc(growthLabel(assumption))}</span><span class="tag">${esc(assumption.changedFields.map(f=>growthFields[f]).join(" · "))}</span></div>`;if(!miMode())return "";const p=miProfile(),u=p.units[key],r=p.results[key];
+function miCard(key,assumption=null){if(assumption)return growthCardMeta(assumption);if(!miMode())return "";const p=miProfile(),u=p.units[key],r=p.results[key];
  return `<div class="mi-chips">${r?`<span class="tag mi-member-power">전투력 ${miNum(r.power)}</span>`:'<span class="tag">평균 가정</span>'}${u?`<span class="tag mi-member-star">${miStars(u)}</span>`:""}</div>`}
 function miVerdict(t,st){const r=SIMQ.res[simSig(st,t)];
  if(!r)return `<div class="mi-verdict" data-k="judgment"><b class="mut">시뮬 전</b></div>`;
@@ -1352,7 +1356,7 @@ function drawGraph(){
  setTimeout(()=>{if(cy){cy.resize();cy.fit(undefined,30)}},50)}
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=()=>{graphDirty=true;drawGraph()});
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party"){graphDirty=true;drawGraph()}};
-function shareUrl(){const c=contents[$("content").value],s=cur&&cur[$("stage").value],state={c:c.key,s:s?s.tab+"|"+s.name:"",m:MODE,rk:+$("rk").value,ag:growthOptions().growth,ae:growthOptions().equipment,ao:growthOptions().owned};
+function shareUrl(){const c=contents[$("content").value],s=cur&&cur[$("stage").value],state={c:c.key,s:s?s.tab+"|"+s.name:"",m:MODE,rk:+$("rk").value,ag:growthOptions().growth,ao:growthOptions().owned};
  document.querySelectorAll(".party[data-party] .bsel").forEach(el=>{state[el.closest(".party").dataset.party==="2"?"b2":"b"]=el.value});
  return ShareState.url(location.href,state)}
 async function shareUrlMi(){let url=shareUrl();if(!MI.info||!$("share-mi").checked)return url;

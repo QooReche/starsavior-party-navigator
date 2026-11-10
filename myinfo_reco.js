@@ -37,13 +37,23 @@
     if (preset.kind === 'equipment' && !owned) throw new Error('장비 비교는 보유 구원자만 가능');
     const unit = owned ? clone(owned) : {id: spec.uid, star: 0, sigil: 0, favor: 0, resonance: 0,
       skills: {}, equip: [], gauntlet: {level: 0, journey: [0,0,0,0,0], potentials: [], blessings: []}};
-    const fields = preset.fields || (preset.kind === 'equipment' ? ['equip'] : owned
-      ? ['resonance', 'skills', 'journey', 'potentials'] : ['resonance', 'skills', 'journey', 'potentials', 'equip']);
+    const fields = preset.fields || (preset.kind === 'equipment' ? ['equip']
+      : ['level', 'equip', 'skills', 'resonance', 'journey', 'potentials']);
     const before = clone(unit);
+    if(fields.some(f=>f==='journey'||f==='potentials'))unit.gauntlet ||= {};
+    // A scenario registers only its target in a virtual slot. Never edit MI.info,
+    // or mistake a savior's own level for its effective (slot/source) level.
+    const levelTarget = fields.includes('level') ? info.star_link?.level ?? info.star_link_level : null;
+    if (levelTarget != null && !Number.isInteger(levelTarget)) throw new Error('스타링크 레벨 없음');
+    const targetInfo = levelTarget == null ? info : {...info, star_link:{
+      level:levelTarget, source:info.star_link?.source || [],
+      slots:[...(info.star_link?.slots || []).filter(s=>s.id!==unit.id), {index:-1,id:unit.id}]}};
     for (const field of fields) {
-      if (field === 'resonance') {
+      if (field === 'level') { if (!unit.level) unit.level = levelTarget; }
+      else if (field === 'resonance') {
         const unlock = growth.units[spec.uid].resonance_unlock;
-        unit.resonance = Math.max(0, ...Object.keys(unlock).map(Number).filter(n => unlock[n] <= info.star_link_level));
+        const level = levelTarget ?? Stats.effective_level(unit,info);
+        unit.resonance = Math.max(0, ...Object.keys(unlock).map(Number).filter(n => unlock[n] <= level));
         if (owned) unit.resonance = Math.max(unit.resonance, owned.resonance);
       } else if (field === 'skills') unit.skills = clone(spec.skills);
       else if (field === 'equip') unit.equip = clone(spec.equip);
@@ -54,18 +64,21 @@
         unit.gauntlet.potentials = (unit.gauntlet.potentials || []).filter(p => !special.has(p[0])).concat([clone(spec.potential)]);
       } else throw new Error('지원하지 않는 육성 항목: ' + field);
     }
-    const value = (u, f) => ['journey', 'potentials'].includes(f) ? u.gauntlet[f] : u[f];
-    const changedFields = fields.filter(f => !owned || JSON.stringify(value(before,f)) !== JSON.stringify(value(unit,f)));
+    const value = (u, f) => ['journey', 'potentials'].includes(f) ? u.gauntlet?.[f] : u[f];
+    const changes = Object.fromEntries(fields.map(f=>[f, f==='level'
+      ? {before:owned ? Stats.effective_level(owned,info) : null, after:levelTarget}
+      : {before:value(before,f),after:value(unit,f)}]));
+    const changedFields = fields.filter(f => !owned || JSON.stringify(changes[f].before) !== JSON.stringify(changes[f].after));
     return {unit, source: owned ? 'owned' : 'assumed', changedFields, presetId: data.version,
-      kind: preset.kind || 'growth', key};
+      changes, levelTarget, targetInfo, kind: preset.kind || 'growth', key};
   }
   function assumedProfile(base, assumed, info, growth, content) {
     const rule = Stats.rule_for_content(content), spec = growth.assumed.units[assumed.key];
-    const result = Stats.final_stats(assumed.unit, info, growth, rule);
+    const result = Stats.final_stats(assumed.unit, assumed.targetInfo || info, growth, rule);
     const missing = [...(result?.missing || ['content'])];
     for (const [slot, level] of Object.entries(assumed.unit.skills))
       if (level && !spec.skill_levels[slot]?.includes(level)) missing.push('combat.skill:' + slot);
-    for (const [id, level] of assumed.unit.gauntlet.potentials)
+    for (const [id, level] of assumed.unit.gauntlet?.potentials || [])
       if (level && !growth.assumed.combat_support.potentials[id]?.includes(String(level))) missing.push('combat.potential:' + id);
     if (!result || !Number.isFinite(result.power) || !Object.values(result.stats).every(Number.isFinite)) missing.push('stats');
     if (missing.length) throw new Error('가정 자료 미지원: ' + [...new Set(missing)].join(', '));

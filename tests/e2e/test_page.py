@@ -995,8 +995,8 @@ def test_share_link(browser, ctx):
     page.wait_for_function('() => !!window.copied')
     url = page.evaluate('() => window.copied')
     params = parse_qs(urlsplit(url).query, keep_blank_values=True)
-    assert set(params) == {'c', 's', 'm', 'rk', 'b', 'ag', 'ae', 'ao'}, params
-    assert params['ag'] == ['0'] and params['ae'] == ['0'] and params['ao'] == ['1']
+    assert set(params) == {'c', 's', 'm', 'rk', 'b', 'ag', 'ao'}, params
+    assert params['ag'] == ['0'] and params['ao'] == ['1'] and 'ae' not in params
     assert not urlsplit(url).fragment
     # 2) 「내 정보 포함」: 해시 #shared=
     page.check('#share-mi')
@@ -1575,10 +1575,9 @@ def test_assumed_growth(browser, ctx):
     if os.environ.get('PN_DISABLE_ASSUMED') == '1':
         page.evaluate('growthMaybe=()=>{}')
     page.click('#tab-info')
-    assert page.locator('label:has(#assume-growth)').inner_text().strip() == '육성 가이드(미보유·덜 키운 구원자 가정)'
-    assert page.locator('label:has(#assume-equipment)').inner_text().strip() == '장비 가정(가이드 기본 세트 +15)'
+    assert page.locator('label:has(#assume-growth)').inner_text().strip() == '육성 가이드'
+    assert page.locator('#assume-equipment').count() == 0
     page.check('#assume-growth')
-    page.check('#assume-equipment')
     page.click('#tab-reco')
     page.click('button[data-go]')
     page.wait_for_function("() => GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
@@ -1598,13 +1597,27 @@ def test_assumed_growth(browser, ctx):
     assert result['scope']['evaluated'] > 0 and result['rows'], result
     assert all(r['prog'] > 0 and r['n'] == result['baseline']['n'] for r in result['rows']), result
     assert result['owned'] and result['one'], result
-    assert page.locator('[data-k="assumed-badge"]').count() == 1
+    assert page.locator('.card [data-k="assumed-badge"]').count() == 1
+    assert '가정 포함' in page.inner_text('[data-k="growth-best"]')
+    assert page.locator('.assumed-card .assumed-mark').count() > 0
+    assert '→' in page.locator('.assumed-card .assumed-mark').first.get_attribute('title')
+    if os.environ.get('PN_DISABLE_GUIDE_STYLE') == '1':
+        page.add_style_tag(content='.assumed-card .card {border-style:solid !important}')
+    colors = []
+    for theme in ('light', 'dark'):
+        page.evaluate('(theme)=>document.documentElement.dataset.theme=theme', theme)
+        style = page.locator('.assumed-card .card').evaluate('(e)=>({style:getComputedStyle(e).borderTopStyle,color:getComputedStyle(e).borderTopColor})')
+        assert style['style'] == 'dashed', style
+        colors.append(style['color'])
+    assert colors[0] != colors[1], colors
+    assert page.locator('[data-k="growth-contributions"]').count() > 0
+    assert page.evaluate("GROW.result.rows.some(r=>r.component&&r.result&&r.result.prog>0)")
     assert result['history'] and 'progs' not in result['history'] and 'item_id' not in result['history']
     # Full share payload must remain the original account, while options travel in search.
     shared = page.evaluate('''async () => {const url=await shareUrlMi();
       const u=new URL(url),decoded=await MyInfoImport.fromHash(u.hash.replace('#shared=','#myinfo='));
       return {same:JSON.stringify(decoded)===window.assumedOriginal,ag:u.searchParams.get('ag'),ae:u.searchParams.get('ae')};}''')
-    assert shared == dict(same=True, ag='1', ae='1'), shared
+    assert shared == dict(same=True, ag='1', ae=None), shared
     # Shared mode storage guard uses the actual page completion path's helper.
     unchanged = page.evaluate('''() => {const old=LS.get('growth.history');MI.shared=true;
       const entry=GrowthGuide.summary(GROW.result,'op/shared/test','new',MI.hash,'other');
@@ -1627,7 +1640,6 @@ def test_assumed_growth(browser, ctx):
     page.evaluate('MI.shared=false')
     page.click('#tab-info')
     page.uncheck('#assume-growth')
-    page.uncheck('#assume-equipment')
     assert page.evaluate("GROW.phase==='idle' && GROW.result===null && SIMQ.busy===null")
     page.click('#mi-panel-clear')
     assert page.evaluate("localStorage.getItem('pn.growth.history')===null")
@@ -1643,7 +1655,7 @@ def test_assumed_manual(browser, ctx):
       await miApply(info);setMode('manual',true);condChanged();}''')
     settle(page)
     page.click('#tab-info')
-    page.check('#assume-equipment')
+    page.check('#assume-growth')
     page.click('#tab-reco')
     page.click('button[data-go]')
     page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
@@ -1653,7 +1665,7 @@ def test_assumed_manual(browser, ctx):
     # In-flight invalidation: a new option change must discard the entire scenario.
     page.evaluate('''() => {growthCancel();growthStart(contents[$('content').value],cur[$('stage').value]);}''')
     page.click('#tab-info')
-    page.uncheck('#assume-equipment')
+    page.uncheck('#assume-growth')
     settle(page)
     assert page.evaluate("GROW.result===null&&GROW.phase==='idle'&&SIMQ.busy===null")
     assert not ctx.errors, ctx.errors
@@ -1689,7 +1701,87 @@ def test_assumed_corridor(browser, ctx):
     return True, '합성 계정 달 회랑 100: %.1f초 / %d판 / 보유 3명+가정 1명·속성 제한·기준 없음' % (result['ms']/1000, result['runs'])
 
 
-TESTS = [test_assumed_growth, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
+def test_star_link_slots(browser, ctx):
+    """Real workers, synthetic seven-savior account, two occupied slots."""
+    page = open_page(browser, ctx, info=SYNTH)
+    choose(page, '작전 (일반)', 'SECTOR 15-3')
+    page.evaluate('''async () => {
+      const info=structuredClone(MI.info);info.star_link_level=240;
+      for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
+      const keys=['luna','dana','muriel','elisa','emily','bell','scarlet'];
+      info.units=keys.map(key=>{const u=MyInfoReco.assume(key,{...info,units:[]},MI.growth).unit;
+        u.level=key==='scarlet'?82:240;
+        if(key!=='scarlet'){u.equip=[];u.gauntlet.journey=[0,0,0,0,0];u.gauntlet.potentials=[];
+          u.skills={basic:1,special:1,ultimate:1,passive:1};u.resonance=0;}return u;});
+      info.star_link={level:240,source:info.units.slice(0,4).map(u=>u.id),slots:info.units.slice(4,6).map((u,index)=>({index,id:u.id}))};
+      await miApply(info);window.slotOriginal=JSON.stringify(MI.info);showReco();
+    }''')
+    settle(page)
+    wait_sim_done(page)
+    page.wait_for_selector('[data-slot-start]:not([disabled])')
+    assert page.evaluate('SLOT.contexts.size') == 1
+    # Replay A's candidate generation while the page globals represent another content.
+    assert page.evaluate('''async () => {
+      const c=[...SLOT.contexts.values()][0],profile=miProfile(),key='scarlet',old=[GIMACT,SBACT,DMW];
+      const run=()=>growthCandidates(c.c,c.st,()=>true,Date.now()+10000,{original:profile,profile,qi:c.qi,
+        scoring:c.scoring,targets:[{key,kind:'slot'}]});
+      const project=r=>JSON.stringify(r.map(t=>t.candidates.map(j=>({party:j.party,v:j.t.v}))));
+      const a=project(await run());GIMACT=[];SBACT=[];DMW=[1,999];
+      try{const b=project(await run());return a===b&&DMW[1]===999;}finally{[GIMACT,SBACT,DMW]=old;}
+    }''')
+    # Controlled evaluator isolates the fixed200 contract and common candidate sets.
+    assert page.evaluate('''async () => {
+      const context={...[...SLOT.contexts.values()][0]},referenceInfo=structuredClone(MI.info),info=structuredClone(MI.info);
+      info.star_link.slots[0].id=MI.growth.assumed.units.scarlet.uid;
+      context.c={...context.c,key:'rush'};
+      const original=growthEvaluate,seen=[];
+      growthEvaluate=async(jobs,n)=>{seen.push(jobs);return Object.fromEntries(jobs.map((j,i)=>[j.id,
+        {clear:i%2?.9:.5,n,prog:.9,progs:Array(n).fill(.9),via:{},ttk:10}]));};
+      try{const r=await slotEvaluateState({info,referenceInfo,context,focus:[info.star_link.slots[0].id],remaining:3000,deadline:Date.now()+10000},GROW.id);
+        return r.metric.clear===r.controlMetric.clear&&r.runs>0&&seen.every(jobs=>jobs.every(j=>j.id.startsWith('0|')));
+      }finally{growthEvaluate=original;}
+    }''')
+    if os.environ.get('PN_DISABLE_SLOT') == '1':
+        page.evaluate('() => {StarLink.search=async p=>({initial:p.info.star_link.slots.map(s=>s.id),slots:p.info.star_link.slots.map(s=>s.id),swaps:[],diagnostics:[],rows:[],runs:0,ms:0,pairs:0,limited:false});}')
+    stored = page.evaluate('JSON.stringify({...localStorage})')
+    page.click('[data-slot-start]')
+    page.wait_for_function("SLOT.phase==='done'||SLOT.phase==='error'", timeout=180000)
+    assert page.evaluate("SLOT.phase") == 'done', page.evaluate('SLOT.msg')
+    r = page.evaluate('''() => ({...SLOT.result,original:JSON.stringify(MI.info)===window.slotOriginal,
+      example:document.querySelector('[data-k="slot-swap"]')?.textContent,
+      contexts:[...SLOT.contexts.keys()]})''')
+    assert len(r['slots']) == 2 and r['swaps'] and r['runs'] > 0 and r['runs'] <= 12000, r
+    assert r['original'] and all(x['prog'] > 0 for x in r['baseline'].values()), r
+    assert '스칼렛' in r['example'] and '넣기:' in r['example'] and '빼기:' in r['example'], r
+    assert '교체 쿨다운 있음' in page.inner_text('[data-k="slot-cooldown"]')
+    assert page.evaluate('JSON.stringify({...localStorage})') == stored
+    assert len(r['contexts']) == 1 and 'SECTOR 15-3' in r['contexts'][0]
+    page.screenshot(path=os.path.join(ctx.shots, 'star_link_slots.png'), full_page=True)
+    with open(os.path.join(ctx.shots, 'star_link_measurement.json'), 'w', encoding='utf8') as f:
+        json.dump(r, f, ensure_ascii=False, indent=2)
+    # Shared mode preserves local account and option storage, including a completed slot run.
+    page.evaluate('MI.shared=true')
+    page.click('[data-slot-start]')
+    page.wait_for_function("SLOT.phase==='done'||SLOT.phase==='error'", timeout=180000)
+    assert page.evaluate("SLOT.phase==='done' && SLOT.result.swaps.length>0")
+    assert page.evaluate('JSON.stringify({...localStorage})') == stored
+    page.click('#tab-info')
+    page.check('#assume-growth')
+    assert page.evaluate('JSON.stringify({...localStorage})') == stored
+    page.uncheck('#assume-growth')
+    # Legacy imports must not expose a slot panel or silently recommend more slots.
+    page.evaluate('''async () => {MI.shared=false;const old=structuredClone(MI.info);delete old.star_link;
+      old.units.forEach(u=>delete u.level);await miApply(old);showReco();}''')
+    settle(page)
+    page.click('#tab-reco')
+    page.wait_for_selector('[data-k="slot-unavailable"]')
+    assert page.locator('[data-k="slot-panel"]').count() == 0
+    assert '다시 불러오기 필요' in page.inner_text('[data-k="slot-unavailable"]')
+    assert not ctx.errors, ctx.errors
+    return True, '합성 슬롯: %.1f초 / %d판 / %s' % (r['ms']/1000, r['runs'], r['example'])
+
+
+TESTS = [test_star_link_slots, test_assumed_growth, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)

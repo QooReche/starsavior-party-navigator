@@ -4,6 +4,7 @@
 
 ## 현재 상태
 
+- 11/10 심야: `9f33827`의 구원자별 실효 레벨과 육성 가이드 1단계를 `ca1e271`에서 병합했음. manifest 충돌은 빌더로 재생성했음. 목표 육성을 레벨·장비·스킬·공명·잠재력 묶음으로 통합하고 단일 항목 비교·임시 보정 표시·현재 슬롯 수 내 교환 추천을 추가했음. 비공개 자료는 읽기만 했고 push하지 않았음. 상세는 아래 심야 절과 `docs/assumed_build_design.md`.
 - 11/10 밤 리뷰 후속: R1 정화 legacy 시간선·R2 웨이브 게이지 독립성을 고쳤음. R3~R5 미확인 경계를 note에 구체화하고 R6 실제 standard 길방 시험을 추가했음. «guild_sim 미재계산» 지적은 a732566에서 이미 재계산했으므로 기각했음. 93d300f 대비 legacy 14사례 일치, a732566 대비 기본값 72판 결과 불변. 상세 `docs/review_followup_1110.md`.
 - 11/10 밤 병합: `guild_bridal_kill_reset=client`, `wave_extra_turn=clear`, `turn_start_order=client`, `guard_skip_immune=client`, `buff_fresh_scope=client`, `break_gauge_actor=client`, `purify_nova_scope=all_casts`, `preemptive_reduce=client`, `omega_dispel=client`로 기본 전환했음. 근거가 불완전한 D 5개·E 2개는 옛 기본을 유지했음. 정본은 `battlesim/rules/default.json`, 상세는 아래 «11/10 밤» 절. 코스모 가속은 규칙·시드·후보·판 수를 바꾸지 않음.
 - 11/10 오후 병합 기본값: `cosmo_hyper_true_target=self`, `damage_vampirism=client`, `cosmo_drain_category=marker`, `cosmo_speed_floor=true`, `variant_self_state=client`, `turn_unit_debuff_cond=client`, `auto_marker_lines=keep`, `shield_tick=turn_end`, `break_domain_revive=client`. `wave_carry`는 새 `client` 선택지를 넣고 기본/legacy `keep` 유지했음. 오전 `cond_count_bind=holding`, `cosmo_boss_barrier=client`, `stage_fx_target=allies`도 반영됨. 정본·근거는 `battlesim/rules/default.json`, 상세는 아래 «11/10 오후» 절.
@@ -19,8 +20,8 @@
 - 11/09 새 기본값: `foe_react_buff_count=client`, `buff_step_group=client`(단계 그룹 버프), `break_skill_reduce=client`(오비탈은 피해 감소 항 0), `chain_pen=client`(연쇄 피해는 공격자 관통 미적용). 모두 legacy 로 되돌릴 수 있음(절 «2026-11-09»). `guild_sim.json` 은 60칸 비교로 불변 확인해 도장만 인정, `quick.json` 은 재생성·재보정(전체 일치 **0.919**). (→ 이후 11/10 병합 규칙으로 두 생성물 재계산)
 - 생성물 규칙 도장: `tools/rules_stamp.py`·`tools/gen_rules_stamp.json`. 규칙 기본값을 바꾸면 `tests/gen_rules_stamp_test.py` 가 `guild_sim`·`quick` 이 낡았다고 실패하므로 다시 만들거나 `--ack 이름 --reason "…"` 로 이유를 적어 인정함. 건너뜀 표시는 `run_tests.py --strict`.
 - 11/09 코스모 실제 플레이에서는 벨그라스가 특히 비관적이었음. 11/10 보호막·자기 피해·흡혈을 수정했으며 같은 시점 자료로 재대조하기로 함(남은 일 16, 계정 수치는 비공개 보고서).
-- 저장소: `origin/main=93d300f` 이후 코스모 가속·길방 BFB·후속 D·규칙 E를 main에 합쳤음. 충돌 정리 병합 커밋은 `22a6235`이며 생성물·교차 시험·HANDOFF를 후속 커밋으로 묶음(푸시 전). 주소: https://QooReche.github.io/starsavior-party-navigator/
-- 최근 검증: 11/10 밤 리뷰 후속 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정, `run_tests.py` **104 통과/0 실패**(일반 104개 파일). 환경 건너뜀 2건: COSMO_TABLES·옆 journeyhelper 저장소 없음. 직전 a732566의 e2e는 브라우저 38개 모두 통과했으며 이번에는 기본값 결과 불변으로 재실행하지 않았음. 골든/결과 해시 `--write`는 쓰지 않았음.
+- 저장소: `origin/main=1402784`, 실효 레벨 `9f33827`과 육성 가이드 브랜치를 `ca1e271`로 병합했음. 심야 묶음·슬롯 추천 보완은 로컬 작업이며 push하지 않았음. 주소: https://QooReche.github.io/starsavior-party-navigator/
+- 최근 검증: 11/10 심야 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe` **110 통과/0 실패**(일반 109개와 브라우저 e2e 묶음 1개). 브라우저 43건 모두 통과했음. 환경 건너뜀 2건: COSMO_TABLES·옆 journeyhelper 저장소 없음. `9f33827` 대비 공개 프리셋 57명×3수준=171건 정확 일치함. 골든/결과 해시 `--write`는 쓰지 않았음.
 
 ## 남은 일
 
@@ -44,7 +45,18 @@
 23. **구원자 스킬 효과 남은 확인**: DoT/HoT 사이 순서·수명 차감 시점·아군 쿨 차감, 능력치 최종 정수화/반올림, 린 실제 서버 덱의 초기 쿨은 미확인임. `stat_select_int=float`, `ally_init_cd=0.0`·grade=user 유지. 실제 플레이 대조는 남았음.
 20. 코스모 영상 대조는 난이도 8 한 판씩뿐이라 전역 가정을 바꾸지 않음. 카넬리아·티리아 판은 11/09 데이터가 남아 있음(비공개 `video_1109`).
 21. **외부 문서 규칙 남은 확인**: NKM:826 두 필드 초기화 의미, 서버의 스테이지 효과 주입기 구성, AFTER_SPAWN 문구↔SE 전수 대응·HP 조건부 등장 효과, DeadNotDispel 동명 충돌·전체 생성 경로가 미확인임. `wave_carry=keep`, `wave_foe_battle_start=all`, `revive_after_spawn=off`, `dead_keep_dnp=off` 기본 유지. 전투력 산출식·적용 콘텐츠·재점화 결합·전투력 공식 일치, `wave_carry=client` 영상 대조·외부 문서와 같은 입력 결과 대조는 남았음(`power_penalty=off` 유지).
-22. 가정 편성(스타링크 밖 구원자·+15 기본 장비·레벨 보정) 옵션은 설계만 먼저. 탐색 공간이 커서 상위 후보에만 적용하는 단계식이 현실적(댓글 피드백 검토, 같은 문서).
+22. **육성 가이드 2·3단계**: 길방의 상위 20% 점수 비교·코스모의 3팀 재결합 가이드는 차후 구현하기로 함. 작전·회랑 1단계와 슬롯 교환 추천은 구현했음.
+24. **가진 +15 장비를 구원자끼리 재분배하는 최적화 — 차후 구현(사용자 11/10 결정)**.
+25. **내 정보 레벨 경계**: 코스모/플래시 포인트 레벨 200 고정의 서버 동작 미확인, 소스 구원자 정확히 200일 때 미확인. 새 형식 내 정보 재추출은 게임 PC에서 하기로 함. 이번 검증은 합성 계정만 사용했음.
+
+## ▶ 2026-11-10 심야 (Claude+codex) — 내 정보 실효 레벨(스타링크 슬롯)·육성 가이드 1단계·슬롯 추천 (푸시 전)
+
+- 병합: `wt/assumed-1110`의 manifest 충돌을 `tools/build_simpack.py`로 해결하고 `ca1e271`로 병합했음. main pull은 최신 상태였음. private static-data `64e4fad`는 읽기 전용으로 사용했음.
+- 묶음: 스타링크 가상 슬롯·가이드 장비 +15·최대 스킬·공명 해금 최대·목표 여정/잠재력을 함께 적용함. 실제가 더 좋은 항목의 음수도 표시함. 원본 계정은 수정하지 않음. 레벨만/장비만/스킬만/공명·잠재력만은 하나씩 바꿔 독립 재탐색함. 항목별 값을 합산하지 않음.
+- 표시: 육성 가이드 체크박스 하나로 정리했음. 옛 장비 옵션·ae 링크 값은 무시함. 카드 안 임시 보정/미보유 가정 라벨, 두 테마의 색 점선, 팀 머리 가정 포함, 수치 원래 값→보정 값 툴팁을 넣었음. 표의 각 줄에도 같은 라벨을 표시함.
+- 슬롯: 직접 실행한 콘텐츠·조건만 세션 메모리에 보관함. 소스는 후보에서 제외하고 현재 슬롯 배열 길이를 유지함. 후보 상위 8명·최대 교환 3번·24쌍·12,000판·120초 안에서 실제 교환을 검증함. 콘텐츠별 원 단위를 유지하고 개선 확인 콘텐츠 수→동일 콘텐츠 개선폭 순으로 비교함. 구간 0 포함·미평가는 확인 부족, 확인된 손해가 있는 교환은 제외함. 쿨다운 시간·준비 상태는 입력에 없어 존재만 표시함.
+- 독립 리뷰: 고정 범위 `ca1e271..129cad0`의 지적 3건을 반영했음. 콘텐츠별 기믹/시즌/피해 가중치를 보존했음. 편성 발견 효과를 슬롯 효과로 오인하지 않도록 양쪽 상태의 공통 후보를 같은 판수·시드로 재평가함. 개별 진단보다 실제 교환을 먼저 계산하도록 바꿨음. 기각 없음. 수정 범위 `129cad0..17a13ee` 재검토에서 세 지적 해소와 새 차단성 결함 없음을 확인했음. `17a13ee..7ba02e6`에서는 단일 항목 비교가 누락된 여정 정보를 임의로 채우지 않도록 한 후속 수정·시험을 검토했고 추가 지적 없었음.
+- 검증: 병합 직후 일반 107 통과/1 실패(`unit.level` 없는 미보유 가정)였으며 가상 슬롯 입력으로 해결했음. 최종 일반 109개·브라우저 e2e 43건 모두 통과했음(실행기 합계 110 통과/0 실패, 환경 건너뜀 2건). 묶음 누락·음수 제거·슬롯 추천 제거·점선 제거 결함 주입은 모두 실패 감지했음. 공유 링크 시험의 옛 `ae` 필수 기대값도 새 계약으로 갱신했음. 최종 결과와 합성 계정 실측은 `docs/assumed_build_validation.md`에 기록했음. 엔진 규칙·골든·내 정보 미사용 경로는 변경하지 않았음.
 
 ## 환경·주의
 

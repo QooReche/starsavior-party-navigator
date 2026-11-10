@@ -32,7 +32,8 @@ function signatures(){const b={account:'a',options:{growth:true},targets:['u'],p
   for(const key of Object.keys(b))assert.notEqual(G.signature(b),G.signature({...b,[key]:key==='excluded'?['y']:key==='options'?{}:'changed'}),key);
   const q=Share.stringify({ag:true,ae:true,ao:false,units:info.units,assumed:M.assume('luna',info,growth)});
   assert(!q.includes('units')&&!q.includes('item')&&!q.includes('assumed'));
-  assert.deepEqual(Share.parse('?'+q,[],[]),{ag:true,ae:true,ao:false});
+  assert.deepEqual(Share.parse('?'+q,[],[]),{ag:true,ao:false});
+  assert(!q.includes('ae='));assert.deepEqual(Share.parse('?ae=1',[],[]),{});
 }
 function quickOrdering(){const text=fs.readFileSync(require.resolve('../growth_ui.js'),'utf8'),start=text.indexOf('function growthQuickCmp'),end=text.indexOf('async function growthCandidates',start);
   const ctx=vm.createContext({QO:{hard:0,tight:1,safe:2}});vm.runInContext(text.slice(start,end),ctx);
