@@ -1,6 +1,6 @@
 {
  "guild_sim": {
-  "hash": "2fcbdc1ecf7127ee",
+  "hash": "ab0c0aa44391ff86",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -29,11 +29,15 @@
    {
     "hash": "2fcbdc1ecf7127ee",
     "reason": "11/10 stage_fx_target 기본 allies: 스테이지 효과(fx)는 플래시 포인트(rush) 44개 스테이지에만 있고 길방 시뮬(build_guild_sim)은 길드방어전 스테이지만 사용(fx 없음, 에이전트 계측 clo/op/oph/equip/cosmo/daily/cube 0개)"
+   },
+   {
+    "hash": "ab0c0aa44391ff86",
+    "reason": "build_guild_sim 재생성"
    }
   ]
  },
  "quick": {
-  "hash": "2fcbdc1ecf7127ee",
+  "hash": "ab0c0aa44391ff86",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -53,6 +57,10 @@
    },
    {
     "hash": "2fcbdc1ecf7127ee",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "ab0c0aa44391ff86",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

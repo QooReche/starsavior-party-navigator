@@ -4,6 +4,7 @@
 
 ## 현재 상태
 
+- 11/10 오후 병합 기본값: `cosmo_hyper_true_target=self`, `damage_vampirism=client`, `cosmo_drain_category=marker`, `cosmo_speed_floor=true`, `variant_self_state=client`, `turn_unit_debuff_cond=client`, `auto_marker_lines=keep`, `shield_tick=turn_end`, `break_domain_revive=client`. `wave_carry`는 새 `client` 선택지를 넣고 기본/legacy `keep` 유지했음. 오전 `cond_count_bind=holding`, `cosmo_boss_barrier=client`, `stage_fx_target=allies`도 반영됨. 정본·근거는 `battlesim/rules/default.json`, 상세는 아래 «11/10 오후» 절.
 - 근거 코드는 비공개 static-data `decompiled/`(디컴파일 빌드 26314877)임. 11/10 설치본이 **26429597**(11/05 갱신)인 것을 확인했고 DLL 5개 해시가 바뀌었으나 내용 비교 결과 **전투 로직 변화 없음**(식별자 재난독화만, 근거 줄 163건 이동 0, `decompiled/BUILD.md` 11/10 절). 표(`tables/`)는 11/10 에 26429597 로 다시 뽑아 덮어썼음(절 «2026-11-10»).
 - 협공 기본값: `formula.COOP_CAP=1.0`, `opts.coop_trigger=basic_only`, `coop_single=true`, `coop_order=random_success`, `forced_coop_target=random`, `forced_coop_slot=shared`, `coop_dead_target=cancel`. 강제 효과 대상을 먼저 정하고 유효 강제 후보 중 균등 1명을 고름. 강제 후보가 없으면 일반 후보 전원 판정 후 성공자 중 균등 1명임. 단일 본대상 사망 시 협공을 취소함.
 - 11/08 기본 전환: `enemy_leader=none`(적 리더 속도 +10 제거, legacy=boss, 절 «11/08 밤 틱 제외 조건» 안 «적 리더» 항목), `any_turn_source=table`(전체 턴 시계 버프를 표 `GlobalTurnCounting` 으로 판정, legacy=text, 절 «전체 턴 시계를 표 기준으로»).
@@ -11,17 +12,16 @@
 - 그 밖의 새 기본값: `mc.enemy_cd_end_order=after_effects`, `revenge_rate=hit`, `nova_force_cap=12`, `ally_auto_lines=client`. 기존 병합분 `foe_skill_order=data`, `empty_attack=process`, `ally_variant_mapping=data`도 반영했음. 선제 방어 실험용 `client`는 차단 조건을 보강했음. 선제 방어 기본값은 11/04 전환한 `preemptive_defense=client_main`임(legacy=recognize).
 - 기존 기본값은 `enforce_timing=queue`, `enforce_target=exec`, `wave_ally_gauge=reset`, `buff_ban=refuse`, `buff_ban_force=client`, `guild_count=all`, `instant_damage=damage`, `reaction_timing=queue`, `skill_order=data`, `dispel_on_attack=on`, `turn_limit_unit=actions`, `break_skill_domain_clock=global`, `break_skill_domain_turns=5`, `enemy_hit_buff_cmp=le`임(`toughness_elem`은 11/04부터 `client`, legacy=db). 정본은 `battlesim/rules/default.json`임.
 - 길드방어전 시즌4(BFB·별 속성)는 11/05 04:00 KST 종료, 결산은 11/12 04:00까지임(`data/guild_defense.json`). BFB 상태 기계·지원 5종·선택 효과 4종·부분 점수식·내 정보 편성 탐색을 구현했음. `guild_boss=off`가 기본이고 길방 진입에서만 켬.
-- `data/guild_sim.json`은 11/08 `810dc37`에서 `enemy_leader=none` 기본으로 다시 계산했음(off/max·육성 ×1·×1.5·×2·×2.5·×3, **234,000판**). off 최고 단계 ×1.5 5→6, ×2 7→8, ×2.5·×3 유지, max 쪽은 오르내림이 섞임. 그 뒤 `any_turn_source=table` 은 길방 결과 해시가 같아 재생성하지 않았음. 기존 필드·최고 클리어 단계는 off, `bySets`·`summaryBySets`는 max를 보존함. 공개 표준 육성만 썼으며 실제 플레이 대조는 남았음.
-- 빠른 계산 표본 2,323건×40판을 11/08 `810dc37`에서 다시 생성하고 재보정했음. 전체 일치 **0.920**(이전 0.916, `data/quick.json calib.acc`).
-- 11/09 새 기본값: `foe_react_buff_count=client`, `buff_step_group=client`(단계 그룹 버프), `break_skill_reduce=client`(오비탈은 피해 감소 항 0), `chain_pen=client`(연쇄 피해는 공격자 관통 미적용). 모두 legacy 로 되돌릴 수 있음(절 «2026-11-09»). `guild_sim.json` 은 60칸 비교로 불변 확인해 도장만 인정, `quick.json` 은 재생성·재보정(전체 일치 **0.919**).
+- `data/guild_sim.json`은 11/10 병합 기본값으로 재계산했음. off/max·육성 ×1·×1.5·×2·×2.5·×3, 팀 5개·지원 6종·단계 0~12·칸당 60판(**234,000판**). 기존 필드·최고 클리어 단계는 off, `bySets`·`summaryBySets`는 max임. 공개 표준 육성만 썼음. 최고 단계는 off 동일(×1/×1.5/×2/×2.5/×3 = 0/6/8/8/9), max는 ×2 6→4·×2.5 7→6으로 바뀜. 실제 플레이 대조는 남았음.
+- 빠른 계산 표본 2,323건×40판을 11/10 병합 기본값으로 다시 생성·재보정했음. 전체 일치 **0.909**(이전 **0.919**, -0.010, `data/quick.json calib.acc`).
+- 11/09 새 기본값: `foe_react_buff_count=client`, `buff_step_group=client`(단계 그룹 버프), `break_skill_reduce=client`(오비탈은 피해 감소 항 0), `chain_pen=client`(연쇄 피해는 공격자 관통 미적용). 모두 legacy 로 되돌릴 수 있음(절 «2026-11-09»). `guild_sim.json` 은 60칸 비교로 불변 확인해 도장만 인정, `quick.json` 은 재생성·재보정(전체 일치 **0.919**). (→ 이후 11/10 병합 규칙으로 두 생성물 재계산)
 - 생성물 규칙 도장: `tools/rules_stamp.py`·`tools/gen_rules_stamp.json`. 규칙 기본값을 바꾸면 `tests/gen_rules_stamp_test.py` 가 `guild_sim`·`quick` 이 낡았다고 실패하므로 다시 만들거나 `--ack 이름 --reason "…"` 로 이유를 적어 인정함. 건너뜀 표시는 `run_tests.py --strict`.
-- 11/09 코스모 실제 플레이(난이도 8, 추천 편성 그대로): 티리아·카넬리아는 엔진 예측이 잘 맞고 **벨그라스만 크게 비관적**(내 정보로 돌리면 전투력은 실제와 정확히 일치, 점수 3.76M 대 실제 7.62M, 약 3라운드 만에 전멸). 절 «코스모 추천 편성 실제 플레이»·남은 일 16.
-- 저장소: 11/09 `c20cffc`까지 커밋·푸시 완료(`git status -sb` ahead 0). 주소: https://QooReche.github.io/starsavior-party-navigator/
-- 최근 검증: 11/09 `run_tests.py --rebuild --e2e` **94 통과/0 실패**(건너뜀 1건: `COSMO_TABLES` 없음). 계정 자료·8899 포트·골든/해시 `--write`는 쓰지 않았음(11/09 늦게 벨그라스 조사만 내정보 사용, 결과는 비공개 폴더).
+- 11/09 코스모 실제 플레이에서는 벨그라스가 특히 비관적이었음. 11/10 보호막·자기 피해·흡혈을 수정했으며 같은 시점 자료로 재대조하기로 함(남은 일 16, 계정 수치는 비공개 보고서).
+- 저장소: main `ccbc0a0`에서 세 갈래 병합 완료, 후속 생성물 재계산·문서 갱신 완료(푸시 전). 주소: https://QooReche.github.io/starsavior-party-navigator/
+- 최근 검증: 11/10 재생성 뒤 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data`를 지정해 전체 **98 통과/0 실패**, `--e2e E:\AI_mk2\venv-pw\Scripts\python.exe` 포함 전체 **99 통과/0 실패**(브라우저 38개 모두 통과). 환경 건너뜀 2건: `COSMO_TABLES`·옆 `journeyhelper` 저장소 없음. 골든/결과 해시 `--write`는 쓰지 않았음.
 
 ## 남은 일
 
-1. (11/10 완료) 표·DLL 빌드 불일치 해소: 표 26429597 재추출, DLL 로직 동일 확인. 11/01 클라 표 수정본 보존 여부는 새 추출이 그 뒤 전 구간을 반영하므로 해당 없음.
 2. 최신 내 정보와 영상으로 실제 플레이를 대조하기로 함: 선택 효과·질투의 시선·정실 어필·보호막·웨이브 게이지·스칼렛 행동 수·하이 스코어 버프 해제·부케 딜 분배. 이번 작업은 계정 자료를 쓰지 않았음.
 3. 추가 규칙 후보: 11/09 조사 3건(피해·명중, 대상·시계·상태, 노바·브레이크)의 «다름·미확인» 목록이 절 «추가 규칙 후보 조사 11/09»에 있음. 구현한 것(오비탈 감소·연쇄 관통)을 뺀 나머지를 클라 코드로 직접 확인한 뒤 하나씩 스위치로 넣기로 함. 모델 가정 자체와 실제 클라 규칙을 구분하기로 함.
 4. 서든데스 끝 턴 경계, 신규 연쇄 피해 유형(ADT_FIXED_TRUE), 반응 중복 이력 단위(트리거 스킬 한 곳), 아군 공격 선제 방어 부호, BFB 능력치 배율 순서·전체 피해식을 추가 확인하기로 함(광역 협공 저장 대상은 11/09 «같음»). 기대값의 확률 상태 상관·동률 대상·아군 HP/브레이크 미모델 근사도 남았음.
@@ -34,16 +34,15 @@
 11. 서부 탈환대 세레스 스킬·기본 베라 자동 지정 근사, 기믹 추정 대처·무적 웨이브 실제 배치·길방 밖 협공/추가타·ReactiveBarrier 활성 표를 추가 확인하기로 함. 기본/개화 매핑과 적 SkillOrderList·빈 공격 처리는 완료했음.
 12. 게임 PC의 10/29 아카라이브 원고 «게임 파일에 새 수치가 없어» 문단과 myinfo.ps1 배포 필요 여부를 확인하기로 함. 작전 보스 근사 보정·rankAll/quickRank 캐시·legacy 정리는 낮은 우선순위로 남겼음.
 13. 장비 탐사 외 «N턴 이내 승리» 미션 확장은 낮은 우선순위: 큐브 팰리스 일부(65·60턴)·이벤트(65·60 / 50·45)·일일(50·45)도 같은 미션이 표에 있으므로 필요하면 `STAR_TURNS` 확장함. 65턴(2별 추정)은 표시 안 함.
-14. 점검(11/08)에서 보류한 것은 모두 11/09 에 완료함(절 «2026-11-09»). 단계 그룹 버프는 `buff_step_group=client` 로 구현함.
-15. 중복 코드 점검 결과(11/08, Opus, 읽기 전용, 상세 `AI\temp\partynavigator\work\audit_1108\dup\duplication_audit.md`): 공통화 우선순위 ① (11/09 완료) 비공개 표 경로 통일 ② (11/09 완료) 구원자 키↔게임 id 매핑 7곳 ③ (11/09 일부 완료: jsonc·rows 만, 아래 절) B2 적 반응 강화/약화 판정(11/09 완료, 위 절) ④ (11/09 완료) `tests/simkit.py`. 이미 어긋난 곳: 길방 `score()` Python(짝수 반올림·가설 B)↔JS(사사오입·B 무시), 길방·코스모 `_put`, 적 반응 조건(mc.py:2697-2709)만 강화/약화를 따로 세어 표식이 «강화 있음»으로 잡힘, 분위수 정의 3가지, `savior_reco.json` 수동 복사. (→ 이후 11/09 에 대부분 정리, 절 «중복 코드 점검 나머지 정리») 독립 리뷰(`bd3ffda..9f8b101`) 지적 7건 중 6건은 이 커밋에서 반영(HANDOFF 절 정정, 제어문자 시험에 탭 금지, 깨진 참조·낡은 문서 표시, enemy_leader 등급 `code`·출처 접두). 반영 안 한 것: enemy_leader 근거가 로컬 전투 호스트 경로뿐이라 서버 동작은 미확인(AGENTS 의 «근거 불완전하면 옛 동작» 과 긴장, note 에 미확인 명시), `guild_sim.json` 234,000판은 이 변경 뒤 재계산 안 함.
-16. **(우선) 코스모 벨그라스 엔진 비관 원인 — 11/10 조사로 주원인 1건 확정**(절 «2026-11-10»; 아래는 11/09 조사 계획 원문): 내 정보(바탕화면 `내정보.json`, 11/09 갱신)로 같은 편성을 돌리면 벨그라스만 점수·깎음이 실제의 절반 이하(로그: 보스가 시작 1라운드에 기본기 3번, 궁극기 «공허 붕괴» 한 방에 3명 사망). 실제는 큰 공격이 약 T39·T23·T13, 50턴 2명 생존. 보스 속도·궁극기 준비 조건·전체 공격 피해량·«폭주: 쇠락»(TurnInfinite·누적)·벨그라스 기믹(`cfg['bel']` erosion)을 하나씩 껐다 켜는 민감도 실험 -> 클라 코드·표로 확인 -> 스위치. 스크립트 `AI\temp\partynavigator\scripts\belgras_myinfo_1109.py`·`belgras_timeline_1109.py`. 티리아·카넬리아는 엔진이 약 -14~-18% 낮음(전역 소폭 비관, 별도).
+15. 중복 코드 점검(11/08) 뒤 남은 공통화 후보: `m_BuffStrID→이름` 나머지 복사본(`build_buff_count`·`build_break_levels` 등은 용도가 달라 보류), `SKILL_TEMPLET_{1,2}` 읽기, mc.py 효과 직접 생성 4곳(의미가 달라 보류). 상세는 절 «11/09 중복 코드 점검 나머지 정리». 독립 리뷰에서 `enemy_leader`의 로컬 전투 호스트 근거만 확인돼 서버 동작은 미확인으로 남겼음(note에 명시).
+16. **코스모 벨그라스 남은 대조**: 침식 체크 버프의 사건 경계·영상의 브레이크 스킬 피해량은 미확인임. 사망 뒤 쇠락(`DeadNotDispel`) 보존은 미구현이며 시각적 다단 타격은 대상별 합산 근사임. 보호막·자기 피해·흡혈 수정 뒤 같은 시점 내 정보·영상으로 실제 플레이를 재대조하기로 함(계정 수치는 비공개 폴더).
 17. **코스모 탐색 시간 단축**: 조사 3건(`AI\temp\partynavigator\work\cosmo_speed_1109\research*.md`). 게임 커뮤니티 선행 사례는 못 찾았고(중국 4·영어·인도 3회 검색 0건), 일반 기법만: ① 같은 시드 팀 간 점수차 분산 측정(CRN) ② 신뢰구간 기반 탈락으로 1단계 «상위 10% 고정» 대체 ③ 구원자 단위 탈락(조합 수 감소, 조건부 시너지 위험) ④ 2단계 이후 다중 라운드 반감 ⑤ Pyodide 버전 비교·워커 부팅 측정·mypyc 시험(Pyodide 는 네이티브의 약 2~3배 느림). 현실적 이득 1.1~1.5배. 11/09 프로파일 기반으로 `_map_prop` 메모·`run_own` 줄 종류 색인 재사용은 적용(결과 동일), 큰 병목은 `mods`(~20%)·`dirty`->`maxhp` 즉시 재계산·`line_kind`. 다음: ① 측정 ② 안전한 마이크로 최적화 추가(`dirty` 지연, `mods` 캐시) ③ 워커 부팅 비용 측정.
 18. **코스모 난이도 자동**: 선택 로직에 상한은 없음(0~18 비교). 난이도 9 부터 «폭주: 시공»(보스 속도 +30%)이 붙어 엔진 점수가 꺾이고 이후는 기본 점수×배율이 지배(8과 18이 비슷). 실제 9 이상 데이터가 없어 엔진 9+ 구간은 미검증 -> 사용자가 9~12단계 결과(턴·생존·깎음)를 주면 보정. 후보 선정이 대표 난이도 6 기준이라 고난이도 전용 팀을 놓칠 수 있음 -> 고난이도(12 등) 추가 스크리닝·probeRuns 증가는 계산 시간과 맞바꿈.
-19. 추가 규칙 후보 직접 확인(남은 일 3): stage_fx_target(플래시 포인트 스테이지 효과 대상, 영향 큼 가능)·wave_carry(웨이브 전환 지속 차감)·일반 버프 부여 턴 차감 제외·스타피어서 발동자 게이지·오메가 해제 불가·행성 정화 조건 8000·counter_inc 지속 피해·shield_tick·check_buff_expiry·부활 처리 등.
-23. **구원자 스킬 효과 엔진 미반영 감사**(사용자 11/10 제기: 일부 구원자 스킬 효과가 엔진에 제대로 안 들어간 듯함). 감사 결과(`AI\temp\partynavigator\work\skill_audit_1110\`): 데이터북 `ef`↔표 불일치 0건, 정적 검사에서 건너뛰는 효과는 65형태 중 3형태·7줄. 확정 결함은 루그 1건(아래 절 `cond_count_bind`, 11/10 수정). 남은 후보: 루그 변형 «제압부·참» 미반영(스킬 교체 줄 무시, 급급여율령이 해제되지 않고 영구 유지됨, 방향 혼재·크기 미측정), 세레스(할로윈) 점화 `TurnUnitNegativeBuff` 조건 미지원(영향 작음), 티리아 궁극기 가시 근사, 린 «청풍 미보유» 분기(시작 쿨타임 가정).
+19. 추가 규칙 후보 직접 확인(남은 일 3): 일반 버프 부여 턴 차감 제외·스타피어서 발동자 게이지·오메가 해제 불가·행성 정화 조건 8000·counter_inc 지속 피해·check_buff_expiry 등. 웨이브·보호막·부활 영역 구현 뒤 미확인은 21에 모았음.
+23. **구원자 스킬 효과 남은 확인**: 세레스(할로윈)의 DoT 틱·지속 만료와 턴 시작 효과 순서, 티리아 최고 방어력 대상 판정의 방어력 버프 반영 시점, 린의 실제 플레이어 덱 생성 경로가 미확인임. 린 `ally_init_cd=0.0`·`grade=user` 유지. 실제 플레이 대조는 남았음.
 24. 길방 BFB 보스(오토마톤 미니건) PASSIVE1 에 SE 4번째(52204: 자신이 타격 후 처치, 처치한 대상이 신부 경쟁 BOSS_1 상태면 BOSS_7 삭제, BuffDeleteCount 0)가 11/05 빌드에서 추가됨. `tools/build_guild_bfb.py` 가드는 기록하고 통과시켰으나 상태 기계에는 아직 미반영, `BuffDeleteCount 0` 의미(전부 삭제인지)도 미확인. 다음 시즌 BFB 가 나오기 전에 확인하기로 함.
 20. 코스모 영상 대조는 난이도 8 한 판씩뿐이라 전역 가정을 바꾸지 않음. 카넬리아·티리아 판은 11/09 데이터가 남아 있음(비공개 `video_1109`).
-21. **외부 «게임코드 시뮬» 문서 대조(11/10)**: 다른 개발자가 게임 DLL 을 그대로 돌려 assumed 23개를 확인한 문서를 받았음(원본 PDF·댓글은 비공개 `static-data/external/`, 대조·피드백 검토는 `docs/external_party_sim_1110.md`). 틀림·일부 틀림 5건 중 `stage_fx_target` 은 11/10 에 구현·기본 전환(절 «2026-11-10»). 나머지 `shield_tick`·`wave_carry`·`break_skill_fixed` 부활 재부여·`power_penalty` 는 클라 코드로 직접 확인한 뒤 스위치로 넣기로 함. 같은 입력(42-36·42-27·혹한의 습격 XIII·성간 회랑 500층)으로 엔진 결과를 대조하기로 함. 문서는 근거가 아니라 단서로만 쓰기로 함.
+21. **외부 문서 규칙 남은 확인**: 새 적 스폰/효과와 아군 웨이브 차감의 선후, NKM:826 두 필드 초기화 의미, 엔진에 별도 상태가 없는 노바 버스트 레벨 초기화가 미확인임. 스테이지 효과 주입기 재등록 전체 경로·부활 시 DeadNotDispel 보존·오메가 전체 효과 경로는 범위 밖으로 남겼음. 전투력 배율 산출식·적용 콘텐츠(플래시 포인트 제외 포함)·재점화 결합·전투력 공식 일치도 미확인임(`power_penalty=off` 유지, 서버 산출은 추정). `wave_carry=keep` 유지, `client` 영상 대조·자연 발생 부활 영역 재부여 검증·외부 문서와 같은 입력 결과 대조는 남았음. 상세 `docs/external_rules_c_1110.md`·`docs/external_party_sim_1110.md`.
 22. 가정 편성(스타링크 밖 구원자·+15 기본 장비·레벨 보정) 옵션은 설계만 먼저. 탐색 공간이 커서 상위 후보에만 적용하는 단계식이 현실적(댓글 피드백 검토, 같은 문서).
 
 ## 환경·주의
@@ -60,15 +59,26 @@
 - PowerShell 한글 읽기는 `Get-Content -Encoding utf8`, git dubious ownership은 설정 변경 없이 `git -c safe.directory=<저장소 경로> ...` 조회로 처리하기로 함.
 - 문체는 존칭 없이 「했음·하기로 함」으로, 짧은 문장·줄바꿈·소제목으로 구분하기로 함.
 
+## ▶ 2026-11-10 오후 (Claude+codex) — 먼저 할 것 3건: 벨그라스 자기 피해·흡혈, 스킬 효과 3종, 외부 문서 규칙 3종 (푸시 전)
+
+- **병합 범위**: 외부 규칙 `967fe37`·스킬 효과 `1ef7a18`·벨그라스 `e1fdfed`를 main `ccbc0a0`에서 합쳤음. 각 작업의 고정 커밋 범위 독립 리뷰와 지적 반영을 완료했음. 이번 후속 작업은 생성물·문서만 갱신하며 엔진·시험·골든을 고치지 않았음. 비공개 static-data `64e4fad`는 읽기만 했음. 이 절의 NKM은 `decompiled/NKM/NKM.decompiled.cs`임.
+- **벨그라스 자기 피해·흡혈**: 공허 붕괴는 시전 시작의 썩은 의지 중첩을 저장해 보스 자신에게 시전당 한 번 예약 피해를 줌(`cosmo_hyper_true_target=self`, legacy `enemy_all`). 반응 처리 뒤·턴 종료 효과 전에 무적/보호막/HP 경로를 거치며 플레이어 개인 피해에 귀속하지 않음. 흡혈(`damage_vampirism=client`, legacy `off`)은 대상별 피해 동기화 합·보유 흡혈률·받는 회복량을 적용해 버림하며, 데이터에 없는 페이 기본 흡혈률을 추가하지 않았음. 쇠락은 약화가 아닌 표식(`cosmo_drain_category=marker`, legacy `debuff`), 코스모 보스 최종 속도는 버림(`cosmo_speed_floor=true`, legacy `false`)임. 근거 NKM:4666-4688·7841-7859·8123-8134·13435-13448·13537-13544·18293, `tables/SE_TEMPLET_SKILL_2.json:34711-35408`, `tables/BUFF_TEMPLET.json:18700-18759`. 해당 작업 보고: 새 시험 16개·legacy/예약 차단 변형 실패 확인. 침식 사건 경계·영상 브레이크 피해·사망 후 쇠락 보존·다단 타격 근사는 남은 일 16에 남겼음.
+- **스킬 효과 3종**: `variant_self_state=client`(legacy `off`)로 루그 제압부·참 교체·설중화 감소·급급여율령 해제·노바 중첩을 연결했음. `turn_unit_debuff_cond=client`(legacy `skip`)로 세레스 할로윈의 턴 유닛 약화 보유 조건을 처리했음. `auto_marker_lines=keep`(legacy `drop`)으로 티리아 최고 방어력 체크 표지를 가시 추가 부여 전에 실행하며 동률이면 무작위 1명임. 근거 NKM:2921-2937·15891-15901·9014-9041·9161-9182·6740-6757·7039-7044·7605-7607, 조건·대상 표 상세 줄은 규칙 source에 있음. 해당 작업 보고: 새 시험 12개·legacy 핵심 시험 7개 실패 확인, 노바 표지 누락 리뷰 지적 반영·재검토 완료. 린은 source/note만 보강했고 시작 쿨 기본값은 유지했음. 남은 순서·스탯 반영 시점·덱 경로는 남은 일 23에 모았음.
+- **외부 규칙 3종**: `wave_carry=client` 선택 시 생존 아군 효과 지속 차감·죽은 시전자 도발 제거·게이지 초기화 뒤 WAVE_START를 처리함(기본/legacy `keep` 유지). `shield_tick=turn_end`(legacy `turn_start`)로 보호막 보유자 턴 끝 차감·행동 중 타인 부여/재부여 면제·시작 이벤트 예외를 반영했음. `break_domain_revive=client`(legacy `none`)로 팀 영역의 남은 수명·부활자 직업별 보너스를 재부여함. `power_penalty=off` 유지, 근거 note/source만 보강. 근거 NKM:813-832·3973-3989·4565-4583·4739-4746·8263-8287·13555-13567. 해당 작업 보고: 시험 14개·7종 변형 실패 확인, 실제 웨이브 진행도/경로 검증과 미확인은 `docs/external_rules_c_1110.md`·남은 일 21에 있음.
+- **길방 판정**: `git show`로 `39e03f4`·`a24d4d9`·`8537350`의 무영향 인정과 이유 이력을 확인했음. 이번에는 기존 후보 5팀이 그대로여도 영향이 있음. 저장 표 첫 팀(세레스 할로윈·웨딩 에핀델·바니 샤를·크리스텔), 표준 육성 ×1.5·6단계·지원 none·선택 off·seed 7·각 20판에서 legacy→병합 기본값 클리어 0.05→0.00, 진행도 0.7416→0.7368, 판별 보스 깎음 평균 0.4833→0.4736. 스위치 하나씩 비교해 `turn_unit_debuff_cond`만 전환해도 같은 차이를 확인했음. 따라서 도장만 인정하지 않고 기존 설정 전체 **234,000판을 재계산했음**(1,028초). 각 1,950칸 중 클리어율 변화 off 359칸·max 423칸, 평균 진행도 변화 off 1,160칸·max 1,515칸. off 최고 단계는 그대로(육성 ×1/×1.5/×2/×2.5/×3 = 0/6/8/8/9), max는 ×2 6→4·×2.5 7→6이며 나머지는 유지했음. 팀·지원·육성·seed·판 수는 이전과 같음.
+- **재생성**: `build_simpack.py` → `gen_quick_calib.py --per-content 400 --opboss` → `calibrate_quick.py --write` → HTML 순으로 완료했음. quick 2,323표본×40판(92,920판), 전체 일치 **0.909**(이전 0.919, -0.010). 보정 뒤 그룹 일치 base 0.885·cosmo 0.963·rush 0.945. quick의 기본 계수·보정 통계만 바뀌었고 콘텐츠별 계수·스테이지 보정값은 동일했음. 길방 완료 뒤 `--rebuild`와 같은 simpack·HTML 빌더를 다시 실행했음. simpack 45파일·6,087,219바이트·`f24c4f44c50d`, HTML 2,083,862바이트. quick/guild_sim 규칙 도장은 모두 `ab0c0aa44391ff86`이며 생성기가 직접 갱신했음.
+- **기준선**: `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data`, 전체 96 통과/2 실패. 실패는 simpack manifest·quick/guild_sim 도장뿐이었음. `COSMO_TABLES`·옆 journeyhelper 없음으로 2건 건너뜀. 골든 `--write`·계정 자료는 쓰지 않았음.
+- **최종 검증**: 같은 `STARSAVIOR_STATIC`으로 `python -X utf8 -I tools/run_tests.py` **98 통과/0 실패**, `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe` **99 통과/0 실패**(e2e 파일을 1건으로 센 수, 브라우저 38개 모두 통과). 기준선의 두 실패는 재생성으로 해소했으며 환경 건너뜀 2건은 같음. HTML의 데이터 밖 내용은 동일하고 데이터 변경은 `guild.sim`뿐임. 11/03·11/02의 오래된 절은 원문 그대로 `docs/HISTORY.md`로 옮겼음. 로컬 QooReche/noreply 신원을 유지해 생성물·문서를 한 커밋으로 묶으며 푸시는 하지 않음.
+
 ## ▶ 2026-11-10 (Claude) — 새 빌드 확인·표 재추출·벨그라스 조사·외부 문서 대조 (푸시 전)
 
 - **빌드**: 설치본 26429597(11/05 20:03). DLL 변경 5개(NKM·NKC·Assembly-CSharp·NKM.Templets·Star.Templets)는 로직 동일(식별자 재난독화). 직접 검증: 새 NKM 을 옛 번호 체계로 맞춰 옛 파일과 비교하면 숫자 유지·CR 정규화 diff 89줄(전부 로그 문자열 속 변수명 접미사). 상세·해시는 static-data `decompiled/BUILD.md`.
 - **표 재추출**(static-data `64e4fad`): 신규 구원자 0. 코스모 시즌 22(벨그라스·티리아·카넬리아) 표 + BattleScript 3개, 길드 레이드 속도 게이지 아이템 2000→3000(`SE_TEMPLET_BATTLE_EFFECT` 4015202, 11/01 이전 수정분 포함), 인코그니타 랜드그레이브 charm 발동 시점(BATTLE_START→AFTER_SPAWN), EX 효과 4개, 미니건 패시브 SE 1개(남은 일 24). 연출·이벤트 포인트 참조·목록 순서는 수치 아님. 패치 노트 대조는 미확인.
 - **생성물**: `data/growth.json` 의 `game_build` 만 갱신(26291832→26429597, 나머지 동일). `data/guild_bfb.json` 은 재생성 결과가 기존과 동일. 시험 93 통과/0 실패(건너뜀 1: `COSMO_TABLES` 없음, 11/09 와 같음).
-- **벨그라스 조사**(비공개 `AI\temp\partynavigator\work\belgras_1110\REPORT.md`, 계정 자료 기반이라 공개 금지): 주원인은 **보스 보호막 오류**로 확정. 처단자 패시브 표(`SE_TEMPLET_SKILL_2`)에 BI_BARRIER 가 3개 있음: `_05`·`_07`(ENEMY_ALL, 25%)·`_09`(AUTO_ALLY 보스 쪽, 1%). `tools/build_cosmo_raid.py:281` 이 첫 줄(25%)만 `barrierHpPct` 로 저장하고 `cosmo_raid.py:443` 이 보스에 적용해 과대. 에이전트 실험(아군 무적)에서 1%로 줄이면 깎음이 크게 올라감(수치는 계정 자료 기반이라 비공개 보고서에만). 고정 피해(공허 붕괴가 아군 전원에게 들어가는지)는 클라 코드 미확정, 페이 흡혈(`NST_RATE_DAMAGE_VAMPIRISM`)은 엔진에 없음. 전부 고쳐도 실제 점수에 못 미쳐 침식 방어 유지·브레이크 스킬 피해가 남은 후보. **아직 코드에는 넣지 않았음**(다음: `cosmo_boss_barrier` 스위치, 근거 `_09` 가 보스 대상인지 대상 해석 확인).
+- **벨그라스 조사**(비공개 `AI\temp\partynavigator\work\belgras_1110\REPORT.md`, 계정 자료 기반이라 공개 금지): 주원인은 **보스 보호막 오류**로 확정. 처단자 패시브 표(`SE_TEMPLET_SKILL_2`)에 BI_BARRIER 가 3개 있음: `_05`·`_07`(ENEMY_ALL, 25%)·`_09`(AUTO_ALLY 보스 쪽, 1%). `tools/build_cosmo_raid.py:281` 이 첫 줄(25%)만 `barrierHpPct` 로 저장하고 `cosmo_raid.py:443` 이 보스에 적용해 과대. 에이전트 실험(아군 무적)에서 1%로 줄이면 깎음이 크게 올라감(수치는 계정 자료 기반이라 비공개 보고서에만). 고정 피해(공허 붕괴가 아군 전원에게 들어가는지)는 클라 코드 미확정, 페이 흡혈(`NST_RATE_DAMAGE_VAMPIRISM`)은 엔진에 없음. 전부 고쳐도 실제 점수에 못 미쳐 침식 방어 유지·브레이크 스킬 피해가 남은 후보. **아직 코드에는 넣지 않았음**(다음: `cosmo_boss_barrier` 스위치, 근거 `_09` 가 보스 대상인지 대상 해석 확인). (→ 이후 11/10 오전 보호막, 오후 자기 피해·흡혈 수정 완료)
 - **`cond_count_bind`(새 기본 `holding`, legacy `last_key`)**: 조건 줄의 `중첩수`·`효과 개수`가 바로 앞 «자신이 미보유» 키의 효과(없는 효과라 개수 0)에 묶여 루그 설중사우 후 행동 게이지 +40/80/120%p 줄(「자신이 보유: 설중화; 자신이 미보유: 급급여율령; 중첩수: N」)이 항상 거짓이던 것을 고침. 근거 표 조건 52189~52191(`SelfBuffLevelCount` 는 `SelfBuffStrId`=설중화에만 붙음). `mc.py` `cond_ok`, 시험 `tests/cond_count_bind_test.py`(4개, 두 모드 결과가 갈림). 표준 육성 A/B(에이전트, 6칸)에서 루그 피해 +1.5~+60%. 생성물: `guild_sim` 은 루그가 팀에 없어 인정(이유 기록), `quick` 재생성·재보정 전체 일치 **0.919**(변화 없음). 시험 94 통과/0 실패. 실제 플레이 대조는 미검증(남은 일 9).
-- **`cosmo_boss_barrier`(새 기본 `client`, legacy=`legacy`)**: 벨그라스 처단자가 보스에게 주는 보호막을 1%로(표 SE 210009411 `_09`, 조건 60414 «아군이 타격 후+응집된 생기», 대상 AUTO_ALLY, BarrierRate 100). 이전에는 아군용 줄(`_05`·`_07`, ENEMY_ALL, 25%)의 값을 보스에도 써서 보스가 공격마다 최대 HP 25% 보호막을 얻었음. `tools/build_cosmo_raid.py` 가 `bossBarrierHpPct` 를 따로 뽑아(`data/cosmo_raid.json` 의 `belgras.minions`, 나머지 필드 불변 확인) `mc.cosmo_boss_barrier_pct` 가 고름. 시험 `cosmo_raid_test.test_minions` 의 «보스 보호막 ≥ 25%» 단정(잘못된 가정을 굳힌 것)을 client 1%·legacy 25% 두 모드 검사로 바꿈. `quick`·`guild_sim` 은 코스모 게이트 규칙을 켜지 않아 인정(이유 기록). 시험 94 통과/0 실패(`COSMO_TABLES=C:\build\new-extract` 로 표 대조까지). 실제 플레이 대조(남은 일 16)는 미검증: 이 수정만으로는 실제 점수에 못 미치는 것으로 조사됐고 고정 피해·침식·브레이크 스킬 피해가 남은 후보.
-- **`stage_fx_target`(새 기본 `allies`, legacy=`enemies`, `off`도 있음)**: 플래시 포인트(BOSS_RUSH) 스테이지 효과를 적에게 걸던 가정을 아군(속성·직업 조건에 맞는 유닛)으로 바꿈. 근거: `BATTLE_EFFECT_TEMPLET` 60001~60021 전부 `AteamEffectTarget=ALL`·`BteamEffectTarget` 없음, 속성 `TargetAdjustType`·직업 `TargetRoleType`, SE 6000101~ 전부 `NSETT_SELF`+`NSEAT_BATTLE_START`, 클라 팀·직업·속성 판정 `NKM.Templets.decompiled.cs:36731-36799`, 효과 선별 `NKM.decompiled.cs:415-429`, 전투 시작 발동 `12829-12836`. 44개 스테이지 효과 순서·수치를 데이터북 fx 문장과 대조해 일치(`tools/build_stage_fx.py` -> `data/stage_fx.json`, 속성·직업 조건). fx 가 있는 스테이지는 플래시 포인트 44개뿐(다른 콘텐츠 0). 에이전트 측정(20판, 표준 육성): 같은 팀 진행도 allies 0.75 / enemies 0.62 / off 0.73, 클리어율 그레고리 Ⅰ 30% 대 5%. **미확인**: 서버가 전투 시작에 실제로 아군 유닛에 효과를 주입하는 호출(클라 코드에 없음, A팀=플레이어는 AteamWin·서든데스 A팀 효과 선례로 판단) -> 실제 플래시 포인트 영상 대조 필요. 엔진에 항이 없는 «생명력 흡수율 +15%»(공허매장자)는 양쪽 모드 모두 미반영. 시험 `tests/stage_fx_target_test.py`(7개, 일부러 깨뜨려 확인). `guild_sim` 은 fx 스테이지를 안 써서 인정, `quick` 은 rush 표본이 있어 재생성·재보정. 아래 «이전 판단» 문장 정정: 앞선 «기본 enemies 유지»는 quick 재보정 전의 임시 상태였음.
+- **`cosmo_boss_barrier`(새 기본 `client`, legacy=`legacy`)**: 벨그라스 처단자가 보스에게 주는 보호막을 1%로(표 SE 210009411 `_09`, 조건 60414 «아군이 타격 후+응집된 생기», 대상 AUTO_ALLY, BarrierRate 100). 이전에는 아군용 줄(`_05`·`_07`, ENEMY_ALL, 25%)의 값을 보스에도 써서 보스가 공격마다 최대 HP 25% 보호막을 얻었음. `tools/build_cosmo_raid.py` 가 `bossBarrierHpPct` 를 따로 뽑아(`data/cosmo_raid.json` 의 `belgras.minions`, 나머지 필드 불변 확인) `mc.cosmo_boss_barrier_pct` 가 고름. 시험 `cosmo_raid_test.test_minions` 의 «보스 보호막 ≥ 25%» 단정(잘못된 가정을 굳힌 것)을 client 1%·legacy 25% 두 모드 검사로 바꿈. `quick`·`guild_sim` 은 코스모 게이트 규칙을 켜지 않아 인정(이유 기록). 시험 94 통과/0 실패(`COSMO_TABLES=C:\build\new-extract` 로 표 대조까지). 실제 플레이 대조(남은 일 16)는 미검증: 이 수정만으로는 실제 점수에 못 미치는 것으로 조사됐고 고정 피해·침식·브레이크 스킬 피해가 남은 후보. (→ 이후 11/10 오후 고정 피해는 보스 자신 대상 예약 피해로 수정, 침식·브레이크 피해 대조는 남음)
+- **`stage_fx_target`(새 기본 `allies`, legacy=`enemies`, `off`도 있음)**: 플래시 포인트(BOSS_RUSH) 스테이지 효과를 적에게 걸던 가정을 아군(속성·직업 조건에 맞는 유닛)으로 바꿈. 근거: `BATTLE_EFFECT_TEMPLET` 60001~60021 전부 `AteamEffectTarget=ALL`·`BteamEffectTarget` 없음, 속성 `TargetAdjustType`·직업 `TargetRoleType`, SE 6000101~ 전부 `NSETT_SELF`+`NSEAT_BATTLE_START`, 클라 팀·직업·속성 판정 `NKM.Templets.decompiled.cs:36731-36799`, 효과 선별 `NKM.decompiled.cs:415-429`, 전투 시작 발동 `12829-12836`. 44개 스테이지 효과 순서·수치를 데이터북 fx 문장과 대조해 일치(`tools/build_stage_fx.py` -> `data/stage_fx.json`, 속성·직업 조건). fx 가 있는 스테이지는 플래시 포인트 44개뿐(다른 콘텐츠 0). 에이전트 측정(20판, 표준 육성): 같은 팀 진행도 allies 0.75 / enemies 0.62 / off 0.73, 클리어율 그레고리 Ⅰ 30% 대 5%. **미확인**: 서버가 전투 시작에 실제로 아군 유닛에 효과를 주입하는 호출(클라 코드에 없음, A팀=플레이어는 AteamWin·서든데스 A팀 효과 선례로 판단) -> 실제 플래시 포인트 영상 대조 필요. 엔진에 항이 없는 «생명력 흡수율 +15%»(공허매장자)는 양쪽 모드 모두 미반영. (→ 이후 11/10 오후 `damage_vampirism=client`로 생명력 흡수율 효과 연결) 시험 `tests/stage_fx_target_test.py`(7개, 일부러 깨뜨려 확인). `guild_sim` 은 fx 스테이지를 안 써서 인정, `quick` 은 rush 표본이 있어 재생성·재보정. 아래 «이전 판단» 문장 정정: 앞선 «기본 enemies 유지»는 quick 재보정 전의 임시 상태였음.
 - **외부 «게임코드 시뮬» 문서 대조**: `docs/external_party_sim_1110.md`(11/10 푸시 완료). 남은 일 21·22.
 
 ## ▶ 2026-11-09 (Claude) — 코스모 추천 편성 실제 플레이: 벨그라스 (푸시 전)
@@ -92,13 +102,13 @@
 - 직접 확인해 구현함: 오비탈 감소 없음, 연쇄 공격자 관통 없음(위 절).
 - 조사만 됨(직접 확인 전, 다음에 코드로 확인 후 스위치로 넣기):
   - **stage_fx_target (영향 큼 가능)**: 플래시 포인트 스테이지 효과(BATTLE_EFFECT 60001-60021)가 표에서 A팀(아군)·속성/직업 한정 자기 버프인데 엔진은 전 적에게 건다고 함. 서버가 실제로 아군에 부여하는 코드는 클라에 없어 표의 대상 조건으로만 판정.
-  - **wave_carry**: 클라는 웨이브 전환 때 아군 버프·보호막·DoT·HoT 지속을 1씩 줄이고 노바 버스트 레벨을 0으로, «웨이브 시작 시» 줄은 그 뒤. 엔진은 지속을 안 줄이고 순서 반대.
+  - **wave_carry**: 클라는 웨이브 전환 때 아군 버프·보호막·DoT·HoT 지속을 1씩 줄이고 노바 버스트 레벨을 0으로, «웨이브 시작 시» 줄은 그 뒤. 엔진은 지속을 안 줄이고 순서 반대. (→ 이후 11/10 `wave_carry=client` 선택지 구현, 기본 `keep` 유지·미확인은 남은 일 21)
   - **일반 버프 부여 턴 차감 제외**: 클라는 행동 중인 유닛이 남에게서 받은 버프도 그 행동 끝 차감에서 제외, SKILL_START 시점 부여분은 같은 턴에도 차감. 엔진은 자기 부여만 제외.
   - **스타피어서 발동자 게이지**: 클라는 턴 선정 때 게이지를 0으로 만든 뒤(NKM:13488 근처 `OBF_3574(0)`) 브레이크가 발동해 `BI_SPEED_GAUGE_UP` +2000 이 발동자에게도 붙음. 엔진은 발동자를 제외(mc.py `_apply_break` 게이지 줄 `u is not actor`). 호출 순서는 직접 못 확인.
   - **오메가 프로토콜 break_skill_fixed**: `BI_ORBITAL_ARRAY_OMEGA` 가 일반 버프(CanNotDispel=false)라 클라에서는 해제됨, 엔진은 해제 불가.
   - **행성 정화 조건 8000**: 표에 `AfterMyAction {}`(스킬 필터 없음, SKILL_CONDITION_TEMPLET.json:2498). 엔진은 반응·협공·추가 시전을 제외하는데 클라에 그런 분기가 안 보임.
   - **counter_inc 지속 피해**: 클라는 공격자 현재 시전 칸이 턴 전환 때 지워져(NKM:13486) 지속 피해에 카운터 +10%가 안 붙을 수 있음. 엔진은 붙임. 틱 순서 미확인.
-  - 그 밖: shield_tick(클라는 보유자 턴 끝 차감, 엔진 기본 턴 시작), check_buff_expiry(매 스킬 끝), 부활 시 DeadNotDispel 유지·AFTER_SPAWN 재발동, heal_target 동률·부활 대상, AOE_DIV 레벨 가산 위치, dmg_reduction 클라 전용 항(비치명·역할·상성·유닛 종류), debuff_model 절대 적중/저항 항(현 데이터 0), ForceNonCritical SE 1건, toughness 구원자 격파 게이지 0(표 근거 없음)·AdjustSuperArmorBreakScale 사용처, power_penalty 레벨 거리 표 미모델.
+  - 그 밖: shield_tick(클라는 보유자 턴 끝 차감, 엔진 기본 턴 시작) (→ 이후 11/10 기본 `turn_end` 전환), check_buff_expiry(매 스킬 끝), 부활 시 DeadNotDispel 유지·AFTER_SPAWN 재발동, heal_target 동률·부활 대상, AOE_DIV 레벨 가산 위치, dmg_reduction 클라 전용 항(비치명·역할·상성·유닛 종류), debuff_model 절대 적중/저항 항(현 데이터 0), ForceNonCritical SE 1건, toughness 구원자 격파 게이지 0(표 근거 없음)·AdjustSuperArmorBreakScale 사용처, power_penalty 레벨 거리 표 미모델.
 - **같음 확인**: ELEM_HIT, dot_snapshot(live), enemy_same_formula, toughness_elem(client), basic_tough, evade_model 확률식, power_penalty 범위표 500행, nova_policy(오토에 버스트 호출 없음), break_skill_point_cap(grade code 로 올릴 수 있음), break_skill_cd_unit, break_skill_domain_clock, 광역 협공 저장 대상.
 
 ## ▶ 2026-11-09 (Claude) — 중복 코드 점검 나머지 정리 (푸시 완료)
@@ -285,208 +295,3 @@ ew-extract`·시즌 1022·빌드 26429597 로 임시 출력과 `data/cosmo_raid.
 - 보류: 길방 보스 속도 합산(`기본×(1+합)` 추정, 합산 경로 미추적 — 클라 식이면 7~12단계 보스가 약 8% 빠름), 서든데스 사망자 처리(근거 부족). 보호막(22.5%)·흡수 방식은 클라와 일치 확인 → 9·10단계 낙관의 원인은 미확정(남은 후보: ATK 배율 적용 위치, 보스 대상 선택). 시작 게이지 근거는 표·코드에 없음.
 - 표 26291832 vs 설치본 26314877: 10/29 이후 바뀐 번들 5개(11/01 00:30)의 CLIENT_* 표 14개는 `tables/`와 MD5 일치, 나머지는 연출 스크립트라 재추출 불필요. 기록 `AI\temp\partynavigator\work\decomp_1104\check5_tables_vs_dll.md`.
 - 그 밖에 확인한 클라 규칙(미반영): 길방 하루 도전권 기본 2+구매 1, 1~6스테이지 1개·EX 2개, EX만 화·목·토, 점수는 확정 포인트 합(최고만 쓰는지 미확인). 졸개전 패배 점수는 죽인 졸개만 1250씩.
-
-## ▶ 2026-11-03 밤 (집 PC) — 길방 EX 영상 7판 기록 (푸시 완료)
-
-- 길방 시즌4 EX 실제 플레이 영상 7판(6·8·9·10단계) 판독을 [docs/ingame_samples.md](docs/ingame_samples.md) 맨 아래 절에 기록했음. 코드·데이터는 바꾸지 않았음.
-- 점수식 확인: 결과 포인트 = (2,500 + 1,250×졸개 2기 + 25,000×보스 깎은 비율) × (1+단계 보너스). 6단계 상한 48,000·8단계 54,000이 실제 승리 판과 정확히 일치. 단계는 12단계까지 있고(보너스 +120%까지) 상한은 9단계 57,000·10단계 60,000·11단계 63,000·12단계 66,000.
-- 같은 편성(카르멘 리더·스칼렛·아모라·선샤인 캣 스마일, 격돌의 돌풍)으로 8단계 3승, 9단계 0승 2패, 10단계 0승 1패. 시뮬 기본값은 9·10단계를 훨씬 낙관적으로 봄. 원인은 정실 어필 보호막(최대 체력 22.5%) 구간의 아군 피해 과대와 보스 첫 행동 시점(영상 3번째, 시뮬 5번째)으로 좁혔으나 단일 보정으로 8·9·10단계를 동시에 맞추지 못했음. 보정 후보(보스 시작 게이지 +40%p·속도 ×1.15)는 과적합이라 엔진에 넣지 않았음(근거 불충분, 기본값은 옛 동작).
-- 편성 찾기는 단계별 점수 상한이 있어 6단계 동점이 많음. 순위 기준을 평균이 아니라 상위 점수·상한 도달률로 보는 방향이 맞다는 사용자 의견(확정 전 재도전 가능)을 받았으나 화면·검색 코드에는 반영 전.
-- 계정 기반 시뮬 수치(편성 찾기 결과·보정 격자)는 공개 저장소에 넣지 않고 비공개 `AI\temp\partynavigator\work\guild_ex_1103\`에 있음(INDEX.md).
-- 남은 일: 보호막 구간·보스 시작 게이지를 클라 코드 근거로 확인해 규칙 스위치로 넣기, 9단계 이상 영상 추가(편성 다양화), 편성 찾기 순위를 상위 점수 기준으로 바꿀지 결정, 10단계 이상 면역(약화만 막는 구현) 영상 검증.
-
-## ▶ 2026-11-03 (회사 PC, codex 병렬) — 현재 빌드 디컴파일본으로 규칙 재확인·대형 재생성 (푸시 완료)
-
-### A — 협공·강제 적용·효과 순서
-
-- 이전 5묶음(협공 후보 순서·적 스킬/빈 공격·기본/개화 매핑·기믹 재조사·e2e 서버 격리)과 A/B/C/D 재확인 4묶음을 함께 통합 검증했음. e2e는 전용 임의 포트·Windows 배타 바인딩을 쓰며 8899를 쓰지 않음.
-- 13개 규칙을 현재 빌드로 대조했음. 일반 협공은 전원 확률 판정 후 성공자 중 균등 1명인 `random_success`로 바꿨음. COOP_CAP·팀 노바·강제 적용·강화 불가·스킬 순서·빈 공격·DC_ATTACK·중첩 시점·버프 개수·능력치 경로를 재확인했음. [대응표](docs/client_recheck_rea.md).
-
-### B — 노바·쿨·반격
-
-- 적 종료 효과 뒤 쿨 차감, 피격 시점 반격 확률, 노바 상한 12를 반영했음. 서든데스 상세 미확인은 남겼음. 독립 리뷰에서 브레이크 스킬 공용 노바 증가의 상한 우회를 찾아 `nova_add`로 통일했음. 팀/개인×상한12/legacy0 실제 발동 시험과 고장 주입 실패 2건을 확인했음. [대응표](docs/client_recheck_reb.md).
-
-### C — 자동 대상·형태·선제 방어
-
-- 19개 규칙을 대조했음. 자동 대상 필터 전 자신 제외를 반영하고 `ally_auto_lines=client`를 기본으로 했음. 형태별 매핑을 유지하고 선제 방어 client의 NoPreemptiveDefend를 연결했음. recognize 기본·기존 근사는 유지했음. [대응표](docs/client_recheck_rec.md).
-
-### D — 감소 시점·길방 카운트
-
-- LevelBuffDecrease 런타임과 그웬 감소 뒤 예약 특수기 실행을 확인했음. 카넬리아 잔향 비소모·강인한 타격 시전별 50%, 부케 피해 증가, 소환체 포함 길방 카운트를 재확인했음. 규칙 값은 유지했음. [대응표](docs/client_recheck_red.md).
-
-### 강제 협공
-
-- `forced_coop_target=random`을 기본으로 했음. 효과 대상의 공격력·체크 버프 필터와 최종 강제 후보 추첨을 나눴음. 유효 후보만 균등 선정하고, 없으면 일반 협공으로 내려감. 플래그는 턴 끝 초기화함. `live_atk`·`stat_atk`는 보존했음.
-- 독립 리뷰에서 단일 본대상 사망 뒤 다른 적으로 재지정하는 경계를 찾아 `coop_dead_target=cancel`을 추가했음(`legacy/alt=retarget`). MC·기대값에 같은 취소 조건을 적용했음. 광역 저장 대상 대응은 미확인으로 남겼음. [근거·시험](docs/client_recheck_forced_coop.md).
-- 강제 협공 시험 파일 11개·기대값 전용 12개를 통과했음. 고장 주입 MC 4종·기대값 6종·단일 대상 사망 취소 2종을 모두 탐지했음. 실제 전투 강제 경로 4회·진행도 1.0, 일반 협공 새 분기 22회·진행도 1.0을 확인했음.
-
-### 누락 점검
-
-- `coop_trigger`, `coop_single`, `forced_coop_slot`, `forced_coop`, `BASE_MULT`, `DEF_K`, `DEC_CAP`, `rand_range`, `any_turn_clock`, `enemy_cd_tick` 10개는 값 유지·grade=code·source 갱신했음. 카운터 일반 공격 조건은 확인했으나 지속 피해 경계 때문에 data를 유지했음. [확인 표·후보](docs/client_recheck_extra.md).
-- 독립 리뷰는 불변 작업트리에서 `git diff eb522be..HEAD`로 병합된 9개 작업과 이번 수정의 상호작용을 읽었음. 노바 상한 우회·단일 대상 사망 재지정·한글 설명 손상 3건을 확인해 반영했음. 수정 스냅샷 재확인에서 추가 지적 없었음. 기각한 지적은 없음.
-
-### 재생성·시험·공지
-
-- `build_simpack.py → update.py → gen_quick_calib.py --per-content 400 --opboss → calibrate_quick.py --write → build_guild_sim.py(기본 인자·4작업자) → build_party_html.py index.html` 순서로 완료했음. update의 태그 문서는 줄 집합 동일·순서만 달라 원복했음.
-- 단일 대상 사망 수정 전 빠른 계산 표본 작업은 354.8초에 중지하고 처음부터 다시 만들었음. 최종 단계별 소요는 아래와 같음. 최초 simpack/update와 수정 후 재실행 기록을 함께 남겼음.
-
-```text
-simpack 0.1524314 exit=0
-update 22.5871662 exit=0
-gen_quick 354.7641603 exit=-1
-simpack_update_final 22.7772289 exit=0
-gen_quick_final 428.0621252 exit=0
-calibrate 87.5656995 exit=0
-guild 946.1591381 exit=0
-html 1.2448868 exit=0
-```
-
-- 공개 화력 지표 변경 구원자는 **0명**임. 빠른 계산 검증은 2323건, 시뮬 표본과의 가중 일치율 **91.5→91.8%**임. 계수·보정값은 이전과 같았음. 스테이지 반반 검증은 코스모 93.2→94.7%, 플래시 포인트 87.8→90.5%였음. 작전 큰 보스 m=0.85 후보는 보류 검증 개선이 작아 새 적용 0곳임. 자세한 그룹·보류 검증은 `data/quick.json calib`에 기록했음.
-- 길방 기본 인자 5편성×5육성×2프리셋×6지원×13단계×60판 = **234,000판**을 완료했음. 이전 공개 JSON과 모든 필드가 정확히 같아 파일 diff는 없음. 공개 표준 육성이고 계정 수치는 없음. 최고 단계는 클리어율 50% 이상인 후보 기준임.
-
-| 육성 | off 최고 단계(클리어율) | max 최고 단계(클리어율) |
-| --- | --- | --- |
-| ×1 | 없음 | 없음 |
-| ×1.5 | 2 (70%) | 없음 |
-| ×2 | 6 (85%) | 3 (91.67%) |
-| ×2.5 | 7 (83.33%) | 5 (56.67%) |
-| ×3 | 8 (88.33%) | 6 (81.67%) |
-
-- 시험 처리: P1 골든은 당시 `stat_atk` 입력, P2/MC 해시는 `live_atk`·`retarget`로 고정했음. 일반 협공 끔이 강제 협공까지 막던 새 경로 결함을 두 엔진에서 고쳤음. 일반 협공 순서 감시는 본대상 사망으로 취소되는 행동을 제외하고 실제 분기 횟수를 계속 검사함. 골든·해시 기대값은 바꾸지 않았음. 최종 자료 재생성 뒤 추가 시험 실패는 없었음.
-- 수정 전 기준선은 76/0, 최종 rebuild는 78/0, e2e 포함 79/0(브라우저35개)임. 독립 리뷰 재확인·`git diff --check` 통과했음. 이번 작업 전 HANDOFF의 약 1주 지난 절은 이미 HISTORY로 옮겨져 있어 새로 옮길 절은 없었음.
-- 공지: «📢 11/03 업데이트 · 최신 클라 코드로 전투 규칙 재확인 · 협공·노바 상한·적 쿨·반격 반영 · 길방 시뮬 표 재계산 · 실제 플레이 대조 전이라 결과가 다를 수 있음». README도 갱신했음. 푸시 전 상태이므로 절 제목과 저장소 상태는 푸시 대기로 적었음.
-
-## ▶ 2026-11-02 (회사 PC, codex) — 길방 시뮬 표 선택 효과·육성 배수 (푸시 완료)
-
-- 기본 프리셋은 설계대로 `off=[0,0,0,0]`, `max=[3,3,3,3]`로 했음. 육성 기본값은 `1,1.5,2,2.5,3`임. 기존 `rates`·`bySupport`·`progBySupport`·`fracBySupport`·`summary`는 off로 유지하고 `sets`·팀별 `bySets`·`summaryBySets`를 추가했음. `guild_defense.py sim_payload`도 새 필드를 전달하며 옛 자료는 off만 표시함.
-- `simExpect`는 프리셋별 실제 `fracBySupport`와 `extraPct`를 함께 써 최대 기대 점수를 고름. 결과에 «선택 효과 끔/모두 최대» 칩을 붙였음. 기존의 frac만 있고 progress가 없으면 frac를 무시하던 경계도 고쳤음. 최고 클리어 단계·상세 클리어율 표는 off 기준, 지원별 비교 표는 기존 ×2 기준을 유지했음. Python/JS 점수식은 0·1·.5 반올림 경계까지 대조했음.
-- 순차 재생성 초반 속도로 40분 초과가 예상돼 편성·육성·프리셋별 독립 작업을 최대 4개 프로세스로 나눴음(`--workers 1`은 순차). 시드·판수·결과 병합 순서는 같으며, 실제 엔진 순차/병렬 결과 일치 시험을 추가했음. 순차 시도를 중단한 뒤 `python -X utf8 -I tools/build_guild_sim.py` 기본 인자로 다시 시작해 끝까지 완료했음.
-- 재생성: 5편성×5육성×2프리셋×6지원×13단계×60판 = 234,000판. 최종 실행 약 778초(12분 58초), 빌더 계산 로그 777초였음. 이전 ×1·×1.5·×2의 off 클리어율·진행도·판별 frac·summary는 HEAD 자료와 모두 정확히 일치했음. `index.html`도 새 자료로 다시 만들었음.
-
-| 육성 | off 최고 단계(클리어율) | max 최고 단계(클리어율) | 최대 기대 점수·선택 |
-| --- | --- | --- | --- |
-| ×1 | 없음 | 없음 | 20,568 · off 0단계 |
-| ×1.5 | 2 (70%) | 없음 | 46,376 · max 1단계 |
-| ×2 | 6 (85%) | 3 (91.67%) | 56,368 · max 3단계 |
-| ×2.5 | 7 (83.33%) | 5 (56.67%) | 57,000 · max 3단계 |
-| ×3 | 8 (88.33%) | 6 (81.67%) | 63,459 · max 6단계 |
-
-- 최고 단계는 클리어율 50% 이상인 후보 기준임. 표는 공개 표준 육성으로만 만들었음. 엔진 소규모 시험(커뮤니티 편성·×2·6단계·불의 고동·seed=7·12판)은 off/max 진행도 0.6696/0.5710, 클리어율 8.33%/0%였고 양쪽 진행도>0을 확인했음.
-- 추가 프리셋은 `--sets off,max,no_void=3330` 형태로 받음(순서: 소멸·불멸·쇠락·허무, 각 0~3). 커뮤니티 편성·12판·불의 고동/격돌의 돌풍·0~12단계 소규모 비교에서 최고 기대 점수는 ×2 off/max/no_void 32,962/38,772/37,341, ×3 46,472/52,011/50,636이었음. 이 표본에서는 no_void가 max를 넘지 않았음. 전체 256조합 최적을 보장하지 않으며 기본 표에는 off/max만 넣었음.
-- 시험을 일부러 깨뜨린 경우 7건을 모두 잡았음: 엔진 선택 효과 끄기, 빌더의 sets 전달 끄기, 병렬 결과 순서 뒤집기, payload의 bySets 제거, 화면의 프리셋 비교 끄기·off 결과 재사용·점수 가산 제거. 메모리에서만 바꿨고 실제 소스는 정상 상태로 유지했음. 새 시험은 기본 인자→파일→화면 자료 전달, 프리셋 승자 전환, 추가 프리셋·옛 자료 호환을 확인함.
-- 수정 전 기준선은 69 통과/실패 0, 최종 `python -X utf8 -I tools/run_tests.py --rebuild`는 시험 파일 70 통과/실패 0이었음. `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`는 전체 71 통과/실패 0이었음(e2e 내부 31개 모두 통과, `test_guild_defense`·`test_guild_season_rollover`·`test_guild_search` 포함). `git diff --check`도 통과했음.
-- 독립 리뷰는 커밋 없이 HEAD `9c8808a` 기준 diff와 소스·시험의 불변 사본으로 두 번 했음(병렬화 추가분 포함). 수정 필요 지적은 없었음. 엔진 규칙·골든·해시를 바꾸지 않았고 계정 자료를 사용하지 않았음. 실제 영상 재대조는 하지 않았음. Claude 가 `run_tests.py`(70 통과)·길방 e2e 3개를 다시 돌려 확인한 뒤 커밋·푸시했음.
-- e2e 흔들림: 작업 전 `--rebuild --e2e` 에서 `test_guild_season_rollover` 가 콘솔 `ERR_CONNECTION_REFUSED` 1줄로 실패(기능 판정은 전 0/후 1 정상)했고, 단독 3회 재실행은 모두 통과했음. 앞서 `test_load_no_errors` 도 로드 시간 초과로 한 번 실패했음. 매번 다른 시험이라 부하·시험 서버 흔들림으로 보고, 반복되면 해당 요청 주소를 기록해 원인을 보기로 함.
-
-## ▶ 2026-11-02 밤 (회사 PC, codex) — 협공 확률 상한 해제 `COOP_CAP` (중간 저장, 푸시 완료)
-
-- `formula.COOP_CAP` 기본값을 1.0으로 바꿨음(`legacy=0.30`, `alt=[0.30]`, `grade=data`). `rules.py` 주석과 규칙 근거를 맞췄음.
-- 근거: `star-savior-decompiled/NKM/NKM.decompiled.cs:15835-15951`은 최종 협공 능력치 내림차순으로 `RollDice(value, 10000)` 판정함. `:2171-2201`·`:3611-3618`에서 버프 능력치 합을 넣어 `:18244` 이후 최종 능력치를 다시 계산하며, `:18462-18476`은 `StatDataCap`의 양수 상한만 적용함. (→ 11/03 최신 빌드에서 random_success로 재확인·반영)
-- `NKM.Templets/NKM.Templets.decompiled.cs:27064`가 읽는 표는 `starsavior-static-data/tables/Plain/CLIENT_CONST_TEMPLET.json:125-142`임. `:138-142`의 치명·치명 피해 상한은 활성이고 협공 3000은 주석 처리돼 있음. `JSON_STAT_DATA_CAP`·`m_StatDataCap`은 현 디컴파일본 검색 0건임. 상한이 있었다면 버프에도 걸리는 구조지만, 현 표에는 협공 상한 자체가 없음.
-- `LEGACY_FORMULA`를 모으고 `rank_check.apply_rules(base='legacy')`가 기대값 엔진 상수에도 적용하도록 했음. `--base legacy --golden tests/golden/sim_golden_p1.json`에서 구원자 65명·파티 150팀·스테이지 50칸 정확히 일치했음.
-- 고정 결과 시험은 0.30을 명시했음: `mc_cache_test`·`heal_burst_test`는 `formula_override`, `golden_check`는 기대값 엔진 상수, `guild_defense_test`의 추천 출력 해시는 옛 상한으로 만든 화력 입력을 씀. 저장된 골든·해시는 바꾸지 않았음. `web_test`의 임시 교체값도 0.30으로 바꿔 새 기본값 1.0 복원을 검사함.
-- `coop_cap_test.py`를 추가했음. 공개 표의 에밀리·왈츠 아세라·힐데·메이드 세레스, standard 육성, 태양 회랑 250층, seed=17, 20판에서 협공 버프 30% 초과 경로와 양쪽 진행도>0·협공>0을 확인했음. 판당 협공은 0.30에서 2.45회, 새 기본값에서 6.10회였음. 기본값을 메모리에서 0.30으로 되돌리자 `2.45 not greater than 2.45`로 실패했으며 1.0으로 원복했음. 계정 자료는 쓰지 않았음.
-- `tools/update.py`로 화력 지표(`sim_damage.py index` → `pack_damage.py`)와 빠른 계산 재료를 재생성했음. 화력 지표의 변경 구원자는 왈츠 아세라 1명임. `gen_quick_calib.py --per-content 400 --opboss`로 표준 육성 표본 2,323건×40판을 새 엔진으로 생성한 뒤 `calibrate_quick.py --write`로 `data/quick.json`의 계수·콘텐츠/스테이지 보정·검증 요약을 다시 맞췄음. `update.py`가 만든 태그 문서의 순서만 바뀐 차이는 원복했음.
-- `tools/build_guild_sim.py` 기본 인자로 `data/guild_sim.json`을 재생성했음(5편성×3육성×6지원×13단계×60판=70,200판, 805초). 선택 효과 끔·브레이크 미장착·표준 육성 가정을 유지했음. `rates`·`bySupport`·`progBySupport`·`fracBySupport`·`summary`가 새 엔진 결과임. 재생성을 생략한 요청 자료는 없음. (→ 이후 11/02 길방 시뮬 표 선택 효과·육성 배수 절에서 off/max·5육성으로 재생성)
-- 새 자료로 첫 전체 재빌드 시험은 67 통과 / 2 실패였음(`reco_parity_test.py`, `reco_reuse_test.js`). 수정 전 기준선은 68 통과 / 실패 0이므로 새 자료가 드러낸 차이임. 고정 추천 결과는 새 화력표·재보정 계수에 영향을 받았음. `tests/fixtures/reuse_legacy_inputs.json`에 `684ed40`의 이전 공개 입력(0.30 화력·빠른 계산 계수)만 고정했고 `reuse_baseline.json`의 기대값은 유지했음.
-- 순서 대조 실패는 Python 3.13의 `sum()` 보상 합산과 JS 순차 합산의 끝자리 차이(25.310000000000002와 25.31)가 원인이었음. `party_reco.py team_value`의 점수·시너지 합산과 태그 가산 순서를 JS와 맞췄음. 기존 상위 200 조합·동점 순서 시험이 변경 전 실패하고 변경 후 통과했음. 길방 빌더의 후보 4편성·리더가 생성 때와 그대로임도 확인해 앞서 만든 시뮬 표를 유지했음.
-- 최종 `python -X utf8 -I tools/run_tests.py --rebuild`: 시험 파일 69 통과 / 실패 0. `build_simpack.py`·`build_party_html.py index.html`을 다시 실행했고 `git diff --check`도 통과했음. 골든·해시 기대값 변경 없음. e2e·실제 영상 재대조는 하지 않았음. 작업 트리만 수정했으며 커밋·푸시하지 않았음.
-- 독립 리뷰는 커밋 없이 HEAD `684ed40` 기준 diff와 수정 파일의 불변 사본으로 했음. 추가 추천 합산·fixture 수정까지 리뷰했고 수정 필요 지적은 없었음. fixture 값이 이전 공개 입력과 일치함도 확인했음. 기존 근사로 `mc.py:1943`이 상한 적용 뒤 확률로 정렬하므로, 서로 다른 100% 초과 후보가 여러 명이면 클라의 원래 능력치 순서와 달라질 수 있음. 이번에는 상한 기본값과 재현 경로만 바꾸고 이 경계는 남은 일 18번에 기록했음. (→ 11/03 최신 빌드에서 random_success로 재확인·반영)
-
-## ▶ 2026-11-02 저녁 (집 PC) — 세레스 먼지 포착 `level_buff_decrease` (푸시 완료)
-
-- 영상 2개(작전 38-36 오토 `op3836-c` 재점화 3, 성간 회랑 450 오토 `corr450-c` 재점화 5·세레스 첫 실측)를 `docs/ingame_samples.md` 에 정리했음.
-- 450 대조 중 구원자 키를 잘못 넣어(`ceres` 스트라이커 대신 `ceres-sun-supporter` 서포터) 「세레스 회복 미구현」으로 오판했다가 정정했음. 동명 구원자는 이름·부제·직업으로 키를 확인할 것.
-- 올바른 키에서 시뮬이 실제보다 오래 버팀(행동 수가 실제 TURN 97 보다 큼). 원인 조사(Opus, 읽기 전용): ① 먼지 포착 «5회 부여»는 표상 `LevelBuffDecrease` 5 감소(`SE_TEMPLET_SKILL_1.json:38328-38343`)인데 엔진이 5를 더했음, ② 협공 상한 0.30(후보).
-- ① 을 `level_buff_decrease`(기본 on, off=옛 동작)로 반영: 영상에서 추가 발동 전후 중첩 5건 중 4건이 정확히 -5(1건 7→4 원인 불명, 4건은 후 값 미판독). 450 대조 수치는 내 정보 기반이라 비공개 작업 폴더에만 둠(행동 수·회복·받은 피해가 실제에 가까워짐). 그웬·카넬리아 `LevelBuffDecrease` 는 감소 시점 미확인이라 제외. 시험 `tests/level_buff_decrease_test.py`. (→ 11/03 현재 빌드에서 그웬 감소 뒤 예약 특수기 실행·카넬리아 비소모 확인)
-- ② 는 보류: 아세라 뤼니송 문구는 「통찰 스택당 협공 확률 20%, 최대 5개」(최대 100%)인데 `COOP_CAP` 0.30(클라 `NST_RATE_CROSS_ATTACK` 3000)이 막음. 영상: 38-36 에서 프로페서M 기본기 뒤는 강제 협공(아모라)이 협공 자리를 차지해 아세라 협공이 안 붙고, 힐데 기본기 뒤 2/2 발생, 450 에서 70% 이상. 클라 상한이 스킬 증가분에도 걸리는지 확인 필요. (→ 11/02 밤 회사 PC: 클라에 상한 없음 확인, 기본 1.0)
-- 남은 차이: 450 웨이브 2 길이(시뮬이 실제보다 김)·첫 사망 시점. 후보는 출혈 겹침·보호막. 조사물 `AI\temp\partynavigator\work\video_1102_corr450\investigate\`.
-
-## ▶ 2026-11-02 (회사 PC, codex) — 강제 적용·스택 시점·소환체
-
-- Claude 가 검토·시험 후 커밋·푸시함. 같은 때 Claude 는 시즌 경계 화면 갱신(`party_template.html gsWatch`, e2e)과 길방 시뮬 표 재생성(`fracBySupport`)을 함.
-
-### 강제 적용·피해 제한
-
-- `buff_ban_force=client`를 새 기본값으로 넣었음(`legacy/alt=off`). `add_effect`·보호막 부여·`_limit_damage`의 신규 불사/후속 강화가 공통 `refuse_buff` 판정을 씀. 기존 강화는 유지하며 기존 바큇살의 생명력 회복·쿨 초기화도 그대로임. `off`는 강제 강화까지 거부하고 피해 제한은 직접 삽입하던 옛 동작임.
-- 근거: `NKM/NKM.decompiled.cs:4053`의 CantGetMoreBuff + IsBuff + !ForceApplyEffect. `BUFF_TEMPLET.json:2224`의 BI_IMMORTAL과 `:22339`의 BI_MAID_LANTERN_1은 IsBuff=true, ForceApplyEffect=false임. 조율은 `:37175`의 BI_TUNER_CROWN_2(IsBuff/ForceApplyEffect=true)임.
-- `tools/build_buff_force.py --static E:/AI_mk2/starsavior-static-data`로 BUFF_TEMPLET의 m_BuffName을 `Strings/STRING_COMMON_ko_en.json:1`의 ko와 연결했음. 공개 `data/buff_force.json`에는 동명 충돌 없는 강제 강화 이름 77개만 저장했음. IsBuff/ForceApplyEffect가 다른 동명 효과 17종은 경고 후 제외했음(지속 회복·참극의 가시·용의 역린·타임 패러독스 등). BuffStrID·원문 표는 복사하지 않았음. 브라우저 manifest에 새 자료를 추가했음.
-- standard, seed=17, 편성·스테이지·규칙별 100판 비교했음. A=카넬리아·그웬·화이트 펄 루나·웨딩 카르멘, B=카넬리아·아모라·힐데·웨딩 카르멘. 어려움 34-6: A 클리어 0→0%, 진행도 0.0269→0.0269, B 0→0%, 0.0343→0.0343. 어려움 39-3: A 0→0%, 0.0182→0.0182, B 0→0%, 0.0278→0.0278. 모두 `off→client` 순서임. 강화 불가 중 부여 판정이 0회였으므로 이 비교는 규칙 영향 없음의 근거로 쓰지 않기로 함. 직접 효과 부여·치명 피해 경계 시험으로 변경 경로를 검증했음.
-
-### 강인한 타격·소환체
-
-- 강인한 타격: `guild_support_test.test_strike_cast_probability` 추가했음. 고정 시드 731, 400시전×3타에서 192시전 발동(48%), 한 시전의 모든 타격 판정 일치 확인했음. 기존 50% 기본 동작은 유지했음. 근거: `SE_TEMPLET_BATTLE_EFFECT.json:901`의 SE 4011102(m_fActiveRate=5000), `NKM/NKM.decompiled.cs:16284`의 시점 확인 뒤 확률 판정.
-- 질투의 시선: `Plain/SKILL_CONDITION_TEMPLET.json:10427`(58801)은 AfterEnemyAction·보스 비변신 조건뿐임. 소환은 `NKM/NKM.decompiled.cs:5198`에서 OBF_26401을 생성하며, `:15662` SKILL_END → `:15705` → `:16040` 유닛 클래스 검사 → `:16079` 적 행동 후 SE 발행 경로에 포함됨. 기본 `guild_count=all`과 같아서 동작 수정 없이 근거 주석과 `test_summoned_cast_count`를 추가했음. 실제 소환 표지 Unit의 cast·피해·카운트/신부 경쟁 증가 및 같은 편·변신 중 제외를 확인했음. 아군 소환 자동 생성 기능을 새로 넣은 것은 아님.
-
-### 스택·예약 경로 조사
-
-- 그웬: 현 표 기준 `SE_TEMPLET_SKILL_1.json:24523`(10404015)는 SKILL_END 엔포스 예약, `:24541`(10404016)은 AfterActiveSkillSe=true·RepeatBuffCount=5·LevelBuffDecrease=true임(이전 기록 23868은 현 파일 줄과 다름). `NKM:2635`는 액티브 SE 뒤 AfterActiveSkillSe를 배치하고 `:15662`·`:15955`·`:16158`에서 종료 SE를 실행함. 엔진은 `run_batch`가 consume 줄을 extra_cast보다 먼저 실행하며 `apply_buff`가 5개 감소시킴. 다만 현 `Star.Templets.decompiled.cs:25257` 로더는 AfterActiveSkillSe·RepeatBuffCount를 읽지만 `LevelBuffDecrease`는 전체 디컴파일본에 없음. 감소 런타임을 확인하지 못했으므로 시점 변경·새 규칙 도입 없이 미확인으로 남겼음. (→ 11/03 build 26314877의 LevelBuffDecrease 런타임·감소 후 예약 실행으로 재확인 완료)
-- 카넬리아: `SE_TEMPLET_SKILL_1.json:2815`(10052014), `Plain/SKILL_CONDITION_TEMPLET.json:8560`(52123)으로 칠흑의 잔향 보유·내 턴·SKILL_END 특수기 추가 발동 및 SeCoolTurn=1 확인했음. 잔향은 IsLevel=false(`BUFF_TEMPLET.json:22339`)이고 이 SE에 삭제·감소 설정이 없음. `NKM:15662`·`:15955`·`:16280`에서 종료/쿨 검사, `:16319`에서 쿨 등록(`:3277`의 SeCoolTurn 저장) 후 예약함. 엔진도 extra_cast의 줄 쿨로 재발동을 막으며 잔향·격동을 소모하지 않음. 격동은 own_pre에서 공격력 보정에 읽고 사용 후 부여함. count_damage 경로는 카넬리아 정규화 줄에 없음. 소모 시점 수정 없음.
-- 크리스텔·프로페서M: `SKILL_TEMPLET_1.json:816`(10172)·`:860`(10175 변형)·`:1746`(10392)은 모두 NST_REACT, ReactConditionID=10413/10418/10419임. `NKM:15672` 이후 반응 예약, `:15306` 이후 ReactAttack 불발 때만 예약 이력 초기화 경로와 맞음. fire_trigger의 key(중복 제한·불발 재예약)를 유지했음. 이전 기록의 크리스텔 엔포스 표현은 이 두 반응 스킬에는 적용하지 않음.
-
-### 검증
-
-- 새 시험 6개(강제 강화 4·타격 확률 1·소환체 1)를 추가했음. 메모리에서 구현을 바꾸어 동명 충돌 경고 제거·강제 예외 제거·보호막 예외 제거·불사 우회·후속 강화 우회·타격 확률 100%·타격마다 재추첨·유닛별 확률 고정·소환체 제외의 9가지 오류가 모두 시험을 실패시키는 것을 확인한 뒤 원복했음.
-- 기준선은 65 통과/1 실패(index.html 최신성)였음. 수정 전 HEAD bbdc21e를 별도 폴더에 git archive하여 `guild_defense_test.py` 12개 통과를 확인했음. 기존 커밋 결함이 아니라 동시 화면 작업 중 생성본 불일치였으며 재생성 후 해소됐음.
-- 최종 `python -X utf8 -I tools/run_tests.py --rebuild`: 통과 67 / 실패 0. 골든·캐시 해시 변경 없음, `--write` 쓰지 않았음. mc_cache·heal_burst의 고정 해시 시험에는 새 규칙을 off로 명시했음. `git diff --check` 통과했음. e2e는 이번 작업에서 실행하지 않았음.
-
-## ▶ 2026-11-02 (회사 PC) — 엔포스 대상 선택 시점·게임 PC 커밋 52개 리뷰 반영
-
-- **엔포스 대상 `enforce_target`(기본 `exec`=클라, `book`=옛 동작)**: 클라는 예약에 시전자·스킬·자동 대상 규칙만 저장하고 적은 실행 검사에서 고름(NKM.decompiled.cs 7973·6390~6397·13181~13189). 엔진은 예약 때 골랐음 → `exec` 면 엔포스(`RX_ENFORCE`)·추가 시전 줄(`extra_cast`, 그웬 등)·공용 잠재력(`random_ally_basic`)·확률 추가 발동(`RX_EXTRA_P`, 개화 베스타 등)의 적을 실행 직전에 다시 고름(표지·최근 타격 대상·무작위). 시전자(아군)는 둘 다 예약 때. `enforce_timing=queue` 이고 행동 안 예약일 때만 차이. `mc_cache_test` 해시는 `book` 고정.
-- 측정(standard 육성, 200판, 태양 회랑 200·250층, 그웬·선샤인 캣·크리스텔·힐데 / 프로페서M·클레어·아셰라·카르멘): exec·book 결과 동일(84.5%·42.0%, 진행도 0.616·0.629). 예약 뒤 실행 전에 대상이 죽는 경우가 드물어 영향 거의 없음. exec 경로가 실제로 타는 것은 확인(20판에 78회).
-- **클라 확인 결과 중 반영 안 한 것**: ① 엔포스는 예약 중복 검사 없음·불발 시 재예약 없음(NKM 13174, 불발 이력 초기화는 ReactAttack 만 15306~15314) — 엔진의 엔포스·추가 시전 줄은 이미 key 없이 예약해 같음. key 를 쓰는 건 트리거 경로(크리스텔·프로페서M `fire_trigger`)뿐이고 이 경로가 클라에서 엔포스인지 반응인지 구원자별 미확인이라 그대로 둠. ③ 스택 소모 시점(SE_TEMPLET_SKILL_1): 스마일 도약 SKILL_START(1811)·클레어 냉각 SKILL_START(27623)·선샤인 캣 스파클라 SKILL_END 예약 후 삭제(28903~28965)·그웬 SKILL_END 5회 감소 설정만 확인(23868, 런타임 경로 미확인)·카넬리아 SKILL_END 추가 발동·쿨 1턴(2815, 스택 소모 미확인). 엔진 반영은 그웬·카넬리아 확인 뒤. (→ 이후 11/02 codex: 카넬리아는 소모 없음·크리스텔/프로페서M은 반응으로 확인, 그웬 감소 런타임은 미확인)
-- **시험 보강**: `enforce_timing_test` 의 `test_both_modes_run` 이 standard 육성으로 진행도 0 인 스테이지(43-36)를 써서 아무것도 검증 못 했음 → 달 회랑 100층으로, 진행도 0 이면 실패하게 함. 새 시험 4개(기본값·두 값 실행·실행 때 대상 있음·예약 함수가 대상을 묶지 않음 — `_exec_pick` 을 끄면 실패하는 것 확인).
-- **게임 PC 커밋 52개(c85c8d1..70dd48d) 리뷰(codex 영역별 2명 + Claude) 반영**:
-  - 공개 화면 «제외·주의 구원자» 문구에 내 계정 시뮬 수치(클리어 96%→28% 등)가 있었음 → 수치 뺌(`data/guild_defense.json search.notes`).
-  - 편성 찾기 기대 점수가 평균 진행도를 점수식에 넣어, 졸개전 패배와 클리어가 섞인 팀을 크게 낮춰 봤음(반반이면 5,000 vs 실제 평균 16,250) → 판별 진행도(`prog_runs`, api 결과 outcome 밖·`run_auto` 의 `progs`)로 판마다 점수 후 평균. 졸개전에서 진 판도 졸개 점수는 다 받은 것으로 두는 근사는 남음. 패널의 `simExpect`(시뮬 표 기반)는 표에 판별 값이 없어 그대로 — 표 재생성 때 같이 고칠 것.
-  - 내 정보에서 «추천» 끈 구원자가 편성 찾기 풀에 다시 들어갔음 → `EXCL` 적용.
-  - 내 정보를 바꾸거나 추천 제외를 바꿔도 이전 편성 찾기 결과·진행이 남았음 → `gsReset()`.
-  - `.gitignore` 가 루트·`samples/` 의 내 정보 파일을 못 막았음 → `/내정보*.json`·`/myinfo*.json`·`/samples/`·`/static-data/` 추가(`git check-ignore -q` 로 확인, `tests/fixtures/` 는 안 막음).
-  - 편성 찾기 시험의 가짜 작업자가 `via` 를 안 돌려 협공 배제 연결이 끊겨도 통과했음 → via·progs 전달과 `coopHit` 까지 확인.
-  - 부분 점수 반올림 Python(짝수 반올림)·JS 불일치 → Python 도 0.5 올림.
-  - 미반영: 시즌 종료 시각(11/05 04:00)을 넘겨 열어 둔 화면은 새로고침 전까지 «진행 중» 표시(영향 작음).
-  - 엔진(길방): 강인한 타격(4011102)은 클라가 `m_fActiveRate` 5000 을 50% 로 굴림(NKM 16466) → 시전마다 50% 로 발동(지금 시전 `_cast_ctx` 가 바뀌면 다시 굴림 — 겹친 추가 발동도 따로, 옛 가정 100%). 부케 보스 자해 연쇄에 보스 피해 증가가 빠졌음(같은 편이면 inc 0) → 클라 연쇄 피해 계산은 대상 진영과 무관하게 시전자 피해 증가 반영(NKM 5605). `guild_sim.json` 시뮬 표는 이 두 수정 전 값 — 다음 표 재생성 때 반영.
-  - `wave_gauge_test` 도 진행도 0 스테이지라 웨이브 전환이 한 번도 안 일어났음 → 태양 회랑 250층 + 전환 직후 아군 게이지(reset 0 / keep 이월)를 직접 확인하는 시험 추가.
-  - **다음에 할 것(리뷰로 확인된 결함, 데이터 작업 필요)**: ① 〈강화 불가〉 중에도 `ForceApplyEffect` 강화는 걸림(NKM 4053, BUFF_TEMPLET 351개가 True) — 엔진은 전부 거부해서 공허조율자 «조율»(어려움 34-6·39-3) 같은 강제 적용 중첩을 막음. 효과 한글 이름 ↔ BuffStrID ↔ ForceApplyEffect 표를 `tools/` 로 뽑아 `add_effect` 거부 조건에 넣어야 함. ② `_limit_damage`(mc.py ~2305)가 치명 피해 때 새 〈불사〉·후속 강화(카넬리아 칠흑의 잔향 등)를 `add_effect` 없이 직접 넣어 〈강화 불가〉를 우회함 — ①의 표로 같이 처리. ③ 강인한 타격 50% 시험(발생 비율 확인)이 아직 없음.
-  - 반영 안 한 리뷰 지적: 격돌의 돌풍 게이지 3,000 이 2,000 이어야 한다는 지적은 틀림 — 11/01 패치로 2000→3000(docs/HISTORY.md 11/01 절). 이 PC 의 static-data 에 11/01 표가 없어 생긴 오판.
-- 수정분은 codex 로 한 번 더 검토(지적 3건: 확률 추가 발동 경로 누락·강인한 타격 판정 재사용·시험이 기능 제거를 못 잡음 → 모두 반영). 전체 Python·JS 시험·골든·e2e(Playwright, `E:\AI_mk2\venv-pw`) 통과. (→ 경로는 새 «환경·주의»의 E:\AI_mk2\venv-pw 기준)
-- 이 PC 의 `starsavior-static-data` 가 10/22 빌드라 `myinfo_stats_test` 가 실패했음 → pull 후 통과. 새 PC·오랜만의 PC 에서는 두 저장소 다 pull 부터.
-
-## ▶ 2026-11-02 밤 — `enforce_timing` 기본을 `queue` 로 전환 (푸시 완료)
-
-- 근거(조사 `AI\temp\partynavigator\work\common_rules\enforce_client_check.md`·`enforce_order_check.md`·`enforce_tl.md`): 스마일(선샤인 캣)·클레어·그웬·카넬리아의 추가 발동은 전부 `BI_ENFORCE`(SE_TEMPLET_SKILL_1, NSEAT_SKILL_END), 반응형 아님, 확률 줄 없음(m_fActiveRate 10000 = 조건 맞으면 100%; 엔진 RX_EXTRA_P 는 베스타·공용 잠재력용). 클라는 시전 함수(DoSkill:3025) 안에서 SKILL_END SE 처리(스킬 후 해제 — 예: AX 스택 SEID 4000102, 조건 8003 궁극기 종료 — 와 엔포스 예약 등록)를 끝낸 뒤 반환하고 예약 루프(2827~2926)가 돈다 → 해제가 먼저, 추가 발동은 그 뒤. 엔진 queue 가 이 순서와 같음(nested 는 해제 전에 시전해 힐데 3 에서 과대평가).
-- 영향(1000판, wave_ally_gauge=reset): 태양 회랑 450 클리어 nested 58.8% → queue 88.6%, 코스모 힐데 3(그웬·스마일·크리스텔·힐데) 95.0% → 82.0%. 원인은 11개 상한·반격 순서가 아니라 지연 시전 때의 버프·표지 상태 차이.
-- **편성 찾기 재실행(reset+queue 기본, 내 정보 11/02, 선택 효과 최대, 6단계·불의 고동)**: 순위·기대 점수·클리어율은 비공개 로그 `...\work\guild_defense\gs_full_out_1102_queue.txt`(수치는 비공개 폴더). 11/03 촬영은 이 탐색의 1위 편성으로 함.
-- 시험: `enforce_timing_test` 기본 queue 로 갱신, `mc_cache_test` 해시는 `wave_ally_gauge=keep`·`enforce_timing=nested` 로 고정(캐시 동일성 시험). 골든 불변, 전체 시험 통과.
-- **미반영 클라 차이(엔진 수정 후보, 미확인 부분 있음)**: ① 엔포스는 예약 중복 제한 없음·불발 시 재예약 없음(엔진은 행동당 1개 제한, `_defer_extra` key) ② 대상은 실행 직전에 자동 대상 규칙(4/6/47)으로 선택(엔진은 예약 때 선택, 죽으면 무작위) ③ 스택 소모 시점 구원자별: 스마일·클레어 = 실행(SKILL_START), 선샤인 캣 = 예약(SKILL_END), 그웬 = 예약 추정. 영상 대조 전이라 아직 안 고침. (→ 11/02 회사 PC: ① 엔포스·추가 시전은 이미 key 없음, 트리거만 미확인; ② exec 반영 완료; ③ 스택 소모는 미완료)
-
-## ▶ 2026-11-02 웨이브 전환 아군 게이지 규칙 `wave_ally_gauge` (푸시 완료)
-
-- 클라 `BattleHostSingle.cs` 391~421: 웨이브 전환 때 OnWaveStart 트리거 실행 **뒤** 생존 아군 전원 게이지 `Set(0)`(적 신규 웨이브도 0, 보스 웨이브 전용 속도 보정·행동 대기 못 찾음). 엔진은 이월. 규칙 `wave_ally_gauge`(기본 `keep`=옛, `reset`=클라; `mc.spawn_wave`). 기본값은 영상 검증 전이라 keep. 시험 `tests/wave_gauge_test.py`, 근거 `AI\temp\partynavigator\work\guild_defense\wave_gauge.md`, 비교 `scripts\gd_wavegauge_cmp.py`. (→ 이후 기본값을 reset 으로 전환)
-- 길방 상위 3팀(내 정보 11/02, 6단계·불의 고동, 100판) keep→reset: 클리어율이 대체로 내려가고 어필 횟수·보호막 시간 초과가 늘었음. 차이 원인 확인: 화면 편성 찾기는 선택 효과 4종 최대(3,3,3,3)로 돌리는데 스크립트가 끈 상태였음(선택 효과 단계가 오를수록 클리어율이 크게 떨어짐). 선택 효과 최대로 다시 비교(100판) keep→reset — reset 이면 순위가 크게 흔들림, 시간 초과(보호막 못 깸) 증가. 표본 100판이라 변동 포함. 수치는 비공개 폴더.
-- 내 정보 11/02 08:43 반영(세레스 육성), 편성 찾기 재실행: 1위 동일, 풀 32·조합 28,435(편성·수치는 비공개 폴더).
-- **기본값을 `reset`으로 전환(11/02)**: 호출부 추적(`wave_gauge.md`)로 확인 — 핸들러는 첫 웨이브 제외 **모든** 웨이브 전환에서 1회(`BattleHostSingle.cs:266`, 조건: 웨이브 데이터·마지막 아님·적 전멸, 일반/보스 구분 없음), 게이지 세터는 실제 행동 게이지(`TurnSpeedCalculator`), 전환 직후 속도 랜덤 없음. 추가 턴은 클라에서 게이지가 아닌 예약이라 엔진은 `extra_turn` 유닛 게이지를 유지(`break_skill_test` 근거). `mc_cache_test` 해시 3개는 `keep` 으로 고정(캐시 동일성 시험이라 규칙과 무관). 골든·전체 시험 통과(골든 불변). 옛 동작 `wave_ally_gauge=keep`. **영상 대조는 미검증**(보스 등장 직후 아군 게이지·스칼렛 행동 횟수).
-- **reset 기본으로 편성 찾기 재실행(내 정보 11/02, 선택 효과 최대, 6단계·불의 고동)**: 1위가 바뀜. 상위 팀끼리 기대 점수 차가 작아 순위가 불안정(판수 40). 편성·수치는 비공개 폴더. 로그 `AI\temp\partynavigator\work\guild_defense\gs_full_out_1102_reset.txt`. (→ 이후 reset+queue 재탐색 결과는 11/02 밤 절)
-- 다음: `enforce_timing=queue` 확인 4가지, 영상 촬영 대조(편성 찾기 1위로 1판). (→ queue 기본 전환·코드 확인은 완료, 스택 소모·영상 대조는 남음)
-
-## ▶ 2026-11-02 길방 «내 정보로 최고 점수 편성 찾기» + 질투의 시선 카운트 정정 (푸시 완료)
-
-- **편성 찾기(`guild_search.js`, 패널 아래 `#guild-search`)**: 내 정보를 불러온 뒤 버튼 → 브라우저 작업자(`sim_worker.js`, 최대 8개)로 3단계 탐색. ① 풀 전 조합 2판(예선 단계 6, 서포터 있으면 격돌의 돌풍·없으면 불의 고동) ② 상위 400팀 10판 ③ 상위 12팀 × 별의 도전 단계 [2,4,6,8,10,12] × 지원 × 40판 → 기대 점수 상위 5. 기대 점수는 확인된 점수식(진행도 → 보스 깎은 비율). 선택 효과 단계는 위 패널에서 고른 값. 실측(24코어 PC, 내 계정): 풀 33명·조합 31,855개, **5분 20초**, 1위 루나(화이트 펄 트랩)·트리쉬·아모라·스마일(선샤인 캣), 6단계·불의 고동, 기대 63,514(클리어 약 13%·보스 평균 95% 깎음). 저사양 PC 소요 시간은 미측정(조합 수가 시간을 정함). (→ 이후 reset+queue 재탐색으로 1위 변경, 11/02 밤 절 참고)
-- **풀 선정이 핵심이었음**: 전투력 상위 N명만 쓰면 어제 상위 팀(아모라 18위·루나 24위·카르멘 28위, 세레스(샤프 앤 스위트)는 전투력 최고의 37%)이 빠짐. 지금은 `minPowerRatio` 0.8 이상 + 역할 보충(`minRole` 서포터 6·디펜더 3). 전투력은 100k~115k로 거의 평평해 단독 기준으로 못 씀. 2판 예선에서도 어제 상위 팀이 15~184위(풀 안에서)에 들어 400팀 유지로 충분.
-- **시즌별 규칙은 `data/guild_defense.json` 의 `search`**(풀·판수·단계·지원·`excludeText`·`excludeKeys`). 보스가 매 시즌 바뀌니 새 시즌에는 이 값과 `guild_bfb.py` 를 같이 검토(화면에도 경고). 기억 `guild-defense-per-season`.
-- **협공 제외(체크박스, 기본 켬)**: 스킬 문구에 «협공» 있는 구원자(프로페서M·왈츠 아세라) + 직접 지정 `excludeKeys`(그웬). 커뮤니티 근거(아카라이브 187421752 등, 중간 신뢰: 길방 EX는 협공 금지, 아모라 후열, 불의 고동). 세레스(샤프 앤 스위트 `ceres-sun-supporter`)는 그웬과 같은 «추가 발동» 문구 형태이나 커뮤니티가 필수로 써서 뺀 것이 아님. 이름이 같은 별개 구원자가 있음(세레스 샤프 앤 스위트=서포터 / 서부 탈환대=스트라이커 `ceres`, 스마일 보이저 `smile` / 선샤인 캣 `sunshine-cat-smile`, 웨딩 카르멘 등) → 항상 키·부제로 구분. (→ 이후 그웬은 제외에서 주의로 이동, 협공은 시뮬 via 로 자동 배제; HISTORY 11/01 협공 절)
-- **엔진 정정(클라 코드 근거, `work/guild_defense/coop_analysis.md`)**: 질투의 시선(조건 58801 AfterEnemyAction)은 시전이 끝날 때마다 발행(DoSkill.cs:3025·3695)되고 협공·반격·반응·엔포스(추가 발동)도 같은 경로, 58801 에 IsNotEnforceSkill 없음 → **신부 경쟁 카운트에 모든 시전이 포함**. 규칙 `guild_count`(all 기본 / main = 옛 가정). 내 계정 6팀 비교에서 진행도 변화 ≤ +0.013(클리어율은 1위 팀 17% → 45% 등 표본 60판 변동 포함). 그웬 포함 팀(진행도 0.70)·프로페서M 포함 팀(0.79)은 규칙과 무관하게 1위 팀(0.98)보다 낮음. 미검증: 영상 대조, 그웬 추가 발동의 실제 attackType, 소환체 취급. (→ 그웬 추가 발동은 11/02 밤 BI_ENFORCE 로 확인, 영상·소환체 카운트는 남음)
-- 시뮬 표(`guild_sim.json`) 재생성 755초. 시험: `tests/guild_search_test.js`(9), `guild_bfb_test.py`(`test_count_all_casts`), `guild_defense_test.py`(`test_search_excluded`), e2e `test_guild_search`(탐색 크기만 줄여 실제 작업자로 끝까지).
-- **배포 완료(2026-11-02)**: `main` 39052c9 푸시, Pages 빌드 성공. (→ 현재 main 5cd0b75 원격 일치, Pages HTML도 로컬 index.html과 일치 확인)
-- **남은 일(우선순위 순)**:
-  1. **협공 자동 배제를 시뮬레이터가 조합을 보고 하도록**(사용자 지적): 지금은 스킬 문구 «협공» + 직접 지정 `excludeKeys`(그웬)뿐이라 장비로 붙는 협공·조합에 따른 발생 여부를 못 봄 → 시뮬 결과에 협공·강제 협공·추가 발동·잠재력(`via=coop/forced_coop/trigger/potential`) 시전 횟수를 싣고 예선에서 발생한 팀을 거름. (→ f18de32에서 구현 완료, 5cd0b75에서 전달 경로 시험 보강)
-  2. **특수 잠재력으로 기본기가 같이 나가는 경우**(사용자 지적): 엔진 `random_ally_basic`(`mc.py` 2931, `via='potential'`), 클라 잠재력 40401~40408 이 25% 확률로 무작위 아군 기본기 추가 시전. 어느 구원자 것인지 미확인(`SE_TEMPLET_POTEN`·`BUFF_TEMPLET` BI_POTEN_PASSIVE_40401x 추적). 위 1번에 포함 + 질투의 시선 카운트에 들어가는지 코드 확인. (→ HISTORY 11/01 협공 절에서 공용 잠재력·조건·쿨·EnforceAttack·카운트 확인 완료)
-  3. 영상으로 선택 효과·점수식·질투의 시선 카운트(협공·추가 발동 포함) 검증, 정실 어필 시점 대조 → 엔진 보정(편성 찾기 1위 편성으로 1판 촬영 권장). (→ 점수식은 11/01 영상 1판으로 확인, 다른 규칙 영상 대조는 남음)
-  4. 저사양 PC 소요 시간 측정/`minPowerRatio` 상향 선택지/예상 시간 표시(24코어 5분 20초).
-  5. 아모라·스칼렛 딜 분배 차이 원인(실측 42만·13만 vs 시뮬 55만·7만). (→ 부케 귀속 수정·스칼렛 하이 스코어 구현 일치 확인 완료, 남은 분배 차이는 영상 대조 필요)
-  6. 그웬 추가 발동의 실제 attackType(엔포스 예약인지), 소환체 카운트 취급. (→ 그웬은 11/02 밤 BI_ENFORCE 로 확인, 소환체 취급은 남음)
-  7. 브레이크 스킬·서포터 직업을 추천 입력에 더 반영. (→ 서포터 직업별 지원 선별은 guild_search.js에 반영, 브레이크 스킬 입력은 남음)
-  8. 시즌 갱신 준비: 다음 시즌 보스가 다르면 `guild_bfb.py` 새 보스 명세 교체, `search` 설정 재검토.
-  9. 서부 탈환대 세레스(`ceres`, 스트라이커) 스킬 확인. 동명 구원자는 항상 키·부제로 구분.
-  10. 선택 효과 차원을 시뮬 표(`guild_sim.json`)에 추가.
-
