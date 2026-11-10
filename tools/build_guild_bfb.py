@@ -32,8 +32,7 @@ EXPECT = {
                 ('BI_SPEED_GAUGE_CHANGE_FIX', None), ('BI_AUTOMATON_MINIGUN_BOSS_8', None), ('BI_AUTOMATON_MINIGUN_BOSS_6', None),
                 ('BI_AUTOMATON_MINIGUN_BOSS_9', None)],
     'HYPER': [('BI_STAT_NST_RATE_PENETRATE_DEF', None), ('BI_SPEED_GAUGE_UP', None)],
-    # 2026-11-10(빌드 26429597) 에 네 번째 SE(52204)가 추가됨: «자신이 타격 후 처치했고, 처치한 대상이 신부 경쟁
-    # (BOSS_1) 상태일 때 BOSS_7 삭제(BuffDeleteCount 0)». 엔진(길방 BFB 상태 기계)에는 아직 반영하지 않았음(HANDOFF 남은 일 24).
+    # 11/05 빌드 26429597의 네 번째 SE(52204): 신부 경쟁 대상 처치 후 BOSS_7 전체 삭제.
     'PASSIVE1': [('BI_AUTOMATON_MINIGUN_BOSS_1', 58801), ('BI_AUTOMATON_MINIGUN_BOSS_7', 58801), ('BI_DELETE_SPECIFIC_BUFF', 4001),
                  ('BI_DELETE_SPECIFIC_BUFF', 52204)],
     'PASSIVE3': [('BI_ADD_DAMAGE_1', 55521)],
@@ -56,6 +55,17 @@ def rows(p):
 def need(cond, msg):
     if not cond:
         raise Changed(msg)
+
+
+def validate_kill_reset(se, condition):
+    """52204는 대상·조건·삭제 수량까지 고정한다."""
+    expected = dict(SkillConditionId=52204, m_BuffTargetType='NSETT_SELF',
+                    m_BuffStrID='BI_DELETE_SPECIFIC_BUFF', m_BuffLifeTurn=0, BuffDeleteCount=0,
+                    DeleteSpecificBuffStrId='BI_AUTOMATON_MINIGUN_BOSS_7',
+                    m_Condition=dict(m_ActiveType='NSEAT_SKILL_END', m_fActiveRate=10000))
+    need(all(se.get(k) == v for k, v in expected.items()), 'PASSIVE1 52204 삭제 효과 변경')
+    need(condition == dict(Id=52204, AfterMyAttack=dict(EliminateEnemy=True,
+                          TargetBuffStrId=['BI_AUTOMATON_MINIGUN_BOSS_1'])), '52204 발동 조건 변경')
 
 
 def main():
@@ -129,6 +139,9 @@ def main():
     for k, exp in EXPECT.items():
         got = [(r['m_BuffStrID'], r.get('SkillConditionId')) for r in ses(BOSS_SK + k)]
         need(got == exp, 'SE 배열 변경: %s %s' % (k, got))
+    kill_reset = ses(BOSS_SK + 'PASSIVE1')[3]
+    validate_kill_reset(kill_reset, next(r for r in rows(T / 'Plain' / 'SKILL_CONDITION_TEMPLET.json')
+                                        if r['Id'] == 52204))
     p2 = ses(BOSS_SK + 'PASSIVE2')
     need([r.get('SkillConditionId') for r in p2] == PASSIVE2_CONDS, 'PASSIVE2 조건 배열 변경')
     crit = lvg[skills[BOSS_SK + 'PASSIVE1']['SkillLevelGroup']].get('SkillLevelStat') or []
@@ -174,7 +187,8 @@ def main():
                               dur=hy2[1]['m_BuffLifeTurn'], gaugeUp=hy2[3]['SpeedGaugeRate']),
                   bridal=dict(atkPerStack=bstat('BI_AUTOMATON_MINIGUN_BOSS_1', 'NST_NV_RATE_ATK'),
                               max=buffs['BI_AUTOMATON_MINIGUN_BOSS_1']['BuffLevelMax'],
-                              countMax=buffs['BI_AUTOMATON_MINIGUN_BOSS_7']['BuffLevelMax'], trigger=5),
+                              countMax=buffs['BI_AUTOMATON_MINIGUN_BOSS_7']['BuffLevelMax'], trigger=5,
+                              killReset=dict(conditionId=kill_reset['SkillConditionId'], deleteCount=kill_reset['BuffDeleteCount'])),
                   appeal=dict(barrierRate=sp[7]['BarrierRate'],
                               slowSpd=bstat('BI_AUTOMATON_MINIGUN_BOSS_9', 'NST_NV_RATE_TURN_SPEED'),
                               slowAtk=bstat('BI_AUTOMATON_MINIGUN_BOSS_9', 'NST_NV_RATE_ATK'),

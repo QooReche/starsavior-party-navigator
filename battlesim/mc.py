@@ -668,7 +668,7 @@ class Ctx:
     __slots__ = ('owner', 'src', 'skill', 'extra', 'targets', 'target', 'inc', 'atkp', 'cr', 'cd', 'pen', 'eh', 'crit',
                  'kill', 'coop_used', 'heal_give', 'heal_recv', 'local', 'nb', 'hit_victim', 'acc', 'evaded', 'recv_by',
                  'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets',
-                 'crit_targets', 'break_targets', 'markers', 'dead_targets', 'tough_targets', 'vamp_damage')
+                 'crit_targets', 'break_targets', 'markers', 'dead_targets', 'tough_targets', 'vamp_damage', 'guild_bridal_targets')
 
     def __init__(self, owner, src, skill, extra=False):
         self.owner, self.src, self.skill, self.extra = owner, src, skill, extra
@@ -689,6 +689,7 @@ class Ctx:
         self.evaded = set()   # 이 시전에서 회피한 대상(회피한 대상에는 약화가 걸리지 않음)
         self.crit = False
         self.kill = False
+        self.guild_bridal_targets = set()  # BFB 52204: 사망 시 eff가 비워지기 전 공격 대상의 신부 경쟁 기록
         self.coop_used = False
         self.local = None    # 피격 직전 줄의 이번 피격 한정 보정 {unit: {'defp':..,'guard':..}}
         self.nb = False

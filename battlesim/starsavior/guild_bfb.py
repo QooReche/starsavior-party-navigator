@@ -7,6 +7,7 @@
 
 상태 기계(게임 표 원문 기준, 괄호 = 조건 id):
 - 질투의 시선(58801): 아군 유닛 스킬 후(협공·추가 발동·소환체 포함), 보스가 «정실 어필 상태»(ANIMSET2)가 아니면 공격력 최고 아군(이미 있으면 그 사람)에게 신부 경쟁 +1(공격력 +3%/중첩, 최대 10), 보스 카운트 +1.
+- 52204(client): 보스 공격 종료 시 신부 경쟁 보유 공격 대상이 사망했으면 BOSS_7 카운트 전부 삭제.
 - 정실 어필(52093): 보스 공격 후, 카운트 5 이상 + 신부 경쟁 보유자 있음 -> 강화 해제·게이지 0·나머지 아군 들러리(능력치 0·받는 피해 +100%·게이지 증가 무효)·
   보스 보호막(최대 생명력 22.5%, 강인도 피해 무효)·보스 공격 -70%·속도 -20%, 특수기 -> 독점 선언, 보호막 중 공격은 신부 경쟁 보유자에게.
 - 캣파이트: 보호막 중 보스 공격 5회(52094) 또는 처치(52095) -> 상태 해제 + 축복의 대피로연 강제 발동(2144 후 원래 스킬).
@@ -183,6 +184,8 @@ class Controller:
 
     def __init__(self, b):
         self.b = b
+        if b.mc['guild_bridal_kill_reset'] not in ('client', 'off'):
+            raise ValueError('guild_bridal_kill_reset 은 client|off')
         self.boss = None
         self.cfg = None
         self.count = 0          # 신부 경쟁 카운팅(BOSS_7)
@@ -346,6 +349,16 @@ class Controller:
             return
         if u is not boss:
             return
+        # PASSIVE1 04는 PASSIVE2(캣파이트)·정실 어필 반응 예약보다 먼저 처리.
+        # NKM:10040-10152: 같은 공격 이력 대상의 사망 + TargetBuff를 함께 검사.
+        # 엔진 kill()은 eff를 즉시 비우므로 pre_hit에서 B1 대상만 시전별로 보존함.
+        if (self.b.mc['guild_bridal_kill_reset'] == 'client' and sk.is_attack
+                and any(v.dead for v in getattr(ctx, 'guild_bridal_targets', ()))):
+            reset = self.cfg['data']['bridal']['killReset']
+            if reset['deleteCount'] != 0:
+                raise ValueError('BFB 52204 삭제 수량 변경: 빌더·상태 기계 확인 필요')
+            self.count = 0  # BuffDeleteCount=0: 제한 없이 특정 버프 전체 삭제(NKM:4175-4198,4325-4333)
+            self.b.rule_hits['guild_bridal_kill_reset'] += 1
         row = self.cfg['row']
         if row and row['skillStack']:
             self._put(boss, STACK, {'피해 증가': row['skillStack']}, maxs=10)    # 940001~3
@@ -461,7 +474,11 @@ class Controller:
 
     # ---------- 피격
     def pre_hit(self, a, v):
-        """신부의 응징(55521): 보호막 중 들러리에게 맞으면 들러리 전원에게 연쇄 피해"""
+        """52204용 신부 경쟁 기록·신부의 응징(55521): 들러리 전원에게 연쇄 피해."""
+        ctx = getattr(self.b, '_cast_ctx', None)
+        if (ctx is not None and a is self.boss and not v.dead and v.has(B1)
+                and self.b.mc['guild_bridal_kill_reset'] == 'client'):
+            ctx.guild_bridal_targets.add(v)
         if self.support != 'none':
             self._sup_pre_hit(a, v)
         if v is not self.boss or a.side != 0 or not self.barrier() or not a.has(B2):
