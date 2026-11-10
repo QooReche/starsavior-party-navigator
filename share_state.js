@@ -18,12 +18,14 @@
     }
     if(q.has("m")||q.has("mode"))out.m=(q.get("m")??q.get("mode"))==="manual"?"manual":"auto";
     if(q.has("rk"))out.rk=/^[0-5]$/.test(q.get("rk"))?Number(q.get("rk")):0;
+    for(const key of ['ag','ae','ao'])if(q.has(key))out[key]=q.get(key)==='1';
     for(const key of ["b","b2"])if(q.has(key))out[key]=q.get(key)===""||breakKeys.includes(q.get(key))?q.get(key):null;
     return out;
   }
   function stringify(state){
     const q=new URLSearchParams();
     for(const key of ["c","s","g","m","rk"])if(state[key]!=null)q.set(key,String(state[key]));
+    for(const key of ['ag','ae','ao'])if(typeof state[key]==='boolean')q.set(key,state[key]?'1':'0');
     if(state.g==="manual"&&Number.isSafeInteger(state.p)&&state.p>0&&state.p<1e12)q.set("p",String(state.p));
     for(const key of ["b","b2"])if(typeof state[key]==="string")q.set(key,state[key]);
     return q.toString();

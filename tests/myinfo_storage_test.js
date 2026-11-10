@@ -6,7 +6,7 @@ function boot(saved,info=null){
   const option={disabled:true},grow={value:'1',options:['myinfo','1','0.8','1.25','manual'].map(value=>({value})),querySelector:()=>option};
   const els={grow,mypow:{value:''},rk:{value:'0',options:[]},mmode:{value:''},optbox:{},go:{}};
   const ctx=vm.createContext({$:id=>els[id],MI:{info},PW:saved.pw||{},SHARE:{},applyShare(){},
-    LS:{get:k=>saved[k]??null,set:(k,v)=>{saved[k]=v}},miLoad(){},renderMi(){},updCount(){},run(){},refreshTabs(){},drawGraph(){},
+    LS:{get:k=>saved[k]??null,set:(k,v)=>{saved[k]=v}},miLoad(){},renderMi(){},growthInit(){},updCount(){},run(){},refreshTabs(){},drawGraph(){},
     AUTO:false,SIMQ:{},REQ:false,window:{Quick:true},QK:{d:{st:{op:{'tab|stage':{bp:80000}}},params:{}}},rkOf:()=>0});
   vm.runInContext(section('function miSelect(','let cur='),ctx);
   vm.runInContext(section('{const gv=LS.get(', '</script>'),ctx);

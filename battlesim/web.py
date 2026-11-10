@@ -133,4 +133,6 @@ def run_manual(stage, party, n, seed, extra=None):
     tl = simulate(party, _enc(stage, op), op).get('timeline')
     sq = seq_from_timeline(tl)
     sq.update(run=idx, kind=kind, ttk=(runs[idx][1] if runs else None))
-    return json.dumps(dict(c=o['clear_p'], ci=o['ci95']['clear'], t=o['ttk_median'], n=o['n_runs'], pol=list(pol), seq=sq, bs=_break_summary(r)), ensure_ascii=False)
+    return json.dumps(dict(c=o['clear_p'], ci=o['ci95']['clear'], t=o['ttk_median'], n=o['n_runs'],
+                           prog=o.get('progress'), progs=r.get('prog_runs'),
+                           pol=list(pol), seq=sq, bs=_break_summary(r)), ensure_ascii=False)
