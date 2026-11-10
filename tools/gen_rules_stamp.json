@@ -1,6 +1,6 @@
 {
  "guild_sim": {
-  "hash": "e645473f925c9c92",
+  "hash": "2e770586886fac1e",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -13,11 +13,19 @@
    {
     "hash": "e645473f925c9c92",
     "reason": "buff_step_group·break_skill_reduce·chain_pen 추가(11/09). 팀 5개 x 육성 1.5·3 x 단계 0·6·12 x 지원 2종 60칸을 새 규칙/옛 규칙으로 20판씩 비교해 클리어율·진행도 모두 동일(temp/partynavigator/scripts/guild_sens_1109.py)"
+   },
+   {
+    "hash": "2e770586886fac1e",
+    "reason": "cond_count_bind 영향은 루그(lugh) 설중사우 후 행동 게이지 줄뿐. guild_sim.json teams 5개(ceres-sun-supporter/wedding-epindel/bunny-charlotte+cristelle|tyria|hilde|scarlet, community wedding-carmen/amora/tyria)에 lugh 없음, build_guild_sim.reco_teams(4) 재실행 결과 팀 동일(후보 변경 없음), 지원 6종도 구원자 아님"
+   },
+   {
+    "hash": "2e770586886fac1e",
+    "reason": "11/10 cond_count_bind(루그 설중사우 후 게이지 줄의 중첩수 대상) 추가: data/guild_sim.json 에 lugh(루그) 가 팀으로 들어 있지 않아(JSON 문자열 검사 0건) 결과에 영향 없음"
    }
   ]
  },
  "quick": {
-  "hash": "e645473f925c9c92",
+  "hash": "2e770586886fac1e",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -25,6 +33,10 @@
    },
    {
     "hash": "e645473f925c9c92",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "2e770586886fac1e",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

@@ -2984,7 +2984,11 @@ class Battle:
                     return False
             elif k in ('자신이 보유', '자신이 미보유'):
                 names = [x.strip() for x in v.split(',')]
-                last = ('A', names)
+                # cond_count_bind=holding: 「미보유」 키는 뒤따르는 중첩수·효과 개수의 대상이 되지 않는다(표의
+                # SelfBuffLevelCount 는 SelfBuffStrId 에 붙고 NotSelfBuffStrId 에는 붙지 않음, 루그 52189~52191).
+                if not (k == '자신이 미보유' and self.mc['cond_count_bind'] == 'holding'
+                        and '자신 미보유 효과 중첩수' not in dict(ln.params)):
+                    last = ('A', names)
                 pres = any(owner.has(n) for n in names)
                 # 「미보유 + 효과 중첩수 N」는 효과 자체 부재가 아니라 N중첩 미달.
                 if k == '자신이 미보유' and '자신 미보유 효과 중첩수' in dict(ln.params):
