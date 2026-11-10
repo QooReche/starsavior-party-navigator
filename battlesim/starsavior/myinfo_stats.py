@@ -31,6 +31,48 @@ def _number(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
+def level_info(unit, info):
+    """Effective account level, its origin, and legacy-input diagnostics.
+
+    NKC:501233-501265,421483-421504; source enhancement at exactly 200
+    needs unexported unlock/readiness flags. Use own level until 201.
+    NKC:421446-421450 clears readiness above 200; unlock is inferred there.
+    Partial new inputs retain the old account-level fallback.
+    """
+    unit, info = unit or {}, info or {}
+    link = info.get("star_link")
+    link = link if isinstance(link, dict) else {}
+    valid_level = lambda v: _number(v) and v == math.floor(v) and 1 <= v <= 2147483647
+    missing = []
+    if not valid_level(unit.get("level")):
+        missing.append("unit.level")
+    if not valid_level(link.get("level")):
+        missing.append("star_link.level")
+    for field in ("source", "slots"):
+        if not isinstance(link.get(field), list):
+            missing.append("star_link." + field)
+    if missing:
+        level = info.get("star_link_level")
+        if not valid_level(level):
+            missing.append("star_link_level")
+            level = 1
+        return dict(level=level, source="legacy", missing=sorted(missing))
+    uid = unit.get("id")
+    source = "unit"
+    if any(isinstance(s, dict) and s.get("id") == uid and uid for s in link["slots"]):
+        source = "slot"
+    elif link["level"] >= 201 and uid in link["source"]:
+        source = "source"
+    return dict(level=unit["level"] if source == "unit" else link["level"], source=source, missing=[])
+
+
+def effective_level(unit, info, missing=None):
+    result = level_info(unit, info)
+    if missing is not None:
+        missing.update(result["missing"])
+    return result["level"]
+
+
 def gauntlet_stats(unit, growth):
     """Return separate journey (x1) and potential (flat/R2) contributions.
 
@@ -151,7 +193,7 @@ def final_stats(unit, info, growth, rule="normal", breakdown=False):
     if template is None:
         missing.add("unit:" + (str(uid) if uid is not None else "missing"))
     else:
-        level = 200 if rule == "fixed200" else number(info, "star_link_level", "star_link_level", 1, 1)
+        level = 200 if rule == "fixed200" else effective_level(unit, info, missing)
         resonance = 10 if rule == "fixed200" else number(unit, "resonance", "resonance")
         # NKM.Templets.cs:17837-17842 serializes limit break (star), StarGrade
         # (sigil), resonance separately. NKM.cs:1979-1982,18553-18556 passes

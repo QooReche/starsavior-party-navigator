@@ -38,6 +38,15 @@
     const ints=(v,keys)=>keys.every(k=>!(k in v)||(Number.isInteger(v[k])&&v[k]>=0));
     const option=v=>obj(v)&&(!("stat" in v)||typeof v.stat==="string")&&(!("value" in v)||Number.isFinite(v.value));
     if (!ints(o,["star_link_level"])) return "스타링크 값이 올바르지 않습니다.";
+    // Protocol int32 bounds; 100 client slot indices (NKC:421378-421381).
+    const int32=(v,min=1)=>Number.isInteger(v)&&v>=min&&v<=2147483647;
+    if ("star_link" in o) {
+      const s=o.star_link;
+      if (!obj(s)||!int32(s.level)||s.level!==o.star_link_level||
+          !Array.isArray(s.source)||s.source.length>4||!s.source.every(v=>int32(v))||new Set(s.source).size!==s.source.length||
+          !Array.isArray(s.slots)||!s.slots.every(v=>obj(v)&&int32(v.index,0)&&v.index<100&&int32(v.id,0))||
+          new Set(s.slots.map(v=>v.index)).size!==s.slots.length) return "스타링크 정보가 올바르지 않습니다.";
+    }
     if ("tactics" in o && (!obj(o.tactics)||!ints(o.tactics,["facility_level","common_level"])||
         ("groups" in o.tactics&&(!obj(o.tactics.groups)||!Object.values(o.tactics.groups).every(v=>obj(v)&&ints(v,["level","attack","defense","hp"])))))) return "전술 정보가 올바르지 않습니다.";
     if ("break_skills" in o&&(!Array.isArray(o.break_skills)||!o.break_skills.every(b=>obj(b)&&Number.isInteger(b.id)&&b.id>0&&Number.isInteger(b.level)&&b.level>=1&&b.level<=10))) return "브레이크 스킬 정보가 올바르지 않습니다.";
@@ -45,6 +54,7 @@
     for (const u of o.units) {
       if (!obj(u)||!Number.isInteger(u.id)||u.id<=0||ids.has(u.id)||!ints(u,["star","sigil","resonance","favor"])) return "구원자 항목이 올바르지 않습니다.";
       ids.add(u.id);
+      if ("level" in u&&!int32(u.level)) return "구원자 레벨이 올바르지 않습니다.";
       if ("skills" in u&&(!obj(u.skills)||!ints(u.skills,["basic","special","ultimate","passive"]))) return "스킬 정보가 올바르지 않습니다.";
       if ("equip" in u&&(!Array.isArray(u.equip)||!u.equip.every(e=>obj(e)&&ints(e,["item_id","level","enhance"])&&
           (!("main" in e)||option(e.main))&&(!("subs" in e)||(Array.isArray(e.subs)&&e.subs.every(option)))))) return "장비 정보가 올바르지 않습니다.";
@@ -56,6 +66,11 @@
       }
     }
     return "";
+  }
+
+  function warnings(info) {
+    const ids=new Set(info.units.map(u=>u.id));
+    return (info.star_link?.slots||[]).some(s=>s.id!==0&&!ids.has(s.id)) ? ['스타링크 슬롯 구원자 정보 없음'] : [];
   }
 
   // 로스터(uid = 게임 구원자 ID)에서 보유한 구원자의 key 목록과, 페이지가 모르는 ID 목록을 돌려준다.
@@ -92,6 +107,6 @@
     return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   }
 
-  const api = { FORMAT, fromHash, toHash, validate, mapOwned, mapBreak, b64urlToBytes };
+  const api = { FORMAT, fromHash, toHash, validate, warnings, mapOwned, mapBreak, b64urlToBytes };
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.MyInfoImport = api;
 })(typeof window !== "undefined" ? window : globalThis);

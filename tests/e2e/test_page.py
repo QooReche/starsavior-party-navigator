@@ -847,6 +847,10 @@ def test_myinfo_import_clear(browser, ctx):
     assert '전술 공통 Lv20' in page.inner_text('#mi-meta') and '저장됨 10-01 ' in page.inner_text('#mi-saved')
     assert page.locator('#mi-list .mi-pick').count() == 8
     assert page.locator('#mi-list .mi-pick input[data-use]:checked').count() == 8
+    assert '구원자별 레벨 없음' not in page.inner_text('#mi-meta')
+    assert page.locator('#mi-list .mi-link').count() == 3
+    assert page.locator('#mi-list [data-uid="1001"] .mi-level').inner_text() == 'Lv140'
+    assert all(t == '스타링크 · 슬롯' for t in page.locator('#mi-list .mi-link').all_text_contents())
     pw = page.locator('#mi-list .mi-pw').all_text_contents()
     assert all('—' not in t for t in pw), pw
     vals = [int(t.strip().replace(',', '')) for t in pw]
@@ -920,6 +924,10 @@ def test_myinfo_rules_mobile(browser, ctx):
     choose(page, '코스모 게이트', '길레 2단계')
     assert page.evaluate('() => miProfile().rule') == 'fixed200'
     assert normal != page.evaluate('() => miProfile().results.luna.power')
+    page.click('#tab-info')
+    assert all(t == 'Lv200' for t in page.locator('#mi-list .mi-level').all_text_contents())
+    assert page.locator('#mi-list .mi-link').count() == 0
+    page.click('#tab-reco')
     assert 'Lv200 · 공명 10' in page.inner_text('.party[data-party="1"] .qh')
     assert page.evaluate('() => document.documentElement.scrollWidth <= innerWidth')
     page.screenshot(path=os.path.join(ctx.shots, 'myinfo_reco_mobile.png'), full_page=True)
@@ -1565,7 +1573,33 @@ TESTS.append(test_boss_gimmick_mobile)
 TESTS.extend([test_myinfo_required, test_myinfo_import_clear, test_myinfo_use_toggle, test_myinfo_rules_mobile, test_myinfo_sim])
 TESTS.extend([test_share_link, test_sim_runs, test_press_to_compute])
 TESTS.extend([test_skill_view, test_skill_retry])
-TESTS.append(test_myinfo_full)
+def test_myinfo_level_compat(browser, ctx):
+    """Legacy warning, source boundary, and unknown-slot warning in the real UI."""
+    ctx.errors.clear()
+    page = open_page(browser, ctx, info=os.path.join(FIXTURES, 'myinfo_legacy.json'))
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    page.click('#tab-info')
+    assert '구원자별 레벨 없음 · 다시 불러오기 권장' in page.inner_text('#mi-meta')
+    assert all(t == 'Lv120' for t in page.locator('#mi-list .mi-level').all_text_contents())
+    updated = json.loads(open(SYNTH, encoding='utf-8').read())
+    updated['star_link_level'] = updated['star_link']['level'] = 201
+    updated['star_link']['slots'].append(dict(index=99, id=900099))
+    page.evaluate('(info) => miApply(info)', updated)
+    page.wait_for_function('() => !MI.pending && !!MI.growth')
+    assert '구원자별 레벨 없음' not in page.inner_text('#mi-meta')
+    assert '스타링크 슬롯 구원자 정보 없음' in page.inner_text('#mi-meta')
+    assert page.locator('#mi-list [data-uid="1001"] .mi-level').inner_text() == 'Lv201'
+    assert page.locator('#mi-list [data-uid="1001"] .mi-link').inner_text() == '스타링크 · 소스'
+    page.click('#mi-list button[data-mi-sheet="1001"]')
+    page.wait_for_selector('#mi-dlg .mi-level')
+    assert page.locator('#mi-dlg .mi-level').inner_text() == 'Lv201'
+    assert page.locator('#mi-dlg .mi-link').inner_text() == '스타링크 · 소스'
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '옛 형식 경고·201 소스·슬롯 경고·상세 실효 레벨'
+
+
+TESTS.extend([test_myinfo_full, test_myinfo_level_compat])
 TESTS.append(test_graph_evidence)
 TESTS.append(test_equip_goal_option)
 TESTS.append(test_guild_defense)

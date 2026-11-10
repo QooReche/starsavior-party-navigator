@@ -41,7 +41,8 @@ const tests={
     const before=vm.runInContext('simSig(st,t)',ctx);ctx.MI.hash='second';assert.notEqual(vm.runInContext('simSig(st,t)',ctx),before);
     ctx.miMode=()=>false;assert.notEqual(vm.runInContext('simSig(st,t)',ctx),before);},
   sim_power(){const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
-    const keys=['1001','1002','1003','1005'],profile=M.profile(info,roster,growth,'op');
+    // Keep the original power/penalty contract on its original input.
+    const keys=['1001','1002','1003','1005'],profile=M.profile(require('./fixtures/myinfo_legacy.json'),roster,growth,'op');
     const ctx=vm.createContext({arrangeOf:()=>({order:keys,lead:'1001'}),ekey:k=>k,Quick:Q,
       QK:{d:{sv:Object.fromEntries(keys.map(k=>[k,[0,100,1000,50,100,10000]]))}},
       t:{ek:keys,base:40000,b:M.team(keys,profile,k=>k)}});

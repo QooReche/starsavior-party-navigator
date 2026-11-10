@@ -44,7 +44,8 @@
         "level": 10,
         "potentials": [],
         "blessings": []
-      }
+      },
+      "level": 140
     },
     {
       "id": 1002,
@@ -80,7 +81,8 @@
         "level": 10,
         "potentials": [],
         "blessings": []
-      }
+      },
+      "level": 140
     },
     {
       "id": 1003,
@@ -116,7 +118,8 @@
         "level": 10,
         "potentials": [],
         "blessings": []
-      }
+      },
+      "level": 140
     },
     {
       "id": 1005,
@@ -152,7 +155,8 @@
         "level": 10,
         "potentials": [],
         "blessings": []
-      }
+      },
+      "level": 140
     },
     {
       "id": 1008,
@@ -188,7 +192,8 @@
         "level": 10,
         "potentials": [],
         "blessings": []
-      }
+      },
+      "level": 39
     },
     {
       "id": 1009,
@@ -224,7 +229,8 @@
         "level": 10,
         "potentials": [],
         "blessings": []
-      }
+      },
+      "level": 40
     },
     {
       "id": 1010,
@@ -260,7 +266,8 @@
         "level": 10,
         "potentials": [],
         "blessings": []
-      }
+      },
+      "level": 41
     },
     {
       "id": 1011,
@@ -296,7 +303,31 @@
         "level": 10,
         "potentials": [],
         "blessings": []
-      }
+      },
+      "level": 42
     }
-  ]
+  ],
+  "star_link": {
+    "level": 120,
+    "source": [
+      1001,
+      1002,
+      1003,
+      1005
+    ],
+    "slots": [
+      {
+        "index": 0,
+        "id": 1008
+      },
+      {
+        "index": 1,
+        "id": 1009
+      },
+      {
+        "index": 2,
+        "id": 1010
+      }
+    ]
+  }
 }

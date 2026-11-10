@@ -97,13 +97,13 @@ class SyntheticTests(unittest.TestCase):
         self.assertEqual(out["stats"], dict(atk=202, hp=1259, **{"def": 105}, spd=104,
                                             cr=500, cd=5000, eh=10076, er=92))
         self.assertEqual(out["power"], unit_power(out["stats"], 0, 10))
-        self.assertEqual(out["missing"], [])
+        self.assertEqual(out["missing"], ["star_link.level", "star_link.slots", "star_link.source", "unit.level"])
         # Unknown potential tuples / blessings must not be guessed or change any stat.
         u["gauntlet"].update(potentials=[[999999, 1, 2, 3]], blessings=[999999])
         changed = ms.final_stats(u, i, g)
         self.assertEqual(changed["stats"], out["stats"])
         # blessings → hurdles(관문 이력), missing 에는 포함하지 않음 (NKC 231872 확정)
-        self.assertEqual(changed["missing"], ["gauntlet.potential:999999", "power_pp"])
+        self.assertEqual(changed["missing"], sorted(out["missing"] + ["gauntlet.potential:999999", "power_pp"]))
         self.assertNotIn("gauntlet_blessings", changed["missing"])
 
     def test_unit_passive(self):
@@ -426,7 +426,8 @@ class SyntheticTests(unittest.TestCase):
                     self.assertGreater(actual, final[stat])
 
     def test_sim_imported_power(self):
-        info = json.loads((ROOT / "tests/fixtures/myinfo_synthetic.json").read_text(encoding="utf-8"))
+        # Frozen power/penalty contract uses the original legacy input.
+        info = json.loads((ROOT / "tests/fixtures/myinfo_legacy.json").read_text(encoding="utf-8"))
         growth = json.loads((ROOT / "data/growth.json").read_text(encoding="utf-8"))
         units = []
         for u in info["units"]:

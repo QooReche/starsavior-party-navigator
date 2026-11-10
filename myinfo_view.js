@@ -15,6 +15,11 @@
   const line=(a,b)=>`<div class="mi-detail-line"><span>${a}</span><b>${b}</b></div>`;
   const section=(title,html)=>`<section class="skill-card"><h3>${title}</h3>${html}</section>`;
   const level=v=>Number.isFinite(v)?num(v):'—';
+  function levelBadge(unit,info,rule='normal'){
+    const lv=Stats.level_info(unit,info),fixed=rule==='fixed200';
+    const kind=lv.source==='slot'?'스타링크 · 슬롯':lv.source==='source'?'스타링크 · 소스':'';
+    return `<span class="mi-level">Lv${level(fixed?200:lv.level)}</span>${fixed?'':kind?` <span class="tag mi-link">${kind}</span>`:''}`;
+  }
   function at(table,lv){const n=Object.keys(table||{}).map(Number).filter(n=>n<=lv).sort((a,b)=>b-a)[0];return table?.[n]||{}}
   function account(info,growth){
     const t=info.tactics||{},gs=t.groups||{};
@@ -75,7 +80,7 @@
   const short={atk:'공격력',hp:'생명력',def:'방어력',spd:'속도',cr:'치명 확률',cd:'치명 피해',eh:'효과 적중',er:'효과 저항'};
   const tile=(ic,label,val,sub='')=>`<div class="ms-tile">${icon(ic)}<span>${label}</span><b>${val}</b>${sub?`<small>${sub}</small>`:''}</div>`;
   const block=(ic,title,html,cls='')=>`<section class="ms-block ${cls}"><h3>${icon(ic)}${title}</h3>${html}</section>`;
-  function sheet(unit,info,growth,result,publicData,combat,simulation,savior){
+  function sheet(unit,info,growth,result,publicData,combat,simulation,savior,rule='normal'){
     const b=result.breakdown,gauntlet=unit.gauntlet||{},learned=result.combat.potentials,sk=result.combat.skills||{};
     const effects=learned.map(([id,lv])=>combatEffects(id,lv,publicData,combat));
     const stats=keys.map(k=>tile(k,short[k],value(k,result.stats[k]))).join('');
@@ -88,6 +93,7 @@
     const inner=b.sources.filter(s=>['favor','tactics','facility'].includes(s.id)).map(s=>line(`${s.id==='tactics'?esc(groups[s.group]||'기타')+(s.field==='level'?'':` · ${{attack:'공',defense:'방',hp:'생'}[s.field]}`):labels[s.id]} Lv${s.level}`,values(s.values))).join('');
     return `<div class="ms-head">${savior?.art||''}<div class="ms-id"><div class="ms-name">${savior?.dia||''}<div><h2>${esc(savior?.name||'미등록 구원자')}</h2><small>${esc(savior?.sub||'')}</small></div></div>
       <div class="ms-power">${icon('power')}<b>${num(result.power)}</b></div>
+      <div>${levelBadge(unit,info,rule)}</div>
       <div class="ms-meta">${tile('ultimate','★',level(unit.star))}${tile('sigil','각인',level(unit.sigil))}${tile('reso','공명',level(unit.resonance))}${tile('hp','호감도',level(unit.favor))}</div>
       <p class="ms-sim ${simulation?'on':''}">${simulation?'이 수치로 시뮬합니다':'시뮬 미반영'}</p>${savior?.key?`<button type="button" class="sec" data-skill-open="${esc(savior.key)}" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${icon('special')}스킬 설명 보기</button>`:''}</div></div>
       <div class="ms-grid">${block('atk','능력치',`<div class="ms-tiles">${stats}</div>`)}${block('special','스킬 레벨',`<div class="ms-skills">${skills}</div>`)}
@@ -128,7 +134,7 @@
       if(!c.info||!c.growth){body.innerHTML='<p>성장표를 불러온 뒤 다시 열어 주세요.</p>';return}
       try{await load();const unit=c.info.units.find(u=>String(u.id)===String(uid));if(!unit){body.textContent='구원자 정보 없음';return}
         const r=Stats.final_stats(unit,c.info,c.growth,c.rule||'normal',true);
-        body.innerHTML=sheet(unit,c.info,c.growth,r,publicData,combat,c.simulation&&!!c.growth.units?.[unit.id]&&r.power>0,savior)}
+        body.innerHTML=sheet(unit,c.info,c.growth,r,publicData,combat,c.simulation&&!!c.growth.units?.[unit.id]&&r.power>0,savior,c.rule||'normal')}
       catch(e){body.innerHTML=`<p role="status">상세를 불러오지 못했습니다. <button type="button" class="sec" data-mi-sheet-retry="${esc(uid)}">다시 시도</button></p>`}}
     document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
       if(b.hasAttribute('data-mi-retry')){fill(b.dataset.miRetry);return}
@@ -139,6 +145,6 @@
     });
     return {button,panel,refresh,openSheet};
   }
-  const api={names,groups,value,account,breakdown,equipment,combatEffects,render,sheet,mount};
+  const api={names,groups,value,levelBadge,account,breakdown,equipment,combatEffects,render,sheet,mount};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.MyInfoView=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -44,7 +44,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 140
   },
   {
    "id": 1002,
@@ -80,7 +81,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 140
   },
   {
    "id": 1003,
@@ -116,7 +118,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 140
   },
   {
    "id": 1005,
@@ -152,7 +155,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 140
   },
   {
    "id": 1008,
@@ -188,7 +192,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 39
   },
   {
    "id": 1009,
@@ -224,7 +229,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 40
   },
   {
    "id": 1010,
@@ -260,7 +266,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 41
   },
   {
    "id": 1011,
@@ -296,7 +303,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 42
   },
   {
    "id": 1013,
@@ -332,7 +340,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 43
   },
   {
    "id": 1014,
@@ -368,7 +377,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 44
   },
   {
    "id": 1015,
@@ -404,7 +414,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 45
   },
   {
    "id": 1016,
@@ -440,7 +451,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 46
   },
   {
    "id": 1017,
@@ -476,7 +488,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 47
   },
   {
    "id": 1018,
@@ -512,7 +525,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 48
   },
   {
    "id": 1019,
@@ -548,7 +562,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 49
   },
   {
    "id": 1021,
@@ -584,7 +599,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 50
   },
   {
    "id": 1023,
@@ -620,7 +636,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 51
   },
   {
    "id": 1024,
@@ -656,7 +673,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 52
   },
   {
    "id": 1025,
@@ -692,7 +710,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 53
   },
   {
    "id": 1026,
@@ -728,7 +747,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 54
   },
   {
    "id": 1027,
@@ -764,7 +784,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 55
   },
   {
    "id": 1029,
@@ -800,7 +821,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 56
   },
   {
    "id": 1030,
@@ -836,7 +858,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 57
   },
   {
    "id": 1031,
@@ -872,7 +895,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 58
   },
   {
    "id": 1032,
@@ -908,7 +932,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 59
   },
   {
    "id": 1033,
@@ -944,7 +969,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 60
   },
   {
    "id": 1034,
@@ -980,7 +1006,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 61
   },
   {
    "id": 1039,
@@ -1016,7 +1043,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 62
   },
   {
    "id": 1040,
@@ -1052,7 +1080,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 63
   },
   {
    "id": 1041,
@@ -1088,7 +1117,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 64
   },
   {
    "id": 1042,
@@ -1124,7 +1154,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 65
   },
   {
    "id": 1043,
@@ -1160,7 +1191,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 66
   },
   {
    "id": 1044,
@@ -1196,7 +1228,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 67
   },
   {
    "id": 1045,
@@ -1232,7 +1265,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 68
   },
   {
    "id": 1046,
@@ -1268,7 +1302,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 69
   },
   {
    "id": 1049,
@@ -1304,7 +1339,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 70
   },
   {
    "id": 1051,
@@ -1340,7 +1376,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 71
   },
   {
    "id": 1052,
@@ -1376,7 +1413,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 72
   },
   {
    "id": 1053,
@@ -1412,7 +1450,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 73
   },
   {
    "id": 1054,
@@ -1448,7 +1487,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 74
   },
   {
    "id": 1055,
@@ -1484,7 +1524,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 75
   },
   {
    "id": 1056,
@@ -1520,7 +1561,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 76
   },
   {
    "id": 1057,
@@ -1556,7 +1598,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 77
   },
   {
    "id": 1058,
@@ -1592,7 +1635,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 78
   },
   {
    "id": 1060,
@@ -1628,7 +1672,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 79
   },
   {
    "id": 1501,
@@ -1664,7 +1709,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 80
   },
   {
    "id": 1502,
@@ -1700,7 +1746,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 81
   },
   {
    "id": 1506,
@@ -1736,7 +1783,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 82
   },
   {
    "id": 1507,
@@ -1772,7 +1820,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 83
   },
   {
    "id": 1508,
@@ -1808,7 +1857,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 84
   },
   {
    "id": 1509,
@@ -1844,7 +1894,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 85
   },
   {
    "id": 1510,
@@ -1880,7 +1931,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 86
   },
   {
    "id": 1511,
@@ -1916,7 +1968,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 87
   },
   {
    "id": 1059,
@@ -1952,7 +2005,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 88
   },
   {
    "id": 3001,
@@ -1988,7 +2042,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 89
   },
   {
    "id": 3002,
@@ -2024,7 +2079,8 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 90
   },
   {
    "id": 3003,
@@ -2060,7 +2116,227 @@
     "level": 10,
     "potentials": [],
     "blessings": []
-   }
+   },
+   "level": 91
   }
- ]
+ ],
+ "star_link": {
+  "level": 120,
+  "source": [
+   1001,
+   1002,
+   1003,
+   1005
+  ],
+  "slots": [
+   {
+    "index": 0,
+    "id": 1008
+   },
+   {
+    "index": 1,
+    "id": 1009
+   },
+   {
+    "index": 2,
+    "id": 1010
+   },
+   {
+    "index": 3,
+    "id": 1011
+   },
+   {
+    "index": 4,
+    "id": 1013
+   },
+   {
+    "index": 5,
+    "id": 1014
+   },
+   {
+    "index": 6,
+    "id": 1015
+   },
+   {
+    "index": 7,
+    "id": 1016
+   },
+   {
+    "index": 8,
+    "id": 1017
+   },
+   {
+    "index": 9,
+    "id": 1018
+   },
+   {
+    "index": 10,
+    "id": 1019
+   },
+   {
+    "index": 11,
+    "id": 1021
+   },
+   {
+    "index": 12,
+    "id": 1023
+   },
+   {
+    "index": 13,
+    "id": 1024
+   },
+   {
+    "index": 14,
+    "id": 1025
+   },
+   {
+    "index": 15,
+    "id": 1026
+   },
+   {
+    "index": 16,
+    "id": 1027
+   },
+   {
+    "index": 17,
+    "id": 1029
+   },
+   {
+    "index": 18,
+    "id": 1030
+   },
+   {
+    "index": 19,
+    "id": 1031
+   },
+   {
+    "index": 20,
+    "id": 1032
+   },
+   {
+    "index": 21,
+    "id": 1033
+   },
+   {
+    "index": 22,
+    "id": 1034
+   },
+   {
+    "index": 23,
+    "id": 1039
+   },
+   {
+    "index": 24,
+    "id": 1040
+   },
+   {
+    "index": 25,
+    "id": 1041
+   },
+   {
+    "index": 26,
+    "id": 1042
+   },
+   {
+    "index": 27,
+    "id": 1043
+   },
+   {
+    "index": 28,
+    "id": 1044
+   },
+   {
+    "index": 29,
+    "id": 1045
+   },
+   {
+    "index": 30,
+    "id": 1046
+   },
+   {
+    "index": 31,
+    "id": 1049
+   },
+   {
+    "index": 32,
+    "id": 1051
+   },
+   {
+    "index": 33,
+    "id": 1052
+   },
+   {
+    "index": 34,
+    "id": 1053
+   },
+   {
+    "index": 35,
+    "id": 1054
+   },
+   {
+    "index": 36,
+    "id": 1055
+   },
+   {
+    "index": 37,
+    "id": 1056
+   },
+   {
+    "index": 38,
+    "id": 1057
+   },
+   {
+    "index": 39,
+    "id": 1058
+   },
+   {
+    "index": 40,
+    "id": 1060
+   },
+   {
+    "index": 41,
+    "id": 1501
+   },
+   {
+    "index": 42,
+    "id": 1502
+   },
+   {
+    "index": 43,
+    "id": 1506
+   },
+   {
+    "index": 44,
+    "id": 1507
+   },
+   {
+    "index": 45,
+    "id": 1508
+   },
+   {
+    "index": 46,
+    "id": 1509
+   },
+   {
+    "index": 47,
+    "id": 1510
+   },
+   {
+    "index": 48,
+    "id": 1511
+   },
+   {
+    "index": 49,
+    "id": 1059
+   },
+   {
+    "index": 50,
+    "id": 3001
+   },
+   {
+    "index": 51,
+    "id": 3002
+   }
+  ]
+ }
 }

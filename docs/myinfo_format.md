@@ -8,7 +8,12 @@
   "format": "ss-myinfo-v1",
   "game_build": "25951618",              // 추출 당시 게임 빌드
   "exported_at": "2026-10-22T00:20:00+09:00",
-  "star_link_level": 343,                // 스타 링크 레벨(계정 공통, 구원자 레벨 역할)
+  "star_link_level": 240,                // 스타링크 공유 레벨(전원에게 적용되는 값은 아님)
+  "star_link": {                        // 선택 필드. 아래 값은 합성 예시
+    "level": 240,                       // star_link_level과 같음
+    "source": [1001, 1002, 1003, 1005],  // 소스 구원자 ID, 최대 4명
+    "slots": [{"index": 0, "id": 1040}, {"index": 1, "id": 0}] // 0은 빈 슬롯
+  },
   "tactics": {
     "facility_level": 5,                 // 전술 분석 시설 레벨(공격·방어·생명 비율 보너스: 레벨5 = +5%)
     "common_level": 111,                 // 공통 전술 레벨
@@ -21,6 +26,7 @@
   "units": [                             // 보유 구원자만(id 오름차순)
     {
       "id": 1040,                        // 정적 표 UNIT_TEMPLET_BASE1.m_UnitID
+      "level": 23,                       // 선택 필드. 자기 레벨(합성 예시)
       "star": 3,                         // ★ 수(0~3)
       "sigil": 2,                        // 수호성 각인(별의 인장) 단계(0~6)
       "resonance": 10,                   // 공명 단계(0~10)
@@ -41,6 +47,26 @@
 
 스탯 이름: `NST_ATK, NST_HP, NST_DEF, NST_TURN_SPEED, NST_RATE_CRITICAL(0.01%), NST_RATE_CRITICAL_DAMAGE, NST_RATE_EFFECT_HIT, NST_RATE_EFFECT_EVADE, NST_NV_RATE_ATK/HP/DEF`(0.01% 단위 비율).
 구원자 ID(`id`)·장비 아이템 ID 는 게임 내부 ID 이며, 페이지는 로스터의 `uid` 로 보유 구원자를 연결한다.
+
+## 구원자별 실효 레벨 (2026-11-10)
+
+`format`은 `ss-myinfo-v1`을 유지함. `units[].level`과 `star_link`는 선택 필드이며 옛 파일도 읽음.
+
+- 슬롯에 등록됨 → `star_link.level`.
+- 소스에 포함되고 스타링크가 201 이상임 → `star_link.level`.
+- 그 밖 → `units[].level`.
+- `cosmo`·`rush`의 `fixed200`은 슬롯 여부와 관계없이 기존처럼 레벨 200·공명 10을 씀.
+
+근거는 비공개 static-data `decompiled/NKC/NKC.decompiled.cs:501233-501265`(실효 레벨), `:421483-421504`(슬롯·소스 판정), `:421446-421450`(200 초과 시 준비 상태 해제), `:501424`(자기 레벨 대입)임. 빌드는 `decompiled/BUILD.md`의 26314877 및 26429597 동등성 기록을 따름.
+소스의 정확히 200 판정에는 증폭 해금·준비 상태가 더 필요하며 현재 형식에는 없음. 따라서 자기 레벨을 유지함. 201 이상 해금은 레벨에서 추론함. fixed200의 서버 적용은 미확인이고 이번 변경에서는 유지함.
+
+새 정보 중 자기 레벨·스타링크 레벨·소스·슬롯 하나라도 빠지면 해당 구원자는 옛 동작(`star_link_level`)으로 계산함. `missing`에는 빠진 값에 맞춰 `unit.level`, `star_link.level`, `star_link.source`, `star_link.slots`를 남김. 옛 스타링크 레벨도 없으면 1로 계산하고 `star_link_level` 진단을 추가함. fixed200에는 이 진단이 필요 없음.
+옛 파일은 슬롯 밖 구원자를 과대평가할 수 있어 상단에 「구원자별 레벨 없음 · 다시 불러오기 권장」을 표시함. 카드·상세에는 적용 레벨과 「스타링크 · 슬롯/소스」를 표시하고 fixed200에서는 Lv200을 표시함.
+
+검증: 레벨은 양의 int32, 소스 ID는 양의 int32 최대 4개(중복 불가), 슬롯 `index`는 클라의 0~99(중복 불가), 슬롯 `id`는 0~2147483647임. 이 상한은 프로토콜·클라 저장 범위이고 게임 성장 상한·무료 슬롯 수를 뜻하지 않음. `star_link`가 있으면 `level/source/slots`를 모두 갖추고 `level == star_link_level`이어야 함. 슬롯 ID가 `units`에 없어도 불러오며 경고만 표시함. DateTime·쿨다운은 내보내지 않음.
+
+추출 순번(0부터): Unit `rec[1]` = 자기 레벨, UserData `ud[19]`의 `synchro[2]` = 스타링크 레벨, `[3]` = 소스, `[4]` = 슬롯 목록. 슬롯은 `[0]` = index, `[1]` = ID, `[2]` = 제외하는 DateTime임. 근거 `decompiled/NKM.Templets/NKM.Templets.decompiled.cs:19741-19790,20545-20580`.
+실제 캡처는 실행하지 않았으며 합성 LOGIN_ACK로 C#·두 PowerShell 배포본·Python 출력 일치를 검사했음.
 
 ## 불러오기·저장·갱신 (페이지 동작)
 - **불러오는 경로 두 가지**: ① 주소 해시 `#myinfo=<base64url(gzip(JSON))>` 로 열면 자동으로 읽는다(읽은 뒤 주소창에서 해시를 지운다. 해시는 서버로 전송되지 않는다). ② 서랍 「내 구원자 → 내 정보 불러오기 → 파일 선택」으로 `내정보.json` 을 고른다. 구현 `myinfo_import.js`, 연결 코드 `party_template.html`(`miApply`).

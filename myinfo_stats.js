@@ -15,6 +15,31 @@
       rush: "fixed200", "플래시 포인트": "fixed200", BossRush: "fixed200"}, content, null);
   }
 
+  function level_info(unit, info) {
+    // NKC:501233-501265,421483-421504. At 200 unlock/readiness is unknown;
+    // above 200 readiness is cleared (421446-421450), unlock is inferred.
+    unit = unit || {}; info = info || {};
+    const link = info.star_link || {}, missing = [];
+    const validLevel = v => Number.isInteger(v) && v >= 1 && v <= 2147483647;
+    if (!validLevel(unit.level)) missing.push('unit.level');
+    if (!validLevel(link.level)) missing.push('star_link.level');
+    for (const field of ['source', 'slots']) if (!Array.isArray(link[field])) missing.push('star_link.' + field);
+    if (missing.length) {
+      let level = info.star_link_level;
+      if (!validLevel(level)) { missing.push('star_link_level'); level = 1; }
+      return {level, source: 'legacy', missing: missing.sort()};
+    }
+    const source = link.slots.some(s => s && s.id === unit.id && unit.id) ? 'slot' :
+      link.level >= 201 && link.source.includes(unit.id) ? 'source' : 'unit';
+    return {level: source === 'unit' ? unit.level : link.level, source, missing: []};
+  }
+
+  function effective_level(unit, info, missing) {
+    const result = level_info(unit, info);
+    if (missing) for (const key of result.missing) missing.add(key);
+    return result.level;
+  }
+
   function unit_power(stats, pp = 0, skill_level_sum = 34) {
     // Port of battlesim/starsavior/build.py (including caps and operation order).
     const {atk, hp, def: df, spd} = stats;
@@ -113,7 +138,7 @@
     if (!template) {
       missing.add("unit:" + (uid == null ? "missing" : String(uid)));
     } else {
-      const level = rule === "fixed200" ? 200 : number(info, "star_link_level", "star_link_level", 1, 1);
+      const level = rule === "fixed200" ? 200 : effective_level(unit, info, missing);
       const resonance = rule === "fixed200" ? 10 : number(unit, "resonance", "resonance");
       // NKM.Templets.cs:17837-17842 / NKM.cs:1979-1982: only sigil is
       // StarGrade; star is limit break and must not be added to it.
@@ -222,7 +247,7 @@
     if (breakdown) result.breakdown = detail;
     return result;
   }
-  const api = {final_stats, gauntlet_stats, rule_for_content, unit_power};
+  const api = {final_stats, gauntlet_stats, rule_for_content, unit_power, effective_level, level_info};
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.MyInfoStats = api;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -1236,7 +1236,7 @@ function renderMi(){const info=MI.info;$("grow").querySelector('[value="myinfo"]
  const date=String(info.exported_at||"—"),current=miProfile();
  // Unsupported content falls back only in recommendations; the account tab still shows normal stats.
  const p=current.rule?current:(MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(info,R,MI.growth,"op")));
- $("mi-meta").innerHTML=`스타링크 Lv${miNum(info.star_link_level)} · 전술 공통 Lv${miNum(info.tactics?.common_level)} · 전술 시설 Lv${miNum(info.tactics?.facility_level)} ·${esc(date.slice(0,10))} · 보유 ${info.units.length}명 ${[p.mismatch?"빌드 다름":"",p.rule==="fixed200"?"Lv200 · 공명 10":"",!current.rule?"일반 능력치":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("")}`;
+ $("mi-meta").innerHTML=`스타링크 Lv${miNum(info.star_link_level)} · 전술 공통 Lv${miNum(info.tactics?.common_level)} · 전술 시설 Lv${miNum(info.tactics?.facility_level)} ·${esc(date.slice(0,10))} · 보유 ${info.units.length}명 ${[info.units.some(u=>MyInfoStats.level_info(u,info).source==="legacy")?"구원자별 레벨 없음 · 다시 불러오기 권장":"",...MyInfoImport.warnings(info),p.mismatch?"빌드 다름":"",p.rule==="fixed200"?"Lv200 · 공명 10":"",!current.rule?"일반 능력치":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("")}`;
  $("mi-saved").textContent=MI.saved?`저장됨 ${savedTime(date)}`:"저장 안 됨 · 현재 화면에만 적용됨";
  $("mi-account").innerHTML=MIFULL.button('account')+MIFULL.panel('account');
  const roster=new Map(R.map(s=>[s.uid,s]));
@@ -1246,7 +1246,7 @@ function renderMi(){const info=MI.info;$("grow").querySelector('[value="myinfo"]
   const use=s?!EXCL.has(s.key):false,eq=(u.equip||[]).length;
   return `<article class="mi-pick${s&&!use?" off":""}" data-uid="${u.id}"><button type="button" class="mi-open" data-mi-sheet="${u.id}" aria-haspopup="dialog" aria-label="${esc(s?.name||"미등록 구원자")} 상세 보기">
    <span class="mi-art">${s?art(s):""}${s?dia(s,30):""}<span class="mi-star">${"★".repeat(Math.max(0,Math.min(5,u.star|0)))||"☆"}</span></span>
-   <span class="mi-cap"><b>${esc(s?.name||"미등록 구원자")}</b><small>${esc(s?.sub||"미등록 구원자")}</small><span class="mi-pw">${UiShared.icon("power")}${r?miNum(r.power):"—"}</span><small class="mi-sub2">공명 ${miNum(u.resonance)} · 각인 ${miNum(u.sigil)} · 장비 ${eq}/6</small></span></button>
+   <span class="mi-cap"><b>${esc(s?.name||"미등록 구원자")}</b><small>${esc(s?.sub||"미등록 구원자")}</small><span class="mi-pw">${UiShared.icon("power")}${r?miNum(r.power):"—"}</span><small>${MyInfoView.levelBadge(u,info,p.rule)}</small><small class="mi-sub2">공명 ${miNum(u.resonance)} · 각인 ${miNum(u.sigil)} · 장비 ${eq}/6</small></span></button>
    ${s?`<label class="mi-use" title="끄면 추천·시뮬 후보에서 뺍니다"><input type="checkbox" data-use="${esc(s.key)}"${use?" checked":""}> 추천</label>`:""}</article>`}).join("")}</div>`;
  $("mi-excl").innerHTML=EXCL.size?`추천에서 뺀 구원자 ${EXCL.size}명 <button type="button" class="sec" data-exclclear="1">모두 다시 넣기</button>`:"";
  MIFULL.refresh();SKILLS.refresh();
