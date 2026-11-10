@@ -50,7 +50,7 @@
 24. **가진 +15 장비를 구원자끼리 재분배하는 최적화 — 차후 구현(사용자 11/10 결정)**.
 25. **내 정보 레벨 경계**: 코스모/플래시 포인트 레벨 200 고정의 서버 동작 미확인, 소스 구원자 정확히 200일 때 미확인. 새 형식 내 정보 재추출은 게임 PC에서 하기로 함. 이번 검증은 합성 계정만 사용했음. 서버의 null 슬롯·레벨 0 전송 여부와 잠긴 슬롯 포함 여부는 미확인임. 방어 처리는 추가했으며 실제 사용 가능한 슬롯 수는 재추출 뒤 대조하기로 함.
 
-## ▶ 2026-11-10 심야 (Claude+codex) — 내 정보 실효 레벨(스타링크 슬롯)·육성 가이드 1단계·슬롯 추천 (푸시 전)
+## ▶ 2026-11-10 심야 (Claude+codex) — 내 정보 실효 레벨(스타링크 슬롯)·육성 가이드 1단계·슬롯 추천 (푸시 완료)
 
 ### 리뷰 3종 후속 (11/10, 푸시 전)
 
@@ -133,7 +133,7 @@
 - **`stage_fx_target`(새 기본 `allies`, legacy=`enemies`, `off`도 있음)**: 플래시 포인트(BOSS_RUSH) 스테이지 효과를 적에게 걸던 가정을 아군(속성·직업 조건에 맞는 유닛)으로 바꿈. 근거: `BATTLE_EFFECT_TEMPLET` 60001~60021 전부 `AteamEffectTarget=ALL`·`BteamEffectTarget` 없음, 속성 `TargetAdjustType`·직업 `TargetRoleType`, SE 6000101~ 전부 `NSETT_SELF`+`NSEAT_BATTLE_START`, 클라 팀·직업·속성 판정 `NKM.Templets.decompiled.cs:36731-36799`, 효과 선별 `NKM.decompiled.cs:415-429`, 전투 시작 발동 `12829-12836`. 44개 스테이지 효과 순서·수치를 데이터북 fx 문장과 대조해 일치(`tools/build_stage_fx.py` -> `data/stage_fx.json`, 속성·직업 조건). fx 가 있는 스테이지는 플래시 포인트 44개뿐(다른 콘텐츠 0). 에이전트 측정(20판, 표준 육성): 같은 팀 진행도 allies 0.75 / enemies 0.62 / off 0.73, 클리어율 그레고리 Ⅰ 30% 대 5%. **미확인**: 서버가 전투 시작에 실제로 아군 유닛에 효과를 주입하는 호출(클라 코드에 없음, A팀=플레이어는 AteamWin·서든데스 A팀 효과 선례로 판단) -> 실제 플래시 포인트 영상 대조 필요. 엔진에 항이 없는 «생명력 흡수율 +15%»(공허매장자)는 양쪽 모드 모두 미반영. (→ 이후 11/10 오후 `damage_vampirism=client`로 생명력 흡수율 효과 연결) 시험 `tests/stage_fx_target_test.py`(7개, 일부러 깨뜨려 확인). `guild_sim` 은 fx 스테이지를 안 써서 인정, `quick` 은 rush 표본이 있어 재생성·재보정. 아래 «이전 판단» 문장 정정: 앞선 «기본 enemies 유지»는 quick 재보정 전의 임시 상태였음.
 - **외부 «게임코드 시뮬» 문서 대조**: `docs/external_party_sim_1110.md`(11/10 푸시 완료). 남은 일 21·22.
 
-## ▶ 2026-11-09 (Claude) — 코스모 추천 편성 실제 플레이: 벨그라스 (푸시 전)
+## ▶ 2026-11-09 (Claude) — 코스모 추천 편성 실제 플레이: 벨그라스 (푸시 완료)
 
 - 사용자가 추천 화면(자동 난이도) 대로 벨그라스를 쳤음(영상 11/09 19.53.35, 난이도 8, 판독 `AI\temp\partynavigator\work\video_1109\belgras\REPORT.md`). 편성은 추천과 일치(프레이·에밀리 리더·로자리아·페이 + 스타피어서 Lv.4). 결과: 점수 **7,619,375**(추천 화면 상위 4,537,859·평균 3,898,913), 보스 남은 HP **43%**(예측 깎음 22% -> 실제 57%), 턴 50/50 미처치, 생존 2/4(통계 남은 HP 0% 2명으로 읽은 추정), 점수식 역산은 생존 2명·깎음 약 57.5%와 맞음(식은 11/08 와 같음). 보스 시작 HP 1,450,000 은 엔진과 같음.
 - 엔진은 실제보다 **크게 비관적**: 같은 편성을 표준 육성으로 돌리면(전투력이 실제의 약 절반이라 직접 비교는 못 함) 난이도 0에서도 18턴쯤 전멸, 실제는 50턴 동안 2명 생존. 이번 값은 같은 내 정보(편성 전투력 일치)로 다시 돌려 차이를 재야 함(남은 일). 후보: 보스 피해량·«폭주: 쇠락»(최대 생명력 5%씩 감소)·브레이크 스킬 피해(영상 HUD 에서 발동 한 번에 점수가 약 358k 뛴 장면, 데미지 180,000 표기) 과소 가능성. 모두 미확인.
@@ -180,27 +180,27 @@
 - 생성물 규칙 도장: `tools/rules_stamp.py`·`tools/gen_rules_stamp.json`(지문 = formula·opts·mc 기본값 해시). `guild_sim`·`quick` 이 만들어진 규칙과 지금 규칙이 다르면 `tests/gen_rules_stamp_test.py` 가 실패. 다시 만들거나(빌더 `build_guild_sim.py`·`calibrate_quick.py --write` 가 도장을 새로 찍음) `rules_stamp.py --ack <이름> --reason "…"` 로 이유를 적어 인정함. 지금 도장은 11/09 기준선(두 파일 다시 만들지 않음, 이유는 json 에 기록). 전체 89/0 + e2e 통과(`--rebuild`).
 - 안 한 것: 규칙을 조건별로 나눠 «어느 키가 이 생성물에 영향 주는지» 판정하지 않음(키 하나만 바꿔도 낡았다고 뜨므로 인정 절차를 거침).
 
-## ▶ 2026-11-09 (Claude) — 비공개 표 경로 통일 (푸시 전)
+## ▶ 2026-11-09 (Claude) — 비공개 표 경로 통일 (푸시 완료)
 
 - `tools/runtime.static_path_or_none(root)` 추가: `STARSAVIOR_STATIC` → `<저장소>/../static-data`(`tables/` 가 있어야 인정) → None. 시험 6개(`myinfo_stats`·`myinfo_combat`·`savior_mapping`·`guild_bfb`·`client_gaps_1104`·`eff_remaining`)가 이 규칙을 씀. `C:\build\static-data` 고정 경로·다른 PC 경로(`E:\AI_mk2\...`)·`CERES_AUDIT_STATIC` 별칭은 없앰. `cosmo_raid_test` 의 `COSMO_TABLES`(추출본 형식이 달라) 는 그대로.
 - 이 PC 에서 그동안 건너뛰던 `myinfo_stats` 비공개 정답 대조·`myinfo_combat` 재현·`savior_mapping` 원본 대조가 실제로 돌았고 **모두 통과**(새로 깨진 시험 없음). 사본은 `AI\partynavigator\static-data`(0e16db1, 11/02)를 씀.
 - 시험 `cleanup_test.test_static_path_or_none`(함수를 깨면 실패 확인). 전체 `run_tests.py` 86/0(e2e 안 돌림).
 - 남음: node 없을 때 print 후 통과하는 시험 3개(항목 14), 건너뜀 방식 통일(guild_bfb 는 print 유지). 다음 공통화 후보는 항목 15의 ③ 나머지(BUFF 이름표·STRING_COMMON·`names_of`).
 
-## ▶ 2026-11-09 (Claude) — 구원자 키↔게임 id 매핑 공통화 (푸시 전)
+## ▶ 2026-11-09 (Claude) — 구원자 키↔게임 id 매핑 공통화 (푸시 완료)
 
 - `battlesim/starsavior/savior_ids.py` 추가: `keys_by_id(index, db=None, only_db=False)`(id→키), `ids_by_key(index, db=None)`(키→id, DB 키는 setdefault), `uid_resolver(index)`(키 우선, 이름은 유일할 때만). 규칙은 «색인 key → 시뮬 DB id → 유일한 이름».
 - 쓰는 곳으로 바꿈: `build_auto_skill`(3곳)·`savior_mapping_test`·`build_myinfo_combat`·`ingame_check`·`build_growth.roster_ids`·`build_party_html` uid. 지금 시뮬 DB 에는 색인에 없는 구원자가 0명이라 `auto_skill.json` 은 바뀌지 않음(아모라는 색인에 있음). 앞으로 색인에 없는 구원자가 생기면 `build_auto_skill` 은 키를 채우지 않고 `build_myinfo_combat` 은 채움(`only_db` 때문에 규칙은 그대로 두었음, 통일 여부 미정).
 - 확인: `--static` 으로 build_auto_skill·build_growth·build_myinfo_combat·build_party_html 재실행 -> `git diff data index.html` 0. 시험 `savior_ids_test`(DB 변형 제외를 지우면 실패 확인). `sim/manifest.json` 에 새 파일이 목록에 들어감(브라우저 시뮬 묶음). 전체 87/0(e2e 제외).
 
-## ▶ 2026-11-09 (Claude) — 빌더 표 읽기 `tools/tables.py` (푸시 전)
+## ▶ 2026-11-09 (Claude) — 빌더 표 읽기 `tools/tables.py` (푸시 완료)
 
 - `tools/tables.py`: `jsonc(path)`(문자열 안 `//` 보존, BOM 허용 — build_auto_skill 구현을 옮김), `rows(path)`(Data 벗김). 정규식으로 `//` 를 지우던 `build_foe_spawn.jsonc`·`build_foe_summon` 인라인·`build_cosmo_raid.strip_jsonc` 를 이것으로 교체(`errors='replace'` 도 없어짐 — 표에 잘못된 바이트가 있으면 이제 오류). 다른 빌더가 `build_auto_skill`/`build_foe_spawn` 에서 가져다 쓰던 `jsonc` 이름은 재노출로 유지.
 - 확인: `--static` 으로 build_auto_skill·foe_spawn·foe_summon·foe_auto·foe_react·buff_force·guild_bfb·battle_end 재실행 -> `git diff data` 0. 코스모는 `C:\build
 ew-extract`·시즌 1022·빌드 26429597 로 임시 출력과 `data/cosmo_raid.json` 키별 비교 같음. 시험 `tables_test`(문자열 안 `//` 처리 되돌리면 실패 확인), 전체 88/0(e2e 제외).
 - 안 한 것: `m_BuffStrID → 이름` 7곳·`STRING_COMMON` 10곳·`names_of` 중복·`SKILL_TEMPLET_{1,2}` 읽는 20여 줄(`json.loads(...)['Data']` 를 `rows` 로 바꾸는 일). 효과가 작고 diff 확인 비용이 커서 보류.
 
-## ▶ 2026-11-09 (Claude) — 시험 공용 도우미 `tests/simkit.py` (푸시 전)
+## ▶ 2026-11-09 (Claude) — 시험 공용 도우미 `tests/simkit.py` (푸시 완료)
 
 - `FIXED`·`unit`(p3 판)·`battle`·`give` 를 `tests/simkit.py` 로 옮기고 `p3_test`·`p5_test` 는 거기서 가져옴(p5 의 `unit` 은 element·sa 를 항상 넣는 얇은 래퍼로 남김). 기존 `from p3_test import ...`(29곳)·`from p5_test import ...`(11곳)은 그대로 동작함. 새 시험은 simkit 에서 가져오기로 함.
 - 사고와 정정: 앞 절을 쓸 때 heredoc 안 파이썬 문자열의 백슬래시+b 가 백스페이스 문자가 되어 HANDOFF 의 코스모 표 경로가 깨진 채 푸시됐음(`md_control_chars_test` 가 잡음). 이번 커밋에서 복원함. 교훈: HANDOFF 수정은 Edit 도구로 하기.
