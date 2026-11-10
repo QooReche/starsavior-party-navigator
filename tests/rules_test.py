@@ -329,7 +329,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     # 2026-11-04 클라 후보 스위치(break_point_hits·break_auto_blocked_cc 는 같은 날 기본 = 클라 값으로 전환)
     'break_point_hits', 'dot_formula', 'react_hist_unit', 'immune_force_apply', 'break_auto_blocked_cc',
     # 2026-11-05 길방 보스 속도·공격력 NV 합산
-    'guild_boss_nv_sum',
+    'guild_boss_nv_sum', 'guild_bridal_kill_reset',
     # 2026-11-06 코스모 게이트 시즌 전투(벨그라스·난이도 레벨·챌린지 효과)
     'cosmo_raid_boss', 'cosmo_hyper_true_target', 'damage_vampirism', 'cosmo_drain_category', 'cosmo_speed_floor',
 ])
