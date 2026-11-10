@@ -56,6 +56,7 @@
     for(const [k,n] of Object.entries(row.stats||{}))effects.push(`${k==='NST_SUPER_ARMOR'?'강인도':'시뮬 미반영'} +${n}`);
     return {known:true,active:effects.length>0,text:effects.join(' · ')||''};
   }
+  const statMissing=result=>result.missing.filter(k=>!['unit.level','star_link.level','star_link.source','star_link.slots'].includes(k));
   function render(unit,info,growth,result,publicData,combat,simulation){
     const b=result.breakdown,gauntlet=unit.gauntlet||{},learned=result.combat.potentials;
     const effects=learned.map(([id,lv])=>combatEffects(id,lv,publicData,combat));
@@ -74,7 +75,7 @@
     return `<div class="mi-sim-chips" aria-label="시뮬 반영 값">${chips.map(c=>`<span class="tag">${esc(c)}</span>`).join('')}</div>`+
       section('능력치 출처',breakdown(result))+section('내실',inner||'정보 없음')+section('장비',equipment(unit,growth,publicData))+
       section(`건틀렛 Lv${level(gauntlet.level)}`,`<p class="mut">여정 · 각 항목 상한 1,500</p>${journey}<ul class="mi-potentials">${potentials||'<li>습득 잠재력 없음</li>'}</ul>${line('관문 이력',(gauntlet.blessings?.length?'시뮬 미반영':'없음'))}`)+
-      (result.missing.length?`<details class="mi-diagnostics"><summary>미확인 정보 ${result.missing.length}</summary><p>일부 정보는 시뮬에 반영되지 않습니다.</p></details>`:'');
+      (statMissing(result).length?`<details class="mi-diagnostics"><summary>미확인 정보 ${statMissing(result).length}</summary><p>일부 정보는 시뮬에 반영되지 않습니다.</p></details>`:'');
   }
   // 캐릭터 상세 시트(팝업): 칸 나눈 능력치·스킬·장비·건틀렛, 항목마다 아이콘
   const short={atk:'공격력',hp:'생명력',def:'방어력',spd:'속도',cr:'치명 확률',cd:'치명 피해',eh:'효과 적중',er:'효과 저항'};
@@ -100,7 +101,7 @@
       ${block('gear','장비',equipment(unit,growth,publicData),'wide')}
       ${block('journey',`건틀렛 Lv${level(gauntlet.level)} · 여정`,`<div class="ms-tiles five">${journey}</div><ul class="ms-pots">${pots||'<li class="mut">습득 잠재력 없음</li>'}</ul><p class="mut">관문 이력: ${(gauntlet.blessings?.length?'시뮬 미반영':'없음')}</p>`,'wide')}
       <details class="ms-block wide"><summary>${icon('tactics')}능력치 출처·내실</summary>${breakdown(result)}${inner||''}</details>
-      ${result.missing.length?`<details class="ms-block wide mi-diagnostics"><summary>미확인 정보 ${result.missing.length}</summary><p>일부 정보는 시뮬에 반영되지 않습니다.</p></details>`:''}</div>`;
+      ${statMissing(result).length?`<details class="ms-block wide mi-diagnostics"><summary>미확인 정보 ${statMissing(result).length}</summary><p>일부 정보는 시뮬에 반영되지 않습니다.</p></details>`:''}</div>`;
   }
   function mount(getContext){
     const opened=new Set(),cache=new Map();let contextKey=null,publicData,combat,pending;

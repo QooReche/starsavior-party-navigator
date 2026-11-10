@@ -1,5 +1,14 @@
 # 육성 가이드 1단계 검증
 
+## 2026-11-10 리뷰 3종 후속
+
+- 기준선 `d675cd0`: 일반 109 통과/0 실패. 소스 가상 슬롯·후보별 실패 격리·옛 형식 항목별 비교·조건 호환 기록과 모바일 화면을 고쳤음. 판정별 반영/기각과 클라 근거는 HANDOFF 심야 리뷰 절에 있음.
+- `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe --timeout 1800`에서 브라우저 44건 모두 통과했음. 일반 한 건의 옛 레벨 0 거부 기대값을 새 계약에 맞춰 고친 뒤 `--rebuild` 일반 전체를 다시 실행해 110 통과/0 실패했음. 로그는 `%TEMP%/pn-review-final.log`·`pn-review-general-final.log`임. 기존 환경 건너뜀 2건은 그대로임.
+- 코드 blocking 3종·조건 혼합·슬롯 수/빈 칸·레벨 0 거부, 모바일 blocking 4종을 결함 주입으로 재현하고 실패를 확인했음. 실제 Pyodide에서 옛 형식의 비레벨 항목은 진행도 양수·100판 비교, 미지원 구원자는 개별 제외하고 슬롯 교환이 계속됨을 검사했음.
+- 이전 두 테마 색 구분 검증은 다크 전용 계약으로 바꿨음. 잘못된 light 속성 덮어쓰기를 제거하고 어떤 속성에서도 다크 대비를 유지함. 라벨 7.01:1·테두리 9.24:1·수치 표시 9.48:1, 점/대시·기호·글자를 병용함.
+- 기존 캡처 스크립트를 재사용해 `scratch/pn/shots2`에 기존 18상태와 옛 형식 가이드 1장, manifest를 저장했음. 가로 넘침·깨진 이미지·캡처 오류 0건. 접힌 모바일 전체 높이 3,897px이며 펼침 캡처는 나머지 명단과 실제 보유자의 항목별 기여까지 열었음.
+- 추출기는 일반/빈 목록/null 혼합/전부 null 네 합성 ACK를 C#·두 PowerShell 배포본·Python으로 대조하고 null 방어 제거 시 실패함을 확인했음. 실계정 자료·골든 쓰기·엔진 규칙 변경·push는 하지 않았음.
+
 ## 2026-11-10 심야 — 묶음·슬롯 추천 보완
 
 변경 파일: 합성/평가 `myinfo_reco.js`·`growth_guide.js`·`growth_ui.js`, 슬롯 추천 `star_link.js`·`star_link_ui.js`, 화면/공유 `party_template.html`·`index.html`·`share_state.js`, 시험 `tests/assumed_guide_test.js`·`tests/guide_bundle_test.js`·`tests/e2e/test_page.py`, 문서 `HANDOFF.md`·`README.md`·`docs/assumed_build_design.md`·이 문서·`docs/myinfo_format.md`임. 병합 해결 때만 `sim/manifest.json`을 재생성했음.

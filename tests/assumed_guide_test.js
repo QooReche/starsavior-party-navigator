@@ -9,8 +9,8 @@ function generation(){const before=JSON.stringify(info),base=M.profile(info,rost
   for(const s of roster){const a=M.assume(s.key,info,growth),p=M.assumedProfile(base,a,info,growth,'op'),f=p.results[s.key];
     assert.equal(f.missing.length,0);assert(f.power>0);assert.notEqual(p,base);
     assert.equal(a.unit.id,s.uid);assert.deepEqual(a.unit.skills,growth.assumed.units[s.key].skills);
-    const unlocked=Math.max(...Object.entries(growth.units[s.uid].resonance_unlock).filter(([,lv])=>lv<=info.star_link_level).map(([n])=>+n));
-    assert.equal(a.unit.resonance,unlocked);
+    const unlocked=Math.max(...Object.entries(growth.units[s.uid].resonance_unlock).filter(([,lv])=>lv<=S.effective_level(a.unit,a.targetInfo)).map(([n])=>+n));
+    assert.equal(a.unit.resonance,Math.max(base.units[s.key]?.resonance||0,unlocked));
     if(!base.units[s.key]){assert.equal(a.source,'assumed');assert.equal(a.unit.sigil,0);assert.equal(a.unit.favor,0);
       assert.equal(a.unit.equip.length,6);assert.equal(M.team([s.key],p,k=>k).assumed,1);}
     const fixed=M.assumedProfile(base,a,info,growth,'cosmo').results[s.key];

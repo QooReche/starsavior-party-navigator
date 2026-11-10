@@ -42,7 +42,7 @@
     const int32=(v,min=1)=>Number.isInteger(v)&&v>=min&&v<=2147483647;
     if ("star_link" in o) {
       const s=o.star_link;
-      if (!obj(s)||!int32(s.level)||s.level!==o.star_link_level||
+      if (!obj(s)||!int32(s.level,0)||s.level!==o.star_link_level||
           !Array.isArray(s.source)||s.source.length>4||!s.source.every(v=>int32(v))||new Set(s.source).size!==s.source.length||
           !Array.isArray(s.slots)||!s.slots.every(v=>obj(v)&&int32(v.index,0)&&v.index<100&&int32(v.id,0))||
           new Set(s.slots.map(v=>v.index)).size!==s.slots.length) return "스타링크 정보가 올바르지 않습니다.";
@@ -54,7 +54,7 @@
     for (const u of o.units) {
       if (!obj(u)||!Number.isInteger(u.id)||u.id<=0||ids.has(u.id)||!ints(u,["star","sigil","resonance","favor"])) return "구원자 항목이 올바르지 않습니다.";
       ids.add(u.id);
-      if ("level" in u&&!int32(u.level)) return "구원자 레벨이 올바르지 않습니다.";
+      if ("level" in u&&!int32(u.level,0)) return "구원자 레벨이 올바르지 않습니다.";
       if ("skills" in u&&(!obj(u.skills)||!ints(u.skills,["basic","special","ultimate","passive"]))) return "스킬 정보가 올바르지 않습니다.";
       if ("equip" in u&&(!Array.isArray(u.equip)||!u.equip.every(e=>obj(e)&&ints(e,["item_id","level","enhance"])&&
           (!("main" in e)||option(e.main))&&(!("subs" in e)||(Array.isArray(e.subs)&&e.subs.every(option)))))) return "장비 정보가 올바르지 않습니다.";

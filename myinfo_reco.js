@@ -41,9 +41,14 @@
       : ['level', 'equip', 'skills', 'resonance', 'journey', 'potentials']);
     const before = clone(unit);
     if(fields.some(f=>f==='journey'||f==='potentials'))unit.gauntlet ||= {};
-    // A scenario registers only its target in a virtual slot. Never edit MI.info,
-    // or mistake a savior's own level for its effective (slot/source) level.
-    const levelTarget = fields.includes('level') ? info.star_link?.level ?? info.star_link_level : null;
+    const currentLevel = Stats.level_info(unit,info), levelUnknown = !!owned && currentLevel.source==='legacy';
+    if(levelUnknown && fields.length===1 && fields[0]==='level')
+      throw Object.assign(new Error('레벨 자료 없음 · 다시 불러오기 필요'),{code:'level-data'});
+    // NKC:420258-420264 excludes sources. A growth target must never lower a level.
+    const linkLevel = info.star_link?.level ?? info.star_link_level;
+    const register = fields.includes('level') && !levelUnknown && !info.star_link?.source?.includes(unit.id)
+      && (!owned || linkLevel>currentLevel.level);
+    const levelTarget = register ? linkLevel : null;
     if (levelTarget != null && !Number.isInteger(levelTarget)) throw new Error('스타링크 레벨 없음');
     const targetInfo = levelTarget == null ? info : {...info, star_link:{
       level:levelTarget, source:info.star_link?.source || [],
@@ -52,7 +57,7 @@
       if (field === 'level') { if (!unit.level) unit.level = levelTarget; }
       else if (field === 'resonance') {
         const unlock = growth.units[spec.uid].resonance_unlock;
-        const level = levelTarget ?? Stats.effective_level(unit,info);
+        const level = Stats.effective_level(unit,targetInfo);
         unit.resonance = Math.max(0, ...Object.keys(unlock).map(Number).filter(n => unlock[n] <= level));
         if (owned) unit.resonance = Math.max(unit.resonance, owned.resonance);
       } else if (field === 'skills') unit.skills = clone(spec.skills);
@@ -66,16 +71,18 @@
     }
     const value = (u, f) => ['journey', 'potentials'].includes(f) ? u.gauntlet?.[f] : u[f];
     const changes = Object.fromEntries(fields.map(f=>[f, f==='level'
-      ? {before:owned ? Stats.effective_level(owned,info) : null, after:levelTarget}
+      ? {before:owned ? currentLevel.level : null, after:Stats.effective_level(unit,targetInfo)}
       : {before:value(before,f),after:value(unit,f)}]));
     const changedFields = fields.filter(f => !owned || JSON.stringify(changes[f].before) !== JSON.stringify(changes[f].after));
     return {unit, source: owned ? 'owned' : 'assumed', changedFields, presetId: data.version,
-      changes, levelTarget, targetInfo, kind: preset.kind || 'growth', key};
+      changes, levelTarget, levelUnknown, targetInfo, kind: preset.kind || 'growth', key};
   }
   function assumedProfile(base, assumed, info, growth, content) {
     const rule = Stats.rule_for_content(content), spec = growth.assumed.units[assumed.key];
     const result = Stats.final_stats(assumed.unit, assumed.targetInfo || info, growth, rule);
-    const missing = [...(result?.missing || ['content'])];
+    // Legacy levels still use the documented fallback; other missing stats block evaluation.
+    const missing = [...(result?.missing || ['content'])].filter(k=>
+      !(assumed.levelUnknown && ['unit.level','star_link.level','star_link.source','star_link.slots'].includes(k)));
     for (const [slot, level] of Object.entries(assumed.unit.skills))
       if (level && !spec.skill_levels[slot]?.includes(level)) missing.push('combat.skill:' + slot);
     for (const [id, level] of assumed.unit.gauntlet?.potentials || [])

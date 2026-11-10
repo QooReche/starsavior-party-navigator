@@ -20,7 +20,7 @@ function growthTargets(c,st){const opts=growthOptions(),restrict=(CFG.restrict[c
     }}return targets;}
 function growthSig(c,st){return GrowthGuide.signature({account:MI.hash,options:growthOptions(),targets:growthTargets(c,st),
   preset:MI.growth?.assumed?.version,content:[c.key,st.tab,st.name],excluded:[...EXCL],breaks:[breakOwned(),MI.info?.break_skills,BRSEL,SESSION_BR],
-  mode:MODE,rules:simOpt(c.key),engine:GROW.versions?.engine,data:GROW.versions?.data});}
+  mode:MODE,modifiers:[MM,SCROWN],rules:simOpt(c.key),engine:GROW.versions?.engine,data:GROW.versions?.data});}
 function growthMetric(r,mode=MODE){if(mode!=='manual'||!r.man)return r;
   return {...r,clear:r.man.c,ttk:r.man.t,n:r.man.n??r.n,ci:r.man.ci,prog:r.man.prog,progs:r.man.progs};}
 function growthJob(t,id,c=contents[$('content').value]){const bn=breakChoice(t.combo,c).name||null;
@@ -62,7 +62,7 @@ async function growthCandidates(c,st,alive,deadline,config={}){const original=co
         choices.sort((a,b)=>b.v-a.v);const quick=choices.slice().sort(growthQuickCmp);
         for(const t of [choices[0],quick[0]])if(t)controls.push(growthJob(t,'owned|'+t.keys.slice().sort().join(','),c));}
       targets.push({...target,...assumed,id,candidates,controls});
-    }catch(e){targets.push({...target,id,error:String(e.message),candidates:[],controls:[]});}
+    }catch(e){targets.push({...target,id,error:String(e.message),errorCode:e.code,candidates:[],controls:[]});}
     if(!config.profile){GROW.msg=`육성 후보 준비 ${targets.length}건`;growthPaint();}await new Promise(ok=>setTimeout(ok,0));
   }return targets;}
 function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.state||GROW,mode=env.mode||MODE,paint=env.paint||growthPaint;return new Promise(resolve=>{
@@ -119,11 +119,10 @@ function growthDescription(r){return (r.changedFields||[]).map(f=>{
   const c=r.changes?.[f];if(f==='level'&&c)return `${c.before==null?'Lv ':('Lv '+c.before+'→')}스타링크`;
   if(f==='resonance'&&c)return `공명 ${c.before??0}→${c.after}`;
   return growthFields[f];}).join(' · ');}
-function growthBadge(r){return `<span class="assumed-label" data-k="assumed-badge">${esc(growthLabel(r))}${growthDescription(r)?' · '+esc(growthDescription(r)):''}</span>`;}
+function growthBadge(r,short=false){const missing=r.source==='assumed';return `<span class="assumed-label ${missing?'assumed-missing':'assumed-owned'}" data-k="assumed-badge"><span aria-hidden="true">${missing?'＋':'↑'}</span><span class="al-long">${esc(growthLabel(r))}</span><span class="al-short">${missing?'미보유':'보정'}</span>${!short&&growthDescription(r)?' · '+esc(growthDescription(r)):''}</span>`;}
 function growthCardMeta(r){const before=miProfile().results[r.key],after=r.team?.t.b.finals[r.key];
   if(!after)return '';
-  const number=(label,a,b)=>`<span class="tag">${label} ${miNum(b)}${a!==b?`<small class="assumed-mark" title="${label} ${miNum(a)} → ${miNum(b)}" aria-label="${label} 임시 보정">*</small>`:''}</span>`;
-  return `<div class="mi-chips">${number('전투력',before?.power,after.power)}${['atk','hp','def','spd'].map((k,i)=>number(['공','생','방','속'][i],before?.stats[k],after.stats[k])).join('')}</div>`;}
+  return `<div class="mi-chips"><span class="assumed-mark" title="전투력 ${miNum(before?.power)} → ${miNum(after.power)}">전투력 ${before?`${miNum(before.power)} → `:''}${miNum(after.power)}${before?'':' (가정)'}</span></div><details class="growth-stats"><summary>능력치 변화</summary>${['atk','hp','def','spd'].map((k,i)=>`<div>${['공','생','방','속'][i]} ${before?`${miNum(before.stats[k])} → `:''}${miNum(after.stats[k])}</div>`).join('')}</details>`;}
 function growthPaint(){if(!growthEnabled())return;let el=$('growth-result');
   if(!el){if(!['op','clo'].includes(contents[$('content').value]?.key)||!REQ)return;
     el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
@@ -132,17 +131,25 @@ function growthPaint(){if(!growthEnabled())return;let el=$('growth-result');
   if(!GROW.result){el.innerHTML=`<b>육성 가이드</b><p>${esc(GROW.msg||'보유 편성 확인 뒤 평가')}</p>`;return;}
   const r=GROW.result,rows=r.rows.filter(x=>!x.component).sort((a,b)=>(b.delta??-Infinity)-(a.delta??-Infinity)),fmt=v=>v==null?'—':(v>0?'+':'')+v.toFixed(1),
     metric=v=>v?`${(v.clear*100).toFixed(1)}% · 진행 ${((v.prog||0)*100).toFixed(1)}% · ${v.ttk==null?'—':v.ttk.toFixed(1)}턴 · ${v.n}판`:r.baselinePending?'기준 재평가 미완료':'기준 편성 없음';
-  const status=x=>x.result?metric(x.result):x.status==='unsupported'?'자료 미지원':x.status==='screened'?'예선만 · 미평가':'미평가';
+  const status=x=>x.result?metric(x.result):x.errorCode==='level-data'?'자료 없음':x.status==='unsupported'?'자료 미지원':x.status==='screened'?'예선만 · 미평가':'미평가';
   const delta=x=>x.delta==null?'확인 부족':fmt(x.delta)+'%p'+(x.confirmed?' · 개선 확인':' · 확인 부족');
   const best=rows.find(x=>x.result);
   let cards='';if(best?.team){const ar=arrangeOf(best.team.t.combo);LEADKEY=ar.lead;
-    cards=`<div data-k="growth-best"><b><span class="tag assumed-label">가정 포함</span> ${esc(BYKEY[best.key]?.name||best.key)}</b><div class="rowcards">${ar.order.map((k,i)=>{
+    cards=`<div data-k="growth-best"><span class="assumed-label">가정 포함</span><div class="rowcards">${ar.order.map((k,i)=>{
       const x=best.team.t.combo.find(x=>x.s.key===k);return card(x,i===0||i===3?'back':'front',null,k===best.key?best:null);
-    }).join('')}</div><p>${metric(best.result)} · 브레이크 ${esc(best.team.breakName||'없음')}</p></div>`;}
-  const contributions=x=>{const parts=r.rows.filter(p=>p.parentId===x.id);return parts.length?`<details data-k="growth-contributions"><summary>항목별 기여</summary><p class="mut">각 항목만 바꾸고 다시 탐색 · 합산하지 않음</p>${parts.map(p=>`<p data-component="${p.component}"><b>${growthParts[p.component]}</b> ${delta(p)}<br>${growthBadge(p)}<br><span class="mut" title="${esc(p.error||'')}">${status(p)}${p.ci?' · 차이 구간 '+p.ci.map(fmt).join(' ~ ')+'%p':''}</span></p>`).join('')}</details>`:'';};
-  el.innerHTML=`<b>이 구원자를 키우면</b>${GROW.errors.length?`<p class="bad" title="${esc(GROW.errors.join(' · '))}">일부 평가 실패 · 완료한 결과만 표시</p>`:''}<p class="mut">보유 기준 ${metric(r.baseline)} · 묶음 평가 ${rows.filter(x=>x.result).length}/${rows.length}명 · ${(r.ms/1000).toFixed(1)}초 · 완료 ${r.runs}판</p>${cards}
-    <div style="overflow-x:auto"><table data-k="growth-table"><thead><tr><th>구원자</th><th>목표 육성 묶음</th><th>묶음 전체 개선</th><th>95% 차이 구간</th><th>평가 범위</th></tr></thead><tbody>${rows.map(x=>`<tr data-growth-key="${esc(x.id)}"><td>${esc(BYKEY[x.key]?.name||x.key)}</td><td>${growthBadge(x)}${contributions(x)}</td><td>${delta(x)}</td><td>${x.ci?x.ci.map(fmt).join(' ~ ')+'%p':'—'}</td><td title="${esc(x.error||'')}">${status(x)} · 후보 ${x.screened}/2</td></tr>`).join('')}</tbody></table></div>`;
+    }).join('')}</div><p class="mut">${esc(growthDescription(best))}</p><p>${best.result.ttk==null?'':best.result.ttk.toFixed(1)+'턴 · '}브레이크 ${esc(best.team.breakName||'없음')}</p></div>`;}
+  const contributions=x=>{const parts=r.rows.filter(p=>p.parentId===x.id);return `<details data-k="growth-contributions"><summary>항목별 기여·평가 상세</summary><p class="mut">${status(x)} · 후보 ${x.screened}/2${x.ci?' · 95% 차이 구간 '+x.ci.map(fmt).join(' ~ ')+'%p':''}${x.error?' · '+esc(x.error):''}</p>${parts.length?'<p class="mut">각 항목만 바꾸고 다시 탐색 · 합산하지 않음</p>':''}${parts.map(p=>`<p data-component="${p.component}"><b>${growthParts[p.component]}</b> ${p.errorCode==='level-data'?'자료 없음':delta(p)}<br><span class="mut">${status(p)}${p.error?' · '+esc(p.error):''}${p.ci?' · 차이 구간 '+p.ci.map(fmt).join(' ~ ')+'%p':''}</span></p>`).join('')}</details>`;};
+  const table=(list,extra=false)=>`<table data-k="${extra?'growth-more-table':'growth-table'}" class="growth-table"><thead><tr><th>구원자·목표</th><th>클리어 변화</th><th>상태</th></tr></thead><tbody>${list.map(x=>`<tr data-growth-key="${esc(x.id)}"><td><b>${esc(BYKEY[x.key]?.name||x.key)}</b> ${growthBadge(x,true)}${contributions(x)}</td><td>${x.result&&r.baseline?`${(r.baseline.clear*100).toFixed(1)}% → ${(x.result.clear*100).toFixed(1)}%`:'—'}</td><td>${x.errorCode==='level-data'?'자료 없음':delta(x)}</td></tr>`).join('')}</tbody></table>`;
+  const top=rows.filter(x=>x.result).slice(0,5),rest=rows.filter(x=>!top.includes(x));
+  const headline=best&&r.baseline&&best.delta>0?`${esc(BYKEY[best.key]?.name||best.key)} 키우면 · 클리어 ${(r.baseline.clear*100).toFixed(1)}% → ${(best.result.clear*100).toFixed(1)}%${best.confirmed?'':' · 확인 부족'}`:
+    best&&!r.baseline?`${esc(BYKEY[best.key]?.name||best.key)} 육성 가정 · 클리어 ${(best.result.clear*100).toFixed(1)}% · 기준 확인 부족`:'개선이 확인된 육성 후보 없음';
+  // Detach the live slot card before replacing the guide body (keep its handlers).
+  const slot=$('star-link-result');if(slot?.parentElement===el)slot.remove();
+  el.innerHTML=`<b data-k="growth-summary">${headline}</b>${GROW.errors.length?`<p class="bad" title="${esc(GROW.errors.join(' · '))}">일부 평가 실패 · 완료한 결과만 표시</p>`:''}<div data-k="growth-slot-summary"></div>${cards}
+    <p class="mut">목표: 스타링크 Lv(상향만) · 장비 +15 · 스킬·공명 최대 · 여정·잠재력</p>${table(top)}${rest.length?`<details data-k="growth-more"><summary>나머지 ${rest.length}명 · 미평가 포함</summary>${table(rest,true)}</details>`:''}
+    <details><summary>계산 정보</summary><p class="mut">보유 기준 ${metric(r.baseline)} · 묶음 평가 ${rows.filter(x=>x.result).length}/${rows.length}명 · ${(r.ms/1000).toFixed(1)}초 · 완료 ${r.runs}판</p></details>`;
+  if(slot)el.querySelector('[data-k="growth-slot-summary"]').append(slot);
   const version=GROW.versions.engine+'|'+GROW.versions.data,history=MI.shared?GROW.history:LS.get('growth.history')||{},
-    matching=Object.fromEntries(Object.entries(history).filter(([,v])=>v.account===MI.hash&&v.version===version)),priority=GrowthGuide.priority(matching);
-  el.innerHTML+=`<details><summary>성능 개선 기준 육성 후보</summary>${priority.slice(0,12).map(x=>`<p>${esc(BYKEY[x.key]?.name||x.key)} · 묶음 · 개선 확인 ${x.count}콘텐츠<br><span class="mut">${x.contents.map(v=>`${esc(v.content)} ${v.delta==null?'미평가':fmt(v.delta)+'%p'}`).join(' · ')}</span></p>`).join('')}</details>`;
+    matching=Object.fromEntries(Object.entries(history).filter(([,v])=>v.account===MI.hash&&v.version===version)),priority=GrowthGuide.priority(matching,GROW.sig);
+  el.insertAdjacentHTML('beforeend',`<details><summary>성능 개선 기준 육성 후보</summary>${priority.slice(0,12).map(x=>`<p>${esc(BYKEY[x.key]?.name||x.key)} · 묶음 · 개선 확인 ${x.count}콘텐츠<br><span class="mut">${x.contents.map(v=>`${esc(v.content)} ${v.delta==null?'미평가':fmt(v.delta)+'%p'}`).join(' · ')}</span></p>`).join('')}</details>`);
 }

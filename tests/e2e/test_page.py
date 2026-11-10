@@ -1557,6 +1557,33 @@ def test_cosmo_auto_level(browser, ctx):
     return ok, "기본 자동 %s / 안내 %s / 보스별 난이도 %s 요청 %s 비교 %d개(최대 %s) / 카드 양식 %s %s / 낡은 경고 %d / 오류 %s" % (default_auto, info[:1], lv[4], lv[1], lv[2], lv[3], shape_ok, shape[:1], stale, ctx.errors[:2])
 
 
+def guide_layout_audit(page):
+    """Visible mobile content, real element bounds and WCAG relative luminance."""
+    audit = page.evaluate('''() => {
+      const g=document.querySelector('#growth-result'),summary=g.querySelector('[data-k="growth-summary"]'),
+        slot=g.querySelector('[data-k="growth-slot-summary"] #star-link-result'),best=g.querySelector('[data-k="growth-best"]'),
+        badge=g.querySelector('.assumed-card .card>.assumed-label'),info=g.querySelector('.assumed-card .cinfo');
+      const visible=e=>!!e.getClientRects().length&&e.checkVisibility();
+      const lum=rgb=>rgb.match(/[\\d.]+/g).slice(0,3).map(Number).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4})
+        .reduce((s,x,i)=>s+x*[.2126,.7152,.0722][i],0);
+      const contrast=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05)};
+      const bs=badge&&getComputedStyle(badge),cs=badge&&getComputedStyle(badge.closest('.card'));
+      return {summary:summary?.textContent,first:summary===g.firstElementChild,
+        slotBefore:!!slot&&slot.getBoundingClientRect().top<best.getBoundingClientRect().top,
+        badgeHeight:badge?.getBoundingClientRect().height,badgeClear:!!badge&&badge.getBoundingClientRect().bottom<info.getBoundingClientRect().top,
+        rows:[...g.querySelectorAll('[data-growth-key]')].filter(visible).length,
+        names:[...g.querySelectorAll('[data-growth-key]>td:first-child>b')].filter(visible).every(e=>e.getBoundingClientRect().height<25),
+        height:g.getBoundingClientRect().height,overflow:document.documentElement.scrollWidth>innerWidth,
+        textContrast:bs&&contrast(bs.color,bs.backgroundColor),borderContrast:cs&&contrast(cs.borderTopColor,cs.backgroundColor)};
+    }''')
+    assert audit['summary'] and audit['first'], ('B6', audit)
+    assert audit['slotBefore'], ('B3', audit)
+    assert audit['badgeHeight'] <= 24 and audit['badgeClear'], ('B1', audit)
+    assert audit['rows'] <= 5 and audit['names'] and audit['height'] < 2600 and not audit['overflow'], ('B2', audit)
+    assert audit['textContrast'] >= 4.5 and audit['borderContrast'] >= 3, audit
+    return audit
+
+
 def test_assumed_growth(browser, ctx):
     """Real Pyodide: checkbox -> owned search -> one-savior stage -> comparison table.
 
@@ -1607,9 +1634,34 @@ def test_assumed_growth(browser, ctx):
     for theme in ('light', 'dark'):
         page.evaluate('(theme)=>document.documentElement.dataset.theme=theme', theme)
         style = page.locator('.assumed-card .card').evaluate('(e)=>({style:getComputedStyle(e).borderTopStyle,color:getComputedStyle(e).borderTopColor})')
-        assert style['style'] == 'dashed', style
+        assert style['style'] in ('dashed', 'dotted'), style
         colors.append(style['color'])
-    assert colors[0] != colors[1], colors
+    assert colors[0] == colors[1], colors  # dark-only site, even with a foreign theme attribute
+    assert page.evaluate('''() => {const button=document.querySelector('[data-slot-start]');
+      let clicked=0;button.addEventListener('review-click',()=>clicked++);growthPaint();
+      const current=document.querySelector('[data-slot-start]');current.dispatchEvent(new Event('review-click'));
+      return button===current&&clicked===1;}'''), 'guide repaint must retain slot handlers'
+    page.set_viewport_size({'width': 390, 'height': 844})
+    guide_layout_audit(page)
+    # Each blocking layout regression must trip the same bounds/order audit.
+    for mutation, restore in [
+        ("window.badStyle=document.createElement('style');badStyle.textContent='.assumed-card .card>.assumed-label{height:120px!important}';document.head.append(badStyle)", "badStyle.remove()"),
+        ("document.querySelector('[data-k=growth-more]').open=true", "document.querySelector('[data-k=growth-more]').open=false"),
+        ("document.querySelector('#growth-result').append(document.querySelector('#star-link-result'))", "document.querySelector('[data-k=growth-slot-summary]').append(document.querySelector('#star-link-result'))"),
+        ("window.savedSummary=document.querySelector('[data-k=growth-summary]');savedSummary.remove()", "document.querySelector('#growth-result').prepend(savedSummary)"),
+    ]:
+        page.evaluate('() => {' + mutation + '}')
+        try:
+            try:
+                guide_layout_audit(page)
+            except AssertionError:
+                pass
+            else:
+                raise AssertionError('layout mutation escaped: ' + mutation)
+        finally:
+            page.evaluate('() => {' + restore + '}')
+        guide_layout_audit(page)
+    page.set_viewport_size({'width': 1366, 'height': 1000})
     assert page.locator('[data-k="growth-contributions"]').count() > 0
     assert page.evaluate("GROW.result.rows.some(r=>r.component&&r.result&&r.result.prog>0)")
     assert result['history'] and 'progs' not in result['history'] and 'item_id' not in result['history']
@@ -1672,6 +1724,30 @@ def test_assumed_manual(browser, ctx):
     return True, '수동 진행도·100판 재평가·정책 탐색 판수 상한·진행 중 무효화'
 
 
+def test_assumed_legacy(browser, ctx):
+    page = open_page(browser, ctx, info=os.path.join(FIXTURES, 'myinfo_legacy.json'))
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    page.evaluate('''async () => {const info=structuredClone(MI.info);
+      for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
+      await miApply(info);EXCL=new Set(R.filter(s=>!miProfile().units[s.key]).map(s=>s.key));
+      window.legacyOriginal=JSON.stringify(MI.info);condChanged();}''')
+    settle(page)
+    page.click('#tab-info')
+    page.check('#assume-growth')
+    page.click('#tab-reco')
+    page.click('button[data-go]')
+    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
+    assert page.evaluate('''() => GROW.phase==='done' && JSON.stringify(MI.info)===legacyOriginal &&
+      GROW.result.baseline.prog>0 && ['equipment','skills','potential'].every(k=>
+        GROW.result.rows.some(r=>r.component===k&&r.result?.prog>0&&r.result.n===100)) &&
+      GROW.result.rows.filter(r=>r.component==='level').every(r=>r.errorCode==='level-data'&&!r.result)''')
+    page.locator('[data-k="growth-contributions"] summary').first.click()
+    assert '자료 없음' in page.locator('[data-component="level"]').first.inner_text()
+    page.screenshot(path=os.path.join(ctx.shots, 'assumed_legacy.png'), full_page=True)
+    assert not ctx.errors, ctx.errors
+    return True, '옛 형식 실제 100판: 장비·스킬·공명·잠재력 진행도 양수, 레벨만 자료 없음'
+
+
 def test_assumed_corridor(browser, ctx):
     page = open_page(browser, ctx, info=SYNTH)
     page.select_option('#content', value=page.evaluate("String(contents.findIndex(c=>c.key==='clo'))"))
@@ -1702,17 +1778,18 @@ def test_assumed_corridor(browser, ctx):
 
 
 def test_star_link_slots(browser, ctx):
-    """Real workers, synthetic seven-savior account, two occupied slots."""
+    """Real workers, eight invented saviors including one unsupported, two slots."""
     page = open_page(browser, ctx, info=SYNTH)
     choose(page, '작전 (일반)', 'SECTOR 15-3')
     page.evaluate('''async () => {
       const info=structuredClone(MI.info);info.star_link_level=240;
       for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
-      const keys=['luna','dana','muriel','elisa','emily','bell','scarlet'];
+      const keys=['luna','dana','muriel','elisa','emily','bell','scarlet','gwen'];
       info.units=keys.map(key=>{const u=MyInfoReco.assume(key,{...info,units:[]},MI.growth).unit;
         u.level=key==='scarlet'?82:240;
         if(key!=='scarlet'){u.equip=[];u.gauntlet.journey=[0,0,0,0,0];u.gauntlet.potentials=[];
           u.skills={basic:1,special:1,ultimate:1,passive:1};u.resonance=0;}return u;});
+      delete info.units[7].gauntlet;info.units[7].level=82;
       info.star_link={level:240,source:info.units.slice(0,4).map(u=>u.id),slots:info.units.slice(4,6).map((u,index)=>({index,id:u.id}))};
       await miApply(info);window.slotOriginal=JSON.stringify(MI.info);showReco();
     }''')
@@ -1747,6 +1824,8 @@ def test_star_link_slots(browser, ctx):
     page.click('[data-slot-start]')
     page.wait_for_function("SLOT.phase==='done'||SLOT.phase==='error'", timeout=180000)
     assert page.evaluate("SLOT.phase") == 'done', page.evaluate('SLOT.msg')
+    assert page.evaluate("SLOT.excluded.length===1 && SLOT.excluded[0].reason.includes('gauntlet')")
+    assert page.locator('[data-k="slot-excluded"]').count() == 1
     r = page.evaluate('''() => ({...SLOT.result,original:JSON.stringify(MI.info)===window.slotOriginal,
       example:document.querySelector('[data-k="slot-swap"]')?.textContent,
       contexts:[...SLOT.contexts.keys()]})''')
@@ -1774,6 +1853,8 @@ def test_star_link_slots(browser, ctx):
       old.units.forEach(u=>delete u.level);await miApply(old);showReco();}''')
     settle(page)
     page.click('#tab-reco')
+    # Import starts a new owned simulation; its progress view precedes slot UI.
+    wait_sim_done(page)
     page.wait_for_selector('[data-k="slot-unavailable"]')
     assert page.locator('[data-k="slot-panel"]').count() == 0
     assert '다시 불러오기 필요' in page.inner_text('[data-k="slot-unavailable"]')
@@ -1781,7 +1862,7 @@ def test_star_link_slots(browser, ctx):
     return True, '합성 슬롯: %.1f초 / %d판 / %s' % (r['ms']/1000, r['runs'], r['example'])
 
 
-TESTS = [test_star_link_slots, test_assumed_growth, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
+TESTS = [test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)
@@ -1805,6 +1886,7 @@ def test_myinfo_level_compat(browser, ctx):
     choose(page, '작전 (일반)', 'SECTOR 1-3')
     page.click('#tab-info')
     assert '구원자별 레벨 없음 · 다시 불러오기 권장' in page.inner_text('#mi-meta')
+    assert page.locator('#mi-meta .reload-needed').count() == 1
     assert all(t == 'Lv120' for t in page.locator('#mi-list .mi-level').all_text_contents())
     updated = json.loads(open(SYNTH, encoding='utf-8').read())
     updated['star_link_level'] = updated['star_link']['level'] = 201

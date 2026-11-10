@@ -12,10 +12,18 @@ assert.match(V.levelBadge(info.units[2],info),/Lv17/);
 assert.match(V.levelBadge(info.units[0],info,'fixed200'),/Lv200/);
 assert.doesNotMatch(V.levelBadge(info.units[0],info,'fixed200'),/스타링크/);
 const clone=()=>structuredClone(info);
-for(const value of [0,-1,1.5,'23',null,true,2147483648]){
+for(const value of [-1,1.5,'23',null,true,2147483648]){
   let x=clone();x.units[0].level=value;assert.notEqual(M.validate(x),'');
   x=clone();x.star_link.level=value;assert.notEqual(M.validate(x),'');
 }
+// Zero is an accepted unknown level; keep the legacy fallback and its diagnostics.
+const zeroOwn=clone();zeroOwn.units[0].level=0;
+assert.equal(M.validate(zeroOwn),'');assert.equal(S.effective_level(zeroOwn.units[0],zeroOwn),201);
+assert.equal(S.level_info(zeroOwn.units[0],zeroOwn).source,'legacy');
+assert(S.level_info(zeroOwn.units[0],zeroOwn).missing.includes('unit.level'));
+const zeroLink=clone();zeroLink.star_link_level=zeroLink.star_link.level=0;
+assert.equal(M.validate(zeroLink),'');assert.equal(S.effective_level(zeroLink.units[0],zeroLink),1);
+assert(S.level_info(zeroLink.units[0],zeroLink).missing.includes('star_link.level'));
 for(const change of [
   x=>x.star_link=null,x=>x.star_link=[],x=>x.star_link.level=200,
   x=>x.star_link.source=[1,2,3,4,5],x=>x.star_link.source=[1,1],

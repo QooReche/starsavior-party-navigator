@@ -5,8 +5,8 @@
   const LIMITS=Object.freeze({maxRuns:12000,maxMs:120000,maxSwaps:3,maxCandidates:8,maxPairs:24});
   function availability(info){
     const l=info?.star_link;
-    if(!l||!Array.isArray(l.slots)||!Array.isArray(l.source)||!Number.isInteger(l.level)||
-      info.units.some(u=>!Number.isInteger(u.level)))return '다시 불러오기 필요';
+    if(!l||!Array.isArray(l.slots)||!Array.isArray(l.source)||!Number.isInteger(l.level)||l.level<1||
+      info.units.some(u=>!Number.isInteger(u.level)||u.level<1))return '다시 불러오기 필요';
     const ids=l.slots.map(s=>s.id).filter(Boolean),owned=new Set(info.units.map(u=>u.id));
     if(ids.some(id=>!owned.has(id)||l.source.includes(id))||new Set(ids).size!==ids.length)return '확인 부족 · 슬롯 자료 확인 필요';
     return '';
@@ -56,9 +56,10 @@
         // Diagnostics never take the budget needed for the first real exchange.
         // Keep at least half the run budget available to further pair validation.
         if(runs<L.maxRuns/2)for(const [kind,id] of [['in',add],['out',remove]]){
+          if(!id || (kind==='in'&&!slots.includes(0)))continue;
           if(diagnostics.some(d=>d.step===step&&d.kind===kind&&d.id===id))continue;
           if(!within()||runs>=L.maxRuns/2)break;
-          const ids=kind==='in'?[...slots,id]:slots.filter((v,i)=>i!==slots.indexOf(id));
+          const ids=slots.slice();ids[slots.indexOf(kind==='in'?0:id)]=kind==='in'?id:0;
           const d=await assess(ids,id?[id]:[]);
           diagnostics.push({step,kind,id,rows:differences(d.metrics,d.controls||current,contexts)});
         }
@@ -76,7 +77,8 @@
       else{limited=true;slots=first.slots;current=first.metrics;baseline=first.baseline;swaps.splice(1);}}
     // Unmeasured candidate diagnostics stay explicitly unknown.
     for(const [kind,ids] of [['in',candidates.filter(id=>!initial.includes(id)&&!info.star_link.source.includes(id))],['out',initial]])
-      for(const id of new Set(ids))if(!diagnostics.some(d=>d.kind===kind&&d.id===id))diagnostics.push({step:0,kind,id,rows:differences({},baseline,contexts)});
+      for(const id of new Set(ids.filter(Boolean)))if(!diagnostics.some(d=>d.kind===kind&&d.id===id))diagnostics.push({step:0,kind,id,
+        note:kind==='in'&&!initial.includes(0)?'교환 필요':'',rows:differences({},baseline,contexts)});
     if(!within())limited=true;
     if(!alive())return null;
     return {initial,slots,swaps,diagnostics,baseline,metrics:current,rows:differences(current,baseline,contexts),

@@ -1,9 +1,9 @@
 // Session-only content snapshots: never persist simulated accounts or slot proposals.
-const SLOT={scope:null,contexts:new Map(),result:null,phase:'idle',msg:'',errors:[],stop:null};
+const SLOT={scope:null,contexts:new Map(),result:null,phase:'idle',msg:'',errors:[],excluded:[],stop:null};
 function slotScope(){return MyInfoReco.hash([MI.hash,MODE,MM,SCROWN,[...EXCL].sort(),breakOwned(),BRSEL,SESSION_BR,SHARE.b,SHARE.b2,
   MI.growth,QK.d,['op','oph','clo','daily','equip','cube','rush'].map(k=>simOpt(k))]);}
 function slotCancel(){if(SLOT.stop)SLOT.stop();SLOT.stop=null;SLOT.phase='idle';SLOT.result=null;SLOT.msg='';SLOT.errors=[];
-  if(SIMQ.busy==='slots')SIMQ.busy=null;}
+  SLOT.excluded=[];if(SIMQ.busy==='slots')SIMQ.busy=null;}
 function slotSync(){const scope=slotScope();if(SLOT.scope!==scope){slotCancel();SLOT.scope=scope;SLOT.contexts.clear();}}
 function slotRemember(c,st){if(!miMode()||!MI.growth||StarLink.availability(MI.info))return;
   slotSync();if(!MyInfoStats.rule_for_content(c.key)||SIMQ.busy!=null)return;
@@ -61,10 +61,14 @@ async function slotStart(){if(SIMQ.busy!=null||StarLink.availability(MI.info))re
     if(contexts.some(c=>c.version!==manifest.ver))throw Error('엔진이 바뀜 · 콘텐츠를 다시 실행');
     GROW.versions={engine:manifest.ver,data:MyInfoReco.hash([GrowthGuide.VERSION,MI.growth,D,QK.d])};
     const original=MyInfoReco.profile(MI.info,R,MI.growth,'op'),link=MI.info.star_link;
-    const candidates=R.filter(s=>original.units[s.key]&&!link.source.includes(s.uid)&&!EXCL.has(s.key))
-      .map(s=>{const a=MyInfoReco.assume(s.key,MI.info,MI.growth,{fields:['level']}),p=MyInfoReco.assumedProfile(original,a,MI.info,MI.growth,'op');
-        return {id:s.uid,gain:p.results[s.key].power-original.results[s.key].power};})
-      .filter(x=>x.gain>0).sort((a,b)=>b.gain-a.gain||a.id-b.id).map(x=>x.id);
+    const gains=[];SLOT.excluded=[];
+    for(const s of R.filter(s=>original.units[s.key]&&!link.source.includes(s.uid)&&
+      !link.slots.some(slot=>slot.id===s.uid)&&!EXCL.has(s.key))){
+      try{const a=MyInfoReco.assume(s.key,MI.info,MI.growth,{fields:['level']}),p=MyInfoReco.assumedProfile(original,a,MI.info,MI.growth,'op');
+        const gain=p.results[s.key].power-original.results[s.key].power;if(gain>0)gains.push({id:s.uid,gain});
+      }catch(e){SLOT.excluded.push({id:s.uid,reason:String(e.message)});}
+    }
+    const candidates=gains.sort((a,b)=>b.gain-a.gain||a.id-b.id).map(x=>x.id);
     SLOT.result=await StarLink.search({info:MI.info,contexts,candidates,alive,
       evaluate:request=>slotEvaluateState(request,id),progress:p=>{SLOT.msg=`완료 ${p.runs}판 · 교환 검증 ${p.pairs}쌍`;slotPaint();}});
     if(alive())SLOT.phase='done';
@@ -73,21 +77,25 @@ async function slotStart(){if(SIMQ.busy!=null||StarLink.availability(MI.info))re
 }
 function slotPaint(){if(!miMode()||!MI.info||!REQ)return;
   let el=$('star-link-result');if(!el){el=document.createElement('div');el.id='star-link-result';el.className='party';$('out').append(el);}
+  const summary=document.querySelector('[data-k="growth-slot-summary"]');if(summary)summary.append(el);
+  else if($('growth-result'))$('growth-result').before(el);
   const unavailable=StarLink.availability(MI.info);
   if(unavailable){el.innerHTML=`<span class="tag" data-k="slot-unavailable">${esc(unavailable)}</span>`;return;}
   const name=id=>id?(R.find(s=>s.uid===id)?.name||String(id)):'빈 슬롯',fmt=v=>v==null?'확인 부족':`${v>0?'+':''}${v.toFixed(1)}%p`;
   const content=id=>{const [k,tab,st]=id.split('/');return `${contents.find(c=>c.key===k)?.name||k} · ${tab} ${st}`;};
-  const reason=rows=>rows.map(r=>`<span class="tag" title="${esc(r.ci?'95% 차이 구간 '+r.ci.map(fmt).join(' ~ '):'미평가')}">${esc(content(r.content))} ${fmt(r.delta)}${r.confirmed?'':r.ci?.[1]<0?' · 손해 확인':' · 확인 부족'}</span>`).join('');
+  const reason=rows=>rows.map(r=>`<span class="tag slot-${r.confirmed?'good':r.ci?.[1]<0?'bad':'pending'}" title="${esc(r.ci?'95% 차이 구간 '+r.ci.map(fmt).join(' ~ '):'미평가')}">${r.confirmed?'✓':r.ci?.[1]<0?'▼':'?'} ${esc(content(r.content))} ${fmt(r.delta)}${r.confirmed?'':r.ci?.[1]<0?' · 손해 확인':' · 확인 부족'}</span>`).join('');
+  const face=id=>{const s=R.find(s=>s.uid===id);return s?`<span class="slot-face">${art(s)}</span>`:'';};
   const r=SLOT.result;
   el.innerHTML=`<div data-k="slot-panel"><b>스타링크 슬롯 추천</b> <span class="tag" data-k="slot-cooldown">교체 쿨다운 있음</span>
-    <p class="mut">직접 실행한 ${SLOT.contexts.size}개 스테이지 기준 · 현재 ${MI.info.star_link.slots.length}칸 · 소스 ${MI.info.star_link.source.length}명 별도</p>
+    ${!r?'':r.swaps.map(s=>`<div class="slot-swap" data-k="slot-swap"><span class="slot-in">▲ 넣기: ${face(s.in)}<b>${esc(name(s.in))}</b> <small>Lv ${MI.info.units.find(u=>u.id===s.in).level}→링크</small></span><span class="slot-out">▼ 빼기: ${face(s.out)}<b>${esc(name(s.out))}</b></span><div>${reason(s.rows)}</div></div>`).join('')||'<p>확인 부족 · 개선이 확인된 교환 없음</p>'}
     ${SLOT.phase==='running'?`<p role="status">${esc(SLOT.msg)}</p><button class="sec" data-slot-stop>중단</button>`:
       `<button class="sec" data-slot-start ${SIMQ.busy!=null||!SLOT.contexts.size?'disabled':''}>슬롯 추천 계산</button>`}
     ${SLOT.phase==='error'?`<p>${esc(SLOT.msg)} · 확인 부족</p>`:''}
+    <details><summary>슬롯 평가 상세${SLOT.excluded.length?` · 제외 ${SLOT.excluded.length}명`:''}</summary><p class="mut">직접 실행한 ${SLOT.contexts.size}개 스테이지 기준 · 현재 ${MI.info.star_link.slots.length}칸 · 소스 ${MI.info.star_link.source.length}명 별도</p>
+    ${SLOT.excluded.map(x=>`<p data-k="slot-excluded">${esc(name(x.id))} 제외 · ${esc(x.reason)}</p>`).join('')}
     ${!r?'':`<p>지금 슬롯: ${r.initial.map(id=>esc(name(id))).join(' · ')}<br>추천 슬롯: ${r.slots.map(id=>esc(name(id))).join(' · ')}</p>
-      ${r.swaps.map(s=>`<p data-k="slot-swap"><b>넣기: ${esc(name(s.in))}(Lv ${MI.info.units.find(u=>u.id===s.in).level}→스타링크) · 빼기: ${esc(name(s.out))}</b><br>${reason(s.rows)}</p>`).join('')||'<p>확인 부족 · 개선이 확인된 교환 없음</p>'}
       <p class="mut">${(r.ms/1000).toFixed(1)}초 · 완료 ${r.runs}판 · ${r.pairs}쌍 검증${r.limited?' · 상한 내 부분 탐색 · 확인 부족':''}</p>
-      <details><summary>슬롯에 넣으면 / 슬롯에서 빼면</summary>${r.diagnostics.map(d=>`<p>${d.step+1}차 ${d.kind==='in'?'넣기':'빼기'}: ${esc(name(d.id))}<br>${reason(d.rows)}</p>`).join('')}</details>`}
+      <details><summary>슬롯에 넣으면 / 슬롯에서 빼면</summary>${r.diagnostics.map(d=>`<p>${d.step+1}차 ${d.kind==='in'?'넣기':'빼기'}: ${esc(name(d.id))}<br>${d.note?esc(d.note):reason(d.rows)}</p>`).join('')}</details>`}</details>
     ${SLOT.errors.length?'<p>일부 평가 실패 · 확인 부족</p>':''}</div>`;
   el.querySelector('[data-slot-start]')?.addEventListener('click',slotStart);
   el.querySelector('[data-slot-stop]')?.addEventListener('click',()=>{simInvalidate();SLOT.phase='error';SLOT.msg='중단함';slotPaint();});
