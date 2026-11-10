@@ -329,6 +329,12 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
 # maxPool(숫자)을 주면 그때만 전투력 상위 maxPool 명 + minRole 보충(minPowerRatio 이상)으로 자른다. maxCombos 는 보스당 조합 수 안전 상한(넘으면 시작하지 않고 안내).
 # etaWeights = 단계별 «한 판 상대 비용»(남은 시간 계산에서 아직 안 해 본 단계의 속도를 추정할 때 쓰는 초기값, 실측으로 조정).
 SEARCH = dict(
+    speed=dict(
+        workerReuse=dict(value=True, legacy=False, alt=True, note='단계 사이 워커 재사용. 측정: docs/cosmo_speed_rd_1110.md'),
+        rngStreams=dict(value=False, legacy=False, alt=True, note='공통 난수 동기화 실험. 판 수 유지.'),
+        surrogate=dict(value=False, legacy=False, alt=True, ratio=0.7, auditFrac=0.02, minAudit=64,
+                       minPerUnit=3, missThreshold=0.04, proxy={'tyria': 'attack'},
+                       note='빠른 탐색(실험). 제외 무작위 표본의 경계 이상 비율이 문턱을 넘으면 해당 보스 전수 복귀.')),
     _note='3보스 구원자 겹침 금지 편성 찾기(cosmo_search.js) 설정. 기본은 보유 육성 구원자 전수 탐색이고, 판 수·keep 은 정밀도와 계산 시간의 절충이라 실측으로 조정한다.',
     maxPool=None, maxCombos=300000, minPowerRatio=0.6, minRole={'서포터': 2, '디펜더': 2}, minFront=1, minDealer=1,
     # 1단계 순차 반감: 전 조합을 firstRuns 판 돌려 순위를 매기고, 상위 passFrac(경계 동점 포함, 최소 passMinMult×keep 팀)만 runs 판이 되도록 더 돌린다. firstRuns 를 빼거나 runs 이상이면 반감 없음.

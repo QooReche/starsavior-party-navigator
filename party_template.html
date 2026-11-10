@@ -515,7 +515,7 @@ const csMobile=()=>{try{return !!((navigator.userAgentData&&navigator.userAgentD
 const csWorkers=()=>CosmoSearch.workerCount(D.cosmoRaid.search,{cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory,mobile:csMobile()});
 const csProfile=()=>MI.info&&MI.growth?(MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,MI.growth,"cosmo"))):null;
 function csPre(){   // 시작 전 «예상 시간» 안내(저장된 이 PC 속도가 있으면 예상 시간, 없으면 안내 문구)
- try{const S=D.cosmoRaid.search,pf=csProfile();if(!pf)return "시작하면 몇 초 뒤 예상 시간이 표시됩니다";
+ try{const S=CosmoSearch.searchSettings(D.cosmoRaid.search,CSR.optFast),pf=csProfile();if(!pf)return "시작하면 몇 초 뒤 예상 시간이 표시됩니다";
   const rows=CosmoSearch.poolAll(S,pf.results,R.filter(s=>!EXCL.has(s.key)));if(CosmoSearch.feasibility(S,rows))return "";
   return CosmoSearch.preText(CosmoSearch.plan(S,rows,csBreaks().length),CosmoSearch.priorFrom(LS.get("cosmo.speed"),csWorkers()))}catch(e){return ""}}
 let csLast=0,csTimer=0;
@@ -530,6 +530,7 @@ function csTick(force){   // 진행 글자만 200ms 이상 간격으로 갱신(�
 function csReset(){   // 내 정보 다시 불러오기·제외 목록 변경: 진행 중인 검색은 취소(끝난 결과는 남기되 서명이 달라 «낡은 결과»로 표시)
  if(CSR.phase==="run"){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.id++;CSR.phase="idle";CSR.eta=null}}
 function csOpt(){const C=D.cosmoRaid;
+ if(CSR.optFast==null)CSR.optFast=!!(C.search.speed&&C.search.speed.surrogate&&C.search.speed.surrogate.value);
  if(CSR.optLevel==null){const v=LS.get("cosmo.level");CSR.optLevel=Number.isInteger(v)&&v>=-1&&v<=C.levelMax?v:C.search.defaultLevel}
  if(CSR.optMode==null){const v=LS.get("cosmo.mode");CSR.optMode=CosmoSearch.MODES[v]?v:C.search.defaultMode}}
 // 코스모 결과 한 팀: 기존 추천 카드와 같은 모양(앞열 2·뒤열 2, 리더 왕관, 브레이크 스킬 줄). 시뮬이 가정한 칸 순서 = order(앞열 먼저, 첫 구원자가 리더)
@@ -545,7 +546,7 @@ function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").v
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
- p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,sig:csSig(),preEta:MI.info?csPre():""})}
+ p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info?csPre():""})}
 async function cosmoSearchStart(){
  if(!MI.info||CSR.phase==="run")return;
  const C=D.cosmoRaid,id=++CSR.id,stale=()=>CSR.id!==id,paint=()=>renderCosmoSearch(),level=CSR.optLevel,mode=CSR.optMode;
@@ -553,7 +554,7 @@ async function cosmoSearchStart(){
   CSR.phase="run";CSR.sig=csSig();CSR.msg="내 구원자 능력치 계산 중";CSR.done=0;CSR.total=0;CSR.eta=null;CSR.etaText="";CSR.runs=1;paint();
   const growth=await miGrowth();if(stale())return;
   const profile=MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,growth,"cosmo"));
-  const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=C.search;
+  const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=CosmoSearch.searchSettings(C.search,CSR.optFast);
   const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
    makeWorker:()=>new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,breaks:csBreaks(),
    onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed"),workers)})},
@@ -561,10 +562,11 @@ async function cosmoSearchStart(){
    onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());csTick(false)},onHandle:h=>{CSR.handle=h}});
   if(!out||stale())return;
   const sum=CSR.eta&&CSR.eta.summary();if(sum)LS.set("cosmo.speed",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
-  Object.assign(CSR,out,{phase:"done",handle:null,eta:null});paint()
+  Object.assign(CSR,{fast:false,audit:null},out,{phase:"done",handle:null,eta:null});paint()
  }catch(e){if(stale())return;CSR.handle=null;CSR.eta=null;CSR.phase=/^취소$/.test(e.message)?"idle":"err";CSR.msg=e.message||String(e);paint()}}
-$("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("select[data-cs]");if(!t)return;
- if(t.dataset.cs==="level"){CSR.optLevel=+t.value;LS.set("cosmo.level",CSR.optLevel)}else{CSR.optMode=t.value;LS.set("cosmo.mode",CSR.optMode)}
+$("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("[data-cs]");if(!t)return;
+ if(t.dataset.cs==="fast")CSR.optFast=t.checked;
+ else if(t.dataset.cs==="level"){CSR.optLevel=+t.value;LS.set("cosmo.level",CSR.optLevel)}else if(t.dataset.cs==="mode"){CSR.optMode=t.value;LS.set("cosmo.mode",CSR.optMode)}
  if(CSR.phase!=="run")renderCosmoSearch()});
 $("cosmo-search").addEventListener("click",e=>{const b=e.target.closest("button[data-cs]");if(!b)return;
  if(b.dataset.cs==="start")cosmoSearchStart();

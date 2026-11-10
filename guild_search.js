@@ -131,31 +131,50 @@
   // 진행·취소: onProgress(done, total), handle.cancel(). 작업자가 오류를 내면 reject.
   // chunk(숫자, 선택): 주면 정적 분할 대신 «작업 큐»로 chunk 팀씩 끝나는 작업자에게 나눠 준다(빠른 작업자가 더 많이 처리, 끝 꼬리 지연 감소).
   // 작업자는 run 메시지를 여러 번 받을 수 있다(sim_worker.js 가 메시지마다 처리). 안 주면 예전처럼 정적 분할.
-  function runPhase({makeWorker, jobs, workers, runs, seed, stage, base, onProgress, chunk}) {
+  // 한 탐색이 소유하는 풀. 동시에 두 단계를 실행하지 않는다. 취소/오류/탐색 종료 때 close.
+  function workerPool(makeWorker) {
+    const ws = []; let closed = false, serial = 0;
+    return {
+      get(i) { if (closed) throw new Error("닫힌 작업자 풀"); return ws[i] || (ws[i] = makeWorker()); },
+      nextId() { return ++serial; },
+      close() { if (closed) return; closed = true; ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; w.terminate(); }); }
+    };
+  }
+  function runPhase({makeWorker, pool, jobs, workers, runs, seed, stage, base, onProgress, chunk}) {
     const dyn = chunk > 0;
     const parts = dyn ? Array.from({length: Math.max(1, Math.min(workers, Math.ceil(jobs.length / chunk)))}, () => []) : split(jobs, workers), res = {}, ws = [];
     let done = 0, finished = 0, dead = false, rejectFn, next = 0, seq = 0;
+    const clean = fatal => {
+      ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; if (!pool) w.terminate(); });
+      if (fatal && pool) pool.close();
+    };
+    const fail = err => { if (dead) return; dead = true; clean(true); rejectFn(err); };
     const p = new Promise((resolve, reject) => {
       rejectFn = reject;
-      if (!jobs.length) { resolve(res); return; }
-      parts.forEach((part, wi) => {
-        const w = makeWorker(); ws.push(w);
-        const send = list => w.postMessage({type: "run", id: ++seq, base, stage, n_runs: runs, seed, options: {build: "standard", rules_override: {power_penalty: "model"}},
-          teams: list.map(j => ({key: j.key, party: j.party, options: j.options}))});
+      if (!jobs.length) { dead = true; resolve(res); return; }
+      try { parts.forEach((part, wi) => {
+        if (dead) return;
+        const w = pool ? pool.get(wi) : makeWorker(); ws.push(w);
+        let requestId;
+        const send = list => {
+          requestId = pool ? pool.nextId() : ++seq;
+          try { w.postMessage({type: "run", id: requestId, base, stage, n_runs: runs, seed, options: {build: "standard", rules_override: {power_penalty: "model"}},
+            teams: list.map(j => ({key: j.key, party: j.party, options: j.options}))}); }
+          catch (e) { fail(e); }
+        };
         w.onmessage = e => {
-          const m = e.data; if (dead) return;
+          const m = e.data; if (dead || (m.id != null && m.id !== requestId)) return;
           if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}, progs: m.result.progs || null, cosmo: m.result.cosmo || null}; done++; if (onProgress) onProgress(done, jobs.length); }
           else if (m.type === "done" && dyn && next < jobs.length) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); }
-          else if (m.type === "done") { if (++finished === parts.length) { ws.forEach(x => x.terminate()); resolve(res); } }
-          else if (m.type === "error") { dead = true; ws.forEach(x => x.terminate()); reject(new Error(m.msg || "작업자 오류")); }
+          else if (m.type === "done") { if (++finished === parts.length) { dead = true; clean(false); resolve(res); } }
+          else if (m.type === "error") fail(new Error(m.msg || "작업자 오류"));
         };
-        w.onerror = ev => { if (dead) return; dead = true; ws.forEach(x => x.terminate()); reject(new Error("작업자 오류: " + (ev && ev.message || "알 수 없음"))); };
+        w.onerror = ev => fail(new Error("작업자 오류: " + (ev && ev.message || "알 수 없음")));
         if (dyn) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); return; }
-        w.postMessage({type: "run", id: wi + 1, base, stage, n_runs: runs, seed, options: {build: "standard", rules_override: {power_penalty: "model"}},
-          teams: part.map(j => ({key: j.key, party: j.party, options: j.options}))});
-      });
+        send(part);
+      }); } catch (e) { fail(e); }
     });
-    return {promise: p, cancel() { dead = true; ws.forEach(x => x.terminate()); rejectFn(new Error("취소")); }};
+    return {promise: p, cancel() { if (dead) { if (pool) pool.close(); return; } fail(new Error("취소")); }};
   }
 
   const BASIS = {client: "클라 자료 확인", community: "커뮤니티 근거(중간 신뢰)", inference: "추정"};
@@ -193,6 +212,6 @@
     return `<div class="gd-search" data-k="gd-search">${head}${body}${warn}</div>`;
   }
 
-  const api = {FRONT, TOP_Q, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, runPhase, html, SUP_NAME, countDropped, notesHtml, BASIS};
+  const api = {FRONT, TOP_Q, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, SUP_NAME, countDropped, notesHtml, BASIS};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);
