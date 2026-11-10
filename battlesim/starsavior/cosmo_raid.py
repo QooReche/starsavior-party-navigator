@@ -14,7 +14,7 @@
 - 난이도 레벨 배율 = 능력치 x (1 + ScaleFactor/10000) (추정, 길방 별의 도전과 같은 형태).
 - 시즌 버프는 해당 속성/직업 아군에게 상시 효과로 붙임(BCT_* 해석 추정). 생명력%는 전투 시작 때 최대 생명력까지 채움.
 - 벨그라스: 침식/썩은 의지·잠행하는 뿌리 규칙은 스킬 설명문 기준. 「썩은 의지 방지 체크 버프(BOSS_6)」는 «효과 발생 전 상태로 판정»으로 근사.
-  공허 붕괴의 추가 고정 피해(5000 x 썩은 의지, 최대 50)는 «타격한 아군 각각에게 방어 무시·보호막 적용»으로 근사(대상 범위·보호막 적용은 미확인).
+  공허 붕괴는 시전 시작의 썩은 의지로 자기 대상 피해를 예약하고 턴 종료 전에 보호막·HP에 적용한다(NKM:4688,13537).
   기록자·처단자의 응집된 생기 재충전(상대 턴 시작)은 «영양 과잉이 끝난 뒤 다음 시전 종료 때»로 근사.
 - 엔진에 없는 효과 종류(타임 패러독스 판정 등)는 가장 가까운 기존 효과로 대신함."""
 import copy
@@ -240,6 +240,30 @@ class Controller:
         self.minions = {}            # kind -> 유닛
         self.over = {}               # 부속 유닛 -> 영양 과잉이 끝나는 전역 턴
         self.stats = defaultdict(int)
+        self.pending_damage = []      # (대상, 시전 시작 때 확정한 고정 피해)
+
+    def before_cast(self, u, sk, ctx):
+        if (u is self.boss and self.cfg['model'] == 'belgras' and sk.slot == '궁극기'
+                and self.b.mc['cosmo_hyper_true_target'] == 'self'):
+            p = self.cfg['bel']['hyperTrueDamage']
+            n = min(self._stacks(u, ROT), p['max'])
+            if n > 0:
+                self.pending_damage.append((u, p['perStack'] * n))
+                self.stats['self_damage_queued'] += 1
+
+    def flush_damage(self):
+        # NKM:13539-13544: 반응 종료 → 예약 피해 → 보유자 턴 종료 효과.
+        pending, self.pending_damage = self.pending_damage, []
+        for target, damage in pending:
+            if target.dead:
+                continue
+            hp, shield = target.hp, target.shield_total()
+            self.b.apply_damage(None, target, damage, 'true', shieldable=True)
+            self.stats['true_damage_hits'] += 1
+            self.stats['self_damage_hp'] += hp - target.hp
+            self.stats['self_damage_shield'] += shield - target.shield_total()
+            self.b.log(self_damage=target.name, damage=damage, hp_damage=hp - target.hp,
+                       absorbed=shield - target.shield_total())
 
     # ---------- 효과 도우미
     def _put(self, x, name, props, dur=math.inf, cat='marker', maxs=1, add=1, fixed=True, src=None):
@@ -501,7 +525,7 @@ class Controller:
             fx = self.fx
             if 'drain' in fx and not a.dead:
                 self.stats['drain'] += 1
-                self._put(a, CH_DRAIN, {'생명력%': -fx['drain']['pct']}, cat='debuff', maxs=fx['drain']['max'], fixed=True)
+                self._put(a, CH_DRAIN, {'생명력%': -fx['drain']['pct']}, cat=b.mc['cosmo_drain_category'], maxs=fx['drain']['max'], fixed=True)
             if 'rewind' in fx and boss.has(fx['rewind']['state']):
                 self.stats['rewind'] += 1
                 b.set_gauge(boss, boss.gauge + fx['rewind']['pct'] * 100)
@@ -515,10 +539,12 @@ class Controller:
                 e = bm['erosion']
                 self._erode(e['decaySingle'] if single else e['decayAoe'], bm['rot']['gainSingle'] if single else bm['rot']['gainAoe'])
                 if single and a.has(THORN):
+                    self.stats['thorn_gauge'] += 1
                     b.set_gauge(boss, boss.gauge + bm['passive1']['thornHitGaugePct'] * 100)    # 패시브1: 가시 상태 적의 단일 공격에 피격 후 게이지 +20%
         elif a.side == 0 and v.side == 1 and self.cfg['model'] == 'belgras' and getattr(v.d, 'cosmo', None) and v.d.cosmo.get('model') == 'minion':
             self._minion_hit(a, v)
-        elif a is boss and v.side == 0 and self.cfg['model'] == 'belgras' and sk is not None and sk.slot == '궁극기':
+        elif (a is boss and v.side == 0 and self.cfg['model'] == 'belgras' and sk is not None and sk.slot == '궁극기'
+              and b.mc['cosmo_hyper_true_target'] == 'enemy_all'):
             n = min(self._stacks(boss, ROT), self.cfg['bel']['hyperTrueDamage']['max'])
             if n > 0:
                 b.apply_damage(boss, v, self.cfg['bel']['hyperTrueDamage']['perStack'] * n, 'true', shieldable=True)

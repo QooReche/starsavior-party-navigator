@@ -84,5 +84,7 @@ def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, 
         for k, v in gear.items():
             if k in out:
                 out[k] += v
+    if gear.get('vampirism'):
+        out['vampirism'] = math.floor(gear['vampirism'])
     out['_template'] = sid
     return out

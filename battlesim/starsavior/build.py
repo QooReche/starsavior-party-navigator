@@ -28,11 +28,12 @@ MAIN_KEY = {'공격력': 'atk', '생명력': 'hp', '방어력': 'def', '속도':
             '효과적중%': 'eh', '효과 적중%': 'eh', '효과저항%': 'er', '효과 저항%': 'er'}
 NST_KEY = {'NST_ATK': 'atk', 'NST_HP': 'hp', 'NST_DEF': 'def', 'NST_TURN_SPEED': 'spd', 'NST_NV_RATE_ATK': 'atkP',
            'NST_NV_RATE_HP': 'hpP', 'NST_NV_RATE_DEF': 'defP', 'NST_RATE_CRITICAL': 'cr', 'NST_RATE_CRITICAL_DAMAGE': 'cd',
-           'NST_RATE_EFFECT_HIT': 'eh', 'NST_RATE_EFFECT_EVADE': 'er'}
+           'NST_RATE_EFFECT_HIT': 'eh', 'NST_RATE_EFFECT_EVADE': 'er', 'NST_RATE_DAMAGE_VAMPIRISM': 'vampirism'}
 # 잠재력 상시 스탯 줄 -> gear 키와 배율(비율은 1/10000, 정수는 그대로). 강인도는 따로(sa).
 POT_STAT = {'공격력%': ('atkP', 100), '생명력%': ('hpP', 100), '방어력%': ('defP', 100), '속도': ('spd', 1), '속도%': ('spdP', 100),
             '치명타 확률': ('cr', 100), '치명타 피해': ('cd', 100), '효과 적중': ('eh', 100), '효과 저항': ('er', 100),
-            '공격력': ('atk', 1), '생명력': ('hp', 1), '방어력': ('def', 1)}
+            '공격력': ('atk', 1), '생명력': ('hp', 1), '방어력': ('def', 1),
+            '피해 흡혈': ('vampirism', 100), '생명력 흡수율': ('vampirism', 100)}
 RULES_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'rules', 'builds.json')
 
 

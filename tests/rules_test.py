@@ -331,7 +331,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     # 2026-11-05 길방 보스 속도·공격력 NV 합산
     'guild_boss_nv_sum',
     # 2026-11-06 코스모 게이트 시즌 전투(벨그라스·난이도 레벨·챌린지 효과)
-    'cosmo_raid_boss',
+    'cosmo_raid_boss', 'cosmo_hyper_true_target', 'damage_vampirism', 'cosmo_drain_category', 'cosmo_speed_floor',
 ])
 _NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'break_skill_model'})
 
@@ -418,9 +418,10 @@ def test_alt_legacy_keys_in_code():
     check_files = [os.path.join(ROOT, 'sim_worker.js'), os.path.join(ROOT, 'party_template.html')]
     sources = []
     for d in check_dirs:
-        for fn in os.listdir(d):
-            if fn.endswith('.py'):
-                sources.append(os.path.join(d, fn))
+        for dirpath, _dirs, fnames in os.walk(d):
+            for fn in fnames:
+                if fn.endswith('.py'):
+                    sources.append(os.path.join(dirpath, fn))
     for f in check_files:
         if os.path.exists(f):
             sources.append(f)
