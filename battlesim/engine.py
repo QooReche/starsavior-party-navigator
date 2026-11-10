@@ -76,7 +76,7 @@ class Actor:
     # ---- 버프 합산
     def mods(self):
         m = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0,
-                 inc_vs={}, inc_slot={})
+                 preempt_reduce=0.0, inc_vs={}, inc_slot={})
         for b in self.buffs.values():
             for k, v in b.props.items():
                 key, sub = _map_prop(k)

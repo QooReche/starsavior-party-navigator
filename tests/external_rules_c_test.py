@@ -208,7 +208,7 @@ class ShieldTest(unittest.TestCase):
         boundaries = {'start': 0, 'end': 0}
         act, fire = Battle._act_turn, Battle.fire
 
-        def watch_act(b, u):
+        def watch_act(b, u, **kw):
             initial = {name: (e, e.dur) for name, e in u.eff.items()
                        if e.shield > 0 and e.clock == 'owner_turn' and math.isfinite(e.dur)}
             ending = []
@@ -227,7 +227,7 @@ class ShieldTest(unittest.TestCase):
                 return result
 
             with patch.object(b, 'fire', watch_fire):
-                result = act(b, u)
+                result = act(b, u, **kw)
             for e, dur in ending:
                 self.assertEqual(e.dur, dur - 1)  # 종료 차감을 지우면 실패
                 boundaries['end'] += 1

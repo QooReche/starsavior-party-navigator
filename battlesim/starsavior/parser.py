@@ -300,6 +300,8 @@ def _perm_apply(stats, passive, eff):
         passive['eh'] += v / 100
     elif st == '선제 방어 확률':
         passive['preempt'] += v / 100
+    elif st == '선제 방어 무시 확률':
+        passive['preempt_reduce'] += v / 100
     elif st in ('피해 흡혈', '생명력 흡수율'):
         passive['vampirism'] += v / 100
     else:
@@ -405,4 +407,5 @@ def _map_prop_raw(k):
     m = re.match(r'^(기본기|특수기|궁극기) 피해 증가$', k)
     if m: return ('inc_slot', m.group(1))
     if k == '선제 방어 확률': return ('preempt', None)
+    if k == '선제 방어 무시 확률': return ('preempt_reduce', None)
     return (None, None)
