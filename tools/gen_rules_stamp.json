@@ -1,6 +1,6 @@
 {
  "guild_sim": {
-  "hash": "255fc05813a448b7",
+  "hash": "2fcbdc1ecf7127ee",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -25,11 +25,15 @@
    {
     "hash": "255fc05813a448b7",
     "reason": "11/10 cosmo_boss_barrier 추가: 코스모 게이트(cosmo_raid_boss=on, 시즌 전투 meta.cosmo_raid)에서만 읽는 스위치라 길방 생성기(build_guild_sim)는 쓰지 않음(grep 0건)"
+   },
+   {
+    "hash": "2fcbdc1ecf7127ee",
+    "reason": "11/10 stage_fx_target 기본 allies: 스테이지 효과(fx)는 플래시 포인트(rush) 44개 스테이지에만 있고 길방 시뮬(build_guild_sim)은 길드방어전 스테이지만 사용(fx 없음, 에이전트 계측 clo/op/oph/equip/cosmo/daily/cube 0개)"
    }
   ]
  },
  "quick": {
-  "hash": "255fc05813a448b7",
+  "hash": "2fcbdc1ecf7127ee",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -46,6 +50,10 @@
    {
     "hash": "255fc05813a448b7",
     "reason": "11/10 cosmo_boss_barrier 추가: 코스모 게이트 벨그라스 전용 스위치. quick 표본 생성기(gen_quick_calib/calibrate_quick)는 cosmo_raid_boss 를 켜지 않아(grep 0건) 결과 무관, quick 의 cosmo 항목은 코스모 회랑"
+   },
+   {
+    "hash": "2fcbdc1ecf7127ee",
+    "reason": "calibrate_quick --write 재보정"
    }
   ]
  }

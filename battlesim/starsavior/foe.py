@@ -74,6 +74,7 @@ def foe_summon(src=SRC):
 
 
 _SUDDEN = {}
+_STAGE_FX = {}
 _BATTLE_END = {}
 
 
@@ -86,6 +87,17 @@ def battle_end(src=SRC):
             with open(p, encoding='utf-8') as f:
                 _BATTLE_END[src] = frozenset(json.load(f)['boss_kill'])
     return _BATTLE_END[src]
+
+
+def stage_fx_cond(src=SRC):
+    """data/stage_fx.json(tools/build_stage_fx.py) -> {'콘텐츠|탭|스테이지': [[속성|None, 직업|None], ...]}(fx 문장 순서). 없으면 빈 표"""
+    if src not in _STAGE_FX:
+        p = os.path.join(src, 'data', 'stage_fx.json')
+        _STAGE_FX[src] = {}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                _STAGE_FX[src] = json.load(f).get('stages', {})
+    return _STAGE_FX[src]
 
 
 def sudden_death(src=SRC):

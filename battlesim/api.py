@@ -44,7 +44,7 @@ from . import rules as _rules
 from .mc import Battle, EventLimitError, support_report
 from .rules import DEFAULT_OPTS, MC_NOTE_KEYS, MC_OPTS, MC_RULES, RULES
 from .starsavior.data import _find_key, get_db
-from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves, sudden_death, battle_end
+from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves, sudden_death, battle_end, stage_fx_cond
 from .starsavior.parser import Skill, UnitDef
 from .starsavior.mc_semantics import normalized_definition
 
@@ -383,6 +383,28 @@ def simulate(party_spec, encounter_spec, options=None):
 REKINDLE = [0.0, 0.03, 0.07, 0.12, 0.18, 0.25]     # 작전 재점화 버프 단계별 (주는 피해 +x, 받는 피해 −x) — 인게임 표(2026-10-21 사용자 제보)
 
 
+def _ally_stage_fx(encounter_spec, meta, fx):
+    """stage_fx_target=allies: 스테이지 효과를 «속성·직업 조건에 맞는 아군»에게 건다(표: A팀 대상, B팀 없음). [(props, 속성|None, 직업|None)]
+    조건은 데이터북 문장 순서대로 data/stage_fx.json 에 있다. 문장을 덮어썼거나 조건이 없으면 아군 전체(조건 없음)로 본다."""
+    texts = encounter_spec.get('stage_fx')
+    key = '%s|%s|%s' % (meta['content'], meta['tab'], meta['name']) if meta.get('name') and meta.get('content') else None
+    if texts is None and key:
+        from .starsavior.foe import find_raw_stage
+        try:
+            texts = find_raw_stage(meta['content'], meta['tab'], meta['name']).get('fx') or []
+        except KeyError:        # 원본 스테이지 표에 없는 스테이지(코스모 게이트 등)는 스테이지 효과가 없음
+            texts = []
+    conds = stage_fx_cond().get(key) if (key and encounter_spec.get('stage_fx') is None) else None
+    out = []
+    for i, t in enumerate(texts or []):
+        props, _ = parse_fx([t])
+        if not props:
+            continue
+        adj, role = (conds[i] if conds and len(conds) == len(texts) else (None, None))
+        out.append((props, adj, role))
+    return out
+
+
 def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     db = get_db()
     build = o.get('build', 'none')
@@ -397,6 +419,9 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     if meta.get('cosmo_raid') and 'cosmo_raid_boss' not in (o.get('rules_override') or {}):
         mc = dict(mc, cosmo_raid_boss='on')    # 코스모 시즌 전투에서만 난이도 레벨·챌린지·벨그라스 상태 기계를 켠다(명시하면 그 값)
     max_turns = encounter_spec.get('max_turns', 50)
+    if mc['stage_fx_target'] not in ('enemies', 'allies', 'off'):
+        raise ValueError('stage_fx_target 은 enemies|allies|off: %r' % mc['stage_fx_target'])
+    ally_fx = _ally_stage_fx(encounter_spec, meta, fx) if mc['stage_fx_target'] == 'allies' else None
     sudden = sudden_death()['groups'].get(meta.get('sudden_death')) if meta.get('sudden_death') else None
     power = party_power(defs)
     pp = power_pen(power, meta.get('recommended_power'), db)
@@ -443,7 +468,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     semantic_cache: dict = {}
     for r in range(n_runs):
         rng = random.Random(seed * 1000003 + offset + r)
-        b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {},
+        b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {}, ally_fx=ally_fx,
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
                    enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'), rng_streams=bool(o.get('rng_streams')),
                    sudden=sudden, semantic_cache=semantic_cache, mc_overrides=o.get('rules_override') or {},

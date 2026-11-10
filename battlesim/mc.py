@@ -688,7 +688,7 @@ class Ctx:
 
 # ------------------------------------------------------------------ 전투
 class Battle:
-    def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None,
+    def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None, ally_fx=None,
                  timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None, rng_streams=False, sudden=None,
                  semantic_cache=None, mc_overrides=None, battle_mode='all_kill'):
         self.pen = tuple(pen) if pen else (1.0, 1.0)    # P5 전투력 보정(아군이 주는 피해 배율, 적이 주는 피해 배율) — 스킬·지속·연쇄만
@@ -704,7 +704,15 @@ class Battle:
         if rng_streams:
             base = rng.getrandbits(64)
             self._rs = (random.Random(base * 2 + 1), random.Random(base * 2 + 2))
-        self.allies = [Unit(d, 0, i, self, leader=(leader == i)) for i, d in enumerate(ally_defs)]
+        # 스테이지 효과를 아군에게 거는 모드(mc.stage_fx_target=allies): ally_fx = [(props, 속성|None, 직업|None)] — 조건에 맞는 아군만
+        def _afx(d):
+            tot = {}
+            for props, adj, role in ally_fx or ():
+                if (adj is None or d.element == adj) and (role is None or d.role == role):
+                    for k, v in props.items():
+                        tot[k] = tot.get(k, 0.0) + v
+            return tot
+        self.allies = [Unit(d, 0, i, self, leader=(leader == i), fx=_afx(d)) for i, d in enumerate(ally_defs)]
         self.waves = waves
         self.wave_i = -1
         self.foes = []
