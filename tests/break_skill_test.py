@@ -33,7 +33,8 @@ def setup(bs=CUBE, mc=None, roles=('스트라이커',), **kw):
 
 
 def legacy_setup(bs=CUBE, mc=None, **kw):
-    return setup(bs, mc=dict(break_skill_domain_clock='legacy', break_skill_reduce='all', **(mc or {})), **kw)
+    return setup(bs, mc=dict(break_skill_domain_clock='legacy', break_skill_reduce='all',
+                            break_gauge_actor='exclude', omega_dispel='fixed', **(mc or {})), **kw)
 
 
 class BreakReduceClientTest(unittest.TestCase):
@@ -103,6 +104,7 @@ class BreakSkillLegacyTest(unittest.TestCase):
     def test_break_kill_wave_transition_preserves_ultimate(self):
         b = battle([unit('ally', skills=[dict(slot='궁극기', dm=100, cd=5)])],
                    [unit('first', hp=1)], break_skill={'name': '차원 강습'},
+                   mc={'break_gauge_actor': 'exclude'},
                    opts={'nova_policy': 'manual'}, timeline=True, max_turns=.1)
         b.waves.append([unit('second', hp=10 ** 9)])
         a = b.allies[0]
@@ -463,7 +465,7 @@ class BreakSkillGlobalTest(unittest.TestCase):
         for name in ('큐브 과부하', '특이점 관측', '스타피어서', '차원 강습', '행성 정화'):
             for cd_unit in ('ally_turn', 'round'):
                 with self.subTest(name=name, cd_unit=cd_unit):
-                    b = self.prepared(name, mc={'break_skill_cd_unit': cd_unit})
+                    b = self.prepared(name, mc={'break_skill_cd_unit': cd_unit, 'break_gauge_actor': 'exclude'})
                     unrelated = give(b.allies[0], '별도 효과', dur=20)
                     unrelated.clock = 'global'
                     rows = self.observe(b)
@@ -582,7 +584,8 @@ class BreakSkillGlobalTest(unittest.TestCase):
     def test_planet_nova_excludes_extra_casts_and_missing_domain(self):
         for case in ('reaction', 'coop', 'extra', 'missing', 'dead', 'stun'):
             with self.subTest(case=case):
-                b = setup({'name': '행성 정화'}, turn_limit=1, opts={'coop': False})
+                b = setup({'name': '행성 정화'}, turn_limit=1, opts={'coop': False},
+                          mc={'purify_nova_scope': 'main_only'})
                 a = b.allies[0]
                 b.break_points, a.gauge = 3, 10000
                 original = b.cast

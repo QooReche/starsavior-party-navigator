@@ -21,7 +21,7 @@ class TauntDurationTest(unittest.TestCase):
                          immune=['도발'] if immune else [],
                          skills=[dict(slot='기본기', dm=100, all=aoe),
                                  dict(slot='특수기', dm=100, cd=2)])],
-                   mc=dict(toughness='off', **({'taunt_skill_end_duration': False} if legacy else {})),
+                   mc=dict(toughness='off', **({'taunt_skill_end_duration': False, 'buff_fresh_scope': 'self'} if legacy else {})),
                    opts={'coop': False, 'nova': False}, timeline=True)
         luna, ally = b.allies
         foe = b.foes[0]

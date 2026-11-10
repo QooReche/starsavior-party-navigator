@@ -302,6 +302,7 @@ def test_index_uses_merged_opts():
 # note 키 4개를 MC_OPTS 에서 뺐을 때 기존 출력이 그대로인지 고정한다.
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
+    'buff_fresh_scope', 'break_gauge_actor', 'purify_nova_scope', 'preemptive_reduce', 'omega_dispel', 'check_buff_scope',
     'foe_skill_order', 'empty_attack', 'enemy_cd_end_order', 'revenge_rate',
     'buff_ban', 'buff_ban_force', 'enforce_timing', 'enforce_target', 'wave_ally_gauge', 'buff_count_source', 'dispel_on_attack', 'skill_order', 'hit_stack_order', 'permanent_accuracy', 'battle_end_mode',
     'variant_self_state', 'turn_unit_debuff_cond', 'auto_marker_lines',
