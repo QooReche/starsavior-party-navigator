@@ -9,6 +9,7 @@
   const finalCost=(n,mode)=>mode==='manual'?2*n+4*Math.max(10,Math.floor(n/3))+1:n;
   const completed=r=>r.completed??Object.keys(r).length;
   const VERSION='growth-stage23-v5';
+  const HISTORY_VERSION='grown-history-v6';
   function signature(s){return JSON.stringify([s.account,s.options,s.targets,s.preset,s.content,
     [...s.excluded].sort(),s.breaks,s.mode,s.rules,s.engine,s.data,s.modifiers,VERSION,
     s.equipment,s.policy]);}
@@ -92,6 +93,12 @@
     metric:result.metric||'clear',unit:result.unit||'%p',conditions:result.conditions||null,at:Date.now(),
     scope:result.scope,rows:result.rows.filter(r=>!r.component).map(({key,kind,delta,ci,confirmed,status})=>({key,kind,delta,ci,confirmed,status}))};}
   function save(storage,shared,entry){if(shared)return false;
+    if(entry.historyVersion===HISTORY_VERSION){
+      // Retain different conditions/accounts/versions; only replace this exact summary.
+      const next={...(storage.get('growth.history')||{})};
+      next[JSON.stringify([entry.historyVersion,entry.content,entry.signature])]=entry;
+      return storage.set('growth.history',next);
+    }
     const old=storage.get('growth.history')||{},next=Object.fromEntries(Object.entries(old).filter(([,v])=>v.account===entry.account&&v.version===entry.version&&compatible(v.signature,entry.signature)));
     next[entry.content]=entry;const latest=Object.entries(next).sort((a,b)=>b[1].at-a[1].at).slice(0,30);
     return storage.set('growth.history',Object.fromEntries(latest));}
@@ -132,6 +139,37 @@
           const x=a.contents.find(c=>c.content===id),y=b.contents.find(c=>c.content===id&&c.metric===x.metric&&c.unit===x.unit);
           if(y&&x.delta!=null&&y.delta!=null&&x.delta!==y.delta)return y.delta-x.delta;
         }return a.key.localeCompare(b.key)||a.kind.localeCompare(b.kind);});
+  }
+  function grownSummary({content,signature,account,version,members,delta,metric,unit,at=Date.now()}){
+    return {content,signature,account,version,historyVersion:HISTORY_VERSION,at,delta,metric,unit,
+      rows:members.map(({key,source,changedFields})=>({key,source,changedFields:[...changedFields]}))};
+  }
+  function grownPriority(history,signature,current={}){
+    const latest=new Map();
+    for(const h of Object.values(history)){
+      if(h.historyVersion!==HISTORY_VERSION||!compatible(h.signature,signature))continue;
+      const ctx=historyContext(h.signature);
+      if(Object.hasOwn(current,ctx.kind)&&!conditionsMatch(ctx.conditions,current[ctx.kind],ctx.kind))continue;
+      const old=latest.get(h.content);if(!old||h.at>=old.at)latest.set(h.content,h);
+    }
+    const by=new Map();
+    for(const h of latest.values())for(const r of h.rows){
+      const id=r.key+'|'+r.source;
+      if(!by.has(id))by.set(id,{key:r.key,source:r.source,contents:[],changedFields:[]});
+      const item=by.get(id);item.changedFields=[...new Set([...item.changedFields,...r.changedFields])];
+      item.contents.push({content:h.content,delta:h.delta,metric:h.metric,unit:h.unit});
+    }
+    return [...by.values()].map(r=>({...r,count:new Set(r.contents.map(c=>c.content.split('/')[0])).size})).sort((a,b)=>{
+      if(a.count!==b.count)return b.count-a.count;
+      const metricKey=c=>JSON.stringify([c.content.split('/')[0],c.metric,c.unit]);
+      for(const id of [...new Set(a.contents.map(metricKey))].sort()){
+        const aa=a.contents.filter(c=>metricKey(c)===id&&Number.isFinite(c.delta)),bb=b.contents.filter(c=>metricKey(c)===id&&Number.isFinite(c.delta));
+        if(!aa.length||!bb.length)continue;
+        const x=Math.max(...aa.map(c=>c.delta)),y=Math.max(...bb.map(c=>c.delta));
+        if(x!==y)return y-x;
+      }
+      return a.key.localeCompare(b.key)||a.source.localeCompare(b.source);
+    });
   }
   // Seeded, independent resampling of individual runs; never score a mean progress.
   function bootstrap(a,b,stat,seed=27011,reps=1000){
@@ -194,7 +232,7 @@
     return {rows,baseline,baselinePending,runs,ms:now()-start,metric:'cosmo-'+mode,unit:'점',
       scope:{targets:targets.length,evaluated:rows.filter(r=>r.result).length,maxRuns:L.maxRuns,maxMs:L.maxMs}};
   }
-  const api={VERSION,LIMITS,COSMO_LIMITS,COMPONENTS,options,cmp,finalCost,signature,compatible,interval,compare,screenPlan,search,summary,save,priority,
+  const api={VERSION,HISTORY_VERSION,LIMITS,COSMO_LIMITS,COMPONENTS,options,cmp,finalCost,signature,compatible,interval,compare,screenPlan,search,summary,save,priority,grownSummary,grownPriority,
     bootstrap,topScore,guildMetric,cosmoTriples,searchCosmo};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GrowthGuide=api;
 })(typeof window!=='undefined'?window:globalThis);

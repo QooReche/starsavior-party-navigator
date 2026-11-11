@@ -13,6 +13,32 @@
   }
   function withSlots(info,ids){return {...info,star_link:{...info.star_link,
     slots:ids.map((id,i)=>({index:info.star_link.slots[i]?.index??i,id}))}};}
+  function exchangeCandidates(info,slots,candidates,{keep=[],defer=[],emptyFirst=false,maxCandidates=LIMITS.maxCandidates}={}){
+    const incoming=candidates.filter(id=>!slots.includes(id)&&!info.star_link.source.includes(id)).slice(0,maxCandidates);
+    const outgoing=[...new Set(slots)].filter(id=>!keep.includes(id));
+    if(emptyFirst)outgoing.sort((a,b)=>(a===0?-1:defer.includes(a)?1:0)-(b===0?-1:defer.includes(b)?1:0));
+    return {incoming,outgoing};
+  }
+  function exchange(slots,add,remove){const next=slots.slice();next[next.indexOf(remove)]=add;return next;}
+  // A registration plan, not a claim about the combat effect of removing a member.
+  // Share the exact exchange candidates/slot indexing with the measured search.
+  function growthPlan(info,required,team=[],current=[]){
+    const unavailable=availability(info);if(unavailable)return {unavailable,swaps:[]};
+    const initial=info.star_link.slots.map(s=>s.id),source=info.star_link.source;
+    const incoming=[...new Set(required)].filter(id=>!source.includes(id)&&!initial.includes(id));
+    const empty=initial.filter(id=>!id).length,shortage=Math.max(0,incoming.length-empty);
+    if(!shortage)return {initial,slots:initial,empty,shortage,required:incoming,swaps:[],register:incoming,remaining:[],limited:false,pairs:0,runs:0};
+    let slots=initial.slice(),pairs=0;const swaps=[];
+    for(const add of incoming.slice(0,LIMITS.maxCandidates)){
+      if(swaps.length>=LIMITS.maxSwaps||pairs>=LIMITS.maxPairs)break;
+      const candidates=exchangeCandidates(info,slots,[add],{keep:[...team,...incoming],defer:current,emptyFirst:true});
+      if(!candidates.incoming.length||!candidates.outgoing.length)continue;
+      const remove=candidates.outgoing[0];pairs++;
+      slots=exchange(slots,add,remove);swaps.push({in:add,out:remove,deferred:!!remove&&current.includes(remove)});
+    }
+    return {initial,slots,empty,shortage,required:incoming,swaps,pairs,runs:0,
+      remaining:incoming.filter(id=>!slots.includes(id)),limited:incoming.some(id=>!slots.includes(id))};
+  }
   function differences(metrics,base,contexts){return contexts.map(c=>({content:c.id,
     ...(metrics[c.id]&&base[c.id]?G.compare(metrics[c.id],base[c.id]):{delta:null,ci:null,confirmed:false})}));}
   const count=rows=>new Set(rows.filter(r=>r.confirmed).map(r=>r.content.split('/')[0])).size;
@@ -42,13 +68,12 @@
     let baseline=(await assess(slots,[])).metrics,current=baseline,first=null;
     if(Object.keys(baseline).length!==contexts.length||!contexts.length)limited=true;
     for(let step=0;step<L.maxSwaps&&within()&&contexts.length;step++){
-      const incoming=candidates.filter(id=>!slots.includes(id)&&!info.star_link.source.includes(id)).slice(0,L.maxCandidates);
+      const {incoming,outgoing}=exchangeCandidates(info,slots,candidates,{maxCandidates:L.maxCandidates});
       let best=null;
       // Verify real two-unit changes; adding and removing independently is not additive.
-      const outgoing=[...new Set(slots)];
       exchanges:for(const add of incoming)for(const remove of outgoing){
         if(!within()||pairs>=L.maxPairs){limited=true;break exchanges;}
-        const next=slots.slice();next[next.indexOf(remove)]=add;pairs++;
+        const next=exchange(slots,add,remove);pairs++;
         const {metrics,controls}=await assess(next,[add,remove].filter(Boolean)),rows=differences(metrics,controls||current,contexts);
         // A missing result or a confirmed regression cannot become a recommendation.
         const eligible=rows.every(r=>r.delta!=null&&r.ci[1]>=0)&&count(rows)>0;
@@ -84,6 +109,6 @@
     return {initial,slots,swaps,diagnostics,baseline,metrics:current,rows:differences(current,baseline,contexts),
       runs,ms:now()-start,pairs,limited,scope:{contexts:contexts.length,candidates:Math.min(candidates.length,L.maxCandidates),...L}};
   }
-  const api={LIMITS,availability,withSlots,differences,count,rank,search};
+  const api={LIMITS,availability,withSlots,exchangeCandidates,exchange,growthPlan,differences,count,rank,search};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.StarLink=api;
 })(typeof window!=='undefined'?window:globalThis);

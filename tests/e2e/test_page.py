@@ -1740,7 +1740,7 @@ def overwrite_audit(page, require_card=False):
           const a=GROW.result.snapshot.changes[el.dataset.key],labels={level:'스타링크',equip:'장비 +15',skills:'스킬',resonance:'공명',journey:'여정',potentials:'잠재력'};
           return a.changedFields.length===el.querySelectorAll('.mi-chips .tag').length&&a.changedFields.every(f=>el.textContent.includes(labels[f]));})''')
     assert not page.locator('#out > [data-party="1"] .assumed-card').count()
-    assert not page.evaluate("LS.get('growth.history')"), 'old priority history is not populated by whole-account passes'
+    assert page.evaluate("Object.values(LS.get('growth.history')||{}).every(h=>h.historyVersion===GrowthGuide.HISTORY_VERSION)"), 'whole-account summaries use a separate history version'
     return visible
 
 
@@ -1749,6 +1749,25 @@ def test_assumed_growth(browser, ctx):
     choose(page, '작전 (일반)', 'SECTOR 15-3')
     overwrite_account(page)
     overwrite_audit(page, require_card=True)
+    first_party = "document.querySelector('.party').dataset.party==='1'"
+    assert page.evaluate(first_party), 'the ranking panel must not shadow party-card selectors'
+    page.evaluate("$('growth-priority').classList.add('party')")
+    try:
+        assert not page.evaluate(first_party), 'selector-collision mutation must be detected'
+    finally:
+        page.evaluate("$('growth-priority').classList.remove('party')")
+    assert '슬롯 4칸 부족' in page.inner_text('[data-k="growth-slot-chip"]')
+    page.click('#tab-info')
+    page.wait_for_selector('#growth-priority [data-k="growth-rank-row"]')
+    assert page.locator('#growth-priority > [data-k="growth-rank-row"]').count() == 4
+    assert '1개 콘텐츠' in page.inner_text('#growth-priority')
+    page.set_viewport_size({'width': 1366, 'height': 1000})
+    page.screenshot(path=os.path.join(ctx.shots, 'next_desktop.png'), full_page=True)
+    page.set_viewport_size({'width': 390, 'height': 844})
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+    page.locator('#growth-priority').screenshot(path=os.path.join(ctx.shots, 'next_mobile.png'))
+    page.click('#tab-reco')
+    assert page.locator('[data-k="growth-slot-chip"]').is_visible()
     before = page.locator('#out > [data-party="1"]').get_attribute('data-team')
     for value in ['GROW.result.baseline.clear', 'Math.max(0,GROW.result.baseline.clear-.1)']:
         page.evaluate('window.savedClear=GROW.result.best.clear;GROW.result.best.clear='+value+';growthPaint()')
@@ -1790,6 +1809,26 @@ def test_assumed_growth(browser, ctx):
     assert '미완료' in page.inner_text('#growth-result')
     assert page.locator('#out > [data-party="1"]').get_attribute('data-team') == before
     page.evaluate('() => {growthEvaluate=realEvaluate;}')
+    # Reconstruct signatures from current data/engine after a real refresh.
+    saved_history = page.evaluate("JSON.stringify(LS.get('growth.history'))")
+    page.evaluate("LS.set('growth.options',growthOptions())")
+    page.reload()
+    wait_myinfo(page)
+    settle(page)
+    page.click('#tab-info')
+    page.wait_for_selector('#growth-priority [data-k="growth-rank-row"]')
+    assert page.evaluate("JSON.stringify(LS.get('growth.history'))") == saved_history
+    # A shared account may show session summaries but cannot overwrite local history.
+    page.evaluate('''async () => {
+      await miApply(structuredClone(MI.info),{shared:true});
+      const old=Object.values(LS.get('growth.history'))[0];
+      GrowthGuide.save(LS,MI.shared,{...old,content:'op/shared',at:Date.now()});
+    }''')
+    assert page.evaluate("JSON.stringify(LS.get('growth.history'))") == saved_history
+    page.evaluate('MI.shared=false')
+    page.click('#mi-panel-clear')
+    assert not page.evaluate("LS.get('growth.history')")
+    assert not page.locator('#growth-priority').is_visible()
     assert not ctx.errors, ctx.errors
     return True, '작전 실제 작업자 · 원본 불변 · 같은/낮은 결과 숨김 · 취소 · 390px · 하단 보조 카드'
 
@@ -1979,6 +2018,14 @@ def test_growth_stage23(browser, ctx):
         assert page.evaluate(f'JSON.stringify({state}.rows)') == original
         page.set_viewport_size({'width': 390, 'height': 844})
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+        if kind == 'cosmo':
+            page.click('#tab-info')
+            page.wait_for_selector('#growth-priority [data-k="growth-rank-row"]')
+            assert page.locator('#growth-priority > [data-k="growth-rank-row"]').count() == 5
+            assert page.locator('#growth-priority details [data-k="growth-rank-row"]').count() == 7
+            assert '2개 콘텐츠' in page.inner_text('#growth-priority')
+            assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+            page.click('#tab-reco')
     assert page.evaluate('stage23Peak<=Math.max(csWorkers(),8)')
     assert page.evaluate('stage23Requests.every(r=>r.teams.every(t=>t.party.units.every(u=>u.stats_final)))')
     assert not ctx.errors, ctx.errors

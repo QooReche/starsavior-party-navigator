@@ -11,10 +11,11 @@ function growthControls(){const enabled=!!MI.info&&growthEnabled(),details=$('gr
   $('assume-growth').disabled=!MI.info;$('growth-requires-info').hidden=!!MI.info;
   if(details.dataset.enabled!==String(enabled)||!enabled)details.open=enabled;
   details.dataset.enabled=String(enabled);
-  $('growth-settings-summary').textContent='육성 설정 · '+(!MI.info?'내 정보 필요':!enabled?'꺼짐':growthOptions().owned?'보유 + 미보유':'보유만');}
+  $('growth-settings-summary').textContent='육성 설정 · '+(!MI.info?'내 정보 필요':!enabled?'꺼짐':growthOptions().owned?'보유 + 미보유':'보유만');
+  growthRankPaint();}
 function growthCancel(){if(typeof slotCancel==='function')slotCancel();GROW.id++;if(GROW.stop)GROW.stop();GROW.stop=null;
   if(typeof SIMQ!=='undefined'&&SIMQ.busy==='growth')SIMQ.busy=null;
-  GROW.phase='idle';GROW.result=null;GROW.sig=null;GROW.msg='';GROW.errors=[];}
+  GROW.phase='idle';GROW.result=null;GROW.sig=null;GROW.msg='';GROW.errors=[];GROW.recordTag=null;}
 function growthInit(){const o=GrowthGuide.options(LS.get('growth.options')||{},SHARE);
   $('assume-growth').checked=o.growth;$('assume-owned').value=o.owned?'all':'owned';
   $('assume-growth').setAttribute('aria-describedby','growth-hint');
@@ -26,9 +27,9 @@ function growthTargets(c,st){const opts=growthOptions(),restrict=(CFG.restrict[c
     if(opts.growth&&(owned[s.key]||opts.owned)){
       const t={key:s.key,kind:'growth',source:owned[s.key]?'owned':'assumed',id:s.key+'|growth'};targets.push(t);
     }}return targets;}
-function growthSig(c,st){return GrowthGuide.signature({account:MI.hash,options:growthOptions(),targets:growthTargets(c,st),
+function growthSig(c,st,versions=GROW.versions){return GrowthGuide.signature({account:MI.hash,options:growthOptions(),targets:growthTargets(c,st),
   preset:MI.growth?.assumed?.version,content:[c.key,...(c.key==='cosmo'?[]:[st.tab,st.name]),growthConditions(c)],excluded:[...EXCL],breaks:[breakOwned(),MI.info?.break_skills],
-  modifiers:[MM,SCROWN],rules:SIMOPT,engine:GROW.versions?.engine,data:GROW.versions?.data,
+  modifiers:[MM,SCROWN],rules:SIMOPT,engine:versions?.engine,data:versions?.data,
   equipment:[MI.hash,[...EXCL].sort()],
   policy:[GrowthGuide.VERSION,GrowthGuide.LIMITS,GrowthGuide.COSMO_LIMITS,17011,900001,27011]});}
 function growthMetric(r,mode=MODE){if(mode!=='manual'||!r.man)return r;
@@ -114,12 +115,13 @@ function growthMaybe(c,st){if(growthEnabled()&&growthSeasonContent()){growthPain
   growthPaint();}
 const growthLabel=r=>r.source==='assumed'?'미보유':'키워야 함';
 const growthFields={level:'레벨→스타링크',resonance:'공명 최대',skills:'스킬 최대',journey:'목표 여정',potentials:'목표 잠재력',equip:'장비 +15'};
+const growthShortFields={level:'스타링크',equip:'장비 +15',skills:'스킬',resonance:'공명',journey:'여정',potentials:'잠재력'};
 function growthDescription(r){return (r.changedFields||[]).map(f=>{
   const c=r.changes?.[f];if(f==='level'&&c)return `${c.before==null?'Lv ':('Lv '+c.before+'→')}스타링크`;
   if(f==='resonance'&&c)return `공명 ${c.before??0}→${c.after}`;
   return growthFields[f];}).join(' · ');}
 function growthBadge(r,short=false){const missing=r.source==='assumed';return `<span class="assumed-label ${missing?'assumed-missing':'assumed-owned'}" data-k="assumed-badge"><span aria-hidden="true">${missing?'＋':'↑'}</span><span class="al-long">${esc(growthLabel(r))}</span><span class="al-short">${missing?'미보유':'키워야 함'}</span>${!short&&growthDescription(r)?' · '+esc(growthDescription(r)):''}</span>`;}
-function growthCardMeta(r){if(r.overwrite)return `<div class="mi-chips">${r.changedFields.map(f=>`<span class="tag">${esc(({level:'스타링크',equip:'장비 +15',skills:'스킬',resonance:'공명',journey:'여정',potentials:'잠재력'})[f])}</span>`).join('')}</div>`;const before=miProfile().results[r.key],after=r.team?.t.b.finals[r.key];
+function growthCardMeta(r){if(r.overwrite)return `<div class="mi-chips">${r.changedFields.map(f=>`<span class="tag">${esc(growthShortFields[f])}</span>`).join('')}</div>`;const before=miProfile().results[r.key],after=r.team?.t.b.finals[r.key];
   if(!after)return '';
   return `<div class="mi-chips"><span class="assumed-mark" title="전투력 ${miNum(before?.power)} → ${miNum(after.power)}">전투력 ${before?`${miNum(before.power)} → `:''}${miNum(after.power)}${before?'':' (가정)'}</span></div><details class="growth-stats"><summary>능력치 변화</summary>${['atk','hp','def','spd'].map((k,i)=>`<div>${['공','생','방','속'][i]} ${before?`${miNum(before.stats[k])} → `:''}${miNum(after.stats[k])}</div>`).join('')}</details>`;}
 // Seasonal passes share the lock and each content's existing worker budget.
@@ -139,6 +141,41 @@ function growthConditions(c,trackTeams=true){const rules=simOpt(c.key);
   return {rules,mode:MODE,breaks:[breaks,{}],...(shared?{breakDefault:SHARE.b}:{}),...(teams?.length?{breakTeams:teams}:{})};}
 function growthPriority(history){return GrowthGuide.priority(history,GROW.sig,
   Object.fromEntries(contents.map(c=>[c.key,growthConditions(c,false)])));}
+function growthMembers(r){const keys=r.kind==='cosmo'?r.best?.teams.flatMap(t=>t.keys||t.order):r.kind==='guild'?r.best?.keys||r.best?.order:r.team?.t.keys;
+  return [...new Set(keys||[])].map(key=>r.snapshot.changes[key]).filter(a=>a?.changedFields.length);}
+function growthRecord(c,st,r,show){if(!r?.snapshot||!GROW.sig)return;
+  const field=c.key==='guild'?'score':c.key==='cosmo'?'sum':'clear',scale=field==='clear'?100:1;
+  const members=show?growthMembers(r):[],delta=show?scale*(r.best[field]-(r.baseline?.[field]||0)):0;
+  const entry=GrowthGuide.grownSummary({content:c.key==='cosmo'?'cosmo/'+D.cosmoRaid.season:c.key+'/'+st.tab+'/'+st.name,
+    signature:GROW.sig,account:MI.hash,version:MyInfoReco.OVERWRITE_VERSION,members,delta,
+    metric:c.key==='guild'?'guild-top':c.key==='cosmo'?'cosmo-'+CSR.optMode:'clear',unit:field==='clear'?'%p':'점'});
+  const tag=JSON.stringify({...entry,at:0});if(GROW.recordTag===tag)return;GROW.recordTag=tag;
+  const key=JSON.stringify([entry.historyVersion,entry.content,entry.signature]);GROW.history[key]=entry;
+  GrowthGuide.save(LS,MI.shared,entry);growthRankPaint();
+}
+function growthRankPaint(){const el=$('growth-priority');if(!el)return;
+  el.hidden=true;
+  if(!MI.info||!MI.growth||!QK.d||!growthEnabled())return;
+  const history=MI.shared?GROW.history:{...(LS.get('growth.history')||{}),...GROW.history};
+  if(!Object.values(history).some(h=>h.historyVersion===GrowthGuide.HISTORY_VERSION))return;
+  // Reload must check the current engine, rather than trust the engine saved in a summary.
+  if(!GROW.historyEngine){if(!GROW.historyLoading){GROW.historyLoading=true;
+    fetch('sim/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('engine');return r.json();})
+      .then(m=>{GROW.historyEngine=m.ver;growthRankPaint();}).catch(()=>{}).finally(()=>{GROW.historyLoading=false;});}return;}
+  const c=contents[$('content').value],st=cur[$('stage').value];if(!c||!st)return;
+  const versions={engine:GROW.historyEngine,data:MyInfoReco.hash([GrowthGuide.VERSION,MI.growth,D,QK.d])};
+  const rows=GrowthGuide.grownPriority(history,growthSig(c,st,versions),
+    Object.fromEntries(contents.map(c=>[c.key,growthConditions(c,false)])));
+  if(!rows.length)return;
+  const row=r=>`<div class="growth-rank-row" data-k="growth-rank-row"><b>${esc(BYKEY[r.key]?.name||r.key)}</b> `+
+    `<span class="tag">${r.count}개 콘텐츠</span>${r.source==='assumed'?'<span class="tag assumed-missing">미보유</span>':''}`+
+    `<div class="mi-chips">${r.changedFields.map(f=>`<span class="tag">${esc(growthShortFields[f]||f)}</span>`).join('')}</div></div>`;
+  // Missing saviors have a separate group, while the combined visible list stays at five.
+  const ordered=[...rows.filter(r=>r.source!=='assumed'),...rows.filter(r=>r.source==='assumed')];
+  el.hidden=false;el.innerHTML='<b>키울 만한 구원자</b>'+ordered.slice(0,5).map(row).join('')+
+    `<details><summary>${ordered.length>5?'나머지 '+(ordered.length-5)+'명 · ':''}상세</summary>`+
+    ordered.slice(5).map(row).join('')+'<p class="mut">보조 추천에 나온 콘텐츠 종류 수 · 함께 키운 팀 기준</p></details>';
+}
 function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.context===growthOwnedContext('guild'):
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
 function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks()],simOpt(kind)]);}
@@ -204,7 +241,7 @@ async function growthStart(c,st){
   try{
     const manifest=await fetch('sim/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('엔진 확인 실패');return r.json();});
     if(GROW.id!==id)return;
-    GROW.versions={engine:manifest.ver,data:MyInfoReco.hash([GrowthGuide.VERSION,MI.growth,D,QK.d])};GROW.sig=growthSig(c,st);
+    GROW.versions={engine:manifest.ver,data:MyInfoReco.hash([GrowthGuide.VERSION,MI.growth,D,QK.d])};GROW.historyEngine=manifest.ver;GROW.sig=growthSig(c,st);
     const slots=await fetch('data/myinfo_slots.json').then(r=>{if(!r.ok)throw Error('장비 부위 확인 실패');return r.json();});
     if(GROW.id!==id)return;
     const snapshot=MyInfoReco.overwrite(MI.info,R,MI.growth,c.key==='guild'?'op':c.key,
@@ -239,12 +276,14 @@ function growthBaseline(c,st){
   return current?growthMetric(SIMQ.res[simSig(st,current)]||{clear:0}):null;
 }
 function growthPaint(){
+  growthRankPaint();
   let el=$('growth-result');
   if(!growthEnabled()||!MI.info){el?.remove();return;}
   const c=contents[$('content').value],r=GROW.result;
   if(!['op','clo','guild','cosmo'].includes(c.key))return;
   if(r&&['op','clo'].includes(c.key))r.baseline=growthBaseline(c,cur[$('stage').value]);
   const show=r&&growthBetter(c.key,r.baseline,r.best);
+  if(GROW.phase==='done')growthRecord(c,cur[$('stage').value],r,show);
   if(GROW.phase==='done'&&!show){el?.remove();return;}
   if(GROW.phase==='idle'&&growthSeasonContent()&&growthSeasonReady(c)&&SIMQ.busy==null)
     setTimeout(()=>{if(GROW.phase==='idle')growthStart(c,cur[$('stage').value]);},0);
@@ -266,7 +305,8 @@ function growthPaint(){
   else if(c.key==='guild'){const t=r.best;body=cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0])+`<p class="mut">${t.level}단계 · ${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</p>`;}
   else if(r.team){const ar=arrangeOf(r.team.t.combo);body=cards(ar.order,ar.lead)+`<p class="mut">${esc(r.team.breakName||'브레이크 없음')}</p>`;}
   const metric=c.key==='guild'?`상위 20% ${Math.round(r.best.score).toLocaleString()}점`:c.key==='cosmo'?`3팀 합산 ${Math.round(r.best.sum).toLocaleString()}점`:`클리어 ${(r.best.clear*100).toFixed(1)}%`;
-  el.innerHTML=head+` <span class="tag">${metric}</span><div data-k="growth-${c.key}-card">${body}</div>`+
-    `<details><summary>상세</summary><p class="mut">스타링크 · 장비 +15 · 스킬·공명 최대 · 목표 여정·잠재력 · ${(r.ms/1000).toFixed(1)}초</p>`+
+  const slots=growthSlotMarkup(r,c,cur[$('stage').value]);
+  el.innerHTML=head+` <span class="tag">${metric}</span>${slots.chip}<div data-k="growth-${c.key}-card">${body}</div>`+
+    `<details><summary>상세</summary>${slots.detail}<p class="mut">스타링크 · 장비 +15 · 스킬·공명 최대 · 목표 여정·잠재력 · ${(r.ms/1000).toFixed(1)}초</p>`+
     r.snapshot.errors.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')+'</details>';
 }
