@@ -19,9 +19,10 @@ function growthTargets(c,st){const opts=growthOptions(),restrict=(CFG.restrict[c
         targets.push({...t,id:t.id+'|'+component,parentId:t.id,component,fields});
     }}return targets;}
 function growthSig(c,st){return GrowthGuide.signature({account:MI.hash,options:growthOptions(),targets:growthTargets(c,st),
-  preset:MI.growth?.assumed?.version,content:[c.key,st.tab,st.name],excluded:[...EXCL],breaks:[breakOwned(),MI.info?.break_skills,BRSEL,SESSION_BR],
-  mode:MODE,modifiers:[MM,SCROWN],rules:simOpt(c.key),engine:GROW.versions?.engine,data:GROW.versions?.data,
-  ...growthConditions()});}
+  preset:MI.growth?.assumed?.version,content:[c.key,...(c.key==='cosmo'?[]:[st.tab,st.name]),growthConditions(c)],excluded:[...EXCL],breaks:[breakOwned(),MI.info?.break_skills,BRSEL,SESSION_BR],
+  mode:MODE,modifiers:[MM,SCROWN],rules:SIMOPT,engine:GROW.versions?.engine,data:GROW.versions?.data,
+  equipment:[MI.hash,[...EXCL].sort()],
+  policy:[GrowthGuide.VERSION,GrowthGuide.LIMITS,GrowthGuide.COSMO_LIMITS,17011,900001,27011]});}
 function growthMetric(r,mode=MODE){if(mode!=='manual'||!r.man)return r;
   return {...r,clear:r.man.c,ttk:r.man.t,n:r.man.n??r.n,ci:r.man.ci,prog:r.man.prog,progs:r.man.progs};}
 function growthJob(t,id,c=contents[$('content').value]){const bn=breakChoice(t.combo,c).name||null;
@@ -59,13 +60,14 @@ async function growthCandidates(c,st,alive,deadline,config={}){const original=co
       aq.sort((a,b)=>b.v-a.v);qq.sort(growthQuickCmp);
       const pick=new Map();for(const t of [qq[0],aq[0],qq[1],aq[1]])if(t&&pick.size<2)pick.set(t.keys.slice().sort().join(','),t);
       const makeJob=config.makeJob||((t,id)=>growthJob(t,id,c));
-      const candidates=[...pick].map(([k,t])=>makeJob(t,id+'|'+k)),controls=[];
-      for(const job of candidates){if(Date.now()>=deadline)break;const three=job.t.combo.filter(x=>x.s.key!==target.key);
+      const candidates=[...pick].map(([k,t])=>makeJob(t,id+'|'+k)),controls=[];let controlsComplete=true;
+      for(const job of candidates){if(Date.now()>=deadline){controlsComplete=false;break;}const three=job.t.combo.filter(x=>x.s.key!==target.key);
         const choices=all.filter(x=>!three.some(y=>y.s.key===x.s.key)).map(x=>growthTeam([x,...three],original,qi,defPen,config.scoring));
         choices.sort((a,b)=>b.v-a.v);const quick=choices.slice().sort(growthQuickCmp);
         if(config.exactControls&&original.results[target.key])choices.unshift(growthTeam(job.t.combo,original,qi,defPen,config.scoring));
+        if(!choices.length)controlsComplete=false;
         for(const t of [choices[0],quick[0]])if(t)controls.push(makeJob(t,'owned|'+t.keys.slice().sort().join(',')));}
-      targets.push({...target,...assumed,id,candidates,controls});
+      targets.push({...target,...assumed,id,candidates,controls,controlsComplete});
     }catch(e){targets.push({...target,id,error:String(e.message),errorCode:e.code,candidates:[],controls:[]});}
     if(!config.profile){GROW.msg=`육성 후보 준비 ${targets.length}건`;growthPaint();}await new Promise(ok=>setTimeout(ok,0));
   }return targets;}
@@ -161,13 +163,14 @@ function growthPaint(){if(!growthEnabled())return;let el=$('growth-result');
 
 // Seasonal guides share the global simulator lock and at most three workers.
 function growthSeasonContent(){const c=contents[$('content').value];return c?.key==='cosmo'||(c?.key==='guild'&&parseInt(cur?.[$('stage').value]?.name,10)===D.guild.steps.find(s=>s.ex)?.step)?c:null;}
-function growthConditions(){return {
-  season:[D.guild?.season,D.cosmoRaid?.season],
-  difficulty:[D.guild?GuildView.normSel(D.guild,GS.sel||LS.get('guild.v2')):null,CSR.optLevel],
-  support:[GSR.banCoop,CSR.optFast],ranking:['guild-top-cap-mean',CSR.optMode],
-  teams:[GSR.rows,CSR.rows].map(rows=>rows.map(r=>r.teams?r.teams.map(t=>[t.keys,t.order,t.level,t.brk,t.brkLv]):[r.keys,r.order,r.sup,r.level])),
-  equipment:[MI.hash,[...EXCL].sort()],
-  policy:[GrowthGuide.VERSION,GrowthGuide.LIMITS,GrowthGuide.COSMO_LIMITS,17011,900001,27011]};}
+function growthConditions(c){const rules=simOpt(c.key);
+  if(c.key==='guild')return {rules,season:D.guild?.season,
+    difficulty:GuildView.normSel(D.guild,GS.sel||LS.get('guild.v2')),banCoop:GSR.banCoop,ranking:'guild-top-cap-mean',
+    teams:GSR.rows.map(r=>[r.keys,r.order,r.sup,r.level])};
+  if(c.key==='cosmo')return {rules,season:D.cosmoRaid?.season,
+    difficulty:CSR.optLevel,fast:CSR.optFast,ranking:CSR.optMode,
+    teams:CSR.rows.map(r=>(r.teams||[]).map(t=>[t.boss,t.keys,t.order,t.level,t.brk,t.brkLv]))};
+  return {rules};}
 function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.context===growthOwnedContext('guild'):
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
 function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks()],simOpt(kind)]);}
@@ -207,7 +210,7 @@ async function growthGuild(c,st,id,deadline){
   if(!supportJob)throw Error('현재 조건에서 사용 가능한 보유 기준 지원 없음');
   const support=supportJob.options.guild.support;
   const makeJob=(t,key)=>growthSeasonJob(t,key,options(support)),banned=new Set(S.banCoop===false?[]:S.excluded||[]);
-  const targets=await growthCandidates(c,st,alive,deadline,{original:profile,qi,scoring,banned,makeJob,ruleContent:'op',
+  const targets=await growthCandidates(c,st,alive,deadline,{original:profile,qi,scoring,banned,makeJob,ruleContent:'op',exactControls:true,
     targets:growthTargets(c,st).filter(t=>!banned.has(t.key))});
   const owned=GSR.rows.map(r=>{const j=makeJob(team(r.keys),'owned|'+r.keys.slice().sort().join(','));
     return {...j,result:r===reference?supportRes[supportJob.id]:null};});
@@ -220,7 +223,9 @@ async function growthGuild(c,st,id,deadline){
 }
 async function growthCosmo(c,st,id,deadline){
   const alive=()=>GROW.id===id,C=D.cosmoRaid,S=C.search,bosses=C.bosses.map(b=>b.key),profile=csProfile(),cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),
-    reference=CSR.rows[0];if(!reference)throw Error('보유 3팀 기준 없음');
+    reference=CSR.rows[0];
+  if(!Array.isArray(reference?.teams)||bosses.length!==3||bosses.some(b=>!reference.teams.some(t=>t?.boss===b&&t.keys?.length===4&&Number.isInteger(t.level))))
+    throw Error('보유 탐색 먼저 · 보스 3개 기준 편성 필요');
   const owned=[[],[],[]],established=[],targets=new Map();
   const conditions=reference.teams.map(t=>({boss:t.boss,level:t.level,brk:t.brk?{name:t.brk,level:t.brkLv}:null}));
   for(let i=0;i<3;i++){

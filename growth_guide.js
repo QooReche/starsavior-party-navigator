@@ -8,11 +8,12 @@
   // sim_worker.run_auto + web.run_manual: 4 policy probes, selected policy, replay.
   const finalCost=(n,mode)=>mode==='manual'?2*n+4*Math.max(10,Math.floor(n/3))+1:n;
   const completed=r=>r.completed??Object.keys(r).length;
-  const VERSION='growth-stage23-v4';
+  const VERSION='growth-stage23-v5';
   function signature(s){return JSON.stringify([s.account,s.options,s.targets,s.preset,s.content,
     [...s.excluded].sort(),s.breaks,s.mode,s.rules,s.engine,s.data,s.modifiers,VERSION,
-    s.season,s.difficulty,s.support,s.ranking,s.teams,s.equipment,s.policy]);}
-  // Targets and stage differ across contents; all account/options/rules must agree.
+    s.equipment,s.policy]);}
+  // Only targets/content may differ. Seasonal memory lives inside content;
+  // account, common options/rules, versions, equipment and policy must agree.
   function compatible(a,b){if(!a||!b)return false;try{
     const context=s=>{const a=JSON.parse(s);if(a[12]!==VERSION)throw Error('old history');return a.filter((_,i)=>i!==2&&i!==4);};
     return JSON.stringify(context(a))===JSON.stringify(context(b));
@@ -57,19 +58,28 @@
     const components=first.flatMap(t=>Object.keys(COMPONENTS).map(k=>ranked.find(x=>x.parentId===t.id&&x.component===k)).filter(Boolean));
     const finalists=[...first,...components,...bundles.slice(first.length)].slice(0,Math.min(L.finalists,slots));
     progress('선발 완료 · 같은 판 수로 재평가');
-    const jobs=bestOwned.concat(finalists.map(t=>t.best));
-    // In four runs, top20 is just a maximum. Keep both mean and cap leaders.
-    if(metric)for(const t of finalists){const cap=(t.candidates||[]).filter(j=>sr[j.id]).sort((a,b)=>screenRank(sr[a.id],sr[b.id],1))[0];
-      const mean=(t.candidates||[]).filter(j=>sr[j.id]).sort((a,b)=>screenRank(sr[a.id],sr[b.id],0))[0];
-      for(const j of [mean,cap])if(j&&!jobs.some(x=>x.id===j.id)&&runs+(jobs.length+1)*cost<=L.maxRuns)jobs.push(j);}
+    let jobs=bestOwned.concat(finalists.map(t=>t.best));
+    const selected=new Set();
+    // In four runs, top20 is just a maximum. Keep both mean and cap leaders,
+    // reserving the entire scenario's controls before admitting a guild row.
+    if(metric){const reserved=new Map(bestOwned.map(j=>[j.id,j]));
+      for(const t of finalists){const cap=(t.candidates||[]).filter(j=>sr[j.id]).sort((a,b)=>screenRank(sr[a.id],sr[b.id],1))[0];
+        const mean=(t.candidates||[]).filter(j=>sr[j.id]).sort((a,b)=>screenRank(sr[a.id],sr[b.id],0))[0];
+        const needed=new Map([t.best,mean,cap,...(t.controls||[])].filter(Boolean).map(j=>[j.id,j]));
+        const add=[...needed.values()].filter(j=>!reserved.has(j.id));
+        if(t.controlsComplete===false||runs+(reserved.size+add.length)*cost>L.maxRuns)continue;
+        add.forEach(j=>reserved.set(j.id,j));selected.add(t.id);}
+      jobs=[...reserved.values()];}
     const fr=now()-start<L.maxMs?await evaluate(jobs,L.finalRuns,900001):{};
     runs+=completed(fr)*cost;
     if(!alive())return null;
     if(metric)for(const t of chosen)t.best=(t.candidates||[]).filter(j=>fr[j.id]).sort((a,b)=>rank(fr[a.id],fr[b.id]))[0]||t.best;
     const baselinePending=!!(established&&!fr[established.id]);
-    const baselineJob=baselinePending?null:bestOwned.filter(j=>fr[j.id]).sort((a,b)=>rank(fr[a.id],fr[b.id]))[0];
+    const finalOwned=metric?[...owned,...targets.flatMap(t=>t.controls||[])]:bestOwned;
+    const baselineJob=baselinePending?null:finalOwned.filter(j=>fr[j.id]).sort((a,b)=>rank(fr[a.id],fr[b.id]))[0];
     const baseline=baselineJob?fr[baselineJob.id]:null;
-    const rows=chosen.map(t=>{const result=t.best&&fr[t.best.id];return {id:t.id,key:t.key,kind:t.kind,source:t.source,
+    const rows=chosen.map(t=>{const complete=!metric||(selected.has(t.id)&&(t.controls||[]).every(j=>fr[j.id]));
+      const result=complete&&t.best&&fr[t.best.id];return {id:t.id,key:t.key,kind:t.kind,source:t.source,
       component:t.component,parentId:t.parentId,changes:t.changes,changedFields:t.changedFields,presetId:t.presetId,status:result?'evaluated':t.error?'unsupported':t.best?'screened':'unevaluated',
       error:t.error,errorCode:t.errorCode,result:result||null,team:result?t.best:null,screened:(t.candidates||[]).filter(j=>sr[j.id]).length,
       ...(result?diff(result,baseline):{delta:null,ci:null,confirmed:false})}});

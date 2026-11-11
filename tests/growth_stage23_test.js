@@ -4,10 +4,10 @@ const G=require('../growth_guide'),GS=require('../guild_search'),V=require('../g
 const source=fs.readFileSync(require.resolve('../growth_guide'),'utf8');
 function load(code){const ctx={module:{exports:{}},require:createRequire(require.resolve('../growth_guide'))};vm.runInNewContext(code,ctx);return ctx.module.exports;}
 function signature(g=G){const s={account:'synthetic',options:{growth:true},targets:['x'],content:['guild','EX'],excluded:[],
-  season:'s4',difficulty:8,support:'gust',ranking:'top',teams:[['a','b','c','d']],equipment:['hash',[]],policy:['v',7200,120000,17011,900001]};
+  equipment:['hash',[]],policy:['v',7200,120000,17011,900001]};
   const sig=g.signature(s),history={a:{signature:sig,content:'guild/EX',rows:[{key:'x',kind:'growth',delta:10,confirmed:true}]}};
   assert.equal(g.priority(history,sig).length,1);
-  for(const k of ['season','difficulty','support','ranking','teams','equipment','policy'])assert.equal(g.priority(history,g.signature({...s,[k]:'changed'})).length,0,k);
+  for(const k of ['equipment','policy'])assert.equal(g.priority(history,g.signature({...s,[k]:'changed'})).length,0,k);
   assert(!g.compatible(JSON.stringify(JSON.parse(sig).slice(0,12)),sig));
   const row=(key,delta)=>({key,delta,kind:'growth',confirmed:true});
   const h={a:{signature:sig,content:'op/a',unit:'%p',rows:[row('a',20),row('b',10)]},
@@ -87,11 +87,11 @@ async function workerContract(){const ui=fs.readFileSync(require.resolve('../gro
 }
 (async()=>{signature();guild();triples();await scheduling();await guildSchedule();await workerContract();
   for(const [name,from,to,test] of [
-    ['history conditions','s.season,s.difficulty,s.support,s.ranking,s.teams,s.equipment,s.policy','null,null,null,null,null,null,null',signature],
+    ['history conditions','s.equipment,s.policy','null,null',signature],
     ['content units','.find(c=>c.content===id&&c.metric===x.metric&&c.unit===x.unit)','[0]',signature],
     ['per-run score','V.scoreFromProg(G,V.extraPct(G,level,tiers),p)','V.scoreFromProg(G,V.extraPct(G,level,tiers),r.prog)',guild],
     ['guild rank','b.top-a.top||b.cap-a.cap||b.mean-a.mean','b.mean-a.mean||b.cap-a.cap||b.top-a.top',guild],
-    ['guild screening diversity','if(metric)for(const t of finalists)','if(false)for(const t of finalists)',guildSchedule],
+    ['guild screening diversity','[t.best,mean,cap,...(t.controls||[])]','[t.best,...(t.controls||[])]',guildSchedule],
     ['filtered run budget','r.completed??Object.keys(r).length','Object.keys(r).length',guildSchedule],
     ['bootstrap seed','let state=seed>>>0','let state=1',guild],
     ['one boss','i===k?assumed[k]:list','assumed[k]',triples],

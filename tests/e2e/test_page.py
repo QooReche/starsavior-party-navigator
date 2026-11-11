@@ -1946,6 +1946,13 @@ def test_growth_stage23(browser, ctx):
     history = page.evaluate("localStorage.getItem('pn.growth.history')")
     assert 'progs' not in history and 'stats_override' not in history
     assert page.evaluate("!!LS.get('growth.history')['cosmo/'+D.cosmoRaid.season]")
+    assert page.evaluate("Object.keys(LS.get('growth.history')).some(k=>k.startsWith('guild/'))"), '길방 기록 보존'
+    before_tab = page.evaluate('JSON.stringify(GROW.result)')
+    # Seasonal view hides the legacy boss selector; dispatch its real handler.
+    page.evaluate("$('tab').value=contents[$('content').value].stages.find(s=>s.tab!==cur[$('stage').value].tab).tab;refreshStages()")
+    settle(page)
+    assert page.evaluate('JSON.stringify(GROW.result)') == before_tab, '보기 전용 보스 탭 변경'
+    assert page.evaluate('GROW.phase') == 'done'
     page.set_viewport_size({'width': 390, 'height': 844})
     settle(page)
     page.wait_for_selector('[data-k="growth-cosmo-card"]')
@@ -1956,6 +1963,11 @@ def test_growth_stage23(browser, ctx):
     page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
     assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
     assert page.evaluate("localStorage.getItem('pn.growth.history')") == history
+    page.evaluate('MI.shared=false;CSR.rows[0].teams.pop()')
+    page.locator('[data-growth-start]').click()
+    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
+    assert page.evaluate('GROW.phase') == 'error'
+    assert '보유 탐색 먼저' in page.inner_text('#growth-result')
     page.evaluate('MI.shared=false;miClear()')
     assert page.evaluate("localStorage.getItem('pn.growth.history')===null")
     page.close()

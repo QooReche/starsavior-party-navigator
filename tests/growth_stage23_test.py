@@ -9,7 +9,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import guild_defense as gd
-from battlesim import simulate
+from battlesim.web import run_auto
 
 
 class GrowthStage23Test(unittest.TestCase):
@@ -42,13 +42,19 @@ console.log(JSON.stringify(m.prepare({n:x.ps.length,progs:x.ps,prog:x.ps.reduce(
         self.assertEqual(self.check_metric([0, 1, 0, 1], tiny=True)['mean'], 1)
 
     def test_real_guild_runs(self):
-        r = simulate({'units': ['gwen', 'fei', 'professor-m', 'amora'], 'leader': 0},
-                     {'guild': {'level': 0, 'support': 'gust', 'sets': [0, 0, 0, 0]}},
-                     {'build': 'standard', 'n_runs': 4, 'seed': 17011})
-        self.assertGreater(r['outcome']['progress'], 0)
-        self.assertEqual(len(r['prog_runs']), 4)
-        metric = self.check_metric(r['prog_runs'])
-        self.assertGreater(metric['top'], 0)
+        for n, seed in [(4, 17011), (100, 900001)]:
+            with self.subTest(n=n):
+                # Exact Python entry point called by sim_worker.js, including JSON transport.
+                r = json.loads(run_auto('guild/test/EX',
+                    {'units': ['gwen', 'fei', 'professor-m', 'amora'], 'leader': 0}, n, seed,
+                    {'build': 'standard', 'rng_streams': True,
+                     'guild': {'level': 0, 'support': 'gust', 'sets': [0, 0, 0, 0]}}))
+                self.assertGreater(r['prog'], 0)
+                self.assertEqual(r['n'], n)
+                self.assertEqual(len(r['progs']), n)
+                self.assertIn('via', r)
+                metric = self.check_metric(r['progs'])
+                self.assertGreater(metric['top'], 0)
 
 
 if __name__ == '__main__':
