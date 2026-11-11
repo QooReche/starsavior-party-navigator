@@ -381,28 +381,41 @@ class _Ctx:
 
 
 def test_boss_nv_sum():
-    """11/05: 보스 AddStat 속도(-25%)를 별의 도전 속도 버프와 한 합에 더해 floor(기본×(1+합)) (NKM:18200-18280).
-    기본 230: 7단계 +10% -> 195, 9단계 이상 +30% -> 241. 옛 방식(bake)은 172 에 (1+버프)를 또 곱해 7단계 189.2·9단계 223.6."""
+    """11/11 stage(선택지, 기본은 client 유지 — ScaleFactor 단 미확인): 클라는 AddStat 1단·패시브 2단·버프 3단을 곱하고 마지막에 내림(NKM:18187-18216, 18266-18293).
+    기본 230, AddStat 속도 -25%: 7단계 +10% -> floor(189.75)=189, 8단계 +20% -> 207, 9단계 이상 +30% -> 224.
+    legacy client(11/05~11/11)는 한 합 floor(230×(1-0.25+버프)): 195·218·241. bake 는 172×(1+버프): 189.2·206.4·223.6."""
+    assert MC_OPTS['guild_boss_nv_sum'] == 'client', MC_OPTS['guild_boss_nv_sum']
     got, good = {}, {}
-    for mode in ('client', 'bake'):
-        for level in (0, 7, 9):
+    for mode in ('stage', 'client', 'bake'):
+        for level in (0, 7, 8, 9):
             b, _ = battle(level=level, mc={'guild_boss_nv_sum': mode})
             boss = to_boss(b)
-            got[(mode, level)] = (boss.spd(), b.atk_stat(boss) if hasattr(b, 'atk_stat') else None)
+            got[(mode, level)] = (boss.spd(), b.atk_stat(boss))
             good[(mode, level)] = boss.n_good()
-    flat = got[('client', 0)][0] - 172            # 보스에 붙는 평탄 속도 가산(클라 식은 평탄합을 같은 floor 안에 넣음)
-    assert flat >= 0 and got[('bake', 0)][0] == 172 + flat, got            # 버프 없는 0단계는 같음
-    assert got[('client', 7)][0] == 195 + flat, got
-    assert got[('client', 9)][0] == 241 + flat, got
-    assert abs(got[('bake', 7)][0] - (189.2 + flat)) < 1e-6 and abs(got[('bake', 9)][0] - (223.6 + flat)) < 1e-6, got
+    flat = got[('client', 0)][0] - 172            # 보스에 붙는 평탄 속도 가산
+    assert flat == 0, got                          # 현재 표에는 없음 — 생기면 아래 기대값의 단을 다시 확인
+    assert got[('bake', 0)][0] == 172 and got[('stage', 0)][0] == 172, got   # 버프 없는 0단계는 같음
+    assert [got[('stage', lv)][0] for lv in (7, 8, 9)] == [189, 207, 224], got
+    assert [got[('client', lv)][0] for lv in (7, 8, 9)] == [195, 218, 241], got
+    for lv, v in ((7, 189.2), (8, 206.4), (9, 223.6)):
+        assert abs(got[('bake', lv)][0] - v) < 1e-6, got
     # 합산용 고정 효과가 보스의 강화 효과 개수(질투의 시선 등이 세는 n_good)를 바꾸지 않는다(리뷰 지적: marker)
-    for level in (0, 7, 9):
-        assert good[('client', level)] == good[('bake', level)], (level, good)
-    # 공격력은 어필 밖에서 두 방식이 같다(-17.5% 한 번)
-    for level in (0, 7, 9):
-        a, c = got[('bake', level)][1], got[('client', level)][1]
-        if a is not None:
-            assert abs(a - c) <= 1.0, (level, a, c)
+    for level in (0, 7, 8, 9):
+        assert good[('client', level)] == good[('bake', level)] == good[('stage', level)], (level, good)
+    # 공격력은 어필 밖에서 세 방식이 같다(-17.5% 한 번)
+    for level in (0, 7, 8, 9):
+        a, c, st = got[('bake', level)][1], got[('client', level)][1], got[('stage', level)][1]
+        assert abs(a - c) <= 1.0 and abs(st - c) <= 1.0, (level, a, c, st)
+    # 3단 버프가 있으면 stage 는 곱, client 는 합: 공격력 +30%(독점 선언 크기)를 직접 걸어 비교
+    vals = {}
+    for mode in ('stage', 'client'):
+        b, _ = battle(level=9, mc={'guild_boss_nv_sum': mode})
+        boss = to_boss(b)
+        b.put_eff(boss, '시험 공격 강화', {'공격력%': 30}, dur=math.inf, src=boss, cat='buff', fixed=True)
+        vals[mode] = b.atk_stat(boss)
+    base = got[('client', 9)][1] / (1 - 0.175)
+    assert abs(vals['stage'] - base * (1 - 0.175) * 1.3) <= 1.0, vals
+    assert abs(vals['client'] - base * (1 - 0.175 + 0.3)) <= 1.0, vals
     try:
         b, _ = battle(mc={'guild_boss_nv_sum': 'wrong'})
         to_boss(b)

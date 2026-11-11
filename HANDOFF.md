@@ -1,9 +1,10 @@
 # 인수인계
 
-갱신 2026-11-10. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md).
+갱신 2026-11-11. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md).
 
 ## 현재 상태
 
+- 11/11 작업 PC: 길방 보스 능력치 합산에 클라 최종 스탯 식(단별 곱) `guild_boss_nv_sum=stage` 선택지를 추가했음. **기본은 `client` 유지**(단계 배율 ScaleFactor 의 단 미확인·11/05 영상 대조가 client 방향). 기본값 결과 불변이라 생성물은 다시 만들지 않았음. 상세 아래 «11/11 작업 PC» 절.
 - 11/10 밤 늦게: 육성 가이드 리뷰 반영 `cf7d316`과 코스모 탐색 R&D `412da89`를 `0c70ab4`에서 병합했음. Astra 2건·Opus 1~5 권고를 반영해 누락 팀 재평가·벤치 시간 보존·ETA 저장값 갱신·작은 풀 전수 경로를 보완했음. 기본 옵션 결과는 유지했음. 코스모 «빠른 탐색(실험)»은 기본 꺼짐, 단계 사이 워커 재사용은 기본 켜짐(`workerReuse.value=true`, legacy=false)임. 네이티브 전체 탐색은 작은 풀 1.24배·큰 풀 1.11배로 **2배 목표 미달**이며, 기본 변경만의 브라우저 전체 탐색 가속률은 미확인임. 상세 `docs/cosmo_speed_rd_1110.md`와 아래 밤 늦게 절.
 - 11/10 심야 리뷰 3종 후속: 소스/고레벨 가상 슬롯 차단, 미지원 구원자 개별 제외, 옛 형식 항목별 육성 비교를 고쳤음. 현재 조건과 호환되는 기록만 우선순위에 쓰고 모바일은 결론·넣기/빼기·상위 5명 중심으로 바꿨음. 추출 도구 두 저장소의 null 슬롯도 처리했음. 다크 전용 유지, light 신설 지적은 기각했음. 아래 심야 절에 판정·검증 기록을 남김. `cf7d316`까지 푸시 완료했음.
 - 11/10 심야: `9f33827`의 구원자별 실효 레벨과 육성 가이드 1단계를 `ca1e271`에서 병합했음. manifest 충돌은 빌더로 재생성했음. 목표 육성을 레벨·장비·스킬·공명·잠재력 묶음으로 통합하고 단일 항목 비교·임시 보정 표시·현재 슬롯 수 내 교환 추천을 추가했음. 비공개 자료는 읽기만 했으며 이후 `cf7d316`까지 푸시 완료했음. 상세는 아래 심야 절과 `docs/assumed_build_design.md`.
@@ -13,7 +14,7 @@
 - 근거 코드는 비공개 static-data `decompiled/`(디컴파일 빌드 26314877)임. 11/10 설치본이 **26429597**(11/05 갱신)인 것을 확인했고 DLL 5개 해시가 바뀌었으나 내용 비교 결과 **전투 로직 변화 없음**(식별자 재난독화만, 근거 줄 163건 이동 0, `decompiled/BUILD.md` 11/10 절). 표(`tables/`)는 11/10 에 26429597 로 다시 뽑아 덮어썼음(절 «2026-11-10»).
 - 협공 기본값: `formula.COOP_CAP=1.0`, `opts.coop_trigger=basic_only`, `coop_single=true`, `coop_order=random_success`, `forced_coop_target=random`, `forced_coop_slot=shared`, `coop_dead_target=cancel`. 강제 효과 대상을 먼저 정하고 유효 강제 후보 중 균등 1명을 고름. 강제 후보가 없으면 일반 후보 전원 판정 후 성공자 중 균등 1명임. 단일 본대상 사망 시 협공을 취소함.
 - 11/08 기본 전환: `enemy_leader=none`(적 리더 속도 +10 제거, legacy=boss, 절 «11/08 밤 틱 제외 조건» 안 «적 리더» 항목), `any_turn_source=table`(전체 턴 시계 버프를 표 `GlobalTurnCounting` 으로 판정, legacy=text, 절 «전체 턴 시계를 표 기준으로»).
-- 11/05 기본 전환: `dot_formula=client`, `react_hist_unit=unit`, `immune_force_apply=client`(절 «2026-11-05»). 11/04 전환 4개는 `preemptive_defense=client_main`, `toughness_elem=client`, `break_point_hits=window`, `break_auto_blocked_cc=on`. 11/05 오전에 `guild_boss_nv_sum=client`(길방 보스 속도·공격력 합산)도 기본으로 넣었고 9·10단계 낙관의 주원인이었음(절 «11/05 오전»). 길방 표는 이 기본으로 재생성함. 11/10 AddStatData 전달 경로 확인으로 같은 합 가정의 근거를 재검토하기로 했으며 이번에는 기본값을 유지했음(남은 일 4).
+- 11/05 기본 전환: `dot_formula=client`, `react_hist_unit=unit`, `immune_force_apply=client`(절 «2026-11-05»). 11/04 전환 4개는 `preemptive_defense=client_main`, `toughness_elem=client`, `break_point_hits=window`, `break_auto_blocked_cc=on`. 11/05 오전에 `guild_boss_nv_sum=client`(길방 보스 속도·공격력 합산)도 기본으로 넣었고 9·10단계 낙관의 주원인이었음(절 «11/05 오전»). 길방 표는 이 기본으로 재생성함. 11/10 AddStatData 전달 경로 확인으로 같은 합 가정의 근거를 재검토하기로 했으며 이번에는 기본값을 유지했음(남은 일 4). (→ 이후 11/11 `stage` 선택지 추가, 기본 client 유지)
 - 그 밖의 새 기본값: `mc.enemy_cd_end_order=after_effects`, `revenge_rate=hit`, `nova_force_cap=12`, `ally_auto_lines=client`. 기존 병합분 `foe_skill_order=data`, `empty_attack=process`, `ally_variant_mapping=data`도 반영했음. 선제 방어 실험용 `client`는 차단 조건을 보강했음. 선제 방어 기본값은 11/04 전환한 `preemptive_defense=client_main`임(legacy=recognize).
 - 기존 기본값은 `enforce_timing=queue`, `enforce_target=exec`, `wave_ally_gauge=reset`, `buff_ban=refuse`, `buff_ban_force=client`, `guild_count=all`, `instant_damage=damage`, `reaction_timing=queue`, `skill_order=data`, `dispel_on_attack=on`, `turn_limit_unit=actions`, `break_skill_domain_clock=global`, `break_skill_domain_turns=5`, `enemy_hit_buff_cmp=le`임(`toughness_elem`은 11/04부터 `client`, legacy=db). 정본은 `battlesim/rules/default.json`임.
 - 길드방어전 시즌4(BFB·별 속성)는 11/05 04:00 KST 종료, 결산은 11/12 04:00까지임(`data/guild_defense.json`). BFB 상태 기계·지원 5종·선택 효과 4종·부분 점수식·내 정보 편성 탐색을 구현했음. `guild_boss=off`가 기본이고 길방 진입에서만 켬.
@@ -22,14 +23,14 @@
 - 11/09 새 기본값: `foe_react_buff_count=client`, `buff_step_group=client`(단계 그룹 버프), `break_skill_reduce=client`(오비탈은 피해 감소 항 0), `chain_pen=client`(연쇄 피해는 공격자 관통 미적용). 모두 legacy 로 되돌릴 수 있음(절 «2026-11-09»). `guild_sim.json` 은 60칸 비교로 불변 확인해 도장만 인정, `quick.json` 은 재생성·재보정(전체 일치 **0.919**). (→ 이후 11/10 병합 규칙으로 두 생성물 재계산)
 - 생성물 규칙 도장: `tools/rules_stamp.py`·`tools/gen_rules_stamp.json`. 규칙 기본값을 바꾸면 `tests/gen_rules_stamp_test.py` 가 `guild_sim`·`quick` 이 낡았다고 실패하므로 다시 만들거나 `--ack 이름 --reason "…"` 로 이유를 적어 인정함. 건너뜀 표시는 `run_tests.py --strict`.
 - 11/09 코스모 실제 플레이에서는 벨그라스가 특히 비관적이었음. 11/10 보호막·자기 피해·흡혈을 수정했으며 같은 시점 자료로 재대조하기로 함(남은 일 16, 계정 수치는 비공개 보고서).
-- 저장소: `origin/main=8abd645`(11/10 밤 늦게 작업까지 푸시 완료, 11/11 확인). 주소: https://QooReche.github.io/starsavior-party-navigator/
+- 저장소: 11/11 작업 PC 절까지 푸시 완료. 주소: https://QooReche.github.io/starsavior-party-navigator/
 - 최근 검증: 11/10 밤 늦게 리뷰 반영 전 기준선은 **112 통과/0 실패**였음. 반영 후 static-data와 Playwright 가상환경을 지정한 `tools/run_tests.py --rebuild --e2e <Playwright Python> --timeout 1800`은 **일반 113개·브라우저 44개 통과/0 실패**였음(실행기 집계 114 통과). 기존 환경 건너뜀 2건(COSMO_TABLES·옆 journeyhelper 없음)은 같음. 탐색 결함 10종·벤치 시간 덮어쓰기 결함을 모두 검출했음. 로그는 `local/cosmo-review-final.log`, 골든/결과 해시 `--write`는 쓰지 않았음.
 
 ## 남은 일
 
 2. 최신 내 정보와 영상으로 실제 플레이를 대조하기로 함: 선택 효과·질투의 시선·정실 어필·보호막·웨이브 게이지·스칼렛 행동 수·하이 스코어 버프 해제·부케 딜 분배. 이번 작업은 계정 자료를 쓰지 않았음.
 3. 추가 규칙 후보 중 미확인: heal_target 동률·부활 대상, AOE_DIV 레벨 가산 위치, 피해 감소의 클라 전용 항(11/11 조사: 현재 데이터 영향 없음, 절 «2026-11-11»), 절대 적중/저항 항(현 데이터 0), ForceNonCritical SE 1건, 구원자 격파 게이지·AdjustSuperArmorBreakScale 사용처. 11/10 구현·직접 확인분은 `docs/followup_d_1110.md`·`docs/rules_e_1110.md`에 정리했음.
-4. 서든데스 컨트롤러가 단계 선택식에 이전/새 턴 중 무엇을 넘기는지, ADT_FIXED_TRUE 전체 식, 엔진 trigger_skills와 표 NST_REACT 28건의 전수 대응, counter_inc의 시전 시작/끝 마지막 칸 기록 시점이 미확인임. BFB 배치 AddStatData는 1단 NV, 버프는 3단으로 들어가는 경로를 확인했으므로 현 `guild_boss_nv_sum=client`의 같은 합 가정을 재검토해야 함. 별의 도전 단계 배율 주입·지원/선택 효과 전체 피해식은 미확인임. 기대값 엔진의 확률 상태 상관·동률 대상·아군 HP/브레이크 근사도 남았음.
+4. 서든데스 컨트롤러가 단계 선택식에 이전/새 턴 중 무엇을 넘기는지, ADT_FIXED_TRUE 전체 식, 엔진 trigger_skills와 표 NST_REACT 28건의 전수 대응, counter_inc의 시전 시작/끝 마지막 칸 기록 시점이 미확인임. BFB 길방 보스 합산은 11/11 `stage` 선택지로 넣었고 기본 전환은 ① 단계 배율 ScaleFactor 가 들어가는 단(클라 코드에 소비처 없음 — 서버 쪽으로 보임) 또는 ② 게임 PC 에서 내 정보·영상(11/05 의 8단계 승·9·10단계 패)을 `stage` 로 재대조한 결과로 정하기로 함. 일반 유닛도 클라는 패시브(2단)×버프(3단) 곱인데 엔진은 한 합임: 아군 `d.stats` 에 장비(클라 2단)가 이미 섞여 있어 입력 합성부터 손봐야 하므로 보류함(11/11 codex 상담, 표준 육성 65명 중 57명이 해당 패시브 보유, 차이는 대략 p×m/(1+p+m) — p=.15·m=.30 이면 +3%). 별의 도전 단계 배율 주입·지원/선택 효과 전체 피해식은 미확인임. 기대값 엔진의 확률 상태 상관·동률 대상·아군 HP/브레이크 근사도 남았음.
 5. 길방 추천에 보유 브레이크 스킬 입력을 연결하고, 편성·지원·단계를 직접 고르는 시뮬 UI와 수동 비교 범위를 정하기로 함.
 6. 길방 미확정 규칙을 확인하기로 함: 허무와 10단계 면역 동시 선택, 하루 도전·점수 합산·1~6단계 요일, 보스 속도/공격 AddStat·지원 배치 순서·시즌 길드 버프, 졸개전 패배 부분 점수 근사. BFB 52204 처치 초기화는 구현 완료했고, 중간 신부 경쟁 해제·부활·다단 타격 사건 순서는 미검증임.
 7. 11/05 종료 뒤 다음 시즌 자료·보스 명세·search 설정을 갱신하고 빌더 검증을 확인하기로 함(`docs/PORTING.md`, `tools/build_guild_bfb.py`).
@@ -52,7 +53,16 @@
 24. **가진 +15 장비를 구원자끼리 재분배하는 최적화 — 차후 구현(사용자 11/10 결정)**.
 25. **내 정보 레벨 경계**: 코스모/플래시 포인트 레벨 200 고정의 서버 동작 미확인, 소스 구원자 정확히 200일 때 미확인. 새 형식 내 정보 재추출은 게임 PC에서 하기로 함. 이번 검증은 합성 계정만 사용했음. 서버의 null 슬롯·레벨 0 전송 여부와 잠긴 슬롯 포함 여부는 미확인임. 방어 처리는 추가했으며 실제 사용 가능한 슬롯 수는 재추출 뒤 대조하기로 함.
 
-## ▶ 2026-11-11 (Claude) — 최신 코드 기준 실제 플레이 재대조 (푸시 전, 코드 변경 없음)
+## ▶ 2026-11-11 작업 PC (Claude+codex) — 길방 보스 단별 곱 `guild_boss_nv_sum=stage` 선택지 (푸시 완료)
+
+- 클라 최종 스탯(NKM:18187-18216, 18266-18293)은 1단(기본·AddStat 등)·2단(패시브·장비)·3단(버프 등) 비율을 차례로 곱하고 마지막에 한 번 내림함. 2단 고정값은 2단 곱 뒤·3단 곱 전에 더하고, 3단 고정값은 맨 끝에 더함. 입력 경로: AddStat→1단(NKM:2361), 패시브→2단(2544-2556), 버프→3단(3855-3866·2371, 2862-2906).
+- `stage` = AddStat 을 효과(mods 합)가 아니라 보스 정의 `nv_stage1` 에 두고 `Unit.spd`·`Battle.atk_stat`·`live_atk` 가 단별로 곱함. 9~12단계 보스 속도 224(client 241, bake 223.6), 7단계 189, 8단계 207. 어필 밖 공격력은 세 값 같음. 시전 한정 공격력 증가(ctx)의 단은 미확인이라 3단에 둠.
+- **기본 client 유지 이유**: ① 길방 단계 배율(DIFFICULTY_LEVEL_GROUP ScaleFactor, 9단계 공격 +120%)이 들어가는 단을 클라에서 못 찾았음(Star.Templets:13228-13230 은 UI 표시에만 쓰임, codex 조사). AddStat 과 같은 1단 합이면 9단계 보스 공격력 34,425, 지금처럼 미리 곱이면 30,855(약 10% 차이). ② 11/05 영상 대조는 client 방향과 맞았고 bake(≈stage)는 9·10단계를 낙관했음. stage(느린 보스)와 ScaleFactor 1단 합(센 보스)이 같이 맞을 수 있어 한쪽만 바꾸지 않음. → 남은 일 4.
+- 일반 유닛 전역 곱 전환은 보류(남은 일 4). codex 설계 상담: 아군 `d.stats` 는 장비 포함(parser.py:320, stats.py:64), 내 정보는 패시브까지 포함 후 `stats_final` 이 제거(myinfo_stats.py:284), `d.passive` 에 등장 시 local 효과도 들어감(mc.py:3631), HP 는 이미 일부 곱 구조(mc.py:538·860) — 매핑 확정 전에 기본 전환하면 미확인을 확정하게 됨.
+- 시험: `guild_bfb_test.test_boss_nv_sum` 을 세 모드·0/7/8/9단계·3단 버프 곱/합 비교로 바꿈. stage 분기를 끄면 실패함을 확인. 기본값 결과 불변이라 `guild_sim`·`quick` 재생성 없음(codex 리뷰가 client/bake 2모드×5단계×3판 API 결과·타임라인 일치 확인). 리뷰 blocking 0, 비차단 1건(대상 선정 `live_atk` 가 stage 미반영) 반영.
+- 환경: 작업 PC 에 사용자 환경변수 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 를 지정했음 — 비공개 표 대조 시험 9건이 건너뛰지 않고 돎. `COSMO_TABLES` 는 원본 추출 폴더(`hard/` 하위 구조) 기준이라 static-data `tables/` 로는 안 됨(건너뜀 유지). `STARSAVIOR_STATIC` 지정 상태로 `run_tests.py --rebuild --e2e E:\AI_mk2env-pw\Scripts\python.exe` **114 통과/0 실패**(브라우저 시험 포함), 건너뜀 2건(COSMO_TABLES·옆 journeyhelper)은 종전과 같음.
+
+## ▶ 2026-11-11 (Claude) — 최신 코드 기준 실제 플레이 재대조 (푸시 완료, 코드 변경 없음)
 
 - 게임 PC `내정보.json` 11/11 갱신본으로 재대조했음(수치는 계정 자료라 비공개 `AI\temp\partynavigator\work\belgras_1111\`·`henan19_1111\`). 시험은 최신 main 에서 113 통과/0 실패.
 - **벨그라스 난이도 8**: 11/10 오후 병합 규칙(`cosmo_hyper_true_target=self` 등) 기준 점수는 실제의 약 86%, 깎음은 실제보다 낮음. 전투력은 실제와 일치. 남은 격차는 **아군 생존**(엔진은 41~49턴 전멸, 실제는 50턴 2명 생존). 이 PC 가 원격보다 뒤처진 상태에서 같은 자기 피해 수정을 중복 구현했다가 폐기했음(교훈: 시작 때 fetch). 남은 일 16 의 침식 수명·ROOT/BOSS_5 는 클라 코드 조사 중.

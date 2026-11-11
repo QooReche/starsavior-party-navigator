@@ -596,8 +596,13 @@ class Unit:
             return 0.0      # 〈들러리〉 300872 FixStats NST_TURN_SPEED 0 — pick_next 는 속도 0 이면 게이지가 차지 않는 것으로 처리
         m = self.mods()
         p = self.d.passive
-        s = self.d.spd_base * (1 + m['spdp'] + p['spdp']) + m['spdf'] + p['spdf']
-        if getattr(self.d, 'bfb', None) and self.b.mc['guild_boss_nv_sum'] == 'client':
+        st1 = getattr(self.d, 'nv_stage1', None)
+        if st1 is not None:
+            # 길방 보스 stage: floor(((기본×(1+1단))×(1+2단) + 2단 고정)×(1+3단) + 3단 고정) (NKM:18266-18293)
+            s = math.floor((self.d.spd_base * (1 + st1['spdp']) * (1 + p['spdp']) + p['spdf']) * (1 + m['spdp']) + m['spdf'] + 1e-9)
+        else:
+            s = self.d.spd_base * (1 + m['spdp'] + p['spdp']) + m['spdf'] + p['spdf']
+        if st1 is None and getattr(self.d, 'bfb', None) and self.b.mc['guild_boss_nv_sum'] == 'client':
             s = math.floor(s + 1e-9)       # 클라 최종 스탯 (int)Math.Floor (NKM:18268-18280)
         if self.leader:
             s += self.b.mc['leader_speed']
@@ -1838,6 +1843,8 @@ class Battle:
         return max(pool, key=lambda v: (self.live_atk(v), -v.pos))
 
     def live_atk(self, v):
+        if getattr(v.d, 'nv_stage1', None) is not None:
+            return self.atk_stat(v)      # 길방 보스 stage: 단별 곱(atk_stat 과 같은 식)
         return v.d.stats['atk'] * (1 + v.d.passive['atkp'] + v.mods()['atkp'] + v.d.gear_atkp)
 
     def resolve(self, owner, text, ctx, kind='buff'):
@@ -2370,6 +2377,11 @@ class Battle:
         if u.zero_stats:
             return 0.0
         m = u.mods()
+        st1 = getattr(u.d, 'nv_stage1', None)
+        if st1 is not None:
+            # 길방 보스 stage: 1단(AddStat)·2단(패시브)·3단(버프) 곱. 시전 한정 ctx.atkp 의 단은 미확인이라 버프와 같은 3단에 둠
+            return (u.d.stats['atk'] * (1 + st1['atkp']) * (1 + u.d.passive['atkp'] + u.d.gear_atkp)
+                    * (1 + m['atkp'] + (ctx.atkp if ctx else 0.0)))
         return u.d.stats['atk'] * (1 + u.d.passive['atkp'] + m['atkp'] + (ctx.atkp if ctx else 0.0) + u.d.gear_atkp)
 
     def def_stat(self, u, local=0.0):

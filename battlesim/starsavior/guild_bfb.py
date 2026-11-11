@@ -199,7 +199,7 @@ class Controller:
         self.strike_roll = {}   # 강인한 타격: 유닛별 이번 시전 발동 여부(50%)
 
     # ---------- 효과 도우미
-    def _nv_sum_client(self, boss, d):
+    def _nv_sum_client(self, boss, d, stage=False):
         """클라(NKM:18200-18280): 보스 AddStat 의 속도·공격력 비율은 버프의 NV 비율(별의 도전 속도, 정실 어필 감소, 독점 선언 등)과
         한 합에 더해 최종값 = floor(기본 × (1 + 합)). 굳혀서 곱하던 옛 방식(bake)은 보스 속도를 약 7.7%(9~12단계) 느리게 봄.
         생명력은 NV 버프가 없고 단계 배율이 곱이라 그대로(_stats)."""
@@ -207,6 +207,11 @@ class Controller:
         boss.d.stats = dict(boss.d.stats)
         boss.d.stats['atk'] = math.floor(s['atk'] * (1 + (lv['atk'] * 100 if lv else 0) / 10000))
         boss.d.spd_base = s['spd']
+        if stage:
+            # stage(NKM:18187-18216, 18266-18293): AddStat 은 1단, 패시브 2단, 버프 3단 비율이고 단끼리 곱함.
+            # 1단 비율은 효과(mods 합)가 아니라 정의에 따로 둔다 — Unit.spd / Battle.atk_stat 이 단별로 곱함.
+            boss.d.nv_stage1 = {'spdp': a['spdp'] / 10000, 'atkp': a['atkp'] / 10000}
+            return
         # marker: 강화 효과 개수(n_good)에 세지 않음(합산은 mods() 가 category 와 무관하게 더함)
         self._put(boss, NV_ADD, {'속도%': a['spdp'] / 100, '공격력%': a['atkp'] / 100}, cat='marker')
 
@@ -303,10 +308,11 @@ class Controller:
         self.boss, self.cfg = boss, boss.d.bfb
         self.base = dict(boss.d.skills)
         d = self.cfg['data']
-        if self.b.mc['guild_boss_nv_sum'] == 'client':
-            self._nv_sum_client(boss, d)
-        elif self.b.mc['guild_boss_nv_sum'] != 'bake':
-            raise ValueError('guild_boss_nv_sum 은 client|bake')
+        mode = self.b.mc['guild_boss_nv_sum']
+        if mode in ('client', 'stage'):
+            self._nv_sum_client(boss, d, stage=mode == 'stage')
+        elif mode != 'bake':
+            raise ValueError('guild_boss_nv_sum 은 stage|client|bake')
         self._put(boss, PEN, {'방어 관통': d['pen'] / 100}, cat='marker')
         row = self.cfg['row']
         if row and row['speed']:
