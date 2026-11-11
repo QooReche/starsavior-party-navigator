@@ -60,7 +60,7 @@
 - **기본 client 유지 이유**: ① 길방 단계 배율(DIFFICULTY_LEVEL_GROUP ScaleFactor, 9단계 공격 +120%)이 들어가는 단을 클라에서 못 찾았음(Star.Templets:13228-13230 은 UI 표시에만 쓰임, codex 조사). AddStat 과 같은 1단 합이면 9단계 보스 공격력 34,425, 지금처럼 미리 곱이면 30,855(약 10% 차이). ② 11/05 영상 대조는 client 방향과 맞았고 bake(≈stage)는 9·10단계를 낙관했음. stage(느린 보스)와 ScaleFactor 1단 합(센 보스)이 같이 맞을 수 있어 한쪽만 바꾸지 않음. → 남은 일 4.
 - 일반 유닛 전역 곱 전환은 보류(남은 일 4). codex 설계 상담: 아군 `d.stats` 는 장비 포함(parser.py:320, stats.py:64), 내 정보는 패시브까지 포함 후 `stats_final` 이 제거(myinfo_stats.py:284), `d.passive` 에 등장 시 local 효과도 들어감(mc.py:3631), HP 는 이미 일부 곱 구조(mc.py:538·860) — 매핑 확정 전에 기본 전환하면 미확인을 확정하게 됨.
 - 시험: `guild_bfb_test.test_boss_nv_sum` 을 세 모드·0/7/8/9단계·3단 버프 곱/합 비교로 바꿈. stage 분기를 끄면 실패함을 확인. 기본값 결과 불변이라 `guild_sim`·`quick` 재생성 없음(codex 리뷰가 client/bake 2모드×5단계×3판 API 결과·타임라인 일치 확인). 리뷰 blocking 0, 비차단 1건(대상 선정 `live_atk` 가 stage 미반영) 반영.
-- 환경: 작업 PC 에 사용자 환경변수 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 를 지정했음 — 비공개 표 대조 시험 9건이 건너뛰지 않고 돎. `COSMO_TABLES` 는 원본 추출 폴더(`hard/` 하위 구조) 기준이라 static-data `tables/` 로는 안 됨(건너뜀 유지). `STARSAVIOR_STATIC` 지정 상태로 `run_tests.py --rebuild --e2e E:\AI_mk2env-pw\Scripts\python.exe` **114 통과/0 실패**(브라우저 시험 포함), 건너뜀 2건(COSMO_TABLES·옆 journeyhelper)은 종전과 같음.
+- 환경: 작업 PC 에 사용자 환경변수 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 를 지정했음 — 비공개 표 대조 시험 9건이 건너뛰지 않고 돎. `COSMO_TABLES` 는 원본 추출 폴더(`hard/` 하위 구조) 기준이라 static-data `tables/` 로는 안 됨(건너뜀 유지). `STARSAVIOR_STATIC` 지정 상태로 `run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe` **114 통과/0 실패**(브라우저 시험 포함), 건너뜀 2건(COSMO_TABLES·옆 journeyhelper)은 종전과 같음.
 
 ## ▶ 2026-11-11 (Claude) — 최신 코드 기준 실제 플레이 재대조 (푸시 완료, 코드 변경 없음)
 
