@@ -889,6 +889,8 @@ class Battle:
         새 효과면 만들고(category=cat, harmful 은 cat=='debuff'), 있으면 지속을 늘림(refresh_props 면 수치도 갱신).
         중첩은 add 만큼 더하고 0..maxs 로 자름."""
         e = x.eff.get(name)
+        changed = e is None
+        old_props = e.props if e is not None else None
         if e is None:
             e = Eff(name, dict(props), maxs, dur, src or x, cat == 'debuff')
             e.category, e.fixed = cat, fixed
@@ -897,10 +899,18 @@ class Battle:
         else:
             e.dur = max(e.dur, dur)
             if refresh_props:
+                # A nonempty replacement may change values OR their addition order.
+                changed = bool(e.props or props)
                 e.props = dict(props)
+        old_stacks = e.stacks
         e.stacks = max(0, min(e.maxs, e.stacks + add))
         e.dead_keep = dead_keep or (self.mc['dead_keep_dnp'] == 'client' and dead_keep_name(name))
-        self.dirty(x)
+        # mods depends on props/stacks/category and 강화 불가, not duration/fresh/dead_keep.
+        # Empty markers cannot change stats; suppress-mode 강화 불가 is the exception.
+        # Both old/new props matter when refresh_props removes the last modifier.
+        if ((changed or e.stacks != old_stacks)
+                and (old_props or e.props or (name == '강화 불가' and not x.ban_refuse))):
+            self.dirty(x)
         return e
 
     def log(self, **kw):
@@ -1263,6 +1273,7 @@ class Battle:
             if end_cd and self.mc['enemy_cd_end_order'] == 'before_effects':
                 self._tick_cooldowns(u)
             self.fire(u, 'own_te', Ctx(u, u, None))
+            changed = False
             for name in list(u.eff):
                 e = u.eff[name]
                 if e.clock != 'owner_turn':
@@ -1277,9 +1288,11 @@ class Battle:
                     for it in e.inst:
                         it[1] -= 1
                     e.inst = [it for it in e.inst if it[1] > 0]
+                    changed = changed or e.stacks != len(e.inst)
                     e.stacks = len(e.inst)
                     if not e.inst:
                         del u.eff[name]
+                        changed = True
                     continue
                 if e.shield > 0 and self.mc['shield_tick'] == 'turn_start':
                     continue
@@ -1287,7 +1300,11 @@ class Battle:
                     e.dur -= 1
                     if e.dur <= 0:
                         del u.eff[name]
-            self.dirty(u)
+                        changed = True
+            # Duration/fresh/skip_tick alone are not mods inputs. Removal or a DoT
+            # stack change invalidates here, at the same HP-clamping boundary.
+            if changed:
+                self.dirty(u)
 
             if end_cd and self.mc['enemy_cd_end_order'] == 'after_effects':
                 # Build 26314877 NKM:2013-2021: TURN_END effects, buff
@@ -1327,7 +1344,7 @@ class Battle:
                         e.dur -= 1
                         if e.dur <= 0:
                             del v.eff[name]
-                        changed = True
+                            changed = True
                 if changed:
                     self.dirty(v)
 
@@ -1352,7 +1369,7 @@ class Battle:
                     e.dur -= 1
                     if e.dur <= 0:
                         del u.eff[name]
-                    self.dirty(u)
+                        self.dirty(u)
 
     def _break_skill_rule(self, name):
         """큐브의 기존 평면 규칙/override 계약은 유지하며 신규 표와 같은 모양으로 읽는다."""
@@ -1476,13 +1493,16 @@ class Battle:
         self.rule_hits['break_domain_revive'] += 1
 
     def _tick_shields(self, u):
+        changed = False
         for name in list(u.eff):
             e = u.eff[name]
             if e.shield > 0 and e.dur != math.inf:
                 e.dur -= 1
                 if e.dur <= 0:
                     del u.eff[name]
-        self.dirty(u)
+                    changed = True
+        if changed:
+            self.dirty(u)
 
     def _expire_checks(self, skill=False):
         for holder, name in self.check_pending:
@@ -4306,12 +4326,17 @@ class Battle:
                 top.dur = max(top.dur, dur)
                 top.skip_tick = True
                 self.rule_hits['buff_step_keep'] += 1
-                self.dirty(x)
                 return
             for n, _ in same:
                 del x.eff[n]
                 self.rule_hits['buff_step_replace'] += 1
             e = x.eff.get(name)
+        # Only unchanged props, category and stacks can reuse mods. Nonempty
+        # input always invalidates (including an in-place edit to the same dict).
+        # dict equality is insufficient: it ignores float addition order.
+        changed = e is None or bool(step is not None and same)
+        old_stacks = e.stacks if e is not None else 0
+        old_props = e.props if e is not None else None
         transient = eff['dur'] is None and ctx is not None and ctx.local is not None
         check = bool(self.mc['check_buff_expiry'] in ('action', 'skill') and (transient or (eff['dur'] is None and
                      (self.mc['check_buff_scope'] == 'all' or (CHECK_NAME.search(name) and not eff['props'])))))
@@ -4329,6 +4354,7 @@ class Battle:
             x.eff[name] = e
             e.fresh = fresh
         else:
+            changed = changed or e.category != category or bool(eff['props'])
             e.category, e.harmful = category, harmful
             if eff['dur'] is not None:
                 if e.check and refresh_check:
@@ -4361,7 +4387,12 @@ class Battle:
             e.stacks = min(e.maxs, e.stacks + eff['times'])
         if hot:
             e.hot = hot
-        self.dirty(x)
+        # Step replacement may remove another effect with props, even when this
+        # effect has none. Empty markers otherwise don't invalidate mods.
+        if ((changed or old_stacks != e.stacks)
+                and (old_props or e.props or (step is not None and same)
+                     or (name == '강화 불가' and not x.ban_refuse))):
+            self.dirty(x)
 
     def forced_coop(self, owner, ctx, n):
         """live_atk/stat_atk 재현용 즉시 강제 협공. random은 효과 대상 플래그를 coop에서 읽음."""

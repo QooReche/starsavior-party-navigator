@@ -3,6 +3,7 @@
 import math
 import re
 from collections import defaultdict
+from functools import lru_cache
 
 from .stats import calc_stats
 
@@ -379,15 +380,13 @@ class UnitDef:
         self.gear_atkp = 0.0
 
 
-_PROP_MAP = {}
-
-
+@lru_cache(maxsize=4096)
 def _map_prop(k):
-    """속성 이름 -> (키, 부키). 순수 함수라 결과를 기억한다(정규식 비용 제거)."""
-    r = _PROP_MAP.get(k)
-    if r is None:
-        r = _PROP_MAP[k] = _map_prop_raw(k)
-    return r
+    """속성 이름 -> (키, 부키). 문자열만의 순수 함수: 상태 무효화 불필요.
+
+    C 구현 LRU로 Python 함수/사전 조회의 반복을 피하고, 입력 수는 제한한다.
+    """
+    return _map_prop_raw(k)
 
 
 def _map_prop_raw(k):

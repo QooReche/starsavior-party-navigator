@@ -293,13 +293,18 @@ class Controller:
         e = x.eff.get(name)
         if e is None:
             return
+        old_stacks = e.stacks
         e.stacks = max(0, min(e.maxs, n))
         if e.stacks <= 0:
             del x.eff[name]
-        self.b.dirty(x)
+        # Empty markers affect mechanics via stack/on, not mods. The only
+        # name-dependent mods input is 강화 불가 in suppress mode.
+        if e.stacks != old_stacks and (e.props or (name == '강화 불가' and not x.ban_refuse)):
+            self.b.dirty(x)
 
     def _drop(self, x, name):
-        if x.eff.pop(name, None) is not None:
+        e = x.eff.pop(name, None)
+        if e is not None and (e.props or (name == '강화 불가' and not x.ban_refuse)):
             self.b.dirty(x)
 
     def barrier(self):
