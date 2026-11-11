@@ -122,7 +122,9 @@ class AccelTest(unittest.TestCase):
                     self.assertEqual(u.actions, 2)
 
     def test_owner_dot_stack_expiry_fresh_and_skip_tick(self):
-        b = mc.Battle([definition()], [], random.Random(1), opts={'coop': False})
+        # This cache regression protects the legacy owner-turn duration path.
+        b = mc.Battle([definition()], [], random.Random(1), opts={'coop': False},
+                      mc={'dot_hot_lifetime': 'turn_end'})
         u = b.allies[0]
         e = b.put_eff(u, 'instances', {'생명력%': 25}, maxs=2, add=2)
         e.dot = ('atk', 0)

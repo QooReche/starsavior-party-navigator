@@ -45,7 +45,7 @@ class FollowupTest(unittest.TestCase):
                                   ('revive_after_spawn', 'off', 'off'),
                                   ('dead_keep_dnp', 'off', 'off'),
                                   ('add_damage_guard', 'off', 'off'),
-                                  ('stat_select_int', 'float', 'float')]:
+                                  ('stat_select_int', 'floor', 'float')]:
             self.assertEqual(MC_OPTS[key], value)
             self.assertEqual(MC_RULES[key]['legacy'], legacy)
             self.assertTrue(MC_RULES[key]['source'])
@@ -97,7 +97,7 @@ class FollowupTest(unittest.TestCase):
         for mode in ('client', 'dot_first'):
             for lethal in (False, True):
                 b = battle([unit_def('ceres-sun-supporter'), unit('turn')], [unit('foe')],
-                           mc=dict(turn_start_order=mode), opts={'coop': False})
+                           mc=dict(turn_start_order=mode, dot_hot_lifetime='turn_end'), opts={'coop': False})
                 ceres, turn = b.allies
                 ceres.eff.clear()
                 e = give(turn, '연소', harmful=True, dur=1)
@@ -332,7 +332,7 @@ def mutations():
         (Battle, 'strike', "self.mc['guard_skip_immune'] == 'client'", 'False', ['test_guard_immune_and_vampirism']),
         (Battle, 'kill', "if self.mc['dead_keep_dnp'] == 'client' else {}", 'if False else {}', ['test_dnp_and_stage_fx_revive']),
         (Battle, 'run_special', "if ln.phase == '등장 후':", 'if False:', ['test_revive_after_spawn']),
-        (C.Controller, 'flush_damage', "self.b.mc['add_damage_guard'] == 'client'", 'False', ['test_add_damage_guard']),
+        (Battle, 'fixed_true_damage', "(client or self.mc['add_damage_guard'] == 'client')", 'False', ['test_add_damage_guard']),
         (Battle, '_filter', "self.mc['stat_select_int'] == 'floor'", 'False', ['test_stat_selection_and_buff_timing']),
         (C.Controller, '_erode', 'if not pre:', "if not (self._stacks(boss, ERO) > 0 or self._stacks(boss, ROOT) > 0):", ['test_erode_cast_boundary']),
         (Battle, 'spawn_wave', 'self._carry_wave_effects()', 'pass', ['test_wave_spawn_and_battle_start']),

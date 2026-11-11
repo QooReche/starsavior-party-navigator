@@ -1,6 +1,6 @@
 {
  "guild_sim": {
-  "hash": "fc85dd2714434381",
+  "hash": "e50ab5d249e7ad69",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -37,11 +37,15 @@
    {
     "hash": "fc85dd2714434381",
     "reason": "build_guild_sim 재생성"
+   },
+   {
+    "hash": "e50ab5d249e7ad69",
+    "reason": "11/11 클라 규칙 6건 기본 전환(dot_hot_order·dot_hot_lifetime·ally_cd_tick·stat_select_int·break_domain_category·ally_turn_self): 축소 재생성(팀 3·육성 3·지원 3·단계 0~12·칸당 12판) 이전과 teams·summary 전부 동일"
    }
   ]
  },
  "quick": {
-  "hash": "fc85dd2714434381",
+  "hash": "e50ab5d249e7ad69",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -70,6 +74,10 @@
    {
     "hash": "fc85dd2714434381",
     "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "e50ab5d249e7ad69",
+    "reason": "11/11 클라 규칙 6건 기본 전환: 규칙은 판당 수십~수백 회 작동하나 13개 콘텐츠x편성 3개 20판 결과(timeline 포함)가 이전과 동일 — 쿨·지속 차감 시점 차이가 같은 턴 안에서 상쇄됨"
    }
   ]
  }

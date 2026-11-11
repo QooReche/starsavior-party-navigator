@@ -105,7 +105,7 @@ class BreakSkillLegacyTest(unittest.TestCase):
         b = battle([unit('ally', skills=[dict(slot='궁극기', dm=100, cd=5)])],
                    [unit('first', hp=1)], break_skill={'name': '차원 강습'},
                    opts={'nova_policy': 'manual'},
-                   mc={'wave_extra_turn': 'keep', 'break_gauge_actor': 'exclude'},
+                   mc={'wave_extra_turn': 'keep', 'break_gauge_actor': 'exclude', 'ally_cd_tick': 'turn_start'},
                    timeline=True, max_turns=.1)
         b.waves.append([unit('second', hp=10 ** 9)])
         a = b.allies[0]

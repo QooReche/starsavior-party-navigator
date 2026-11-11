@@ -54,11 +54,13 @@ class CooldownOrderTest(unittest.TestCase):
         self.assertEqual(seen, [('tick', True), ('effect', 3)])
         self.assertEqual(u.cd['궁극기'], 2)
 
-    def test_ally_still_ticks_at_start(self):
+    def test_ally_tick_is_independent_of_enemy_order(self):
         for order in ('before_effects', 'after_effects'):
-            u, seen = self.trace({'enemy_cd_end_order': order}, side=0)
-            self.assertEqual(seen, [('tick', True), ('effect', 4)])
-            self.assertEqual(u.cd['궁극기'], 2)
+            for mode in ('turn_start', 'turn_end'):
+                u, seen = self.trace({'enemy_cd_end_order': order, 'ally_cd_tick': mode}, side=0)
+                self.assertEqual(seen, [('tick', True), ('effect', 4)] if mode == 'turn_start'
+                                 else [('effect', 4), ('tick', False)])
+                self.assertEqual(u.cd['궁극기'], 2 if mode == 'turn_start' else 1)
 
 
 class RevengeSnapshotTest(unittest.TestCase):

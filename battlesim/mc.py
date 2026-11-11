@@ -639,6 +639,8 @@ class Unit:
         table = self.b.mc['buff_count_source'] == 'table'
         return sum(1 for e in self.eff.values()
                    if e.stacks > 0 and not e.check and (not dispellable or not e.fixed)
+                   and not (self.b.mc['break_domain_category'] == 'marker' and e.category == 'marker'
+                            and self.b.break_skill_enabled and e.name == self.b.break_skill_rule['domain'])
                    and (positive_buff(e.name, e.category == 'buff') if table else e.category == 'buff'))
 
 
@@ -1211,8 +1213,9 @@ class Battle:
             self.log(recover=u.name, skip=skip)
         if self.mc['shield_tick'] == 'turn_start':
             self._tick_shields(u)
-        end_cd = (u.side == 1 and self.mc['enemy_cd_tick'] == 'turn_end'
-                  and self.mc['enemy_cd_native'])
+        ally_end_cd = u.side == 0 and self.mc['ally_cd_tick'] == 'turn_end'
+        end_cd = ally_end_cd or (u.side == 1 and self.mc['enemy_cd_tick'] == 'turn_end'
+                                and self.mc['enemy_cd_native'])
         if not end_cd:
             self._tick_cooldowns(u)
         if self.mc['turn_start_order'] == 'dot_first':
@@ -1224,6 +1227,12 @@ class Battle:
         for v in self.alive(u.side):
             if v is not u:
                 self.fire(v, 'ally_ts', Ctx(v, u, None))
+            elif self.mc['ally_turn_self'] == 'condition':
+                lines = [ln for ln in self.kind_lines(v, 'ally_ts')
+                         if dict(ln.params).get('자신 포함') == '예']
+                if lines:
+                    self.rule_hits['ally_turn_self'] += len(lines)
+                    self.run_batch(v, lines, Ctx(v, u, None))
         for v in self.alive(1 - u.side):
             self.fire(v, 'enemy_ts', Ctx(v, u, None))
         if self.mc['turn_start_order'] == 'client':
@@ -1270,12 +1279,14 @@ class Battle:
         if self.gb is not None and hasattr(self.gb, 'flush_damage'):
             self.gb.flush_damage()
         if not u.dead:
-            if end_cd and self.mc['enemy_cd_end_order'] == 'before_effects':
+            if end_cd and not ally_end_cd and self.mc['enemy_cd_end_order'] == 'before_effects':
                 self._tick_cooldowns(u)
             self.fire(u, 'own_te', Ctx(u, u, None))
             changed = False
             for name in list(u.eff):
                 e = u.eff[name]
+                if self.mc['dot_hot_lifetime'] == 'tick' and (e.dot or e.hot):
+                    continue
                 if e.clock != 'owner_turn':
                     continue
                 if e.fresh:
@@ -1306,10 +1317,12 @@ class Battle:
             if changed:
                 self.dirty(u)
 
-            if end_cd and self.mc['enemy_cd_end_order'] == 'after_effects':
+            if end_cd and (ally_end_cd or self.mc['enemy_cd_end_order'] == 'after_effects'):
                 # Build 26314877 NKM:2013-2021: TURN_END effects, buff
                 # durations, then all cooldowns (including newly used skills).
                 self._tick_cooldowns(u)
+                if ally_end_cd:
+                    self.rule_hits['ally_cd_tick'] += 1
 
     def _finish_action(self, u):
         """정상 행동·행동 불가·지속 피해 사망 모두 한 번 거치는 턴 종료.
@@ -1334,6 +1347,8 @@ class Battle:
                 changed = False
                 for name in list(v.eff):
                     e = v.eff[name]
+                    if self.mc['dot_hot_lifetime'] == 'tick' and (e.dot or e.hot):
+                        continue
                     if e.clock != 'any_turn':
                         continue
                     e.fresh = False
@@ -1469,6 +1484,10 @@ class Battle:
                 e.stacks, e.fixed, e.clock = 1, self.mc['break_skill_fixed'], clock
                 if name == '오메가 프로토콜' and self.mc['omega_dispel'] == 'client':
                     e.fixed = False
+                if name == rule['domain']:
+                    e.category = self.mc['break_domain_category']
+                    if e.category == 'marker':
+                        self.rule_hits['break_domain_category'] += 1
                 u.eff[name] = e
             self.dirty(u)
 
@@ -1488,6 +1507,9 @@ class Battle:
         name = self.break_skill_rule['domain']
         e = Eff(name, self._domain_props(u), 1, self.break_domain_remaining, None, False)
         e.stacks, e.fixed, e.clock = 1, self.mc['break_skill_fixed'], self.break_domain_clock
+        e.category = self.mc['break_domain_category']
+        if e.category == 'marker':
+            self.rule_hits['break_domain_category'] += 1
         u.eff[name] = e
         self.dirty(u)
         self.rule_hits['break_domain_revive'] += 1
@@ -1658,6 +1680,7 @@ class Battle:
                    'high_gauge': lambda v: v.gauge, 'low_gauge': lambda v: v.gauge,
                    'high_spd': lambda v: v.spd(), 'low_spd': lambda v: v.spd()}[st]
             if self.mc['stat_select_int'] == 'floor' and st not in ('high_hp_rate', 'high_gauge', 'low_gauge'):
+                self.rule_hits['stat_select_int'] += 1
                 raw_key = key
                 key = lambda v: math.floor(raw_key(v))
             best = (max if st.startswith('high') else min)(key(v) for v in pool)
@@ -2084,6 +2107,11 @@ class Battle:
                 self._check_foe_react(u, ctx, timing_filter='on_my_attack')
             # 이미 시작한 공격은 대상 목록이 비어도 DAMAGE_END 전 DC_ATTACK을 해제함.
             # NKM:15552의 조기 반환은 대상이 아니라 UnitState 공격 이벤트가 없는 경우임.
+            if self.mc['counter_slot_timing'] == 'event' and sk.raw.get('act') in ('공격', '비공격'):
+                # Public active cards represent attack/non-attack events. Unknown
+                # state-only cards must not acquire history just by reaching cast().
+                u.last_slot = sk.slot
+                self.rule_hits['counter_slot_timing'] += 1
             if sk.is_attack and (ctx.targets or self.mc['empty_attack'] == 'process'):
                 self.deal(u, ctx)
             if not u.dead:
@@ -2120,7 +2148,8 @@ class Battle:
                     and (self.opts['coop'] or (self.opts['forced_coop']
                          and self.opts['forced_coop_target'] == 'random'))):
                 self.coop(u, ctx)
-            u.last_slot = sk.slot
+            if self.mc['counter_slot_timing'] == 'end':
+                u.last_slot = sk.slot
             return ctx
         finally:
             for (x, name), old in ctx.markers.items():
@@ -2173,6 +2202,9 @@ class Battle:
         if not m:
             self.unsup['hl: 회복 계수 형식 미해석 ' + str(hl)[:30]] += 1
             return
+        if self.mc['counter_slot_timing'] == 'event':
+            u.last_slot = sk.slot
+            self.rule_hits['counter_slot_timing'] += 1
         stat = {'생명력': u.maxhp, '공격력': self.atk_stat(u, ctx), '방어력': self.def_stat(u)}[m.group(1)]
         tg = sk.tg or ''
         if tg == '자신':
@@ -2731,6 +2763,50 @@ class Battle:
             return True
         return False
 
+    def fixed_true_damage(self, source, target, damage, *, source_side=None, remaining_hp_bp=None):
+        """ADT_FIXED_TRUE (NKM:17333-17365,17857-17914).
+
+        NST_RATE_DAMAGE_LIMIT_BY_HP is a final stat in basis points; effect props
+        may supply the same stat. remaining_hp_bp is the host's optional boss HP
+        floor (not immortality). Current encounters do not supply that host field.
+        """
+        if target.dead:
+            return damage
+        client = self.mc['fixed_true_formula'] == 'client'
+        side = source.side if source is not None else source_side
+        guard, shared = None, 0.0
+        if (client or self.mc['add_damage_guard'] == 'client') and not target.invincible() and not target.on('스킬 피해 무효'):
+            share = 0.0
+            for u in self.alive(target.side):
+                if u is not target and u.mods()['guard'] > share:
+                    guard, share = u, u.mods()['guard']
+            if guard is not None:
+                shared = damage * min(1.0, share)
+                damage -= shared
+                self.rule_hits['add_damage_guard'] += 1
+
+        def finish(v, value):
+            if not client:
+                return value
+            self.rule_hits['fixed_true_formula'] += 1
+            if side is not None and side != v.side and self.pen[side] > 0:
+                value *= self.pen[side]
+            stat = 'NST_RATE_DAMAGE_LIMIT_BY_HP'
+            limit = v.d.stats.get(stat, 0) + sum(e.props.get(stat, 0) * e.stacks
+                                               for e in v.eff.values() if v.on(e.name))
+            limit = math.floor(limit)
+            if limit > 0:
+                value = min(value, v.maxhp * limit / 10000)
+            if remaining_hp_bp is not None and getattr(v.d, 'boss', False):
+                value = min(value, max(0, v.hp - math.ceil(v.maxhp * remaining_hp_bp / 10000)))
+            return max(1, min(2147483647, int(value)))
+
+        damage = finish(target, damage)
+        self.apply_damage(source, target, damage, 'true', shieldable=True)
+        if guard is not None and shared >= 1 and not guard.dead:
+            self.apply_damage(source, guard, finish(guard, shared), 'guard', shieldable=True)
+        return damage
+
     def _instant_damage(self, owner, x):
         """〈즉시 피해〉 DAMAGE_INSTANT(클라 피해 컨트롤러 ഊഉഋഈ….cs:181 → 유닛 피해 함수 (a=T, b=T)):
         무적 → 〈스킬 피해 무효〉(1회 소모) → 보호막 → 불사 순으로 거친다(apply_damage).
@@ -3109,68 +3185,116 @@ class Battle:
 
     def _tick_dot_hot(self, u):
         """턴 시작: 지속 피해(시전자별 중첩, 매 틱 시전자 현재 스탯, 보호막 무시)와 지속 회복"""
-        for name in list(u.eff):
-            e = u.eff.get(name)
-            if e is None:
-                continue
-            if e.inst:
-                stat, c = e.dot
-                dot_client = self.mc['dot_formula'] == 'client'
-                for src, _left in list(e.inst):
-                    if u.dead:
-                        return
-                    if dot_client and src.side == u.side and src is not u:
-                        continue      # NKM:17278-17281: 같은 편 다른 유닛의 피해는 0
-                    sm = src.mods()
-                    val = self.atk_stat(src) if stat == 'atk' else src.maxhp
-                    base = val * c * _rules.BASE_MULT
+        try:
+            names = list(u.eff)
+            hot_first = self.mc['dot_hot_order'] == 'hot_first'
+            if hot_first and any(e.hot for e in u.eff.values()) and any(e.dot for e in u.eff.values()):
+                self.rule_hits['dot_hot_order'] += 1
+            items = ([(n, 'hot') for n in names] + [(n, 'dot') for n in names]
+                     if hot_first else [(n, 'both') for n in names])
+            for name, phase in items:
+                e = u.eff.get(name)
+                if e is None:
+                    continue
+                if phase != 'hot' and e.inst:
+                    stat, c = e.dot
+                    dot_client = self.mc['dot_formula'] == 'client'
+                    for instance in list(e.inst):
+                        src, _left = instance
+                        if u.dead:
+                            return
+                        if dot_client and src.side == u.side and src is not u:
+                            if self.mc['dot_hot_lifetime'] == 'tick':
+                                instance[1] -= 1
+                                self.rule_hits['dot_hot_lifetime'] += 1
+                            continue      # NKM:17278-17281: 같은 편 다른 유닛의 피해는 0
+                        sm = src.mods()
+                        val = self.atk_stat(src) if stat == 'atk' else src.maxhp
+                        base = val * c * _rules.BASE_MULT
 
-                    def dot_dmg(v, b, src=src, sm=sm):
-                        """대상 v 가 기본 피해 b 를 받을 때의 최종 피해(방어·증감·상성·난수는 v 기준)"""
-                        inc = sm['inc']
-                        if src.last_slot is not None and src.last_slot == v.last_slot:
-                            inc += self.mc['counter_inc']
-                        dec = v.mods()['red'].get('all', 0.0)
-                        if v.broken:
-                            inc += sm['inc_break']
-                            dec -= _rules.BREAK_DEC
-                        dec = min(_rules.DEC_CAP, dec)
-                        de = self.def_stat(v)
-                        dr = de / (de + _rules.DEF_K)
-                        if dot_client:
-                            # NKM:17314,17786-17816: 방어율 관통(시전자 방어 관통) / NKM:17545-17561,17918-17922: 상성 ±5%
-                            dr = max(0.0, dr - dr * min(1.0, sm['pen']))
-                            if src.element and v.element:
-                                if ELEM_BEATS.get(src.element) == v.element:
-                                    inc += 0.05
-                                elif ELEM_LOSES.get(src.element) == v.element:
-                                    inc -= 0.05
-                            self.rule_hits['dot_client'] += 1
-                        return max(1.0, math.floor(b * (1 + inc - dec) * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
+                        def dot_dmg(v, b, src=src, sm=sm):
+                            """대상 v 가 기본 피해 b 를 받을 때의 최종 피해(방어·증감·상성·난수는 v 기준)"""
+                            inc = sm['inc']
+                            if src.last_slot is not None and src.last_slot == v.last_slot:
+                                inc += self.mc['counter_inc']
+                            dec = v.mods()['red'].get('all', 0.0)
+                            if v.broken:
+                                inc += sm['inc_break']
+                                dec -= _rules.BREAK_DEC
+                            dec = min(_rules.DEC_CAP, dec)
+                            de = self.def_stat(v)
+                            dr = de / (de + _rules.DEF_K)
+                            if dot_client:
+                                # NKM:17314,17786-17816: 방어율 관통(시전자 방어 관통) / NKM:17545-17561,17918-17922: 상성 ±5%
+                                dr = max(0.0, dr - dr * min(1.0, sm['pen']))
+                                if src.element and v.element:
+                                    if ELEM_BEATS.get(src.element) == v.element:
+                                        inc += 0.05
+                                    elif ELEM_LOSES.get(src.element) == v.element:
+                                        inc -= 0.05
+                                self.rule_hits['dot_client'] += 1
+                            return max(1.0, math.floor(b * (1 + inc - dec) * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
 
-                    guard, share_base = None, 0.0
-                    if dot_client and not u.invincible() and not u.on('스킬 피해 무효'):
-                        # NKM:1286-1308,17315-17319: 대상 제외 같은 편 중 분담 비율 최대 1명, 분담 몫은 방어 적용 전 기본 피해에서 뗌
-                        # (무적·스킬 무효인 대상은 분담 없음). 동률은 먼저 본 쪽(클라 동률 규칙 OBF_9827 은 미확인).
-                        gs = 0.0
-                        for w in self.alive(u.side):
-                            if w is not u:
-                                s = w.mods()['guard']
-                                if s > gs + 1e-12:
-                                    guard, gs = w, s
-                        if guard is not None:
-                            share_base = base * min(1.0, gs)
-                            base -= share_base
-                            self.rule_hits['dot_guard'] += 1
-                    self.apply_damage(src, u, dot_dmg(u, base), 'dot', shieldable=False)
-                    if (guard is not None and share_base >= 1.0 and not guard.dead
-                            and not (src.side == guard.side and src is not guard)):
-                        # NKM:7925-7928,8153-8171,17368-17409: 수호자 몫은 수호자 방어·증감·상성·별도 난수로 다시 계산, 보호막 무시
-                        # (NKM:17376-17379: 시전자가 수호자와 같은 편이면서 수호자 본인이 아니면 수호자 몫 0 — 자기 지속 피해)
-                        self.apply_damage(src, guard, dot_dmg(guard, share_base), 'dot', shieldable=False)
-            if e.hot > 0 and not u.dead and u.on(name):
-                # 지속 회복은 원래 주는 회복량 보정을 안 쓰지만, 서든데스 감소는 시전자 기준으로 적용(근사)
-                self.heal(e.src or u, u, u.maxhp * e.hot, (e.src or u).sd.get('주는 회복량', 0.0) / 100.0)
+                        guard, share_base = None, 0.0
+                        if dot_client and not u.invincible() and not u.on('스킬 피해 무효'):
+                            # NKM:1286-1308,17315-17319: 대상 제외 같은 편 중 분담 비율 최대 1명, 분담 몫은 방어 적용 전 기본 피해에서 뗌
+                            # (무적·스킬 무효인 대상은 분담 없음). 동률은 먼저 본 쪽(클라 동률 규칙 OBF_9827 은 미확인).
+                            gs = 0.0
+                            for w in self.alive(u.side):
+                                if w is not u:
+                                    s = w.mods()['guard']
+                                    if s > gs + 1e-12:
+                                        guard, gs = w, s
+                            if guard is not None:
+                                share_base = base * min(1.0, gs)
+                                base -= share_base
+                                self.rule_hits['dot_guard'] += 1
+                        self.apply_damage(src, u, dot_dmg(u, base), 'dot', shieldable=False)
+                        if self.mc['dot_hot_lifetime'] == 'tick':
+                            instance[1] -= 1
+                            self.rule_hits['dot_hot_lifetime'] += 1
+                        if (guard is not None and share_base >= 1.0 and not guard.dead
+                                and not (src.side == guard.side and src is not guard)):
+                            # NKM:7925-7928,8153-8171,17368-17409: 수호자 몫은 수호자 방어·증감·상성·별도 난수로 다시 계산, 보호막 무시
+                            # (NKM:17376-17379: 시전자가 수호자와 같은 편이면서 수호자 본인이 아니면 수호자 몫 0 — 자기 지속 피해)
+                            self.apply_damage(src, guard, dot_dmg(guard, share_base), 'dot', shieldable=False)
+                if phase != 'dot' and e.hot > 0 and not u.dead and u.on(name):
+                    # 지속 회복은 원래 주는 회복량 보정을 안 쓰지만, 서든데스 감소는 시전자 기준으로 적용(근사)
+                    self.heal(e.src or u, u, u.maxhp * e.hot, (e.src or u).sd.get('주는 회복량', 0.0) / 100.0)
+                    if self.mc['dot_hot_lifetime'] == 'tick':
+                        e.dur -= 1
+                        self.rule_hits['dot_hot_lifetime'] += 1
+        finally:
+            if self.mc['dot_hot_lifetime'] == 'tick':
+                self._expire_dot_hot(u)
+                # GlobalTurnCounting on other units ticks here (NKM:13427-13431).
+                for v in self.alive(0) + self.alive(1):
+                    if v is u:
+                        continue
+                    for e in v.eff.values():
+                        if e.clock == 'any_turn' and (e.dot or e.hot):
+                            if e.inst is not None:
+                                for it in e.inst:
+                                    it[1] -= 1
+                            else:
+                                e.dur -= 1
+                    self._expire_dot_hot(v)
+
+    def _expire_dot_hot(self, u):
+        changed = False
+        for name, e in list(u.eff.items()):
+            if e.dot and e.inst is not None:
+                e.inst = [it for it in e.inst if it[1] > 0]
+                changed |= e.stacks != len(e.inst)
+                e.stacks = len(e.inst)
+                expired = not e.inst
+            else:
+                expired = e.hot > 0 and e.dur <= 0
+            if expired:
+                del u.eff[name]
+                changed = True
+        if changed:
+            self.dirty(u)
 
     # ---------- 회복·보호막
     def _vampirism_hit(self, a, target, ctx, damage, last=True):

@@ -258,20 +258,7 @@ class Controller:
             if target.dead:
                 continue
             hp, shield = target.hp, target.shield_total()
-            guard, shared = None, 0.0
-            if self.b.mc['add_damage_guard'] == 'client' and not target.invincible() and not target.on('스킬 피해 무효'):
-                share = 0.0
-                for u in self.b.alive(target.side):
-                    if u is not target and u.mods()['guard'] > share:
-                        guard, share = u, u.mods()['guard']
-                if guard is not None:
-                    shared = damage * min(1.0, share)
-                    damage -= shared
-                    self.b.rule_hits['add_damage_guard'] += 1
-            # apply_damage는 무효를 소비하지 않음. 무적·보호막은 대상/수호자 각각 적용.
-            self.b.apply_damage(None, target, damage, 'true', shieldable=True)
-            if guard is not None and shared >= 1 and not guard.dead:
-                self.b.apply_damage(None, guard, shared, 'guard', shieldable=True)
+            damage = self.b.fixed_true_damage(None, target, damage, source_side=target.side)
             self.stats['true_damage_hits'] += 1
             self.stats['self_damage_hp'] += hp - target.hp
             self.stats['self_damage_shield'] += shield - target.shield_total()
@@ -565,5 +552,9 @@ class Controller:
               and b.mc['cosmo_hyper_true_target'] == 'enemy_all'):
             n = min(self._stacks(boss, ROT), self.cfg['bel']['hyperTrueDamage']['max'])
             if n > 0:
-                b.apply_damage(boss, v, self.cfg['bel']['hyperTrueDamage']['perStack'] * n, 'true', shieldable=True)
+                damage = self.cfg['bel']['hyperTrueDamage']['perStack'] * n
+                if b.mc['fixed_true_formula'] == 'client':
+                    b.fixed_true_damage(boss, v, damage)
+                else:
+                    b.apply_damage(boss, v, damage, 'true', shieldable=True)
                 self.stats['true_damage_hits'] += 1
