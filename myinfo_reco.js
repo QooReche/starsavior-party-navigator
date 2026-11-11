@@ -2,6 +2,7 @@
 (function (root) {
   "use strict";
   const Stats = typeof module !== "undefined" && module.exports ? require("./myinfo_stats.js") : root.MyInfoStats;
+  const itemSlots = typeof module !== "undefined" && module.exports ? require("./data/myinfo_slots.json") : null;
   function hash(info) {
     const s = JSON.stringify(info); let h = 2166136261;
     for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
@@ -97,9 +98,13 @@
       ? Math.max(1000, Math.round((result.power * multiplier - result.power) / 1000) * 1000) : null;
     return {label: result.clear ? "오토 가능" : "오토 어려움", extra};
   }
-  // Independent account snapshot. Never lower an imported field to the preset.
-  const OVERWRITE_VERSION='grown-account-v1';
-  function overwrite(info, roster, growth, content, {includeMissing=true, excluded=[]}={}) {
+  // Compare equipment by body part, without depending on import array order.
+  function equipmentValue(equip, slots) {
+    return (equip||[]).map(e=>[slots?.[e.item_id]??-1,e]).sort((a,b)=>a[0]-b[0]||a[1].item_id-b[1].item_id);
+  }
+  // Independent account snapshot. Equipment is selected as one complete bundle.
+  const OVERWRITE_VERSION='grown-account-v2';
+  function overwrite(info, roster, growth, content, {includeMissing=true, excluded=[], slots=itemSlots}={}) {
     const target=clone(info), changes={}, errors=[], banned=new Set(excluded);
     let out=profile(info,roster,growth,content);
     for(const s of roster){
@@ -113,20 +118,16 @@
           const want=growth.assumed.units[s.key].potential;
           const learned=(old.gauntlet?.potentials||[]).find(p=>growth.assumed.special_ids.includes(p[0])&&p[1]>=want[1]);
           if(learned)u.gauntlet.potentials=clone(old.gauntlet.potentials);
-          u.equip=u.equip.map((v,i)=>{
-            const prev=old.equip?.[i];if(!prev)return v;
-            if(prev.enhance>=15)return clone(prev);
-            const next=clone(v);
-            // Keep stronger imported stats; +15 is a target, not a downgrade.
-            if(prev.main?.stat===next.main.stat)next.main.value=Math.max(prev.main.value,next.main.value);
-            for(const sub of prev.subs||[]){const hit=next.subs.find(x=>x.stat===sub.stat);
-              if(hit)hit.value=Math.max(hit.value,sub.value);else next.subs.push(clone(sub));}
-            return next;
-          }).concat(clone(old.equip?.slice(6)||[]));
+          // Both candidates use the same grown level/skills/journey and content rule.
+          // Keep imported equipment on ties; never merge its stats into the preset.
+          const rule=Stats.rule_for_content(content),presetPower=Stats.final_stats(u,a.targetInfo,growth,rule).power;
+          const originalPower=Stats.final_stats({...u,equip:old.equip},a.targetInfo,growth,rule).power;
+          if(!(presetPower>originalPower))u.equip=clone(old.equip);
         }
         const value=(x,f)=>['journey','potentials'].includes(f)?x.gauntlet?.[f]:x[f];
         for(const f of Object.keys(a.changes))if(f!=='level')a.changes[f]={before:old?value(old,f):null,after:value(u,f)};
-        a.changedFields=Object.keys(a.changes).filter(f=>!old||JSON.stringify(a.changes[f].before)!==JSON.stringify(a.changes[f].after));
+        const comparable=(f,v)=>f==='equip'?equipmentValue(v,slots):f==='skills'?Object.entries(v||{}).sort(([a],[b])=>a.localeCompare(b)):v;
+        a.changedFields=Object.keys(a.changes).filter(f=>!old||JSON.stringify(comparable(f,a.changes[f].before))!==JSON.stringify(comparable(f,a.changes[f].after)));
         a.overwrite=true;
         if(!a.changedFields.length)continue;
         out=assumedProfile(out,a,info,growth,content);

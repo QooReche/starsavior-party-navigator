@@ -567,10 +567,10 @@ async function cosmoSearchStart(target=CSR,profileOverride=null){
   const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
    makeWorker:()=>profileOverride?growthWorker():new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,breaks:csBreaks(),
    onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed.v2"),workers)})},
-   onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm)LS.set("cosmo.speed.v2",{sec:sm,workers});CSR.eta=null;CSR.etaText="마무리 단계(난이도 비교·최종 확인)는 남은 시간을 따로 계산하지 않습니다"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();if(!profileOverride)csTick(true)},
+   onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm&&!profileOverride)LS.set("cosmo.speed.v2",{sec:sm,workers});CSR.eta=null;CSR.etaText="마무리 단계(난이도 비교·최종 확인)는 남은 시간을 따로 계산하지 않습니다"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();if(!profileOverride)csTick(true)},
    onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());if(!profileOverride)csTick(false)},onHandle:h=>{CSR.handle=h}});
   if(!out||stale())return;
-  const sum=CSR.eta&&CSR.eta.summary();if(sum)LS.set("cosmo.speed.v2",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
+  const sum=CSR.eta&&CSR.eta.summary();if(sum&&!profileOverride)LS.set("cosmo.speed.v2",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
   Object.assign(CSR,{fast:false,fastSkipped:false,audit:null},out,{phase:"done",handle:null,eta:null});CSR.context=growthOwnedContext('cosmo');paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return CSR
  }catch(e){if(profileOverride)throw e;if(stale())return;CSR.handle=null;CSR.eta=null;CSR.phase=/^취소$/.test(e.message)?"idle":"err";CSR.msg=e.message||String(e);paint()}}
 $("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("[data-cs]");if(!t)return;

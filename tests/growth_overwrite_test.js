@@ -32,7 +32,7 @@ function overwrite(m=M){const info=synthetic(),before=JSON.stringify(info);
   const high={...info,units:[u],star_link:{level:120,source:[],slots:[]}};
   const h=m.overwrite(high,roster,growth,'op',{includeMissing:false});
   assert.equal(h.errors.length,0);assert.deepEqual(h.info,high);assert.deepEqual(h.changes,{});
-  // Mixed fields: preserve a +15 item and stronger journey while raising skills.
+  // Mixed fields: preserve the stronger equipment bundle while raising skills.
   const mixed=structuredClone(high);mixed.units[0].skills.basic=1;
   const raised=m.overwrite(mixed,roster,growth,'op',{includeMissing:false});
   assert.equal(raised.errors.length,0);assert.deepEqual(raised.changes[key].changedFields,['skills']);
@@ -61,7 +61,7 @@ overwrite();overwrite(load(source));display();
 mutate('original account mutation',source,'const target=clone(info),','const target=info,',s=>overwrite(load(s)));
 mutate('missing selection',source,'(!includeMissing&&!out.units[s.key])','false',s=>overwrite(load(s)));
 mutate('higher journey preserved',source,'Math.max(v,old.gauntlet?.journey?.[i]||0)','v',s=>overwrite(load(s)));
-mutate('higher equipment preserved',source,'if(prev.enhance>=15)','if(false)',s=>overwrite(load(s)));
+mutate('higher equipment preserved',source,'if(!(presetPower>originalPower))','if(false)',s=>overwrite(load(s)));
 mutate('strict improvement only',ui,'metric(result)>(metric(baseline)??0)','metric(result)>=(metric(baseline)??0)',display);
 mutate('actual shortage chips',ui,'r.changedFields.map(f=>','["level","equip","skills","resonance","journey","potentials"].map(f=>',display);
 console.log('ALL OK whole-account overwrite');

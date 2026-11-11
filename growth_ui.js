@@ -205,8 +205,10 @@ async function growthStart(c,st){
     const manifest=await fetch('sim/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('엔진 확인 실패');return r.json();});
     if(GROW.id!==id)return;
     GROW.versions={engine:manifest.ver,data:MyInfoReco.hash([GrowthGuide.VERSION,MI.growth,D,QK.d])};GROW.sig=growthSig(c,st);
+    const slots=await fetch('data/myinfo_slots.json').then(r=>{if(!r.ok)throw Error('장비 부위 확인 실패');return r.json();});
+    if(GROW.id!==id)return;
     const snapshot=MyInfoReco.overwrite(MI.info,R,MI.growth,c.key==='guild'?'op':c.key,
-      {includeMissing:growthOptions().owned,excluded:[...EXCL]});
+      {includeMissing:growthOptions().owned,excluded:[...EXCL],slots});
     const started=Date.now();let result,baseline;
     if(seasonal){
       const owned=c.key==='guild'?GSR:CSR;
@@ -218,8 +220,7 @@ async function growthStart(c,st){
       if(!out||out.phase!=='done')throw Error('미완료');
       result={best:out.rows[0]||null,runs:out.runs};
     }else{
-      const current=LASTQ[1]?.rows[0];
-      baseline=current?growthMetric(SIMQ.res[simSig(st,current)]||{clear:0}):null;
+      baseline=growthBaseline(c,st);
       result=await growthStageSearch(c,st,snapshot.profile,id);
     }
     if(GROW.id!==id)return;
@@ -232,11 +233,17 @@ async function growthStart(c,st){
     if(SIMQ.pool){SIMQ.pool.slice(1).forEach(w=>w?.terminate());SIMQ.pool=null;}
     growthPaint();}}
 }
+function growthBaseline(c,st){
+  const q=LASTQ[1],selected=PICK[c.key+'|'+st.tab+'|'+st.name+'|1'];
+  const current=selected&&(q?.all||q?.rows||[]).find(t=>t.keys.slice().sort().join(',')===selected)||q?.rows[0];
+  return current?growthMetric(SIMQ.res[simSig(st,current)]||{clear:0}):null;
+}
 function growthPaint(){
   let el=$('growth-result');
   if(!growthEnabled()||!MI.info){el?.remove();return;}
   const c=contents[$('content').value],r=GROW.result;
   if(!['op','clo','guild','cosmo'].includes(c.key))return;
+  if(r&&['op','clo'].includes(c.key))r.baseline=growthBaseline(c,cur[$('stage').value]);
   const show=r&&growthBetter(c.key,r.baseline,r.best);
   if(GROW.phase==='done'&&!show){el?.remove();return;}
   if(GROW.phase==='idle'&&growthSeasonContent()&&growthSeasonReady(c)&&SIMQ.busy==null)

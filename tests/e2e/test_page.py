@@ -1766,6 +1766,19 @@ def test_assumed_growth(browser, ctx):
       return !badge||badge.getBoundingClientRect().bottom<info.getBoundingClientRect().top;})''')
     page.locator('#growth-result').screenshot(path=os.path.join(ctx.shots, 'overwrite_mobile.png'))
     assert page.locator('#out > [data-party="1"]').get_attribute('data-team') == before
+    # Selecting an alternate current-account card updates the grown comparison too.
+    alternate = page.locator('button[data-pick="1"]').first
+    assert alternate.count()
+    selected_key = alternate.get_attribute('data-key')
+    expected = page.evaluate('''key => {
+      const st=cur[$('stage').value],t=LASTQ[1].all.find(t=>t.keys.slice().sort().join(',')===key);
+      return growthMetric(SIMQ.res[simSig(st,t)]||{clear:0}).clear;
+    }''', selected_key)
+    alternate.click()
+    assert page.locator('#out > [data-party="1"]').get_attribute('data-team') == selected_key
+    assert page.evaluate('GROW.result.baseline.clear') == expected
+    page.locator(f'button[data-pick="1"][data-key="{before}"]').click()
+    assert page.locator('#out > [data-party="1"]').get_attribute('data-team') == before
     shared = page.evaluate('''async () => {const u=new URL(await shareUrlMi());
       const info=await MyInfoImport.fromHash(u.hash.replace('#shared=','#myinfo='));return JSON.stringify(info)===overwriteOriginal;}''')
     assert shared
@@ -1916,6 +1929,8 @@ def test_growth_stage23(browser, ctx):
       await miApply(info);window.stage23Original=JSON.stringify(MI.info);
       window.stage23Version=(await fetch('sim/manifest.json').then(r=>r.json())).ver;
       window.stage23Requests=[];window.stage23Active=0;window.stage23Peak=0;
+      window.stage23SpeedWrites=[];const savedSet=LS.set;
+      LS.set=(key,value)=>{if(key==='cosmo.speed.v2')stage23SpeedWrites.push({grown:SIMQ.busy==='growth',value});return savedSet(key,value);};
       window.Worker=class {
         constructor(){stage23Peak=Math.max(stage23Peak,++stage23Active);}
         postMessage(req){stage23Requests.push(req);setTimeout(()=>{
@@ -1952,6 +1967,7 @@ def test_growth_stage23(browser, ctx):
         if kind == 'cosmo':
             assert page.evaluate('new Set(GROW.result.best.teams.flatMap(t=>t.keys)).size') == 12
             assert page.locator('#growth-result .gc').count() == 12
+            assert page.evaluate('stage23SpeedWrites.length>0 && stage23SpeedWrites.every(x=>!x.grown)')
         else:
             assert page.evaluate('GROW.result.best.prog>0')
             assert page.locator('#growth-result .gc').count() == 4
