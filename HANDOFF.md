@@ -58,7 +58,7 @@
 
 - 프로파일(코스모 벨그라스 340판, 10.2초)은 한 곳에 몰리지 않고 고르게 퍼져 있었음: dict.get 246만 회, `mods` 30만 회, `lines_of` 32만·`kind_lines` 24만 회 등.
 - 바꾼 것(`battlesim/mc.py`): `kind_lines` 를 유닛별 시점 색인 캐시로(정의 객체·`d.lines` 참조·길이가 바뀌면 다시 만듦 — `lines_of` 의 기존 캐시와 같은 무효화 조건), 맞은 아군·맞기 전 아군 줄도 이 색인 사용, `line_rest`·`paren_after_name` 문자열 캐시(4,096개 제한, 전투 상태 저장 없음), `mods` 초기값 사전 복사, `run_batch` 빈 묶음 조기 반환·`hit_stack_order` 아닐 때 집계 생략, `_per_target` 조건 판정 순서(부작용 없는 검사), `add_effect` 의 `_is_any_turn` 중복 호출 제거, 반복 import 제거.
-- 동일성: `tools/bench_cosmo_speed.py` sha256 `d8a8dccd…` 유지. 저장소 밖 `E:\AI_mk2ccel-golden\golden.py`(13개 콘텐츠·편성 3개·기본/전체 legacy 규칙 78건, timeline 포함 20판 해시)가 기준 `base.json` 과 파일 전체 동일. 같은 코드로 두 번 돌려 재현 동일함도 먼저 확인했음. 다음 최적화에도 이 도구로 전후 비교함.
+- 동일성: `tools/bench_cosmo_speed.py` sha256 `d8a8dccd…` 유지. 저장소 밖 `E:\AI_mk2\accel-golden\golden.py`(13개 콘텐츠·편성 3개·기본/전체 legacy 규칙 78건, timeline 포함 20판 해시)가 기준 `base.json` 과 파일 전체 동일. 같은 코드로 두 번 돌려 재현 동일함도 먼저 확인했음. 다음 최적화에도 이 도구로 전후 비교함.
 - 속도: codex 교차 측정(원본·최종본 번갈아 3회씩) 평균 3.91→3.16초(약 1.24배). 메인 재측정은 2.61·3.29초로 측정 잡음이 커서 배수는 «약 1.2배»로만 기록함. 브라우저(Pyodide) 전후 시간은 미측정.
 - 시험: `tests/accel_test.py` 9개(색인 무효화·판/유닛 격리·합산 순서), 결함 주입 6건 검출(codex 보고). 전체 `run_tests.py --rebuild --e2e` **115 통과/0 실패**, 건너뜀 2건 종전과 같음. 메인(Claude) 코드 검토: `e.clock = clock` 은 새 효과 생성 분기 안이라 기존 동작과 같음, `_per_target`·`run_batch` 재배치는 부작용 없는 검사라 같음 — 반영.
 - 시도 후 철회: `Ctx` 생성 생략(사건 호출 관찰 시험이 깨짐).
