@@ -12,10 +12,12 @@
   function signature(s){return JSON.stringify([s.account,s.options,s.targets,s.preset,s.content,
     [...s.excluded].sort(),s.breaks,s.mode,s.rules,s.engine,s.data,s.modifiers,VERSION,
     s.equipment,s.policy]);}
-  // Only targets/content may differ. Seasonal memory lives inside content;
+  // Targets/content and legacy mode/break-selection memory may differ;
   // account, common options/rules, versions, equipment and policy must agree.
   function compatible(a,b){if(!a||!b)return false;try{
-    const context=s=>{const a=JSON.parse(s);if(a[12]!==VERSION)throw Error('old history');return a.filter((_,i)=>i!==2&&i!==4);};
+    const context=s=>{const a=JSON.parse(s);if(a[12]!==VERSION)throw Error('old history');
+      if(Array.isArray(a[6]))a[6]=a[6].slice(0,2);
+      return a.filter((_,i)=>i!==2&&i!==4&&i!==7);};
     return JSON.stringify(context(a))===JSON.stringify(context(b));
   }catch{return false;}}
   function interval(r){
@@ -93,9 +95,22 @@
     const old=storage.get('growth.history')||{},next=Object.fromEntries(Object.entries(old).filter(([,v])=>v.account===entry.account&&v.version===entry.version&&compatible(v.signature,entry.signature)));
     next[entry.content]=entry;const latest=Object.entries(next).sort((a,b)=>b[1].at-a[1].at).slice(0,30);
     return storage.set('growth.history',Object.fromEntries(latest));}
-  function priority(history,signature){const by=new Map();
-    for(const h of Object.values(history).filter(h=>compatible(h.signature,signature)))for(const r of h.rows){const id=r.key+'|'+r.kind;
+  function historyContext(signature){const a=JSON.parse(signature),content=a[4],kind=content[0];
+    let conditions=content.at(-1);
+    // Read earlier v5 summaries without purging their unrelated seasonal records.
+    if(conditions&&typeof conditions==='object'&&!['guild','cosmo'].includes(kind))
+      conditions={...conditions,mode:conditions.mode??a[7],breaks:conditions.breaks??a[6]?.slice(2)};
+    return {kind,conditions};}
+  function priority(history,signature,current={}){const by=new Map(),latest=new Map(),entries=Object.values(history).filter(h=>compatible(h.signature,signature));
+    for(const h of entries){const ctx=historyContext(h.signature),old=latest.get(ctx.kind);
+      if(!old||(h.at??0)>=(old.at??0))latest.set(ctx.kind,{at:h.at,conditions:ctx.conditions});}
+    if(signature){const ctx=historyContext(signature);latest.set(ctx.kind,ctx);}
+    for(const [kind,conditions] of Object.entries(current))latest.set(kind,{conditions});
+    for(const h of entries){const ctx=historyContext(h.signature);
+      if(JSON.stringify(ctx.conditions)!==JSON.stringify(latest.get(ctx.kind)?.conditions))continue;
+      for(const r of h.rows){const id=r.key+'|'+r.kind;
       if(!by.has(id))by.set(id,{key:r.key,kind:r.kind,contents:[]});by.get(id).contents.push({...r,content:h.content,unit:h.unit||'%p',metric:h.metric||'clear'});}
+    }
     return [...by.values()].map(r=>({...r,count:new Set(r.contents.filter(c=>c.confirmed).map(c=>c.content.split('/')[0])).size}))
       .sort((a,b)=>{if(a.count!==b.count)return b.count-a.count;
         for(const id of [...new Set(a.contents.map(c=>c.content))].sort()){

@@ -52,6 +52,71 @@ function signatureScope(code=ui){const ctx=context(code),sig=key=>ctx.growthSig(
     ()=>ctx.document.getElementById=()=>({checked:false,value:'missing'}),()=>vm.runInContext("GROW.versions.engine='other'",ctx),
     ()=>vm.runInContext("GROW.versions.data='other'",ctx)]){const before=sig('op');mutate();assert(!G.compatible(before,sig('op')));}
 }
+function selectionHistory(field,code=ui){const ctx=context(code),before={};
+  for(const kind of ['op','guild','cosmo'])before[kind]=save(ctx,kind);
+  if(field==='mode')ctx.MODE='manual';else {ctx.BRSEL['op|a,b,c,d']='test';ctx.SESSION_BR['op|a,b,c,d']='test';}
+  save(ctx,'op','second');const history=ctx.LS.get('growth.history');
+  for(const kind of ['guild','cosmo']){
+    assert(history[kind+'/stage'],field+' must retain '+kind);
+    assert.equal(ctx.growthSig(content(kind),stage),before[kind],kind+' must ignore stage1 '+field);
+  }
+  assert(history['op/stage'],'different conditions stay stored');
+  assert.notEqual(ctx.growthSig(content('op'),stage),before.op,'stage1 condition must change');
+  const p=G.priority(history,ctx.growthSig(content('op'),stage));
+  assert.equal(p[0].count,3);assert(!p[0].contents.some(c=>c.content==='op/stage'));
+}
+function legacySelection(){const ctx=context(),old=save(ctx,'op','old'),parsed=JSON.parse(old),cond=parsed[4].at(-1);
+  parsed[6].push(...cond.breaks);parsed[7]=cond.mode;delete cond.mode;delete cond.breaks;
+  ctx.LS.get('growth.history')['op/old'].signature=JSON.stringify(parsed);
+  save(ctx,'guild');assert(ctx.LS.get('growth.history')['op/old'],'earlier v5 common-memory layout retained');
+  ctx.contents=['op','guild','cosmo'].map(content);vm.runInContext('GROW.sig=growthSig(contents[1],{tab:"tab",name:"stage"})',ctx);
+  assert(ctx.growthPriority(ctx.LS.get('growth.history'))[0].contents.some(c=>c.content==='op/old'));
+  ctx.MODE='manual';save(ctx,'op','new');
+  const h=ctx.LS.get('growth.history');assert(h['op/old']);
+  assert(!ctx.growthPriority(h)[0].contents.some(c=>c.content==='op/old'),'legacy content mode is filtered too');
+}
+function conditionHistory(g=G,field='mode',code=ui){const ctx=context(code);ctx.GrowthGuide=g;
+  // Deterministic timestamps exercise latest per content, independently of the viewed content.
+  const add=(kind,name,at)=>{save(ctx,kind,name);const h=ctx.LS.get('growth.history');h[kind+'/'+name].at=at;return h;};
+  if(field==='mode'||field==='breaks'){
+    add('op','old',1);
+    if(field==='mode')ctx.MODE='manual';else ctx.BRSEL['op|a,b,c,d']='test';
+    add('op','new',2);add('op','same',3);save(ctx,'cosmo');
+    const h=ctx.LS.get('growth.history'),p=g.priority(h,ctx.growthSig(content('cosmo'),stage));
+    assert(h['op/old']);assert.equal(p[0].contents.filter(c=>c.content.startsWith('op/')).length,2);
+    assert(!p[0].contents.some(c=>c.content==='op/old'),'latest stage1 conditions only');
+    return;
+  }
+  add('guild','old',1);ctx.GS.sel.level=3;add('guild','new',2);save(ctx,'op');
+  const h=ctx.LS.get('growth.history'),sig=ctx.growthSig(content('op'),stage);
+  assert(h['guild/old']);assert(!g.priority(h,sig)[0].contents.some(c=>c.content==='guild/old'));
+  assert(g.priority(h,sig)[0].contents.some(c=>c.content==='guild/new'));
+  ctx.contents=['op','guild','cosmo'].map(content);vm.runInContext('GROW.sig=growthSig(contents[0],{tab:"tab",name:"stage"})',ctx);
+  assert(ctx.growthPriority(h)[0].contents.some(c=>c.content==='guild/new'),'current valid guild shown');
+  ctx.GS.sel.level=4;
+  assert(!ctx.growthPriority(h)[0].contents.some(c=>c.content.startsWith('guild/')),'unsaved current difficulty filters display');
+  ctx.GS.sel.level=3;ctx.D.guild={...D,season:'next season'};
+  assert(!ctx.growthPriority(h)[0].contents.some(c=>c.content.startsWith('guild/')),'current season filters display');
+  assert(h['guild/old']&&h['guild/new'],'display filtering must not delete history');
+}
+async function malformedCosmo(code=ui){const ctx=context(code),CS=require('../cosmo_search');
+  const teams=['a','b','c'].map((boss,i)=>({boss,keys:Array.from({length:4},(_,j)=>boss+j),level:0}));
+  ctx.CSR.rows=[{teams},{},{teams:[]},{teams:teams.slice(0,2)},{teams:[null,...teams.slice(1)]}];
+  assert.doesNotThrow(()=>ctx.growthSig(content('cosmo'),stage),'signature must tolerate skipped candidates too');
+  ctx.GuildSearch=GS;ctx.CosmoSearch=CS;ctx.EL={};ctx.CFG.damage={weightBoss:1};ctx.csProfile=()=>({results:{}});
+  const requests=[];ctx.GuildSearch={...GS,party:keys=>({order:keys,spec:{units:keys.map(key=>({key}))}})};
+  ctx.growthCandidates=async()=>[];
+  ctx.growthPhase=async(jobs,n)=>{requests.push(...jobs);return Object.fromEntries(jobs.map(j=>[j.id,
+    {n,prog:.8,progs:Array(n).fill(.8),via:{trigger:1},cosmo:{top:10,mean:10,n,clear:0,frac:.8}}]));};
+  let result;await assert.doesNotReject(async()=>{result=await ctx.growthCosmo({...content('cosmo'),stages:[]},stage,0,Date.now()+10000);});
+  assert(result.runs>0);assert.equal(result.baseline.sum,30);assert.equal(new Set(requests.map(j=>j.boss)).size,3);
+  const errors=vm.runInContext('GROW.errors',ctx);assert.equal(errors.length,4);
+  assert(errors.some(e=>e.includes('2행')&&e.includes('편성 목록 없음')));assert(errors.some(e=>e.includes('4행')&&e.includes('보스 3개')));
+  const el={innerHTML:'',querySelector:()=>({})};ctx.$=()=>el;ctx.growthSeasonContent=()=>content('cosmo');ctx.growthSeasonReady=()=>true;
+  ctx.SIMQ={busy:null};ctx.esc=s=>s;ctx.csBoss=s=>s;
+  ctx.result=result;vm.runInContext("GROW.result=result;GROW.phase='done'",ctx);ctx.growthSeasonPaint();
+  for(const error of errors)assert(el.innerHTML.includes(error),'skip reason must appear in details');
+}
 async function missingBoss(code=ui){const ctx=context(code);
   for(const teams of [undefined,[],[{boss:'a',keys:['a','b','c','d'],level:0}],
     ['a','a','c'].map(boss=>({boss,keys:['a','b','c','d'],level:0}))]){
@@ -107,6 +172,15 @@ async function mutation(name,code,from,to,test){assert(code.includes(from),name)
   assert(caught,'mutation survived: '+name);console.log('MUTATION caught + restored:',name);
 }
 (async()=>{
+  selectionHistory('mode');selectionHistory('breaks');legacySelection();conditionHistory();conditionHistory(G,'breaks');conditionHistory(G,'guild');await malformedCosmo();
+  await mutation('mode memory scope',ui,'modifiers:[MM,SCROWN]','mode:MODE,modifiers:[MM,SCROWN]',s=>selectionHistory('mode',s));
+  await mutation('break memory scope',ui,'breaks:[breakOwned(),MI.info?.break_skills]','breaks:[breakOwned(),MI.info?.break_skills,BRSEL,SESSION_BR]',s=>selectionHistory('breaks',s));
+  for(const field of ['mode','breaks','guild'])await mutation('aggregate '+field,source,
+    'if(JSON.stringify(ctx.conditions)!==JSON.stringify(latest.get(ctx.kind)?.conditions))continue;',
+    'if(false)continue;',s=>conditionHistory(load(s),field));
+  await mutation('current display conditions',ui,'Object.fromEntries(contents.map(c=>[c.key,growthConditions(c)]))','{}',s=>conditionHistory(G,'guild',s));
+  await mutation('malformed cosmo rows',ui,'return !reason;','return true;',malformedCosmo);
+  await mutation('skip reason display',ui,'GROW.errors.map(reason=>`<p class="mut">${esc(reason)}</p>`).join(\'\')','\'\'',malformedCosmo);
   historyOp();historySeason();historyReload();signatureScope();await missingBoss();await exactControls();await workerProgs();await controls();
   for(const [name,test] of [['op history',historyOp],['season history',historySeason],['reload history',historyReload]])
     await mutation(name,ui,'policy:[GrowthGuide.VERSION','policy:[JSON.stringify([GS.sel,GSR,CSR]),GrowthGuide.VERSION',test);

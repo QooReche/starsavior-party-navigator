@@ -57,6 +57,8 @@ HANDOFF 남은 일 22·24. Claude 가 후보안(A1/A2, B1/B2, C1/C2/C3)을 먼�
 
 ## 구현 기록(11/12)
 
+비차단 후속(11/12): `growthSig/growthConditions`에서 수동 모드·`BRSEL/SESSION_BR`를 1단계 콘텐츠 조건으로 옮겼음. `compatible`은 공통 맥락만 비교하며 이전 v5 서명도 정규화해 기록을 유지함. `historyContext/priority`는 콘텐츠 종류별 최신 조건만 집계하고 `growthPriority/growthPaint`는 현재 선택 조건까지 대조하므로, 모드·브레이크가 다른 작전 기록과 단계·시즌이 지난 길방 기록은 저장소에 남되 집계에서 제외됨. `growthCosmo`는 기준팀 밖 편성 목록 없음·보스 누락·잘못된 편성 행을 건너뛰고 `growthSeasonPaint` 상세에 행 번호와 사유를 표시함. 요청한 5개 회귀 시나리오와 기존 v5 호환·미저장 조건 변경·상세 표시를 검사했고, 새 결함 주입 8종 및 수정 전 HEAD `ae23bca`를 사용한 5개 회귀 시험이 모두 실패하는 것을 확인했음. 합성 계정 브라우저 시험에도 불완전한 코스모 행을 추가했음. 수정 전 기준선은 118 통과·0 실패, STARSAVIOR_STATIC을 지정한 최종 `run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`는 일반 118개·브라우저 45개 통과(실행기 집계 119 통과·0 실패)였음. 기존 환경 건너뜀 2건은 그대로이며 로그는 `local/ggfix-final.log`, 수정 전 코드 검출 로그는 `local/ggfix-head-mutations.log`임. 엔진·HANDOFF는 변경하지 않았으며 외부 golden은 생략했고 커밋·푸시는 하지 않았음.
+
 ### 독립 리뷰 후속(11/12)
 
 - 리뷰 원문 `ggAB_review.md`의 blocking 1건과 비차단 지적을 코드로 대조했음. 서명 교차 오염·길방 대조팀 누락·코스모 탭 무효화는 모두 재현해 반영했음. 확정 결함의 기각은 없음.

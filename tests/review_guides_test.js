@@ -58,7 +58,8 @@ function signatures(g=G){const s={account:'a',options:{growth:true},targets:['u'
   assert.equal(g.priority(history,other)[0].count,1);
   let same=history;g.save({get:()=>same,set:(_,v)=>same=v},false,{account:'a',version:'v',content:'clo/b',signature:other,rows:[]});
   assert.equal(Object.keys(same).length,2,'compatible content history must survive');
-  for(const change of [{excluded:['u']},{mode:'manual'},{breaks:['x']},{rules:{x:1}},{modifiers:['y',1]}]){
+  assert(g.compatible(sig,g.signature({...s,mode:'manual'})),'legacy mode belongs to content, not common context');
+  for(const change of [{excluded:['u']},{breaks:['x']},{rules:{x:1}},{modifiers:['y',1]}]){
     const changed=g.signature({...s,...change});assert.equal(g.priority(history,changed).length,0);
     let value=history;g.save({get:()=>value,set:(_,v)=>value=v},false,{account:'a',version:'v',content:'clo/b',signature:changed,rows:[]});
     assert.equal(Object.keys(value).length,1);

@@ -1963,6 +1963,16 @@ def test_growth_stage23(browser, ctx):
     page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
     assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
     assert page.evaluate("localStorage.getItem('pn.growth.history')") == history
+    # Malformed non-reference candidates must not abort the real start/signature/paint path.
+    page.evaluate('CSR.rows.push({}, {teams:[]}, {teams:CSR.rows[0].teams.slice(0,2)})')
+    page.locator('[data-growth-start]').click()
+    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
+    assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
+    assert page.evaluate('GROW.result.runs>0&&GROW.result.baseline.sum>0&&GROW.errors.length===3')
+    details = page.locator('[data-k="growth-score-details"]').text_content()
+    assert '편성 목록 없음' in details and '보스 3개 편성 누락' in details and '행 건너뜀' in details
+    assert page.evaluate("localStorage.getItem('pn.growth.history')") == history
+    page.evaluate('CSR.rows.splice(-3)')
     page.evaluate('MI.shared=false;CSR.rows[0].teams.pop()')
     page.locator('[data-growth-start]').click()
     page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)

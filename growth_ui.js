@@ -19,8 +19,8 @@ function growthTargets(c,st){const opts=growthOptions(),restrict=(CFG.restrict[c
         targets.push({...t,id:t.id+'|'+component,parentId:t.id,component,fields});
     }}return targets;}
 function growthSig(c,st){return GrowthGuide.signature({account:MI.hash,options:growthOptions(),targets:growthTargets(c,st),
-  preset:MI.growth?.assumed?.version,content:[c.key,...(c.key==='cosmo'?[]:[st.tab,st.name]),growthConditions(c)],excluded:[...EXCL],breaks:[breakOwned(),MI.info?.break_skills,BRSEL,SESSION_BR],
-  mode:MODE,modifiers:[MM,SCROWN],rules:SIMOPT,engine:GROW.versions?.engine,data:GROW.versions?.data,
+  preset:MI.growth?.assumed?.version,content:[c.key,...(c.key==='cosmo'?[]:[st.tab,st.name]),growthConditions(c)],excluded:[...EXCL],breaks:[breakOwned(),MI.info?.break_skills],
+  modifiers:[MM,SCROWN],rules:SIMOPT,engine:GROW.versions?.engine,data:GROW.versions?.data,
   equipment:[MI.hash,[...EXCL].sort()],
   policy:[GrowthGuide.VERSION,GrowthGuide.LIMITS,GrowthGuide.COSMO_LIMITS,17011,900001,27011]});}
 function growthMetric(r,mode=MODE){if(mode!=='manual'||!r.man)return r;
@@ -157,7 +157,7 @@ function growthPaint(){if(!growthEnabled())return;let el=$('growth-result');
     <details><summary>계산 정보</summary><p class="mut">보유 기준 ${metric(r.baseline)} · 묶음 평가 ${rows.filter(x=>x.result).length}/${rows.length}명 · ${(r.ms/1000).toFixed(1)}초 · 완료 ${r.runs}판</p></details>`;
   if(slot)el.querySelector('[data-k="growth-slot-summary"]').append(slot);
   const version=GROW.versions.engine+'|'+GROW.versions.data,history=MI.shared?GROW.history:LS.get('growth.history')||{},
-    matching=Object.fromEntries(Object.entries(history).filter(([,v])=>v.account===MI.hash&&v.version===version)),priority=GrowthGuide.priority(matching,GROW.sig);
+    matching=Object.fromEntries(Object.entries(history).filter(([,v])=>v.account===MI.hash&&v.version===version)),priority=growthPriority(matching);
   el.insertAdjacentHTML('beforeend',`<details><summary>성능 개선 기준 육성 후보</summary>${priority.slice(0,12).map(x=>`<p>${esc(BYKEY[x.key]?.name||x.key)} · 묶음 · 개선 확인 ${x.count}콘텐츠<br><span class="mut">${x.contents.map(v=>`${esc(v.content)} ${v.delta==null?'미평가':fmt(v.delta)+esc(v.unit)}`).join(' · ')}</span></p>`).join('')}</details>`);
 }
 
@@ -169,8 +169,10 @@ function growthConditions(c){const rules=simOpt(c.key);
     teams:GSR.rows.map(r=>[r.keys,r.order,r.sup,r.level])};
   if(c.key==='cosmo')return {rules,season:D.cosmoRaid?.season,
     difficulty:CSR.optLevel,fast:CSR.optFast,ranking:CSR.optMode,
-    teams:CSR.rows.map(r=>(r.teams||[]).map(t=>[t.boss,t.keys,t.order,t.level,t.brk,t.brkLv]))};
-  return {rules};}
+    teams:CSR.rows.map(r=>Array.isArray(r?.teams)?r.teams.map(t=>[t?.boss,t?.keys,t?.order,t?.level,t?.brk,t?.brkLv]):[])};
+  return {rules,mode:MODE,breaks:[BRSEL,SESSION_BR]};}
+function growthPriority(history){return GrowthGuide.priority(history,GROW.sig,
+  Object.fromEntries(contents.map(c=>[c.key,growthConditions(c)])));}
 function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.context===growthOwnedContext('guild'):
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
 function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks()],simOpt(kind)]);}
@@ -224,8 +226,14 @@ async function growthGuild(c,st,id,deadline){
 async function growthCosmo(c,st,id,deadline){
   const alive=()=>GROW.id===id,C=D.cosmoRaid,S=C.search,bosses=C.bosses.map(b=>b.key),profile=csProfile(),cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),
     reference=CSR.rows[0];
-  if(!Array.isArray(reference?.teams)||bosses.length!==3||bosses.some(b=>!reference.teams.some(t=>t?.boss===b&&t.keys?.length===4&&Number.isInteger(t.level))))
+  if(!Array.isArray(reference?.teams)||reference.teams.length!==3||bosses.length!==3||bosses.some(b=>!reference.teams.some(t=>t?.boss===b&&t.keys?.length===4&&Number.isInteger(t.level))))
     throw Error('보유 탐색 먼저 · 보스 3개 기준 편성 필요');
+  const validRows=CSR.rows.filter((r,index)=>{
+    const reason=!Array.isArray(r?.teams)||!r.teams.length?'편성 목록 없음':
+      r.teams.length!==3||bosses.some(b=>!r.teams.some(t=>t?.boss===b&&t.keys?.length===4&&Number.isInteger(t.level)))?'보스 3개 편성 누락 또는 잘못된 편성':'';
+    if(reason)GROW.errors.push(`보유 후보 ${index+1}행 건너뜀 · ${reason}`);
+    return !reason;
+  });
   const owned=[[],[],[]],established=[],targets=new Map();
   const conditions=reference.teams.map(t=>({boss:t.boss,level:t.level,brk:t.brk?{name:t.brk,level:t.brkLv}:null}));
   for(let i=0;i<3;i++){
@@ -236,7 +244,7 @@ async function growthCosmo(c,st,id,deadline){
     const makeJob=(t,key)=>({...growthSeasonJob(t,boss+'|'+key,options,i),boss});
     const rows=(CSR.growthOwned||[]).filter(j=>j.boss===boss),res=Object.fromEntries(rows.map(j=>[j.key,j.result]));
     const diverse=CosmoSearch.pickDiverse(rows,res,CSR.optMode,8);
-    const keys=new Map([...CSR.rows.flatMap(r=>r.teams.filter(t=>t.boss===boss)),...diverse].map(t=>[CosmoSearch.idOf(t.keys),t.keys]));
+    const keys=new Map([...validRows.flatMap(r=>r.teams.filter(t=>t.boss===boss)),...diverse].map(t=>[CosmoSearch.idOf(t.keys),t.keys]));
     for(const ks of keys.values()){
       const p=GuildSearch.party(ks,profile.results,cls),job={id:boss+'|owned|'+ks.slice().sort().join(','),keys:ks,order:p.order,party:p.spec,options,boss,bossIndex:i};
       owned[i].push(job);if(CosmoSearch.idOf(ks)===CosmoSearch.idOf(reference.teams.find(t=>t.boss===boss).keys))established.push(job);
@@ -289,6 +297,7 @@ function growthSeasonPaint(){const c=growthSeasonContent();if(!c||!growthEnabled
     rows.filter(r=>r.result).slice(0,5).map(show).join('')+
     `<details data-k="growth-score-details"><summary>평가 상세</summary><p class="mut">${c.key==='guild'?'보유 기준팀의 최선 지원 고정 · 평균·상한 예선 후 별도 시드 100판 · 부트스트랩 차이 구간':'가정자 한 보스씩 · 보유 중복 없이 재결합 · 보유 최선 3팀과 비교 · 기준팀 난이도·브레이크 고정'}. 제한 탐색 · 오토 기준 · 전역 최적 보장 없음.</p>`+
     (result?`<p class="mut">완료 ${result.runs}판 · ${(result.ms/1000).toFixed(1)}초${result.baselinePending?' · 기준 재평가 미완료':''}${GROW.errors.length?' · 일부 평가 실패':''}</p>`:'')+
+    GROW.errors.map(reason=>`<p class="mut">${esc(reason)}</p>`).join('')+
     rows.filter(r=>!rows.filter(x=>x.result).slice(0,5).includes(r)).map(show).join('')+
     (result?.rows||[]).filter(r=>r.component).map(r=>`<p>${esc(BYKEY[r.key]?.name||r.key)} · ${growthParts[r.component]} ${r.delta==null?'미평가':fmt(r.delta)+'점'}</p>`).join('')+'</details>';
   el.querySelector('[data-growth-start]').onclick=growthSeasonStart;
