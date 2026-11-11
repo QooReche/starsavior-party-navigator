@@ -184,6 +184,10 @@ body:not(.show-why) .gimnote{display:none}
 .qv{display:inline-block;font-weight:700;border-radius:10px;padding:1px 10px;font-size:13px;border:1px solid}.qv.safe{color:var(--good);border-color:var(--good)}
 .qv.tight{color:var(--warn);border-color:var(--warn)}.qv.hard{color:var(--bad);border-color:var(--bad)}
 .mi-tabs .tabsp{flex:1}.idle{text-align:center;padding:22px 12px}.idle p{margin:6px 0}.idle button{margin-top:8px;font-size:15px;padding:8px 20px}
+#reco-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 16px;margin-top:8px}#reco-actions button{margin-top:0}
+#growth-control-home:empty{display:none}#growth-control{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:12px}#growth-control label{display:inline-flex;align-items:center;gap:4px;min-height:40px;white-space:nowrap}#growth-control .tag{margin:0;white-space:nowrap}#growth-control:has(input:disabled) label{color:var(--mut)}
+#growth-settings{margin:10px 0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px}#growth-settings summary{display:flex;align-items:center;cursor:pointer}#growth-settings summary:before{content:'▸';margin-right:6px}#growth-settings[open] summary:before{content:'▾'}#growth-settings select{max-width:100%}
+@media(max-width:600px){#reco-actions{flex-direction:column}#reco-actions>button{width:100%}#growth-control-home{max-width:100%}#growth-control{row-gap:0}}
 .qv.approx{border-style:dashed;opacity:.8}.qv.pending{border-style:dashed;color:var(--mut);border-color:var(--mut)}.progress{padding:16px}.progress .pbar{height:6px;border-radius:3px;background:rgba(127,127,127,.2);margin:10px 0;overflow:hidden}.progress .pbar i{display:block;height:100%;background:var(--acc);transition:width .3s}.bigboss{border-color:var(--warn);border-style:solid}.qwarn{margin:6px 0;padding:6px 10px;border:1px dashed var(--warn);border-radius:8px;font-size:13px}
 .pwrow{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px}.pwrow .face{width:28px;height:28px}.pwrow span{flex:1}.pwrow input[type=number]{width:110px}.pwrow .bl{font-size:12px;color:var(--mut);display:inline-flex;gap:3px;align-items:center}
 .qsim{display:inline-block;margin-top:3px}.simbar{justify-content:flex-start}
@@ -329,7 +333,7 @@ summary{padding:9px 4px}
 <h1>파티 편성 네비게이터 <small style="color:var(--bad)">베타</small></h1>
 <p class="sub">가진 구원자로 이 스테이지를 깰 파티를 찾습니다</p>
 <p class="notice" data-k="notice">📢 11/03 업데이트 · 최신 클라 코드로 전투 규칙 재확인 · 협공·노바 상한·적 쿨·반격 반영 · 길방 시뮬 표 재계산 · 실제 플레이 대조 전이라 결과가 다를 수 있음</p>
-<nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천 파티</button><button id="tab-info" type="button" aria-pressed="false">내 정보</button><span class="tabsp"></span><span id="mi-chip" class="mi-chip"></span><button id="mi-open" type="button" class="sec">내 계정 정보 불러오기</button><button id="share-link" type="button" class="sec" aria-live="polite" title="조건과 내 정보(구원자 수치)를 담은 링크 — 받은 사람이 같은 정보로 추천을 볼 수 있음">링크 복사</button><label class="mi-use" title="끄면 조건만 담고 내 정보는 넣지 않음"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></nav>
+<nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천 파티</button><button id="tab-info" type="button" aria-pressed="false">내 정보</button><span id="growth-control-home"><span id="growth-control"><label><input type="checkbox" id="assume-growth"> 육성 가이드</label><span id="growth-hint" class="tag">키우면 얼마나 좋아지나</span><span id="growth-requires-info" class="tag">내 정보 필요</span></span></span><span class="tabsp"></span><span id="mi-chip" class="mi-chip"></span><button id="mi-open" type="button" class="sec">내 계정 정보 불러오기</button><button id="share-link" type="button" class="sec" aria-live="polite" title="조건과 내 정보(구원자 수치)를 담은 링크 — 받은 사람이 같은 정보로 추천을 볼 수 있음">링크 복사</button><label class="mi-use" title="끄면 조건만 담고 내 정보는 넣지 않음"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></nav>
 <div id="shared-bar" class="shared-bar" hidden></div>
 <div class="panel input-panel">
  <div class="row input-row">
@@ -356,7 +360,7 @@ summary{padding:9px 4px}
    <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
 <section id="mi-panel" class="panel" aria-label="내 정보" hidden>
  <div class="mi-toolbar"><b>내 정보</b><button id="mi-open-import" type="button">불러오기·만드는 방법</button><button id="mi-panel-clear" type="button">지우기</button><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
- <div class="mi-assume"><label><input type="checkbox" id="assume-growth"> 육성 가이드</label><details><summary>가정 기준</summary><p><span class="tag">스타링크 Lv · 상향만</span> <span class="tag">장비 +15 · 표준 부옵</span> <span class="tag">스킬·공명 최대</span> <span class="tag">여정·잠재력</span><br>%p = 보유 최고 대비 추정 · 실제 장비 보유와 무관 · 소스 레벨 유지</p><label>육성 대상 <select id="assume-owned"><option value="all">미보유 + 보유 목표 육성</option><option value="missing">미보유만</option></select></label></details></div>
+ <details id="growth-settings"><summary id="growth-settings-summary">육성 설정 · 꺼짐</summary><label>육성 대상 <select id="assume-owned"><option value="all">미보유 + 보유 목표 육성</option><option value="missing">미보유만</option></select></label><p>가정 기준 <span class="tag">스타링크 Lv · 상향만</span> <span class="tag">장비 +15 · 표준 부옵</span> <span class="tag">스킬·공명 최대</span> <span class="tag">여정·잠재력</span></p><p class="mut">%p = 보유 최고 대비 추정 · 실제 장비 보유와 무관 · 소스 레벨 유지</p></details>
 <div id="mi-meta"></div><div id="mi-saved" class="mut"></div><div id="mi-account"></div>
  <section id="mi-brk-sec"><b>보유 브레이크 스킬</b> <span class="mut" id="brk-note">직접 선택</span><div id="brk" style="margin-top:6px"></div></section>
  <div id="mi-excl" class="mut"></div><div id="mi-list"></div>
@@ -1125,13 +1129,13 @@ setInterval(()=>{if(SIMQ.busy==null)return;const t=simEtaText();document.querySe
 // 주소에 ?auto=1 이 있거나 공유 링크로 열면 예전처럼 바로 계산한다(자동 시험·링크 공유용).
 const AUTO=/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
 function idleView(){const t=id=>{const e=$(id);return e&&e.selectedOptions&&e.selectedOptions[0]?e.selectedOptions[0].textContent.trim():""};
- $("out").innerHTML=`<div class="party idle" data-k="idle"><p><b>${esc(t("content"))}</b> · ${esc(t("tab"))} · <b>${esc(t("stage"))}</b> · 내 정보 기준</p><button type="button" data-go="1" title="현재 조건(콘텐츠·섹터·지역·스테이지)과 내 정보로 후보를 시뮬해서 추천합니다(첫 실행 시 계산 엔진 약 14MB)">추천 편성 보기</button></div>`}
+ $("out").innerHTML=`<div class="party idle" data-k="idle"><p><b>${esc(t("content"))}</b> · ${esc(t("tab"))} · <b>${esc(t("stage"))}</b> · 내 정보 기준</p><div id="reco-actions"><button type="button" data-go="1" title="현재 조건(콘텐츠·섹터·지역·스테이지)과 내 정보로 후보를 시뮬해서 추천합니다(첫 실행 시 계산 엔진 약 14MB)">추천 편성 보기</button></div></div>`;growthControlPlace()}
 function condChanged(){REQ=false;SIMQ.kick=false;simInvalidate();run()}
 function miGuide(){return `<div class="party guide" data-k="miguide"><h3>먼저 내 정보를 불러오세요</h3>
  <p class="mut">PowerShell 명령 실행 → 관리자 확인 후 게임 로그인·로비에서 엔터 → 사이트에 자동 반영</p>
  <div class="acts"><button type="button" data-miopen="1">내 계정 정보 불러오기</button></div></div>`}
 function showReco(){if(!MI.info){setDrawer(true);return}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
-function run(skipAuto=false){$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
+function run(skipAuto=false){growthControlPlace(true);$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);simRunAdd(Date.now()-t0)}
 function runCore(skipAuto=false){
  renderMi();
@@ -1245,10 +1249,10 @@ function miVerdict(t,st){const r=SIMQ.res[simSig(st,t)];
  const first=m?m.first:r.first,death=m?m.first_p:r.first_p;
  const risk=first&&Number.isFinite(death)?` · ${esc(first.split("#")[0])} 위험 ${Math.round(death*100)}%`:"";
  return `<div class="mi-verdict" data-k="judgment" title="${esc(simTitle(r))}"><b class="${clear>=0.5?"ok":"hard"}">${clear>=0.5?"깰 수 있음":"어려움"}</b> · 클리어 ${Math.round(clear*100)}%${turn!=null?` · 약 ${Math.round(turn)}턴`:""}${!m&&r.t60!=null?` · ${STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:""}${risk}</div>`}
-function miTab(info){$("mi-panel").hidden=!info;$("out").hidden=info;$("graphwrap").hidden=info;document.querySelector(".input-panel").hidden=info;
+function miTab(info){$("mi-panel").hidden=!info;$("out").hidden=info;$("graphwrap").hidden=info;document.querySelector(".input-panel").hidden=info;growthControlPlace();
  $("tab-reco").setAttribute("aria-pressed",String(!info));$("tab-info").setAttribute("aria-pressed",String(info));if(info)renderMi();else {drawGraph();if(cy)cy.resize()}}
 function savedTime(date){const d=new Date(date);if(!Number.isFinite(+d))return "";const z=v=>String(v).padStart(2,"0");return `${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`}
-function renderMi(){const info=MI.info;$("grow").querySelector('[value="myinfo"]').disabled=!info;
+function renderMi(){growthControls();const info=MI.info;$("grow").querySelector('[value="myinfo"]').disabled=!info;
  $("mi-panel-clear").disabled=!info&&!MI.invalid;$("mi-clear").disabled=!info&&!MI.invalid;
  if(!info){$("mi-meta").textContent=MI.invalid?"저장된 정보 오류 · 지우거나 파일을 다시 불러오기":"불러온 정보 없음";$("mi-saved").textContent="";$("mi-list").innerHTML="";$("mi-account").innerHTML="";MIFULL.refresh();return}
  const date=String(info.exported_at||"—"),current=miProfile();

@@ -1597,6 +1597,114 @@ def guide_layout_audit(page):
     return audit
 
 
+def growth_control_audit(page, home=False, enabled=True):
+    assert page.locator('#assume-growth').count() == 1
+    assert page.locator('#mi-panel #assume-growth, .mi-assume').count() == 0
+    host = '#growth-control-home' if home else '#reco-actions'
+    assert page.locator(host + ' #assume-growth').count() == 1
+    assert page.locator('#assume-growth').is_visible()
+    assert page.locator('#assume-growth').is_enabled() == enabled
+    assert page.locator('#growth-requires-info').is_visible() == (not enabled)
+    boxes = page.evaluate('''host => {
+      const elements=[...document.querySelectorAll(host+' button, '+host+' #growth-control label, '+host+' #growth-control .tag')]
+        .filter(e=>e.getBoundingClientRect().width);
+      const rects=elements.map(e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom};});
+      return {width:innerWidth,scroll:document.documentElement.scrollWidth,rects};
+    }''', host)
+    assert boxes['scroll'] <= boxes['width'] + 1, boxes
+    for i, a in enumerate(boxes['rects']):
+        assert 0 <= a['left'] < a['right'] <= boxes['width'] + 1, boxes
+        for b in boxes['rects'][i + 1:]:
+            assert min(a['right'], b['right']) <= max(a['left'], b['left']) + 1 or \
+                min(a['bottom'], b['bottom']) <= max(a['top'], b['top']) + 1, boxes
+
+
+def growth_settings_collapsed(page):
+    assert not page.locator('#growth-settings').evaluate('(e)=>e.open')
+    assert not page.locator('#assume-owned').is_visible()
+    assert not page.locator('#growth-settings .tag').first.is_visible()
+
+
+def test_growth_controls(browser, ctx):
+    page = open_page(browser, ctx, query='?auto=0', info=None, wait=False,
+                     viewport={'width': 390, 'height': 844})
+    growth_control_audit(page, home=True, enabled=False)
+    page.click('#tab-info')
+    settle(page)
+    growth_settings_collapsed(page)
+    assert page.locator('#growth-settings-summary').is_visible()
+    # Prove the audits catch a duplicate old switch, a missing gate, and exposed settings.
+    for mutation, restore, audit in [
+        ("$('mi-panel').append($('assume-growth').cloneNode())", "document.querySelector('#mi-panel #assume-growth').remove()",
+         lambda: growth_control_audit(page, home=True, enabled=False)),
+        ("$('assume-growth').disabled=false", "$('assume-growth').disabled=true",
+         lambda: growth_control_audit(page, home=True, enabled=False)),
+        ("$('growth-settings').open=true", "$('growth-settings').open=false",
+         lambda: growth_settings_collapsed(page)),
+    ]:
+        page.evaluate('() => {' + mutation + '}')
+        try:
+            try:
+                audit()
+            except AssertionError:
+                pass
+            else:
+                raise AssertionError('growth control mutation escaped: ' + mutation)
+        finally:
+            page.evaluate('() => {' + restore + '}')
+    page.evaluate('(info)=>miApply(info)', load_json(SYNTH))
+    wait_myinfo(page)
+    settle(page)
+    page.click('#tab-reco')
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    growth_control_audit(page)
+    page.check('#assume-growth')
+    assert page.evaluate("LS.get('growth.options').growth")
+    page.click('#tab-info')
+    assert page.locator('#assume-owned').is_visible()
+    assert page.locator('#growth-settings .tag').first.is_visible()
+    page.select_option('#assume-owned', 'missing')
+    page.click('#tab-reco')
+    for width, height, name in [(1280, 900, 'desktop'), (390, 844, 'mobile')]:
+        page.set_viewport_size({'width': width, 'height': height})
+        growth_control_audit(page)
+        page.screenshot(path=os.path.join(ctx.shots, 'growth_controls_' + name + '.png'), full_page=True)
+    # The stored shape predates the move; retain its checkbox and target selection on reload.
+    saved = page.evaluate("localStorage.getItem('pn.growth.options')")
+    page.reload()
+    wait_myinfo(page)
+    settle(page)
+    growth_control_audit(page)
+    assert page.locator('#assume-growth').is_checked()
+    assert page.locator('#assume-owned').input_value() == 'missing'
+    assert page.evaluate("localStorage.getItem('pn.growth.options')") == saved
+    assert page.evaluate("new URL(shareUrl()).searchParams.get('ag')==='1' && new URL(shareUrl()).searchParams.get('ao')==='0'")
+    # Shared query overrides the old local options without persisting either control.
+    page.goto(ctx.base + '/index.html?auto=0&ag=0&ao=1')
+    wait_myinfo(page)
+    settle(page)
+    assert not page.locator('#assume-growth').is_checked()
+    assert page.locator('#assume-owned').input_value() == 'all'
+    assert page.evaluate("localStorage.getItem('pn.growth.options')") == saved
+    page.evaluate('(info)=>miApply(info,{shared:true})', load_json(SYNTH))
+    settle(page)
+    page.check('#assume-growth')
+    page.click('#tab-info')
+    page.select_option('#assume-owned', 'missing')
+    page.uncheck('#assume-growth')
+    growth_settings_collapsed(page)
+    assert page.evaluate("localStorage.getItem('pn.growth.options')") == saved
+    page.evaluate('MI.shared=false')
+    page.check('#assume-growth')
+    page.click('#mi-panel-clear')
+    settle(page)
+    growth_control_audit(page, home=True, enabled=False)
+    growth_settings_collapsed(page)
+    assert page.locator('#assume-growth').is_checked(), 'clearing account must retain the saved preference'
+    assert not ctx.errors, ctx.errors
+    return True, '버튼 옆 단일 스위치·내 정보 필요·설정 접기·저장/공유·390px·결함 주입 3종'
+
+
 def test_assumed_growth(browser, ctx):
     """Real Pyodide: checkbox -> owned search -> one-savior stage -> comparison table.
 
@@ -1614,7 +1722,7 @@ def test_assumed_growth(browser, ctx):
     settle(page)
     if os.environ.get('PN_DISABLE_ASSUMED') == '1':
         page.evaluate('growthMaybe=()=>{}')
-    page.click('#tab-info')
+    page.click('#tab-reco')
     assert page.locator('label:has(#assume-growth)').inner_text().strip() == '육성 가이드'
     assert page.locator('#assume-equipment').count() == 0
     page.check('#assume-growth')
@@ -1623,6 +1731,8 @@ def test_assumed_growth(browser, ctx):
     page.wait_for_function("() => GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
     assert page.evaluate("GROW.phase") == 'done', page.evaluate('GROW.msg')
     page.wait_for_selector('[data-k="growth-table"]')
+    assert page.locator('#out #growth-result [data-k="growth-table"]').count() == 1
+    growth_control_audit(page, home=True)
     result = page.evaluate('''() => ({
       runs:GROW.result.runs, ms:GROW.result.ms, scope:GROW.result.scope,
       rows:GROW.result.rows.filter(r=>r.result).slice(0,5).map(r=>({key:r.key,kind:r.kind,clear:r.result.clear,
@@ -1915,6 +2025,7 @@ def test_growth_stage23(browser, ctx):
     names = page.locator('#content option').all_text_contents()
     page.select_option('#content', label=next(n for n in names if n.startswith('길드방어전')))
     settle(page)
+    growth_control_audit(page)
     page.evaluate("GS.sel={level:0,tiers:[0,0,0,0]};renderGuild()")
     page.click('#guild-search [data-gs="start"]')
     page.wait_for_function("GSR.phase==='done'||GSR.phase==='err'")
@@ -1924,6 +2035,7 @@ def test_growth_stage23(browser, ctx):
     assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
     assert page.evaluate('GROW.result.rows.some(r=>r.result)'), page.evaluate('GROW.result.rows.map(r=>({id:r.id,error:r.error,status:r.status}))')
     page.wait_for_selector('[data-k="growth-guild-card"]')
+    assert page.locator('#out #growth-result [data-k="growth-guild-card"]').count() > 0
     assert '현재 조건에서의 개선' in page.inner_text('#growth-result')
     assert page.evaluate('GROW.result.runs>0&&GROW.result.runs<=7200&&GROW.result.rows.some(r=>r.result?.prog>0)')
     assert page.evaluate('stage23Requests.filter(r=>r.n_runs===100).every(r=>r.seed===900001)')
@@ -1939,6 +2051,8 @@ def test_growth_stage23(browser, ctx):
     page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
     assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
     page.wait_for_selector('[data-k="growth-cosmo-card"]')
+    assert page.locator('#out #growth-result [data-k="growth-cosmo-card"]').count() > 0
+    growth_control_audit(page, home=True)
     assert page.evaluate('GROW.result.runs>0&&GROW.result.runs<=12000&&stage23Peak<=3')
     assert page.evaluate('GROW.result.rows.filter(r=>r.team).every(r=>new Set(r.team.teams.flatMap(t=>t.keys)).size===12)')
     assert page.evaluate('new Set(stage23Requests.filter(r=>r.n_runs===4).flatMap(r=>r.teams.filter(t=>t.key.includes("|growth")).map(t=>t.options.cosmo_raid.boss))).size===3')
@@ -1984,7 +2098,7 @@ def test_growth_stage23(browser, ctx):
     return True, '길방·코스모: 옵션→보유 검색→육성 비교→모바일 결과 카드, 원본 불변'
 
 
-TESTS = [test_growth_stage23, test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
+TESTS = [test_growth_controls, test_growth_stage23, test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)

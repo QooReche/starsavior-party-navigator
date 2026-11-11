@@ -4,11 +4,21 @@ function growthOptions(){return {growth:!!document.getElementById('assume-growth
   owned:document.getElementById('assume-owned')?.value!=='missing'};}
 function growthCacheTag(){return JSON.stringify([GrowthGuide.VERSION,growthOptions(),MI.growth?.assumed?.version]);}
 function growthEnabled(){const o=growthOptions();return o.growth;}
+// Keep one live checkbox while the recommendation body is replaced.
+function growthControlPlace(home=false){const target=!home&&!$('out').hidden&&$('reco-actions');
+  (target||$('growth-control-home')).append($('growth-control'));}
+function growthControls(){const enabled=!!MI.info&&growthEnabled(),details=$('growth-settings');
+  $('assume-growth').disabled=!MI.info;$('growth-requires-info').hidden=!!MI.info;
+  if(details.dataset.enabled!==String(enabled)||!enabled)details.open=enabled;
+  details.dataset.enabled=String(enabled);
+  $('growth-settings-summary').textContent='육성 설정 · '+(!MI.info?'내 정보 필요':!enabled?'꺼짐':growthOptions().owned?'미보유 + 보유':'미보유만');}
 function growthCancel(){if(typeof slotCancel==='function')slotCancel();GROW.id++;if(GROW.stop)GROW.stop();GROW.stop=null;
   if(typeof SIMQ!=='undefined'&&SIMQ.busy==='growth')SIMQ.busy=null;
   GROW.phase='idle';GROW.result=null;GROW.sig=null;GROW.msg='';GROW.errors=[];}
 function growthInit(){const o=GrowthGuide.options(LS.get('growth.options')||{},SHARE);
   $('assume-growth').checked=o.growth;$('assume-owned').value=o.owned?'all':'missing';
+  $('assume-growth').setAttribute('aria-describedby','growth-hint');
+  growthControls();
   for(const id of ['assume-growth','assume-owned'])$(id).onchange=()=>{
     if(!MI.shared)LS.set('growth.options',growthOptions());condChanged();};}
 function growthTargets(c,st){const opts=growthOptions(),restrict=(CFG.restrict[c.name]||{})[st.tab],owned=(c.key==='guild'?MyInfoReco.profile(MI.info,R,MI.growth,'op'):miProfile()).units;
