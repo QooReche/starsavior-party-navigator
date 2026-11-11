@@ -1,8 +1,8 @@
 // Page integration. Uses the existing SIMQ workers, never a second worker budget.
 const GROW={id:0,phase:'idle',result:null,sig:null,msg:'',stop:null,versions:null,history:{},errors:[]};
 function growthOptions(){return {growth:!!document.getElementById('assume-growth')?.checked,
-  owned:document.getElementById('assume-owned')?.value!=='missing'};}
-function growthCacheTag(){return JSON.stringify([GrowthGuide.VERSION,growthOptions(),MI.growth?.assumed?.version]);}
+  owned:document.getElementById('assume-owned')?.value!=='owned'};}
+function growthCacheTag(){return JSON.stringify(['current-account',MyInfoReco.OVERWRITE_VERSION,growthOptions(),MI.growth?.assumed?.version]);}
 function growthEnabled(){const o=growthOptions();return o.growth;}
 // Keep one live checkbox while the recommendation body is replaced.
 function growthControlPlace(home=false){const target=!home&&!$('out').hidden&&$('reco-actions');
@@ -11,22 +11,20 @@ function growthControls(){const enabled=!!MI.info&&growthEnabled(),details=$('gr
   $('assume-growth').disabled=!MI.info;$('growth-requires-info').hidden=!!MI.info;
   if(details.dataset.enabled!==String(enabled)||!enabled)details.open=enabled;
   details.dataset.enabled=String(enabled);
-  $('growth-settings-summary').textContent='육성 설정 · '+(!MI.info?'내 정보 필요':!enabled?'꺼짐':growthOptions().owned?'미보유 + 보유':'미보유만');}
+  $('growth-settings-summary').textContent='육성 설정 · '+(!MI.info?'내 정보 필요':!enabled?'꺼짐':growthOptions().owned?'보유 + 미보유':'보유만');}
 function growthCancel(){if(typeof slotCancel==='function')slotCancel();GROW.id++;if(GROW.stop)GROW.stop();GROW.stop=null;
   if(typeof SIMQ!=='undefined'&&SIMQ.busy==='growth')SIMQ.busy=null;
   GROW.phase='idle';GROW.result=null;GROW.sig=null;GROW.msg='';GROW.errors=[];}
 function growthInit(){const o=GrowthGuide.options(LS.get('growth.options')||{},SHARE);
-  $('assume-growth').checked=o.growth;$('assume-owned').value=o.owned?'all':'missing';
+  $('assume-growth').checked=o.growth;$('assume-owned').value=o.owned?'all':'owned';
   $('assume-growth').setAttribute('aria-describedby','growth-hint');
   growthControls();
   for(const id of ['assume-growth','assume-owned'])$(id).onchange=()=>{
     if(!MI.shared)LS.set('growth.options',growthOptions());condChanged();};}
 function growthTargets(c,st){const opts=growthOptions(),restrict=(CFG.restrict[c.name]||{})[st.tab],owned=(c.key==='guild'?MyInfoReco.profile(MI.info,R,MI.growth,'op'):miProfile()).units;
   const targets=[];for(const s of R){if(EXCL.has(s.key)||(restrict&&s.el!==restrict))continue;
-    if(opts.growth&&(!owned[s.key]||opts.owned)){
+    if(opts.growth&&(owned[s.key]||opts.owned)){
       const t={key:s.key,kind:'growth',source:owned[s.key]?'owned':'assumed',id:s.key+'|growth'};targets.push(t);
-      if(owned[s.key])for(const [component,fields] of Object.entries(GrowthGuide.COMPONENTS))
-        targets.push({...t,id:t.id+'|'+component,parentId:t.id,component,fields});
     }}return targets;}
 function growthSig(c,st){return GrowthGuide.signature({account:MI.hash,options:growthOptions(),targets:growthTargets(c,st),
   preset:MI.growth?.assumed?.version,content:[c.key,...(c.key==='cosmo'?[]:[st.tab,st.name]),growthConditions(c)],excluded:[...EXCL],breaks:[breakOwned(),MI.info?.break_skills],
@@ -87,228 +85,181 @@ function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.sta
   const workers=scrPool(),parts=workers.map(()=>[]),request=SIMQ.requestId=(SIMQ.requestId||0)+1;
   jobs.forEach((j,i)=>parts[i%workers.length].push(j));let open=parts.filter(p=>p.length).length,done=false;
   const finish=cut=>{if(done)return;done=true;clearTimeout(timer);state.stop=null;
+    if(cut)Object.defineProperty(results,'incomplete',{value:true});
     if(cut){for(const w of workers)w?.terminate();SIMQ.w=null;SIMQ.loaded=false;SIMQ.pool=null;}
     resolve(results);};
-  const timer=setTimeout(()=>finish(true),Math.max(1,deadline-Date.now()));state.stop=()=>finish(true);
+  let timer;
+  const arm=()=>{clearTimeout(timer);const due=env.screenClock?(env.screenClock.deadline??Date.now()+SIMQ.LOAD_MS):deadline;
+    timer=setTimeout(()=>finish(true),Math.max(1,due-Date.now()));};
+  const ready=()=>{if(env.screenClock&&!env.screenClock.deadline&&workers.every((w,i)=>!parts[i].length||w._ready)){
+    env.screenClock.deadline=Date.now()+SCR_MS;arm();}};
+  arm();ready();state.stop=()=>finish(true);
   for(const [i,w] of workers.entries()){
     if(!parts[i].length)continue;
     w.onmessage=e=>{const m=e.data;if(GROW.id!==id||SIMQ.requestId!==request||(m.id!=null&&m.id!==request))return;
-      if(m.type==='stage'){if(m.msg==='준비 끝'){SIMQ.loaded=true;w._ready=true;}return;}
+      if(m.type==='stage'){if(m.msg==='준비 끝'){SIMQ.loaded=true;w._ready=true;ready();}return;}
       if(m.type==='team'){if(m.result.ver!==GROW.versions.engine){state.errors.push('엔진 버전이 바뀜 · 다시 실행');finish(true);return;}
         results[m.key]=growthMetric({...m.result,n},mode);state.msg=`${seed===900001?'재평가':'후보 확인'} ${Object.keys(results).length}/${jobs.length} · ${n}판`;paint();}
       if(m.type==='done'&&--open===0)finish(false);
       if(m.type==='error'){state.errors.push('가정 시뮬 오류: '+m.msg);finish(true);}};
     w.onerror=e=>{state.errors.push('가정 작업자 오류: '+e.message);finish(true);};
     w.postMessage({type:'run',id:request,base:location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),
-      stage:c.key+'/'+st.tab+'/'+st.name,n_runs:n,seed,mode:seed===900001?mode:'auto',options:{...(env.options||simOpt(c.key)),rng_streams:true},
+      stage:c.key+'/'+st.tab+'/'+st.name,n_runs:n,seed,mode:env.final||seed===900001?mode:'auto',options:{...(env.options||simOpt(c.key)),rng_streams:true},
       teams:parts[i].map(j=>({key:j.id,party:j.party,options:j.options}))});
   }
 });}
-async function growthStart(c,st){if(GROW.phase==='running'||SIMQ.busy!=null||!MI.growth||!QK.d)return;
-  const id=++GROW.id,alive=()=>GROW.id===id;GROW.phase='running';GROW.msg='육성 가이드 준비';SIMQ.busy='growth';growthPaint();
-  try{
-    const manifest=await fetch('sim/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw new Error('엔진 버전 확인 실패');return r.json();});
-    if(!alive())return;GROW.versions={engine:manifest.ver,data:MyInfoReco.hash([GrowthGuide.VERSION,MI.growth,D,QK.d])};
-    GROW.sig=growthSig(c,st);const started=Date.now(),deadline=started+GrowthGuide.LIMITS.maxMs;
-    const targets=await growthCandidates(c,st,alive,deadline);if(!alive())return;
-    const owned=(LASTQ[1]?.all||[]).filter(t=>SIMQ.res[simSig(st,t)]).map(t=>({...growthJob(t,'owned|'+t.keys.slice().sort().join(','),c),result:growthMetric(SIMQ.res[simSig(st,t)])}));
-    const result=await GrowthGuide.search({targets,owned,alive,mode:MODE,
-      limits:{maxMs:Math.max(0,deadline-Date.now())},
-      evaluate:(jobs,n,seed)=>growthEvaluate(jobs,n,seed,c,st,id,deadline),
-      progress:m=>{GROW.msg=m;growthPaint();}});
-    if(!alive()||!result)return;
-    result.ms=Date.now()-started;result.scope.maxMs=GrowthGuide.LIMITS.maxMs;GROW.result=result;GROW.phase='done';
-    const content=c.key+'/'+st.tab+'/'+st.name,version=GROW.versions.engine+'|'+GROW.versions.data;
-    const entry=GrowthGuide.summary(result,content,GROW.sig,MI.hash,version);
-    if(MI.shared)GROW.history[content]=entry;else GrowthGuide.save(LS,false,entry);
-  }catch(e){if(alive()){GROW.phase='error';GROW.msg=e.message;}}
-  finally{if(alive()){SIMQ.busy=null;if(SIMQ.pool){SIMQ.pool.slice(1).forEach(w=>w?.terminate());SIMQ.pool=null;}growthPaint();if(typeof slotPaint==='function')slotPaint();}}
-}
 function growthMaybe(c,st){if(growthEnabled()&&growthSeasonContent()){growthPaint();return;}if(!growthEnabled()||!miMode()||!['op','clo'].includes(c.key)||!REQ)return;
   if(GROW.sig&&GROW.sig!==growthSig(c,st))growthCancel();
   if(GROW.phase==='idle'&&SIMQ.busy==null&&!SIMQ.err&&simAutoOn())setTimeout(()=>{if(REQ&&GROW.phase==='idle')growthStart(c,st);},0);
   growthPaint();}
-const growthLabel=r=>r.source==='assumed'?'미보유 가정':'임시 보정';
+const growthLabel=r=>r.source==='assumed'?'미보유':'키워야 함';
 const growthFields={level:'레벨→스타링크',resonance:'공명 최대',skills:'스킬 최대',journey:'목표 여정',potentials:'목표 잠재력',equip:'장비 +15'};
-const growthParts={level:'레벨만',equipment:'장비만',skills:'스킬만',potential:'공명·잠재력만'};
 function growthDescription(r){return (r.changedFields||[]).map(f=>{
   const c=r.changes?.[f];if(f==='level'&&c)return `${c.before==null?'Lv ':('Lv '+c.before+'→')}스타링크`;
   if(f==='resonance'&&c)return `공명 ${c.before??0}→${c.after}`;
   return growthFields[f];}).join(' · ');}
-function growthBadge(r,short=false){const missing=r.source==='assumed';return `<span class="assumed-label ${missing?'assumed-missing':'assumed-owned'}" data-k="assumed-badge"><span aria-hidden="true">${missing?'＋':'↑'}</span><span class="al-long">${esc(growthLabel(r))}</span><span class="al-short">${missing?'미보유':'보정'}</span>${!short&&growthDescription(r)?' · '+esc(growthDescription(r)):''}</span>`;}
-function growthCardMeta(r){const before=miProfile().results[r.key],after=r.team?.t.b.finals[r.key];
+function growthBadge(r,short=false){const missing=r.source==='assumed';return `<span class="assumed-label ${missing?'assumed-missing':'assumed-owned'}" data-k="assumed-badge"><span aria-hidden="true">${missing?'＋':'↑'}</span><span class="al-long">${esc(growthLabel(r))}</span><span class="al-short">${missing?'미보유':'키워야 함'}</span>${!short&&growthDescription(r)?' · '+esc(growthDescription(r)):''}</span>`;}
+function growthCardMeta(r){if(r.overwrite)return `<div class="mi-chips">${r.changedFields.map(f=>`<span class="tag">${esc(({level:'스타링크',equip:'장비 +15',skills:'스킬',resonance:'공명',journey:'여정',potentials:'잠재력'})[f])}</span>`).join('')}</div>`;const before=miProfile().results[r.key],after=r.team?.t.b.finals[r.key];
   if(!after)return '';
   return `<div class="mi-chips"><span class="assumed-mark" title="전투력 ${miNum(before?.power)} → ${miNum(after.power)}">전투력 ${before?`${miNum(before.power)} → `:''}${miNum(after.power)}${before?'':' (가정)'}</span></div><details class="growth-stats"><summary>능력치 변화</summary>${['atk','hp','def','spd'].map((k,i)=>`<div>${['공','생','방','속'][i]} ${before?`${miNum(before.stats[k])} → `:''}${miNum(after.stats[k])}</div>`).join('')}</details>`;}
-function growthPaint(){if(!growthEnabled())return;let el=$('growth-result');
-  if(growthSeasonContent()){growthSeasonPaint();return;}
-  if(!el){if(!['op','clo'].includes(contents[$('content').value]?.key)||!REQ)return;
-    el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
-  if(GROW.phase==='running'){el.innerHTML=`<b>육성 가이드</b><p role="status">${esc(GROW.msg)}</p><button class="sec" data-growth-cancel>가정 중단</button>`;
-    el.querySelector('button').onclick=()=>{simInvalidate();GROW.phase='error';GROW.msg='중단함 · 미평가';growthPaint();};return;}
-  if(!GROW.result){el.innerHTML=`<b>육성 가이드</b><p>${esc(GROW.msg||'보유 편성 확인 뒤 평가')}</p>`;return;}
-  const r=GROW.result,rows=r.rows.filter(x=>!x.component).sort((a,b)=>(b.delta??-Infinity)-(a.delta??-Infinity)),fmt=v=>v==null?'—':(v>0?'+':'')+v.toFixed(1),
-    metric=v=>v?`${(v.clear*100).toFixed(1)}% · 진행 ${((v.prog||0)*100).toFixed(1)}% · ${v.ttk==null?'—':v.ttk.toFixed(1)}턴 · ${v.n}판`:r.baselinePending?'기준 재평가 미완료':'기준 편성 없음';
-  const status=x=>x.result?metric(x.result):x.errorCode==='level-data'?'자료 없음':x.status==='unsupported'?'자료 미지원':x.status==='screened'?'예선만 · 미평가':'미평가';
-  const delta=x=>x.delta==null?'확인 부족':fmt(x.delta)+'%p'+(x.confirmed?' · 개선 확인':' · 확인 부족');
-  const best=rows.find(x=>x.result);
-  let cards='';if(best?.team){const ar=arrangeOf(best.team.t.combo);LEADKEY=ar.lead;
-    cards=`<div data-k="growth-best"><span class="assumed-label">가정 포함</span><div class="rowcards">${ar.order.map((k,i)=>{
-      const x=best.team.t.combo.find(x=>x.s.key===k);return card(x,i===0||i===3?'back':'front',null,k===best.key?best:null);
-    }).join('')}</div><p class="mut">${esc(growthDescription(best))}</p><p>${best.result.ttk==null?'':best.result.ttk.toFixed(1)+'턴 · '}브레이크 ${esc(best.team.breakName||'없음')}</p></div>`;}
-  const contributions=x=>{const parts=r.rows.filter(p=>p.parentId===x.id);return `<details data-k="growth-contributions"><summary>항목별 기여·평가 상세</summary><p class="mut">${status(x)} · 후보 ${x.screened}/2${x.ci?' · 95% 차이 구간 '+x.ci.map(fmt).join(' ~ ')+'%p':''}${x.error?' · '+esc(x.error):''}</p>${parts.length?'<p class="mut">각 항목만 바꾸고 다시 탐색 · 합산하지 않음</p>':''}${parts.map(p=>`<p data-component="${p.component}"><b>${growthParts[p.component]}</b> ${p.errorCode==='level-data'?'자료 없음':delta(p)}<br><span class="mut">${status(p)}${p.error?' · '+esc(p.error):''}${p.ci?' · 차이 구간 '+p.ci.map(fmt).join(' ~ ')+'%p':''}</span></p>`).join('')}</details>`;};
-  const table=(list,extra=false)=>`<table data-k="${extra?'growth-more-table':'growth-table'}" class="growth-table"><thead><tr><th>구원자·목표</th><th>클리어 변화</th><th>상태</th></tr></thead><tbody>${list.map(x=>`<tr data-growth-key="${esc(x.id)}"><td><b>${esc(BYKEY[x.key]?.name||x.key)}</b> ${growthBadge(x,true)}${contributions(x)}</td><td>${x.result&&r.baseline?`${(r.baseline.clear*100).toFixed(1)}% → ${(x.result.clear*100).toFixed(1)}%`:'—'}</td><td>${x.errorCode==='level-data'?'자료 없음':delta(x)}</td></tr>`).join('')}</tbody></table>`;
-  const top=rows.filter(x=>x.result).slice(0,5),rest=rows.filter(x=>!top.includes(x));
-  const headline=best&&r.baseline&&best.delta>0?`${esc(BYKEY[best.key]?.name||best.key)} 키우면 · 클리어 ${(r.baseline.clear*100).toFixed(1)}% → ${(best.result.clear*100).toFixed(1)}%${best.confirmed?'':' · 확인 부족'}`:
-    best&&!r.baseline?`${esc(BYKEY[best.key]?.name||best.key)} 육성 가정 · 클리어 ${(best.result.clear*100).toFixed(1)}% · 기준 확인 부족`:'개선이 확인된 육성 후보 없음';
-  // Detach the live slot card before replacing the guide body (keep its handlers).
-  const slot=$('star-link-result');if(slot?.parentElement===el)slot.remove();
-  el.innerHTML=`<b data-k="growth-summary">${headline}</b>${GROW.errors.length?`<p class="bad" title="${esc(GROW.errors.join(' · '))}">일부 평가 실패 · 완료한 결과만 표시</p>`:''}<div data-k="growth-slot-summary"></div>${cards}
-    <p class="mut">목표: 스타링크 Lv(상향만) · 장비 +15 · 스킬·공명 최대 · 여정·잠재력</p>${table(top)}${rest.length?`<details data-k="growth-more"><summary>나머지 ${rest.length}명 · 미평가 포함</summary>${table(rest,true)}</details>`:''}
-    <details><summary>계산 정보</summary><p class="mut">보유 기준 ${metric(r.baseline)} · 묶음 평가 ${rows.filter(x=>x.result).length}/${rows.length}명 · ${(r.ms/1000).toFixed(1)}초 · 완료 ${r.runs}판</p></details>`;
-  if(slot)el.querySelector('[data-k="growth-slot-summary"]').append(slot);
-  const version=GROW.versions.engine+'|'+GROW.versions.data,history=MI.shared?GROW.history:LS.get('growth.history')||{},
-    matching=Object.fromEntries(Object.entries(history).filter(([,v])=>v.account===MI.hash&&v.version===version)),priority=growthPriority(matching);
-  el.insertAdjacentHTML('beforeend',`<details><summary>성능 개선 기준 육성 후보</summary>${priority.slice(0,12).map(x=>`<p>${esc(BYKEY[x.key]?.name||x.key)} · 묶음 · 개선 확인 ${x.count}콘텐츠<br><span class="mut">${x.contents.map(v=>`${esc(v.content)} ${v.delta==null?'미평가':fmt(v.delta)+esc(v.unit)}`).join(' · ')}</span></p>`).join('')}</details>`);
-}
-
-// Seasonal guides share the global simulator lock and at most three workers.
+// Seasonal passes share the lock and each content's existing worker budget.
 function growthSeasonContent(){const c=contents[$('content').value];return c?.key==='cosmo'||(c?.key==='guild'&&parseInt(cur?.[$('stage').value]?.name,10)===D.guild.steps.find(s=>s.ex)?.step)?c:null;}
-function growthConditions(c){const rules=simOpt(c.key);
+function growthConditions(c,trackTeams=true){const rules=simOpt(c.key);
   if(c.key==='guild')return {rules,season:D.guild?.season,
     difficulty:GuildView.normSel(D.guild,GS.sel||LS.get('guild.v2')),banCoop:GSR.banCoop,ranking:'guild-top-cap-mean',
     teams:GSR.rows.map(r=>[r.keys,r.order,r.sup,r.level])};
   if(c.key==='cosmo')return {rules,season:D.cosmoRaid?.season,
     difficulty:CSR.optLevel,fast:CSR.optFast,ranking:CSR.optMode,
     teams:CSR.rows.map(r=>Array.isArray(r?.teams)?r.teams.map(t=>[t?.boss,t?.keys,t?.order,t?.level,t?.brk,t?.brkLv]):[])};
-  return {rules,mode:MODE,breaks:[BRSEL,SESSION_BR]};}
+  const prefix=c.key+'|',shared=typeof SHARE!=='undefined'&&Object.hasOwn(SHARE,'b');
+  const selected=shared?SESSION_BR:BRSEL;
+  const teams=!trackTeams||typeof LASTQ==='undefined'?null:(LASTQ[1]?.rows||[]).map(t=>prefix+t.keys.slice().sort().join(','));
+  const breaks=Object.fromEntries(Object.entries(selected).filter(([k])=>k.startsWith(prefix)&&(!teams?.length||teams.includes(k))).sort(([a],[b])=>a.localeCompare(b)));
+  if(shared&&teams)for(const k of teams)breaks[k]??=SHARE.b;
+  return {rules,mode:MODE,breaks:[breaks,{}],...(shared?{breakDefault:SHARE.b}:{}),...(teams?.length?{breakTeams:teams}:{})};}
 function growthPriority(history){return GrowthGuide.priority(history,GROW.sig,
-  Object.fromEntries(contents.map(c=>[c.key,growthConditions(c)])));}
+  Object.fromEntries(contents.map(c=>[c.key,growthConditions(c,false)])));}
 function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.context===growthOwnedContext('guild'):
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
 function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks()],simOpt(kind)]);}
-async function growthPhase(jobs,n,seed,c,st,id,deadline,prepare=r=>r){
-  const results={};Object.defineProperty(results,'completed',{value:0,writable:true});
-  if(!jobs.length||Date.now()>=deadline||GROW.id!==id)return results;
-  const handle=GuildSearch.runPhase({makeWorker:()=>new Worker('sim_worker.js'),jobs:jobs.map(j=>({...j,key:j.id})),
-    workers:Math.max(1,Math.min(3,(navigator.hardwareConcurrency||4)-1)),runs:n,seed,
-    stage:c.key+'/'+st.tab+'/'+st.name,base:location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),
-    options:{...simOpt(c.key),rng_streams:true},
-    onResult:(key,r)=>{if(GROW.id!==id)return;results.completed++;
-      if(r.ver!==GROW.versions.engine){GROW.errors.push('엔진 버전 변경');return;}
-      const value=prepare(r);if(value)results[key]=value;},
-    onProgress:(done,total)=>{if(GROW.id===id){GROW.msg=`${n===100?'재평가':'후보 확인'} ${done}/${total} · ${n}판`;growthPaint();}}});
-  const timer=setTimeout(()=>handle.cancel(),Math.max(1,deadline-Date.now()));GROW.stop=()=>handle.cancel();
-  try{await handle.promise;}catch(e){if(e.message!=='취소')GROW.errors.push(e.message);}
-  finally{clearTimeout(timer);if(GROW.id===id)GROW.stop=null;}
-  return results;
+// Whole-account pass: the owned recommendation and its caches remain untouched.
+function growthBetter(kind,baseline,result){
+  const metric=r=>kind==='guild'?r?.score:kind==='cosmo'?r?.sum:r?.clear;
+  return Number.isFinite(metric(result))&&metric(result)>(metric(baseline)??0);
 }
-function growthSeasonJob(t,id,options,bossIndex){
-  const p=GuildSearch.party(t.keys,t.b.finals,Object.fromEntries(R.map(s=>[s.key,s.cls])));
-  return {id,t,keys:t.keys,order:p.order,party:p.spec,options,bossIndex};
+// Same load/idle limits as the normal stage simulator, per seasonal worker.
+function growthWorker(){
+  const raw=new Worker('sim_worker.js');let timer=null,ready=false,runs=1;
+  const wrapper={onmessage:null,onerror:null,postMessage(message){runs=message.n_runs;arm();raw.postMessage(message);},
+    terminate(){clearTimeout(timer);raw.terminate();}};
+  function arm(){clearTimeout(timer);timer=setTimeout(()=>wrapper.onerror?.({message:'시간 초과'}),ready?simTeamLimit(runs,'auto'):SIMQ.LOAD_MS);}
+  raw.onmessage=e=>{if(e.data.type==='done'||e.data.type==='error')clearTimeout(timer);
+    else {if(e.data.msg==='준비 끝'||e.data.type==='team')ready=true;arm();}wrapper.onmessage?.(e);};
+  raw.onerror=e=>{clearTimeout(timer);wrapper.onerror?.(e);};return wrapper;
 }
-async function growthGuild(c,st,id,deadline){
-  const alive=()=>GROW.id===id,sel=GuildView.normSel(D.guild,GS.sel||LS.get('guild.v2')),
-    S={...D.guild.search,banCoop:GSR.banCoop},profile=MyInfoReco.profile(MI.info,R,MI.growth,'op'),
-    cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),metric=GrowthGuide.guildMetric(GuildSearch,GuildView,D.guild,sel.level,sel.tiers),
-    prepare=r=>GuildSearch.coopHit(S,r)?null:metric.prepare(r),qi=quickIn(c,st),scoring={gim:gimTop(c,st),season:st.sb||[],damage:[Math.min(1,(st.n-1)/2),CFG.damage.weightBoss]};
-  const team=keys=>growthTeam(keys.map(k=>({s:BYKEY[k],score:0})),profile,qi,CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty,scoring);
-  const reference=GSR.rows[0];if(!reference)throw Error('보유 기준 편성 없음');
-  const options=support=>({guild:{level:sel.level,sets:sel.tiers.slice(),support}});
-  const supportJobs=GuildSearch.finalSupports(S,reference.keys,cls).map(sup=>growthSeasonJob(team(reference.keys),'support|'+sup,options(sup)));
-  const supportRes=await growthPhase(supportJobs,100,900001,c,st,id,deadline,prepare);
-  if(!alive())return null;
-  if(supportRes.completed!==supportJobs.length)throw Error('보유 지원 확인 미완료 · 다시 실행');
-  const supportJob=supportJobs.filter(j=>supportRes[j.id]).sort((a,b)=>metric.rank(supportRes[a.id],supportRes[b.id]))[0];
-  if(!supportJob)throw Error('현재 조건에서 사용 가능한 보유 기준 지원 없음');
-  const support=supportJob.options.guild.support;
-  const makeJob=(t,key)=>growthSeasonJob(t,key,options(support)),banned=new Set(S.banCoop===false?[]:S.excluded||[]);
-  const targets=await growthCandidates(c,st,alive,deadline,{original:profile,qi,scoring,banned,makeJob,ruleContent:'op',exactControls:true,
-    targets:growthTargets(c,st).filter(t=>!banned.has(t.key))});
-  const owned=GSR.rows.map(r=>{const j=makeJob(team(r.keys),'owned|'+r.keys.slice().sort().join(','));
-    return {...j,result:r===reference?supportRes[supportJob.id]:null};});
-  const result=await GrowthGuide.search({targets,owned,metric,mode:'auto',alive,
-    limits:{maxRuns:7200-supportJobs.length*100,maxMs:Math.max(0,deadline-Date.now())},
-    evaluate:(jobs,n,seed)=>growthPhase(jobs,n,seed,c,st,id,deadline,prepare)});
-  if(result){result.runs+=supportJobs.length*100;result.scope.maxRuns=7200;result.metric='guild-top20';result.unit='점';
-    result.conditions={season:D.guild.season,level:sel.level,tiers:sel.tiers,support,ranking:'top20-cap-mean',mode:'auto'};}
-  return result;
-}
-async function growthCosmo(c,st,id,deadline){
-  const alive=()=>GROW.id===id,C=D.cosmoRaid,S=C.search,bosses=C.bosses.map(b=>b.key),profile=csProfile(),cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),
-    reference=CSR.rows[0];
-  if(!Array.isArray(reference?.teams)||reference.teams.length!==3||bosses.length!==3||bosses.some(b=>!reference.teams.some(t=>t?.boss===b&&t.keys?.length===4&&Number.isInteger(t.level))))
-    throw Error('보유 탐색 먼저 · 보스 3개 기준 편성 필요');
-  const validRows=CSR.rows.filter((r,index)=>{
-    const reason=!Array.isArray(r?.teams)||!r.teams.length?'편성 목록 없음':
-      r.teams.length!==3||bosses.some(b=>!r.teams.some(t=>t?.boss===b&&t.keys?.length===4&&Number.isInteger(t.level)))?'보스 3개 편성 누락 또는 잘못된 편성':'';
-    if(reason)GROW.errors.push(`보유 후보 ${index+1}행 건너뜀 · ${reason}`);
-    return !reason;
-  });
-  const owned=[[],[],[]],established=[],targets=new Map();
-  const conditions=reference.teams.map(t=>({boss:t.boss,level:t.level,brk:t.brk?{name:t.brk,level:t.brkLv}:null}));
-  for(let i=0;i<3;i++){
-    const boss=bosses[i],cond=conditions.find(x=>x.boss===boss),meta=C.bosses[i],existing=c.stages.find(s=>s.tab===meta.name&&s.name.endsWith('3단계')),
-      bst=existing||{...st,tab:meta.name,name:meta.name+' 3단계',w:{[Object.keys(EL).find(k=>EL[k]===meta.element)]:2},n:1,sb:[]},
-      qi=existing?quickIn(c,bst):null,scoring={gim:existing?gimTop(c,bst):[],season:bst.sb||[],damage:[Math.min(1,(bst.n-1)/2),CFG.damage.weightBoss]};
-    const options={cosmo_raid:{boss,step:3,level:cond.level},cosmo_top_q:S.topQ,break_skill:cond.brk};
-    const makeJob=(t,key)=>({...growthSeasonJob(t,boss+'|'+key,options,i),boss});
-    const rows=(CSR.growthOwned||[]).filter(j=>j.boss===boss),res=Object.fromEntries(rows.map(j=>[j.key,j.result]));
-    const diverse=CosmoSearch.pickDiverse(rows,res,CSR.optMode,8);
-    const keys=new Map([...validRows.flatMap(r=>r.teams.filter(t=>t.boss===boss)),...diverse].map(t=>[CosmoSearch.idOf(t.keys),t.keys]));
-    for(const ks of keys.values()){
-      const p=GuildSearch.party(ks,profile.results,cls),job={id:boss+'|owned|'+ks.slice().sort().join(','),keys:ks,order:p.order,party:p.spec,options,boss,bossIndex:i};
-      owned[i].push(job);if(CosmoSearch.idOf(ks)===CosmoSearch.idOf(reference.teams.find(t=>t.boss===boss).keys))established.push(job);
+async function growthStageSearch(c,st,profile,id){
+  const restrict=(CFG.restrict[c.name]||{})[st.tab],qi=quickIn(c,st);
+  if(!qi)throw Error('빠른 계산 자료 없음');
+  const candidates=R.filter(s=>profile.results[s.key]&&!EXCL.has(s.key)&&(!restrict||s.el===restrict))
+    .map(s=>{const [scoreValue,parts]=score(s,st.w,c.main,c.boss);return {s,score:scoreValue,parts};});
+  if(candidates.length<4)return {best:null,runs:0};
+  const defPen=CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty;
+  const all=quickRank(rankAll(candidates,defPen),qi,profile),key=t=>t.keys.slice().sort().join(','),by=new Map(all.map(t=>[key(t),t]));
+  const selected=new Map(),first=SCR_ROUNDS[0];
+  all.slice(0,first.q).forEach(t=>selected.set(key(t),t));
+  all.slice().sort((a,b)=>b.v-a.v).slice(0,first.v).forEach(t=>selected.set(key(t),t));
+  let keys=[...selected.keys()],runs=0;const screenClock={deadline:null};
+  const evaluate=async(list,n,deadline,final=false)=>{
+    if(GROW.id!==id)throw Error('취소');
+    const jobs=list.map(k=>growthJob(by.get(k),k,c));
+    const r=await growthEvaluate(jobs,n,SIMQ.seed,c,st,id,deadline,{final,mode:final?MODE:'auto',...(!final?{screenClock}:{})});
+    runs+=Object.keys(r).length*(final?GrowthGuide.finalCost(n,MODE):n);
+    if(GROW.id!==id||r.incomplete||Object.keys(r).length!==jobs.length)throw Error('미완료');
+    return r;
+  };
+  if(keys.length>3){
+    const deadline=Infinity; // Preparation has its own LOAD_MS; screening starts when workers are ready.
+    for(const round of SCR_ROUNDS){
+      if(round.top)keys=keys.slice(0,round.top);
+      const r=await evaluate(keys,round.n,deadline);
+      keys.sort((a,b)=>scrCmp(r[a],r[b]));
+      if(keys.length<=3)break;
     }
-    const generated=await growthCandidates(c,bst,alive,deadline,{original:profile,qi,scoring,makeJob,exactControls:true});
-    for(const t of generated){if(!targets.has(t.id))targets.set(t.id,{...t,candidates:[],controls:[]});
-      const row=targets.get(t.id);row.candidates.push(...t.candidates);row.controls.push(...t.controls);}
   }
-  for(const t of targets.values()){const lists=bosses.map((_,i)=>t.candidates.filter(j=>j.bossIndex===i));
-    t.candidates=[0,1].flatMap(i=>lists.map(list=>list[i]).filter(Boolean));}
-  const result=await GrowthGuide.searchCosmo({CS:CosmoSearch,targets:[...targets.values()],owned,established,mode:CSR.optMode,alive,
-    limits:{maxMs:Math.max(0,deadline-Date.now())},evaluate:(jobs,n,seed)=>growthPhase(jobs,n,seed,c,st,id,deadline)});
-  if(result)result.conditions={season:C.season,requestedLevel:CSR.optLevel,bosses:conditions,ranking:CSR.optMode,mode:'auto'};
-  return result;
+  // The same 3-at-a-time, at most 9, >=50% stop rule as simAutoKick.
+  let best=null,bestJob=null;
+  for(let i=0;i<Math.min(9,keys.length);i+=3){
+    const batch=keys.slice(i,i+3),r=await evaluate(batch,SIMQ.n,
+      Date.now()+Math.max(SIMQ.LOAD_MS,batch.length*simTeamLimit(SIMQ.n,MODE)),true);
+    for(const k of batch)if(!best||scrCmp(r[k],best)<0){best=r[k];bestJob=growthJob(by.get(k),k,c);}
+    if(best?.clear>=.5)break;
+  }
+  return {best,team:bestJob,runs};
 }
-async function growthSeasonStart(){const c=growthSeasonContent(),st=cur?.[$('stage').value];
-  if(!c||!MI.growth||!QK.d||!growthSeasonReady(c)||SIMQ.busy!=null||GSR.phase==='run'||CSR.phase==='run')return;
-  growthCancel();const id=++GROW.id;SIMQ.busy='growth';GROW.phase='running';GROW.msg='육성 후보 준비';growthPaint();
-  const started=Date.now(),L=c.key==='guild'?GrowthGuide.LIMITS:GrowthGuide.COSMO_LIMITS,deadline=started+L.maxMs;
-  try{const manifest=await fetch('sim/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('엔진 확인 실패');return r.json();});
-    if(GROW.id!==id)return;GROW.versions={engine:manifest.ver,data:MyInfoReco.hash([GrowthGuide.VERSION,MI.growth,D,QK.d])};
-    GROW.sig=growthSig(c,st);
-    const result=await (c.key==='guild'?growthGuild: growthCosmo)(c,st,id,deadline);
-    if(GROW.id!==id||!result)return;
+async function growthStart(c,st){
+  if(!growthEnabled()||GROW.phase==='running'||SIMQ.busy!=null||GSR.phase==='run'||CSR.phase==='run'||!MI.growth||!QK.d)return;
+  const seasonal=['guild','cosmo'].includes(c.key);
+  if(seasonal&&!growthSeasonReady(c))return;
+  const id=++GROW.id;GROW.phase='running';GROW.msg='다 키운 계정 탐색';GROW.errors=[];SIMQ.busy='growth';growthPaint();
+  try{
+    const manifest=await fetch('sim/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('엔진 확인 실패');return r.json();});
+    if(GROW.id!==id)return;
+    GROW.versions={engine:manifest.ver,data:MyInfoReco.hash([GrowthGuide.VERSION,MI.growth,D,QK.d])};GROW.sig=growthSig(c,st);
+    const snapshot=MyInfoReco.overwrite(MI.info,R,MI.growth,c.key==='guild'?'op':c.key,
+      {includeMissing:growthOptions().owned,excluded:[...EXCL]});
+    const started=Date.now();let result,baseline;
+    if(seasonal){
+      const owned=c.key==='guild'?GSR:CSR;
+      baseline=owned.rows[0]||null;
+      const state={...owned,id:0,phase:'idle',rows:[],handle:null};
+      GROW.stop=()=>{state.id++;state.handle?.cancel();};
+      // Existing search functions own their phase deadlines and worker-count policy.
+      const out=await (c.key==='guild'?guildSearchStart:cosmoSearchStart)(state,snapshot.profile);
+      if(!out||out.phase!=='done')throw Error('미완료');
+      result={best:out.rows[0]||null,runs:out.runs};
+    }else{
+      const current=LASTQ[1]?.rows[0];
+      baseline=current?growthMetric(SIMQ.res[simSig(st,current)]||{clear:0}):null;
+      result=await growthStageSearch(c,st,snapshot.profile,id);
+    }
+    if(GROW.id!==id)return;
     if(GROW.sig!==growthSig(c,st)){growthCancel();return;}
-    result.ms=Date.now()-started;result.scope.maxMs=L.maxMs;GROW.result=result;GROW.phase='done';
-    const content=c.key+'/'+(c.key==='cosmo'?D.cosmoRaid.season:st.tab+'/'+st.name),entry=GrowthGuide.summary(result,content,GROW.sig,MI.hash,GROW.versions.engine+'|'+GROW.versions.data);
-    if(MI.shared)GROW.history[content]=entry;else GrowthGuide.save(LS,false,entry);
-  }catch(e){if(GROW.id===id){GROW.phase='error';GROW.msg=e.message;}}
-  finally{if(GROW.id===id){SIMQ.busy=null;growthPaint();}}
+    GROW.result={...result,baseline,snapshot,kind:c.key,ms:Date.now()-started,
+      signature:JSON.stringify(['grown-account',MyInfoReco.OVERWRITE_VERSION,snapshot.preset,GROW.sig])};
+    GROW.phase='done';
+  }catch(e){if(GROW.id===id){GROW.phase='error';GROW.msg='미완료';GROW.errors.push(e.message);}}
+  finally{if(GROW.id===id){GROW.stop=null;SIMQ.busy=null;
+    if(SIMQ.pool){SIMQ.pool.slice(1).forEach(w=>w?.terminate());SIMQ.pool=null;}
+    growthPaint();}}
 }
-function growthSeasonPaint(){const c=growthSeasonContent();if(!c||!growthEnabled()||!MI.info)return;
-  let el=$('growth-result');if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
-  const head=`<b>육성 가이드 · ${c.key==='guild'?'길방':'코스모'}</b>`;
-  if(GROW.phase==='running'){el.innerHTML=head+`<p role="status">${esc(GROW.msg)}</p><button data-growth-stop>중단</button>`;
-    el.querySelector('button').onclick=()=>{growthCancel();GROW.msg='중단함 · 미평가';growthPaint();};return;}
-  if(GROW.sig&&GROW.sig!==growthSig(c,cur[$('stage').value]))growthCancel();
-  const ready=growthSeasonReady(c),result=GROW.result,fmt=v=>v==null?'—':Math.round(v).toLocaleString(),num=r=>c.key==='guild'?r?.top:r?.sum;
-  const rows=(result?.rows||[]).filter(r=>!r.component).sort((a,b)=>(b.delta??-Infinity)-(a.delta??-Infinity));
-  const show=r=>`<article class="growth-score-card" data-k="growth-${c.key}-card"><b>${esc(BYKEY[r.key]?.name||r.key)}</b> ${growthBadge(r,true)}
-    <p><span class="tag">${c.key==='guild'?'상위 20%':'3팀 합산'}</span> ${fmt(num(result.baseline))} → ${fmt(num(r.result))}점</p>
-    <b>${r.delta==null?'미평가':(r.delta>0?'+':'')+fmt(r.delta)+'점'}${r.confirmed?' · 개선 확인':''}</b>
-    ${c.key==='guild'&&r.result?`<p class="mut">상한 ${Math.round(result.baseline?.cap*100||0)}% → ${Math.round(r.result.cap*100)}% · 평균 ${fmt(result.baseline?.mean)} → ${fmt(r.result.mean)}</p>`:''}
-    ${r.ci?`<p class="mut">95% 차이 ${r.ci.map(fmt).join(' ~ ')}점</p>`:''}
-    <p class="mut">${r.team?(c.key==='guild'?r.team.order.map(k=>esc(BYKEY[k]?.name||k)).join(' · '):r.team.teams.map(t=>esc(csBoss(t.boss))+': '+t.order.map(k=>esc(BYKEY[k]?.name||k)).join(' · ')).join('<br>')):esc(r.error||'확인 부족')}</p></article>`;
-  const conditions=result?.conditions;
-  el.innerHTML=head+` <button data-growth-start ${ready&&SIMQ.busy==null?'':'disabled'}>육성 비교</button>`+
-    `<p>${result?'현재 조건에서의 개선':esc(GROW.msg||(ready?'보유 기준 준비됨':'먼저 보유 최고 편성 찾기'))}</p>`+
-    (conditions?`<p class="mut">${c.key==='guild'?conditions.level+'단계 · '+esc(GuildSearch.SUP_NAME[conditions.support]||conditions.support):conditions.bosses.map(b=>esc(csBoss(b.boss))+' '+b.level+'단계').join(' · ')} · 오토</p>`:'')+
-    rows.filter(r=>r.result).slice(0,5).map(show).join('')+
-    `<details data-k="growth-score-details"><summary>평가 상세</summary><p class="mut">${c.key==='guild'?'보유 기준팀의 최선 지원 고정 · 평균·상한 예선 후 별도 시드 100판 · 부트스트랩 차이 구간':'가정자 한 보스씩 · 보유 중복 없이 재결합 · 보유 최선 3팀과 비교 · 기준팀 난이도·브레이크 고정'}. 제한 탐색 · 오토 기준 · 전역 최적 보장 없음.</p>`+
-    (result?`<p class="mut">완료 ${result.runs}판 · ${(result.ms/1000).toFixed(1)}초${result.baselinePending?' · 기준 재평가 미완료':''}${GROW.errors.length?' · 일부 평가 실패':''}</p>`:'')+
-    GROW.errors.map(reason=>`<p class="mut">${esc(reason)}</p>`).join('')+
-    rows.filter(r=>!rows.filter(x=>x.result).slice(0,5).includes(r)).map(show).join('')+
-    (result?.rows||[]).filter(r=>r.component).map(r=>`<p>${esc(BYKEY[r.key]?.name||r.key)} · ${growthParts[r.component]} ${r.delta==null?'미평가':fmt(r.delta)+'점'}</p>`).join('')+'</details>';
-  el.querySelector('[data-growth-start]').onclick=growthSeasonStart;
+function growthPaint(){
+  let el=$('growth-result');
+  if(!growthEnabled()||!MI.info){el?.remove();return;}
+  const c=contents[$('content').value],r=GROW.result;
+  if(!['op','clo','guild','cosmo'].includes(c.key))return;
+  const show=r&&growthBetter(c.key,r.baseline,r.best);
+  if(GROW.phase==='done'&&!show){el?.remove();return;}
+  if(GROW.phase==='idle'&&growthSeasonContent()&&growthSeasonReady(c)&&SIMQ.busy==null)
+    setTimeout(()=>{if(GROW.phase==='idle')growthStart(c,cur[$('stage').value]);},0);
+  if(GROW.phase==='idle'&&!growthSeasonContent()){el?.remove();return;}
+  if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
+  const head='<b data-k="growth-summary">키우면</b>';
+  if(GROW.phase!=='done'){
+    const running=GROW.phase==='running';
+    el.innerHTML=head+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'미완료':'지금 계정 탐색 후'}</span>`+
+      (running?'<button class="sec" data-growth-cancel>중단</button>':'')+
+      (GROW.errors.length?`<details><summary>상세</summary>${GROW.errors.map(esc).join(' · ')}</details>`:'');
+    el.querySelector('[data-growth-cancel]')?.addEventListener('click',()=>{
+      const stop=GROW.stop;GROW.id++;stop?.();GROW.stop=null;SIMQ.busy=null;GROW.phase='error';GROW.msg='미완료';growthPaint();});return;
+  }
+  const marks=r.snapshot.changes;
+  const cards=(order,lead)=>{LEADKEY=lead;return `<div class="rowcards">${order.map((k,i)=>card({s:BYKEY[k]},i===0||i===3?'back':'front',null,marks[k]||null)).join('')}</div>`;};
+  let body='';
+  if(c.key==='cosmo')body=r.best.teams.map(t=>`<div class="growth-score-card"><b>${esc(csBoss(t.boss))} · ${t.level}단계</b>${cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0])}<p class="mut">${esc(t.brk||'브레이크 없음')}</p></div>`).join('');
+  else if(c.key==='guild'){const t=r.best;body=cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0])+`<p class="mut">${t.level}단계 · ${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</p>`;}
+  else if(r.team){const ar=arrangeOf(r.team.t.combo);body=cards(ar.order,ar.lead)+`<p class="mut">${esc(r.team.breakName||'브레이크 없음')}</p>`;}
+  const metric=c.key==='guild'?`상위 20% ${Math.round(r.best.score).toLocaleString()}점`:c.key==='cosmo'?`3팀 합산 ${Math.round(r.best.sum).toLocaleString()}점`:`클리어 ${(r.best.clear*100).toFixed(1)}%`;
+  el.innerHTML=head+` <span class="tag">${metric}</span><div data-k="growth-${c.key}-card">${body}</div>`+
+    `<details><summary>상세</summary><p class="mut">스타링크 · 장비 +15 · 스킬·공명 최대 · 목표 여정·잠재력 · ${(r.ms/1000).toFixed(1)}초</p>`+
+    r.snapshot.errors.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')+'</details>';
 }

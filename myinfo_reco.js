@@ -97,6 +97,47 @@
       ? Math.max(1000, Math.round((result.power * multiplier - result.power) / 1000) * 1000) : null;
     return {label: result.clear ? "오토 가능" : "오토 어려움", extra};
   }
-  const api = {hash, profile, team, judgment, assume, assumedProfile};
+  // Independent account snapshot. Never lower an imported field to the preset.
+  const OVERWRITE_VERSION='grown-account-v1';
+  function overwrite(info, roster, growth, content, {includeMissing=true, excluded=[]}={}) {
+    const target=clone(info), changes={}, errors=[], banned=new Set(excluded);
+    let out=profile(info,roster,growth,content);
+    for(const s of roster){
+      if(banned.has(s.key)||(!includeMissing&&!out.units[s.key]))continue;
+      try{
+        const a=assume(s.key,info,growth),old=out.units[s.key],u=a.unit;
+        if(old){
+          for(const [k,v] of Object.entries(old.skills||{}))u.skills[k]=Math.max(v,u.skills[k]||0);
+          u.gauntlet.journey=u.gauntlet.journey.map((v,i)=>Math.max(v,old.gauntlet?.journey?.[i]||0));
+          // A learned special potential at/above the target keeps its identity too.
+          const want=growth.assumed.units[s.key].potential;
+          const learned=(old.gauntlet?.potentials||[]).find(p=>growth.assumed.special_ids.includes(p[0])&&p[1]>=want[1]);
+          if(learned)u.gauntlet.potentials=clone(old.gauntlet.potentials);
+          u.equip=u.equip.map((v,i)=>{
+            const prev=old.equip?.[i];if(!prev)return v;
+            if(prev.enhance>=15)return clone(prev);
+            const next=clone(v);
+            // Keep stronger imported stats; +15 is a target, not a downgrade.
+            if(prev.main?.stat===next.main.stat)next.main.value=Math.max(prev.main.value,next.main.value);
+            for(const sub of prev.subs||[]){const hit=next.subs.find(x=>x.stat===sub.stat);
+              if(hit)hit.value=Math.max(hit.value,sub.value);else next.subs.push(clone(sub));}
+            return next;
+          }).concat(clone(old.equip?.slice(6)||[]));
+        }
+        const value=(x,f)=>['journey','potentials'].includes(f)?x.gauntlet?.[f]:x[f];
+        for(const f of Object.keys(a.changes))if(f!=='level')a.changes[f]={before:old?value(old,f):null,after:value(u,f)};
+        a.changedFields=Object.keys(a.changes).filter(f=>!old||JSON.stringify(a.changes[f].before)!==JSON.stringify(a.changes[f].after));
+        a.overwrite=true;
+        if(!a.changedFields.length)continue;
+        out=assumedProfile(out,a,info,growth,content);
+        const i=target.units.findIndex(x=>x.id===u.id);if(i<0)target.units.push(u);else target.units[i]=u;
+        if(a.levelTarget!=null){target.star_link ||= clone(a.targetInfo.star_link);
+          target.star_link.slots=target.star_link.slots.filter(x=>x.id!==u.id).concat({index:-1,id:u.id});}
+        changes[s.key]=a;
+      }catch(e){errors.push({key:s.key,reason:e.message});}
+    }
+    return {info:target,profile:out,changes,errors,version:OVERWRITE_VERSION,preset:growth.assumed.version};
+  }
+  const api = {hash, profile, team, judgment, assume, assumedProfile, overwrite, OVERWRITE_VERSION};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.MyInfoReco = api;
 })(typeof window !== "undefined" ? window : globalThis);

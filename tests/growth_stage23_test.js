@@ -76,13 +76,15 @@ async function workerContract(){const ui=fs.readFileSync(require.resolve('../gro
         if(req.teams[0].key!=='slow')this.onmessage({data:{type:'done',id:req.id}});},1);}
       terminate(){if(!this.dead){this.dead=true;active--;}}
     }};
-  vm.runInNewContext(ui.slice(ui.indexOf('async function growthPhase'),ui.indexOf('function growthSeasonJob')),ctx);
+  ctx.MODE='auto';ctx.SIMQ={};ctx.growthMetric=r=>r;
+  ctx.scrPool=()=>ctx.SIMQ.pool||(ctx.SIMQ.pool=[ctx.SIMQ.w,new ctx.Worker(),new ctx.Worker()]);
+  vm.runInNewContext(ui.slice(ui.indexOf('function growthEvaluate'),ui.indexOf('function growthMaybe')),ctx);
   const jobs=Array.from({length:3},(_,i)=>({id:'j'+i,party:{},options:{}}));
-  const r=await ctx.growthPhase(jobs,4,17011,{key:'guild'},{tab:'a',name:'EX'},1,Date.now()+1000,()=>null);
-  assert.equal(Object.keys(r).length,0);assert.equal(r.completed,3);assert.equal(peak,3);assert.equal(active,0);
-  const partial=await ctx.growthPhase([{id:'slow',party:{}}],100,900001,{key:'cosmo'},{tab:'a',name:'b'},1,Date.now()+30);
-  assert.equal(partial.slow.n,100);assert.equal(active,0,'deadline closes worker, retaining completed teams');
-  const cancelled=ctx.growthPhase([{id:'slow',party:{}}],100,900001,{key:'cosmo'},{tab:'a',name:'b'},1,Date.now()+1000);
+  const r=await ctx.growthEvaluate(jobs,4,17011,{key:'op'},{tab:'a',name:'stage'},1,Date.now()+1000);
+  assert.equal(Object.keys(r).length,3);assert.equal(r.j0.progs.length,4);assert.equal(r.j0.via.coop,1);assert.equal(peak,3);
+  const partial=await ctx.growthEvaluate([{id:'slow',party:{}}],100,900001,{key:'op'},{tab:'a',name:'b'},1,Date.now()+30);
+  assert.equal(partial.slow.n,100);assert(partial.incomplete);assert.equal(active,0,'deadline closes worker, retaining completed teams');
+  const cancelled=ctx.growthEvaluate([{id:'slow',party:{}}],100,900001,{key:'op'},{tab:'a',name:'b'},1,Date.now()+1000);
   ctx.GROW.id++;ctx.GROW.stop();const stopped=await cancelled;assert.equal(Object.keys(stopped).length,0);assert.equal(active,0);
 }
 (async()=>{signature();guild();triples();await scheduling();await guildSchedule();await workerContract();

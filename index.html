@@ -360,7 +360,7 @@ summary{padding:9px 4px}
    <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
 <section id="mi-panel" class="panel" aria-label="내 정보" hidden>
  <div class="mi-toolbar"><b>내 정보</b><button id="mi-open-import" type="button">불러오기·만드는 방법</button><button id="mi-panel-clear" type="button">지우기</button><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
- <details id="growth-settings"><summary id="growth-settings-summary">육성 설정 · 꺼짐</summary><label>육성 대상 <select id="assume-owned"><option value="all">미보유 + 보유 목표 육성</option><option value="missing">미보유만</option></select></label><p>가정 기준 <span class="tag">스타링크 Lv · 상향만</span> <span class="tag">장비 +15 · 표준 부옵</span> <span class="tag">스킬·공명 최대</span> <span class="tag">여정·잠재력</span></p><p class="mut">%p = 보유 최고 대비 추정 · 실제 장비 보유와 무관 · 소스 레벨 유지</p></details>
+ <details id="growth-settings"><summary id="growth-settings-summary">육성 설정 · 꺼짐</summary><label>육성 대상 <select id="assume-owned"><option value="all">보유 + 미보유</option><option value="owned">보유만</option></select></label><p>가정 기준 <span class="tag">스타링크 Lv · 상향만</span> <span class="tag">장비 +15 · 표준 부옵</span> <span class="tag">스킬·공명 최대</span> <span class="tag">여정·잠재력</span></p><p class="mut">지금 계정 먼저 · 더 좋아질 때만 키우면 추천</p></details>
 <div id="mi-meta"></div><div id="mi-saved" class="mut"></div><div id="mi-account"></div>
  <section id="mi-brk-sec"><b>보유 브레이크 스킬</b> <span class="mut" id="brk-note">직접 선택</span><div id="brk" style="margin-top:6px"></div></section>
  <div id="mi-excl" class="mut"></div><div id="mi-list"></div>
@@ -480,20 +480,21 @@ const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} 
 function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
  p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsTiers().join(""),label:gsLabel,esc,excluded:D.guild.search.excluded,notes:D.guild.search.notes})}
-async function guildSearchStart(){
- if(!MI.info||GSR.phase==="run"||SIMQ.busy!=null||CSR.phase==="run")return;
- growthCancel();
+async function guildSearchStart(target=GSR,profileOverride=null){
+ const GSR=target;
+ if(!MI.info||GSR.phase==="run"||(SIMQ.busy!=null&&!profileOverride)||CSR.phase==="run")return;
+ if(!profileOverride)growthCancel();
  const S=D.guild.search;S.banCoop=GSR.banCoop;const V=GuildView,G=D.guild,id=++GSR.id,c=contents[$("content").value],st=cur&&cur[$("stage").value];
- const stale=()=>GSR.id!==id,paint=()=>renderGuildSearch(true);
+ const stale=()=>GSR.id!==id,paint=()=>profileOverride?growthPaint():renderGuildSearch(true);
  try{
   GSR.phase="run";GSR.msg="내 구원자 능력치 계산 중";GSR.done=0;GSR.total=0;paint();
   const growth=await miGrowth();if(stale())return;
-  const profile=MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
+  const profile=profileOverride||MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
   const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers();
   const rows=GuildSearch.pool(S,results,R.filter(s=>!EXCL.has(s.key))),list=GuildSearch.combos(S,rows.map(r=>r));
   if(list.length<1)throw new Error("편성할 수 있는 구원자가 부족합니다(내 정보에 육성된 구원자 4명 이상 필요)");
   const combos=list.map(k=>k),workers=Math.max(2,Math.min(8,(navigator.hardwareConcurrency||4)-1));
-  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>new Worker("sim_worker.js");
+  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>profileOverride?growthWorker():new Worker("sim_worker.js");
   const jobsA=GuildSearch.screenJobs(S,G,V,combos,results,cls,tiers);
   GSR.msg=`1단계: 조합 ${jobsA.length}개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다)`;GSR.total=jobsA.length;paint();
   const hA=GuildSearch.runPhase({makeWorker:mk,jobs:jobsA,workers,runs:S.screen.runs,seed:1,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
@@ -507,8 +508,8 @@ async function guildSearchStart(){
   const hB=GuildSearch.runPhase({makeWorker:mk,jobs:jobsB,workers,runs:S.final.runs,seed:2,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
   GSR.handle=hB;const resB=await hB.promise;if(stale())return;
   GSR.dropped=GuildSearch.countDropped(S,[[jobsA,resA],[jobsA2,resA2],[jobsB,resB]]);GSR.rows=GuildSearch.rank(V,G,jobsB,resB,tiers,5,S);GSR.sig=tiers.join("");GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=S.final.runs;
-  GSR.context=growthOwnedContext('guild');GSR.phase="done";GSR.handle=null;paint();growthPaint()
- }catch(e){if(stale())return;GSR.handle=null;GSR.phase=/^취소$/.test(e.message)?"idle":"err";GSR.msg=e.message||String(e);paint()}}
+  GSR.context=growthOwnedContext('guild');GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
+ }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.phase=/^취소$/.test(e.message)?"idle":"err";GSR.msg=e.message||String(e);paint()}}
 $("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
 $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[data-gs]");if(!b)return;
  if(b.dataset.gs==="start")guildSearchStart();
@@ -553,24 +554,25 @@ function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").v
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
  p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info?csPre():""})}
-async function cosmoSearchStart(){
- if(!MI.info||CSR.phase==="run"||SIMQ.busy!=null||GSR.phase==="run")return;
- growthCancel();
- const C=D.cosmoRaid,id=++CSR.id,stale=()=>CSR.id!==id,paint=()=>renderCosmoSearch(),level=CSR.optLevel,mode=CSR.optMode;
+async function cosmoSearchStart(target=CSR,profileOverride=null){
+ const CSR=target;
+ if(!MI.info||CSR.phase==="run"||(SIMQ.busy!=null&&!profileOverride)||GSR.phase==="run")return;
+ if(!profileOverride)growthCancel();
+ const C=D.cosmoRaid,id=++CSR.id,stale=()=>CSR.id!==id,paint=()=>profileOverride?growthPaint():renderCosmoSearch(),level=CSR.optLevel,mode=CSR.optMode;
  try{
   CSR.phase="run";CSR.sig=csSig();CSR.msg="내 구원자 능력치 계산 중";CSR.done=0;CSR.total=0;CSR.eta=null;CSR.etaText="";CSR.runs=1;paint();
   const growth=await miGrowth();if(stale())return;
-  const profile=MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,growth,"cosmo"));
+  const profile=profileOverride||MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,growth,"cosmo"));
   const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=CosmoSearch.searchSettings(C.search,CSR.optFast);
   const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
-   makeWorker:()=>new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,breaks:csBreaks(),
+   makeWorker:()=>profileOverride?growthWorker():new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,breaks:csBreaks(),
    onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed.v2"),workers)})},
-   onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm)LS.set("cosmo.speed.v2",{sec:sm,workers});CSR.eta=null;CSR.etaText="마무리 단계(난이도 비교·최종 확인)는 남은 시간을 따로 계산하지 않습니다"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();csTick(true)},
-   onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());csTick(false)},onHandle:h=>{CSR.handle=h}});
+   onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm)LS.set("cosmo.speed.v2",{sec:sm,workers});CSR.eta=null;CSR.etaText="마무리 단계(난이도 비교·최종 확인)는 남은 시간을 따로 계산하지 않습니다"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();if(!profileOverride)csTick(true)},
+   onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());if(!profileOverride)csTick(false)},onHandle:h=>{CSR.handle=h}});
   if(!out||stale())return;
   const sum=CSR.eta&&CSR.eta.summary();if(sum)LS.set("cosmo.speed.v2",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
-  Object.assign(CSR,{fast:false,fastSkipped:false,audit:null},out,{phase:"done",handle:null,eta:null});CSR.context=growthOwnedContext('cosmo');paint();growthPaint()
- }catch(e){if(stale())return;CSR.handle=null;CSR.eta=null;CSR.phase=/^취소$/.test(e.message)?"idle":"err";CSR.msg=e.message||String(e);paint()}}
+  Object.assign(CSR,{fast:false,fastSkipped:false,audit:null},out,{phase:"done",handle:null,eta:null});CSR.context=growthOwnedContext('cosmo');paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return CSR
+ }catch(e){if(profileOverride)throw e;if(stale())return;CSR.handle=null;CSR.eta=null;CSR.phase=/^취소$/.test(e.message)?"idle":"err";CSR.msg=e.message||String(e);paint()}}
 $("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("[data-cs]");if(!t)return;
  if(t.dataset.cs==="fast")CSR.optFast=t.checked;
  else if(t.dataset.cs==="level"){CSR.optLevel=+t.value;LS.set("cosmo.level",CSR.optLevel)}else if(t.dataset.cs==="mode"){CSR.optMode=t.value;LS.set("cosmo.mode",CSR.optMode)}
@@ -815,9 +817,9 @@ function quickIn(c,st){if(!QK.d||!window.Quick)return null;const qs=(QK.d.st[c.k
  const prm=rk&&p0?Object.assign({},p0,{A:p0.A*(1+REKINDLE[rk]),B:p0.B*(1-REKINDLE[rk])}):p0;   // 재점화 버프 = 아군 피해 ×(1+x)·적 피해 ×(1−x)(시뮬 api rekindle 과 같은 뜻)
  return {qs,power:my>0?my:null,growth:+($("grow").value==="manual"?LS.get("grow"):$("grow").value)||1,ck:c.key,prm,rk}}
 const qBase=(qi,keys)=>Object.assign({growth:qi.growth,power:qi.power,powers:$("grow").value==="manual"&&!Object.hasOwn(SHARE,"p")?pwOf(keys):null},miMode()?MyInfoReco.team(keys,miProfile(),ekey):{});
-function quickRank(ranked,qi){
+function quickRank(ranked,qi,profile=null){
  const all=ranked,sv=QK.d.sv,prm=qi.prm,out=[];
- for(const x of all){const keys=x.combo.map(y=>y.s.key),ek=keys.map(ekey),b=qBase(qi,keys);const r=Quick.evaluate(ek,qi.qs,sv,D.pen,prm,b.growth,b.power,true,b.powers);if(!r.ok)continue;
+ for(const x of all){const keys=x.combo.map(y=>y.s.key),ek=profile?keys:keys.map(ekey),b=profile?{growth:1,power:null,...MyInfoReco.team(keys,profile,k=>k)}:qBase(qi,keys);const r=Quick.evaluate(ek,qi.qs,sv,D.pen,prm,b.growth,b.power,true,b.powers);if(!r.ok)continue;
   out.push({combo:x.combo,v:x.v,got:x.got,keys,ek,b,base:b.power||(qi.qs.bp?qi.qs.bp*b.growth:null),q:r,vd:Quick.verdict(r)})}
  out.sort((a,b)=>QO[b.vd]-QO[a.vd]||(a.vd==="hard"?b.q.rounds-a.q.rounds:b.q.left-a.q.left)||a.q.rounds-b.q.rounds||b.v-a.v);
  if(out.length&&out[0].vd==="hard"){   // 아무 팀도 못 깨면 「몇 % 더 키우면 깨는지」가 가장 작은 팀부터 — 모든 후보를 비교(codex 검토)

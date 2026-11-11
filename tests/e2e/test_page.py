@@ -1663,7 +1663,7 @@ def test_growth_controls(browser, ctx):
     page.click('#tab-info')
     assert page.locator('#assume-owned').is_visible()
     assert page.locator('#growth-settings .tag').first.is_visible()
-    page.select_option('#assume-owned', 'missing')
+    page.select_option('#assume-owned', 'owned')
     page.click('#tab-reco')
     for width, height, name in [(1280, 900, 'desktop'), (390, 844, 'mobile')]:
         page.set_viewport_size({'width': width, 'height': height})
@@ -1676,7 +1676,7 @@ def test_growth_controls(browser, ctx):
     settle(page)
     growth_control_audit(page)
     assert page.locator('#assume-growth').is_checked()
-    assert page.locator('#assume-owned').input_value() == 'missing'
+    assert page.locator('#assume-owned').input_value() == 'owned'
     assert page.evaluate("localStorage.getItem('pn.growth.options')") == saved
     assert page.evaluate("new URL(shareUrl()).searchParams.get('ag')==='1' && new URL(shareUrl()).searchParams.get('ao')==='0'")
     # Shared query overrides the old local options without persisting either control.
@@ -1690,7 +1690,7 @@ def test_growth_controls(browser, ctx):
     settle(page)
     page.check('#assume-growth')
     page.click('#tab-info')
-    page.select_option('#assume-owned', 'missing')
+    page.select_option('#assume-owned', 'owned')
     page.uncheck('#assume-growth')
     growth_settings_collapsed(page)
     assert page.evaluate("localStorage.getItem('pn.growth.options')") == saved
@@ -1705,170 +1705,100 @@ def test_growth_controls(browser, ctx):
     return True, '버튼 옆 단일 스위치·내 정보 필요·설정 접기·저장/공유·390px·결함 주입 3종'
 
 
-def test_assumed_growth(browser, ctx):
-    """Real Pyodide: checkbox -> owned search -> one-savior stage -> comparison table.
+def overwrite_account(page, mode='auto', legacy=False, corridor=False):
+    page.evaluate('''async ({mode,legacy,corridor}) => {
+      const info=structuredClone(MI.info);
+      for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
+      if(corridor){const keys=R.filter(s=>s.el==='moon'&&MI.growth.assumed.units[s.key]).slice(0,5).map(s=>s.key);
+        info.units=keys.map(k=>MyInfoReco.assume(k,{...info,units:[]},MI.growth).unit);}
+      info.star_link={level:240,source:[],slots:[]};info.star_link_level=240;
+      for(const u of info.units){u.level=1;u.equip=[];u.skills={basic:1,special:1,ultimate:1,passive:1};
+        u.resonance=0;u.gauntlet.journey=[0,0,0,0,0];u.gauntlet.potentials=[];}
+      if(legacy){delete info.star_link;info.units.forEach(u=>delete u.level);}
+      await miApply(info);setMode(mode,true);window.overwriteOriginal=JSON.stringify(MI.info);
+      $('assume-owned').value='owned';$('assume-growth').checked=true;condChanged();showReco();
+    }''', dict(mode=mode, legacy=legacy, corridor=corridor))
 
-    Only SYNTH supplies account values. Its intentionally absent tactics fields
-    are explicitly zeroed in memory to exercise the strict missing-data gate.
-    PN_DISABLE_ASSUMED=1 deliberately disconnects the feature; this test MUST fail.
-    """
-    page = open_page(browser, ctx, info=SYNTH)
-    choose(page, '작전 (일반)', 'SECTOR 1-3')
-    page.evaluate('''async () => {
-      const info=JSON.parse(JSON.stringify(MI.info));
-      for(const group of Object.keys(MI.growth.tactics))info.tactics.groups[group]={level:0,attack:0,defense:0,hp:0};
-      await miApply(info);window.assumedOriginal=JSON.stringify(info);
-    }''')
-    settle(page)
-    if os.environ.get('PN_DISABLE_ASSUMED') == '1':
-        page.evaluate('growthMaybe=()=>{}')
-    page.click('#tab-reco')
-    assert page.locator('label:has(#assume-growth)').inner_text().strip() == '육성 가이드'
-    assert page.locator('#assume-equipment').count() == 0
-    page.check('#assume-growth')
-    page.click('#tab-reco')
-    page.click('button[data-go]')
-    page.wait_for_function("() => GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
-    assert page.evaluate("GROW.phase") == 'done', page.evaluate('GROW.msg')
-    page.wait_for_selector('[data-k="growth-table"]')
-    assert page.locator('#out #growth-result [data-k="growth-table"]').count() == 1
-    growth_control_audit(page, home=True)
-    result = page.evaluate('''() => ({
-      runs:GROW.result.runs, ms:GROW.result.ms, scope:GROW.result.scope,
-      rows:GROW.result.rows.filter(r=>r.result).slice(0,5).map(r=>({key:r.key,kind:r.kind,clear:r.result.clear,
-        prog:r.result.prog,n:r.result.n,delta:r.delta,ci:r.ci})),
-      baseline:GROW.result.baseline,
-      owned:JSON.stringify(MI.info)===window.assumedOriginal,
-      one:GROW.result.rows.filter(r=>r.team).every(r=>r.team.party.units.filter(u=>
-        u.key===r.key).length===1&&r.team.party.units.every(u=>u.stats_final&&u.build==='none')),
-      history:localStorage.getItem('pn.growth.history')
-    })''')
-    assert result['runs'] > 0 and result['runs'] <= 7200, result
-    assert result['scope']['evaluated'] > 0 and result['rows'], result
-    assert all(r['prog'] > 0 and r['n'] == result['baseline']['n'] for r in result['rows']), result
-    assert result['owned'] and result['one'], result
-    assert page.locator('.card [data-k="assumed-badge"]').count() == 1
-    assert '가정 포함' in page.inner_text('[data-k="growth-best"]')
-    assert page.locator('.assumed-card .assumed-mark').count() > 0
-    assert '→' in page.locator('.assumed-card .assumed-mark').first.get_attribute('title')
-    if os.environ.get('PN_DISABLE_GUIDE_STYLE') == '1':
-        page.add_style_tag(content='.assumed-card .card {border-style:solid !important}')
-    colors = []
-    for theme in ('light', 'dark'):
-        page.evaluate('(theme)=>document.documentElement.dataset.theme=theme', theme)
-        style = page.locator('.assumed-card .card').evaluate('(e)=>({style:getComputedStyle(e).borderTopStyle,color:getComputedStyle(e).borderTopColor})')
-        assert style['style'] in ('dashed', 'dotted'), style
-        colors.append(style['color'])
-    assert colors[0] == colors[1], colors  # dark-only site, even with a foreign theme attribute
-    assert page.evaluate('''() => {const button=document.querySelector('[data-slot-start]');
-      let clicked=0;button.addEventListener('review-click',()=>clicked++);growthPaint();
-      const current=document.querySelector('[data-slot-start]');current.dispatchEvent(new Event('review-click'));
-      return button===current&&clicked===1;}'''), 'guide repaint must retain slot handlers'
-    page.set_viewport_size({'width': 390, 'height': 844})
-    guide_layout_audit(page)
-    # Each blocking layout regression must trip the same bounds/order audit.
-    for mutation, restore in [
-        ("window.badStyle=document.createElement('style');badStyle.textContent='.assumed-card .card>.assumed-label{height:120px!important}';document.head.append(badStyle)", "badStyle.remove()"),
-        ("document.querySelector('[data-k=growth-more]').open=true", "document.querySelector('[data-k=growth-more]').open=false"),
-        ("document.querySelector('#growth-result').append(document.querySelector('#star-link-result'))", "document.querySelector('[data-k=growth-slot-summary]').append(document.querySelector('#star-link-result'))"),
-        ("window.savedSummary=document.querySelector('[data-k=growth-summary]');savedSummary.remove()", "document.querySelector('#growth-result').prepend(savedSummary)"),
-    ]:
-        page.evaluate('() => {' + mutation + '}')
-        try:
-            try:
-                guide_layout_audit(page)
-            except AssertionError:
-                pass
-            else:
-                raise AssertionError('layout mutation escaped: ' + mutation)
-        finally:
-            page.evaluate('() => {' + restore + '}')
-        guide_layout_audit(page)
-    page.set_viewport_size({'width': 1366, 'height': 1000})
-    assert page.locator('[data-k="growth-contributions"]').count() > 0
-    assert page.evaluate("GROW.result.rows.some(r=>r.component&&r.result&&r.result.prog>0)")
-    assert result['history'] and 'progs' not in result['history'] and 'item_id' not in result['history']
-    # Full share payload must remain the original account, while options travel in search.
-    shared = page.evaluate('''async () => {const url=await shareUrlMi();
-      const u=new URL(url),decoded=await MyInfoImport.fromHash(u.hash.replace('#shared=','#myinfo='));
-      return {same:JSON.stringify(decoded)===window.assumedOriginal,ag:u.searchParams.get('ag'),ae:u.searchParams.get('ae')};}''')
-    assert shared == dict(same=True, ag='1', ae=None), shared
-    # Shared mode storage guard uses the actual page completion path's helper.
-    unchanged = page.evaluate('''() => {const old=LS.get('growth.history');MI.shared=true;
-      const entry=GrowthGuide.summary(GROW.result,'op/shared/test','new',MI.hash,'other');
-      GrowthGuide.save(LS,MI.shared,entry);MI.shared=false;
-      return JSON.stringify(old)===JSON.stringify(LS.get('growth.history'));}''')
-    assert unchanged
-    # Deadline covers candidate generation too; no quick/combination work after expiry.
-    assert page.evaluate('''async () => {const c=contents[$('content').value],st=cur[$('stage').value];
-      const targets=await growthCandidates(c,st,()=>true,Date.now()-1);
-      return targets.length>0&&targets.every(t=>t.limited&&t.candidates.length===0);}''')
-    page.screenshot(path=os.path.join(ctx.shots, 'assumed_growth.png'), full_page=True)
-    with open(os.path.join(ctx.shots, 'assumed_measurement.json'), 'w', encoding='utf8') as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
-    # Complete an actual shared-account search; completion must not write local history.
-    saved_history = page.evaluate("localStorage.getItem('pn.growth.history')")
-    page.evaluate('''async () => {await miApply(JSON.parse(JSON.stringify(MI.info)),{shared:true});condChanged();showReco();}''')
+
+def overwrite_audit(page, require_card=False):
     page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
-    assert page.evaluate("GROW.phase==='done' && Object.keys(GROW.history).length>0")
-    assert page.evaluate("localStorage.getItem('pn.growth.history')") == saved_history
-    page.evaluate('MI.shared=false')
-    page.click('#tab-info')
-    page.uncheck('#assume-growth')
-    assert page.evaluate("GROW.phase==='idle' && GROW.result===null && SIMQ.busy===null")
-    page.click('#mi-panel-clear')
-    assert page.evaluate("localStorage.getItem('pn.growth.history')===null")
+    assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.errors')
+    assert page.evaluate('''() => {const r=GROW.result;return r&&r.runs>0&&r.best?.prog>0&&
+      JSON.stringify(MI.info)===overwriteOriginal && r.snapshot.info!==MI.info &&
+      r.team.party.units.every(u=>u.stats_final&&u.build==='none');}''')
+    assert page.locator('#out > [data-party="1"]').count() == 1
+    assert page.locator('[data-k="growth-table"], [data-k="growth-contributions"]').count() == 0
+    visible = page.evaluate('growthBetter(GROW.result.kind,GROW.result.baseline,GROW.result.best)')
+    assert page.locator('#growth-result').count() == int(visible)
+    if require_card:
+        assert visible, page.evaluate('({baseline:GROW.result.baseline,best:GROW.result.best})')
+    if visible:
+        assert page.evaluate("$('growth-result').compareDocumentPosition(document.querySelector('#out > [data-party]')) & Node.DOCUMENT_POSITION_PRECEDING")
+        assert page.locator('#growth-result .assumed-card').count() > 0
+        assert '키워야 함' in page.inner_text('#growth-result')
+        assert page.evaluate('''() => [...document.querySelectorAll('#growth-result .assumed-card')].every(el=>{
+          const a=GROW.result.snapshot.changes[el.dataset.key],labels={level:'스타링크',equip:'장비 +15',skills:'스킬',resonance:'공명',journey:'여정',potentials:'잠재력'};
+          return a.changedFields.length===el.querySelectorAll('.mi-chips .tag').length&&a.changedFields.every(f=>el.textContent.includes(labels[f]));})''')
+    assert not page.locator('#out > [data-party="1"] .assumed-card').count()
+    assert not page.evaluate("LS.get('growth.history')"), 'old priority history is not populated by whole-account passes'
+    return visible
+
+
+def test_assumed_growth(browser, ctx):
+    page = open_page(browser, ctx, info=SYNTH)
+    choose(page, '작전 (일반)', 'SECTOR 15-3')
+    overwrite_account(page)
+    overwrite_audit(page, require_card=True)
+    before = page.locator('#out > [data-party="1"]').get_attribute('data-team')
+    for value in ['GROW.result.baseline.clear', 'Math.max(0,GROW.result.baseline.clear-.1)']:
+        page.evaluate('window.savedClear=GROW.result.best.clear;GROW.result.best.clear='+value+';growthPaint()')
+        assert not page.locator('#growth-result').count()
+        page.evaluate('GROW.result.best.clear=savedClear;growthPaint()')
+    page.set_viewport_size({'width': 1366, 'height': 1000})
+    page.screenshot(path=os.path.join(ctx.shots, 'overwrite_desktop.png'), full_page=True)
+    page.set_viewport_size({'width': 390, 'height': 844})
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+    page.locator('#growth-result').scroll_into_view_if_needed()
+    settle(page)
+    assert page.locator('#growth-result .assumed-card').first.is_visible()
+    assert page.evaluate('''() => [...document.querySelectorAll('#growth-result .card')].every(card=>{
+      const badge=card.querySelector('.assumed-label'),info=card.querySelector('.cinfo');
+      return !badge||badge.getBoundingClientRect().bottom<info.getBoundingClientRect().top;})''')
+    page.locator('#growth-result').screenshot(path=os.path.join(ctx.shots, 'overwrite_mobile.png'))
+    assert page.locator('#out > [data-party="1"]').get_attribute('data-team') == before
+    shared = page.evaluate('''async () => {const u=new URL(await shareUrlMi());
+      const info=await MyInfoImport.fromHash(u.hash.replace('#shared=','#myinfo='));return JSON.stringify(info)===overwriteOriginal;}''')
+    assert shared
+    # A pending background pass is canceled without touching the owned card.
+    page.evaluate('''() => {window.realEvaluate=growthEvaluate;growthEvaluate=()=>new Promise(resolve=>{GROW.stop=()=>resolve({});});
+      growthCancel();growthStart(contents[$('content').value],cur[$('stage').value]);}''')
+    page.wait_for_function("GROW.phase==='running'&&!!GROW.stop")
+    page.click('[data-growth-cancel]')
+    assert '미완료' in page.inner_text('#growth-result')
+    assert page.locator('#out > [data-party="1"]').get_attribute('data-team') == before
+    page.evaluate('() => {growthEvaluate=realEvaluate;}')
     assert not ctx.errors, ctx.errors
-    return True, '합성 계정 1-3: %.1f초 / %d판 / 평가 %s명 / 원본·출처·공유·기록 삭제' % (result['ms']/1000, result['runs'], result['scope']['evaluated'])
+    return True, '작전 실제 작업자 · 원본 불변 · 같은/낮은 결과 숨김 · 취소 · 390px · 하단 보조 카드'
 
 
 def test_assumed_manual(browser, ctx):
     page = open_page(browser, ctx, info=SYNTH)
     choose(page, '작전 (일반)', 'SECTOR 1-3')
-    page.evaluate('''async () => {const info=JSON.parse(JSON.stringify(MI.info));
-      for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
-      await miApply(info);setMode('manual',true);condChanged();}''')
-    settle(page)
-    page.click('#tab-info')
-    page.check('#assume-growth')
-    page.click('#tab-reco')
-    page.click('button[data-go]')
-    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
-    assert page.evaluate('''() => {const r=GROW.result;return r&&r.runs<=7200&&r.baseline.n===100&&
-      r.rows.some(x=>x.result)&&r.rows.filter(x=>x.result).every(x=>x.result.n===100&&x.result.prog>0&&
-        x.result.prog===x.result.man.prog&&x.result.progs.length===100);}''')
-    # In-flight invalidation: a new option change must discard the entire scenario.
-    page.evaluate('''() => {growthCancel();growthStart(contents[$('content').value],cur[$('stage').value]);}''')
-    page.click('#tab-info')
-    page.uncheck('#assume-growth')
-    settle(page)
-    assert page.evaluate("GROW.result===null&&GROW.phase==='idle'&&SIMQ.busy===null")
+    overwrite_account(page, mode='manual')
+    overwrite_audit(page)
+    assert page.evaluate('GROW.result.best.n===100&&GROW.result.best.man&&GROW.result.best.progs.length===100')
     assert not ctx.errors, ctx.errors
-    return True, '수동 진행도·100판 재평가·정책 탐색 판수 상한·진행 중 무효화'
+    return True, '수동 같은 추천 탐색 · 정책 결과 · 판별 진행도'
 
 
 def test_assumed_legacy(browser, ctx):
-    page = open_page(browser, ctx, info=os.path.join(FIXTURES, 'myinfo_legacy.json'))
+    page = open_page(browser, ctx, info=SYNTH)
     choose(page, '작전 (일반)', 'SECTOR 1-3')
-    page.evaluate('''async () => {const info=structuredClone(MI.info);
-      for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
-      await miApply(info);EXCL=new Set(R.filter(s=>!miProfile().units[s.key]).map(s=>s.key));
-      window.legacyOriginal=JSON.stringify(MI.info);condChanged();}''')
-    settle(page)
-    page.click('#tab-info')
-    page.check('#assume-growth')
-    page.click('#tab-reco')
-    page.click('button[data-go]')
-    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
-    assert page.evaluate('''() => GROW.phase==='done' && JSON.stringify(MI.info)===legacyOriginal &&
-      GROW.result.baseline.prog>0 && ['equipment','skills','potential'].every(k=>
-        GROW.result.rows.some(r=>r.component===k&&r.result?.prog>0&&r.result.n===100)) &&
-      GROW.result.rows.filter(r=>r.component==='level').every(r=>r.errorCode==='level-data'&&!r.result)''')
-    page.locator('[data-k="growth-contributions"] summary').first.click()
-    assert '자료 없음' in page.locator('[data-component="level"]').first.inner_text()
-    page.screenshot(path=os.path.join(ctx.shots, 'assumed_legacy.png'), full_page=True)
+    overwrite_account(page, legacy=True)
+    overwrite_audit(page)
+    assert page.evaluate("Object.values(GROW.result.snapshot.changes).every(x=>!x.changedFields.includes('level'))")
     assert not ctx.errors, ctx.errors
-    return True, '옛 형식 실제 100판: 장비·스킬·공명·잠재력 진행도 양수, 레벨만 자료 없음'
+    return True, '옛 형식 레벨 유지 · 나머지 목표 육성 · 원본 불변'
 
 
 def test_assumed_corridor(browser, ctx):
@@ -1879,25 +1809,11 @@ def test_assumed_corridor(browser, ctx):
     settle(page)
     page.select_option('#stage', value=page.evaluate("String(cur.findIndex(s=>s.name==='FLOOR 100'))"))
     settle(page)
-    page.evaluate('''async () => {const info=JSON.parse(JSON.stringify(MI.info));
-      for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
-      await miApply(info);}''')
-    settle(page)
-    page.click('#tab-info')
-    page.check('#assume-growth')
-    page.click('#tab-reco')
-    page.click('button[data-go]')
-    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
-    result = page.evaluate('''() => {const r=GROW.result;return r&&{baseline:r.baseline,runs:r.runs,ms:r.ms,
-      rows:r.rows.filter(x=>x.result).map(x=>({key:x.key,n:x.result.n,prog:x.result.prog,delta:x.delta,
-        valid:x.team.party.units.every(u=>BYKEY[u.key].el==='moon')&&x.team.party.units.filter(u=>
-          miProfile().units[u.key]).length===3}))};}''')
-    assert result and result['baseline'] is None and result['runs'] > 0, result
-    assert result['rows'] and all(r['valid'] and r['delta'] is None and r['n'] == 100 for r in result['rows']), result
-    assert any(r['prog'] > 0 for r in result['rows']), result
-    assert page.locator('[data-k="growth-table"]').count() == 1
+    overwrite_account(page, corridor=True)
+    overwrite_audit(page)
+    assert page.evaluate("GROW.result.team.party.units.every(u=>BYKEY[u.key].el==='moon')")
     assert not ctx.errors, ctx.errors
-    return True, '합성 계정 달 회랑 100: %.1f초 / %d판 / 보유 3명+가정 1명·속성 제한·기준 없음' % (result['ms']/1000, result['runs'])
+    return True, '달 회랑 100 실제 작업자 · 속성 제한 · 계정 전체 덮어쓰기'
 
 
 def test_star_link_slots(browser, ctx):
@@ -1986,22 +1902,25 @@ def test_star_link_slots(browser, ctx):
 
 
 def test_growth_stage23(browser, ctx):
-    """Synthetic account, real search/generator/UI, deterministic worker contract."""
+    """Same seasonal search for both accounts, deterministic worker results from input stats."""
     page = open_page(browser, ctx, info=SYNTH, raid_ui=True)
     page.evaluate('''async () => {
       const info=structuredClone(MI.info);
       for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
       const keys=R.filter(s=>MI.growth.assumed.units[s.key]&&!D.guild.search.excluded.includes(s.key)).slice(0,12).map(s=>s.key);
       window.stage23Keys=keys;
-      info.units=keys.map(k=>({...MyInfoReco.assume(k,{...info,units:[]},MI.growth).unit,level:120}));
-      if(!await miApply(info))throw Error(MyInfoImport.validate(info)||$('mi-status').textContent);window.stage23Original=JSON.stringify(MI.info);
+      info.units=keys.map(k=>{const u=MyInfoReco.assume(k,{...info,units:[]},MI.growth).unit;
+        return {...u,level:1,equip:[],skills:{basic:1,special:1,ultimate:1,passive:1},resonance:0,
+          gauntlet:{journey:[0,0,0,0,0],potentials:[],blessings:[],level:0}};});
+      info.star_link={level:240,source:[],slots:[]};info.star_link_level=240;
+      await miApply(info);window.stage23Original=JSON.stringify(MI.info);
       window.stage23Version=(await fetch('sim/manifest.json').then(r=>r.json())).ver;
       window.stage23Requests=[];window.stage23Active=0;window.stage23Peak=0;
       window.Worker=class {
         constructor(){stage23Peak=Math.max(stage23Peak,++stage23Active);}
         postMessage(req){stage23Requests.push(req);setTimeout(()=>{
           if(this.dead)return;
-          for(const t of req.teams){const value=(t.key.includes('|growth')?.9:.6)+(t.options?.guild?.support==='fire'?.05:0);
+          for(const t of req.teams){const value=Math.min(.95,.5+t.party.units.reduce((a,u)=>a+u.stats_override.atk,0)/100000);
             const bi=D.cosmoRaid.bosses.findIndex(b=>b.key===t.options?.cosmo_raid?.boss),wanted=stage23Keys.slice(bi*4,bi*4+4),
               score=Math.round(value*1000)+t.party.units.filter(u=>wanted.includes(u.key)).length*1000;
             const result={ver:stage23Version,n:req.n_runs,clear:0,prog:value,progs:Array(req.n_runs).fill(value),via:{trigger:1},
@@ -2011,91 +1930,43 @@ def test_growth_stage23(browser, ctx):
         },0);}
         terminate(){if(!this.dead){this.dead=true;stage23Active--;}}
       };
-      const targets=growthTargets;growthTargets=(c,s)=>targets(c,s).filter(t=>!t.component&&!keys.includes(t.key)&&!D.guild.search.excluded.includes(t.key)).slice(0,1);
-      const candidates=growthCandidates;growthCandidates=(c,s,...args)=>{
-        if(Object.keys(s.w).some(k=>!EL[k]))throw Error('잘못된 보스 속성 '+JSON.stringify([s.tab,s.w,D.cosmoRaid.bosses.map(b=>[b.name,b.element])]));return candidates(c,s,...args);};
       const S=D.guild.search;Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,screen2:{keep:3,runs:2},finalists:2});
       S.screen.runs=2;S.final.runs=2;S.final.levels=[0];S.final.supports=['fire','gust'];
       const C=D.cosmoRaid.search;C.minFront=0;C.minDealer=0;C.screen.runs=2;C.rerank.runs=2;C.final.runs=2;
       C.poolSize=12;C.maxPool=12;C.rerank.keep=18;
+      $('assume-growth').checked=true;$('assume-owned').value='owned';condChanged();
     }''')
-    page.click('#tab-info')
-    page.check('#assume-growth')
-    page.click('#tab-reco')
-    names = page.locator('#content option').all_text_contents()
-    page.select_option('#content', label=next(n for n in names if n.startswith('길드방어전')))
-    settle(page)
-    growth_control_audit(page)
-    page.evaluate("GS.sel={level:0,tiers:[0,0,0,0]};renderGuild()")
-    page.click('#guild-search [data-gs="start"]')
-    page.wait_for_function("GSR.phase==='done'||GSR.phase==='err'")
-    assert page.evaluate('GSR.phase') == 'done', page.evaluate('GSR.msg')
-    page.locator('[data-growth-start]').click()
-    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
-    assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
-    assert page.evaluate('GROW.result.rows.some(r=>r.result)'), page.evaluate('GROW.result.rows.map(r=>({id:r.id,error:r.error,status:r.status}))')
-    page.wait_for_selector('[data-k="growth-guild-card"]')
-    assert page.locator('#out #growth-result [data-k="growth-guild-card"]').count() > 0
-    assert '현재 조건에서의 개선' in page.inner_text('#growth-result')
-    assert page.evaluate('GROW.result.runs>0&&GROW.result.runs<=7200&&GROW.result.rows.some(r=>r.result?.prog>0)')
-    assert page.evaluate('stage23Requests.filter(r=>r.n_runs===100).every(r=>r.seed===900001)')
-    assert page.evaluate('GROW.result.conditions.support==="fire"&&stage23Requests.flatMap(r=>r.teams).filter(t=>t.key.includes("|growth")).every(t=>t.options.guild.support==="fire"&&t.options.guild.level===0)')
-    page.select_option('#content', label=next(n for n in names if n.startswith('코스모 게이트')))
-    settle(page)
-    page.evaluate("CSR.optLevel=0;CSR.optFast=false;renderCosmoSearch()")
-    page.click('#cosmo-search [data-cs="start"]')
-    page.wait_for_function("CSR.phase==='done'||CSR.phase==='err'", timeout=180000)
-    assert page.evaluate('CSR.phase') == 'done', page.evaluate('CSR.msg')
-    page.evaluate('stage23Peak=0;stage23Requests=[]')
-    page.locator('[data-growth-start]').click()
-    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
-    assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
-    page.wait_for_selector('[data-k="growth-cosmo-card"]')
-    assert page.locator('#out #growth-result [data-k="growth-cosmo-card"]').count() > 0
-    growth_control_audit(page, home=True)
-    assert page.evaluate('GROW.result.runs>0&&GROW.result.runs<=12000&&stage23Peak<=3')
-    assert page.evaluate('GROW.result.rows.filter(r=>r.team).every(r=>new Set(r.team.teams.flatMap(t=>t.keys)).size===12)')
-    assert page.evaluate('new Set(stage23Requests.filter(r=>r.n_runs===4).flatMap(r=>r.teams.filter(t=>t.key.includes("|growth")).map(t=>t.options.cosmo_raid.boss))).size===3')
-    assert page.evaluate('JSON.stringify(MI.info)===stage23Original')
-    history = page.evaluate("localStorage.getItem('pn.growth.history')")
-    assert 'progs' not in history and 'stats_override' not in history
-    assert page.evaluate("!!LS.get('growth.history')['cosmo/'+D.cosmoRaid.season]")
-    assert page.evaluate("Object.keys(LS.get('growth.history')).some(k=>k.startsWith('guild/'))"), '길방 기록 보존'
-    before_tab = page.evaluate('JSON.stringify(GROW.result)')
-    # Seasonal view hides the legacy boss selector; dispatch its real handler.
-    page.evaluate("$('tab').value=contents[$('content').value].stages.find(s=>s.tab!==cur[$('stage').value].tab).tab;refreshStages()")
-    settle(page)
-    assert page.evaluate('JSON.stringify(GROW.result)') == before_tab, '보기 전용 보스 탭 변경'
-    assert page.evaluate('GROW.phase') == 'done'
-    page.set_viewport_size({'width': 390, 'height': 844})
-    settle(page)
-    page.wait_for_selector('[data-k="growth-cosmo-card"]')
-    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
-    page.screenshot(path=os.path.join(ctx.shots, 'growth_stage23.png'), full_page=True)
-    page.evaluate('MI.shared=true')
-    page.locator('[data-growth-start]').click()
-    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
-    assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
-    assert page.evaluate("localStorage.getItem('pn.growth.history')") == history
-    # Malformed non-reference candidates must not abort the real start/signature/paint path.
-    page.evaluate('CSR.rows.push({}, {teams:[]}, {teams:CSR.rows[0].teams.slice(0,2)})')
-    page.locator('[data-growth-start]').click()
-    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
-    assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
-    assert page.evaluate('GROW.result.runs>0&&GROW.result.baseline.sum>0&&GROW.errors.length===3')
-    details = page.locator('[data-k="growth-score-details"]').text_content()
-    assert '편성 목록 없음' in details and '보스 3개 편성 누락' in details and '행 건너뜀' in details
-    assert page.evaluate("localStorage.getItem('pn.growth.history')") == history
-    page.evaluate('CSR.rows.splice(-3)')
-    page.evaluate('MI.shared=false;CSR.rows[0].teams.pop()')
-    page.locator('[data-growth-start]').click()
-    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
-    assert page.evaluate('GROW.phase') == 'error'
-    assert '보유 탐색 먼저' in page.inner_text('#growth-result')
-    page.evaluate('MI.shared=false;miClear()')
-    assert page.evaluate("localStorage.getItem('pn.growth.history')===null")
-    page.close()
-    return True, '길방·코스모: 옵션→보유 검색→육성 비교→모바일 결과 카드, 원본 불변'
+    for kind, state, selector in [('guild', 'GSR', '#guild-search [data-gs="start"]'), ('cosmo', 'CSR', '#cosmo-search [data-cs="start"]')]:
+        page.select_option('#content', value=page.evaluate(f"String(contents.findIndex(c=>c.key==='{kind}'))"))
+        settle(page)
+        page.evaluate("GS.sel={level:0,tiers:[0,0,0,0]};CSR.optLevel=0;CSR.optFast=false;renderGuild();renderCosmoSearch()")
+        page.click(selector)
+        page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
+        assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.errors')
+        assert page.evaluate(f"{state}.phase==='done' && {state}.rows.length>0")
+        assert page.locator(f'[data-k="growth-{kind}-card"]').count() == 1
+        assert page.evaluate('growthBetter(GROW.result.kind,GROW.result.baseline,GROW.result.best)')
+        assert page.evaluate('JSON.stringify(MI.info)===stage23Original')
+        assert '키워야 함' in page.inner_text('#growth-result')
+        assert page.evaluate('GROW.result.snapshot.errors.length') == 0
+        if kind == 'cosmo':
+            assert page.evaluate('new Set(GROW.result.best.teams.flatMap(t=>t.keys)).size') == 12
+            assert page.locator('#growth-result .gc').count() == 12
+        else:
+            assert page.evaluate('GROW.result.best.prog>0')
+            assert page.locator('#growth-result .gc').count() == 4
+        original = page.evaluate(f'JSON.stringify({state}.rows)')
+        field = 'sum' if kind == 'cosmo' else 'score'
+        page.evaluate(f'window.savedMetric=GROW.result.best.{field};GROW.result.best.{field}=GROW.result.baseline.{field};growthPaint()')
+        assert not page.locator('#growth-result').count()
+        page.evaluate(f'GROW.result.best.{field}=savedMetric;growthPaint()')
+        assert page.evaluate(f'JSON.stringify({state}.rows)') == original
+        page.set_viewport_size({'width': 390, 'height': 844})
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+    assert page.evaluate('stage23Peak<=Math.max(csWorkers(),8)')
+    assert page.evaluate('stage23Requests.every(r=>r.teams.every(t=>t.party.units.every(u=>u.stats_final)))')
+    assert not ctx.errors, ctx.errors
+    return True, '길방·코스모 같은 탐색 · 실제 입력 스탯 기반 결과 · 상위20%/3팀 합산 · 같으면 숨김 · 원본 불변'
 
 
 TESTS = [test_growth_controls, test_growth_stage23, test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,

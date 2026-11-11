@@ -101,13 +101,28 @@
     if(conditions&&typeof conditions==='object'&&!['guild','cosmo'].includes(kind))
       conditions={...conditions,mode:conditions.mode??a[7],breaks:conditions.breaks??a[6]?.slice(2)};
     return {kind,conditions};}
+  function conditionsMatch(a,b,kind){
+    if(!a||!b)return JSON.stringify(a)===JSON.stringify(b);
+    a={...a};b={...b};
+    if(['guild','cosmo'].includes(kind)){
+      // No search since reload means unknown teams, not a different selection.
+      if(!b.teams?.length){delete a.teams;delete b.teams;}
+    }else{
+      const keys=a.breakTeams||[...new Set([...Object.keys(a.breaks?.[0]||{}),...Object.keys(b.breaks?.[0]||{})])].filter(k=>k.startsWith(kind+'|'));
+      const map=x=>x.breaks?.[0]||{};
+      if(keys.some(k=>(map(a)[k]??a.breakDefault??null)!==(map(b)[k]??b.breakDefault??null)))return false;
+      if(keys.length){delete a.breakDefault;delete b.breakDefault;}
+      delete a.breaks;delete b.breaks;delete a.breakTeams;delete b.breakTeams;
+    }
+    return JSON.stringify(a)===JSON.stringify(b);
+  }
   function priority(history,signature,current={}){const by=new Map(),latest=new Map(),entries=Object.values(history).filter(h=>compatible(h.signature,signature));
     for(const h of entries){const ctx=historyContext(h.signature),old=latest.get(ctx.kind);
       if(!old||(h.at??0)>=(old.at??0))latest.set(ctx.kind,{at:h.at,conditions:ctx.conditions});}
     if(signature){const ctx=historyContext(signature);latest.set(ctx.kind,ctx);}
     for(const [kind,conditions] of Object.entries(current))latest.set(kind,{conditions});
     for(const h of entries){const ctx=historyContext(h.signature);
-      if(JSON.stringify(ctx.conditions)!==JSON.stringify(latest.get(ctx.kind)?.conditions))continue;
+      if(!conditionsMatch(ctx.conditions,latest.get(ctx.kind)?.conditions,ctx.kind))continue;
       for(const r of h.rows){const id=r.key+'|'+r.kind;
       if(!by.has(id))by.set(id,{key:r.key,kind:r.kind,contents:[]});by.get(id).contents.push({...r,content:h.content,unit:h.unit||'%p',metric:h.metric||'clear'});}
     }
