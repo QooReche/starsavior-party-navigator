@@ -140,7 +140,7 @@
       close() { if (closed) return; closed = true; ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; w.terminate(); }); }
     };
   }
-  function runPhase({makeWorker, pool, jobs, workers, runs, seed, stage, base, onProgress, chunk}) {
+  function runPhase({makeWorker, pool, jobs, workers, runs, seed, stage, base, onProgress, chunk, options, onResult}) {
     const dyn = chunk > 0;
     const parts = dyn ? Array.from({length: Math.max(1, Math.min(workers, Math.ceil(jobs.length / chunk)))}, () => []) : split(jobs, workers), res = {}, ws = [];
     let done = 0, finished = 0, dead = false, rejectFn, next = 0, seq = 0;
@@ -158,13 +158,13 @@
         let requestId;
         const send = list => {
           requestId = pool ? pool.nextId() : ++seq;
-          try { w.postMessage({type: "run", id: requestId, base, stage, n_runs: runs, seed, options: {build: "standard", rules_override: {power_penalty: "model"}},
+          try { w.postMessage({type: "run", id: requestId, base, stage, n_runs: runs, seed, options: options || {build: "standard", rules_override: {power_penalty: "model"}},
             teams: list.map(j => ({key: j.key, party: j.party, options: j.options}))}); }
           catch (e) { fail(e); }
         };
         w.onmessage = e => {
           const m = e.data; if (dead || (m.id != null && m.id !== requestId)) return;
-          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}, progs: m.result.progs || null, cosmo: m.result.cosmo || null}; done++; if (onProgress) onProgress(done, jobs.length); }
+          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}, progs: m.result.progs || null, cosmo: m.result.cosmo || null}; if(onResult)onResult(m.key,m.result); done++; if (onProgress) onProgress(done, jobs.length); }
           else if (m.type === "done" && dyn && next < jobs.length) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); }
           else if (m.type === "done") { if (++finished === parts.length) { dead = true; clean(false); resolve(res); } }
           else if (m.type === "error") fail(new Error(m.msg || "작업자 오류"));

@@ -6,6 +6,7 @@
 :root{color-scheme:dark;--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e;--warn:#ffb454;--gold:#ffd24a;--ult:#7a4fc0;--spc:#3b6cb4;--bas:#4a5568;--assumed:#cba6ff;--assumed-bg:#332544}
 .assumed-card .card{border:2px dashed var(--assumed)}.assumed-label{color:var(--assumed);background:var(--assumed-bg);font-weight:700;font-size:11px;display:inline-block;padding:3px 5px;border-radius:5px;white-space:nowrap}.assumed-card .card>.assumed-label{position:absolute;top:6px;right:6px;z-index:3;pointer-events:none}.assumed-mark{color:var(--assumed);font-weight:bold}.assumed-missing{border:1px dotted var(--assumed)}.assumed-owned{border:1px dashed var(--assumed)}.al-short{display:none}.gc[data-assumed="assumed"] .card{border-style:dotted}.gc[data-assumed="assumed"] .art{filter:grayscale(.5)}
 #out #growth-result{border:1px dashed var(--assumed);border-top:2px dashed var(--assumed)}
+.growth-score-card{border:1px solid var(--line);border-radius:9px;margin:10px 0;padding:10px;overflow-wrap:anywhere}.growth-score-card p{margin:7px 0}.growth-score-card .tag{white-space:nowrap}
 .growth-table{border-collapse:collapse;width:100%;font-size:13px;word-break:keep-all}.growth-table th,.growth-table td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.growth-table td:first-child>b,.growth-table th{white-space:nowrap}.growth-table details{margin-top:5px}.growth-stats{font-size:11px;word-break:keep-all}.growth-stats summary{cursor:pointer}
 .slot-swap{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:8px;margin:8px 0;border:1px solid var(--line);border-radius:8px}.slot-in,.slot-out{display:flex;align-items:center;gap:5px;font-weight:700}.slot-in{color:var(--good)}.slot-out{color:var(--bad)}.slot-face{display:inline-block;width:34px;height:34px;overflow:hidden;border-radius:50%;position:relative}.slot-face img{width:100%;height:100%;object-fit:cover;object-position:top}.tag.slot-good{color:var(--good);border-color:var(--good)}.tag.slot-bad{color:var(--bad);border-color:var(--bad)}.tag.slot-pending{border-style:dashed}.tag.reload-needed{border-color:var(--warn);color:var(--warn)}#growth-result #star-link-result{margin:10px 0;border-top:1px solid var(--line)}
 @media(max-width:760px){.assumed-card .card>.assumed-label{font-size:10px;padding:2px 3px;top:3px;right:3px}.assumed-label .al-long{display:none}.assumed-label .al-short{display:inline}.growth-table thead{display:none}.growth-table tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;padding:8px 0;border-bottom:1px solid var(--line)}.growth-table td{display:block;padding:0;border:0}.growth-table td:first-child{grid-column:1/-1}.growth-table td:first-child>b{font-size:14px}.assumed-card .mi-chips{font-size:10px;word-break:keep-all}.slot-swap{font-size:13px}}
@@ -461,8 +462,8 @@ function renderGuild(){const c=contents[$("content").value],p=$("guild-panel"),s
  const ex=D.guild.steps.find(x=>x.ex);renderGuildSearch(!!ex&&parseInt(s.name,10)===ex.step)}
 $("guild-panel").addEventListener("change",e=>{const t=e.target.closest("select[data-g]");if(!t)return;
  const sel=GuildView.normSel(D.guild,GS.sel);if(t.dataset.g==="level")sel.level=+t.value;else sel.tiers[+t.dataset.i]=+t.value;
- GS.sel=sel;LS.set("guild.v2",sel);renderGuild()});
-$("guild-panel").addEventListener("click",e=>{if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove("guild.v2");renderGuild()});
+ GS.sel=sel;LS.set("guild.v2",sel);growthCancel();renderGuild();growthPaint()});
+$("guild-panel").addEventListener("click",e=>{if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove("guild.v2");growthCancel();renderGuild();growthPaint()});
 // 시즌 시작·종료·결산 종료 시각이 지나면 열어 둔 화면도 패널을 다시 그림(종료 뒤 «갱신 대기» 경고). 탭 복귀 때도 다시 판정
 function gsWatch(){if(!D.guild||!D.guild.season||!window.GuildView)return;const s=D.guild.season,now=Date.now();
  const next=[s.start,s.end,s.settleEnd].map(GuildView.parseTime).filter(t=>t>now).sort((x,y)=>x-y)[0];
@@ -476,7 +477,8 @@ function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
  p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsTiers().join(""),label:gsLabel,esc,excluded:D.guild.search.excluded,notes:D.guild.search.notes})}
 async function guildSearchStart(){
- if(!MI.info||GSR.phase==="run")return;
+ if(!MI.info||GSR.phase==="run"||SIMQ.busy!=null||CSR.phase==="run")return;
+ growthCancel();
  const S=D.guild.search;S.banCoop=GSR.banCoop;const V=GuildView,G=D.guild,id=++GSR.id,c=contents[$("content").value],st=cur&&cur[$("stage").value];
  const stale=()=>GSR.id!==id,paint=()=>renderGuildSearch(true);
  try{
@@ -501,9 +503,9 @@ async function guildSearchStart(){
   const hB=GuildSearch.runPhase({makeWorker:mk,jobs:jobsB,workers,runs:S.final.runs,seed:2,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
   GSR.handle=hB;const resB=await hB.promise;if(stale())return;
   GSR.dropped=GuildSearch.countDropped(S,[[jobsA,resA],[jobsA2,resA2],[jobsB,resB]]);GSR.rows=GuildSearch.rank(V,G,jobsB,resB,tiers,5,S);GSR.sig=tiers.join("");GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=S.final.runs;
-  GSR.phase="done";GSR.handle=null;paint()
+  GSR.context=growthOwnedContext('guild');GSR.phase="done";GSR.handle=null;paint();growthPaint()
  }catch(e){if(stale())return;GSR.handle=null;GSR.phase=/^취소$/.test(e.message)?"idle":"err";GSR.msg=e.message||String(e);paint()}}
-$("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;if(GSR.phase!=="run")renderGuildSearch(true)});
+$("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
 $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[data-gs]");if(!b)return;
  if(b.dataset.gs==="start")guildSearchStart();
  else if(b.dataset.gs==="cancel"){GSR.id++;if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";renderGuildSearch(true)}});
@@ -548,7 +550,8 @@ function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").v
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
  p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info?csPre():""})}
 async function cosmoSearchStart(){
- if(!MI.info||CSR.phase==="run")return;
+ if(!MI.info||CSR.phase==="run"||SIMQ.busy!=null||GSR.phase==="run")return;
+ growthCancel();
  const C=D.cosmoRaid,id=++CSR.id,stale=()=>CSR.id!==id,paint=()=>renderCosmoSearch(),level=CSR.optLevel,mode=CSR.optMode;
  try{
   CSR.phase="run";CSR.sig=csSig();CSR.msg="내 구원자 능력치 계산 중";CSR.done=0;CSR.total=0;CSR.eta=null;CSR.etaText="";CSR.runs=1;paint();
@@ -562,12 +565,12 @@ async function cosmoSearchStart(){
    onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());csTick(false)},onHandle:h=>{CSR.handle=h}});
   if(!out||stale())return;
   const sum=CSR.eta&&CSR.eta.summary();if(sum)LS.set("cosmo.speed.v2",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
-  Object.assign(CSR,{fast:false,fastSkipped:false,audit:null},out,{phase:"done",handle:null,eta:null});paint()
+  Object.assign(CSR,{fast:false,fastSkipped:false,audit:null},out,{phase:"done",handle:null,eta:null});CSR.context=growthOwnedContext('cosmo');paint();growthPaint()
  }catch(e){if(stale())return;CSR.handle=null;CSR.eta=null;CSR.phase=/^취소$/.test(e.message)?"idle":"err";CSR.msg=e.message||String(e);paint()}}
 $("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("[data-cs]");if(!t)return;
  if(t.dataset.cs==="fast")CSR.optFast=t.checked;
  else if(t.dataset.cs==="level"){CSR.optLevel=+t.value;LS.set("cosmo.level",CSR.optLevel)}else if(t.dataset.cs==="mode"){CSR.optMode=t.value;LS.set("cosmo.mode",CSR.optMode)}
- if(CSR.phase!=="run")renderCosmoSearch()});
+ growthCancel();if(CSR.phase!=="run")renderCosmoSearch();growthPaint()});
 $("cosmo-search").addEventListener("click",e=>{const b=e.target.closest("button[data-cs]");if(!b)return;
  if(b.dataset.cs==="start")cosmoSearchStart();
  else if(b.dataset.cs==="cancel"){CSR.id++;if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.phase="idle";CSR.eta=null;renderCosmoSearch()}});
@@ -1128,7 +1131,7 @@ function miGuide(){return `<div class="party guide" data-k="miguide"><h3>먼저 
  <p class="mut">PowerShell 명령 실행 → 관리자 확인 후 게임 로그인·로비에서 엔터 → 사이트에 자동 반영</p>
  <div class="acts"><button type="button" data-miopen="1">내 계정 정보 불러오기</button></div></div>`}
 function showReco(){if(!MI.info){setDrawer(true);return}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
-function run(skipAuto=false){$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";return}if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
+function run(skipAuto=false){$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);simRunAdd(Date.now()-t0)}
 function runCore(skipAuto=false){
  renderMi();

@@ -455,7 +455,7 @@
     const resC = await run(jobsC, S.final.runs, 2, `${auto ? "마지막 확인" : "3단계"}: 합이 큰 ${triples.length}개 편성의 팀 ${seen.size}개${brks.length > 1 ? "를 브레이크 스킬 " + (brks.length - 1) + "종과 함께" : ""} ${S.final.runs}판씩 확인 중`, auto ? null : 3);
     if (stale()) return null;
     const rows2 = finalRankBrk(triples, bosses, levelOf, brks, resC, mode, S.combine.show);
-    return {rows: rows2, pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: pl.keep, triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
+    return {rows: rows2, growthOwned: jobsB.map(j=>({...j,result:resB[j.key]})), pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: pl.keep, triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
       halved: pl.halved, firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed,
       ...(speedValue(S, "surrogate", false) ? {fast: true, audit: auditInfo || [], ...(pl.fastSkipped ? {fastSkipped: true} : {})} : {})};
     } finally { if (workersPool) workersPool.close(); }

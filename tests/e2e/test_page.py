@@ -1875,7 +1875,94 @@ def test_star_link_slots(browser, ctx):
     return True, '합성 슬롯: %.1f초 / %d판 / %s' % (r['ms']/1000, r['runs'], r['example'])
 
 
-TESTS = [test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
+def test_growth_stage23(browser, ctx):
+    """Synthetic account, real search/generator/UI, deterministic worker contract."""
+    page = open_page(browser, ctx, info=SYNTH, raid_ui=True)
+    page.evaluate('''async () => {
+      const info=structuredClone(MI.info);
+      for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
+      const keys=R.filter(s=>MI.growth.assumed.units[s.key]&&!D.guild.search.excluded.includes(s.key)).slice(0,12).map(s=>s.key);
+      window.stage23Keys=keys;
+      info.units=keys.map(k=>({...MyInfoReco.assume(k,{...info,units:[]},MI.growth).unit,level:120}));
+      if(!await miApply(info))throw Error(MyInfoImport.validate(info)||$('mi-status').textContent);window.stage23Original=JSON.stringify(MI.info);
+      window.stage23Version=(await fetch('sim/manifest.json').then(r=>r.json())).ver;
+      window.stage23Requests=[];window.stage23Active=0;window.stage23Peak=0;
+      window.Worker=class {
+        constructor(){stage23Peak=Math.max(stage23Peak,++stage23Active);}
+        postMessage(req){stage23Requests.push(req);setTimeout(()=>{
+          if(this.dead)return;
+          for(const t of req.teams){const value=(t.key.includes('|growth')?.9:.6)+(t.options?.guild?.support==='fire'?.05:0);
+            const bi=D.cosmoRaid.bosses.findIndex(b=>b.key===t.options?.cosmo_raid?.boss),wanted=stage23Keys.slice(bi*4,bi*4+4),
+              score=Math.round(value*1000)+t.party.units.filter(u=>wanted.includes(u.key)).length*1000;
+            const result={ver:stage23Version,n:req.n_runs,clear:0,prog:value,progs:Array(req.n_runs).fill(value),via:{trigger:1},
+              cosmo:{top:score,mean:score,n:req.n_runs,clear:0,frac:value}};
+            this.onmessage({data:{id:req.id,type:'team',key:t.key,result}});
+          }this.onmessage({data:{id:req.id,type:'done'}});
+        },0);}
+        terminate(){if(!this.dead){this.dead=true;stage23Active--;}}
+      };
+      const targets=growthTargets;growthTargets=(c,s)=>targets(c,s).filter(t=>!t.component&&!keys.includes(t.key)&&!D.guild.search.excluded.includes(t.key)).slice(0,1);
+      const candidates=growthCandidates;growthCandidates=(c,s,...args)=>{
+        if(Object.keys(s.w).some(k=>!EL[k]))throw Error('잘못된 보스 속성 '+JSON.stringify([s.tab,s.w,D.cosmoRaid.bosses.map(b=>[b.name,b.element])]));return candidates(c,s,...args);};
+      const S=D.guild.search;Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,screen2:{keep:3,runs:2},finalists:2});
+      S.screen.runs=2;S.final.runs=2;S.final.levels=[0];S.final.supports=['fire','gust'];
+      const C=D.cosmoRaid.search;C.minFront=0;C.minDealer=0;C.screen.runs=2;C.rerank.runs=2;C.final.runs=2;
+      C.poolSize=12;C.maxPool=12;C.rerank.keep=18;
+    }''')
+    page.click('#tab-info')
+    page.check('#assume-growth')
+    page.click('#tab-reco')
+    names = page.locator('#content option').all_text_contents()
+    page.select_option('#content', label=next(n for n in names if n.startswith('길드방어전')))
+    settle(page)
+    page.evaluate("GS.sel={level:0,tiers:[0,0,0,0]};renderGuild()")
+    page.click('#guild-search [data-gs="start"]')
+    page.wait_for_function("GSR.phase==='done'||GSR.phase==='err'")
+    assert page.evaluate('GSR.phase') == 'done', page.evaluate('GSR.msg')
+    page.locator('[data-growth-start]').click()
+    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
+    assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
+    assert page.evaluate('GROW.result.rows.some(r=>r.result)'), page.evaluate('GROW.result.rows.map(r=>({id:r.id,error:r.error,status:r.status}))')
+    page.wait_for_selector('[data-k="growth-guild-card"]')
+    assert '현재 조건에서의 개선' in page.inner_text('#growth-result')
+    assert page.evaluate('GROW.result.runs>0&&GROW.result.runs<=7200&&GROW.result.rows.some(r=>r.result?.prog>0)')
+    assert page.evaluate('stage23Requests.filter(r=>r.n_runs===100).every(r=>r.seed===900001)')
+    assert page.evaluate('GROW.result.conditions.support==="fire"&&stage23Requests.flatMap(r=>r.teams).filter(t=>t.key.includes("|growth")).every(t=>t.options.guild.support==="fire"&&t.options.guild.level===0)')
+    page.select_option('#content', label=next(n for n in names if n.startswith('코스모 게이트')))
+    settle(page)
+    page.evaluate("CSR.optLevel=0;CSR.optFast=false;renderCosmoSearch()")
+    page.click('#cosmo-search [data-cs="start"]')
+    page.wait_for_function("CSR.phase==='done'||CSR.phase==='err'", timeout=180000)
+    assert page.evaluate('CSR.phase') == 'done', page.evaluate('CSR.msg')
+    page.evaluate('stage23Peak=0;stage23Requests=[]')
+    page.locator('[data-growth-start]').click()
+    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
+    assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
+    page.wait_for_selector('[data-k="growth-cosmo-card"]')
+    assert page.evaluate('GROW.result.runs>0&&GROW.result.runs<=12000&&stage23Peak<=3')
+    assert page.evaluate('GROW.result.rows.filter(r=>r.team).every(r=>new Set(r.team.teams.flatMap(t=>t.keys)).size===12)')
+    assert page.evaluate('new Set(stage23Requests.filter(r=>r.n_runs===4).flatMap(r=>r.teams.filter(t=>t.key.includes("|growth")).map(t=>t.options.cosmo_raid.boss))).size===3')
+    assert page.evaluate('JSON.stringify(MI.info)===stage23Original')
+    history = page.evaluate("localStorage.getItem('pn.growth.history')")
+    assert 'progs' not in history and 'stats_override' not in history
+    assert page.evaluate("!!LS.get('growth.history')['cosmo/'+D.cosmoRaid.season]")
+    page.set_viewport_size({'width': 390, 'height': 844})
+    settle(page)
+    page.wait_for_selector('[data-k="growth-cosmo-card"]')
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+    page.screenshot(path=os.path.join(ctx.shots, 'growth_stage23.png'), full_page=True)
+    page.evaluate('MI.shared=true')
+    page.locator('[data-growth-start]').click()
+    page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
+    assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.msg')
+    assert page.evaluate("localStorage.getItem('pn.growth.history')") == history
+    page.evaluate('MI.shared=false;miClear()')
+    assert page.evaluate("localStorage.getItem('pn.growth.history')===null")
+    page.close()
+    return True, '길방·코스모: 옵션→보유 검색→육성 비교→모바일 결과 카드, 원본 불변'
+
+
+TESTS = [test_growth_stage23, test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)
