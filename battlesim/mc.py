@@ -20,6 +20,7 @@ from . import rules as _rules
 from .engine import calc_hit
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
 from .starsavior.data import SRC
+from .starsavior import foe as _foe
 from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules
 
@@ -281,7 +282,13 @@ DAMAGE_LIMIT = {
 
 def line_rest(ln):
     """줄에서 시점·조건 머리를 뗀 효과 문장"""
-    return split_head(ln.raw, decimal_hp=True)[2].strip()
+    return _line_rest_raw(ln.raw)
+
+
+@lru_cache(maxsize=4096)
+def _line_rest_raw(raw):
+    # Only immutable text in/out: changing raw changes the key; no unit/battle state is retained.
+    return split_head(raw, decimal_hp=True)[2].strip()
 
 
 def heal_burst_rank(d, sk):
@@ -407,8 +414,10 @@ def _shield_dur(t):
     return math.inf if t == '지속 무한' else int(t.replace('턴', ''))
 
 
+@lru_cache(maxsize=4096)
 def paren_after_name(raw):
     """〈이름〉 바로 뒤의 (…) 를 괄호 짝을 맞춰 꺼낸다 -> (괄호 안, 그 뒤 나머지). 없으면 (None, 뒤 문장)"""
+    # Bounded string -> tuple-of-strings cache; copied definitions cannot carry stale entries.
     if '〉' not in raw:
         return None, ''
     rest = raw.split('〉', 1)[1]
@@ -461,10 +470,16 @@ class Eff:
         self.clock = 'owner_turn'   # 영역은 global 또는 legacy의 ally_turn/round로 차감
 
 
+_MOD_ZERO = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0, er=0.0,
+                 der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, vampirism=0.0, inc_single=0.0, inc_aoe=0.0, evade=0.0, acc=0.0,
+                 tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, barrier_give=0.0, preempt=0.0, preempt_reduce=0.0, inc_vs=None, inc_slot=None, red=None)
+
+
 class Unit:
     def __init__(self, d, side, pos, b, leader=False, fx=None):
         d = normalized_definition(d)
         self.d = d
+        self._kind_index = None
         self.side, self.pos = side, pos
         self.name = d.name
         self.key = getattr(d, 'key', d.name)
@@ -545,9 +560,9 @@ class Unit:
     def mods(self):
         if self._m is not None:
             return self._m
-        m = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0, er=0.0,
-                 der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, vampirism=0.0, inc_single=0.0, inc_aoe=0.0, evade=0.0, acc=0.0,
-                 tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, barrier_give=0.0, preempt=0.0, preempt_reduce=0.0, inc_vs={}, inc_slot={}, red={})
+        # Scalar defaults are immutable; nested accumulators must be fresh per recalculation.
+        m = _MOD_ZERO.copy()
+        m['inc_vs'], m['inc_slot'], m['red'] = {}, {}, {}
         blocked = self.buff_blocked()            # 〈강화 불가〉(suppress 모드만): 걸린 강화 효과를 전부 끔 — refuse(클라)에서는 새 강화 부여만 거부
         for e in self.eff.values():
             if e.stacks <= 0 or (blocked and e.category == 'buff'):
@@ -845,7 +860,7 @@ class Battle:
         return self.allies if side == 0 else self.foes
 
     def alive(self, side):
-        return [u for u in self.side_units(side) if not u.dead]
+        return [u for u in (self.allies if side == 0 else self.foes) if not u.dead]
 
     def turn_now(self):
         return self.t / self.turn_ticks
@@ -912,18 +927,27 @@ class Battle:
         return cached[2]
 
     def kind_lines(self, u, kind):
-        """lines_of(u) 중 line_kind == kind 인 줄(색인, tuple). 색인은 lines_of 와 같은 캐시 사전(런 간 공유 또는 per-Battle)에 두고,
-        lines_of 가 돌려준 목록 객체가 바뀌면 다시 만든다."""
-        src = self.lines_of(u)
+        """시점별 불변 tuple 색인. 각 Unit이 소유하며 다음 판/다른 유닛과 공유하지 않음.
+
+        정의 교체(copy.copy 포함), lines 참조 교체/길이 변경 때 다시 만듦.
+        같은 길이의 줄 내부 수정은 기존 정규화 캐시와 마찬가지로 지원하지 않음:
+        정의를 수정하는 호출자는 lines를 새 목록으로 교체해야 함.
+        enemy_lines와 ENGINE_CACHE는 매번 검사하므로 실행 중 전환도 반영함.
+        """
+        if u.side == 1 and not self.enemy_lines:
+            return ()
         if not ENGINE_CACHE:
-            return [ln for ln in src if line_kind(ln) == kind]
-        store = self._semantic_cache if self._semantic_cache is not None else self._semantic_lines
-        k = ('kind', id(u.d), kind)
-        hit = store.get(k)
-        if hit is None or hit[0] is not src:
-            hit = (src, tuple(ln for ln in src if line_kind(ln) == kind))
-            store[k] = hit
-        return hit[1]
+            return [ln for ln in self.lines_of(u) if line_kind(ln) == kind]
+        d = u.d
+        raw = d.lines
+        hit = u._kind_index
+        if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw):
+            grouped = {}
+            for ln in self.lines_of(u):
+                grouped.setdefault(line_kind(ln), []).append(ln)
+            index = {k: tuple(v) for k, v in grouped.items()}
+            hit = u._kind_index = (d, raw, len(raw), index)
+        return hit[3].get(kind, ())
 
     # ---------- 진행
     def spawn_wave(self):
@@ -2165,7 +2189,7 @@ class Battle:
             self.run_batch(u, lines, ctx)
 
     def fire(self, u, kind, ctx):
-        lines = list(self.kind_lines(u, kind))
+        lines = self.kind_lines(u, kind)
         if lines:
             self.run_batch(u, lines, ctx)
 
@@ -2245,7 +2269,7 @@ class Battle:
 
     def fire_foes(self, actor, ctx, kind):
         for b in self.alive(1 - actor.side):
-            lines = list(self.kind_lines(b, kind))
+            lines = self.kind_lines(b, kind)
             if lines:
                 c2 = Ctx(b, actor, ctx.skill, ctx.extra)
                 c2.targets, c2.target, c2.crit, c2.evaded = ctx.targets, ctx.target, ctx.crit, ctx.evaded
@@ -2457,7 +2481,7 @@ class Battle:
             for w in self.alive(v.side):
                 if w is v:
                     continue
-                lines = [ln for ln in self.lines_of(w) if line_kind(ln) == 'hit_ally']
+                lines = self.kind_lines(w, 'hit_ally')
                 if lines:
                     c2 = Ctx(w, a, sk, ctx.extra)
                     c2.target, c2.targets, c2.crit, c2.hit_victim = v, [v], hctx.crit, v
@@ -2477,7 +2501,7 @@ class Battle:
         self.fire(v, 'prehit_self', hctx)
         for w in self.alive(v.side):
             if w is not v:
-                lines = [ln for ln in self.lines_of(w) if line_kind(ln) == 'prehit_ally']
+                lines = self.kind_lines(w, 'prehit_ally')
                 if lines:
                     c2 = Ctx(w, a, sk, ctx.extra)
                     c2.target, c2.targets, c2.crit, c2.hit_victim, c2.local = v, [v], crit, v, hctx.local
@@ -3468,15 +3492,19 @@ class Battle:
     def run_batch(self, owner, lines, ctx):
         """같은 사건(시점·주인)에 걸린 줄 묶음: 조건은 사건 시점 상태로 한꺼번에 판정하고, 효과는 순서대로 실행하되
         추가 발동(시전)은 묶음의 나머지 효과(중첩 소비 등) 뒤에 실행한다(같은 사건에서 자기 자신을 다시 부르는 무한 연쇄 방지)."""
+        if not lines:
+            return
         # 같은 시점의 선행 부여를 참조하는 조건은 부여가 끝난 뒤 판정한다.
         # 나머지 조건은 소거 전에 함께 판정하여 조건부 효과 묶음의 일관성을 지킨다.
-        hit_counts = {name.strip() for ln in lines if line_kind(ln) == 'hit_self'
-                      for key, value in ln.params if key == '자신이 보유' for name in value.split(',')}
-        hit_grants = [ln for ln in lines if self.mc['hit_stack_order'] == 'apply_first'
-                      and line_kind(ln) == 'hit_self' and ln.eff['kind'] == 'buff'
-                      and ln.eff.get('target') == '자신' and ln.eff.get('max')
-                      and ln.eff.get('name') in hit_counts and not ln.params
-                      and not ln.eff.get('consume')]
+        hit_grants = []
+        if self.mc['hit_stack_order'] == 'apply_first':
+            hit_counts = {name.strip() for ln in lines if line_kind(ln) == 'hit_self'
+                          for key, value in ln.params if key == '자신이 보유' for name in value.split(',')}
+            if hit_counts:
+                hit_grants = [ln for ln in lines if line_kind(ln) == 'hit_self' and ln.eff['kind'] == 'buff'
+                              and ln.eff.get('target') == '자신' and ln.eff.get('max')
+                              and ln.eff.get('name') in hit_counts and not ln.params
+                              and not ln.eff.get('consume')]
         count_grants = [ln for ln in lines if ln in hit_grants or ln.eff.get('pre_grant') or
                         (ln.eff['kind'] == 'buff' and
                          (ln.eff.get('per_hit') or ln.eff.get('per_crit') or ln.eff.get('cast_marker')))]
@@ -3501,7 +3529,7 @@ class Battle:
     def _per_target(self, owner, ln, ctx):
         """대상 조건(대상 속성·대상이 보유 등)이 붙은 「받는 회복량」 줄, 또는 여러 대상을 치는 내 공격의 「이번 스킬에만」 보정 줄:
         조건을 대상마다 따로 판정해야 한다(첫 대상 하나로 판정해 전원에게 적용하면 틀림)."""
-        if not any(k in TARGET_KEYS for k, _ in ln.params) or ctx.skill is None or ctx.src is not owner:
+        if ctx.skill is None or ctx.src is not owner or not any(k in TARGET_KEYS for k, _ in ln.params):
             return False
         if ln.eff['kind'] == 'ignored' and RX_RECV_HEAL.match(line_rest(ln)):
             return True
@@ -4189,8 +4217,7 @@ class Battle:
         """효과 설명에 '누군가 턴 종료 시 턴 수가 차감' 이 있는 상태(유닛 사전 우선, 없으면 전체 적 스킬 사전)."""
         info = getattr(owner.d, 'effect_info', {}).get(name)
         if info is None or 'clock' not in info:
-            from .starsavior.foe import gloss
-            info = gloss().get(name) or {}
+            info = _foe.gloss().get(name) or {}
         if info.get('clock') == 'any_turn':
             return True
         # 설명문에 문구가 없는 상태(2회·3회 피격 카운팅 버프·규제 등)도 표의 GlobalTurnCounting 으로 판정한다(any_turn_source=table)
@@ -4295,8 +4322,7 @@ class Battle:
             e.dead_keep = self.mc['dead_keep_dnp'] == 'client' and dead_keep_name(name)
             e.category = category
             e.fixed = fixed
-            if self.mc['any_turn_clock'] and self._is_any_turn(owner, name):
-                e.clock = 'any_turn'
+            e.clock = clock
             if check:
                 e.check = True
                 self.check_pending.append((x, name))
