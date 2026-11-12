@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "9b1ea9cddbe7b0b7",
+  "hash": "e1dd8737be72b4aa",
   "history": [
-   {
-    "hash": "2e770586886fac1e",
-    "reason": "11/10 cond_count_bind(루그 설중사우 후 게이지 줄의 중첩수 대상) 추가: data/guild_sim.json 에 lugh(루그) 가 팀으로 들어 있지 않아(JSON 문자열 검사 0건) 결과에 영향 없음"
-   },
    {
     "hash": "255fc05813a448b7",
     "reason": "11/10 cosmo_boss_barrier 추가: 코스모 게이트(cosmo_raid_boss=on, 시즌 전투 meta.cosmo_raid)에서만 읽는 스위치라 길방 생성기(build_guild_sim)는 쓰지 않음(grep 0건)"
@@ -41,16 +37,16 @@
    {
     "hash": "9b1ea9cddbe7b0b7",
     "reason": "격전 의뢰 foe_forced_coop 추가: main 82c612f 대비 길방 포함 기존 콘텐츠 golden 기본/legacy 78/78 동일. 시즌 종료 상태와 길방 계산 유지."
+   },
+   {
+    "hash": "e1dd8737be72b4aa",
+    "reason": "11/12 myinfo_potential_coverage·foe_forced_coop 추가: 표준 육성 결과 불변(golden 78/78), 길드 방어전 시즌 종료(미오픈)로 재계산 생략"
    }
   ]
  },
  "quick": {
-  "hash": "9b1ea9cddbe7b0b7",
+  "hash": "e1dd8737be72b4aa",
   "history": [
-   {
-    "hash": "e645473f925c9c92",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "2e770586886fac1e",
     "reason": "calibrate_quick --write 재보정"
@@ -86,6 +82,10 @@
    {
     "hash": "9b1ea9cddbe7b0b7",
     "reason": "격전 의뢰 foe_forced_coop 추가: main 82c612f 대비 기존 콘텐츠 golden 기본/legacy 78/78 동일. quick 재생성은 clash 18곳만 추가, 기존 st·sv·params·pc·calib 동일."
+   },
+   {
+    "hash": "e1dd8737be72b4aa",
+    "reason": "11/12 myinfo_potential_coverage 는 내 정보 경로 전용·foe_forced_coop 는 격전 의뢰 전용: 표준 육성 결과·quick 표본 불변(golden 78/78)"
    }
   ]
  }
