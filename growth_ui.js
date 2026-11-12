@@ -114,7 +114,8 @@ function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.sta
 });}
 function growthMaybe(c,st){if(growthEnabled()&&growthSeasonContent()){growthPaint();return;}if(!growthEnabled()||!miMode()||!['op','clo'].includes(c.key)||!REQ)return;
   if(GROW.sig&&GROW.sig!==growthSig(c,st))growthCancel();
-  if(GROW.phase==='idle'&&SIMQ.busy==null&&!SIMQ.err&&simAutoOn())setTimeout(()=>{if(REQ&&GROW.phase==='idle')growthStart(c,st);},0);
+  if(GROW.phase==='idle'&&SIMQ.busy==null&&!SIMQ.err&&simAutoOn()){const id=GROW.id;
+    setTimeout(()=>{if(GROW.id===id&&REQ&&GROW.phase==='idle')growthStart(c,st);},0);}
   growthPaint();}
 const growthLabel=r=>'키워야 함';
 const growthFields={level:'레벨→스타링크',resonance:'공명 최대',skills:'스킬 최대',journey:'목표 스텔라 아카이브',potentials:'목표 잠재력',equip:'장비 +15',favor:'호감도'};

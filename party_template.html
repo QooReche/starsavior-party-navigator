@@ -353,6 +353,7 @@ summary{padding:9px 4px}
  </div>
 
  <details class="optbox ux-menu" id="optbox"><summary aria-label="전투·공유 메뉴">⋯</summary><div id="mode-menu" class="menu-controls"></div>
+  <label class="mi-use"><input type="checkbox" id="reco-auto"> 자동 계산</label>
   <button type="button" class="sec" id="sim-auto-off" data-simauto="0">모의 전투 자동 실행 끄기</button><input type="number" id="mypow" hidden><div id="powinfo" class="powinfo" hidden></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됩니다.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성<select id="mmode"><option value="">균형</option><option value="avoid">역상성 회피</option></select></label></div>
@@ -969,13 +970,14 @@ function simBar(p,rows,st,hasMore){
   all?`<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">모의 전투 실행</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
-function simInvalidate(){if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;SIMQ.screening=false;if(SIMQ.pool){for(const w of SIMQ.pool.slice(1))w&&w.terminate();SIMQ.pool=null}for(const k in SIMQ.scr)if(!SIMQ.scr[k].done)delete SIMQ.scr[k];if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
+function simInvalidate(){if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;if(SIMQ.pool){for(const w of SIMQ.pool.slice(1))w&&w.terminate();SIMQ.pool=null}for(const k in SIMQ.scr)if(!SIMQ.scr[k].done)delete SIMQ.scr[k];if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
 function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=msg;SIMQ.err=/취소|중단/.test(msg)?"중단함":/엔진 준비 시간 초과/.test(msg)?"계산 엔진 준비가 오래 걸려 멈췄어요 · 네트워크를 확인하고 다시 시도해 주세요":/시간 초과/.test(msg)?"계산이 오래 걸려 멈췄어요 · 다시 시도하면 끝난 팀은 이어서 계산해요":"자료를 불러오지 못했습니다. 다시 시도해 주세요";SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
+function simQueue(start){const id=SIMQ.requestId;clearTimeout(SIMQ.startTimer);SIMQ.startTimer=setTimeout(()=>{if(SIMQ.requestId===id&&REQ&&!RECO.timer)start()},0)}
 function simAutoKick(){if(!simAutoOn()||SIMQ.busy!=null||(miMode()&&MI.pending))return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
- for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done){setTimeout(()=>{if(simScreen(p)===false)run()},0);return}if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){setTimeout(()=>simStart(p),0);return}
+ for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done){simQueue(()=>{if(simScreen(p)===false)run()});return}if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){simQueue(()=>simStart(p));return}
   // 보여 준 팀이 모두 시뮬에서 클리어 50% 미만이면, 클리어하는 편성이 나오거나 9팀이 될 때까지 다음 3팀을 자동으로 더 시뮬한다(1안이 근사 순위의 앞 3팀에 갇히지 않게)
-  if(b&&b.rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&b.rows.length<9&&b.total>b.rows.length){const k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run(true);setTimeout(()=>simStart(p),0);return}}}
+  if(b&&b.rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&b.rows.length<9&&b.total>b.rows.length){const k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run(true);simQueue(()=>simStart(p));return}}}
 function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy||(miMode()&&MI.pending))return false;
  const box=LASTQ[p];if(!box)return false;
  const rows=(jobs||box.rows.map(t=>({key:t.keys.slice().sort().join(","),t,bname:teamBreak(t)?.name||null,sig:simSig(st,t)}))).filter(j=>!SIMQ.res[j.sig]);if(!rows.length)return false;
@@ -1152,18 +1154,37 @@ function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap
 function buildCands(ranked){return ranked.slice(0,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
 // 남은 시간 표시는 1초마다 다시 그린다(화면 전체를 다시 그리지 않고 글자만)
 setInterval(()=>{if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
-// 계산은 「추천 편성 보기」를 눌렀을 때만 한다(조건을 바꿀 때마다 계산·시뮬이 돌지 않게). 조건이 바뀌면 결과를 비우고 안내만 보인다.
-// 주소에 ?auto=1 이 있거나 공유 링크로 열면 예전처럼 바로 계산한다(자동 시험·링크 공유용).
+// 기기별 자동 추천과 기존 URL/모의 전투 자동 실행은 별개다.
 const AUTO=/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
-function idleView(){const t=id=>{const e=$(id);return e&&e.selectedOptions&&e.selectedOptions[0]?e.selectedOptions[0].textContent.trim():""};
- $("out").innerHTML=`<div class="party idle" data-k="idle"><div id="reco-actions"><button type="button" data-go="1" title="현재 조건(콘텐츠·섹터·지역·스테이지)과 내 정보로 후보를 모의 전투해서 추천합니다(첫 실행 시 계산 엔진 약 14MB)">추천 편성 보기</button></div></div>`;growthControlPlace()}
-function condChanged(){REQ=false;SIMQ.kick=false;simInvalidate();run()}
+// CPU 6배 감속에서 화면 응답 지연이 확인됨. 자동 기본화는 성능 재판정 뒤 전환.
+const RECO_AUTO_DEFAULT=false;
+const RECO={enabled:LS.get('reco.auto')??RECO_AUTO_DEFAULT,timer:null,revision:0,standard:false,sharedPending:!!SHARE.c};
+const recoAutoOn=()=>RECO.enabled&&!['guild','cosmo'].includes(contents[$('content').value]?.key);
+function recoClearTimer(){clearTimeout(RECO.timer);RECO.timer=null;RECO.revision++}
+$('reco-auto').checked=!!RECO.enabled;
+$('reco-auto').onchange=()=>{RECO.enabled=$('reco-auto').checked;LS.set('reco.auto',RECO.enabled);condChanged()};
+function idleView(){
+ const waiting=!!RECO.timer;
+ $('out').innerHTML=`<div class="party idle" data-k="idle"><div id="reco-actions">${waiting?'<span role="status">계산 준비 중</span><button type="button" class="sec" data-recocancel>중단</button>':'<button type="button" data-go="1" title="현재 조건과 내 정보로 추천합니다">추천 편성 보기</button>'}</div></div>`;growthControlPlace()}
+function condChanged(){
+ const canRun=!!MI.info||RECO.standard,requested=canRun&&(AUTO||recoAutoOn()||RECO.sharedPending);
+ recoClearTimer();clearTimeout(_rt);REQ=false;SIMQ.kick=false;
+ simInvalidate(); // cancel old selection immediately
+ for(const k in LASTQ)delete LASTQ[k];
+ if(requested&&cur?.[$('stage').value]&&!seasonBlocked(contents[$('content').value]?.key)){
+  const revision=RECO.revision;
+  RECO.timer=setTimeout(()=>{if(RECO.revision!==revision)return;RECO.timer=null;
+   if(seasonBlocked(contents[$('content').value]?.key))return;
+   REQ=true;SIMQ.err='';if(RECO.sharedPending&&!AUTO)SIMQ.kick=true;run();},300);
+ }
+ run(true);
+}
 function miGuide(){return `<div class="party guide" data-k="miguide" data-state="needs-info"><h3>내 구원자로 깰 수 있는 파티를 찾아 드려요</h3>
  <p class="mut">계정 정보를 불러오면 내 구원자에 맞춰 추천해요. 정보 없이도 표준 육성으로 살펴볼 수 있어요.</p><ol class="guide-steps"><li><b>명령 복사</b><small>PowerShell에 붙여넣기</small></li><li><b>게임 로그인</b><small>로비에서 도구 창에 엔터</small></li><li><b>자동 반영</b><small>이 화면에 바로 표시</small></li></ol>
  <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 남에게 보내지 마세요 — 계정 정보가 들어 있어요</p><p class="mut">내 정보는 이 브라우저에만 저장돼요</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div>`}
-function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;if(!MI.info){$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
+function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;recoClearTimer();if(!MI.info){RECO.standard=true;$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
 function run(skipAuto=false){seasonPaint();growthControlPlace(true);$("mode-menu").append(MODE_CONTROLS);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
- if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);simRunAdd(Date.now()-t0)}
+ if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}
 function runCore(skipAuto=false){
  if(seasonBlocked(contents[$('content').value]?.key))return;
  renderMi();
@@ -1210,6 +1231,7 @@ function runCore(skipAuto=false){
   const tail=`${altChips(party,alt,p)}<details class="manual-details" data-fold="manual-${p}"><summary>수동 스킬 순서</summary>${seq||'<div class="mut">수동을 선택하고 모의 전투하면 순서가 표시돼요</div>'}</details><details class="score-details" data-fold="score-${p}"><summary>더 보기</summary><div class="unit-metrics">${party.map(x=>`<div>${esc(x.s.name)}${simUnit(r,x.s.key)}</div>`).join("")}</div>${miFlags(qr?.b.assumed)}${starNote(c.key)}${bigBoss(c,st)?bigBossNote(bigBoss(c,st)):""}${p===1?'<div data-controls="score"></div><div data-controls="graph"></div>':""}<div class="scoredata">추천 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10${party.map(x=>`<div>${esc(x.s.name)}: ${Object.entries(x.parts).map(([k,v])=>`${esc(k)} ${v.toFixed(1)}`).join(" · ")}</div>`).join("")}${synSummary(party)}</div></details>`;
   html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}">${quickBox(p,qt,qi,st,pick.key,main,tail)}</div>`}
 
+ html+='<div class="acts"><button type="button" class="sec" data-recoretry>다시 계산</button></div>';
  $("out").innerHTML=html;
  document.querySelectorAll('#out .party[data-party]').forEach(p=>{const more=p.querySelector('.score-details');if(more)p.querySelectorAll('.bbar,.break-extra,.gimbox,.gimavoid').forEach(e=>more.append(e));if(allParties.length>1)p.insertAdjacentHTML('afterbegin',`<h2 class="party-label">파티 ${p.dataset.party}</h2>`);});
  if(skipAuto!==true)simAutoKick();
@@ -1255,7 +1277,9 @@ function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:chec
 const setWhy=on=>{document.body.classList.toggle("show-why",on);$("showwhy").checked=on;LS.set("why",on);if(on)drawGraph()};
 $("showwhy").onchange=()=>setWhy($("showwhy").checked);{const w=!!LS.get("why");document.body.classList.toggle("show-why",w);$("showwhy").checked=w}
 let _rt=null;const rerunNow=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
-const rerun=()=>{clearTimeout(_rt);_rt=setTimeout(AUTO?run:condChanged,150)};   // 조건이 바뀜: 자동 모드가 아니면 결과를 비우고 「추천 편성 보기」 안내
+const rerun=()=>condChanged();
+$('out').addEventListener('click',e=>{if(e.target.closest('[data-recocancel]')){recoClearTimer();RECO.sharedPending=false;REQ=false;run(true)}});
+$('out').addEventListener('click',e=>{if(e.target.closest('[data-recoretry]')){simInvalidate();SIMQ.res={};SIMQ.scr={};SIMQ.refined=new Set();SIMQ.more={};showReco()}});
 $("out").addEventListener("click",e=>{if(e.target.closest("button[data-miretry]")){MI.error="";miLoad();setTimeout(run,0);return}if(e.target.closest("button[data-go]"))showReco();const mo=e.target.closest("button[data-miopen]");if(mo){setDrawer(true);if(mo.dataset.miopen==="how")document.querySelector("#drawer .mihow")?.scrollIntoView({block:"start"})}});
 function updCount(){const n=document.querySelectorAll("#own input:checked").length;$("dcount").textContent=String(n);renderPw();renderChip()}
 document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk"))){if(e.target.closest("#brk")){pruneBreakSel();if(SIMQ.busy)simInvalidate();SIMQ.err=""}saveSel();updCount();rerun()}});
@@ -1330,7 +1354,7 @@ async function miApply(info,opt={}){
  const {unknown}=MyInfoImport.mapOwned(info,R);
  MI.saved=false;MI.invalid=false;MI.shared=!!opt.shared;miReset(info);syncOwn();
  MI.saved=opt.shared?false:LS.set("myinfo",info);if(!opt.shared)saveSel();updCount();renderMi();sharedBar();
- if(opt.shared&&SHARE.c){REQ=true;SIMQ.kick=true;rerunNow()}else rerun();
+ if(opt.shared&&SHARE.c)RECO.sharedPending=true;rerun();
  miStatus(miSummary(info,unknown.length)+(MI.saved?"":" · 저장 안 됨"),!MI.saved);return true}
 $("mi-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
  try{await miApply(JSON.parse(await f.text()))}catch(err){miStatus("바탕화면 내정보.json을 선택해 주세요.",true)}});
@@ -1424,7 +1448,7 @@ setMode(LS.get("mode")==="manual"?"manual":"auto",false);
 
  else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
  if(!SHARE.g)LS.set("grow.v2",$("grow").value)}
-{const gv=LS.get("goal");if(gv==="0"||gv==="60"){$("goal").value=gv;if(gv==="0")$("optbox").open=true}}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}growthInit();updCount();refreshTabs();applyShare();miLoad();REQ=!!MI.info&&(AUTO||!!SHARE.c);SIMQ.kick=REQ&&!AUTO;run();window._ready=true;if(LS.get("why"))drawGraph();
+{const gv=LS.get("goal");if(gv==="0"||gv==="60"){$("goal").value=gv;if(gv==="0")$("optbox").open=true}}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}growthInit();updCount();refreshTabs();applyShare();miLoad();condChanged();window._ready=true;if(LS.get("why"))drawGraph();
 seasonRefresh();setInterval(seasonRefresh,1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)seasonRefresh()});
 </script></body></html>

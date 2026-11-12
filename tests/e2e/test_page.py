@@ -26,6 +26,7 @@ import urllib.request
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tools"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 if os.path.isdir(r"E:\AI_mk2\pw-browsers"):
     os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", r"E:\AI_mk2\pw-browsers")
 
@@ -1065,8 +1066,7 @@ def test_share_link(browser, ctx):
     target.goto(mi_url)
     target.wait_for_function('() => window._ready && MI.info && MI.shared && MI.growth && !MI.pending', timeout=60000)
     settle(target)
-    # 참고(검사 안 함): 공유 정보를 비동기로 적용하면서 miReset→rerun→condChanged 가 REQ 를 끄므로, 이 링크는 바로 계산하지 않고
-    # 「추천 편성 보기」 안내가 뜬다(조건만 담은 공유 링크는 바로 계산). 화면 쪽 판단이 필요해 시험으로는 고정하지 않는다.
+    # 비동기 공유 계정의 자동 시작·육성 결과는 test_auto_calculation_shared_growth에서 검사한다.
     shared_view = 'idle' if target.locator('#out [data-k="idle"]').count() else 'computed'
     assert target.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,MODE,$("rk").value]') == expected
     assert target.evaluate('() => MI.info.units.length') == 8
@@ -1132,7 +1132,8 @@ def test_sim_runs(browser, ctx):
 def test_press_to_compute(browser, ctx):
     """「추천 편성 보기」: 누르기 전엔 계산 안 함 → 누르면 진행 화면만(예선 → 본선, 결과 카드 안 보임) → 끝나면 결과(판정은 모두 시뮬 기준), 조건을 바꾸면 안내로."""
     ctx.errors.clear()
-    page = open_page(browser, ctx, query="?auto=0", simauto=None, wait=False)     # ?auto=1 없이 연다. 자동 확인 저장값 없음(기본)
+    page = open_page(browser, ctx, query="?auto=0", simauto=None, wait=False,
+                     setup=lambda p: p.add_init_script("localStorage.setItem('pn.reco.auto','false')"))
     wait_myinfo(page)
     settle(page)
     assert page.locator('[data-k="idle"]').count() == 1 and page.locator('.qrow[data-key]').count() == 0
@@ -2908,6 +2909,9 @@ def test_ux_step3(browser, ctx):
 
 TESTS.append(test_ux_step3)
 
+from auto_calculation import register as register_auto_calculation
+TESTS.extend(register_auto_calculation(sys.modules[__name__]))
+
 
 def main():
     args = sys.argv[1:]
@@ -2944,7 +2948,7 @@ def main():
                     try:
                         ok, msg = t(browser, ctx)
                     except Exception as ex:
-                        ok, msg = False, "오류: %r (줄 %s)" % (ex, [f.lineno for f in traceback.extract_tb(ex.__traceback__) if f.filename == __file__][-1])
+                        ok, msg = False, "오류: %r (위치 %s)" % (ex, [(os.path.basename(f.filename), f.lineno) for f in traceback.extract_tb(ex.__traceback__) if f.filename.startswith(os.path.dirname(__file__))])
                     finally:
                         # Also close pages/workers left behind when an assertion or navigation fails.
                         pending = list(ctx.requests.values())
