@@ -21,7 +21,7 @@ from .engine import calc_hit
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
 from .starsavior.data import SRC
 from .starsavior import foe as _foe
-from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger
+from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger, explicit_target
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules
 
 with open(os.path.join(SRC, 'data', 'buff_force.json'), encoding='utf-8') as _f:
@@ -230,9 +230,9 @@ def _react_line_kind(phase, trig):
 COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이 아님', '자기 추가발동 트리거', '자기 추가발동 트리거 스킬',
                  'TurnUnitNegativeBuff', 'NotTurnUnitNegativeBuff',
                  '자신 미보유 효과 중첩수', '시전자 턴', '자신이 보유', '자신이 미보유',
-                 '중첩수', '효과 개수', '중첩수 이상', '효과 개수 이상', '효과 개수 미만', '대상이 보유', '대상이 미보유',
+                 '중첩수', '효과 개수', '중첩수 이상', '효과 개수 이상', '효과 개수 미만', '효과 개수 이하', '대상이 보유', '대상이 미보유',
                  '대상 효과 중첩수', '대상 약화효과 보유', '대상 강화효과 보유', '대상 강인도 없음', '대상 브레이크', '결과',
-                 '대상 HP% 초과', '대상 HP% 미만', '적 처치', '적을 처치하지 못함', '내 턴', '자신 포함', '시전자 속성', '시전자가 보유',
+                 '대상 HP% 초과', '대상 HP% 미만', '대상 HP% 이상', '대상 HP% 이하', '적 처치', '적을 처치하지 못함', '내 턴', '자신 포함', '시전자 속성', '시전자가 보유',
                  '자신에게 약화효과 없음', '자신 약화효과 보유', '자신 강화효과 보유', '스킬 쿨타임 아님', '턴 유닛이 보유',
                  '스킬 대상 유형', '단일 대상 공격', '대상 속성', '적 약화효과 보유', '적 강화효과 보유', '특정 효과 보유 적 존재',
                  '턴 유닛 속성', 'EnemyAdjustType', 'NotEnemyAdjustType', 'IsTargetSuperArmor',
@@ -248,7 +248,7 @@ RX_DISPEL_N = re.compile(r'^(.+?)에게 (?:(\d+)% 확률로 )?\((약화|강화)�
 # P5 적 효과(대표 스테이지에서 자주 나오는 것)
 RX_GAUGE_SET = re.compile(r'^(.+?)에게 행동 게이지를 (\d+)%로 설정')
 RX_CHAIN_T = re.compile(r'^(.+?)에게 연쇄 피해 = 대상 (최대 생명력|생명력)×([\d.]+)% \(×1\.85, 방어력 적용\)(?: ×(\d+))?')
-RX_CD_UP = re.compile(r'^(.+?)에게 스킬 쿨타임 (\d+)턴 증가')
+RX_CD_UP = re.compile(r'^(.+?)에게 (?:스킬|기본기|특수기|궁극기) 쿨타임 (\d+)턴 증가')
 RX_LOCAL_PER = re.compile(r'^자신에게 능력치 보정 피해 증가 ([+-]?[\d.]+)% \((자신|적 전체|공격 대상|아군 전체)의 (강화|약화) 효과 1개당 위 수치만큼 적용, 개수 상한 없음\)')
 CD_RESET_NAMES = {'궁극기 쿨타임 초기화': '궁극기', '특수기 쿨타임 감소': '특수기',
                   '특수기 쿨타임 초기화': '특수기'}   # 설명문 「쿨타임이 초기화」·「최대로 감소한 상태로 시작」. 적 「어둠의 맹세」 = BI_SPECIAL_COOL_TURN_DOWN_ALL 감소값 0(NKM 2874~2886)
@@ -330,7 +330,7 @@ def _dur(v):
     return math.inf if v is None else v
 
 
-TARGET_KEYS = set(['대상 속성', '대상 클래스', '대상이 보유', '대상이 미보유', '대상 HP% 초과', '대상 HP% 미만', '대상 약화효과 보유',
+TARGET_KEYS = set(['대상 속성', '대상 클래스', '대상이 보유', '대상이 미보유', '대상 HP% 초과', '대상 HP% 미만', '대상 HP% 이상', '대상 HP% 이하', '대상 약화효과 보유',
                    '대상 강화효과 보유', '대상 효과 중첩수', 'NotTargetPositiveBuff'])
 
 
@@ -1917,6 +1917,13 @@ class Battle:
     def resolve(self, owner, text, ctx, kind='buff'):
         """줄의 대상 문구 -> 유닛 목록(owner 기준 상대 진영). 해석 못 하면 None."""
         t = text.strip()
+        spec = explicit_target(t)
+        if spec is not None:
+            if owner.side == 1 and self.mc['foe_auto'] == 'off':
+                # 문구만 풀어 쓴 데이터북에서도 off의 설명문 근사·동률 순서를 보존.
+                old_target = ('아군' if spec['ally'] else '적') + (' 1명' if spec['one'] else '') + '(자동 지정)'
+                return self.resolve(owner, old_target, ctx, kind)
+            return self.line_auto_targets(owner, self.line_spec(owner, self._cur_line) or spec, ctx)
         if t.startswith('스킬 대상'):
             if ctx.skill is None:
                 return None
@@ -2682,7 +2689,7 @@ class Battle:
             if v.side == 1 and self.break_skill_enabled:
                 self._add_break_points(v)
             if v.side == 1 or self.mc['ally_break_gauge'] == 'reset':
-                v.gauge = 0.0      # 몬스터는 행동 게이지 0(databook #d-break). 구원자도 기본 0(사용자 인게임 확인 2026-10-21, mc.ally_break_gauge)
+                v.gauge = 0.0      # 몬스터 또는 구원자 reset 대안. 구원자 기본 keep은 게이지 유지.
             self.dirty(v)
             self.log(brk=v.name, by=a.name)
 
@@ -3421,6 +3428,9 @@ class Battle:
             elif k == '효과 개수 미만':
                 if self._count(owner, ctx, last) >= float(v):
                     return False
+            elif k == '효과 개수 이하':
+                if self._count(owner, ctx, last) > float(v):
+                    return False
             elif k in ('대상이 보유', '대상이 미보유'):
                 names = [x.strip() for x in v.split(',')]
                 last = ('E', names)
@@ -3470,6 +3480,12 @@ class Battle:
             elif k == '대상 HP% 미만':
                 if tgt is None or not (tgt.hp / tgt.maxhp < float(v) / 10000.0):
                     return False
+            elif k in ('대상 HP% 이상', '대상 HP% 이하'):
+                if tgt is None:
+                    return False
+                ratio, threshold = tgt.hp / tgt.maxhp, float(v) / 10000.0
+                if not (ratio >= threshold if k.endswith('이상') else ratio <= threshold):
+                    return False
             elif k == '적 처치':
                 if bool(ctx.kill) != (v == '예'):
                     return False
@@ -3477,7 +3493,10 @@ class Battle:
                 if (not ctx.kill) != (v == '예'):
                     return False
             elif k == '내 턴':
-                if (v == '예') != (owner.acting and ctx.src is owner and not ctx.extra):
+                own_turn = owner.acting
+                if self.mc['own_turn_condition'] == 'main_only':
+                    own_turn = own_turn and ctx.src is owner and not ctx.extra
+                if (v == '예') != own_turn:
                     return False
             elif k == '자신 포함':
                 pass
@@ -3532,7 +3551,7 @@ class Battle:
                 if tgt is None or tgt.role != v:
                     return False
             elif k in ('적 약화효과 보유', '적 강화효과 보유'):
-                lim = dict(ln.params).get('효과 개수 미만')
+                lim = dict(ln.params).get('효과 개수 이하', dict(ln.params).get('효과 개수 미만'))
                 cmp_ = self.mc['enemy_hit_buff_cmp']
                 if (k == '적 강화효과 보유' and v == '예' and lim is not None and cmp_ != 'legacy'
                         and ctx.src is not None and ctx.src.side != owner.side):
@@ -3886,7 +3905,9 @@ class Battle:
         if kd == 'cdr':
             # 내 시전 문맥 = 그 스킬 칸. 피격 반응 등 남의 시전 문맥이면 공격자의 칸이 아니라 줄 주인 쪽 칸:
             # 줄이 달린 스킬 칸 -> (패시브면) 궁극기 -> 쿨타임이 가장 긴 칸 (에밀리·길레 설명은 모두 궁극기 쿨타임 감소, 가정)
-            if ctx.src is owner and ctx.skill is not None:
+            if eff.get('slot'):
+                sl = eff['slot']
+            elif ctx.src is owner and ctx.skill is not None:
                 sl = ctx.skill.slot
             elif ln.slot in owner.cd:
                 sl = ln.slot
@@ -4109,13 +4130,15 @@ class Battle:
             return
         m = RX_CD_UP.match(rest)
         if m:   # 스킬 쿨타임 N턴 증가: 대상의 쿨타임 있는 스킬 전부(assumed). 면역 「스킬 쿨타임 증가」면 무시
+            explicit_slot = re.search(r'(기본기|특수기|궁극기) 쿨타임', rest)
             for x in self.resolve(owner, m.group(1), ctx) or []:
                 if '스킬 쿨타임 증가' in getattr(x.d, 'immune', ()):
                     continue
                 if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
                     continue
                 for slot, sk in x.d.skills.items():
-                    if sk.cd and (not ln.eff.get('cd_slot') or slot == ln.eff['cd_slot']):
+                    selected = explicit_slot[1] if explicit_slot else ln.eff.get('cd_slot')
+                    if sk.cd and (not selected or slot == selected):
                         x.cd[slot] = x.cd.get(slot, 0) + int(m.group(2))
             return
         m = RX_LOCAL_PER.match(rest)

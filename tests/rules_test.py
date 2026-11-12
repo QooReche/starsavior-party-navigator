@@ -194,7 +194,9 @@ def test_legacy_reproduces_p1_golden():
     with open(os.path.join(ROOT, 'tests', 'golden', 'sim_golden_p1.json'), encoding='utf-8') as f:
         golden = json.load(f)
     try:
-        r = rc.run_one(golden, DB, 'legacy', {'forced_coop_target': 'stat_atk'}, 3)
+        from public_inputs_1111 import public_inputs
+        with public_inputs() as frozen_db:
+            r = rc.run_one(golden, frozen_db, 'legacy', {'forced_coop_target': 'stat_atk'}, 3)
     finally:
         rc.apply_rules('default', None)
     return r['exact'], '골든 정확 일치 %s (지표 Spearman %.4f, 150팀 %.4f, 처치 턴 바뀐 칸 %d)' % (
@@ -309,7 +311,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'buff_ban', 'buff_ban_force', 'enforce_timing', 'enforce_target', 'wave_ally_gauge', 'buff_count_source', 'dispel_on_attack', 'skill_order', 'hit_stack_order', 'permanent_accuracy', 'battle_end_mode',
     'wave_extra_turn', 'turn_start_order', 'wave_foe_battle_start', 'guard_skip_immune', 'dead_keep_dnp', 'revive_after_spawn', 'add_damage_guard', 'stat_select_int',
     'variant_self_state', 'turn_unit_debuff_cond', 'auto_marker_lines',
-    'ally_auto_lines', 'ally_auto_target', 'ally_break_gauge', 'ally_init_cd', 'ally_variant_mapping', 'any_turn_clock', 'any_turn_source',
+    'ally_auto_lines', 'ally_auto_target', 'ally_break_gauge', 'ally_init_cd', 'ally_variant_mapping', 'any_turn_clock', 'any_turn_source', 'own_turn_condition',
     'auto_skill', 'basic_tough', 'enforce',
     'break_skill_atk_pct', 'break_skill_boss_points', 'break_skill_buff_turns',
     'break_skill_cd_unit', 'break_skill_cooldown', 'break_skill_cost',
@@ -383,6 +385,13 @@ def test_toughness_elem_no_legacy():
     return ok, 'toughness_elem value=%s legacy=%s' % (entry.get('value'), entry.get('legacy', '(없음)'))
 
 
+def test_ally_break_default():
+    entry = RULES['mc']['ally_break_gauge']
+    ok = (MC_OPTS['ally_break_gauge'] == 'keep' and entry['legacy'] == 'skip'
+          and 'reset' in entry['alt'] and entry['grade'] == 'code' and bool(entry['source']))
+    return ok, '격파 기본 keep / legacy skip / reset 대안 / 코드 근거'
+
+
 def test_note_keys_not_in_code():
     """note 키 4개는 battlesim/*.py·tools/*.py·sim_worker.js·party_template.html 에서 읽지 않아야 한다.
     grep 기반: 키 이름이 문자열로 나타나면 안 됨(JSON 의 키 정의 자체는 제외, 파이썬·JS 소비 코드만 체크)."""
@@ -449,7 +458,7 @@ TESTS = [test_coop_trigger, test_coop_single, test_nova_policy, test_nova_pool, 
          test_dot_snapshot, test_gear_order, test_dmg_reduction, test_forced_coop_slot, test_debuff_state_zero_p,
          test_debuff_state_multi_caster, test_gauge_expect, test_index_uses_merged_opts, test_legacy_reproduces_p1_golden,
          test_mc_note_not_in_opts, test_mc_opts_keys_snapshot, test_assumptions_used_note_keys_present,
-         test_toughness_elem_no_legacy, test_note_keys_not_in_code, test_alt_legacy_keys_in_code]
+         test_toughness_elem_no_legacy, test_ally_break_default, test_note_keys_not_in_code, test_alt_legacy_keys_in_code]
 
 
 def main():

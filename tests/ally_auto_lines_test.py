@@ -12,7 +12,7 @@ sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from p3_test import battle, unit   # noqa: E402
 from battlesim.mc import Ctx, ally_auto_lines   # noqa: E402
 from battlesim.metrics import unit_def   # noqa: E402
-from tools.build_auto_skill import _skip_paren   # noqa: E402
+from tools.build_auto_skill import _skip_paren, is_auto_line, described_auto   # noqa: E402
 
 
 def line_of(u, slot, head):
@@ -64,7 +64,7 @@ class AllyAutoLinesTest(unittest.TestCase):
                    [unit('boss', hp=10 ** 9)], mc=mc)
         dana = b.allies[0]
         dana.d.stats['atk'] = 10 ** 6            # 자신이 공격력 최고여도 「자신 제외」 필터로 빠져야 함
-        ln = line_of(dana, '특수기', '아군 1명(자동 지정)')
+        ln = line_of(dana, '특수기', '공격력이 가장 높은 다른 아군 1명')
         b._cur_line = ln
         return b, dana, ln
 
@@ -84,10 +84,11 @@ class AllyAutoLinesTest(unittest.TestCase):
         rows = [r for field in ('lines', 'variant_lines') for v in d[field].values() for r in v]
         self.assertGreater(len(rows), 10)
         for slot, raw, spec in rows:
-            self.assertIn('(자동 지정)', raw)
+            self.assertTrue(is_auto_line(raw), raw)
             self.assertEqual(set(spec) - {'one', 'f', 'ally'}, set())
             head = _skip_paren(raw.split(']', 1)[-1].lstrip())   # (조건: …) 를 건너뛴 대상 머리말 — 조건 안 괄호 포함
-            self.assertEqual(spec.get('ally', False), not head.startswith('적'))
+            described = described_auto(raw)
+            self.assertEqual(spec.get('ally', False), described['ally'] if described else not head.startswith('적'))
 
     def test_every_level_line_registered(self):
         """내 정보 스킬 레벨이 바꿔 끼우는 줄(데이터북 L 그룹)도 같은 규칙으로 등록 — 힐데·웨딩 에핀델 궁극기 등 레벨업 추가 행."""
@@ -105,7 +106,7 @@ class AllyAutoLinesTest(unittest.TestCase):
                     continue
                 for grp in L['e']:
                     missing += [(key, s['sl'], L['ln'][j][:40]) for j in grp
-                                if '(자동 지정)' in L['ln'][j] and (s['sl'], L['ln'][j]) not in got]
+                                if is_auto_line(L['ln'][j]) and (s['sl'], L['ln'][j]) not in got]
         self.assertEqual(missing, [])
         hilde = [raw for sl, raw, _ in d['variant_lines']['hilde'] if sl == '궁극기']
         self.assertEqual(len(hilde), 3)                  # 도발 기본·75%·85% 판정

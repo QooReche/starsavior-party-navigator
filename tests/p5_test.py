@@ -170,8 +170,8 @@ def test_tough_elem_and_fixed():
 
 
 def test_ally_break_gauge_and_coop():
-    """구원자 브레이크: 기본(skip)은 게이지 유지 + 다음 자기 턴은 회복에 쓰고 행동 없음(사용자 설명 2026-10-21), reset 이면 즉시 게이지 0,
-    keep 이면 유지·정상 행동. 격파 중에는 협공 후보에서 빠짐"""
+    """구원자 브레이크: 기본 keep은 유지·회복 후 정상 행동, legacy skip은 회복 턴 생략.
+    reset은 즉시 게이지 0. 격파 중에는 협공 후보에서 빠짐."""
     res = {}
     for mode in ('keep', 'reset', None):
         a, f = unit('a', sa=1), unit('foe', hp=10 ** 9)
@@ -182,16 +182,16 @@ def test_ally_break_gauge_and_coop():
         res[mode] = (A.broken, A.gauge)
     no_react = b.no_react(b.allies[0])
     acted = {}
-    for mode in ('skip', 'keep'):
+    for mode in ('skip', 'keep', None):
         a, f = unit('a', sa=1), unit('foe', hp=10 ** 9)
-        bb = battle([a], [f], mc=dict(ally_break_gauge=mode))
+        bb = battle([a], [f], mc=dict(ally_break_gauge=mode) if mode else None)
         A, F = bb.allies[0], bb.foes[0]
         hit(bb, F, A, '기본기', ab=1)
         hp0 = F.hp
         bb.act(A)
         acted[mode] = (A.broken, F.hp < hp0)      # 회복했는가, 그 턴에 공격했는가
     ok = (res == {'keep': (True, 6000.0), 'reset': (True, 0.0), None: (True, 6000.0)} and no_react
-          and acted == {'skip': (False, False), 'keep': (False, True)})
+          and acted == {'skip': (False, False), 'keep': (False, True), None: (False, True)})
     return ok, '결과 %s / 다음 턴 %s' % (res, acted)
 
 

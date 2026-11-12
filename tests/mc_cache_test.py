@@ -41,7 +41,7 @@ def _unit(name='u', role='스트라이커', hp=10000, atk=1000, df=500, spd=100,
     )
 
 
-_KEEP = {'dot_hot_order': 'insertion', 'dot_hot_lifetime': 'turn_end', 'ally_cd_tick': 'turn_start',
+_KEEP = {'ally_break_gauge': 'skip', 'own_turn_condition': 'main_only', 'dot_hot_order': 'insertion', 'dot_hot_lifetime': 'turn_end', 'ally_cd_tick': 'turn_start',
          'stat_select_int': 'float', 'break_domain_category': 'buff', 'ally_turn_self': 'exclude',
          'fixed_true_formula': 'legacy', 'counter_slot_timing': 'end', 'wave_extra_turn': 'keep', 'turn_start_order': 'dot_first', 'guard_skip_immune': 'off',
          'buff_fresh_scope': 'self', 'break_gauge_actor': 'exclude', 'purify_nova_scope': 'main_only',

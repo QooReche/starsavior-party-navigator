@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """level_buff_decrease: 세레스(샤프 앤 스위트) 〈손님 맞이 청소〉의 먼지 포착(해제불가) «5회 부여»는 표(LevelBuffDecrease=true)상 5 감소.
-기본 on = 5 감소, off = 옛 동작(5 더함). 실행: python -X utf8 -I tests/level_buff_decrease_test.py
+11/12 데이터북은 명시적 5중첩 감소로 바뀌었으므로 on/off 모두 감소함.
+옛 «5회 부여»의 on/off 차이는 patch_1112_test가 별도 검사함.
+실행: python -X utf8 -I tests/level_buff_decrease_test.py
 근거: static-data SE_TEMPLET_SKILL_1.json:38328-38343, 영상 11/02 성간 회랑 450(추가 발동 전후 중첩 5건 중 4건 -5).
-일부러 깨뜨리기: mc.py apply_buff 의 level_buff_decrease 분기를 지우면 test_on_decreases 가 실패한다."""
+일부러 깨뜨리기: 명시적 중첩 감소 파싱을 끄면 patch_1112_test의 소비 검사가 실패함."""
 import os
 import sys
 
@@ -49,14 +51,14 @@ def test_on_decreases():
     assert 0 < r['outcome']['progress'] <= 1, r['outcome']
 
 
-def test_off_adds():
+def test_explicit_decrease_ignores_legacy_inference_switch():
     seen, _ = _run('off')
     assert len(seen) >= 3, seen
-    assert all(after >= before for before, after in seen), seen[:8]
-    assert any(after > before for before, after in seen), seen[:8]
+    assert all(after == max(0, before - 5) for before, after in seen), seen[:8]
+    assert any(before >= 5 for before, _ in seen), seen[:8]
 
 
-TESTS = [test_default_is_on, test_on_decreases, test_off_adds]
+TESTS = [test_default_is_on, test_on_decreases, test_explicit_decrease_ignores_legacy_inference_switch]
 
 if __name__ == '__main__':
     for t in TESTS:

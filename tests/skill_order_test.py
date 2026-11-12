@@ -69,7 +69,7 @@ class FoeSkillOrderTest(unittest.TestCase):
         for mode, slot in (('data', '특수기'), ('default', '궁극기')):
             with self.subTest(mode=mode):
                 b, f = self.setup(foe_skill_order=mode)
-                self.assertEqual(f.key, 'foe:1554:388')
+                self.assertEqual(f.key, 'foe:1563:388')
                 self.assertEqual(f.d.skill_order, ['특수기', '궁극기', '기본기'])
                 self.assertEqual(b.choose_skill(f)[0].slot, slot)
                 b.act(f)

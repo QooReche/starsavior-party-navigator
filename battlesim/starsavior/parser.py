@@ -10,6 +10,45 @@ from .stats import calc_stats
 # ------------------------------------------------------------------ 줄(ef) 파싱
 NUM = r'[+-]?\d+(?:\.\d+)?'
 
+
+@lru_cache(maxsize=256)
+def explicit_target(text):
+    """2.70 데이터북이 자동 지정 대신 풀어 쓴 대상. 기존 필터 이름으로 읽는다."""
+    if '자동 지정' in text or text in ('자신', '스킬 대상', '아군 전체', '적 전체'):
+        return None
+    if text == '「물폭탄」이 없던 공격 대상':
+        return dict(ally=False, one=False, exclude_self=False, f=[['has', ['물폭탄 미부착 체크용 버프']]])
+    if text == '전에 「물폭탄」이 걸려 있던 적':
+        return dict(ally=False, one=False, exclude_self=False, f=[['has', ['물폭탄 제거 체크용 버프']]])
+    if not re.search(r'(?:아군|적)(?:\s|$)', text):
+        return None
+    filters = []
+    if '행동할 수 있는' in text:
+        filters.append('not_unable_to_act')
+    if '「협공 불가」 상태가 아닌' in text:
+        filters.append(['not_has', ['협공 불가']])
+    state = re.search(r'「([^」]+)」 상태인', text)
+    if state:
+        filters.append(['has', [n.strip() for n in state[1].split(',')]])
+    elif '상태가 아닌' in text and '「협공 불가」' not in text:
+        filters.append(['not_has', [n.strip() for group in re.findall(r'「([^」]+)」', text) for n in group.split(',')]])
+    elem = re.search(r'(태양|달|별|질서|혼돈) 속성 아군', text)
+    if elem:
+        filters.append(['elem', elem[1]])
+    if '강화 효과가 있는' in text:
+        filters.append('buffed')
+    count = re.search(r'(강화|약화) 효과가 (\d+)개 (이상|이하)', text)
+    if count:
+        filters.append([('buff_' if count[1]=='강화' else 'debuff_') + ('ge' if count[3]=='이상' else 'le'),int(count[2])])
+    rank = re.search(r'(최대 생명력|생명력 비율|공격력|방어력|속도|행동 게이지)[이가] 가장 (높은|낮은)', text)
+    if rank:
+        filters.append(('high_' if rank[2] == '높은' else 'low_') +
+                       {'최대 생명력':'max_hp', '생명력 비율':'hp_rate', '공격력':'atk', '방어력':'def', '속도':'spd', '행동 게이지':'gauge'}[rank[1]])
+    if not filters and not text.startswith(('다른 아군', '무작위 적', '무작위 아군')):
+        return None
+    return dict(ally='아군' in text, one='1명' in text,
+                exclude_self='다른 아군' in text or text.startswith(('자신 제외', '자신을 제외', '다른 ')), f=filters)
+
 def split_head(raw, decimal_hp=False):
     """decimal_hp는 확률 전투의 정밀 조건용. 기본값은 기대값 계산 호환용."""
     m = re.match(r'^\[([^\]]+)\]\s*(.*)$', raw, re.S)
@@ -122,9 +161,12 @@ def parse_effect(rest):
     if m:
         v = float(m.group(2)) * (1 if m.group(3) == '증가' else -1)
         return dict(kind='gauge', target=m.group(1), val=v, judge='효과 적중 판정' in rest)
-    m = re.match(r'^(.+?)에게 스킬 쿨타임 (\d+)턴 감소', rest)
+    m = re.match(r'^(.+?)에게 (스킬|기본기|특수기|궁극기) 쿨타임 (\d+)턴 감소', rest)
     if m:
-        return dict(kind='cdr', target=m.group(1), val=int(m.group(2)))
+        eff = dict(kind='cdr', target=m.group(1), val=int(m.group(3)))
+        if m.group(2) != '스킬':
+            eff['slot'] = m.group(2)
+        return eff
     m = re.match(r'^(자신|.+?)에게 (기본기|특수기|궁극기) 추가 발동(?:\s*×(\d+))?', rest)
     if m:
         return dict(kind='extra_cast', slot=m.group(2), times=int(m.group(3) or 1), target=m.group(1))
@@ -137,6 +179,13 @@ def parse_effect(rest):
     m = re.match(r"^(.+?)에게 '([^']+)' 해제", rest)
     if m:
         return dict(kind='remove', target=m.group(1), name=m.group(2))
+    m = re.match(r"^(.+?)에게 '([^']+)' (\d+)중첩 감소", rest)
+    if m:
+        return dict(kind='buff', target=m[1], name=m[2], chance=1.0, dur=None,
+                    props={}, max=None, times=int(m[3]), judge=False, consume=True)
+    m = re.match(r"^(.+?)에게 '([^']+)' 지속 턴 \+?(\d+)", rest)
+    if m:
+        return dict(kind='extend', target=m[1], name=m[2], val=int(m[3]), judge='효과 적중 판정' in rest)
     m = re.match(r'^(.+?)에게\s*(?:\(대상마다 (\d+)% 판정\)\s*)?(?:(\d+)% 확률로\s*)?〈([^〉]+)〉\s*(?:\(([^)]*)\))?\s*(?:‹([^›]*)›)?\s*(\{[^}]*\})?', rest)
     if m:
         target, p1, p2, name, props, dot, flags = m.groups()

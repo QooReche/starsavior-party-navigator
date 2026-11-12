@@ -286,7 +286,7 @@ def description_lines(d, lines):
                   if k in ('자신이 보유', '자신이 미보유', '대상이 보유', '시전자가 보유') for n in v.split(',')}
     for ln in out:
         e = ln.eff
-        if (e['kind'] == 'buff' and e['name'] in references and not e['props']
+        if (e['kind'] == 'buff' and not e.get('consume') and e['name'] in references and not e['props']
                 and ln.phase in ('스킬 사용 시작 시', '스킬 사용 후', '피해 처리 직전', '피해 처리 후')
                 and not e.get('max') and e.get('dur') in (None, float('inf'))):
             e['cast_marker'] = True
@@ -309,7 +309,7 @@ def selection_lines(d, lines, raws):
     references = {v for ln in lines for k, v in ln.params if '보유' in k}
     random_markers = set()
     for ln in lines:
-        if '무작위 효과' in ln.raw and re.search(r'중 1개 ×\d+', ln.raw):
+        if '무작위 효과' in ln.raw and re.search(r'중 1개(?: · \d+턴 지속)? ×\d+', ln.raw):
             random_markers.update(v for k, v in ln.params if k == '자신이 미보유' and '카운팅' in v)
     for ln in lines:
         desc = raws.get(ln.slot, {})
@@ -341,8 +341,10 @@ def selection_lines(d, lines, raws):
                 ln.kind, ln.trig = 'own_pre', None
                 e.update(target='적 전체', target_state=state[1])
         move = re.search(r'신규 \[([^]]+)\] 발생 시 기존의 \[\1\]을 해제', desc)
+        if move and e.get('target') == '「물폭탄」이 없던 공격 대상':
+            e['target'] = '스킬 대상'
         # 적 표식 이동만 보정한다. 아군 자동 지정 버프의 부여·해제는 원래 줄을 따른다.
-        if move and (e.get('target', '').startswith('적') or e.get('target') == '스킬 대상'
+        if move and (e.get('target', '').startswith(('적', '무작위 적', '속도가 가장 높은 적', '전에 「물폭탄」')) or e.get('target') == '스킬 대상'
                      or e['kind'] == 'local'):
             mark = move[1]
             if '체크용' in name or (e['kind'] == 'remove' and name == mark):

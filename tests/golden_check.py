@@ -15,7 +15,7 @@ import random
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-sys.path.insert(0, os.path.join(ROOT, 'tools'))
+sys.path[:0] = [os.path.join(ROOT, 'tools'), os.path.join(ROOT, 'tests')]
 import sim_damage as sd  # noqa: E402
 
 GOLDEN = os.path.join(ROOT, 'tests', 'golden', 'sim_golden.json')
@@ -94,7 +94,12 @@ def main():
         engine.DEFAULT_OPTS['coop_order'] = 'capped'
         engine.DEFAULT_OPTS['forced_coop_target'] = 'live_atk'
         engine.DEFAULT_OPTS['coop_dead_target'] = 'retarget'
-        cur = capture()
+        if a.write:
+            cur = capture()
+        else:
+            from public_inputs_1111 import public_inputs
+            with public_inputs():
+                cur = capture()
     finally:
         engine.COOP_CAP = saved
         engine.DEFAULT_OPTS['coop_order'] = saved_order

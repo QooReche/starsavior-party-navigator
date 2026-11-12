@@ -2194,6 +2194,29 @@ TESTS.append(test_guild_defense)
 TESTS.append(test_cosmo_search)
 
 
+def test_patch1112_cards(browser, ctx):
+    """계산 없이 신규 두 카드·이미지·스킬 연결과 아세라 UID 분리를 확인한다."""
+    page = open_page(browser, ctx, query='?auto=0', info=None, wait=False)
+    for key,uid,name in [('gille',1020,'길레'),('asherah-order-striker',1061,'아세라')]:
+        tile = page.locator('#own .tile').filter(has=page.locator('input[data-k="'+key+'"]'))
+        assert tile.count() == 1
+        assert name in tile.inner_text()
+        assert page.evaluate('(key) => BYKEY[key].uid',key) == uid
+        assert page.evaluate('(key) => BYKEY[key].kind',key) == 'C'
+        # 실제 카드 렌더러(추천/스킬 보기에서 사용하는 이미지)를 확인한다.
+        page.evaluate('(key) => { const d=document.createElement("div"); d.id="patch-card-"+key; d.innerHTML=tile(BYKEY[key]); document.body.append(d); }',key)
+        page.wait_for_function('(key) => {const imgs=[...document.querySelectorAll("#patch-card-"+key+" img")]; return imgs.length>0&&imgs.every(i=>i.complete&&i.naturalWidth>0)}',arg=key)
+        assert page.evaluate('async(uid) => (await (await fetch("data/savior_skills.json")).json())[uid].length',str(uid)) > 0
+    assert page.evaluate('() => new Set(R.filter(s=>s.name==="아세라").map(s=>s.uid)).size') == 3
+    page.screenshot(path=os.path.join(ctx.shots,'patch1112_cards.png'))
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '신규 두 카드·이미지·코즈믹 분류·UID 분리'
+
+
+TESTS.append(test_patch1112_cards)
+
+
 def main():
     args = sys.argv[1:]
     shots = None

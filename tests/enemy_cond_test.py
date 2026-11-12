@@ -54,7 +54,7 @@ class EnemyCondTest(unittest.TestCase):
 
     def test_weak_attacker_buff_condition_matches_hit_by_unbuffed_ally_only(self):
         spec = party('equip', '혹한의 습격|혹한의 습격 XⅦ', ['emily', 'frey', 'haydee', 'gwen'], 'emily', 372610)
-        pair = ('적 강화효과 보유', '효과 개수 미만')
+        pair = ('적 강화효과 보유', '효과 개수 이하')
         new, out_new = self.watch(spec, 'equip/혹한의 습격/혹한의 습격 XⅦ', [pair])
         old, out_old = self.watch(spec, 'equip/혹한의 습격/혹한의 습격 XⅦ', [pair], {'enemy_hit_buff_cmp': 'legacy'})
         self.assertGreater(new[pair][0], 0)

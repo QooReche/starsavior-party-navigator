@@ -1752,5 +1752,39 @@
       "아크 포인트"
     ],
     "capturedAt": "2026-10-15T03:45:28.701Z"
+  },
+  "1020": {
+    "key": "gille",
+    "id": 1020,
+    "slug": "gille",
+    "file": "./1020.html",
+    "source": "https://ss.espr.gg/ko/database/characters/gille",
+    "profile": {
+      "name": "길레",
+      "grade": "SSR",
+      "className": "캐스터",
+      "attackType": "원소",
+      "affiliation": "집행자",
+      "element": "혼돈",
+      "portrait": "./data/savior-detail-assets/1020-portrait.webp",
+      "illustration": "./data/savior-detail-assets/1020-illustration.webp"
+    }
+  },
+  "1061": {
+    "key": "asherah-order-striker",
+    "id": 1061,
+    "slug": "asherah-order-striker",
+    "file": "./1061.html",
+    "source": "https://ss.espr.gg/ko/database/characters/asherah-order-striker",
+    "profile": {
+      "name": "아세라",
+      "grade": "SSR",
+      "className": "스트라이커",
+      "attackType": "참격",
+      "affiliation": "불명",
+      "element": "질서",
+      "portrait": "./data/savior-detail-assets/1061-portrait.webp",
+      "illustration": "./data/savior-detail-assets/1061-illustration.webp"
+    }
   }
 }

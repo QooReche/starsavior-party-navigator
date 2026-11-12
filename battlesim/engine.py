@@ -24,7 +24,7 @@ def calc_hit(a, b=0.0):
     else:
         f = a
     return max(0.0, min(1.0, f))
-from .starsavior.parser import Line, Skill, _map_prop
+from .starsavior.parser import Line, Skill, _map_prop, explicit_target
 from .starsavior.data import SRC
 
 
@@ -615,6 +615,14 @@ class Sim:
     # ---------- 대상 선택
     def resolve_targets(self, owner, text, ctx):
         t = text
+        spec = explicit_target(t)
+        if spec is not None:
+            # 기대값 모델은 원래 자동 지정 근사(공격력순)를 유지한다.
+            t = ('자신 제외 ' if spec['exclude_self'] else '') + ('아군' if spec['ally'] else '적')
+            t += ' 1명(자동 지정)' if spec['one'] else ' 전체'
+            for f in spec['f']:
+                if isinstance(f, list) and f[0] == 'elem':
+                    t = f[1] + ' 속성 ' + t
         sk = ctx.skill
         if t.startswith('적'):
             al = self.alive()
@@ -637,7 +645,7 @@ class Sim:
         mm = re.search(r'(' + '|'.join(['태양', '달', '별', '질서', '혼돈']) + r') 속성 아군', t)
         if mm:
             pool = [x for x in pool if x.element == mm.group(1)]
-        if excl or t.startswith('아군'):
+        if excl or t.startswith('아군') or mm:
             if '전체' in t:
                 return ('a', pool)
             n = re.search(r'(\d+)명', t)
@@ -672,7 +680,7 @@ class Sim:
     # cond_weight 가 해석하는 조건 키 (Line 덤프의 unparsed 판정용; 아래 분기를 고치면 함께 고칠 것)
     COND_KEYS = ('사용 스킬', '추가발동 스킬', '추가발동 스킬이 아님', '자기 추가발동 트리거', '자신이 보유', '자신이 미보유',
                  '중첩수', '효과 개수', '중첩수 이상', '효과 개수 이상', '대상이 보유', '대상 효과 중첩수', '대상 약화효과 보유',
-                 '대상 강인도 없음', '결과', '대상 HP% 초과', '대상 HP% 미만', '적 처치', '적을 처치하지 못함', '내 턴', '자신 포함',
+                 '대상 강인도 없음', '결과', '대상 HP% 초과', '대상 HP% 미만', '대상 HP% 이상', '대상 HP% 이하', '적 처치', '적을 처치하지 못함', '내 턴', '자신 포함',
                  '시전자 속성', '시전자가 보유', '자신에게 약화효과 없음', '자신 약화효과 보유', '자신 강화효과 보유',
                  '스킬 쿨타임 아님', '턴 유닛이 보유')
 
@@ -736,6 +744,10 @@ class Sim:
             elif k == '대상 HP% 미만':
                 e = ctx.target or self.primary()
                 w *= 1.0 if self.hp_frac(e) * 100 < float(v) else 0.0
+            elif k in ('대상 HP% 이상', '대상 HP% 이하'):
+                e = ctx.target or self.primary()
+                ratio = self.hp_frac(e) * 10000
+                w *= float(ratio >= float(v) if k.endswith('이상') else ratio <= float(v))
             elif k == '적 처치':
                 kp = ctx.kill if (ctx.target and ctx.target.maxhp < INF_HP / 2) else self.opts['kill_p_inf']
                 w *= kp if v == '예' else (1 - kp)
@@ -820,7 +832,7 @@ class Sim:
                         x.gauge = clamp(x.gauge + eff['val'] * 100.0 * wf * p, 0, 10000)
             return
         if kd == 'cdr':
-            sl = ctx.skill.slot if ctx.skill is not None else None
+            sl = eff.get('slot') or (ctx.skill.slot if ctx.skill is not None else None)
             if sl in owner.cd:
                 owner.cd[sl] = max(0.0, owner.cd[sl] - eff['val'] * wf)
             return

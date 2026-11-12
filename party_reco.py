@@ -380,7 +380,7 @@ def find_stages(content, query):
     """foe_stages.json 에서 이름(탭 포함)에 query 가 들어 있는 스테이지를 찾는다(최대 5개 반환)."""
     key = FOE_KEYS.get(content)
     hits = []
-    for c in _json(FOE)["contents"] + [gd.foe_content(gd.load())]:  # 길드 방어전은 시즌 파일에서 만든 콘텐츠
+    for c in [c for c in _json(FOE)["contents"] if c['key'] != 'guild'] + [gd.foe_content(gd.load())]:
         if c["key"] != key:
             continue
         for tab in c["tabs"]:

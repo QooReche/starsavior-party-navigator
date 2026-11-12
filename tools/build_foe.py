@@ -91,7 +91,8 @@ def build_stage(st):
     if st.get('fx'): out['fx'] = st['fx']
     if st.get('fix'): out['fixed_player'] = {'level': st['fix'][0], 'resonance': st['fix'][1]}
     if st.get('lt'): out['turn_limit'] = st['lt']
-    if st.get('sea'): out['season_bonus_latest'] = {'season': st['sea'][0][0], 'bonuses': [{'cond': a, 'text': b} for a, b in st['sea'][0][1]], 'kind': st['sea'][0][2] if len(st['sea'][0]) > 2 else None}
+    # 2.70: guild bonuses append a name, level and effect ID after cond/text.
+    if st.get('sea'): out['season_bonus_latest'] = {'season': st['sea'][0][0], 'bonuses': [{'cond': row[0], 'text': row[1]} for row in st['sea'][0][1]], 'kind': st['sea'][0][2] if len(st['sea'][0]) > 2 else None}
     if st.get('ch'): out['star_challenge_ref'] = st['ch']
     if st.get('pick'): out['star_pick'] = st['pick']
     if st.get('sm'):
@@ -119,7 +120,7 @@ notes = [
  "fx(스테이지 효과), fix(구원자 레벨·공명 고정), lt(턴 제한), sea(시즌 보너스, 가장 최근만), sm(소환 적)은 원본 필드 그대로 의미 해석(sea 의 'ex'/'pick' 종류는 의미 추정 불가, 그대로 kind 에 보존).",
  "star_challenge_ref(ch)/star_pick(pick): 별의 도전 EX 참조 키. 의미는 앱 코드 근거, 상세 보정치는 raw star 테이블에 있어 미포함.",
 ]
-res = {'_source': 'https://starsavior-databook.pages.dev/data/foe.js?v=48a4b5df', '_notes': notes, 'contents': contents}
+res = {'_source': 'https://starsavior-databook.pages.dev/data/foe.js', '_notes': notes, 'contents': contents}
 _out = os.path.join(ROOT, 'data', 'foe_stages.json')
 with atomic_open(_out) as f:
     json.dump(res, f, ensure_ascii=False, indent=None, separators=(',', ':'))

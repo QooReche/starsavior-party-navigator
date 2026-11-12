@@ -738,6 +738,8 @@ const EQUIPMENT_SET_IMAGE_NAMES = new Set([
 ]);
 
 const SAVIOR_DETAIL_IDS = {
+  "asherah-order-striker": 1061,
+  "gille": 1020,
   "ceres-sun-supporter": 1059,
   "lydia-moon-caster": 1060,
   "gwen": 1040,
@@ -1413,6 +1415,12 @@ I18N_DATA.subtitles.ja["샤프 앤 스위트"] = "シャープ＆スイーツ";
 I18N_DATA.ui.en["출시 예정"] = "Upcoming";
 I18N_DATA.ui.ja["출시 예정"] = "近日登場";
 
+I18N_DATA.saviorNames.en["길레"] = "Gille";
+I18N_DATA.saviorNames.ja["길레"] = "ギーレ";
+
+I18N_DATA.subtitles.en["편애의 마녀"] = "Witch of Favoritism";
+I18N_DATA.subtitles.ja["편애의 마녀"] = "偏愛の魔女";
+
 const SAVIORS = [
   {
     "id": "lydia-moon-caster",
@@ -1658,7 +1666,7 @@ const SAVIORS = [
             "note": "단점 보완 맞춤 훈련 대체"
           },
           {
-            "name": "하늘의 심판 or 불굴의 역작 or 누각 위, 유리달 맞이 or 영원 속박의 굴레",
+            "name": "하늘의 심판 or 불굴의 역작 or 누각 위, 유리달 맞이 or 영원 속박의 굴레 or 어느 한 기사의 맹세",
             "note": "하얀 달의 온기는 햇빛처럼 대체"
           },
           {
@@ -5766,6 +5774,34 @@ const SAVIORS = [
     "image": "./data/savior-detail-assets/1059-portrait.webp",
     "summary": "ESPR 구원자 정보를 반영했습니다. PVE 세팅 정보는 미정입니다.",
     "guideUrl": "https://ss.espr.gg/ko/database/characters/ceres-sun-supporter"
+  },
+  {
+    "id": "gille",
+    "name": "길레",
+    "subtitle": "집행자",
+    "affiliation": "집행자",
+    "grade": "SSR",
+    "element": "chaos",
+    "className": "캐스터",
+    "role": "캐스터",
+    "attackType": "원소",
+    "image": "./data/savior-detail-assets/1020-portrait.webp",
+    "summary": "ESPR 구원자 정보를 반영했습니다. PVE 세팅 정보는 미정입니다.",
+    "guideUrl": "https://ss.espr.gg/ko/database/characters/gille"
+  },
+  {
+    "id": "asherah-order-striker",
+    "name": "아세라",
+    "subtitle": "편애의 마녀",
+    "affiliation": "불명",
+    "grade": "SSR",
+    "element": "order",
+    "className": "스트라이커",
+    "role": "스트라이커",
+    "attackType": "참격",
+    "image": "./data/savior-detail-assets/1061-portrait.webp",
+    "summary": "ESPR 구원자 정보를 반영했습니다. PVE 세팅 정보는 미정입니다.",
+    "guideUrl": "https://ss.espr.gg/ko/database/characters/asherah-order-striker"
   }
 ];
 
@@ -8508,8 +8544,8 @@ function createArcanaImages(choices) {
   if (!imageChoices.length) return "";
 
   return `
-    <div class="arcana-card-images" style="--arcana-count:${Math.min(imageChoices.length, 4)}">
-      ${imageChoices.slice(0, 4).map((choice) => {
+    <div class="arcana-card-images" style="--arcana-count:${imageChoices.length}">
+      ${imageChoices.map((choice) => {
         const detailUrl = getArcanaDetailUrl(choice.name);
         const localizedName = getLocalizedArcanaName(choice.name);
         const detailLabel = translateString("아르카나 상세정보");
@@ -9718,14 +9754,18 @@ function updateJourneyArchiveLanguage() {
 const ARCANA_ARCHIVE_URL = "./data/arcanas/arcanas.json";
 I18N_DATA.arcana.en["가혹한 시련"] = "Maid for Hardship";
 I18N_DATA.arcana.ja["가혹한 시련"] = "過酷な試練";
+I18N_DATA.arcana.en["끝나지 않는 춤"] = "Never Ending Dance";
+I18N_DATA.arcana.ja["끝나지 않는 춤"] = "果てしない舞";
+I18N_DATA.arcana.en["빛바랜 꿈"] = "Faded Dream";
+I18N_DATA.arcana.ja["빛바랜 꿈"] = "色褪せた夢";
 const ARCANA_LEVELS = [35, 40, 45, 50];
 const ARCANA_MAIN_STAT_ORDER = ["힘", "체력", "인내", "집중", "보호"];
 const ARCANA_DUMMY_MAIN_STATS = new Set(["구원자"]);
 const ARCANA_RARITY_ORDER = { SSR: 0, SR: 1, R: 2 };
-// ESPR 한국어 아르카나 목록의 실제 표시 순서 (2026-10-29 확인).
+// ESPR 한국어 아르카나 목록에서 새 항목 위치 확인 (2026-11-12). 기존 항목 간 순서는 유지합니다.
 // ID 크기나 이름으로 출시 순서를 추정하지 않는다.
 const ARCANA_RELEASE_ORDER = new Map([
-  7105901, 7101401, 7106001, 7104001, 7103901, 7105801, 7101701, 7104601, 7104501, 7100301, 7103302,
+  7106101, 7102001, 7105901, 7101401, 7106001, 7104001, 7103901, 7105801, 7101701, 7104601, 7104501, 7100301, 7103302,
   7100501, 7105601, 7105501, 7102501, 7102901, 7101602, 7300301,
   7300201, 7300101, 7102601, 7105701, 7103201, 7100901, 7100801,
   7105401, 7103101, 7104301, 7104401, 7101001, 7150101, 7102101,

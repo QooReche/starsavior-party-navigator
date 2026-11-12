@@ -105,7 +105,7 @@ class CombatTests(unittest.TestCase):
 
     def test_random_ally_basic_conditions_and_once_per_turn(self):
         d = definition(potentials=[(40405, 1)])
-        b = battle([d, unit('partner')], [unit('one'), unit('two')])
+        b = battle([d, unit('partner')], [unit('one'), unit('two')], mc={'own_turn_condition': 'main_only'})
         a = b.allies[0]
         a.acting = True
         ln = next(x for x in d.lines if x.slot == '잠재력')
@@ -145,7 +145,10 @@ class CombatTests(unittest.TestCase):
         static = static_path_or_none()
         if static is None:
             self.skipTest('비공개 표 저장소 없음(STARSAVIOR_STATIC 또는 ../static-data)')
-        built, artifact = build(static), combat.combat_data()
+        from public_inputs_1111 import public_inputs
+        with public_inputs():
+            built = build(static)
+        artifact = combat.combat_data()
         # main() 은 클라 표에서 사라진 구원자(10/22 패치에서 1060 삭제)의 이전 계수를 보존한다 — 같은 규칙으로 비교
         kept = set(artifact['units']) - set(built['units'])
         self.assertLessEqual(kept, {'lydia-moon-caster'})

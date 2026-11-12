@@ -28,6 +28,16 @@ from tools.runtime import static_path, low_priority   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior.savior_ids import keys_by_id   # noqa: E402
 from tools.tables import jsonc, buff_names   # noqa: E402,F401  (jsonc: 다른 빌더가 여기서 가져다 씀)
+from battlesim.starsavior.parser import explicit_target, split_head
+
+
+def described_auto(raw):
+    """공개 데이터북 2.70에서 풀어 쓴 자동 대상도 SE와 연결한다."""
+    return explicit_target(split_head(raw)[2].split('에게 ', 1)[0])
+
+
+def is_auto_line(raw):
+    return '(자동 지정)' in raw or described_auto(raw) is not None
 
 SLOTS = ('기본기', '특수기', '궁극기', '패시브')
 NSI = {'NSI_SKILL_1_ATTACK': '기본기', 'NSI_SKILL_2_SPECIAL': '특수기', 'NSI_SKILL_3_HYPER': '궁극기'}
@@ -224,7 +234,7 @@ def build_lines(static, report, *, legacy=False, client=False):
             has_levelup_auto = any(v for lv, v in seqs.items() if lv != base)
             if not any(r.get('AutoTargetId') for r in rows):
                 continue
-            lines = [ln for ln in s.get('ef') or [] if '(자동 지정)' in ln]
+            lines = [ln for ln in s.get('ef') or [] if is_auto_line(ln)]
             if len(lines) != len(rows):
                 # 데이터북은 묶음 번호(SEGroupID)만 다른 같은 행을 한 줄(「×5」·「N회 부여」)로 합쳐 적는다 — 첫 행만 남겨 다시 짝짓는다
                 rows = _dedup_se(rows)
@@ -240,8 +250,9 @@ def build_lines(static, report, *, legacy=False, client=False):
                     report['옛 data 모드 개화 대상형 제외(설명문 유지): ' + where] += 1
                     continue
                 head = _skip_paren(ln.split(']', 1)[-1].lstrip())
-                ally = not head.startswith('적')
-                one = '1명' in head.split('(자동 지정)')[0]
+                described = described_auto(ln)
+                ally = described['ally'] if described else not head.startswith('적')
+                one = described['one'] if described else '1명' in head.split('(자동 지정)')[0]
                 if ally != tt.startswith('NSETT_AUTO_ALLY') or one != tt.endswith(('_ONE', '_ONE_NOT_SELF')):
                     got = None
                     break
@@ -273,7 +284,7 @@ def build_lines(static, report, *, legacy=False, client=False):
                     seen = {g[1] for g in out.get(key, [])}   # 이미 등록된 원문
                     for gi, grp in enumerate(L['e']):
                         grp_lns = [L['ln'][j] for j in grp if j < len(L['ln'])]
-                        grp_auto = [ln for ln in grp_lns if '(자동 지정)' in ln]
+                        grp_auto = [ln for ln in grp_lns if is_auto_line(ln)]
                         if len(grp_auto) != len(specs):
                             report['레벨 그룹 %d 자동 지정 줄 수 불일치(생략): %s' % (gi, where)] += 1
                             continue

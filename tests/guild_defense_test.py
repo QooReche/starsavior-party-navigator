@@ -145,6 +145,12 @@ def test_content_registration():
 
 
 def test_existing_contents_unchanged():
+    from public_inputs_1111 import recommendation_inputs
+    with recommendation_inputs():
+        _existing_contents_unchanged()
+
+
+def _existing_contents_unchanged():
     # 기존 콘텐츠 추천 출력이 길드 방어전 추가 전과 같다(golden 은 별도). 고정 입력 2건의 출력 해시를 확인한다.
     import hashlib
     from unittest.mock import patch

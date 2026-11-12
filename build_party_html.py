@@ -118,6 +118,8 @@ def main(out=None):
                                "w": w, "aoe": round(st["aoe_ratio"], 2), "def": round(st["defender_ratio"], 2)})
         return stages
     for c in pr._json(pr.FOE)["contents"]:
+        if c['key'] == 'guild':
+            continue  # 2.70 과거 시즌 목록. 현재 길방은 아래 guild_defense.json으로 한 번만 구성.
         name, main, parties = CONTENT_META[c["key"]]
         entry = {"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages_of(c)}
         if c["key"] == "cosmo":
