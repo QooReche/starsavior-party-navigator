@@ -2,7 +2,10 @@
 // 실행: node tests/gim_avoid_test.js
 const fs = require("fs"), path = require("path"), assert = require("assert");
 const tpl = fs.readFileSync(path.join(__dirname, "..", "party_template.html"), "utf8");
-const m = tpl.match(/function gimAvoid\(party,types,p\)\{[\s\S]*?\n function?|function gimAvoid\(party,types,p\)\{[\s\S]*?<\/details>`\}\n/);
+// Windows 체크아웃(CRLF)도 검사하며, 표시 문구 대신 다음 함수 경계로 추출한다.
+for (const newline of ["\n", "\r\n"]) {
+const source = tpl.replace(/\r?\n/g, newline);
+const m = source.match(/^function gimAvoid\(party,types,p\)\{[\s\S]*?(?=^function gimNote\()/m);
 assert(m, "gimAvoid 를 찾지 못함");
 const plain = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "gimmick_plain.json"), "utf8"));
 const rules = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "gimmick_rules.json"), "utf8")).types;
@@ -16,8 +19,10 @@ assert.strictEqual(run([mk("a", ["MULTIHIT"])], [], []), "");
 // 3) 연타형 + 감점 대상 -> 이름·이유·점수 반영 배지, 기본 닫힘
 const h = run([mk("a", ["MULTIHIT"]), mk("b", ["DEALER"])], [["TURN_HIT_REDUCTION", 2]], [["TURN_HIT_REDUCTION", 2]]);
 assert(h.includes("불리한 구원자 1명") && h.includes("연타형") && h.includes("guess scored") && !h.includes(" open"), h);
+assert(h.includes('data-savior="a"') && h.includes('data-score-applied="true"'), h);
 assert(!h.includes('data-savior="b"'));
 // 4) 점수 대상이 아닌 기믹(GIMACT 밖)이면 배지 없음, 추정 유형이면 추정 배지
 const h2 = run([mk("a", ["MULTIHIT"])], [["HIT_RETALIATION", 1]], []);
-assert(!h2.includes("guess scored") && h2.includes("추정"), h2);
-console.log("OK gim_avoid");
+assert(!h2.includes("guess scored") && !h2.includes('data-score-applied="true"') && h2.includes('data-confidence="estimated"') && h2.includes("추정"), h2);
+}
+console.log("OK gim_avoid; LF/CRLF");

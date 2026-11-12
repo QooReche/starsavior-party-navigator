@@ -24,7 +24,9 @@ function rollover(seasonCode=season,pageCode=page,growthCode=ui){
     const ctx={contents:[{key}],$:()=>({value:0}),closed:false,clearTimeout,REQ:true,SIMQ:{busy:'growth',scr:{},kick:true},
       GSR:{id:0,phase:'done'},CSR:{id:0,phase:'done'},renderGuild(){},renderCosmoSearch(){},run(){},stop:()=>stopped++};
     vm.createContext(ctx);vm.runInContext(growthCode,ctx);vm.runInContext(seasonCode,ctx);
-    vm.runInContext(pageCode.match(/function simInvalidate\(\).*\n/)[0],ctx);
+    const invalidate=pageCode.match(/^function simInvalidate\(\)\{[^\r\n]*\}/m);
+    assert(invalidate,'simInvalidate 를 찾지 못함');
+    vm.runInContext(invalidate[0],ctx);
     Object.assign(ctx,{seasonStatus:()=>({blocked:ctx.closed}),seasonBlocked:()=>ctx.closed,seasonPaint(){}});
     vm.runInContext("GROW.phase='running';GROW.stop=stop;GROW.id=3",ctx);
     ctx.seasonRefresh();assert.equal(stopped,0);ctx.closed=true;ctx.seasonRefresh();
@@ -35,9 +37,10 @@ function rollover(seasonCode=season,pageCode=page,growthCode=ui){
   }
 }
 function mutate(name,code,from,to,test){assert(code.includes(from),name);assert.throws(()=>test(code.replace(from,to)),{code:'ERR_ASSERTION'},name);console.log('MUTATION caught:',name);}
-ranking();rollover();
+ranking();
+for(const newline of ['\n','\r\n'])rollover(season,page.replace(/\r?\n/g,newline));
 mutate('closed history exclusion',ui,"!seasonBlocked(h.content?.split('/')[0])",'true',ranking);
 mutate('season cancel chain',season,'simInvalidate();','',s=>rollover(s));
 mutate('growth cancel chain',page,'function simInvalidate(){if(typeof growthCancel==="function")growthCancel();','function simInvalidate(){',s=>rollover(season,s));
 mutate('copied search stop',ui,'if(GROW.stop)GROW.stop();','',s=>rollover(season,page,s));
-console.log('ALL OK small fixes; 4 mutations');
+console.log('ALL OK small fixes; LF/CRLF; 4 mutations');
