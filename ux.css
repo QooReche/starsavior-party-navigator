@@ -33,7 +33,7 @@ button{box-shadow:none;background:var(--acc);border-radius:8px}button:focus-visi
 .result-tab-title{font-weight:700}.result-recommend{display:inline-flex;align-items:center;gap:4px;margin-left:6px;color:#ffd69a;font-size:11px}.result-recommend[hidden]{display:none}.result-recommend::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
 .result-tabs [data-state=running] [data-tab-metric]::before{content:'';display:inline-block;width:8px;height:8px;margin-right:5px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:tab-spin 1s linear infinite}
 @keyframes tab-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.result-tabs [data-state=running] [data-tab-metric]::before{animation:none}}
-@media(max-width:600px){.result-tabs [role=tab]{font-size:12px;padding:12px 6px}.result-tab-title{display:block}.result-tab-sep{display:none}.result-recommend{margin-left:4px;font-size:10px}.growth-todo[data-growth-field=skills]{white-space:normal;overflow-wrap:anywhere}}
+@media(max-width:600px){.result-tabs [role=tab]{font-size:12px;padding:12px 6px}.result-tab-title{display:block}.result-tab-sep{display:none}.result-recommend{margin-left:4px;font-size:10px}.growth-todo{white-space:normal;overflow-wrap:anywhere}}
 
 .alternatives-more>summary{padding:8px 0;font-size:13px;color:var(--acc);cursor:pointer}.alternatives-more .less-label,.alternatives-more[open] .more-label{display:none}.alternatives-more[open] .less-label{display:inline}
 @media(max-width:600px){.growth-task-row{display:block;margin-top:12px}.growth-task-row>b{display:block;margin-bottom:4px}.growth-todo{font-size:11px;padding:3px 6px;gap:3px}}

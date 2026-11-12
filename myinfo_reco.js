@@ -61,7 +61,8 @@
         const level = Stats.effective_level(unit,targetInfo);
         unit.resonance = Math.max(0, ...Object.keys(unlock).map(Number).filter(n => unlock[n] <= level));
         if (owned) unit.resonance = Math.max(unit.resonance, owned.resonance);
-      } else if (field === 'skills') unit.skills = clone(spec.skills);
+      } else if (field === 'favor') unit.favor = 30;
+      else if (field === 'skills') unit.skills = clone(spec.skills);
       else if (field === 'equip') unit.equip = clone(spec.equip);
       else if (field === 'journey') unit.gauntlet.journey = clone(spec.journey);
       else if (field === 'potentials') {
@@ -103,21 +104,44 @@
     return (equip||[]).map(e=>[slots?.[e.item_id]??-1,e]).sort((a,b)=>a[0]-b[0]||a[1].item_id-b[1].item_id);
   }
   // Independent account snapshot. Equipment is selected as one complete bundle.
-  const OVERWRITE_VERSION='grown-account-v2';
-  function overwrite(info, roster, growth, content, {includeMissing=true, excluded=[], slots=itemSlots}={}) {
+  const OVERWRITE_VERSION='grown-account-v3';
+  // Recommendation policy, not a battle rule. Included verbatim in history/cache signatures.
+  const THRESHOLD_POLICY=Object.freeze({skillsAverage:7,skillTarget:10,passive:false,
+    equipMin:12,equipSum:84,archiveMain:500,favorMax:20,favorTarget:30,
+    resonanceMax:10,linkGap:10,potentialTarget:1,ownedOnly:true});
+  function growthFields(old,info,growth,spec,content,slots){
+    const fields=[],level=Stats.level_info(old,info);
+    const fixed=Stats.rule_for_content(content)==='fixed200';
+    if(!fixed&&level.source!=='legacy'&&!info.star_link?.source?.includes(old.id)
+      &&info.star_link.level-level.level>=THRESHOLD_POLICY.linkGap)fields.push('level');
+    const equip=old.equip||[],parts=new Set(equip.map(e=>slots?.[e.item_id]));
+    if([0,1,2,3,4,5].some(i=>!parts.has(i))||equip.some(e=>e.enhance<THRESHOLD_POLICY.equipMin)
+      ||equip.reduce((sum,e)=>sum+e.enhance,0)<THRESHOLD_POLICY.equipSum)fields.push('equip');
+    if(['basic','special','ultimate'].reduce((sum,k)=>sum+(old.skills?.[k]||0),0)/3<=THRESHOLD_POLICY.skillsAverage)fields.push('skills');
+    if(!fixed)fields.push('resonance');
+    const main=spec.journey.indexOf(Math.max(...spec.journey));
+    if(!old.gauntlet||(old.gauntlet.journey?.[main]||0)<THRESHOLD_POLICY.archiveMain)fields.push('journey');
+    if(!(old.gauntlet?.potentials||[]).some(p=>growth.assumed.special_ids.includes(p[0])&&p[1]>0))fields.push('potentials');
+    if(old.favor<=THRESHOLD_POLICY.favorMax)fields.push('favor');
+    return fields;
+  }
+  function overwrite(info, roster, growth, content, {excluded=[], slots=itemSlots}={}) {
     const target=clone(info), changes={}, errors=[], banned=new Set(excluded);
     let out=profile(info,roster,growth,content);
     for(const s of roster){
-      if(banned.has(s.key)||(!includeMissing&&!out.units[s.key]))continue;
+      if(banned.has(s.key)||!out.units[s.key])continue;
       try{
-        const a=assume(s.key,info,growth),old=out.units[s.key],u=a.unit;
-        if(old){
-          for(const [k,v] of Object.entries(old.skills||{}))u.skills[k]=Math.max(v,u.skills[k]||0);
-          u.gauntlet.journey=u.gauntlet.journey.map((v,i)=>Math.max(v,old.gauntlet?.journey?.[i]||0));
-          // A learned special potential at/above the target keeps its identity too.
-          const want=growth.assumed.units[s.key].potential;
-          const learned=(old.gauntlet?.potentials||[]).find(p=>growth.assumed.special_ids.includes(p[0])&&p[1]>=want[1]);
-          if(learned)u.gauntlet.potentials=clone(old.gauntlet.potentials);
+        const old=out.units[s.key],spec=growth.assumed.units[s.key];
+        if(!spec)throw Error('가정 세팅 없음: '+s.key);
+        const fields=growthFields(old,info,growth,spec,content,slots);
+        const a=assume(s.key,info,growth,{fields}),u=a.unit;
+        if(fields.includes('skills'))u.skills={...old.skills,
+          ...Object.fromEntries(['basic','special','ultimate'].map(k=>[k,Math.max(old.skills[k]||0,THRESHOLD_POLICY.skillTarget)]))};
+        if(fields.includes('resonance'))u.resonance=Math.max(old.resonance,Math.min(THRESHOLD_POLICY.resonanceMax,u.resonance));
+        if(fields.includes('favor'))u.favor=THRESHOLD_POLICY.favorTarget;
+        if(fields.includes('journey'))u.gauntlet.journey=u.gauntlet.journey.map((v,i)=>Math.max(v,old.gauntlet?.journey?.[i]||0));
+        if(fields.includes('potentials'))u.gauntlet.potentials.at(-1)[1]=THRESHOLD_POLICY.potentialTarget;
+        if(fields.includes('equip')){
           // Both candidates use the same grown level/skills/journey and content rule.
           // Keep imported equipment on ties; never merge its stats into the preset.
           const rule=Stats.rule_for_content(content),presetPower=Stats.final_stats(u,a.targetInfo,growth,rule).power;
@@ -139,6 +163,6 @@
     }
     return {info:target,profile:out,changes,errors,version:OVERWRITE_VERSION,preset:growth.assumed.version};
   }
-  const api = {hash, profile, team, judgment, assume, assumedProfile, overwrite, OVERWRITE_VERSION};
+  const api = {hash, profile, team, judgment, assume, assumedProfile, overwrite, OVERWRITE_VERSION, THRESHOLD_POLICY};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.MyInfoReco = api;
 })(typeof window !== "undefined" ? window : globalThis);

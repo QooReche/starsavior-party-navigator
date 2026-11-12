@@ -8,7 +8,7 @@ const roster=[{key:'luna',uid:growth.assumed.units.luna.uid}],preset=growth.assu
 function account(){const info=structuredClone(raw);info.units=[];
   info.star_link={level:120,source:[],slots:[]};
   for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
-  const a=M.assume('luna',info,growth);return {...a.targetInfo,units:[a.unit]};
+  const a=M.assume('luna',info,growth);a.unit.favor=30;return {...a.targetInfo,units:[a.unit]};
 }
 function load(code){const ctx={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,ctx);
   return (...args)=>JSON.parse(JSON.stringify(ctx.module.exports.overwrite(...args)));
@@ -36,7 +36,7 @@ function equipment(overwrite=M.overwrite){
   const high=overwrite(info,roster,growth,'op',{includeMissing:false,slots});
   assert.deepEqual(high.info,info);assert.deepEqual(high.changes,{},'no equipment/skill chip for reordered fields');
   // Ties retain the imported objects and order, including harmless item metadata.
-  u.equip=structuredClone(preset).reverse();u.equip.forEach(e=>{e.importTag='kept';});
+  u.equip=structuredClone(preset).reverse();u.equip.forEach(e=>{e.importTag='kept';e.enhance=12;});
   const tie=overwrite(info,roster,growth,'op',{includeMissing:false,slots});
   assert.deepEqual(tie.info,info);assert.deepEqual(tie.changes,{});
   // Weak four-substat equipment must not donate extra options to the preset.

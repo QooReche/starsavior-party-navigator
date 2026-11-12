@@ -23,7 +23,7 @@ function checkPower(u=U){const info=structuredClone(require('./fixtures/myinfo_s
       else if(['journey','potentials'].includes(f.field))unit.gauntlet[f.field]=structuredClone(a.unit.gauntlet[f.field]);
       else unit[f.field]=structuredClone(a.unit[f.field]);
       const expected=S.final_stats(unit,account,growth,'normal').power-S.final_stats(old,info,growth,'normal').power;
-      assert.equal(f.delta,expected,f.field);assert(f.field==='skills'?f.short==='4종':f.short.includes('→'),f.field);assert(f.detail.length>0);
+      assert.equal(f.delta,expected,f.field);assert(f.field==='skills'?f.short==='3종':f.short.includes('→'),f.field);assert(f.detail.length>0);
       assert.equal(u.memberHtml(display).includes(`data-growth-field="${f.field}"`),f.delta!==0);
     }
   }
@@ -32,20 +32,21 @@ function checkPower(u=U){const info=structuredClone(require('./fixtures/myinfo_s
   // Fixed-level content must not report a fictitious benefit for registration.
   const a=Object.values(snapshot.changes).find(a=>a.changedFields.includes('level'));
   const fixed=u.member(a,info,growth,'cosmo',grades,view);
-  assert.equal(fixed.fields.find(f=>f.field==='level').delta,0);
+  assert(!fixed.fields.some(f=>['level','resonance'].includes(f.field)));
   assert(!u.memberHtml(fixed).includes('data-growth-field="level"'));
   const missing=M.overwrite(info,roster,growth,'op',{includeMissing:true});
-  const ma=Object.values(missing.changes).find(a=>a.source==='assumed'),md=u.member(ma,info,growth,'op',grades,view);
-  assert(md.missing&&md.after>0);assert(md.fields.every(f=>f.delta===null));assert.match(u.memberHtml(md),/미보유/);
+  assert(!Object.values(missing.changes).some(a=>a.source==='assumed'));
+  const ma=M.assume('hilde',{...info,units:[]},growth),md=u.member(ma,{...info,units:[]},growth,'op',grades,view);
+  assert.equal(md,null);assert.equal(u.memberHtml(md),'');assert.equal(u.todosHtml(md),'');
 }
 function checkChips(u=U){
   const fields=Object.entries(u.labels).map(([field,label],i)=>({field,label,short:'길고 복잡한 상세 → 목표',detail:'상세 정보',delta:i===3?0:100+i}));
   const m={before:100,after:200,fields,missing:false},html=u.todosHtml(m);
-  assert.equal((html.match(/<button /g)||[]).length,5);
+  assert.equal((html.match(/<button /g)||[]).length,6);
   assert(!html.includes('data-growth-field="resonance"'));
-  assert.equal((html.match(/길고 복잡한/g)||[]).length,1,'only skill targets belong in compact chips');
-  assert(html.includes('스타링크 <small>+100</small>'));
-  assert(html.includes('장비 +15 <small>+101</small>'));
+  assert.equal((html.match(/길고 복잡한/g)||[]).length,6,'every changed target belongs in compact chips');
+  assert(html.includes('스타링크 길고 복잡한 상세 → 목표 <small>(+100)</small>'));
+  assert(html.includes('장비 길고 복잡한 상세 → 목표 <small>(+101)</small>'));
   assert(!u.memberHtml(m,false).includes('<button'));
   assert.equal(u.todosHtml({...m,fields:[{...fields[0],delta:0}]}),'');
   assert.match(u.todosHtml({...m,fields:[{...fields[0],delta:null}],missing:true}),/자료 없음/);
@@ -59,14 +60,15 @@ function checkSkills(u=U){
     const a={unit:target,changedFields:['skills'],changes:{skills:{before:old.skills,after:target.skills}}};
     const m=u.member(a,info,growth,'op',grades,view),f=m.fields[0];
     assert.equal(f.short,expected);assert(f.delta>0);
-    assert.equal(f.detail.split('\n').length,4);
-    for(const [key,label] of Object.entries({basic:'기본',special:'특수',ultimate:'궁',passive:'패시브'}))assert(f.detail.includes(`${label} ${old.skills[key]}→10`));
+    assert.equal(f.detail.split('\n').length,3);
+    for(const [key,label] of Object.entries({basic:'기본',special:'특수',ultimate:'궁'}))assert(f.detail.includes(`${label} ${old.skills[key]}→10`));
+    assert(!f.detail.includes('패시브'));
     assert(u.todosHtml(m).includes(`>스킬 ${expected} <small>(+${u.num(f.delta)})</small>`));
   }
   inspect('기본 6→10 · 궁 1→10');
   old.skills.ultimate=10;inspect('기본 6→10');
   old.skills.special=1;old.skills.ultimate=1;inspect('3종');
-  old.skills.passive=1;inspect('4종');
+  old.skills.passive=1;target.skills.passive=1;inspect('3종');
 }
 function checkTabState(u=U){
   const base={enabled:true,phase:'done',better:true,baseline:{clear:.4},best:{clear:.8}};
@@ -88,9 +90,9 @@ checkVerdict();checkGrades();checkPower();checkChips();checkSkills();checkTabSta
 mutation('p>=.9','p>.9',checkVerdict);
 mutation('value>=r[0]','value>r[0]+50',checkGrades);
 mutation('delta=S.final_stats(unit,account,growth,rule).power-before;','delta=after-before;',checkPower);
-mutation('a.changedFields.map(f=>','a.changedFields.filter(f=>f!=="equip").map(f=>',checkPower);
+mutation('a.changedFields.filter(f=>','a.changedFields.filter(f=>f!=="equip").filter(f=>',checkPower);
 mutation('f.delta!==0','true',checkChips);
-mutation("f.field==='skills'?' '+esc(f.short):''","' '+esc(f.short)",checkChips);
+mutation("${esc(f.short)}", "", checkChips);
 mutation("changed.length<=2","changed.length<2",checkSkills);
 mutation("changed.map(line).join(' · ')","changed.slice(-1).map(line).join(' · ')",checkSkills);
 mutation("Object.keys(skillNames).map(line)","changed.map(line)",checkSkills);
@@ -98,4 +100,4 @@ mutation("baseline.clear<.5","baseline.clear<=.5",checkTabState);
 mutation("&&!!better","",checkTabState);
 mutation("!!enabled&&","",checkTabState);
 mutation("phase==='running'||phase==='error'||","",checkTabState);
-console.log('PASS probability, grades, power, skill 1/2/3/4 targets, four details, tab states; 13 mutations caught');
+console.log('PASS probability, grades, power, skill 1/2/3 targets, passive preserved, three details, tab states; 13 mutations caught');

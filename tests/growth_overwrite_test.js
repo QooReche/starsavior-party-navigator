@@ -21,22 +21,25 @@ function overwrite(m=M){const info=synthetic(),before=JSON.stringify(info);
   }
   const missing=roster.find(s=>!info.units.some(u=>u.id===s.uid));
   const all=m.overwrite(info,roster,growth,'op',{includeMissing:true});
-  assert(all.info.units.length>info.units.length);assert.equal(all.changes[missing.key].source,'assumed');
+  assert.equal(all.info.units.length,info.units.length);assert(!all.changes[missing.key]);assert(!all.profile.units[missing.key]);
   const excluded=m.overwrite(info,roster,growth,'op',{includeMissing:true,excluded:[missing.key]});
   assert(!excluded.profile.results[missing.key]);
   // An account already above every target stays byte-for-byte intact.
   const key='luna',target=M.assume(key,{...info,units:[]},growth),u=structuredClone(target.unit);
-  u.level=300;u.resonance=Math.max(...Object.keys(growth.units[u.id].resonance).map(Number));u.gauntlet.journey=[1500,1500,1500,1500,1500];
+  u.level=300;u.favor=30;u.resonance=Math.max(...Object.keys(growth.units[u.id].resonance).map(Number));u.gauntlet.journey=[1500,1500,1500,1500,1500];
   u.gauntlet.potentials[0][1]=Math.max(...growth.assumed.combat_support.potentials[u.gauntlet.potentials[0][0]].map(Number));
   u.equip.forEach(e=>{e.enhance=16;e.main.value*=2;});
   const high={...info,units:[u],star_link:{level:120,source:[],slots:[]}};
   const h=m.overwrite(high,roster,growth,'op',{includeMissing:false});
   assert.equal(h.errors.length,0);assert.deepEqual(h.info,high);assert.deepEqual(h.changes,{});
   // Mixed fields: preserve the stronger equipment bundle while raising skills.
-  const mixed=structuredClone(high);mixed.units[0].skills.basic=1;
+  const mixed=structuredClone(high);mixed.units[0].skills.basic=1;mixed.units[0].equip.forEach(e=>e.enhance=12);
   const raised=m.overwrite(mixed,roster,growth,'op',{includeMissing:false});
   assert.equal(raised.errors.length,0);assert.deepEqual(raised.changes[key].changedFields,['skills']);
-  assert.deepEqual(raised.info.units[0].equip,u.equip);
+  assert.deepEqual(raised.info.units[0].equip,mixed.units[0].equip);
+  const main=growth.assumed.units[key].journey.indexOf(1250);mixed.units[0].gauntlet.journey[main]=499;
+  const archive=m.overwrite(mixed,roster,growth,'op');
+  assert.deepEqual(archive.info.units[0].gauntlet.journey,mixed.units[0].gauntlet.journey.map((v,i)=>i===main?1250:v));
 }
 function display(code=ui){const ctx={GrowthGuide:require('../growth_guide'),esc:s=>s,Ux:require('../ux_ui'),MI:{info:synthetic(),growth},contents:[{key:'op'}],$:()=>({value:0}),D:{archiveGrades:require('../data/archive_grades.json'),growthView:{...require('../data/myinfo_view.json'),itemSlots:require('../data/myinfo_slots.json')}}};vm.createContext(ctx);vm.runInContext(code,ctx);
   for(const [kind,field] of [['op','clear'],['clo','clear'],['guild','score'],['cosmo','sum']]){
@@ -60,7 +63,7 @@ function mutate(name,code,from,to,test){assert(code.includes(from));let caught=f
 }
 overwrite();overwrite(load(source));display();
 mutate('original account mutation',source,'const target=clone(info),','const target=info,',s=>overwrite(load(s)));
-mutate('missing selection',source,'(!includeMissing&&!out.units[s.key])','false',s=>overwrite(load(s)));
+mutate('missing selection',source,'||!out.units[s.key]','',s=>overwrite(load(s)));
 mutate('higher journey preserved',source,'Math.max(v,old.gauntlet?.journey?.[i]||0)','v',s=>overwrite(load(s)));
 mutate('higher equipment preserved',source,'if(!(presetPower>originalPower))','if(false)',s=>overwrite(load(s)));
 mutate('strict improvement only',ui,'metric(result)>(metric(baseline)??0)','metric(result)>=(metric(baseline)??0)',display);

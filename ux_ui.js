@@ -4,9 +4,9 @@
   const U=typeof module!=='undefined'&&module.exports?require('./ui_shared'):root.UiShared;
   const S=typeof module!=='undefined'&&module.exports?require('./myinfo_stats'):root.MyInfoStats;
   const esc=U.esc, num=v=>Number.isFinite(v)?Math.round(v).toLocaleString('ko-KR'):'—';
-  const labels={level:'스타링크',equip:'장비 +15',skills:'스킬',resonance:'공명',journey:'스텔라 아카이브',potentials:'잠재력'};
+  const labels={level:'스타링크',equip:'장비',skills:'스킬',resonance:'공명',journey:'스텔라 아카이브',potentials:'잠재력',favor:'호감도'};
   const names=['힘','체력','인내','집중','보호'];
-  const skillNames={basic:'기본',special:'특수',ultimate:'궁',passive:'패시브'};
+  const skillNames={basic:'기본',special:'특수',ultimate:'궁'};
   const clone=x=>JSON.parse(JSON.stringify(x));
   function verdict(p){return p>=.9?['safe','안정적']:p>=.7?['ok','깰 수 있어요']:p>=.5?['shaky','아슬아슬']:['risk','어려워요'];}
   function help(title,text){return `<button type="button" class="ux-help" data-help="${esc(text)}" aria-label="${esc(title)} 설명" aria-expanded="false">ⓘ</button>`;}
@@ -18,8 +18,9 @@
   const signed=v=>v==null?'자료 없음':(v>=0?'+':'−')+num(Math.abs(v));
   function member(a,info,growth,content,table,view={}){
     const old=info.units.find(u=>u.id===a.unit.id),rule=S.rule_for_content(content),before=old?S.final_stats(old,info,growth,rule).power:0;
+    if(!old)return null;
     const after=S.final_stats(a.unit,a.targetInfo||info,growth,rule).power;
-    const fields=a.changedFields.map(f=>{
+    const fields=a.changedFields.filter(f=>rule!=='fixed200'||!['level','resonance'].includes(f)).map(f=>{
       // A missing unit has no account baseline. Do not invent its starting power.
       let delta=null;
       if(old){const unit=clone(old);let account=info;
@@ -30,9 +31,9 @@
       }
       const c=a.changes[f]||{},b=c.before,t=c.after;let short='',detail='';
       if(f==='level')short=`Lv ${num(b)}→${num(t)}`;
-      if(f==='resonance')short=`${num(b??0)}→${num(t)}`;
+      if(f==='resonance'||f==='favor')short=`${num(b??0)}→${num(t)}`;
       if(f==='skills'){
-        const changed=Object.keys(t||{}).filter(k=>t[k]>(b?.[k]||0));
+        const changed=Object.keys(skillNames).filter(k=>t?.[k]>(b?.[k]||0));
         const line=k=>`${skillNames[k]||k} ${b?.[k]||0}→${t?.[k]??b?.[k]??0}`;
         detail=Object.keys(skillNames).map(line).join('\n');
         short=changed.length<=2?changed.map(line).join(' · '):`${changed.length}종`;
@@ -58,8 +59,8 @@
     });
     return {before,after,fields,missing:!old};
   }
-  function todosHtml(m){return m.fields.filter(f=>f.delta!==0).map(f=>`<button type="button" class="growth-todo" data-growth-field="${f.field}" data-power-delta="${f.delta??''}" data-help="${esc(f.detail+'\n전투력 '+signed(f.delta)+(m.missing?' · 미보유 구원자는 현재 수치가 없어 항목별 증가를 계산하지 않아요.':' · 이 항목만 목표로 올렸을 때의 증가예요.'))}" aria-expanded="false">${esc(f.label)}${f.field==='skills'?' '+esc(f.short):''} <small>${f.field==='skills'?'('+signed(f.delta)+')':signed(f.delta)}</small></button>`).join('');}
-  function memberHtml(m,withTodos=true){return `<div class="growth-power" data-k="member-power">전투력 ${m.missing?'미보유':num(m.before)} → ${num(m.after)}</div>`+(withTodos?`<div class="growth-todos">${todosHtml(m)}</div>`:'');}
+  function todosHtml(m){return (m?.fields||[]).filter(f=>f.delta!==0).map(f=>`<button type="button" class="growth-todo" data-growth-field="${f.field}" data-power-delta="${f.delta??''}" data-help="${esc(f.detail+'\n전투력 '+signed(f.delta)+' · 이 항목만 목표로 올렸을 때의 증가예요.')}" aria-expanded="false">${esc(f.label)} ${esc(f.short)} <small>(${signed(f.delta)})</small></button>`).join('');}
+  function memberHtml(m,withTodos=true){if(!m)return '';return `<div class="growth-power" data-k="member-power">전투력 ${num(m.before)} → ${num(m.after)}</div>`+(withTodos?`<div class="growth-todos">${todosHtml(m)}</div>`:'');}
   function resultTabState({enabled,phase,better,baseline,best,kind='op',message='',errors=[]}){
     const probability=kind==='op'||kind==='clo',field=kind==='guild'?'score':'sum';
     const metric=r=>probability?(Number.isFinite(r?.clear)?Math.round(r.clear*100)+'%':'계산 전'):

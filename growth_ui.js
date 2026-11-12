@@ -2,8 +2,8 @@
 const GROW={id:0,phase:'idle',result:null,sig:null,msg:'',stop:null,versions:null,history:{},errors:[]};
 let growthTabs=null;
 function growthOptions(){return {growth:!!document.getElementById('assume-growth')?.checked,
-  owned:document.getElementById('assume-owned')?.value!=='owned'};}
-function growthCacheTag(){return JSON.stringify(['current-account',MyInfoReco.OVERWRITE_VERSION,growthOptions(),MI.growth?.assumed?.version]);}
+  owned:false};}
+function growthCacheTag(){return JSON.stringify(['current-account',MyInfoReco.OVERWRITE_VERSION,MyInfoReco.THRESHOLD_POLICY,growthOptions(),MI.growth?.assumed?.version]);}
 function growthEnabled(){const o=growthOptions();return o.growth;}
 // Keep one live checkbox while the recommendation body is replaced.
 function growthControlPlace(home=false){const seasonal=['guild','cosmo'].includes(contents[$('content').value]?.key);
@@ -13,28 +13,28 @@ function growthControls(){const enabled=!!MI.info&&growthEnabled(),details=$('gr
   $('assume-growth').disabled=!MI.info;$('growth-requires-info').hidden=!!MI.info;
   if(!enabled)details.open=false;
   details.dataset.enabled=String(enabled);
-  $('growth-settings-summary').textContent='육성 설정 · '+(!MI.info?'내 정보 필요':!enabled?'꺼짐':growthOptions().owned?'보유 + 미보유':'보유만');
+  $('growth-settings-summary').textContent='육성 설정 · '+(!MI.info?'내 정보 필요':!enabled?'꺼짐':'보유만');
   growthRankPaint();}
 function growthCancel(){growthTabs?.reset();if(typeof slotCancel==='function')slotCancel();GROW.id++;if(GROW.stop)GROW.stop();GROW.stop=null;
   document.getElementById('growth-result')?.remove();
   if(typeof SIMQ!=='undefined'&&SIMQ.busy==='growth')SIMQ.busy=null;
   GROW.phase='idle';GROW.result=null;GROW.sig=null;GROW.msg='';GROW.errors=[];GROW.recordTag=null;}
 function growthInit(){const o=GrowthGuide.options(LS.get('growth.options')||{},SHARE);
-  $('assume-growth').checked=o.growth;$('assume-owned').value=o.owned?'all':'owned';
+  $('assume-growth').checked=o.growth;
   $('assume-growth').setAttribute('aria-describedby','growth-hint');
   growthControls();
-  for(const id of ['assume-growth','assume-owned'])$(id).onchange=()=>{
+  $('assume-growth').onchange=()=>{
     if(!MI.shared)LS.set('growth.options',growthOptions());condChanged();};}
 function growthTargets(c,st){const opts=growthOptions(),restrict=(CFG.restrict[c.name]||{})[st.tab],owned=(c.key==='guild'?MyInfoReco.profile(MI.info,R,MI.growth,'op'):miProfile()).units;
   const targets=[];for(const s of R){if(EXCL.has(s.key)||(restrict&&s.el!==restrict))continue;
-    if(opts.growth&&(owned[s.key]||opts.owned)){
-      const t={key:s.key,kind:'growth',source:owned[s.key]?'owned':'assumed',id:s.key+'|growth'};targets.push(t);
+    if(opts.growth&&owned[s.key]){
+      const t={key:s.key,kind:'growth',source:'owned',id:s.key+'|growth'};targets.push(t);
     }}return targets;}
 function growthSig(c,st,versions=GROW.versions){return GrowthGuide.signature({account:MI.hash,options:growthOptions(),targets:growthTargets(c,st),
   preset:MI.growth?.assumed?.version,content:[c.key,...(c.key==='cosmo'?[]:[st.tab,st.name]),growthConditions(c)],excluded:[...EXCL],breaks:[breakOwned(),MI.info?.break_skills],
   modifiers:[MM,SCROWN],rules:SIMOPT,engine:versions?.engine,data:versions?.data,
   equipment:[MI.hash,[...EXCL].sort()],
-  policy:[GrowthGuide.VERSION,GrowthGuide.LIMITS,GrowthGuide.COSMO_LIMITS,17011,900001,27011]});}
+  policy:[MyInfoReco.OVERWRITE_VERSION,MyInfoReco.THRESHOLD_POLICY,GrowthGuide.VERSION,GrowthGuide.LIMITS,GrowthGuide.COSMO_LIMITS,17011,900001,27011]});}
 function growthMetric(r,mode=MODE){if(mode!=='manual'||!r.man)return r;
   return {...r,clear:r.man.c,ttk:r.man.t,n:r.man.n??r.n,ci:r.man.ci,prog:r.man.prog,progs:r.man.progs};}
 function growthJob(t,id,c=contents[$('content').value]){const bn=breakChoice(t.combo,c).name||null;
@@ -116,19 +116,19 @@ function growthMaybe(c,st){if(growthEnabled()&&growthSeasonContent()){growthPain
   if(GROW.sig&&GROW.sig!==growthSig(c,st))growthCancel();
   if(GROW.phase==='idle'&&SIMQ.busy==null&&!SIMQ.err&&simAutoOn())setTimeout(()=>{if(REQ&&GROW.phase==='idle')growthStart(c,st);},0);
   growthPaint();}
-const growthLabel=r=>r.source==='assumed'?'미보유':'키워야 함';
-const growthFields={level:'레벨→스타링크',resonance:'공명 최대',skills:'스킬 최대',journey:'목표 스텔라 아카이브',potentials:'목표 잠재력',equip:'장비 +15'};
-const growthShortFields={level:'스타링크',equip:'장비 +15',skills:'스킬',resonance:'공명',journey:'스텔라 아카이브',potentials:'잠재력'};
+const growthLabel=r=>'키워야 함';
+const growthFields={level:'레벨→스타링크',resonance:'공명 최대',skills:'스킬 최대',journey:'목표 스텔라 아카이브',potentials:'목표 잠재력',equip:'장비 +15',favor:'호감도'};
+const growthShortFields={level:'스타링크',equip:'장비',skills:'스킬',resonance:'공명',journey:'스텔라 아카이브',potentials:'잠재력',favor:'호감도'};
 function growthDescription(r){if(r.source==='assumed')return '';return (r.changedFields||[]).map(f=>{
   const c=r.changes?.[f];if(f==='level'&&c)return `${c.before==null?'Lv ':('Lv '+c.before+'→')}스타링크`;
   if(f==='resonance'&&c)return `공명 ${c.before??0}→${c.after}`;
   return growthFields[f];}).join(' · ');}
-function growthBadge(r,short=false){const missing=r.source==='assumed';return `<span class="assumed-label ${missing?'assumed-missing':'assumed-owned'}" data-k="assumed-badge"><span aria-hidden="true">${missing?'＋':'↑'}</span><span class="al-long">${esc(growthLabel(r))}</span><span class="al-short">${missing?'미보유':'키워야 함'}</span>${!short&&growthDescription(r)?' · '+esc(growthDescription(r)):''}</span>`;}
-function growthCardMeta(r){if(r.overwrite)return Ux.memberHtml(growthDisplay(r),false);if(r.source==='assumed')return '';const before=miProfile().results[r.key],after=r.team?.t.b.finals[r.key];
+function growthBadge(r,short=false){if(r.source!=='owned')return '';return `<span class="assumed-label assumed-owned" data-k="assumed-badge"><span aria-hidden="true">↑</span><span class="al-long">${esc(growthLabel(r))}</span><span class="al-short">키워야 함</span>${!short&&growthDescription(r)?' · '+esc(growthDescription(r)):''}</span>`;}
+function growthCardMeta(r){if(r.source!=='owned')return '';if(r.overwrite)return Ux.memberHtml(growthDisplay(r),false);const before=miProfile().results[r.key],after=r.team?.t.b.finals[r.key];
   if(!after)return '';
   return `<div class="mi-chips"><span class="assumed-mark" title="전투력 ${miNum(before?.power)} → ${miNum(after.power)}">전투력 ${before?`${miNum(before.power)} → `:''}${miNum(after.power)}${before?'':' (가정)'}</span></div><details class="growth-stats"><summary>능력치 변화</summary>${['atk','hp','def','spd'].map((k,i)=>`<div>${['공','생','방','속'][i]} ${before?`${miNum(before.stats[k])} → `:''}${miNum(after.stats[k])}</div>`).join('')}</details>`;}
 const growthDisplays=new WeakMap();
-function growthTodoRow(r,name){const chips=Ux.todosHtml(growthDisplay(r));return chips?`<div class="growth-task-row" data-key="${esc(r.key)}"><b>${esc(name)}</b><div class="growth-todos">${chips}</div></div>`:'';}
+function growthTodoRow(r,name){if(r.source!=='owned')return '';const chips=Ux.todosHtml(growthDisplay(r));return chips?`<div class="growth-task-row" data-key="${esc(r.key)}"><b>${esc(name)}</b><div class="growth-todos">${chips}</div></div>`:'';}
 function growthDisplay(a){const c=contents[$('content').value].key,content=c==='guild'?'op':c;
   let cached=growthDisplays.get(a);if(!cached||cached.content!==content||cached.info!==MI.info){cached={content,info:MI.info,value:Ux.member(a,MI.info,MI.growth,content,D.archiveGrades,D.growthView)};growthDisplays.set(a,cached);}return cached.value;}
 // Seasonal passes share the lock and each content's existing worker budget.
@@ -176,10 +176,9 @@ function growthRankPaint(){const el=$('growth-priority');if(!el)return;
     Object.fromEntries(contents.map(c=>[c.key,growthConditions(c,false)])));
   if(!rows.length)return;
   const row=r=>`<div class="growth-rank-row" data-k="growth-rank-row"><b>${esc(BYKEY[r.key]?.name||r.key)}</b> `+
-    `<span class="tag">${r.count}개 콘텐츠</span>${r.source==='assumed'?'<span class="tag assumed-missing">미보유</span>':''}`+
+    `<span class="tag">${r.count}개 콘텐츠</span>`+
     `<div class="mi-chips">${r.changedFields.map(f=>`<span class="tag">${esc(growthShortFields[f]||f)}</span>`).join('')}</div></div>`;
-  // Missing saviors have a separate group, while the combined visible list stays at five.
-  const ordered=[...rows.filter(r=>r.source!=='assumed'),...rows.filter(r=>r.source==='assumed')];
+  const ordered=rows.filter(r=>r.source==='owned');
   el.hidden=false;el.innerHTML='<b>키울 만한 구원자</b>'+ordered.slice(0,5).map(row).join('')+
     `<details><summary>${ordered.length>5?'나머지 '+(ordered.length-5)+'명 · ':''}상세</summary>`+
     ordered.slice(5).map(row).join('')+'<p class="mut">보조 추천에 나온 콘텐츠 종류 수 · 함께 키운 팀 기준</p></details>';
@@ -246,7 +245,7 @@ async function growthStart(c,st){
   if(!growthEnabled()||GROW.phase==='running'||SIMQ.busy!=null||GSR.phase==='run'||CSR.phase==='run'||!MI.growth||!QK.d)return;
   const seasonal=['guild','cosmo'].includes(c.key);
   if(seasonal&&!growthSeasonReady(c))return;
-  const id=++GROW.id;GROW.phase='running';GROW.msg='다 키운 계정 탐색';GROW.errors=[];SIMQ.busy='growth';growthPaint();
+  const id=++GROW.id;GROW.phase='running';GROW.msg='육성 계획 탐색';GROW.errors=[];SIMQ.busy='growth';growthPaint();
   try{
     const manifest=await fetch('sim/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('엔진 확인 실패');return r.json();});
     if(GROW.id!==id)return;
@@ -254,7 +253,7 @@ async function growthStart(c,st){
     const slots=await fetch('data/myinfo_slots.json').then(r=>{if(!r.ok)throw Error('장비 부위 확인 실패');return r.json();});
     if(GROW.id!==id)return;
     const snapshot=MyInfoReco.overwrite(MI.info,R,MI.growth,c.key==='guild'?'op':c.key,
-      {includeMissing:growthOptions().owned,excluded:[...EXCL],slots});
+      {excluded:[...EXCL],slots});
     const started=Date.now();let result,baseline;
     if(seasonal){
       const owned=c.key==='guild'?GSR:CSR;
@@ -334,8 +333,8 @@ function growthPaint(){
   const st=cur[$('stage').value],prob=['op','clo'].includes(c.key);
   const summary=prob?`<div class="mi-verdict"><div class="verdict-main"><b class="verdict-number"><small>지금</small>${r.baseline?Math.round(r.baseline.clear*100)+'%':'자료 없음'} → <small>맞추면</small>${Math.round(r.best.clear*100)}%</b>${Ux.chip(r.best.clear)}</div><div class="verdict-stats"><div><b>${miNum(MODE==='manual'?r.best.ttk:(r.best.ta??r.best.ttk))}턴</b><small>예상 턴</small></div><div><b>${miNum(grown)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div></div>`:`<div class="season-score" data-k="growth-season-score"><span>지금 ${r.baseline?miNum(c.key==='guild'?r.baseline.score:r.baseline.sum)+'점':'자료 없음'} → 맞추면</span><b>${miNum(c.key==='guild'?r.best.score:r.best.sum)}</b><small>${c.key==='guild'?'상위 20% 점수':'3팀 합산 점수'}</small></div>`;
   el.innerHTML=head+summary+`<p class="growth-total" data-k="growth-power-total">기존 대비 전투력 ${Ux.signed(delta)}(${now?Ux.signed(delta/now*100)+'%':'비교 자료 없음'})으로 계산했어요 ${Ux.help('전투력 변화','위의 현재 편성과 육성 후 편성의 팀 전투력을 비교해요. 구성원이 바뀌면 편성 교체에 따른 차이도 포함해요. 항목별 값은 같은 구원자에서 그 항목만 목표로 올렸을 때의 전투력 증가예요. 곱셈·반올림·편성 변경 때문에 항목별 합계와 전체 증가가 다를 수 있어요. 추가 모의 전투는 하지 않아요.')}</p>`+
-    `<p class="growth-components" data-k="growth-components">${['팀 항목별 전투력',...Object.entries(totals).filter(([,v])=>v!==0).map(([f,v])=>`${growthShortFields[f]} ${Ux.signed(v)}`),...(missing?['미보유 항목은 비교 자료 없음']:[])].join(' · ')}</p><div data-k="growth-${c.key}-card">${body}</div>`+
-    Ux.help('육성 기준',`스타링크 · 장비 +15 · 스킬·공명 최대 · 목표 스텔라 아카이브·잠재력. 기존보다 높은 항목만 적용하는 프리셋이에요. 최소 육성치는 아니에요. ${D.archiveGrades?.unverified||''}`)+
+    `<p class="growth-components" data-k="growth-components">${['팀 항목별 전투력',...Object.entries(totals).filter(([,v])=>v!==0).map(([f,v])=>`${growthShortFields[f]} ${Ux.signed(v)}`),...(missing?['일부 항목 비교 자료 없음']:[])].join(' · ')}</p><div data-k="growth-${c.key}-card">${body}</div>`+
+    Ux.help('육성 기준',`이 육성 계획을 따랐을 때 예상. 보유 구원자의 기준선 미달 항목만 프리셋 목표로 계산해요. 패시브는 현재 값을 유지해요. 최소 육성치는 아니에요. ${D.archiveGrades?.unverified||''}`)+
     (r.snapshot.errors.length?`<details><summary>계산에서 제외된 구원자 ${r.snapshot.errors.length}명</summary>${r.snapshot.errors.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');
   growthTabsPaint(c,el,show);
 }

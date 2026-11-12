@@ -16,8 +16,9 @@ function history(g=G){
   save('guild/one',['b'],1000000);save('cosmo/one',['missing'],200,'auto','assumed');
   const current={op:cond('auto'),clo:cond('auto'),guild:cond('auto'),cosmo:cond('auto')};
   const rank=()=>plain(g.grownPriority(store.get('growth.history'),sig('op'),current));
+  assert(rank().length>0,'owned history must remain available');
   assert.equal(rank()[0].key,'z');assert.equal(rank().find(x=>x.key==='a').count,1,'stages are one content kind');
-  assert(rank().find(x=>x.key==='missing').source==='assumed');
+  assert(!rank().some(x=>x.key==='missing'));
   assert(rank().findIndex(x=>x.key==='a')<rank().findIndex(x=>x.key==='b'),'never compare guild points against probability');
   // Tie within op: z has the larger op improvement, despite its name sorting last.
   save('clo/one',[],0);assert(rank().findIndex(x=>x.key==='z')<rank().findIndex(x=>x.key==='a'));
@@ -49,21 +50,21 @@ function rankMarkup(){
   vm.runInContext("GROW.historyEngine='test';growthRankPaint()",ctx);
   const html=elements['growth-priority'].innerHTML;
   assert.equal((html.split('<details>')[0].match(/data-k="growth-rank-row"/g)||[]).length,5);
-  assert(html.includes('나머지 2명'));assert(html.includes('미보유'));assert(html.includes('2개 콘텐츠'));
+  assert(html.includes('나머지 1명'));assert(!html.includes('미보유'));assert(html.includes('2개 콘텐츠'));
 }
 function cardMarks(code=ui){
   const growth=require('../data/growth.json'),info=structuredClone(require('./fixtures/myinfo_synthetic.json'));
   const M=require('../myinfo_reco'),Ux=require('../ux_ui');
   const ctx={GrowthGuide:G,esc:String,Ux,MI:{info,growth},contents:[{key:'op'}],$:()=>({value:0}),D:{archiveGrades:require('../data/archive_grades.json')}};vm.createContext(ctx);vm.runInContext(code,ctx);
   const missing={...M.assume('hilde',{...info,units:[]},growth),overwrite:true};
-  assert(ctx.growthBadge(missing).includes('미보유'));
+  assert.equal(ctx.growthBadge(missing),'');
   assert(!ctx.growthBadge(missing).includes('스타링크'));assert(!ctx.growthBadge(missing).includes('장비'));
-  assert(ctx.growthCardMeta(missing).includes('미보유'));
-  assert(ctx.growthTodoRow(missing,'힐데').includes('data-growth-field="equip"'));
+  assert.equal(ctx.growthCardMeta(missing),'');
+  assert.equal(ctx.growthTodoRow(missing,'힐데'),'');
   const owned={...M.assume('luna',info,growth),overwrite:true};
   assert(ctx.growthBadge(owned).includes('키워야 함'));
   assert(ctx.growthTodoRow(owned,'루나').includes('data-growth-field="skills"'));
-  assert(ctx.growthTodoRow(owned,'루나').includes('장비 +15'));
+  assert(ctx.growthTodoRow(owned,'루나').includes('→+15'));
 }
 function recording(code=ui){
   let data={},writes=0;const ctx={GrowthGuide:G,MyInfoReco:{OVERWRITE_VERSION:'test'},MI:{hash:'synthetic',shared:false},
@@ -75,7 +76,7 @@ function recording(code=ui){
     b:{key:'b',source:'assumed',changedFields:['level','equip']},unused:{key:'unused',source:'owned',changedFields:['skills']}}}};
   const c={key:'op'},st={tab:'tab',name:'stage'};
   ctx.growthRecord(c,st,result,true);assert.equal(writes,1);
-  const saved=Object.values(data['growth.history'])[0];assert.deepEqual(saved.rows.map(r=>r.key),['a','b']);
+  const saved=Object.values(data['growth.history'])[0];assert.deepEqual(saved.rows.map(r=>r.key),['a']);
   assert.equal(saved.unit,'%p');assert(Math.abs(saved.delta-70)<1e-8);
   assert(!JSON.stringify(data).includes('privateMarker'));
   ctx.growthRecord(c,st,result,true);assert.equal(writes,1,'repaint does not duplicate writes');
@@ -121,7 +122,7 @@ function mutation(name,code,from,to,test){assert(code.includes(from),name);let c
   mutation('shared not saved',gs,'if(shared)return false;','if(false)return false;',s=>history(load(s)));
   mutation('shared UI recording',ui,'GrowthGuide.save(LS,MI.shared,entry)','GrowthGuide.save(LS,false,entry)',recording);
   mutation('only supplementary members',ui,'const members=show?growthMembers(r):[]','const members=growthMembers(r)',recording);
-  mutation('missing card fields',ui,"if(r.overwrite)return Ux.memberHtml", "if(r.source==='assumed')return '';if(r.overwrite)return Ux.memberHtml",cardMarks);
+  mutation('missing cards excluded',ui,"if(r.source!=='owned')return '';", "",cardMarks);
   mutation('matching content history',ui,'r.kind!==c.key||','',recording);
   // Isolated registration power and its label are covered by ux_ui_test.
   const outgoing='[...new Set(slots)]';assert(ss.includes(outgoing));

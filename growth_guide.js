@@ -3,13 +3,14 @@
   'use strict';
   const LIMITS=Object.freeze({screenRuns:4, finalRuns:100, finalists:48, maxRuns:7200, maxMs:120000, companions:16});
   const COMPONENTS=Object.freeze({level:['level'],equipment:['equip'],skills:['skills'],potential:['resonance','journey','potentials']});
-  function options(saved={},shared={}) {return {growth:!!(shared.ag??saved.growth),owned:(shared.ao??saved.owned)!==false};}
+  // Legacy owned/ao meant "include missing". Accept them without changing the owned-only policy.
+  function options(saved={},shared={}) {return {growth:!!(shared.ag??saved.growth),owned:false};}
   const cmp=(a,b)=>b.clear-a.clear||(b.prog??0)-(a.prog??0)||(a.ttk??Infinity)-(b.ttk??Infinity);
   // sim_worker.run_auto + web.run_manual: 4 policy probes, selected policy, replay.
   const finalCost=(n,mode)=>mode==='manual'?2*n+4*Math.max(10,Math.floor(n/3))+1:n;
   const completed=r=>r.completed??Object.keys(r).length;
-  const VERSION='growth-stage23-v5';
-  const HISTORY_VERSION='grown-history-v6';
+  const VERSION='growth-stage23-v6';
+  const HISTORY_VERSION='grown-history-v7';
   function signature(s){return JSON.stringify([s.account,s.options,s.targets,s.preset,s.content,
     [...s.excluded].sort(),s.breaks,s.mode,s.rules,s.engine,s.data,s.modifiers,VERSION,
     s.equipment,s.policy]);}
@@ -142,7 +143,7 @@
   }
   function grownSummary({content,signature,account,version,members,delta,metric,unit,at=Date.now()}){
     return {content,signature,account,version,historyVersion:HISTORY_VERSION,at,delta,metric,unit,
-      rows:members.map(({key,source,changedFields})=>({key,source,changedFields:[...changedFields]}))};
+      rows:members.filter(m=>m.source==='owned').map(({key,source,changedFields})=>({key,source,changedFields:[...changedFields]}))};
   }
   function grownPriority(history,signature,current={}){
     const latest=new Map();
@@ -154,6 +155,7 @@
     }
     const by=new Map();
     for(const h of latest.values())for(const r of h.rows){
+      if(r.source!=='owned')continue;
       const id=r.key+'|'+r.source;
       if(!by.has(id))by.set(id,{key:r.key,source:r.source,contents:[],changedFields:[]});
       const item=by.get(id);item.changedFields=[...new Set([...item.changedFields,...r.changedFields])];

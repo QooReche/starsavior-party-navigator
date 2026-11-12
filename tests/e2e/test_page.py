@@ -1043,7 +1043,7 @@ def test_share_link(browser, ctx):
     url = page.evaluate('() => window.copied')
     params = parse_qs(urlsplit(url).query, keep_blank_values=True)
     assert set(params) == {'c', 's', 'm', 'rk', 'b', 'ag', 'ao'}, params
-    assert params['ag'] == ['0'] and params['ao'] == ['1'] and 'ae' not in params
+    assert params['ag'] == ['0'] and params['ao'] == ['0'] and 'ae' not in params
     assert not urlsplit(url).fragment
     # 2) 「내 정보 포함」: 해시 #shared=
     page.check('#share-mi')
@@ -1680,7 +1680,7 @@ def growth_control_audit(page, home=False, enabled=True):
 
 def growth_settings_collapsed(page):
     assert not page.locator('#growth-settings').evaluate('(e)=>e.open')
-    assert not page.locator('#assume-owned').is_visible()
+    assert page.locator('#assume-owned').count() == 0
     assert not page.locator('#growth-settings .ux-help').is_visible()
 
 
@@ -1721,9 +1721,9 @@ def test_growth_controls(browser, ctx):
     assert page.evaluate("LS.get('growth.options').growth")
     page.click('#tab-info')
     page.click('#growth-settings-summary')
-    assert page.locator('#assume-owned').is_visible()
+    assert page.locator('#assume-owned').count() == 0
     assert page.locator('#growth-settings .ux-help').is_visible()
-    page.select_option('#assume-owned', 'owned')
+    assert page.evaluate('growthOptions().owned===false')
     page.click('#tab-reco')
     for width, height, name in [(1280, 900, 'desktop'), (390, 844, 'mobile')]:
         page.set_viewport_size({'width': width, 'height': height})
@@ -1736,7 +1736,7 @@ def test_growth_controls(browser, ctx):
     settle(page)
     growth_control_audit(page)
     assert page.locator('#assume-growth').is_checked()
-    assert page.locator('#assume-owned').input_value() == 'owned'
+    assert page.locator('#assume-owned').count() == 0
     assert page.evaluate("localStorage.getItem('pn.growth.options')") == saved
     assert page.evaluate("new URL(shareUrl()).searchParams.get('ag')==='1' && new URL(shareUrl()).searchParams.get('ao')==='0'")
     # Shared query overrides the old local options without persisting either control.
@@ -1744,14 +1744,15 @@ def test_growth_controls(browser, ctx):
     wait_myinfo(page)
     settle(page)
     assert not page.locator('#assume-growth').is_checked()
-    assert page.locator('#assume-owned').input_value() == 'all'
+    assert page.locator('#assume-owned').count() == 0
+    assert page.evaluate('growthOptions().owned===false')
     assert page.evaluate("localStorage.getItem('pn.growth.options')") == saved
     page.evaluate('(info)=>miApply(info,{shared:true})', load_json(SYNTH))
     settle(page)
     page.check('#assume-growth')
     page.click('#tab-info')
     page.click('#growth-settings-summary')
-    page.select_option('#assume-owned', 'owned')
+    assert page.evaluate('growthOptions().owned===false')
     page.click('#tab-reco')
     page.uncheck('#assume-growth')
     growth_settings_collapsed(page)
@@ -1781,7 +1782,7 @@ def overwrite_account(page, mode='auto', legacy=False, corridor=False):
         u.resonance=0;u.gauntlet.journey=[0,0,0,0,0];u.gauntlet.potentials=[];}
       if(legacy){delete info.star_link;info.units.forEach(u=>delete u.level);}
       await miApply(info);await new Promise(resolve=>setTimeout(resolve,200));setMode(mode,true);window.overwriteOriginal=JSON.stringify(MI.info);
-      $('assume-owned').value='owned';$('assume-growth').checked=true;condChanged();showReco();
+      $('assume-growth').checked=true;condChanged();showReco();
     }''', dict(mode=mode, legacy=legacy, corridor=corridor))
 
 
@@ -1797,6 +1798,9 @@ def overwrite_audit(page, require_card=False):
     assert page.evaluate('''() => {const r=GROW.result;return r&&r.runs>0&&r.best?.prog>0&&
       JSON.stringify(MI.info)===overwriteOriginal && r.snapshot.info!==MI.info &&
       r.team.party.units.every(u=>u.stats_final&&u.build==='none');}''')
+    assert page.evaluate('''() => GROW.result.snapshot.info.units.every(u=>{
+      const old=MI.info.units.find(x=>x.id===u.id);return old&&old.skills.passive===u.skills.passive;})''')
+    assert page.locator('#growth-result .assumed-missing, #growth-result [data-assumed="assumed"]').count() == 0
     assert page.locator('#out > [data-party="1"]').count() == 1
     assert page.locator('[data-k="growth-table"], [data-k="growth-contributions"]').count() == 0
     visible = page.evaluate('growthBetter(GROW.result.kind,GROW.result.baseline,GROW.result.best)')
@@ -1886,6 +1890,7 @@ def test_assumed_growth(browser, ctx):
     page.click('#result-tab-growth')
     page.set_viewport_size({'width': 1366, 'height': 1000})
     page.screenshot(path=os.path.join(ctx.shots, 'overwrite_desktop.png'), full_page=True)
+    page.locator('#growth-result').screenshot(path=os.path.join(ctx.shots, 'grow_th_d.png'))
     page.set_viewport_size({'width': 390, 'height': 844})
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
     page.locator('#growth-result').scroll_into_view_if_needed()
@@ -1895,6 +1900,7 @@ def test_assumed_growth(browser, ctx):
       const badge=card.querySelector('.assumed-label'),info=card.querySelector('.cinfo');
       return !badge||badge.getBoundingClientRect().bottom<info.getBoundingClientRect().top;})''')
     page.locator('#growth-result').screenshot(path=os.path.join(ctx.shots, 'overwrite_mobile.png'))
+    page.locator('#growth-result').screenshot(path=os.path.join(ctx.shots, 'grow_th_m.png'))
     assert page.locator('#out > [data-party="1"]').get_attribute('data-team') == before
     # Selecting an alternate current-account card updates the grown comparison too.
     alternate = page.locator('button[data-pick="1"]').first
@@ -2118,7 +2124,7 @@ def test_growth_stage23(browser, ctx):
       S.screen.runs=2;S.final.runs=2;S.final.levels=[0];S.final.supports=['fire','gust'];
       const C=D.cosmoRaid.search;C.minFront=0;C.minDealer=0;C.screen.runs=2;C.rerank.runs=2;C.final.runs=2;
       C.poolSize=12;C.maxPool=12;C.rerank.keep=18;
-      $('assume-growth').checked=true;$('assume-owned').value='owned';condChanged();
+      $('assume-growth').checked=true;condChanged();
     }''')
     for kind, state, selector in [('guild', 'GSR', '#guild-search [data-gs="start"]'), ('cosmo', 'CSR', '#cosmo-search [data-cs="start"]')]:
         page.select_option('#content', value=page.evaluate(f"String(contents.findIndex(c=>c.key==='{kind}'))"))
@@ -2519,15 +2525,16 @@ def test_ux_step12(browser, ctx):
                 fold.locator('summary').tap()
         if state not in ('growth', 'tabs_growth'):
             return
-        assert page.locator('#growth-result [data-growth-field]').count() == 20
+        assert page.locator('#growth-result [data-growth-field]').count() == 24
         assert page.locator('#growth-result [data-power-delta="0"]').count() == 0
         assert '+0' not in page.inner_text('[data-k="growth-components"]')
         assert '공명' not in page.inner_text('[data-k="growth-components"]')
         assert page.evaluate('''() => [...document.querySelectorAll('#growth-result .growth-task-row')].every(row=>{
           const chips=[...row.querySelectorAll('.growth-todo')];
-          const lines=new Set(chips.map(e=>Math.round(e.getBoundingClientRect().top)));
-          return chips.length===5&&lines.size<=2&&chips.every(e=>e.scrollWidth<=e.clientWidth);
-        })'''), 'member chips must fit in at most two lines'
+          const boxes=chips.map(e=>e.getBoundingClientRect());
+          return chips.length===6&&chips.every(e=>e.scrollWidth<=e.clientWidth)&&boxes.every((a,i)=>
+            boxes.slice(i+1).every(b=>a.right<=b.left+1||b.right<=a.left+1||a.bottom<=b.top+1||b.bottom<=a.top+1));
+        })'''), 'all changed values must fit without clipping or overlapping'
 
     def shot(state):
         for suffix, width, height in [('d', 1280, 900), ('m', 390, 844)]:
@@ -2735,23 +2742,25 @@ def test_ux_step12(browser, ctx):
     assert count >= 3
     assert skills.text_content().startswith(f'스킬 {count}종 (+'), skills.text_content()
     skills.tap()
-    for key, label in [('basic', '기본'), ('special', '특수'), ('ultimate', '궁'), ('passive', '패시브')]:
+    for key, label in [('basic', '기본'), ('special', '특수'), ('ultimate', '궁')]:
         assert f"{label} {levels['before'][key]}→{levels['after'][key]}" in page.inner_text('#ux-popover')
+    assert levels['before']['passive'] == levels['after']['passive']
+    assert '패시브' not in page.inner_text('#ux-popover')
     page.keyboard.press('Escape')
     card = page.locator('#growth-result [data-growth-field="journey"]').first
-    assert '→' not in card.text_content() and '스텔라 아카이브 +' in card.text_content(), card.text_content()
+    assert '→' in card.text_content() and '스텔라 아카이브 ' in card.text_content(), card.text_content()
     card.tap()
     assert '이 항목만 목표로' in page.inner_text('#ux-popover')
     assert '→' in page.inner_text('#ux-popover') and '(MAX)' in page.inner_text('#ux-popover')
     assert page.locator('#ux-popover').evaluate('(e)=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight}')
     page.keyboard.press('Escape')
     equip = page.locator('#growth-result [data-growth-field="equip"]').first
-    assert equip.text_content().startswith('장비 +15 +') and '없음' not in equip.text_content()
+    assert equip.text_content().startswith('장비 없음→+15')
     equip.hover()
     assert '세트: ' in page.inner_text('#ux-popover')
     page.keyboard.press('Escape')
     potential = page.locator('#growth-result [data-growth-field="potentials"]').first
-    assert potential.text_content().startswith('잠재력 +') and '미습득' not in potential.text_content()
+    assert potential.text_content().startswith('잠재력 ') and '미습득→1' in potential.text_content()
     potential.tap()
     assert '미습득' in page.inner_text('#ux-popover')
     page.keyboard.press('Escape')

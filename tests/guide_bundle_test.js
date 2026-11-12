@@ -34,8 +34,8 @@ function bundle(){const info=fixture(),key=roster[6].key,u=info.units[6];
   assert.throws(()=>M.assumedProfile(base,onlyLevel,absent,growth,'op'),/gauntlet/);
   const complete=M.assume(key,absent,growth);
   assert(M.assumedProfile(base,complete,absent,growth,'op').results[key].power>0);
-  assert.deepEqual(G.options({equipment:true}),{growth:false,owned:true});
-  assert.deepEqual(G.options({growth:true,equipment:false},{ae:false}),{growth:true,owned:true});
+  assert.deepEqual(G.options({equipment:true}),{growth:false,owned:false});
+  assert.deepEqual(G.options({growth:true,equipment:false},{ae:false,ao:true}),{growth:true,owned:false});
   const template=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
   assert(!template.includes('id="assume-equipment"'));assert(template.includes('id="assume-growth"> 클리어 추천 육성'));
 }

@@ -186,7 +186,7 @@ async function mutation(name,code,from,to,test){assert(code.includes(from),name)
   await mutation('current display conditions',ui,'Object.fromEntries(contents.map(c=>[c.key,growthConditions(c,false)]))','{}',s=>conditionHistory(G,'guild',s));
   historyOp();historySeason();historyReload();signatureScope();await exactControls();await workerProgs();await controls();
   for(const [name,test] of [['op history',historyOp],['season history',historySeason],['reload history',historyReload]])
-    await mutation(name,ui,'policy:[GrowthGuide.VERSION','policy:[JSON.stringify([GS.sel,GSR,CSR]),GrowthGuide.VERSION',test);
+    await mutation(name,ui,'policy:[MyInfoReco.OVERWRITE_VERSION','policy:[JSON.stringify([GS.sel,GSR,CSR]),MyInfoReco.OVERWRITE_VERSION',test);
   await mutation('boss tab',ui,"(c.key==='cosmo'?[]:[st.tab,st.name])",'[st.tab,st.name]',signatureScope);
   await mutation('exact owned control',ui,'config.exactControls&&original.results[target.key]','false',exactControls);
   await mutation('worker progs',fs.readFileSync(require.resolve('../sim_worker'),'utf8'),
