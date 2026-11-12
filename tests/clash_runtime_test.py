@@ -11,7 +11,9 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from battlesim.mc import Battle, Ctx
+from battlesim import simulate
 from battlesim.api import _norm_encounter
+from battlesim.web import run_auto
 from battlesim.metrics import unit_def
 from battlesim.starsavior.myinfo_stats import rule_for_content
 from battlesim.starsavior import foe as F
@@ -188,6 +190,83 @@ class ClashCombatTest(unittest.TestCase):
                 give(u, '협공 불가')
         b.cast(boss, boss.d.skills['기본기'], target=b.allies[0])
         self.assertFalse(any(e.get('via') == 'forced_coop' for e in b.timeline))
+
+
+class ClashTurnLimitTest(unittest.TestCase):
+    """실제 보스·구원자 스킬과 합성 능력치로 긴 판을 만든다(개인 계정 입력 없음)."""
+    stage = 'clash/폐쇄된 심상/폐쇄된 심상 Ⅰ'
+
+    def party(self, atk=1000, hp=10**9):
+        return {'units': [{'key': 'gwen', 'stats_final': True,
+                           'stats_override': {'hp': hp, 'atk': atk, 'def': 10000, 'spd': 100, 'cr': 0}}]}
+
+    def run_case(self, atk=1000, hp=10**9, encounter=None, **options):
+        seen = []
+        run = Battle.run
+        def observe(battle):
+            seen.append(battle)
+            return run(battle)
+        with patch.object(Battle, 'run', observe):
+            result = simulate(self.party(atk, hp), {'stage': self.stage, **(encounter or {})},
+                              {'n_runs': 1, 'seed': 3, 'per_run': True, **options})
+        self.assertEqual(len(seen), 1)
+        self.assertGreater(result['outcome']['progress'], 0)
+        return result, seen[0]
+
+    def test_clear_after_50_without_defeat_limit(self):
+        # 명시 제한 입력이 있어도 격전 의뢰 기본은 제한 없음. 실제 처치까지 진행.
+        r, b = self.run_case(encounter={'turn_limit': 50})
+        self.assertIsNone(r['encounter']['turn_limit'])
+        self.assertEqual(b.max_turns, 200)
+        self.assertGreater(b.clear_t / b.turn_ticks, 50)
+        self.assertGreater(b.global_turns, 65)
+        self.assertEqual(r['runs'][0][0], 'clear')
+        self.assertEqual((r['outcome']['clear_p'], r['outcome']['wipe_p'], r['outcome']['timeout_p']), (1, 0, 0))
+        self.assertFalse(b.alive(1))
+
+    def test_safety_cap_is_undecided_and_override_is_honored(self):
+        for cap in (None, 60):
+            with self.subTest(cap=cap):
+                r, b = self.run_case(atk=300, encounter={} if cap is None else {'max_turns': cap})
+                expected = 200 if cap is None else cap
+                self.assertEqual(b.max_turns, expected)
+                self.assertGreater(b.t / b.turn_ticks, expected - 2)
+                self.assertLessEqual(b.t / b.turn_ticks, expected)
+                self.assertGreater(b.global_turns, 50)
+                self.assertTrue(b.alive(0) and b.alive(1))
+                self.assertEqual(r['runs'], [['timeout', None]])
+                self.assertEqual((r['outcome']['clear_p'], r['outcome']['wipe_p'], r['outcome']['timeout_p']), (0, 0, 1))
+
+    def test_wipe_still_ends_battle(self):
+        r, b = self.run_case(hp=10000)
+        self.assertFalse(b.alive(0))
+        self.assertLess(b.t / b.turn_ticks, 50)
+        self.assertEqual(r['runs'], [['wipe', None]])
+        self.assertEqual((r['outcome']['wipe_p'], r['outcome']['timeout_p']), (1, 0))
+
+    def test_legacy_keeps_50_model_turn_cap(self):
+        r, b = self.run_case(rules_override={'clash_no_turn_limit': False})
+        self.assertEqual(b.max_turns, 50)
+        self.assertLessEqual(b.t / b.turn_ticks, 50)
+        self.assertEqual(r['runs'], [['timeout', None]])
+
+    def test_star_mission_is_separate_from_clear(self):
+        for limit in (60, 65):
+            for atk, star_p in ((1000, 0), (10000, 1)):
+                with self.subTest(limit=limit, atk=atk):
+                    r, b = self.run_case(atk=atk, star_turns=limit)
+                    self.assertEqual(r['outcome']['clear_p'], 1)
+                    self.assertEqual(r['star_turn'], {'limit': limit, 'p': star_p})
+                    self.assertEqual(int(b.global_turns <= limit), star_p)
+                    self.assertIsNone(r['encounter']['turn_limit'])
+
+    def test_web_summary_keeps_timeout_separate_from_wipe(self):
+        for atk, outcome in ((1000, (1, 0, 0)), (300, (0, 0, 1))):
+            with self.subTest(atk=atk):
+                r = json.loads(run_auto(self.stage, self.party(atk), 1, 3, {'star_turns': 65}))
+                self.assertGreater(r['prog'], 0)
+                self.assertEqual((r['clear'], r['wipe'], r['timeout']), outcome)
+                self.assertEqual(r['t60'], 0)
 
 
 if __name__ == '__main__':

@@ -16,7 +16,8 @@ encounter_spec
   {"waves": [[적, ...], ...]}  적 = {"foe": u 번호, "variant": x 번호, "stats_override": {...}} 또는 명시
        {"name", "hp", "atk", "def", "spd", "cr", "cd", "eh", "er", "role", "element", "boss",
         "skills": [{"slot": "기본기", "dm": 80, "all": false, "cd": null, "tg": "적 단일"}]}
-  선택: "turn_limit"(스테이지 lt 를 덮어씀), "stage_fx"(문장 목록, 스테이지 fx 를 덮어씀), "max_turns"(턴 제한 없을 때 시간 상한, 50)
+  선택: "turn_limit"(스테이지 lt 를 덮어씀, 격전 의뢰 기본 규칙에서는 무시), "stage_fx"(문장 목록, 스테이지 fx 를 덮어씀),
+       "max_turns"(모델 턴 안전 상한, 기본 50·격전 의뢰 200; 도달 시 전멸이 아닌 timeout 미결)
 options
   {"seed": 1, "n_runs": 100, "rules_override": {mc·opts 키: 값}, "nova_policy": "auto"|"manual"|"heal", "timeline": false,
    "enemy_lines": true, "run_offset": 0, "per_run": false, "formula_override": {"COOP_CAP": 1.0}, "rekindle": 0,
@@ -420,7 +421,11 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         mc = dict(mc, guild_boss='on')     # 길방 전투에서만 BFB 상태 기계를 켠다(명시하면 그 값)
     if meta.get('cosmo_raid') and 'cosmo_raid_boss' not in (o.get('rules_override') or {}):
         mc = dict(mc, cosmo_raid_boss='on')    # 코스모 시즌 전투에서만 난이도 레벨·챌린지·벨그라스 상태 기계를 켠다(명시하면 그 값)
-    max_turns = encounter_spec.get('max_turns', 50)
+    clash_no_limit = meta.get('content') == 'clash' and mc['clash_no_turn_limit']
+    if clash_no_limit:
+        # 11/12 사용자 판단: 클라에 격전 의뢰 제한값 주입 경로 없음. 별 미션 턴과 별개.
+        turn_limit = None
+    max_turns = encounter_spec.get('max_turns', 200 if clash_no_limit else 50)
     if mc['stage_fx_target'] not in ('enemies', 'allies', 'off'):
         raise ValueError('stage_fx_target 은 enemies|allies|off: %r' % mc['stage_fx_target'])
     ally_fx = _ally_stage_fx(encounter_spec, meta, fx) if mc['stage_fx_target'] == 'allies' else None

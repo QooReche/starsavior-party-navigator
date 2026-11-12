@@ -49,7 +49,7 @@
 근거 줄은 모두 비공개 `starsavior-static-data/decompiled/` 빌드 26610546 기준. `NKM`·`NKM.Templets`·`Star.Templets`·`NKC`는 각각 `<이름>/<이름>.decompiled.cs`임.
 
 1. **완료 — 퍼세스 판별 강제 협공.** `build_foe_clash.py`에서 효과 줄 변환, `build_foe_auto.py`에서 AutoTargetId 52와 자신 제외를 연결했음. NKM:7143-7186은 자신 제외 후 순서 있는 우선 필터를 적용하며, 필터 결과가 0명이면 이전 후보를 유지하고 성공 결과가 1명이면 중단함. 따라서 세 조건의 단순 AND로 구현하지 않았음. NKM:7535-7545는 특정 버프 제외, 7572-7574는 현재 공격력 최고, 7754-7763·7901-7912는 격파·기절·수면 제외임. NKM:5294-5298의 대상 플래그와 15913-15950·16073-16100의 협공 후보·기본기 사용 검사를 기존 `forced_coop` 경로로 재사용했음. `mc.foe_forced_coop=on`(legacy off), 일반 적 협공은 확장하지 않았음. 변환 미반영 0건, 지원 보고에서도 사라졌음.
-2. **미확인·판단 필요 — 패배 제한 턴 수치.** NKM:538-560·638-668·768-803에서 전역/웨이브/적 행동 제한과 패배 판정을 찾았음. 그러나 제한값 필드(`OBF_31827`·`OBF_32696`·`OBF_29861`)에 격전 의뢰 값을 넣는 경로는 배포 클라에서 찾지 못했음. Star.Templets:8115는 `LimitTurn` 미지정 시 0, 격전 전투 18행은 미지정임. 별 미션 65·60을 패배 제한으로 바꾸지 않았음. `max_turns=50` 유지했음. 이는 시뮬 시간 상한이며 클라 전역 행동 턴 50을 확인했다는 뜻은 아님. 수치 확정은 서버 입력 또는 게임 PC 대조가 필요함.
+2. **완료 — 패배 제한 턴 없음(2026-11-13 반영).** 11/12 사용자 판단을 따라 격전 의뢰는 아군 전멸 또는 보스 처치까지 진행하기로 함. NKM:538-560·638-668·768-803에 전역/웨이브/적 행동 제한과 패배 판정은 있지만, 제한값 필드(`OBF_31827`·`OBF_32696`·`OBF_29861`)에 격전 의뢰 값을 넣는 경로는 배포 클라에서 찾지 못했음. Star.Templets:8115는 `LimitTurn` 미지정 시 0, 격전 전투 18행은 미지정임. 이는 클라 주입 경로 부재에 따른 사용자 판단이며 서버 입력까지 확인한 것은 아님. `clash_no_turn_limit=true`로 clash의 패배 제한을 제거했음(legacy false는 기존 입력·50턴 상한). 무한 반복 방지용 `max_turns` 기본만 200 **모델 턴(100틱)** 으로 두고 명시값은 유지했음. 상한 도달은 패배/전멸이 아닌 미결로 기존 `outcome.timeout_p`·판별 `timeout`·웹 `timeout`에 집계함. 별 미션 `BMT_LIMIT_TURN` 65·60의 전체 행동 수 이내 클리어율 `star_turn`은 그대로임. 다른 콘텐츠는 변경하지 않았음.
 3. **완료 — AddStatData 순서, 계산 유지.** NKM.Templets:37860·42002에서 스폰/소환 AddStatData를 읽음. NKM:2350-2377·18935-18945에서 1단 입력으로 전달하고, 19150-19176에서 레벨 성장 합산, 18784-18824·18878-18903에서 `(기본+고정 가산+성장)×1단 비율 → 2단 패시브/장비 → 3단 전투 버프` 순서로 계산함. 격전 의뢰의 보스·소환병은 현재 `foe_stats`의 `(b+gw×(L-1))×(1+AddStatData%)`와 맞았음. 소환/배치 유닛은 NKM:2215·19078-19089에서 구원자 스타링크 레벨 보정을 사용하지 않음. 일반 유닛의 패시브·버프 2/3단 분리라는 기존 전역 과제는 이번 범위에서 변경하지 않았음.
 4. **완료 — 버전 업그레이드 5%, WeakAdjustData 표시용.** Star.Templets:29274-29280은 Stats와 BuffDesc를 별도 필드로 읽고, NKM:4895-4905·6072는 SE Stats로 버프 스탯을 덮어씀. NKM:3885-3893·2371·18947-18951로 최종 3단 버프 입력에 연결됨. NKC:562000-562010은 BuffDesc를 설명문에만 사용함. 표 `SE_TEMPLET_SKILL_2.json:34664-34684`의 500을 따라 중첩당 5%·최대 5를 유지했음(설명문 @@3와의 불일치는 표 자체에 남아 있음). WeakAdjustData는 Star.Templets:8119-8128·8026에서 추천 속성 목록으로 읽고 NKC:65990-66006 `NKCBattleRecommendAdjustViewer`의 아이콘 표시만 소비함. 추가 피해 배율을 넣지 않았음.
 5. **완료 — 전용 시험·실제 화면.** 실제 로더의 조각 유무/데이터북 우선·인덱스 오프셋·부가 자료 on/off, API의 boss_kill 연결·소환 0/4칸·최대 2명, 정상 레벨, 3탭×6단계, 시작/종료 경계와 종료 시 «미오픈»을 검사했음. e2e에서 실제 Pyodide 결과 카드 확인, 스크린샷 `local/shots/clash.png`(합성 계정) 저장했음. 발견한 연결 누락 2건을 고쳤음: `build_simpack.py`의 `foe_clash.json` 누락, `data/quick.json`의 clash 자료 누락(없으면 시뮬 버튼도 안 나옴). quick 재생성 결과는 clash 18곳만 추가됐고 기존 st·sv·계수·보정값은 동일했음.
@@ -70,7 +70,14 @@
 - 첫 전체 검사에서 새 코드로 생긴 `coop_order_test`·`savior_mapping_test` 실패를 고쳤음. 강제 협공 후보가 없는 적은 협공 호출을 생략하고, 아군 빌더와 공유하는 필터 함수의 새 동작을 적 강제 협공 줄로 한정했음. 기존 시험의 기대값을 바꾸지 않았음. 관련 5개 시험 재실행 통과했음.
 - `accel-golden/golden.py`를 main `82c612f`와 wt-clash 각각 실행: 기본/전체 legacy 78/78 동일, 실행 오류 0. 출력 `local/clash_main.json`·`local/clash.json`. 기존 콘텐츠 계산·quick 값을 그대로 유지했음. 해시 고정 시험은 새 규칙을 legacy off로 고정했음.
 - 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data`, `PN_E2E_LOW_MEMORY=1` 지정 후 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`: **130 통과/실패 0**, 위 환경 자료 없는 2건만 건너뛰었음. 실행 로그 `local/clash_final.log`. 격전 의뢰 실제 결과 카드·기간 종료 게이트 통과, 최종 스크린샷 `local/shots/clash.png` 육안 확인했음.
-- **판단 필요는 2번 패배 제한 수치만 남았음.** 독립 리뷰는 커밋 전 단계에서 별도로 진행할 것. 이 작업에서는 병렬 작업자·커밋·푸시·HANDOFF.md 수정하지 않았음.
+- **판단 필요는 2번 패배 제한 수치만 남았음(→ 2026-11-13 사용자 판단으로 제한 없음 반영).** 독립 리뷰는 커밋 전 단계에서 별도로 진행할 것. 이 작업에서는 병렬 작업자·커밋·푸시·HANDOFF.md 수정하지 않았음.
+
+## 패배 제한 없음 검증 — 2026-11-13
+
+- 실제 보스·구원자 스킬에 공개 합성 능력치를 넣어 50 모델 턴 이후 클리어, 기본 200턴·명시 60턴 상한에서 양쪽 생존/미결, 아군 전멸, legacy 50턴, 별 60·65턴 조건 성공/실패, 웹 timeout 전달을 검사했음. 전용 시험 14개 통과, 모든 새 시뮬 표본은 진행도 >0을 확인했음.
+- 결함 주입 5종(50턴 상한 복귀·패배 제한 잔류·상한을 전멸로 집계·명시 상한 무시·별 조건을 모든 클리어로 집계)을 각각 assertion 실패로 검출하고 원복했음. 로그 `local/ct_mutation_*.log`.
+- 수정 전 main과 동일한 `978afb0`에서 전체 135 통과/실패 0, 환경 자료 없는 기존 2건 건너뜀. golden 기본/전체 legacy **78/78 동일**, 실행 오류 0(`local/ct_main.json`·`local/ct.json`).
+- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild`: **135 통과/실패 0**(`local/ct_final.log`). COSMO_TABLES·옆 journeyhelper 미존재로 기존 2건만 건너뛰었음. e2e는 `test_clash`만 실행해 **PASS·종료 코드 0** 확인했음(`local/ct_e2e.log`, `local/ct_shots/clash.png`). 첫 실행도 ALL OK였지만 PowerShell이 NO_COLOR/FORCE_COLOR 경고를 오류 스트림으로 처리해 종료 상태가 1로 잡혀, subprocess로 출력을 캡처해 실제 시험 종료 코드를 다시 확인했음. 병렬 실행·커밋·푸시·HANDOFF.md 수정 없음.
 
 ## 주의
 

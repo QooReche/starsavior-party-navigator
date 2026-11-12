@@ -333,7 +333,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'shield_tick', 'stage_fx_target', 'sudden_death', 'summon',
     'target_defender_mult', 'target_mode', 'target_row_weight',
     'taunt_skill_end_duration', 'toughness', 'toughness_elem',
-    'turn_limit_unit', 'turn_ticks', 'unknown_cond',
+    'turn_limit_unit', 'turn_ticks', 'unknown_cond', 'clash_no_turn_limit',
     # 2026-11-04 클라 후보 스위치(break_point_hits·break_auto_blocked_cc 는 같은 날 기본 = 클라 값으로 전환)
     'break_point_hits', 'dot_formula', 'react_hist_unit', 'immune_force_apply', 'break_auto_blocked_cc',
     # 2026-11-05 길방 보스 속도·공격력 NV 합산
