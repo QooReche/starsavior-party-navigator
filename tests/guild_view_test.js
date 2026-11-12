@@ -111,6 +111,9 @@ const tests = {
     assert(h.includes('data-k="gd-dev"'), '개발 중 배너 유지');
     const none = {...S, summary: Object.fromEntries(S.growth.map(g => [String(g), null]))};
     assert(V.panelHtml({...P, sim: none}, null, 7, T('2026-10-30T12:00:00+09:00'), esc).includes('EX도 어려움'));
+    const zero = {...S, summary: Object.fromEntries(S.growth.map(g => [String(g), {level: 0, team: 0, p: 0.7}]))};
+    const hz = V.panelHtml({...P, sim: zero}, null, 7, T('2026-10-30T12:00:00+09:00'), esc);
+    assert(hz.includes('EX 기본') && !/>0단계</.test(hz), '별의 도전 0 은 0단계로 쓰지 않음');
     const one = {...S, summary: {[String(S.growth[0])]: {level: 3, team: 0, p: 0.7}}};
     const h3 = V.simBox({...P, sim: one}, esc);
     assert(h3.includes('별의 도전 3단계</b>까지') && h3.includes(V.rangeText(V.score(P, V.extraPct(P, 3, [0, 0, 0, 0])))) && h3.includes('클리어 70%'));

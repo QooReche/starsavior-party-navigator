@@ -40,10 +40,10 @@ function quickOrdering(){const text=fs.readFileSync(require.resolve('../growth_u
   const early={vd:'hard',q:{rounds:1,left:0},v:10},late={vd:'hard',q:{rounds:20,left:0},v:10};
   assert(ctx.growthQuickCmp(late,early)<0,'hard candidates must prefer surviving longer');
   assert(ctx.growthQuickCmp({...late,vd:'safe',q:{rounds:3,left:.8}},{...early,vd:'safe',q:{rounds:1,left:.2}})<0);
-  let tabsReset=0;
-  const cancel=vm.createContext({growthTabs:{reset(){tabsReset++;}},GROW:{id:3,stop:()=>{},result:{},errors:[]},SIMQ:{busy:'growth'}});
+  let tabsReset=0,removed=0;
+  const cancel=vm.createContext({document:{getElementById(id){assert.equal(id,'growth-result');return {remove(){removed++;}};}},growthTabs:{reset(){tabsReset++;}},GROW:{id:3,stop:()=>{},result:{},errors:[]},SIMQ:{busy:'growth'}});
   vm.runInContext(text.slice(text.indexOf('function growthCancel'),text.indexOf('function growthInit')),cancel);
-  cancel.growthCancel();assert.equal(cancel.SIMQ.busy,null);assert.equal(cancel.GROW.result,null);assert.equal(cancel.GROW.id,4);assert.equal(tabsReset,1);
+  cancel.growthCancel();assert.equal(cancel.SIMQ.busy,null);assert.equal(cancel.GROW.result,null);assert.equal(cancel.GROW.id,4);assert.equal(tabsReset,1);assert.equal(removed,1);
 }
 async function scheduling(){const targets=Array.from({length:4},(_,i)=>({id:'t'+i,key:'u'+i,kind:'growth',source:'assumed',
   candidates:[0,1].map(j=>({id:`t${i}c${j}`})),controls:[{id:'owned'+i}]})),calls=[];

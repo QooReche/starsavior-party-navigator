@@ -20,8 +20,8 @@ function ranking(code=ui){
 }
 function rollover(seasonCode=season,pageCode=page,growthCode=ui){
   for(const key of ['guild','cosmo']){
-    let stopped=0;
-    const ctx={contents:[{key}],$:()=>({value:0}),closed:false,clearTimeout,REQ:true,SIMQ:{busy:'growth',scr:{},kick:true},
+    let stopped=0,removed=0;
+    const ctx={contents:[{key}],$:()=>({value:0}),document:{getElementById:id=>id==='growth-result'?{remove:()=>removed++}:null},closed:false,clearTimeout,REQ:true,SIMQ:{busy:'growth',scr:{},kick:true},
       GSR:{id:0,phase:'done'},CSR:{id:0,phase:'done'},renderGuild(){},renderCosmoSearch(){},run(){},stop:()=>stopped++};
     vm.createContext(ctx);vm.runInContext(growthCode,ctx);vm.runInContext(seasonCode,ctx);
     const invalidate=pageCode.match(/^function simInvalidate\(\)\{[^\r\n]*\}/m);
@@ -29,11 +29,12 @@ function rollover(seasonCode=season,pageCode=page,growthCode=ui){
     vm.runInContext(invalidate[0],ctx);
     Object.assign(ctx,{seasonStatus:()=>({blocked:ctx.closed}),seasonBlocked:()=>ctx.closed,seasonPaint(){}});
     vm.runInContext("GROW.phase='running';GROW.stop=stop;GROW.id=3",ctx);
-    ctx.seasonRefresh();assert.equal(stopped,0);ctx.closed=true;ctx.seasonRefresh();
+    ctx.seasonRefresh();assert.equal(stopped,0);assert.equal(removed,0);ctx.closed=true;ctx.seasonRefresh();
     assert.equal(stopped,1,'season refresh must reach the copied search stop handle exactly once');
     assert.equal(vm.runInContext('GROW.id',ctx),4);assert.equal(vm.runInContext('GROW.phase',ctx),'idle');
     assert.equal(vm.runInContext('GROW.stop',ctx),null);assert.equal(ctx.SIMQ.busy,null);
-    ctx.seasonRefresh();assert.equal(stopped,1,'same closed state does not cancel twice');
+    assert.equal(removed,1,'season refresh removes the relocated growth card');
+    ctx.seasonRefresh();assert.equal(stopped,1,'same closed state does not cancel twice');assert.equal(removed,1);
   }
 }
 function mutate(name,code,from,to,test){assert(code.includes(from),name);assert.throws(()=>test(code.replace(from,to)),{code:'ERR_ASSERTION'},name);console.log('MUTATION caught:',name);}
@@ -43,4 +44,5 @@ mutate('closed history exclusion',ui,"!seasonBlocked(h.content?.split('/')[0])",
 mutate('season cancel chain',season,'simInvalidate();','',s=>rollover(s));
 mutate('growth cancel chain',page,'function simInvalidate(){if(typeof growthCancel==="function")growthCancel();','function simInvalidate(){',s=>rollover(season,s));
 mutate('copied search stop',ui,'if(GROW.stop)GROW.stop();','',s=>rollover(season,page,s));
-console.log('ALL OK small fixes; LF/CRLF; 4 mutations');
+mutate('relocated growth cleanup',ui,"document.getElementById('growth-result')?.remove();",'',s=>rollover(season,page,s));
+console.log('ALL OK small fixes; LF/CRLF; 5 mutations');

@@ -6,7 +6,8 @@ function growthOptions(){return {growth:!!document.getElementById('assume-growth
 function growthCacheTag(){return JSON.stringify(['current-account',MyInfoReco.OVERWRITE_VERSION,growthOptions(),MI.growth?.assumed?.version]);}
 function growthEnabled(){const o=growthOptions();return o.growth;}
 // Keep one live checkbox while the recommendation body is replaced.
-function growthControlPlace(home=false){const target=!home&&!$('out').hidden&&$('reco-actions');
+function growthControlPlace(home=false){const seasonal=['guild','cosmo'].includes(contents[$('content').value]?.key);
+  const target=!home&&!seasonal&&!$('out').hidden&&$('reco-actions');
   (target||$('growth-control-home')).append($('growth-control'));}
 function growthControls(){const enabled=!!MI.info&&growthEnabled(),details=$('growth-settings');
   $('assume-growth').disabled=!MI.info;$('growth-requires-info').hidden=!!MI.info;
@@ -15,6 +16,7 @@ function growthControls(){const enabled=!!MI.info&&growthEnabled(),details=$('gr
   $('growth-settings-summary').textContent='육성 설정 · '+(!MI.info?'내 정보 필요':!enabled?'꺼짐':growthOptions().owned?'보유 + 미보유':'보유만');
   growthRankPaint();}
 function growthCancel(){growthTabs?.reset();if(typeof slotCancel==='function')slotCancel();GROW.id++;if(GROW.stop)GROW.stop();GROW.stop=null;
+  document.getElementById('growth-result')?.remove();
   if(typeof SIMQ!=='undefined'&&SIMQ.busy==='growth')SIMQ.busy=null;
   GROW.phase='idle';GROW.result=null;GROW.sig=null;GROW.msg='';GROW.errors=[];GROW.recordTag=null;}
 function growthInit(){const o=GrowthGuide.options(LS.get('growth.options')||{},SHARE);
@@ -286,7 +288,7 @@ function growthTabsPaint(c,el,show){
   const seasonal=c.key==='guild'||c.key==='cosmo',r=GROW.result;
   const baseline=seasonal?(c.key==='guild'?GSR:CSR).rows[0]:growthBaseline(c,cur[$('stage').value]);
   const now=seasonal?$(c.key+'-search'):document.querySelector('#out > [data-party="1"]');
-  if(!seasonal&&now&&now.nextElementSibling!==el)now.after(el);
+  if(now&&now.nextElementSibling!==el)now.after(el);
   growthTabs||=Ux.createResultTabs();
   growthTabs.update(now,el,Ux.resultTabState({enabled:growthEnabled(),phase:GROW.phase,better:show,
     kind:c.key,baseline,best:r?.best,message:GROW.msg,errors:GROW.errors}));
@@ -307,7 +309,7 @@ function growthPaint(){
   if(GROW.phase==='idle'&&!growthSeasonContent()){growthTabs?.reset();el?.remove();return;}
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
   el.dataset.state=GROW.phase;
-  const head='<h3 class="growth-heading" data-k="growth-summary">클리어 추천 육성 <span>· 이것만 맞추면 깰 수 있어요</span></h3>';
+  const head='<h3 class="growth-heading" data-k="growth-summary">클리어 추천 육성 <span>· '+(['guild','cosmo'].includes(c.key)?'맞추면 기대 점수가 올라가요':'이것만 맞추면 깰 수 있어요')+'</span></h3>';
   if(GROW.phase!=='done'){
     const running=GROW.phase==='running';
     el.innerHTML='<b data-k="growth-summary">클리어 추천 육성</b><span class="tag growth-on">클리어 추천 육성 켜짐</span>'+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'미완료 · 다시 실행해 주세요':'지금 계정 탐색 후'}</span>`+
@@ -319,10 +321,9 @@ function growthPaint(){
   const marks=r.snapshot.changes;
   const cards=(order,lead)=>{LEADKEY=lead;return `<div class="rowcards">${order.map((k,i)=>card({s:BYKEY[k]},i===0||i===3?'back':'front',null,marks[k]||null)).join('')}</div><div class="growth-tasks">${order.map(k=>marks[k]?growthTodoRow(marks[k],BYKEY[k].name):'').join('')}</div>`;};
   let body='';
-  if(c.key==='cosmo')body=r.best.teams.map(t=>`<div class="growth-score-card"><b>${esc(csBoss(t.boss))} · ${t.level}단계</b>${cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0])}<p class="mut">${esc(t.brk||'브레이크 없음')}</p></div>`).join('');
-  else if(c.key==='guild'){const t=r.best;body=cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0])+`<p class="mut">${t.level}단계 · ${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</p>`;}
+  if(c.key==='cosmo')body=r.best.teams.map(t=>`<div class="growth-score-card"><div class="season-chips"><b>${esc(csBoss(t.boss))}</b><span class="tag">난이도 ${t.level}</span><span class="tag">${esc(t.brk||'브레이크 없음')}${t.brkLv?' · Lv.'+t.brkLv:''}</span></div>${cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0])}</div>`).join('');
+  else if(c.key==='guild'){const t=r.best;body=`<div class="season-chips"><span class="tag">${t.level}단계</span><span class="tag">${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</span></div>`+cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0]);}
   else if(r.team){const ar=arrangeOf(r.team.t.combo);body=cards(ar.order,ar.lead)+`<p class="mut">${esc(r.team.breakName||'브레이크 없음')}</p>`;}
-  const metric=c.key==='guild'?`상위 20% ${Math.round(r.best.score).toLocaleString()}점`:c.key==='cosmo'?`3팀 합산 ${Math.round(r.best.sum).toLocaleString()}점`:`클리어 ${(r.best.clear*100).toFixed(1)}%`;
   const keys=c.key==='cosmo'?r.best.teams.flatMap(t=>t.keys||t.order):c.key==='guild'?(r.best.keys||r.best.order):r.team?.t.keys||[];
   const grown=keys.reduce((sum,k)=>sum+(r.snapshot.profile.results[k]?.power||0),0);
   const currentKeys=c.key==='cosmo'?r.baseline?.teams?.flatMap(t=>t.keys||t.order):c.key==='guild'?(r.baseline?.keys||r.baseline?.order):[...document.querySelectorAll('.party[data-party="1"] .gc')].map(e=>e.dataset.key);
@@ -331,7 +332,7 @@ function growthPaint(){
   const totals={};let missing=false;
   for(const k of keys){if(!marks[k])continue;for(const f of growthDisplay(marks[k]).fields){if(f.delta==null){missing=true;continue;}totals[f.field]=(totals[f.field]||0)+f.delta;}}
   const st=cur[$('stage').value],prob=['op','clo'].includes(c.key);
-  const summary=prob?`<div class="mi-verdict"><div class="verdict-main"><b class="verdict-number"><small>지금</small>${r.baseline?Math.round(r.baseline.clear*100)+'%':'자료 없음'} → <small>맞추면</small>${Math.round(r.best.clear*100)}%</b>${Ux.chip(r.best.clear)}</div><div class="verdict-stats"><div><b>${miNum(MODE==='manual'?r.best.ttk:(r.best.ta??r.best.ttk))}턴</b><small>예상 턴</small></div><div><b>${miNum(grown)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div></div>`:`<span class="tag">${metric}</span>`;
+  const summary=prob?`<div class="mi-verdict"><div class="verdict-main"><b class="verdict-number"><small>지금</small>${r.baseline?Math.round(r.baseline.clear*100)+'%':'자료 없음'} → <small>맞추면</small>${Math.round(r.best.clear*100)}%</b>${Ux.chip(r.best.clear)}</div><div class="verdict-stats"><div><b>${miNum(MODE==='manual'?r.best.ttk:(r.best.ta??r.best.ttk))}턴</b><small>예상 턴</small></div><div><b>${miNum(grown)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div></div>`:`<div class="season-score" data-k="growth-season-score"><span>지금 ${r.baseline?miNum(c.key==='guild'?r.baseline.score:r.baseline.sum)+'점':'자료 없음'} → 맞추면</span><b>${miNum(c.key==='guild'?r.best.score:r.best.sum)}</b><small>${c.key==='guild'?'상위 20% 점수':'3팀 합산 점수'}</small></div>`;
   el.innerHTML=head+summary+`<p class="growth-total" data-k="growth-power-total">기존 대비 전투력 ${Ux.signed(delta)}(${now?Ux.signed(delta/now*100)+'%':'비교 자료 없음'})으로 계산했어요 ${Ux.help('전투력 변화','위의 현재 편성과 육성 후 편성의 팀 전투력을 비교해요. 구성원이 바뀌면 편성 교체에 따른 차이도 포함해요. 항목별 값은 같은 구원자에서 그 항목만 목표로 올렸을 때의 전투력 증가예요. 곱셈·반올림·편성 변경 때문에 항목별 합계와 전체 증가가 다를 수 있어요. 추가 모의 전투는 하지 않아요.')}</p>`+
     `<p class="growth-components" data-k="growth-components">${['팀 항목별 전투력',...Object.entries(totals).filter(([,v])=>v!==0).map(([f,v])=>`${growthShortFields[f]} ${Ux.signed(v)}`),...(missing?['미보유 항목은 비교 자료 없음']:[])].join(' · ')}</p><div data-k="growth-${c.key}-card">${body}</div>`+
     Ux.help('육성 기준',`스타링크 · 장비 +15 · 스킬·공명 최대 · 목표 스텔라 아카이브·잠재력. 기존보다 높은 항목만 적용하는 프리셋이에요. 최소 육성치는 아니에요. ${D.archiveGrades?.unverified||''}`)+

@@ -111,6 +111,12 @@ def settle(page):
     page.wait_for_timeout(450)
 
 
+def open_fold(page, key):
+    fold = page.locator(f'details[data-fold="{key}"]')
+    if not fold.evaluate('e=>e.open'):
+        fold.locator(':scope > summary').click()
+
+
 def choose(page, content, query):
     labels = page.eval_on_selector_all("#content option", "o => o.map(x => x.textContent)")
     page.select_option("#content", label=next(l for l in labels if l == content or l.startswith(content + "(")))
@@ -1340,9 +1346,9 @@ def test_guild_defense(browser, ctx):
     settle(page)
     page.wait_for_selector('#out .party[data-party="1"] .rowcards .gc', timeout=30000)
     first_stage = page.eval_on_selector("#stage", "s => s.selectedOptions[0].textContent")
-    panel = page.locator("#guild-panel")
+    panel = page.locator("#guild-extra")
     shown = panel.is_visible()
-    text = panel.inner_text()
+    text = panel.text_content()
     sim_sets = panel.locator('[data-k="gd-sim-set"]').all_text_contents()
     sim_data_ok = page.evaluate("""() => D.guild.sim.growth.join(',') === '1,1.5,2,2.5,3'
         && D.guild.sim.sets.max.join(',') === '3,3,3,3'
@@ -1350,10 +1356,11 @@ def test_guild_defense(browser, ctx):
         && D.guild.sim.growth.every(g => ['off','max'].includes(GuildView.simExpect(D.guild,D.guild.sim,g).set))""")
     cards = page.locator('.party[data-party="1"] .rowcards .gc').count()
     gim = page.locator('.party[data-party="1"] .gimrow[data-code="TARGET_PRIORITY"]').count()
-    page.select_option('#guild-panel select[data-g="level"]', "6")
-    page.wait_for_function("() => document.querySelector('#guild-panel .gd-now').textContent.includes('추가 점수 60%')")
+    open_fold(page, "gd-effects")
+    page.select_option('#guild-extra select[data-g="level"]', "6")
+    page.wait_for_function("() => document.querySelector('#guild-extra .gd-now').textContent.includes('추가 점수 60%')")
     sel6 = panel.locator('[data-k="gd-now"]').inner_text()
-    page.click('#guild-panel button[data-g="best"]')
+    page.click('#guild-extra button[data-g="best"]')
     best_back = "(최고 조합)" in panel.locator('[data-k="gd-now"]').inner_text()
     # 시즌 종료 뒤 표시: 화면 함수에 시즌 끝난 시각을 넣어 본다(실제 오늘 날짜와 무관하게 판정)
     stale = page.evaluate("() => GuildView.panelHtml(D.guild, null, 7, Date.parse('2026-11-06T00:00:00+09:00'), esc)")
@@ -1361,7 +1368,7 @@ def test_guild_defense(browser, ctx):
     page.select_option("#stage", index=1)
     page.dispatch_event("#stage", "change")
     settle(page)
-    lower = panel.inner_text()
+    lower = panel.text_content()
     choose(page, "작전 (일반)", "36")
     hidden = not panel.is_visible()
     errs = list(ctx.errors)
@@ -1385,7 +1392,7 @@ def test_guild_season_rollover(browser, ctx):
     names = page.eval_on_selector("#content", "s => [...s.options].map(o => o.textContent)")
     page.select_option("#content", label=next(n for n in names if n.startswith("길드방어전")))
     settle(page)
-    page.wait_for_selector("#guild-panel [data-k=gd-dev]", timeout=30000)
+    page.wait_for_selector("#guild-panel .gd-head", timeout=30000)
     before = page.locator("#guild-panel [data-k=gd-stale]").count()
     page.clock.fast_forward(20000)
     page.wait_for_selector("#guild-panel [data-k=gd-stale]", timeout=10000)
@@ -1408,12 +1415,14 @@ def test_guild_search(browser, ctx):
     # 탐색 크기를 줄인다(풀 8명·상위 2팀·단계 4 하나·판수 2) — 로직은 그대로
     page.evaluate("""() => {const S=D.guild.search;S.poolSize=8;S.minRole={'서포터':1,'디펜더':1};S.minPowerRatio=0;S.screen2={keep:3,runs:2};S.finalists=2;S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['fire','gust']}""")
     page.click('#guild-search button[data-gs="start"]')
-    page.wait_for_selector('#guild-search [data-k="gd-search-table"]', timeout=540000)
+    page.wait_for_selector('#guild-search [data-k="gs-best"]', timeout=540000)
+    open_fold(page, 'gs-results')
     rows = page.locator('#guild-search [data-k="gd-search-table"] tbody tr').count()
-    txt = page.locator('#guild-search').inner_text()
+    txt = page.locator('#guild-search').text_content()
     score_ok = page.evaluate("""() => [...document.querySelectorAll('#guild-search tbody tr')].every(tr => /^[0-9,]+$/.test(tr.children[4].innerText.trim()) && +tr.children[4].innerText.replace(/,/g,'') > 0)""")
     # 선택 효과를 바꾸면 낡은 결과 경고
-    page.select_option('#guild-panel select[data-g="set"][data-i="0"]', "1")
+    open_fold(page, "gd-effects")
+    page.select_option('#guild-extra select[data-g="set"][data-i="0"]', "1")
     page.wait_for_function("() => !!document.querySelector('#guild-search [data-k=gd-search-stale]')")
     page.select_option("#stage", index=1)
     page.dispatch_event("#stage", "change")
@@ -1421,7 +1430,7 @@ def test_guild_search(browser, ctx):
     hidden = not page.locator("#guild-search").is_visible()
     errs = list(ctx.errors)
     page.close()
-    ok = shown and has_btn == 1 and 1 <= rows <= 5 and score_ok and "추정" in txt and hidden and not errs
+    ok = shown and has_btn == 1 and 1 <= rows <= 5 and score_ok and "상위 점수" in txt and hidden and not errs
     return ok, "패널 %s / 버튼 %d / 결과 %d줄 / 점수 %s / 숨김 %s / 오류 %s" % (shown, has_btn, rows, score_ok, hidden, errs[:2])
 
 
@@ -1454,7 +1463,9 @@ def test_guild_search_dropped(browser, ctx):
       };
     }""")
     page.click('#guild-search [data-gs="start"]')
-    page.wait_for_selector('#guild-search [data-k="gd-search-table"]')
+    page.wait_for_selector('#guild-search [data-k="gs-best"]')
+    open_fold(page, 'gs-results')
+    open_fold(page, 'gs-options')
     notes = page.locator('#guild-search [data-k="gd-notes"]')
     notes.locator('summary').click()
     dropped = notes.locator('[data-k="gd-search-dropped"]')
@@ -1470,7 +1481,8 @@ def test_guild_search_dropped(browser, ctx):
     assert len(shown) == 4 and all(format(state['expected'], ',') in row for row in shown), shown
     page.uncheck('#guild-search [data-gs="coop"]')
     page.click('#guild-search [data-gs="start"]')
-    page.wait_for_selector('#guild-search [data-k="gd-search-table"]')
+    page.wait_for_selector('#guild-search [data-k="gs-best"]')
+    open_fold(page, 'gs-results')
     assert page.evaluate("() => GSR.dropped===0 && GSR.rows.length===5 && GSR.rows.some(r=>r.keys.slice().sort().join(',')===__banned)")
     assert page.locator('[data-k="gd-search-dropped"]').count() == 0
     assert not ctx.errors, ctx.errors
@@ -1514,8 +1526,10 @@ def test_cosmo_search(browser, ctx):
     has_btn = page.locator('#cosmo-search button[data-cs="start"]').count()
     fast = page.locator('#cosmo-search input[data-cs="fast"]')
     assert not fast.is_checked(), '실험 옵션은 기본 꺼짐'
+    open_fold(page, 'cs-options')
     fast.check()
     assert page.evaluate('() => CSR.optFast && !D.cosmoRaid.search.speed.surrogate.value')
+    open_fold(page, 'cs-basis')
     assert '전수 확인' in page.locator('#cosmo-search [data-k="cs-eta-pre"]').inner_text()
     fast.uncheck()
     assert page.evaluate('() => !CSR.optFast')
@@ -1565,6 +1579,7 @@ def test_cosmo_search(browser, ctx):
     old1 = page.locator('#cosmo-search [data-k="cs-old"]').count()
     page.evaluate("() => { EXCL.delete(R[0].key); renderCosmoSearch() }")
     old2 = page.locator('#cosmo-search [data-k="cs-old"]').count()
+    open_fold(page, 'cs-options')
     fast.check()
     assert page.locator('#cosmo-search [data-k="cs-stale"]').count() == 1
     fast.uncheck()
@@ -2119,6 +2134,49 @@ def test_growth_stage23(browser, ctx):
         assert page.evaluate('JSON.stringify(MI.info)===stage23Original')
         page.click('#result-tab-growth')
         assert '키워야 함' in page.inner_text('#growth-result')
+        field = 'sum' if kind == 'cosmo' else 'score'
+        shown = page.locator('#growth-result [data-k="growth-season-score"]')
+        assert shown.is_visible()
+        assert shown.locator('b').inner_text() == page.evaluate(f'Ux.num(GROW.result.best.{field})')
+        def seasonal_tab_layout():
+            assert page.evaluate(f"$('{kind}-search').nextElementSibling===$('growth-result')")
+            gap=page.evaluate("$('growth-result').getBoundingClientRect().top-$('result-tabs').getBoundingClientRect().bottom")
+            assert 0<=gap<=24,gap
+        seasonal_tab_layout()
+        page.evaluate("$('out').append($('growth-result'))")
+        try:
+            seasonal_tab_layout()
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('seasonal tab separation mutation survived')
+        finally:
+            page.evaluate('growthPaint()')
+        seasonal_tab_layout()
+        assert page.evaluate("document.querySelector('#growth-result .season-chips').getBoundingClientRect().top < document.querySelector('#growth-result .rowcards').getBoundingClientRect().top")
+        assert '깰 수 있어요' not in page.inner_text('#growth-result [data-k="growth-summary"]'), '점수 개선을 클리어 보장으로 쓰지 않음'
+        page.screenshot(path=os.path.join(ctx.shots,f'ui3_{kind}_growth.png'),full_page=True)
+        if kind=='guild':
+            page.evaluate('window.ui3Req=REQ;REQ=true;slotPaint()')
+            def slot_location():
+                assert page.evaluate("$('out').contains($('star-link-result'))")
+            slot_location()
+            page.evaluate("$('growth-result').after($('star-link-result'))")
+            try:
+                slot_location()
+            except AssertionError:
+                pass
+            else:
+                raise AssertionError('detached slot panel mutation survived')
+            finally:
+                page.evaluate('slotPaint();REQ=ui3Req')
+            page.click('#tab-info')
+            assert page.locator('#star-link-result').is_hidden()
+            assert page.locator('#growth-result').is_hidden()
+            page.click('#tab-reco')
+            assert page.locator('#growth-result').is_visible()
+        else:
+            assert page.locator('#star-link-result').count()==0, '코스모 전환 뒤 길방 슬롯 패널이 남지 않음'
         assert page.evaluate('GROW.result.snapshot.errors.length') == 0
         if kind == 'cosmo':
             assert page.evaluate('new Set(GROW.result.best.teams.flatMap(t=>t.keys)).size') == 12
@@ -2163,6 +2221,7 @@ def test_growth_stage23(browser, ctx):
         assert page.evaluate("GROW.phase==='idle' && GROW.stop===null && SIMQ.busy===null && stage23Active===0")
         page.wait_for_timeout(100)
         assert page.locator('#growth-result').count() == 0
+        assert page.locator('#star-link-result').count() == 0
         assert page.evaluate("JSON.stringify(LS.get('growth.history'))") == saved_history
         if kind == 'guild':
             assert page.evaluate("!$('growth-priority').hidden")
@@ -2722,6 +2781,123 @@ def test_ux_step12(browser, ctx):
 
 
 TESTS.append(test_ux_step12)
+
+
+def test_ux_step3(browser, ctx):
+    """Seasonal layout and interactions; deterministic fixtures never contain account data."""
+    page = open_page(browser, ctx, '?auto=0&season=force', info=FULL, wait=False,
+                     raid_ui=True, season_bypass=False)
+    wait_myinfo(page)
+
+    def select(kind):
+        page.select_option('#content', value=page.evaluate(f"String(contents.findIndex(c=>c.key==='{kind}'))"))
+        settle(page)
+
+    def first_screen(kind):
+        page.evaluate('scrollTo(0,0)')
+        bounds = page.locator(f'#{kind}-search [data-{ "gs" if kind=="guild" else "cs"}="start"]').bounding_box()
+        assert bounds and bounds['y'] >= 0 and bounds['y']+bounds['height'] <= page.viewport_size['height'], bounds
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+
+    def caught(change, audit, restore):
+        page.evaluate(change)
+        try:
+            audit()
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('UI3 mutation survived: '+change)
+        finally:
+            page.evaluate(restore)
+
+    select('guild')
+    for width, height, suffix in [(1280,900,'d'),(390,844,'m')]:
+        page.set_viewport_size({'width':width,'height':height})
+        first_screen('guild')
+        assert page.locator('[data-k="gd-summary-table"] tbody tr').count() == 5
+        assert page.locator('#guild-extra select[data-g="level"]').is_hidden()
+        page.screenshot(path=os.path.join(ctx.shots,f'ui3_guild_{suffix}.png'),full_page=True)
+    # Check the two independent metrics against the same reference row.
+    expected = page.evaluate("""() => ({level:GuildView.simBest(D.guild.sim,2).level,
+      score:Math.round(GuildView.simExpect(D.guild,D.guild.sim,2).m)})""")
+    def guild_numbers():
+        assert page.inner_text('[data-k="gd-clear-kpi"]') == (str(expected['level'])+'단계' if expected['level'] else 'EX 기본')
+        assert page.inner_text('[data-k="gd-score-kpi"]') == format(expected['score'],',')
+    guild_numbers()
+    caught("document.querySelector('[data-k=gd-clear-kpi]').textContent='99단계'",guild_numbers,'renderGuild()')
+    caught("document.querySelector('#guild-search').style.marginTop='2400px'",lambda:first_screen('guild'),"$('guild-search').style.marginTop=''")
+    page.locator('[data-k="gd-summary-table"] .ux-help').first.click()
+    assert page.locator('#ux-popover').is_visible() and '지원' in page.inner_text('#ux-popover')
+    page.keyboard.press('Escape')
+    open_fold(page,'gd-effects')
+    page.select_option('#guild-extra [data-g="level"]','6')
+    assert page.locator('[data-fold="gd-effects"]').evaluate('e=>e.open')
+    assert page.evaluate('GS.sel.level') == 6
+    page.select_option('#guild-extra [data-g="set"][data-i="0"]','1')
+    assert page.evaluate('gsTiers()[0]') == 1
+    page.click('#guild-extra [data-g="best"]')
+    assert page.evaluate('gsTiers().every(x=>x===0)')
+    page.locator('[data-fold="gd-effects"] > summary').click()
+    open_fold(page,'gs-options')
+    page.uncheck('[data-gs="coop"]')
+    assert page.evaluate('GSR.banCoop===false')
+    page.check('[data-gs="coop"]')
+    page.locator('[data-fold="gs-options"] > summary').click()
+
+    # The real search entry and cancel handlers must stop their workers, with no late result.
+    page.evaluate("""() => {window.ui3Created=0;window.ui3Stopped=0;
+      window.Worker=class {constructor(){ui3Created++} postMessage(){} terminate(){ui3Stopped++}};}""")
+    for kind, prefix, state in [('guild','gs','GSR'),('cosmo','cs','CSR')]:
+        select(kind)
+        first_screen(kind)
+        if kind=='cosmo':
+            assert page.locator('[data-cs="level"]').is_hidden()
+            open_fold(page,'cs-options')
+            page.select_option('[data-cs="level"]','3')
+            page.select_option('[data-cs="mode"]','mean')
+            page.check('[data-cs="fast"]')
+            assert page.evaluate("CSR.optLevel===3&&CSR.optMode==='mean'&&CSR.optFast")
+            assert page.locator('[data-fold="cs-options"]').evaluate('e=>e.open')
+            page.uncheck('[data-cs="fast"]')
+            page.locator('[data-fold="cs-options"] > summary').click()
+        count=page.evaluate('ui3Created')
+        page.click(f'[data-{prefix}="start"]')
+        page.wait_for_function(f"ui3Created>{count}&&{state}.handle!=null")
+        page.click(f'[data-{prefix}="cancel"]')
+        page.wait_for_timeout(100)
+        assert page.evaluate(f"{state}.phase==='idle'&&{state}.handle===null&&ui3Stopped===ui3Created")
+
+    # Result rendering fixture: the production renderer receives three disjoint teams.
+    page.evaluate("""() => {
+      const keys=R.filter(s=>MI.profiles.cosmo.results[s.key]?.power>0).slice(0,12).map(s=>s.key);
+      const brk=csBreaks()[0];
+      const teams=D.cosmoRaid.bosses.map((b,i)=>({boss:b.key,keys:keys.slice(i*4,i*4+4),order:keys.slice(i*4,i*4+4),
+        level:i+3,brk:brk?.name||null,brkLv:brk?.level||null,st:{mean:10000+i*1000,top:12000+i*1000,clear:.7,frac:.85,n:20}}));
+      Object.assign(CSR,{phase:'done',rows:[{sum:33000,teams}],level:3,reqLevel:3,mode:'mean',fast:false,sig:csSig(),pool:12,combos:1,keep:1,triples:1,runs:20});renderCosmoSearch();
+    }""")
+    def cosmo_result():
+        assert page.inner_text('[data-k="cs-best"] [data-k="cs-sum"]') == '33,000'
+        audit=page.evaluate("""() => {const best=document.querySelector('[data-k=cs-best]'),first=best.querySelector('.rowcards').getBoundingClientRect().top;
+          return [best.querySelector('[data-k=cs-sum]').getBoundingClientRect().bottom<first,
+            best.querySelector('[data-k=cs-boss-summary]').getBoundingClientRect().bottom<=first,
+            best.querySelectorAll('[data-k=cs-boss-summary]>div').length===3] }""")
+        assert all(audit),audit
+        assert page.locator('[data-k="cs-best"] .gc').count() == 12
+    cosmo_result()
+    caught("document.querySelector('[data-k=cs-best] [data-k=cs-sum]').textContent='1'",cosmo_result,'renderCosmoSearch()')
+    caught("document.querySelector('[data-k=cs-best] [data-k=cs-table]').append(document.querySelector('[data-k=cs-best] [data-k=cs-boss-summary]'))",cosmo_result,'renderCosmoSearch()')
+    for width,height,suffix in [(1280,900,'d'),(390,844,'m')]:
+        page.set_viewport_size({'width':width,'height':height})
+        page.evaluate('scrollTo(0,0)')
+        cosmo_result()
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+        page.screenshot(path=os.path.join(ctx.shots,f'ui3_cosmo_{suffix}.png'),full_page=True)
+    assert not ctx.errors,ctx.errors
+    page.close()
+    return True,'desktop/mobile first-screen action, two metrics, folds/help, cancel both searches, 3-team summary, 4 mutations'
+
+
+TESTS.append(test_ux_step3)
 
 
 def main():

@@ -78,7 +78,8 @@ async function slotStart(){if(SIMQ.busy!=null||StarLink.availability(MI.info))re
 function slotPaint(){if(!miMode()||!MI.info||!REQ)return;
   let el=$('star-link-result');if(!el){el=document.createElement('details');el.id='star-link-result';el.className='party slot-details';$('out').append(el);}
   const summary=document.querySelector('[data-k="growth-slot-summary"]');if(summary)summary.append(el);
-  else if($('growth-result'))$('growth-result').after(el);
+  else if($('growth-result')&&$('out').contains($('growth-result')))$('growth-result').after(el);
+  else $('out').append(el); // Seasonal growth cards live outside this result area's lifecycle.
   const unavailable=StarLink.availability(MI.info);
   if(unavailable){el.innerHTML=`<summary>스타링크 슬롯 추천 <span class="tag" data-k="slot-unavailable">${esc(unavailable)}</span></summary>`;return;}
   const name=id=>id?(R.find(s=>s.uid===id)?.name||String(id)):'빈 슬롯',fmt=v=>v==null?'확인 부족':`${v>0?'+':''}${v.toFixed(1)}%p`;

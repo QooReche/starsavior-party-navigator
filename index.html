@@ -5,7 +5,7 @@
 <style>
 :root{color-scheme:dark;--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e;--warn:#ffb454;--gold:#ffd24a;--ult:#7a4fc0;--spc:#3b6cb4;--bas:#4a5568;--assumed:#cba6ff;--assumed-bg:#332544}
 .assumed-card .card{border:2px dashed var(--assumed)}.assumed-label{color:var(--assumed);background:var(--assumed-bg);font-weight:700;font-size:11px;display:inline-block;padding:3px 5px;border-radius:5px;white-space:nowrap}.assumed-card .card>.assumed-label{position:absolute;top:6px;right:6px;z-index:3;pointer-events:none}.assumed-mark{color:var(--assumed);font-weight:bold}.assumed-missing{border:1px dotted var(--assumed)}.assumed-owned{border:1px dashed var(--assumed)}.al-short{display:none}.gc[data-assumed="assumed"] .card{border-style:dotted}.gc[data-assumed="assumed"] .art{filter:grayscale(.5)}
-#out #growth-result{border:1px dashed var(--assumed);border-top:2px dashed var(--assumed)}
+#growth-result{border:1px dashed var(--assumed);border-top:2px dashed var(--assumed)}
 .growth-score-card{border:1px solid var(--line);border-radius:9px;margin:10px 0;padding:10px;overflow-wrap:anywhere}.growth-score-card p{margin:7px 0}.growth-score-card .tag{white-space:nowrap}
 .growth-table{border-collapse:collapse;width:100%;font-size:13px;word-break:keep-all}.growth-table th,.growth-table td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.growth-table td:first-child>b,.growth-table th{white-space:nowrap}.growth-table details{margin-top:5px}.growth-stats{font-size:11px;word-break:keep-all}.growth-stats summary{cursor:pointer}
 .slot-swap{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:8px;margin:8px 0;border:1px solid var(--line);border-radius:8px}.slot-in,.slot-out{display:flex;align-items:center;gap:5px;font-weight:700}.slot-in{color:var(--good)}.slot-out{color:var(--bad)}.slot-face{display:inline-block;width:34px;height:34px;overflow:hidden;border-radius:50%;position:relative}.slot-face img{width:100%;height:100%;object-fit:cover;object-position:top}.tag.slot-good{color:var(--good);border-color:var(--good)}.tag.slot-bad{color:var(--bad);border-color:var(--bad)}.tag.slot-pending{border-style:dashed}.tag.reload-needed{border-color:var(--warn);color:var(--warn)}#growth-result #star-link-result{margin:10px 0;border-top:1px solid var(--line)}
@@ -375,6 +375,7 @@ summary{padding:9px 4px}
 <p id="season-note" role="status" hidden></p>
 <section id="guild-panel" class="panel" aria-label="길드 방어전 안내" hidden></section>
 <section id="guild-search" class="panel" aria-label="길드 방어전 편성 찾기" hidden></section>
+<section id="guild-extra" class="panel" aria-label="길드 방어전 설정·설명" hidden></section>
 <section id="cosmo-search" class="panel" aria-label="코스모 게이트 3보스 편성 찾기" hidden></section>
 <div id="out"></div>
 <div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">선이나 구원자를 눌러 보세요</span>
@@ -472,15 +473,21 @@ let cur=null;
 // 길드 방어전(시즌제) 안내 패널: 선택(별의 도전 단계·선택 효과)은 이 브라우저에만 기억. 처음엔 최고 점수 조합(선택 효과는 길방에 없어 끔; 옛 저장값은 guild.v2 로 바꾸며 버림)
 const GS={sel:null};
 function renderGuild(){const c=contents[$("content").value],p=$("guild-panel"),s=cur&&cur[$("stage").value];
- if(!c||!c.seasonal||!s||!window.GuildView||!D.guild){p.hidden=true;p.innerHTML="";renderGuildSearch(false);return}
+ const extra=$("guild-extra");
+ if(!c||!c.seasonal||!s||!window.GuildView||!D.guild){p.hidden=true;p.innerHTML="";extra.hidden=true;extra.innerHTML="";renderGuildSearch(false);return}
  if(!GS.sel)GS.sel=LS.get("guild.v2");
  if(!GS.watch){GS.watch=1;gsWatch()}
+ const folds=seasonFoldState(extra);
  p.hidden=false;p.innerHTML=GuildView.panelHtml(D.guild,GS.sel,parseInt(s.name,10),Date.now(),esc);
+ extra.hidden=false;extra.replaceChildren(p.querySelector('[data-k="gd-details"]'));seasonRestoreFolds(extra,folds);
  const ex=D.guild.steps.find(x=>x.ex);renderGuildSearch(!!ex&&parseInt(s.name,10)===ex.step)}
-$("guild-panel").addEventListener("change",e=>{const t=e.target.closest("select[data-g]");if(!t)return;
+$("guild-extra").addEventListener("change",e=>{const t=e.target.closest("select[data-g]");if(!t)return;
  const sel=GuildView.normSel(D.guild,GS.sel);if(t.dataset.g==="level")sel.level=+t.value;else sel.tiers[+t.dataset.i]=+t.value;
  GS.sel=sel;LS.set("guild.v2",sel);growthCancel();renderGuild();growthPaint()});
-$("guild-panel").addEventListener("click",e=>{if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove("guild.v2");growthCancel();renderGuild();growthPaint()});
+$("guild-extra").addEventListener("click",e=>{if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove("guild.v2");growthCancel();renderGuild();growthPaint()});
+// Keep an explicitly opened settings fold open through input/progress repaint.
+function seasonFoldState(p){return [...p.querySelectorAll('details[data-fold]')].map(d=>[d.dataset.fold,d.open]);}
+function seasonRestoreFolds(p,state){for(const [key,open] of state){const d=p.querySelector(`details[data-fold="${key}"]`);if(d)d.open=open;}}
 // 시즌 시작·종료·결산 종료 시각이 지나면 열어 둔 화면도 패널을 다시 그림(종료 뒤 «갱신 대기» 경고). 탭 복귀 때도 다시 판정
 function gsWatch(){if(!D.guild||!D.guild.season||!window.GuildView)return;const s=D.guild.season,now=Date.now();
  const next=[s.start,s.end,s.settleEnd].map(GuildView.parseTime).filter(t=>t>now).sort((x,y)=>x-y)[0];
@@ -492,7 +499,8 @@ const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild.v2")).tiers;
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
 function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
- p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsTiers().join(""),label:gsLabel,esc,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonApplyPanel(p,'guild')}
+ const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsTiers().join(""),label:gsLabel,esc,team:gsTeam,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
+function gsTeam(t){LEADKEY=t.order[0];return `<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
 async function guildSearchStart(target=GSR,profileOverride=null){
  if(seasonBlocked('guild'))return;
  const GSR=target;
@@ -559,7 +567,7 @@ function csTeam(t){LEADKEY=t.order[0];const xs=t.order.map(k=>({s:BYKEY[k]}));
  const cards=`<div class="rowcards cs-cards">${card(xs[2],"back")}${card(xs[0],"front")}${card(xs[1],"front")}${card(xs[3],"back")}</div>`;
  const b=t.brk,info=b&&CFG.breakSkills[b],im=b&&D.bicons[b];
  const bar=`<div class="bbar" title="${esc(info?info.text:"브레이크 스킬 미장착")}">${im?`<img src="${im}" alt="">`:`<span class="bicon">${b&&BG[b]||"◆"}</span>`}<div class="bbody"><b>${esc(b||"브레이크 스킬 장착 안 함")}</b>${b?` <span class="mut">Lv.${t.brkLv}</span>`:""}${info?` <span class="mut">${esc(info.text)}</span>`:""}</div></div>`;
- return cards+bar}
+ return bar+cards}
 function csBreaks(){const lv=MI.brkLv||null,have=lv?Object.keys(lv):breakOwned();return have.filter(n=>CFG.breakSupported.includes(n)).map(n=>({name:n,level:brkLv(n)}))}
 const csBoss=k=>((D.cosmoRaid.bosses.find(b=>b.key===k))||{}).name||k;
 function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").value];
@@ -567,7 +575,7 @@ function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").v
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
- p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonApplyPanel(p,'cosmo')}
+ const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo')}
 async function cosmoSearchStart(target=CSR,profileOverride=null){
  if(seasonBlocked('cosmo'))return;
  const CSR=target;

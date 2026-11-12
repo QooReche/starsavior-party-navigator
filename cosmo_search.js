@@ -469,7 +469,8 @@
     const warning = GS.unsupportedHtml(r.teams, esc);
     if (cx.team) {   // 화면이 카드 모양(앞열·뒤열·리더·브레이크 스킬)을 그려 준다: 보스마다 한 덩어리
       const blocks = r.teams.map(t => `<div class="cs-boss" data-k="cs-team"><div class="cs-bh"><b>${esc(cx.bossName(t.boss))}</b>${t.level != null ? ` <span class="cs-lv">난이도 ${t.level}</span>` : ""}<span class="cs-sc">${MODES[mode]} <b>${num(metric(t.st, mode))}</b> · ${MODES[mode === "top" ? "mean" : "top"]} ${num(other(t.st, mode))} · 클리어율 ${pct(t.st.clear)} · 보스 깎음 ${pct(t.st.frac)}</span></div>${cx.team(t)}</div>`).join("");
-      return `${warning}<div data-k="cs-table">${blocks}<div class="cs-sum"><b>합계 <span data-k="cs-sum">${num(r.sum)}</span></b></div></div>`;
+      const summary=r.teams.map(t=>`<div><b>${esc(cx.bossName(t.boss))}</b><span class="tag">난이도 ${t.level??'—'}</span><span>${esc(t.brk||'브레이크 없음')}${t.brkLv?' · Lv.'+t.brkLv:''}</span></div>`).join('');
+      return `${warning}<div data-k="cs-table"><div class="season-score"><span>3팀 합산 점수</span><b data-k="cs-sum">${num(r.sum)}</b><small>${MODES[mode]} 기준</small></div><div class="season-boss-summary" data-k="cs-boss-summary">${summary}</div>${blocks}</div>`;
     }
     const body = r.teams.map(t => `<tr><td>${esc(cx.bossName(t.boss))}${t.level != null ? "<br>난이도 " + t.level : ""}${t.brk ? "<br>" + esc(t.brk) : ""}</td><td>${t.order.map(k => esc(cx.label(k))).join("<br>")}</td><td><b>${num(metric(t.st, mode))}</b></td><td>${num(other(t.st, mode))}</td><td>${pct(t.st.clear)}</td><td>${pct(t.st.frac)}</td></tr>`).join("");
     return `${warning}<div class="gd-scroll"><table data-k="cs-table"><thead><tr><th>보스</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>${MODES[mode]}(순위 기준)</th><th>${MODES[mode === "top" ? "mean" : "top"]}</th><th>클리어율</th><th>보스 깎음</th></tr></thead><tbody>${body}<tr><td colspan="2"><b>합계</b></td><td colspan="4"><b data-k="cs-sum">${num(r.sum)}</b></td></tr></tbody></table></div>`;
@@ -477,29 +478,29 @@
   const progText = st => `${st.msg || ""}${st.total ? ` · ${num(st.done)}/${num(st.total)}` : ""}`;
   function html(st, cx) {
     const esc = cx.esc;
-    const head = '<b>3보스 최고 점수 편성 찾기</b> <span class="gd-est" title="시뮬 기반 추정입니다">추정</span>';
+    const head = '<h3 class="season-title">코스모 게이트</h3>';
     const warn = '<div class="mut gd-small">오토 전투 기준 · 내 정보의 실제 최종 능력치 · 같은 구원자를 여러 보스에 쓰지 않는 3팀(12명) · 점수 합산식은 서버 계산이라 추정이고 시뮬 전체가 아직 실제 플레이와 충분히 대조되지 않았습니다(참고용). 협공 제외는 적용하지 않습니다. 시즌이 바뀌면 새 시즌 값이 반영된 뒤에 쓰세요.</div>';
     if (!cx.hasInfo) return `<div class="gd-search" data-k="cs-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자를 불러오세요. 불러온 구원자 중에서 3보스 점수 합이 가장 큰 3팀을 찾습니다.</div></div>`;
     const lv = [`<option value="-1"${cx.level === AUTO ? " selected" : ""}>자동 (최고 점수 난이도)</option>`].concat(Array.from({length: cx.levelMax + 1}, (_, i) => `<option value="${i}"${i === cx.level ? " selected" : ""}>${i === 0 ? "레벨 0(없음)" : "레벨 " + i}</option>`)).join("");
     const md = Object.entries(MODES).map(([k, v]) => `<option value="${k}"${k === cx.mode ? " selected" : ""}>${v}</option>`).join("");
-    const opt = `<div class="gd-small"><label>난이도 <select data-cs="level">${lv}</select></label> <label>순위 기준 <select data-cs="mode">${md}</select></label> <label><input type="checkbox" data-cs="fast"${cx.fast ? " checked" : ""}> 빠른 탐색(실험)</label> <span class="mut">— 3단계(Step 3) 기준. 상위 점수 = 판별 점수 상위 20%의 평균. 빠른 탐색은 추천이 달라질 수 있고, 놓침 감지 시 전수 확인합니다.</span></div>`;
+    const opt = `<details class="season-options" data-fold="cs-options"><summary>탐색 설정 <span class="tag">${cx.level===AUTO?'난이도 자동':'난이도 '+cx.level} · ${MODES[cx.mode]}${cx.fast?' · 빠른 탐색':''}</span></summary><div class="season-fields"><label>난이도 <select data-cs="level">${lv}</select></label> <label>순위 기준 <select data-cs="mode">${md}</select></label> <label><input type="checkbox" data-cs="fast"${cx.fast ? " checked" : ""}> 빠른 탐색(실험)</label></div><p class="mut">3단계(Step 3) 기준. 상위 점수 = 판별 점수 상위 20%의 평균. 빠른 탐색은 추천이 달라질 수 있고, 놓침 감지 시 전수 확인합니다.</p></details>`;
     const btn = label => `<button type="button" data-cs="start">${label}</button>`;
     const pre = cx.preEta ? `<div class="mut gd-small" data-k="cs-eta-pre">${esc(cx.preEta)}</div>` : "";
     let body;
     // 진행 표시: 글자 칸(cs-prog, cs-eta)만 갱신하고 취소 버튼은 다시 만들지 않는다(클릭 유실 방지)
     if (st.phase === "run") body = `<div data-k="cs-progress"><span data-k="cs-prog">${esc(progText(st))}</span><div class="mut gd-small" data-k="cs-eta">${esc(st.etaText || "")}</div><button type="button" class="sec" data-cs="cancel">취소</button></div>`;
-    else if (st.phase === "err") body = `${opt}<div class="bad" data-k="cs-err">찾지 못했습니다: ${esc(st.msg || "")}</div>${pre}${btn("다시 시도")}`;
+    else if (st.phase === "err") body = `<div class="bad" data-k="cs-err">찾지 못했습니다: ${esc(st.msg || "")}</div>${btn("다시 시도")}${opt}`;
     else if (st.phase === "done") {
       const stale = (st.reqLevel != null ? st.reqLevel : st.level) !== cx.level || st.mode !== cx.mode || !!st.fast !== !!cx.fast ? '<div class="gd-warn" data-k="cs-stale">위에서 고른 탐색 설정이 바뀌었습니다. 아래 결과는 이전 선택 기준이니 다시 찾아 주세요.</div>' : "";
       const old = cx.sig != null && st.sig !== cx.sig ? '<div class="gd-warn" data-k="cs-old">낡은 결과: 내 정보를 다시 불러왔거나 추천에서 뺄 구원자 목록이 바뀌었습니다. 아래 결과는 이전 기준이니 다시 찾아 주세요.</div>' : "";
       const rows = st.rows || [];
       const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐습니다(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
-      const first = rows.length ? `${lvInfo}<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : '<div class="mut">결과 없음</div>';
+      const first = rows.length ? `<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : '<div class="mut">결과 없음</div>';
       const rest = rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx)}</details>`).join("");
       const scr = st.halved ? `${st.fast && !st.fastSkipped ? "대리 선별·무작위 확인" + (st.audit.some(a => a.fallback) ? "·놓침 보스 전수 복귀" : "") + " 뒤" : "보스마다 조합 " + num(st.combos) + "개를"} ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
-      body = `${old}${stale}${opt}${first}${rest}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값입니다(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순입니다. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있습니다.</div>${pre}${btn("다시 찾기")}`;
-    } else body = `${opt}${pre}${btn("3보스 최고 점수 편성 찾기")}<span class="mut gd-small"> 보유 구원자가 많으면 오래 걸립니다. 탭을 연 채로 기다려 주세요.</span>`;
-    return `<div class="gd-search" data-k="cs-search">${head}${body}${warn}</div>`;
+      body = `${old}${stale}${first}${rest}${btn("다시 찾기")}${opt}<details class="season-options" data-fold="cs-result-basis"><summary>탐색 결과 상세</summary>${lvInfo}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값입니다(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순입니다. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있습니다.</div></details>`;
+    } else body = `${btn("보스 3마리 편성 찾기")}<span class="mut season-wait">몇 분 걸려요 · 탭을 열어 두세요</span>${opt}`;
+    return `<div class="gd-search" data-k="cs-search" data-state="${st.phase}">${head}${body}<details class="season-options" data-fold="cs-basis"><summary>계산 기준·예상 시간 ⓘ</summary><span class="gd-est">추정</span>${pre}${warn}</details></div>`;
   }
 
   // 작업자 수 자동 결정(순수 함수, 시험 대상). env = {cores: 논리 코어 수(navigator.hardwareConcurrency, 없으면 null), memGB: navigator.deviceMemory(없으면 null), mobile: 모바일 여부}

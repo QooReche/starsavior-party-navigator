@@ -66,11 +66,22 @@
 
   function seasonBox(G, nowMs, esc) {
     const st = seasonState(G.season, nowMs), s = G.season;
-    const stale = st.needsUpdate
-      ? `<div class="gd-warn" data-k="gd-stale"><b>갱신 대기</b> · 이 시즌(${esc(G.tab)})은 ${md(s.end)} 04:00에 끝났습니다. 아래 수치는 지난 시즌 기준이며 새 시즌에는 달라질 수 있습니다.</div>` : "";
-    const dev = `<div class="gd-dev" data-k="gd-dev" role="note"><b>⚠ 개발 중 · 테스트 중인 기능입니다</b><br>점수 계산과 고단계 수치는 확인되지 않았고, 시뮬 추정은 실제 플레이와 대조하지 않았습니다. 참고용으로만 봐 주세요.</div>`;
-    return `${dev}<div class="gd-head"><b>${esc(G.title)}</b> <span class="gd-state ${st.state}">${STATE_TEXT[st.state]}</span><span class="mut"> · 이 시즌 정보는 ${md(G.asOf)} 기준</span></div>${stale}
-<div class="mut gd-small">진행 ${md(s.start)} ~ ${md(s.end)} 04:00 · 결산 ~${md(s.settleEnd)} 04:00 · 보스 ${esc(s.boss.name)}(${EL[s.boss.element] || ""} ${esc(s.boss.role)})</div>`;
+    return `<div class="gd-head"><b>길드 방어전 · ${esc(s.label)}</b><span class="gd-state ${st.state}">${STATE_TEXT[st.state]}</span>${help('시즌 정보', `${G.title} · 이 시즌 정보는 ${md(G.asOf)} 기준. 진행 ${md(s.start)} ~ ${md(s.end)} 04:00 · 결산 ~${md(s.settleEnd)} 04:00 · 보스 ${s.boss.name}(${EL[s.boss.element] || ''} ${s.boss.role})`, esc)}</div>`+
+      (st.needsUpdate?'<p class="mut gd-small" data-k="gd-stale">갱신 대기 · 아래는 지난 시즌 기준이에요</p>':'');
+  }
+  const help = (title, text, esc) => `<button type="button" class="ux-help" aria-label="${esc(title)} 설명" aria-expanded="false" data-help="${esc(text)}">ⓘ</button>`;
+  // Reference table only: never present preset power as the user's account result.
+  function overview(G, esc) {
+    const S=G.sim;
+    if(!S)return '<p class="mut">단계·점수 자료 없음</p>';
+    const g=S.growth.find(x=>Number(x)===2)??S.growth[0], b=simBest(S,g), e=simExpect(G,S,g);
+    const level=b=>b?(b.level?b.level+'단계':'EX 기본'):'EX도 어려움';
+    const power=g=>'약 '+Math.round(S.recPower*g/10000)+'만';
+    const detail=(b,expect)=>b?`${expect?'별의 도전 '+b.level+'단계 · ':''}클리어 ${pct(b.p)} · 지원 ${SUP_NAME[b.support]||b.support}`:'클리어 기준 미달';
+    const rows=S.growth.map(g=>{const b=simBest(S,g),e=simExpect(G,S,g);return `<tr><th>${power(g)}</th><td><b>${level(b)}</b><small>${b?pct(b.p):'—'} ${help('클리어 편성·지원',b?S.teams[b.team].names.join(' · ')+' · '+detail(b,false):'클리어 기준 미달',esc)}</small></td><td><b>${e?num(e.m):'—'}</b><small>${e?level(e)+' · '+pct(e.p):'—'} ${help('점수 편성·지원',e?S.teams[e.team].names.join(' · ')+' · '+detail(e,true):'자료 없음',esc)}</small></td></tr>`;}).join('');
+    return `<div data-k="gd-overview"><p class="season-basis">기준표 · 전투력 ${power(g)} ${help('기준표','내 계정 결과가 아닌 표준 육성 후보의 모의 전투 기준이에요. 두 지표는 서로 다른 편성·단계·지원일 수 있어요. 지원과 편성은 각 ⓘ에서 확인하세요. 내 구원자는 편성 찾기로 계산해요.',esc)}</p>
+<div class="season-kpis"><div><span>최고 클리어 단계</span><b data-k="gd-clear-kpi">${level(b)}</b><small>${b?'클리어 '+pct(b.p):'기준 미달'}</small></div><div><span>최대 기대 점수</span><b data-k="gd-score-kpi">${e?num(e.m):'—'}</b><small>${e?level(e)+' · 클리어 '+pct(e.p):'자료 없음'}</small></div></div>
+<table class="season-reference" data-k="gd-summary-table"><thead><tr><th>전투력</th><th>클리어 단계 · 지원</th><th>기대 점수 · 지원</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   function rulesBox(G, esc) {
     const r = G.rules;
@@ -169,7 +180,9 @@ ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율 (선�
   }
   function panelHtml(G, sel0, step, nowMs, esc) {
     const sel = normSel(G, sel0), ex = exStep(G);
-    let html = seasonBox(G, nowMs, esc);
+    let html = seasonBox(G, nowMs, esc)+(step===ex.step?overview(G,esc):'');
+    if(step!==ex.step)html+=`<p class="mut">${step}단계 · 별의 도전 없음. 편성 탐색은 EX(${ex.step}단계)를 골라 주세요.</p>`;
+    html += '<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary><div class="gd-dev" data-k="gd-dev" role="note"><b>개발 중 · 테스트 중인 기능입니다</b><br>점수 계산과 고단계 수치는 확인되지 않았고, 시뮬 추정은 실제 플레이와 대조하지 않았습니다. 참고용으로만 봐 주세요.</div>';
     if (step === ex.step) {
       const pct = extraPct(G, sel.level, sel.tiers), sc = score(G, pct), b = bestSelection(G), bsc = score(G, extraPct(G, b.level, b.tiers));
       const hyp = G.score.hypotheses.map(h => `${h.name} ${num(sc[h.id])}`).join(" · ");   // 보스를 다 깎았을 때 점수
@@ -184,13 +197,13 @@ ${simBox(G, esc)}${selectBox(G, sel)}
       const total = s.base + G.stepsMeta.minions * s.kill + s.bossKill;
       html += `<div class="gd-now" data-k="gd-now">${step}단계에는 별의 도전이 없습니다. 기본 ${num(s.base)} + 졸개 처치 ${num(G.stepsMeta.minions * s.kill)} + 보스 처치 ${num(s.bossKill)} = <b>${num(total)}</b><br><span class="mut">최고 점수는 EX(${ex.step}단계)에서 나옵니다. 스테이지에서 EX를 고르세요.</span></div>`;
     }
-    html += rulesBox(G, esc) + stepsTable(G, step, esc);
+    html += '</details><details class="season-options" data-fold="gd-rules"><summary>입장 규칙·점수 계산 방식·출처</summary>'+rulesBox(G, esc) + stepsTable(G, step, esc);
     const b = G.exBoss;
     html += `<div class="mut gd-small" data-k="gd-boss">EX 보스 기준값(별의 도전 전) 생명력 ${num(b.hp)} · 속도 ${b.speed} · 공격 ${num(b.atk)} · 방어 ${num(b.def)} · 슈퍼아머 ${b.superArmor} ${EST}</div>`;
     const src = Object.values(G.sources).filter(s => s.url).map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)}</a>`).join("<br>");
     html += `<details class="gd-comm" data-k="gd-comm"><summary>커뮤니티 정보 <span class="gd-est">추정·낮은 신뢰</span></summary><ul>${G.community.items.map(i => `<li>${esc(i.text)}</li>`).join("")}</ul><div class="mut gd-small">${esc(G.community.note)}</div></details>
 <details class="gd-src"><summary>출처</summary><div class="gd-small">${src}</div></details>`;
-    return html;
+    return html+'</details></div>';
   }
   const api = {num, parseTime, seasonState, baseTotal, extraPct, score, scoreAt, bossPoints, progParts, scoreFromProg, bestSelection, normSel, rangeText, levelEffects, simBest, simExpect, simBox, panelHtml};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildView = api;
