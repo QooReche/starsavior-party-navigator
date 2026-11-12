@@ -22,8 +22,8 @@ options
    "enemy_lines": true, "run_offset": 0, "per_run": false, "formula_override": {"COOP_CAP": 1.0}, "rekindle": 0,
    "break_skill": {"name": "큐브 과부하", "level": 5}}
   break_skill = 생략/None 이면 미장착. 큐브 과부하·특이점 관측·스타피어서·차원 강습·행성 정화 지원(레벨 1~10 = 계수 가산, mc.break_skill_level), 다른 이름은 unsupported.runtime 에 기록.
-  rekindle = 작전 재점화 버프 단계 0~5(작전 op 에서만): 아군 주는 피해 ×(1+x)·받는 피해 ×(1−x), x = REKINDLE[단계]
-       (인게임 표 2026-10-21 사용자 제보, 전투력 보정과 곱으로 합침 — 곱인지 증감 합인지는 미확인)
+  rekindle = 작전(op·oph) 재점화 단계 0~5: 피해 증가·감소 항에 +x, x = REKINDLE[단계](rekindle_apply=multiply면 옛 별도 곱)
+       (26610546 클라·표 확인: docs/rekindle_1112.md. 전투력 보정은 별도 배율로 유지)
   run_offset = 판 번호 시작값(판 r 의 난수 = seed*1000003 + run_offset + r; timeline 은 첫 판 = run_offset 번 판)
   per_run = true 면 result.runs = [[결과, 처치 턴 또는 null], ...](판 순서)
   formula_override = 공식 상수 임시 교체(민감도용, 지금은 COOP_CAP 만). 실행이 끝나면 원래 값으로 돌린다
@@ -382,7 +382,7 @@ def simulate(party_spec, encounter_spec, options=None):
             setattr(_rules, k, v)
 
 
-REKINDLE = [0.0, 0.03, 0.07, 0.12, 0.18, 0.25]     # 작전 재점화 버프 단계별 (주는 피해 +x, 받는 피해 −x) — 인게임 표(2026-10-21 사용자 제보)
+REKINDLE = [0.0, 0.03, 0.07, 0.12, 0.18, 0.25]     # 작전 재점화 버프 단계별 (주는 피해 +x, 받는 피해 −x) — 26610546 BUFF_TEMPLET:55578-55937, NST_RATE_DAMAGE_UP/REDUCE
 
 
 def _ally_stage_fx(encounter_spec, meta, fx):
@@ -437,12 +437,20 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     elif mc['power_penalty'] not in ('off', 'model'):
         raise ValueError('power_penalty 는 off|model: %r' % mc['power_penalty'])
     rk = int(o.get('rekindle') or 0)
+    if mc['rekindle_apply'] not in ('sum', 'multiply'):
+        raise ValueError('rekindle_apply 는 sum|multiply: %r' % mc['rekindle_apply'])
     if rk and meta.get('content') in ('op', 'oph'):
         if not 0 < rk < len(REKINDLE):
             raise ValueError('rekindle 은 0~%d: %r' % (len(REKINDLE) - 1, rk))
         x = REKINDLE[rk]
-        a0, e0 = pen or (1.0, 1.0)
-        pen = (a0 * (1 + x), e0 * (1 - x))
+        if mc['rekindle_apply'] == 'multiply':
+            a0, e0 = pen or (1.0, 1.0)
+            pen = (a0 * (1 + x), e0 * (1 - x))
+        else:
+            # IsBuff=false·ForceApplyEffect·TurnInfinite·DeadNotDispel: 강화 개수/해제/금지와
+            # 독립인 상시 스탯. stage_fx_target=off여도 재점화는 별도로 적용한다.
+            # NKM:2371,3885-3892,18864-18897 → mc.Unit.mods → 일반/지속/연쇄 피해.
+            ally_fx = list(ally_fx or ()) + [({'피해 증가': x * 100, '피해 감소': x * 100}, None, None)]
     static = support_report(defs + [d for w in waves for d in w])
     names = ['%s#%d' % (d.name, i) for i, d in enumerate(defs)]
     agg = defaultdict(lambda: defaultdict(list))

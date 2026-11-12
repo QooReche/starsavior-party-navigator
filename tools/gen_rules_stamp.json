@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "e1dd8737be72b4aa",
+  "hash": "f16c098b69a0b613",
   "history": [
-   {
-    "hash": "255fc05813a448b7",
-    "reason": "11/10 cosmo_boss_barrier 추가: 코스모 게이트(cosmo_raid_boss=on, 시즌 전투 meta.cosmo_raid)에서만 읽는 스위치라 길방 생성기(build_guild_sim)는 쓰지 않음(grep 0건)"
-   },
    {
     "hash": "2fcbdc1ecf7127ee",
     "reason": "11/10 stage_fx_target 기본 allies: 스테이지 효과(fx)는 플래시 포인트(rush) 44개 스테이지에만 있고 길방 시뮬(build_guild_sim)은 길드방어전 스테이지만 사용(fx 없음, 에이전트 계측 clo/op/oph/equip/cosmo/daily/cube 0개)"
@@ -39,18 +35,18 @@
     "reason": "격전 의뢰 foe_forced_coop 추가: main 82c612f 대비 길방 포함 기존 콘텐츠 golden 기본/legacy 78/78 동일. 시즌 종료 상태와 길방 계산 유지."
    },
    {
-    "hash": "e1dd8737be72b4aa",
-    "reason": "11/12 myinfo_potential_coverage·foe_forced_coop 추가: 표준 육성 결과 불변(golden 78/78), 길드 방어전 시즌 종료(미오픈)로 재계산 생략"
+    "hash": "2680bd92e4befe60",
+    "reason": "11/12 재점화 합산: 길드방어전 시즌4 종료로 미오픈이라 재생성 생략. 재점화는 op·oph만 적용되어 길방 결과는 불변. 새 시즌 자료 반영 때 재생성"
+   },
+   {
+    "hash": "f16c098b69a0b613",
+    "reason": "11/12 재점화 합산 등: 길드 방어전 시즌 종료(미오픈)로 재계산 생략"
    }
   ]
  },
  "quick": {
-  "hash": "e1dd8737be72b4aa",
+  "hash": "f16c098b69a0b613",
   "history": [
-   {
-    "hash": "2e770586886fac1e",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "255fc05813a448b7",
     "reason": "11/10 cosmo_boss_barrier 추가: 코스모 게이트 벨그라스 전용 스위치. quick 표본 생성기(gen_quick_calib/calibrate_quick)는 cosmo_raid_boss 를 켜지 않아(grep 0건) 결과 무관, quick 의 cosmo 항목은 코스모 회랑"
@@ -84,8 +80,12 @@
     "reason": "격전 의뢰 foe_forced_coop 추가: main 82c612f 대비 기존 콘텐츠 golden 기본/legacy 78/78 동일. quick 재생성은 clash 18곳만 추가, 기존 st·sv·params·pc·calib 동일."
    },
    {
-    "hash": "e1dd8737be72b4aa",
-    "reason": "11/12 myinfo_potential_coverage 는 내 정보 경로 전용·foe_forced_coop 는 격전 의뢰 전용: 표준 육성 결과·quick 표본 불변(golden 78/78)"
+    "hash": "2680bd92e4befe60",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "f16c098b69a0b613",
+    "reason": "11/12 재점화 합산: quick 재보정(0.923→0.927) 뒤 병합된 규칙(잠재력 대조·격전 강제 협공·아세라 강인도)은 표준 육성 quick 표본 불변"
    }
   ]
  }

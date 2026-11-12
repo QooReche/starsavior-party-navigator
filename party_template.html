@@ -823,7 +823,7 @@ const ekey=k=>!(miMode()&&miProfile().results[k])&&BLOOM[k]&&QK.d&&QK.d.sv[k+BLV
 function pwOf(keys){const o={};let n=0;for(const k of keys)if(PW[k]>0){o[ekey(k)]=PW[k];n++}return n?o:null}
 function quickIn(c,st){if(!QK.d||!window.Quick)return null;const qs=(QK.d.st[c.key]||{})[st.tab+"|"+st.name];if(!qs)return null;
  const my=$("grow").value==="manual"?+$("mypow").value:0,rk=rkOf(c.key),p0=(QK.d.pc&&QK.d.pc[c.key])||QK.d.params;
- const prm=rk&&p0?Object.assign({},p0,{A:p0.A*(1+REKINDLE[rk]),B:p0.B*(1-REKINDLE[rk])}):p0;   // 재점화 버프 = 아군 피해 ×(1+x)·적 피해 ×(1−x)(시뮬 api rekindle 과 같은 뜻)
+ const prm=rk&&p0?Object.assign({},p0,{A:p0.A*(1+REKINDLE[rk]),B:p0.B*(1-REKINDLE[rk])}):p0;   // 빠른 계산 재점화 근사: 집계 화력 계수에 배율 적용. 상세 시뮬(api rekindle)은 개별 증감 항에 합산
  return {qs,power:my>0?my:null,growth:+($("grow").value==="manual"?LS.get("grow"):$("grow").value)||1,ck:c.key,prm,rk}}
 const qBase=(qi,keys)=>Object.assign({growth:qi.growth,power:qi.power,powers:$("grow").value==="manual"&&!Object.hasOwn(SHARE,"p")?pwOf(keys):null},miMode()?MyInfoReco.team(keys,miProfile(),ekey):{});
 function quickRank(ranked,qi,profile=null){

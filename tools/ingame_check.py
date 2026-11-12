@@ -2,7 +2,7 @@
 """인게임 실측(docs/ingame_samples.md)과 확률 엔진을 대조한다 — 「준 피해 ÷ 받은 피해」 비율·클리어 확률·아군 행동 수.
 
 실측 판마다 사용자 능력치 화면 값(공·생·방·속도·치명 등)을 stats_override 로 넣고(화면이 없는 구원자는 남은 전투력 몫으로 표준 육성 배율),
-재점화 버프는 전투력 보정 배율에 곱한다(api options.rekindle 과 같은 뜻). 규칙을 바꿔 보려면 --ov '{"basic_tough": 1}'.
+재점화는 api options.rekindle로 전달한다(기본 증감 합산, rekindle_apply=multiply면 옛 별도 곱). 규칙을 바꿔 보려면 --ov '{"basic_tough": 1}'.
 
 사용: python -X utf8 -I tools/ingame_check.py [--runs 100] [--ov JSON] [--only 37-3] [--bs [LV]] [--bs-name 이름] [--bs-real] [--myinfo PATH]
 --myinfo = 비공개 내정보를 제자리에서 읽어 콘텐츠 규칙으로 최종 능력치·전투력을 계산한다.
