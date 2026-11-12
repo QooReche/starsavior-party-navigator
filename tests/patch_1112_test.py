@@ -86,6 +86,54 @@ class Patch1112Test(unittest.TestCase):
         self.assertEqual(len(gaps),1)
         self.assertIn('강인도 피해 감소',gaps[0]['reason'])
 
+    def test_wedding_epindel_own_turn_extra_effects(self):
+        # 실제 부케 토스의 내 턴 줄 3개: 추가 턴·공격력 증가·점화 소비.
+        # 상태만 준비하고 추가 시전의 피해와 조건/효과 실행은 실제 엔진을 쓴다.
+        for mode, expected in [('client', ['extra_turn', 'buff', 'remove']), ('main_only', [])]:
+            with self.subTest(mode=mode):
+                b = battle([unit_def('wedding-epindel')], [unit('f', hp=10**8)],
+                           mc={'own_turn_condition': mode}, opts={'coop': False, 'nova': False})
+                a = b.allies[0]
+                a.acting = True
+                give(a, '점화', {}, stacks=5).maxs = 5
+                checked, executed = [], []
+                original_cond, original_exec = b.cond_ok, b.exec_line
+                def cond(owner, ln, ctx):
+                    result = original_cond(owner, ln, ctx)
+                    if owner is a and dict(ln.params).get('내 턴') == '예':
+                        self.assertTrue(ctx.extra)
+                        checked.append(result)
+                    return result
+                def execute(owner, ln, ctx):
+                    if owner is a and dict(ln.params).get('내 턴') == '예':
+                        executed.append(ln.eff['kind'])
+                    return original_exec(owner, ln, ctx)
+                with patch.object(b, 'cond_ok', cond), patch.object(b, 'exec_line', execute):
+                    b.cast(a, a.d.skills['특수기'], extra=True, target=b.foes[0])
+                self.assertGreater(b.progress(), 0)
+                self.assertEqual(checked, [mode == 'client'] * 3)
+                self.assertEqual(executed, expected)
+                self.assertEqual(a.extra_turn, mode == 'client')
+                self.assertEqual(a.has('공격력 증가'), mode == 'client')
+                self.assertEqual(a.stack('점화'), 0 if mode == 'client' else 5)
+
+    def test_own_turn_uses_owner_state_with_other_event_source(self):
+        for mode in ('client', 'main_only'):
+            b = battle([unit_def('wedding-epindel'), unit('partner')], [unit('f')],
+                       mc={'own_turn_condition': mode})
+            a, partner = b.allies
+            give(a, '점화', {}, stacks=5).maxs = 5
+            lines = [ln for ln in b.lines_of(a) if dict(ln.params).get('내 턴') == '예']
+            self.assertEqual(len(lines), 3)
+            for acting in (True, False):
+                a.acting = acting
+                for source in (a, partner):
+                    for extra in (True, False):
+                        ctx = Ctx(a, source, a.d.skills['특수기'], extra)
+                        expected = acting and (mode == 'client' or (source is a and not extra))
+                        self.assertEqual([b.cond_ok(a, ln, ctx) for ln in lines], [expected] * 3,
+                                         (mode, acting, source.key, extra))
+
     def test_old_mislabelled_stack_grant_keeps_legacy_switch(self):
         for mode, stacks in [('on', 3), ('off', 13)]:
             b = battle([unit()], [unit('f')], mc={'level_buff_decrease': mode})
@@ -94,6 +142,65 @@ class Patch1112Test(unittest.TestCase):
             ln = Line('[스킬 사용 후] 자신에게 〈먼지 포착(해제불가)〉 (지속 무한 / 속도% +3%) {최대 25중첩, 5회 부여}', '특수기', 'active')
             b.exec_line(a, ln, Ctx(a, a, a.d.skills['기본기']))
             self.assertEqual(a.stack('먼지 포착(해제불가)'), stacks)
+
+    def test_named_duration_extends_buff_and_keeps_legacy(self):
+        for mode, duration in [('on', 5), ('off', 3)]:
+            with self.subTest(mode=mode):
+                b = battle([unit()], [unit('f')], mc={'effect_dur_extend': mode})
+                a, f = b.allies[0], b.foes[0]
+                selected = give(a, '공격력 증가', {'공격력%': 30})
+                other = give(a, '속도 증가', {'속도%': 20})
+                enemy = give(f, '공격력 증가', {'공격력%': 30})
+                ln = Line("[스킬 사용 후] 자신에게 '공격력 증가' 지속 턴 +2", '기본기', 'active')
+                self.assertEqual(ln.eff['kind'], 'extend')
+                b.run_line(a, ln, Ctx(a, a, a.d.skills['기본기']))
+                self.assertEqual(selected.dur, duration)
+                self.assertEqual((other.dur, enemy.dur), (3, 3))
+
+    def test_named_duration_does_not_extend_marker_or_missed_effect(self):
+        b = battle([unit()], [unit('f')])
+        a = b.allies[0]
+        marker = give(a, '점화', {}, stacks=5)
+        checked = give(a, '공격력 증가', {'공격력%': 30})
+        checked.check = True
+        for name in ('점화', '공격력 증가'):
+            ln = Line(f"[스킬 사용 후] 자신에게 '{name}' 지속 턴 +1", '기본기', 'active')
+            b.run_line(a, ln, Ctx(a, a, a.d.skills['기본기']))
+        self.assertEqual((marker.dur, checked.dur), (3, 3))
+        checked.check = False
+        ln = Line("[스킬 사용 후] 자신에게 '공격력 증가' 지속 턴 +1 {효과 적중 판정}", '기본기', 'active')
+        with patch.object(b, 'roll_hit', return_value=False) as hit:
+            b.run_line(a, ln, Ctx(a, a, a.d.skills['기본기']))
+        self.assertEqual(hit.call_count, 1)
+        self.assertEqual(checked.dur, 3)
+
+    def test_existing_named_burn_duration_lines_unchanged(self):
+        # 원문 3건은 크리스텔 궁극기의 lv/ef/L 표현에 각각 실려 있다.
+        def named_lines(value):
+            if isinstance(value, dict):
+                return [raw for child in value.values() for raw in named_lines(child)]
+            if isinstance(value, list):
+                return [raw for child in value for raw in named_lines(child)]
+            return [value] if isinstance(value, str) and "'연소' 지속 턴" in value else []
+        raws = named_lines(get_db().main)
+        self.assertEqual(len(raws), 3)
+        for raw in raws:
+            for mode in ('on', 'off'):
+                with self.subTest(raw=raw, mode=mode):
+                    b = battle([unit()], [unit('f')], mc={'effect_dur_extend': mode})
+                    a, f = b.allies[0], b.foes[0]
+                    burn = give(f, '연소', harmful=True)
+                    burn.inst = [[a, 2], [a, 3]]
+                    other = give(f, '출혈', harmful=True)
+                    good = give(f, '공격력 증가', {'공격력%': 30})
+                    ln = Line(raw, '궁극기', 'active')
+                    ctx = Ctx(a, a, a.d.skills['기본기'])
+                    ctx.target, ctx.targets = f, [f]
+                    with patch.object(b, 'roll_hit', return_value=True):
+                        b.exec_line(a, ln, ctx)
+                    self.assertEqual(burn.dur, 4)
+                    self.assertEqual([x[1] for x in burn.inst], [3, 4])
+                    self.assertEqual((other.dur, good.dur), (3, 3))
 
     def test_orthros_new_condition_and_damage_text(self):
         raw = load_foe()

@@ -3776,7 +3776,7 @@ class Battle:
             return
         if kd == 'extend':
             # 설명문으로 효과 이름을 정하는 연장(mc_semantics, 크리스텔 등)은 원래부터 실행됨.
-            # mc.effect_dur_extend 는 파서가 새로 해석한 줄(src='parser', 오르트로스 「적(자동 지정)에게 효과 지속 턴 +1」)만 켜고 끈다.
+            # off는 일반 연장(src='parser')을 미지원으로, 이름 지정 연장을 종전 약화 전용으로 둔다.
             if eff.get('src') == 'parser' and self.mc.get('effect_dur_extend') == 'off':
                 self.run_special(owner, ln, ctx, line_rest(ln))   # 옛 동작 = 미해석 줄로 처리(옛 결과 그대로 재현)
                 return
@@ -3784,7 +3784,12 @@ class Battle:
                 if eff['judge'] and not self.roll_hit(owner, ctx, x, None):
                     continue
                 for name, e in x.eff.items():
-                    if not e.harmful or (eff['name'] and name != eff['name']):
+                    if eff['name'] and name != eff['name']:
+                        continue
+                    # 이름 지정 연장은 강화에도 적용(NKM:5123-5134,
+                    # Star.Templets:4535-4557,4708-4711). 일반 약화 연장은 그대로.
+                    if not e.harmful and not (eff.get('named') and self.mc['effect_dur_extend'] == 'on'
+                                             and not e.check and positive_buff(name, True)):
                         continue
                     e.dur += eff['val']
                     for instance in e.inst or []:

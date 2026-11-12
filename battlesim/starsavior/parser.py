@@ -185,7 +185,7 @@ def parse_effect(rest):
                     props={}, max=None, times=int(m[3]), judge=False, consume=True)
     m = re.match(r"^(.+?)에게 '([^']+)' 지속 턴 \+?(\d+)", rest)
     if m:
-        return dict(kind='extend', target=m[1], name=m[2], val=int(m[3]), judge='효과 적중 판정' in rest)
+        return dict(kind='extend', target=m[1], name=m[2], val=int(m[3]), judge='효과 적중 판정' in rest, named=True)
     m = re.match(r'^(.+?)에게\s*(?:\(대상마다 (\d+)% 판정\)\s*)?(?:(\d+)% 확률로\s*)?〈([^〉]+)〉\s*(?:\(([^)]*)\))?\s*(?:‹([^›]*)›)?\s*(\{[^}]*\})?', rest)
     if m:
         target, p1, p2, name, props, dot, flags = m.groups()

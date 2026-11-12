@@ -139,6 +139,39 @@ class CombatTests(unittest.TestCase):
         b.cast(a, a.d.skills['궁극기'], target=b.foes[0])
         self.assertEqual(b.nova_of(a), n + 5)  # normal skill 1 + potential 2
 
+    def test_random_ally_basic_client_extra_and_once_per_turn(self):
+        # 40405: 기본값은 자기 턴의 추가 발동에도 적용하며, 턴당 제한은 공유한다.
+        d = definition(potentials=[(40405, 1)])
+        b = battle([d, unit('partner')], [unit('one'), unit('two')], opts={'coop': False})
+        a = b.allies[0]
+        a.acting = True
+        ln = next(x for x in d.lines if x.slot == '잠재력')
+        ctx = Ctx(a, a, a.d.skills['기본기'], True)
+        ctx.via, ctx.crit = 'extra', True
+        self.assertEqual(b.mc['own_turn_condition'], 'client')
+        with patch.object(b.rng, 'random', return_value=0), \
+                patch.object(b.rng, 'choice', lambda xs: xs[-1]), \
+                patch.object(b, 'cast', wraps=b.cast) as cast:
+            b.run_line(a, ln, ctx)
+            self.assertEqual(cast.call_count, 1)
+            self.assertIs(cast.call_args.args[0], b.allies[1])
+            self.assertIs(cast.call_args.kwargs['target'], b.foes[1])
+            ctx.extra = False
+            b.run_line(a, ln, ctx)
+            self.assertEqual(cast.call_count, 1)  # 추가 발동→본행동도 같은 턴 제한
+            a.actions += 1
+            ctx.extra = True
+            b.run_line(a, ln, ctx)
+            self.assertEqual(cast.call_count, 2)
+            a.actions += 1
+            ctx.crit = False
+            b.run_line(a, ln, ctx)
+            self.assertEqual(cast.call_count, 2)
+            ctx.crit, a.acting = True, False
+            b.run_line(a, ln, ctx)
+            self.assertEqual(cast.call_count, 2)
+        self.assertGreater(b.progress(), 0)
+
     def test_builder_reproduces_numeric_artifact(self):
         from tools.build_myinfo_combat import build, MISMATCH
         from tools.runtime import static_path_or_none
