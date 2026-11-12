@@ -164,7 +164,8 @@ function growthRankPaint(){const el=$('growth-priority');if(!el)return;
       .then(m=>{GROW.historyEngine=m.ver;growthRankPaint();}).catch(()=>{}).finally(()=>{GROW.historyLoading=false;});}return;}
   const c=contents[$('content').value],st=cur[$('stage').value];if(!c||!st)return;
   const versions={engine:GROW.historyEngine,data:MyInfoReco.hash([GrowthGuide.VERSION,MI.growth,D,QK.d])};
-  const rows=GrowthGuide.grownPriority(history,growthSig(c,st,versions),
+  const activeHistory=Object.fromEntries(Object.entries(history).filter(([,h])=>!seasonBlocked(h.content?.split('/')[0])));
+  const rows=GrowthGuide.grownPriority(activeHistory,growthSig(c,st,versions),
     Object.fromEntries(contents.map(c=>[c.key,growthConditions(c,false)])));
   if(!rows.length)return;
   const row=r=>`<div class="growth-rank-row" data-k="growth-rank-row"><b>${esc(BYKEY[r.key]?.name||r.key)}</b> `+

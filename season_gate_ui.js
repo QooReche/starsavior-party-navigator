@@ -25,6 +25,7 @@ function seasonRefresh(){
   seasonLastState=tag;
   seasonPaint();
   if(seasonBlocked(key)){
+    // simInvalidate -> growthCancel -> GROW.stop also cancels the copied seasonal growth search.
     simInvalidate();REQ=false;SIMQ.kick=false;
     for(const target of [GSR,CSR]){target.id++;target.handle?.cancel();target.handle=null;target.phase='idle';}
   }

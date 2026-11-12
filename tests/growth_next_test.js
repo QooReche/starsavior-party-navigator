@@ -44,7 +44,7 @@ function rankMarkup(){
   vm.createContext(ctx);vm.runInContext(ui,ctx);
   // Production renderer keeps top five visible, folds the remainder, and marks missing saviors.
   Object.assign(ctx,{$:id=>elements[id],MI:{info,growth:{}},QK:{d:{}},contents:[{key:'op'}],cur:[{}],D:{},
-    growthEnabled:()=>true,growthSig:()=>'',growthConditions:()=>({}),MyInfoReco:{hash:()=>''},
+    growthEnabled:()=>true,growthSig:()=>'',growthConditions:()=>({}),seasonBlocked:()=>false,MyInfoReco:{hash:()=>''},
     LS:{get:()=>({h:{historyVersion:G.HISTORY_VERSION}})},GrowthGuide:{...G,grownPriority:()=>Array.from({length:7},(_,i)=>({key:String(i),source:i===3?'assumed':'owned',count:2,changedFields:['skills']}))}});
   vm.runInContext("GROW.historyEngine='test';growthRankPaint()",ctx);
   const html=elements['growth-priority'].innerHTML;

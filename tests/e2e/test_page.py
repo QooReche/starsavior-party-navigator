@@ -1979,8 +1979,12 @@ def test_star_link_slots(browser, ctx):
 
 def test_growth_stage23(browser, ctx):
     """Same seasonal search for both accounts, deterministic worker results from input stats."""
-    page = open_page(browser, ctx, info=SYNTH, raid_ui=True)
+    page = open_page(browser, ctx, info=SYNTH, raid_ui=True, setup=lambda pg: pg.clock.install())
     page.evaluate('''async () => {
+      const now=Date.now(),start=new Date(now-10000).toISOString();
+      Object.assign(D.guild.season,{start,end:new Date(now+3600000).toISOString()});
+      D.cosmoRaid.seasonPeriod={start,end:new Date(now+7200000).toISOString()};
+      history.replaceState(null,'','?auto=0');seasonRefresh();
       const info=structuredClone(MI.info);
       for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
       const keys=R.filter(s=>MI.growth.assumed.units[s.key]&&!D.guild.search.excluded.includes(s.key)).slice(0,12).map(s=>s.key);
@@ -1996,7 +2000,7 @@ def test_growth_stage23(browser, ctx):
       LS.set=(key,value)=>{if(key==='cosmo.speed.v2')stage23SpeedWrites.push({grown:SIMQ.busy==='growth',value});return savedSet(key,value);};
       window.Worker=class {
         constructor(){stage23Peak=Math.max(stage23Peak,++stage23Active);}
-        postMessage(req){stage23Requests.push(req);setTimeout(()=>{
+        postMessage(req){stage23Requests.push(req);if(window.stage23Hold)return;setTimeout(()=>{
           if(this.dead)return;
           for(const t of req.teams){const value=Math.min(.95,.5+t.party.units.reduce((a,u)=>a+u.stats_override.atk,0)/100000);
             const bi=D.cosmoRaid.bosses.findIndex(b=>b.key===t.options?.cosmo_raid?.boss),wanted=stage23Keys.slice(bi*4,bi*4+4),
@@ -2052,10 +2056,36 @@ def test_growth_stage23(browser, ctx):
             assert '2개 콘텐츠' in page.inner_text('#growth-priority')
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
             page.click('#tab-reco')
+    # Keep a real seasonal search pending in its copied state, then cross the end boundary.
+    # Worker replies are held; production cancellation must terminate them and prevent a late card.
+    for kind in ['guild', 'cosmo']:
+        page.evaluate('''() => {
+          growthCancel();$('assume-growth').checked=false;window.stage23Hold=true;
+        }''')
+        page.select_option('#content', value=page.evaluate(f"String(contents.findIndex(c=>c.key==='{kind}'))"))
+        settle(page)
+        # Closing either season invalidates both owned search states; prepare the next one again.
+        page.evaluate(f"async()=>{{stage23Hold=false;await {kind}SearchStart();stage23Hold=true;}}")
+        assert page.evaluate("growthSeasonReady(contents[$('content').value])"), kind
+        page.evaluate("$('assume-growth').checked=true;void growthStart(contents[$('content').value],cur[$('stage').value])")
+        page.wait_for_function("GROW.phase==='running' && stage23Active>0 && typeof GROW.stop==='function'")
+        saved_history = page.evaluate("JSON.stringify(LS.get('growth.history'))")
+        page.clock.set_system_time(_dt.datetime.fromisoformat(page.evaluate(f"seasonData('{kind}').end").replace('Z', '+00:00')))
+        page.evaluate('seasonRefresh()')
+        assert page.evaluate("GROW.phase==='idle' && GROW.stop===null && SIMQ.busy===null && stage23Active===0")
+        page.wait_for_timeout(100)
+        assert page.locator('#growth-result').count() == 0
+        assert page.evaluate("JSON.stringify(LS.get('growth.history'))") == saved_history
+        if kind == 'guild':
+            assert page.evaluate("!$('growth-priority').hidden")
+            assert '1개 콘텐츠' in page.inner_text('#growth-priority')
+            assert '2개 콘텐츠' not in page.inner_text('#growth-priority')
+        else:
+            assert page.evaluate("$('growth-priority').hidden")
     assert page.evaluate('stage23Peak<=Math.max(csWorkers(),8)')
     assert page.evaluate('stage23Requests.every(r=>r.teams.every(t=>t.party.units.every(u=>u.stats_final)))')
     assert not ctx.errors, ctx.errors
-    return True, '길방·코스모 같은 탐색 · 실제 입력 스탯 기반 결과 · 상위20%/3팀 합산 · 같으면 숨김 · 원본 불변'
+    return True, '길방·코스모 같은 탐색 · 종료 시 작업자 취소·순위 제외·기록 보존'
 
 
 def test_season_gate(browser, ctx):
