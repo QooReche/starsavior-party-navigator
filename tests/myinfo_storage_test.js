@@ -19,7 +19,20 @@ const tests={
   legacy_power_ignored(){const saved={grow:'1.25',pow:'100000',pw:{luna:25000,gwen:25000}},b=boot(saved);
     assert.notEqual(b.els.grow.value,'manual');assert.equal(b.els.mypow.value,'');assert.equal(b.quick().power,null);},
   myinfo_fixed(){const b=boot({grow:'1.25',pow:'100000'},{units:[]});assert.equal(b.els.grow.value,'myinfo');assert.equal(b.quick().power,null);},
-  defaults(){assert.equal(boot({}).els.grow.value,'1');assert.equal(boot({grow:'0.8'}).els.grow.value,'0.8');}
+  defaults(){assert.equal(boot({}).els.grow.value,'1');assert.equal(boot({grow:'0.8'}).els.grow.value,'0.8');},
+  legacy_reco_auto_ignored(){
+    for(const saved of [undefined,false,true]){
+      let invalidated=0,rendered=0;
+      const ctx=vm.createContext({location:{search:''},SHARE:{},MI:{info:{}},SIMQ:{kick:true},LASTQ:{old:{}},_rt:null,
+        LS:{get:k=>{assert.notEqual(k,'reco.auto','must not read the retired preference');return saved}},
+        clearTimeout(){},setTimeout(){assert.fail('normal selection must not schedule recommendation')},
+        simInvalidate(){invalidated++},run(skip){assert.equal(skip,true);rendered++}});
+      vm.runInContext(section('const AUTO=', 'function miGuide('),ctx);
+      vm.runInContext('REQ=true;condChanged()',ctx);
+      assert.equal(vm.runInContext('!REQ&&RECO.timer===null&&RECO.revision===1&&!SIMQ.kick&&Object.keys(LASTQ).length===0',ctx),true);
+      assert.equal(invalidated,1);assert.equal(rendered,1);
+    }
+  }
 };
 let failed=0;for(const [name,test] of Object.entries(tests)){try{test();console.log('PASS',name)}catch(e){failed++;console.error('FAIL',name,e.message)}}
 if(failed)process.exitCode=1;else console.log('ALL OK',Object.keys(tests).length);

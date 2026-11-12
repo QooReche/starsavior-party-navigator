@@ -1132,8 +1132,7 @@ def test_sim_runs(browser, ctx):
 def test_press_to_compute(browser, ctx):
     """「추천 편성 보기」: 누르기 전엔 계산 안 함 → 누르면 진행 화면만(예선 → 본선, 결과 카드 안 보임) → 끝나면 결과(판정은 모두 시뮬 기준), 조건을 바꾸면 안내로."""
     ctx.errors.clear()
-    page = open_page(browser, ctx, query="?auto=0", simauto=None, wait=False,
-                     setup=lambda p: p.add_init_script("localStorage.setItem('pn.reco.auto','false')"))
+    page = open_page(browser, ctx, query="?auto=0", simauto=None, wait=False)
     wait_myinfo(page)
     settle(page)
     assert page.locator('[data-k="idle"]').count() == 1 and page.locator('.qrow[data-key]').count() == 0

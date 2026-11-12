@@ -353,7 +353,6 @@ summary{padding:9px 4px}
  </div>
 
  <details class="optbox ux-menu" id="optbox"><summary aria-label="전투·공유 메뉴">⋯</summary><div id="mode-menu" class="menu-controls"></div>
-  <label class="mi-use"><input type="checkbox" id="reco-auto"> 자동 계산</label>
   <button type="button" class="sec" id="sim-auto-off" data-simauto="0">모의 전투 자동 실행 끄기</button><input type="number" id="mypow" hidden><div id="powinfo" class="powinfo" hidden></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됩니다.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성<select id="mmode"><option value="">균형</option><option value="avoid">역상성 회피</option></select></label></div>
@@ -1154,20 +1153,15 @@ function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap
 function buildCands(ranked){return ranked.slice(0,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
 // 남은 시간 표시는 1초마다 다시 그린다(화면 전체를 다시 그리지 않고 글자만)
 setInterval(()=>{if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
-// 기기별 자동 추천과 기존 URL/모의 전투 자동 실행은 별개다.
+// 추천은 버튼으로 시작한다. 시험용 URL과 공유 링크만 자동으로 시작한다.
 const AUTO=/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
-// CPU 6배 감속에서 화면 응답 지연이 확인됨. 자동 기본화는 성능 재판정 뒤 전환.
-const RECO_AUTO_DEFAULT=false;
-const RECO={enabled:LS.get('reco.auto')??RECO_AUTO_DEFAULT,timer:null,revision:0,standard:false,sharedPending:!!SHARE.c};
-const recoAutoOn=()=>RECO.enabled&&!['guild','cosmo'].includes(contents[$('content').value]?.key);
+const RECO={timer:null,revision:0,standard:false,sharedPending:!!SHARE.c};
 function recoClearTimer(){clearTimeout(RECO.timer);RECO.timer=null;RECO.revision++}
-$('reco-auto').checked=!!RECO.enabled;
-$('reco-auto').onchange=()=>{RECO.enabled=$('reco-auto').checked;LS.set('reco.auto',RECO.enabled);condChanged()};
 function idleView(){
  const waiting=!!RECO.timer;
- $('out').innerHTML=`<div class="party idle" data-k="idle"><div id="reco-actions">${waiting?'<span role="status">계산 준비 중</span><button type="button" class="sec" data-recocancel>중단</button>':'<button type="button" data-go="1" title="현재 조건과 내 정보로 추천합니다">추천 편성 보기</button>'}</div></div>`;growthControlPlace()}
+ $('out').innerHTML=`<div class="party idle" data-k="idle"><div id="reco-actions">${waiting?'<span role="status">계산 준비 중</span>'+(RECO.sharedPending?'<button type="button" class="sec" data-recocancel>중단</button>':''):'<button type="button" data-go="1" title="현재 조건과 내 정보로 추천합니다">추천 편성 보기</button>'}</div></div>`;growthControlPlace()}
 function condChanged(){
- const canRun=!!MI.info||RECO.standard,requested=canRun&&(AUTO||recoAutoOn()||RECO.sharedPending);
+ const canRun=!!MI.info||RECO.standard,requested=canRun&&(AUTO||RECO.sharedPending);
  recoClearTimer();clearTimeout(_rt);REQ=false;SIMQ.kick=false;
  simInvalidate(); // cancel old selection immediately
  for(const k in LASTQ)delete LASTQ[k];
@@ -1231,7 +1225,6 @@ function runCore(skipAuto=false){
   const tail=`${altChips(party,alt,p)}<details class="manual-details" data-fold="manual-${p}"><summary>수동 스킬 순서</summary>${seq||'<div class="mut">수동을 선택하고 모의 전투하면 순서가 표시돼요</div>'}</details><details class="score-details" data-fold="score-${p}"><summary>더 보기</summary><div class="unit-metrics">${party.map(x=>`<div>${esc(x.s.name)}${simUnit(r,x.s.key)}</div>`).join("")}</div>${miFlags(qr?.b.assumed)}${starNote(c.key)}${bigBoss(c,st)?bigBossNote(bigBoss(c,st)):""}${p===1?'<div data-controls="score"></div><div data-controls="graph"></div>':""}<div class="scoredata">추천 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10${party.map(x=>`<div>${esc(x.s.name)}: ${Object.entries(x.parts).map(([k,v])=>`${esc(k)} ${v.toFixed(1)}`).join(" · ")}</div>`).join("")}${synSummary(party)}</div></details>`;
   html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}">${quickBox(p,qt,qi,st,pick.key,main,tail)}</div>`}
 
- html+='<div class="acts"><button type="button" class="sec" data-recoretry>다시 계산</button></div>';
  $("out").innerHTML=html;
  document.querySelectorAll('#out .party[data-party]').forEach(p=>{const more=p.querySelector('.score-details');if(more)p.querySelectorAll('.bbar,.break-extra,.gimbox,.gimavoid').forEach(e=>more.append(e));if(allParties.length>1)p.insertAdjacentHTML('afterbegin',`<h2 class="party-label">파티 ${p.dataset.party}</h2>`);});
  if(skipAuto!==true)simAutoKick();
@@ -1279,7 +1272,6 @@ $("showwhy").onchange=()=>setWhy($("showwhy").checked);{const w=!!LS.get("why");
 let _rt=null;const rerunNow=()=>{clearTimeout(_rt);_rt=setTimeout(run,150)};
 const rerun=()=>condChanged();
 $('out').addEventListener('click',e=>{if(e.target.closest('[data-recocancel]')){recoClearTimer();RECO.sharedPending=false;REQ=false;run(true)}});
-$('out').addEventListener('click',e=>{if(e.target.closest('[data-recoretry]')){simInvalidate();SIMQ.res={};SIMQ.scr={};SIMQ.refined=new Set();SIMQ.more={};showReco()}});
 $("out").addEventListener("click",e=>{if(e.target.closest("button[data-miretry]")){MI.error="";miLoad();setTimeout(run,0);return}if(e.target.closest("button[data-go]"))showReco();const mo=e.target.closest("button[data-miopen]");if(mo){setDrawer(true);if(mo.dataset.miopen==="how")document.querySelector("#drawer .mihow")?.scrollIntoView({block:"start"})}});
 function updCount(){const n=document.querySelectorAll("#own input:checked").length;$("dcount").textContent=String(n);renderPw();renderChip()}
 document.addEventListener("change",e=>{if(e.target.closest&&(e.target.closest("#own")||e.target.closest("#brk"))){if(e.target.closest("#brk")){pruneBreakSel();if(SIMQ.busy)simInvalidate();SIMQ.err=""}saveSel();updCount();rerun()}});

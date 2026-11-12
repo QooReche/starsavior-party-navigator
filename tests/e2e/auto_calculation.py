@@ -1,8 +1,7 @@
-"""Automatic recommendation: real UI, hostile late workers, and CDP CPU slowdown.
+"""Manual recommendation and URL/shared auto-start with hostile late workers.
 
 Registered by test_page.py; uses its one browser and synthetic public fixtures.
 """
-import json
 import os
 
 
@@ -24,11 +23,6 @@ FAKE_WORKER = """() => {
 }"""
 
 
-def option(page, enabled):
-    page.locator('#optbox').evaluate('(e)=>e.open=true')
-    page.locator('#reco-auto').set_checked(enabled)
-
-
 def fake_setup(page):
     page.add_init_script('(' + FAKE_WORKER + ')()')
 
@@ -43,25 +37,29 @@ def drain(page):
 
 
 def test_auto_calculation_controls(browser, ctx):
-    page = open_page(browser, ctx, query='?auto=0', info=SYNTH, simauto='0', wait=False,
-                     setup=fake_setup)
+    def setup(page):
+        fake_setup(page)
+        page.add_init_script("localStorage.setItem('pn.reco.auto','true')")
+    page = open_page(browser, ctx, query='?auto=0', info=SYNTH, simauto=None, wait=False,
+                     setup=setup)
     wait_myinfo(page)
-    # The checked default is tested independently of the explicit opt-in cases.
-    assert page.locator('#reco-auto').is_checked() == page.evaluate('RECO_AUTO_DEFAULT')
-    option(page, True)
-    page.wait_for_selector('.party[data-team]')
-    assert page.evaluate('autoJobs.length') == 0, 'recommendation must respect simauto=0'
-    assert page.evaluate("localStorage.getItem('pn.simauto')") == '0'
+
+    def idle():
+        page.wait_for_timeout(450)  # Beyond the retained 300ms URL/shared debounce.
+        assert page.locator('#reco-auto').count() == 0
+        assert page.locator('[data-recoretry], [data-recocancel], .party[data-team]').count() == 0
+        assert page.locator('[data-go]').inner_text() == '추천 편성 보기'
+        assert page.evaluate('!REQ&&RECO.timer===null&&SIMQ.busy===null')
+
+    idle()
     page.select_option('#stage', index=2)
-    page.wait_for_selector('.party[data-team]')
-    assert page.evaluate('autoJobs.length') == 0
-    option(page, False)
-    page.wait_for_selector('[data-go]')
-    assert page.evaluate("LS.get('reco.auto')") is False
+    idle()
+    assert page.evaluate('autoJobs.length') == 0, 'legacy preference must not start work'
+    assert page.evaluate("LS.get('reco.auto')") is True, 'old preference need not be deleted'
     page.reload()
     wait_myinfo(page)
-    page.wait_for_selector('[data-go]')
-    assert not page.locator('#reco-auto').is_checked()
+    idle()
+    assert page.evaluate('autoJobs.length') == 0
     page.click('[data-go]')
     page.wait_for_function('autoJobs.length>0')
     page.click('[data-simcancel]')
@@ -71,30 +69,32 @@ def test_auto_calculation_controls(browser, ctx):
     page.locator('[data-sim]').first.click()
     page.wait_for_function('autoJobs.some(j=>!j.worker.stopped)')
     drain(page)
+    assert page.locator('[data-recoretry]').count() == 0
     old_jobs = page.evaluate('autoJobs.length')
-    page.click('[data-recoretry]')
-    page.wait_for_function(f'autoJobs.length>{old_jobs}')
-    drain(page)
-    # ?auto=1 remains an independent URL override; it must not save the device switch.
-    page.evaluate('simAuto(false)')  # The explicit retry above enables simulation, as before.
+    page.select_option('#stage', index=3)
+    idle()
+    assert page.evaluate('autoJobs.length') == old_jobs, 'changing a completed selection must wait for a click'
+    # ?auto=1 still starts recommendation, respecting the separate simulation preference.
+    page.evaluate('simAuto(false)')
     page.goto(ctx.base + '/index.html?auto=1&dev=1')
     wait_myinfo(page)
     page.wait_for_selector('.party[data-team]')
-    assert not page.locator('#reco-auto').is_checked()
-    assert page.evaluate("LS.get('reco.auto')===false&&localStorage.getItem('pn.simauto')==='0'")
+    assert page.locator('#reco-auto, [data-recoretry]').count() == 0
+    assert page.evaluate("LS.get('reco.auto')===true&&localStorage.getItem('pn.simauto')==='0'")
     page.select_option('#stage', index=3)
     page.wait_for_selector('.party[data-team]')
     assert page.evaluate('autoJobs.length') == 0
-    # Only the new preference excludes both seasonal searches; legacy auto URLs stay intact.
+    # Seasonal searches also keep their explicit start buttons.
     page.goto(ctx.base + '/index.html?auto=0&dev=1')
     wait_myinfo(page)
-    option(page, True)
     for key in ['guild', 'cosmo']:
         page.evaluate("k=>{$('q').value='';$('content').value=contents.findIndex(c=>c.key===k);$('content').dispatchEvent(new Event('change'));}", key)
         page.wait_for_timeout(500)
         assert page.evaluate('SIMQ.busy===null&&GSR.phase!=="run"&&CSR.phase!=="run"')
         assert page.locator('[data-go]').count() or page.locator('[data-cs="start"]').count()
-    # No stage, no automatic work; closed clash season is blocked even with opt-in.
+    # No stage, no automatic work; closed clash season is blocked even with ?auto=1.
+    page.goto(ctx.base + '/index.html?auto=1&dev=1')
+    wait_myinfo(page)
     page.evaluate("$('content').value=contents.findIndex(c=>c.key==='op');refreshTabs();$('q').value='no-such-stage';refreshStages()")
     page.wait_for_timeout(450)
     assert page.evaluate('SIMQ.busy===null&&!REQ')
@@ -103,13 +103,12 @@ def test_auto_calculation_controls(browser, ctx):
     assert page.evaluate("seasonBlocked('clash')&&SIMQ.busy===null&&!REQ")
     assert not ctx.errors, ctx.errors
     page.close()
-    return True, 'preference persistence, simauto/URL independence, stop/retry, seasonal buttons and closed-season gate'
+    return True, 'no toggle/retry; legacy true ignored on startup/reload/selection; manual start/stop; URL/simauto independence; seasonal gate'
 
 
 def race_case(browser, ctx, mutation=None, main=False):
     def setup(page):
         fake_setup(page)
-        page.add_init_script("localStorage.setItem('pn.reco.auto','true')")
         if mutation:
             with open(os.path.join(ROOT, 'index.html'), encoding='utf-8') as f:
                 html = f.read()
@@ -119,7 +118,7 @@ def race_case(browser, ctx, mutation=None, main=False):
                 old, new = 'if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;', '/* stale request guard removed */'
             assert old in html, mutation
             page.route('**/index.html?*', lambda r: r.fulfill(body=html.replace(old, new), content_type='text/html'))
-    page = open_page(browser, ctx, query='?auto=0', info=SYNTH, simauto=None, wait=False, setup=setup)
+    page = open_page(browser, ctx, query='?auto=1', info=SYNTH, simauto=None, wait=False, setup=setup)
     wait_myinfo(page)
     page.wait_for_function('autoJobs.length>0')
     if main:
@@ -172,10 +171,7 @@ def test_auto_calculation_races(browser, ctx):
 
 
 def test_auto_calculation_shared_growth(browser, ctx):
-    def setup(page):
-        fake_setup(page)
-        page.add_init_script("localStorage.setItem('pn.reco.auto','false')")
-    page = open_page(browser, ctx, query='?auto=0', info=SYNTH, simauto='0', wait=False, setup=setup)
+    page = open_page(browser, ctx, query='?auto=0', info=SYNTH, simauto='0', wait=False, setup=fake_setup)
     wait_myinfo(page)
     # The shared account arrives asynchronously, after normal page startup.
     url = page.evaluate("async()=>{const u=new URL(await shareUrlMi());u.searchParams.set('ag','1');return u.href}")
@@ -184,7 +180,7 @@ def test_auto_calculation_shared_growth(browser, ctx):
     page.wait_for_function('MI.shared&&!!MI.growth&&!MI.pending')
     page.wait_for_function('autoJobs.length>0')
     assert page.locator('#assume-growth').is_checked()
-    assert not page.locator('#reco-auto').is_checked()
+    assert page.locator('#reco-auto').count() == 0
 
     def finish_growth():
         for _ in range(100):
@@ -198,76 +194,36 @@ def test_auto_calculation_shared_growth(browser, ctx):
 
     finish_growth()
     assert page.evaluate("JSON.stringify([LS.get('myinfo'),LS.get('growth.options'),LS.get('growth.history')])") == saved
-    # Local automatic opt-in also runs the growth pass on the next selection.
-    page.evaluate('simAuto(true)')
-    option(page, True)
+    # After the shared link's initial run, a new selection needs an explicit click.
+    old_jobs = page.evaluate('autoJobs.length')
     page.select_option('#stage', index=2)
+    page.wait_for_timeout(450)
+    assert page.locator('[data-go]').count() == 1
+    assert page.locator('[data-recoretry], [data-recocancel], .party[data-team]').count() == 0
+    assert page.evaluate('autoJobs.length') == old_jobs
+    page.click('[data-go]')
     page.wait_for_function('autoJobs.some(j=>!j.finished&&!j.worker.stopped)')
     finish_growth()
     assert page.evaluate("GROW.sig===growthSig(contents[$('content').value],cur[$('stage').value])")
     assert page.evaluate("JSON.stringify([LS.get('myinfo'),LS.get('growth.options'),LS.get('growth.history')])") == saved
+    # Keep the shared-link preparation window open so the actual stop button is testable.
+    page.add_init_script("""const nativeTimeout=window.setTimeout;
+      window.setTimeout=(fn,ms,...args)=>nativeTimeout(fn,ms===300?3000:ms,...args);""")
+    page.goto('about:blank')  # Reopening the same hash URL alone may not reload the document.
+    page.goto(url)
+    page.wait_for_function('MI.shared&&!!MI.growth&&!MI.pending')
+    page.click('[data-recocancel]')
+    page.wait_for_timeout(3200)
+    assert page.locator('[data-go]').count() == 1
+    assert page.locator('[data-recocancel]').count() == 0
+    assert page.evaluate('autoJobs.length===0&&!REQ&&RECO.timer===null&&!RECO.sharedPending')
     assert not ctx.errors, ctx.errors
     page.close()
-    return True, 'asynchronous shared link auto-start, growth option/pass/result, subsequent selection, local account/options/history preserved'
-
-
-def test_auto_calculation_slow(browser, ctx):
-    """Real Pyodide, full public fixture, one worker, 6x CDP CPU slowdown."""
-    def setup(page):
-        page.add_init_script("""if(!Object.getOwnPropertyDescriptor(navigator,'hardwareConcurrency'))Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>2});
-          if(!Object.getOwnPropertyDescriptor(navigator,'deviceMemory'))Object.defineProperty(navigator,'deviceMemory',{get:()=>1});
-          localStorage.setItem('pn.reco.auto','false');
-          window.slow={jobs:[],canceled:[],done:[],gaps:[]};
-          const Native=Worker;
-          window.Worker=class extends Native {
-            constructor(...args){super(...args);this.addEventListener('message',e=>{
-              if(e.data.type==='done'){this.finished=true;slow.done.push({stage:this.req?.stage,n:this.req?.n_runs});}
-            });}
-            postMessage(req){this.req=req;this.finished=false;slow.jobs.push({stage:req.stage,n:req.n_runs});super.postMessage(req);}
-            terminate(){if(this.req&&!this.finished)slow.canceled.push(this.req.stage);super.terminate();}
-          };""")
-    page = open_page(browser, ctx, query='?auto=0', info=FULL, simauto=None, wait=False, setup=setup)
-    wait_myinfo(page)
-    page.wait_for_function('!!QK.d')
-    cdp = page.context.new_cdp_session(page)
-    cdp.send('Emulation.setCPUThrottlingRate', {'rate': 6})
-    page.evaluate("window.slowStart=cur.findIndex(s=>s.name==='SECTOR 15-1');if(slowStart<0)throw Error('measurement stage missing');$('stage').value=String(slowStart);$('stage').dispatchEvent(new Event('change'))")
-    option(page, True)
-    page.wait_for_function('slow.jobs.length>0', timeout=60000)
-    # Enter a new selection while the old real worker is still preparing/running.
-    page.evaluate("""async()=>{
-      slow.jobs=[];slow.done=[];slow.canceled=[];slow.gaps=[];
-      let last=performance.now();window.slowTick=setInterval(()=>{const now=performance.now();slow.gaps.push(now-last);last=now;},50);
-      for(let i=1;i<=5;i++){$('stage').value=String(slowStart+i);$('stage').dispatchEvent(new Event('change'));
-        if(i<5)await new Promise(r=>setTimeout(r,50));}
-      slow.last=performance.now();slow.stage=contents[$('content').value].key+'/'+cur[$('stage').value].tab+'/'+cur[$('stage').value].name;
-    }""")
-    wait_sim_done(page, timeout=600000)
-    result = page.evaluate("""()=>{clearInterval(slowTick);return {cpu:6,workers:1,changes:5,
-      elapsed_ms:Math.round(performance.now()-slow.last),max_gap_ms:Math.round(Math.max(...slow.gaps)),
-      cancellations:slow.canceled.length,completed:new Set(slow.done.filter(x=>x.n===100).map(x=>x.stage)).size,
-      main_batches:slow.done.filter(x=>x.n===100).length,
-      starts:slow.jobs.filter(x=>x.n===8).length,requested_stages:[...new Set(slow.jobs.map(x=>x.stage))],
-      stages:[...new Set(slow.done.map(x=>x.stage))],stage:slow.stage,
-      progress:LASTQ[1].rows.map(t=>SIMQ.res[simSig(cur[$('stage').value],t)]?.prog),
-      defaultOn:RECO_AUTO_DEFAULT};}""")
-    cdp.send('Emulation.setCPUThrottlingRate', {'rate': 1})
-    assert result['cancellations'] >= 1, result
-    assert result['starts'] == 1 and result['requested_stages'] == [result['stage']], result
-    assert result['completed'] == 1 and result['stages'] == [result['stage']], result
-    assert any((p or 0) > 0 for p in result['progress']), result
-    if result['elapsed_ms'] > 15000 or result['max_gap_ms'] > 1000:
-        assert result['defaultOn'] is False, 'slow-device gate requires default OFF: ' + json.dumps(result)
-    with open(os.path.join(ctx.shots, 'auto-calculation-slow.json'), 'w', encoding='utf-8') as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
-    page.screenshot(path=os.path.join(ctx.shots, 'auto-calculation-slow.png'))
-    assert not ctx.errors, ctx.errors
-    page.close()
-    return True, json.dumps(result, ensure_ascii=False)
+    return True, 'shared link auto-start/growth/stop; subsequent selection requires click; local account/options/history preserved'
 
 
 def register(api):
-    for name in ['ROOT', 'SYNTH', 'FULL', 'open_page', 'wait_myinfo', 'wait_sim_done']:
+    for name in ['ROOT', 'SYNTH', 'open_page', 'wait_myinfo']:
         globals()[name] = getattr(api, name)
     return [test_auto_calculation_controls, test_auto_calculation_races,
-            test_auto_calculation_shared_growth, test_auto_calculation_slow]
+            test_auto_calculation_shared_growth]
