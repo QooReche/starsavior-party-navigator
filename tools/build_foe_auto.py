@@ -56,6 +56,26 @@ HEAD = [(r'적 1명\(자동 지정\)', {'NSETT_AUTO_ENEMY_ONE'}), (r'적\(자동
         (r'적 전체', {'NSETT_ENEMY_ALL'}), (r'아군 전체|자신 제외 아군 전체|자신을 제외한 아군 전체', {'NSETT_MYTEAM_ALL', 'NSETT_MYTEAM_ALL_NOT_SELF'}),
         (r'자신에게 소환:', {None, 'NSETT_SELF'}),   # 소환 줄은 SE 대상 종류가 비어 있음
         (r'자신에게|자신의', {'NSETT_SELF'}), (r'스킬 대상|대상에게|적에게|적 1명에게', {'NSETT_TARGET'})]
+# 11/12 데이터북부터 자동 지정 줄이 «아군 1명(자동 지정)에게» 대신 조건을 풀어 쓴 문구(예: «최대 생명력이 가장 높은 아군 1명에게»,
+# «「초즌」 상태인 적 전체에게», «다른 아군 1명에게», «보스인 아군 전체에게»)로 나온다. 대상 머리말에 조건어가 붙은 아군/적 문구는
+# 자동 지정으로 보고, 클라 SE 행의 m_BuffTargetType 이 같은 쪽 AUTO 계열일 때만 짝짓는다(아니면 기존처럼 거절).
+RX_HEAD_NEW = re.compile(r'(?:[)\]]\s+|^)(?P<h>[^()\[\]〈〉]*?(?:아군|적)(?: 중 [^()\[\]〈〉]*?)?(?: \d+명| 전체)?)(?:에게|의)\s')
+PLAIN_HEAD = {'적', '적 1명', '적 전체', '아군 전체', '자신 제외 아군 전체', '자신을 제외한 아군 전체', '스킬 대상', '대상'}
+AUTO_KINDS = {'아군': {'NSETT_AUTO_ALLY', 'NSETT_AUTO_ALLY_ONE', 'NSETT_AUTO_ALLY_ONE_NOT_SELF'}, '적': {'NSETT_AUTO_ENEMY', 'NSETT_AUTO_ENEMY_ONE'}}
+
+def new_auto_kinds(line):
+    """조건을 풀어 쓴 자동 지정 머리말이면 허용 대상 종류 집합, 아니면 None."""
+    if '(자동 지정)' in line:
+        return None
+    m = RX_HEAD_NEW.search(line)
+    if not m:
+        return None
+    h = m.group('h').strip()
+    if not h or h in PLAIN_HEAD or h.startswith('자신'):
+        return None
+    side = '아군' if '아군' in h else '적'
+    return AUTO_KINDS[side]
+
 RX_TIMES = re.compile(r'(\d+)회 부여')
 REPORT = Counter()
 REPORT_HEAD = Counter()      # 대상 머리말을 못 읽은 줄(짝짓기 거절)
@@ -144,6 +164,11 @@ def pair_lines(ef, rows):
         return None
     for (_i, line), r in zip(exp, rows):
         tt = r.get('m_BuffTargetType')
+        nk = new_auto_kinds(line)
+        if nk is not None:
+            if tt not in nk:
+                return None
+            continue
         for pat, kinds in HEAD:
             if re.search(pat, line):
                 if tt not in kinds:

@@ -384,17 +384,27 @@ SEARCH = dict(
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--tables', required=True, help='추출한 클라 표 폴더(CLIENT_ 접두 파일, hard/, plain/)')
+    ap.add_argument('--tables', required=False, default=None, help='추출한 클라 표 폴더(CLIENT_ 접두 파일, hard/, plain/)')
     ap.add_argument('--season', type=int, required=True, help='RankingRaidSeasonId (예: 1022)')
     ap.add_argument('--build', default=None, help='표 빌드 번호(기록용)')
     ap.add_argument('--out', default=str(ROOT / 'data' / 'cosmo_raid.json'))
     ap.add_argument('--season-dates-only', action='store_true', help='기존 공개 자료의 시즌 날짜만 갱신(정규화된 static-data 표 지원)')
+    ap.add_argument('--start', default=None, help='공지로 확인한 시즌 시작(ISO, 예 2026-11-05T14:00:00+09:00). --season-dates-only 와 함께')
+    ap.add_argument('--end', default=None, help='공지로 확인한 플레이 종료(ISO). 결산 중에는 플레이 불가라 게이트는 이 값을 «종료»로 본다')
+    ap.add_argument('--settle-end', default=None, help='결산 종료(ISO, 기록용)')
+    ap.add_argument('--period-src', default='notice', help='날짜 출처 표시(기본 notice)')
     a = ap.parse_args()
     low_priority()
     if a.season_dates_only:
         out = json.loads(Path(a.out).read_text(encoding='utf-8'))
         need(out['season']['id'] == a.season, '기존 공개 자료와 요청 시즌이 다름')
-        out['season'].update(season_period(a.tables, out['season']['playableInterval']))
+        if a.start or a.end:
+            # 시작·끝 날짜는 클라 표에 없다(서버 INTERVAL). 공지 기준 값을 직접 받는다.
+            need(a.start and a.end and a.start < a.end, '--start/--end 를 같이, 시작<끝으로 지정')
+            out['season'].update(start=a.start, end=a.end, settleEnd=a.settle_end, src=[a.period_src])
+        else:
+            need(a.tables, '--tables 필요')
+            out['season'].update(season_period(a.tables, out['season']['playableInterval']))
         atomic_json(a.out, out)
         print('시즌 날짜 저장', a.out, out['season']['start'], out['season']['end'])
         return

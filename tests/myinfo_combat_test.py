@@ -178,9 +178,7 @@ class CombatTests(unittest.TestCase):
         static = static_path_or_none()
         if static is None:
             self.skipTest('비공개 표 저장소 없음(STARSAVIOR_STATIC 또는 ../static-data)')
-        from public_inputs_1111 import public_inputs
-        with public_inputs():
-            built = build(static)
+        built = build(static)   # 11/12 표 재추출 뒤에는 현재 공개 입력으로 재현(옛 11/11 고정 입력 제거)
         artifact = combat.combat_data()
         # main() 은 클라 표에서 사라진 구원자(10/22 패치에서 1060 삭제)의 이전 계수를 보존한다 — 같은 규칙으로 비교
         kept = set(artifact['units']) - set(built['units'])

@@ -25,14 +25,11 @@ from battlesim.starsavior import myinfo_stats as ms
 from battlesim.starsavior.build import unit_power
 from battlesim.starsavior.data import get_db
 from tools.build_growth import build_growth, roster_ids, potential_power_levels
-from public_inputs_1111 import public_inputs
 
 
 def build_published_growth(static):
-    # The installed private tables still precede 11/12; do not mix new public
-    # roster/potential lines into that build's numeric reproducibility check.
-    with public_inputs():
-        return build_growth(static)
+    # 11/12 표(빌드 26610546) 재추출 뒤에는 현재 공개 입력으로 재현한다(옛 11/11 고정 입력 제거).
+    return build_growth(static)
 
 from tools.runtime import static_path_or_none
 STATIC = static_path_or_none(ROOT) or ROOT / ".no-static-data"  # 없으면 is_dir() 거짓 -> 건너뜀
@@ -473,8 +470,8 @@ class SyntheticTests(unittest.TestCase):
     def test_published_schema(self):
         g = json.loads((ROOT / "data/growth.json").read_text(encoding="utf-8"))
         self.assertEqual(set(g), {"_note", "game_build", "units", "star_link", "tactics", "facility", "item_sets", "sets", "potentials", "potential_pp", "assumed"})
-        self.assertEqual(roster_ids() - set(map(int, g["units"])), {1020, 1061},
-                         '11/12 신규 구원자 성장표: 게임 PC 재추출 대기')
+        self.assertEqual(roster_ids() - set(map(int, g["units"])), set(),
+                         '11/12 신규 구원자(1020·1061)는 빌드 26610546 표 재추출로 성장표에 포함됨')
         self.assertFalse(set(map(int, g["units"])) - roster_ids())
         allowed = set(ms.KEYS) | set(ms.RATE_KEYS)
 
