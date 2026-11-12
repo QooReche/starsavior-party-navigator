@@ -170,7 +170,7 @@ def wait_sim_done(page, parties=(1,), timeout=600000):
 
 
 def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", excl=None, setup=None, wait=True, raid_ui=False, season_bypass=True, has_touch=False):
-    """내 정보(기본: 로스터 전원 가상 계정)를 넣고 연다. 추천은 내 정보가 있어야만 계산한다.
+    """내 정보(기본: 로스터 전원 가상 계정)를 넣고 연다. 정보가 없으면 안내에서 표준 추천을 시작한다.
     ?auto=1 = 버튼 없이 바로 계산(버튼 흐름은 test_press_to_compute). simauto "0" 이면 결과를 바로 보이고(판정 「계산 전」),
     시뮬은 시험이 「시뮬로 확인」을 누를 때만 돈다."""
     page = browser.new_page(viewport=viewport or {"width": 1280, "height": 900}, has_touch=has_touch)
@@ -437,7 +437,7 @@ def test_load_no_errors(browser, ctx):
 
 
 def test_mobile_layout(browser, ctx):
-    """390x844: 가로 스크롤 없음, 상세 카드 4장이 한 줄(인게임 순서), 추천 줄이 화면 안"""
+    """390x844: 가로 스크롤 없음, 상세 카드 4장이 2열(기존 순서), 추천 줄이 화면 안"""
     page = open_page(browser, ctx, viewport={"width": 390, "height": 844})
     choose(page, "코스모 게이트", "길레 2단계")
     sw = page.evaluate("() => [document.documentElement.scrollWidth, window.innerWidth]")
@@ -446,9 +446,9 @@ def test_mobile_layout(browser, ctx):
     qw = page.evaluate("""() => Math.max(...[...document.querySelectorAll('.qbox .qrow')].map(e => e.getBoundingClientRect().right))""")
     page.screenshot(path=os.path.join(ctx.shots, "mobile_cosmo_gille2.png"), full_page=True)
     page.close()
-    same_row = len({c[1] for c in cards}) == 1 and [c[2] for c in cards] == sorted(c[2] for c in cards)
+    same_row = len(cards) == 4 and cards[0][1] == cards[1][1] < cards[2][1] == cards[3][1] and cards[0][2] == cards[2][2] < cards[1][2] == cards[3][2]
     ok = sw[0] <= sw[1] and len(cards) == 4 and same_row and qw <= sw[1] + 1
-    return ok, "폭 %s, 카드 %s 한 줄 %s, 추천 줄 오른쪽 끝 %.0f" % (sw, [c[0] for c in cards], same_row, qw)
+    return ok, "폭 %s, 카드 %s 2열 %s, 추천 줄 오른쪽 끝 %.0f" % (sw, [c[0] for c in cards], same_row, qw)
 
 
 def test_manual_mode(browser, ctx):
@@ -768,7 +768,7 @@ def test_boss_gimmick_mobile(browser, ctx):
       const cards = [...document.querySelectorAll('.party[data-party="1"] .card')].map(e => e.getBoundingClientRect());
       // 옛 「내 구원자」 고정 버튼(#dbtn)이 얼굴을 가리던 검사는 버튼이 없어져 「없음」 확인으로 바꿈
       return {sw:document.documentElement.scrollWidth, iw:innerWidth,
-        cards:cards.length, same:cards.every(r => Math.abs(r.top-cards[0].top)<1),
+        cards:cards.length, same:cards.length===4&&cards[0].top===cards[1].top&&cards[2].top===cards[3].top&&cards[2].top>cards[0].top,
         clear:!document.querySelector('#dbtn')};
     }''')
     manual = page.locator('.party[data-party="1"] .manual-details')
@@ -805,7 +805,7 @@ def import_synthetic(page, path=SYNTH):
 
 
 # test_myinfo_legacy_power 삭제: 옛 저장값(pn.pow·pn.pw·육성 배율)을 「내 전투력」 모드로 옮기던 기능이 없어졌다.
-# 추천은 내 정보로만 계산하고 옛 링크의 g/p 는 무시한다(test_myinfo_required·test_share_link 에서 확인).
+# 옛 링크의 g/p 는 무시한다(test_myinfo_required·test_share_link 에서 확인).
 
 
 def test_myinfo_required(browser, ctx):
@@ -831,7 +831,7 @@ def test_myinfo_required(browser, ctx):
     page.click('#mi-open-import')
     reopened = page.evaluate('() => document.querySelector("#drawer").classList.contains("open")')
     page.keyboard.press('Escape')
-    # 버튼 흐름(?auto=1 없이)에서도 「추천 편성 보기」 대신 안내가 나오고, 계산은 하지 않는다
+    # 자동 계산 없이 불러오기 안내와 표준 육성 추천 버튼을 함께 보여 준다.
     page.goto(ctx.base + '/index.html')
     page.wait_for_function('() => window._ready')
     settle(page)
@@ -841,7 +841,7 @@ def test_myinfo_required(browser, ctx):
     page.close()
     ok = (guide == 1 and state['rows'] == 0 and state['lastq'] == 0 and state['busy'] is None and state['worker'] is None
           and state['grow'] != '0.8' and state['pow'] == '' and state['old'] and state['chip'] == ''
-          and not state['dbtn'] and state['own'] == 0 and opened and closed and reopened and guide2 == 1 and sw and not errs)
+          and not state['dbtn'] and state['own'] == 0 and opened and closed and reopened and guide2 == 11 and sw and not errs)
     return ok, '안내 %d, 상태 %s, 팝업 열기 %s/닫기 %s/#mi-open %s, 버튼 흐름 안내 %d, 오류 %s' % (guide, state, opened, closed, reopened, guide2, errs[:2])
 
 
@@ -903,7 +903,8 @@ def test_myinfo_import_clear(browser, ctx):
     settle(page)
     assert page.evaluate('() => !LS.get("myinfo") && !MI.info && !Object.keys(SIMQ.res).length && !Object.keys(SIMQ.more).length')
     assert '불러온 정보 없음' in page.locator('#mi-meta').text_content()
-    # 지운 뒤 숨은 #own 체크는 남는다(miReset 이 syncOwn 을 안 부름) — 내 정보가 없으면 계산하지 않아 화면 영향은 없어 검사하지 않음
+    # 지우면 자동 실행 주소여도 표준 추천을 임의로 시작하지 않고 안내로 돌아간다.
+    assert page.locator('#own input:checked').count() == 0
     page.click('#tab-reco')
     assert page.locator('#out [data-k="miguide"]').count() == 1 and page.locator('#out .qrow[data-key]').count() == 0
     assert page.get_attribute('#mi-chip', 'data-state') == 'empty'
@@ -1645,7 +1646,7 @@ def growth_control_audit(page, home=False, enabled=True):
     assert page.locator('#mi-panel #assume-growth, .mi-assume').count() == 0
     host = '#growth-control-home' if home else '#reco-actions'
     assert page.locator(host + ' #assume-growth').count() == 1
-    assert page.locator('#assume-growth').is_visible() == (enabled and page.locator('#out').is_visible())
+    assert page.locator('#assume-growth').is_visible() == page.locator('#out').is_visible()
     assert page.locator('#assume-growth').is_enabled() == enabled
     assert page.locator('#growth-requires-info').evaluate('e=>e.hidden') == enabled
     boxes = page.evaluate('''host => {
@@ -2410,6 +2411,38 @@ def test_ux_step12(browser, ctx):
     page = open_page(browser, ctx, '?auto=0', info=None, wait=False, has_touch=True)
     page.wait_for_function('window._ready')
 
+    def caught_mutation(change, audit, restore):
+        page.evaluate(change)
+        try:
+            audit()
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('UI review mutation survived: ' + change)
+        finally:
+            page.evaluate(restore)
+        audit()
+
+    def selection_audit():
+        assert page.locator('.input-panel').is_visible()
+        assert page.locator('#content').is_visible() and page.locator('#stage').is_visible()
+
+    def card_audit():
+        assert page.evaluate('''() => {
+          const cards=[...document.querySelectorAll('.party[data-party="1"] .rowcards .gc')];
+          const st=cur[$('stage').value],key=document.querySelector('.party[data-party="1"]').dataset.team;
+          const t=LASTQ[1].rows.find(t=>t.keys.slice().sort().join(',')===key),r=SIMQ.res[simSig(st,t)];
+          return cards.length===4&&!!r?.u&&cards.every(c=>{
+            const s=BYKEY[c.dataset.key],sub=c.querySelector('.csb'),chip=c.querySelector('.simu'),meta=c.querySelector('.mi-chips');
+            const [sh,dp]=r.u[s.key],expected=`피해 ${Math.round(sh*100)}% · 탈락 ${Math.round(dp*100)}%`;
+            if(!sub||sub.textContent!==s.sub||!sub.checkVisibility()||!chip||!chip.checkVisibility()||chip.textContent!==expected)return false;
+            const box=chip.getBoundingClientRect(),style=getComputedStyle(chip);
+            return c.querySelector('.cnm').nextElementSibling===sub&&(!meta||meta.getBoundingClientRect().bottom<=box.top)
+              &&chip.scrollWidth<=chip.clientWidth&&box.left>=c.getBoundingClientRect().left&&box.right<=c.getBoundingClientRect().right
+              &&box.height<=parseFloat(style.lineHeight)+parseFloat(style.paddingTop)+parseFloat(style.paddingBottom)+2.1;
+          });
+        }'''), f'visible per-unit damage/death values, subtitle, metadata order and single-line chips at {page.evaluate("innerWidth")}px'
+
     def compact_layout(state):
         assert page.evaluate('''() => [...document.querySelectorAll(innerWidth<=600?'.gc .mi-member-star':'#growth-result .mi-member-star')].every(e=>
           ['none','normal','""'].includes(getComputedStyle(e,'::before').content))'''), 'no separator at the beginning of a metadata line'
@@ -2446,12 +2479,47 @@ def test_ux_step12(browser, ctx):
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), state
             assert page.evaluate("[...document.images].filter(i=>i.getBoundingClientRect().width).every(i=>i.naturalWidth>0)"), state
             compact_layout(state)
+            if state == 'result':
+                card_audit()
             page.evaluate('window.scrollTo(0,0)')
             page.screenshot(path=os.path.join(ctx.shots, f'ui_{state}_{suffix}.png'), full_page=True)
+            if state in ('first', 'result'):
+                page.screenshot(path=os.path.join(ctx.shots, f'ui_fix2_{state}_{suffix}.png'), full_page=True)
 
     assert not page.locator('#assume-growth').is_checked()
-    assert page.locator('.input-panel').is_hidden()
+    selection_audit()
     shot('first')
+    # Both render paths used to hide selection when no account was loaded.
+    caught_mutation('window.fixRenderChip=renderChip;renderChip=()=>{fixRenderChip();document.querySelector(".input-panel").hidden=!MI.info};renderChip()',
+                    selection_audit, 'renderChip=fixRenderChip;renderChip()')
+    page.click('#tab-info')
+    assert page.locator('.input-panel').is_hidden()
+    page.click('#tab-reco')
+    selection_audit()
+    caught_mutation('window.fixMiTab=miTab;miTab=info=>{fixMiTab(info);document.querySelector(".input-panel").hidden=info||!MI.info};miTab(false)',
+                    selection_audit, 'miTab=fixMiTab;miTab(false)')
+    # A small public roster exercises the real standard-build worker with no account.
+    page.evaluate('EXCL=new Set(R.slice(8).map(s=>s.key))')
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    page.click('[data-go]')
+    wait_sim_done(page)
+    assert page.evaluate('!MI.info&&!miMode()&&$("grow").value==="1"&&document.querySelectorAll("#own input:checked").length===8')
+    assert page.evaluate('Object.values(SIMQ.res).some(r=>r.clear>0)')
+    assert '표준 육성 기준' in page.inner_text('.party[data-party="1"] .mi-verdict')
+    card_audit()
+    # Closed seasons remain reachable using the visible selection controls.
+    page.evaluate('''() => {history.replaceState(null,'','?auto=0');window.__legacyRaid=0;
+      const period={start:'2000-01-01T00:00:00Z',end:'2000-01-02T00:00:00Z'};
+      Object.assign(D.guild.season,period);D.cosmoRaid.seasonPeriod={...period};}''')
+    for key in ['guild', 'cosmo']:
+        page.select_option('#content', value=page.evaluate(f"String(contents.findIndex(c=>c.key==='{key}'))"))
+        settle(page)
+        assert page.inner_text('#season-chip') == '미오픈'
+        assert '시즌 종료' in page.inner_text('#season-note')
+        assert page.locator('#content').is_visible()
+        assert page.evaluate('SIMQ.busy===null')
+    page.evaluate("history.replaceState(null,'','?auto=0&dev=1');window.__legacyRaid=1;EXCL.clear()")
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
     import_synthetic(page)
     wait_myinfo(page)
     # Touch must open help without toggling its adjacent checkbox.
@@ -2488,6 +2556,25 @@ def test_ux_step12(browser, ctx):
     assert '권장 전투력' in page.inner_text('.party[data-party="1"] .mi-verdict')
     assert page.locator('.party[data-party="1"] > .qbox > .qrow[data-key]').count() == 0
     shot('result')
+    # Stress the widest percentage labels without adding another simulation.
+    page.evaluate('''() => {
+      const st=cur[$('stage').value],key=document.querySelector('.party[data-party="1"]').dataset.team;
+      const t=LASTQ[1].rows.find(t=>t.keys.slice().sort().join(',')===key);
+      window.fixMetricsResult=SIMQ.res[simSig(st,t)];window.fixUnitMetrics=fixMetricsResult.u;
+      fixMetricsResult.u=Object.fromEntries(Object.keys(fixUnitMetrics).map(k=>[k,[1,1]]));run(true);
+    }''')
+    for width in [320, 390, 600, 601, 760, 761]:
+        page.set_viewport_size({'width': width, 'height': 900})
+        card_audit()
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+    page.set_viewport_size({'width': 390, 'height': 844})
+    caught_mutation('''window.fixLayout=document.createElement('style');fixLayout.textContent='@media(max-width:760px){.rowcards{grid-template-columns:repeat(4,minmax(0,1fr))!important}}';document.head.append(fixLayout)''',
+                    card_audit, 'fixLayout.remove()')
+    page.evaluate('fixMetricsResult.u=fixUnitMetrics;run(true)')
+    caught_mutation("window.fixCard=card;card=(...args)=>fixCard(...args).replace(/<div class=\"simu\">[\\s\\S]*<\\/div><\\/div>$/, '</div>');run(true)",
+                    card_audit, 'card=fixCard;run(true)')
+    caught_mutation("window.fixCard=card;card=(...args)=>fixCard(...args).replace(/<div class=\"csb\">.*?<\\/div>/, '');run(true)",
+                    card_audit, 'card=fixCard;run(true)')
     page.click('#tab-info')
     shot('myinfo')
     page.click('#tab-reco')
@@ -2568,6 +2655,17 @@ def test_ux_step12(browser, ctx):
     page.evaluate("GROW.phase='done';GROW.errors=[];GROW.msg='';growthPaint()")
     page.click('#result-tab-growth')
     assert '지금' in page.inner_text('#growth-result .mi-verdict') and '맞추면' in page.inner_text('#growth-result .mi-verdict')
+    # Different auto/manual values and null manual turns must survive the metric -> DOM path.
+    page.evaluate('window.fixBest=GROW.result.best;window.fixMode=MODE;window.fixGrowthPaint=growthPaint')
+    def turns_audit():
+        for mode, auto_turns, manual_turns, expected in [('auto', 47, 12, 47), ('auto', None, 12, 31), ('manual', 47, 12, 12), ('manual', 47, None, None)]:
+            page.evaluate('''([mode,ta,t])=>{MODE=mode;GROW.result.best=growthMetric({...fixBest,clear:1,ttk:31,ta,man:{c:1,t}},mode);growthPaint();}''', [mode, auto_turns, manual_turns])
+            want = page.evaluate('n=>miNum(n)+"턴"', expected)
+            assert page.locator('#growth-result .verdict-stats b').first.inner_text() == want
+    turns_audit()
+    caught_mutation('''growthPaint=eval('('+fixGrowthPaint.toString().replace("MODE==='manual'?r.best.ttk:(r.best.ta??r.best.ttk)","r.best.ta??r.best.ttk")+')')''',
+                    turns_audit, 'growthPaint=fixGrowthPaint')
+    page.evaluate('MODE=fixMode;GROW.result.best=fixBest;growthPaint()')
     assert '기존 대비 전투력 +' in page.inner_text('[data-k="growth-power-total"]')
     assert '스텔라 아카이브' in page.inner_text('[data-k="growth-components"]')
     assert page.locator('#growth-result [data-growth-field]').count() > 4
@@ -2620,7 +2718,7 @@ def test_ux_step12(browser, ctx):
     assert page.locator('[data-slot-start]').is_visible()
     assert not ctx.errors, ctx.errors
     page.close()
-    return True, '12 screenshots; result tabs, default/visibility, keyboard/touch, recommendation threshold, no URL/storage state, skills and mutations'
+    return True, '16 screenshots; standard recommendation without account, closed seasons, damage/death chips at 320-761px, subtitles, manual turns, 6 review mutations; tabs/skills preserved'
 
 
 TESTS.append(test_ux_step12)

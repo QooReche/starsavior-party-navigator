@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
 const section=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a)));
-const ctx=vm.createContext({Ux:require('../ux_ui'),miNum:require('../ux_ui').num,growthEnabled:()=>false,MODE:'auto',SIMQ:{res:{}},simSig:()=> 'selected',esc:s=>String(s).replaceAll('<','&lt;'),
+const ctx=vm.createContext({Ux:require('../ux_ui'),miNum:require('../ux_ui').num,growthEnabled:()=>false,miMode:()=>true,MODE:'auto',SIMQ:{res:{}},simSig:()=> 'selected',esc:s=>String(s).replaceAll('<','&lt;'),
  QK:{d:{st:{}}},GuildSearch:require('../guild_search.js'),Number,Math,Date});
 vm.runInContext(section('function simTitle(', 'function simBar('),ctx);
 vm.runInContext(section('function miVerdict(', 'function miTab('),ctx);
@@ -13,6 +13,7 @@ ctx.SIMQ.res.selected={clear:.96,n:100,ci:[.91,.99],ttk:22,ta:35,first:'에밀�
 const headline=ev('miVerdict({}, {})');
 assert.match(headline,/data-state="done"/);assert.match(headline,/data-verdict="safe"/);assert.match(visible(headline),/클리어96%/);assert.match(visible(headline),/약 35턴/);assert.match(headline,/에밀리 위험 41%/);
 assert.match(headline,/data-help="100판 · 95% 구간/);
+assert.match(headline,/내 구원자 기준/);ctx.miMode=()=>false;assert.match(ev('miVerdict({}, {})'),/표준 육성 기준/);ctx.miMode=()=>true;
 assert.doesNotMatch(visible(headline),/ttk|95%|#1001|근사|TURN/);
 ctx.MODE='manual';ctx.SIMQ.res.selected.man={c:.4,n:100,ci:[.3,.5],t:14};
 assert.match(ev('miVerdict({}, {})'),/data-verdict="risk"/);assert.match(visible(ev('miVerdict({}, {})')),/클리어40%/);assert.match(visible(ev('miVerdict({}, {})')),/약 14턴/);

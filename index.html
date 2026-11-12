@@ -780,7 +780,7 @@ function card(x,pos,r,assumption=null){const s=x.s;
  const u=assumption?.unit;
  return `<div class="gc${assumption?' assumed-card':''}" data-pos="${pos}" data-assumed="${assumption?assumption.source:''}" data-key="${esc(s.key)}"><div class="card"><button type="button" class="skill-open-card" data-skill-open="${esc(s.key)}" aria-label="${esc(s.name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false"></button>${s.key===LEADKEY?`<div class="crown" title="속도 +10">${CROWN}<span>리더</span></div>`:''}<div class="fallback">${esc(s.name[0])}</div>${art(s)}${assumption?growthBadge(assumption,true):''}
  <div class="slotlbl ${pos}" data-position="${pos}">${pos==='back'?bow:UiShared.icon('def')}${pos==='back'?'후열':'전열'}</div><div class="cinfo">${dia(s,40)}${kindTxt(s)}</div></div>
- <div class="cnm">${esc(s.name)}</div>${u?`<div class="mi-chips"><span class="mi-member-star">${miStars(u)}</span></div>`:''}${miCard(s.key,assumption)}</div>`}
+ <div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub||'')}</div>${u?`<div class="mi-chips"><span class="mi-member-star">${miStars(u)}</span></div>`:''}${miCard(s.key,assumption)}${simUnit(r,s.key)}</div>`}
 function breakCard(br,r,p,t,st){
  const b=CFG.breakSkills[br.name],im=D.bicons[br.name],bs=MODE==="manual"&&r?.man?r.man.bs:r?.bs;
  return `<div class="bbar" title="${esc(b?.text||"브레이크 스킬 미장착")}">${im&&br.name?`<img src="${im}" alt="">`:`<span class="bicon">${BG[br.name]||"◆"}</span>`}<div class="bbody"><select class="bsel" data-bkey="${esc(br.key)}" aria-label="장착 브레이크 스킬">${["",...br.have].map(n=>`<option value="${esc(n)}"${n===br.name?" selected":""}>${esc(n||"장착 안 함")}${n&&n===br.rec?" · 추천":""}</option>`).join("")}</select>${t&&br.have.length?`<button type="button" class="sec" data-bcompare="${p}" data-key="${esc(ckey(t.combo))}">비교</button>`:""}</div>${Ux.help("브레이크 스킬",b?.text||"브레이크 스킬 미장착")}</div><div class="break-extra">${bs?`<details><summary>브레이크 발동</summary>${breakChip(bs)}</details>`:""}</div>${p?breakCompareView(br,p,t,st):""}`}
@@ -1151,10 +1151,10 @@ function idleView(){const t=id=>{const e=$(id);return e&&e.selectedOptions&&e.se
  $("out").innerHTML=`<div class="party idle" data-k="idle"><div id="reco-actions"><button type="button" data-go="1" title="현재 조건(콘텐츠·섹터·지역·스테이지)과 내 정보로 후보를 모의 전투해서 추천합니다(첫 실행 시 계산 엔진 약 14MB)">추천 편성 보기</button></div></div>`;growthControlPlace()}
 function condChanged(){REQ=false;SIMQ.kick=false;simInvalidate();run()}
 function miGuide(){return `<div class="party guide" data-k="miguide" data-state="needs-info"><h3>내 구원자로 깰 수 있는 파티를 찾아 드려요</h3>
- <p class="mut">먼저 계정 정보를 한 번 불러오세요.</p><ol class="guide-steps"><li><b>명령 복사</b><small>PowerShell에 붙여넣기</small></li><li><b>게임 로그인</b><small>로비에서 도구 창에 엔터</small></li><li><b>자동 반영</b><small>이 화면에 바로 표시</small></li></ol>
- <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 남에게 보내지 마세요 — 계정 정보가 들어 있어요</p><p class="mut">내 정보는 이 브라우저에만 저장돼요</p></div>`}
-function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;if(!MI.info){setDrawer(true);return}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
-function run(skipAuto=false){seasonPaint();growthControlPlace(true);$("mode-menu").append(MODE_CONTROLS);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
+ <p class="mut">계정 정보를 불러오면 내 구원자에 맞춰 추천해요. 정보 없이도 표준 육성으로 살펴볼 수 있어요.</p><ol class="guide-steps"><li><b>명령 복사</b><small>PowerShell에 붙여넣기</small></li><li><b>게임 로그인</b><small>로비에서 도구 창에 엔터</small></li><li><b>자동 반영</b><small>이 화면에 바로 표시</small></li></ol>
+ <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 남에게 보내지 마세요 — 계정 정보가 들어 있어요</p><p class="mut">내 정보는 이 브라우저에만 저장돼요</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div>`}
+function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;if(!MI.info){$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
+function run(skipAuto=false){seasonPaint();growthControlPlace(true);$("mode-menu").append(MODE_CONTROLS);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);simRunAdd(Date.now()-t0)}
 function runCore(skipAuto=false){
  if(seasonBlocked(contents[$('content').value]?.key))return;
@@ -1238,7 +1238,7 @@ function syncBrk(){const lv=MI.info?MyInfoImport.mapBreak(MI.info):null;MI.brkLv
  const n=$("brk-note");if(n)n.textContent=lv?"내 정보 기준":"직접 선택";
  pruneBreakSel()}
 function renderChip(){const e=$("mi-chip");if(!e)return;const i=MI.info;e.classList.toggle("none",!i);
- e.dataset.state=i?"loaded":"empty";e.innerHTML=i?`${MI.shared?"공유받은 ":""}<b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(5,10).replace("-","/"))} 기준`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"";document.querySelector(".input-panel").hidden=!i||!$("mi-panel").hidden;$("option-chips").innerHTML=[MODE==="manual"?"수동":"",rkOf(contents[$("content").value]?.key)?`재점화 ${$("rk").value}단계`:"",MM==="avoid"?"불리한 속성 피하기":"",!simAutoOn()?"모의 전투 자동 실행 꺼짐":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("");
+ e.dataset.state=i?"loaded":"empty";e.innerHTML=i?`${MI.shared?"공유받은 ":""}<b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(5,10).replace("-","/"))} 기준`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"";document.querySelector(".input-panel").hidden=!$("mi-panel").hidden;$("option-chips").innerHTML=[MODE==="manual"?"수동":"",rkOf(contents[$("content").value]?.key)?`재점화 ${$("rk").value}단계`:"",MM==="avoid"?"불리한 속성 피하기":"",!simAutoOn()?"모의 전투 자동 실행 꺼짐":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("");
  $("mi-open").textContent=i?"계정 정보 다시 불러오기":"내 계정 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["share-link","mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i}
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b))}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
@@ -1270,9 +1270,9 @@ function miVerdict(t,st){const r=SIMQ.res[simSig(st,t)],m=MODE==='manual'&&r?.ma
  const warning=r?GuildSearch.unsupportedHtml([m||r],esc):'';
  const detail=r?simTitle(r)+(first&&Number.isFinite(death)?` · ${first.split('#')[0]} 위험 ${Math.round(death*100)}%`:''):'모의 전투를 실행하면 클리어 확률을 확인할 수 있어요.';
  return `<div class="mi-verdict" data-k="judgment" data-state="${r?'done':'pending'}"><div class="verdict-main"><b class="verdict-number"><small>클리어</small>${r?Math.round(clear*100)+'%':'계산 전'}</b>${r?Ux.chip(clear):''}${Ux.help('클리어 확률',detail+'\n판정: 90% 이상 안정적 · 70% 이상 깰 수 있어요 · 50% 이상 아슬아슬 · 50% 미만 어려워요.')}
- <div class="verdict-meta">${MODE==='manual'?'수동':'오토'} 전투 · 내 구원자 기준 ${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':''}${!m&&r?.t60!=null?` · ${STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:''}</div></div>
+ <div class="verdict-meta">${MODE==='manual'?'수동':'오토'} 전투 · ${miMode()?'내 구원자 기준':'표준 육성 기준'} ${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':''}${!m&&r?.t60!=null?` · ${STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:''}</div></div>
  <div class="verdict-stats"><div><b>${turn!=null?'약 '+Math.round(turn)+'턴':'—'}</b><small>예상 턴</small></div><div><b>${miNum(power)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div>${st.rp&&power<st.rp?`<span class="tag">권장보다 ${miNum(st.rp-power)} 부족</span>`:''}</div>${warning}`}
-function miTab(info){$("mi-panel").hidden=!info;$("out").hidden=info;$("graphwrap").hidden=info;document.querySelector(".input-panel").hidden=info||!MI.info;growthControlPlace();
+function miTab(info){$("mi-panel").hidden=!info;$("out").hidden=info;$("graphwrap").hidden=info;document.querySelector(".input-panel").hidden=info;growthControlPlace();
  if($('result-tabs'))$('result-tabs').hidden=info;
  $("tab-reco").setAttribute("aria-pressed",String(!info));$("tab-info").setAttribute("aria-pressed",String(info));if(info)renderMi();else {drawGraph();if(cy)cy.resize()}}
 function savedTime(date){const d=new Date(date);if(!Number.isFinite(+d))return "";const z=v=>String(v).padStart(2,"0");return `${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`}
@@ -1306,7 +1306,7 @@ $("mi-list").addEventListener("change",e=>{const x=e.target.closest("input[data-
 $("mi-excl").addEventListener("click",e=>{if(!e.target.closest("button[data-exclclear]"))return;gsReset();EXCL.clear();LS.set("excl",[]);syncOwn();saveSel();updCount();renderMi();rerun()});
 function gsReset(){try{csReset()}catch(e){}if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.id++;GSR.phase="idle";GSR.rows=[];GSR.msg=""}   // 내 정보·추천 제외가 바뀌면 이전 편성 찾기 결과·진행을 버림
 function miReset(info){GROW.history={};simInvalidate();gsReset();SIMQ.res={};SIMQ.scr={};SIMQ.refined=new Set();SIMQ.more={};SIMQ.err="";BRCMP.seen.clear();BRCMP.open={};for(const k in PICK)delete PICK[k];
- MI.info=info;MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
+ MI.info=info;REQ=!!info&&(REQ||AUTO);MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
  if(info)$("grow").value="myinfo";else if($("grow").value==="myinfo")$("grow").value="1";
  miSelect();rerun()}
 function miClear(){if(MI.shared){$("shared-back")?.click();return}MI.importId++;LS.remove("growth.history");GROW.history={};MI.invalid=!LS.remove("myinfo");MI.saved=false;miReset(null);syncOwn();miStatus(MI.invalid?"저장 정보 삭제 실패 · 브라우저 사이트 데이터에서 지우기":"불러온 정보 없음",MI.invalid)}
@@ -1405,7 +1405,7 @@ function applyShare(){
  if(SHARE.c){$("content").value=String(contents.findIndex(c=>c.key===SHARE.c));refreshTabs();
   const stage=contents[$("content").value].stages.find(s=>s.tab+"|"+s.name===SHARE.s);
   if(stage){$("tab").value=stage.tab;refreshStages();$("stage").value=String(cur.indexOf(stage))}}
- if(SHARE.g&&SHARE.g!=="myinfo")SHARE.oldGrow=true;   // 옛 링크의 육성·전투력(g/p)은 쓰지 않는다 — 추천은 내 정보로만
+ if(SHARE.g&&SHARE.g!=="myinfo")SHARE.oldGrow=true;   // 옛 링크의 육성·전투력(g/p)은 쓰지 않는다
  if(SHARE.m)setMode(SHARE.m,false);if(SHARE.rk!=null)$("rk").value=String(SHARE.rk);
  for(const key of ["b","b2"]){const name=SHARE[key];if(name)document.querySelectorAll("#brk input").forEach(x=>{if(x.dataset.b===name)x.checked=true})}
  showInfo();showPow();
@@ -1416,7 +1416,7 @@ setMode(LS.get("mode")==="manual"?"manual":"auto",false);
 
  else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
  if(!SHARE.g)LS.set("grow.v2",$("grow").value)}
-{const gv=LS.get("goal");if(gv==="0"||gv==="60"){$("goal").value=gv;if(gv==="0")$("optbox").open=true}}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}growthInit();updCount();refreshTabs();applyShare();miLoad();REQ=AUTO||!!SHARE.c;SIMQ.kick=REQ&&!AUTO;run();window._ready=true;if(LS.get("why"))drawGraph();
+{const gv=LS.get("goal");if(gv==="0"||gv==="60"){$("goal").value=gv;if(gv==="0")$("optbox").open=true}}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}growthInit();updCount();refreshTabs();applyShare();miLoad();REQ=!!MI.info&&(AUTO||!!SHARE.c);SIMQ.kick=REQ&&!AUTO;run();window._ready=true;if(LS.get("why"))drawGraph();
 seasonRefresh();setInterval(seasonRefresh,1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)seasonRefresh()});
 </script></body></html>

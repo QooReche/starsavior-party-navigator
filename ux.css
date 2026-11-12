@@ -39,3 +39,10 @@ button{box-shadow:none;background:var(--acc);border-radius:8px}button:focus-visi
 @media(max-width:600px){.growth-task-row{display:block;margin-top:12px}.growth-task-row>b{display:block;margin-bottom:4px}.growth-todo{font-size:11px;padding:3px 6px;gap:3px}}
 
 .potential-warnings{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}.potential-warnings .tag{white-space:normal;overflow-wrap:anywhere}
+
+/* 변형 이름과 전투 기여는 접지 않고 카드 아래에서 확인한다. */
+.gc .csb{display:block;font-size:11px;color:var(--mut);text-align:center;overflow-wrap:anywhere}
+.gc .simu{align-self:center;white-space:nowrap;font-size:11px;line-height:1.6;min-height:0;padding:2px 6px;margin-top:4px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.gc .simu:empty,.gc .simu .sb{display:none}
+@media(max-width:760px){.rowcards{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:16px}}
+@media(max-width:360px){.gc .simu{font-size:10px;padding-left:2px;padding-right:2px}.gc .simu .dot{display:none}}
