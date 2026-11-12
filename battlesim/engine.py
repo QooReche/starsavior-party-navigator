@@ -8,7 +8,7 @@ from functools import lru_cache
 from collections import defaultdict
 
 from .rules import (AOE_DIV, BASE_MULT, BREAK_DEC, COOP_CAP, DEC_CAP, DEF_K, DEFAULT_OPTS, ELEM_BEATS, ELEM_HIT, ELEM_LOSES,  # noqa: F401
-                    INF_HP, KNOWN_DOT, TICK_PER_TURN)
+                    INF_HP, KNOWN_DOT, MC_OPTS, TICK_PER_TURN)
 
 # 적에게 거는 약화 중 대상의 「받는 피해 감소」 값을 바꾸는 속성 -> 적용 범위(감소 합, dmg_reduction='sum_cap')
 _RED_PROPS = {'받는 피해 감소': 'all', '피해 감소': 'all', '전체 대상 피해 감소': 'aoe', '단일 대상 피해 감소': 'single',
@@ -160,6 +160,8 @@ class Sim:
         self.opts = dict(DEFAULT_OPTS)
         if opts:
             self.opts.update(opts)
+        # MC와 같은 규칙 원본. 지표/골든은 opts로 옛 값을 명시할 수 있다.
+        self.dmg_cap_scope = self.opts.get('dmg_cap_scope', MC_OPTS['dmg_cap_scope'])
         self.party = [Actor(d, i, self.opts) for i, d in enumerate(defs)]
         self.enemies = [Enemy(e, i) for i, e in enumerate(enemies)]
         self.turns = turns
@@ -239,8 +241,8 @@ class Sim:
                 base, inc = self.dot_parts(part['src'], part['coef']) if self.opts['dot_snapshot'] == 'live' else (part['base'], part['inc'])
                 dec = 0.0
                 if self.opts['dmg_reduction'] == 'sum_cap':   # DoT 는 단일/전체·스킬 종류별 증감이 없어 'all' 감소만
-                    dec = min(DEC_CAP, e.recv_red(('all',)) - BREAK_DEC * self.opts['break_p'])
-                dmg = base * (1 + inc - dec) * part['stacks'] * (1 - self.dr(e, 0.0))
+                    dec = e.recv_red(('all',)) - BREAK_DEC * self.opts['break_p']
+                dmg = base * self._damage_mult(inc, dec) * part['stacks'] * (1 - self.dr(e, 0.0))
                 self.hurt(e, dmg, part['src'], 'dot', hit=0.0)
         if e.dead:
             for a in self.party:
@@ -547,6 +549,22 @@ class Sim:
         return ('a', pool[:1] if spec['one'] else (pool if matched else []))
 
     # ---------- 피해
+    def _damage_mult(self, inc, dec, cr=0.0, cdv=0.0):
+        """26610546 NKM:18187-18193,18534-18547: 치명별 순합 하한 뒤 기대값.
+
+        상한은 비선형이므로 치명 확률을 먼저 곱하지 않는다.
+        reduce 및 잘림이 없는 경우에는 종전 연산 순서를 유지한다.
+        """
+        if self.dmg_cap_scope != 'net':
+            if self.opts['dmg_reduction'] == 'sum_cap':
+                dec = min(DEC_CAP, dec)
+            return (1 + inc - dec) + cr * cdv
+        normal = 1 + inc - dec
+        if DEC_CAP > 0 and min(normal, normal + cdv) < 1 - DEC_CAP:
+            return ((1 - cr) * max(1 - DEC_CAP, normal)
+                    + cr * max(1 - DEC_CAP, normal + cdv))
+        return normal + cr * cdv
+
     def deal_damage(self, a, ctx):
         sk = ctx.skill
         w = ctx.w
@@ -583,12 +601,12 @@ class Sim:
                     inc -= 0.05
             dec = 0.0
             if self.opts['dmg_reduction'] == 'sum_cap':
-                # 감소 합: 대상 약화의 받는 피해 감소 값(전체/단일·슬롯별) - 브레이크 15%p, 상한 50%
+                # 감소 합: 대상 약화(전체/단일·슬롯별) - 브레이크 15%p. 상한은 _damage_mult에서.
                 scope = ('all', 'aoe' if sk.all else 'single', sk.slot)
-                dec = min(DEC_CAP, e.recv_red(scope) - BREAK_DEC * self.opts['break_p'])
+                dec = e.recv_red(scope) - BREAK_DEC * self.opts['break_p']
             elif self.opts['break_p']:
                 inc += 0.15 * self.opts['break_p']
-            mult = (1 + inc - dec) + cr * cdv
+            mult = self._damage_mult(inc, dec, cr, cdv)
             dmg = base * (1 - dr) * mult * w
             before_dead = e.dead
             self.hurt(e, dmg, a, 'extra' if ctx.extra else 'direct', hit=w)

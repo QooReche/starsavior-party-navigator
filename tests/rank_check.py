@@ -26,6 +26,7 @@ import battlesim.rules as rules  # noqa: E402
 
 PRISTINE = dict(rules.DEFAULT_OPTS)
 PRISTINE_F = {k: getattr(engine, k) for k in rules.RULES['formula']}
+PRISTINE_CAP = rules.MC_OPTS['dmg_cap_scope']
 
 # 교정 항목(설명용 이름, 덮어쓸 값) — 각각 「교정 전」 위에 하나만 켠다
 CORRECTIONS = [
@@ -49,14 +50,18 @@ def apply_rules(base='default', override=None):
     """DEFAULT_OPTS(공유 dict)와 엔진 상수를 제자리에서 바꾼다. 캐시(UnitDef)도 비운다."""
     rules.DEFAULT_OPTS.clear()
     rules.DEFAULT_OPTS.update(PRISTINE)
+    rules.MC_OPTS['dmg_cap_scope'] = PRISTINE_CAP
     for k, v in PRISTINE_F.items():
         setattr(engine, k, v)
     if base == 'legacy':
+        rules.MC_OPTS['dmg_cap_scope'] = rules.MC_RULES['dmg_cap_scope']['legacy']
         rules.DEFAULT_OPTS.update(rules.LEGACY_OPTS)
         for k, v in rules.LEGACY_FORMULA.items():
             setattr(engine, k, v)
     for k, v in (override or {}).items():
-        if k in PRISTINE:
+        if k == 'dmg_cap_scope':
+            rules.MC_OPTS[k] = v
+        elif k in PRISTINE:
             rules.DEFAULT_OPTS[k] = v
         elif k in PRISTINE_F:
             setattr(engine, k, v)

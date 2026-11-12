@@ -20,7 +20,7 @@ from battlesim.starsavior.data import get_db  # noqa: E402
 from battlesim.starsavior.stats import calc_stats  # noqa: E402
 
 DB = get_db()
-LEG = dict(LEGACY_OPTS)
+LEG = dict(LEGACY_OPTS, dmg_cap_scope='reduce')
 
 
 def dummies(n, start=0):

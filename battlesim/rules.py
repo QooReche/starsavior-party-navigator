@@ -71,7 +71,7 @@ DEFAULT_OPTS = dict(
 # 교정 전 값: rules/default.json의 legacy. P1 골든은 이후 갱신된 legacy 키를 당시 입력으로 별도 고정한다.
 LEGACY_OPTS = {k: v['legacy'] for k, v in RULES['opts'].items() if 'legacy' in v}
 LEGACY_FORMULA = {k: v['legacy'] for k, v in RULES['formula'].items() if 'legacy' in v}
-# P3 확률 엔진(battlesim/mc.py) 전용 규칙. DEFAULT_OPTS 와 따로 둔다(기대값 엔진·damage_index 출력 불변).
+# P3 확률 엔진 규칙. dmg_cap_scope는 기대값 엔진도 읽는다. DEFAULT_OPTS·damage_index 옵션 목록과는 따로 둔다.
 MC_RULES = {k: v for k, v in RULES.get('mc', {}).items() if not k.startswith('_') and k != 'break_skills'}
 # kind='note' 항목: 설명용이며 엔진 코드가 읽지 않는다. MC_OPTS 에서 제외하되 MC_RULES·assumptions_used 출력엔 유지.
 MC_NOTE_KEYS = frozenset(k for k, v in MC_RULES.items() if v.get('kind') == 'note')

@@ -3,10 +3,6 @@
   "hash": "b3087698f2d7ddd4",
   "history": [
    {
-    "hash": "e645473f925c9c92",
-    "reason": "buff_step_group·break_skill_reduce·chain_pen 추가(11/09). 팀 5개 x 육성 1.5·3 x 단계 0·6·12 x 지원 2종 60칸을 새 규칙/옛 규칙으로 20판씩 비교해 클리어율·진행도 모두 동일(temp/partynavigator/scripts/guild_sens_1109.py)"
-   },
-   {
     "hash": "2e770586886fac1e",
     "reason": "cond_count_bind 영향은 루그(lugh) 설중사우 후 행동 게이지 줄뿐. guild_sim.json teams 5개(ceres-sun-supporter/wedding-epindel/bunny-charlotte+cristelle|tyria|hilde|scarlet, community wedding-carmen/amora/tyria)에 lugh 없음, build_guild_sim.reco_teams(4) 재실행 결과 팀 동일(후보 변경 없음), 지원 6종도 구원자 아님"
    },
@@ -41,6 +37,10 @@
    {
     "hash": "b3087698f2d7ddd4",
     "reason": "11/12 빌드 26610546 dmg_cap_scope=net 반영: 길드 방어전 시즌4 종료·미오픈으로 시뮬표 재생성 생략, 새 시즌 자료 반영 때 재생성"
+   },
+   {
+    "hash": "b3087698f2d7ddd4",
+    "reason": "11/12 피해 상한 비차단 리뷰: 기대값 엔진도 net 연결, MC 골든 78건 불변. 길드 방어전 시즌4 종료(미오픈)로 표 재생성 생략, 새 시즌 자료 반영 때 재생성"
    }
   ]
  },

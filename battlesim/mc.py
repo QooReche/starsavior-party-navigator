@@ -2741,10 +2741,9 @@ class Battle:
             dec = min(_rules.DEC_CAP, dec)
         mult = 1 + inc - dec
         mult += critical
-        if net:
+        if net and _rules.DEC_CAP > 0 and mult < 1 - _rules.DEC_CAP:
             self.rule_hits['dmg_cap_scope'] += 1
-            if _rules.DEC_CAP > 0:
-                mult = max(1 - _rules.DEC_CAP, mult)
+            mult = 1 - _rules.DEC_CAP
         return mult
 
     def apply_damage(self, a, v, dmg, kind, shieldable=True):
