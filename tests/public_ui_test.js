@@ -2,7 +2,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
 const section=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a)));
 const ctx=vm.createContext({MODE:'auto',SIMQ:{res:{}},simSig:()=> 'selected',esc:s=>String(s).replaceAll('<','&lt;'),
- QK:{d:{st:{}}},Number,Math,Date});
+ QK:{d:{st:{}}},GuildSearch:require('../guild_search.js'),Number,Math,Date});
 vm.runInContext(section('function simTitle(', 'function simBar('),ctx);
 vm.runInContext(section('function miVerdict(', 'function miTab('),ctx);
 vm.runInContext(section('const BIGBOSS=', '// 「추천 편성 보기」'),ctx);

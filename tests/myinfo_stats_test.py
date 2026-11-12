@@ -469,7 +469,9 @@ class SyntheticTests(unittest.TestCase):
 
     def test_published_schema(self):
         g = json.loads((ROOT / "data/growth.json").read_text(encoding="utf-8"))
-        self.assertEqual(set(g), {"_note", "game_build", "units", "star_link", "tactics", "facility", "item_sets", "sets", "potentials", "potential_pp", "assumed"})
+        self.assertEqual(set(g), {"_note", "game_build", "units", "star_link", "tactics", "facility", "item_sets", "sets", "potentials", "potential_pp", "potential_unsupported", "assumed"})
+        self.assertTrue(all(pid in g['potentials'] and isinstance(reason, str)
+                            for pid, reason in g['potential_unsupported'].items()))
         self.assertEqual(roster_ids() - set(map(int, g["units"])), set(),
                          '11/12 신규 구원자(1020·1061)는 빌드 26610546 표 재추출로 성장표에 포함됨')
         self.assertFalse(set(map(int, g["units"])) - roster_ids())

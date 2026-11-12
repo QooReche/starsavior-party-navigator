@@ -150,6 +150,8 @@ def _norm_party(party_spec, db, mode, build=None, mc=None):
     for u in units:
         uu = dict(key=u) if isinstance(u, str) else u
         k = _unit_key(uu, db, mode, build, use_combat)
+        if k is not None:
+            k += (bool((mc or MC_OPTS).get('myinfo_potential_coverage', True)),)
         hit = _UNIT_CACHE.get(k) if k is not None else None
         if hit is not None and hit[0] is db and not any(hit[1] is x for x in defs):     # 같은 파티에 같은 구원자가 두 번이면 객체를 나눈다
             defs.append(hit[1])
@@ -186,7 +188,7 @@ def _norm_party_raw(party_spec, db, mode, build=None, mc=None):
                     for k in FINAL_PASSIVE_KEYS.get(st, ()):
                         d.passive[k] = 0.0
         if combat is not None:
-            apply_potentials(d, db, combat)
+            apply_potentials(d, db, combat, (mc or MC_OPTS).get('myinfo_potential_coverage', True))
         defs.append(d)
     return defs, leader
 

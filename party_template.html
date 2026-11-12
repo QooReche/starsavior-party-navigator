@@ -1260,7 +1260,8 @@ function miVerdict(t,st){const r=SIMQ.res[simSig(st,t)];
  const m=MODE==="manual"&&r.man,clear=m?m.c:r.clear,turn=m?(m.ta??m.t):(r.ta??r.ttk);
  const first=m?m.first:r.first,death=m?m.first_p:r.first_p;
  const risk=first&&Number.isFinite(death)?` · ${esc(first.split("#")[0])} 위험 ${Math.round(death*100)}%`:"";
- return `<div class="mi-verdict" data-k="judgment" title="${esc(simTitle(r))}"><b class="${clear>=0.5?"ok":"hard"}">${clear>=0.5?"깰 수 있음":"어려움"}</b> · 클리어 ${Math.round(clear*100)}%${turn!=null?` · 약 ${Math.round(turn)}턴`:""}${!m&&r.t60!=null?` · ${STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:""}${risk}</div>`}
+ const warning=GuildSearch.unsupportedHtml([m||r],esc);
+ return `<div class="mi-verdict" data-k="judgment" title="${esc(simTitle(r))}"><b class="${clear>=0.5?"ok":"hard"}">${clear>=0.5?"깰 수 있음":"어려움"}</b> · 클리어 ${Math.round(clear*100)}%${turn!=null?` · 약 ${Math.round(turn)}턴`:""}${!m&&r.t60!=null?` · ${STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:""}${risk}</div>${warning}`}
 function miTab(info){$("mi-panel").hidden=!info;$("out").hidden=info;$("graphwrap").hidden=info;document.querySelector(".input-panel").hidden=info;growthControlPlace();
  $("tab-reco").setAttribute("aria-pressed",String(!info));$("tab-info").setAttribute("aria-pressed",String(info));if(info)renderMi();else {drawGraph();if(cy)cy.resize()}}
 function savedTime(date){const d=new Date(date);if(!Number.isFinite(+d))return "";const z=v=>String(v).padStart(2,"0");return `${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`}

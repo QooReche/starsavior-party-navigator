@@ -228,6 +228,7 @@ def _react_line_kind(phase, trig):
 
 # 확률 엔진이 해석하는 조건 키(이 밖의 키가 붙은 줄은 unknown_cond 규칙: 기본 skip + 기록)
 COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이 아님', '자기 추가발동 트리거', '자기 추가발동 트리거 스킬',
+                 '대상 강인도 있음',
                  'TurnUnitNegativeBuff', 'NotTurnUnitNegativeBuff',
                  '자신 미보유 효과 중첩수', '시전자 턴', '자신이 보유', '자신이 미보유',
                  '중첩수', '효과 개수', '중첩수 이상', '효과 개수 이상', '효과 개수 미만', '효과 개수 이하', '대상이 보유', '대상이 미보유',
@@ -574,6 +575,8 @@ class Unit:
         for k, v in self.fx.items():
             _add_prop(m, k, v, 1)
         for k, v in self.sd.items():
+            _add_prop(m, k, v, 1)
+        for k, v in getattr(self.d, 'potential_props', {}).items():
             _add_prop(m, k, v, 1)
         m['acc'] += self.permanent_accuracy
         m['vampirism'] += self.d.stats.get('vampirism', 0) / 10000.0 + self.d.passive.get('vampirism', 0)
@@ -2736,7 +2739,8 @@ class Battle:
             dec += 0.5     # 회피 시 감소 합 +50%(databook #d-sum)
         if v.broken:
             dec -= _rules.BREAK_DEC          # 브레이크 대상: 감소 합 −15%p 후 상한(databook #d-break)
-        mult = self._damage_mult(inc, dec, max(0.0, cdv - vm['critred']) if crit else 0.0)
+        local_critred = hctx.local[v].get('critred', 0.0) if hctx is not None and hctx.local is not None else 0.0
+        mult = self._damage_mult(inc, dec, max(0.0, cdv - vm['critred'] - local_critred) if crit else 0.0)
         dmg = base * (1 - dr) * mult * r * self.pen[a.side]
         return max(1.0, math.floor(dmg))
 
@@ -3495,6 +3499,9 @@ class Battle:
             elif k == 'IsTargetSuperArmor':      # 「강인한 의지」: 대상(피격자)이 강인도 격파 상태가 아니면(내부 키 이름 해석, assumed)
                 if (tgt is not None and not tgt.broken) != (v == '예'):
                     return False
+            elif k == '대상 강인도 있음':  # NKM.Templets:42453-42459, actual current toughness > 0.
+                if (tgt is not None and tgt.sa > 0) != (v == '예'):
+                    return False
             elif k == '결과':
                 if v == '치명타' and not ctx.crit:
                     return False
@@ -3859,6 +3866,8 @@ class Battle:
                     ctx.local[owner]['guard'] += v
                 elif st in ('피해 감소', '받는 피해 감소'):
                     ctx.local[owner]['red'] += v
+                elif st == '치명타 피해 감소' and eff.get('potential_coverage'):
+                    ctx.local[owner]['critred'] += v
                 else:
                     self.unsup['local(피격 직전): ' + st] += 1
                 return
@@ -4331,7 +4340,11 @@ class Battle:
         self.unsup['effect: ' + rest[:60]] += 1
 
     def chain(self, owner, eff, ctx):
-        if eff.get('random_enemy'):
+        if eff.get('chance', 1) < 1 and self.R(owner.side).random() >= eff['chance']:
+            return
+        if eff.get('target') == 'attacker':
+            tg = [ctx.src] if ctx is not None and ctx.src is not None else []
+        elif eff.get('random_enemy'):
             pool = self.alive(1 - owner.side)
             tg = [self.R(owner.side).choice(pool)] if pool else []
         else:
@@ -4615,6 +4628,8 @@ def _meaning_gap(ln, k, markers):
     """줄이 파싱은 됐지만 엔진이 그 의미(속성·이름)를 실행하지 못하는 경우의 사유. 없으면 None."""
     e = ln.eff
     if e['kind'] == 'local':
+        if e.get('potential_coverage') and e.get('stat') == '치명타 피해 감소' and k == 'prehit_self':
+            return None
         if k in ('battle_start', 'wave_start'):
             return None                     # 등장 후·웨이브 시작 시 능력치 보정은 _perm_apply 로 처리
         ok = LOCAL_PREHIT_OK if k in ('prehit_self', 'prehit_ally') else LOCAL_OK
@@ -4727,7 +4742,11 @@ def _support_one(d, markers_all):
             if not reason and bad:
                 reason = 'condition: ' + ','.join(bad)
             if reason:
-                out.append(dict(unit=d.name, foe=foe, slot=ln.slot, reason=reason, raw=ln.raw,
+                raw = ln.raw
+                label = getattr(d, 'potential_line_names', {}).get(raw)
+                if label:
+                    raw = label + ' — ' + raw
+                out.append(dict(unit=d.name, foe=foe, slot=ln.slot, reason=reason, raw=raw,
                                 critical=bool(foe and CRITICAL_RX.search(rest) and '강인도' not in rest)))
         for ts in d.trigger_skills.values():
             if not supported_trigger(d, ts) and ts.slot not in getattr(d, 'react', {}):

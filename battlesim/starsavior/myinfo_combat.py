@@ -9,6 +9,15 @@ from .parser import Line
 
 SLOTS = {'기본기': 'basic', '특수기': 'special', '궁극기': 'ultimate', '고유 패시브': 'passive'}
 
+# Derived PotenLevelStat rates; same modifier vocabulary used by combat buffs.
+POTENTIAL_STAT_PROPS = {
+    'NST_RATE_CROSS_ATTACK': '협공 확률', 'NST_RATE_REVENGE_ATTACK': '반격 확률',
+    'NST_RATE_PREEMPTIVE_DEFEND': '선제 방어 확률', 'NST_RATE_DAMAGE_VAMPIRISM': '피해 흡혈',
+    **{f'NST_RATE_DAMAGE_{kind}_SKILL_{slot}': f'{name} 피해 {label}'
+       for kind, label in [('UP', '증가'), ('REDUCE', '감소')]
+       for slot, name in [('ATTACK', '기본기'), ('SPECIAL', '특수기'), ('HYPER', '궁극기')]},
+}
+
 
 @lru_cache(maxsize=1)
 def combat_data():
@@ -69,7 +78,7 @@ def select_skills(raw, key, combat):
     return u
 
 
-def apply_potentials(d, db, combat):
+def apply_potentials(d, db, combat, coverage=True):
     tables = combat_data()['potentials']
     public = {p['id']: p for p in db.main['dict']['pot']}
     seen = set()
@@ -81,17 +90,40 @@ def apply_potentials(d, db, combat):
             continue
         row = tables.get(str(pid), {}).get(str(level))
         pot = public.get(pid)
-        if row is None or pot is None:
-            d.unmodeled.append('myinfo potential: unknown ID/level %s/%s' % (pid, level))
+        name = combat_data().get('potential_names', {}).get(str(pid)) or (pot or {}).get('n') or '이름 미확인'
+        label = '%s (%s/%s)' % (name, pid, level)
+        if row is None or (not coverage and pot is None):
+            d.unmodeled.append('myinfo potential: %s — 지원하지 않음: unknown ID/level' % label)
             continue
-        source = next(x[4] for x in pot['lv'] if x[0] == level)
+        source = row.get('effects') if coverage else None
+        if source is None:
+            source = next((x[4] for x in (pot or {}).get('lv', []) if x[0] == level), None)
+        if source is None:
+            d.unmodeled.append('myinfo potential: %s — 지원하지 않음: 효과 문구 없음' % label)
+            continue
+        for gap in combat_data().get('potential_unsupported', {}).get(f'{pid}/{level}', []) if coverage else []:
+            d.unmodeled.append('myinfo potential: %s — 지원하지 않음: %s' % (label, gap))
         for stat, value in row['stats'].items():
             if stat == 'NST_SUPER_ARMOR':
                 d.stats['sa'] += value
+            elif coverage and stat in POTENTIAL_STAT_PROPS:
+                props = getattr(d, 'potential_props', None)
+                if props is None:
+                    d.potential_props = props = {}
+                key = POTENTIAL_STAT_PROPS[stat]
+                props[key] = props.get(key, 0) + value / 100
             else:
-                d.unmodeled.append('myinfo potential stat: %s/%s' % (pid, stat))
+                d.unmodeled.append('myinfo potential stat: %s — 지원하지 않음: %s' % (label, stat))
         for i in row['lines']:
             ln = Line(source[i], '잠재력', 'passive')
+            if coverage and str(i) in row.get('chains', {}):
+                ln.eff = dict(kind='chain', **row['chains'][str(i)])
+            if coverage and ln.eff.get('stat') == '치명타 피해 감소':
+                ln.eff['potential_coverage'] = True
+                ln.params = [('대상 강인도 있음' if k == 'IsTargetSuperArmor' else k, v) for k, v in ln.params]
+            if not hasattr(d, 'potential_line_names'):
+                d.potential_line_names = {}
+            d.potential_line_names[ln.raw] = label
             if i in row['random_chain']:
                 ln.eff['random_enemy'] = True
             if str(i) in row['random_basic']:

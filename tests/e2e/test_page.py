@@ -2297,6 +2297,33 @@ def test_clash(browser, ctx):
 TESTS.append(test_clash)
 
 
+def test_potential_unsupported(browser, ctx):
+    """Real Pyodide worker retains a named, unconfirmed arcana-origin potential."""
+    ctx.errors.clear()
+    page = open_page(browser, ctx, info=SYNTH)
+    info = json.loads(open(SYNTH, encoding='utf8').read())
+    for u in info['units']:
+        u['gauntlet']['potentials'] = [[11026, 1, 0, 0]]
+    page.evaluate('(info) => miApply(info)', info)
+    page.wait_for_function('() => !!MI.growth && !MI.pending')
+    choose(page, '작전 (일반)', 'SECTOR 1-3')
+    page.evaluate('() => {SIMQ.n=1;run()}')
+    page.click('.party[data-party="1"] button[data-sim="1"]')
+    wait_sim_done(page)
+    warning = page.locator('[data-k="potential-unsupported"]').first
+    assert '지원하지 않음' in warning.inner_text()
+    warning.locator('summary').click()
+    assert '재난 대응 프로토콜' in warning.inner_text()
+    assert page.evaluate('() => Object.values(SIMQ.res).some(r=>r.unsupported?.some(x=>x.raw.includes("재난 대응 프로토콜")))')
+    page.screenshot(path=os.path.join(ctx.shots, 'potential_unsupported.png'))
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '실제 작업자 → 웹 요약 → 결과 카드에 미지원 잠재력 이름 표시'
+
+
+TESTS.append(test_potential_unsupported)
+
+
 def main():
     args = sys.argv[1:]
     shots = None

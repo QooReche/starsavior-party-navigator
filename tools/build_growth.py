@@ -231,6 +231,9 @@ def build_growth(static, game_build=None):
     # eight stats, whereas an unknown ID/level must remain a diagnostic.
     potentials = {str(row["PotenId"]): potential_levels[row["PotenLevelGroupId"]]
                   for row in load("SE_POTENTIAL_TEMPLET")}
+    potential_unsupported = {pid: '레벨 표 없음' for pid, rows in potentials.items() if not rows}
+    if len(potentials) != len(load('SE_POTENTIAL_TEMPLET')):
+        raise ValueError('Duplicate potential ID: review table before publishing')
     # Battle power sums checked, undiscounted costs through the learned level;
     # stat rows above remain absolute. Star.Templets.decompiled.cs:21677-21690.
     pp_groups = {}
@@ -246,6 +249,7 @@ def build_growth(static, game_build=None):
         star_link=cumulative(load("SYNCHRO_LEVEL_TEMPLET"), "SynchroLevel",
                              lambda r: stats(r.get("StatAddPerLevelData", {}))),
         tactics=dict(tactics), facility=facility, potentials=potentials, potential_pp=potential_pp,
+        potential_unsupported=potential_unsupported,
         item_sets={str(r["EquipItemId"]): r.get("SetOptionId", 0) for r in load("EQUIP_ITEM_TEMPLET")},
         sets={str(r["SetOptionId"]): dict(parts=r["NeedParts"], stats=stats(r.get("SetStat"), "SetStatType", "SetStatValue"))
               for r in load("EQUIP_SET_OPTION_TEMPLET")})

@@ -11,6 +11,7 @@ from battlesim.fileio import atomic_text
 from battlesim.starsavior.data import get_db
 from battlesim.starsavior.savior_ids import keys_by_id
 from tools.build_growth import STAT, read
+from tools.potential_catalog import catalog_tables, PotentialConverter, Unconvertible, names, arcana_unique
 
 
 MISMATCH = []   # build() 가 건너뛴 잠재력 레벨(설명·클라 효과 수 불일치) '잠재력/레벨: …'
@@ -50,6 +51,11 @@ def build(static):
     public = {p['id']: p for p in db.main['dict']['pot']}
     pl = {(r['PotenLevelGroupId'], r['PotenLevelValue']): r for r in load('POTENTIAL_LEVEL_GROUP_TEMPLET')}
     se = {r['m_SEStrID']: r for r in load('SE_TEMPLET_POTEN')}
+    tb = catalog_tables(static)
+    tb.se.update(se)
+    converter = PotentialConverter(tb)
+    potential_names = names(load, tb)
+    unsupported = {}
     potentials = {}
     for p in load('SE_POTENTIAL_TEMPLET'):
         rows = {}
@@ -57,30 +63,63 @@ def build(static):
             if group != p['PotenLevelGroupId']:
                 continue
             pub = next((x for x in public.get(p['PotenId'], {}).get('lv', []) if x[0] == level), None)
-            if pub is None:
-                continue
-            lines = [i for i, s in enumerate(pub[4]) if not s.startswith(('능력치:', '[상시] 능력치:'))]
+            lines = [i for i, s in enumerate(pub[4]) if not s.startswith(('능력치:', '[상시] 능력치:'))] if pub else []
             source = [se[s] for s in r.get('PotenLevelSe', [])]
-            if len(lines) != len(source):
+            matched_source = source
+            effects, gaps = None, []
+            if pub is None or len(lines) != len(source):
+                # Public descriptions are optional; derive missing SE through
+                # the existing converter, keeping every rejected ID visible.
+                effects = []
+                matched_source = []
+                for s in source:
+                    try:
+                        effects.append(converter.convert(s['m_SEStrID'])['line'])
+                        matched_source.append(s)
+                    except Unconvertible as ex:
+                        gaps.append('%s: %s' % (s['m_SEID'], ex))
+                lines = list(range(len(effects)))
+            if pub is not None and effects is not None and gaps:
                 # 공개 설명 줄 수와 클라 효과 수가 다르면(데이터북이 클라 표보다 새 빌드일 때 등) 이 레벨은 만들지 않고 기록 —
                 # main() 이 이전 계수를 보존한다. 둘 다 없으면 시험(myinfo_combat_test)이 잡는다
                 MISMATCH.append(f'{p["PotenId"]}/{level}: 설명 {len(lines)}줄·클라 효과 {len(source)}개')
                 PUBLIC_LINES[(str(p['PotenId']), str(level))] = len(pub[4])
+                unsupported[f'{p["PotenId"]}/{level}'] = gaps
                 continue
             stats = {s['PotenLevelStatType']: s.get('PotenLevelStatRate', s.get('PotenLevelStatValue', 0))
                      for s in r.get('PotenLevelStat', []) if s['PotenLevelStatType'] not in STAT}
             # Existing public effect text supplies the vocabulary. Only indexes,
             # flags and extracted numeric stats are added to the public artifact.
-            random_chain, random_basic = [], {}
-            for i, s in zip(lines, source):
+            random_chain, random_basic, chains = [], {}, {}
+            for i, s in zip(lines, matched_source):
                 if s.get('AddDamageRate') and s.get('AutoTargetId') == 4:
                     random_chain.append(i)
+                if (s.get('AddDamageRate') and s.get('AutoTargetId') == 17
+                        and s.get('AddDamageTargetType') == 'NSETT_SELF'
+                        and s.get('AddDamageStatType') in ('NST_HP', 'NST_ATK', 'NST_DEF')):
+                    chains[str(i)] = dict(stat={'NST_HP': 'hp', 'NST_ATK': 'atk', 'NST_DEF': 'def'}[s['AddDamageStatType']],
+                                          coef=s['AddDamageRate'] / 10000,
+                                          chance=s['m_Condition'].get('m_fActiveRate', 10000) / 10000,
+                                          target='attacker')
                 if (s.get('m_BuffStrID') == 'BI_ENFORCE' and s.get('AutoTargetId') == 5
                         and s.get('EnforceAutoTargetId') == 4 and s.get('EnforceSkillIndex') == 'NSI_SKILL_1_ATTACK'):
                     random_basic[str(i)] = s['m_Condition'].get('m_fActiveRate', 10000)
             rows[str(level)] = dict(lines=lines, stats=stats, random_chain=random_chain, random_basic=random_basic)
+            if effects is not None:
+                rows[str(level)]['effects'] = effects
+            if chains:
+                rows[str(level)]['chains'] = chains
+            if any(s.get('m_BuffStrID') == 'BI_STAT_NST_RATE_DAMAGE_VAMPIRISM'
+                   and s.get('m_Condition', {}).get('m_ActiveType') == 'NSEAT_HIT' for s in source):
+                unsupported[f'{p["PotenId"]}/{level}'] = ['미확인: 치명타 적중 시 흡혈의 복수 대상 판정·시전 내 유지 범위']
+            if gaps:
+                unsupported[f'{p["PotenId"]}/{level}'] = gaps
         potentials[str(p['PotenId'])] = rows
-    return dict(version=1, units=units, potentials=potentials)
+        if not rows:
+            unsupported.setdefault(str(p['PotenId']), ['레벨 표 없음 또는 효과 변환 미확인'])
+    return dict(version=1, units=units, potentials=potentials,
+                potential_names=potential_names, potential_unsupported=unsupported,
+                arcana_unique=arcana_unique(load, tb))
 
 
 def main():

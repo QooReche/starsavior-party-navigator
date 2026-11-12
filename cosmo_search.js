@@ -186,8 +186,8 @@
       const teams = t.teams.map((e, i) => {
         const lv = levelOf(bosses[i], e.keys);
         let pick = null;
-        for (const b of brks) { const r = res[jobKey(bosses[i], e.keys, lv, b)]; if (r && r.cosmo && (!pick || metric(r.cosmo, mode) > metric(pick.st, mode))) pick = {st: r.cosmo, brk: b ? b.name : null, brkLv: b ? b.level : null, bs: r.bs || null}; }
-        return pick ? {boss: bosses[i], keys: e.keys, order: e.order, level: lv, st: pick.st, brk: pick.brk, brkLv: pick.brkLv} : null;
+        for (const b of brks) { const r = res[jobKey(bosses[i], e.keys, lv, b)]; if (r && r.cosmo && (!pick || metric(r.cosmo, mode) > metric(pick.st, mode))) pick = {st: r.cosmo, brk: b ? b.name : null, brkLv: b ? b.level : null, bs: r.bs || null, ...GS.unsupportedFields(r)}; }
+        return pick ? {boss: bosses[i], keys: e.keys, order: e.order, level: lv, st: pick.st, brk: pick.brk, brkLv: pick.brkLv, ...GS.unsupportedFields(pick)} : null;
       });
       if (teams.some(x => !x)) continue;
       out.push({sum: teams.reduce((a, x) => a + metric(x.st, mode), 0), sum2: teams.reduce((a, x) => a + other(x.st, mode), 0), teams});
@@ -200,7 +200,7 @@
   function finalRank(triples, bosses, level, res, mode, show) {
     const out = [];
     for (const t of triples) {
-      const teams = t.teams.map((e, i) => { const r = res[jobKey(bosses[i], e.keys, level)]; return r && r.cosmo ? {boss: bosses[i], keys: e.keys, order: e.order, st: r.cosmo} : null; });
+      const teams = t.teams.map((e, i) => { const r = res[jobKey(bosses[i], e.keys, level)]; return r && r.cosmo ? {boss: bosses[i], keys: e.keys, order: e.order, st: r.cosmo, ...GS.unsupportedFields(r)} : null; });
       if (teams.some(x => !x)) continue;
       out.push({sum: teams.reduce((a, x) => a + metric(x.st, mode), 0), sum2: teams.reduce((a, x) => a + other(x.st, mode), 0), teams});
     }
@@ -466,12 +466,13 @@
   // 화면 조각. st = {phase: idle|run|done|err, msg, done, total, rows, level, mode, bosses, ...}, cx = {hasInfo, label(key), esc, bossName(key), levelMax, level, mode}
   function table(r, mode, cx) {
     const esc = cx.esc;
+    const warning = GS.unsupportedHtml(r.teams, esc);
     if (cx.team) {   // 화면이 카드 모양(앞열·뒤열·리더·브레이크 스킬)을 그려 준다: 보스마다 한 덩어리
       const blocks = r.teams.map(t => `<div class="cs-boss" data-k="cs-team"><div class="cs-bh"><b>${esc(cx.bossName(t.boss))}</b>${t.level != null ? ` <span class="cs-lv">난이도 ${t.level}</span>` : ""}<span class="cs-sc">${MODES[mode]} <b>${num(metric(t.st, mode))}</b> · ${MODES[mode === "top" ? "mean" : "top"]} ${num(other(t.st, mode))} · 클리어율 ${pct(t.st.clear)} · 보스 깎음 ${pct(t.st.frac)}</span></div>${cx.team(t)}</div>`).join("");
-      return `<div data-k="cs-table">${blocks}<div class="cs-sum"><b>합계 <span data-k="cs-sum">${num(r.sum)}</span></b></div></div>`;
+      return `${warning}<div data-k="cs-table">${blocks}<div class="cs-sum"><b>합계 <span data-k="cs-sum">${num(r.sum)}</span></b></div></div>`;
     }
     const body = r.teams.map(t => `<tr><td>${esc(cx.bossName(t.boss))}${t.level != null ? "<br>난이도 " + t.level : ""}${t.brk ? "<br>" + esc(t.brk) : ""}</td><td>${t.order.map(k => esc(cx.label(k))).join("<br>")}</td><td><b>${num(metric(t.st, mode))}</b></td><td>${num(other(t.st, mode))}</td><td>${pct(t.st.clear)}</td><td>${pct(t.st.frac)}</td></tr>`).join("");
-    return `<div class="gd-scroll"><table data-k="cs-table"><thead><tr><th>보스</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>${MODES[mode]}(순위 기준)</th><th>${MODES[mode === "top" ? "mean" : "top"]}</th><th>클리어율</th><th>보스 깎음</th></tr></thead><tbody>${body}<tr><td colspan="2"><b>합계</b></td><td colspan="4"><b data-k="cs-sum">${num(r.sum)}</b></td></tr></tbody></table></div>`;
+    return `${warning}<div class="gd-scroll"><table data-k="cs-table"><thead><tr><th>보스</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>${MODES[mode]}(순위 기준)</th><th>${MODES[mode === "top" ? "mean" : "top"]}</th><th>클리어율</th><th>보스 깎음</th></tr></thead><tbody>${body}<tr><td colspan="2"><b>합계</b></td><td colspan="4"><b data-k="cs-sum">${num(r.sum)}</b></td></tr></tbody></table></div>`;
   }
   const progText = st => `${st.msg || ""}${st.total ? ` · ${num(st.done)}/${num(st.total)}` : ""}`;
   function html(st, cx) {

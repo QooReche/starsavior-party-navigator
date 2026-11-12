@@ -61,12 +61,18 @@ def _break_summary(r):
     return {k: r['break_skill'][k] for k in ('name', 'uses', 'dmg', 'supported')}
 
 
+def _potential_unsupported(r):
+    rows = [x for x in r.get('unsupported', {}).get('static', []) if x.get('slot') == '잠재력']
+    return {'unsupported': rows} if rows else {}
+
+
 def run_auto(stage, party, n, seed, extra=None):
     op = _opts(extra, n_runs=n, seed=seed)
     top_q = op.pop('cosmo_top_q', 0.2)
     r = simulate(party, _enc(stage, op), op)
     o = r['outcome']
     extra_out = {'cosmo': cosmo_summary(r['cosmo_raid'], top_q)} if r.get('cosmo_raid') else {}
+    extra_out.update(_potential_unsupported(r))
     first = sorted(((v.get('first_death_p') or 0, k) for k, v in r['per_unit'].items()), reverse=True)
     st = r.get('star_turn')
     return json.dumps(dict(clear=o['clear_p'], t60=(st['p'] if st else None), prog=o.get('progress'), progs=r.get('prog_runs'), via=r.get('ally_via') or {}, wipe=o['wipe_p'], timeout=o['timeout_p'], ci=o['ci95']['clear'], n=o['n_runs'],
@@ -135,4 +141,4 @@ def run_manual(stage, party, n, seed, extra=None):
     sq.update(run=idx, kind=kind, ttk=(runs[idx][1] if runs else None))
     return json.dumps(dict(c=o['clear_p'], ci=o['ci95']['clear'], t=o['ttk_median'], n=o['n_runs'],
                            prog=o.get('progress'), progs=r.get('prog_runs'),
-                           pol=list(pol), seq=sq, bs=_break_summary(r)), ensure_ascii=False)
+                           pol=list(pol), seq=sq, bs=_break_summary(r), **_potential_unsupported(r)), ensure_ascii=False)

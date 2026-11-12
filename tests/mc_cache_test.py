@@ -55,6 +55,7 @@ _KEEP = {'dmg_cap_scope': 'reduce', 'ally_break_gauge': 'skip', 'own_turn_condit
          'nova_force_cap': 0, 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget',
          # 2026-11-04 기본 전환분은 legacy 로 고정
          'preemptive_defense': 'recognize', 'toughness_elem': 'db', 'break_point_hits': 'once', 'break_auto_blocked_cc': 'off'}   # 해시는 옛 규칙 기준(캐시 동일성 시험이 목적)
+_KEEP['myinfo_potential_coverage'] = False
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

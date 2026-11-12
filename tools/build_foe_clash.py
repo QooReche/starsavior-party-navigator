@@ -151,6 +151,8 @@ def clean_markup(s):
 
 # ---------------------------------------------------------------------------------------------- SE 행 -> 효과 줄
 class SeConverter:
+    phases = PHASE
+    stat_labels = STAT_LABEL
     def __init__(self, tb):
         self.tb = tb
 
@@ -288,7 +290,7 @@ class SeConverter:
     def props_text(self, stats):
         parts = []
         for nst, kind, v in stats:
-            lab = STAT_LABEL.get(nst)
+            lab = self.stat_labels.get(nst)
             if lab is None:
                 raise Unconvertible('속성 %s 의 데이터북 이름을 모름' % nst)
             parts.append('%s %s%%' % (lab, sgn(v / 100.0)) if kind == 'RATE' else '%s %s' % (lab, sgn(v)))
@@ -350,9 +352,9 @@ class SeConverter:
             raise Unconvertible('SE 행 %s 없음' % se_id)
         cond = row.get('m_Condition') or {}
         at = cond.get('m_ActiveType')
-        if at not in PHASE:
+        if at not in self.phases:
             raise Unconvertible('발동 시점 %s 미지원' % at)
-        head = '[%s]' % PHASE[at]
+        head = '[%s]' % self.phases[at]
         self.cond_buffs = []
         if row.get('SkillConditionId'):
             head += ' (조건: %s)' % self.cond_text(row['SkillConditionId'], at)

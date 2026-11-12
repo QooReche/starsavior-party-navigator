@@ -67,6 +67,11 @@
     return {top, mean, cap};
   }
   const byRank = (a, b) => b.top - a.top || b.cap - a.cap || b.mean - a.mean;
+  const unsupportedFields = r => r.unsupported?.length ? {unsupported: r.unsupported} : {};
+  function unsupportedHtml(rows, esc) {
+    const messages = [...new Set(rows.flatMap(r => (r.unsupported || []).map(x => `${x.unit || ""} · ${x.raw}`)))];
+    return messages.length ? `<details class="qwarn" data-k="potential-unsupported"><summary>지원하지 않음 · 잠재력 효과 ${messages.length}건</summary>${messages.map(x=>`<div>${esc(x)}</div>`).join("")}</details>` : "";
+  }
 
   const jobKey = (keys, level, sup, tiers) => [keys.join("+"), level, sup, (tiers || []).join("")].join("|");
 
@@ -122,7 +127,7 @@
     for (const j of jobs) {
       const r = res[j.key]; if (!r || coopHit(S || {}, r)) continue;
       const st = rankStats(V, G, j.level, tiers, r.prog, r.progs, r.clear), id = j.keys.slice().sort().join("+"), cur = best.get(id);
-      if (!cur || byRank(st, {top: cur.score, cap: cur.cap, mean: cur.mean}) < 0) best.set(id, {keys: j.keys, order: j.order, level: j.level, sup: j.sup, score: st.top, mean: st.mean, cap: st.cap, clear: r.clear, prog: r.prog, frac: Math.max(0, Math.min(1, 2 * r.prog - 1)), n: r.n});
+      if (!cur || byRank(st, {top: cur.score, cap: cur.cap, mean: cur.mean}) < 0) best.set(id, {keys: j.keys, order: j.order, level: j.level, sup: j.sup, score: st.top, mean: st.mean, cap: st.cap, clear: r.clear, prog: r.prog, frac: Math.max(0, Math.min(1, 2 * r.prog - 1)), n: r.n, ...unsupportedFields(r)});
     }
     return [...best.values()].sort((a, b) => b.score - a.score || b.cap - a.cap || b.mean - a.mean || (a.order.join() < b.order.join() ? -1 : 1)).slice(0, top || 5);
   }
@@ -164,7 +169,7 @@
         };
         w.onmessage = e => {
           const m = e.data; if (dead || (m.id != null && m.id !== requestId)) return;
-          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}, progs: m.result.progs || null, cosmo: m.result.cosmo || null}; if(onResult)onResult(m.key,m.result); done++; if (onProgress) onProgress(done, jobs.length); }
+          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}, progs: m.result.progs || null, cosmo: m.result.cosmo || null, ...unsupportedFields(m.result)}; if(onResult)onResult(m.key,m.result); done++; if (onProgress) onProgress(done, jobs.length); }
           else if (m.type === "done" && dyn && next < jobs.length) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); }
           else if (m.type === "done") { if (++finished === parts.length) { dead = true; clean(false); resolve(res); } }
           else if (m.type === "error") fail(new Error(m.msg || "작업자 오류"));
@@ -209,9 +214,9 @@
       body = `${stale}${coop}<div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>보스 깎음</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
 <div class="mut gd-small">후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값입니다(표본이 작아 한두 단계·수천 점은 오차). 위에서 고른 선택 효과 기준(기본 끔). 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순입니다. 점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받습니다.</div>${btn("다시 찾기")}`;
     } else body = coop + "<br>" + btn("최고 점수 편성 찾기") + '<span class="mut gd-small"> 몇 분 걸릴 수 있어요. 탭을 연 채로 기다려 주세요.</span>';
-    return `<div class="gd-search" data-k="gd-search">${head}${body}${warn}</div>`;
+    return `<div class="gd-search" data-k="gd-search">${head}${body}${st.phase === "done" ? unsupportedHtml(st.rows || [], esc) : ""}${warn}</div>`;
   }
 
-  const api = {FRONT, TOP_Q, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, SUP_NAME, countDropped, notesHtml, BASIS};
+  const api = {FRONT, TOP_Q, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, SUP_NAME, countDropped, notesHtml, BASIS, unsupportedFields, unsupportedHtml};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);
