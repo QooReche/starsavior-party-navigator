@@ -52,7 +52,7 @@ python -X utf8 -I tools/sim_damage.py simulate ... --rules "{\"target_defender_m
 
 ### P5 — 육성 프리셋·강인도/브레이크·피해 제한·전투력 보정
 - `simulate(..., options={'build': 'standard'})`: 육성 프리셋(기본 'none' = 예전과 같음, 유닛별 `{'key':..., 'build':...}` 도 됨). 브라우저 평균 육성 시뮬은 'standard'를 사용함. 결과 `party.build`·`builds`(구원자별 주옵·세트·잠재력 요약)·`power`(databook 전투력 공식 4명 합)·`power_ratio`(권장 대비 %)·`penalty`.
-- 규칙(`rules/default.json` 의 `mc`): `toughness`(on/off, 강인도·브레이크), `toughness_elem`(강인도 상성), `basic_tough`(기본기 강인도 파괴량, 0), `ally_break_gauge`(구원자 브레이크 때 게이지 keep/reset), `power_penalty`(off/model).
+- 규칙(`rules/default.json` 의 `mc`): `toughness`(on/off, 강인도·브레이크), `toughness_elem`(강인도 상성), `basic_tough`(기본기 강인도 파괴량, 0), `ally_break_gauge`(구원자 브레이크 때 게이지 keep/skip/reset, 기본 keep — 정본 `rules/default.json`), `power_penalty`(off/model).
 - 「피해 제한」은 효과별 표 `mc.DAMAGE_LIMIT`(대미지 브레이크·불사의 육신·바큇살)만 지원, 그 밖은 중요 미지원. 〈불사〉 = 생명력 1 남김.
 - 결과 `breaks{ally, foe}`(판당 평균 브레이크 횟수), `unsupported.depth_runs`(연쇄 깊이 한도로 시전을 건너뛴 판 수 — 사전 계산은 1판이라도 있으면 그 팀을 「계산 불가」로).
 - 시험: `python -X utf8 -I tests/p5_test.py`(15개, 일부러 깨뜨려 실패 확인 — `docs/sim_p5_report.md`). 설계 = `docs/battlesim_design.md` 11절.
