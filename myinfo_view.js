@@ -92,7 +92,7 @@
       const txt=esc(e.text).replace(/강인도 \+(\d+)/g,(m)=>`${icon('tough','ic in')}${m}`);
       return `<li>${icon('gem')}<div><b>${esc(publicData.potentials?.[id]?.name||'잠재력 정보 없음')} · Lv${lv}</b><p>${st?esc(values(st)):'시뮬 미반영'}</p>${e.active?`<details><summary>시뮬 전투 효과</summary><p class="mut">${txt}</p></details>`:txt?`<p class="mut">${txt}</p>`:''}</div></li>`}).join('');
     const inner=b.sources.filter(s=>['favor','tactics','facility'].includes(s.id)).map(s=>line(`${s.id==='tactics'?esc(groups[s.group]||'기타')+(s.field==='level'?'':` · ${{attack:'공',defense:'방',hp:'생'}[s.field]}`):labels[s.id]} Lv${s.level}`,values(s.values))).join('');
-    return `<div class="ms-head">${savior?.art||''}<div class="ms-id"><div class="ms-name">${savior?.dia||''}<div><h2>${esc(savior?.name||'미등록 구원자')}</h2><small>${esc(savior?.sub||'')}</small></div></div>
+    return `<div class="ms-head">${savior?.art||''}<div class="ms-id"><div class="ms-name">${savior?.dia||''}<div><h2>${esc(savior?.name||'미등록 구원자')}</h2><small>${esc(savior?.sub||'')}</small>${savior?.kind||''}</div></div>
       <div class="ms-power">${icon('power')}<b>${num(result.power)}</b></div>
       <div>${levelBadge(unit,info,rule)}</div>
       <div class="ms-meta">${tile('ultimate','★',level(unit.star))}${tile('sigil','각인',level(unit.sigil))}${tile('reso','공명',level(unit.resonance))}${tile('hp','호감도',level(unit.favor))}</div>

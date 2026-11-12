@@ -100,6 +100,12 @@
   "kind": "C"
  },
  {
+  "name": "아세라",
+  "sub": "편애의 마녀",
+  "kind": "S",
+  "source": "2026-11-12, starsavior-static-data/tables/UNIT_TEMPLET_BASE1.json:2472,2512-2520 — m_UnitID=1061, UnitTagTypeGroup[].UnitTagType=UOT_COSMIC/UOT_SHIFTER"
+ },
+ {
   "name": "로자리아",
   "sub": "폴른 호크",
   "kind": "C"

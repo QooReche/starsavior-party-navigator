@@ -1,0 +1,9 @@
+{
+ "_note": "데이터북 rel.u[id].t는 단일 관측 분류이고 units.cc는 캐릭터 분류라 SHIFTER 판별에 쓰지 않음. 아래는 클라 표에서 확인한 추가 표시 태그. 편성 제한에는 쓰지 않음.",
+ "units": {
+  "1061": {
+   "kinds": ["S"],
+   "source": "2026-11-12, starsavior-static-data/tables/UNIT_TEMPLET_BASE1.json:2472,2512-2520 — m_UnitID=1061, UnitTagTypeGroup[].UnitTagType=UOT_COSMIC/UOT_SHIFTER"
+  }
+ }
+}

@@ -149,12 +149,17 @@ def main(out=None):
                     "star": "attr_star", "order": "attr_order", "chaos": "attr_chaos"}.items():
         with open(os.path.join(pr.HERE, "assets", "ui_icons", fn + ".webp"), "rb") as f:
             icons[kor] = "data:image/webp;base64," + base64.b64encode(f.read()).decode()
-    # 어나더/코즈믹 분류: databook rel.u[id].t (N 일반 / C 코즈믹 / A 어나더), 이름+부제로 연결
-    kinds = {(k["name"], k["sub"]): k["kind"] for k in pr._json(os.path.join(pr.DATA, "kinds.json"))}
+    # 표시 태그: 이름+부제로 복수 행을 모음. kind는 기존 단일 관측 분류 호환용.
+    kinds = {}
+    for k in pr._json(os.path.join(pr.DATA, "kinds.json")):
+        tags = kinds.setdefault((k["name"], k["sub"]), [])
+        if k["kind"] not in tags:
+            tags.append(k["kind"])
     for x in r:
         k = kinds.get((x["name"], x["sub"]))
         if k:
-            x["kind"] = k
+            x["kinds"] = k
+            x["kind"] = next((t for t in k if t in ("C", "A")), None)
     bicons = {}
     bdir = os.path.join(pr.HERE, "assets", "break_icons")
     for fn in os.listdir(bdir):

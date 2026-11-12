@@ -242,6 +242,7 @@ class CleanupTest(unittest.TestCase):
             main = {'units': [], 'rel': {'u': {}}, 'topics': {'pen': [], 'tribe': []}}
             (self.tmp / 'rawdata').mkdir()
             fileio.atomic_json(self.tmp / 'rawdata/databook_main.json', main)
+            fileio.atomic_json(self.tmp / 'data/kind_overrides.json', {'units': {}})
             with patch.object(update, 'ROOT', str(self.tmp)), patch.object(sys, 'argv', ['update', '--no-html']):
                 update.main()
         names = [Path(c[0]).name for c in calls]

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """게임 업데이트 후 데이터를 한 번에 다시 만든다(구조도·추천이 데이터에서 자동 갱신되도록).
 사용: python -X utf8 -I tools/update.py [databook main.json(기본 rawdata/databook_main.json)] [--no-html]
-  1) data/kinds.json (어나더/코즈믹)·data/power_penalty.json (전투력 보정 표)   2) synergy_tags.py (기능 태그)   3) tools/build_synergy_pairs.py (스킬 연계)
+  1) data/kinds.json (어나더/코즈믹/시프터)·data/power_penalty.json (전투력 보정 표)   2) synergy_tags.py (기능 태그)   3) tools/build_synergy_pairs.py (스킬 연계)
   4) rawdata/foe.js 가 있으면 tools/build_foe.py (스테이지별 적 정보)
   5) tools/build_quick_data.py (빠른 계산 재료 data/quick.json, 계수 보존) + tools/build_simpack.py (브라우저 시뮬 파일 목록 sim/manifest.json)
   6) build_skills.py·build_myinfo_view.py (공개 스킬·설명), build_party_html.py index.html
@@ -32,6 +32,26 @@ def load(p):
     return read_json(p) if os.path.exists(p) else []
 
 
+def build_kinds(dbm, overrides):
+    """단일 관측 분류에 근거가 있는 추가 태그를 더함(이름+부제당 여러 행)."""
+    kinds = []
+    seen = set()
+    for u in dbm["units"]:
+        t = dbm["rel"]["u"].get(str(u["id"]), {}).get("t")
+        extra = overrides["units"].get(str(u["id"]), {})
+        tags = ([t] if t in ("C", "A") else []) + extra.get("kinds", [])
+        for tag in tags:
+            key = (u["n"], u["ti"], tag)
+            if key in seen:
+                continue
+            seen.add(key)
+            row = {"name": u["n"], "sub": u["ti"], "kind": tag}
+            if tag != t:
+                row["source"] = extra["source"]
+            kinds.append(row)
+    return kinds
+
+
 def main():
     low_priority()
     args = [a for i, a in enumerate(sys.argv[1:], 1) if not a.startswith("--") and sys.argv[i - 1] != "--sim-workers"]
@@ -40,11 +60,7 @@ def main():
     old_roster = {p["a"] for p in old_syn} | {p["b"] for p in old_syn}
 
     dbm = read_json(src)
-    kinds = []
-    for u in dbm["units"]:
-        t = dbm["rel"]["u"].get(str(u["id"]), {}).get("t")
-        if t in ("C", "A"):
-            kinds.append({"name": u["n"], "sub": u["ti"], "kind": t})
+    kinds = build_kinds(dbm, read_json(os.path.join(ROOT, "data", "kind_overrides.json")))
     with atomic_open(os.path.join(ROOT, "data", "kinds.json")) as f:
         json.dump(kinds, f, ensure_ascii=False, indent=1)
     print("kinds:", len(kinds))

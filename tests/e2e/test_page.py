@@ -2224,6 +2224,49 @@ def test_patch1112_cards(browser, ctx):
 TESTS.append(test_patch1112_cards)
 
 
+def test_shifter_tags(browser, ctx):
+    """실제 카드·내 정보·상세의 복수 태그와 같은 이름의 일반판 분리를 확인함."""
+    page = open_page(browser, ctx, query='?auto=0', info=SYNTH, wait=False)
+    wait_myinfo(page)
+    key = 'asherah-order-striker'
+    own = page.locator('#own .tile').filter(has=page.locator(f'input[data-k="{key}"]'))
+    assert own.locator('.kind > span').all_text_contents() == ['COSMIC', 'SHIFTER']
+    assert page.evaluate('(key) => BYKEY[key].kinds', key) == ['C', 'S']
+    assert page.evaluate('R.filter(s=>s.name==="아세라"&&s.uid!==1061).every(s=>!s.kinds?.includes("S"))')
+    # 추천 카드에서 쓰는 실제 렌더 함수. 가상 계정에 신규 구원자 한 명만 추가함.
+    page.evaluate('''async key => {
+      const node=document.createElement('div');node.id='shifter-card';
+      node.style.width='260px';node.innerHTML=tile(BYKEY[key]);document.body.append(node);
+      const info=structuredClone(MI.info),unit=structuredClone(info.units[0]);
+      unit.id=1061;info.units.push(unit);await miApply(info);
+    }''', key)
+    card = page.locator('#shifter-card')
+    assert card.locator('.kind > span').all_text_contents() == ['COSMIC', 'SHIFTER']
+    assert card.locator('.k-S').evaluate('(el)=>getComputedStyle(el).color') == 'rgb(139, 220, 255)'
+    page.click('#tab-info')
+    page.fill('#mi-q', '아세라')
+    row = page.locator('#mi-list [data-uid="1061"]')
+    assert row.locator('.kind > span').all_text_contents() == ['COSMIC', 'SHIFTER']
+    assert page.locator('#mi-list [data-uid="1001"] .k-S').count() == 0
+    row.locator('[data-mi-sheet]').click()
+    page.wait_for_selector('#mi-dlg .k-S')
+    assert page.locator('#mi-dlg .kind > span').all_text_contents() == ['COSMIC', 'SHIFTER']
+    cosmic, shifter = [page.locator('#mi-dlg '+c).bounding_box() for c in ('.k-C', '.k-S')]
+    assert abs(cosmic['y'] - shifter['y']) < 5
+    assert shifter['x'] >= cosmic['x'] + cosmic['width']
+    page.wait_for_function('''() => [...document.querySelectorAll('#mi-dlg .ms-art img')]
+        .every(i=>i.complete&&i.naturalWidth>0)''')
+    page.screenshot(path=os.path.join(ctx.shots, 'shifter.png'))
+    page.set_viewport_size({'width': 390, 'height': 844})
+    assert page.locator('#mi-dlg .k-S').is_visible()
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '카드·내 정보·상세 COSMIC+SHIFTER·하늘색 칩·일반판 분리'
+
+
+TESTS.append(test_shifter_tags)
+
+
 def main():
     args = sys.argv[1:]
     shots = None
