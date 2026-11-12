@@ -109,9 +109,9 @@ A/B는 짝수 쌍에서 순서를 뒤집어 AB/BA로 실행했음. 쌍 안 A·B 
 
 | 특정 비용 | 호출 | 자체 % | 누적 % |
 |---|---|---|---|
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:560:mods | 308003 | 3.54 | 6.27 |
+| battlesim\mc.py:560:mods | 308003 | 3.54 | 6.27 |
 | ~:0:<method 'get' of 'dict' objects> | 2104055 | 5.37 | 5.37 |
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:713:__init__ | 94142 | 3.14 | 3.14 |
+| battlesim\mc.py:713:__init__ | 94142 | 3.14 | 3.14 |
 
 mods 캐시 분리 관측(별도 실행·래퍼 계측 포함, 속도 판정에 미사용):
 
@@ -124,16 +124,16 @@ dict.get의 직접 호출자 상위 10개(동일 함수 안의 여러 줄 호출
 
 | 호출자 파일:함수 정의 줄 | 호출 | 자체 초 | 전체 % | dict.get 중 % |
 |---|---|---|---|---|
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:941:kind_lines | 306661 | 0.0596 | 0.76 | 14.07 |
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:582:stack | 216687 | 0.0410 | 0.52 | 9.68 |
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:4421:add_effect | 181950 | 0.0372 | 0.47 | 8.78 |
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:3655:run_batch | 154080 | 0.0318 | 0.40 | 7.50 |
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:3608:line_ok | 157629 | 0.0301 | 0.38 | 7.11 |
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:598:on | 110617 | 0.0209 | 0.27 | 4.94 |
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:2702:final_dmg | 91641 | 0.0168 | 0.21 | 3.96 |
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:4388:_is_any_turn | 70401 | 0.0151 | 0.19 | 3.56 |
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:560:mods | 69678 | 0.0151 | 0.19 | 3.56 |
-| E:\AI_mk2\wt-accel3\battlesim\mc.py:3735:_exec_line | 79605 | 0.0149 | 0.19 | 3.52 |
+| battlesim\mc.py:941:kind_lines | 306661 | 0.0596 | 0.76 | 14.07 |
+| battlesim\mc.py:582:stack | 216687 | 0.0410 | 0.52 | 9.68 |
+| battlesim\mc.py:4421:add_effect | 181950 | 0.0372 | 0.47 | 8.78 |
+| battlesim\mc.py:3655:run_batch | 154080 | 0.0318 | 0.40 | 7.50 |
+| battlesim\mc.py:3608:line_ok | 157629 | 0.0301 | 0.38 | 7.11 |
+| battlesim\mc.py:598:on | 110617 | 0.0209 | 0.27 | 4.94 |
+| battlesim\mc.py:2702:final_dmg | 91641 | 0.0168 | 0.21 | 3.96 |
+| battlesim\mc.py:4388:_is_any_turn | 70401 | 0.0151 | 0.19 | 3.56 |
+| battlesim\mc.py:560:mods | 69678 | 0.0151 | 0.19 | 3.56 |
+| battlesim\mc.py:3735:_exec_line | 79605 | 0.0149 | 0.19 | 3.52 |
 
 ## Cython 후보·암달 상한
 
