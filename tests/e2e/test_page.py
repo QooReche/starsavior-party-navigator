@@ -250,8 +250,11 @@ def roster_keys():
 
 def test_quick_owned_small(browser, ctx):
     """내 정보 탭 「추천」 토글로 6명만 남기면(저장값 pn.excl 복원) 추천 팀은 그 6명 안에서만, 「모두 다시 넣기」로 복구"""
-    keep = roster_keys()[:6]
-    page = open_page(browser, ctx, excl=[k for k in roster_keys() if k not in keep])
+    roster = roster_keys()
+    keep = roster[:6]
+    owned_count = len(load_json(FULL)['units'])
+    excluded_count = len(roster) - len(keep)
+    page = open_page(browser, ctx, excl=[k for k in roster if k not in keep])
     choose(page, "코스모 게이트", "길레 2단계")
     page.wait_for_selector('.party[data-party="1"] .qbox .qrow')
     rows = quick_rows(page)
@@ -264,7 +267,10 @@ def test_quick_owned_small(browser, ctx):
     settle(page)
     back = page.evaluate("() => [EXCL.size, JSON.parse(localStorage.getItem('pn.excl')), document.querySelectorAll('#own input:checked').length]")
     page.close()
-    ok = len(rows) >= 1 and inside and sorted(own) == sorted(keep) and "제외 51명" in chip and off == 51 and back == [0, [], 57]
+    # 추천 제외는 전체 로스터 기준이고, 내 정보 카드·복구 보유 수는 가상 계정 기준임.
+    ok = (len(rows) >= 1 and inside and sorted(own) == sorted(keep)
+          and f"제외 {excluded_count}명" in chip and off == owned_count - len(keep)
+          and back == [0, [], owned_count])
     return ok, "남긴 6명 -> %d안, 6명 안 %s, 보유 %d, 칩 %s, 꺼진 카드 %d, 다시 넣기 %s" % (len(rows), inside, len(own), chip, off, back)
 
 
@@ -1327,7 +1333,8 @@ def test_guild_defense(browser, ctx):
     hidden = not panel.is_visible()
     errs = list(ctx.errors)
     page.close()
-    ok = (name == "길드방어전(시즌4 10/29~11/05)" and first_stage.startswith("7단계 EX") and shown and cards == 4 and gim == 1
+    # 현재 날짜에 따른 미오픈 접미사는 test_season_gate에서 별도로 검사함.
+    ok = (name.removesuffix(" [미오픈]") == "길드방어전(시즌4 10/29~11/05)" and first_stage.startswith("7단계 EX") and shown and cards == 4 and gim == 1
           and "최고 점수가 나오는 조합" in text and "보스를 깎은 비율" in text and "가설 B" not in text and "추정" in text
           and "시뮬 추정: 깰 수 있는 최고 단계" in text and "개발 중" in text
           and sim_data_ok and len(sim_sets) == 5 and all(s in ('선택 효과 끔', '모두 최대') for s in sim_sets)

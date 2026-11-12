@@ -107,5 +107,66 @@ golden 분해 중 소비 효과의 표지 오인과 `foe_auto=off` 동률 선택
 3. 신규 아세라의 `강인도 피해 감소 -3` 및 신규 캐릭터 전체 시전 경로 확인. 미지원 1줄을 임의로 확정하지 않았음.
 4. 격전 의뢰 6스테이지는 데이터북 반영 대기. 공개 guild 53개를 격전 의뢰로 오인하지 않음.
 5. 신규 고정 장비(윤회의 아뮬렛·링, 노블 프레스티지 아뮬렛·시그넷, 뒤틀린 인형의 아뮬렛, 혹한의 폭풍설 목걸이, 잊혀진 친위대의 펜던트)의 **실제 아이템 ID·세트/고정 효과**를 새 표에서 확인. 현재 내 정보는 입력된 주·부옵은 계산하지만 미등록 ID의 세트·특수 효과까지 정확하다고 보장할 수 없음. `growth.item_sets` 및 전투 효과 어댑터 확장 필요 여부 판단하기로 함.
-6. guild_sim 재생성·quick 재보정·규칙 도장 갱신을 한 번에 실행. 이번에는 quick의 sv/st 입력만 바뀌었고 params/pc/sm/calib는 유지했음. 전체 e2e도 퇴근 후 실행하기로 함.
+6. guild_sim은 시즌 종료로 재생성을 생략하고 새 시즌 자료 반영 때 재생성하기로 함. quick 재보정·규칙 도장 갱신·전체 e2e의 2단계 결과는 아래 절에 기록함.
 7. 격파 동작 영상 확인. 독립 리뷰는 커밋 전 메인 작업에서 진행하기로 함.
+
+## 2026-11-12 2단계 — 가이드·공지·빠른 계산·전체 시험
+
+기준 커밋 `944ca1d`, 작업 폴더 `E:\AI_mk2\wt-p1112`에서만 진행했음. 비공개 static-data는 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data`로 읽었으며 수정하지 않았음. 커밋·푸시·HANDOFF 수정은 하지 않았음.
+
+### 가이드 DB 확인
+
+- 확인 시각 **2026-11-12 17:35 KST**. `python -X utf8 -I tools/fetch_sources.py`로 최신 원본을 받았음. 데이터북 JSON은 기존과 내용이 같아 직렬화 형식만 바뀐 차이는 제거했음. 가이드 app-core.js도 기존과 동일했음.
+- 가이드 `SAVIORS`에 **길레(`gille`, 1020)·편애의 마녀 아세라(`asherah-order-striker`, 1061)**가 있음. 이름·부제·소속·등급·속성·직업·UID·이미지 경로가 1단계의 `savior_reco.json`·`saviors_index.json`과 일치함. 두 명의 초상화·일러스트 원본 4개도 HTTP 200을 확인했음.
+- **가이드 미반영(2026-11-12 17:35 KST): 신규 2명의 티어·주 사용 콘텐츠·PVE 추천 세팅.** 두 캐릭터 소개에는 모두 PVE 세팅 미정이라고 명시됨. 로스터 등재와 추천 세팅 반영을 구분했음.
+- `node tools/extract_guide_tier.js` 실행 결과 티어 54명·주 사용 콘텐츠 55명, `data/db_tier.json`은 기존과 동일했음. 신규 2명의 티어·주 사용 콘텐츠는 원본에도 없어 임의로 넣지 않았음.
+- 문서의 여정 저장소 `assets/savior_reco.json`은 **2026-10-29 / 57명**이고 신규 2명이 없음. 기존 57명의 내용은 현재 파일과 같음. 따라서 현재의 59명 로스터를 유지했음. 가이드의 `/saviors_index.json`·`/data/saviors_index.json`은 404라 app-core의 신규 항목·UID 매핑·이미지 원본으로 기존 색인을 직접 대조했음. 세 가이드 JSON 모두 추가로 바뀐 내용은 없음.
+
+### 공지·생성물 처리
+
+- `party_template.html` 공지와 README 업데이트 문단에 11/12 신규 구원자, 격파 뒤 다음 자기 턴 행동(클라 기준), 길드 방어전 시즌 종료·미오픈, 실제 플레이 대조 전의 오차 가능성을 반영했음.
+- `guild_sim.json`은 재생성하지 않았음. 아래 명령으로 새 시즌 재생성 사유를 규칙 도장에 기록했음.
+
+```powershell
+python -X utf8 -I tools/rules_stamp.py --ack guild_sim --reason "11/12 패치·ally_break_gauge=keep 등: 길드 방어전 시즌4 종료(미오픈)로 재계산 생략, 새 시즌 자료 반영 때 재생성"
+```
+
+### 빠른 계산 재보정
+
+도구 기본값은 **1,455표본 × 40판**, 기존 보정은 **2,323표본 × 40판**임. 전후 정확도는 표본 구성이 다르므로 동일 표본에서의 개선량으로 해석하지 않음. 병렬 작업자를 만들지 않도록 저장소 제외 로컬 실행기 `local/run_quick_serial.py`에서 `gen_quick_calib.Pool`만 순차 `map`으로 바꿔 기존 `main()`을 실행했음. 표본 선정·시드·판 수·계산 코드는 바꾸지 않았음.
+
+총 **58,200판, 표본 오류 0건** 생성 뒤 `python -X utf8 -I tools/calibrate_quick.py --write`를 실행했음. `data/quick.json`의 params·pc·sm·calib와 quick 규칙 도장을 갱신했음.
+
+| 항목 | 이전 | 이후 |
+|---|---:|---:|
+| 전체 일치 `calib.acc` | 0.910 | **0.922** |
+| base 일치 / 표본 수 | 0.886 / 1,523 | 0.899 / 935 |
+| cosmo 일치 / 표본 수 | 0.963 / 400 | 0.969 / 260 |
+| rush 일치 / 표본 수 | 0.948 / 400 | 0.958 / 260 |
+
+전체 일치는 **+0.012(1.2%p)**임. 스테이지 보정은 cosmo 6곳·rush 8곳, 작전 큰 보스 공통 배수는 1.0으로 별도 보정하지 않았음. 현재 규칙 지문 `747fad8ca776aac6`에 guild_sim·quick 도장이 모두 일치함. 로그: `local/p1112-quick-gen.log`, `local/p1112-quick-calibrate.log`; 이전 보정 메타데이터: `local/p1112-calib-before.json`.
+
+### 시험 기준선
+
+수정 전 `python -X utf8 -I tools/run_tests.py`: **124 통과 / 1 실패**. 유일한 실패는 `gen_rules_stamp_test.py`의 `guild_sim·quick` 낡은 규칙 도장임. 기존 환경 미충족 2건(`COSMO_TABLES`, 옆 `journeyhelper` 없음)은 동일했음. 로그: `local/p1112-stage2-baseline.log`.
+
+### 전체 시험 중 확인한 기존 기대값 오류
+
+첫 `--rebuild --e2e` 실행은 일반 125개 통과, 브라우저 48개 중 2개 실패였음(실행기 집계 125 통과 / 1 실패). 두 실패 모두 콘솔·네트워크 오류는 없었음.
+
+- `test_quick_owned_small`: 전체 로스터는 59명인데 제외 칩을 51명으로 고정했음. 실제 제외는 53명이고, 가상 계정은 여전히 57명이므로 꺼진 보유 카드는 51명·복구 보유 수는 57명이 맞음. 전체 로스터와 가상 계정 수를 각각 사용하도록 고쳤음. 기준 커밋 `944ca1d`에도 59명 로스터와 51명 고정 기대값이 함께 있어 2단계 재보정으로 생긴 실패가 아님을 확인했음.
+- `test_guild_defense`: 종료된 시즌의 콘텐츠 이름에 붙는 ` [미오픈]`을 기대값이 허용하지 않았음. 패널 검사는 해당 접미사를 제거한 시즌 이름을 비교하도록 고쳤음. 미오픈 칩·접미사·탐색 차단·종료 경계는 기존 `test_season_gate`의 엄격한 검사를 그대로 유지했음.
+- 두 시험을 단독 재실행해 모두 통과했음. 제품 로직·시뮬 결과 해시·골든 기대값은 바꾸지 않았음. 로그: `local/p1112-stage2-first-full.log`, `local/p1112-stage2-e2e-fix.log`.
+
+### 최종 결과
+
+```powershell
+$env:STARSAVIOR_STATIC='E:\AI_mk2\starsavior-static-data'
+python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe
+```
+
+**2026-11-12 18:12 KST 완료: 실행기 집계 126 통과 / 0 실패**(일반 125개 + 브라우저 실행 1개, 브라우저 내부 48개 전부 통과). 기준선부터 있던 환경 미충족 2건(`COSMO_TABLES`, 옆 `journeyhelper` 없음)은 그대로 건너뛰었음. 로그: `local/p1112-stage2-final.log`, 브라우저 확인 자료: `local/shots/`.
+
+- 재빌드로 `index.html`·`sim/manifest.json`을 갱신했음. quick의 변경 키는 `params·pc·sm·calib`뿐임.
+- HANDOFF·guild_sim·가이드 JSON 3개·규칙 원본은 기준 커밋과 내용이 같음을 확인했음. 계정 자료는 사용하지 않았고 로컬 로그·표본·실행기는 저장소 제외 경로에만 남겼음.
+- 최종 `git diff --check` 통과. 커밋·푸시는 하지 않았음.
