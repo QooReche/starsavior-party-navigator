@@ -104,10 +104,10 @@
     return (equip||[]).map(e=>[slots?.[e.item_id]??-1,e]).sort((a,b)=>a[0]-b[0]||a[1].item_id-b[1].item_id);
   }
   // Independent account snapshot. Equipment is selected as one complete bundle.
-  const OVERWRITE_VERSION='grown-account-v3';
+  const OVERWRITE_VERSION='grown-account-v4';
   // Recommendation policy, not a battle rule. Included verbatim in history/cache signatures.
-  const THRESHOLD_POLICY=Object.freeze({skillsAverage:7,skillTarget:10,passive:false,
-    equipMin:12,equipSum:84,archiveMain:500,favorMax:20,favorTarget:30,
+  const THRESHOLD_POLICY=Object.freeze({skillMax:7,skillTarget:10,passive:false,
+    equipMin:12,equipSum:84,archiveMain:950,favorMax:20,favorTarget:30,
     resonanceMax:10,linkGap:10,potentialTarget:1,ownedOnly:true});
   function growthFields(old,info,growth,spec,content,slots){
     const fields=[],level=Stats.level_info(old,info);
@@ -117,7 +117,7 @@
     const equip=old.equip||[],parts=new Set(equip.map(e=>slots?.[e.item_id]));
     if([0,1,2,3,4,5].some(i=>!parts.has(i))||equip.some(e=>e.enhance<THRESHOLD_POLICY.equipMin)
       ||equip.reduce((sum,e)=>sum+e.enhance,0)<THRESHOLD_POLICY.equipSum)fields.push('equip');
-    if(['basic','special','ultimate'].reduce((sum,k)=>sum+(old.skills?.[k]||0),0)/3<=THRESHOLD_POLICY.skillsAverage)fields.push('skills');
+    if(['basic','special','ultimate'].some(k=>(old.skills?.[k]||0)<=THRESHOLD_POLICY.skillMax))fields.push('skills');
     if(!fixed)fields.push('resonance');
     const main=spec.journey.indexOf(Math.max(...spec.journey));
     if(!old.gauntlet||(old.gauntlet.journey?.[main]||0)<THRESHOLD_POLICY.archiveMain)fields.push('journey');
@@ -136,7 +136,7 @@
         const fields=growthFields(old,info,growth,spec,content,slots);
         const a=assume(s.key,info,growth,{fields}),u=a.unit;
         if(fields.includes('skills'))u.skills={...old.skills,
-          ...Object.fromEntries(['basic','special','ultimate'].map(k=>[k,Math.max(old.skills[k]||0,THRESHOLD_POLICY.skillTarget)]))};
+          ...Object.fromEntries(['basic','special','ultimate'].map(k=>[k,(old.skills[k]||0)<=THRESHOLD_POLICY.skillMax?Math.max(old.skills[k]||0,THRESHOLD_POLICY.skillTarget):old.skills[k]]))};
         if(fields.includes('resonance'))u.resonance=Math.max(old.resonance,Math.min(THRESHOLD_POLICY.resonanceMax,u.resonance));
         if(fields.includes('favor'))u.favor=THRESHOLD_POLICY.favorTarget;
         if(fields.includes('journey'))u.gauntlet.journey=u.gauntlet.journey.map((v,i)=>Math.max(v,old.gauntlet?.journey?.[i]||0));

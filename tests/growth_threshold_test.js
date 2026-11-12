@@ -23,10 +23,10 @@ function check(m=M){
     return {r,u:r.info.units[0],old:info.units[0],info,fields:r.changes.luna?.changedFields||[]};
   }
   assert.deepEqual(run(()=>{}).fields,[],'above all thresholds: byte-for-byte unchanged');
-  for(const [levels,raised] of [[[7,7,7],true],[[7,7,8],false],[[10,10,1],true],[[6,8,8],false]]){
+  for(const [levels,after] of [[[7,7,7],[10,10,10]],[[7,7,8],[10,10,8]],[[10,10,1],[10,10,10]],[[6,8,8],[10,8,8]],[[8,8,8],[8,8,8]],[[8,9,10],[8,9,10]]]){
     const {u,fields}=run(u=>{[u.skills.basic,u.skills.special,u.skills.ultimate]=levels;});
-    assert.deepEqual([u.skills.basic,u.skills.special,u.skills.ultimate],raised?[10,10,10]:levels);
-    assert.equal(fields.includes('skills'),raised);
+    assert.deepEqual([u.skills.basic,u.skills.special,u.skills.ultimate],after,levels.join('/'));
+    assert.equal(fields.includes('skills'),levels.some(v=>v<=7));
   }
   // Deliberately weak stats make the eligible preset win; enhancement alone must gate it.
   for(const [levels,raised] of [[[13,14,14,14,14,14],true],[[14,14,14,14,14,14],false],
@@ -38,7 +38,7 @@ function check(m=M){
   assert(run(u=>u.equip.pop()).fields.includes('equip'),'empty slot');
   assert(run(u=>{u.equip[5]=clone(u.equip[0]);u.equip.forEach(e=>{e.main.value=1;e.subs=[];});}).fields.includes('equip'),'duplicate slot is still a missing body part');
   const main=spec.journey.indexOf(Math.max(...spec.journey));
-  for(const [n,raised] of [[499,true],[500,false]]){
+  for(const [n,raised] of [[949,true],[950,false]]){
     const {u,old,fields}=run(u=>{u.gauntlet.journey=[1400,1400,1400,1400,1400];u.gauntlet.journey[main]=n;});
     assert.equal(fields.includes('journey'),raised);
     assert.deepEqual(plain(u.gauntlet.journey),old.gauntlet.journey.map((v,i)=>raised?Math.max(v,spec.journey[i]):v));
@@ -89,7 +89,7 @@ function signature(code=fs.readFileSync(require.resolve('../growth_ui'),'utf8'))
   const args=[{key:'op',name:'op'},{tab:'tab',name:'stage'},{engine:'e',data:'d'}];
   assert.equal(ctx.growthTargets(...args).length,1);
   const before=ctx.growthSig(...args),cache=ctx.growthCacheTag();
-  ctx.MyInfoReco.THRESHOLD_POLICY={...M.THRESHOLD_POLICY,skillsAverage:8};
+  ctx.MyInfoReco.THRESHOLD_POLICY={...M.THRESHOLD_POLICY,skillMax:8};
   assert.notEqual(ctx.growthSig(...args),before);assert.notEqual(ctx.growthCacheTag(),cache);
   assert(!G.compatible(before,ctx.growthSig(...args)));
   ctx.MyInfoReco.THRESHOLD_POLICY=M.THRESHOLD_POLICY;ctx.MyInfoReco.OVERWRITE_VERSION='old';
@@ -100,7 +100,8 @@ function load(code){const ctx={module:{exports:{}},require:p=>require('../'+p)};
 const source=fs.readFileSync(require.resolve('../myinfo_reco'),'utf8');
 check();check(load(source));options();signature();
 const mutations=[
-  ['skills average boundary','<=THRESHOLD_POLICY.skillsAverage','<THRESHOLD_POLICY.skillsAverage'],
+  ['skill boundary','(old.skills?.[k]||0)<=THRESHOLD_POLICY.skillMax','(old.skills?.[k]||0)<THRESHOLD_POLICY.skillMax'],
+  ['skill per-skill raise','<=THRESHOLD_POLICY.skillMax?Math.max','<=99?Math.max'],
   ['equipment total boundary','<THRESHOLD_POLICY.equipSum','<=THRESHOLD_POLICY.equipSum'],
   ['equipment slot boundary','<THRESHOLD_POLICY.equipMin','<=THRESHOLD_POLICY.equipMin'],
   ['archive boundary','<THRESHOLD_POLICY.archiveMain','<=THRESHOLD_POLICY.archiveMain'],
@@ -118,4 +119,4 @@ for(const [name,from,to] of mutations){assert(source.includes(from),name+' ancho
 }
 const guide=fs.readFileSync(require.resolve('../growth_guide'),'utf8');
 assert.throws(()=>options(load(guide.replace('owned:false','owned:(shared.ao??saved.owned)!==false'))),{code:'ERR_ASSERTION'});
-console.log('PASS threshold boundaries, real stats, ownership, options, signatures; 12 mutations caught');
+console.log('PASS threshold boundaries, real stats, ownership, options, signatures; 13 mutations caught');
