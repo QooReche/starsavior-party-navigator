@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "747fad8ca776aac6",
+  "hash": "b3087698f2d7ddd4",
   "history": [
-   {
-    "hash": "256589eb9ba20ac1",
-    "reason": "buff_step_group=client 추가(11/09). 단계 그룹 버프를 쓰는 구원자는 세이라(1014) 하나이고 guild_sim 팀 5개(ceres-sun-supporter·wedding-epindel·bunny-charlotte 등)에 없어 결과 불변"
-   },
    {
     "hash": "e645473f925c9c92",
     "reason": "buff_step_group·break_skill_reduce·chain_pen 추가(11/09). 팀 5개 x 육성 1.5·3 x 단계 0·6·12 x 지원 2종 60칸을 새 규칙/옛 규칙으로 20판씩 비교해 클리어율·진행도 모두 동일(temp/partynavigator/scripts/guild_sens_1109.py)"
@@ -41,11 +37,15 @@
    {
     "hash": "747fad8ca776aac6",
     "reason": "11/12 패치·ally_break_gauge=keep 등: 길드 방어전 시즌4 종료(미오픈)로 재계산 생략, 새 시즌 자료 반영 때 재생성"
+   },
+   {
+    "hash": "b3087698f2d7ddd4",
+    "reason": "11/12 빌드 26610546 dmg_cap_scope=net 반영: 길드 방어전 시즌4 종료·미오픈으로 시뮬표 재생성 생략, 새 시즌 자료 반영 때 재생성"
    }
   ]
  },
  "quick": {
-  "hash": "747fad8ca776aac6",
+  "hash": "b3087698f2d7ddd4",
   "history": [
    {
     "hash": "3cf4df693ae2594d",
@@ -81,6 +81,10 @@
    },
    {
     "hash": "747fad8ca776aac6",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "b3087698f2d7ddd4",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

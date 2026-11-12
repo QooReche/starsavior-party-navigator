@@ -255,10 +255,10 @@ class Patch1112Test(unittest.TestCase):
             for slot in row:self.assertIn(slot,d.trigger_skills,key)
 
     def test_noa_sum_and_reduction_cap(self):
-        b=battle([unit(df=0)],[unit('f',df=0)])
+        b=battle([unit(df=0)],[unit('f',df=0)],mc={'dmg_cap_scope':'reduce'})
         a,f=b.allies[0],b.foes[0];ctx=Ctx(a,a,a.d.skills['기본기'])
         give(a,'증가',{'피해 증가':40});give(f,'감소',{'피해 감소':80})
-        # 클라 식: 1 + .4 - min(.5,.8) = .9. 합친 뒤 제한하면 .6으로 달라짐.
+        # 구빌드 식 고정: 1 + .4 - min(.5,.8) = .9. 새 빌드는 damage_cap_1112_test에서 검사.
         self.assertEqual(b.final_dmg(a,f,1000,ctx,False,0,0,1,None),899)
         give(a,'감소',{'피해 증가':-70})
         self.assertEqual(b.final_dmg(a,f,1000,ctx,False,0,0,1,None),200)

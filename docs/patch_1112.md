@@ -170,3 +170,91 @@ python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\p
 - 재빌드로 `index.html`·`sim/manifest.json`을 갱신했음. quick의 변경 키는 `params·pc·sm·calib`뿐임.
 - HANDOFF·guild_sim·가이드 JSON 3개·규칙 원본은 기준 커밋과 내용이 같음을 확인했음. 계정 자료는 사용하지 않았고 로컬 로그·표본·실행기는 저장소 제외 경로에만 남겼음.
 - 최종 `git diff --check` 통과. 커밋·푸시는 하지 않았음.
+
+## 2026-11-12 새 빌드 피해 규칙
+
+기준 `main 776f3fc`, 작업 폴더 `wt-dmgcap`임. 비공개 static-data `708f196`, 빌드 **26610546**의 `decompiled/BUILD.md` 11/12 절과 `analysis/decomp_diff_1112.md`, 실제 코드를 읽었음. 두 체크아웃이 지정 커밋과 일치해 pull로 기준을 바꾸지 않았음. 아래 내용은 앞의 «NOA 피해량 증감 대조»에서 재추출 전으로 남긴 상한 판단을 대체함. 커밋·푸시·HANDOFF 수정은 하지 않았음.
+
+### 순증감에 적용하는 감소 상한
+
+새 `mc.dmg_cap_scope`의 기본은 `net`, legacy/alt는 `reduce`, 근거 등급은 `code`임.
+
+- `net`: `max(1 − DEC_CAP, 1 + 주는 증감 − 받는 감소 + 치명 보정)`. 클라처럼 `DEC_CAP <= 0`이면 상한을 적용하지 않음.
+- `reduce`: 종전 `1 + 주는 증감 − min(DEC_CAP, 받는 감소) + 치명 보정`. 부동소수점 덧셈 순서도 유지했음.
+- 방어율은 별도 곱임. 상성·카운터·회피·스킬 한정 보정·브레이크·치명 보정을 합친 뒤 상한을 적용함.
+- `deal → strike → final_dmg`의 아군→적·적→아군, 수호 분담 각 대상, `dot_dmg`의 지속 피해와 수호 몫에 연결했음. 연쇄·고정 피해는 이 식에 넣지 않았음.
+- 오비탈 `_break_dmg`는 증가항이 0이라 기존 `min(DEC_CAP, 감소)`와 새 순합 하한의 결과가 같음. `break_skill_reduce=client`는 감소항 자체가 0임. 기대값 엔진(`engine.py`)은 이번 MC 규칙 범위 밖으로 종전 식을 유지했음.
+
+근거는 모두 새 `decompiled/NKM/NKM.decompiled.cs`임: 일반/지속 피해 공통 함수 **18148–18167**, 방어율·분담 뒤 순합 하한 **18170–18201**, 증감 집계 **18299–18339**, 치명 보정의 증가 합 참여 **18534–18547**. 상수는 `tables/Plain/CLIENT_CONST_TEMPLET.json:135–136`의 5000(50%)임.
+
+### 연쇄 분기 대조
+
+분기 식별을 호출 경로로 확인했음: AddDamage 버프 **NKM:4721–4743** → 증가량 산출 **6212–6236** → 피해 컨트롤러 **8154–8168** → 별도 최종 계산 **17774–17818**. `OBF_29807`은 `ADT_NORMAL` 이외에 참을 반환함(**4748–4751**).
+
+| 항목 | 새 클라 / 현재 엔진 |
+|---|---|
+| 일반 받는 피해 증감 | 연쇄 계산에 사용하지 않음. 현재 `chain`도 같음 |
+| 공격자 방어 관통 | 사용하지 않음(**18388–18405**). 기존 `chain_pen=client`와 같음 |
+| 연쇄의 주는 증감 | 일반 증가·속성/역할 보조항·브레이크 증가 및 새 `UP_ADD_DAMAGE`를 기본 피해에 적용. 일반 피해의 순합 하한을 쓰지 않음 |
+| 새 수신자 감소 | `REDUCE_ADD_DAMAGE`만 별도로 최대 50% 제한한 뒤 곱함(**17804–17814**). `ADT_FIXED_TRUE`·`ADT_STAT_TRUE`는 해당 분기 제외 |
+| 현재 데이터 | 새 `UP/REDUCE_ADD_DAMAGE` 부여원 0건. 신규 항이 0인 증감 식은 현재 경로와 같아 새 스위치를 추가하지 않았음 |
+
+이번 일치 판정은 새 증감 분기와 관통에 대한 것임. 클라의 연쇄 중간 정수화·수호 처리까지 현재 모델이 완전히 같다는 판정은 아님. 새 전용 스탯의 실제 부여원이 생기면 그 입력 경로와 별도 감소 분기를 함께 구현해야 함.
+
+### 격폭 사용처 전수 확인
+
+`tables/**/*.json` **5,495개**를 전부 문자열 검색하고, 유효 JSON 635개는 재귀 필드 검사도 했음. 나머지 4,860개는 주석·후행 쉼표 등이 있는 JSONC이며 문자열 검색에서 제외하지 않았음. `ExplosionDamage` **1,015행 전부 false**였음. `ExplosionDamageType`, `ExplosionBuffStrId`, `ExplosionOrder`, `DotBuffStrId`, `EXPLOSION_DAMAGE`, `EDT_DOT_*`와 신규 `UP/REDUCE_{ADD_DAMAGE,DOT,EXPLOSION}` 스탯 문자열은 전부 0건이었음.
+
+| 범위 | 활성 격폭 사용처 |
+|---|---:|
+| 길레·편애의 마녀 아세라 포함 구원자 | 0 |
+| 적·격전 의뢰 보스 포함 표 전체 | 0 |
+| 공개 `rawdata/databook_main.json`·`rawdata/foe.js`의 격폭 문구 | 0 |
+
+코드의 구현 자체는 확인했음: **NKM:8195–8238**의 실행/삭제·유지, **17821–17864**의 남은 DoT 합산, **18174–18176**의 격폭 방어율 제외. 공개 사용처가 없어 이번에 구현하지 않았음. **판단 필요:** 격폭을 «격전 의뢰 전용»으로 분류할 근거도 현재 표에는 없음. 사용처 0과 전용 콘텐츠 확정을 구분함. 스캔 요약은 저장소 제외 `local/dc-table-scan.json`에 있음.
+
+### 검증·결과 비교
+
+- 수정 전 기준선: **125 통과 / 0 실패**, 환경 건너뜀 2건(`COSMO_TABLES`, 옆 journeyhelper 없음). `local/dc-baseline.log`.
+- 새 `damage_cap_1112_test.py` 10개 시험: 양 진영 타격·지속 피해·수호, 방어 별도, 치명/회피/상성/카운터/브레이크, 하한 경계, 연쇄 제외·관통을 검사함.
+- 표준 육성 태양 회랑 FLOOR 250 실제 전투: 진행도 **0.6558 > 0**, 순합 계산 **1,153회**, legacy와 배율 차이 **3회**를 확인했음(20판·seed=3·리더 미지정).
+- 결함 주입 **6/6 검출**: 감소항 선제 제한 복원, 최종 하한 제거, 치명을 제한 뒤 더하기, 지속 피해만 옛 식, 적→아군만 옛 식, 연쇄에 일반 감소 적용. 모두 프로세스 안 monkeypatch 후 복구했음.
+- 해시 시험 `mc_cache_test`의 `_KEEP`와 `heal_burst_test`의 기존 override에 `dmg_cap_scope=reduce`를 넣었음. 해시·골든 기대값은 변경하지 않았음. 앞 절의 구빌드 상한 시험도 legacy 명시로 보존했음.
+
+지정 `accel-golden/golden.py`를 main 폴더와 작업 폴더에 순차 실행했음. 출력은 작업 폴더의 `local/dc_main.json`·`local/dc.json`임. **legacy 39/39 일치**, 기본값 **6/39 차이**, 실행 오류 0건이었음.
+
+| 편성 인덱스 | 기본값 차이 스테이지 | 상한 식이 달라진 타격 수 |
+|---|---|---:|
+| 0 | 태양 회랑 FLOOR 200 | 27 |
+| 0 | 태양 회랑 FLOOR 250 | 27 |
+| 0 | 작전(하드) 플로라 13-10 | 10 |
+| 1 | 달 회랑 FLOOR 100 | 6 |
+| 1 | 태양 회랑 FLOOR 200 | 3 |
+| 1 | 태양 회랑 FLOOR 250 | 12 |
+
+6건 모두 적→아군에서 증가 −5%(상성 불리)·감소 50%가 겹쳐 배율 **0.45 → 0.50**이 된 결과임. 비교 20판의 클리어율은 각 사례에서 그대로였고, 피해량·일부 턴 분포·진행도가 바뀌었음. 편성 0의 태양 250 진행도는 0.7294→0.7267이었음. 원인 추적과 비교 요약은 `local/dc-causes.json`에 있음. 공개 표준 육성만 사용했음.
+
+### 빠른 계산·최종 전체 시험
+
+빠른 계산 표본은 이전과 같은 1,455건×40판으로 생성함. `local/run_quick_serial.py`에서 `gen_quick_calib.Pool`만 순차 map으로 바꿔 작업자를 만들지 않았으며, 표본 선정·시드·판 수는 기본값 그대로임. 생성 후 `tools/calibrate_quick.py --write`로 재보정함. 길방 표는 시즌 종료·미오픈이므로 재생성하지 않고 새 시즌 재생성 사유를 규칙 도장에 기록함.
+
+표본 **58,200판·오류 0건** 생성 후 재보정했음. `local/dc-quick-gen.log`, `local/dc-quick-calibrate.log`에 결과를 남겼음.
+
+| 항목 | 이전 | 이후 |
+|---|---:|---:|
+| `calib.acc` | 0.922 | **0.923** |
+| base / 935표본 | 0.899 | 0.901 |
+| cosmo / 260표본 | 0.969 | 0.969 |
+| rush / 260표본 | 0.958 | 0.958 |
+
+현재 규칙 지문은 `b3087698f2d7ddd4`이며 quick 재보정과 guild_sim 미오픈 사유를 각각 도장에 남겼음. `data/guild_sim.json`은 변경하지 않았음.
+
+최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 뒤 아래 명령을 순차 실행했음.
+
+```powershell
+python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe
+```
+
+**127 통과 / 0 실패**(일반 126개 + 전체 브라우저 실행 1개)였음. 기준선과 같은 환경 건너뜀 2건은 `COSMO_TABLES` 없음(CLIENT_ 접두 별도 추출본 필요)·옆 journeyhelper 없음임. 로그는 `local/dc-final.log`, 브라우저 확인 자료는 `local/shots/`임. 최종 생성물 상태에서도 지정 golden 명령을 다시 실행해 legacy 39건 일치·default 차이 6건·오류 0건을 확인했음.
+
+재빌드된 `sim/manifest.json`을 반영했고 `index.html`은 재생성 결과가 기존과 같았음. `data/quick.json`의 변경은 `calib` 메타데이터뿐이며 최적 계수는 그대로였음. `git diff --check` 통과, HANDOFF·guild_sim·기존 골든 파일은 변경하지 않았음. 병렬 작업자·커밋·푸시 없이 지정 작업 폴더에서만 수정했음.

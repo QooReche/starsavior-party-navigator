@@ -2726,12 +2726,25 @@ class Battle:
             dec += 0.5     # 회피 시 감소 합 +50%(databook #d-sum)
         if v.broken:
             dec -= _rules.BREAK_DEC          # 브레이크 대상: 감소 합 −15%p 후 상한(databook #d-break)
-        dec = min(_rules.DEC_CAP, dec)
-        mult = 1 + inc - dec
-        if crit:
-            mult += max(0.0, cdv - vm['critred'])
+        mult = self._damage_mult(inc, dec, max(0.0, cdv - vm['critred']) if crit else 0.0)
         dmg = base * (1 - dr) * mult * r * self.pen[a.side]
         return max(1.0, math.floor(dmg))
+
+    def _damage_mult(self, inc, dec, critical=0.0):
+        """26610546 NKM:18187-18193,18314: 치명 포함 순증감에 감소 상한 적용.
+
+        reduce는 종전 덧셈 순서까지 보존한다. 연쇄 피해는 이 식을 쓰지 않는다.
+        """
+        net = self.mc['dmg_cap_scope'] == 'net'
+        if not net:
+            dec = min(_rules.DEC_CAP, dec)
+        mult = 1 + inc - dec
+        mult += critical
+        if net:
+            self.rule_hits['dmg_cap_scope'] += 1
+            if _rules.DEC_CAP > 0:
+                mult = max(1 - _rules.DEC_CAP, mult)
+        return mult
 
     def apply_damage(self, a, v, dmg, kind, shieldable=True):
         """보호막 -> HP 순. 사망하면 True."""
@@ -3228,7 +3241,6 @@ class Battle:
                             if v.broken:
                                 inc += sm['inc_break']
                                 dec -= _rules.BREAK_DEC
-                            dec = min(_rules.DEC_CAP, dec)
                             de = self.def_stat(v)
                             dr = de / (de + _rules.DEF_K)
                             if dot_client:
@@ -3240,7 +3252,8 @@ class Battle:
                                     elif ELEM_LOSES.get(src.element) == v.element:
                                         inc -= 0.05
                                 self.rule_hits['dot_client'] += 1
-                            return max(1.0, math.floor(b * (1 + inc - dec) * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
+                            mult = self._damage_mult(inc, dec)
+                            return max(1.0, math.floor(b * mult * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
 
                         guard, share_base = None, 0.0
                         if dot_client and not u.invincible() and not u.on('스킬 피해 무효'):
