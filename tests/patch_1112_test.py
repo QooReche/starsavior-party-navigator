@@ -82,9 +82,7 @@ class Patch1112Test(unittest.TestCase):
     def test_new_units_and_ceres_support_report(self):
         for key in ('gille','ceres','ceres-sun-supporter'):
             self.assertEqual(support_report([unit_def(key)]),[],key)
-        gaps=support_report([unit_def('asherah-order-striker')])
-        self.assertEqual(len(gaps),1)
-        self.assertIn('강인도 피해 감소',gaps[0]['reason'])
+        self.assertEqual(support_report([unit_def('asherah-order-striker')]), [])
 
     def test_wedding_epindel_own_turn_extra_effects(self):
         # 실제 부케 토스의 내 턴 줄 3개: 추가 턴·공격력 증가·점화 소비.

@@ -689,7 +689,7 @@ def _add_prop(m, k, v, stacks):
         m['tough'] += v * stacks
     elif k == '강인도 고정 피해':
         m['tough_fixed'] += v * stacks
-    elif k == '강인도 피해 감소':         # NST_SUPER_ARMOR_DAMAGE_REDUCE(toughness_elem=client만 읽음, 현 데이터 부여원 없음)
+    elif k == '강인도 피해 감소':         # NST_SUPER_ARMOR_DAMAGE_REDUCE(toughness_elem=client만 읽음)
         m['tough_red'] = m.get('tough_red', 0.0) + v * stacks
     elif k == '브레이크 대상 피해 증가':
         m['inc_break'] += val
@@ -1649,6 +1649,8 @@ class Battle:
             rows = lines.get(owner.key, {}) if variants else (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {}))
             spec = rows.get((ln.slot, ln.raw))
         if spec is not None:
+            if ln.eff.get('stat') == '강인도 피해 감소':
+                return spec  # 보스 표지가 없으면 대상 없음. 설명문 근사로 일반 적을 고르지 않음.
             # 내부 표지(체크용·판별용 버프)를 찾는 필터인데 그 표지를 가진 유닛이 없으면(표지를 거는 줄을 엔진이 근사로 처리하는 경우)
             # 데이터 규칙 대신 설명문 근사로(티리아는 auto_marker_lines=drop의 옛 동작).
             # IsHighDef 자체는 NKM:7605-7607에 있으며 동률은 모두 남긴다(6740-6757).
@@ -2689,7 +2691,8 @@ class Battle:
                 self.rule_hits['tough_client_lose'] += 1
             elif a.element and v.element and ELEM_BEATS.get(a.element) == v.element:
                 normal += 1
-            td = int(round(normal + fixed - v.mods().get('tough_red', 0.0)))
+            td = int(round(normal + fixed - v.mods().get('tough_red', 0.0)
+                           - ctx.local_by[v].get('tough_red', 0.0)))
         else:
             td = int(round(max(0.0, normal) + max(0.0, fixed)))
         if td <= 0:
@@ -3901,6 +3904,16 @@ class Battle:
                 ctx.tough += eff['val']
             elif st == '강인도 고정 피해':
                 ctx.tough_fixed += eff['val']
+            elif st == '강인도 피해 감소':
+                # build 26610546 NKM:17221-17225, SE 10612016: 피격자 정수 보정.
+                # 기존 toughness_elem=client 경로만 읽으며 시전 간에는 누적되지 않는다.
+                if self.mc['toughness_elem'] == 'client':
+                    spec = self.line_spec(owner, ln)
+                    if spec is None:
+                        self.unsup['local: 강인도 피해 감소 대상 미확인'] += 1
+                    else:
+                        for x in self.line_auto_targets(owner, spec, ctx):
+                            ctx.local_by[x]['tough_red'] += eff['val']
             elif st == '브레이크 대상 피해 증가':
                 ctx.inc_break += v
             elif st == '대상 약화효과 1개당 피해 증가':    # 대상마다 그 대상의 약화 개수(P5)
@@ -4610,7 +4623,7 @@ HANDLED_NAMES = set(['도발', '은신', '현장 대기', '기절', '수면', '�
                      '강인도 피해 무효', '불사', '강화 불가', '협공 불가', '강제 치명타 발생']) | set(CD_RESET_NAMES) | set(SELF_KILL_NAMES) | set(IGNORED_NAMES) \
     | set(INVINCIBLE_NAMES)
 LOCAL_OK = ('피해 증가', '공격력%', '치명타 확률', '치명타 피해', '방어 관통', '효과 적중', '주는 회복량', '명중률',
-            '강인도 피해', '강인도 고정 피해', '브레이크 대상 피해 증가', '대상 약화효과 1개당 피해 증가')
+            '강인도 피해', '강인도 고정 피해', '강인도 피해 감소', '브레이크 대상 피해 증가', '대상 약화효과 1개당 피해 증가')
 LOCAL_PREHIT_OK = ('방어력%', '피해 분담(수호)', '피해 감소', '받는 피해 감소')
 
 

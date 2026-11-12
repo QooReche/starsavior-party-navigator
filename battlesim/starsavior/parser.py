@@ -23,6 +23,8 @@ def explicit_target(text):
     if not re.search(r'(?:아군|적)(?:\s|$)', text):
         return None
     filters = []
+    if text.startswith('보스인 '):
+        filters.append('boss')
     if '행동할 수 있는' in text:
         filters.append('not_unable_to_act')
     if '「협공 불가」 상태가 아닌' in text:
