@@ -491,7 +491,7 @@
     if (st.phase === "run") body = `<div data-k="cs-progress"><span data-k="cs-prog">${esc(progText(st))}</span><div class="mut gd-small" data-k="cs-eta">${esc(st.etaText || "")}</div><button type="button" class="sec" data-cs="cancel">취소</button></div>`;
     else if (st.phase === "err") body = `<div class="bad" data-k="cs-err">찾지 못했습니다: ${esc(st.msg || "")}</div>${btn("다시 시도")}${opt}`;
     else if (st.phase === "done") {
-      const stale = (st.reqLevel != null ? st.reqLevel : st.level) !== cx.level || st.mode !== cx.mode || !!st.fast !== !!cx.fast ? '<div class="gd-warn" data-k="cs-stale">위에서 고른 탐색 설정이 바뀌었습니다. 아래 결과는 이전 선택 기준이니 다시 찾아 주세요.</div>' : "";
+      const stale = (st.reqLevel != null ? st.reqLevel : st.level) !== cx.level || st.mode !== cx.mode || !!st.fast !== !!cx.fast ? '<div class="gd-warn" data-k="cs-stale">고른 탐색 설정이 바뀌었습니다. 아래 결과는 이전 선택 기준이니 다시 찾아 주세요.</div>' : "";
       const old = cx.sig != null && st.sig !== cx.sig ? '<div class="gd-warn" data-k="cs-old">낡은 결과: 내 정보를 다시 불러왔거나 추천에서 뺄 구원자 목록이 바뀌었습니다. 아래 결과는 이전 기준이니 다시 찾아 주세요.</div>' : "";
       const rows = st.rows || [];
       const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐습니다(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
