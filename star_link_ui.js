@@ -76,17 +76,17 @@ async function slotStart(){if(SIMQ.busy!=null||StarLink.availability(MI.info))re
   finally{if(alive()){SIMQ.busy=null;if(SIMQ.pool){SIMQ.pool.slice(1).forEach(w=>w?.terminate());SIMQ.pool=null;}slotPaint();}}
 }
 function slotPaint(){if(!miMode()||!MI.info||!REQ)return;
-  let el=$('star-link-result');if(!el){el=document.createElement('div');el.id='star-link-result';el.className='party';$('out').append(el);}
+  let el=$('star-link-result');if(!el){el=document.createElement('details');el.id='star-link-result';el.className='party slot-details';$('out').append(el);}
   const summary=document.querySelector('[data-k="growth-slot-summary"]');if(summary)summary.append(el);
-  else if($('growth-result'))$('growth-result').before(el);
+  else if($('growth-result'))$('growth-result').after(el);
   const unavailable=StarLink.availability(MI.info);
-  if(unavailable){el.innerHTML=`<span class="tag" data-k="slot-unavailable">${esc(unavailable)}</span>`;return;}
+  if(unavailable){el.innerHTML=`<summary>스타링크 슬롯 추천 <span class="tag" data-k="slot-unavailable">${esc(unavailable)}</span></summary>`;return;}
   const name=id=>id?(R.find(s=>s.uid===id)?.name||String(id)):'빈 슬롯',fmt=v=>v==null?'확인 부족':`${v>0?'+':''}${v.toFixed(1)}%p`;
   const content=id=>{const [k,tab,st]=id.split('/');return `${contents.find(c=>c.key===k)?.name||k} · ${tab} ${st}`;};
   const reason=rows=>rows.map(r=>`<span class="tag slot-${r.confirmed?'good':r.ci?.[1]<0?'bad':'pending'}" title="${esc(r.ci?'95% 차이 구간 '+r.ci.map(fmt).join(' ~ '):'미평가')}">${r.confirmed?'✓':r.ci?.[1]<0?'▼':'?'} ${esc(content(r.content))} ${fmt(r.delta)}${r.confirmed?'':r.ci?.[1]<0?' · 손해 확인':' · 확인 부족'}</span>`).join('');
   const face=id=>{const s=R.find(s=>s.uid===id);return s?`<span class="slot-face">${art(s)}</span>`:'';};
   const r=SLOT.result;
-  el.innerHTML=`<div data-k="slot-panel"><b>스타링크 슬롯 추천</b> <span class="tag" data-k="slot-cooldown">교체 쿨다운 있음</span>
+  el.innerHTML=`<summary>스타링크 슬롯 추천${SLOT.phase==='running'?' · 계산 중':SLOT.phase==='error'?' · 확인 부족':''}</summary><div data-k="slot-panel"><span class="tag" data-k="slot-cooldown">교체 쿨다운 있음</span>
     ${!r?'':r.swaps.map(s=>`<div class="slot-swap" data-k="slot-swap"><span class="slot-in">▲ 넣기: ${face(s.in)}<b>${esc(name(s.in))}</b> <small>Lv ${MI.info.units.find(u=>u.id===s.in).level}→링크</small></span><span class="slot-out">▼ 빼기: ${face(s.out)}<b>${esc(name(s.out))}</b></span><div>${reason(s.rows)}</div></div>`).join('')||'<p>확인 부족 · 개선이 확인된 교환 없음</p>'}
     ${SLOT.phase==='running'?`<p role="status">${esc(SLOT.msg)}</p><button class="sec" data-slot-stop>중단</button>`:
       `<button class="sec" data-slot-start ${SIMQ.busy!=null||!SLOT.contexts.size?'disabled':''}>슬롯 추천 계산</button>`}

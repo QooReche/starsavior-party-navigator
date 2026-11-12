@@ -36,6 +36,9 @@ async function main() {
     }
   }
   assert.equal(GS.unsupportedHtml([{}],esc),'');
+  const chips=GS.unsupportedHtml([result],esc);
+  assert.match(chips,/<span class="tag">지원하지 않음/);
+  assert.doesNotMatch(chips,/<details|data-help=/);
   console.log('PASS: unsupported worker payload → guild/cosmo ranking → escaped result names');
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

@@ -52,15 +52,18 @@ function rankMarkup(){
   assert(html.includes('나머지 2명'));assert(html.includes('미보유'));assert(html.includes('2개 콘텐츠'));
 }
 function cardMarks(code=ui){
-  const ctx={GrowthGuide:G,esc:String};vm.createContext(ctx);vm.runInContext(code,ctx);
-  const missing={source:'assumed',overwrite:true,changedFields:['level','equip','skills'],changes:{level:{before:null,after:240}}};
+  const growth=require('../data/growth.json'),info=structuredClone(require('./fixtures/myinfo_synthetic.json'));
+  const M=require('../myinfo_reco'),Ux=require('../ux_ui');
+  const ctx={GrowthGuide:G,esc:String,Ux,MI:{info,growth},contents:[{key:'op'}],$:()=>({value:0}),D:{archiveGrades:require('../data/archive_grades.json')}};vm.createContext(ctx);vm.runInContext(code,ctx);
+  const missing={...M.assume('hilde',{...info,units:[]},growth),overwrite:true};
   assert(ctx.growthBadge(missing).includes('미보유'));
   assert(!ctx.growthBadge(missing).includes('스타링크'));assert(!ctx.growthBadge(missing).includes('장비'));
-  assert.equal(ctx.growthCardMeta(missing),'');
-  const owned={...missing,source:'owned'};
+  assert(ctx.growthCardMeta(missing).includes('미보유'));
+  assert(ctx.growthTodoRow(missing,'힐데').includes('data-growth-field="equip"'));
+  const owned={...M.assume('luna',info,growth),overwrite:true};
   assert(ctx.growthBadge(owned).includes('키워야 함'));
-  assert(ctx.growthCardMeta(owned).includes('>스타링크</span>'));
-  assert(ctx.growthCardMeta(owned).includes('장비 +15'));
+  assert(ctx.growthTodoRow(owned,'루나').includes('data-growth-field="skills"'));
+  assert(ctx.growthTodoRow(owned,'루나').includes('장비 +15'));
 }
 function recording(code=ui){
   let data={},writes=0;const ctx={GrowthGuide:G,MyInfoReco:{OVERWRITE_VERSION:'test'},MI:{hash:'synthetic',shared:false},
@@ -118,11 +121,11 @@ function mutation(name,code,from,to,test){assert(code.includes(from),name);let c
   mutation('shared not saved',gs,'if(shared)return false;','if(false)return false;',s=>history(load(s)));
   mutation('shared UI recording',ui,'GrowthGuide.save(LS,MI.shared,entry)','GrowthGuide.save(LS,false,entry)',recording);
   mutation('only supplementary members',ui,'const members=show?growthMembers(r):[]','const members=growthMembers(r)',recording);
-  mutation('missing card fields',ui,"if(r.source==='assumed')return '';",'',cardMarks);
+  mutation('missing card fields',ui,"if(r.overwrite)return Ux.memberHtml", "if(r.source==='assumed')return '';if(r.overwrite)return Ux.memberHtml",cardMarks);
   mutation('matching content history',ui,'r.kind!==c.key||','',recording);
-  mutation('starlink field retained',ui,"level:'스타링크'","level:'레벨'",cardMarks);
+  // Isolated registration power and its label are covered by ux_ui_test.
   const outgoing='[...new Set(slots)]';assert(ss.includes(outgoing));
   await assert.rejects(()=>unchanged(load(ss.replace(outgoing,outgoing+'.sort((a,b)=>b-a)'))),{code:'ERR_ASSERTION'});
   console.log('MUTATION caught + restored: measured outgoing order');
-  console.log('ALL OK growth next; 12 mutations; frozen main measured slot search');
+  console.log('ALL OK growth next; 11 mutations; frozen main measured slot search');
 })().catch(e=>{console.error(e);process.exitCode=1;});

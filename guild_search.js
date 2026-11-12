@@ -70,7 +70,7 @@
   const unsupportedFields = r => r.unsupported?.length ? {unsupported: r.unsupported} : {};
   function unsupportedHtml(rows, esc) {
     const messages = [...new Set(rows.flatMap(r => (r.unsupported || []).map(x => `${x.unit || ""} · ${x.raw}`)))];
-    return messages.length ? `<details class="qwarn" data-k="potential-unsupported"><summary>지원하지 않음 · 잠재력 효과 ${messages.length}건</summary>${messages.map(x=>`<div>${esc(x)}</div>`).join("")}</details>` : "";
+    return messages.length ? `<div class="qwarn potential-warnings" data-k="potential-unsupported">${messages.map(x=>`<span class="tag">지원하지 않음 · ${esc(x)}</span>`).join("")}</div>` : "";
   }
 
   const jobKey = (keys, level, sup, tiers) => [keys.join("+"), level, sup, (tiers || []).join("")].join("|");

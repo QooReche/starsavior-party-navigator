@@ -1,28 +1,35 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
 const section=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a)));
-const ctx=vm.createContext({MODE:'auto',SIMQ:{res:{}},simSig:()=> 'selected',esc:s=>String(s).replaceAll('<','&lt;'),
+const ctx=vm.createContext({Ux:require('../ux_ui'),miNum:require('../ux_ui').num,growthEnabled:()=>false,MODE:'auto',SIMQ:{res:{}},simSig:()=> 'selected',esc:s=>String(s).replaceAll('<','&lt;'),
  QK:{d:{st:{}}},GuildSearch:require('../guild_search.js'),Number,Math,Date});
 vm.runInContext(section('function simTitle(', 'function simBar('),ctx);
 vm.runInContext(section('function miVerdict(', 'function miTab('),ctx);
 vm.runInContext(section('const BIGBOSS=', '// 「추천 편성 보기」'),ctx);
 vm.runInContext(section('function savedTime(', 'function renderMi('),ctx);
 const ev=s=>vm.runInContext(s,ctx),visible=s=>s.replace(/<[^>]*>/g,'');
-assert.match(visible(ev('miVerdict({}, {})')),/시뮬 전/);
+assert.match(visible(ev('miVerdict({}, {})')),/계산 전/);
 ctx.SIMQ.res.selected={clear:.96,n:100,ci:[.91,.99],ttk:22,ta:35,first:'에밀리#1001',first_p:.41};
 const headline=ev('miVerdict({}, {})');
-assert.equal(visible(headline),'깰 수 있음 · 클리어 96% · 약 35턴 · 에밀리 위험 41%');
-assert.match(headline,/title="100판 · 95% 구간/);
+assert.match(headline,/data-state="done"/);assert.match(headline,/data-verdict="safe"/);assert.match(visible(headline),/클리어96%/);assert.match(visible(headline),/약 35턴/);assert.match(headline,/에밀리 위험 41%/);
+assert.match(headline,/data-help="100판 · 95% 구간/);
 assert.doesNotMatch(visible(headline),/ttk|95%|#1001|근사|TURN/);
 ctx.MODE='manual';ctx.SIMQ.res.selected.man={c:.4,n:100,ci:[.3,.5],t:14};
-assert.equal(visible(ev('miVerdict({}, {})')),'어려움 · 클리어 40% · 약 14턴');
+assert.match(ev('miVerdict({}, {})'),/data-verdict="risk"/);assert.match(visible(ev('miVerdict({}, {})')),/클리어40%/);assert.match(visible(ev('miVerdict({}, {})')),/약 14턴/);
+ctx.SIMQ.res.selected.unsupported=[{unit:'합성 구원자',raw:'자동 잠재력'}];
+ctx.SIMQ.res.selected.man.unsupported=[{unit:'합성 구원자',raw:'수동 잠재력'}];
+for(const mode of ['auto','manual']){
+ ctx.MODE=mode;const result=ev('miVerdict({}, {})');
+ assert.match(visible(result),mode==='auto'?/지원하지 않음 · 합성 구원자 · 자동 잠재력/:/지원하지 않음 · 합성 구원자 · 수동 잠재력/);
+ assert.doesNotMatch(result,/<details/);
+}
 for(const key of ['op','oph','equip','clo','rush','cosmo']){
  ctx.QK.d.st[key]={'area|boss':{bp:100,w:[[[150,0,0,0,0,true]]]}};
  ctx.content={key};assert.equal(ev('bigBoss(content,{tab:"area",name:"boss"})'),1.5);
 }
 ctx.QK.d.st.op['area|mob']={bp:100,w:[[[200,0,0,0,0,false]]]};
 assert.equal(ev('bigBoss({key:"op"},{tab:"area",name:"mob"})'),0);
-assert.equal(visible(ev('bigBossNote(1.5)')),'⚠ 큰 보스전 — 시뮬이 실제와 다를 수 있음');
+assert.match(ev('bigBossNote(1.5)'),/data-k="bigboss"/);assert.match(ev('bigBossNote(1.5)'),/data-help=/);
 assert.equal(ev('savedTime("2026-10-23T08:47:00")'),'10-23 08:47');
 assert.equal(ev('savedTime("bad")'),'');
 const skills=require('../skill_view.js');

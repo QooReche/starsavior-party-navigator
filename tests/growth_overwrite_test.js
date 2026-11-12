@@ -38,17 +38,18 @@ function overwrite(m=M){const info=synthetic(),before=JSON.stringify(info);
   assert.equal(raised.errors.length,0);assert.deepEqual(raised.changes[key].changedFields,['skills']);
   assert.deepEqual(raised.info.units[0].equip,u.equip);
 }
-function display(code=ui){const ctx={GrowthGuide:require('../growth_guide'),esc:s=>s};vm.createContext(ctx);vm.runInContext(code,ctx);
+function display(code=ui){const ctx={GrowthGuide:require('../growth_guide'),esc:s=>s,Ux:require('../ux_ui'),MI:{info:synthetic(),growth},contents:[{key:'op'}],$:()=>({value:0}),D:{archiveGrades:require('../data/archive_grades.json'),growthView:{...require('../data/myinfo_view.json'),itemSlots:require('../data/myinfo_slots.json')}}};vm.createContext(ctx);vm.runInContext(code,ctx);
   for(const [kind,field] of [['op','clear'],['clo','clear'],['guild','score'],['cosmo','sum']]){
     assert(ctx.growthBetter(kind,{[field]:.4},{[field]:.8}),kind);
     assert(!ctx.growthBetter(kind,{[field]:.8},{[field]:.8}),kind+' tie');
     assert(!ctx.growthBetter(kind,{[field]:.8},{[field]:.4}),kind+' lower');
   }
   const r=M.overwrite(synthetic(),roster,growth,'op',{includeMissing:false});
-  const labels={level:'스타링크',equip:'장비 +15',skills:'스킬',resonance:'공명',journey:'여정',potentials:'잠재력'};
+  const labels={level:'스타링크',equip:'장비 +15',skills:'스킬',resonance:'공명',journey:'스텔라 아카이브',potentials:'잠재력'};
   for(const a of Object.values(r.changes)){
-    const html=ctx.growthCardMeta(a);assert(ctx.growthBadge(a,true).includes('키워야 함'));
-    for(const [f,label] of Object.entries(labels))assert.equal(html.includes('>'+label+'<'),a.changedFields.includes(f));
+    const html=ctx.growthTodoRow(a,a.key);assert(ctx.growthBadge(a,true).includes('키워야 함'));
+    assert(ctx.growthCardMeta(a).includes('member-power'));
+    for(const [f,label] of Object.entries(labels))assert.equal(html.includes('data-growth-field="'+f+'"'),ctx.growthDisplay(a).fields.some(x=>x.field===f&&x.delta!==0));
   }
 }
 function load(code){const ctx={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,ctx);
@@ -63,7 +64,7 @@ mutate('missing selection',source,'(!includeMissing&&!out.units[s.key])','false'
 mutate('higher journey preserved',source,'Math.max(v,old.gauntlet?.journey?.[i]||0)','v',s=>overwrite(load(s)));
 mutate('higher equipment preserved',source,'if(!(presetPower>originalPower))','if(false)',s=>overwrite(load(s)));
 mutate('strict improvement only',ui,'metric(result)>(metric(baseline)??0)','metric(result)>=(metric(baseline)??0)',display);
-mutate('actual shortage chips',ui,'r.changedFields.map(f=>','["level","equip","skills","resonance","journey","potentials"].map(f=>',display);
+// Per-field presentation mutation coverage is in ux_ui_test.js.
 console.log('ALL OK whole-account overwrite');
 async function timeout(code=ui){let active=0;
   const ctx={setTimeout,clearTimeout,SIMQ:{LOAD_MS:5},simTeamLimit:()=>5,

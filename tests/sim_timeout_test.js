@@ -41,8 +41,8 @@ r=start(T);r.msg({type:'stage',msg:'시뮬 1/3팀 (100판)'});
 assert.equal(ev('SIMQ.eta')-now,600000);assert.match(ev('simEtaText()'),/완료까지 약 10분/);assert.match(ev('simEtaText()'),/오래 걸릴 수 있어요/);
 advance(300000);assert.equal(ev('SIMQ.eta')-now,300000);
 
-// 4) 진행이 멈추면(팀 상한 600초 동안 소식 없음) 「시뮬 시간 초과」
-advance(299000);assert.equal(stops.length,0);advance(2000);assert.deepEqual(stops,['시뮬 시간 초과']);
+// 4) 진행이 멈추면(팀 상한 600초 동안 소식 없음) 「모의 전투 시간 초과」
+advance(299000);assert.equal(stops.length,0);advance(2000);assert.deepEqual(stops,['모의 전투 시간 초과']);
 
 // 5) 끝난 팀은 다시 시도 때 빼고 돈다 + 취소 뒤 늦게 온 결과는 무시
 ctx.SIMQ.w=null;ctx.SIMQ.loaded=true;
@@ -59,7 +59,7 @@ ctx.document.hidden=true;advance(3600000);assert.equal(stops.length,0);ctx.docum
 ctx.SIMQ.w=null;ctx.SIMQ.loaded=true;stops.length=0;
 r=start(T.slice(2));r.msg({type:'stage',id:undefined,msg:'준비 끝'});r.msg({type:'stage',msg:'시뮬 1/1팀 (100판)'});
 const L=ev('simTeamLimit(100)'),freeze=ms=>{now+=ms;const t=timers.sort((a,b)=>a.at-b.at).shift();t.fn()};
-freeze(L+600000);assert.equal(stops.length,0);advance(L-1000);assert.equal(stops.length,0);advance(2000);assert.deepEqual(stops,['시뮬 시간 초과']);
+freeze(L+600000);assert.equal(stops.length,0);advance(L-1000);assert.equal(stops.length,0);advance(2000);assert.deepEqual(stops,['모의 전투 시간 초과']);
 
 // 7-1) 멈춘 동안의 팀 시간은 속도 표본에 넣지 않는다
 ctx.SIMQ.w=null;stops.length=0;for(const k of Object.keys(ctx.SIMQ.res))delete ctx.SIMQ.res[k];

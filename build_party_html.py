@@ -190,7 +190,7 @@ def main(out=None):
     skill_url = "data/savior_skills.json?v=" + hashlib.sha256(skill_bytes).hexdigest()[:12]
     # 별도 생성 단계 tools/build_myinfo_view.py가 공개 설명 자료를 담당함.
     power = pr._json(pr.POW)
-    data = json.dumps({"roster": r, "skillsUrl": skill_url, "skillIcons": pr._json(os.path.join(pr.DATA, "skill_icons.json"))["units"], "synDetailUrl": syn_detail_url, "cytoUrl": cyto_url,
+    data = json.dumps({"roster": r, "archiveGrades": pr._json(os.path.join(pr.DATA, "archive_grades.json")), "growthView": {**pr._json(os.path.join(pr.DATA, "myinfo_view.json")), "itemSlots": pr._json(os.path.join(pr.DATA, "myinfo_slots.json"))}, "skillsUrl": skill_url, "skillIcons": pr._json(os.path.join(pr.DATA, "skill_icons.json"))["units"], "synDetailUrl": syn_detail_url, "cytoUrl": cyto_url,
                        "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
                        "pen": power["pen"], "tribe": power["tribe"],
                        "grules": grules["types"], "plain": pr._json(os.path.join(pr.DATA, "gimmick_plain.json")), "gim": pr.gimmick_rules()[1],"dmg": pr._json(pr.DMG), "guild": gd.page_payload(gdef), "cosmoRaid": cosmo_raid_payload()}, ensure_ascii=False, separators=(",", ":"))
