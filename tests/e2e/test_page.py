@@ -1724,6 +1724,12 @@ def overwrite_account(page, mode='auto', legacy=False, corridor=False):
     }''', dict(mode=mode, legacy=legacy, corridor=corridor))
 
 
+def assert_growth_no_slot_plan(page):
+    assert page.locator('#growth-result [data-k="growth-slot-chip"], #growth-result [data-k="growth-slot-plan"]').count() == 0
+    text = page.locator('#growth-result').text_content()
+    assert not any(label in text for label in ['칸 부족', '빈 슬롯', '등록 계획', '넣기', '빼고', '배정 필요', '후순위', '교체 쿨다운'])
+
+
 def overwrite_audit(page, require_card=False):
     page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=240000)
     assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.errors')
@@ -1737,6 +1743,7 @@ def overwrite_audit(page, require_card=False):
     if require_card:
         assert visible, page.evaluate('({baseline:GROW.result.baseline,best:GROW.result.best})')
     if visible:
+        assert_growth_no_slot_plan(page)
         assert page.evaluate("$('growth-result').compareDocumentPosition(document.querySelector('#out > [data-party]')) & Node.DOCUMENT_POSITION_PRECEDING")
         assert page.locator('#growth-result .assumed-card').count() > 0
         assert '키워야 함' in page.inner_text('#growth-result')
@@ -1760,7 +1767,19 @@ def test_assumed_growth(browser, ctx):
         assert not page.evaluate(first_party), 'selector-collision mutation must be detected'
     finally:
         page.evaluate("$('growth-priority').classList.remove('party')")
-    assert '슬롯 4칸 부족' in page.inner_text('[data-k="growth-slot-chip"]')
+    assert page.locator('#growth-result .mi-chips .tag').filter(has_text='스타링크').count() == 4
+    # A reintroduced registration instruction must fail even without the old selectors.
+    page.evaluate("$('growth-result').insertAdjacentHTML('beforeend','<p id=slot-plan-mutation>빈 슬롯에 등록</p>')")
+    try:
+        try:
+            assert_growth_no_slot_plan(page)
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('slot-plan mutation survived')
+    finally:
+        page.locator('#slot-plan-mutation').evaluate('(el)=>el.remove()')
+    assert_growth_no_slot_plan(page)
     page.click('#tab-info')
     page.wait_for_selector('#growth-priority [data-k="growth-rank-row"]')
     assert page.locator('#growth-priority > [data-k="growth-rank-row"]').count() == 4
@@ -1771,7 +1790,8 @@ def test_assumed_growth(browser, ctx):
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
     page.locator('#growth-priority').screenshot(path=os.path.join(ctx.shots, 'next_mobile.png'))
     page.click('#tab-reco')
-    assert page.locator('[data-k="growth-slot-chip"]').is_visible()
+    assert_growth_no_slot_plan(page)
+    assert page.locator('#growth-result .mi-chips .tag').filter(has_text='스타링크').first.is_visible()
     before = page.locator('#out > [data-party="1"]').get_attribute('data-team')
     for value in ['GROW.result.baseline.clear', 'Math.max(0,GROW.result.baseline.clear-.1)']:
         page.evaluate('window.savedClear=GROW.result.best.clear;GROW.result.best.clear='+value+';growthPaint()')
@@ -2003,6 +2023,7 @@ def test_growth_stage23(browser, ctx):
         assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.errors')
         assert page.evaluate(f"{state}.phase==='done' && {state}.rows.length>0")
         assert page.locator(f'[data-k="growth-{kind}-card"]').count() == 1
+        assert_growth_no_slot_plan(page)
         assert page.evaluate('growthBetter(GROW.result.kind,GROW.result.baseline,GROW.result.best)')
         assert page.evaluate('JSON.stringify(MI.info)===stage23Original')
         assert '키워야 함' in page.inner_text('#growth-result')
@@ -2014,6 +2035,7 @@ def test_growth_stage23(browser, ctx):
         else:
             assert page.evaluate('GROW.result.best.prog>0')
             assert page.locator('#growth-result .gc').count() == 4
+            assert page.locator('#growth-result .mi-chips .tag').filter(has_text='스타링크').count() == 4
         original = page.evaluate(f'JSON.stringify({state}.rows)')
         field = 'sum' if kind == 'cosmo' else 'score'
         page.evaluate(f'window.savedMetric=GROW.result.best.{field};GROW.result.best.{field}=GROW.result.baseline.{field};growthPaint()')

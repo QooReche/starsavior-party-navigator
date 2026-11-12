@@ -1,42 +1,9 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),cp=require('node:child_process');
 const G=require('../growth_guide'),S=require('../star_link');
 const gs=fs.readFileSync(require.resolve('../growth_guide'),'utf8'),ss=fs.readFileSync(require.resolve('../star_link'),'utf8');
-const ui=fs.readFileSync(require.resolve('../growth_ui'),'utf8'),slotUi=fs.readFileSync(require.resolve('../star_link_ui'),'utf8');
+const ui=fs.readFileSync(require.resolve('../growth_ui'),'utf8');
 const plain=x=>JSON.parse(JSON.stringify(x));
 function load(code){const ctx={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,ctx);return ctx.module.exports;}
-function slots(s=S){
-  const info={units:Array.from({length:12},(_,i)=>({id:i+1,level:1})),star_link:{level:240,source:[1],slots:[{index:8,id:2},{index:12,id:0},{index:42,id:3}]}};
-  const before=JSON.stringify(info),plan=s.growthPlan(info,[4,5,1,4],[4,5],[2]);
-  assert.equal(plan.shortage,1);assert.deepEqual(plain(plan.swaps),[{in:4,out:0,deferred:false},{in:5,out:3,deferred:false}]);
-  assert(!plan.slots.includes(1));assert(plan.slots.includes(2),'current team is deferred');
-  assert.deepEqual(s.withSlots(info,plan.slots).star_link.slots.map(s=>s.index),[8,12,42]);
-  const enough=s.growthPlan(info,[4]);assert.equal(enough.shortage,0);assert.deepEqual(plain(enough.register),[4]);
-  const protectedPlan=s.growthPlan(info,[4,5,6],[4,5,6],[2,3]);
-  assert.equal(protectedPlan.shortage,2);assert.equal(protectedPlan.swaps[0].out,0);
-  assert(protectedPlan.swaps.slice(1).every(x=>x.deferred));
-  const kept=s.growthPlan(info,[4,5],[2,4,5],[3]);assert.equal(kept.swaps[1].out,3);assert(kept.swaps[1].deferred);
-  const bounded=s.growthPlan(info,[4,5,6,7,8,9,10,11,12],[],[]);
-  assert.equal(bounded.swaps.length,3);assert.equal(bounded.remaining.length,6);
-  assert(bounded.pairs<=s.LIMITS.maxPairs&&bounded.runs<=s.LIMITS.maxRuns);
-  assert(s.growthPlan({...info,star_link:null},[4]).unavailable);
-  for(const blank of [0,null,undefined,'']){
-    const sparse={...info,star_link:{...info.star_link,slots:[{index:8,id:2},{index:12,id:blank},{index:42,id:3}]}};
-    const p=s.growthPlan(sparse,[4,5]);
-    assert.equal(p.empty,1);assert.equal(p.shortage,1);
-    assert.equal(p.swaps[0].out,blank,'fill every representation of an empty slot first');
-    assert.equal(p.slots[1],4);assert.equal(p.swaps[1].out,2);
-  }
-  const large={...info,star_link:{...info.star_link,slots:[2,0,3,0,4,5].map((id,index)=>({id,index}))}};
-  const capped=s.growthPlan(large,[6,7,8,9,10,11]);
-  assert.equal(capped.shortage,4);assert.equal(capped.swaps.length,5,'two free registrations plus three replacements');
-  assert.equal(capped.swaps.filter(x=>x.out).length,3);assert.deepEqual(plain(capped.remaining),[11]);assert(capped.limited);
-  const missing=s.growthPlan(info,[99,4,99]);
-  assert.deepEqual(plain(missing.required),[4]);assert.equal(missing.shortage,0);
-  assert.deepEqual(plain(missing.register),[4]);assert.deepEqual(plain(missing.remaining),[]);
-  const mixed=s.growthPlan(info,[99,4,5]);
-  assert.equal(mixed.shortage,1);assert.deepEqual(plain(mixed.swaps.map(x=>x.in)),[4,5]);
-  assert.equal(JSON.stringify(info),before);
-}
 function history(g=G){
   let data={};const store={get:k=>data[k],set:(k,v)=>(data[k]=plain(v),true)};
   const cond=mode=>({mode,rules:{},breaks:[{},{}]});
@@ -69,23 +36,12 @@ function history(g=G){
   assert(!g.grownPriority(data['growth.history'],sig('op','auto','other'),current).length);
   assert(Object.values(data['growth.history']).every(h=>!JSON.stringify(h).includes('stats_final')));
 }
-function markup(code=slotUi){
+function rankMarkup(){
   const elements={'growth-priority':{hidden:true,innerHTML:''},'content':{value:0},'stage':{value:0}};
-  const info={units:[1,2,3,4].map(id=>({id,level:1})),star_link:{level:240,source:[],slots:[{index:3,id:1}]}};
+  const info={units:[1,2,3,4].map(id=>({id,level:1}))};
   const roster=[1,2,3,4].map(uid=>({uid,key:String(uid),name:'합성'+uid}));
-  const ctx={GrowthGuide:G,StarLink:S,MI:{info},R:roster,BYKEY:Object.fromEntries(roster.map(s=>[s.key,s])),esc:String,PICK:{},LASTQ:{1:{rows:[{keys:['1']}]}}};
-  vm.createContext(ctx);vm.runInContext(ui,ctx);vm.runInContext(code,ctx);
-  const r={kind:'op',team:{t:{keys:['2','3']}},snapshot:{changes:Object.fromEntries([2,3].map(id=>[String(id),{key:String(id),unit:{id},source:'owned',changedFields:['level'],levelTarget:240}]))}};
-  const result=ctx.growthSlotMarkup(r,{key:'op'},{tab:'t',name:'s'});
-  assert(result.chip.includes('슬롯 2칸 부족'));assert(result.detail.includes('합성1 빼고 합성2 넣기'));
-  assert(result.detail.includes('지금 추천팀 · 후순위'));assert(result.detail.includes('교체 쿨다운 있음'));
-  info.star_link.slots=[{index:0,id:0},{index:1,id:0}];assert(ctx.growthSlotMarkup(r,{key:'op'},{}).chip.includes('빈 슬롯에 등록'));
-  // Synthetic assumed members cannot consume slots even if present in an overwritten profile.
-  r.snapshot.changes['3'].source='assumed';info.star_link.slots=[{index:0,id:0}];
-  const mixed=ctx.growthSlotMarkup(r,{key:'op'},{});
-  assert(mixed.chip.includes('빈 슬롯에 등록'));assert(!mixed.detail.includes('합성3'));
-  r.snapshot.changes['2'].source='assumed';
-  assert.deepEqual(plain(ctx.growthSlotMarkup(r,{key:'op'},{})),{chip:'',detail:''});
+  const ctx={GrowthGuide:G,R:roster,BYKEY:Object.fromEntries(roster.map(s=>[s.key,s])),esc:String};
+  vm.createContext(ctx);vm.runInContext(ui,ctx);
   // Production renderer keeps top five visible, folds the remainder, and marks missing saviors.
   Object.assign(ctx,{$:id=>elements[id],MI:{info,growth:{}},QK:{d:{}},contents:[{key:'op'}],cur:[{}],D:{},
     growthEnabled:()=>true,growthSig:()=>'',growthConditions:()=>({}),MyInfoReco:{hash:()=>''},
@@ -95,12 +51,16 @@ function markup(code=slotUi){
   assert.equal((html.split('<details>')[0].match(/data-k="growth-rank-row"/g)||[]).length,5);
   assert(html.includes('나머지 2명'));assert(html.includes('미보유'));assert(html.includes('2개 콘텐츠'));
 }
-function missingCard(code=ui){
+function cardMarks(code=ui){
   const ctx={GrowthGuide:G,esc:String};vm.createContext(ctx);vm.runInContext(code,ctx);
   const missing={source:'assumed',overwrite:true,changedFields:['level','equip','skills'],changes:{level:{before:null,after:240}}};
   assert(ctx.growthBadge(missing).includes('미보유'));
   assert(!ctx.growthBadge(missing).includes('스타링크'));assert(!ctx.growthBadge(missing).includes('장비'));
   assert.equal(ctx.growthCardMeta(missing),'');
+  const owned={...missing,source:'owned'};
+  assert(ctx.growthBadge(owned).includes('키워야 함'));
+  assert(ctx.growthCardMeta(owned).includes('>스타링크</span>'));
+  assert(ctx.growthCardMeta(owned).includes('장비 +15'));
 }
 function recording(code=ui){
   let data={},writes=0;const ctx={GrowthGuide:G,MyInfoReco:{OVERWRITE_VERSION:'test'},MI:{hash:'synthetic',shared:false},
@@ -148,12 +108,7 @@ function mutation(name,code,from,to,test){assert(code.includes(from),name);let c
   assert(caught,'mutation survived: '+name);console.log('MUTATION caught + restored:',name);
 }
 (async()=>{
-  slots();history();markup();missingCard();recording();await unchanged();
-  mutation('slot shortage',ss,'Math.max(0,incoming.length-empty)','0',s=>slots(load(s)));
-  mutation('source excluded',ss,'!source.includes(id)&&!initial.includes(id)','!initial.includes(id)',s=>slots(load(s)));
-  mutation('empty first',ss,'emptyFirst:true','emptyFirst:false',s=>slots(load(s)));
-  mutation('current team deferred',ss,'defer:current','defer:[]',s=>slots(load(s)));
-  mutation('grown member retained',ss,'keep:[...team,...incoming]','keep:[]',s=>slots(load(s)));
+  history();rankMarkup();cardMarks();recording();await unchanged();
   mutation('kinds not stage count',gs,"new Set(r.contents.map(c=>c.content.split('/')[0])).size","r.contents.length",s=>history(load(s)));
   mutation('same content tie',gs,'if(x!==y)return y-x;','if(false)return y-x;',s=>history(load(s)));
   mutation('no cross-content sum',gs,'if(a.count!==b.count)return b.count-a.count;',
@@ -161,17 +116,13 @@ function mutation(name,code,from,to,test){assert(code.includes(from),name);let c
   mutation('conditions excluded',gs,"if(Object.hasOwn(current,ctx.kind)&&!conditionsMatch(ctx.conditions,current[ctx.kind],ctx.kind))continue;",'',s=>history(load(s)));
   mutation('different conditions retained',gs,"const next={...(storage.get('growth.history')||{})};","const next={};",s=>history(load(s)));
   mutation('shared not saved',gs,'if(shared)return false;','if(false)return false;',s=>history(load(s)));
-  mutation('slot chip',slotUi,"'슬롯 '+plan.shortage+'칸 부족'","'등록'",markup);
   mutation('shared UI recording',ui,'GrowthGuide.save(LS,MI.shared,entry)','GrowthGuide.save(LS,false,entry)',recording);
   mutation('only supplementary members',ui,'const members=show?growthMembers(r):[]','const members=growthMembers(r)',recording);
-  mutation('empty variants',ss,'!id?-1','id===0?-1',s=>slots(load(s)));
-  mutation('free registrations',ss,'if(remove)replacements++','replacements++',s=>slots(load(s)));
-  mutation('owned registration only',ss,'owned.has(id)&&','',s=>slots(load(s)));
-  mutation('missing slot markup',slotUi,"a.source==='owned'&&",'',markup);
-  mutation('missing card fields',ui,"if(r.source==='assumed')return '';",'',missingCard);
+  mutation('missing card fields',ui,"if(r.source==='assumed')return '';",'',cardMarks);
   mutation('matching content history',ui,'r.kind!==c.key||','',recording);
-  const outgoing='[...new Set(slots)].filter(id=>!keep.includes(id))';assert(ss.includes(outgoing));
+  mutation('starlink field retained',ui,"level:'스타링크'","level:'레벨'",cardMarks);
+  const outgoing='[...new Set(slots)]';assert(ss.includes(outgoing));
   await assert.rejects(()=>unchanged(load(ss.replace(outgoing,outgoing+'.sort((a,b)=>b-a)'))),{code:'ERR_ASSERTION'});
   console.log('MUTATION caught + restored: measured outgoing order');
-  console.log('ALL OK growth next; 21 mutations; frozen main measured slot search');
+  console.log('ALL OK growth next; 12 mutations; frozen main measured slot search');
 })().catch(e=>{console.error(e);process.exitCode=1;});

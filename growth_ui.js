@@ -307,8 +307,7 @@ function growthPaint(){
   else if(c.key==='guild'){const t=r.best;body=cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0])+`<p class="mut">${t.level}단계 · ${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</p>`;}
   else if(r.team){const ar=arrangeOf(r.team.t.combo);body=cards(ar.order,ar.lead)+`<p class="mut">${esc(r.team.breakName||'브레이크 없음')}</p>`;}
   const metric=c.key==='guild'?`상위 20% ${Math.round(r.best.score).toLocaleString()}점`:c.key==='cosmo'?`3팀 합산 ${Math.round(r.best.sum).toLocaleString()}점`:`클리어 ${(r.best.clear*100).toFixed(1)}%`;
-  const slots=growthSlotMarkup(r,c,cur[$('stage').value]);
-  el.innerHTML=head+` <span class="tag">${metric}</span>${slots.chip}<div data-k="growth-${c.key}-card">${body}</div>`+
-    `<details><summary>상세</summary>${slots.detail}<p class="mut">스타링크 · 장비 +15 · 스킬·공명 최대 · 목표 여정·잠재력 · ${(r.ms/1000).toFixed(1)}초</p>`+
+  el.innerHTML=head+` <span class="tag">${metric}</span><div data-k="growth-${c.key}-card">${body}</div>`+
+    `<details><summary>상세</summary><p class="mut">스타링크 · 장비 +15 · 스킬·공명 최대 · 목표 여정·잠재력 · ${(r.ms/1000).toFixed(1)}초</p>`+
     r.snapshot.errors.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')+'</details>';
 }

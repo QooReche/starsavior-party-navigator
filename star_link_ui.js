@@ -1,27 +1,5 @@
 // Session-only content snapshots: never persist simulated accounts or slot proposals.
 const SLOT={scope:null,contexts:new Map(),result:null,phase:'idle',msg:'',errors:[],excluded:[],stop:null};
-function growthSlotMarkup(r,c,st){
-  const members=growthMembers(r),required=members.filter(a=>a.source==='owned'&&a.changedFields.includes('level')&&a.levelTarget!=null).map(a=>a.unit.id);
-  if(!required.length)return {chip:'',detail:''};
-  const keys=r.kind==='cosmo'?r.best.teams.flatMap(t=>t.keys||t.order):r.kind==='guild'?r.best.keys||r.best.order:r.team.t.keys;
-  let current;
-  if(c.key==='cosmo')current=CSR.rows[0]?.teams.flatMap(t=>t.keys||t.order)||[];
-  else if(c.key==='guild')current=GSR.rows[0]?.keys||GSR.rows[0]?.order||[];
-  else {const selected=PICK[c.key+'|'+st.tab+'|'+st.name+'|1'];
-    current=((LASTQ[1]?.all||[]).find(t=>t.keys.slice().sort().join(',')===selected)||LASTQ[1]?.rows[0])?.keys||[];}
-  const ids=ks=>ks.map(k=>BYKEY[k]?.uid).filter(Boolean);
-  const plan=StarLink.growthPlan(MI.info,required,ids(keys),ids(current));
-  if(plan.unavailable)return {chip:`<span class="tag" data-k="growth-slot-chip">${esc(plan.unavailable)}</span>`,detail:''};
-  if(!plan.required.length)return {chip:'',detail:''};
-  const name=id=>esc(R.find(s=>s.uid===id)?.name||String(id));
-  const chip=`<span class="tag" data-k="growth-slot-chip">${plan.shortage?'슬롯 '+plan.shortage+'칸 부족':'빈 슬롯에 등록'}</span>`;
-  const detail=`<div data-k="growth-slot-plan"><p class="mut">등록 계획 · 현재 ${plan.initial.length}칸 · 빈 ${plan.empty}칸 · 교체 쿨다운 있음</p>`+
-    (plan.register?.length?`<p>${plan.register.map(name).join(' · ')} · 빈 슬롯에 등록</p>`:'')+
-    plan.swaps.map(s=>`<p>${s.out?name(s.out)+' 빼고 '+name(s.in)+' 넣기':'빈 슬롯에 '+name(s.in)+' 등록'}${s.deferred?' <span class="tag">지금 추천팀 · 후순위</span>':''}</p>`).join('')+
-    (plan.remaining.length?`<p class="mut">${plan.remaining.map(name).join(' · ')} · 추가 ${plan.remaining.length}칸 배정 필요</p>`:'')+
-    (plan.shortage?'<p class="mut">슬롯 교체만의 전투 효과는 미검증</p>':'')+'</div>';
-  return {chip,detail};
-}
 function slotScope(){return MyInfoReco.hash([MI.hash,MODE,MM,SCROWN,[...EXCL].sort(),breakOwned(),BRSEL,SESSION_BR,SHARE.b,SHARE.b2,
   MI.growth,QK.d,['op','oph','clo','daily','equip','cube','rush'].map(k=>simOpt(k))]);}
 function slotCancel(){if(SLOT.stop)SLOT.stop();SLOT.stop=null;SLOT.phase='idle';SLOT.result=null;SLOT.msg='';SLOT.errors=[];
