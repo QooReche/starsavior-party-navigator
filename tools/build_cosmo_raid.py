@@ -17,6 +17,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from datetime import datetime, timedelta, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -72,6 +73,43 @@ def need(cond, msg):
 
 def load(p):
     return rows(p)
+
+
+def season_period(tables, interval_id):
+    """Only explicit interval dates are public. Missing/ambiguous dates stay unknown.
+
+    Supports the extracted INTERVAL table layouts; never infer dates from a
+    season number, reward interval, or the local machine timezone.
+    """
+    if not interval_id:
+        return dict(start=None, end=None)
+    kst = timezone(timedelta(hours=9))
+
+    def date(value):
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError('missing date')
+        parsed = datetime.fromisoformat(value.strip().replace('Z', '+00:00'))
+        return (parsed.replace(tzinfo=kst) if parsed.tzinfo is None else parsed.astimezone(kst))
+
+    found = set()
+    for path in sorted(Path(tables).rglob('*.json')):
+        if 'INTERVAL' not in path.stem.upper():
+            continue
+        for row in load(path):
+            if not isinstance(row, dict) or interval_id not in row.values():
+                continue
+            for start_key, end_key in [('StartDate', 'EndDate'), ('m_StartDate', 'm_EndDate'),
+                                       ('StartDateTime', 'EndDateTime')]:
+                try:
+                    start, end = date(row.get(start_key)), date(row.get(end_key))
+                    if start < end:
+                        found.add((start.isoformat(), end.isoformat()))
+                except ValueError:
+                    pass
+    if len(found) != 1:
+        return dict(start=None, end=None)
+    start, end = found.pop()
+    return dict(start=start, end=end)
 
 
 def build(T, season_id, game_build):
@@ -350,8 +388,16 @@ def main():
     ap.add_argument('--season', type=int, required=True, help='RankingRaidSeasonId (예: 1022)')
     ap.add_argument('--build', default=None, help='표 빌드 번호(기록용)')
     ap.add_argument('--out', default=str(ROOT / 'data' / 'cosmo_raid.json'))
+    ap.add_argument('--season-dates-only', action='store_true', help='기존 공개 자료의 시즌 날짜만 갱신(정규화된 static-data 표 지원)')
     a = ap.parse_args()
     low_priority()
+    if a.season_dates_only:
+        out = json.loads(Path(a.out).read_text(encoding='utf-8'))
+        need(out['season']['id'] == a.season, '기존 공개 자료와 요청 시즌이 다름')
+        out['season'].update(season_period(a.tables, out['season']['playableInterval']))
+        atomic_json(a.out, out)
+        print('시즌 날짜 저장', a.out, out['season']['start'], out['season']['end'])
+        return
     season, bosses, effects, bel = build(a.tables, a.season, a.build)
     out = dict(
         _note='코스모 게이트(RANKING_RAID) 시즌 자료. 시즌이 바뀌면 tools/build_cosmo_raid.py 로 이 파일을 다시 만든다(절차: docs/PORTING.md 「코스모 게이트 시즌 갱신」). '
@@ -359,7 +405,8 @@ def main():
         asOf='2026-11-06', gameBuild=a.build,
         sources=dict(client=dict(name='게임 클라이언트 표(빌드 %s): RANKING_RAID 전투·시즌·난이도·전투효과·버프·유닛·스킬 표' % a.build, url='')),
         season=dict(id=season['RankingRaidSeasonId'], playableInterval=season.get('PlayableIntervalId'), rewardInterval=season.get('IntervalId'),
-                    contentsTag=season.get('ContentsTag'), bossOrder=[b['key'] for b in bosses]),
+                    contentsTag=season.get('ContentsTag'), bossOrder=[b['key'] for b in bosses],
+                    **season_period(a.tables, season.get('PlayableIntervalId'))),
         fixed=dict(unitLevel=bosses[0]['steps'][0]['fixLevel'], resonance=bosses[0]['steps'][0]['fixRes'], starLinkCap=200,
                    note='구원자 레벨·공명 고정(FixUnitLevel/FixUnitResonance), 스타링크는 StarLinkScale=0 이라 «200 초과 미적용»으로 둠(미확인), 장비·아카이브·전술은 정상'),
         bosses=bosses, effects=[effects[k] for k in sorted(effects)],

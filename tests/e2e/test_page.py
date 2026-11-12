@@ -164,11 +164,13 @@ def wait_sim_done(page, parties=(1,), timeout=600000):
     page.wait_for_function(SIM_DONE_JS, arg=list(parties), timeout=timeout)
 
 
-def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", excl=None, setup=None, wait=True, raid_ui=False):
+def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", excl=None, setup=None, wait=True, raid_ui=False, season_bypass=True):
     """내 정보(기본: 로스터 전원 가상 계정)를 넣고 연다. 추천은 내 정보가 있어야만 계산한다.
     ?auto=1 = 버튼 없이 바로 계산(버튼 흐름은 test_press_to_compute). simauto "0" 이면 결과를 바로 보이고(판정 「시뮬 전」),
     시뮬은 시험이 「시뮬로 확인」을 누를 때만 돈다."""
     page = browser.new_page(viewport=viewport or {"width": 1280, "height": 900})
+    if os.environ.get('PN_E2E_LOW_MEMORY') == '1':
+        page.add_init_script("Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>2});Object.defineProperty(navigator,'deviceMemory',{get:()=>1});")
     attach(page, ctx)
     seed(page, info, simauto, excl)
     if not raid_ui:
@@ -177,6 +179,8 @@ def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", exc
         setup(page)
     if "auto=" not in query:
         query += ("&" if "?" in query else "?") + "auto=1"
+    if season_bypass:
+        query += ("&" if "?" in query else "?") + "dev=1"
     page.goto(ctx.base + "/index.html" + query)
     if not wait:
         page.wait_for_function("() => window._ready")
@@ -2032,7 +2036,62 @@ def test_growth_stage23(browser, ctx):
     return True, '길방·코스모 같은 탐색 · 실제 입력 스탯 기반 결과 · 상위20%/3팀 합산 · 같으면 숨김 · 원본 불변'
 
 
-TESTS = [test_growth_controls, test_growth_stage23, test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
+def test_season_gate(browser, ctx):
+    """One page: closed/current/future/unknown seasons, direct calls and hidden bypass."""
+    page = open_page(browser, ctx, query='?auto=0', info=SYNTH, wait=False, raid_ui=True, season_bypass=False,
+                     setup=lambda pg: pg.clock.install(time=_dt.datetime(2026, 11, 6, 12, tzinfo=_dt.timezone(_dt.timedelta(hours=9)))))
+    wait_myinfo(page)
+    page.evaluate('''() => {
+      window.gateLoads=0;window.originalMiGrowth=miGrowth;
+      miGrowth=async()=>{gateLoads++;throw Error('synthetic gate entry reached');};
+      window.gatePeriod={start:'2026-11-01T04:00:00+09:00',end:'2026-11-05T04:00:00+09:00'};
+      Object.assign(D.guild.season,gatePeriod);D.cosmoRaid.seasonPeriod={...gatePeriod};
+    }''')
+    for key, selector, state in [('guild', '#guild-search [data-gs="start"]', 'GSR'), ('cosmo', '#cosmo-search [data-cs="start"]', 'CSR')]:
+        page.select_option('#content', value=page.evaluate(f"String(contents.findIndex(c=>c.key==='{key}'))"))
+        settle(page)
+        page.evaluate('seasonRefresh()')
+        assert page.inner_text('#season-chip') == '미오픈'
+        assert '[미오픈]' in page.locator('#content option:checked').inner_text()
+        assert '2026-11-05' in page.get_attribute('#season-chip', 'title')
+        assert '시즌 종료 — 새 시즌 자료 반영 전' in page.inner_text('#season-note')
+        assert page.locator(selector).is_disabled()
+        page.evaluate(f'''async()=>{{
+          $('assume-growth').checked=true;
+          await {key if key == 'guild' else 'cosmo'}SearchStart();
+          await growthStart(contents[$('content').value],cur[$('stage').value]);showReco();runCore();
+        }}''')
+        assert page.evaluate('gateLoads') == 0
+        assert page.evaluate("SIMQ.busy===null && GROW.phase!=='running'")
+        page.evaluate("history.replaceState(null,'','?auto=0&dev=1');seasonRefresh()")
+        assert page.locator(selector).is_enabled()
+        page.click(selector)
+        page.wait_for_function('gateLoads===1')
+        assert page.evaluate(f'{state}.msg') == 'synthetic gate entry reached'
+        page.evaluate("history.replaceState(null,'','?auto=0');gateLoads=0;seasonRefresh()")
+        assert page.locator(selector).is_disabled()
+    # Unknown dates stay available and visibly labelled; a future season is closed.
+    page.evaluate('D.cosmoRaid.seasonPeriod={};seasonRefresh()')
+    assert page.inner_text('#season-chip') == '기간 미확인'
+    assert page.locator('#cosmo-search [data-cs="start"]').is_enabled()
+    page.evaluate("D.cosmoRaid.seasonPeriod={start:'2026-12-01T04:00:00+09:00',end:'2026-12-05T04:00:00+09:00'};seasonRefresh()")
+    assert page.inner_text('#season-chip') == '미오픈'
+    assert page.inner_text('#season-note') == '시즌 시작 전'
+    assert page.locator('#cosmo-search [data-cs="start"]').is_disabled()
+    # The open page must disable itself at the exact end, without reload.
+    page.evaluate("D.cosmoRaid.seasonPeriod={start:new Date(Date.now()-1000).toISOString(),end:new Date(Date.now()+1000).toISOString()};seasonRefresh()")
+    assert page.locator('#cosmo-search [data-cs="start"]').is_enabled()
+    page.clock.fast_forward(2000)
+    assert page.locator('#cosmo-search [data-cs="start"]').is_disabled()
+    page.set_viewport_size({'width':390,'height':844})
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+    page.screenshot(path=os.path.join(ctx.shots, 'season_gate_mobile.png'), full_page=True)
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '미오픈 칩·탐색/육성 차단·dev 우회·기간 미확인·시작 전·종료 경계·390px'
+
+
+TESTS = [test_season_gate, test_growth_controls, test_growth_stage23, test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)

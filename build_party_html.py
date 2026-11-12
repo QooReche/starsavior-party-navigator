@@ -66,7 +66,8 @@ def image_urls(roster, idx=None):
 def cosmo_raid_payload():
     """코스모 게이트 «3보스 최고 점수 편성 찾기» 화면 자료: 시즌·보스 이름·난이도 최대 레벨·탐색 설정(data/cosmo_raid.json 의 search). 스탯·챌린지 표 등은 싣지 않는다(시뮬 쪽이 읽음)."""
     g = pr._json(os.path.join(pr.DATA, "cosmo_raid.json"))
-    return {"season": g["season"]["id"], "bosses": [{"key": b["key"], "name": b["name"], "element": b["element"]} for b in g["bosses"]],
+    return {"season": g["season"]["id"], "seasonPeriod": {k: g["season"].get(k) for k in ("start", "end")},
+            "bosses": [{"key": b["key"], "name": b["name"], "element": b["element"]} for b in g["bosses"]],
             "levelMax": min(len(b["levels"]) for b in g["bosses"]), "search": g["search"], "scoreConf": g["score"]["conf"]}
 
 

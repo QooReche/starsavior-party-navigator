@@ -65,7 +65,7 @@ function baseline(code=ui){
   ctx.PICK['op|sector|stage|1']='obsolete';assert.equal(ctx.growthBaseline(c,st).clear,.8);
   // Repainting after a user selection must refresh an already-finished comparison.
   ctx.PICK['op|sector|stage|1']='e,f,g,h';
-  Object.assign(ctx,{growthEnabled:()=>true,MI:{info:{}},contents:[c],cur:[st],$:(id)=>id==='growth-result'?{remove(){ctx.removed=true;}}:{value:0}});
+  Object.assign(ctx,{seasonBlocked:()=>false,growthEnabled:()=>true,MI:{info:{}},contents:[c],cur:[st],$:(id)=>id==='growth-result'?{remove(){ctx.removed=true;}}:{value:0}});
   vm.runInContext("GROW.phase='done';GROW.result={baseline:{clear:.9},best:{clear:.1}};growthPaint()",ctx);
   assert.equal(vm.runInContext('GROW.result.baseline.clear',ctx),.2);assert(ctx.removed);
 }
@@ -73,7 +73,7 @@ async function speed(code=page){
   const fn=code.slice(code.indexOf('async function cosmoSearchStart('),code.indexOf('$("cosmo-search").addEventListener("change"'));
   for(const finalPhase of [false,true])for(const grown of [false,true]){
     const writes=[],state={id:0,phase:'idle',optLevel:0,optMode:'mean'};
-    const ctx={CSR:state,MI:{info:{},profiles:{}},SIMQ:{busy:null},GSR:{phase:'idle'},D:{cosmoRaid:{search:{},bosses:[],levelMax:18}},R:[],EXCL:new Set(),
+    const ctx={seasonBlocked:()=>false,CSR:state,MI:{info:{},profiles:{}},SIMQ:{busy:null},GSR:{phase:'idle'},D:{cosmoRaid:{search:{},bosses:[],levelMax:18}},R:[],EXCL:new Set(),
       location:{href:'http://example.test/'},LS:{get:()=>({sec:{old:1}}),set:(k,v)=>writes.push([k,v])},
       csSig:()=>'',csWorkers:()=>2,csBreaks:()=>[],csNow:()=>1,csTick(){},growthCancel(){},growthPaint(){},renderCosmoSearch(){},growthEnabled:()=>false,growthOwnedContext:()=>'',
       miGrowth:async()=>growth,MyInfoReco:{profile:()=>({results:{}})},

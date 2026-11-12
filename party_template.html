@@ -185,6 +185,7 @@ body:not(.show-why) .gimnote{display:none}
 .qv.tight{color:var(--warn);border-color:var(--warn)}.qv.hard{color:var(--bad);border-color:var(--bad)}
 .mi-tabs .tabsp{flex:1}.idle{text-align:center;padding:22px 12px}.idle p{margin:6px 0}.idle button{margin-top:8px;font-size:15px;padding:8px 20px}
 #reco-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 16px;margin-top:8px}#reco-actions button{margin-top:0}
+.season-closed button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
 #growth-control-home:empty{display:none}#growth-control{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:12px}#growth-control label{display:inline-flex;align-items:center;gap:4px;min-height:40px;white-space:nowrap}#growth-control .tag{margin:0;white-space:nowrap}#growth-control:has(input:disabled) label{color:var(--mut)}
 #growth-settings{margin:10px 0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px}#growth-settings summary{display:flex;align-items:center;cursor:pointer}#growth-settings summary:before{content:'▸';margin-right:6px}#growth-settings[open] summary:before{content:'▾'}#growth-settings select{max-width:100%}
 #growth-priority .growth-rank-row{padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}#growth-priority .mi-chips{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:4px;margin-top:5px}#growth-priority details{margin-top:10px}
@@ -338,7 +339,7 @@ summary{padding:9px 4px}
 <div id="shared-bar" class="shared-bar" hidden></div>
 <div class="panel input-panel">
  <div class="row input-row">
-  <label>콘텐츠<select id="content"></select></label>
+  <label><span>콘텐츠 <span id="season-chip" class="tag" hidden></span></span><select id="content"></select></label>
   <details id="filters" class="filters" open><summary>필터</summary><div class="filterbody">
   <label class="tab-filter">섹터 / 지역<select id="tab"></select></label>
   <label class="search-filter">검색<input type="text" id="q" placeholder="예: 36, 아가논, 길레"></label>
@@ -368,6 +369,7 @@ summary{padding:9px 4px}
  <div id="mi-excl" class="mut"></div><div id="mi-list"></div>
  <p class="mut">클리어 %는 시뮬 추정입니다</p>
 </section>
+<p id="season-note" role="status" hidden></p>
 <section id="guild-panel" class="panel" aria-label="길드 방어전 안내" hidden></section>
 <section id="guild-search" class="panel" aria-label="길드 방어전 편성 찾기" hidden></section>
 <section id="cosmo-search" class="panel" aria-label="코스모 게이트 3보스 편성 찾기" hidden></section>
@@ -417,6 +419,8 @@ summary{padding:9px 4px}
 <script src="myinfo_reco.js"></script>
 <script src="growth_guide.js"></script>
 <script src="growth_ui.js"></script>
+<script src="season_gate.js"></script>
+<script src="season_gate_ui.js"></script>
 <script src="star_link.js"></script>
 <script src="star_link_ui.js"></script>
 <script src="share_state.js"></script>
@@ -481,8 +485,9 @@ const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild.v2")).tiers;
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
 function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
- p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsTiers().join(""),label:gsLabel,esc,excluded:D.guild.search.excluded,notes:D.guild.search.notes})}
+ p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsTiers().join(""),label:gsLabel,esc,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonApplyPanel(p,'guild')}
 async function guildSearchStart(target=GSR,profileOverride=null){
+ if(seasonBlocked('guild'))return;
  const GSR=target;
  if(!MI.info||GSR.phase==="run"||(SIMQ.busy!=null&&!profileOverride)||CSR.phase==="run")return;
  if(!profileOverride)growthCancel();
@@ -555,8 +560,9 @@ function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").v
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
- p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info?csPre():""})}
+ p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonApplyPanel(p,'cosmo')}
 async function cosmoSearchStart(target=CSR,profileOverride=null){
+ if(seasonBlocked('cosmo'))return;
  const CSR=target;
  if(!MI.info||CSR.phase==="run"||(SIMQ.busy!=null&&!profileOverride)||GSR.phase==="run")return;
  if(!profileOverride)growthCancel();
@@ -1138,10 +1144,11 @@ function condChanged(){REQ=false;SIMQ.kick=false;simInvalidate();run()}
 function miGuide(){return `<div class="party guide" data-k="miguide"><h3>먼저 내 정보를 불러오세요</h3>
  <p class="mut">PowerShell 명령 실행 → 관리자 확인 후 게임 로그인·로비에서 엔터 → 사이트에 자동 반영</p>
  <div class="acts"><button type="button" data-miopen="1">내 계정 정보 불러오기</button></div></div>`}
-function showReco(){if(!MI.info){setDrawer(true);return}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
-function run(skipAuto=false){growthControlPlace(true);$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
+function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;if(!MI.info){setDrawer(true);return}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
+function run(skipAuto=false){seasonPaint();growthControlPlace(true);$("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했습니다</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않습니다. 네트워크를 확인한 뒤 다시 시도해 주세요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);simRunAdd(Date.now()-t0)}
 function runCore(skipAuto=false){
+ if(seasonBlocked(contents[$('content').value]?.key))return;
  renderMi();
  const folds=new Map([...document.querySelectorAll("#out details[data-fold]")].map(d=>[d.dataset.fold,d.open]));
  $("control-home").append(MODE_CONTROLS,SCORE_CONTROLS,GRAPH_WRAP);
@@ -1397,4 +1404,6 @@ setMode(LS.get("mode")==="manual"?"manual":"auto",false);
  else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
  if(!SHARE.g)LS.set("grow.v2",$("grow").value)}
 {const gv=LS.get("goal");if(gv==="0"||gv==="60"){$("goal").value=gv;if(gv==="0")$("optbox").open=true}}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}growthInit();updCount();refreshTabs();applyShare();miLoad();REQ=AUTO||!!SHARE.c;SIMQ.kick=REQ&&!AUTO;run();window._ready=true;if(LS.get("why"))drawGraph();
+seasonRefresh();setInterval(seasonRefresh,1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)seasonRefresh()});
 </script></body></html>

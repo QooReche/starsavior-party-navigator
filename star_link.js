@@ -15,8 +15,10 @@
     slots:ids.map((id,i)=>({index:info.star_link.slots[i]?.index??i,id}))}};}
   function exchangeCandidates(info,slots,candidates,{keep=[],defer=[],emptyFirst=false,maxCandidates=LIMITS.maxCandidates}={}){
     const incoming=candidates.filter(id=>!slots.includes(id)&&!info.star_link.source.includes(id)).slice(0,maxCandidates);
-    const outgoing=[...new Set(slots)].filter(id=>!keep.includes(id));
-    if(emptyFirst)outgoing.sort((a,b)=>(a===0?-1:defer.includes(a)?1:0)-(b===0?-1:defer.includes(b)?1:0));
+    let outgoing=[...new Set(slots)].filter(id=>!keep.includes(id));
+    // Sort wrappers: Array.sort always moves raw undefined to the end without comparing it.
+    if(emptyFirst)outgoing=outgoing.map(id=>({id,rank:!id?-1:defer.includes(id)?1:0}))
+      .sort((a,b)=>a.rank-b.rank).map(x=>x.id);
     return {incoming,outgoing};
   }
   function exchange(slots,add,remove){const next=slots.slice();next[next.indexOf(remove)]=add;return next;}
@@ -25,15 +27,16 @@
   function growthPlan(info,required,team=[],current=[]){
     const unavailable=availability(info);if(unavailable)return {unavailable,swaps:[]};
     const initial=info.star_link.slots.map(s=>s.id),source=info.star_link.source;
-    const incoming=[...new Set(required)].filter(id=>!source.includes(id)&&!initial.includes(id));
+    const owned=new Set(info.units.map(u=>u.id));
+    const incoming=[...new Set(required)].filter(id=>owned.has(id)&&!source.includes(id)&&!initial.includes(id));
     const empty=initial.filter(id=>!id).length,shortage=Math.max(0,incoming.length-empty);
     if(!shortage)return {initial,slots:initial,empty,shortage,required:incoming,swaps:[],register:incoming,remaining:[],limited:false,pairs:0,runs:0};
-    let slots=initial.slice(),pairs=0;const swaps=[];
+    let slots=initial.slice(),pairs=0,replacements=0;const swaps=[];
     for(const add of incoming.slice(0,LIMITS.maxCandidates)){
-      if(swaps.length>=LIMITS.maxSwaps||pairs>=LIMITS.maxPairs)break;
+      if(replacements>=LIMITS.maxSwaps||pairs>=LIMITS.maxPairs)break;
       const candidates=exchangeCandidates(info,slots,[add],{keep:[...team,...incoming],defer:current,emptyFirst:true});
       if(!candidates.incoming.length||!candidates.outgoing.length)continue;
-      const remove=candidates.outgoing[0];pairs++;
+      const remove=candidates.outgoing[0];pairs++;if(remove)replacements++;
       slots=exchange(slots,add,remove);swaps.push({in:add,out:remove,deferred:!!remove&&current.includes(remove)});
     }
     return {initial,slots,empty,shortage,required:incoming,swaps,pairs,runs:0,

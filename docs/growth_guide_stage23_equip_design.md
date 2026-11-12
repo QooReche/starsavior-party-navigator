@@ -151,3 +151,11 @@ HANDOFF 남은 일 22·24. Claude 가 후보안(A1/A2, B1/B2, C1/C2/C3)을 먼�
 - 합성 계정 단위 시험과 결함 주입 14종을 통과했음. 실제 작전 작업자 e2e에서 보조 카드 슬롯 칩·순위·새로 고침·공유 미저장·내 정보 삭제·390px을 확인했음. 시즌 e2e는 실제 탐색에 결정적 작업자 결과를 연결했음. 기준선은 120 통과·0 실패였음. 커밋·푸시·HANDOFF·엔진은 변경하지 않았음.
 - 첫 전체 검사는 일반 121개 통과, 브라우저의 기존 `test_myinfo_sim` 1건 실패였음. 순위 영역에 파티 스타일 `.party`를 재사용해 숨겨진 순위가 기존 시험의 첫 파티 선택자에 잡혔음. HEAD 원본 5파일을 브라우저 요청에서 대체한 같은 시험은 통과해 이번 변경의 회귀임을 확인했음(`local/next-head-check.log`). 순위를 일반 `.panel`로 바꾼 뒤 같은 시험도 통과했으며, 보조 카드 e2e에 선택자 충돌을 다시 주입하는 검사 1종을 추가했음.
 - 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`는 **122 통과·0 실패**, 종료 코드 0이었음. 일반 121개·브라우저 46개 통과, 기존 COSMO_TABLES·옆 journeyhelper 없음 건너뜀 2건은 유지됨. 새 결함 주입은 단위 14종·브라우저 1종을 검출했음. 로그 `local/next-final.log`, 스크린샷 `local/shots/next_desktop.png`·`next_mobile.png`이며 모두 최종 실행에서 갱신했음. `git diff --check` 통과, 엔진 변경이 없어 외부 golden은 실행하지 않았음.
+
+### 11/12 리뷰 5건 마무리
+
+`unchanged()`를 main 원본 `9f119eb84fc2f270a47920a6f10427e38a6d2547:star_link.js`와 같은 fixture로 고정했음. Git·원본이 없으면 실패하며 outgoing 순서 변경도 검출했음(앞 절의 HEAD 비교를 대체함). 현재 콘텐츠와 결과 종류가 다르면 기록을 저장하지 않고, 0·null·undefined·빈 문자열을 빈 슬롯으로 처리했음. 미보유는 등록 대상·부족 칸에서 제외하고 카드에는 미보유 라벨만 남겼음. 빈 칸 등록은 교체 3회 상한에서 제외했으며 기존 슬롯 탐색 결과는 원본과 같았음. `growth_next_test.js`의 결함 주입 21종과 실제 작업자를 쓰는 슬롯·보조 카드 e2e를 통과했음. 이번 작업은 지정 작업 폴더에서만 진행했고 커밋·푸시·HANDOFF 수정은 하지 않았음.
+
+### 11/12 시즌 미오픈 처리
+
+길방·코스모에 시작 전/플레이 종료 후 «미오픈» 칩·종료일 툴팁·한 줄 안내를 넣고 일반 추천·시즌 탐색·육성 탐색 진입을 차단했음. 결산 종료일이 아닌 플레이 종료일을 쓰며 열린 화면도 시계 변화에 따라 갱신하고 진행 중 탐색을 취소함. `?dev=1` 또는 `?season=force`는 숨은 검증용 우회이고 순수 시뮬·탐색 라이브러리는 날짜로 막지 않음. 코스모 빌더에 INTERVAL 날짜 추출과 `--season-dates-only`를 추가했음. 지정 비공개 tables에는 INTERVAL 파일·해당 날짜 정의가 없어 `season.start/end=null`만 추가했고 기존 공개 데이터 값은 전부 같았음. 화면은 «기간 미확인»으로 열어 둠. 날짜 필드 형태는 합성 표로 검사했으며 실표 날짜 대조는 미확인임. 새 JS/Python 시험에서 경계·결산·미확인·우회·진입 차단 결함 13종을 검출했고, 관련 e2e 4개(시즌 게이트·시즌 육성·슬롯·보조 카드/순위)는 브라우저 하나에서 순서대로 통과했음. `PN_E2E_LOW_MEMORY=1`로 실제 시뮬 작업자 수를 낮췄으며 전체 e2e는 실행하지 않았음. 기준선은 121 통과·0 실패였음. 기존 화면 단위시험의 가짜 환경에 새 시즌 갱신 의존성을 추가한 뒤, `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild`는 **123 통과·0 실패**, 종료 코드 0이었음. 기존 환경 건너뜀 2건(COSMO_TABLES·옆 journeyhelper 없음)은 유지됨. 전체 재빌드 검증 로그는 `local/season-review-final.log`, 관련 화면은 `local/shots/season-review/`에 둠.

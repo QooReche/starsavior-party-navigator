@@ -116,12 +116,12 @@ function growthMaybe(c,st){if(growthEnabled()&&growthSeasonContent()){growthPain
 const growthLabel=r=>r.source==='assumed'?'미보유':'키워야 함';
 const growthFields={level:'레벨→스타링크',resonance:'공명 최대',skills:'스킬 최대',journey:'목표 여정',potentials:'목표 잠재력',equip:'장비 +15'};
 const growthShortFields={level:'스타링크',equip:'장비 +15',skills:'스킬',resonance:'공명',journey:'여정',potentials:'잠재력'};
-function growthDescription(r){return (r.changedFields||[]).map(f=>{
+function growthDescription(r){if(r.source==='assumed')return '';return (r.changedFields||[]).map(f=>{
   const c=r.changes?.[f];if(f==='level'&&c)return `${c.before==null?'Lv ':('Lv '+c.before+'→')}스타링크`;
   if(f==='resonance'&&c)return `공명 ${c.before??0}→${c.after}`;
   return growthFields[f];}).join(' · ');}
 function growthBadge(r,short=false){const missing=r.source==='assumed';return `<span class="assumed-label ${missing?'assumed-missing':'assumed-owned'}" data-k="assumed-badge"><span aria-hidden="true">${missing?'＋':'↑'}</span><span class="al-long">${esc(growthLabel(r))}</span><span class="al-short">${missing?'미보유':'키워야 함'}</span>${!short&&growthDescription(r)?' · '+esc(growthDescription(r)):''}</span>`;}
-function growthCardMeta(r){if(r.overwrite)return `<div class="mi-chips">${r.changedFields.map(f=>`<span class="tag">${esc(growthShortFields[f])}</span>`).join('')}</div>`;const before=miProfile().results[r.key],after=r.team?.t.b.finals[r.key];
+function growthCardMeta(r){if(r.source==='assumed')return '';if(r.overwrite)return `<div class="mi-chips">${r.changedFields.map(f=>`<span class="tag">${esc(growthShortFields[f])}</span>`).join('')}</div>`;const before=miProfile().results[r.key],after=r.team?.t.b.finals[r.key];
   if(!after)return '';
   return `<div class="mi-chips"><span class="assumed-mark" title="전투력 ${miNum(before?.power)} → ${miNum(after.power)}">전투력 ${before?`${miNum(before.power)} → `:''}${miNum(after.power)}${before?'':' (가정)'}</span></div><details class="growth-stats"><summary>능력치 변화</summary>${['atk','hp','def','spd'].map((k,i)=>`<div>${['공','생','방','속'][i]} ${before?`${miNum(before.stats[k])} → `:''}${miNum(after.stats[k])}</div>`).join('')}</details>`;}
 // Seasonal passes share the lock and each content's existing worker budget.
@@ -143,7 +143,7 @@ function growthPriority(history){return GrowthGuide.priority(history,GROW.sig,
   Object.fromEntries(contents.map(c=>[c.key,growthConditions(c,false)])));}
 function growthMembers(r){const keys=r.kind==='cosmo'?r.best?.teams.flatMap(t=>t.keys||t.order):r.kind==='guild'?r.best?.keys||r.best?.order:r.team?.t.keys;
   return [...new Set(keys||[])].map(key=>r.snapshot.changes[key]).filter(a=>a?.changedFields.length);}
-function growthRecord(c,st,r,show){if(!r?.snapshot||!GROW.sig)return;
+function growthRecord(c,st,r,show){if(!r?.snapshot||r.kind!==c.key||!GROW.sig)return;
   const field=c.key==='guild'?'score':c.key==='cosmo'?'sum':'clear',scale=field==='clear'?100:1;
   const members=show?growthMembers(r):[],delta=show?scale*(r.best[field]-(r.baseline?.[field]||0)):0;
   const entry=GrowthGuide.grownSummary({content:c.key==='cosmo'?'cosmo/'+D.cosmoRaid.season:c.key+'/'+st.tab+'/'+st.name,
@@ -234,6 +234,7 @@ async function growthStageSearch(c,st,profile,id){
   return {best,team:bestJob,runs};
 }
 async function growthStart(c,st){
+  if(seasonBlocked(c.key))return;
   if(!growthEnabled()||GROW.phase==='running'||SIMQ.busy!=null||GSR.phase==='run'||CSR.phase==='run'||!MI.growth||!QK.d)return;
   const seasonal=['guild','cosmo'].includes(c.key);
   if(seasonal&&!growthSeasonReady(c))return;
@@ -280,6 +281,7 @@ function growthPaint(){
   let el=$('growth-result');
   if(!growthEnabled()||!MI.info){el?.remove();return;}
   const c=contents[$('content').value],r=GROW.result;
+  if(seasonBlocked(c.key)){el?.remove();return;}
   if(!['op','clo','guild','cosmo'].includes(c.key))return;
   if(r&&['op','clo'].includes(c.key))r.baseline=growthBaseline(c,cur[$('stage').value]);
   const show=r&&growthBetter(c.key,r.baseline,r.best);

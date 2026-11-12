@@ -1,7 +1,7 @@
 // Session-only content snapshots: never persist simulated accounts or slot proposals.
 const SLOT={scope:null,contexts:new Map(),result:null,phase:'idle',msg:'',errors:[],excluded:[],stop:null};
 function growthSlotMarkup(r,c,st){
-  const members=growthMembers(r),required=members.filter(a=>a.changedFields.includes('level')&&a.levelTarget!=null).map(a=>a.unit.id);
+  const members=growthMembers(r),required=members.filter(a=>a.source==='owned'&&a.changedFields.includes('level')&&a.levelTarget!=null).map(a=>a.unit.id);
   if(!required.length)return {chip:'',detail:''};
   const keys=r.kind==='cosmo'?r.best.teams.flatMap(t=>t.keys||t.order):r.kind==='guild'?r.best.keys||r.best.order:r.team.t.keys;
   let current;
