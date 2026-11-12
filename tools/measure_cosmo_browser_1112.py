@@ -40,7 +40,7 @@ def page_at(browser, base):
     page.set_default_timeout(4 * 3600 * 1000)
     page.goto(base + '/local/cosmo-workers.html')
     assert page.evaluate('document.characterSet') == 'UTF-8'
-    for file in ('guild_search.js', 'cosmo_search.js'):
+    for file in ('ui_shared.js', 'guild_search.js', 'cosmo_search.js'):
         page.add_script_tag(url=base + '/' + file)
     return context, page
 

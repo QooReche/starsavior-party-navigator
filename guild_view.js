@@ -2,7 +2,7 @@
 (function (root) {
   "use strict";
   const MAX_TIER = 3;
-  const num = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const {num} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   function parseTime(s) { return Date.parse(/T/.test(s) ? s : s + "T00:00:00+09:00"); }
   function md(s) { const d = new Date(parseTime(s) + 9 * 3600 * 1000); return String(d.getUTCMonth() + 1).padStart(2, "0") + "/" + String(d.getUTCDate()).padStart(2, "0"); }
   // state: upcoming / active / settling / ended, needsUpdate = 시즌 종료 시각이 지남(갱신 대기)

@@ -8,7 +8,7 @@ const data=require('../data/guild_defense.json');
 const section=(s,a,b)=>{const start=s.indexOf(a);assert(start>=0,a);const end=s.indexOf(b,start);assert(end>start,b);return s.slice(start,end);};
 const plain=x=>JSON.parse(JSON.stringify(x));
 const skill={name:'스타피어서',level:7};
-function load(code){const ctx={module:{exports:{}}};vm.runInNewContext(code,ctx);return ctx.module.exports;}
+function load(code){const ctx={module:{exports:{}},require:require('node:module').createRequire(require.resolve('../guild_search'))};vm.runInNewContext(code,ctx);return ctx.module.exports;}
 function context(gs=GS,html=page){
   const G=structuredClone(data),S=G.search;
   Object.assign(S,{poolSize:6,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,excluded:[],screen2:{keep:12,runs:3},finalists:10});

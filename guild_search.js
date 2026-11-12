@@ -3,6 +3,7 @@
 // 시뮬 자체는 battlesim(guild 옵션)이 하고, 이 파일은 «어떤 팀을 어떤 조건으로 돌릴지»와 «결과를 어떻게 순위 매길지»만 정한다.
 (function (root) {
   "use strict";
+  const {num} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const FRONT = ["디펜더", "서포터"];
 
   // 후보 풀: 내 최종 전투력이 최고의 minPowerRatio 배 이상인 구원자(최대 poolSize 명) + 역할별 최소 인원(minRole: 서포터·디펜더는 전투력이 낮아도 역할 때문에 쓰이므로 따로 보충). rows = [{key, cls, power}]
@@ -213,7 +214,6 @@
   }
 
   const SUP_NAME = {none: "지원 안 고름", gust: "격돌의 돌풍", focus: "날카로운 집중력", strike: "강인한 타격", mountain: "태산의 의지", fire: "불의 고동"};
-  const num = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   // 화면 조각. st = {phase: idle|run|done|err, msg, done, total, rows, sig}, cx = {hasInfo, sig(현재 고른 선택 효과), label(key), esc}
   function html(st, cx) {
     const esc = cx.esc;

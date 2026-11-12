@@ -99,6 +99,7 @@ def main():
             page = context.new_page()
             page.goto(base + '/local/cosmo-workers.html')
             assert page.evaluate('document.characterSet') == 'UTF-8'
+            page.add_script_tag(url=base+'/ui_shared.js')
             page.add_script_tag(url=base+'/guild_search.js')
             page.add_script_tag(url=base+'/cosmo_search.js')
             # Warm HTTP and OS caches once, not included in measurements.

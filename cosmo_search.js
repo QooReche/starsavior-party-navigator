@@ -3,6 +3,7 @@
 // 시즌 값(풀 크기·판 수·K 등)은 data/cosmo_raid.json 의 search. 점수는 시뮬 쪽(battlesim/web.py cosmo_summary)이 판마다 점수식에 넣어 요약값으로 돌려준다.
 (function (root) {
   "use strict";
+  const {num} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const GS = typeof require !== "undefined" ? require("./guild_search.js") : root.GuildSearch;
   const TEAM = 4, BOSSES = 3, EPS = 1e-9;
   const speedValue = (S, key, fallback) => S.speed && S.speed[key] ? S.speed[key].value : fallback;
@@ -461,7 +462,6 @@
     } finally { if (workersPool) workersPool.close(); }
   }
 
-  const num = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   const pct = x => Math.round((x || 0) * 100) + "%";
   // 화면 조각. st = {phase: idle|run|done|err, msg, done, total, rows, level, mode, bosses, ...}, cx = {hasInfo, label(key), esc, bossName(key), levelMax, level, mode}
   function table(r, mode, cx) {
