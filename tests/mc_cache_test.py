@@ -50,7 +50,7 @@ _KEEP = {'dmg_cap_scope': 'reduce', 'ally_break_gauge': 'skip', 'own_turn_condit
          'variant_self_state': 'off', 'turn_unit_debuff_cond': 'skip', 'auto_marker_lines': 'drop',
          'shield_tick': 'turn_start', 'wave_carry': 'keep', 'break_domain_revive': 'none',
          'enemy_leader': 'boss', 'any_turn_source': 'text', 'ally_auto_lines': 'data', 'ally_variant_mapping': 'legacy', 'wave_ally_gauge': 'keep', 'enforce_timing': 'nested', 'enforce_target': 'book', 'buff_ban_force': 'off', 'coop_order': 'capped',
-         'foe_skill_order': 'default', 'empty_attack': 'skip',
+         'foe_skill_order': 'default', 'foe_forced_coop': 'off', 'empty_attack': 'skip',
          'enemy_cd_end_order': 'before_effects', 'revenge_rate': 'current',
          'nova_force_cap': 0, 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget',
          # 2026-11-04 기본 전환분은 legacy 로 고정

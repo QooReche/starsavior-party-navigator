@@ -156,21 +156,19 @@ class ClashBuildTest(unittest.TestCase):
         self.assertEqual(efs[('한 맺힌 격앙', 0)], '[피해 처리 직전] (조건: 내가 피해를 받기 직전 [NotEnemyAdjustType: 별]) 자신에게 능력치 보정 피해 감소 +50% {이번 스킬에만 적용}')
         self.assertEqual(efs[('강압', 0)], '[스킬 사용 시작 시] (조건: 적 비공격 스킬 시) 자신에게 행동 게이지 50%p 증가')
         self.assertIn('{효과 적중 판정, 2회 부여}', efs[('침입자 청소', 1)])
+        version = next(l for l in efs.values() if '〈버전 업그레이드(해제불가)〉' in l)
+        self.assertIn('피해 감소 +5%', version)  # SE Stats=500, BuffDesc @@3 is display only.
+        self.assertIn('최대 5중첩', version)
 
-    def test_unverified_not_in_ef(self):
-        """효과 줄로 못 만든 SE(퍼세스 강제 협공)는 ef 에 없고 unmodeled 에 원인과 함께 있다. 빙결 조건(TargetPositiveBuff+BuffCountLess)은
+    def test_force_coop_converted_without_unmodeled(self):
+        """퍼세스 강제 협공까지 변환됨. 빙결 조건(TargetPositiveBuff+BuffCountLess)은
         엔진 키 «대상 강화효과 개수 이하»로 변환돼 ef 에 있다(클라 NKM.Templets 42752·43328)"""
         all_ef = {l for s in self.frag['s'] for l in s['ef']}
         um = self.out['unmodeled']
-        self.assertTrue(um)
-        for u in um:
-            self.assertTrue(u['reason'])
-            if u.get('candidate'):
-                self.assertNotIn(u['candidate'], all_ef)
-        self.assertTrue(any('FORCE_CROSS' in u['reason'] or '협공' in u['reason'] or 'AutoTargetId=52' in u['reason'] for u in um))
+        self.assertEqual(um, [])
+        self.assertIn('[스킬 사용 후] (조건: 내 공격 후 [사용 스킬: 기본기]) 자신 제외 아군 1명(자동 지정)에게 〈강제 협공〉 (0턴)', all_ef)
         self.assertTrue(any('빙결' in l and '대상 강화효과 개수 이하: 1' in l for l in all_ef))
         self.assertFalse(any('빙결' in l and '대상 강화효과 보유' in l for l in all_ef))
-        self.assertFalse(any('빙결' in (u.get('candidate') or '') for u in um))
 
     # ---------------------------------------------------------------- 3) 스탯: 표에서 독립 계산
     def indep_stats(self, unit_str, level, add):

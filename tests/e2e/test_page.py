@@ -2267,6 +2267,36 @@ def test_shifter_tags(browser, ctx):
 TESTS.append(test_shifter_tags)
 
 
+def test_clash(browser, ctx):
+    """격전 의뢰 목록 → 실제 Pyodide 결과 카드 → 종료 시 미오픈. 가상 계정 사용."""
+    page = open_page(browser, ctx, info=SYNTH, season_bypass=False,
+                     setup=lambda pg: pg.clock.install(time=_dt.datetime(2026, 11, 13, 12,
+                         tzinfo=_dt.timezone(_dt.timedelta(hours=9)))))
+    choose(page, '격전 의뢰', '폐쇄된 심상')
+    assert page.locator('#content option:checked').inner_text() == '격전 의뢰'
+    assert page.evaluate("cur.length") == 6
+    assert page.evaluate("D.contents.find(c=>c.key==='clash').stages.length") == 18
+    assert page.evaluate("MyInfoStats.rule_for_content('clash')") == 'normal'
+    assert page.locator('.party[data-party="1"] button[data-sim="1"]').count(), page.inner_text('#out')
+    page.click('.party[data-party="1"] button[data-sim="1"]')
+    wait_sim_done(page)
+    assert page.locator('.party[data-party="1"] .mi-verdict').count() == 1
+    assert '완료' in page.inner_text('.party[data-party="1"] [data-k="simstate"]')
+    assert page.evaluate("PN_SIMQ.lastReq.req.stage").startswith('clash/')
+    page.screenshot(path=os.path.join(ctx.shots, 'clash.png'), full_page=True)
+    page.clock.set_system_time(_dt.datetime(2026, 12, 3, 4, tzinfo=_dt.timezone(_dt.timedelta(hours=9))))
+    page.evaluate('seasonRefresh()')
+    assert page.inner_text('#season-chip') == '미오픈'
+    assert '[미오픈]' in page.locator('#content option:checked').inner_text()
+    assert page.evaluate("seasonBlocked('clash')")
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '격전 의뢰 3탭×6단계·정상 레벨·실제 시뮬 결과·기간 종료 미오픈'
+
+
+TESTS.append(test_clash)
+
+
 def main():
     args = sys.argv[1:]
     shots = None

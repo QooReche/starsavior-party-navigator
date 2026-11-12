@@ -46,7 +46,7 @@ RATE = {'FrontLineTargetRate': 'front', 'BackLineTargetRate': 'back', 'DefenderT
 COUNT = {'IsPositiveBuffCountOverThan': 'buff_ge', 'IsPositiveBuffCountLessThan': 'buff_le',
          'IsNegativeBuffCountOverThan': 'debuff_ge', 'IsNegativeBuffCountLessThan': 'debuff_le'}
 AUTO_ENEMY = {'NSETT_AUTO_ENEMY': False, 'NSETT_AUTO_ENEMY_ONE': True}
-# 아군 자동 지정(NKM 6407~6450 같은 함수, 상대 대신 내 편): 전체형·1명형. 「자신 제외 1명」(NOT_SELF)은 이 함수가 다루지 않아 제외
+# 아군 자동 지정: 전체형·1명형. NOT_SELF는 아래 add_lines의 검증된 강제 협공 경로만 지원.
 AUTO_ALLY = {'NSETT_AUTO_ALLY': False, 'NSETT_AUTO_ALLY_ONE': True}
 # BI_ENFORCE 강제 추가 행동: EnforceSkillIndex → 스킬 칸 (NKM 4555~4572)
 ENFORCE_SLOT = {'NSI_SKILL_1_ATTACK': '기본기', 'NSI_SKILL_2_SPECIAL': '특수기', 'NSI_SKILL_3_HYPER': '궁극기'}
@@ -84,7 +84,11 @@ REPORT_HEAD = Counter()      # 대상 머리말을 못 읽은 줄(짝짓기 거�
 Unknown = UnknownName        # 시험·다른 빌더가 이 이름으로 가져다 씀
 
 
-def filters(t, bname):
+def filters(t, bname, *, forced_coop=False):
+    # AutoTargetId 52. IsNotUnableToAct includes break (NKM:7901-7912).
+    # 이 함수는 아군 빌더도 사용함. 검증한 적 강제 협공 줄에만 새 필터를 사용함.
+    if forced_coop and t == {'IsNotUnableToAct': True, 'IsNotSpecificBuff': ['BI_DISABLE_CROSS_ATTACK'], 'IsHighAtk': True}:
+        return ['not_unable_to_coop', ['not_has', ['협공 불가']], 'high_atk']
     out = []
     for k, v in (t or {}).items():
         if k in SIMPLE and v is True:
@@ -293,7 +297,11 @@ def add_lines(res, si, sid, raw, se, target, bname):
     got, bad = {}, set()
     for k, r in pairs:
         tt = r.get('m_BuffTargetType')
-        if r.get('AutoTargetId') and (tt in AUTO_ENEMY or tt in AUTO_ALLY):
+        if (tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF' and r.get('m_BuffStrID') == 'BI_FORCE_CROSS_ATTACK'
+                and r.get('AutoTargetId')):
+            spec = dict(one=True, ally=True, exclude_self=True,
+                        f=filters(target[r['AutoTargetId']], bname, forced_coop=True))
+        elif r.get('AutoTargetId') and (tt in AUTO_ENEMY or tt in AUTO_ALLY):
             spec = {'one': AUTO_ENEMY.get(tt, AUTO_ALLY.get(tt)), 'f': filters(target.get(r['AutoTargetId']), bname)}
             if tt in AUTO_ALLY:
                 spec['ally'] = True
@@ -304,10 +312,12 @@ def add_lines(res, si, sid, raw, se, target, bname):
                 if esi:
                     enemy_f = filters(target.get(eat), bname) if eat else []
                     spec['enforce'] = {'slot': esi, 'enemy_f': enemy_f}
-            key = '%d:%d' % (si, k)
-            if key in got and got[key] != spec:
-                bad.add(key)        # 펼친 줄끼리 규칙이 다르면 그 줄은 버림
-            got[key] = spec
+        else:
+            continue
+        key = '%d:%d' % (si, k)
+        if key in got and got[key] != spec:
+            bad.add(key)        # 펼친 줄끼리 규칙이 다르면 그 줄은 버림
+        got[key] = spec
     for key, spec in got.items():
         if key not in bad:
             res['lines'][key] = spec

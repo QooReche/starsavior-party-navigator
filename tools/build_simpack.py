@@ -19,7 +19,7 @@ FIXED = ['battlesim/rules/default.json', 'battlesim/rules/builds.json', 'rawdata
          'rawdata/guide_app-core.js', 'data/synergy_tags.json', 'data/myinfo_combat.json', 'data/auto_skill.json', 'data/foe_auto.json',
          'data/sudden_death.json', 'data/stage_fx.json', 'data/battle_end.json',
          'data/break_skill_levels.json', 'data/buff_count.json', 'data/buff_step.json', 'data/buff_force.json', 'data/buff_immune_pass.json', 'data/buff_global_turn.json',
-         'data/foe_react.json', 'data/foe_summon.json', 'data/buff_dead_keep.json',
+         'data/foe_react.json', 'data/foe_summon.json', 'data/foe_clash.json', 'data/buff_dead_keep.json',
          'data/guild_bfb.json', 'data/guild_defense.json', 'data/cosmo_raid.json']   # 길드 방어전 BFB(starsavior/guild_bfb.py)
 
 

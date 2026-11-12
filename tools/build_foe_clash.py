@@ -230,6 +230,11 @@ class SeConverter:
             if cond is None:
                 raise Unconvertible('자동 대상 %s 의 조건 행 없음(AutoTargetId=%s)' % (tt, row.get('AutoTargetId')))
             c = dict(cond)
+            if (tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF' and c == {
+                    'IsNotUnableToAct': True, 'IsNotSpecificBuff': ['BI_DISABLE_CROSS_ATTACK'], 'IsHighAtk': True}):
+                # AutoTargetId 52: NKM:7149-7152,7535-7536,7572-7574,7754-7755,7901-7912.
+                # 우선 필터의 실패/동률 처리는 foe_auto 규칙으로 보존한다.
+                return '자신 제외 아군 1명(자동 지정)'
             if tt == 'NSETT_AUTO_ENEMY' and len(c) == 1:
                 # 데이터북: «강화 효과가 2개 이상인 적 전체에게» / «강화 효과가 1개 이하인 적 전체에게» (옛 웬디고 궁극기 AutoTargetId 1005·1006)
                 if 'IsPositiveBuffCountOverThan' in c:
@@ -416,7 +421,8 @@ class SeConverter:
             return dict(line='%s %s 연쇄 피해 = 자신 공격력×%s%% (×%s, 방어력 적용)' % (head, who, fnum(row['AddDamageRate'] / 100.0), fnum(tb.damage_scale)),
                         gl=None, collapse='none', kind='chain', se=se_id)
         if buff.get('ForceCrossAttack'):
-            raise Unconvertible('강제 협공(BI_FORCE_CROSS_ATTACK) 효과 줄 문법이 데이터북에 없음')
+            return dict(line='%s %s %s〈강제 협공〉 (0턴)' % (head, who, self.chance_prefix(row)),
+                        gl=None, collapse='none', kind='forced_coop', se=se_id)
         # ----- 일반 상태 효과(버프/디버프)
         name = tb.buff_name(bid)
         if not name:
@@ -549,9 +555,14 @@ def unverified_parts(line, shapes):
     p = line_parts(line)
     bad = []
     engine_cond = p[1] is not None and re.fullmatch(r'내 공격 후 \[대상 강화효과 개수 이하: #\]', p[1]) is not None
+    # 기존 구원자 파서·forced_coop 경로가 읽는 즉시 플래그. 신규 적 줄은 전용 시험으로 검사.
+    engine_coop = line == ('[스킬 사용 후] (조건: 내 공격 후 [사용 스킬: 기본기]) '
+                           '자신 제외 아군 1명(자동 지정)에게 〈강제 협공〉 (0턴)')
     # 위 조건은 엔진 전용 키(mc.line_ok)라 데이터북에 없어도 클라 코드(NKM.Templets 42752·43328)로 의미가 확인된 문법으로 본다
     for i, label in enumerate(('시점', '조건', '대상 머리', '본문')):
         if i == 1 and engine_cond:
+            continue
+        if engine_coop and i in (2, 3):
             continue
         if p[i] is not None and p[i] not in shapes[i]:
             bad.append('%s: %s' % (label, p[i]))

@@ -1717,6 +1717,9 @@ class Battle:
         if st == 'not_unable_to_act':
             # IsNotUnableToAct(NKM 1189~1199): 행동 불가가 아닌 대상만(사망·기절·수면 제외). 풀에서 사망은 이미 빠져 있으므로 기절·수면만.
             return [v for v in pool if not self.incapacitated(v)]
+        if st == 'not_unable_to_coop':
+            # AutoTargetId 52, build 26610546 NKM:7901-7912: break, stun, sleep.
+            return [v for v in pool if not self.no_react(v)]
         if st == 'back':
             return [v for v in pool if v.pos >= 2]
         if st in ROLE_NAMES:
@@ -2152,7 +2155,9 @@ class Battle:
             if self.mc['check_buff_expiry'] == 'skill':
                 # NKM:15394-15396,15586-15593: SKILL_END 뒤, 협공보다 먼저 전원 정리.
                 self._expire_checks(skill=True)
-            if (u.side == 0 and sk.is_attack and not extra and not u.dead
+            if ((u.side == 0 or (self.mc['foe_forced_coop'] == 'on'
+                                and any(b.side == u.side for b in self._forced_coop_candidates)))
+                    and sk.is_attack and not extra and not u.dead
                     and (self.opts['coop'] or (self.opts['forced_coop']
                          and self.opts['forced_coop_target'] == 'random'))):
                 self.coop(u, ctx)
@@ -2364,7 +2369,11 @@ class Battle:
                 ctx.coop_used = True
                 self.cast(b, b.d.skills['기본기'], extra=True,
                           target=self._coop_target(ctx), via='forced_coop')
+                if actor.side == 1:
+                    self.rule_hits['foe_forced_coop'] += 1
                 return  # NKM:15508-15521: 일반 후보의 확률도 굴리지 않음
+        if actor.side == 1:
+            return  # 적은 검증된 강제 협공만 연결. 일반 협공의 기존 아군 경로와 분리.
         if not self.opts['coop']:
             return
         stat_order = self.opts['coop_order'] == 'stat'
@@ -2452,7 +2461,7 @@ class Battle:
 
     def _coop_target(self, ctx):
         if ctx.skill.all:
-            al = self.alive(1)
+            al = self.alive(1 - ctx.src.side if ctx.src is not None else 1)
             return self.R(ctx.src.side if ctx.src is not None else None).choice(al) if al else None
         return ctx.target if (ctx.target is not None and not ctx.target.dead) else None
 
@@ -4369,6 +4378,8 @@ class Battle:
         return self.R(owner.side).random() < calc_hit(a, b)
 
     def apply_buff(self, owner, eff, ctx, hot=0.0, raw=''):
+        if eff['name'] == '강제 협공' and owner.side == 1 and self.mc['foe_forced_coop'] != 'on':
+            return  # legacy는 자동 대상 추첨의 난수도 소비하지 않음.
         tg = self.resolve(owner, eff['target'], ctx)
         if not tg:
             return
