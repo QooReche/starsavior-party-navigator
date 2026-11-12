@@ -27,6 +27,7 @@ def spawn_flags(src=SRC):
     if src not in _SPAWN:
         p = os.path.join(src, 'data', 'foe_spawn.json')
         _SPAWN[src] = json.load(open(p, encoding='utf-8')).get('stages', {}) if os.path.exists(p) else {}
+        _SPAWN[src] = {**_SPAWN[src], **extra_aux(src).get('spawn', {})}
     return _SPAWN[src]
 
 
@@ -70,6 +71,9 @@ def foe_summon(src=SRC):
             with open(p, encoding='utf-8') as f:
                 d = json.load(f)
             _SUMMON[src] = {'groups': d.get('groups', {}), 'stages': d.get('stages', {})}
+        ax = extra_aux(src)
+        _SUMMON[src] = {'groups': {**_SUMMON[src]['groups'], **ax.get('summon_groups', {})},
+                        'stages': {**_SUMMON[src]['stages'], **ax.get('summon_stages', {})}}
     return _SUMMON[src]
 
 
@@ -86,6 +90,7 @@ def battle_end(src=SRC):
         if os.path.exists(p):
             with open(p, encoding='utf-8') as f:
                 _BATTLE_END[src] = frozenset(json.load(f)['boss_kill'])
+        _BATTLE_END[src] = _BATTLE_END[src] | frozenset(extra_boss_kill(src))
     return _BATTLE_END[src]
 
 
@@ -112,16 +117,69 @@ def sudden_death(src=SRC):
     return _SUDDEN[src]
 
 
+_EXTRA = {}
+_EXTRA_ON = {}
+
+
+def load_extra(src=SRC):
+    """data/foe_clash.json(tools/build_foe_clash.py) -> 데이터북 foe.js 에 아직 없는 콘텐츠(격전 의뢰)의 적 조각. 없으면 None.
+    데이터북에 같은 콘텐츠 키(g[].k)가 이미 들어오면 조각은 쓰지 않는다(데이터북 우선, 조각은 임시 보충)."""
+    if src not in _EXTRA:
+        p = os.path.join(src, 'data', 'foe_clash.json')
+        _EXTRA[src] = None
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                _EXTRA[src] = json.load(f)
+    return _EXTRA[src]
+
+
+def merge_extra(raw, frag):
+    """조각을 foe.js 원본 뒤에 덧붙인다(규칙은 조각 _note): 조각 안 인덱스는 «조각 내부 0 기준»이라 오프셋을 더한다.
+    raw 를 제자리에서 바꾼다. 이미 같은 콘텐츠 키가 있으면(데이터북이 반영함) 아무것도 하지 않고 False."""
+    if not frag or any(g['k'] == c['k'] for c in frag['g'] for g in raw['g']):
+        return False
+    if frag.get('ak'):
+        raise ValueError('조각 ak 가 비어 있지 않으면 이 병합 규칙으로는 부족함')
+    so, uo, xo = len(raw['s']), len(raw['u']), len(raw['x'])
+    raw['s'] += json.loads(json.dumps(frag['s']))
+    raw['x'] += json.loads(json.dumps(frag['x']))
+    for u in frag['u']:
+        u2 = json.loads(json.dumps(u))
+        u2['sk'] = [i + so for i in u['sk']]
+        raw['u'].append(u2)
+    for g in json.loads(json.dumps(frag['g'])):
+        for t in g['tabs']:
+            for st in t['s']:
+                st['w'] = [[[e[0] + uo] + ([e[1] + xo] if len(e) > 1 else []) for e in w] for w in st['w']]
+                for sm in st.get('sm', []):
+                    sm[2] = [[a + uo, b + xo, c] for a, b, c in sm[2]]
+        raw['g'].append(g)
+    return True
+
+
 def load_foe(src=SRC):
-    """foe.js 원본(dict: g/u/s/ak/x/star). 한 번만 읽는다."""
+    """foe.js 원본(dict: g/u/s/ak/x/star)에 data/foe_clash.json 조각을 덧붙인 것. 한 번만 읽는다."""
     global _FOE
     if _FOE is None or _FOE[0] != src:
         with open(os.path.join(src, 'rawdata', 'foe.js'), encoding='utf-8') as f:
             s = f.read()
         m = re.search(r'__SSD\.foe=', s)
         d, _ = json.JSONDecoder().raw_decode(s[m.end():])
+        _EXTRA_ON[src] = merge_extra(d, load_extra(src))
         _FOE = (src, d)
     return _FOE[1]
+
+
+def extra_aux(src=SRC):
+    """병합된 조각의 aux(스폰 표시·소환 그룹·칸 번호). 병합되지 않았으면(없음·데이터북이 이미 반영) 빈 dict."""
+    load_foe(src)
+    return (load_extra(src) or {}).get('aux', {}) if _EXTRA_ON.get(src) else {}
+
+
+def extra_boss_kill(src=SRC):
+    """병합된 조각의 스테이지 키('콘텐츠|탭|스테이지') 중 BM_BOSS_KILL 인 것(조각 boss_kill, 클라 BattleMode 기준)."""
+    load_foe(src)
+    return list((load_extra(src) or {}).get('boss_kill', [])) if _EXTRA_ON.get(src) else []
 
 
 def foe_stats(raw, u, x, st):
@@ -245,6 +303,12 @@ class FoeDef:
             for raw_line in sd.get('ef') or []:
                 self.lines.append(Line(raw_line, slot, src))
         self.spd_base = self.stats['spd']
+        if _EXTRA_ON.get(SRC) or any(_EXTRA_ON.values()):
+            # 조각(data/foe_clash.json)으로 들어온 유닛: 효과 줄로 만들지 못한 SE 행을 지원 보고(mc.support_report)에 올린다
+            skill_names = {raw['s'][si]['n'] for si in u['sk']}
+            for um in (load_extra(next(k for k, v in _EXTRA_ON.items() if v)) or {}).get('unmodeled', []):
+                if self.name in um.get('units', ()) and um.get('skill_name') in skill_names:
+                    self.unmodeled.append('격전 의뢰 효과 미반영: %s — %s' % (um['skill_name'], um.get('reason', '')))
         # 적 반응(트리거) 스킬 발동 조건(mc.foe_react): 칸 -> {timing, conds, target}
         react_data = foe_react().get(self.key) or {}
         self.react = {}

@@ -1,7 +1,7 @@
 // Session-only content snapshots: never persist simulated accounts or slot proposals.
 const SLOT={scope:null,contexts:new Map(),result:null,phase:'idle',msg:'',errors:[],excluded:[],stop:null};
 function slotScope(){return MyInfoReco.hash([MI.hash,MODE,MM,SCROWN,[...EXCL].sort(),breakOwned(),BRSEL,SESSION_BR,SHARE.b,SHARE.b2,
-  MI.growth,QK.d,['op','oph','clo','daily','equip','cube','rush'].map(k=>simOpt(k))]);}
+  MI.growth,QK.d,['op','oph','clo','daily','equip','cube','rush','clash'].map(k=>simOpt(k))]);}
 function slotCancel(){if(SLOT.stop)SLOT.stop();SLOT.stop=null;SLOT.phase='idle';SLOT.result=null;SLOT.msg='';SLOT.errors=[];
   SLOT.excluded=[];if(SIMQ.busy==='slots')SIMQ.busy=null;}
 function slotSync(){const scope=slotScope();if(SLOT.scope!==scope){slotCancel();SLOT.scope=scope;SLOT.contexts.clear();}}

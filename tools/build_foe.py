@@ -10,6 +10,9 @@ with open(os.path.join(ROOT, 'rawdata', 'foe.js'), encoding='utf8') as f:
     s = f.read()  # 공개 데이터북 원본, tools/fetch_sources.py 로 갱신함
 m = re.search(r'__SSD\.foe=', s)
 d, _ = json.JSONDecoder().raw_decode(s[m.end():])
+# 데이터북에 아직 없는 콘텐츠(격전 의뢰)는 클라 표에서 만든 조각(data/foe_clash.json)을 덧붙인다. 데이터북이 같은 콘텐츠를 반영하면 조각은 쓰이지 않는다.
+from battlesim.starsavior.foe import load_extra, merge_extra
+merge_extra(d, load_extra(os.path.abspath(ROOT)))
 os.makedirs(os.path.join(HERE, 'raw'), exist_ok=True)
 atomic_json(os.path.join(HERE, 'raw', 'foe_raw.json'), d)  # build_gimmicks.py 의 입력
 

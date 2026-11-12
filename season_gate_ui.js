@@ -1,5 +1,6 @@
-function seasonData(key){return key==='guild'?D.guild?.season:key==='cosmo'?D.cosmoRaid?.seasonPeriod:null;}
-function seasonStatus(key){return ['guild','cosmo'].includes(key)?SeasonGate.state(seasonData(key),Date.now(),location.search):{blocked:false,label:'',message:''};}
+const SEASON_KEYS=['guild','cosmo','clash'];
+function seasonData(key){return key==='guild'?D.guild?.season:key==='cosmo'?D.cosmoRaid?.seasonPeriod:key==='clash'?D.contents.find(c=>c.key==='clash')?.seasonPeriod:null;}
+function seasonStatus(key){return SEASON_KEYS.includes(key)?SeasonGate.state(seasonData(key),Date.now(),location.search):{blocked:false,label:'',message:''};}
 function seasonBlocked(key){return seasonStatus(key).blocked;}
 function seasonPaint(){
   const key=contents[$('content').value]?.key,state=seasonStatus(key),s=seasonData(key);
@@ -19,7 +20,7 @@ function seasonApplyPanel(panel,key){
 }
 let seasonLastState=null;
 function seasonRefresh(){
-  const key=contents[$('content').value]?.key,tag=JSON.stringify(['guild','cosmo'].map(seasonStatus));
+  const key=contents[$('content').value]?.key,tag=JSON.stringify(SEASON_KEYS.map(seasonStatus));
   if(seasonLastState===null){seasonLastState=tag;seasonPaint();return;}
   if(tag===seasonLastState)return;
   seasonLastState=tag;

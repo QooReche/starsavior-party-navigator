@@ -23,6 +23,7 @@ def rule_for_content(content):
     """
     return {"op": "normal", "작전": "normal", "clo": "normal", "회랑": "normal", "Cloister": "normal",
             "oph": "normal", "daily": "normal", "equip": "normal", "cube": "normal",
+            "clash": "normal", "격전 의뢰": "normal",   # 격전 의뢰(SS_EVENT_CLASH)는 BATTLE_STAT_APPLY_TEMPLET 에 없는 장면(11/12 표 확인) -> 정상 레벨
             "cosmo": "fixed200", "코스모 게이트": "fixed200", "CosmoGate": "fixed200",
             "rush": "fixed200", "플래시 포인트": "fixed200", "BossRush": "fixed200"}.get(content)
 

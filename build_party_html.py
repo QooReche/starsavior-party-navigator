@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # -I 는 스크�
 import guild_defense as gd  # noqa: E402
 import party_reco as pr  # noqa: E402
 from battlesim.fileio import atomic_text
+from battlesim.starsavior.foe import load_extra
 from battlesim.starsavior.savior_ids import uid_resolver
 
 PORTRAIT_ROOT = "https://starsavior-guide.github.io/"  # 가이드 DB 초상화(온라인일 때만 표시, 없으면 글자 배지)
@@ -18,7 +19,7 @@ CONTENT_META = {  # foe key -> (표시 이름, 주 사용 콘텐츠명, 파티 �
     "op": ("작전 (일반)", "작전", 1), "oph": ("작전 (어려움)", "작전", 1),
     "clo": ("성간 회랑", "회랑", 1), "rush": ("플래시 포인트", "플래시 포인트", 1),
     "cosmo": ("코스모 게이트", "코스모 게이트", 2), "daily": ("일일 재화 던전", None, 1),
-    "equip": ("장비 탐사", None, 1), "cube": ("큐브 팰리스", None, 1)}
+    "equip": ("장비 탐사", None, 1), "cube": ("큐브 팰리스", None, 1), "clash": ("격전 의뢰", None, 1)}
 
 
 _UNI = {"\u2160": "I", "\u2161": "II", "\u2162": "III", "\u2163": "IV", "\u2164": "V", "\u2165": "VI", "\u2166": "VII",
@@ -121,11 +122,14 @@ def main(out=None):
         if c['key'] == 'guild':
             continue  # 2.70 과거 시즌 목록. 현재 길방은 아래 guild_defense.json으로 한 번만 구성.
         name, main, parties = CONTENT_META[c["key"]]
-        entry = {"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush"), "stages": stages_of(c)}
+        entry = {"key": c["key"], "name": name, "main": main, "parties": parties, "boss": c["key"] in ("cosmo", "rush", "clash"), "stages": stages_of(c)}
         if c["key"] == "cosmo":
             # 시즌제 화면: 목록에는 «코스모 게이트(시즌 N)» 로 보이고, 섹터·스테이지 선택 없이 시즌 패널만 쓴다. name 은 설정 키라 그대로 둔다
             entry["raid"] = True
             entry["title"] = f'{name}(시즌 {pr._json(os.path.join(pr.DATA, "cosmo_raid.json"))["season"]["id"] % 1000})'
+        if c["key"] == "clash":
+            # 기간 한정 콘텐츠: 공지 기준 기간(data/foe_clash.json period)을 게이트가 읽는다. 끝나면 «미오픈» 처리
+            entry["seasonPeriod"] = ((load_extra(pr.HERE) or {}).get("period"))
         contents.append(entry)
     # 길드 방어전(시즌제): 시즌·단계 자료(data/guild_defense.json)에서 만든다. 일관성 검사를 통과해야 빌드된다
     gdef = gd.load()

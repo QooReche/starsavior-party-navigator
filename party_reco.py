@@ -24,7 +24,7 @@ OVR = os.path.join(DATA, "synergy_overrides.json")
 CONT = os.path.join(HERE, "party_contents.json")
 FOE = os.path.join(DATA, "foe_stages.json")
 FOE_KEYS = {"작전": "op", "작전어려움": "oph", "일일": "daily", "장비": "equip", "큐브": "cube",
-            "플래시 포인트": "rush", "회랑": "clo", "코스모 게이트": "cosmo", "길드방어전": "guild"}
+            "플래시 포인트": "rush", "회랑": "clo", "코스모 게이트": "cosmo", "길드방어전": "guild", "격전 의뢰": "clash"}
 EL = {"sun": "태양", "moon": "달", "star": "별", "order": "질서", "chaos": "혼돈"}
 SUPPORT, DEFENDER = "서포터", "디펜더"
 FRONT_ROLES = (DEFENDER, SUPPORT)

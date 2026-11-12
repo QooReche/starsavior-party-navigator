@@ -52,6 +52,7 @@ def battle_rows(static):
     return out
 
 
+CLASH = ('MOTIVATOR', 'WENDIGO', 'PERSES')   # 격전 의뢰 탭 순서(BattleStrID 의 보스 부분)
 NAMED = {'cosmo': 'RANKING_RAID_', 'rush': 'BOSS_RUSH_'}   # 콘텐츠 전체가 후보인 곳 -> 게임 전투 머리
 NAME_CHECK = set(NAMED) | {'daily'}   # 적 이름까지 맞춰야 하는 콘텐츠(일일 재화 던전은 탭이 골드·크리스탈·재료 중 무엇인지 몰라)
 _NAMES = {}
@@ -103,6 +104,9 @@ def candidates(ck, tab, name, i_tab, i_stage, rows=()):
         # 장비 탐색(혹한의 습격 등): NORMAL_BATTLE_EXPLORE_EQUIP<탭 순서>_<단계> — 단계 번호가 데이터북 순서와 달라 탭 전체를 후보로
         head = 'NORMAL_BATTLE_EXPLORE_EQUIP%d_' % (i_tab + 1)
         return sorted(k for k in rows if k.startswith(head))
+    if ck == 'clash' and i_tab < len(CLASH):
+        # 격전 의뢰(SS_EVENT_CLASH): 탭 순서(모티베이터·웬디고·퍼세스, 조각 data/foe_clash.json 과 같은 순서) × 단계 번호
+        return ['NORMAL_BATTLE_EVENT_CLASH_%s_%03d' % (CLASH[i_tab], i_stage + 1)]
     if ck in NAMED:
         return sorted(k for k in rows if k.startswith(NAMED[ck]))
     if ck == 'daily':

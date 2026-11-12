@@ -231,6 +231,7 @@ COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이
                  'TurnUnitNegativeBuff', 'NotTurnUnitNegativeBuff',
                  '자신 미보유 효과 중첩수', '시전자 턴', '자신이 보유', '자신이 미보유',
                  '중첩수', '효과 개수', '중첩수 이상', '효과 개수 이상', '효과 개수 미만', '효과 개수 이하', '대상이 보유', '대상이 미보유',
+                 '대상 강화효과 개수 이하',
                  '대상 효과 중첩수', '대상 약화효과 보유', '대상 강화효과 보유', '대상 강인도 없음', '대상 브레이크', '결과',
                  '대상 HP% 초과', '대상 HP% 미만', '대상 HP% 이상', '대상 HP% 이하', '적 처치', '적을 처치하지 못함', '내 턴', '자신 포함', '시전자 속성', '시전자가 보유',
                  '자신에게 약화효과 없음', '자신 약화효과 보유', '자신 강화효과 보유', '스킬 쿨타임 아님', '턴 유닛이 보유',
@@ -330,7 +331,7 @@ def _dur(v):
     return math.inf if v is None else v
 
 
-TARGET_KEYS = set(['대상 속성', '대상 클래스', '대상이 보유', '대상이 미보유', '대상 HP% 초과', '대상 HP% 미만', '대상 HP% 이상', '대상 HP% 이하', '대상 약화효과 보유',
+TARGET_KEYS = set(['대상 강화효과 개수 이하', '대상 속성', '대상 클래스', '대상이 보유', '대상이 미보유', '대상 HP% 초과', '대상 HP% 미만', '대상 HP% 이상', '대상 HP% 이하', '대상 약화효과 보유',
                    '대상 강화효과 보유', '대상 효과 중첩수', 'NotTargetPositiveBuff'])
 
 
@@ -3455,6 +3456,10 @@ class Battle:
                 has = tgt is not None and tgt.n_harmful() > 0
                 if has != (v == '예'):
                     return False
+            elif k == '대상 강화효과 개수 이하':
+                # 클라 TargetPositiveBuff + BuffCountLess N: 대상의 강화 효과 수 ≤ N(0개 포함) — NKM.Templets 42752·43328
+                if tgt is None or tgt.n_good() > float(v):
+                    return False
             elif k == '대상 강화효과 보유':
                 last = ('TB', None)
                 has = tgt is not None and tgt.n_good() > 0
@@ -4720,6 +4725,8 @@ def _support_one(d, markers_all):
                                 raw='트리거 스킬 미반영: ' + ts.name, critical=False))
         supported_variants = {sk.name for _, sk in variant_rules(d).values()}
         for msg in getattr(d, 'unmodeled', []):
+            if msg.startswith('격전 의뢰 효과 미반영'):
+                out.append(dict(unit=d.name, foe=foe, slot=None, reason='data', raw=msg, critical=False))
             if msg.startswith('myinfo '):
                 out.append(dict(unit=d.name, foe=foe, slot='잠재력', reason='data', raw=msg, critical=False))
             if msg.startswith('변형'):
