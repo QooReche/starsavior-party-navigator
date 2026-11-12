@@ -1441,6 +1441,7 @@ def test_guild_search_dropped(browser, ctx):
     page.select_option('#content', label=next(n for n in names if n.startswith('길드방어전')))
     settle(page)
     page.evaluate("""() => {
+      MI.brkLv={};  // 브레이크 미보유의 기존 3단계 경로. 4단계는 test_guild_break_search.
       const S=D.guild.search;
       Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,
         screen2:{keep:5,runs:2},finalists:5});
@@ -2910,6 +2911,9 @@ TESTS.append(test_ux_step3)
 
 from auto_calculation import register as register_auto_calculation
 TESTS.extend(register_auto_calculation(sys.modules[__name__]))
+
+from guild_break import register as register_guild_break
+TESTS.extend(register_guild_break(sys.modules[__name__]))
 
 
 def main():

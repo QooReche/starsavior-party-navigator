@@ -73,7 +73,9 @@
     return messages.length ? `<div class="qwarn potential-warnings" data-k="potential-unsupported">${messages.map(x=>`<span class="tag">지원하지 않음 · ${esc(x)}</span>`).join("")}</div>` : "";
   }
 
-  const jobKey = (keys, level, sup, tiers) => [keys.join("+"), level, sup, (tiers || []).join("")].join("|");
+  const BREAK_CHECK = {teams: 8, runs: 40, version: 1};
+  const breakSignature = breaks => JSON.stringify([BREAK_CHECK.version, breaks.map(b => [b.name, b.level]).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] - b[1])]);
+  const jobKey = (keys, level, sup, tiers, brk = null) => [keys.join("+"), level, sup, (tiers || []).join(""), JSON.stringify(brk && [brk.name, brk.level])].join("|");
 
   // 작업 목록 → 작업자 수만큼 나눈 묶음(라운드 로빈). job = {key, party, options:{guild}}
   function split(jobs, n) {
@@ -94,6 +96,23 @@
       const p = party(keys, results, cls);
       for (const level of S.final.levels) for (const sup of finalSupports(S, keys, cls))
         jobs.push({key: jobKey(keys, level, sup, tiers), keys, level, sup, party: p.spec, order: p.order, options: {guild: {level, sets: tiers.slice(), support: sup}}});
+    }
+    return jobs;
+  }
+
+  // 본선 상위 팀의 최적 지원은 고정. 최적 단계±1에서 미장착과 보유·지원 스킬을 같은 시드/판수로 비교한다.
+  function breakJobs(ranked, breaks, results, cls, tiers) {
+    if (!breaks.length) return [];
+    const jobs = [];
+    for (const r of ranked.slice(0, BREAK_CHECK.teams)) {
+      const p = party(r.keys, results, cls);
+      for (let level = Math.max(0, r.level - 1); level <= Math.min(12, r.level + 1); level++) {
+        for (const brk of [null, ...breaks]) jobs.push({
+          key: jobKey(r.keys, level, r.sup, tiers, brk), keys: r.keys, level, sup: r.sup,
+          party: p.spec, order: p.order,
+          options: {guild: {level, sets: tiers.slice(), support: r.sup}, break_skill: brk}
+        });
+      }
     }
     return jobs;
   }
@@ -127,7 +146,7 @@
     for (const j of jobs) {
       const r = res[j.key]; if (!r || coopHit(S || {}, r)) continue;
       const st = rankStats(V, G, j.level, tiers, r.prog, r.progs, r.clear), id = j.keys.slice().sort().join("+"), cur = best.get(id);
-      if (!cur || byRank(st, {top: cur.score, cap: cur.cap, mean: cur.mean}) < 0) best.set(id, {keys: j.keys, order: j.order, level: j.level, sup: j.sup, score: st.top, mean: st.mean, cap: st.cap, clear: r.clear, prog: r.prog, frac: Math.max(0, Math.min(1, 2 * r.prog - 1)), n: r.n, ...unsupportedFields(r)});
+      if (!cur || byRank(st, {top: cur.score, cap: cur.cap, mean: cur.mean}) < 0) best.set(id, {keys: j.keys, order: j.order, level: j.level, sup: j.sup, brk: j.options?.break_skill?.name || null, brkLv: j.options?.break_skill?.level || null, score: st.top, mean: st.mean, cap: st.cap, clear: r.clear, prog: r.prog, frac: Math.max(0, Math.min(1, 2 * r.prog - 1)), n: r.n, ...unsupportedFields(r)});
     }
     return [...best.values()].sort((a, b) => b.score - a.score || b.cap - a.cap || b.mean - a.mean || (a.order.join() < b.order.join() ? -1 : 1)).slice(0, top || 5);
   }
@@ -209,8 +228,8 @@
     if (st.phase === "run") body = `<div data-k="gd-search-progress">${esc(st.msg || "")}${st.total ? ` · ${st.done}/${st.total}` : ""} <button type="button" class="sec" data-gs="cancel">취소</button></div>`;
     else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">찾지 못했습니다: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;
     else if (st.phase === "done") {
-      const stale = st.sig !== cx.sig ? '<div class="gd-warn" data-k="gd-search-stale">고른 선택 효과가 바뀌었습니다. 아래 결과는 이전 선택 기준이니 다시 찾아 주세요.</div>' : "";
-      const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))).join("<br>")}</td><td>${r.level}단계</td><td>${esc(SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
+      const stale = st.sig !== cx.sig ? '<div class="gd-warn" data-k="gd-search-stale">계산 조건이 바뀌었습니다. 아래 결과는 이전 선택 기준이니 다시 찾아 주세요.</div>' : "";
+      const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${r.level}단계</td><td>${esc(SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
       const best=st.rows[0];
       const result=best?`<div class="season-result" data-k="gs-best"><div class="season-score"><span>상위 점수</span><b data-k="gs-score">${num(best.score)}</b><small>점</small></div><div class="season-chips"><span class="tag">${best.level}단계</span><span class="tag">${esc(SUP_NAME[best.sup]||best.sup)}</span><span class="tag">클리어 ${Math.round(best.clear*100)}%</span></div>${cx.team?cx.team(best):''}</div>`:'';
       body = `${stale}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>보스 깎음</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
@@ -219,6 +238,7 @@
     return `<div class="gd-search" data-k="gd-search" data-state="${st.phase}">${head}${body}${st.phase === "done" ? unsupportedHtml(st.rows || [], esc) : ""}<details class="season-options" data-fold="gs-basis"><summary>계산 기준 ⓘ</summary><span class="gd-est">추정</span>${warn}</details></div>`;
   }
 
-  const api = {FRONT, TOP_Q, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, SUP_NAME, countDropped, notesHtml, BASIS, unsupportedFields, unsupportedHtml};
+  const breakLabel = (t, esc) => `브레이크 스킬: ${esc(t.brk || "없음")}${t.brk ? ` Lv.${t.brkLv}` : ""}`;
+  const api = {FRONT, TOP_Q, BREAK_CHECK, breakSignature, breakJobs, breakLabel, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, SUP_NAME, countDropped, notesHtml, BASIS, unsupportedFields, unsupportedHtml};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

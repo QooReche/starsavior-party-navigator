@@ -496,11 +496,12 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!$("guild
 // ── 길방 «내 정보로 최고 점수 편성 찾기»(guild_search.js): 예선(전 조합 짧게) → 본선(상위 팀을 단계·지원별로). 작업자는 시뮬 창구(sim_worker.js)를 그대로 쓴다
 const GSR={banCoop:true,phase:"idle",msg:"",done:0,total:0,rows:[],sig:"",handle:null,id:0};
 const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild.v2")).tiers;
+const gsSig=() => JSON.stringify([MI.hash,[...EXCL].sort(),gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]);
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
 function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
- const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsTiers().join(""),label:gsLabel,esc,team:gsTeam,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
-function gsTeam(t){LEADKEY=t.order[0];return `<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
+ const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
+function gsTeam(t){LEADKEY=t.order[0];return seasonBreakBar(t,true)+`<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
 async function guildSearchStart(target=GSR,profileOverride=null){
  if(seasonBlocked('guild'))return;
  const GSR=target;
@@ -512,7 +513,7 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   GSR.phase="run";GSR.msg="내 구원자 능력치 계산 중";GSR.done=0;GSR.total=0;paint();
   const growth=await miGrowth();if(stale())return;
   const profile=profileOverride||MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
-  const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers();
+  const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers(),breaks=ownedSimBreaks(),sig=gsSig(),context=growthOwnedContext('guild');
   const rows=GuildSearch.pool(S,results,R.filter(s=>!EXCL.has(s.key))),list=GuildSearch.combos(S,rows.map(r=>r));
   if(list.length<1)throw new Error("편성할 수 있는 구원자가 부족합니다(내 정보에 육성된 구원자 4명 이상 필요)");
   const combos=list.map(k=>k),workers=Math.max(2,Math.min(8,(navigator.hardwareConcurrency||4)-1));
@@ -529,8 +530,17 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   GSR.msg=`3단계: 상위 ${fin.length}팀을 단계·지원별로 확인 중`;GSR.done=0;GSR.total=jobsB.length;paint();
   const hB=GuildSearch.runPhase({makeWorker:mk,jobs:jobsB,workers,runs:S.final.runs,seed:2,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
   GSR.handle=hB;const resB=await hB.promise;if(stale())return;
-  GSR.dropped=GuildSearch.countDropped(S,[[jobsA,resA],[jobsA2,resA2],[jobsB,resB]]);GSR.rows=GuildSearch.rank(V,G,jobsB,resB,tiers,5,S);GSR.sig=tiers.join("");GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=S.final.runs;
-  GSR.context=growthOwnedContext('guild');GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
+  const pairs=[[jobsA,resA],[jobsA2,resA2],[jobsB,resB]];
+  let ranked=GuildSearch.rank(V,G,jobsB,resB,tiers,GuildSearch.BREAK_CHECK.teams,S);
+  const jobsC=GuildSearch.breakJobs(ranked,breaks,results,cls,tiers);
+  if(jobsC.length){
+   GSR.msg="4단계: 브레이크 스킬 확인 중";GSR.done=0;GSR.total=jobsC.length;paint();
+   const hC=GuildSearch.runPhase({makeWorker:mk,jobs:jobsC,workers,runs:GuildSearch.BREAK_CHECK.runs,seed:2,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
+   GSR.handle=hC;const resC=await hC.promise;if(stale())return;
+   pairs.push([jobsC,resC]);ranked=GuildSearch.rank(V,G,jobsC,resC,tiers,5,S);
+  }
+  GSR.dropped=GuildSearch.countDropped(S,pairs);GSR.rows=ranked.slice(0,5);GSR.sig=sig;GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=jobsC.length?GuildSearch.BREAK_CHECK.runs:S.final.runs;
+  GSR.context=context;GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
  }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.phase=/^취소$/.test(e.message)?"idle":"err";GSR.msg=e.message||String(e);paint()}}
 $("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
 $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[data-gs]");if(!b)return;
@@ -565,10 +575,14 @@ function csOpt(){const C=D.cosmoRaid;
 // 코스모 결과 한 팀: 기존 추천 카드와 같은 모양(앞열 2·뒤열 2, 리더 왕관, 브레이크 스킬 줄). 시뮬이 가정한 칸 순서 = order(앞열 먼저, 첫 구원자가 리더)
 function csTeam(t){LEADKEY=t.order[0];const xs=t.order.map(k=>({s:BYKEY[k]}));
  const cards=`<div class="rowcards cs-cards">${card(xs[2],"back")}${card(xs[0],"front")}${card(xs[1],"front")}${card(xs[3],"back")}</div>`;
+ return seasonBreakBar(t)+cards}
+function seasonBreakBar(t,compact=false){
+ if(compact)return `<div class="bbar"><div class="bbody">${GuildSearch.breakLabel(t,esc)}</div></div>`;
  const b=t.brk,info=b&&CFG.breakSkills[b],im=b&&D.bicons[b];
  const bar=`<div class="bbar" title="${esc(info?info.text:"브레이크 스킬 미장착")}">${im?`<img src="${im}" alt="">`:`<span class="bicon">${b&&BG[b]||"◆"}</span>`}<div class="bbody"><b>${esc(b||"브레이크 스킬 장착 안 함")}</b>${b?` <span class="mut">Lv.${t.brkLv}</span>`:""}${info?` <span class="mut">${esc(info.text)}</span>`:""}</div></div>`;
- return bar+cards}
-function csBreaks(){const lv=MI.brkLv||null,have=lv?Object.keys(lv):breakOwned();return have.filter(n=>CFG.breakSupported.includes(n)).map(n=>({name:n,level:brkLv(n)}))}
+ return bar}
+function ownedSimBreaks(){const lv=MI.brkLv||null,have=lv?Object.keys(lv):breakOwned();return have.filter(n=>CFG.breakSupported.includes(n)).map(n=>({name:n,level:brkLv(n)}))}
+function csBreaks(){return ownedSimBreaks()}
 const csBoss=k=>((D.cosmoRaid.bosses.find(b=>b.key===k))||{}).name||k;
 function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").value];
  if(!c||c.key!=="cosmo"||!D.cosmoRaid||!window.CosmoSearch){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}if(CSR.phase==="run"){CSR.phase="idle";CSR.id++}p.hidden=true;p.innerHTML="";return}

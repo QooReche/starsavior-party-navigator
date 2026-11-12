@@ -136,8 +136,8 @@ function growthDisplay(a){const c=contents[$('content').value].key,content=c==='
 function growthSeasonContent(){const c=contents[$('content').value];return c?.key==='cosmo'||(c?.key==='guild'&&parseInt(cur?.[$('stage').value]?.name,10)===D.guild.steps.find(s=>s.ex)?.step)?c:null;}
 function growthConditions(c,trackTeams=true){const rules=simOpt(c.key);
   if(c.key==='guild')return {rules,season:D.guild?.season,
-    difficulty:GuildView.normSel(D.guild,GS.sel||LS.get('guild.v2')),banCoop:GSR.banCoop,ranking:'guild-top-cap-mean',
-    teams:GSR.rows.map(r=>[r.keys,r.order,r.sup,r.level])};
+    difficulty:GuildView.normSel(D.guild,GS.sel||LS.get('guild.v2')),banCoop:GSR.banCoop,ranking:'guild-top-cap-mean',breakCheck:GuildSearch.breakSignature(ownedSimBreaks()),
+    teams:GSR.rows.map(r=>[r.keys,r.order,r.sup,r.level,r.brk,r.brkLv])};
   if(c.key==='cosmo')return {rules,season:D.cosmoRaid?.season,
     difficulty:CSR.optLevel,fast:CSR.optFast,ranking:CSR.optMode,
     teams:CSR.rows.map(r=>Array.isArray(r?.teams)?r.teams.map(t=>[t?.boss,t?.keys,t?.order,t?.level,t?.brk,t?.brkLv]):[])};
@@ -186,7 +186,7 @@ function growthRankPaint(){const el=$('growth-priority');if(!el)return;
 }
 function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.context===growthOwnedContext('guild'):
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
-function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks()],simOpt(kind)]);}
+function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks()],simOpt(kind)]);}
 // Whole-account pass: the owned recommendation and its caches remain untouched.
 function growthBetter(kind,baseline,result){
   const metric=r=>kind==='guild'?r?.score:kind==='cosmo'?r?.sum:r?.clear;
