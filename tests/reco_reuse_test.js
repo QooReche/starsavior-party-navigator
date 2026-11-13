@@ -145,6 +145,40 @@ for (const [label, exp] of Object.entries(EXPECTED)) {
   }
 }
 
+// 재점화(11/13 제보): 빠른 계산 순위는 재점화 단계와 무관해야 한다(재점화 3 에서 «버티는 팀»이 위로 올라와 강한 팀이 예선 후보에서 빠짐).
+// 재점화 3 의 quickRank 가 재점화 0 기준값(EXPECTED)과 같고, 판정 계수 prm 이 재점화 0 의 것(p0)과 같은 객체여야 한다.
+// 순서가 실제로 바뀌는 어려운 스테이지에서도 prm 이 p0 인지 따로 확인한다(op_24/SECTOR 1-1 은 순서가 안 바뀔 수 있음).
+for (const rk of [3, 5]) {
+  const ctx = buildCtx();
+  ctx.rkOf = () => rk;
+  ctx._own = OWN.op_24;
+  const r = JSON.parse(JSON.stringify(vm.runInContext(`(()=>{
+    const c = D.contents.find(c=>c.key==='op');
+    const st = c.stages.find(s=>s.name.includes('SECTOR 1-1'));
+    const own = new Set(_own);
+    GIMACT = gimTop(c,st); SBACT = st.sb||[];
+    DMW = [Math.min(1,(st.n-1)/2), c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];
+    const defPen = CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty;
+    const cands = D.roster.filter(s=>own.has(s.key)).map(s=>{const[v,p]=score(s,st.w,c.main,c.boss);return{s,score:v,parts:p}});
+    const qi = quickIn(c,st), p0 = (QK.d.pc&&QK.d.pc[c.key])||QK.d.params;
+    const qr = quickRank(rankAll(cands,defPen),qi);
+    return {rk: qi.rk, same: qi.prm === p0, qr: qr.slice(0,10).map(t=>({keys:t.keys.slice().sort().join(','),vd:t.vd,rounds:t.q.rounds,left:t.q.left}))};
+  })()`, ctx)));
+  try {
+    assert.equal(r.rk, rk, `rk=${rk} quickIn.rk`);
+    assert.ok(r.same, `rk=${rk} 빠른 계산 계수 prm 은 재점화 0 의 p0 여야 함`);
+    for (let i = 0; i < EXPECTED.op_24.qr.length; i++) {
+      assert.equal(r.qr[i].keys, EXPECTED.op_24.qr[i].keys, `rk=${rk} qr[${i}] keys`);
+      assert.equal(r.qr[i].vd, EXPECTED.op_24.qr[i].vd, `rk=${rk} qr[${i}] vd`);
+      assert.ok(Math.abs(r.qr[i].left - EXPECTED.op_24.qr[i].left) < 1e-9, `rk=${rk} qr[${i}] left`);
+    }
+    console.log(`PASS rekindle ${rk} quickRank == rekindle 0`);
+  } catch (e) {
+    failed++;
+    console.error(`FAIL rekindle ${rk}: ${e.message}`);
+  }
+}
+
 // tie-span i-order test: verify combos with same approx-score keep creation index order
 {
   const ctx = buildCtx();

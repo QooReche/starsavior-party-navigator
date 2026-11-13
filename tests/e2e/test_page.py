@@ -502,7 +502,7 @@ def test_cosmo_joint(browser, ctx):
 
 
 def test_rekindle_ui(browser, ctx):
-    """작전 재점화 버프: 고르면 머리말에 「재점화 N단계」, 빠른 계산 아군·적 피해 계수에 반영, 시뮬 옵션 rekindle, 다른 콘텐츠엔 안 붙음"""
+    """작전 재점화 버프: 고르면 머리말에 「재점화 N단계」, 빠른 계산 순위엔 반영 안 함(11/13), 시뮬 옵션 rekindle, 다른 콘텐츠엔 안 붙음"""
     ctx.errors.clear()
     page = open_page(browser, ctx)
     choose(page, "작전 (일반)", "36-36")
