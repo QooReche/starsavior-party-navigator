@@ -222,8 +222,51 @@ def test_auto_calculation_shared_growth(browser, ctx):
     return True, 'shared link auto-start/growth/stop; subsequent selection requires click; local account/options/history preserved'
 
 
+def test_auto_calculation_stop_buttons(browser, ctx):
+    """멈춤 단추는 진행 표시가 갱신되는 사이에 눌러도 먹는다(실제 마우스: 내림 → 팀 결과 도착 → 올림).
+    예선 진행 칸의 「취소」(전체 취소)와 클리어 추천 육성의 「중단」."""
+    page = open_page(browser, ctx, query='?auto=0', info=SYNTH, simauto='0', wait=False, setup=fake_setup)
+    wait_myinfo(page)
+    url = page.evaluate("async()=>{const u=new URL(await shareUrlMi());u.searchParams.set('ag','1');return u.href}")
+    page.goto(url)
+    page.wait_for_function('MI.shared&&!!MI.growth&&!MI.pending')
+    page.wait_for_function('autoJobs.length>0&&SIMQ.screening')
+    # 1) 예선 중: 「지금까지 결과로 보기」 옆에 「취소」가 있고, 누르는 사이 한 작업자의 팀 결과가 와도 전부 멈춘다
+    page.wait_for_selector('#out [data-k="progress"] button[data-simcancel]')
+    buttons = page.locator('#out [data-k="progress"] button').all_inner_texts()
+    press(page, '#out [data-k="progress"] button[data-simcancel]', "() => finishAutoJob(autoJobs.find(j=>!j.finished&&!j.worker.stopped))")
+    stopped = page.evaluate("({all:autoJobs.every(j=>j.worker.stopped),busy:SIMQ.busy,err:SIMQ.err,screening:SIMQ.screening})")
+    page.wait_for_timeout(450)
+    assert page.evaluate('SIMQ.busy===null'), 'cancel must not immediately restart'
+    assert buttons[-2:] == ['지금까지 결과로 보기', '취소'], buttons
+    assert stopped == {'all': True, 'busy': None, 'err': '중단함', 'screening': False}, stopped
+    # 2) 다시 시작해 추천을 끝내면 육성 탐색이 돈다. 「중단」을 누르는 사이 팀 결과(진행 글자 갱신)가 와도 중단된다
+    page.locator('[data-sim]').first.click()
+    for _ in range(100):
+        if page.evaluate("SIMQ.busy==='growth'&&GROW.phase==='running'&&autoJobs.some(j=>!j.finished&&!j.worker.stopped)&&!!document.querySelector('[data-growth-cancel]')"):
+            break
+        page.evaluate("if(SIMQ.busy!=='growth')autoJobs.filter(j=>!j.finished&&!j.worker.stopped).forEach(j=>finishAutoJob(j,.6))")
+        page.wait_for_timeout(80)
+    assert page.evaluate("SIMQ.busy==='growth'&&GROW.phase==='running'"), page.evaluate('[SIMQ.busy,GROW.phase,GROW.errors]')
+    page.click('#result-tab-growth')
+    page.wait_for_selector('#growth-result [data-growth-cancel]')
+    before = page.inner_text('#growth-result [data-k="growth-msg"]')
+    press(page, '#growth-result [data-growth-cancel]', """() => {const j=autoJobs.find(j=>!j.finished&&!j.worker.stopped);
+      j.callback({data:{type:'stage',id:j.req.id,msg:'준비 끝'}});
+      for(const team of j.req.teams.slice(0,3))j.callback({data:{type:'team',id:j.req.id,key:team.key,
+        result:{ver:GROW.versions.engine,n:j.req.n_runs,clear:.9,prog:.9,progs:Array(j.req.n_runs).fill(.9),via:{coop:0},ci:[.9,.9],ttk:2,ta:2}}});
+      window.__growthMsg=document.querySelector('#growth-result [data-k="growth-msg"]').textContent}""")
+    after = page.evaluate('window.__growthMsg')
+    assert after != before and '3/' in after, (before, after)                # 누르는 사이 진행 글자는 실제로 바뀌었다
+    assert page.evaluate("GROW.phase==='error'&&SIMQ.busy===null"), page.evaluate('[GROW.phase,SIMQ.busy]')
+    assert '계산을 끝내지 못했어요' in page.inner_text('#growth-result')
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '예선 「취소」·육성 「중단」: 누르는 사이 진행이 갱신돼도 클릭이 먹음 (%s → %s)' % (before.strip(), after.strip())
+
+
 def register(api):
-    for name in ['ROOT', 'SYNTH', 'open_page', 'wait_myinfo']:
+    for name in ['ROOT', 'SYNTH', 'open_page', 'wait_myinfo', 'press']:
         globals()[name] = getattr(api, name)
     return [test_auto_calculation_controls, test_auto_calculation_races,
-            test_auto_calculation_shared_growth]
+            test_auto_calculation_shared_growth, test_auto_calculation_stop_buttons]

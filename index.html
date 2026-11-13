@@ -1108,7 +1108,8 @@ function scrClose(sc){sc.order=scrOrder(sc);sc.short=scrShort(sc);sc.done=true;s
 function scrNote(p,st){const sc=SIMQ.scr[scrKey(st,p)];if(!sc||!sc.done||!sc.short)return "";
  const seen=Object.keys(sc.res).length,msg=seen<sc.total?`중간에 멈춰서 후보 ${seen}/${sc.total}팀만 확인했어요`:"중간에 멈춰서 상위 팀을 짧게만 확인했어요";
  return `<div class="scr-short" data-k="scr-short" role="status"><span>${msg}</span>${SIMQ.busy==null?`<button type="button" class="sec" data-scrmore="${p}">끝까지 확인</button>`:""}</div>`}
-// 진행 화면의 「지금까지 결과로 보기」: 끝난 팀이 있으면 그 팀들로 순위를 정하고(simInvalidate 가 scrClose) 본선으로, 하나도 없으면 그냥 취소
+// 진행 화면의 「지금까지 결과로 보기」: 끝난 팀이 있으면 그 팀들로 순위를 정하고(simInvalidate 가 scrClose) 본선으로, 하나도 없으면 그냥 취소.
+// 옆의 「취소」(data-simcancel)는 본선으로 가지 않고 전부 멈춘다(끝난 팀 순위는 남고 「끝까지 확인」으로 이어 갈 수 있음)
 function scrStop(){const st=cur&&cur[$("stage").value],sc=st&&SIMQ.busy!=null?SIMQ.scr[scrKey(st,SIMQ.busy)]:null;
  if(!SIMQ.screening||!sc||!Object.keys(sc.res).length){simStop("취소함");return}simInvalidate();run()}
 function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("stage").value],box=LASTQ[p];if(!st||!box||SIMQ.busy!=null)return false;
@@ -1171,7 +1172,7 @@ function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap
  return `<div class="party progress" data-party="${p}" data-k="progress" data-state="running"><b>추천 편성 확인 중</b>${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':""}<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
   <p><span data-k="simstate" title="후보 ${SCR_N}판 · 작업자 ${scrWorkers()}개">${sc?"후보 거르는 중":"상위 팀 확인 중"} ${done}/${all}</span></p>
   ${Ux.help("진행 방식","후보를 거른 뒤 상위 팀을 100판씩 모의 전투해요. 남은 시간은 이 기기의 최근 계산 속도를 기준으로 표시해요. 후보를 거르는 중에 「지금까지 결과로 보기」를 누르면 그때까지 확인한 팀으로 먼저 보여 주고, 나머지는 「끝까지 확인」으로 이어서 볼 수 있어요.")}<p data-k="eta">${esc(simEtaText())}</p>
-  ${sc?'<button type="button" class="sec" data-scrstop="1">지금까지 결과로 보기</button>':'<button type="button" class="sec" data-simcancel="1">중단하고 결과 보기</button>'}</div>`}
+  ${sc?'<button type="button" class="sec" data-scrstop="1">지금까지 결과로 보기</button> <button type="button" class="sec" data-simcancel="1">취소</button>':'<button type="button" class="sec" data-simcancel="1">중단하고 결과 보기</button>'}</div>`}
 
 function buildCands(ranked){return ranked.slice(0,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
 // 남은 시간 표시는 1초마다 다시 그린다(화면 전체를 다시 그리지 않고 글자만)
@@ -1181,8 +1182,10 @@ const AUTO=/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
 const RECO={timer:null,revision:0,standard:false,sharedPending:!!SHARE.c};
 function recoClearTimer(){clearTimeout(RECO.timer);RECO.timer=null;RECO.revision++}
 function idleView(){
- const waiting=!!RECO.timer;
- $('out').innerHTML=`<div class="party idle" data-k="idle"><div id="reco-actions">${waiting?'<span role="status">계산 준비 중</span>'+(RECO.sharedPending?'<button type="button" class="sec" data-recocancel>중단</button>':''):'<button type="button" data-go="1" title="현재 조건과 내 정보로 추천합니다">추천 편성 보기</button>'}</div></div>`;growthControlPlace()}
+ const waiting=!!RECO.timer,kind=waiting?(RECO.sharedPending?"cancel":"wait"):"go",out=$('out'),now=out.children&&out.children.length===1?out.firstElementChild:null;
+ // 같은 안내면 다시 그리지 않는다: 조건·자료 로딩으로 연달아 불려도 누르는 중인 단추(중단·추천 편성 보기)가 사라지지 않게
+ if(now&&now.dataset.k==="idle"&&now.dataset.kind===kind){growthControlPlace();return}
+ out.innerHTML=`<div class="party idle" data-k="idle" data-kind="${kind}"><div id="reco-actions">${waiting?'<span role="status">계산 준비 중</span>'+(RECO.sharedPending?'<button type="button" class="sec" data-recocancel>중단</button>':''):'<button type="button" data-go="1" title="현재 조건과 내 정보로 추천합니다">추천 편성 보기</button>'}</div></div>`;growthControlPlace()}
 function condChanged(){
  const canRun=!!MI.info||RECO.standard,requested=canRun&&(AUTO||RECO.sharedPending);
  recoClearTimer();clearTimeout(_rt);REQ=false;SIMQ.kick=false;

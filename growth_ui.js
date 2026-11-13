@@ -337,9 +337,13 @@ function growthPaint(){
   el.dataset.state=GROW.phase;
   const head='<h3 class="growth-heading" data-k="growth-summary">클리어 추천 육성 <span>· '+(['guild','cosmo'].includes(c.key)?'맞추면 기대 점수가 올라가요':'이것만 맞추면 깰 수 있어요')+'</span></h3>';
   if(GROW.phase!=='done'){
-    const running=GROW.phase==='running';
+    const running=GROW.phase==='running',shape=GROW.phase+'|'+GROW.errors.length,msg=el.querySelector('[data-k="growth-msg"]');
+    // 탐색 중 팀 결과마다 불린다: 모양이 같으면 진행 글자만 바꾼다(통째로 다시 그리면 누르는 중인 「중단」 단추가 사라져 클릭이 안 먹음)
+    if(running&&el.dataset.shape===shape&&msg){const t=' '+GROW.msg;if(msg.textContent!==t)msg.textContent=t;growthTabsPaint(c,el,show);return;}
+    el.dataset.shape=shape;
     el.innerHTML='<b data-k="growth-summary">클리어 추천 육성</b><span class="tag growth-on">클리어 추천 육성 켜짐</span>'+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'계산을 끝내지 못했어요 · 다시 실행해 주세요':'지금 계정 탐색 후'}</span>`+
-      (running?`<span class="mut"> ${esc(GROW.msg)}</span><button class="sec" data-growth-cancel>중단</button>`:'')+
+      // 단추를 진행 글자 앞에 둔다(글자 길이가 바뀌어도 단추 자리가 안 밀리게)
+      (running?`<button class="sec" data-growth-cancel>중단</button><span class="mut" data-k="growth-msg"> ${esc(GROW.msg)}</span>`:'')+
       (GROW.errors.length?`<details><summary>상세</summary>${GROW.errors.map(esc).join(' · ')}</details>`:'');
     el.querySelector('[data-growth-cancel]')?.addEventListener('click',()=>{
       const stop=GROW.stop;GROW.id++;stop?.();GROW.stop=null;SIMQ.busy=null;GROW.phase='error';GROW.msg='미완료';growthPaint();});growthTabsPaint(c,el,show);return;
