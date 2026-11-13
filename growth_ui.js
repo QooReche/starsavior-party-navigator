@@ -85,12 +85,11 @@ async function growthCandidates(c,st,alive,deadline,config={}){const original=co
   }return targets;}
 function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.state||GROW,mode=env.mode||MODE,paint=env.paint||growthPaint;return new Promise(resolve=>{
   const results={};if(!jobs.length||Date.now()>=deadline||GROW.id!==id||state.errors.length){resolve(results);return;}
-  if(!SIMQ.w){SIMQ.w=new Worker('sim_worker.js');SIMQ.loaded=false;}
-  const workers=scrPool(),parts=workers.map(()=>[]),request=SIMQ.requestId=(SIMQ.requestId||0)+1;
-  jobs.forEach((j,i)=>parts[i%workers.length].push(j));let open=parts.filter(p=>p.length).length,done=false;
+  // 작업자 풀·대기열은 추천 예선·본선과 같은 것(scrPool·simDispatch): 정상으로 끝나면 작업자를 살려 두고, 끊길 때(중단·시간 초과·오류)만 풀을 끈다
+  const workers=scrPool(jobs.length),request=SIMQ.requestId=(SIMQ.requestId||0)+1;let done=false;
   const finish=cut=>{if(done)return;done=true;clearTimeout(timer);state.stop=null;
     if(cut)Object.defineProperty(results,'incomplete',{value:true});
-    if(cut){for(const w of workers)w?.terminate();SIMQ.w=null;SIMQ.loaded=false;SIMQ.pool=null;}
+    if(cut)simPoolDrop();
     resolve(results);};
   let timer;
   // 예선(env.screenClock)은 전체 시간 상한이 없다: 엔진 준비는 LOAD_MS, 준비된 뒤에는 팀 결과가 올 때마다 다시 재는 무진행 상한뿐(추천 예선과 같음).
@@ -98,23 +97,19 @@ function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.sta
   const stall=env.screenClock,arm=()=>{clearTimeout(timer);
     const due=stall?Date.now()+(stall.ready?simTeamLimit(n,'auto'):SIMQ.LOAD_MS):deadline;
     timer=setTimeout(()=>{if(stall&&(Date.now()-due>5000||(typeof document!=='undefined'&&document.hidden))){arm();return;}finish(true);},Math.max(1,due-Date.now()));};
-  const ready=()=>{if(stall&&!stall.ready&&workers.every((w,i)=>!parts[i].length||w._ready)){stall.ready=true;arm();}};
+  const ready=()=>{if(stall&&!stall.ready&&workers.every(w=>w._ready)){stall.ready=true;arm();}};
   arm();ready();state.stop=()=>finish(true);
-  for(const [i,w] of workers.entries()){
-    if(!parts[i].length)continue;
-    w.onmessage=e=>{const m=e.data;if(GROW.id!==id||SIMQ.requestId!==request||(m.id!=null&&m.id!==request))return;
-      if(m.type==='stage'){if(m.msg==='준비 끝'){SIMQ.loaded=true;w._ready=true;ready();}
-        return;}
-      if(m.type==='team'&&stall)arm();
-      if(m.type==='team'){if(m.result.ver!==GROW.versions.engine){state.errors.push('엔진 버전이 바뀜 · 다시 실행');finish(true);return;}
-        results[m.key]=growthMetric({...m.result,n},mode);state.msg=`${seed===900001?'재평가':'후보 확인'} ${Object.keys(results).length}/${jobs.length} · ${n}판`;paint();}
-      if(m.type==='done'&&--open===0)finish(false);
-      if(m.type==='error'){state.errors.push('육성 모의 전투 오류: '+m.msg);finish(true);}};
-    w.onerror=e=>{state.errors.push('가정 작업자 오류: '+e.message);finish(true);};
-    w.postMessage({type:'run',id:request,base:location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),
-      stage:c.key+'/'+st.tab+'/'+st.name,n_runs:n,seed,mode:env.final||seed===900001?mode:'auto',options:{...(env.options||simOpt(c.key)),rng_streams:true},
-      teams:parts[i].map(j=>({key:j.id,party:j.party,options:j.options}))});
-  }
+  // 작업마다 판 수를 따로 줄 수 있다(j.runs — 앞 단계 판을 다시 쓰는 예선 2차: growthStageSearch). 결과의 n 은 합친 판 수(n)
+  const base=location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),options={...(env.options||simOpt(c.key)),rng_streams:true};
+  simDispatch(workers,jobs,{id:request,live:()=>!done&&GROW.id===id&&SIMQ.requestId===request,
+    msg:j=>({type:'run',base,stage:c.key+'/'+st.tab+'/'+st.name,n_runs:j.runs||n,seed,mode:env.final||seed===900001?mode:'auto',options,
+      teams:[{key:j.id,party:j.party,options:j.options}]}),
+    stage(w,m){if(m.msg==='준비 끝'){SIMQ.loaded=true;ready();}},
+    team(j,m){if(stall)arm();
+      if(m.result.ver!==GROW.versions.engine){state.errors.push('엔진 버전이 바뀜 · 다시 실행');finish(true);return;}
+      results[j.id]=growthMetric({...m.result,n},mode);state.msg=`${seed===900001?'재평가':'후보 확인'} ${Object.keys(results).length}/${jobs.length} · ${n}판`;paint();},
+    done(){finish(false);},
+    error(msg,w,crash){state.errors.push((crash?'가정 작업자 오류: ':'육성 모의 전투 오류: ')+msg);finish(true);}});
 });}
 function growthMaybe(c,st){if(growthEnabled()&&growthSeasonContent()){growthPaint();return;}if(!growthEnabled()||!miMode()||!['op','clo'].includes(c.key)||!REQ)return;
   if(GROW.sig&&GROW.sig!==growthSig(c,st))growthCancel();
@@ -216,19 +211,23 @@ async function growthStageSearch(c,st,profile,id){
   const all=quickRank(rankAll(candidates,defPen),qi,profile),key=t=>t.keys.slice().sort().join(','),by=new Map(all.map(t=>[key(t),t]));
   // 후보 순서는 추천 예선(simScreen)과 같은 규칙(scrPick, 재점화 풀 포함). 전체 시간 상한 없이 끝까지 돌고, 멈추는 것은 「중단」(전체 취소)뿐
   let keys=scrPick(all,SCR_RK&&rkOf(c.key)?rkQuickTop(c,st,all,SCR_RK,qi):null),runs=0;
-  const evaluate=async(list,n,deadline,final=false)=>{
+  // 예선 2차는 1차 판을 다시 돌리지 않는다(추천 예선과 같음): prev = 앞 단계 {n, r}. 앞 결과의 raw 를 되돌려 보내 뒤쪽 판(run_offset)만 돌리고 작업자가 합친다
+  const evaluate=async(list,n,deadline,final=false,prev=null)=>{
     if(GROW.id!==id)throw Error('취소');
-    const jobs=list.map(k=>growthJob(by.get(k),k,c));
+    const jobs=list.map(k=>{const j=growthJob(by.get(k),k,c);if(final)return j;
+      const raw=prev&&prev.n<n?prev.r[k]?.raw:null;
+      return raw?{...j,runs:n-prev.n,options:{...j.options,run_offset:prev.n,merge_raw:raw}}:{...j,options:{...j.options,raw_runs:true}};});
     const r=await growthEvaluate(jobs,n,SIMQ.seed,c,st,id,deadline,{final,mode:final?MODE:'auto',...(!final?{screenClock:{}}:{})});
-    runs+=Object.keys(r).length*(final?GrowthGuide.finalCost(n,MODE):n);
+    runs+=final?Object.keys(r).length*GrowthGuide.finalCost(n,MODE):jobs.reduce((a,j)=>a+(r[j.id]?j.runs||n:0),0);
     if(GROW.id!==id||r.incomplete||Object.keys(r).length!==jobs.length)throw Error('미완료');
     return r;
   };
   if(keys.length>3){
     const deadline=Infinity; // 예선은 growthEvaluate 의 내려받기·무진행 상한만 쓴다
+    let prev=null;
     for(const round of SCR_ROUNDS){
       if(round.top)keys=keys.slice(0,round.top);
-      const r=await evaluate(keys,round.n,deadline);
+      const r=await evaluate(keys,round.n,deadline,false,prev);prev={n:round.n,r};
       keys.sort((a,b)=>scrCmp(r[a],r[b]));
       if(keys.length<=3)break;
     }
@@ -277,8 +276,7 @@ async function growthStart(c,st){
       signature:JSON.stringify(['grown-account',MyInfoReco.OVERWRITE_VERSION,snapshot.preset,GROW.sig])};
     GROW.phase='done';
   }catch(e){if(GROW.id===id){GROW.phase='error';GROW.msg='미완료';GROW.errors.push(e.message);}}
-  finally{if(GROW.id===id){GROW.stop=null;SIMQ.busy=null;
-    if(SIMQ.pool){SIMQ.pool.slice(1).forEach(w=>w?.terminate());SIMQ.pool=null;}
+  finally{if(GROW.id===id){GROW.stop=null;SIMQ.busy=null;   // 작업자 풀은 끄지 않는다(다음 계산이 다시 씀 — scrPool 주석). 끊긴 경우는 growthEvaluate 가 이미 껐다
     growthPaint();}}
 }
 function growthBaseline(c,st){

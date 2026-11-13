@@ -85,7 +85,9 @@ async function warmup(code=ui){const ctx={setTimeout,clearTimeout,Date,MODE:'aut
     this.onmessage({data:{id:req.id,type:'stage',msg:'준비 끝'}});
     this.onmessage({data:{id:req.id,type:'team',key:'team',result:{ver:'test',prog:.8,n:req.n_runs,progs:Array(req.n_runs).fill(.8),via:{}}}});
     this.onmessage({data:{id:req.id,type:'done'}});},25);}terminate(){this.dead=true;}}};
-  ctx.scrPool=()=>[ctx.SIMQ.w];vm.createContext(ctx);
+  vm.createContext(ctx);   // 작업자 풀·대기열은 화면 것 그대로(navigator 없음 = 작업자 1개)
+  const page=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
+  vm.runInContext(page.slice(page.indexOf('// ── 작업자 풀·작업 대기열'),page.indexOf('// 이 기기의 시뮬 속도')),ctx);
   vm.runInContext(code.slice(code.indexOf('function growthEvaluate'),code.indexOf('function growthMaybe')),ctx);
   const r=await ctx.growthEvaluate([{id:'team',party:{}}],8,1,{key:'op'},{tab:'a',name:'b'},1,Infinity,{screenClock:{deadline:null}});
   assert(!r.incomplete&&r.team?.prog>0,'engine preparation must use the load limit, not the short no-progress limit');ctx.SIMQ.w?.terminate();

@@ -77,8 +77,10 @@ async function workerContract(){const ui=fs.readFileSync(require.resolve('../gro
       terminate(){if(!this.dead){this.dead=true;active--;}}
     }};
   ctx.MODE='auto';ctx.SIMQ={};ctx.growthMetric=r=>r;
-  ctx.scrPool=()=>ctx.SIMQ.pool||(ctx.SIMQ.pool=[ctx.SIMQ.w,new ctx.Worker(),new ctx.Worker()]);
-  vm.runInNewContext(ui.slice(ui.indexOf('function growthEvaluate'),ui.indexOf('function growthMaybe')),ctx);
+  // 작업자 풀·대기열은 화면 것 그대로(코어 16·메모리 모름 = 6개까지, 작업 3개 → 작업자 3개)
+  const page=fs.readFileSync(require.resolve('../party_template.html'),'utf8');vm.createContext(ctx);
+  vm.runInContext(page.slice(page.indexOf('// ── 작업자 풀·작업 대기열'),page.indexOf('// 이 기기의 시뮬 속도')),ctx);
+  vm.runInContext(ui.slice(ui.indexOf('function growthEvaluate'),ui.indexOf('function growthMaybe')),ctx);
   const jobs=Array.from({length:3},(_,i)=>({id:'j'+i,party:{},options:{}}));
   const r=await ctx.growthEvaluate(jobs,4,17011,{key:'op'},{tab:'a',name:'stage'},1,Date.now()+1000);
   assert.equal(Object.keys(r).length,3);assert.equal(r.j0.progs.length,4);assert.equal(r.j0.via.coop,1);assert.equal(peak,3);

@@ -2,6 +2,9 @@
 """브라우저 시뮬(sim_worker.js, Pyodide) 진입점 — 화면이 부르는 함수 둘. PC 에서도 같은 코드로 시험한다(tests/web_test.py).
 
 run_auto(stage, party, n, seed, extra)   -> JSON 문자열: 오토 결과 요약
+    extra.raw_runs = true 면 결과에 raw(판별 원시값의 JSON «문자열») 를 붙인다. 화면은 이 문자열을 뜯어 보지 않고 그대로 보관했다가
+    extra.merge_raw 로 되돌려 준다 → 이번에 돌린 판(run_offset 뒤쪽) 앞에 붙여 «처음부터 한 번에 돌린 것»과 같은 요약을 낸다(merge_summary).
+    예선 1차 8판을 2차 32판에 다시 쓰는 용도: 2차는 n=24·run_offset=8·merge_raw=1차 raw.
 run_manual(stage, party, n, seed, extra) -> JSON 문자열: 수동 정책 4종 중 최선 + 그 정책의 대표 1판 서순
 stage = "콘텐츠/탭/스테이지", party = {"units": [{key, stats_override}], "leader": 칸 번호 또는 None}(칸 = 전열1, 전열2, 후열1, 후열2),
 extra = simulate options 의 JSON(예: {"build": "standard", "rules_override": {"power_penalty": "model"}}).
@@ -9,7 +12,9 @@ extra = simulate options 의 JSON(예: {"build": "standard", "rules_override": {
 import json
 import math
 
-from .api import simulate
+import statistics
+
+from .api import simulate, _wilson
 
 # 수동 정책: (자동 대상, 노바 버스트) — 옛 사전 계산(build_sim_results.POLICIES)과 같다
 POLICIES = [('boss_first', 'any_attack'), ('boss_first', 'ult_only'), ('lowest_hp', 'any_attack'), ('lowest_hp', 'ult_only')]
@@ -66,19 +71,48 @@ def _potential_unsupported(r):
     return {'unsupported': rows} if rows else {}
 
 
+def merge_summary(raw, star_turns=None):
+    """판별 원시값(api raw_runs, 판 순서) -> run_auto 요약 가운데 판 수에 따라 달라지는 값.
+    식은 api._simulate 의 outcome·star_turn·prog_runs 와 글자 그대로 같아야 한다(반올림·합 순서 포함) — tests/screen_merge_test.py 가
+    «나눠 돌려 합친 것 == 한 번에 돌린 것»을 여러 스테이지·팀으로 확인한다."""
+    n = len(raw)
+    count = lambda kind: sum(1 for x in raw if x[0] == kind)
+    ttk = [x[1] for x in raw if x[0] == 'clear']
+    ttk_actions = [x[2] for x in raw if x[0] == 'clear']
+    prog = [x[3] for x in raw]
+    return dict(clear=round(count('clear') / n, 4), wipe=round(count('wipe') / n, 4), timeout=round(count('timeout') / n, 4),
+                ci=_wilson(count('clear'), n), n=n,
+                ttk=round(statistics.median(ttk), 2) if ttk else None,
+                ta=round(statistics.median(ttk_actions), 1) if ttk_actions else None,
+                prog=round(sum(prog) / n, 4), progs=[round(x, 4) for x in prog],
+                t60=(round(sum(1 for a in ttk_actions if a <= int(star_turns)) / n, 4) if star_turns else None))
+
+
 def run_auto(stage, party, n, seed, extra=None):
     op = _opts(extra, n_runs=n, seed=seed)
     top_q = op.pop('cosmo_top_q', 0.2)
+    prior = op.pop('merge_raw', None)       # 앞서 돌린 판의 raw(JSON 문자열). 있으면 이번 판(run_offset = 앞 판 수)과 합친 요약을 낸다
+    if prior is not None:
+        prior = json.loads(prior)
+        if int(op.get('run_offset', 0)) != len(prior):
+            raise ValueError('merge_raw 는 run_offset(%r) 판만큼 있어야 함: %d' % (op.get('run_offset', 0), len(prior)))
+        op['raw_runs'] = True
     r = simulate(party, _enc(stage, op), op)
     o = r['outcome']
     extra_out = {'cosmo': cosmo_summary(r['cosmo_raid'], top_q)} if r.get('cosmo_raid') else {}
     extra_out.update(_potential_unsupported(r))
     first = sorted(((v.get('first_death_p') or 0, k) for k, v in r['per_unit'].items()), reverse=True)
     st = r.get('star_turn')
-    return json.dumps(dict(clear=o['clear_p'], t60=(st['p'] if st else None), prog=o.get('progress'), progs=r.get('prog_runs'), via=r.get('ally_via') or {}, wipe=o['wipe_p'], timeout=o['timeout_p'], ci=o['ci95']['clear'], n=o['n_runs'],
-                           ttk=o['ttk_median'], ta=o.get('ttk_actions_median'), first=(first[0][1] if first and first[0][0] > 0 else None),
-                           first_p=(first[0][0] if first else 0), gate=r['unsupported'].get('gate_ok', True),
-                           power=r.get('party', {}).get('power'), u=_unit_map(party, r), bs=_break_summary(r), **extra_out), ensure_ascii=False)
+    if op.get('raw_runs'):
+        raw = (prior or []) + r['raw_runs']
+        extra_out['raw'] = json.dumps(raw)      # 문자열로 낸다: 화면(JS)을 거치며 1.0 이 1 로 바뀌면 합의 끝자리가 달라질 수 있다
+    out = dict(clear=o['clear_p'], t60=(st['p'] if st else None), prog=o.get('progress'), progs=r.get('prog_runs'), via=r.get('ally_via') or {}, wipe=o['wipe_p'], timeout=o['timeout_p'], ci=o['ci95']['clear'], n=o['n_runs'],
+               ttk=o['ttk_median'], ta=o.get('ttk_actions_median'), first=(first[0][1] if first and first[0][0] > 0 else None),
+               first_p=(first[0][0] if first else 0), gate=r['unsupported'].get('gate_ok', True),
+               power=r.get('party', {}).get('power'), u=_unit_map(party, r), bs=_break_summary(r), **extra_out)
+    if prior is not None:       # 합친 요약으로 덮는다(u·via·first·bs·power 등 나머지는 이번에 돌린 판만의 값이라 예선 순위 밖에서는 쓰지 말 것)
+        out.update(merge_summary(raw, op.get('star_turns')), merged=[len(prior), len(r['raw_runs'])])
+    return json.dumps(out, ensure_ascii=False)
 
 
 def seq_from_timeline(tl, max_turns=SEQ_TURNS):
@@ -124,6 +158,7 @@ def run_manual(stage, party, n, seed, extra=None):
             best = (key, pol)
     pol = best[1]
     op = _opts(extra, pol, n_runs=n, seed=seed, per_run=True)
+    op.pop('merge_raw', None)
     r = simulate(party, _enc(stage, op), op)
     o = r['outcome']
     runs = r.get('runs') or []

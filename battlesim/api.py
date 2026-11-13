@@ -27,6 +27,8 @@ options
        (26610546 클라·표 확인: docs/rekindle_1112.md. 전투력 보정은 별도 배율로 유지)
   run_offset = 판 번호 시작값(판 r 의 난수 = seed*1000003 + run_offset + r; timeline 은 첫 판 = run_offset 번 판)
   per_run = true 면 result.runs = [[결과, 처치 턴 또는 null], ...](판 순서)
+  raw_runs = true 면 result.raw_runs = [[결과, 처치 턴(반올림 전) 또는 null, 전체 행동 수 또는 null, 적 진척도(반올림 전)], ...](판 순서).
+       나눠 돌린 판을 합쳐 «처음부터 한 번에 돌린 것»과 같은 요약을 내는 재료(battlesim/web.py merge_summary)
   formula_override = 공식 상수 임시 교체(민감도용, 지금은 COOP_CAP 만). 실행이 끝나면 원래 값으로 돌린다
 result
   {schema_version, outcome{clear_p, wipe_p, timeout_p, ci95{...}, n_runs, n_clear, ttk_median, ttk_p10_p90, ttk_basis},
@@ -473,6 +475,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     first = defaultdict(int)
     offset = int(o.get('run_offset', 0))
     per_run = [] if o.get('per_run') else None
+    raw_runs = [] if o.get('raw_runs') else None
     raid_runs = [] if meta.get('cosmo_raid') else None     # 판별 점수 재료: 깎은 보스 HP 비율·남은 턴·생존 구원자 수·클리어
     raid_ctl = defaultdict(int)                             # 컨트롤러 경로 횟수 합계(시험이 «경로가 실제로 탔는지» 확인하는 용도)
     prog = []   # 판마다 적 진척도(0~1): 끝낸 웨이브 수 + 현재 웨이브에서 깎은 체력 비율, 웨이브 수로 나눔. 클리어 0% 팀끼리 순위를 가르는 데 쓴다
@@ -499,6 +502,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
             ttk.append(b.clear_t / b.turn_ticks)
             ttk_actions.append(sum(u.actions for u in b.allies) + sum(u.actions for u in b.all_foes))
         prog.append(b.progress())
+        if raw_runs is not None:    # 요약(outcome·star_turn·progress)이 쓰는 값 그대로: 아래 ttk·ttk_actions·prog 에 넣은 것과 같은 객체
+            raw_runs.append([b.result, ttk[-1] if b.result == 'clear' else None, ttk_actions[-1] if b.result == 'clear' else None, prog[-1]])
         if raid_runs is not None:
             for k, v in getattr(b.gb, 'stats', {}).items():
                 raid_ctl[k] += v
@@ -606,6 +611,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     if per_run is not None:
         res['runs'] = per_run
         res['run_offset'] = offset
+    if raw_runs is not None:
+        res['raw_runs'] = raw_runs
     return res
 
 

@@ -73,7 +73,7 @@ async function slotStart(){if(SIMQ.busy!=null||StarLink.availability(MI.info))re
       evaluate:request=>slotEvaluateState(request,id),progress:p=>{SLOT.msg=`완료 ${p.runs}판 · 교환 검증 ${p.pairs}쌍`;slotPaint();}});
     if(alive())SLOT.phase='done';
   }catch(e){if(alive()){SLOT.phase='error';SLOT.msg=e.message;}}
-  finally{if(alive()){SIMQ.busy=null;if(SIMQ.pool){SIMQ.pool.slice(1).forEach(w=>w?.terminate());SIMQ.pool=null;}slotPaint();}}
+  finally{if(alive()){SIMQ.busy=null;slotPaint();}}   // 작업자 풀은 살려 둔다(scrPool 주석)
 }
 function slotPaint(){if(!miMode()||!MI.info||!REQ)return;
   let el=$('star-link-result');if(!el){el=document.createElement('details');el.id='star-link-result';el.className='party slot-details';$('out').append(el);}

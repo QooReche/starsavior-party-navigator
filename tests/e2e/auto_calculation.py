@@ -20,6 +20,15 @@ FAKE_WORKER = """() => {
     callback({data:{type:'done',id:req.id}});
     job.finished=true;
   };
+  // 작업자는 팀을 하나씩 받고, done 을 보내면 다음 팀을 받는다(대기열) → 남은 일이 없을 때까지 되풀이. 단계가 바뀌는 곳(비동기)에서 멈춘다
+  window.finishAutoAll=clear=>{
+    for(let guard=0;guard<2000;guard++){
+      const job=autoJobs.find(j=>!j.finished&&!j.worker.stopped);
+      if(!job)return;
+      finishAutoJob(job,typeof clear==='function'?clear():clear);
+    }
+    throw Error('finishAutoAll did not settle');
+  };
 }"""
 
 
@@ -29,7 +38,7 @@ def fake_setup(page):
 
 def drain(page):
     for _ in range(20):
-        page.evaluate("autoJobs.filter(j=>!j.finished&&!j.worker.stopped).forEach(j=>finishAutoJob(j))")
+        page.evaluate("finishAutoAll()")
         page.wait_for_timeout(80)
         if page.evaluate("SIMQ.busy===null&&!simWaiting(cur[$('stage').value])&&!!document.querySelector('.party[data-team]')"):
             return
@@ -115,7 +124,7 @@ def race_case(browser, ctx, mutation=None, main=False):
             if mutation == 'cancel':
                 old, new = 'simInvalidate(); // cancel old selection immediately', '// cancellation removed'
             else:
-                old, new = 'if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;', '/* stale request guard removed */'
+                old, new = 'if(!o.live()||(m.id!=null&&m.id!==o.id))return;', '/* stale request guard removed */'
             assert old in html, mutation
             page.route('**/index.html?*', lambda r: r.fulfill(body=html.replace(old, new), content_type='text/html'))
     page = open_page(browser, ctx, query='?auto=1', info=SYNTH, simauto=None, wait=False, setup=setup)
@@ -125,7 +134,7 @@ def race_case(browser, ctx, mutation=None, main=False):
         for _ in range(10):
             if page.evaluate('autoJobs.some(j=>j.req.n_runs===100)'):
                 break
-            page.evaluate('autoJobs.filter(j=>!j.finished&&!j.worker.stopped).forEach(j=>finishAutoJob(j))')
+            page.evaluate('finishAutoAll()')
             page.wait_for_timeout(80)
         assert page.evaluate('autoJobs.some(j=>j.req.n_runs===100)'), 'must exercise final simulation'
     page.evaluate("window.oldJob=autoJobs.filter(j=>!j.finished).at(-1);window.oldCount=autoJobs.length")
@@ -184,7 +193,7 @@ def test_auto_calculation_shared_growth(browser, ctx):
 
     def finish_growth():
         for _ in range(100):
-            page.evaluate("autoJobs.filter(j=>!j.finished&&!j.worker.stopped).forEach(j=>finishAutoJob(j,SIMQ.busy==='growth'?.95:.6))")
+            page.evaluate("finishAutoAll(()=>SIMQ.busy==='growth'?.95:.6)")
             page.wait_for_timeout(80)
             if page.evaluate("GROW.phase==='done'"):
                 break
@@ -245,16 +254,14 @@ def test_auto_calculation_stop_buttons(browser, ctx):
     for _ in range(100):
         if page.evaluate("SIMQ.busy==='growth'&&GROW.phase==='running'&&autoJobs.some(j=>!j.finished&&!j.worker.stopped)&&!!document.querySelector('[data-growth-cancel]')"):
             break
-        page.evaluate("if(SIMQ.busy!=='growth')autoJobs.filter(j=>!j.finished&&!j.worker.stopped).forEach(j=>finishAutoJob(j,.6))")
+        page.evaluate("if(SIMQ.busy!=='growth')finishAutoAll(.6)")
         page.wait_for_timeout(80)
     assert page.evaluate("SIMQ.busy==='growth'&&GROW.phase==='running'"), page.evaluate('[SIMQ.busy,GROW.phase,GROW.errors]')
     page.click('#result-tab-growth')
     page.wait_for_selector('#growth-result [data-growth-cancel]')
     before = page.inner_text('#growth-result [data-k="growth-msg"]')
-    press(page, '#growth-result [data-growth-cancel]', """() => {const j=autoJobs.find(j=>!j.finished&&!j.worker.stopped);
-      j.callback({data:{type:'stage',id:j.req.id,msg:'준비 끝'}});
-      for(const team of j.req.teams.slice(0,3))j.callback({data:{type:'team',id:j.req.id,key:team.key,
-        result:{ver:GROW.versions.engine,n:j.req.n_runs,clear:.9,prog:.9,progs:Array(j.req.n_runs).fill(.9),via:{coop:0},ci:[.9,.9],ttk:2,ta:2}}});
+    press(page, '#growth-result [data-growth-cancel]', """() => {
+      for(let i=0;i<3;i++)finishAutoJob(autoJobs.find(j=>!j.finished&&!j.worker.stopped),.9);   // 팀 셋이 끝남(작업자는 다음 팀을 받음)
       window.__growthMsg=document.querySelector('#growth-result [data-k="growth-msg"]').textContent}""")
     after = page.evaluate('window.__growthMsg')
     assert after != before and '3/' in after, (before, after)                # 누르는 사이 진행 글자는 실제로 바뀌었다

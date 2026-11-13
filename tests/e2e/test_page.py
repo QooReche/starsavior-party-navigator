@@ -343,28 +343,32 @@ def test_sim_timeout_partial(browser, ctx):
     page = open_page(browser, ctx)
     page.clock.install()
     page.evaluate("""() => {
-      window.__workers=[];
+      window.__workers=[];window.__posts=[];
       window.Worker=class {
         constructor(){__workers.push(this)}
-        postMessage(req){this.req=req}
+        postMessage(req){this.req=req;__posts.push({w:this,req})}
         terminate(){this.stopped=true}
       };
-      window.__finishTeam=(w,i)=>w.onmessage({data:{type:'team',id:w.req.id,key:w.req.teams[i].key,
-        result:{n:w.req.n_runs,clear:0.75,prog:0.9,progs:[0.8,1],via:{coop:0},ci:[0.65,0.85],ttk:10}}});
+      // 작업자는 팀을 하나씩 받는다(대기열): __serve = 지금 맡은 팀의 결과 + done → 다음 팀을 받는다
+      window.__busy=()=>__workers.filter(w=>!w.stopped&&w._job!=null);
+      window.__ready=()=>__workers.forEach(w=>{if(!w.stopped&&w.req)w.onmessage({data:{type:'stage',msg:'준비 끝'}})});
+      window.__sent=id=>__posts.filter(p=>p.req.id===id);
+      window.__serve=w=>{const r=w.req;w.onmessage({data:{type:'team',id:r.id,job:r.job,key:r.teams[0].key,
+        result:{n:r.n_runs,clear:0.75,prog:0.9,progs:[0.8,1],via:{coop:0},ci:[0.65,0.85],ttk:10}}});w.onmessage({data:{type:'done',id:r.id,job:r.job}})};
       if(!simScreen(1))throw Error('예선 시작 실패');
-      __workers.forEach(w=>w.onmessage({data:{type:'stage',id:w.req.id,msg:'준비 끝'}}));
-      __finishTeam(__workers[0],0);
+      __ready();__workers[0].onmessage({data:{type:'team',id:__workers[0].req.id,job:__workers[0].req.job,key:__workers[0].req.teams[0].key,
+        result:{n:8,clear:0.75,prog:0.9,progs:[0.8,1],via:{coop:0},ci:[0.65,0.85],ttk:10}}});
     }""")
     page.clock.run_for(200000)                              # 예선엔 60초 상한이 없다(무진행 상한 240초 전)
     assert page.evaluate("() => SIMQ.busy===1 && SIMQ.screening && !Object.values(SIMQ.scr).some(s=>s.done)")
     page.evaluate("() => scrStop()")
     assert page.evaluate("""() => Object.values(SIMQ.scr).some(s=>s.done && s.short && s.order.length===1)
       && __workers.every(w=>w.stopped) && Object.keys(SIMQ.res).length===0 && SIMQ.err===''""")
-    page.evaluate('() => {window.__workers=[]}')
+    page.evaluate('() => {window.__workers=[];window.__posts=[]}')
     page.click('.party[data-party="1"] [data-sim="1"]')
-    page.evaluate("""() => {
-      const w=__workers[0];w.onmessage({data:{type:'stage',id:w.req.id,msg:'준비 끝'}});__finishTeam(w,0);
-    }""")
+    # 본선: 팀마다 작업자에 나눠 맡긴다(작업자는 팀 수보다 많지 않음). 한 팀만 끝내고 나머지는 소식이 없다
+    assert page.evaluate('() => SIMQ.lastReq.req.teams.length===3 && __workers.length<=3 && __posts.every(p=>p.req.teams.length===1&&p.req.n_runs===100)')
+    page.evaluate("""() => {window.__firstKey=__workers[0].req.teams[0].key;window.__firstWorkers=__workers.slice();__ready();__serve(__workers[0])}""")
     assert page.evaluate('() => Object.keys(SIMQ.res).length') == 1
     page.clock.run_for(240000)
     page.wait_for_selector('[data-k="simstate"][data-state="error"]')
@@ -372,16 +376,14 @@ def test_sim_timeout_partial(browser, ctx):
     assert page.locator('[data-k="progress"]').count() == 0
     assert '75%' in page.locator('.party[data-party="1"] .mi-verdict').inner_text()
     assert page.locator('.party[data-party="1"] .alternatives .qrow .qt:has-text("계산 전")').count() == 2
-    assert page.evaluate('() => __workers[0].stopped && SIMQ.busy===null')
+    assert page.evaluate('() => __workers.every(w=>w.stopped) && SIMQ.busy===null && SIMQ.pool===null')
     page.click('.party[data-party="1"] [data-sim="1"]')
-    assert page.evaluate("""() => __workers[1].req.teams.length===__workers[0].req.teams.length-1
-      && !__workers[1].req.teams.some(t=>t.key===__workers[0].req.teams[0].key)""")
+    assert page.evaluate("""() => SIMQ.lastReq.req.teams.length===2 && !SIMQ.lastReq.req.teams.some(t=>t.key===__firstKey)
+      && __workers.length>__firstWorkers.length""")
     page.evaluate("""() => {
-      const old=__workers[0],w=__workers[1];__finishTeam(old,1);
-      old.onmessage({data:{type:'done',id:old.req.id}});
+      const old=__firstWorkers.find(w=>w.req&&w.req.teams[0].key!==__firstKey);__serve(old);   // 끊긴 요청의 작업자가 늦게 보낸 결과·done
       if(Object.keys(SIMQ.res).length!==1 || SIMQ.busy!==1)throw Error('늦은 결과가 현재 요청을 바꿈');
-      w.onmessage({data:{type:'stage',id:w.req.id,msg:'준비 끝'}});
-      w.req.teams.forEach((_,i)=>__finishTeam(w,i));w.onmessage({data:{type:'done',id:w.req.id}});
+      __ready();for(let g=0;g<20&&__busy().length;g++)__serve(__busy()[0]);
     }""")
     wait_sim_done(page, timeout=10000)
     assert page.locator('.party[data-party="1"] .qrow[data-key] .qsim').count() == 2
@@ -406,31 +408,34 @@ def test_screen_stop_notice(browser, ctx):
     단추는 실제 마우스로 누른다: 누르고 있는 사이 팀 결과가 오거나 단계가 바뀌어도(진행 칸 갱신) 클릭이 먹어야 한다."""
     page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
     page.evaluate("""() => {
-      window.__workers=[];
+      window.__workers=[];window.__posts=[];
       window.Worker=class {
         constructor(){__workers.push(this)}
-        postMessage(req){this.req=req}
+        postMessage(req){this.req=req;__posts.push({w:this,req})}
         terminate(){this.stopped=true}
       };
-      window.__live=()=>__workers.filter(w=>!w.stopped&&w.req);
-      window.__team=(w,i,clear)=>w.onmessage({data:{type:'team',id:w.req.id,key:w.req.teams[i].key,
-        result:{n:w.req.n_runs,clear,prog:0.6,progs:[0.6],via:{coop:0},ci:[0.1,0.4],ttk:30}}});
-      window.__finishAll=()=>{for(const w of __live()){const req=w.req;w.onmessage({data:{type:'stage',id:req.id,msg:'준비 끝'}});
-        req.teams.forEach((t,i)=>__team(w,i,0.25));w.req=null;w.onmessage({data:{type:'done',id:req.id}})}};
+      // 작업자는 팀을 하나씩 받는다(대기열): __serve = 지금 맡은 팀의 결과 + done → 다음 팀을 받는다
+      window.__busy=()=>__workers.filter(w=>!w.stopped&&w._job!=null);
+      window.__ready=()=>__workers.forEach(w=>{if(!w.stopped&&w.req)w.onmessage({data:{type:'stage',msg:'준비 끝'}})});
+      window.__sent=id=>__posts.filter(p=>p.req.id===id);
+      window.__serve=(w,clear=0.25)=>{const r=w.req;w.onmessage({data:{type:'team',id:r.id,job:r.job,key:r.teams[0].key,
+        result:{n:r.n_runs,clear,prog:0.6,progs:[0.6],via:{coop:0},ci:[0.1,0.4],ttk:30,raw:'[]'}}});w.onmessage({data:{type:'done',id:r.id,job:r.job}})};
+      // 지금 단계(요청 하나)의 일을 모두 끝낸다
+      window.__finishAll=()=>{const id=SIMQ.requestId;__ready();for(let g=0;g<2000&&SIMQ.requestId===id&&__busy().length;g++)__serve(__busy()[0])};
       simAuto(true);run();
     }""")
-    page.wait_for_function('() => SIMQ.screening && __live().length>0', timeout=10000)
-    first = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)],ws=__live();
-      ws.forEach(w=>w.onmessage({data:{type:'stage',id:w.req.id,msg:'준비 끝'}}));
-      for(let i=0;i<7;i++)__team(ws[i%ws.length],Math.floor(i/ws.length),0.25);
+    page.wait_for_function('() => SIMQ.screening && __busy().length>0', timeout=10000)
+    first = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)],id=SIMQ.requestId;
+      __ready();
+      for(let i=0;i<7;i++){const ws=__busy();__serve(ws[i%ws.length])}
       const pg=document.querySelector('#out [data-k="progress"]'),bt=pg&&pg.querySelector('button[data-scrstop]'),r=bt&&bt.getBoundingClientRect();
-      return {sent:ws.flatMap(w=>w.req.teams).length,total:sc.total,runs:[...new Set(ws.map(w=>w.req.n_runs))],
+      return {sent:new Set(__sent(id).map(p=>p.req.teams[0].key)).size-__busy().length,total:sc.total,runs:[...new Set(__sent(id).map(p=>p.req.n_runs))],
         bar:!!(pg&&pg.querySelector('.pbar')),eta:!!(pg&&pg.querySelector('[data-k="eta"]')),state:pg?pg.querySelector('[data-k="simstate"]').textContent:'',
         stop:bt?bt.textContent:'',right:r?r.right:999,inner:innerWidth}}""")
     page.screenshot(path=os.path.join(ctx.shots, 'screen_progress_390.png'), full_page=False)
     # 누르고 있는 사이(마우스 내림~올림) 팀 결과 3개가 더 온다 → 그래도 클릭이 먹는다
     press(page, '#out [data-k="progress"] button[data-scrstop]',
-          "() => {const ws=__live();for(let i=7;i<10;i++)__team(ws[i%ws.length],Math.floor(i/ws.length),0.25)}")
+          "() => {for(let i=7;i<10;i++){const ws=__busy();__serve(ws[i%ws.length])}}")
     stopped = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)];
       return {done:sc.done,short:sc.short,order:sc.order.length,seen:Object.keys(sc.res).length,err:SIMQ.err}}""")
     # 멈춘 뒤 자동으로 본선(상위 팀 100판)이 이어진다 → 가짜 결과로 끝낸다
@@ -446,11 +451,12 @@ def test_screen_stop_notice(browser, ctx):
       return {right:Math.max(b.right,r.right),left:Math.min(b.left,r.left),bw:b.width,bh:b.height,scroll:document.documentElement.scrollWidth,inner:innerWidth}}""")
     page.screenshot(path=os.path.join(ctx.shots, 'screen_stop_390.png'), full_page=False)
     page.click('[data-k="scr-short"] button[data-scrmore]')
-    page.wait_for_function('() => SIMQ.screening && __live().length>0', timeout=10000)
+    page.wait_for_function('() => SIMQ.screening && __busy().length>0', timeout=10000)
     page.wait_for_selector('#out [data-k="progress"] button[data-scrstop]')
-    a_sent = page.evaluate("() => ({sent:__live().flatMap(w=>w.req.teams).length,runs:[...new Set(__live().map(w=>w.req.n_runs))]})")
+    page.evaluate("() => {window.__aId=SIMQ.requestId}")
     # 누르고 있는 사이 1차가 끝나 2차로 넘어간다(진행 칸이 갱신됨) → 단추가 그대로라 클릭이 먹고, 2차 0팀에서 멈춘다
     press(page, '#out [data-k="progress"] button[data-scrstop]', "() => __finishAll()")
+    a_sent = page.evaluate("() => ({sent:new Set(__sent(__aId).map(p=>p.req.teams[0].key)).size,runs:[...new Set(__sent(__aId).map(p=>p.req.n_runs))]})")
     mid = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)];
       return {done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,up:(sc.up||[]).length,r2:Object.keys(sc.res2).length,order:sc.order.length,err:SIMQ.err}}""")
     for _ in range(40):
@@ -460,10 +466,11 @@ def test_screen_stop_notice(browser, ctx):
         page.wait_for_timeout(100)
     text2 = page.locator('.party[data-party="1"] [data-k="scr-short"]').inner_text()
     page.click('[data-k="scr-short"] button[data-scrmore]')
-    page.wait_for_function('() => SIMQ.screening && __live().length>0', timeout=10000)
-    more = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)];
-      const b={sent:__live().flatMap(w=>w.req.teams).length,runs:[...new Set(__live().map(w=>w.req.n_runs))]};
-      __finishAll();return {b,done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,up:Object.keys(sc.res2).length,total:sc.total}}""")
+    page.wait_for_function('() => SIMQ.screening && __busy().length>0', timeout=10000)
+    more = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)],id=SIMQ.requestId;
+      __finishAll();const b={sent:new Set(__sent(id).map(p=>p.req.teams[0].key)).size,runs:[...new Set(__sent(id).map(p=>p.req.n_runs))],
+        merge:__sent(id).every(p=>p.req.teams[0].options.run_offset===8&&p.req.teams[0].options.merge_raw==='[]')};
+      return {b,done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,up:Object.keys(sc.res2).length,total:sc.total}}""")
     more['a'] = a_sent
     for _ in range(40):
         page.evaluate('() => __finishAll()')
@@ -473,7 +480,7 @@ def test_screen_stop_notice(browser, ctx):
     gone = page.locator('[data-k="scr-short"]').count() == 0 and page.locator('.party[data-party="1"] .qbox').count() == 1
     errs = list(ctx.errors)
     page.close()
-    ok = (first['sent'] == first['total'] and first['total'] > 20 and first['runs'] == [8] and first['bar'] and first['eta']
+    ok = (first['sent'] == 7 and first['total'] > 20 and first['runs'] == [8] and first['bar'] and first['eta']
           and '후보 거르는 중 7/%d' % first['total'] in first['state'] and first['stop'] == '지금까지 결과로 보기' and first['right'] <= first['inner']
           and stopped == {'done': True, 'short': True, 'order': 10, 'seen': 10, 'err': ''}
           and ('중간에 멈춰서 후보 10/%d팀만 확인했어요' % first['total']) in text and '끝까지 확인' in text
@@ -481,7 +488,7 @@ def test_screen_stop_notice(browser, ctx):
           and '중간에 멈춰서 상위 팀을 짧게만 확인했어요' in text2
           and box['left'] >= 0 and box['right'] <= box['inner'] and box['scroll'] <= box['inner'] and box['bw'] > 40 and box['bh'] > 20
           and more['a']['sent'] == first['total'] - 10 and more['a']['runs'] == [8]
-          and more['b']['sent'] == 20 and more['b']['runs'] == [32]
+          and more['b']['sent'] == 20 and more['b']['runs'] == [24] and more['b']['merge']      # 2차 = 1차 8판 + 24판(1차 raw 를 되돌려 보냄)
           and more['done'] and not more['short'] and more['seen'] == more['total'] and more['up'] == 20 and gone and not errs)
     return ok, '진행 %s / 멈춤 %s / 안내 %r / 폭 %s / 2차 멈춤 %s %r / 끝까지 %s / 안내 사라짐 %s / 오류 %s' % (first, stopped, text, box, mid, text2, more, gone, errs[:2])
 
@@ -637,7 +644,7 @@ def test_break_skill_select(browser, ctx):
       window.Worker=class {constructor(){window.__bw.push(this)} postMessage(req){this.req=req} terminate(){this.stopped=true}};
     }""")
     page.click('button[data-sim="1"]')
-    req = page.evaluate("() => window.__bw[0].req")
+    req = page.evaluate("() => SIMQ.lastReq.req")       # 보낼 전체 목록(작업자에는 팀마다 따로 간다)
     team_key = default['key'].split('|', 1)[1]
     team = next(t for t in req['teams'] if t['key'] == team_key)
     options_ok = team['options']['break_skill'] == {'name': chosen, 'level': 5} and all('break_skill' in t['options'] for t in req['teams'])
@@ -650,9 +657,13 @@ def test_break_skill_select(browser, ctx):
       w.onmessage({data:{type:'team',id:w.req.id,key:w.req.teams[0].key,result:{clear:1}}});
       return w.stopped && Object.keys(SIMQ.res).length===before} """)
     page.click('button[data-sim="1"]')
-    none_req = page.evaluate("() => window.__bw.at(-1).req")
+    none_req = page.evaluate("() => SIMQ.lastReq.req")
     none_ok = next(t for t in none_req['teams'] if t['key'] == team_key)['options']['break_skill'] is None
-    page.evaluate("""key => {simAuto(false);const w=window.__bw.at(-1);w.onmessage({data:{type:'team',id:w.req.id,key,
+    # 그 팀을 맡은 작업자가 결과를 낸다(작업자가 모자라 아직 못 받았으면 앞 팀들을 먼저 끝낸다)
+    page.evaluate("""key => {simAuto(false);const live=()=>window.__bw.filter(w=>!w.stopped&&w._job!=null);
+      for(let g=0;g<20&&!live().some(w=>w.req.teams[0].key===key);g++){const o=live()[0],r=o.req;
+        o.onmessage({data:{type:'team',id:r.id,job:r.job,key:r.teams[0].key,result:{clear:0.4,ci:[0.3,0.5],n:100,bs:{name:null,uses:0,dmg:0,supported:false}}}});o.onmessage({data:{type:'done',id:r.id,job:r.job}})}
+      const w=live().find(w=>w.req.teams[0].key===key);w.onmessage({data:{type:'team',id:w.req.id,job:w.req.job,key,
       result:{clear:0.5,ci:[0.4,0.6],n:100,bs:{name:null,uses:0,dmg:0,supported:false}}}});run(true)}""", team_key)
     if not page.locator('.party[data-party="1"] .score-details').evaluate('e => e.open'):
         page.click('.party[data-party="1"] .score-details > summary')
@@ -698,7 +709,9 @@ def test_break_skill_compare(browser, ctx):
     rows = page.locator(card + ' .bcrow').count()
     requests = page.evaluate('() => window.__breakRequests')
     expected = [None] + [n for n in setup['owned'] if n in setup['supported']]
-    actual = [t['options']['break_skill']['name'] if t['options']['break_skill'] else None for t in requests[0]['teams']]
+    # 팀마다 요청 하나(대기열): 작업 번호 순으로 모으면 보낸 순서
+    sent_teams = [t for r in sorted(requests, key=lambda r: r['job']) for t in r['teams']]
+    actual = [t['options']['break_skill']['name'] if t['options']['break_skill'] else None for t in sent_teams]
     unsupported = page.locator(card + ' .bcrow', has_text='미지원').count()
     names = page.eval_on_selector_all(card + ' .bcrow', 'els => els.map(e=>e.dataset.bname)')
     chosen = page.eval_on_selector(card + ' .bsel', '(s,names) => names.find(n=>n && n!==s.value)', expected)
@@ -720,8 +733,8 @@ def test_break_skill_compare(browser, ctx):
     page.close()
     ok = (before == 0 and progress == 1 and rows == len(setup['owned']) + 1 and names == [''] + setup['owned']
           and actual == expected and unsupported == len(setup['owned']) + 1 - len(expected)
-          and all(t['party'] == setup['party'] for t in requests[0]['teams'])
-          and selected == chosen and cache and count == 1
+          and all(len(r['teams']) == 1 for r in requests) and all(t['party'] == setup['party'] for t in sent_teams)
+          and selected == chosen and cache and count == len(expected)      # 다시 눌러도 새 요청 없음(캐시)
           and bounds['sw'] <= bounds['iw'] and bounds['right'] <= bounds['iw'] and not errs)
     return ok, '목록 %d/%d, 실행 %d(미지원 %d), 캐시 장착 %s, 요청 %d, 390px %s, 오류 %s' % (
         rows, len(setup['owned']) + 1, len(actual), unsupported, selected == chosen and cache, count, bounds, errs[:2])
@@ -1208,10 +1221,12 @@ def test_sim_runs(browser, ctx):
     """Mock only Worker computation; real UI, request, result handling and cache signatures."""
     page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
     page.evaluate('''() => {simAuto(false);window.requests=[];
-      window.Worker=class {postMessage(req){requests.push(req);this.req=req} terminate(){this.stopped=true}};
-      window.completeSim=()=>{const w=SIMQ.w,r=w.req;r.teams.forEach((t,i)=>w.onmessage({data:{type:'team',id:r.id,key:t.key,
-        result:{n:r.n_runs,clear:[0.35,0.65,0.9][i%3],ci:[0.2,0.8],ttk:10,gate:true}}}));
-        w.onmessage({data:{type:'done',id:r.id}})};
+      window.simWorkers=[];
+      window.Worker=class {constructor(){simWorkers.push(this)} postMessage(req){requests.push(req);this.req=req} terminate(){this.stopped=true}};
+      // 팀마다 따로 온다(대기열): 일하는 작업자마다 결과 + done, 남은 팀이 없을 때까지
+      window.completeSim=()=>{for(let g=0;g<50;g++){const w=simWorkers.find(w=>!w.stopped&&w._job!=null);if(!w)return;const r=w.req;
+        w.onmessage({data:{type:'team',id:r.id,job:r.job,key:r.teams[0].key,result:{n:r.n_runs,clear:[0.35,0.65,0.9][r.job%3],ci:[0.2,0.8],ttk:10,gate:true}}});
+        w.onmessage({data:{type:'done',id:r.id,job:r.job}})}};
     }''')
     assert page.locator('input[name="runs"]').count() == 0      # 시뮬은 100판으로 충분해서 판 수 선택(300판 정밀)을 없앴다
     page.click('button[data-sim="1"]')

@@ -49,6 +49,7 @@
 - 행성 정화 지원. 나머지 미지원 항목은 현재 규칙과 아래 기록을 확인. 목록은 `docs/BACKLOG.md`.
 - 설계·검증 기록: `docs/battlesim_design.md`, `docs/redesign_v1.md`, `docs/ingame_samples.md`(인게임 실측 대조).
 - 게임 코드로 확인한 규칙은 `battlesim/rules/default.json` 의 스위치(근거 등급 `code`)로 둠. 실측 대조: `tools/ingame_check.py --myinfo <내정보>`.
+- 화면의 예선·본선은 작업자 여럿에 팀 단위로 나눠 돌림(작업자 풀·대기열·1차 판 재사용: `party_template.html` 의 «작업자 풀·작업 대기열»·예선 주석). 속도를 고칠 때는 `tools/bench_screen.py` 로 고치기 전·후의 예선 순위·팀별 결과·시간·메모리를 대조(결과가 달라지면 안 됨).
 - 알려진 한계: 큰 보스전은 편성에 따라 실측보다 비관적이거나 낙관적. 작전·장비 탐사·성간 회랑 등에서 주의. 기록 `docs/received_damage_audit.md`.
 
 ### 길드 방어전 (시즌제, 1차)

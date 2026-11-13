@@ -45,7 +45,9 @@ assert.equal(ev('teamBreak(a).level'),8);ev('MI.brkLv=null');
 console.log('PASS 선택 기본값·팀/콘텐츠 분리·저장·서명·결과 칩·내 정보 레벨');
 ctx.LASTQ[1]={rows:[ctx.a,ctx.b]};ev('simStart(1)');
 const old=workers[0],req=old.req;
-assert.deepEqual(plain(req.teams.map(t=>t.options.break_skill)),[{name:'특이점 관측',level:5},{name:'큐브 과부하',level:5}]);
+// 팀마다 따로 보낸다(대기열): 첫 요청 = 첫 팀, 전체 목록은 SIMQ.lastReq
+assert.deepEqual(plain(req.teams.map(t=>t.options.break_skill)),[{name:'특이점 관측',level:5}]);
+assert.deepEqual(plain(ev('SIMQ.lastReq.req.teams').map(t=>t.options.break_skill)),[{name:'특이점 관측',level:5},{name:'큐브 과부하',level:5}]);
 handlers.change({target:{closest:()=>({dataset:{bkey:'op|a,b'},value:''})}});
 assert(old.stopped);
 old.onmessage({data:{type:'team',id:req.id,key:'a,b',result:{clear:1}}});
@@ -99,19 +101,26 @@ console.log('PASS 최고 규칙(클리어·턴·0% 우열 없음·미지원 제�
 ev('simInvalidate();SIMQ.res={};BRSEL["op|a,b"]="스타피어서"');
 ctx.SIMQ.res[ev('simSigB(cur[0],a,null)')]={clear:0.4,ttk:5};
 ev('breakCompareStart(1,"a,b")');
-const cw=workers.at(-1),cr=cw.req,expected=jobs.filter(j=>j.bname!==null);
+// 작업자는 팀 하나씩 받는다(대기열): 보낼 전체 목록은 SIMQ.lastReq, 작업자의 req 는 지금 맡은 팀
+const cw=workers.at(-1),cr=plain(ev('SIMQ.lastReq.req')),expected=jobs.filter(j=>j.bname!==null);
 assert.equal(cr.teams.length,expected.length); // 미장착 캐시는 건너뛴다.
 assert.deepEqual(plain(cr.teams.map(t=>t.options.break_skill.name)),expected.map(j=>j.bname));
 assert(cr.teams.every(t=>JSON.stringify(t.party)===JSON.stringify(plain(ev('simParty(a)')))));
+assert.equal(cw.req.teams.length,1);assert.equal(cw.req.teams[0].key,cr.teams[0].key);
 const count=workers.length;ev('breakCompareStart(1,"c,d");simStart(1)');assert.equal(workers.length,count);
 const view=()=>ev('breakCompareView(breakChoice(a.combo,contents[0]),1,a,cur[0])');
 assert.match(view(),/data-k="breakstate"/);assert.match(view(),/취소/);
 assert.equal((view().match(/class="bcrow"/g)||[]).length,targets.length);
 assert.match(view(),/행성 정화 · 대기/);assert.doesNotMatch(view(),/미지원/);   // 10/23 행성 정화 지원
-cw.onmessage({data:{type:'team',id:cr.id,key:'not-a-job',result:{clear:1}}});
+cw.onmessage({data:{type:'team',id:cr.id,job:cw.req.job,key:'not-a-job',result:{clear:1}}});
 assert.equal(Object.keys(ctx.SIMQ.res).length,1);
-for(const t of cr.teams)cw.onmessage({data:{type:'team',id:cr.id,key:t.key,result:{clear:0.8,ttk:2}}});
-cw.onmessage({data:{type:'done',id:cr.id}});
+const served=[];
+for(let i=0;i<cr.teams.length;i++){const r=cw.req;served.push(r.teams[0].key);   // 끝낸 작업의 done 뒤에야 다음 팀이 온다
+ cw.onmessage({data:{type:'team',id:r.id,job:r.job,key:r.teams[0].key,result:{clear:0.8,ttk:2}}});
+ cw.onmessage({data:{type:'team',id:r.id,job:r.job,key:r.teams[0].key,result:{clear:0.1,ttk:9}}});   // 같은 작업의 두 번째 결과는 버린다
+ assert.equal(cw.req,r,'done 전에는 다음 작업을 안 보냄');
+ cw.onmessage({data:{type:'done',id:r.id,job:r.job}})}
+assert.deepEqual(served,cr.teams.map(t=>t.key));assert(Object.values(ctx.SIMQ.res).every(r=>r.clear!==0.1));
 assert.equal(ctx.SIMQ.busy,null);
 assert.equal(Object.keys(ctx.SIMQ.res).length,jobs.length);
 assert.match(view(),/최고/);

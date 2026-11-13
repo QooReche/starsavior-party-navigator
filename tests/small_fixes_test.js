@@ -22,7 +22,7 @@ function rollover(seasonCode=season,pageCode=page,growthCode=ui){
   for(const key of ['guild','cosmo']){
     let stopped=0,removed=0;
     const ctx={contents:[{key}],$:()=>({value:0}),document:{getElementById:id=>id==='growth-result'?{remove:()=>removed++}:null},closed:false,clearTimeout,REQ:true,SIMQ:{busy:'growth',scr:{},kick:true},
-      GSR:{id:0,phase:'done'},CSR:{id:0,phase:'done'},renderGuild(){},renderCosmoSearch(){},run(){},stop:()=>stopped++};
+      GSR:{id:0,phase:'done'},CSR:{id:0,phase:'done'},renderGuild(){},renderCosmoSearch(){},run(){},simPoolDrop(){},stop:()=>stopped++};
     vm.createContext(ctx);vm.runInContext(growthCode,ctx);vm.runInContext(seasonCode,ctx);
     const invalidate=pageCode.match(/^function simInvalidate\(\)\{[^\r\n]*\}/m);
     assert(invalidate,'simInvalidate 를 찾지 못함');
