@@ -306,6 +306,7 @@ def test_index_uses_merged_opts():
 _EXPECTED_MC_OPTS_KEYS = frozenset([
     'chain_stat_true', 'target_toughness_condition',
     'source_buff_list', 'gille_promotion_target',
+    'target_break_condition', 'target_condition_set',
     'dmg_cap_scope',
     'rekindle_apply',
     'dot_hot_order', 'dot_hot_lifetime', 'ally_cd_tick', 'break_domain_category',

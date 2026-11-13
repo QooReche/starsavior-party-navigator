@@ -2565,6 +2565,7 @@ class Battle:
                 if lines:
                     c2 = Ctx(w, a, sk, ctx.extra)
                     c2.target, c2.targets, c2.crit, c2.hit_victim = v, [v], hctx.crit, v
+                    c2.break_targets = hctx.break_targets
                     self.run_batch(w, lines, c2)
             self.reaction_skills(v, a, sk, hctx.crit, v in hctx.evaded)
         ctx.target = ctx.targets[0] if ctx.targets else None
@@ -2641,6 +2642,9 @@ class Battle:
             ctx.kill = True
         if self.mc['toughness'] == 'on' and not evaded and not v.dead:
             self.tough_hit(a, v, ctx)      # 피해 처리 뒤(격파시킨 타격 자체는 −15%p 를 받지 않음, assumed). 회피하면 강인도 안 깎임(community)
+        # NKM:10381-10394: MyEffectiveHit의 대상은 공격자가 아니라 피격자.
+        # 같은 시전에서 새로 격파된 피격자만 넘기며 다음 시전에는 남기지 않음.
+        hctx.break_targets = ctx.break_targets.intersection((v,))
         if self.gb is not None:
             self.gb.post_hit(a, v)
         reactions.append((v, hctx))
@@ -3388,6 +3392,50 @@ class Battle:
         return mm.get('bossBarrierHpPct', mm['barrierHpPct'])
 
     def cond_ok(self, owner, ln, ctx):
+        # 재현된 HP 이하·약화 보유 조건만 대상 집합으로 확장한다.
+        # NKM:9446-9479,10480-10504: 공격 후에는 한 피격 기록이 조건 전부를 만족해야 함.
+        keys = ('대상 HP% 이하', '대상 약화효과 보유')
+        if (self.mc['target_condition_set'] == 'any' and len(ctx.targets) > 1
+                and any(k in keys for k, _ in ln.params)):
+            self.rule_hits['target_condition_set'] += 1
+            if '[스킬 사용 시작 시]' not in ln.raw:
+                for target in ctx.targets:
+                    probe = copy.copy(ctx)
+                    probe.target, probe.targets = target, [target]
+                    if self._cond_values(owner, ln, probe):
+                        return True
+                return False
+            # NKM:9671-9695,9738-9751: 시작 시에는 각 조건의 대상 집합을 따로 검사.
+            # 효과 개수는 직전 약화 보유 조건에 붙이고, 다른 조건은 기존 문맥으로 판정.
+            groups, rest = [], []
+            counts = ('중첩수', '효과 개수', '대상 효과 중첩수', '중첩수 이상',
+                      '효과 개수 이상', '효과 개수 미만', '효과 개수 이하')
+            group = None
+            for k, v in ln.params:
+                if k in keys:
+                    group = [(k, v)]
+                    groups.append(group)
+                elif group is not None and group[0][0] == '대상 약화효과 보유' and k in counts:
+                    group.append((k, v))
+                else:
+                    group = None
+                    rest.append((k, v))
+            for params in groups:
+                passed = False
+                for target in ctx.targets:
+                    probe = copy.copy(ctx)
+                    probe.target, probe.targets = target, [target]
+                    if self._cond_values(owner, _ParamView(ln, params), probe):
+                        passed = True
+                        break
+                if not passed:
+                    return False
+            remaining = _ParamView(ln, rest)
+            remaining.raw = ln.raw
+            return self._cond_values(owner, remaining, ctx)
+        return self._cond_values(owner, ln, ctx)
+
+    def _cond_values(self, owner, ln, ctx):
         mh = RX_HP_COND.search(ln.raw)
         if mh:
             frac = owner.hp / owner.maxhp * 100
@@ -3512,7 +3560,13 @@ class Battle:
                 if passed != (v == '예'):
                     return False
             elif k == '대상 브레이크':    # TargetSuperArmorBreak는 별도 사건 조건.
-                if (tgt is not None and tgt.broken) != (v == '예'):
+                if self.mc['target_break_condition'] == 'event':
+                    targets = ctx.targets or ([tgt] if tgt is not None else [])
+                    passed = any(x in ctx.break_targets for x in targets)
+                    self.rule_hits['target_break_condition'] += 1
+                else:
+                    passed = tgt is not None and tgt.broken
+                if passed != (v == '예'):
                     return False
             elif k == '피해 증가(조건부)':     # 「이 줄은 조건부 피해 증가」 표지로 봄(값 '예'만 나옴, assumed)
                 pass

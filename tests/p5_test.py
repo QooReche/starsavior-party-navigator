@@ -243,18 +243,27 @@ def test_break_recovery_turn_effects():
 
 
 def test_break_conditions():
-    """「대상 브레이크: 예」·「대상 강인도 없음: 예」 조건은 격파 상태에서만 참(P4 까지는 늘 거짓)"""
+    """새 격파 사건은 해당 시전에서만 참, 강인도 없음은 이후에도 참. state는 옛 판정."""
     a, f = unit('a'), unit('foe', hp=10 ** 9, sa=1)
     b = battle([a], [f])
     A, F = b.allies[0], b.foes[0]
-    ln = Line('[스킬 사용 시작 시] (조건: 내 공격 시 [대상 브레이크: 예]) 자신에게 능력치 보정 피해 증가 +30% {이번 스킬에만 적용}', '고유 패시브', 'passive')
+    ln = Line('[스킬 사용 후] (조건: 내 공격 후 [대상 브레이크: 예]) 자신에게 행동 게이지 10%p 증가', '고유 패시브', 'passive')
     sk = A.d.skills['기본기']
     c = Ctx(A, A, sk)
     c.targets, c.target = [F], F
     before = b.cond_ok(A, ln, c)
-    hit(b, A, F, '기본기', ab=1)
+    sk.ab = 1
+    b.deal(A, c)
     after = b.cond_ok(A, ln, c)
-    return (not before) and after, '격파 전 %s / 후 %s' % (before, after)
+    next_ctx = Ctx(A, A, sk)
+    next_ctx.targets, next_ctx.target = [F], F
+    later = b.cond_ok(A, ln, next_ctx)
+    state_ln = Line(ln.raw.replace('대상 브레이크', '대상 강인도 없음'), '고유 패시브', 'passive')
+    state = b.cond_ok(A, state_ln, next_ctx)
+    b.mc['target_break_condition'] = 'state'
+    legacy = b.cond_ok(A, ln, next_ctx)
+    return (not before) and after and not later and state and legacy and b.progress() > 0, (
+        '격파 전 %s / 같은 시전 %s / 다음 시전 %s / 강인도 없음 %s / legacy %s' % (before, after, later, state, legacy))
 
 
 # ---------------------------------------------------------------- 피해 제한·불사
