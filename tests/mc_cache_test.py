@@ -58,6 +58,7 @@ _KEEP = {'rekindle_apply': 'multiply', 'dmg_cap_scope': 'reduce', 'ally_break_ga
 _KEEP['myinfo_potential_coverage'] = False
 _KEEP['clash_no_turn_limit'] = False
 _KEEP.update(chain_stat_true='legacy', target_toughness_condition='first')
+_KEEP.update(source_buff_list='literal', gille_promotion_target='fallback')
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

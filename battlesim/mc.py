@@ -1649,6 +1649,11 @@ class Battle:
             rows = lines.get(owner.key, {}) if variants else (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {}))
             spec = rows.get((ln.slot, ln.raw))
         if spec is not None:
+            if (self.mc['gille_promotion_target'] == 'marker' and owner.key == 'gille'
+                    and ln.slot == '특수기' and ln.eff.get('name') == '피날레(해제불가)'):
+                # NKM:7135-7187,7523-7546: 전체 대상 필터가 불일치하면 대상 없음.
+                self.rule_hits['gille_promotion_target'] += 1
+                return spec
             if (ln.eff.get('stat') == '강인도 피해 감소'
                     or (self.mc['chain_stat_true'] == 'client' and ln.eff.get('damage_type') == 'ADT_STAT_TRUE')):
                 return spec  # 보스 표지가 없으면 대상 없음. 설명문 근사로 일반 적을 고르지 않음.
@@ -3405,6 +3410,16 @@ class Battle:
                         return False
                     continue
                 return False
+            if (last and last[0] == 'XS' and self.mc['source_buff_list'] == 'any'
+                    and k == '중첩수'):
+                # NKM.Templets:42617-42640,42849-42864: 이름별로 보유·중첩을 함께 검사.
+                # 효과 개수(인스턴스 수)는 별도 개념이라 기존 경로를 유지함.
+                names = [n for n in last[1] if ctx.src is not None and ctx.src.has(n)
+                         and ctx.src.stack(n) == float(v)]
+                if not names:
+                    return False
+                last = ('XS', names)
+                continue
             if k == '사용 스킬':
                 if not (sk is not None and sk.slot == v):
                     return False
@@ -3546,10 +3561,15 @@ class Battle:
             elif k == '시전자 속성':
                 if ctx.src is None or ctx.src.element != v:
                     return False
-            elif k == '시전자가 보유':
-                if ctx.src is None or not ctx.src.has(v):
+            elif k in ('시전자가 보유', '턴 유닛이 보유'):
+                names = [x.strip() for x in v.split(',')]
+                use_list = self.mc['source_buff_list'] == 'any'
+                if ctx.src is None or not any(ctx.src.has(n) for n in (names if use_list else [v])):
                     return False
-                last = ('XS', [x.strip() for x in v.split(',')])    # 뒤따르는 「효과 개수/중첩수」는 시전자(나를 친 상대)의 중첩수
+                if use_list:
+                    self.rule_hits['source_buff_list'] += 1
+                if use_list or k == '시전자가 보유':
+                    last = ('XS', names)  # 후속 중첩수도 조건의 시전자/턴 유닛에 바인딩.
             elif k == '자신에게 약화효과 없음':
                 if (owner.n_harmful() == 0) != (v == '예'):
                     return False
@@ -3563,9 +3583,6 @@ class Battle:
                     return False
             elif k == '스킬 쿨타임 아님':
                 if owner.cd.get(v, 0) > 0:
-                    return False
-            elif k == '턴 유닛이 보유':
-                if ctx.src is None or not ctx.src.has(v):
                     return False
             elif k in ('TurnUnitNegativeBuff', 'NotTurnUnitNegativeBuff'):
                 # NKM.Templets:41816-41818,42375-42407: GetBool false는 검사 안 함.

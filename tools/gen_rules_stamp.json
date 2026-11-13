@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "4bc2697e8fd33dcb",
+  "hash": "8b42ba297d919458",
   "history": [
-   {
-    "hash": "fc85dd2714434381",
-    "reason": "build_guild_sim 재생성"
-   },
    {
     "hash": "e50ab5d249e7ad69",
     "reason": "11/11 클라 규칙 6건 기본 전환(dot_hot_order·dot_hot_lifetime·ally_cd_tick·stat_select_int·break_domain_category·ally_turn_self): 축소 재생성(팀 3·육성 3·지원 3·단계 0~12·칸당 12판) 이전과 teams·summary 전부 동일"
@@ -41,16 +37,16 @@
    {
     "hash": "4bc2697e8fd33dcb",
     "reason": "11/13 연쇄 고정 피해·대상 강인도 판정 변경: 길드 방어전 시즌 종료로 guild_sim 재생성을 생략했음. 다음 시즌 자료 반영 때 재생성하기로 함."
+   },
+   {
+    "hash": "8b42ba297d919458",
+    "reason": "11/13 시전자 목록 조건·길레 승급 수정: 길드 방어전 시즌 종료로 사전 계산 재생성을 생략했음. 다음 시즌 자료 반영 때 재생성하기로 함."
    }
   ]
  },
  "quick": {
-  "hash": "4bc2697e8fd33dcb",
+  "hash": "8b42ba297d919458",
   "history": [
-   {
-    "hash": "ab0c0aa44391ff86",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "fc85dd2714434381",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +81,10 @@
    },
    {
     "hash": "4bc2697e8fd33dcb",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "8b42ba297d919458",
     "reason": "calibrate_quick --write 재보정"
    }
   ]
