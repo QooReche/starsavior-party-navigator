@@ -510,7 +510,7 @@ $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[
 const CSR={phase:"idle",msg:"",done:0,total:0,rows:[],handle:null,id:0,optLevel:null,optMode:null,sig:"",etaText:"",eta:null,runs:1};
 const csSig=()=>(MI.hash||"")+"|"+[...EXCL].sort().join(",");   // 내 정보·추천 제외가 바뀌었는지 비교하는 서명
 const csNow=()=>performance.now()/1000;
-const csMobile=()=>{try{return !!((navigator.userAgentData&&navigator.userAgentData.mobile)||/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent||""))}catch(e){return false}};
+const csMobile=()=>{try{return !!((navigator.userAgentData&&navigator.userAgentData.mobile)||/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent||"")||(/Macintosh/.test(navigator.userAgent||"")&&navigator.maxTouchPoints>1))}catch(e){return false}};
 const csWorkers=()=>CosmoSearch.workerCount(D.cosmoRaid.search,{cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory,mobile:csMobile()});
 const csProfile=()=>MI.info&&MI.growth?(MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,MI.growth,"cosmo"))):null;
 function csPre(){   // 시작 전 «예상 시간» 안내(저장된 이 PC 속도가 있으면 예상 시간, 없으면 안내 문구)
