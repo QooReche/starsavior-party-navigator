@@ -302,16 +302,19 @@ function growthNoneText(kind,r){const prob=['op','clo'].includes(kind),b=r?.base
   const has=Number.isFinite(v),now=has?(prob?Math.round(v*100)+'%':miNum(v)+'점'):'';
   if(prob&&has&&v<=0)return `추천 기준까지 키워도 이 스테이지는 모의 전투에서 깨지 못했어요 (지금 ${now})`;
   return `추천 기준까지 키워도 지금${has?'('+now+')':''}보다 ${prob?'잘 깨는':'점수가 높은'} 편성은 찾지 못했어요`;}
-// 결과 없음 아래 한 줄 도움말(11/13 제보: «아무것도 안 나오면 스타링크를 올려야 하나?» 오해) — 무엇을 올려 봤는지와 다음에 할 일
+// 결과 없음 아래 도움말(11/13 제보: «아무것도 안 나오면 스타링크를 올려야 하나?» 오해) — [제목, 내용] 줄 목록. 무엇을 올려 봤는지와 다음에 할 일
 function growthNoneHint(kind,r){const prob=['op','clo'].includes(kind),b=r?.baseline,v=prob?b?.clear:null;
-  if(prob&&Number.isFinite(v)&&v>=1)return '';
-  const tried='보유 구원자의 스킬·장비·스텔라 아카이브·잠재력·호감도·공명·스타링크(레벨)를 추천 기준까지 올려서 계산했어요.';
-  if(prob&&(!Number.isFinite(v)||v<=0))return tried+' 지금 보유한 구원자로는 아직 어려운 스테이지일 수 있어요. 새 구원자를 얻거나 앞 스테이지부터 도전해 보세요.';
-  return tried+' 지금 추천 편성이 가장 나은 선택이에요.';}
+  if(prob&&Number.isFinite(v)&&v>=1)return [];
+  const noItems=!!r?.snapshot&&!Object.values(r.snapshot.changes||{}).some(a=>a?.changedFields?.length);
+  const rows=noItems?[]:[['추천 기준까지 올려 본 항목','스킬 · 장비 · 스텔라 아카이브 · 잠재력 · 호감도 · 공명 · 스타링크(레벨) (보유 구원자만)']];
+  if(prob&&(!Number.isFinite(v)||v<=0))rows.push(['다음 할 일','지금 보유한 구원자로는 아직 어려운 스테이지일 수 있어요. 새 구원자를 얻거나 앞 스테이지부터 도전해 보세요.']);
+  else rows.push(['결론','지금 추천 편성이 가장 나은 선택이에요.']);
+  return rows;}
 function growthNonePaint(c,r){growthTabs?.reset();let el=$('growth-result');
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
-  el.dataset.state='none';const errs=r?.snapshot?.errors||[];
-  el.innerHTML=`<p class="growth-none" data-k="growth-none" role="status"><b>클리어 추천 육성</b> · ${esc(growthNoneText(c.key,r))}</p>`+((h=>h?`<p class="mut growth-none-hint" data-k="growth-none-hint">${esc(h)}</p>`:'')(growthNoneHint(c.key,r)))+
+  el.dataset.state='none';const errs=r?.snapshot?.errors||[],hint=growthNoneHint(c.key,r);
+  el.innerHTML=`<h3 class="growth-none-title">클리어 추천 육성</h3><p class="growth-none" data-k="growth-none" role="status">${esc(growthNoneText(c.key,r))}</p>`+
+    (hint.length?`<dl class="growth-none-hint" data-k="growth-none-hint">${hint.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`:'')+
     (errs.length?`<details><summary>계산에서 제외된 구원자 ${errs.length}명</summary>${errs.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');
   const now=['guild','cosmo'].includes(c.key)?$(c.key+'-search'):document.querySelector('#out > [data-party="1"]');
   if(now&&now.nextElementSibling!==el)now.after(el);}

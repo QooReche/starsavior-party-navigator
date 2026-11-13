@@ -76,9 +76,10 @@ function baseline(code=ui){
   assert.equal(ctx.growthNoneText('op',{...grown,baseline:{clear:.996}}),'추천 기준까지 키워도 지금(100%)보다 잘 깨는 편성은 찾지 못했어요');
   // 0% 는 «못 깼다»를 분명히 + 도움말에 무엇을 올려 봤는지(스타링크 포함)와 다음 할 일(11/13 제보 오해)
   assert.equal(ctx.growthNoneText('op',{...grown,baseline:{clear:0}}),'추천 기준까지 키워도 이 스테이지는 모의 전투에서 깨지 못했어요 (지금 0%)');
-  assert.match(ctx.growthNoneHint('op',{...grown,baseline:{clear:0}}),/스타링크.*추천 기준까지 올려서 계산했어요.*앞 스테이지/);
-  assert.match(ctx.growthNoneHint('op',{...grown,baseline:{clear:.4}}),/가장 나은 선택/);
-  assert.equal(ctx.growthNoneHint('op',{...grown,baseline:{clear:1}}),'');
+  assert.match(ctx.growthNoneHint('op',{...grown,baseline:{clear:0}}).flat().join('|'),/올려 본 항목\|[^|]*스타링크.*\|다음 할 일\|[^|]*앞 스테이지/);
+  assert.match(ctx.growthNoneHint('op',{...grown,baseline:{clear:.4}}).flat().join('|'),/결론\|[^|]*가장 나은 선택/);
+  assert.equal(ctx.growthNoneHint('op',{...grown,baseline:{clear:1}}).length,0);
+  assert.ok(!ctx.growthNoneHint('op',{...flat,baseline:{clear:0}}).some(([k])=>k.includes('올려 본 항목')));   // 이미 다 키웠으면 «올려 본 항목» 없이 다음 할 일만
   assert.equal(ctx.growthNoneText('clo',{...grown}),'추천 기준까지 키워도 지금보다 잘 깨는 편성은 찾지 못했어요');
   assert.equal(ctx.growthNoneText('guild',{...grown,baseline:{score:1200}}),'추천 기준까지 키워도 지금(1200점)보다 점수가 높은 편성은 찾지 못했어요');
   assert.equal(ctx.growthNoneText('cosmo',{...grown,baseline:{sum:1}}),'추천 기준까지 키워도 지금(1점)보다 점수가 높은 편성은 찾지 못했어요');
