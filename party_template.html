@@ -316,7 +316,7 @@ summary{padding:9px 4px}
   <button type="button" class="sec" id="sim-auto-off" data-simauto="0">모의 전투 자동 실행 끄기</button><input type="number" id="mypow" hidden><div id="powinfo" class="powinfo" hidden></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됩니다.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성<select id="mmode"><option value="">균형</option><option value="avoid">역상성 회피</option></select></label></div>
-  <div id="goalbox" style="margin-top:10px" hidden><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px" title="장비 탐사는 60턴 안에 이겨야 3별이 되어 소탕이 열립니다. 모의 전투의 턴 수는 실제와 차이가 있을 수 있습니다.">장비 탐사 목표<select id="goal"><option value="60">60턴 안에 클리어 (3별·소탕)</option><option value="0">클리어만 하면 됨 (턴 무관)</option></select></label></div>
+  <div id="goalbox" style="margin-top:10px" hidden><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px" title="장비 탐사·격전 의뢰는 60턴 안에 이겨야 3별이 되어 소탕이 열립니다. 모의 전투의 턴 수는 실제와 차이가 있을 수 있습니다.">3별 목표<select id="goal"><option value="60">60턴 안에 클리어 (3별·소탕)</option><option value="0">클리어만 하면 됨 (턴 무관)</option></select></label></div>
 <div class="menu-share"><button id="share-link" type="button" class="sec" aria-live="polite">링크 복사</button><label class="mi-use"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></div></details>
 <div id="option-chips" class="option-chips"></div>
 <div id="growth-control-home"><span id="growth-control"><label><input type="checkbox" id="assume-growth"> 클리어를 위한 추천 육성도 같이 보기</label><button id="growth-hint" type="button" class="ux-help" aria-label="클리어 추천 육성 설명" aria-expanded="false" data-help="덜 키운 구원자를 맞췄다고 치고 함께 찾아요. 더 잘 깨는 편성이 있으면 결과 아래에 보여줘요. 목표는 프리셋 기준이며 최소 육성치를 찾는 기능은 아니에요.">ⓘ</button><span id="growth-requires-info" class="tag">내 정보 필요</span></span></div>
@@ -580,7 +580,7 @@ $("cosmo-search").addEventListener("click",e=>{const b=e.target.closest("button[
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.title||c.name)}</option>`).join("");
 const raidUi=c=>!!c.raid&&!window.__legacyRaid;   // 시즌제 화면(코스모): 섹터·스테이지 선택과 보스별 추천을 숨김. 시험만 __legacyRaid 로 옛 화면을 씀
 function tabsOf(c){const m=new Map();c.stages.forEach(s=>{if(!m.has(s.tab))m.set(s.tab,s.tabLabel)});return [...m]}
-function refreshTabs(){const c=contents[$("content").value];$("goalbox").hidden=c.key!=="equip";
+function refreshTabs(){const c=contents[$("content").value];$("goalbox").hidden=!STAR_TURNS[c.key];
  $("filters").hidden=raidUi(c);document.querySelector(".stage-filter").hidden=raidUi(c);
  $("tab").innerHTML=`<option value="">(전체)</option>`+tabsOf(c).map(([t,l])=>`<option value="${esc(t)}">${esc(l)}</option>`).join("");refreshStages()}
 function refreshStages(){
@@ -878,9 +878,9 @@ function simAuto(on){SIMQ.auto=on;try{localStorage.setItem("pn.simauto",on?"1":"
 function simAutoOn(){if(SIMQ.auto||SIMQ.kick)return true;try{return miMode()&&localStorage.getItem("pn.simauto")!=="0"}catch(e){return false}}
 // 시뮬 공통 옵션: 표준 육성(P5 build) 위에 공·생·방만 육성 가정 배수로 바꾸고, 역보정은 엔진이 스탯으로 전투력을 계산해 적용
 const SIMOPT={build:"standard",rules_override:{power_penalty:"model"}};
-const STAR_TURNS={equip:60};   // 3별 미션 «N턴 이내 승리»(BMT_LIMIT_TURN, 표 BATTLE_TEMPLET_NORMAL 탐사 60곳은 65·60턴). 3별이 돼야 소탕이 열림
-const starOf=ck=>STAR_TURNS[ck]&&(document.getElementById("goal")||{}).value!=="0"?STAR_TURNS[ck]:0;   // 옵션 «장비 탐사 목표»가 «클리어만»이면 0
-const starNote=ck=>{const n=starOf(ck);return n?`<div class="mut" data-k="starnote">장비 탐사 ${n}턴 내 클리어 ${Ux.help('장비 탐사 목표',`3별(소탕) 조건인 ${n}턴 이내 승리 가능성을 먼저 보고 순위를 매겨요. 클리어만 필요하면 ⋯ 메뉴의 장비 탐사 목표에서 바꾸세요.`)}</div>`:''};
+const STAR_TURNS={equip:60,clash:60};   // 3별 미션 «N턴 이내 승리»(BMT_LIMIT_TURN, 표 BATTLE_TEMPLET_NORMAL: 장비 탐사 60곳·격전 의뢰 SS_EVENT_CLASH 18곳 모두 65·60턴). 3별이 돼야 소탕이 열림
+const starOf=ck=>STAR_TURNS[ck]&&(document.getElementById("goal")||{}).value!=="0"?STAR_TURNS[ck]:0;   // 옵션 «3별 목표»가 «클리어만»이면 0
+const starNote=ck=>{const n=starOf(ck);return n?`<div class="mut" data-k="starnote">${n}턴 내 클리어(3별) ${Ux.help('3별 목표',`3별(소탕) 조건인 ${n}턴 이내 승리 가능성을 먼저 보고 순위를 매겨요. 클리어만 필요하면 ⋯ 메뉴의 3별 목표에서 바꾸세요.`)}</div>`:''};
 const simOpt=ck=>{const rk=rkOf(ck),st=starOf(ck),o=st?Object.assign({},SIMOPT,{star_turns:st}):SIMOPT;return rk?Object.assign({},o,{rekindle:rk}):o};
 function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
  // 육성 가정 = 기준(Lv200·표준 육성) 공·생·방 × k (전투력이 공·생·방에 비례하는 식이라 엔진이 계산하는 전투력 = 가정한 전투력)

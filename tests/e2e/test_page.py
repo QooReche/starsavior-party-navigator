@@ -1495,7 +1495,7 @@ def test_guild_search_dropped(browser, ctx):
 
 
 def test_equip_goal_option(browser, ctx):
-    """장비 탐사 목표 옵션: 장비 탐사에서만 보이고, «60턴 안에 클리어»면 안내 문구가 있고 «클리어만»이면 사라짐"""
+    """3별 목표 옵션: 장비 탐사·격전 의뢰에서만 보이고, «60턴 안에 클리어»면 안내 문구가 있고 «클리어만»이면 사라짐"""
     ctx.errors.clear()
     page = open_page(browser, ctx)
     page.evaluate("() => { document.getElementById('optbox').open = true }")
@@ -1509,10 +1509,17 @@ def test_equip_goal_option(browser, ctx):
     page.wait_for_selector('.party[data-party="1"] .qbox')
     note_off = page.locator('.qbox [data-k="starnote"]').count() == 0
     saved = page.evaluate("() => localStorage.getItem('pn.goal')")
+    # 격전 의뢰도 장비 탐사와 같은 3별 미션(65·60턴, 클라 표 SS_EVENT_CLASH 18곳) → 같은 옵션·안내·시뮬 star_turns
+    page.select_option("#goal", "60")
+    choose(page, '격전 의뢰', '폐쇄된 심상')
+    page.wait_for_selector('.party[data-party="1"] .qbox')
+    clash_vis = page.locator("#goalbox").is_visible()
+    clash_note = page.locator('.qbox [data-k="starnote"]').count() > 0
+    clash_opt = page.evaluate("() => simOpt('clash').star_turns === 60 && !simOpt('op').star_turns")
     errs = list(ctx.errors)
     page.close()
-    ok = hidden_op and vis and note_on and note_off and saved == '"0"' and not errs
-    return ok, "작전에서 숨김 %s / 장비 탐사 표시 %s / 안내 켬 %s / 끔 %s / 저장 %s / 오류 %d" % (hidden_op, vis, note_on, note_off, saved, len(errs))
+    ok = hidden_op and vis and note_on and note_off and saved == '"0"' and clash_vis and clash_note and clash_opt and not errs
+    return ok, "작전에서 숨김 %s / 장비 탐사 표시 %s / 안내 켬 %s / 끔 %s / 저장 %s / 격전 의뢰 표시 %s·안내 %s·시뮬 %s / 오류 %d" % (hidden_op, vis, note_on, note_off, saved, clash_vis, clash_note, clash_opt, len(errs))
 
 
 def test_cosmo_search(browser, ctx):
