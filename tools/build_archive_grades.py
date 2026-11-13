@@ -21,14 +21,17 @@ def build(static):
             # Upper ranks are image glyphs. SSG+ at 1250 conflicts with supplied
             # SG / SG+ screenshots: show numbers until the glyph is verified.
             label = code.replace('_PLUS', '+') if code.split('_')[0] in list('GFEDCBA') else ''
+            # 2026-11-13 사용자 결정: 주력 1,250(MAX, 내부 SSG_PLUS)은 화면에 «SG»로 표시. 나머지 상위 등급은 숫자.
+            if r['StatValue'] == 1250:
+                label = 'SG'
             values.append([r['StatValue'], label])
         stats.append(sorted(values))
     return {'stats': stats, 'source': 'STAT_GRADE_TEMPLET; Star.Templets:31071-31078 (26610546)',
-            'unverified': '상위 등급 그림 글자: 1250의 SG/SG+ 제보와 내부 SSG+ 불일치. 숫자로 표시.'}
+            'unverified': '상위 등급 그림 글자: 1,250은 SG로 표시(내부 이름 SSG+), 500~1,150은 숫자로 표시.'}
 
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--static', required=True)
     args = ap.parse_args()
-    (ROOT / 'data/archive_grades.json').write_text(json.dumps(build(args.static), ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8')
+    (ROOT / 'data/archive_grades.json').write_text(json.dumps(build(args.static), ensure_ascii=False, separators=(',', ':'))+'\n', encoding='utf-8', newline='\n')

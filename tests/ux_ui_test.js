@@ -4,9 +4,9 @@ const growth=require('../data/growth.json'),grades=require('../data/archive_grad
 const view={...require('../data/myinfo_view.json'),itemSlots:require('../data/myinfo_slots.json')};
 const roster=Object.entries(growth.assumed.units).map(([key,s])=>({key,uid:s.uid}));
 function checkVerdict(u=U){for(const [p,expected] of [[0,'risk'],[.49999,'risk'],[.5,'shaky'],[.69999,'shaky'],[.7,'ok'],[.89999,'ok'],[.9,'safe'],[1,'safe']])assert.equal(u.verdict(p)[0],expected);}
-function checkGrades(u=U){for(const [n,label] of [[1250,''],[497,'A+'],[465,'A+'],[435,'A'],[373,'B+'],[367,'B+'],[181,'D+'],[148,'E+'],[66,'F']]){
+function checkGrades(u=U){for(const [n,label] of [[1250,'SG'],[1150,''],[497,'A+'],[465,'A+'],[435,'A'],[373,'B+'],[367,'B+'],[181,'D+'],[148,'E+'],[66,'F']]){
   for(let i=0;i<5;i++)assert.equal(u.grade(n,i,grades),label,`grade ${n}/${i}`);
-}assert.equal(u.archive(1250,0,grades),'1,250','unresolved screenshot glyph must remain numeric');
+}assert.equal(u.archive(1250,0,grades),'SG 1,250','1,250(MAX) is shown as SG (user decision 11/13)');assert.equal(u.archive(1150,0,grades),'1,150','other upper glyphs stay numeric');
 assert.equal(u.grade(1501,0,grades),'');}
 function checkPower(u=U){const info=structuredClone(require('./fixtures/myinfo_synthetic.json'));
   for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
