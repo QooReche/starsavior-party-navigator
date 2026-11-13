@@ -586,7 +586,8 @@ function refreshTabs(){const c=contents[$("content").value];$("goalbox").hidden=
 function refreshStages(){
  const c=contents[$("content").value],t=$("tab").value,q=$("q").value.trim();
  cur=c.stages.filter(s=>(!t||s.tab===t)&&(!q||s.name.includes(q)||(s.label||"").includes(q)||s.tabLabel.includes(q)));
- $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
+ const nameN=new Map();cur.forEach(s=>{const k=s.label||s.name;nameN.set(k,(nameN.get(k)||0)+1)});   // 섹터 «전체»에서 같은 이름이 여러 회랑에 겹치면(성간·태양·달·별 FLOOR N) 회랑 이름을 앞에 붙인다
+ $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${nameN.get(s.label||s.name)>1&&s.tabLabel?esc(s.tabLabel)+" · ":""}${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
  showInfo();showPow();if(window._ready)rerun()}
 function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`${EL[e]} ${n}`).join(" / ")}
 function showPow(){const s=cur&&cur[$("stage").value],my=$("grow").value==="manual"?+$("mypow").value:0,el=$("powinfo");
