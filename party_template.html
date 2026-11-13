@@ -1007,9 +1007,17 @@ function simRate(mode){return mode==="manual"?SIMQ.rateM:SIMQ.rate}
 // 본선 한 묶음(3팀) 예상 시간 = 계산 + 화면 다시 계산 2번
 function simBatchMs(runs,rate){return 3*runs*rate+2*(SIMQ.runMs||0)}
 function simRunAdd(ms){if(ms>=0)SIMQ.runMs=SIMQ.runMs?SIMQ.runMs*0.5+ms*0.5:ms}
-// 진행 화면이 떠 있으면 진행 칸만 다시 그린다(없으면 false — 호출한 쪽이 전체를 다시 그림)
+// 진행 칸 갱신: 모양이 같으면(같은 단추·같은 표시) 단추 DOM 은 그대로 두고 글자·막대만 바꾼다.
+// 통째로 다시 그리면 누르는 중이던 단추가 사라져 클릭이 안 먹는다(팀 결과·단계 전환 때마다 다시 그리던 것, 11/13 리뷰)
+function simProgressSync(pv,st){const box=document.createElement("div");box.innerHTML=simProgress(st);const nv=box.firstElementChild;
+ const shape=x=>[...x.querySelectorAll("button")].map(b=>b.textContent).join("|")+"/"+x.querySelectorAll(".tag").length+"/"+x.dataset.party;
+ const a=pv.querySelector(".pbar"),b=nv.querySelector(".pbar");
+ if(shape(pv)!==shape(nv)||!a||!b){pv.replaceWith(nv);return}
+ for(const q of ['[data-k="simstate"]','[data-k="eta"]']){const x=pv.querySelector(q),y=nv.querySelector(q);if(x&&y&&x.textContent!==y.textContent)x.textContent=y.textContent}
+ a.setAttribute("aria-valuemax",b.getAttribute("aria-valuemax"));a.setAttribute("aria-valuenow",b.getAttribute("aria-valuenow"));a.firstElementChild.style.width=b.firstElementChild.style.width}
+// 진행 화면이 떠 있으면 진행 칸만 갱신한다(없으면 false — 호출한 쪽이 전체를 다시 그림)
 function simPaintProgress(){const pv=typeof document!=="undefined"&&document.querySelector('#out [data-k="progress"]');if(!pv)return false;
- const st=cur&&cur[$("stage").value];if(!st)return false;pv.outerHTML=simProgress(st);return true}
+ const st=cur&&cur[$("stage").value];if(!st)return false;simProgressSync(pv,st);return true}
 // 팀 하나의 시간 상한: 잰 속도로 예상한 시간의 3배(저사양 기기 배려), 최소 RUN_MS. 수동 속도를 아직 못 쟀으면 자동 속도의 4배로 어림
 function simTeamLimit(runs,mode){const r=simRate(mode)||(mode==="manual"&&SIMQ.rate?SIMQ.rate*4:0);return Math.max(SIMQ.RUN_MS,r?3*r*runs:0)}
 function fmtDur(ms){const s=Math.ceil(ms/1000);if(s<60)return s+"초";const m=Math.floor(s/60),r=Math.round((s%60)/10)*10;return r>=60?(m+1)+"분":m+"분"+(r?" "+r+"초":"")}
@@ -1117,7 +1125,7 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
  const el=()=>document.querySelector('[data-k="progress"] [data-k="simstate"]'),show=m=>{SIMQ.msg=m;const x=el();if(x)x.textContent=m};
  let id=0,legN=R0.n;
  // 작업자 여럿(scrPool)에 후보를 번갈아 나눠 맡기고, 모두 끝나면 next. i = 단계(0·1), 결과는 1차 sc.res · 2차 sc.res2
- const leg=(i,keys,next)=>{const n=SCR_ROUNDS[i].n,into=i?sc.res2:sc.res;legN=n;sc.round=i;sc.left=keys.length;sc.got=0;{const pv=document.querySelector('[data-k="progress"]');if(pv)pv.outerHTML=simProgress(st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
+ const leg=(i,keys,next)=>{const n=SCR_ROUNDS[i].n,into=i?sc.res2:sc.res;legN=n;sc.round=i;sc.left=keys.length;sc.got=0;{const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
   const ws=scrPool(),parts=ws.map(()=>[]);
   // 남은 시간 = 예선 남은 몫(작업자 수로 나눔) + 본선(보이는 팀 수 × 본선 판 수, 작업자 1개)
   // 본선 = 보이는 팀 수 × 판 수 × 본선 속도(모르면 예선 속도) + 화면 다시 계산 2번(예선 끝·본선 끝)

@@ -391,8 +391,19 @@ def test_sim_timeout_partial(browser, ctx):
     return True, '예선 부분 순위→본선 시간 초과→1팀 결과·안내→2팀 재시도 완료, 늦은 메시지 무시'
 
 
+def press(page, selector, between):
+    """실제 마우스로 누른다: 내림 → between(JS) 실행 → 올림. 그 사이 단추가 다시 그려지면 클릭이 안 먹는다."""
+    box = page.locator(selector).bounding_box()
+    x, y = box['x'] + box['width'] / 2, box['y'] + box['height'] / 2
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.evaluate(between)
+    page.mouse.up()
+
+
 def test_screen_stop_notice(browser, ctx):
-    """예선은 끝까지 돈다(390px): 진행 막대·남은 시간·「지금까지 결과로 보기」→ 끝난 팀으로 순위·본선 → 결과 위 「중간에 멈춰서 후보 N/M팀만 확인했어요 · 끝까지 확인」→ 안 돈 팀만 이어서 → 안내 사라짐."""
+    """예선은 끝까지 돈다(390px): 진행 막대·남은 시간·「지금까지 결과로 보기」→ 끝난 팀으로 순위·본선 → 결과 위 「중간에 멈춰서 후보 N/M팀만 확인했어요 · 끝까지 확인」→ 안 돈 팀만 이어서 → 안내 사라짐.
+    단추는 실제 마우스로 누른다: 누르고 있는 사이 팀 결과가 오거나 단계가 바뀌어도(진행 칸 갱신) 클릭이 먹어야 한다."""
     page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
     page.evaluate("""() => {
       window.__workers=[];
@@ -417,7 +428,9 @@ def test_screen_stop_notice(browser, ctx):
         bar:!!(pg&&pg.querySelector('.pbar')),eta:!!(pg&&pg.querySelector('[data-k="eta"]')),state:pg?pg.querySelector('[data-k="simstate"]').textContent:'',
         stop:bt?bt.textContent:'',right:r?r.right:999,inner:innerWidth}}""")
     page.screenshot(path=os.path.join(ctx.shots, 'screen_progress_390.png'), full_page=False)
-    page.click('#out [data-k="progress"] button[data-scrstop]')
+    # 누르고 있는 사이(마우스 내림~올림) 팀 결과 3개가 더 온다 → 그래도 클릭이 먹는다
+    press(page, '#out [data-k="progress"] button[data-scrstop]',
+          "() => {const ws=__live();for(let i=7;i<10;i++)__team(ws[i%ws.length],Math.floor(i/ws.length),0.25)}")
     stopped = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)];
       return {done:sc.done,short:sc.short,order:sc.order.length,seen:Object.keys(sc.res).length,err:SIMQ.err}}""")
     # 멈춘 뒤 자동으로 본선(상위 팀 100판)이 이어진다 → 가짜 결과로 끝낸다
@@ -434,10 +447,24 @@ def test_screen_stop_notice(browser, ctx):
     page.screenshot(path=os.path.join(ctx.shots, 'screen_stop_390.png'), full_page=False)
     page.click('[data-k="scr-short"] button[data-scrmore]')
     page.wait_for_function('() => SIMQ.screening && __live().length>0', timeout=10000)
+    page.wait_for_selector('#out [data-k="progress"] button[data-scrstop]')
+    a_sent = page.evaluate("() => ({sent:__live().flatMap(w=>w.req.teams).length,runs:[...new Set(__live().map(w=>w.req.n_runs))]})")
+    # 누르고 있는 사이 1차가 끝나 2차로 넘어간다(진행 칸이 갱신됨) → 단추가 그대로라 클릭이 먹고, 2차 0팀에서 멈춘다
+    press(page, '#out [data-k="progress"] button[data-scrstop]', "() => __finishAll()")
+    mid = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)];
+      return {done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,up:(sc.up||[]).length,r2:Object.keys(sc.res2).length,order:sc.order.length,err:SIMQ.err}}""")
+    for _ in range(40):
+        page.evaluate('() => __finishAll()')
+        if page.locator('.party[data-party="1"] [data-k="scr-short"] button[data-scrmore]').count():
+            break
+        page.wait_for_timeout(100)
+    text2 = page.locator('.party[data-party="1"] [data-k="scr-short"]').inner_text()
+    page.click('[data-k="scr-short"] button[data-scrmore]')
+    page.wait_for_function('() => SIMQ.screening && __live().length>0', timeout=10000)
     more = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)];
-      const a={sent:__live().flatMap(w=>w.req.teams).length,runs:[...new Set(__live().map(w=>w.req.n_runs))]};
-      __finishAll();const b={sent:__live().flatMap(w=>w.req.teams).length,runs:[...new Set(__live().map(w=>w.req.n_runs))]};
-      __finishAll();return {a,b,done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,up:Object.keys(sc.res2).length,total:sc.total}}""")
+      const b={sent:__live().flatMap(w=>w.req.teams).length,runs:[...new Set(__live().map(w=>w.req.n_runs))]};
+      __finishAll();return {b,done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,up:Object.keys(sc.res2).length,total:sc.total}}""")
+    more['a'] = a_sent
     for _ in range(40):
         page.evaluate('() => __finishAll()')
         if page.evaluate("""() => SIMQ.busy===null && !!document.querySelector('.party[data-party="1"] .qbox') && !document.querySelector('[data-k="progress"]')"""):
@@ -448,13 +475,15 @@ def test_screen_stop_notice(browser, ctx):
     page.close()
     ok = (first['sent'] == first['total'] and first['total'] > 20 and first['runs'] == [8] and first['bar'] and first['eta']
           and '후보 거르는 중 7/%d' % first['total'] in first['state'] and first['stop'] == '지금까지 결과로 보기' and first['right'] <= first['inner']
-          and stopped == {'done': True, 'short': True, 'order': 7, 'seen': 7, 'err': ''}
-          and ('중간에 멈춰서 후보 7/%d팀만 확인했어요' % first['total']) in text and '끝까지 확인' in text
+          and stopped == {'done': True, 'short': True, 'order': 10, 'seen': 10, 'err': ''}
+          and ('중간에 멈춰서 후보 10/%d팀만 확인했어요' % first['total']) in text and '끝까지 확인' in text
+          and mid == {'done': True, 'short': True, 'seen': first['total'], 'up': 20, 'r2': 0, 'order': first['total'], 'err': ''}
+          and '중간에 멈춰서 상위 팀을 짧게만 확인했어요' in text2
           and box['left'] >= 0 and box['right'] <= box['inner'] and box['scroll'] <= box['inner'] and box['bw'] > 40 and box['bh'] > 20
-          and more['a']['sent'] == first['total'] - 7 and more['a']['runs'] == [8]
+          and more['a']['sent'] == first['total'] - 10 and more['a']['runs'] == [8]
           and more['b']['sent'] == 20 and more['b']['runs'] == [32]
           and more['done'] and not more['short'] and more['seen'] == more['total'] and more['up'] == 20 and gone and not errs)
-    return ok, '진행 %s / 멈춤 %s / 안내 %r / 폭 %s / 끝까지 %s / 안내 사라짐 %s / 오류 %s' % (first, stopped, text, box, more, gone, errs[:2])
+    return ok, '진행 %s / 멈춤 %s / 안내 %r / 폭 %s / 2차 멈춤 %s %r / 끝까지 %s / 안내 사라짐 %s / 오류 %s' % (first, stopped, text, box, mid, text2, more, gone, errs[:2])
 
 
 def test_sim_auto_and_override(browser, ctx):
