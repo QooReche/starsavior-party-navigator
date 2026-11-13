@@ -180,6 +180,10 @@ def parse_effect(rest, damage_type='ADT_NORMAL'):
         return dict(kind='extra_cast', slot=m.group(2), times=int(m.group(3) or 1), target=m.group(1))
     if re.match(r'^자신에게 〈추가 턴〉', rest):
         return dict(kind='extra_turn')
+    m = re.match(r'^(.+?)에게 연쇄 피해 = 대상 (공격력|방어력)×([\d.]+)%', rest)
+    if m:
+        return dict(kind='chain', target=m.group(1), stat={'공격력': 'target_atk', '방어력': 'target_def'}[m.group(2)],
+                    coef=float(m.group(3)) / 100.0, damage_type=damage_type)
     m = re.match(r'^(.+?)에게 연쇄 피해 = 자신 (공격력|생명력|방어력)×([\d.]+)%', rest)
     if m:
         return dict(kind='chain', target=m.group(1), stat={'공격력': 'atk', '생명력': 'hp', '방어력': 'def'}[m.group(2)],

@@ -305,6 +305,7 @@ def test_index_uses_merged_opts():
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
     'chain_stat_true', 'target_toughness_condition',
+    'target_hp_condition', 'not_self_stack', 'chain_target_stat',
     'source_buff_list', 'gille_promotion_target',
     'target_break_condition', 'target_condition_set',
     'dmg_cap_scope',

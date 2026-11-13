@@ -13,6 +13,7 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 sys.path.insert(0, str(ROOT))
 from battlesim.fileio import atomic_json, atomic_text, read_json
+from tools.synergy_self_status import links as self_status_links
 SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "rawdata", "databook_main.json")  # 데이터북 data/main.js 를 JSON 으로 푼 파일
 TAGS = os.path.join(ROOT, "data", "synergy_tags.json")
 OUT = os.path.join(ROOT, "data")  # synergy_pairs.json (리뷰 md 는 docs/ 로 옮긴다)
@@ -386,6 +387,20 @@ def add(a, b, typ, strength, directed, reason, evs, conf, cat):
 
 
 # ===== 유형 1: 부여 -> 소비 =====
+# 클라 표로 검증한 파쇄 연계를 반영함. 다른 상태 후보는 아래 보고 목록에만 남김.
+# SE_TEMPLET_SKILL_1:41726(자신 파쇄),13053/13068(서곡·게이지),13393(속도).
+pending_self_status = set()
+for ai, bi, status, eva, evb, effect in self_status_links(U, parse_line):
+    a, b = units[ai], units[bi]
+    if same_char(a, b):
+        continue
+    if (a.key, b.key, status) != ('asherah-order-striker', 'gille', '파쇄'):
+        pending_self_status.add((a.key, b.key, status))
+        continue
+    add(a, b, 1, min(3, payoff(effect) + 1), True,
+        "%s 이(가) 자신에게 얻는 〈%s〉로 구원자 %s 의 파쇄 아군 대상 서곡·행동 게이지·속도 지원을 받음" % (lab(a), status, lab(b)),
+        [eva, evb], '확인', 'self_status:' + status)
+
 for b in units:
     for c, n, pay, evb, cfb in b.cons:
         if c == "enemy_has":
@@ -638,6 +653,8 @@ L += ["## 규칙/한계", "",
       "- 속성 공유(5-c)는 스택이 공유되는 것이 아니라 같은 속성 상성 보너스를 같은 적에게 쓰는 약연계라 강도 1~2.", ""]
 ver = os.path.join(ROOT, "docs", "synergy_pairs_verification.md")
 if os.path.exists(ver):
-    L += [open(ver, encoding="utf8").read()]
+    with open(ver, encoding="utf8") as f:
+        L += [f.read()]
 atomic_text(os.path.join(ROOT, "docs", "synergy_pairs_review.md"), "\n".join(L))
 print("pairs", len(out), dict(cnt), dict(conf_c))
+print('자기 상태 연계 미반영 후보:', sorted(pending_self_status))

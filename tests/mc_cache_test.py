@@ -60,6 +60,7 @@ _KEEP['clash_no_turn_limit'] = False
 _KEEP.update(chain_stat_true='legacy', target_toughness_condition='first')
 _KEEP.update(source_buff_list='literal', gille_promotion_target='fallback')
 _KEEP.update(target_break_condition='state', target_condition_set='first')
+_KEEP.update(target_hp_condition='ratio', not_self_stack='ge', chain_target_stat='off')
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

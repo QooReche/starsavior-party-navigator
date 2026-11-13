@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "213e5e67c881536e",
+  "hash": "6a167ad4ef8ae53c",
   "history": [
-   {
-    "hash": "747fad8ca776aac6",
-    "reason": "11/12 패치·ally_break_gauge=keep 등: 길드 방어전 시즌4 종료(미오픈)로 재계산 생략, 새 시즌 자료 반영 때 재생성"
-   },
    {
     "hash": "b3087698f2d7ddd4",
     "reason": "11/12 빌드 26610546 dmg_cap_scope=net 반영: 길드 방어전 시즌4 종료·미오픈으로 시뮬표 재생성 생략, 새 시즌 자료 반영 때 재생성"
@@ -41,20 +37,16 @@
    {
     "hash": "213e5e67c881536e",
     "reason": "대상 격파 사건·HP 이하/약화 대상 집합 규칙 반영. 길드 방어전 시즌 종료로 사전 계산은 다음 시즌 자료 반영 때 재생성함."
+   },
+   {
+    "hash": "6a167ad4ef8ae53c",
+    "reason": "11/13 대상 HP 정수 절삭·미보유 중첩 동등 비교·대상 공격력 연쇄 지원: 길드 방어전 시즌 종료로 사전 계산 재생성 보류, 새 시즌 자료 반영 때 재생성"
    }
   ]
  },
  "quick": {
-  "hash": "213e5e67c881536e",
+  "hash": "6a167ad4ef8ae53c",
   "history": [
-   {
-    "hash": "e50ab5d249e7ad69",
-    "reason": "11/11 클라 규칙 6건 기본 전환: 규칙은 판당 수십~수백 회 작동하나 13개 콘텐츠x편성 3개 20판 결과(timeline 포함)가 이전과 동일 — 쿨·지속 차감 시점 차이가 같은 턴 안에서 상쇄됨"
-   },
-   {
-    "hash": "747fad8ca776aac6",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "b3087698f2d7ddd4",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +77,14 @@
    },
    {
     "hash": "213e5e67c881536e",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "6a167ad4ef8ae53c",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "6a167ad4ef8ae53c",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

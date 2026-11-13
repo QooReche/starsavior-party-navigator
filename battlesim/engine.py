@@ -616,6 +616,11 @@ class Sim:
         ctx.target = targets[0]
 
     def chain_damage(self, a, eff, ctx, w):
+        if eff['stat'] in ('target_atk', 'target_def'):
+            # 공통 파서는 MC용 대상 능력치 연쇄도 읽음. 기대값 모델의 적에는
+            # 공격력/능력치 효과 상태가 없으므로 임의 값 대신 미지원으로 남김.
+            self.unmodeled['effect: ' + eff['stat'] + ' chain'] += 1
+            return
         side_targets = self.resolve_targets(a, eff['target'], ctx)
         if not side_targets or side_targets[0] != 'e':
             return

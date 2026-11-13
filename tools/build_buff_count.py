@@ -37,10 +37,24 @@ def main():
     ap.add_argument('--static', type=Path)
     args = ap.parse_args()
     buffs = build(static_path(args.static))
+    levels = build_levels(static_path(args.static))
     out = {'_note': '이름별 [IsBuff, IsPositive] 후보. 양성은 두 값 모두 true. 동명 양성 충돌·미등록 이름은 legacy 분류.',
-           'buffs': buffs}
+           'buffs': buffs, 'levels': levels}
     atomic_text(ROOT / 'data/buff_count.json', json.dumps(out, ensure_ascii=False, indent=2) + '\n')
     print('buff_count.json:', len(buffs), 'names')
+
+
+def build_levels(static):
+    """이름별 IsLevel. 충돌은 None으로 남겨 꼬리표 제거 조회로도 확정하지 않음."""
+    tables = Path(static) / 'tables'
+    strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf8'))
+    rows = json.loads((tables / 'BUFF_TEMPLET.json').read_text(encoding='utf8'))['Data']
+    flags = {}
+    for row in rows:
+        name = strings.get(row.get('m_BuffName'), {}).get('ko')
+        if name:
+            flags.setdefault(name, set()).add(bool(row.get('IsLevel', False)))
+    return {name: next(iter(values)) if len(values) == 1 else None for name, values in sorted(flags.items())}
 
 
 if __name__ == '__main__':

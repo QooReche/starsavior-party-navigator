@@ -5,7 +5,8 @@
 스탯으로 전투력을 계산해 적용(power_penalty=model), 시뮬 칸 = 화면 카드 순서를 [전열1, 전열2, 후열1, 후열2]로 바꾼 것.
 결과 = tools/raw/quick_calib.json(저장소 제외). 작업자 2개·낮은 우선순위. 다음 = tools/calibrate_quick.py --write
 
-사용: python -X utf8 -I tools/gen_quick_calib.py [--runs 40] [--per-content 400] [--opboss]
+사용: python -X utf8 -I tools/gen_quick_calib.py [--runs 40] [--per-content 400] [--opboss] [--workers 2]
+  --workers 1: 자식 프로세스 없이 순차 실행(메모리 제한 PC).
   --opboss: 작전·작전(하드) 큰 보스 스테이지(quick.big_boss)의 표본 팀을 콘텐츠 상한과 별도로 모두 넣는다(근사 보정용)
 """
 import json
@@ -88,6 +89,9 @@ def save_samples(out, runs):
 def main():
     runs = int(sys.argv[sys.argv.index('--runs') + 1]) if '--runs' in sys.argv else 40
     per = int(sys.argv[sys.argv.index('--per-content') + 1]) if '--per-content' in sys.argv else 260
+    workers = int(sys.argv[sys.argv.index('--workers') + 1]) if '--workers' in sys.argv else 2
+    if workers < 1:
+        raise ValueError('--workers must be positive')
     low()
     from battlesim import quick
     q, _ = quick.load(ROOT)
@@ -108,11 +112,16 @@ def main():
                     jobs.append((ck, sk, tk, o, L, rnd.choice(GROWTHS), runs))
     print('작업', len(jobs), '건, 판 수', runs, flush=True)
     out = []
-    with Pool(2, initializer=low) as pool:
-        for i, r in enumerate(pool.imap_unordered(job, jobs, chunksize=4)):
+    def collect(results):
+        for i, r in enumerate(results):
             out.append(r)
             if (i + 1) % 200 == 0:
                 print(i + 1, flush=True)
+    if workers == 1:
+        collect(map(job, jobs))
+    else:
+        with Pool(workers, initializer=low) as pool:
+            collect(pool.imap_unordered(job, jobs, chunksize=4))
     save_samples(out, runs)
     print('저장', OUT, len(out), '건')
 

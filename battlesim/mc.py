@@ -13,6 +13,7 @@ import math
 import os
 import random
 import re
+import struct
 from collections import defaultdict
 from functools import lru_cache
 
@@ -92,6 +93,30 @@ def ally_auto_lines(src=SRC, *, variants=False, client=False):
 _BLV = {}
 
 _BUFF_COUNT = None
+_BUFF_LEVEL = None
+
+
+_FLOAT32 = struct.Struct('f')
+
+
+def _float32(value):
+    return _FLOAT32.unpack(_FLOAT32.pack(value))[0]
+
+
+def hp_basis_points(hp, maxhp):
+    """NKM:2191-2198 → Templets:43131: float/float → float → double*10000 → int."""
+    denominator = _float32(maxhp)
+    return int(_float32(_float32(hp) / denominator) * 10000) if denominator else 0
+
+
+def level_buff(name):
+    """표에서 확정된 IsLevel. 미등록/동명 충돌은 None(기존 중첩 판정 유지)."""
+    global _BUFF_LEVEL
+    if _BUFF_LEVEL is None:
+        with open(os.path.join(SRC, 'data', 'buff_count.json'), encoding='utf8') as f:
+            _BUFF_LEVEL = json.load(f)['levels']
+    key = re.sub(r'\(해제\s*불가\)$', '', name).strip()
+    return _BUFF_LEVEL.get(name, _BUFF_LEVEL.get(key))
 
 
 _GLOBAL_TURN = None
@@ -3494,14 +3519,26 @@ class Battle:
                         and '자신 미보유 효과 중첩수' not in dict(ln.params)):
                     last = ('A', names)
                 pres = any(owner.has(n) for n in names)
-                # 「미보유 + 효과 중첩수 N」는 효과 자체 부재가 아니라 N중첩 미달.
+                # NKM.Templets:42427-42450: 이름별 지정 중첩수의 부재.
                 if k == '자신이 미보유' and '자신 미보유 효과 중첩수' in dict(ln.params):
+                    if self.mc['not_self_stack'] == 'exact':
+                        n = float(dict(ln.params)['자신 미보유 효과 중첩수'])
+                        if any(owner.has(name) and (level_buff(name) is False or n <= 0 or owner.stack(name) == n)
+                               for name in names):
+                            return False
+                        self.rule_hits['not_self_stack'] += 1
+                        continue
                     if any(owner.stack(n) >= float(dict(ln.params)['자신 미보유 효과 중첩수']) for n in names):
                         return False
                     continue
                 if pres != (k == '자신이 보유'):
                     return False
             elif k == '자신 미보유 효과 중첩수':
+                if self.mc['not_self_stack'] == 'exact':
+                    # 앞의 이름별 검사에서 처리함. 합산하면 서로 다른 효과를 혼동함.
+                    if '자신이 미보유' not in dict(ln.params):
+                        return False
+                    continue
                 if self._count(owner, ctx, last) >= float(v):
                     return False
             elif k in ('중첩수', '효과 개수', '대상 효과 중첩수'):
@@ -3595,7 +3632,11 @@ class Battle:
             elif k in ('대상 HP% 이상', '대상 HP% 이하'):
                 if tgt is None:
                     return False
-                ratio, threshold = tgt.hp / tgt.maxhp, float(v) / 10000.0
+                if self.mc['target_hp_condition'] == 'bp':
+                    ratio, threshold = hp_basis_points(tgt.hp, tgt.maxhp), float(v)
+                    self.rule_hits['target_hp_condition'] += 1
+                else:
+                    ratio, threshold = tgt.hp / tgt.maxhp, float(v) / 10000.0
                 if not (ratio >= threshold if k.endswith('이상') else ratio <= threshold):
                     return False
             elif k == '적 처치':
@@ -4443,13 +4484,24 @@ class Battle:
         if not tg:
             return
         m = owner.mods()
-        tstat = eff['stat'] == 'target_hp'      # P5 「대상 생명력×N%」 연쇄 피해
+        tstat = eff['stat'].startswith('target_')
+        if tstat and eff['stat'] != 'target_hp' and self.mc['chain_target_stat'] == 'off':
+            self.unsup['effect: target stat chain'] += 1
+            return
         val = 0.0 if tstat else {'atk': self.atk_stat(owner, ctx), 'hp': owner.maxhp, 'def': self.def_stat(owner)}[eff['stat']]
         for v in tg:
             if v.side == owner.side or v.dead:
                 continue
             if tstat:
-                val = v.maxhp
+                # NKM:4730-4735: NSETT_TARGET는 각 피해 수신자의 현재 능력치.
+                if eff['stat'] == 'target_hp':
+                    val = v.maxhp
+                elif eff['stat'] == 'target_atk':
+                    val = self.atk_stat(v)
+                else:
+                    val = self.def_stat(v)
+                if eff['stat'] != 'target_hp':
+                    self.rule_hits['chain_target_stat'] += 1
             if self.mc['chain_stat_true'] == 'client' and eff.get('damage_type') == 'ADT_STAT_TRUE':
                 # NKM:6214-6217에서 먼저 정수화. 최종 팀 보정은 17815/18407,
                 # 방어·증감·1.85·난수는 4748-4756/17791-17815/18435에서 제외.
