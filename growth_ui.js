@@ -236,8 +236,8 @@ async function growthStageSearch(c,st,profile,id){
     if(keys.length<total)limited={seen:keys.length,total};
     // 2차: 남은 시간에 맞춘 판 수(모두 같은 판 수) → 팀 수 축소 → 생략
     if(keys.length>3){const plan=ScrPlan.round2(keys.length,SIMQ.rateS,workers,left()*0.9);
-      if(plan){keys=keys.slice(0,plan.top);const r2=await evaluate(keys,plan.n,deadline);keys.sort((a,b)=>scrCmp(r2[a],r2[b]));}
-      else limited=limited||{seen:total,total};}
+      if(!plan||plan.cut)limited=limited||{seen:total,total}; // 2차 생략·축소도 알린다
+      if(plan){keys=keys.slice(0,plan.top);const r2=await evaluate(keys,plan.n,deadline);keys.sort((a,b)=>scrCmp(r2[a],r2[b]));}}
   }
   // The same 3-at-a-time, at most 9, >=50% stop rule as simAutoKick.
   let best=null,bestJob=null;
@@ -320,7 +320,7 @@ function growthNoneHint(kind,r){const prob=['op','clo'].includes(kind),b=r?.base
   return rows;}
 // 시간이 모자라 후보를 줄여 본 탐색은 결과 아래에 알린다(조용히 품질이 떨어지지 않게)
 function growthLimitedHtml(r){const l=r?.limited;if(!l)return '';
-  return `<p class="mut scr-short" data-k="growth-limited" role="status">${l.seen<l.total?`시간이 부족해 후보 ${l.seen}/${l.total}팀만 확인했어요`:'시간이 부족해 후보를 짧게만 확인했어요'}</p>`;}
+  return `<p class="mut scr-short" data-k="growth-limited" role="status">${l.seen<l.total?`시간이 부족해 후보 ${l.seen}/${l.total}팀만 확인했어요`:'시간이 부족해 상위 팀을 짧게만 확인했어요'}</p>`;}
 function growthNonePaint(c,r){growthTabs?.reset();let el=$('growth-result');
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
   el.dataset.state='none';const errs=r?.snapshot?.errors||[],hint=growthNoneHint(c.key,r);

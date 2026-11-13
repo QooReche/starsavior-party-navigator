@@ -19,12 +19,14 @@ function harness(src,o){
   scrWorkers:()=>3,growthJob:(t,k)=>({id:k,t}),simTeamLimit:()=>1000,GrowthGuide:{finalCost:n=>n},Date:{now:()=>clock},
   growthEvaluate:async(jobs,n,seed,c,st,id,deadline,env)=>{calls.push({keys:Array.from(jobs,j=>j.id),n,final:!!env.final});
    if(env.screenClock&&!env.screenClock.deadline)env.screenClock.deadline=clock+60000;
+   // real = 실제처럼: 팀을 번갈아 나눈 작업자 3개가 각자 차례로 돎 → 가장 많이 맡은 작업자의 시간. 상한을 넘기면 실제와 같이 미완료
+   if(o.real&&!env.final){clock+=Math.ceil(jobs.length/3)*n*o.real;if(clock>env.screenClock.deadline){const r={};Object.defineProperty(r,'incomplete',{value:true});return r}}
    clock+=o.cost?o.cost(jobs.length,n,calls.length):0;if(o.rateAfter&&!env.final)ctx.SIMQ.rateS=o.rateAfter;
    const r=Object.fromEntries(jobs.map(j=>[j.id,{clear:0.5,prog:0.5,ttk:20}]));
    if(o.incomplete)Object.defineProperty(r,'incomplete',{value:true});return r}});
  for(const s of [src.plan,src.cmp,src.search,src.limited])vm.runInContext(s,ctx);
  const profile={results:Object.fromEntries(ctx.R.map(s=>[s.key,{}]))};
- return {ctx,calls,run:()=>vm.runInContext('growthStageSearch',ctx)({key:'op',name:'작전'},{tab:'a',name:'b'},profile,1)};
+ return {ctx,calls,now:()=>clock,run:()=>vm.runInContext('growthStageSearch',ctx)({key:'op',name:'작전'},{tab:'a',name:'b'},profile,1)};
 }
 
 async function suite(src){
@@ -32,7 +34,7 @@ async function suite(src){
  const want=[];for(let i=0;i<15;i++)want.push(key('t'+i),key('t'+(29-i)));
 
  // A) 속도를 모름: 앞 6팀으로 재고(1판 0.5초, 24초 씀) → 남은 1차 예산 12초 = 9팀 → 2차는 10팀 16판 → limited 15/30
- {const h=harness(src,{teams:30,rateAfter:500,cost:(m,n,i)=>i===1?24000:i===2?6000:0}),r=await h.run();
+ {const h=harness(src,{teams:30,rateAfter:500,cost:(m,n,i)=>i===1?24000:0}),r=await h.run();
   const scr=h.calls.filter(c=>c.keys&&!c.final);
   assert.deepEqual(scr[0],{keys:want.slice(0,6),n:8,final:false},'속도 재기: 번갈아 순서의 앞 6팀');
   assert.deepEqual(scr[1],{keys:want.slice(6,15),n:8,final:false},'남은 예산만큼만');
@@ -51,7 +53,19 @@ async function suite(src){
  {const h=harness(src,{teams:8,rate:50,rateSt:'op|x|y',rateAfter:3000,cost:()=>0}),r=await h.run(),scr=h.calls.filter(c=>c.keys&&!c.final);
   assert.equal(scr[0].keys.length,6,'다른 스테이지 속도면 앞 6팀으로 다시 잼');assert.equal(scr[1].keys.length,2,'최소 팀 수(12)까지는 돎');
   assert.equal(scr.length,2,'2차 생략');assert.deepEqual(JSON.parse(JSON.stringify(r.limited)),{seen:8,total:8});
-  assert.match(vm.runInContext('growthLimitedHtml',h.ctx)(r),/후보를 짧게만 확인했어요/);}
+  assert.match(vm.runInContext('growthLimitedHtml',h.ctx)(r),/상위 팀을 짧게만 확인했어요/);}
+
+ // C2) 작업자 배분(올림)까지 넣은 실제 시간으로도 상한 안에 끝난다(codex 리뷰 11/13 재현: 30팀·작업자 3·1판 0.4초 / 0.3초).
+ //     2차를 줄였거나 건너뛰었으면 후보를 다 봤어도 limited 를 남긴다
+ for(const [rate,n2] of [[400,null],[300,27],[100,32]]){const h=harness(src,{teams:30,rate,rateSt:'op|a|b',real:rate}),r=await h.run(),scr=h.calls.filter(c=>c.keys&&!c.final);
+  assert(h.now()-1000<=60000,`1판 ${rate}ms: 예선이 상한을 넘김(${h.now()-1000}ms)`);
+  assert.equal(scr[0].keys.length,30);assert.equal(scr.length,n2?2:1,`1판 ${rate}ms 2차 ${n2?'실행':'생략'}`);
+  if(n2){assert.equal(scr[1].n,n2);assert.equal(scr[1].keys.length,rate===100?20:10)}
+  assert.deepEqual(JSON.parse(JSON.stringify(r.limited)),rate===100?null:{seen:30,total:30},`1판 ${rate}ms limited`);
+  assert.equal(/상위 팀을 짧게만 확인했어요/.test(vm.runInContext('growthLimitedHtml',h.ctx)(r)),rate!==100)}
+
+ {const h=harness(src,{teams:30,rate:480,rateSt:'op|a|b',real:480});await h.run();   // 작업자 하나 9팀 × 3 = 27팀(28팀이면 한 작업자가 10팀 = 38.4초로 1차 몫 36초를 넘김)
+  assert.equal(h.calls.find(c=>c.keys).keys.length,27,'1차 팀 수는 작업자당 팀 수 × 작업자 수');}
 
  // D) 재점화 풀: 재점화>0 일 때만 SCR_RK 팀을 후보에 번갈아 넣는다
  {const off=harness(src,{teams:200,rate:1,rateSt:'op|a|b'});await off.run();
@@ -71,6 +85,9 @@ async function suite(src){
  const mutants={
   '1차 축소 끔':{...SRC,plan:rep(SRC.plan,'if(!(rate>0))return total;\n  return','return total;\n  return')},
   '번갈아 대신 이어 붙이기':{...SRC,plan:rep(SRC.plan,'for(let i=0;i<m;i++)for(const l of lists){const k=l[i];','for(const l of lists)for(let i=0;i<m;i++){const k=l[i];')},
+  '작업자 배분 올림 빠짐(2차)':{...SRC,plan:rep(SRC.plan,'Math.floor(Math.max(0,ms)/(Math.ceil(t/workers)*rate))','Math.floor(Math.max(0,ms)*workers/(t*rate))')},
+  '작업자 배분 올림 빠짐(1차)':{...SRC,plan:rep(SRC.plan,'Math.floor(Math.max(0,ms)/(SCR_ROUNDS[0].n*rate))*workers','Math.floor(Math.max(0,ms)*workers/(SCR_ROUNDS[0].n*rate))')},
+  '2차 축소 안 알림':{...SRC,search:rep(SRC.search,'if(!plan||plan.cut)limited','if(!plan)limited')},
   '2차 하한 없음':{...SRC,plan:rep(SRC.plan,'SCR_N2MIN=16','SCR_N2MIN=1')},
   '재점화 풀 끔':{...SRC,plan:rep(SRC.plan,'SCR_RK=40','SCR_RK=0')},
   '스테이지별 속도 구분 없음':{...SRC,plan:rep(SRC.plan,'if(SIMQ.rateSt!==k){','if(false){')},

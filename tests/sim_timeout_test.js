@@ -173,12 +173,20 @@ const finishAll=(h,clear=0.5)=>live(h).slice().forEach(w=>{const req=w.req;req.t
  assert.equal(P('ScrPlan.round1(120,5000,3,36000)'),12,'아무리 느려도 최소 팀 수');
  assert.equal(P('ScrPlan.round1(5,5000,3,36000)'),5);
  assert.equal(P('ScrPlan.round1(120,400,3,-5)'),12,'예산이 음수여도 최소 팀 수');
- assert.deepEqual(P('ScrPlan.round2(120,50,3,20000)'),{top:20,n:32});
- assert.deepEqual(P('ScrPlan.round2(120,100,3,20000)'),{top:20,n:30});
- assert.deepEqual(P('ScrPlan.round2(120,187.5,3,20000)'),{top:20,n:16},'하한 16판은 통과');
- assert.deepEqual(P('ScrPlan.round2(120,200,3,20000)'),{top:10,n:30},'20팀 16판이 안 되면 10팀으로');
+ assert.equal(P('ScrPlan.round1(120,400,2,36000)'),22,'작업자 하나가 돌 수 있는 팀 수 × 작업자 수');
+ // 2차 시간은 가장 많이 맡은 작업자 기준: 20팀·작업자 3 → 7팀, 10팀 → 4팀
+ assert.deepEqual(P('ScrPlan.round2(120,50,3,20000)'),{top:20,n:32,cut:false});
+ assert.deepEqual(P('ScrPlan.round2(120,100,3,20000)'),{top:20,n:28,cut:true});
+ assert.deepEqual(P('ScrPlan.round2(120,178,3,20000)'),{top:20,n:16,cut:true},'하한 16판은 통과');
+ assert.deepEqual(P('ScrPlan.round2(120,200,3,20000)'),{top:10,n:25,cut:true},'20팀 16판이 안 되면 10팀으로');
  assert.equal(P('ScrPlan.round2(120,400,3,20000)'),null,'10팀 16판도 안 되면 생략');
- assert.deepEqual(P('ScrPlan.round2(6,0,3,20000)'),{top:6,n:32});
+ assert.deepEqual(P('ScrPlan.round2(6,0,3,20000)'),{top:6,n:32,cut:false});
+ assert.deepEqual(P('ScrPlan.round2(6,100,3,20000)'),{top:6,n:32,cut:false},'후보가 20팀보다 적은 것은 축소가 아님');
+ // 계획대로 돌면(팀을 번갈아 나눠 작업자마다 차례로) 예산을 넘지 않는다 — 올림을 빼먹으면 넘는다(codex 리뷰 11/13)
+ for(const [rate,w] of [[400,3],[300,3],[250,2],[700,3],[90,1]]){
+  const m=P(`ScrPlan.round1(30,${rate},${w},36000)`),t1=Math.ceil(m/w)*8*rate;if(m>12)assert(t1<=36000,`1차 ${rate}ms·작업자 ${w}: ${t1}`);
+  const left=(60000-t1)*0.9,p2=P(`ScrPlan.round2(${m},${rate},${w},${left})`);
+  if(p2)assert(Math.ceil(p2.top/w)*p2.n*rate<=left,`2차 ${rate}ms·작업자 ${w}: ${JSON.stringify(p2)}`)}
 }
 
 // 14) 후보 순서는 풀별 번갈아, 속도를 모르면 앞 팀(작업자당 2)으로 먼저 잰 뒤 남은 예산만큼만 더 돈다. 2차는 모두 같은 판 수
@@ -194,8 +202,8 @@ const finishAll=(h,clear=0.5)=>live(h).slice().forEach(w=>{const req=w.req;req.t
  live(h).forEach(w=>h.send(w,{type:'done'}));
  assert.deepEqual(order(h),pool.slice(6,15),'남은 예산만큼만(꼬리는 안 돎)');
  assert.equal(h.sc().left,15);assert.equal(h.sc().done,false);
- finishAll(h);                                                // 1차 끝 → 2차: 남은 36초×0.9 → 15팀은 16판이 안 돼 10팀 19판
- assert.equal(h.sc().round,1);assert.equal(sent(h).length,10);assert(live(h).every(w=>w.req.n_runs===19),'2차는 모두 같은 판 수');
+ finishAll(h);                                                // 1차 끝 → 2차: 남은 36초×0.9 → 15팀(작업자당 5)은 16판이 안 돼 10팀(작업자당 4) 16판
+ assert.equal(h.sc().round,1);assert.equal(sent(h).length,10);assert(live(h).every(w=>w.req.n_runs===16),'2차는 모두 같은 판 수');
  finishAll(h,0.6);
  const sc=h.sc();assert.equal(sc.done,true);assert.equal(sc.cut,false);assert.equal(sc.short,true);assert.equal(Object.keys(sc.res).length,15);
  assert(h.ws[0].stopped!==true,'줄여서 끝내도 엔진(0번 작업자)은 살려 둠');
@@ -220,13 +228,30 @@ const finishAll=(h,clear=0.5)=>live(h).slice().forEach(w=>{const req=w.req;req.t
 // 15) 이 스테이지에서 잰 속도가 있으면 처음부터 팀 수를 줄인다. 다른 스테이지 속도는 안 쓴다. 2차가 안 되면 생략하고 알린다
 {
  const h=screeningHarness(names(30));h.c.SIMQ.rateS=1000;h.c.SIMQ.rateSt='op|1|1-1';
- h.ev('simScreen(1)');assert.equal(sent(h).length,13);       // 3×36000/(8×1000) = 13.5
+ h.ev('simScreen(1)');assert.equal(sent(h).length,12);       // 작업자 하나 36000/(8×1000) = 4팀 × 3
  const other=screeningHarness(names(30));other.c.SIMQ.rateS=1000;other.c.SIMQ.rateSt='op|1|9-9';
  other.ev('simScreen(1)');assert.equal(sent(other).length,6,'다른 스테이지 속도면 다시 잰다');assert.equal(other.c.SIMQ.rateS,0);
  const slow=screeningHarness(names(8));slow.c.SIMQ.rateS=3000;slow.c.SIMQ.rateSt='op|1|1-1';
  slow.ev('simScreen(1)');slow.ready();assert.equal(sent(slow).length,8);finishAll(slow);
  const sc=slow.sc();assert.equal(sc.done,true);assert.equal(sc.round,0,'2차 생략');assert.equal(sc.short,true);
- assert.match(slow.ev('scrNote(1,cur[0])'),/시간이 부족해 후보를 짧게만 확인했어요/);
+ assert.match(slow.ev('scrNote(1,cur[0])'),/시간이 부족해 상위 팀을 짧게만 확인했어요/);
  assert(Object.values(sc.res).every(r=>r.n===8));
 }
-console.log('PASS 예선 예산: 번갈아 순서·속도 재기·1차 축소·2차 판 수 하한/생략·안내·끝까지 확인·도중 취소');
+
+// 16) 2차만 줄였을 때도 알린다: 후보는 다 봤지만 상위 팀을 기본(20팀·32판)보다 짧게 봄 → 안내·「끝까지 확인」(32판으로 다시)
+{
+ const h=screeningHarness(names(30));h.c.SIMQ.rateS=300;h.c.SIMQ.rateSt='op|1|1-1';
+ h.ev('simScreen(1)');h.ready();assert.equal(sent(h).length,30,'1차는 전부');finishAll(h);
+ assert.equal(h.sc().round,1);assert.equal(sent(h).length,20);assert(live(h).every(w=>w.req.n_runs===25),'2차 20팀 25판(작업자당 7팀)');
+ finishAll(h,0.6);const sc=h.sc();
+ assert.equal(sc.done,true);assert.equal(sc.cut,false);assert.equal(Object.keys(sc.res).length,30);assert.equal(sc.short,true,'2차만 줄여도 short');
+ const note=h.ev('scrNote(1,cur[0])');assert.match(note,/시간이 부족해 상위 팀을 짧게만 확인했어요/);assert.match(note,/data-scrmore="1"/);
+ assert.equal(h.ev('simScreen(1,true)'),true);h.ready();
+ assert.equal(sent(h).length,20);assert(live(h).every(w=>w.req.n_runs===32));finishAll(h,0.6);
+ assert.equal(h.sc().short,false);assert.equal(h.ev('scrNote(1,cur[0])'),'');
+ // 빠른 기기는 줄이지 않고 안내도 없다
+ const fast=screeningHarness(names(30));fast.c.SIMQ.rateS=20;fast.c.SIMQ.rateSt='op|1|1-1';
+ fast.ev('simScreen(1)');fast.ready();finishAll(fast);assert(live(fast).every(w=>w.req.n_runs===32));finishAll(fast);
+ assert.equal(fast.sc().short,false);assert.equal(fast.ev('scrNote(1,cur[0])'),'');
+}
+console.log('PASS 예선 예산: 번갈아 순서·속도 재기·1차 축소·작업자 배분 올림·2차 판 수 하한/축소/생략·안내·끝까지 확인·도중 취소');
