@@ -339,7 +339,7 @@ def test_browser_sim_blocked(browser, ctx):
 
 
 def test_sim_timeout_partial(browser, ctx):
-    """실제 UI 중단 경로: 한 팀 완료 뒤 시간 초과→부분 결과 표시→남은 팀만 재시도."""
+    """실제 UI 중단 경로: 예선 한 팀 완료 뒤 「지금까지 결과로 보기」→부분 순위, 본선 한 팀 완료 뒤 시간 초과→부분 결과 표시→남은 팀만 재시도."""
     page = open_page(browser, ctx)
     page.clock.install()
     page.evaluate("""() => {
@@ -355,9 +355,11 @@ def test_sim_timeout_partial(browser, ctx):
       __workers.forEach(w=>w.onmessage({data:{type:'stage',id:w.req.id,msg:'준비 끝'}}));
       __finishTeam(__workers[0],0);
     }""")
-    page.clock.run_for(60000)
-    assert page.evaluate("""() => Object.values(SIMQ.scr).some(s=>s.done && s.cut && s.order.length===1)
-      && __workers.every(w=>w.stopped) && Object.keys(SIMQ.res).length===0""")
+    page.clock.run_for(200000)                              # 예선엔 60초 상한이 없다(무진행 상한 240초 전)
+    assert page.evaluate("() => SIMQ.busy===1 && SIMQ.screening && !Object.values(SIMQ.scr).some(s=>s.done)")
+    page.evaluate("() => scrStop()")
+    assert page.evaluate("""() => Object.values(SIMQ.scr).some(s=>s.done && s.short && s.order.length===1)
+      && __workers.every(w=>w.stopped) && Object.keys(SIMQ.res).length===0 && SIMQ.err===''""")
     page.evaluate('() => {window.__workers=[]}')
     page.click('.party[data-party="1"] [data-sim="1"]')
     page.evaluate("""() => {
@@ -389,10 +391,10 @@ def test_sim_timeout_partial(browser, ctx):
     return True, '예선 부분 순위→본선 시간 초과→1팀 결과·안내→2팀 재시도 완료, 늦은 메시지 무시'
 
 
-def test_screen_short_notice(browser, ctx):
-    """예선 시간 예산(390px): 느린 기기는 후보를 줄여 보고 「시간이 부족해 후보 N/M팀만 확인했어요 · 끝까지 확인」→ 누르면 안 돈 팀만 이어서 → 안내 사라짐."""
+def test_screen_stop_notice(browser, ctx):
+    """예선은 끝까지 돈다(390px): 진행 막대·남은 시간·「지금까지 결과로 보기」→ 끝난 팀으로 순위·본선 → 결과 위 「중간에 멈춰서 후보 N/M팀만 확인했어요 · 끝까지 확인」→ 안 돈 팀만 이어서 → 안내 사라짐."""
     page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
-    first = page.evaluate("""() => {
+    page.evaluate("""() => {
       window.__workers=[];
       window.Worker=class {
         constructor(){__workers.push(this)}
@@ -400,37 +402,59 @@ def test_screen_short_notice(browser, ctx):
         terminate(){this.stopped=true}
       };
       window.__live=()=>__workers.filter(w=>!w.stopped&&w.req);
+      window.__team=(w,i,clear)=>w.onmessage({data:{type:'team',id:w.req.id,key:w.req.teams[i].key,
+        result:{n:w.req.n_runs,clear,prog:0.6,progs:[0.6],via:{coop:0},ci:[0.1,0.4],ttk:30}}});
       window.__finishAll=()=>{for(const w of __live()){const req=w.req;w.onmessage({data:{type:'stage',id:req.id,msg:'준비 끝'}});
-        req.teams.forEach(t=>w.onmessage({data:{type:'team',id:req.id,key:t.key,result:{n:req.n_runs,clear:0.25,prog:0.6,progs:[0.6],via:{coop:0},ci:[0.1,0.4],ttk:30}}}));
-        w.onmessage({data:{type:'done',id:req.id}})}};
-      const c=contents[$('content').value],st=cur[$('stage').value];
-      SIMQ.rateS=3000;SIMQ.rateSt=c.key+'|'+st.tab+'|'+st.name;      // 1판 3초인 느린 기기
-      if(!simScreen(1))throw Error('예선 시작 실패');
-      const sent=__live().flatMap(w=>w.req.teams.map(t=>t.key)),sc=SIMQ.scr[scrKey(st,1)];
-      __finishAll();
-      return {sent:sent.length,total:sc.total,pool:sc.pool.length,runs:[...new Set(__workers.map(w=>w.req&&w.req.n_runs))],done:sc.done,short:sc.short,round:sc.round};
+        req.teams.forEach((t,i)=>__team(w,i,0.25));w.req=null;w.onmessage({data:{type:'done',id:req.id}})}};
+      simAuto(true);run();
     }""")
+    page.wait_for_function('() => SIMQ.screening && __live().length>0', timeout=10000)
+    first = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)],ws=__live();
+      ws.forEach(w=>w.onmessage({data:{type:'stage',id:w.req.id,msg:'준비 끝'}}));
+      for(let i=0;i<7;i++)__team(ws[i%ws.length],Math.floor(i/ws.length),0.25);
+      const pg=document.querySelector('#out [data-k="progress"]'),bt=pg&&pg.querySelector('button[data-scrstop]'),r=bt&&bt.getBoundingClientRect();
+      return {sent:ws.flatMap(w=>w.req.teams).length,total:sc.total,runs:[...new Set(ws.map(w=>w.req.n_runs))],
+        bar:!!(pg&&pg.querySelector('.pbar')),eta:!!(pg&&pg.querySelector('[data-k="eta"]')),state:pg?pg.querySelector('[data-k="simstate"]').textContent:'',
+        stop:bt?bt.textContent:'',right:r?r.right:999,inner:innerWidth}}""")
+    page.screenshot(path=os.path.join(ctx.shots, 'screen_progress_390.png'), full_page=False)
+    page.click('#out [data-k="progress"] button[data-scrstop]')
+    stopped = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)];
+      return {done:sc.done,short:sc.short,order:sc.order.length,seen:Object.keys(sc.res).length,err:SIMQ.err}}""")
+    # 멈춘 뒤 자동으로 본선(상위 팀 100판)이 이어진다 → 가짜 결과로 끝낸다
+    for _ in range(40):
+        page.evaluate('() => __finishAll()')
+        if page.locator('.party[data-party="1"] [data-k="scr-short"] button[data-scrmore]').count():
+            break
+        page.wait_for_timeout(100)
     note = page.locator('.party[data-party="1"] [data-k="scr-short"]')
     note.wait_for()
     text = note.inner_text()
     box = page.evaluate("""() => {const n=document.querySelector('[data-k="scr-short"]'),b=n.querySelector('button').getBoundingClientRect(),r=n.getBoundingClientRect();
       return {right:Math.max(b.right,r.right),left:Math.min(b.left,r.left),bw:b.width,bh:b.height,scroll:document.documentElement.scrollWidth,inner:innerWidth}}""")
-    page.screenshot(path=os.path.join(ctx.shots, 'screen_short_390.png'), full_page=False)
+    page.screenshot(path=os.path.join(ctx.shots, 'screen_stop_390.png'), full_page=False)
     page.click('[data-k="scr-short"] button[data-scrmore]')
+    page.wait_for_function('() => SIMQ.screening && __live().length>0', timeout=10000)
     more = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)];
-      const a={sent:__live().flatMap(w=>w.req.teams.map(t=>t.key)).length,runs:[...new Set(__live().map(w=>w.req.n_runs))],free:sc.free,seen:Object.keys(sc.res).length};
-      __finishAll();const b={sent:__live().flatMap(w=>w.req.teams.map(t=>t.key)).length,runs:[...new Set(__live().map(w=>w.req.n_runs))]};
-      __finishAll();return {a,b,done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,total:sc.total}}""")
-    page.wait_for_function("""() => !document.querySelector('[data-k="scr-short"]')""", timeout=10000)
+      const a={sent:__live().flatMap(w=>w.req.teams).length,runs:[...new Set(__live().map(w=>w.req.n_runs))]};
+      __finishAll();const b={sent:__live().flatMap(w=>w.req.teams).length,runs:[...new Set(__live().map(w=>w.req.n_runs))]};
+      __finishAll();return {a,b,done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,up:Object.keys(sc.res2).length,total:sc.total}}""")
+    for _ in range(40):
+        page.evaluate('() => __finishAll()')
+        if page.evaluate("""() => SIMQ.busy===null && !!document.querySelector('.party[data-party="1"] .qbox') && !document.querySelector('[data-k="progress"]')"""):
+            break
+        page.wait_for_timeout(100)
+    gone = page.locator('[data-k="scr-short"]').count() == 0 and page.locator('.party[data-party="1"] .qbox').count() == 1
     errs = list(ctx.errors)
     page.close()
-    ok = (first['sent'] == 12 and first['total'] > 12 and first['runs'] == [8] and first['done'] and first['short'] and first['round'] == 0
-          and ('시간이 부족해 후보 12/%d팀만 확인했어요' % first['total']) in text and '끝까지 확인' in text
+    ok = (first['sent'] == first['total'] and first['total'] > 20 and first['runs'] == [8] and first['bar'] and first['eta']
+          and '후보 거르는 중 7/%d' % first['total'] in first['state'] and first['stop'] == '지금까지 결과로 보기' and first['right'] <= first['inner']
+          and stopped == {'done': True, 'short': True, 'order': 7, 'seen': 7, 'err': ''}
+          and ('중간에 멈춰서 후보 7/%d팀만 확인했어요' % first['total']) in text and '끝까지 확인' in text
           and box['left'] >= 0 and box['right'] <= box['inner'] and box['scroll'] <= box['inner'] and box['bw'] > 40 and box['bh'] > 20
-          and more['a']['sent'] == first['total'] - 12 and more['a']['runs'] == [8] and more['a']['free']
-          and more['b']['sent'] == min(20, first['total']) and more['b']['runs'] == [32]
-          and more['done'] and not more['short'] and more['seen'] == more['total'] and not errs)
-    return ok, '처음 %s / 안내 %r / 폭 %s / 끝까지 %s / 오류 %s' % (first, text, box, more, errs[:2])
+          and more['a']['sent'] == first['total'] - 7 and more['a']['runs'] == [8]
+          and more['b']['sent'] == 20 and more['b']['runs'] == [32]
+          and more['done'] and not more['short'] and more['seen'] == more['total'] and more['up'] == 20 and gone and not errs)
+    return ok, '진행 %s / 멈춤 %s / 안내 %r / 폭 %s / 끝까지 %s / 안내 사라짐 %s / 오류 %s' % (first, stopped, text, box, more, gone, errs[:2])
 
 
 def test_sim_auto_and_override(browser, ctx):
@@ -2017,7 +2041,7 @@ def test_assumed_growth(browser, ctx):
     assert '계산 중' in page.inner_text('#result-tab-growth')
     page.click('#result-tab-growth')
     page.click('[data-growth-cancel]')
-    assert '미완료' in page.inner_text('#growth-result')
+    assert '계산을 끝내지 못했어요' in page.inner_text('#growth-result')
     assert '미완료' in page.inner_text('#result-tab-growth')
     result_tabs_audit(page, 'growth')
     assert page.locator('#out > [data-party="1"]').get_attribute('data-team') == before
@@ -2393,7 +2417,7 @@ TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)
 TESTS.append(test_request_diagnostics)
 TESTS.append(test_sim_timeout_partial)
-TESTS.append(test_screen_short_notice)
+TESTS.append(test_screen_stop_notice)
 TESTS.append(test_guild_search_dropped)
 TESTS.append(test_guild_season_rollover)
 TESTS.append(test_break_skill_select)
@@ -2811,7 +2835,7 @@ def test_ux_step12(browser, ctx):
     page.evaluate("GROW.phase='error';GROW.errors=['시험용 작업자 오류'];growthPaint()")
     result_tabs_audit(page, 'growth')
     assert '미완료 · 실패' in page.inner_text('#result-tab-growth')
-    assert '미완료' in page.inner_text('#growth-result')
+    assert '계산을 끝내지 못했어요' in page.inner_text('#growth-result')
     page.evaluate("GROW.phase='done';GROW.errors=[];GROW.msg='';growthPaint()")
     page.click('#result-tab-growth')
     assert '지금' in page.inner_text('#growth-result .mi-verdict') and '맞추면' in page.inner_text('#growth-result .mi-verdict')

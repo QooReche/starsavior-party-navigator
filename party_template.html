@@ -952,7 +952,7 @@ function simBar(p,rows,st,hasMore){
   all?`<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">모의 전투 실행</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
-function simInvalidate(){if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;if(SIMQ.pool){for(const w of SIMQ.pool.slice(1))w&&w.terminate();SIMQ.pool=null}for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;if(x.free&&x.order.length){x.done=true;x.free=false;x.short=true}else delete SIMQ.scr[k]}if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
+function simInvalidate(){if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;if(SIMQ.pool){for(const w of SIMQ.pool.slice(1))w&&w.terminate();SIMQ.pool=null}for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;if(Object.keys(x.res).length)scrClose(x);else delete SIMQ.scr[k]}if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
 function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=msg;SIMQ.err=/취소|중단/.test(msg)?"중단함":/엔진 준비 시간 초과/.test(msg)?"계산 엔진 준비가 오래 걸려 멈췄어요 · 네트워크를 확인하고 다시 시도해 주세요":/시간 초과/.test(msg)?"계산이 오래 걸려 멈췄어요 · 다시 시도하면 끝난 팀은 이어서 계산해요":"자료를 불러오지 못했습니다. 다시 시도해 주세요";SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simQueue(start){const id=SIMQ.requestId;clearTimeout(SIMQ.startTimer);SIMQ.startTimer=setTimeout(()=>{if(SIMQ.requestId===id&&REQ&&!RECO.timer)start()},0)}
@@ -1054,6 +1054,7 @@ $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-sim]
  const mo=e.target.closest("button[data-more]");if(mo){const st=cur&&cur[$("stage").value],p=+mo.dataset.more,k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run();simStart(p);return}
  const sm=e.target.closest("button[data-scrmore]");if(sm){simAuto(true);if(simScreen(+sm.dataset.scrmore,true))run();return}
  if(e.target.closest("button[data-simauto]")){simAuto(false);run();return}
+ if(e.target.closest("button[data-scrstop]")){scrStop();return}
  if(e.target.closest("button[data-simcancel]"))simStop("취소함")});
 $("out").addEventListener("change",e=>{const s=e.target.closest("select.bsel");if(!s)return;
  breakEquip(s.dataset.bkey,s.value)});
@@ -1070,72 +1071,66 @@ const bigBossNote=r=>`<div class="bigboss" data-k="bigboss">큰 보스전 ${Ux.h
 // 2파티 콘텐츠는 함께 고르기(JOINT)가 있어 예선을 쓰지 않는다
 // 단계: 1차 = 빠른 계산 상위 80 + 근사 점수 상위 40 (+ 재점화 풀 SCR_RK) 을 8판, 2차 = 1차 상위 20 을 32판. 순위 = 클리어율 → 적 진척도(0% 끼리도 가름) → 처치 턴.
 // 모든 팀이 같은 시드(판 번호별 같은 난수 시작)를 써서 팀끼리 비교 오차를 줄인다(팀 순서·작업자 배정과 결과는 무관).
-// 시간(11/13): 상한 SCR_MS 에 걸려 «끊기기» 전에, 이 기기에서 잰 속도로 돌 수 있는 만큼만 미리 정한다(ScrPlan).
-//  1차 = 상한의 SCR_R1 안에 들어가는 팀 수만(후보는 풀별 번갈아 순서라 꼬리를 잘라도 풀마다 고르게 남음). 속도를 모르면 앞 몇 팀으로 먼저 잰다.
-//  2차 = 남은 시간에 맞춘 판 수(모든 팀 같은 판 수, 하한 SCR_N2MIN) → 안 되면 팀 수를 SCR_TOP2MIN 으로 → 그래도 안 되면 2차 생략.
-//  줄였으면(1차 팀 수·2차 팀 수/판 수·2차 생략 어느 것이든) sc.short — 화면에 알리고 「끝까지 확인」(simScreen(p,true): 안 돈 팀만 상한 없이 이어서). SCR_MS 타이머는 예상이 빗나갔을 때의 마지막 안전망
-const SCR_ROUNDS=[{n:8,q:80,v:40},{n:32,top:20}],SCR_MS=60000,SCR_N=SCR_ROUNDS.map(r=>r.n).join("→");
-// SCR_RK = 재점화 풀 크기(재점화>0 일 때만 후보에 더함, 0 이면 끔) · SCR_R1 = 1차가 쓸 시간 몫 · SCR_MIN1 = 1차 최소 팀 수 · SCR_PROBE = 속도 재는 팀 수(작업자당)
-const SCR_RK=40,SCR_R1=0.6,SCR_MIN1=12,SCR_PROBE=2,SCR_N2MIN=16,SCR_TOP2MIN=10;
-const ScrPlan={
- // 여러 풀을 번갈아 한 줄로(중복은 먼저 나온 자리만)
- interleave(lists){const out=[],seen=new Set(),m=Math.max(0,...lists.map(l=>l.length));
-  for(let i=0;i<m;i++)for(const l of lists){const k=l[i];if(k!=null&&!seen.has(k)){seen.add(k);out.push(k)}}return out},
- // 걸리는 시간은 가장 많이 맡은 작업자가 정한다: 팀을 번갈아 나누므로 작업자 하나가 ceil(팀 수/작업자 수)팀을 차례로 돈다
- // 1차에 돌 팀 수: ms 안에 작업자 하나가 돌 수 있는 팀 수 × workers(rate = 1판 ms). 속도를 모르면 전부, 아무리 느려도 min 팀
- round1(total,rate,workers,ms,min=SCR_MIN1){if(!(rate>0))return total;
-  return Math.max(Math.min(total,min),Math.min(total,Math.floor(Math.max(0,ms)/(SCR_ROUNDS[0].n*rate))*workers))},
- // 2차 {top,n,cut} 또는 null(시간 부족 → 생략). count = 1차를 마친 팀 수, cut = 기본(상위 top팀·n판)보다 줄였음
- round2(count,rate,workers,ms){const R=SCR_ROUNDS[1],full=Math.min(R.top,count);if(!(rate>0))return {top:full,n:R.n,cut:false};
-  for(const top of [R.top,SCR_TOP2MIN]){const t=Math.min(top,count),n=Math.min(R.n,Math.floor(Math.max(0,ms)/(Math.ceil(t/workers)*rate)));if(n>=SCR_N2MIN)return {top:t,n,cut:t<full||n<R.n}}
-  return null}};
-// 예선 후보 순서: 빠른 계산 상위 q · 근사 점수 상위 v · 재점화 풀(rkTop)을 번갈아
+// 시간(11/13, 정확도 우선): 전체 시간 상한이 없다 — 느린 기기에서도 줄이지 않고 끝까지 돈다. 멈추는 것은 사용자뿐(진행 화면 「지금까지 결과로 보기」).
+//  멈추면 그때까지 끝난 팀으로 순위를 정하고(scrClose) sc.short — 결과 위에 알리고 「끝까지 확인」(simScreen(p,true): 안 돈 것만 이어서).
+//  후보는 풀별 번갈아 순서(scrPick)라 중간에 멈춰도 풀마다 고르게 남는다. 안전망은 무진행 상한뿐(팀 결과가 simTeamLimit 동안 안 오면 오류로 멈춤)
+const SCR_ROUNDS=[{n:8,q:80,v:40},{n:32,top:20}],SCR_N=SCR_ROUNDS.map(r=>r.n).join("→");
+// SCR_RK = 재점화 풀 크기(재점화>0 일 때만 후보에 더함, 0 이면 끔)
+const SCR_RK=40;
+// 예선 후보 순서: 빠른 계산 상위 q · 근사 점수 상위 v · 재점화 풀(rkTop)을 번갈아 한 줄로(중복은 먼저 나온 자리만)
 function scrPick(all,rkTop){const ck=t=>t.keys.slice().sort().join(","),R0=SCR_ROUNDS[0];
- return ScrPlan.interleave([all.slice(0,R0.q).map(ck),all.slice().sort((a,b)=>b.v-a.v).slice(0,R0.v).map(ck),(rkTop||[]).map(ck)])}
-// 속도는 스테이지마다 다르다(전투 길이) — 다른 스테이지에서 잰 값으로 예산을 짜지 않는다
-function scrRateStage(c,st){const k=c.key+"|"+st.tab+"|"+st.name;if(SIMQ.rateSt!==k){SIMQ.rateSt=k;SIMQ.rateS=0}}
+ const lists=[all.slice(0,R0.q).map(ck),all.slice().sort((a,b)=>b.v-a.v).slice(0,R0.v).map(ck),(rkTop||[]).map(ck)],out=[],seen=new Set(),m=Math.max(...lists.map(l=>l.length));
+ for(let i=0;i<m;i++)for(const l of lists){const k=l[i];if(k!=null&&!seen.has(k)){seen.add(k);out.push(k)}}return out}
 const scrKey=(st,p)=>JSON.stringify([contents[$("content").value].key,st.tab,st.name,+p,rkOf(contents[$("content").value].key),miMode()?MI.hash:"",SCROWN,MM||"",...(typeof growthEnabled==="function"&&growthEnabled()?[growthCacheTag()]:[])]);
 let SCROWN="";
 const scrOn=()=>(contents[$("content").value].parties||1)===1;
 const SCR_WMAX=3,scrWorkers=()=>{const c=navigator.hardwareConcurrency||2,m=navigator.deviceMemory||4;return Math.max(1,Math.min(SCR_WMAX,c-1,m>=8?3:m>=4?2:1))};
 function scrPool(){const n=scrWorkers();if(!SIMQ.pool)SIMQ.pool=[];SIMQ.pool[0]=SIMQ.w;for(let j=1;j<n;j++)if(!SIMQ.pool[j])SIMQ.pool[j]=new Worker("sim_worker.js");return SIMQ.pool.slice(0,n)}
 const scrCmp=(a,b)=>(b.t60??b.clear)-(a.t60??a.clear)||b.clear-a.clear||(b.prog??0)-(a.prog??0)||(a.ttk??1e9)-(b.ttk??1e9);
-// 줄여서 본 예선의 안내(결과 위). 계산 중이 아닐 때만 「끝까지 확인」 단추
+// 예선 상태 sc: pool = 후보(순서대로), res = 1차(8판) 결과, up = 2차에 올린 팀, res2 = 2차(32판) 결과
+// 순위: 2차를 «다» 마쳤으면 올린 팀을 32판 결과 순으로 앞에, 나머지는 8판 결과 순. 2차를 다 못 마쳤으면 8판 결과만으로
+//  (먼저 끝난 팀만 32판 결과로 위에 올리면 클리어율과 무관하게 순서가 갈린다 — 판 수가 같은 것끼리만 비교). 못 쓴 32판 결과는 「끝까지 확인」 때 다시 안 돌게 남겨 둔다
+function scrOrder(sc){const r1=Object.keys(sc.res).sort((a,b)=>scrCmp(sc.res[a],sc.res[b])),up=sc.up||[];
+ if(!up.length||up.some(k=>!sc.res2[k]))return r1;
+ const top=up.slice().sort((a,b)=>scrCmp(sc.res2[a],sc.res2[b])),s=new Set(top);return top.concat(r1.filter(k=>!s.has(k)))}
+// short = 다 못 봄: 안 돈 후보가 있거나, 2차를 시작 못 했거나(후보가 4팀 이상인데), 2차를 다 못 마침
+function scrShort(sc){const up=sc.up||[];return sc.pool.some(k=>!sc.res[k])||(up.length?up.some(k=>!sc.res2[k]):Object.keys(sc.res).length>3)}
+function scrClose(sc){sc.order=scrOrder(sc);sc.short=scrShort(sc);sc.done=true;sc.free=false}
+// 중간에 멈춘 예선의 안내(결과 위). 계산 중이 아닐 때만 「끝까지 확인」 단추
 function scrNote(p,st){const sc=SIMQ.scr[scrKey(st,p)];if(!sc||!sc.done||!sc.short)return "";
- const seen=Object.keys(sc.res).length,msg=seen<sc.total?`시간이 부족해 후보 ${seen}/${sc.total}팀만 확인했어요`:"시간이 부족해 상위 팀을 짧게만 확인했어요";
+ const seen=Object.keys(sc.res).length,msg=seen<sc.total?`중간에 멈춰서 후보 ${seen}/${sc.total}팀만 확인했어요`:"중간에 멈춰서 상위 팀을 짧게만 확인했어요";
  return `<div class="scr-short" data-k="scr-short" role="status"><span>${msg}</span>${SIMQ.busy==null?`<button type="button" class="sec" data-scrmore="${p}">끝까지 확인</button>`:""}</div>`}
+// 진행 화면의 「지금까지 결과로 보기」: 끝난 팀이 있으면 그 팀들로 순위를 정하고(simInvalidate 가 scrClose) 본선으로, 하나도 없으면 그냥 취소
+function scrStop(){const st=cur&&cur[$("stage").value],sc=st&&SIMQ.busy!=null?SIMQ.scr[scrKey(st,SIMQ.busy)]:null;
+ if(!SIMQ.screening||!sc||!Object.keys(sc.res).length){simStop("취소함");return}simInvalidate();run()}
 function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("stage").value],box=LASTQ[p];if(!st||!box||SIMQ.busy!=null)return false;
  const k=scrKey(st,p),ck=t=>t.keys.slice().sort().join(","),byKey=new Map(box.all.map(t=>[ck(t),t]));
  const R0=SCR_ROUNDS[0],R1=SCR_ROUNDS[1];let sc=SIMQ.scr[k];
- if(more){if(!sc||!sc.done||!sc.short||!sc.pool)return false;sc.pool=sc.pool.filter(x=>byKey.has(x));sc.total=sc.pool.length;sc.done=false;sc.cut=false;sc.free=true;sc.allReady=false;sc.up=null}
+ if(more){if(!sc||!sc.done||!sc.short)return false;sc.pool=sc.pool.filter(x=>byKey.has(x));sc.total=sc.pool.length;sc.done=false;sc.free=true;sc.allReady=false}
  else{const pool=scrPick(box.all,SCR_RK&&rkOf(c.key)?rkQuickTop(c,st,box.all,SCR_RK):null);
-  if(pool.length<=3){SIMQ.scr[k]={done:true,order:pool,n:pool.length,total:pool.length,res:{}};return false}
-  scrRateStage(c,st);sc=SIMQ.scr[k]={done:false,order:[],n:pool.length,total:pool.length,pool,res:{},round:0,left:pool.length,t0:0}}
+  if(pool.length<=3){SIMQ.scr[k]={done:true,order:pool,n:pool.length,total:pool.length,pool,res:{},res2:{}};return false}
+  sc=SIMQ.scr[k]={done:false,order:[],n:pool.length,total:pool.length,pool,res:{},res2:{},up:null,round:0,left:pool.length}}
  SIMQ.err="";SIMQ.busy=p;SIMQ.screening=true;SIMQ.compareKey=null;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
  if(!SIMQ.w){SIMQ.w=new Worker("sim_worker.js");SIMQ.loaded=false}
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
- const rank=()=>{const up=sc.up||new Set();return Object.entries(sc.res).sort((a,b)=>(up.has(b[0])-up.has(a[0]))||(b[1].n-a[1].n)||scrCmp(a[1],b[1])).map(e=>e[0])};
- // short = 후보를 다 못 봤거나(1차 축소·시간 초과) 2차를 건너뛰었거나 2차를 기본(상위 20팀·32판)보다 줄임. 「끝까지 확인」을 마치면 false
- const finish=cut=>{if(sc.done)return;clearTimeout(SIMQ.timer);sc.order=rank();sc.done=true;sc.cut=!!cut;sc.short=!!cut||!!sc.skip2||!!sc.cut2||sc.pool.some(x=>!sc.res[x]);sc.free=false;SIMQ.screening=false;SIMQ.busy=null;if(SIMQ.pool){for(const w of SIMQ.pool.slice(1))w&&w.terminate();SIMQ.pool=null}};
+ const finish=()=>{if(sc.done)return;clearTimeout(SIMQ.timer);scrClose(sc);SIMQ.screening=false;SIMQ.busy=null;if(SIMQ.pool){for(const w of SIMQ.pool.slice(1))w&&w.terminate();SIMQ.pool=null}};
  const el=()=>document.querySelector('[data-k="progress"] [data-k="simstate"]'),show=m=>{SIMQ.msg=m;const x=el();if(x)x.textContent=m};
- const elapsed=()=>sc.allReady?performance.now()-sc.t0:0;
- let id=0;
- // 작업자 여럿(scrPool)에 후보를 번갈아 나눠 맡기고, 모두 끝나면 next. i = 단계(0·1), n = 판 수, got0/all = 진행 표시용(이 단계에서 이미 끝난 수 / 돌 예정 수)
- const leg=(i,keys,n,next,got0=0,all=keys.length)=>{sc.round=i;sc.left=all;sc.got=got0;{const pv=document.querySelector('[data-k="progress"]');if(pv)pv.outerHTML=simProgress(st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
+ let id=0,legN=R0.n;
+ // 작업자 여럿(scrPool)에 후보를 번갈아 나눠 맡기고, 모두 끝나면 next. i = 단계(0·1), 결과는 1차 sc.res · 2차 sc.res2
+ const leg=(i,keys,next)=>{const n=SCR_ROUNDS[i].n,into=i?sc.res2:sc.res;legN=n;sc.round=i;sc.left=keys.length;sc.got=0;{const pv=document.querySelector('[data-k="progress"]');if(pv)pv.outerHTML=simProgress(st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
   const ws=scrPool(),parts=ws.map(()=>[]);
-  // 남은 시간 = 예선 남은 몫(작업자 수로 나눔, SCR_MS 상한 안) + 본선(보이는 팀 수 × 본선 판 수, 작업자 1개)
+  // 남은 시간 = 예선 남은 몫(작업자 수로 나눔) + 본선(보이는 팀 수 × 본선 판 수, 작업자 1개)
   // 본선 = 보이는 팀 수 × 판 수 × 본선 속도(모르면 예선 속도) + 화면 다시 계산 2번(예선 끝·본선 끝)
   const scrEta=()=>{const rs=SIMQ.rateS;if(!rs||!sc.allReady){SIMQ.eta=null;return}const nw=ws.length;
-   let ms=(sc.left-(sc.got||0))*n*rs/nw+(i?0:Math.min(R1.top,sc.left)*R1.n*rs/nw);
-   if(!sc.free)ms=Math.min(ms,Math.max(0,SCR_MS-(performance.now()-sc.t0)));
-   const ord=rank(),k=ord.findIndex(x=>sc.res[x].clear>=0.5),nb=Math.max(1,Math.min(k<0?3:Math.floor(k/3)+1,Math.ceil(Math.min(9,box.total||3)/3)));
+   const ms=(sc.left-(sc.got||0))*n*rs/nw+(i?0:Math.min(R1.top,sc.left)*R1.n*rs/nw);
+   const ord=scrOrder(sc),k=ord.findIndex(x=>(sc.res2[x]||sc.res[x]).clear>=0.5),nb=Math.max(1,Math.min(k<0?3:Math.floor(k/3)+1,Math.ceil(Math.min(9,box.total||3)/3)));
    SIMQ.eta=Date.now()+ms+nb*simBatchMs(SIMQ.n,simRate(MODE)||rs*(MODE==="manual"?4:1))};
-  // 예선 시간은 작업자가 «모두» 엔진을 준비한 뒤부터 잰다(늦게 뜬 작업자 몫이 시간 초과로 통째로 빠지지 않게)
-  const chk=()=>{if(!sc.allReady&&ws.every(x=>x._ready)){sc.allReady=true;SIMQ.loaded=true;sc.t0=performance.now();arm()}};keys.forEach((k,j)=>parts[j%ws.length].push(k));let open=parts.filter(x=>x.length).length;
+  // 무진행 상한은 작업자가 «모두» 엔진을 준비한 뒤부터 잰다(그 전에는 내려받기 상한)
+  const chk=()=>{if(!sc.allReady&&ws.every(x=>x._ready)){sc.allReady=true;SIMQ.loaded=true;arm()}};keys.forEach((k,j)=>parts[j%ws.length].push(k));let open=parts.filter(x=>x.length).length;
   ws.forEach((w,j)=>{if(!parts[j].length)return;
    w.onmessage=e=>{const m=e.data;if(SIMQ.requestId!==id||(m.id!=null&&m.id!==id))return;
     if(m.type==="stage"){if(m.msg==="준비 끝"){w._ready=true;chk()}if(/^시뮬 \d+\//.test(m.msg||""))w._t=Date.now();if(j)return;show(`후보 거르는 중 ${sc.got||0}/${sc.left}`);return}
-    if(m.type==="team"){sc.res[m.key]=Object.assign(m.result,{n});sc.got++;if(w._t){simRateAdd((Date.now()-w._t)/n,"scr");w._t=0}scrEta();if(sc.free)arm();
+    if(m.type==="team"){into[m.key]=Object.assign(m.result,{n});sc.got++;if(w._t){simRateAdd((Date.now()-w._t)/n,"scr");w._t=0}scrEta();arm();
      show(`후보 거르는 중 ${sc.got}/${sc.left}`);
      const bar=document.querySelector('[data-k="progress"] .pbar i');if(bar)bar.style.width=Math.round(sc.got/sc.left*100)+"%";return}
     if(m.type==="done"){if(--open>0)return;next();return}
@@ -1144,27 +1139,18 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
    chk();w.postMessage({type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:n,seed:SIMQ.seed,options:Object.assign({},simOpt(c.key),{rng_streams:true}),mode:"auto",
     teams:parts[j].map(key=>{const t=byKey.get(key),bn=teamBreak(t)?.name||null;return {key,party:simParty(t),options:{break_skill:bn?{name:bn,level:brkLv(bn)}:null}}})})})};
  const end=()=>{finish();run()};
- // 2차: 1차를 마친 팀을 클리어율 순으로(판 수 섞여도 같은 잣대) 세워 위쪽만 더 돈다
- const second=()=>{const cand=Object.entries(sc.res).filter(e=>byKey.has(e[0])).sort((a,b)=>scrCmp(a[1],b[1])).map(e=>e[0]);if(cand.length<=3){end();return}
-  const plan=sc.free?{top:Math.min(R1.top,cand.length),n:R1.n,cut:false}:ScrPlan.round2(cand.length,SIMQ.rateS,scrWorkers(),(SCR_MS-elapsed())*0.9);
-  sc.skip2=!plan;sc.cut2=!!plan&&plan.cut;if(!plan){end();return}
-  const top=cand.slice(0,plan.top),todo=top.filter(x=>sc.res[x].n!==plan.n);sc.up=new Set(top);sc.n2=plan.n;
-  if(!todo.length){end();return}
-  leg(1,todo,plan.n,end)};
- // 1차: 속도를 알면 돌 팀 수를 미리 정하고, 모르면 앞 SCR_PROBE×작업자 팀으로 잰 뒤 나머지 팀 수를 정한다
- const first=()=>{const keys=sc.pool.filter(x=>!sc.res[x]),nw=scrWorkers(),probe=SCR_PROBE*nw,budget=()=>SCR_MS*SCR_R1-elapsed();
-  if(!keys.length){second();return}
-  if(sc.free){leg(0,keys,R0.n,second);return}
-  if(SIMQ.rateS>0||keys.length<=probe){const m=ScrPlan.round1(keys.length,SIMQ.rateS,nw,budget());leg(0,keys.slice(0,m),R0.n,second);return}
-  leg(0,keys.slice(0,probe),R0.n,()=>{const rest=keys.slice(probe),m=ScrPlan.round1(rest.length,SIMQ.rateS,nw,budget(),Math.max(0,SCR_MIN1-probe));
-   if(m>0)leg(0,rest.slice(0,m),R0.n,second,probe,probe+m);else second()},0,keys.length)};
- // 엔진을 내려받는 동안은 내려받기 상한, 준비된 뒤에는 남은 예선 시간. 「끝까지 확인」은 전체 상한 없이 팀 결과가 올 때마다 다시 재는 무진행 상한
- const arm=()=>{clearTimeout(SIMQ.timer);const left=!sc.allReady?SIMQ.LOAD_MS:sc.free?simTeamLimit(R1.n,"auto"):Math.max(1000,SCR_MS-(performance.now()-sc.t0));
+ // 2차: 1차(8판) 결과 순으로 위쪽 R1.top 팀을 32판. 「끝까지 확인」에서는 이미 32판 결과가 있는 팀은 다시 안 돈다
+ const second=()=>{const cand=Object.keys(sc.res).filter(x=>byKey.has(x)).sort((a,b)=>scrCmp(sc.res[a],sc.res[b]));if(cand.length<=3){sc.up=null;end();return}
+  sc.up=cand.slice(0,R1.top);const todo=sc.up.filter(x=>!sc.res2[x]);if(todo.length)leg(1,todo,end);else end()};
+ const first=()=>{const keys=sc.pool.filter(x=>!sc.res[x]);if(keys.length)leg(0,keys,second);else second()};
+ // 엔진을 내려받는 동안은 내려받기 상한, 준비된 뒤에는 무진행 상한(팀 결과가 올 때마다 다시 잰다). 전체 시간 상한은 없다
+ const arm=()=>{clearTimeout(SIMQ.timer);const left=sc.allReady?simTeamLimit(legN,"auto"):SIMQ.LOAD_MS;
   const due=performance.now()+left;
   SIMQ.timer=setTimeout(()=>{const late=performance.now()-due;
-   // 예정보다 크게 늦게 돌았으면(탭 동결·절전 복귀) 멈춘 시간은 예선 시간에서 빼고, 그동안 잰 팀 시간은 속도 표본에서 버린다
-   if(late>5000){if(sc.allReady)sc.t0+=late;(SIMQ.pool||[SIMQ.w]).forEach(x=>{if(x)x._t=0});arm();return}
-   if(!sc.allReady){if(document.hidden){arm();return}simStop("엔진 준비 시간 초과");return}finish(true);simInvalidate();run()},left)};
+   // 예정보다 크게 늦게 돌았으면(탭 동결·절전 복귀) 그동안 계산도 멈췄으므로 다시 재고, 그동안 잰 팀 시간은 속도 표본에서 버린다. 가려진 탭도 실패로 끝내지 않는다
+   if(late>5000){(SIMQ.pool||[SIMQ.w]).forEach(x=>{if(x)x._t=0});arm();return}
+   if(document.hidden){arm();return}
+   SIMQ.screening=false;simStop(sc.allReady?"모의 전투 시간 초과":"엔진 준비 시간 초과")},left)};
  if(SIMQ.loaded&&SIMQ.w)SIMQ.w._ready=true;arm();first();
  return true}
 function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.busy!=null&&!SIMQ.compareKey)return true;
@@ -1176,8 +1162,8 @@ function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap
  const pct=all?Math.round(done/all*100):0;
  return `<div class="party progress" data-party="${p}" data-k="progress" data-state="running"><b>추천 편성 확인 중</b>${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':""}<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
   <p><span data-k="simstate" title="후보 ${SCR_N}판 · 작업자 ${scrWorkers()}개">${sc?"후보 거르는 중":"상위 팀 확인 중"} ${done}/${all}</span></p>
-  ${Ux.help("진행 방식","후보를 거른 뒤 상위 팀을 100판씩 모의 전투해요. 남은 시간은 이 기기의 최근 계산 속도를 기준으로 표시해요.")}<p data-k="eta">${esc(simEtaText())}</p>
-  <button type="button" class="sec" data-simcancel="1">중단하고 결과 보기</button></div>`}
+  ${Ux.help("진행 방식","후보를 거른 뒤 상위 팀을 100판씩 모의 전투해요. 남은 시간은 이 기기의 최근 계산 속도를 기준으로 표시해요. 후보를 거르는 중에 「지금까지 결과로 보기」를 누르면 그때까지 확인한 팀으로 먼저 보여 주고, 나머지는 「끝까지 확인」으로 이어서 볼 수 있어요.")}<p data-k="eta">${esc(simEtaText())}</p>
+  ${sc?'<button type="button" class="sec" data-scrstop="1">지금까지 결과로 보기</button>':'<button type="button" class="sec" data-simcancel="1">중단하고 결과 보기</button>'}</div>`}
 
 function buildCands(ranked){return ranked.slice(0,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
 // 남은 시간 표시는 1초마다 다시 그린다(화면 전체를 다시 그리지 않고 글자만)

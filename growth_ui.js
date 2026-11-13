@@ -93,18 +93,18 @@ function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.sta
     if(cut){for(const w of workers)w?.terminate();SIMQ.w=null;SIMQ.loaded=false;SIMQ.pool=null;}
     resolve(results);};
   let timer;
-  const arm=()=>{clearTimeout(timer);const due=env.screenClock?(env.screenClock.deadline??Date.now()+SIMQ.LOAD_MS):deadline;
-    timer=setTimeout(()=>finish(true),Math.max(1,due-Date.now()));};
-  const ready=()=>{if(env.screenClock&&!env.screenClock.deadline&&workers.every((w,i)=>!parts[i].length||w._ready)){
-    env.screenClock.deadline=Date.now()+SCR_MS;arm();}};
+  // 예선(env.screenClock)은 전체 시간 상한이 없다: 엔진 준비는 LOAD_MS, 준비된 뒤에는 팀 결과가 올 때마다 다시 재는 무진행 상한뿐(추천 예선과 같음). 가려진 탭은 끊지 않는다
+  const stall=env.screenClock,arm=()=>{clearTimeout(timer);
+    const due=stall?Date.now()+(stall.ready?simTeamLimit(n,'auto'):SIMQ.LOAD_MS):deadline;
+    timer=setTimeout(()=>{if(stall&&typeof document!=='undefined'&&document.hidden){arm();return;}finish(true);},Math.max(1,due-Date.now()));};
+  const ready=()=>{if(stall&&!stall.ready&&workers.every((w,i)=>!parts[i].length||w._ready)){stall.ready=true;arm();}};
   arm();ready();state.stop=()=>finish(true);
   for(const [i,w] of workers.entries()){
     if(!parts[i].length)continue;
     w.onmessage=e=>{const m=e.data;if(GROW.id!==id||SIMQ.requestId!==request||(m.id!=null&&m.id!==request))return;
       if(m.type==='stage'){if(m.msg==='준비 끝'){SIMQ.loaded=true;w._ready=true;ready();}
-        if(env.screenClock&&/^시뮬 \d+\//.test(m.msg||''))w._t=Date.now();return;}
-      // 예선 단계는 이 기기 속도를 잰다(ScrPlan 예산용, 추천 예선과 같은 SIMQ.rateS)
-      if(m.type==='team'&&env.screenClock&&w._t){if(typeof simRateAdd==='function')simRateAdd((Date.now()-w._t)/n,'scr');w._t=0;}
+        return;}
+      if(m.type==='team'&&stall)arm();
       if(m.type==='team'){if(m.result.ver!==GROW.versions.engine){state.errors.push('엔진 버전이 바뀜 · 다시 실행');finish(true);return;}
         results[m.key]=growthMetric({...m.result,n},mode);state.msg=`${seed===900001?'재평가':'후보 확인'} ${Object.keys(results).length}/${jobs.length} · ${n}판`;paint();}
       if(m.type==='done'&&--open===0)finish(false);
@@ -213,31 +213,29 @@ async function growthStageSearch(c,st,profile,id){
   if(candidates.length<4)return {best:null,runs:0};
   const defPen=CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty;
   const all=quickRank(rankAll(candidates,defPen),qi,profile),key=t=>t.keys.slice().sort().join(','),by=new Map(all.map(t=>[key(t),t]));
-  // 후보 순서·시간 예산은 추천 예선(simScreen)과 같은 규칙(scrPick·ScrPlan): 상한에 걸려 «미완료»로 끝나기 전에 돌 수 있는 만큼만 돈다
-  let keys=scrPick(all,SCR_RK&&rkOf(c.key)?rkQuickTop(c,st,all,SCR_RK,qi):null),runs=0,limited=null;const screenClock={deadline:null};
-  const workers=scrWorkers(),left=()=>screenClock.deadline?screenClock.deadline-Date.now():SCR_MS;
+  // 후보 순서는 추천 예선(simScreen)과 같은 규칙(scrPick). 전체 시간 상한 없이 끝까지 돌고, 멈추는 것은 사용자뿐:
+  // 예선 중 「지금까지 결과로 보기」(GROW.partial) → 그때까지 끝난 팀으로 순위를 정해 본선으로 가고 limited 로 알린다
+  let keys=scrPick(all,SCR_RK&&rkOf(c.key)?rkQuickTop(c,st,all,SCR_RK,qi):null),runs=0,limited=null,stopped=false;
   const evaluate=async(list,n,deadline,final=false)=>{
     if(GROW.id!==id)throw Error('취소');
-    const jobs=list.map(k=>growthJob(by.get(k),k,c));
-    const r=await growthEvaluate(jobs,n,SIMQ.seed,c,st,id,deadline,{final,mode:final?MODE:'auto',...(!final?{screenClock}:{})});
+    const jobs=list.map(k=>growthJob(by.get(k),k,c));GROW.partial=false;GROW.screening=!final;
+    const r=await growthEvaluate(jobs,n,SIMQ.seed,c,st,id,deadline,{final,mode:final?MODE:'auto',...(!final?{screenClock:{}}:{})});
     runs+=Object.keys(r).length*(final?GrowthGuide.finalCost(n,MODE):n);
+    const soft=!final&&GROW.partial&&GROW.id===id;GROW.partial=false;GROW.screening=false;
+    if(soft&&Object.keys(r).length){stopped=true;return r;}
     if(GROW.id!==id||r.incomplete||Object.keys(r).length!==jobs.length)throw Error('미완료');
     return r;
   };
   if(keys.length>3){
-    const deadline=Infinity; // Preparation has its own LOAD_MS; screening starts when workers are ready.
-    const n1=SCR_ROUNDS[0].n,total=keys.length,probe=SCR_PROBE*workers,budget=()=>left()-SCR_MS*(1-SCR_R1);
-    scrRateStage(c,st);
-    // 1차: 속도를 모르면 앞 몇 팀으로 먼저 잰 뒤, 상한의 SCR_R1 안에 드는 팀 수만 돈다
-    let r=!(SIMQ.rateS>0)&&total>probe?await evaluate(keys.slice(0,probe),n1,deadline):{};
-    const done=Object.keys(r).length,rest=keys.slice(done),m=ScrPlan.round1(rest.length,SIMQ.rateS,workers,budget(),Math.max(0,SCR_MIN1-done));
-    if(m>0)r={...r,...await evaluate(rest.slice(0,m),n1,deadline)};
+    const deadline=Infinity,total=keys.length; // 예선은 growthEvaluate 의 무진행 상한만 쓴다
+    const r=await evaluate(keys,SCR_ROUNDS[0].n,deadline);
     keys=keys.filter(k=>r[k]).sort((a,b)=>scrCmp(r[a],r[b]));
-    if(keys.length<total)limited={seen:keys.length,total};
-    // 2차: 남은 시간에 맞춘 판 수(모두 같은 판 수) → 팀 수 축소 → 생략
-    if(keys.length>3){const plan=ScrPlan.round2(keys.length,SIMQ.rateS,workers,left()*0.9);
-      if(!plan||plan.cut)limited=limited||{seen:total,total}; // 2차 생략·축소도 알린다
-      if(plan){keys=keys.slice(0,plan.top);const r2=await evaluate(keys,plan.n,deadline);keys.sort((a,b)=>scrCmp(r2[a],r2[b]));}}
+    if(stopped)limited={seen:keys.length,total};
+    else if(keys.length>3){
+      const top=keys.slice(0,SCR_ROUNDS[1].top),r2=await evaluate(top,SCR_ROUNDS[1].n,deadline);
+      // 2차 도중에 멈췄으면 32판 결과는 버리고 8판 순위 그대로(먼저 끝난 팀만 위로 올리면 클리어율과 무관하게 순서가 갈림)
+      if(stopped)limited={seen:total,total};else keys=top.sort((a,b)=>scrCmp(r2[a],r2[b]));
+    }
   }
   // The same 3-at-a-time, at most 9, >=50% stop rule as simAutoKick.
   let best=null,bestJob=null;
@@ -318,9 +316,9 @@ function growthNoneHint(kind,r){const prob=['op','clo'].includes(kind),b=r?.base
   if(prob&&(!Number.isFinite(v)||v<=0))rows.push(['참고','지금 보유한 구원자로는 아직 어려운 스테이지일 수 있어요.']);
   else rows.push(['결론','지금 추천 편성이 가장 나은 선택이에요.']);
   return rows;}
-// 시간이 모자라 후보를 줄여 본 탐색은 결과 아래에 알린다(조용히 품질이 떨어지지 않게)
+// 예선을 중간에 멈춘 탐색은 결과 아래에 알린다(조용히 품질이 떨어지지 않게)
 function growthLimitedHtml(r){const l=r?.limited;if(!l)return '';
-  return `<p class="mut scr-short" data-k="growth-limited" role="status">${l.seen<l.total?`시간이 부족해 후보 ${l.seen}/${l.total}팀만 확인했어요`:'시간이 부족해 상위 팀을 짧게만 확인했어요'}</p>`;}
+  return `<p class="mut scr-short" data-k="growth-limited" role="status">${l.seen<l.total?`중간에 멈춰서 후보 ${l.seen}/${l.total}팀만 확인했어요`:'중간에 멈춰서 상위 팀을 짧게만 확인했어요'}</p>`;}
 function growthNonePaint(c,r){growthTabs?.reset();let el=$('growth-result');
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
   el.dataset.state='none';const errs=r?.snapshot?.errors||[],hint=growthNoneHint(c.key,r);
@@ -347,9 +345,11 @@ function growthPaint(){
   const head='<h3 class="growth-heading" data-k="growth-summary">클리어 추천 육성 <span>· '+(['guild','cosmo'].includes(c.key)?'맞추면 기대 점수가 올라가요':'이것만 맞추면 깰 수 있어요')+'</span></h3>';
   if(GROW.phase!=='done'){
     const running=GROW.phase==='running';
-    el.innerHTML='<b data-k="growth-summary">클리어 추천 육성</b><span class="tag growth-on">클리어 추천 육성 켜짐</span>'+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'미완료 · 다시 실행해 주세요':'지금 계정 탐색 후'}</span>`+
-      (running?`<span class="mut"> ${esc(GROW.msg)}</span><button class="sec" data-growth-cancel>중단</button>`:'')+
+    el.innerHTML='<b data-k="growth-summary">클리어 추천 육성</b><span class="tag growth-on">클리어 추천 육성 켜짐</span>'+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'계산을 끝내지 못했어요 · 다시 실행해 주세요':'지금 계정 탐색 후'}</span>`+
+      (running?`<span class="mut"> ${esc(GROW.msg)}</span>${GROW.screening?'<button class="sec" data-growth-partial>지금까지 결과로 보기</button>':''}<button class="sec" data-growth-cancel>중단</button>`:'')+
       (GROW.errors.length?`<details><summary>상세</summary>${GROW.errors.map(esc).join(' · ')}</details>`:'');
+    // 예선 중에만: 끝난 팀으로 순위를 정해 본선으로(growthStageSearch 가 GROW.partial 을 보고 이어 감)
+    el.querySelector('[data-growth-partial]')?.addEventListener('click',()=>{GROW.partial=true;GROW.stop?.();});
     el.querySelector('[data-growth-cancel]')?.addEventListener('click',()=>{
       const stop=GROW.stop;GROW.id++;stop?.();GROW.stop=null;SIMQ.busy=null;GROW.phase='error';GROW.msg='미완료';growthPaint();});growthTabsPaint(c,el,show);return;
   }

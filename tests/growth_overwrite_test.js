@@ -79,7 +79,7 @@ async function timeout(code=ui){let active=0;
     assert(reason.includes('시간 초과'));assert.equal(active,0);
   }finally{handle.cancel();}
 }
-async function warmup(code=ui){const ctx={setTimeout,clearTimeout,MODE:'auto',SCR_MS:5,SIMQ:{LOAD_MS:100},
+async function warmup(code=ui){const ctx={setTimeout,clearTimeout,Date,MODE:'auto',simTeamLimit:()=>5,SIMQ:{LOAD_MS:100},
   GROW:{id:1,errors:[],versions:{engine:'test'}},location:{href:'http://example.test/'},simOpt:()=>({}),growthPaint(){},growthMetric:r=>r,
   Worker:class {postMessage(req){setTimeout(()=>{if(this.dead)return;
     this.onmessage({data:{id:req.id,type:'stage',msg:'준비 끝'}});
@@ -88,12 +88,12 @@ async function warmup(code=ui){const ctx={setTimeout,clearTimeout,MODE:'auto',SC
   ctx.scrPool=()=>[ctx.SIMQ.w];vm.createContext(ctx);
   vm.runInContext(code.slice(code.indexOf('function growthEvaluate'),code.indexOf('function growthMaybe')),ctx);
   const r=await ctx.growthEvaluate([{id:'team',party:{}}],8,1,{key:'op'},{tab:'a',name:'b'},1,Infinity,{screenClock:{deadline:null}});
-  assert(!r.incomplete&&r.team?.prog>0,'engine preparation must not consume the screening window');ctx.SIMQ.w?.terminate();
+  assert(!r.incomplete&&r.team?.prog>0,'engine preparation must use the load limit, not the short no-progress limit');ctx.SIMQ.w?.terminate();
 }
 (async()=>{await warmup();await timeout();let caught=false;
   try{await timeout(ui.replace("timer=setTimeout(()=>wrapper.onerror?.({message:'시간 초과'})","timer=setTimeout(()=>{}"));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}
   assert(caught,'timeout mutation survived');console.log('MUTATION caught + restored: seasonal worker timeout');
   caught=false;
-  try{await warmup(ui.replace('env.screenClock.deadline??Date.now()+SIMQ.LOAD_MS','env.screenClock.deadline??Date.now()+SCR_MS'));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}
+  try{await warmup(ui.replace("stall.ready?simTeamLimit(n,'auto'):SIMQ.LOAD_MS","true?simTeamLimit(n,'auto'):SIMQ.LOAD_MS"));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}
   assert(caught,'warmup mutation survived');console.log('MUTATION caught + restored: screening warmup budget');
 })().catch(e=>{console.error(e);process.exitCode=1;});
