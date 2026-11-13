@@ -294,6 +294,20 @@ function growthTabsPaint(c,el,show){
     kind:c.key,baseline,best:r?.best,message:GROW.msg,errors:GROW.errors}));
   if($('result-tabs'))$('result-tabs').hidden=$('out').hidden;
 }
+// 탐색이 끝났는데 더 나은 육성 편성이 없을 때: 탭 없이 같은 자리에 한 줄 안내(조용히 사라지면 켰는데 안 나온 것처럼 보임)
+function growthNoneText(kind,r){const prob=['op','clo'].includes(kind),b=r?.baseline,v=prob?b?.clear:kind==='guild'?b?.score:b?.sum;
+  const noItems=!!r?.snapshot&&!Object.values(r.snapshot.changes||{}).some(a=>a?.changedFields?.length);
+  if(prob&&Number.isFinite(v)&&v>=1)return '추가 육성 없이도 모의 전투 클리어율 100%예요';
+  if(noItems)return '추천 육성 기준까지 올릴 항목이 없어요';
+  const now=Number.isFinite(v)?' · 지금 '+(prob?Math.round(v*100)+'%':miNum(v)+'점'):'';
+  return `이번 탐색에서 ${prob?'클리어율이':'점수가'} 더 높은 육성 편성을 찾지 못했어요${now}`;}
+function growthNonePaint(c,r){growthTabs?.reset();let el=$('growth-result');
+  if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
+  el.dataset.state='none';const errs=r?.snapshot?.errors||[];
+  el.innerHTML=`<p class="growth-none" data-k="growth-none" role="status"><b>클리어 추천 육성</b> · ${esc(growthNoneText(c.key,r))}</p>`+
+    (errs.length?`<details><summary>계산에서 제외된 구원자 ${errs.length}명</summary>${errs.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');
+  const now=['guild','cosmo'].includes(c.key)?$(c.key+'-search'):document.querySelector('#out > [data-party="1"]');
+  if(now&&now.nextElementSibling!==el)now.after(el);}
 function growthPaint(){
   growthRankPaint();
   let el=$('growth-result');
@@ -303,7 +317,7 @@ function growthPaint(){
   if(r&&['op','clo'].includes(c.key))r.baseline=growthBaseline(c,cur[$('stage').value]);
   const show=r&&growthBetter(c.key,r.baseline,r.best);
   if(GROW.phase==='done')growthRecord(c,cur[$('stage').value],r,show);
-  if(GROW.phase==='done'&&!show){growthTabs?.reset();el?.remove();return;}
+  if(GROW.phase==='done'&&!show){growthNonePaint(c,r);return;}
   if(GROW.phase==='idle'&&growthSeasonContent()&&growthSeasonReady(c)&&SIMQ.busy==null)
     setTimeout(()=>{if(GROW.phase==='idle')growthStart(c,cur[$('stage').value]);},0);
   if(GROW.phase==='idle'&&!growthSeasonContent()){growthTabs?.reset();el?.remove();return;}

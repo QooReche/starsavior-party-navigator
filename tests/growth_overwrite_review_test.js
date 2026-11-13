@@ -66,8 +66,17 @@ function baseline(code=ui){
   // Repainting after a user selection must refresh an already-finished comparison.
   ctx.PICK['op|sector|stage|1']='e,f,g,h';
   Object.assign(ctx,{seasonBlocked:()=>false,growthEnabled:()=>true,MI:{info:{}},contents:[c],cur:[st],$:(id)=>id==='growth-result'?{remove(){ctx.removed=true;}}:{value:0}});
+  ctx.growthNonePaint=()=>{ctx.none=true;};ctx.miNum=n=>String(n);
   vm.runInContext("GROW.phase='done';GROW.result={baseline:{clear:.9},best:{clear:.1}};growthPaint()",ctx);
-  assert.equal(vm.runInContext('GROW.result.baseline.clear',ctx),.2);assert(ctx.removed);
+  assert.equal(vm.runInContext('GROW.result.baseline.clear',ctx),.2);assert(ctx.none);
+  // 더 나은 육성 편성이 없을 때 안내 문구(조용히 사라지지 않음)
+  const grown={snapshot:{changes:{a:{changedFields:['skills']}}}},flat={snapshot:{changes:{a:{changedFields:[]}}}};
+  assert.equal(ctx.growthNoneText('op',{...grown,baseline:{clear:1}}),'추가 육성 없이도 모의 전투 클리어율 100%예요');
+  assert.equal(ctx.growthNoneText('op',{...flat,baseline:{clear:.4}}),'추천 육성 기준까지 올릴 항목이 없어요');
+  assert.equal(ctx.growthNoneText('op',{...grown,baseline:{clear:.996}}),'이번 탐색에서 클리어율이 더 높은 육성 편성을 찾지 못했어요 · 지금 100%');
+  assert.equal(ctx.growthNoneText('clo',{...grown}),'이번 탐색에서 클리어율이 더 높은 육성 편성을 찾지 못했어요');
+  assert.equal(ctx.growthNoneText('guild',{...grown,baseline:{score:1200}}),'이번 탐색에서 점수가 더 높은 육성 편성을 찾지 못했어요 · 지금 1200점');
+  assert.equal(ctx.growthNoneText('cosmo',{...grown,baseline:{sum:1}}),'이번 탐색에서 점수가 더 높은 육성 편성을 찾지 못했어요 · 지금 1점');
 }
 async function speed(code=page){
   const fn=code.slice(code.indexOf('async function cosmoSearchStart('),code.indexOf('$("cosmo-search").addEventListener("change"'));

@@ -596,6 +596,8 @@ def test_break_skill_compare(browser, ctx):
       const t=LASTQ[1].rows.find(t=>ckey(t.combo)===key);
       return {key, party:simParty(t), owned:breakOwned(), supported:CFG.breakSupported};
     }''')
+    # 브레이크 선택칸은 접힌 「더 보기」 밖, 카드 바로 아래에 보여야 함(11/13 제보: 접힘 속에 숨어 안 보였음)
+    assert page.locator(card + ' .bbar').is_visible() and page.locator(card + ' .score-details .bbar').count() == 0
     page.click(card + ' button[data-bcompare]')
     page.wait_for_selector(card + ' .bcompare .bcrow')
     progress = page.locator(card + ' .bcompare button[data-simcancel]').count()
@@ -779,13 +781,13 @@ def test_boss_gimmick_mobile(browser, ctx):
         clear:!document.querySelector('#dbtn')};
     }''')
     manual = page.locator('.party[data-party="1"] .manual-details')
-    manual_folded = not manual.evaluate("e => e.open") and not page.locator("#m-manual").is_visible()
-    manual.locator("summary").click()
+    # 「수동 스킬 순서」는 수동 모드에서만 보인다(오토에선 쓸 일이 없어 숨김)
+    manual_folded = manual.count() == 0 and not page.locator("#m-manual").is_visible()
     if not page.locator('#optbox').evaluate('e => e.open'):
         page.click('#optbox > summary')
     page.locator('label:has(#m-manual)').click()
     settle(page)
-    manual_ok = (manual_folded and manual.evaluate("e => e.open")
+    manual_ok = (manual_folded and manual.count() == 1
                  and page.locator("#m-manual").is_checked() and "mode=manual" in page.url
                  and page.evaluate("() => MODE === 'manual' && LS.get('mode') === 'manual'"))
     page.close()
@@ -1009,7 +1011,7 @@ def test_myinfo_sim(browser, ctx):
     wait_sim_done(page)
     assert '클리어' in page.inner_text('.mi-verdict') and '수동 ' not in page.inner_text('.mi-verdict')
     assert page.evaluate('() => SIMQ.lastReq.req.teams.every(t=>t.party.units.every(u=>u.build==="none"&&u.stats_final))')
-    page.click('.manual-details > summary')
+    assert page.locator('.manual-details').count() == 0
     if not page.locator('#optbox').evaluate('e => e.open'):
         page.click('#optbox > summary')
     page.locator('label:has(#m-manual)').click()
@@ -1806,7 +1808,8 @@ def overwrite_audit(page, require_card=False):
     assert page.locator('#out > [data-party="1"]').count() == 1
     assert page.locator('[data-k="growth-table"], [data-k="growth-contributions"]').count() == 0
     visible = page.evaluate('growthBetter(GROW.result.kind,GROW.result.baseline,GROW.result.best)')
-    assert page.locator('#growth-result').count() == int(visible)
+    assert page.locator('#growth-result:not([data-state="none"])').count() == int(visible)
+    assert page.locator('#growth-result [data-k="growth-none"]').count() == int(not visible)
     if require_card:
         assert visible, page.evaluate('({baseline:GROW.result.baseline,best:GROW.result.best})')
     if visible:
@@ -1886,7 +1889,10 @@ def test_assumed_growth(browser, ctx):
     before = page.locator('#out > [data-party="1"]').get_attribute('data-team')
     for value in ['GROW.result.baseline.clear', 'Math.max(0,GROW.result.baseline.clear-.1)']:
         page.evaluate('window.savedClear=GROW.result.best.clear;GROW.result.best.clear='+value+';growthPaint()')
-        assert not page.locator('#growth-result').count()
+        assert page.get_attribute('#growth-result', 'data-state') == 'none'
+        none = page.inner_text('#growth-result [data-k="growth-none"]')
+        assert ('찾지 못했어요' in none or '100%' in none or '올릴 항목이 없어요' in none), none
+        assert page.locator('#growth-result .assumed-card').count() == 0
         assert not page.locator('#result-tabs').count()
         page.evaluate('GROW.result.best.clear=savedClear;growthPaint()')
     page.click('#result-tab-growth')
@@ -2197,7 +2203,8 @@ def test_growth_stage23(browser, ctx):
         original = page.evaluate(f'JSON.stringify({state}.rows)')
         field = 'sum' if kind == 'cosmo' else 'score'
         page.evaluate(f'window.savedMetric=GROW.result.best.{field};GROW.result.best.{field}=GROW.result.baseline.{field};growthPaint()')
-        assert not page.locator('#growth-result').count()
+        assert page.get_attribute('#growth-result', 'data-state') == 'none' and '점수가 더 높은 육성 편성을 찾지 못했어요' in page.inner_text('#growth-result [data-k="growth-none"]')
+        assert page.locator('#growth-result .gc').count() == 0
         page.evaluate(f'GROW.result.best.{field}=savedMetric;growthPaint()')
         assert page.evaluate(f'JSON.stringify({state}.rows)') == original
         page.set_viewport_size({'width': 390, 'height': 844})
@@ -2702,7 +2709,8 @@ def test_ux_step12(browser, ctx):
     result_tabs_audit(page)
     for value in ['GROW.result.baseline.clear', 'Math.max(0,GROW.result.baseline.clear-.1)']:
         page.evaluate('window.tabsBest=GROW.result.best.clear;GROW.result.best.clear='+value+';growthPaint()')
-        assert page.locator('#result-tabs, #growth-result').count() == 0
+        assert page.locator('#result-tabs').count() == 0 and page.locator('#growth-result:not([data-state="none"])').count() == 0
+        assert page.locator('#growth-result [data-k="growth-none"]').count() == 1
         assert page.locator('#out > [data-party="1"]').is_visible()
         page.evaluate('GROW.result.best.clear=tabsBest;growthPaint()')
         result_tabs_audit(page)
