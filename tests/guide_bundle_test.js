@@ -37,7 +37,7 @@ function bundle(){const info=fixture(),key=roster[6].key,u=info.units[6];
   assert.deepEqual(G.options({equipment:true}),{growth:false,owned:false});
   assert.deepEqual(G.options({growth:true,equipment:false},{ae:false,ao:true}),{growth:true,owned:false});
   const template=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
-  assert(!template.includes('id="assume-equipment"'));assert(template.includes('id="assume-growth"> 클리어 추천 육성'));
+  assert(!template.includes('id="assume-equipment"'));assert(template.includes('id="assume-growth"> 클리어를 위한 추천 육성도 같이 보기'));
 }
 async function components(){const t={id:'bundle',key:'u',kind:'growth',source:'owned',candidates:[{id:'bundle'}]};
   const targets=[t,...Object.keys(G.COMPONENTS).map(component=>({...t,id:component,parentId:t.id,component,candidates:[{id:component}]}))];

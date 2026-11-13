@@ -800,7 +800,7 @@ def test_boss_gimmick_mobile(browser, ctx):
 
 
 def import_synthetic(page, path=SYNTH):
-    """내 정보 불러오기 팝업(#mi-open → #mi-file → #dclose)으로 파일을 올린다"""
+    """내 정보 불러오기 팝업(헤더 #mi-open-import → #mi-file → #dclose)으로 파일을 올린다"""
     page.click('#tab-info')
     page.click('#mi-open-import')
     page.wait_for_selector('#drawer.open')
@@ -816,7 +816,7 @@ def import_synthetic(page, path=SYNTH):
 
 
 def test_myinfo_required(browser, ctx):
-    """내 정보 없음: ?auto=1 이어도 계산하지 않고 안내 카드(data-k=miguide), 안내 버튼·#mi-open 으로 불러오기 팝업, 옛 링크 g/p 무시"""
+    """내 정보 없음: ?auto=1 이어도 계산하지 않고 안내 카드(data-k=miguide), 안내 버튼·헤더 #mi-open-import 로 불러오기 팝업, 옛 링크 g/p 무시"""
     ctx.errors.clear()
     page = open_page(browser, ctx, "?g=0.8&p=123456&c=op", info=None, wait=False)
     settle(page)
@@ -829,6 +829,7 @@ def test_myinfo_required(browser, ctx):
     assert not page.locator('#mi-cmd').is_visible()
     assert all(page.locator('#' + key).is_hidden() for key in ('share-link', 'mi-view', 'mi-clear'))
     assert '완전히 종료 후 재실행' in page.inner_text('.mihow')
+    assert page.locator('header.site-head #mi-open-import').count() == 1 and page.locator('#mi-panel #mi-open-import').count() == 0
     assert '사이트가 자동으로 열리며 반영' in page.inner_text('.mihow')
     assert page.locator('#dclose').bounding_box()['height'] >= 39.9
     opened = page.evaluate('() => document.querySelector("#drawer").classList.contains("open") && document.activeElement === $("dclose")')
@@ -849,7 +850,7 @@ def test_myinfo_required(browser, ctx):
     ok = (guide == 1 and state['rows'] == 0 and state['lastq'] == 0 and state['busy'] is None and state['worker'] is None
           and state['grow'] != '0.8' and state['pow'] == '' and state['old'] and state['chip'] == ''
           and not state['dbtn'] and state['own'] == 0 and opened and closed and reopened and guide2 == 11 and sw and not errs)
-    return ok, '안내 %d, 상태 %s, 팝업 열기 %s/닫기 %s/#mi-open %s, 버튼 흐름 안내 %d, 오류 %s' % (guide, state, opened, closed, reopened, guide2, errs[:2])
+    return ok, '안내 %d, 상태 %s, 팝업 열기 %s/닫기 %s/헤더 버튼 %s, 버튼 흐름 안내 %d, 오류 %s' % (guide, state, opened, closed, reopened, guide2, errs[:2])
 
 
 def test_myinfo_import_clear(browser, ctx):

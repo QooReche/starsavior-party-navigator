@@ -30,7 +30,7 @@ details summary{cursor:pointer;color:var(--acc)}
 #dbtn{position:fixed;left:0;top:38%;z-index:40;padding:10px 8px;border-radius:0 10px 10px 0;background:var(--acc);color:#fff;font-size:13px;line-height:1.3;box-shadow:2px 2px 8px #0006}
 #dbtn span{display:block;margin-top:2px;font-size:12px;opacity:.9}
 #drawer{position:fixed;left:50%;top:50%;width:min(560px,94vw);max-height:88vh;z-index:60;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 40px #000a;padding:16px 18px;overflow:auto;transform:translate(-50%,-46%);visibility:hidden;transition:transform .15s}
-.mi-chip{font-size:12px;color:var(--mut);margin-right:6px}.mi-chip b{color:var(--fg)}.mi-chip.none{color:var(--warn)}
+.mi-head{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}.mi-import{font-size:12px;padding:5px 10px}.mi-chip{font-size:12px;color:var(--mut);margin-right:6px}.mi-chip b{color:var(--fg)}.mi-chip.none{color:var(--warn)}
 .guide{padding:18px}.guide h3{margin:0 0 6px}.guide .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .ic{width:16px;height:16px;flex:none;vertical-align:-3px;color:var(--gold)}.ic.in{width:13px;height:13px;margin-right:2px}
 .mi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:10px}
@@ -159,7 +159,7 @@ body:not(.show-why) .why,body:not(.show-why) .tg,body:not(.show-why) .syn,body:n
 .qbox{margin:0 0 10px;padding:10px 12px;border:1px solid var(--acc);border-radius:10px;background:rgba(76,194,194,.06)}
 .qbox .qh{font-size:13px;color:var(--mut);margin-bottom:6px}.qrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0;border-top:1px solid var(--line)}
 .qrow:first-of-type{border-top:0}.qrow .qn{min-width:46px;font-weight:700}.qrow .faces{display:flex;gap:2px}.qrow .qt{flex:1;min-width:180px;font-size:13px}.idle{text-align:center;padding:22px 12px}.idle p{margin:6px 0}.idle button{margin-top:8px;font-size:15px;padding:8px 20px}
-#reco-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 16px;margin-top:8px}#reco-actions button{margin-top:0}
+#reco-actions{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;margin-top:8px}#reco-actions button{margin-top:0}
 .season-closed button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
 #growth-control-home:empty{display:none}#growth-control{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;font-size:12px}#growth-control label{display:inline-flex;align-items:center;gap:4px;min-height:40px;white-space:nowrap}#growth-control .tag{margin:0;white-space:nowrap}#growth-control:has(input:disabled) label{color:var(--mut)}
 #growth-settings{margin:10px 0;padding:8px 10px;border:1px solid var(--line);border-radius:10px;font-size:13px}#growth-settings summary{display:flex;align-items:center;cursor:pointer}#growth-settings summary:before{content:'▸';margin-right:6px}#growth-settings[open] summary:before{content:'▾'}#growth-settings select{max-width:100%}
@@ -293,7 +293,7 @@ summary{padding:9px 4px}
 .gd-best,.gd-now{margin:8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);line-height:1.6}.gd-sel{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.gd-sel label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px;min-width:0;flex:1 1 150px}.gd-sel select{max-width:100%;font-size:14px}
 .gd-scroll{overflow-x:auto;max-width:100%;margin:6px 0}.gd-scroll table{border-collapse:collapse;width:100%;min-width:420px}.gd-scroll th,.gd-scroll td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;font-size:12px}.gd-scroll tr.cur td{background:rgba(111,211,255,.1);font-weight:700}.gd-fx{min-width:190px;color:var(--mut)}.gd-rules{margin:8px 0;padding-left:18px;line-height:1.6}.gd-comm ul{margin:4px 0;padding-left:18px}
 </style><link rel="stylesheet" href="ux.css"></head><body><main>
-<header class="site-head"><h1>파티 편성 네비게이터 <small>베타</small></h1><span id="mi-chip" class="mi-chip"></span>
+<header class="site-head"><h1>파티 편성 네비게이터 <small>베타</small></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button></span>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천</button><button id="tab-info" type="button" aria-pressed="false">내 구원자</button></nav></header>
 <p class="notice" data-k="notice">모의 전투 결과라 실제 플레이와 다를 수 있어요 <button type="button" class="ux-help" aria-label="계산 방식 설명" aria-expanded="false" data-help="내 구원자 수치로 모의 전투를 여러 판 돌려 클리어한 비율을 보여줘요. 계산에 쓰는 성장표와 게임 패치는 차이가 있을 수 있어요. 가정·출처·근거는 각 결과의 ⓘ와 더 보기에서 확인하세요.">ⓘ</button></p>
 <div id="shared-bar" class="shared-bar" hidden></div>
@@ -319,12 +319,12 @@ summary{padding:9px 4px}
   <div id="goalbox" style="margin-top:10px" hidden><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px" title="장비 탐사는 60턴 안에 이겨야 3별이 되어 소탕이 열립니다. 모의 전투의 턴 수는 실제와 차이가 있을 수 있습니다.">장비 탐사 목표<select id="goal"><option value="60">60턴 안에 클리어 (3별·소탕)</option><option value="0">클리어만 하면 됨 (턴 무관)</option></select></label></div>
 <div class="menu-share"><button id="share-link" type="button" class="sec" aria-live="polite">링크 복사</button><label class="mi-use"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></div></details>
 <div id="option-chips" class="option-chips"></div>
-<div id="growth-control-home"><span id="growth-control"><label><input type="checkbox" id="assume-growth"> 클리어 추천 육성</label><button id="growth-hint" type="button" class="ux-help" aria-label="클리어 추천 육성 설명" aria-expanded="false" data-help="덜 키운 구원자를 맞췄다고 치고 함께 찾아요. 더 잘 깨는 편성이 있으면 결과 아래에 보여줘요. 목표는 프리셋 기준이며 최소 육성치를 찾는 기능은 아니에요.">ⓘ</button><span id="growth-requires-info" class="tag">내 정보 필요</span></span></div>
+<div id="growth-control-home"><span id="growth-control"><label><input type="checkbox" id="assume-growth"> 클리어를 위한 추천 육성도 같이 보기</label><button id="growth-hint" type="button" class="ux-help" aria-label="클리어 추천 육성 설명" aria-expanded="false" data-help="덜 키운 구원자를 맞췄다고 치고 함께 찾아요. 더 잘 깨는 편성이 있으면 결과 아래에 보여줘요. 목표는 프리셋 기준이며 최소 육성치를 찾는 기능은 아니에요.">ⓘ</button><span id="growth-requires-info" class="tag">내 정보 필요</span></span></div>
 </div>
 <div id="control-home" hidden><div id="stinfo"></div><div id="mode-controls"><div class="seg" role="radiogroup" aria-label="전투 방식">
    <label><input type="radio" name="mode" value="auto" id="m-auto"><span>오토</span></label><label><input type="radio" name="mode" value="manual" id="m-manual"><span>수동</span></label></div></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
 <section id="mi-panel" class="panel" aria-label="내 정보" hidden>
- <div class="mi-toolbar"><button id="mi-open-import" type="button">새로 불러오기</button><details id="mi-menu" class="ux-menu"><summary aria-label="내 구원자 메뉴">⋯</summary><button id="mi-panel-clear" type="button" class="sec">지우기</button><button id="mi-open" type="button" class="sec">새로 불러오기</button></details><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
+ <div class="mi-toolbar"><details id="mi-menu" class="ux-menu"><summary aria-label="내 구원자 메뉴">⋯</summary><button id="mi-panel-clear" type="button" class="sec">지우기</button></details><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
  <details id="growth-settings"><summary id="growth-settings-summary">육성 설정 · 꺼짐</summary><button type="button" class="ux-help" aria-label="육성 목표 설명" aria-expanded="false" data-help="이 육성 계획을 따랐을 때 예상. 보유 구원자만, 기본·특수·궁 중 7 이하인 스킬·장비 빈 칸/+12 미만/강화 합 84 미만·스텔라 아카이브 주력 950 미만·호감도 20 이하인 항목을 목표로 올려요. 공명은 해금 최대, 스타링크는 실효 레벨 차이 10 이상, 특수 잠재력은 없을 때만 적용해요. 패시브는 유지해요. 고정 레벨 콘텐츠는 공명·스타링크를 제외해요.">ⓘ</button></details>
  <section id="growth-priority" class="panel" hidden aria-label="키울 만한 구원자"></section>
 <div id="mi-saved" class="mut" role="status"></div><details class="account-summary"><summary>계정 요약</summary><div id="mi-meta"></div><div id="mi-account"></div></details>
@@ -1234,8 +1234,8 @@ function syncBrk(){const lv=MI.info?MyInfoImport.mapBreak(MI.info):null;MI.brkLv
  const n=$("brk-note");if(n)n.textContent=lv?"내 정보 기준":"직접 선택";
  pruneBreakSel()}
 function renderChip(){const e=$("mi-chip");if(!e)return;const i=MI.info;e.classList.toggle("none",!i);
- e.dataset.state=i?"loaded":"empty";e.innerHTML=i?`${MI.shared?"공유받은 ":""}<b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(5,10).replace("-","/"))} 기준`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"";document.querySelector(".input-panel").hidden=!$("mi-panel").hidden;$("option-chips").innerHTML=[MODE==="manual"?"수동":"",rkOf(contents[$("content").value]?.key)?`재점화 ${$("rk").value}단계`:"",MM==="avoid"?"불리한 속성 피하기":"",!simAutoOn()?"모의 전투 자동 실행 꺼짐":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("");
- $("mi-open").textContent=i?"계정 정보 다시 불러오기":"내 계정 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["share-link","mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i}
+ e.dataset.state=i?"loaded":"empty";e.innerHTML=i?`${MI.shared?"공유받은 ":""}<b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(5,10).replace("-","/"))} 갱신`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"";document.querySelector(".input-panel").hidden=!$("mi-panel").hidden;$("option-chips").innerHTML=[MODE==="manual"?"수동":"",rkOf(contents[$("content").value]?.key)?`재점화 ${$("rk").value}단계`:"",MM==="avoid"?"불리한 속성 피하기":"",!simAutoOn()?"모의 전투 자동 실행 꺼짐":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("");
+ $("mi-open-import").textContent=i?"새로 불러오기":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["share-link","mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i}
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b))}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  syncOwn();
@@ -1308,7 +1308,7 @@ function miReset(info){GROW.history={};simInvalidate();gsReset();SIMQ.res={};SIM
  miSelect();rerun()}
 function miClear(){if(MI.shared){$("shared-back")?.click();return}MI.importId++;LS.remove("growth.history");GROW.history={};MI.invalid=!LS.remove("myinfo");MI.saved=false;miReset(null);syncOwn();miStatus(MI.invalid?"저장 정보 삭제 실패 · 브라우저 사이트 데이터에서 지우기":"불러온 정보 없음",MI.invalid)}
 $("mi-sort").onchange=renderMi;$("tab-reco").onclick=()=>miTab(false);$("tab-info").onclick=()=>miTab(true);
-$("mi-view").onclick=()=>{setDrawer(false);miTab(true)};$("mi-open-import").onclick=()=>setDrawer(true);$("mi-open").onclick=()=>setDrawer(true);$("mi-panel-clear").onclick=()=>{if(confirm("이 브라우저에 저장한 내 구원자 정보를 지울까요?"))miClear();};
+$("mi-view").onclick=()=>{setDrawer(false);miTab(true)};$("mi-open-import").onclick=()=>setDrawer(true);$("mi-panel-clear").onclick=()=>{if(confirm("이 브라우저에 저장한 내 구원자 정보를 지울까요?"))miClear();};
 const miStatus=(t,bad)=>{const e=$("mi-status");e.textContent=t;e.style.color=bad?"#e0553a":""};
 function miSummary(info,unknown){const d=info.exported_at?String(info.exported_at).slice(0,10):"";return `불러옴: 보유 구원자 ${info.units.length}명${d?` · ${d} 추출`:""}${unknown?` · 이 페이지에 없는 구원자 ${unknown}명`:""}`}
 async function miApply(info,opt={}){
