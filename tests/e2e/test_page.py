@@ -389,6 +389,50 @@ def test_sim_timeout_partial(browser, ctx):
     return True, '예선 부분 순위→본선 시간 초과→1팀 결과·안내→2팀 재시도 완료, 늦은 메시지 무시'
 
 
+def test_screen_short_notice(browser, ctx):
+    """예선 시간 예산(390px): 느린 기기는 후보를 줄여 보고 「시간이 부족해 후보 N/M팀만 확인했어요 · 끝까지 확인」→ 누르면 안 돈 팀만 이어서 → 안내 사라짐."""
+    page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
+    first = page.evaluate("""() => {
+      window.__workers=[];
+      window.Worker=class {
+        constructor(){__workers.push(this)}
+        postMessage(req){this.req=req}
+        terminate(){this.stopped=true}
+      };
+      window.__live=()=>__workers.filter(w=>!w.stopped&&w.req);
+      window.__finishAll=()=>{for(const w of __live()){const req=w.req;w.onmessage({data:{type:'stage',id:req.id,msg:'준비 끝'}});
+        req.teams.forEach(t=>w.onmessage({data:{type:'team',id:req.id,key:t.key,result:{n:req.n_runs,clear:0.25,prog:0.6,progs:[0.6],via:{coop:0},ci:[0.1,0.4],ttk:30}}}));
+        w.onmessage({data:{type:'done',id:req.id}})}};
+      const c=contents[$('content').value],st=cur[$('stage').value];
+      SIMQ.rateS=3000;SIMQ.rateSt=c.key+'|'+st.tab+'|'+st.name;      // 1판 3초인 느린 기기
+      if(!simScreen(1))throw Error('예선 시작 실패');
+      const sent=__live().flatMap(w=>w.req.teams.map(t=>t.key)),sc=SIMQ.scr[scrKey(st,1)];
+      __finishAll();
+      return {sent:sent.length,total:sc.total,pool:sc.pool.length,runs:[...new Set(__workers.map(w=>w.req&&w.req.n_runs))],done:sc.done,short:sc.short,round:sc.round};
+    }""")
+    note = page.locator('.party[data-party="1"] [data-k="scr-short"]')
+    note.wait_for()
+    text = note.inner_text()
+    box = page.evaluate("""() => {const n=document.querySelector('[data-k="scr-short"]'),b=n.querySelector('button').getBoundingClientRect(),r=n.getBoundingClientRect();
+      return {right:Math.max(b.right,r.right),left:Math.min(b.left,r.left),bw:b.width,bh:b.height,scroll:document.documentElement.scrollWidth,inner:innerWidth}}""")
+    page.screenshot(path=os.path.join(ctx.shots, 'screen_short_390.png'), full_page=False)
+    page.click('[data-k="scr-short"] button[data-scrmore]')
+    more = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)];
+      const a={sent:__live().flatMap(w=>w.req.teams.map(t=>t.key)).length,runs:[...new Set(__live().map(w=>w.req.n_runs))],free:sc.free,seen:Object.keys(sc.res).length};
+      __finishAll();const b={sent:__live().flatMap(w=>w.req.teams.map(t=>t.key)).length,runs:[...new Set(__live().map(w=>w.req.n_runs))]};
+      __finishAll();return {a,b,done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,total:sc.total}}""")
+    page.wait_for_function("""() => !document.querySelector('[data-k="scr-short"]')""", timeout=10000)
+    errs = list(ctx.errors)
+    page.close()
+    ok = (first['sent'] == 12 and first['total'] > 12 and first['runs'] == [8] and first['done'] and first['short'] and first['round'] == 0
+          and ('시간이 부족해 후보 12/%d팀만 확인했어요' % first['total']) in text and '끝까지 확인' in text
+          and box['left'] >= 0 and box['right'] <= box['inner'] and box['scroll'] <= box['inner'] and box['bw'] > 40 and box['bh'] > 20
+          and more['a']['sent'] == first['total'] - 12 and more['a']['runs'] == [8] and more['a']['free']
+          and more['b']['sent'] == min(20, first['total']) and more['b']['runs'] == [32]
+          and more['done'] and not more['short'] and more['seen'] == more['total'] and not errs)
+    return ok, '처음 %s / 안내 %r / 폭 %s / 끝까지 %s / 오류 %s' % (first, text, box, more, errs[:2])
+
+
 def test_sim_auto_and_override(browser, ctx):
     """한 번 시뮬을 누르면 다음 스테이지부터 자동 확인, 시뮬 결과가 있으면 판정 배지가 시뮬 기준(title)으로 바뀜, 「자동 확인 끄기」"""
     page = open_page(browser, ctx)
@@ -2349,6 +2393,7 @@ TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)
 TESTS.append(test_request_diagnostics)
 TESTS.append(test_sim_timeout_partial)
+TESTS.append(test_screen_short_notice)
 TESTS.append(test_guild_search_dropped)
 TESTS.append(test_guild_season_rollover)
 TESTS.append(test_break_skill_select)

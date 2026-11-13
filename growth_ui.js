@@ -101,7 +101,10 @@ function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.sta
   for(const [i,w] of workers.entries()){
     if(!parts[i].length)continue;
     w.onmessage=e=>{const m=e.data;if(GROW.id!==id||SIMQ.requestId!==request||(m.id!=null&&m.id!==request))return;
-      if(m.type==='stage'){if(m.msg==='준비 끝'){SIMQ.loaded=true;w._ready=true;ready();}return;}
+      if(m.type==='stage'){if(m.msg==='준비 끝'){SIMQ.loaded=true;w._ready=true;ready();}
+        if(env.screenClock&&/^시뮬 \d+\//.test(m.msg||''))w._t=Date.now();return;}
+      // 예선 단계는 이 기기 속도를 잰다(ScrPlan 예산용, 추천 예선과 같은 SIMQ.rateS)
+      if(m.type==='team'&&env.screenClock&&w._t){if(typeof simRateAdd==='function')simRateAdd((Date.now()-w._t)/n,'scr');w._t=0;}
       if(m.type==='team'){if(m.result.ver!==GROW.versions.engine){state.errors.push('엔진 버전이 바뀜 · 다시 실행');finish(true);return;}
         results[m.key]=growthMetric({...m.result,n},mode);state.msg=`${seed===900001?'재평가':'후보 확인'} ${Object.keys(results).length}/${jobs.length} · ${n}판`;paint();}
       if(m.type==='done'&&--open===0)finish(false);
@@ -210,10 +213,9 @@ async function growthStageSearch(c,st,profile,id){
   if(candidates.length<4)return {best:null,runs:0};
   const defPen=CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty;
   const all=quickRank(rankAll(candidates,defPen),qi,profile),key=t=>t.keys.slice().sort().join(','),by=new Map(all.map(t=>[key(t),t]));
-  const selected=new Map(),first=SCR_ROUNDS[0];
-  all.slice(0,first.q).forEach(t=>selected.set(key(t),t));
-  all.slice().sort((a,b)=>b.v-a.v).slice(0,first.v).forEach(t=>selected.set(key(t),t));
-  let keys=[...selected.keys()],runs=0;const screenClock={deadline:null};
+  // 후보 순서·시간 예산은 추천 예선(simScreen)과 같은 규칙(scrPick·ScrPlan): 상한에 걸려 «미완료»로 끝나기 전에 돌 수 있는 만큼만 돈다
+  let keys=scrPick(all,SCR_RK&&rkOf(c.key)?rkQuickTop(c,st,all,SCR_RK,qi):null),runs=0,limited=null;const screenClock={deadline:null};
+  const workers=scrWorkers(),left=()=>screenClock.deadline?screenClock.deadline-Date.now():SCR_MS;
   const evaluate=async(list,n,deadline,final=false)=>{
     if(GROW.id!==id)throw Error('취소');
     const jobs=list.map(k=>growthJob(by.get(k),k,c));
@@ -224,12 +226,18 @@ async function growthStageSearch(c,st,profile,id){
   };
   if(keys.length>3){
     const deadline=Infinity; // Preparation has its own LOAD_MS; screening starts when workers are ready.
-    for(const round of SCR_ROUNDS){
-      if(round.top)keys=keys.slice(0,round.top);
-      const r=await evaluate(keys,round.n,deadline);
-      keys.sort((a,b)=>scrCmp(r[a],r[b]));
-      if(keys.length<=3)break;
-    }
+    const n1=SCR_ROUNDS[0].n,total=keys.length,probe=SCR_PROBE*workers,budget=()=>left()-SCR_MS*(1-SCR_R1);
+    scrRateStage(c,st);
+    // 1차: 속도를 모르면 앞 몇 팀으로 먼저 잰 뒤, 상한의 SCR_R1 안에 드는 팀 수만 돈다
+    let r=!(SIMQ.rateS>0)&&total>probe?await evaluate(keys.slice(0,probe),n1,deadline):{};
+    const done=Object.keys(r).length,rest=keys.slice(done),m=ScrPlan.round1(rest.length,SIMQ.rateS,workers,budget(),Math.max(0,SCR_MIN1-done));
+    if(m>0)r={...r,...await evaluate(rest.slice(0,m),n1,deadline)};
+    keys=keys.filter(k=>r[k]).sort((a,b)=>scrCmp(r[a],r[b]));
+    if(keys.length<total)limited={seen:keys.length,total};
+    // 2차: 남은 시간에 맞춘 판 수(모두 같은 판 수) → 팀 수 축소 → 생략
+    if(keys.length>3){const plan=ScrPlan.round2(keys.length,SIMQ.rateS,workers,left()*0.9);
+      if(plan){keys=keys.slice(0,plan.top);const r2=await evaluate(keys,plan.n,deadline);keys.sort((a,b)=>scrCmp(r2[a],r2[b]));}
+      else limited=limited||{seen:total,total};}
   }
   // The same 3-at-a-time, at most 9, >=50% stop rule as simAutoKick.
   let best=null,bestJob=null;
@@ -239,7 +247,7 @@ async function growthStageSearch(c,st,profile,id){
     for(const k of batch)if(!best||scrCmp(r[k],best)<0){best=r[k];bestJob=growthJob(by.get(k),k,c);}
     if(best?.clear>=.5)break;
   }
-  return {best,team:bestJob,runs};
+  return {best,team:bestJob,runs,limited};
 }
 async function growthStart(c,st){
   if(seasonBlocked(c.key))return;
@@ -310,11 +318,14 @@ function growthNoneHint(kind,r){const prob=['op','clo'].includes(kind),b=r?.base
   if(prob&&(!Number.isFinite(v)||v<=0))rows.push(['참고','지금 보유한 구원자로는 아직 어려운 스테이지일 수 있어요.']);
   else rows.push(['결론','지금 추천 편성이 가장 나은 선택이에요.']);
   return rows;}
+// 시간이 모자라 후보를 줄여 본 탐색은 결과 아래에 알린다(조용히 품질이 떨어지지 않게)
+function growthLimitedHtml(r){const l=r?.limited;if(!l)return '';
+  return `<p class="mut scr-short" data-k="growth-limited" role="status">${l.seen<l.total?`시간이 부족해 후보 ${l.seen}/${l.total}팀만 확인했어요`:'시간이 부족해 후보를 짧게만 확인했어요'}</p>`;}
 function growthNonePaint(c,r){growthTabs?.reset();let el=$('growth-result');
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
   el.dataset.state='none';const errs=r?.snapshot?.errors||[],hint=growthNoneHint(c.key,r);
   el.innerHTML=`<h3 class="growth-none-title">클리어 추천 육성</h3><p class="growth-none" data-k="growth-none" role="status">${esc(growthNoneText(c.key,r))}</p>`+
-    (hint.length?`<dl class="growth-none-hint" data-k="growth-none-hint">${hint.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`:'')+
+    (hint.length?`<dl class="growth-none-hint" data-k="growth-none-hint">${hint.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`:'')+growthLimitedHtml(r)+
     (errs.length?`<details><summary>계산에서 제외된 구원자 ${errs.length}명</summary>${errs.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');
   const now=['guild','cosmo'].includes(c.key)?$(c.key+'-search'):document.querySelector('#out > [data-party="1"]');
   if(now&&now.nextElementSibling!==el)now.after(el);}
@@ -357,7 +368,7 @@ function growthPaint(){
   for(const k of keys){if(!marks[k])continue;for(const f of growthDisplay(marks[k]).fields){if(f.delta==null){missing=true;continue;}totals[f.field]=(totals[f.field]||0)+f.delta;}}
   const st=cur[$('stage').value],prob=['op','clo'].includes(c.key);
   const summary=prob?`<div class="mi-verdict"><div class="verdict-main"><b class="verdict-number"><small>지금</small>${r.baseline?Math.round(r.baseline.clear*100)+'%':'자료 없음'} → <small>맞추면</small>${Math.round(r.best.clear*100)}%</b>${Ux.chip(r.best.clear)}</div><div class="verdict-stats"><div><b>${miNum(MODE==='manual'?r.best.ttk:(r.best.ta??r.best.ttk))}턴</b><small>예상 턴</small></div><div><b>${miNum(grown)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div></div>`:`<div class="season-score" data-k="growth-season-score"><span>지금 ${r.baseline?miNum(c.key==='guild'?r.baseline.score:r.baseline.sum)+'점':'자료 없음'} → 맞추면</span><b>${miNum(c.key==='guild'?r.best.score:r.best.sum)}</b><small>${c.key==='guild'?'상위 20% 점수':'3팀 합산 점수'}</small></div>`;
-  el.innerHTML=head+summary+`<p class="growth-total" data-k="growth-power-total">기존 대비 전투력 ${Ux.signed(delta)}(${now?Ux.signed(delta/now*100)+'%':'비교 자료 없음'})으로 계산했어요 ${Ux.help('전투력 변화','위의 현재 편성과 육성 후 편성의 팀 전투력을 비교해요. 구성원이 바뀌면 편성 교체에 따른 차이도 포함해요. 항목별 값은 같은 구원자에서 그 항목만 목표로 올렸을 때의 전투력 증가예요. 곱셈·반올림·편성 변경 때문에 항목별 합계와 전체 증가가 다를 수 있어요. 추가 모의 전투는 하지 않아요.')}</p>`+
+  el.innerHTML=head+summary+growthLimitedHtml(r)+`<p class="growth-total" data-k="growth-power-total">기존 대비 전투력 ${Ux.signed(delta)}(${now?Ux.signed(delta/now*100)+'%':'비교 자료 없음'})으로 계산했어요 ${Ux.help('전투력 변화','위의 현재 편성과 육성 후 편성의 팀 전투력을 비교해요. 구성원이 바뀌면 편성 교체에 따른 차이도 포함해요. 항목별 값은 같은 구원자에서 그 항목만 목표로 올렸을 때의 전투력 증가예요. 곱셈·반올림·편성 변경 때문에 항목별 합계와 전체 증가가 다를 수 있어요. 추가 모의 전투는 하지 않아요.')}</p>`+
     `<p class="growth-components" data-k="growth-components">${['팀 항목별 전투력',...Object.entries(totals).filter(([,v])=>v!==0).map(([f,v])=>`${growthShortFields[f]} ${Ux.signed(v)}`),...(missing?['일부 항목 비교 자료 없음']:[])].join(' · ')}</p><div data-k="growth-${c.key}-card">${body}</div>`+
     Ux.help('육성 기준',`이 육성 계획을 따랐을 때 예상. 보유 구원자의 기준선 미달 항목만 프리셋 목표로 계산해요. 패시브는 현재 값을 유지해요. 최소 육성치는 아니에요. ${D.archiveGrades?.unverified||''}`)+
     (r.snapshot.errors.length?`<details><summary>계산에서 제외된 구원자 ${r.snapshot.errors.length}명</summary>${r.snapshot.errors.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');

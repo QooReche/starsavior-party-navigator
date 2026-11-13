@@ -147,7 +147,7 @@ for (const [label, exp] of Object.entries(EXPECTED)) {
 
 // 재점화(11/13 제보): 빠른 계산 순위는 재점화 단계와 무관해야 한다(재점화 3 에서 «버티는 팀»이 위로 올라와 강한 팀이 예선 후보에서 빠짐).
 // 재점화 3 의 quickRank 가 재점화 0 기준값(EXPECTED)과 같고, 판정 계수 prm 이 재점화 0 의 것(p0)과 같은 객체여야 한다.
-// 순서가 실제로 바뀌는 어려운 스테이지에서도 prm 이 p0 인지 따로 확인한다(op_24/SECTOR 1-1 은 순서가 안 바뀔 수 있음).
+// op_24/SECTOR 1-1 은 쉬워서 재점화를 넣어도 순서가 안 바뀔 수 있다 — 순서가 실제로 바뀌는 어려운 스테이지는 아래 「재점화 어려운 스테이지」 블록에서 따로 본다.
 for (const rk of [3, 5]) {
   const ctx = buildCtx();
   ctx.rkOf = () => rk;
@@ -176,6 +176,57 @@ for (const rk of [3, 5]) {
   } catch (e) {
     failed++;
     console.error(`FAIL rekindle ${rk}: ${e.message}`);
+  }
+}
+
+// 재점화 어려운 스테이지(SECTOR 41-36): 재점화 0 에서는 빠른 계산 «클리어» 팀이 거의 없고, 재점화 3 을 넣으면 크게 늘어나는 곳.
+// ① 순위(quickRank)는 재점화 단계와 무관 ② 재점화 풀(rkQuickTop)은 재점화>0 일 때만, «깨는» 팀을 빨리 깨는 순으로
+// ③ 예선 후보(scrPick)는 빠른 계산·근사 점수·재점화 풀을 번갈아 넣는다(재점화로만 깨지는 팀이 예선에 듦)
+{
+  const ctx = buildCtx();
+  vm.runInContext(sec('const SCR_ROUNDS=', 'const scrKey='), ctx);
+  ctx._own = OWN.op_24;
+  const r = JSON.parse(vm.runInContext(`(()=>{
+    const c = D.contents.find(c=>c.key==='op');
+    const st = c.stages.find(s=>s.name==='SECTOR 41-36');
+    const own = new Set(_own);
+    GIMACT = gimTop(c,st); SBACT = st.sb||[];
+    DMW = [Math.min(1,(st.n-1)/2), c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];
+    const defPen = CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty;
+    const cands = D.roster.filter(s=>own.has(s.key)).map(s=>{const[v,p]=score(s,st.w,c.main,c.boss);return{s,score:v,parts:p}});
+    const ranked = rankAll(cands,defPen), ck = t=>t.keys.slice().sort().join(','), p0 = (QK.d.pc&&QK.d.pc[c.key])||QK.d.params;
+    const q0 = quickRank(ranked,quickIn(c,st)), none = rkQuickTop(c,st,q0,40), pool0 = scrPick(q0,null);
+    rkOf = ()=>3;
+    const qi = quickIn(c,st), q3 = quickRank(ranked,qi), all3 = rkQuickTop(c,st,q3,1e9), top = rkQuickTop(c,st,q3,SCR_RK), pool3 = scrPick(q3,top);
+    const x = REKINDLE[3], prm = Object.assign({},p0,{A:p0.A*(1+x),B:p0.B*(1-x)});
+    const ev = t=>Quick.evaluate(t.ek,qi.qs,QK.d.sv,D.pen,prm,t.b.growth,t.b.power,true,t.b.powers);
+    return JSON.stringify({same: qi.prm===p0, clear0: q0.filter(t=>t.vd!=='hard').length, clear3: all3.length, none: none.length,
+      rank0: q0.slice(0,200).map(ck), rank3: q3.slice(0,200).map(ck), vd0: q0.slice(0,200).map(t=>t.vd), vd3: q3.slice(0,200).map(t=>t.vd),
+      top: top.map(t=>({k:ck(t), v:t.v, clear:ev(t).clear, rounds:ev(t).rounds})), rk: SCR_RK,
+      pool0, pool3, q80: q3.slice(0,80).map(ck), v40: q3.slice().sort((a,b)=>b.v-a.v).slice(0,40).map(ck)});
+  })()`, ctx));
+  try {
+    assert.ok(r.same, '빠른 계산 계수 prm 은 재점화 0 의 p0 여야 함');
+    assert.ok(r.clear0 < 80 && r.clear3 > r.clear0 + 40, `재점화로 «클리어» 판정이 크게 느는 스테이지여야 함(${r.clear0} → ${r.clear3})`);
+    assert.deepEqual(r.rank3, r.rank0, '재점화 3 의 quickRank 순서 = 재점화 0');
+    assert.deepEqual(r.vd3, r.vd0, '재점화 3 의 판정 = 재점화 0');
+    assert.equal(r.none, 0, '재점화 0 이면 재점화 풀 없음');
+    assert.equal(r.top.length, r.rk, '재점화 풀 크기');
+    assert.ok(r.top.every(t=>t.clear), '재점화 풀은 재점화 반영 시 깨는 팀만');
+    for (let i = 1; i < r.top.length; i++) {
+      const a = r.top[i-1], b = r.top[i];
+      assert.ok(a.rounds < b.rounds || (a.rounds === b.rounds && a.v >= b.v), `재점화 풀 순서: 빨리 깨는 순 → 근사 점수 순 (${i})`);
+    }
+    const fresh = r.top.map(t=>t.k).filter(k=>!r.pool0.includes(k));
+    assert.ok(fresh.length > 0, '재점화 풀이 기존 후보에 없던 팀을 예선에 넣어야 함(없으면 이 시험은 아무것도 지키지 않음)');
+    assert.ok(r.top.every(t=>r.pool3.includes(t.k)), '재점화 풀 전원이 예선 후보에 듦');
+    assert.equal(r.pool3.length, r.pool0.length + fresh.length, '후보 = 기존 후보 + 재점화 풀의 새 팀');
+    assert.deepEqual([...r.pool3].sort(), [...new Set([...r.pool0, ...r.top.map(t=>t.k)])].sort());
+    assert.deepEqual(r.pool3.slice(0,3), [r.q80[0], r.v40.find(k=>k!==r.q80[0]), r.top.map(t=>t.k).find(k=>k!==r.q80[0]&&k!==r.v40.find(k=>k!==r.q80[0]))], '번갈아 순서(빠른 계산·근사 점수·재점화 풀)');
+    console.log(`PASS rekindle hard stage (quick clear ${r.clear0} -> ${r.clear3}, rekindle pool adds ${fresh.length})`);
+  } catch (e) {
+    failed++;
+    console.error(`FAIL rekindle hard stage: ${e.message}`);
   }
 }
 
@@ -225,4 +276,4 @@ for (const rk of [3, 5]) {
 }
 
 if (failed) process.exit(1);
-console.log(`ALL OK (${Object.keys(EXPECTED).length + 1} checks)`);
+console.log(`ALL OK (${Object.keys(EXPECTED).length + 2} checks)`);
