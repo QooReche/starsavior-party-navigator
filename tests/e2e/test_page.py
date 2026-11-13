@@ -122,22 +122,17 @@ def choose(page, content, query):
     labels = page.eval_on_selector_all("#content option", "o => o.map(x => x.textContent)")
     page.select_option("#content", label=next(l for l in labels if l == content or l.startswith(content + "(")))
     settle(page)
-    # 모바일 검색은 접힌 필터 안에 있다. 실제 펼치기 동작 후 입력한다.
-    menu_was_open = page.locator('#optbox').evaluate('e => e.open')
-    if not menu_was_open:
-        page.click('#optbox > summary')
-    folded = not page.locator("#q").is_visible()
-    if folded:
-        page.click("#filters > summary")
-    page.fill("#q", query)
-    settle(page)
-    page.select_option("#stage", index=0)
+    # 스테이지 검색은 메뉴 밖 첫 줄에 있다(11/13 복원). 스테이지가 적은 콘텐츠는 검색창이 없으니 목록에서 고른다
+    if page.locator("#q").is_visible():
+        page.fill("#q", query)
+        settle(page)
+        page.select_option("#stage", index=0)
+    else:
+        idx = page.evaluate("q => cur.findIndex(s => (s.tabLabel+' '+(s.label||'')+' '+s.name).includes(q))", query)
+        assert idx >= 0, query
+        page.select_option("#stage", index=idx)
     page.dispatch_event("#stage", "change")
     settle(page)
-    if folded:
-        page.click("#filters > summary")
-    if not menu_was_open:
-        page.click('#optbox > summary')
 
 
 FIXTURES = os.path.join(ROOT, "tests", "fixtures")
@@ -1494,6 +1489,41 @@ def test_guild_search_dropped(browser, ctx):
     return True, '협공 1팀 제외→4팀/판별 기대 점수 표시, 제외 해제→5팀 복귀'
 
 
+def test_stage_search(browser, ctx):
+    """스테이지 검색: 데스크톱·폰 모두 메뉴를 열지 않아도 보이고, 띄어 쓴 낱말은 모두 들어간 스테이지만(대소문자 무시)"""
+    ctx.errors.clear()
+    out = []
+    for vp in ({"width": 1280, "height": 900}, {"width": 390, "height": 844}):
+        page = open_page(browser, ctx, viewport=vp)
+        vis = page.locator("#q").is_visible() and not page.locator('#optbox').evaluate('e => e.open')
+        page.select_option('#content', value=page.evaluate("String(contents.findIndex(c=>c.key==='clo'))"))
+        settle(page)
+        page.fill("#q", "달 floor 36")
+        settle(page)
+        opts = page.eval_on_selector_all("#stage option", "o => o.map(x => x.textContent)")
+        names = page.evaluate("cur.map(s => (s.tabLabel + ' ' + (s.label || s.name)).toLowerCase())")
+        multi = bool(opts) and all('달' in n and 'floor' in n and '36' in n for n in names)
+        multi = multi and names[0].endswith('floor 36')   # 숫자는 딱 맞는 것 먼저(136·236 보다 앞)
+        page.fill("#q", "")
+        settle(page)
+        restored = page.evaluate("cur.length === contents.find(c => c.key === 'clo').stages.length")
+        page.close()
+        out.append((vis, multi, restored, len(opts)))
+    # 스테이지가 적은 콘텐츠(길드 방어전 등)는 검색창을 숨긴다
+    page = open_page(browser, ctx)
+    few = page.evaluate("contents.filter(c => !raidUi(c) && c.stages.length <= SEARCH_MIN).map(c => contents.indexOf(c))")
+    hid = True
+    for i in few[:3]:
+        page.select_option('#content', value=str(i))
+        settle(page)
+        hid = hid and page.locator("#q").is_hidden()
+    page.close()
+    out.append(('짧은 목록 숨김', len(few), hid))
+    errs = list(ctx.errors)
+    ok = all(v and m and r for v, m, r, _ in out[:2]) and hid and not errs
+    return ok, "데스크톱/폰 (보임·여러 낱말·지우면 전체·결과 수) %s / 오류 %d" % (out, len(errs))
+
+
 def test_equip_goal_option(browser, ctx):
     """3별 목표 옵션: 장비 탐사·격전 의뢰에서만 보이고, «60턴 안에 클리어»면 안내 문구가 있고 «클리어만»이면 사라짐"""
     ctx.errors.clear()
@@ -2358,6 +2388,7 @@ def test_myinfo_level_compat(browser, ctx):
 
 TESTS.extend([test_myinfo_full, test_myinfo_level_compat])
 TESTS.append(test_graph_evidence)
+TESTS.append(test_stage_search)
 TESTS.append(test_equip_goal_option)
 TESTS.append(test_guild_defense)
 TESTS.append(test_cosmo_search)

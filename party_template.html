@@ -15,7 +15,7 @@ main{max-width:1100px;margin:0 auto;padding:16px}
 h1{font-size:20px;margin:0 0 4px}.sub{color:var(--mut);margin:0 0 14px;font-size:13px}.notice{margin:-8px 0 12px;font-size:12px;color:var(--mut);border-left:3px solid var(--acc,#6cf);padding:2px 8px}
 .panel,.party{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.row label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px}
-select,input[type=text],input[type=number]{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit;min-width:150px;max-width:100%}
+select,input[type=text],input[type=search],input[type=number]{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);font:inherit;min-width:150px;max-width:100%}
 button{padding:7px 14px;border:0;border-radius:6px;background:var(--acc);color:#fff;font:inherit;cursor:pointer}
 button.sec{background:transparent;color:var(--acc);border:1px solid var(--acc)}
 .info{color:var(--mut);font-size:13px;margin-top:8px}
@@ -170,7 +170,7 @@ body:not(.show-why) .why,body:not(.show-why) .tg,body:not(.show-why) .syn,body:n
 @media (prefers-reduced-motion:reduce){#drawer{transition:none}}
 @media (max-width:760px){
  main{padding:12px}
- select,input[type=text],input[type=number]{font-size:16px;min-width:0}
+ select,input[type=text],input[type=search],input[type=number]{font-size:16px;min-width:0}
  .row label{flex:1 1 140px}
  .bbar{flex-direction:column;text-align:center}
  .rowcards{column-gap:6px}.sgrid{column-gap:6px}
@@ -197,7 +197,7 @@ h1 small{-webkit-text-fill-color:var(--bad)}
 button{border-radius:999px;background:linear-gradient(180deg,#86dcff,#3fa9e0);color:#06223a;font-weight:700;box-shadow:0 0 10px rgba(111,211,255,.25)}
 button.sec{background:rgba(111,211,255,.06);color:var(--acc);border:1px solid rgba(111,211,255,.6);box-shadow:none;font-weight:600}
 button:hover{filter:brightness(1.12)}
-select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-color:var(--line);border-radius:8px}
+select,input[type=text],input[type=search],input[type=number]{background:rgba(6,10,24,.75);border-color:var(--line);border-radius:8px}
 .qbox{border:1px solid rgba(243,207,116,.55);background:linear-gradient(180deg,rgba(243,207,116,.08),rgba(111,211,255,.04));border-radius:12px;box-shadow:0 0 18px rgba(243,207,116,.08)}
 .qbox .qh b{color:var(--gold)!important}
 .qrow .qn{color:var(--gold)}
@@ -205,7 +205,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 /* 필요한 편성 정보부터: 카드 → 기믹 → 브레이크 → 접힌 보조 정보 */
 .input-row{gap:8px}.input-row>label,.filterbody>label{flex:1;min-width:0}
 .input-row select,.input-row input{width:100%;min-width:0}.filters,.filterbody{display:contents}.filters::details-content{display:contents}.filters>summary{display:none}
-.input-row>label:first-child{order:0}.tab-filter{order:1}.search-filter{order:2}.stage-filter{order:3;flex:1.5!important}.filterbody>label:last-child{order:4}
+.input-row>label:first-child{order:0}.tab-filter{order:1}.search-filter{order:2}.stage-filter{order:3;flex:1.5!important}.search-filter[hidden]{display:none!important}.search-filter input{box-sizing:border-box;min-height:40px}.filterbody>label:last-child{order:4}
 #dbtn{position:static;order:5;flex:none;border-radius:6px;padding:7px 10px;box-shadow:none;line-height:1.5;white-space:nowrap}
 #dbtn span{display:inline;margin:0;font-size:inherit;opacity:1}.optbox{margin-top:6px}
 .qbox{padding:0;border:0;background:transparent;margin:0}.qrow{padding:4px 0}.qrow .qn{min-width:28px}.qrow .face{width:34px;height:34px}.qrow .qt{min-width:0;flex:1 1 240px}.qrow .faces{flex:none}
@@ -232,6 +232,7 @@ select,input[type=text],input[type=number]{background:rgba(6,10,24,.75);border-c
 @media(max-width:760px){
  main{padding:10px}.party{padding:10px}.panel{padding:10px}.input-row>label:first-child,.stage-filter{flex:1 1 40%!important;order:0;min-width:0}
  .filters{display:block;order:2;flex:1 1 100%;min-width:0}.filters::details-content{display:block}.filters>summary{display:list-item}.filterbody{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.filterbody>label{flex:1 1 100px}
+ .search-filter{flex:1 1 100%!important;order:1}.search-filter>span{display:none}
  #dbtn{order:1;margin-left:auto}.qrow{gap:5px}.qrow .qt{flex-basis:100%}.rowcards{column-gap:5px}
  .gimcols{grid-template-columns:minmax(0,1fr);gap:6px}.gimbox{padding:8px}.bbar{padding:6px;gap:6px}.bbar .bschip{max-width:30%}
  .crown{left:3px;top:3px;padding:2px}.slotlbl{font-size:10px;letter-spacing:0}.qbox>details{font-size:12px}
@@ -302,11 +303,11 @@ summary{padding:9px 4px}
   <label><span>콘텐츠 <span id="season-chip" class="tag" hidden></span></span><select id="content"></select></label>
   <details id="filters" class="filters" open><summary>필터</summary><div class="filterbody">
   <label class="tab-filter">섹터 / 지역<select id="tab"></select></label>
-  <label class="search-filter">검색<input type="text" id="q" placeholder="예: 36, 아가논, 길레"></label>
 
 
   <label hidden>육성<select id="grow"><option value="myinfo" disabled>내 정보</option><option value="1" selected>평균 (권장 100%)</option><option value="0.8">덜 키움 (권장의 80%)</option><option value="1.25">넉넉히 (권장의 125%)</option><option value="manual">내 전투력</option></select></label>
   </div></details>
+  <label class="search-filter"><span>스테이지 검색</span><input type="search" id="q" placeholder="스테이지 검색 (예: 36, 아가논)" aria-label="스테이지 검색" autocomplete="off"></label>
   <label class="stage-filter">스테이지<select id="stage"></select></label>
   <span id="dcount" hidden></span>
 
@@ -578,14 +579,16 @@ $("cosmo-search").addEventListener("click",e=>{const b=e.target.closest("button[
  else if(b.dataset.cs==="cancel"){CSR.id++;if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.phase="idle";CSR.eta=null;renderCosmoSearch()}});
 
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.title||c.name)}</option>`).join("");
+const SEARCH_MIN=20;   // 스테이지가 이보다 적으면 검색창을 숨긴다(길드 방어전 등 — 목록이 짧아 검색이 필요 없음)
 const raidUi=c=>!!c.raid&&!window.__legacyRaid;   // 시즌제 화면(코스모): 섹터·스테이지 선택과 보스별 추천을 숨김. 시험만 __legacyRaid 로 옛 화면을 씀
 function tabsOf(c){const m=new Map();c.stages.forEach(s=>{if(!m.has(s.tab))m.set(s.tab,s.tabLabel)});return [...m]}
 function refreshTabs(){const c=contents[$("content").value];$("goalbox").hidden=!STAR_TURNS[c.key];
- $("filters").hidden=raidUi(c);document.querySelector(".stage-filter").hidden=raidUi(c);
+ $("filters").hidden=raidUi(c);document.querySelector(".stage-filter").hidden=raidUi(c);document.querySelector(".search-filter").hidden=raidUi(c)||c.stages.length<=SEARCH_MIN;if($("q").hidden||document.querySelector(".search-filter").hidden)$("q").value="";
  $("tab").innerHTML=`<option value="">(전체)</option>`+tabsOf(c).map(([t,l])=>`<option value="${esc(t)}">${esc(l)}</option>`).join("");refreshStages()}
 function refreshStages(){
- const c=contents[$("content").value],t=$("tab").value,q=$("q").value.trim();
- cur=c.stages.filter(s=>(!t||s.tab===t)&&(!q||s.name.includes(q)||(s.label||"").includes(q)||s.tabLabel.includes(q)));
+ const c=contents[$("content").value],t=$("tab").value,qs=$("q").value.trim().toLowerCase().split(/\s+/).filter(Boolean);   // 띄어 쓴 낱말이 모두 들어간 스테이지(예: «달 36»). 대소문자 무시
+ cur=c.stages.filter(s=>{if(t&&s.tab!==t)return false;if(!qs.length)return true;const h=(s.tabLabel+" "+(s.label||"")+" "+s.name).toLowerCase();return qs.every(w=>h.includes(w))});
+ {const nums=qs.filter(w=>/^\d+$/.test(w));if(nums.length){const ex=s=>{const ns=(s.tabLabel+" "+(s.label||"")+" "+s.name).match(/\d+/g)||[];return nums.every(w=>ns.includes(w))};const a=cur.filter(ex);cur=a.concat(cur.filter(s=>!a.includes(s)))}}   // 숫자는 딱 맞는 것 먼저(36 → FLOOR 36 이 136 보다 앞)
  const nameN=new Map();cur.forEach(s=>{const k=s.label||s.name;nameN.set(k,(nameN.get(k)||0)+1)});   // 섹터 «전체»에서 같은 이름이 여러 회랑에 겹치면(성간·태양·달·별 FLOOR N) 회랑 이름을 앞에 붙인다
  $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${nameN.get(s.label||s.name)>1&&s.tabLabel?esc(s.tabLabel)+" · ":""}${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
  showInfo();showPow();if(window._ready)rerun()}
