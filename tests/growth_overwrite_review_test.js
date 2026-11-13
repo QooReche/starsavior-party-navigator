@@ -72,11 +72,16 @@ function baseline(code=ui){
   // 더 나은 육성 편성이 없을 때 안내 문구(조용히 사라지지 않음)
   const grown={snapshot:{changes:{a:{changedFields:['skills']}}}},flat={snapshot:{changes:{a:{changedFields:[]}}}};
   assert.equal(ctx.growthNoneText('op',{...grown,baseline:{clear:1}}),'추가 육성 없이도 모의 전투 클리어율 100%예요');
-  assert.equal(ctx.growthNoneText('op',{...flat,baseline:{clear:.4}}),'추천 육성 기준까지 올릴 항목이 없어요');
-  assert.equal(ctx.growthNoneText('op',{...grown,baseline:{clear:.996}}),'이번 탐색에서 클리어율이 더 높은 육성 편성을 찾지 못했어요 · 지금 100%');
-  assert.equal(ctx.growthNoneText('clo',{...grown}),'이번 탐색에서 클리어율이 더 높은 육성 편성을 찾지 못했어요');
-  assert.equal(ctx.growthNoneText('guild',{...grown,baseline:{score:1200}}),'이번 탐색에서 점수가 더 높은 육성 편성을 찾지 못했어요 · 지금 1200점');
-  assert.equal(ctx.growthNoneText('cosmo',{...grown,baseline:{sum:1}}),'이번 탐색에서 점수가 더 높은 육성 편성을 찾지 못했어요 · 지금 1점');
+  assert.equal(ctx.growthNoneText('op',{...flat,baseline:{clear:.4}}),'이미 추천 기준까지 다 키워서 더 올릴 항목이 없어요');
+  assert.equal(ctx.growthNoneText('op',{...grown,baseline:{clear:.996}}),'추천 기준까지 키워도 지금(100%)보다 잘 깨는 편성은 찾지 못했어요');
+  // 0% 는 «못 깼다»를 분명히 + 도움말에 무엇을 올려 봤는지(스타링크 포함)와 다음 할 일(11/13 제보 오해)
+  assert.equal(ctx.growthNoneText('op',{...grown,baseline:{clear:0}}),'추천 기준까지 키워도 이 스테이지는 모의 전투에서 깨지 못했어요 (지금 0%)');
+  assert.match(ctx.growthNoneHint('op',{...grown,baseline:{clear:0}}),/스타링크.*추천 기준까지 올려서 계산했어요.*앞 스테이지/);
+  assert.match(ctx.growthNoneHint('op',{...grown,baseline:{clear:.4}}),/가장 나은 선택/);
+  assert.equal(ctx.growthNoneHint('op',{...grown,baseline:{clear:1}}),'');
+  assert.equal(ctx.growthNoneText('clo',{...grown}),'추천 기준까지 키워도 지금보다 잘 깨는 편성은 찾지 못했어요');
+  assert.equal(ctx.growthNoneText('guild',{...grown,baseline:{score:1200}}),'추천 기준까지 키워도 지금(1200점)보다 점수가 높은 편성은 찾지 못했어요');
+  assert.equal(ctx.growthNoneText('cosmo',{...grown,baseline:{sum:1}}),'추천 기준까지 키워도 지금(1점)보다 점수가 높은 편성은 찾지 못했어요');
 }
 async function speed(code=page){
   const fn=code.slice(code.indexOf('async function cosmoSearchStart('),code.indexOf('$("cosmo-search").addEventListener("change"'));

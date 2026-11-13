@@ -1928,7 +1928,8 @@ def test_assumed_growth(browser, ctx):
         page.evaluate('window.savedClear=GROW.result.best.clear;GROW.result.best.clear='+value+';growthPaint()')
         assert page.get_attribute('#growth-result', 'data-state') == 'none'
         none = page.inner_text('#growth-result [data-k="growth-none"]')
-        assert ('찾지 못했어요' in none or '100%' in none or '올릴 항목이 없어요' in none), none
+        assert ('찾지 못했어요' in none or '깨지 못했어요' in none or '100%' in none or '올릴 항목이 없어요' in none), none
+        page.locator('#growth-result').screenshot(path=os.path.join(ctx.shots, 'growth_none_mobile.png'))
         assert page.locator('#growth-result .assumed-card').count() == 0
         assert not page.locator('#result-tabs').count()
         page.evaluate('GROW.result.best.clear=savedClear;growthPaint()')
@@ -2240,7 +2241,7 @@ def test_growth_stage23(browser, ctx):
         original = page.evaluate(f'JSON.stringify({state}.rows)')
         field = 'sum' if kind == 'cosmo' else 'score'
         page.evaluate(f'window.savedMetric=GROW.result.best.{field};GROW.result.best.{field}=GROW.result.baseline.{field};growthPaint()')
-        assert page.get_attribute('#growth-result', 'data-state') == 'none' and '점수가 더 높은 육성 편성을 찾지 못했어요' in page.inner_text('#growth-result [data-k="growth-none"]')
+        assert page.get_attribute('#growth-result', 'data-state') == 'none' and '점수가 높은 편성은 찾지 못했어요' in page.inner_text('#growth-result [data-k="growth-none"]')
         assert page.locator('#growth-result .gc').count() == 0
         page.evaluate(f'GROW.result.best.{field}=savedMetric;growthPaint()')
         assert page.evaluate(f'JSON.stringify({state}.rows)') == original
