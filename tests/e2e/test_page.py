@@ -2566,7 +2566,8 @@ def test_clash(browser, ctx):
                          tzinfo=_dt.timezone(_dt.timedelta(hours=9)))))
     choose(page, '격전 의뢰', '폐쇄된 심상')
     assert page.locator('#content option:checked').inner_text() == '격전 의뢰'
-    assert page.evaluate("cur.length") == 6
+    # 격전 의뢰는 스테이지 18개(검색창 숨김 기준 20개 이하) → 검색 대신 목록에서 고름
+    assert page.evaluate("cur.length") == 18 and '폐쇄된 심상' in page.evaluate("cur[$('stage').value].tabLabel+' '+(cur[$('stage').value].label||cur[$('stage').value].name)")
     assert page.evaluate("D.contents.find(c=>c.key==='clash').stages.length") == 18
     assert page.evaluate("MyInfoStats.rule_for_content('clash')") == 'normal'
     assert page.locator('.party[data-party="1"] button[data-sim="1"]').count(), page.inner_text('#out')
