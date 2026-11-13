@@ -1,0 +1,8 @@
+{
+ "_note": "tools/build_chain_damage.py: AddTrueDamageByStat → ADT_STAT_TRUE. 스킬의 모든 레벨·대상 SE 유형이 같을 때만 등록. 없는 스킬은 ADT_NORMAL.",
+ "units": {
+  "asherah-order-striker": {
+   "고유 패시브": "ADT_STAT_TRUE"
+  }
+ }
+}

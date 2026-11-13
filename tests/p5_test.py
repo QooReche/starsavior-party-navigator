@@ -533,6 +533,7 @@ def test_review_fixes():
     b4.spawn_wave()
     P, E = b4.allies[0], b4.foes[0]
     E.broken = True
+    E.sa = 0  # IsNotTargetSuperArmor는 broken 플래그 대신 현재 강인도를 읽음.
     ctx4 = b4.cast(P, pm.trigger_skills['특수기'], extra=True, skip_lines=True, target=E, via='trigger', local_pre=True)
     out['profm'] = (round(ctx4.inc, 2), round(ctx4.inc_break, 2))
     exp = dict(stun=True, dead=True, forced=100.0, rec_before=0, rec_after=1, per_target=(0.0, 0.2, 0.0), profm=(0.15, 0.3))

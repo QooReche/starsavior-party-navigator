@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "d8a159b83d427fd9",
+  "hash": "4bc2697e8fd33dcb",
   "history": [
-   {
-    "hash": "ab0c0aa44391ff86",
-    "reason": "build_guild_sim 재생성"
-   },
    {
     "hash": "fc85dd2714434381",
     "reason": "build_guild_sim 재생성"
@@ -41,16 +37,16 @@
    {
     "hash": "d8a159b83d427fd9",
     "reason": "11/13 clash_no_turn_limit: clash API에만 적용. main 978afb0 대비 기존 콘텐츠 golden 기본/legacy 78/78 동일, 길방 계산 불변."
+   },
+   {
+    "hash": "4bc2697e8fd33dcb",
+    "reason": "11/13 연쇄 고정 피해·대상 강인도 판정 변경: 길드 방어전 시즌 종료로 guild_sim 재생성을 생략했음. 다음 시즌 자료 반영 때 재생성하기로 함."
    }
   ]
  },
  "quick": {
-  "hash": "d8a159b83d427fd9",
+  "hash": "4bc2697e8fd33dcb",
   "history": [
-   {
-    "hash": "2fcbdc1ecf7127ee",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "ab0c0aa44391ff86",
     "reason": "calibrate_quick --write 재보정"
@@ -86,6 +82,10 @@
    {
     "hash": "d8a159b83d427fd9",
     "reason": "11/13 clash_no_turn_limit: clash API 안전 상한만 200턴으로 변경. main 978afb0 대비 기존 콘텐츠 golden 기본/legacy 78/78 동일. quick 근사식·입력 스탯·기존 보정 계수는 이번 범위에서 유지."
+   },
+   {
+    "hash": "4bc2697e8fd33dcb",
+    "reason": "calibrate_quick --write 재보정"
    }
   ]
  }

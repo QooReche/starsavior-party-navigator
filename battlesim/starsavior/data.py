@@ -16,10 +16,19 @@ class DB:
             tg = json.load(f)
         self.tags = {(s['id'], s['variant']): s for s in tg['saviors']}
         self.units = {}
+        chain_path = os.path.join(src, 'data', 'chain_damage.json')
+        chain_types = {}
+        if os.path.exists(chain_path):  # 이전 빌드의 고정 입력에는 유형 자료가 없음.
+            with open(chain_path, encoding='utf-8') as f:
+                chain_types = json.load(f)['units']
         for u in self.main['units']:
             t = self.tags.get((u['id'], u['v']))
             key = t['key'] if t else ('%s@%s' % (u['id'], u['v']))
             self.units[key] = u
+            for sk in u['sk']:
+                damage_type = chain_types.get(key, {}).get(sk['sl'])
+                if damage_type:
+                    sk['chain_damage_type'] = damage_type
         self._foe = None
 
     @property

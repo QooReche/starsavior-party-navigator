@@ -34,6 +34,8 @@ python -m http.server 8000 --bind 127.0.0.1                       # http://127.0
 | `HANDOFF.md` | 현재 상태, 미검증, 다음 후보 | 먼저 읽을 것 |
 
 ## 4. 게임 업데이트가 있을 때
+
+비공개 표 갱신 뒤 `python -X utf8 -I tools/build_chain_damage.py --static <static-data 경로>`로 연쇄 피해 유형도 다시 생성함. `data/chain_damage.json`은 구원자·스킬별 유형만 담고, 한 스킬 안에 유형이 섞이면 줄별 매핑을 추가하도록 빌더가 실패함. 대상 문구가 바뀌면 `tools/build_auto_skill.py`도 재생성함.
 ```
 python -X utf8 -I tools/fetch_sources.py                 # 데이터북·가이드 DB 원본 갱신(rawdata/)
 node tools/extract_guide_tier.js                          # 가이드 DB 티어·주 사용 콘텐츠 -> data/db_tier.json

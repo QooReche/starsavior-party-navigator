@@ -57,6 +57,7 @@ _KEEP = {'rekindle_apply': 'multiply', 'dmg_cap_scope': 'reduce', 'ally_break_ga
          'preemptive_defense': 'recognize', 'toughness_elem': 'db', 'break_point_hits': 'once', 'break_auto_blocked_cc': 'off'}   # 해시는 옛 규칙 기준(캐시 동일성 시험이 목적)
 _KEEP['myinfo_potential_coverage'] = False
 _KEEP['clash_no_turn_limit'] = False
+_KEEP.update(chain_stat_true='legacy', target_toughness_condition='first')
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

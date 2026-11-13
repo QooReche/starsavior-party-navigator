@@ -25,6 +25,10 @@ def explicit_target(text):
     filters = []
     if text.startswith('보스인 '):
         filters.append('boss')
+    if text.startswith('브레이크 상태인 '):
+        filters.append('broken')
+    elif text.startswith('브레이크 상태가 아닌 '):
+        filters.append('not_broken')
     if '행동할 수 있는' in text:
         filters.append('not_unable_to_act')
     if '「협공 불가」 상태가 아닌' in text:
@@ -33,7 +37,9 @@ def explicit_target(text):
     if state:
         filters.append(['has', [n.strip() for n in state[1].split(',')]])
     elif '상태가 아닌' in text and '「협공 불가」' not in text:
-        filters.append(['not_has', [n.strip() for group in re.findall(r'「([^」]+)」', text) for n in group.split(',')]])
+        names = [n.strip() for group in re.findall(r'「([^」]+)」', text) for n in group.split(',')]
+        if names:
+            filters.append(['not_has', names])
     elem = re.search(r'(태양|달|별|질서|혼돈) 속성 아군', text)
     if elem:
         filters.append(['elem', elem[1]])
@@ -134,7 +140,7 @@ def parse_flags(s):
     return f
 
 
-def parse_effect(rest):
+def parse_effect(rest, damage_type='ADT_NORMAL'):
     """효과 문장 -> dict(kind=...). 해석 못 하면 kind='ignored'"""
     rest = rest.strip()
     # 「N% 확률로 능력치 보정」(큐브 펌웨어 복제체 리디아): MC 기대값으로 처리
@@ -177,7 +183,7 @@ def parse_effect(rest):
     m = re.match(r'^(.+?)에게 연쇄 피해 = 자신 (공격력|생명력|방어력)×([\d.]+)%', rest)
     if m:
         return dict(kind='chain', target=m.group(1), stat={'공격력': 'atk', '생명력': 'hp', '방어력': 'def'}[m.group(2)],
-                    coef=float(m.group(3)) / 100.0)
+                    coef=float(m.group(3)) / 100.0, damage_type=damage_type)
     m = re.match(r"^(.+?)에게 '([^']+)' 해제", rest)
     if m:
         return dict(kind='remove', target=m.group(1), name=m.group(2))
@@ -265,7 +271,7 @@ def trig_kind(phase, trig):
 class Line:
     __slots__ = ('raw', 'slot', 'src_kind', 'phase', 'trig', 'params', 'kind', 'eff', 'bound', 'na', 'hpw')
 
-    def __init__(self, raw, slot, src_kind, decimal_hp=False):
+    def __init__(self, raw, slot, src_kind, decimal_hp=False, damage_type='ADT_NORMAL'):
         self.raw, self.slot, self.src_kind = raw, slot, src_kind
         phase, cond, rest, self.hpw = split_head(raw, decimal_hp=decimal_hp)
         self.phase = phase
@@ -278,7 +284,7 @@ class Line:
             m = re.match(r'^능력치:\s*(.+?)\s+(' + NUM + r')(%?)$', rest)
             self.eff = dict(kind='perm', stat=m.group(1), val=float(m.group(2))) if m else dict(kind='ignored', why='상시미해석')
         else:
-            self.eff = parse_effect(rest)
+            self.eff = parse_effect(rest, damage_type=damage_type)
         self.bound = (src_kind in ('active', 'trigger')) and self.kind in ('own_pre', 'own_post')
         # 데이터가 '소비'를 '부여'로 표기한 줄 보정 (예: 그웬 전기 충격 5회 이상 -> 추가 발동 + 5회 감소)
         if self.eff['kind'] == 'buff' and self.eff['target'].startswith('자신'):
@@ -393,7 +399,7 @@ class UnitDef:
                 src = 'active'
                 self.skills[slot] = sk
             for raw in s['ef']:
-                ln = Line(raw, slot, src)
+                ln = Line(raw, slot, src, damage_type=s.get('chain_damage_type', 'ADT_NORMAL'))
                 self.lines.append(ln)
                 if ln.kind == 'perm':
                     if ln.eff['kind'] == 'perm':

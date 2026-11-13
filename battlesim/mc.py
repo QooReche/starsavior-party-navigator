@@ -1649,7 +1649,8 @@ class Battle:
             rows = lines.get(owner.key, {}) if variants else (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {}))
             spec = rows.get((ln.slot, ln.raw))
         if spec is not None:
-            if ln.eff.get('stat') == '강인도 피해 감소':
+            if (ln.eff.get('stat') == '강인도 피해 감소'
+                    or (self.mc['chain_stat_true'] == 'client' and ln.eff.get('damage_type') == 'ADT_STAT_TRUE')):
                 return spec  # 보스 표지가 없으면 대상 없음. 설명문 근사로 일반 적을 고르지 않음.
             # 내부 표지(체크용·판별용 버프)를 찾는 필터인데 그 표지를 가진 유닛이 없으면(표지를 거는 줄을 엔진이 근사로 처리하는 경우)
             # 데이터 규칙 대신 설명문 근사로(티리아는 auto_marker_lines=drop의 옛 동작).
@@ -3483,7 +3484,19 @@ class Battle:
             elif k == '이번 타격 격파':
                 if bool(ctx.break_targets) != (v == '예'):
                     return False
-            elif k in ('대상 강인도 없음', '대상 브레이크'):    # P5: 강인도 격파 상태
+            elif k in ('대상 강인도 없음', '대상 강인도 있음', 'IsTargetSuperArmor'):
+                if self.mc['target_toughness_condition'] == 'any':
+                    targets = ctx.targets or ([tgt] if tgt is not None else [])
+                    # NKM.Templets:42453-42501: 현재 강인도 >0/<=0, 빈 집합도 통과.
+                    positive = k != '대상 강인도 없음'
+                    passed = not targets or any((x.sa > 0) == positive for x in targets)
+                elif k == '대상 강인도 있음':
+                    passed = tgt is not None and tgt.sa > 0
+                else:
+                    passed = tgt is not None and tgt.broken == (k == '대상 강인도 없음')
+                if passed != (v == '예'):
+                    return False
+            elif k == '대상 브레이크':    # TargetSuperArmorBreak는 별도 사건 조건.
                 if (tgt is not None and tgt.broken) != (v == '예'):
                     return False
             elif k == '피해 증가(조건부)':     # 「이 줄은 조건부 피해 증가」 표지로 봄(값 '예'만 나옴, assumed)
@@ -3498,12 +3511,6 @@ class Battle:
             elif k == 'ExistAllySpecificBuff':   # 같은 편(나 포함)에 그 효과를 가진 유닛이 있음(assumed)
                 names = [x.strip() for x in v.split(',')]
                 if not any(x.has(n) for x in self.alive(owner.side) for n in names):
-                    return False
-            elif k == 'IsTargetSuperArmor':      # 「강인한 의지」: 대상(피격자)이 강인도 격파 상태가 아니면(내부 키 이름 해석, assumed)
-                if (tgt is not None and not tgt.broken) != (v == '예'):
-                    return False
-            elif k == '대상 강인도 있음':  # NKM.Templets:42453-42459, actual current toughness > 0.
-                if (tgt is not None and tgt.sa > 0) != (v == '예'):
                     return False
             elif k == '결과':
                 if v == '치명타' and not ctx.crit:
@@ -4372,6 +4379,13 @@ class Battle:
                 continue
             if tstat:
                 val = v.maxhp
+            if self.mc['chain_stat_true'] == 'client' and eff.get('damage_type') == 'ADT_STAT_TRUE':
+                # NKM:6214-6217에서 먼저 정수화. 최종 팀 보정은 17815/18407,
+                # 방어·증감·1.85·난수는 4748-4756/17791-17815/18435에서 제외.
+                dmg = max(1, math.floor(int(val * eff['coef']) * self.pen[owner.side]))
+                self.rule_hits['chain_stat_true'] += 1
+                self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
+                continue
             de = self.def_stat(v)
             dr = de / (de + _rules.DEF_K)
             if self.mc['chain_pen'] != 'client':

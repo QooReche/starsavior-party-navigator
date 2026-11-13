@@ -304,6 +304,7 @@ def test_index_uses_merged_opts():
 # note 키 4개를 MC_OPTS 에서 뺐을 때 기존 출력이 그대로인지 고정한다.
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
+    'chain_stat_true', 'target_toughness_condition',
     'dmg_cap_scope',
     'rekindle_apply',
     'dot_hot_order', 'dot_hot_lifetime', 'ally_cd_tick', 'break_domain_category',

@@ -119,7 +119,8 @@ def variant_rules(d):
         sk = Skill(dict(raw, sl=slot))
         view = copy.copy(d)
         view.u = dict(d.u, sk=[dict(raw, sl=slot)])
-        sk.semantic_lines = description_lines(view, [Line(s, slot, 'active') for s in raw['ef']])
+        sk.semantic_lines = description_lines(view, [Line(s, slot, 'active',
+            damage_type=raw.get('chain_damage_type', 'ADT_NORMAL')) for s in raw['ef']])
         # SE 10275016: 데이터북은 부여로 적지만 변형 기본기의 설중화는 1 감소.
         # 일반 기본기/패시브의 같은 이름 부여 줄에는 적용하지 않는다.
         if rule.get('kind') == 'self_state' and raw['n'] == '제압부·참':
@@ -224,7 +225,8 @@ def description_lines(d, lines):
                             lambda m: '자신 HP %s%% 미만' % hp[1]
                             if abs(float(m[1]) - (float(hp[1]) - 0.01)) < 1e-8 else m[0], ln.raw)
         if re.search(r'\(자신 HP [\d.]+%', ln.raw):
-            ln = Line(ln.raw, ln.slot, ln.src_kind, decimal_hp=True)
+            ln = Line(ln.raw, ln.slot, ln.src_kind, decimal_hp=True,
+                      damage_type=ln.eff.get('damage_type', 'ADT_NORMAL'))
         e = ln.eff
         name = e.get('name') or ''
         if e['kind'] == 'buff' and name:
