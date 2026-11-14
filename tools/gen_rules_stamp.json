@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "8d8a1f7cf9dacf3e",
+  "hash": "622d80810ee95e3c",
   "history": [
-   {
-    "hash": "2680bd92e4befe60",
-    "reason": "11/12 재점화 합산: 길드방어전 시즌4 종료로 미오픈이라 재생성 생략. 재점화는 op·oph만 적용되어 길방 결과는 불변. 새 시즌 자료 반영 때 재생성"
-   },
    {
     "hash": "f16c098b69a0b613",
     "reason": "11/12 재점화 합산 등: 길드 방어전 시즌 종료(미오픈)로 재계산 생략"
@@ -41,16 +37,16 @@
    {
     "hash": "8d8a1f7cf9dacf3e",
     "reason": "11/14 barrier_depletion(보호막 소진 시 버프째 제거, Barrier+능력치 버프 3개뿐)…길드 방어전 시즌 미오픈·재생성 데이터 없음, 골든 65/150/10 일치"
+   },
+   {
+    "hash": "622d80810ee95e3c",
+    "reason": "11/14 wave_carry 기본 client(웨이브 전환 때 아군 버프 지속 -1, 영상 근거)…길드 방어전 시즌 미오픈·재생성 데이터 없음, 골든 65/150/10 일치"
    }
   ]
  },
  "quick": {
-  "hash": "8d8a1f7cf9dacf3e",
+  "hash": "622d80810ee95e3c",
   "history": [
-   {
-    "hash": "d8a159b83d427fd9",
-    "reason": "11/13 clash_no_turn_limit: clash API 안전 상한만 200턴으로 변경. main 978afb0 대비 기존 콘텐츠 golden 기본/legacy 78/78 동일. quick 근사식·입력 스탯·기존 보정 계수는 이번 범위에서 유지."
-   },
    {
     "hash": "4bc2697e8fd33dcb",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +81,10 @@
    },
    {
     "hash": "8d8a1f7cf9dacf3e",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "622d80810ee95e3c",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

@@ -165,7 +165,7 @@ def test_stats_final_and_luna_reaction():
     ck, sk, order, lead, pw, rk = I.SAMPLES['37-2'][:6]          # 실측 37-2 와 같은 파티(긴 잡몹전 — 치명 피격이 충분히 나옴)
     spec = G.party_spec(q, order, lead, list(order), pw / q['st'][ck][sk]['bp'], q['st'][ck][sk])
     fired = 0
-    for seed in range(1, 13):
+    for seed in range(1, 41):     # 드문 사건(치명 피격 반응) — wave_carry=client 뒤 1~12 에선 0회라 범위를 넓힘
         r = simulate(spec, {'stage': 'op/모나스티르 광장/SECTOR 37-2'}, dict(G.SIMOPT, n_runs=1, seed=seed, timeline=True))
         fired += sum(1 for e in r['timeline'] if e.get('via') == 'reaction' and e.get('actor') == '루나')
         if fired:

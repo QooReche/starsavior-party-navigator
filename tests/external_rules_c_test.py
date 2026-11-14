@@ -44,7 +44,7 @@ def effect(b, owner, target, text, phase='스킬 사용 후'):
 
 class DefaultsTest(unittest.TestCase):
     def test_switch_contract(self):
-        for key, value, legacy in [('wave_carry', 'keep', 'keep'),
+        for key, value, legacy in [('wave_carry', 'client', 'keep'),   # 2026-11-14 기본 client(영상 근거)
                                    ('shield_tick', 'turn_end', 'turn_start'),
                                    ('break_domain_revive', 'client', 'none')]:
             self.assertEqual(MC_OPTS[key], value)
