@@ -980,6 +980,8 @@ class Battle:
             x.eff[name] = e
         else:
             e.dur = max(e.dur, dur)
+            if self.mc['dispel_order'] == 'client' and e.inst is None:
+                e.seq = next(_EFF_SEQ)   # 기믹 효과 재부여도 옛 객체를 지우고 다시 넣어 목록 뒤로(NKM:4505-4537, add_effect 와 같음)
             if refresh_props:
                 # A nonempty replacement may change values OR their addition order.
                 changed = bool(e.props or props)

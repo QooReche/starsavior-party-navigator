@@ -81,6 +81,17 @@ def test_reapply_updates_seq_in_add_effect():
         assert (x.eff['공격력 증가'].seq != first) is moved
 
 
+
+def test_put_eff_reapply_updates_seq():
+    """기믹 모듈 put_eff(코스모·길방) 재부여도 클라에선 재삽입이라 목록 뒤로 간다(NKM:4505-4537)."""
+    for mode, moved in (('client', True), ('insertion', False)):
+        b = NS(mc=dict(MC_OPTS, dispel_order=mode), dirty=lambda u: None)
+        x = NS(side=0, name='x', eff={}, acting=False, ban_refuse=False)
+        Battle.put_eff(b, x, '상급 공격력 증가', {'공격력%': 10.0}, dur=2)
+        first = x.eff['상급 공격력 증가'].seq
+        Battle.put_eff(b, x, '상급 공격력 증가', {'공격력%': 10.0}, dur=2)
+        assert (x.eff['상급 공격력 증가'].seq != first) is moved, mode
+
 if __name__ == '__main__':
     n = 0
     for k, f in list(globals().items()):
