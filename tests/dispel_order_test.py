@@ -73,7 +73,7 @@ def test_reapply_updates_seq_in_add_effect():
         b = NS(mc=dict(MC_OPTS, dispel_order=mode), rule_hits=defaultdict(int), dirty=lambda u: None,
                _cur_line=None, check_pending=[], refuse_buff=lambda u, n: False, _is_any_turn=lambda o, n: False,
                _buff_fresh=lambda *a: False, alive=lambda side: [], _cc_immune=lambda u, n: False,
-               _forced=lambda o: False)
+               _forced=lambda o, n=None: False)
         eff = dict(name='공격력 증가', props={'공격력%': 10.0}, dur='2턴', max=None, times=1, target='자신')
         Battle.add_effect(b, owner, x, eff, None)
         first = x.eff['공격력 증가'].seq

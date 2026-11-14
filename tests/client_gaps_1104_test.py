@@ -290,7 +290,8 @@ class ImmuneForceTest(unittest.TestCase):
         self.assertIn(force, FORCE_BUFF_NAMES)
         got = {}
         for mode in ('legacy', 'client'):
-            b = battle([unit('a')], [unit('f')], mc={'immune_force_apply': mode})
+            # se_force_apply(버프 강제 이름도 면역 통과, 2026-11-14)가 같은 장면을 통과시키므로 이 규칙만 보도록 끔
+            b = battle([unit('a')], [unit('f')], mc={'immune_force_apply': mode, 'se_force_apply': 'off'})
             a, f = b.allies[0], b.foes[0]
             give(f, '면역')
             b.add_effect(a, f, dict(eff(force), ignore_resist=False), Ctx(a, a, a.d.skills['기본기']))

@@ -4946,7 +4946,9 @@ class Battle:
         category = ('marker' if marker else info.get('category')) or ('debuff' if opp else 'buff')
         forced = self._forced(owner, name)
         if category == 'buff' and self.refuse_buff(x, name):
-            if not forced:
+            # 강화 불가 예외: SE 행 강제는 se_force_apply, 버프 자체 강제(이름 291개)는 buff_ban_force 가 끄지 않았을 때만
+            # (refuse_buff 안의 buff_ban_force 는 IsBuff&&강제 78개 이름만 봄 — 클라는 ForceApplyEffect 만 본다, NKM:4389·6112)
+            if not (self._forced(owner) or (forced and self.mc['buff_ban_force'] != 'off')):
                 return     # 〈강화 불가〉: 새 강화 효과(갱신·합산 포함)는 거부(클라 버프 부여 함수 650줄)
             self.rule_hits['se_force_apply'] += 1   # CantGetMoreBuff 거부도 강제 적용이면 생략(NKM:4389 !OBF_8151)
         resist = category == 'debuff' and not eff.get('ignore_resist')
