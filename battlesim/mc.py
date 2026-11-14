@@ -529,7 +529,7 @@ DISPEL_ON_ATTACK = ('여유로운 응수', '헥사 너트')
 class Eff:
     """유닛에 붙은 효과 1개(강화·약화·보호막·지속 피해·지속 회복). stacks 는 정수."""
     __slots__ = ('name', 'props', 'stacks', 'maxs', 'dur', 'src', 'harmful', 'fresh', 'shield', 'dot', 'inst', 'hot',
-                 'check', 'fixed', 'clock', 'category', 'skip_tick', 'dead_keep', 'seq')
+                 'check', 'fixed', 'clock', 'category', 'skip_tick', 'dead_keep', 'seq', 'check_turn')
 
     def __init__(self, name, props, maxs, dur, src, harmful):
         self.name, self.props, self.maxs, self.dur, self.src, self.harmful = name, props, maxs, dur, src, harmful
@@ -541,6 +541,7 @@ class Eff:
         self.inst = None     # 지속 피해 중첩별 [시전자, 남은 턴]
         self.hot = 0.0       # 턴마다 회복 계수(대상 최대 생명력 비율)
         self.check = False   # 확인용 버프(행동 끝에 사라짐)
+        self.check_turn = None   # 수명 0 효과가 생긴(또는 다시 부여된) 전역 턴(OBF_10523) — check_buff_expiry=skill 의 같은 턴 조건
         self.fixed = False   # 해제 불가
         self.dead_keep = False   # DeadNotDispel: 해제 불가와 별개(NKM:5385)
         self.skip_tick = False   # 단계 그룹: 더 낮은 단계가 지속만 늘린 뒤 다음 차감 1회를 건너뜀(NKM:4297-4305, 3978-3988)
@@ -866,6 +867,7 @@ class Battle:
         self.result = None
         self.clear_t = None
         self.check_pending = []
+        self.global_turns = 0    # 게임 전역 턴(run 에서 행동마다 +1)
         self.first_death = None
         self.death_seq = 0
         self._hit_log = None      # 유효 타격 [(공격자, 피격자, 시전, 피격 시 반격 확률)]
@@ -1418,7 +1420,7 @@ class Battle:
             for v in self.alive(side):
                 for e in v.eff.values():
                     e.skip_tick = False
-        self._expire_checks()
+        self._expire_checks(actor=u)
         self._forced_coop_candidates.clear()  # build 26314877 NKM:13569-13572
         u.acting = False
         if u.extra_turn and not u.dead:
@@ -1630,15 +1632,28 @@ class Battle:
         if changed:
             self.dirty(u)
 
-    def _expire_checks(self, skill=False):
+    def _expire_checks(self, skill=False, actor=None):
+        """수명 0 효과 정리. check_buff_expiry=skill(클라): 스킬 끝(OBF_4932)·행동 끝(OBF_14573) 모두 OBF_10623 —
+        «같은 전역 턴에 생긴(buff.OBF_10523 == 전역 턴) 수명<=0» 버프만 지운다(build 26610546 NKM:4047-4053·16017-16024·13990-13994).
+        다른 턴에 생긴 것(전투·웨이브 시작 등 턴 사이에 부여)은 남고, 행동 끝 차감(OBF_29028, 3999-4014: 생성 턴이 다르면 차감)에서
+        사라진다 — 턴 유닛(OBF_2849)은 전부, 나머지 유닛(OBF_16373, OBF_8763)은 전체 턴 시계 버프(OBF_10355)만.
+        action(legacy) = 생성 턴을 보지 않고 행동 끝에 전부 지우던 옛 동작."""
+        same_turn = self.mc['check_buff_expiry'] == 'skill'
+        keep = []
         for holder, name in self.check_pending:
             e = holder.eff.get(name)
             if e is not None and e.check:
+                if same_turn and e.check_turn is not None and e.check_turn != self.global_turns:
+                    # 행동 끝 차감으로만 사라짐: 턴 유닛이거나 전체 턴 시계 효과일 때
+                    if actor is None or not (holder is actor or e.clock != 'owner_turn'):
+                        keep.append((holder, name))
+                        self.rule_hits['check_turn_keep'] += 1
+                        continue
                 del holder.eff[name]
                 self.dirty(holder)
                 if skill:
                     self.rule_hits['check_expire_skill'] += 1
-        self.check_pending = []
+        self.check_pending = keep
 
     def choose_skill(self, u):
         """(스킬, 미리 고른 대상 또는 None). 게임 자동 전투(NKM.decompiled.cs 6360~6390·6588~6620): 침묵이면 기본기,
@@ -5077,6 +5092,7 @@ class Battle:
             e.clock = clock
             if check:
                 e.check = True
+                e.check_turn = self.global_turns
                 self.check_pending.append((x, name))
             x.eff[name] = e
             e.fresh = fresh
@@ -5101,6 +5117,7 @@ class Battle:
             if refresh_check:
                 e.check = check
                 if check:
+                    e.check_turn = self.global_turns    # 재부여 = 새 버프 객체(NKM:4419), 생성 턴도 새로
                     self.check_pending.append((x, name))
         if dot:
             e.dot = dot

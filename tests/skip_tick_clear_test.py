@@ -22,7 +22,7 @@ def test_finish_action_clears_all_skip():
     actor, ally, foe = _unit(0, True), _unit(0, True), _unit(1, True)
     actor.acting = True
     units = {0: [actor, ally], 1: [foe]}
-    b = NS(mc={'any_turn_clock': False}, alive=lambda side: units[side], _expire_checks=lambda: None,
+    b = NS(mc={'any_turn_clock': False}, alive=lambda side: units[side], _expire_checks=lambda actor=None: None,
            _forced_coop_candidates=set())
     Battle._finish_action(b, actor)
     for u in (actor, ally, foe):
