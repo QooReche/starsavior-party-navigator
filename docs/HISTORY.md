@@ -1,3 +1,20 @@
+## 2026-11-15 기대값 엔진 행동 게이지를 클라 방식으로 — 두 엔진 공통 식(battlesim/gauge.py)
+
+앞 절에서 몬테카를로 엔진(mc.py)만 클라 행동 게이지(`turn_gauge=client`)로 바꾸고 기대값 엔진(engine.py)은 실수 게이지로 남겼던 것을 맞춤.
+
+- 공통 식 `battlesim/gauge.py`(근거 build 26610546 NKM.decompiled.cs:12286-12431 TurnSpeedCalculator·:1962): `any_ready`(누가 100% 이상이면 증가 없음), `int_gain`((int)(속도 x 틱) — 최소 틱은 실수, OBF_17115), `turn_key`(추가 턴 > 게이지 > 속도 > 우선순위). mc.py 는 같은 식을 이 모듈로 부르게만 바꿈(결과 불변 — mc_cache_test 등 고정 해시 통과).
+- engine.Sim: `opts['turn_gauge']`(없으면 `MC_OPTS['turn_gauge']`, 기본 client)를 읽음. client 면 시간 진행 때 위 식으로 정수 증가, 행동 유닛 = 정렬 1위. float = 이전 동작 그대로.
+  - 우선순위 항: 클라는 등장 때 난수 0~9999 인데 기대값 엔진엔 난수가 없어 고정 순서(아군 먼저, 칸 순)로 대신함(이전 동률 처리와 같은 순서).
+  - 게이지 효과의 기대값(gauge_expect)은 소수로 남김 — 절삭은 시간 진행분에만.
+  - 지평선 여유: 정수 절삭으로 유닛 게이지가 진행마다 1 미만씩 덜 차서 시간축 위 행동이 최대 (진행 횟수/속도) 틱 늦게 잡힘. 모델 지평선(턴 x 100틱)은 클라에 없는 경계라 이 지연만큼은 같은 시각으로 봄. 없으면 속도 100 더미의 10번째 행동이 1000틱 바로 뒤로 밀려 잘려, 버프 없는 구원자의 아군 피해 증가가 0 → -14.6% 처럼 틀어졌음(초안에서 확인).
+- 사용처(영향 범위): `metrics.py`(구원자 화력 지표 build_index → tools/raw·data/damage_index.json, 빠른 계산 자료 build_quick_data 의 unit_metrics), `tools/sim_damage.py`(파티·스테이지 기대값), `cli.py`. mc.py 는 calc_hit 만 가져다 씀.
+  - 현재 자료로 build_index(구원자 67명) float/client 비교: 화력·행동·아군 증가 지표 차이 0건 → 사이트 화력 지표·data/quick.json 그대로(calibrate_quick 재보정 결과 동일, 일치 0.910).
+  - 골든 자료(public_inputs_1111)로 client 를 켜면: 구원자 지표 0건, 파티 150팀 중 7팀 총피해 -0.55~+2.39%, 스테이지 처치 턴 39칸이 대부분 +0.001턴 안팎(절삭 지연), 2칸은 행동 순서가 바뀌어 5.76→6.00·7.00→6.74턴.
+- 골든: P1/P2 회귀 기준이라 `golden_check.py` 가 `turn_gauge=float` 로 고정(dmg_cap_scope 고정과 같은 방식) → 65/150/10 일치.
+  - `tests/rank_check.py` 의 legacy 기준(`apply_rules('legacy')`)도 기대값 엔진이 읽는 MC 규칙으로 turn_gauge 를 legacy(float)로 되돌리게 함(`ENGINE_MC_KEYS`) — 안 하면 `rules_test.test_legacy_reproduces_p1_golden` 이 처치 턴 40칸 차이로 실패(실제로 한 번 실패 확인).
+- 남긴 것: 실수 게이지(float)일 때 두 엔진의 동률 처리 차이(engine = 먼저 본 쪽, mc = 게이지·속도·아군 먼저)는 그대로. 기대값 엔진의 능력치 단 구성(stat_stage)·속도 정수화(stat_floor)는 이번 범위 밖(가산식 그대로).
+- 시험: `tests/ev_gauge_test.py` — 두 엔진이 같은 모듈 사용, 정수 절삭으로 실수와 순서가 갈리는 꼴(속도 123·119·114/적 153)과 무작위 60편성의 첫 40행동 순서가 mc client 와 같음, 지평선 여유로 속도 100 더미 10행동 유지. engine 을 float 로 되돌리면 순서 시험 2개, 여유를 빼면 지평선 시험이 실패함을 확인 후 원복.
+
 ## 2026-11-15 결과 카드 — 운에 크게 좌우되는 결과 안내
 
 클리어율이 아주 낮으면(예: 성간 회랑 485 클리어 0.5%, 95% 구간 0.2~1.2%) 사용자가 수십 번 져도 이유를 모름 → 결과 카드(`miVerdict`, `data-k="judgment"`) 안에 짧은 안내를 띄움.

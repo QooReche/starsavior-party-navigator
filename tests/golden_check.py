@@ -90,12 +90,14 @@ def main():
     saved_forced = engine.DEFAULT_OPTS['forced_coop_target']
     saved_dead = engine.DEFAULT_OPTS['coop_dead_target']
     saved_cap = engine.MC_OPTS['dmg_cap_scope']
+    saved_gauge = engine.MC_OPTS['turn_gauge']
     try:
         engine.COOP_CAP = 0.30
         engine.DEFAULT_OPTS['coop_order'] = 'capped'
         engine.DEFAULT_OPTS['forced_coop_target'] = 'live_atk'
         engine.DEFAULT_OPTS['coop_dead_target'] = 'retarget'
         engine.MC_OPTS['dmg_cap_scope'] = 'reduce'
+        engine.MC_OPTS['turn_gauge'] = 'float'     # 기대값 엔진도 클라 게이지를 쓰게 된 뒤에도(11/15) 골든은 옛 실수 게이지로 고정
         if a.write:
             cur = capture()
         else:
@@ -108,6 +110,7 @@ def main():
         engine.DEFAULT_OPTS['forced_coop_target'] = saved_forced
         engine.DEFAULT_OPTS['coop_dead_target'] = saved_dead
         engine.MC_OPTS['dmg_cap_scope'] = saved_cap
+        engine.MC_OPTS['turn_gauge'] = saved_gauge
     if a.write:
         os.makedirs(os.path.dirname(GOLDEN), exist_ok=True)
         tmp = GOLDEN + '.tmp'

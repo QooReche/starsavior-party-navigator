@@ -25,6 +25,7 @@ def calc_hit(a, b=0.0):
         f = a
     return max(0.0, min(1.0, f))
 from .starsavior.parser import Line, Skill, _map_prop, explicit_target
+from . import gauge as _gauge
 from .starsavior.data import SRC
 
 
@@ -162,6 +163,7 @@ class Sim:
             self.opts.update(opts)
         # MC와 같은 규칙 원본. 지표/골든은 opts로 옛 값을 명시할 수 있다.
         self.dmg_cap_scope = self.opts.get('dmg_cap_scope', MC_OPTS['dmg_cap_scope'])
+        self.turn_gauge = self.opts.get('turn_gauge', MC_OPTS['turn_gauge'])
         self.party = [Actor(d, i, self.opts) for i, d in enumerate(defs)]
         self.enemies = [Enemy(e, i) for i, e in enumerate(enemies)]
         self.turns = turns
@@ -204,6 +206,7 @@ class Sim:
         self.start()
         actors = self.party + self.enemies
         guard = 0
+        gsteps = 0        # turn_gauge=client: 정수 절삭이 일어난 시간 진행 횟수(지평선 여유 계산용)
         while guard < 5000:
             guard += 1
             living = [x for x in actors if getattr(x, 'dead', False) is False]
@@ -213,11 +216,36 @@ class Sim:
                 need = 0.0 if x.gauge >= 10000 else (10000 - x.gauge) / max(spd, 1e-6)
                 if bt is None or need < bt - 1e-9:
                     best, bt = x, need
-            if best is None or self.t + bt > self.horizon + 1e-9:
+            if best is None:
                 break
-            for x in living:
-                spd = x.spd() if x.is_ally else x.spd_eff()
-                x.gauge = min(10000.0, x.gauge + spd * bt)
+            slack = 1e-9
+            if self.turn_gauge == 'client' and gsteps:
+                # 정수 절삭으로 한 번 진행할 때마다 유닛 게이지가 1 미만씩 덜 차서, 시간축(틱) 위에서는 행동이 최대
+                # (진행 횟수 / 속도) 틱 늦게 잡힌다. 모델 지평선(turns x 100틱)은 클라에 없는 경계라(클라 턴 제한은 행동 수)
+                # 이 지연만큼은 같은 시각으로 본다 — 없으면 속도 100 유닛의 10번째 행동이 1000틱 바로 뒤로 밀려 잘린다.
+                bspd = best.spd() if best.is_ally else best.spd_eff()
+                slack += gsteps / max(bspd, 1e-6)
+            if self.t + bt > self.horizon + slack:
+                break
+            if self.turn_gauge == 'client':
+                # mc.Battle.run 과 같은 계산(battlesim/gauge.py, NKM:12290-12317·12415-12431): 누가 100% 이상이면 안 올리고,
+                # 아니면 최소 틱만큼 유닛마다 (int)(속도 x 틱)을 더함. 행동 유닛 = 정렬 1위(추가 턴 > 게이지 > 속도 > 우선순위).
+                # 우선순위(클라 = 등장 때 난수 0~9999)는 기대값 엔진에 난수가 없어 고정 순서(아군 먼저, 칸 순)로 대신한다.
+                # 게이지 효과의 기대값(gauge_expect)은 소수로 남는다 — 정수 절삭은 시간 진행분에만.
+                if not _gauge.any_ready(living) and bt > 0:
+                    gsteps += 1
+                    for x in living:
+                        spd = x.spd() if x.is_ally else x.spd_eff()
+                        x.gauge = min(10000.0, x.gauge + _gauge.int_gain(spd * bt))
+                n = len(living)
+                best = min(range(n), key=lambda i: _gauge.turn_key(
+                    getattr(living[i], 'extra_turn', False), living[i].gauge,
+                    living[i].spd() if living[i].is_ally else living[i].spd_eff(), n - i))
+                best = living[best]
+            else:
+                for x in living:
+                    spd = x.spd() if x.is_ally else x.spd_eff()
+                    x.gauge = min(10000.0, x.gauge + spd * bt)
             self.t += bt
             if best.is_ally:
                 self.act_ally(best)

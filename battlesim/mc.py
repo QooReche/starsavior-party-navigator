@@ -2,6 +2,7 @@
 """P3 확률(몬테카를로) 전투 엔진 — 양 진영 대칭(구원자 4명 vs 스테이지 적 웨이브).
 
 설계 = docs/battlesim_design.md 「P3 상세」. 기대값 엔진(engine.Sim)은 동결(웹 화력 지표·골든 유지)하고, 새 규칙은 여기에만 구현한다.
+  예외(11/15): 행동 게이지(turn_gauge=client)는 battlesim/gauge.py 공통 식을 두 엔진이 같이 쓴다.
 - 같은 줄 파서(parser.Line)·스킬(Skill)·스탯(calc_stats)·효과 적중 판정(engine.calc_hit)·피해식 상수(rules)를 쓴다.
 - 치명·효과 적중·확률 효과·협공·대상 선택·피해 난수를 실제로 굴린다. 중첩은 정수.
 - 시간: 시뮬 틱(게이지) / 개체별 행동 횟수(Unit.actions) / 「모델 기준 턴」 = 틱 / turn_ticks(100). 턴 제한은 모델 기준 턴으로 비교.
@@ -20,6 +21,7 @@ from functools import lru_cache
 
 from . import rules as _rules
 from .engine import calc_hit
+from . import gauge as _gauge
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
 from .starsavior.data import SRC
 from .starsavior import foe as _foe
@@ -1212,13 +1214,13 @@ class Battle:
                 # 유닛마다 (int)(속도 x 틱)을 더함(정수 절삭). 행동 유닛 = 정렬 1위(추가 턴 > 게이지 > 속도 > 전투 시작 때 굴린 우선순위)
                 # 브레이크 라운드 경계로 나눈 구간(round_tick)은 클라에 없는 분할이라 소수를 잃지 않게 실수로 쌓아 두고,
                 # 다음 행동까지의 전체 구간이 끝날 때 한 번만 절삭(_g0 = 구간 시작 게이지, _gacc = 쌓인 실수 증가분)
-                if not any(x.gauge >= 10000 for x in living):
+                if not _gauge.any_ready(living):
                     for x in living:
                         if bt > 0:
                             if x._g0 is None:
                                 x._g0, x._gacc = x.gauge, 0.0
                             x._gacc += x.spd() * bt
-                            self.set_gauge(x, x._g0 + (x._gacc if round_tick else int(x._gacc)), keep_frac=round_tick)
+                            self.set_gauge(x, x._g0 + (x._gacc if round_tick else _gauge.int_gain(x._gacc)), keep_frac=round_tick)
                 if not round_tick:
                     for x in living:
                         x._g0 = None
@@ -1295,7 +1297,7 @@ class Battle:
         pr = x._turn_prio
         if pr is None:
             pr = x._turn_prio = self._roll_prio()
-        return (not x.extra_turn, -x.gauge, -x.spd(), -pr)
+        return _gauge.turn_key(x.extra_turn, x.gauge, x.spd(), pr)
 
     def _roll_prio(self):
         """유닛 등장 때 굴리는 행동 우선순위(NKM:1962 RandomGenerator.Next(10000)). 전용 난수라 다른 흐름에 영향 없음"""
