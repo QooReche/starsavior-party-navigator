@@ -1,3 +1,11 @@
+## 2026-11-14 회복·보호막 대체 경로의 동률 = 클라 회복 규칙 2
+
+- 클라 근거: static-data `tables/Plain/AUTO_SKILL_TARGET_TEMPLET.json` Id 2(회복 기본 규칙) = IsLowHpRate → IsLowMaxHp, 필터 뒤 여럿이면 무작위(build 26610546 NKM 7132-7181·비율 비교 7590-7594).
+- 옛 엔진: 자동 대상 자료가 없는 회복·보호막 줄(pick_ally·«아군 N명(자동 지정)» 문구 경로·select_auto lowest_hp)은 비율을 실수로 비교하고 같으면 앞 칸을 골랐음.
+- 새 규칙 `heal_tie`(기본 client, legacy slot): 1/10000 정수 비율 → 최대 생명력 최저 → 무작위. 무작위는 동률일 때만 뽑아 난수 흐름은 동률이 없으면 그대로. 자료 경로(line_auto_targets)는 원래 클라 규칙이라 바뀌지 않음.
+- 영향: 골든 65/150/10 일치. 성간 회랑 485 표준 편성(아모라·아세라·힐데·프로페서M)은 발동 0회(아세라 회복은 자료 경로) — 485 실측 차이의 원인은 아님. 빠른 계산 재보정(calibrate_quick --write), guild_sim 은 시즌 미오픈으로 인정 처리.
+- 시험 `tests/heal_tie_test.py` 6개(옛 로직이면 4개 실패).
+
 ## 2026-11-14 자신 추가 발동의 적 대상 = EnforceAutoTargetId 규칙(감시자 반격 등)
 
 - 계기: 성간 회랑 485 실측 대조에서 감시자 «비틀린 시선»(전체 공격에 피격 후 기본기 추가 발동, «타격자 우선»)이 엔진에선 거의 힐데에게 갔음. 클라 표 `SE_TEMPLET_SKILL_2` COND_MON_SPOTTER_RING_PASSIVE_01 = BI_ENFORCE·대상 NSETT_SELF·**EnforceAutoTargetId 17**(자신을 마지막으로 때린 적)·SkillConditionId 5002(광역 피격)·SeCoolTurn 3.

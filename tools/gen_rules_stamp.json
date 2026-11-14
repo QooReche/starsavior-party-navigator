@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "37244a8639cb0abc",
+  "hash": "f9b2116566f06572",
   "history": [
-   {
-    "hash": "b3087698f2d7ddd4",
-    "reason": "11/12 피해 상한 비차단 리뷰: 기대값 엔진도 net 연결, MC 골든 78건 불변. 길드 방어전 시즌4 종료(미오픈)로 표 재생성 생략, 새 시즌 자료 반영 때 재생성"
-   },
    {
     "hash": "9b1ea9cddbe7b0b7",
     "reason": "격전 의뢰 foe_forced_coop 추가: main 82c612f 대비 길방 포함 기존 콘텐츠 golden 기본/legacy 78/78 동일. 시즌 종료 상태와 길방 계산 유지."
@@ -41,16 +37,16 @@
    {
     "hash": "37244a8639cb0abc",
     "reason": "11/14 self_enforce_target(자신 추가 발동 대상 = EnforceAutoTargetId 규칙): 길드 방어전 시즌 종료(미오픈)로 사전 계산 재생성 보류, 새 시즌 자료 반영 때 재생성. accel-golden 길방 2건(그웬 편성)은 결과 해시 변화 — 최근 타격 대상이 쓰러졌을 때 무작위로 고르는 차이"
+   },
+   {
+    "hash": "f9b2116566f06572",
+    "reason": "11/14 heal_tie(회복·보호막 대체 경로 동률 = 클라 회복 규칙 2): 길드 방어전 시즌 미오픈으로 사전 계산 재생성 보류, 새 시즌 자료 반영 때 재생성. 골든 65/150/10 일치"
    }
   ]
  },
  "quick": {
-  "hash": "37244a8639cb0abc",
+  "hash": "f9b2116566f06572",
   "history": [
-   {
-    "hash": "2680bd92e4befe60",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "f16c098b69a0b613",
     "reason": "11/12 재점화 합산: quick 재보정(0.923→0.927) 뒤 병합된 규칙(잠재력 대조·격전 강제 협공·아세라 강인도)은 표준 육성 quick 표본 불변"
@@ -85,6 +81,10 @@
    },
    {
     "hash": "37244a8639cb0abc",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "f9b2116566f06572",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

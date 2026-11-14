@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """회복·보호막 대체 경로의 «생명력 비율 최저 1명» 동률 처리 mc.heal_tie.
 클라 회복 규칙 2(static-data tables/Plain/AUTO_SKILL_TARGET_TEMPLET.json Id 2 = IsLowHpRate → IsLowMaxHp, 그래도 여럿이면 무작위 —
-NKM.decompiled.cs 7001-7050). 옛 엔진은 비율이 같으면 앞 칸을 골랐다.
+NKM.decompiled.cs build 26610546 7132-7181). 옛 엔진은 비율이 같으면 앞 칸을 골랐다.
 실행: python -X utf8 -I tests/heal_tie_test.py"""
 import os
 import random

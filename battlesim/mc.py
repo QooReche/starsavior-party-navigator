@@ -1991,7 +1991,7 @@ class Battle:
 
     def heal_order(self, owner, pool, k):
         """생명력 비율이 낮은 순서의 아군 목록(회복·보호막 대체 경로). mc.heal_tie=client: 클라 회복 규칙 2(AUTO_SKILL_TARGET_TEMPLET Id 2 =
-        IsLowHpRate → IsLowMaxHp, 그래도 여럿이면 무작위 — NKM 7001-7050 필터 사슬)로 앞 k명을 차례로 고른다. slot = 옛 동작(비율 실수 비교, 동률이면 앞 칸)."""
+        IsLowHpRate → IsLowMaxHp, 그래도 여럿이면 무작위 — build 26610546 NKM 7132-7181 필터 사슬·7590-7594 비율 비교)로 앞 k명을 차례로 고른다. slot = 옛 동작(비율 실수 비교, 동률이면 앞 칸)."""
         if self.mc['heal_tie'] != 'client':
             return sorted(pool, key=lambda v: (v.hp / v.maxhp, v.pos))
         left, out = sorted(pool, key=lambda v: v.pos), []
