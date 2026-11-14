@@ -15,6 +15,18 @@
   function grade(value,index,table=grades){const rows=table?.stats?.[index];if(!Number.isFinite(value)||!rows||value>1500)return '';return rows.reduce((g,r)=>value>=r[0]?r[1]:g,'');}
   function archive(value,index,table){const g=grade(value,index,table);return (g?g+' ':'')+num(value);}
   function chip(p){const [state,label]=verdict(p);return `<span class="verdict-chip g-${state}" data-verdict="${state}">${label}</span>`;}
+  // 운에 크게 좌우되는 결과 안내: 클리어율 5% 미만이거나, 95% 구간이 1% 밑에서 5% 이상까지 걸쳐 결론이 흔들릴 때만 문구를 낸다.
+  // r = 시뮬 요약({clear, ci:[하한,상한], n}). 「30번 도전 시 한 번이라도 깰 확률」 = 1-(1-p)^30(판마다 독립 가정).
+  const LUCK={low:.05,ciLo:.01,ciHi:.05,tries:30};
+  const pctText=p=>{const v=Math.round(p*1000)/10;return (v>=10?Math.round(v):v)+'%';};
+  function luckNote(r){const p=r?.clear;if(!Number.isFinite(p))return '';
+    const ci=Array.isArray(r.ci)&&r.ci.every(Number.isFinite)?r.ci:null;
+    const low=p<LUCK.low,shaky=!!ci&&ci[0]<LUCK.ciLo&&ci[1]>=LUCK.ciHi;
+    if(!low&&!shaky)return '';
+    const once=1-Math.pow(1-p,LUCK.tries);
+    const head=p===0?`모의 전투 ${num(r.n)}판에서 한 번도 못 깼어요.`:low?`클리어 확률이 매우 낮아요(약 ${pctText(p)}).`:`클리어 확률이 낮고 결과가 흔들려요(약 ${pctText(p)}, 범위 ${pctText(ci[0])}~${pctText(ci[1])}).`;
+    const tries=p>0?` ${LUCK.tries}번 도전해도 한 번이라도 깰 확률은 약 ${pctText(once)}예요.`:'';
+    return `<div class="luck-note" data-k="luck-note" role="note">${head} 몇십 번 시도해도 못 깰 수 있어요 — 파티를 바꾸거나 육성을 더 하는 걸 권해요.${tries}</div>`;}
   const signed=v=>v==null?'자료 없음':(v>=0?'+':'−')+num(Math.abs(v));
   function member(a,info,growth,content,table,view={}){
     const old=info.units.find(u=>u.id===a.unit.id),rule=S.rule_for_content(content),before=old?S.final_stats(old,info,growth,rule).power:0;
@@ -121,6 +133,6 @@
     doc.addEventListener('focusout',e=>{if(owner===e.target&&!pinned)close();});
     root.addEventListener('resize',()=>{if(owner)place();});root.addEventListener('scroll',()=>{if(owner)place();},true);
   }
-  const api={verdict,help,grade,archive,setGrades,chip,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
+  const api={verdict,help,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Ux=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

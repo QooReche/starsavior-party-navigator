@@ -25,6 +25,15 @@ ctx.SIMQ.res.selected.unsupported=[{unit:'합성 구원자',raw:'자동 잠재�
  assert.doesNotMatch(result,/<details/);
 }
 delete ctx.MODE;
+// 운에 크게 좌우되는 결과 안내: 96% 결과엔 없고, 성간 회랑 485 같은 0.5%(구간 0.2~1.2%) 결과엔 결과 카드 안에 뜬다
+assert.doesNotMatch(ev('miVerdict({}, {})'),/data-k="luck-note"/);
+ctx.SIMQ.res.selected={clear:.005,n:2000,ci:[.002,.012],ta:80};
+{const result=ev('miVerdict({}, {})'),card=result.slice(0,result.lastIndexOf('</div>'));
+ assert.match(card,/data-k="luck-note"/,'mi-verdict 카드 안');assert.match(visible(result),/클리어 확률이 매우 낮아요\(약 0\.5%\)/);
+ assert.match(visible(result),/30번 도전해도 한 번이라도 깰 확률은 약 14%/);assert.match(result,/data-verdict="risk"/);}
+ctx.SIMQ.res.selected={clear:.6,n:100,ci:[.5,.69],ta:40};assert.doesNotMatch(ev('miVerdict({}, {})'),/luck-note/);
+delete ctx.SIMQ.res.selected;assert.doesNotMatch(ev('miVerdict({}, {})'),/luck-note/);
+
 for(const key of ['op','oph','equip','clo','rush','cosmo']){
  ctx.QK.d.st[key]={'area|boss':{bp:100,w:[[[150,0,0,0,0,true]]]}};
  ctx.content={key};assert.equal(ev('bigBoss(content,{tab:"area",name:"boss"})'),1.5);
