@@ -104,11 +104,11 @@
     return (equip||[]).map(e=>[slots?.[e.item_id]??-1,e]).sort((a,b)=>a[0]-b[0]||a[1].item_id-b[1].item_id);
   }
   // Independent account snapshot. Equipment is selected as one complete bundle.
-  const OVERWRITE_VERSION='grown-account-v4';
+  const OVERWRITE_VERSION='grown-account-v5';   // v5: 스텔라 아카이브는 기록 통째 교체(칸별 섞기 금지)
   // Recommendation policy, not a battle rule. Included verbatim in history/cache signatures.
   const THRESHOLD_POLICY=Object.freeze({skillMax:7,skillTarget:10,passive:false,
     equipMin:12,equipSum:84,archiveMain:950,favorMax:20,favorTarget:30,
-    resonanceMax:10,linkGap:10,potentialTarget:1,ownedOnly:true});
+    resonanceMax:10,linkGap:10,potentialTarget:1,ownedOnly:true,archiveWhole:true});
   function growthFields(old,info,growth,spec,content,slots){
     const fields=[],level=Stats.level_info(old,info);
     const fixed=Stats.rule_for_content(content)==='fixed200';
@@ -119,6 +119,8 @@
       ||equip.reduce((sum,e)=>sum+e.enhance,0)<THRESHOLD_POLICY.equipSum)fields.push('equip');
     if(['basic','special','ultimate'].some(k=>(old.skills?.[k]||0)<=THRESHOLD_POLICY.skillMax))fields.push('skills');
     if(!fixed)fields.push('resonance');
+    // 스텔라 아카이브: 기준표 주력 칸이 archiveMain 미만이면(다른 칸이 SG 여도) «기준표 기록으로 다시 만들기»를 후보로 올린다.
+    // 채택 여부는 overwrite 가 지금 기록과 비교해 정한다(통째 교체 — 아래 주석)
     const main=spec.journey.indexOf(Math.max(...spec.journey));
     if(!old.gauntlet||(old.gauntlet.journey?.[main]||0)<THRESHOLD_POLICY.archiveMain)fields.push('journey');
     if(!(old.gauntlet?.potentials||[]).some(p=>growth.assumed.special_ids.includes(p[0])&&p[1]>0))fields.push('potentials');
@@ -139,7 +141,14 @@
           ...Object.fromEntries(['basic','special','ultimate'].map(k=>[k,(old.skills[k]||0)<=THRESHOLD_POLICY.skillMax?Math.max(old.skills[k]||0,THRESHOLD_POLICY.skillTarget):old.skills[k]]))};
         if(fields.includes('resonance'))u.resonance=Math.max(old.resonance,Math.min(THRESHOLD_POLICY.resonanceMax,u.resonance));
         if(fields.includes('favor'))u.favor=THRESHOLD_POLICY.favorTarget;
-        if(fields.includes('journey'))u.gauntlet.journey=u.gauntlet.journey.map((v,i)=>Math.max(v,old.gauntlet?.journey?.[i]||0));
+        if(fields.includes('journey')&&old.gauntlet?.journey){
+          // 아카이브 5칸은 한 번의 여정 결과로 통째로 정해진다(사용자 확인 11/14: 한 칸 SG 는 현실적, 두 칸 동시 SG 는 어려움).
+          // 그래서 칸별로 큰 값을 골라 섞지 않는다 — 섞으면 «힘 1250 + 체력 1250» 같은 불가능한 기록이 되어 육성 결과가 부풀려진다.
+          // 기준표 기록으로 통째 교체한 쪽과 지금 기록 중 전투력이 높은 쪽 하나만 쓴다(장비 묶음과 같은 원칙, 같으면 지금 기록).
+          const power=x=>Stats.final_stats(x,a.targetInfo,growth,Stats.rule_for_content(content)).power;
+          const kept={...u,gauntlet:{...u.gauntlet,journey:clone(old.gauntlet.journey)}};
+          if(!(power(u)>power(kept)))u.gauntlet.journey=clone(old.gauntlet.journey);
+        }
         if(fields.includes('potentials'))u.gauntlet.potentials.at(-1)[1]=THRESHOLD_POLICY.potentialTarget;
         if(fields.includes('equip')){
           // Both candidates use the same grown level/skills/journey and content rule.

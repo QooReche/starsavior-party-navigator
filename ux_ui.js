@@ -45,17 +45,20 @@
           return `${['무기','장갑','갑옷','신발','목걸이','반지'][slot]||'장비'} ${prev?'+'+(prev.enhance||0):'없음'}→+${e.enhance} · ${view.sets?.[growth.item_sets?.[e.item_id]]||'세트 정보 없음'}`;}).join('\n');
       }
       if(f==='journey'){
-        const ix=(t||[]).map((v,i)=>i).filter(i=>t[i]>(b?.[i]||0));
-        const main=ix.slice().sort((i,j)=>t[j]-t[i])[0];
-        short=main==null?'':`${names[main]} ${grade(b?.[main]||0,main,table)||num(b?.[main]||0)}→${grade(t[main],main,table)||num(t[main])}${t[main]===1250?' (MAX)':''}${ix.length>1?' · 외 '+(ix.length-1)+'항목':''}`;
-        detail=ix.map(i=>`${names[i]} ${archive(b?.[i]||0,i,table)} → ${archive(t[i],i,table)}${t[i]===1250?' (MAX)':''}`).join('\n');
+        // 기록을 통째로 다시 만드는 추천: 지금 주력 칸 → 바뀌는 주력 칸을 함께 보인다(이미 SG 인 칸을 버리는 추천일 수 있음을 알게)
+        const top=x=>x&&x.some(v=>v>0)?x.indexOf(Math.max(...x)):null,mb=top(b),mt=top(t||[]);
+        const g=(x,i)=>grade(x[i],i,table)||num(x[i]);
+        short=mt==null?'':`(주력 ${mb==null?'없음':names[mb]+' '+g(b,mb)} → ${names[mt]} ${g(t,mt)})`;
+        const down=names.filter((n,i)=>(b?.[i]||0)>t[i]);
+        detail='한 번의 여정 결과로 기록 전체를 다시 만드는 목표예요(칸별로 좋은 값만 섞을 수 없어요).'+(down.length?`\n지금보다 내려가는 칸: ${down.join('·')}`:'')+'\n'+
+          names.map((n,i)=>`${n} ${archive(b?.[i]||0,i,table)} → ${archive(t[i],i,table)}${t[i]===1250?' (MAX)':''}`).join('\n');
       }
       if(f==='potentials'){
         const changes=(t||[]).filter(p=>!(b||[]).some(q=>q[0]===p[0]&&q[1]>=p[1]));
         short=changes.map(p=>`${view.potentials?.[p[0]]?.name||''} ${(b||[]).find(q=>q[0]===p[0])?.[1]||'미습득'}→${p[1]}`).join(' · ');
         detail=changes.map(p=>`${view.potentials?.[p[0]]?.name||'잠재력 '+p[0]} ${(b||[]).find(q=>q[0]===p[0])?.[1]||'미습득'} → ${p[1]}`).join('\n');
       }
-      return {field:f,label:labels[f],short,detail:detail||short,delta};
+      return {field:f,label:f==='journey'?'스텔라 아카이브 기록 다시 만들기':labels[f],short,detail:detail||short,delta};
     });
     return {before,after,fields,missing:!old};
   }

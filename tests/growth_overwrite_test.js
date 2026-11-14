@@ -14,7 +14,9 @@ function overwrite(m=M){const info=synthetic(),before=JSON.stringify(info);
     const old=info.units.find(u=>u.id===a.unit.id);
     assert(a.overwrite);assert.equal(a.source,'owned');assert(a.unit.resonance>=old.resonance);
     for(const [k,v] of Object.entries(old.skills))assert(a.unit.skills[k]>=v);
-    for(const [i,v] of old.gauntlet.journey.entries())assert(a.unit.gauntlet.journey[i]>=v);
+    // 스텔라 아카이브는 통째로: 지금 기록 그대로이거나 기준표 기록 그대로(칸별로 섞지 않는다)
+    const spec=growth.assumed.units[key].journey,now=JSON.stringify(a.unit.gauntlet.journey);
+    assert(now===JSON.stringify(old.gauntlet.journey)||now===JSON.stringify(spec),key+' journey mixed');
     assert(a.unit.equip.every(e=>e.enhance>=15));
     assert.deepEqual(a.changedFields,Object.keys(a.changes).filter(f=>JSON.stringify(a.changes[f].before)!==JSON.stringify(a.changes[f].after)));
     assert(r.profile.results[key].power>0);
@@ -39,7 +41,8 @@ function overwrite(m=M){const info=synthetic(),before=JSON.stringify(info);
   assert.deepEqual(raised.info.units[0].equip,mixed.units[0].equip);
   const main=growth.assumed.units[key].journey.indexOf(1250);mixed.units[0].gauntlet.journey[main]=499;
   const archive=m.overwrite(mixed,roster,growth,'op');
-  assert.deepEqual(archive.info.units[0].gauntlet.journey,mixed.units[0].gauntlet.journey.map((v,i)=>i===main?1250:v));
+  // 주력 칸만 낮고 나머지가 기준표보다 훨씬 높은 기록: 통째 교체가 더 나쁘므로 지금 기록을 그대로 둔다(주력 칸만 1250 으로 끼워 넣지 않는다)
+  assert.deepEqual(archive.info.units[0].gauntlet.journey,mixed.units[0].gauntlet.journey);assert(!archive.changes[key]?.changedFields.includes('journey'));
 }
 function display(code=ui){const ctx={GrowthGuide:require('../growth_guide'),esc:s=>s,Ux:require('../ux_ui'),MI:{info:synthetic(),growth},contents:[{key:'op'}],$:()=>({value:0}),D:{archiveGrades:require('../data/archive_grades.json'),growthView:{...require('../data/myinfo_view.json'),itemSlots:require('../data/myinfo_slots.json')}}};vm.createContext(ctx);vm.runInContext(code,ctx);
   for(const [kind,field] of [['op','clear'],['clo','clear'],['guild','score'],['cosmo','sum']]){
@@ -64,7 +67,7 @@ function mutate(name,code,from,to,test){assert(code.includes(from));let caught=f
 overwrite();overwrite(load(source));display();
 mutate('original account mutation',source,'const target=clone(info),','const target=info,',s=>overwrite(load(s)));
 mutate('missing selection',source,'||!out.units[s.key]','',s=>overwrite(load(s)));
-mutate('higher journey preserved',source,'Math.max(v,old.gauntlet?.journey?.[i]||0)','v',s=>overwrite(load(s)));
+mutate('journey slots never mixed',source,'if(!(power(u)>power(kept)))u.gauntlet.journey=clone(old.gauntlet.journey);','u.gauntlet.journey=u.gauntlet.journey.map((v,i)=>Math.max(v,old.gauntlet.journey[i]||0));',s=>overwrite(load(s)));
 mutate('higher equipment preserved',source,'if(!(presetPower>originalPower))','if(false)',s=>overwrite(load(s)));
 mutate('strict improvement only',ui,'metric(result)>(metric(baseline)??0)','metric(result)>=(metric(baseline)??0)',display);
 // Per-field presentation mutation coverage is in ux_ui_test.js.

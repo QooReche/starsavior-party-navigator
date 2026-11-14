@@ -38,11 +38,15 @@ function check(m=M){
   assert(run(u=>u.equip.pop()).fields.includes('equip'),'empty slot');
   assert(run(u=>{u.equip[5]=clone(u.equip[0]);u.equip.forEach(e=>{e.main.value=1;e.subs=[];});}).fields.includes('equip'),'duplicate slot is still a missing body part');
   const main=spec.journey.indexOf(Math.max(...spec.journey));
+  // 스텔라 아카이브: 기준표 주력 칸이 950 미만이면 «기준표 기록으로 통째 교체»가 후보, 950 이상이면 후보 아님. 칸별로 섞지 않는다
   for(const [n,raised] of [[949,true],[950,false]]){
-    const {u,old,fields}=run(u=>{u.gauntlet.journey=[1400,1400,1400,1400,1400];u.gauntlet.journey[main]=n;});
+    const {u,old,fields}=run(u=>{u.gauntlet.journey=[100,100,100,100,100];u.gauntlet.journey[main]=n;});
     assert.equal(fields.includes('journey'),raised);
-    assert.deepEqual(plain(u.gauntlet.journey),old.gauntlet.journey.map((v,i)=>raised?Math.max(v,spec.journey[i]):v));
+    assert.deepEqual(plain(u.gauntlet.journey),raised?spec.journey:old.gauntlet.journey);
   }
+  // 후보여도 통째 교체가 지금 기록보다 못하면(다른 칸이 훨씬 높음) 그대로 둔다
+  {const {u,old,fields}=run(u=>{u.gauntlet.journey=[1400,1400,1400,1400,1400];u.gauntlet.journey[main]=949;});
+   assert(!fields.includes('journey'));assert.deepEqual(plain(u.gauntlet.journey),old.gauntlet.journey);}
   const noGauntlet=run(u=>delete u.gauntlet);
   assert.deepEqual(plain(noGauntlet.u.gauntlet.journey),spec.journey);
   assert(noGauntlet.fields.includes('potentials'));
