@@ -4984,6 +4984,13 @@ class Battle:
                 del x.eff[n]
                 self.rule_hits['buff_step_replace'] += 1
             e = x.eff.get(name)
+        if e is not None and name == '스킬 피해 무효' and self.mc['nullifier_count'] == 'client':
+            # 재부여는 새 «스킬 무효화 N회»가 남은 횟수보다 클 때만 받는다 — 같거나 작으면 부여 자체를 거부해 지속·순서도
+            # 그대로(NKM:4338-4340 OBF_9349 거짓이면 return false, 5585-5591 SkillNullifierValue > 남은 횟수).
+            mn = RX_NULLIFY_N.search(self._cur_line.raw) if self._cur_line is not None else None
+            if (int(mn.group(1)) if mn else 1) <= e.stacks:
+                self.rule_hits['nullifier_count'] += 1
+                return
         # Only unchanged props, category and stacks can reuse mods. Nonempty
         # input always invalidates (including an in-place edit to the same dict).
         # dict equality is insufficient: it ignores float addition order.

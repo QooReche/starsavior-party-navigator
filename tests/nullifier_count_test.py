@@ -49,6 +49,31 @@ def test_single_charge_same_both():
         assert f.hp == hp and '스킬 피해 무효' not in f.eff
 
 
+
+def _reapply(mode, first, second, dur2='5턴'):
+    b = battle([unit('a')], [unit('f')], mc={'nullifier_count': mode})
+    f = b.foes[0]
+    ctx = Ctx(f, f, f.d.skills['기본기'])
+    ctx.target, ctx.targets = f, [f]
+    b.run_line(f, Line('[스킬 사용 후] 자신에게 〈스킬 피해 무효〉 (1턴 / 스킬 무효화) 스킬 무효화 %d회' % first,
+                       '기본기', 'active'), ctx)
+    e = f.eff['스킬 피해 무효']
+    seq = e.seq
+    b.run_line(f, Line('[스킬 사용 후] 자신에게 〈스킬 피해 무효〉 (%s / 스킬 무효화) 스킬 무효화 %d회' % (dur2, second),
+                       '기본기', 'active'), ctx)
+    return f.eff['스킬 피해 무효'], seq
+
+
+def test_reapply_smaller_or_equal_refused_client():
+    """클라 NKM:4338-4340·5585-5591: 남은 횟수 이하의 재부여는 부여 자체를 거부(지속·목록 순서도 갱신 안 함)."""
+    for second in (1, 3):
+        e, seq = _reapply('client', 3, second)
+        assert e.stacks == 3 and e.dur == 1 and e.seq == seq, (second, e.stacks, e.dur)
+    e, _ = _reapply('client', 3, 5)                                 # 더 크면 받음
+    assert e.stacks == 5 and e.dur == 5
+    e, _ = _reapply('once', 1, 1)                                   # 옛 동작: 같은 1회 재부여로 지속 갱신
+    assert e.dur == 5
+
 if __name__ == '__main__':
     n = 0
     for k, fn in list(globals().items()):
