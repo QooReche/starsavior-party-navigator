@@ -4893,12 +4893,16 @@ class Battle:
             return True
         return False
 
-    def _forced(self, owner):
+    def _forced(self, owner, name=None):
         """지금 실행 중인 줄이 SE 행 ForceApplyEffect 인가(data/foe_auto.json force, tools/build_foe_auto.py). 강제 적용은
         유닛 면역 목록·회피·CantGetMoreBuff/Debuff·상태이상 면역·게이지 증가 면역을 건너뛴다(NKM:4318-4327·4394-4416 의
         !OBF_8151, 생성자 6112: SE 강제 || 버프 강제). 효과 적중 판정은 별개. 규칙 mc.se_force_apply."""
+        if self.mc['se_force_apply'] != 'client':
+            return False
+        if name is not None and name in buff_flags()['force_apply']:
+            return True     # 버프 자체 ForceApplyEffect(BUFF_TEMPLET, data/buff_flags.json force_apply) — 클라는 SE 강제와 OR(NKM:6112)
         ln = self._cur_line
-        if self.mc['se_force_apply'] != 'client' or ln is None or owner is None:
+        if ln is None or owner is None:
             return False
         return (ln.slot, ln.raw) in getattr(owner.d, 'force_lines', ())
 
@@ -4940,7 +4944,7 @@ class Battle:
         info = getattr(owner.d, 'effect_info', {}).get(name, {})
         marker = eff.get('cast_marker') or bool(CHECK_NAME.search(name)) or '판별용' in name
         category = ('marker' if marker else info.get('category')) or ('debuff' if opp else 'buff')
-        forced = self._forced(owner)
+        forced = self._forced(owner, name)
         if category == 'buff' and self.refuse_buff(x, name):
             if not forced:
                 return     # 〈강화 불가〉: 새 강화 효과(갱신·합산 포함)는 거부(클라 버프 부여 함수 650줄)
