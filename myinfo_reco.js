@@ -104,12 +104,35 @@
     return (equip||[]).map(e=>[slots?.[e.item_id]??-1,e]).sort((a,b)=>a[0]-b[0]||a[1].item_id-b[1].item_id);
   }
   // Independent account snapshot. Equipment is selected as one complete bundle.
-  const OVERWRITE_VERSION='grown-account-v5';   // v5: 스텔라 아카이브는 기록 통째 교체(칸별 섞기 금지)
+  const OVERWRITE_VERSION='grown-account-v6';   // v6: 아카이브 주력 판단 = 공략 DB 여정 스탯 우선순위, 장비×기록 조합 비교 / v5: 기록 통째 교체(칸별 섞기 금지)
   // Recommendation policy, not a battle rule. Included verbatim in history/cache signatures.
   const THRESHOLD_POLICY=Object.freeze({skillMax:7,skillTarget:10,passive:false,
     equipMin:12,equipSum:84,archiveMain:950,favorMax:20,favorTarget:30,
-    resonanceMax:10,linkGap:10,potentialTarget:1,ownedOnly:true,archiveWhole:true});
-  function growthFields(old,info,growth,spec,content,slots){
+    resonanceMax:10,linkGap:10,potentialTarget:1,ownedOnly:true,archiveWhole:true,archivePriority:'guide'});
+  // ── 스텔라 아카이브(여정 기록) 목표 ──
+  // 아카이브 5칸은 한 번의 여정 결과로 통째로 정해진다(사용자 확인 11/14: 한 칸 SG 는 현실적, 두 칸 동시 SG 는 어려움) → 칸별로 큰 값을 골라 섞지 않는다.
+  // 주력 판단은 공략 DB 의 «여정 스탯 우선순위»(data/journey_priority.json, tools/extract_journey_priority.js)를 따른다:
+  //   rows = [우선순위 줄…], 줄 = [[칸…] > [칸…] …](같은 묶음 안은 동률). 일반 디펜더는 두 줄(퓨어탱커 / 공격력 탱커) — 가이드가 하나를 고르지 않으므로 둘 다 본다.
+  //   · 충족: 어느 줄이든 첫 묶음의 칸 가운데 하나가 archiveMain 이상 → 아카이브는 키울 항목이 아님(예: 왈츠 아세라 = [힘, 체력] 이 첫 묶음 → 체력 SG 면 충족)
+  //   · 미충족: 줄마다 «다시 만든 기록» 후보 하나 — 기준표 예시 기록의 값(큰 순)을 우선순위 순서대로 배정. 같은 묶음 안에서는 지금 값이 높은 칸에 큰 값을 준다
+  //     (동률인 칸이면 이미 더 키운 쪽을 주력으로 삼는 편이 지금 기록에 가까운 목표이기 때문. 지금 값도 같으면 칸 번호 순)
+  // 우선순위 표가 없으면(옛 호출) 기준표 기록의 주력 칸만 보고 기준표 기록 그대로를 후보로 쓴다.
+  function archiveRows(key,priority){const rows=priority?.units?.[key];return rows?.length?rows.map(r=>r.groups):null;}
+  function archiveMet(journey,spec,rows){
+    const main=spec.journey.indexOf(Math.max(...spec.journey)),first=rows?rows.map(g=>g[0]):[[main]];
+    return first.some(group=>group.some(i=>(journey?.[i]||0)>=THRESHOLD_POLICY.archiveMain));
+  }
+  function archiveCandidates(journey,spec,rows){
+    if(!rows)return [clone(spec.journey)];
+    const values=[...spec.journey].sort((a,b)=>b-a),seen=new Set(),out=[];
+    for(const groups of rows){
+      const order=groups.flatMap(group=>group.slice().sort((a,b)=>(journey?.[b]||0)-(journey?.[a]||0)||a-b)),record=Array(5).fill(0);
+      order.forEach((slot,i)=>{record[slot]=values[i];});
+      const id=record.join(',');if(!seen.has(id)){seen.add(id);out.push(record);}
+    }
+    return out;
+  }
+  function growthFields(old,info,growth,spec,content,slots,rows=null){
     const fields=[],level=Stats.level_info(old,info);
     const fixed=Stats.rule_for_content(content)==='fixed200';
     if(!fixed&&level.source!=='legacy'&&!info.star_link?.source?.includes(old.id)
@@ -119,15 +142,13 @@
       ||equip.reduce((sum,e)=>sum+e.enhance,0)<THRESHOLD_POLICY.equipSum)fields.push('equip');
     if(['basic','special','ultimate'].some(k=>(old.skills?.[k]||0)<=THRESHOLD_POLICY.skillMax))fields.push('skills');
     if(!fixed)fields.push('resonance');
-    // 스텔라 아카이브: 기준표 주력 칸이 archiveMain 미만이면(다른 칸이 SG 여도) «기준표 기록으로 다시 만들기»를 후보로 올린다.
-    // 채택 여부는 overwrite 가 지금 기록과 비교해 정한다(통째 교체 — 아래 주석)
-    const main=spec.journey.indexOf(Math.max(...spec.journey));
-    if(!old.gauntlet||(old.gauntlet.journey?.[main]||0)<THRESHOLD_POLICY.archiveMain)fields.push('journey');
+    // 스텔라 아카이브: 주력 미충족(archiveMet)이면 «기록 다시 만들기»를 후보로 올린다. 채택 여부는 overwrite 가 지금 기록과 비교해 정한다
+    if(!old.gauntlet||!archiveMet(old.gauntlet.journey,spec,rows))fields.push('journey');
     if(!(old.gauntlet?.potentials||[]).some(p=>growth.assumed.special_ids.includes(p[0])&&p[1]>0))fields.push('potentials');
     if(old.favor<=THRESHOLD_POLICY.favorMax)fields.push('favor');
     return fields;
   }
-  function overwrite(info, roster, growth, content, {excluded=[], slots=itemSlots}={}) {
+  function overwrite(info, roster, growth, content, {excluded=[], slots=itemSlots, priority=null}={}) {
     const target=clone(info), changes={}, errors=[], banned=new Set(excluded);
     let out=profile(info,roster,growth,content);
     for(const s of roster){
@@ -135,27 +156,28 @@
       try{
         const old=out.units[s.key],spec=growth.assumed.units[s.key];
         if(!spec)throw Error('가정 세팅 없음: '+s.key);
-        const fields=growthFields(old,info,growth,spec,content,slots);
+        const rows=archiveRows(s.key,priority),fields=growthFields(old,info,growth,spec,content,slots,rows);
         const a=assume(s.key,info,growth,{fields}),u=a.unit;
         if(fields.includes('skills'))u.skills={...old.skills,
           ...Object.fromEntries(['basic','special','ultimate'].map(k=>[k,(old.skills[k]||0)<=THRESHOLD_POLICY.skillMax?Math.max(old.skills[k]||0,THRESHOLD_POLICY.skillTarget):old.skills[k]]))};
         if(fields.includes('resonance'))u.resonance=Math.max(old.resonance,Math.min(THRESHOLD_POLICY.resonanceMax,u.resonance));
         if(fields.includes('favor'))u.favor=THRESHOLD_POLICY.favorTarget;
-        if(fields.includes('journey')&&old.gauntlet?.journey){
-          // 아카이브 5칸은 한 번의 여정 결과로 통째로 정해진다(사용자 확인 11/14: 한 칸 SG 는 현실적, 두 칸 동시 SG 는 어려움).
-          // 그래서 칸별로 큰 값을 골라 섞지 않는다 — 섞으면 «힘 1250 + 체력 1250» 같은 불가능한 기록이 되어 육성 결과가 부풀려진다.
-          // 기준표 기록으로 통째 교체한 쪽과 지금 기록 중 전투력이 높은 쪽 하나만 쓴다(장비 묶음과 같은 원칙, 같으면 지금 기록).
-          const power=x=>Stats.final_stats(x,a.targetInfo,growth,Stats.rule_for_content(content)).power;
-          const kept={...u,gauntlet:{...u.gauntlet,journey:clone(old.gauntlet.journey)}};
-          if(!(power(u)>power(kept)))u.gauntlet.journey=clone(old.gauntlet.journey);
-        }
         if(fields.includes('potentials'))u.gauntlet.potentials.at(-1)[1]=THRESHOLD_POLICY.potentialTarget;
-        if(fields.includes('equip')){
-          // Both candidates use the same grown level/skills/journey and content rule.
-          // Keep imported equipment on ties; never merge its stats into the preset.
-          const rule=Stats.rule_for_content(content),presetPower=Stats.final_stats(u,a.targetInfo,growth,rule).power;
-          const originalPower=Stats.final_stats({...u,equip:old.equip},a.targetInfo,growth,rule).power;
-          if(!(presetPower>originalPower))u.equip=clone(old.equip);
+        if(fields.includes('equip')||fields.includes('journey')){
+          // 장비 묶음(지금 것 / 기준표 것)과 아카이브 기록(지금 것 / 다시 만든 후보)은 «통째로» 고른다 — 서로 섞지 않는다(스탯·옵션을 합치지 않음).
+          // 다른 육성값(레벨·스킬·공명·호감도·잠재력)을 먼저 정한 뒤 모든 조합의 전투력을 비교해 가장 높은 조합 하나를 쓴다.
+          // 한 축을 먼저 정해 버리면(예: 기준표 장비로 기록을 고른 뒤 장비를 되돌림) «지금 장비 + 지금 기록»보다 약한 조합이 남을 수 있다(11/14 리뷰).
+          // 지금 것을 먼저 놓고 «더 클 때만» 바꾸므로 같으면 지금 것을 유지하고, 결과가 지금 장비·지금 기록보다 약해지는 일은 없다.
+          const rule=Stats.rule_for_content(content);
+          const equips=fields.includes('equip')?[old.equip,u.equip]:[u.equip];
+          const records=!fields.includes('journey')?[null]:[...(old.gauntlet?.journey?[old.gauntlet.journey]:[]),...archiveCandidates(old.gauntlet?.journey,spec,rows)];
+          let best=null;
+          for(const equip of equips)for(const record of records){
+            const unit=record?{...u,equip,gauntlet:{...u.gauntlet,journey:record}}:{...u,equip};
+            const power=Stats.final_stats(unit,a.targetInfo,growth,rule).power;
+            if(!best||power>best.power)best={power,equip,record};
+          }
+          u.equip=clone(best.equip);if(best.record)u.gauntlet.journey=clone(best.record);
         }
         const value=(x,f)=>['journey','potentials'].includes(f)?x.gauntlet?.[f]:x[f];
         for(const f of Object.keys(a.changes))if(f!=='level')a.changes[f]={before:old?value(old,f):null,after:value(u,f)};

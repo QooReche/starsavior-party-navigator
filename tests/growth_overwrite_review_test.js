@@ -107,11 +107,11 @@ async function mutation(name,code,from,to,test){assert(code.includes(from),name+
 }
 (async()=>{
   equipment();equipment(load(source));baseline();await speed();
-  await mutation('whole bundle selection',source,'if(!(presetPower>originalPower))u.equip=clone(old.equip);',
+  await mutation('whole bundle selection',source,'u.equip=clone(best.equip);',
     'u.equip=u.equip.map((e,i)=>old.equip[i]?.enhance>=15?clone(old.equip[i]):e);',s=>equipment(load(s)));
-  await mutation('tie retains original',source,'presetPower>originalPower','presetPower>=originalPower',s=>equipment(load(s)));
-  await mutation('preset substats only',source,'const rule=Stats.rule_for_content(content),presetPower=',
-    'u.equip.forEach((e,i)=>e.subs.push(...(old.equip[i]?.subs||[])));const rule=Stats.rule_for_content(content),presetPower=',s=>equipment(load(s)));
+  await mutation('tie retains original',source,'if(!best||power>best.power)','if(!best||power>=best.power)',s=>equipment(load(s)));
+  await mutation('preset substats only',source,"const equips=fields.includes('equip')?[old.equip,u.equip]:[u.equip];",
+    "u.equip.forEach((e,i)=>e.subs.push(...(old.equip[i]?.subs||[])));const equips=fields.includes('equip')?[old.equip,u.equip]:[u.equip];",s=>equipment(load(s)));
   await mutation('picked comparison',ui,"selected&&(q?.all||q?.rows||[]).find(t=>t.keys.slice().sort().join(',')===selected)",'null',baseline);
   await mutation('selection after completion',ui,"if(r&&stage)r.baseline=growthBaseline(c,cur[$('stage').value]);",'',baseline);
   await mutation('cosmo phase speed isolation',page,'if(sm&&!profileOverride)LS.set','if(sm)LS.set',speed);

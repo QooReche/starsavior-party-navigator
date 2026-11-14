@@ -67,8 +67,8 @@ function mutate(name,code,from,to,test){assert(code.includes(from));let caught=f
 overwrite();overwrite(load(source));display();
 mutate('original account mutation',source,'const target=clone(info),','const target=info,',s=>overwrite(load(s)));
 mutate('missing selection',source,'||!out.units[s.key]','',s=>overwrite(load(s)));
-mutate('journey slots never mixed',source,'if(!(power(u)>power(kept)))u.gauntlet.journey=clone(old.gauntlet.journey);','u.gauntlet.journey=u.gauntlet.journey.map((v,i)=>Math.max(v,old.gauntlet.journey[i]||0));',s=>overwrite(load(s)));
-mutate('higher equipment preserved',source,'if(!(presetPower>originalPower))','if(false)',s=>overwrite(load(s)));
+mutate('journey slots never mixed',source,'if(best.record)u.gauntlet.journey=clone(best.record);','if(best.record)u.gauntlet.journey=best.record.map((v,i)=>Math.max(v,old.gauntlet?.journey?.[i]||0,spec.journey[i]));',s=>overwrite(load(s)));
+mutate('higher equipment preserved',source,"const equips=fields.includes('equip')?[old.equip,u.equip]:[u.equip];",'const equips=[u.equip];',s=>overwrite(load(s)));
 mutate('strict improvement only',ui,'metric(result)>(metric(baseline)??0)','metric(result)>=(metric(baseline)??0)',display);
 // Per-field presentation mutation coverage is in ux_ui_test.js.
 console.log('ALL OK whole-account overwrite');

@@ -9,7 +9,7 @@
   옛 사전 계산(build_sim_results.py, data/sim)은 2026-10-20 퇴역 — 화면은 빠른 계산 + 브라우저 시뮬.
   엔진 규칙·적 데이터가 크게 바뀌면 빠른 계산 계수를 다시 맞춘다: tools/gen_quick_calib.py(약 15분) -> tools/calibrate_quick.py --write
 입력(rawdata/에서 추적함): 팬 데이터북 data/main.js 를 JSON 으로 푼 파일(`window.__SSD.x={...}` 를 json.JSONDecoder().raw_decode 로 파싱),
-                    rawdata/foe.js (데이터북 data/foe.js). 가이드 DB 가 바뀌면 data/db_tier.json·savior_reco.json·saviors_index.json 은 따로 갱신.
+                    rawdata/foe.js (데이터북 data/foe.js). 가이드 DB 가 바뀌면 data/db_tier.json·savior_reco.json·saviors_index.json·journey_priority.json(node tools/extract_journey_priority.js) 은 따로 갱신.
 수동 보정은 data/synergy_overrides.json 에 적으면 다시 돌려도 유지된다."""
 import json
 import os

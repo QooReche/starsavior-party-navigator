@@ -108,7 +108,7 @@ const mutations=[
   ['skill per-skill raise','<=THRESHOLD_POLICY.skillMax?Math.max','<=99?Math.max'],
   ['equipment total boundary','<THRESHOLD_POLICY.equipSum','<=THRESHOLD_POLICY.equipSum'],
   ['equipment slot boundary','<THRESHOLD_POLICY.equipMin','<=THRESHOLD_POLICY.equipMin'],
-  ['archive boundary','<THRESHOLD_POLICY.archiveMain','<=THRESHOLD_POLICY.archiveMain'],
+  ['archive boundary','>=THRESHOLD_POLICY.archiveMain','>THRESHOLD_POLICY.archiveMain'],
   ['favor boundary','<=THRESHOLD_POLICY.favorMax','<THRESHOLD_POLICY.favorMax'],
   ['link boundary','>=THRESHOLD_POLICY.linkGap','>THRESHOLD_POLICY.linkGap'],
   ['resonance disabled',"fields.push('resonance')","void 0"],

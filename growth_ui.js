@@ -266,7 +266,7 @@ async function growthStart(c,st){
     const slots=await fetch('data/myinfo_slots.json').then(r=>{if(!r.ok)throw Error('장비 부위 확인 실패');return r.json();});
     if(GROW.id!==id)return;
     const snapshot=MyInfoReco.overwrite(MI.info,R,MI.growth,c.key==='guild'?'op':c.key,
-      {excluded:[...EXCL],slots});
+      {excluded:[...EXCL],slots,priority:D.journeyPriority});   // 아카이브 주력 판단 = 공략 DB 여정 스탯 우선순위
     const started=Date.now();let result,baseline;
     if(seasonal){
       const owned=c.key==='guild'?GSR:CSR;
