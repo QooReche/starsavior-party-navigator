@@ -409,7 +409,8 @@ class Controller:
             if sk.slot == '기본기':
                 if 'pressure' in fx:
                     for x in hit:
-                        if not x.dead:
+                        # 압박(SE 9401801)은 비강제 게이지 감소 — 회피·면역 대상은 거부(NKM:4394-4398·4540-4566, mc.gauge_cd_immune)
+                        if not x.dead and not b._harm_evaded(x, ctx) and not b._harm_immune(x):
                             self.stats['pressure'] += 1
                             b.set_gauge(x, x.gauge - fx['pressure']['pct'] * 100)
                 if 'march' in fx:
@@ -481,7 +482,11 @@ class Controller:
             self._put(boss, ROOT, {'속도%': bm['root']['speedPct']}, dur=bm['root']['turns'], cat='marker')
             b.set_gauge(boss, boss.gauge + bm['hyperGauge']['self'] * 100)
             for x in b.alive(0):
-                b.set_gauge(x, x.gauge + bm['hyperGauge']['enemy'] * 100)
+                d = bm['hyperGauge']['enemy'] * 100
+                # 벨그라스 궁극기 적 게이지 감소(SE 930082355)도 비강제 — 회피·면역 대상은 거부(mc.gauge_cd_immune)
+                if d < 0 and (b._harm_evaded(x, ctx) or b._harm_immune(x)):
+                    continue
+                b.set_gauge(x, x.gauge + d)
             self.stats['hyper'] += 1
         self._sync_ban()
 
