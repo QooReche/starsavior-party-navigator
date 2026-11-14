@@ -4328,7 +4328,7 @@ class Battle:
                     e.stacks = 1
                     if self.mc['dispel_shield'] == 'client':
                         # BI_BARRIER_CAN_NOT_DISPEL 등 «(해제불가)» 보호막만 해제 대상에서 빠진다(BUFF_TEMPLET CanNotDispel).
-                        e.fixed = '해제불가' in m.group(2) or '해제 불가' in ln.raw
+                        e.fixed = '해제불가' in m.group(2) or (ln is not None and '해제 불가' in ln.raw)
                     x.eff[m.group(2)] = e
                 if self.mc['shield_tick'] == 'turn_end':
                     # NKM:4565-4583,4739-4746: 재부여도 생성 시점 갱신. 시작 이벤트는 같은 턴에 차감.
@@ -4509,6 +4509,11 @@ class Battle:
 
     def _dispel_ok(self, owner, ctx, x, p, rest):
         if p < 1.0 and self.R(owner.side).random() >= p:
+            return False
+        if x.side != owner.side and ctx is not None and x in ctx.evaded and self.mc['dispel_evade'] == 'client':
+            # 해제도 버프 부여라 공통 부여 검사(OBF_32436)의 회피 거부(OBF_13659)를 먼저 탄다: 이번 시전을 회피한 적 대상은
+            # HIT·SKILL_END 줄의 효과를 받지 않는다(강제 적용만 예외, NKM:4323-4327·4540-4566).
+            self.rule_hits['dispel_evade'] += 1
             return False
         if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
             return False
