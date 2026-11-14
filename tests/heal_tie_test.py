@@ -71,6 +71,88 @@ def test_k_picks_and_full_list():
     assert sorted(v.name for v in got) == ['a', 'b', 'c', 'd']
 
 
+# ---- 세 호출 경로 연결(pick_ally · «아군 N명» 문구 경로 · select_auto lowest_hp)과 난수·자료 경로 우선 ----
+from unittest.mock import patch                                  # noqa: E402
+import battlesim.mc as MCM                                       # noqa: E402
+
+
+def _path_stub(mode, units, seed=1):
+    b = _stub(mode, seed)
+    b.mc.update(heal_target='lowest_hp_ratio', foe_auto='client')
+    b.opts = {'forced_coop_target': 'random'}
+    b._cur_line = None
+    b.alive = lambda side: [u for u in units if u.side == side and not u.dead]
+    b.heal_order = lambda *a, **k: Battle.heal_order(b, *a, **k)
+    b.live_atk = lambda v: 0
+    b.unsup = defaultdict(int)
+    return b
+
+
+def _tied():
+    """a(앞 칸)·b 가 비율·최대 생명력 모두 같음, c 는 체력 가득."""
+    return [_u('a', 0, 50, 100), _u('b', 1, 50, 100), _u('c', 2, 100, 100)]
+
+
+def _draws(call, mode, n=300):
+    c = Counter()
+    for seed in range(n):
+        us = _tied()
+        c[call(_path_stub(mode, us, seed), us)] += 1
+    return c
+
+
+def test_path_pick_ally():
+    call = lambda b, us: Battle.pick_ally(b, us[2], 'heal').name
+    c = _draws(call, 'client')
+    assert set(c) == {'a', 'b'} and min(c.values()) > 60, c        # 동률은 무작위
+    assert _draws(call, 'slot', 20) == Counter(a=20)                # 옛 동작 = 앞 칸
+
+
+def test_path_text_resolve():
+    call = lambda b, us: Battle.resolve(b, us[2], '아군 1명', NS(), 'heal')[0].name
+    c = _draws(call, 'client')
+    assert set(c) == {'a', 'b'} and min(c.values()) > 60, c
+    assert _draws(call, 'slot', 20) == Counter(a=20)
+
+
+def test_path_select_auto_lowest_hp():
+    def call(b, us):
+        with patch.object(MCM, 'auto_rule', lambda d, ln, kind: {'mode': 'lowest_hp'}):
+            return Battle.select_auto(b, us[2], '아군 1명(자동 지정)', NS(targets=[]), 'heal')[0].name
+    c = Counter()
+    for seed in range(300):
+        us = _tied()
+        b = _path_stub('client', us, seed)
+        b._cur_line = NS(eff={}, raw='', slot=None)
+        for u in us:
+            u.d = None
+        c[call(b, us)] += 1
+    assert set(c) == {'a', 'b'} and min(c.values()) > 60, c
+
+
+def test_no_tie_keeps_rng_state():
+    """동률이 없으면 난수를 쓰지 않음(난수 흐름 불변)."""
+    us = [_u('a', 0, 80, 100), _u('b', 1, 20, 100), _u('c', 2, 90, 100)]
+    b = _path_stub('client', us)
+    rng = b.R(0)
+    before = rng.getstate()
+    assert Battle.pick_ally(b, us[0], 'heal') is us[1]
+    assert Battle.resolve(b, us[0], '아군 2명', NS(), 'heal')[0] is us[1]
+    assert rng.getstate() == before and b.rule_hits['heal_tie'] == 0
+
+
+def test_data_path_wins_over_heal_order():
+    """줄에 자동 대상 자료가 있으면(line_spec ally) 자료 경로가 먼저 — heal_order 를 부르지 않음."""
+    us = _tied()
+    b = _path_stub('client', us)
+    b._cur_line = NS(eff={'name': '회복'})
+    sentinel = [us[2]]
+    b.line_spec = lambda owner, ln: {'ally': True}
+    b.line_auto_targets = lambda owner, spec, ctx: sentinel
+    b.heal_order = lambda *a, **k: (_ for _ in ()).throw(AssertionError('heal_order 호출됨'))
+    assert Battle.resolve(b, us[0], '아군 1명(자동 지정)', NS(), 'heal') is sentinel
+
+
 if __name__ == '__main__':
     n = 0
     for k, f in list(globals().items()):
