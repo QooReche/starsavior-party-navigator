@@ -6,10 +6,10 @@
   // Legacy owned/ao meant "include missing". Accept them without changing the owned-only policy.
   function options(saved={},shared={}) {return {growth:!!(shared.ag??saved.growth),owned:false};}
   const cmp=(a,b)=>b.clear-a.clear||(b.prog??0)-(a.prog??0)||(a.ttk??Infinity)-(b.ttk??Infinity);
-  // sim_worker.run_auto + web.run_manual: 4 policy probes, selected policy, replay.
-  const finalCost=(n,mode)=>mode==='manual'?2*n+4*Math.max(10,Math.floor(n/3))+1:n;
+  // 본선 한 팀의 판 수(오토만 — 11/14 수동 모드 제거)
+  const finalCost=n=>n;
   const completed=r=>r.completed??Object.keys(r).length;
-  const VERSION='growth-stage23-v7';   // v7: 스테이지형 전 콘텐츠·목표 지표(3별이면 N턴 내 클리어율)
+  const VERSION='growth-stage23-v8';   // v8: 수동 모드 제거(오토만)   // v7: 스테이지형 전 콘텐츠·목표 지표(3별이면 N턴 내 클리어율)
   const HISTORY_VERSION='grown-history-v7';
   function signature(s){return JSON.stringify([s.account,s.options,s.targets,s.preset,s.content,
     [...s.excluded].sort(),s.breaks,s.mode,s.rules,s.engine,s.data,s.modifiers,VERSION,

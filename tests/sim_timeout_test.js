@@ -71,19 +71,16 @@ r=start(T.slice(0,1));r.msg({type:'stage',id:undefined,msg:'준비 끝'});r.msg(
 const rate0=ev('SIMQ.rate');freeze(ev('simTeamLimit(100)')+600000);r.msg({type:'team',key:r.req.teams[0].key,result:{n:100,clear:0.5}});r.msg({type:'done'});
 assert.equal(ev('SIMQ.rate'),rate0);assert.equal(stops.length,0);
 
-// 8) 수동 모드: 「수동 서순」 진행 메시지도 진행으로 인정(자동 반 + 수동 반이 각각 상한 안이면 끝까지)
-const rateAuto=ev('SIMQ.rate');ctx.MODE='manual';ctx.SIMQ.w=null;stops.length=0;ctx.SIMQ.rateM=undefined;
-for(const k of Object.keys(ctx.SIMQ.res))delete ctx.SIMQ.res[k];
-r=start(T.slice(0,1));r.msg({type:'stage',id:undefined,msg:'준비 끝'});r.msg({type:'stage',msg:'시뮬 1/1팀 (100판)'});advance(500000);
-r.msg({type:'stage',msg:'수동 서순 1/1팀 (정책 4종 시험)'});advance(500000);assert.equal(stops.length,0);
-r.msg({type:'team',key:r.req.teams[0].key,result:{n:100,clear:0.5}});r.msg({type:'done'});
-assert.equal(Math.round(ev('SIMQ.rateM')),10000);assert.equal(ev('SIMQ.rate'),rateAuto); // 자동 속도는 그대로
-ctx.MODE='auto';
+// 8) 수동 모드는 없다(11/14 제거): 팀 하나 상한·속도는 오토 하나뿐이고, 옛 상태(MODE)가 남아 있어도 요청에 mode 가 붙지 않는다
+ctx.MODE='manual';ctx.SIMQ.w=null;stops.length=0;for(const k of Object.keys(ctx.SIMQ.res))delete ctx.SIMQ.res[k];
+r=start(T.slice(0,1));assert(!('mode' in r.req));assert.equal(ev('simTeamLimit(100,"manual")'),ev('simTeamLimit(100)'));
+r.msg({type:'stage',id:undefined,msg:'준비 끝'});r.msg({type:'stage',msg:'시뮬 1/1팀 (100판)'});r.team({n:100,clear:0.5,man:{c:0.1}});
+assert.equal(ev('SIMQ.rateM'),undefined);assert.equal(stops.length,0);delete ctx.MODE;
 
 // 7) 시간 표기
 assert.equal(ev('fmtDur(42000)'),'42초');assert.equal(ev('fmtDur(150000)'),'2분 30초');assert.equal(ev('fmtDur(599000)'),'10분');
 assert.match((ctx.SIMQ.busy=1,ctx.SIMQ.loaded=true,ctx.SIMQ.eta=now-60000,ev('simEtaText()')),/예상보다 오래/);ctx.SIMQ.busy=null;
-console.log('PASS 엔진 준비 초과·느린 기기 완료·속도 비례 상한·남은 시간·무진행 초과·완료 팀 재사용·늦은 메시지 무시·가려진 탭·동결 복귀·수동 모드·예상 초과');
+console.log('PASS 엔진 준비 초과·느린 기기 완료·속도 비례 상한·남은 시간·무진행 초과·완료 팀 재사용·늦은 메시지 무시·가려진 탭·동결 복귀·수동 모드 없음·예상 초과');
 
 // 별도 상태로 실제 simStop/simInvalidate와 예선 콜백까지 실행한다(중단을 가짜 함수로 대체하지 않음).
 // 가짜 작업자: 받은 요청을 posts 에 적기만 한다. 시험이 그 작업자의 «지금 맡은 팀»(w.req) 결과·done 을 손으로 보낸다(대기열은 done 뒤에 다음 팀을 줌)
@@ -317,10 +314,10 @@ console.log('PASS 속도 개선: 순위는 작업자 수와 무관·대기열(�
  vm.runInContext(fs.readFileSync(require.resolve('../sim_worker.js'),'utf8'),wk);
  wk.fake={toPy:()=>{made++;return {destroy(){freed++}}},globals:{get:()=>{gets++;return (stage,party,n,seed,extra)=>{if(JSON.parse(extra).boom)throw Error('boom');return JSON.stringify({n})}}}};
  vm.runInContext('ready=Promise.resolve({p:fake,ver:"t"})',wk);
- for(const job of [0,1,2])await wk.onmessage({data:{type:'run',id:7,job,stage:'op/a/b',n_runs:8,seed:1,mode:job===1?'manual':'auto',teams:[{key:'k'+job,party:{},options:job===2?{boom:1}:{}}]}});
+ for(const job of [0,1,2])await wk.onmessage({data:{type:'run',id:7,job,stage:'op/a/b',n_runs:8,seed:1,mode:job===1?'manual':undefined,teams:[{key:'k'+job,party:{},options:job===2?{boom:1}:{}}]}});
  assert(out.length>0&&out.every(m=>m.id===7&&[0,1,2].includes(m.job)));
- for(const job of [0,1])assert.deepEqual(out.filter(m=>m.job===job).map(m=>m.type),job?['stage','stage','team','done']:['stage','team','done']);
+ for(const job of [0,1])assert.deepEqual(out.filter(m=>m.job===job).map(m=>m.type),['stage','team','done'],'요청에 mode:manual 이 와도 오토만 돈다');
  assert.deepEqual(out.filter(m=>m.job===2).map(m=>m.type),['stage','error']);
- assert.equal(made,3);assert.equal(freed,3,'toPy 객체 해제(오류가 나도)');assert.equal(gets,2,'run_auto·run_manual 핸들은 한 번만');
+ assert.equal(made,3);assert.equal(freed,3,'toPy 객체 해제(오류가 나도)');assert.equal(gets,1,'run_auto 핸들은 한 번만');
  console.log('PASS 작업자: 작업 번호 되돌림·파이썬 객체 해제·핸들 재사용');
 })().catch(e=>{console.error(e);process.exit(1)});

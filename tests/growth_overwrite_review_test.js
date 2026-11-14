@@ -61,14 +61,15 @@ function baseline(code=ui){
   const c={key:'op'},st={tab:'sector',name:'stage'};
   assert.equal(ctx.growthBaseline(c,st).clear,.9);
   ctx.PICK['op|sector|stage|1']='e,f,g,h';assert.equal(ctx.growthBaseline(c,st).clear,.3);
-  ctx.MODE='manual';assert.equal(ctx.growthBaseline(c,st).clear,.2);
-  ctx.PICK['op|sector|stage|1']='obsolete';assert.equal(ctx.growthBaseline(c,st).clear,.8);
+  // 옛 결과에 수동 값(man)이 붙어 있어도 오토 값을 쓴다(11/14 수동 모드 제거)
+  ctx.MODE='manual';assert.equal(ctx.growthBaseline(c,st).clear,.3);delete ctx.MODE;
+  ctx.PICK['op|sector|stage|1']='obsolete';assert.equal(ctx.growthBaseline(c,st).clear,.9);
   // Repainting after a user selection must refresh an already-finished comparison.
   ctx.PICK['op|sector|stage|1']='e,f,g,h';
   Object.assign(ctx,{seasonBlocked:()=>false,growthEnabled:()=>true,MI:{info:{}},contents:[c],cur:[st],$:(id)=>id==='growth-result'?{remove(){ctx.removed=true;}}:{value:0}});
   ctx.growthNonePaint=()=>{ctx.none=true;};ctx.miNum=n=>String(n);
   vm.runInContext("GROW.phase='done';GROW.result={baseline:{clear:.9},best:{clear:.1}};growthPaint()",ctx);
-  assert.equal(vm.runInContext('GROW.result.baseline.clear',ctx),.2);assert(ctx.none);
+  assert.equal(vm.runInContext('GROW.result.baseline.clear',ctx),.3);assert(ctx.none);
   // 더 나은 육성 편성이 없을 때 안내 문구(조용히 사라지지 않음)
   const grown={snapshot:{changes:{a:{changedFields:['skills']}}}},flat={snapshot:{changes:{a:{changedFields:[]}}}};
   assert.equal(ctx.growthNoneText('op',{...grown,baseline:{clear:1}}),'추가 육성 없이도 모의 전투 클리어율 100%예요');

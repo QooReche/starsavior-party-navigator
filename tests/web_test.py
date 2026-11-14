@@ -2,7 +2,7 @@
 """브라우저 시뮬 진입점(battlesim/web.py)·엔진 규칙 시험 — 옛 사전 계산 시험(tests/p4_test.py)에서 엔진 쪽만 옮기고 새 진입점을 더함.
 
 사용: python -X utf8 -I tests/web_test.py
-일부러 깨뜨려 보기: web.CARD 를 [0, 1, 2, 3] 으로 바꾸면 test_seq_from_timeline 이 실패해야 한다."""
+화면은 오토 기준만 쓴다(2026-11-14 수동 모드 제거) — 수동 진입점(run_manual·서순 변환)이 없음을 test_no_manual_entry 가 본다."""
 import json
 import os
 import sys
@@ -28,22 +28,6 @@ def party(g=1.0):
     return G.party_spec(q, order, 'fei', order, g, st), st
 
 
-def test_seq_from_timeline():
-    """서순: 모델 기준 턴 행·화면 카드 칸 매핑(시뮬 칸 0,1,2,3 -> 카드 1,2,0,3), 적 행동 제외, 협공은 협공한 구원자 칸, 버스트 표시"""
-    tl = [dict(actor='x', side=0, pos=0, skill='기본기', targets=['보스'], turn=0.8, all=False, tgt_side=1, tgt_boss=True),
-          dict(actor='y', side=0, pos=3, skill='기본기(추가)', targets=['보스'], turn=0.8, via='coop', all=False, tgt_side=1, tgt_boss=True),
-          dict(actor='boss', side=1, pos=0, skill='궁극기', targets=['x'], turn=0.9),
-          dict(actor='z', side=0, pos=2, skill='궁극기', targets=['a', 'b'], turn=1.0, nb=True, all=True, tgt_side=1),
-          dict(actor='w', side=0, pos=1, skill='특수기', targets=['f0'], turn=1.4, all=False, tgt_side=0),
-          dict(actor='x', side=0, pos=0, skill='기본기', targets=['쫄몹'], turn=13.2, all=False, tgt_side=1, tgt_boss=False)]
-    sq = web.seq_from_timeline(tl)
-    r1, r2 = sq['rows'][0], sq['rows'][1]
-    ok = (len(sq['rows']) == 2 and sq['turns'] == 14 and r1['t'] == 1 and r1['c'][1] == [{'k': 'B', 'tg': '보스'}]
-          and r1['c'][3] == [{'k': 'B', 'tg': '보스', 'v': 'coop'}] and r1['c'][0] == [{'k': 'U', 'tg': '전체', 'nb': 1}]
-          and r1['nb'] == [[0, 'U']] and r2['t'] == 2 and r2['c'][2] == [{'k': 'S', 'tg': '아군 f0'}])
-    return ok, json.dumps(sq, ensure_ascii=False)[:160]
-
-
 def test_slot_order():
     """화면 카드 순서 -> 시뮬 칸: 전열(카드 2·3번째)이 시뮬 0·1번 칸, 리더 번호도 시뮬 칸 기준(2026-10-20 버그: 카드 순서를 그대로 넘겼음)"""
     p, _ = party()
@@ -64,27 +48,14 @@ def test_run_auto_power_and_determinism():
     return ok, '전투력 %.0f (가정 %.0f) / 같은 시드 같음 %s / 다른 시드 피해·사망 포함 결과 다름 %s' % (a['power'], want, a == b, different)
 
 
-def test_run_manual_shape():
-    """run_manual: 정책 4종 중 하나, 서순 행·카드 4칸, 대표 판 종류"""
+def test_no_manual_entry():
+    """화면 진입점에 수동이 없다: run_manual·서순 변환·수동 정책 목록이 없고, 작업자도 run_auto 만 가져온다. 엔진의 수동 정책 규칙은 그대로(test_manual_burst_rule)."""
+    gone = [n for n in ('run_manual', 'seq_from_timeline', 'POLICIES', 'CARD') if hasattr(web, n)]
+    worker = open(os.path.join(ROOT, 'sim_worker.js'), encoding='utf-8').read()
     p, _ = party()
-    m = json.loads(web.run_manual(STAGE, p, 30, 1, OPT))
-    sq = m['seq']
-    ok = tuple(m['pol']) in web.POLICIES and sq['rows'] and all(len(r['c']) == 4 for r in sq['rows']) and sq['kind'] in ('clear', 'wipe', 'timeout')
-    return bool(ok), '정책 %s, 클리어 %s, 서순 %d행, %s' % (m['pol'], m['c'], len(sq['rows']), sq['kind'])
-
-
-def test_manual_star_turns():
-    """수동 결과에도 N턴 이내 클리어율(t60): star_turns 옵션이 있을 때만, 오토와 같은 집계(전체 행동 수 <= 한도)를 수동 정책 판에 적용.
-    한도를 크게 주면 t60 = 클리어율, 0 이면 0, 옵션이 없으면 None(화면은 그때 클리어율을 목표 지표로 쓴다)."""
-    p, _ = party(1.0)
-    base = json.loads(OPT)
-    none = json.loads(web.run_manual(STAGE, p, 12, 1, OPT))
-    big = json.loads(web.run_manual(STAGE, p, 12, 1, json.dumps(dict(base, star_turns=100000))))
-    zero = json.loads(web.run_manual(STAGE, p, 12, 1, json.dumps(dict(base, star_turns=0.5))))
-    auto = json.loads(web.run_auto(STAGE, p, 12, 1, json.dumps(dict(base, star_turns=100000))))
-    ok = (none['t60'] is None and big['t60'] == big['c'] and big['c'] > 0 and zero['t60'] == 0 and auto['t60'] == auto['clear']
-          and {k: v for k, v in big.items() if k != 't60'} == {k: v for k, v in none.items() if k != 't60'})
-    return ok, '옵션 없음 %s / 큰 한도 %s = 클리어율 %s / 한도 0.5 %s / 나머지 값 불변 %s' % (none['t60'], big['t60'], big['c'], zero['t60'], ok)
+    a = json.loads(web.run_auto(STAGE, p, 4, 1, OPT))
+    ok = not gone and 'run_manual' not in worker and 'manual' not in worker and 'man' not in a
+    return ok, '남은 수동 진입점 %s / 작업자에 수동 %s / 오토 결과에 man %s' % (gone, 'manual' in worker, 'man' in a)
 
 
 def test_manual_burst_rule():
@@ -115,7 +86,7 @@ def test_formula_override_restored():
 
 
 def test_manifest_complete():
-    """sim/manifest.json 의 파일만 빈 폴더에 복사해 run_auto(표준 육성)·run_manual 이 돌아가는가 — 브라우저(Pyodide)와 같은 조건.
+    """sim/manifest.json 의 파일만 빈 폴더에 복사해 run_auto(표준 육성)가 돌아가는가 — 브라우저(Pyodide)와 같은 조건.
     (2026-10-20: 표준 육성이 읽는 builds.json·가이드 파일이 목록에서 빠질 뻔함)"""
     import shutil
     import subprocess
@@ -129,9 +100,8 @@ def test_manifest_complete():
             shutil.copyfile(os.path.join(ROOT, *f.split('/')), dst)
         p, _ = party()
         code = ("import os,sys,json;os.environ['PN_SRC']=sys.argv[1];sys.path.insert(0,sys.argv[1]);"
-                "from battlesim.web import run_auto,run_manual;"
-                "a=json.loads(run_auto(sys.argv[2],json.loads(sys.argv[3]),5,1,sys.argv[4]));"
-                "m=json.loads(run_manual(sys.argv[2],json.loads(sys.argv[3]),6,1,sys.argv[4]));print(a['clear'],m['c'])")
+                "from battlesim.web import run_auto;"
+                "a=json.loads(run_auto(sys.argv[2],json.loads(sys.argv[3]),5,1,sys.argv[4]));print(a['clear'])")
         r = subprocess.run([sys.executable, '-X', 'utf8', '-I', '-c', code, tmp, STAGE, json.dumps(p), OPT],
                            capture_output=True, text=True, encoding='utf-8', cwd=tmp)
         ok = r.returncode == 0
@@ -208,7 +178,7 @@ def test_stats_final_and_luna_reaction():
     return ok, '최종값 전투력 %.0f(공식 %.0f) / 재증폭 %.0f / 루나 반응 %d회 / 부분 입력 %s' % (p_final, want, p_raw, fired, partial_ok)
 
 
-TESTS = [test_seq_from_timeline, test_slot_order, test_run_auto_power_and_determinism, test_run_manual_shape, test_manual_star_turns, test_manual_burst_rule,
+TESTS = [test_slot_order, test_run_auto_power_and_determinism, test_no_manual_entry, test_manual_burst_rule,
          test_formula_override_restored, test_manifest_complete, test_pyodide_local, test_rekindle, test_stats_final_and_luna_reaction]
 
 

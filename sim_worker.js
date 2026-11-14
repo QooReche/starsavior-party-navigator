@@ -25,7 +25,7 @@ async function boot(base){
 import os, sys
 os.environ['PN_SRC'] = '/repo'
 sys.path.insert(0, '/repo')
-from battlesim.web import run_auto, run_manual
+from battlesim.web import run_auto
 `);
  postMessage({type:"stage",msg:"준비 끝"});
  return {p,ver:man.ver}}
@@ -34,8 +34,8 @@ onmessage=async e=>{const m=e.data;
   if(!ready)ready=boot(m.base);
   const {p,ver}=await ready;
   if(m.type!=="run")return;
-  if(!fns)fns={run:p.globals.get("run_auto"),man:p.globals.get("run_manual")};   // battlesim/web.py
-  const {run,man}=fns;
+  if(!fns)fns={run:p.globals.get("run_auto")};   // battlesim/web.py — 오토 기준만(11/14 수동 모드 제거)
+  const {run}=fns;
   for(let i=0;i<m.teams.length;i++){const t=m.teams[i];
    const opts=Object.assign({},m.options||{},t.options||{});
    if(m.options?.rules_override||t.options?.rules_override)opts.rules_override=Object.assign({},m.options?.rules_override,t.options?.rules_override);
@@ -43,8 +43,6 @@ onmessage=async e=>{const m=e.data;
    postMessage({type:"stage",id:m.id,job:m.job,msg:`시뮬 ${i+1}/${m.teams.length}팀 (${m.n_runs}판)`});
    const party=p.toPy(t.party);let res;
    try{res=Object.assign(JSON.parse(run(m.stage,party,m.n_runs,m.seed,ex)),{ver});
-    if(m.mode==="manual"){postMessage({type:"stage",id:m.id,job:m.job,msg:`수동 서순 ${i+1}/${m.teams.length}팀 (정책 4종 시험)`});
-     res.man=JSON.parse(man(m.stage,party,m.n_runs,m.seed,ex))}
    }finally{if(party&&party.destroy)party.destroy()}
    postMessage({type:"team",id:m.id,job:m.job,key:t.key,result:res})}
   postMessage({type:"done",id:m.id,job:m.job})

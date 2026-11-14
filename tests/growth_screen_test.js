@@ -37,7 +37,7 @@ function evalHarness(src,n=8){
  const ctx=vm.createContext({console,Object,Math,Promise,Infinity,MODE:'auto',Date:{now:()=>clock},document:{hidden:false},
   setTimeout:(fn,ms)=>{const t={fn,at:clock+ms};queue.push(t);return t},clearTimeout:t=>{queue=queue.filter(x=>x!==t)},
   SIMQ:{LOAD_MS:180000,seed:1},GROW:{id:1,errors:[],versions:{engine:'v'}},simTeamLimit:()=>240000,
-  location:{href:'https://test/index.html'},simOpt:()=>({}),growthPaint(){},growthMetric:r=>r,
+  location:{href:'https://test/index.html'},simOpt:()=>({}),growthPaint(){},
   navigator:{hardwareConcurrency:4,deviceMemory:8},
   Worker:class{constructor(){ws.push(this)}postMessage(req){this.req=req;(this.log||(this.log=[])).push(req)}terminate(){this.stopped=true}}});
  vm.runInContext(src.pool,ctx);vm.runInContext(src.evaluate,ctx);

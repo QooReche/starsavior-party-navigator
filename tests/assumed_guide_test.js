@@ -62,8 +62,7 @@ async function scheduling(){const targets=Array.from({length:4},(_,i)=>({id:'t'+
     const r=await noisy(jobs,n,seed);if(seed===900001)delete r.old;return r;}});
   assert(partial.baselinePending);assert.equal(partial.baseline,null);assert(partial.rows.every(r=>r.delta===null&&!r.confirmed));
   assert(result.runs<=G.LIMITS.maxRuns);assert.equal(calls[0].jobs[0].id,'t0c0');assert.equal(calls[0].jobs[4].id,'t0c1');
-  const manual=await G.search({targets,owned:[],evaluate,mode:'manual',limits:{maxRuns:1100}});
-  assert(manual.runs<=1100);assert.equal(G.finalCost(100,'manual'),333);
+  assert.equal(G.finalCost(100),100);assert.equal(G.finalCost(100,'manual'),100,'수동 모드는 없다(11/14) — 본선 한 팀 = 그 판 수');
   const cap=await G.search({targets,owned:[],evaluate,limits:{finalists:1}});
   assert.equal(cap.rows.filter(r=>r.status==='evaluated').length,1);assert(cap.rows.some(r=>r.status==='screened'&&r.delta===null));
   const none=await G.search({targets,owned:[],evaluate:async()=>({})});assert(none.rows.every(r=>r.status==='unevaluated'&&r.delta===null));

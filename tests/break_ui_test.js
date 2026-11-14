@@ -64,13 +64,14 @@ console.log('PASS 보유 해제 무효화·저장 실패 허용');
 
 // 이전 서명 식을 독립적으로 유지: 문자열/UTF-8 바이트가 그대로여야 기존 캐시를 쓴다.
 const legacy='JSON.stringify([contents[$("content").value].key,cur[0].tab,cur[0].name,simParty(a),SIMQ.n,MODE,teamBreak(a)?.name||null].concat(rkOf()? [rkOf()]:[]))';
-for(const mode of ['auto','manual'])for(const rk of [0,3])for(const name of ['',...owned]){
- ctx.MODE=mode;ctx.rkOf=()=>rk;ctx.name=name;ev('BRSEL["op|a,b"]=name');
+// (수동 모드 제거 11/14: 서명의 모드 자리는 "auto" 고정 — 옛 오토 서명과 글자까지 같다)
+for(const rk of [0,3])for(const name of ['',...owned]){
+ ctx.rkOf=()=>rk;ctx.name=name;ev('BRSEL["op|a,b"]=name');
  assert.deepEqual(Buffer.from(ev('simSig(cur[0],a)')),Buffer.from(ev(legacy)));
  assert.equal(ev('simSigB(cur[0],a,name||null)'),ev(legacy));
 }
-ctx.MODE='auto';ctx.rkOf=()=>0;
-console.log('PASS simSig 기존 키 바이트 동일성(auto/manual·재점화·미장착/장착)');
+ctx.rkOf=()=>0;assert.equal(JSON.parse(ev('simSig(cur[0],a)'))[5],'auto');
+console.log('PASS simSig 기존 키 바이트 동일성(오토·재점화·미장착/장착)');
 
 owned=['특이점 관측','스타피어서','큐브 과부하','차원 강습','행성 정화'];
 const targets=plain(ev('breakTargets()')),jobs=plain(ev('breakJobs(cur[0],a)'));
@@ -91,12 +92,11 @@ assert.equal(best([row('A',0.9,null),row(null,0.9,0)]),null);
 assert.equal(best([row('A',0,null),row('B',0,1)]),undefined);
 assert.equal(best([row('A',1,1,false)]),undefined);
 assert.equal(best([]),undefined);
-ctx.MODE='manual';
+// 옛 결과에 수동 값(man)이 붙어 있어도 오토 값만 본다
 assert.equal(best([{...row('A',1,1),result:{clear:1,ttk:1,man:{c:0.5,t:2}}},
- {...row('B',0,8),result:{clear:0,ttk:8,man:{c:0.5,t:1}}}]),'B');
-assert.deepEqual(plain(ev('breakMetric({clear:1,ttk:1,man:{c:0.5,t:2}})')),{clear:0.5,turn:2});
-ctx.MODE='auto';
-console.log('PASS 최고 규칙(클리어·턴·0% 우열 없음·미지원 제외·수동 값)');
+ {...row('B',0,8),result:{clear:0,ttk:8,man:{c:0.5,t:1}}}]),'A');
+assert.deepEqual(plain(ev('breakMetric({clear:1,ttk:1,man:{c:0.5,t:2}})')),{clear:1,turn:1});
+console.log('PASS 최고 규칙(클리어·턴·0% 우열 없음·미지원 제외·수동 값 무시)');
 
 ev('simInvalidate();SIMQ.res={};BRSEL["op|a,b"]="스타피어서"');
 ctx.SIMQ.res[ev('simSigB(cur[0],a,null)')]={clear:0.4,ttk:5};
@@ -161,12 +161,14 @@ console.log('PASS 비교 재표시 범위·부분 캐시 숨김·선택 변경/�
  vm.runInContext('ready=Promise.resolve({p:fake,ver:"test"})',worker);
  await worker.onmessage({data:{...plain(req),mode:'manual',options:{build:'standard',rules_override:{power_penalty:'model',basic_tough:1}},
   teams:[{key:'a',party:{},options:{break_skill:{name:'차원 강습',level:5},rules_override:{basic_tough:0}}},{key:'b',party:{},options:{break_skill:null}}]}});
- assert.equal(calls.length,4);
- assert.deepEqual(calls.map(c=>c.opts.break_skill),[{name:'차원 강습',level:5},{name:'차원 강습',level:5},null,null]);
+ // 요청에 mode:'manual' 이 붙어 와도(옛 화면) 오토만 돈다: 팀마다 run_auto 한 번, 결과에 man 없음
+ assert.equal(calls.length,2);assert(calls.every(c=>c.fn==='run_auto'));
+ assert.deepEqual(calls.map(c=>c.opts.break_skill),[{name:'차원 강습',level:5},null]);
  assert.deepEqual(calls[0].opts.rules_override,{power_penalty:'model',basic_tough:0});
- assert.deepEqual(calls[2].opts.rules_override,{power_penalty:'model',basic_tough:1});
+ assert.deepEqual(calls[1].opts.rules_override,{power_penalty:'model',basic_tough:1});
+ assert(sent.filter(m=>m.type==='team').every(m=>!('man' in m.result)));assert(!sent.some(m=>/수동/.test(m.msg||'')));
  assert(calls.every(c=>c.opts.build==='standard'));
  assert.equal(sent.filter(m=>m.type==='team').length,2);
  assert(sent.every(m=>m.id===req.id));
- console.log('PASS 실제 Worker auto/manual 팀별 options 병합·요청 ID');
+ console.log('PASS 실제 Worker 팀별 options 병합·요청 ID·오토만');
 })().catch(e=>{console.error(e);process.exitCode=1});

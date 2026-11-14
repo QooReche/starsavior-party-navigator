@@ -1,12 +1,12 @@
 // 「클리어 추천 육성」을 모든 콘텐츠로(11/14): 스테이지형 8개(작전·작전 어려움·일일·장비 탐사·큐브·플래시 포인트·성간 회랑·격전 의뢰)는 같은 탐색을 쓰고,
 // 판정은 그 콘텐츠의 목표 지표(3별 목표면 N턴 내 클리어율 t60, 아니면 클리어율)로 한다. 켰는데 조용히 사라지는 경로가 없어야 한다.
 //  ① 더 나은가(growthBetter): 목표 지표가 올라야. t60 동률이면 클리어율이 오른 경우만, 진척도·처치 턴만 나아진 것은 아님
-//  ② 본선 멈춤(growthStageSearch)·추천 본선 「더 보기」(simBar·simGoal): 목표 지표 50% 경계
+//  ② 본선 멈춤(growthStageSearch)·추천 본선 「더 보기」(simBar·goalVal): 목표 지표 50% 경계
 //  ③ 고정 육성(플래시 포인트 = Lv200·공명 10 고정): «올릴 항목»에 레벨·공명이 없다
 //  ④ 목표 전환(3별 ↔ 클리어만): 문구·탭·예선 캐시 키
 //  ⑤ 재점화(작전·작전 어려움)만 재점화 풀을 후보에 더한다
 //  ⑥ 조용히 사라지는 경로 0: 8개 콘텐츠 × (대기 사유·탐색 중·오류·더 나음·없음·계산 못 함) 모두 안내가 남는다
-//  ⑦ 수동 결과의 t60 은 수동 값(오토 값을 남기지 않음)
+//  ⑦ 오토 기준만(수동 모드 제거): 옛 결과에 수동 값(man)이 붙어 있어도 쓰지 않는다
 // 끝에서 고친 코드를 일부러 되돌려(결함 주입) 이 시험이 실패하는지 확인한다. 실행: node tests/growth_all_test.js
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const M=require('../myinfo_reco'),S=require('../myinfo_stats'),U=require('../ux_ui');
@@ -64,10 +64,8 @@ function better(src){
   assert(!B(k,{t60:.6,clear:.6},{t60:.5,clear:1}),'t60 하락은 클리어율이 올라도 아님');
  }
  for(const [k,f] of [['guild','score'],['cosmo','sum']]){assert(B(k,{[f]:1},{[f]:2}));assert(!B(k,{[f]:2},{[f]:2}));assert(!B(k,{clear:0},{clear:1}),'시즌 콘텐츠는 점수로만');}
- // ⑦ 수동 결과
- const m=h.ctx.growthMetric({clear:.9,t60:.8,man:{c:.5,t:12,t60:.3}},'manual');assert.equal(m.clear,.5);assert.equal(m.t60,.3);
- assert.equal(h.ctx.growthMetric({clear:.9,t60:.8,man:{c:.5,t:12}},'manual').t60,null,'수동 t60 이 없으면 오토 값을 남기지 않음');
- assert.equal(h.ctx.growthMetric({clear:.9,t60:.8,man:{c:.5}},'auto').t60,.8);
+ // ⑦ 오토 기준만: 수동 값으로 바꾸는 함수가 없다
+ assert.equal(typeof h.ctx.growthMetric,'undefined');assert(!/\bMODE\b|\.man\b/.test(src.ui),'growth_ui.js 에 수동 모드 흔적');
  assert.equal(h.ctx.growthGoal({clear:.9,t60:.2}),.2);assert.equal(h.ctx.growthGoal({clear:.9,t60:null}),.9);assert.equal(h.ctx.growthGoal(null),null);
 }
 
@@ -105,16 +103,15 @@ async function stop(src){
  assert.equal((await run({kind:'oph',rk:0,final:()=>({clear:1})})).calls.filter(c=>c.rkPool).length,0);
 }
 
-// ②-b 추천 본선: 보여 준 팀이 모두 목표 지표 50% 미만이면 「더 보기」(다음 3팀). 수동 모드는 수동 결과의 목표 지표. ④ 예선 캐시 키
+// ②-b 추천 본선: 보여 준 팀이 모두 목표 지표 50% 미만이면 「더 보기」(다음 3팀). ④ 예선 캐시 키
 function mainStop(src){
  const mk=(mode,res)=>{const ctx=vm.createContext({MODE:mode,SIMQ:{res,n:100,busy:null,err:''},simSig:(st,t)=>t.k,esc:String,simEtaText:()=>''});
-  for(const s of [line(src.html,'const simMain='),line(src.html,'const simGoal='),cut(src.html,'function simBar(','function simInvalidate(')])vm.runInContext(s,ctx);return ctx};
+  for(const s of [line(src.html,'const goalVal='),cut(src.html,'function simBar(','function simInvalidate(')])vm.runInContext(s,ctx);return ctx};
  const rows=[{k:'a'},{k:'b'},{k:'c'}],more=(mode,r)=>/data-more/.test(mk(mode,{a:r,b:r,c:r}).simBar(1,rows,{},true));
  assert(more('auto',{clear:.9,t60:.4,n:100}),'클리어율 90% 여도 60턴 내 40% 면 더 본다');
  assert(!more('auto',{clear:.9,t60:.5,n:100}));assert(!more('auto',{clear:.5,t60:null,n:100}));assert(more('auto',{clear:.4999,t60:null,n:100}));
- assert(more('manual',{clear:.9,t60:.9,n:100,man:{c:.9,t60:.2}}),'수동 모드는 수동 t60');
- assert(!more('manual',{clear:.1,t60:.1,n:100,man:{c:.6}}),'수동 t60 이 없으면 수동 클리어율');
- const sg=vm.runInContext('simGoal',mk('auto',{}));assert.equal(sg({clear:.9,t60:.4}),.4);assert.equal(sg({clear:.9}),.9);assert.equal(sg(undefined),null);
+ assert(!more('manual',{clear:.9,t60:.9,n:100,man:{c:.1,t60:.1}}),'옛 수동 값(man)·MODE 는 보지 않음');
+ const sg=vm.runInContext('goalVal',mk('auto',{}));assert.equal(sg({clear:.9,t60:.4}),.4);assert.equal(sg({clear:.9}),.9);assert.equal(sg(undefined),null);
  // ④ 목표를 바꾸면 예선 캐시를 다시 쓴다
  const key=goal=>{const ctx=vm.createContext({JSON,contents:[{key:'equip'}],$:()=>({value:0}),rkOf:()=>0,miMode:()=>false,MI:{},SCROWN:'',MM:'',starOf:()=>goal});
   vm.runInContext(line(src.html,'const scrKey='),ctx);return vm.runInContext('scrKey({tab:"t",name:"n"},1)',ctx)};
@@ -212,7 +209,7 @@ function silent(src){
 
 async function suite(src=SRC){better(src);await stop(src);mainStop(src);fixed();words(src);silent(src)}
 (async()=>{
- await suite();console.log('PASS 육성 전 콘텐츠: 목표 지표 판정·50% 경계·고정 육성·목표 전환·재점화 풀·조용히 사라지는 경로 0·수동 t60');
+ await suite();console.log('PASS 육성 전 콘텐츠: 목표 지표 판정·50% 경계·고정 육성·목표 전환·재점화 풀·조용히 사라지는 경로 0·오토 기준만');
  const rep=(s,a,b)=>{assert(s.includes(a),'주입 대상 없음: '+a);return s.replace(a,b)};
  const m=(file,a,b)=>({...SRC,[file]:rep(SRC[file],a,b)});
  const mutants={
@@ -227,11 +224,9 @@ async function suite(src=SRC){better(src);await stop(src);mainStop(src);fixed();
   '본선 멈춤 경계 초과':m('ui',"if(growthGoal(best)>=.5)break;","if(growthGoal(best)>.5)break;"),
   '후보 부족을 이유 없이 끝냄':m('ui',"return {best:null,runs:0,reason:'few'};","return {best:null,runs:0};"),
   '자료 없음을 오류로 던짐':m('ui',"if(!qi)return {best:null,runs:0,reason:'quick'};","if(!qi)throw Error('빠른 계산 자료 없음');"),
-  '수동에 오토 t60 을 남김':m('ui',",t60:r.man.t60??null};}","};}"),
   '3별 문구를 클리어율 기준으로':m('ui',"star=prob&&turns>0&&(b?.t60!=null||r?.best?.t60!=null);\n  if(r?.reason==='few')","star=false;\n  if(r?.reason==='few')"),
   '요약 숫자를 클리어율로':m('ui',"→ <small>맞추면</small>${pct(growthGoal(r.best))}</b>","→ <small>맞추면</small>${pct(r.best.clear)}</b>"),
-  '추천 본선 멈춤을 클리어율로':m('html',"const simGoal=r=>{const m=simMain(r);return m?(m.t60??m.clear):null};","const simGoal=r=>{const m=simMain(r);return m?m.clear:null};"),
-  '수동 모드에 수동 t60 을 안 씀':m('html',"Object.assign({clear:r.man.c},r.man.t60!=null?{t60:r.man.t60}:{})","{clear:r.man.c,t60:r.t60}"),
+  '추천 본선 멈춤을 클리어율로':m('html',"const goalVal=r=>r?(r.t60??r.clear):null;","const goalVal=r=>r?r.clear:null;"),
   '예선 캐시 키에 목표 없음':m('html',"rkOf(contents[$(\"content\").value].key),starOf(contents[$(\"content\").value].key),","rkOf(contents[$(\"content\").value].key),"),
   '탭을 클리어율로':m('ux',"const goal=r=>goalTurns&&r?.t60!=null?r.t60:r?.clear;","const goal=r=>r?.clear;"),
   '탭: 스테이지형 = 작전·성간 회랑':m('ux',"const probability=kind!=='guild'&&kind!=='cosmo'","const probability=kind==='op'||kind==='clo'")};

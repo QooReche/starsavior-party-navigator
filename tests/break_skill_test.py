@@ -251,16 +251,14 @@ class BreakSkillLegacyTest(unittest.TestCase):
                 o1 = simulate(party, enc, dict(opts, break_skill={'name': name, 'level': 1}, **off))
                 self.assertEqual(o5['per_unit'], o1['per_unit'])       # 옛 동작: 모든 레벨 같은 계수
                 self.assertEqual(o5['break_skill'], o1['break_skill'])
-        # 웹 진입점의 auto/manual이 실제 엔진 결과의 네 필드를 그대로 돌려준다.
+        # 웹 진입점(오토)이 실제 엔진 결과의 네 필드를 그대로 돌려준다.
         stage = 'op/NOA 상업지구/SECTOR 1-3'
         for name in ('특이점 관측', '스타피어서', '차원 강습', '큐브 과부하', '행성 정화', None):
             extra = {'break_skill': {'name': name} if name else None, 'rules_override': {'basic_tough': 1}}
-            for runner in (web.run_auto, web.run_manual):
-                got = json.loads(runner(stage, party, 2, 8, extra))
-                pol = got.get('pol')
-                expected = simulate(party, {'stage': stage}, _opts(extra, pol, n_runs=2, seed=8))['break_skill']
-                self.assertEqual(got['bs'], {k: expected[k] for k in ('name', 'uses', 'dmg', 'supported')})
-                self.assertEqual(got['bs']['supported'], name is not None)
+            got = json.loads(web.run_auto(stage, party, 2, 8, extra))
+            expected = simulate(party, {'stage': stage}, _opts(extra, n_runs=2, seed=8))['break_skill']
+            self.assertEqual(got['bs'], {k: expected[k] for k in ('name', 'uses', 'dmg', 'supported')})
+            self.assertEqual(got['bs']['supported'], name is not None)
 
     def test_default_disabled(self):
         b = legacy_setup(None)
@@ -428,8 +426,7 @@ class BreakSkillLegacyTest(unittest.TestCase):
         for result in (default, explicit_none):
             result.pop('runtime_ms_per_run')
         self.assertEqual(default, explicit_none)
-        for policy in (None, ('boss_first', 'any_attack')):
-            self.assertEqual(_opts(json.dumps({'break_skill': CUBE}), policy)['break_skill'], CUBE)
+        self.assertEqual(_opts(json.dumps({'break_skill': CUBE}))['break_skill'], CUBE)
 
 
 class BreakSkillGlobalTest(unittest.TestCase):

@@ -79,7 +79,7 @@ function signatureScope(code=ui){const ctx=context(code),sig=key=>ctx.growthSig(
 }
 function selectionHistory(field,code=ui){const ctx=context(code),before={};
   for(const kind of ['op','guild','cosmo'])before[kind]=save(ctx,kind);
-  if(field==='mode')ctx.MODE='manual';else {ctx.BRSEL['op|a,b,c,d']='test';ctx.SESSION_BR['op|a,b,c,d']='test';}
+  ctx.BRSEL['op|a,b,c,d']='test';ctx.SESSION_BR['op|a,b,c,d']='test';
   save(ctx,'op','second');const history=ctx.LS.get('growth.history');
   for(const kind of ['guild','cosmo']){
     assert(history[kind+'/stage'],field+' must retain '+kind);
@@ -96,16 +96,18 @@ function legacySelection(){const ctx=context(),old=save(ctx,'op','old'),parsed=J
   save(ctx,'guild');assert(ctx.LS.get('growth.history')['op/old'],'earlier v5 common-memory layout retained');
   ctx.contents=['op','guild','cosmo'].map(content);vm.runInContext('GROW.sig=growthSig(contents[1],{tab:"tab",name:"stage"})',ctx);
   assert(ctx.growthPriority(ctx.LS.get('growth.history'))[0].contents.some(c=>c.content==='op/old'));
-  ctx.MODE='manual';save(ctx,'op','new');
+  // 옛 수동 모드 기록(11/14 수동 모드 제거 전): 지금 조건은 언제나 오토라 순위에서 빠진다(기록은 지우지 않음)
+  parsed[7]='manual';ctx.LS.get('growth.history')['op/old'].signature=JSON.stringify(parsed);
   const h=ctx.LS.get('growth.history');assert(h['op/old']);
-  assert(!ctx.growthPriority(h)[0].contents.some(c=>c.content==='op/old'),'legacy content mode is filtered too');
+  assert(!(ctx.growthPriority(h)[0]?.contents||[]).some(c=>c.content==='op/old'),'legacy manual-mode history is filtered');
+  assert.equal(ctx.growthConditions(content('op')).mode,'auto');ctx.MODE='manual';assert.equal(ctx.growthConditions(content('op')).mode,'auto','화면에 수동 상태가 없다');
 }
-function conditionHistory(g=G,field='mode',code=ui){const ctx=context(code);ctx.GrowthGuide=g;
+function conditionHistory(g=G,field='breaks',code=ui){const ctx=context(code);ctx.GrowthGuide=g;
   // Deterministic timestamps exercise latest per content, independently of the viewed content.
   const add=(kind,name,at)=>{save(ctx,kind,name);const h=ctx.LS.get('growth.history');h[kind+'/'+name].at=at;return h;};
-  if(field==='mode'||field==='breaks'){
+  if(field==='breaks'){
     add('op','old',1);
-    if(field==='mode')ctx.MODE='manual';else ctx.BRSEL['op|a,b,c,d']='test';
+    ctx.BRSEL['op|a,b,c,d']='test';
     add('op','new',2);add('op','same',3);save(ctx,'cosmo');
     const h=ctx.LS.get('growth.history'),p=g.priority(h,ctx.growthSig(content('cosmo'),stage));
     assert(h['op/old']);assert.equal(p[0].contents.filter(c=>c.content.startsWith('op/')).length,2);
@@ -177,10 +179,9 @@ async function mutation(name,code,from,to,test){assert(code.includes(from),name)
   await mutation('reload session break',ui,'const selected=shared?SESSION_BR:BRSEL;','const selected=SESSION_BR;',reloadAggregation);
   await mutation('unrelated team break',source,'const keys=a.breakTeams||','const keys=false||',s=>reloadAggregation(ui,load(s)));
   await mutation('reload unknown seasonal teams',source,'if(!b.teams?.length)','if(false)',s=>reloadAggregation(ui,load(s)));
-  selectionHistory('mode');selectionHistory('breaks');legacySelection();conditionHistory();conditionHistory(G,'breaks');conditionHistory(G,'guild');
-  await mutation('mode memory scope',ui,'modifiers:[MM,SCROWN]','mode:MODE,modifiers:[MM,SCROWN]',s=>selectionHistory('mode',s));
+  selectionHistory('breaks');legacySelection();conditionHistory(G,'breaks');conditionHistory(G,'guild');
   await mutation('break memory scope',ui,'breaks:[breakOwned(),MI.info?.break_skills]','breaks:[breakOwned(),MI.info?.break_skills,BRSEL,SESSION_BR]',s=>selectionHistory('breaks',s));
-  for(const field of ['mode','breaks','guild'])await mutation('aggregate '+field,source,
+  for(const field of ['breaks','guild'])await mutation('aggregate '+field,source,
     'if(!conditionsMatch(ctx.conditions,latest.get(ctx.kind)?.conditions,ctx.kind))continue;',
     'if(false)continue;',s=>conditionHistory(load(s),field));
   await mutation('current display conditions',ui,'Object.fromEntries(contents.map(c=>[c.key,growthConditions(c,false)]))','{}',s=>conditionHistory(G,'guild',s));

@@ -15,15 +15,16 @@ assert.match(headline,/data-state="done"/);assert.match(headline,/data-verdict="
 assert.match(headline,/data-help="100판 · 95% 구간/);
 assert.match(headline,/내 구원자 기준/);ctx.miMode=()=>false;assert.match(ev('miVerdict({}, {})'),/표준 육성 기준/);ctx.miMode=()=>true;
 assert.doesNotMatch(visible(headline),/ttk|95%|#1001|근사|TURN/);
-ctx.MODE='manual';ctx.SIMQ.res.selected.man={c:.4,n:100,ci:[.3,.5],t:14};
-assert.match(ev('miVerdict({}, {})'),/data-verdict="risk"/);assert.match(visible(ev('miVerdict({}, {})')),/클리어40%/);assert.match(visible(ev('miVerdict({}, {})')),/약 14턴/);
+// 오토 기준만(11/14 수동 모드 제거): 옛 결과에 수동 값(man)이 붙어 있거나 MODE 가 남아 있어도 오토 값만 보인다
+ctx.MODE='manual';ctx.SIMQ.res.selected.man={c:.4,n:100,ci:[.3,.5],t:14,unsupported:[{unit:'합성 구원자',raw:'수동 잠재력'}]};
+assert.match(ev('miVerdict({}, {})'),/data-verdict="safe"/);assert.match(visible(ev('miVerdict({}, {})')),/클리어96%/);assert.match(visible(ev('miVerdict({}, {})')),/약 35턴/);
+assert.match(visible(ev('miVerdict({}, {})')),/오토 전투/);assert.doesNotMatch(visible(ev('miVerdict({}, {})')),/수동/);
 ctx.SIMQ.res.selected.unsupported=[{unit:'합성 구원자',raw:'자동 잠재력'}];
-ctx.SIMQ.res.selected.man.unsupported=[{unit:'합성 구원자',raw:'수동 잠재력'}];
-for(const mode of ['auto','manual']){
- ctx.MODE=mode;const result=ev('miVerdict({}, {})');
- assert.match(visible(result),mode==='auto'?/지원하지 않음 · 합성 구원자 · 자동 잠재력/:/지원하지 않음 · 합성 구원자 · 수동 잠재력/);
+{const result=ev('miVerdict({}, {})');
+ assert.match(visible(result),/지원하지 않음 · 합성 구원자 · 자동 잠재력/);assert.doesNotMatch(visible(result),/수동 잠재력/);
  assert.doesNotMatch(result,/<details/);
 }
+delete ctx.MODE;
 for(const key of ['op','oph','equip','clo','rush','cosmo']){
  ctx.QK.d.st[key]={'area|boss':{bp:100,w:[[[150,0,0,0,0,true]]]}};
  ctx.content={key};assert.equal(ev('bigBoss(content,{tab:"area",name:"boss"})'),1.5);

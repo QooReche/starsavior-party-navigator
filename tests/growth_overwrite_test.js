@@ -80,7 +80,7 @@ async function timeout(code=ui){let active=0;
   }finally{handle.cancel();}
 }
 async function warmup(code=ui){const ctx={setTimeout,clearTimeout,Date,MODE:'auto',simTeamLimit:()=>5,SIMQ:{LOAD_MS:100},
-  GROW:{id:1,errors:[],versions:{engine:'test'}},location:{href:'http://example.test/'},simOpt:()=>({}),growthPaint(){},growthMetric:r=>r,
+  GROW:{id:1,errors:[],versions:{engine:'test'}},location:{href:'http://example.test/'},simOpt:()=>({}),growthPaint(){},
   Worker:class {postMessage(req){setTimeout(()=>{if(this.dead)return;
     this.onmessage({data:{id:req.id,type:'stage',msg:'준비 끝'}});
     this.onmessage({data:{id:req.id,type:'team',key:'team',result:{ver:'test',prog:.8,n:req.n_runs,progs:Array(req.n_runs).fill(.8),via:{}}}});

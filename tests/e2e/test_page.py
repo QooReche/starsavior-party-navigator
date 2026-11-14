@@ -558,24 +558,32 @@ def test_mobile_layout(browser, ctx):
 
 
 def test_manual_mode(browser, ctx):
-    """수동: 시뮬을 누르면 정책 4종 중 최선으로 수동 클리어 확률 + 서순 표(카드 순서 열), ?mode=manual 유지"""
-    page = open_page(browser, ctx, "?mode=manual")
+    """수동 모드는 없다(11/14 제거, 오토 기준): 전환 UI·수동 스킬 순서가 없고, 옛 수동 링크(?mode=manual·?m=manual)와 옛 저장값(pn.mode=manual)으로 열어도
+    깨지지 않고 오토로 계산한다 — 요청에 mode 없음, 결과에 수동 값 없음, 판정은 «오토 전투». 링크의 나머지 조건(재점화 등)은 그대로 복원."""
+    ctx.errors.clear()
+    page = open_page(browser, ctx, "?mode=manual&m=manual&rk=3", setup=lambda pg: pg.add_init_script("try{localStorage.setItem('pn.mode','\"manual\"')}catch(e){}"))
     choose(page, "작전 (일반)", "SECTOR 1-3")
-    pend = page.locator('.party[data-party="1"] .seq[data-state="pending"]').count()
+    stored = page.evaluate("() => localStorage.getItem('pn.mode')")
+    ui = page.evaluate("""() => ({radio:document.querySelectorAll('input[name="mode"],#m-manual,#m-auto,#mode-controls').length,
+      seq:document.querySelectorAll('.manual-details,.seq,.sgrid').length,mode:typeof MODE,setMode:typeof setMode,share:'m' in SHARE,rk:$('rk').value,
+      text:/수동/.test(document.body.innerText)})""")
+    page.evaluate("""() => {window.__reqs=[];const W=window.Worker;window.Worker=class extends W{postMessage(m,...a){if(m&&m.type==='run')__reqs.push(m);return super.postMessage(m,...a)}}}""")
     page.click('.party[data-party="1"] button[data-sim="1"]')
     wait_sim_done(page)
     page.wait_for_timeout(300)
-    seq =page.locator('.party[data-party="1"] .seq[data-state="ok"]').count()
-    rows = page.locator('.party[data-party="1"] .seq .sgrid .tl').count()
-    heads = page.evaluate("() => [...document.querySelectorAll('.party[data-party=\"1\"] .seq .sgrid .hd')].map(e => e.textContent)")
-    cards = page.evaluate("() => [...document.querySelectorAll('.party[data-party=\"1\"] .rowcards .gc .cnm')].map(e => e.textContent)")
-    man = page.locator('.party[data-party="1"] .qsim[data-man="1"]').count()
-    page.screenshot(path=os.path.join(ctx.shots, "desktop_manual_seq.png"), full_page=True)
-    url_ok = "mode=manual" in page.url
+    after = page.evaluate("""() => {const st=cur[$('stage').value],rs=LASTQ[1].rows.map(t=>SIMQ.res[simSig(st,t)]);
+      return {n:rs.length,man:rs.some(r=>!r||'man' in r),mode:__reqs.some(m=>'mode' in m),reqs:__reqs.length,sig:JSON.parse(simSig(st,LASTQ[1].rows[0]))[5],
+        verdict:document.querySelector('.party[data-party="1"] .mi-verdict .verdict-meta').innerText,chips:document.getElementById('option-chips').innerText,
+        man1:document.querySelectorAll('.qsim[data-man]').length,seq:document.querySelectorAll('.manual-details,.seq').length,text:/수동/.test(document.getElementById('out').innerText),
+        url:location.search,rekindle:simOpt('op').rekindle}}""")
+    page.screenshot(path=os.path.join(ctx.shots, "desktop_no_manual.png"), full_page=True)
+    errs = list(ctx.errors)
     page.evaluate("() => { localStorage.removeItem('pn.mode'); localStorage.removeItem('pn.simauto') }")
     page.close()
-    ok = pend == 1 and seq == 1 and rows >= 1 and heads == cards and man >= 1 and url_ok
-    return ok, "누르기 전 안내 %d, 서순 %d(행 %d), 열 = 카드 순서 %s, 수동 결과 %d줄, URL %s" % (pend, seq, rows, heads == cards, man, url_ok)
+    ok = (ui == {'radio': 0, 'seq': 0, 'mode': 'undefined', 'setMode': 'undefined', 'share': False, 'rk': '3', 'text': False} and stored == '"manual"'
+          and after['n'] >= 1 and not after['man'] and not after['mode'] and after['reqs'] > 0 and after['sig'] == 'auto' and '오토 전투' in after['verdict']
+          and '수동' not in after['chips'] and after['man1'] == 0 and after['seq'] == 0 and not after['text'] and after['rekindle'] == 3 and not errs)
+    return ok, "전환 UI·상태 %s / 시뮬 뒤 %s / 오류 %s" % (ui, after, errs[:2])
 
 
 def test_cosmo_joint(browser, ctx):
@@ -860,7 +868,7 @@ def test_gimmick_avoid(browser, ctx):
 
 
 def test_boss_gimmick_mobile(browser, ctx):
-    """37-3: 슬롯별 태그·담당 대조, 큰 보스전 경고(1-1 에는 없음), 모바일 배치·더 보기, 접힌 수동 서순에서 모드 전환."""
+    """37-3: 슬롯별 태그·담당 대조, 큰 보스전 경고(1-1 에는 없음), 모바일 배치·더 보기, 수동 모드 흔적 없음."""
     page = open_page(browser, ctx, viewport={"width": 390, "height": 844})
     no_big = page.locator('#out [data-k="bigboss"]').count()
     choose(page, "작전 (일반)", "37-3")
@@ -885,16 +893,8 @@ def test_boss_gimmick_mobile(browser, ctx):
         cards:cards.length, same:cards.length===4&&cards[0].top===cards[1].top&&cards[2].top===cards[3].top&&cards[2].top>cards[0].top,
         clear:!document.querySelector('#dbtn')};
     }''')
-    manual = page.locator('.party[data-party="1"] .manual-details')
-    # 「수동 스킬 순서」는 수동 모드에서만 보인다(오토에선 쓸 일이 없어 숨김)
-    manual_folded = manual.count() == 0 and not page.locator("#m-manual").is_visible()
-    if not page.locator('#optbox').evaluate('e => e.open'):
-        page.click('#optbox > summary')
-    page.locator('label:has(#m-manual)').click()
-    settle(page)
-    manual_ok = (manual_folded and manual.count() == 1
-                 and page.locator("#m-manual").is_checked() and "mode=manual" in page.url
-                 and page.evaluate("() => MODE === 'manual' && LS.get('mode') === 'manual'"))
+    # 수동 모드는 없다(11/14 제거): 수동 스킬 순서 칸·전환 단추가 없음
+    manual_ok = page.locator('.manual-details, #m-manual, input[name="mode"]').count() == 0
     page.close()
     ok = (n >= 3 and "보스" in txt and "(추정)" not in txt
           and ("대응 미확인" not in txt and "대처" in txt)
@@ -902,7 +902,7 @@ def test_boss_gimmick_mobile(browser, ctx):
           and audit["checked"] > 0 and audit["compared"] > 0 and not audit["errors"] and manual_ok
           and layout["sw"] <= layout["iw"] and layout["cards"] == 4 and layout["same"] and layout["clear"]
           and no_big == 0 and big == 1 and "큰 보스전" in big_txt)
-    return ok, "기믹 %d/%d줄, 심각도 %s, 더 보기 %s, 모바일 %s, 슬롯 %s, 수동 %s, 큰 보스 경고 1-1 %d / 37-3 %d" % (
+    return ok, "기믹 %d/%d줄, 심각도 %s, 더 보기 %s, 모바일 %s, 슬롯 %s, 수동 UI 없음 %s, 큰 보스 경고 1-1 %d / 37-3 %d" % (
         n, all_n, severities, expanded_n == all_n, layout, audit, manual_ok, no_big, big)
 
 
@@ -1105,7 +1105,7 @@ def test_myinfo_rules_mobile(browser, ctx):
 
 
 def test_myinfo_sim(browser, ctx):
-    """자동 확인을 끈 상태에선 시뮬이 안 돎, 버튼으로 내 정보 auto/manual 확률과 최종 스탯 요청 검증(예선 포함)."""
+    """자동 확인을 끈 상태에선 시뮬이 안 돎, 버튼으로 내 정보 오토 확률과 최종 스탯 요청 검증(예선 포함)."""
     ctx.errors.clear()
     page = open_page(browser, ctx, info=SYNTH)
     choose(page, '작전 (일반)', 'SECTOR 1-3')
@@ -1117,29 +1117,24 @@ def test_myinfo_sim(browser, ctx):
     assert '클리어' in page.inner_text('.mi-verdict') and '수동 ' not in page.inner_text('.mi-verdict')
     assert page.evaluate('() => SIMQ.lastReq.req.teams.every(t=>t.party.units.every(u=>u.build==="none"&&u.stats_final))')
     assert page.locator('.manual-details').count() == 0
-    if not page.locator('#optbox').evaluate('e => e.open'):
-        page.click('#optbox > summary')
-    page.locator('label:has(#m-manual)').click()
-    page.wait_for_function('() => !document.querySelector("[data-k=progress]") && LASTQ[1].rows.every(t=>SIMQ.res[simSig(cur[$("stage").value],t)]?.man)', timeout=600000)
-    settle(page)
-    assert page.evaluate(r'''() => {const t=LASTQ[1].rows.find(t=>ckey(t.combo)===document.querySelector('.party').dataset.team),r=SIMQ.res[simSig(cur[$('stage').value],t)];return document.querySelector('.mi-verdict .verdict-number').textContent.replace(/\s/g,'')==='클리어'+Math.round(r.man.c*100)+'%'}''')
+    assert page.evaluate(r'''() => {const t=LASTQ[1].rows.find(t=>ckey(t.combo)===document.querySelector('.party').dataset.team),r=SIMQ.res[simSig(cur[$('stage').value],t)];return !('man' in r)&&document.querySelector('.mi-verdict .verdict-number').textContent.replace(/\s/g,'')==='클리어'+Math.round(r.clear*100)+'%'}''')
     assert not ctx.errors, ctx.errors
     page.close()
-    return True, '버튼 실행·최종 스탯 요청·오토/수동 확률'
+    return True, '버튼 실행·최종 스탯 요청·오토 확률'
 
 
 def test_share_link(browser, ctx):
-    """링크 복사: 조건(c·s·m·rk·b)만, 「내 정보 포함」이면 #shared= — 받는 쪽은 그 정보로 보되 저장 안 함(#shared-bar), 자기 내 정보는 그대로, 옛 g/p·잘못된 값 무시."""
+    """링크 복사: 조건(c·s·rk·b)만, 「내 정보 포함」이면 #shared= — 받는 쪽은 그 정보로 보되 저장 안 함(#shared-bar), 자기 내 정보는 그대로, 옛 g/p·잘못된 값 무시."""
     from urllib.parse import urlsplit, parse_qs
     page = open_page(browser, ctx, viewport={'width': 390, 'height': 844}, info=SYNTH)
     choose(page, '작전 (일반)', '37-3')
-    page.evaluate('''() => { $('rk').value='3'; $('rk').dispatchEvent(new Event('change'));setMode('manual',true);run();
+    page.evaluate('''() => { $('rk').value='3'; $('rk').dispatchEvent(new Event('change'));run();
       Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>window.copied=text}});
     }''')
     settle(page)
     page.click('.party[data-party="1"] .score-details > summary')
     page.select_option('.party[data-party="1"] .bsel', '')
-    expected = page.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,MODE,$("rk").value]')
+    expected = page.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,$("rk").value]')
     # 1) 「내 정보 포함」 끔: 조건만
     if not page.locator('#optbox').evaluate('e => e.open'):
         page.click('#optbox > summary')
@@ -1151,7 +1146,7 @@ def test_share_link(browser, ctx):
     page.wait_for_function('() => !!window.copied')
     url = page.evaluate('() => window.copied')
     params = parse_qs(urlsplit(url).query, keep_blank_values=True)
-    assert set(params) == {'c', 's', 'm', 'rk', 'b', 'ag', 'ao'}, params
+    assert set(params) == {'c', 's', 'rk', 'b', 'ag', 'ao'}, params
     assert params['ag'] == ['0'] and params['ao'] == ['0'] and 'ae' not in params
     assert not urlsplit(url).fragment
     # 2) 「내 정보 포함」: 해시 #shared=
@@ -1176,7 +1171,7 @@ def test_share_link(browser, ctx):
     settle(target)
     # 비동기 공유 계정의 자동 시작·육성 결과는 test_auto_calculation_shared_growth에서 검사한다.
     shared_view = 'idle' if target.locator('#out [data-k="idle"]').count() else 'computed'
-    assert target.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,MODE,$("rk").value]') == expected
+    assert target.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,$("rk").value]') == expected
     assert target.evaluate('() => MI.info.units.length') == 8
     assert target.evaluate('() => localStorage.getItem("pn.myinfo")') is None
     assert target.is_visible('#shared-bar') and '공유받은' in target.inner_text('#shared-bar')
@@ -1194,10 +1189,10 @@ def test_share_link(browser, ctx):
     # 잘못된 값·옛 육성(g/p) 링크는 기본값으로, g/p 는 쓰지 않음
     target.goto(ctx.base + '/index.html?c=bad&s=bad&g=0.8&p=123456&m=bad&rk=999&b=bad&pick=old&auto=1')
     target.wait_for_function('() => window._ready')
-    assert target.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,MODE,$("rk").value,$("mypow").value,!!SHARE.oldGrow]') == ['op', 'SECTOR 1-1', 'auto', '0', '', True]
+    assert target.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,$("rk").value,$("mypow").value,!!SHARE.oldGrow]') == ['op', 'SECTOR 1-1', '0', '', True]
     target.goto(ctx.base + '/index.html?mode=manual&pick=old')
     target.wait_for_function('() => window._ready')
-    assert target.evaluate('() => MODE') == 'manual'
+    assert target.evaluate("() => typeof MODE==='undefined' && !('m' in SHARE) && !document.querySelector('input[name=mode]')")   # 옛 수동 링크도 오토로 열림
     target.goto(ctx.base + '/index.html')
     target.wait_for_function('() => window._ready')
     assert target.input_value('#rk') == '5'
@@ -1924,8 +1919,8 @@ def test_growth_controls(browser, ctx):
     return True, '버튼 옆 단일 스위치·내 정보 필요·설정 접기·저장/공유·390px·결함 주입 3종'
 
 
-def overwrite_account(page, mode='auto', legacy=False, corridor=False):
-    page.evaluate('''async ({mode,legacy,corridor}) => {
+def overwrite_account(page, legacy=False, corridor=False):
+    page.evaluate('''async ({legacy,corridor}) => {
       const info=structuredClone(MI.info);
       for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
       if(corridor){const keys=R.filter(s=>s.el==='moon'&&MI.growth.assumed.units[s.key]).slice(0,5).map(s=>s.key);
@@ -1934,9 +1929,9 @@ def overwrite_account(page, mode='auto', legacy=False, corridor=False):
       for(const u of info.units){u.level=1;u.equip=[];u.skills={basic:1,special:1,ultimate:1,passive:1};
         u.resonance=0;u.gauntlet.journey=[0,0,0,0,0];u.gauntlet.potentials=[];}
       if(legacy){delete info.star_link;info.units.forEach(u=>delete u.level);}
-      await miApply(info);await new Promise(resolve=>setTimeout(resolve,200));setMode(mode,true);window.overwriteOriginal=JSON.stringify(MI.info);
+      await miApply(info);await new Promise(resolve=>setTimeout(resolve,200));window.overwriteOriginal=JSON.stringify(MI.info);
       $('assume-growth').checked=true;condChanged();showReco();
-    }''', dict(mode=mode, legacy=legacy, corridor=corridor))
+    }''', dict(legacy=legacy, corridor=corridor))
 
 
 def assert_growth_no_slot_plan(page):
@@ -2066,7 +2061,7 @@ def test_assumed_growth(browser, ctx):
     selected_key = alternate.get_attribute('data-key')
     expected = page.evaluate('''key => {
       const st=cur[$('stage').value],t=LASTQ[1].all.find(t=>t.keys.slice().sort().join(',')===key);
-      return growthMetric(SIMQ.res[simSig(st,t)]||{clear:0}).clear;
+      return (SIMQ.res[simSig(st,t)]||{clear:0}).clear;
     }''', selected_key)
     page.click('#result-tab-now')
     alternate.click()
@@ -2114,16 +2109,6 @@ def test_assumed_growth(browser, ctx):
     assert not page.locator('#growth-priority').is_visible()
     assert not ctx.errors, ctx.errors
     return True, '작전 실제 작업자 · 원본 불변 · 같은/낮은 결과 숨김 · 취소 · 390px · 하단 보조 카드'
-
-
-def test_assumed_manual(browser, ctx):
-    page = open_page(browser, ctx, info=SYNTH)
-    choose(page, '작전 (일반)', 'SECTOR 1-3')
-    overwrite_account(page, mode='manual')
-    overwrite_audit(page)
-    assert page.evaluate('GROW.result.best.n===100&&GROW.result.best.man&&GROW.result.best.progs.length===100')
-    assert not ctx.errors, ctx.errors
-    return True, '수동 같은 추천 탐색 · 정책 결과 · 판별 진행도'
 
 
 def test_assumed_legacy(browser, ctx):
@@ -2455,7 +2440,7 @@ def test_season_gate(browser, ctx):
     return True, '미오픈 칩·탐색/육성 차단·dev 우회·기간 미확인·시작 전·종료 경계·390px'
 
 
-TESTS = [test_season_gate, test_growth_controls, test_growth_stage23, test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_manual, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
+TESTS = [test_season_gate, test_growth_controls, test_growth_stage23, test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)
@@ -2767,9 +2752,7 @@ def test_ux_step12(browser, ctx):
     page.locator('h1').tap()
     assert page.locator('#ux-popover').is_hidden()
     page.click('#optbox > summary')
-    page.locator('label:has(#m-manual)').click()
-    assert page.locator('#option-chips').inner_text().find('수동') >= 0
-    page.locator('label:has(#m-auto)').click()
+    assert page.locator('#m-manual, input[name="mode"]').count() == 0 and '수동' not in page.locator('#option-chips').inner_text()
     assert page.locator('#share-link').is_visible()
     page.click('#optbox > summary')
     assert page.locator('#share-link').is_hidden()
@@ -2884,17 +2867,17 @@ def test_ux_step12(browser, ctx):
     page.evaluate("GROW.phase='done';GROW.errors=[];GROW.msg='';growthPaint()")
     page.click('#result-tab-growth')
     assert '지금' in page.inner_text('#growth-result .mi-verdict') and '맞추면' in page.inner_text('#growth-result .mi-verdict')
-    # Different auto/manual values and null manual turns must survive the metric -> DOM path.
-    page.evaluate('window.fixBest=GROW.result.best;window.fixMode=MODE;window.fixGrowthPaint=growthPaint')
+    # 예상 턴은 오토 값: 전체 행동 수(ta), 없으면 처치 턴(ttk). 옛 결과에 수동 값(man)이 붙어 있어도 쓰지 않는다
+    page.evaluate('window.fixBest=GROW.result.best;window.fixGrowthPaint=growthPaint')
     def turns_audit():
-        for mode, auto_turns, manual_turns, expected in [('auto', 47, 12, 47), ('auto', None, 12, 31), ('manual', 47, 12, 12), ('manual', 47, None, None)]:
-            page.evaluate('''([mode,ta,t])=>{MODE=mode;GROW.result.best=growthMetric({...fixBest,clear:1,ttk:31,ta,man:{c:1,t}},mode);growthPaint();}''', [mode, auto_turns, manual_turns])
+        for auto_turns, manual_turns, expected in [(47, 12, 47), (None, 12, 31), (47, None, 47)]:
+            page.evaluate('''([ta,t])=>{GROW.result.best={...fixBest,clear:1,ttk:31,ta,man:{c:1,t}};growthPaint();}''', [auto_turns, manual_turns])
             want = page.evaluate('n=>miNum(n)+"턴"', expected)
             assert page.locator('#growth-result .verdict-stats b').first.inner_text() == want
     turns_audit()
-    caught_mutation('''growthPaint=eval('('+fixGrowthPaint.toString().replace("MODE==='manual'?r.best.ttk:(r.best.ta??r.best.ttk)","r.best.ta??r.best.ttk")+')')''',
+    caught_mutation('''growthPaint=eval('('+fixGrowthPaint.toString().replace("r.best.ta??r.best.ttk","r.best.man?.t??r.best.ttk")+')')''',
                     turns_audit, 'growthPaint=fixGrowthPaint')
-    page.evaluate('MODE=fixMode;GROW.result.best=fixBest;growthPaint()')
+    page.evaluate('GROW.result.best=fixBest;growthPaint()')
     assert '기존 대비 전투력 +' in page.inner_text('[data-k="growth-power-total"]')
     assert '스텔라 아카이브' in page.inner_text('[data-k="growth-components"]')
     assert page.locator('#growth-result [data-growth-field]').count() > 4
@@ -2949,7 +2932,7 @@ def test_ux_step12(browser, ctx):
     assert page.locator('[data-slot-start]').is_visible()
     assert not ctx.errors, ctx.errors
     page.close()
-    return True, '16 screenshots; standard recommendation without account, closed seasons, damage/death chips at 320-761px, subtitles, manual turns, 6 review mutations; tabs/skills preserved'
+    return True, '16 screenshots; standard recommendation without account, closed seasons, damage/death chips at 320-761px, subtitles, auto turns, 6 review mutations; tabs/skills preserved'
 
 
 TESTS.append(test_ux_step12)

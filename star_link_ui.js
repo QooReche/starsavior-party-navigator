@@ -1,23 +1,23 @@
 // Session-only content snapshots: never persist simulated accounts or slot proposals.
 const SLOT={scope:null,contexts:new Map(),result:null,phase:'idle',msg:'',errors:[],excluded:[],stop:null};
-function slotScope(){return MyInfoReco.hash([MI.hash,MODE,MM,SCROWN,[...EXCL].sort(),breakOwned(),BRSEL,SESSION_BR,SHARE.b,SHARE.b2,
+function slotScope(){return MyInfoReco.hash([MI.hash,'auto',MM,SCROWN,[...EXCL].sort(),breakOwned(),BRSEL,SESSION_BR,SHARE.b,SHARE.b2,
   MI.growth,QK.d,['op','oph','clo','daily','equip','cube','rush','clash'].map(k=>simOpt(k))]);}
 function slotCancel(){if(SLOT.stop)SLOT.stop();SLOT.stop=null;SLOT.phase='idle';SLOT.result=null;SLOT.msg='';SLOT.errors=[];
   SLOT.excluded=[];if(SIMQ.busy==='slots')SIMQ.busy=null;}
 function slotSync(){const scope=slotScope();if(SLOT.scope!==scope){slotCancel();SLOT.scope=scope;SLOT.contexts.clear();}}
 function slotRemember(c,st){if(!miMode()||!MI.growth||StarLink.availability(MI.info))return;
   slotSync();if(!MyInfoStats.rule_for_content(c.key)||SIMQ.busy!=null)return;
-  const jobs=(LASTQ[1]?.all||[]).filter(t=>{const r=SIMQ.res[simSig(st,t)];return r&&growthMetric(r).n>=100;})
-    .map(t=>({...growthJob(t,'owned|'+t.keys.slice().sort().join(','),c),result:growthMetric(SIMQ.res[simSig(st,t)])}));
+  const jobs=(LASTQ[1]?.all||[]).filter(t=>{const r=SIMQ.res[simSig(st,t)];return r&&r.n>=100;})
+    .map(t=>({...growthJob(t,'owned|'+t.keys.slice().sort().join(','),c),result:SIMQ.res[simSig(st,t)]}));
   if(!jobs.length)return;
   const id=c.key+'/'+st.tab+'/'+st.name;
   const version=jobs[0].result.ver;
   for(const [k,v] of SLOT.contexts)if(v.version!==version)SLOT.contexts.delete(k);
-  SLOT.contexts.set(id,{id,c,st,qi:quickIn(c,st),jobs,mode:MODE,options:structuredClone(simOpt(c.key)),version,
+  SLOT.contexts.set(id,{id,c,st,qi:quickIn(c,st),jobs,options:structuredClone(simOpt(c.key)),version,
     scoring:structuredClone({gim:GIMACT,season:SBACT,damage:DMW})});
 }
 async function slotEvaluateState({info,referenceInfo=info,context,focus,remaining,deadline},id){
-  const {c,st,qi}=context,cost=GrowthGuide.finalCost(100,context.mode),alive=()=>GROW.id===id;
+  const {c,st,qi}=context,cost=GrowthGuide.finalCost(100),alive=()=>GROW.id===id;
   if(remaining<cost||Date.now()>=deadline)return {runs:0,paired:true};
   const profiles=[info,referenceInfo].map(i=>MyInfoReco.profile(i,R,MI.growth,c.key)),restrict=(CFG.restrict[c.name]||{})[st.tab];
   const keys=focus.map(uid=>R.find(s=>s.uid===uid)).filter(s=>s&&!EXCL.has(s.key)&&(!restrict||restrict===s.el)).map(s=>s.key);
@@ -32,7 +32,7 @@ async function slotEvaluateState({info,referenceInfo=info,context,focus,remainin
   const pairs=[...combos].filter(([,combo])=>profiles.every(p=>combo.every(x=>p.results[x.s.key]&&!p.results[x.s.key].missing.length)))
     .map(([key,combo])=>({key,jobs:profiles.map((p,i)=>growthJob(growthTeam(combo,p,qi,defPen,context.scoring),i+'|'+key,c))}));
   if(!pairs.length)return {runs:0,paired:true};
-  const env={state:SLOT,mode:context.mode,options:context.options,paint:slotPaint};
+  const env={state:SLOT,options:context.options,paint:slotPaint};
   // Same party/options on fixed200 has exactly zero level effect; share that run.
   const unique=jobs=>{const seen=new Map(),aliases={};for(const j of jobs){const sig=JSON.stringify([j.party,j.options]);
     if(seen.has(sig))aliases[j.id]=seen.get(sig).id;else seen.set(sig,j);}return {jobs:[...seen.values()],aliases};};

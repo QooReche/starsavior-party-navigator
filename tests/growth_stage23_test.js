@@ -76,7 +76,7 @@ async function workerContract(){const ui=fs.readFileSync(require.resolve('../gro
         if(req.teams[0].key!=='slow')this.onmessage({data:{type:'done',id:req.id}});},1);}
       terminate(){if(!this.dead){this.dead=true;active--;}}
     }};
-  ctx.MODE='auto';ctx.SIMQ={};ctx.growthMetric=r=>r;
+  ctx.SIMQ={};
   // 작업자 풀·대기열은 화면 것 그대로(코어 16·메모리 모름 = 6개까지, 작업 3개 → 작업자 3개)
   const page=fs.readFileSync(require.resolve('../party_template.html'),'utf8');vm.createContext(ctx);
   vm.runInContext(page.slice(page.indexOf('// ── 작업자 풀·작업 대기열'),page.indexOf('// 이 기기의 시뮬 속도')),ctx);

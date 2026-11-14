@@ -79,7 +79,7 @@ def test_merged_equals_direct():
 
 
 def test_merge_guard():
-    """merge_raw 의 판 수와 run_offset 이 다르면 거부(조용히 틀린 합을 내지 않음), 수동 진입점은 merge_raw 를 무시"""
+    """merge_raw 의 판 수와 run_offset 이 다르면 거부(조용히 틀린 합을 내지 않음)"""
     stage, party, opt = next(iter(cases()))
     first = run(stage, party, 4, dict(opt, raw_runs=True))
     try:
@@ -87,8 +87,7 @@ def test_merge_guard():
         refused = False
     except ValueError:
         refused = True
-    man = json.loads(web.run_manual(stage, party, 3, 1, json.dumps(dict(opt, merge_raw=first['raw']))))
-    return refused and man['n'] == 3, '판 수 불일치 거부 %s / 수동 %d판' % (refused, man['n'])
+    return refused, '판 수 불일치 거부 %s' % refused
 
 
 TESTS = [test_merged_equals_direct, test_merge_guard]

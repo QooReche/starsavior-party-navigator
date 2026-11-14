@@ -40,7 +40,7 @@ INIT_JS = """(() => {
   const W=window.Worker,B={made:0,killed:0,posts:[]};window.__bench=B;
   window.Worker=class extends W{
     constructor(...a){super(...a);B.made++}
-    postMessage(m,...r){if(m&&m.type==='run')B.posts.push({n:m.n_runs,teams:(m.teams||[]).length,mode:m.mode,off:(m.teams||[]).map(t=>t.options&&t.options.run_offset||0),t:Date.now()});return super.postMessage(m,...r)}
+    postMessage(m,...r){if(m&&m.type==='run')B.posts.push({n:m.n_runs,teams:(m.teams||[]).length,off:(m.teams||[]).map(t=>t.options&&t.options.run_offset||0),t:Date.now()});return super.postMessage(m,...r)}
     terminate(){B.killed++;return super.terminate()}
   };
 })()"""
@@ -50,14 +50,14 @@ COLLECT_JS = """() => {
   const pick=r=>r?{clear:r.clear,t60:r.t60??null,prog:r.prog??null,ttk:r.ttk??null,n:r.n}:null;
   const map=o=>Object.fromEntries(Object.entries(o||{}).map(([k,v])=>[k,pick(v)]));
   const rows=LASTQ[1].rows.map(t=>{const r=SIMQ.res[simSig(st,t)];return {key:t.keys.slice().sort().join(','),
-    res:r?{clear:r.clear,t60:r.t60??null,prog:r.prog??null,ttk:r.ttk??null,ta:r.ta??null,n:r.n,ci:r.ci,wipe:r.wipe,timeout:r.timeout,u:r.u,man:r.man?{c:r.man.c,t:r.man.t,pol:r.man.pol}:null}:null}});
+    res:r?{clear:r.clear,t60:r.t60??null,prog:r.prog??null,ttk:r.ttk??null,ta:r.ta??null,n:r.n,ci:r.ci,wipe:r.wipe,timeout:r.timeout,u:r.u}:null}});
   const B=window.__bench;
   return {stage:st.tab+'|'+st.name,screen:sc&&{done:sc.done,short:!!sc.short,total:sc.total,pool:sc.pool,order:sc.order,up:sc.up||null,res:map(sc.res),res2:map(sc.res2)},
     rows,shown:document.querySelector('.party[data-party="1"]')?.dataset.team||null,
     workersMade:B.made,workersKilled:B.killed,posts:B.posts.length,
     // 판 수별 요청 시각(시작 뒤 ms): [판 수, 첫 요청, 마지막 요청, 요청 수] — 예선 1차·2차·본선이 언제 시작했는지
     phases:[...new Set(B.posts.map(p=>p.n))].map(n=>{const ps=B.posts.filter(p=>p.n===n);return [n,ps[0].t-B.t0,ps[ps.length-1].t-B.t0,ps.length]}),
-    runs:B.posts.reduce((s,p)=>s+p.n*p.teams*(p.mode==='manual'?2:1),0),scrWorkers:typeof scrWorkers==='function'?scrWorkers():null}
+    runs:B.posts.reduce((s,p)=>s+p.n*p.teams,0),scrWorkers:typeof scrWorkers==='function'?scrWorkers():null}
 }"""
 
 
@@ -139,7 +139,7 @@ class MemPeak:
         self._t.join(timeout=5)
 
 
-def run_one(browser, base, content, query, rk, workers, mode, timeout):
+def run_one(browser, base, content, query, rk, workers, timeout):
     import test_page as tp
     page = browser.new_page(viewport={'width': 1280, 'height': 900})
     errors = []
@@ -155,8 +155,6 @@ def run_one(browser, base, content, query, rk, workers, mode, timeout):
         tp.choose(page, content, query)
         page.evaluate("() => { document.getElementById('optbox').open = true }")
         page.select_option('#rk', str(rk))
-        if mode == 'manual':
-            page.evaluate("() => { const b=document.querySelector('input[name=\"mode\"][value=\"manual\"]'); if(b){b.checked=true;b.dispatchEvent(new Event('change',{bubbles:true}))} }")
         tp.settle(page)
         with MemPeak() as mem:
             t0 = time.time()
@@ -166,7 +164,7 @@ def run_one(browser, base, content, query, rk, workers, mode, timeout):
             tp.wait_sim_done(page, timeout=timeout)
             dt = time.time() - t0
         out = page.evaluate(COLLECT_JS)
-        out.update(content=content, query=query, rk=rk, workers=workers, mode=page.evaluate('() => MODE'), seconds=round(dt, 1), peakMB=round(mem.peak),
+        out.update(content=content, query=query, rk=rk, workers=workers, mode='auto', seconds=round(dt, 1), peakMB=round(mem.peak),
                    errors=errors, quick=page.evaluate("""() => {const c={};for(const t of (LASTQ[1].all||[]).slice(0,80))c[t.vd]=(c[t.vd]||0)+1;return c}"""))
         return out
     finally:
@@ -209,7 +207,6 @@ def main():
     ap.add_argument('--out')
     ap.add_argument('--workers', default='1')
     ap.add_argument('--stages')
-    ap.add_argument('--mode', default='auto', choices=['auto', 'manual'])
     ap.add_argument('--timeout', type=int, default=3600)
     ap.add_argument('--compare', nargs='+')
     ap.add_argument('--root', default=ROOT, help='화면을 내줄 저장소 폴더(기준 기록은 고치기 전 사본 폴더를 준다)')
@@ -235,9 +232,9 @@ def main():
         try:
             for w in [int(x) for x in a.workers.split(',')]:
                 for c, q, rk in stages:
-                    if (c, q, rk, w, a.mode) in have:
+                    if (c, q, rk, w, 'auto') in have:
                         continue
-                    r = run_one(browser, base, c, q, rk, w, a.mode, a.timeout * 1000)
+                    r = run_one(browser, base, c, q, rk, w, a.timeout * 1000)
                     results.append(r)
                     sc = r['screen'] or {}
                     print('%s %s rk%d W%d: %.1f초 %d판 %dMB 후보 %s 빠른계산 %s 1위 %s 단계 %s' % (c, q, rk, w, r['seconds'], r['runs'], r['peakMB'], sc.get('total'), r['quick'],

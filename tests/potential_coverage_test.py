@@ -208,15 +208,14 @@ class CoverageTests(unittest.TestCase):
         self.assertLess(damage[1], damage[0])
         self.assertEqual(damage[2], damage[0])
 
-    def test_named_unsupported_reaches_auto_and_manual(self):
+    def test_named_unsupported_reaches_web_result(self):
         # A real unconfirmed potential, not just a hypothetical unknown ID.
         payload = dict(units=[dict(key='wedding-epindel', stats_override=SCREEN, stats_final=True,
                                   myinfo_combat={'potentials': [[11026, 1]]})])
-        for fn in (web.run_auto, web.run_manual):
-            result = json.loads(fn('clo/달 회랑/FLOOR 100', payload, 1, 3))
-            self.assertIn('unsupported', result)
-            self.assertTrue(any('재난 대응 프로토콜' in x['raw'] for x in result['unsupported']))
-            self.assertTrue(any('지원하지 않음' in x['raw'] for x in result['unsupported']))
+        result = json.loads(web.run_auto('clo/달 회랑/FLOOR 100', payload, 1, 3))
+        self.assertIn('unsupported', result)
+        self.assertTrue(any('재난 대응 프로토콜' in x['raw'] for x in result['unsupported']))
+        self.assertTrue(any('지원하지 않음' in x['raw'] for x in result['unsupported']))
         # Recognized level but a parser gap must retain the name too.
         row = copy.deepcopy(combat.combat_data()['potentials']['25004']['1'])
         row['effects'] = ['[알 수 없는 시점] 자신에게 알 수 없는 효과']
