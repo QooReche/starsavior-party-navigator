@@ -851,7 +851,9 @@ const ARCANA_DETAIL_IDS = {
   "영원 속박의 굴레": 7101701,
   "탐닉자의 유흥거리": 7103901,
   "자칭 베테랑 탐정의 수사법": 7104001,
-  "이게 옷이라고요?": 7106001
+  "이게 옷이라고요?": 7106001,
+  "끝나지 않는 춤": 7102001,
+  "빛바랜 꿈": 7106101
 };
 
 
@@ -991,6 +993,15 @@ Object.values(ARCANA_LIBRARY).flat().forEach((card) => {
   card.detailId = detailId || null;
   card.image = detailId ? `${LOCAL_ARCANA_CARD_ROOT}/${detailId}.webp` : "";
 });
+
+// 신규 아르카나를 추천 슬롯에서도 실제 카드/이미지로 표시합니다.
+for (const [name, id] of [["끝나지 않는 춤", 7102001], ["빛바랜 꿈", 7106101]]) {
+  ARCANA_LIBRARY[name] = [{
+    name,
+    detailId: id,
+    image: `${LOCAL_ARCANA_CARD_ROOT}/${id}.webp`
+  }];
+}
 
 ARCANA_LIBRARY["웨핀델"] = ARCANA_LIBRARY["웨딩 에핀델"];
 
@@ -1290,27 +1301,23 @@ function getJourneyStatPriorityRows(savior) {
 }
 
 function createJourneyStatPriorityRowMarkup(groups, label = "", note = "") {
-  const parts = [];
-
-  groups.forEach((group, groupIndex) => {
-    if (groupIndex) {
-      parts.push(`<span class="journey-stat-priority-operator" aria-hidden="true">&gt;</span>`);
-    }
-
-    group.forEach((stat, statIndex) => {
-      if (statIndex) {
-        parts.push(`<span class="journey-stat-priority-operator is-equal" aria-hidden="true">=</span>`);
-      }
-
+  const parts = groups.map((group, groupIndex) => `
+    <span class="journey-stat-priority-group">
+      ${group.map((stat, statIndex) => {
+      const operator = statIndex ? "=" : groupIndex ? "&gt;" : "";
       const iconUrl = JOURNEY_STAT_ICON_URLS[stat] || "";
-      parts.push(`
-        <span class="journey-stat-priority-item">
-          <img src="${escapeHtml(iconUrl)}" alt="" loading="lazy" decoding="async" aria-hidden="true">
-          <strong>${escapeHtml(translateString(stat))}</strong>
+      return `
+        <span class="journey-stat-priority-unit">
+          ${operator ? `<span class="journey-stat-priority-operator${statIndex ? " is-equal" : ""}" aria-hidden="true">${operator}</span>` : ""}
+          <span class="journey-stat-priority-item">
+            <img src="${escapeHtml(iconUrl)}" alt="" loading="lazy" decoding="async" aria-hidden="true">
+            <strong>${escapeHtml(translateString(stat))}</strong>
+          </span>
         </span>
-      `);
-    });
-  });
+      `;
+    }).join("")}
+    </span>
+  `);
 
   const readable = groups.map((group) => group.join(" = ")).join(" > ");
 
@@ -1318,8 +1325,7 @@ function createJourneyStatPriorityRowMarkup(groups, label = "", note = "") {
     <div class="journey-stat-priority-line">
       ${label ? `<div class="journey-stat-priority-label">${escapeHtml(translateString(label))}</div>` : ""}
       ${note ? `<div class="journey-stat-priority-note">${escapeHtml(translateString(note))}</div>` : ""}
-      <div class="journey-stat-priority-row" aria-label="${escapeHtml(readable)}"
-        style="display:flex;align-items:center;gap:10px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;padding:3px 1px 7px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;">
+      <div class="journey-stat-priority-row" aria-label="${escapeHtml(readable)}">
         ${parts.join("")}
       </div>
     </div>
@@ -5805,6 +5811,16 @@ const SAVIORS = [
   }
 ];
 
+// 레인저 3명의 추천 슬롯 4를 기본 데이터에 직접 고정합니다.
+// app.js 후처리 실행 여부와 무관하게 상세 화면에서 동일한 결과를 표시합니다.
+for (const savior of SAVIORS) {
+  if (!["scarlet", "naru", "petra"].includes(savior.id)) continue;
+  const detail = savior.detail || (savior.detail = {});
+  const arcana = detail.arcana || (detail.arcana = {});
+  arcana.pve = Array.from({ length: 5 }, (_, index) => arcana.pve?.[index] || null);
+  arcana.pve[3] = { name: "끝나지 않는 춤", note: "" };
+}
+
 const STANDARD_SUPPORTER_BUILD_IDS = new Set([
   "vera",
   "elisa",
@@ -7990,7 +8006,11 @@ function createDetailMarkup(savior) {
   const hasCommonArcana = (build.arcana.pve || []).some((arcana) =>
     String(arcana?.name || "").includes("공용 아르카나")
   );
-  const basePveArcana = hasCommonArcana ? COMMON_ARCANA_SLOTS : build.arcana.pve;
+  const basePveArcana = ["scarlet", "naru", "petra"].includes(savior.id)
+    ? COMMON_ARCANA_SLOTS.map((slot, index) =>
+        index === 3 ? { name: "끝나지 않는 춤", note: "" } : { ...slot }
+      )
+    : (hasCommonArcana ? COMMON_ARCANA_SLOTS : build.arcana.pve);
   const pveArcana = STRIKER_ARCANA_SWAP_IDS.has(savior.id)
     ? (basePveArcana || []).map((slot) =>
         slot
@@ -8316,7 +8336,7 @@ function createEquipmentCard(mode, data, className, subtitle) {
           <dt>반지</dt>
           <dd>${createEquipmentOptionListMarkup(data.ringOptions, data.ring)}</dd>
         </div>
-        <div class="build-row">
+        <div class="build-row build-row-equipment-sets">
           <dt>추천 세트</dt>
           <dd class="equipment-set-list">
             ${createEquipmentSetOptionsMarkup(data)}
@@ -10569,6 +10589,21 @@ function ensureJourneyStatPriorityStyle() {
     .journey-stat-priority-line {
       min-width: 0;
     }
+    .journey-stat-priority-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      padding: 3px 1px 7px;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+    }
+    .journey-stat-priority-group,
+    .journey-stat-priority-unit {
+      display: contents;
+    }
     .journey-stat-priority-label {
       margin: 0 0 3px;
       color: var(--muted);
@@ -10615,8 +10650,31 @@ function ensureJourneyStatPriorityStyle() {
       .journey-stat-priority-lines { gap: 12px; }
       .journey-stat-priority-label { margin-bottom: 2px; font-size: .8rem; }
       .journey-stat-priority-note { margin-bottom: 5px; font-size: .72rem; }
-      .journey-stat-priority-row { gap: 7px !important; }
-      .journey-stat-priority-item { gap: 5px; font-size: .88rem; }
+      .journey-stat-priority-row {
+        flex-wrap: wrap;
+        gap: 7px;
+        overflow: visible;
+        white-space: normal;
+      }
+      .journey-stat-priority-group,
+      .journey-stat-priority-unit {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-width: 0;
+        max-width: 100%;
+      }
+      .journey-stat-priority-group { flex-wrap: wrap; }
+      .journey-stat-priority-item {
+        min-width: 0;
+        flex: 0 1 auto;
+        gap: 5px;
+        font-size: .88rem;
+      }
+      .journey-stat-priority-item strong {
+        min-width: 0;
+        overflow-wrap: anywhere;
+      }
       .journey-stat-priority-item img { width: 29px; height: 29px; flex-basis: 29px; }
       .journey-stat-priority-operator { min-width: 12px; font-size: 1rem; }
     }
@@ -11037,8 +11095,77 @@ function applyRequestedLayoutFixes() {
       flex: 0 0 auto;
       margin-inline: 0 !important;
     }
+
+    @media (max-width: 620px) {
+      html[lang="en"] .equipment-set-combination,
+      html[lang="ja"] .equipment-set-combination {
+        flex-wrap: wrap !important;
+      }
+      html[lang="en"] .equipment-set-joined,
+      html[lang="ja"] .equipment-set-joined,
+      html[lang="en"] .equipment-set-part,
+      html[lang="ja"] .equipment-set-part {
+        min-width: 0;
+        max-width: 100% !important;
+        flex: 0 1 auto;
+      }
+      html[lang="en"] .equipment-set-label,
+      html[lang="ja"] .equipment-set-label {
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+      }
+    }
   `;
   document.head.appendChild(style);
+}
+
+function installResponsiveNavigation() {
+  const header = document.querySelector(".topbar-inner");
+  const brand = header?.querySelector(".brand");
+  const actions = header?.querySelector(".topbar-actions");
+  const nav = header?.querySelector(".main-nav");
+  const context = document.createElement("canvas").getContext("2d");
+  if (!header || !brand || !actions || !nav || !context) return;
+
+  let scheduled = false;
+  const update = () => {
+    scheduled = false;
+    const style = getComputedStyle(header);
+    const buttons = [...nav.querySelectorAll(".nav-item")];
+    const navStyle = getComputedStyle(nav);
+    const navGap = parseFloat(navStyle.columnGap) || 0;
+    const inlinePadding = parseFloat(navStyle.getPropertyValue("--nav-inline-padding"));
+    const required = buttons.reduce((width, button) => {
+      const itemStyle = getComputedStyle(button);
+      context.font = `${itemStyle.fontWeight} ${itemStyle.fontSize} ${itemStyle.fontFamily}`;
+      const text = button.textContent.trim();
+      return width + context.measureText(text).width
+        + (parseFloat(itemStyle.letterSpacing) || 0) * text.length
+        + (Number.isFinite(inlinePadding) ? inlinePadding * 2
+          : parseFloat(itemStyle.paddingLeft) + parseFloat(itemStyle.paddingRight))
+        + parseFloat(itemStyle.borderLeftWidth) + parseFloat(itemStyle.borderRightWidth);
+    }, navGap * Math.max(0, buttons.length - 1));
+    const available = header.clientWidth
+      - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+      - brand.getBoundingClientRect().width - actions.getBoundingClientRect().width
+      - (parseFloat(style.columnGap) || 0) * 2;
+
+    header.classList.toggle("has-wrapped-nav",
+      matchMedia("(max-width: 620px)").matches && required > available - 1);
+    document.documentElement.style.setProperty("--site-header-height",
+      `${Math.ceil(header.getBoundingClientRect().height + 1)}px`);
+  };
+  const schedule = () => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(update);
+  };
+  const resize = new ResizeObserver(schedule);
+  [header, brand, actions, ...nav.querySelectorAll(".nav-item")].forEach((node) => resize.observe(node));
+  new MutationObserver(schedule).observe(nav, { subtree: true, childList: true, characterData: true });
+  window.addEventListener("resize", schedule);
+  document.fonts?.ready.then(schedule);
+  schedule();
 }
 
 
@@ -11210,6 +11337,7 @@ window.addEventListener("hashchange", syncFromHash);
 
 installSaviorListGuidance();
 applyRequestedLayoutFixes();
+installResponsiveNavigation();
 installArcanaCardStyles();
 renderList();
 
