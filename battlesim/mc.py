@@ -4926,10 +4926,12 @@ class Battle:
         info = getattr(owner.d, 'effect_info', {}).get(name, {})
         marker = eff.get('cast_marker') or bool(CHECK_NAME.search(name)) or '판별용' in name
         category = ('marker' if marker else info.get('category')) or ('debuff' if opp else 'buff')
-        if category == 'buff' and self.refuse_buff(x, name):
-            return     # 〈강화 불가〉: 새 강화 효과(갱신·합산 포함)는 거부(클라 버프 부여 함수 650줄)
-        resist = category == 'debuff' and not eff.get('ignore_resist')
         forced = self._forced(owner)
+        if category == 'buff' and self.refuse_buff(x, name):
+            if not forced:
+                return     # 〈강화 불가〉: 새 강화 효과(갱신·합산 포함)는 거부(클라 버프 부여 함수 650줄)
+            self.rule_hits['se_force_apply'] += 1   # CantGetMoreBuff 거부도 강제 적용이면 생략(NKM:4389 !OBF_8151)
+        resist = category == 'debuff' and not eff.get('ignore_resist')
         if (self.mc['immune_group_resist'] == 'client' and not resist and name in getattr(x.d, 'immune', ())
                 and not forced and not (eff.get('unique_enemy') and eff.get('ignore_resist'))):
             # 물폭탄류(unique_enemy+ignore_resist)는 SE 행 ForceApplyEffect 라 면역 목록도 통과(immune_force_apply 와 같은 식별).

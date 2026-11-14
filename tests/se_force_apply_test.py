@@ -65,6 +65,25 @@ def test_bellwether_force_data():
     assert ('특수기', raw['s'][502]['ef'][2]) in d.force_lines
 
 
+
+def _buff_banned(mode, forced):
+    """〈강화 불가〉(CantGetMoreBuff) 거부도 강제 적용이면 생략(NKM:4389 IsPositive && !OBF_8151)."""
+    b = battle([unit('a')], [unit('f')], mc={'se_force_apply': mode})
+    f = b.foes[0]
+    ln = Line('[스킬 사용 후] 자신에게 〈공격력 증가〉 (2턴 / 공격력% +10%)', '기본기', 'active')
+    f.d.force_lines = {(ln.slot, ln.raw)} if forced else set()
+    give(f, '강화 불가', harmful=True, dur=3)
+    ctx = Ctx(f, f, f.d.skills['기본기'])
+    ctx.target, ctx.targets = f, [f]
+    b.run_line(f, ln, ctx)
+    return f
+
+
+def test_forced_buff_passes_buff_ban_client():
+    assert '공격력 증가' in _buff_banned('client', True).eff
+    assert '공격력 증가' not in _buff_banned('client', False).eff
+    assert '공격력 증가' not in _buff_banned('off', True).eff
+
 if __name__ == '__main__':
     n = 0
     for k, fn in list(globals().items()):
