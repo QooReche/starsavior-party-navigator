@@ -605,6 +605,11 @@ class Unit:
         self.summoned = False        # 소환으로 생성된 유닛
         self.last_slot = None
         self.last_target = None
+        # 회피 거부(OBF_13659)용 클라 상태: 마지막으로 고른 스킬·대상(OBF_25698·OBF_10269 — 스폰 때만 비움, NKM:1927-1931·7256-7342)과
+        # 마지막 피격 결과가 회피인가(OBF_20548, 피격마다 덮어씀 NKM:2003·2861)
+        self.sel_skill = None
+        self.sel_target = None
+        self.hit_evaded = False
         self.extra_turn = False
         self.acting = False
         self.leader = leader
@@ -2266,6 +2271,7 @@ class Battle:
                 ctx.targets = self._preemptive_check(u, ctx.targets, ctx)
             ctx.target = ctx.targets[0] if ctx.targets else None
             ctx.dead_targets = {x for x in ctx.targets if x.dead}
+            u.sel_skill, u.sel_target = sk, ctx.target     # 클라 OBF_16608·OBF_2333(스킬·대상 선택) — 다음 선택까지 유지
             if self.timeline is not None:
                 t0 = ctx.targets[0] if ctx.targets else None
                 self.log(actor=u.name, side=u.side, pos=u.pos, skill=sk.slot + ('(추가)' if extra else ''), skill_name=sk.name,
@@ -2760,6 +2766,7 @@ class Battle:
         # 피격 직전 줄(대상·대상 아군)
         hctx = Ctx(v, a, sk, ctx.extra)
         hctx.target, hctx.targets, hctx.crit, hctx.hit_victim = v, [v], crit, v
+        v.hit_evaded = bool(evaded)      # 마지막 피격 결과(OBF_20548 = Evade/명중, NKM:2003·2861)
         if evaded:
             hctx.evaded.add(v)
         hctx.local = defaultdict(lambda: defaultdict(float))
@@ -4643,7 +4650,7 @@ class Battle:
     def _dispel_ok(self, owner, ctx, x, p, rest):
         if p < 1.0 and self.R(owner.side).random() >= p:
             return False
-        if x.side != owner.side and ctx is not None and x in ctx.evaded and self.mc['dispel_evade'] == 'client':
+        if ctx is not None and self.mc['dispel_evade'] == 'client' and self._evade_rejects(owner, x, ctx):
             # 해제도 버프 부여라 공통 부여 검사(OBF_32436)의 회피 거부(OBF_13659)를 먼저 탄다: 이번 시전을 회피한 적 대상은
             # HIT·SKILL_END 줄의 효과를 받지 않는다(강제 적용만 예외, NKM:4323-4327·4540-4566).
             self.rule_hits['dispel_evade'] += 1
@@ -4988,14 +4995,39 @@ class Battle:
         if ctx is None or x is owner or x.side == owner.side:
             return False
         ln = self._cur_line
-        if ln is not None and line_kind(ln) in self._EVADE_FREE_KINDS:
+        if ln is not None and line_kind(ln) in Battle._EVADE_FREE_KINDS:
             return False
         return True
+
+    def _evade_rejects(self, owner, x, ctx):
+        """클라 회피 거부 OBF_13659(NKM:4540-4566) 전체: 효과 쪽 조건(_evade_gate)에 더해 시전자 스킬로 판정한다 —
+        시전자의 지금 스킬(OBF_5963 = 마지막으로 고른 스킬, 고른 적 없으면 null → 거부 없음)이 적 단일·반응 대상(적)이면
+        시전자가 고른 대상(OBF_35462)이 x 이고 x 의 마지막 피격이 회피일 때(4559), 적 전체면 x 의 마지막 피격이 회피일 때(4564).
+        그 밖(자신·아군 대상 스킬)은 거부 없음. 줄 주인이 지금 시전 중이면(ctx.src) 그 시전의 스킬·첫 대상을, 아니면(다른 아군의
+        «아군 공격 후» 줄·피격 반응 등) 그 유닛이 마지막으로 고른 스킬·대상을 쓴다. 회피 여부는 이번 시전에서 맞았으면 이번 결과,
+        안 맞았으면 마지막 피격 결과(엔진 x.hit_evaded)."""
+        if not self._evade_gate(owner, x, ctx):
+            return False
+        if ctx.src is owner:
+            sk, tgt = ctx.skill, (ctx.targets[0] if ctx.targets else None)
+        else:
+            sk, tgt = owner.sel_skill, owner.sel_target
+        if sk is None:
+            return False
+        ev = x in ctx.evaded or (x not in ctx.hit_targets and x.hit_evaded)
+        if not ev:
+            return False
+        tg = sk.tg or ''
+        if sk.all or tg == '적 전체':
+            return True
+        if tg in ('적 단일', '반응 대상(적)'):
+            return tgt is x
+        return False
 
     def _harm_evaded(self, x, ctx):
         """행동 게이지 감소·쿨타임 증가(비양성 IsBuff=false 버프, BUFF_TEMPLET 2502·2504-2506 강제 아님)도 공통 부여 검사를 탄다:
         이번 시전을 회피한 적 대상은 거부(OBF_13659, NKM:4323-4327·4540-4566). 규칙 mc.gauge_cd_immune."""
-        if self.mc['gauge_cd_immune'] == 'client' and ctx is not None and x in ctx.evaded:
+        if self.mc['gauge_cd_immune'] == 'client' and ctx is not None and self._evade_rejects(ctx.owner, x, ctx):
             self.rule_hits['gauge_cd_immune'] += 1
             return True
         return False
@@ -5076,10 +5108,11 @@ class Battle:
         # 회피 거부(OBF_13659)는 저항 판정과 별개라 효과 저항 무시 약화에도 적용(NKM:4323-4327·4540-4566, 강제만 예외).
         # 물폭탄류(unique_enemy+ignore_resist)는 SE 강제라 제외. 규칙 mc.evade_ignore_resist(legacy = 저항 대상 약화만).
         if self.mc['evade_ignore_resist'] == 'client':
-            evade_chk = self._evade_gate(owner, x, ctx) and not (eff.get('unique_enemy') and eff.get('ignore_resist'))
+            evaded = (ctx is not None and self._evade_rejects(owner, x, ctx)
+                      and not (eff.get('unique_enemy') and eff.get('ignore_resist')))
         else:
-            evade_chk = resist
-        if evade_chk and ctx is not None and x in ctx.evaded:
+            evaded = resist and ctx is not None and x in ctx.evaded
+        if evaded:
             if not resist and not forced:
                 self.rule_hits['evade_ignore_resist'] += 1
             if forced:

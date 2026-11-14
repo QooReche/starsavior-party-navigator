@@ -24,12 +24,12 @@ def _case(mode, evaded):
     buff = Eff('공격력 증가', {'atkp': 0.2}, 1, 3, None, False)
     buff.stacks = 1
     owner = NS(side=0, name='o')
-    x = U(side=1, name='x', eff={buff.name: buff})
-    ctx = NS(evaded={x} if evaded else set())
+    x = U(side=1, name='x', eff={buff.name: buff}, hit_evaded=False)
+    ctx = NS(evaded={x} if evaded else set(), src=owner, skill=NS(tg='적 단일', all=False), targets=[x], hit_targets=[])
     b = NS(mc=dict(MC_OPTS, dispel_evade=mode), rule_hits=defaultdict(int), dirty=lambda u: None,
            R=lambda side: random.Random(1), _fired=lambda u: None, log=lambda **k: None,
-           resolve=lambda o, expr, c, kind=None: [x], roll_hit=lambda *a: True)
-    for f in ('_dispel_ok', '_dispel_shield_ok', '_dispel_n_ordered'):
+           resolve=lambda o, expr, c, kind=None: [x], roll_hit=lambda *a: True, _cur_line=None)
+    for f in ('_dispel_ok', '_dispel_shield_ok', '_dispel_n_ordered', '_evade_rejects', '_evade_gate'):
         setattr(b, f, (lambda g: (lambda *a: g(b, *a)))(getattr(Battle, f)))
     Battle.run_special(b, owner, NS(raw=''), ctx, '스킬 대상에게 〈버프 해제〉 (강화효과 해제) {효과 적중 판정}')
     return x, b

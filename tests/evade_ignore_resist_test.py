@@ -89,6 +89,58 @@ def test_forced_marker_passes():
     assert '잔멸의 가시' in a.eff
 
 
+def _side(mode='client', sel=None, sel_target='a', hit_evaded=True, in_ctx=False, hit=False, tg_src='적 단일'):
+    """줄 주인(f2)이 지금 시전자(f)가 아닌 경우 — 다른 아군의 «아군 공격 후» 줄·피격 반응 등. 클라는 그 유닛이 마지막으로 고른
+    스킬(OBF_5963)·대상(OBF_35462)과 x 의 마지막 피격 결과(OBF_20548)로 판정(NKM:4542·4559·4564)."""
+    b = battle([unit('a'), unit('a2')], [unit('f'), unit('f2', skills=[dict(slot='기본기', dm=100), dict(slot='궁극기', dm=100, all=True),
+                                                                         dict(slot='특수기', dm=0, tg='자신')])],
+               mc={'evade_ignore_resist': mode})
+    a, f, f2 = b.allies[0], b.foes[0], b.foes[1]
+    sk = {'single': f2.d.skills['기본기'], 'all': f2.d.skills['궁극기'], 'self': f2.d.skills['특수기'], None: None}[sel]
+    f2.sel_skill, f2.sel_target = sk, {'a': a, 'a2': b.allies[1]}[sel_target]
+    a.hit_evaded = hit_evaded
+    ctx = Ctx(f2, f, f.d.skills['기본기'])
+    ctx.target, ctx.targets = a, [a]
+    if in_ctx:
+        ctx.evaded.add(a)
+    if hit:
+        ctx.hit_targets.append(a)
+    b._cur_line = Line('[스킬 사용 후] (조건: 아군 공격 후) 스킬 대상에게 〈출혈〉 (2턴)', '기본기', 'active')
+    eff = dict(kind='buff', target='', name='출혈', chance=1.0, dur=2, props={}, max=None, times=1, judge=False,
+               ignore_resist=True, dot=('atk', 0.1))
+    b.add_effect(f2, a, eff, ctx)
+    return '출혈' not in a.eff
+
+
+def test_side_owner_never_selected_no_block():
+    assert not _side(sel=None, in_ctx=True)                        # OBF_5963 null → 거부 없음(4542)
+
+
+def test_side_owner_single_target_rule():
+    assert _side(sel='single', sel_target='a')                       # 고른 대상 = x, x 마지막 피격 회피(4559)
+    assert not _side(sel='single', sel_target='a2')                  # 고른 대상이 다르면 거부 없음
+    assert not _side(sel='single', sel_target='a', hit_evaded=False)
+
+
+def test_side_owner_all_and_self_skill():
+    assert _side(sel='all', sel_target='a2')                         # 적 전체 스킬: x 마지막 피격 회피면 거부(4564)
+    assert not _side(sel='self')                                     # 자신 대상 스킬: 거부 없음
+    assert not _side(sel='all', mode='off')                          # legacy 는 저항 대상 약화·ctx.evaded 만
+
+
+def test_this_cast_result_overrides_stale():
+    assert not _side(sel='all', hit=True, hit_evaded=True)           # 이번 시전에 맞았고 회피 안 했으면 옛 회피 기록 무시
+    assert _side(sel='all', hit=True, in_ctx=True, hit_evaded=False)
+
+
+def test_strike_records_last_hit_result():
+    b = battle([unit('a')], [unit('f')])
+    a, f = b.allies[0], b.foes[0]
+    a.hit_evaded = True
+    b.cast(f, f.d.skills['기본기'], target=a)                        # 회피 0 → 명중
+    assert a.hit_evaded is False and f.sel_skill is f.d.skills['기본기'] and f.sel_target is a
+
+
 if __name__ == '__main__':
     n = 0
     for k, fn in list(globals().items()):
