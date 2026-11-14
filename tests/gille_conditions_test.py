@@ -137,7 +137,7 @@ class GillePromotionTest(unittest.TestCase):
             return result
         with patch.object(Battle, 'cast', record):
             r = simulate(dict(units=team, leader=0), dict(stage='clo/태양 회랑/FLOOR 200'),
-                         dict(build='standard', n_runs=1, seed=7))
+                         dict(build='standard', n_runs=1, seed=7, rules_override={'turn_gauge': 'float'}))   # 장면 고정(seed 7 판의 행동 순서)
         self.assertGreater(r['outcome']['progress'], 0)
         self.assertGreaterEqual(len(seen), 2)
         self.assertGreater(seen[0][0], 0)

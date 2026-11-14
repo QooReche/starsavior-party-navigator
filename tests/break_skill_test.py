@@ -22,7 +22,8 @@ OMEGA, MATRIX = '오메가 프로토콜', '치트 매트릭스'
 
 
 # 공식 단위 시험은 옛 계수(레벨 가산 없음·DamageScale 제외)로 고정하고, 레벨·배율은 BreakLevelScaleTest 가 따로 본다
-LEGACY_SCALE = dict(break_skill_level='off', break_skill_scale='off')
+LEGACY_SCALE = dict(break_skill_level='off', break_skill_scale='off',
+                    turn_gauge='float')   # 같은 속도 아군·보스 장면의 행동 순서 고정(turn_gauge=client 면 우선순위 난수로 갈림)
 
 
 def setup(bs=CUBE, mc=None, roles=('스트라이커',), **kw):

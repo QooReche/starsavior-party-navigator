@@ -218,7 +218,7 @@ if __name__ == '__main__':
         print('Legacy-start mutation detected:', caught)
         sys.exit(0 if caught else 1)
     if '--mutations' in sys.argv:
-        def capped(self, u, value):
+        def capped(self, u, value, **kw):
             u.gauge = min(10000.0, max(0.0, value))
         with patch.object(Battle, 'set_gauge', capped):
             result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromTestCase(GaugeTest))

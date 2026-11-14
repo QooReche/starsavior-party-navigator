@@ -12,7 +12,7 @@ STAT_MODES = {
     'rank': (0.1, 0.0),      # 랭크전(PvP): 성장 능력치 10%만
 }
 
-def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, gear_order=None, journey=None):
+def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, gear_order=None, journey=None, stage_out=None):
     """gear(확장 훅): 정수 {'atk','hp','def','spd','cr','cd','eh','er'}(cr/cd/eh/er 은 1/10000) + 비율 {'atkP','hpP','defP','spdP'}(1/10000).
     gear_order(기본 = rules 의 gear_order): 'databook' = floor(((기본+레벨)x(1+공명%)+공명 정수) x (1+각인%+장비%) + 장비 정수),
     'legacy' = 각인%만 곱해 버림한 뒤 장비 정수를 더함(장비%는 이 함수가 아니라 UnitDef.gear_atkp 로 전투 중 곱함).
@@ -52,6 +52,7 @@ def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, 
                 rf[k] += v
     starP = sum(next((x[1] for x in sts if x[0] == 'atkP'), 0) for _, sts in ST['star'][:star])
     out = {}
+    stage = {}
     for k in ('hp', 'atk', 'def', 'spd'):
         main = k != 'spd'
         sc1 = s1 * 1.0 if main else 1.0
@@ -65,6 +66,8 @@ def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, 
         if new_order:
             # ⓓ(% 합: 각인% + 장비%)을 한 번 곱하고 ⓑ(장비 정수)를 더한 뒤 버림. 장비가 없으면 교정 전과 같은 연산이 된다.
             gp = gear.get(k + 'P', 0)
+            # 전투 중 단 구성(mc.stat_stage)용: 1단 값·2단 비율·2단 고정(NKM:18874-18891 — 2단 % 는 패시브 스킬 능력치와 한 합)
+            stage[k] = (v, ((starP if main else 0) + gp) * 1e-4, gear.get(k, 0))
             if gp:
                 v = v + v * ((starP if main else 0) + gp) * 1e-4
             elif main:
@@ -87,4 +90,6 @@ def calc_stats(db, u, level=200, res_stage=10, star=0, mode='fixed', gear=None, 
     if gear.get('vampirism'):
         out['vampirism'] = math.floor(gear['vampirism'])
     out['_template'] = sid
+    if stage_out is not None:
+        stage_out.update(stage)   # 전투 중 단 구성(mc.stat_stage)용 — 능력치 dict 에는 넣지 않음
     return out

@@ -183,9 +183,9 @@ def measure(stage, runs, seed, myinfo, override=None):
         row['cd_after'] = dict(u.cd)
         record(b, 'action', **row)
 
-    def gauge(b, u, value):
+    def gauge(b, u, value, **kw):
         old = u.gauge
-        originals['set_gauge'](b, u, value)
+        originals['set_gauge'](b, u, value, **kw)   # keep_frac(turn_gauge=client 라운드 분할) 그대로 전달
         delta = u.gauge - old
         if abs(delta) < 1e-8:
             return

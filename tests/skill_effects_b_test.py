@@ -195,7 +195,8 @@ class CeresTest(unittest.TestCase):
         self.assertEqual(u.stack('점화'), 0)
 
     def test_live_debuff(self):
-        r = measured(['emily', 'waltz-asherah', 'hilde', 'ceres-sun-supporter'], 'clo/달 회랑/FLOOR 100')
+        # turn_gauge=client(11/15) 뒤 2판에선 약화 줄이 안 나와 판 수를 늘림(12판 10회 — 경로 자체는 그대로)
+        r = measured(['emily', 'waltz-asherah', 'hilde', 'ceres-sun-supporter'], 'clo/달 회랑/FLOOR 100', runs=12)
         self.assertGreater(r['outcome']['progress'], 0)
         self.assertGreater(r['counts'].get('debuff_lines', 0), 0, r)
 

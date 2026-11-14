@@ -48,7 +48,8 @@ def battle_rows(static):
         for r in json.loads(p.read_text(encoding='utf-8'))['Data']:
             fn = (r.get('BattleTempletFileName') or '').replace('.txt', '.json')
             if fn:
-                out[r['BattleStrID']] = (Path(static) / 'tables' / 'BattleScript' / fn, str(r.get('BattlePower')), str(r.get('BattleLevel')))
+                out[r['BattleStrID']] = (Path(static) / 'tables' / 'BattleScript' / fn, str(r.get('BattlePower')), str(r.get('BattleLevel')),
+                                         r.get('DeckSlotMax') or 'BATTLE_SLOT_4')
     return out
 
 
@@ -116,8 +117,9 @@ def candidates(ck, tab, name, i_tab, i_stage, rows=()):
     return []
 
 
-def build(static, sids=None):
-    """-> (stages, why). sids 에 dict 를 주면 연결된 스테이지마다 「콘텐츠|탭|스테이지」 -> 게임 BattleStrID 를 채운다(tools/build_sudden_death)"""
+def build(static, sids=None, slots=None, decks=None):
+    """-> (stages, why). slots·decks 에 dict 를 주면 연결된 스테이지마다 웨이브별 SpawnPosIndex 목록·DeckSlotMax(4 가 아닐 때만)를 채운다.
+    sids 에 dict 를 주면 연결된 스테이지마다 「콘텐츠|탭|스테이지」 -> 게임 BattleStrID 를 채운다(tools/build_sudden_death)"""
     raw = F.load_foe(str(ROOT))
     rows = battle_rows(static)
     stages, why = {}, Counter()
@@ -151,6 +153,10 @@ def build(static, sids=None):
                     why['배치 불일치:' + ck] += 1
                     continue
                 stages['%s|%s|%s' % (ck, t['t'], s['n'])] = hit
+                if slots is not None:
+                    slots['%s|%s|%s' % (ck, t['t'], s['n'])] = [[u.get('SpawnPosIndex') for u in x] for x in lists]
+                if decks is not None and row[3] != 'BATTLE_SLOT_4':
+                    decks['%s|%s|%s' % (ck, t['t'], s['n'])] = row[3]
                 if sids is not None:
                     sids['%s|%s|%s' % (ck, t['t'], s['n'])] = sid
                 why['연결:' + ck] += 1
@@ -166,12 +172,15 @@ def main():
     except ValueError as ex:
         ap.error(str(ex))
     low_priority()
-    stages, why = build(static)
+    slots, decks = {}, {}
+    stages, why = build(static, slots=slots, decks=decks)
     out = dict(_note='적 시작 쿨 표시(tools/build_foe_spawn.py). 칸마다 A=모든 스킬 0, S=특수기만 0, H=궁극기만 0, '
                      'B=특수기·궁극기 0, N=모두 가득. 없는 스테이지는 엔진이 등급 규칙(보스 S, 그 밖 A)으로 대신함.',
-               stages=dict(sorted(stages.items())))
+               stages=dict(sorted(stages.items())),
+               _note_slots='slots = 웨이브별 칸마다 게임 SpawnPosIndex(BattleScript). deck = DeckSlotMax 가 BATTLE_SLOT_4 가 아닌 스테이지만(전열 칸 판정이 다름, NKM:616-625).',
+               slots=dict(sorted(slots.items())), deck=dict(sorted(decks.items())))
     atomic_text(ROOT / 'data' / 'foe_spawn.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
-    print('foe_spawn.json: 스테이지', len(stages), dict(sorted(why.items())))
+    print('foe_spawn.json: 스테이지', len(stages), dict(sorted(why.items())), 'deck≠4', len(decks), dict(sorted(__import__("collections").Counter(decks.values()).items())))
 
 
 if __name__ == '__main__':

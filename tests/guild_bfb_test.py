@@ -388,7 +388,8 @@ def test_boss_nv_sum():
     got, good = {}, {}
     for mode in ('stage', 'client', 'bake'):
         for level in (0, 7, 8, 9):
-            b, _ = battle(level=level, mc={'guild_boss_nv_sum': mode})
+            # bake 는 옛 근사(실수 결과)라 전역 정수화·단 구성(stat_floor·stat_stage, 2026-11-15)도 옛 값으로 둠
+            b, _ = battle(level=level, mc=dict({'guild_boss_nv_sum': mode}, **({'stat_floor': 'float', 'stat_stage': 'add'} if mode == 'bake' else {})))
             boss = to_boss(b)
             got[(mode, level)] = (boss.spd(), b.atk_stat(boss))
             good[(mode, level)] = boss.n_good()

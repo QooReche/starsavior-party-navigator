@@ -171,6 +171,7 @@ class DrainSpeedTest(unittest.TestCase):
                 b.gb._put(boss, C.ERO, {'속도%': 1}, maxs=35, add=n)
                 self.assertEqual(boss.spd(), math.floor(180 * (1 + n / 100 + (.3 if level == 9 else 0)) + 1e-9))
             b.mc['cosmo_speed_floor'] = False
+            b.mc['stat_floor'] = 'float'     # 전역 최종 속도 정수화(stat_floor=client)도 꺼야 cosmo_speed_floor 의 효과가 보임
             b.gb._set_stacks(boss, C.ERO, 34)
             self.assertAlmostEqual(boss.spd(), 180 * (1.34 + (.3 if level == 9 else 0)))
 

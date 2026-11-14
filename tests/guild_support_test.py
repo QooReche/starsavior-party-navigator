@@ -62,10 +62,10 @@ def test_gust_gauge():
     from battlesim import mc
     orig = mc.Battle.set_gauge
 
-    def spy(self, u, value):
+    def spy(self, u, value, **kw):
         if self.gb is not None and self.gb.support == 'gust':
             calls.append((u.name, value - u.gauge))
-        return orig(self, u, value)
+        return orig(self, u, value, **kw)
 
     mc.Battle.set_gauge = spy
     try:

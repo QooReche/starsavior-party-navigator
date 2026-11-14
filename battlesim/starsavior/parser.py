@@ -379,7 +379,8 @@ class UnitDef:
         self.u = u
         self.id, self.variant, self.name = u['id'], u['v'], u['n']
         self.role, self.element, self.grade, self.attack_kind = u['r'], u['a'], u['g'], u['k']
-        self.stats = calc_stats(db, u, level, res_stage, star, mode, gear)
+        self.stat_stage = {}
+        self.stats = calc_stats(db, u, level, res_stage, star, mode, gear, stage_out=self.stat_stage)
         self.build = None
         self.skills = {}          # slot -> Skill (활성)
         self.trigger_skills = {}
@@ -426,7 +427,8 @@ class UnitDef:
             gear2 = dict(gear or {})
             for k, v in bd['gear'].items():
                 gear2[k] = gear2.get(k, 0) + v
-            self.stats = calc_stats(db, u, level, res_stage, star, mode, gear2, journey=bd['journey'])
+            self.stat_stage = {}
+            self.stats = calc_stats(db, u, level, res_stage, star, mode, gear2, journey=bd['journey'], stage_out=self.stat_stage)
             self.stats['sa'] = self.stats['sa'] + bd['sa_bonus']
             for raw in bd['pot_lines']:
                 ln = Line(raw, '잠재력', 'passive')

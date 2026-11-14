@@ -234,7 +234,8 @@ class ShieldTest(unittest.TestCase):
             return result
 
         with patch.object(Battle, '_act_turn', watch_act):
-            result, battles = run_stage('keep', 40, shield_tick='turn_end')
+            # turn_gauge=client 면 행동 순서가 바뀌어 이 편성·판 수에서 흡수 장면이 안 생김 → 장면 고정용으로 float(시험 대상 경로는 그대로)
+            result, battles = run_stage('keep', 40, shield_tick='turn_end', turn_gauge='float')
         self.assertGreater(result['outcome']['progress'], 0)
         self.assertGreater(sum(b.rule_hits['shield_owner_absorb'] for b in battles), 0)
         self.assertGreater(boundaries['start'], 0)

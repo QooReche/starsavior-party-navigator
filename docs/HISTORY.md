@@ -1,3 +1,29 @@
+## 2026-11-15 클라 대조 후속 — 적 쪽 수호자 동률·능력치 단 구성·속도 정수화·행동 게이지
+
+앞 절(11/14 공허절멸자 대조)의 남은 위험 3건을 클라(build 26610546)로 끝냄. 모두 규칙 스위치, 기본 = 클라.
+
+- 적 쪽 수호자 동률(`guard_tie` 확장): 전열 판정은 칸 번호만 봄(OBF_29042 :13247-13253 기본 칸 1·2, BattleHostSingle :616-625 는 DeckSlotMax 1~3). DeckSlotMax 는 전투 표 필드(Star.Templets:8769·9003, 기본 BATTLE_SLOT_4)이고 엔진 연결 스테이지 4,141개는 모두 4.
+  - `tools/build_foe_spawn.py` 가 배치의 SpawnPosIndex(웨이브별 칸)와 4 가 아닌 DeckSlotMax 를 `data/foe_spawn.json` 의 `slots`·`deck` 에 같이 씀. `foe.stage_waves` 가 `game_slot`·`game_deck` 으로 붙임(소환 스테이지는 소환 칸). 기존 `d.slot`(소환 추적) 은 그대로.
+  - 예: 성간 회랑 485 2웨이브 = 칸 0·2·4 → 동률이면 칸 2(공허절멸자, 전열).
+  - 칸을 모르는 후보(사용자 정의 적 등)가 있으면 먼저 본 쪽. 1~3칸 덱의 아군 칸 배치는 엔진에 없어 그때 아군은 먼저 본 쪽(연결 스테이지 0개).
+- 능력치 단 구성(새 규칙 `stat_stage`, legacy add): OBF_16891(:18783-18905)은 1단(기본·레벨·스테이지 AddStat) → 2단(패시브 스킬 능력치 25577·11550, 장비 30723 등 % 합 + 고정) → 3단(버프 6433 등 % 합 + 고정)을 단마다 곱함. 엔진은 패시브·장비·버프 % 를 한 합으로 더해 왔음(패시브 20% + 버프 30% → 1.5배, 클라 1.56배).
+  - 공격력·방어력·속도(spd) 모두 client 에서 단별 곱, 3단 비율은 만분율 정수 합 x 0.0001. 대상 선택의 공격력 비교(live_atk)도 같은 값. 최대 생명력·길드 방어전 보스는 원래 단별 곱.
+  - 버프 표(BUFF_TEMPLET)의 공격력·방어력·속도 증감은 NST_NV_RATE_* (3단) — 예 BI_ATTACK_INCREASE NV_RATE_ATK 3000.
+  - 2단 % 합: 클라는 각인(별)·장비 % 와 패시브 스킬 능력치 % 를 한 합으로 곱함(OBF_25866 27470·30723·25577/11550 → :18874-18891). 표준 육성(calc_stats, gear_order=databook)은 각인/장비 % 를 전투 전 능력치에 굳혀 버림 → `calc_stats` 가 1단 값·각인/장비 %·장비 정수를 UnitDef `stat_stage` 에 남기고, client 단 구성은 그 값으로 2단을 다시 만듦(전투 전 능력치가 그 값으로 재현될 때만 — 내정보 덮어쓰기 등 다른 경로는 전투 전 능력치 x (1 + 패시브 %) 근사).
+  - 출처 확인: 1단 = 기본·레벨(24896·29688·21019)·여정(15282 JourneyStat)·공명 성장(34022)·스테이지 AddStat(16820·23438), 2단 = 별/각인(27470)·25745·장비(30723 주·부 옵션·세트)·호감도(8222 FavorLevel)·패시브 스킬(25577·11550), 3단 = 버프(6433)·7967·0978. 엔진 [상시] 「능력치:」 줄 = 패시브 스킬 능력치(2단), 전투 시작 버프 = 3단.
+  - 내정보 경로(myinfo_stats.final_stats)는 전투 전 능력치를 2단까지 계산해 버림한 값이라 3단 곱의 앞 단 소수가 빠짐(능력치 1 미만).
+  - 11/14 커밋의 stat_floor=client 경로는 공격력·방어력을 이미 단별 곱으로 계산하고 있었음(정수화와 단 구성이 한 규칙에 섞임) → 이번에 단 구성을 `stat_stage` 로 떼어 냄.
+- 속도 정수화(`stat_floor` 확장): 최종 속도도 (int)Math.Floor(:18897). 리더 +10(LeaderBattleEffectIdList 9000001 = NST_TURN_SPEED +10 고정)은 정수라 순서 무관.
+- 행동 게이지(새 규칙 `turn_gauge`, legacy float): TurnSpeedCalculator(:12286-12431) — 누가 100% 이상이면 게이지를 안 올리고, 아니면 최소 틱만큼 유닛마다 (int)(속도 x 틱)을 더함. 행동 유닛 = 정렬 1위(추가 턴 > 게이지 > 속도 > 등장 때 굴린 우선순위 RandomGenerator.Next(10000) :1962). 엔진은 실수 게이지·동률 아군 먼저였음.
+  - 우선순위는 유닛 등장 때 전용 난수로 굴림. 전용 난수의 씨앗은 주 난수 상태를 읽기만 해서 만듦(소비하지 않아 치명·대상 선택 등 다른 결정의 난수 흐름은 legacy 와 같음; legacy 면 아예 안 굴림). 첫 턴 속도 난수(x0.975~1.025)는 OBF_24405(PvP) 전용이라 뺌. 확정 턴(NextTurnCatch)은 엔진에 그 효과가 없어 뺌.
+  - 게이지 저장도 정수(set_gauge, 클라 :5113-5115 (int) 변환 뒤 저장).
+  - 독립 리뷰(codex 1회) 반영: ① blocking — break_skill_cd_unit=round 의 라운드 경계 분할마다 절삭하면 소수를 잃음(속도 101: 101→100) → 경계 구간은 실수로 쌓고 다음 행동까지의 전체 구간에서 한 번만 절삭. ② 우선순위를 처음 정렬 때가 아니라 등장 때 굴림. ③ set_gauge 정수 저장. ④ 시험 보강(run 루프로 라운드 분할·100% 이상 증가 없음·정수 저장·등장 우선순위, 예외 삼킴 제거).
+  - 남긴 것: 기대값 엔진(engine.py)은 가산식·실수 게이지 그대로(확률 엔진만 클라 대조 대상).
+- 시험: `tests/stat_turn_1115_test.py`(2단 각인/장비·패시브 % 한 합·값이 바뀌면 근사, 적 칸 전열 우선·전열끼리 앞 칸·칸 모름·덱 칸 수별 전열, 단별 곱 공격력·방어력·속도, 속도 정수화, 게이지 정수 증가·100% 이상 증가 없음·정수 저장·라운드 분할 한 번 절삭·등장 우선순위 동률). 각 분기를 끄면 실패 확인. `mc_cache_test` _KEEP·`heal_burst_test` 옛 해시에 새 규칙 legacy.
+  - 기존 시험 조정(결함 가림 아님 — 판 번호·같은 속도로 고른 장면이 행동 순서 변화로 안 생김): `break_skill_test`(LEGACY_SCALE 에 turn_gauge=float), `external_rules_c_test.test_standard_owner_absorption_path`·`gille_conditions_test.test_standard_battle_reaches_both_steps`(turn_gauge=float), `target_conditions_test.test_real_reproductions_execute_effects`(새 규칙 셋 legacy). 옛 근사값을 보는 `guild_bfb_test` bake·`belgras_client_test` cosmo_speed_floor=False 확인은 stat_floor(·stat_stage)=옛 값.
+  - 드문 사건 시험은 범위만 넓힘(경로는 그대로 탐 확인): `skill_effects_b_test.CeresTest.test_live_debuff` 2→12판(12판 10회), `web_test` 루나 치명 피격 반응 판 번호 1~40→1~160(41~160 에서 8회). `tools/boss_action_diagnostic.py`·`guild_support_test`·`boss_recheck_test` 의 set_gauge 감싸개는 keep_frac 인자를 넘김.
+- 영향: 골든 65/150/10 일치. 빠른 계산 재보정(일치 0.910). guild_sim 은 시즌 미오픈이라 도장 ack.
+
 ## 2026-11-14 성간 회랑 485 공허절멸자 피해 클라 대조 — 능력치 정수화·연쇄 피해 정수화·연쇄 수호 분담·수호자 동률 · power_penalty 근거 보탬
 
 - 계기: 영상 대조에서 공허절멸자 «학습된 전투 기술» 이 힐데에게 주는 피해가 엔진 28~33k 로 보였음. 클라 식으로 항마다 맞춰 봄(build 26610546).

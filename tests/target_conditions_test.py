@@ -156,7 +156,8 @@ class TargetConditionsTest(unittest.TestCase):
             with patch.object(Battle, '_exec_line', record):
                 r = simulate(dict(units=['dana', 'lydia', 'frey', 'hilde'], leader=0),
                              dict(stage=f'clo/태양 회랑/FLOOR {floor}'),
-                             dict(build='standard', n_runs=1, seed=seed))
+                             dict(build='standard', n_runs=1, seed=seed,
+                                  rules_override={'turn_gauge': 'float', 'stat_stage': 'add', 'stat_floor': 'float'}))   # 판 번호로 고른 장면 고정(2026-11-15 규칙 전 행동 순서)
             self.assertGreater(r['prog_runs'][0], 0)
             self.assertTrue(hits, (key, effect))
 

@@ -614,6 +614,9 @@ class Unit:
         self.acting = False
         self.leader = leader
         self.actions = 0
+        self._g0, self._gacc = None, 0.0     # turn_gauge=client 라운드 분할 구간의 실수 증가분
+        # turn_gauge=client 행동 우선순위: 등장 처리에서 굴림(NKM:1962). 그 밖에는 처음 정렬 때 굴림(_turn_key)
+        self._turn_prio = b._roll_prio() if b.mc.get('turn_gauge') == 'client' else None
         self.cast_count = defaultdict(int)
         self.dmg = 0.0
         self.taken = 0.0
@@ -701,8 +704,16 @@ class Unit:
         if st1 is not None:
             # 길방 보스 stage: floor(((기본×(1+1단))×(1+2단) + 2단 고정)×(1+3단) + 3단 고정) (NKM:18266-18293)
             s = math.floor((self.d.spd_base * (1 + st1['spdp']) * (1 + p['spdp']) + p['spdf']) * (1 + m['spdp']) + m['spdf'] + 1e-9)
+        elif self.b.mc['stat_stage'] == 'client':
+            # NKM:18874-18897: 2단(패시브 % + 고정) 뒤 3단(버프 % 만분율 정수 합 x 0.0001 + 고정)을 따로 곱함
+            s2 = self.b._stage2(self, 'spd', p['spdp'], p['spdf']) if self.d.stats.get('spd') == self.d.spd_base                 else self.d.spd_base * (1 + p['spdp']) + p['spdf']
+            s = s2 + s2 * (round(m['spdp'] * 10000) * 0.0001) + m['spdf']
+            if self.b.mc['stat_floor'] == 'client':
+                s = math.floor(s)      # 최종 속도 (int)Math.Floor(:18897). 리더 +10 은 정수 고정값이라 순서 무관
         else:
             s = self.d.spd_base * (1 + m['spdp'] + p['spdp']) + m['spdf'] + p['spdf']
+            if self.b.mc['stat_floor'] == 'client':
+                s = math.floor(s)
         if st1 is None and getattr(self.d, 'bfb', None) and self.b.mc['guild_boss_nv_sum'] == 'client':
             s = math.floor(s + 1e-9)       # 클라 최종 스탯 (int)Math.Floor (NKM:18268-18280)
         if self.leader:
@@ -837,6 +848,7 @@ class Battle:
         # 공통 난수(선택): 아군 쪽(0)·적 쪽(1) 결정에 서로 다른 흐름을 쓴다. 같은 판 번호면 적의 대상 선택·치명 등이
         # 아군 행동 수와 무관하게 같은 순서로 나와 팀끼리 비교할 때 운의 차이가 줄어든다(예선 전용, 기본 꺼짐)
         self._rs = None
+        self._prio_rng = None        # turn_gauge=client 유닛 우선순위 전용 난수(처음 쓸 때 만듦 — legacy 흐름 불변)
         if rng_streams:
             base = rng.getrandbits(64)
             self._rs = (random.Random(base * 2 + 1), random.Random(base * 2 + 2))
@@ -1195,8 +1207,26 @@ class Battle:
             if self.t + bt > horizon + 1e-9:
                 self.result = 'timeout'
                 break
-            for x in living:
-                self.set_gauge(x, x.gauge + x.spd() * bt)
+            if self.mc['turn_gauge'] == 'client':
+                # NKM:12290-12317,12415-12431(TurnSpeedCalculator): 누가 100% 이상이면 게이지를 안 올리고, 아니면 최소 틱만큼
+                # 유닛마다 (int)(속도 x 틱)을 더함(정수 절삭). 행동 유닛 = 정렬 1위(추가 턴 > 게이지 > 속도 > 전투 시작 때 굴린 우선순위)
+                # 브레이크 라운드 경계로 나눈 구간(round_tick)은 클라에 없는 분할이라 소수를 잃지 않게 실수로 쌓아 두고,
+                # 다음 행동까지의 전체 구간이 끝날 때 한 번만 절삭(_g0 = 구간 시작 게이지, _gacc = 쌓인 실수 증가분)
+                if not any(x.gauge >= 10000 for x in living):
+                    for x in living:
+                        if bt > 0:
+                            if x._g0 is None:
+                                x._g0, x._gacc = x.gauge, 0.0
+                            x._gacc += x.spd() * bt
+                            self.set_gauge(x, x._g0 + (x._gacc if round_tick else int(x._gacc)), keep_frac=round_tick)
+                if not round_tick:
+                    for x in living:
+                        x._g0 = None
+                    best = min(living, key=self._turn_key)
+                    self.rule_hits['turn_gauge'] += 1
+            else:
+                for x in living:
+                    self.set_gauge(x, x.gauge + x.spd() * bt)
             self.t += bt
             if round_tick:
                 self._break_round += 1
@@ -1233,7 +1263,7 @@ class Battle:
         if lv > 0:
             self.log(sudden=lv + 1, global_turn=self.global_turns)
 
-    def set_gauge(self, u, value):
+    def set_gauge(self, u, value, keep_frac=False):
         """Gauge buffs may exceed 100%; overflow orders already-ready actors.
 
         NKM.decompiled.cs:3323-3330 (lower clamp only), 4648-4675
@@ -1244,6 +1274,8 @@ class Battle:
         u.gauge = max(0.0, value)
         if not self.mc['gauge_overflow']:
             u.gauge = min(10000.0, u.gauge)
+        if self.mc['turn_gauge'] == 'client' and not keep_frac:
+            u.gauge = float(int(u.gauge))     # 클라 게이지는 정수 저장(NKM:5113-5115 (int) 변환 뒤 저장)
 
     def pick_next(self, living):
         """다음 행동 유닛과 그때까지 걸리는 틱. 동시 100% 는 _tie_before 순서"""
@@ -1256,6 +1288,22 @@ class Battle:
             elif abs(need - bt) <= 1e-9 and self._tie_before(x, best):
                 best = x
         return best, bt
+
+    def _turn_key(self, x):
+        """turn_gauge=client 정렬 키(NKM:12332-12364 CompareTo): 추가 턴 먼저, 게이지 높은 순, 속도 높은 순,
+        유닛 우선순위(등장 때 RandomGenerator.Next(10000), :1962) 높은 순. 확정 턴(NextTurnCatch) 항은 엔진에 없는 효과라 뺌"""
+        pr = x._turn_prio
+        if pr is None:
+            pr = x._turn_prio = self._roll_prio()
+        return (not x.extra_turn, -x.gauge, -x.spd(), -pr)
+
+    def _roll_prio(self):
+        """유닛 등장 때 굴리는 행동 우선순위(NKM:1962 RandomGenerator.Next(10000)). 전용 난수라 다른 흐름에 영향 없음"""
+        if self._prio_rng is None:
+            # 주 난수 상태를 읽기만 해서 씨앗을 만듦(소비하지 않음 — 다른 결정의 난수 흐름이 legacy 와 같게)
+            st = self.rng.getstate()[1]
+            self._prio_rng = random.Random(hash(st[:8]) ^ 0x5EED1962)
+        return self._prio_rng.randrange(10000)
 
     def _tie_before(self, x, y):
         """동시 100%: 추가 턴 > 게이지 높은 순 > 속도 높은 순 > 고정 순서(아군 먼저, 칸 순)"""
@@ -2091,8 +2139,8 @@ class Battle:
         return max(pool, key=lambda v: (self.live_atk(v), -v.pos))
 
     def live_atk(self, v):
-        if getattr(v.d, 'nv_stage1', None) is not None:
-            return self.atk_stat(v)      # 길방 보스 stage: 단별 곱(atk_stat 과 같은 식)
+        if getattr(v.d, 'nv_stage1', None) is not None or self.mc['stat_stage'] == 'client':
+            return self.atk_stat(v)      # 단별 곱(atk_stat 과 같은 식). 길방 보스 stage 또는 stat_stage=client
         return v.d.stats['atk'] * (1 + v.d.passive['atkp'] + v.mods()['atkp'] + v.d.gear_atkp)
 
     def resolve(self, owner, text, ctx, kind='buff'):
@@ -2661,18 +2709,34 @@ class Battle:
             b0 = u.d.stats['atk'] * (1 + st1['atkp']) * (1 + u.d.passive['atkp'] + u.d.gear_atkp)
             r3 = m['atkp'] + (ctx.atkp if ctx else 0.0)
             return self._stat_int(b0 * (1 + r3), b0, r3)
-        b0 = u.d.stats['atk'] * (1 + u.d.passive['atkp'] + u.d.gear_atkp)
         r3 = m['atkp'] + (ctx.atkp if ctx else 0.0)
-        return self._stat_int(u.d.stats['atk'] * (1 + u.d.passive['atkp'] + m['atkp'] + (ctx.atkp if ctx else 0.0) + u.d.gear_atkp), b0, r3)
+        if self.mc['stat_stage'] == 'client':
+            # NKM:18874-18897(OBF_16891): 2단(패시브 스킬 능력치 25577·11550, 장비 30723 …) 합을 곱한 뒤 3단(버프 6433 등)을 따로 곱함
+            b0 = self._stage2(u, 'atk', u.d.passive['atkp'] + u.d.gear_atkp)
+            return self._stat_int(b0 * (1 + r3), b0, r3)
+        return self._stat_int(u.d.stats['atk'] * (1 + u.d.passive['atkp'] + r3 + u.d.gear_atkp))
 
     def def_stat(self, u, local=0.0):
         if u.zero_stats:
             return 0.0
         m = u.mods()
-        v = max(0.0, u.d.stats['def'] * (1 + u.d.passive['defp'] + m['defp'] + local))
-        if self.mc['stat_floor'] != 'client':
-            return v
-        return max(0.0, self._stat_int(v, u.d.stats['def'] * (1 + u.d.passive['defp']), m['defp'] + local))
+        r3 = m['defp'] + local
+        if self.mc['stat_stage'] == 'client':
+            b0 = self._stage2(u, 'def', u.d.passive['defp'])
+            return max(0.0, self._stat_int(max(0.0, b0 * (1 + r3)), b0, r3))
+        return max(0.0, self._stat_int(max(0.0, u.d.stats['def'] * (1 + u.d.passive['defp'] + r3))))
+
+    @staticmethod
+    def _stage2(u, key, rate, flat=0.0):
+        """2단까지의 값(NKM:18874-18891: 1단 값 + 2단 고정 + 1단 값 x 2단 % 합). calc_stats 가 남긴 1단 값·각인/장비 % 가 있고
+        그 값으로 다시 계산한 전투 전 능력치가 지금 stats 와 같으면 각인/장비 % 와 패시브 % 를 한 합으로, 아니면(내정보 덮어쓰기 등)
+        전투 전 능력치 x (1 + 패시브 %) 로 근사."""
+        st = (getattr(u.d, 'stat_stage', None) or {}).get(key)
+        if st is not None:
+            s1, r2, f2 = st
+            if math.floor(s1 + s1 * r2 + f2) == u.d.stats.get(key):
+                return s1 + f2 + s1 * (r2 + rate) + flat
+        return u.d.stats[key] * (1 + rate) + flat
 
     def _stat_int(self, v, base=None, rate=None):
         """build 26610546 NKM:18892-18897: 최종 능력치 = (int)Math.Floor(앞 단 값 + 앞 단 값 x 3단 비율), 3단 비율 = 만분율 정수 합 x 0.0001.
@@ -2702,8 +2766,8 @@ class Battle:
             H = d.stats['hp'] * (1 + d.passive['hpp'] + m['hpp']) * max(0.01, 1 + a.sd_hp)   # 서든데스는 전투 전 값에 곱함(−99% 하한)
         if a.zero_stats:
             D = 0.0   # 〈들러리〉 FixStats NST_DEF 0
-        elif self.mc['stat_floor'] == 'client':
-            D = self.def_stat(a)   # 방어 계수 스킬의 방어력 항도 정수 최종 방어력(NKM:18892-18897)
+        elif self.mc['stat_floor'] == 'client' or self.mc['stat_stage'] == 'client':
+            D = self.def_stat(a)   # 방어 계수 스킬의 방어력 항도 피해식 방어력과 같은 최종 방어력(NKM:18874-18897)
         else:
             D = d.stats['def'] * (1 + d.passive['defp'] + m['defp'])
         S = a.spd()
@@ -2977,22 +3041,53 @@ class Battle:
     def _guard_better(self, cur, cur_s, w, s):
         """수호자 후보 w(분담 비율 s)가 지금 후보 cur(cur_s)보다 앞서는가(NKM:1286-1311 OBF_18133).
         비율이 크면 교체. 같으면 guard_tie=client 일 때 클라 OBF_30007: 둘 다 전열이면 앞 칸, 한쪽만 전열이면 그쪽,
-        둘 다 후열이면 먼저 본 쪽 유지. 아군 전열 = 엔진 칸 0·1(클라 칸 1·2, OBF_29042 :13247). 적 쪽 동률은 칸 판정
-        맵별 분기(:616-625)를 옮기지 않아 먼저 본 쪽 유지. legacy first = 비율이 클 때만 교체(이전 동작)."""
+        둘 다 후열이면 먼저 본 쪽 유지. 칸 번호 = 게임 팀 칸(_game_slot), 전열 = _front_slot(덱 칸 수별, :616-625·13247-13253).
+        칸 번호를 모르는 후보가 있으면 먼저 본 쪽 유지. legacy first = 비율이 클 때만 교체(이전 동작)."""
         if s <= 0:
             return False
         if cur is None or s > cur_s + 1e-12:
             return True
-        if s < cur_s - 1e-12 or self.mc['guard_tie'] != 'client' or w.side != 0:
+        if s < cur_s - 1e-12 or self.mc['guard_tie'] != 'client':
             return False
-        cf, wf = cur.pos < 2, w.pos < 2
+        ci, wi = self._game_slot(cur), self._game_slot(w)
+        if ci is None or wi is None:
+            return False
+        deck = self._game_deck()
+        cf, wf = self._front_slot(ci, deck), self._front_slot(wi, deck)
         if cf and wf:
-            better = w.pos < cur.pos
+            better = wi < ci
         else:
             better = wf and not cf
         if better:
             self.rule_hits['guard_tie'] += 1
         return better
+
+    _ALLY_GAME_SLOT = {0: 1, 1: 2, 2: 0, 3: 3}   # 엔진 아군 칸(전열1·전열2·후열1·후열2) -> 게임 칸(후열1=0·전열1=1·전열2=2·후열2=3)
+
+    def _game_slot(self, u):
+        """수호자 동률 판정에 쓰는 게임 팀 칸 번호. 아군 = 4칸 덱 기준 변환, 적 = 소환 추적 칸 또는 배치 SpawnPosIndex. 모르면 None"""
+        if u.side == 0:
+            if self._game_deck() != 'BATTLE_SLOT_4':
+                return None      # 1~3칸 덱의 아군 칸 배치는 엔진에 없음(현재 연결 스테이지 0개)
+            return self._ALLY_GAME_SLOT.get(u.pos)
+        if u.slot is not None:
+            return u.slot
+        return getattr(u.d, 'game_slot', None)
+
+    def _game_deck(self):
+        d = next((f.d for f in self.foes), None)
+        return getattr(d, 'game_deck', 'BATTLE_SLOT_4') or 'BATTLE_SLOT_4'
+
+    @staticmethod
+    def _front_slot(i, deck):
+        """NKM:616-625(BattleHostSingle, DeckSlotMax 1~3)·13247-13253(기본): 전열 칸 판정. 양 팀 공통(칸 번호만 봄)"""
+        if deck == 'BATTLE_SLOT_1':
+            return i == 0
+        if deck == 'BATTLE_SLOT_2':
+            return i in (0, 1)
+        if deck == 'BATTLE_SLOT_3':
+            return i == 1
+        return i in (1, 2)
 
     def _chain_guard(self, v, base):
         """연쇄(추가) 피해의 수호 분담(NKM:8167 OBF_18133 → 17799-17803). (수호자, 분담 몫).

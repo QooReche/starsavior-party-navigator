@@ -31,6 +31,22 @@ def spawn_flags(src=SRC):
     return _SPAWN[src]
 
 
+_SLOTS = {}
+
+
+def spawn_slots(src=SRC):
+    """data/foe_spawn.json -> (slots, deck). slots['콘텐츠|탭|스테이지'] = 웨이브별 칸마다 게임 SpawnPosIndex,
+    deck[...] = DeckSlotMax(BATTLE_SLOT_4 가 아닐 때만). 없으면 빈 dict 둘"""
+    if src not in _SLOTS:
+        p = os.path.join(src, 'data', 'foe_spawn.json')
+        d = {}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                d = json.load(f)
+        _SLOTS[src] = (d.get('slots', {}), d.get('deck', {}))
+    return _SLOTS[src]
+
+
 _AUTO = {}
 
 
@@ -374,6 +390,9 @@ def stage_waves(content, tab, name, src=SRC):
     # 소환 데이터(칸·쿨 플래그·속성)
     sm_data = foe_summon(src) if st.get('sm') else None
     stage_slots = (sm_data['stages'].get(key) or {}).get('wave_slots') if sm_data else None
+    game_slots, decks = spawn_slots(src)
+    game_slots = stage_slots or game_slots.get(key)
+    deck = decks.get(key, 'BATTLE_SLOT_4')
     waves = []
     for wi, w in enumerate(st['w']):
         row = []
@@ -384,6 +403,9 @@ def stage_waves(content, tab, name, src=SRC):
             d.spawn = flags[wi][pi] if flags and wi < len(flags) and pi < len(flags[wi]) else None
             # 게임 칸 번호(소환 스테이지: BattleScript SpawnPosIndex, 그 외: 배열 순서)
             d.slot = stage_slots[wi][pi] if stage_slots and wi < len(stage_slots) and pi < len(stage_slots[wi]) else pi
+            # 게임 칸 번호(수호자 동률 판정용, mc.guard_tie): 소환 칸 또는 배치 SpawnPosIndex. 모르면 None
+            d.game_slot = game_slots[wi][pi] if game_slots and wi < len(game_slots) and pi < len(game_slots[wi]) else None
+            d.game_deck = deck
             row.append(d)
         waves.append(row)
     # 소환 그룹을 소환자에 부착
@@ -407,6 +429,7 @@ def stage_waves(content, tab, name, src=SRC):
                 sd = FoeDef(raw, s_ui, s_xi, st)
                 sd.spawn = slot_spec['flag']
                 sd.slot = slot_spec['pos']
+                sd.game_slot, sd.game_deck = slot_spec['pos'], deck
                 if slot_spec.get('element'):
                     sd.element = slot_spec['element']
                 summon_slots.append({'pos': slot_spec['pos'], 'foe_def': sd})
