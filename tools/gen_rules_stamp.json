@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "6a167ad4ef8ae53c",
+  "hash": "37244a8639cb0abc",
   "history": [
-   {
-    "hash": "b3087698f2d7ddd4",
-    "reason": "11/12 빌드 26610546 dmg_cap_scope=net 반영: 길드 방어전 시즌4 종료·미오픈으로 시뮬표 재생성 생략, 새 시즌 자료 반영 때 재생성"
-   },
    {
     "hash": "b3087698f2d7ddd4",
     "reason": "11/12 피해 상한 비차단 리뷰: 기대값 엔진도 net 연결, MC 골든 78건 불변. 길드 방어전 시즌4 종료(미오픈)로 표 재생성 생략, 새 시즌 자료 반영 때 재생성"
@@ -41,20 +37,16 @@
    {
     "hash": "6a167ad4ef8ae53c",
     "reason": "11/13 대상 HP 정수 절삭·미보유 중첩 동등 비교·대상 공격력 연쇄 지원: 길드 방어전 시즌 종료로 사전 계산 재생성 보류, 새 시즌 자료 반영 때 재생성"
+   },
+   {
+    "hash": "37244a8639cb0abc",
+    "reason": "11/14 self_enforce_target(자신 추가 발동 대상 = EnforceAutoTargetId 규칙): 길드 방어전 시즌 종료(미오픈)로 사전 계산 재생성 보류, 새 시즌 자료 반영 때 재생성. accel-golden 길방 2건(그웬 편성)은 결과 해시 변화 — 최근 타격 대상이 쓰러졌을 때 무작위로 고르는 차이"
    }
   ]
  },
  "quick": {
-  "hash": "6a167ad4ef8ae53c",
+  "hash": "37244a8639cb0abc",
   "history": [
-   {
-    "hash": "b3087698f2d7ddd4",
-    "reason": "calibrate_quick --write 재보정"
-   },
-   {
-    "hash": "9b1ea9cddbe7b0b7",
-    "reason": "격전 의뢰 foe_forced_coop 추가: main 82c612f 대비 기존 콘텐츠 golden 기본/legacy 78/78 동일. quick 재생성은 clash 18곳만 추가, 기존 st·sv·params·pc·calib 동일."
-   },
    {
     "hash": "2680bd92e4befe60",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +77,14 @@
    },
    {
     "hash": "6a167ad4ef8ae53c",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "37244a8639cb0abc",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "37244a8639cb0abc",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

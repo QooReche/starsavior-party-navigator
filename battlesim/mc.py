@@ -90,6 +90,29 @@ def ally_auto_lines(src=SRC, *, variants=False, client=False):
     return _ALINES[cache_key]
 
 
+_SELF_ENF = {}
+
+
+def ally_self_enforce(src=SRC):
+    """구원자 자신 추가 발동(BI_ENFORCE)의 적 대상 규칙 {key: {(칸, 원문): {slot, eat, f}}} — data/auto_skill.json self_enforce. 충돌은 버림."""
+    if src not in _SELF_ENF:
+        p = os.path.join(src, 'data', 'auto_skill.json')
+        out = {}
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                for key, rows in (json.load(f).get('self_enforce') or {}).items():
+                    d, clash = {}, set()
+                    for slot, raw, spec in rows:
+                        if (slot, raw) in d and d[(slot, raw)] != spec:
+                            clash.add((slot, raw))
+                        d[(slot, raw)] = spec
+                    for k in clash:
+                        del d[k]
+                    out[key] = d
+        _SELF_ENF[src] = out
+    return _SELF_ENF[src]
+
+
 _BLV = {}
 
 _BUFF_COUNT = None
@@ -1692,6 +1715,33 @@ class Battle:
                         self.unsup['selector: 표지 보유자 없음(설명문 근사) ' + ln.raw[:50]] += 1
                         return None
         return spec
+
+    def self_enforce_spec(self, owner, ln):
+        """자신이 시전하는 추가 발동 줄의 클라 대상 규칙(mc.self_enforce_target=client): 적 = data/foe_auto.json enforce_self,
+        구원자 = data/auto_skill.json self_enforce. 자료가 없는 줄은 None(옛 동작: 자신이 최근에 때린 적·설명문 표지)."""
+        if ln is None or self.mc['self_enforce_target'] != 'client':
+            return None
+        if owner.side == 1:
+            return (getattr(owner.d, 'enforce_self', None) or {}).get((ln.slot, ln.raw))
+        rows = ally_self_enforce()
+        spec = (rows.get(owner.key) or {}).get((ln.slot, ln.raw))
+        if spec is None and '@' in owner.key:
+            spec = (rows.get(owner.key.split('@')[0]) or {}).get((ln.slot, ln.raw))
+        return spec
+
+    def _self_enforce_fn(self, actor, sk, f, ctx):
+        """자신 추가 발동 시전 함수. 대상 규칙 f 로 적을 고르는 때는 mc.enforce_target 을 따름: exec(클라) = 실행 직전,
+        book = 예약 때 고르고 실행 때 쓰러졌으면 무작위(옛 시점 동작과 같은 방식)."""
+        if self._exec_pick():
+            def fn():
+                pool = self.targetable(1 - actor.side)
+                if not pool or actor.dead:
+                    return None
+                return self.cast(actor, sk, extra=True, target=self.filter_pick(actor, pool, f), parent=ctx)
+            return fn
+        pool = self.targetable(1 - actor.side)
+        t0 = self.filter_pick(actor, pool, f) if pool else None
+        return lambda: self.cast(actor, sk, extra=True, target=self._live_or_random(t0, actor.side), parent=ctx)
 
     def line_auto_targets(self, owner, spec, ctx):
         """효과 줄 자동 대상(build 26314877 NKM:7001-7050): 단일(one)이면 필터 뒤 1명(1명이 되면 멈춤, 여럿이면 무작위 — 필터가 하나도 안 맞아도),
@@ -4100,6 +4150,16 @@ class Battle:
                 else:
                     return
             sk = actor.d.skills.get(eff['slot']) or actor.d.trigger_skills.get(eff['slot'])
+            espec = self.self_enforce_spec(owner, ln) if actor is owner else None
+            if sk is not None and espec is not None:
+                # build 26610546 NKM.decompiled.cs:5014-5030·13175-13183: 자신 대상 BI_ENFORCE 는 EnforceAutoTargetId(0 이면 구원자 1·적 1001)의
+                # 대상 규칙을 예약에 저장하고, 적은 실행할 때 그 규칙으로 고른다(«자신이 최근에 때린 적»이 아님 — 그건 규칙 6).
+                self.rule_hits['self_enforce_target'] += 1
+                for _ in range(eff['times']):
+                    fn = self._self_enforce_fn(actor, sk, espec['f'], ctx)
+                    if not self._defer_extra(fn):
+                        fn()
+                return
             if sk is not None:
                 tgt = actor.last_target if (actor.last_target is not None and not actor.last_target.dead) else None
                 rule = trigger_rule(sk, self.lines_of(actor))
@@ -4383,6 +4443,14 @@ class Battle:
             sk = owner.d.skills.get(m.group(2)) or owner.d.trigger_skills.get(m.group(2))
             if sk is not None and self.R(owner.side).random() < int(m.group(1)) / 100.0:
                 self._fired(owner)
+                espec = self.self_enforce_spec(owner, ln)
+                if espec is not None:
+                    # 확률 자신 추가 발동도 같은 BI_ENFORCE 경로(NKM.decompiled.cs:5014-5030) — 대상은 EnforceAutoTargetId 규칙으로 실행할 때
+                    self.rule_hits['self_enforce_target'] += 1
+                    fn = self._self_enforce_fn(owner, sk, espec['f'], ctx)
+                    if not self._defer_extra(fn):
+                        fn()
+                    return
                 target = ctx.src if (ctx.src is not None and ctx.src.side != owner.side) else None
                 if self._exec_pick():     # 클라: 대상은 실행 직전에(NKM 7973) — 타격자가 살아 있으면 그대로, 무작위는 그때 굴림
                     def fn(src=target, rnd=bool(ln.eff.get('random_enemy'))):

@@ -331,6 +331,17 @@ class FoeDef:
             self.auto_lines[key] = spec
         for key in clash:
             del self.auto_lines[key]
+        # 자신이 시전하는 추가 발동(BI_ENFORCE)의 적 대상 규칙(mc.self_enforce_target): (칸, 효과 줄 원문) -> {slot, eat, f, cool, cond}
+        self.enforce_self, clash = {}, set()
+        for k, spec in rules.get('enforce_self', {}).items():
+            si, li = (int(x) for x in k.split(':'))
+            sd = raw['s'][si]
+            key = (sd['sl'], (sd.get('ef') or [])[li])
+            if key in self.enforce_self and self.enforce_self[key] != spec:
+                clash.add(key)
+            self.enforce_self[key] = spec
+        for key in clash:
+            del self.enforce_self[key]
 
 
 def find_raw_stage(content, tab, name, src=SRC):

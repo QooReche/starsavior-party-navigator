@@ -157,6 +157,22 @@ def se_of(sid, se):
     return None
 
 
+RX_SELF_EXTRA = re.compile(r'자신에게 (?:\d+% 확률로 )?(기본기|특수기|궁극기) 추가 발동')
+
+
+def effect_part(line):
+    """«[시점] (조건: …) 효과» 에서 효과 부분. 조건 괄호 안의 대괄호·괄호 중첩을 센다."""
+    rest = line.split(']', 1)[1].lstrip() if line.startswith('[') else line
+    if rest.startswith('('):
+        depth = 0
+        for i, ch in enumerate(rest):
+            depth += ch in '(['
+            depth -= ch in ')]'
+            if depth == 0:
+                return rest[i + 1:].lstrip()
+    return rest
+
+
 def pair_lines(ef, rows):
     """데이터북 ef 줄 ↔ SE 행. 줄 수가 같고 줄마다 대상 머리말이 SE 대상 종류와 맞을 때만 [(줄 번호, SE 행)].
     「{N회 부여}」 줄은 게임에서 같은 행 N개라 N줄로 펼쳐 맞춘다."""
@@ -168,6 +184,13 @@ def pair_lines(ef, rows):
         return None
     for (_i, line), r in zip(exp, rows):
         tt = r.get('m_BuffTargetType')
+        if is_self_enforce(r):
+            # 자신 추가 발동 줄은 조건 괄호에 «[스킬 대상 유형: 적 전체]» 같은 낱말이 들어 있어(감시자 비틀린 시선)
+            # 머리말 표가 조건 쪽을 대상으로 잘못 읽는다 — 효과 부분(조건 괄호 뒤)이 «자신에게 … 추가 발동» 인지로 판정.
+            m = RX_SELF_EXTRA.match(effect_part(line))
+            if not m or ENFORCE_SLOT.get(r.get('EnforceSkillIndex')) != m.group(1):
+                return None
+            continue
         nk = new_auto_kinds(line)
         if nk is not None:
             if tt not in nk:
@@ -249,7 +272,7 @@ def build(static):
             REPORT['한 유닛에 다른 규칙(제외)' if None not in variants else '모르는 어휘로 유닛 제외'] += 1
             continue
         rules = json.loads(variants[0])
-        if rules['skills'] or rules['lines'] or rules.get('order'):
+        if rules['skills'] or rules['lines'] or rules.get('order') or rules.get('enforce_self'):
             out['foe:%d' % ui + (':%d' % xi if xi is not None else '')] = rules
     return out
 
@@ -286,17 +309,80 @@ def unit_rules(u, raw, gu, skills, auto, target, se, bname):
     return res
 
 
+def is_self_enforce(r):
+    """자신이 시전하는 BI_ENFORCE 행(«자신에게 기본기 추가 발동» 등). 대상 규칙은 AutoTargetId 가 아니라 EnforceAutoTargetId."""
+    return r.get('m_BuffStrID') == 'BI_ENFORCE' and r.get('m_BuffTargetType') == 'NSETT_SELF'
+
+
+def self_enforce_spec(r, target, bname, default_id):
+    """자신 대상 BI_ENFORCE 행 -> {slot, eat, f, cool, cond}. build 26610546 NKM.decompiled.cs:5014-5030: EnforceAutoTargetId 가 0 이면
+    대상 유닛이 구원자·용병이면 규칙 1, 그 밖(적)은 1001. 번호는 AUTO_SKILL_TARGET_TEMPLET(NKM:13175-13183 → OBF_34343 = 그 표).
+    cool·cond 는 SeCoolTurn·SkillConditionId(엔진은 데이터북 문구로 처리하며, 시험이 둘이 같은지 확인한다)."""
+    esi = ENFORCE_SLOT.get(r.get('EnforceSkillIndex'))
+    if not esi:
+        raise Unknown('EnforceSkillIndex %s' % r.get('EnforceSkillIndex'))
+    eat = int(r.get('EnforceAutoTargetId') or 0) or default_id
+    if eat not in target:
+        raise Unknown('EnforceAutoTargetId %s' % eat)
+    return {'slot': esi, 'eat': eat, 'f': filters(target[eat], bname),
+            'cool': int(r.get('SeCoolTurn') or 0), 'cond': int(r.get('SkillConditionId') or 0)}
+
+
+def add_self_enforce_loose(res, si, raw, rows_se, target, bname):
+    """줄 수 짝짓기가 안 된 스킬(데이터북이 «N회 부여»·레벨 행을 합쳐 적는 등)의 자신 추가 발동: 그 스킬의 자신 enforce 행이
+    대상 규칙 하나(slot·eat·f)뿐이면 «자신에게 … 추가 발동» 효과 줄 전부에 그 규칙을 붙임(구원자 build_self_enforce 와 같은 방식).
+    규칙이 여럿이면 넣지 않음(보고). cool·cond 는 행이 모두 같을 때만, 아니면 None."""
+    rows = [r for r in rows_se if is_self_enforce(r)]
+    if not rows:
+        return
+    try:
+        specs = [self_enforce_spec(r, target, bname, 1001) for r in rows]
+    except Unknown as ex:
+        REPORT['자신 추가 발동 대상 모르는 어휘(그 줄 제외): ' + str(ex)[:40]] += 1
+        return
+    core = {json.dumps({k: sp[k] for k in ('slot', 'eat', 'f')}, sort_keys=True, ensure_ascii=False) for sp in specs}
+    slot = json.loads(next(iter(core)))['slot'] if len(core) == 1 else None
+    # 문구의 시전 칸이 표의 EnforceSkillIndex 칸과 같은 줄만(오연결 방지)
+    lines = [i for i, ln in enumerate(raw['s'][si].get('ef') or [])
+             if (m := RX_SELF_EXTRA.match(effect_part(ln))) and m.group(1) == slot]
+    if len(core) != 1 or not lines:
+        REPORT['자신 추가 발동 느슨한 연결 불가(규칙 여럿·줄 없음, 옛 동작)'] += 1
+        return
+    spec = dict(json.loads(core.pop()))
+    for k in ('cool', 'cond'):
+        vals = {sp[k] for sp in specs}
+        spec[k] = vals.pop() if len(vals) == 1 else None
+    REPORT['자신 추가 발동 느슨한 연결(줄 수 불일치 스킬)'] += 1
+    for i in lines:
+        res.setdefault('enforce_self', {})['%d:%d' % (si, i)] = spec
+
+
 def add_lines(res, si, sid, raw, se, target, bname):
     rows_se = se_of(sid, se)
-    if not rows_se or not any(r.get('AutoTargetId') for r in rows_se):
+    if not rows_se or not any(r.get('AutoTargetId') or is_self_enforce(r) for r in rows_se):
         return
     pairs = pair_lines(raw['s'][si].get('ef') or [], rows_se)
     if pairs is None:
         REPORT['효과 줄 짝짓기 실패'] += 1
+        add_self_enforce_loose(res, si, raw, rows_se, target, bname)
         return
     got, bad = {}, set()
     for k, r in pairs:
         tt = r.get('m_BuffTargetType')
+        if is_self_enforce(r):
+            key = '%d:%d' % (si, k)
+            try:
+                spec = self_enforce_spec(r, target, bname, 1001)
+            except Unknown as ex:
+                REPORT['자신 추가 발동 대상 모르는 어휘(그 줄 제외): ' + str(ex)[:40]] += 1
+                continue
+            prev = res.setdefault('enforce_self', {}).get(key)
+            if prev is not None and prev != spec:
+                REPORT['자신 추가 발동 펼친 줄 규칙 불일치(그 줄 제외)'] += 1
+                res['enforce_self'][key] = None
+            elif prev is None and key not in res['enforce_self']:
+                res['enforce_self'][key] = spec
+            continue
         if (tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF' and r.get('m_BuffStrID') == 'BI_FORCE_CROSS_ATTACK'
                 and r.get('AutoTargetId')):
             spec = dict(one=True, ally=True, exclude_self=True,
@@ -321,6 +407,10 @@ def add_lines(res, si, sid, raw, se, target, bname):
     for key, spec in got.items():
         if key not in bad:
             res['lines'][key] = spec
+    if 'enforce_self' in res:
+        res['enforce_self'] = {k: v for k, v in res['enforce_self'].items() if v is not None}
+        if not res['enforce_self']:
+            del res['enforce_self']
 
 
 def main():
@@ -334,13 +424,16 @@ def main():
     low_priority()
     units = build(static)
     out = dict(_note='적 자동 대상 규칙(tools/build_foe_auto.py). units[foe:유닛[:변형]] = {skills[칸] = 규칙 행(c 조건, f 필터), '
-                     'lines["스킬번호:줄번호"] = 효과 줄 자동 대상(one = 1명, f 필터), order = SkillOrderList 시도 순서}. '
+                     'lines["스킬번호:줄번호"] = 효과 줄 자동 대상(one = 1명, f 필터), order = SkillOrderList 시도 순서, '
+                     'enforce_self["스킬번호:줄번호"] = 자신이 시전하는 추가 발동(BI_ENFORCE)의 적 대상 규칙(eat = EnforceAutoTargetId, 0 이면 1001; '
+                     'f 필터, cool = SeCoolTurn, cond = SkillConditionId — mc.self_enforce_target)}. '
                      '없는 적·줄은 엔진 기본(설명문 근사 -> 규칙 1001), 없는 순서는 궁극기->특수기->기본기.',
                units=units)
     atomic_text(ROOT / 'data' / 'foe_auto.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
     n_sk = sum(len(v['skills']) for v in units.values())
     n_ln = sum(len(v['lines']) for v in units.values())
-    print('foe_auto.json: 적', len(units), '스킬 규칙', n_sk, '효과 줄', n_ln)
+    n_es = sum(len(v.get('enforce_self', {})) for v in units.values())
+    print('foe_auto.json: 적', len(units), '스킬 규칙', n_sk, '효과 줄', n_ln, '자신 추가 발동', n_es)
     for k, v in REPORT.most_common():
         print('  ', v, k)
     for k, v in REPORT_HEAD.most_common(8):

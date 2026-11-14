@@ -295,6 +295,67 @@ def build_lines(static, report, *, legacy=False, client=False):
     return out
 
 
+def build_self_enforce(static, report):
+    """구원자 자신 추가 발동(BI_ENFORCE, NSETT_SELF)의 적 대상 규칙 -> {구원자 key: [[칸, 데이터북 원문, {slot, eat, f, cool, cond}]]}.
+    EnforceAutoTargetId 0 = 규칙 1(구원자, NKM.decompiled.cs:5014-5030). 기본/개화는 form_bindings 연결.
+    한 스킬의 자신 enforce 행 규칙이 하나뿐이면 그 스킬의 «자신에게 … 추가 발동» 줄 전부(레벨 그룹 원문 포함)에, 여럿이면 줄 수가 같을 때만 순서대로."""
+    from tools import build_foe_auto as FA
+    tables = Path(static) / 'tables'
+    target = {r['Id']: r['TargetCondition'] for r in jsonc(tables / 'Plain' / 'AUTO_SKILL_TARGET_TEMPLET.json')['Data']}
+    bname = buff_names(tables)
+    se = {}
+    for n in (1, 2):
+        for r in json.loads((tables / ('SE_TEMPLET_SKILL_%d.json' % n)).read_text(encoding='utf-8'))['Data']:
+            m = re.match(r'^COND_(.+)_(\d+)_(\d+)$', r.get('m_SEStrID') or '')
+            if m:
+                se.setdefault(m.group(1), []).append(((int(m.group(2)), int(m.group(3))), r))
+    index = json.loads((ROOT / 'data' / 'saviors_index.json').read_text(encoding='utf-8'))
+    keys = keys_by_id(index)
+    book = json.loads((ROOT / 'rawdata' / 'databook_main.json').read_text(encoding='utf-8'))['units']
+    slot_of = {'기본기': 0, '특수기': 1, '궁극기': 2, '고유 패시브': 3}
+    out = {}
+    for key, bu, _u, skill_ids in form_bindings(tables, keys, book):
+        for s in bu['sk']:
+            i = slot_of.get(s['sl'])
+            if i is None or i >= len(skill_ids):
+                continue
+            sid = skill_ids[i].replace('NKM_UNIT_', '', 1)
+            rows = se.get(sid) or se.get(sid.replace('S_', '', 1)) or []
+            rows = [r for _n, r in sorted(rows, key=lambda x: x[0]) if FA.is_self_enforce(r)]
+            if not rows:
+                continue
+            where = '%s %s' % (key, s['sl'])
+            try:
+                specs = [FA.self_enforce_spec(r, target, bname, 1) for r in rows]
+            except FA.Unknown as ex:
+                report['자신 추가 발동 모르는 어휘(제외): %s %s' % (where, ex)] += 1
+                continue
+            cands = list(s.get('ef') or [])
+            L = s.get('L') or {}
+            cands += [ln for ln in L.get('ln') or [] if ln not in cands]
+            lines = [(ln, FA.RX_SELF_EXTRA.match(FA.effect_part(ln))) for ln in cands]
+            lines = [(ln, m.group(1)) for ln, m in lines if m]
+            # 같은 대상 규칙인데 행마다 재발동 제한·조건 번호만 다른 경우(오메가 파워업 스타 1~3중첩 5행 ↔ 데이터북 3줄)는 대상 규칙 하나로 보고
+            # cool·cond 는 None(여러 값)으로 둔다 — 엔진은 대상 규칙만 쓰고, cool·cond 는 표 대조용
+            core = {json.dumps({k: sp[k] for k in ('slot', 'eat', 'f')}, sort_keys=True, ensure_ascii=False) for sp in specs}
+            uniq = [json.loads(x) for x in sorted({json.dumps(sp, sort_keys=True, ensure_ascii=False) for sp in specs})]
+            if len(uniq) > 1 and len(core) == 1:
+                uniq = [dict(json.loads(core.pop()), cool=None, cond=None)]
+            if not lines:
+                report['자신 추가 발동 줄 없음(데이터북 미해석): ' + where] += 1
+                continue
+            # 문구의 시전 칸과 표의 EnforceSkillIndex 칸이 같아야 연결(오연결 방지)
+            if len(uniq) == 1 and all(sl == uniq[0]['slot'] for _ln, sl in lines):
+                pairs = [(ln, uniq[0]) for ln, _sl in lines]
+            elif len(uniq) > 1 and len(lines) == len(specs) and all(sl == sp['slot'] for (_ln, sl), sp in zip(lines, specs)):
+                pairs = [(ln, sp) for (ln, _sl), sp in zip(lines, specs)]
+            else:
+                report['자신 추가 발동 규칙 여럿·줄 수·칸 불일치(제외): ' + where] += 1
+                continue
+            out.setdefault(key, []).extend([s['sl'], ln, sp] for ln, sp in pairs)
+    return out
+
+
 def build_no_preemptive(static):
     """build 26314877의 버프/스킬 NoPreemptiveDefend를 공개 이름·칸으로 연결."""
     tables = Path(static) / 'tables'
@@ -351,7 +412,10 @@ def main():
                                  'mc.ally_auto_lines=client에서 사용하며 client_lines는 옛 형태 연결, client_variant_lines는 기본/개화 연결.',
                client_lines=dict(sorted(client_lines.items())),
                client_variant_lines=dict(sorted(client_variant_lines.items())),
-               no_preemptive=build_no_preemptive(static))
+               no_preemptive=build_no_preemptive(static),
+               self_enforce_note='자신이 시전하는 추가 발동(BI_ENFORCE, NSETT_SELF)의 적 대상: self_enforce[구원자 key] = [[칸, 데이터북 원문, '
+                                 '{slot, eat = EnforceAutoTargetId(0 이면 1), f 필터, cool = SeCoolTurn, cond = SkillConditionId}]]. mc.self_enforce_target=client 에서 사용',
+               self_enforce=dict(sorted(build_self_enforce(static, report).items())))
     atomic_text(ROOT / 'data' / 'auto_skill.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
     print('auto_skill.json: 구원자', len(units), '스킬', sum(len(v) for v in units.values()), '스킬 순서', len(order),
           '효과 줄 자동 대상', sum(len(v) for v in variant_lines.values()), '(구원자 %d)' % len(variant_lines))
