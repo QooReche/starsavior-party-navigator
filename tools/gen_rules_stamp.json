@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "e6a7e9f1524b9f68",
+  "hash": "1a902070a947852f",
   "history": [
-   {
-    "hash": "52a12ac07f67821a",
-    "reason": "11/14 클라 대조 해제·면역 13건 규칙(dispel_*·sleep_wake·debuff_ban_flag·gauge_*·cc_immune_buff 등) — 길드 방어전 시즌 미오픈"
-   },
    {
     "hash": "52a12ac07f67821a",
     "reason": "11/14 클라 대조 해제·면역 13건 규칙(dispel_*·sleep_wake·debuff_ban_flag·gauge_*·cc_immune_buff 등) — 길드 방어전 시즌 미오픈"
@@ -41,16 +37,16 @@
    {
     "hash": "e6a7e9f1524b9f68",
     "reason": "지속/즉시 피해 피격 결과 NormalHit(dot_hit_result) — 길드 방어전 시즌 미오픈"
+   },
+   {
+    "hash": "1a902070a947852f",
+    "reason": "11/15 1~5번 합본(dot_hit_result·foe_auto·power_penalty·luck note·ev gauge), 길드 방어전 시즌 미오픈"
    }
   ]
  },
  "quick": {
-  "hash": "e6a7e9f1524b9f68",
+  "hash": "1a902070a947852f",
   "history": [
-   {
-    "hash": "52a12ac07f67821a",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "ddda8e71057748f9",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +81,10 @@
    },
    {
     "hash": "e6a7e9f1524b9f68",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "1a902070a947852f",
     "reason": "calibrate_quick --write 재보정"
    }
   ]
