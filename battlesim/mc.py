@@ -4297,6 +4297,9 @@ class Battle:
                 if e is None:
                     e = Eff(m.group(2), props, 1, _shield_dur(m.group(3)), owner, False)
                     e.stacks = 1
+                    if self.mc['dispel_shield'] == 'client':
+                        # BI_BARRIER_CAN_NOT_DISPEL 등 «(해제불가)» 보호막만 해제 대상에서 빠진다(BUFF_TEMPLET CanNotDispel).
+                        e.fixed = '해제불가' in m.group(2) or '해제 불가' in ln.raw
                     x.eff[m.group(2)] = e
                 if self.mc['shield_tick'] == 'turn_end':
                     # NKM:4565-4583,4739-4746: 재부여도 생성 시점 갱신. 시작 이벤트는 같은 턴에 차감.
@@ -4359,7 +4362,9 @@ class Battle:
                     continue
                 for name in list(x.eff):
                     e = x.eff[name]
-                    if e.category == ('debuff' if harmful else 'buff') and not e.fixed and e.shield <= 0:
+                    if e.category == ('debuff' if harmful else 'buff') and not e.fixed and self._dispel_shield_ok(e):
+                        if e.shield > 0:
+                            self.rule_hits['dispel_shield'] += 1
                         del x.eff[name]
                 self.dirty(x)
             return
@@ -4371,8 +4376,11 @@ class Battle:
             for x in tg or []:
                 if not self._dispel_ok(owner, ctx, x, p, rest):
                     continue
-                names = [n for n, e in x.eff.items() if e.category == ('debuff' if harmful else 'buff') and not e.fixed and e.shield <= 0][:int(m.group(4))]
+                names = [n for n, e in x.eff.items() if e.category == ('debuff' if harmful else 'buff') and not e.fixed
+                         and self._dispel_shield_ok(e)][:int(m.group(4))]
                 for n in names:
+                    if x.eff[n].shield > 0:
+                        self.rule_hits['dispel_shield'] += 1
                     del x.eff[n]
                 self.dirty(x)
             return
@@ -4414,6 +4422,11 @@ class Battle:
                     ctx.inc += v * sum(cnt(x) for x in pool)
             return
         self._run_special_rest(owner, ln, ctx, rest)
+
+    def _dispel_shield_ok(self, e):
+        """해제 후보에 보호막을 넣는가. client = 클라 OBF_33563(NKM:4229-4253)은 Barrier 를 따로 빼지 않는다 —
+        BI_BARRIER(1038)는 IsBuff·IsPositive·CanNotDispel=false 라 강화 해제에 지워진다. skip = 보호막을 빼던 옛 동작."""
+        return e.shield <= 0 or self.mc['dispel_shield'] == 'client'
 
     def _dispel_ok(self, owner, ctx, x, p, rest):
         if p < 1.0 and self.R(owner.side).random() >= p:
