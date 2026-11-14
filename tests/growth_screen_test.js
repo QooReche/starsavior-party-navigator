@@ -10,7 +10,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8'),ui=fs.readFileSync(require.resolve('../growth_ui.js'),'utf8');
 const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,'구간 없음: '+a);return s.slice(i,j)};
 const SRC={plan:cut(html,'const SCR_ROUNDS=','const scrKey='),cmp:cut(html,'const scrCmp=','// 예선 상태 sc'),pool:cut(html,'// ── 작업자 풀·작업 대기열','// 이 기기의 시뮬 속도'),
- search:cut(ui,'async function growthStageSearch','async function growthStart'),evaluate:cut(ui,'function growthEvaluate','function growthMaybe')};
+ goal:cut(ui,'function growthStageKind(','function growthJob'),search:cut(ui,'async function growthStageSearch','async function growthStart'),evaluate:cut(ui,'function growthEvaluate','function growthMaybe')};
 const key=k=>['a','b','c',k].sort().join(',');
 
 // ① 탐색 흐름. o.stop = {call, done}: call 번째 평가가 done 팀만 끝낸 채 미완료로 돌아옴(무진행 상한·오류)
@@ -26,7 +26,7 @@ function searchHarness(src,o){
    const nth=calls.filter(x=>x.keys).length,stop=o.stop&&o.stop.call===nth?o.stop:null,done=stop?jobs.slice(0,stop.done):jobs;
    const r=Object.fromEntries(done.map(j=>[j.id,{clear:o.clear?o.clear(j.id,n):0.5,prog:0.5,ttk:20,...(o.noRaw?{}:{raw:'[raw'+n+']'})}]));
    if(stop)Object.defineProperty(r,'incomplete',{value:true});return r}});
- for(const s of [src.plan,src.cmp,src.search])vm.runInContext(s,ctx);
+ for(const s of [src.plan,src.cmp,src.goal,src.search])vm.runInContext(s,ctx);
  const profile={results:Object.fromEntries(ctx.R.map(s=>[s.key,{}]))};
  return {ctx,calls,evals:()=>calls.filter(c=>c.keys),run:()=>vm.runInContext('growthStageSearch',ctx)({key:'op',name:'작전'},{tab:'a',name:'b'},profile,1)};
 }

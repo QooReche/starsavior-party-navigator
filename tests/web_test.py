@@ -73,6 +73,20 @@ def test_run_manual_shape():
     return bool(ok), '정책 %s, 클리어 %s, 서순 %d행, %s' % (m['pol'], m['c'], len(sq['rows']), sq['kind'])
 
 
+def test_manual_star_turns():
+    """수동 결과에도 N턴 이내 클리어율(t60): star_turns 옵션이 있을 때만, 오토와 같은 집계(전체 행동 수 <= 한도)를 수동 정책 판에 적용.
+    한도를 크게 주면 t60 = 클리어율, 0 이면 0, 옵션이 없으면 None(화면은 그때 클리어율을 목표 지표로 쓴다)."""
+    p, _ = party(1.0)
+    base = json.loads(OPT)
+    none = json.loads(web.run_manual(STAGE, p, 12, 1, OPT))
+    big = json.loads(web.run_manual(STAGE, p, 12, 1, json.dumps(dict(base, star_turns=100000))))
+    zero = json.loads(web.run_manual(STAGE, p, 12, 1, json.dumps(dict(base, star_turns=0.5))))
+    auto = json.loads(web.run_auto(STAGE, p, 12, 1, json.dumps(dict(base, star_turns=100000))))
+    ok = (none['t60'] is None and big['t60'] == big['c'] and big['c'] > 0 and zero['t60'] == 0 and auto['t60'] == auto['clear']
+          and {k: v for k, v in big.items() if k != 't60'} == {k: v for k, v in none.items() if k != 't60'})
+    return ok, '옵션 없음 %s / 큰 한도 %s = 클리어율 %s / 한도 0.5 %s / 나머지 값 불변 %s' % (none['t60'], big['t60'], big['c'], zero['t60'], ok)
+
+
 def test_manual_burst_rule():
     """수동 노바 버스트: ult_only 면 버스트가 궁극기에서만, any_attack 이면 다른 스킬에도 있을 수 있음, 오토는 버스트 없음"""
     pt = {'units': ['gwen', 'fei', 'professor-m', 'amora'], 'leader': 0}
@@ -194,7 +208,7 @@ def test_stats_final_and_luna_reaction():
     return ok, '최종값 전투력 %.0f(공식 %.0f) / 재증폭 %.0f / 루나 반응 %d회 / 부분 입력 %s' % (p_final, want, p_raw, fired, partial_ok)
 
 
-TESTS = [test_seq_from_timeline, test_slot_order, test_run_auto_power_and_determinism, test_run_manual_shape, test_manual_burst_rule,
+TESTS = [test_seq_from_timeline, test_slot_order, test_run_auto_power_and_determinism, test_run_manual_shape, test_manual_star_turns, test_manual_burst_rule,
          test_formula_override_restored, test_manifest_complete, test_pyodide_local, test_rekindle, test_stats_final_and_luna_reaction]
 
 

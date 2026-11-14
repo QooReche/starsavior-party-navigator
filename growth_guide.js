@@ -9,7 +9,7 @@
   // sim_worker.run_auto + web.run_manual: 4 policy probes, selected policy, replay.
   const finalCost=(n,mode)=>mode==='manual'?2*n+4*Math.max(10,Math.floor(n/3))+1:n;
   const completed=r=>r.completed??Object.keys(r).length;
-  const VERSION='growth-stage23-v6';
+  const VERSION='growth-stage23-v7';   // v7: 스테이지형 전 콘텐츠·목표 지표(3별이면 N턴 내 클리어율)
   const HISTORY_VERSION='grown-history-v7';
   function signature(s){return JSON.stringify([s.account,s.options,s.targets,s.preset,s.content,
     [...s.excluded].sort(),s.breaks,s.mode,s.rules,s.engine,s.data,s.modifiers,VERSION,

@@ -848,7 +848,10 @@ function quickWeak(t){const sv=QK.d.sv,us=t.ek.map(k=>sv[k]),w=[];
 // 보여 줄 팀(기본 3, 「다음 3팀」마다 +3, 최대 9). 모든 팀에 시뮬 결과가 있으면 시뮬 클리어 확률 순으로 다시 세운다(시뮬이 빠른 계산보다 우선)
 const moreKey=(st,p)=>st.tab+"|"+st.name+"|"+p;
 const simCls=r=>{const c=r.clear!=null?r.clear:r.c;return c>=0.9?"safe":c>=0.5?"tight":"hard"};
-const simMain=r=>r&&MODE==="manual"&&r.man?{clear:r.man.c}:r;
+const simMain=r=>r&&MODE==="manual"&&r.man?Object.assign({clear:r.man.c},r.man.t60!=null?{t60:r.man.t60}:{}):r;
+// 목표 지표(11/14): 3별 목표(장비 탐사·격전 의뢰, 옵션 «클리어만»이 아닐 때)면 N턴 내 클리어율(t60), 아니면 클리어율. 예선 순위(scrCmp)의 첫 기준과 같다.
+//  «50% 미만이면 다음 3팀을 더 본다»(추천 본선·클리어 추천 육성)와 «더 나은 편성인가»(육성)는 모두 이 값으로 판정한다 — 3별 목표인데 클리어율로 멈추면 60턴 안에 못 깨는 팀에서 멈춘다
+//  goalVal(요약 하나의 목표 지표)은 scrCmp 옆, simGoal(지금 모드 — 수동이면 수동 결과 — 의 목표 지표)은 simStart 뒤에 있다
 // 3팀마다 세 번째 자리는 근사 점수(시너지·팀 화력) 순 최상위 — 빠른 계산은 구원자 수치를 더하기만 해 연계를 못 보므로 시뮬 기회를 나눠 준다(codex 상담: 빠른 계산 2 : 시너지 1)
 function quickRows(qt,st,p){const n=(SIMQ.more[moreKey(st,p)]||3),rows=[];const seen=new Set();
  const sc=SIMQ.scr[scrKey(st,p)];
@@ -943,13 +946,13 @@ function breakEquip(key,name,skipAuto=false){
 function simTitle(r){const m=MODE==="manual"&&r.man,v=m||r;return `${v.n??r.n}판 · 95% 구간 ${(v.ci||[]).map(v=>Math.round(v*100)+"%").join("~")}${m?" · 수동 턴은 모의 전투 기준입니다":" · TURN은 전체 행동 수 추정으로 실측과 0.8~1.7배 차이가 날 수 있습니다"}`}
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
  const m=MODE==="manual"&&r.man;
- return `<span class="qsim" data-sim="${simCls(m?{clear:m.c}:r)}"${m?' data-man="1"':""} title="${esc(simTitle(r))}">클리어 ${Math.round((m?m.c:r.clear)*100)}%${!m&&r.t60!=null?` · ${r.t60n||STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:""}</span>`}
+ return `<span class="qsim" data-sim="${simCls(m?{clear:m.c}:r)}"${m?' data-man="1"':""} title="${esc(simTitle(r))}">클리어 ${Math.round((m?m.c:r.clear)*100)}%${(m||r).t60!=null?` · ${r.t60n||STAR_TURNS.equip}턴 내 ${Math.round((m||r).t60*100)}%`:""}</span>`}
 function simBar(p,rows,st,hasMore){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
  const st8=SIMQ.busy===p&&!SIMQ.compareKey?`<span class="mut" data-k="simstate" data-state="running">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
   SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`<span class="bad" data-k="simstate" data-state="error">모의 전투 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
-  all?`<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
+  all?`<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>simGoal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">모의 전투 실행</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
 function simInvalidate(){if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;if(Object.keys(x.res).length)scrClose(x);else delete SIMQ.scr[k]}simPoolDrop();clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
@@ -958,8 +961,8 @@ function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=m
 function simQueue(start){const id=SIMQ.requestId;clearTimeout(SIMQ.startTimer);SIMQ.startTimer=setTimeout(()=>{if(SIMQ.requestId===id&&REQ&&!RECO.timer)start()},0)}
 function simAutoKick(){if(!simAutoOn()||SIMQ.busy!=null||(miMode()&&MI.pending))return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
  for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done){simQueue(()=>{if(simScreen(p)===false)run()});return}if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){simQueue(()=>simStart(p));return}
-  // 보여 준 팀이 모두 시뮬에서 클리어 50% 미만이면, 클리어하는 편성이 나오거나 9팀이 될 때까지 다음 3팀을 자동으로 더 시뮬한다(1안이 근사 순위의 앞 3팀에 갇히지 않게)
-  if(b&&b.rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&b.rows.length<9&&b.total>b.rows.length){const k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run(true);simQueue(()=>simStart(p));return}}}
+  // 보여 준 팀이 모두 시뮬에서 목표 지표(simGoal: 3별 목표면 N턴 내 클리어율, 아니면 클리어율) 50% 미만이면, 넘는 편성이 나오거나 9팀이 될 때까지 다음 3팀을 자동으로 더 시뮬한다(1안이 근사 순위의 앞 3팀에 갇히지 않게)
+  if(b&&b.rows.every(t=>simGoal(SIMQ.res[simSig(st,t)])<0.5)&&b.rows.length<9&&b.total>b.rows.length){const k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run(true);simQueue(()=>simStart(p));return}}}
 function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy||(miMode()&&MI.pending))return false;
  const box=LASTQ[p];if(!box)return false;
  const rows=(jobs||box.rows.map(t=>({key:t.keys.slice().sort().join(","),t,bname:teamBreak(t)?.name||null,sig:simSig(st,t)}))).filter(j=>!SIMQ.res[j.sig]);if(!rows.length)return false;
@@ -974,7 +977,7 @@ function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("c
  const arm=simWatch(ws,()=>simTeamLimit(runs,md),live,ready=>simStop(ready?"모의 전투 시간 초과":"엔진 준비 시간 초과"));
  // 남은 시간 = (남은 팀 × 판 수 × 속도 − 돌고 있는 팀이 이미 쓴 시간) ÷ 작업자 수
  const eta=()=>{const left=rows.filter(j=>!SIMQ.res[j.sig]).length,r=simRate(md),now=Date.now();
-  const done=rows.filter(j=>SIMQ.res[j.sig]),more=!jobs&&box.total>box.rows.length&&box.rows.length<9&&done.length&&done.every(j=>simMain(SIMQ.res[j.sig]).clear<0.5)?Math.ceil((Math.min(9,box.total)-box.rows.length)/3):0;
+  const done=rows.filter(j=>SIMQ.res[j.sig]),more=!jobs&&box.total>box.rows.length&&box.rows.length<9&&done.length&&done.every(j=>simGoal(SIMQ.res[j.sig])<0.5)?Math.ceil((Math.min(9,box.total)-box.rows.length)/3):0;
   const spent=ws.reduce((a,w)=>a+(w._job!=null&&w._t?now-w._t:0),0);
   SIMQ.eta=r&&SIMQ.loaded?now+Math.max(0,left*runs*r-spent)/ws.length+(SIMQ.runMs||0)+more*simBatchMs(runs,r):null};
  SIMQ.eta=null;
@@ -995,6 +998,7 @@ function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("c
   done(){clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null;run(!!jobs)},
   error:(msg,w,crash)=>simStop(crash?"작업자 오류: "+msg:msg)});
  run(!!compareKey);return true}
+const simGoal=r=>{const m=simMain(r);return m?(m.t60??m.clear):null};   // 지금 모드의 목표 지표(simMain 옆 주석)
 // ── 작업자 풀·작업 대기열(예선·본선·클리어 추천 육성이 함께 쓴다) ──
 // 작업자 수(순수 함수, 시험 대상) = min(논리 코어 − 1, SCR_WMAX, 메모리 예산). env = {cores: navigator.hardwareConcurrency, memGB: navigator.deviceMemory(브라우저가 최대 8 로 잘라 알려 줌), mobile}
 //  메모리 예산 = 기기 메모리의 절반 ÷ 작업자 하나 SCR_WMB(MB) — 풀은 계산이 끝나도 살아 있으므로(아래 scrPool) 상주 풀 전체가 이 예산 안이다.
@@ -1130,10 +1134,12 @@ const SCR_RK=40;
 function scrPick(all,rkTop){const ck=t=>t.keys.slice().sort().join(","),R0=SCR_ROUNDS[0];
  const lists=[all.slice(0,R0.q).map(ck),all.slice().sort((a,b)=>b.v-a.v).slice(0,R0.v).map(ck),(rkTop||[]).map(ck)],out=[],seen=new Set(),m=Math.max(...lists.map(l=>l.length));
  for(let i=0;i<m;i++)for(const l of lists){const k=l[i];if(k!=null&&!seen.has(k)){seen.add(k);out.push(k)}}return out}
-const scrKey=(st,p)=>JSON.stringify([contents[$("content").value].key,st.tab,st.name,+p,rkOf(contents[$("content").value].key),miMode()?MI.hash:"",SCROWN,MM||"",...(typeof growthEnabled==="function"&&growthEnabled()?[growthCacheTag()]:[])]);
+// (목표가 다르면 예선 결과의 t60 유무·순위가 다르다 → 키에 starOf)
+const scrKey=(st,p)=>JSON.stringify([contents[$("content").value].key,st.tab,st.name,+p,rkOf(contents[$("content").value].key),starOf(contents[$("content").value].key),miMode()?MI.hash:"",SCROWN,MM||"",...(typeof growthEnabled==="function"&&growthEnabled()?[growthCacheTag()]:[])]);
 let SCROWN="";
 const scrOn=()=>(contents[$("content").value].parties||1)===1;
 const scrCmp=(a,b)=>(b.t60??b.clear)-(a.t60??a.clear)||b.clear-a.clear||(b.prog??0)-(a.prog??0)||(a.ttk??1e9)-(b.ttk??1e9);
+const goalVal=r=>r?(r.t60??r.clear):null;   // 목표 지표 = scrCmp 의 첫 기준(simMain 옆 주석)
 // 예선 상태 sc: pool = 후보(순서대로), res = 1차(8판) 결과, up = 2차에 올린 팀, res2 = 2차(32판) 결과
 // 순위: 2차를 «다» 마쳤으면 올린 팀을 32판 결과 순으로 앞에, 나머지는 8판 결과 순. 2차를 다 못 마쳤으면 8판 결과만으로
 //  (먼저 끝난 팀만 32판 결과로 위에 올리면 클리어율과 무관하게 순서가 갈린다 — 판 수가 같은 것끼리만 비교). 못 쓴 32판 결과는 「끝까지 확인」 때 다시 안 돌게 남겨 둔다
@@ -1176,7 +1182,7 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
   // 본선 = 보이는 팀 수 × 판 수 × 본선 속도(모르면 예선 속도), 작업자에 나눔 + 화면 다시 계산 2번(예선 끝·본선 끝)
   const scrEta=()=>{const rs=SIMQ.rateS;if(!rs||!sc.allReady){SIMQ.eta=null;return}const nw=ws.length;
    const ms=(sc.left-(sc.got||0))*per*rs/nw+(i?0:Math.min(R1.top,sc.left)*(R1.n-R0.n)*rs/nw);
-   const ord=scrOrder(sc),k=ord.findIndex(x=>(sc.res2[x]||sc.res[x]).clear>=0.5),nb=Math.max(1,Math.min(k<0?3:Math.floor(k/3)+1,Math.ceil(Math.min(9,box.total||3)/3)));
+   const ord=scrOrder(sc),k=ord.findIndex(x=>goalVal(sc.res2[x]||sc.res[x])>=0.5),nb=Math.max(1,Math.min(k<0?3:Math.floor(k/3)+1,Math.ceil(Math.min(9,box.total||3)/3)));
    SIMQ.eta=Date.now()+ms+nb*simBatchMs(SIMQ.n,simRate(MODE)||rs*(MODE==="manual"?4:1))};
   // 무진행 상한(작업자별, simWatch): 엔진 준비 전에는 내려받기 상한, 준비 뒤에는 팀 하나 상한. 전체 시간 상한은 없다
   const arm=simWatch(ws,()=>simTeamLimit(n,"auto"),live,ready=>{SIMQ.screening=false;simStop(ready?"모의 전투 시간 초과":"엔진 준비 시간 초과")});
@@ -1203,7 +1209,7 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
  return true}
 function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.busy!=null&&!SIMQ.compareKey)return true;
  for(const p of Object.keys(LASTQ)){const b=LASTQ[p];if(!b)continue;if(scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done)return true;if(b.rows.some(t=>!SIMQ.res[simSig(st,t)]))return true;
-  if(b.rows.every(t=>simMain(SIMQ.res[simSig(st,t)]).clear<0.5)&&b.rows.length<9&&b.total>b.rows.length)return true}
+  if(b.rows.every(t=>simGoal(SIMQ.res[simSig(st,t)])<0.5)&&b.rows.length<9&&b.total>b.rows.length)return true}
  return false}
 function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap(b=>b.rows),p=SIMQ.busy??(Number(Object.keys(LASTQ)[0])||1);
  const sc=SIMQ.screening?SIMQ.scr[scrKey(st,p)]:null,done=sc?sc.got||0:rows.filter(t=>SIMQ.res[simSig(st,t)]).length,all=sc?sc.left:rows.length;
@@ -1359,7 +1365,7 @@ function miVerdict(t,st){const r=SIMQ.res[simSig(st,t)],m=MODE==='manual'&&r?.ma
  const warning=r?GuildSearch.unsupportedHtml([m||r],esc):'';
  const detail=r?simTitle(r)+(first&&Number.isFinite(death)?` · ${first.split('#')[0]} 위험 ${Math.round(death*100)}%`:''):'모의 전투를 실행하면 클리어 확률을 확인할 수 있어요.';
  return `<div class="mi-verdict" data-k="judgment" data-state="${r?'done':'pending'}"><div class="verdict-main"><b class="verdict-number"><small>클리어</small>${r?Math.round(clear*100)+'%':'계산 전'}</b>${r?Ux.chip(clear):''}${Ux.help('클리어 확률',detail+'\n판정: 90% 이상 안정적 · 70% 이상 깰 수 있어요 · 50% 이상 아슬아슬 · 50% 미만 어려워요.')}
- <div class="verdict-meta">${MODE==='manual'?'수동':'오토'} 전투 · ${miMode()?'내 구원자 기준':'표준 육성 기준'} ${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':''}${!m&&r?.t60!=null?` · ${STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:''}</div></div>
+ <div class="verdict-meta">${MODE==='manual'?'수동':'오토'} 전투 · ${miMode()?'내 구원자 기준':'표준 육성 기준'} ${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':''}${(m||r)?.t60!=null?` · ${STAR_TURNS.equip}턴 내 ${Math.round((m||r).t60*100)}%`:''}</div></div>
  <div class="verdict-stats"><div><b>${turn!=null?'약 '+Math.round(turn)+'턴':'—'}</b><small>예상 턴</small></div><div><b>${miNum(power)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div>${st.rp&&power<st.rp?`<span class="tag">권장보다 ${miNum(st.rp-power)} 부족</span>`:''}</div>${warning}`}
 function miTab(info){$("mi-panel").hidden=!info;$("out").hidden=info;$("graphwrap").hidden=info;document.querySelector(".input-panel").hidden=info;growthControlPlace();
  if($('result-tabs'))$('result-tabs').hidden=info;

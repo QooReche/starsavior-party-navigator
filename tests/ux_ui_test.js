@@ -96,7 +96,7 @@ mutation("${esc(f.short)}", "", checkChips);
 mutation("changed.length<=2","changed.length<2",checkSkills);
 mutation("changed.map(line).join(' · ')","changed.slice(-1).map(line).join(' · ')",checkSkills);
 mutation("Object.keys(skillNames).map(line)","changed.map(line)",checkSkills);
-mutation("baseline.clear<.5","baseline.clear<=.5",checkTabState);
+mutation("goal(baseline)<.5","goal(baseline)<=.5",checkTabState);
 mutation("&&!!better","",checkTabState);
 mutation("!!enabled&&","",checkTabState);
 mutation("phase==='running'||phase==='error'||","",checkTabState);

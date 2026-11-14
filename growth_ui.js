@@ -35,8 +35,15 @@ function growthSig(c,st,versions=GROW.versions){return GrowthGuide.signature({ac
   modifiers:[MM,SCROWN],rules:SIMOPT,engine:versions?.engine,data:versions?.data,
   equipment:[MI.hash,[...EXCL].sort()],
   policy:[MyInfoReco.OVERWRITE_VERSION,MyInfoReco.THRESHOLD_POLICY,GrowthGuide.VERSION,GrowthGuide.LIMITS,GrowthGuide.COSMO_LIMITS,17011,900001,27011]});}
+// 수동 모드: 수동 정책 결과로 바꾼다. t60(N턴 내 클리어율)도 수동 값으로(없으면 null — 오토 값을 남기지 않는다)
 function growthMetric(r,mode=MODE){if(mode!=='manual'||!r.man)return r;
-  return {...r,clear:r.man.c,ttk:r.man.t,n:r.man.n??r.n,ci:r.man.ci,prog:r.man.prog,progs:r.man.progs};}
+  return {...r,clear:r.man.c,ttk:r.man.t,n:r.man.n??r.n,ci:r.man.ci,prog:r.man.prog,progs:r.man.progs,t60:r.man.t60??null};}
+// 스테이지형 콘텐츠(작전·작전 어려움·일일·장비 탐사·큐브·플래시 포인트·성간 회랑·격전 의뢰 …) = 길방·코스모(시즌 탐색) 밖 전부. 같은 탐색(growthStageSearch)을 쓴다
+function growthStageKind(kind){return !['guild','cosmo'].includes(kind);}
+// 그 콘텐츠의 목표: 3별 목표(starOf — 장비 탐사·격전 의뢰, 옵션 «클리어만»이면 0)면 N턴, 아니면 0(클리어율)
+function growthGoalTurns(kind){return typeof starOf==='function'&&growthStageKind(kind)?starOf(kind)||0:0;}
+// 목표 지표 값: 3별 목표 결과(t60 있음)면 N턴 내 클리어율, 아니면 클리어율 — 예선 순위(scrCmp)의 첫 기준과 같다
+function growthGoal(r){return r?(r.t60??r.clear):null;}
 function growthJob(t,id,c=contents[$('content').value]){const bn=breakChoice(t.combo,c).name||null;
   return {id,t,party:simParty(t),options:{break_skill:bn?{name:bn,level:brkLv(bn)}:null},breakName:bn};}
 function growthScoreEnv(env,fn){if(!env)return fn();const saved=[GIMACT,SBACT,DMW];
@@ -111,7 +118,9 @@ function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.sta
     done(){finish(false);},
     error(msg,w,crash){state.errors.push((crash?'가정 작업자 오류: ':'육성 모의 전투 오류: ')+msg);finish(true);}});
 });}
-function growthMaybe(c,st){if(growthEnabled()&&growthSeasonContent()){growthPaint();return;}if(!growthEnabled()||!miMode()||!['op','clo'].includes(c.key)||!REQ)return;
+// 스테이지형 콘텐츠는 모두 탐색한다(11/14: 작전·성간 회랑만 하던 것). 못 하는 경우(내 정보 기준 아님·길방 EX 밖)는 growthPaint 가 이유를 남긴다 — 켰는데 조용히 사라지지 않게
+function growthMaybe(c,st){if(growthEnabled()&&growthSeasonContent()){growthPaint();return;}if(!growthEnabled()||!REQ)return;
+  if(!miMode()||!growthStageKind(c.key)){growthPaint();return;}
   if(GROW.sig&&GROW.sig!==growthSig(c,st))growthCancel();
   if(GROW.phase==='idle'&&SIMQ.busy==null&&!SIMQ.err&&simAutoOn()){const id=GROW.id;
     setTimeout(()=>{if(GROW.id===id&&REQ&&GROW.phase==='idle')growthStart(c,st);},0);}
@@ -151,11 +160,12 @@ function growthPriority(history){return GrowthGuide.priority(history,GROW.sig,
 function growthMembers(r){const keys=r.kind==='cosmo'?r.best?.teams.flatMap(t=>t.keys||t.order):r.kind==='guild'?r.best?.keys||r.best?.order:r.team?.t.keys;
   return [...new Set(keys||[])].map(key=>r.snapshot.changes[key]).filter(a=>a?.changedFields.length);}
 function growthRecord(c,st,r,show){if(!r?.snapshot||r.kind!==c.key||!GROW.sig)return;
-  const field=c.key==='guild'?'score':c.key==='cosmo'?'sum':'clear',scale=field==='clear'?100:1;
-  const members=show?growthMembers(r):[],delta=show?scale*(r.best[field]-(r.baseline?.[field]||0)):0;
+  // 스테이지형은 목표 지표의 차이(3별 목표면 N턴 내 클리어율 — metric 이름도 따로)
+  const stage=growthStageKind(c.key),turns=stage&&r.best?.t60!=null?growthGoalTurns(c.key):0,field=c.key==='guild'?'score':c.key==='cosmo'?'sum':'clear',scale=field==='clear'?100:1;
+  const members=show?growthMembers(r):[],delta=!show?0:stage?scale*(growthGoal(r.best)-(growthGoal(r.baseline)||0)):scale*(r.best[field]-(r.baseline?.[field]||0));
   const entry=GrowthGuide.grownSummary({content:c.key==='cosmo'?'cosmo/'+D.cosmoRaid.season:c.key+'/'+st.tab+'/'+st.name,
     signature:GROW.sig,account:MI.hash,version:MyInfoReco.OVERWRITE_VERSION,members,delta,
-    metric:c.key==='guild'?'guild-top':c.key==='cosmo'?'cosmo-'+CSR.optMode:'clear',unit:field==='clear'?'%p':'점'});
+    metric:c.key==='guild'?'guild-top':c.key==='cosmo'?'cosmo-'+CSR.optMode:turns?'clear-in-'+turns:'clear',unit:field==='clear'?'%p':'점'});
   const tag=JSON.stringify({...entry,at:0});if(GROW.recordTag===tag)return;GROW.recordTag=tag;
   const key=JSON.stringify([entry.historyVersion,entry.content,entry.signature]);GROW.history[key]=entry;
   GrowthGuide.save(LS,MI.shared,entry);growthRankPaint();
@@ -187,8 +197,12 @@ function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.con
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
 function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks()],simOpt(kind)]);}
 // Whole-account pass: the owned recommendation and its caches remain untouched.
+// 스테이지형: 목표 지표(3별 목표면 N턴 내 클리어율, 아니면 클리어율)가 올라야 «더 나음». 목표 지표가 같으면 3별 목표일 때만 클리어율이 오른 경우를 인정한다
+//  (N턴 내 확률은 그대로여도 깨는 확률이 오른 것). 진척도·처치 턴만 나아진 것은 «더 잘 깸»이 아니다 — 표시하지 않는다
 function growthBetter(kind,baseline,result){
-  const metric=r=>kind==='guild'?r?.score:kind==='cosmo'?r?.sum:r?.clear;
+  if(growthStageKind(kind)){const a=growthGoal(result),b=growthGoal(baseline)??0;
+    return Number.isFinite(a)&&(a>b||(a===b&&result.t60!=null&&result.clear>(baseline?.clear??0)));}
+  const metric=r=>kind==='guild'?r?.score:r?.sum;
   return Number.isFinite(metric(result))&&metric(result)>(metric(baseline)??0);
 }
 // Same load/idle limits as the normal stage simulator, per seasonal worker.
@@ -203,10 +217,10 @@ function growthWorker(){
 }
 async function growthStageSearch(c,st,profile,id){
   const restrict=(CFG.restrict[c.name]||{})[st.tab],qi=quickIn(c,st);
-  if(!qi)throw Error('빠른 계산 자료 없음');
+  if(!qi)return {best:null,runs:0,reason:'quick'};
   const candidates=R.filter(s=>profile.results[s.key]&&!EXCL.has(s.key)&&(!restrict||s.el===restrict))
     .map(s=>{const [scoreValue,parts]=score(s,st.w,c.main,c.boss);return {s,score:scoreValue,parts};});
-  if(candidates.length<4)return {best:null,runs:0};
+  if(candidates.length<4)return {best:null,runs:0,reason:'few'};
   const defPen=CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty;
   const all=quickRank(rankAll(candidates,defPen),qi,profile),key=t=>t.keys.slice().sort().join(','),by=new Map(all.map(t=>[key(t),t]));
   // 후보 순서는 추천 예선(simScreen)과 같은 규칙(scrPick, 재점화 풀 포함). 전체 시간 상한 없이 끝까지 돌고, 멈추는 것은 「중단」(전체 취소)뿐
@@ -232,13 +246,13 @@ async function growthStageSearch(c,st,profile,id){
       if(keys.length<=3)break;
     }
   }
-  // The same 3-at-a-time, at most 9, >=50% stop rule as simAutoKick.
+  // The same 3-at-a-time, at most 9, >=50% stop rule as simAutoKick — 목표 지표 기준(3별 목표면 N턴 내 클리어율).
   let best=null,bestJob=null;
   for(let i=0;i<Math.min(9,keys.length);i+=3){
     const batch=keys.slice(i,i+3),r=await evaluate(batch,SIMQ.n,
       Date.now()+Math.max(SIMQ.LOAD_MS,batch.length*simTeamLimit(SIMQ.n,MODE)),true);
     for(const k of batch)if(!best||scrCmp(r[k],best)<0){best=r[k];bestJob=growthJob(by.get(k),k,c);}
-    if(best?.clear>=.5)break;
+    if(growthGoal(best)>=.5)break;
   }
   return {best,team:bestJob,runs};
 }
@@ -291,23 +305,40 @@ function growthTabsPaint(c,el,show){
   if(now&&now.nextElementSibling!==el)now.after(el);
   growthTabs||=Ux.createResultTabs();
   growthTabs.update(now,el,Ux.resultTabState({enabled:growthEnabled(),phase:GROW.phase,better:show,
-    kind:c.key,baseline,best:r?.best,message:GROW.msg,errors:GROW.errors}));
+    kind:c.key,baseline,best:r?.best,message:GROW.msg,errors:GROW.errors,goalTurns:growthGoalTurns(c.key)}));
   if($('result-tabs'))$('result-tabs').hidden=$('out').hidden;
 }
+// 켰는데 탐색을 시작하지 않은 이유(결과 화면이 떠 있을 때만). 빈 글 = 안내할 화면이 아님
+function growthIdleText(c){
+  if(!REQ||!document.querySelector('#out > [data-party]'))return '';
+  if(c.key==='guild')return '길드 방어전은 EX 단계에서만 계산해요';
+  if(!miMode())return '내 정보 기준으로 추천할 때만 계산해요 · 육성 기준을 «내 구원자»로 바꿔 주세요';
+  if(SIMQ.err)return '모의 전투가 끝나지 않아 계산하지 못했어요 · 모의 전투를 다시 실행하면 이어서 계산해요';
+  if(!simAutoOn())return '모의 전투를 실행하면 이어서 계산해요';
+  if(SIMQ.busy!=null)return '다른 계산이 끝나면 이어서 계산해요';
+  return '계산 준비 중';}
 // 탐색이 끝났는데 더 나은 육성 편성이 없을 때: 탭 없이 같은 자리에 한 줄 안내(조용히 사라지면 켰는데 안 나온 것처럼 보임)
-function growthNoneText(kind,r){const prob=['op','clo'].includes(kind),b=r?.baseline,v=prob?b?.clear:kind==='guild'?b?.score:b?.sum;
+//  3별 목표(turns>0)면 «N턴 안에» 기준으로 말한다. 계산하지 못한 경우(r.reason)는 이유를 그대로 적는다
+function growthNoneText(kind,r,turns=growthGoalTurns(kind)){const prob=growthStageKind(kind),b=r?.baseline,star=prob&&turns>0&&(b?.t60!=null||r?.best?.t60!=null);
+  if(r?.reason==='few')return '이 스테이지에 편성할 수 있는 보유 구원자가 4명 미만이라 계산하지 못했어요';
+  if(r?.reason==='quick')return '이 스테이지는 빠른 계산 자료가 없어서 계산하지 못했어요';
+  const v=prob?(star?b?.t60:b?.clear):kind==='guild'?b?.score:b?.sum;
   const noItems=!!r?.snapshot&&!Object.values(r.snapshot.changes||{}).some(a=>a?.changedFields?.length);
-  if(prob&&Number.isFinite(v)&&v>=1)return '추가 육성 없이도 모의 전투 클리어율 100%예요';
+  if(prob&&Number.isFinite(v)&&v>=1)return star?`추가 육성 없이도 ${turns}턴 내 클리어율 100%예요`:'추가 육성 없이도 모의 전투 클리어율 100%예요';
   if(noItems)return '이미 추천 기준까지 다 키워서 더 올릴 항목이 없어요';
   const has=Number.isFinite(v),now=has?(prob?Math.round(v*100)+'%':miNum(v)+'점'):'';
+  if(star)return has&&v>0?`추천 기준까지 키워도 지금(${turns}턴 내 ${now})보다 ${turns}턴 안에 잘 깨는 편성은 찾지 못했어요`:
+    `추천 기준까지 키워도 ${turns}턴 안에 깨는 편성은 찾지 못했어요${has?` (지금 ${turns}턴 내 ${now}${Number.isFinite(b?.clear)?' · 클리어 '+Math.round(b.clear*100)+'%':''})`:''}`;
   if(prob&&has&&v<=0)return `추천 기준까지 키워도 이 스테이지는 모의 전투에서 깨지 못했어요 (지금 ${now})`;
   return `추천 기준까지 키워도 지금${has?'('+now+')':''}보다 ${prob?'잘 깨는':'점수가 높은'} 편성은 찾지 못했어요`;}
 // 결과 없음 아래 도움말(11/13 제보: «아무것도 안 나오면 스타링크를 올려야 하나?» 오해) — [제목, 내용] 줄 목록. 무엇을 올려 봤는지와 참고 한 줄
-function growthNoneHint(kind,r){const prob=['op','clo'].includes(kind),b=r?.baseline,v=prob?b?.clear:null;
+function growthNoneHint(kind,r,turns=growthGoalTurns(kind)){const prob=growthStageKind(kind),b=r?.baseline,star=prob&&turns>0&&(b?.t60!=null||r?.best?.t60!=null),v=prob?(star?b?.t60:b?.clear):null;
+  if(r?.reason)return [];
   if(prob&&Number.isFinite(v)&&v>=1)return [];
   const noItems=!!r?.snapshot&&!Object.values(r.snapshot.changes||{}).some(a=>a?.changedFields?.length);
   const rows=noItems?[]:[['추천 기준까지 올려 본 항목','스킬 · 장비 · 스텔라 아카이브 · 잠재력 · 호감도 · 공명 · 스타링크(레벨) (보유 구원자만)']];
-  if(prob&&(!Number.isFinite(v)||v<=0))rows.push(['참고','지금 보유한 구원자로는 아직 어려운 스테이지일 수 있어요.']);
+  if(star&&(!Number.isFinite(v)||v<=0)&&b?.clear>0)rows.push(['참고',`클리어는 되지만 ${turns}턴 안에 끝내기는 아직 어려울 수 있어요. 클리어만 필요하면 ⋯ 메뉴의 3별 목표를 «클리어만»으로 바꿔 보세요.`]);
+  else if(prob&&(!Number.isFinite(v)||v<=0))rows.push(['참고','지금 보유한 구원자로는 아직 어려운 스테이지일 수 있어요.']);
   else rows.push(['결론','지금 추천 편성이 가장 나은 선택이에요.']);
   return rows;}
 function growthNonePaint(c,r){growthTabs?.reset();let el=$('growth-result');
@@ -322,18 +353,25 @@ function growthPaint(){
   growthRankPaint();
   let el=$('growth-result');
   if(!growthEnabled()||!MI.info){growthTabs?.reset();el?.remove();return;}
-  const c=contents[$('content').value],r=GROW.result;
-  if(seasonBlocked(c.key)||!['op','clo','guild','cosmo'].includes(c.key)){growthTabs?.reset();el?.remove();return;}
-  if(r&&['op','clo'].includes(c.key))r.baseline=growthBaseline(c,cur[$('stage').value]);
+  const c=contents[$('content').value],r=GROW.result,stage=growthStageKind(c.key);
+  if(seasonBlocked(c.key)){growthTabs?.reset();el?.remove();return;}   // 기간이 끝난 시즌 콘텐츠는 화면 자체가 «기간 종료» 안내(결과·켜짐 표시 없음)
+  if(r&&stage)r.baseline=growthBaseline(c,cur[$('stage').value]);
   const show=r&&growthBetter(c.key,r.baseline,r.best);
   if(GROW.phase==='done')growthRecord(c,cur[$('stage').value],r,show);
   if(GROW.phase==='done'&&!show){growthNonePaint(c,r);return;}
   if(GROW.phase==='idle'&&growthSeasonContent()&&growthSeasonReady(c)&&SIMQ.busy==null)
     setTimeout(()=>{if(GROW.phase==='idle')growthStart(c,cur[$('stage').value]);},0);
-  if(GROW.phase==='idle'&&!growthSeasonContent()){growthTabs?.reset();el?.remove();return;}
+  // 탐색을 시작하지 않은 채 결과 화면이 떠 있으면 이유를 남긴다(11/14 제보: «켜짐» 표시만 있고 아무 안내가 없었음). 결과 화면이 없으면(「추천 편성 보기」 전·진행 화면) 지운다
+  if(GROW.phase==='idle'&&!growthSeasonContent()){growthTabs?.reset();const why=growthIdleText(c);
+    if(!why){el?.remove();return;}
+    if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
+    el.dataset.state='idle';el.dataset.shape='';
+    el.innerHTML=`<h3 class="growth-none-title">클리어 추천 육성</h3><p class="growth-none" data-k="growth-wait" role="status">${esc(why)}</p>`;
+    const now=document.querySelector('#out > [data-party="1"]');if(now&&now.nextElementSibling!==el)now.after(el);return;}
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
   el.dataset.state=GROW.phase;
-  const head='<h3 class="growth-heading" data-k="growth-summary">클리어 추천 육성 <span>· '+(['guild','cosmo'].includes(c.key)?'맞추면 기대 점수가 올라가요':'이것만 맞추면 깰 수 있어요')+'</span></h3>';
+  const turns=growthGoalTurns(c.key),star=stage&&turns>0&&r?.best?.t60!=null;
+  const head='<h3 class="growth-heading" data-k="growth-summary">클리어 추천 육성 <span>· '+(!stage?'맞추면 기대 점수가 올라가요':star?`맞추면 ${turns}턴 안에 깰 확률이 올라가요`:'이것만 맞추면 깰 수 있어요')+'</span></h3>';
   if(GROW.phase!=='done'){
     const running=GROW.phase==='running',shape=GROW.phase+'|'+GROW.errors.length,msg=el.querySelector('[data-k="growth-msg"]');
     // 탐색 중 팀 결과마다 불린다: 모양이 같으면 진행 글자만 바꾼다(통째로 다시 그리면 누르는 중인 「중단」 단추가 사라져 클릭이 안 먹음)
@@ -359,8 +397,9 @@ function growthPaint(){
   const now=(currentKeys||keys).reduce((sum,k)=>sum+(current.results[k]?.power||0),0),delta=grown-now;
   const totals={};let missing=false;
   for(const k of keys){if(!marks[k])continue;for(const f of growthDisplay(marks[k]).fields){if(f.delta==null){missing=true;continue;}totals[f.field]=(totals[f.field]||0)+f.delta;}}
-  const st=cur[$('stage').value],prob=['op','clo'].includes(c.key);
-  const summary=prob?`<div class="mi-verdict"><div class="verdict-main"><b class="verdict-number"><small>지금</small>${r.baseline?Math.round(r.baseline.clear*100)+'%':'자료 없음'} → <small>맞추면</small>${Math.round(r.best.clear*100)}%</b>${Ux.chip(r.best.clear)}</div><div class="verdict-stats"><div><b>${miNum(MODE==='manual'?r.best.ttk:(r.best.ta??r.best.ttk))}턴</b><small>예상 턴</small></div><div><b>${miNum(grown)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div></div>`:`<div class="season-score" data-k="growth-season-score"><span>지금 ${r.baseline?miNum(c.key==='guild'?r.baseline.score:r.baseline.sum)+'점':'자료 없음'} → 맞추면</span><b>${miNum(c.key==='guild'?r.best.score:r.best.sum)}</b><small>${c.key==='guild'?'상위 20% 점수':'3팀 합산 점수'}</small></div>`;
+  // 요약의 큰 숫자는 목표 지표(3별 목표면 N턴 내 클리어율), 3별 목표면 클리어율을 아래 줄에 함께 적는다
+  const st=cur[$('stage').value],prob=stage,pct=v=>Number.isFinite(v)?Math.round(v*100)+'%':'자료 없음';
+  const summary=prob?`<div class="mi-verdict" data-k="growth-goal" data-goal="${star?turns:0}"><div class="verdict-main"><b class="verdict-number"><small>${star?turns+'턴 내 · ':''}지금</small>${r.baseline?pct(growthGoal(r.baseline)):'자료 없음'} → <small>맞추면</small>${pct(growthGoal(r.best))}</b>${Ux.chip(growthGoal(r.best))}</div>${star?`<div class="verdict-meta" data-k="growth-clear">클리어 ${r.baseline?pct(r.baseline.clear):'자료 없음'} → ${pct(r.best.clear)}</div>`:''}<div class="verdict-stats"><div><b>${miNum(MODE==='manual'?r.best.ttk:(r.best.ta??r.best.ttk))}턴</b><small>예상 턴</small></div><div><b>${miNum(grown)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div></div>`:`<div class="season-score" data-k="growth-season-score"><span>지금 ${r.baseline?miNum(c.key==='guild'?r.baseline.score:r.baseline.sum)+'점':'자료 없음'} → 맞추면</span><b>${miNum(c.key==='guild'?r.best.score:r.best.sum)}</b><small>${c.key==='guild'?'상위 20% 점수':'3팀 합산 점수'}</small></div>`;
   el.innerHTML=head+summary+`<p class="growth-total" data-k="growth-power-total">기존 대비 전투력 ${Ux.signed(delta)}(${now?Ux.signed(delta/now*100)+'%':'비교 자료 없음'})으로 계산했어요 ${Ux.help('전투력 변화','위의 현재 편성과 육성 후 편성의 팀 전투력을 비교해요. 구성원이 바뀌면 편성 교체에 따른 차이도 포함해요. 항목별 값은 같은 구원자에서 그 항목만 목표로 올렸을 때의 전투력 증가예요. 곱셈·반올림·편성 변경 때문에 항목별 합계와 전체 증가가 다를 수 있어요. 추가 모의 전투는 하지 않아요.')}</p>`+
     `<p class="growth-components" data-k="growth-components">${['팀 항목별 전투력',...Object.entries(totals).filter(([,v])=>v!==0).map(([f,v])=>`${growthShortFields[f]} ${Ux.signed(v)}`),...(missing?['일부 항목 비교 자료 없음']:[])].join(' · ')}</p><div data-k="growth-${c.key}-card">${body}</div>`+
     Ux.help('육성 기준',`이 육성 계획을 따랐을 때 예상. 보유 구원자의 기준선 미달 항목만 프리셋 목표로 계산해요. 패시브는 현재 값을 유지해요. 최소 육성치는 아니에요. ${D.archiveGrades?.unverified||''}`)+

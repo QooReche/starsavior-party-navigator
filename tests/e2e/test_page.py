@@ -3077,6 +3077,9 @@ TESTS.extend(register_auto_calculation(sys.modules[__name__]))
 from guild_break import register as register_guild_break
 TESTS.extend(register_guild_break(sys.modules[__name__]))
 
+from growth_all import register as register_growth_all
+TESTS.extend(register_growth_all(sys.modules[__name__]))
+
 
 def main():
     args = sys.argv[1:]

@@ -174,6 +174,7 @@ def run_manual(stage, party, n, seed, extra=None):
     tl = simulate(party, _enc(stage, op), op).get('timeline')
     sq = seq_from_timeline(tl)
     sq.update(run=idx, kind=kind, ttk=(runs[idx][1] if runs else None))
-    return json.dumps(dict(c=o['clear_p'], ci=o['ci95']['clear'], t=o['ttk_median'], n=o['n_runs'],
+    st = r.get('star_turn')     # N턴 이내 클리어율(옵션 star_turns 가 있을 때) — 오토 요약의 t60 과 같은 집계를 수동 정책 판에 적용
+    return json.dumps(dict(c=o['clear_p'], ci=o['ci95']['clear'], t=o['ttk_median'], n=o['n_runs'], t60=(st['p'] if st else None),
                            prog=o.get('progress'), progs=r.get('prog_runs'),
                            pol=list(pol), seq=sq, bs=_break_summary(r), **_potential_unsupported(r)), ensure_ascii=False)

@@ -61,14 +61,16 @@
   }
   function todosHtml(m){return (m?.fields||[]).filter(f=>f.delta!==0).map(f=>`<button type="button" class="growth-todo" data-growth-field="${f.field}" data-power-delta="${f.delta??''}" data-help="${esc(f.detail+'\n전투력 '+signed(f.delta)+' · 이 항목만 목표로 올렸을 때의 증가예요.')}" aria-expanded="false">${esc(f.label)} ${esc(f.short)} <small>(${signed(f.delta)})</small></button>`).join('');}
   function memberHtml(m,withTodos=true){if(!m)return '';return `<div class="growth-power" data-k="member-power">전투력 ${num(m.before)} → ${num(m.after)}</div>`+(withTodos?`<div class="growth-todos">${todosHtml(m)}</div>`:'');}
-  function resultTabState({enabled,phase,better,baseline,best,kind='op',message='',errors=[]}){
-    const probability=kind==='op'||kind==='clo',field=kind==='guild'?'score':'sum';
-    const metric=r=>probability?(Number.isFinite(r?.clear)?Math.round(r.clear*100)+'%':'계산 전'):
+  // 스테이지형 콘텐츠(길방·코스모 밖 전부)는 확률, 시즌 콘텐츠는 점수. goalTurns>0 = 3별 목표: 확률은 «N턴 내 클리어율»(t60)로 보인다
+  function resultTabState({enabled,phase,better,baseline,best,kind='op',message='',errors=[],goalTurns=0}){
+    const probability=kind!=='guild'&&kind!=='cosmo',field=kind==='guild'?'score':'sum';
+    const goal=r=>goalTurns&&r?.t60!=null?r.t60:r?.clear;
+    const metric=r=>probability?(Number.isFinite(goal(r))?Math.round(goal(r)*100)+'%':'계산 전'):
       (Number.isFinite(r?.[field])?num(r[field])+'점':'계산 전');
     return {show:!!enabled&&(phase==='running'||phase==='error'||phase==='done'&&!!better),
-      now:(probability?'클리어 ':'점수 ')+metric(baseline),
+      now:(probability?(goalTurns?goalTurns+'턴 내 ':'클리어 '):'점수 ')+metric(baseline),
       growth:phase==='running'?'계산 중'+(message?' · '+message:''):phase==='error'?'미완료'+(errors.length?' · 실패':''):'맞추면 '+metric(best)+' ↑',
-      recommend:Number.isFinite(baseline?.clear)&&baseline.clear<.5,phase};
+      recommend:probability&&Number.isFinite(goal(baseline))&&goal(baseline)<.5,phase};
   }
   // The choice lives only in this controller. Never persist it or add it to share state.
   function createResultTabs(){
