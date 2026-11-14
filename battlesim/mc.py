@@ -22,6 +22,7 @@ from functools import lru_cache
 from . import rules as _rules
 from .engine import calc_hit
 from . import gauge as _gauge
+from . import statcalc as _stat
 from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
 from .starsavior.data import SRC
 from .starsavior import foe as _foe
@@ -578,7 +579,7 @@ class Unit:
         hpp = d.passive['hpp'] + self.fx.get('생명력%', 0.0) / 100.0
         self.sd_hp = 0.0                         # 서든데스 생명력 비율(최대 생명력·피해의 생명력 항에 전투 전 값 x (1 + 이 값)으로 곱함)
         self._m = None
-        self.maxhp0 = float(math.floor(st['hp'] * (1 + hpp)))   # 전투 전 최종 최대 생명력 — 버프·서든데스는 여기에 곱함(NKM 18342~18358 세 번째 묶음)
+        self.maxhp0 = _stat.maxhp0(st['hp'], hpp)   # 전투 전 최종 최대 생명력 — 버프·서든데스는 여기에 곱함(NKM 18342~18358 세 번째 묶음)
         self.hp = self.maxhp0
         self.sd = {}                             # 서든데스 단계 효과(전투 효과 층, 버프 아님 — 정화·약화 개수에 안 잡힘)
         self.gauge = 0.0
@@ -639,7 +640,7 @@ class Unit:
         """최대 생명력 = floor(전투 전 최종값 x (1 + 버프 생명력%(mc.buff_maxhp) + 서든데스 생명력%)), 묶음 합 −99% 하한(NKM 18272~18358).
         부수효과 없음 — 현재 생명력 자르기는 Battle.dirty 가 한다."""
         r = self.mods()['hpp_buff'] if self.b.mc['buff_maxhp'] == 'on' else 0.0
-        return float(math.floor(self.maxhp0 * max(0.01, 1 + r + self.sd_hp)))
+        return _stat.maxhp(self.maxhp0, r, self.sd_hp)
 
     @maxhp.setter
     def maxhp(self, value):          # 시험·외부에서 최대 생명력을 직접 정할 때(전투 전 값으로 둠)
@@ -708,10 +709,8 @@ class Unit:
             s = math.floor((self.d.spd_base * (1 + st1['spdp']) * (1 + p['spdp']) + p['spdf']) * (1 + m['spdp']) + m['spdf'] + 1e-9)
         elif self.b.mc['stat_stage'] == 'client':
             # NKM:18874-18897: 2단(패시브 % + 고정) 뒤 3단(버프 % 만분율 정수 합 x 0.0001 + 고정)을 따로 곱함
-            s2 = self.b._stage2(self, 'spd', p['spdp'], p['spdf']) if self.d.stats.get('spd') == self.d.spd_base                 else self.d.spd_base * (1 + p['spdp']) + p['spdf']
-            s = s2 + s2 * (round(m['spdp'] * 10000) * 0.0001) + m['spdf']
-            if self.b.mc['stat_floor'] == 'client':
-                s = math.floor(s)      # 최종 속도 (int)Math.Floor(:18897). 리더 +10 은 정수 고정값이라 순서 무관
+            # 최종 속도 (int)Math.Floor(:18897, stat_floor=client). 리더 +10 은 정수 고정값이라 순서 무관. 식 = battlesim/statcalc.py
+            s = _stat.spd_client(self.d, m['spdp'], m['spdf'], self.b.mc['stat_floor'] == 'client')
         else:
             s = self.d.spd_base * (1 + m['spdp'] + p['spdp']) + m['spdf'] + p['spdf']
             if self.b.mc['stat_floor'] == 'client':
@@ -2714,8 +2713,7 @@ class Battle:
         r3 = m['atkp'] + (ctx.atkp if ctx else 0.0)
         if self.mc['stat_stage'] == 'client':
             # NKM:18874-18897(OBF_16891): 2단(패시브 스킬 능력치 25577·11550, 장비 30723 …) 합을 곱한 뒤 3단(버프 6433 등)을 따로 곱함
-            b0 = self._stage2(u, 'atk', u.d.passive['atkp'] + u.d.gear_atkp)
-            return self._stat_int(b0 * (1 + r3), b0, r3)
+            return _stat.atk_client(u.d, r3, self.mc['stat_floor'] == 'client')    # 식 = battlesim/statcalc.py(기대값 엔진 공용)
         return self._stat_int(u.d.stats['atk'] * (1 + u.d.passive['atkp'] + r3 + u.d.gear_atkp))
 
     def def_stat(self, u, local=0.0):
@@ -2724,8 +2722,7 @@ class Battle:
         m = u.mods()
         r3 = m['defp'] + local
         if self.mc['stat_stage'] == 'client':
-            b0 = self._stage2(u, 'def', u.d.passive['defp'])
-            return max(0.0, self._stat_int(max(0.0, b0 * (1 + r3)), b0, r3))
+            return _stat.def_client(u.d, r3, self.mc['stat_floor'] == 'client')    # 식 = battlesim/statcalc.py(기대값 엔진 공용)
         return max(0.0, self._stat_int(max(0.0, u.d.stats['def'] * (1 + u.d.passive['defp'] + r3))))
 
     @staticmethod
@@ -2733,12 +2730,7 @@ class Battle:
         """2단까지의 값(NKM:18874-18891: 1단 값 + 2단 고정 + 1단 값 x 2단 % 합). calc_stats 가 남긴 1단 값·각인/장비 % 가 있고
         그 값으로 다시 계산한 전투 전 능력치가 지금 stats 와 같으면 각인/장비 % 와 패시브 % 를 한 합으로, 아니면(내정보 덮어쓰기 등)
         전투 전 능력치 x (1 + 패시브 %) 로 근사."""
-        st = (getattr(u.d, 'stat_stage', None) or {}).get(key)
-        if st is not None:
-            s1, r2, f2 = st
-            if math.floor(s1 + s1 * r2 + f2) == u.d.stats.get(key):
-                return s1 + f2 + s1 * (r2 + rate) + flat
-        return u.d.stats[key] * (1 + rate) + flat
+        return _stat.unit_stage2(u.d, key, rate, flat)
 
     def _stat_int(self, v, base=None, rate=None):
         """build 26610546 NKM:18892-18897: 최종 능력치 = (int)Math.Floor(앞 단 값 + 앞 단 값 x 3단 비율), 3단 비율 = 만분율 정수 합 x 0.0001.
@@ -2746,7 +2738,7 @@ class Battle:
         if self.mc['stat_floor'] != 'client':
             return v
         if base is not None:
-            v = base + base * (round(rate * 10000) * 0.0001)
+            return _stat.stage3(base, rate, True)
         return float(math.floor(v))
 
     def hp_stat(self, u):
@@ -4965,7 +4957,7 @@ class Battle:
             if self.mc['chain_stat_true'] == 'client' and eff.get('damage_type') == 'ADT_STAT_TRUE':
                 # NKM:6214-6217에서 먼저 정수화. 최종 팀 보정은 17815/18407,
                 # 방어·증감·1.85·난수는 4748-4756/17791-17815/18435에서 제외.
-                b0 = float(int(val * eff['coef']))
+                b0 = _stat.chain_true_value(val, eff['coef'])
                 guard, share_base = self._chain_guard(v, b0)
                 dmg = max(1, math.floor((b0 - share_base) * self.pen[owner.side]))
                 self.rule_hits['chain_stat_true'] += 1
@@ -4988,7 +4980,7 @@ class Battle:
             if self.mc['chain_round'] == 'client':
                 # NKM:4730-4740·6212-6236: 추가 피해 값 = (int)((능력치 x 계수 + 그 x 증가합) x 1.85) 로 먼저 정수화한 뒤
                 # 방어(17791-17796)·팀 배율(17815)·난수와 정수 절삭(18431-18456)을 적용
-                b0 = float(int((val * eff['coef'] + val * eff['coef'] * inc) * _rules.BASE_MULT))
+                b0 = _stat.chain_value(val, eff['coef'], inc, _rules.BASE_MULT)
                 self.rule_hits['chain_round'] += 1
             else:
                 b0 = val * eff['coef'] * (1 + inc) * _rules.BASE_MULT

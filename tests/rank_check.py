@@ -26,8 +26,8 @@ import battlesim.rules as rules  # noqa: E402
 
 PRISTINE = dict(rules.DEFAULT_OPTS)
 PRISTINE_F = {k: getattr(engine, k) for k in rules.RULES['formula']}
-# 기대값 엔진도 읽는 MC 규칙(engine.Sim: dmg_cap_scope, 11/15 부터 turn_gauge)
-ENGINE_MC_KEYS = ('dmg_cap_scope', 'turn_gauge')
+# 기대값 엔진도 읽는 MC 규칙(engine.Sim: dmg_cap_scope, 11/15 부터 turn_gauge·능력치/연쇄/지속 피해 규칙) — 목록 원본은 engine
+ENGINE_MC_KEYS = engine.ENGINE_MC_KEYS
 PRISTINE_MC = {k: rules.MC_OPTS[k] for k in ENGINE_MC_KEYS}
 
 # 교정 항목(설명용 이름, 덮어쓸 값) — 각각 「교정 전」 위에 하나만 켠다

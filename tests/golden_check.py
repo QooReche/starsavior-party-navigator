@@ -89,15 +89,16 @@ def main():
     saved_order = engine.DEFAULT_OPTS['coop_order']
     saved_forced = engine.DEFAULT_OPTS['forced_coop_target']
     saved_dead = engine.DEFAULT_OPTS['coop_dead_target']
-    saved_cap = engine.MC_OPTS['dmg_cap_scope']
-    saved_gauge = engine.MC_OPTS['turn_gauge']
+    # 기대값 엔진도 읽는 MC 규칙(engine.ENGINE_MC_KEYS: dmg_cap_scope, 11/15 turn_gauge·능력치/연쇄/지속 피해 규칙)은 골든에선 옛 값
+    saved_mc = {k: engine.MC_OPTS[k] for k in engine.ENGINE_MC_KEYS}
     try:
         engine.COOP_CAP = 0.30
         engine.DEFAULT_OPTS['coop_order'] = 'capped'
         engine.DEFAULT_OPTS['forced_coop_target'] = 'live_atk'
         engine.DEFAULT_OPTS['coop_dead_target'] = 'retarget'
-        engine.MC_OPTS['dmg_cap_scope'] = 'reduce'
-        engine.MC_OPTS['turn_gauge'] = 'float'     # 기대값 엔진도 클라 게이지를 쓰게 된 뒤에도(11/15) 골든은 옛 실수 게이지로 고정
+        from battlesim.rules import MC_RULES
+        for k in engine.ENGINE_MC_KEYS:
+            engine.MC_OPTS[k] = MC_RULES[k]['legacy']   # dmg_cap_scope=reduce, turn_gauge=float, stat_stage=add, stat_floor=float …
         if a.write:
             cur = capture()
         else:
@@ -109,8 +110,7 @@ def main():
         engine.DEFAULT_OPTS['coop_order'] = saved_order
         engine.DEFAULT_OPTS['forced_coop_target'] = saved_forced
         engine.DEFAULT_OPTS['coop_dead_target'] = saved_dead
-        engine.MC_OPTS['dmg_cap_scope'] = saved_cap
-        engine.MC_OPTS['turn_gauge'] = saved_gauge
+        engine.MC_OPTS.update(saved_mc)
     if a.write:
         os.makedirs(os.path.dirname(GOLDEN), exist_ok=True)
         tmp = GOLDEN + '.tmp'
