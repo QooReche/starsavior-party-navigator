@@ -43,7 +43,7 @@ class FollowupTest(unittest.TestCase):
                                   ('guard_skip_immune', 'client', 'off'),
                                   ('wave_foe_battle_start', 'all', 'all'),
                                   ('revive_after_spawn', 'off', 'off'),
-                                  ('dead_keep_dnp', 'off', 'off'),
+                                  ('dead_keep_dnp', 'client', 'off'),   # 11/14 기본 client 전환
                                   ('add_damage_guard', 'off', 'off'),
                                   ('stat_select_int', 'floor', 'float')]:
             self.assertEqual(MC_OPTS[key], value)
