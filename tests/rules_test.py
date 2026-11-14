@@ -345,7 +345,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     # 2026-11-06 코스모 게이트 시즌 전투(벨그라스·난이도 레벨·챌린지 효과)
     'cosmo_raid_boss', 'cosmo_hyper_true_target', 'damage_vampirism', 'cosmo_drain_category', 'cosmo_speed_floor',
     # 2026-11-14 클라 대조(해제·면역 16건)
-    'dispel_shield', 'dispel_instance', 'dispel_order', 'dispel_evade', 'sleep_wake', 'dispel_attack_names', 'debuff_ban_flag', 'gauge_cd_immune', 'gauge_up_immune', 'cc_immune_buff', 'immune_group_resist', 'abs_hit_terms', 'nullifier_count', 'se_force_apply', 'bskill_nullify',
+    'dispel_shield', 'dispel_instance', 'dispel_order', 'dispel_evade', 'sleep_wake', 'dispel_attack_names', 'debuff_ban_flag', 'gauge_cd_immune', 'gauge_up_immune', 'cc_immune_buff', 'immune_group_resist', 'abs_hit_terms', 'nullifier_count', 'se_force_apply', 'bskill_nullify', 'evade_ignore_resist',
 ])
 _NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'break_skill_model'})
 

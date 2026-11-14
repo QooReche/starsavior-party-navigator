@@ -4957,7 +4957,13 @@ class Battle:
             # 저항 판정 대상 약화는 아래 roll_hit 가 같은 이름으로 막으므로 여기서는 저항 무시·비약화 경로만.
             self.rule_hits['immune_group_resist'] += 1
             return
-        if resist and ctx is not None and x in ctx.evaded:
+        # 회피 거부(OBF_13659)는 저항 판정과 별개라 효과 저항 무시 약화에도 적용(NKM:4323-4327·4540-4566, 강제만 예외).
+        # 물폭탄류(unique_enemy+ignore_resist)는 SE 강제라 제외. 규칙 mc.evade_ignore_resist(legacy = 저항 대상 약화만).
+        evade_chk = resist or (self.mc['evade_ignore_resist'] == 'client' and category == 'debuff' and opp
+                               and not eff.get('unique_enemy'))
+        if evade_chk and ctx is not None and x in ctx.evaded:
+            if not resist and not forced:
+                self.rule_hits['evade_ignore_resist'] += 1
             if forced:
                 self.rule_hits['se_force_apply'] += 1
             else:
