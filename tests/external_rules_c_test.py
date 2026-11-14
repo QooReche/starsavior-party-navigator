@@ -51,7 +51,7 @@ class DefaultsTest(unittest.TestCase):
             self.assertEqual(MC_RULES[key]['legacy'], legacy)
             self.assertEqual(MC_RULES[key]['grade'], 'code')
             self.assertTrue(MC_RULES[key]['source'])
-        self.assertEqual(MC_OPTS['power_penalty'], 'off')
+        self.assertEqual(MC_OPTS['power_penalty'], 'model')   # 2026-11-15 기본 model 전환(rules_test test_power_penalty_default)
 
 
 class WaveTest(unittest.TestCase):
@@ -235,7 +235,8 @@ class ShieldTest(unittest.TestCase):
 
         with patch.object(Battle, '_act_turn', watch_act):
             # turn_gauge=client 면 행동 순서가 바뀌어 이 편성·판 수에서 흡수 장면이 안 생김 → 장면 고정용으로 float(시험 대상 경로는 그대로)
-            result, battles = run_stage('keep', 40, shield_tick='turn_end', turn_gauge='float')
+            # power_penalty 도 off 고정: 11/15 기본 model 이면 FLOOR 250(이 편성 전투력 비율 78.67%) 이 아군 x0.786·적 x1.214 라 흡수 장면이 사라짐(보정과 무관한 보호막 경로 시험)
+            result, battles = run_stage('keep', 40, shield_tick='turn_end', turn_gauge='float', power_penalty='off')
         self.assertGreater(result['outcome']['progress'], 0)
         self.assertGreater(sum(b.rule_hits['shield_owner_absorb'] for b in battles), 0)
         self.assertGreater(boundaries['start'], 0)

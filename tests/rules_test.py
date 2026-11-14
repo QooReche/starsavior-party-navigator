@@ -400,6 +400,19 @@ def test_ally_break_default():
     return ok, '격파 기본 keep / legacy skip / reset 대안 / 코드 근거'
 
 
+def test_power_penalty_default():
+    """전투력 보정 기본 = model(2026-11-15 PM 결정: 클라 BATTLE_POWER_RANGE_TEMPLET·OBF_6202, 성간 회랑 485 영상 x1.228 일치).
+    옵션을 생략한 시뮬도 보정이 걸려야 한다(사이트 SIMOPT 의 덮어쓰기와 무관하게). legacy = 옛 기본 off.
+    일부러 깨뜨리기: default.json 의 power_penalty value 를 off 로 되돌리면 실패."""
+    entry = RULES['mc']['power_penalty']
+    from battlesim import simulate
+    r = simulate(['gwen', 'fei', 'professor-m', 'amora'], {'stage': 'op/버려진 요새/SECTOR 40-1'}, {'n_runs': 1, 'build': 'standard'})
+    ok = (MC_OPTS['power_penalty'] == 'model' and entry['value'] == 'model' and entry.get('legacy') == 'off'
+          and 'off' in entry['alt'] and bool(entry['source']) and r['party']['penalty'] == [0.1, 1.9])
+    return ok, '기본 %s / legacy %s / alt %s / 옵션 생략 시뮬 배율 %s' % (
+        MC_OPTS['power_penalty'], entry.get('legacy'), entry.get('alt'), r['party']['penalty'])
+
+
 def test_note_keys_not_in_code():
     """note 키 4개는 battlesim/*.py·tools/*.py·sim_worker.js·party_template.html 에서 읽지 않아야 한다.
     grep 기반: 키 이름이 문자열로 나타나면 안 됨(JSON 의 키 정의 자체는 제외, 파이썬·JS 소비 코드만 체크)."""
@@ -466,7 +479,7 @@ TESTS = [test_coop_trigger, test_coop_single, test_nova_policy, test_nova_pool, 
          test_dot_snapshot, test_gear_order, test_dmg_reduction, test_forced_coop_slot, test_debuff_state_zero_p,
          test_debuff_state_multi_caster, test_gauge_expect, test_index_uses_merged_opts, test_legacy_reproduces_p1_golden,
          test_mc_note_not_in_opts, test_mc_opts_keys_snapshot, test_assumptions_used_note_keys_present,
-         test_toughness_elem_no_legacy, test_ally_break_default, test_note_keys_not_in_code, test_alt_legacy_keys_in_code]
+         test_toughness_elem_no_legacy, test_ally_break_default, test_power_penalty_default, test_note_keys_not_in_code, test_alt_legacy_keys_in_code]
 
 
 def main():

@@ -269,7 +269,9 @@ class StandardTest(unittest.TestCase):
     def test_wave_and_turn_start_paths(self):
         # 이 편성·시드에서 «추가 턴 예약을 가진 채 웨이브 전환»이 일어나는 장면은 옛 자신 추가 발동 대상(최근에 때린 적)에서 생김.
         # self_enforce_target=client(세레스 추가 특수기가 보스 우선)에선 96판에도 0회라, 웨이브 경로 시험은 장면을 고정해 둠(11/14)
-        r = measured(WAVE, 'clo/태양 회랑/FLOOR 250', wave_extra_turn='clear', self_enforce_target='last_target')
+        # power_penalty 는 off 로 고정: 11/15 기본 model 전환 뒤 FLOOR 250 은 전투력 비율 80.94% → 아군 x0.859·적 x1.141 이라
+        # 전투 흐름이 바뀌어 이 장면이 사라짐. 이 시험은 웨이브 전환 경로(보정과 무관)를 보는 것이므로 장면을 만든 11/14 조건 그대로 둠
+        r = measured(WAVE, 'clo/태양 회랑/FLOOR 250', wave_extra_turn='clear', self_enforce_target='last_target', power_penalty='off')
         self.assertGreater(r['hits'].get('wave_extra_turn', 0), 0)
         r = measured(CERES, 'clo/태양 회랑/FLOOR 200', turn_start_order='client')
         self.assertGreater(r['hits'].get('turn_start_order', 0), 0)

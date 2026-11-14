@@ -1,3 +1,16 @@
+## 2026-11-15 전투력 보정(power_penalty) 기본값 off → model(클라 근거)
+
+PM 결정으로 규칙 스위치 `power_penalty` 의 기본값을 사이트가 쓰던 `model` 로 바꿈(legacy = 옛 기본 off, grade assumed → code).
+
+- 근거(11/14 조사, `battlesim/rules/default.json` power_penalty source):
+  - static-data `tables/BATTLE_POWER_RANGE_TEMPLET.json` 500행 = databook topics.pen(`data/power_penalty.json`) — 구간·아군/적 배율 차이 0행.
+  - 클라 적용 지점: build 26610546 `decompiled/NKM/NKM.decompiled.cs:18369-18386`(OBF_6202, B팀(적)이 주는 최종 피해에 TeamBDamageRate 곱), `:479-482`(OBF_28251 전투 시작 값).
+  - 성간 회랑 485 영상의 적 피해가 model 배율(적 x1.228 구간)과 일치.
+- 사이트 화면(`index.html`·`party_template.html` SIMOPT), `guild_search.js`, `tools/build_guild_sim.py`, `tools/gen_quick_calib.py` 는 전부터 `rules_override` 로 model 을 넘겨 왔음 → 화면·길드 시뮬·빠른 계산 결과는 그대로(이중 설정, 기본값과 같은 값). 바뀌는 것은 옵션을 생략한 호출(웹 API 기본·도구·시험).
+- 생성물: `calibrate_quick --write` 재실행 결과 `data/quick.json` 변화 없음(정답지가 이미 model 조건). `guild_sim` 은 재생성 대신 인정(`rules_stamp --ack`, 길드 방어전 시즌 미오픈·생성기가 이미 model). simpack 재생성.
+- 시험: 기본 = model 확인 `tests/rules_test.py` test_power_penalty_default(기본값을 off 로 되돌리면 실패하는 것 확인). 보정과 무관한 경로를 특정 판 장면으로 보던 시험 3건(`followup_d_test` 웨이브 추가 턴, `external_rules_c_test` 보호막 보유자 흡수, `target_conditions_test` 실전 재현)은 FLOOR 250 이 전투력 비율 78~81% 구간(아군 x0.79~0.86·적 x1.14~1.21)이라 장면이 사라져 그 시험 안에서 `power_penalty='off'` 고정. `p5_test` test_power_penalty 의 «끔» 비교는 off 를 명시. `external_rules_c_test` 기본값 계약은 model 로.
+- 남은 미확인: 전투력 계산식 가정(스킬 레벨 합 34·잠재력 0), 적용 콘텐츠 범위(플래시 포인트 제외의 클라 근거), 재점화 결합, BATTLE_POWER_LEVEL_TEMPLET(레벨 차 배율) 결합.
+
 ## 2026-11-15 적 자료 누락 3종(메인스토리 08 보스·바스커빌의 괴수·힐데 코스모) — 스킬→SE 연결을 클라 SkillLevelSE 로
 
 11/14 절(SE 강제 적용)에서 «엔진 적 자료에 없음»으로 남긴 3종의 원인을 클라(build 26610546) 표로 확인함.

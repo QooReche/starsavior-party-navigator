@@ -300,7 +300,9 @@ def test_power_penalty():
     p80, p40, p95 = power_pen(8000, 10000, db), power_pen(4000, 10000, db), power_pen(9500, 10000, db)
     r = simulate(['gwen', 'fei', 'professor-m', 'amora'], {'stage': 'op/버려진 요새/SECTOR 40-1'},
                  {'n_runs': 1, 'build': 'standard', 'rules_override': {'power_penalty': 'model'}})
-    r0 = simulate(['gwen', 'fei', 'professor-m', 'amora'], {'stage': 'op/버려진 요새/SECTOR 40-1'}, {'n_runs': 1, 'build': 'standard'})
+    # 끔 비교는 off 를 명시(11/15 기본값이 model 로 바뀌어 옵션 생략 = model)
+    r0 = simulate(['gwen', 'fei', 'professor-m', 'amora'], {'stage': 'op/버려진 요새/SECTOR 40-1'},
+                  {'n_runs': 1, 'build': 'standard', 'rules_override': {'power_penalty': 'off'}})
     rr = simulate(['gwen', 'fei', 'professor-m', 'amora'], {'stage': 'rush/매니저 그레고리/매니저 그레고리 Ⅳ'},
                   {'n_runs': 1, 'build': 'standard', 'rules_override': {'power_penalty': 'model'}})
     ok = (p80[1:] == (0.85, 1.15) and p40[1:] == (0.1, 1.9) and p95[1:] == (1.0, 1.0) and r['party']['penalty'] == [0.1, 1.9]
