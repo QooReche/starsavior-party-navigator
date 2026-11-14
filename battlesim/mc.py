@@ -4893,9 +4893,12 @@ class Battle:
             self.mc['taunt_skill_end_duration'] and name == '도발' and x.acting
             and ln is not None and ln.phase == '스킬 사용 후')
 
-    # 클라 SE 실행 시점이 HIT·SKILL_END 가 아닌 줄(SKILL_START·턴 시작/종료·전투/웨이브 시작·DAMAGE_START)은 회피 거부 대상이 아니다.
+    # 클라 SE 실행 시점이 HIT·SKILL_END 가 아닌 줄(SKILL_START·턴 시작/종료·전투/웨이브 시작·DAMAGE_START·DIE)은 회피 거부 대상이 아니다
+    # (NKM.Templets:32440-32451 NSEAT). «피해 처리 후»(hit_self)는 엔진이 «피격 시»와 같은 종류로 묶어 두어 빼지 않음 — 그 줄은
+    # 피격자가 공격자에게 거는 것이라 공격자가 회피 목록에 들 일이 없다.
     _EVADE_FREE_KINDS = frozenset(('own_pre', 'ally_pre', 'foe_pre', 'foe_pre_na', 'own_ts', 'ally_ts', 'enemy_ts',
-                                   'own_te', 'battle_start', 'wave_start', 'prehit_self', 'prehit_ally'))
+                                   'own_te', 'battle_start', 'wave_start', 'prehit_self', 'prehit_ally',
+                                   'death_self', 'death_ally', 'death_enemy'))
 
     def _evade_gate(self, owner, x, ctx):
         """회피 거부(OBF_13659, NKM:4540-4566)의 효과 쪽 조건: 시전자와 다른 편(같은 편·자신이면 거부 없음), SE 시점 HIT/SKILL_END
@@ -5117,7 +5120,7 @@ class Battle:
             if refresh_check:
                 e.check = check
                 if check:
-                    e.check_turn = self.global_turns    # 재부여 = 새 버프 객체(NKM:4419), 생성 턴도 새로
+                    e.check_turn = self.global_turns    # 재부여 = 새 버프 객체(NKM:4474-4487), 생성 턴도 새로
                     self.check_pending.append((x, name))
         if dot:
             e.dot = dot
@@ -5137,8 +5140,8 @@ class Battle:
             e.hot = hot
         if name == '스킬 피해 무효' and self.mc['nullifier_count'] == 'client':
             # SkillNullifierValue(«스킬 무효화 N회»): 새 횟수가 남은 횟수보다 클 때만 갈아 끼움(NKM:5585-5591 OBF_9349).
-            # 갈아 끼움 = 옛 객체를 지우고 새 객체(OBF_4403 생성자 5558-5562: 횟수 = 새 SE 값)를 넣음(4419 새 객체, 4495-4507
-            # OBF_5657 → OBF_11376 삭제 후 OBF_27309 삽입) — 지속도 새 SE 값이지 max(옛, 새)가 아니다.
+            # 갈아 끼움 = 새 객체(4474-4487: OBF_2204 생성 → OBF_5657 옛 객체 삭제 → OBF_27309 삽입, 4505-4518)를 넣음 —
+            # 횟수 = 새 SE 값(OBF_4403 생성자 5558-5562), 지속 = 새 SE 값(버프 생성자 4893)이지 max(옛, 새)가 아니다.
             mn = RX_NULLIFY_N.search(self._cur_line.raw) if self._cur_line is not None else None
             n = int(mn.group(1)) if mn else 1
             if old_stacks > 0:
