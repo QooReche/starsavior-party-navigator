@@ -5137,9 +5137,15 @@ class Battle:
             e.hot = hot
         if name == '스킬 피해 무효' and self.mc['nullifier_count'] == 'client':
             # SkillNullifierValue(«스킬 무효화 N회»): 새 횟수가 남은 횟수보다 클 때만 갈아 끼움(NKM:5585-5591 OBF_9349).
+            # 갈아 끼움 = 옛 객체를 지우고 새 객체(OBF_4403 생성자 5558-5562: 횟수 = 새 SE 값)를 넣음(4419 새 객체, 4495-4507
+            # OBF_5657 → OBF_11376 삭제 후 OBF_27309 삽입) — 지속도 새 SE 값이지 max(옛, 새)가 아니다.
             mn = RX_NULLIFY_N.search(self._cur_line.raw) if self._cur_line is not None else None
             n = int(mn.group(1)) if mn else 1
-            if n > 1 or e.maxs > 1:
+            if old_stacks > 0:
+                if e.dur != dur:
+                    self.rule_hits['nullifier_count'] += 1
+                e.maxs, e.stacks, e.dur = max(1, n), n, dur
+            elif n > 1 or e.maxs > 1:
                 e.maxs = max(e.maxs, n)
                 e.stacks = max(old_stacks, n)
         # Step replacement may remove another effect with props, even when this

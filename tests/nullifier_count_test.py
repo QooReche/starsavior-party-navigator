@@ -50,12 +50,12 @@ def test_single_charge_same_both():
 
 
 
-def _reapply(mode, first, second, dur2='5턴'):
+def _reapply(mode, first, second, dur2='5턴', dur1='1턴'):
     b = battle([unit('a')], [unit('f')], mc={'nullifier_count': mode})
     f = b.foes[0]
     ctx = Ctx(f, f, f.d.skills['기본기'])
     ctx.target, ctx.targets = f, [f]
-    b.run_line(f, Line('[스킬 사용 후] 자신에게 〈스킬 피해 무효〉 (1턴 / 스킬 무효화) 스킬 무효화 %d회' % first,
+    b.run_line(f, Line('[스킬 사용 후] 자신에게 〈스킬 피해 무효〉 (%s / 스킬 무효화) 스킬 무효화 %d회' % (dur1, first),
                        '기본기', 'active'), ctx)
     e = f.eff['스킬 피해 무효']
     seq = e.seq
@@ -73,6 +73,15 @@ def test_reapply_smaller_or_equal_refused_client():
     assert e.stacks == 5 and e.dur == 5
     e, _ = _reapply('once', 1, 1)                                   # 옛 동작: 같은 1회 재부여로 지속 갱신
     assert e.dur == 5
+
+
+def test_reapply_larger_new_object_duration_client():
+    """더 큰 횟수로 갈아 끼우면 새 객체(NKM:4419·4495-4507, OBF_4403 생성자 5558-5562) — 지속도 새 SE 값(옛 값과 max 아님)."""
+    e, seq = _reapply('client', 3, 5, dur2='1턴', dur1='5턴')
+    assert e.stacks == 5 and e.dur == 1 and e.seq != seq, (e.stacks, e.dur)
+    e, _ = _reapply('client', 2, 4, dur2='지속 무한', dur1='2턴')
+    assert e.stacks == 4 and e.dur == float('inf')
+
 
 if __name__ == '__main__':
     n = 0
