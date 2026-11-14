@@ -2733,8 +2733,10 @@ class Battle:
             self.dirty(v)
             self.log(nullify=v.name)
             # NKM:7841-7859: 피해 동기화 값은 무효·보호막·HP 차감 반환값과 별개.
-            if self.mc['damage_vampirism'] == 'client':
-                self._vampirism_hit(a, v, ctx, self.final_dmg(a, v, base, ctx, crit, cdv, pen, r, hctx))
+            if self.mc['damage_vampirism'] == 'client' or self.mc['sleep_wake'] == 'client':
+                sync = self.final_dmg(a, v, base, ctx, crit, cdv, pen, r, hctx)
+                self._vampirism_hit(a, v, ctx, sync)
+                self._hit_wake(v, sync)
             reactions.append((v, hctx))
             return
         if guard is None or share <= 0:
@@ -2764,6 +2766,7 @@ class Battle:
                 sync_damage = (self.final_dmg(a, v, base, ctx, crit, cdv, pen, r, hctx)
                                if v.invincible() and guard is not None else dmg)
                 self._vampirism_hit(a, v, ctx, sync_damage)
+                self._hit_wake(v, sync_damage)
         if killed and v.dead:
             ctx.kill = True
         if self.mc['toughness'] == 'on' and not evaded and not v.dead:
@@ -3498,6 +3501,19 @@ class Battle:
         self.rule_hits['damage_vampirism'] += 1
         self.rule_hits['damage_vampirism_heal'] += real
         self.log(vampirism=a.name, target=target.name, damage=total, heal=real)
+
+    def _hit_wake(self, v, sync):
+        """마지막 스킬 타격의 동기화 피해가 0보다 크면 피격자의 수면(m_bSleep) 효과를 지운다(OBF_2209, build 26610546
+        NKM:7997-8011 호출 조건 IsLastHit && 피해 > 0, 8335 OBF_11376(Sleep)). 무효·보호막으로 HP 가 안 깎여도 동기화 피해 기준."""
+        if self.mc['sleep_wake'] != 'client' or sync <= 0 or v.dead:
+            return
+        hit = False
+        for n in buff_flags()['sleep']:
+            if v.eff.pop(n, None) is not None:
+                hit = True
+        if hit:
+            self.rule_hits['sleep_wake'] += 1
+            self.dirty(v)
 
     def heal(self, src, v, amount, give):
         if v.dead:
