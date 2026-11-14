@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "ddda8e71057748f9",
+  "hash": "b1e0c4c257957068",
   "history": [
-   {
-    "hash": "8b42ba297d919458",
-    "reason": "11/13 시전자 목록 조건·길레 승급 수정: 길드 방어전 시즌 종료로 사전 계산 재생성을 생략했음. 다음 시즌 자료 반영 때 재생성하기로 함."
-   },
    {
     "hash": "213e5e67c881536e",
     "reason": "대상 격파 사건·HP 이하/약화 대상 집합 규칙 반영. 길드 방어전 시즌 종료로 사전 계산은 다음 시즌 자료 반영 때 재생성함."
@@ -41,16 +37,16 @@
    {
     "hash": "ddda8e71057748f9",
     "reason": "11/14 클라 대조 후속: 수명 0 효과 매 스킬 끝 정리 기본 전환·SE 강제 적용 — 길드 방어전 시즌 미오픈"
+   },
+   {
+    "hash": "b1e0c4c257957068",
+    "reason": "2026-11-14 클라 대조 리뷰 반영(bskill_nullify·evade_ignore_resist 신규, se_force_apply 버프 강제 확장) — 길드 시뮬 시즌 미오픈이라 재생성 불필요"
    }
   ]
  },
  "quick": {
-  "hash": "ddda8e71057748f9",
+  "hash": "b1e0c4c257957068",
   "history": [
-   {
-    "hash": "6a167ad4ef8ae53c",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "37244a8639cb0abc",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +81,10 @@
    },
    {
     "hash": "ddda8e71057748f9",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "b1e0c4c257957068",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

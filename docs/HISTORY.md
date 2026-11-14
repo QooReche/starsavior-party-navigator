@@ -8,6 +8,16 @@
   - SE 강제 행 6개의 짝짓기 원인: 홍염 양각 보스 «솟구치는 환영»은 `build_foe_auto` 머리말 정규식이 «「환상(해제불가)」 상태인 적 전체에게»의 괄호를 머리말로 못 읽어 스킬 전체 짝짓기 실패 → 「…」 안 괄호 허용으로 고침, force 5줄(적 정의 5개, 〈착란 체크용 버프〉 — 엔진에선 표지라 결과 변화 0). 밤의 절망(메인스토리 EP8 2행)·바스커빌의 괴수(궁극기)·힐데 코스모(자신 대상)는 엔진 적 자료(foe.js)에 없음. 물폭탄은 구원자, 기존 식별 유지.
   - 정규식 수정의 부수 효과(diff 확인): 다른 적 효과 줄 자동 대상 40줄 추가(369→409, 삭제·변경 0) — «「불협화음(해제불가)」 상태가 아닌 적 전체에게»(17개 정의)·«「보호막, …(해제불가)」 상태가 아닌 적 전체에게»(3개 정의)·홍염 양각 보스 4줄×5개 정의. 모두 문구와 같은 필터.
 - 시험: `tests/life0_cleanup_test.py`(정리 대상 판정에서 turn_infinite 를 빼면·기본값을 되돌리면 실패), `tests/se_force_apply_test.py`(강제 판정을 끄면 실패). `rules_e_test` 기본값 계약 skill/all. `dispel_order_test` 스텁에 `_forced` 보탬(se_force_apply 커밋에서 빠뜨려 그 커밋만 단독으로는 실패).
+- 통합 뒤 리뷰(codex 2회: 8·10번 리뷰 blocking 0, 전체 누락 점검 blocking 5) 반영:
+  - `se_force_apply`: 강제 적용이면 〈강화 불가〉(CantGetMoreBuff) 거부도 생략(`:4389`). 버프 자체 ForceApplyEffect 도 강제로 봄 — `tools/build_buff_flags.py` force_apply(BUFF_TEMPLET 291개, 예: 불협화음(해제불가) 300413·잔멸의 가시 301131·기절(해제불가)). 공허변주자 기본기를 회피해도 불협화음이 붙음. 일반 기절·출혈·중독은 강제 아님.
+  - 새 규칙 `evade_ignore_resist`(legacy off): 회피 거부(`:4323-4327·4540-4566`)는 저항 판정과 별개라 효과 저항 무시 약화도 막음 — 코스모 카넬리아 기본기 〈출혈〉(SE 9401001·BUFF 1523 비강제)이 회피 대상에 붙던 문제.
+  - 새 규칙 `bskill_nullify`(legacy off): 오비탈 피해도 DAMAGE_SKILL 이라 〈스킬 피해 무효〉가 막고 1회 소모(`:7993·2693-2710`, 무적이 먼저면 소모 안 함). 수면 해제는 동기화 피해 기준이라 유지.
+  - `gauge_up_immune`: 오비탈 〈스타피어서〉 게이지 증가(SE_TEMPLET_ORBITAL_ARRAY 102011 → BI_SPEED_GAUGE_UP 2002, 비강제)도 억류·들러리 보유자에겐 거부. 규칙 설명의 «브레이크 스킬 게이지 해당 없음» 정정.
+  - `dispel_order`: 기믹 모듈 `put_eff`(코스모·길방) 재부여도 seq 갱신(`:4505-4537`) — 벨그라스 처단자 생기 소진 뒤 재부여된 상급 공격력 증가의 해제 순서.
+  - default.json `dead_keep_dnp`·`check_buff_scope`·`check_buff_expiry` 설명의 옛 기본값 문구를 «이전 판단»으로 표시, check_buff_expiry source 에 4047-4053·16017-16024 보탬.
+  - 고치지 않음(비차단): 수명 0 정리가 «같은 전역 턴 생성» 조건을 따로 보지 않음(`mc.py` check_pending 은 생성 시점에 쌓여 사실상 같은 턴, 다른 턴 효과가 지워지는 재현 없음).
+  - 기존 시험 조정: `client_gaps_1104_test.test_force_apply_passes_immune` 은 immune_force_apply 의 legacy 동작만 보는데 버프 강제 확장(se_force_apply)이 같은 장면을 통과시켜 그 호출만 `se_force_apply=off`. `dispel_order_test` 스텁 `_forced` 인자 맞춤. 강화 불가 예외는 buff_ban_force=off 면 버프 강제 이름도 막아 `buff_force_test` legacy 계약 유지.
+  - 시험: `bskill_nullify_test`·`evade_ignore_resist_test`(신규), `se_force_apply_test`(강화 불가·버프 강제 2건), `dispel_order_test`(put_eff). 각 수정을 되돌리면 실패 확인.
 - 영향: 골든 65/150/10 일치. 빠른 계산 재보정(일치 0.910). guild_sim 은 시즌 미오픈이라 도장 ack.
 
 ## 2026-11-14 클라 대조: 해제·면역 16건 판정과 13건 수정
