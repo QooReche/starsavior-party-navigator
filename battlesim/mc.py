@@ -4878,6 +4878,22 @@ class Battle:
             self.mc['taunt_skill_end_duration'] and name == '도발' and x.acting
             and ln is not None and ln.phase == '스킬 사용 후')
 
+    # 클라 SE 실행 시점이 HIT·SKILL_END 가 아닌 줄(SKILL_START·턴 시작/종료·전투/웨이브 시작·DAMAGE_START)은 회피 거부 대상이 아니다.
+    _EVADE_FREE_KINDS = frozenset(('own_pre', 'ally_pre', 'foe_pre', 'foe_pre_na', 'own_ts', 'ally_ts', 'enemy_ts',
+                                   'own_te', 'battle_start', 'wave_start', 'prehit_self', 'prehit_ally'))
+
+    def _evade_gate(self, owner, x, ctx):
+        """회피 거부(OBF_13659, NKM:4540-4566)의 효과 쪽 조건: 시전자와 다른 편(같은 편·자신이면 거부 없음), SE 시점 HIT/SKILL_END
+        (4546), 대상 종류 TARGET/ENEMY_ALL/AUTO_ENEMY(_ONE) = 적 대상(4550 — 다른 편이면 모두 적 대상 종류). 효과의 강화/약화
+        구분은 보지 않는다(표식·강화도 거부). 강제 적용(4554)과 회피 여부는 호출자가 본다. 시점은 지금 실행 중인 줄(_cur_line)로
+        판정하고, 줄이 없으면(기믹 모듈 직접 부여 등) 거부 대상으로 둔다. 규칙 mc.evade_ignore_resist=client."""
+        if ctx is None or x is owner or x.side == owner.side:
+            return False
+        ln = self._cur_line
+        if ln is not None and line_kind(ln) in self._EVADE_FREE_KINDS:
+            return False
+        return True
+
     def _harm_evaded(self, x, ctx):
         """행동 게이지 감소·쿨타임 증가(비양성 IsBuff=false 버프, BUFF_TEMPLET 2502·2504-2506 강제 아님)도 공통 부여 검사를 탄다:
         이번 시전을 회피한 적 대상은 거부(OBF_13659, NKM:4323-4327·4540-4566). 규칙 mc.gauge_cd_immune."""
@@ -4961,8 +4977,10 @@ class Battle:
             return
         # 회피 거부(OBF_13659)는 저항 판정과 별개라 효과 저항 무시 약화에도 적용(NKM:4323-4327·4540-4566, 강제만 예외).
         # 물폭탄류(unique_enemy+ignore_resist)는 SE 강제라 제외. 규칙 mc.evade_ignore_resist(legacy = 저항 대상 약화만).
-        evade_chk = resist or (self.mc['evade_ignore_resist'] == 'client' and category == 'debuff' and opp
-                               and not eff.get('unique_enemy'))
+        if self.mc['evade_ignore_resist'] == 'client':
+            evade_chk = self._evade_gate(owner, x, ctx) and not (eff.get('unique_enemy') and eff.get('ignore_resist'))
+        else:
+            evade_chk = resist
         if evade_chk and ctx is not None and x in ctx.evaded:
             if not resist and not forced:
                 self.rule_hits['evade_ignore_resist'] += 1
