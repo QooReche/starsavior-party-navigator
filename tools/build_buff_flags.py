@@ -6,6 +6,7 @@ python -X utf8 -I tools/build_buff_flags.py --static <비공개 저장소>
   build 26610546 NKM.decompiled.cs 4505-4520·4916-4929) = 해제 후보 순서(mc.dispel_order).
 - dispel_attack: DispelCondition=DC_ATTACK. 공격 스킬 끝에 시전자에게서 제거(OBF_20893 NKM:4084-4097, 호출 15719-15722, mc.dispel_attack_names).
 - cant_more_debuff: m_bDebuffBan = CantGetMoreDebuff(Star.Templets 4739 플래그 19). 이름과 무관하게 새 약화 거부(NKM:4394-4398, mc.debuff_ban_flag).
+- immune_gauge_up: ImmuneSpeedGaugeUp. 행동 게이지 증가(SpeedGaugeUp) 효과 거부(NKM:4412-4416, mc.gauge_up_immune).
 - sleep: m_bSleep(수면). 마지막 타격 피해가 0보다 크면 피격자에게서 제거(OBF_2209 NKM:8314-8335, mc.sleep_wake).
 """
 import argparse
@@ -49,6 +50,7 @@ def extract(rows, strings, warn=print):
         'priority': {n: v for n, v in pri.items() if v},
         'sleep': flagged(rows, strings, 'm_bSleep', warn),
         'cant_more_debuff': flagged(rows, strings, 'm_bDebuffBan', warn),
+        'immune_gauge_up': flagged(rows, strings, 'ImmuneSpeedGaugeUp', warn),
         'dispel_attack': sorted(n for n, v in by_name(rows, strings, lambda r: r.get('DispelCondition') == 'DC_ATTACK', warn,
                                                       'DispelCondition').items() if v),
     }

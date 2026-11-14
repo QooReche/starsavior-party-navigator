@@ -16,6 +16,7 @@ from battlesim.starsavior.parser import Line                     # noqa: E402
 
 GAUGE = '[스킬 사용 후] 스킬 대상에게 행동 게이지 20%p 감소 {효과 적중 판정}'
 CD = '[스킬 사용 후] 스킬 대상에게 스킬 쿨타임 1턴 증가'
+GAUGE_P = '[스킬 사용 후] 스킬 대상에게 100% 확률로 행동 게이지 20%p 감소 {효과 적중 판정}'
 
 
 def _run(mode, text, immune=False, evaded=False):
@@ -50,6 +51,12 @@ def test_gauge_applied_legacy_and_plain():
     for kw in (dict(immune=True), dict(evaded=True)):
         assert _run('off', GAUGE, **kw)[1].gauge == 3000.0
     assert _run('client', GAUGE)[1].gauge == 3000.0
+
+
+def test_chance_gauge_blocked_client():
+    for kw in (dict(immune=True), dict(evaded=True)):
+        assert _run('client', GAUGE_P, **kw)[1].gauge == 5000.0, kw
+        assert _run('off', GAUGE_P, **kw)[1].gauge == 3000.0, kw
 
 
 def test_cd_blocked_client():

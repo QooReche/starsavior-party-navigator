@@ -4189,6 +4189,8 @@ class Battle:
                     continue
                 if down and self._harm_immune(x):
                     continue
+                if eff['val'] > 0 and self._gauge_up_blocked(x):
+                    continue
                 self.set_gauge(x, x.gauge + eff['val'] * 100.0)
             return
         if kd == 'gauge_set_if':
@@ -4588,7 +4590,12 @@ class Battle:
             for x in tg or []:
                 if self.R(owner.side).random() >= int(m.group(2)) / 100.0:
                     continue
+                down = x.side != owner.side and dv < 0
+                if down and self._harm_evaded(x, ctx):
+                    continue
                 if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
+                    continue
+                if (down and self._harm_immune(x)) or (dv > 0 and self._gauge_up_blocked(x)):
                     continue
                 self._fired(owner)
                 self.set_gauge(x, x.gauge + dv)
@@ -4844,6 +4851,16 @@ class Battle:
         """같은 효과를 CantGetMoreDebuff(면역 계열) 대상은 거부(비양성·비DeleteBuff·비강제, NKM:4394-4398)."""
         if self.mc['gauge_cd_immune'] == 'client' and self._debuff_banned(x):
             self.rule_hits['gauge_cd_immune'] += 1
+            return True
+        return False
+
+    def _gauge_up_blocked(self, x):
+        """행동 게이지 증가 면역(ImmuneSpeedGaugeUp: 억류(해제불가)·들러리(해제불가), data/buff_flags.json)이면 게이지 증가 효과를
+        거부한다(SpeedGaugeUp 버프, 강제 아님 — NKM:4412-4416). 규칙 mc.gauge_up_immune. 자연 충전은 해당 없음."""
+        if self.mc['gauge_up_immune'] != 'client':
+            return False
+        if any(x.on(n) for n in buff_flags()['immune_gauge_up'] if n in x.eff):
+            self.rule_hits['gauge_up_immune'] += 1
             return True
         return False
 
