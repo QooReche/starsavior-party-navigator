@@ -52,10 +52,6 @@
     "reason": "calibrate_quick --write 재보정"
    },
    {
-    "hash": "6a167ad4ef8ae53c",
-    "reason": "calibrate_quick --write 재보정"
-   },
-   {
     "hash": "37244a8639cb0abc",
     "reason": "calibrate_quick --write 재보정"
    },
@@ -81,6 +77,10 @@
    },
    {
     "hash": "52a12ac07f67821a",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "ddda8e71057748f9",
     "reason": "calibrate_quick --write 재보정"
    },
    {
