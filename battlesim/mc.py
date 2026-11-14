@@ -4195,14 +4195,15 @@ class Battle:
             for x in tg:
                 if eff.get('shield_only') and x.shield_total() <= 0:
                     continue
-                down = x.side != owner.side and eff['val'] < 0
+                forced = self._forced(owner)
+                down = x.side != owner.side and eff['val'] < 0 and not forced
                 if down and self._harm_evaded(x, ctx):
                     continue
                 if x.side != owner.side and eff.get('judge') and not self.roll_hit(owner, ctx, x, None):
                     continue
                 if down and self._harm_immune(x):
                     continue
-                if eff['val'] > 0 and self._gauge_up_blocked(x):
+                if eff['val'] > 0 and not forced and self._gauge_up_blocked(x):
                     continue
                 self.set_gauge(x, x.gauge + eff['val'] * 100.0)
             return
@@ -4878,6 +4879,15 @@ class Battle:
             return True
         return False
 
+    def _forced(self, owner):
+        """지금 실행 중인 줄이 SE 행 ForceApplyEffect 인가(data/foe_auto.json force, tools/build_foe_auto.py). 강제 적용은
+        유닛 면역 목록·회피·CantGetMoreBuff/Debuff·상태이상 면역·게이지 증가 면역을 건너뛴다(NKM:4318-4327·4394-4416 의
+        !OBF_8151, 생성자 6112: SE 강제 || 버프 강제). 효과 적중 판정은 별개. 규칙 mc.se_force_apply."""
+        ln = self._cur_line
+        if self.mc['se_force_apply'] != 'client' or ln is None or owner is None:
+            return False
+        return (ln.slot, ln.raw) in getattr(owner.d, 'force_lines', ())
+
     def _cc_immune(self, x, name):
         """기절·수면·침묵·도발 효과를 각 면역 버프(〈기절 면역〉 1047 등, BUFF_TEMPLET m_bImmuneStun…) 보유자가 거부(NKM:4407-4411,
         강제 적용 예외 — 엔진은 SE 행 강제를 모름). 이름 = data/buff_flags.json cc. 규칙 mc.cc_immune_buff."""
@@ -4919,15 +4929,19 @@ class Battle:
         if category == 'buff' and self.refuse_buff(x, name):
             return     # 〈강화 불가〉: 새 강화 효과(갱신·합산 포함)는 거부(클라 버프 부여 함수 650줄)
         resist = category == 'debuff' and not eff.get('ignore_resist')
+        forced = self._forced(owner)
         if (self.mc['immune_group_resist'] == 'client' and not resist and name in getattr(x.d, 'immune', ())
-                and not (eff.get('unique_enemy') and eff.get('ignore_resist'))):
+                and not forced and not (eff.get('unique_enemy') and eff.get('ignore_resist'))):
             # 물폭탄류(unique_enemy+ignore_resist)는 SE 행 ForceApplyEffect 라 면역 목록도 통과(immune_force_apply 와 같은 식별).
             # 유닛 면역 목록(ImmuneGroupId)은 효과 적중·저항 무시와 독립된 첫 검사(NKM:4318-4322, 강제 적용만 예외).
             # 저항 판정 대상 약화는 아래 roll_hit 가 같은 이름으로 막으므로 여기서는 저항 무시·비약화 경로만.
             self.rule_hits['immune_group_resist'] += 1
             return
         if resist and ctx is not None and x in ctx.evaded:
-            return     # 회피한 대상에는 약화가 걸리지 않음(공식 2026-06-04 오류 수정 공지)
+            if forced:
+                self.rule_hits['se_force_apply'] += 1
+            else:
+                return     # 회피한 대상에는 약화가 걸리지 않음(공식 2026-06-04 오류 수정 공지)
         if self.mc['immune_force_apply'] == 'client':
             # build 26314877 NKM:4339-4343: CantGetMoreDebuff는 비양성·비DeleteBuff·비ForceApply 효과만 IMMUNE 거부
             # (효과 저항 무시 여부와 무관). 통과 이름 = data/buff_immune_pass.json(IsPositive|DeleteBuff|ForceApplyEffect,
@@ -4937,14 +4951,19 @@ class Battle:
                 # (SE_TEMPLET_SKILL_1 COND_SUMMER_SMILE_UNIQUE_PASSIVE_01_01)로 통과로 본다(엔진은 SE 행 ID 를 몰라 이 경로로 대신 식별).
                 if name in IMMUNE_PASS_NAMES or (eff.get('unique_enemy') and eff.get('ignore_resist')):
                     self.rule_hits['immune_force_pass'] += 1
+                elif forced:
+                    self.rule_hits['se_force_apply'] += 1
                 else:
                     return
-        elif resist and self._debuff_banned(x):
+        elif resist and not forced and self._debuff_banned(x):
             return     # 〈면역〉 (약화효과 면역): 상대가 거는 효과(약화) 전부 막음
-        if resist and (eff.get('judge') or name in getattr(x.d, 'immune', ())):
-            if not self.roll_hit(owner, ctx, x, name):
+        immune_name = name in getattr(x.d, 'immune', ())
+        if forced and immune_name and resist:
+            self.rule_hits['se_force_apply'] += 1      # 강제 적용은 유닛 면역 목록 통과(NKM:4318), 효과 적중 판정은 별개
+        if resist and (eff.get('judge') or (immune_name and not forced)):
+            if not self.roll_hit(owner, ctx, x, None if forced else name):
                 return
-        if self.mc['cc_immune_buff'] == 'client' and self._cc_immune(x, name):
+        if self.mc['cc_immune_buff'] == 'client' and not forced and self._cc_immune(x, name):
             return
         dot = eff.get('dot')
         if dot is None and name in _rules.KNOWN_DOT and not eff['props']:

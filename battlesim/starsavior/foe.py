@@ -331,6 +331,12 @@ class FoeDef:
             self.auto_lines[key] = spec
         for key in clash:
             del self.auto_lines[key]
+        # SE 행 ForceApplyEffect 인 효과 줄(mc.se_force_apply): (칸, 효과 줄 원문)
+        self.force_lines = set()
+        for k in rules.get('force', ()):
+            si, li = (int(x) for x in k.split(':'))
+            sd = raw['s'][si]
+            self.force_lines.add((sd['sl'], (sd.get('ef') or [])[li]))
         # 자신이 시전하는 추가 발동(BI_ENFORCE)의 적 대상 규칙(mc.self_enforce_target): (칸, 효과 줄 원문) -> {slot, eat, f, cool, cond}
         self.enforce_self, clash = {}, set()
         for k, spec in rules.get('enforce_self', {}).items():

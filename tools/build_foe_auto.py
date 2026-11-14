@@ -59,7 +59,8 @@ HEAD = [(r'적 1명\(자동 지정\)', {'NSETT_AUTO_ENEMY_ONE'}), (r'적\(자동
 # 11/12 데이터북부터 자동 지정 줄이 «아군 1명(자동 지정)에게» 대신 조건을 풀어 쓴 문구(예: «최대 생명력이 가장 높은 아군 1명에게»,
 # «「초즌」 상태인 적 전체에게», «다른 아군 1명에게», «보스인 아군 전체에게»)로 나온다. 대상 머리말에 조건어가 붙은 아군/적 문구는
 # 자동 지정으로 보고, 클라 SE 행의 m_BuffTargetType 이 같은 쪽 AUTO 계열일 때만 짝짓는다(아니면 기존처럼 거절).
-RX_HEAD_NEW = re.compile(r'(?:[)\]]\s+|^)(?P<h>[^()\[\]〈〉]*?(?:아군|적)(?: 중 [^()\[\]〈〉]*?)?(?: \d+명| 전체)?)(?:에게|의)\s')
+# 「…」 효과 이름 안의 괄호(예: «「환상(해제불가)」 상태인 적 전체에게»)는 머리말의 일부로 본다(홍염 양각 보스 솟구치는 환영).
+RX_HEAD_NEW = re.compile(r'(?:[)\]]\s+|^)(?P<h>(?:「[^」]*」|[^()\[\]〈〉「])*?(?:아군|적)(?: 중 (?:「[^」]*」|[^()\[\]〈〉「])*?)?(?: \d+명| 전체)?)(?:에게|의)\s')
 PLAIN_HEAD = {'적', '적 1명', '적 전체', '아군 전체', '자신 제외 아군 전체', '자신을 제외한 아군 전체', '스킬 대상', '대상'}
 AUTO_KINDS = {'아군': {'NSETT_AUTO_ALLY', 'NSETT_AUTO_ALLY_ONE', 'NSETT_AUTO_ALLY_ONE_NOT_SELF'}, '적': {'NSETT_AUTO_ENEMY', 'NSETT_AUTO_ENEMY_ONE'}}
 
@@ -272,7 +273,7 @@ def build(static):
             REPORT['한 유닛에 다른 규칙(제외)' if None not in variants else '모르는 어휘로 유닛 제외'] += 1
             continue
         rules = json.loads(variants[0])
-        if rules['skills'] or rules['lines'] or rules.get('order') or rules.get('enforce_self'):
+        if rules['skills'] or rules['lines'] or rules.get('order') or rules.get('enforce_self') or rules.get('force'):
             out['foe:%d' % ui + (':%d' % xi if xi is not None else '')] = rules
     return out
 
@@ -359,12 +360,29 @@ def add_self_enforce_loose(res, si, raw, rows_se, target, bname):
 
 def add_lines(res, si, sid, raw, se, target, bname):
     rows_se = se_of(sid, se)
-    if not rows_se or not any(r.get('AutoTargetId') or is_self_enforce(r) for r in rows_se):
+    if not rows_se:
+        return
+    auto_rows = any(r.get('AutoTargetId') or is_self_enforce(r) for r in rows_se)
+    force_rows = any(r.get('ForceApplyEffect') for r in rows_se)
+    if not auto_rows and not force_rows:
         return
     pairs = pair_lines(raw['s'][si].get('ef') or [], rows_se)
     if pairs is None:
-        REPORT['효과 줄 짝짓기 실패'] += 1
-        add_self_enforce_loose(res, si, raw, rows_se, target, bname)
+        if force_rows:
+            REPORT['강제 적용 SE 줄 짝짓기 실패(그 스킬 force 없음)'] += 1
+        if auto_rows:
+            REPORT['효과 줄 짝짓기 실패'] += 1
+            add_self_enforce_loose(res, si, raw, rows_se, target, bname)
+        return
+    # SE 행 ForceApplyEffect: 면역 목록·회피·CantGetMoreBuff/Debuff·상태이상 면역·게이지 증가 면역을 건너뛰는 강제 적용 줄
+    # (NKM:4318-4327·4394-4416 의 !OBF_8151, 생성자 6112 OBF_8151 = SE 강제 || 버프 강제). 효과 적중 판정은 별개.
+    for k, r in pairs:
+        if r.get('ForceApplyEffect'):
+            key = '%d:%d' % (si, k)
+            if key not in res.setdefault('force', []):
+                res['force'].append(key)
+                res['force'].sort()
+    if not auto_rows:
         return
     got, bad = {}, set()
     for k, r in pairs:
@@ -426,14 +444,16 @@ def main():
     out = dict(_note='적 자동 대상 규칙(tools/build_foe_auto.py). units[foe:유닛[:변형]] = {skills[칸] = 규칙 행(c 조건, f 필터), '
                      'lines["스킬번호:줄번호"] = 효과 줄 자동 대상(one = 1명, f 필터), order = SkillOrderList 시도 순서, '
                      'enforce_self["스킬번호:줄번호"] = 자신이 시전하는 추가 발동(BI_ENFORCE)의 적 대상 규칙(eat = EnforceAutoTargetId, 0 이면 1001; '
-                     'f 필터, cool = SeCoolTurn, cond = SkillConditionId — mc.self_enforce_target)}. '
+                     'f 필터, cool = SeCoolTurn, cond = SkillConditionId — mc.self_enforce_target), '
+                     'force = SE 행 ForceApplyEffect 인 효과 줄 ["스킬번호:줄번호"] (mc.se_force_apply)}. '
                      '없는 적·줄은 엔진 기본(설명문 근사 -> 규칙 1001), 없는 순서는 궁극기->특수기->기본기.',
                units=units)
     atomic_text(ROOT / 'data' / 'foe_auto.json', json.dumps(out, ensure_ascii=False, separators=(',', ':')) + '\n')
     n_sk = sum(len(v['skills']) for v in units.values())
     n_ln = sum(len(v['lines']) for v in units.values())
     n_es = sum(len(v.get('enforce_self', {})) for v in units.values())
-    print('foe_auto.json: 적', len(units), '스킬 규칙', n_sk, '효과 줄', n_ln, '자신 추가 발동', n_es)
+    n_fc = sum(len(v.get('force', [])) for v in units.values())
+    print('foe_auto.json: 적', len(units), '스킬 규칙', n_sk, '효과 줄', n_ln, '자신 추가 발동', n_es, '강제 적용 줄', n_fc)
     for k, v in REPORT.most_common():
         print('  ', v, k)
     for k, v in REPORT_HEAD.most_common(8):
