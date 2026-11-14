@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "52a12ac07f67821a",
+  "hash": "ddda8e71057748f9",
   "history": [
-   {
-    "hash": "4bc2697e8fd33dcb",
-    "reason": "11/13 연쇄 고정 피해·대상 강인도 판정 변경: 길드 방어전 시즌 종료로 guild_sim 재생성을 생략했음. 다음 시즌 자료 반영 때 재생성하기로 함."
-   },
    {
     "hash": "8b42ba297d919458",
     "reason": "11/13 시전자 목록 조건·길레 승급 수정: 길드 방어전 시즌 종료로 사전 계산 재생성을 생략했음. 다음 시즌 자료 반영 때 재생성하기로 함."
@@ -41,16 +37,16 @@
    {
     "hash": "52a12ac07f67821a",
     "reason": "11/14 클라 대조 해제·면역 13건 규칙(dispel_*·sleep_wake·debuff_ban_flag·gauge_*·cc_immune_buff 등) — 길드 방어전 시즌 미오픈"
+   },
+   {
+    "hash": "ddda8e71057748f9",
+    "reason": "11/14 클라 대조 후속: 수명 0 효과 매 스킬 끝 정리 기본 전환·SE 강제 적용 — 길드 방어전 시즌 미오픈"
    }
   ]
  },
  "quick": {
-  "hash": "52a12ac07f67821a",
+  "hash": "ddda8e71057748f9",
   "history": [
-   {
-    "hash": "213e5e67c881536e",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "6a167ad4ef8ae53c",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +81,10 @@
    },
    {
     "hash": "52a12ac07f67821a",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "ddda8e71057748f9",
     "reason": "calibrate_quick --write 재보정"
    }
   ]
