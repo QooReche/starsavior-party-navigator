@@ -188,9 +188,14 @@ def main(out=None):
     skills = json.loads(skill_bytes)
     assert all(str(s["uid"]) in skills for s in r), "Missing public skills for roster uid"
     skill_url = "data/savior_skills.json?v=" + hashlib.sha256(skill_bytes).hexdigest()[:12]
+    # 여정 스탯 우선순위(공략 DB): 로스터에 있는데 표에 없으면 다시 뽑아야 하고(중단), 공략 DB 에 아직 없어 직업 기본값으로 채운 구원자는 알린다 — 중단 점검은 저장 전에(빠진 구원자가 있으면 페이지를 쓰지 않음)
+    jp = pr._json(os.path.join(pr.DATA, "journey_priority.json"))
+    stale = [s["key"] for s in roster if s["key"] not in jp["units"]]
+    if stale:
+        raise SystemExit("여정 스탯 우선순위에 없는 구원자 %d명: %s — node tools/extract_journey_priority.js 를 다시 실행" % (len(stale), ", ".join(stale)))
     # 별도 생성 단계 tools/build_myinfo_view.py가 공개 설명 자료를 담당함.
     power = pr._json(pr.POW)
-    data = json.dumps({"roster": r, "archiveGrades": pr._json(os.path.join(pr.DATA, "archive_grades.json")), "growthView": {**pr._json(os.path.join(pr.DATA, "myinfo_view.json")), "itemSlots": pr._json(os.path.join(pr.DATA, "myinfo_slots.json"))}, "journeyPriority": pr._json(os.path.join(pr.DATA, "journey_priority.json")), "skillsUrl": skill_url, "skillIcons": pr._json(os.path.join(pr.DATA, "skill_icons.json"))["units"], "synDetailUrl": syn_detail_url, "cytoUrl": cyto_url,
+    data = json.dumps({"roster": r, "archiveGrades": pr._json(os.path.join(pr.DATA, "archive_grades.json")), "growthView": {**pr._json(os.path.join(pr.DATA, "myinfo_view.json")), "itemSlots": pr._json(os.path.join(pr.DATA, "myinfo_slots.json"))}, "journeyPriority": jp, "skillsUrl": skill_url, "skillIcons": pr._json(os.path.join(pr.DATA, "skill_icons.json"))["units"], "synDetailUrl": syn_detail_url, "cytoUrl": cyto_url,
                        "contents": contents, "cfg": out_cfg, "icons": icons, "bicons": bicons, "syn": syn, "bosses": bosses,
                        "pen": power["pen"], "tribe": power["tribe"],
                        "grules": grules["types"], "plain": pr._json(os.path.join(pr.DATA, "gimmick_plain.json")), "gim": pr.gimmick_rules()[1],"dmg": pr._json(pr.DMG), "guild": gd.page_payload(gdef), "cosmoRaid": cosmo_raid_payload()}, ensure_ascii=False, separators=(",", ":"))
@@ -201,11 +206,6 @@ def main(out=None):
     out = out or (sys.argv[1] if len(sys.argv) > 1 else OUT_DEFAULT)
     atomic_text(out, html)
     print(out, len(html.encode('utf-8')), "bytes (UTF-8)")
-    # 여정 스탯 우선순위(공략 DB): 로스터에 있는데 표에 없으면 다시 뽑아야 하고(중단), 공략 DB 에 아직 없어 직업 기본값으로 채운 구원자는 알린다
-    jp = pr._json(os.path.join(pr.DATA, "journey_priority.json"))
-    stale = [s["key"] for s in roster if s["key"] not in jp["units"]]
-    if stale:
-        raise SystemExit("여정 스탯 우선순위에 없는 구원자 %d명: %s — node tools/extract_journey_priority.js 를 다시 실행" % (len(stale), ", ".join(stale)))
     if jp.get("fallback"):
         print("[알림] 여정 스탯 우선순위: 공략 DB 에 없는 구원자 %d명(직업 기본값으로 판단, DB 받은 날짜 %s): %s" % (
             len(jp["fallback"]), jp.get("db_fetched") or "기록 없음", ", ".join("%s(%s)" % kv for kv in jp["fallback"].items())))
