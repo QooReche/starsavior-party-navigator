@@ -197,15 +197,18 @@ def pair_lines(ef, rows):
             if tt not in nk:
                 return None
             continue
+        # 대상 머리말은 효과 부분(조건 괄호 뒤)에서 읽는다 — 조건 «[스킬 대상 유형: 적 전체; …]»(피격 조건)의 낱말을 대상으로
+        # 잘못 읽으면 «… 자신에게 〈어긋난 시계바늘(해제불가)〉» 같은 줄이 적 전체로 판정돼 그 스킬 전체 짝짓기가 실패했다.
+        part = effect_part(line)
         for pat, kinds in HEAD:
-            if re.search(pat, line):
+            if re.search(pat, part):
                 if tt not in kinds:
                     return None       # 한 줄이라도 대상 종류가 다르면 그 스킬 전체를 짝짓지 않음
                 break
         else:
-            REPORT_HEAD[line.split(']')[-1][:30]] += 1
+            REPORT_HEAD[part[:30]] += 1
             return None               # 대상 머리말을 못 읽은 줄이 있으면 짝짓지 않음
-        if ('자동 지정' in line) != (tt or '').startswith('NSETT_AUTO'):
+        if ('자동 지정' in part) != (tt or '').startswith('NSETT_AUTO'):
             return None
     return [(i, r) for (i, _line), r in zip(exp, rows)]
 
