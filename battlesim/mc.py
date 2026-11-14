@@ -2883,7 +2883,11 @@ class Battle:
                     e.shield -= take
                     rest -= take
                     absorbed += take
-                    if e.shield <= 1e-9 and not e.props:
+                    if e.shield <= 1e-9 and (not e.props or self.mc['barrier_depletion'] == 'client'):
+                        # 클라: Barrier 버프는 보호막 HP 0 이 되면 버프째 제거 — 같은 버프의 능력치(〈파프닐의 강림〉 방어력% 등)도 함께 사라짐
+                        # (build 26610546 NKM:2746-2765 OBF_29097 흡수 뒤 OBF_8841<=0 → OBF_11376 제거, 5858-5861 Barrier 플래그 → OBF_29097). legacy = 능력치가 있으면 남김.
+                        if e.props:
+                            self.rule_hits['barrier_depletion'] += 1
                         del v.eff[name]
                         self.dirty(v)
         real = min(rest, v.hp)

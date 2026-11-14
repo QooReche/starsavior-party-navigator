@@ -87,7 +87,7 @@ class ClashCombatTest(unittest.TestCase):
         """스킬 순서·장막·중첩을 실제 행동 루프에서 관찰. 기능 제거 시 실패해야 함."""
         cast = Battle.cast
         for tab, prefix, buff, minimum in [
-                (0, ['재충전', '포착', '포착', '재충전', '침입자 청소'], '버전 업그레이드(해제불가)', 2),
+                (0, ['재충전', '포착', '포착', '재충전', '침입자 청소'], '버전 업그레이드(해제불가)', 1),   # mc.barrier_depletion=client: 〈저항 장막〉(BI_MOTIVATOR_HANDS_1, Barrier) 보호막이 깨지면 장막째 사라져 중첩 조건이 덜 맞음
                 (1, ['서리 지진', '차가운 고통', '차가운 고통', '서리 지진', '눈보라를 가르는 포효'], '혹한의 기운', 2),
                 (2, ['소집', '판별', '판별'], '방위', 2)]:
             with self.subTest(tab=tab):
