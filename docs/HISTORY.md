@@ -1,3 +1,22 @@
+## 2026-11-14 성간 회랑 485 공허절멸자 피해 클라 대조 — 능력치 정수화·연쇄 피해 정수화·연쇄 수호 분담·수호자 동률 · power_penalty 근거 보탬
+
+- 계기: 영상 대조에서 공허절멸자 «학습된 전투 기술» 이 힐데에게 주는 피해가 엔진 28~33k 로 보였음. 클라 식으로 항마다 맞춰 봄(build 26610546).
+- 피해식(NKM.decompiled.cs): 기본값 = 공격력 x AtkFactor x 1.85(OBF_13616 :18218-18297, 적·아군 같은 식) → 방어율 def/(def+3000)·관통(OBF_32020 :18341, CLIENT_CONST DefenceConst 3000) → 증가합(OBF_21481 :18299, 상성 ±0.05·RATE_DAMAGE_UP·카운터 0.10·치명피해 등) − 감소합(OBF_2574 :18320, 회피 +0.5), 순합 −50% 하한(:18186) → 팀별 최종 배율(OBF_6202 :18369-18386) → 난수 Range(9500,10500)(:18436). 치명 판정 = 공격자 치명 − 대상 NST_RATE_CRITICAL_EVADE(OBF_31522 :8289-8309, 표에 부여원 0건).
+- 공격력: 기본(UNIT_STAT_TEMPLET2 + STAT_ADD_PER_LEVEL2 x (레벨−1), 레벨 = BATTLE_TEMPLET BattleLevel) x (1+스테이지 AddStat NV_RATE_ATK) x (1+버프 NV_RATE_ATK)(OBF_16891 :18783-18905, 3단 곱). «절멸자의 말로»(BI_FALLEN_SHIELD_1)는 NV_RATE_ATK +2%·치명 +2%(3단, 버프).
+- «침식 심도 증가»는 스테이지 전투 효과가 아니라 보스 유닛 패시브(MON_BOSS_PASSIVE8 → BI_BOSS_PASSIVE8_01, RATE_DAMAGE_UP 500, SKILL_END 1중첩, 최대 99). «공허 방패» 보유 시 +30% 는 기본기 SE(조건 51006, SKILL_START·이번 스킬만), 특수기·궁극기엔 없음. «간파» 연쇄 피해는 추가 피해 식(OBF_28002 :6212-6236 — (값 + 값 x (DAMAGE_UP+역할+속성+추가피해 증가+브레이크)) x 1.85, 방어는 대상 관통 저항만 :18388)과 엔진이 같음.
+- 결과(위 항목): 엔진이 클라와 같음. 28~33k 는 power_penalty=off(규칙 기본값) 값이고, 화면 설정(model)에서는 영상 범위(난수 0.95~1.05 안)와 맞음. 특수기 «공방일체»(AtkFactor 9500)도 대상 방어력 증가·카운터가 걸린 판의 엔진 비치명 값이 영상 범위 안 — 엔진 첫 타 중간값이 높게 보인 것은 치명·방어력 증가 없는 판이 섞인 탓.
+- 시작 쿨 표시: 클라 HyperSkillAvailable·SpecialSkillAvailable·AllSkillAvailable 은 «사용 가능 여부»가 아니라 등장 때 쿨타임 초기값(NKM:1940-1985 — All 이면 전부 0, 아니면 전부 최대 쿨, Special/Hyper 는 그 칸만 0, OBF_18304·OBF_20053 :2389-2413). 485 공허절멸자(S)는 궁극기 «공허 드리우기»가 쿨 4로 시작해 «공방일체 → 학습 x3 → 공허 드리우기» 순서가 되고 영상과 같음. data/foe_spawn.json 을 다시 뽑아 차이 0 확인(길드 방어전 53개는 build_guild_bfb 가 따로 처리).
+- 규칙 `power_penalty` 는 기본 off 그대로 두고 note·source 에 근거를 보탬: BATTLE_POWER_RANGE_TEMPLET 500행 = databook topics.pen(차이 0행), 적용 지점 NKM 18369-18386·479-482, 485 영상 적 피해 x1.228 구간 일치. 레벨 차 배율(BATTLE_POWER_LEVEL_TEMPLET) 결합은 미확인.
+- 독립 리뷰(codex)에서 나온 남은 차이 3건을 고침(모두 규칙 스위치, 기본 = 클라):
+  - `stat_floor`(legacy float): 피해식의 공격력·방어력(방어 계수 스킬의 방어력 항 포함)을 3단(버프)까지 곱한 뒤 Math.Floor(NKM:18892-18897). 차이는 피해 1 안팎.
+  - `chain_round`(legacy float): 일반 연쇄 피해 값 = (int)((능력치 x 계수 + 그 x 증가합) x 1.85) 로 먼저 정수화한 뒤 방어·팀 배율·난수(NKM:4730-4740·6212-6236·8150-8168).
+  - `chain_guard`(legacy off): 연쇄(추가) 피해도 수호 분담 — 대상 제외 분담 비율 최대 1명이 방어 전 값의 분담 몫을 가져가 수호자 방어·별도 난수로 다시 계산, 대상이 무적·스킬 무효면 분담 없음, ADT_STAT_TRUE 도 같은 분담(NKM:8150-8191·8371-8386·17799-17803·1286-1308). 수호 부여원 예: SE COND_INCOGNITA_FLOWER_HYPER_01_01(BI_GUARD).
+  - 재검토(codex 2회째) 반영: `stat_floor` 는 클라 순서 Floor(앞 단 값 + 앞 단 값 x 만분율 정수 합 x 0.0001)로, 처음 넣었던 오차 보정(+1e-6)을 뺌(100·−56% → 클라 43, 보정하면 44). 새 규칙 `guard_tie`(legacy first): 수호자 분담 비율이 같으면 클라 OBF_30007 — 둘 다 전열이면 앞 칸, 한쪽만 전열이면 그쪽, 둘 다 후열이면 먼저 본 쪽(NKM:1286-1311·13247-13253). 스킬 타격·지속·연쇄·코스모 고정 추가 피해 네 곳 공통. 적 쪽 동률은 맵별 칸 판정(:616-625)을 옮기지 않아 먼저 본 쪽(미확인).
+  - 남긴 것(비차단): 연쇄 피해 수호자 몫에 관통 저항(:18395)·추가 피해 감소(:17806) 미적용 — 두 스탯 모두 표에 부여원 0건이라 결과 동일.
+  - 기각: «난수 상한 1.0500 포함» 지적 — 규칙 rand_range 값이 [0.95, 1.0499] 라 randint 상한이 1.0499(상한 제외와 같음).
+- 시험: `tests/dmg_terms_1114_test.py`(네 규칙의 client/legacy 값, 무효 대상 분담 없음, 오차 보정 없는 정수화, 수호자 동률 전열 우선·후열끼리 먼저 본 쪽). 각 분기를 끄면 실패 확인. `mc_cache_test` _KEEP·`heal_burst_test` 옛 결과 해시에 네 규칙 legacy.
+  - 기존 시험 조정: `client_rules_1111_test.test_stat_select_int`·`followup_d_test.test_stat_selection_and_buff_timing` 은 stat_select_int 의 소수 능력치 비교를 보는데, stat_floor=client 면 def_stat·atk_stat 이 이미 정수라 장면이 안 생김 → 그 호출만 `stat_floor=float`.
+- 영향: 골든 65/150/10 일치. 빠른 계산 재보정(일치 0.910). guild_sim 은 시즌 미오픈이라 도장 ack. 485 공허절멸자 기본기 피해는 정수화 뒤에도 사실상 그대로(비치명 중간값 차이 1 안팎).
 ## 2026-11-14 클라 대조 소규모 후속: 회피 거부 조건·수명 0 정리 턴 조건·스킬 무효화 재부여·foe_auto 파싱 시험·여정 우선순위 점검
 
 규칙 기본값은 바뀌지 않음(기존 규칙 안에서 클라 조건을 보강). 골든 65/150/10 일치.

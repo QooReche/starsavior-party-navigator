@@ -325,7 +325,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'break_skill_hit_pct', 'break_skill_level', 'break_skill_normal_points',
     'break_skill_point_cap', 'break_skill_role_speed_pct', 'break_skill_scale',
     'break_skill_speed_pct', 'break_skills',
-    'break_skill_reduce', 'buff_maxhp', 'buff_step_group', 'chain_pen', 'chain_skill_damage_up', 'check_buff_expiry', 'cond_count_bind', 'cosmo_boss_barrier', 'counter_inc',
+    'break_skill_reduce', 'buff_maxhp', 'buff_step_group', 'chain_pen', 'chain_round', 'chain_guard', 'stat_floor', 'guard_tie', 'chain_skill_damage_up', 'check_buff_expiry', 'cond_count_bind', 'cosmo_boss_barrier', 'counter_inc',
     'debuff_instance_count', 'effect_dur_extend', 'enemy_auto_target', 'enemy_cd_native',
     'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
     'enemy_leader', 'enemy_same_formula', 'enemy_spawn', 'evade_model',

@@ -2643,15 +2643,30 @@ class Battle:
         st1 = getattr(u.d, 'nv_stage1', None)
         if st1 is not None:
             # 길방 보스 stage: 1단(AddStat)·2단(패시브)·3단(버프) 곱. 시전 한정 ctx.atkp 의 단은 미확인이라 버프와 같은 3단에 둠
-            return (u.d.stats['atk'] * (1 + st1['atkp']) * (1 + u.d.passive['atkp'] + u.d.gear_atkp)
-                    * (1 + m['atkp'] + (ctx.atkp if ctx else 0.0)))
-        return u.d.stats['atk'] * (1 + u.d.passive['atkp'] + m['atkp'] + (ctx.atkp if ctx else 0.0) + u.d.gear_atkp)
+            b0 = u.d.stats['atk'] * (1 + st1['atkp']) * (1 + u.d.passive['atkp'] + u.d.gear_atkp)
+            r3 = m['atkp'] + (ctx.atkp if ctx else 0.0)
+            return self._stat_int(b0 * (1 + r3), b0, r3)
+        b0 = u.d.stats['atk'] * (1 + u.d.passive['atkp'] + u.d.gear_atkp)
+        r3 = m['atkp'] + (ctx.atkp if ctx else 0.0)
+        return self._stat_int(u.d.stats['atk'] * (1 + u.d.passive['atkp'] + m['atkp'] + (ctx.atkp if ctx else 0.0) + u.d.gear_atkp), b0, r3)
 
     def def_stat(self, u, local=0.0):
         if u.zero_stats:
             return 0.0
         m = u.mods()
-        return max(0.0, u.d.stats['def'] * (1 + u.d.passive['defp'] + m['defp'] + local))
+        v = max(0.0, u.d.stats['def'] * (1 + u.d.passive['defp'] + m['defp'] + local))
+        if self.mc['stat_floor'] != 'client':
+            return v
+        return max(0.0, self._stat_int(v, u.d.stats['def'] * (1 + u.d.passive['defp']), m['defp'] + local))
+
+    def _stat_int(self, v, base=None, rate=None):
+        """build 26610546 NKM:18892-18897: 최종 능력치 = (int)Math.Floor(앞 단 값 + 앞 단 값 x 3단 비율), 3단 비율 = 만분율 정수 합 x 0.0001.
+        base·rate 를 주면 클라와 같은 순서로 계산(보정 없는 Floor), 안 주면 v 를 그대로 Floor. legacy = 실수 그대로(이전 동작)."""
+        if self.mc['stat_floor'] != 'client':
+            return v
+        if base is not None:
+            v = base + base * (round(rate * 10000) * 0.0001)
+        return float(math.floor(v))
 
     def hp_stat(self, u):
         return u.maxhp
@@ -2670,7 +2685,12 @@ class Battle:
             H = a.maxhp    # 생명력 비례 항 = 지금 최대 생명력(전투 전 값 x 버프·서든데스 묶음)
         else:
             H = d.stats['hp'] * (1 + d.passive['hpp'] + m['hpp']) * max(0.01, 1 + a.sd_hp)   # 서든데스는 전투 전 값에 곱함(−99% 하한)
-        D = 0.0 if a.zero_stats else d.stats['def'] * (1 + d.passive['defp'] + m['defp'])   # 〈들러리〉 FixStats NST_DEF 0
+        if a.zero_stats:
+            D = 0.0   # 〈들러리〉 FixStats NST_DEF 0
+        elif self.mc['stat_floor'] == 'client':
+            D = self.def_stat(a)   # 방어 계수 스킬의 방어력 항도 정수 최종 방어력(NKM:18892-18897)
+        else:
+            D = d.stats['def'] * (1 + d.passive['defp'] + m['defp'])
         S = a.spd()
         fa, fh, fd, fs = [x / 10000.0 for x in sk.cf]
         base = (A * fa + H * fh + D * fd) * (1 + S / 100.0 * fs) * _rules.BASE_MULT
@@ -2757,7 +2777,7 @@ class Battle:
             if w is v:
                 continue
             s = w.mods()['guard'] + hctx.local[w]['guard']
-            if s > share + 1e-12:
+            if self._guard_better(guard, share, w, s):
                 guard, share = w, s
         share = min(1.0, share)
         if self.mc['guard_skip_immune'] == 'client' and (v.invincible() or v.on('스킬 피해 무효')):
@@ -2938,6 +2958,42 @@ class Battle:
             mult = 1 - _rules.DEC_CAP
         return mult
 
+    def _guard_better(self, cur, cur_s, w, s):
+        """수호자 후보 w(분담 비율 s)가 지금 후보 cur(cur_s)보다 앞서는가(NKM:1286-1311 OBF_18133).
+        비율이 크면 교체. 같으면 guard_tie=client 일 때 클라 OBF_30007: 둘 다 전열이면 앞 칸, 한쪽만 전열이면 그쪽,
+        둘 다 후열이면 먼저 본 쪽 유지. 아군 전열 = 엔진 칸 0·1(클라 칸 1·2, OBF_29042 :13247). 적 쪽 동률은 칸 판정
+        맵별 분기(:616-625)를 옮기지 않아 먼저 본 쪽 유지. legacy first = 비율이 클 때만 교체(이전 동작)."""
+        if s <= 0:
+            return False
+        if cur is None or s > cur_s + 1e-12:
+            return True
+        if s < cur_s - 1e-12 or self.mc['guard_tie'] != 'client' or w.side != 0:
+            return False
+        cf, wf = cur.pos < 2, w.pos < 2
+        if cf and wf:
+            better = w.pos < cur.pos
+        else:
+            better = wf and not cf
+        if better:
+            self.rule_hits['guard_tie'] += 1
+        return better
+
+    def _chain_guard(self, v, base):
+        """연쇄(추가) 피해의 수호 분담(NKM:8167 OBF_18133 → 17799-17803). (수호자, 분담 몫).
+        대상 제외 같은 편 중 분담 비율 최대 1명(1286-1308), 대상이 무적·스킬 무효면 분담 없음. legacy off = 분담 없음."""
+        if self.mc['chain_guard'] != 'client' or v.invincible() or v.on('스킬 피해 무효'):
+            return None, 0.0
+        guard, gs = None, 0.0
+        for w in self.alive(v.side):
+            if w is not v:
+                s = w.mods()['guard']
+                if self._guard_better(guard, gs, w, s):
+                    guard, gs = w, s
+        if guard is None:
+            return None, 0.0
+        self.rule_hits['chain_guard'] += 1
+        return guard, base * min(1.0, gs)
+
     def apply_damage(self, a, v, dmg, kind, shieldable=True):
         """보호막 -> HP 순. 사망하면 True."""
         if v.dead or dmg <= 0:
@@ -2994,7 +3050,7 @@ class Battle:
         if (client or self.mc['add_damage_guard'] == 'client') and not target.invincible() and not target.on('스킬 피해 무효'):
             share = 0.0
             for u in self.alive(target.side):
-                if u is not target and u.mods()['guard'] > share:
+                if u is not target and self._guard_better(guard, share, u, u.mods()['guard']):
                     guard, share = u, u.mods()['guard']
             if guard is not None:
                 shared = damage * min(1.0, share)
@@ -3458,7 +3514,7 @@ class Battle:
                             for w in self.alive(u.side):
                                 if w is not u:
                                     s = w.mods()['guard']
-                                    if s > gs + 1e-12:
+                                    if self._guard_better(guard, gs, w, s):
                                         guard, gs = w, s
                             if guard is not None:
                                 share_base = base * min(1.0, gs)
@@ -4780,9 +4836,15 @@ class Battle:
             if self.mc['chain_stat_true'] == 'client' and eff.get('damage_type') == 'ADT_STAT_TRUE':
                 # NKM:6214-6217에서 먼저 정수화. 최종 팀 보정은 17815/18407,
                 # 방어·증감·1.85·난수는 4748-4756/17791-17815/18435에서 제외.
-                dmg = max(1, math.floor(int(val * eff['coef']) * self.pen[owner.side]))
+                b0 = float(int(val * eff['coef']))
+                guard, share_base = self._chain_guard(v, b0)
+                dmg = max(1, math.floor((b0 - share_base) * self.pen[owner.side]))
                 self.rule_hits['chain_stat_true'] += 1
                 self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
+                if guard is not None and share_base >= 1.0 and not guard.dead:
+                    gdmg = max(1, math.floor(share_base * self.pen[owner.side]))
+                    self.log(guard=guard.name, protects=v.name, dmg=gdmg)
+                    self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True)
                 continue
             de = self.def_stat(v)
             dr = de / (de + _rules.DEF_K)
@@ -4794,8 +4856,26 @@ class Battle:
             # incoming attack's modifiers when a defender reacts.
             if self.mc['chain_skill_damage_up'] and ctx is not None and ctx.src is owner:
                 inc += ctx.inc + ctx.local_by[v]['inc']
-            dmg = max(1.0, math.floor(val * eff['coef'] * (1 + inc) * _rules.BASE_MULT * (1 - dr) * self.rand(owner.side) * self.pen[owner.side]))
+            if self.mc['chain_round'] == 'client':
+                # NKM:4730-4740·6212-6236: 추가 피해 값 = (int)((능력치 x 계수 + 그 x 증가합) x 1.85) 로 먼저 정수화한 뒤
+                # 방어(17791-17796)·팀 배율(17815)·난수와 정수 절삭(18431-18456)을 적용
+                b0 = float(int((val * eff['coef'] + val * eff['coef'] * inc) * _rules.BASE_MULT))
+                self.rule_hits['chain_round'] += 1
+            else:
+                b0 = val * eff['coef'] * (1 + inc) * _rules.BASE_MULT
+            guard, share_base = self._chain_guard(v, b0)
+            b0 -= share_base
+            dmg = max(1.0, math.floor(b0 * (1 - dr) * self.rand(owner.side) * self.pen[owner.side]))
             self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
+            if guard is not None and share_base >= 1.0 and not guard.dead:
+                # NKM:8188-8191,8371-8386: 수호자 몫은 수호자 방어·별도 난수로 다시 계산(수호자에게서 다시 분담하지 않음)
+                gde = self.def_stat(guard)
+                gdr = gde / (gde + _rules.DEF_K)
+                if self.mc['chain_pen'] != 'client':
+                    gdr = max(0.0, gdr - gdr * min(1.0, m['pen']))
+                gdmg = max(1.0, math.floor(share_base * (1 - gdr) * self.rand(owner.side) * self.pen[owner.side]))
+                self.log(guard=guard.name, protects=v.name, dmg=gdmg)
+                self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True)
 
     # ---------- 효과 부여
     def roll_hit(self, owner, ctx, x, name):

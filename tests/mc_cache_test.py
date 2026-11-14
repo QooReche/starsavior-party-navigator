@@ -62,6 +62,7 @@ _KEEP.update(source_buff_list='literal', gille_promotion_target='fallback')
 _KEEP['self_enforce_target'] = 'last_target'
 _KEEP.update(target_break_condition='state', target_condition_set='first')
 _KEEP.update(target_hp_condition='ratio', not_self_stack='ge', chain_target_stat='off')
+_KEEP.update(stat_floor='float', chain_round='float', chain_guard='off', guard_tie='first')
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

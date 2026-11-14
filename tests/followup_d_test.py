@@ -224,7 +224,8 @@ class FollowupTest(unittest.TestCase):
 
     def test_stat_selection_and_buff_timing(self):
         for mode in ('float', 'floor'):
-            b = battle([unit('a'), unit('b')], [unit('foe')], mc={'stat_select_int': mode})
+            # stat_floor=client 면 def_stat·atk_stat 이 이미 정수라 선택 규칙의 소수 비교 장면이 안 생김 → 이 시험은 float 고정
+            b = battle([unit('a'), unit('b')], [unit('foe')], mc={'stat_select_int': mode, 'stat_floor': 'float'})
             a, other = b.allies
             give(other, 'def', {'방어력%': .04})
             self.assertAlmostEqual(b.def_stat(other) - b.def_stat(a), .4)

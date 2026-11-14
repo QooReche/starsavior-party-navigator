@@ -164,6 +164,7 @@ class RulesTest(unittest.TestCase):
         self.assertEqual(b._filter(a, b.allies, 'high_def'), b.allies)
         self.assertEqual(b.rule_hits['stat_select_int'], 1)
         b.mc['stat_select_int'] = 'float'
+        b.mc['stat_floor'] = 'float'     # stat_floor=client 면 def_stat 이 이미 정수라 소수 차이가 안 남음
         self.assertEqual(b._filter(a, b.allies, 'high_def'), [other])
 
     def test_break_domain_category(self):

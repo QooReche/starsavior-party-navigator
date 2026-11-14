@@ -1,15 +1,7 @@
 {
  "guild_sim": {
-  "hash": "b1e0c4c257957068",
+  "hash": "58c5082c6d44a22e",
   "history": [
-   {
-    "hash": "213e5e67c881536e",
-    "reason": "대상 격파 사건·HP 이하/약화 대상 집합 규칙 반영. 길드 방어전 시즌 종료로 사전 계산은 다음 시즌 자료 반영 때 재생성함."
-   },
-   {
-    "hash": "6a167ad4ef8ae53c",
-    "reason": "11/13 대상 HP 정수 절삭·미보유 중첩 동등 비교·대상 공격력 연쇄 지원: 길드 방어전 시즌 종료로 사전 계산 재생성 보류, 새 시즌 자료 반영 때 재생성"
-   },
    {
     "hash": "37244a8639cb0abc",
     "reason": "11/14 self_enforce_target(자신 추가 발동 대상 = EnforceAutoTargetId 규칙): 길드 방어전 시즌 종료(미오픈)로 사전 계산 재생성 보류, 새 시즌 자료 반영 때 재생성. accel-golden 길방 2건(그웬 편성)은 결과 해시 변화 — 최근 타격 대상이 쓰러졌을 때 무작위로 고르는 차이"
@@ -41,20 +33,20 @@
    {
     "hash": "b1e0c4c257957068",
     "reason": "2026-11-14 클라 대조 리뷰 반영(bskill_nullify·evade_ignore_resist 신규, se_force_apply 버프 강제 확장) — 길드 시뮬 시즌 미오픈이라 재생성 불필요"
+   },
+   {
+    "hash": "9a15dfc73e3aa475",
+    "reason": "피해식 정수화·연쇄 수호 분담 규칙(stat_floor·chain_round·chain_guard) 추가 — 길드 방어전 시즌 미오픈"
+   },
+   {
+    "hash": "58c5082c6d44a22e",
+    "reason": "피해식 정수화·연쇄 수호 분담·수호자 동률 규칙(stat_floor·chain_round·chain_guard·guard_tie) — 길드 방어전 시즌 미오픈"
    }
   ]
  },
  "quick": {
-  "hash": "b1e0c4c257957068",
+  "hash": "58c5082c6d44a22e",
   "history": [
-   {
-    "hash": "37244a8639cb0abc",
-    "reason": "calibrate_quick --write 재보정"
-   },
-   {
-    "hash": "37244a8639cb0abc",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "f9b2116566f06572",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +77,14 @@
    },
    {
     "hash": "b1e0c4c257957068",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "9a15dfc73e3aa475",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "58c5082c6d44a22e",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

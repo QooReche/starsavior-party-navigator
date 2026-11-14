@@ -156,7 +156,8 @@ class HealBurstTest(unittest.TestCase):
                                                        'break_auto_blocked_cc': 'off',
                                                        'effect_dur_extend': 'off',
                                                        'gauge_conditional': 'off',
-                                                       'local_vs_element': 'off'}})
+                                                       'local_vs_element': 'off',
+                                                       'stat_floor': 'float', 'chain_round': 'float', 'chain_guard': 'off', 'guard_tie': 'first'}})   # 2026-11-14 규칙은 옛 값
             frozen = {k: v for k, v in r.items() if k in ('per_unit', 'outcome', 'timeline', 'breaks', 'break_skill', 'foes')}
             frozen['outcome'] = {k: v for k, v in frozen['outcome'].items() if k not in ('progress', 'ttk_actions_median')}   # 나중에 더한 요약 칸(전투 규칙 무관)
             self.assertEqual(hashlib.sha256(json.dumps(frozen, sort_keys=True, ensure_ascii=False).encode()).hexdigest(), digest)
