@@ -103,6 +103,35 @@ function check(m=M,ux=U){
  {const x=run(m,A,ASHERAH,{content:'rush'});assert(!x.changed);assert(x.power>=x.original);}
  assert.equal(m.OVERWRITE_VERSION,'grown-account-v6');assert.equal(m.THRESHOLD_POLICY.archiveWhole,true);assert.equal(m.THRESHOLD_POLICY.archivePriority,'guide');assert.equal(m.THRESHOLD_POLICY.archiveMain,950);
 }
+// 공략 DB 지연 대비: 페이지 로스터에는 있는데 DB 에 없는 구원자는 직업 기본값으로 채우고 fallback 에 적는다(조용히 대체하지 않음). 실제 도구를 가짜 로스터로 돌린다
+{const cp=require('node:child_process'),os=require('node:os'),path=require('node:path'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'journey-priority-'));
+ try{const tool=require.resolve('../tools/extract_journey_priority.js'),guide=require.resolve('../rawdata/guide_app-core.js'),roster=path.join(dir,'roster.json'),out=path.join(dir,'out.json');
+  const real=require('../data/savior_reco.json').saviors.map(s=>({key:s.key,className:s.className}));
+  // 지금 자료가 최신 추출과 같은가(가이드·로스터를 고치고 다시 안 뽑으면 실패)
+  fs.writeFileSync(roster,JSON.stringify({saviors:real}));
+  const now=cp.spawnSync('node',[tool,guide,roster,out],{encoding:'utf8'});assert.equal(now.status,0,now.stderr);
+  same(JSON.parse(fs.readFileSync(out,'utf8')),priority,'data/journey_priority.json 이 낡음 — node tools/extract_journey_priority.js 다시 실행');
+  const missing=Object.keys(priority.fallback);same(missing,real.map(s=>s.key).filter(k=>!new RegExp('^    "id": "'+k+'",?\\s*$','m').test(fs.readFileSync(guide,'utf8'))),'fallback = 로스터 − 공략 DB');
+  console.log(`[알림] 공략 DB 에 없는 구원자 ${missing.length}명${missing.length?'(직업 기본값): '+missing.join(', '):''} · DB 받은 날짜 ${priority.db_fetched||'기록 없음'}`);
+  assert.match(String(priority.db_fetched),/^\d{4}-\d{2}-\d{2}$/,'DB 받은 날짜 기록');
+  for(const k of real.map(s=>s.key))assert(priority.units[k],k+' 우선순위 없음(로스터에 있음)');
+  // 신규 구원자 셋(레인저·디펜더·모르는 직업)이 로스터에만 있는 경우
+  fs.writeFileSync(roster,JSON.stringify({saviors:[...real.slice(0,2),{key:'new-ranger',className:'레인저'},{key:'new-defender',className:'디펜더'},{key:'new-unknown',className:'신규직업'}]}));
+  const r=cp.spawnSync('node',[tool,guide,roster,out],{encoding:'utf8'});assert.equal(r.status,0,r.stderr);
+  const d=JSON.parse(fs.readFileSync(out,'utf8'));
+  same(d.fallback,{'new-ranger':'레인저','new-defender':'디펜더','new-unknown':'신규직업'});assert.match(r.stdout,/\[알림\] 공략 DB 에 없는 구원자 3명/);
+  same(d.units['new-ranger'].map(x=>x.groups),[[[0],[3],[1,2],[4]]],'레인저 기본 = 힘 > 집중 > [체력, 인내] > 보호');
+  same(d.units['new-defender'].map(x=>x.groups),[[[1,2],[0],[3,4]],[[0],[1],[2],[3,4]]],'디펜더 기본 = 두 줄');
+  same(d.units['new-unknown'].map(x=>x.groups),[[[0],[1,2],[3,4]]],'모르는 직업 = 가이드의 기본 분기');
+  assert(!d.fallback[real[0].key]&&d.units[real[0].key],'DB 에 있는 구원자는 fallback 이 아님');
+  // 직업 기본값으로 채운 구원자도 같은 규칙으로 판단한다(표시만 다름)
+  {const key='waltz-asherah',fake={...priority,units:{...priority.units,[key]:d.units['new-ranger']},fallback:{[key]:'레인저'}};
+   const info=account(key,[247,1250,761,122,97]),x=plain(M.overwrite(info,[{key,uid:specOf(key).uid}],growth,'op',{slots,priority:fake}));
+   same(x.errors,[]);const cand=[1250,473,168,515,129],keep=powerOf(info,info.units[0]),swap=powerOf(info,withRecord(info,cand));
+   same(x.info.units[0].gauntlet.journey,swap>keep?cand:[247,1250,761,122,97],'레인저 기본(힘 주력)이면 체력 SG 로는 충족이 아님 → 후보(힘 1250·집중 515·체력 473·인내 168·보호 129)와 비교');}
+  // 직업이 없으면 기본값도 못 정한다 → 조용히 넘기지 않고 실패
+  fs.writeFileSync(roster,JSON.stringify({saviors:[{key:'no-class'}]}));assert.notEqual(cp.spawnSync('node',[tool,guide,roster,out],{encoding:'utf8'}).status,0);
+ }finally{fs.rmSync(dir,{recursive:true,force:true})}}
 // 우선순위 표 자체: 59명 모두 있고, 줄마다 다섯 칸이 한 번씩, 출처·등급 표기
 {assert.equal(priority.grade,'guide');assert.match(priority.source,/guide_app-core\.js/);same(priority.stats,NAMES);
  for(const key of Object.keys(growth.assumed.units)){const rows=priority.units[key];assert(rows?.length>=1,key+' 우선순위 없음');

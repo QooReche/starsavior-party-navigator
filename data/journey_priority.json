@@ -8,6 +8,10 @@
   "집중",
   "보호"
  ],
+ "db_fetched": "2026-11-14",
+ "roster": "data/savior_reco.json",
+ "fallback_note": "fallback = 페이지 로스터에는 있으나 공략 DB 에 아직 없는 구원자 — 직업 기본 우선순위로 채움(공략 DB 미반영)",
+ "fallback": {},
  "units": {
   "lydia-moon-caster": [
    {

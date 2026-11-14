@@ -201,6 +201,14 @@ def main(out=None):
     out = out or (sys.argv[1] if len(sys.argv) > 1 else OUT_DEFAULT)
     atomic_text(out, html)
     print(out, len(html.encode('utf-8')), "bytes (UTF-8)")
+    # 여정 스탯 우선순위(공략 DB): 로스터에 있는데 표에 없으면 다시 뽑아야 하고(중단), 공략 DB 에 아직 없어 직업 기본값으로 채운 구원자는 알린다
+    jp = pr._json(os.path.join(pr.DATA, "journey_priority.json"))
+    stale = [s["key"] for s in roster if s["key"] not in jp["units"]]
+    if stale:
+        raise SystemExit("여정 스탯 우선순위에 없는 구원자 %d명: %s — node tools/extract_journey_priority.js 를 다시 실행" % (len(stale), ", ".join(stale)))
+    if jp.get("fallback"):
+        print("[알림] 여정 스탯 우선순위: 공략 DB 에 없는 구원자 %d명(직업 기본값으로 판단, DB 받은 날짜 %s): %s" % (
+            len(jp["fallback"]), jp.get("db_fetched") or "기록 없음", ", ".join("%s(%s)" % kv for kv in jp["fallback"].items())))
 
 
 if __name__ == "__main__":

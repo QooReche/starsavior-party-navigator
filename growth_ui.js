@@ -314,6 +314,9 @@ function growthIdleText(c){
   if(!simAutoOn())return '모의 전투를 실행하면 이어서 계산해요';
   if(SIMQ.busy!=null)return '다른 계산이 끝나면 이어서 계산해요';
   return '계산 준비 중';}
+// 공략 DB 는 늦게 갱신될 수 있다: DB 에 아직 없는 구원자(data/journey_priority.json 의 fallback)는 직업 기본 우선순위로 아카이브를 판단했다 — 그 사실을 보인다(조용히 대체하지 않음)
+function growthArchiveNote(keys){const fb=D.journeyPriority?.fallback||{},names=[...new Set(keys||[])].filter(k=>fb[k]).map(k=>BYKEY[k]?.name||k);
+  return names.length?`<p class="mut" data-k="growth-archive-fallback">스텔라 아카이브 우선순위: ${names.map(esc).join('·')} — 공략 DB 미반영 · 직업 기본값으로 판단했어요</p>`:'';}
 // 탐색이 끝났는데 더 나은 육성 편성이 없을 때: 탭 없이 같은 자리에 한 줄 안내(조용히 사라지면 켰는데 안 나온 것처럼 보임)
 //  3별 목표(turns>0)면 «N턴 안에» 기준으로 말한다. 계산하지 못한 경우(r.reason)는 이유를 그대로 적는다
 function growthNoneText(kind,r,turns=growthGoalTurns(kind)){const prob=growthStageKind(kind),b=r?.baseline,star=prob&&turns>0&&(b?.t60!=null||r?.best?.t60!=null);
@@ -343,6 +346,7 @@ function growthNonePaint(c,r){growthTabs?.reset();let el=$('growth-result');
   el.dataset.state='none';const errs=r?.snapshot?.errors||[],hint=growthNoneHint(c.key,r);
   el.innerHTML=`<h3 class="growth-none-title">클리어 추천 육성</h3><p class="growth-none" data-k="growth-none" role="status">${esc(growthNoneText(c.key,r))}</p>`+
     (hint.length?`<dl class="growth-none-hint" data-k="growth-none-hint">${hint.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`:'')+
+    growthArchiveNote(Object.keys(r?.snapshot?.profile?.units||{}))+
     (errs.length?`<details><summary>계산에서 제외된 구원자 ${errs.length}명</summary>${errs.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');
   const now=['guild','cosmo'].includes(c.key)?$(c.key+'-search'):document.querySelector('#out > [data-party="1"]');
   if(now&&now.nextElementSibling!==el)now.after(el);}
@@ -398,7 +402,7 @@ function growthPaint(){
   const st=cur[$('stage').value],prob=stage,pct=v=>Number.isFinite(v)?Math.round(v*100)+'%':'자료 없음';
   const summary=prob?`<div class="mi-verdict" data-k="growth-goal" data-goal="${star?turns:0}"><div class="verdict-main"><b class="verdict-number"><small>${star?turns+'턴 내 · ':''}지금</small>${r.baseline?pct(growthGoal(r.baseline)):'자료 없음'} → <small>맞추면</small>${pct(growthGoal(r.best))}</b>${Ux.chip(growthGoal(r.best))}</div>${star?`<div class="verdict-meta" data-k="growth-clear">클리어 ${r.baseline?pct(r.baseline.clear):'자료 없음'} → ${pct(r.best.clear)}</div>`:''}<div class="verdict-stats"><div><b>${miNum(r.best.ta??r.best.ttk)}턴</b><small>예상 턴</small></div><div><b>${miNum(grown)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div></div>`:`<div class="season-score" data-k="growth-season-score"><span>지금 ${r.baseline?miNum(c.key==='guild'?r.baseline.score:r.baseline.sum)+'점':'자료 없음'} → 맞추면</span><b>${miNum(c.key==='guild'?r.best.score:r.best.sum)}</b><small>${c.key==='guild'?'상위 20% 점수':'3팀 합산 점수'}</small></div>`;
   el.innerHTML=head+summary+`<p class="growth-total" data-k="growth-power-total">기존 대비 전투력 ${Ux.signed(delta)}(${now?Ux.signed(delta/now*100)+'%':'비교 자료 없음'})으로 계산했어요 ${Ux.help('전투력 변화','위의 현재 편성과 육성 후 편성의 팀 전투력을 비교해요. 구성원이 바뀌면 편성 교체에 따른 차이도 포함해요. 항목별 값은 같은 구원자에서 그 항목만 목표로 올렸을 때의 전투력 증가예요. 곱셈·반올림·편성 변경 때문에 항목별 합계와 전체 증가가 다를 수 있어요. 추가 모의 전투는 하지 않아요.')}</p>`+
-    `<p class="growth-components" data-k="growth-components">${['팀 항목별 전투력',...Object.entries(totals).filter(([,v])=>v!==0).map(([f,v])=>`${growthShortFields[f]} ${Ux.signed(v)}`),...(missing?['일부 항목 비교 자료 없음']:[])].join(' · ')}</p><div data-k="growth-${c.key}-card">${body}</div>`+
+    `<p class="growth-components" data-k="growth-components">${['팀 항목별 전투력',...Object.entries(totals).filter(([,v])=>v!==0).map(([f,v])=>`${growthShortFields[f]} ${Ux.signed(v)}`),...(missing?['일부 항목 비교 자료 없음']:[])].join(' · ')}</p>${growthArchiveNote(keys)}<div data-k="growth-${c.key}-card">${body}</div>`+
     Ux.help('육성 기준',`이 육성 계획을 따랐을 때 예상. 보유 구원자의 기준선 미달 항목만 프리셋 목표로 계산해요. 패시브는 현재 값을 유지해요. 최소 육성치는 아니에요. ${D.archiveGrades?.unverified||''}`)+
     (r.snapshot.errors.length?`<details><summary>계산에서 제외된 구원자 ${r.snapshot.errors.length}명</summary>${r.snapshot.errors.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');
   growthTabsPaint(c,el,show);

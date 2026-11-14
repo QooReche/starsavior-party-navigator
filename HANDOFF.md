@@ -55,6 +55,8 @@
 - 게임 PC의 내 정보·영상 판독·work 메모·임시물은 `AI\temp\partynavigator\` 기준이며 `INDEX.md`로 찾기로 함. 계정 자료 사본은 비공개 static-data/samples에만 둠.
 - 공개 저장소·Pages에 계정 수치·내 정보 원본·클라 원본 표를 추가하지 않기로 함. 공개 화면은 가공한 일반 자료만 사용함. 계정 기준 시뮬 수치는 11/08 정리에서 일부 걷어내 비공개 폴더(`AI\temp\partynavigator\private_results\`·`work\`) 안내로 바꿨고, 남은 옛 수치는 당시 기록임(git 기록에는 남음).
 - Git 신원은 `QooReche <87477643+QooReche@users.noreply.github.com>`만 사용하기로 함.
+- **공략 DB·데이터북을 참조하는 작업**은 시작 때 `python -X utf8 -I tools/fetch_sources.py --dry` → 실제 받기로 최신을 확인함(사용자 11/14). 받기에 실패하면 지금 rawdata 사본으로 진행하고 실패 사실만 기록·보고(`rawdata/sources.json` 의 fetched·last_attempt·error). 받은 rawdata 가 바뀌면 별도 커밋. 공략 DB 는 늦게 갱신될 수 있으므로 DB 에 없는 구원자는 직업 기본값으로 대체하되 화면·자료에 «공략 DB 미반영»을 표시함(조용한 대체 금지 — `data/journey_priority.json` 의 fallback, 도구·빌드·시험이 «DB 에 없는 구원자 N명»을 알림).
+- **근거 순서**: 사실(수치·규칙)은 클라 > 실측 > 공략 DB. 공략 DB 는 클라에 없는 «추천»(티어·추천 세팅·여정 스탯 우선순위)에만 쓰고, DB 값이 게임과 어긋나 보이면 DB 를 정답으로 고정하지 않음.
 - codex 는 구현·조사·리뷰 모두 맡길 수 있음(쓰기 제한 없음). 커밋·푸시는 시험 전부 확인 뒤. 시험은 `python -X utf8 -I tools/run_tests.py`(`--rebuild`·`--e2e <python>`). 골든을 통과시키려고 `--write` 하지 않기로 함.
 - 엔진 변경 뒤에는 `tools/build_simpack.py` → 계수 재맞춤(`tools/gen_quick_calib.py --per-content 400 --opboss`, `tools/calibrate_quick.py --write`) → HTML 생성 → 관련 시험·검토 순으로 진행하기로 함.
 - 패치 때는 `docs/PORTING.md`대로 구원자 목록·색인과 --static 빌더를 갱신하고, 최신 번들 채택(`dupes.json used`)을 확인하기로 함. static-data 경로는 --static → STARSAVIOR_STATIC 순임.

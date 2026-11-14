@@ -3,10 +3,14 @@
   - 팬 데이터북(starsavior-databook.pages.dev): data/main.js -> tools/unwrap_ssd.py 로 rawdata/databook_main.json, data/foe.js -> rawdata/foe.js
   - 가이드 DB(starsavior-guide.github.io): app-core.js -> rawdata/guide_app-core.js (티어·주 사용 콘텐츠는 node tools/extract_guide_tier.js)
 사용: python -X utf8 -I tools/fetch_sources.py [--dry]   (--dry 는 주소만 확인하고 내려받지 않음)
+받은 날짜는 rawdata/sources.json 의 fetched 에 적는다(공략 DB 가 늦게 갱신될 수 있어 «언제 자료인가»를 파생 자료가 함께 싣는다).
+받기에 실패하면 rawdata 는 그대로 두고 sources.json 에 last_attempt·error 만 적는다 — DB 를 참조하는 작업은 그 사본으로 진행하고 실패 사실을 보고한다(HANDOFF 환경·주의).
 주의: 원본 사이트 구조가 바뀌면 정규식이 실패할 수 있다. 데이터북·가이드 DB 재사용은 사용자가 허락받은 것으로 확인됨(2026-10-19)."""
 import os
 import re
 import sys
+import datetime
+import json
 import time
 import urllib.request
 
@@ -62,10 +66,29 @@ def main():
         atomic_json(os.path.join(RAW, 'databook_main.json'), main_data)
         atomic_text(os.path.join(RAW, 'foe.js'), foe_js)
         atomic_text(os.path.join(RAW, 'guide_app-core.js'), core_js)
+        record(fetched=datetime.date.today().isoformat(), last_attempt=datetime.date.today().isoformat(), error=None)
     else:
         print("GET", core_url)
     print("다음: node tools/extract_guide_tier.js  ->  python -X utf8 -I tools/update.py")
 
 
+def record(**kw):
+    """rawdata/sources.json 갱신: fetched = 마지막으로 받은 날짜(성공), last_attempt·error = 마지막 시도(실패면 사유)"""
+    p = os.path.join(RAW, 'sources.json')
+    try:
+        with open(p, encoding='utf-8') as f:
+            cur = json.load(f)
+    except (OSError, ValueError):
+        cur = {}
+    cur.update(kw)
+    atomic_json(p, cur)
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (Exception, SystemExit) as ex:
+        if not DRY and not (isinstance(ex, SystemExit) and ex.code in (0, None)):
+            record(last_attempt=datetime.date.today().isoformat(), error=str(ex)[:300])
+            print('받기 실패 — rawdata 는 그대로 둠. rawdata/sources.json 에 기록:', str(ex)[:300])
+        raise

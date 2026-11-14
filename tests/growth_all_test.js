@@ -201,6 +201,14 @@ function silent(src){
   h.G.result.best={clear:.9,t60:0,ttk:20};h.ctx.growthPaint();assert.equal(h.el().dataset.state,'done','60턴 내 확률은 그대로여도 클리어율이 올랐으면 보임(숫자는 그대로 0% → 0%)');
   assert.match(h.text(),/지금 ?0% → 맞추면 ?0%/);assert.match(h.text(),/클리어 3% → 90%/);
   h.G.result.best={clear:.03,t60:0,ttk:5,prog:1};h.ctx.growthPaint();assert.equal(h.el().dataset.state,'none');assert.match(h.text(),/60턴 안에 깨는 편성은 찾지 못했어요/);}
+ // 공략 DB 에 아직 없는 구원자(직업 기본 우선순위로 판단)는 결과 칸에 그 사실을 적는다 — 더 나음·없음 둘 다
+ {const h=page(src,{kind:'op'});h.ctx.D.journeyPriority={fallback:{a:'레인저'}};h.ctx.BYKEY.a={name:'새구원자'};
+  assert.match(h.ctx.growthArchiveNote(['a','b','a']),/스텔라 아카이브 우선순위: 새구원자 — 공략 DB 미반영 · 직업 기본값/);assert.equal(h.ctx.growthArchiveNote(['b']),'');
+  h.ctx.SIMQ.res={sig:{clear:.2,t60:null}};h.ctx.LASTQ[1]={rows:[{keys:['a','b','c','d']}]};h.G.phase='done';
+  const snap={...snapshot(['skills']),profile:{results:{},units:{a:{},b:{}}}};
+  h.G.result={best:{clear:.2,t60:null},team:null,snapshot:snap,kind:'op',runs:1};h.ctx.growthPaint();
+  assert.equal(h.el().dataset.state,'none');assert.match(h.text(),/새구원자 — 공략 DB 미반영 · 직업 기본값/);
+  h.ctx.D.journeyPriority={fallback:{}};h.ctx.growthPaint();assert.doesNotMatch(h.text(),/공략 DB 미반영/);}
  // 길방: EX 밖 단계는 이유를 적는다. 기간이 끝난 시즌 콘텐츠·결과 화면이 없을 때는 표시 자체가 없다(«켜짐» 표시도 없는 화면)
  {const h=page(src,{kind:'guild',stageName:'3'});h.ctx.growthStart=()=>{throw Error('시작하면 안 됨')};h.ctx.growthMaybe(h.c,h.st);assert.match(h.text(),/EX 단계에서만 계산해요/);}
  {const h=page(src,{kind:'clash',blocked:true});h.ctx.growthPaint();assert.equal(h.el(),null);}
@@ -215,6 +223,7 @@ async function suite(src=SRC){better(src);await stop(src);mainStop(src);fixed();
  const mutants={
   '작전·성간 회랑만 탐색(옛 차단)':m('ui',"if(!miMode()||!growthStageKind(c.key)){growthPaint();return;}","if(!miMode()||!['op','clo'].includes(c.key))return;"),
   '작전·성간 회랑 밖은 칸을 지움(옛 차단)':m('ui',"if(seasonBlocked(c.key)){growthTabs?.reset();el?.remove();return;}","if(seasonBlocked(c.key)||!['op','clo','guild','cosmo'].includes(c.key)){growthTabs?.reset();el?.remove();return;}"),
+  '공략 DB 미반영 표시를 안 함':m('ui',"growthArchiveNote(Object.keys(r?.snapshot?.profile?.units||{}))+","''+"),
   '대기 사유를 안 보임':m('ui',"if(!why){el?.remove();return;}","if(true){el?.remove();return;}"),
   '스테이지형 = 작전·성간 회랑':m('ui',"function growthStageKind(kind){return !['guild','cosmo'].includes(kind);}","function growthStageKind(kind){return ['op','clo'].includes(kind);}"),
   '판정을 클리어율로만':m('ui',"function growthGoal(r){return r?(r.t60??r.clear):null;}","function growthGoal(r){return r?r.clear:null;}"),
