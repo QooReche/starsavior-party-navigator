@@ -136,7 +136,7 @@ def conds(c, bname):
 def se_rows(tables, skills=None):
     """게임 스킬 이름 -> 그 스킬의 SE 행 목록(클라 순서). 클라는 스킬 -> SKILL_TEMPLET.SkillLevelGroup ->
     SKILL_LEVEL_GROUP_TEMPLET.SkillLevelSE(m_SEStrID 목록, 적힌 순서) 로 SE 를 찾는다
-    (build 26610546 Star.Templets.decompiled.cs:29987 읽기, 30016-30028 SE 이름으로 연결·순서대로 보관).
+    (build 26610546 Star.Templets.decompiled.cs:29987 읽기, 29999-30010 SE 이름으로 연결·순서대로 보관).
     SE 이름은 스킬 이름과 다를 수 있다 — 코스모 힐데 COSMO_03 스킬 -> COND_..._COSMO_01_*, 바스커빌의 괴수
     BOSS_COSMO_01_HYPER -> COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_*, 세레스(WEST_BEAMSWORD) -> COND_MON_CERES_* 등.
     11/15 전까지는 이름 추정(COND_<스킬>_NN)으로 찾아 적 스킬 1,216개 중 110개가 클라와 달랐다(빈 72·다른 행 38).

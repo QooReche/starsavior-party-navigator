@@ -75,6 +75,45 @@ def test_horizon_keeps_last_action():
     assert [p.actions for p in sim.party[1:]] == [10, 10, 10], [p.actions for p in sim.party]
 
 
+
+def test_horizon_no_slack_without_truncation_loss():
+    # 지평선 여유는 실제 절삭 손실만큼만: 속도 99.99(적 199.98)는 진행마다 잘리는 소수가 0 이라 10번째 행동(1000.1틱)은
+    # 실수 게이지처럼 지평선 밖 — 진행 횟수로 여유를 주던 초안은 10회·피해 17% 과대(11/15 2차 리뷰)
+    # 다른 유닛(속도 100 더미 3명)의 절삭 손실은 x 의 여유가 아님 — 모든 유닛 합으로 주면 x 가 10회가 됐음(2차 리뷰 2회)
+    for mode in ('float', 'client'):
+        o = dict(DEFAULT_OPTS, turn_gauge=mode)
+        for extra in (0, 3):
+            sim = Sim([DummyDef(name='x', spd=99.99)] + [DummyDef(name='s%d' % i) for i in range(extra)],
+                      [dict(name='f', hp=INF_HP, **{'def': 0}, spd=199.98)], 10, o).run()
+            assert sim.party[0].actions == 9, (mode, extra, [p.actions for p in sim.party])
+
+
+def test_horizon_delay_inherited_by_gauge_gain():
+    # 교수 M 은 더미 행동 때 게이지를 받아 그 시각에 행동 — 지연을 행동 유닛 몫만 보면 1000틱 행동(실수 게이지 16회)이
+    # 잘려 15회가 됐음(build_index 15명 지표 변동). 게이지를 받으면 행동 유닛의 지연을 물려받아 실수와 같은 횟수
+    from battlesim import metrics
+    got = []
+    for mode in ('float', 'client'):
+        o = dict(DEFAULT_OPTS, turn_gauge=mode)
+        sim = Sim([metrics.unit_def('professor-m')] + [DummyDef(name='dummy%d' % i) for i in range(3)],
+                  metrics.ref_enemies(1, o), 10, o).run()
+        got.append([p.actions for p in sim.party])
+    assert got[0] == got[1] == [16, 10, 10, 10], got
+
+
+def test_extra_turn_first_in_client_sort():
+    # 추가 턴은 정렬 1위(NKM:12339-12342, gauge.turn_key): 세이라 특수기(추가 턴)와 같은 순간 벨 리스 게이지가 100% 여도
+    # 세이라가 이어서 행동해야 함. act_ally 가 extra_turn 을 지운 뒤 정렬하면 속도 순으로 벨 리스가 끼어들었음(11/15 2차 리뷰)
+    from battlesim.metrics import unit_def
+    o = dict(DEFAULT_OPTS, turn_gauge='client')
+    sim = Sim([unit_def('seira'), unit_def('bell')], [dict(name='f', hp=INF_HP, **{'def': 0}, spd=100)], 10, o)
+    log, oa = [], sim.act_ally
+    sim.act_ally = lambda a: (log.append((round(sim.t, 3), a.name)), oa(a))
+    sim.run()
+    same = [n for t, n in log if abs(t - 629.881) < 1e-3]
+    assert len(same) == 3 and same[0] == same[1] == sim.party[0].name, same
+
+
 if __name__ == '__main__':
     n = 0
     for k, fn in list(globals().items()):

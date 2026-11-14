@@ -206,7 +206,12 @@ class Sim:
         self.start()
         actors = self.party + self.enemies
         guard = 0
-        gsteps = 0        # turn_gauge=client: 정수 절삭이 일어난 시간 진행 횟수(지평선 여유 계산용)
+        client = self.turn_gauge == 'client'
+        # turn_gauge=client: 유닛별 지연 x._gd = 정수 절삭으로 잘린 게이지의 시간 환산(잘린 소수 / 그때 속도) 누적.
+        # 다른 유닛의 행동 중에 게이지를 받으면 그 행동 유닛의 지연을 물려받는다(max) — 게이지가 시간에 선형이라
+        # 받은 시각이 밀려도 도달 시각의 밀림은 max(자기 지연, 행동 유닛 지연) 를 넘지 않는다.
+        for x in actors:
+            x._gd = 0.0
         while guard < 5000:
             guard += 1
             living = [x for x in actors if getattr(x, 'dead', False) is False]
@@ -219,27 +224,31 @@ class Sim:
             if best is None:
                 break
             slack = 1e-9
-            if self.turn_gauge == 'client' and gsteps:
-                # 정수 절삭으로 한 번 진행할 때마다 유닛 게이지가 1 미만씩 덜 차서, 시간축(틱) 위에서는 행동이 최대
-                # (진행 횟수 / 속도) 틱 늦게 잡힌다. 모델 지평선(turns x 100틱)은 클라에 없는 경계라(클라 턴 제한은 행동 수)
-                # 이 지연만큼은 같은 시각으로 본다 — 없으면 속도 100 유닛의 10번째 행동이 1000틱 바로 뒤로 밀려 잘린다.
-                bspd = best.spd() if best.is_ally else best.spd_eff()
-                slack += gsteps / max(bspd, 1e-6)
+            if client:
+                # 정수 절삭으로 게이지가 덜 찬 만큼 시간축(틱) 위의 행동이 늦게 잡힌다. 모델 지평선(turns x 100틱)은 클라에 없는
+                # 경계라(클라 턴 제한은 행동 수) 그 유닛의 지연(_gd)만큼만 같은 시각으로 본다 — 없으면 속도 100 유닛의
+                # 10번째 행동이 1000틱 바로 뒤로 밀려 잘린다. (진행 횟수·모든 유닛 합으로 여유를 주면 절삭 손실이 없는
+                # 유닛의 지평선 밖 행동까지 들어갔음 — 11/15 2차 리뷰 2회)
+                slack += best._gd
             if self.t + bt > self.horizon + slack:
                 break
-            if self.turn_gauge == 'client':
+            if client:
                 # mc.Battle.run 과 같은 계산(battlesim/gauge.py, NKM:12290-12317·12415-12431): 누가 100% 이상이면 안 올리고,
                 # 아니면 최소 틱만큼 유닛마다 (int)(속도 x 틱)을 더함. 행동 유닛 = 정렬 1위(추가 턴 > 게이지 > 속도 > 우선순위).
                 # 우선순위(클라 = 등장 때 난수 0~9999)는 기대값 엔진에 난수가 없어 고정 순서(아군 먼저, 칸 순)로 대신한다.
                 # 게이지 효과의 기대값(gauge_expect)은 소수로 남는다 — 정수 절삭은 시간 진행분에만.
                 if not _gauge.any_ready(living) and bt > 0:
-                    gsteps += 1
                     for x in living:
                         spd = x.spd() if x.is_ally else x.spd_eff()
-                        x.gauge = min(10000.0, x.gauge + _gauge.int_gain(spd * bt))
+                        acc = spd * bt
+                        gain = _gauge.int_gain(acc)
+                        if x.gauge + gain < 10000.0:
+                            x._gd += (acc - gain) / max(spd, 1e-6)
+                        x.gauge = min(10000.0, x.gauge + gain)
                 n = len(living)
+                # 추가 턴: act_ally 끝에서 extra_turn 을 지우고 게이지 100% 로 바꾸므로, 정렬 1위 항은 그 표지(xturn)로 본다
                 best = min(range(n), key=lambda i: _gauge.turn_key(
-                    getattr(living[i], 'extra_turn', False), living[i].gauge,
+                    getattr(living[i], 'xturn', False), living[i].gauge,
                     living[i].spd() if living[i].is_ally else living[i].spd_eff(), n - i))
                 best = living[best]
             else:
@@ -247,10 +256,15 @@ class Sim:
                     spd = x.spd() if x.is_ally else x.spd_eff()
                     x.gauge = min(10000.0, x.gauge + spd * bt)
             self.t += bt
+            best.xturn = False
+            before = [(x, x.gauge) for x in living if x is not best] if client else ()
             if best.is_ally:
                 self.act_ally(best)
             else:
                 self.act_enemy(best)
+            for x, g in before:
+                if x.gauge > g + 1e-9 and best._gd > x._gd:
+                    x._gd = best._gd
             if not self.alive():
                 self.kill_time = self.t
                 break
@@ -363,6 +377,7 @@ class Sim:
         if a.extra_turn:
             a.extra_turn = False
             a.gauge = 10000.0
+            a.xturn = True      # turn_gauge=client 정렬에서 추가 턴 우선(NKM:12339-12342) — 다음 행동 때 지움
 
     def choose_skill(self, a):
         if getattr(a.d, 'dummy', False):
