@@ -83,6 +83,16 @@ def test_reapply_larger_new_object_duration_client():
     assert e.stacks == 4 and e.dur == float('inf')
 
 
+def test_reapply_after_consumed_uses_new_count():
+    """3회 중 2회 소모(남은 1) 뒤 2회 재부여 = 남은 횟수보다 커서 받음 → 새 객체 횟수 2(최대도 2)."""
+    b, f, hp = _run('client', 3, 2)
+    assert f.eff['스킬 피해 무효'].stacks == 1
+    ctx = Ctx(f, f, f.d.skills['기본기'])
+    b.run_line(f, Line('[스킬 사용 후] 자신에게 〈스킬 피해 무효〉 (2턴 / 스킬 무효화) 스킬 무효화 2회', '기본기', 'active'), ctx)
+    e = f.eff['스킬 피해 무효']
+    assert (e.stacks, e.maxs, e.dur) == (2, 2, 2), (e.stacks, e.maxs, e.dur)
+
+
 if __name__ == '__main__':
     n = 0
     for k, fn in list(globals().items()):
