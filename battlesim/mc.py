@@ -1381,6 +1381,13 @@ class Battle:
         브레이크 영역(global)은 run의 _tick_break_domain에서 별도로 차감한다."""
         if self.mc['any_turn_clock']:
             self._tick_any_turn()
+        # 단계 그룹 «다음 차감 1회 건너뜀»(OBF_6935)은 행동 끝마다 모든 유닛에서 비워짐: 턴 유닛은 OBF_2849 → OBF_29028,
+        # 나머지는 OBF_16373 → OBF_29028(OBF_8763 true) 이 차감 뒤 OBF_6935.Clear()(build 26610546 NKM:13961-13969, 13637-13643, 3999-4014).
+        # 남의 행동 중에 붙은 건너뜀이 그 유닛의 다음 자기 턴·웨이브 전환까지 남지 않게 한다.
+        for side in (0, 1):
+            for v in self.alive(side):
+                for e in v.eff.values():
+                    e.skip_tick = False
         self._expire_checks()
         self._forced_coop_candidates.clear()  # build 26314877 NKM:13569-13572
         u.acting = False
