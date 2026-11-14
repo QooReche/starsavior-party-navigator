@@ -8,6 +8,7 @@ python -X utf8 -I tools/build_buff_flags.py --static <비공개 저장소>
 - cant_more_debuff: m_bDebuffBan = CantGetMoreDebuff(Star.Templets 4739 플래그 19). 이름과 무관하게 새 약화 거부(NKM:4394-4398, mc.debuff_ban_flag).
 - immune_gauge_up: ImmuneSpeedGaugeUp. 행동 게이지 증가(SpeedGaugeUp) 효과 거부(NKM:4412-4416, mc.gauge_up_immune).
 - cc: 기절·수면·침묵·도발 효과 이름과 각각의 면역 버프 이름(m_bImmuneStun 등). 면역 보유자는 해당 효과 거부(NKM:4407-4411, mc.cc_immune_buff).
+- turn_infinite: TurnInfinite(수명 무한). 지속 표기 없는 효과 줄이라도 수명 0 정리 대상이 아님(mc.check_buff_scope=all, «타격 후 해제» 나태·헥사 너트).
 - sleep: m_bSleep(수면). 마지막 타격 피해가 0보다 크면 피격자에게서 제거(OBF_2209 NKM:8314-8335, mc.sleep_wake).
 """
 import argparse
@@ -52,6 +53,7 @@ def extract(rows, strings, warn=print):
         'sleep': flagged(rows, strings, 'm_bSleep', warn),
         'cant_more_debuff': flagged(rows, strings, 'm_bDebuffBan', warn),
         'immune_gauge_up': flagged(rows, strings, 'ImmuneSpeedGaugeUp', warn),
+        'turn_infinite': flagged(rows, strings, 'TurnInfinite', warn),
         'cc': {k: {'effects': flagged(rows, strings, f, warn), 'immune': flagged(rows, strings, im, warn)}
                for k, f, im in (('stun', 'm_bStun', 'm_bImmuneStun'), ('sleep', 'm_bSleep', 'm_bImmuneSleep'),
                                 ('silence', 'm_bSilence', 'm_bImmuneSilence'), ('aggro', 'm_bAggro', 'm_bImmuneAggro'))},

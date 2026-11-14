@@ -292,7 +292,8 @@ class StandardTest(unittest.TestCase):
         for k, old in LEGACY.items():
             self.assertNotEqual(MC_OPTS[k], old)
             self.assertEqual(MC_RULES[k]['legacy'], old)
-        self.assertEqual((MC_OPTS['check_buff_expiry'], MC_OPTS['check_buff_scope']), ('action', 'name'))
+        # 11/14 기본 전환(클라 수명 0 효과 전수 대조 뒤): skill/all
+        self.assertEqual((MC_OPTS['check_buff_expiry'], MC_OPTS['check_buff_scope']), ('skill', 'all'))
         cases = [('clo/달 회랑/FLOOR 100', None, {'check_buff_expiry': 'skill'},
                   ['buff_fresh_other', 'buff_fresh_start', 'check_expire_skill']),
                  ('clo/태양 회랑/FLOOR 200', '행성 정화', {}, ['purify_extra']),

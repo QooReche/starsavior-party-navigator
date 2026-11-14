@@ -5017,8 +5017,10 @@ class Battle:
         old_stacks = e.stacks if e is not None else 0
         old_props = e.props if e is not None else None
         transient = eff['dur'] is None and ctx is not None and ctx.local is not None
+        # scope all: 지속 표기 없는 효과 = 클라 수명 0(SE m_BuffLifeTurn 0). 단 버프 자체가 TurnInfinite(«타격 후 해제» 나태 등)면 무한.
         check = bool(self.mc['check_buff_expiry'] in ('action', 'skill') and (transient or (eff['dur'] is None and
-                     (self.mc['check_buff_scope'] == 'all' or (CHECK_NAME.search(name) and not eff['props'])))))
+                     ((self.mc['check_buff_scope'] == 'all' and name not in buff_flags()['turn_infinite'])
+                      or (CHECK_NAME.search(name) and not eff['props'])))))
         refresh_check = self.mc['check_buff_expiry'] == 'skill' or self.mc['check_buff_scope'] == 'all'
         if e is None:
             mx = eff['max'] or (5 if dot else 1)
