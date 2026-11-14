@@ -1538,7 +1538,10 @@ class Battle:
             had_barrier = self.gb is not None and self.gb.barrier()
             for v in list(self.alive(1)):
                 before = v.taken
-                self.apply_damage(None, v, self._break_dmg(v, base), 'bskill')
+                hit = self._break_dmg(v, base)
+                self.apply_damage(None, v, hit, 'bskill')
+                # 오비탈(NSI_SKILL_ORBITAL, NKM:3234)도 공통 타격 경로(NKM:7997-8018)라 마지막 피해 > 0 이면 수면 해제(8335)
+                self._hit_wake(v, hit)
                 dmg = v.taken - before
                 self.break_skill_dmg += dmg
                 self.log(bskill_damage=self.break_skill_name, to=v.name, amount=dmg)

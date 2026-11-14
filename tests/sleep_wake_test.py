@@ -44,6 +44,31 @@ def test_nullified_hit_still_wakes_client():
     assert '수면' not in f.eff                            # 동기화 피해 기준이라 풀림
 
 
+
+def _orbital(mode):
+    """공격형 브레이크 스킬(오비탈 〈차원 강습〉)도 공통 타격 경로(NKM:7997-8018, 오비탈 식별 3234)라 피해 > 0 이면 수면 해제."""
+    import p5_test as P
+    foe = P.unit('boss', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
+    foe.boss = True
+    b = P.battle([P.unit('a')], [foe], break_skill={'name': '차원 강습', 'level': 5}, mc={'sleep_wake': mode})
+    a, f = b.allies[0], b.foes[0]
+    P.give(f, '수면', harmful=True, dur=2)
+    b.break_points = 3
+    hp = f.hp
+    b._use_break_skill(a)
+    return b, f, hp
+
+
+def test_orbital_damage_wakes_client():
+    b, f, hp = _orbital('client')
+    assert b.break_skill_uses == 1 and f.hp < hp                 # 오비탈이 실제로 피해를 줌
+    assert '수면' not in f.eff and b.rule_hits['sleep_wake'] == 1
+
+
+def test_orbital_keeps_sleep_legacy():
+    b, f, hp = _orbital('off')
+    assert f.hp < hp and '수면' in f.eff
+
 if __name__ == '__main__':
     n = 0
     for k, fn in list(globals().items()):
