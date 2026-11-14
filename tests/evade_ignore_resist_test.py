@@ -141,6 +141,31 @@ def test_strike_records_last_hit_result():
     assert a.hit_evaded is False and f.sel_skill is f.d.skills['기본기'] and f.sel_target is a
 
 
+def test_damage_end_line_not_blocked():
+    """«피해 처리 후» = NSEAT_DAMAGE_END(레이시 SE 10494016 등) — 회피 거부 시점(HIT·SKILL_END, NKM:4546)이 아님.
+    레이시 기본기를 회피했던 적이 레이시를 때릴 때 피격 반응 〈뒤엉킨 꿈결〉이 붙어야 함(codex 재현)."""
+    b = battle([unit('a')], [unit('f')], mc={'evade_ignore_resist': 'client'})
+    a, f = b.allies[0], b.foes[0]
+    f.sel_skill, f.sel_target = f.d.skills['기본기'], a       # 반응 주인(f)이 전에 a 를 고름
+    a.hit_evaded = True                                       # a 는 f 의 공격을 회피했었음
+    ctx = Ctx(f, a, a.d.skills['기본기'])                      # a 가 f 를 공격하는 중(피격 반응)
+    ctx.target, ctx.targets = f, [f]
+    for phase, blocked in (('피해 처리 후', False), ('피해 처리 직전', False), ('피격 시', True)):
+        b._cur_line = Line('[%s] (조건: 내가 피격될 때) 대상에게 〈뒤엉킨 꿈결〉 (2턴)' % phase, '기본기', 'active')
+        a.eff.pop('뒤엉킨 꿈결', None)
+        b.add_effect(f, a, dict(kind='buff', target='', name='뒤엉킨 꿈결', chance=1.0, dur=2, props={}, max=None, times=1,
+                                judge=False, ignore_resist=True), ctx)
+        assert ('뒤엉킨 꿈결' not in a.eff) is blocked, phase
+
+
+def test_skill_start_resets_hit_result():
+    """스킬 시작마다 전원 피격 결과 = Evade(NKM:15621-15623 → 2003), 대상은 판정값으로 덮음 — 대상이 아니었던 적도 «회피»."""
+    b = battle([unit('a'), unit('a2')], [unit('f')])
+    a, a2, f = b.allies[0], b.allies[1], b.foes[0]
+    b.cast(f, f.d.skills['기본기'], target=a)
+    assert a.hit_evaded is False and a2.hit_evaded is True
+
+
 if __name__ == '__main__':
     n = 0
     for k, fn in list(globals().items()):

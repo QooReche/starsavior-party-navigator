@@ -1269,6 +1269,8 @@ class Battle:
 
     # ---------- 행동
     def act(self, u):
+        # 턴 유닛의 스킬·대상 선택 초기화(NKM:13903-13907 OBF_16608(NSI_INVALID)·OBF_2333(-1)) — 행동 못 하면 비운 채로 남음
+        u.sel_skill = u.sel_target = None
         reset_gauge = self.mc['break_gauge_actor'] == 'client'
         if reset_gauge:
             # NKM:13483-13488: 턴 선택 때 초기화, 오비탈의 게이지 증가는 이후 보존.
@@ -2271,7 +2273,14 @@ class Battle:
                 ctx.targets = self._preemptive_check(u, ctx.targets, ctx)
             ctx.target = ctx.targets[0] if ctx.targets else None
             ctx.dead_targets = {x for x in ctx.targets if x.dead}
-            u.sel_skill, u.sel_target = sk, ctx.target     # 클라 OBF_16608·OBF_2333(스킬·대상 선택) — 다음 선택까지 유지
+            u.sel_skill, u.sel_target = sk, ctx.target     # 클라 OBF_16608·OBF_2333(스킬·대상 선택) — 다음 선택·자기 턴 시작까지 유지
+            # 스킬 시작마다 전원 피격 결과를 Evade 로 초기화(NKM:15621-15623 → OBF_9199 2003)하고, 대상은 판정(OBF_17314 8242-8264:
+            # 비공격 스킬 = NormalHit, 공격은 deal 의 회피 굴림)으로 덮어씀. 그래서 «회피» = 이번 스킬에서 회피했거나 대상이 아니었음.
+            for side in (0, 1):
+                for w in self.alive(side):
+                    w.hit_evaded = True
+            for w in ctx.targets:
+                w.hit_evaded = False
             if self.timeline is not None:
                 t0 = ctx.targets[0] if ctx.targets else None
                 self.log(actor=u.name, side=u.side, pos=u.pos, skill=sk.slot + ('(추가)' if extra else ''), skill_name=sk.name,
@@ -4980,12 +4989,10 @@ class Battle:
             self.mc['taunt_skill_end_duration'] and name == '도발' and x.acting
             and ln is not None and ln.phase == '스킬 사용 후')
 
-    # 클라 SE 실행 시점이 HIT·SKILL_END 가 아닌 줄(SKILL_START·턴 시작/종료·전투/웨이브 시작·DAMAGE_START·DIE)은 회피 거부 대상이 아니다
-    # (NKM.Templets:32440-32451 NSEAT). «피해 처리 후»(hit_self)는 엔진이 «피격 시»와 같은 종류로 묶어 두어 빼지 않음 — 그 줄은
-    # 피격자가 공격자에게 거는 것이라 공격자가 회피 목록에 들 일이 없다.
-    _EVADE_FREE_KINDS = frozenset(('own_pre', 'ally_pre', 'foe_pre', 'foe_pre_na', 'own_ts', 'ally_ts', 'enemy_ts',
-                                   'own_te', 'battle_start', 'wave_start', 'prehit_self', 'prehit_ally',
-                                   'death_self', 'death_ally', 'death_enemy'))
+    # 회피 거부는 SE 실행 시점이 NSEAT_HIT·NSEAT_SKILL_END 인 줄만(NKM:4546). 데이터북 시점 = SE m_ActiveType:
+    # «스킬 사용 후» = SKILL_END(2621행), «피격 시» = HIT(13행), «피해 처리 후» = DAMAGE_END(381행 — 레이시 SE 10494016 등),
+    # «피해 처리 직전» = DAMAGE_START, «스킬 사용 시작 시»·턴 시작/종료·전투/웨이브 시작·등장 후·사망 시는 각 시점(tables/SE_TEMPLET_SKILL_*).
+    _EVADE_PHASES = frozenset(('스킬 사용 후', '피격 시'))
 
     def _evade_gate(self, owner, x, ctx):
         """회피 거부(OBF_13659, NKM:4540-4566)의 효과 쪽 조건: 시전자와 다른 편(같은 편·자신이면 거부 없음), SE 시점 HIT/SKILL_END
@@ -4995,7 +5002,7 @@ class Battle:
         if ctx is None or x is owner or x.side == owner.side:
             return False
         ln = self._cur_line
-        if ln is not None and line_kind(ln) in Battle._EVADE_FREE_KINDS:
+        if ln is not None and ln.phase not in Battle._EVADE_PHASES:
             return False
         return True
 
@@ -5005,16 +5012,19 @@ class Battle:
         시전자가 고른 대상(OBF_35462)이 x 이고 x 의 마지막 피격이 회피일 때(4559), 적 전체면 x 의 마지막 피격이 회피일 때(4564).
         그 밖(자신·아군 대상 스킬)은 거부 없음. 줄 주인이 지금 시전 중이면(ctx.src) 그 시전의 스킬·첫 대상을, 아니면(다른 아군의
         «아군 공격 후» 줄·피격 반응 등) 그 유닛이 마지막으로 고른 스킬·대상을 쓴다. 회피 여부는 이번 시전에서 맞았으면 이번 결과,
-        안 맞았으면 마지막 피격 결과(엔진 x.hit_evaded)."""
+        안 맞았으면 피격 결과(엔진 x.hit_evaded — 스킬 시작마다 전원 «회피»로 초기화, 대상은 판정값)."""
         if not self._evade_gate(owner, x, ctx):
             return False
         if ctx.src is owner:
+            # 지금 시전 중인 주인: 그 시전의 판정이 곧 피격 결과. 적 단일은 고른 대상만, 적 전체는 살아 있는 적 전원이 대상이라
+            # 이번 시전의 회피 목록과 같다(이번 시전 밖에서 실행된 줄의 묵은 상태를 쓰지 않음).
             sk, tgt = ctx.skill, (ctx.targets[0] if ctx.targets else None)
+            ev = x in ctx.evaded
         else:
             sk, tgt = owner.sel_skill, owner.sel_target
+            ev = x in ctx.evaded or (x not in ctx.hit_targets and x.hit_evaded)
         if sk is None:
             return False
-        ev = x in ctx.evaded or (x not in ctx.hit_targets and x.hit_evaded)
         if not ev:
             return False
         tg = sk.tg or ''
