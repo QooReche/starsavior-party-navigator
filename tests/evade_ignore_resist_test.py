@@ -166,6 +166,20 @@ def test_skill_start_resets_hit_result():
     assert a.hit_evaded is False and a2.hit_evaded is True
 
 
+def test_shared_and_chain_damage_mark_normal_hit():
+    """수호 분담·연쇄/고정 피해를 받은 유닛의 피격 결과 = NormalHit(NKM:8356→17898→2861, 8376/8168→17788) — 스킬 시작
+    초기화(«회피»)가 남아 분담 피해를 받은 수호자가 회피 거부되던 문제(codex 리뷰 재현)."""
+    b = battle([unit('a'), unit('g')], [unit('f')])
+    a, g = b.allies
+    for kind in ('guard', 'chain', 'true'):
+        g.hit_evaded = True
+        b.apply_damage(b.foes[0], g, 10, kind)
+        assert g.hit_evaded is False, kind
+    g.hit_evaded = True
+    b.apply_damage(b.foes[0], g, 10, 'hit')                      # 직접 타격은 deal 의 회피 굴림이 정함(여기선 그대로)
+    assert g.hit_evaded is True
+
+
 if __name__ == '__main__':
     n = 0
     for k, fn in list(globals().items()):

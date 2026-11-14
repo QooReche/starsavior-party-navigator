@@ -3107,6 +3107,10 @@ class Battle:
 
     def apply_damage(self, a, v, dmg, kind, shieldable=True):
         """보호막 -> HP 순. 사망하면 True."""
+        if kind in ('guard', 'chain', 'true') and not v.dead:
+            # 수호 분담·연쇄/고정 피해를 받는 유닛도 피격 결과 = NormalHit(회피 거부 OBF_13659 의 OBF_20548): 일반 수호
+            # NKM:8356 → 17898 → 2861, 연쇄 수호·고정 피해 8376/8168 → OBF_9963 17788. 피해 계산 전에 덮으므로 0·무적이어도.
+            v.hit_evaded = False
         if v.dead or dmg <= 0:
             return False
         if v.invincible():
