@@ -2676,9 +2676,14 @@ class Battle:
             a.last_target = ctx.hit_targets[-1]
         # 〈공격 시 해제〉(DispelCondition=DC_ATTACK): 공격 스킬의 모든 타격·대상 처리 뒤, 피격 반응 전에 시전자에게서 지움(NKM 15580). 반격·협공도 이 경로
         if self.mc['dispel_on_attack'] == 'on':
-            for nm in DISPEL_ON_ATTACK:
+            table = self.mc['dispel_attack_names'] == 'table'
+            # 표 이름(동명 혼재로 빠진 여유로운 응수는 기존 확인분 DISPEL_ON_ATTACK 로 보탬)
+            for nm in (DISPEL_ON_ATTACK + tuple(n for n in buff_flags()['dispel_attack'] if n not in DISPEL_ON_ATTACK)
+                       if table else DISPEL_ON_ATTACK):
                 if a.eff.pop(nm, None) is not None:
                     self.dirty(a)
+                    if table and nm not in DISPEL_ON_ATTACK:
+                        self.rule_hits['dispel_attack_names'] += 1
         # 피격 반응은 전체 공격의 모든 대상 처리가 끝난 뒤(동시성 규칙)
         for v, hctx in reactions:
             if v.dead:

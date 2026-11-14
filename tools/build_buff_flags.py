@@ -4,6 +4,7 @@ python -X utf8 -I tools/build_buff_flags.py --static <비공개 저장소>
 원문·BuffStrID는 저장하지 않는다. 같은 이름의 행끼리 값이 다르면 그 이름은 빼고(이름만으로 못 가름) 경고한다.
 - priority: ShowIconPriority(0 이 아닌 것만). 클라 버프 목록 정렬(OBF_25553: 우선순위 내림차순 → 양성 먼저 → 넣은 순,
   build 26610546 NKM.decompiled.cs 4505-4520·4916-4929) = 해제 후보 순서(mc.dispel_order).
+- dispel_attack: DispelCondition=DC_ATTACK. 공격 스킬 끝에 시전자에게서 제거(OBF_20893 NKM:4084-4097, 호출 15719-15722, mc.dispel_attack_names).
 - sleep: m_bSleep(수면). 마지막 타격 피해가 0보다 크면 피격자에게서 제거(OBF_2209 NKM:8314-8335, mc.sleep_wake).
 """
 import argparse
@@ -46,6 +47,8 @@ def extract(rows, strings, warn=print):
         '_note': '이름별 버프 표식(tools/build_buff_flags.py, BUFF_TEMPLET). 같은 이름 행끼리 값이 다르면 뺌.',
         'priority': {n: v for n, v in pri.items() if v},
         'sleep': flagged(rows, strings, 'm_bSleep', warn),
+        'dispel_attack': sorted(n for n, v in by_name(rows, strings, lambda r: r.get('DispelCondition') == 'DC_ATTACK', warn,
+                                                      'DispelCondition').items() if v),
     }
 
 
