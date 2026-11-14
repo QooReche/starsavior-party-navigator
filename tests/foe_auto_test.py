@@ -10,7 +10,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [ROOT, os.path.join(ROOT, 'tests')]
 from p3_test import battle, give, unit   # noqa: E402
 from battlesim.mc import Ctx   # noqa: E402
-from battlesim.starsavior.foe import FoeDef, load_foe   # noqa: E402
+from battlesim.starsavior.foe import FoeDef, load_foe, stage_waves   # noqa: E402
 
 RAW = load_foe()
 
@@ -110,6 +110,30 @@ class FoeAutoTest(unittest.TestCase):
                                      [{'m_BuffTargetType': 'NSETT_SELF'}, auto]))
         self.assertIsNone(pair_lines(['[스킬 사용 후] 행동 게이지 증가', '[스킬 사용 후] 적(자동 지정)에게 〈Y〉'],
                                      [{'m_BuffTargetType': 'NSETT_SELF'}, auto]))   # 대상 머리말을 못 읽는 줄
+
+    def test_hilde_cosmo_stage_uses_client_line_rule(self):
+        """코스모 게이트 힐데 1~3단계: 궁극기 «행동 게이지가 가장 높은 적에게 〈도발〉» 줄이 클라 SE
+        (COND_MON_COUNTERSIDE_HILDE_BLACK_BOSS_COSMO_01_HYPER_02, NSETT_AUTO_ENEMY·AutoTargetId 18 = IsHighSpeedGauge)로 연결된다.
+        스킬 이름(COSMO_03)과 SE 이름(COSMO_01)이 달라 11/15 전 빌더(이름 추정)는 이 적을 통째로 빠뜨렸음 — SkillLevelSE 로 고침."""
+        for name in ('힐데 1단계', '힐데 2단계', '힐데 3단계'):
+            _st, waves = stage_waves('cosmo', '힐데', name)
+            d = waves[0][0]
+            self.assertEqual(d.name, '힐데 (타입 : 지크프리트)')
+            taunt = [ln for ln in d.lines if ln.slot == '궁극기' and '도발' in ln.raw]
+            self.assertEqual(len(taunt), 1, name)
+            self.assertEqual(d.auto_lines.get((taunt[0].slot, taunt[0].raw)), {'f': ['high_gauge'], 'one': False}, name)
+        b = battle([unit('a%d' % i, hp=10 ** 6) for i in range(4)], [d])
+        foe = b.foes[0]
+        ln = taunt[0]
+        self.assertEqual(b.line_spec(foe, ln), {'f': ['high_gauge'], 'one': False})
+        for i, x in enumerate(b.allies):
+            x.gauge = [10, 70, 30, 70][i]
+        b._cur_line = ln
+        try:
+            got = b.resolve(foe, '행동 게이지가 가장 높은 적', Ctx(foe, foe, foe.d.skills['궁극기']), kind='buff')
+        finally:
+            b._cur_line = None
+        self.assertEqual(set(got), {b.allies[1], b.allies[3]})   # 전체형: 가장 높은 값 동률 모두
 
     def single(self, b, foe, spec):
         out = b.line_auto_targets(foe, spec, None)

@@ -1,3 +1,13 @@
+## 2026-11-15 적 자료 누락 3종(메인스토리 08 보스·바스커빌의 괴수·힐데 코스모) — 스킬→SE 연결을 클라 SkillLevelSE 로
+
+11/14 절(SE 강제 적용)에서 «엔진 적 자료에 없음»으로 남긴 3종의 원인을 클라(build 26610546) 표로 확인함.
+
+- 근본 원인(빌더 매핑): `tools/build_foe_auto.py` 는 스킬의 SE 행을 이름 추정(`COND_<스킬 이름>_NN`)으로 찾았음. 클라는 스킬 → `SKILL_TEMPLET.SkillLevelGroup` → `SKILL_LEVEL_GROUP_TEMPLET.SkillLevelSE`(m_SEStrID 목록, 적힌 순서)로 찾음(`Star.Templets.decompiled.cs:29987` 읽기, `30016-30028` 이름으로 SE 연결·순서 보관). 적(`NKM_UNIT_MON_*`) 스킬 1,216개 중 110개가 달랐음(추정이 빈 결과 72 — 세레스 `WEST_BEAMSWORD`→`COND_MON_CERES_*`, 힐데·로자리아 `_BLACK_BOSS`→`_BOSS`, 메인스토리 보스 `BLACK` 유무 등 / 다른 행 38 — 격전 의뢰 보스 레벨 공용 행, 코스모 티리아·올베로스 패시브 공용 행 등). → `se_rows` 를 SkillLevelSE 기준으로 바꾸고 `se_of` 는 그 결과만 봄. 레벨이 여럿이고 SE 목록이 다른 적 스킬은 넣지 않고 보고(현재 0개 — 다른 4개는 구원자 스킬).
+- 힐데 코스모(코스모 게이트 힐데 1~3단계, 데이터북 «힐데 (타입 : 지크프리트)»): 게임 유닛 `…HILDE_BLACK_BOSS_COSMO_01~03` 의 스킬 이름은 `COSMO_03_*`, SE 는 `COND_…_COSMO_01_*` 라 이름 추정으로는 SE 0행 → 적 전체가 `data/foe_auto.json` 에서 빠졌음. 이제 `foe:12:0`·`foe:13:0`·`foe:14:0` = 궁극기 «행동 게이지가 가장 높은 적에게 〈도발〉» 줄이 클라 SE `COSMO_01_HYPER_02`(NSETT_AUTO_ENEMY, AutoTargetId 18 = IsHighSpeedGauge) → `{"f":["high_gauge"],"one":false}`. 스킬 규칙(AutoSkillId)은 표에 없어 비어 있음. 이 적의 SE 에 강제 적용 행은 없음(11/14 절 «힐데 코스모(자신 대상)» 표현은 부정확).
+- 같은 수정으로 바뀐 다른 적(diff 전수): 올베로스(코스모 2·3단계, `foe:33:0`·`foe:35:0`) 패시브 «대군세» 의 «「초즌」 상태인 아군 1명에게 기본기 추가 발동»(AutoTargetId 1026 + BI_ENFORCE 기본기)·«다른 아군 1명에게 〈초즌〉»(AutoTargetId 5 = not_self) 2줄 — 클라 SkillLevelSE 가 1단계 행(`COSMO_01_PASSIVE2_02~05`)을 같이 씀. 복제체 마르실(`foe:1572:400`) 패시브 «일점 타격!» 자신 추가 발동(eat 17 = last_damager, cond 35000). 그 밖 적 1,000여 개는 바이트 단위 동일. 적 1003→1007, 효과 줄 409→416, 자신 추가 발동 399→400, 강제 적용 줄 5 그대로.
+- 메인스토리 08 보스(밤의 절망 `…NIGHT_DESPAIR_BLACK_BOSS_MAINSTORY_08_01/02`)·바스커빌의 괴수(`…DOOMSDAY_BEAST_BLACK_BOSS_*`): 빌더 문제가 아니라 엔진 적 원본(데이터북 `rawdata/foe.js`)에 해당 콘텐츠가 없음. 밤의 절망 전투 = `NORMAL_BATTLE_EVENT_EPISODE_8_STORY_007/008`(이벤트 스토리), 바스커빌 = 이벤트 큐브 `NORMAL_BATTLE_EVENT_CUBE_21903xx`·탐정 이벤트, 코스모 바스커빌 유닛(`…BOSS_COSMO_01~03`)은 배치 파일 없음. 데이터북 콘텐츠 묶음(작전·일일·장비·큐브·플래시·회랑·코스모·길드)에 이 전투가 없어 시뮬 스테이지로 불러올 수 없음 — 클라 표만으로 적 정의를 만들려면 효과 줄 문구(엔진이 읽는 ef)를 새로 만드는 별도 설계가 필요(이번에 안 함). 두 적의 SE 연결 자체는 이번 수정으로 맞음(예: 바스커빌 궁극기 `BOSS_COSMO_01_HYPER` → `COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_01~11`, 강제 기절 `_03` 포함).
+- 시험: `tests/foe_auto_builder_test.py` `test_se_rows_follow_skill_level_se`(이름이 다른 SE·목록 순서·레벨별 다름/없는 이름/레벨 그룹 없음 제외 — 옛 이름 추정으로 되돌리면 실패), `tests/foe_auto_test.py` `test_hilde_cosmo_stage_uses_client_line_rule`(코스모 힐데 1~3단계 `stage_waves` → 도발 줄 규칙·대상 = 게이지 최고 동률 전원 — 옛 `foe_auto.json` 이면 실패).
+
 ## 2026-11-15 지속 피해·즉시 피해도 마지막 피격 결과를 NormalHit 로 덮음 (`dot_hit_result`)
 
 - 질문: 지속 피해(중독·화상 등) 틱이 대상의 «마지막 피격 결과»(엔진 `Unit.hit_evaded`, 회피 거부 `_evade_gate`/`_evade_rejects` 가 읽는 값)·수면 해제(`_hit_wake`)·피격 반응을 건드리는가. 클라(build 26610546)로 확인.

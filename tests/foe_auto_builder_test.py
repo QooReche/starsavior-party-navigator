@@ -7,14 +7,19 @@
 - pair_lines: 대상 머리말은 효과 부분에서 읽음 — 피격 조건 «[스킬 대상 유형: 적 전체; …]» 의 낱말을 대상으로 읽어
   «… 자신에게 〈어긋난 시계바늘(해제불가)〉» 같은 줄(적 데이터 24줄)의 스킬 짝짓기가 실패하던 결함(11/14 수정).
 - filters/conds: has/not_has·스택 조건·모르는 어휘.
+- se_rows/se_of: 스킬 -> SE 행은 클라처럼 SKILL_TEMPLET.SkillLevelGroup -> SKILL_LEVEL_GROUP_TEMPLET.SkillLevelSE 로 찾음
+  (11/15 수정 — 옛 이름 추정 COND_<스킬>_NN 은 코스모 힐데 COSMO_03 스킬 -> COND_…_COSMO_01_* 같은 연결을 못 찾아 힐데 코스모가
+  data/foe_auto.json 에서 빠졌고, 적 스킬 110개의 SE 가 클라와 달랐음).
 실행: python -X utf8 -I tests/foe_auto_builder_test.py"""
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT)]
+import json   # noqa: E402
+import tempfile   # noqa: E402
 from tools.build_foe_auto import (AUTO_KINDS, RX_HEAD_NEW, Unknown, conds, effect_part, filters,   # noqa: E402
-                                  new_auto_kinds, pair_lines)
+                                  new_auto_kinds, pair_lines, se_of, se_rows)
 
 ENEMY, ALLY = AUTO_KINDS['적'], AUTO_KINDS['아군']
 
@@ -121,6 +126,41 @@ def test_conds():
             pass
         else:
             raise AssertionError(bad)
+
+
+def test_se_rows_follow_skill_level_se():
+    """SE 이름이 스킬 이름과 달라도(COSMO_03 스킬 -> COSMO_01 SE) SkillLevelSE 목록 순서대로 찾는다."""
+    sk3 = 'NKM_UNIT_MON_X_BOSS_COSMO_03_HYPER'
+    tables = {
+        'SKILL_TEMPLET_1': [{'m_SkillStrID': sk3, 'SkillLevelGroup': 10},
+                            {'m_SkillStrID': 'NKM_UNIT_MON_Y_ATTACK', 'SkillLevelGroup': 11},     # 레벨별 SE 다름 -> 제외
+                            {'m_SkillStrID': 'NKM_UNIT_MON_Z_ATTACK', 'SkillLevelGroup': 12},     # 없는 SE 이름 -> 제외
+                            {'m_SkillStrID': 'NKM_UNIT_MON_W_ATTACK'}],                           # 레벨 그룹 없음 -> SE 없음
+        'SKILL_TEMPLET_2': [],
+        # 표 순서는 뒤집어 둠(결과는 SkillLevelSE 순서) · 이름 추정이 찾던 COND_X_BOSS_COSMO_03_HYPER_01 은 클라가 안 씀
+        'SE_TEMPLET_SKILL_1': [{'m_SEStrID': 'COND_MON_X_BOSS_COSMO_01_HYPER_02', 'm_BuffTargetType': 'NSETT_AUTO_ENEMY'},
+                               {'m_SEStrID': 'COND_MON_X_BOSS_COSMO_01_HYPER_01', 'm_BuffTargetType': 'NSETT_SELF'},
+                               {'m_SEStrID': 'COND_MON_X_BOSS_COSMO_03_HYPER_01', 'm_BuffTargetType': 'NSETT_TARGET'},
+                               {'m_SEStrID': 'COND_MON_Y_ATTACK_01'}, {'m_SEStrID': 'COND_MON_W_ATTACK_01'}],
+        'SE_TEMPLET_SKILL_2': [],
+        'SKILL_LEVEL_GROUP_TEMPLET_1': [
+            {'SkillLevelGroupID': 10, 'SkillLevelValue': 1,
+             'SkillLevelSE': ['COND_MON_X_BOSS_COSMO_01_HYPER_01', 'COND_MON_X_BOSS_COSMO_01_HYPER_02']},
+            {'SkillLevelGroupID': 11, 'SkillLevelValue': 1, 'SkillLevelSE': ['COND_MON_Y_ATTACK_01']},
+            {'SkillLevelGroupID': 11, 'SkillLevelValue': 2, 'SkillLevelSE': []},
+            {'SkillLevelGroupID': 12, 'SkillLevelValue': 1, 'SkillLevelSE': ['COND_NONE_01']}],
+        'SKILL_LEVEL_GROUP_TEMPLET_2': [],
+    }
+    with tempfile.TemporaryDirectory() as d:
+        t = Path(d)
+        for name, rows in tables.items():
+            (t / (name + '.json')).write_text(json.dumps({'Data': rows}), encoding='utf-8')
+        se = se_rows(t)
+    got = se_of(sk3, se)
+    assert [r['m_SEStrID'] for r in got] == ['COND_MON_X_BOSS_COSMO_01_HYPER_01', 'COND_MON_X_BOSS_COSMO_01_HYPER_02'], got
+    assert [r['m_BuffTargetType'] for r in got] == ['NSETT_SELF', 'NSETT_AUTO_ENEMY']
+    for sid in ('NKM_UNIT_MON_Y_ATTACK', 'NKM_UNIT_MON_Z_ATTACK', 'NKM_UNIT_MON_W_ATTACK', 'NKM_UNIT_MON_NOPE_ATTACK'):
+        assert se_of(sid, se) is None, sid
 
 
 if __name__ == '__main__':

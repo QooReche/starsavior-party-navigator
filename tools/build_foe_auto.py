@@ -133,29 +133,49 @@ def conds(c, bname):
     return out
 
 
-def se_rows(tables):
-    by = defaultdict(list)
+def se_rows(tables, skills=None):
+    """게임 스킬 이름 -> 그 스킬의 SE 행 목록(클라 순서). 클라는 스킬 -> SKILL_TEMPLET.SkillLevelGroup ->
+    SKILL_LEVEL_GROUP_TEMPLET.SkillLevelSE(m_SEStrID 목록, 적힌 순서) 로 SE 를 찾는다
+    (build 26610546 Star.Templets.decompiled.cs:29987 읽기, 30016-30028 SE 이름으로 연결·순서대로 보관).
+    SE 이름은 스킬 이름과 다를 수 있다 — 코스모 힐데 COSMO_03 스킬 -> COND_..._COSMO_01_*, 바스커빌의 괴수
+    BOSS_COSMO_01_HYPER -> COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_*, 세레스(WEST_BEAMSWORD) -> COND_MON_CERES_* 등.
+    11/15 전까지는 이름 추정(COND_<스킬>_NN)으로 찾아 적 스킬 1,216개 중 110개가 클라와 달랐다(빈 72·다른 행 38).
+    적 스킬은 레벨이 하나뿐 — 레벨이 여럿이고 SE 목록이 다르면 어느 레벨인지 몰라 넣지 않고 보고한다."""
+    if skills is None:
+        skills = {}
+        for n in (1, 2):
+            for r in json.loads((tables / ('SKILL_TEMPLET_%d.json' % n)).read_text(encoding='utf-8'))['Data']:
+                skills[r['m_SkillStrID']] = r
+    by_name = {}
     for n in (1, 2):
         for r in json.loads((tables / ('SE_TEMPLET_SKILL_%d.json' % n)).read_text(encoding='utf-8'))['Data']:
-            m = re.match(r'^COND_(.+)_(\d+)$', r.get('m_SEStrID') or '')
-            if m:
-                by[m.group(1)].append((int(m.group(2)), r))
-    return {k: [r for _, r in sorted(v, key=lambda x: x[0])] for k, v in by.items()}
+            if r.get('m_SEStrID'):
+                by_name[r['m_SEStrID']] = r
+    levels = defaultdict(dict)
+    for n in (1, 2):
+        for r in json.loads((tables / ('SKILL_LEVEL_GROUP_TEMPLET_%d.json' % n)).read_text(encoding='utf-8'))['Data']:
+            levels[r['SkillLevelGroupID']][r['SkillLevelValue']] = list(r.get('SkillLevelSE') or [])
+    out = {}
+    for sid, sk in skills.items():
+        lv = levels.get(sk.get('SkillLevelGroup'))
+        if not lv:
+            continue
+        if len({tuple(v) for v in lv.values()}) != 1:
+            if sid.startswith('NKM_UNIT_MON_'):
+                REPORT['스킬 레벨별 SE 다름(그 스킬 제외)'] += 1
+            continue
+        names = next(iter(lv.values()))
+        if any(x not in by_name for x in names):
+            REPORT['SkillLevelSE 이름이 SE 표에 없음(그 스킬 제외)'] += 1
+            continue
+        if names:
+            out[sid] = [by_name[x] for x in names]
+    return out
 
 
 def se_of(sid, se):
-    # SE m_SEStrID 이름은 COND_<skill_key>_<줄번호>. skill_key 가 보통 MON_... 이지만
-    # NKM_UNIT_MON_... 전체를 쓰는 경우도 있어(공허선도자·공허절멸자 등) 세 가지로 시도한다.
-    for key in (sid.replace('NKM_UNIT_MON_', '', 1), sid.replace('NKM_UNIT_', '', 1), sid):
-        if key in se:
-            return se[key]
-    # 게임 유닛 변형 접미사(예: _01)가 스킬 이름에 붙지만 SE 이름에는 없는 경우(해피 68호 _RUSH_01_PASSIVE2 → SE _RUSH_PASSIVE2)
-    alt = re.sub(r'_\d+(_(?:PASSIVE|ATTACK|SPECIAL|HYPER))', r'\1', sid)
-    if alt != sid:
-        for key in (alt.replace('NKM_UNIT_MON_', '', 1), alt.replace('NKM_UNIT_', '', 1), alt):
-            if key in se:
-                return se[key]
-    return None
+    """게임 스킬 이름 -> SE 행 목록(se_rows 결과). 없으면 None."""
+    return se.get(sid)
 
 
 RX_SELF_EXTRA = re.compile(r'자신에게 (?:\d+% 확률로 )?(기본기|특수기|궁극기) 추가 발동')
@@ -226,7 +246,7 @@ def build(static):
     auto = {r['Id']: r for r in jsonc(tables / 'Plain' / 'AUTO_SKILL_TEMPLET.json')['Data']}
     target = {r['Id']: r['TargetCondition'] for r in jsonc(tables / 'Plain' / 'AUTO_SKILL_TARGET_TEMPLET.json')['Data']}
     bname = buff_names(tables)
-    se = se_rows(tables)
+    se = se_rows(tables, skills)
     raw = F.load_foe(str(ROOT))
     rows = SP.battle_rows(static)
     link = defaultdict(set)      # (ui, xi) -> 게임 UnitStrId 집합
