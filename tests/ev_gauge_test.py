@@ -110,8 +110,12 @@ def test_extra_turn_first_in_client_sort():
     log, oa = [], sim.act_ally
     sim.act_ally = lambda a: (log.append((round(sim.t, 3), a.name)), oa(a))
     sim.run()
-    same = [n for t, n in log if abs(t - 629.881) < 1e-3]
-    assert len(same) == 3 and same[0] == same[1] == sim.party[0].name, same
+    # 같은 시각에 세 번 행동한 묶음(세이라 추가 턴 + 벨 리스 게이지 100%) — 시각은 능력치 규칙에 따라 바뀌므로 묶음으로 찾음
+    groups = {}
+    for t, n in log:
+        groups.setdefault(t, []).append(n)
+    triple = [v for v in groups.values() if len(v) == 3]
+    assert triple and all(v[0] == v[1] == sim.party[0].name for v in triple), groups
 
 
 if __name__ == '__main__':
