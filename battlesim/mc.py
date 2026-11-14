@@ -4823,6 +4823,19 @@ class Battle:
             self.mc['taunt_skill_end_duration'] and name == '도발' and x.acting
             and ln is not None and ln.phase == '스킬 사용 후')
 
+    def _debuff_banned(self, x):
+        """새 약화를 거부하는 상태(CantGetMoreDebuff)인가. table = BUFF_TEMPLET m_bDebuffBan 이름 전부(면역·면역(해제불가)·
+        면역(영역 전개)·시엔 고유 버프(해제불가)·바스커빌의 역작(해제불가), data/buff_flags.json) — 클라는 이름이 아니라
+        플래그로 본다(NKM:4401-4405). name = 이름 〈면역〉만 보던 옛 동작."""
+        if x.on('면역'):
+            return True
+        if self.mc['debuff_ban_flag'] != 'table':
+            return False
+        if any(x.on(n) for n in buff_flags()['cant_more_debuff'] if n in x.eff):
+            self.rule_hits['debuff_ban_flag'] += 1
+            return True
+        return False
+
     def add_effect(self, owner, x, eff, ctx, hot=0.0, fixed=False):
         name = eff['name']
         opp = x.side != owner.side
@@ -4838,14 +4851,14 @@ class Battle:
             # build 26314877 NKM:4339-4343: CantGetMoreDebuff는 비양성·비DeleteBuff·비ForceApply 효과만 IMMUNE 거부
             # (효과 저항 무시 여부와 무관). 통과 이름 = data/buff_immune_pass.json(IsPositive|DeleteBuff|ForceApplyEffect,
             # 같은 이름 행이 모두 통과일 때만). 이름만으로 못 가르는 혼재 이름·표에 없는 효과·SE 행 강제 4건은 거부로 둠.
-            if category == 'debuff' and x.on('면역'):
+            if category == 'debuff' and self._debuff_banned(x):
                 # 전투·웨이브 시작에 거는 «기존 표식 해제» 표식(물폭탄 등, unique_enemy+ignore_resist)은 SE 행 ForceApplyEffect
                 # (SE_TEMPLET_SKILL_1 COND_SUMMER_SMILE_UNIQUE_PASSIVE_01_01)로 통과로 본다(엔진은 SE 행 ID 를 몰라 이 경로로 대신 식별).
                 if name in IMMUNE_PASS_NAMES or (eff.get('unique_enemy') and eff.get('ignore_resist')):
                     self.rule_hits['immune_force_pass'] += 1
                 else:
                     return
-        elif resist and x.on('면역'):
+        elif resist and self._debuff_banned(x):
             return     # 〈면역〉 (약화효과 면역): 상대가 거는 효과(약화) 전부 막음
         if resist and (eff.get('judge') or name in getattr(x.d, 'immune', ())):
             if not self.roll_hit(owner, ctx, x, name):
