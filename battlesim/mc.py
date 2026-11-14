@@ -4854,6 +4854,15 @@ class Battle:
             return True
         return False
 
+    def _cc_immune(self, x, name):
+        """기절·수면·침묵·도발 효과를 각 면역 버프(〈기절 면역〉 1047 등, BUFF_TEMPLET m_bImmuneStun…) 보유자가 거부(NKM:4407-4411,
+        강제 적용 예외 — 엔진은 SE 행 강제를 모름). 이름 = data/buff_flags.json cc. 규칙 mc.cc_immune_buff."""
+        for k in buff_flags()['cc'].values():
+            if name in k['effects'] and any(x.on(n) for n in k['immune'] if n in x.eff):
+                self.rule_hits['cc_immune_buff'] += 1
+                return True
+        return False
+
     def _gauge_up_blocked(self, x):
         """행동 게이지 증가 면역(ImmuneSpeedGaugeUp: 억류(해제불가)·들러리(해제불가), data/buff_flags.json)이면 게이지 증가 효과를
         거부한다(SpeedGaugeUp 버프, 강제 아님 — NKM:4412-4416). 규칙 mc.gauge_up_immune. 자연 충전은 해당 없음."""
@@ -4904,6 +4913,8 @@ class Battle:
         if resist and (eff.get('judge') or name in getattr(x.d, 'immune', ())):
             if not self.roll_hit(owner, ctx, x, name):
                 return
+        if self.mc['cc_immune_buff'] == 'client' and self._cc_immune(x, name):
+            return
         dot = eff.get('dot')
         if dot is None and name in _rules.KNOWN_DOT and not eff['props']:
             dot = _rules.KNOWN_DOT[name]
