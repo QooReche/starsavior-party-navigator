@@ -4768,6 +4768,15 @@ class Battle:
             elif ELEM_LOSES.get(owner.element) == x.element:
                 a -= _rules.ELEM_HIT
         b = 0.0 - (x.d.stats.get('der', 0) / 10000.0 + xm['der'])
+        if self.mc['abs_hit_terms'] == 'client':
+            # 클라 OBF_23872(NKM:20255-20302): 절대값 = 시전자 절대 적중 - (대상 절대 저항 + 역상성일 때 대상 역상성 절대 저항).
+            # 표(UNIT_STAT_TEMPLET)의 두 값은 현재 전 유닛 0 이라 로더가 채우지 않음 — 들어오면(stats dhit·adher) 반영.
+            extra = owner.d.stats.get('dhit', 0) / 10000.0
+            if owner.element and x.element and ELEM_LOSES.get(owner.element) == x.element:
+                extra -= x.d.stats.get('adher', 0) / 10000.0
+            if extra:
+                self.rule_hits['abs_hit_terms'] += 1
+                b += extra
         return self.R(owner.side).random() < calc_hit(a, b)
 
     def apply_buff(self, owner, eff, ctx, hot=0.0, raw=''):
