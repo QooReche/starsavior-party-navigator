@@ -4182,7 +4182,12 @@ class Battle:
             for x in tg:
                 if eff.get('shield_only') and x.shield_total() <= 0:
                     continue
+                down = x.side != owner.side and eff['val'] < 0
+                if down and self._harm_evaded(x, ctx):
+                    continue
                 if x.side != owner.side and eff.get('judge') and not self.roll_hit(owner, ctx, x, None):
+                    continue
+                if down and self._harm_immune(x):
                     continue
                 self.set_gauge(x, x.gauge + eff['val'] * 100.0)
             return
@@ -4472,7 +4477,11 @@ class Battle:
             for x in self.resolve(owner, m.group(1), ctx) or []:
                 if '스킬 쿨타임 증가' in getattr(x.d, 'immune', ()):
                     continue
+                if x.side != owner.side and self._harm_evaded(x, ctx):
+                    continue
                 if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
+                    continue
+                if x.side != owner.side and self._harm_immune(x):
                     continue
                 for slot, sk in x.d.skills.items():
                     selected = explicit_slot[1] if explicit_slot else ln.eff.get('cd_slot')
@@ -4823,10 +4832,25 @@ class Battle:
             self.mc['taunt_skill_end_duration'] and name == '도발' and x.acting
             and ln is not None and ln.phase == '스킬 사용 후')
 
+    def _harm_evaded(self, x, ctx):
+        """행동 게이지 감소·쿨타임 증가(비양성 IsBuff=false 버프, BUFF_TEMPLET 2502·2504-2506 강제 아님)도 공통 부여 검사를 탄다:
+        이번 시전을 회피한 적 대상은 거부(OBF_13659, NKM:4323-4327·4540-4566). 규칙 mc.gauge_cd_immune."""
+        if self.mc['gauge_cd_immune'] == 'client' and ctx is not None and x in ctx.evaded:
+            self.rule_hits['gauge_cd_immune'] += 1
+            return True
+        return False
+
+    def _harm_immune(self, x):
+        """같은 효과를 CantGetMoreDebuff(면역 계열) 대상은 거부(비양성·비DeleteBuff·비강제, NKM:4394-4398)."""
+        if self.mc['gauge_cd_immune'] == 'client' and self._debuff_banned(x):
+            self.rule_hits['gauge_cd_immune'] += 1
+            return True
+        return False
+
     def _debuff_banned(self, x):
         """새 약화를 거부하는 상태(CantGetMoreDebuff)인가. table = BUFF_TEMPLET m_bDebuffBan 이름 전부(면역·면역(해제불가)·
         면역(영역 전개)·시엔 고유 버프(해제불가)·바스커빌의 역작(해제불가), data/buff_flags.json) — 클라는 이름이 아니라
-        플래그로 본다(NKM:4401-4405). name = 이름 〈면역〉만 보던 옛 동작."""
+        플래그로 본다(NKM:4394-4398). name = 이름 〈면역〉만 보던 옛 동작."""
         if x.on('면역'):
             return True
         if self.mc['debuff_ban_flag'] != 'table':

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """새 약화 거부(CantGetMoreDebuff)를 이름이 아니라 표 플래그로 보는지 mc.debuff_ban_flag.
-클라: 부여 검사(build 26610546 NKM.decompiled.cs 4401-4405)는 대상 버프의 CantGetMoreDebuff 플래그(BUFF_TEMPLET
+클라: 부여 검사(build 26610546 NKM.decompiled.cs 4394-4398)는 대상 버프의 CantGetMoreDebuff 플래그(BUFF_TEMPLET
 m_bDebuffBan)로 거부한다. 옛 엔진(name)은 이름 〈면역〉만 봐서 길드 방어전 티엔 〈시엔 고유 버프(해제불가)〉
 (약화효과 면역, BUFF_TEMPLET 300781)가 있어도 약화가 들어갔다.
 실행: python -X utf8 -I tests/debuff_ban_flag_test.py"""
