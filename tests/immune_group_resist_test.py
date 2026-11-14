@@ -36,6 +36,16 @@ def test_ignore_resist_pierces_legacy():
     assert '기절' in _run('resist_only', True)[1].eff
 
 
+def test_forced_waterbomb_passes_client():
+    # 물폭탄(SE COND_SUMMER_SMILE_UNIQUE_PASSIVE_01_01 ForceApplyEffect)은 면역 목록 검사도 통과(!OBF_8151)
+    b = battle([unit('a')], [unit('f')], mc={'immune_group_resist': 'client'})
+    a, f = b.allies[0], b.foes[0]
+    f.d.immune = {'물폭탄'}
+    b.add_effect(a, f, dict(name='물폭탄', props={}, dur=None, max=None, times=1, target='스킬 대상', judge=False,
+                            ignore_resist=True, unique_enemy=True), None)
+    assert '물폭탄' in f.eff
+
+
 def test_normal_debuff_blocked_both():
     for mode in ('client', 'resist_only'):
         assert '기절' not in _run(mode, False)[1].eff

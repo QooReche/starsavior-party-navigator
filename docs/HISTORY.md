@@ -1,3 +1,24 @@
+## 2026-11-14 클라 대조: 해제·면역 16건 판정과 13건 수정
+
+codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 build 26610546 디컴파일로 하나씩 확인함. 13건 고침(규칙 스위치, 모두 기본 = 클라), 1건 기본값 전환(dead_keep_dnp), 2건은 고치지 않음.
+
+- 해제 버프 공통: 클라 해제는 버프 부여 함수(OBF_32436, `NKM.decompiled.cs:4303-4495`) 안에서 실행됨 — 면역 목록(4318)·회피(4323)·효과 적중(4364)을 지난 뒤 해제 후보(OBF_33563, 4229-4253) → 삭제.
+- `dispel_shield`(legacy skip): 강화 해제가 일반 〈보호막〉(BI_BARRIER 1038, CanNotDispel=false)도 지움. «(해제불가)» 보호막만 남음. 적 〈버프 해제〉·강화 N개 해제(회랑·격전 의뢰 다수)에서 발생.
+- `dispel_instance`(legacy name): N개 해제를 버프 객체 단위로 셈. 연소·출혈·중독·빙결(IsUniqueID)은 인스턴스마다 1개. 웬디고·공허열반자·구원자 로베르타 등 «효과 N개 해제»에서 발생.
+- `dispel_order`(legacy insertion): N개 해제 순서 = ShowIconPriority 내림차순 → 넣은 순, 재부여는 뒤로(4495-4531·4916-4929). 오메가 프로토콜 등 우선순위 1 강화가 먼저 지워짐. 새 도구 `tools/build_buff_flags.py` → `data/buff_flags.json`(simpack 포함)에 우선순위·이하 표식을 이름별로 담음(동명 혼재는 뺌).
+- `dispel_evade`(legacy off): 이번 시전을 회피한 적에게 해제가 안 걸림(OBF_13659 4540-4566).
+- `dead_keep_dnp` 기본 off → client: 부활(5436-5455)이 DeadNotDispel 효과를 남김. 쇠락 중첩이 부활 최대 HP 에 남음.
+- `sleep_wake`(legacy off): 대상별 마지막 타격의 동기화 피해가 0보다 크면 수면 해제(OBF_2209 7993-8011·8314-8336, 스킬 피해 무효로 막혀도). 수면을 거는 적이 많아 발생 잦음.
+- `dispel_attack_names`(legacy two): 공격 시 해제(DC_ATTACK)를 표 이름 전부에(4084-4097). 길드 방어전 심해의 폭군 〈나태〉가 무한 유지되던 문제. dispel_on_attack 설명의 «나태는 콘텐츠 밖» 정정.
+- `debuff_ban_flag`(legacy name): 새 약화 거부를 이름 〈면역〉이 아니라 CantGetMoreDebuff 플래그로(4394-4398). 길드 방어전 티엔 〈시엔 고유 버프(해제불가)〉에서 발생.
+- `gauge_cd_immune`(legacy off): 적에게 거는 행동 게이지 감소·쿨타임 증가(비양성·비강제 버프 2502·2504-2506)도 회피·면역에 막힘. 게이지 감소 줄이 매우 흔해 발생 잦음.
+- `gauge_up_immune`(legacy off): 〈억류(해제불가)〉·〈들러리(해제불가)〉(ImmuneSpeedGaugeUp) 보유자에게 게이지 증가 거부(4412-4416). 회랑 FLOOR 500/600 공허투영자에서 발생.
+- 실전 발생 0(우선순위 낮음, 그래도 고침): `cc_immune_buff`(기절·수면·침묵·도발 면역 버프, 4407-4411 — 엔진 데이터에 면역 버프를 거는 줄 없음), `immune_group_resist`(유닛 면역 목록을 저항 무시 효과에도, 4318-4322 — 물폭탄은 강제 적용이라 통과, 남은 저항 무시 효과는 아군 대상뿐), `abs_hit_terms`(시전자 절대 적중·역상성 절대 저항, 20255-20302 — 표 값 전부 0), `nullifier_count`(스킬 무효화 N회 카운트, 5553-5592 — 현재 줄 모두 1회).
+- 고치지 않음: ① SE 행 ForceApplyEffect 의 면역 예외(4318·4394, 생성자 6112) — 클라 동작은 확인했으나 강제 SE 5행 중 물폭탄 외 4행(메인스토리 08 보스·바스커빌 괴수·홍염 양각 보스)은 `build_foe_auto` 의 SE↔효과 줄 짝짓기가 전부 실패해 엔진이 어느 줄인지 모름(시험 삼아 빌더에 force 출력을 넣었더니 0줄이라 되돌림). immune_force_apply 설명의 기존 한계 그대로. ② 지속 0 효과의 매 시전 정리(4047-4052) — check_buff_expiry/scope 에 이미 client 대안이 있으나 dur=None ↔ 클라 수명 0 전수 대응 미확인(지적 자체도 불확실)이라 기본 유지.
+- 기존 시험 조정(결함을 가리지 않는지 확인): `savior_fix_test.test_trigger_blocking` 은 «수면 중 추가 발동 차단»을 보는데 sleep_wake=client 면 적 공격에 맞는 순간 수면이 풀려 장면이 안 생김 → 그 호출만 `sleep_wake=off`. `buff_clock_test.test_real_boss_chain_count_drops` 는 gauge_cd_immune 가 난수열을 바꿔 30판 비율이 0.672→0.729(기준 0.7)로 넘어감 → 시험 대상(전체 턴 시계)과 무관해 그 호출만 `gauge_cd_immune=off`. `followup_d_test` 기본값 계약 dead_keep_dnp=client. `immune_group_resist` 는 첫 구현이 물폭탄(강제 SE)까지 막아 `cleanup_test`·`savior_fix_test` 물폭탄 시험이 깨졌음 — 클라도 강제 적용은 면역 목록을 통과하므로 엔진 쪽을 고침.
+- 시험: 항목마다 `tests/<규칙>_test.py`(dispel_shield·dispel_instance·dispel_order·dispel_evade·dead_keep_default·sleep_wake·dispel_attack_names·debuff_ban_flag·gauge_cd_immune·gauge_up_immune·cc_immune_buff·immune_group_resist·abs_hit_terms·nullifier_count). 각 엔진 분기를 옛 동작으로 되돌리면 실패함을 확인.
+- 영향: 골든 65/150/10 일치. 빠른 계산 재보정(일치 0.910). guild_sim 은 시즌 미오픈이라 도장 ack.
+
 ## 2026-11-14 웨이브 전환 때 아군 버프 지속 -1 을 기본으로(wave_carry = client)
 
 - 클라 근거(build 26610546): `NKM.decompiled.cs:818-827` 웨이브 전환에서 아군마다 OBF_29028(전역 턴) 호출 → 버프마다 지속 -1. 같은 전역 턴에 생긴 버프는 빼되, OBF_27950(SKILL_START·TURN_START·스폰·웨이브·전투 시작 생성분) 예외는 차감(`:3999-4011`, `:4620-4638`). 엔진은 `wave_carry=client` 로 이미 구현돼 있었으나 «영상 미검증»이라 기본 keep 이었음.

@@ -1,15 +1,7 @@
 {
  "guild_sim": {
-  "hash": "622d80810ee95e3c",
+  "hash": "52a12ac07f67821a",
   "history": [
-   {
-    "hash": "f16c098b69a0b613",
-    "reason": "11/12 재점화 합산 등: 길드 방어전 시즌 종료(미오픈)로 재계산 생략"
-   },
-   {
-    "hash": "d8a159b83d427fd9",
-    "reason": "11/13 clash_no_turn_limit: clash API에만 적용. main 978afb0 대비 기존 콘텐츠 golden 기본/legacy 78/78 동일, 길방 계산 불변."
-   },
    {
     "hash": "4bc2697e8fd33dcb",
     "reason": "11/13 연쇄 고정 피해·대상 강인도 판정 변경: 길드 방어전 시즌 종료로 guild_sim 재생성을 생략했음. 다음 시즌 자료 반영 때 재생성하기로 함."
@@ -41,20 +33,20 @@
    {
     "hash": "622d80810ee95e3c",
     "reason": "11/14 wave_carry 기본 client(웨이브 전환 때 아군 버프 지속 -1, 영상 근거)…길드 방어전 시즌 미오픈·재생성 데이터 없음, 골든 65/150/10 일치"
+   },
+   {
+    "hash": "52a12ac07f67821a",
+    "reason": "11/14 클라 대조 해제·면역 13건 규칙(dispel_*·sleep_wake·debuff_ban_flag·gauge_*·cc_immune_buff 등) — 길드 방어전 시즌 미오픈"
+   },
+   {
+    "hash": "52a12ac07f67821a",
+    "reason": "11/14 클라 대조 해제·면역 13건 규칙(dispel_*·sleep_wake·debuff_ban_flag·gauge_*·cc_immune_buff 등) — 길드 방어전 시즌 미오픈"
    }
   ]
  },
  "quick": {
-  "hash": "622d80810ee95e3c",
+  "hash": "52a12ac07f67821a",
   "history": [
-   {
-    "hash": "4bc2697e8fd33dcb",
-    "reason": "calibrate_quick --write 재보정"
-   },
-   {
-    "hash": "8b42ba297d919458",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "213e5e67c881536e",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +77,14 @@
    },
    {
     "hash": "622d80810ee95e3c",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "52a12ac07f67821a",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "52a12ac07f67821a",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

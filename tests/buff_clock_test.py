@@ -96,7 +96,10 @@ class GlobalTurnClockTest(unittest.TestCase):
             for src in ('table', 'text'):
                 count.clear()
                 r = api.simulate(p, {'stage': 'oph/플로라/SECTOR 13-10'},
-                                 dict(build='standard', n_runs=30, seed=3, rules_override={'any_turn_source': src, 'enemy_leader': 'boss'}))
+                                 dict(build='standard', n_runs=30, seed=3, rules_override={'any_turn_source': src, 'enemy_leader': 'boss',
+                                                               # 11/14 gauge_cd_immune=client 는 회피한 게이지 감소의 적중 굴림을 건너뛰어
+                                                               # 난수열이 바뀜(30판 비율 0.672→0.729) — 시험 대상(전체 턴 시계)과 무관해 옛 값으로 장면 고정
+                                                               'gauge_cd_immune': 'off'}))
                 out[src] = (count['chain'] / max(1, count['hit']), r['outcome']['progress'], count['hit'] / 30.0)      # (보스 피격 1회당 연쇄, 진행도, 판당 피격)
         finally:
             api.Battle.chain, api.Battle.strike = orig, orig_strike

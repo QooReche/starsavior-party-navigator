@@ -4914,7 +4914,9 @@ class Battle:
         if category == 'buff' and self.refuse_buff(x, name):
             return     # 〈강화 불가〉: 새 강화 효과(갱신·합산 포함)는 거부(클라 버프 부여 함수 650줄)
         resist = category == 'debuff' and not eff.get('ignore_resist')
-        if (self.mc['immune_group_resist'] == 'client' and not resist and name in getattr(x.d, 'immune', ())):
+        if (self.mc['immune_group_resist'] == 'client' and not resist and name in getattr(x.d, 'immune', ())
+                and not (eff.get('unique_enemy') and eff.get('ignore_resist'))):
+            # 물폭탄류(unique_enemy+ignore_resist)는 SE 행 ForceApplyEffect 라 면역 목록도 통과(immune_force_apply 와 같은 식별).
             # 유닛 면역 목록(ImmuneGroupId)은 효과 적중·저항 무시와 독립된 첫 검사(NKM:4318-4322, 강제 적용만 예외).
             # 저항 판정 대상 약화는 아래 roll_hit 가 같은 이름으로 막으므로 여기서는 저항 무시·비약화 경로만.
             self.rule_hits['immune_group_resist'] += 1

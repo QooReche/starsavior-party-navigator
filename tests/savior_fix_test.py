@@ -187,8 +187,10 @@ def test_trigger_blocking():
     out = []
     for key in ['roberta', 'fei', 'smile', 'sunshine-cat-smile', 'professor-m']:
         for block in ['기절', '수면', 'break', 'cd']:
+            # mc.sleep_wake=client 면 적 공격에 맞는 순간 수면이 풀려(클라 OBF_2209) «수면 중 차단» 장면이 안 생김 → 이 시험만 off 로 고정
             b, a, f = setup(key, [unit('actor')], [unit('foe', atk=1, hp=10**9, sa=1000,
-                                                       skills=[dict(slot='기본기', dm=100, all=True)])])
+                                                       skills=[dict(slot='기본기', dm=100, all=True)])],
+                            mc={'sleep_wake': 'off'})
             if block == 'break':
                 a.broken = True
             elif block == 'cd':
