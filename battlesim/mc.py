@@ -4377,9 +4377,25 @@ class Battle:
                 if not self._dispel_ok(owner, ctx, x, p, rest):
                     continue
                 names = [n for n, e in x.eff.items() if e.category == ('debuff' if harmful else 'buff') and not e.fixed
-                         and self._dispel_shield_ok(e)][:int(m.group(4))]
+                         and self._dispel_shield_ok(e)]
+                left = int(m.group(4))
                 for n in names:
-                    if x.eff[n].shield > 0:
+                    if left <= 0:
+                        break
+                    e = x.eff[n]
+                    if self.mc['dispel_instance'] == 'client' and e.inst is not None and len(e.inst) > 1:
+                        # 클라 해제 후보는 버프 객체 단위(OBF_33563 의 num 은 객체마다 +1). 지속 피해 묶음은 객체가 인스턴스마다 따로라
+                        # N개 해제는 먼저 붙은 인스턴스부터 N개만 지운다(NKM:4229-4253, 4321-4334 IsUniqueID 별 객체).
+                        k = min(left, len(e.inst))
+                        del e.inst[:k]
+                        left -= k
+                        self.rule_hits['dispel_instance'] += 1
+                        if e.inst:
+                            e.stacks = len(e.inst)
+                            continue
+                    else:
+                        left -= 1
+                    if e.shield > 0:
                         self.rule_hits['dispel_shield'] += 1
                     del x.eff[n]
                 self.dirty(x)
