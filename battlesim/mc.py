@@ -1541,6 +1541,15 @@ class Battle:
             for v in list(self.alive(1)):
                 before = v.taken
                 hit = self._break_dmg(v, base)
+                if self.mc['bskill_nullify'] == 'client' and v.on('스킬 피해 무효') and not v.invincible():
+                    # 오비탈 피해도 DAMAGE_SKILL 이라 〈스킬 피해 무효〉가 막고 1회 소모(NKM:7993 OBF_23259(…, true, DAMAGE_SKILL),
+                    # 2693-2710: 무적이 먼저 0 반환, 아니면 SkillNullifier 카운트 차감). 동기화 피해는 그대로라 수면은 풀림.
+                    self.rule_hits['bskill_nullify'] += 1
+                    self._use_nullifier(v)
+                    self.log(nullify=v.name)
+                    self._hit_wake(v, hit)
+                    self.log(bskill_damage=self.break_skill_name, to=v.name, amount=0)
+                    continue
                 self.apply_damage(None, v, hit, 'bskill')
                 # 오비탈(NSI_SKILL_ORBITAL, NKM:3234)도 공통 타격 경로(NKM:7997-8018)라 마지막 피해 > 0 이면 수면 해제(8335)
                 self._hit_wake(v, hit)
@@ -1561,7 +1570,10 @@ class Battle:
                 self.log(heal=self.break_skill_name, to=u.name, amount=got)
             if self.opts['nova_pool'] == 'unit':
                 self.nova_add(u, nova)
-            if rule.get('gauge') and (u is not actor or self.mc['break_gauge_actor'] == 'client'):
+            if (rule.get('gauge') and (u is not actor or self.mc['break_gauge_actor'] == 'client')
+                    and not (rule['gauge'] > 0 and self._gauge_up_blocked(u))):
+                # 오비탈 게이지 증가도 SE 행(SE_TEMPLET_ORBITAL_ARRAY 102011, 비강제) → BI_SPEED_GAUGE_UP(2002) 버프라
+                # 행동 게이지 증가 면역(억류·들러리)이면 거부(NKM:4412-4416, mc.gauge_up_immune)
                 self.set_gauge(u, u.gauge + rule['gauge'])
                 if u is actor:
                     self.rule_hits['break_gauge_actor'] += 1
