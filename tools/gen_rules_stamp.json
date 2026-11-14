@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "eec6d66a5b21cb23",
+  "hash": "e6a7e9f1524b9f68",
   "history": [
-   {
-    "hash": "622d80810ee95e3c",
-    "reason": "11/14 wave_carry 기본 client(웨이브 전환 때 아군 버프 지속 -1, 영상 근거)…길드 방어전 시즌 미오픈·재생성 데이터 없음, 골든 65/150/10 일치"
-   },
    {
     "hash": "52a12ac07f67821a",
     "reason": "11/14 클라 대조 해제·면역 13건 규칙(dispel_*·sleep_wake·debuff_ban_flag·gauge_*·cc_immune_buff 등) — 길드 방어전 시즌 미오픈"
@@ -41,16 +37,16 @@
    {
     "hash": "eec6d66a5b21cb23",
     "reason": "능력치 단 구성·속도 정수화·행동 게이지·적 수호자 동률(stat_stage·turn_gauge·stat_floor·guard_tie) — 길드 방어전 시즌 미오픈"
+   },
+   {
+    "hash": "e6a7e9f1524b9f68",
+    "reason": "지속/즉시 피해 피격 결과 NormalHit(dot_hit_result) — 길드 방어전 시즌 미오픈"
    }
   ]
  },
  "quick": {
-  "hash": "eec6d66a5b21cb23",
+  "hash": "e6a7e9f1524b9f68",
   "history": [
-   {
-    "hash": "52a12ac07f67821a",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "52a12ac07f67821a",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +81,10 @@
    },
    {
     "hash": "eec6d66a5b21cb23",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "e6a7e9f1524b9f68",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

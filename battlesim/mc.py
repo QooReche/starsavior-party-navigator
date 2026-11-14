@@ -3199,6 +3199,11 @@ class Battle:
         무적 → 〈스킬 피해 무효〉(1회 소모) → 보호막 → 불사 순으로 거친다(apply_damage).
         피해량 = DT_BUFF_INSTANT(AtkFactor 10000·HpFactor 100000) = 시전자 공격력 100% + 최대 생명력 1000%, 대상 방어율만 적용
         (근사: 치명·난수·피해 증감·수호 분담 없음 — 생명력 10배라 결과는 사실상 같음)."""
+        if self.mc['dot_hit_result'] == 'client' and not (owner.side == x.side and owner is not x):
+            # NKM:8119 → 17733 → 18150·18163: 즉시 피해도 계산(OBF_7777)에서 대상 피격 결과를 NormalHit 로 덮음 — 무적·무효
+            # 검사(유닛 피해 함수)보다 먼저. 같은 편 다른 시전자는 17743 에서 먼저 빠짐.
+            x.hit_evaded = False
+            self.rule_hits['dot_hit_result'] += 1
         if x.invincible():
             self.log(invincible=x.name, kind='instant')
             return
@@ -3635,6 +3640,11 @@ class Battle:
                                 share_base = base * min(1.0, gs)
                                 base -= share_base
                                 self.rule_hits['dot_guard'] += 1
+                        if self.mc['dot_hit_result'] == 'client':
+                            # NKM:8045 → 17733 → 18150·18163: 지속 피해 계산(OBF_7777)이 대상 피격 결과 OBF_20548 을 NormalHit 로
+                            # 덮는다(무적·0 피해여도 계산이 먼저). 같은 편 다른 시전자는 17743 에서 먼저 빠져 덮지 않음(위 continue).
+                            u.hit_evaded = False
+                            self.rule_hits['dot_hit_result'] += 1
                         self.apply_damage(src, u, dot_dmg(u, base), 'dot', shieldable=False)
                         if self.mc['dot_hot_lifetime'] == 'tick':
                             instance[1] -= 1
@@ -3643,6 +3653,8 @@ class Battle:
                                 and not (src.side == guard.side and src is not guard)):
                             # NKM:7925-7928,8153-8171,17368-17409: 수호자 몫은 수호자 방어·증감·상성·별도 난수로 다시 계산, 보호막 무시
                             # (NKM:17376-17379: 시전자가 수호자와 같은 편이면서 수호자 본인이 아니면 수호자 몫 0 — 자기 지속 피해)
+                            if self.mc['dot_hit_result'] == 'client':
+                                guard.hit_evaded = False      # 수호자 몫 계산 OBF_21375(NKM:8080 → 6212 → 17898)도 NormalHit
                             self.apply_damage(src, guard, dot_dmg(guard, share_base), 'dot', shieldable=False)
                 if phase != 'dot' and e.hot > 0 and not u.dead and u.on(name):
                     # 지속 회복은 원래 주는 회복량 보정을 안 쓰지만, 서든데스 감소는 시전자 기준으로 적용(근사)
