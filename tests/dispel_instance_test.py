@@ -80,6 +80,27 @@ def test_dispel_all_unchanged():
         assert x.eff == {}
 
 
+
+def test_interleaved_single_instance_uses_own_seq_client():
+    """중독① → 기절 → 중독② 순으로 받고 «약화 1개 해제» 두 번: 클라 목록(객체별 넣은 순, NKM:4505-4520·4916-4929)은
+    중독① → 기절 → 중독② 라 두 번째에 기절이 지워져야 한다. 인스턴스 1개가 남았을 때 묶음 최초 seq 로 세우면 중독②가 지워졌다."""
+    from battlesim import mc as M
+    poison = Eff('중독', {}, 5, 2, None, True)
+    poison.dot = ('atk', 0.1)
+    i1 = M._Inst([None, 2]); i1.seq = next(M._EFF_SEQ)
+    stun = Eff('기절', {}, 1, 1, None, True)
+    stun.stacks = 1
+    i2 = M._Inst([None, 2]); i2.seq = next(M._EFF_SEQ)
+    poison.seq = i1.seq
+    poison.inst = [i1, i2]
+    poison.stacks = 2
+    x = NS(side=0, name='x', eff={'중독': poison, '기절': stun})
+    _run('client', x, '자신에게 (약화효과 해제) 효과 1개 해제')
+    assert x.eff['중독'].inst == [i2] and '기절' in x.eff
+    _run('client', x, '자신에게 (약화효과 해제) 효과 1개 해제')
+    assert '기절' not in x.eff, sorted(x.eff)
+    assert x.eff['중독'].inst == [i2] and x.eff['중독'].stacks == 1
+
 if __name__ == '__main__':
     n = 0
     for k, f in list(globals().items()):

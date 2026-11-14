@@ -4521,7 +4521,8 @@ class Battle:
         for n in names:
             e = x.eff[n]
             pri = buff_priority(n)
-            if self.mc['dispel_instance'] == 'client' and e.inst is not None and len(e.inst) > 1:
+            if self.mc['dispel_instance'] == 'client' and e.inst:
+                # 인스턴스가 1개만 남아도 그 인스턴스의 순번으로 — 묶음 최초 seq 로 세우면 사이에 들어온 객체보다 앞선다
                 objs += [(-pri, getattr(it, 'seq', e.seq), n, it) for it in e.inst]
             else:
                 objs.append((-pri, e.seq, n, None))
@@ -4535,8 +4536,9 @@ class Battle:
             if e is None:
                 continue
             if it is not None:
+                if len(e.inst) > 1:
+                    self.rule_hits['dispel_instance'] += 1
                 e.inst[:] = [i for i in e.inst if i is not it]
-                self.rule_hits['dispel_instance'] += 1
                 if e.inst:
                     e.stacks = len(e.inst)
                     continue
