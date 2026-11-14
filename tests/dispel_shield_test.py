@@ -26,8 +26,8 @@ def _battle(mode, target):
     b = NS(mc=dict(MC_OPTS, dispel_shield=mode), rule_hits=defaultdict(int), dirty=lambda u: None,
            R=lambda side: random.Random(1), _fired=lambda u: None, log=lambda **k: None)
     b.resolve = lambda owner, expr, ctx, kind=None: [target]
-    b._dispel_ok = lambda *a: Battle._dispel_ok(b, *a)
-    b._dispel_shield_ok = lambda e: Battle._dispel_shield_ok(b, e)
+    for f in ('_dispel_ok', '_dispel_shield_ok', '_dispel_n_ordered'):
+        setattr(b, f, (lambda g: (lambda *a: g(b, *a)))(getattr(Battle, f)))
     return b
 
 

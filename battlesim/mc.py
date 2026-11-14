@@ -8,6 +8,7 @@
 - 이벤트 한도 초과는 EventLimitError(정상 결과를 돌려주지 않는다).
 P3 규칙 값은 rules/default.json 의 "mc" 절(MC_OPTS)."""
 import copy
+import itertools
 import json
 import math
 import os
@@ -152,6 +153,31 @@ def global_turn_buff(name):
         with open(os.path.join(SRC, 'data', 'buff_global_turn.json'), encoding='utf-8') as f:
             _GLOBAL_TURN = {re.sub(r'\(해제\s*불가\)$', '', n).strip() for n in json.load(f)}   # 양쪽 모두 꼬리표를 뗀 이름으로 비교
     return re.sub(r'\(해제\s*불가\)$', '', name).strip() in _GLOBAL_TURN
+
+
+_BUFF_FLAGS = None
+
+
+def buff_flags():
+    """data/buff_flags.json(tools/build_buff_flags.py): 이름별 BUFF_TEMPLET 표식. 같은 이름 행끼리 다르면 빠져 있음."""
+    global _BUFF_FLAGS
+    if _BUFF_FLAGS is None:
+        with open(os.path.join(SRC, 'data', 'buff_flags.json'), encoding='utf-8') as f:
+            _BUFF_FLAGS = json.load(f)
+    return _BUFF_FLAGS
+
+
+def buff_priority(name):
+    """ShowIconPriority(클라 버프 목록 정렬 1순위, 내림차순). 표에 없거나 동명 혼재면 0."""
+    return buff_flags()['priority'].get(name, 0)
+
+
+_EFF_SEQ = itertools.count(1)
+
+
+class _Inst(list):
+    """지속 피해 인스턴스 [시전자, 남은 턴] + 넣은 순서(seq). 클라 버프 목록에서 객체 하나."""
+    __slots__ = ('seq',)
 
 
 _BUFF_STEP = None
@@ -502,7 +528,7 @@ DISPEL_ON_ATTACK = ('여유로운 응수', '헥사 너트')
 class Eff:
     """유닛에 붙은 효과 1개(강화·약화·보호막·지속 피해·지속 회복). stacks 는 정수."""
     __slots__ = ('name', 'props', 'stacks', 'maxs', 'dur', 'src', 'harmful', 'fresh', 'shield', 'dot', 'inst', 'hot',
-                 'check', 'fixed', 'clock', 'category', 'skip_tick', 'dead_keep')
+                 'check', 'fixed', 'clock', 'category', 'skip_tick', 'dead_keep', 'seq')
 
     def __init__(self, name, props, maxs, dur, src, harmful):
         self.name, self.props, self.maxs, self.dur, self.src, self.harmful = name, props, maxs, dur, src, harmful
@@ -518,6 +544,7 @@ class Eff:
         self.dead_keep = False   # DeadNotDispel: 해제 불가와 별개(NKM:5385)
         self.skip_tick = False   # 단계 그룹: 더 낮은 단계가 지속만 늘린 뒤 다음 차감 1회를 건너뜀(NKM:4297-4305, 3978-3988)
         self.clock = 'owner_turn'   # 영역은 global 또는 legacy의 ally_turn/round로 차감
+        self.seq = next(_EFF_SEQ)    # 클라 버프 목록에 들어간 순서(재부여 = 지우고 다시 넣음, mc.dispel_order)
 
 
 _MOD_ZERO = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0, er=0.0,
@@ -4294,6 +4321,8 @@ class Battle:
                 if self.refuse_buff(x, m.group(2)):
                     continue     # 〈강화 불가〉: 보호막도 강화 효과라 새로 받지 못함(합산 포함)
                 e = x.eff.get(m.group(2))
+                if e is not None and self.mc['dispel_order'] == 'client':
+                    e.seq = next(_EFF_SEQ)   # 보호막 재부여도 합산한 새 객체로 다시 넣음(NKM:4524-4531, 5368-5381)
                 if e is None:
                     e = Eff(m.group(2), props, 1, _shield_dur(m.group(3)), owner, False)
                     e.stacks = 1
@@ -4379,6 +4408,10 @@ class Battle:
                 names = [n for n, e in x.eff.items() if e.category == ('debuff' if harmful else 'buff') and not e.fixed
                          and self._dispel_shield_ok(e)]
                 left = int(m.group(4))
+                if self.mc['dispel_order'] == 'client':
+                    self._dispel_n_ordered(x, names, left)
+                    self.dirty(x)
+                    continue
                 for n in names:
                     if left <= 0:
                         break
@@ -4438,6 +4471,36 @@ class Battle:
                     ctx.inc += v * sum(cnt(x) for x in pool)
             return
         self._run_special_rest(owner, ln, ctx, rest)
+
+    def _dispel_n_ordered(self, x, names, left):
+        """클라 순서로 N개 해제: 버프 목록은 ShowIconPriority 내림차순 → 넣은 순(재부여는 뒤로)(OBF_25553·OBF_16553,
+        NKM:4505-4520·4916-4929), 해제 후보 루프(OBF_33563)가 그 순서로 객체 N개를 고른다. 지속 피해는 인스턴스가 객체."""
+        objs = []
+        for n in names:
+            e = x.eff[n]
+            pri = buff_priority(n)
+            if self.mc['dispel_instance'] == 'client' and e.inst is not None and len(e.inst) > 1:
+                objs += [(-pri, getattr(it, 'seq', e.seq), n, it) for it in e.inst]
+            else:
+                objs.append((-pri, e.seq, n, None))
+        old = [(o[2], o[1]) for o in sorted(objs, key=lambda o: (names.index(o[2]), o[1]))[:left]]
+        objs.sort(key=lambda o: (o[0], o[1]))
+        picked = objs[:left]
+        if sorted(old) != sorted((o[2], o[1]) for o in picked):
+            self.rule_hits['dispel_order'] += 1     # 옛 순서(처음 붙은 이름 순)로 골랐을 때와 지우는 대상이 다름
+        for _, _, n, it in picked:
+            e = x.eff.get(n)
+            if e is None:
+                continue
+            if it is not None:
+                e.inst[:] = [i for i in e.inst if i is not it]
+                self.rule_hits['dispel_instance'] += 1
+                if e.inst:
+                    e.stacks = len(e.inst)
+                    continue
+            if e.shield > 0:
+                self.rule_hits['dispel_shield'] += 1
+            del x.eff[n]
 
     def _dispel_shield_ok(self, e):
         """해제 후보에 보호막을 넣는가. client = 클라 OBF_33563(NKM:4229-4253)은 Barrier 를 따로 빼지 않는다 —
@@ -4824,6 +4887,8 @@ class Battle:
         else:
             changed = changed or e.category != category or bool(eff['props'])
             e.category, e.harmful = category, harmful
+            if not dot and self.mc['dispel_order'] == 'client':
+                e.seq = next(_EFF_SEQ)   # 같은 ID 재부여는 옛 객체를 지우고 새로 넣는다(NKM:4524-4531 OBF_5657→OBF_11376, 4505 OBF_27309)
             if eff['dur'] is not None:
                 if e.check and refresh_check:
                     # 기존 0턴 효과를 유한/명시 무한으로 재부여하면 만료 예약도 갱신.
@@ -4849,7 +4914,9 @@ class Battle:
                 if len(e.inst) >= e.maxs:
                     e.inst.sort(key=lambda it: it[1])
                     e.inst.pop(0)
-                e.inst.append([owner, dur if dur != math.inf else 10 ** 6])
+                it = _Inst([owner, dur if dur != math.inf else 10 ** 6])
+                it.seq = next(_EFF_SEQ)
+                e.inst.append(it)
             e.stacks = len(e.inst)
         else:
             e.stacks = min(e.maxs, e.stacks + eff['times'])
