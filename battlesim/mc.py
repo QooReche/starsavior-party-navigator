@@ -320,6 +320,7 @@ RX_SHIELD = re.compile(r'^(.+?)에게 〈([^〉]+)〉\s*\((\d+턴|지속 무한)
 RX_REVIVE = re.compile(r'^(.+?)에게 부활\(생명력 (\d+)%\)')
 RX_HOT = re.compile(r'‹턴마다 회복: 대상 최대 생명력×([\d.]+)%›')
 RX_DISPEL = re.compile(r'^(.+?)에게 (?:\(대상마다 (\d+)% 판정\) )?〈[^〉]+〉\s*\((?:\d+턴 / )?(약화|강화)효과 해제\)')
+RX_NULLIFY_N = re.compile(r'스킬 무효화 (\d+)회')
 RX_DISPEL_N = re.compile(r'^(.+?)에게 (?:(\d+)% 확률로 )?\((약화|강화)효과 해제\) 효과 (\d+)개 해제')
 # P5 적 효과(대표 스테이지에서 자주 나오는 것)
 RX_GAUGE_SET = re.compile(r'^(.+?)에게 행동 게이지를 (\d+)%로 설정')
@@ -2733,9 +2734,8 @@ class Battle:
             guard = None
         r = self.rand(a.side)
         if v.on('스킬 피해 무효') and not v.invincible():    # 〈무적〉이 먼저 막으면 무효화는 소모 안 됨(클라 피해 함수 1113 → 1118)
-            # 〈스킬 피해 무효〉 「스킬 무효화 1회」: 이번 스킬 피해 0, 효과 1회 소모(지속 피해는 스킬이 아니라 그대로)
-            del v.eff['스킬 피해 무효']
-            self.dirty(v)
+            # 〈스킬 피해 무효〉 「스킬 무효화 N회」: 이번 스킬 피해 0, 효과 1회 소모(지속 피해는 스킬이 아니라 그대로)
+            self._use_nullifier(v)
             self.log(nullify=v.name)
             # NKM:7841-7859: 피해 동기화 값은 무효·보호막·HP 차감 반환값과 별개.
             if self.mc['damage_vampirism'] == 'client' or self.mc['sleep_wake'] == 'client':
@@ -3000,8 +3000,7 @@ class Battle:
             self.log(invincible=x.name, kind='instant')
             return
         if x.on('스킬 피해 무효'):
-            del x.eff['스킬 피해 무효']
-            self.dirty(x)
+            self._use_nullifier(x)
             self.log(nullify=x.name)
             return
         de = self.def_stat(x)
@@ -3506,6 +3505,17 @@ class Battle:
         self.rule_hits['damage_vampirism'] += 1
         self.rule_hits['damage_vampirism_heal'] += real
         self.log(vampirism=a.name, target=target.name, damage=total, heal=real)
+
+    def _use_nullifier(self, v):
+        """〈스킬 피해 무효〉 1회 소모. client = 남은 횟수(stacks)를 1 줄이고 0 이면 제거(SkillNullifier OBF_4403.OBF_23259 의
+        카운트 차감, build 26610546 NKM:5571-5583). legacy = 횟수와 무관하게 통째로 제거."""
+        e = v.eff['스킬 피해 무효']
+        if self.mc['nullifier_count'] == 'client' and e.stacks > 1:
+            e.stacks -= 1
+            self.rule_hits['nullifier_count'] += 1
+        else:
+            del v.eff['스킬 피해 무효']
+        self.dirty(v)
 
     def _hit_wake(self, v, sync):
         """마지막 스킬 타격의 동기화 피해가 0보다 크면 피격자의 수면(m_bSleep) 효과를 지운다(OBF_2209, build 26610546
@@ -5027,6 +5037,13 @@ class Battle:
             e.stacks = min(e.maxs, e.stacks + eff['times'])
         if hot:
             e.hot = hot
+        if name == '스킬 피해 무효' and self.mc['nullifier_count'] == 'client':
+            # SkillNullifierValue(«스킬 무효화 N회»): 새 횟수가 남은 횟수보다 클 때만 갈아 끼움(NKM:5585-5591 OBF_9349).
+            mn = RX_NULLIFY_N.search(self._cur_line.raw) if self._cur_line is not None else None
+            n = int(mn.group(1)) if mn else 1
+            if n > 1 or e.maxs > 1:
+                e.maxs = max(e.maxs, n)
+                e.stacks = max(old_stacks, n)
         # Step replacement may remove another effect with props, even when this
         # effect has none. Empty markers otherwise don't invalidate mods.
         if ((changed or old_stacks != e.stacks)
