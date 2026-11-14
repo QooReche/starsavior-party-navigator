@@ -314,7 +314,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'ally_turn_self', 'fixed_true_formula', 'counter_slot_timing',
     'buff_fresh_scope', 'break_gauge_actor', 'purify_nova_scope', 'preemptive_reduce', 'omega_dispel', 'check_buff_scope',
     'foe_skill_order', 'foe_forced_coop', 'empty_attack', 'enemy_cd_end_order', 'revenge_rate',
-    'buff_ban', 'buff_ban_force', 'enforce_timing', 'enforce_target', 'self_enforce_target', 'wave_ally_gauge', 'buff_count_source', 'dispel_on_attack', 'skill_order', 'hit_stack_order', 'permanent_accuracy', 'battle_end_mode',
+    'buff_ban', 'buff_ban_force', 'enforce_timing', 'enforce_target', 'self_enforce_target', 'heal_tie', 'wave_ally_gauge', 'buff_count_source', 'dispel_on_attack', 'skill_order', 'hit_stack_order', 'permanent_accuracy', 'battle_end_mode',
     'wave_extra_turn', 'turn_start_order', 'wave_foe_battle_start', 'guard_skip_immune', 'dead_keep_dnp', 'revive_after_spawn', 'add_damage_guard', 'stat_select_int',
     'variant_self_state', 'turn_unit_debuff_cond', 'auto_marker_lines',
     'ally_auto_lines', 'ally_auto_target', 'ally_break_gauge', 'ally_init_cd', 'ally_variant_mapping', 'any_turn_clock', 'any_turn_source', 'own_turn_condition',

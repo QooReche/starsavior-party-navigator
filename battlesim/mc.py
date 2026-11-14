@@ -1989,6 +1989,23 @@ class Battle:
             return 'heal'
         return 'buff'
 
+    def heal_order(self, owner, pool, k):
+        """생명력 비율이 낮은 순서의 아군 목록(회복·보호막 대체 경로). mc.heal_tie=client: 클라 회복 규칙 2(AUTO_SKILL_TARGET_TEMPLET Id 2 =
+        IsLowHpRate → IsLowMaxHp, 그래도 여럿이면 무작위 — NKM 7001-7050 필터 사슬)로 앞 k명을 차례로 고른다. slot = 옛 동작(비율 실수 비교, 동률이면 앞 칸)."""
+        if self.mc['heal_tie'] != 'client':
+            return sorted(pool, key=lambda v: (v.hp / v.maxhp, v.pos))
+        left, out = sorted(pool, key=lambda v: v.pos), []
+        while left and len(out) < k:
+            got, _ = self.filter_chain(owner, left, ('low_hp_rate', 'low_max_hp'))
+            if len(got) > 1:
+                self.rule_hits['heal_tie'] += 1
+                pick = self.R(owner.side).choice(got)
+            else:
+                pick = got[0]
+            out.append(pick)
+            left = [v for v in left if v is not pick]
+        return out + sorted(left, key=lambda v: (v.hp / v.maxhp, v.pos))
+
     def pick_ally(self, u, sk_kind='buff', exclude_self=False):
         if sk_kind == 'revive':
             dead = [v for v in self.side_units(u.side) if v.dead]
@@ -1996,7 +2013,7 @@ class Battle:
                 return dead[0]
         pool = [v for v in self.alive(u.side) if not (exclude_self and v is u)] or [u]
         if sk_kind in ('heal', 'revive') and self.mc['heal_target'] == 'lowest_hp_ratio':
-            return min(pool, key=lambda v: (v.hp / v.maxhp, v.pos))
+            return self.heal_order(u, pool, 1)[0]
         return max(pool, key=lambda v: (self.live_atk(v), -v.pos))
 
     def live_atk(self, v):
@@ -2069,7 +2086,7 @@ class Battle:
             n = re.search(r'(\d+)명', t)
             k = int(n.group(1)) if n else 1
             if kind in ('heal', 'shield') and self.mc['heal_target'] == 'lowest_hp_ratio':
-                pool = sorted(pool, key=lambda v: (v.hp / v.maxhp, v.pos))
+                pool = self.heal_order(owner, pool, k)
             else:
                 pool = sorted(pool, key=lambda v: (-self.live_atk(v), v.pos))
             return pool[:k]
@@ -2108,7 +2125,7 @@ class Battle:
         if mode == 'random':
             return [self.R(owner.side).choice(pool)]
         if mode == 'lowest_hp':
-            pool = sorted(pool, key=lambda v: (v.hp / v.maxhp, v.pos))
+            pool = self.heal_order(owner, pool, k or 1)
         else:
             pool = sorted(pool, key=lambda v: (-self.live_atk(v), v.pos))
         return pool[:k or 1]
