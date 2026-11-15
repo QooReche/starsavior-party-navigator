@@ -1,6 +1,6 @@
 /* 화면 1·2단계: 8/16/24 spacing, compact result cards, dark layers. */
 :root{--bg:#0b0f1a;--card:#131a2a;--line:#28364f;--mut:#a5b2c8;--acc:#6cc8ff}
-body{background:var(--bg);font-size:15px}main{max-width:960px;padding:24px 24px 64px}
+body{background:var(--bg);font-size:15px}main{max-width:1440px;padding:24px 24px 64px}
 .panel,.party{padding:24px;margin-bottom:16px;box-shadow:none;backdrop-filter:none;border:1px solid var(--line);background:var(--card)}
 h1{font-size:18px;color:var(--fg);background:none;margin:0}h1 small{font-size:11px;color:var(--mut)!important;-webkit-text-fill-color:var(--mut)}
 .site-head h1{display:flex;align-items:center;gap:8px}.gwen-head{width:36px;height:36px;object-fit:contain;flex:none}
@@ -116,3 +116,57 @@ button.sec{background:rgba(111,211,207,.06);border-color:rgba(111,211,207,.6);co
 .verdict-main{display:flex;flex-wrap:wrap;align-items:center}.verdict-main>.verdict-meta{flex-basis:100%}
 @media(max-width:400px){.gwen-caption{font-size:12px}}
 @media(max-width:600px){.case-request{outline-offset:-6px}.case-clip{left:18px}.gwen-greet .gwen-welcome{width:60px;height:60px}.gwen-say{font-size:13px;padding:8px 12px}}
+
+/* 넓은 사건 파일: 카드와 근거는 나란히, 긴 문장은 읽기 폭을 유지함. */
+.result-summary,.result-team{min-width:0}
+.guide>p,.guide-steps{max-width:80ch;margin-left:auto;margin-right:auto}
+.gd-small,.growth-components,.scoredata,.gimwhy,.growth-none-hint{max-width:85ch;overflow-wrap:anywhere}
+.notice{overflow-wrap:anywhere;white-space:normal}
+.input-row>label{min-width:0}.qrow{align-items:center}.qrow .faces{align-items:center}
+.verdict-number{display:inline-flex;align-items:center;gap:6px}.verdict-number small{margin-right:0}
+.verdict-main{gap:4px}.verdict-chip{margin-left:0}.verdict-stats{align-items:flex-start}
+.season-reference :is(th,td){vertical-align:middle}.mi-toolbar>label{display:flex;align-items:center;gap:8px}
+@media(min-width:761px){
+ .input-row>label{flex:1 1 150px}.input-row>label:has(#stage){flex:2 1 240px}
+ .input-row select{width:100%}.input-row .whytoggle{flex:0 0 auto}
+ .guide-steps{width:100%}.mi-grid{grid-template-columns:repeat(auto-fill,minmax(156px,1fr))}
+}
+@media(min-width:1200px){
+ .result-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,340px);gap:24px;align-items:start}
+ .result-team{grid-column:1;grid-row:1}.result-summary{grid-column:2;grid-row:1;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--ink)}
+ .result-team>.rowcards{margin-top:0}.result-summary .mi-verdict{margin-bottom:8px}
+ .result-summary .verdict-main{flex-basis:100%;min-width:0}.result-summary .verdict-stats{gap:16px}
+ .alternatives{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px}
+ .alternatives>.alternatives-more{grid-column:1/-1}.alternatives>.qrow{border-top:0;border-bottom:1px solid var(--line)}
+ .season-result{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:0 24px}
+ .season-result>.rowcards{grid-column:1;grid-row:1/5;margin-top:0}.season-result>:not(.rowcards){grid-column:2;min-width:0}
+ .cs-boss{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:8px 24px}
+ .cs-boss>.cs-cards{grid-column:1;grid-row:1/4;margin-top:0}.cs-boss>:not(.cs-cards){grid-column:2;min-width:0}
+ .cs-bh{align-content:start}.cs-bh .cs-sc{flex-basis:100%}
+}
+/* 그림은 전용 트랙 안에서만 움직이며 문구·진행률·단추는 중앙에 고정함. */
+.gwen-work{--gwen-size:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;margin:12px auto;width:100%}
+.gwen-track{position:relative;display:block;flex:none;width:min(100%,560px);height:var(--gwen-size);overflow:hidden}
+.gwen-traveler{position:absolute;display:block;left:calc(50% - var(--gwen-size)/2);top:0;width:var(--gwen-size);height:var(--gwen-size)}
+.gwen-scene{display:block;width:var(--gwen-size);height:var(--gwen-size)}
+.gwen-caption{max-width:80ch;text-align:center}
+.gwen-roam .gwen-traveler{animation:gwen-roam 12s linear infinite}
+.gwen-roam .gwen-scene{animation:gwen-turn 12s step-end infinite}
+.gwen-roam .gwen-worker{animation:gwen-hop 12s linear infinite}
+@keyframes gwen-roam{0%,12%{left:0}40%,60%{left:calc(100% - var(--gwen-size))}88%,100%{left:0}}
+@keyframes gwen-turn{0%,49%{transform:scaleX(1)}50%,99%{transform:scaleX(-1)}100%{transform:scaleX(1)}}
+@keyframes gwen-hop{0%,12%,16%,20%,24%,28%,32%,36%,40%,60%,64%,68%,72%,76%,80%,84%,88%,100%{transform:translateY(0)}14%,18%,22%,26%,30%,34%,38%,62%,66%,70%,74%,78%,82%,86%{transform:translateY(-4px)}}
+.progress,.idle:has(.gwen-work),.simbar:has(>.gwen-work),.bcstate:has(>.gwen-work),[data-k=gd-search-progress],[data-k=cs-progress],#growth-result:has(>.gwen-work),[data-k=slot-panel]:has(>.gwen-work){text-align:center}
+.progress .pbar{width:min(100%,520px);margin:12px auto}
+.progress>p{margin:8px auto;max-width:80ch}.progress>button{margin:4px}
+.simbar:has(>.gwen-work),.bcstate:has(>.gwen-work){justify-content:center}
+:is([data-k=gd-search-progress],[data-k=cs-progress])>button{display:block;margin:12px auto}
+#growth-result:has(>.gwen-work)>[data-k=growth-msg]{display:block;margin:8px auto;max-width:80ch}
+#growth-result:has(>.gwen-work) .growth-none-hint{margin-inline:auto;text-align:left}
+:is(.simbar,.bcstate):has(>.gwen-work)>[data-k=eta]{flex-basis:100%}
+#reco-actions{justify-content:center;align-items:center}
+@media(max-width:400px){.gwen-work{--gwen-size:120px}}
+@media(prefers-reduced-motion:reduce){
+ .gwen-roam .gwen-traveler,.gwen-roam .gwen-scene,.gwen-work .gwen-worker{animation:none;transform:none}
+ .gwen-roam .gwen-traveler{left:calc(50% - var(--gwen-size)/2)}
+}

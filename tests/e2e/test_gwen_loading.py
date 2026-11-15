@@ -28,8 +28,10 @@ def check_scene(page, mode, scope='#out', reduced=False):
     expected = '/assets/ui_icons/gwen/' + art + ('.webp' if animated else '.png')
     assert scene.locator('img').evaluate('(img)=>img.currentSrc').endswith(expected), expected
     animation = scene.locator('img').evaluate('(img)=>getComputedStyle(img).animationName')
-    if reduced or mode != 'report':
+    if reduced or mode not in ('report', 'inspect', 'long'):
         assert animation == 'none', animation
+    elif mode in ('inspect', 'long'):
+        assert animation == 'gwen-hop', animation
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), '가로 넘침'
 
 

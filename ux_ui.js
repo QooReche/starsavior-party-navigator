@@ -24,7 +24,8 @@
     if(!art)return '';
     const animated=art==='investigate'||art==='files',base='assets/ui_icons/gwen/'+art;
     const label=gwenLine(mode);
-    return `<span class="gwen-work" data-gwen="${mode}"><picture class="gwen-scene" aria-hidden="true">${animated?`<source media="(prefers-reduced-motion: no-preference)" srcset="${base}.webp" type="image/webp">`:''}<img class="gwen-worker" src="${base}.png" width="160" height="160" alt=""></picture>${label?`<span class="gwen-caption">${label}</span>`:''}</span>`;
+    const roam=art==='investigate';
+    return `<span class="gwen-work${roam?' gwen-roam':''}" data-gwen="${mode}"><span class="gwen-track"><span class="gwen-traveler"><picture class="gwen-scene" aria-hidden="true">${animated?`<source media="(prefers-reduced-motion: no-preference)" srcset="${base}.webp" type="image/webp">`:''}<img class="gwen-worker" src="${base}.png" width="160" height="160" alt="" loading="lazy"></picture></span></span>${label?`<span class="gwen-caption">${label}</span>`:''}</span>`;
   }
   // 같은 결과를 다시 그리거나 접기를 열어도 발표를 반복하지 않음.
   const gwenResults=new WeakMap(),gwenPending=new Map();let gwenSerial=0;

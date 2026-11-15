@@ -19,3 +19,7 @@ local/
 docs/*_results.json
 # 예외: 계정과 무관한 표준 육성 결과
 !docs/toughness_results.json
+
+/_shot_wide_*.png
+/_shot_roam.webm
+/_art_compare2.png
