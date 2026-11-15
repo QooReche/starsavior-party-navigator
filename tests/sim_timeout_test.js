@@ -42,7 +42,7 @@ assert.equal(ev('simTeamLimit(100)'),600000);
 // 남은 시간: 새 요청에서 팀 시작 직후 = 남은 팀 수 × 100판 × 2초
 for(const t of T)for(const k of Object.keys(ctx.SIMQ.res))delete ctx.SIMQ.res[k];
 r=start(T);r.msg({type:'stage',msg:'시뮬 1/1팀 (100판)'});
-assert.equal(ev('SIMQ.eta')-now,600000);assert.match(ev('simEtaText()'),/완료까지 약 10분/);assert.match(ev('simEtaText()'),/오래 걸릴 수 있어요/);
+assert.equal(ev('SIMQ.eta')-now,600000);assert.match(ev('simEtaText()'),/완료까지 약 10분/);assert.match(ev('simEtaText()'),/오래 걸릴 수 있음/);
 advance(300000);assert.equal(ev('SIMQ.eta')-now,300000);
 
 // 4) 진행이 멈추면(팀 상한 600초 동안 소식 없음) 「모의 전투 시간 초과」
@@ -167,7 +167,7 @@ const finishAll=(h,clear=0.5)=>{const id=h.c.SIMQ.requestId;for(let guard=0;guar
  assert.equal(sc.order[0],best8,'8판 결과 순 — 2차를 먼저 끝낸 팀이 위로 올라오지 않음');
  assert.equal(Object.keys(sc.res).length,6);assert(Object.values(sc.res).every(r=>r.n===8));assert.deepEqual(Object.keys(sc.res2),[early]);
  assert.equal(sc.res2[early].n,32,'합친 판 수');
- assert.match(h.ev('scrNote(1,cur[0])'),/중간에 멈춰서 상위 팀을 짧게만 확인했어요/);assert.equal(h.c.SIMQ.err,'');
+ assert.match(h.ev('scrNote(1,cur[0])'),/중간에 멈춰서 상위 팀을 짧게만 확인했음/);assert.equal(h.c.SIMQ.err,'');
  assert.equal(h.ev('simScreen(1,true)'),true);h.ready();const id=h.c.SIMQ.requestId;
  finishAll(h,0.55);
  assert.equal(sent(h,id).length,5);assert(!sent(h,id).includes(early),'이미 32판을 돈 팀은 다시 안 돎');assert(sentOf(h,id).every(p=>p.req.n_runs===24));
@@ -238,7 +238,7 @@ console.log('PASS 예선 상한 없음·준비 지연/실패·작업자별 무�
  h.ev('scrStop()');const sc=h.sc();
  assert.equal(sc.done,true);assert.equal(sc.short,true);assert.equal(sc.order.length,7);assert.equal(sc.order[0],best);
  assert.equal(h.c.SIMQ.err,'','멈춤은 오류가 아님(본선으로 이어 감)');assert.equal(h.c.SIMQ.busy,null);assert(h.ws.every(w=>w.stopped));
- const note=h.ev('scrNote(1,cur[0])');assert.match(note,/중간에 멈춰서 후보 7\/30팀만 확인했어요/);assert.match(note,/data-scrmore="1"[^>]*>끝까지 확인/);
+ const note=h.ev('scrNote(1,cur[0])');assert.match(note,/중간에 멈춰서 후보 7\/30팀만 확인했음/);assert.match(note,/data-scrmore="1"[^>]*>끝까지 확인/);
  h.c.SIMQ.busy=1;assert.doesNotMatch(h.ev('scrNote(1,cur[0])'),/data-scrmore/,'계산 중엔 단추 없음');h.c.SIMQ.busy=null;
  const todo=pool.filter(k=>!sc.res[k]);
  assert.equal(h.ev('simScreen(1,true)'),true);h.ready();const id=h.c.SIMQ.requestId;

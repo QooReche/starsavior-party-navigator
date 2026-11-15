@@ -77,7 +77,7 @@
           rendered.set(target,JSON.stringify([String(uid),getUnit(uid)?.skills]));
         }
       }catch(e){
-        if(target.isConnected&&target.dataset.uid===String(uid))target.innerHTML='<p role="status">스킬을 불러오지 못했습니다. <button type="button" class="sec" data-skill-retry>다시 시도</button></p>';
+        if(target.isConnected&&target.dataset.uid===String(uid))target.innerHTML='<p role="status">스킬을 불러오지 못했음. <button type="button" class="sec" data-skill-retry>다시 시도</button></p>';
       }
     }
     function fold(uid){

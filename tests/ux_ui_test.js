@@ -88,15 +88,15 @@ function checkLuck(u=U){
   const on=r=>u.luckNote(r).includes('data-k="luck-note"'),text=r=>u.luckNote(r).replace(/<[^>]*>/g,'');
   const case485={clear:.005,ci:[.002,.012],n:2000};
   assert(on(case485));assert.match(text(case485),/약 0\.5%/);assert.match(text(case485),/30번 도전해도 한 번이라도 깰 확률은 약 14%/);
-  assert.match(text(case485),/파티를 바꾸거나 육성을 더/);
+  assert.match(text(case485),/파티 변경이나 추가 육성 권장/);
   assert.equal(Math.round((1-Math.pow(1-.005,30))*1000)/10,14,'1-(1-p)^30');
   // 기준 경계: 5% 미만만 «낮음», 구간은 하한 1% 미만 + 상한 5% 이상일 때만 «흔들림»
   assert(on({clear:.0499,ci:[.04,.06],n:2000}));assert(!on({clear:.05,ci:[.04,.06],n:2000}));
-  assert(on({clear:.05,ci:[.009,.236],n:20}));assert.match(text({clear:.05,ci:[.009,.236],n:20}),/결과가 흔들려요\(약 5%, 범위 0\.9%~24%\)/);
+  assert(on({clear:.05,ci:[.009,.236],n:20}));assert.match(text({clear:.05,ci:[.009,.236],n:20}),/결과가 흔들림\(약 5%, 범위 0\.9%~24%\)/);
   assert(!on({clear:.05,ci:[.01,.236],n:20}));assert(!on({clear:.05,ci:[.009,.0499],n:20}));
   assert(!on({clear:.125,ci:[.022,.47],n:8}),'하한 1% 이상이면 표본이 적어도 안 띄움');
-  // 0판 클리어: 확률 대신 «한 번도 못 깼어요», 30번 문구 없음
-  const zero={clear:0,ci:[0,.037],n:100};assert(on(zero));assert.match(text(zero),/모의 전투 100판에서 한 번도 못 깼어요/);assert.doesNotMatch(text(zero),/30번/);
+  // 0판 클리어: 확률 대신 «한 번도 못 깼음», 30번 문구 없음
+  const zero={clear:0,ci:[0,.037],n:100};assert(on(zero));assert.match(text(zero),/모의 전투 100판에서 한 번도 못 깼음/);assert.doesNotMatch(text(zero),/30번/);
   for(const r of [{clear:.96,ci:[.91,.99],n:100},{clear:.5,ci:[.4,.6],n:100},{clear:.2,n:8},null,undefined,{},{clear:null}])assert.equal(u.luckNote(r),'',JSON.stringify(r));
   assert(on({clear:.03}),'구간이 없어도 클리어율로 판단');
 }

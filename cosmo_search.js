@@ -228,9 +228,9 @@
   // 시작 전 확인: 3팀(12명)을 만들 수 없으면 이유를 정확히 알려 주는 문구, 가능하면 null
   function feasibility(S, rows) {
     const F = rows.filter(isFront).length, D = rows.length - F, mf = S.minFront || 0, md = S.minDealer || 0, pool = S.maxPool > 0 ? ` (탐색 풀을 ${S.maxPool}명으로 제한한 설정)` : "";
-    if (rows.length < TEAM * BOSSES) return `편성할 수 있는 구원자가 부족합니다(육성된 보유 구원자 ${rows.length}명, 3팀 ${TEAM * BOSSES}명 필요)${pool}`;
-    if (F < BOSSES * mf) return `앞열 역할(디펜더·서포터) 구원자가 부족합니다(육성된 ${F}명, 3팀에 팀마다 최소 ${mf}명씩 ${BOSSES * mf}명 필요)${pool}`;
-    if (D < BOSSES * md) return `딜러(디펜더·서포터가 아닌 구원자)가 부족합니다(육성된 ${D}명, 3팀에 팀마다 최소 ${md}명씩 ${BOSSES * md}명 필요)${pool}`;
+    if (rows.length < TEAM * BOSSES) return `편성할 수 있는 구원자가 부족함(육성된 보유 구원자 ${rows.length}명, 3팀 ${TEAM * BOSSES}명 필요)${pool}`;
+    if (F < BOSSES * mf) return `앞열 역할(디펜더·서포터) 구원자가 부족함(육성된 ${F}명, 3팀에 팀마다 최소 ${mf}명씩 ${BOSSES * mf}명 필요)${pool}`;
+    if (D < BOSSES * md) return `딜러(디펜더·서포터가 아닌 구원자)가 부족함(육성된 ${D}명, 3팀에 팀마다 최소 ${md}명씩 ${BOSSES * md}명 필요)${pool}`;
     return null;
   }
   // 2단계로 넘길 팀 수: 조합 수가 keep 의 2배 이하면 «상위 자르기+다양성 채우기»가 거의 의미가 없고 분할이 불발하므로 조합 전체를 넘긴다
@@ -338,13 +338,13 @@
   const clock = ms => { const d = new Date(ms), p = n => String(n).padStart(2, "0"); return `${p(d.getHours())}:${p(d.getMinutes())}`; };
   // est = etaNew().estimate(..), nowMs = 지금 시각(ms)
   function etaLine(est, nowMs) {
-    if (!est || !est.ready) return "남은 시간 계산 중 (계산 엔진을 준비하거나 처음 몇 초를 재는 중입니다)";
+    if (!est || !est.ready) return "남은 시간 계산 중 (계산 엔진을 준비하거나 처음 몇 초를 재는 중)";
     return `남은 시간 ${fmtDur(est.remainSec)} · 전체 완료 예상 ${clock(nowMs + est.remainSec * 1000)}`;
   }
   // 시작 전 안내. pl = plan(), prior = priorFrom(...) 또는 null
   function preText(pl, prior) {
     const g = `조합 ${num(pl.combos)}개 · ${pl.fast ? "선별 예상 " : "총 "}${num(pl.total)}판${pl.fast ? " · 놓침 감지 시 전수 확인으로 늘어남" : pl.fastSkipped ? " · 조합 수가 적어 빠른 탐색을 적용하지 않고 전수 확인" : ""}`;
-    if (!prior) return `시작하면 몇 초 뒤 예상 시간이 표시됩니다 (${g})`;
+    if (!prior) return `시작하면 몇 초 뒤 예상 시간이 표시됨 (${g})`;
     const sec = pl.stages.reduce((a, s, i) => a + s.games * prior[i], 0);
     return `이 PC의 지난 실행 속도 기준 예상 ${fmtDur(sec)} (${g})`;
   }
@@ -363,14 +363,14 @@
   async function search(cx) {
     const {S, bosses, mode, results, roster} = cx;
     const auto = cx.level === AUTO, level = auto ? (S.auto && S.auto.screenLevel) || 6 : cx.level;   // 자동이면 1·2단계는 대표 난이도로
-    if (bosses.length !== BOSSES) throw new Error("보스는 3명이어야 합니다");
-    if (auto && !(Number.isInteger(cx.levelMax) && cx.levelMax >= 1)) throw new Error("난이도 최대값(levelMax)이 없습니다");   // 긴 계산을 돌리기 전에 막는다
+    if (bosses.length !== BOSSES) throw new Error("보스는 3명이어야 함");
+    if (auto && !(Number.isInteger(cx.levelMax) && cx.levelMax >= 1)) throw new Error("난이도 최대값(levelMax)이 없음");   // 긴 계산을 돌리기 전에 막는다
     const rows = poolAll(S, results, roster);
     const bad = feasibility(S, rows);
     if (bad) throw new Error(bad);
     const pl = plan(S, rows, (cx.breaks || []).length);
-    if (!pl.combos) throw new Error("조건에 맞는 4인 조합이 없습니다");
-    if (S.maxCombos > 0 && pl.combos > S.maxCombos) throw new Error(`4인 조합이 ${num(pl.combos)}개로 안전 상한(${num(S.maxCombos)}개)을 넘습니다. 추천에서 뺄 구원자를 늘리거나 설정의 maxPool/maxCombos 를 조정하세요`);
+    if (!pl.combos) throw new Error("조건에 맞는 4인 조합이 없음");
+    if (S.maxCombos > 0 && pl.combos > S.maxCombos) throw new Error(`4인 조합이 ${num(pl.combos)}개로 안전 상한(${num(S.maxCombos)}개)을 넘음. 추천에서 뺄 구원자를 늘리거나 설정의 maxPool/maxCombos 를 조정해야 함`);
     const list = GS.combos(S, rows), cls = Object.fromEntries(roster.map(s => [s.key, s.cls]));
     if (cx.onPlan) cx.onPlan(pl);
     const workersPool = speedValue(S, "workerReuse", false) ? GS.workerPool(cx.makeWorker) : null;
@@ -387,14 +387,14 @@
     let jobsA = [].concat(...bosses.map(b => bossJobs(S, b, level, list, results, cls))), auditInfo = null;
     let resA, jobsK, passed = list.length;      // jobsK = 2단계 후보를 뽑을 작업 목록(반감이면 보충 판을 돌린 팀만), resA = 그 팀들의 결과
     if (!pl.halved) {
-      resA = await run(shuffled(jobsA, 20261106), S.screen.runs, 1, `1단계: 보스 3명 × 조합 ${list.length}개를 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다)`, 0);
+      resA = await run(shuffled(jobsA, 20261106), S.screen.runs, 1, `1단계: 보스 3명 × 조합 ${list.length}개를 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`, 0);
       if (stale()) return null;
       jobsK = jobsA;
     } else {
       const fr = S.screen.firstRuns, more = S.screen.runs - fr;
       const selection = pl.fast ? bosses.map((b, i) => surrogateSelect(S, jobsA.filter(j => j.boss === b), results, 20261110 + i)) : null;
       const firstJobs = selection ? [].concat(...selection.map(s => s.jobs)) : jobsA;
-      const res1 = await run(shuffled(firstJobs, 20261106), fr, 1, `1단계 (1/2): ${selection ? "빠른 탐색·무작위 놓침 확인" : "전체 조합 확인"} · ${num(firstJobs.length)}팀을 ${fr}판씩 훑는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다)`, 0);
+      const res1 = await run(shuffled(firstJobs, 20261106), fr, 1, `1단계 (1/2): ${selection ? "빠른 탐색·무작위 놓침 확인" : "전체 조합 확인"} · ${num(firstJobs.length)}팀을 ${fr}판씩 훑는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`, 0);
       if (stale()) return null;
       if (selection) {
         auditInfo = selection.map((s, i) => Object.assign({boss: bosses[i]}, surrogateAudit(S, s, res1, mode, pl.pass)));
@@ -404,7 +404,7 @@
         if (missing.length) {
           Object.assign(res1, await run(shuffled(missing, 20261106), fr, 1, "놓침 감지: 해당 보스의 나머지 조합을 전수 확인 중", 0, firstJobs.length));
           if (stale()) return null;
-          if (missing.some(j => !res1[j.key] || !res1[j.key].cosmo)) throw new Error("전수 확인 결과가 누락되었습니다. 다시 시도해 주세요");
+          if (missing.some(j => !res1[j.key] || !res1[j.key].cosmo)) throw new Error("전수 확인 결과가 누락됨. 다시 시도 필요");
         }
         jobsA = jobsA.filter(j => fallback.has(j.boss) || done.has(j.key));
       }
@@ -427,7 +427,7 @@
     if (stale()) return null;
     const lists = bosses.map(b => pickTop(jobsB.filter(j => j.boss === b), resB, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
     let triples = bestTriples(lists, S.combine.topTriples);
-    if (!triples.length) throw new Error("겹치지 않는 3팀을 찾지 못했습니다(후보가 서로 겹침). 내 정보에 육성된 구원자를 늘려 보세요");
+    if (!triples.length) throw new Error("겹치지 않는 3팀을 찾지 못했음(후보가 서로 겹침). 내 정보에 육성된 구원자 추가 필요");
     // 난이도 자동: 보스마다 난이도를 따로 고를 수 있으므로(게임이 허용), 뽑은 삼중의 모든 팀을 난이도 0~최대에서 짧게 돌려 팀별로 점수가 가장 큰 난이도를 정하고
     // 그 합이 큰 순으로 삼중을 다시 매긴다. 이 뒤 단계는 시간 안내(ETA) 단계에 없어 stage=null 로 알린다(화면은 안내를 끈다)
     let probe = null, levelOf = () => level;
@@ -479,27 +479,27 @@
   function html(st, cx) {
     const esc = cx.esc;
     const head = '<h3 class="season-title">코스모 게이트</h3>';
-    const warn = '<div class="mut gd-small">오토 전투 기준 · 내 정보의 실제 최종 능력치 · 같은 구원자를 여러 보스에 쓰지 않는 3팀(12명) · 점수 합산식은 서버 계산이라 추정이고 시뮬 전체가 아직 실제 플레이와 충분히 대조되지 않았습니다(참고용). 협공 제외는 적용하지 않습니다. 시즌이 바뀌면 새 시즌 값이 반영된 뒤에 쓰세요.</div>';
-    if (!cx.hasInfo) return `<div class="gd-search" data-k="cs-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자를 불러오세요. 불러온 구원자 중에서 3보스 점수 합이 가장 큰 3팀을 찾습니다.</div></div>`;
+    const warn = '<div class="mut gd-small">오토 전투 기준 · 내 정보의 실제 최종 능력치 · 같은 구원자를 여러 보스에 쓰지 않는 3팀(12명) · 점수 합산식은 서버 계산이라 추정이고 시뮬 전체가 아직 실제 플레이와 충분히 대조되지 않았음(참고용). 협공 제외는 적용하지 않음. 시즌이 바뀌면 새 시즌 값이 반영된 뒤에 사용해야 함.</div>';
+    if (!cx.hasInfo) return `<div class="gd-search" data-k="cs-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자 불러오기 필요. 불러온 구원자 중에서 3보스 점수 합이 가장 큰 3팀을 찾음.</div></div>`;
     const lv = [`<option value="-1"${cx.level === AUTO ? " selected" : ""}>자동 (최고 점수 난이도)</option>`].concat(Array.from({length: cx.levelMax + 1}, (_, i) => `<option value="${i}"${i === cx.level ? " selected" : ""}>${i === 0 ? "레벨 0(없음)" : "레벨 " + i}</option>`)).join("");
     const md = Object.entries(MODES).map(([k, v]) => `<option value="${k}"${k === cx.mode ? " selected" : ""}>${v}</option>`).join("");
-    const opt = `<details class="season-options" data-fold="cs-options"><summary>탐색 설정 <span class="tag">${cx.level===AUTO?'난이도 자동':'난이도 '+cx.level} · ${MODES[cx.mode]}${cx.fast?' · 빠른 탐색':''}</span></summary><div class="season-fields"><label>난이도 <select data-cs="level">${lv}</select></label> <label>순위 기준 <select data-cs="mode">${md}</select></label> <label><input type="checkbox" data-cs="fast"${cx.fast ? " checked" : ""}> 빠른 탐색(실험)</label></div><p class="mut">3단계(Step 3) 기준. 상위 점수 = 판별 점수 상위 20%의 평균. 빠른 탐색은 추천이 달라질 수 있고, 놓침 감지 시 전수 확인합니다.</p></details>`;
+    const opt = `<details class="season-options" data-fold="cs-options"><summary>탐색 설정 <span class="tag">${cx.level===AUTO?'난이도 자동':'난이도 '+cx.level} · ${MODES[cx.mode]}${cx.fast?' · 빠른 탐색':''}</span></summary><div class="season-fields"><label>난이도 <select data-cs="level">${lv}</select></label> <label>순위 기준 <select data-cs="mode">${md}</select></label> <label><input type="checkbox" data-cs="fast"${cx.fast ? " checked" : ""}> 빠른 탐색(실험)</label></div><p class="mut">3단계(Step 3) 기준. 상위 점수 = 판별 점수 상위 20%의 평균. 빠른 탐색은 추천이 달라질 수 있고, 놓침 감지 시 전수 확인함.</p></details>`;
     const btn = label => `<button type="button" data-cs="start">${label}</button>`;
     const pre = cx.preEta ? `<div class="mut gd-small" data-k="cs-eta-pre">${esc(cx.preEta)}</div>` : "";
     let body;
     // 진행 표시: 글자 칸(cs-prog, cs-eta)만 갱신하고 취소 버튼은 다시 만들지 않는다(클릭 유실 방지)
     if (st.phase === "run") body = `<div data-k="cs-progress"><span data-k="cs-prog">${esc(progText(st))}</span><div class="mut gd-small" data-k="cs-eta">${esc(st.etaText || "")}</div><button type="button" class="sec" data-cs="cancel">취소</button></div>`;
-    else if (st.phase === "err") body = `<div class="bad" data-k="cs-err">찾지 못했습니다: ${esc(st.msg || "")}</div>${btn("다시 시도")}${opt}`;
+    else if (st.phase === "err") body = `<div class="bad" data-k="cs-err">찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}${opt}`;
     else if (st.phase === "done") {
-      const stale = (st.reqLevel != null ? st.reqLevel : st.level) !== cx.level || st.mode !== cx.mode || !!st.fast !== !!cx.fast ? '<div class="gd-warn" data-k="cs-stale">고른 탐색 설정이 바뀌었습니다. 아래 결과는 이전 선택 기준이니 다시 찾아 주세요.</div>' : "";
-      const old = cx.sig != null && st.sig !== cx.sig ? '<div class="gd-warn" data-k="cs-old">낡은 결과: 내 정보를 다시 불러왔거나 추천에서 뺄 구원자 목록이 바뀌었습니다. 아래 결과는 이전 기준이니 다시 찾아 주세요.</div>' : "";
+      const stale = (st.reqLevel != null ? st.reqLevel : st.level) !== cx.level || st.mode !== cx.mode || !!st.fast !== !!cx.fast ? '<div class="gd-warn" data-k="cs-stale">고른 탐색 설정이 바뀌었음. 아래 결과는 이전 선택 기준이므로 다시 찾기 필요.</div>' : "";
+      const old = cx.sig != null && st.sig !== cx.sig ? '<div class="gd-warn" data-k="cs-old">낡은 결과: 내 정보를 다시 불러왔거나 추천에서 뺄 구원자 목록이 바뀌었음. 아래 결과는 이전 기준이므로 다시 찾기 필요.</div>' : "";
       const rows = st.rows || [];
-      const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐습니다(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
+      const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐음(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
       const first = rows.length ? `<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : '<div class="mut">결과 없음</div>';
       const rest = rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx)}</details>`).join("");
       const scr = st.halved ? `${st.fast && !st.fastSkipped ? "대리 선별·무작위 확인" + (st.audit.some(a => a.fallback) ? "·놓침 보스 전수 복귀" : "") + " 뒤" : "보스마다 조합 " + num(st.combos) + "개를"} ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
-      body = `${old}${stale}${first}${rest}${btn("다시 찾기")}${opt}<details class="season-options" data-fold="cs-result-basis"><summary>탐색 결과 상세</summary>${lvInfo}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값입니다(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순입니다. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있습니다.</div></details>`;
-    } else body = `${btn("보스 3마리 편성 찾기")}<span class="mut season-wait">몇 분 걸려요 · 탭을 열어 두세요</span>${opt}`;
+      body = `${old}${stale}${first}${rest}${btn("다시 찾기")}${opt}<details class="season-options" data-fold="cs-result-basis"><summary>탐색 결과 상세</summary>${lvInfo}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값임(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순임. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있음.</div></details>`;
+    } else body = `${btn("보스 3마리 편성 찾기")}<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>${opt}`;
     return `<div class="gd-search" data-k="cs-search" data-state="${st.phase}">${head}${body}<details class="season-options" data-fold="cs-basis"><summary>계산 기준·예상 시간 ⓘ</summary><span class="gd-est">추정</span>${pre}${warn}</details></div>`;
   }
 

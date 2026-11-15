@@ -14,7 +14,7 @@
   }
 
   async function gunzipText(bytes) {
-    if (typeof DecompressionStream !== "function") throw new Error("자동 반영이 안 됩니다. 바탕화면 내정보.json을 [파일 선택]으로 불러오세요.");
+    if (typeof DecompressionStream !== "function") throw new Error("자동 반영이 안 됨. 바탕화면 내정보.json을 [파일 선택]으로 불러오기 필요.");
     const ds = new DecompressionStream("gzip");
     const w = ds.writable.getWriter();
     w.write(bytes); w.close();
@@ -30,14 +30,14 @@
   }
 
   function validate(o) {
-    if (!o || typeof o !== "object") return "파일 내용이 올바르지 않습니다.";
-    if (o.format !== FORMAT) return "내정보.json을 선택해 주세요.";
-    if (!Array.isArray(o.units) || !o.units.length) return "구원자 정보가 비어 있습니다.";
+    if (!o || typeof o !== "object") return "파일 내용이 올바르지 않음.";
+    if (o.format !== FORMAT) return "내정보.json을 선택해야 함.";
+    if (!Array.isArray(o.units) || !o.units.length) return "구원자 정보가 비어 있음.";
     const obj=v=>v!==null&&typeof v==="object"&&!Array.isArray(v);
     const num=v=>Number.isFinite(v)&&v>=0;
     const ints=(v,keys)=>keys.every(k=>!(k in v)||(Number.isInteger(v[k])&&v[k]>=0));
     const option=v=>obj(v)&&(!("stat" in v)||typeof v.stat==="string")&&(!("value" in v)||Number.isFinite(v.value));
-    if (!ints(o,["star_link_level"])) return "스타링크 값이 올바르지 않습니다.";
+    if (!ints(o,["star_link_level"])) return "스타링크 값이 올바르지 않음.";
     // Protocol int32 bounds; 100 client slot indices (NKC:421378-421381).
     const int32=(v,min=1)=>Number.isInteger(v)&&v>=min&&v<=2147483647;
     if ("star_link" in o) {
@@ -45,24 +45,24 @@
       if (!obj(s)||!int32(s.level,0)||s.level!==o.star_link_level||
           !Array.isArray(s.source)||s.source.length>4||!s.source.every(v=>int32(v))||new Set(s.source).size!==s.source.length||
           !Array.isArray(s.slots)||!s.slots.every(v=>obj(v)&&int32(v.index,0)&&v.index<100&&int32(v.id,0))||
-          new Set(s.slots.map(v=>v.index)).size!==s.slots.length) return "스타링크 정보가 올바르지 않습니다.";
+          new Set(s.slots.map(v=>v.index)).size!==s.slots.length) return "스타링크 정보가 올바르지 않음.";
     }
     if ("tactics" in o && (!obj(o.tactics)||!ints(o.tactics,["facility_level","common_level"])||
-        ("groups" in o.tactics&&(!obj(o.tactics.groups)||!Object.values(o.tactics.groups).every(v=>obj(v)&&ints(v,["level","attack","defense","hp"])))))) return "전술 정보가 올바르지 않습니다.";
-    if ("break_skills" in o&&(!Array.isArray(o.break_skills)||!o.break_skills.every(b=>obj(b)&&Number.isInteger(b.id)&&b.id>0&&Number.isInteger(b.level)&&b.level>=1&&b.level<=10))) return "브레이크 스킬 정보가 올바르지 않습니다.";
+        ("groups" in o.tactics&&(!obj(o.tactics.groups)||!Object.values(o.tactics.groups).every(v=>obj(v)&&ints(v,["level","attack","defense","hp"])))))) return "전술 정보가 올바르지 않음.";
+    if ("break_skills" in o&&(!Array.isArray(o.break_skills)||!o.break_skills.every(b=>obj(b)&&Number.isInteger(b.id)&&b.id>0&&Number.isInteger(b.level)&&b.level>=1&&b.level<=10))) return "브레이크 스킬 정보가 올바르지 않음.";
     const ids=new Set();
     for (const u of o.units) {
-      if (!obj(u)||!Number.isInteger(u.id)||u.id<=0||ids.has(u.id)||!ints(u,["star","sigil","resonance","favor"])) return "구원자 항목이 올바르지 않습니다.";
+      if (!obj(u)||!Number.isInteger(u.id)||u.id<=0||ids.has(u.id)||!ints(u,["star","sigil","resonance","favor"])) return "구원자 항목이 올바르지 않음.";
       ids.add(u.id);
-      if ("level" in u&&!int32(u.level,0)) return "구원자 레벨이 올바르지 않습니다.";
-      if ("skills" in u&&(!obj(u.skills)||!ints(u.skills,["basic","special","ultimate","passive"]))) return "스킬 정보가 올바르지 않습니다.";
+      if ("level" in u&&!int32(u.level,0)) return "구원자 레벨이 올바르지 않음.";
+      if ("skills" in u&&(!obj(u.skills)||!ints(u.skills,["basic","special","ultimate","passive"]))) return "스킬 정보가 올바르지 않음.";
       if ("equip" in u&&(!Array.isArray(u.equip)||!u.equip.every(e=>obj(e)&&ints(e,["item_id","level","enhance"])&&
-          (!("main" in e)||option(e.main))&&(!("subs" in e)||(Array.isArray(e.subs)&&e.subs.every(option)))))) return "장비 정보가 올바르지 않습니다.";
+          (!("main" in e)||option(e.main))&&(!("subs" in e)||(Array.isArray(e.subs)&&e.subs.every(option)))))) return "장비 정보가 올바르지 않음.";
       if ("gauntlet" in u) {
         const g=u.gauntlet;
         if (!obj(g)||!ints(g,["level"])||("journey" in g&&(!Array.isArray(g.journey)||g.journey.length!==5||!g.journey.every(num)))||
             ("potentials" in g&&(!Array.isArray(g.potentials)||!g.potentials.every(p=>Array.isArray(p)&&p.length===4&&p.every(v=>Number.isInteger(v)&&v>=0))))||
-            ("blessings" in g&&(!Array.isArray(g.blessings)||!g.blessings.every(v=>Number.isInteger(v)&&v>=0)))) return "건틀렛 정보가 올바르지 않습니다.";
+            ("blessings" in g&&(!Array.isArray(g.blessings)||!g.blessings.every(v=>Number.isInteger(v)&&v>=0)))) return "건틀렛 정보가 올바르지 않음.";
       }
     }
     return "";
@@ -96,7 +96,7 @@
 
   // 공유 링크용: JSON → gzip → base64url (fromHash 의 반대). 브라우저 CompressionStream 필요
   async function toHash(info) {
-    if (typeof CompressionStream !== "function") throw new Error("링크를 만들 수 없습니다. 다른 브라우저에서 시도해 주세요.");
+    if (typeof CompressionStream !== "function") throw new Error("링크를 만들 수 없음. 다른 브라우저에서 시도 필요.");
     const cs = new CompressionStream("gzip");
     const w = cs.writable.getWriter();
     w.write(new TextEncoder().encode(JSON.stringify(info))); w.close();

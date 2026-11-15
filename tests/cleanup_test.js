@@ -77,7 +77,7 @@ async function graph(){
  visible=true;c.drawGraph();assert.equal(injected,1,'fail: inject');
  scriptEl.onerror(new Error('fail'));
  await new Promise(r=>setTimeout(r,0));
- assert.ok(els.cy.innerHTML.includes('구조도 라이브러리를 불러오지 못했습니다'),'failure msg');
+ assert.ok(els.cy.innerHTML.includes('구조도 라이브러리를 불러오지 못했음'),'failure msg');
  assert.equal(vm.runInContext('_cyP',c),null,'promise cleared for retry');
 }
 async function worker(status=200,badFile=false){

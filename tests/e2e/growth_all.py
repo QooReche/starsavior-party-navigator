@@ -49,7 +49,7 @@ def register(api):
         if s['better']:
             assert s['tabs'] == 2 and '키워야 함' in page.inner_text('#growth-result'), s
         else:
-            assert s['tabs'] == 0 and any(w in s['text'] for w in ['찾지 못했어요', '깨지 못했어요', '100%예요', '올릴 항목이 없어요']), s
+            assert s['tabs'] == 0 and any(w in s['text'] for w in ['찾지 못했음', '깨지 못했음', '100%임', '올릴 항목이 없음']), s
         # 그 콘텐츠의 규칙: 3별 목표(장비 탐사·격전 의뢰)는 60턴 내 확률로, 플래시 포인트는 레벨·공명 고정, 재점화는 작전만
         if key in STAR:
             assert s['star'] == 60 and s['turns'] == 60 and s['opts'].get('star_turns') == 60 and s['best']['t60'] is not None and s['base']['t60'] is not None, s
@@ -77,7 +77,7 @@ def register(api):
                 settle(page)
                 # 조건이 바뀌면 지난 결과는 지워지고, 모의 전투를 다시 실행하기 전까지는 대기 안내가 남는다(조용히 사라지지 않음)
                 wait = page.evaluate("() => {const e=document.getElementById('growth-result');return e?[e.dataset.state,e.innerText]:null}")
-                assert wait and wait[0] == 'idle' and '모의 전투를 실행하면 이어서 계산해요' in wait[1], wait
+                assert wait and wait[0] == 'idle' and '모의 전투를 실행하면 이어서 계산함' in wait[1], wait
                 page.click('.party[data-party="1"] button[data-sim="1"]')
                 page.wait_for_function("(GROW.phase==='done'||GROW.phase==='error')&&GROW.result&&GROW.result.best&&GROW.result.best.t60==null", timeout=600000)
                 c = page.evaluate(STATE_JS)

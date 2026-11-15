@@ -266,7 +266,7 @@ def test_auto_calculation_stop_buttons(browser, ctx):
     after = page.evaluate('window.__growthMsg')
     assert after != before and '3/' in after, (before, after)                # 누르는 사이 진행 글자는 실제로 바뀌었다
     assert page.evaluate("GROW.phase==='error'&&SIMQ.busy===null"), page.evaluate('[GROW.phase,SIMQ.busy]')
-    assert '계산을 끝내지 못했어요' in page.inner_text('#growth-result')
+    assert '계산을 끝내지 못했음' in page.inner_text('#growth-result')
     assert not ctx.errors, ctx.errors
     page.close()
     return True, '예선 「취소」·육성 「중단」: 누르는 사이 진행이 갱신돼도 클릭이 먹음 (%s → %s)' % (before.strip(), after.strip())

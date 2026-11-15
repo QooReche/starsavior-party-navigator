@@ -62,12 +62,12 @@
   }
   const STATE_TEXT = {upcoming: "시작 전", active: "진행 중", settling: "결산 중(플레이 불가)", ended: "종료"};
   const EL = {sun: "태양", moon: "달", star: "별", order: "질서", chaos: "혼돈"};
-  const EST = '<span class="gd-est" title="공식 수치가 아니라 계산·해석으로 얻은 값입니다">추정</span>';
+  const EST = '<span class="gd-est" title="공식 수치가 아니라 계산·해석으로 얻은 값임">추정</span>';
 
   function seasonBox(G, nowMs, esc) {
     const st = seasonState(G.season, nowMs), s = G.season;
     return `<div class="gd-head"><b>길드 방어전 · ${esc(s.label)}</b><span class="gd-state ${st.state}">${STATE_TEXT[st.state]}</span>${help('시즌 정보', `${G.title} · 이 시즌 정보는 ${md(G.asOf)} 기준. 진행 ${md(s.start)} ~ ${md(s.end)} 04:00 · 결산 ~${md(s.settleEnd)} 04:00 · 보스 ${s.boss.name}(${EL[s.boss.element] || ''} ${s.boss.role})`, esc)}</div>`+
-      (st.needsUpdate?'<p class="mut gd-small" data-k="gd-stale">갱신 대기 · 아래는 지난 시즌 기준이에요</p>':'');
+      (st.needsUpdate?'<p class="mut gd-small" data-k="gd-stale">갱신 대기 · 아래는 지난 시즌 기준임</p>':'');
   }
   const help = (title, text, esc) => `<button type="button" class="ux-help" aria-label="${esc(title)} 설명" aria-expanded="false" data-help="${esc(text)}">ⓘ</button>`;
   // Reference table only: never present preset power as the user's account result.
@@ -79,14 +79,14 @@
     const power=g=>'약 '+Math.round(S.recPower*g/10000)+'만';
     const detail=(b,expect)=>b?`${expect?'별의 도전 '+b.level+'단계 · ':''}클리어 ${pct(b.p)} · 지원 ${SUP_NAME[b.support]||b.support}`:'클리어 기준 미달';
     const rows=S.growth.map(g=>{const b=simBest(S,g),e=simExpect(G,S,g);return `<tr><th>${power(g)}</th><td><b>${level(b)}</b><small>${b?pct(b.p):'—'} ${help('클리어 편성·지원',b?S.teams[b.team].names.join(' · ')+' · '+detail(b,false):'클리어 기준 미달',esc)}</small></td><td><b>${e?num(e.m):'—'}</b><small>${e?level(e)+' · '+pct(e.p):'—'} ${help('점수 편성·지원',e?S.teams[e.team].names.join(' · ')+' · '+detail(e,true):'자료 없음',esc)}</small></td></tr>`;}).join('');
-    return `<div data-k="gd-overview"><p class="season-basis">기준표 · 전투력 ${power(g)} ${help('기준표','내 계정 결과가 아닌 표준 육성 후보의 모의 전투 기준이에요. 두 지표는 서로 다른 편성·단계·지원일 수 있어요. 지원과 편성은 각 ⓘ에서 확인하세요. 내 구원자는 편성 찾기로 계산해요.',esc)}</p>
+    return `<div data-k="gd-overview"><p class="season-basis">기준표 · 전투력 ${power(g)} ${help('기준표','내 계정 결과가 아닌 표준 육성 후보의 모의 전투 기준임. 두 지표는 서로 다른 편성·단계·지원일 수 있음. 지원과 편성은 각 ⓘ에서 확인 가능. 내 구원자는 편성 찾기로 계산함.',esc)}</p>
 <div class="season-kpis"><div><span>최고 클리어 단계</span><b data-k="gd-clear-kpi">${level(b)}</b><small>${b?'클리어 '+pct(b.p):'기준 미달'}</small></div><div><span>최대 기대 점수</span><b data-k="gd-score-kpi">${e?num(e.m):'—'}</b><small>${e?level(e)+' · 클리어 '+pct(e.p):'자료 없음'}</small></div></div>
 <table class="season-reference" data-k="gd-summary-table"><thead><tr><th>전투력</th><th>클리어 단계 · 지원</th><th>기대 점수 · 지원</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
   function rulesBox(G, esc) {
     const r = G.rules;
     return `<ul class="gd-rules" data-k="gd-rules"><li>한 판 최대 ${r.turnLimit}턴 · 파티 ${r.partyCount}개(${r.partySize}명)</li>
-<li><b>${esc(r.reuse)}</b> — 같은 구원자를 여러 번 쓸 수 없으니 날마다 쓸 구원자를 나눠 정하세요</li>
+<li><b>${esc(r.reuse)}</b> — 같은 구원자를 여러 번 쓸 수 없으니 날마다 쓸 구원자를 나눠 정해야 함</li>
 <li>${esc(r.abandon)}</li>
 <li>EX는 ${r.entryDaysEx.join("·")}요일만 입장 · 입장 재화 ${r.entryItemEx}개${r.skipEx ? "" : " · 전투 건너뛰기 불가"}</li></ul>`;
   }
@@ -175,27 +175,27 @@
     const supTab = sups.length > 1 ? `<details class="gd-simtab"><summary>알리시아 지원별 클리어 가능 최고 단계 (×${gMid}) · 선택 효과 끔</summary><div class="gd-scroll"><table><thead><tr><th>파티</th>${sups.map(s => `<th>${SUP_NAME[s]}</th>`).join("")}</tr></thead><tbody>${supRows}</tbody></table></div></details>` : "";
     return `<div class="gd-sim" data-k="gd-sim"><b>시뮬 추정: 깰 수 있는 최고 단계</b> ${EST} <span class="mut">선택 효과 끔</span><ul>${lines}</ul>
 ${ex ? `<b>기대 점수가 가장 큰 단계</b> ${EST} <span class="mut">선택 효과 없음(클라 기준) · 졸개 2기 처치로 계산</span><ul>${ex}</ul>` : ""}
-<div class="mut gd-small">${esc(S.basis)} · 오토 전투 기준 · 단계당 ${S.runs}판(표본이 작아 한 단계쯤은 오차) · 클리어율 ${pct(S.passP)} 이상을 «깰 수 있음»으로 봄 · 기대 점수 = 시뮬에서 보스를 깎은 평균 비율을 영상으로 확인한 점수식에 넣은 값(패배해도 깎은 만큼 받음). 점수식은 실제 플레이 1판으로 확인했지만 시뮬 결과는 아직 실제와 대조 중입니다. 수동 조작(행동 게이지 조절·브레이크 타이밍)은 반영하지 않아 실제보다 낮게 나올 수 있습니다. 알리시아 지원은 게임 표 값으로 넣었고 일부 해석(발동 확률·경계값)은 추정입니다.</div>
+<div class="mut gd-small">${esc(S.basis)} · 오토 전투 기준 · 단계당 ${S.runs}판(표본이 작아 한 단계쯤은 오차) · 클리어율 ${pct(S.passP)} 이상을 «깰 수 있음»으로 봄 · 기대 점수 = 시뮬에서 보스를 깎은 평균 비율을 영상으로 확인한 점수식에 넣은 값(패배해도 깎은 만큼 받음). 점수식은 실제 플레이 1판으로 확인했지만 시뮬 결과는 아직 실제와 대조 중. 수동 조작(행동 게이지 조절·브레이크 타이밍)은 반영하지 않아 실제보다 낮게 나올 수 있음. 알리시아 지원은 게임 표 값으로 넣었고 일부 해석(발동 확률·경계값)은 추정임.</div>
 ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율 (선택 효과 끔)</summary><div class="gd-scroll"><table><thead><tr><th>파티</th><th>육성</th><th>지원</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></details></div>`;
   }
   function panelHtml(G, sel0, step, nowMs, esc) {
     const sel = normSel(G, sel0), ex = exStep(G);
     let html = seasonBox(G, nowMs, esc)+(step===ex.step?overview(G,esc):'');
-    if(step!==ex.step)html+=`<p class="mut">${step}단계 · 별의 도전 없음. 편성 탐색은 EX(${ex.step}단계)를 골라 주세요.</p>`;
-    html += '<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary><div class="gd-dev" data-k="gd-dev" role="note"><b>개발 중 · 테스트 중인 기능입니다</b><br>점수 계산과 고단계 수치는 확인되지 않았고, 시뮬 추정은 실제 플레이와 대조하지 않았습니다. 참고용으로만 봐 주세요.</div>';
+    if(step!==ex.step)html+=`<p class="mut">${step}단계 · 별의 도전 없음. 편성 탐색은 EX(${ex.step}단계)를 선택해야 함.</p>`;
+    html += '<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary><div class="gd-dev" data-k="gd-dev" role="note"><b>개발 중 · 테스트 중인 기능임</b><br>점수 계산과 고단계 수치는 확인되지 않았고, 시뮬 추정은 실제 플레이와 대조하지 않았음. 참고용으로만 활용.</div>';
     if (step === ex.step) {
       const pct = extraPct(G, sel.level, sel.tiers), sc = score(G, pct), b = bestSelection(G), bsc = score(G, extraPct(G, b.level, b.tiers));
       const hyp = G.score.hypotheses.map(h => `${h.name} ${num(sc[h.id])}`).join(" · ");   // 보스를 다 깎았을 때 점수
       const isBest = sel.level === b.level && sel.tiers.every((t, i) => t === b.tiers[i]);
       html += `<div class="gd-best" data-k="gd-best"><b>최고 점수가 나오는 조합</b>: 별의 도전 ${b.level}단계 + 선택 효과 없음(클라 확인, 서버 처리는 미확인; 추가 점수 ${extraPct(G, b.level, b.tiers)}%) → 보스를 다 깎으면 점수 ${rangeText(bsc)}<br>
-<span class="mut">패배해도 보스를 깎은 비율만큼 보스 점수(최대 ${num(ex.bossKill)})를 받고, 추가 점수는 합계 전체에 곱해집니다(실제 영상으로 확인). 그래서 못 깰 단계라도 높은 단계가 점수에 유리할 수 있어요. 추천 파티는 단계와 관계없이 보스 속성·특징 기준입니다. 단계별 기대 점수는 아래 «시뮬 추정»을 보세요.</span></div>
+<span class="mut">패배해도 보스를 깎은 비율만큼 보스 점수(최대 ${num(ex.bossKill)})를 받고, 추가 점수는 합계 전체에 곱해짐(실제 영상으로 확인). 그래서 못 깰 단계라도 높은 단계가 점수에 유리할 수 있음. 추천 파티는 단계와 관계없이 보스 속성·특징 기준임. 단계별 기대 점수는 아래 «시뮬 추정»에서 확인.</span></div>
 ${simBox(G, esc)}${selectBox(G, sel)}
 <div class="gd-now" data-k="gd-now">고른 조합: 추가 점수 ${pct}% → 보스를 다 깎으면 <b>${rangeText(sc)}</b>${isBest ? " (최고 조합)" : ""}<br><span class="mut">${esc(hyp)} · ${esc(G.score.hypotheses.map(h => h.name + ": " + h.desc).join(" / "))}</span></div>
 <div class="mut gd-small">${esc(G.score.note)} ${esc(G.sets.note)}</div>${levelTable(G, sel, esc)}`;
     } else {
       const s = G.steps.find(x => x.step === step);
       const total = s.base + G.stepsMeta.minions * s.kill + s.bossKill;
-      html += `<div class="gd-now" data-k="gd-now">${step}단계에는 별의 도전이 없습니다. 기본 ${num(s.base)} + 졸개 처치 ${num(G.stepsMeta.minions * s.kill)} + 보스 처치 ${num(s.bossKill)} = <b>${num(total)}</b><br><span class="mut">최고 점수는 EX(${ex.step}단계)에서 나옵니다. 스테이지에서 EX를 고르세요.</span></div>`;
+      html += `<div class="gd-now" data-k="gd-now">${step}단계에는 별의 도전이 없음. 기본 ${num(s.base)} + 졸개 처치 ${num(G.stepsMeta.minions * s.kill)} + 보스 처치 ${num(s.bossKill)} = <b>${num(total)}</b><br><span class="mut">최고 점수는 EX(${ex.step}단계)에서 나옴. 스테이지에서 EX를 선택해야 함.</span></div>`;
     }
     html += '</details><details class="season-options" data-fold="gd-rules"><summary>입장 규칙·점수 계산 방식·출처</summary>'+rulesBox(G, esc) + stepsTable(G, step, esc);
     const b = G.exBoss;

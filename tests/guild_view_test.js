@@ -62,7 +62,7 @@ const tests = {
   },
   lower_step() {
     const h = V.panelHtml(P, null, 6, T('2026-10-30T12:00:00+09:00'), esc);
-    assert(h.includes('6단계에는 별의 도전이 없습니다') && h.includes('<b>15,000</b>') && !h.includes('data-g="level"'));
+    assert(h.includes('6단계에는 별의 도전이 없음') && h.includes('<b>15,000</b>') && !h.includes('data-g="level"'));
     assert(h.includes('data-k="gd-rules"'));
   },
   plain_terms() {
@@ -106,7 +106,7 @@ const tests = {
       })));
     }
     const h = V.panelHtml({...P, sim: S}, null, 7, T('2026-10-30T12:00:00+09:00'), esc);
-    assert(h.includes('data-k="gd-sim"') && h.includes('시뮬 추정: 깰 수 있는 최고 단계') && h.includes('시뮬 결과는 아직 실제와 대조 중입니다'));
+    assert(h.includes('data-k="gd-sim"') && h.includes('시뮬 추정: 깰 수 있는 최고 단계') && h.includes('시뮬 결과는 아직 실제와 대조 중'));
     assert(h.includes('기대 점수가 가장 큰 단계') && h.includes('알리시아 지원 «') && h.includes('지원별 클리어 가능 최고 단계'), '지원·기대 점수 표시');
     assert(h.includes('data-k="gd-dev"'), '개발 중 배너 유지');
     const none = {...S, summary: Object.fromEntries(S.growth.map(g => [String(g), null]))};

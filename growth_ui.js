@@ -308,38 +308,38 @@ function growthTabsPaint(c,el,show){
 // 켰는데 탐색을 시작하지 않은 이유(결과 화면이 떠 있을 때만). 빈 글 = 안내할 화면이 아님
 function growthIdleText(c){
   if(!REQ||!document.querySelector('#out > [data-party]'))return '';
-  if(c.key==='guild')return '길드 방어전은 EX 단계에서만 계산해요';
-  if(!miMode())return '내 정보 기준으로 추천할 때만 계산해요 · 육성 기준을 «내 구원자»로 바꿔 주세요';
-  if(SIMQ.err)return '모의 전투가 끝나지 않아 계산하지 못했어요 · 모의 전투를 다시 실행하면 이어서 계산해요';
-  if(!simAutoOn())return '모의 전투를 실행하면 이어서 계산해요';
-  if(SIMQ.busy!=null)return '다른 계산이 끝나면 이어서 계산해요';
+  if(c.key==='guild')return '길드 방어전은 EX 단계에서만 계산함';
+  if(!miMode())return '내 정보 기준으로 추천할 때만 계산함 · 육성 기준을 «내 구원자»로 변경 필요';
+  if(SIMQ.err)return '모의 전투가 끝나지 않아 계산하지 못했음 · 모의 전투를 다시 실행하면 이어서 계산함';
+  if(!simAutoOn())return '모의 전투를 실행하면 이어서 계산함';
+  if(SIMQ.busy!=null)return '다른 계산이 끝나면 이어서 계산함';
   return '계산 준비 중';}
 // 공략 DB 는 늦게 갱신될 수 있다: DB 에 아직 없는 구원자(data/journey_priority.json 의 fallback)는 직업 기본 우선순위로 아카이브를 판단했다 — 그 사실을 보인다(조용히 대체하지 않음)
 function growthArchiveNote(keys){const fb=D.journeyPriority?.fallback||{},names=[...new Set(keys||[])].filter(k=>fb[k]).map(k=>BYKEY[k]?.name||k);
-  return names.length?`<p class="mut" data-k="growth-archive-fallback">스텔라 아카이브 우선순위: ${names.map(esc).join('·')} — 공략 DB 미반영 · 직업 기본값으로 판단했어요</p>`:'';}
+  return names.length?`<p class="mut" data-k="growth-archive-fallback">스텔라 아카이브 우선순위: ${names.map(esc).join('·')} — 공략 DB 미반영 · 직업 기본값으로 판단했음</p>`:'';}
 // 탐색이 끝났는데 더 나은 육성 편성이 없을 때: 탭 없이 같은 자리에 한 줄 안내(조용히 사라지면 켰는데 안 나온 것처럼 보임)
 //  3별 목표(turns>0)면 «N턴 안에» 기준으로 말한다. 계산하지 못한 경우(r.reason)는 이유를 그대로 적는다
 function growthNoneText(kind,r,turns=growthGoalTurns(kind)){const prob=growthStageKind(kind),b=r?.baseline,star=prob&&turns>0&&(b?.t60!=null||r?.best?.t60!=null);
-  if(r?.reason==='few')return '이 스테이지에 편성할 수 있는 보유 구원자가 4명 미만이라 계산하지 못했어요';
-  if(r?.reason==='quick')return '이 스테이지는 빠른 계산 자료가 없어서 계산하지 못했어요';
+  if(r?.reason==='few')return '이 스테이지에 편성할 수 있는 보유 구원자가 4명 미만이라 계산하지 못했음';
+  if(r?.reason==='quick')return '이 스테이지는 빠른 계산 자료가 없어서 계산하지 못했음';
   const v=prob?(star?b?.t60:b?.clear):kind==='guild'?b?.score:b?.sum;
   const noItems=!!r?.snapshot&&!Object.values(r.snapshot.changes||{}).some(a=>a?.changedFields?.length);
-  if(prob&&Number.isFinite(v)&&v>=1)return star?`추가 육성 없이도 ${turns}턴 내 클리어율 100%예요`:'추가 육성 없이도 모의 전투 클리어율 100%예요';
-  if(noItems)return '이미 추천 기준까지 다 키워서 더 올릴 항목이 없어요';
+  if(prob&&Number.isFinite(v)&&v>=1)return star?`추가 육성 없이도 ${turns}턴 내 클리어율 100%임`:'추가 육성 없이도 모의 전투 클리어율 100%임';
+  if(noItems)return '이미 추천 기준까지 다 키워서 더 올릴 항목이 없음';
   const has=Number.isFinite(v),now=has?(prob?Math.round(v*100)+'%':miNum(v)+'점'):'';
-  if(star)return has&&v>0?`추천 기준까지 키워도 지금(${turns}턴 내 ${now})보다 ${turns}턴 안에 잘 깨는 편성은 찾지 못했어요`:
-    `추천 기준까지 키워도 ${turns}턴 안에 깨는 편성은 찾지 못했어요${has?` (지금 ${turns}턴 내 ${now}${Number.isFinite(b?.clear)?' · 클리어 '+Math.round(b.clear*100)+'%':''})`:''}`;
-  if(prob&&has&&v<=0)return `추천 기준까지 키워도 이 스테이지는 모의 전투에서 깨지 못했어요 (지금 ${now})`;
-  return `추천 기준까지 키워도 지금${has?'('+now+')':''}보다 ${prob?'잘 깨는':'점수가 높은'} 편성은 찾지 못했어요`;}
+  if(star)return has&&v>0?`추천 기준까지 키워도 지금(${turns}턴 내 ${now})보다 ${turns}턴 안에 잘 깨는 편성은 찾지 못했음`:
+    `추천 기준까지 키워도 ${turns}턴 안에 깨는 편성은 찾지 못했음${has?` (지금 ${turns}턴 내 ${now}${Number.isFinite(b?.clear)?' · 클리어 '+Math.round(b.clear*100)+'%':''})`:''}`;
+  if(prob&&has&&v<=0)return `추천 기준까지 키워도 이 스테이지는 모의 전투에서 깨지 못했음 (지금 ${now})`;
+  return `추천 기준까지 키워도 지금${has?'('+now+')':''}보다 ${prob?'잘 깨는':'점수가 높은'} 편성은 찾지 못했음`;}
 // 결과 없음 아래 도움말(11/13 제보: «아무것도 안 나오면 스타링크를 올려야 하나?» 오해) — [제목, 내용] 줄 목록. 무엇을 올려 봤는지와 참고 한 줄
 function growthNoneHint(kind,r,turns=growthGoalTurns(kind)){const prob=growthStageKind(kind),b=r?.baseline,star=prob&&turns>0&&(b?.t60!=null||r?.best?.t60!=null),v=prob?(star?b?.t60:b?.clear):null;
   if(r?.reason)return [];
   if(prob&&Number.isFinite(v)&&v>=1)return [];
   const noItems=!!r?.snapshot&&!Object.values(r.snapshot.changes||{}).some(a=>a?.changedFields?.length);
   const rows=noItems?[]:[['추천 기준까지 올려 본 항목','스킬 · 장비 · 스텔라 아카이브 · 잠재력 · 호감도 · 공명 · 스타링크(레벨) (보유 구원자만)']];
-  if(star&&(!Number.isFinite(v)||v<=0)&&b?.clear>0)rows.push(['참고',`클리어는 되지만 ${turns}턴 안에 끝내기는 아직 어려울 수 있어요. 클리어만 필요하면 ⋯ 메뉴의 3별 목표를 «클리어만»으로 바꿔 보세요.`]);
-  else if(prob&&(!Number.isFinite(v)||v<=0))rows.push(['참고','지금 보유한 구원자로는 아직 어려운 스테이지일 수 있어요.']);
-  else rows.push(['결론','지금 추천 편성이 가장 나은 선택이에요.']);
+  if(star&&(!Number.isFinite(v)||v<=0)&&b?.clear>0)rows.push(['참고',`클리어는 되지만 ${turns}턴 안에 끝내기는 아직 어려울 수 있음. 클리어만 필요하면 ⋯ 메뉴의 3별 목표를 «클리어만»으로 변경 권장.`]);
+  else if(prob&&(!Number.isFinite(v)||v<=0))rows.push(['참고','지금 보유한 구원자로는 아직 어려운 스테이지일 수 있음.']);
+  else rows.push(['결론','지금 추천 편성이 가장 나은 선택임.']);
   return rows;}
 function growthNonePaint(c,r){growthTabs?.reset();let el=$('growth-result');
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
@@ -372,13 +372,13 @@ function growthPaint(){
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
   el.dataset.state=GROW.phase;
   const turns=growthGoalTurns(c.key),star=stage&&turns>0&&r?.best?.t60!=null;
-  const head='<h3 class="growth-heading" data-k="growth-summary">클리어 추천 육성 <span>· '+(!stage?'맞추면 기대 점수가 올라가요':star?`맞추면 ${turns}턴 안에 깰 확률이 올라가요`:'이것만 맞추면 깰 수 있어요')+'</span></h3>';
+  const head='<h3 class="growth-heading" data-k="growth-summary">클리어 추천 육성 <span>· '+(!stage?'맞추면 기대 점수가 올라감':star?`맞추면 ${turns}턴 안에 깰 확률이 올라감`:'이것만 맞추면 깰 수 있음')+'</span></h3>';
   if(GROW.phase!=='done'){
     const running=GROW.phase==='running',shape=GROW.phase+'|'+GROW.errors.length,msg=el.querySelector('[data-k="growth-msg"]');
     // 탐색 중 팀 결과마다 불린다: 모양이 같으면 진행 글자만 바꾼다(통째로 다시 그리면 누르는 중인 「중단」 단추가 사라져 클릭이 안 먹음)
     if(running&&el.dataset.shape===shape&&msg){const t=' '+GROW.msg;if(msg.textContent!==t)msg.textContent=t;growthTabsPaint(c,el,show);return;}
     el.dataset.shape=shape;
-    el.innerHTML='<b data-k="growth-summary">클리어 추천 육성</b><span class="tag growth-on">클리어 추천 육성 켜짐</span>'+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'계산을 끝내지 못했어요 · 다시 실행해 주세요':'지금 계정 탐색 후'}</span>`+
+    el.innerHTML='<b data-k="growth-summary">클리어 추천 육성</b><span class="tag growth-on">클리어 추천 육성 켜짐</span>'+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'계산을 끝내지 못했음 · 다시 실행 필요':'지금 계정 탐색 후'}</span>`+
       // 단추를 진행 글자 앞에 둔다(글자 길이가 바뀌어도 단추 자리가 안 밀리게)
       (running?`<button class="sec" data-growth-cancel>중단</button><span class="mut" data-k="growth-msg"> ${esc(GROW.msg)}</span>`:'')+
       (GROW.errors.length?`<details><summary>상세</summary>${GROW.errors.map(esc).join(' · ')}</details>`:'');
@@ -401,9 +401,9 @@ function growthPaint(){
   // 요약의 큰 숫자는 목표 지표(3별 목표면 N턴 내 클리어율), 3별 목표면 클리어율을 아래 줄에 함께 적는다
   const st=cur[$('stage').value],prob=stage,pct=v=>Number.isFinite(v)?Math.round(v*100)+'%':'자료 없음';
   const summary=prob?`<div class="mi-verdict" data-k="growth-goal" data-goal="${star?turns:0}"><div class="verdict-main"><b class="verdict-number"><small>${star?turns+'턴 내 · ':''}지금</small>${r.baseline?pct(growthGoal(r.baseline)):'자료 없음'} → <small>맞추면</small>${pct(growthGoal(r.best))}</b>${Ux.chip(growthGoal(r.best))}</div>${star?`<div class="verdict-meta" data-k="growth-clear">클리어 ${r.baseline?pct(r.baseline.clear):'자료 없음'} → ${pct(r.best.clear)}</div>`:''}<div class="verdict-stats"><div><b>${miNum(r.best.ta??r.best.ttk)}턴</b><small>예상 턴</small></div><div><b>${miNum(grown)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div></div>`:`<div class="season-score" data-k="growth-season-score"><span>지금 ${r.baseline?miNum(c.key==='guild'?r.baseline.score:r.baseline.sum)+'점':'자료 없음'} → 맞추면</span><b>${miNum(c.key==='guild'?r.best.score:r.best.sum)}</b><small>${c.key==='guild'?'상위 20% 점수':'3팀 합산 점수'}</small></div>`;
-  el.innerHTML=head+summary+`<p class="growth-total" data-k="growth-power-total">기존 대비 전투력 ${Ux.signed(delta)}(${now?Ux.signed(delta/now*100)+'%':'비교 자료 없음'})으로 계산했어요 ${Ux.help('전투력 변화','위의 현재 편성과 육성 후 편성의 팀 전투력을 비교해요. 구성원이 바뀌면 편성 교체에 따른 차이도 포함해요. 항목별 값은 같은 구원자에서 그 항목만 목표로 올렸을 때의 전투력 증가예요. 곱셈·반올림·편성 변경 때문에 항목별 합계와 전체 증가가 다를 수 있어요. 추가 모의 전투는 하지 않아요.')}</p>`+
+  el.innerHTML=head+summary+`<p class="growth-total" data-k="growth-power-total">기존 대비 전투력 ${Ux.signed(delta)}(${now?Ux.signed(delta/now*100)+'%':'비교 자료 없음'})으로 계산했음 ${Ux.help('전투력 변화','위의 현재 편성과 육성 후 편성의 팀 전투력을 비교함. 구성원이 바뀌면 편성 교체에 따른 차이도 포함함. 항목별 값은 같은 구원자에서 그 항목만 목표로 올렸을 때의 전투력 증가임. 곱셈·반올림·편성 변경 때문에 항목별 합계와 전체 증가가 다를 수 있음. 추가 모의 전투는 하지 않음.')}</p>`+
     `<p class="growth-components" data-k="growth-components">${['팀 항목별 전투력',...Object.entries(totals).filter(([,v])=>v!==0).map(([f,v])=>`${growthShortFields[f]} ${Ux.signed(v)}`),...(missing?['일부 항목 비교 자료 없음']:[])].join(' · ')}</p>${growthArchiveNote(keys)}<div data-k="growth-${c.key}-card">${body}</div>`+
-    Ux.help('육성 기준',`이 육성 계획을 따랐을 때 예상. 보유 구원자의 기준선 미달 항목만 프리셋 목표로 계산해요. 패시브는 현재 값을 유지해요. 최소 육성치는 아니에요. ${D.archiveGrades?.unverified||''}`)+
+    Ux.help('육성 기준',`이 육성 계획을 따랐을 때 예상. 보유 구원자의 기준선 미달 항목만 프리셋 목표로 계산함. 패시브는 현재 값을 유지함. 최소 육성치는 아님. ${D.archiveGrades?.unverified||''}`)+
     (r.snapshot.errors.length?`<details><summary>계산에서 제외된 구원자 ${r.snapshot.errors.length}명</summary>${r.snapshot.errors.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');
   growthTabsPaint(c,el,show);
 }

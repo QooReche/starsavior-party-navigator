@@ -30,24 +30,24 @@ for (const code of ['STEALTH', 'SKILL_NULLIFY']) {
 }
 const guard = row('INVULN_GUARD', [['DISPEL']]);
 assert.match(guard, /해제 가능한 강화만 지우기/);
-assert.match(guard, /해제 불가 상태는 강화 해제로 지울 수 없습니다/);
+assert.match(guard, /해제 불가 상태는 강화 해제로 지울 수 없음/);
 assert.match(guard, /data-confidence="estimated"/);
 assert.match(row('SELF_BUFF_DEPENDENT', [['DISPEL']]), /적 버프 지우기/);
 const cooldown = row('COOLDOWN_DISRUPT', [['CD_REDUCE'], ['CLEANSE']]);
 assert.match(cooldown, /면역·쿨타임 줄이기/);
 assert.match(cooldown, /강제 적용 제외/);
-assert.match(cooldown, /약화 해제로 되돌릴 수 없습니다/);
+assert.match(cooldown, /약화 해제로 되돌릴 수 없음/);
 assert.match(cooldown, /data-savior="member0"/);
 assert.doesNotMatch(cooldown, /data-savior="member1"/);
 assert.match(cooldown, /data-confidence="estimated"/);
 for (const code of ['SHIELD_GEN', 'SHIELD_GATED']) {
   const html = row(code, [['BREAK'], ['DEF_PEN']]);
-  assert.match(html, /브레이크가 모든 보호막을 지우지는 않습니다/);
+  assert.match(html, /브레이크가 모든 보호막을 지우지는 않음/);
   assert.match(html, /data-confidence="estimated"/);
 }
 for (const code of ['BUFF_STRIP', 'BUFF_BAN']) {
   const html = row(code, [['CLEANSE'], ['CD_REDUCE']]);
-  assert.match(html, /재부여가 보장되지는 않습니다/);
+  assert.match(html, /재부여가 보장되지는 않음/);
   assert.match(html, /data-confidence="estimated"/);
 }
 for (const code of ['SELF_DESTRUCT', 'ALLY_DEATH_TRIGGER', 'UNDYING', 'STANCE_CYCLE',

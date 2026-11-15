@@ -372,7 +372,7 @@ def test_sim_timeout_partial(browser, ctx):
     assert page.evaluate('() => Object.keys(SIMQ.res).length') == 1
     page.clock.run_for(240000)
     page.wait_for_selector('[data-k="simstate"][data-state="error"]')
-    assert '끝난 팀은 이어서 계산해요' in page.locator('[data-k="simstate"]').inner_text()
+    assert '끝난 팀은 이어서 계산함' in page.locator('[data-k="simstate"]').inner_text()
     assert page.locator('[data-k="progress"]').count() == 0
     assert '75%' in page.locator('.party[data-party="1"] .mi-verdict').inner_text()
     assert page.locator('.party[data-party="1"] .alternatives .qrow .qt:has-text("계산 전")').count() == 2
@@ -404,7 +404,7 @@ def press(page, selector, between):
 
 
 def test_screen_stop_notice(browser, ctx):
-    """예선은 끝까지 돈다(390px): 진행 막대·남은 시간·「지금까지 결과로 보기」→ 끝난 팀으로 순위·본선 → 결과 위 「중간에 멈춰서 후보 N/M팀만 확인했어요 · 끝까지 확인」→ 안 돈 팀만 이어서 → 안내 사라짐.
+    """예선은 끝까지 돈다(390px): 진행 막대·남은 시간·「지금까지 결과로 보기」→ 끝난 팀으로 순위·본선 → 결과 위 「중간에 멈춰서 후보 N/M팀만 확인했음 · 끝까지 확인」→ 안 돈 팀만 이어서 → 안내 사라짐.
     단추는 실제 마우스로 누른다: 누르고 있는 사이 팀 결과가 오거나 단계가 바뀌어도(진행 칸 갱신) 클릭이 먹어야 한다."""
     page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
     page.evaluate("""() => {
@@ -483,9 +483,9 @@ def test_screen_stop_notice(browser, ctx):
     ok = (first['sent'] == 7 and first['total'] > 20 and first['runs'] == [8] and first['bar'] and first['eta']
           and '후보 거르는 중 7/%d' % first['total'] in first['state'] and first['stop'] == '지금까지 결과로 보기' and first['right'] <= first['inner']
           and stopped == {'done': True, 'short': True, 'order': 10, 'seen': 10, 'err': ''}
-          and ('중간에 멈춰서 후보 10/%d팀만 확인했어요' % first['total']) in text and '끝까지 확인' in text
+          and ('중간에 멈춰서 후보 10/%d팀만 확인했음' % first['total']) in text and '끝까지 확인' in text
           and mid == {'done': True, 'short': True, 'seen': first['total'], 'up': 20, 'r2': 0, 'order': first['total'], 'err': ''}
-          and '중간에 멈춰서 상위 팀을 짧게만 확인했어요' in text2
+          and '중간에 멈춰서 상위 팀을 짧게만 확인했음' in text2
           and box['left'] >= 0 and box['right'] <= box['inner'] and box['scroll'] <= box['inner'] and box['bw'] > 40 and box['bh'] > 20
           and more['a']['sent'] == first['total'] - 10 and more['a']['runs'] == [8]
           and more['b']['sent'] == 20 and more['b']['runs'] == [24] and more['b']['merge']      # 2차 = 1차 8판 + 24판(1차 raw 를 되돌려 보냄)
@@ -1451,7 +1451,7 @@ def test_graph_evidence(browser, ctx):
     page.screenshot(path=os.path.join(ctx.shots, "graph_evidence.png"))
     page.close()
     ok = (cy_drawn and syn_loaded and info_text and "불러오는 중" not in info_text
-          and "불러오지 못했습니다" not in info_text and req_count == 0 and not errs)
+          and "불러오지 못했음" not in info_text and req_count == 0 and not errs)
     return ok, "그래프 그려짐 %s, syn_detail 로드 %s, 근거 표시 %s, 2차 탭 재요청 %d, 오류 %s" % (
         cy_drawn, syn_loaded, bool(info_text), req_count, errs[:1])
 
@@ -1501,7 +1501,7 @@ def test_guild_defense(browser, ctx):
           and sim_data_ok and len(sim_sets) == 5 and all(s in ('선택 효과 끔', '모두 최대') for s in sim_sets)
           and '×2.5' in text and '×3' in text and '지원별 클리어 가능 최고 단계 (×2)' in text
           and "일일 초기화 전까지" in text and "기준" in text and "추가 점수 60%" in sel6 and best_back
-          and "갱신 대기" in stale and "갱신 대기" not in live and "6단계에는 별의 도전이 없습니다" in lower
+          and "갱신 대기" in stale and "갱신 대기" not in live and "6단계에는 별의 도전이 없음" in lower
           and hidden and not errs)
     return ok, "%s / %s / 카드 %d / 기믹줄 %d / 패널 %s / 오류 %s" % (name, first_stage, cards, gim, shown, errs[:2])
 
@@ -1701,9 +1701,9 @@ def test_cosmo_search(browser, ctx):
     page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed.v2');localStorage.setItem('pn.cosmo.speed',JSON.stringify({sec:[999,999,999,999],workers:4}))}catch(e){}}""")
     page.select_option('#cosmo-search select[data-cs="level"]', "3")
     lvl = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value")
-    # 시작 전 안내: 이 PC 속도를 모르면 «시작하면 몇 초 뒤 예상 시간이 표시됩니다»
+    # 시작 전 안내: 이 PC 속도를 모르면 «시작하면 몇 초 뒤 예상 시간이 표시됨»
     pre0 = page.locator('#cosmo-search [data-k="cs-eta-pre"]').all_text_contents()
-    pre0_ok = len(pre0) == 1 and "시작하면 몇 초 뒤 예상 시간이 표시됩니다" in pre0[0]
+    pre0_ok = len(pre0) == 1 and "시작하면 몇 초 뒤 예상 시간이 표시됨" in pre0[0]
     # 취소: 진행 표시가 보이면 눌러 처음 상태로 돌아가고, 잠시 뒤에도 결과가 끼어들지 않아야 함
     page.click('#cosmo-search button[data-cs="start"]')
     page.wait_for_selector('#cosmo-search [data-k="cs-progress"]', timeout=30000)
@@ -2051,7 +2051,7 @@ def test_assumed_growth(browser, ctx):
         page.evaluate('window.savedClear=GROW.result.best.clear;GROW.result.best.clear='+value+';growthPaint()')
         assert page.get_attribute('#growth-result', 'data-state') == 'none'
         none = page.inner_text('#growth-result [data-k="growth-none"]')
-        assert ('찾지 못했어요' in none or '깨지 못했어요' in none or '100%' in none or '올릴 항목이 없어요' in none), none
+        assert ('찾지 못했음' in none or '깨지 못했음' in none or '100%' in none or '올릴 항목이 없음' in none), none
         page.locator('#growth-result').screenshot(path=os.path.join(ctx.shots, 'growth_none_mobile.png'))
         assert page.locator('#growth-result .assumed-card').count() == 0
         assert not page.locator('#result-tabs').count()
@@ -2096,7 +2096,7 @@ def test_assumed_growth(browser, ctx):
     assert '계산 중' in page.inner_text('#result-tab-growth')
     page.click('#result-tab-growth')
     page.click('[data-growth-cancel]')
-    assert '계산을 끝내지 못했어요' in page.inner_text('#growth-result')
+    assert '계산을 끝내지 못했음' in page.inner_text('#growth-result')
     assert '미완료' in page.inner_text('#result-tab-growth')
     result_tabs_audit(page, 'growth')
     assert page.locator('#out > [data-party="1"]').get_attribute('data-team') == before
@@ -2319,7 +2319,7 @@ def test_growth_stage23(browser, ctx):
             page.evaluate('growthPaint()')
         seasonal_tab_layout()
         assert page.evaluate("document.querySelector('#growth-result .season-chips').getBoundingClientRect().top < document.querySelector('#growth-result .rowcards').getBoundingClientRect().top")
-        assert '깰 수 있어요' not in page.inner_text('#growth-result [data-k="growth-summary"]'), '점수 개선을 클리어 보장으로 쓰지 않음'
+        assert '깰 수 있음' not in page.inner_text('#growth-result [data-k="growth-summary"]'), '점수 개선을 클리어 보장으로 쓰지 않음'
         page.screenshot(path=os.path.join(ctx.shots,f'ui3_{kind}_growth.png'),full_page=True)
         if kind=='guild':
             page.evaluate('window.ui3Req=REQ;REQ=true;slotPaint()')
@@ -2354,7 +2354,7 @@ def test_growth_stage23(browser, ctx):
         original = page.evaluate(f'JSON.stringify({state}.rows)')
         field = 'sum' if kind == 'cosmo' else 'score'
         page.evaluate(f'window.savedMetric=GROW.result.best.{field};GROW.result.best.{field}=GROW.result.baseline.{field};growthPaint()')
-        assert page.get_attribute('#growth-result', 'data-state') == 'none' and '점수가 높은 편성은 찾지 못했어요' in page.inner_text('#growth-result [data-k="growth-none"]')
+        assert page.get_attribute('#growth-result', 'data-state') == 'none' and '점수가 높은 편성은 찾지 못했음' in page.inner_text('#growth-result [data-k="growth-none"]')
         assert page.locator('#growth-result .gc').count() == 0
         page.evaluate(f'GROW.result.best.{field}=savedMetric;growthPaint()')
         assert page.evaluate(f'JSON.stringify({state}.rows)') == original
@@ -2879,7 +2879,7 @@ def test_ux_step12(browser, ctx):
     page.evaluate("GROW.phase='error';GROW.errors=['시험용 작업자 오류'];growthPaint()")
     result_tabs_audit(page, 'growth')
     assert '미완료 · 실패' in page.inner_text('#result-tab-growth')
-    assert '계산을 끝내지 못했어요' in page.inner_text('#growth-result')
+    assert '계산을 끝내지 못했음' in page.inner_text('#growth-result')
     page.evaluate("GROW.phase='done';GROW.errors=[];GROW.msg='';growthPaint()")
     page.click('#result-tab-growth')
     assert '지금' in page.inner_text('#growth-result .mi-verdict') and '맞추면' in page.inner_text('#growth-result .mi-verdict')
@@ -3078,6 +3078,59 @@ TESTS.extend(register_guild_break(sys.modules[__name__]))
 
 from growth_all import register as register_growth_all
 TESTS.extend(register_growth_all(sys.modules[__name__]))
+
+
+def test_public_tone(browser, ctx):
+    """Real CSS cascade, responsive notice, folded-history anchor and import copy."""
+    page = open_page(browser, ctx, '?auto=0', info=None, wait=False)
+
+    def audit_notice():
+        box = page.locator('[data-k="update-notice"]').evaluate('''e=>{
+          const s=getComputedStyle(e);return {
+            border:parseFloat(s.borderTopWidth),radius:parseFloat(s.borderRadius),
+            background:s.backgroundColor,height:e.clientHeight-parseFloat(s.paddingTop)-parseFloat(s.paddingBottom),
+            line:parseFloat(s.lineHeight),overflow:e.scrollWidth>e.clientWidth,
+            pageOverflow:document.documentElement.scrollWidth>innerWidth,
+            length:[...e.textContent.trim()].length,width:innerWidth};}''')
+        assert box['border'] > 0 and box['radius'] > 0, box
+        assert box['background'] != 'rgba(0, 0, 0, 0)', box
+        assert not box['overflow'] and not box['pageOverflow'] and box['length'] <= 60, box
+        if box['width'] >= 1000:
+            assert box['height'] <= box['line'] + 1, box
+
+    for width in (1280, 1000, 360):
+        page.set_viewport_size({'width': width, 'height': 900})
+        audit_notice()
+        page.screenshot(path=os.path.join(ctx.shots, 'tone_top_%d.png' % width))
+    # Reproduce the old CSS reset and prove the browser assertion catches it.
+    page.locator('[data-k="update-notice"]').evaluate("e=>e.style.border='0'")
+    try:
+        audit_notice()
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError('notice box mutation survived')
+    finally:
+        page.locator('[data-k="update-notice"]').evaluate("e=>e.style.removeProperty('border')")
+    audit_notice()
+    assert '모의 전투 결과라 실제 플레이와 다를 수 있음' in page.inner_text('[data-k="notice"]')
+    page.locator('[data-k="update-notice"] a').click()
+    assert page.locator('#update-history').evaluate('e=>e.open')
+    assert page.evaluate('location.hash') == '#update-history'
+    page.evaluate('scrollTo(0,0)')
+    page.set_viewport_size({'width': 1280, 'height': 900})
+    page.click('#mi-open-import')
+    text = page.inner_text('#drawer')
+    assert '게임이 켜져 있으면 완전히 껐다 다시 켜야 함' in text
+    assert '사이트가 자동으로 열리며 반영됨' in text
+    assert page.inner_text('#mi-copy') == '명령 복사'
+    page.screenshot(path=os.path.join(ctx.shots, 'tone_import.png'))
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '1280/1000px one line, 360px wrap, box mutation caught, anchor, three phrases, import'
+
+
+TESTS.append(test_public_tone)
 
 
 def main():

@@ -141,20 +141,20 @@ function words(src){
  const grown=snapshot(['skills']),flat=snapshot([]);
  const star=page(src,{kind:'equip',goal:true}).ctx,plain=page(src,{kind:'equip',goal:false}).ctx;
  assert.equal(star.growthGoalTurns('equip'),60);assert.equal(star.growthGoalTurns('clash'),60);assert.equal(star.growthGoalTurns('op'),0);assert.equal(plain.growthGoalTurns('equip'),0);
- assert.equal(star.growthNoneText('equip',{snapshot:grown,baseline:{t60:0,clear:.03},best:{t60:0,clear:.03}}),'추천 기준까지 키워도 60턴 안에 깨는 편성은 찾지 못했어요 (지금 60턴 내 0% · 클리어 3%)');
- assert.equal(star.growthNoneText('equip',{snapshot:grown,baseline:{t60:.4,clear:.9},best:{t60:.4,clear:.9}}),'추천 기준까지 키워도 지금(60턴 내 40%)보다 60턴 안에 잘 깨는 편성은 찾지 못했어요');
- assert.equal(star.growthNoneText('equip',{snapshot:grown,baseline:{t60:1,clear:1},best:{t60:1,clear:1}}),'추가 육성 없이도 60턴 내 클리어율 100%예요');
- assert.equal(star.growthNoneText('equip',{snapshot:grown,baseline:{t60:.2,clear:1},best:{t60:.2,clear:1}}),'추천 기준까지 키워도 지금(60턴 내 20%)보다 60턴 안에 잘 깨는 편성은 찾지 못했어요','클리어율 100% 여도 3별 목표를 못 채웠으면 «100%예요»라 하지 않음');
+ assert.equal(star.growthNoneText('equip',{snapshot:grown,baseline:{t60:0,clear:.03},best:{t60:0,clear:.03}}),'추천 기준까지 키워도 60턴 안에 깨는 편성은 찾지 못했음 (지금 60턴 내 0% · 클리어 3%)');
+ assert.equal(star.growthNoneText('equip',{snapshot:grown,baseline:{t60:.4,clear:.9},best:{t60:.4,clear:.9}}),'추천 기준까지 키워도 지금(60턴 내 40%)보다 60턴 안에 잘 깨는 편성은 찾지 못했음');
+ assert.equal(star.growthNoneText('equip',{snapshot:grown,baseline:{t60:1,clear:1},best:{t60:1,clear:1}}),'추가 육성 없이도 60턴 내 클리어율 100%임');
+ assert.equal(star.growthNoneText('equip',{snapshot:grown,baseline:{t60:.2,clear:1},best:{t60:.2,clear:1}}),'추천 기준까지 키워도 지금(60턴 내 20%)보다 60턴 안에 잘 깨는 편성은 찾지 못했음','클리어율 100% 여도 3별 목표를 못 채웠으면 «100%임»라 하지 않음');
  assert.match(star.growthNoneHint('equip',{snapshot:grown,baseline:{t60:0,clear:.5},best:{t60:0,clear:.5}}).flat().join('|'),/클리어는 되지만 60턴 안에.*클리어만/);
  assert.match(star.growthNoneHint('equip',{snapshot:grown,baseline:{t60:0,clear:0},best:{t60:0,clear:0}}).flat().join('|'),/아직 어려운 스테이지/);
  assert.equal(star.growthNoneHint('equip',{snapshot:grown,baseline:{t60:1,clear:1},best:{t60:1,clear:1}}).length,0);
  // 클리어만: 종전 문구 그대로
- assert.equal(plain.growthNoneText('equip',{snapshot:grown,baseline:{clear:0,t60:null},best:{clear:0,t60:null}}),'추천 기준까지 키워도 이 스테이지는 모의 전투에서 깨지 못했어요 (지금 0%)');
- assert.equal(plain.growthNoneText('equip',{snapshot:grown,baseline:{clear:.4,t60:null},best:{clear:.4,t60:null}}),'추천 기준까지 키워도 지금(40%)보다 잘 깨는 편성은 찾지 못했어요');
- assert.equal(plain.growthNoneText('daily',{snapshot:flat,baseline:{clear:.4}}),'이미 추천 기준까지 다 키워서 더 올릴 항목이 없어요');
- for(const k of STAGE)assert.equal(plain.growthNoneText(k,{snapshot:grown,baseline:{clear:1}}),'추가 육성 없이도 모의 전투 클리어율 100%예요',k);
+ assert.equal(plain.growthNoneText('equip',{snapshot:grown,baseline:{clear:0,t60:null},best:{clear:0,t60:null}}),'추천 기준까지 키워도 이 스테이지는 모의 전투에서 깨지 못했음 (지금 0%)');
+ assert.equal(plain.growthNoneText('equip',{snapshot:grown,baseline:{clear:.4,t60:null},best:{clear:.4,t60:null}}),'추천 기준까지 키워도 지금(40%)보다 잘 깨는 편성은 찾지 못했음');
+ assert.equal(plain.growthNoneText('daily',{snapshot:flat,baseline:{clear:.4}}),'이미 추천 기준까지 다 키워서 더 올릴 항목이 없음');
+ for(const k of STAGE)assert.equal(plain.growthNoneText(k,{snapshot:grown,baseline:{clear:1}}),'추가 육성 없이도 모의 전투 클리어율 100%임',k);
  // 계산하지 못한 이유
- assert.match(plain.growthNoneText('cube',{reason:'few',best:null}),/4명 미만이라 계산하지 못했어요/);assert.match(plain.growthNoneText('cube',{reason:'quick',best:null}),/자료가 없어서 계산하지 못했어요/);
+ assert.match(plain.growthNoneText('cube',{reason:'few',best:null}),/4명 미만이라 계산하지 못했음/);assert.match(plain.growthNoneText('cube',{reason:'quick',best:null}),/자료가 없어서 계산하지 못했음/);
  assert.equal(plain.growthNoneHint('cube',{reason:'few',best:null}).length,0);
  // 탭
  const X=vm.runInNewContext(src.ux+';module.exports',{module:{exports:{}},require:p=>require('../'+p)});
@@ -183,24 +183,24 @@ function silent(src){
    assert.equal(h.el()?.dataset.state,'idle',kind+' 대기 안내 없음');assert.match(h.text(),want,kind);assert.match(h.text(),/클리어 추천 육성/);}
   // 탐색 중·오류(중단 포함)
   {const h=page(src,{kind});h.ev("GROW.phase='running';GROW.msg='후보 확인 1/9';growthPaint()");assert.match(h.text(),/탐색 중.*후보 확인 1\/9/,kind);
-   h.ev("GROW.phase='error';GROW.msg='미완료';GROW.errors=['미완료'];growthPaint()");assert.match(h.text(),/계산을 끝내지 못했어요 · 다시 실행해 주세요/,kind);assert.equal(h.el().dataset.state,'error');}
+   h.ev("GROW.phase='error';GROW.msg='미완료';GROW.errors=['미완료'];growthPaint()");assert.match(h.text(),/계산을 끝내지 못했음 · 다시 실행 필요/,kind);assert.equal(h.el().dataset.state,'error');}
   // 끝남: 더 나음 → 요약, 아님 → 한 줄 안내, 계산 못 함 → 이유
   {const h=page(src,{kind});h.ctx.SIMQ.res={sig:{clear:.2,t60:null}};h.ctx.LASTQ[1]={rows:[{keys:['a','b','c','d']}]};h.G.phase='done';
    h.G.result={best:{clear:.7,t60:null,ttk:20},team:null,snapshot:snapshot(['skills']),kind,runs:1};h.ctx.growthPaint();
-   assert.equal(h.el()?.dataset.state,'done',kind);assert.match(h.text(),/지금 ?20% → 맞추면 ?70%/,kind);assert.match(h.text(),/이것만 맞추면 깰 수 있어요/);
+   assert.equal(h.el()?.dataset.state,'done',kind);assert.match(h.text(),/지금 ?20% → 맞추면 ?70%/,kind);assert.match(h.text(),/이것만 맞추면 깰 수 있음/);
    h.G.result.best={clear:.2,t60:null,prog:1,ttk:1};h.ctx.growthPaint();
-   assert.equal(h.el()?.dataset.state,'none',kind);assert.match(h.text(),/지금\(20%\)보다 잘 깨는 편성은 찾지 못했어요/,kind+' 진척도·턴만 나아진 결과를 «더 나음»으로 보이면 안 됨');
-   Object.assign(h.G.result,{best:null,reason:'few'});h.ctx.growthPaint();assert.match(h.text(),/4명 미만이라 계산하지 못했어요/,kind);
-   Object.assign(h.G.result,{best:null,reason:'quick'});h.ctx.growthPaint();assert.match(h.text(),/자료가 없어서 계산하지 못했어요/,kind);}
+   assert.equal(h.el()?.dataset.state,'none',kind);assert.match(h.text(),/지금\(20%\)보다 잘 깨는 편성은 찾지 못했음/,kind+' 진척도·턴만 나아진 결과를 «더 나음»으로 보이면 안 됨');
+   Object.assign(h.G.result,{best:null,reason:'few'});h.ctx.growthPaint();assert.match(h.text(),/4명 미만이라 계산하지 못했음/,kind);
+   Object.assign(h.G.result,{best:null,reason:'quick'});h.ctx.growthPaint();assert.match(h.text(),/자료가 없어서 계산하지 못했음/,kind);}
  }
  // 3별 목표: 큰 숫자는 60턴 내 확률, 클리어율은 아래 줄
  for(const kind of STAR){const h=page(src,{kind,goal:true});h.ctx.SIMQ.res={sig:{clear:.03,t60:0}};h.ctx.LASTQ[1]={rows:[{keys:['a','b','c','d']}]};h.G.phase='done';
   h.G.result={best:{clear:.9,t60:.6,ttk:20},team:null,snapshot:snapshot(['skills']),kind,runs:1};h.ctx.growthPaint();
-  assert.match(h.el().innerHTML,/data-goal="60"/);assert.match(h.text(),/60턴 내 · 지금 ?0% → 맞추면 ?60%/);assert.match(h.text(),/클리어 3% → 90%/);assert.match(h.text(),/60턴 안에 깰 확률이 올라가요/);
+  assert.match(h.el().innerHTML,/data-goal="60"/);assert.match(h.text(),/60턴 내 · 지금 ?0% → 맞추면 ?60%/);assert.match(h.text(),/클리어 3% → 90%/);assert.match(h.text(),/60턴 안에 깰 확률이 올라감/);
   assert.match(h.el().innerHTML,/data-chip="0.6"/,'판정 칩도 목표 지표로');
   h.G.result.best={clear:.9,t60:0,ttk:20};h.ctx.growthPaint();assert.equal(h.el().dataset.state,'done','60턴 내 확률은 그대로여도 클리어율이 올랐으면 보임(숫자는 그대로 0% → 0%)');
   assert.match(h.text(),/지금 ?0% → 맞추면 ?0%/);assert.match(h.text(),/클리어 3% → 90%/);
-  h.G.result.best={clear:.03,t60:0,ttk:5,prog:1};h.ctx.growthPaint();assert.equal(h.el().dataset.state,'none');assert.match(h.text(),/60턴 안에 깨는 편성은 찾지 못했어요/);}
+  h.G.result.best={clear:.03,t60:0,ttk:5,prog:1};h.ctx.growthPaint();assert.equal(h.el().dataset.state,'none');assert.match(h.text(),/60턴 안에 깨는 편성은 찾지 못했음/);}
  // 공략 DB 에 아직 없는 구원자(직업 기본 우선순위로 판단)는 결과 칸에 그 사실을 적는다 — 더 나음·없음 둘 다
  {const h=page(src,{kind:'op'});h.ctx.D.journeyPriority={fallback:{a:'레인저'}};h.ctx.BYKEY.a={name:'새구원자'};
   assert.match(h.ctx.growthArchiveNote(['a','b','a']),/스텔라 아카이브 우선순위: 새구원자 — 공략 DB 미반영 · 직업 기본값/);assert.equal(h.ctx.growthArchiveNote(['b']),'');
@@ -210,7 +210,7 @@ function silent(src){
   assert.equal(h.el().dataset.state,'none');assert.match(h.text(),/새구원자 — 공략 DB 미반영 · 직업 기본값/);
   h.ctx.D.journeyPriority={fallback:{}};h.ctx.growthPaint();assert.doesNotMatch(h.text(),/공략 DB 미반영/);}
  // 길방: EX 밖 단계는 이유를 적는다. 기간이 끝난 시즌 콘텐츠·결과 화면이 없을 때는 표시 자체가 없다(«켜짐» 표시도 없는 화면)
- {const h=page(src,{kind:'guild',stageName:'3'});h.ctx.growthStart=()=>{throw Error('시작하면 안 됨')};h.ctx.growthMaybe(h.c,h.st);assert.match(h.text(),/EX 단계에서만 계산해요/);}
+ {const h=page(src,{kind:'guild',stageName:'3'});h.ctx.growthStart=()=>{throw Error('시작하면 안 됨')};h.ctx.growthMaybe(h.c,h.st);assert.match(h.text(),/EX 단계에서만 계산함/);}
  {const h=page(src,{kind:'clash',blocked:true});h.ctx.growthPaint();assert.equal(h.el(),null);}
  {const h=page(src,{kind:'equip',party:false});h.ctx.growthPaint();assert.equal(h.el(),null,'진행 화면·안내 화면에는 육성 칸이 없음(«켜짐» 표시가 진행 화면에 있음)');}
 }

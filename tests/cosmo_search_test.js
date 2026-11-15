@@ -575,7 +575,7 @@ const tests = {
     assert.equal(C.priorFrom({sec: [0.1, 0.2, 0.2], workers: 4}, 8), null, '단계 구성이 다른 옛 저장값(3단계)은 버림');
     assert.equal(C.priorFrom(null, 8), null);
     const pl = {combos: 1820, total: 20000, stages: [{games: 10000}, {games: 0}, {games: 9000}, {games: 1000}]};
-    assert(/시작하면 몇 초 뒤 예상 시간이 표시됩니다/.test(C.preText(pl, null)));
+    assert(/시작하면 몇 초 뒤 예상 시간이 표시됨/.test(C.preText(pl, null)));
     const t = C.preText(pl, [0.01, 0.01, 0.02, 0.02]);    // 100 + 0 + 180 + 20 = 300초
     assert(t.includes('예상 약 5분') && t.includes('20,000판'), t);
   },
@@ -587,7 +587,7 @@ const tests = {
     const run = C.html({phase: 'run', msg: '1단계', done: 3, total: 10, etaText: '남은 시간 약 5초'}, cx);
     assert(run.includes('3/10') && C.html({phase: 'run'}, cx).includes('data-cs="cancel"'));
     assert(run.includes('data-k="cs-prog"') && run.includes('data-k="cs-eta"') && run.includes('남은 시간 약 5초'), '진행 글자·남은 시간 칸 분리(취소 버튼 재생성 없이 갱신)');
-    assert(C.html({phase: 'idle'}, {...cx, preEta: '시작하면 몇 초 뒤 예상 시간이 표시됩니다'}).includes('cs-eta-pre'));
+    assert(C.html({phase: 'idle'}, {...cx, preEta: '시작하면 몇 초 뒤 예상 시간이 표시됨'}).includes('cs-eta-pre'));
     assert(!C.html({phase: 'idle'}, cx).includes('cs-eta-pre'));
     const done0 = {phase: 'done', rows: [], level: 6, mode: 'mean', sig: 'a|', pool: 14, combos: 1000, keep: 300, triples: 10, runs: 40};
     assert(!C.html(done0, {...cx, sig: 'a|'}).includes('cs-old') && C.html(done0, {...cx, sig: 'b|'}).includes('cs-old'), '내 정보·제외 서명이 달라지면 낡은 결과');

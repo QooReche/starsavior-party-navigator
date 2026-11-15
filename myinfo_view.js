@@ -76,7 +76,7 @@
     return `<div class="mi-sim-chips" aria-label="모의 전투 반영 값">${chips.map(c=>`<span class="tag">${esc(c)}</span>`).join('')}</div>`+
       section('능력치 출처',breakdown(result))+section('내실',inner||'정보 없음')+section('장비',equipment(unit,growth,publicData))+
       section(`건틀렛 Lv${level(gauntlet.level)}`,`<p class="mut">스텔라 아카이브 · 각 항목 상한 1,500</p>${journey}<ul class="mi-potentials">${potentials||'<li>습득 잠재력 없음</li>'}</ul>${line('관문 이력',(gauntlet.blessings?.length?'모의 전투 미반영':'없음'))}`)+
-      (statMissing(result).length?`<details class="mi-diagnostics"><summary>미확인 정보 ${statMissing(result).length}</summary><p>일부 정보는 모의 전투에 반영되지 않습니다.</p></details>`:'');
+      (statMissing(result).length?`<details class="mi-diagnostics"><summary>미확인 정보 ${statMissing(result).length}</summary><p>일부 정보는 모의 전투에 반영되지 않음.</p></details>`:'');
   }
   // 캐릭터 상세 시트(팝업): 칸 나눈 능력치·스킬·장비·건틀렛, 항목마다 아이콘
   const short={atk:'공격력',hp:'생명력',def:'방어력',spd:'속도',cr:'치명 확률',cd:'치명 피해',eh:'효과 적중',er:'효과 저항'};
@@ -97,12 +97,12 @@
       <div class="ms-power">${icon('power')}<b>${num(result.power)}</b></div>
       <div>${levelBadge(unit,info,rule)}</div>
       <div class="ms-meta">${tile('ultimate','★',level(unit.star))}${tile('sigil','각인',level(unit.sigil))}${tile('reso','공명',level(unit.resonance))}${tile('hp','호감도',level(unit.favor))}</div>
-      <p class="ms-sim ${simulation?'on':''}">${simulation?'이 수치로 모의 전투합니다':'모의 전투 미반영'}</p>${savior?.key?`<button type="button" class="sec" data-skill-open="${esc(savior.key)}" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${icon('special')}스킬 설명 보기</button>`:''}</div></div>
+      <p class="ms-sim ${simulation?'on':''}">${simulation?'이 수치로 모의 전투함':'모의 전투 미반영'}</p>${savior?.key?`<button type="button" class="sec" data-skill-open="${esc(savior.key)}" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${icon('special')}스킬 설명 보기</button>`:''}</div></div>
       <div class="ms-grid">${block('atk','능력치',`<div class="ms-tiles">${stats}</div>`)}${block('special','스킬 레벨',`<div class="ms-skills">${skills}</div>`)}
       ${block('gear','장비',equipment(unit,growth,publicData),'wide')}
       ${block('journey',`건틀렛 Lv${level(gauntlet.level)} · 스텔라 아카이브`,`<div class="ms-tiles five">${journey}</div><ul class="ms-pots">${pots||'<li class="mut">습득 잠재력 없음</li>'}</ul><p class="mut">관문 이력: ${(gauntlet.blessings?.length?'모의 전투 미반영':'없음')}</p>`,'wide')}
       <details class="ms-block wide"><summary>${icon('tactics')}능력치 출처·내실</summary>${breakdown(result)}${inner||''}</details>
-      ${statMissing(result).length?`<details class="ms-block wide mi-diagnostics"><summary>미확인 정보 ${statMissing(result).length}</summary><p>일부 정보는 모의 전투에 반영되지 않습니다.</p></details>`:''}</div>`;
+      ${statMissing(result).length?`<details class="ms-block wide mi-diagnostics"><summary>미확인 정보 ${statMissing(result).length}</summary><p>일부 정보는 모의 전투에 반영되지 않음.</p></details>`:''}</div>`;
   }
   function mount(getContext){
     const opened=new Set(),cache=new Map();let contextKey=null,publicData,combat,pending;
@@ -113,7 +113,7 @@
     async function fill(uid){
       const c=sync(),target=document.getElementById(`mi-detail-${uid}`);if(!target||!c.info)return;
       if(cache.has(uid)){target.replaceChildren(cache.get(uid));return}
-      if(!c.growth){target.textContent='성장표를 불러온 뒤 다시 펼쳐 주세요.';return}
+      if(!c.growth){target.textContent='성장표를 불러온 뒤 다시 펼치기.';return}
       target.innerHTML='<p role="status">불러오는 중…</p>';
       try{
         if(uid!=='account')await load();
@@ -127,17 +127,17 @@
           node.innerHTML=render(unit,c.info,c.growth,r,publicData,combat,c.simulation&&!!c.growth.units?.[unit.id]&&r.power>0);
         }
         cache.set(uid,node);target.replaceChildren(node);
-      }catch(e){if(target.isConnected)target.innerHTML=`<p role="status">상세를 불러오지 못했습니다. <button type="button" class="sec" data-mi-retry="${uid}">다시 시도</button></p>`}
+      }catch(e){if(target.isConnected)target.innerHTML=`<p role="status">상세를 불러오지 못했음. <button type="button" class="sec" data-mi-retry="${uid}">다시 시도</button></p>`}
     }
     function refresh(){sync();for(const uid of opened)fill(uid)}
     // 상세 시트 팝업(#mi-dlg). savior = {key,name,sub,art,dia} 표시용 조각
     async function openSheet(uid,savior){const dlg=document.getElementById('mi-dlg'),body=document.getElementById('mi-dlg-body');if(!dlg||!body)return;
       const c=sync();body.innerHTML='<p role="status">불러오는 중…</p>';if(!dlg.open)dlg.showModal();
-      if(!c.info||!c.growth){body.innerHTML='<p>성장표를 불러온 뒤 다시 열어 주세요.</p>';return}
+      if(!c.info||!c.growth){body.innerHTML='<p>성장표를 불러온 뒤 다시 열기.</p>';return}
       try{await load();const unit=c.info.units.find(u=>String(u.id)===String(uid));if(!unit){body.textContent='구원자 정보 없음';return}
         const r=Stats.final_stats(unit,c.info,c.growth,c.rule||'normal',true);
         body.innerHTML=sheet(unit,c.info,c.growth,r,publicData,combat,c.simulation&&!!c.growth.units?.[unit.id]&&r.power>0,savior,c.rule||'normal')}
-      catch(e){body.innerHTML=`<p role="status">상세를 불러오지 못했습니다. <button type="button" class="sec" data-mi-sheet-retry="${esc(uid)}">다시 시도</button></p>`}}
+      catch(e){body.innerHTML=`<p role="status">상세를 불러오지 못했음. <button type="button" class="sec" data-mi-sheet-retry="${esc(uid)}">다시 시도</button></p>`}}
     document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
       if(b.hasAttribute('data-mi-retry')){fill(b.dataset.miRetry);return}
       if(!b.hasAttribute('data-mi-detail'))return;

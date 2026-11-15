@@ -41,7 +41,7 @@ async function main(){
  delete res[selected.audit[0].key];assert(C.surrogateAudit(s,selected,res,'top',50).fallback,'missing result cannot pass');
  const legacy=settings(), reused=settings();reused.speed.workerReuse.value=true;
  const a=state(),b=state(),messages=[];const before=await search(legacy,a,false,{onPhase:m=>messages.push(m)}),after=await search(reused,b);
- assert(messages[0].includes('처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸립니다'),'halved screening explains first download');
+ assert(messages[0].includes('처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림'),'halved screening explains first download');
  assert.deepEqual(after,before,'worker reuse leaves every result unchanged');
  assert(a.created>b.created);assert.equal(b.created,3);assert.equal(b.closed,b.created);
  const streams=settings();streams.speed.rngStreams.value=true;

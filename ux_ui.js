@@ -8,7 +8,7 @@
   const names=['힘','체력','인내','집중','보호'];
   const skillNames={basic:'기본',special:'특수',ultimate:'궁'};
   const clone=x=>JSON.parse(JSON.stringify(x));
-  function verdict(p){return p>=.9?['safe','안정적']:p>=.7?['ok','깰 수 있어요']:p>=.5?['shaky','아슬아슬']:['risk','어려워요'];}
+  function verdict(p){return p>=.9?['safe','안정적']:p>=.7?['ok','깰 수 있음']:p>=.5?['shaky','아슬아슬']:['risk','어려움'];}
   function help(title,text){return `<button type="button" class="ux-help" data-help="${esc(text)}" aria-label="${esc(title)} 설명" aria-expanded="false">ⓘ</button>`;}
   let grades=null;
   function setGrades(table){grades=table;}
@@ -24,9 +24,9 @@
     const low=p<LUCK.low,shaky=!!ci&&ci[0]<LUCK.ciLo&&ci[1]>=LUCK.ciHi;
     if(!low&&!shaky)return '';
     const once=1-Math.pow(1-p,LUCK.tries);
-    const head=p===0?`모의 전투 ${num(r.n)}판에서 한 번도 못 깼어요.`:low?`클리어 확률이 매우 낮아요(약 ${pctText(p)}).`:`클리어 확률이 낮고 결과가 흔들려요(약 ${pctText(p)}, 범위 ${pctText(ci[0])}~${pctText(ci[1])}).`;
-    const tries=p>0?` ${LUCK.tries}번 도전해도 한 번이라도 깰 확률은 약 ${pctText(once)}예요.`:'';
-    return `<div class="luck-note" data-k="luck-note" role="note">${head} 몇십 번 시도해도 못 깰 수 있어요 — 파티를 바꾸거나 육성을 더 하는 걸 권해요.${tries}</div>`;}
+    const head=p===0?`모의 전투 ${num(r.n)}판에서 한 번도 못 깼음.`:low?`클리어 확률 매우 낮음(약 ${pctText(p)}).`:`클리어 확률이 낮고 결과가 흔들림(약 ${pctText(p)}, 범위 ${pctText(ci[0])}~${pctText(ci[1])}).`;
+    const tries=p>0?` ${LUCK.tries}번 도전해도 한 번이라도 깰 확률은 약 ${pctText(once)}임.`:'';
+    return `<div class="luck-note" data-k="luck-note" role="note">${head} 몇십 번 시도해도 못 깰 수 있음 — 파티 변경이나 추가 육성 권장.${tries}</div>`;}
   const signed=v=>v==null?'자료 없음':(v>=0?'+':'−')+num(Math.abs(v));
   function member(a,info,growth,content,table,view={}){
     const old=info.units.find(u=>u.id===a.unit.id),rule=S.rule_for_content(content),before=old?S.final_stats(old,info,growth,rule).power:0;
@@ -62,7 +62,7 @@
         const g=(x,i)=>grade(x[i],i,table)||num(x[i]);
         short=mt==null?'':`(주력 ${mb==null?'없음':names[mb]+' '+g(b,mb)} → ${names[mt]} ${g(t,mt)})`;
         const down=names.filter((n,i)=>(b?.[i]||0)>t[i]);
-        detail='한 번의 여정 결과로 기록 전체를 다시 만드는 목표예요(칸별로 좋은 값만 섞을 수 없어요).'+(down.length?`\n지금보다 내려가는 칸: ${down.join('·')}`:'')+'\n'+
+        detail='한 번의 여정 결과로 기록 전체를 다시 만드는 목표임(칸별로 좋은 값만 섞을 수 없음).'+(down.length?`\n지금보다 내려가는 칸: ${down.join('·')}`:'')+'\n'+
           names.map((n,i)=>`${n} ${archive(b?.[i]||0,i,table)} → ${archive(t[i],i,table)}${t[i]===1250?' (MAX)':''}`).join('\n');
       }
       if(f==='potentials'){
@@ -74,7 +74,7 @@
     });
     return {before,after,fields,missing:!old};
   }
-  function todosHtml(m){return (m?.fields||[]).filter(f=>f.delta!==0).map(f=>`<button type="button" class="growth-todo" data-growth-field="${f.field}" data-power-delta="${f.delta??''}" data-help="${esc(f.detail+'\n전투력 '+signed(f.delta)+' · 이 항목만 목표로 올렸을 때의 증가예요.')}" aria-expanded="false">${esc(f.label)} ${esc(f.short)} <small>(${signed(f.delta)})</small></button>`).join('');}
+  function todosHtml(m){return (m?.fields||[]).filter(f=>f.delta!==0).map(f=>`<button type="button" class="growth-todo" data-growth-field="${f.field}" data-power-delta="${f.delta??''}" data-help="${esc(f.detail+'\n전투력 '+signed(f.delta)+' · 이 항목만 목표로 올렸을 때의 증가임.')}" aria-expanded="false">${esc(f.label)} ${esc(f.short)} <small>(${signed(f.delta)})</small></button>`).join('');}
   function memberHtml(m,withTodos=true){if(!m)return '';return `<div class="growth-power" data-k="member-power">전투력 ${num(m.before)} → ${num(m.after)}</div>`+(withTodos?`<div class="growth-todos">${todosHtml(m)}</div>`:'');}
   // 스테이지형 콘텐츠(길방·코스모 밖 전부)는 확률, 시즌 콘텐츠는 점수. goalTurns>0 = 3별 목표: 확률은 «N턴 내 클리어율»(t60)로 보인다
   function resultTabState({enabled,phase,better,baseline,best,kind='op',message='',errors=[],goalTurns=0}){

@@ -1,12 +1,40 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+function checkNotice(page,file){
+ const update=page.match(/<p class="notice update-notice" data-k="update-notice">([\s\S]*?)<\/p>/);
+ assert(update,`${file}: distinct update box exists`);
+ const text=update[1].replace(/<[^>]*>/g,'').trim();
+ assert.match(text,/^📢 11\/15 업데이트 ·/);
+ assert([...text].length<=60,`${file}: notice including details stays within 60 characters`);
+ assert.match(update[1],/<a href="#update-history"[^>]*>자세히<\/a>/);
+ assert.match(page,/<details class="note" id="update-history"><summary>업데이트 내역/);
+ const css=page.match(/\.notice\.update-notice\{([^}]+)\}/)?.[1]||'';
+ for(const rule of ['background:color-mix','border:1px solid var(--acc)','border-radius:8px'])assert(css.includes(rule),`${file}: ${rule}`);
+ assert.match(page,/@media\(min-width:1000px\)\{\.update-notice\{white-space:nowrap\}\}/);
+ // Exercise the link's real handler: following an anchor must reveal the folded history.
+ const history={open:false},handler=update[1].match(/onclick="([^"]+)"/);
+ assert(handler,`${file}: details link opens history`);
+ vm.runInNewContext(handler[1],{document:{getElementById:id=>{assert.equal(id,'update-history');return history;}}});
+ assert.equal(history.open,true);
+}
+function checkTone(page,file){
+ for(const phrase of ['모의 전투 결과라 실제 플레이와 다를 수 있음','게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함','사이트가 자동으로 열리며 반영됨'])assert(page.includes(phrase),`${file}: ${phrase}`);
+}
 // Check both the editable template and the generated page served to users.
 for(const file of ['party_template.html','index.html']){
  const page=fs.readFileSync(require.resolve('../'+file),'utf8');
- const update=page.match(/<p class="notice" data-k="update-notice">([^<]*)<\/p>/);
- assert(update,`${file}: top update notice exists`);
- assert.match(update[1],/^📢 11\/15 업데이트 ·/,`${file}: update date`);
+ checkNotice(page,file);checkTone(page,file);
+ for(const [from,to,check] of [
+  ['class="notice update-notice"','class="notice"',checkNotice],
+  ['코스모 힐데 추가','코스모 힐데 적 정보 추가 및 전투 판정 변경 사항 상세 안내',checkNotice],
+  ['background:color-mix','color:color-mix',checkNotice],
+  ['border:1px solid var(--acc);border-radius:8px','border:0;border-radius:0',checkNotice],
+  ["document.getElementById('update-history').open=true","document.getElementById('update-history').open=false",checkNotice],
+  ['모의 전투 결과라 실제 플레이와 다를 수 있음','모의 전투 결과라 실제 플레이와 다를 수 있어요',checkTone],
+  ['게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함','게임이 이미 켜져 있으면 <b>완전히 끄고</b> 다시 켜세요',checkTone],
+  ['사이트가 자동으로 열리며 반영됨','사이트가 자동으로 열리며 반영돼요',checkTone]
+ ]){assert(page.includes(from));assert.throws(()=>check(page.replace(from,to),file),{code:'ERR_ASSERTION'},`${file}: mutation caught: ${from}`);check(page,file);}
  assert.equal((page.match(/data-k="update-notice"/g)||[]).length,1);
- assert.match(page,/<\/header>\s*<p class="notice" data-k="update-notice">[^<]*<\/p>\s*<p class="notice" data-k="notice">모의 전투 결과라 실제 플레이와 다를 수 있어요/,`${file}: update directly above the original guidance`);
+ assert.match(page,/<\/header>\s*<p class="notice update-notice" data-k="update-notice">[^\n]*<\/p>\s*<p class="notice" data-k="notice">모의 전투 결과라 실제 플레이와 다를 수 있음/,`${file}: update directly above the original guidance`);
  assert.match(page,/<summary>업데이트 내역\(11\/15\)<\/summary>11\/15:[^<]+<br>11\/12: 신규 구원자 길레/);
  // Keep the copy action and all four instructions together, in both shipped sources.
  const guide=page.match(/<div class="mi-import-guide">([\s\S]*?)<\/ol>\s*<p class="mut mi-import-fallback">([\s\S]*?)<\/p>\s*<\/div>/);
@@ -17,8 +45,8 @@ for(const file of ['party_template.html','index.html']){
  assert.deepEqual(steps,[
   '단추를 눌러 복사 → <b>PowerShell</b>에 붙여넣고 <b>Enter</b>',
   '「관리자 확인」 창이 뜨면 <b>[예]</b>',
-  '게임에 로그인 → 로비가 보이면 <b>도구 창에서 Enter</b>\n     <span class="mi-import-warning">⚠ 게임이 이미 켜져 있으면 <b>완전히 끄고</b> 다시 켜세요</span>',
-  '사이트가 자동으로 열리며 반영돼요'
+  '게임에 로그인 → 로비가 보이면 <b>도구 창에서 Enter</b>\n     <span class="mi-import-warning">⚠ 게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함</span>',
+  '사이트가 자동으로 열리며 반영됨'
  ].map(s=>s.replace(/\s+/g,' ')),`${file}: four short steps and separate restart warning`);
  assert.equal(guide[2],'안 될 때·다른 기기에서: 바탕화면 <b>내정보.json</b>을 [파일 선택]으로 올리기');
  // Execute the real renderer through empty -> loaded -> cleared states.
@@ -69,7 +97,7 @@ delete ctx.MODE;
 assert.doesNotMatch(ev('miVerdict({}, {})'),/data-k="luck-note"/);
 ctx.SIMQ.res.selected={clear:.005,n:2000,ci:[.002,.012],ta:80};
 {const result=ev('miVerdict({}, {})'),card=result.slice(0,result.lastIndexOf('</div>'));
- assert.match(card,/data-k="luck-note"/,'mi-verdict 카드 안');assert.match(visible(result),/클리어 확률이 매우 낮아요\(약 0\.5%\)/);
+ assert.match(card,/data-k="luck-note"/,'mi-verdict 카드 안');assert.match(visible(result),/클리어 확률 매우 낮음\(약 0\.5%\)/);
  assert.match(visible(result),/30번 도전해도 한 번이라도 깰 확률은 약 14%/);assert.match(result,/data-verdict="risk"/);}
 ctx.SIMQ.res.selected={clear:.6,n:100,ci:[.5,.69],ta:40};assert.doesNotMatch(ev('miVerdict({}, {})'),/luck-note/);
 delete ctx.SIMQ.res.selected;assert.doesNotMatch(ev('miVerdict({}, {})'),/luck-note/);
