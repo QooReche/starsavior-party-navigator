@@ -442,7 +442,7 @@ def test_cristelle_stack_trigger():
 
 
 def test_cristelle_ignite_amount():
-    """설명문: 다른 아군 특수기/궁극기 공격 시 태양 +2, 나머지 +1. 특수기 분배는 태양만 +2."""
+    """획득은 태양 +2/나머지 +1. SE10172014 특수기 분배는 자신 제외 전원 +2."""
     out = {}
     for element in ('태양', '달', '별'):
         for slot, attack in (('기본기', True), ('특수기', True), ('궁극기', True), ('특수기', False)):
@@ -462,7 +462,7 @@ def test_cristelle_ignite_amount():
     shared = (S.stack('점화'), M.stack('점화'), C.stack('점화'))
     # 공유 파서의 ef는 그대로여야 기대값 엔진에 영향이 없다.
     unchanged = [ln.eff['times'] for ln in C.d.lines if ln.slot == '고유 패시브' and dict(ln.params).get('시전자 속성') == '태양'] == [2, 2]
-    return all(got == want for got, want in out.values()) and shared == (2, 0, 0) and unchanged, '획득 12조건 %s / 분배 %s' % (out, shared)
+    return all(got == want for got, want in out.values()) and shared == (2, 2, 0) and unchanged, '획득 12조건 %s / 분배 %s' % (out, shared)
 
 
 def test_trigger_support_report():

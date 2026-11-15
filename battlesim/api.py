@@ -155,6 +155,7 @@ def _norm_party(party_spec, db, mode, build=None, mc=None):
         k = _unit_key(uu, db, mode, build, use_combat)
         if k is not None:
             k += (bool((mc or MC_OPTS).get('myinfo_potential_coverage', True)),)
+            k += ((mc or {}).get('bloom_passive_levels', MC_OPTS['bloom_passive_levels']),)
         hit = _UNIT_CACHE.get(k) if k is not None else None
         if hit is not None and hit[0] is db and not any(hit[1] is x for x in defs):     # 같은 파티에 같은 구원자가 두 번이면 객체를 나눈다
             defs.append(hit[1])
@@ -178,7 +179,8 @@ def _norm_party_raw(party_spec, db, mode, build=None, mc=None):
         key = _find_key(db, u['key'])
         from .starsavior.myinfo_combat import select_skills, apply_potentials
         combat = u.get('myinfo_combat') if (mc or MC_OPTS).get('myinfo_combat', True) else None
-        unit_data = select_skills(db.units[key], key, combat) if combat is not None else None
+        unit_data = select_skills(db.units[key], key, combat,
+            (mc or {}).get('bloom_passive_levels', MC_OPTS['bloom_passive_levels'])) if combat is not None else None
         d = UnitDef(db, key, u.get('level', 200), u.get('res', 10), u.get('star', 0), u.get('mode', mode),
                     build='none' if combat is not None else u.get('build', build), unit_data=unit_data)
         d = normalized_definition(d)

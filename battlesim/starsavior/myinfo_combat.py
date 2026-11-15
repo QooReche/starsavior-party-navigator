@@ -38,20 +38,24 @@ def combat_input(unit):
                             and p[1] > 0])
 
 
-def select_skills(raw, key, combat):
+def select_skills(raw, key, combat, bloom='client'):
     """L.e/L.ei contain complete selected-level SE groups, not level deltas.
 
     NKM:17744-17757 adds SkillLevelDamageUp to a nonzero ATK coefficient.
     Current tables have zero there; SE damage-up effects stay in L.e instead.
     """
     u = copy.deepcopy(raw)
-    if key not in combat_data()['units']:
+    bloom_passive = bloom == 'client' and '@' in key and key.split('@')[0] in combat_data()['units']
+    if key not in combat_data()['units'] and not bloom_passive:
         # 계수 표가 없는 구원자(예: 개화 변형): 파티 전체를 실패시키지 않고 기본 스킬 레벨로 계산한다.
         return u
     rows = combat_data()['units'].get(key, {})
     result = []
     for s in u['sk']:
         slot = SLOTS.get(s['sl'].removeprefix('변형 '))
+        if bloom_passive and slot != 'passive':
+            result.append(s)
+            continue
         if slot is None or slot not in combat.get('skills', {}):
             result.append(s)
             continue
@@ -63,6 +67,10 @@ def select_skills(raw, key, combat):
         if level == 0:
             continue
         values = rows.get(slot, {}).get(str(level))
+        if bloom_passive and slot == 'passive':
+            # 개화 패시브의 자체 L 표가 단계별 정답. 기본형 SE로 대체하지 않는다.
+            values = [s.get('cdm', 0), 0]
+            u['_bloom_level_selected'] = True
         table = s.get('L')
         if values is None or not table or level > len(table.get('ei', [])):
             raise ValueError('Unsupported myinfo skill level: ' + key + '/' + slot)

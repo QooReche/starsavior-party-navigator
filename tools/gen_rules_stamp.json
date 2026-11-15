@@ -1,15 +1,7 @@
 {
  "guild_sim": {
-  "hash": "fa6a0b89622210c2",
+  "hash": "c103067eceff8481",
   "history": [
-   {
-    "hash": "9a15dfc73e3aa475",
-    "reason": "피해식 정수화·연쇄 수호 분담 규칙(stat_floor·chain_round·chain_guard) 추가 — 길드 방어전 시즌 미오픈"
-   },
-   {
-    "hash": "58c5082c6d44a22e",
-    "reason": "피해식 정수화·연쇄 수호 분담·수호자 동률 규칙(stat_floor·chain_round·chain_guard·guard_tie) — 길드 방어전 시즌 미오픈"
-   },
    {
     "hash": "eec6d66a5b21cb23",
     "reason": "능력치 단 구성·속도 정수화·행동 게이지·적 수호자 동률(stat_stage·turn_gauge·stat_floor·guard_tie) — 길드 방어전 시즌 미오픈"
@@ -41,20 +33,20 @@
    {
     "hash": "fa6a0b89622210c2",
     "reason": "11/15 전수조사 수정 G1, 길드 방어전 시즌 미오픈"
+   },
+   {
+    "hash": "c103067eceff8481",
+    "reason": "11/15 전수조사 수정 G2, 길드 방어전 시즌 미오픈"
+   },
+   {
+    "hash": "c103067eceff8481",
+    "reason": "11/15 전수조사 수정 G2, 길드 방어전 시즌 미오픈"
    }
   ]
  },
  "quick": {
-  "hash": "fa6a0b89622210c2",
+  "hash": "c103067eceff8481",
   "history": [
-   {
-    "hash": "9a15dfc73e3aa475",
-    "reason": "calibrate_quick --write 재보정"
-   },
-   {
-    "hash": "58c5082c6d44a22e",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "eec6d66a5b21cb23",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +77,14 @@
    },
    {
     "hash": "fa6a0b89622210c2",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "c103067eceff8481",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "c103067eceff8481",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

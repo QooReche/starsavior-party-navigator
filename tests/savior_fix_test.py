@@ -121,8 +121,9 @@ def test_sunshine_extra():
     b.cast(a, a.d.skills['궁극기'], target=f)
     targets = [e['targets'] for e in b.timeline if e.get('skill') == '특수기(추가)']
     out = (casts(a), a.stack('도약'), a.stack('스파클라(해제불가)'), a.gauge, targets)
-    # SKILL_END 패시브 물폭탄 이동이 액티브 추가 발동보다 먼저임(NKM:2818-2821).
-    return out == (2, 5, 0, 0, [[f.name], [f.name]]), str(out)
+    # 신규 부여는 패시브, 기존 물폭탄 제거는 AfterActiveSkillSe(SE10464021).
+    # 액티브 추가 발동 동안 두 표적 모두 후보이며 특수기는 표식을 이동하지 않는다.
+    return out == (2, 5, 0, 0, [[marked.name], [f.name]]), str(out)
 
 
 def test_claire_source():

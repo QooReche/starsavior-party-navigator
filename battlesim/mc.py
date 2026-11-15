@@ -180,7 +180,7 @@ _EFF_SEQ = itertools.count(1)
 
 class _Inst(list):
     """지속 피해 인스턴스 [시전자, 남은 턴] + 넣은 순서(seq). 클라 버프 목록에서 객체 하나."""
-    __slots__ = ('seq',)
+    __slots__ = ('seq', 'fresh')
 
 
 _BUFF_STEP = None
@@ -881,6 +881,8 @@ class Battle:
         self.nova_bursts = defaultdict(int)  # (아군 칸, 슬롯)별 실제 사용 횟수
         self.unsup = defaultdict(int)
         self.rule_hits = defaultdict(int)    # 2026-11-04 클라 후보 스위치가 실제로 탄 횟수(시험용, 결과에 싣지 않음)
+        if self.mc['bloom_passive_levels'] == 'client':
+            self.rule_hits['bloom_passive_levels'] += sum(bool(getattr(d, 'u', {}).get('_bloom_level_selected')) for d in ally_defs)
         self.timeline = [] if timeline else None
         self.enemy_lines = enemy_lines
         self.result = None
@@ -1026,7 +1028,8 @@ class Battle:
     def lines_of(self, u):
         if u.side == 1 and not self.enemy_lines:
             return ()
-        modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll'))
+        modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order'))
         key = id(u.d)
         sc = self._semantic_cache
         if sc is not None:
@@ -1059,7 +1062,8 @@ class Battle:
         d = u.d
         raw = d.lines
         hit = u._kind_index
-        modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll'))
+        modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order'))
         if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw) or hit[4] != modes:
             grouped = {}
             for ln in self.lines_of(u):
@@ -1433,6 +1437,18 @@ class Battle:
                 if self.mc['dot_hot_lifetime'] == 'tick' and (e.dot or e.hot):
                     continue
                 if e.clock != 'owner_turn':
+                    continue
+                if e.inst is not None and not e.dot and self.mc['independent_stack_limits'] == 'client':
+                    for it in e.inst:
+                        if getattr(it, 'fresh', False):
+                            it.fresh = False
+                        else:
+                            it[1] -= 1
+                    e.inst = [it for it in e.inst if it[1] > 0]
+                    changed |= e.stacks != len(e.inst)
+                    e.stacks = len(e.inst)
+                    if not e.inst:
+                        del u.eff[name]
                     continue
                 if e.fresh:
                     e.fresh = False
@@ -3276,7 +3292,10 @@ class Battle:
             rule = DAMAGE_LIMIT[name]
             if rule['kind'] == 'floor':
                 floor_hp = math.floor(v.maxhp * rule['pct'])
-                if v.hp > floor_hp and left < floor_hp:
+                eligible = v.hp >= floor_hp if self.mc['damage_break_boundary'] == 'client' else v.hp > floor_hp
+                if eligible and left < floor_hp:
+                    if self.mc['damage_break_boundary'] == 'client':
+                        self.rule_hits['damage_break_boundary'] += 1
                     left = floor_hp
                     self._consume_limit(v, name, rule)
             elif rule['kind'] == 'lethal' and left <= 1e-9:
@@ -3636,7 +3655,7 @@ class Battle:
                 e = u.eff.get(name)
                 if e is None:
                     continue
-                if phase != 'hot' and e.inst:
+                if phase != 'hot' and e.dot and e.inst:
                     stat, c = e.dot
                     dot_client = self.mc['dot_formula'] == 'client'
                     for instance in list(e.inst):
@@ -3706,6 +3725,14 @@ class Battle:
                                 guard.hit_evaded = False      # 수호자 몫 계산 OBF_21375(NKM:8080 → 6212 → 17898)도 NormalHit
                             self.apply_damage(src, guard, dot_dmg(guard, share_base), 'dot', shieldable=False)
                 if phase != 'dot' and e.hot > 0 and not u.dead and u.on(name):
+                    if e.inst is not None and self.mc['independent_stack_limits'] == 'client':
+                        for instance in e.inst:
+                            src = instance[0] or u
+                            self.heal(src, u, u.maxhp * e.hot, src.sd.get('주는 회복량', 0.0) / 100.0)
+                            if self.mc['dot_hot_lifetime'] == 'tick':
+                                instance[1] -= 1
+                        self.rule_hits['independent_stack_limits'] += 1
+                        continue
                     # 지속 회복은 원래 주는 회복량 보정을 안 쓰지만, 서든데스 감소는 시전자 기준으로 적용(근사)
                     self.heal(e.src or u, u, u.maxhp * e.hot, (e.src or u).sd.get('주는 회복량', 0.0) / 100.0)
                     if self.mc['dot_hot_lifetime'] == 'tick':
@@ -3730,7 +3757,7 @@ class Battle:
     def _expire_dot_hot(self, u):
         changed = False
         for name, e in list(u.eff.items()):
-            if e.dot and e.inst is not None:
+            if (e.dot or e.hot) and e.inst is not None:
                 e.inst = [it for it in e.inst if it[1] > 0]
                 changed |= e.stacks != len(e.inst)
                 e.stacks = len(e.inst)
@@ -4161,6 +4188,9 @@ class Battle:
         self.run_batch(owner, [ln], ctx)
 
     def line_ok(self, owner, ln, ctx):
+        rule = ln.eff.get('rule_key')
+        if rule and self.mc[rule] == 'client':
+            self.rule_hits[rule] += 1
         if ln.eff.get('auto_marker_candidate'):
             if self.mc['auto_marker_lines'] != 'keep' or owner.side != 0 or self.mc['ally_auto_lines'] not in ('data', 'client'):
                 return False
@@ -4316,10 +4346,35 @@ class Battle:
                 if not self._defer_extra(fn):
                     fn()
             return
+        if kd in ('waterbomb_end', 'waterbomb_cleanup'):
+            if self.mc['smile_waterbomb_scope'] != 'client' or ctx.skill is None or ctx.skill.slot not in ('기본기', '궁극기'):
+                return
+            key = ('waterbomb', owner)
+            if kd == 'waterbomb_end':
+                old = [v for v in self.alive(1-owner.side) if v.has('물폭탄')]
+                fresh = [v for v in ctx.targets if not v.dead and not v.has('물폭탄')]
+                ctx.end_targets[key] = (old, fresh)
+                for v in ctx.targets:
+                    if v.dead:
+                        continue
+                    times = (2 if ctx.skill.slot == '기본기' else 1) if v in fresh else 1
+                    for _ in range(times):
+                        self.add_effect(owner, v, dict(eff['buff'], times=1), ctx)
+            else:
+                old, fresh = ctx.end_targets.get(key, ([], []))
+                if any(v.has('물폭탄') for v in fresh):
+                    for v in old:
+                        if v.eff.pop('물폭탄', None) is not None:
+                            self.dirty(v)
+            return
         if kd == 'count_damage':
             if ctx.src is owner and ctx.skill is not None:
                 if eff['scope'] == 'shield_all':
-                    n = sum(sum(e.shield > 0 for e in x.eff.values()) for x in self.alive(1 - owner.side))
+                    if self.mc['shield_enemy_count'] == 'client':
+                        n = sum(any(e.shield > 0 for e in x.eff.values()) for x in self.alive(1 - owner.side))
+                        self.rule_hits['shield_enemy_count'] += 1
+                    else:
+                        n = sum(sum(e.shield > 0 for e in x.eff.values()) for x in self.alive(1 - owner.side))
                     ctx.inc += min(n, eff['cap']) * eff['val'] / 100
                 elif eff['scope'] == 'self_good':
                     ctx.inc += min(owner.n_good(), eff['cap']) * eff['val'] / 100
@@ -4575,10 +4630,11 @@ class Battle:
         if kd == 'buff':
             if owner.d.key == 'cristelle' and eff['name'] == '점화':
                 # units.sk d1/dx: 태양 시전자면 기본 1개에 추가 1개(ef의 2회는 합계).
-                # 특수기가 나눠 주는 2개 역시 자신을 제외한 태양 아군에게만 적용.
+                # 특수기 SE10172014는 MYTEAM_ALL_NOT_SELF이며 속성 제한이 없다.
                 if ln.slot == '고유 패시브' and line_kind(ln) == 'ally_pre' and dict(ln.params).get('시전자 속성') == '태양':
                     eff = dict(eff, times=1)
-                elif ln.slot == '특수기' and eff['target'] == '자신 제외 아군 전체':
+                elif (ln.slot == '특수기' and eff['target'] == '자신 제외 아군 전체'
+                      and self.mc['cristelle_ignite_targets'] != 'client'):
                     eff = dict(eff, target='자신 제외 태양 속성 아군 전체')
             if eff['name'] in IGNORED_NAMES:
                 return
@@ -5336,6 +5392,15 @@ class Battle:
                     del other.eff[name]
                     self.dirty(other)
         e = x.eff.get(name)
+        independent_cap = None
+        unlimited_dot = False
+        if self.mc['independent_stack_limits'] == 'client':
+            independent_cap = {'파사인': 3, '상쾌한 기분(해제불가)': 5}.get(name)
+            unlimited_dot = bool(dot and name in ('출혈', '연소'))
+            if independent_cap or unlimited_dot:
+                self.rule_hits['independent_stack_limits'] += 1
+            if independent_cap and e is not None and e.stacks >= independent_cap:
+                return  # UniqueIdStackMax: 상한에서 신규 부여를 거부, 기존 지속도 유지.
         cast_ctx = getattr(self, '_cast_ctx', None)
         if eff.get('cast_marker') and cast_ctx is not None and (x, name) not in cast_ctx.markers:
             cast_ctx.markers[(x, name)] = copy.copy(e) if e is not None else None
@@ -5383,8 +5448,10 @@ class Battle:
                      ((self.mc['check_buff_scope'] == 'all' and name not in buff_flags()['turn_infinite'])
                       or (CHECK_NAME.search(name) and not eff['props'])))))
         refresh_check = self.mc['check_buff_expiry'] == 'skill' or self.mc['check_buff_scope'] == 'all'
+        if eff.get('persistent_marker'):
+            check = False
         if e is None:
-            mx = eff['max'] or (5 if dot else 1)
+            mx = independent_cap or (math.inf if unlimited_dot else eff['max'] or (5 if dot else 1))
             e = Eff(name, eff['props'], mx, dur, owner, harmful)
             e.dead_keep = self.mc['dead_keep_dnp'] == 'client' and dead_keep_name(name)
             e.category = category
@@ -5419,16 +5486,19 @@ class Battle:
                 if check:
                     e.check_turn = self.global_turns    # 재부여 = 새 버프 객체(NKM:4474-4487), 생성 턴도 새로
                     self.check_pending.append((x, name))
-        if dot:
+        if dot or independent_cap:
             e.dot = dot
             if e.inst is None:
                 e.inst = []
             for _ in range(eff['times']):
                 if len(e.inst) >= e.maxs:
+                    if independent_cap:
+                        break
                     e.inst.sort(key=lambda it: it[1])
                     e.inst.pop(0)
                 it = _Inst([owner, dur if dur != math.inf else 10 ** 6])
                 it.seq = next(_EFF_SEQ)
+                it.fresh = fresh
                 e.inst.append(it)
             e.stacks = len(e.inst)
         else:

@@ -18,6 +18,8 @@ def after_active_se(key, ln):
     if ln.src_kind != 'passive':
         return False
     e = ln.eff
+    if e['kind'] == 'waterbomb_cleanup':
+        return True
     return ((key in ('smile', 'tyria', 'gwen', 'claire') and e['kind'] == 'extra_cast')
             or (key == 'trish' and e.get('name') == '도약')
             or (key == 'cristelle' and e['kind'] == 'chain')
@@ -222,6 +224,18 @@ def unit_glossary(d):
 def description_lines(d, lines, rules=None):
     """정본에 명시된 범위·순서를 ef에 보충한다. key별 예외를 만들지 않는다."""
     rules = rules or {}
+    if rules.get('smile_waterbomb_scope') == 'client' and d.key == 'sunshine-cat-smile':
+        # SE10464012..21: duplicated grant rows straddle the ultimate marker.
+        # Preserve the marker state machine without manufacturing timed buffs.
+        related = [ln for ln in lines if ln.src_kind == 'passive' and ln.kind == 'own_post'
+                   and '물폭탄' in (ln.eff.get('name') or '')]
+        if related:
+            grant = copy.copy(related[0])
+            grant.params, grant.trig = [], None
+            grant.eff = dict(kind='waterbomb_end', buff=dict(related[0].eff), rule_key='smile_waterbomb_scope')
+            cleanup = copy.copy(grant)
+            cleanup.eff = dict(kind='waterbomb_cleanup', rule_key='smile_waterbomb_scope')
+            lines = [grant if ln is related[0] else ln for ln in lines if ln not in related[1:]] + [cleanup]
     raws = {s['sl']: s for s in getattr(d, 'u', {}).get('sk', []) if not s['sl'].startswith('변형')}
     if not raws:
         return lines
@@ -257,7 +271,11 @@ def description_lines(d, lines, rules=None):
                     continue
                 elem = re.search(r'(태양|달|별|질서|혼돈) 속성 아군 (전체|한명)', sentence)
                 conditional = re.search(r'아군 대상이 (태양|달|별|질서|혼돈) 속성이라면', sentence)
-                if elem and '아군' in e.get('target', ''):
+                client_ignite = (rules.get('cristelle_ignite_targets') == 'client'
+                    and d.key == 'cristelle' and ln.slot == '특수기' and name == '점화')
+                if client_ignite:
+                    e.update(target='자신 제외 아군 전체', rule_key='cristelle_ignite_targets')
+                elif elem and '아군' in e.get('target', ''):
                     e['target'] = ('자신 제외 ' if '자신을 제외한' in sentence else '') + elem[1] + ' 속성 아군 ' + ('전체' if elem[2] == '전체' else '1명')
                 elif conditional and e.get('target') == '스킬 대상':
                     e['beneficiary_element'] = conditional[1]
@@ -330,6 +348,12 @@ def description_lines(d, lines, rules=None):
                 and not any(k in ('자신이 보유', '자신이 미보유', '대상이 보유', '대상이 미보유')
                             and e['name'] in [n.strip() for n in v.split(',')] for k, v in ln.params)):
             e['pre_grant'] = True
+        if (rules.get('gauge_lock_order') == 'client' and d.key == 'lydia-moon-caster'
+                and e.get('name') == '메이드 리디아 패시브 행게 카운팅 버프'):
+            # 다음 TURN_START의 명시적 제거까지 유지하는 재발동 제한 표지.
+            e.pop('cast_marker', None)
+            e.pop('pre_grant', None)
+            e.update(persistent_marker=True, rule_key='gauge_lock_order')
     return out
 
 
@@ -376,6 +400,7 @@ def selection_lines(d, lines, raws, rules=None):
                     ln.kind, ln.params = 'own_post', []
                     e.update(start_filter=state[1], rule_key='skill_end_timing')
         move = re.search(r'신규 \[([^]]+)\] 발생 시 기존의 \[\1\]을 해제', desc)
+        smile_scope = rules.get('smile_waterbomb_scope') == 'client' and d.key == 'sunshine-cat-smile'
         if move and e.get('target') == '「물폭탄」이 없던 공격 대상':
             e['target'] = '스킬 대상'
         # 적 표식 이동만 보정한다. 아군 자동 지정 버프의 부여·해제는 원래 줄을 따른다.
@@ -388,11 +413,12 @@ def selection_lines(d, lines, raws, rules=None):
                 if ln.phase in ('전투 시작 시', '웨이브 시작 시'):
                     e.update(unique_enemy=True, ignore_resist=True)
                 elif e.get('target') == '스킬 대상':
-                    ln.params = [(k, v) for k, v in ln.params if k not in ('대상이 보유', '대상이 미보유')]
+                    if not smile_scope:
+                        ln.params = [(k, v) for k, v in ln.params if k not in ('대상이 보유', '대상이 미보유')]
                     e['unique_enemy'] = True
                 else:
                     continue
-            if e['kind'] == 'local' and '타격 시 적이 [' + mark + '] 상태이면' in desc:
+            if e['kind'] == 'local' and '타격 시 적이 [' + mark + '] 상태이면' in desc and not smile_scope:
                 ln.params = [(k, v) for k, v in ln.params if k != '사용 스킬']
         if ('체크용' in name and name not in references
                 and re.search(r'(방어력|행동 게이지|속도)[이가] 가장 높은 적', desc)):
@@ -409,9 +435,14 @@ def selection_lines(d, lines, raws, rules=None):
             repeat = re.search(r'\[' + re.escape(bundle) + r'\]을 (\d+)회 발생', desc)
             if repeat:
                 e.update(random_times=int(repeat[1]), pre_grant=True)
-                ln.params = []
+                if rules.get('scarlet_pinball_marker') != 'client' or d.key != 'scarlet':
+                    ln.params = []
+                else:
+                    e['rule_key'] = 'scarlet_pinball_marker'
         if name in random_markers and '무작위 효과' not in ln.raw:
-            continue
+            if rules.get('scarlet_pinball_marker') != 'client' or d.key != 'scarlet':
+                continue
+            e['persistent_marker'] = True
         # 역할별 증폭은 다른 대상의 피해에 섞이지 않는다.
         role = re.match(r'vs (.+) 피해 증가$', e.get('stat', ''))
         if e['kind'] == 'local' and role and role[1] + ' 클래스이면' in desc:

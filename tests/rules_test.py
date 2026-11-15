@@ -304,6 +304,7 @@ def test_index_uses_merged_opts():
 # note 키 4개를 MC_OPTS 에서 뺐을 때 기존 출력이 그대로인지 고정한다.
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
+    'bloom_passive_levels', 'independent_stack_limits', 'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'shield_enemy_count', 'gauge_lock_order', 'damage_break_boundary',
     'hit_ally_skill_end', 'skill_end_timing', 'passive_se_order', 'se_independent_roll',
     'stack_react_timing',
     'chain_stat_true', 'target_toughness_condition',
