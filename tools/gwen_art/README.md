@@ -1,6 +1,10 @@
 # 그웬 SD 팬 그림
 
-2026-11-15 `ready`를 추가했음. 내장 `image_gen`에 기존 welcome·investigate·report를 참조로 넣고 «기존 SD와 같은 머리·몸 비율, 굵은 윤곽선·단순 명암·남색/청록/금색을 유지하며 한 손은 허리, 다른 흰 장갑 손은 아래의 가상 단추를 가리키고 자신만만하게 미소 짓는 전신 그웬, 투명 배경, 전연령, 문자·로고 없음»으로 요청했음(전체 프롬프트: [ready_prompt.json](ready_prompt.json)). 생성 1회, 재생성 0회이며 기존 5종·walk와 공식 21.webp·22.png를 먼저 확인했음. [build_ready.py](build_ready.py)는 기존 `build.master`·`build2.move_part`·`build2.encode`를 재사용함. 생성 알파의 미세한 배경 잡음을 정리하고 가장자리 투명도를 보존해 본체 높이 약 450px로 맞췄으며, 원본은 내부색 192개·알파 가장자리 64개 팔레트의 512px PNG로 저장했음. `ready.png`는 표시 120~140px용 160px 정지본, `ready.webp`는 손·소매 끝만 0/−4/+3/0도로 움직이는 4프레임(500/220/220/460ms), `loop=1` 한 번 재생임. 세 파일 모두 80,000바이트 이하·투명도·프레임 수를 검사했음. 재현은 `python -B -X utf8 tools/gwen_art/build_ready.py`, 최초 가져오기는 `--import-file <생성 PNG>`를 붙임. 밝은 배경·어두운 UI·140px 표시·동작 프레임을 나란히 둔 `_tmp/_art_ready_compare.png`에서 기존 5종과 화풍을 대조해 채택했음.
+2026-11-15 `ready`를 **화면 오른쪽의 «추천 편성 보기» 단추를 가리키는 자세**로 다시 만들었음. 기존 investigate·files·report·surprised·welcome의 512px 그림과 공식 21.webp·22.png를 `view_image`로 먼저 확인했음. 내장 `image_gen`에 welcome·investigate·report를 직접 참조로 넣고, 같은 SD 비율·굵은 윤곽선·남색/청록/금색 채색, 정면 몸, 한 손은 허리, 다른 팔과 검지는 보는 사람 기준 오른쪽으로 뻗은 자세, 자신만만한 미소를 요청했음. 전연령·문자 없음·투명 배경임. 이번 교체 생성 1회, 추가 재시도 0회임. 전체 프롬프트와 참조 목록은 [ready_prompt.json](ready_prompt.json)에 있음.
+
+[build_ready.py](build_ready.py)는 생성 알파의 미세한 잡음을 정리하고 가장자리 투명도를 보존해 본체 높이 약 450px로 맞췄음. `ready_512.png`는 내부색 192개·알파 가장자리 64개 팔레트의 512px PNG, `ready.png`는 160px 정지본임. `ready.webp`는 160px 4프레임이며 정확히 **300/200/200/300ms, 합계 1000ms, loop=1**임. 손목·장갑 영역만 오른쪽으로 살짝 늘려 손을 내미는 동작을 만들었음(512px 기준 0/+5/+9/0px, 160px에서는 최대 약 2.8px). 얼굴·몸은 고정하고 마지막 프레임은 첫 자세로 돌아옴. 손끝 여백·실제 저장된 WebP의 프레임별 시간·투명도·각 파일 80,000바이트·정지본+동작본 35,000바이트·사이트용 전체 그림 640,000바이트 한도를 빌더에서 검사함.
+
+재현은 `python -B -X utf8 tools/gwen_art/build_ready.py`, 최초 가져오기는 `--import-file <생성 PNG>`를 붙임. 기존 5종과 새 ready, 어두운 배경의 실제 160px 정지본 오른쪽에 단추를 놓은 배치, 저장된 WebP의 4프레임을 담은 `_tmp/_art_ready2_compare.png`를 확인해 채택했음. 검증은 `python -X utf8 -m unittest tests.gwen_art_test`임. 이번에는 ready 3개 파일과 이 폴더의 빌더·프롬프트·설명만 갱신했음.
 
 후속 그림·현재 재생 방식은 [추가 그림·움직임](art2.md)에 정리했음. 기존 SD 5종은 유지했으며 아래는 최초 제작 기록임.
 

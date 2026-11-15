@@ -7,10 +7,28 @@ import argparse
 import json
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 from build import NAMES, OUT, RESAMPLE, ROOT, master
-from build2 import encode, move_part
+from build2 import encode
+
+DURATIONS = [300, 200, 200, 300]
+
+
+def ready_frames(src):
+    # Only the exposed wrist/glove extends toward screen right. The left edge
+    # stays anchored to the sleeve; hair, face and body stay pixel-identical.
+    box = (354, 254, 440, 316)
+    hand = src.crop(box)
+    frames = []
+    for dx in (0, 5, 9, 0):
+        frame = src.copy()
+        if dx:
+            frame.paste((0, 0, 0, 0), box)
+            frame.alpha_composite(
+                hand.resize((hand.width + dx, hand.height), RESAMPLE), box[:2])
+        frames.append(frame)
+    return frames
 
 
 def compact_master(src):
@@ -34,7 +52,7 @@ def compact_master(src):
 
 
 def compare(frames):
-    sheet = Image.new('RGB', (1320, 670), '#edf0f5')
+    sheet = Image.new('RGB', (1320, 790), '#edf0f5')
     draw = ImageDraw.Draw(sheet)
     for i, name in enumerate((*NAMES, 'ready')):
         x = i * 220
@@ -43,14 +61,23 @@ def compare(frames):
         pic = src.resize((220, 220), RESAMPLE)
         sheet.paste(pic, (x, 40), pic)
         draw.rectangle((x, 280, x + 219, 465), fill='#111b30')
-        pic = src.resize((140, 140), RESAMPLE)
-        sheet.paste(pic, (x + 40, 300), pic)
-        draw.text((x + 16, 478), '140px / dark UI', fill='#192239')
-    draw.text((16, 525), 'ready: one-shot hand gesture / 160px frames', fill='#192239')
+        pic = src.resize((160, 160), RESAMPLE)
+        sheet.paste(pic, (x + 30, 290), pic)
+        draw.text((x + 16, 478), '160px / dark UI', fill='#192239')
+    draw.text((16, 515), '160px layout: Gwen points to the button on SCREEN RIGHT', fill='#192239')
+    draw.rectangle((10, 545, 440, 775), fill='#111b30')
+    pic = Image.open(OUT / 'ready.png').convert('RGBA')
+    sheet.paste(pic, (25, 565), pic)
+    draw.rounded_rectangle((190, 629, 410, 675), radius=8,
+                           fill='#3158a0', outline='#86a7eb', width=2)
+    font = ImageFont.truetype('C:/Windows/Fonts/malgun.ttf', 18)
+    draw.text((300, 652), '추천 편성 보기', font=font, anchor='mm', fill='white')
     for i, frame in enumerate(frames):
-        pic = frame.resize((120, 120), RESAMPLE)
-        sheet.paste(pic, (440 + i * 140, 535), pic)
-    path = ROOT / '_tmp/_art_ready_compare.png'
+        x = 460 + i * 210
+        draw.rectangle((x, 545, x + 199, 775), fill='#111b30')
+        sheet.paste(frame, (x + 20, 565), frame)
+        draw.text((x + 20, 747), f'{i + 1}: {DURATIONS[i]}ms', fill='white')
+    path = ROOT / '_tmp/_art_ready2_compare.png'
     path.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(path)
 
@@ -78,13 +105,14 @@ def main():
     src = Image.open(path).convert('RGBA')
     assert src.size == (512, 512)
     assert src.getchannel('A').getextrema() == (0, 255)
-    # Coordinates are fitted to the approved generated ready master.
-    polygon = [(80, 319), (158, 319), (185, 340), (180, 357),
-               (165, 370), (155, 405), (80, 405)]
-    frames = move_part(src, polygon, [0, -4, 3, 0], (166, 330))
+    frames = ready_frames(src)
     assert ImageChops.difference(frames[0], frames[1]).getbbox()
     assert frames[0].tobytes() == frames[-1].tobytes()
-    served = encode('ready', frames, 160, [300, 200, 200, 300], 1)
+    for frame in frames:
+        assert frame.crop((0, 0, 354, 512)).tobytes() == src.crop((0, 0, 354, 512)).tobytes()
+        assert frame.getchannel('A').getbbox()[2] < 488, 'Fingertip needs margin'
+    encode('ready', frames, 160, DURATIONS, 1)
+    served = []
     sizes = {}
     for name in ('ready_512.png', 'ready.png', 'ready.webp'):
         output = OUT / name
@@ -93,12 +121,21 @@ def main():
             assert im.convert('RGBA').getchannel('A').getextrema() == (0, 255)
             if name.endswith('.webp'):
                 assert im.n_frames == 4 and im.info['loop'] == 1
+                durations = []
                 for i in range(im.n_frames):
                     im.seek(i)
                     im.load()
+                    durations.append(im.info['duration'])
+                    served.append(im.convert('RGBA'))
+                assert durations == DURATIONS, durations
         sizes[name] = output.stat().st_size
+    assert sizes['ready.png'] + sizes['ready.webp'] <= 35000, sizes
+    total = sum(p.stat().st_size for p in OUT.iterdir()
+                if p.suffix in ('.png', '.webp') and not p.stem.endswith('_512'))
+    assert total <= 640000, total
     compare(served)
     print(json.dumps(sizes, indent=2))
+    print('Served art total:', total)
 
 
 if __name__ == '__main__':

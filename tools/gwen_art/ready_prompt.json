@@ -3,10 +3,38 @@
   "transparent_background": true,
   "generation_count": 1,
   "regeneration_count": 0,
+  "replaces": "Previous downward-pointing ready pose",
   "references": [
     "assets/ui_icons/gwen/welcome_512.png",
     "assets/ui_icons/gwen/investigate_512.png",
     "assets/ui_icons/gwen/report_512.png"
   ],
-  "prompt": "Use case: stylized-concept. Create ONE new full-body transparent SD/chibi sprite of Gwen from Star Savior for a tiny UI button mascot. The three attached existing sprites are the authoritative style AND character reference: match their exact head/body ratio, face, thick dark outline weight, muted navy-purple hair colors, simple flat cel shading, and simplified uniform detail. This must look like a sixth pose drawn by exactly the same illustrator in the same existing sprite set, not a reinterpretation. The first image (welcome) is the main reference; second (investigate) and third (report) reinforce identical style. Preserve enormous rounded navy bob with long pointed bangs, one small rectangular gold hair clip on viewer right, confident half-lidded amber-yellow eyes, small knowing smile, navy military jacket, gold fringed epaulettes, teal neck bow and waist bow, white layered frills, black waist with gold buckles, white gloves, white tights and small dark shoes. Pose: standing facing viewer, ready for departure and patiently waiting for the commander, one gloved hand on hip and the OTHER arm extending diagonally down/out with index finger clearly pointing DOWN toward an imaginary button below her. Keep the pointing glove separated from body silhouette so it is readable at 130 pixels. No actual button. Both feet visible and resting at same baseline. Confident welcoming little smile. Proportions exactly as supplied SDs, approximately two heads tall. Composition: single centered figure, square canvas, full body with small even transparent margins. Transparent alpha background, NO ground shadow, no background, no decorative marks, no border, no text, no lettering, no logos, no watermark. All ages. Do not add realistic anatomy, additional rendering, painterly effects, sparkles, comic panels or extra figures."
+  "prompt": "Use case: stylized-concept. Create ONE new full-body transparent SD/chibi sprite of Gwen from Star Savior. Input images 1 welcome, 2 investigate, 3 report are authoritative references for the EXACT existing sprite set's proportions, thick dark outlines, flat cel shading, muted navy-purple hair, and simplified uniform. Make this look like another pose drawn by exactly the same illustrator. Preserve enormous round navy bob with pointed bangs, a small rectangular gold hair clip on VIEWER RIGHT, half-lidded amber-yellow eyes, a confident knowing smile, navy military jacket, gold fringed epaulettes, teal neck bow and waist bow, white layered frills, black waist and gold buckles, white gloves, white tights, small dark shoes. Approximately two heads tall, same head/body ratio as references. Critical NEW POSE: body facing front or slightly toward SCREEN RIGHT; her arm on the VIEWER RIGHT side extends straight out sideways HORIZONTALLY to SCREEN RIGHT. White gloved index finger clearly points horizontally toward the RIGHT EDGE OF THE IMAGE, as if indicating a UI button beside her on the viewer's right. Arm is outstretched, not folded. Glove silhouette must protrude past her hair and body on the RIGHT and remain readable at 160px. Other hand on hip. BOTH eyes visible, confident small smile. Finger tip points right (positive image x), NOT down, NOT left, NOT toward the camera. Full body visible with feet at the same baseline; centered square canvas with safe transparent margins around hair, shoes and right pointing fingertip. No button or arrow in the artwork. Actual transparent alpha background, no ground shadow, no backdrop, no decoration, no text, no logos, no watermark. All ages. No painterly shading, no realistic anatomy, no additional characters. Match the existing five-pose SD set faithfully.",
+  "reviewed_style_references": [
+    "assets/ui_icons/gwen/investigate_512.png",
+    "assets/ui_icons/gwen/files_512.png",
+    "assets/ui_icons/gwen/report_512.png",
+    "assets/ui_icons/gwen/surprised_512.png",
+    "assets/ui_icons/gwen/welcome_512.png"
+  ],
+  "reviewed_official_references": [
+    "21.webp",
+    "22.png"
+  ],
+  "animation": {
+    "size": 160,
+    "duration_ms": [
+      300,
+      200,
+      200,
+      300
+    ],
+    "loop": 1,
+    "wrist_extension_px_at_512": [
+      0,
+      5,
+      9,
+      0
+    ]
+  }
 }
