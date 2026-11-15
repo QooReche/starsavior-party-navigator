@@ -19,6 +19,28 @@
     report:['조사 끝 · 보고함']};
   const gwenSeed=root.document?Math.floor(Math.random()*6):0;
   const gwenLine=mode=>{const lines=GWEN_LINES[mode];return lines?lines[gwenSeed%lines.length]:'';};
+  // 그웬 말풍선 대사 표(친근한 반말·한 줄). 상황별 2~4개 중 방문당 하나로 고정함. 진행률·숫자·보안 안내는 여기 두지 않음.
+  const GWEN_SAY={
+    inspect:['단서는 끈질기게 모으는 법이지','사건 파일부터 펼쳐 볼게','좋아, 수사를 시작해 볼까?'],
+    screen:['후보를 하나씩 탐문 중…','수상한 후보는 내가 걸러 낼게','답은 서류 더미 속에 있어!'],
+    long:['잠복은 내 특기야. 조금만 기다려','끝까지 파헤치는 게 탐정이지','진실을 밝히는 빛! …곧 보일 거야'],
+    report:['조사 끝! 보고할게','수사 완료, 결과 나왔어!'],
+    error:['으… 단서가 부족해','이런, 수사가 막혔어…','음… 이건 예상 밖인데'],
+    high:['사건 해결! 이 편성이면 충분해','범인은… 아니, 정답은 바로 이 편성!','이 편성, 내가 보증할게!'],
+    shaky:['아슬아슬해… 한 번 더 확인해 봐','반반 승부야. 방심은 금물!'],
+    hard:['이대론 벅차. 편성을 손봐야겠어','단서가 더 필요해. 육성도 살펴봐'],
+    low:['이 사건은 만만치 않아. 육성부터 하자','지금은 무리야. 힘부터 기르자'],
+    welcome:['어서 와, 의뢰인! 어떤 사건이야?','그웬 탐정 사무소에 잘 왔어!','사건이라면 나한테 맡겨!'],
+    import:['의뢰인 정보, 내가 받아 갈게','정보만 주면 수사는 내가 할게'],
+    empty:['명단이 비었네. 정보부터 받아 올까?','아직 사건 파일이 텅 비었어']};
+  const gwenSayLine=key=>{const lines=Object.hasOwn(GWEN_SAY,key)?GWEN_SAY[key]:null;return lines?lines[gwenSeed%lines.length]:'';};
+  // 클리어율 구간(판정 칩과 같은 경계): 70% 이상·50% 이상·5% 이상·그 미만.
+  const gwenSayBand=p=>!Number.isFinite(p)?'':p>=.7?'high':p>=.5?'shaky':p>=.05?'hard':'low';
+  // 말풍선은 장식(같은 뜻의 안내·판정이 옆에 글로 있음)이라 읽기 도구에는 숨김. tail = 꼬리가 향하는 쪽(down·up·left·right).
+  function gwenSay(key,tail='down'){
+    const line=gwenSayLine(key);
+    return line?`<span class="gwen-bubble" data-gwen-say="${esc(key)}" data-tail="${esc(tail)}" aria-hidden="true">${esc(line)}</span>`:'';
+  }
   const GWEN_ART=new Set(['investigate','files','walk','report','surprised','welcome','confident','thoughtful','notes']);
   function gwenImage(art,cls='gwen-worker',size=160){
     if(!GWEN_ART.has(art))return '';
@@ -29,14 +51,14 @@
   function gwenReaction(p){
     if(!Number.isFinite(p))return '';
     const art=p<.05?'notes':p<.7?'thoughtful':'confident';
-    return `<div class="gwen-reaction" data-gwen-reaction="${art}" aria-hidden="true"><div class="gwen-bubble-space"></div>${gwenImage(art,'gwen-reaction-art',240)}</div>`;
+    return `<div class="gwen-reaction" data-gwen-reaction="${art}" aria-hidden="true"><div class="gwen-bubble-space">${gwenSay(gwenSayBand(p))}</div>${gwenImage(art,'gwen-reaction-art',240)}</div>`;
   }
-  function gwenWork(mode){
+  function gwenWork(mode,say=mode){
     const art={inspect:'investigate',screen:'files',long:'walk',error:'surprised',report:'report',welcome:'welcome'}[mode];
     if(!art)return '';
     const label=gwenLine(mode);
     const roam=art==='investigate'||art==='walk';
-    return `<span class="gwen-work${roam?' gwen-roam':''}" data-gwen="${mode}"><span class="gwen-track"><span class="gwen-traveler"><span class="gwen-scene" aria-hidden="true">${gwenImage(art)}</span></span></span>${label?`<span class="gwen-caption">${label}</span>`:''}</span>`;
+    return `<span class="gwen-work${roam?' gwen-roam':''}" data-gwen="${mode}">${typeof say==='string'&&gwenSayLine(say)?`<span class="gwen-say-lane">${gwenSay(say)}</span>`:''}<span class="gwen-track"><span class="gwen-traveler"><span class="gwen-scene" aria-hidden="true">${gwenImage(art)}</span></span></span>${label?`<span class="gwen-caption">${label}</span>`:''}</span>`;
   }
   // Each one-shot WebP has loop=1. A new blob URL replays cached bytes without network
   // downloads on every interval. Every pending callback is invalidated on hide/reduce/remove.
@@ -227,6 +249,8 @@
   function mount(){
     const doc=root.document;if(!doc)return;
     mountGwen();
+    // 정적 HTML 에 미리 놓인 빈 말풍선(불러오기 창)은 여기서 한 번만 채움.
+    doc.querySelectorAll('.gwen-bubble[data-gwen-say]:empty').forEach(el=>{el.textContent=gwenSayLine(el.dataset.gwenSay);});
     const retireReports=()=>{
       const live=new Map();
       doc.querySelectorAll('[data-gwen="report"]').forEach(el=>{
@@ -265,6 +289,6 @@
     doc.addEventListener('focusout',e=>{if(owner===e.target&&!pinned)close();});
     root.addEventListener('resize',()=>{if(owner)place();});root.addEventListener('scroll',()=>{if(owner)place();},true);
   }
-  const api={verdict,help,gwenImage,gwenReaction,gwenWork,GWEN_LINES,gwenReport,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
+  const api={verdict,help,gwenImage,gwenReaction,gwenWork,GWEN_LINES,GWEN_SAY,gwenSay,gwenSayBand,gwenReport,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Ux=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

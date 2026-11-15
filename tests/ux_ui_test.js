@@ -130,15 +130,78 @@ function checkGwenWork(u=U){
   u.syncGwen(parent,'long');assert.match(old.outerHTML,/data-gwen="long"/);
   u.syncGwen(parent,'done');assert.equal(old.outerHTML,'');
 }
+// 그웬 말풍선: 대사 표 한곳, 상황별 2~4개·한 줄(30자 이내)·반말, 방문당 하나 고정, 장식이라 aria-hidden.
+function checkGwenSay(u=U){
+  const keys=['inspect','screen','long','report','error','high','shaky','hard','low','welcome','import','empty'];
+  assert.deepEqual(Object.keys(u.GWEN_SAY),keys);
+  for(const key of keys){const lines=u.GWEN_SAY[key];
+    assert(lines.length>=2&&lines.length<=4,key);assert.equal(new Set(lines).size,lines.length,key);
+    for(const line of lines){assert([...line].length<=30,line);assert.doesNotMatch(line,/\n|[<>&"]/,line);
+      assert.doesNotMatch(line,/(음|함|됨|임|니다|세요|어요|아요|해요)[.!?…]*$/,`안내 문구체·존댓말 아님: ${line}`);
+      assert.doesNotMatch(line,/\d|%/,`숫자·진행률은 말풍선에 넣지 않음: ${line}`);}
+    const html=u.gwenSay(key);
+    assert.equal(html,`<span class="gwen-bubble" data-gwen-say="${key}" data-tail="down" aria-hidden="true">${lines[0]}</span>`);
+    assert.equal(u.gwenSay(key),html,'다시 그려도 같은 대사');}
+  assert.match(u.gwenSay('welcome','right'),/data-tail="right"/);
+  for(const key of ['','none','toString','constructor',undefined])assert.equal(u.gwenSay(key),'',String(key));
+  assert.equal(u.GWEN_SAY.error[0],'으… 단서가 부족해');assert.equal(u.GWEN_SAY.welcome[0],'어서 와, 의뢰인! 어떤 사건이야?');
+  assert.equal(u.GWEN_SAY.import[0],'의뢰인 정보, 내가 받아 갈게');
+  // 진행·실패·보고 연출: 그림 트랙 앞에 말풍선 한 개, 기존 안내 문구(caption)는 그대로.
+  for(const mode of ['inspect','screen','long','error','report','welcome']){const html=u.gwenWork(mode);
+    assert.equal((html.match(/class="gwen-bubble"/g)||[]).length,1,mode);
+    assert(html.includes(`<span class="gwen-say-lane">${u.gwenSay(mode)}</span><span class="gwen-track">`),mode);}
+  assert.match(u.gwenWork('inspect'),/<span class="gwen-caption">그웬이 추천 편성 확인 중…<\/span>/);
+  assert(u.gwenWork('screen','empty').includes(u.gwenSay('empty')));assert.match(u.gwenWork('screen','empty'),/data-gwen="screen"/);
+  assert.doesNotMatch(u.gwenWork('screen',null),/gwen-bubble/);
+  // Array.map 같은 호출로 숫자가 둘째 인자로 와도 엉뚱한 대사를 내지 않음.
+  assert.doesNotMatch(['screen'].map(u.gwenWork)[0],/gwen-bubble/);
+  // 결과 발표: 판정 칩과 같은 경계(70%·50%)와 매우 낮음(5% 미만).
+  for(const [p,band] of [[1,'high'],[.7,'high'],[.6999,'shaky'],[.5,'shaky'],[.4999,'hard'],[.05,'hard'],[.0499,'low'],[0,'low']]){
+    assert.equal(u.gwenSayBand(p),band,String(p));
+    assert(u.gwenReaction(p).includes(`<div class="gwen-bubble-space">${u.gwenSay(band)}</div>`),String(p));}
+  for(const p of [NaN,undefined,null])assert.equal(u.gwenSayBand(p),'');
+  assert.match(u.gwenReaction(.95),/^<div class="gwen-reaction" data-gwen-reaction="confident" aria-hidden="true">/);
+  assert.match(u.GWEN_SAY.high[0],/사건 해결/);assert.match(u.GWEN_SAY.shaky[0],/아슬아슬/);assert.match(u.GWEN_SAY.low[0],/육성부터/);
+}
+// 방문당 하나 고정: 브라우저에서는 처음 한 번만 고르고, 불러오기 창의 빈 말풍선은 mount 가 한 번 채움.
+function checkGwenSayVisit(code=source){
+  const filled=[],randoms=[.25,.9,.1,.7];let calls=0;
+  const el={dataset:{gwenSay:'import'},textContent:''};
+  const doc={hidden:false,body:{append(){}},documentElement:{classList:{toggle(){}},clientWidth:1280},addEventListener(){},
+    createElement:()=>({}),querySelectorAll:q=>q==='.gwen-bubble[data-gwen-say]:empty'?(filled.push(q),[el]):[]};
+  const c={module:undefined,document:doc,UiShared:require('../ui_shared'),MyInfoStats:S,innerHeight:900,innerWidth:1280,
+    Math:Object.assign(Object.create(Math),{random:()=>{calls++;return randoms[(calls-1)%randoms.length];}}),
+    matchMedia:()=>({matches:false,addEventListener(){}}),addEventListener(){},setTimeout,clearTimeout,
+    IntersectionObserver:class{observe(){}unobserve(){}},MutationObserver:class{observe(){}}};
+  c.globalThis=c;vm.runInNewContext(code,c);const u=c.Ux;
+  const first=u.gwenSay('inspect');assert(u.GWEN_SAY.inspect.some(line=>first.includes('>'+line+'<')));
+  assert.notEqual(first,U.gwenSay('inspect'),'방문마다 고른 대사(시험용 난수 .25 → 둘째 대사)');
+  for(let i=0;i<5;i++){assert.equal(u.gwenSay('inspect'),first,'다시 그려도 대사 유지');assert.equal(u.gwenWork('long'),u.gwenWork('long'));}
+  assert.equal(calls,1,'난수는 방문당 한 번');
+  u.mount();assert.equal(filled.length,1);assert(u.GWEN_SAY.import.includes(el.textContent),'불러오기 창 말풍선 채움');
+}
 const source=fs.readFileSync(require.resolve('../ux_ui'),'utf8');
 function mutation(from,to,check){assert(source.includes(from));let caught=false;try{check(load(source.replace(from,to)));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}assert(caught,`mutation survived: ${from}`);check(U);}
 checkVerdict();checkGrades();checkPower();checkChips();checkSkills();checkTabState();checkLuck();
 checkGwenWork();
+checkGwenSay();checkGwenSayVisit();
 {const r={},first=U.gwenReport(r);assert.match(first,/data-gwen="report"/);assert.equal(U.gwenReport(r),first,'not consumed before visible mount');assert.equal(U.gwenReport(null),'');}
 mutation("if(!art)return '';","return '';",checkGwenWork);
 mutation("error:'surprised'","error:'welcome'",checkGwenWork);
 mutation("?'screen':/준비|능력치 계산/","?'long':/준비|능력치 계산/",checkGwenWork);
 mutation("old.outerHTML=gwenWork(mode)","old.outerHTML=old.outerHTML",checkGwenWork);
+mutation("p>=.7?'high'","p>.7?'high'",checkGwenSay);
+mutation("p>=.5?'shaky'","p>=.4?'shaky'",checkGwenSay);
+mutation("p>=.05?'hard':'low'","p>=.05?'hard':'hard'",checkGwenSay);
+mutation('<div class="gwen-bubble-space">${gwenSay(gwenSayBand(p))}</div>','<div class="gwen-bubble-space"></div>',checkGwenSay);
+mutation('<span class="gwen-say-lane">${gwenSay(say)}</span>','',checkGwenSay);
+mutation('data-tail="${esc(tail)}" aria-hidden="true">','data-tail="${esc(tail)}">',checkGwenSay);
+mutation("function gwenWork(mode,say=mode){","function gwenWork(mode,say='inspect'){",checkGwenSay);
+mutation("'으… 단서가 부족해'","'단서가 부족함'",checkGwenSay);
+mutation("'어서 와, 의뢰인! 어떤 사건이야?'","'어서 오세요, 의뢰인! 오늘은 어떤 사건을 맡기러 오셨나요?'",checkGwenSay);
+{const visit=(from,to)=>{assert(source.includes(from));assert.throws(()=>checkGwenSayVisit(source.replace(from,to)),{code:'ERR_ASSERTION'},`mutation survived: ${from}`);};
+ visit("return lines?lines[gwenSeed%lines.length]:'';};\n  // 클리어율","return lines?lines[Math.floor(Math.random()*lines.length)]:'';};\n  // 클리어율");
+ visit("el.textContent=gwenSayLine(el.dataset.gwenSay);","");}
 mutation('p>=.9','p>.9',checkVerdict);
 mutation('value>=r[0]','value>r[0]+50',checkGrades);
 mutation('delta=S.final_stats(unit,account,growth,rule).power-before;','delta=after-before;',checkPower);
@@ -156,4 +219,4 @@ mutation("const low=p<LUCK.low","const low=p<=LUCK.low",checkLuck);
 mutation("ci[0]<LUCK.ciLo&&ci[1]>=LUCK.ciHi","ci[0]<LUCK.ciLo",checkLuck);
 mutation("if(!low&&!shaky)return '';","",checkLuck);
 mutation("1-Math.pow(1-p,LUCK.tries)","p*LUCK.tries",checkLuck);
-console.log('PASS probability, grades, power, skill targets, tab states, luck note, Gwen modes and transitions; 21 mutations caught');
+console.log('PASS probability, grades, power, skill targets, tab states, luck note, Gwen modes and transitions, Gwen speech bubbles; 32 mutations caught');

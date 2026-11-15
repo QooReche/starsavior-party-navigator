@@ -357,7 +357,7 @@ summary{padding:9px 4px}
  <div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장함.</div>
  <div class="mut" id="mi-status" style="margin:4px 0 6px">불러온 정보 없음</div>
  <section class="mihow">
-  <div class="gwen-greet"><img class="gwen-welcome" data-gwen-art="welcome" data-gwen-static="assets/ui_icons/gwen/welcome.png" data-gwen-motion="assets/ui_icons/gwen/welcome.webp" width="160" height="160" alt="" aria-hidden="true" loading="lazy"><p class="gwen-say">의뢰인 정보는 그웬이 받아 감<small>아래 4단계를 순서대로 하면 됨</small></p></div>
+  <div class="gwen-greet"><img class="gwen-welcome" data-gwen-art="welcome" data-gwen-static="assets/ui_icons/gwen/welcome.png" data-gwen-motion="assets/ui_icons/gwen/welcome.webp" width="160" height="160" alt="" aria-hidden="true" loading="lazy"><div class="gwen-greet-text"><span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span><p class="gwen-greet-note mut">아래 4단계를 순서대로 하면 됨</p></div></div>
   <b class="mihow-title">Windows PC에서 불러오기</b>
   <div class="mi-import-guide">
    <div class="dtools"><button id="mi-copy" type="button">명령 복사</button></div>
@@ -1232,10 +1232,10 @@ function condChanged(){
  }
  run(true);
 }
-function miEmpty(){return `<div class="mi-empty" data-k="mi-empty">${Ux.gwenWork("screen")}<b>아직 명단이 비어 있음</b><p class="mut">계정 정보를 불러오면 내 구원자 명단과 육성 상태를 여기에 정리함</p><button type="button" data-mi-empty-open>계정 정보 불러오기</button></div>`}
+function miEmpty(){return `<div class="mi-empty" data-k="mi-empty">${Ux.gwenWork("screen","empty")}<b>아직 명단이 비어 있음</b><p class="mut">계정 정보를 불러오면 내 구원자 명단과 육성 상태를 여기에 정리함</p><button type="button" data-mi-empty-open>계정 정보 불러오기</button></div>`}
 function miGuide(){return `<div class="party guide case-request" data-k="miguide" data-state="needs-info"><img class="case-clip" src="assets/ui_icons/office_clip.svg" width="18" height="30" alt="" aria-hidden="true"><p class="case-tag">사건 의뢰서 · 접수 대기</p><h3>내 구원자로 깰 파티 찾기</h3>
  <p class="mut">계정 정보를 맡기면 그웬이 내 구원자에 맞춰 조사해 추천함. 정보 없이도 표준 육성으로 살펴볼 수 있음.</p><ol class="guide-steps"><li><b>명령 복사</b><small>PowerShell에 붙여넣기</small></li><li><b>게임 로그인</b><small>로비에서 도구 창에 엔터</small></li><li><b>자동 반영</b><small>이 화면에 바로 표시</small></li></ol>
- <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div>${Ux.gwenImage("welcome","gwen-guide-art")}</div></div>`}
+ <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div>${Ux.gwenSay("welcome","right")}${Ux.gwenImage("welcome","gwen-guide-art")}</div></div>`}
 function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;recoClearTimer();if(!MI.info){RECO.standard=true;$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
 function run(skipAuto=false){seasonPaint();growthControlPlace(true);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror">${Ux.gwenWork("error")}<h3>내 정보 계산 자료를 불러오지 못했음</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}

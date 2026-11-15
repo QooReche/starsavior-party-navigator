@@ -98,9 +98,7 @@ button.sec{background:rgba(111,211,207,.06);border-color:rgba(111,211,207,.6);co
 .gwen-memo{display:flex;align-items:center;gap:6px;margin-bottom:2px;letter-spacing:.04em}.gwen-memo img{width:20px;height:20px;flex:none;object-fit:contain}
 /* 불러오기 창: 그웬 인사 한 줄 */
 .gwen-greet{display:flex;align-items:center;gap:12px;margin:4px 0 12px}.gwen-greet .gwen-welcome{width:72px;height:72px;margin:0;flex:none}
-.gwen-say{position:relative;margin:0;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--ink);font-size:14px;font-weight:700;line-height:1.5;min-width:0}
-.gwen-say::before{content:'';position:absolute;left:-6px;top:50%;width:10px;height:10px;margin-top:-5px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--ink);transform:rotate(45deg)}
-.gwen-say small{display:block;font-size:12px;font-weight:400;color:var(--mut)}
+.gwen-greet-text{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}.gwen-greet-note{margin:0;font-size:12px}
 .mihow-title{display:flex;align-items:center;gap:8px}.mihow-title::before{content:'';width:22px;height:18px;flex:none;background:url(assets/ui_icons/office_file.svg) center/contain no-repeat}
 #mi-status[data-state=ok]::before,#mi-status[data-state=bad]::before{display:inline-block;margin-right:8px;padding:0 6px;border:1px solid currentColor;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:.06em}
 #mi-status[data-state=ok]::before{content:'접수 완료';color:var(--good)}#mi-status[data-state=bad]::before{content:'확인 필요'}
@@ -115,7 +113,7 @@ button.sec{background:rgba(111,211,207,.06);border-color:rgba(111,211,207,.6);co
 :is(.notice,#growth-control,.verdict-main,.cs-bh,.bbar,.gd-head,.season-chips,.season-boss-summary>div,.menu-share)>.ux-help{top:0}.gd-head{display:flex;align-items:center;flex-wrap:wrap;gap:0 6px}
 .verdict-main{display:flex;flex-wrap:wrap;align-items:center}.verdict-main>.verdict-meta{flex-basis:100%}
 @media(max-width:400px){.gwen-caption{font-size:12px}}
-@media(max-width:600px){.case-request{outline-offset:-6px}.case-clip{left:18px}.gwen-greet .gwen-welcome{width:60px;height:60px}.gwen-say{font-size:13px;padding:8px 12px}}
+@media(max-width:600px){.case-request{outline-offset:-6px}.case-clip{left:18px}.gwen-greet .gwen-welcome{width:60px;height:60px}}
 
 /* 넓은 사건 파일: 카드와 근거는 나란히, 긴 문장은 읽기 폭을 유지함. */
 .result-summary,.result-team{min-width:0}
@@ -151,14 +149,14 @@ button.sec{background:rgba(111,211,207,.06);border-color:rgba(111,211,207,.6);co
 .gwen-scene{display:block;width:var(--gwen-size);height:var(--gwen-size)}
 .gwen-caption{max-width:80ch;text-align:center}
 .gwen-reaction{display:flex;flex-direction:column;align-items:flex-end;max-width:100%;margin-top:12px;pointer-events:none}
-/* Future dialogue has its own 220px box above the face; it never overlays the controls. */
-.gwen-bubble-space{width:220px;max-width:100%;height:64px;align-self:flex-start}
+/* 말풍선 자리(220×64 이상)는 얼굴 위에 따로 잡아 조작부를 덮지 않음. */
+.gwen-bubble-space{display:flex;align-items:flex-end;justify-content:flex-end;width:100%;min-height:64px;padding-right:48px;box-sizing:border-box}
 .gwen-reaction-art{display:block;width:200px;height:200px;object-fit:contain;max-width:100%}
 .result-summary:has(.gwen-reaction) [data-gwen="report"]{--gwen-size:72px;min-height:0;margin:4px auto;font-size:12px}
 .result-summary:has(.gwen-reaction) [data-gwen="report"] .gwen-scene{width:72px;height:72px}
 .mi-empty .gwen-work{max-width:360px}.mi-empty .gwen-caption{display:none}
-.gwen-paused .gwen-roam :is(.gwen-traveler,.gwen-scene,.gwen-worker){animation-play-state:paused}
-@media(max-width:1199px){.gwen-reaction{flex-direction:row;align-items:center;justify-content:flex-end}.gwen-reaction-art{width:112px;height:112px}.gwen-bubble-space{flex:0 1 220px;height:64px}}
+.gwen-paused .gwen-roam :is(.gwen-traveler,.gwen-scene,.gwen-worker,.gwen-bubble,.gwen-bubble::after){animation-play-state:paused}
+@media(max-width:1199px){.gwen-reaction{flex-direction:row;align-items:center;justify-content:flex-end}.gwen-reaction-art{width:112px;height:112px}.gwen-bubble-space{flex:0 1 240px;width:auto;min-width:0;align-items:center;padding-right:4px}.gwen-reaction .gwen-bubble{--tx:calc(100% + .5px);--ty:50%;--tr:-45deg;transform-origin:100% 50%}}
 .gwen-roam .gwen-traveler{animation:gwen-roam 12s linear infinite}
 .gwen-roam .gwen-scene{animation:gwen-turn 12s step-end infinite}
 .gwen-roam .gwen-worker{animation:gwen-hop 12s linear infinite}
@@ -178,4 +176,38 @@ button.sec{background:rgba(111,211,207,.06);border-color:rgba(111,211,207,.6);co
 @media(prefers-reduced-motion:reduce){
  .gwen-roam .gwen-traveler,.gwen-roam .gwen-scene,.gwen-work .gwen-worker{animation:none;transform:none}
  .gwen-roam .gwen-traveler{left:calc(50% - var(--gwen-size)/2)}
+}
+
+/* ── 그웬 말풍선 ─────────────────────────────────────────────────────────
+   카드보다 살짝 밝은 바탕 + 얇은 황동 테두리. 꼬리는 --tx/--ty/--tr 로 그림 쪽을 향함(down·up·left·right).
+   대사는 ux_ui.js 의 GWEN_SAY 한곳에서 관리하고, 장식이라 aria-hidden 임. */
+.gwen-bubble{--tail:50%;--tx:var(--tail);--ty:calc(100% + .5px);--tr:45deg;position:relative;display:block;box-sizing:border-box;flex:none;width:fit-content;max-width:min(100%,280px);margin:0;padding:8px 14px;border:1px solid rgba(217,185,121,.62);border-radius:14px;background:#1e2a45;color:var(--fg);font-size:13px;font-weight:700;line-height:1.5;letter-spacing:0;text-align:center;word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance;pointer-events:none;transform-origin:var(--tail) 100%;animation:gwen-bubble-pop .38s cubic-bezier(.3,1.45,.5,1) 1 both}
+.gwen-bubble:empty{display:none}
+.gwen-bubble::after{content:'';position:absolute;left:var(--tx);top:var(--ty);width:10px;height:10px;box-sizing:border-box;border:solid rgba(217,185,121,.62);border-width:0 1px 1px 0;border-bottom-right-radius:2px;background:#1e2a45;translate:-50% -50%;rotate:var(--tr)}
+.gwen-bubble[data-tail=up]{--ty:-.5px;--tr:225deg;transform-origin:var(--tail) 0}
+.gwen-bubble[data-tail=left]{--tx:-.5px;--ty:50%;--tr:135deg;transform-origin:0 50%}
+.gwen-bubble[data-tail=right]{--tx:calc(100% + .5px);--ty:50%;--tr:-45deg;transform-origin:100% 50%}
+@keyframes gwen-bubble-pop{0%{opacity:0;scale:.72}60%{opacity:1}100%{opacity:1;scale:1}}
+/* 진행 연출: 말풍선 줄은 그림 트랙과 같은 폭. 높이를 미리 잡아 단계가 바뀌어도 아래가 밀리지 않음. */
+.gwen-say-lane{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;flex:none;width:min(100%,560px);min-height:40px;padding-bottom:2px;box-sizing:border-box}
+/* 걸어 다닐 때는 말풍선이 머리 위를 따라가고 꼬리는 그림 가운데를 가리킴(그림과 같은 12초 박자). */
+.gwen-roam .gwen-say-lane{align-items:flex-start}
+.gwen-roam .gwen-bubble{min-width:calc(var(--gwen-size) + 24px);transform-origin:50% 100%;animation:gwen-bubble-pop .38s cubic-bezier(.3,1.45,.5,1) 1 both,gwen-say-roam 12s linear infinite}
+.gwen-roam .gwen-bubble::after{animation:gwen-tail-roam 12s linear infinite}
+@keyframes gwen-say-roam{0%,12%{left:0;translate:0}40%,60%{left:100%;translate:-100%}88%,100%{left:0;translate:0}}
+@keyframes gwen-tail-roam{0%,12%{left:calc(var(--gwen-size)/2)}40%,60%{left:calc(100% - var(--gwen-size)/2)}88%,100%{left:calc(var(--gwen-size)/2)}}
+/* 결과 요약 칸(넓은 화면): 말풍선은 등신대 머리 위, 꼬리는 그림 가운데로. 작은 보고 그림은 말풍선을 생략함. */
+.gwen-reaction .gwen-bubble{--tail:calc(100% - 52px)}
+.result-summary:has(.gwen-reaction) [data-gwen="report"] .gwen-say-lane{display:none}
+/* 첫 안내: 그림 왼쪽(넓은 화면) → 그림 위(좁은 화면). */
+.gwen-guide-footer>.gwen-bubble{grid-column:3;grid-row:1;justify-self:end;align-self:end;margin:0 150px 64px 0;max-width:min(calc(100% - 150px),280px)}
+.gwen-guide-footer>.gwen-guide-art{grid-row:1}
+@media(max-width:1100px){.gwen-guide-footer>.gwen-bubble{--tail:calc(100% - 70px);--tx:var(--tail);--ty:calc(100% + .5px);--tr:45deg;transform-origin:var(--tail) 100%;margin:0 0 2px;max-width:100%}.gwen-guide-footer>div{grid-row:1/3}.gwen-guide-footer>.gwen-guide-art{grid-row:2}}
+@media(max-width:600px){.gwen-guide-footer>.gwen-bubble{--tail:50%;grid-column:1;grid-row:auto;justify-self:center}.gwen-guide-footer>div,.gwen-guide-footer>.gwen-guide-art{grid-row:auto}}
+/* 휴대폰: 말풍선 줄만큼 여백·그림을 줄여 진행 칸 높이와 단추 위치를 그대로 둠. */
+@media(max-width:600px){.gwen-work:has(.gwen-say-lane){--gwen-size:120px;gap:4px;margin:4px auto}.gwen-say-lane{min-height:36px}}
+@media(max-width:400px){.gwen-bubble{font-size:12px;padding:7px 12px}.gwen-work:has(.gwen-say-lane){gap:0;margin:0 auto}.gwen-say-lane{position:relative;z-index:1;margin-bottom:-16px}}
+@media(prefers-reduced-motion:reduce){
+ .gwen-bubble,.gwen-roam .gwen-bubble,.gwen-roam .gwen-bubble::after{animation:none}
+ .gwen-roam .gwen-say-lane{align-items:center}
 }

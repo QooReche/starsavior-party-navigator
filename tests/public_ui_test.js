@@ -39,10 +39,20 @@ function checkGwen(page,file){
  assert.equal((guide.match(/data-gwen-art=/g)||[]).length,1,`${file}: 첫 안내에 그웬은 한 번`);
  const drawer=page.slice(page.indexOf('<aside id="drawer"'),page.indexOf('</aside>'));
  assert.match(drawer,/<div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장함\.<\/div>/);
- assert.match(drawer,/<div class="gwen-greet"><img class="gwen-welcome" [^>]*alt="" aria-hidden="true" loading="lazy"><p class="gwen-say">의뢰인 정보는 그웬이 받아 감<small>아래 4단계를 순서대로 하면 됨<\/small><\/p><\/div>/);
+ // 불러오기 창: 그웬 말은 말풍선(장식, 대사는 ux_ui.js 가 채움), 순서 안내는 말풍선 밖에 사이트 문구로 그대로.
+ assert.match(drawer,/<div class="gwen-greet"><img class="gwen-welcome" [^>]*alt="" aria-hidden="true" loading="lazy"><div class="gwen-greet-text"><span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"><\/span><p class="gwen-greet-note mut">아래 4단계를 순서대로 하면 됨<\/p><\/div><\/div>/);
+ assert.equal((drawer.match(/class="gwen-bubble"/g)||[]).length,1,`${file}: 불러오기 창 말풍선 한 개`);
+ // 말풍선: 그웬 그림마다 한 개, 꼬리는 그림 쪽. 대사는 화면 파일에 직접 쓰지 않고 대사 표에서만 가져옴.
+ const Ux=require('../ux_ui'),bubble=Ux.gwenSay('welcome','right');
+ assert.match(bubble,/^<span class="gwen-bubble" data-gwen-say="welcome" data-tail="right" aria-hidden="true">[^<]+<\/span>$/);
+ assert(guide.includes(bubble+'<img class="gwen-guide-art"'),`${file}: 첫 안내 말풍선은 그림 바로 앞`);
+ assert.equal((guide.match(/class="gwen-bubble"/g)||[]).length,1,`${file}: 첫 안내 말풍선 한 개`);
+ assert.match(guide,/<p class="account-safe">[^<]+<\/p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨<\/p>/,`${file}: 보안 안내는 말풍선 밖 기존 자리`);
+ for(const lines of Object.values(Ux.GWEN_SAY))for(const line of lines)assert(!page.includes(line),`${file}: 대사는 ux_ui.js 한곳에만: ${line}`);
  assert.equal((drawer.match(/<li>/g)||[]).length,4,`${file}: 불러오기 4단계 유지`);
  const emptyAt=page.indexOf('function miEmpty()'),empty=vm.runInNewContext(page.slice(emptyAt,page.indexOf('function miGuide()',emptyAt))+';miEmpty()', {Ux:require('../ux_ui')});
  assert.match(empty,/data-gwen-art="files"/);
+ assert(empty.includes(`<span class="gwen-say-lane">${Ux.gwenSay('empty')}</span>`),`${file}: 빈 명단 말풍선`);assert.equal((empty.match(/class="gwen-bubble"/g)||[]).length,1);
  assert.match(empty,/<button type="button" data-mi-empty-open>계정 정보 불러오기<\/button>/);assert.equal((empty.match(/data-gwen-art=/g)||[]).length,1);
  assert(page.includes('if(e.target.closest("button[data-mi-empty-open]")){$("mi-open-import").click();return}'),`${file}: 빈 상태 단추 연결`);
  for(const f of ['office_clip','office_magnifier','office_file','office_board']){const svg=fs.readFileSync(require.resolve('../assets/ui_icons/'+f+'.svg'),'utf8');
@@ -58,6 +68,12 @@ for(const file of ['party_template.html','index.html']){
   ['gwen_favicon_512.png','old_icon.png',checkGwen],
   ['class="gwen-head"','class="removed-head"',checkGwen],
   ['"welcome","gwen-guide-art"','"welcome","removed-art"',checkGwen],
+  ['${Ux.gwenSay("welcome","right")}','',checkGwen],
+  ['Ux.gwenSay("welcome","right")','Ux.gwenSay("welcome","left")',checkGwen],
+  ['${Ux.gwenWork("screen","empty")}','${Ux.gwenWork("screen")}',checkGwen],
+  ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-gwen-say="import" data-tail="left"></span>',checkGwen],
+  ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-tail="left" aria-hidden="true">의뢰인 정보, 내가 받아 갈게</span>',checkGwen],
+  ['<p class="gwen-greet-note mut">아래 4단계를 순서대로 하면 됨</p>','',checkGwen],
   ['게임 이미지·만화의 권리는','게임 이미지의 권리는',checkGwen],
   ['class="notice update-notice"','class="notice"',checkNotice],
   ['코스모 힐데 추가','코스모 힐데 적 정보 추가 및 전투 판정 변경 사항 상세 안내',checkNotice],
@@ -180,6 +196,41 @@ for(const file of ['party_template.html','index.html']){
   ['.gwen-work .gwen-worker{animation:none;transform:none}', '.gwen-work .gwen-worker{animation:gwen-report 1s infinite;transform:none}'],
  ]){assert(page.includes(from));assert.throws(()=>checkLoading(page.replace(from,to)),{code:'ERR_ASSERTION'});}
 }
+// 말풍선 모양·연출(ux.css): 테마 색, 그림 쪽 꼬리 4방향, 1회 등장, 동작 줄이기에서는 즉시 표시, 좁은 화면 배치.
+function checkBubbleCss(css){
+ const rule=sel=>{const at=css.indexOf('\n'+sel+'{');assert(at>=0,sel);return css.slice(at+sel.length+2,css.indexOf('}',at));};
+ const base=rule('.gwen-bubble');
+ for(const part of ['position:relative','max-width:min(100%,280px)','border:1px solid rgba(217,185,121,.62)','border-radius:14px','background:#1e2a45','word-break:keep-all','overflow-wrap:anywhere','pointer-events:none','animation:gwen-bubble-pop .38s cubic-bezier(.3,1.45,.5,1) 1 both'])assert(base.includes(part),part);
+ const tail=rule('.gwen-bubble::after');
+ for(const part of ["content:''",'position:absolute','left:var(--tx)','top:var(--ty)','rotate:var(--tr)','background:#1e2a45'])assert(tail.includes(part),part);
+ for(const [dir,turn] of [['up','225deg'],['left','135deg'],['right','-45deg']])assert(rule(`.gwen-bubble[data-tail=${dir}]`).includes('--tr:'+turn),dir);
+ assert(base.includes('--tr:45deg'),'기본 꼬리는 아래(그림이 말풍선 아래)');
+ assert.equal(rule('.gwen-bubble:empty'),'display:none');
+ assert.match(css,/@keyframes gwen-bubble-pop\{0%\{opacity:0;scale:\.72\}60%\{opacity:1\}100%\{opacity:1;scale:1\}\}/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\s*\.gwen-bubble,\.gwen-roam \.gwen-bubble,\.gwen-roam \.gwen-bubble::after\{animation:none\}\s*\.gwen-roam \.gwen-say-lane\{align-items:center\}\s*\}/);
+ // 걷는 그림: 말풍선과 꼬리가 그림과 같은 박자(12초, 같은 구간)로 움직임.
+ const beat=name=>css.match(new RegExp('@keyframes '+name+'\{(0%,12%)\{[^}]*\}(40%,60%)\{[^}]*\}(88%,100%)\{'))?.slice(1).join(' ');
+ for(const name of ['gwen-roam','gwen-say-roam','gwen-tail-roam'])assert.equal(beat(name),'0%,12% 40%,60% 88%,100%',name);
+ assert(rule('.gwen-roam .gwen-bubble').includes('gwen-say-roam 12s linear infinite'));
+ assert(rule('.gwen-roam .gwen-bubble::after').includes('gwen-tail-roam 12s linear infinite'));
+ assert.match(rule('.gwen-say-lane'),/width:min\(100%,560px\);min-height:40px/);
+ assert.match(rule('.gwen-bubble-space'),/width:100%;min-height:64px/);
+ assert.match(css,/@media\(max-width:1199px\)\{[^\n]*\.gwen-reaction \.gwen-bubble\{--tx:calc\(100% \+ \.5px\);--ty:50%;--tr:-45deg/,'좁은 결과 화면: 그림 왼쪽 말풍선, 꼬리 오른쪽');
+ assert.match(css,/@media\(max-width:600px\)\{\.gwen-guide-footer>\.gwen-bubble\{--tail:50%;grid-column:1;grid-row:auto;justify-self:center\}/,'휴대폰 첫 안내: 그림 위 가운데');
+ assert(css.includes('.result-summary:has(.gwen-reaction) [data-gwen="report"] .gwen-say-lane{display:none}'),'작은 보고 그림은 말풍선 생략');
+ assert.doesNotMatch(css,/\.gwen-say[{:]/,'옛 말풍선 규칙 제거');
+}
+{const css=fs.readFileSync(require.resolve('../ux.css'),'utf8').replace(/\r\n/g,'\n');checkBubbleCss(css);
+ for(const [from,to] of [
+  [' .gwen-bubble,.gwen-roam .gwen-bubble,.gwen-roam .gwen-bubble::after{animation:none}',' .gwen-bubble{animation:none}'],
+  ['animation:gwen-bubble-pop .38s cubic-bezier(.3,1.45,.5,1) 1 both}\n.gwen-bubble:empty','animation:gwen-bubble-pop .38s cubic-bezier(.3,1.45,.5,1) infinite both}\n.gwen-bubble:empty'],
+  ['.gwen-bubble:empty{display:none}','.gwen-bubble:empty{display:block}'],
+  ['.gwen-bubble[data-tail=left]{--tx:-.5px;--ty:50%;--tr:135deg','.gwen-bubble[data-tail=left]{--tx:-.5px;--ty:50%;--tr:45deg'],
+  ['@keyframes gwen-tail-roam{0%,12%','@keyframes gwen-tail-roam{0%,20%'],
+  ['max-width:min(100%,280px)','max-width:none'],
+  ['border:1px solid rgba(217,185,121,.62);border-radius:14px','border:0;border-radius:0'],
+  ['.result-summary:has(.gwen-reaction) [data-gwen="report"] .gwen-say-lane{display:none}',''],
+ ]){assert(css.includes(from),from);assert.throws(()=>checkBubbleCss(css.replace(from,to)),{code:'ERR_ASSERTION'},'mutation survived: '+from);}}
 for(const f of ['investigate.webp','files.webp'])assert(fs.statSync(require.resolve('../assets/ui_icons/gwen/'+f)).size<=80000);
 for(const module of ['guild_search','cosmo_search']){
  const search=require('../'+module),cx={hasInfo:true,work:require('../ux_ui').gwenWork,workMode:'screen',esc:String,label:String,level:0,mode:'top',levelMax:1};
@@ -192,4 +243,4 @@ assert.deepEqual(cfg.breakSkills['행성 정화'].bonusRoles,[]);
 assert.equal(cfg.breakSkills['행성 정화'].text,'광역 피해(공격력 100%), 강인도 피해 +1, 스킬 후 노바 +1');
 // Parse all template scripts as JavaScript; data replacement is an identifier in the template.
 for(const [,code] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(code);
-console.log('PASS update notice, import label and four-step box (template + index), public headline, mode consistency, boss contents, saved date, skill labels, break description, script syntax');
+console.log('PASS Gwen speech bubbles (guide, import drawer, empty roster, stylesheet), update notice, import label and four-step box (template + index), public headline, mode consistency, boss contents, saved date, skill labels, break description, script syntax');
