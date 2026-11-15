@@ -145,7 +145,7 @@ function checkGwenSay(u=U){
   assert.match(u.gwenSay('welcome','right'),/data-tail="right"/);
   for(const key of ['','none','toString','constructor',undefined])assert.equal(u.gwenSay(key),'',String(key));
   assert.equal(u.GWEN_SAY.error[0],'으… 단서가 부족해');assert.equal(u.GWEN_SAY.welcome[0],'어서 와, 단장! 어떤 사건이야?');
-  assert.equal(u.GWEN_SAY.import[0],'단장 정보, 내가 받아 갈게');
+  assert.equal(u.GWEN_SAY.import[0],'단장의 정보! 내가 받아 갈게');
   // 진행·실패·보고 연출: 그림 트랙 앞에 말풍선 한 개, 기존 안내 문구(caption)는 그대로.
   for(const mode of ['inspect','screen','long','error','report','welcome']){const html=u.gwenWork(mode);
     assert.equal((html.match(/class="gwen-bubble"/g)||[]).length,1,mode);
