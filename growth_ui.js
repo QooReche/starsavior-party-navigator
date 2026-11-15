@@ -295,14 +295,14 @@ function growthBaseline(c,st){
   const current=selected&&(q?.all||q?.rows||[]).find(t=>t.keys.slice().sort().join(',')===selected)||q?.rows[0];
   return current?(SIMQ.res[simSig(st,current)]||{clear:0}):null;
 }
-function growthTabsPaint(c,el,show){
+function growthTabsPaint(c,el,show,none=''){
   const seasonal=c.key==='guild'||c.key==='cosmo',r=GROW.result;
   const baseline=seasonal?(c.key==='guild'?GSR:CSR).rows[0]:growthBaseline(c,cur[$('stage').value]);
   const now=seasonal?$(c.key+'-search'):document.querySelector('#out > [data-party="1"]');
   if(now&&now.nextElementSibling!==el)now.after(el);
   growthTabs||=Ux.createResultTabs();
   growthTabs.update(now,el,Ux.resultTabState({enabled:growthEnabled(),phase:GROW.phase,better:show,
-    kind:c.key,baseline,best:r?.best,message:GROW.msg,errors:GROW.errors,goalTurns:growthGoalTurns(c.key)}));
+    kind:c.key,baseline,best:r?.best,message:GROW.msg,errors:GROW.errors,goalTurns:growthGoalTurns(c.key),none}));
   if($('result-tabs'))$('result-tabs').hidden=$('out').hidden;
 }
 // 켰는데 탐색을 시작하지 않은 이유(결과 화면이 떠 있을 때만). 빈 글 = 안내할 화면이 아님
@@ -317,7 +317,7 @@ function growthIdleText(c){
 // 공략 DB 는 늦게 갱신될 수 있다: DB 에 아직 없는 구원자(data/journey_priority.json 의 fallback)는 직업 기본 우선순위로 아카이브를 판단했다 — 그 사실을 보인다(조용히 대체하지 않음)
 function growthArchiveNote(keys){const fb=D.journeyPriority?.fallback||{},names=[...new Set(keys||[])].filter(k=>fb[k]).map(k=>BYKEY[k]?.name||k);
   return names.length?`<p class="mut" data-k="growth-archive-fallback">스텔라 아카이브 우선순위: ${names.map(esc).join('·')} — 공략 DB 미반영 · 직업 기본값으로 판단했음</p>`:'';}
-// 탐색이 끝났는데 더 나은 육성 편성이 없을 때: 탭 없이 같은 자리에 한 줄 안내(조용히 사라지면 켰는데 안 나온 것처럼 보임)
+// 탐색이 끝났는데 더 나은 육성 편성이 없을 때: 탭은 그대로 두고 「클리어 추천 육성」 탭에 짧은 안내(조용히 사라지면 켰는데 안 나온 것처럼 보임)
 //  3별 목표(turns>0)면 «N턴 안에» 기준으로 말한다. 계산하지 못한 경우(r.reason)는 이유를 그대로 적는다
 function growthNoneText(kind,r,turns=growthGoalTurns(kind)){const prob=growthStageKind(kind),b=r?.baseline,star=prob&&turns>0&&(b?.t60!=null||r?.best?.t60!=null);
   if(r?.reason==='few')return '이 스테이지에 편성할 수 있는 보유 구원자가 4명 미만이라 계산하지 못했음';
@@ -341,15 +341,26 @@ function growthNoneHint(kind,r,turns=growthGoalTurns(kind)){const prob=growthSta
   else if(prob&&(!Number.isFinite(v)||v<=0))rows.push(['참고','지금 보유한 구원자로는 아직 어려운 스테이지일 수 있음.']);
   else rows.push(['결론','지금 추천 편성이 가장 나은 선택임.']);
   return rows;}
-function growthNonePaint(c,r){growthTabs?.reset();let el=$('growth-result');
+// 없음 안내의 분위기와 탭 제목 옆 문구. best = 지금 편성으로 충분하거나(목표 지표 70% 이상) 점수가 이미 최고 → 그웬 「최선」 대사,
+//  fail = 계산하지 못함(r.reason) → 실패 그림, plain = 키워도 더 나아지지 않지만 아직 어려움 → 그림 없이 글만(실패 대사를 붙이지 않음)
+function growthNoneTone(kind,r,turns=growthGoalTurns(kind)){const prob=growthStageKind(kind),b=r?.baseline,star=prob&&turns>0&&(b?.t60!=null||r?.best?.t60!=null);
+  if(r?.reason)return {tone:'fail',tab:'계산하지 못했음'};
+  const v=prob?(star?b?.t60:b?.clear):kind==='guild'?b?.score:b?.sum,has=Number.isFinite(v);
+  const noItems=!!r?.snapshot&&!Object.values(r.snapshot.changes||{}).some(a=>a?.changedFields?.length);
+  const tone=has&&(!prob||v>=.7)?'best':'plain';
+  return {tone,tab:prob&&has&&v>=1?'추가 육성 불필요':noItems?'더 올릴 항목 없음':tone==='best'?'지금 편성이 최선':'더 나은 편성 없음'};}
+function growthNonePaint(c,r){let el=$('growth-result');
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
-  el.dataset.state='none';const errs=r?.snapshot?.errors||[],hint=growthNoneHint(c.key,r);
-  el.innerHTML=`<h3 class="growth-none-title">클리어 추천 육성</h3>${Ux.gwenWork("error")}<p class="growth-none" data-k="growth-none" role="status">${esc(growthNoneText(c.key,r))}</p>`+
+  const errs=r?.snapshot?.errors||[],hint=growthNoneHint(c.key,r),{tone,tab}=growthNoneTone(c.key,r);
+  el.dataset.state='none';el.dataset.tone=tone;el.dataset.shape='';
+  const text=`<p class="growth-none" data-k="growth-none" role="status">${esc(growthNoneText(c.key,r))}</p>`;
+  el.innerHTML='<h3 class="growth-none-title">클리어 추천 육성</h3>'+
+    (tone==='best'?`<div class="growth-best">${Ux.gwenBest()}<div class="growth-best-text"><p class="growth-best-lead" data-k="growth-best">지금 편성이 이미 최선임</p>${text}</div></div>`:
+      (tone==='fail'?Ux.gwenWork('error'):'')+text)+
     (hint.length?`<dl class="growth-none-hint" data-k="growth-none-hint">${hint.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`:'')+
     growthArchiveNote(Object.keys(r?.snapshot?.profile?.units||{}))+
     (errs.length?`<details><summary>계산에서 제외된 구원자 ${errs.length}명</summary>${errs.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');
-  const now=['guild','cosmo'].includes(c.key)?$(c.key+'-search'):document.querySelector('#out > [data-party="1"]');
-  if(now&&now.nextElementSibling!==el)now.after(el);}
+  growthTabsPaint(c,el,false,tab);}
 function growthPaint(){
   growthRankPaint();
   let el=$('growth-result');

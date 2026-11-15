@@ -75,7 +75,16 @@ function checkTabState(u=U){
   const s=u.resultTabState(base);assert(s.show&&s.recommend);assert.equal(s.now,'클리어 40%');assert.equal(s.growth,'맞추면 80% ↑');
   for(const clear of [0,.4999,.5,1])assert.equal(u.resultTabState({...base,baseline:{clear}}).recommend,clear<.5);
   assert(!u.resultTabState({...base,baseline:null}).recommend);
-  for(const changes of [{enabled:false},{better:false},{phase:'idle'}])assert(!u.resultTabState({...base,...changes}).show);
+  for(const changes of [{enabled:false},{phase:'idle'}])assert(!u.resultTabState({...base,...changes}).show);
+  // 탐색이 끝났으면 더 나은 편성이 없어도 탭 유지: 육성 탭 문구는 안내(없으면 기본값), 「추천」 표시는 없음
+  const none=u.resultTabState({...base,better:false,none:'추가 육성 불필요'});
+  assert(none.show&&!none.recommend);assert.equal(none.growth,'추가 육성 불필요');assert.equal(none.now,'클리어 40%');
+  assert.equal(u.resultTabState({...base,better:false}).growth,'더 나은 편성 없음');
+  assert.equal(u.resultTabState({...base,none:'추가 육성 불필요'}).growth,'맞추면 80% ↑','더 나은 편성이 있으면 none 문구를 쓰지 않음');
+  // 「최선」 안내 그웬: 작은 그림(72) + best 대사. 실패 그림·실패 대사가 아님
+  const best=u.gwenBest();assert.match(best,/data-gwen-art="confident"[^>]*width="72" height="72"/);assert.match(best,/data-gwen-say="best" data-tail="left"/);
+  assert(u.GWEN_SAY.best.some(line=>best.includes('>'+line+'<')));assert.doesNotMatch(best,/surprised|data-gwen-say="error"/);
+  assert.deepEqual([...u.GWEN_SAY.best],['더 키울 필요 없어. 이대로 충분해!','이미 최선의 편성이야, 단장']);
   const running=u.resultTabState({...base,phase:'running',better:false,message:'후보 확인 2/10'});
   assert(running.show);assert.equal(running.growth,'계산 중 · 후보 확인 2/10');
   const error=u.resultTabState({...base,phase:'error',better:false,errors:['worker failed']});
@@ -132,7 +141,7 @@ function checkGwenWork(u=U){
 }
 // 그웬 말풍선: 대사 표 한곳, 상황별 2~4개·한 줄(30자 이내)·반말, 방문당 하나 고정, 장식이라 aria-hidden.
 function checkGwenSay(u=U){
-  const keys=['inspect','screen','long','report','error','high','shaky','hard','low','welcome','import','empty','idle'];
+  const keys=['inspect','screen','long','report','error','high','shaky','hard','low','best','welcome','import','empty','idle'];
   assert.deepEqual(Object.keys(u.GWEN_SAY),keys);
   for(const key of keys){const lines=u.GWEN_SAY[key];
     assert(lines.length>=2&&lines.length<=4,key);assert.equal(new Set(lines).size,lines.length,key);

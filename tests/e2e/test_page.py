@@ -2054,7 +2054,7 @@ def test_assumed_growth(browser, ctx):
         assert ('찾지 못했음' in none or '깨지 못했음' in none or '100%' in none or '올릴 항목이 없음' in none), none
         page.locator('#growth-result').screenshot(path=os.path.join(ctx.shots, 'growth_none_mobile.png'))
         assert page.locator('#growth-result .assumed-card').count() == 0
-        assert not page.locator('#result-tabs').count()
+        assert page.locator('#result-tabs [role="tab"]').count() == 2   # 없음이어도 탭 유지
         page.evaluate('GROW.result.best.clear=savedClear;growthPaint()')
     page.click('#result-tab-growth')
     page.set_viewport_size({'width': 1366, 'height': 1000})
@@ -2706,7 +2706,8 @@ def test_ux_step12(browser, ctx):
             page.evaluate("document.querySelectorAll('img[loading=lazy]').forEach(i=>i.loading='eager')")
             page.wait_for_function("[...document.images].filter(i=>i.getBoundingClientRect().width).every(i=>i.complete)")
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), state
-            assert page.evaluate("[...document.images].filter(i=>i.getBoundingClientRect().width).every(i=>i.naturalWidth>0)"), state
+            # 그웬 그림은 실제로 보일 때까지 주소(src)를 받지 않는다(닫힌 서랍·숨긴 탭). 주소가 있거나 보이는 그림만 깨졌는지 본다
+            assert page.evaluate("[...document.images].filter(i=>i.getBoundingClientRect().width&&(i.hasAttribute('src')||i.checkVisibility({visibilityProperty:true}))).every(i=>i.naturalWidth>0)"), state
             compact_layout(state)
             if state == 'result':
                 card_audit()
@@ -2861,9 +2862,12 @@ def test_ux_step12(browser, ctx):
     result_tabs_audit(page)
     for value in ['GROW.result.baseline.clear', 'Math.max(0,GROW.result.baseline.clear-.1)']:
         page.evaluate('window.tabsBest=GROW.result.best.clear;GROW.result.best.clear='+value+';growthPaint()')
-        assert page.locator('#result-tabs').count() == 0 and page.locator('#growth-result:not([data-state="none"])').count() == 0
+        # 없음이어도 탭은 그대로: 「지금」 탭이 보이고 육성 탭은 안내만 담는다. 「추천」 표시는 없음
+        result_tabs_audit(page)
+        assert page.locator('#growth-result:not([data-state="none"])').count() == 0
         assert page.locator('#growth-result [data-k="growth-none"]').count() == 1
-        assert page.locator('#out > [data-party="1"]').is_visible()
+        assert page.locator('#out > [data-party="1"]').is_visible() and page.locator('.result-recommend').is_hidden()
+        assert page.inner_text('#result-tab-growth [data-tab-metric]') in ('추가 육성 불필요', '더 올릴 항목 없음', '지금 편성이 최선', '더 나은 편성 없음')
         page.evaluate('GROW.result.best.clear=tabsBest;growthPaint()')
         result_tabs_audit(page)
     # The recommendation threshold uses the raw probability, not rounded labels.
@@ -2967,7 +2971,12 @@ def test_ux_step3(browser, ctx):
     def first_screen(kind):
         page.evaluate('scrollTo(0,0)')
         bounds = page.locator(f'#{kind}-search [data-{ "gs" if kind=="guild" else "cs"}="start"]').bounding_box()
-        assert bounds and bounds['y'] >= 0 and bounds['y']+bounds['height'] <= page.viewport_size['height'], bounds
+        # 휴대폰 폭에서는 상단 업데이트 공지(c63abbd 에서 복원, 두 줄)가 차지한 높이만큼만 더 허용한다 — 공지가 없으면 원래 기준 그대로.
+        # 넓은 화면은 공지가 있어도 첫 화면 안이어야 한다
+        allow = page.evaluate("""() => {const e=document.querySelector('.update-notice');
+          if(!e||innerWidth>600||!e.getClientRects().length)return 0;
+          return e.getBoundingClientRect().height+parseFloat(getComputedStyle(e).marginBottom);}""")
+        assert bounds and bounds['y'] >= 0 and bounds['y']+bounds['height'] <= page.viewport_size['height']+allow, (bounds, allow)
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
 
     def caught(change, audit, restore):

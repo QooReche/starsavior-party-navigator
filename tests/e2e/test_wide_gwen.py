@@ -87,7 +87,7 @@ def result_audit(page, width):
     assert page.locator('#out .result-team .gc').count() == 4
     a, b = (page.locator('#out '+s).first.bounding_box() for s in ('.result-team', '.result-summary'))
     if width >= 1200:
-        assert a['x'] + a['width'] <= b['x'], 'summary is not beside the cards'
+        assert b['x'] + b['width'] <= a['x'], 'summary is not beside the cards (left of them since 0647248)'
         assert abs(a['y']-b['y'])<2
         assert len(page.locator('#out .alternatives').first.evaluate('(e)=>getComputedStyle(e).gridTemplateColumns').split()) == 2
         choices = page.locator('#out .alternatives>.qrow')

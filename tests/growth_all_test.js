@@ -25,7 +25,7 @@ function page(src,o={}){
   remove(){out.children=out.children.filter(x=>x!==this)}});
  const party={nextElementSibling:null,after(el){this.nextElementSibling=el;out.append(el)}};
  const c={key:o.kind||'op',name:'콘텐츠'},st={tab:'tab',name:o.stageName||'stage',rp:1000};
- const started=[];
+ const started=[],tabs=[];
  const ctx=vm.createContext({console,Object,Math,JSON,Set,Map,Number,Error,Promise,
   REQ:o.req!==false,MODE:o.mode||'auto',MI:{info:{},growth:{assumed:{version:'v'}},hash:'h'},SIMQ:{busy:null,err:'',n:100,seed:1},
   contents:[c],cur:[st],D:{guild:{steps:[{ex:true,step:10}]},archiveGrades:{}},LASTQ:{},PICK:{},BYKEY:{},R:[],
@@ -35,12 +35,12 @@ function page(src,o={}){
   seasonBlocked:()=>!!o.blocked,miMode:()=>o.mi!==false,simAutoOn:()=>o.auto!==false,starOf:k=>o.goal&&STAR.includes(k)?60:0,
   esc:String,miNum:n=>String(Math.round(n)),simSig:()=>'sig',
   MyInfoReco:{OVERWRITE_VERSION:'o',THRESHOLD_POLICY:{},profile:()=>({results:{},units:{}})},
-  Ux:{...U,createResultTabs:()=>({update(){},reset(){}}),resultTabState:x=>x,chip:v=>`<i data-chip="${v}"></i>`,help:()=>'',signed:v=>String(v)},
+  Ux:{...U,createResultTabs:()=>({update(now,el,state){tabs.push(state)},reset(){}}),resultTabState:x=>x,chip:v=>`<i data-chip="${v}"></i>`,help:()=>'',signed:v=>String(v)},
   setTimeout:fn=>{fn();return 0},clearTimeout(){}});
  vm.runInContext(src.ui,ctx);
  ctx.growthRankPaint=()=>{};ctx.growthSig=()=>'sig';
  const el=()=>out.children.find(e=>e.id==='growth-result')||null;
- return {ctx,c,st,el,out,started,G:vm.runInContext('GROW',ctx),ev:s=>vm.runInContext(s,ctx),
+ return {ctx,c,st,el,out,started,tabs,G:vm.runInContext('GROW',ctx),ev:s=>vm.runInContext(s,ctx),
   text:()=>{const e=el();return e?e.innerHTML.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim():''}};
 }
 const snapshot=fields=>({changes:{a:{changedFields:fields}},errors:[],profile:{results:{}}});
@@ -156,6 +156,18 @@ function words(src){
  // 계산하지 못한 이유
  assert.match(plain.growthNoneText('cube',{reason:'few',best:null}),/4명 미만이라 계산하지 못했음/);assert.match(plain.growthNoneText('cube',{reason:'quick',best:null}),/자료가 없어서 계산하지 못했음/);
  assert.equal(plain.growthNoneHint('cube',{reason:'few',best:null}).length,0);
+ // 없음 안내의 분위기·탭 문구: 100% 는 「추가 육성 불필요」·best, 70% 이상 best, 그 미만은 글만(plain), 계산 못 함은 fail
+ const tone=(h,k,r)=>{const t=h.growthNoneTone(k,r);return t.tone+'|'+t.tab;};
+ assert.equal(tone(plain,'op',{snapshot:grown,baseline:{clear:1}}),'best|추가 육성 불필요');
+ assert.equal(tone(plain,'op',{snapshot:grown,baseline:{clear:.7}}),'best|지금 편성이 최선');
+ assert.equal(tone(plain,'op',{snapshot:grown,baseline:{clear:.69}}),'plain|더 나은 편성 없음');
+ assert.equal(tone(plain,'op',{snapshot:grown,baseline:{clear:0}}),'plain|더 나은 편성 없음');
+ assert.equal(tone(plain,'op',{snapshot:grown}),'plain|더 나은 편성 없음');
+ assert.equal(tone(plain,'daily',{snapshot:flat,baseline:{clear:.4}}),'plain|더 올릴 항목 없음');
+ assert.equal(tone(plain,'cube',{reason:'few',best:null,baseline:{clear:1}}),'fail|계산하지 못했음');
+ assert.equal(tone(star,'equip',{snapshot:grown,baseline:{t60:.2,clear:1},best:{t60:.2,clear:1}}),'plain|더 나은 편성 없음','3별 목표는 60턴 내 확률로 판단');
+ assert.equal(tone(star,'equip',{snapshot:grown,baseline:{t60:1,clear:1},best:{t60:1,clear:1}}),'best|추가 육성 불필요');
+ assert.equal(tone(plain,'guild',{snapshot:grown,baseline:{score:1200}}),'best|지금 편성이 최선');
  // 탭
  const X=vm.runInNewContext(src.ux+';module.exports',{module:{exports:{}},require:p=>require('../'+p)});
  const base={enabled:true,phase:'done',better:true};
@@ -190,7 +202,15 @@ function silent(src){
    assert.equal(h.el()?.dataset.state,'done',kind);assert.match(h.text(),/지금 ?20% → 맞추면 ?70%/,kind);assert.match(h.text(),/이것만 맞추면 깰 수 있음/);
    h.G.result.best={clear:.2,t60:null,prog:1,ttk:1};h.ctx.growthPaint();
    assert.equal(h.el()?.dataset.state,'none',kind);assert.match(h.text(),/지금\(20%\)보다 잘 깨는 편성은 찾지 못했음/,kind+' 진척도·턴만 나아진 결과를 «더 나음»으로 보이면 안 됨');
-   Object.assign(h.G.result,{best:null,reason:'few'});h.ctx.growthPaint();assert.match(h.text(),/4명 미만이라 계산하지 못했음/,kind);
+   // 없음이어도 탭 상태를 넘긴다(탭 유지). 20% 는 글만 — 그웬 그림·대사 없음
+   assert.equal(h.tabs.at(-1)?.none,'더 나은 편성 없음',kind);assert.equal(h.tabs.at(-1).better,false);assert.equal(h.el().dataset.tone,'plain');assert.doesNotMatch(h.el().innerHTML,/data-gwen/,kind);
+   // 클리어율 100%: 「이미 최선」 안내 + best 대사. 실패 그림(surprised)·실패 대사(error)가 아님
+   h.ctx.SIMQ.res={sig:{clear:1,t60:null}};h.G.result.best={clear:1,t60:null,prog:1,ttk:1};h.ctx.growthPaint();
+   assert.equal(h.el().dataset.tone,'best',kind);assert.equal(h.tabs.at(-1).none,'추가 육성 불필요',kind);
+   assert.match(h.text(),/지금 편성이 이미 최선임.*추가 육성 없이도 모의 전투 클리어율 100%임/,kind);
+   assert.match(h.el().innerHTML,/data-gwen-best/);assert.match(h.el().innerHTML,/data-gwen-say="best"/);assert.doesNotMatch(h.el().innerHTML,/surprised|data-gwen-say="error"|data-gwen="error"/,kind);
+   h.ctx.SIMQ.res={sig:{clear:.2,t60:null}};
+   Object.assign(h.G.result,{best:null,reason:'few'});h.ctx.growthPaint();assert.match(h.text(),/4명 미만이라 계산하지 못했음/,kind);assert.equal(h.el().dataset.tone,'fail');assert.match(h.el().innerHTML,/data-gwen="error"/);
    Object.assign(h.G.result,{best:null,reason:'quick'});h.ctx.growthPaint();assert.match(h.text(),/자료가 없어서 계산하지 못했음/,kind);}
  }
  // 3별 목표: 큰 숫자는 60턴 내 확률, 클리어율은 아래 줄

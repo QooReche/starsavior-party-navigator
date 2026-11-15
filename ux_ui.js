@@ -30,6 +30,7 @@
     shaky:['아슬아슬해… 한 번 더 확인해 봐','반반 승부야. 방심은 금물!'],
     hard:['이대론 벅차. 편성을 손봐야겠어','단서가 더 필요해. 육성도 살펴봐'],
     low:['이 사건은 만만치 않아. 육성부터 하자','지금은 무리야. 힘부터 기르자'],
+    best:['더 키울 필요 없어. 이대로 충분해!','이미 최선의 편성이야, 단장'],
     welcome:['어서 와, 단장! 어떤 사건이야?','그웬 탐정 사무소에 잘 왔어!','사건이라면 나한테 맡겨!'],
     import:['단장의 정보! 내가 받아 갈게','정보만 주면 수사는 내가 할게'],
     empty:['명단이 비었네. 정보부터 받아 올까?','아직 사건 파일이 텅 비었어'],
@@ -57,6 +58,10 @@
   // 대기 칸(「추천 편성 보기」 단추 옆·위): 인사 그림 한 번 + 말풍선. 장식이라 누를 수 없고 읽기 도구에는 숨김.
   function gwenIdle(){
     return `<span class="idle-gwen" data-gwen-idle aria-hidden="true">${gwenSay('idle','left')}${gwenImage('ready','idle-gwen-art',112)}</span>`;
+  }
+  // 「지금 편성이 이미 최선」 안내(클리어 추천 육성 탭): 작은 그림 + 말풍선. 실패 그림(surprised)·실패 대사를 쓰지 않음.
+  function gwenBest(){
+    return `<span class="gwen-best" data-gwen-best aria-hidden="true">${gwenImage('confident','gwen-best-art',72)}${gwenSay('best','left')}</span>`;
   }
   function gwenWork(mode,say=mode){
     const art={inspect:'investigate',screen:'files',long:'walk',error:'surprised',report:'report',welcome:'welcome'}[mode];
@@ -211,15 +216,17 @@
   function todosHtml(m){return (m?.fields||[]).filter(f=>f.delta!==0).map(f=>`<button type="button" class="growth-todo" data-growth-field="${f.field}" data-power-delta="${f.delta??''}" data-help="${esc(f.detail+'\n전투력 '+signed(f.delta)+' · 이 항목만 목표로 올렸을 때의 증가임.')}" aria-expanded="false">${esc(f.label)} ${esc(f.short)} <small>(${signed(f.delta)})</small></button>`).join('');}
   function memberHtml(m,withTodos=true){if(!m)return '';return `<div class="growth-power" data-k="member-power">전투력 ${num(m.before)} → ${num(m.after)}</div>`+(withTodos?`<div class="growth-todos">${todosHtml(m)}</div>`:'');}
   // 스테이지형 콘텐츠(길방·코스모 밖 전부)는 확률, 시즌 콘텐츠는 점수. goalTurns>0 = 3별 목표: 확률은 «N턴 내 클리어율»(t60)로 보인다
-  function resultTabState({enabled,phase,better,baseline,best,kind='op',message='',errors=[],goalTurns=0}){
+  function resultTabState({enabled,phase,better,baseline,best,kind='op',message='',errors=[],goalTurns=0,none=''}){
     const probability=kind!=='guild'&&kind!=='cosmo',field=kind==='guild'?'score':'sum';
     const goal=r=>goalTurns&&r?.t60!=null?r.t60:r?.clear;
     const metric=r=>probability?(Number.isFinite(goal(r))?Math.round(goal(r)*100)+'%':'계산 전'):
       (Number.isFinite(r?.[field])?num(r[field])+'점':'계산 전');
-    return {show:!!enabled&&(phase==='running'||phase==='error'||phase==='done'&&!!better),
+    // 탐색이 끝났으면 더 나은 편성이 없어도 탭을 유지함(육성 탭 = 안내). none = 그때 탭 제목 옆 문구.
+    const found=phase==='done'&&!!better;
+    return {show:!!enabled&&(phase==='running'||phase==='error'||phase==='done'),
       now:(probability?(goalTurns?goalTurns+'턴 내 ':'클리어 '):'점수 ')+metric(baseline),
-      growth:phase==='running'?'계산 중'+(message?' · '+message:''):phase==='error'?'미완료'+(errors.length?' · 실패':''):'맞추면 '+metric(best)+' ↑',
-      recommend:probability&&Number.isFinite(goal(baseline))&&goal(baseline)<.5,phase};
+      growth:phase==='running'?'계산 중'+(message?' · '+message:''):phase==='error'?'미완료'+(errors.length?' · 실패':''):found?'맞추면 '+metric(best)+' ↑':none||'더 나은 편성 없음',
+      recommend:(phase!=='done'||found)&&probability&&Number.isFinite(goal(baseline))&&goal(baseline)<.5,phase};
   }
   // The choice lives only in this controller. Never persist it or add it to share state.
   function createResultTabs(){
@@ -294,6 +301,6 @@
     doc.addEventListener('focusout',e=>{if(owner===e.target&&!pinned)close();});
     root.addEventListener('resize',()=>{if(owner)place();});root.addEventListener('scroll',()=>{if(owner)place();},true);
   }
-  const api={verdict,help,gwenImage,gwenReaction,gwenIdle,gwenWork,GWEN_LINES,GWEN_SAY,gwenSay,gwenSayBand,gwenReport,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
+  const api={verdict,help,gwenImage,gwenReaction,gwenIdle,gwenBest,gwenWork,GWEN_LINES,GWEN_SAY,gwenSay,gwenSayBand,gwenReport,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Ux=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

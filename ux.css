@@ -229,3 +229,14 @@ body:has(#drawer.open) .idle-gwen>*{visibility:hidden}
  .idle-gwen>.gwen-bubble{align-self:center;max-width:100%}
  .idle:has(>.idle-gwen)>#reco-actions{grid-column:1/-1}
 }
+
+/* ── 「지금 편성이 이미 최선」 안내(클리어 추천 육성 탭) ─────────────────────
+   작은 그림(72px) + 말풍선 + 한두 줄. 탭이 없어 「지금」 칸과 함께 보일 때는 그림을 빼고 말풍선·글만 둠(한 화면에 그웬 하나). */
+.growth-best{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin:0 0 8px}
+.gwen-best{display:flex;align-items:center;gap:10px;flex:none;max-width:100%;pointer-events:none}
+.gwen-best-art{display:block;flex:none;width:72px;height:72px;object-fit:contain}
+.gwen-best>.gwen-bubble{flex:0 1 auto;min-width:0}
+.growth-best-text{flex:1 1 240px;min-width:0}
+#growth-result .growth-best-lead{margin:0 0 2px;font-weight:700;line-height:1.5}
+#growth-result .growth-best .growth-none{margin:0;font-size:13px;font-weight:400;color:var(--mut)}
+#growth-result:not([role=tabpanel]) .gwen-best-art{display:none}

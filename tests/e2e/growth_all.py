@@ -49,7 +49,7 @@ def register(api):
         if s['better']:
             assert s['tabs'] == 2 and '키워야 함' in page.inner_text('#growth-result'), s
         else:
-            assert s['tabs'] == 0 and any(w in s['text'] for w in ['찾지 못했음', '깨지 못했음', '100%임', '올릴 항목이 없음']), s
+            assert s['tabs'] == 2 and any(w in s['text'] for w in ['찾지 못했음', '깨지 못했음', '100%임', '올릴 항목이 없음']), s
         # 그 콘텐츠의 규칙: 3별 목표(장비 탐사·격전 의뢰)는 60턴 내 확률로, 플래시 포인트는 레벨·공명 고정, 재점화는 작전만
         if key in STAR:
             assert s['star'] == 60 and s['turns'] == 60 and s['opts'].get('star_turns') == 60 and s['best']['t60'] is not None and s['base']['t60'] is not None, s
