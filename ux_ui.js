@@ -33,7 +33,7 @@
     welcome:['어서 와, 단장! 어떤 사건이야?','그웬 탐정 사무소에 잘 왔어!','사건이라면 나한테 맡겨!'],
     import:['단장의 정보! 내가 받아 갈게','정보만 주면 수사는 내가 할게'],
     empty:['명단이 비었네. 정보부터 받아 올까?','아직 사건 파일이 텅 비었어'],
-    idle:['단장, 사건 파일 골랐어? 수사 시작할게','스테이지만 정해 주면 바로 출동!','준비됐어, 단장. 단추만 눌러 줘!']};
+    idle:['단장, 사건 파일 골랐어? 수사 시작할게','조사야? 사건이야? 나에게 맡겨','진실을 밝힐 준비는 끝났어, 단장']};
   const gwenSayLine=key=>{const lines=Object.hasOwn(GWEN_SAY,key)?GWEN_SAY[key]:null;return lines?lines[gwenSeed%lines.length]:'';};
   // 클리어율 구간(판정 칩과 같은 경계): 70% 이상·50% 이상·5% 이상·그 미만.
   const gwenSayBand=p=>!Number.isFinite(p)?'':p>=.7?'high':p>=.5?'shaky':p>=.05?'hard':'low';

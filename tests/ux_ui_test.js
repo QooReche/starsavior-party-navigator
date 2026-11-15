@@ -209,7 +209,7 @@ mutation("${gwenSay('idle','left')}${gwenImage('ready','idle-gwen-art',112)}","$
 mutation("${gwenSay('idle','left')}${gwenImage('ready','idle-gwen-art',112)}","${gwenSay('idle','left')}${gwenImage('ready','idle-gwen-art',112)}${gwenImage('ready','idle-gwen-art',112)}",checkGwenSay);
 mutation("gwenImage('ready','idle-gwen-art',112)","gwenImage('investigate','idle-gwen-art',112)",checkGwenSay);
 mutation('<span class="idle-gwen" data-gwen-idle aria-hidden="true">','<span class="idle-gwen" data-gwen="idle">',checkGwenSay);
-mutation("idle:['단장, 사건 파일 골랐어? 수사 시작할게','스테이지만 정해 주면 바로 출동!','준비됐어, 단장. 단추만 눌러 줘!']","idle:['단장, 사건 파일 골랐어? 수사 시작할게']",checkGwenSay);
+mutation("idle:['단장, 사건 파일 골랐어? 수사 시작할게','조사야? 사건이야? 나에게 맡겨','진실을 밝힐 준비는 끝났어, 단장']","idle:['단장, 사건 파일 골랐어? 수사 시작할게']",checkGwenSay);
 assert.match(source,/const continuous=new Set\(\['investigate','files','walk'\]\);/,'인사 그림은 한 번 움직이고 쉼(연속 재생 목록에 없음)');
 mutation("'어서 와, 단장! 어떤 사건이야?'","'어서 오세요, 단장! 오늘은 어떤 사건을 맡기러 오셨나요?'",checkGwenSay);
 {const visit=(from,to)=>{assert(source.includes(from));assert.throws(()=>checkGwenSayVisit(source.replace(from,to)),{code:'ERR_ASSERTION'},`mutation survived: ${from}`);};
