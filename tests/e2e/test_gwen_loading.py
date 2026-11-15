@@ -1,7 +1,7 @@
-"""공식 그웬 작업 연출: 실제 렌더러·360px·취소 DOM·reduced-motion·캡처.
+"""그웬 SD 그림 작업 연출: 실제 렌더러·360px·취소 DOM·reduced-motion·캡처.
 
 python -X utf8 tests/e2e/test_gwen_loading.py [--shots] [--video]
-임시 파일은 작업 트리 _tmp, 캡처는 _shot_load_*.png, 영상은 _shot_load.webm.
+임시 파일은 작업 트리 _tmp, 캡처는 _shot_art_*.png, 영상은 _shot_load.webm.
 """
 import argparse
 import os
@@ -22,13 +22,14 @@ def check_scene(page, mode, scope='#out', reduced=False):
     assert scene.get_attribute('data-gwen') == mode
     scene.locator('img').evaluate('(img)=>img.decode()')
     assert scene.locator('img').evaluate('(img)=>img.naturalWidth>0')
-    assert scene.locator('.gwen-scene').bounding_box()['height'] == 76
-    names = scene.locator('.gwen-worker,.gwen-prop,.gwen-dots').evaluate_all(
-        '(els)=>els.map(e=>getComputedStyle(e).animationName)')
-    if reduced or mode == 'error':
-        assert names == ['none', 'none', 'none'], names
-    else:
-        assert all(n != 'none' for n in names), names
+    assert scene.locator('.gwen-scene').bounding_box()['height'] == (120 if page.viewport_size['width'] == 360 else 140)
+    art = {'inspect':'investigate','screen':'files','long':'investigate','error':'surprised','report':'report','welcome':'welcome'}[mode]
+    animated = mode in ('inspect','screen','long') and not reduced
+    expected = '/assets/ui_icons/gwen/' + art + ('.webp' if animated else '.png')
+    assert scene.locator('img').evaluate('(img)=>img.currentSrc').endswith(expected), expected
+    animation = scene.locator('img').evaluate('(img)=>getComputedStyle(img).animationName')
+    if reduced or mode != 'report':
+        assert animation == 'none', animation
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), '가로 넘침'
 
 
@@ -36,6 +37,19 @@ def exercise(page, base, width, shots):
     page.goto(base + '/index.html?season=force', wait_until='networkidle')
     page.wait_for_function('typeof Ux!=="undefined" && typeof SIMQ!=="undefined"')
     page.wait_for_timeout(1000)  # quick.json 완료 뒤 예약된 첫 화면 갱신까지 기다림.
+    welcome = page.locator('[data-k="miguide"] .gwen-guide-art')
+    assert welcome.get_attribute('src') == 'assets/ui_icons/gwen/welcome.png'
+    welcome.evaluate('(img)=>img.decode()')
+    if shots:
+        welcome.scroll_into_view_if_needed()
+        page.screenshot(path=str(ROOT / f'_shot_art_welcome_{width}.png'))
+    page.locator('#mi-open-import').click()
+    page.locator('#drawer .gwen-welcome').wait_for(state='visible')
+    assert page.locator('#drawer .gwen-welcome').get_attribute('src') == 'assets/ui_icons/gwen/welcome.png'
+    assert page.locator('#drawer').evaluate('(e)=>e.scrollWidth<=e.clientWidth')
+    if shots:
+        page.screenshot(path=str(ROOT / f'_shot_art_import_{width}.png'))
+    page.locator('#dclose').click()
     page.evaluate('''() => {
       RECO.timer=1;idleView();
       // 결과는 합성 상태로 강제하며 작업자를 실행하지 않음.
@@ -46,7 +60,7 @@ def exercise(page, base, width, shots):
     def shot(name, scope='#out'):
         page.locator(scope).scroll_into_view_if_needed()
         if shots:
-            page.screenshot(path=str(ROOT / f'_shot_load_{name}_{width}.png'))
+            page.screenshot(path=str(ROOT / f'_shot_art_{name}_{width}.png'))
 
     shot('wait')
     page.evaluate('growthControlPlace(true);RECO.timer=null;idleView()')
@@ -77,7 +91,7 @@ def exercise(page, base, width, shots):
     check_scene(page, 'long')
     assert page.evaluate('__cancel===document.querySelector("[data-simcancel]")')
     shot('final')
-    for mode in ['inspect', 'screen', 'long', 'error']:
+    for mode in ['inspect', 'screen', 'long', 'error', 'welcome']:
         page.evaluate('(mode)=>$("out").innerHTML=Ux.gwenWork(mode)', mode)
         check_scene(page, mode)
         page.emulate_media(reduced_motion='reduce')
@@ -85,7 +99,7 @@ def exercise(page, base, width, shots):
         if mode == 'long':
             shot('reduced')
             # reduced-motion 규칙을 실제로 무효화하면 같은 검사가 실패해야 함.
-            style = page.add_style_tag(content='.gwen-work .gwen-worker{animation:gwen-bounce 1s infinite!important}')
+            style = page.add_style_tag(content='.gwen-work .gwen-worker{animation:gwen-report 1s infinite!important}')
             try:
                 check_scene(page, mode, reduced=True)
             except AssertionError:
@@ -105,6 +119,49 @@ def exercise(page, base, width, shots):
     shot('error')
     page.evaluate('SIMQ.err="";$("out").innerHTML=simBar(1,[],__loadSt,false)')
     assert page.locator('#out [data-gwen]').count() == 0
+    # 실제 simBar 완료 분기: 한 결과는 한 번 발표, 1.8초 뒤 제거.
+    for reduced in (False, True):
+        page.emulate_media(reduced_motion='reduce' if reduced else 'no-preference')
+        page.evaluate('''() => {
+          window.__artSimBar=new Function('simSig','return ('+simBar.toString()+')')(()=> '__art_report');
+          SIMQ.res.__art_report={n:100,clear:1};
+          $('out').innerHTML=__artSimBar(1,[{}],__loadSt,false);
+        }''')
+        check_scene(page, 'report', reduced=reduced)
+        page.wait_for_timeout(500)
+        shot('report_reduced' if reduced else 'report')
+        page.evaluate('$("out").innerHTML=__artSimBar(1,[{}],__loadSt,false)')
+        check_scene(page, 'report', reduced=reduced)
+        page.wait_for_timeout(1900)
+        assert page.locator('#out [data-gwen]').count() == 0
+        page.evaluate('''() => {
+          $('out').innerHTML=__artSimBar(1,[{}],__loadSt,false);
+        }''')
+        assert page.locator('#out [data-gwen]').count() == 0
+    page.emulate_media(reduced_motion='no-preference')
+    # HTML만 만들다 버렸거나 숨긴 탭에 넣었어도 처음 보일 때 발표함.
+    page.evaluate('''() => {
+      window.__hiddenResult={};Ux.gwenReport(__hiddenResult);
+      $('out').innerHTML='<div id="art-hidden" hidden>'+Ux.gwenReport(__hiddenResult)+'</div>';
+    }''')
+    page.wait_for_timeout(1900)
+    assert page.locator('#art-hidden [data-gwen="report"]').count() == 1
+    page.evaluate('$("art-hidden").hidden=false')
+    check_scene(page, 'report')
+    page.wait_for_timeout(1900)
+    assert page.locator('#art-hidden [data-gwen="report"]').count() == 0
+    # 旧SD 이미지로 되돌리면 실제 currentSrc 검사가 실패해야 함.
+    page.evaluate('$("out").innerHTML=Ux.gwenWork("screen")')
+    page.locator('#out source').evaluate('(e)=>e.srcset="assets/ui_icons/gwen_sd.png"')
+    page.wait_for_timeout(100)
+    try:
+        check_scene(page, 'screen')
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError('그림 연결 되돌림을 검출하지 못함')
+    page.evaluate('$("out").innerHTML=Ux.gwenWork("screen")')
+    check_scene(page, 'screen')
     # 시즌별 실제 연결 및 코스모의 글자만 바꾸는 경로.
     for kind, state, renderer in [('guild', 'GSR', 'renderGuildSearch(true)'), ('cosmo', 'CSR', 'renderCosmoSearch()')]:
         page.evaluate(f'''() => {{

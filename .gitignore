@@ -3,6 +3,8 @@ __pycache__/
 /_tmp/
 /_shot_load_*.png
 /_shot_load.webm
+/_shot_art_*.png
+/_art_compare.png
 release/
 tools/raw/
 local/

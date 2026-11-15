@@ -10,11 +10,23 @@
   const clone=x=>JSON.parse(JSON.stringify(x));
   function verdict(p){return p>=.9?['safe','안정적']:p>=.7?['ok','깰 수 있음']:p>=.5?['shaky','아슬아슬']:['risk','어려움'];}
   function help(title,text){return `<button type="button" class="ux-help" data-help="${esc(text)}" aria-label="${esc(title)} 설명" aria-expanded="false">ⓘ</button>`;}
-  // 공식 SD 두 장만 사용함. 소품은 그림 옆 별도 칸이며 작업 상태/문구는 호출자가 유지함.
+  // 공식 SD를 참고한 팬 그림. picture가 동작 줄이기에서는 정지 PNG를 선택함.
   function gwenWork(mode){
-    if(!['inspect','screen','long','error'].includes(mode))return '';
-    const error=mode==='error',label=mode==='screen'?'그웬이 후보 거르는 중…':mode==='inspect'?'그웬이 추천 편성 확인 중…':'';
-    return `<span class="gwen-work" data-gwen="${mode}"><span class="gwen-scene" aria-hidden="true"><img class="gwen-worker" src="assets/ui_icons/gwen_${error?'surprised':'sd'}.png" width="56" height="56" alt=""><span class="gwen-prop">${error?'!':mode==='screen'?'📄':mode==='long'?'✦':'🔎'}</span><span class="gwen-dots">···</span></span>${label?`<span class="gwen-caption">${label}</span>`:''}</span>`;
+    const art={inspect:'investigate',screen:'files',long:'investigate',error:'surprised',report:'report',welcome:'welcome'}[mode];
+    if(!art)return '';
+    const animated=art==='investigate'||art==='files',base='assets/ui_icons/gwen/'+art;
+    const label=mode==='screen'?'그웬이 후보 거르는 중…':mode==='inspect'?'그웬이 추천 편성 확인 중…':'';
+    return `<span class="gwen-work" data-gwen="${mode}"><picture class="gwen-scene" aria-hidden="true">${animated?`<source media="(prefers-reduced-motion: no-preference)" srcset="${base}.webp" type="image/webp">`:''}<img class="gwen-worker" src="${base}.png" width="160" height="160" alt=""></picture>${label?`<span class="gwen-caption">${label}</span>`:''}</span>`;
+  }
+  // 같은 결과를 다시 그리거나 접기를 열어도 발표를 반복하지 않음.
+  const gwenResults=new WeakMap(),gwenPending=new Map();let gwenSerial=0;
+  function gwenReport(result){
+    if(!result||typeof result!=='object')return '';
+    let state=gwenResults.get(result);
+    if(!state){state={id:String(++gwenSerial),until:0};gwenResults.set(result,state);}
+    if(state.until&&Date.now()>=state.until)return '';
+    gwenPending.set(state.id,state);
+    return gwenWork('report').replace('data-gwen="report"',`data-gwen="report" data-gwen-report="${state.id}"`);
   }
   function gwenStage(message=''){
     return /후보 거르|훑|예선|놓침 감지|1단계|2단계/.test(message)?'screen':/준비|능력치 계산/.test(message)?'inspect':'long';
@@ -133,6 +145,21 @@
   }
   function mount(){
     const doc=root.document;if(!doc)return;
+    const reports=new WeakSet();
+    const retireReports=()=>{
+      const live=new Set();
+      doc.querySelectorAll('[data-gwen="report"]').forEach(el=>{
+        const id=el.dataset.gwenReport;live.add(id);
+        // 숨긴 탭·닫힌 details에서는 발표 시간을 소비하지 않음.
+        if(reports.has(el)||!(el.checkVisibility?.()??el.getClientRects().length))return;
+        reports.add(el);const state=gwenPending.get(id),now=Date.now();
+        if(state&&!state.until)state.until=now+1800;
+        root.setTimeout(()=>{el.remove();gwenPending.delete(id);},Math.max(0,(state?.until||now+1800)-now));
+      });
+      for(const id of gwenPending.keys())if(!live.has(id))gwenPending.delete(id);
+    };
+    new root.MutationObserver(retireReports).observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','style']});
+    retireReports();
     const pop=doc.createElement('div');pop.id='ux-popover';pop.className='ux-popover';pop.role='tooltip';pop.hidden=true;doc.body.append(pop);
     let owner=null,pinned=false,timer;
     function close(){clearTimeout(timer);if(owner){owner.setAttribute('aria-expanded','false');owner.removeAttribute('aria-describedby');}owner=null;pinned=false;pop.hidden=true;}
@@ -147,6 +174,6 @@
     doc.addEventListener('focusout',e=>{if(owner===e.target&&!pinned)close();});
     root.addEventListener('resize',()=>{if(owner)place();});root.addEventListener('scroll',()=>{if(owner)place();},true);
   }
-  const api={verdict,help,gwenWork,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
+  const api={verdict,help,gwenWork,gwenReport,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Ux=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

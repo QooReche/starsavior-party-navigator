@@ -29,8 +29,8 @@ function checkGwen(page,file){
  assert(heading.indexOf('gwen-head')<heading.indexOf('파티 편성 네비게이터'),`${file}: face before title`);
  const start=page.indexOf('function miGuide()');
  const guide=vm.runInNewContext(page.slice(start,page.indexOf('function showReco()',start))+';miGuide()');
- assert.match(guide,/<img class="gwen-guide-art" src="assets\/ui_icons\/gwen_card.webp"[^>]*alt="" aria-hidden="true">/);
- assert.equal((page.match(/src="assets\/ui_icons\/gwen_card.webp"/g)||[]).length,1,`${file}: one decoration, in empty guide only`);
+ assert.match(guide,/<img class="gwen-guide-art" src="assets\/ui_icons\/gwen\/welcome.png"[^>]*alt="" aria-hidden="true">/);
+ assert.equal((page.match(/src="assets\/ui_icons\/gwen\/welcome.png"/g)||[]).length,2,`${file}: welcome in first guide and import drawer`);
  assert(page.includes('게임 이미지·만화의 권리는 원 권리자에게 있음.'),`${file}: image and comic attribution`);
 }
 // Check both the editable template and the generated page served to users.
@@ -151,21 +151,21 @@ function checkLoading(page){
  state.SIMQ.busy=null;state.SIMQ.err='통신 오류';state.SIMQ.errP=1;
  assert.match(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen="error"/);
  state.SIMQ.err='';state.SIMQ.res.r={n:100,clear:1};state.goalVal=r=>r.clear;
- assert.doesNotMatch(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen=/);
+ assert.match(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen="report"/);
+ assert.match(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen="report"/);
  const css=page.match(/@media\(prefers-reduced-motion:reduce\)\{\.gwen-work[^}]+\}/)?.[0]||'';
- for(const rule of ['.gwen-worker','.gwen-prop','.gwen-dots','animation:none','transform:none'])assert(css.includes(rule),rule);
- assert.match(page,/\.gwen-scene\{[^}]*width:100px;height:76px;flex:0 0 100px/);
+ for(const rule of ['.gwen-worker','animation:none','transform:none'])assert(css.includes(rule),rule);
+ assert.match(page,/\.gwen-scene\{[^}]*width:140px;height:140px;flex:0 0 140px/);
 }
 for(const file of ['party_template.html','index.html']){
  const page=fs.readFileSync(require.resolve('../'+file),'utf8');checkLoading(page);
  for(const [from,to] of [
   ['${Ux.gwenWork(sc?"screen":SIMQ.loaded?"long":"inspect")}',''],
   ['${Ux.gwenWork("error")}<span class="bad"','<span class="bad"'],
-  ['.gwen-work .gwen-dots{animation:none;transform:none}', '.gwen-work .gwen-dots{animation:gwen-dots 1s infinite;transform:none}'],
+  ['.gwen-work .gwen-worker{animation:none;transform:none}', '.gwen-work .gwen-worker{animation:gwen-report 1s infinite;transform:none}'],
  ]){assert(page.includes(from));assert.throws(()=>checkLoading(page.replace(from,to)),{code:'ERR_ASSERTION'});}
 }
-const loadingImages=['gwen_sd.png','gwen_surprised.png'];
-assert(loadingImages.reduce((sum,f)=>sum+fs.statSync(require.resolve('../assets/ui_icons/'+f)).size,0)<=60*1024);
+for(const f of ['investigate.webp','files.webp'])assert(fs.statSync(require.resolve('../assets/ui_icons/gwen/'+f)).size<=80000);
 for(const module of ['guild_search','cosmo_search']){
  const search=require('../'+module),cx={hasInfo:true,work:require('../ux_ui').gwenWork,workMode:'screen',esc:String,label:String,level:0,mode:'top',levelMax:1};
  assert.match(search.html({phase:'run',msg:'후보 확인 중',done:2,total:80},cx),/data-gwen="screen"/);

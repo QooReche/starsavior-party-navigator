@@ -105,7 +105,7 @@ async function stop(src){
 
 // ②-b 추천 본선: 보여 준 팀이 모두 목표 지표 50% 미만이면 「더 보기」(다음 3팀). ④ 예선 캐시 키
 function mainStop(src){
- const mk=(mode,res)=>{const ctx=vm.createContext({MODE:mode,SIMQ:{res,n:100,busy:null,err:''},simSig:(st,t)=>t.k,esc:String,simEtaText:()=>''});
+ const mk=(mode,res)=>{const ctx=vm.createContext({Ux:require('../ux_ui'),MODE:mode,SIMQ:{res,n:100,busy:null,err:''},simSig:(st,t)=>t.k,esc:String,simEtaText:()=>''});
   for(const s of [line(src.html,'const goalVal='),cut(src.html,'function simBar(','function simInvalidate(')])vm.runInContext(s,ctx);return ctx};
  const rows=[{k:'a'},{k:'b'},{k:'c'}],more=(mode,r)=>/data-more/.test(mk(mode,{a:r,b:r,c:r}).simBar(1,rows,{},true));
  assert(more('auto',{clear:.9,t60:.4,n:100}),'클리어율 90% 여도 60턴 내 40% 면 더 본다');

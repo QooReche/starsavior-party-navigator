@@ -288,28 +288,15 @@ summary{padding:9px 4px}
 .gd-scroll{overflow-x:auto;max-width:100%;margin:6px 0}.gd-scroll table{border-collapse:collapse;width:100%;min-width:420px}.gd-scroll th,.gd-scroll td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;font-size:12px}.gd-scroll tr.cur td{background:rgba(111,211,255,.1);font-weight:700}.gd-fx{min-width:190px;color:var(--mut)}.gd-rules{margin:8px 0;padding-left:18px;line-height:1.6}.gd-comm ul{margin:4px 0;padding-left:18px}
 
 /* 공식 그웬 SD: 소품은 그림 옆, 모든 단계에 같은 높이의 자리 확보. */
-.gwen-work{display:flex;align-items:center;gap:12px;min-height:76px;width:100%;margin:6px 0;box-sizing:border-box;color:var(--mut);font-size:13px;line-height:1.5}
-.gwen-scene{position:relative;display:inline-flex;align-items:center;width:100px;height:76px;flex:0 0 100px}
-.gwen-worker{width:56px;height:56px;object-fit:contain;transform-origin:50% 85%;margin-left:6px}
-.gwen-prop{position:absolute;left:73px;top:21px;width:24px;text-align:center;font-size:21px;color:var(--acc)}
-.gwen-dots{position:absolute;left:74px;top:45px;letter-spacing:3px;font-weight:700;animation:gwen-dots 1.6s ease-in-out infinite}
+.gwen-work{display:flex;align-items:center;gap:12px;min-height:140px;width:100%;margin:6px 0;box-sizing:border-box;color:var(--mut);font-size:13px;line-height:1.5}
+.gwen-scene{position:relative;display:inline-flex;align-items:center;width:140px;height:140px;flex:0 0 140px}
+.gwen-worker{display:block;width:100%;height:100%;object-fit:contain}
 .gwen-caption{min-width:0;overflow-wrap:anywhere}
-[data-gwen="inspect"] .gwen-worker{animation:gwen-inspect 2.8s ease-in-out infinite}
-[data-gwen="inspect"] .gwen-prop{animation:gwen-glass 2.8s ease-in-out infinite}
-[data-gwen="screen"] .gwen-worker{animation:gwen-screen 1.8s ease-in-out infinite}
-[data-gwen="screen"] .gwen-prop{animation:gwen-page 1.8s ease-in-out infinite}
-[data-gwen="long"] .gwen-worker{animation:gwen-bounce 1.4s ease-in-out infinite}
-[data-gwen="long"] .gwen-prop{animation:gwen-spark 1.4s ease-in-out infinite}
-[data-gwen="error"] .gwen-dots{visibility:hidden;animation:none}
-@keyframes gwen-inspect{0%,100%{transform:translateX(-3px) rotate(-6deg)}50%{transform:translateX(3px) rotate(6deg)}}
-@keyframes gwen-glass{0%,100%{transform:translateY(2px) rotate(-12deg)}50%{transform:translateY(-3px) rotate(12deg)}}
-@keyframes gwen-screen{0%,100%{transform:rotate(-8deg)}45%,65%{transform:rotate(7deg)}}
-@keyframes gwen-page{0%,100%{transform:rotate(-9deg)}45%,65%{transform:translateY(-4px) rotate(12deg)}}
-@keyframes gwen-bounce{0%,65%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
-@keyframes gwen-spark{0%,100%{opacity:.45;transform:scale(.85)}40%{opacity:1;transform:scale(1.1)}}
-@keyframes gwen-dots{0%,100%{opacity:.4}50%{opacity:1}}
-@media(max-width:400px){.gwen-work{gap:6px}}
-@media(prefers-reduced-motion:reduce){.gwen-work .gwen-worker,.gwen-work .gwen-prop,.gwen-work .gwen-dots{animation:none;transform:none}}
+[data-gwen="report"] .gwen-worker{animation:gwen-report .45s ease-out 1}
+@keyframes gwen-report{from{transform:translateY(6px);opacity:.4}to{transform:none;opacity:1}}
+@media(max-width:400px){.gwen-work{gap:6px;min-height:120px}.gwen-scene{width:120px;height:120px;flex-basis:120px}}
+@media(prefers-reduced-motion:reduce){.gwen-work .gwen-worker{animation:none;transform:none}}
+
 </style><link rel="stylesheet" href="ux.css"></head><body><main>
 <header class="site-head"><h1><img class="gwen-head" src="assets/ui_icons/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true"><span>파티 편성 네비게이터 <small>베타</small></span></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button></span>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천</button><button id="tab-info" type="button" aria-pressed="false">내 구원자</button></nav></header>
@@ -370,6 +357,7 @@ summary{padding:9px 4px}
  <div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장함.</div>
  <div class="mut" id="mi-status" style="margin:4px 0 6px">불러온 정보 없음</div>
  <section class="mihow">
+  <img class="gwen-welcome" src="assets/ui_icons/gwen/welcome.png" width="160" height="160" alt="" aria-hidden="true">
   <b>Windows PC에서 불러오기</b>
   <div class="mi-import-guide">
    <div class="dtools"><button id="mi-copy" type="button">명령 복사</button></div>
@@ -484,7 +472,7 @@ function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
  const prog=p.querySelector('[data-k="gd-search-prog"]');
  if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);Ux.syncGwen(p,Ux.gwenStage(GSR.msg));return}
- const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:Ux.gwenWork,workMode:Ux.gwenStage(GSR.msg),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
+ const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:Ux.gwenWork,report:Ux.gwenReport,workMode:Ux.gwenStage(GSR.msg),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
 function gsTeam(t){LEADKEY=t.order[0];return seasonBreakBar(t,true)+`<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
 async function guildSearchStart(target=GSR,profileOverride=null){
  if(seasonBlocked('guild'))return;
@@ -574,7 +562,7 @@ function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").v
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
- const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:Ux.gwenWork,workMode:Ux.gwenStage(CSR.msg),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo')}
+ const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:Ux.gwenWork,report:Ux.gwenReport,workMode:Ux.gwenStage(CSR.msg),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo')}
 async function cosmoSearchStart(target=CSR,profileOverride=null){
  if(seasonBlocked('cosmo'))return;
  const CSR=target;
@@ -953,7 +941,7 @@ function simBar(p,rows,st,hasMore){
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
  const st8=SIMQ.busy===p&&!SIMQ.compareKey?`${Ux.gwenWork("inspect")}<span class="mut" data-k="simstate" data-state="running">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
   SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`${Ux.gwenWork("error")}<span class="bad" data-k="simstate" data-state="error">모의 전투 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
-  all?`<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
+  all?`${rows.length?(Ux.gwenReport?.(SIMQ.res[simSig(st,rows[0])])||''):''}<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">모의 전투 실행</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
 function simInvalidate(){if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;if(Object.keys(x.res).length)scrClose(x);else delete SIMQ.scr[k]}simPoolDrop();clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
@@ -1246,7 +1234,7 @@ function condChanged(){
 }
 function miGuide(){return `<div class="party guide" data-k="miguide" data-state="needs-info"><h3>내 구원자로 깰 파티 찾기</h3>
  <p class="mut">계정 정보를 불러오면 내 구원자에 맞춰 추천함. 정보 없이도 표준 육성으로 살펴볼 수 있음.</p><ol class="guide-steps"><li><b>명령 복사</b><small>PowerShell에 붙여넣기</small></li><li><b>게임 로그인</b><small>로비에서 도구 창에 엔터</small></li><li><b>자동 반영</b><small>이 화면에 바로 표시</small></li></ol>
- <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div><img class="gwen-guide-art" src="assets/ui_icons/gwen_card.webp" width="129" height="240" alt="" aria-hidden="true"></div></div>`}
+ <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div><img class="gwen-guide-art" src="assets/ui_icons/gwen/welcome.png" width="160" height="160" alt="" aria-hidden="true"></div></div>`}
 function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;recoClearTimer();if(!MI.info){RECO.standard=true;$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
 function run(skipAuto=false){seasonPaint();growthControlPlace(true);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror">${Ux.gwenWork("error")}<h3>내 정보 계산 자료를 불러오지 못했음</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}

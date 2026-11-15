@@ -102,10 +102,12 @@ function checkLuck(u=U){
 }
 function load(code){const c={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,c);return c.module.exports;}
 function checkGwenWork(u=U){
-  for(const mode of ['inspect','screen','long','error']){
+  for(const mode of ['inspect','screen','long','error','report','welcome']){
     const html=u.gwenWork(mode);assert.match(html,new RegExp(`data-gwen="${mode}"`));
-    assert.match(html,/width="56" height="56" alt=""/);assert.match(html,/aria-hidden="true"/);
-    assert.match(html,new RegExp(`gwen_${mode==='error'?'surprised':'sd'}\\.png`));
+    assert.match(html,/width="160" height="160" alt=""/);assert.match(html,/aria-hidden="true"/);
+    const art={inspect:'investigate',screen:'files',long:'investigate',error:'surprised',report:'report',welcome:'welcome'}[mode];
+    assert(html.includes(`assets/ui_icons/gwen/${art}.png`));
+    if(['inspect','screen','long'].includes(mode)){assert(html.includes(`${art}.webp`));assert(html.includes('(prefers-reduced-motion: no-preference)'));}
   }
   assert.match(u.gwenWork('inspect'),/그웬이 추천 편성 확인 중…/);
   assert.match(u.gwenWork('screen'),/그웬이 후보 거르는 중…/);
@@ -122,8 +124,9 @@ const source=fs.readFileSync(require.resolve('../ux_ui'),'utf8');
 function mutation(from,to,check){assert(source.includes(from));let caught=false;try{check(load(source.replace(from,to)));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}assert(caught,`mutation survived: ${from}`);check(U);}
 checkVerdict();checkGrades();checkPower();checkChips();checkSkills();checkTabState();checkLuck();
 checkGwenWork();
-mutation("if(!['inspect','screen','long','error'].includes(mode))return '';","return '';",checkGwenWork);
-mutation("error?'surprised':'sd'","error?'sd':'sd'",checkGwenWork);
+{const r={},first=U.gwenReport(r);assert.match(first,/data-gwen="report"/);assert.equal(U.gwenReport(r),first,'not consumed before visible mount');assert.equal(U.gwenReport(null),'');}
+mutation("if(!art)return '';","return '';",checkGwenWork);
+mutation("error:'surprised'","error:'welcome'",checkGwenWork);
 mutation("?'screen':/준비|능력치 계산/","?'long':/준비|능력치 계산/",checkGwenWork);
 mutation("old.outerHTML=gwenWork(mode)","old.outerHTML=old.outerHTML",checkGwenWork);
 mutation('p>=.9','p>.9',checkVerdict);
