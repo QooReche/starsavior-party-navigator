@@ -132,6 +132,8 @@ class HealBurstTest(unittest.TestCase):
                                     'rules_override': {'dmg_cap_scope': 'reduce', 'enemy_leader': 'boss', 'coop_order': 'capped', 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget', 'buff_ban_force': 'off', 'nova_skill_gain': False,
                                                        'foe_skill_order': 'default', 'empty_attack': 'skip',
                                                        'nova_force_effects': False,
+                                                       'hit_ally_skill_end': 'legacy', 'skill_end_timing': 'legacy',
+                                                       'passive_se_order': 'legacy', 'se_independent_roll': 'legacy',
                                                        'enemy_cd_end_order': 'before_effects',
                                                        'revenge_rate': 'current',
                                                        'nova_force_cap': 0,

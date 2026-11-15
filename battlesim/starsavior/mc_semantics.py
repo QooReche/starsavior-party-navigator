@@ -7,6 +7,26 @@ from collections import defaultdict
 from .parser import Line, Skill, ally_stack_trigger, parse_props, _perm_apply
 
 
+def after_active_se(key, ln):
+    """AfterActiveSkillSe exceptions, build 26610546 SE_TEMPLET_SKILL_1.
+
+    SE 10024023,10154022,10174012,10254013/14,10404015/16,
+    10434018/19,10444012. Other flagged rows are removed animation/move
+    markers, whose normalized replacement already performs the operation.
+    NKM:2612-2620,2813-2823 keeps these after the active slot.
+    """
+    if ln.src_kind != 'passive':
+        return False
+    e = ln.eff
+    return ((key in ('smile', 'tyria', 'gwen', 'claire') and e['kind'] == 'extra_cast')
+            or (key == 'trish' and e.get('name') == '도약')
+            or (key == 'cristelle' and e['kind'] == 'chain')
+            or (key == 'tyria' and e.get('name') == '참극의 가시(해제불가)')
+            or (key == 'gwen' and e.get('name') == '전기 충격(해제불가)' and e.get('consume'))
+            or (key == 'scarlet' and e['kind'] == 'remove'
+                and e.get('name') in ('노멀볼(해제불가)', '세븐볼(해제불가)')))
+
+
 def description(sk):
     return sk.raw.get('dx') or sk.raw.get('d1') or ''
 
@@ -35,7 +55,7 @@ def trigger_rule(sk, lines):
     return None
 
 
-def normalized_lines(d):
+def normalized_lines(d, rules=None):
     """카운팅용 내부 효과를 원자적 승급/실제 타격 수로 치환한다."""
     lines = list(d.lines)
     # 최대 스택 -> 임시 표지 -> 소비/승급 -> 표지 삭제의 공통 패턴.
@@ -92,7 +112,7 @@ def normalized_lines(d):
                     continue
                 new.append(ln)
             lines = new + [count]
-    return description_lines(d, lines)
+    return description_lines(d, lines, rules)
 
 
 def normalized_definition(d):
@@ -199,8 +219,9 @@ def unit_glossary(d):
     return out
 
 
-def description_lines(d, lines):
+def description_lines(d, lines, rules=None):
     """정본에 명시된 범위·순서를 ef에 보충한다. key별 예외를 만들지 않는다."""
+    rules = rules or {}
     raws = {s['sl']: s for s in getattr(d, 'u', {}).get('sk', []) if not s['sl'].startswith('변형')}
     if not raws:
         return lines
@@ -254,6 +275,9 @@ def description_lines(d, lines):
                 e.update(target='스킬 대상', shield_only=True)
                 ln.params = []
                 ln.kind, ln.trig = 'own_pre', None
+                if rules.get('skill_end_timing') == 'client':
+                    ln.kind = 'own_post'
+                    e.update(start_filter='shield', rule_key='skill_end_timing')
         if count and '1개당 위 수치만큼 적용' in ln.raw:
             named = re.search(r'\[([^]]+)\]', count[1])
             scope = ('shield_all' if count[1].startswith('적 전체') else 'self_good' if count[1].startswith('자신')
@@ -265,6 +289,10 @@ def description_lines(d, lines):
             ext = re.search(r'(?:\[([^]]+)\]|모든 약화 효과)를 (\d+)턴 연장', desc)
             if ext:
                 ln.eff = dict(kind='extend', target='스킬 대상', name=ext[1], val=int(ext[2]), judge='효과 적중 판정' in ln.raw)
+                if rules.get('se_independent_roll') == 'client':
+                    chance = re.search(r'(\d+)% 확률로', ln.raw)
+                    ln.eff.update(chance=int(chance[1]) / 100 if chance else 1,
+                                  rule_key='se_independent_roll')
         if '스킬 쿨타임' in ln.raw and '증가' in ln.raw:
             cd = re.search(r'(기본기|특수기|궁극기) 쿨타임을 (\d+)턴 증가', desc)
             if cd:
@@ -274,7 +302,8 @@ def description_lines(d, lines):
         if '약화 효과를 모두 해제하고' in desc and '약화효과 해제' in ln.raw:
             ln.kind, ln.bound = 'before_heal', True
         # 사용 시/타격 시 최대 스택 소거와 타격 후 부여는 서로 다른 단계다.
-        if e['kind'] == 'remove' and e.get('target') == '자신' and ln.kind == 'own_post':
+        if (e['kind'] == 'remove' and e.get('target') == '자신' and ln.kind == 'own_post'
+                and rules.get('skill_end_timing') != 'client'):
             for sentence in desc.split('. '):
                 before = re.search(r'(?:타격 시|사용 시).*?(?:모두 소거|모두 소거하고)', sentence)
                 if before and e['name'] in before[0] and not re.search(r'(?:타격 후|사용 후)', before[0]):
@@ -282,7 +311,7 @@ def description_lines(d, lines):
                     ln.trig = (ln.trig or '').replace('내 공격 후', '내 공격 시')
                     break
         out.append(ln)
-    out = selection_lines(d, out, raws)
+    out = selection_lines(d, out, raws, rules)
     # 표지는 선행 조건용이며 지속 버프가 아니다. 명칭 대신 참조 관계로 식별.
     references = {n.strip() for ln in out for k, v in ln.params
                   if k in ('자신이 보유', '자신이 미보유', '대상이 보유', '시전자가 보유') for n in v.split(',')}
@@ -304,8 +333,9 @@ def description_lines(d, lines):
     return out
 
 
-def selection_lines(d, lines, raws):
+def selection_lines(d, lines, raws, rules=None):
     """생사 분기, 상태 필터, 표식 이동, 무작위 효과의 범위/횟수를 정본에서 보충."""
+    rules = rules or {}
     out = []
     variants = {raw['n'] for _, _, raw in variant_specs(d)}
     references = {v for ln in lines for k, v in ln.params if '보유' in k}
@@ -342,6 +372,9 @@ def selection_lines(d, lines, raws):
             if e['kind'] == 'gauge' and e.get('val', 0) < 0:
                 ln.kind, ln.trig = 'own_pre', None
                 e.update(target='적 전체', target_state=state[1])
+                if rules.get('skill_end_timing') == 'client':
+                    ln.kind, ln.params = 'own_post', []
+                    e.update(start_filter=state[1], rule_key='skill_end_timing')
         move = re.search(r'신규 \[([^]]+)\] 발생 시 기존의 \[\1\]을 해제', desc)
         if move and e.get('target') == '「물폭탄」이 없던 공격 대상':
             e['target'] = '스킬 대상'

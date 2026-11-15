@@ -64,6 +64,7 @@ _KEEP['self_enforce_target'] = 'last_target'
 _KEEP.update(target_break_condition='state', target_condition_set='first')
 _KEEP.update(target_hp_condition='ratio', not_self_stack='ge', chain_target_stat='off')
 _KEEP.update(stat_floor='float', chain_round='float', chain_guard='off', guard_tie='first', stat_stage='add', turn_gauge='float')
+_KEEP.update(hit_ally_skill_end='legacy', skill_end_timing='legacy', passive_se_order='legacy', se_independent_roll='legacy')
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

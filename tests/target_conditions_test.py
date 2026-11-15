@@ -157,7 +157,9 @@ class TargetConditionsTest(unittest.TestCase):
                 r = simulate(dict(units=['dana', 'lydia', 'frey', 'hilde'], leader=0),
                              dict(stage=f'clo/태양 회랑/FLOOR {floor}'),
                              dict(build='standard', n_runs=1, seed=seed,
-                                  rules_override={'turn_gauge': 'float', 'stat_stage': 'add', 'stat_floor': 'float', 'power_penalty': 'off'}))   # 판 번호로 고른 장면 고정(2026-11-15 규칙 전 행동 순서, 전투력 보정 기본 model 전환 전 off)
+                                  rules_override={'turn_gauge': 'float', 'stat_stage': 'add', 'stat_floor': 'float', 'power_penalty': 'off',
+                                                  'hit_ally_skill_end': 'legacy', 'skill_end_timing': 'legacy',
+                                                  'passive_se_order': 'legacy', 'se_independent_roll': 'legacy'}))   # 판 번호로 고른 장면 고정(대상 조건 판정 경로 유지)
             self.assertGreater(r['prog_runs'][0], 0)
             self.assertTrue(hits, (key, effect))
 

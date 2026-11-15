@@ -121,7 +121,8 @@ def test_sunshine_extra():
     b.cast(a, a.d.skills['궁극기'], target=f)
     targets = [e['targets'] for e in b.timeline if e.get('skill') == '특수기(추가)']
     out = (casts(a), a.stack('도약'), a.stack('스파클라(해제불가)'), a.gauge, targets)
-    return out == (2, 5, 0, 0, [[marked.name], [marked.name]]), str(out)
+    # SKILL_END 패시브 물폭탄 이동이 액티브 추가 발동보다 먼저임(NKM:2818-2821).
+    return out == (2, 5, 0, 0, [[f.name], [f.name]]), str(out)
 
 
 def test_claire_source():
@@ -331,7 +332,8 @@ def test_fix2_pre_marker():
     c = b.cast(a, a.d.skills['기본기'])
     first = (round(c.inc, 3), a.stack('냉각'), a.stack('귀족의 품격'))
     c = b.cast(a, a.d.skills['기본기'])
-    return first == (0.4, 0, 0) and round(c.inc, 3) == 0.2, str((first, c.inc))
+    # 패시브 냉각 소거 뒤 액티브 기본기의 +1이 남음(NKM:2818-2821).
+    return first == (0.4, 1, 0) and round(c.inc, 3) == 0.2, str((first, c.inc))
 
 
 def test_fix2_lacy_marker():

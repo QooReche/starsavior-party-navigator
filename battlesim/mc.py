@@ -27,7 +27,7 @@ from .rules import DEFAULT_OPTS, ELEM_BEATS, ELEM_LOSES, MC_OPTS
 from .starsavior.data import SRC
 from .starsavior import foe as _foe
 from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger, explicit_target
-from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules
+from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules, after_active_se
 
 with open(os.path.join(SRC, 'data', 'buff_force.json'), encoding='utf-8') as _f:
     FORCE_BUFF_NAMES = frozenset(json.load(_f))
@@ -261,17 +261,17 @@ REACT_TRIG = [
 ENGINE_CACHE = True      # 정의(UnitDef) 단위 의미 해석 캐시 사용 여부(동일성 시험이 끈 결과와 비교)
 
 
-def norm_lines_cached(d):
+def norm_lines_cached(d, modes=()):
     """normalized_lines(d) 를 정의 객체에 붙여 둔다. 정의 객체가 사라지면 같이 사라지므로 키가 쌓이지 않는다(전역 사전 없음).
     d.lines 가 바뀌거나(참조·길이) 복사본(copy.copy)에 딸려 온 값이면 다시 계산한다."""
     if not ENGINE_CACHE:
-        return normalized_lines(d)
+        return normalized_lines(d, dict(modes))
     e = d.__dict__.get('_pn_nl') if hasattr(d, '__dict__') else None
-    if e is not None and e[0] == id(d) and e[1] is d.lines and e[2] == len(d.lines):
+    if e is not None and e[0] == id(d) and e[1] is d.lines and e[2] == len(d.lines) and e[4] == modes:
         return e[3]
-    r = normalized_lines(d)
+    r = normalized_lines(d, dict(modes))
     try:
-        d._pn_nl = (id(d), d.lines, len(d.lines), r)
+        d._pn_nl = (id(d), d.lines, len(d.lines), r, modes)
     except AttributeError:
         pass
     return r
@@ -806,7 +806,7 @@ class Ctx:
     __slots__ = ('owner', 'src', 'skill', 'extra', 'targets', 'target', 'inc', 'atkp', 'cr', 'cd', 'pen', 'eh', 'crit',
                  'kill', 'coop_used', 'heal_give', 'heal_recv', 'local', 'nb', 'hit_victim', 'acc', 'evaded', 'recv_by',
                  'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets',
-                 'crit_targets', 'break_targets', 'markers', 'dead_targets', 'tough_targets', 'vamp_damage', 'guild_bridal_targets')
+                 'crit_targets', 'break_targets', 'markers', 'dead_targets', 'tough_targets', 'vamp_damage', 'guild_bridal_targets', 'end_targets')
 
     def __init__(self, owner, src, skill, extra=False):
         self.owner, self.src, self.skill, self.extra = owner, src, skill, extra
@@ -815,6 +815,7 @@ class Ctx:
         self.crit_targets, self.break_targets = set(), set()
         self.tough_targets = set()  # video: 시전·대상당 1회. 추가 발동은 별도 Ctx.
         self.markers = {}
+        self.end_targets = {}
         self.dead_targets = set()
         self.vamp_damage = defaultdict(float)
         self.targets, self.target = [], None
@@ -1025,18 +1026,21 @@ class Battle:
     def lines_of(self, u):
         if u.side == 1 and not self.enemy_lines:
             return ()
+        modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll'))
         key = id(u.d)
         sc = self._semantic_cache
         if sc is not None:
             cached = sc.get(key)
-            if cached is not None and cached[0] is u.d.lines and cached[1] == len(u.d.lines):
+            if (cached is not None and cached[0] is u.d.lines and cached[1] == len(u.d.lines)
+                    and len(cached) > 3 and cached[3] == modes):
                 return cached[2]
-            result = (u.d.lines, len(u.d.lines), norm_lines_cached(u.d))
+            result = (u.d.lines, len(u.d.lines), norm_lines_cached(u.d, modes), modes)
             sc[key] = result
             return result[2]
         cached = self._semantic_lines.get(key)
-        if cached is None or cached[0] is not u.d.lines or cached[1] != len(u.d.lines):
-            cached = (u.d.lines, len(u.d.lines), norm_lines_cached(u.d))
+        if (cached is None or cached[0] is not u.d.lines or cached[1] != len(u.d.lines)
+                or cached[3] != modes):
+            cached = (u.d.lines, len(u.d.lines), norm_lines_cached(u.d, modes), modes)
             self._semantic_lines[key] = cached
         return cached[2]
 
@@ -1055,12 +1059,13 @@ class Battle:
         d = u.d
         raw = d.lines
         hit = u._kind_index
-        if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw):
+        modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll'))
+        if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw) or hit[4] != modes:
             grouped = {}
             for ln in self.lines_of(u):
                 grouped.setdefault(line_kind(ln), []).append(ln)
             index = {k: tuple(v) for k, v in grouped.items()}
-            hit = u._kind_index = (d, raw, len(raw), index)
+            hit = u._kind_index = (d, raw, len(raw), index, modes)
         return hit[3].get(kind, ())
 
     # ---------- 진행
@@ -2337,6 +2342,13 @@ class Battle:
                          all=bool(sk.all), tgt_side=(t0.side if t0 is not None else None),
                          tgt_boss=bool(t0 is not None and getattr(t0.d, 'boss', False)))
             if not skip_lines:
+                if self.mc['skill_end_timing'] == 'client':
+                    for ln in self.lines_of(u):
+                        state = ln.eff.get('start_filter')
+                        if state and (not ln.bound or ln.slot == sk.slot):
+                            ctx.end_targets[id(ln)] = [x for x in ctx.targets
+                                if (x.shield_total() > 0 if state == 'shield' else x.has(state))]
+                            self.rule_hits['skill_end_timing'] += 1
                 self.run_own(u, ctx, 'own_pre')
             elif local_pre:   # 줄을 건너뛰는 트리거 시전이라도 그 스킬의 「이번 스킬에만」 피해 보정은 적용(프로페서M 브레이크 대상 +30%·스킬 레벨 +15%)
                 lines = [ln for ln in self.lines_of(u) if line_kind(ln) == 'own_pre' and ln.eff['kind'] == 'local' and ln.slot == sk.slot]
@@ -2369,6 +2381,8 @@ class Battle:
             self.fire_side(u, ctx, 'ally_post')
             self.fire_foes(u, ctx, 'foe_post' if sk.is_attack else 'foe_post_na')
             self.fire_foes(u, ctx, 'foe_post_any')      # 「적 행동 후」(공격·비공격 모두)
+            if sk.is_attack and self.mc['hit_ally_skill_end'] == 'client':
+                self.fire_hit_allies(u, ctx)
             if self.gb is not None:
                 self.gb.after_cast(u, sk, ctx, extra)
             # GetNovaForceValue is paid at every skill end, including reactions
@@ -2480,10 +2494,19 @@ class Battle:
         cand = self.kind_lines(u, kind) if source is plain else [ln for ln in source if line_kind(ln) == kind]
         lines = [ln for ln in cand if not (ln.bound and ln.slot != sk.slot)
                  and not (ln.trig and '공격' in ln.trig and ln.na == sk.is_attack)]   # 「내 행동 시/후」는 공격·비공격 모두
-        if kind == 'own_post':
-            # 「기본기 사용 후 최대 스택」은 그 기본기의 스택 부여까지 끝낸 상태로 판정.
-            self.run_batch(u, [ln for ln in lines if ln.src_kind in ('active', 'trigger', 'nova')], ctx)
-            self.run_batch(u, [ln for ln in lines if ln.src_kind not in ('active', 'trigger', 'nova')], ctx)
+        if kind == 'own_post' or (kind == 'own_pre' and self.mc['passive_se_order'] == 'client'):
+            groups = ([ln for ln in lines if ln.src_kind in ('active', 'trigger', 'nova')],
+                      [ln for ln in lines if ln.src_kind not in ('active', 'trigger', 'nova')])
+            if self.mc['passive_se_order'] == 'client':
+                active, passive = groups
+                groups = ([ln for ln in passive if not after_active_se(u.key, ln)], active,
+                          [ln for ln in passive if after_active_se(u.key, ln)])
+                if active and passive:
+                    self.rule_hits['passive_se_order'] += 1
+            if self.mc['skill_end_timing'] == 'client':
+                self.rule_hits['skill_end_timing'] += sum(ln.eff['kind'] == 'remove' for ln in lines)
+            for group in groups:
+                self.run_batch(u, group, ctx)
         elif lines:
             self.run_batch(u, lines, ctx)
 
@@ -2491,6 +2514,26 @@ class Battle:
         lines = self.kind_lines(u, kind)
         if lines:
             self.run_batch(u, lines, ctx)
+
+    def fire_hit_allies(self, actor, ctx):
+        """AllyEffectiveHit: one SE per enemy skill, using one matching hit record.
+
+        All conditions must match the same victim; chance is rolled only after
+        the search, never once per victim (NKM:15805-15809,16120-16133).
+        """
+        for owner in self.alive(1 - actor.side):
+            for ln in self.kind_lines(owner, 'hit_ally'):
+                for victim in ctx.hit_targets:
+                    if victim is owner and dict(ln.params).get('자신 포함') != '예':
+                        continue
+                    probe = Ctx(owner, actor, ctx.skill, ctx.extra)
+                    probe.target, probe.targets, probe.hit_victim = victim, [victim], victim
+                    probe.crit = victim in ctx.crit_targets
+                    probe.evaded, probe.break_targets = ctx.evaded, ctx.break_targets
+                    if self.cond_ok(owner, ln, probe):
+                        self.rule_hits['hit_ally_skill_end'] += 1
+                        self.run_line(owner, ln, probe)
+                        break
 
     def fire_side(self, actor, ctx, kind):
         for b in self.alive(actor.side):
@@ -2827,7 +2870,7 @@ class Battle:
             if v.dead:
                 continue
             self.fire(v, 'hit_self', hctx)
-            for w in self.alive(v.side):
+            for w in (self.alive(v.side) if self.mc['hit_ally_skill_end'] != 'client' else []):
                 if w is v:
                     continue
                 lines = self.kind_lines(w, 'hit_ally')
@@ -4292,6 +4335,10 @@ class Battle:
             if eff.get('src') == 'parser' and self.mc.get('effect_dur_extend') == 'off':
                 self.run_special(owner, ln, ctx, line_rest(ln))   # 옛 동작 = 미해석 줄로 처리(옛 결과 그대로 재현)
                 return
+            if self.mc['se_independent_roll'] == 'client':
+                self.rule_hits['se_independent_roll'] += 1
+                if eff.get('chance', 1) < 1 and self.R(owner.side).random() >= eff['chance']:
+                    return
             for x in self.resolve(owner, eff['target'], ctx) or []:
                 if eff['judge'] and not self.roll_hit(owner, ctx, x, None):
                     continue
@@ -4407,11 +4454,13 @@ class Battle:
                 self.unsup['local: ' + st] += 1
             return
         if kd == 'gauge':
-            tg = self.resolve(owner, eff['target'], ctx)
+            snapshot = self.mc['skill_end_timing'] == 'client' and bool(eff.get('start_filter'))
+            tg = ([x for x in ctx.end_targets.get(id(ln), []) if not x.dead] if snapshot
+                  else self.resolve(owner, eff['target'], ctx))
             if not tg:
                 return
             for x in tg:
-                if eff.get('shield_only') and x.shield_total() <= 0:
+                if not snapshot and eff.get('shield_only') and x.shield_total() <= 0:
                     continue
                 forced = self._forced(owner)
                 down = x.side != owner.side and eff['val'] < 0 and not forced
@@ -5038,6 +5087,14 @@ class Battle:
         return self.R(owner.side).random() < calc_hit(a, b)
 
     def apply_buff(self, owner, eff, ctx, hot=0.0, raw=''):
+        if (self.mc['se_independent_roll'] == 'client' and eff.get('times', 1) > 1
+                and not eff.get('consume') and not eff.get('per_hit') and not eff.get('per_crit')
+                and (eff.get('chance', 1) < 1 or eff.get('judge'))):
+            # Flattened identical SEs retain separate activation and resistance rolls.
+            self.rule_hits['se_independent_roll'] += 1
+            for _ in range(eff['times']):
+                self.apply_buff(owner, dict(eff, times=1), ctx, hot=hot, raw=raw)
+            return
         if eff['name'] == '강제 협공' and owner.side == 1 and self.mc['foe_forced_coop'] != 'on':
             return  # legacy는 자동 대상 추첨의 난수도 소비하지 않음.
         tg = self.resolve(owner, eff['target'], ctx)
