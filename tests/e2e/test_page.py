@@ -2867,7 +2867,7 @@ def test_ux_step12(browser, ctx):
         assert page.locator('#growth-result:not([data-state="none"])').count() == 0
         assert page.locator('#growth-result [data-k="growth-none"]').count() == 1
         assert page.locator('#out > [data-party="1"]').is_visible() and page.locator('.result-recommend').is_hidden()
-        assert page.inner_text('#result-tab-growth [data-tab-metric]') in ('추가 육성 불필요', '더 올릴 항목 없음', '지금 편성이 최선', '더 나은 편성 없음')
+        assert page.inner_text('#result-tab-growth [data-tab-metric]') in ('추가 육성 불필요', '더 올릴 항목 없음', '지금 편성이 최선', '더 나은 편성 없음', '더 높은 점수 없음')
         page.evaluate('GROW.result.best.clear=tabsBest;growthPaint()')
         result_tabs_audit(page)
     # The recommendation threshold uses the raw probability, not rounded labels.

@@ -167,7 +167,8 @@ function words(src){
  assert.equal(tone(plain,'cube',{reason:'few',best:null,baseline:{clear:1}}),'fail|계산하지 못했음');
  assert.equal(tone(star,'equip',{snapshot:grown,baseline:{t60:.2,clear:1},best:{t60:.2,clear:1}}),'plain|더 나은 편성 없음','3별 목표는 60턴 내 확률로 판단');
  assert.equal(tone(star,'equip',{snapshot:grown,baseline:{t60:1,clear:1},best:{t60:1,clear:1}}),'best|추가 육성 불필요');
- assert.equal(tone(plain,'guild',{snapshot:grown,baseline:{score:1200}}),'best|지금 편성이 최선');
+ assert.equal(tone(plain,'guild',{snapshot:grown,baseline:{score:1200}}),'plain|더 높은 점수 없음','점수형은 «충분» 대사 금지');
+ assert.equal(tone(plain,'cosmo',{snapshot:grown,baseline:{sum:2500}}),'plain|더 높은 점수 없음');
  // 탭
  const X=vm.runInNewContext(src.ux+';module.exports',{module:{exports:{}},require:p=>require('../'+p)});
  const base={enabled:true,phase:'done',better:true};

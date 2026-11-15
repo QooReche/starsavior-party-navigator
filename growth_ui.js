@@ -342,13 +342,14 @@ function growthNoneHint(kind,r,turns=growthGoalTurns(kind)){const prob=growthSta
   else rows.push(['결론','지금 추천 편성이 가장 나은 선택임.']);
   return rows;}
 // 없음 안내의 분위기와 탭 제목 옆 문구. best = 지금 편성으로 충분하거나(목표 지표 70% 이상) 점수가 이미 최고 → 그웬 「최선」 대사,
+//  점수형은 항상 plain(점수가 낮아도 «최선»으로 읽히지 않게).
 //  fail = 계산하지 못함(r.reason) → 실패 그림, plain = 키워도 더 나아지지 않지만 아직 어려움 → 그림 없이 글만(실패 대사를 붙이지 않음)
 function growthNoneTone(kind,r,turns=growthGoalTurns(kind)){const prob=growthStageKind(kind),b=r?.baseline,star=prob&&turns>0&&(b?.t60!=null||r?.best?.t60!=null);
   if(r?.reason)return {tone:'fail',tab:'계산하지 못했음'};
   const v=prob?(star?b?.t60:b?.clear):kind==='guild'?b?.score:b?.sum,has=Number.isFinite(v);
   const noItems=!!r?.snapshot&&!Object.values(r.snapshot.changes||{}).some(a=>a?.changedFields?.length);
-  const tone=has&&(!prob||v>=.7)?'best':'plain';
-  return {tone,tab:prob&&has&&v>=1?'추가 육성 불필요':noItems?'더 올릴 항목 없음':tone==='best'?'지금 편성이 최선':'더 나은 편성 없음'};}
+  const tone=has&&prob&&v>=.7?'best':'plain';  // 점수형(길드·코스모)은 «더 높은 점수 없음»이 «충분함»이 아니므로 best 금지(codex 검토)
+  return {tone,tab:prob&&has&&v>=1?'추가 육성 불필요':noItems?'더 올릴 항목 없음':!prob&&has?'더 높은 점수 없음':tone==='best'?'지금 편성이 최선':'더 나은 편성 없음'};}
 function growthNonePaint(c,r){let el=$('growth-result');
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
   const errs=r?.snapshot?.errors||[],hint=growthNoneHint(c.key,r),{tone,tab}=growthNoneTone(c.key,r);
