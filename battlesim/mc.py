@@ -2516,9 +2516,13 @@ class Battle:
                       [ln for ln in lines if ln.src_kind not in ('active', 'trigger', 'nova')])
             if self.mc['passive_se_order'] == 'client':
                 active, passive = groups
+                # Poten SEs follow active AND AfterActiveSkillSe passives
+                # (NKM:2658-2674,2818-2822), despite sharing src_kind.
+                potentials = [ln for ln in passive if ln.slot == '잠재력']
+                passive = [ln for ln in passive if ln.slot != '잠재력']
                 groups = ([ln for ln in passive if not after_active_se(u.key, ln)], active,
-                          [ln for ln in passive if after_active_se(u.key, ln)])
-                if active and passive:
+                          [ln for ln in passive if after_active_se(u.key, ln)], potentials)
+                if active and (passive or potentials):
                     self.rule_hits['passive_se_order'] += 1
             if self.mc['skill_end_timing'] == 'client':
                 self.rule_hits['skill_end_timing'] += sum(ln.eff['kind'] == 'remove' for ln in lines)
@@ -5175,11 +5179,14 @@ class Battle:
     def apply_buff(self, owner, eff, ctx, hot=0.0, raw=''):
         if (self.mc['se_independent_roll'] == 'client' and eff.get('times', 1) > 1
                 and not eff.get('consume') and not eff.get('per_hit') and not eff.get('per_crit')
-                and (eff.get('chance', 1) < 1 or eff.get('judge'))):
-            # Flattened identical SEs retain separate activation and resistance rolls.
+                and (eff.get('repeat_buff') or eff.get('chance', 1) < 1 or eff.get('judge'))):
+            # Separate SEs keep rolling after failure. RepeatBuffCount stops
+            # only when a whole iteration fails (NKM:16396-16438).
             self.rule_hits['se_independent_roll'] += 1
             for _ in range(eff['times']):
-                self.apply_buff(owner, dict(eff, times=1), ctx, hot=hot, raw=raw)
+                applied = self.apply_buff(owner, dict(eff, times=1), ctx, hot=hot, raw=raw)
+                if eff.get('repeat_buff') and not applied:
+                    break
             return
         if eff['name'] == '강제 협공' and owner.side == 1 and self.mc['foe_forced_coop'] != 'on':
             return  # legacy는 자동 대상 추첨의 난수도 소비하지 않음.
@@ -5210,11 +5217,14 @@ class Battle:
                         del x.eff[eff['name']]
                     self.dirty(x)
             return
+        applied = False
         for x in tg:
             if self.R(owner.side).random() >= eff['chance']:
                 continue
             self._fired(owner)
-            self.add_effect(owner, x, eff, ctx, hot=hot, fixed='해제 불가' in raw)
+            if self.add_effect(owner, x, eff, ctx, hot=hot, fixed='해제 불가' in raw):
+                applied = True
+        return applied
 
     def _is_any_turn(self, owner, name):
         """효과 설명에 '누군가 턴 종료 시 턴 수가 차감' 이 있는 상태(유닛 사전 우선, 없으면 전체 적 스킬 사전)."""
@@ -5554,6 +5564,7 @@ class Battle:
                 and (old_props or e.props or (step is not None and same)
                      or (name == '강화 불가' and not x.ban_refuse))):
             self.dirty(x)
+        return True
 
     def forced_coop(self, owner, ctx, n):
         """live_atk/stat_atk 재현용 즉시 강제 협공. random은 효과 대상 플래그를 coop에서 읽음."""

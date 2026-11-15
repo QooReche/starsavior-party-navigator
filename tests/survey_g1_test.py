@@ -1,7 +1,9 @@
 """11/15 client regressions, synthetic stats; --mutate disables each fix."""
 import copy
 import io
+import inspect
 import sys
+import textwrap
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -12,7 +14,8 @@ from simkit import battle, give, unit
 from battlesim.api import _norm_party
 from battlesim.mc import Battle, Ctx, line_kind
 from battlesim.metrics import unit_def, get_db
-from battlesim.starsavior.parser import Line
+from battlesim.starsavior.parser import Line, Skill
+from battlesim.starsavior.myinfo_combat import apply_potentials
 
 
 def selected(key, **skills):
@@ -30,6 +33,92 @@ def setup(key, **skills):
 
 
 class SurveyG1(unittest.TestCase):
+    def test_cast_fires_hit_allies_at_skill_end(self):
+        b = battle([unit('owner'), unit('victim1'), unit('victim2')],
+                   [unit('attacker', skills=[dict(slot='기본기', dm=1, all=True)])],
+                   opts={'coop': False, 'nova': False})
+        owner = b.allies[0]
+        owner.d.lines = [Line('[스킬 사용 후] (조건: 아군이 피격될 때 [자신 포함: 아니오]) 자신에게 〈냉각〉 (지속 무한) {최대 5중첩}', '고유 패시브', 'passive')]
+        seen = []
+        deal = b.deal
+        def record(actor, ctx):
+            deal(actor, ctx)
+            seen.append((len(ctx.hit_targets), owner.stack('냉각')))
+        b.deal = record
+        attacker = b.foes[0]
+        b.cast(attacker, attacker.d.skills['기본기'])
+        self.assertEqual(seen, [(3, 0)])
+        self.assertTrue(all(x.taken > 0 for x in b.allies))
+        self.assertEqual(owner.stack('냉각'), 1, '실제 cast의 SKILL_END에서 한 번 발동')
+        self.assertEqual(b.rule_hits['hit_ally_skill_end'], 1)
+
+    def test_repeat_buff_stops_only_after_whole_iteration_fails(self):
+        # SE10172012/41/81: one RepeatBuffCount=2 SE, not two SEs.
+        for level in (1, 4, 8, 10):
+            with self.subTest(level=level):
+                b, a, v = setup('cristelle', special=level)
+                ln = next(x for x in b.lines_of(a) if x.slot == '특수기' and x.eff.get('name') == '연소')
+                c = Ctx(a, a, Skill(next(s for s in a.d.u['sk'] if s['sl'] == '특수기')))
+                c.target, c.targets = v, [v]
+                with patch.object(b.R(0), 'random', return_value=0), patch.object(b, 'roll_hit', side_effect=[False, True]) as hit:
+                    b.run_line(a, ln, c)
+                self.assertEqual(v.stack('연소'), 0)
+                self.assertEqual(hit.call_count, 1)
+        # One failed target must not abort the other target or next repeat.
+        d = selected('cristelle', special=1)
+        b = battle([d], [unit('first'), unit('second')])
+        a, (v, w) = b.allies[0], b.foes
+        ln = next(x for x in b.lines_of(a) if x.slot == '특수기' and x.eff.get('name') == '연소')
+        c = Ctx(a, a, Skill(next(s for s in a.d.u['sk'] if s['sl'] == '특수기')))
+        c.target, c.targets = v, [v, w]
+        with patch.object(b.R(0), 'random', return_value=0), patch.object(b, 'roll_hit', side_effect=[False, True, True, False]) as hit:
+            b.run_line(a, ln, c)
+        self.assertEqual([v.stack('연소'), w.stack('연소')], [1, 1])
+        self.assertEqual(hit.call_count, 4)
+        # Separate Ceres SEs: a failed first freeze does not stop the second.
+        b, a, v = setup('ceres', special=1)
+        ln = next(x for x in b.lines_of(a) if x.slot == '특수기' and x.eff.get('name') == '빙결')
+        c = Ctx(a, a, a.d.skills['특수기'])
+        c.target, c.targets = v, [v]
+        with patch.object(b.R(0), 'random', return_value=0), patch.object(b, 'roll_hit', side_effect=[False, True]) as hit:
+            b.run_line(a, ln, c)
+        self.assertEqual(v.stack('빙결'), 1)
+        self.assertEqual(hit.call_count, 2)
+
+    def test_potential_chain_after_active_and_after_active_passive(self):
+        d = selected('luna', ultimate=1, passive=0)
+        apply_potentials(d, get_db(), {'potentials': [[11003, 1]]})
+        b = battle([d], [unit('chaos', hp=10**9, df=1000, element='혼돈', sa=99)],
+                   opts={'coop': False, 'nova': False})
+        a = b.allies[0]
+        give(a, '지금이니!(해제불가)')
+        self.assertEqual(a.stack('통찰'), 0)
+        with patch.object(b, 'apply_damage', wraps=b.apply_damage) as damage:
+            b.cast(a, a.d.skills['궁극기'])
+        chains = [call.args[2] for call in damage.call_args_list if call.args[3] == 'chain']
+        self.assertEqual(chains, [452])  # pre-active potential used to deal 444
+        self.assertEqual(a.stack('통찰'), 2)
+        self.assertEqual(a.stack('지금이니!(해제불가)'), 0)
+        self.assertGreater(b.foes[0].taken, 452)
+        # Trish's AfterActiveSkillSe grants leap after active consumes five;
+        # the potential must see the newly granted three, not zero or five.
+        b, a, v = setup('trish')
+        a.d.lines = list(a.d.lines)  # keep cached unit_def clean across mutations
+        apply_potentials(a.d, get_db(), {'potentials': [[11003, 1]]})
+        give(a, '도약', stacks=5)
+        give(a, '지금이니!(해제불가)')
+        c = Ctx(a, a, a.d.skills['궁극기'])
+        c.target, c.targets, c.kill = v, [v], True
+        seen = []
+        run = b.run_batch
+        def record(owner, lines, ctx):
+            if any(x.slot == '잠재력' for x in lines):
+                seen.append(owner.stack('도약'))
+            return run(owner, lines, ctx)
+        b.run_batch = record
+        b.run_own(a, c, 'own_post')
+        self.assertEqual(seen, [3])
+
     def test_hit_ally_once_and_same_victim(self):
         b = battle([unit('owner'), unit('moon', element='달'), unit('sun', element='태양')],
                    [unit('attacker', skills=[dict(slot='기본기', dm=1, all=True)])],
@@ -169,6 +258,20 @@ def mutations(cls, cases):
             assert not result.errors, (key, name, result.errors)
             print('KILLED', key, name)
 
+
+def source_mutation(method, old, new, test):
+    """Remove just the reviewed change; patch restores the live method afterward."""
+    original = getattr(Battle, method)
+    source = textwrap.dedent(inspect.getsource(original))
+    assert old in source, (method, 'mutation anchor missing')
+    namespace = {}
+    exec(compile(source.replace(old, new, 1), '<G1 mutation>', 'exec'), original.__globals__, namespace)
+    with patch.object(Battle, method, namespace[method]):
+        result = unittest.TextTestRunner(stream=io.StringIO()).run(SurveyG1(test))
+    assert not result.wasSuccessful() and not result.errors, (method, test, result.errors)
+    assert getattr(Battle, method) is original
+    print('KILLED', method, test)
+
 if __name__ == '__main__':
     if '--mutate' in sys.argv:
         mutations(SurveyG1, MUTATIONS)
@@ -176,5 +279,17 @@ if __name__ == '__main__':
             r = unittest.TextTestRunner(stream=io.StringIO()).run(SurveyG1('test_passive_precedes_new_debuff_and_stack'))
         assert not r.wasSuccessful() and not r.errors
         print('KILLED AfterActiveSkillSe exception')
+        source_mutation('apply_buff', "if eff.get('repeat_buff') and not applied:",
+                        'if False:', 'test_repeat_buff_stops_only_after_whole_iteration_fails')
+        source_mutation('run_own',
+                        "potentials = [ln for ln in passive if ln.slot == '잠재력']\n"
+                        "            passive = [ln for ln in passive if ln.slot != '잠재력']",
+                        'potentials = []',
+                        'test_potential_chain_after_active_and_after_active_passive')
+        source_mutation('run_own', "[ln for ln in passive if after_active_se(u.key, ln)], potentials)",
+                        "potentials, [ln for ln in passive if after_active_se(u.key, ln)])",
+                        'test_potential_chain_after_active_and_after_active_passive')
+        source_mutation('cast', 'self.fire_hit_allies(u, ctx)', 'pass',
+                        'test_cast_fires_hit_allies_at_skill_end')
     else:
         unittest.main()

@@ -265,6 +265,12 @@ def description_lines(d, lines, rules=None):
         e = ln.eff
         name = e.get('name') or ''
         if e['kind'] == 'buff' and name:
+            # RepeatBuffCount is not a bundle of independent SE rows. The
+            # probabilistic repeat in playable skills is Cristelle's burn:
+            # SE10172012/41/81 and SPECIAL2 SE10175012/41/81 (all levels).
+            # Other flattened grants (Epindel/Ceres, etc.) stay independent.
+            if d.key == 'cristelle' and ln.slot == '특수기' and name == '연소':
+                e['repeat_buff'] = True
             # 수혜자 속성: 공격 대상 조건/시전자 속성과 독립적으로 필터링한다.
             for sentence in desc.split('. '):
                 if '[' + name + ']' not in sentence:

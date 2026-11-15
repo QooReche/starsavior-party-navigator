@@ -3,10 +3,6 @@
   "hash": "6a9b2b5a75618e30",
   "history": [
    {
-    "hash": "eec6d66a5b21cb23",
-    "reason": "능력치 단 구성·속도 정수화·행동 게이지·적 수호자 동률(stat_stage·turn_gauge·stat_floor·guard_tie) — 길드 방어전 시즌 미오픈"
-   },
-   {
     "hash": "e6a7e9f1524b9f68",
     "reason": "지속/즉시 피해 피격 결과 NormalHit(dot_hit_result) — 길드 방어전 시즌 미오픈"
    },
@@ -41,16 +37,16 @@
    {
     "hash": "6a9b2b5a75618e30",
     "reason": "11/15 전수조사 수정 G3, 길드 방어전 시즌 미오픈"
+   },
+   {
+    "hash": "6a9b2b5a75618e30",
+    "reason": "11/15 전수조사 리뷰 반영, 길드 방어전 시즌 미오픈"
    }
   ]
  },
  "quick": {
   "hash": "6a9b2b5a75618e30",
   "history": [
-   {
-    "hash": "eec6d66a5b21cb23",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "e6a7e9f1524b9f68",
     "reason": "calibrate_quick --write 재보정"
@@ -77,6 +73,10 @@
    },
    {
     "hash": "c103067eceff8481",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "6a9b2b5a75618e30",
     "reason": "calibrate_quick --write 재보정"
    },
    {
