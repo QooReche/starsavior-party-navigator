@@ -46,6 +46,7 @@ class ForcedCoopTest(unittest.TestCase):
 
     def test_uniform_forced_priority_and_single_slot(self):
         b, a, ctx = self.setup_battle()
+        b.mc['living_slot_order'] = 'legacy'  # 이 고정 choice 모형은 기존 후보 순서를 격리한다.
         b._forced_coop_candidates.update(b.allies[:3])  # 자신은 후보에서 빠짐
         give(b.allies[3], '일반 협공', {'협공 확률': 100})
         rng = Mock()

@@ -55,6 +55,7 @@ _KEEP = {'rekindle_apply': 'multiply', 'dmg_cap_scope': 'reduce', 'ally_break_ga
          'nova_force_cap': 0, 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget',
          # 2026-11-04 기본 전환분은 legacy 로 고정
          'preemptive_defense': 'recognize', 'toughness_elem': 'db', 'break_point_hits': 'once', 'break_auto_blocked_cc': 'off'}   # 해시는 옛 규칙 기준(캐시 동일성 시험이 목적)
+_KEEP.update(target_row_slot='legacy', living_slot_order='legacy', role_damage_terms='off')
 _KEEP['myinfo_potential_coverage'] = False
 _KEEP['stack_react_timing'] = 'book'
 _KEEP['clash_no_turn_limit'] = False
@@ -67,6 +68,8 @@ _KEEP.update(stat_floor='float', chain_round='float', chain_guard='off', guard_t
 _KEEP.update(hit_ally_skill_end='legacy', skill_end_timing='legacy', passive_se_order='legacy', se_independent_roll='legacy')
 _KEEP.update(bloom_passive_levels='legacy', independent_stack_limits='legacy', smile_waterbomb_scope='legacy', scarlet_pinball_marker='legacy', cristelle_ignite_targets='legacy', shield_enemy_count='legacy', gauge_lock_order='legacy', damage_break_boundary='legacy')
 _KEEP.update(revive_toughness='legacy', potential_11026_vampirism='legacy', heal_cleanse_skill_end='legacy')
+_KEEP['last_damager_timing'] = 'per_target'
+_KEEP['self_hp_condition'] = 'ratio'
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

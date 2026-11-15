@@ -22,7 +22,7 @@ def test_defaults_client():
 def _foe_tie(mode, slots):
     """적 3기: 대상 칸 slots[0], 수호 후보 둘(같은 비율) 칸 slots[1]·slots[2]. 먼저 보는 쪽 = 두 번째 적"""
     b = battle([unit('a')], [unit('t'), unit('g1'), unit('g2')],
-               mc={'guard_tie': mode, 'chain_guard': 'client'})
+               mc={'guard_tie': mode, 'chain_guard': 'client', 'living_slot_order': 'legacy'})
     t, g1, g2 = b.foes
     for u, sl in zip((t, g1, g2), slots):
         u.d.game_slot = sl
@@ -32,7 +32,7 @@ def _foe_tie(mode, slots):
 
 
 def test_foe_guard_tie_front_slot():
-    # 485 꼴(칸 0·2·4): 칸 4(후열) 가 먼저 보여도 칸 2(전열)가 수호
+    # 485 꼴(칸 0·2·4): 칸 4(전열·후열 모두 아님)가 먼저 보여도 칸 2(전열)가 수호
     b, g, (t, g1, g2) = _foe_tie('client', (0, 4, 2))
     assert g is g2, g.name
     assert b.rule_hits['guard_tie'] >= 1

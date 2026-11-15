@@ -304,6 +304,7 @@ def test_index_uses_merged_opts():
 # note 키 4개를 MC_OPTS 에서 뺐을 때 기존 출력이 그대로인지 고정한다.
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
+    'last_damager_timing', 'self_hp_condition',
     'revive_toughness', 'potential_11026_vampirism', 'heal_cleanse_skill_end',
     'bloom_passive_levels', 'independent_stack_limits', 'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'shield_enemy_count', 'gauge_lock_order', 'damage_break_boundary',
     'hit_ally_skill_end', 'skill_end_timing', 'passive_se_order', 'se_independent_roll',
@@ -329,12 +330,12 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'break_skill_hit_pct', 'break_skill_level', 'break_skill_normal_points',
     'break_skill_point_cap', 'break_skill_role_speed_pct', 'break_skill_scale',
     'break_skill_speed_pct', 'break_skills',
-    'break_skill_reduce', 'buff_maxhp', 'buff_step_group', 'chain_pen', 'chain_round', 'chain_guard', 'stat_floor', 'guard_tie', 'stat_stage', 'turn_gauge', 'chain_skill_damage_up', 'check_buff_expiry', 'cond_count_bind', 'cosmo_boss_barrier', 'counter_inc',
+    'break_skill_reduce', 'buff_maxhp', 'buff_step_group', 'chain_pen', 'chain_round', 'chain_guard', 'stat_floor', 'target_row_slot', 'living_slot_order', 'guard_tie', 'stat_stage', 'turn_gauge', 'chain_skill_damage_up', 'check_buff_expiry', 'cond_count_bind', 'cosmo_boss_barrier', 'counter_inc',
     'debuff_instance_count', 'effect_dur_extend', 'enemy_auto_target', 'enemy_cd_native',
     'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
     'enemy_leader', 'enemy_same_formula', 'enemy_spawn', 'evade_model',
     'foe_auto', 'foe_react', 'foe_react_buff_count', 'foe_react_timing', 'gauge_conditional', 'guild_boss', 'guild_count', 'gauge_overflow', 'guard_mode', 'guard_normal_hit',
-    'heal_target', 'instant_damage', 'leader_speed', 'level_buff_decrease', 'local_vs_element', 'manual_burst',
+    'heal_target', 'instant_damage', 'leader_speed', 'level_buff_decrease', 'local_vs_element', 'role_damage_terms', 'manual_burst',
     'max_depth', 'max_events', 'myinfo_combat', 'myinfo_potential_coverage',
     'nova_force_effects', 'nova_skill_gain', 'nova_slot_effects', 'nova_force_cap',
     'power_penalty', 'preemptive_defense', 'rand_range', 'reaction_timing', 'revenge',

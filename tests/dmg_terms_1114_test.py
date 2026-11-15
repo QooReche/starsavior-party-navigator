@@ -102,7 +102,7 @@ def test_stat_floor_def_coef_skill():
 def _tie(mode):
     """아군 4칸(엔진 칸 0·1 전열, 2·3 후열) 중 칸 1(전열)·칸 2(후열)·칸 3(후열)이 같은 분담 비율. 대상 = 칸 0."""
     b = battle([unit('t'), unit('f2'), unit('b1'), unit('b2')], [unit('foe', atk=1000)],
-               mc={'guard_tie': mode, 'chain_guard': 'client', 'chain_round': 'client'})
+               mc={'guard_tie': mode, 'chain_guard': 'client', 'chain_round': 'client', 'living_slot_order': 'legacy'})
     t, f2, b1, b2 = b.allies
     for w in (b2, b1, f2):
         give(w, '수호', {'피해 분담(수호)': 30})
@@ -123,7 +123,7 @@ def test_guard_tie_first():
 
 
 def test_guard_tie_both_back_keeps_first():
-    b = battle([unit('t'), unit('f2'), unit('b1'), unit('b2')], [unit('foe')], mc={'guard_tie': 'client', 'chain_guard': 'client'})
+    b = battle([unit('t'), unit('f2'), unit('b1'), unit('b2')], [unit('foe')], mc={'guard_tie': 'client', 'chain_guard': 'client', 'living_slot_order': 'legacy'})
     t, f2, b1, b2 = b.allies
     for w in (b1, b2):
         give(w, '수호', {'피해 분담(수호)': 30})

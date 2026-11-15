@@ -742,7 +742,26 @@ class Unit:
                    and (positive_buff(e.name, e.category == 'buff') if table else e.category == 'buff'))
 
 
+@lru_cache(maxsize=256)
+def _role_prop(name):
+    """Role damage terms: display values are percent, raw NST values per 10,000."""
+    roles = dict(zip(('STRIKER', 'CASTER', 'ASSASSIN', 'RANGER', 'DEFENDER', 'SUPPORTER'), ROLE_NAMES))
+    raw = re.fullmatch(r'NST_RATE_DAMAGE_(UP|REDUCE)_ROLE_([A-Z]+)', name)
+    if raw and raw[2] in roles:
+        return ('inc_role' if raw[1] == 'UP' else 'red_role', roles[raw[2]], 10000.0)
+    display = re.fullmatch(r'vs (.+?) (?:클래스 )?피해 (증가|감소)', name)
+    if display and display[1] in ROLE_NAMES:
+        return ('inc_role' if display[2] == '증가' else 'red_role', display[1], 100.0)
+    return None
+
+
 def _add_prop(m, k, v, stacks):
+    role = _role_prop(k)
+    if role:
+        key, sub, scale = role
+        values = m.setdefault(key, {})
+        values[sub] = values.get(sub, 0.0) + v / scale * stacks
+        return
     key, sub = _map_prop(k)
     val = v / 100.0 * stacks
     if key is not None:
@@ -805,7 +824,7 @@ class Ctx:
     """시전 1회(또는 피격 반응 1회)의 문맥. owner = 줄 주인, src = 시전자(공격자), skill = 시전 스킬, target = 대상."""
     __slots__ = ('owner', 'src', 'skill', 'extra', 'targets', 'target', 'inc', 'atkp', 'cr', 'cd', 'pen', 'eh', 'crit',
                  'kill', 'coop_used', 'heal_give', 'heal_recv', 'local', 'nb', 'hit_victim', 'acc', 'evaded', 'recv_by',
-                 'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets',
+                 'local_by', 'inc_role', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets',
                  'crit_targets', 'break_targets', 'markers', 'dead_targets', 'tough_targets', 'vamp_damage', 'guild_bridal_targets', 'end_targets', 'hit_vampirism')
 
     def __init__(self, owner, src, skill, extra=False):
@@ -826,6 +845,7 @@ class Ctx:
         self.heal_give = self.heal_recv = 0.0
         self.recv_by = defaultdict(float)      # 대상별 「받는 회복량」 보정(이번 스킬): 대상마다 따로(공유 금지)
         self.local_by = defaultdict(lambda: defaultdict(float))   # 대상별 「이번 스킬에만」 피해 보정(대상 조건이 붙은 줄, 전체 공격)
+        self.inc_role = defaultdict(float)   # 시전자 역할별 증가: 수호자·별도 연쇄 수신자도 피해 계산 때 조회
         self.evaded = set()   # 이 시전에서 회피한 대상(회피한 대상에는 약화가 걸리지 않음)
         self.crit = False
         self.kill = False
@@ -966,7 +986,17 @@ class Battle:
         return self.allies if side == 0 else self.foes
 
     def alive(self, side):
-        return [u for u in (self.allies if side == 0 else self.foes) if not u.dead]
+        pool = [u for u in (self.allies if side == 0 else self.foes) if not u.dead]
+        if self.mc['living_slot_order'] == 'client':
+            # NKM:992,1032,1217,13021-13023: living teams enumerate the
+            # original game slot array. Engine ally positions use a different order.
+            slots = [self._game_slot(u) for u in pool]
+            if all(slot is not None for slot in slots):
+                ordered = [u for _, u in sorted(zip(slots, pool), key=lambda pair: pair[0])]
+                if ordered != pool:
+                    self.rule_hits['living_slot_order'] += 1
+                return ordered
+        return pool
 
     def turn_now(self):
         return self.t / self.turn_ticks
@@ -1952,7 +1982,7 @@ class Battle:
             # AutoTargetId 52, build 26610546 NKM:7901-7912: break, stun, sleep.
             return [v for v in pool if not self.no_react(v)]
         if st == 'back':
-            return [v for v in pool if v.pos >= 2]
+            return [v for v in pool if self._target_row(v, front=False)]
         if st in ROLE_NAMES:
             return [v for v in pool if v.role == st]
         if st == 'boss':
@@ -1974,7 +2004,7 @@ class Battle:
             dead = [v for v in self.side_units(att.side) if v.dead]
             return [max(dead, key=lambda v: getattr(v, 'death_n', 0))] if dead else None
         if st == 'front':
-            return [v for v in pool if v.pos < 2]
+            return [v for v in pool if self._target_row(v, front=True)]
         if st == 'defender':
             return [v for v in pool if v.role == '디펜더']
         raise ValueError('auto_skill 필터 미지원: %r' % (st,))
@@ -2869,6 +2899,13 @@ class Battle:
                 if any(crit for _, crit in prepared.values()):
                     ctx.hit_vampirism = sum(rates)
                 self.rule_hits['potential_11026_vampirism'] += 1
+        if self.mc['last_damager_timing'] == 'client':
+            # build 26610546 NKM:15669-15689: remember all skill victims before
+            # DAMAGE_START or any hit. AddDamage/DoT do not write this memory.
+            for v in ctx.targets:
+                if not v.dead and a.side != v.side:
+                    v.last_damager = a
+            self.rule_hits['last_damager_timing'] += 1
         reactions = []
         for v in list(ctx.targets):
             if v.dead:
@@ -2889,8 +2926,8 @@ class Battle:
             if evaded:
                 ctx.evaded.add(v)
             t0 = v.taken
-            if a.side != v.side:
-                v.last_damager = a    # 게임 IsLastDamageTarget: 스킬 타격 때 피해 계산 전에 기록(NKM 15563~15579, 피해 무효여도)
+            if self.mc['last_damager_timing'] == 'per_target' and a.side != v.side:
+                v.last_damager = a
             self.strike(a, v, base, ctx, crit, min(3.0, cdv + by['cd']), min(1.0, pen + by['pen']), reactions, evaded)
             if self._hit_log is not None and ctx.via != 'revenge' and v.taken > t0:
                 # 반격 후보 = 피해(보호막 흡수 포함)가 0보다 큰 타격(NKM 7203~7215, 회피도 피해가 남으면 포함). 반격으로 낸 타격은 제외
@@ -3092,6 +3129,8 @@ class Battle:
         dr = max(0.0, dr - dr * pen)
         inc = ctx.inc + ctx.local_by[v]['inc'] + m['inc'] + m['inc_slot'].get(sk.slot, 0.0) + m['inc_vs'].get(v.element, 0.0)
         inc += m['inc_aoe'] if sk.all else m['inc_single']
+        role_inc, role_red = self._role_damage_terms(a, v, ctx)
+        inc += role_inc
         if a.element and v.element:
             if ELEM_BEATS.get(a.element) == v.element:
                 inc += 0.05
@@ -3103,6 +3142,7 @@ class Battle:
             inc += m['inc_break'] + ctx.inc_break      # 「브레이크 대상 피해 증가」(공격자 쪽, 증가 합)
         red = vm['red']
         dec = red.get('all', 0.0) + red.get('aoe' if sk.all else 'single', 0.0) + red.get(sk.slot, 0.0)
+        dec += role_red
         if hctx is not None and hctx.local is not None:
             dec += hctx.local[v]['red']      # 피격 직전 「이번 스킬에만」 피해 감소(감소 합에 더함)
         if hctx is not None and v in hctx.evaded:
@@ -3113,6 +3153,19 @@ class Battle:
         mult = self._damage_mult(inc, dec, max(0.0, cdv - vm['critred'] - local_critred) if crit else 0.0)
         dmg = base * (1 - dr) * mult * r * self.pen[a.side]
         return max(1.0, math.floor(dmg))
+
+    def _role_damage_terms(self, attacker, victim, ctx=None, *, chain=False):
+        # NKM:18006-18021,18059-18074; normal sums:18508,18636.
+        # Add damage reads only the attacker's role increase (6212-6236).
+        if self.mc['role_damage_terms'] != 'client':
+            return 0.0, 0.0
+        inc = attacker.mods().get('inc_role', {}).get(victim.role, 0.0)
+        if ctx is not None and ctx.src is attacker:
+            inc += ctx.inc_role.get(victim.role, 0.0)
+        red = 0.0 if chain else victim.mods().get('red_role', {}).get(attacker.role, 0.0)
+        if inc or red:
+            self.rule_hits['role_damage_terms'] += 1
+        return inc, red
 
     def _damage_mult(self, inc, dec, critical=0.0):
         """26610546 NKM:18187-18193,18314: 치명 포함 순증감에 감소 상한 적용.
@@ -3179,6 +3232,24 @@ class Battle:
         if deck == 'BATTLE_SLOT_3':
             return i == 1
         return i in (1, 2)
+
+    def _target_row(self, u, *, front):
+        """NKM:7766-7809 uses game slots, not the engine unit list index.
+
+        Slot 4 in a four-slot host is neither front nor back (13247-13263).
+        Unknown custom placements retain the previous approximation.
+        """
+        if self.mc['target_row_slot'] == 'client':
+            slot = self._game_slot(u)
+            if slot is not None:
+                self.rule_hits['target_row_slot'] += 1
+                deck = self._game_deck()
+                if front:
+                    return self._front_slot(slot, deck)
+                if deck in ('BATTLE_SLOT_1', 'BATTLE_SLOT_2'):
+                    return False
+                return slot in ((0, 2) if deck == 'BATTLE_SLOT_3' else (0, 3))
+        return (u.pos < 2) if front else (u.pos >= 2)
 
     def _chain_guard(self, v, base):
         """연쇄(추가) 피해의 수호 분담(NKM:8167 OBF_18133 → 17799-17803). (수호자, 분담 몫).
@@ -3703,6 +3774,9 @@ class Battle:
                             if src.last_slot is not None and src.last_slot == v.last_slot:
                                 inc += self.mc['counter_inc']
                             dec = v.mods()['red'].get('all', 0.0)
+                            role_inc, role_red = self._role_damage_terms(src, v)
+                            inc += role_inc
+                            dec += role_red
                             if v.broken:
                                 inc += sm['inc_break']
                                 dec -= _rules.BREAK_DEC
@@ -3919,6 +3993,14 @@ class Battle:
         mh = RX_HP_COND.search(ln.raw)
         if mh:
             frac = owner.hp / owner.maxhp * 100
+            if self.mc['self_hp_condition'] == 'client' and mh.group(2) in ('이상', '이하'):
+                # NKM:2191-2198,16508-16516: float division, float *10000,
+                # then integer truncation. This differs from target condition's
+                # double multiplication (hp_basis_points).
+                maximum = _float32(owner.maxhp)
+                ratio = _float32(_float32(owner.hp) / maximum) if maximum else 0.0
+                frac = int(_float32(ratio * 10000.0)) / 100.0
+                self.rule_hits['self_hp_condition'] += 1
             thr = float(mh.group(1))
             if mh.group(2) == '이상' and not frac >= thr - 1e-9:
                 return False
@@ -4468,6 +4550,19 @@ class Battle:
             return
         if kd == 'local':
             st, v = eff['stat'], eff['val'] / 100.0
+            role = _role_prop(st)
+            if role and self.mc['role_damage_terms'] == 'client':
+                key, target_role, scale = role
+                value = eff['val'] / scale
+                if key == 'red_role' and ctx.local is not None and line_kind(ln) in ('prehit_self', 'prehit_ally'):
+                    if ctx.src is not None and ctx.src.role == target_role:
+                        ctx.local[owner]['red'] += value
+                        self.rule_hits['role_damage_terms'] += 1
+                    return
+                if key == 'inc_role' and ctx.src is owner and ctx.skill is not None:
+                    ctx.inc_role[target_role] += value
+                    self.rule_hits['role_damage_terms'] += 1
+                    return
             if ctx.local is not None and line_kind(ln) in ('prehit_self', 'prehit_ally'):
                 if st == '방어력%':
                     ctx.local[owner]['defp'] += v
@@ -5123,6 +5218,7 @@ class Battle:
             if self.mc['chain_pen'] != 'client':
                 dr = max(0.0, dr - dr * min(1.0, m['pen']))     # client: 추가 피해는 공격자 관통을 쓰지 않음(NKM:17356,17837-17855)
             inc = m['inc'] + m['inc_vs'].get(v.element, 0.0) + (m['inc_break'] if v.broken else 0.0)
+            inc += self._role_damage_terms(owner, v, ctx, chain=True)[0]
             # AddDamageController reads the caster's live DAMAGE_UP, including
             # skill-local stat effects (NKM:5601-5611). Do not inherit the
             # incoming attack's modifiers when a defender reacts.
@@ -5613,6 +5709,9 @@ def _meaning_gap(ln, k, markers):
             return None                     # 등장 후·웨이브 시작 시 능력치 보정은 _perm_apply 로 처리
         ok = LOCAL_PREHIT_OK if k in ('prehit_self', 'prehit_ally') else LOCAL_OK
         if e['stat'] in ok:
+            return None
+        role = _role_prop(e['stat'])
+        if role and role[0] == ('red_role' if k in ('prehit_self', 'prehit_ally') else 'inc_role'):
             return None
         if _m_vs.match(e['stat']):          # 「vs X 속성 피해 증가」 — _exec_line 에서 처리
             return None

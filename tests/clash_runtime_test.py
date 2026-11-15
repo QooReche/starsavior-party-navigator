@@ -94,7 +94,7 @@ class ClashCombatTest(unittest.TestCase):
                 waves, limit, fx, _, meta = _norm_encounter({'stage': 'clash/%s/%s Ⅲ' % (TABS[tab], TABS[tab])})
                 b = Battle([unit_def(k, build='standard') for k in ['gwen','fei','professor-m','amora']],
                            waves, random.Random(3), leader=0, turn_limit=limit, fx=fx,
-                           timeline=True, battle_mode=meta['battle_mode'])
+                           timeline=True, battle_mode=meta['battle_mode'], mc={'living_slot_order': 'legacy'})
                 observed = dict(stacks=0, shield=0, soldier_stacks=0)
                 def observe(battle, *args, **kwargs):
                     result = cast(battle, *args, **kwargs)

@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "6a9b2b5a75618e30",
+  "hash": "923c975eb88644cb",
   "history": [
-   {
-    "hash": "e6a7e9f1524b9f68",
-    "reason": "지속/즉시 피해 피격 결과 NormalHit(dot_hit_result) — 길드 방어전 시즌 미오픈"
-   },
    {
     "hash": "1a902070a947852f",
     "reason": "11/15 1~5번 합본(dot_hit_result·foe_auto·power_penalty·luck note·ev gauge), 길드 방어전 시즌 미오픈"
@@ -41,16 +37,16 @@
    {
     "hash": "6a9b2b5a75618e30",
     "reason": "11/15 전수조사 리뷰 반영, 길드 방어전 시즌 미오픈"
+   },
+   {
+    "hash": "923c975eb88644cb",
+    "reason": "슬롯 열 판정·클래스 피해 증감·최근 가해자 시점 클라 방식, 길드 방어전 시즌 미오픈"
    }
   ]
  },
  "quick": {
-  "hash": "6a9b2b5a75618e30",
+  "hash": "923c975eb88644cb",
   "history": [
-   {
-    "hash": "e6a7e9f1524b9f68",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "1a902070a947852f",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +81,10 @@
    },
    {
     "hash": "6a9b2b5a75618e30",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "923c975eb88644cb",
     "reason": "calibrate_quick --write 재보정"
    }
   ]
