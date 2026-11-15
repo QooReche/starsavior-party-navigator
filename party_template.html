@@ -280,6 +280,7 @@ summary{padding:9px 4px}
 </style><link rel="stylesheet" href="ux.css"></head><body><main>
 <header class="site-head"><h1>파티 편성 네비게이터 <small>베타</small></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button></span>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천</button><button id="tab-info" type="button" aria-pressed="false">내 구원자</button></nav></header>
+<p class="notice" data-k="update-notice">📢 11/15 업데이트 · 전투 판정을 게임 클라 기준으로 대폭 정정(버프 해제·면역·회피·행동 순서 등) · 클리어 확률이 낮으면 안내 표시 · 코스모 힐데 적 정보 추가</p>
 <p class="notice" data-k="notice">모의 전투 결과라 실제 플레이와 다를 수 있어요 <button type="button" class="ux-help" aria-label="계산 방식 설명" aria-expanded="false" data-help="내 구원자 수치로 모의 전투를 여러 판 돌려 클리어한 비율을 보여줘요. 계산에 쓰는 성장표와 게임 패치는 차이가 있을 수 있어요. 가정·출처·근거는 각 결과의 ⓘ와 더 보기에서 확인하세요.">ⓘ</button></p>
 <div id="shared-bar" class="shared-bar" hidden></div>
 <div class="panel input-panel">
@@ -330,7 +331,7 @@ summary{padding:9px 4px}
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 보세요.</div></div>
-<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관</p><details class="note"><summary>업데이트 내역(11/12)</summary>신규 구원자 길레·편애의 마녀 반영 · 격파된 아군도 다음 턴 행동(클라 기준) · 길드 방어전은 시즌 종료로 미오픈</details><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않습니다(관리자가 자료를 갱신한 뒤 반영).<br>구원자·스킬·아이콘 등 게임 이미지의 권리는 원 권리자에게 있습니다.<br>저장소 라이선스는 게임 이미지에 적용되지 않습니다.</details>
+<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관</p><details class="note"><summary>업데이트 내역(11/15)</summary>11/15: 전투 판정을 게임 클라 기준으로 정정(버프 해제·면역·회피·지속 피해·행동 순서·전투력 차이 보정) · 클리어 확률이 낮을 때 결과 카드에 안내 · 코스모 힐데 적 정보 추가 · 화력 지표 재계산<br>11/12: 신규 구원자 길레·편애의 마녀 반영 · 격파된 아군도 다음 턴 행동(클라 기준) · 길드 방어전은 시즌 종료로 미오픈</details><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않습니다(관리자가 자료를 갱신한 뒤 반영).<br>구원자·스킬·아이콘 등 게임 이미지의 권리는 원 권리자에게 있습니다.<br>저장소 라이선스는 게임 이미지에 적용되지 않습니다.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 계정 정보 불러오기</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
  <div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장합니다.</div>
@@ -1284,7 +1285,7 @@ function syncBrk(){const lv=MI.info?MyInfoImport.mapBreak(MI.info):null;MI.brkLv
  pruneBreakSel()}
 function renderChip(){const e=$("mi-chip");if(!e)return;const i=MI.info;e.classList.toggle("none",!i);
  e.dataset.state=i?"loaded":"empty";e.innerHTML=i?`${MI.shared?"공유받은 ":""}<b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(5,10).replace("-","/"))} 갱신`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"";document.querySelector(".input-panel").hidden=!$("mi-panel").hidden;$("option-chips").innerHTML=[rkOf(contents[$("content").value]?.key)?`재점화 ${$("rk").value}단계`:"",MM==="avoid"?"불리한 속성 피하기":"",!simAutoOn()?"모의 전투 자동 실행 꺼짐":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("");
- $("mi-open-import").textContent=i?"새로 불러오기":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["share-link","mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i}
+ $("mi-open-import").textContent=i?"새로 불러오기(내 정보)":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["share-link","mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i}
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b))}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  syncOwn();

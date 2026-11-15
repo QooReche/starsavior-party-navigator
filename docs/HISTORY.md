@@ -1,3 +1,9 @@
+## 2026-11-15 상단 업데이트 공지 복원·내 정보 불러오기 단추 구분
+
+- 기존 안내 바로 위에 `data-k="update-notice"` 공지를 복원하고 11/15 변경 요약을 넣었음. 하단 업데이트 내역은 11/15·11/12로 정리했음.
+- 내 정보를 불러온 상태의 단추를 「새로 불러오기(내 정보)」로 바꿨음. `index.html`을 다시 생성했음.
+- 화면 회귀 검사는 템플릿·생성 HTML의 공지 위치·날짜와 불러오기 전·후·정보 삭제 후 단추 이름을 확인함. 공지 삭제·날짜 되돌림·단추 이름 되돌림·생성 HTML만 이전 이름으로 남기는 4가지 깨뜨리기를 확인했음.
+
 ## 2026-11-15 1~6번 합본 — 사이트 화력 지표(data/damage_index.json) 새 엔진으로 재생성
 
 - 경로: `tools/sim_damage.py index`(공개 입력 rawdata/databook_main.json 만) → `tools/pack_damage.py` → `tools/build_quick_data.py` → `calibrate_quick --write`(tools/update.py 와 같은 순서). 커밋돼 있던 지표는 main 엔진으로 다시 만들면 바이트 단위로 같았음(변화는 전부 엔진 변경 몫).

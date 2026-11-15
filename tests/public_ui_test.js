@@ -1,4 +1,31 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+// Check both the editable template and the generated page served to users.
+for(const file of ['party_template.html','index.html']){
+ const page=fs.readFileSync(require.resolve('../'+file),'utf8');
+ const update=page.match(/<p class="notice" data-k="update-notice">([^<]*)<\/p>/);
+ assert(update,`${file}: top update notice exists`);
+ assert.match(update[1],/^📢 11\/15 업데이트 ·/,`${file}: update date`);
+ assert.equal((page.match(/data-k="update-notice"/g)||[]).length,1);
+ assert.match(page,/<\/header>\s*<p class="notice" data-k="update-notice">[^<]*<\/p>\s*<p class="notice" data-k="notice">모의 전투 결과라 실제 플레이와 다를 수 있어요/,`${file}: update directly above the original guidance`);
+ assert.match(page,/<summary>업데이트 내역\(11\/15\)<\/summary>11\/15:[^<]+<br>11\/12: 신규 구원자 길레/);
+ // Execute the real renderer through empty -> loaded -> cleared states.
+ const nodes=Object.fromEntries(['mi-chip','mi-panel','option-chips','content','rk','mi-open-import','share-mi','share-link','mi-view','mi-clear','mi-panel-clear'].map(id=>[id,{dataset:{},classList:{toggle(){}},closest(){return this;}}]));
+ nodes.content.value='op';nodes['mi-panel'].hidden=true;
+ const state={MI:{info:null},EXCL:new Set(),$:id=>nodes[id],document:{querySelector:()=>({})},contents:{op:{key:'op'}},rkOf:()=>false,MM:'',simAutoOn:()=>true,esc:String};
+ const chip=vm.createContext(state),start=page.indexOf('function renderChip()');
+ assert(start>=0,`${file}: renderChip exists`);
+ vm.runInContext(page.slice(start,page.indexOf('function saveSel()',start)),chip);
+ vm.runInContext('renderChip()',chip);
+ assert.equal(nodes['mi-open-import'].textContent,'내 정보 불러오기',`${file}: empty import label`);
+ state.MI.info={units:[]};
+ vm.runInContext('renderChip()',chip);
+ assert.equal(nodes['mi-chip'].dataset.state,'loaded');
+ assert.equal(nodes['mi-open-import'].textContent,'새로 불러오기(내 정보)',`${file}: loaded import label`);
+ state.MI.info=null;
+ vm.runInContext('renderChip()',chip);
+ assert.equal(nodes['mi-open-import'].textContent,'내 정보 불러오기',`${file}: cleared import label`);
+}
+
 const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
 const section=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a)));
 const ctx=vm.createContext({Ux:require('../ux_ui'),miNum:require('../ux_ui').num,growthEnabled:()=>false,miMode:()=>true,MODE:'auto',SIMQ:{res:{}},simSig:()=> 'selected',esc:s=>String(s).replaceAll('<','&lt;'),
@@ -52,4 +79,4 @@ assert.deepEqual(cfg.breakSkills['행성 정화'].bonusRoles,[]);
 assert.equal(cfg.breakSkills['행성 정화'].text,'광역 피해(공격력 100%), 강인도 피해 +1, 스킬 후 노바 +1');
 // Parse all template scripts as JavaScript; data replacement is an identifier in the template.
 for(const [,code] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(code);
-console.log('PASS public headline, mode consistency, boss contents, saved date, skill labels, break description, script syntax');
+console.log('PASS update notice, import label (template + index), public headline, mode consistency, boss contents, saved date, skill labels, break description, script syntax');
