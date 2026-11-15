@@ -59,6 +59,9 @@
                     "source": "databook #d-sum #d-break (docs/formulas_local.md 3장), 상태 효과 사전(속박·표적 각인, formulas_web.md 4.2)"}
  },
  "mc": {
+  "heal_cleanse_skill_end": {"value": "client", "legacy": "legacy", "alt": ["legacy", "client"], "grade": "code", "note": "웨딩 카르멘 궁극기는 기본 회복을 먼저 처리하고 SKILL_END에 약화를 해제함.", "source": "build 26610546: NKM.decompiled.cs:15598,15759-15789 / tables/SE_TEMPLET_SKILL_1.json:35404-35414"},
+  "potential_11026_vampirism": {"value": "client", "legacy": "legacy", "alt": ["legacy", "client"], "grade": "code", "note": "특수기·궁극기 타격 결과 중 치명타가 있으면 해당 시전의 대상별 피해에 흡혈20%를 가산함. 다음 시전에 남기지 않음.", "source": "build 26610546: NKM.decompiled.cs:15668-15687,8321-8333,9557-9585 / NKM.Templets.decompiled.cs:43184-43198 / tables/SE_TEMPLET_POTEN.json:282-328 / tables/Plain/SKILL_CONDITION_TEMPLET.json:2883-2896"},
+  "revive_toughness": {"value": "client", "legacy": "legacy", "alt": ["legacy", "client"], "grade": "code", "note": "부활 시 최대 강인도를 복원하고 격파 상태를 해제함.", "source": "build 26610546: NKM.decompiled.cs:5472,17247-17250,17328-17330"},
   "damage_break_boundary": {"value": "client", "legacy": "legacy", "alt": ["legacy", "client"], "grade": "code", "note": "대미지 브레이크 HP 하한과 같은 생명력도 보호 대상에 포함함.", "source": "build 26610546: NKM.decompiled.cs:4124-4139 / tables SE_TEMPLET_SKILL_1.json:54348-54355"},
   "gauge_lock_order": {"value": "client", "legacy": "legacy", "alt": ["legacy", "client"], "grade": "code", "note": "할로윈 리디아의 게이지 증가 후 재발동 제한 표지를 부여하며 다음 턴 시작까지 유지함.", "source": "build 26610546: NKM.decompiled.cs:16101-16117 / tables SE_TEMPLET_SKILL_1.json:40944-40968,41248-41275"},
   "shield_enemy_count": {"value": "client", "legacy": "legacy", "alt": ["legacy", "client"], "grade": "code", "note": "웨딩 에핀델의 피해 보정은 보호막 종류가 아닌 보호막을 보유한 적 수를 셈.", "source": "build 26610546: NKM.decompiled.cs:16101-16117 / tables SE_TEMPLET_SKILL_1.json:36279 / tables BUFF_TEMPLET.json:29541"},

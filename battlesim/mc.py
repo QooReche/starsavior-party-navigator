@@ -806,7 +806,7 @@ class Ctx:
     __slots__ = ('owner', 'src', 'skill', 'extra', 'targets', 'target', 'inc', 'atkp', 'cr', 'cd', 'pen', 'eh', 'crit',
                  'kill', 'coop_used', 'heal_give', 'heal_recv', 'local', 'nb', 'hit_victim', 'acc', 'evaded', 'recv_by',
                  'local_by', 'tough', 'tough_fixed', 'inc_break', 'force_crit', 'via', 'parent', 'hit_targets',
-                 'crit_targets', 'break_targets', 'markers', 'dead_targets', 'tough_targets', 'vamp_damage', 'guild_bridal_targets', 'end_targets')
+                 'crit_targets', 'break_targets', 'markers', 'dead_targets', 'tough_targets', 'vamp_damage', 'guild_bridal_targets', 'end_targets', 'hit_vampirism')
 
     def __init__(self, owner, src, skill, extra=False):
         self.owner, self.src, self.skill, self.extra = owner, src, skill, extra
@@ -818,6 +818,7 @@ class Ctx:
         self.end_targets = {}
         self.dead_targets = set()
         self.vamp_damage = defaultdict(float)
+        self.hit_vampirism = 0.0
         self.targets, self.target = [], None
         self.inc = self.atkp = self.cr = self.cd = self.pen = self.eh = self.acc = 0.0
         self.tough = self.tough_fixed = self.inc_break = 0.0   # P5 「이번 스킬에만」 강인도 (고정) 피해·브레이크 대상 피해 증가
@@ -1029,7 +1030,7 @@ class Battle:
         if u.side == 1 and not self.enemy_lines:
             return ()
         modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order'))
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end'))
         key = id(u.d)
         sc = self._semantic_cache
         if sc is not None:
@@ -1063,7 +1064,7 @@ class Battle:
         raw = d.lines
         hit = u._kind_index
         modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order'))
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end'))
         if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw) or hit[4] != modes:
             grouped = {}
             for ln in self.lines_of(u):
@@ -2846,6 +2847,24 @@ class Battle:
         cdv = min(3.0, d.stats['cd'] / 10000.0 + d.passive['cd'] + m['cd'] + ctx.cd)
         pen = min(1.0, max(0.0, m['pen'] + ctx.pen))
         ctx.crit = False
+        prepared = None
+        if self.mc['potential_11026_vampirism'] == 'client':
+            rates = [ln.eff['rate'] for ln in self.lines_of(a)
+                     if ln.eff['kind'] == 'hit_vampirism' and ln.eff['slot'] == sk.slot]
+            if rates:
+                # NSEAT_HIT is fired once AFTER collecting every target result,
+                # BEFORE any damage (15668-15687). MyAttackHit tests ANY result.
+                prepared = {}
+                for v in ctx.targets:
+                    if v.dead:
+                        continue
+                    ev = 0.0 if (a.on('필중') or self.mc['evade_model'] == 'off') else v.mods()['evade'] - (m['acc'] + ctx.acc)
+                    evaded = ev > 0 and self.R(a.side).random() < ev
+                    crit = not evaded and (self.R(a.side).random() < min(1.0, cr + ctx.local_by[v]['cr']) or ctx.force_crit)
+                    prepared[v] = (evaded, crit)
+                if any(crit for _, crit in prepared.values()):
+                    ctx.hit_vampirism = sum(rates)
+                self.rule_hits['potential_11026_vampirism'] += 1
         reactions = []
         for v in list(ctx.targets):
             if v.dead:
@@ -2853,10 +2872,13 @@ class Battle:
             ctx.hit_targets.append(v)
             ctx.target = v
             # 회피(가정: 회피율 - 공격자 명중률 보정, 필중이면 0). 회피하면 치명 없음·감소 합 +50%·약화 안 걸림
-            ev = 0.0 if (a.on('필중') or self.mc['evade_model'] == 'off') else v.mods()['evade'] - (m['acc'] + ctx.acc)
-            evaded = ev > 0 and self.R(a.side).random() < ev
             by = ctx.local_by[v]
-            crit = (not evaded) and (self.R(a.side).random() < min(1.0, cr + by['cr']) or ctx.force_crit)
+            if prepared is not None:
+                evaded, crit = prepared[v]
+            else:
+                ev = 0.0 if (a.on('필중') or self.mc['evade_model'] == 'off') else v.mods()['evade'] - (m['acc'] + ctx.acc)
+                evaded = ev > 0 and self.R(a.side).random() < ev
+                crit = (not evaded) and (self.R(a.side).random() < min(1.0, cr + by['cr']) or ctx.force_crit)
             ctx.crit = ctx.crit or crit
             if crit:
                 ctx.crit_targets.add(v)
@@ -3784,6 +3806,8 @@ class Battle:
             return
         total = ctx.vamp_damage.pop(target)
         rate = a.mods()['vampirism']
+        if self.mc['potential_11026_vampirism'] == 'client':
+            rate += ctx.hit_vampirism
         if damage <= 0 or total <= 0 or rate <= 0 or a.dead:
             return
         raw = math.floor(total * rate * (1 + a.mods()['heal_recv']))
@@ -4741,6 +4765,12 @@ class Battle:
                                 self.run_line(x, ln, Ctx(x, x, None))
                                 self.rule_hits['revive_after_spawn'] += 1
                         self.dirty(x)
+                    # C5461 -> 1218 -> 1959: AFTER_SPAWN precedes 5472's
+                    # toughness restore, which precedes 5473's revival HP.
+                    if self.mc['revive_toughness'] == 'client':
+                        x.sa, x.broken = x.sa_max, False
+                        self.rule_hits['revive_toughness'] += 1
+                    if self.mc['revive_after_spawn'] == 'client':
                         x.hp = float(math.floor(x.maxhp * int(m.group(2)) / 100.0))
                     if self.mc['dead_keep_dnp'] == 'client' and any(e.dead_keep for e in x.eff.values()):
                         self.rule_hits['dead_keep_dnp_revive'] += 1

@@ -401,7 +401,8 @@ def test_fix2_cleanse_heal():
             give(x, '회복 불가', {'받는 회복량': -100}, harmful=True)
         b.cast(a, a.d.skills['궁극기'], target=x)
         out.append(x.hp)
-    return out[0] == out[1] and out[0] > 1000, str(out)
+    # SE10553011 is SKILL_END: heal reduction is still present for primary heal.
+    return out[0] > out[1] and out[1] >= 1000, str(out)
 
 
 def test_fix2_extend_scope():

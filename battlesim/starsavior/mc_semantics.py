@@ -318,7 +318,11 @@ def description_lines(d, lines, rules=None):
         if re.search(r'강인도 격파 (?:후|시)', desc):
             ln.params = [('이번 타격 격파' if k == '대상 브레이크' else k, v) for k, v in ln.params]
         if '약화 효과를 모두 해제하고' in desc and '약화효과 해제' in ln.raw:
-            ln.kind, ln.bound = 'before_heal', True
+            if rules.get('heal_cleanse_skill_end') == 'client' and d.key == 'wedding-carmen' and ln.phase == '스킬 사용 후':
+                ln.kind, ln.bound = 'own_post', True
+                e['rule_key'] = 'heal_cleanse_skill_end'
+            else:
+                ln.kind, ln.bound = 'before_heal', True
         # 사용 시/타격 시 최대 스택 소거와 타격 후 부여는 서로 다른 단계다.
         if (e['kind'] == 'remove' and e.get('target') == '자신' and ln.kind == 'own_post'
                 and rules.get('skill_end_timing') != 'client'):

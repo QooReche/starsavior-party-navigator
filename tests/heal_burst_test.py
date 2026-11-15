@@ -138,6 +138,8 @@ class HealBurstTest(unittest.TestCase):
                                                          'smile_waterbomb_scope': 'legacy', 'scarlet_pinball_marker': 'legacy',
                                                          'cristelle_ignite_targets': 'legacy', 'shield_enemy_count': 'legacy',
                                                          'gauge_lock_order': 'legacy', 'damage_break_boundary': 'legacy',
+                                                         'revive_toughness': 'legacy', 'potential_11026_vampirism': 'legacy',
+                                                         'heal_cleanse_skill_end': 'legacy',
                                                        'enemy_cd_end_order': 'before_effects',
                                                        'revenge_rate': 'current',
                                                        'nova_force_cap': 0,

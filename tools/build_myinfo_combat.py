@@ -90,8 +90,17 @@ def build(static):
                      for s in r.get('PotenLevelStat', []) if s['PotenLevelStatType'] not in STAT}
             # Existing public effect text supplies the vocabulary. Only indexes,
             # flags and extracted numeric stats are added to the public artifact.
-            random_chain, random_basic, chains = [], {}, {}
+            random_chain, random_basic, chains, hit_vampirism = [], {}, {}, {}
             for i, s in zip(lines, matched_source):
+                hit = tb.cond.get(s.get('SkillConditionId'), {}).get('MyAttackHit', {})
+                slot = {'NSI_SKILL_2_SPECIAL': '특수기', 'NSI_SKILL_3_HYPER': '궁극기'}.get(hit.get('SkillIndex'))
+                if (s.get('m_BuffStrID') == 'BI_STAT_NST_RATE_DAMAGE_VAMPIRISM'
+                        and s.get('m_Condition', {}).get('m_ActiveType') == 'NSEAT_HIT'
+                        and s.get('m_Condition', {}).get('m_fActiveRate') == 10000
+                        and s.get('m_BuffTargetType') == 'NSETT_SELF' and s.get('m_BuffLifeTurn') == 0
+                        and hit == {'SkillIndex': hit.get('SkillIndex'), 'DamageResultType': ['CriticalHit']}
+                        and slot and len(s.get('Stats', [])) == 1):
+                    hit_vampirism[str(i)] = dict(slot=slot, rate=s['Stats'][0]['NKM_STAT_TYPE_RATE'] / 10000)
                 if s.get('AddDamageRate') and s.get('AutoTargetId') == 4:
                     random_chain.append(i)
                 if (s.get('AddDamageRate') and s.get('AutoTargetId') == 17
@@ -109,8 +118,11 @@ def build(static):
                 rows[str(level)]['effects'] = effects
             if chains:
                 rows[str(level)]['chains'] = chains
+            if hit_vampirism:
+                rows[str(level)]['hit_vampirism'] = hit_vampirism
             if any(s.get('m_BuffStrID') == 'BI_STAT_NST_RATE_DAMAGE_VAMPIRISM'
-                   and s.get('m_Condition', {}).get('m_ActiveType') == 'NSEAT_HIT' for s in source):
+                   and s.get('m_Condition', {}).get('m_ActiveType') == 'NSEAT_HIT'
+                   and str(i) not in hit_vampirism for i, s in zip(lines, matched_source)):
                 unsupported[f'{p["PotenId"]}/{level}'] = ['미확인: 치명타 적중 시 흡혈의 복수 대상 판정·시전 내 유지 범위']
             if gaps:
                 unsupported[f'{p["PotenId"]}/{level}'] = gaps

@@ -124,6 +124,9 @@ def apply_potentials(d, db, combat, coverage=True):
                 d.unmodeled.append('myinfo potential stat: %s — 지원하지 않음: %s' % (label, stat))
         for i in row['lines']:
             ln = Line(source[i], '잠재력', 'passive')
+            if coverage and str(i) in row.get('hit_vampirism', {}):
+                ln.eff = dict(kind='hit_vampirism', **row['hit_vampirism'][str(i)])
+                ln.kind, ln.params = 'own_hit', []
             if coverage and str(i) in row.get('chains', {}):
                 ln.eff = dict(kind='chain', **row['chains'][str(i)])
             if coverage and ln.eff.get('stat') == '치명타 피해 감소':

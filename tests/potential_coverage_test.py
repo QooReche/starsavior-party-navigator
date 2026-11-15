@@ -209,18 +209,20 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(damage[2], damage[0])
 
     def test_named_unsupported_reaches_web_result(self):
-        # A real unconfirmed potential, not just a hypothetical unknown ID.
+        # 11026 is now verified; it must no longer appear as unsupported.
         payload = dict(units=[dict(key='wedding-epindel', stats_override=SCREEN, stats_final=True,
                                   myinfo_combat={'potentials': [[11026, 1]]})])
         result = json.loads(web.run_auto('clo/달 회랑/FLOOR 100', payload, 1, 3))
-        self.assertIn('unsupported', result)
-        self.assertTrue(any('재난 대응 프로토콜' in x['raw'] for x in result['unsupported']))
-        self.assertTrue(any('지원하지 않음' in x['raw'] for x in result['unsupported']))
+        self.assertFalse(any('재난 대응 프로토콜' in x['raw'] for x in result.get('unsupported', [])))
         # Recognized level but a parser gap must retain the name too.
         row = copy.deepcopy(combat.combat_data()['potentials']['25004']['1'])
         row['effects'] = ['[알 수 없는 시점] 자신에게 알 수 없는 효과']
         with patch.dict(combat.combat_data()['potentials']['25004'], {'1': row}):
             api._UNIT_CACHE.clear()
+            payload['units'][0]['myinfo_combat']['potentials'] = [[25004, 1]]
+            result = json.loads(web.run_auto('clo/달 회랑/FLOOR 100', payload, 1, 3))
+            self.assertIn('unsupported', result)
+            self.assertTrue(any('끝없는 종착점' in x['raw'] for x in result['unsupported']))
             gaps = support_report([definition(potentials=[(25004, 1)])])
             self.assertTrue(any('끝없는 종착점' in x['raw'] for x in gaps))
 
@@ -257,7 +259,7 @@ def mutations():
          patch.dict(combat.combat_data()['potentials']['30004']['1'], lines=[])),
         ('drop arcana link', 'test_new_arcana_unique_promotes_are_journey_only',
          patch.dict(combat.combat_data()['arcana_unique']['7106101'], arcanas={})),
-        ('drop unsupported payload', 'test_named_unsupported_reaches_auto_and_manual',
+        ('drop unsupported payload', 'test_named_unsupported_reaches_web_result',
          patch.object(web, '_potential_unsupported', lambda r: {})),
     ]
     for name, method, mutation in checks:
