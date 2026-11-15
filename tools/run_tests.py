@@ -59,6 +59,7 @@ def main():
         tests = [t for t in tests if any(w in t[0] for w in a.only)]
     if a.e2e:
         tests.append(('e2e/test_page.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_page.py', '--shots', 'local/shots']))
+        tests.append(('e2e/test_gwen_loading.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_loading.py']))
     fails = []
     skipped = []
     for name, cmd in tests:

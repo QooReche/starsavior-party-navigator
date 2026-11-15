@@ -136,6 +136,43 @@ const card=skills.render([{sl:'기본기',n:'시험',tg:'-',ty:'SOME_RAW_KEY',d1
 assert.doesNotMatch(card,/SOME_RAW_KEY|RAW_KEY|- ·/);
 assert.match(card,/min-height:40px/);
 const cfg=require('../party_contents.json');
+function checkLoading(page){
+ const Ux=require('../ux_ui'),state={Ux,SIMQ:{busy:1,res:{},scr:{s:{got:2,left:80}},screening:true,loaded:true},
+  LASTQ:{1:{rows:[{},{}]}},scrKey:()=> 's',simSig:()=> 'r',growthEnabled:()=>false,SCR_N:8,scrWorkers:()=>2,simEtaText:()=> '남은 시간 계산 중',esc:String};
+ const run=vm.createContext(state),start=page.indexOf('function simProgress(st)');
+ vm.runInContext(page.slice(start,page.indexOf('function buildCands(',start)),run);
+ const paint=()=>vm.runInContext('simProgress({})',run);
+ assert.match(paint(),/data-gwen="screen"/);assert.match(paint(),/후보 거르는 중 2\/80/);
+ assert.match(paint(),/aria-valuenow="2"/);assert.match(paint(),/data-scrstop="1"/);assert.match(paint(),/data-simcancel="1"/);
+ state.SIMQ.screening=false;assert.match(paint(),/data-gwen="long"/);
+ state.SIMQ.loaded=false;assert.match(paint(),/data-gwen="inspect"/);
+ const bar=page.indexOf('function simBar(');vm.runInContext(page.slice(bar,page.indexOf('function simInvalidate(',bar)),run);
+ assert.match(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen="inspect"/);
+ state.SIMQ.busy=null;state.SIMQ.err='통신 오류';state.SIMQ.errP=1;
+ assert.match(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen="error"/);
+ state.SIMQ.err='';state.SIMQ.res.r={n:100,clear:1};state.goalVal=r=>r.clear;
+ assert.doesNotMatch(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen=/);
+ const css=page.match(/@media\(prefers-reduced-motion:reduce\)\{\.gwen-work[^}]+\}/)?.[0]||'';
+ for(const rule of ['.gwen-worker','.gwen-prop','.gwen-dots','animation:none','transform:none'])assert(css.includes(rule),rule);
+ assert.match(page,/\.gwen-scene\{[^}]*width:100px;height:76px;flex:0 0 100px/);
+}
+for(const file of ['party_template.html','index.html']){
+ const page=fs.readFileSync(require.resolve('../'+file),'utf8');checkLoading(page);
+ for(const [from,to] of [
+  ['${Ux.gwenWork(sc?"screen":SIMQ.loaded?"long":"inspect")}',''],
+  ['${Ux.gwenWork("error")}<span class="bad"','<span class="bad"'],
+  ['.gwen-work .gwen-dots{animation:none;transform:none}', '.gwen-work .gwen-dots{animation:gwen-dots 1s infinite;transform:none}'],
+ ]){assert(page.includes(from));assert.throws(()=>checkLoading(page.replace(from,to)),{code:'ERR_ASSERTION'});}
+}
+const loadingImages=['gwen_sd.png','gwen_surprised.png'];
+assert(loadingImages.reduce((sum,f)=>sum+fs.statSync(require.resolve('../assets/ui_icons/'+f)).size,0)<=60*1024);
+for(const module of ['guild_search','cosmo_search']){
+ const search=require('../'+module),cx={hasInfo:true,work:require('../ux_ui').gwenWork,workMode:'screen',esc:String,label:String,level:0,mode:'top',levelMax:1};
+ assert.match(search.html({phase:'run',msg:'후보 확인 중',done:2,total:80},cx),/data-gwen="screen"/);
+ assert.match(search.html({phase:'err',msg:'통신 오류'},cx),/data-gwen="error"/);
+ assert.match(search.html({phase:'done',rows:[]},cx),/data-gwen="error"/);
+ assert.doesNotMatch(search.html({phase:'idle'},cx),/data-gwen=/);
+}
 assert.deepEqual(cfg.breakSkills['행성 정화'].bonusRoles,[]);
 assert.equal(cfg.breakSkills['행성 정화'].text,'광역 피해(공격력 100%), 강인도 피해 +1, 스킬 후 노바 +1');
 // Parse all template scripts as JavaScript; data replacement is an identifier in the template.

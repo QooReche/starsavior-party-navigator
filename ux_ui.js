@@ -10,6 +10,20 @@
   const clone=x=>JSON.parse(JSON.stringify(x));
   function verdict(p){return p>=.9?['safe','안정적']:p>=.7?['ok','깰 수 있음']:p>=.5?['shaky','아슬아슬']:['risk','어려움'];}
   function help(title,text){return `<button type="button" class="ux-help" data-help="${esc(text)}" aria-label="${esc(title)} 설명" aria-expanded="false">ⓘ</button>`;}
+  // 공식 SD 두 장만 사용함. 소품은 그림 옆 별도 칸이며 작업 상태/문구는 호출자가 유지함.
+  function gwenWork(mode){
+    if(!['inspect','screen','long','error'].includes(mode))return '';
+    const error=mode==='error',label=mode==='screen'?'그웬이 후보 거르는 중…':mode==='inspect'?'그웬이 추천 편성 확인 중…':'';
+    return `<span class="gwen-work" data-gwen="${mode}"><span class="gwen-scene" aria-hidden="true"><img class="gwen-worker" src="assets/ui_icons/gwen_${error?'surprised':'sd'}.png" width="56" height="56" alt=""><span class="gwen-prop">${error?'!':mode==='screen'?'📄':mode==='long'?'✦':'🔎'}</span><span class="gwen-dots">···</span></span>${label?`<span class="gwen-caption">${label}</span>`:''}</span>`;
+  }
+  function gwenStage(message=''){
+    return /후보 거르|훑|예선|놓침 감지|1단계|2단계/.test(message)?'screen':/준비|능력치 계산/.test(message)?'inspect':'long';
+  }
+  // 진행률 갱신 때 단추와 그림 DOM을 보존하고, 단계가 바뀔 때만 연출을 교체함.
+  function syncGwen(container,mode){
+    const old=container?.querySelector('[data-gwen]');
+    if(old&&old.dataset.gwen!==mode)old.outerHTML=gwenWork(mode);
+  }
   let grades=null;
   function setGrades(table){grades=table;}
   function grade(value,index,table=grades){const rows=table?.stats?.[index];if(!Number.isFinite(value)||!rows||value>1500)return '';return rows.reduce((g,r)=>value>=r[0]?r[1]:g,'');}
@@ -133,6 +147,6 @@
     doc.addEventListener('focusout',e=>{if(owner===e.target&&!pinned)close();});
     root.addEventListener('resize',()=>{if(owner)place();});root.addEventListener('scroll',()=>{if(owner)place();},true);
   }
-  const api={verdict,help,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
+  const api={verdict,help,gwenWork,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Ux=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

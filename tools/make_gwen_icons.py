@@ -24,14 +24,43 @@ OUTLINE = [
     (24, 83), (24, 77), (21, 75), (19, 72),
 ]
 
+# 같은 공식 만화의 놀란 SD 얼굴. (365, 900, 505, 1025) 기준, 흰 외곽선 포함.
+SURPRISED_OUTLINE = [
+    (21, 63), (22, 53), (26, 43), (32, 35), (40, 27), (49, 19),
+    (57, 14), (65, 13), (76, 15), (87, 18), (97, 23), (106, 31),
+    (113, 41), (118, 53), (121, 64), (120, 72), (118, 78),
+    (116, 87), (113, 86), (110, 90), (104, 93), (99, 94),
+    (101, 89), (95, 92), (90, 93), (93, 86), (84, 89),
+    (74, 90), (65, 90), (57, 88), (61, 93), (56, 94),
+    (51, 92), (53, 95), (48, 96), (41, 94), (35, 90),
+    (30, 84), (25, 77), (22, 69),
+]
+
+
+def make_surprised(source, dest):
+    with Image.open(source / '21.webp') as comic:
+        if comic.size != (947, 2000):
+            raise ValueError('21.webp 원본 크기가 달라 자르기 좌표 확인 필요')
+        face = comic.convert('RGBA').crop((365, 900, 505, 1025))
+    mask = Image.new('L', face.size)
+    ImageDraw.Draw(mask).polygon(SURPRISED_OUTLINE, fill=255)
+    face.putalpha(mask)
+    face.crop(mask.getbbox()).save(dest / 'gwen_surprised.png', optimize=True)
+    if sum((dest / f).stat().st_size for f in ('gwen_sd.png', 'gwen_surprised.png')) > 60 * 1024:
+        raise ValueError('진행 연출 그림 합계 60KB 초과')
+
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--source-dir', type=Path, required=True)
     ap.add_argument('--preview', type=Path)
+    ap.add_argument('--surprised-only', action='store_true', help='진행 연출용 놀란 얼굴만 생성')
     args = ap.parse_args()
     dest = ROOT / 'assets/ui_icons'
     dest.mkdir(parents=True, exist_ok=True)
+    if args.surprised_only:
+        make_surprised(args.source_dir, dest)
+        return
     with Image.open(args.source_dir / '21.webp') as comic:
         if comic.size != (947, 2000):
             raise ValueError('21.webp 원본 크기가 달라 자르기 좌표 확인 필요')
@@ -41,6 +70,7 @@ def main():
     face.putalpha(mask)
     face = face.crop(mask.getbbox())
     face.save(dest / 'gwen_sd.png', optimize=True)
+    make_surprised(args.source_dir, dest)
     icons = []
     for size in (32, 72, 180, 512):
         icon = Image.new('RGBA', (size, size))

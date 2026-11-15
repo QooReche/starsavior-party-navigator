@@ -286,6 +286,30 @@ summary{padding:9px 4px}
 .gd-est{display:inline-block;font-size:11px;font-weight:700;color:var(--warn);border:1px dashed var(--warn);border-radius:8px;padding:0 6px;margin-left:3px;white-space:nowrap}.gd-warn{margin:6px 0;padding:6px 10px;border:1px solid var(--warn);border-radius:8px;color:var(--warn)}
 .gd-best,.gd-now{margin:8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);line-height:1.6}.gd-sel{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.gd-sel label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px;min-width:0;flex:1 1 150px}.gd-sel select{max-width:100%;font-size:14px}
 .gd-scroll{overflow-x:auto;max-width:100%;margin:6px 0}.gd-scroll table{border-collapse:collapse;width:100%;min-width:420px}.gd-scroll th,.gd-scroll td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;font-size:12px}.gd-scroll tr.cur td{background:rgba(111,211,255,.1);font-weight:700}.gd-fx{min-width:190px;color:var(--mut)}.gd-rules{margin:8px 0;padding-left:18px;line-height:1.6}.gd-comm ul{margin:4px 0;padding-left:18px}
+
+/* 공식 그웬 SD: 소품은 그림 옆, 모든 단계에 같은 높이의 자리 확보. */
+.gwen-work{display:flex;align-items:center;gap:12px;min-height:76px;width:100%;margin:6px 0;box-sizing:border-box;color:var(--mut);font-size:13px;line-height:1.5}
+.gwen-scene{position:relative;display:inline-flex;align-items:center;width:100px;height:76px;flex:0 0 100px}
+.gwen-worker{width:56px;height:56px;object-fit:contain;transform-origin:50% 85%;margin-left:6px}
+.gwen-prop{position:absolute;left:73px;top:21px;width:24px;text-align:center;font-size:21px;color:var(--acc)}
+.gwen-dots{position:absolute;left:74px;top:45px;letter-spacing:3px;font-weight:700;animation:gwen-dots 1.6s ease-in-out infinite}
+.gwen-caption{min-width:0;overflow-wrap:anywhere}
+[data-gwen="inspect"] .gwen-worker{animation:gwen-inspect 2.8s ease-in-out infinite}
+[data-gwen="inspect"] .gwen-prop{animation:gwen-glass 2.8s ease-in-out infinite}
+[data-gwen="screen"] .gwen-worker{animation:gwen-screen 1.8s ease-in-out infinite}
+[data-gwen="screen"] .gwen-prop{animation:gwen-page 1.8s ease-in-out infinite}
+[data-gwen="long"] .gwen-worker{animation:gwen-bounce 1.4s ease-in-out infinite}
+[data-gwen="long"] .gwen-prop{animation:gwen-spark 1.4s ease-in-out infinite}
+[data-gwen="error"] .gwen-dots{visibility:hidden;animation:none}
+@keyframes gwen-inspect{0%,100%{transform:translateX(-3px) rotate(-6deg)}50%{transform:translateX(3px) rotate(6deg)}}
+@keyframes gwen-glass{0%,100%{transform:translateY(2px) rotate(-12deg)}50%{transform:translateY(-3px) rotate(12deg)}}
+@keyframes gwen-screen{0%,100%{transform:rotate(-8deg)}45%,65%{transform:rotate(7deg)}}
+@keyframes gwen-page{0%,100%{transform:rotate(-9deg)}45%,65%{transform:translateY(-4px) rotate(12deg)}}
+@keyframes gwen-bounce{0%,65%,100%{transform:translateY(0)}30%{transform:translateY(-7px)}}
+@keyframes gwen-spark{0%,100%{opacity:.45;transform:scale(.85)}40%{opacity:1;transform:scale(1.1)}}
+@keyframes gwen-dots{0%,100%{opacity:.4}50%{opacity:1}}
+@media(max-width:400px){.gwen-work{gap:6px}}
+@media(prefers-reduced-motion:reduce){.gwen-work .gwen-worker,.gwen-work .gwen-prop,.gwen-work .gwen-dots{animation:none;transform:none}}
 </style><link rel="stylesheet" href="ux.css"></head><body><main>
 <header class="site-head"><h1><img class="gwen-head" src="assets/ui_icons/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true"><span>파티 편성 네비게이터 <small>베타</small></span></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button></span>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천</button><button id="tab-info" type="button" aria-pressed="false">내 구원자</button></nav></header>
@@ -458,7 +482,9 @@ const gsSig=() => JSON.stringify([MI.hash,[...EXCL].sort(),gsTiers(),GSR.banCoop
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
 function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
- const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
+ const prog=p.querySelector('[data-k="gd-search-prog"]');
+ if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);Ux.syncGwen(p,Ux.gwenStage(GSR.msg));return}
+ const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:Ux.gwenWork,workMode:Ux.gwenStage(GSR.msg),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
 function gsTeam(t){LEADKEY=t.order[0];return seasonBreakBar(t,true)+`<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
 async function guildSearchStart(target=GSR,profileOverride=null){
  if(seasonBlocked('guild'))return;
@@ -523,6 +549,7 @@ function csTick(force){   // 진행 글자만 200ms 이상 간격으로 갱신(�
  csLast=now;if(CSR.phase!=="run")return;
  if(CSR.eta)CSR.etaText=CosmoSearch.etaLine(CSR.eta.estimate(csNow()),Date.now());
  const a=document.querySelector('#cosmo-search [data-k="cs-prog"]'),b=document.querySelector('#cosmo-search [data-k="cs-eta"]');
+ Ux.syncGwen(document.getElementById("cosmo-search"),Ux.gwenStage(CSR.msg));
  if(a)a.textContent=CosmoSearch.progText(CSR);if(b)b.textContent=CSR.etaText}
 function csReset(){   // 내 정보 다시 불러오기·제외 목록 변경: 진행 중인 검색은 취소(끝난 결과는 남기되 서명이 달라 «낡은 결과»로 표시)
  if(CSR.phase==="run"){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.id++;CSR.phase="idle";CSR.eta=null}}
@@ -547,7 +574,7 @@ function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").v
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
- const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo')}
+ const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:Ux.gwenWork,workMode:Ux.gwenStage(CSR.msg),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo')}
 async function cosmoSearchStart(target=CSR,profileOverride=null){
  if(seasonBlocked('cosmo'))return;
  const CSR=target;
@@ -903,8 +930,8 @@ function breakCompareView(br,p,t,st){
  const all=rows.every(x=>!x.supported||x.result);
  if(BRCMP.open[p]!==key&&!all)return "";
  const best=all?breakBest(rows):undefined,busy=SIMQ.busy===p&&SIMQ.compareKey===key;
- const state=busy?`<div class="bcstate"><span class="mut" data-k="breakstate" role="status">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span><button type="button" class="sec" data-simcancel="1">취소</button></div>`:
-  SIMQ.err&&SIMQ.errCompare===key?`<div class="bcstate bad">${esc(SIMQ.err)}</div>`:"";
+ const state=busy?`<div class="bcstate">${Ux.gwenWork("inspect")}<span class="mut" data-k="breakstate" role="status">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span><button type="button" class="sec" data-simcancel="1">취소</button></div>`:
+  SIMQ.err&&SIMQ.errCompare===key?`<div class="bcstate bad">${Ux.gwenWork("error")}${esc(SIMQ.err)}</div>`:"";
  return `<div class="bcompare" aria-label="브레이크 스킬 비교">${state}${rows.map(x=>{const m=breakMetric(x.result),current=(x.name||"")===br.name;
   return `<div class="bcrow" data-bname="${esc(x.name||"")}"><span class="bcvalue"${m&&x.supported?` data-sim="${simCls({clear:m.clear})}"`:""}>${esc(x.name||"장착 안 함")} · ${!x.supported?"모의 전투 미반영":m?`클리어 ${Math.round(m.clear*100)}% · 약 ${m.turn==null?"—":Math.round(m.turn*10)/10}턴`:"대기"}${best!==undefined&&best===x.name?' <span class="bschip">최고</span>':""}${current?' <span class="mut">장착 중</span>':""}</span><button type="button" class="sec" data-bequip="${esc(x.name||"")}" data-bkey="${esc(br.key)}"${current?" disabled":""}>장착</button></div>`}).join("")}</div>`}
 function breakCompareStart(p,key){
@@ -924,8 +951,8 @@ function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
 function simBar(p,rows,st,hasMore){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
- const st8=SIMQ.busy===p&&!SIMQ.compareKey?`<span class="mut" data-k="simstate" data-state="running">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
-  SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`<span class="bad" data-k="simstate" data-state="error">모의 전투 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
+ const st8=SIMQ.busy===p&&!SIMQ.compareKey?`${Ux.gwenWork("inspect")}<span class="mut" data-k="simstate" data-state="running">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
+  SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`${Ux.gwenWork("error")}<span class="bad" data-k="simstate" data-state="error">모의 전투 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
   all?`<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">모의 전투 실행</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
@@ -1028,6 +1055,7 @@ function simRunAdd(ms){if(ms>=0)SIMQ.runMs=SIMQ.runMs?SIMQ.runMs*0.5+ms*0.5:ms}
 function simProgressSync(pv,st){const box=document.createElement("div");box.innerHTML=simProgress(st);const nv=box.firstElementChild;
  const shape=x=>[...x.querySelectorAll("button")].map(b=>b.textContent).join("|")+"/"+x.querySelectorAll(".tag").length+"/"+x.dataset.party;
  const a=pv.querySelector(".pbar"),b=nv.querySelector(".pbar");
+ Ux.syncGwen(pv,nv.querySelector("[data-gwen]")?.dataset.gwen);
  if(shape(pv)!==shape(nv)||!a||!b){pv.replaceWith(nv);return}
  for(const q of ['[data-k="simstate"]','[data-k="eta"]']){const x=pv.querySelector(q),y=nv.querySelector(q);if(x&&y&&x.textContent!==y.textContent)x.textContent=y.textContent}
  a.setAttribute("aria-valuemax",b.getAttribute("aria-valuemax"));a.setAttribute("aria-valuenow",b.getAttribute("aria-valuenow"));a.firstElementChild.style.width=b.firstElementChild.style.width}
@@ -1186,7 +1214,7 @@ function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.bus
 function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap(b=>b.rows),p=SIMQ.busy??(Number(Object.keys(LASTQ)[0])||1);
  const sc=SIMQ.screening?SIMQ.scr[scrKey(st,p)]:null,done=sc?sc.got||0:rows.filter(t=>SIMQ.res[simSig(st,t)]).length,all=sc?sc.left:rows.length;
  const pct=all?Math.round(done/all*100):0;
- return `<div class="party progress" data-party="${p}" data-k="progress" data-state="running"><b>추천 편성 확인 중</b>${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':""}<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
+ return `<div class="party progress" data-party="${p}" data-k="progress" data-state="running"><b>추천 편성 확인 중</b>${Ux.gwenWork(sc?"screen":SIMQ.loaded?"long":"inspect")}${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':""}<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
   <p><span data-k="simstate" title="후보 ${SCR_N}판 · 작업자 ${scrWorkers()}개">${sc?"후보 거르는 중":"상위 팀 확인 중"} ${done}/${all}</span></p>
   ${Ux.help("진행 방식","후보를 거른 뒤 상위 팀을 100판씩 모의 전투함. 남은 시간은 이 기기의 최근 계산 속도를 기준으로 표시함. 후보를 거르는 중에 「지금까지 결과로 보기」를 누르면 그때까지 확인한 팀으로 먼저 보여 주고, 나머지는 「끝까지 확인」으로 이어서 볼 수 있음.")}<p data-k="eta">${esc(simEtaText())}</p>
   ${sc?'<button type="button" class="sec" data-scrstop="1">지금까지 결과로 보기</button> <button type="button" class="sec" data-simcancel="1">취소</button>':'<button type="button" class="sec" data-simcancel="1">중단하고 결과 보기</button>'}</div>`}
@@ -1202,7 +1230,7 @@ function idleView(){
  const waiting=!!RECO.timer,kind=waiting?(RECO.sharedPending?"cancel":"wait"):"go",out=$('out'),now=out.children&&out.children.length===1?out.firstElementChild:null;
  // 같은 안내면 다시 그리지 않는다: 조건·자료 로딩으로 연달아 불려도 누르는 중인 단추(중단·추천 편성 보기)가 사라지지 않게
  if(now&&now.dataset.k==="idle"&&now.dataset.kind===kind){growthControlPlace();return}
- out.innerHTML=`<div class="party idle" data-k="idle" data-kind="${kind}"><div id="reco-actions">${waiting?'<span role="status">계산 준비 중</span>'+(RECO.sharedPending?'<button type="button" class="sec" data-recocancel>중단</button>':''):'<button type="button" data-go="1" title="현재 조건과 내 정보로 추천함">추천 편성 보기</button>'}</div></div>`;growthControlPlace()}
+ out.innerHTML=`<div class="party idle" data-k="idle" data-kind="${kind}">${waiting?Ux.gwenWork("inspect"):""}<div id="reco-actions">${waiting?'<span role="status">계산 준비 중</span>'+(RECO.sharedPending?'<button type="button" class="sec" data-recocancel>중단</button>':''):'<button type="button" data-go="1" title="현재 조건과 내 정보로 추천함">추천 편성 보기</button>'}</div></div>`;growthControlPlace()}
 function condChanged(){
  const canRun=!!MI.info||RECO.standard,requested=canRun&&(AUTO||RECO.sharedPending);
  recoClearTimer();clearTimeout(_rt);REQ=false;SIMQ.kick=false;
@@ -1221,7 +1249,7 @@ function miGuide(){return `<div class="party guide" data-k="miguide" data-state=
  <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div><img class="gwen-guide-art" src="assets/ui_icons/gwen_card.webp" width="129" height="240" alt="" aria-hidden="true"></div></div>`}
 function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;recoClearTimer();if(!MI.info){RECO.standard=true;$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
 function run(skipAuto=false){seasonPaint();growthControlPlace(true);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
- if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했음</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}
+ if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror">${Ux.gwenWork("error")}<h3>내 정보 계산 자료를 불러오지 못했음</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}
 function runCore(skipAuto=false){
  if(seasonBlocked(contents[$('content').value]?.key))return;
  renderMi();
@@ -1243,7 +1271,7 @@ function runCore(skipAuto=false){
  for(let p=1;p<=(c.parties||1);p++){
   const rsEl=(CFG.restrict[c.name]||{})[st.tab];
   const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
-  if(cands.length<4){html+=`<div class="party">파티 ${p}: 후보가 4명 미만임.</div>`;break}
+  if(cands.length<4){html+=`<div class="party">${Ux.gwenWork("error")}파티 ${p}: 후보가 4명 미만임.</div>`;break}
   const ranked=p===1&&ranked0?ranked0:rankAll(cands,defPen);
   const list=buildCands(ranked);
   const qi=qi0,qt=p===1&&qr0?qr0:qi?quickRank(ranked,qi):null;jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{all:qt,rows:quickRows(qt,st,p),total:new Set(qt.map(t=>t.keys.slice().sort().join(","))).size}:null;
@@ -1273,7 +1301,7 @@ function runCore(skipAuto=false){
  for(const p of Object.keys(BRCMP.open))if(!document.querySelector(`.party[data-party="${p}"] .bcompare`))delete BRCMP.open[p];
  // 비교가 도는 중 1안 팀이 바뀌어 비교 목록이 사라졌으면, 그 파티의 시뮬 줄에 진행 상태와 취소를 대신 보인다(멈춘 채 다른 시뮬이 막히지 않게)
  if(SIMQ.busy!=null&&SIMQ.compareKey&&!document.querySelector(`.party[data-party="${SIMQ.busy}"] [data-k="breakstate"]`)){const sb=document.querySelector(`.party[data-party="${SIMQ.busy}"] .simbar`)||document.querySelector("#out .simbar");
-  if(sb)sb.innerHTML=`<span class="mut" data-k="breakstate">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`}
+  if(sb)sb.innerHTML=`${Ux.gwenWork("inspect")}<span class="mut" data-k="breakstate">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`}
  document.querySelector('[data-controls="score"]')?.append(SCORE_CONTROLS);document.querySelector('[data-controls="graph"]')?.append($("graphwrap"));
  document.querySelectorAll("#out details[data-fold]").forEach(d=>{if(folds.has(d.dataset.fold))d.open=folds.get(d.dataset.fold)});if(window.onParties)onParties(allParties)}
 $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-pick]");if(!b)return;const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st)return;

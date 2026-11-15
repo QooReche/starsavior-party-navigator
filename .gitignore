@@ -1,5 +1,8 @@
 __pycache__/
 *.pyc
+/_tmp/
+/_shot_load_*.png
+/_shot_load.webm
 release/
 tools/raw/
 local/

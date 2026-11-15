@@ -1,0 +1,191 @@
+"""공식 그웬 작업 연출: 실제 렌더러·360px·취소 DOM·reduced-motion·캡처.
+
+python -X utf8 tests/e2e/test_gwen_loading.py [--shots] [--video]
+임시 파일은 작업 트리 _tmp, 캡처는 _shot_load_*.png, 영상은 _shot_load.webm.
+"""
+import argparse
+import os
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+TMP = ROOT / '_tmp'
+TMP.mkdir(exist_ok=True)
+os.environ['TEMP'] = os.environ['TMP'] = str(TMP)
+
+from test_page import test_server
+from playwright.sync_api import sync_playwright
+
+
+def check_scene(page, mode, scope='#out', reduced=False):
+    scene = page.locator(f'{scope} [data-gwen]')
+    assert scene.count() == 1, (scope, scene.count())
+    assert scene.get_attribute('data-gwen') == mode
+    scene.locator('img').evaluate('(img)=>img.decode()')
+    assert scene.locator('img').evaluate('(img)=>img.naturalWidth>0')
+    assert scene.locator('.gwen-scene').bounding_box()['height'] == 76
+    names = scene.locator('.gwen-worker,.gwen-prop,.gwen-dots').evaluate_all(
+        '(els)=>els.map(e=>getComputedStyle(e).animationName)')
+    if reduced or mode == 'error':
+        assert names == ['none', 'none', 'none'], names
+    else:
+        assert all(n != 'none' for n in names), names
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), '가로 넘침'
+
+
+def exercise(page, base, width, shots):
+    page.goto(base + '/index.html?season=force', wait_until='networkidle')
+    page.wait_for_function('typeof Ux!=="undefined" && typeof SIMQ!=="undefined"')
+    page.wait_for_timeout(1000)  # quick.json 완료 뒤 예약된 첫 화면 갱신까지 기다림.
+    page.evaluate('''() => {
+      RECO.timer=1;idleView();
+      // 결과는 합성 상태로 강제하며 작업자를 실행하지 않음.
+      window.__loadSt=cur[$('stage').value];
+    }''')
+    check_scene(page, 'inspect')
+
+    def shot(name, scope='#out'):
+        page.locator(scope).scroll_into_view_if_needed()
+        if shots:
+            page.screenshot(path=str(ROOT / f'_shot_load_{name}_{width}.png'))
+
+    shot('wait')
+    page.evaluate('growthControlPlace(true);RECO.timer=null;idleView()')
+    assert page.locator('#out [data-gwen]').count() == 0
+    page.evaluate('''() => {
+      LASTQ[1]={rows:[{}, {}, {}]};SIMQ.busy=1;SIMQ.loaded=true;SIMQ.screening=true;
+      SIMQ.scr[scrKey(__loadSt,1)]={got:2,left:80};
+      growthControlPlace(true);$('out').innerHTML=simProgress(__loadSt);
+      window.__cancel=document.querySelector('[data-simcancel]');
+      window.__face=document.querySelector('.gwen-worker');
+    }''')
+    check_scene(page, 'screen')
+    shot('screen')
+    page.evaluate('''() => {
+      SIMQ.scr[scrKey(__loadSt,1)].got=3;
+      simProgressSync(document.querySelector('[data-k="progress"]'),__loadSt);
+    }''')
+    assert page.evaluate('__cancel===document.querySelector("[data-simcancel]") && __face===document.querySelector(".gwen-worker")')
+    assert page.locator('[role=progressbar]').get_attribute('aria-valuenow') == '3'
+    # 본선으로 전환, 엔진 준비 → 긴 계산은 단추 모양이 같아도 그림이 바뀌어야 함.
+    page.evaluate('''() => {
+      LASTQ[1].rows=[];SIMQ.screening=false;SIMQ.loaded=false;
+      simProgressSync(document.querySelector('[data-k="progress"]'),__loadSt);
+      window.__cancel=document.querySelector('[data-simcancel]');
+    }''')
+    check_scene(page, 'inspect')
+    page.evaluate('SIMQ.loaded=true;simProgressSync(document.querySelector("[data-k=progress]"),__loadSt)')
+    check_scene(page, 'long')
+    assert page.evaluate('__cancel===document.querySelector("[data-simcancel]")')
+    shot('final')
+    for mode in ['inspect', 'screen', 'long', 'error']:
+        page.evaluate('(mode)=>$("out").innerHTML=Ux.gwenWork(mode)', mode)
+        check_scene(page, mode)
+        page.emulate_media(reduced_motion='reduce')
+        check_scene(page, mode, reduced=True)
+        if mode == 'long':
+            shot('reduced')
+            # reduced-motion 규칙을 실제로 무효화하면 같은 검사가 실패해야 함.
+            style = page.add_style_tag(content='.gwen-work .gwen-worker{animation:gwen-bounce 1s infinite!important}')
+            try:
+                check_scene(page, mode, reduced=True)
+            except AssertionError:
+                pass
+            else:
+                raise AssertionError('reduced-motion 변이를 검출하지 못함')
+            style.evaluate('(e)=>e.remove()')
+            check_scene(page, mode, reduced=True)
+        page.emulate_media(reduced_motion='no-preference')
+    page.evaluate('''() => {
+      SIMQ.busy=1;SIMQ.err='';$('out').innerHTML=simBar(1,[],__loadSt,false);
+    }''')
+    check_scene(page, 'inspect')
+    shot('simulation')
+    page.evaluate('SIMQ.busy=null;SIMQ.err="시험 오류";SIMQ.errP=1;$("out").innerHTML=simBar(1,[],__loadSt,false)')
+    check_scene(page, 'error')
+    shot('error')
+    page.evaluate('SIMQ.err="";$("out").innerHTML=simBar(1,[],__loadSt,false)')
+    assert page.locator('#out [data-gwen]').count() == 0
+    # 시즌별 실제 연결 및 코스모의 글자만 바꾸는 경로.
+    for kind, state, renderer in [('guild', 'GSR', 'renderGuildSearch(true)'), ('cosmo', 'CSR', 'renderCosmoSearch()')]:
+        page.evaluate(f'''() => {{
+          MI.info={{units:[]}};$('content').value=contents.findIndex(c=>c.key==='{kind}');
+          Object.assign({state},{{phase:'run',msg:'1단계: 후보 훑는 중',done:2,total:80,sig:{'gsSig()' if kind=='guild' else 'csSig()'}}});
+          {renderer};
+        }}''')
+        scope = '#' + kind + '-search'
+        check_scene(page, 'screen', scope)
+        page.evaluate(f'''window.__cancel=document.querySelector('{scope} button[data-{'gs' if kind=='guild' else 'cs'}="cancel"]');
+            window.__face=document.querySelector('{scope} .gwen-worker');{state}.done=3;{renderer}''')
+        assert page.evaluate(f"__face===document.querySelector('{scope} .gwen-worker')")
+        page.evaluate(f'{state}.msg="3단계: 상위 팀 확인 중";{renderer}')
+        check_scene(page, 'long', scope)
+        assert page.evaluate(f'''__cancel===document.querySelector('{scope} button[data-{'gs' if kind=='guild' else 'cs'}="cancel"]')''')
+        shot(kind, scope)
+        page.evaluate(f'{state}.phase="err";{state}.msg="시험 오류";{renderer}')
+        check_scene(page, 'error', scope)
+        page.evaluate(f'{state}.phase="done";{state}.rows=[];{renderer}')
+        check_scene(page, 'error', scope)
+        page.evaluate(f'{state}.phase="idle";{renderer}')
+        assert page.locator(scope + ' [data-gwen]').count() == 0
+        page.evaluate(f'$("{kind}-search").hidden=true')
+    page.evaluate('''() => {
+      $('content').value=contents.findIndex(c=>c.key==='op');
+      $('out').innerHTML='';$('assume-growth').checked=true;
+      GROW.phase='running';GROW.msg='육성 계획 탐색 · 후보 2/80';GROW.result=null;growthPaint();
+      window.__cancel=document.querySelector('[data-growth-cancel]');
+      window.__face=document.querySelector('#growth-result .gwen-worker');
+    }''')
+    check_scene(page, 'long', '#growth-result')
+    shot('growth')
+    page.evaluate('GROW.msg="육성 계획 탐색 · 후보 3/80";growthPaint()')
+    assert page.evaluate('__cancel===document.querySelector("[data-growth-cancel]") && __face===document.querySelector("#growth-result .gwen-worker")')
+    page.locator('[data-growth-cancel]').click()
+    check_scene(page, 'error', '#growth-result')
+    page.evaluate('growthNonePaint({key:"op"},{reason:"few"})')
+    check_scene(page, 'error', '#growth-result')
+    shot('empty')
+    page.evaluate('$("assume-growth").checked=false;growthPaint()')
+    assert page.locator('#growth-result [data-gwen]').count() == 0
+    page.evaluate('''() => {
+      REQ=true;$('grow').add(new Option('내 정보','myinfo'));$('grow').value='myinfo';
+      MI.info={units:[],star_link:{slots:[],source:[],level:1}};
+      SLOT.phase='running';SLOT.msg='슬롯 후보 확인 2/8';SLOT.result=null;
+      slotPaint();$('star-link-result').open=true;
+    }''')
+    check_scene(page, 'long', '#star-link-result')
+    shot('slots')
+    page.evaluate('SLOT.phase="error";SLOT.msg="시험 오류";slotPaint()')
+    check_scene(page, 'error', '#star-link-result')
+    page.evaluate('SLOT.phase="idle";slotPaint()')
+    assert page.locator('#star-link-result [data-gwen]').count() == 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--shots', action='store_true')
+    parser.add_argument('--video', action='store_true')
+    args = parser.parse_args()
+    with test_server() as base, sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        try:
+            for width in [1280, 360]:
+                context = browser.new_context(viewport={'width': width, 'height': 850},
+                    **({'record_video_dir': str(TMP / 'video'), 'record_video_size': {'width': 720, 'height': 850}} if args.video and width == 360 else {}))
+                page = context.new_page()
+                page.set_default_timeout(10000)
+                try:
+                    exercise(page, base, width, args.shots)
+                    if page.video:
+                        page.evaluate('$("out").innerHTML=simProgress(__loadSt);$("out").scrollIntoView()')
+                        page.wait_for_timeout(3000)
+                finally:
+                    context.close()
+                if page.video:
+                    page.video.save_as(str(ROOT / '_shot_load.webm'))
+                print(f'PASS Gwen {width}px: stages, errors, removal, stable buttons, reduced-motion mutation')
+        finally:
+            browser.close()
+
+
+if __name__ == '__main__':
+    main()

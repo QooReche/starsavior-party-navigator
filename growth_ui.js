@@ -344,7 +344,7 @@ function growthNoneHint(kind,r,turns=growthGoalTurns(kind)){const prob=growthSta
 function growthNonePaint(c,r){growthTabs?.reset();let el=$('growth-result');
   if(!el){el=document.createElement('div');el.id='growth-result';el.className='party';$('out').append(el);}
   el.dataset.state='none';const errs=r?.snapshot?.errors||[],hint=growthNoneHint(c.key,r);
-  el.innerHTML=`<h3 class="growth-none-title">클리어 추천 육성</h3><p class="growth-none" data-k="growth-none" role="status">${esc(growthNoneText(c.key,r))}</p>`+
+  el.innerHTML=`<h3 class="growth-none-title">클리어 추천 육성</h3>${Ux.gwenWork("error")}<p class="growth-none" data-k="growth-none" role="status">${esc(growthNoneText(c.key,r))}</p>`+
     (hint.length?`<dl class="growth-none-hint" data-k="growth-none-hint">${hint.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`:'')+
     growthArchiveNote(Object.keys(r?.snapshot?.profile?.units||{}))+
     (errs.length?`<details><summary>계산에서 제외된 구원자 ${errs.length}명</summary>${errs.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');
@@ -378,7 +378,7 @@ function growthPaint(){
     // 탐색 중 팀 결과마다 불린다: 모양이 같으면 진행 글자만 바꾼다(통째로 다시 그리면 누르는 중인 「중단」 단추가 사라져 클릭이 안 먹음)
     if(running&&el.dataset.shape===shape&&msg){const t=' '+GROW.msg;if(msg.textContent!==t)msg.textContent=t;growthTabsPaint(c,el,show);return;}
     el.dataset.shape=shape;
-    el.innerHTML='<b data-k="growth-summary">클리어 추천 육성</b><span class="tag growth-on">클리어 추천 육성 켜짐</span>'+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'계산을 끝내지 못했음 · 다시 실행 필요':'지금 계정 탐색 후'}</span>`+
+    el.innerHTML=Ux.gwenWork(running?'long':GROW.phase==='error'?'error':'')+'<b data-k="growth-summary">클리어 추천 육성</b><span class="tag growth-on">클리어 추천 육성 켜짐</span>'+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'계산을 끝내지 못했음 · 다시 실행 필요':'지금 계정 탐색 후'}</span>`+
       // 단추를 진행 글자 앞에 둔다(글자 길이가 바뀌어도 단추 자리가 안 밀리게)
       (running?`<button class="sec" data-growth-cancel>중단</button><span class="mut" data-k="growth-msg"> ${esc(GROW.msg)}</span>`:'')+
       (GROW.errors.length?`<details><summary>상세</summary>${GROW.errors.map(esc).join(' · ')}</details>`:'');

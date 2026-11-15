@@ -101,9 +101,31 @@ function checkLuck(u=U){
   assert(on({clear:.03}),'구간이 없어도 클리어율로 판단');
 }
 function load(code){const c={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,c);return c.module.exports;}
+function checkGwenWork(u=U){
+  for(const mode of ['inspect','screen','long','error']){
+    const html=u.gwenWork(mode);assert.match(html,new RegExp(`data-gwen="${mode}"`));
+    assert.match(html,/width="56" height="56" alt=""/);assert.match(html,/aria-hidden="true"/);
+    assert.match(html,new RegExp(`gwen_${mode==='error'?'surprised':'sd'}\\.png`));
+  }
+  assert.match(u.gwenWork('inspect'),/그웬이 추천 편성 확인 중…/);
+  assert.match(u.gwenWork('screen'),/그웬이 후보 거르는 중…/);
+  for(const mode of ['idle','done','cancelled',''])assert.equal(u.gwenWork(mode),'');
+  for(const msg of ['후보 거르는 중 3/80','1단계: 조합 훑어보는 중','2단계: 상위 팀 확인 중'])assert.equal(u.gwenStage(msg),'screen');
+  for(const msg of ['작업 준비 중','내 구원자 능력치 계산 중'])assert.equal(u.gwenStage(msg),'inspect');
+  for(const msg of ['3단계: 상위 팀 확인 중','육성 계획 탐색','난이도 비교'])assert.equal(u.gwenStage(msg),'long');
+  const old={dataset:{gwen:'screen'},outerHTML:'unchanged'},parent={querySelector:()=>old};
+  u.syncGwen(parent,'screen');assert.equal(old.outerHTML,'unchanged');
+  u.syncGwen(parent,'long');assert.match(old.outerHTML,/data-gwen="long"/);
+  u.syncGwen(parent,'done');assert.equal(old.outerHTML,'');
+}
 const source=fs.readFileSync(require.resolve('../ux_ui'),'utf8');
 function mutation(from,to,check){assert(source.includes(from));let caught=false;try{check(load(source.replace(from,to)));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}assert(caught,`mutation survived: ${from}`);check(U);}
 checkVerdict();checkGrades();checkPower();checkChips();checkSkills();checkTabState();checkLuck();
+checkGwenWork();
+mutation("if(!['inspect','screen','long','error'].includes(mode))return '';","return '';",checkGwenWork);
+mutation("error?'surprised':'sd'","error?'sd':'sd'",checkGwenWork);
+mutation("?'screen':/준비|능력치 계산/","?'long':/준비|능력치 계산/",checkGwenWork);
+mutation("old.outerHTML=gwenWork(mode)","old.outerHTML=old.outerHTML",checkGwenWork);
 mutation('p>=.9','p>.9',checkVerdict);
 mutation('value>=r[0]','value>r[0]+50',checkGrades);
 mutation('delta=S.final_stats(unit,account,growth,rule).power-before;','delta=after-before;',checkPower);
@@ -121,4 +143,4 @@ mutation("const low=p<LUCK.low","const low=p<=LUCK.low",checkLuck);
 mutation("ci[0]<LUCK.ciLo&&ci[1]>=LUCK.ciHi","ci[0]<LUCK.ciLo",checkLuck);
 mutation("if(!low&&!shaky)return '';","",checkLuck);
 mutation("1-Math.pow(1-p,LUCK.tries)","p*LUCK.tries",checkLuck);
-console.log('PASS probability, grades, power, skill 1/2/3 targets, passive preserved, three details, tab states, luck note; 17 mutations caught');
+console.log('PASS probability, grades, power, skill targets, tab states, luck note, Gwen modes and transitions; 21 mutations caught');

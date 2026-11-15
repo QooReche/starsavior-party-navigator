@@ -35,7 +35,7 @@ function page(src,o={}){
   seasonBlocked:()=>!!o.blocked,miMode:()=>o.mi!==false,simAutoOn:()=>o.auto!==false,starOf:k=>o.goal&&STAR.includes(k)?60:0,
   esc:String,miNum:n=>String(Math.round(n)),simSig:()=>'sig',
   MyInfoReco:{OVERWRITE_VERSION:'o',THRESHOLD_POLICY:{},profile:()=>({results:{},units:{}})},
-  Ux:{createResultTabs:()=>({update(){},reset(){}}),resultTabState:x=>x,chip:v=>`<i data-chip="${v}"></i>`,help:()=>'',signed:v=>String(v)},
+  Ux:{...U,createResultTabs:()=>({update(){},reset(){}}),resultTabState:x=>x,chip:v=>`<i data-chip="${v}"></i>`,help:()=>'',signed:v=>String(v)},
   setTimeout:fn=>{fn();return 0},clearTimeout(){}});
  vm.runInContext(src.ui,ctx);
  ctx.growthRankPaint=()=>{};ctx.growthSig=()=>'sig';

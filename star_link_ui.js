@@ -88,6 +88,7 @@ function slotPaint(){if(!miMode()||!MI.info||!REQ)return;
   const face=id=>{const s=R.find(s=>s.uid===id);return s?`<span class="slot-face">${art(s)}</span>`:'';};
   const r=SLOT.result;
   el.innerHTML=`<summary>스타링크 슬롯 추천${SLOT.phase==='running'?' · 계산 중':SLOT.phase==='error'?' · 확인 부족':''}</summary><div data-k="slot-panel"><span class="tag" data-k="slot-cooldown">교체 쿨다운 있음</span>
+    ${Ux.gwenWork(SLOT.phase==='running'?'long':SLOT.phase==='error'||r&&!r.swaps.length?'error':'')}
     ${!r?'':r.swaps.map(s=>`<div class="slot-swap" data-k="slot-swap"><span class="slot-in">▲ 넣기: ${face(s.in)}<b>${esc(name(s.in))}</b> <small>Lv ${MI.info.units.find(u=>u.id===s.in).level}→링크</small></span><span class="slot-out">▼ 빼기: ${face(s.out)}<b>${esc(name(s.out))}</b></span><div>${reason(s.rows)}</div></div>`).join('')||'<p>확인 부족 · 개선이 확인된 교환 없음</p>'}
     ${SLOT.phase==='running'?`<p role="status">${esc(SLOT.msg)}</p><button class="sec" data-slot-stop>중단</button>`:
       `<button class="sec" data-slot-start ${SIMQ.busy!=null||!SLOT.contexts.size?'disabled':''}>슬롯 추천 계산</button>`}
