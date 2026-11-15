@@ -132,7 +132,7 @@ function checkGwenWork(u=U){
 }
 // 그웬 말풍선: 대사 표 한곳, 상황별 2~4개·한 줄(30자 이내)·반말, 방문당 하나 고정, 장식이라 aria-hidden.
 function checkGwenSay(u=U){
-  const keys=['inspect','screen','long','report','error','high','shaky','hard','low','welcome','import','empty'];
+  const keys=['inspect','screen','long','report','error','high','shaky','hard','low','welcome','import','empty','idle'];
   assert.deepEqual(Object.keys(u.GWEN_SAY),keys);
   for(const key of keys){const lines=u.GWEN_SAY[key];
     assert(lines.length>=2&&lines.length<=4,key);assert.equal(new Set(lines).size,lines.length,key);
@@ -146,6 +146,13 @@ function checkGwenSay(u=U){
   for(const key of ['','none','toString','constructor',undefined])assert.equal(u.gwenSay(key),'',String(key));
   assert.equal(u.GWEN_SAY.error[0],'으… 단서가 부족해');assert.equal(u.GWEN_SAY.welcome[0],'어서 와, 단장! 어떤 사건이야?');
   assert.equal(u.GWEN_SAY.import[0],'단장의 정보! 내가 받아 갈게');
+  // 대기 칸: 대사 2~3개(방문당 고정), 인사 그림 한 장(한 번 움직이고 쉬는 그림), 말풍선 꼬리는 왼쪽 그림 쪽, 누를 것 없음.
+  assert(u.GWEN_SAY.idle.length>=2&&u.GWEN_SAY.idle.length<=3);assert.equal(u.GWEN_SAY.idle[0],'단장, 사건 파일 골랐어? 수사 시작할게');
+  {const idle=u.gwenIdle();
+   assert.equal(idle,`<span class="idle-gwen" data-gwen-idle aria-hidden="true"><span class="gwen-bubble" data-gwen-say="idle" data-tail="left" aria-hidden="true">${u.GWEN_SAY.idle[0]}</span><img class="idle-gwen-art" data-gwen-art="ready" data-gwen-static="assets/ui_icons/gwen/ready.png" data-gwen-motion="assets/ui_icons/gwen/ready.webp" width="112" height="112" alt="" aria-hidden="true" loading="lazy"></span>`);
+   assert.equal(u.gwenIdle(),idle,'다시 그려도 같은 대사');
+   assert.equal((idle.match(/data-gwen-art=/g)||[]).length,1);assert.equal((idle.match(/class="gwen-bubble"/g)||[]).length,1);
+   assert.doesNotMatch(idle,/data-gwen="|<button|\ssrc=/);}
   // 진행·실패·보고 연출: 그림 트랙 앞에 말풍선 한 개, 기존 안내 문구(caption)는 그대로.
   for(const mode of ['inspect','screen','long','error','report','welcome']){const html=u.gwenWork(mode);
     assert.equal((html.match(/class="gwen-bubble"/g)||[]).length,1,mode);
@@ -198,6 +205,12 @@ mutation('<span class="gwen-say-lane">${gwenSay(say)}</span>','',checkGwenSay);
 mutation('data-tail="${esc(tail)}" aria-hidden="true">','data-tail="${esc(tail)}">',checkGwenSay);
 mutation("function gwenWork(mode,say=mode){","function gwenWork(mode,say='inspect'){",checkGwenSay);
 mutation("'으… 단서가 부족해'","'단서가 부족함'",checkGwenSay);
+mutation("${gwenSay('idle','left')}${gwenImage('ready','idle-gwen-art',112)}","${gwenImage('ready','idle-gwen-art',112)}",checkGwenSay);
+mutation("${gwenSay('idle','left')}${gwenImage('ready','idle-gwen-art',112)}","${gwenSay('idle','left')}${gwenImage('ready','idle-gwen-art',112)}${gwenImage('ready','idle-gwen-art',112)}",checkGwenSay);
+mutation("gwenImage('ready','idle-gwen-art',112)","gwenImage('investigate','idle-gwen-art',112)",checkGwenSay);
+mutation('<span class="idle-gwen" data-gwen-idle aria-hidden="true">','<span class="idle-gwen" data-gwen="idle">',checkGwenSay);
+mutation("idle:['단장, 사건 파일 골랐어? 수사 시작할게','스테이지만 정해 주면 바로 출동!','준비됐어, 단장. 단추만 눌러 줘!']","idle:['단장, 사건 파일 골랐어? 수사 시작할게']",checkGwenSay);
+assert.match(source,/const continuous=new Set\(\['investigate','files','walk'\]\);/,'인사 그림은 한 번 움직이고 쉼(연속 재생 목록에 없음)');
 mutation("'어서 와, 단장! 어떤 사건이야?'","'어서 오세요, 단장! 오늘은 어떤 사건을 맡기러 오셨나요?'",checkGwenSay);
 {const visit=(from,to)=>{assert(source.includes(from));assert.throws(()=>checkGwenSayVisit(source.replace(from,to)),{code:'ERR_ASSERTION'},`mutation survived: ${from}`);};
  visit("return lines?lines[gwenSeed%lines.length]:'';};\n  // 클리어율","return lines?lines[Math.floor(Math.random()*lines.length)]:'';};\n  // 클리어율");
@@ -219,4 +232,4 @@ mutation("const low=p<LUCK.low","const low=p<=LUCK.low",checkLuck);
 mutation("ci[0]<LUCK.ciLo&&ci[1]>=LUCK.ciHi","ci[0]<LUCK.ciLo",checkLuck);
 mutation("if(!low&&!shaky)return '';","",checkLuck);
 mutation("1-Math.pow(1-p,LUCK.tries)","p*LUCK.tries",checkLuck);
-console.log('PASS probability, grades, power, skill targets, tab states, luck note, Gwen modes and transitions, Gwen speech bubbles; 32 mutations caught');
+console.log('PASS probability, grades, power, skill targets, tab states, luck note, Gwen modes and transitions, Gwen speech bubbles, idle-panel Gwen; 37 mutations caught');

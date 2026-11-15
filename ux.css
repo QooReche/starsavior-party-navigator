@@ -105,7 +105,8 @@ button.sec{background:rgba(111,211,207,.06);border-color:rgba(111,211,207,.6);co
 /* 내 구원자 빈 상태 */
 .mi-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px 8px 8px;text-align:center}.mi-empty img{width:200px;max-width:70%;height:auto}.mi-empty b{font-size:15px}.mi-empty p{margin:0 0 8px}
 /* ⓘ 도움말: 글리프 대신 CSS로 그려 옆 글자·체크박스·칩과 가운데를 맞춤 */
-.ux-help,.season-reference .ux-help{font-size:0;line-height:0;vertical-align:middle;flex:none;position:relative;top:-2px}
+/* button.ux-help.ux-help: 「칸 안의 단추」 규칙(.idle button 등)이 글자 크기·여백을 되살려 ⓘ가 두 개로 보이지 않게 우선순위를 높임 */
+button.ux-help.ux-help,.season-reference .ux-help{font-size:0;line-height:0;padding:0;margin:0;vertical-align:middle;flex:none;position:relative;top:-2px}
 .ux-help::before{content:'i';box-sizing:border-box;display:grid;place-items:center;width:18px;height:18px;border:1.5px solid currentColor;border-radius:50%;font:italic 700 12px/1 Georgia,'Times New Roman',serif}
 .season-reference .ux-help::before{width:16px;height:16px;font-size:11px}
 .notice[data-k=notice]{display:flex;align-items:center;gap:2px}
@@ -210,4 +211,21 @@ button.sec{background:rgba(111,211,207,.06);border-color:rgba(111,211,207,.6);co
 @media(prefers-reduced-motion:reduce){
  .gwen-bubble,.gwen-roam .gwen-bubble,.gwen-roam .gwen-bubble::after{animation:none}
  .gwen-roam .gwen-say-lane{align-items:center}
+}
+
+/* ── 대기 칸 그웬 ────────────────────────────────────────────────────────
+   넓은 화면: 그림 | (말풍선 · 단추 · 체크박스) 가운데 묶음. 휴대폰: 단추 위에 작은 그림 + 말풍선 한 줄.
+   그림·말풍선은 누를 수 없고(pointer-events:none) 단추·체크박스 칸과 겹치지 않음. 불러오기 창이 열리면 창 안 그웬만 보임. */
+.idle:has(>.idle-gwen){display:grid;grid-template-columns:auto auto;justify-content:center;align-items:center;gap:6px 20px}
+.idle-gwen{display:contents;pointer-events:none}
+.idle-gwen-art{grid-column:1;grid-row:1/3;display:block;width:112px;height:112px;object-fit:contain;pointer-events:none}
+.idle-gwen>.gwen-bubble{grid-column:2;grid-row:1;justify-self:start;align-self:end;max-width:280px}
+.idle:has(>.idle-gwen)>#reco-actions{grid-column:2;grid-row:2;align-self:start;margin-top:0;min-width:0}
+.idle:has(>.idle-gwen)>:not(.idle-gwen,#reco-actions){grid-column:1/-1}
+body:has(#drawer.open) .idle-gwen>*{visibility:hidden}
+@media(max-width:600px){
+ .idle:has(>.idle-gwen){grid-template-columns:auto minmax(0,auto);gap:8px 10px}
+ .idle-gwen-art{grid-row:1;width:64px;height:64px}
+ .idle-gwen>.gwen-bubble{align-self:center;max-width:100%}
+ .idle:has(>.idle-gwen)>#reco-actions{grid-column:1/-1}
 }

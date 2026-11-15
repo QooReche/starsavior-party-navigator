@@ -10,7 +10,7 @@ ART=ROOT/'assets/ui_icons/gwen'
 class GwenArt(unittest.TestCase):
     def test_served_budget_and_static_frames(self):
         files=[p for p in ART.iterdir() if p.suffix in ('.png','.webp') and not p.stem.endswith('_512')]
-        self.assertLessEqual(sum(p.stat().st_size for p in files),600000)
+        self.assertLessEqual(sum(p.stat().st_size for p in files),640000)
         for p in files:
             self.assertLessEqual(p.stat().st_size,80000,p.name)
             with Image.open(p) as img:
@@ -19,7 +19,7 @@ class GwenArt(unittest.TestCase):
                     self.assertEqual(img.n_frames,1,p.name)
 
     def test_animations_are_distinct_and_one_shot(self):
-        for name in ['investigate','files','walk','report','surprised','welcome','confident','thoughtful','notes']:
+        for name in ['investigate','files','walk','report','surprised','welcome','confident','thoughtful','notes','ready']:
             with Image.open(ART/(name+'.webp')) as img:
                 self.assertTrue(2<=img.n_frames<=4,name)
                 self.assertEqual(img.info['loop'],0 if name in ['investigate','files','walk'] else 1,name)

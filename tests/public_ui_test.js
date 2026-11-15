@@ -61,7 +61,8 @@ function checkGwen(page,file){
 // Check both the editable template and the generated page served to users.
 for(const file of ['party_template.html','index.html']){
  const page=fs.readFileSync(require.resolve('../'+file),'utf8');
- checkNotice(page,file);checkTone(page,file);checkGwen(page,file);
+ checkNotice(page,file);checkTone(page,file);checkGwen(page,file);checkIdle(page,file);
+ const uxCss=fs.readFileSync(require.resolve('../ux.css'),'utf8').replace(/\r\n/g,'\n'),checkHelp=(p,f)=>checkHelpOnce(p,uxCss,f);checkHelp(page,file);
  for(const [from,to,check] of [
   ['gwen_favicon_32.png','old_star.svg',checkGwen],
   ['gwen_favicon_180.png','old_touch.png',checkGwen],
@@ -74,6 +75,12 @@ for(const file of ['party_template.html','index.html']){
   ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-gwen-say="import" data-tail="left"></span>',checkGwen],
   ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-tail="left" aria-hidden="true">단장의 정보! 내가 받아 갈게</span>',checkGwen],
   ['<p class="gwen-greet-note mut">아래 4단계를 순서대로 하면 됨</p>','',checkGwen],
+  ['${waiting?Ux.gwenWork("inspect"):Ux.gwenIdle()}<div id="reco-actions">','${waiting?Ux.gwenWork("inspect"):""}<div id="reco-actions">',checkIdle],
+  ['${waiting?Ux.gwenWork("inspect"):Ux.gwenIdle()}<div id="reco-actions">','${Ux.gwenIdle()}${waiting?Ux.gwenWork("inspect"):""}<div id="reco-actions">',checkIdle],
+  ['<div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">','<div class="acts">${Ux.gwenIdle()}<button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">',checkIdle],
+  ['.idle button:not(.ux-help){margin-top:8px;font-size:15px;padding:8px 20px}','.idle .x .y button{margin-top:8px;font-size:15px;padding:8px 20px}',checkHelp],
+  ['.cands button{padding:2px 10px;font-size:12px}','#out button{padding:2px 10px;font-size:12px}',checkHelp],
+  ['<button id="growth-hint" type="button" class="ux-help"','<button type="button" class="ux-help" data-help="중복">ⓘ</button><button id="growth-hint" type="button" class="ux-help"',checkHelp],
   ['게임 이미지·만화의 권리는','게임 이미지의 권리는',checkGwen],
   ['class="notice update-notice"','class="notice"',checkNotice],
   ['코스모 힐데 추가','코스모 힐데 적 정보 추가 및 전투 판정 변경 사항 상세 안내',checkNotice],
@@ -196,6 +203,55 @@ for(const file of ['party_template.html','index.html']){
   ['.gwen-work .gwen-worker{animation:none;transform:none}', '.gwen-work .gwen-worker{animation:gwen-report 1s infinite;transform:none}'],
  ]){assert(page.includes(from));assert.throws(()=>checkLoading(page.replace(from,to)),{code:'ERR_ASSERTION'});}
 }
+// 대기 칸(결과 전): 「추천 편성 보기」 단추 옆에 그웬 한 번(계산 준비 중에는 기존 수사 그림만), 단추·체크박스는 그대로.
+function checkIdle(page,file){
+ const Ux=require('../ux_ui');
+ const view=page.match(/function idleView\(\)\{[\s\S]*?growthControlPlace\(\)\}/)?.[0]||'';
+ assert(view.includes('${waiting?Ux.gwenWork("inspect"):Ux.gwenIdle()}<div id="reco-actions">'),`${file}: 대기 칸 그웬은 단추 묶음 앞, 준비 중에는 수사 그림만`);
+ assert.equal((page.match(/Ux\.gwenIdle\(\)/g)||[]).length,1,`${file}: 대기 그웬은 대기 칸에만 한 번(첫 안내 등 다른 화면에는 두지 않음)`);
+ assert(view.includes('<button type="button" data-go="1" title="현재 조건과 내 정보로 추천함">추천 편성 보기</button>'),`${file}: 단추 그대로`);
+ const idle=Ux.gwenIdle();
+ assert.equal(idle,`<span class="idle-gwen" data-gwen-idle aria-hidden="true">${Ux.gwenSay('idle','left')}${Ux.gwenImage('ready','idle-gwen-art',112)}</span>`);
+ assert.doesNotMatch(idle,/<button|<a |data-gwen=|\ssrc=/,'장식만: 조작부·진행 표식·즉시 로딩 없음');
+ // 첫 안내와 대기 칸은 같은 #out 을 통째로 바꾸므로 동시에 보이지 않음.
+ assert.match(page,/if\(!MI\.info&&!REQ\)\{renderMi\(\);\$\("out"\)\.innerHTML=miGuide\(\);return\}/,`${file}: 첫 안내는 #out 교체`);
+ assert.match(view,/out\.innerHTML=`<div class="party idle"/,`${file}: 대기 칸도 #out 교체`);
+}
+// ⓘ 도움말은 자리마다 하나: 글리프는 숨기고 CSS 로 그린 i 만 보임. 「칸 안의 단추」 규칙이 숨김을 덮어쓰면 ⓘ 가 두 개로 보임.
+function checkHelpOnce(page,css,file){
+ const control=page.match(/<span id="growth-control">[\s\S]*?<\/span><\/span>/)?.[0]||'';
+ assert.equal((control.match(/class="ux-help"/g)||[]).length,1,`${file}: 육성 체크박스 줄 ⓘ 한 개`);
+ assert.equal((page.match(/id="growth-hint"/g)||[]).length,1,`${file}: growth-hint 한 개`);
+ assert.doesNotMatch(page,/ⓘ<\/button>\s*(?:<button[^>]*class="ux-help"|\$\{(?:Ux\.help|q)\()/,`${file}: ⓘ 단추가 연달아 붙지 않음`);
+ const guard='\nbutton.ux-help.ux-help,.season-reference .ux-help{font-size:0;line-height:0;padding:0;margin:0;';
+ assert(css.includes(guard),'ⓘ 글리프 숨김 규칙');assert(css.includes(".ux-help::before{content:'i';"),'그려 넣은 i');
+ // 숨김 규칙(클래스 2 + 요소 1)을 이길 수 있는 「… button」 글자 크기·안쪽 여백 규칙이 없어야 함.
+ const style=page.match(/<style>([\s\S]*?)<\/style>/)[1];
+ for(const [name,text,limit] of [[file,style,Infinity],['ux.css',css,css.indexOf(guard)]]){
+  for(const m of text.matchAll(/([^{}]+)\{([^{}]*)\}/g)){
+   if(!/(?:^|;)\s*(?:font|font-size|padding)\s*:/.test(m[2]))continue;
+   for(const sel of m[1].split(',').map(s=>s.trim())){
+    if(!/(?:^|[\s>+~])button(?:\[[^\]]*\])*$/.test(sel))continue;
+    const ids=(sel.match(/#[\w-]+/g)||[]).length,cls=(sel.match(/\.[\w-]+|\[[^\]]*\]|:(?!not|is|where|has)[\w-]+/g)||[]).length;
+    assert(!ids&&(cls<2||cls===2&&m.index<limit),`${name}: ⓘ 숨김을 덮어쓰는 규칙 ${sel}{${m[2]}}`);
+   }
+  }
+ }
+}
+function checkIdleCss(css){
+ for(const part of [
+  '.idle:has(>.idle-gwen){display:grid;grid-template-columns:auto auto;justify-content:center;align-items:center;gap:6px 20px}',
+  '.idle-gwen{display:contents;pointer-events:none}',
+  '.idle-gwen-art{grid-column:1;grid-row:1/3;display:block;width:112px;height:112px;object-fit:contain;pointer-events:none}',
+  '.idle-gwen>.gwen-bubble{grid-column:2;grid-row:1;justify-self:start;align-self:end;max-width:280px}',
+  '.idle:has(>.idle-gwen)>#reco-actions{grid-column:2;grid-row:2;align-self:start;margin-top:0;min-width:0}',
+  'body:has(#drawer.open) .idle-gwen>*{visibility:hidden}',
+  '@media(max-width:600px){\n .idle:has(>.idle-gwen){grid-template-columns:auto minmax(0,auto);gap:8px 10px}\n .idle-gwen-art{grid-row:1;width:64px;height:64px}\n .idle-gwen>.gwen-bubble{align-self:center;max-width:100%}\n .idle:has(>.idle-gwen)>#reco-actions{grid-column:1/-1}\n}',
+ ])assert(css.includes(part),part);
+ // 동작 줄이기: 말풍선 등장 연출 없음(그림은 mountGwen 이 정지 PNG 로 둠).
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\s*\.gwen-bubble,/);
+ assert.doesNotMatch(css,/\.idle-gwen[^{}]*\{[^}]*animation/,'대기 그웬에 별도 반복 연출 없음');
+}
 // 말풍선 모양·연출(ux.css): 테마 색, 그림 쪽 꼬리 4방향, 1회 등장, 동작 줄이기에서는 즉시 표시, 좁은 화면 배치.
 function checkBubbleCss(css){
  const rule=sel=>{const at=css.indexOf('\n'+sel+'{');assert(at>=0,sel);return css.slice(at+sel.length+2,css.indexOf('}',at));};
@@ -220,6 +276,18 @@ function checkBubbleCss(css){
  assert(css.includes('.result-summary:has(.gwen-reaction) [data-gwen="report"] .gwen-say-lane{display:none}'),'작은 보고 그림은 말풍선 생략');
  assert.doesNotMatch(css,/\.gwen-say[{:]/,'옛 말풍선 규칙 제거');
 }
+{const css=fs.readFileSync(require.resolve('../ux.css'),'utf8').replace(/\r\n/g,'\n'),page=fs.readFileSync(require.resolve('../party_template.html'),'utf8');checkIdleCss(css);
+ for(const [from,to] of [
+  ['.idle-gwen{display:contents;pointer-events:none}','.idle-gwen{display:contents}'],
+  ['body:has(#drawer.open) .idle-gwen>*{visibility:hidden}',''],
+  ['.idle-gwen-art{grid-row:1;width:64px;height:64px}','.idle-gwen-art{grid-row:1;width:112px;height:112px}'],
+  ['.idle:has(>.idle-gwen)>#reco-actions{grid-column:2;grid-row:2;','.idle:has(>.idle-gwen)>#reco-actions{grid-column:1;grid-row:1;'],
+ ]){assert(css.includes(from),from);assert.throws(()=>checkIdleCss(css.replace(from,to)),{code:'ERR_ASSERTION'},'mutation survived: '+from);}
+ for(const [from,to] of [
+  ['\nbutton.ux-help.ux-help,.season-reference .ux-help{font-size:0;','\n.ux-help,.season-reference .ux-help{font-size:0;'],
+  ['\nbutton.ux-help.ux-help,.season-reference .ux-help{font-size:0;line-height:0;padding:0;margin:0;','\nbutton.ux-help.ux-help,.season-reference .ux-help{font-size:12px;line-height:0;padding:0;margin:0;'],
+  ['.bbody button{font-size:13px;white-space:nowrap}','.x .y .z button{font-size:13px;white-space:nowrap}'],
+ ]){assert(css.includes(from),from);assert.throws(()=>checkHelpOnce(page,css.replace(from,to),'party_template.html'),{code:'ERR_ASSERTION'},'mutation survived: '+from);}}
 {const css=fs.readFileSync(require.resolve('../ux.css'),'utf8').replace(/\r\n/g,'\n');checkBubbleCss(css);
  for(const [from,to] of [
   [' .gwen-bubble,.gwen-roam .gwen-bubble,.gwen-roam .gwen-bubble::after{animation:none}',' .gwen-bubble{animation:none}'],
@@ -243,4 +311,4 @@ assert.deepEqual(cfg.breakSkills['행성 정화'].bonusRoles,[]);
 assert.equal(cfg.breakSkills['행성 정화'].text,'광역 피해(공격력 100%), 강인도 피해 +1, 스킬 후 노바 +1');
 // Parse all template scripts as JavaScript; data replacement is an identifier in the template.
 for(const [,code] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(code);
-console.log('PASS Gwen speech bubbles (guide, import drawer, empty roster, stylesheet), update notice, import label and four-step box (template + index), public headline, mode consistency, boss contents, saved date, skill labels, break description, script syntax');
+console.log('PASS idle-panel Gwen (once, beside the button, hidden under the import drawer), one help icon per spot, Gwen speech bubbles (guide, import drawer, empty roster, stylesheet), update notice, import label and four-step box (template + index), public headline, mode consistency, boss contents, saved date, skill labels, break description, script syntax');
