@@ -2544,16 +2544,28 @@ class Battle:
                                    and ('mark' not in rule or v.has(rule['mark']))), None)
                     if target is None:
                         continue
-                if rule.get('recent'):
+                deferred_stack = rule.get('consume_all') and self.mc['stack_react_timing'] == 'client'
+                if rule.get('recent') and not deferred_stack:
                     target = owner.last_target
                     if target is not None and target.dead:
                         target = None
-                # 소거를 먼저 확정해 다른 아군의 연쇄로 같은 스택을 재사용하지 않는다.
-                if rule.get('consume_all'):
+                # Legacy booking consumed stacks before duplicate-reservation checks.
+                if rule.get('consume_all') and not deferred_stack:
                     owner.eff.pop(rule['stack'][0], None)
                     self.dirty(owner)
 
-                def fire_trigger(owner=owner, sk=sk, target=target, rule=rule):
+                def fire_trigger(owner=owner, sk=sk, target=target, rule=rule, deferred_stack=deferred_stack):
+                    if deferred_stack:
+                        # NKM:15955-15977,8645-8651: booking does not consume stacks.
+                        # 9101-9151,7649-7655: choose the current last-hit target at execution.
+                        # The five-stack condition is checked only when booking; the skill's
+                        # SKILL_END lines consume stacks and grant gauge after a successful cast.
+                        enemies = self.alive(1 - owner.side)
+                        if owner.dead or self.no_react(owner) or not enemies:
+                            return None
+                        picked = self.filter_pick(owner, enemies, ['last_hit']) if rule.get('recent') else target
+                        self.rule_hits['stack_react_timing'] += 1
+                        return self.trigger_cast(owner, sk, picked, via='trigger')
                     if target is not None and target.dead and ('hp' in rule or 'mark' in rule):
                         return None
                     c = self.trigger_cast(owner, sk, target if (target is None or not target.dead) else None, via='trigger',

@@ -299,7 +299,8 @@ class StandardTest(unittest.TestCase):
                  ('clo/태양 회랑/FLOOR 200', '행성 정화', {}, ['purify_extra']),
                  ('clo/태양 회랑/FLOOR 200', '스타피어서', {}, ['break_gauge_actor', 'preemptive_client_main'])]
         for stage, skill, override, expected in cases:
-            r, hits = run_stage(stage, override, n=5, skill=skill,
+            # M's corrected reaction timing changes which seed reaches preemptive main hits.
+            r, hits = run_stage(stage, override, n=20, skill=skill,
                                party=['hilde', 'professor-m', 'cristelle', 'wedding-carmen'])
             self.assertGreater(r['outcome']['progress'], 0, r['outcome'])
             if skill:
