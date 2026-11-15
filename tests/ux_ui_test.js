@@ -105,9 +105,9 @@ function checkGwenWork(u=U){
   for(const mode of ['inspect','screen','long','error','report','welcome']){
     const html=u.gwenWork(mode);assert.match(html,new RegExp(`data-gwen="${mode}"`));
     assert.match(html,/width="160" height="160" alt=""/);assert.match(html,/aria-hidden="true"/);
-    const art={inspect:'investigate',screen:'files',long:'investigate',error:'surprised',report:'report',welcome:'welcome'}[mode];
+    const art={inspect:'investigate',screen:'files',long:'walk',error:'surprised',report:'report',welcome:'welcome'}[mode];
     assert(html.includes(`assets/ui_icons/gwen/${art}.png`));
-    if(['inspect','screen','long'].includes(mode)){assert(html.includes(`${art}.webp`));assert(html.includes('(prefers-reduced-motion: no-preference)'));}
+    assert(html.includes(`${art}.webp`));assert.match(html,/loading="lazy"/);assert.doesNotMatch(html,/\ssrc=/);
   }
   assert.match(u.gwenWork('inspect'),/그웬이 추천 편성 확인 중…/);
   assert.match(u.gwenWork('screen'),/그웬이 후보 거르는 중…/);

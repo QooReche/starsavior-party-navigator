@@ -150,6 +150,15 @@ button.sec{background:rgba(111,211,207,.06);border-color:rgba(111,211,207,.6);co
 .gwen-traveler{position:absolute;display:block;left:calc(50% - var(--gwen-size)/2);top:0;width:var(--gwen-size);height:var(--gwen-size)}
 .gwen-scene{display:block;width:var(--gwen-size);height:var(--gwen-size)}
 .gwen-caption{max-width:80ch;text-align:center}
+.gwen-reaction{display:flex;flex-direction:column;align-items:flex-end;max-width:100%;margin-top:12px;pointer-events:none}
+/* Future dialogue has its own 220px box above the face; it never overlays the controls. */
+.gwen-bubble-space{width:220px;max-width:100%;height:64px;align-self:flex-start}
+.gwen-reaction-art{display:block;width:200px;height:200px;object-fit:contain;max-width:100%}
+.result-summary:has(.gwen-reaction) [data-gwen="report"]{--gwen-size:72px;min-height:0;margin:4px auto;font-size:12px}
+.result-summary:has(.gwen-reaction) [data-gwen="report"] .gwen-scene{width:72px;height:72px}
+.mi-empty .gwen-work{max-width:360px}.mi-empty .gwen-caption{display:none}
+.gwen-paused .gwen-roam :is(.gwen-traveler,.gwen-scene,.gwen-worker){animation-play-state:paused}
+@media(max-width:1199px){.gwen-reaction{flex-direction:row;align-items:center;justify-content:flex-end}.gwen-reaction-art{width:112px;height:112px}.gwen-bubble-space{flex:0 1 220px;height:64px}}
 .gwen-roam .gwen-traveler{animation:gwen-roam 12s linear infinite}
 .gwen-roam .gwen-scene{animation:gwen-turn 12s step-end infinite}
 .gwen-roam .gwen-worker{animation:gwen-hop 12s linear infinite}

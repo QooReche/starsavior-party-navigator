@@ -13,20 +13,25 @@ TMP.mkdir(exist_ok=True)
 os.environ['TEMP'] = os.environ['TMP'] = str(TMP)
 
 from test_page import test_server
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError
 
 
 def check_scene(page, mode, scope='#out', reduced=False):
     scene = page.locator(f'{scope} [data-gwen]')
     assert scene.count() == 1, (scope, scene.count())
     assert scene.get_attribute('data-gwen') == mode
+    scene.scroll_into_view_if_needed()
+    page.wait_for_function('(e)=>!!e.getAttribute("src")', arg=scene.locator('img').element_handle())
     scene.locator('img').evaluate('(img)=>img.decode()')
     assert scene.locator('img').evaluate('(img)=>img.naturalWidth>0')
     assert scene.locator('.gwen-scene').bounding_box()['height'] == (120 if page.viewport_size['width'] == 360 else 140)
-    art = {'inspect':'investigate','screen':'files','long':'investigate','error':'surprised','report':'report','welcome':'welcome'}[mode]
+    art = {'inspect':'investigate','screen':'files','long':'walk','error':'surprised','report':'report','welcome':'welcome'}[mode]
     animated = mode in ('inspect','screen','long') and not reduced
     expected = '/assets/ui_icons/gwen/' + art + ('.webp' if animated else '.png')
-    assert scene.locator('img').evaluate('(img)=>img.currentSrc').endswith(expected), expected
+    if reduced or mode in ('inspect','screen','long'):
+        page.wait_for_function('(a)=>a[0].currentSrc.endsWith(a[1])', arg=[scene.locator('img').element_handle(), expected])
+    else:
+        assert scene.locator('img').get_attribute('data-gwen-motion').endswith(art+'.webp')
     animation = scene.locator('img').evaluate('(img)=>getComputedStyle(img).animationName')
     if reduced or mode not in ('report', 'inspect', 'long'):
         assert animation == 'none', animation
@@ -40,14 +45,16 @@ def exercise(page, base, width, shots):
     page.wait_for_function('typeof Ux!=="undefined" && typeof SIMQ!=="undefined"')
     page.wait_for_timeout(1000)  # quick.json 완료 뒤 예약된 첫 화면 갱신까지 기다림.
     welcome = page.locator('[data-k="miguide"] .gwen-guide-art')
-    assert welcome.get_attribute('src') == 'assets/ui_icons/gwen/welcome.png'
+    welcome.scroll_into_view_if_needed()
+    page.wait_for_function('(e)=>!!e.getAttribute("src")', arg=welcome.element_handle())
+    assert welcome.get_attribute('data-gwen-static') == 'assets/ui_icons/gwen/welcome.png'
     welcome.evaluate('(img)=>img.decode()')
     if shots:
         welcome.scroll_into_view_if_needed()
         page.screenshot(path=str(ROOT / f'_shot_art_welcome_{width}.png'))
     page.locator('#mi-open-import').click()
     page.locator('#drawer .gwen-welcome').wait_for(state='visible')
-    assert page.locator('#drawer .gwen-welcome').get_attribute('src') == 'assets/ui_icons/gwen/welcome.png'
+    assert page.locator('#drawer .gwen-welcome').get_attribute('data-gwen-static') == 'assets/ui_icons/gwen/welcome.png'
     assert page.locator('#drawer').evaluate('(e)=>e.scrollWidth<=e.clientWidth')
     if shots:
         page.screenshot(path=str(ROOT / f'_shot_art_import_{width}.png'))
@@ -154,14 +161,17 @@ def exercise(page, base, width, shots):
     assert page.locator('#art-hidden [data-gwen="report"]').count() == 0
     # 旧SD 이미지로 되돌리면 실제 currentSrc 검사가 실패해야 함.
     page.evaluate('$("out").innerHTML=Ux.gwenWork("screen")')
-    page.locator('#out source').evaluate('(e)=>e.srcset="assets/ui_icons/gwen_sd.png"')
+    page.locator('#out [data-gwen-art]').evaluate('(e)=>e.src="assets/ui_icons/gwen_sd.png"')
     page.wait_for_timeout(100)
+    page.set_default_timeout(500)
     try:
         check_scene(page, 'screen')
-    except AssertionError:
+    except (AssertionError, TimeoutError):
         pass
     else:
         raise AssertionError('그림 연결 되돌림을 검출하지 못함')
+    finally:
+        page.set_default_timeout(10000)
     page.evaluate('$("out").innerHTML=Ux.gwenWork("screen")')
     check_scene(page, 'screen')
     # 시즌별 실제 연결 및 코스모의 글자만 바꾸는 경로.

@@ -19,21 +19,93 @@
     report:['조사 끝 · 보고함']};
   const gwenSeed=root.document?Math.floor(Math.random()*6):0;
   const gwenLine=mode=>{const lines=GWEN_LINES[mode];return lines?lines[gwenSeed%lines.length]:'';};
+  const GWEN_ART=new Set(['investigate','files','walk','report','surprised','welcome','confident','thoughtful','notes']);
+  function gwenImage(art,cls='gwen-worker',size=160){
+    if(!GWEN_ART.has(art))return '';
+    const base='assets/ui_icons/gwen/'+art;
+    // No URL is assigned until the actual visible intersection, including hidden tabs/drawers.
+    return `<img class="${cls}" data-gwen-art="${art}" data-gwen-static="${base}.png" data-gwen-motion="${base}.webp" width="${size}" height="${size}" alt="" aria-hidden="true" loading="lazy">`;
+  }
+  function gwenReaction(p){
+    if(!Number.isFinite(p))return '';
+    const art=p<.05?'notes':p<.7?'thoughtful':'confident';
+    return `<div class="gwen-reaction" data-gwen-reaction="${art}" aria-hidden="true"><div class="gwen-bubble-space"></div>${gwenImage(art,'gwen-reaction-art',240)}</div>`;
+  }
   function gwenWork(mode){
-    const art={inspect:'investigate',screen:'files',long:'investigate',error:'surprised',report:'report',welcome:'welcome'}[mode];
+    const art={inspect:'investigate',screen:'files',long:'walk',error:'surprised',report:'report',welcome:'welcome'}[mode];
     if(!art)return '';
-    const animated=art==='investigate'||art==='files',base='assets/ui_icons/gwen/'+art;
     const label=gwenLine(mode);
-    const roam=art==='investigate';
-    return `<span class="gwen-work${roam?' gwen-roam':''}" data-gwen="${mode}"><span class="gwen-track"><span class="gwen-traveler"><picture class="gwen-scene" aria-hidden="true">${animated?`<source media="(prefers-reduced-motion: no-preference)" srcset="${base}.webp" type="image/webp">`:''}<img class="gwen-worker" src="${base}.png" width="160" height="160" alt="" loading="lazy"></picture></span></span>${label?`<span class="gwen-caption">${label}</span>`:''}</span>`;
+    const roam=art==='investigate'||art==='walk';
+    return `<span class="gwen-work${roam?' gwen-roam':''}" data-gwen="${mode}"><span class="gwen-track"><span class="gwen-traveler"><span class="gwen-scene" aria-hidden="true">${gwenImage(art)}</span></span></span>${label?`<span class="gwen-caption">${label}</span>`:''}</span>`;
+  }
+  // Each one-shot WebP has loop=1. A new blob URL replays cached bytes without network
+  // downloads on every interval. Every pending callback is invalidated on hide/reduce/remove.
+  function mountGwen(){
+    const doc=root.document,media=root.matchMedia('(prefers-reduced-motion: reduce)');
+    const states=new Map(),blobs=new Map();
+    const continuous=new Set(['investigate','files','walk']);
+    function visible(img){
+      if(doc.hidden||!states.get(img)?.intersecting||!img.isConnected||!(img.checkVisibility?.({visibilityProperty:true,opacityProperty:true})??img.getClientRects().length))return false;
+      const r=img.getBoundingClientRect();
+      return r.bottom>0&&r.right>0&&r.top<root.innerHeight&&r.left<root.innerWidth;
+    }
+    function still(img,s){
+      if(s.loaded&&img.getAttribute('src')!==img.dataset.gwenStatic)img.src=img.dataset.gwenStatic;
+      if(s.url){root.URL.revokeObjectURL(s.url);s.url=null;}
+      img.dataset.gwenPlaying='false';
+    }
+    function stop(img,s){
+      root.clearTimeout(s.timer);s.timer=null;s.token++;s.active=false;
+      still(img,s);
+    }
+    function play(img,s){
+      if(!visible(img)||media.matches){stop(img,s);return;}
+      const token=++s.token,path=img.dataset.gwenMotion;
+      if(!blobs.has(path))blobs.set(path,root.fetch(path).then(r=>{if(!r.ok)throw Error(r.status);return r.blob();}).catch(e=>{blobs.delete(path);throw e;}));
+      blobs.get(path).then(blob=>{
+        if(token!==s.token||!visible(img)||media.matches)return;
+        s.url=root.URL.createObjectURL(blob);img.src=s.url;img.dataset.gwenPlaying='true';
+        // Start the duration after decoding, so a cold load still gets a complete action.
+        return img.decode().then(()=>{
+          if(token!==s.token)return;
+          s.timer=root.setTimeout(()=>{
+            still(img,s);
+            const delay=4000+Math.floor(Math.random()*4001);
+            s.timer=root.setTimeout(()=>play(img,s),delay);
+          },1000);
+        });
+      }).catch(()=>{if(token===s.token)stop(img,s);});
+    }
+    function update(img,s){
+      if(!visible(img)){if(s.active)stop(img,s);return;}
+      if(!s.loaded){s.loaded=true;img.src=img.dataset.gwenStatic;}
+      if(media.matches){if(s.active)stop(img,s);return;}
+      if(s.active)return;
+      s.active=true;
+      if(continuous.has(img.dataset.gwenArt)){img.src=img.dataset.gwenMotion;img.dataset.gwenPlaying='true';}
+      else play(img,s);
+    }
+    const observer=new root.IntersectionObserver(entries=>{for(const e of entries){const s=states.get(e.target);if(s){s.intersecting=e.isIntersecting&&e.intersectionRect.width>0&&e.intersectionRect.height>0;update(e.target,s);}}},{threshold:[0,.001]});
+    function refresh(){
+      for(const [img,s] of states)if(!img.isConnected){stop(img,s);observer.unobserve(img);states.delete(img);}
+      doc.querySelectorAll('img[data-gwen-art]').forEach(img=>{
+        if(!states.has(img)){states.set(img,{token:0,active:false,loaded:false,timer:null,url:null,intersecting:false});observer.observe(img);}
+        update(img,states.get(img));
+      });
+    }
+    new root.MutationObserver(refresh).observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','style']});
+    doc.addEventListener('visibilitychange',()=>{doc.documentElement.classList.toggle('gwen-paused',doc.hidden);refresh();});
+    media.addEventListener('change',refresh);
+    root.addEventListener('resize',refresh);
+    refresh();
   }
   // 같은 결과를 다시 그리거나 접기를 열어도 발표를 반복하지 않음.
   const gwenResults=new WeakMap(),gwenPending=new Map();let gwenSerial=0;
   function gwenReport(result){
     if(!result||typeof result!=='object')return '';
     let state=gwenResults.get(result);
-    if(!state){state={id:String(++gwenSerial),until:0};gwenResults.set(result,state);}
-    if(state.until&&Date.now()>=state.until)return '';
+    if(!state){state={id:String(++gwenSerial),remaining:1800,started:0,timer:null,done:false};gwenResults.set(result,state);}
+    if(state.done)return '';
     gwenPending.set(state.id,state);
     return gwenWork('report').replace('data-gwen="report"',`data-gwen="report" data-gwen-report="${state.id}"`);
   }
@@ -154,21 +226,31 @@
   }
   function mount(){
     const doc=root.document;if(!doc)return;
-    const reports=new WeakSet();
+    mountGwen();
     const retireReports=()=>{
-      const live=new Set();
+      const live=new Map();
       doc.querySelectorAll('[data-gwen="report"]').forEach(el=>{
-        const id=el.dataset.gwenReport;live.add(id);
-        // 숨긴 탭·닫힌 details에서는 발표 시간을 소비하지 않음.
-        if(reports.has(el)||!(el.checkVisibility?.()??el.getClientRects().length))return;
-        reports.add(el);const state=gwenPending.get(id),now=Date.now();
-        if(state&&!state.until)state.until=now+1800;
-        root.setTimeout(()=>{el.remove();gwenPending.delete(id);},Math.max(0,(state?.until||now+1800)-now));
+        const id=el.dataset.gwenReport,r=el.getBoundingClientRect();
+        live.set(id,!doc.hidden&&(el.checkVisibility?.({visibilityProperty:true,opacityProperty:true})??el.getClientRects().length)&&r.bottom>0&&r.top<root.innerHeight);
       });
-      for(const id of gwenPending.keys())if(!live.has(id))gwenPending.delete(id);
+      for(const [id,state] of gwenPending){
+        if(!live.get(id)){
+          if(state.timer){root.clearTimeout(state.timer);state.timer=null;state.remaining=Math.max(0,state.remaining-(Date.now()-state.started));}
+          if(!live.has(id))gwenPending.delete(id);
+        }else if(!state.timer){
+          state.started=Date.now();
+          state.timer=root.setTimeout(()=>{
+            state.timer=null;state.done=true;gwenPending.delete(id);
+            doc.querySelectorAll(`[data-gwen-report="${id}"]`).forEach(el=>el.remove());
+          },state.remaining);
+        }
+      }
     };
     new root.MutationObserver(retireReports).observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','style']});
     retireReports();
+    doc.addEventListener('visibilitychange',retireReports);
+    root.addEventListener('scroll',retireReports,true);
+    root.addEventListener('resize',retireReports);
     const pop=doc.createElement('div');pop.id='ux-popover';pop.className='ux-popover';pop.role='tooltip';pop.hidden=true;doc.body.append(pop);
     let owner=null,pinned=false,timer;
     function close(){clearTimeout(timer);if(owner){owner.setAttribute('aria-expanded','false');owner.removeAttribute('aria-describedby');}owner=null;pinned=false;pop.hidden=true;}
@@ -183,6 +265,6 @@
     doc.addEventListener('focusout',e=>{if(owner===e.target&&!pinned)close();});
     root.addEventListener('resize',()=>{if(owner)place();});root.addEventListener('scroll',()=>{if(owner)place();},true);
   }
-  const api={verdict,help,gwenWork,GWEN_LINES,gwenReport,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
+  const api={verdict,help,gwenImage,gwenReaction,gwenWork,GWEN_LINES,gwenReport,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Ux=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -61,6 +61,7 @@ def main():
         tests.append(('e2e/test_page.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_page.py', '--shots', 'local/shots']))
         tests.append(('e2e/test_gwen_loading.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_loading.py']))
         tests.append(('e2e/test_wide_gwen.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_wide_gwen.py']))
+        tests.append(('e2e/test_gwen_art2.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_art2.py', '--mutations']))
     fails = []
     skipped = []
     for name, cmd in tests:

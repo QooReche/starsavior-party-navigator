@@ -25,25 +25,25 @@ function checkGwen(page,file){
   assert(link?.includes(`href="assets/ui_icons/gwen_favicon_${size}.png"`),`${file}: Gwen ${rel} ${size}`);
  }
  const heading=page.match(/<header class="site-head"><h1>([\s\S]*?)<\/h1>/)?.[1]||'';
- assert.match(heading,/<img class="gwen-head" src="assets\/ui_icons\/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true">/);
+ assert.match(heading,/<img class="gwen-head" src="assets\/ui_icons\/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true"(?: loading="lazy")?>/);
  assert(heading.indexOf('gwen-head')<heading.indexOf('파티 편성 네비게이터'),`${file}: face before title`);
  const start=page.indexOf('function miGuide()');
- const guide=vm.runInNewContext(page.slice(start,page.indexOf('function showReco()',start))+';miGuide()');
- assert.match(guide,/<img class="gwen-guide-art" src="assets\/ui_icons\/gwen\/welcome.png"[^>]*alt="" aria-hidden="true">/);
- assert.equal((page.match(/src="assets\/ui_icons\/gwen\/welcome.png"/g)||[]).length,2,`${file}: welcome in first guide and import drawer`);
+ const guide=vm.runInNewContext(page.slice(start,page.indexOf('function showReco()',start))+';miGuide()', {Ux:require('../ux_ui')});
+ assert.match(guide,/<img class="gwen-guide-art" data-gwen-art="welcome" data-gwen-static="assets\/ui_icons\/gwen\/welcome.png"[^>]*alt="" aria-hidden="true"(?: loading="lazy")?>/);
+ assert.equal((page.match(/data-gwen-static="assets\/ui_icons\/gwen\/welcome.png"/g)||[]).length,1,`${file}: welcome in first guide and import drawer`);
  assert(page.includes('게임 이미지·만화의 권리는 원 권리자에게 있음.'),`${file}: image and comic attribution`);
  // 탐정 사무소 꾸밈: 장식은 alt=""·aria-hidden, 보안 안내 문구는 뜻·위치 그대로.
  assert.match(guide,/^<div class="party guide case-request" data-k="miguide" data-state="needs-info"><img class="case-clip" src="assets\/ui_icons\/office_clip\.svg" width="18" height="30" alt="" aria-hidden="true"><p class="case-tag">사건 의뢰서 · 접수 대기<\/p><h3>내 구원자로 깰 파티 찾기<\/h3>/);
  assert.match(guide,/<p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지<\/p>/);
  assert.match(guide,/<p class="mut">내 정보는 이 브라우저에만 저장됨<\/p>/);
- assert.equal((guide.match(/gwen\//g)||[]).length,1,`${file}: 첫 안내에 그웬은 한 번`);
+ assert.equal((guide.match(/data-gwen-art=/g)||[]).length,1,`${file}: 첫 안내에 그웬은 한 번`);
  const drawer=page.slice(page.indexOf('<aside id="drawer"'),page.indexOf('</aside>'));
  assert.match(drawer,/<div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장함\.<\/div>/);
- assert.match(drawer,/<div class="gwen-greet"><img class="gwen-welcome" [^>]*alt="" aria-hidden="true"><p class="gwen-say">의뢰인 정보는 그웬이 받아 감<small>아래 4단계를 순서대로 하면 됨<\/small><\/p><\/div>/);
+ assert.match(drawer,/<div class="gwen-greet"><img class="gwen-welcome" [^>]*alt="" aria-hidden="true" loading="lazy"><p class="gwen-say">의뢰인 정보는 그웬이 받아 감<small>아래 4단계를 순서대로 하면 됨<\/small><\/p><\/div>/);
  assert.equal((drawer.match(/<li>/g)||[]).length,4,`${file}: 불러오기 4단계 유지`);
- const emptyAt=page.indexOf('function miEmpty()'),empty=vm.runInNewContext(page.slice(emptyAt,page.indexOf('function miGuide()',emptyAt))+';miEmpty()');
- assert.match(empty,/^<div class="mi-empty" data-k="mi-empty"><img src="assets\/ui_icons\/office_board\.svg" width="200" height="120" alt="" aria-hidden="true">/);
- assert.match(empty,/<button type="button" data-mi-empty-open>계정 정보 불러오기<\/button>/);assert.doesNotMatch(empty,/gwen/);
+ const emptyAt=page.indexOf('function miEmpty()'),empty=vm.runInNewContext(page.slice(emptyAt,page.indexOf('function miGuide()',emptyAt))+';miEmpty()', {Ux:require('../ux_ui')});
+ assert.match(empty,/data-gwen-art="files"/);
+ assert.match(empty,/<button type="button" data-mi-empty-open>계정 정보 불러오기<\/button>/);assert.equal((empty.match(/data-gwen-art=/g)||[]).length,1);
  assert(page.includes('if(e.target.closest("button[data-mi-empty-open]")){$("mi-open-import").click();return}'),`${file}: 빈 상태 단추 연결`);
  for(const f of ['office_clip','office_magnifier','office_file','office_board']){const svg=fs.readFileSync(require.resolve('../assets/ui_icons/'+f+'.svg'),'utf8');
   assert(svg.length<=10000,f);assert.doesNotMatch(svg,/<script|<image|href=/,f);}
@@ -57,7 +57,7 @@ for(const file of ['party_template.html','index.html']){
   ['gwen_favicon_180.png','old_touch.png',checkGwen],
   ['gwen_favicon_512.png','old_icon.png',checkGwen],
   ['class="gwen-head"','class="removed-head"',checkGwen],
-  ['class="gwen-guide-art"','class="removed-art"',checkGwen],
+  ['"welcome","gwen-guide-art"','"welcome","removed-art"',checkGwen],
   ['게임 이미지·만화의 권리는','게임 이미지의 권리는',checkGwen],
   ['class="notice update-notice"','class="notice"',checkNotice],
   ['코스모 힐데 추가','코스모 힐데 적 정보 추가 및 전투 판정 변경 사항 상세 안내',checkNotice],
