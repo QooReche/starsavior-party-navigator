@@ -67,3 +67,52 @@ main:has(#tab-info[aria-pressed=true]) :is(#guild-panel,#guild-search,#guild-ext
 .season-boss-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 24px}.season-boss-summary>div{display:flex;flex-wrap:wrap;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:12px}.season-boss-summary b{font-size:15px}.season-boss-summary>div>span:last-child{flex-basis:100%;font-size:13px;color:var(--mut)}.cs-boss{padding:16px;border:1px solid var(--line);border-radius:12px;margin:16px 0}.cs-bh{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.cs-bh>b{font-size:18px}.cs-sc{font-size:13px;color:var(--mut)}.growth-score-card{padding:16px;border-radius:12px;margin:16px 0}
 @media(max-width:600px){.season-kpis{gap:8px;margin-bottom:8px}.season-kpis>div{padding:8px}.season-kpis b{font-size:26px}.season-kpis span,.season-kpis small{font-size:11px}.season-reference{font-size:12px}.season-reference th,.season-reference td{padding:4px 2px}.season-reference thead th{font-size:10px}.season-reference .ux-help{min-height:24px}.season-wait{margin:8px 0;display:block}#guild-search>div>button,#cosmo-search>div>button{width:100%}.season-boss-summary{grid-template-columns:1fr;gap:8px}.season-boss-summary>div{padding:8px}.season-boss-summary>div>span:last-child{flex-basis:auto;margin-left:auto;font-size:12px}.cs-boss{padding:12px}.season-fields{display:grid;gap:12px}.season-score>b{font-size:28px}}
 #growth-result .growth-none-title{margin:0 0 6px;font-size:15px}#growth-result .growth-none{margin:0 0 10px;font-weight:700;line-height:1.5}#growth-result .growth-none-hint{margin:0;display:grid;gap:6px;font-size:13px;line-height:1.5}#growth-result .growth-none-hint{gap:8px}#growth-result .growth-none-hint>div{display:grid;grid-template-columns:170px 1fr;gap:8px}#growth-result .growth-none-hint dt{color:var(--mut)}#growth-result .growth-none-hint dd{margin:0}@media(max-width:760px){#growth-result .growth-none-hint>div{grid-template-columns:1fr;gap:0}}
+
+/* ── 탐정 그웬의 사무소 테마 ─────────────────────────────────────────────
+   남색 밤(바탕)·청록(조작)·황동(장식). 배치·글자 크기·조작 위치는 그대로 두고 색·선·라벨만 바꿈. */
+:root{--bg:#0a0e19;--card:#131a2b;--line:#2a3550;--mut:#a9b3c9;--acc:#6fd3cf;--brass:#d9b979;--ink:#0f1626}
+body{background:radial-gradient(1100px 380px at 50% -140px,#1b2745 0,transparent 72%) no-repeat var(--bg)}
+button{background:linear-gradient(180deg,#8be3de,#4bb9b5);color:#062624;box-shadow:none}
+button.sec{background:rgba(111,211,207,.06);border-color:rgba(111,211,207,.6);color:var(--acc)}
+.dhead button{background:transparent;color:var(--fg)}
+/* 머리글 밑줄: 높이를 늘리지 않게 기존 아래 여백 16px 을 8+8 로 나눔 */
+.site-head{padding-bottom:8px;margin-bottom:8px;background:linear-gradient(90deg,var(--brass),var(--line) 160px) left bottom/100% 1px no-repeat}
+.site-head h1 small{letter-spacing:.08em}
+.panel,.party{box-shadow:inset 0 2px 0 rgba(217,185,121,.22)}
+.party-label,.season-title,.growth-heading{padding-left:10px;border-left:3px solid var(--brass)}
+.result-tabs [aria-selected=true]{background:#17303a;color:#c9f4f1}
+.ux-popover{border-color:#5b6f8f;background:#18233a;box-shadow:0 8px 24px #0008,inset 0 2px 0 rgba(217,185,121,.35)}
+.guide-steps li{background:var(--ink)}.season-kpis>div{background:var(--ink)}#mi-q{background:var(--ink)}
+.guide-steps li:before{color:var(--brass);font-weight:700}
+/* 라벨 체계: 사건 파일의 작은 황동 글씨 */
+.case-tag,.mi-verdict[data-state=done]::before,.gwen-memo{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--brass)}
+.case-title{display:inline-flex;align-items:center;gap:8px}.case-title::before{content:'';width:18px;height:18px;flex:none;background:url(assets/ui_icons/office_magnifier.svg) center/contain no-repeat}
+/* 결과 카드 머리: 「조사 결과」 라벨 + 점선(판정·확률·전투력 배치는 그대로) */
+.mi-verdict[data-state=done]::before{content:'조사 결과';flex:0 0 100%;box-sizing:border-box;margin-bottom:-8px;padding-left:22px;line-height:18px;background:url(assets/ui_icons/office_magnifier.svg) left center/16px 16px no-repeat,repeating-linear-gradient(90deg,rgba(217,185,121,.55) 0 4px,transparent 4px 9px) 7.2em 50%/calc(100% - 7.2em) 1px no-repeat}
+/* 첫 안내: 사건 의뢰서(얇은 점선 테두리 + 클립) */
+.case-request{position:relative;outline:1px dashed rgba(217,185,121,.38);outline-offset:-9px}
+.case-clip{position:absolute;top:-9px;left:28px;width:18px;height:30px}
+.case-tag{display:inline-block;margin:0 0 12px;padding:3px 10px;border:1px solid rgba(217,185,121,.7);border-radius:4px;transform:rotate(-1.5deg)}
+/* 그웬의 메모(낮은 클리어율 안내) */
+.luck-note{border-left-color:var(--warn)}
+.gwen-memo{display:flex;align-items:center;gap:6px;margin-bottom:2px;letter-spacing:.04em}.gwen-memo img{width:20px;height:20px;flex:none;object-fit:contain}
+/* 불러오기 창: 그웬 인사 한 줄 */
+.gwen-greet{display:flex;align-items:center;gap:12px;margin:4px 0 12px}.gwen-greet .gwen-welcome{width:72px;height:72px;margin:0;flex:none}
+.gwen-say{position:relative;margin:0;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--ink);font-size:14px;font-weight:700;line-height:1.5;min-width:0}
+.gwen-say::before{content:'';position:absolute;left:-6px;top:50%;width:10px;height:10px;margin-top:-5px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--ink);transform:rotate(45deg)}
+.gwen-say small{display:block;font-size:12px;font-weight:400;color:var(--mut)}
+.mihow-title{display:flex;align-items:center;gap:8px}.mihow-title::before{content:'';width:22px;height:18px;flex:none;background:url(assets/ui_icons/office_file.svg) center/contain no-repeat}
+#mi-status[data-state=ok]::before,#mi-status[data-state=bad]::before{display:inline-block;margin-right:8px;padding:0 6px;border:1px solid currentColor;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:.06em}
+#mi-status[data-state=ok]::before{content:'접수 완료';color:var(--good)}#mi-status[data-state=bad]::before{content:'확인 필요'}
+/* 내 구원자 빈 상태 */
+.mi-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:24px 8px 8px;text-align:center}.mi-empty img{width:200px;max-width:70%;height:auto}.mi-empty b{font-size:15px}.mi-empty p{margin:0 0 8px}
+/* ⓘ 도움말: 글리프 대신 CSS로 그려 옆 글자·체크박스·칩과 가운데를 맞춤 */
+.ux-help,.season-reference .ux-help{font-size:0;line-height:0;vertical-align:middle;flex:none;position:relative;top:-2px}
+.ux-help::before{content:'i';box-sizing:border-box;display:grid;place-items:center;width:18px;height:18px;border:1.5px solid currentColor;border-radius:50%;font:italic 700 12px/1 Georgia,'Times New Roman',serif}
+.season-reference .ux-help::before{width:16px;height:16px;font-size:11px}
+.notice[data-k=notice]{display:flex;align-items:center;gap:2px}
+/* 줄 안(inline)에서는 한글 글자 중심이 x높이 중심보다 약 2px 위라 올려 맞추고, flex 부모에서는 align-items 가 맞추므로 되돌림 */
+:is(.notice,#growth-control,.verdict-main,.cs-bh,.bbar,.gd-head,.season-chips,.season-boss-summary>div,.menu-share)>.ux-help{top:0}.gd-head{display:flex;align-items:center;flex-wrap:wrap;gap:0 6px}
+.verdict-main{display:flex;flex-wrap:wrap;align-items:center}.verdict-main>.verdict-meta{flex-basis:100%}
+@media(max-width:400px){.gwen-caption{font-size:12px}}
+@media(max-width:600px){.case-request{outline-offset:-6px}.case-clip{left:18px}.gwen-greet .gwen-welcome{width:60px;height:60px}.gwen-say{font-size:13px;padding:8px 12px}}

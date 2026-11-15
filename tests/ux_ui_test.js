@@ -111,6 +111,16 @@ function checkGwenWork(u=U){
   }
   assert.match(u.gwenWork('inspect'),/그웬이 추천 편성 확인 중…/);
   assert.match(u.gwenWork('screen'),/그웬이 후보 거르는 중…/);
+  // 탐정 말투 한 줄: 단계마다 3종, 짧은 체(「…중…」), 휴대폰 한 줄에 들어갈 길이. 오류에는 문구를 붙이지 않음(오류 글이 주인공).
+  for(const mode of ['inspect','screen','long']){assert.equal(u.GWEN_LINES[mode].length,3,mode);
+    for(const line of u.GWEN_LINES[mode]){assert.match(line,/중…$/,line);assert(line.length<=18,line);}
+    assert(u.gwenWork(mode).includes(`<span class="gwen-caption">${u.GWEN_LINES[mode][0]}</span>`),mode);}
+  assert.match(u.gwenWork('report'),/<span class="gwen-caption">조사 끝 · 보고함<\/span>/);
+  assert.doesNotMatch(u.gwenWork('error'),/gwen-caption/);
+  // 낮은 클리어율 안내 머리: 그웬 얼굴(장식) + 「그웬의 메모」, 본문 뜻은 그대로.
+  {const note=u.luckNote({clear:.005,n:1000,ci:[.002,.012]});
+   assert.match(note,/^<div class="luck-note" data-k="luck-note" role="note"><span class="gwen-memo"><img src="assets\/ui_icons\/gwen_header_72\.png" width="20" height="20" alt="" aria-hidden="true">그웬의 메모<\/span>클리어 확률 매우 낮음/);
+   assert.equal((note.match(/<img/g)||[]).length,1);}
   for(const mode of ['idle','done','cancelled',''])assert.equal(u.gwenWork(mode),'');
   for(const msg of ['후보 거르는 중 3/80','1단계: 조합 훑어보는 중','2단계: 상위 팀 확인 중'])assert.equal(u.gwenStage(msg),'screen');
   for(const msg of ['작업 준비 중','내 구원자 능력치 계산 중'])assert.equal(u.gwenStage(msg),'inspect');

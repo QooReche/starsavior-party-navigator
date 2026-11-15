@@ -32,6 +32,21 @@ function checkGwen(page,file){
  assert.match(guide,/<img class="gwen-guide-art" src="assets\/ui_icons\/gwen\/welcome.png"[^>]*alt="" aria-hidden="true">/);
  assert.equal((page.match(/src="assets\/ui_icons\/gwen\/welcome.png"/g)||[]).length,2,`${file}: welcome in first guide and import drawer`);
  assert(page.includes('게임 이미지·만화의 권리는 원 권리자에게 있음.'),`${file}: image and comic attribution`);
+ // 탐정 사무소 꾸밈: 장식은 alt=""·aria-hidden, 보안 안내 문구는 뜻·위치 그대로.
+ assert.match(guide,/^<div class="party guide case-request" data-k="miguide" data-state="needs-info"><img class="case-clip" src="assets\/ui_icons\/office_clip\.svg" width="18" height="30" alt="" aria-hidden="true"><p class="case-tag">사건 의뢰서 · 접수 대기<\/p><h3>내 구원자로 깰 파티 찾기<\/h3>/);
+ assert.match(guide,/<p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지<\/p>/);
+ assert.match(guide,/<p class="mut">내 정보는 이 브라우저에만 저장됨<\/p>/);
+ assert.equal((guide.match(/gwen\//g)||[]).length,1,`${file}: 첫 안내에 그웬은 한 번`);
+ const drawer=page.slice(page.indexOf('<aside id="drawer"'),page.indexOf('</aside>'));
+ assert.match(drawer,/<div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장함\.<\/div>/);
+ assert.match(drawer,/<div class="gwen-greet"><img class="gwen-welcome" [^>]*alt="" aria-hidden="true"><p class="gwen-say">의뢰인 정보는 그웬이 받아 감<small>아래 4단계를 순서대로 하면 됨<\/small><\/p><\/div>/);
+ assert.equal((drawer.match(/<li>/g)||[]).length,4,`${file}: 불러오기 4단계 유지`);
+ const emptyAt=page.indexOf('function miEmpty()'),empty=vm.runInNewContext(page.slice(emptyAt,page.indexOf('function miGuide()',emptyAt))+';miEmpty()');
+ assert.match(empty,/^<div class="mi-empty" data-k="mi-empty"><img src="assets\/ui_icons\/office_board\.svg" width="200" height="120" alt="" aria-hidden="true">/);
+ assert.match(empty,/<button type="button" data-mi-empty-open>계정 정보 불러오기<\/button>/);assert.doesNotMatch(empty,/gwen/);
+ assert(page.includes('if(e.target.closest("button[data-mi-empty-open]")){$("mi-open-import").click();return}'),`${file}: 빈 상태 단추 연결`);
+ for(const f of ['office_clip','office_magnifier','office_file','office_board']){const svg=fs.readFileSync(require.resolve('../assets/ui_icons/'+f+'.svg'),'utf8');
+  assert(svg.length<=10000,f);assert.doesNotMatch(svg,/<script|<image|href=/,f);}
 }
 // Check both the editable template and the generated page served to users.
 for(const file of ['party_template.html','index.html']){

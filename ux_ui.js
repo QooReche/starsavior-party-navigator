@@ -11,11 +11,19 @@
   function verdict(p){return p>=.9?['safe','안정적']:p>=.7?['ok','깰 수 있음']:p>=.5?['shaky','아슬아슬']:['risk','어려움'];}
   function help(title,text){return `<button type="button" class="ux-help" data-help="${esc(text)}" aria-label="${esc(title)} 설명" aria-expanded="false">ⓘ</button>`;}
   // 공식 SD를 참고한 팬 그림. picture가 동작 줄이기에서는 정지 PNG를 선택함.
+  // 탐정 그웬의 한 줄. 첫 줄이 기본이고, 브라우저에서는 방문마다 한 가지를 골라 그 방문 내내 유지함(다시 그려도 글자가 바뀌지 않음).
+  const GWEN_LINES={
+    inspect:['그웬이 추천 편성 확인 중…','그웬이 단서 모으는 중…','그웬이 사건 파일 펴는 중…'],
+    screen:['그웬이 후보 거르는 중…','용의자… 아니 후보 거르는 중…','그웬이 서류 더미 뒤지는 중…'],
+    long:['그웬이 끈질기게 검증 중…','그웬이 잠복 수사 중…','그웬이 상위 편성 탐문 중…'],
+    report:['조사 끝 · 보고함']};
+  const gwenSeed=root.document?Math.floor(Math.random()*6):0;
+  const gwenLine=mode=>{const lines=GWEN_LINES[mode];return lines?lines[gwenSeed%lines.length]:'';};
   function gwenWork(mode){
     const art={inspect:'investigate',screen:'files',long:'investigate',error:'surprised',report:'report',welcome:'welcome'}[mode];
     if(!art)return '';
     const animated=art==='investigate'||art==='files',base='assets/ui_icons/gwen/'+art;
-    const label=mode==='screen'?'그웬이 후보 거르는 중…':mode==='inspect'?'그웬이 추천 편성 확인 중…':'';
+    const label=gwenLine(mode);
     return `<span class="gwen-work" data-gwen="${mode}"><picture class="gwen-scene" aria-hidden="true">${animated?`<source media="(prefers-reduced-motion: no-preference)" srcset="${base}.webp" type="image/webp">`:''}<img class="gwen-worker" src="${base}.png" width="160" height="160" alt=""></picture>${label?`<span class="gwen-caption">${label}</span>`:''}</span>`;
   }
   // 같은 결과를 다시 그리거나 접기를 열어도 발표를 반복하지 않음.
@@ -52,7 +60,7 @@
     const once=1-Math.pow(1-p,LUCK.tries);
     const head=p===0?`모의 전투 ${num(r.n)}판에서 한 번도 못 깼음.`:low?`클리어 확률 매우 낮음(약 ${pctText(p)}).`:`클리어 확률이 낮고 결과가 흔들림(약 ${pctText(p)}, 범위 ${pctText(ci[0])}~${pctText(ci[1])}).`;
     const tries=p>0?` ${LUCK.tries}번 도전해도 한 번이라도 깰 확률은 약 ${pctText(once)}임.`:'';
-    return `<div class="luck-note" data-k="luck-note" role="note">${head} 몇십 번 시도해도 못 깰 수 있음 — 파티 변경이나 추가 육성 권장.${tries}</div>`;}
+    return `<div class="luck-note" data-k="luck-note" role="note"><span class="gwen-memo"><img src="assets/ui_icons/gwen_header_72.png" width="20" height="20" alt="" aria-hidden="true">그웬의 메모</span>${head} 몇십 번 시도해도 못 깰 수 있음 — 파티 변경이나 추가 육성 권장.${tries}</div>`;}
   const signed=v=>v==null?'자료 없음':(v>=0?'+':'−')+num(Math.abs(v));
   function member(a,info,growth,content,table,view={}){
     const old=info.units.find(u=>u.id===a.unit.id),rule=S.rule_for_content(content),before=old?S.final_stats(old,info,growth,rule).power:0;
@@ -174,6 +182,6 @@
     doc.addEventListener('focusout',e=>{if(owner===e.target&&!pinned)close();});
     root.addEventListener('resize',()=>{if(owner)place();});root.addEventListener('scroll',()=>{if(owner)place();},true);
   }
-  const api={verdict,help,gwenWork,gwenReport,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
+  const api={verdict,help,gwenWork,GWEN_LINES,gwenReport,gwenStage,syncGwen,grade,archive,setGrades,chip,luckNote,LUCK,signed,num,labels,member,todosHtml,memberHtml,resultTabState,createResultTabs,mount};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Ux=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
