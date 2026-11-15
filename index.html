@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="ko" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23223'/%3E%3Cpath d='M16 5l3.3 7.2 7.7.8-5.8 5.2 1.7 7.6L16 21.8 9.1 25.8l1.7-7.6L5 13l7.7-.8z' fill='%23fc4'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/ui_icons/gwen_favicon_32.png">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/ui_icons/gwen_favicon_512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/ui_icons/gwen_favicon_180.png">
 <title>파티 편성 네비게이터 (베타)</title>
 <style>
 :root{color-scheme:dark;--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e;--warn:#ffb454;--gold:#ffd24a;--ult:#7a4fc0;--spc:#3b6cb4;--bas:#4a5568;--assumed:#cba6ff;--assumed-bg:#332544}
@@ -285,7 +287,7 @@ summary{padding:9px 4px}
 .gd-best,.gd-now{margin:8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);line-height:1.6}.gd-sel{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.gd-sel label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px;min-width:0;flex:1 1 150px}.gd-sel select{max-width:100%;font-size:14px}
 .gd-scroll{overflow-x:auto;max-width:100%;margin:6px 0}.gd-scroll table{border-collapse:collapse;width:100%;min-width:420px}.gd-scroll th,.gd-scroll td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;font-size:12px}.gd-scroll tr.cur td{background:rgba(111,211,255,.1);font-weight:700}.gd-fx{min-width:190px;color:var(--mut)}.gd-rules{margin:8px 0;padding-left:18px;line-height:1.6}.gd-comm ul{margin:4px 0;padding-left:18px}
 </style><link rel="stylesheet" href="ux.css"></head><body><main>
-<header class="site-head"><h1>파티 편성 네비게이터 <small>베타</small></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button></span>
+<header class="site-head"><h1><img class="gwen-head" src="assets/ui_icons/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true"><span>파티 편성 네비게이터 <small>베타</small></span></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button></span>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천</button><button id="tab-info" type="button" aria-pressed="false">내 구원자</button></nav></header>
 <p class="notice update-notice" data-k="update-notice">📢 11/15 업데이트 · 전투 판정 클라 기준 정정 · 낮은 클리어율 안내 · 코스모 힐데 추가 <a href="#update-history" onclick="document.getElementById('update-history').open=true">자세히</a></p>
 <p class="notice" data-k="notice">모의 전투 결과라 실제 플레이와 다를 수 있음 <button type="button" class="ux-help" aria-label="계산 방식 설명" aria-expanded="false" data-help="내 구원자 수치로 모의 전투를 여러 판 돌려 클리어한 비율을 보여줌. 계산에 쓰는 성장표와 게임 패치는 차이가 있을 수 있음. 가정·출처·근거는 각 결과의 ⓘ와 더 보기에서 확인 가능.">ⓘ</button></p>
@@ -338,7 +340,7 @@ summary{padding:9px 4px}
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 확인.</div></div>
-<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관</p><details class="note" id="update-history"><summary>업데이트 내역(11/15)</summary>11/15: 전투 판정을 게임 클라 기준으로 정정(버프 해제·면역·회피·지속 피해·행동 순서·전투력 차이 보정) · 클리어 확률이 낮을 때 결과 카드에 안내 · 코스모 힐데 적 정보 추가 · 화력 지표 재계산<br>11/12: 신규 구원자 길레·편애의 마녀 반영 · 격파된 아군도 다음 턴 행동(클라 기준) · 길드 방어전은 시즌 종료로 미오픈</details><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않음(관리자가 자료를 갱신한 뒤 반영).<br>구원자·스킬·아이콘 등 게임 이미지의 권리는 원 권리자에게 있음.<br>저장소 라이선스는 게임 이미지에 적용되지 않음.</details>
+<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관</p><details class="note" id="update-history"><summary>업데이트 내역(11/15)</summary>11/15: 전투 판정을 게임 클라 기준으로 정정(버프 해제·면역·회피·지속 피해·행동 순서·전투력 차이 보정) · 클리어 확률이 낮을 때 결과 카드에 안내 · 코스모 힐데 적 정보 추가 · 화력 지표 재계산<br>11/12: 신규 구원자 길레·편애의 마녀 반영 · 격파된 아군도 다음 턴 행동(클라 기준) · 길드 방어전은 시즌 종료로 미오픈</details><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않음(관리자가 자료를 갱신한 뒤 반영).<br>게임 이미지·만화의 권리는 원 권리자에게 있음.<br>저장소 라이선스는 게임 이미지·만화에 적용되지 않음.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 계정 정보 불러오기</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
  <div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장함.</div>
@@ -1216,7 +1218,7 @@ function condChanged(){
 }
 function miGuide(){return `<div class="party guide" data-k="miguide" data-state="needs-info"><h3>내 구원자로 깰 파티 찾기</h3>
  <p class="mut">계정 정보를 불러오면 내 구원자에 맞춰 추천함. 정보 없이도 표준 육성으로 살펴볼 수 있음.</p><ol class="guide-steps"><li><b>명령 복사</b><small>PowerShell에 붙여넣기</small></li><li><b>게임 로그인</b><small>로비에서 도구 창에 엔터</small></li><li><b>자동 반영</b><small>이 화면에 바로 표시</small></li></ol>
- <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div>`}
+ <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div><img class="gwen-guide-art" src="assets/ui_icons/gwen_card.webp" width="129" height="240" alt="" aria-hidden="true"></div></div>`}
 function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;recoClearTimer();if(!MI.info){RECO.standard=true;$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
 function run(skipAuto=false){seasonPaint();growthControlPlace(true);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror"><h3>내 정보 계산 자료를 불러오지 못했음</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}

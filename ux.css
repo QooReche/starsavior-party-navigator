@@ -3,6 +3,9 @@
 body{background:var(--bg);font-size:15px}main{max-width:960px;padding:24px 24px 64px}
 .panel,.party{padding:24px;margin-bottom:16px;box-shadow:none;backdrop-filter:none;border:1px solid var(--line);background:var(--card)}
 h1{font-size:18px;color:var(--fg);background:none;margin:0}h1 small{font-size:11px;color:var(--mut)!important;-webkit-text-fill-color:var(--mut)}
+.site-head h1{display:flex;align-items:center;gap:8px}.gwen-head{width:36px;height:36px;object-fit:contain;flex:none}
+.guide .gwen-guide-footer{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;text-align:left}.gwen-guide-footer>div{min-width:0}.gwen-guide-art{display:block;height:140px;width:auto;max-width:28%;object-fit:contain;flex:none;border:1px solid var(--line);border-radius:8px}
+@media(max-width:600px){.gwen-head{width:28px;height:28px}.site-head h1{gap:6px}.gwen-guide-art{height:120px}.gwen-guide-footer .sec{max-width:100%;white-space:normal}}
 .site-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px}.site-head .mi-tabs{margin:0 0 0 auto;padding:4px;gap:4px;border:1px solid var(--line);border-radius:32px}.site-head .mi-tabs button{font-size:13px;padding:8px 16px}
 .site-head .mi-chip{font-size:13px}.notice{border:0;margin:0 0 16px;padding:0;font-size:13px}.mut,.note{font-size:13px}
 button{box-shadow:none;background:var(--acc);border-radius:8px}button:focus-visible,summary:focus-visible{outline:2px solid var(--gold);outline-offset:3px}

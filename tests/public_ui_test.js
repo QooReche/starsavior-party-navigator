@@ -19,11 +19,31 @@ function checkNotice(page,file){
 function checkTone(page,file){
  for(const phrase of ['모의 전투 결과라 실제 플레이와 다를 수 있음','게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함','사이트가 자동으로 열리며 반영됨'])assert(page.includes(phrase),`${file}: ${phrase}`);
 }
+function checkGwen(page,file){
+ for(const [rel,size] of [['icon',32],['icon',512],['apple-touch-icon',180]]){
+  const link=[...page.matchAll(/<link\b[^>]*>/g)].map(m=>m[0]).find(s=>s.includes(`rel="${rel}"`)&&s.includes(`sizes="${size}x${size}"`));
+  assert(link?.includes(`href="assets/ui_icons/gwen_favicon_${size}.png"`),`${file}: Gwen ${rel} ${size}`);
+ }
+ const heading=page.match(/<header class="site-head"><h1>([\s\S]*?)<\/h1>/)?.[1]||'';
+ assert.match(heading,/<img class="gwen-head" src="assets\/ui_icons\/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true">/);
+ assert(heading.indexOf('gwen-head')<heading.indexOf('파티 편성 네비게이터'),`${file}: face before title`);
+ const start=page.indexOf('function miGuide()');
+ const guide=vm.runInNewContext(page.slice(start,page.indexOf('function showReco()',start))+';miGuide()');
+ assert.match(guide,/<img class="gwen-guide-art" src="assets\/ui_icons\/gwen_card.webp"[^>]*alt="" aria-hidden="true">/);
+ assert.equal((page.match(/src="assets\/ui_icons\/gwen_card.webp"/g)||[]).length,1,`${file}: one decoration, in empty guide only`);
+ assert(page.includes('게임 이미지·만화의 권리는 원 권리자에게 있음.'),`${file}: image and comic attribution`);
+}
 // Check both the editable template and the generated page served to users.
 for(const file of ['party_template.html','index.html']){
  const page=fs.readFileSync(require.resolve('../'+file),'utf8');
- checkNotice(page,file);checkTone(page,file);
+ checkNotice(page,file);checkTone(page,file);checkGwen(page,file);
  for(const [from,to,check] of [
+  ['gwen_favicon_32.png','old_star.svg',checkGwen],
+  ['gwen_favicon_180.png','old_touch.png',checkGwen],
+  ['gwen_favicon_512.png','old_icon.png',checkGwen],
+  ['class="gwen-head"','class="removed-head"',checkGwen],
+  ['class="gwen-guide-art"','class="removed-art"',checkGwen],
+  ['게임 이미지·만화의 권리는','게임 이미지의 권리는',checkGwen],
   ['class="notice update-notice"','class="notice"',checkNotice],
   ['코스모 힐데 추가','코스모 힐데 적 정보 추가 및 전투 판정 변경 사항 상세 안내',checkNotice],
   ['background:color-mix','color:color-mix',checkNotice],

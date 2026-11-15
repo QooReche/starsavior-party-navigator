@@ -3133,6 +3133,45 @@ def test_public_tone(browser, ctx):
 TESTS.append(test_public_tone)
 
 
+def test_gwen_art(browser, ctx):
+    """Official art loads, aligns with title and fits the empty guide at both widths."""
+    page = open_page(browser, ctx, '?auto=0', info=None, wait=False)
+    page.locator('[data-k="miguide"]').wait_for()
+    settle(page)
+    for width in (1280, 360):
+        page.set_viewport_size({'width': width, 'height': 1400 if width == 360 else 1100})
+        settle(page)
+        for rel, size in (('icon', 32), ('icon', 512), ('apple-touch-icon', 180)):
+            href = page.locator('link[rel="%s"][sizes="%dx%d"]' % (rel, size, size)).get_attribute('href')
+            assert href == 'assets/ui_icons/gwen_favicon_%d.png' % size
+            response = page.request.get(ctx.base + '/' + href)
+            assert response.ok and response.body().startswith(b'\x89PNG\r\n\x1a\n')
+        face = page.locator('.site-head h1 .gwen-head')
+        art = page.locator('[data-k="miguide"] .gwen-guide-art')
+        for img in (face, art):
+            assert img.evaluate('e=>e.complete && e.naturalWidth>0')
+            assert img.evaluate('e=>getComputedStyle(e).opacity') == '1'
+        f, title, a = face.bounding_box(), page.locator('.site-head h1>span').bounding_box(), art.bounding_box()
+        assert f['width'] == f['height'] == (28 if width == 360 else 36)
+        assert abs(f['y'] + f['height']/2 - title['y'] - title['height']/2) < 1
+        assert f['x'] + f['width'] <= title['x']
+        assert 120 <= a['height'] <= 160
+        assert page.locator('.gwen-guide-art').count() == 1
+        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+        page.screenshot(path=os.path.join(ctx.shots, '_shot_gwen_%d.png' % width))
+    # Removing the actual header image must invalidate the rendered-image check.
+    face.evaluate("e=>{e.dataset.savedSrc=e.src; e.removeAttribute('src')}")
+    assert not face.evaluate('e=>!!e.getAttribute("src") && e.complete && e.naturalWidth>0')
+    face.evaluate('e=>{e.src=e.dataset.savedSrc; delete e.dataset.savedSrc}')
+    page.wait_for_function('document.querySelector(".gwen-head").naturalWidth>0')
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, 'Gwen icons load, title aligned, one opaque guide image, no overflow at 1280/360px'
+
+
+TESTS.append(test_gwen_art)
+
+
 def main():
     args = sys.argv[1:]
     shots = None
