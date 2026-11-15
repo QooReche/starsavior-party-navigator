@@ -68,6 +68,10 @@ details summary{cursor:pointer;color:var(--acc)}
 #dback{display:none;position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5)}#dback.on{display:block}
 .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:16px}.dhead button{background:transparent;color:var(--fg);padding:2px 8px;font-size:18px}
 .dtools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dtools button{padding:3px 10px}.mibtn{display:inline-block;padding:3px 10px;border-radius:6px;background:var(--acc);color:#fff}
+.mi-import-guide{margin:10px 0;padding:12px;border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:10px;background:color-mix(in srgb,var(--acc) 8%,var(--bg));color:var(--fg);overflow-wrap:anywhere;word-break:keep-all}
+@counter-style mi-import-step{system:fixed;symbols:"①" "②" "③" "④";suffix:" "}
+.mi-import-guide ol{margin:12px 0 0;padding-left:1.5em;list-style-type:mi-import-step}.mi-import-guide li{padding-left:3px;margin:8px 0}.mi-import-guide li::marker{color:var(--acc)}
+.mi-import-warning{display:block;margin-top:4px;color:var(--warn);font-size:12px}.mi-import-fallback{font-size:12px;margin:10px 0 0}
 .crown{position:absolute;top:6px;left:6px;z-index:3;display:flex;align-items:center;gap:3px;padding:2px 7px 2px 4px;border-radius:8px;background:rgba(8,10,16,.72);box-shadow:0 1px 4px #0008}
 .crown svg{width:18px;height:14px}.crown span{font-size:12px;font-weight:800;color:var(--gold);letter-spacing:.04em}
 .powinfo{margin-top:6px;font-size:13px}.powinfo .ok{color:var(--good)}.powinfo .warn{color:var(--warn)}.powinfo .bad2{color:var(--bad);font-weight:700}
@@ -338,12 +342,17 @@ summary{padding:9px 4px}
  <div class="mut" id="mi-status" style="margin:4px 0 6px">불러온 정보 없음</div>
  <section class="mihow">
   <b>Windows PC에서 불러오기</b>
-  <ol class="mut">
-   <li>PowerShell을 열고 <b>명령 복사</b>를 눌러 붙여넣은 뒤 엔터.</li>
-   <li>관리자 확인 <b>[예]</b> 후 스타세이비어에 로그인하고, 로비가 뜨면 <b>도구 창에서 엔터</b>.<br>게임이 켜져 있으면 완전히 종료 후 재실행하세요.</li>
-   <li>사이트가 자동으로 열리며 반영됩니다.<br>안 되거나 다른 기기로 옮길 때는 바탕화면 <b>내정보.json</b>을 <b>[파일 선택]</b>.</li>
-  </ol>
-  <div class="dtools"><button id="mi-copy" type="button">명령 복사</button></div>
+  <div class="mi-import-guide">
+   <div class="dtools"><button id="mi-copy" type="button">명령 복사</button></div>
+   <ol>
+    <li>단추를 눌러 복사 → <b>PowerShell</b>에 붙여넣고 <b>Enter</b></li>
+    <li>「관리자 확인」 창이 뜨면 <b>[예]</b></li>
+    <li>게임에 로그인 → 로비가 보이면 <b>도구 창에서 Enter</b>
+     <span class="mi-import-warning">⚠ 게임이 이미 켜져 있으면 <b>완전히 끄고</b> 다시 켜세요</span></li>
+    <li>사이트가 자동으로 열리며 반영돼요</li>
+   </ol>
+   <p class="mut mi-import-fallback">안 될 때·다른 기기에서: 바탕화면 <b>내정보.json</b>을 [파일 선택]으로 올리기</p>
+  </div>
   <details><summary>명령 보기</summary><code id="mi-cmd" style="display:block;font-size:11px;word-break:break-all;user-select:all">$f="$env:TEMP\ss_myinfo.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/QooReche/starsavior-myinfo/main/myinfo.ps1 -OutFile $f; powershell -NoProfile -ExecutionPolicy Bypass -File $f</code></details>
   <p class="mut">게임 파일은 건드리지 않고, 내 PC에서만 해독합니다(관리자 확인 1회)</p>
   <p class="mut">게임 업데이트 직후엔 추출이 안 될 수 있습니다. 관리자가 도구를 고친 뒤 다시 해 주세요.</p>

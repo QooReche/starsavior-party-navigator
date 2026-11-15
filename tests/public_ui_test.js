@@ -8,6 +8,19 @@ for(const file of ['party_template.html','index.html']){
  assert.equal((page.match(/data-k="update-notice"/g)||[]).length,1);
  assert.match(page,/<\/header>\s*<p class="notice" data-k="update-notice">[^<]*<\/p>\s*<p class="notice" data-k="notice">모의 전투 결과라 실제 플레이와 다를 수 있어요/,`${file}: update directly above the original guidance`);
  assert.match(page,/<summary>업데이트 내역\(11\/15\)<\/summary>11\/15:[^<]+<br>11\/12: 신규 구원자 길레/);
+ // Keep the copy action and all four instructions together, in both shipped sources.
+ const guide=page.match(/<div class="mi-import-guide">([\s\S]*?)<\/ol>\s*<p class="mut mi-import-fallback">([\s\S]*?)<\/p>\s*<\/div>/);
+ assert(guide,`${file}: import guide box and fallback exist`);
+ assert.match(guide[1],/^\s*<div class="dtools"><button id="mi-copy" type="button">명령 복사<\/button><\/div>\s*<ol>/,`${file}: existing copy button comes first inside box`);
+ assert.equal((page.match(/id="mi-copy"/g)||[]).length,1,`${file}: one copy button`);
+ const steps=[...guide[1].matchAll(/<li>([\s\S]*?)<\/li>/g)].map(m=>m[1].trim().replace(/\s+/g,' '));
+ assert.deepEqual(steps,[
+  '단추를 눌러 복사 → <b>PowerShell</b>에 붙여넣고 <b>Enter</b>',
+  '「관리자 확인」 창이 뜨면 <b>[예]</b>',
+  '게임에 로그인 → 로비가 보이면 <b>도구 창에서 Enter</b>\n     <span class="mi-import-warning">⚠ 게임이 이미 켜져 있으면 <b>완전히 끄고</b> 다시 켜세요</span>',
+  '사이트가 자동으로 열리며 반영돼요'
+ ].map(s=>s.replace(/\s+/g,' ')),`${file}: four short steps and separate restart warning`);
+ assert.equal(guide[2],'안 될 때·다른 기기에서: 바탕화면 <b>내정보.json</b>을 [파일 선택]으로 올리기');
  // Execute the real renderer through empty -> loaded -> cleared states.
  const nodes=Object.fromEntries(['mi-chip','mi-panel','option-chips','content','rk','mi-open-import','share-mi','share-link','mi-view','mi-clear','mi-panel-clear'].map(id=>[id,{dataset:{},classList:{toggle(){}},closest(){return this;}}]));
  nodes.content.value='op';nodes['mi-panel'].hidden=true;
@@ -79,4 +92,4 @@ assert.deepEqual(cfg.breakSkills['행성 정화'].bonusRoles,[]);
 assert.equal(cfg.breakSkills['행성 정화'].text,'광역 피해(공격력 100%), 강인도 피해 +1, 스킬 후 노바 +1');
 // Parse all template scripts as JavaScript; data replacement is an identifier in the template.
 for(const [,code] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(code);
-console.log('PASS update notice, import label (template + index), public headline, mode consistency, boss contents, saved date, skill labels, break description, script syntax');
+console.log('PASS update notice, import label and four-step box (template + index), public headline, mode consistency, boss contents, saved date, skill labels, break description, script syntax');

@@ -932,13 +932,29 @@ def test_myinfo_required(browser, ctx):
       busy:SIMQ.busy, worker:SIMQ.w, grow:$('grow').value, pow:$('mypow').value, old:!!SHARE.oldGrow, chip:$('mi-chip').textContent,
       dbtn:!!document.querySelector('#dbtn'), own:document.querySelectorAll('#own input:checked').length})''')
     page.click('#out button[data-miopen="1"]')
-    assert page.locator('.mihow li').count() == 3
+    box = page.locator('.mi-import-guide')
+    assert box.locator('ol > li').count() == 4
+    assert box.locator('#mi-copy').count() == 1
+    assert box.evaluate('(box) => box.firstElementChild.contains(document.getElementById("mi-copy"))')
     assert not page.locator('#mi-cmd').is_visible()
     assert all(page.locator('#' + key).is_hidden() for key in ('share-link', 'mi-view', 'mi-clear'))
-    assert '완전히 종료 후 재실행' in page.inner_text('.mihow')
+    assert '⚠ 게임이 이미 켜져 있으면 완전히 끄고 다시 켜세요' in box.inner_text()
     assert page.locator('header.site-head #mi-open-import').count() == 1 and page.locator('#mi-panel #mi-open-import').count() == 0
     assert '사이트가 자동으로 열리며 반영' in page.inner_text('.mihow')
     assert page.locator('#dclose').bounding_box()['height'] >= 39.9
+    for width in (1280, 360):
+        page.set_viewport_size({'width': width, 'height': 900})
+        assert page.locator('#drawer').evaluate('(el) => el.scrollWidth <= el.clientWidth'), '불러오기 창 가로 넘침'
+        assert box.evaluate('(el) => el.scrollWidth <= el.clientWidth'), '안내 박스 가로 넘침'
+        assert box.evaluate('''(el) => {
+          const s = getComputedStyle(el), warning = el.querySelector('.mi-import-warning');
+          return parseFloat(s.borderLeftWidth) >= 3 && parseFloat(s.borderRadius) > 0
+            && s.borderLeftColor === getComputedStyle(el.querySelector('li'), '::marker').color
+            && s.backgroundColor !== 'rgba(0, 0, 0, 0)' && getComputedStyle(warning).display === 'block'
+            && getComputedStyle(warning).color !== s.color;
+        }'''), '강조 테두리·배경·별도 주의 줄'
+        page.screenshot(path=os.path.join(ctx.shots, 'import_%d.png' % width), full_page=True)
+    page.set_viewport_size({'width': 1280, 'height': 900})
     opened = page.evaluate('() => document.querySelector("#drawer").classList.contains("open") && document.activeElement === $("dclose")')
     page.click('#dclose')
     closed = not page.evaluate('() => document.querySelector("#drawer").classList.contains("open")')
