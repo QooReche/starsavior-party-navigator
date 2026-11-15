@@ -72,7 +72,7 @@ for(const file of ['party_template.html','index.html']){
   ['Ux.gwenSay("welcome","right")','Ux.gwenSay("welcome","left")',checkGwen],
   ['${Ux.gwenWork("screen","empty")}','${Ux.gwenWork("screen")}',checkGwen],
   ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-gwen-say="import" data-tail="left"></span>',checkGwen],
-  ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-tail="left" aria-hidden="true">의뢰인 정보, 내가 받아 갈게</span>',checkGwen],
+  ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-tail="left" aria-hidden="true">단장 정보, 내가 받아 갈게</span>',checkGwen],
   ['<p class="gwen-greet-note mut">아래 4단계를 순서대로 하면 됨</p>','',checkGwen],
   ['게임 이미지·만화의 권리는','게임 이미지의 권리는',checkGwen],
   ['class="notice update-notice"','class="notice"',checkNotice],

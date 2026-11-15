@@ -144,8 +144,8 @@ function checkGwenSay(u=U){
     assert.equal(u.gwenSay(key),html,'다시 그려도 같은 대사');}
   assert.match(u.gwenSay('welcome','right'),/data-tail="right"/);
   for(const key of ['','none','toString','constructor',undefined])assert.equal(u.gwenSay(key),'',String(key));
-  assert.equal(u.GWEN_SAY.error[0],'으… 단서가 부족해');assert.equal(u.GWEN_SAY.welcome[0],'어서 와, 의뢰인! 어떤 사건이야?');
-  assert.equal(u.GWEN_SAY.import[0],'의뢰인 정보, 내가 받아 갈게');
+  assert.equal(u.GWEN_SAY.error[0],'으… 단서가 부족해');assert.equal(u.GWEN_SAY.welcome[0],'어서 와, 단장! 어떤 사건이야?');
+  assert.equal(u.GWEN_SAY.import[0],'단장 정보, 내가 받아 갈게');
   // 진행·실패·보고 연출: 그림 트랙 앞에 말풍선 한 개, 기존 안내 문구(caption)는 그대로.
   for(const mode of ['inspect','screen','long','error','report','welcome']){const html=u.gwenWork(mode);
     assert.equal((html.match(/class="gwen-bubble"/g)||[]).length,1,mode);
@@ -198,7 +198,7 @@ mutation('<span class="gwen-say-lane">${gwenSay(say)}</span>','',checkGwenSay);
 mutation('data-tail="${esc(tail)}" aria-hidden="true">','data-tail="${esc(tail)}">',checkGwenSay);
 mutation("function gwenWork(mode,say=mode){","function gwenWork(mode,say='inspect'){",checkGwenSay);
 mutation("'으… 단서가 부족해'","'단서가 부족함'",checkGwenSay);
-mutation("'어서 와, 의뢰인! 어떤 사건이야?'","'어서 오세요, 의뢰인! 오늘은 어떤 사건을 맡기러 오셨나요?'",checkGwenSay);
+mutation("'어서 와, 단장! 어떤 사건이야?'","'어서 오세요, 단장! 오늘은 어떤 사건을 맡기러 오셨나요?'",checkGwenSay);
 {const visit=(from,to)=>{assert(source.includes(from));assert.throws(()=>checkGwenSayVisit(source.replace(from,to)),{code:'ERR_ASSERTION'},`mutation survived: ${from}`);};
  visit("return lines?lines[gwenSeed%lines.length]:'';};\n  // 클리어율","return lines?lines[Math.floor(Math.random()*lines.length)]:'';};\n  // 클리어율");
  visit("el.textContent=gwenSayLine(el.dataset.gwenSay);","");}
