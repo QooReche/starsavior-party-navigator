@@ -1,0 +1,8 @@
+{
+  "file_bytes": 80000,
+  "served_bytes": 1450000,
+  "baseline_served_bytes": 620083,
+  "new_pairs_bytes": 520000,
+  "blink_bytes": 280000,
+  "measurement": "cry PNG+WebP 31362; zap prototype PNG+WebP 28884; 13 pairs at 40000 plus 10 blinks at 28000 plus baseline, rounded up"
+}

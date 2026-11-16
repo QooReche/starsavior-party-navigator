@@ -13,6 +13,7 @@ OUT = ROOT / 'assets/ui_icons/gwen'
 MASTERS = Path(__file__).parent / 'masters2'
 NEW = {'walk': 4, 'confident': 2, 'thoughtful': 2, 'notes': 2}
 R = Image.Resampling.LANCZOS
+BUDGET = json.loads((Path(__file__).parent / 'budget.json').read_text(encoding='utf-8'))
 
 
 def cells(src, count):
@@ -71,7 +72,7 @@ def encode(name, frames, size, duration, loop, static=True):
         png.save(OUT/(name+'.png'),optimize=True)
     path = OUT/(name+'.webp')
     frames[0].save(path,save_all=True,append_images=frames[1:],duration=duration,loop=loop,quality=88,method=6)
-    assert path.stat().st_size <= 80000, path
+    assert path.stat().st_size <= BUDGET['file_bytes'], path
     with Image.open(path) as im:
         assert 2 <= im.n_frames <= 4 and im.info['loop'] == loop
     return frames
@@ -127,8 +128,8 @@ def main():
     for name in ['report','surprised','welcome']:
         frames[name]=encode(name,old_frames(name),160,[240,200,200,360],1,static=False)
     served=[p for p in OUT.iterdir() if p.suffix in ('.png','.webp') and not p.stem.endswith('_512')]
-    assert all(p.stat().st_size<=80000 for p in served)
-    assert sum(p.stat().st_size for p in served)<=600000
+    assert all(p.stat().st_size<=BUDGET['file_bytes'] for p in served)
+    assert sum(p.stat().st_size for p in served)<=BUDGET['served_bytes']
     print(json.dumps({p.name:p.stat().st_size for p in served},indent=2))
     print('Served total:',sum(p.stat().st_size for p in served))
     if args.reference_dir:
