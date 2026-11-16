@@ -10,7 +10,7 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 from build import NAMES, OUT, RESAMPLE, ROOT, master
-from build2 import encode
+from build2 import BUDGET, encode
 
 DURATIONS = [300, 200, 200, 300]
 
@@ -116,7 +116,7 @@ def main():
     sizes = {}
     for name in ('ready_512.png', 'ready.png', 'ready.webp'):
         output = OUT / name
-        assert output.stat().st_size <= 80000, output
+        assert output.stat().st_size <= BUDGET['file_bytes'], output
         with Image.open(output) as im:
             assert im.convert('RGBA').getchannel('A').getextrema() == (0, 255)
             if name.endswith('.webp'):
@@ -132,7 +132,7 @@ def main():
     assert sizes['ready.png'] + sizes['ready.webp'] <= 35000, sizes
     total = sum(p.stat().st_size for p in OUT.iterdir()
                 if p.suffix in ('.png', '.webp') and not p.stem.endswith('_512'))
-    assert total <= 640000, total
+    assert total <= BUDGET['served_bytes'], total
     compare(served)
     print(json.dumps(sizes, indent=2))
     print('Served art total:', total)
