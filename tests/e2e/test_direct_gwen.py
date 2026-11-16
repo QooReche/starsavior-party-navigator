@@ -155,7 +155,9 @@ def timing(browser,base,width=1280):
     p.evaluate("GwenLane.edit('grown',0)")
     assert p.evaluate('GwenLane.mount().state.quiet')
     assert not p.evaluate('GwenLane.mount().state.moving')
-    assert p.locator(ACTOR).is_hidden()
+    assert p.locator(ACTOR).is_visible(), 'quiet mode should retain a still illustration'
+    shown(p)
+    p.wait_for_function("document.querySelector('.gwen-lane-image')?.dataset.gwenPlaying==='false'")
     p.evaluate("window.holdDirect=true;for(const s of R.filter(s=>MI.info.units.some(u=>u.id===s.uid)).slice(0,4))directChange({type:'put',key:s.key})")
     p.locator('#direct-run').click()
     p.wait_for_function("DIRECT.rows.now?.status==='running'");shown(p)

@@ -84,8 +84,11 @@ body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-
 .gwen-result-lane{height:122px;padding-top:34px;box-sizing:border-box}
 #direct-progress{display:block;width:100%;height:8px;margin:4px 0 12px}
 .gwen-quiet-option{display:block;margin-bottom:12px;font-size:13px}
-html[data-gwen-quiet=true] .gwen-lane-actor[data-priority="0"],html[data-gwen-quiet=true] .gwen-lane-actor[data-priority="1"]{visibility:hidden}
+/* Quiet mode keeps one still illustration in its reserved lane. */
+#direct-board-lane{background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat;border-radius:8px}
 @media(min-width:1200px){
+ #direct-board-lane{height:162px}
+ #direct-board-lane .gwen-lane-actor,#direct-board-lane .gwen-lane-poke{width:120px;height:120px}
  .gwen-result-lane{height:282px}
  .gwen-result-lane .gwen-lane-actor,.gwen-result-lane .gwen-lane-poke{width:240px;height:240px}
 }

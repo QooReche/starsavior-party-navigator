@@ -174,12 +174,13 @@
       return blobs.get(path);
     }
     function create(img){
+      const reduced=()=>media.matches||(img.hasAttribute('data-gwen-managed')&&doc.documentElement.dataset.gwenQuiet==='true');
       const scene=img.closest('[data-gwen], [data-gwen-idle], .gwen-reaction, .gwen-best, .gwen-greet, .gwen-guide-footer')||img;
       const bubble=scene.querySelector?.('.gwen-bubble'),idle=scene.hasAttribute('data-gwen-idle');
       const report=gwenPending.get(scene.dataset.gwenReport)?.deref();
       const s={img,scene,bubble,idle,report,token:0,timer:null,url:null,pendingURL:null,active:false,intersecting:false,
         clock:0,last:0,due:{},expression:img.dataset.gwenExpression||img.dataset.gwenArt,asset:null,still:null,phase:'rest',line:0,
-        baseSay:bubble?.dataset.gwenSay,clicks:[],pokeCount:0,pokeLock:0,lastSpeech:-Infinity,lastPoke:-Infinity,reduced:media.matches};
+        baseSay:bubble?.dataset.gwenSay,clicks:[],pokeCount:0,pokeLock:0,lastSpeech:-Infinity,lastPoke:-Infinity,reduced:reduced()};
       function account(){
         if(!s.active)return;
         const now=Date.now(),delta=Math.max(0,now-s.last);s.last=now;s.clock+=delta;
@@ -199,8 +200,8 @@
         rest();
       }
       function breathing(){
-        img.dataset.gwenRest=String(s.active&&!media.matches&&!img.hasAttribute('data-gwen-managed')&&s.phase==='rest'&&s.expression!=='walk');
-        scene.dataset.gwenPaused=String(!s.active||media.matches);
+        img.dataset.gwenRest=String(s.active&&!reduced()&&!img.hasAttribute('data-gwen-managed')&&s.phase==='rest'&&s.expression!=='walk');
+        scene.dataset.gwenPaused=String(!s.active||reduced());
       }
       function schedule(){
         root.clearTimeout(s.timer);s.timer=null;
@@ -240,19 +241,19 @@
       }
       function action(){
         delete s.due.action;
-        if(!s.asset.motion||media.matches)return;
+        if(!s.asset.motion||reduced())return;
         show(s.asset.motion,'action',!s.asset.loop);
       }
       function resetDeadlines(){
         s.due={};
-        if(!media.matches){
+        if(!reduced()){
           s.due.line=s.clock+12000;
 
           if(idle&&s.expression==='ready')s.due.doze=s.clock+60000;
           if(s.asset.blink&&s.expression!=='walk')s.due.blink=s.clock+rand(3000,3001);
         }
-        if(GWEN_CYCLES[scene.dataset.gwen]&&s.baseSay!=='empty')s.due.cycle=s.clock+(media.matches?20000:rand(8000,2001));
-        if(s.expression==='walk'&&!media.matches&&doc.documentElement.dataset.gwenQuiet!=='true')s.due.travel=s.clock+150;
+        if(GWEN_CYCLES[scene.dataset.gwen]&&s.baseSay!=='empty')s.due.cycle=s.clock+(reduced()?20000:rand(8000,2001));
+        if(s.expression==='walk'&&!reduced()&&doc.documentElement.dataset.gwenQuiet!=='true')s.due.travel=s.clock+150;
         if(bubble&&!idle)s.due.hide=s.clock+2500;
         if(s.restoreAt!=null)s.due.restore=s.restoreAt;
       }
@@ -261,7 +262,7 @@
         scene.dataset.gwenExpression=expression;img.dataset.gwenExpression=expression;
         img.dataset.gwenArt=s.asset.art;img.dataset.gwenStatic=s.asset.still;img.dataset.gwenMotion=s.asset.motion;
         scene.classList.toggle('gwen-roam',scene.hasAttribute('data-gwen')&&expression==='walk');
-        if(expression!=='walk'||media.matches){
+        if(expression!=='walk'||reduced()){
           const traveler=scene.querySelector('.gwen-traveler'),body=scene.querySelector('.gwen-scene');
           if(traveler){traveler.style.left='';traveler.style.transform='';}if(body)body.style.transform='';s.travelX=null;
         }
@@ -282,7 +283,7 @@
         const due=key=>s.due[key]!=null&&s.due[key]<=s.clock;
         if(due('travel')){
           const track=scene.querySelector('.gwen-track'),traveler=scene.querySelector('.gwen-traveler');
-          if(track&&traveler&&s.motionOwner&&!media.matches&&doc.documentElement.dataset.gwenQuiet!=='true'){
+          if(track&&traveler&&s.motionOwner&&!reduced()&&doc.documentElement.dataset.gwenQuiet!=='true'){
             const max=Math.max(0,track.clientWidth-traveler.clientWidth),from=Math.min(max,s.travelX||0);
             if(s.travelX==null)s.travelRight=true;
             if(from>=max)s.travelRight=false;else if(from<=0)s.travelRight=true;
@@ -324,18 +325,18 @@
       s.update=()=>{
         const on=gwenVisible(img);
         if(!on){if(s.active)s.stop();return;}
-        if(s.active&&s.reduced===media.matches)return;
+        if(s.active&&s.reduced===reduced())return;
         if(s.active)s.stop();
-        s.active=true;s.last=Date.now();s.reduced=media.matches;s.waiting=false;
+        s.active=true;s.last=Date.now();s.reduced=reduced();s.waiting=false;
         // 자동 대사/순환의 남은 시간은 숨김 동안 보존함.
         const deadlines={...s.due},line=s.line;select(s.expression,bubble?.dataset.gwenSay||s.baseSay);s.line=line;say(bubble?.dataset.gwenSay);
-        if(!media.matches){for(const key of ['line','cycle','doze','restore'])if(deadlines[key]!=null)s.due[key]=deadlines[key];}
+        if(!reduced()){for(const key of ['line','cycle','doze','restore'])if(deadlines[key]!=null)s.due[key]=deadlines[key];}
         schedule();
       };
       s.input=()=>{
         if(!idle||!s.active)return;account();
         if(s.expression==='doze'){s.restoreAt=s.clock+1500;select('wake','idle');}
-        if(s.expression==='ready'&&!media.matches)s.due.doze=s.clock+60000;
+        if(s.expression==='ready'&&!reduced())s.due.doze=s.clock+60000;
         schedule();
       };
       s.poke=()=>{
@@ -369,7 +370,7 @@
     }
     new root.MutationObserver(refresh).observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','style','data-gwen-expression']});
     doc.addEventListener('visibilitychange',()=>{doc.documentElement.classList.toggle('gwen-paused',doc.hidden);refresh();});
-    media.addEventListener('change',refresh);root.addEventListener('resize',refresh);root.addEventListener('scroll',refresh,true);
+    doc.addEventListener('gwenquietchange',refresh);media.addEventListener('change',refresh);root.addEventListener('resize',refresh);root.addEventListener('scroll',refresh,true);
     for(const type of ['pointerdown','pointermove','keydown','input'])doc.addEventListener(type,()=>{for(const s of states.values())s.input();},{passive:true});
     doc.addEventListener('keydown',e=>{if(e.repeat&&['Enter',' '].includes(e.key)&&e.target.closest('.gwen-poke'))e.preventDefault();});
     doc.addEventListener('click',e=>{const b=e.target.closest('.gwen-poke');if(b)states.get(b.querySelector('img'))?.poke();});

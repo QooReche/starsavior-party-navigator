@@ -112,6 +112,7 @@ body:not(.show-why) .why,body:not(.show-why) .tg,body:not(.show-why) .syn,body:n
 .card{position:relative;aspect-ratio:3/5.6;border-radius:14px;overflow:hidden;border:2px solid #7a8190;background:#10131a;box-shadow:0 0 0 2px #262b36 inset}
 .card .art{position:absolute;left:0;right:0;bottom:0;width:100%;height:112%;object-fit:cover;object-position:center bottom}
 .card .fallback{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:30%;font-size:54px;font-weight:700;color:#5b6475}
+.card:has(>img.art)>.fallback,.direct-member:has(>img.art)>.fallback{visibility:hidden}
 .card::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(transparent,rgba(8,10,16,.92) 55%)}
 .cinfo{position:absolute;left:0;right:0;bottom:0;z-index:2;text-align:center;padding:0 6px 10px;color:#fff}
 .cls{width:50px;height:50px;margin:0 auto 4px;transform:rotate(45deg);border:2px solid #e8ecf5;border-radius:6px;display:flex;align-items:center;justify-content:center}
@@ -380,7 +381,7 @@ summary{padding:9px 4px}
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 확인.</div></div>
-<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관</p><details class="note" id="update-history"><summary>업데이트 내역(11/15)</summary>11/15: 전투 판정을 게임 클라 기준으로 정정(버프 해제·면역·회피·지속 피해·행동 순서·전투력 차이 보정) · 클리어 확률이 낮을 때 결과 카드에 안내 · 코스모 힐데 적 정보 추가 · 화력 지표 재계산<br>11/12: 신규 구원자 길레·편애의 마녀 반영 · 격파된 아군도 다음 턴 행동(클라 기준) · 길드 방어전은 시즌 종료로 미오픈</details><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않음(관리자가 자료를 갱신한 뒤 반영).<br>게임 이미지·만화의 권리는 원 권리자에게 있음.<br>저장소 라이선스는 게임 이미지·만화에 적용되지 않음.</details>
+<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관</p><details class="note" id="update-history"><summary>업데이트 내역(11/15)</summary>11/15: 전투 판정을 게임 클라 기준으로 정정(버프 해제·면역·회피·지속 피해·행동 순서·전투력 차이 보정) · 클리어 확률이 낮을 때 결과 카드에 안내 · 코스모 힐데 적 정보 추가 · 화력 지표 재계산<br>11/12: 신규 구원자 길레·편애의 마녀 반영 · 격파된 아군도 다음 턴 행동(클라 기준) · 길드 방어전은 시즌 종료로 미오픈</details><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않음(관리자가 자료를 갱신한 뒤 반영).<br>그웬 길 배경: 게임 클라이언트 배경 이미지(© STUDIOBSIDE).<br>게임 이미지·만화의 권리는 원 권리자에게 있음.<br>저장소 라이선스는 게임 이미지·만화에 적용되지 않음.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 계정 정보 불러오기</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
  <div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장함.</div>

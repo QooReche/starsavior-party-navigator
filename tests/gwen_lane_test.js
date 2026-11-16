@@ -11,6 +11,21 @@ function motion(g){const equal=(a,b)=>assert.deepEqual(JSON.parse(JSON.stringify
  }equal(g.travel(400,9999,500,80,{run:true}),{x:420,ms:1000/12});
  equal(g.travel(20,200,500,80,{quiet:true}),{x:20,ms:0});}
 cooldown(G);priority(G);motion(G);
+function playground(g){
+ const p=g.playground(()=>.5),history=[];
+ for(let i=0;i<12;i++){
+  const a=p.next(i%2?600:0,600);assert.equal(a.target,i%2?0:600);
+  assert(a.duration>=2000&&a.duration<=3000);assert(p.delay()>=3000&&p.delay()<=7000);
+  // Cancelled travel plans must not displace the last actually displayed poses.
+  p.next(0,600);p.next(600,600);const pose=p.pose();
+  assert(!history.slice(-2).includes(pose));history.push(pose);
+ }
+ assert(g.playground(()=>.01).next(0,600).run);assert.equal(g.playground(()=>.01).pose(),'jump');
+ assert(!p.next(0,600).run);
+}
+playground(G);
+const silent=G.policy();silent.event('play',0,{level:'idle',candidates:['think'],silent:true});
+assert(silent.event('put',100).speech,'silent playground consumed the edit speech cooldown');
 for(const [kind,choices] of Object.entries(G.CHOICES))for(const key of choices)assert(U.GWEN_SCENES[key],`${kind}: ${key}`);
 for(const [key,lines] of Object.entries(G.SAY)){assert(lines.length>=1&&lines.length<=4,key);for(const line of lines)assert(!/단장(?!님)/.test(line));}
 const p=G.policy(()=>0),history=[];for(let i=0;i<20;i++){const a=p.pick(G.CHOICES.high);assert(!history.slice(-2).includes(a));history.push(a);}
