@@ -1,0 +1,46 @@
+{
+  "start_commit": "29e69fd",
+  "preserved_outside_masks": {
+    "st_point": {
+      ".png": "cfbbf8c8d04153423f1e21c466a7d6751f0b2f88aa5d9415ee5eb5cc419747d5",
+      "_blink.png": "fb3fbd9488adccf5c3d9a7eae1428287992041686c6558aab36ea0cf012fc598"
+    },
+    "st_sulk": {
+      ".png": "303d91409af05995615278a18d9e5ba55b629a32cb04649608db675727b7dcbf",
+      "_blink.png": "23496e648796219c0fc6261b6d52ab3f487cde1d5fa41c783be867f2ccca798b"
+    }
+  },
+  "unchanged_assets": {
+    "assets/ui_icons/gwen/confident.png": "5a36175d94bea1a277d9877ea5f98450812e6af170fd2d8bd240262c5f8f8628",
+    "assets/ui_icons/gwen/confident.webp": "422069845a802f5275b431179655ed5823651391fb27f77ef2661bacb3c01a6c",
+    "assets/ui_icons/gwen/st_cheer.png": "3a2c05950377f3a0a445de885b58302f31c391f84aa0bda1793eb81906ea6ef8",
+    "assets/ui_icons/gwen/st_cheer.webp": "40b18ed7da144fcbcf00ba7604dfe231482130eeb8b79b3422b87b355fcc952f",
+    "assets/ui_icons/gwen/st_cheer_blink.png": "22891f6fc0ecb23a13c1d1d552ce6776b945f205f0858103f6045561a9c89fd1",
+    "assets/ui_icons/gwen/st_cry.png": "3e73ff34f682b0cc72de8d186b22300335abb072fe3d714ae8dfb54746bc4219",
+    "assets/ui_icons/gwen/st_cry.webp": "439d8e059c86bb61df105f2fe558692e4ea249e62b11276ab21add9a4ee160ba",
+    "assets/ui_icons/gwen/st_cry_blink.png": "012f4ff9640fb8568b21780f171067ec839a8860b164d38bab5005532f9e8f8a",
+    "assets/ui_icons/gwen/st_ok.png": "f35df956bdbe40215fe46012925a515b0e321d08ac2fc7a8d74a8764adb3ce65",
+    "assets/ui_icons/gwen/st_ok.webp": "29014edfd9cedf7547e19a73a7928b3961cfd2872fc800d6419922572bbbbfac",
+    "assets/ui_icons/gwen/st_ok_blink.png": "a3c109dedabbaf2670a3912746280016038bc4dcc654b9538dc24308df789e2b",
+    "assets/ui_icons/gwen/st_shy.png": "1764285bbac379ea4beb1066ec2a33199393356b5ef5f4924979c709c300f015",
+    "assets/ui_icons/gwen/st_shy.webp": "cc52b319a0a612842904b1af35eacf13e3b1d66ec175841a550e813f3b826be3",
+    "assets/ui_icons/gwen/st_shy_blink.png": "d1d19916da88b8414c28d796df52a9b35df3f31ed5150348daaa7299ed8f7eaf",
+    "assets/ui_icons/gwen/st_verdict.png": "2991c9d7f74d50177e6ee61ac61bbae30bc04a2a67473e2578f404e2d26afdd5",
+    "assets/ui_icons/gwen/st_verdict.webp": "8684aa19bb56122cbc0d840c0b28f81e1ccba11c760213cefeb538a2e69f5ea2",
+    "assets/ui_icons/gwen/st_verdict_blink.png": "13f79504bd5e5f261c89a0e705cf712efd8b6dbca0d56d17cadf19bed510f962",
+    "assets/ui_icons/gwen/st_welcome.png": "596d69be889e1c4d2da711af006bd1d0f3440454b600c94f760fe4e131bb0a8f",
+    "assets/ui_icons/gwen/st_welcome.webp": "c703e0cad22f230bb7154c2d41650d161cd00030f0f0bbc058945510d5269572",
+    "assets/ui_icons/gwen/st_welcome_blink.png": "20cb831db66f3afa0515f9ad517af3c87a631a49429d1a915adbbbcb48e0bc0b",
+    "assets/ui_icons/gwen/st_wink.png": "8fffdef58c31ae5e0bf40b7e21b3e4d2a19c6ed2c72f725685cd7b2b2a9351bb",
+    "assets/ui_icons/gwen/st_wink.webp": "5a3b7271b09361cd4c6efd040232c74414b0caa0df7ee58662e00d8b8ea26508",
+    "assets/ui_icons/gwen/st_wink_blink.png": "d954335a299f37925b4634da0a109b617fb2f3ca5394a69c78b934507d057055",
+    "assets/ui_icons/gwen/st_zap.png": "d0680148b8b8832995cb90e013d58d9a7dd9d6f96f9488dbb9bbe09258654d36",
+    "assets/ui_icons/gwen/st_zap.webp": "723861a4531c4d6b02836df78db4dc2526fabc534cc535c096b90d1cd35261f4",
+    "assets/ui_icons/gwen/st_zap_blink.png": "51987bc28bdd63c0417d583498f44fd852754b7889676631a86669240781f06a",
+    "assets/ui_icons/gwen/thoughtful.png": "bd1f0c013c8613e05cb758c8014daf76cb6ca1723008134d42d4abe4a24f1fe6"
+  },
+  "superseded_by_art8": {
+    "assets/ui_icons/gwen/notes.png": "b6cd5860c9be6076255a7981c3da1c48978add49a5235857416a94c2f3f01035",
+    "assets/ui_icons/gwen/notes.webp": "3c44b1d4da27c8ea4e729f3bfb63d108c40c3e1b74c86352531402054dd85a6b"
+  }
+}

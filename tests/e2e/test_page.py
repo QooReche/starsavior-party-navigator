@@ -186,6 +186,10 @@ def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", exc
         setup(page)
     if "auto=" not in query:
         query += ("&" if "?" in query else "?") + "auto=1"
+    # These are recommendation regressions. The half-start/navigation suite lives
+    # in test_direct_party.py; explicitly enter recommendation mode here.
+    if 'auto=0' in query and 'pm=' not in query:
+        query += '&pm=reco'
     if season_bypass:
         query += ("&" if "?" in query else "?") + "dev=1"
     page.goto(ctx.base + "/index.html" + query)
@@ -395,6 +399,7 @@ def test_sim_timeout_partial(browser, ctx):
 
 def press(page, selector, between):
     """실제 마우스로 누른다: 내림 → between(JS) 실행 → 올림. 그 사이 단추가 다시 그려지면 클릭이 안 먹는다."""
+    page.locator(selector).scroll_into_view_if_needed()
     box = page.locator(selector).bounding_box()
     x, y = box['x'] + box['width'] / 2, box['y'] + box['height'] / 2
     page.mouse.move(x, y)
@@ -1904,7 +1909,7 @@ def test_growth_controls(browser, ctx):
     assert page.evaluate("localStorage.getItem('pn.growth.options')") == saved
     assert page.evaluate("new URL(shareUrl()).searchParams.get('ag')==='1' && new URL(shareUrl()).searchParams.get('ao')==='0'")
     # Shared query overrides the old local options without persisting either control.
-    page.goto(ctx.base + '/index.html?auto=0&ag=0&ao=1')
+    page.goto(ctx.base + '/index.html?auto=0&pm=reco&ag=0&ao=1')
     wait_myinfo(page)
     settle(page)
     assert not page.locator('#assume-growth').is_checked()
@@ -2979,10 +2984,13 @@ def test_ux_step3(browser, ctx):
         page.evaluate('scrollTo(0,0)')
         bounds = page.locator(f'#{kind}-search [data-{ "gs" if kind=="guild" else "cs"}="start"]').bounding_box()
         # 휴대폰 폭에서는 상단 업데이트 공지(c63abbd 에서 복원, 두 줄)가 차지한 높이만큼만 더 허용한다 — 공지가 없으면 원래 기준 그대로.
-        # 넓은 화면은 공지가 있어도 첫 화면 안이어야 한다
+        # A단계의 필수 모드 띠가 추가한 고정 높이는 공통 탐색 UI로 따로 셈한다.
+        # 기존 계절 콘텐츠 본문에 허용한 읽기 높이와 2400px 이동 결함 검출은 유지한다.
         allow = page.evaluate("""() => {const e=document.querySelector('.update-notice');
-          if(!e||innerWidth>600||!e.getClientRects().length)return 0;
-          return e.getBoundingClientRect().height+parseFloat(getComputedStyle(e).marginBottom);}""")
+          const bar=document.querySelector('#mode-strip'),style=bar&&getComputedStyle(bar);
+          const nav=bar?.getClientRects().length?bar.getBoundingClientRect().height+parseFloat(style.marginTop)+parseFloat(style.marginBottom):0;
+          if(!e||innerWidth>600||!e.getClientRects().length)return nav;
+          return nav+e.getBoundingClientRect().height+parseFloat(getComputedStyle(e).marginBottom);}""")
         assert bounds and bounds['y'] >= 0 and bounds['y']+bounds['height'] <= page.viewport_size['height']+allow, (bounds, allow)
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
 

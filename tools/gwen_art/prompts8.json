@@ -1,0 +1,21 @@
+{
+  "tool": "built-in image_gen",
+  "start_commit": "d185efe",
+  "transparent_background": true,
+  "calls": [
+    {
+      "name": "notes",
+      "attempt": 1,
+      "prompt": "Use case: precise-object-edit. Image 1 is the EDIT TARGET, a transparent 640x320 horizontal sprite sheet with TWO 320px square cells. Images 2, 3 and 4 are COSTUME STRIPE REFERENCES ONLY (official model, corrected point and sulk). Repair ONLY both blue sleeves in BOTH cells of image 1. On VIEWER RIGHT arm (Gwen's left, holding notebook, NOT pencil arm), add the MISSING broad WHITE outer stripe: starts just below gold shoulder epaulette, runs continuously down the outer upper arm to outer elbow, turns around bent elbow, follows the visible forearm upward/inward to immediately before white wrist frill. On VIEWER LEFT pencil arm extend its existing broad white upper sleeve stripe around elbow and along the visible forearm to just before wrist frill. Each stripe is broad 20-25 percent sleeve width, white with subtle pale gray cloth shading and matching fine piping, matching reference point/sulk. No blue gap in a visible stripe, no disconnected short fragment, no ending halfway before cuff. Only genuinely occluded segments may be hidden. Preserve exact original sleeve silhouettes and folds, exact pose and position in both cells, exact canvas/cell dimensions and original alpha. KEEP FACE, HAIR, EYES (open in cell 1 / closed in cell 2), HANDS, GLOVES, FRILLS, PENCIL, NOTEBOOK AND ALL NON-SLEEVE PIXELS UNCHANGED. Do not redraw character or move body. Return same two-cell transparent sheet. This is a localized costume repair.",
+      "reference_paths": [
+        "tools/gwen_art/masters2/notes.webp",
+        "<private-ref>/play_p_017.jpg",
+        "assets/ui_icons/gwen/st_point.png",
+        "assets/ui_icons/gwen/st_sulk.png"
+      ],
+      "source": "<codex-image-cache>/01a1e362-95ec-74d1-bc13-f97255e8492e/exec-44c6b728-3ad0-48f5-880f-eac4bfeecaa6.png",
+      "saved": "_tmp/art8/notes-edit.png"
+    }
+  ],
+  "compositing": "Reuse edited first-cell sleeve only, registered separately for both arms and action pose; patches8 contains masked lossless patches and approved original served PNG/WebP. Preserve all decoded original RGBA outside sleeve masks and all alpha. No full regeneration."
+}

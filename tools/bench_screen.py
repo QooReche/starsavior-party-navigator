@@ -147,7 +147,7 @@ def run_one(browser, base, content, query, rk, workers, timeout):
     page.add_init_script(INIT_JS % (workers + 1))
     page.add_init_script('window.__legacyRaid = 1')
     try:
-        page.goto(base + '/index.html?auto=0&dev=1')
+        page.goto(base + '/index.html?auto=0&dev=1&pm=reco')
         page.wait_for_function('() => window._ready')
         if page.evaluate('() => !!MI.info'):
             raise RuntimeError('내 정보가 들어 있음 — 표준 육성 입력만 쓴다')

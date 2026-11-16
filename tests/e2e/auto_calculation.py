@@ -124,7 +124,7 @@ def race_case(browser, ctx, mutation=None, main=False):
             if mutation == 'cancel':
                 old, new = 'simInvalidate(); // cancel old selection immediately', '// cancellation removed'
             else:
-                old, new = 'if(!o.live()||(m.id!=null&&m.id!==o.id))return;', '/* stale request guard removed */'
+                old, new = 'if(!boot&&(m.id!==o.id||(m.requestId!=null&&m.requestId!==o.id)))return;', '/* stale request guard removed */'
             assert old in html, mutation
             page.route('**/index.html?*', lambda r: r.fulfill(body=html.replace(old, new), content_type='text/html'))
     page = open_page(browser, ctx, query='?auto=1', info=SYNTH, simauto=None, wait=False, setup=setup)
@@ -138,6 +138,11 @@ def race_case(browser, ctx, mutation=None, main=False):
             page.wait_for_timeout(80)
         assert page.evaluate('autoJobs.some(j=>j.req.n_runs===100)'), 'must exercise final simulation'
     page.evaluate("window.oldJob=autoJobs.filter(j=>!j.finished).at(-1);window.oldCount=autoJobs.length")
+    # The new manager discards terminated leases before request validation. Exercise
+    # the request guard on a live lease as well, so removing it must still fail.
+    if mutation != 'cancel':
+        page.evaluate("window.beforeWrong=JSON.stringify([SIMQ.res,SIMQ.scr]);oldJob.callback({data:{type:'team',id:oldJob.req.id+99999,requestId:oldJob.req.id+99999,key:oldJob.req.teams[0].key,result:{clear:.13,prog:.13,progs:[.13],via:{},n:8,ttk:99}}})")
+        assert page.evaluate('beforeWrong===JSON.stringify([SIMQ.res,SIMQ.scr])'), 'late result changed current request (wrong request id)'
     page.select_option('#stage', index=1)
     if mutation == 'cancel':
         assert page.evaluate('oldJob.worker.stopped===true'), 'old worker was not terminated'

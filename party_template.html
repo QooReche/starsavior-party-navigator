@@ -319,6 +319,7 @@ summary{padding:9px 4px}
  </div>
 
  <details class="optbox ux-menu" id="optbox"><summary aria-label="옵션·공유 메뉴">⋯</summary>
+  <label class="gwen-quiet-option"><input type="checkbox" id="gwen-quiet"> 그웬 반응 줄이기</label>
   <button type="button" class="sec" id="sim-auto-off" data-simauto="0">모의 전투 자동 실행 끄기</button><input type="number" id="mypow" hidden><div id="powinfo" class="powinfo" hidden></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됨.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성<select id="mmode"><option value="">균형</option><option value="avoid">역상성 회피</option></select></label></div>
@@ -328,6 +329,8 @@ summary{padding:9px 4px}
 <div id="growth-control-home"><span id="growth-control"><label><input type="checkbox" id="assume-growth"> 클리어를 위한 추천 육성도 같이 보기</label><button id="growth-hint" type="button" class="ux-help" aria-label="클리어 추천 육성 설명" aria-expanded="false" data-help="덜 키운 구원자를 맞췄다고 치고 함께 찾음. 더 잘 깨는 편성이 있으면 결과 아래에 보여줌. 목표는 프리셋 기준이며 최소 육성치를 찾는 기능은 아님.">ⓘ</button><span id="growth-requires-info" class="tag">내 정보 필요</span></span></div>
 </div>
 <div id="control-home" hidden><div id="stinfo"></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
+<nav id="mode-strip" aria-label="편성 모드" hidden><button type="button" class="sec" data-pn-mode="home">← 처음으로</button><button type="button" class="sec" data-pn-mode="reco">자동 추천</button><button type="button" class="sec" data-pn-mode="direct">직접 편성</button></nav>
+<section id="start-screen" aria-label="시작 방법 고르기" hidden></section>
 <section id="mi-panel" class="panel" aria-label="내 정보" hidden>
  <div class="mi-toolbar"><details id="mi-menu" class="ux-menu"><summary aria-label="내 구원자 메뉴">⋯</summary><button id="mi-panel-clear" type="button" class="sec">지우기</button></details><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
  <details id="growth-settings"><summary id="growth-settings-summary">육성 설정 · 꺼짐</summary><button type="button" class="ux-help" aria-label="육성 목표 설명" aria-expanded="false" data-help="이 육성 계획을 따랐을 때 예상. 보유 구원자만, 기본·특수·궁 중 7 이하인 스킬·장비 빈 칸/+12 미만/강화 합 84 미만·스텔라 아카이브 주력 950 미만·호감도 20 이하인 항목을 목표로 올림. 공명은 해금 최대, 스타링크는 실효 레벨 차이 10 이상, 특수 잠재력은 없을 때만 적용함. 패시브는 유지함. 고정 레벨 콘텐츠는 공명·스타링크를 제외함.">ⓘ</button></details>
@@ -343,6 +346,32 @@ summary{padding:9px 4px}
 <section id="guild-extra" class="panel" aria-label="길드 방어전 설정·설명" hidden></section>
 <section id="cosmo-search" class="panel" aria-label="코스모 게이트 3보스 편성 찾기" hidden></section>
 <div id="out"></div>
+<section id="direct-panel" class="party" aria-label="직접 편성" hidden>
+ <header class="direct-heading"><h2>직접 편성</h2><p class="mut">편성만 직접 고름 · 전투는 오토로 돌림</p></header>
+ <div class="result-layout">
+  <div class="result-summary">
+   <button id="direct-run" type="button" data-direct-action="run" disabled>모의 전투 실행</button>
+   <p id="direct-run-state" role="status" aria-live="polite"></p>
+   <span id="direct-standard" class="tag" hidden>표준 육성 기준</span>
+   <div id="direct-result-summary" class="mi-verdict"><b>조사 대기</b><b id="direct-summary-power">—</b></div>
+   <div id="direct-gwen" class="direct-gwen"><div id="direct-result-lane" class="gwen-lane gwen-result-lane" aria-label="그웬 결과 자리"></div><div id="direct-progress-lane" class="gwen-lane" aria-label="그웬 진행 길"></div><progress id="direct-progress" max="100" value="0" aria-label="모의 전투 진행"></progress></div>
+   <details id="direct-comparison"><summary>결과·비교</summary><div id="direct-results"></div></details>
+   <div class="direct-summary-options"><label><input id="direct-starlink" type="checkbox"> 스타링크 추가 적용<small>나머지 편성원에게도 넣었다고 침. 육성 가정에 포함된 등록은 꺼도 유지됨.</small></label><button id="direct-recommend" type="button" class="sec" data-direct-action="recommend">추천도 돌리기</button><span id="direct-conditions" class="tag"></span></div>
+  </div>
+  <div class="result-team">
+   <div id="direct-board-lane" class="gwen-lane" aria-label="그웬 길"></div>
+   <div id="direct-board" aria-label="편성판"></div>
+   <label class="direct-break-label">브레이크 스킬 <select id="direct-break"><option>자동 선택</option></select></label>
+   <div class="direct-board-footer"><b>편성 합계 <span id="direct-total">—</span></b><button type="button" class="sec" id="direct-arrange" data-direct-action="arrange">자리 자동 배치</button><button type="button" class="sec" data-direct-action="clear">비우기</button><button type="button" class="sec" id="direct-undo" data-direct-action="undo" disabled>되돌리기</button></div>
+   <p class="mut">칸을 고른 뒤 구원자를 누르면 넣음. 칸 두 개를 차례로 누르면 맞바꿈. ☆로 리더 지정.</p>
+   <p id="direct-state" class="direct-state" role="status" aria-live="polite"></p><button id="direct-retry" type="button" data-direct-action="retry" hidden>자료 다시 불러오기</button>
+   <button id="direct-picker-open" type="button" data-direct-action="open">구원자 고르기</button>
+   <section id="direct-picker-inline" class="direct-picker" data-direct-picker aria-label="구원자 고르기"><b>구원자 고르기</b><input type="search" data-direct-search placeholder="이름 검색" aria-label="직접 편성 구원자 검색"><label><input type="checkbox" data-direct-unowned> 미보유도 보기</label><div data-direct-list></div></section>
+  </div>
+ </div>
+ <div id="direct-detail"></div>
+</section>
+<dialog id="direct-picker-dialog" aria-label="구원자 연속 고르기"><div class="direct-picker-head"><b>구원자 고르기 · 연속 선택</b><button type="button" class="sec" data-direct-action="close">닫기</button></div><section data-direct-picker><input type="search" data-direct-search aria-label="고르기 창 구원자 검색" placeholder="이름 검색"><label><input type="checkbox" data-direct-unowned> 미보유도 보기</label><p data-direct-pick-status role="status"></p><div data-direct-list></div></section></dialog>
 <div class="panel" id="graphwrap"><b>스킬 연계 구조도</b> <span class="mut">선이나 구원자를 눌러 확인</span>
  <div class="row" style="margin-top:8px">
   <label>보기<select id="gmode"><option value="party">추천 파티의 연계</option><option value="center">구원자 중심</option><option value="all">전체 지도(강한 연계만)</option></select></label>
@@ -390,6 +419,7 @@ summary{padding:9px 4px}
 <script src="ui_shared.js"></script>
 <script src="myinfo_import.js"></script>
 <script src="myinfo_stats.js"></script>
+<script src="gwen_lane.js"></script>
 <script src="ux_ui.js"></script>
 <script src="myinfo_view.js"></script>
 <script src="myinfo_reco.js"></script>
@@ -399,7 +429,11 @@ summary{padding:9px 4px}
 <script src="season_gate_ui.js"></script>
 <script src="star_link.js"></script>
 <script src="star_link_ui.js"></script>
+<script src="direct_party.js"></script>
 <script src="share_state.js"></script>
+<script src="direct_ui.js"></script>
+<script src="direct_run.js"></script>
+<link rel="stylesheet" href="direct.css">
 <script src="guild_view.js"></script>
 <script src="guild_search.js"></script>
 <script src="cosmo_search.js"></script>
@@ -773,12 +807,12 @@ const CROWN='<svg viewBox="0 0 34 26" aria-hidden="true"><path d="M2 22 L5 6 L12
 function simUnit(r,key){if(!r||!r.g||!r.u||!r.u[key])return '<div class="simu"></div>';const [sh,dp]=r.u[key];const pct=Math.round(sh*100),dpp=Math.round(dp*100);
  const lv=dp>=0.5?3:dp>=0.2?2:dp>=0.05?1:0;
  return `<div class="simu"><div class="sb" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="피해 기여 ${pct}%"><i style="width:${pct}%"></i></div>피해 ${pct}% · <span class="dot d${lv}"></span>탈락 ${dpp}%</div>`}
-function card(x,pos,r,assumption=null){const s=x.s;
+function card(x,pos,r,assumption=null,manual=null){const s=x.s;
  const bow='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3c13 3 13 15 0 18V3M3 12h18m-4-4 4 4-4 4"/></svg>';
  const u=assumption?.unit;
- return `<div class="gc${assumption?' assumed-card':''}" data-pos="${pos}" data-assumed="${assumption?assumption.source:''}" data-key="${esc(s.key)}"><div class="card"><button type="button" class="skill-open-card" data-skill-open="${esc(s.key)}" aria-label="${esc(s.name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false"></button>${s.key===LEADKEY?`<div class="crown" title="속도 +10">${CROWN}<span>리더</span></div>`:''}<div class="fallback">${esc(s.name[0])}</div>${art(s)}${assumption?growthBadge(assumption,true):''}
+ return `<div class="gc${assumption?' assumed-card':''}" data-pos="${pos}" data-assumed="${assumption?assumption.source:''}" data-key="${esc(s.key)}"><div class="card"><button type="button" class="skill-open-card" data-skill-open="${esc(s.key)}" aria-label="${esc(s.name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false"></button>${s.key===(manual?manual.leader:LEADKEY)?`<div class="crown" title="속도 +10">${CROWN}<span>리더</span></div>`:''}<div class="fallback">${esc(s.name[0])}</div>${art(s)}${assumption?growthBadge(assumption,true):''}
  <div class="slotlbl ${pos}" data-position="${pos}">${pos==='back'?bow:UiShared.icon('def')}${pos==='back'?'후열':'전열'}</div><div class="cinfo">${dia(s,40)}${kindTxt(s)}</div></div>
- <div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub||'')}</div>${u?`<div class="mi-chips"><span class="mi-member-star">${miStars(u)}</span></div>`:''}${miCard(s.key,assumption)}${simUnit(r,s.key)}</div>`}
+ <div class="cnm">${esc(s.name)}</div><div class="csb">${esc(s.sub||'')}</div>${u?`<div class="mi-chips"><span class="mi-member-star">${miStars(u)}</span></div>`:''}${manual?`<div class="mi-chips">${manual.final?miNum(manual.final.power):""}</div>`:miCard(s.key,assumption)}${simUnit(r,s.key)}</div>`}
 function breakCard(br,r,p,t,st){
  const b=CFG.breakSkills[br.name],im=D.bicons[br.name],bs=r?.bs;
  return `<div class="bbar" title="${esc(b?.text||"브레이크 스킬 미장착")}">${im&&br.name?`<img src="${im}" alt="">`:`<span class="bicon">${BG[br.name]||"◆"}</span>`}<div class="bbody"><select class="bsel" data-bkey="${esc(br.key)}" aria-label="장착 브레이크 스킬">${["",...br.have].map(n=>`<option value="${esc(n)}"${n===br.name?" selected":""}>${esc(n||"장착 안 함")}${n&&n===br.rec?" · 추천":""}</option>`).join("")}</select>${t&&br.have.length?`<button type="button" class="sec" data-bcompare="${p}" data-key="${esc(ckey(t.combo))}">비교</button>`:""}</div>${Ux.help("브레이크 스킬",b?.text||"브레이크 스킬 미장착")}</div><div class="break-extra">${bs?`<details><summary>브레이크 발동</summary>${breakChip(bs)}</details>`:""}</div>${p?breakCompareView(br,p,t,st):""}`}
@@ -873,7 +907,7 @@ function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+t
 
 // ---- 브라우저 시뮬 확인(sim_worker.js + Pyodide): 위 3팀을 확률 전투 엔진으로 다시 돌린다. 누를 때만 내려받는다(처음 약 14MB)
 // 안전장치(codex 상담): 제한 시간·취소(작업자 종료), 실패해도 빠른 계산은 그대로, 결과는 추정치+95% 구간, 입력이 바뀌면 이전 결과 무효
-const SIMQ={w:null,busy:null,res:{},scr:{},screening:false,msg:"",err:"",n:100,seed:1,LOAD_MS:180000,RUN_MS:240000,timer:null,more:{},
+const SIMQ={w:null,busy:null,res:{},scr:{},screening:false,msg:"",err:"",n:100,seed:1,LOAD_MS:180000,RUN_MS:240000,more:{},
  auto:(()=>{try{return localStorage.getItem("pn.simauto")==="1"}catch(e){return false}})()};
 $("sim-auto-off").onclick=()=>{simAuto(false);SIMQ.kick=false;run(true)};
 function simAuto(on){SIMQ.auto=on;try{localStorage.setItem("pn.simauto",on?"1":"0")}catch(e){}}
@@ -890,7 +924,7 @@ function simParty(t){const ar=arrangeOf(t.combo),sv=QK.d.sv;
  // 구원자별 전투력 = quick.js evaluate 와 같은 배분(입력값, 없으면 base × 기준 전투력 비율). 반올림 = 버림(x+0.5) — 파이썬 gen_quick_calib 와 같게
  let rs=0;for(const x of t.ek)rs+=sv[x][5];const base=t.base||rs*Quick.MUL;
  // 시뮬 칸 = [전열1, 전열2, 후열1, 후열2]. 화면 카드 순서(ar.order) = [후열1, 전열1, 전열2, 후열2] 라 바꿔 넣는다(tools/build_sim_results.arrange 와 같은 규칙)
- const so=[ar.order[1],ar.order[2],ar.order[0],ar.order[3]];
+ const so=DirectParty.toEngine(ar.order);
  const units=so.map(k0=>{const k=ekey(k0),u=sv[k],pw=(t.b.powers&&t.b.powers[k])||null;
   if(t.b.finals?.[k0])return {key:k,build:"none",stats_override:t.b.finals[k0].stats,stats_final:true,power:t.b.finals[k0].power,myinfo_combat:t.b.finals[k0].combat};
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
@@ -944,7 +978,7 @@ function simBar(p,rows,st,hasMore,shown=rows[0]){
   all?`${rows.length?(Ux.gwenReport?.(SIMQ.res[simSig(st,shown)],{clear:p===1?SIMQ.res[simSig(st,shown)]?.clear:undefined})||''):''}<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">모의 전투 실행</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
-function simInvalidate(){if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;if(Object.keys(x.res).length)scrClose(x);else delete SIMQ.scr[k]}simPoolDrop();clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
+function simInvalidate(){if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;if(Object.keys(x.res).length)scrClose(x);else delete SIMQ.scr[k]}simPoolDrop();SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
 function simStop(msg,cancelled=false){SIMQ.cancelled=cancelled;const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=msg;SIMQ.err=/취소|중단/.test(msg)?"중단함":/엔진 준비 시간 초과/.test(msg)?"계산 엔진 준비가 오래 걸려 멈췄음 · 네트워크를 확인하고 다시 시도 필요":/시간 초과/.test(msg)?"계산이 오래 걸려 멈췄음 · 다시 시도하면 끝난 팀은 이어서 계산함":"자료를 불러오지 못했음. 다시 시도 필요";SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simQueue(start){const id=SIMQ.requestId;clearTimeout(SIMQ.startTimer);SIMQ.startTimer=setTimeout(()=>{if(SIMQ.requestId===id&&REQ&&!RECO.timer)start()},0)}
@@ -971,6 +1005,7 @@ function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("c
  SIMQ.eta=null;
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
  const teams=rows.map(j=>({key:j.key,party:simParty(j.t),options:{break_skill:j.bname?{name:j.bname,level:brkLv(j.bname)}:null}}));
+ const directMeta=typeof directRecoMeta==="function"?directRecoMeta(c,st,runs):null;
  const req={type:"run",id,base,stage:c.key+"/"+st.tab+"/"+st.name,n_runs:runs,seed:SIMQ.seed,options:simOpt(c.key),teams};
  SIMQ.lastReq={req,sigs};   // 기록용(시험·진단): 실제로는 팀마다 따로 보낸다
  if(SIMQ.loaded&&SIMQ.w)SIMQ.w._ready=true;
@@ -981,9 +1016,10 @@ function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("c
    if(/^시뮬 \d+\//.test(m.msg||"")){w._t=Date.now();eta()}const el=document.querySelector(`.party[data-party="${p}"] [data-k="${compareKey?"breakstate":"simstate"}"]`);if(el){el.title=m.msg;el.textContent=SIMQ.msg;}},
   team(j,m,w){if(w._t)simRateAdd((Date.now()-w._t)/runs);w._t=0;
    SIMQ.res[j.sig]=m.result;
+   if(directMeta){const meta=JSON.parse(JSON.stringify(directMeta));meta.parts[7].engine=m.result.ver;meta.condition=JSON.stringify(meta.parts);(SIMQ.meta??={})[j.sig]=meta;}
    if(jobs&&!compareKey&&runs===300&&SIMQ.n===100){const parts=JSON.parse(j.sig);parts[4]=100;(SIMQ.refined??=new Set()).add(JSON.stringify(parts))}
    eta();if(!jobs&&simPaintProgress())return;run(!!jobs)},
-  done(){clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null;run(!!jobs)},
+  done(){SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null;run(!!jobs)},
   error:(msg,w,crash)=>simStop(crash?"작업자 오류: "+msg:msg)});
  run(!!compareKey);return true}
 const goalVal=r=>r?(r.t60??r.clear):null;   // 목표 지표 = scrCmp 의 첫 기준(simCls 옆 주석)
@@ -998,38 +1034,72 @@ function scrWorkerCount(env){const e=env||{},c=e.cores>0?Math.floor(e.cores):2,m
  if(e.mobile)n=Math.min(n,2);
  return Math.max(1,n)}
 function scrWorkers(){return typeof navigator==="undefined"?1:scrWorkerCount({cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory,mobile:typeof csMobile==="function"&&csMobile()})}
-// 풀: 0번 = SIMQ.w. want(작업 수)보다 많이 띄우지 않는다. 한 번 띄운 작업자는 계산이 «정상으로» 끝나도 살려 두고 다음 계산(예선 → 본선 → 추가 확인 → 클리어 추천 육성)이 다시 쓴다
-//  — 예선이 끝날 때마다 끄고 다시 띄우면 작업자마다 엔진 준비(수 초)를 또 한다. 끄는 것은 무효화·취소·실패뿐(simPoolDrop): 돌고 있는 파이썬은 중간에 못 멈춰서 작업자째 끈다
-function scrPool(want){const n=Math.max(1,Math.min(scrWorkers(),want||Infinity));if(!SIMQ.pool)SIMQ.pool=[];
- if(!SIMQ.w){SIMQ.w=new Worker("sim_worker.js");SIMQ.loaded=false}
- SIMQ.pool[0]=SIMQ.w;for(let j=1;j<n;j++)if(!SIMQ.pool[j])SIMQ.pool[j]=new Worker("sim_worker.js");return SIMQ.pool.slice(0,n)}
-function simPoolDrop(){for(const w of SIMQ.pool||[])w&&w.terminate();SIMQ.pool=null;if(SIMQ.w){SIMQ.w.terminate();SIMQ.w=null}SIMQ.loaded=false}
+// 풀은 SIMPOOL 하나가 소유함. scrPool은 독점 대여 예약이며 실제 배정 때 배열에 작업자를 넣음.
+// 정상 종료는 반환·재사용, 취소는 owner/requestId/group에 속한 작업자만 종료함.
+// SIMQ.w/pool은 기존 진단용 별칭이며 메시지 핸들러·타이머 소유권은 없음.
+const SIMPOOL={workers:[],batches:[],serial:0,pumping:false};
+function scrPool(want){const ws=[];ws.capacity=Math.max(1,Math.min(scrWorkers(),want||Infinity));return ws}
+function simPoolSync(){SIMQ.pool=SIMPOOL.workers.length?SIMPOOL.workers:null;SIMQ.w=SIMPOOL.workers[0]||null;SIMQ.loaded=!!SIMQ.w?._ready}
+function simRelease(w,kill=false){const lease=w._lease;if(lease){const ws=lease.batch.ws,i=ws.indexOf(w);if(i>=0)ws.splice(i,1);w._lease=null;w._job=null;lease.batch.o.arm?.()}
+ if(kill){w._dead=true;w.terminate();SIMPOOL.workers=SIMPOOL.workers.filter(x=>x!==w)}simPoolSync()}
+function simPoolDrop(owner='reco',requestId=null,group=null){
+ const matches=b=>b.owner===owner&&(requestId==null||b.o.id===requestId)&&(group==null||b.o.group===group);
+ for(const b of SIMPOOL.batches.filter(matches)){b.closed=true;b.o.arm?.cancel?.()}
+ for(const w of SIMPOOL.workers.slice())if(matches(w._lease?.batch||w._lastBatch))simRelease(w,true);
+ SIMPOOL.batches=SIMPOOL.batches.filter(b=>!b.closed);simPump()}
+function simReceive(w,m){
+ const lease=w._lease;if(w._dead||!lease)return;
+ const b=lease.batch,o=b.o;
+ if(b.closed||!o.live())return;
+ // Only legacy boot notifications may omit id. Calculation replies must match the lease.
+ const boot=m.type==='stage'&&m.id==null&&m.requestId==null;
+ if(!boot&&(m.id!==o.id||(m.requestId!=null&&m.requestId!==o.id)))return;
+ if(m.owner!=null&&m.owner!==b.owner||m.revision!=null&&m.revision!==(o.revision||0)||m.jobId!=null&&m.jobId!==lease.token)return;
+ if(m.job!=null&&m.job!==lease.index)return;
+ if(m.type==='stage'){if(m.msg==='준비 끝')w._ready=true;w._last=Date.now();o.stage?.(w,m);if(!b.closed)o.arm?.();return}
+ if(m.type==='error'){o.error(m.msg,w,false);return}
+ if(m.type==='team'){if(lease.got||m.key!==w._key)return;lease.got=true;w._last=Date.now();o.team(b.jobs[lease.index],m,w);if(!b.closed)o.arm?.();return}
+ if(m.type==='done'){
+  if(!lease.got){o.error('결과 없이 끝난 작업',w,false);return}
+  simRelease(w);b.left--;
+  if(!b.left){b.closed=true;o.arm?.cancel?.();SIMPOOL.batches=SIMPOOL.batches.filter(x=>x!==b);o.done()}
+  simPump()}}
+function simPump(){if(SIMPOOL.pumping)return;SIMPOOL.pumping=true;
+ try{
+  for(const b of SIMPOOL.batches.slice())if(!b.o.live()){b.closed=true;b.o.arm?.cancel?.();for(const w of b.ws.slice())simRelease(w,true)}
+  SIMPOOL.batches=SIMPOOL.batches.filter(b=>!b.closed);
+  for(;;){
+   const pending=SIMPOOL.batches.filter(b=>!b.closed&&b.next<b.jobs.length).sort((a,b)=>(b.owner==='direct')-(a.owner==='direct')||a.serial-b.serial);
+   const priority=pending.some(b=>b.owner==='direct');
+   const b=pending.find(b=>(!priority||b.owner==='direct')&&b.ws.length<b.ws.capacity);if(!b)break;
+   let w=SIMPOOL.workers.find(w=>!w._lease&&!w._dead);
+   if(!w){if(SIMPOOL.workers.length>=scrWorkers())break;
+    w=new Worker('sim_worker.js');w.onmessage=e=>simReceive(w,e.data);
+    w.onerror=e=>{const b=w._lease?.batch;if(b&&!b.closed&&b.o.live())b.o.error(e.message||'알 수 없음',w,true)};
+    SIMPOOL.workers.push(w)}
+   const j=b.next++,m=b.o.msg(b.jobs[j],j),token=++SIMPOOL.serial;
+   w._owner=b.owner;w._lastBatch={owner:b.owner,o:{id:b.o.id,group:b.o.group}};w._lease={batch:b,index:j,token,got:false};w._job=j;w._key=m.teams[0].key;w._n=m.n_runs;w._t=0;w._last=Date.now();b.ws.push(w);simPoolSync();
+   b.o.assigned?.(w,b.jobs[j]);
+   w.postMessage({...m,id:b.o.id,requestId:b.o.id,owner:b.owner,revision:b.o.revision||0,job:j,jobId:token});b.o.arm?.();
+  }
+ }finally{SIMPOOL.pumping=false}}
 // 대기열: 작업(팀 하나)을 순서대로 하나씩 맡기고, 작업자가 그 작업의 done 을 보내면 다음 작업을 준다(고정 분배가 아니라 먼저 끝난 작업자가 더 가져간다).
 //  작업마다 번호(job)를 달아 보내고 작업자가 되돌려 준다 — 지금 맡긴 작업(번호·팀 key 가 같은 것)의 답만 받고, 같은 작업의 결과는 한 번만 받는다. 결과 없이 done 이 오면 오류.
 //  결과는 어느 작업자가 언제 돌렸는지와 무관하다(팀마다 같은 시드·판 번호). 순위 동률도 끝난 순서가 아니라 후보 순서로 가른다(scrOrder).
-//  o = {id: 요청 번호, live(): 요청이 아직 유효한가, msg(작업, 번호) -> 보낼 요청(teams 1개), stage(w,m)?, team(작업,m,w), done(), error(글,w,작업자가 죽었는가), arm()?: 무진행 감시 다시 재기}
-function simDispatch(ws,jobs,o){let next=0,left=jobs.length;const got=new Set(),arm=o.arm||(()=>{});
- const feed=w=>{if(next>=jobs.length){w._job=null;return}const j=next++,m=o.msg(jobs[j],j);w._job=j;w._key=m.teams[0].key;w._n=m.n_runs;w._t=0;w._last=Date.now();w.postMessage(Object.assign(m,{id:o.id,job:j}))};
- for(const w of ws){
-  w.onmessage=e=>{const m=e.data;if(!o.live()||(m.id!=null&&m.id!==o.id))return;
-   if(m.type==="stage"){if(m.msg==="준비 끝")w._ready=true;if(m.msg==="준비 끝"||m.id===o.id)w._last=Date.now();if(o.stage)o.stage(w,m);if(o.live())arm();return}
-   if(m.type==="error"){o.error(m.msg,w,false);return}
-   if(w._job==null||(m.job!=null&&m.job!==w._job))return;   // job 이 없는 답 = 옛 sim_worker.js(캐시)와 섞인 경우: 한 번에 한 작업뿐이라 지금 작업의 답으로 본다
-   const j=w._job;
-   if(m.type==="team"){if(got.has(j)||m.key!==w._key)return;got.add(j);w._last=Date.now();o.team(jobs[j],m,w);if(o.live())arm();return}
-   if(m.type==="done"){if(!got.has(j)){o.error("결과 없이 끝난 작업",w,false);return}w._job=null;if(--left===0){o.done();return}feed(w);arm()}};
-  w.onerror=e=>{if(o.live())o.error(e.message||"알 수 없음",w,true)}}
- for(const w of ws)feed(w);arm()}
+//  o = {owner='reco', id, revision, group?, live(), msg(작업, 번호), assigned?, stage?, team, done, error, arm?}
+//  물리 작업자의 핸들러는 생성 때 한 번만 설치함. 대기 시간에는 무진행 시계를 돌리지 않음.
+function simDispatch(ws,jobs,o){const b={ws,jobs,o,owner:o.owner||'reco',next:0,left:jobs.length,serial:++SIMPOOL.serial,closed:false};
+ SIMPOOL.batches.push(b);simPump();return b}
 // 무진행 감시(작업자별): 일하는 작업자마다 «마지막 소식(w._last) + 상한»을 넘기면 stop(그 작업자가 엔진을 준비했는가). 상한 = 엔진 준비 전 LOAD_MS, 준비 뒤 limit().
 //  가려진 탭이거나 타이머가 예정보다 크게 늦게 돌았으면(탭 동결·절전 복귀 — 그동안 계산도 멈춤) 끝내지 않고 다시 잰다. 늦게 돈 경우 그동안 잰 팀 시간(w._t)은 속도 표본에서 버린다
-function simWatch(ws,limit,live,stop){const lim=w=>w._ready?limit():SIMQ.LOAD_MS;
- const arm=()=>{clearTimeout(SIMQ.timer);const busy=ws.filter(w=>w._job!=null);if(!busy.length)return;
+function simWatch(ws,limit,live,stop){let timer;const lim=w=>w._ready?limit():SIMQ.LOAD_MS;
+ const arm=()=>{clearTimeout(timer);const busy=ws.filter(w=>w._job!=null);if(!busy.length)return;
   const wait=Math.max(1,Math.min(...busy.map(w=>w._last+lim(w)))-Date.now()),due=Date.now()+wait;
-  SIMQ.timer=setTimeout(()=>{if(!live())return;const late=Date.now()-due>5000;
+  timer=setTimeout(()=>{if(!live())return;const late=Date.now()-due>5000;
    if(late||(typeof document!=="undefined"&&document.hidden)){for(const w of ws){w._last=Date.now();if(late)w._t=0}arm();return}
    const dead=ws.find(w=>w._job!=null&&Date.now()-w._last>=lim(w));if(!dead){arm();return}
    stop(!!dead._ready)},wait)};
- return arm}
+ arm.cancel=()=>clearTimeout(timer);return arm}
 // 이 기기의 시뮬 속도(1판당 ms, 최근 값 쪽으로 평균). 예선·본선 팀이 끝날 때마다 갱신
 // 본선 = SIMQ.rate, 예선("scr") = SIMQ.rateS
 function simRateAdd(r,kind){if(!(r>0))return;const k=kind==="scr"?"rateS":"rate";SIMQ[k]=SIMQ[k]?SIMQ[k]*0.5+r*0.5:r}
@@ -1157,7 +1227,7 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
  SIMQ.err="";SIMQ.busy=p;SIMQ.screening=true;SIMQ.compareKey=null;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
  // 정상으로 끝나면 작업자를 끄지 않는다(본선이 바로 다시 쓴다 — scrPool 주석)
- const finish=()=>{if(sc.done)return;clearTimeout(SIMQ.timer);scrClose(sc);SIMQ.screening=false;SIMQ.busy=null};
+ const finish=()=>{if(sc.done)return;scrClose(sc);SIMQ.screening=false;SIMQ.busy=null};
  const el=()=>document.querySelector('[data-k="progress"] [data-k="simstate"]'),show=m=>{SIMQ.msg=m;const x=el();if(x)x.textContent=m};
  let id=0;
  // 후보를 대기열(simDispatch)로 작업자들에 맡기고, 모두 끝나면 next. i = 단계(0·1), 결과는 1차 sc.res · 2차 sc.res2
@@ -1211,8 +1281,8 @@ function buildCands(ranked){return ranked.slice(0,10).map((x,i)=>({combo:x.combo
 // 남은 시간 표시는 1초마다 다시 그린다(화면 전체를 다시 그리지 않고 글자만)
 setInterval(()=>{if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
 // 추천은 버튼으로 시작한다. 시험용 URL과 공유 링크만 자동으로 시작한다.
-const AUTO=/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
-const RECO={timer:null,revision:0,standard:false,sharedPending:!!SHARE.c};
+const AUTO=!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'&&/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
+const RECO={timer:null,revision:0,standard:false,sharedPending:!!SHARE.c&&!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'};
 function recoClearTimer(){clearTimeout(RECO.timer);RECO.timer=null;RECO.revision++}
 function idleView(){
  const waiting=!!RECO.timer,kind=waiting?(RECO.sharedPending?"cancel":"wait"):"go",out=$('out'),now=out.children&&out.children.length===1?out.firstElementChild:null;
@@ -1220,7 +1290,7 @@ function idleView(){
  if(now&&now.dataset.k==="idle"&&now.dataset.kind===kind){growthControlPlace();return}
  out.innerHTML=`<div class="party idle" data-k="idle" data-kind="${kind}">${waiting?Ux.gwenWork("inspect"):Ux.gwenIdle()}<div id="reco-actions">${waiting?'<span role="status">계산 준비 중</span>'+(RECO.sharedPending?'<button type="button" class="sec" data-recocancel>중단</button>':''):'<button type="button" data-go="1" title="현재 조건과 내 정보로 추천함">추천 편성 보기</button>'}</div></div>`;growthControlPlace()}
 function condChanged(){
- const canRun=!!MI.info||RECO.standard,requested=canRun&&(AUTO||RECO.sharedPending);
+ const canRun=!!MI.info||RECO.standard,requested=canRun&&DIRECT.mode==='reco'&&(AUTO||RECO.sharedPending);
  recoClearTimer();clearTimeout(_rt);REQ=false;SIMQ.kick=false;
  simInvalidate(); // cancel old selection immediately
  for(const k in LASTQ)delete LASTQ[k];
@@ -1237,8 +1307,8 @@ function miGuide(){return `<div class="party guide case-request" data-k="miguide
  <p class="mut">계정 정보를 맡기면 그웬이 내 구원자에 맞춰 조사해 추천함. 정보 없이도 표준 육성으로 살펴볼 수 있음.</p><ol class="guide-steps"><li><b>명령 복사</b><small>PowerShell에 붙여넣기</small></li><li><b>게임 로그인</b><small>로비에서 도구 창에 엔터</small></li><li><b>자동 반영</b><small>이 화면에 바로 표시</small></li></ol>
  <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div>${Ux.gwenSay("welcome","right")}${Ux.gwenImage("welcome","gwen-guide-art")}</div></div>`}
 function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;recoClearTimer();if(!MI.info){RECO.standard=true;$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
-function run(skipAuto=false){seasonPaint();growthControlPlace(true);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
- if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror">${Ux.gwenError("other")}<h3>내 정보 계산 자료를 불러오지 못했음</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}
+function run(skipAuto=false){directRefresh();seasonPaint();growthControlPlace(true);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
+ if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror">${Ux.gwenError("other")}<h3>내 정보 계산 자료를 불러오지 못했음</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);directResultsPaint();if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}
 function runCore(skipAuto=false){
  if(seasonBlocked(contents[$('content').value]?.key))return;
  renderMi();
@@ -1316,7 +1386,7 @@ function syncBrk(){const lv=MI.info?MyInfoImport.mapBreak(MI.info):null;MI.brkLv
  pruneBreakSel()}
 function renderChip(){const e=$("mi-chip");if(!e)return;const i=MI.info;e.classList.toggle("none",!i);
  e.dataset.state=i?"loaded":"empty";e.innerHTML=i?`${MI.shared?"공유받은 ":""}<b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(5,10).replace("-","/"))} 갱신`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"";document.querySelector(".input-panel").hidden=!$("mi-panel").hidden;$("option-chips").innerHTML=[rkOf(contents[$("content").value]?.key)?`재점화 ${$("rk").value}단계`:"",MM==="avoid"?"불리한 속성 피하기":"",!simAutoOn()?"모의 전투 자동 실행 꺼짐":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("");
- $("mi-open-import").textContent=i?"새로 불러오기(내 정보)":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["share-link","mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i}
+ $("mi-open-import").textContent=i?"새로 불러오기(내 정보)":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i;$("share-link").hidden=false}
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b))}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  syncOwn();
@@ -1351,7 +1421,7 @@ function miVerdict(t,st){const r=SIMQ.res[simSig(st,t)];
  <div class="verdict-meta">오토 전투 · ${miMode()?'내 구원자 기준':'표준 육성 기준'} ${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':''}${r?.t60!=null?` · ${STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:''}</div></div>
  <div class="verdict-stats"><div><b>${turn!=null?'약 '+Math.round(turn)+'턴':'—'}</b><small>예상 턴</small></div><div><b>${miNum(power)}</b><small>전투력</small></div><div><b>${st.rp?miNum(st.rp):'자료 없음'}</b><small>권장 전투력</small></div></div>${st.rp&&power<st.rp?`<span class="tag">권장보다 ${miNum(st.rp-power)} 부족</span>`:''}${r?Ux.luckNote(r):''}</div>${warning}`}
 function miTab(info){$("mi-panel").hidden=!info;$("out").hidden=info;$("graphwrap").hidden=info;document.querySelector(".input-panel").hidden=info;growthControlPlace();
- if($('result-tabs'))$('result-tabs').hidden=info;
+ directVisibility();if($('result-tabs'))$('result-tabs').hidden=info||DIRECT.mode!=='reco';
  $("tab-reco").setAttribute("aria-pressed",String(!info));$("tab-info").setAttribute("aria-pressed",String(info));if(info)renderMi();else {drawGraph();if(cy)cy.resize()}}
 function savedTime(date){const d=new Date(date);if(!Number.isFinite(+d))return "";const z=v=>String(v).padStart(2,"0");return `${z(d.getMonth()+1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`}
 function renderMi(){growthControls();const info=MI.info;$("grow").querySelector('[value="myinfo"]').disabled=!info;
@@ -1400,7 +1470,7 @@ async function miApply(info,opt={}){
  const {unknown}=MyInfoImport.mapOwned(info,R);
  MI.saved=false;MI.invalid=false;MI.shared=!!opt.shared;miReset(info);syncOwn();
  MI.saved=opt.shared?false:LS.set("myinfo",info);if(!opt.shared)saveSel();updCount();renderMi();sharedBar();
- if(opt.shared&&SHARE.c)RECO.sharedPending=true;rerun();
+ if(opt.shared&&SHARE.c&&!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home')RECO.sharedPending=true;rerun();
  miStatus(miSummary(info,unknown.length)+(MI.saved?"":" · 저장 안 됨"),!MI.saved);return true}
 $("mi-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
  try{await miApply(JSON.parse(await f.text()))}catch(err){miStatus("바탕화면 내정보.json을 선택해야 함.",true)}});
@@ -1471,6 +1541,7 @@ function drawGraph(){
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=()=>{graphDirty=true;drawGraph()});
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party"){graphDirty=true;drawGraph()}};
 function shareUrl(){const c=contents[$("content").value],s=cur&&cur[$("stage").value],state={c:c.key,s:s?s.tab+"|"+s.name:"",rk:+$("rk").value,ag:growthOptions().growth,ao:growthOptions().owned};
+ if(DIRECT.mode==='direct'){state.pm='direct';state.dp=DirectParty.share(DIRECT.draft);}
  document.querySelectorAll(".party[data-party] .bsel").forEach(el=>{state[el.closest(".party").dataset.party==="2"?"b2":"b"]=el.value});
  return ShareState.url(location.href,state)}
 async function shareUrlMi(){let url=shareUrl();if(!MI.info||!$("share-mi").checked)return url;
@@ -1493,7 +1564,7 @@ function applyShare(){
 
  else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
  if(!SHARE.g)LS.set("grow.v2",$("grow").value)}
-{const gv=LS.get("goal");if(gv==="0"||gv==="60"){$("goal").value=gv;if(gv==="0")$("optbox").open=true}}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}growthInit();updCount();refreshTabs();applyShare();miLoad();condChanged();window._ready=true;if(LS.get("why"))drawGraph();
+{const gv=LS.get("goal");if(gv==="0"||gv==="60"){$("goal").value=gv;if(gv==="0")$("optbox").open=true}}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}growthInit();updCount();refreshTabs();applyShare();directInit();miLoad();condChanged();window._ready=true;if(LS.get("why"))drawGraph();
 seasonRefresh();setInterval(seasonRefresh,1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)seasonRefresh()});
 </script></body></html>

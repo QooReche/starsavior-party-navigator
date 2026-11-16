@@ -14,7 +14,7 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 
 
 def ready(page,base):
-    page.goto(base+'/index.html?season=force',wait_until='networkidle')
+    page.goto(base+'/index.html?season=force&pm=reco',wait_until='networkidle')
     page.wait_for_function('window._ready')
     page.wait_for_timeout(700)
 
@@ -83,7 +83,7 @@ def timer_audit(page):
 
 def deferred_audit(page,requests):
     page.emulate_media(reduced_motion='reduce')
-    fixture(page,page.evaluate(''''<div id="deferred-art" hidden>'+Ux.gwenReaction(.01)+'</div>' '''))
+    fixture(page,page.evaluate(''''<div id="deferred-art" hidden>'+Ux.gwenImage('notes')+'</div>' '''))
     page.wait_for_timeout(150)
     assert page.locator('#deferred-art img').get_attribute('src') is None
     assert not any('/notes.' in u for u in requests),'hidden asset was fetched'
@@ -134,7 +134,9 @@ def result_audit(page,probability,art,width,shots):
     }''',probability)
     reaction=page.locator('#out .gwen-reaction')
     assert reaction.count()==1,'only the first party should carry a portrait'
-    assert reaction.get_attribute('data-gwen-reaction')==art
+    actual=reaction.get_attribute('data-gwen-reaction')
+    assert actual in ({'confident':['confident','st_verdict','st_cheer','st_ok'],'thoughtful':['thoughtful','st_point'],'notes':['notes','st_cry']}[art])
+    art=actual
     pic=loaded(page,'#out .gwen-reaction img')
     playing(page,pic)
     assert pic.get_attribute('data-gwen-motion').endswith(art+'.webp')

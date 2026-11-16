@@ -7,6 +7,7 @@ function growthCacheTag(){return JSON.stringify(['current-account',MyInfoReco.OV
 function growthEnabled(){const o=growthOptions();return o.growth;}
 // Keep one live checkbox while the recommendation body is replaced.
 function growthControlPlace(home=false){const seasonal=['guild','cosmo'].includes(contents[$('content').value]?.key);
+  if(typeof DIRECT!=='undefined'&&DIRECT.mode==='home'&&$('start-growth')&&$('mi-panel').hidden){$('start-growth').append($('growth-control'));return;}
   const target=!home&&!seasonal&&!$('out').hidden&&$('reco-actions');
   (target||$('growth-control-home')).append($('growth-control'));}
 function growthControls(){const enabled=!!MI.info&&growthEnabled(),details=$('growth-settings');
@@ -93,19 +94,22 @@ function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.sta
   const workers=scrPool(jobs.length),request=SIMQ.requestId=(SIMQ.requestId||0)+1;let done=false;
   const finish=cut=>{if(done)return;done=true;clearTimeout(timer);state.stop=null;
     if(cut)Object.defineProperty(results,'incomplete',{value:true});
-    if(cut)simPoolDrop();
+    if(cut)simPoolDrop('reco',request);
     resolve(results);};
-  let timer;
+  let timer,waiting=Date.now();
   // 예선(env.screenClock)은 전체 시간 상한이 없다: 엔진 준비는 LOAD_MS, 준비된 뒤에는 팀 결과가 올 때마다 다시 재는 무진행 상한뿐(추천 예선과 같음).
   // 타이머가 예정보다 크게 늦게 돌았으면(절전·탭 동결 복귀 — 그동안 계산도 멈춤) 끝내지 않고 다시 잰다. 가려진 탭도 끊지 않는다
   const stall=env.screenClock,arm=()=>{clearTimeout(timer);
+    if(done)return;
+    if(!workers.length){waiting??=Date.now();return;}
+    if(waiting!=null){if(Number.isFinite(deadline))deadline+=Date.now()-waiting;waiting=null;}
     const due=stall?Date.now()+(stall.ready?simTeamLimit(n,'auto'):SIMQ.LOAD_MS):deadline;
     timer=setTimeout(()=>{if(stall&&(Date.now()-due>5000||(typeof document!=='undefined'&&document.hidden))){arm();return;}finish(true);},Math.max(1,due-Date.now()));};
-  const ready=()=>{if(stall&&!stall.ready&&workers.every(w=>w._ready)){stall.ready=true;arm();}};
+  const ready=()=>{if(stall&&!stall.ready&&workers.length&&workers.every(w=>w._ready)){stall.ready=true;arm();}};
   arm();ready();state.stop=()=>finish(true);
   // 작업마다 판 수를 따로 줄 수 있다(j.runs — 앞 단계 판을 다시 쓰는 예선 2차: growthStageSearch). 결과의 n 은 합친 판 수(n)
   const base=location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),options={...(env.options||simOpt(c.key)),rng_streams:true};
-  simDispatch(workers,jobs,{id:request,live:()=>!done&&GROW.id===id&&SIMQ.requestId===request,
+  simDispatch(workers,jobs,{id:request,arm:()=>{if(!workers.length||waiting!=null)arm();},assigned(){ready();arm();},live:()=>!done&&GROW.id===id&&SIMQ.requestId===request,
     msg:j=>({type:'run',base,stage:c.key+'/'+st.tab+'/'+st.name,n_runs:j.runs||n,seed,options,
       teams:[{key:j.id,party:j.party,options:j.options}]}),
     stage(w,m){if(m.msg==='준비 끝'){SIMQ.loaded=true;ready();}},

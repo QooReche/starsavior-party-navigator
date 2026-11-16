@@ -85,9 +85,12 @@ async function workerContract(){const ui=fs.readFileSync(require.resolve('../gro
   const r=await ctx.growthEvaluate(jobs,4,17011,{key:'op'},{tab:'a',name:'stage'},1,Date.now()+1000);
   assert.equal(Object.keys(r).length,3);assert.equal(r.j0.progs.length,4);assert.equal(r.j0.via.coop,1);assert.equal(peak,3);
   const partial=await ctx.growthEvaluate([{id:'slow',party:{}}],100,900001,{key:'op'},{tab:'a',name:'b'},1,Date.now()+30);
-  assert.equal(partial.slow.n,100);assert(partial.incomplete);assert.equal(active,0,'deadline closes worker, retaining completed teams');
+  assert.equal(partial.slow.n,100);assert(partial.incomplete);assert.equal(active,2,'deadline closes its lease; two idle workers from the preceding request remain reusable');
+  assert.equal(vm.runInContext('SIMPOOL.workers.filter(w=>w._lease).length',ctx),0,'timed-out lease must be released');
   const cancelled=ctx.growthEvaluate([{id:'slow',party:{}}],100,900001,{key:'op'},{tab:'a',name:'b'},1,Date.now()+1000);
-  ctx.GROW.id++;ctx.GROW.stop();const stopped=await cancelled;assert.equal(Object.keys(stopped).length,0);assert.equal(active,0);
+  ctx.GROW.id++;ctx.GROW.stop();const stopped=await cancelled;assert.equal(Object.keys(stopped).length,0);assert.equal(active,1,'individual cancellation preserves the unrelated idle worker');
+  assert.equal(vm.runInContext('SIMPOOL.workers.filter(w=>w._lease).length',ctx),0);
+  ctx.simPoolDrop('reco');assert.equal(active,0,'whole recommendation cancellation releases its remaining idle pool');
 }
 (async()=>{signature();guild();triples();await scheduling();await guildSchedule();await workerContract();
   for(const [name,from,to,test] of [

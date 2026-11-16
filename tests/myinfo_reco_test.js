@@ -31,7 +31,7 @@ const tests={
     const start=html.indexOf('function simParty('),end=html.indexOf('// 표시 상태',start);
     const profile=M.profile(info,roster,growth,'op'),keys=['1001','1002','1003','missing'];
     const finals=M.team(keys,profile,k=>k),sv=Object.fromEntries(keys.map(k=>[k,[0,100,1000,50,100,10000]]));
-    const ctx=vm.createContext({arrangeOf:()=>({order:keys,lead:'1002'}),QK:{d:{sv}},Quick:Q,ekey:k=>k,
+    const ctx=vm.createContext({DirectParty:require('../direct_party'),arrangeOf:()=>({order:keys,lead:'1002'}),QK:{d:{sv}},Quick:Q,ekey:k=>k,
       contents:[{key:'op'}],$:()=>({value:0}),rkOf:()=>0,starOf:()=>0,SIMQ:{n:100},MODE:'auto',miMode:()=>true,MI:{hash:'first'},teamBreak:()=>null});
     vm.runInContext(html.slice(start,end),ctx);ctx.t={combo:[],ek:keys,base:40000,b:finals};ctx.st={tab:'x',name:'y'};
     const party=JSON.parse(JSON.stringify(vm.runInContext('simParty(t)',ctx)));
@@ -43,7 +43,7 @@ const tests={
   sim_power(){const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
     // Keep the original power/penalty contract on its original input.
     const keys=['1001','1002','1003','1005'],profile=M.profile(require('./fixtures/myinfo_legacy.json'),roster,growth,'op');
-    const ctx=vm.createContext({arrangeOf:()=>({order:keys,lead:'1001'}),ekey:k=>k,Quick:Q,
+    const ctx=vm.createContext({DirectParty:require('../direct_party'),arrangeOf:()=>({order:keys,lead:'1001'}),ekey:k=>k,Quick:Q,
       QK:{d:{sv:Object.fromEntries(keys.map(k=>[k,[0,100,1000,50,100,10000]]))}},
       t:{ek:keys,base:40000,b:M.team(keys,profile,k=>k)}});
     vm.runInContext(html.slice(html.indexOf('function simParty('),html.indexOf('const simSigB=')),ctx);

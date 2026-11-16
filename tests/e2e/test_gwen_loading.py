@@ -42,7 +42,7 @@ def check_scene(page, mode, scope='#out', reduced=False, cause='other', art=None
     if reduced or mode not in ('report', 'long'):
         assert animation == 'none', animation
     elif mode == 'long':
-        assert animation == 'gwen-hop', animation
+        assert animation == 'none', animation  # bounded traveler transform is audited in test_wide_gwen
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), '가로 넘침'
 
 
@@ -71,7 +71,7 @@ def error_wiring_audit(page):
 
 
 def exercise(page, base, width, shots):
-    page.goto(base + '/index.html?season=force', wait_until='networkidle')
+    page.goto(base + '/index.html?season=force&pm=reco', wait_until='networkidle')
     page.wait_for_function('typeof Ux!=="undefined" && typeof SIMQ!=="undefined"')
     page.wait_for_timeout(1000)  # quick.json 완료 뒤 예약된 첫 화면 갱신까지 기다림.
     welcome = page.locator('[data-k="miguide"] .gwen-guide-art')
@@ -138,7 +138,7 @@ def exercise(page, base, width, shots):
         if mode == 'long':
             shot('reduced')
             # reduced-motion 규칙을 실제로 무효화하면 같은 검사가 실패해야 함.
-            style = page.add_style_tag(content='.gwen-work .gwen-worker{animation:gwen-report 1s infinite!important}')
+            style = page.add_style_tag(content='#out .gwen-work .gwen-worker{animation:gwen-report 1s infinite!important}')
             try:
                 check_scene(page, mode, reduced=True)
             except AssertionError:

@@ -55,24 +55,25 @@ def idle_audit(page):
     page.clock.run_for(48000)
     assert expression(scene)=='doze','idle did not doze'
     page.keyboard.press('Shift')
-    assert expression(scene)=='ready','input did not wake idle'
+    assert expression(scene)=='wake','input did not wake idle'
+    page.clock.run_for(1600)
     button.focus()
     assert button.evaluate('(e)=>getComputedStyle(e).outlineStyle')!='none','focus ring missing'
     page.keyboard.press('Enter')
     assert expression(scene)=='shy','Enter click missing'
     assert scene.locator('[role=status]').inner_text(),'click feedback absent'
-    # Holding Enter produces one native click, repeated keydown must not count.
+    # A held key counts once; three separate clicks reach cry, then ten seconds lock.
     page.keyboard.down('Enter');page.keyboard.down('Enter');page.keyboard.up('Enter')
-    assert expression(scene)=='shy','keyboard autorepeat counted'
+    assert expression(scene)=='sulk','keyboard autorepeat counted'
     page.keyboard.press('Space')
-    assert expression(scene)=='sulk','third click must sulk'
-    button.click();button.click()
-    assert expression(scene)=='cry','fifth click must cry'
-    page.clock.run_for(3100)
+    assert expression(scene)=='cry','third click must cry'
+    button.click();assert expression(scene)=='cry','poke lock missing'
+    page.clock.run_for(1600)
     assert expression(scene)=='ready','reaction did not restore'
-    button.click();page.clock.run_for(2100);button.click();button.click()
-    assert expression(scene)=='shy','click time window exceeded'
-    page.clock.run_for(3100)
+    button.click();assert expression(scene)=='ready','ten-second lock missing'
+    page.clock.run_for(8500)
+    button.click();assert expression(scene)=='shy'
+    page.clock.run_for(1600)
     # Visible time only: hidden time cannot consume idle or dialogue deadlines.
     page.evaluate('$("out").hidden=true')
     page.clock.run_for(90000)
@@ -128,7 +129,7 @@ def result_audit(page):
     }''')
     loaded(page,'#out [data-gwen=report] img')
     assert expression(page.locator('#out [data-gwen=report]'))=='cry','shown result must drive report'
-    assert page.locator('#out [data-gwen-reaction]').get_attribute('data-gwen-reaction')=='notes'
+    assert page.locator('#out [data-gwen-reaction]').get_attribute('data-gwen-reaction') in ['notes','st_cry']
     page.clock.run_for(600)
     page.evaluate('__paintReport()');page.clock.run_for(1300)
     assert page.locator('#out [data-gwen=report]').count()==0,'rerender restarted report lifetime'
@@ -297,9 +298,9 @@ def touch_audit(page):
     scene=idle(page);page.get_by_role('button',name='그웬 부르기').tap()
     assert expression(scene)=='shy'
     page.get_by_role('button',name='그웬 부르기').tap()
-    assert expression(scene)=='shy','pointer+click double counted'
+    assert expression(scene)=='sulk','pointer+click double counted'
     page.get_by_role('button',name='그웬 부르기').tap()
-    assert expression(scene)=='sulk'
+    assert expression(scene)=='cry'
 
 
 def main():

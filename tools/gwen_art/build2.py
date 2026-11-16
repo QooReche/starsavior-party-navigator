@@ -7,6 +7,8 @@ import argparse
 import json
 from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw, ImageOps
+import sleeve7
+import sleeve8
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'assets/ui_icons/gwen'
@@ -65,6 +67,9 @@ def old_frames(name):
 
 
 def encode(name, frames, size, duration, loop, static=True):
+    if name == 'notes':
+        assert size == 240
+        return sleeve8.encode(OUT, duration, loop, static)
     frames = [f.resize((size,size),R) for f in frames]
     if static:
         png=frames[0].quantize(colors=256,method=Image.Quantize.FASTOCTREE,dither=Image.Dither.NONE).convert('RGBA')
@@ -121,6 +126,7 @@ def main():
     for name,count in NEW.items():
         src=Image.open(MASTERS/(name+'.webp')).convert('RGBA')
         parts=cells(src,count)
+        parts=sleeve7.apply(name,parts)
         if name=='walk':
             frames[name]=encode(name,parts,160,[300]*4,0)
         else:

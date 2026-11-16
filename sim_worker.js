@@ -7,11 +7,11 @@
 // Pyodide 0.26.4 는 외부 CDN 이 아니라 이 사이트의 lib/pyodide/ 에서 받는다(같은 주소 = 바깥 서버 의존 없음, 해시 lib/pyodide/SHA256SUMS)
 const PYODIDE=new URL("lib/pyodide/",self.location.href).href;
 let ready=null,fns=null;
-async function boot(base){
- postMessage({type:"stage",msg:"계산 엔진 내려받는 중(처음 한 번)"});
+async function boot(base,send=postMessage){
+ send({type:"stage",msg:"계산 엔진 내려받는 중(처음 한 번)"});
  importScripts(PYODIDE+"pyodide.js");
  const p=await loadPyodide({indexURL:PYODIDE});
- postMessage({type:"stage",msg:"전투 데이터 내려받는 중"});
+ send({type:"stage",msg:"전투 데이터 내려받는 중"});
  const response=await fetch(base+"sim/manifest.json",{cache:"no-cache"});
  if(!response.ok)throw new Error("manifest HTTP "+response.status);
  const man=await response.json();
@@ -27,11 +27,12 @@ os.environ['PN_SRC'] = '/repo'
 sys.path.insert(0, '/repo')
 from battlesim.web import run_auto
 `);
- postMessage({type:"stage",msg:"준비 끝"});
+ send({type:"stage",msg:"준비 끝"});
  return {p,ver:man.ver}}
 onmessage=async e=>{const m=e.data;
+ const send=data=>postMessage({...data,id:m.id,requestId:m.requestId,owner:m.owner,revision:m.revision,job:m.job,jobId:m.jobId});
  try{
-  if(!ready)ready=boot(m.base);
+  if(!ready)ready=boot(m.base,send);
   const {p,ver}=await ready;
   if(m.type!=="run")return;
   if(!fns)fns={run:p.globals.get("run_auto")};   // battlesim/web.py — 오토 기준만(11/14 수동 모드 제거)
@@ -40,10 +41,23 @@ onmessage=async e=>{const m=e.data;
    const opts=Object.assign({},m.options||{},t.options||{});
    if(m.options?.rules_override||t.options?.rules_override)opts.rules_override=Object.assign({},m.options?.rules_override,t.options?.rules_override);
    const ex=JSON.stringify(opts);
-   postMessage({type:"stage",id:m.id,job:m.job,msg:`시뮬 ${i+1}/${m.teams.length}팀 (${m.n_runs}판)`});
+   send({type:"stage",msg:`시뮬 ${i+1}/${m.teams.length}팀 (${m.n_runs}판)`});
    const party=p.toPy(t.party);let res;
+   // Observe completed battles only for DIRECT. The engine, RNG, aggregation and
+   // recommendation call path stay unchanged. Restore the method even on failure.
+   let completed=0;
+   if(m.progress){p.globals.set('_pn_progress',()=>send({type:'stage',completed:++completed,total:m.n_runs,msg:'계산 중'}));
+    p.runPython(`
+from battlesim.api import Battle as _pn_battle
+_pn_original_run = _pn_battle.run
+def _pn_observed_run(self):
+    result = _pn_original_run(self)
+    _pn_progress()
+    return result
+_pn_battle.run = _pn_observed_run
+`);}
    try{res=Object.assign(JSON.parse(run(m.stage,party,m.n_runs,m.seed,ex)),{ver});
-   }finally{if(party&&party.destroy)party.destroy()}
-   postMessage({type:"team",id:m.id,job:m.job,key:t.key,result:res})}
-  postMessage({type:"done",id:m.id,job:m.job})
- }catch(err){postMessage({type:"error",id:m.id,job:m.job,msg:String(err&&err.message||err).slice(-400)})}};
+   }finally{if(m.progress){p.runPython('_pn_battle.run = _pn_original_run');p.globals.delete('_pn_progress');}if(party&&party.destroy)party.destroy()}
+   send({type:"team",key:t.key,result:res})}
+  send({type:"done"})
+ }catch(err){send({type:"error",msg:String(err&&err.message||err).slice(-400)})}};

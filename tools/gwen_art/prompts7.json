@@ -1,0 +1,41 @@
+{
+  "tool": "built-in image_gen",
+  "transparent_background": true,
+  "max_calls_per_asset": 2,
+  "start_commit": "29e69fd",
+  "calls": [
+    {
+      "name": "st_point",
+      "attempt": 1,
+      "prompt": "Use case: precise-object-edit. Image 1 is the EDIT TARGET: a three-cell horizontal transparent sprite sheet, each cell 320x320, overall 960x320. Image 2 is costume reference ONLY. Preserve all original pixels except the broken white sleeve band specified below. Preserve exact canvas, cell alignment, character silhouette, face, hair, facial expressions, gloves, cuffs, torso, palette and every pose. Edit ONLY the broken band on the outer face of the forearm that crosses the waist in front. Extend the existing broad white band seamlessly along the visible outer sleeve all the way to immediately before the wrist frill. No blue gap and no pointed dead-end halfway along the visible forearm. Follow the cloth bend and existing subtle gray-white shading and thin gold piping. Do NOT paint stripes on inward-facing raised sleeves or across gloves. Keep transparent background. Output the same three-cell sheet with the same character position in each cell. For this st_point target: repair the VIEWER RIGHT arm, which drops from right shoulder then bends LEFT horizontally across waist. Its stripe currently stops at mid forearm; extend it LEFT across the remaining blue forearm to the cuff beside the glove at center-left. Do this identically for all three cells. Leave the raised pointing arm on VIEWER LEFT untouched.",
+      "reference_paths": [
+        "_tmp/art7/st_point-target.png",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "saved": "_tmp/art7/st_point-edit.png",
+      "source": "<codex-image-cache>/01a1e34d-1256-7e53-8935-84332315731a/exec-166540aa-00a2-4636-b40a-f79e6606437d.png"
+    },
+    {
+      "name": "st_sulk",
+      "attempt": 1,
+      "prompt": "Use case: precise-object-edit. Image 1 is the EDIT TARGET: a three-cell horizontal transparent sprite sheet, each cell 320x320, overall 960x320. Image 2 is costume reference ONLY. Preserve all original pixels except the broken white sleeve band specified below. Preserve exact canvas, cell alignment, character silhouette, face, hair, facial expressions, gloves, cuffs, torso, palette and every pose. Edit ONLY the broken band on the outer face of the forearm that crosses the waist in front. Extend the existing broad white band seamlessly along the visible outer sleeve all the way to immediately before the wrist frill. No blue gap and no pointed dead-end halfway along the visible forearm. Follow the cloth bend and existing subtle gray-white shading and thin gold piping. Do NOT paint stripes on inward-facing raised sleeves or across gloves. Keep transparent background. Output the same three-cell sheet with the same character position in each cell. For this st_sulk target: repair the FOREGROUND crossed arm running from VIEWER LEFT elbow diagonally upward/right toward the white wrist frill near center-right chest. Its white outer upper-arm band currently ends in a pointed triangle at the left elbow. Continue that SAME band around the elbow and along the visible outer face of foreground forearm until immediately before its wrist frill. Keep the band broad about 20-25% of sleeve width and consistent with the upper arm. The other arm behind it must keep its existing band, naturally occluded by the front arm. All three cells.",
+      "reference_paths": [
+        "_tmp/art7/st_sulk-target.png",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "saved": "_tmp/art7/st_sulk-edit.png",
+      "source": "<codex-image-cache>/01a1e34d-1256-7e53-8935-84332315731a/exec-322866ab-d233-48f0-adc8-c06fdbffd494.png"
+    },
+    {
+      "name": "thoughtful",
+      "attempt": 1,
+      "prompt": "Use case: precise-object-edit. Input image is the EDIT TARGET, a two-cell horizontal transparent sprite sheet of Gwen, 640x320. Modify ONLY the narrow incorrect white diagonal stripe on the INNER raised forearm in the SECOND (right-hand) cell with closed eyes. This thin white line runs from the cuff of the hand at her chin down-left toward the elbow on VIEWER LEFT of that cell. Remove this thin diagonal INNER stripe by restoring plain royal-blue sleeve fabric with matching shading. Keep the broad OUTER white stripe along the far left silhouette of that sleeve, and the broad outer stripe of the arm at her hip, unchanged. Do NOT remove or alter any cuff frills. The FIRST (left-hand) cell is already correct and must be untouched. Preserve both faces, eyes, hair, gloves, hands, shoulder epaulettes, outer bands, torso, silhouettes, exact cell alignment and all transparency. No regeneration of the character. Same two-cell sheet, change only the thin inner sleeve stripe in cell 2.",
+      "reference_paths": [
+        "tools/gwen_art/masters2/thoughtful.webp"
+      ],
+      "saved": "_tmp/art7/thoughtful-edit.png",
+      "source": "<codex-image-cache>/01a1e34d-1256-7e53-8935-84332315731a/exec-74aa79c8-5fae-4f14-afd3-81421d4acc31.png"
+    }
+  ],
+  "compositing": "Only generated sleeve pixels inside explicit polygons. Reuse selected first-cell sleeve with offsets point=(0,0),(-1,0); sulk=(0,0),(18,2),(0,0). Point closed-eye source uses its edited third cell; shipping blink takes only eyes and keeps the base sleeve. Preserve original alpha and all source pixels outside masks. PNG retains original palette outside sleeve; animation uses existing lossy quality=88 encoder."
+}

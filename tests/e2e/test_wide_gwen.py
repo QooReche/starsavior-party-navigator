@@ -65,21 +65,22 @@ def loading_audit(page, reduced=False, scope='#out'):
         centered(page, w+' .gwen-scene', w+' .gwen-track')
         assert page.locator(w+' img').evaluate('(i)=>i.currentSrc.endsWith(".png")')
     else:
-        for selector in ('.gwen-traveler', '.gwen-scene', '.gwen-worker'):
-            assert page.locator(w+' '+selector).evaluate('(e)=>getComputedStyle(e).animationName') != 'none'
-        pause_roam(page, 1800)
+        traveler=page.locator(w+' .gwen-traveler')
+        body,track=page.locator(w+' .gwen-scene').bounding_box(),page.locator(w+' .gwen-track').bounding_box()
+        assert body['x']>=track['x']-.5 and body['x']+body['width']<=track['x']+track['width']+.5, 'Gwen left reserved track'
+        page.wait_for_function('(e)=>e.getAnimations().some(a=>a.effect.getTiming().duration<=600)',arg=traveler.element_handle())
+        # The production controller now uses bounded transform segments, not a 12s left animation.
+        details=traveler.evaluate('''e=>{const a=e.getAnimations()[0];a.pause();a.currentTime=0;
+          return {duration:a.effect.getTiming().duration,frames:a.effect.getKeyframes()}}''')
+        assert 0<details['duration']<=600
+        assert all('transform' in f and 'left' not in f for f in details['frames'])
         a = page.locator(w+' .gwen-scene').bounding_box()
         caption = page.locator(w+' .gwen-caption').bounding_box()
-        pause_roam(page, 5000)
+        traveler.evaluate('e=>{const a=e.getAnimations()[0];a.currentTime=a.effect.getTiming().duration}')
         b = page.locator(w+' .gwen-scene').bounding_box()
-        assert b['x'] > a['x'] + 30, (a,b)
+        assert 1<abs(b['x']-a['x'])<=36.1, (a,b)
         assert caption == page.locator(w+' .gwen-caption').bounding_box(), 'caption moved'
         assert b['y']+b['height'] <= caption['y'], 'Gwen overlaps caption'
-        pause_roam(page, 6600)
-        assert page.locator(w+' .gwen-scene').evaluate('(e)=>getComputedStyle(e).transform').startswith('matrix(-1'), 'direction did not flip'
-        c = page.locator(w+' .gwen-scene').bounding_box()
-        pause_roam(page, 6900)
-        assert c == page.locator(w+' .gwen-scene').bounding_box(), 'inspection pause missing'
     fits(page)
 
 
@@ -100,7 +101,7 @@ def result_audit(page, width):
 
 
 def exercise(page, base, width, shots):
-    page.goto(base+'/index.html?season=force',wait_until='networkidle')
+    page.goto(base+'/index.html?season=force&pm=reco',wait_until='networkidle')
     page.wait_for_function('window._ready')
     page.wait_for_timeout(700)
     wide(page,width)
@@ -119,11 +120,11 @@ def exercise(page, base, width, shots):
     shot('loading')
     if width==1280:
         mutation(page,'.gwen-work{align-items:flex-start!important}',lambda:loading_audit(page))
-        mutation(page,'.gwen-roam .gwen-traveler{animation:none!important}',lambda:loading_audit(page))
+        mutation(page,'.gwen-roam .gwen-traveler{transform:translateX(-999px)!important}',lambda:loading_audit(page))
     page.emulate_media(reduced_motion='reduce')
     loading_audit(page,True)
     if width==1280:
-        mutation(page,'.gwen-roam .gwen-traveler{animation:gwen-roam 12s infinite!important}',lambda:loading_audit(page,True))
+        mutation(page,'#out .gwen-roam .gwen-traveler{animation:gwen-roam 12s infinite!important}',lambda:loading_audit(page,True))
     page.emulate_media(reduced_motion='no-preference')
     # Files stay centered, while progress and cancellation nodes survive updates.
     page.evaluate('''() => {SIMQ.screening=true;SIMQ.scr[scrKey(__loadSt,1)]={got:3,left:80};
@@ -168,7 +169,7 @@ def exercise(page, base, width, shots):
         fits(page)
         page.evaluate(f'$("{kind}-search").hidden=true')
     # A full synthetic roster exercises the actual responsive card grid.
-    page.goto(base+'/index.html',wait_until='networkidle')
+    page.goto(base+'/index.html?pm=reco',wait_until='networkidle')
     page.evaluate('(info)=>miApply(info,{shared:true})',__import__('json').loads(Path(FULL).read_text(encoding='utf-8')))
     wait_myinfo(page)
     page.evaluate('miTab(true)')
@@ -200,7 +201,7 @@ def main():
             if args.video:
                 context=browser.new_context(viewport={'width':1280,'height':850},record_video_dir=str(TMP/'roam-video'),record_video_size={'width':1280,'height':850})
                 page=context.new_page()
-                page.goto(base+'/index.html',wait_until='networkidle')
+                page.goto(base+'/index.html?pm=reco',wait_until='networkidle')
                 page.wait_for_function('window._ready')
                 page.evaluate('''() => {SIMQ.auto=false;SIMQ.kick=false;localStorage.setItem('pn.simauto','0');REQ=true;RECO.standard=true;document.querySelectorAll('#own input').forEach((x,i)=>x.checked=i<8);updCount();run(true);SIMQ.busy=1;SIMQ.loaded=true;growthControlPlace(true);$('out').innerHTML=simProgress(cur[$('stage').value]);$('out').scrollIntoView({block:'center'});}''')
                 page.wait_for_timeout(12500)

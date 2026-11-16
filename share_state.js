@@ -1,9 +1,12 @@
 // Public view state only. Never serialize account data or owned saviors.
 (function(root){
   "use strict";
+  const Direct=typeof module!=="undefined"&&module.exports?require('./direct_party'):root.DirectParty;
   const growths=["1","0.8","1.25","manual","myinfo"];
   function parse(search,contents,breakKeys){
     const q=new URLSearchParams(search),out={};
+    if(['home','reco','direct'].includes(q.get('pm')))out.pm=q.get('pm');
+    if(q.has('dp')&&q.get('dp').length<4096){try{const d=JSON.parse(q.get('dp'));if(d?.v===Direct.VERSION){out.dp=Direct.share(d);out.pm||='direct';}}catch(e){}}
     if(q.has("c")||q.has("s")){
       const c=contents.find(c=>c.key===q.get("c"))||contents[0];
       out.c=c.key;
@@ -24,6 +27,8 @@
   }
   function stringify(state){
     const q=new URLSearchParams();
+    if(['home','reco','direct'].includes(state.pm))q.set('pm',state.pm);
+    if(state.dp)q.set('dp',JSON.stringify(Direct.share(state.dp)));
     for(const key of ["c","s","g","rk"])if(state[key]!=null)q.set(key,String(state[key]));
     for(const key of ['ag','ao'])if(typeof state[key]==='boolean')q.set(key,state[key]?'1':'0');
     if(state.g==="manual"&&Number.isSafeInteger(state.p)&&state.p>0&&state.p<1e12)q.set("p",String(state.p));

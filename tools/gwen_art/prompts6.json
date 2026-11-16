@@ -1,0 +1,263 @@
+{
+  "status": "generated and visually reviewed; selected normalized masters saved for API-free rebuild",
+  "tool": "built-in image_gen",
+  "transparent_background": true,
+  "style_references": [
+    "official_cry_podium.png",
+    "assets/savior/gwen_art.webp",
+    "story_s_039120.jpg",
+    "story_s_040560.jpg",
+    "PM-approved st_cry (face/style only)"
+  ],
+  "costume_reference": "play_p_017.jpg",
+  "excluded_style_references": [
+    "confident",
+    "thoughtful",
+    "notes"
+  ],
+  "shared_prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.",
+  "poses": {
+    "confident": "TWO cells. Reassuring confident smile, white-gloved THUMBS UP beside shoulder. Cell 1 golden eyes open. Cell 2 small playful wink and thumb raised slightly. Same identity and posture.",
+    "thoughtful": "TWO cells. Thoughtful concerned face, gloved index finger resting at chin, eyes looking slightly to viewer left. Cell 1 eyes open; cell 2 soft contemplative eye closure and very slight head tilt, finger stays at chin.",
+    "notes": "TWO cells. Mildly flustered determined face with one small sweat bead at temple, one hand holding a small blank memo pad at chest, other writing with a pencil. Cell 1 worried eyes open, pencil at start of stroke; cell 2 pencil moves subtly, eyes briefly close, same sweat and posture.",
+    "st_verdict": "THREE cells. Smug self-assured small asymmetrical closed-mouth fufu smile, half-lidded eyes. One hand on hip. Other holds SHORT THIN BLACK RIDING CROP with RED HANDLE, points toward viewer in foreshortening. Cell 1 elbow bent, cell 2 extend same arm toward viewer, cell 3 exact cell 1 with both eyes closed. Pointer only, no striking, no target.",
+    "st_cheer": "THREE cells. Broad delighted open-mouth smile. HER LEFT arm on VIEWER RIGHT raised by head, other hand on hip. Cell 1 elbow bent and fist beside head, cell 2 SAME arm extends higher above head, cell 3 exact cell 1 except both eyes closed. Leave room above for entire raised fist, head remains large.",
+    "st_ok": "THREE cells. Friendly smile and BOTH hands forming clear OK circles with thumb and index finger by shoulders, other three fingers extended naturally. Cell 1 base, cell 2 same hands tilt outward in subtle double wave, cell 3 exact cell 1 except eyes closed. Transparent holes between fingers.",
+    "st_point": "THREE cells. Serious explaining face, small neutral mouth. HER RIGHT hand on VIEWER LEFT raises index finger, other arm rests across waist. Cell 1 finger upright, cell 2 finger inclines subtly with small knuckle bend, cell 3 exact cell 1 except both eyes closed. Head and torso fixed.",
+    "st_shy": "THREE cells. Bashful gentle small smile, pale pink blush, hands lightly clasped at lower chest. Cell 1 facing viewer, cell 2 head bows slightly with eyes looking down, cell 3 exact cell 1 except both eyes closed.",
+    "st_sulk": "THREE cells. Puffed cheeks, small pursed lips, sideways annoyed golden-eyed glance, folded arms. Cell 1 head slightly turned viewer left; cell 2 turn head a little farther same direction, pin remains viewer right; cell 3 exact cell 1 except both eyes closed.",
+    "st_wink": "THREE cells. Doyagao proud self-satisfied smile, visibly lift chin and tilt face BACK approximately {selected_angle} degrees, half-lidded eyes looking DOWN toward viewer. One hand on hip, other near chest. Face remains round and large; avoid nostril view. Cell 1 both eyes open; cell 2 identical except VIEWER RIGHT eye winks, left eye stays open; cell 3 identical except both eyes close. Absolutely fixed head, mouth, body and hands across all cells.",
+    "st_zap": "THREE cells. Mischievous closed-mouth asymmetrical fufu smile, half-lidded golden eyes. One hand at waist, other holding BLACK RECTANGULAR STUN GUN by HER RIGHT shoulder on VIEWER LEFT, red top terminals and tiny blue-white sparks between terminals. Cell 1 small sparks; cell 2 EXACT same face/hands/device/body, only spark branches brighten; cell 3 exact cell 1 except both eyes close. No tongue, no target, no contact, no violence.",
+    "st_welcome": "THREE cells. Warm open-mouth welcome smile. HER LEFT hand on VIEWER RIGHT raised beside head, open palm with five natural fingers; other hand by waist. Cell 1 base wave; cell 2 same hand tilts outward at wrist, shoulder/elbow/head remain fixed; cell 3 exact cell 1 except both eyes closed."
+  },
+  "max_calls_per_asset": 2,
+  "calls": [
+    {
+      "name": "confident",
+      "attempt": 1,
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTWO cells. Reassuring confident smile, white-gloved THUMBS UP beside shoulder. Cell 1 golden eyes open. Cell 2 small playful wink and thumb raised slightly. Same identity and posture.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-3217b9f8-9031-49fc-8efe-b3a61a851bee.png",
+      "saved": "_tmp/art6/generated/confident.png"
+    },
+    {
+      "name": "thoughtful",
+      "attempt": 1,
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTWO cells. Thoughtful concerned face, gloved index finger resting at chin, eyes looking slightly to viewer left. Cell 1 eyes open; cell 2 soft contemplative eye closure and very slight head tilt, finger stays at chin.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-4c89ea98-8b78-46e3-bb3a-2c3802141940.png",
+      "saved": "_tmp/art6/generated/thoughtful.png"
+    },
+    {
+      "name": "notes",
+      "attempt": 1,
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTWO cells. Mildly flustered determined face with one small sweat bead at temple, one hand holding a small blank memo pad at chest, other writing with a pencil. Cell 1 worried eyes open, pencil at start of stroke; cell 2 pencil moves subtly, eyes briefly close, same sweat and posture.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-9c5e202f-2ed5-4d51-b49d-d58d32028b2d.png",
+      "saved": "_tmp/art6/generated/notes.png"
+    },
+    {
+      "name": "st_verdict",
+      "attempt": 1,
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTHREE cells. Smug self-assured small asymmetrical closed-mouth fufu smile, half-lidded eyes. One hand on hip. Other holds SHORT THIN BLACK RIDING CROP with RED HANDLE, points toward viewer in foreshortening. Cell 1 elbow bent, cell 2 extend same arm toward viewer, cell 3 exact cell 1 with both eyes closed. Pointer only, no striking, no target.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-77287613-73c9-4537-91d3-303adc6a0795.png",
+      "saved": "_tmp/art6/generated/st_verdict.png"
+    },
+    {
+      "name": "st_cheer",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTHREE cells. Broad delighted open-mouth smile. HER LEFT arm on VIEWER RIGHT raised by head, other hand on hip. Cell 1 elbow bent and fist beside head, cell 2 SAME arm extends higher above head, cell 3 exact cell 1 except both eyes closed. Leave room above for entire raised fist, head remains large.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-722652fe-98fc-49f4-af91-b050dd7d41a4.png",
+      "saved": "_tmp/art6/generated/st_cheer-1.png"
+    },
+    {
+      "name": "thoughtful",
+      "attempt": 2,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-45d10e2a-74c8-4b47-9cb3-e1958903d9e8.png",
+      "saved": "_tmp/art6/generated/thoughtful-edit.png",
+      "prompt": "Use case: precise-object-edit. Edit only the white stripe on the bent forearm on VIEWER LEFT in BOTH cells. The white stripe currently runs from elbow diagonally toward hand at chin on the torso-facing surface: REMOVE that entire forearm stripe and its gold border and fill with matching softly shaded royal blue cloth. Keep the broad white band on the outer UPPER arm left of elbow, and the outer band on the opposite arm. Inner forearm must be plain blue. Preserve both faces, all hair, eyes, pose, hands, costume elsewhere, transparency and two-cell layout exactly.",
+      "reference_paths": [
+        "_tmp/art6/generated/thoughtful.png"
+      ]
+    },
+    {
+      "name": "st_ok",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTHREE cells. Friendly smile and BOTH hands forming clear OK circles with thumb and index finger by shoulders, other three fingers extended naturally. Cell 1 base, cell 2 same hands tilt outward in subtle double wave, cell 3 exact cell 1 except eyes closed. Transparent holes between fingers.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-07b4c1ba-70dd-4e4b-9f44-45d5b1012400.png",
+      "saved": "_tmp/art6/generated/st_ok-1.png"
+    },
+    {
+      "name": "st_point",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTHREE cells. Serious explaining face, small neutral mouth. HER RIGHT hand on VIEWER LEFT raises index finger, other arm rests across waist. Cell 1 finger upright, cell 2 finger inclines subtly with small knuckle bend, cell 3 exact cell 1 except both eyes closed. Head and torso fixed.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-e16c1f67-63be-418d-a927-06a5e7016f3c.png",
+      "saved": "_tmp/art6/generated/st_point-1.png"
+    },
+    {
+      "name": "st_shy",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTHREE cells. Bashful gentle small smile, pale pink blush, hands lightly clasped at lower chest. Cell 1 facing viewer, cell 2 head bows slightly with eyes looking down, cell 3 exact cell 1 except both eyes closed.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-d22f90f6-bb55-45a3-84ef-f13672363a22.png",
+      "saved": "_tmp/art6/generated/st_shy-1.png"
+    },
+    {
+      "name": "st_sulk",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTHREE cells. Puffed cheeks, small pursed lips, sideways annoyed golden-eyed glance, folded arms. Cell 1 head slightly turned viewer left; cell 2 turn head a little farther same direction, pin remains viewer right; cell 3 exact cell 1 except both eyes closed.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-9f182733-aaea-49d7-be53-f67b53b2d1f7.png",
+      "saved": "_tmp/art6/generated/st_sulk-1.png"
+    },
+    {
+      "name": "st_zap",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTHREE cells. Mischievous closed-mouth asymmetrical fufu smile, half-lidded golden eyes. One hand at waist, other holding BLACK RECTANGULAR STUN GUN by HER RIGHT shoulder on VIEWER LEFT, red top terminals and tiny blue-white sparks between terminals. Cell 1 small sparks; cell 2 EXACT same face/hands/device/body, only spark branches brighten; cell 3 exact cell 1 except both eyes close. No tongue, no target, no contact, no violence.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-faa10d8c-2807-4db8-a9d7-7acc18cba8c0.png",
+      "saved": "_tmp/art6/generated/st_zap-1.png"
+    },
+    {
+      "name": "st_welcome",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTHREE cells. Warm open-mouth welcome smile. HER LEFT hand on VIEWER RIGHT raised beside head, open palm with five natural fingers; other hand by waist. Cell 1 base wave; cell 2 same hand tilts outward at wrist, shoulder/elbow/head remain fixed; cell 3 exact cell 1 except both eyes closed.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-71548a55-9c83-4d23-a7eb-2435da437224.png",
+      "saved": "_tmp/art6/generated/st_welcome-1.png"
+    },
+    {
+      "name": "doya10",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame. ONE square portrait, not a multi-frame sheet. Proud self-satisfied DOYAGAO: visibly tilt face BACK by approximately 10 degrees, chin clearly raised, half-lidded golden eyes looking DOWN at viewer, subtle closed-mouth confident smile, one hand on hip and the other near chest. Show a clear raised-chin angle while preserving round small-chin official face. Keep head large and readable; reject excessive nostril view or shrinking face. Same waist-up framing and pose for all angle candidates.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-dce29605-693c-4df5-a369-c7ee1071dac1.png",
+      "saved": "_tmp/art6/generated/doya10-1.png"
+    },
+    {
+      "name": "doya18",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame. ONE square portrait, not a multi-frame sheet. Proud self-satisfied DOYAGAO: visibly tilt face BACK by approximately 18 degrees, chin clearly raised, half-lidded golden eyes looking DOWN at viewer, subtle closed-mouth confident smile, one hand on hip and the other near chest. Show a clear raised-chin angle while preserving round small-chin official face. Keep head large and readable; reject excessive nostril view or shrinking face. Same waist-up framing and pose for all angle candidates.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-0d34569d-9619-4e96-a771-a322fb6efb92.png",
+      "saved": "_tmp/art6/generated/doya18-1.png"
+    },
+    {
+      "name": "doya25",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame. ONE square portrait, not a multi-frame sheet. Proud self-satisfied DOYAGAO: visibly tilt face BACK by approximately 25 degrees, chin clearly raised, half-lidded golden eyes looking DOWN at viewer, subtle closed-mouth confident smile, one hand on hip and the other near chest. Show a clear raised-chin angle while preserving round small-chin official face. Keep head large and readable; reject excessive nostril view or shrinking face. Same waist-up framing and pose for all angle candidates.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-5b46efae-6dc9-4006-afba-44a17061b39d.png",
+      "saved": "_tmp/art6/generated/doya25-1.png"
+    },
+    {
+      "name": "st_cry",
+      "prompt": "Edit only the sleeves in the existing approved st_cry sheet. Remove narrow inner-facing white stripes and add broad outer-facing white bands (20-25% sleeve width), preserving thin gold piping if present. Keep all faces, hair, tears, hands, posture, costume outside the sleeve regions and transparency unchanged. All three cells retain exact positions and dimensions. Face pixels must remain identical after masked compositing.\nUse case: precise-object-edit. Image 1 is the exact approved 960x320 three-cell sheet to edit; image 2 is sleeve placement reference only. Work at the exact original layout. On BOTH sleeves in EACH cell remove ALL white from the torso-facing inner areas. Add a broad white band along the far outer edge, facing away from the torso, below epaulette to before frilled glove cuff. At viewer left forearm white belongs on LEFT edge, at viewer right forearm white belongs on RIGHT edge. 20-25 percent of sleeve width. No other changes; especially absolutely identical faces and eyes. Preserve original alpha.",
+      "reference_paths": [
+        "tools/gwen_art/masters5/st_cry.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-a2730e29-8910-4d18-863e-6e1565a03102.png",
+      "saved": "_tmp/art6/generated/st_cry-1.png"
+    },
+    {
+      "name": "st_wink",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTHREE cells. Doyagao proud self-satisfied smile, visibly lift chin and tilt face BACK approximately 18 degrees, half-lidded eyes looking DOWN toward viewer. One hand on hip, other near chest. Face remains round and large; avoid nostril view. Cell 1 both eyes open; cell 2 identical except VIEWER RIGHT eye winks, left eye stays open; cell 3 identical except both eyes close. Absolutely fixed head, mouth, body and hands across all cells.\nCRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.\nThe final reference image is the SELECTED 18-degree pose candidate: preserve this raised-chin pose, round facial shape and half-lidded downward gaze exactly. Do not lower the chin. Three square cells in a single row, all body and head positions identical.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg",
+        "_tmp/art6/generated/doya18-1.png"
+      ],
+      "attempt": 1,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-2442a8cb-3a6e-47db-97e8-765efc97e8eb.png",
+      "saved": "_tmp/art6/generated/st_wink-1.png"
+    },
+    {
+      "name": "st_verdict",
+      "prompt": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame.\nTHREE cells. Critical pose: HER RIGHT HAND ON VIEWER LEFT holds a SHORT THIN black riding crop with red grip, aimed STRAIGHT AT THE CAMERA in strong foreshortening. Tiny narrow tip, never a large paddle. HER LEFT HAND ON VIEWER RIGHT rests on hip. Gold hair clip remains VIEWER RIGHT: DO NOT MIRROR character. Smug closed-mouth fufu smile, half-lidded golden eyes. Cell 1 elbow bent and pointing the short crop at viewer; cell 2 SAME arm extended more toward viewer, cropped foreshortened tip visibly closer. Cell 3 exact cell 1 but both eyes closed. Same scale, equal cells, stable face. CRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+      "reference_paths": [
+        "<private-ref>/official_cry_podium.png",
+        "assets/savior/gwen_art.webp",
+        "<private-ref>/play_p_017.jpg"
+      ],
+      "attempt": 2,
+      "source": "<codex-image-cache>/01a1e32f-198d-7cb0-8551-dd320515472a\\exec-9775ff97-b40a-48d5-8b69-3837b5e465f0.png",
+      "saved": "_tmp/art6/generated/st_verdict-2.png"
+    }
+  ],
+  "doya_candidates": [
+    10,
+    18,
+    25
+  ],
+  "cry_edit": "Edit only the sleeves in the existing approved st_cry sheet. Remove narrow inner-facing white stripes and add broad outer-facing white bands (20-25% sleeve width), preserving thin gold piping if present. Keep all faces, hair, tears, hands, posture, costume outside the sleeve regions and transparency unchanged. All three cells retain exact positions and dimensions. Face pixels must remain identical after masked compositing.",
+  "doya_candidate_prompts": {
+    "10": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame. ONE square portrait, not a multi-frame sheet. Proud self-satisfied DOYAGAO: visibly tilt face BACK by approximately 10 degrees, chin clearly raised, half-lidded golden eyes looking DOWN at viewer, subtle closed-mouth confident smile, one hand on hip and the other near chest. Show a clear raised-chin angle while preserving round small-chin official face. Keep head large and readable; reject excessive nostril view or shrinking face. Same waist-up framing and pose for all angle candidates.",
+    "18": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame. ONE square portrait, not a multi-frame sheet. Proud self-satisfied DOYAGAO: visibly tilt face BACK by approximately 18 degrees, chin clearly raised, half-lidded golden eyes looking DOWN at viewer, subtle closed-mouth confident smile, one hand on hip and the other near chest. Show a clear raised-chin angle while preserving round small-chin official face. Keep head large and readable; reject excessive nostril view or shrinking face. Same waist-up framing and pose for all angle candidates.",
+    "25": "Use case: stylized-concept. Transparent upper-body head-to-waist portrait animation sprite sheet of Gwen from Star Savior. Use ONLY the supplied official cry illustration, official office-chair card and story CGs for identity and painting style; game model for costume details. Match a round soft face, small short chin, half-lidded ringed GOLD irises, pale pink blush, thin delicate outlines, soft cel shading plus restrained gradients. Hair is DARK INDIGO/PURPLE NAVY (#1E1B4B to #2A2560), subtle blue-violet highlights, teal inner hair behind the ears, gold bar pin on VIEWER RIGHT. Never bright blue hair, mature sharp generic anime face, glossy highlights or chibi. Royal-blue military jacket, gold fringed epaulettes, teal neck ribbon and red diamond jewel, white layered jabot, white gloves with frilled cuffs, black double waist belt. Sleeves have ONE BROAD white band ONLY on the OUTER face away from the torso, from below shoulder to just before wrist frill, width 20-25 percent of sleeve width; no white stripes on inner sleeve or inner wrist. Thin gold piping beside the outer band may remain. Full hair and hands inset from canvas boundaries. Same scale, head/body location and waist baseline across equal square cells in ONE HORIZONTAL ROW, transparent gutters. No scene, backdrop, text, symbols, speech bubbles, watermark or ground shadow. True alpha transparency. No tongue sticking out in any frame. ONE square portrait, not a multi-frame sheet. Proud self-satisfied DOYAGAO: visibly tilt face BACK by approximately 25 degrees, chin clearly raised, half-lidded golden eyes looking DOWN at viewer, subtle closed-mouth confident smile, one hand on hip and the other near chest. Show a clear raised-chin angle while preserving round small-chin official face. Keep head large and readable; reject excessive nostril view or shrinking face. Same waist-up framing and pose for all angle candidates."
+  },
+  "sleeve_clarification": "CRITICAL: Forearms bent toward torso expose the plain BLUE inner sleeve. Do not draw white on an inward-facing forearm. Bands may be occluded or invisible, do not force them into view.",
+  "selected_doya_angle": 18
+}
