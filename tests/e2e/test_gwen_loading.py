@@ -16,7 +16,10 @@ from test_page import test_server
 from playwright.sync_api import sync_playwright, TimeoutError
 
 
-def check_scene(page, mode, scope='#out', reduced=False):
+ERROR_ART = {'calculation':'cry', 'few':'sulk', 'empty':'sulk', 'other':'surprised'}
+
+
+def check_scene(page, mode, scope='#out', reduced=False, cause='other', art=None):
     scene = page.locator(f'{scope} [data-gwen]')
     assert scene.count() == 1, (scope, scene.count())
     assert scene.get_attribute('data-gwen') == mode
@@ -25,7 +28,10 @@ def check_scene(page, mode, scope='#out', reduced=False):
     scene.locator('img').evaluate('(img)=>img.decode()')
     assert scene.locator('img').evaluate('(img)=>img.naturalWidth>0')
     assert scene.locator('.gwen-scene').bounding_box()['height'] == (120 if page.viewport_size['width'] == 360 else 140)
-    art = {'inspect':'investigate','screen':'files','long':'walk','error':'surprised','report':'report','welcome':'welcome'}[mode]
+    art = art or (ERROR_ART[cause] if mode == 'error' else
+        {'inspect':'investigate','screen':'files','long':'walk','report':'report','welcome':'welcome'}[mode])
+    assert scene.locator('img').get_attribute('data-gwen-art') == art, f'{mode}/{cause}: wrong art'
+    assert scene.locator('img').get_attribute('data-gwen-motion').endswith(art+'.webp')
     animated = mode in ('inspect','screen','long') and not reduced
     expected = '/assets/ui_icons/gwen/' + art + ('.webp' if animated else '.png')
     if reduced or mode == 'long':
@@ -38,6 +44,30 @@ def check_scene(page, mode, scope='#out', reduced=False):
     elif mode == 'long':
         assert animation == 'gwen-hop', animation
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), '가로 넘침'
+
+
+def error_wiring_audit(page):
+    page.emulate_media(reduced_motion='reduce')
+    for cause,art in ERROR_ART.items():
+        page.evaluate('(c)=>{$("out").hidden=false;$("out").innerHTML=Ux.gwenError(c)}',cause)
+        check_scene(page,'error',cause=cause,reduced=True)
+        if art == 'surprised':
+            continue
+        original=page.evaluate('(a)=>Ux.GWEN_SCENES[a]',art)
+        try:
+            page.evaluate('''([a,c])=>{Ux.GWEN_SCENES[a]={file:null,fallback:'surprised'};
+              $('out').innerHTML=Ux.gwenError(c);}''',[art,cause])
+            try:
+                check_scene(page,'error',cause=cause,reduced=True)
+            except AssertionError as error:
+                assert 'wrong art' in str(error),str(error)
+                print(f'CAUGHT error wiring rollback: {cause}/{art}',flush=True)
+            else:
+                raise AssertionError(f'error wiring rollback survived: {cause}')
+        finally:
+            page.evaluate('([a,s,c])=>{Ux.GWEN_SCENES[a]=s;$("out").innerHTML=Ux.gwenError(c)}',[art,original,cause])
+        check_scene(page,'error',cause=cause,reduced=True)
+    page.emulate_media(reduced_motion='no-preference')
 
 
 def exercise(page, base, width, shots):
@@ -124,7 +154,7 @@ def exercise(page, base, width, shots):
     check_scene(page, 'inspect')
     shot('simulation')
     page.evaluate('SIMQ.busy=null;SIMQ.err="시험 오류";SIMQ.errP=1;$("out").innerHTML=simBar(1,[],__loadSt,false)')
-    check_scene(page, 'error')
+    check_scene(page, 'error', cause='calculation')
     shot('error')
     page.evaluate('SIMQ.err="";$("out").innerHTML=simBar(1,[],__loadSt,false)')
     assert page.locator('#out [data-gwen]').count() == 0
@@ -136,11 +166,11 @@ def exercise(page, base, width, shots):
           SIMQ.res.__art_report={n:100,clear:1};
           $('out').innerHTML=__artSimBar(1,[{}],__loadSt,false);
         }''')
-        check_scene(page, 'report', reduced=reduced)
+        check_scene(page, 'report', reduced=reduced, art='cheer')
         page.wait_for_timeout(500)
         shot('report_reduced' if reduced else 'report')
         page.evaluate('$("out").innerHTML=__artSimBar(1,[{}],__loadSt,false)')
-        check_scene(page, 'report', reduced=reduced)
+        check_scene(page, 'report', reduced=reduced, art='cheer')
         page.wait_for_timeout(1900)
         assert page.locator('#out [data-gwen]').count() == 0
         page.evaluate('''() => {
@@ -194,9 +224,9 @@ def exercise(page, base, width, shots):
         assert page.evaluate(f'''__cancel===document.querySelector('{scope} button[data-{'gs' if kind=='guild' else 'cs'}="cancel"]')''')
         shot(kind, scope)
         page.evaluate(f'{state}.phase="err";{state}.msg="시험 오류";{renderer}')
-        check_scene(page, 'error', scope)
+        check_scene(page, 'error', scope, cause='other')
         page.evaluate(f'{state}.phase="done";{state}.rows=[];{renderer}')
-        check_scene(page, 'error', scope)
+        check_scene(page, 'error', scope, cause='empty')
         page.evaluate(f'{state}.phase="idle";{renderer}')
         assert page.locator(scope + ' [data-gwen]').count() == 0
         page.evaluate(f'$("{kind}-search").hidden=true')
@@ -214,7 +244,7 @@ def exercise(page, base, width, shots):
     page.locator('[data-growth-cancel]').click()
     assert page.locator('#growth-result [data-gwen]').count()==0, 'cancel is not an error'
     page.evaluate('growthNonePaint({key:"op"},{reason:"few"})')
-    check_scene(page, 'error', '#growth-result')
+    check_scene(page, 'error', '#growth-result', cause='few')
     shot('empty')
     page.evaluate('$("assume-growth").checked=false;growthPaint()')
     assert page.locator('#growth-result [data-gwen]').count() == 0
@@ -227,9 +257,10 @@ def exercise(page, base, width, shots):
     check_scene(page, 'long', '#star-link-result')
     shot('slots')
     page.evaluate('SLOT.phase="error";SLOT.msg="시험 오류";slotPaint()')
-    check_scene(page, 'error', '#star-link-result')
+    check_scene(page, 'error', '#star-link-result', cause='calculation')
     page.evaluate('SLOT.phase="idle";slotPaint()')
     assert page.locator('#star-link-result [data-gwen]').count() == 0
+    error_wiring_audit(page)
 
 
 def main():
@@ -243,6 +274,7 @@ def main():
             for width in [1280, 360]:
                 context = browser.new_context(viewport={'width': width, 'height': 850},
                     **({'record_video_dir': str(TMP / 'video'), 'record_video_size': {'width': 720, 'height': 850}} if args.video and width == 360 else {}))
+                context.add_init_script('Math.random=()=>.5')
                 page = context.new_page()
                 page.set_default_timeout(10000)
                 try:

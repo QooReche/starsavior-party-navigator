@@ -57,16 +57,17 @@
     const line=gwenSayLine(key);
     return line?`<span class="gwen-bubble" data-gwen-say="${esc(key)}" data-tail="${esc(tail)}" aria-hidden="true">${esc(line)}</span>`:'';
   }
-  // file/blink를 채우면 새 그림이 연결됨. 미연결 그림은 fallback을 사용함.
+  // 새 그림·깜빡임 연결. WebP 자체의 loop=0과 화면의 연속 재생은 별개임:
+  // 진행 그림도 investigate/files처럼 1초 재생 후 쉬며, walk만 loop:true로 계속 걸음.
   const GWEN_SCENES={
-    investigate:{file:'investigate'},files:{file:'files'},walk:{file:'walk',loop:true},
-    report:{file:'report'},surprised:{file:'surprised'},welcome:{file:'welcome'},
-    confident:{file:'confident'},thoughtful:{file:'thoughtful'},notes:{file:'notes'},ready:{file:'ready'},
-    cry:{file:null,fallback:'surprised'},verdict:{file:null,fallback:'report'},cheer:{file:null,fallback:'report'},
-    sulk:{file:null,fallback:'surprised'},shy:{file:null,fallback:'ready'},doze:{file:null,fallback:'ready'},
-    think:{file:null,fallback:'report'},magnify:{file:null,fallback:'files'},
-    stamp:{file:null,fallback:'report'},board:{file:null,fallback:'investigate'},coffee:{file:null,fallback:'files'},
-    stakeout:{file:null,fallback:'investigate'},zap:{file:null,fallback:'surprised'}
+    investigate:{file:'investigate',blink:'investigate_blink.png'},files:{file:'files',blink:'files_blink.png'},walk:{file:'walk',loop:true},
+    report:{file:'report',blink:'report_blink.png'},surprised:{file:'surprised'},welcome:{file:'welcome',blink:'welcome_blink.png'},
+    confident:{file:'confident'},thoughtful:{file:'thoughtful'},notes:{file:'notes'},ready:{file:'ready',blink:'ready_blink.png'},
+    cry:{file:'cry'},verdict:{file:'verdict',blink:'verdict_blink.png'},cheer:{file:'cheer',blink:'cheer_blink.png'},
+    sulk:{file:'sulk',blink:'sulk_blink.png'},shy:{file:'shy',blink:'shy_blink.png'},doze:{file:'doze'},
+    think:{file:'think',blink:'think_blink.png'},magnify:{file:'magnify'},
+    stamp:{file:'stamp'},board:{file:'board'},coffee:{file:'coffee'},
+    stakeout:{file:'stakeout'},zap:{file:'zap'}
   };
   const GWEN_CYCLES={inspect:['investigate','think','magnify'],screen:['files','stamp','board'],long:['walk','stakeout','zap','coffee']};
   function gwenAsset(key){

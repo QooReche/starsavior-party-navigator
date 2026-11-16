@@ -155,7 +155,15 @@ def result_audit(page,probability,art,width,shots):
 def walk_audit(page):
     fixture(page,page.evaluate('Ux.gwenWork("long")'))
     pic=loaded(page,'#out img')
+    assert pic.get_attribute('data-gwen-art')=='walk','walking sheet disconnected'
+    assert pic.get_attribute('data-gwen-motion').endswith('/walk.webp'),'walking motion disconnected'
+    # loaded() may return the decoded PNG while the animation is still decoding.
+    # Walk alone uses a direct continuous WebP, never a one-shot blob URL.
+    page.wait_for_function('(e)=>e.dataset.gwenPlaying==="true"&&e.currentSrc.endsWith("/walk.webp")',arg=pic.element_handle())
     assert pic.get_attribute('src').endswith('walk.webp'),'walking sheet disconnected'
+    page.clock.run_for(1500)
+    assert pic.get_attribute('src').endswith('walk.webp'),'walking loop stopped after one shot'
+    assert pic.get_attribute('data-gwen-playing')=='true'
     page.emulate_media(reduced_motion='reduce')
     page.wait_for_function('(e)=>e.currentSrc.endsWith("walk.png")',arg=pic.element_handle())
     assert pic.evaluate('(e)=>getComputedStyle(e).animationName')=='none'
@@ -210,6 +218,7 @@ def main():
             if args.mutations:
                 source=(ROOT/'ux_ui.js').read_text(encoding='utf-8')
                 variants=[('walk',"long:'walk'","long:'investigate'",walk_audit),
+                          ('walk-loop',"walk:{file:'walk',loop:true}","walk:{file:'walk'}",walk_audit),
                           ('interval','rand(4000,4001)','0',timer_audit),
                           ('reduced',"root.matchMedia('(prefers-reduced-motion: reduce)')","({matches:false,addEventListener(){}})",timer_audit),
                           ('result',"if(!Number.isFinite(p))return '';","return '';",lambda p:result_audit(p,.95,'confident',1280,False)),

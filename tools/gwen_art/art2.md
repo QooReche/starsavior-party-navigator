@@ -39,13 +39,13 @@ walk만 연속 재생·좌우 이동함. 나머지 동작은 1초 뒤 PNG로 돌
 
 대기 그림은 접근 가능한 버튼임. 무입력 60초 뒤 doze, 입력 시 ready로 복귀함. 2초 창 안 클릭 1·3·5회는 shy·sulk·cry이며 마지막 클릭 뒤 보이는 시간 3초 후 복귀함. Enter/Space·터치를 지원하고 키 자동반복과 pointer/click 중복을 집계하지 않음. 클릭 반응만 읽기 도구에 알림. 대사는 상황별 6개이며 전체 후보에서 방문별 시작 줄을 고른 뒤 보이는 시간 12초마다 바꿈. 최장 대사에서도 추천 조작 위치가 변하지 않도록 말풍선·모바일 열을 확보했음.
 
-실제 `data-gwen` 단계는 그대로 두고 8~10초마다 표현만 순환함. inspect는 investigate→think→magnify, screen은 files→stamp→board, long은 walk→stakeout→zap→coffee임. 현재 대체 그림도 연속으로 같지 않음.
+실제 `data-gwen` 단계는 그대로 두고 8~10초마다 표현만 순환함. inspect는 investigate→think→magnify, screen은 files→stamp→board, long은 walk→stakeout→zap→coffee임. 새 그림을 실제 파일로 연결했음.
 
 결과 발표 SD는 첫 파티의 선택된 `shown.clear`를 사용함. 70% 이상은 결과별로 고정된 verdict/cheer, 5% 이상·70% 미만은 report, 5% 미만은 cry임. 확률 없음·점수형·길드/코스모 배열은 중립 report임. decode가 완료되고 실제 보이는 1.8초만 소비하며 재렌더해도 다시 시작하지 않음. 등신대 반응은 기존 첫 파티 배치를 유지함. 오류는 호출부가 calculation(cry), few/empty(sulk), other(surprised)를 넘김. 취소·미계산·이미 최선은 실패 그림을 쓰지 않음.
 
-새 그림은 이 화면 작업에 포함하지 않았음. 그림 작업에서 PNG/WebP 존재·크기·재생을 확인한 뒤 아래 항목의 `file:null`을 `file:'이름'`으로 채우면 연결됨. 정지 PNG만 있으면 `motion:false`, 160px 깜빡임 정지 PNG까지 있으면 `blink:'이름_blink.png'`를 같은 항목에 추가함. 없는 파일을 먼저 연결하지 않음. 연결 전에는 fallback만 요청하므로 404 요청이 생기지 않음.
+2026-11-16 그림 작업 병합 뒤 아래 13종의 PNG/WebP와 깜빡임 10종을 실제 파일로 연결했음. 진행 7종 WebP의 loop=0은 파일 자체의 무한 반복이며 화면의 `loop:true`와 구별함. investigate/files와 같이 화면 컨트롤러가 1초 뒤 PNG로 바꾸고 4~8초 쉬게 하며 walk만 연속 재생함. 깜빡임은 ready/welcome/investigate/files/report/think/shy/sulk/verdict/cheer의 `이름_blink.png`를 사용함.
 
-| 이름 | 연결 상황 | 현재 fallback |
+| 이름 | 연결 상황 | 연결 이전 fallback |
 |---|---|---|
 | cry | 낮은 결과·계산 실패·5회 클릭 | surprised |
 | verdict | 높은 결과 발표 | report |
@@ -64,7 +64,7 @@ walk만 연속 재생·좌우 이동함. 나머지 동작은 1초 뒤 PNG로 돌
 ## 검증
 
 `tests/gwen_art_test.py`: 합계/개별 용량·알파·정지 PNG·프레임 변화·지속 시간·loop 메타데이터.
-`tests/e2e/test_gwen_art2.py --shots --mutations`: 360/1280/1600px 실제 결과 렌더러·빈 명단·반응 3종·lazy 요청·재다운로드 없는 재생·4초 이상 휴식·document.hidden·숨긴 패널/서랍·잘린 요소·화면 경계·reduced-motion·제거 시 URL 해제와 재생 중단. 걷기 연결/간격/정지/결과 그림/서랍/잘림/URL 정리 되돌림 7종을 검출함. 기존 진행 상태·취소 DOM·발표 수명·넓은 화면 시험도 유지함.
+`tests/e2e/test_gwen_art2.py --shots --mutations`: 360/1280/1600px 실제 결과 렌더러·빈 명단·반응 3종·lazy 요청·재다운로드 없는 재생·4초 이상 휴식·document.hidden·숨긴 패널/서랍·잘린 요소·화면 경계·reduced-motion·제거 시 URL 해제와 재생 중단. 걷기 연결/loop 플래그/간격/정지/결과 그림/서랍/잘림/URL 정리 되돌림 8종을 검출함. 기존 진행 상태·취소 DOM·발표 수명·넓은 화면 시험도 유지함.
 `tests/gwen_ux_test.js`: 확률 경계·누락·점수형·배열·결과 고정·오류 원인·전체 대사 선택과 되돌림 4종.
-`tests/e2e/test_gwen_ux.py --mutations --shots`: 360/1280/1600px 클릭·터치·키보드·방치 복귀·표현 순환·168개 대사의 고정 배치·선택 결과·지연 decode/fetch 중 교체/제거·발표 decode 대기·시즌 후보 부족·가짜 blink·로딩 지연 전후 bounding box/opacity/layout-shift를 검사함. 순환/복귀/토큰/숨김/버튼/decode/발표 decode 대기/선택 결과/고정 자리/대사 공간 되돌림 10종을 각각 의도한 assertion으로 검출함. 새 그림 자체의 품질·blink 프레임은 그림 연결 뒤 다시 검증해야 함.
+`tests/e2e/test_gwen_ux.py --mutations --shots`: 360/1280/1600px 클릭·터치·키보드·방치 복귀·표현 순환·168개 대사의 고정 배치·선택 결과·지연 decode/fetch 중 교체/제거·발표 decode 대기·시즌 후보 부족·실제 blink·로딩 지연 전후 bounding box/opacity/layout-shift를 검사함. 순환/복귀/토큰/숨김/버튼/decode/발표 decode 대기/선택 결과/고정 자리/대사 공간과 cry/순환/blink 연결·fetch 토큰 되돌림 총 14종을 각각 의도한 assertion으로 검출함. loading 시험은 오류 원인별 실제 그림을 확인하고 cry/sulk→surprised 되돌림도 검출함. 1280/360px 연결 캡처·깜빡임 프레임은 `_tmp/gwen-wire/`에 보관함.
 `_art_compare2.png`와 `_shot_art2_*.png`는 비교·상황별 화면 증거이며 커밋하지 않음. 전체·골든 실행 결과는 docs/HISTORY.md의 해당 절에 기록함.

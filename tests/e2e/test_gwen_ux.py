@@ -97,12 +97,11 @@ def cycle_audit(page):
     for mode,names in [('inspect',['investigate','think','magnify']),('screen',['files','stamp','board']),('long',['walk','stakeout','zap','coffee'])]:
         fixture(page,page.evaluate('(m)=>Ux.gwenWork(m)',mode))
         loaded(page,'#out img');scene=page.locator('#out [data-gwen]')
-        previous=None
         for name in names:
             assert expression(scene)==name,f'cycle stuck: {mode}/{name}'
             actual=scene.locator('img').get_attribute('data-gwen-art')
-            assert actual!=previous,'consecutive identical fallback images'
-            previous=actual
+            assert actual==name,f'cycle art disconnected: {mode}/{name}: {actual}'
+            assert scene.locator('img').get_attribute('data-gwen-motion').endswith('/'+name+'.webp')
             assert scene.get_attribute('data-gwen')==mode,'expression changed actual stage'
             assert ('gwen-roam' in scene.get_attribute('class'))==(name=='walk'),'only walk may roam'
             page.clock.run_for(9100)
@@ -178,16 +177,31 @@ def decode_audit(page,remove=False):
 
 
 def fetch_audit(page):
-    held=[]
-    page.route('**/surprised.webp',lambda route:held.append(route))
+    held=[];page._gwen_held=held
+    def hold(route):
+        held.append(route)
+        page.evaluate('window.__cryHeld=true')
+    page.route('**/cry.webp',hold)
+    page.evaluate('''() => {window.__fetchCreated=[];window.__cryHeld=false;window.__cryRead=false;
+      const create=URL.createObjectURL.bind(URL),fetch=window.fetch.bind(window);
+      URL.createObjectURL=b=>{const u=create(b);__fetchCreated.push(u);return u;};
+      window.fetch=async (...args)=>{const response=await fetch(...args);
+        if(response.url.endsWith('/cry.webp')){const blob=response.blob.bind(response);
+          response.blob=()=>blob().then(b=>{window.__cryRead=true;return b;});}
+        return response;};}''')
     fixture(page,page.evaluate('Ux.gwenError("calculation")'))
-    loaded(page,'#out img')
-    page.wait_for_timeout(100)
+    pic=loaded(page,'#out img')
+    assert pic.get_attribute('data-gwen-art')=='cry','calculation art disconnected'
+    assert pic.get_attribute('src').endswith('/cry.png'),'calculation still disconnected'
+    page.wait_for_function('__cryHeld')
     assert held,'pending fetch path not exercised'
     page.evaluate('window.__fetchOld=document.querySelector("#out img");$("out").innerHTML=""')
+    created=page.evaluate('__fetchCreated.length')
     for route in held:route.continue_()
-    page.wait_for_timeout(250)
-    assert page.evaluate('__fetchOld.src.endsWith("surprised.png")'),'removed fetch wrote stale source'
+    held.clear()
+    page.wait_for_function('__cryRead')
+    assert page.evaluate('__fetchOld.src.endsWith("/cry.png")'),'removed fetch wrote stale source'
+    assert page.evaluate('__fetchCreated.length')==created,'removed fetch created a blob URL'
 
 
 def report_loading_audit(page):
@@ -249,14 +263,18 @@ def loading_audit(page,width,shots=False):
 
 
 def blink_audit(page):
-    # No test art is generated: a known PNG stands in for a separately produced blink frame.
-    page.evaluate('Ux.GWEN_SCENES.ready.blink="ready.png"')
+    assert page.evaluate('Ux.GWEN_SCENES.ready.blink')=='ready_blink.png','blink disconnected'
     page.clock.install();scene=idle(page);playing(page,scene.locator('img'))
     page.clock.run_for(1200)
     page.evaluate('''() => {window.__frames=[];new MutationObserver(()=>__frames.push({time:Date.now(),src:document.querySelector('#out img').src})).observe(document.querySelector('#out img'),{attributes:true,attributeFilter:['src']});}''')
-    page.clock.run_for(5000)
+    page.clock.run_for(3400)
+    # The real blink PNG must decode before its 120–160 ms visible interval starts.
+    page.wait_for_function('document.querySelector("#out img").currentSrc.endsWith("/ready_blink.png")')
+    page.clock.run_for(160)
     frames=page.evaluate('__frames')
     assert len(frames)>=2,'blink did not close and reopen during PNG rest'
+    assert frames[0]['src'].endswith('/ready_blink.png'),'blink frame disconnected'
+    assert frames[1]['src'].endswith('/ready.png'),'blink did not reopen'
     assert 120<=frames[1]['time']-frames[0]['time']<=160,frames
     assert scene.locator('img').get_attribute('data-gwen-playing')=='false','blink ran during action'
 
@@ -299,6 +317,11 @@ def main():
             if args.mutations:
                 source=(ROOT/'ux_ui.js').read_text(encoding='utf-8')
                 variants=[
+                    ('cry-wire',"cry:{file:'cry'}","cry:{file:null,fallback:'surprised'}",fetch_audit,'calculation art disconnected'),
+                    ('fetch-token','const data=await bytes(path);if(!valid(token))return;',
+                     'const data=await bytes(path);',fetch_audit,'removed fetch created a blob URL'),
+                    ('cycle-wire',"think:{file:'think'","think:{file:null,fallback:'report'",cycle_audit,'cycle art disconnected'),
+                    ('blink-wire',"blink:'ready_blink.png'","blink:'ready.png'",blink_audit,'blink disconnected'),
                     ('cycle',"if(due('cycle')){","if(false){",cycle_audit,'cycle stuck'),
                     ('wake',"if(s.expression==='doze'){","if(false){",idle_audit,'input did not wake'),
                     ('token','s.token++;root.clearTimeout(s.timer);','root.clearTimeout(s.timer);',decode_audit,'stale decode'),
@@ -312,7 +335,8 @@ def main():
                     page.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:true});document.dispatchEvent(new Event("visibilitychange"))')
                     page.clock.run_for(61000)
                     assert expression(scene)=='ready','document hidden time consumed'
-                variants[3]=(*variants[3][:3],hidden_audit,'document hidden time consumed')
+                hidden_index=next(i for i,v in enumerate(variants) if v[0]=='hidden')
+                variants[hidden_index]=(*variants[hidden_index][:3],hidden_audit,'document hidden time consumed')
                 for name,old,new,audit,message in variants:
                     assert old in source,name
                     try:run_case(browser,base,audit,source=source.replace(old,new))

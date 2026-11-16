@@ -1,5 +1,6 @@
 ## 2026-11-16 그웬 수명·대기 생동감·클릭·진행 순환·로딩 표시
 
+- 새 그림 13종·깜빡임 10종을 실제 파일에 연결했음. 진행 WebP의 loop=0은 investigate/files처럼 1초 재생·휴식으로 제어하고 walk만 연속 재생함. 오류 원인별 그림·걷기 decode 대기·cry 지연 fetch 시험을 고쳤고 연결·loop·blink·수명 되돌림을 검출한 뒤 원복했음. 1280/360px 각 33장 캡처는 `_tmp/gwen-wire/`에 보관하며 커밋에서 제외함. index 재생성·독립 검토와 전체 `run_tests.py --e2e` 193개 통과/실패 0을 확인했음(`_tmp/wire_full.log`; COSMO_TABLES 없음 1건 건너뜀).
 - 화면 전용 작업임. 장면별 컨트롤러와 다음 이벤트 timeout 하나로 가시성·재생·대사·방치·클릭·발표 수명을 묶었음. 숨김·탭·서랍·부모 잘림·화면 경계·document.hidden·제거·reduced-motion을 처리하고 이전 fetch/decode는 토큰으로 무효화함. Blob 바이트를 공유하고 재생별 object URL을 종료·중단 때 해제함.
 - 그림 요청을 1.5초 늦춰 수정 전 1280/360px을 재현했음. 그웬 112×112/64×64, 말풍선·추천 단추·결과 영역은 로드 전후 이동 0px였고 layout-shift 합계는 두 폭 모두 0이었음. PM이 본 네모 상자·재정렬 자체는 재현하지 못했음. 확인된 빈 표시는 구원자 얼굴 `img.face`의 46×46 원형 배경·2px 테두리였음. naturalWidth=0인데 opacity=1이라 로드 전에 보였음. 기록은 `_tmp/loading_baseline.json`·`face_baseline.json`임.
 - 그웬·구원자 얼굴에 width/height·aspect-ratio로 자리를 확보하고 decode 전 투명, 완료 뒤 160ms 페이드인으로 바꿨음. 기존 src를 바로 바꾸던 재생 경로는 다음 그림을 decode한 뒤 교체함. 지연 decode 중 src 유지·교체·제거를 실제 브라우저에서 검사했음. 수정 뒤 360/1280/1600px의 주요 bounding box 변화 0px·로드 전 opacity=0·layout-shift 합계 0임. 동일 폭의 로딩 수치는 0→0이며 CLS가 개선됐다고 보지는 않았음.
