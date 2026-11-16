@@ -58,6 +58,8 @@ def main():
     if a.only:
         tests = [t for t in tests if any(w in t[0] for w in a.only)]
     if a.e2e:
+        tests.append(('e2e/test_direct_compact.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_direct_compact.py']))
+        tests.append(('e2e/test_direct_phase2.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_direct_phase2.py']))
         tests.append(('e2e/test_direct_gwen.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_direct_gwen.py']))
         tests.append(('e2e/test_direct_execution.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_direct_execution.py', '--real', '--mutations']))
         tests.append(('e2e/test_direct_party.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_direct_party.py', '--mutations']))

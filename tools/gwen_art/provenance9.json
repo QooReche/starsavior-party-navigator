@@ -1,0 +1,11 @@
+{
+  "start_commit": "8cd0dce",
+  "before_sha256": {
+    "st_sulk-before.png": "fc6ab9393631ebdddffaf30159d467fd7ca4dcd685140f210782c6f7602cdf5a",
+    "st_shy-before.png": "1764285bbac379ea4beb1066ec2a33199393356b5ef5f4924979c709c300f015"
+  },
+  "original_masters_sha256": {
+    "st_sulk": "f16e8ec016755dd115372e5e273887e6a22493dc816b3caf08fda88d1420382a",
+    "st_shy": "559a34f917621b731bebf4a55806b91e2b31d709e5d6f2971417e69843d6c0e4"
+  }
+}

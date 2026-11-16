@@ -4,8 +4,8 @@
   const PRIORITY={idle:0,edit:1,work:2,result:3,error:4};
   const CHOICES={home:['guide2','st_welcome','welcome'],empty:['ready','present'],
     ready:['ready'],vacant:['think','sulk','peek'],put:['present','shy'],remove:['surprised','sulk'],
-    swap:['think'],leader:['verdict'],complete:['jump'],grown:['train'],starLink:['charge','board','train'],
-    brk:['charge'],start:['zap'],work:['magnify','stamp','stakeout','walk','files'],
+    swap:['think'],leader:['verdict'],complete:['jump'],grown:['train'],
+    withReco:['files','board'],withGrowth:['train'],reco:['stakeout','magnify','files'],growth:['train','walk'],skip:['surprised'],recoHigher:['st_point','thoughtful'],brk:['charge'],start:['zap'],work:['magnify','stamp','stakeout','walk','files'],
     high:['st_verdict','st_cheer','st_ok'],medium:['st_point','thoughtful'],low:['st_cry','notes'],
     highSD:['verdict','cheer','report'],mediumSD:['report','verdict'],lowSD:['cry'],
     better:['st_wink'],past:['think'],error:['cry','surprised','sulk'],wait:['wait'],doze:['doze'],wake:['wake']};
@@ -13,8 +13,9 @@
     empty:['단장님, 구원자부터 골라 봐!','후후후, 어떤 조합이 될까?'],vacant:['빈 칸이 남았네, 단장님.','천천히 골라도 돼. 내가 기다릴게!'],
     put:['좋아, 이쪽으로 모실게!','후후후, 한 명 더 모였어!','단장님, 자리 확인해 봐!'],remove:['잠깐! 다른 조합도 볼까?','단장님, 다음 구원자는 누구야?'],
     swap:['이쪽 자리로 바꿔 볼까?','후후후, 배치도 중요하지!'],leader:['단장님, 이번 리더는 정했네!','앞장설 구원자, 확인했어!'],
-    complete:['네 명 다 모였어, 단장님!','후후후, 준비됐으면 나만 믿어!'],grown:['이만큼 키웠다고 치고 볼게!','단장님, 달라진 능력치도 확인해 봐!'],
-    starLink:['스타링크까지 더해서 볼게!','후후후, 연결하면 얼마나 달라질까?'],brk:['브레이크 준비, 확인했어!','단장님, 이 스킬로 볼게!'],
+    complete:['네 명 다 모였어, 단장님!','후후후, 준비됐으면 나만 믿어!'],grown:['이만큼 키웠다고 치고 볼게!','단장님, 달라진 능력치도 확인해 봐!','스타링크까지 더해서 볼게!'],
+    withReco:['후후후, 내 추천이랑 겨뤄 보자는 거지?','좋아, 내 추천도 같이 꺼내 올게!'],withGrowth:['키웠을 때 편성도 찾아볼게!'],reco:['이번엔 내 추천 차례야, 단장님!','후보를 하나씩 살펴볼게.'],growth:['키우면 누가 좋을지 보고 있어!'],skip:['알았어, 그건 넘어갈게!'],recoHigher:['내 추천 쪽이 조금 더 높네. 비교해 봐, 단장님!'],
+    brk:['브레이크 준비, 확인했어!','단장님, 이 스킬로 볼게!'],
     start:['천재 조사관에게 맡겨!','후후후, 지금부터 확인할게!'],work:['하나씩 꼼꼼히 살펴볼게.','단장님, 조금만 기다려!','끝까지 확인할 테니 나만 믿어!'],
     high:['후후후, 든든한 편성이네!','잘 골랐어, 단장님!','천재 조사관의 확인도 끝!'],medium:['아슬아슬하네. 숫자도 살펴봐!','단장님, 한 번 더 비교해 볼까?'],
     low:['으아앙, 쉽지 않겠는걸!','단장님, 육성도 같이 살펴보자.'],better:['후후후, 추천보다 높게 나왔어!','단장님, 멋진 선택이야!'],past:['편성이 바뀌었네. 지난 결과야!','지금 편성으로 다시 확인해 봐!'],
@@ -73,7 +74,7 @@
     function cancelMove(){if(move){const pos=move.animation.currentTime||0;const ratio=Math.min(1,pos/Math.max(1,move.ms));x=move.from+(move.to-move.from)*ratio;move.animation.cancel();move=null;}
       if(actor)actor.style.transform=`translateX(${x}px)`;landing=0;pending=null;actor?.removeAttribute('data-moving');}
     function setLane(id){ensure();const target=doc.getElementById(id);if(!target)return false;
-      if(lane!==target||actor.parentElement!==target){cancelMove();lane=target;lane.append(actor);x=Math.max(0,(lane.clientWidth-actor.offsetWidth)/2);actor.style.transform=`translateX(${x}px)`;}
+      if(lane!==target||actor.parentElement!==target){cancelMove();lane=target;lane.append(actor);x=id==='direct-progress-lane'?0:Math.max(0,(lane.clientWidth-actor.offsetWidth)/2);actor.style.transform=`translateX(${x}px)`;}
       return true;}
     function image(key){if(key===art)return;art=key;actor.querySelector('button').innerHTML=root.Ux.gwenImage(key,'gwen-lane-image',80).replace('data-gwen-art=', 'data-gwen-managed="true" data-gwen-art=');
       actor.dataset.gwenExpression=key;actor.dataset.event=lastEvent;}
@@ -98,15 +99,16 @@
       if(opts.target!=null)moveTo(opts.target,{run:opts.run,reaction:e});else{cancelMove();display(e);}
       if(opts.level==='edit'||!opts.level)restoreAt=clock+1500+(move?move.ms+150:0);return true;}
     function base(){if(current.mode==='home')return ['home','home-gwen-lane'];
-      if(current.phase==='work')return ['work','direct-progress-lane'];
+      if(current.phase==='work')return [current.step==='reco'?'reco':current.step==='growth'?'growth':'work','direct-progress-lane'];
       if(current.phase==='error')return ['error','direct-result-lane'];
-      if(current.phase==='result')return [current.better?'better':current.clear>=.7?'high':current.clear>=.05?'medium':'low','direct-result-lane'];
+      if(current.phase==='result')return [current.recoHigher?'recoHigher':current.better?'better':current.clear>=.7?'high':current.clear>=.05?'medium':'low','direct-result-lane'];
       if(current.stale)return ['past','direct-board-lane'];
       if(current.count>0&&current.count<4)return ['wait','direct-result-lane'];
       return [current.count===0?'empty':'ready','direct-board-lane'];}
     function settle(){const [kind,id]=base();if(!setLane(id))return;
       const portrait=id==='direct-result-lane'&&innerWidth>=1200;lane.dataset.portrait=String(portrait);
       let candidates=CHOICES[kind];if(['high','medium','low'].includes(kind)&&!portrait)candidates=CHOICES[kind+'SD'];
+      if(kind==='recoHigher'&&!portrait)candidates=['report','think'];
       if(kind==='better'&&!portrait)candidates=['verdict','cheer','report'];
       if(kind==='home')candidates=innerWidth>=1200?CHOICES.home:['guide2','welcome','present'];
       const level=current.phase==='error'?'error':current.phase==='result'?'result':current.phase==='work'?'work':'idle';
@@ -124,8 +126,8 @@
       cycleAt=clock+(mq.matches?20000:9000);restoreAt=0;
     }
     function sync(next){current={...next};if(!['home','direct'].includes(current.mode)){if(actor){cancelMove();actor.remove();}phaseKey='';return;}
-      const key=JSON.stringify([current.mode,current.phase,current.result,current.stale,current.better,innerWidth>=1200]);
-      if(key!==phaseKey){phaseKey=key;
+      const key=JSON.stringify([current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
+      if(key!==phaseKey){const stepChanged=current.phase==='work'&&lane?.id==='direct-progress-lane';phaseKey=key;if(stepChanged){cancelMove();x=0;if(actor)actor.style.transform='translateX(0px)';}
         startAt=0;startAction=null;
         if(current.phase==='work'&&visible()&&lane?.id==='direct-board-lane'&&!quiet&&!mq.matches){
           const e=p.event('start',clock,{level:'work',duration:Infinity});display(e);exit=Infinity;startAt=clock+250;startAction='exit';
@@ -136,10 +138,13 @@
       }
     }
     function edit(action,slot){idleAt=clock;vacant=false;sleeping=false;
+      if(current.mode==='direct'&&current.phase==='work'&&action==='skip'&&!quiet){
+        if(setLane('direct-progress-lane')){request('skip',{level:'work',duration:1500});restoreAt=clock+1500;}return;
+      }
       if(current.mode!=='direct'||current.phase==='work'||current.phase==='error'||quiet)return;
       if(p.state.priority>=PRIORITY.result&&clock<p.state.until)return;
       if(!setLane('direct-board-lane'))return;lane.dataset.portrait='false';
-      const kind=action==='put'&&current.count===4?'complete':({put:'put',remove:'remove',swap:'swap',leader:'leader',grown:'grown',starLink:'starLink',brk:'brk',arrange:'swap',clear:'empty',undo:'swap',focus:'point'}[action]||'empty');
+      const kind=action==='put'&&current.count===4?'complete':({put:'put',remove:'remove',swap:'swap',leader:'leader',grown:'grown',withReco:'withReco',withGrowth:'withGrowth',skip:'skip',brk:'brk',arrange:'swap',clear:'empty',undo:'swap',focus:'point'}[action]||'empty');
       const cell=doc.querySelector(`[data-direct-slot="${slot}"]`),r=cell?.getBoundingClientRect(),l=lane.getBoundingClientRect();
       const target=kind==='complete'?(lane.clientWidth-actor.offsetWidth)/2:r?r.x+r.width/2-l.x-actor.offsetWidth/2:null;
       request(kind,{level:'edit',candidates:kind==='point'?['point']:undefined,target,run:action==='put'});
@@ -152,7 +157,7 @@
     function tick(){const now=performance.now(),on=visible(),delta=Math.max(0,now-last);last=now;
       if(!on){move?.animation.pause();if(actor)actor.dataset.lanePaused='true';return;}
       clock+=Math.min(delta,1000);actor.dataset.lanePaused=String(mq.matches);if(move?.animation.playState==='paused')move.animation.play();
-      if(startAt&&clock>=startAt){startAt=0;if(startAction==='exit')moveTo(lane.clientWidth-actor.offsetWidth,{run:true,leave:true});else request('work',{level:'work',duration:Infinity});startAction=null;}
+      if(startAt&&clock>=startAt){startAt=0;if(startAction==='exit')moveTo(lane.clientWidth-actor.offsetWidth,{run:true,leave:true});else request(base()[0],{level:'work',duration:Infinity});startAction=null;}
       if(move&&move.animation.playState==='finished'){
         const m=move,reaction=pending;x=m.to;m.animation.cancel();move=null;actor.style.transform=`translateX(${x}px)`;
         // A long lane is crossed in bounded segments, never by a cross-column absolute jump.
@@ -161,11 +166,12 @@
       }
       if(!move&&landing&&clock>=landing){landing=0;if(pending){display(pending);restoreAt=pending.priority===PRIORITY.edit?clock+1500:0;pending=null;}}
       if(exit!=null&&clock>=exit){exit=null;settle();}
-      actor.querySelector('.gwen-lane-speech').hidden=!!move||clock>=bubbleUntil;
-      actor.querySelector('.gwen-lane-speech').style.left=Math.max(95-x,Math.min(actor.offsetWidth/2,lane.clientWidth-95-x))+'px';
+      const bubble=actor.querySelector('.gwen-lane-speech');bubble.hidden=!!move||clock>=bubbleUntil;
+      if(!bubble.hidden){const half=bubble.offsetWidth/2;
+        bubble.style.left=Math.max(half-x,Math.min(actor.offsetWidth/2,lane.clientWidth-half-x))+'px';}
       if(restoreAt&&clock>=restoreAt&&!move&&!landing){restoreAt=0;settle();}
       if(current.phase==='work'&&exit==null&&clock>=cycleAt&&!move){
-        request('work',{level:'work',duration:Infinity});cycleAt=clock+(mq.matches?20000:9000);
+        request(base()[0],{level:'work',duration:Infinity});cycleAt=clock+(mq.matches?20000:9000);
         if(!Number.isFinite(current.progress))moveTo(Math.random()*(lane.clientWidth-actor.offsetWidth));
       }
       if(!['work','error'].includes(current.phase)&&!quiet){

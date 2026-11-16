@@ -8,7 +8,7 @@ function boot(saved,info=null){
   const ctx=vm.createContext({$:id=>els[id],MI:{info},PW:saved.pw||{},SHARE:{},applyShare(){},
     LS:{get:k=>saved[k]??null,set:(k,v)=>{saved[k]=v}},miLoad(){},renderMi(){},growthInit(){},updCount(){},run(){},refreshTabs(){},drawGraph(){},
     seasonRefresh(){},condChanged(){},directInit(){},setInterval(){},document:{addEventListener(){}},
-    AUTO:false,SIMQ:{},REQ:false,window:{Quick:true},QK:{d:{st:{op:{'tab|stage':{bp:80000}}},params:{}}},rkOf:()=>0});
+    AUTO:false,SIMQ:{},REQ:false,RECO:{standard:false},window:{Quick:true},QK:{d:{st:{op:{'tab|stage':{bp:80000}}},params:{}}},rkOf:()=>0});
   vm.runInContext(section('function miSelect(','let cur='),ctx);
   vm.runInContext(section('{const gv=LS.get(', '</script>'),ctx);
   vm.runInContext(section('function quickIn(', 'const qBase='),ctx);

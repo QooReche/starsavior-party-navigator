@@ -56,26 +56,32 @@ function overwriteParity(p=P){
   for(let mask=0;mask<16;mask++){
     const d=full();d.slots.forEach((s,i)=>s.grown=!!(mask&(1<<i)));
     const expected=M.overwrite(cx.info,roster,growth,'op',{excluded:roster.filter(s=>!d.slots.some(m=>m.key===s.key&&m.grown)).map(s=>s.key),slots,priority});
+    const ids=[...new Set([...expected.info.star_link.slots.map(s=>s.id),...d.slots.filter(s=>s.grown).map(s=>roster.find(r=>r.key===s.key).uid)])];
+    const final=M.profile(S.withSlots(expected.info,ids),roster,growth,'op');
     const actual=p.powers(d,cx);assert.equal(actual.errors.length,0);
-    d.slots.forEach((s,i)=>{assert.deepEqual(JSON.parse(JSON.stringify(actual.values[i])),expected.profile.results[s.key]);
+    d.slots.forEach((s,i)=>{assert.deepEqual(JSON.parse(JSON.stringify(actual.values[i])),JSON.parse(JSON.stringify(final.results[s.key])));
       if(!s.grown)assert.deepEqual(actual.values[i],base.results[s.key]);else if(actual.values[i].power!==base.results[s.key].power)changed++;
     });assert.equal(actual.total,actual.values.reduce((a,r)=>a+r.power,0));
   }assert(changed>0,'fixture must exercise growth');assert.equal(JSON.stringify(cx.info),before);
 }
 test('all 16 per-slot overwrite combinations equal recommendation power/combat, input immutable',()=>overwriteParity());
-test('StarLink copied-account recalculation, capacity warning, overwrite registration survives off',()=>{
-  const cx=context();cx.info.units.forEach(u=>u.level=100);cx.info.star_link={level:200,source:[],slots:[{index:0,id:cx.info.units.at(-1).id}]};
-  const before=JSON.stringify(cx.info),d=full();d.slots[0].grown=true;
-  const off=P.powers(d,cx),on=P.powers({...d,starLink:true},cx),offAgain=P.powers(d,cx);
-  assert.deepEqual(off.values,offAgain.values);assert(on.warnings.some(s=>s.includes('실제 빈 슬롯')));
-  assert(off.changes[keys[0]].changedFields.includes('level'),'must exercise overwrite link registration');
-  const expected=M.overwrite(cx.info,roster,growth,'op',{excluded:roster.filter(s=>s.key!==keys[0]).map(s=>s.key),slots,priority});
-  const ids=[...new Set([...expected.info.star_link.slots.map(s=>s.id),...keys.map(k=>roster.find(s=>s.key===k).uid)])];
-  const profile=M.profile(S.withSlots(expected.info,ids),roster,growth,'op');
-  on.values.forEach((v,i)=>assert.deepEqual(v,profile.results[keys[i]]));
-  assert.equal(JSON.stringify(cx.info),before);assert(on.values.some((v,i)=>v.power!==off.values[i].power));
-  const fixed=P.powers({...d,starLink:true},{...cx,content:'cosmo'});assert(fixed.warnings.some(s=>s.includes('고정 레벨')));
-});
+function linkCheck(p=P){
+  for(const gap of [1,9,10,0,-5])for(const source of [false,true]){
+    const cx=context();cx.info.units.forEach(u=>u.level=200-gap);cx.info.star_link={level:200,source:source?[roster.find(s=>s.key===keys[0]).uid]:[],slots:[]};
+    const before=JSON.stringify(cx.info),d=full(),current=p.powers(d,cx);d.slots[0].grown=true;
+    const actual=p.powers(d,cx),target=M.overwrite(cx.info,roster,growth,'op',{excluded:roster.filter(s=>s.key!==keys[0]).map(s=>s.key),slots,priority});
+    const uid=roster.find(s=>s.key===keys[0]).uid,ids=[...new Set([...target.info.star_link.slots.map(s=>s.id),uid])];
+    const expected=M.profile(S.withSlots(target.info,ids),roster,growth,'op');
+    assert.deepEqual(JSON.parse(JSON.stringify(actual.values[0])),expected.results[keys[0]]);
+    assert(actual.linked.includes(keys[0]));assert.equal(actual.warnings.length,0);
+    for(let i=1;i<4;i++)assert.deepEqual(actual.values[i],current.values[i]);
+    assert.equal(JSON.stringify(cx.info),before);assert(!('starLink' in p.draft({...d,starLink:true})));
+    assert.deepEqual(p.powers({...d,starLink:true},cx).values,actual.values,'old field ignored');
+    cx.info.star_link.slots=[{index:0,id:uid}];const already=p.powers(d,cx);assert(!already.linked.includes(keys[0]));
+    const fixed=p.powers(d,{...cx,content:'flash'});assert(!fixed.linked?.length);assert.equal(fixed.warnings.length,0);
+  }
+}
+test('grown-only registration: gaps 1/9/10/0/negative, full capacity, source, old field, registered, fixed level, immutable account',()=>linkCheck());
 test('signature includes final stats, stage, break level, seed, runs, all options/versions',()=>{
   const input={party:P.serialize(full()),stage:{content:'op',name:'one'},brk:{name:'큐브 과부하',level:1},seed:1,runs:100,options:{rng_streams:true,build:'standard'},versions:{engine:'e',data:'d',policy:'p'}};
   const baseline=P.signature(input);
@@ -86,7 +92,7 @@ test('signature includes final stats, stage, break level, seed, runs, all option
 });
 function isolation(p=P){const local=full(),remote=p.edit(local,{type:'swap',a:0,b:1}),state=p.restore(local,remote);assert.equal(p.storage(state),null);state.draft=p.edit(state.draft,{type:'grown',slot:0,value:true});assert.equal(p.storage(state),null);assert.deepEqual(local,full());}
 test('local/share allowlist, received session edits never replace local',()=>{
-  const dirty={...full(),account:raw,result:{secret:99},power:123,profile:{stats:123}};dirty.slots[0].power=999;
+  const dirty={...full(),starLink:true,account:raw,result:{secret:99},power:123,profile:{stats:123}};dirty.slots[0].power=999;
   assert.deepEqual(P.draft(dirty),full());assert.deepEqual(P.storage(P.restore(dirty,null)),full());isolation();
   const q=Share.stringify({pm:'direct',dp:dirty,account:raw}),out=Share.parse('?'+q,[],[]);
   assert.deepEqual(out.dp,P.share(full()));assert(!q.includes('power'));assert(!q.includes('profile'));assert(!q.includes('account'));assert.equal(out.pm,'direct');
@@ -107,4 +113,8 @@ test('mutation detected: overwrite → legacy assume',()=>{
   assert.throws(()=>overwriteParity(mutant(s=>s.replace('// Pure DIRECT','// legacy Pure DIRECT'),old)));
 });
 test('mutation detected: received draft overwrites local',()=>assert.throws(()=>isolation(mutant(s=>s.replace('state.shared?null:draft(state.draft)','draft(state.draft)')))));
-console.log(`${checks} direct contract groups passed (96 payloads/signatures, 96 recommendation parity cases, 16 growth combinations, 4 mutations)`);
+test('mutation detected: omit StarLink registration',()=>assert.throws(()=>linkCheck(mutant(s=>s.replace('if(!ids.includes(unit.id))ids.push(unit.id);',''))),assert.AssertionError));
+test('mutation detected: register unselected members',()=>assert.throws(()=>linkCheck(mutant(s=>s.replace('d.slots.filter(m=>m?.grown)','d.slots.filter(Boolean)'))),assert.AssertionError));
+test('mutation detected: restore capacity gating',()=>assert.throws(()=>linkCheck(mutant(s=>s.replace('if(!ids.includes(unit.id))','if(ids.includes(0)&&!ids.includes(unit.id))'))),assert.AssertionError));
+test('mutation detected: restore old starLink field',()=>assert.throws(()=>linkCheck(mutant(s=>s.replace('out.leader=key(raw.leader);','out.leader=key(raw.leader);out.starLink=raw.starLink===true;'))),assert.AssertionError));
+console.log(`${checks} direct contract groups passed (96 payloads/signatures, 96 recommendation parity cases, 16 growth combinations, 8 mutations)`);

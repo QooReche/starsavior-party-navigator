@@ -1,0 +1,39 @@
+{
+  "tool": "built-in image_gen",
+  "start_commit": "d6f096d",
+  "transparent_background": true,
+  "calls": [
+    {
+      "name": "st_sulk",
+      "attempt": 1,
+      "prompt": "Use case: precise-object-edit. Image 1 is the EDIT TARGET, original transparent three-cell 960x320 sprite sheet. Image 2 is facial expression reference ONLY and is the maximum intensity allowed. Return the exact same three-cell layout and proportions with true transparency. Edit ONLY facial expression, keep face contour and cheeks ORIGINAL and natural, same original delicate official game illustration style, short chin, hair, head size, skin, costume, hands, shoulders, sleeves and all non-face pixels. Cell 1 base pose, cell 2 existing tiny head motion with SAME emotion strength, cell 3 same face and placement as cell 1 except both eyes closed. No text, extra objects, tongue or expression symbols. Preserve original face silhouette EXACTLY, no cheek inflation. Expression must be readable but restrained in 120px full-sprite display. SULK: gently furrow eyebrows, eyes looking sideways, slight existing head turn to viewer left. A small closed pout with lip corners slightly down and a very subtly protruding lower lip. Natural FLAT cheek contour, NO puffed cheeks, NO swelling, NO round cheek masses, NO intense blush. The reference's quiet displeasure, never caricature. Slightly clearer than original tiny mouth, no exaggerated W-shaped mouth. Keep eyes at original locations. Same quiet sulk in all cells, cell 3 blink. Do not amplify beyond reference.",
+      "reference_paths": [
+        "tools/gwen_art/masters5/st_sulk.webp",
+        "<private-ref>/face_l3_015.jpg"
+      ],
+      "source": "<codex-image-cache>/exec-0571143c-49d2-4c79-95fb-cca1d3a57641.png",
+      "saved": "_tmp/art10/st_sulk-generated.png"
+    },
+    {
+      "name": "st_shy",
+      "attempt": 1,
+      "prompt": "Use case: precise-object-edit. Image 1 is the EDIT TARGET, original transparent three-cell 960x320 sprite sheet. Image 2 is facial expression reference ONLY and is the maximum intensity allowed. Return the exact same three-cell layout and proportions with true transparency. Edit ONLY facial expression, keep face contour and cheeks ORIGINAL and natural, same original delicate official game illustration style, short chin, hair, head size, skin, costume, hands, shoulders, sleeves and all non-face pixels. Cell 1 base pose, cell 2 existing tiny head motion with SAME emotion strength, cell 3 same face and placement as cell 1 except both eyes closed. No text, extra objects, tongue or expression symbols. Preserve original face silhouette EXACTLY, no cheek inflation. Expression must be readable but restrained in 120px full-sprite display. SHY: faint diffuse pink warmth in cheeks only, NO deep saturated pink, NO circles or discs, NO intense blush. Slightly narrower gently smiling golden eyes (still open, no strong squint), small tender closed smile, subtly bashful eyebrows. A quiet shy smile, head slightly bowed as original with tiny dip in cell 2. Facial features slightly clearer than the original neutral expression but gentler than reference. Keep original eye and face locations. Cell 3 closed eyes but same faint diffuse blush and little smile. Do not make it sleepy or sad.",
+      "reference_paths": [
+        "tools/gwen_art/masters5/st_shy.webp",
+        "<private-ref>/face_l5_015.jpg"
+      ],
+      "source": "<codex-image-cache>/exec-2f51a6b7-bc8a-4c36-a3a3-653f03d1f79c.png",
+      "saved": "_tmp/art10/st_shy-generated.png"
+    }
+  ],
+  "candidates": {
+    "A": 0.55,
+    "B": 0.78,
+    "C": 1
+  },
+  "selected": {
+    "st_sulk": "C",
+    "st_shy": "C"
+  },
+  "compositing": "Normalize each generated cell to 320px; st_sulk offset (15,-1), st_shy (0,-3). Composite only inner-face polygons (0.7px feather), preserve original face contour and all alpha. Store selected local lossless patches in patches9, preserve existing body/sleeve pipeline. Candidate percentages are of NEW restrained face, not rejected d6f096d. Blink changes eyes only."
+}

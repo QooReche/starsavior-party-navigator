@@ -12,7 +12,7 @@ function motion(g){const equal=(a,b)=>assert.deepEqual(JSON.parse(JSON.stringify
  equal(g.travel(20,200,500,80,{quiet:true}),{x:20,ms:0});}
 cooldown(G);priority(G);motion(G);
 for(const [kind,choices] of Object.entries(G.CHOICES))for(const key of choices)assert(U.GWEN_SCENES[key],`${kind}: ${key}`);
-for(const [key,lines] of Object.entries(G.SAY)){assert(lines.length>=2&&lines.length<=4,key);for(const line of lines)assert(!/단장(?!님)/.test(line));}
+for(const [key,lines] of Object.entries(G.SAY)){assert(lines.length>=1&&lines.length<=4,key);for(const line of lines)assert(!/단장(?!님)/.test(line));}
 const p=G.policy(()=>0),history=[];for(let i=0;i<20;i++){const a=p.pick(G.CHOICES.high);assert(!history.slice(-2).includes(a));history.push(a);}
 const clicks=G.policy(()=>0);assert.equal(clicks.poke(0).art,'shy');assert.equal(clicks.poke(100).art,'sulk');assert.equal(clicks.poke(200).art,'cry');
 assert.equal(clicks.poke(10199),null);assert.equal(clicks.poke(10200).art,'shy');

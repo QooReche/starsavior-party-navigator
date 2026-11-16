@@ -113,7 +113,7 @@ async function mutation(name,code,from,to,test){assert(code.includes(from),name+
   await mutation('preset substats only',source,"const equips=fields.includes('equip')?[old.equip,u.equip]:[u.equip];",
     "u.equip.forEach((e,i)=>e.subs.push(...(old.equip[i]?.subs||[])));const equips=fields.includes('equip')?[old.equip,u.equip]:[u.equip];",s=>equipment(load(s)));
   await mutation('picked comparison',ui,"selected&&(q?.all||q?.rows||[]).find(t=>t.keys.slice().sort().join(',')===selected)",'null',baseline);
-  await mutation('selection after completion',ui,"if(r&&stage)r.baseline=growthBaseline(c,cur[$('stage').value]);",'',baseline);
+  await mutation('selection after completion',ui,"if(r&&stage&&!r.baselineFirst)r.baseline=growthBaseline(c,cur[$('stage').value]);",'',baseline);
   await mutation('cosmo phase speed isolation',page,'if(sm&&!profileOverride)LS.set','if(sm)LS.set',speed);
   await mutation('cosmo final speed isolation',page,'if(sum&&!profileOverride)LS.set','if(sum)LS.set',speed);
   console.log('ALL OK overwrite review: bundles, slots, chips, PICK, speed; 7 mutations');

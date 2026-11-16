@@ -50,7 +50,7 @@ firstRecommendation(collect);
 assert.throws(()=>firstRecommendation(collect.replace('result=SIMQ.res[sig]','result=growthBaseline(c,st)')),assert.AssertionError);
 console.log('MUTATION caught + restored: growthBaseline instead of completed rows[0]');
 async function manifestTimeout(){
- const src=direct.slice(direct.indexOf('async function directManifest('),direct.indexOf('async function directRun('));
+ const src=direct.slice(direct.indexOf('async function directManifest('),direct.indexOf('async function directRunRows('));
  let now=0,queue=[],signal;
  const ctx=vm.createContext({AbortController,Error,Date:{now:()=>now},SIMQ:{LOAD_MS:180000},document:{hidden:false},
   setTimeout:(fn,ms)=>{const t={fn,at:now+ms};queue.push(t);return t},clearTimeout:t=>queue=queue.filter(x=>x!==t),

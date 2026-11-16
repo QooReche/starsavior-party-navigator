@@ -21,14 +21,21 @@
 ### 직접 편성
 
 - `direct_party.js`: 순수 초안·검증·배치 변환·사용자 배치 직렬화·전투력·서명·저장/공유 허용 목록. `direct_ui.js`는 편집, `direct_run.js`는 실행 스냅샷·행별 캐시·비교 표시를 맡음. 둘 다 물리 작업자를 만들지 않음.
-- 초안 `{v:1, slots:[{key,grown}|null × 4], leader:key|null, starLink:boolean, brk:'auto'|null|{name,level}}`. 저장/엔진 순서는 전열1·전열2·후열1·후열2, `toScreen` 결과는 후열1·전열1·전열2·후열2. 리더·육성 선택은 구원자를 따라감.
-- `powers`는 전체 로스터에서 선택하지 않은 구원자를 excluded로 넘겨 추천의 overwrite를 호출함. 장비 부위와 journeyPriority를 같이 전달하며 스타링크 추가 가정은 사본 withSlots→profile 재계산임. 추가 빈 칸이 필요하면 실제 등록 가능 여부와 구분해 표시함.
+- 초안 `{v:1, slots:[{key,grown}|null × 4], leader:key|null, brk:'auto'|null|{name,level}}`. 저장/엔진 순서는 전열1·전열2·후열1·후열2, `toScreen` 결과는 후열1·전열1·전열2·후열2. 리더·육성 선택은 구원자를 따라감.
+- `powers`는 전체 로스터에서 선택하지 않은 구원자를 excluded로 넘겨 추천의 overwrite를 호출함. 장비 부위와 journeyPriority를 같이 전달하며 선택한 미등록 구원자는 사본의 스타링크 slots에 무조건 추가한 뒤 profile을 재계산함. 칸 수·원천·격차 조건은 보지 않으며 원계정은 보존함. 고정 200 콘텐츠는 기존 능력치 규칙대로 스타링크 효과가 없음. 별도 체크·경고·가상 등록 표시는 없고 칸 상세에 등록 가정 포함만 알림. 옛 저장값·공유의 starLink 필드는 무시함.
 - `serialize`는 arrangeOf를 호출하지 않음. B단계 실행 직전 `validate`로 계정·속성·콘텐츠를 검사하고 `serialize(draft, profile.results)`로 직렬화함. `signature`에는 최종 party, stage, break 이름/레벨, seed, runs, options, engine/data/policy/preset versions를 모두 전달해야 함.
 - 로컬 저장은 `LS.set('direct.v1', DirectParty.storage(DIRECT))`의 허용 목록만 사용. 공유받은 세션의 storage는 null이고 편집 후에도 로컬을 덮어쓰지 않음. 공유 `dp`는 초안+entry만, `pm`은 화면 모드이며 기존 `m/mode`·`#shared=`와 구분함. 명시적 pm은 공유 초안과 독립적으로 복원함.
 - 실행/비교는 B단계에서 연결했음. `SIMPOOL` 관리자가 코어·메모리·모바일 상한 안에서 작업자를 독점 대여함. `scrPool`은 예약 배열이며 `simDispatch` 배정 전에는 비어 있음. 직접 작업은 진행 중인 추천 팀을 끊지 않고 다음 배정부터 우선함. 무진행 타이머는 예약별이며 대기 중에는 멈춤. `simPoolDrop(owner, requestId?, group?)`의 기본 owner는 추천 묶음(`reco`)임.
 - 직접 현재/가정은 같은 seed·판수·전체 옵션으로 실행하며 직렬화된 요청이 같으면 계산 한 번을 공유함. 결과의 표시 줄과 스냅샷은 별도로 유지함. 추천 1안은 완료된 `LASTQ[1].rows[0]`과 실행 당시 metadata가 조건·계정·버전까지 일치할 때만 비교함. 추천의 rng_streams 정책은 바꾸지 않았으며 직접 본선도 기존 추천 본선과 같음. 3별 비교는 t60, 구간은 각 Wilson 구간 끝점 차이인 보수적 비교 범위임.
 - 직접 진행률은 sim_worker가 DIRECT 요청에 한해 Battle.run 완료를 관측해 전달함. 엔진 파일·판별 집계·난수 입력은 그대로이며 관측 함수는 finally에서 복원함. 새 작업자의 준비 180초·팀별 상한·숨김/절전 보정, 육성 예선 무진행/본선 deadline을 유지함.
 - 기존 추천 now/growth 두 탭은 그대로임. 계약 검사는 `node tests/direct_party_test.js`, 실행 소유권은 `node tests/direct_execution_test.js`, B 화면·실제 엔진·되돌림은 `tests/e2e/test_direct_execution.py --real --mutations`임(Playwright Python 필요). B 캡처는 `_tmp/direct-b/`, C 그웬 길/이동/새 그림과 실제 육성 효과 시험은 `tests/e2e/test_direct_gwen.py`·`tools/gwen_art/direct_c.md`, 캡처는 `_tmp/direct-c/`임.
+
+- 2차의 실행 선택은 `pn.direct.with.v1={reco:boolean}` 하나이며 초안·공유·서명에 포함하지 않음. 종속 육성 체크는 `assume-growth`의 change 이벤트를 사용하며 별도 값·저장소가 없음. 추천 탭과 같은 완료 저장소와 서명을 읽어 재계산 없이 연결함.
+- `recommend_pipeline.js`는 주입된 계획·예선·본선 함수로 순차 계산함. `recommend_runtime.js`가 입력 사본과 결과 저장소를 연결하고, 기존 추천도 `recoCandidates`·`recoScreenSequence`·`simSignature`와 육성 `growthStageSearch`/`growthEvaluate`를 공유함. `direct_bundle.js`는 작업 소유자와 단계를 관리함. 실행 도중 직접 편집은 direct owner만 중단함. 조건 변경은 묶음을 중단하며, 합류한 추천 탭 작업은 묶음 취소만으로 죽이지 않음.
+- 기존 육성 결과를 직접 비교로 가져올 때도 완료된 추천 rows[0]을 `baselineFirst` 기준으로 고정함. 추천 탭 본문·탭 제목도 그 기준을 사용함. 추천 자체의 후보·결과값·정렬은 변하지 않음. 길드 방어전·코스모는 「이 줄만 계산」과 실행 진입점 양쪽에서 차단함.
+- 기존 추천 결과 보존을 위해 예선/육성의 rng_streams와 일반 본선 난수 정책을 그대로 사용함. 비교는 짝지은 실험이라고 표시하지 않으며 기존 보수적 구간을 사용함.
+- `direct_drag.js`는 마우스 6px, 터치 350ms 이후 끌기를 시작함. 터치 대기 중 8px 이동은 일반 스크롤임. 미리보기 동안 편집·그리기를 보류하고 놓을 때 `directChange`를 한 번 호출함. ESC·바깥 놓기는 취소하며 후속 click을 삼킴. 키보드/누르기는 기존 편집 경로임. 얼굴은 추천의 art·1:1.12·그림 112% 규칙을 사용하고 전원 검토 결과 별도 예외는 없음.
+- 2차 화면·실제 스타링크·되돌림·리뷰 회귀 시험은 `tests/e2e/test_direct_phase2.py`, 영상은 `--only video`로 생성함. 59명 얼굴 시트·단계·끌기·실제 전투력 전후 캡처는 `_tmp/phase2/`에 생성하며 공개 커밋에 넣지 않음.
 
 ### 이전 육성 가정 (현재 화면에서 숨김)
 - 평균 / 80% / 125% / 내 전투력(파티 또는 구원자별) / 내 정보 중 하나만 적용.

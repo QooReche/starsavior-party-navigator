@@ -11,6 +11,8 @@ from build2 import ROOT, OUT, R, cells, encode
 from build3 import difference_mask, assert_eye_only
 import cry6
 import sleeve7
+import face9
+import sleeve11
 
 HERE = Path(__file__).resolve().parent
 MASTERS = HERE / 'masters5'
@@ -43,7 +45,7 @@ def import_sheet(path):
 def original_master_frames(name):
     with Image.open(MASTERS / (name+'.webp')) as im:
         frames = cells(im.convert('RGBA'), 3)
-    return cry6.apply_sleeves(frames) if name == 'st_cry' else frames
+    return cry6.apply_sleeves(frames) if name == 'st_cry' else face9.apply(name, frames)
 
 
 def master_frames(name):
@@ -87,6 +89,9 @@ def blink_master(name, sleeves=True):
 
 
 def blink_static(name):
+    if name == 'st_shy':
+        with Image.open(sleeve11.PATCHES/'st_shy_base_blink.png') as im:
+            return sleeve11.repair(im.convert('RGBA'))
     with Image.open(OUT / (name+'.png')) as im:
         src = im.convert('RGBA')
     if name == 'st_cry':
@@ -127,8 +132,14 @@ def build(names=NAMES, blink=True):
             with Image.open(OUT/(name+'.png')) as im:
                 preserved = cry6.preserve_static(im.convert('RGBA'))
             preserved.save(OUT/(name+'.png'), optimize=True)
+        if name in face9.NAMES:
+            with Image.open(OUT/(name+'.png')) as im:
+                preserved = face9.preserve_static(name, im.convert('RGBA'))
+            preserved.save(OUT/(name+'.png'), optimize=True)
         if blink:
             blink_static(name).save(OUT / (name+'_blink.png'), optimize=True)
+        if name == 'st_shy':
+            sleeve11.encode(OUT, blink=blink)
 
 
 def validate_outputs(names=NAMES):

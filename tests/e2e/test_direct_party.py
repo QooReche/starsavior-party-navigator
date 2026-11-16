@@ -114,7 +114,9 @@ def editor(browser,base,width,touch=False):
     assert page.evaluate('''() => {
       const d=DIRECT.draft,c=directContext();
       const r=MyInfoReco.overwrite(MI.info,R,MI.growth,c.content,{excluded:R.filter(s=>!d.slots.some(m=>m?.key===s.key&&m.grown)).map(s=>s.key),slots:DIRECT.slots,priority:D.journeyPriority});
-      return d.slots.every((m,i)=>DIRECT.values.values[i].power===r.profile.results[m.key].power);
+      const ids=[...new Set([...r.info.star_link.slots.map(x=>x.id),...d.slots.filter(m=>m?.grown).map(m=>BYKEY[m.key].uid)])];
+      const final=MyInfoReco.profile(StarLink.withSlots(r.info,ids),R,MI.growth,c.content);
+      return d.slots.every((m,i)=>DIRECT.values.values[i].power===final.results[m.key].power);
     }''')
     for i in [0,3]:
         b=page.locator(f'[data-direct-action=slot][data-slot="{i}"]')
@@ -123,7 +125,10 @@ def editor(browser,base,width,touch=False):
     swapped=page.evaluate('DIRECT.draft')
     assert swapped['slots'][3]['key']==original['slots'][0]['key'] and swapped['slots'][3]['grown']
     assert swapped['leader']==original['leader']
-    leader=page.locator('.direct-slot[data-direct-slot="1"] [data-direct-action=leader]')
+    if touch:
+        page.locator('[data-direct-action=slot][data-slot="1"]').tap()
+        leader=page.locator('#direct-selection [data-direct-action=leader]')
+    else:leader=page.locator('.direct-slot[data-direct-slot="1"] [data-direct-action=leader]')
     leader.focus();page.keyboard.press('Space')
     assert page.evaluate('DIRECT.draft.leader===DIRECT.draft.slots[1].key')
     order=page.evaluate('JSON.stringify(DIRECT.draft)')
@@ -136,7 +141,11 @@ def editor(browser,base,width,touch=False):
     assert page.evaluate('DIRECT.draft.slots.every(s=>s===null)')
     page.locator('#direct-undo').click();assert page.evaluate('JSON.stringify(DIRECT.draft)')==order
     assert page.locator('#direct-undo').is_disabled()
-    page.locator('[data-direct-action=remove][data-slot="2"]').click()
+    if touch:
+        page.evaluate('DIRECT.selected=null;directPaint()')
+        page.locator('[data-direct-action=slot][data-slot="2"]').tap()
+        page.locator('#direct-selection [data-direct-action=remove]').tap()
+    else:page.locator('.direct-slot [data-direct-action=remove][data-slot="2"]').click()
     assert '4명 미만' in page.locator('#direct-state').inner_text()
     page.locator('#direct-undo').click()
     assert page.evaluate('JSON.stringify(DIRECT.draft)')==order
@@ -162,10 +171,11 @@ def power_link_conditions(browser,base):
     page.locator('[data-direct-action=grown][data-slot="0"]').click()
     basepower=page.locator('#direct-total').inner_text()
     before=page.evaluate('JSON.stringify(MI.info)')
-    page.locator('#direct-starlink').check()
+    assert page.locator('#direct-starlink').count()==0
+    page.locator('[data-direct-action=grown][data-slot="1"]').click()
     assert page.locator('#direct-total').inner_text()!=basepower
-    assert '실제 빈 슬롯' in page.locator('#direct-state').inner_text()
-    page.locator('#direct-starlink').uncheck()
+    assert '가상 등록' not in page.locator('#direct-state').inner_text()
+    page.locator('[data-direct-action=grown][data-slot="1"]').click()
     assert page.locator('#direct-total').inner_text()==basepower
     assert page.evaluate('JSON.stringify(MI.info)')==before
     draft=page.evaluate('JSON.stringify(DIRECT.draft)')
@@ -249,8 +259,8 @@ def no_info_and_restrictions(browser,base):
 
 def shared(browser,base,mutate=False):
     # A local draft is deliberately different from the received draft.
-    draft={'v':1,'slots':[{'key':k,'grown':False} for k in ['luna','smile','carnelia','asherah-voyager']], 'leader':'luna','starLink':False,'brk':'auto'}
-    local={**draft,'leader':'smile'}
+    draft={'v':1,'slots':[{'key':k,'grown':False} for k in ['luna','smile','carnelia','asherah-voyager']], 'leader':'luna','brk':'auto'}
+    local={**draft,'leader':'smile','starLink':True}
     def setup(page):
         seed(page,extra={'pn.direct.v1':json.dumps(local)})
         # seed() has a session guard; add this one directly before first document.
@@ -260,10 +270,11 @@ def shared(browser,base,mutate=False):
             old="DIRECT.mode=SHARE.pm||(SHARE.dp?'direct':(SHARE.c||AUTO||/[#&]shared=/.test(location.hash))?'reco':'home');"
             assert old in src
             page.route('**/direct_ui.js',lambda route:route.fulfill(body=src.replace(old,"DIRECT.mode='home';"),content_type='text/javascript'))
-    page=ready(browser,base,query='?c=op&auto=1&pm=direct&dp='+quote(json.dumps(draft)),setup=setup)
+    page=ready(browser,base,query='?c=op&auto=1&pm=direct&dp='+quote(json.dumps({**draft,'starLink':True})),setup=setup)
     try:
         assert page.locator('#start-screen').is_hidden(),'shared link displayed half start screen'
         assert page.locator('#direct-panel').is_visible()
+        assert page.evaluate('DIRECT.draft')==draft,'legacy link field changed the restored draft'
         assert page.evaluate('!AUTO && !REQ && !RECO.sharedPending && !RECO.timer && SIMQ.busy==null')
         page.locator('[data-direct-action=grown][data-slot="0"]').click()
         assert page.evaluate('JSON.parse(localStorage.getItem("pn.direct.v1"))')==local

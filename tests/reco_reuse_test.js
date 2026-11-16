@@ -36,7 +36,7 @@ function buildCtx() {
     REKINDLE: [0, 0.03, 0.07, 0.12, 0.18, 0.25],
     GIMACT: [], SBACT: [], DMW: [0, 0.5],
     SIMQ: {res:{}, more:{}, scr:{}, n:100},
-    LASTQ: {}, JOINT: null, MODE: 'auto',
+    LASTQ: {}, JOINT: null, MODE: 'auto', MI:{info:null}, RECO:{standard:false},
     LS: {get:()=>null, set:()=>{}}, SHARE: {},
     miMode: ()=>false, miProfile: ()=>({results:{}}),
     MyInfoReco: {team:()=>({})}, rkOf: ()=>0,

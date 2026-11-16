@@ -139,7 +139,7 @@ class MemPeak:
         self._t.join(timeout=5)
 
 
-def run_one(browser, base, content, query, rk, workers, timeout):
+def run_one(browser, base, content, query, rk, workers, timeout, direct=False):
     import test_page as tp
     page = browser.new_page(viewport={'width': 1280, 'height': 900})
     errors = []
@@ -159,12 +159,18 @@ def run_one(browser, base, content, query, rk, workers, timeout):
         with MemPeak() as mem:
             t0 = time.time()
             page.evaluate('() => { window.__bench.t0 = Date.now() }')
-            page.click('button[data-go]')
-            page.wait_for_selector('.party[data-party="1"] .qbox .qrow[data-key]', timeout=timeout)
+            if direct:
+                page.evaluate("directNavigate('direct')")
+                page.wait_for_function('!!DIRECT.slots')
+                page.evaluate("void directRun('reco')")
+                page.wait_for_function('DIRECT.bundle&&!DIRECT.bundle.running',timeout=timeout)
+                assert page.evaluate("DIRECT.bundle.steps.every(s=>s.status==='done')"),page.evaluate('DIRECT.bundle.steps')
+            else:page.click('button[data-go]')
+            page.wait_for_selector('.party[data-party="1"] .qbox .qrow[data-key]', state='attached' if direct else 'visible', timeout=timeout)
             tp.wait_sim_done(page, timeout=timeout)
             dt = time.time() - t0
         out = page.evaluate(COLLECT_JS)
-        out.update(content=content, query=query, rk=rk, workers=workers, mode='auto', seconds=round(dt, 1), peakMB=round(mem.peak),
+        out.update(content=content, query=query, rk=rk, workers=workers, mode='auto', entry='direct' if direct else 'reco', seconds=round(dt, 1), peakMB=round(mem.peak),
                    errors=errors, quick=page.evaluate("""() => {const c={};for(const t of (LASTQ[1].all||[]).slice(0,80))c[t.vd]=(c[t.vd]||0)+1;return c}"""))
         return out
     finally:
@@ -209,6 +215,7 @@ def main():
     ap.add_argument('--stages')
     ap.add_argument('--timeout', type=int, default=3600)
     ap.add_argument('--compare', nargs='+')
+    ap.add_argument('--direct', action='store_true', help='직접 편성의 같은 추천 계산 경로로 실행')
     ap.add_argument('--root', default=ROOT, help='화면을 내줄 저장소 폴더(기준 기록은 고치기 전 사본 폴더를 준다)')
     a = ap.parse_args()
     if a.compare:
@@ -234,7 +241,7 @@ def main():
                 for c, q, rk in stages:
                     if (c, q, rk, w, 'auto') in have:
                         continue
-                    r = run_one(browser, base, c, q, rk, w, a.timeout * 1000)
+                    r = run_one(browser, base, c, q, rk, w, a.timeout * 1000, a.direct)
                     results.append(r)
                     sc = r['screen'] or {}
                     print('%s %s rk%d W%d: %.1f초 %d판 %dMB 후보 %s 빠른계산 %s 1위 %s 단계 %s' % (c, q, rk, w, r['seconds'], r['runs'], r['peakMB'], sc.get('total'), r['quick'],

@@ -1,0 +1,31 @@
+{
+  "tool": "built-in image_gen",
+  "start_commit": "8cd0dce",
+  "transparent_background": true,
+  "max_calls_per_asset": 2,
+  "calls": [
+    {
+      "name": "st_sulk",
+      "attempt": 1,
+      "prompt": "Use case: precise-object-edit. Image 1 is the edit target: a transparent THREE-cell horizontal sprite sheet, 960x320, each cell 320x320. Image 2 is a facial expression reference ONLY. Edit ONLY the face and necessary head angle in all three cells. Preserve the original official illustration style: soft round face, small short chin, dark indigo-purple bob with teal inner hair, restrained soft shading, delicate lines, golden eyes and gold bar pin on VIEWER RIGHT. Preserve exact torso, crossed/clasped hands, all clothes, shoulders, scale, waist crop, cell locations and true transparent background. The broad continuous white OUTER sleeve bands, gloves, frills, epaulettes, bow and jewel must stay unchanged. No tongue, text, symbols, background or new props. Expression MUST be unmistakable when the entire square cell is downscaled to 120px: use clearly visible bold facial shapes, not tiny neutral marks. Cell 1 is base. Cell 2 retains the target's small head motion but same enhanced emotion. Cell 3 must duplicate cell 1 head position/expression exactly except BOTH eyes closed for a blink; same cheeks, mouth and eyebrows. Return the same three-cell transparent sheet. SULKING: dramatically puff BOTH cheeks outward, visibly convex bulging cheek contours, particularly the near cheek. A compact DARK tightly pressed 'ㅅ' shaped pout, clearly annoyed, no smile. Lowered inward-sloping brows and narrowed HALF-OPEN golden eyes glaring sideways. Turn head distinctly AWAY toward VIEWER LEFT in a clear three-quarter angle, eyes giving a displeased side glance back. Cell 2 turns slightly further left as a small huffy head turn; keep crossed arms exactly as target. Puffy cheeks and angular pout must remain strong in all cells. Capture reference's irritated narrowed eyes but exaggerate the cheek inflation beyond the reference so it reads at 120px.",
+      "reference_paths": [
+        "tools/gwen_art/masters5/st_sulk.webp",
+        "<private-ref>/face_l3_015.jpg"
+      ],
+      "source": "<codex-image-cache>/01a1e3d1-f9d8-7072-a5da-1f7548adb11d/exec-f77298af-5337-4033-93fe-5b31c96a4772.png",
+      "saved": "_tmp/art9/st_sulk-edit.png"
+    },
+    {
+      "name": "st_shy",
+      "attempt": 1,
+      "prompt": "Use case: precise-object-edit. Image 1 is the edit target: a transparent THREE-cell horizontal sprite sheet, 960x320, each cell 320x320. Image 2 is a facial expression reference ONLY. Edit ONLY the face and necessary head angle in all three cells. Preserve the original official illustration style: soft round face, small short chin, dark indigo-purple bob with teal inner hair, restrained soft shading, delicate lines, golden eyes and gold bar pin on VIEWER RIGHT. Preserve exact torso, crossed/clasped hands, all clothes, shoulders, scale, waist crop, cell locations and true transparent background. The broad continuous white OUTER sleeve bands, gloves, frills, epaulettes, bow and jewel must stay unchanged. No tongue, text, symbols, background or new props. Expression MUST be unmistakable when the entire square cell is downscaled to 120px: use clearly visible bold facial shapes, not tiny neutral marks. Cell 1 is base. Cell 2 retains the target's small head motion but same enhanced emotion. Cell 3 must duplicate cell 1 head position/expression exactly except BOTH eyes closed for a blink; same cheeks, mouth and eyebrows. Return the same three-cell transparent sheet. BASHFUL SHY: two ROUND DEEP rosy-pink cheek blush patches, substantial and saturated enough to be obvious at 120px. Narrow smiling golden eyes with gently DROOPING outer corners, tender embarrassed expression. Lower chin and bow head while looking UP at viewer from beneath lashes. Small but clearly visible DARK closed '‿' upward-curved smile, no open mouth. Cell 2 dips head slightly further shyly, still peeking upward. Keep clasped hands exactly as target. Cell 3 closed eyelids for blink, retain both round deep blush patches and small curved smile. Do not leave the original nearly neutral wide-open eyes.",
+      "reference_paths": [
+        "tools/gwen_art/masters5/st_shy.webp",
+        "<private-ref>/face_l5_015.jpg"
+      ],
+      "source": "<codex-image-cache>/01a1e3d1-f9d8-7072-a5da-1f7548adb11d/exec-cb2dbd29-2d18-45b6-bdf3-024c87aebfbf.png",
+      "saved": "_tmp/art9/st_shy-edit.png"
+    }
+  ],
+  "compositing": "Resize each generated cell to 320x320, translate (0,-5), extract face polygons with a 1.2px feather. Preserve original outer hair alpha; only st_sulk cheek/chin may expand the silhouette. Apply before sleeve7. Retain approved PNG pixels outside the face footprint; use existing quality=88 animation encoder. Blink uses only eye polygons, st_shy source aligned (-5,0). No full regeneration."
+}

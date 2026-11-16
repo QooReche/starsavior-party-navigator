@@ -29,8 +29,13 @@ def start(browser,base,width=1280,setup=fake,info=True):
     kwargs={'setup':setup,'touch':width==360}
     if not info:kwargs['info']=None
     p=ready(browser,base,width,**kwargs);enter(p);pick_four(p,width==360)
-    p.locator('#direct-comparison summary').click()
+    p.evaluate("$('direct-comparison').open=true")
     return p
+
+def expand_row(p,kind):
+    b=p.locator(f'[data-direct-action=compare-toggle][data-kind={kind}]')
+    if b.get_attribute('aria-expanded')!='true':b.click()
+
 
 def done(p):p.wait_for_function("!DIRECT.active && DIRECT.rows.now?.status==='done'",timeout=120000)
 
@@ -41,6 +46,7 @@ def shots_and_reuse(browser,base,width):
     if width==360:p.locator('#direct-run').tap()
     else:p.locator('#direct-run').focus();p.keyboard.press('Enter')
     p.wait_for_function("DIRECT.rows.now?.progress===62")
+    expand_row(p,'now')
     assert '62/100판' in p.locator('[data-direct-row=now]').inner_text()
     assert p.locator('#direct-run').inner_text()=='취소'
     p.screenshot(path=str(OUT/f'running-{width}.png'),full_page=True)
@@ -53,11 +59,12 @@ def shots_and_reuse(browser,base,width):
     p.locator('#direct-run').click();done(p)
     assert p.evaluate('directPosts.length')<=count+1
     assert p.locator('[data-direct-row=grown]').count()==1
+    expand_row(p,'grown')
     assert '보수적 비교 범위' in p.locator('[data-direct-row=grown]').inner_text()
     p.screenshot(path=str(OUT/f'growth-comparison-{width}.png'),full_page=True)
     count=p.evaluate('directPosts.length')
     p.locator('[data-direct-action=leader][data-slot]').count() # leader buttons use key
-    p.locator('.direct-slot[data-direct-slot="1"] [data-direct-action=leader]').click()
+    p.evaluate("directChange({type:'leader',key:DIRECT.draft.slots[1].key})")
     assert p.locator('[data-direct-row=now]').evaluate("e=>e.classList.contains('direct-past')")
     assert '82%' in p.locator('[data-direct-row=now]').inner_text()
     p.screenshot(path=str(OUT/f'past-{width}.png'),full_page=True)
@@ -74,11 +81,11 @@ def shots_and_reuse(browser,base,width):
     assert p.evaluate("DIRECT.rows.now.status==='done'")
     p.screenshot(path=str(OUT/f'error-{width}.png'),full_page=True)
     p.evaluate('window.failGrown=false')
-    p.locator('[data-direct-action=run-row]').click();done(p)
+    p.locator('[data-direct-action=run-row][data-kind=grown]').click();done(p)
     p.evaluate("DIRECT.cache.delete(DIRECT.rows.grown.sig);window.failGrown=true;directRun('grown')")
     p.wait_for_function("!DIRECT.active && DIRECT.rows.grown.status==='error'")
     p.locator('[data-direct-action=grown][data-slot="0"]').click()
-    assert p.locator('[data-direct-row=grown]').count()==0,'obsolete failure leaked into current inputs'
+    assert '계산 실패' not in p.locator('[data-direct-row=grown]').inner_text(),'obsolete failure leaked into current inputs'
     assert p.evaluate("DIRECT.rows.now.status==='done'")
     geometry(p,width);assert not p.errors,p.errors;p.close()
 
@@ -91,7 +98,7 @@ def conditions_and_cancel(browser,base):
     # Edits and account changes cancel only the direct snapshot already in flight.
     p.evaluate("DIRECT.cache.clear();window.holdDirect=true;directRun()")
     p.wait_for_function('DIRECT.rows.now?.status==="running"')
-    p.locator('.direct-slot[data-direct-slot="1"] [data-direct-action=leader]').click()
+    p.evaluate("directChange({type:'leader',key:DIRECT.draft.slots[1].key})")
     assert p.evaluate('!DIRECT.active && directWorkers.every(w=>w.dead)')
     p.locator('#direct-undo').click()
     p.evaluate('directRun()');p.wait_for_function('DIRECT.rows.now?.status==="running"')
@@ -119,20 +126,20 @@ def combinations(browser,base):
     for grown,link in [(False,False),(True,False),(False,True),(True,True)]:
         p.evaluate('''([grown,link])=>{DIRECT.draft.slots.forEach(m=>m.grown=grown);DIRECT.draft.starLink=link;directPaint()}''',[grown,link])
         p.locator('#direct-run').click();done(p)
-        assert p.evaluate("!!DIRECT.expected.grown")==bool(grown or link)
+        assert p.evaluate("!!DIRECT.expected.grown")==bool(grown),'retired starLink field changed execution'
         assert p.evaluate("DIRECT.rows.now.sig===DIRECT.expected.now.sig")
     # Same final request is calculated once, irrespective of assumption flags.
     p.close();p=start(browser,base,info=False)
-    p.evaluate("DIRECT.draft.starLink=true;directPaint()")
+    p.evaluate("DIRECT.draft.slots[0].grown=true;directPaint()")
     p.locator('#direct-run').click();done(p)
     assert p.evaluate('directPosts.length')==1
     assert p.evaluate('DIRECT.rows.now.result.clear===DIRECT.rows.grown.result.clear')
-    p.evaluate("DIRECT.draft.starLink=false;directPaint()")
+    p.evaluate("DIRECT.draft.slots[0].grown=false;directPaint()")
     assert p.locator('[data-direct-row=grown].direct-past').count()==1,'deduplicated assumption result did not become past'
     assert p.locator('[data-direct-row=now].direct-past').count()==0
-    p.evaluate("DIRECT.draft.starLink=true;directPaint()")
+    p.evaluate("DIRECT.draft.slots[0].grown=true;directPaint()")
     assert p.locator('[data-direct-row=grown].direct-past').count()==0
-    assert '표준 육성 기준' in p.locator('#direct-run-state').inner_text()
+    assert '표준 육성 기준' in p.locator('#direct-standard').inner_text()
     p.close()
 
 def real_execution(browser,base):
@@ -153,11 +160,12 @@ def real_execution(browser,base):
     p.set_viewport_size({'width':360,'height':1000});geometry(p,360)
     p.screenshot(path=str(OUT/'real-result-360.png'),full_page=True)
     p.set_viewport_size({'width':1280,'height':1000})
-    p.locator('#direct-recommend').click();wait_sim_done(p,timeout=240000)
+    expand_row(p,'reco')
+    p.locator('[data-direct-action=view-reco]').click();p.evaluate('showReco()');wait_sim_done(p,timeout=240000)
     p.locator('#mode-strip [data-pn-mode=direct]').click()
     assert p.evaluate('DIRECT.compare.result===SIMQ.res[simSig(cur[$("stage").value],LASTQ[1].rows[0])]')
-    assert p.locator('#direct-recommend').is_hidden()
-    assert '추천 탭 결과' in p.locator('[data-direct-row=reco]').inner_text()
+    assert p.locator('#direct-recommend').count()==0
+    assert '추천 탭과 같은 결과' in p.locator('[data-direct-row=reco]').inner_text()
     assert not p.errors,p.errors;p.close()
 
 def goal_and_reaction(browser,base):
@@ -165,9 +173,11 @@ def goal_and_reaction(browser,base):
     p.select_option('#content',p.evaluate("String(contents.findIndex(c=>c.key==='equip'))"))
     p.locator('#direct-run').click();done(p)
     assert p.evaluate('DIRECT.expected.now.options.star_turns')==60
+    expand_row(p,'now')
     assert '60턴 내 55%' in p.locator('[data-direct-row=now]').inner_text()
     assert '−50' in p.evaluate("directDifference({n:100,clear:.9,t60:.2},{n:100,clear:.1,t60:.7},'t60')")
     p.evaluate("$('goal').value='0';condChanged()")
+    expand_row(p,'now')
     assert '60턴 내 55%' in p.locator('[data-direct-row=now].direct-past').inner_text(),'past metric changed with goal'
     p.close();p=start(browser,base,info=False)
     p.evaluate('window.clearDirect=.01');p.locator('#direct-run').click();done(p)
@@ -212,7 +222,7 @@ def main():
                     p=start(browser,base,setup=setup)
                     try:
                         p.locator('#direct-run').click();done(p)
-                        p.locator('.direct-slot[data-direct-slot="1"] [data-direct-action=leader]').click()
+                        p.evaluate("directChange({type:'leader',key:DIRECT.draft.slots[1].key})")
                         assert p.locator('[data-direct-row=now].direct-past').count()==1,'past result label missing'
                     finally:p.close()
                 stale_check()

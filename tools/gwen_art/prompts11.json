@@ -1,0 +1,19 @@
+{
+  "tool": "built-in image_gen",
+  "start_commit": "6a380fa",
+  "transparent_background": true,
+  "calls": [
+    {
+      "name": "st_shy",
+      "attempt": 1,
+      "prompt": "Use case: precise-object-edit. EDIT TARGET is the supplied transparent three-cell sprite sheet, each cell 320x320 overall 960x320. Keep the exact same canvas, three poses, alignment, silhouette and every face, expression, hair, hand, glove, frilled cuff, torso and belt. Change ONLY the missing lower-sleeve white bands on BOTH forearms in ALL THREE CELLS. Both hands are clasped before the chest. Each royal-blue sleeve already has a broad white outer band from shoulder to elbow. Currently that band wrongly ENDS at the elbow. Continue that SAME band, smoothly bending around each elbow, along the LOWER OUTSIDE EDGE of the inward-folded forearm up to just before the white wrist frill. The left elbow is near (60,265), left cuff near (96,277); right elbow near (253,265), right cuff near (214,277) in each 320 cell. The stripe should curve down around the elbow then inward/up toward the cuff. The stripe is on the visible outer/lower forearm, not across its upper inward-facing blue surface. Width about 20-25 percent of sleeve width, matching the existing broad white upper arm stripe, with soft gray-white shading and fine existing gold piping where appropriate. No blue interruption between shoulder stripe, elbow stripe and new forearm stripe. Preserve the original blue sleeve silhouette. Never paint on frills, gloves, hands or torso. Keep the same approved restrained faces exactly. Do NOT regenerate characters. Transparent background.",
+      "reference_paths": [
+        "_tmp/art11/st_shy-target.png"
+      ],
+      "saved": "_tmp/art11/st_shy-generated.png",
+      "source": "<codex-image-cache>/01a1e428-7451-7a31-95e6-a95d90275d14/exec-ba7110c5-a17c-49f1-856e-b3feb399022c.png"
+    }
+  ],
+  "visual_reference": "<private-ref>/play_p_017.jpg (read only, inspected after edit; not an image_gen input)",
+  "compositing": "Normalize each generated cell to 320x320. Use open and head-bowed cells only. Composite generated cloth inside the two explicit lower-sleeve polygons with 0.6px feather, resize to 240, preserve all approved decoded RGBA outside mask support and original alpha. Use base sleeve for PNG, blink, F0 and F2; action sleeve for F1. No facial patch changes. Quality 95 WebP retains timing and loop; decoded RGB has measured recompression differences."
+}

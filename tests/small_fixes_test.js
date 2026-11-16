@@ -42,7 +42,7 @@ ranking();
 for(const newline of ['\n','\r\n'])rollover(season,page.replace(/\r?\n/g,newline));
 mutate('closed history exclusion',ui,"!seasonBlocked(h.content?.split('/')[0])",'true',ranking);
 mutate('season cancel chain',season,'simInvalidate();','',s=>rollover(s));
-mutate('growth cancel chain',page,'function simInvalidate(){if(typeof growthCancel==="function")growthCancel();','function simInvalidate(){',s=>rollover(season,s));
+mutate('growth cancel chain',page,"function simInvalidate(){if(typeof recoTaskCancel==='function')recoTaskCancel('입력이 바뀜');if(typeof growthCancel===\"function\")growthCancel();","function simInvalidate(){if(typeof recoTaskCancel==='function')recoTaskCancel('입력이 바뀜');",s=>rollover(season,s));
 mutate('copied search stop',ui,'if(GROW.stop)GROW.stop();','',s=>rollover(season,page,s));
 mutate('relocated growth cleanup',ui,"document.getElementById('growth-result')?.remove();",'',s=>rollover(season,page,s));
 console.log('ALL OK small fixes; LF/CRLF; 5 mutations');

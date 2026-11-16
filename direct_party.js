@@ -6,13 +6,13 @@
   const S=node?require('./star_link'):root.StarLink;
   const VERSION=1;
   const key=v=>typeof v==='string'&&/^[a-z][a-z0-9_-]{0,63}$/.test(v)?v:null;
-  const empty=()=>({v:VERSION,slots:[null,null,null,null],leader:null,starLink:false,brk:'auto'});
+  const empty=()=>({v:VERSION,slots:[null,null,null,null],leader:null,brk:'auto'});
   const toEngine=xs=>[xs[1],xs[2],xs[0],xs[3]];
   const toScreen=xs=>[xs[2],xs[0],xs[1],xs[3]];
   function draft(raw){
     const out=empty();if(!raw||raw.v!==VERSION)return out;
     out.slots=out.slots.map((_,i)=>key(raw.slots?.[i]?.key)?{key:key(raw.slots[i].key),grown:raw.slots[i].grown===true}:null);
-    out.leader=key(raw.leader);out.starLink=raw.starLink===true;
+    out.leader=key(raw.leader);
     if(raw.brk===null)out.brk=null;
     else if(raw.brk&&typeof raw.brk.name==='string'&&raw.brk.name.length<=40&&Number.isInteger(raw.brk.level)&&raw.brk.level>=1&&raw.brk.level<=10)
       out.brk={name:raw.brk.name,level:raw.brk.level};
@@ -49,7 +49,6 @@
     if(action.type==='remove'&&slots[action.slot]){const old=slots[action.slot];slots[action.slot]=null;if(d.leader===old.key)d.leader=slots.find(Boolean)?.key||null;}
     if(action.type==='leader'&&slots.some(s=>s?.key===action.key))d.leader=action.key;
     if(action.type==='grown'&&slots[action.slot])slots[action.slot].grown=!!action.value;
-    if(action.type==='starLink')d.starLink=!!action.value;
     if(action.type==='brk')return draft({...d,brk:action.value});
     if(action.type==='clear')return empty();
     // Explicit automatic placement changes positions only; leader/growth follow their savior.
@@ -70,22 +69,20 @@
     const original=M.profile(info,roster,growth,content);
     const snapshot=M.overwrite(info,roster,growth,content,{excluded:roster.filter(s=>!selected.has(s.key)).map(s=>s.key),slots,priority});
     let profile=snapshot.profile,account=snapshot.info;const warnings=[];
-    if(d.starLink){
-      const unavailable=S.availability(info);
-      if(unavailable)warnings.push(unavailable);
-      else if(original.rule==='fixed200')warnings.push('고정 레벨 콘텐츠 · 스타링크 추가 적용 없음');
-      else{
-        const ids=account.star_link.slots.map(s=>s.id),byKey=new Map(roster.map(s=>[s.key,s.uid]));let extra=0;
-        for(const m of d.slots.filter(Boolean)){const id=byKey.get(m.key);
-          if(!account.units.some(u=>u.id===id)||account.star_link.source.includes(id)||ids.includes(id))continue;
-          const free=ids.indexOf(0);if(free>=0)ids[free]=id;else{ids.push(id);extra++;}
-        }
-        if(extra)warnings.push(`가상 등록 ${extra}명 · 실제 빈 슬롯/교체 확인 필요`);
-        account=S.withSlots(account,ids);profile=M.profile(account,roster,growth,content);
+    const linked=[];
+    // Direct-only PM policy: a grown, unregistered member is registered in the copy.
+    // Capacity/source restrictions do not gate a hypothetical build. Legacy data stays legacy.
+    if(account.star_link&&Array.isArray(account.star_link.slots)){
+      const ids=account.star_link.slots.map(s=>s.id),previous=new Set(info.star_link?.slots?.map(s=>s.id)||[]);
+      for(const m of d.slots.filter(m=>m?.grown)){
+        const unit=profile.units[m.key];if(!unit||previous.has(unit.id))continue;
+        if(!ids.includes(unit.id))ids.push(unit.id);
+        if(original.rule!=='fixed200')linked.push(m.key);
       }
+      account=S.withSlots(account,ids);profile=M.profile(account,roster,growth,content);
     }
     const values=d.slots.map(s=>s?profile.results[s.key]||null:null),before=d.slots.map(s=>s?original.results[s.key]||null:null);
-    return {values,before,total:values.reduce((n,r)=>n+(r?.power||0),0),profile,changes:snapshot.changes,errors:snapshot.errors,warnings};
+    return {values,before,total:values.reduce((n,r)=>n+(r?.power||0),0),profile,linked,changes:snapshot.changes,errors:snapshot.errors,warnings};
   }
   function stable(v){if(Array.isArray(v))return v.map(stable);if(v&&typeof v==='object')return Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])]));return v;}
   function signature({party,stage,brk,seed,runs,options,versions}){

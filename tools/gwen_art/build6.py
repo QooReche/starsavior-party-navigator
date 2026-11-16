@@ -1,6 +1,6 @@
-"""Rebuild official-style portraits with local sleeve repairs and original faces.
+"""Rebuild official-style portraits with local sleeve and expression repairs.
 
-Default rebuild uses committed masters and art6/art7 sleeve patches, no generation API.
+Default rebuild uses committed masters and art6-art9 patches, no generation API.
 --import-dir accepts the selected normalized 320px master sheets.
 """
 import argparse

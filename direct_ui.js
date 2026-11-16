@@ -4,6 +4,7 @@ function directInit(){
   Object.assign(DIRECT,DirectParty.restore(LS.get('direct.v1'),SHARE.dp));
   DIRECT.mode=SHARE.pm||(SHARE.dp?'direct':(SHARE.c||AUTO||/[#&]shared=/.test(location.hash))?'reco':'home');
   history.replaceState({...history.state,pnMode:DIRECT.mode},'',location.href);
+  directDragInit();directBundleInit();
   document.addEventListener('click',e=>{
     if(e.target.closest('#start-screen [data-miopen]')){setDrawer(true);return;}
     const mode=e.target.closest('[data-pn-mode]');if(mode){directNavigate(mode.dataset.pnMode,mode);return;}
@@ -11,15 +12,21 @@ function directInit(){
     if(choice&&!e.target.closest('button,input,label,a,summary,details')){directNavigate(choice.dataset.pnChoice,choice);return;}
     const b=e.target.closest('[data-direct-action]');if(!b||b.disabled)return;
     const a=b.dataset.directAction,i=Number(b.dataset.slot);
+    if(a==='compare-toggle'){const panel=$(b.getAttribute('aria-controls')),open=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',String(open));panel.hidden=!open;return;}
     if(a==='run'){directRun();return;}
     if(a==='run-row'){directRun(b.dataset.kind);return;}
-    if(a==='recommend'){directNavigate('reco');showReco();return;}
+    if(a==='skip'){directBundleSkip(b.dataset.kind);return;}
+    if(a==='view-reco'){directNavigate('reco');run(true);return;}
+    if(a==='view-growth'){directNavigate('reco');run(true);$('result-tab-growth')?.click();return;}
+    if(a==='recommend'){directNavigate('reco');return;}
+    if(a==='deselect'){const i=DIRECT.selected;DIRECT.selected=null;directPaint();$('direct-board').querySelector(`[data-direct-action=slot][data-slot="${i}"]`)?.focus();return;}
     if(a==='unowned'){const status=b.closest('[data-direct-picker]').querySelector('[data-direct-pick-status]')||$('direct-state');status.textContent='보유하지 않음 · 고를 수 없음';return;}
     if(a==='slot'){
       const swapping=DIRECT.selected!==null&&DIRECT.selected!==i;
       if(swapping){directChange({type:'swap',a:DIRECT.selected,b:i});DIRECT.selected=null;}
       else DIRECT.selected=DIRECT.selected===i?null:i;
-      directPaint();if(!swapping)GwenLane.edit('focus',i);return;
+      directPaint();if(!swapping)GwenLane.edit('focus',i);
+      if(!DIRECT.draft.slots[i]&&DIRECT.selected===i&&innerWidth<=760){$('direct-picker-dialog').showModal();$('direct-picker-dialog').querySelector('input').focus();}return;
     }
     if(a==='pick'){
       directChange({type:'put',key:b.dataset.key,slot:DIRECT.selected});DIRECT.selected=null;directPaint();return;
@@ -43,7 +50,6 @@ function directInit(){
   });
   document.addEventListener('change',e=>{
     if(e.target.matches('[data-direct-unowned]')){DIRECT.showUnowned=e.target.checked;document.querySelectorAll('[data-direct-unowned]').forEach(x=>x.checked=e.target.checked);document.querySelectorAll('[data-direct-picker]').forEach(h=>directList(h,h.querySelector('[data-direct-search]').value));}
-    if(e.target.id==='direct-starlink')directChange({type:'starLink',value:e.target.checked});
     if(e.target.id==='direct-break')directChange({type:'brk',value:e.target.value==='auto'?'auto':e.target.value===''?null:{name:e.target.value,level:brkLv(e.target.value)}});
   });
   document.querySelectorAll('[data-direct-search]').forEach(input=>input.addEventListener('input',()=>directList(input.closest('[data-direct-picker]'),input.value)));
@@ -132,24 +138,31 @@ function directList(host,query=''){
 }
 function directPaint(){
   if(!DIRECT.draft)return;
+  if(DIRECT.drag){DIRECT.paintDeferred=true;return;}
   const focus=document.activeElement,focusId=focus?.id,action=focus?.dataset.directAction,slot=focus?.dataset.slot,key=focus?.dataset.key,picker=focus?.closest('[data-direct-picker]');
   const ctx=directContext(),check=DirectParty.validate(DIRECT.draft,ctx);let values=null;
   try{values=directValues();}catch(e){DIRECT.error=e.message;}
-  const power=r=>r?miNum(r.power):'—',labels=['전열1','전열2','후열1','후열2'];
+  const power=r=>r?(r.power>=1000?(r.power/1000).toFixed(1)+'k':miNum(r.power)):'—',labels=['전열1','전열2','후열1','후열2'];
   $('direct-board').innerHTML=DirectParty.toScreen([0,1,2,3]).map(i=>{
     const m=DIRECT.draft.slots[i],s=m&&BYKEY[m.key],v=values?.values[i],old=values?.before[i];
-    return `<section class="direct-slot${DIRECT.selected===i?' selected':''}" data-direct-slot="${i}"><b class="direct-position">${labels[i]}</b>
-      <button type="button" class="direct-member sec" data-direct-action="slot" data-slot="${i}" aria-pressed="${DIRECT.selected===i}" aria-label="${labels[i]} ${esc(s?.name||'빈 칸')} 선택">${s?`<img src="${esc(s.img)}" alt=""><span title="${esc(s.name)}">${esc(s.name)}</span>`:'<span class="direct-empty">＋</span><span>빈 칸</span>'}</button>
-      <div class="direct-slot-tools"><button type="button" class="sec" data-direct-action="leader" data-key="${esc(m?.key||'')}" ${!m?'disabled':''} aria-label="${labels[i]} 리더 지정" aria-pressed="${!!m&&DIRECT.draft.leader===m.key}">${m&&DIRECT.draft.leader===m.key?'★':'☆'}</button><button type="button" class="sec" data-direct-action="remove" data-slot="${i}" ${!m?'disabled':''} aria-label="${labels[i]} 빼기">✕</button></div>
-      <div class="direct-power" data-direct-power="${i}">${power(v)}</div>${v&&old&&v.power!==old.power?`<small class="direct-before">${power(old)} → ${power(v)}</small>`:''}
-      <button type="button" class="sec direct-grow" data-direct-action="grown" data-slot="${i}" aria-pressed="${!!m?.grown}" ${!m||!MI.info||!values?'disabled':''}><span>지금</span><span>육성했다면</span></button>
-      ${m?`<details class="direct-stats"><summary aria-label="${labels[i]} 능력치·육성 상세">ⓘ 상세</summary>${v?['atk','hp','def','spd'].map((k,j)=>`<div>${['공','생','방','속'][j]} ${miNum(v.stats[k]||0)}</div>`).join(''):''}<p>${m.grown?'추천 육성과 같은 기준 · '+esc((values?.changes[m.key]?.changedFields||[]).map(f=>({level:'스타링크',equip:'장비',skills:'스킬',resonance:'공명',journey:'기록',potentials:'잠재력',favor:'호감도'}[f]||f)).join(' · ')||'이미 목표 충족'):'현재 상태'}</p></details>`:''}
+    const leader=!!m&&DIRECT.draft.leader===m.key,linked=values?.linked?.includes(m?.key);
+    const changes=(values?.changes[m?.key]?.changedFields||[]).filter(f=>f!=='level').map(f=>({equip:'장비',skills:'스킬',resonance:'공명',journey:'기록',potentials:'잠재력',favor:'호감도'}[f]||f));
+    if(linked)changes.unshift('스타링크 등록 가정 포함');
+    return `<section class="direct-slot${DIRECT.selected===i?' selected':''}${leader?' direct-leader':''}" data-pos="${i<2?'front':'back'}" data-direct-slot="${i}">
+      <div class="direct-card-wrap"><button type="button" class="direct-member sec${!s?' direct-vacant':''}" data-direct-action="slot" data-slot="${i}" aria-pressed="${DIRECT.selected===i}" aria-label="${labels[i]} ${esc(s?.name||'빈 칸')} 선택">
+      ${s?`<span class="fallback">${esc(s.name[0])}</span>${art(s)}<span class="direct-name" title="${esc(s.name)}">${dia(s,20)}<span>${esc(s.name)}</span></span>`:'<span class="direct-empty">＋</span><span class="direct-name">구원자 넣기</span>'}
+      <b class="direct-position">${labels[i]}</b>${leader?`<span class="crown">${CROWN}<span>리더</span></span>`:''}</button>
+      <div class="direct-slot-tools"><button type="button" class="sec" data-direct-action="leader" data-key="${esc(m?.key||'')}" ${!m?'disabled':''} aria-label="${labels[i]} 리더 지정" aria-pressed="${leader}">${leader?'★':'☆'}</button><button type="button" class="sec" data-direct-action="remove" data-slot="${i}" ${!m?'disabled':''} aria-label="${labels[i]} 빼기">✕</button></div></div>
+      <button type="button" class="sec direct-grow" data-direct-action="grown" data-slot="${i}" aria-pressed="${!!m?.grown}" ${!m||!MI.info||!values?'disabled':''}><b class="direct-power" data-direct-power="${i}">${v&&old&&v.power!==old.power?power(old)+'→':''}${power(v)}</b><span>${m?.grown?'육성했다면 ✓':'지금'}</span></button>
+      ${m?`<details class="direct-stats"><summary aria-label="${labels[i]} 능력치·육성 상세">ⓘ <span>상세</span></summary>${v?['atk','hp','def','spd'].map((k,j)=>`<div>${['공','생','방','속'][j]} ${miNum(v.stats[k]||0)}</div>`).join(''):''}<p>${m.grown?'추천 육성과 같은 기준 · '+esc(changes.join(' · ')||'이미 목표 충족'):'현재 상태'}</p></details>`:''}
       ${check.errors.filter(e=>e.slot===i).map(e=>`<small class="direct-invalid">${esc(e.message)}</small>`).join('')}</section>`;
   }).join('');
   $('direct-total').textContent=values?miNum(values.total):'—';$('direct-summary-power').textContent=$('direct-total').textContent;
   $('direct-state').textContent=[check.ok?'편성 중 · 4/4명':check.errors.filter(e=>e.slot==null).map(e=>e.message).join(' · '),!MI.info?'내 정보 없음 · 표준 육성 기준':'내 구원자 기준',DIRECT.shared?'공유받은 초안 · 로컬 저장 안 함':'',...(values?.warnings||[]).filter(w=>w!=='내 정보 없음 · 표준 육성 기준'),...values?.errors.map(e=>e.reason)||[],DIRECT.error||(!values?'전투력 자료를 불러오는 중':'')].filter(Boolean).join(' · ');
   $('direct-retry').hidden=!DIRECT.error;$('direct-undo').disabled=!DIRECT.undo;$('direct-arrange').disabled=DIRECT.draft.slots.filter(Boolean).length!==4;
-  $('direct-starlink').checked=DIRECT.draft.starLink;$('direct-starlink').disabled=!MI.info;
+  const chosenMember=DIRECT.selected==null?null:DIRECT.draft.slots[DIRECT.selected];
+  $('direct-selection').hidden=!chosenMember;
+  $('direct-selection').innerHTML=chosenMember?`<small>고른 칸: ${labels[DIRECT.selected]} ${esc(BYKEY[chosenMember.key]?.name||'')}</small><div><button type="button" class="sec" data-direct-action="leader" data-key="${chosenMember.key}">★ 리더로</button><button type="button" class="sec" data-direct-action="remove" data-slot="${DIRECT.selected}">✕ 빼기</button><button type="button" class="sec" data-direct-action="deselect">선택 취소</button></div>`:'';
   $('direct-conditions').textContent=`오토 100판 · ${contents[$('content').value].title||contents[$('content').value].name} · ${cur?.[$('stage').value]?.label||cur?.[$('stage').value]?.name||'스테이지 미선택'}${contents[$('content').value].parties>1?' · 파티 1만':''}${rkOf(ctx.content)?' · 재점화 '+rkOf(ctx.content):''}${starOf(ctx.content)?' · '+starOf(ctx.content)+'턴 3별 목표':''}`;
   const brks=ownedSimBreaks(),chosen=DIRECT.draft.brk?.name;
   $('direct-break').innerHTML='<option value="auto">자동 선택</option><option value="">없음</option>'+brks.map(b=>`<option value="${esc(b.name)}">${esc(b.name)} Lv.${b.level}</option>`).join('')+(chosen&&!brks.some(b=>b.name===chosen)?`<option value="${esc(chosen)}" disabled>${esc(chosen)} · 미보유/지원 안 함</option>`:'');

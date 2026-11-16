@@ -4,10 +4,6 @@
     "st_point": {
       ".png": "cfbbf8c8d04153423f1e21c466a7d6751f0b2f88aa5d9415ee5eb5cc419747d5",
       "_blink.png": "fb3fbd9488adccf5c3d9a7eae1428287992041686c6558aab36ea0cf012fc598"
-    },
-    "st_sulk": {
-      ".png": "303d91409af05995615278a18d9e5ba55b629a32cb04649608db675727b7dcbf",
-      "_blink.png": "23496e648796219c0fc6261b6d52ab3f487cde1d5fa41c783be867f2ccca798b"
     }
   },
   "unchanged_assets": {
@@ -22,9 +18,6 @@
     "assets/ui_icons/gwen/st_ok.png": "f35df956bdbe40215fe46012925a515b0e321d08ac2fc7a8d74a8764adb3ce65",
     "assets/ui_icons/gwen/st_ok.webp": "29014edfd9cedf7547e19a73a7928b3961cfd2872fc800d6419922572bbbbfac",
     "assets/ui_icons/gwen/st_ok_blink.png": "a3c109dedabbaf2670a3912746280016038bc4dcc654b9538dc24308df789e2b",
-    "assets/ui_icons/gwen/st_shy.png": "1764285bbac379ea4beb1066ec2a33199393356b5ef5f4924979c709c300f015",
-    "assets/ui_icons/gwen/st_shy.webp": "cc52b319a0a612842904b1af35eacf13e3b1d66ec175841a550e813f3b826be3",
-    "assets/ui_icons/gwen/st_shy_blink.png": "d1d19916da88b8414c28d796df52a9b35df3f31ed5150348daaa7299ed8f7eaf",
     "assets/ui_icons/gwen/st_verdict.png": "2991c9d7f74d50177e6ee61ac61bbae30bc04a2a67473e2578f404e2d26afdd5",
     "assets/ui_icons/gwen/st_verdict.webp": "8684aa19bb56122cbc0d840c0b28f81e1ccba11c760213cefeb538a2e69f5ea2",
     "assets/ui_icons/gwen/st_verdict_blink.png": "13f79504bd5e5f261c89a0e705cf712efd8b6dbca0d56d17cadf19bed510f962",
@@ -42,5 +35,18 @@
   "superseded_by_art8": {
     "assets/ui_icons/gwen/notes.png": "b6cd5860c9be6076255a7981c3da1c48978add49a5235857416a94c2f3f01035",
     "assets/ui_icons/gwen/notes.webp": "3c44b1d4da27c8ea4e729f3bfb63d108c40c3e1b74c86352531402054dd85a6b"
+  },
+  "superseded_by_art9": {
+    "preserved_outside_masks": {
+      "st_sulk": {
+        ".png": "303d91409af05995615278a18d9e5ba55b629a32cb04649608db675727b7dcbf",
+        "_blink.png": "23496e648796219c0fc6261b6d52ab3f487cde1d5fa41c783be867f2ccca798b"
+      }
+    },
+    "unchanged_assets": {
+      "assets/ui_icons/gwen/st_shy.png": "1764285bbac379ea4beb1066ec2a33199393356b5ef5f4924979c709c300f015",
+      "assets/ui_icons/gwen/st_shy.webp": "cc52b319a0a612842904b1af35eacf13e3b1d66ec175841a550e813f3b826be3",
+      "assets/ui_icons/gwen/st_shy_blink.png": "d1d19916da88b8414c28d796df52a9b35df3f31ed5150348daaa7299ed8f7eaf"
+    }
   }
 }
