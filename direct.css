@@ -22,12 +22,18 @@
 .direct-name{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:3px;min-height:30px;padding:3px;background:#111d;color:#fff;font-size:12px;z-index:2}
 .direct-name>span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.direct-name .dia{flex:none}
 .direct-position{position:absolute;top:5px;left:4px;z-index:2;border-radius:4px;background:#183958e6;color:#fff;padding:3px;font-size:11px}
-.direct-slot[data-pos=front] .direct-position{background:#804811e6}.direct-member .crown{top:3px;right:3px;left:auto;width:auto;z-index:3;white-space:nowrap}.direct-member .crown span{font-size:10px}.direct-member .crown svg{flex:none}
+.direct-slot[data-pos=front] .direct-position{background:#804811e6}
+.direct-leader-toggle{position:absolute;top:3px;right:3px;z-index:4;width:40px;min-width:40px;height:40px;padding:2px!important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:#181c29ed!important;font-size:20px;line-height:20px}
+.direct-leader-toggle[aria-pressed=true]{color:var(--gold);border-color:var(--gold)}
+.direct-leader-toggle .crown{position:static;display:flex;padding:0;gap:1px;background:none;box-shadow:none;white-space:nowrap}
+.direct-leader-toggle .crown span{display:inline;font-size:9px;line-height:12px;letter-spacing:0}.direct-leader-toggle .crown svg{width:12px;height:10px;flex:none}
 .direct-vacant{border-style:dashed!important}.direct-empty{position:absolute;inset:0;display:grid;place-items:center;font-size:36px}
-.direct-slot-tools{display:none}.direct-slot-tools button{position:absolute;z-index:4;right:4px;padding:3px!important;min-height:30px;min-width:30px;background:#181c29dd}.direct-slot-tools [data-direct-action=leader]{top:45px}.direct-slot-tools [data-direct-action=remove]{bottom:33px}
+.direct-slot-tools{display:none}.direct-slot-tools button{position:absolute;z-index:4;right:4px;padding:3px!important;min-height:30px;min-width:30px;background:#181c29dd}.direct-slot-tools [data-direct-action=remove]{bottom:33px}
 @media(hover:hover){.direct-slot-tools{display:block;opacity:0}.direct-card-wrap:hover .direct-slot-tools,.direct-card-wrap:focus-within .direct-slot-tools{opacity:1}}
 .direct-grow{width:100%;padding:5px 1px!important;margin-top:6px;font-size:11px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;min-height:64px}
-.direct-grow[aria-pressed=true]{border-color:var(--acc);color:var(--acc)}.direct-power{font-size:clamp(9px,1.05vw,14px);white-space:nowrap}
+.direct-grow[aria-pressed=true]{border-color:var(--acc);color:var(--acc);background:#6fd3ff18}.direct-power{font-size:clamp(9px,1.05vw,14px);white-space:nowrap;color:var(--fg)}
+.direct-grow[aria-pressed=true] .direct-power{color:var(--acc)}
+.direct-grow:disabled{opacity:.45;cursor:default}.direct-grow>span{white-space:nowrap}
 .direct-stats{font-size:11px;overflow-wrap:anywhere;margin-top:4px}.direct-stats summary{min-height:28px}.direct-invalid{display:block;color:var(--bad)}
 #direct-selection{margin-top:10px}#direct-selection>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}#direct-selection button{min-height:64px;padding:5px;font-size:12px}
 #direct-drop-remove{border:2px dashed var(--mut);border-radius:10px;min-height:64px;box-sizing:border-box;display:grid;place-items:center;margin-top:10px}
@@ -38,7 +44,7 @@
 .direct-drag-ghost .face{width:64px;height:64px;object-fit:cover;display:grid;place-items:center;background:var(--ink)}
 .direct-drop-ready .direct-member{outline:2px dashed var(--acc)}.direct-drop-over{outline:3px solid var(--acc)!important;outline-offset:2px}
 .direct-drop-over::after{content:attr(data-drop-label);position:absolute;inset:35% 0 auto;background:var(--ink);color:var(--acc);pointer-events:none;z-index:6;font-size:14px}
-.direct-drag-help>span:last-child{display:none}
+.direct-drag-help{font-size:12px}
 .direct-board-footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}.direct-break-label{display:block;margin:12px 0}.direct-break-label select{max-width:100%}
 .direct-picker{margin-top:16px}.direct-picker input{width:100%;box-sizing:border-box;margin:8px 0}
 [data-direct-list]{display:grid;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:6px;max-height:440px;overflow:auto;padding:3px}
@@ -48,8 +54,10 @@
 #direct-picker-open{display:none}.direct-state{margin:12px 0;font-size:13px;overflow-wrap:anywhere}
 body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-search,#season-note),body[data-party-mode=home] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-search,#season-note){display:none!important}
 @media(max-width:760px){
+ .direct-leader-toggle{top:0;right:0}
+ .direct-slot-tools [data-direct-action=remove]{left:2px;right:auto;bottom:2px}
  #start-screen{grid-template-columns:1fr;gap:10px}.start-gwen{grid-row:1;display:flex;align-items:center;justify-content:center;gap:10px}.start-gwen img{width:96px;height:96px}.start-gwen p{text-align:left}
- .start-choice{padding:16px}#direct-panel{padding:10px}#direct-board{gap:4px}.direct-slot{padding:0}.direct-name{font-size:10px;padding:2px;min-height:22px}.direct-name .dia{display:none}.direct-position{font-size:9px;top:2px;left:2px}.direct-member .crown{width:20px}.direct-member .crown span{display:none}.direct-power{font-size:9px}.direct-stats summary span{display:none}.direct-drag-help>span:first-child{display:none}.direct-drag-help>span:last-child{display:inline}.direct-grow{font-size:10px;gap:2px}.direct-slot-tools{gap:2px}
+ .start-choice{padding:16px}#direct-panel{padding:10px}#direct-board{gap:4px}.direct-slot{padding:0}.direct-name{font-size:10px;padding:2px;min-height:22px}.direct-name .dia{display:none}.direct-position{font-size:9px;top:2px;left:2px;padding:2px}.direct-power{font-size:9px}.direct-stats summary span{display:none}.direct-grow{font-size:10px;gap:2px}.direct-slot-tools{gap:2px}
  #direct-picker-inline{display:none}#direct-picker-open{display:inline-block;width:100%;min-height:44px}#direct-picker-dialog{position:fixed;top:auto;bottom:0;margin:0 auto;border-radius:16px 16px 0 0}
  #mode-strip{gap:4px}#mode-strip button{font-size:12px;padding:8px}#direct-panel .result-summary{margin-bottom:16px}
 }
