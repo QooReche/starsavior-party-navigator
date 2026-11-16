@@ -210,12 +210,12 @@ def main():
             if args.mutations:
                 source=(ROOT/'ux_ui.js').read_text(encoding='utf-8')
                 variants=[('walk',"long:'walk'","long:'investigate'",walk_audit),
-                          ('interval','4000+Math.floor(Math.random()*4001)','0',timer_audit),
+                          ('interval','rand(4000,4001)','0',timer_audit),
                           ('reduced',"root.matchMedia('(prefers-reduced-motion: reduce)')","({matches:false,addEventListener(){}})",timer_audit),
                           ('result',"if(!Number.isFinite(p))return '';","return '';",lambda p:result_audit(p,.95,'confident',1280,False)),
-                          ('drawer','checkVisibility?.({visibilityProperty:true,opacityProperty:true})','checkVisibility?.()',drawer_audit),
-                          ('clipping','!states.get(img)?.intersecting||','',clipped_audit),
-                          ('cleanup','stop(img,s);observer.unobserve(img);states.delete(img);','observer.unobserve(img);states.delete(img);',timer_audit)]
+                          ('drawer',"c.visibility==='hidden'",'false',drawer_audit),
+                          ('clipping',"if(el!==img){","if(false){",clipped_audit),
+                          ('cleanup','s.stop();observer.unobserve(img);states.delete(img);','observer.unobserve(img);states.delete(img);',timer_audit)]
                 for name,old,new,audit in variants:
                     assert old in source
                     context=browser.new_context(viewport={'width':1280,'height':950})

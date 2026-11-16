@@ -28,14 +28,14 @@ def check_scene(page, mode, scope='#out', reduced=False):
     art = {'inspect':'investigate','screen':'files','long':'walk','error':'surprised','report':'report','welcome':'welcome'}[mode]
     animated = mode in ('inspect','screen','long') and not reduced
     expected = '/assets/ui_icons/gwen/' + art + ('.webp' if animated else '.png')
-    if reduced or mode in ('inspect','screen','long'):
+    if reduced or mode == 'long':
         page.wait_for_function('(a)=>a[0].currentSrc.endsWith(a[1])', arg=[scene.locator('img').element_handle(), expected])
     else:
         assert scene.locator('img').get_attribute('data-gwen-motion').endswith(art+'.webp')
     animation = scene.locator('img').evaluate('(img)=>getComputedStyle(img).animationName')
-    if reduced or mode not in ('report', 'inspect', 'long'):
+    if reduced or mode not in ('report', 'long'):
         assert animation == 'none', animation
-    elif mode in ('inspect', 'long'):
+    elif mode == 'long':
         assert animation == 'gwen-hop', animation
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), '가로 넘침'
 
@@ -160,12 +160,14 @@ def exercise(page, base, width, shots):
     page.wait_for_timeout(1900)
     assert page.locator('#art-hidden [data-gwen="report"]').count() == 0
     # 旧SD 이미지로 되돌리면 실제 currentSrc 검사가 실패해야 함.
+    page.emulate_media(reduced_motion='reduce')
     page.evaluate('$("out").innerHTML=Ux.gwenWork("screen")')
+    check_scene(page, 'screen', reduced=True)
     page.locator('#out [data-gwen-art]').evaluate('(e)=>e.src="assets/ui_icons/gwen_sd.png"')
     page.wait_for_timeout(100)
     page.set_default_timeout(500)
     try:
-        check_scene(page, 'screen')
+        check_scene(page, 'screen', reduced=True)
     except (AssertionError, TimeoutError):
         pass
     else:
@@ -173,7 +175,8 @@ def exercise(page, base, width, shots):
     finally:
         page.set_default_timeout(10000)
     page.evaluate('$("out").innerHTML=Ux.gwenWork("screen")')
-    check_scene(page, 'screen')
+    check_scene(page, 'screen', reduced=True)
+    page.emulate_media(reduced_motion='no-preference')
     # 시즌별 실제 연결 및 코스모의 글자만 바꾸는 경로.
     for kind, state, renderer in [('guild', 'GSR', 'renderGuildSearch(true)'), ('cosmo', 'CSR', 'renderCosmoSearch()')]:
         page.evaluate(f'''() => {{
@@ -209,7 +212,7 @@ def exercise(page, base, width, shots):
     page.evaluate('GROW.msg="육성 계획 탐색 · 후보 3/80";growthPaint()')
     assert page.evaluate('__cancel===document.querySelector("[data-growth-cancel]") && __face===document.querySelector("#growth-result .gwen-worker")')
     page.locator('[data-growth-cancel]').click()
-    check_scene(page, 'error', '#growth-result')
+    assert page.locator('#growth-result [data-gwen]').count()==0, 'cancel is not an error'
     page.evaluate('growthNonePaint({key:"op"},{reason:"few"})')
     check_scene(page, 'error', '#growth-result')
     shot('empty')

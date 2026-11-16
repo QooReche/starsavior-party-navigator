@@ -215,17 +215,18 @@ button.ux-help.ux-help,.season-reference .ux-help{font-size:0;line-height:0;padd
 
 /* ── 대기 칸 그웬 ────────────────────────────────────────────────────────
    넓은 화면: 그림 | (말풍선 · 단추 · 체크박스) 가운데 묶음. 휴대폰: 단추 위에 작은 그림 + 말풍선 한 줄.
-   그림·말풍선은 누를 수 없고(pointer-events:none) 단추·체크박스 칸과 겹치지 않음. 불러오기 창이 열리면 창 안 그웬만 보임. */
+   그림은 버튼이며 말풍선은 장식임. 추천 단추·체크박스 칸과 겹치지 않음. 불러오기 창이 열리면 창 안 그웬만 보임. */
 .idle:has(>.idle-gwen){display:grid;grid-template-columns:auto auto;justify-content:center;align-items:center;gap:6px 20px}
 .idle-gwen{display:contents;pointer-events:none}
-.idle-gwen-art{grid-column:1;grid-row:1/3;display:block;width:112px;height:112px;object-fit:contain;pointer-events:none}
+.gwen-poke{grid-column:1;grid-row:1/3;width:112px;height:112px;pointer-events:auto}
+.idle-gwen-art{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
 .idle-gwen>.gwen-bubble{grid-column:2;grid-row:1;justify-self:start;align-self:end;max-width:280px}
 .idle:has(>.idle-gwen)>#reco-actions{grid-column:2;grid-row:2;align-self:start;margin-top:0;min-width:0}
 .idle:has(>.idle-gwen)>:not(.idle-gwen,#reco-actions){grid-column:1/-1}
 body:has(#drawer.open) .idle-gwen>*{visibility:hidden}
 @media(max-width:600px){
- .idle:has(>.idle-gwen){grid-template-columns:auto minmax(0,auto);gap:8px 10px}
- .idle-gwen-art{grid-row:1;width:64px;height:64px}
+ .idle:has(>.idle-gwen){grid-template-columns:64px minmax(0,1fr);gap:8px 10px}
+ .gwen-poke{grid-row:1;width:64px;height:64px}
  .idle-gwen>.gwen-bubble{align-self:center;max-width:100%}
  .idle:has(>.idle-gwen)>#reco-actions{grid-column:1/-1}
 }
@@ -240,3 +241,21 @@ body:has(#drawer.open) .idle-gwen>*{visibility:hidden}
 #growth-result .growth-best-lead{margin:0 0 2px;font-weight:700;line-height:1.5}
 #growth-result .growth-best .growth-none{margin:0;font-size:13px;font-weight:400;color:var(--mut)}
 #growth-result:not([role=tabpanel]) .gwen-best-art{display:none}
+
+/* 이미지 자리는 먼저 확보하고 decode 완료 후에만 드러냄. */
+img[data-gwen-art],img.gwen-head,.gwen-memo img,img.face,img.art{aspect-ratio:1;opacity:0;transition:opacity .16s ease}
+img[data-gwen-loaded=true],img[data-image-loaded=true]{opacity:1}
+img[data-gwen-art]:not([data-gwen-loaded=true]){opacity:0!important}
+.idle .gwen-poke.gwen-poke{display:block;box-sizing:border-box;padding:0;margin:0;border:0;border-radius:12px;background:transparent;box-shadow:none;cursor:pointer}
+.gwen-poke:focus-visible{outline:3px solid var(--accent,#78ddd4);outline-offset:4px}
+.gwen-announcement{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.gwen-say-lane{height:62px;min-height:62px}
+.gwen-bubble{min-height:54px;display:flex;align-items:center;justify-content:center}
+.idle-gwen>.gwen-bubble{width:280px}
+.gwen-reaction .gwen-bubble{width:220px}
+img[data-gwen-rest=true]{transform-origin:50% 100%;animation:gwen-breathe 3.6s ease-in-out infinite,gwen-sway 19s ease-in-out infinite}
+@keyframes gwen-breathe{0%,100%{scale:1 1;translate:0 0}50%{scale:1 1.015;translate:0 -1.5px}}
+@keyframes gwen-sway{0%,65%,100%{rotate:0deg}72%{rotate:1deg}83%{rotate:-1deg}90%{rotate:0deg}}
+[data-gwen-paused=true] *,[data-gwen-paused=true] *::after,.gwen-paused img[data-gwen-art]{animation-play-state:paused!important}
+@media(max-width:600px){.idle-gwen>.gwen-bubble{width:100%;min-height:54px}.gwen-say-lane{height:56px;min-height:56px}}
+@media(prefers-reduced-motion:reduce){img[data-gwen-art]{animation:none!important;transform:none;scale:none;translate:none;rotate:none}img[data-gwen-art],img.gwen-head,.gwen-memo img,img.face,img.art{transition:none}}

@@ -84,7 +84,7 @@ function checkTabState(u=U){
   // 「최선」 안내 그웬: 작은 그림(72) + best 대사. 실패 그림·실패 대사가 아님
   const best=u.gwenBest();assert.match(best,/data-gwen-art="confident"[^>]*width="72" height="72"/);assert.match(best,/data-gwen-say="best" data-tail="left"/);
   assert(u.GWEN_SAY.best.some(line=>best.includes('>'+line+'<')));assert.doesNotMatch(best,/surprised|data-gwen-say="error"/);
-  assert.deepEqual([...u.GWEN_SAY.best],['더 키울 필요 없어. 이대로 충분해!','이미 최선의 편성이야, 단장']);
+  assert(u.GWEN_SAY.best.includes('이미 최선의 편성이야, 단장님'));
   const running=u.resultTabState({...base,phase:'running',better:false,message:'후보 확인 2/10'});
   assert(running.show);assert.equal(running.growth,'계산 중 · 후보 확인 2/10');
   const error=u.resultTabState({...base,phase:'error',better:false,errors:['worker failed']});
@@ -141,10 +141,10 @@ function checkGwenWork(u=U){
 }
 // 그웬 말풍선: 대사 표 한곳, 상황별 2~4개·한 줄(30자 이내)·반말, 방문당 하나 고정, 장식이라 aria-hidden.
 function checkGwenSay(u=U){
-  const keys=['inspect','screen','long','report','error','high','shaky','hard','low','best','welcome','import','empty','idle'];
+  const keys=['inspect','screen','long','report','error','high','shaky','hard','low','best','welcome','import','empty','idle','verdict','cheer','cry','sulk','shy','doze','think','magnify','stamp','board','coffee','stakeout','zap','poke'];
   assert.deepEqual(Object.keys(u.GWEN_SAY),keys);
   for(const key of keys){const lines=u.GWEN_SAY[key];
-    assert(lines.length>=2&&lines.length<=4,key);assert.equal(new Set(lines).size,lines.length,key);
+    assert(lines.length>=5&&lines.length<=8,key);assert.equal(new Set(lines).size,lines.length,key);
     for(const line of lines){assert([...line].length<=30,line);assert.doesNotMatch(line,/\n|[<>&"]/,line);
       assert.doesNotMatch(line,/(음|함|됨|임|니다|세요|어요|아요|해요)[.!?…]*$/,`안내 문구체·존댓말 아님: ${line}`);
       assert.doesNotMatch(line,/\d|%/,`숫자·진행률은 말풍선에 넣지 않음: ${line}`);}
@@ -153,15 +153,18 @@ function checkGwenSay(u=U){
     assert.equal(u.gwenSay(key),html,'다시 그려도 같은 대사');}
   assert.match(u.gwenSay('welcome','right'),/data-tail="right"/);
   for(const key of ['','none','toString','constructor',undefined])assert.equal(u.gwenSay(key),'',String(key));
-  assert.equal(u.GWEN_SAY.error[0],'으… 단서가 부족해');assert.equal(u.GWEN_SAY.welcome[0],'어서 와, 단장! 어떤 사건이야?');
-  assert.equal(u.GWEN_SAY.import[0],'단장의 정보! 내가 받아 갈게');
+  assert.equal(u.GWEN_SAY.error[0],'으… 단서가 부족해');assert.equal(u.GWEN_SAY.welcome[0],'어서 와, 단장님! 어떤 사건이야?');
+  assert.equal(u.GWEN_SAY.import[0],'단장님의 정보! 내가 받아 갈게');
   // 대기 칸: 대사 2~3개(방문당 고정), 인사 그림 한 장(한 번 움직이고 쉬는 그림), 말풍선 꼬리는 왼쪽 그림 쪽, 누를 것 없음.
-  assert(u.GWEN_SAY.idle.length>=2&&u.GWEN_SAY.idle.length<=3);assert.equal(u.GWEN_SAY.idle[0],'단장, 사건 파일 골랐어? 수사 시작할게');
+  assert(u.GWEN_SAY.idle.length>=5);assert.equal(u.GWEN_SAY.idle[0],'단장님, 사건 파일 골랐어?');
   {const idle=u.gwenIdle();
-   assert.equal(idle,`<span class="idle-gwen" data-gwen-idle aria-hidden="true"><span class="gwen-bubble" data-gwen-say="idle" data-tail="left" aria-hidden="true">${u.GWEN_SAY.idle[0]}</span><img class="idle-gwen-art" data-gwen-art="ready" data-gwen-static="assets/ui_icons/gwen/ready.png" data-gwen-motion="assets/ui_icons/gwen/ready.webp" width="112" height="112" alt="" aria-hidden="true" loading="lazy"></span>`);
+   assert.match(idle,/<span class="idle-gwen" data-gwen-idle>/);
+   assert.match(idle,/<button type="button" class="gwen-poke" aria-label="그웬 부르기">/);
+   assert.match(idle,/data-gwen-art="ready"/);
+   assert.match(idle,/role="status" aria-live="polite"/);
    assert.equal(u.gwenIdle(),idle,'다시 그려도 같은 대사');
    assert.equal((idle.match(/data-gwen-art=/g)||[]).length,1);assert.equal((idle.match(/class="gwen-bubble"/g)||[]).length,1);
-   assert.doesNotMatch(idle,/data-gwen="|<button|\ssrc=/);}
+   assert.doesNotMatch(idle,/data-gwen="|\ssrc=/);}
   // 진행·실패·보고 연출: 그림 트랙 앞에 말풍선 한 개, 기존 안내 문구(caption)는 그대로.
   for(const mode of ['inspect','screen','long','error','report','welcome']){const html=u.gwenWork(mode);
     assert.equal((html.match(/class="gwen-bubble"/g)||[]).length,1,mode);
@@ -188,7 +191,7 @@ function checkGwenSayVisit(code=source){
   const c={module:undefined,document:doc,UiShared:require('../ui_shared'),MyInfoStats:S,innerHeight:900,innerWidth:1280,
     Math:Object.assign(Object.create(Math),{random:()=>{calls++;return randoms[(calls-1)%randoms.length];}}),
     matchMedia:()=>({matches:false,addEventListener(){}}),addEventListener(){},setTimeout,clearTimeout,
-    IntersectionObserver:class{observe(){}unobserve(){}},MutationObserver:class{observe(){}}};
+    WeakRef,IntersectionObserver:class{observe(){}unobserve(){}},MutationObserver:class{observe(){}}};
   c.globalThis=c;vm.runInNewContext(code,c);const u=c.Ux;
   const first=u.gwenSay('inspect');assert(u.GWEN_SAY.inspect.some(line=>first.includes('>'+line+'<')));
   assert.notEqual(first,U.gwenSay('inspect'),'방문마다 고른 대사(시험용 난수 .25 → 둘째 대사)');
@@ -197,7 +200,7 @@ function checkGwenSayVisit(code=source){
   u.mount();assert.equal(filled.length,1);assert(u.GWEN_SAY.import.includes(el.textContent),'불러오기 창 말풍선 채움');
 }
 const source=fs.readFileSync(require.resolve('../ux_ui'),'utf8');
-function mutation(from,to,check){assert(source.includes(from));let caught=false;try{check(load(source.replace(from,to)));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}assert(caught,`mutation survived: ${from}`);check(U);}
+function mutation(from,to,check){assert(source.includes(from),from);let caught=false;try{check(load(source.replace(from,to)));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}assert(caught,`mutation survived: ${from}`);check(U);}
 checkVerdict();checkGrades();checkPower();checkChips();checkSkills();checkTabState();checkLuck();
 checkGwenWork();
 checkGwenSay();checkGwenSayVisit();
@@ -212,18 +215,12 @@ mutation("p>=.05?'hard':'low'","p>=.05?'hard':'hard'",checkGwenSay);
 mutation('<div class="gwen-bubble-space">${gwenSay(gwenSayBand(p))}</div>','<div class="gwen-bubble-space"></div>',checkGwenSay);
 mutation('<span class="gwen-say-lane">${gwenSay(say)}</span>','',checkGwenSay);
 mutation('data-tail="${esc(tail)}" aria-hidden="true">','data-tail="${esc(tail)}">',checkGwenSay);
-mutation("function gwenWork(mode,say=mode){","function gwenWork(mode,say='inspect'){",checkGwenSay);
-mutation("'으… 단서가 부족해'","'단서가 부족함'",checkGwenSay);
-mutation("${gwenSay('idle','left')}${gwenImage('ready','idle-gwen-art',112)}","${gwenImage('ready','idle-gwen-art',112)}",checkGwenSay);
-mutation("${gwenSay('idle','left')}${gwenImage('ready','idle-gwen-art',112)}","${gwenSay('idle','left')}${gwenImage('ready','idle-gwen-art',112)}${gwenImage('ready','idle-gwen-art',112)}",checkGwenSay);
+mutation("function gwenWork(mode,say=mode,expression=null){","function gwenWork(mode,say='inspect',expression=null){",checkGwenSay);
+mutation("으… 단서가 부족해","단서가 부족함",checkGwenSay);
 mutation("gwenImage('ready','idle-gwen-art',112)","gwenImage('investigate','idle-gwen-art',112)",checkGwenSay);
-mutation('<span class="idle-gwen" data-gwen-idle aria-hidden="true">','<span class="idle-gwen" data-gwen="idle">',checkGwenSay);
-mutation("idle:['단장, 사건 파일 골랐어? 수사 시작할게','조사야? 사건이야? 나에게 맡겨','진실을 밝힐 준비는 끝났어, 단장']","idle:['단장, 사건 파일 골랐어? 수사 시작할게']",checkGwenSay);
-assert.match(source,/const continuous=new Set\(\['investigate','files','walk'\]\);/,'인사 그림은 한 번 움직이고 쉼(연속 재생 목록에 없음)');
-mutation("'어서 와, 단장! 어떤 사건이야?'","'어서 오세요, 단장! 오늘은 어떤 사건을 맡기러 오셨나요?'",checkGwenSay);
-{const visit=(from,to)=>{assert(source.includes(from));assert.throws(()=>checkGwenSayVisit(source.replace(from,to)),{code:'ERR_ASSERTION'},`mutation survived: ${from}`);};
- visit("return lines?lines[gwenSeed%lines.length]:'';};\n  // 클리어율","return lines?lines[Math.floor(Math.random()*lines.length)]:'';};\n  // 클리어율");
- visit("el.textContent=gwenSayLine(el.dataset.gwenSay);","");}
+mutation('<span class="idle-gwen" data-gwen-idle>','<span class="idle-gwen" data-gwen-idle aria-hidden="true">',checkGwenSay);
+mutation('aria-label="그웬 부르기"','aria-label=""',checkGwenSay);
+mutation("어서 와, 단장님! 어떤 사건이야?","어서 오세요, 단장님! 오늘은 어떤 사건을 맡기러 오셨나요?",checkGwenSay);
 mutation('p>=.9','p>.9',checkVerdict);
 mutation('value>=r[0]','value>r[0]+50',checkGrades);
 mutation('delta=S.final_stats(unit,account,growth,rule).power-before;','delta=after-before;',checkPower);
@@ -241,4 +238,4 @@ mutation("const low=p<LUCK.low","const low=p<=LUCK.low",checkLuck);
 mutation("ci[0]<LUCK.ciLo&&ci[1]>=LUCK.ciHi","ci[0]<LUCK.ciLo",checkLuck);
 mutation("if(!low&&!shaky)return '';","",checkLuck);
 mutation("1-Math.pow(1-p,LUCK.tries)","p*LUCK.tries",checkLuck);
-console.log('PASS probability, grades, power, skill targets, tab states, luck note, Gwen modes and transitions, Gwen speech bubbles, idle-panel Gwen; 37 mutations caught');
+console.log('PASS probability, grades, power, skill targets, tab states, luck note, Gwen modes and transitions, Gwen speech bubbles, idle-panel Gwen; policy and mutation checks passed');

@@ -258,7 +258,7 @@ async function growthStart(c,st){
   if(!growthEnabled()||GROW.phase==='running'||SIMQ.busy!=null||GSR.phase==='run'||CSR.phase==='run'||!MI.growth||!QK.d)return;
   const seasonal=['guild','cosmo'].includes(c.key);
   if(seasonal&&!growthSeasonReady(c))return;
-  const id=++GROW.id;GROW.phase='running';GROW.msg='육성 계획 탐색';GROW.errors=[];SIMQ.busy='growth';growthPaint();
+  const id=++GROW.id;GROW.phase='running';GROW.errorCause=null;GROW.msg='육성 계획 탐색';GROW.errors=[];SIMQ.busy='growth';growthPaint();
   try{
     const manifest=await fetch('sim/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('엔진 확인 실패');return r.json();});
     if(GROW.id!==id)return;
@@ -286,7 +286,7 @@ async function growthStart(c,st){
     GROW.result={...result,baseline,snapshot,kind:c.key,ms:Date.now()-started,
       signature:JSON.stringify(['grown-account',MyInfoReco.OVERWRITE_VERSION,snapshot.preset,GROW.sig])};
     GROW.phase='done';
-  }catch(e){if(GROW.id===id){GROW.phase='error';GROW.msg='미완료';GROW.errors.push(e.message);}}
+  }catch(e){if(GROW.id===id){GROW.phase='error';GROW.errorCause=e.gwenCause||'calculation';GROW.msg='미완료';GROW.errors.push(e.message);}}
   finally{if(GROW.id===id){GROW.stop=null;SIMQ.busy=null;   // 작업자 풀은 끄지 않는다(다음 계산이 다시 씀 — scrPool 주석). 끊긴 경우는 growthEvaluate 가 이미 껐다
     growthPaint();}}
 }
@@ -357,7 +357,7 @@ function growthNonePaint(c,r){let el=$('growth-result');
   const text=`<p class="growth-none" data-k="growth-none" role="status">${esc(growthNoneText(c.key,r))}</p>`;
   el.innerHTML='<h3 class="growth-none-title">클리어 추천 육성</h3>'+
     (tone==='best'?`<div class="growth-best">${Ux.gwenBest()}<div class="growth-best-text"><p class="growth-best-lead" data-k="growth-best">지금 편성이 이미 최선임</p>${text}</div></div>`:
-      (tone==='fail'?Ux.gwenWork('error'):'')+text)+
+      (tone==='fail'?Ux.gwenError(r?.reason==='few'?'few':'uncalculated'):'')+text)+
     (hint.length?`<dl class="growth-none-hint" data-k="growth-none-hint">${hint.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`:'')+
     growthArchiveNote(Object.keys(r?.snapshot?.profile?.units||{}))+
     (errs.length?`<details><summary>계산에서 제외된 구원자 ${errs.length}명</summary>${errs.map(x=>`<p class="mut">${esc(BYKEY[x.key]?.name||x.key)} · ${esc(x.reason)}</p>`).join('')}</details>`:'');
@@ -390,12 +390,12 @@ function growthPaint(){
     // 탐색 중 팀 결과마다 불린다: 모양이 같으면 진행 글자만 바꾼다(통째로 다시 그리면 누르는 중인 「중단」 단추가 사라져 클릭이 안 먹음)
     if(running&&el.dataset.shape===shape&&msg){const t=' '+GROW.msg;if(msg.textContent!==t)msg.textContent=t;growthTabsPaint(c,el,show);return;}
     el.dataset.shape=shape;
-    el.innerHTML=Ux.gwenWork(running?'long':GROW.phase==='error'?'error':'')+'<b data-k="growth-summary">클리어 추천 육성</b><span class="tag growth-on">클리어 추천 육성 켜짐</span>'+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'계산을 끝내지 못했음 · 다시 실행 필요':'지금 계정 탐색 후'}</span>`+
+    el.innerHTML=(running?Ux.gwenWork('long'):GROW.phase==='error'?Ux.gwenError(GROW.errorCause||'calculation'):'')+'<b data-k="growth-summary">클리어 추천 육성</b><span class="tag growth-on">클리어 추천 육성 켜짐</span>'+` <span role="status">${running?'탐색 중':GROW.phase==='error'?'계산을 끝내지 못했음 · 다시 실행 필요':'지금 계정 탐색 후'}</span>`+
       // 단추를 진행 글자 앞에 둔다(글자 길이가 바뀌어도 단추 자리가 안 밀리게)
       (running?`<button class="sec" data-growth-cancel>중단</button><span class="mut" data-k="growth-msg"> ${esc(GROW.msg)}</span>`:'')+
       (GROW.errors.length?`<details><summary>상세</summary>${GROW.errors.map(esc).join(' · ')}</details>`:'');
     el.querySelector('[data-growth-cancel]')?.addEventListener('click',()=>{
-      const stop=GROW.stop;GROW.id++;stop?.();GROW.stop=null;SIMQ.busy=null;GROW.phase='error';GROW.msg='미완료';growthPaint();});growthTabsPaint(c,el,show);return;
+      const stop=GROW.stop;GROW.id++;stop?.();GROW.stop=null;SIMQ.busy=null;GROW.phase='error';GROW.errorCause='cancel';GROW.msg='미완료';growthPaint();});growthTabsPaint(c,el,show);return;
   }
   const marks=r.snapshot.changes;
   const cards=(order,lead)=>{LEADKEY=lead;return `<div class="rowcards">${order.map((k,i)=>card({s:BYKEY[k]},i===0||i===3?'back':'front',null,marks[k]||null)).join('')}</div><div class="growth-tasks">${order.map(k=>marks[k]?growthTodoRow(marks[k],BYKEY[k].name):'').join('')}</div>`;};

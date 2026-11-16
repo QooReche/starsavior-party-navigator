@@ -29,7 +29,7 @@ function checkGwen(page,file){
  assert(heading.indexOf('gwen-head')<heading.indexOf('파티 편성 네비게이터'),`${file}: face before title`);
  const start=page.indexOf('function miGuide()');
  const guide=vm.runInNewContext(page.slice(start,page.indexOf('function showReco()',start))+';miGuide()', {Ux:require('../ux_ui')});
- assert.match(guide,/<img class="gwen-guide-art" data-gwen-art="welcome" data-gwen-static="assets\/ui_icons\/gwen\/welcome.png"[^>]*alt="" aria-hidden="true"(?: loading="lazy")?>/);
+ assert.match(guide,/<img class="gwen-guide-art" data-gwen-expression="welcome" data-gwen-art="welcome" data-gwen-static="assets\/ui_icons\/gwen\/welcome.png"[^>]*alt="" aria-hidden="true"(?: loading="lazy")?>/);
  assert.equal((page.match(/data-gwen-static="assets\/ui_icons\/gwen\/welcome.png"/g)||[]).length,1,`${file}: welcome in first guide and import drawer`);
  assert(page.includes('게임 이미지·만화의 권리는 원 권리자에게 있음.'),`${file}: image and comic attribution`);
  // 탐정 사무소 꾸밈: 장식은 alt=""·aria-hidden, 보안 안내 문구는 뜻·위치 그대로.
@@ -73,7 +73,7 @@ for(const file of ['party_template.html','index.html']){
   ['Ux.gwenSay("welcome","right")','Ux.gwenSay("welcome","left")',checkGwen],
   ['${Ux.gwenWork("screen","empty")}','${Ux.gwenWork("screen")}',checkGwen],
   ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-gwen-say="import" data-tail="left"></span>',checkGwen],
-  ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-tail="left" aria-hidden="true">단장의 정보! 내가 받아 갈게</span>',checkGwen],
+  ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-tail="left" aria-hidden="true">단장님의 정보! 내가 받아 갈게</span>',checkGwen],
   ['<p class="gwen-greet-note mut">아래 4단계를 순서대로 하면 됨</p>','',checkGwen],
   ['${waiting?Ux.gwenWork("inspect"):Ux.gwenIdle()}<div id="reco-actions">','${waiting?Ux.gwenWork("inspect"):""}<div id="reco-actions">',checkIdle],
   ['${waiting?Ux.gwenWork("inspect"):Ux.gwenIdle()}<div id="reco-actions">','${Ux.gwenIdle()}${waiting?Ux.gwenWork("inspect"):""}<div id="reco-actions">',checkIdle],
@@ -199,7 +199,7 @@ for(const file of ['party_template.html','index.html']){
  const page=fs.readFileSync(require.resolve('../'+file),'utf8');checkLoading(page);
  for(const [from,to] of [
   ['${Ux.gwenWork(sc?"screen":SIMQ.loaded?"long":"inspect")}',''],
-  ['${Ux.gwenWork("error")}<span class="bad"','<span class="bad"'],
+  ['${Ux.gwenError(SIMQ.cancelled?"cancel":"calculation")}<span class="bad"','<span class="bad"'],
   ['.gwen-work .gwen-worker{animation:none;transform:none}', '.gwen-work .gwen-worker{animation:gwen-report 1s infinite;transform:none}'],
  ]){assert(page.includes(from));assert.throws(()=>checkLoading(page.replace(from,to)),{code:'ERR_ASSERTION'});}
 }
@@ -211,8 +211,8 @@ function checkIdle(page,file){
  assert.equal((page.match(/Ux\.gwenIdle\(\)/g)||[]).length,1,`${file}: 대기 그웬은 대기 칸에만 한 번(첫 안내 등 다른 화면에는 두지 않음)`);
  assert(view.includes('<button type="button" data-go="1" title="현재 조건과 내 정보로 추천함">추천 편성 보기</button>'),`${file}: 단추 그대로`);
  const idle=Ux.gwenIdle();
- assert.equal(idle,`<span class="idle-gwen" data-gwen-idle aria-hidden="true">${Ux.gwenSay('idle','left')}${Ux.gwenImage('ready','idle-gwen-art',112)}</span>`);
- assert.doesNotMatch(idle,/<button|<a |data-gwen=|\ssrc=/,'장식만: 조작부·진행 표식·즉시 로딩 없음');
+ assert.equal(idle,`<span class="idle-gwen" data-gwen-idle>${Ux.gwenSay('idle','left')}<button type="button" class="gwen-poke" aria-label="그웬 부르기">${Ux.gwenImage('ready','idle-gwen-art',112)}</button><span class="gwen-announcement" role="status" aria-live="polite" aria-atomic="true"></span></span>`);
+ assert.doesNotMatch(idle,/<a |data-gwen=|\ssrc=/,'장식만: 조작부·진행 표식·즉시 로딩 없음');
  // 첫 안내와 대기 칸은 같은 #out 을 통째로 바꾸므로 동시에 보이지 않음.
  assert.match(page,/if\(!MI\.info&&!REQ\)\{renderMi\(\);\$\("out"\)\.innerHTML=miGuide\(\);return\}/,`${file}: 첫 안내는 #out 교체`);
  assert.match(view,/out\.innerHTML=`<div class="party idle"/,`${file}: 대기 칸도 #out 교체`);
@@ -242,11 +242,11 @@ function checkIdleCss(css){
  for(const part of [
   '.idle:has(>.idle-gwen){display:grid;grid-template-columns:auto auto;justify-content:center;align-items:center;gap:6px 20px}',
   '.idle-gwen{display:contents;pointer-events:none}',
-  '.idle-gwen-art{grid-column:1;grid-row:1/3;display:block;width:112px;height:112px;object-fit:contain;pointer-events:none}',
+  '.gwen-poke{grid-column:1;grid-row:1/3;width:112px;height:112px;pointer-events:auto}',
   '.idle-gwen>.gwen-bubble{grid-column:2;grid-row:1;justify-self:start;align-self:end;max-width:280px}',
   '.idle:has(>.idle-gwen)>#reco-actions{grid-column:2;grid-row:2;align-self:start;margin-top:0;min-width:0}',
   'body:has(#drawer.open) .idle-gwen>*{visibility:hidden}',
-  '@media(max-width:600px){\n .idle:has(>.idle-gwen){grid-template-columns:auto minmax(0,auto);gap:8px 10px}\n .idle-gwen-art{grid-row:1;width:64px;height:64px}\n .idle-gwen>.gwen-bubble{align-self:center;max-width:100%}\n .idle:has(>.idle-gwen)>#reco-actions{grid-column:1/-1}\n}',
+  '@media(max-width:600px){\n .idle:has(>.idle-gwen){grid-template-columns:64px minmax(0,1fr);gap:8px 10px}\n .gwen-poke{grid-row:1;width:64px;height:64px}\n .idle-gwen>.gwen-bubble{align-self:center;max-width:100%}\n .idle:has(>.idle-gwen)>#reco-actions{grid-column:1/-1}\n}',
  ])assert(css.includes(part),part);
  // 동작 줄이기: 말풍선 등장 연출 없음(그림은 mountGwen 이 정지 PNG 로 둠).
  assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\s*\.gwen-bubble,/);
@@ -280,7 +280,7 @@ function checkBubbleCss(css){
  for(const [from,to] of [
   ['.idle-gwen{display:contents;pointer-events:none}','.idle-gwen{display:contents}'],
   ['body:has(#drawer.open) .idle-gwen>*{visibility:hidden}',''],
-  ['.idle-gwen-art{grid-row:1;width:64px;height:64px}','.idle-gwen-art{grid-row:1;width:112px;height:112px}'],
+  ['.gwen-poke{grid-row:1;width:64px;height:64px}','.gwen-poke{grid-row:1;width:112px;height:112px}'],
   ['.idle:has(>.idle-gwen)>#reco-actions{grid-column:2;grid-row:2;','.idle:has(>.idle-gwen)>#reco-actions{grid-column:1;grid-row:1;'],
  ]){assert(css.includes(from),from);assert.throws(()=>checkIdleCss(css.replace(from,to)),{code:'ERR_ASSERTION'},'mutation survived: '+from);}
  for(const [from,to] of [

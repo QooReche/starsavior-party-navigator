@@ -938,7 +938,7 @@ def test_myinfo_required(browser, ctx):
     assert box.evaluate('(box) => box.firstElementChild.contains(document.getElementById("mi-copy"))')
     assert not page.locator('#mi-cmd').is_visible()
     assert all(page.locator('#' + key).is_hidden() for key in ('share-link', 'mi-view', 'mi-clear'))
-    assert '⚠ 게임이 이미 켜져 있으면 완전히 끄고 다시 켜세요' in box.inner_text()
+    assert '⚠ 게임이 켜져 있으면 완전히 껐다 다시 켜야 함' in box.inner_text()
     assert page.locator('header.site-head #mi-open-import').count() == 1 and page.locator('#mi-panel #mi-open-import').count() == 0
     assert '사이트가 자동으로 열리며 반영' in page.inner_text('.mihow')
     assert page.locator('#dclose').bounding_box()['height'] >= 39.9
@@ -2607,12 +2607,19 @@ TESTS.append(test_clash)
 
 
 def test_potential_unsupported(browser, ctx):
-    """Real Pyodide worker retains a named, unconfirmed arcana-origin potential."""
+    """Real worker retains a known potential name when its effect cannot be parsed."""
     ctx.errors.clear()
-    page = open_page(browser, ctx, info=SYNTH)
+    # 11026 is supported now. Inject a parser gap in the served fixture only,
+    # matching potential_coverage_test.py; production data and engine stay intact.
+    combat = load_json(os.path.join(ROOT, 'data', 'myinfo_combat.json'))
+    combat['potentials']['25004']['1']['effects'] = ['[알 수 없는 시점] 자신에게 알 수 없는 효과']
+    def setup(page):
+        page.context.route('**/data/myinfo_combat.json*', lambda route: route.fulfill(
+            status=200, content_type='application/json', body=json.dumps(combat, ensure_ascii=False)))
+    page = open_page(browser, ctx, info=SYNTH, setup=setup)
     info = json.loads(open(SYNTH, encoding='utf8').read())
     for u in info['units']:
-        u['gauntlet']['potentials'] = [[11026, 1, 0, 0]]
+        u['gauntlet']['potentials'] = [[25004, 1, 0, 0]]
     page.evaluate('(info) => miApply(info)', info)
     page.wait_for_function('() => !!MI.growth && !MI.pending')
     choose(page, '작전 (일반)', 'SECTOR 1-3')
@@ -2623,8 +2630,8 @@ def test_potential_unsupported(browser, ctx):
     assert '지원하지 않음' in warning.inner_text()
     assert warning.is_visible()
     assert warning.locator('details, [data-help]').count() == 0
-    assert '재난 대응 프로토콜' in warning.inner_text()
-    assert page.evaluate('() => Object.values(SIMQ.res).some(r=>r.unsupported?.some(x=>x.raw.includes("재난 대응 프로토콜")))')
+    assert '끝없는 종착점' in warning.inner_text()
+    assert page.evaluate('() => Object.values(SIMQ.res).some(r=>r.unsupported?.some(x=>x.raw.includes("끝없는 종착점")))')
     page.screenshot(path=os.path.join(ctx.shots, 'potential_unsupported.png'))
     assert not ctx.errors, ctx.errors
     page.close()

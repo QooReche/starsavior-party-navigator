@@ -367,9 +367,9 @@
     if (auto && !(Number.isInteger(cx.levelMax) && cx.levelMax >= 1)) throw new Error("난이도 최대값(levelMax)이 없음");   // 긴 계산을 돌리기 전에 막는다
     const rows = poolAll(S, results, roster);
     const bad = feasibility(S, rows);
-    if (bad) throw new Error(bad);
+    if (bad) throw Object.assign(new Error(bad),{gwenCause:"few"});
     const pl = plan(S, rows, (cx.breaks || []).length);
-    if (!pl.combos) throw new Error("조건에 맞는 4인 조합이 없음");
+    if (!pl.combos) throw Object.assign(new Error("조건에 맞는 4인 조합이 없음"),{gwenCause:"few"});
     if (S.maxCombos > 0 && pl.combos > S.maxCombos) throw new Error(`4인 조합이 ${num(pl.combos)}개로 안전 상한(${num(S.maxCombos)}개)을 넘음. 추천에서 뺄 구원자를 늘리거나 설정의 maxPool/maxCombos 를 조정해야 함`);
     const list = GS.combos(S, rows), cls = Object.fromEntries(roster.map(s => [s.key, s.cls]));
     if (cx.onPlan) cx.onPlan(pl);
@@ -404,7 +404,7 @@
         if (missing.length) {
           Object.assign(res1, await run(shuffled(missing, 20261106), fr, 1, "놓침 감지: 해당 보스의 나머지 조합을 전수 확인 중", 0, firstJobs.length));
           if (stale()) return null;
-          if (missing.some(j => !res1[j.key] || !res1[j.key].cosmo)) throw new Error("전수 확인 결과가 누락됨. 다시 시도 필요");
+          if (missing.some(j => !res1[j.key] || !res1[j.key].cosmo)) throw Object.assign(new Error("전수 확인 결과가 누락됨. 다시 시도 필요"),{gwenCause:"calculation"});
         }
         jobsA = jobsA.filter(j => fallback.has(j.boss) || done.has(j.key));
       }
@@ -427,7 +427,7 @@
     if (stale()) return null;
     const lists = bosses.map(b => pickTop(jobsB.filter(j => j.boss === b), resB, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
     let triples = bestTriples(lists, S.combine.topTriples);
-    if (!triples.length) throw new Error("겹치지 않는 3팀을 찾지 못했음(후보가 서로 겹침). 내 정보에 육성된 구원자 추가 필요");
+    if (!triples.length) throw Object.assign(new Error("겹치지 않는 3팀을 찾지 못했음(후보가 서로 겹침). 내 정보에 육성된 구원자 추가 필요"),{gwenCause:"empty"});
     // 난이도 자동: 보스마다 난이도를 따로 고를 수 있으므로(게임이 허용), 뽑은 삼중의 모든 팀을 난이도 0~최대에서 짧게 돌려 팀별로 점수가 가장 큰 난이도를 정하고
     // 그 합이 큰 순으로 삼중을 다시 매긴다. 이 뒤 단계는 시간 안내(ETA) 단계에 없어 stage=null 로 알린다(화면은 안내를 끈다)
     let probe = null, levelOf = () => level;
@@ -478,7 +478,8 @@
   const progText = st => `${st.msg || ""}${st.total ? ` · ${num(st.done)}/${num(st.total)}` : ""}`;
   function html(st, cx) {
     const esc = cx.esc;
-    const work = mode => cx.work ? cx.work(mode) : "";
+    const work = (...args) => cx.work ? cx.work(...args) : "";
+    const error = cause => cx.error ? cx.error(cause) : work("error");
     const head = '<h3 class="season-title">코스모 게이트</h3>';
     const warn = '<div class="mut gd-small">오토 전투 기준 · 내 정보의 실제 최종 능력치 · 같은 구원자를 여러 보스에 쓰지 않는 3팀(12명) · 점수 합산식은 서버 계산이라 추정이고 시뮬 전체가 아직 실제 플레이와 충분히 대조되지 않았음(참고용). 협공 제외는 적용하지 않음. 시즌이 바뀌면 새 시즌 값이 반영된 뒤에 사용해야 함.</div>';
     if (!cx.hasInfo) return `<div class="gd-search" data-k="cs-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자 불러오기 필요. 불러온 구원자 중에서 3보스 점수 합이 가장 큰 3팀을 찾음.</div></div>`;
@@ -490,13 +491,13 @@
     let body;
     // 진행 표시: 글자 칸(cs-prog, cs-eta)만 갱신하고 취소 버튼은 다시 만들지 않는다(클릭 유실 방지)
     if (st.phase === "run") body = `<div data-k="cs-progress">${work(cx.workMode || "long")}<span data-k="cs-prog">${esc(progText(st))}</span><div class="mut gd-small" data-k="cs-eta">${esc(st.etaText || "")}</div><button type="button" class="sec" data-cs="cancel">취소</button></div>`;
-    else if (st.phase === "err") body = `<div class="bad" data-k="cs-err">${work("error")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}${opt}`;
+    else if (st.phase === "err") body = `<div class="bad" data-k="cs-err">${error(st.errorCause||"other")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}${opt}`;
     else if (st.phase === "done") {
       const stale = (st.reqLevel != null ? st.reqLevel : st.level) !== cx.level || st.mode !== cx.mode || !!st.fast !== !!cx.fast ? '<div class="gd-warn" data-k="cs-stale">고른 탐색 설정이 바뀌었음. 아래 결과는 이전 선택 기준이므로 다시 찾기 필요.</div>' : "";
       const old = cx.sig != null && st.sig !== cx.sig ? '<div class="gd-warn" data-k="cs-old">낡은 결과: 내 정보를 다시 불러왔거나 추천에서 뺄 구원자 목록이 바뀌었음. 아래 결과는 이전 기준이므로 다시 찾기 필요.</div>' : "";
       const rows = st.rows || [];
       const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐음(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
-      const first = rows.length ? `${cx.report?.(st.rows)||""}<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : `${work('error')}<div class="mut">결과 없음</div>`;
+      const first = rows.length ? `${cx.report?.(st.rows)||""}<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : `${error('empty')}<div class="mut">결과 없음</div>`;
       const rest = rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx)}</details>`).join("");
       const scr = st.halved ? `${st.fast && !st.fastSkipped ? "대리 선별·무작위 확인" + (st.audit.some(a => a.fallback) ? "·놓침 보스 전수 복귀" : "") + " 뒤" : "보스마다 조합 " + num(st.combos) + "개를"} ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
       body = `${old}${stale}${first}${rest}${btn("다시 찾기")}${opt}<details class="season-options" data-fold="cs-result-basis"><summary>탐색 결과 상세</summary>${lvInfo}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값임(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순임. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있음.</div></details>`;

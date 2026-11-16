@@ -173,7 +173,7 @@
       ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; if (!pool) w.terminate(); });
       if (fatal && pool) pool.close();
     };
-    const fail = err => { if (dead) return; dead = true; clean(true); rejectFn(err); };
+    const fail = err => { err.gwenCause ||= "calculation"; if (dead) return; dead = true; clean(true); rejectFn(err); };
     const p = new Promise((resolve, reject) => {
       rejectFn = reject;
       if (!jobs.length) { dead = true; resolve(res); return; }
@@ -199,7 +199,7 @@
         send(part);
       }); } catch (e) { fail(e); }
     });
-    return {promise: p, cancel() { if (dead) { if (pool) pool.close(); return; } fail(new Error("취소")); }};
+    return {promise: p, cancel() { if (dead) { if (pool) pool.close(); return; } fail(Object.assign(new Error("취소"),{gwenCause:"cancel"})); }};
   }
 
   const BASIS = {client: "클라 자료 확인", community: "커뮤니티 근거(중간 신뢰)", inference: "추정"};
@@ -218,7 +218,8 @@
   const progText = st => `${st.msg || ""}${st.total ? ` · ${st.done}/${st.total}` : ""}`;
   function html(st, cx) {
     const esc = cx.esc;
-    const work = mode => cx.work ? cx.work(mode) : "";
+    const work = (...args) => cx.work ? cx.work(...args) : "";
+    const error = cause => cx.error ? cx.error(cause) : work("error");
     const warn = '<div class="mut gd-small">오토 전투 기준 · 내 정보의 실제 최종 능력치 · 선택 효과는 길방에 없다는 클라 확인에 따라 기본 끔(서버 처리는 미확인) · 시뮬 전체가 아직 실제 플레이와 충분히 대조되지 않았음(참고용). 시즌이 바뀌면 보스·규칙이 달라지니 새 시즌 값이 반영된 뒤에 사용해야 함.</div>';
     const head = '';
     if (!cx.hasInfo) return `<div class="gd-search" data-k="gd-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자 불러오기 필요. 불러온 구원자 중에서 기대 점수가 가장 큰 4인 편성을 찾음.</div></div>`;
@@ -228,13 +229,13 @@
     const coop = ex.length ? `<details class="season-options" data-fold="gs-options"><summary>협공 제외·주의 구원자 <span class="tag">${st.banCoop===false?'제외 꺼짐':'제외 켜짐'}</span></summary>${notes}<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 길방 EX는 협공 금지라는 글이 많음(스킬 문구로 먼저 빼고, 시뮬에서 협공이 나간 팀도 거름)</span></label></details>` : "";
     let body;
     if (st.phase === "run") body = `<div data-k="gd-search-progress">${work(cx.workMode || "long")}<span data-k="gd-search-prog">${esc(progText(st))}</span> <button type="button" class="sec" data-gs="cancel">취소</button></div>`;
-    else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">${work("error")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;
+    else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">${error(st.errorCause||"other")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;
     else if (st.phase === "done") {
       const stale = st.sig !== cx.sig ? '<div class="gd-warn" data-k="gd-search-stale">계산 조건이 바뀌었음. 아래 결과는 이전 선택 기준이므로 다시 찾기 필요.</div>' : "";
       const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${r.level}단계</td><td>${esc(SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
       const best=st.rows[0];
       const result=best?`<div class="season-result" data-k="gs-best"><div class="season-score"><span>상위 점수</span><b data-k="gs-score">${num(best.score)}</b><small>점</small></div><div class="season-chips"><span class="tag">${best.level}단계</span><span class="tag">${esc(SUP_NAME[best.sup]||best.sup)}</span><span class="tag">클리어 ${Math.round(best.clear*100)}%</span></div>${cx.team?cx.team(best):''}</div>`:'';
-      body = `${stale}${st.rows.length?(cx.report?.(st.rows)||""):work("error")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>보스 깎음</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
+      body = `${stale}${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>보스 깎음</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
 <div class="mut gd-small">후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값임(표본이 작아 한두 단계·수천 점은 오차). 고른 선택 효과 기준(기본 끔). 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순임. 점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받음.</div></details>`;
     } else body = btn("내 구원자로 편성 찾기") + '<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>'+coop;
     return `<div class="gd-search" data-k="gd-search" data-state="${st.phase}">${head}${body}${st.phase === "done" ? unsupportedHtml(st.rows || [], esc) : ""}<details class="season-options" data-fold="gs-basis"><summary>계산 기준 ⓘ</summary><span class="gd-est">추정</span>${warn}</details></div>`;

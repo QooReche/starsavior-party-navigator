@@ -54,7 +54,7 @@ async function slotEvaluateState({info,referenceInfo=info,context,focus,remainin
 async function slotStart(){if(SIMQ.busy!=null||StarLink.availability(MI.info))return;slotSync();
   const contexts=[...SLOT.contexts.values()];if(!contexts.length)return;
   const id=++GROW.id,alive=()=>GROW.id===id;
-  SLOT.phase='running';SLOT.result=null;SLOT.errors=[];SLOT.msg='슬롯 후보 준비';SIMQ.busy='slots';slotPaint();
+  SLOT.phase='running';SLOT.cancelled=false;SLOT.result=null;SLOT.errors=[];SLOT.msg='슬롯 후보 준비';SIMQ.busy='slots';slotPaint();
   try{
     const manifest=await fetch('sim/manifest.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw Error('엔진 버전 확인 실패');return r.json();});
     if(!alive())return;
@@ -88,7 +88,7 @@ function slotPaint(){if(!miMode()||!MI.info||!REQ)return;
   const face=id=>{const s=R.find(s=>s.uid===id);return s?`<span class="slot-face">${art(s)}</span>`:'';};
   const r=SLOT.result;
   el.innerHTML=`<summary>스타링크 슬롯 추천${SLOT.phase==='running'?' · 계산 중':SLOT.phase==='error'?' · 확인 부족':''}</summary><div data-k="slot-panel"><span class="tag" data-k="slot-cooldown">교체 쿨다운 있음</span>
-    ${SLOT.phase==='done'&&r?.swaps.length?(Ux.gwenReport?.(r)||''):Ux.gwenWork(SLOT.phase==='running'?'long':SLOT.phase==='error'||r&&!r.swaps.length?'error':'')}
+    ${SLOT.phase==='done'&&r?.swaps.length?(Ux.gwenReport?.(r)||''):(SLOT.phase==='running'?Ux.gwenWork('long'):SLOT.phase==='error'?Ux.gwenError(SLOT.cancelled?'cancel':'calculation'):'')}
     ${!r?'':r.swaps.map(s=>`<div class="slot-swap" data-k="slot-swap"><span class="slot-in">▲ 넣기: ${face(s.in)}<b>${esc(name(s.in))}</b> <small>Lv ${MI.info.units.find(u=>u.id===s.in).level}→링크</small></span><span class="slot-out">▼ 빼기: ${face(s.out)}<b>${esc(name(s.out))}</b></span><div>${reason(s.rows)}</div></div>`).join('')||'<p>확인 부족 · 개선이 확인된 교환 없음</p>'}
     ${SLOT.phase==='running'?`<p role="status">${esc(SLOT.msg)}</p><button class="sec" data-slot-stop>중단</button>`:
       `<button class="sec" data-slot-start ${SIMQ.busy!=null||!SLOT.contexts.size?'disabled':''}>슬롯 추천 계산</button>`}
@@ -100,5 +100,5 @@ function slotPaint(){if(!miMode()||!MI.info||!REQ)return;
       <details><summary>슬롯에 넣으면 / 슬롯에서 빼면</summary>${r.diagnostics.map(d=>`<p>${d.step+1}차 ${d.kind==='in'?'넣기':'빼기'}: ${esc(name(d.id))}<br>${d.note?esc(d.note):reason(d.rows)}</p>`).join('')}</details>`}</details>
     ${SLOT.errors.length?'<p>일부 평가 실패 · 확인 부족</p>':''}</div>`;
   el.querySelector('[data-slot-start]')?.addEventListener('click',slotStart);
-  el.querySelector('[data-slot-stop]')?.addEventListener('click',()=>{simInvalidate();SLOT.phase='error';SLOT.msg='중단함';slotPaint();});
+  el.querySelector('[data-slot-stop]')?.addEventListener('click',()=>{simInvalidate();SLOT.cancelled=true;SLOT.phase='error';SLOT.msg='중단함';slotPaint();});
 }

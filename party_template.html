@@ -472,7 +472,7 @@ function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
  const prog=p.querySelector('[data-k="gd-search-prog"]');
  if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);Ux.syncGwen(p,Ux.gwenStage(GSR.msg));return}
- const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:Ux.gwenWork,report:Ux.gwenReport,workMode:Ux.gwenStage(GSR.msg),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
+ const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:Ux.gwenWork,error:Ux.gwenError,report:Ux.gwenReport,workMode:Ux.gwenStage(GSR.msg),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
 function gsTeam(t){LEADKEY=t.order[0];return seasonBreakBar(t,true)+`<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
 async function guildSearchStart(target=GSR,profileOverride=null){
  if(seasonBlocked('guild'))return;
@@ -487,7 +487,7 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   const profile=profileOverride||MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
   const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers(),breaks=ownedSimBreaks(),sig=gsSig(),context=growthOwnedContext('guild');
   const rows=GuildSearch.pool(S,results,R.filter(s=>!EXCL.has(s.key))),list=GuildSearch.combos(S,rows.map(r=>r));
-  if(list.length<1)throw new Error("편성할 수 있는 구원자가 부족함(내 정보에 육성된 구원자 4명 이상 필요)");
+  if(list.length<1)throw Object.assign(new Error("편성할 수 있는 구원자가 부족함(내 정보에 육성된 구원자 4명 이상 필요)"),{gwenCause:"few"});
   const combos=list.map(k=>k),workers=Math.max(2,Math.min(8,(navigator.hardwareConcurrency||4)-1));
   const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>profileOverride?growthWorker():new Worker("sim_worker.js");
   const jobsA=GuildSearch.screenJobs(S,G,V,combos,results,cls,tiers);
@@ -513,7 +513,7 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   }
   GSR.dropped=GuildSearch.countDropped(S,pairs);GSR.rows=ranked.slice(0,5);GSR.sig=sig;GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=jobsC.length?GuildSearch.BREAK_CHECK.runs:S.final.runs;
   GSR.context=context;GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
- }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.phase=/^취소$/.test(e.message)?"idle":"err";GSR.msg=e.message||String(e);paint()}}
+ }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.errorCause=e.gwenCause||"other";GSR.phase=GSR.errorCause==="cancel"?"idle":"err";GSR.msg=e.message||String(e);paint()}}
 $("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
 $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[data-gs]");if(!b)return;
  if(b.dataset.gs==="start")guildSearchStart();
@@ -562,7 +562,7 @@ function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").v
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
- const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:Ux.gwenWork,report:Ux.gwenReport,workMode:Ux.gwenStage(CSR.msg),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo')}
+ const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:Ux.gwenWork,error:Ux.gwenError,report:Ux.gwenReport,workMode:Ux.gwenStage(CSR.msg),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo')}
 async function cosmoSearchStart(target=CSR,profileOverride=null){
  if(seasonBlocked('cosmo'))return;
  const CSR=target;
@@ -582,7 +582,7 @@ async function cosmoSearchStart(target=CSR,profileOverride=null){
   if(!out||stale())return;
   const sum=CSR.eta&&CSR.eta.summary();if(sum&&!profileOverride)LS.set("cosmo.speed.v2",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
   Object.assign(CSR,{fast:false,fastSkipped:false,audit:null},out,{phase:"done",handle:null,eta:null});CSR.context=growthOwnedContext('cosmo');paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return CSR
- }catch(e){if(profileOverride)throw e;if(stale())return;CSR.handle=null;CSR.eta=null;CSR.phase=/^취소$/.test(e.message)?"idle":"err";CSR.msg=e.message||String(e);paint()}}
+ }catch(e){if(profileOverride)throw e;if(stale())return;CSR.handle=null;CSR.eta=null;CSR.errorCause=e.gwenCause||"other";CSR.phase=CSR.errorCause==="cancel"?"idle":"err";CSR.msg=e.message||String(e);paint()}}
 $("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("[data-cs]");if(!t)return;
  if(t.dataset.cs==="fast")CSR.optFast=t.checked;
  else if(t.dataset.cs==="level"){CSR.optLevel=+t.value;LS.set("cosmo.level",CSR.optLevel)}else if(t.dataset.cs==="mode"){CSR.optMode=t.value;LS.set("cosmo.mode",CSR.optMode)}
@@ -766,8 +766,8 @@ function breakChip(bs){return bs?`<span class="bschip">${bs.supported?`발동 ${
 const KT=s=>[...new Set(s.kinds||[s.kind])].map(k=>({C:["COSMIC","k-C"],A:["ANOTHER","k-A"],S:["SHIFTER","k-S"]}[k])).filter(Boolean);
 const kindTxt=s=>{const tags=KT(s);return tags.length?`<span class="kind">${tags.map(([name,cls])=>`<span class="${cls}">${name}</span>`).join("")}</span>`:""};
 const dia=(s,px)=>`<span class="dia e-${s.el}" style="width:${px}px;height:${px}px"><img src="${D.icons[s.cls]}" alt="${esc(s.cls)}" style="width:${Math.round(px*.66)}px;height:${Math.round(px*.66)}px"></span>`;
-function art(s){const u=s.art||s.img;return u?`<img class="art" src="${esc(u)}" alt="" loading="lazy" onerror="this.remove()">`:""}
-function face(s){return s.img?`<img class="face" src="${esc(s.img)}" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;face&quot;>${esc(s.name[0])}</span>'">`:`<span class="face">${esc(s.name[0])}</span>`}
+function art(s){const u=s.art||s.img;return u?`<img class="art" src="${esc(u)}" width="512" height="512" alt="" loading="lazy" onerror="this.remove()">`:""}
+function face(s){return s.img?`<img class="face" src="${esc(s.img)}" width="160" height="160" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;face&quot;>${esc(s.name[0])}</span>'">`:`<span class="face">${esc(s.name[0])}</span>`}
 function altChips(party,alt,p){return `<details class="altbox" data-fold="alt-${p}"><summary>대신 넣을 구원자</summary>${party.map(x=>`${esc(x.s.name)}→${alt(x).map(a=>esc(a.s.name)).join("·")||"후보 없음"}`).join(" / ")}</details>`}
 const CROWN='<svg viewBox="0 0 34 26" aria-hidden="true"><path d="M2 22 L5 6 L12 14 L17 3 L22 14 L29 6 L32 22 Z" fill="#ffd24a" stroke="#8a5a00" stroke-width="1.5" stroke-linejoin="round"/><rect x="2" y="22" width="30" height="3" rx="1" fill="#e6a800"/></svg>';
 function simUnit(r,key){if(!r||!r.g||!r.u||!r.u[key])return '<div class="simu"></div>';const [sh,dp]=r.u[key];const pct=Math.round(sh*100),dpp=Math.round(dp*100);
@@ -867,7 +867,7 @@ function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+t
    ${k===pickKey?"":`<span class="qt">${sr?simCell(p,t,st):'<span class="mut" data-state="pending">계산 전</span>'}</span><button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">보기</button>`}</div>`};
  const selected=rows.findIndex(t=>t.keys.slice().sort().join(",")===pickKey),active=selected<0?0:selected;
  const alternatives=rows.flatMap((t,i)=>i===active?[]:[row(t,i)]);
- return `<div class="qbox" data-k="quick"><div class="result-layout"><div class="result-summary">${miVerdict(shown,st)}${scrNote(p,st)}${simBar(p,rows,st,uniq>rows.length)}${p===1&&!SIMQ.busy?Ux.gwenReaction(SIMQ.res[simSig(st,shown)]?.clear):''}</div><div class="result-team">${main}</div></div>${alternatives.length?`<div class="alternatives" data-k="alternatives">${alternatives.slice(0,2).join('')}${alternatives.length>2?`<details class="alternatives-more" data-fold="alternatives-${p}"><summary><span class="more-label">더 보기(+${alternatives.length-2})</span><span class="less-label">접기</span></summary>${alternatives.slice(2).join('')}</details>`:''}</div>`:''}${tail}</div>`}
+ return `<div class="qbox" data-k="quick"><div class="result-layout"><div class="result-summary">${miVerdict(shown,st)}${scrNote(p,st)}${simBar(p,rows,st,uniq>rows.length,shown)}${p===1&&!SIMQ.busy?Ux.gwenReaction(SIMQ.res[simSig(st,shown)]?.clear):''}</div><div class="result-team">${main}</div></div>${alternatives.length?`<div class="alternatives" data-k="alternatives">${alternatives.slice(0,2).join('')}${alternatives.length>2?`<details class="alternatives-more" data-fold="alternatives-${p}"><summary><span class="more-label">더 보기(+${alternatives.length-2})</span><span class="less-label">접기</span></summary>${alternatives.slice(2).join('')}</details>`:''}</div>`:''}${tail}</div>`}
 
 
 
@@ -919,7 +919,7 @@ function breakCompareView(br,p,t,st){
  if(BRCMP.open[p]!==key&&!all)return "";
  const best=all?breakBest(rows):undefined,busy=SIMQ.busy===p&&SIMQ.compareKey===key;
  const state=busy?`<div class="bcstate">${Ux.gwenWork("inspect")}<span class="mut" data-k="breakstate" role="status">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span><button type="button" class="sec" data-simcancel="1">취소</button></div>`:
-  SIMQ.err&&SIMQ.errCompare===key?`<div class="bcstate bad">${Ux.gwenWork("error")}${esc(SIMQ.err)}</div>`:"";
+  SIMQ.err&&SIMQ.errCompare===key?`<div class="bcstate bad">${Ux.gwenError(SIMQ.cancelled?"cancel":"calculation")}${esc(SIMQ.err)}</div>`:"";
  return `<div class="bcompare" aria-label="브레이크 스킬 비교">${state}${rows.map(x=>{const m=breakMetric(x.result),current=(x.name||"")===br.name;
   return `<div class="bcrow" data-bname="${esc(x.name||"")}"><span class="bcvalue"${m&&x.supported?` data-sim="${simCls({clear:m.clear})}"`:""}>${esc(x.name||"장착 안 함")} · ${!x.supported?"모의 전투 미반영":m?`클리어 ${Math.round(m.clear*100)}% · 약 ${m.turn==null?"—":Math.round(m.turn*10)/10}턴`:"대기"}${best!==undefined&&best===x.name?' <span class="bschip">최고</span>':""}${current?' <span class="mut">장착 중</span>':""}</span><button type="button" class="sec" data-bequip="${esc(x.name||"")}" data-bkey="${esc(br.key)}"${current?" disabled":""}>장착</button></div>`}).join("")}</div>`}
 function breakCompareStart(p,key){
@@ -936,16 +936,16 @@ function breakEquip(key,name,skipAuto=false){
 function simTitle(r){return `${r.n}판 · 95% 구간 ${(r.ci||[]).map(v=>Math.round(v*100)+"%").join("~")} · TURN은 전체 행동 수 추정으로 실측과 0.8~1.7배 차이가 날 수 있음`}
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
  return `<span class="qsim" data-sim="${simCls(r)}" title="${esc(simTitle(r))}">클리어 ${Math.round(r.clear*100)}%${r.t60!=null?` · ${r.t60n||STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:""}</span>`}
-function simBar(p,rows,st,hasMore){
+function simBar(p,rows,st,hasMore,shown=rows[0]){
  const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
  const st8=SIMQ.busy===p&&!SIMQ.compareKey?`${Ux.gwenWork("inspect")}<span class="mut" data-k="simstate" data-state="running">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
-  SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`${Ux.gwenWork("error")}<span class="bad" data-k="simstate" data-state="error">모의 전투 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
-  all?`${rows.length?(Ux.gwenReport?.(SIMQ.res[simSig(st,rows[0])])||''):''}<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
+  SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`${Ux.gwenError(SIMQ.cancelled?"cancel":"calculation")}<span class="bad" data-k="simstate" data-state="error">모의 전투 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
+  all?`${rows.length?(Ux.gwenReport?.(SIMQ.res[simSig(st,shown)],{clear:p===1?SIMQ.res[simSig(st,shown)]?.clear:undefined})||''):''}<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">모의 전투 실행</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
 function simInvalidate(){if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;if(Object.keys(x.res).length)scrClose(x);else delete SIMQ.scr[k]}simPoolDrop();clearTimeout(SIMQ.timer);SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
-function simStop(msg){const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=msg;SIMQ.err=/취소|중단/.test(msg)?"중단함":/엔진 준비 시간 초과/.test(msg)?"계산 엔진 준비가 오래 걸려 멈췄음 · 네트워크를 확인하고 다시 시도 필요":/시간 초과/.test(msg)?"계산이 오래 걸려 멈췄음 · 다시 시도하면 끝난 팀은 이어서 계산함":"자료를 불러오지 못했음. 다시 시도 필요";SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
+function simStop(msg,cancelled=false){SIMQ.cancelled=cancelled;const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=msg;SIMQ.err=/취소|중단/.test(msg)?"중단함":/엔진 준비 시간 초과/.test(msg)?"계산 엔진 준비가 오래 걸려 멈췄음 · 네트워크를 확인하고 다시 시도 필요":/시간 초과/.test(msg)?"계산이 오래 걸려 멈췄음 · 다시 시도하면 끝난 팀은 이어서 계산함":"자료를 불러오지 못했음. 다시 시도 필요";SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simQueue(start){const id=SIMQ.requestId;clearTimeout(SIMQ.startTimer);SIMQ.startTimer=setTimeout(()=>{if(SIMQ.requestId===id&&REQ&&!RECO.timer)start()},0)}
 function simAutoKick(){if(!simAutoOn()||SIMQ.busy!=null||(miMode()&&MI.pending))return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
@@ -1095,7 +1095,7 @@ $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-sim]
  const sm=e.target.closest("button[data-scrmore]");if(sm){simAuto(true);if(simScreen(+sm.dataset.scrmore,true))run();return}
  if(e.target.closest("button[data-simauto]")){simAuto(false);run();return}
  if(e.target.closest("button[data-scrstop]")){scrStop();return}
- if(e.target.closest("button[data-simcancel]"))simStop("취소함")});
+ if(e.target.closest("button[data-simcancel]"))simStop("취소함",true)});
 $("out").addEventListener("change",e=>{const s=e.target.closest("select.bsel");if(!s)return;
  breakEquip(s.dataset.bkey,s.value)});
 
@@ -1146,7 +1146,7 @@ function scrNote(p,st){const sc=SIMQ.scr[scrKey(st,p)];if(!sc||!sc.done||!sc.sho
 // 진행 화면의 「지금까지 결과로 보기」: 끝난 팀이 있으면 그 팀들로 순위를 정하고(simInvalidate 가 scrClose) 본선으로, 하나도 없으면 그냥 취소.
 // 옆의 「취소」(data-simcancel)는 본선으로 가지 않고 전부 멈춘다(끝난 팀 순위는 남고 「끝까지 확인」으로 이어 갈 수 있음)
 function scrStop(){const st=cur&&cur[$("stage").value],sc=st&&SIMQ.busy!=null?SIMQ.scr[scrKey(st,SIMQ.busy)]:null;
- if(!SIMQ.screening||!sc||!Object.keys(sc.res).length){simStop("취소함");return}simInvalidate();run()}
+ if(!SIMQ.screening||!sc||!Object.keys(sc.res).length){simStop("취소함",true);return}simInvalidate();run()}
 function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("stage").value],box=LASTQ[p];if(!st||!box||SIMQ.busy!=null)return false;
  const k=scrKey(st,p),ck=t=>t.keys.slice().sort().join(","),byKey=new Map(box.all.map(t=>[ck(t),t]));
  const R0=SCR_ROUNDS[0],R1=SCR_ROUNDS[1];let sc=SIMQ.scr[k];
@@ -1238,7 +1238,7 @@ function miGuide(){return `<div class="party guide case-request" data-k="miguide
  <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div>${Ux.gwenSay("welcome","right")}${Ux.gwenImage("welcome","gwen-guide-art")}</div></div>`}
 function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;recoClearTimer();if(!MI.info){RECO.standard=true;$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
 function run(skipAuto=false){seasonPaint();growthControlPlace(true);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
- if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror">${Ux.gwenWork("error")}<h3>내 정보 계산 자료를 불러오지 못했음</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}
+ if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror">${Ux.gwenError("other")}<h3>내 정보 계산 자료를 불러오지 못했음</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}
 function runCore(skipAuto=false){
  if(seasonBlocked(contents[$('content').value]?.key))return;
  renderMi();
@@ -1260,7 +1260,7 @@ function runCore(skipAuto=false){
  for(let p=1;p<=(c.parties||1);p++){
   const rsEl=(CFG.restrict[c.name]||{})[st.tab];
   const cands=R.filter(s=>own.has(s.key)&&!used.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
-  if(cands.length<4){html+=`<div class="party">${Ux.gwenWork("error")}파티 ${p}: 후보가 4명 미만임.</div>`;break}
+  if(cands.length<4){html+=`<div class="party">${Ux.gwenError("few")}파티 ${p}: 후보가 4명 미만임.</div>`;break}
   const ranked=p===1&&ranked0?ranked0:rankAll(cands,defPen);
   const list=buildCands(ranked);
   const qi=qi0,qt=p===1&&qr0?qr0:qi?quickRank(ranked,qi):null;jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{all:qt,rows:quickRows(qt,st,p),total:new Set(qt.map(t=>t.keys.slice().sort().join(","))).size}:null;
