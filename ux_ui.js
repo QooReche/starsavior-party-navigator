@@ -190,6 +190,7 @@
         for(const key of ['url','pendingURL'])if(s[key]){root.URL.revokeObjectURL(s[key]);s[key]=null;}
       }
       function rest(){
+        delete s.due.land;delete img.dataset.gwenLanded;
         if(s.still){img.src=s.still;img.dataset.gwenLoaded='true';}
         img.dataset.gwenPlaying='false';s.phase='rest';
         release();
@@ -232,6 +233,11 @@
           s.url=url;s.pendingURL=null;if(previous)root.URL.revokeObjectURL(previous);
           s.phase=phase;img.dataset.gwenPlaying=String(phase==='action');
           if(phase==='action'&&!s.asset.loop)s.due.action=s.clock+1000;
+          // jump.webp: 400ms airborne, then 600ms landed (build4.DURATIONS).
+          // The static jump PNG is airborne; rest() restores that shadow too.
+          if(phase==='action'&&s.expression==='jump'&&img.hasAttribute('data-gwen-managed')){
+            delete img.dataset.gwenLanded;s.due.land=s.clock+400;
+          }
           if(phase==='blink')s.due.open=s.clock+rand(120,41);
           breathing();schedule();
         }catch{
@@ -281,6 +287,7 @@
         s.timer=null;if(!gwenVisible(img)){s.update();return;}account();
         if(report&&!report.done&&report.remaining<=0){report.done=true;gwenPending.delete(report.id);scene.remove();s.stop();return;}
         const due=key=>s.due[key]!=null&&s.due[key]<=s.clock;
+        if(due('land')){delete s.due.land;img.dataset.gwenLanded='true';}
         if(due('travel')){
           const track=scene.querySelector('.gwen-track'),traveler=scene.querySelector('.gwen-traveler');
           if(track&&traveler&&s.motionOwner&&!reduced()&&doc.documentElement.dataset.gwenQuiet!=='true'){

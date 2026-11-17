@@ -14,18 +14,32 @@ OUT.mkdir(parents=True,exist_ok=True)
 ACTOR='.gwen-lane-actor'
 
 
-def shown(p):
+def shown(p,expected=None):
     p.locator(ACTOR).scroll_into_view_if_needed()
-    p.wait_for_function("document.querySelector('.gwen-lane-image')?.dataset.gwenLoaded==='true'")
+    p.wait_for_function('''expected=>{const i=document.querySelector('.gwen-lane-image');
+      return i?.dataset.gwenExpression===(expected||GwenLane.mount().state.art)&&
+        i.dataset.gwenLoaded==='true'&&i.complete&&i.naturalWidth>0&&Number(getComputedStyle(i).opacity)>.99}''',arg=expected)
 
 
-def snapshot(p,name,width):
-    shown(p)
-    p.wait_for_function("Number(getComputedStyle(document.querySelector('.gwen-lane-image')).opacity)>.99")
-    if getattr(p,'freeze_capture',False):p.clock.pause_at(p.evaluate('Date.now()+50')/1000)
-    try:p.screenshot(path=str(OUT/f'{name}-{width}.png'),full_page=True)
+def snapshot(p,name,width,expected=None):
+    # Freeze before scrolling/decoding: a short reaction must not expire while
+    # the screenshot helper waits, and retained old pixels are not the target.
+    reaction=expected is not None
+    frozen=getattr(p,'freeze_capture',False)
+    # Leave a protocol round-trip margin, below the 1500ms reaction lifetime.
+    if frozen:p.clock.pause_at(p.evaluate('Date.now()+250')/1000)
+    try:
+        expected=expected or p.evaluate('GwenLane.mount().state.art')
+        shown(p,expected)
+        def captured_pose():
+            return p.evaluate('[GwenLane.mount().state.art,document.querySelector(".gwen-lane-image").dataset.gwenExpression]')
+        if frozen:assert captured_pose()==[expected,expected],('capture missed requested reaction',name,expected,captured_pose(),p.evaluate('GwenLane.mount().state'))
+        # Chromium full-page capture can briefly resize to 1px and legitimately
+        # reset the responsive portrait. Keep the viewport for short reactions.
+        p.screenshot(path=str(OUT/f'{name}-{width}.png'),full_page=not reaction)
+        if frozen:assert captured_pose()==[expected,expected],('capture missed short reaction',name,expected,captured_pose(),p.evaluate('GwenLane.mount().state'))
     finally:
-        if getattr(p,'freeze_capture',False):p.clock.resume()
+        if frozen:p.clock.resume()
 
 
 def bounds(p):
@@ -104,8 +118,7 @@ def ui(browser,base,width):
     for i,kind in enumerate(['shy','sulk','cry'],1):
         p.locator('.gwen-lane-poke').click()
         assert p.evaluate('GwenLane.mount().state.art')==('st_' if width>=1200 else '')+kind
-        snapshot(p,f'click-{i}',width)
-        assert p.evaluate('GwenLane.mount().state.art')==('st_' if width>=1200 else '')+kind, 'capture missed short reaction'
+        snapshot(p,f'click-{i}',width,expected=('st_' if width>=1200 else '')+kind)
     before=p.evaluate('GwenLane.mount().state.art');p.locator('.gwen-lane-poke').click()
     assert p.evaluate('GwenLane.mount().state.art')==before,'10-second poke lock missing'
     p.locator('#optbox > summary').click();p.locator('#gwen-quiet').check()
