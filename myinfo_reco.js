@@ -62,7 +62,12 @@
         unit.resonance = Math.max(0, ...Object.keys(unlock).map(Number).filter(n => unlock[n] <= level));
         if (owned) unit.resonance = Math.max(unit.resonance, owned.resonance);
       } else if (field === 'favor') unit.favor = 30;
-      else if (field === 'skills') unit.skills = clone(spec.skills);
+      else if (field === 'skills') {
+        unit.skills = clone(spec.skills);
+        // Growth keeps the current limit break; slot 4 unlocks at break 1.
+        // overwrite separately preserves the imported passive instead of upgrading it.
+        if (unit.star === 0) unit.skills.passive = 0;
+      }
       else if (field === 'equip') unit.equip = clone(spec.equip);
       else if (field === 'journey') unit.gauntlet.journey = clone(spec.journey);
       else if (field === 'potentials') {
