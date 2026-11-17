@@ -67,7 +67,7 @@ function overwriteParity(p=P){
 test('all 16 per-slot overwrite combinations equal recommendation power/combat, input immutable',()=>overwriteParity());
 function linkCheck(p=P){
   for(const gap of [1,9,10,0,-5])for(const source of [false,true]){
-    const cx=context();cx.info.units.forEach(u=>u.level=200-gap);cx.info.star_link={level:200,source:source?[roster.find(s=>s.key===keys[0]).uid]:[],slots:[]};
+    const cx=context();cx.info.units.forEach(u=>u.level=200-gap);cx.info.star_link={unlocked:true,level:200,source:source?[roster.find(s=>s.key===keys[0]).uid]:[],slots:[]};
     const before=JSON.stringify(cx.info),d=full(),current=p.powers(d,cx);d.slots[0].grown=true;
     const actual=p.powers(d,cx),target=M.overwrite(cx.info,roster,growth,'op',{excluded:roster.filter(s=>s.key!==keys[0]).map(s=>s.key),slots,priority});
     const uid=roster.find(s=>s.key===keys[0]).uid,ids=[...new Set([...target.info.star_link.slots.map(s=>s.id),uid])];

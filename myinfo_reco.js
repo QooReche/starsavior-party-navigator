@@ -31,6 +31,24 @@
     return {powers: Object.keys(powers).length ? powers : null, finals, assumed};
   }
   const clone = x => JSON.parse(JSON.stringify(x));
+  // NKM.Templets.decompiled.cs:29202-29221. Blossom is the imported actual state.
+  function prelinkLevel(unit, growth) {
+    const grade = unit.blossom === true ? 'SSR' : growth.units[unit.id]?.grade;
+    if (!['R','SR','SSR'].includes(grade) || !Number.isInteger(unit.star) || unit.star<0 || unit.star>3)
+      throw new Error('돌파 최대 레벨 자료 없음');
+    return grade==='R' ? 80 : grade==='SR' ? 160 : unit.star===3 ? 200 : unit.star===2 ? 180 : 160;
+  }
+  function prelinkNote(unit, info, growth) {
+    const cap=prelinkLevel(unit,growth), target=Math.max(unit.level||1,cap);
+    // CLIENT_CONST Synchro.LevelLimitTable / NKC:432734-432755.
+    // PM C: use the original account's four highest actual levels, advisory only.
+    const levels=info.units.map(u=>u.level||0).sort((a,b)=>b-a).slice(0,4);
+    const req=[ [40,20],[80,60],[120,100],[160,140] ]
+      .filter(([limit,level])=>target>limit && levels.filter(n=>n>=level).length<4).at(-1)?.[1];
+    return {cap,target,aboveCap:(unit.level||0)>cap,
+      text:`스타링크 미개방 · 현재 돌파 기준 최대 레벨(Lv.${target})로 가정`+
+        (req?` · 실제로는 Lv.${req} 이상 4명 필요할 수 있음`:'')};
+  }
   function assume(key, info, growth, preset = {}) {
     const data = growth?.assumed, spec = data?.units?.[key];
     if (!spec) throw new Error('가정 세팅 없음: ' + key);
@@ -42,20 +60,22 @@
       : ['level', 'equip', 'skills', 'resonance', 'journey', 'potentials']);
     const before = clone(unit);
     if(fields.some(f=>f==='journey'||f==='potentials'))unit.gauntlet ||= {};
-    const currentLevel = Stats.level_info(unit,info), levelUnknown = !!owned && currentLevel.source==='legacy';
+    const currentLevel = Stats.level_info(unit,info), prelink = info.star_link?.unlocked===false,
+      levelUnknown = !!owned && (currentLevel.source==='legacy' || info.star_link?.unlocked==null);
     if(levelUnknown && fields.length===1 && fields[0]==='level')
       throw Object.assign(new Error('레벨 자료 없음 · 다시 불러오기 필요'),{code:'level-data'});
     // NKC:420258-420264 excludes sources. A growth target must never lower a level.
     const linkLevel = info.star_link?.level ?? info.star_link_level;
-    const register = fields.includes('level') && !levelUnknown && !info.star_link?.source?.includes(unit.id)
+    const register = fields.includes('level') && info.star_link?.unlocked===true && !levelUnknown && !info.star_link?.source?.includes(unit.id)
       && (!owned || linkLevel>currentLevel.level);
-    const levelTarget = register ? linkLevel : null;
+    const levelTarget = prelink && !levelUnknown && fields.includes('level')
+      ? Math.max(unit.level||1,prelinkLevel(unit,growth)) : register ? linkLevel : null;
     if (levelTarget != null && !Number.isInteger(levelTarget)) throw new Error('스타링크 레벨 없음');
-    const targetInfo = levelTarget == null ? info : {...info, star_link:{
-      level:levelTarget, source:info.star_link?.source || [],
+    const targetInfo = prelink || levelTarget == null ? info : {...info, star_link:{
+      ...info.star_link, level:levelTarget, source:info.star_link?.source || [],
       slots:[...(info.star_link?.slots || []).filter(s=>s.id!==unit.id), {index:-1,id:unit.id}]}};
     for (const field of fields) {
-      if (field === 'level') { if (!unit.level) unit.level = levelTarget; }
+      if (field === 'level') { if (prelink && levelTarget!=null) unit.level=levelTarget; else if (!unit.level) unit.level = levelTarget; }
       else if (field === 'resonance') {
         const unlock = growth.units[spec.uid].resonance_unlock;
         const level = Stats.effective_level(unit,targetInfo);
@@ -82,7 +102,7 @@
       : {before:value(before,f),after:value(unit,f)}]));
     const changedFields = fields.filter(f => !owned || JSON.stringify(changes[f].before) !== JSON.stringify(changes[f].after));
     return {unit, source: owned ? 'owned' : 'assumed', changedFields, presetId: data.version,
-      changes, levelTarget, levelUnknown, targetInfo, kind: preset.kind || 'growth', key};
+      changes, levelTarget, levelUnknown, prelink, targetInfo, kind: preset.kind || 'growth', key};
   }
   function assumedProfile(base, assumed, info, growth, content) {
     const rule = Stats.rule_for_content(content), spec = growth.assumed.units[assumed.key];
@@ -109,7 +129,7 @@
     return (equip||[]).map(e=>[slots?.[e.item_id]??-1,e]).sort((a,b)=>a[0]-b[0]||a[1].item_id-b[1].item_id);
   }
   // Independent account snapshot. Equipment is selected as one complete bundle.
-  const OVERWRITE_VERSION='grown-account-v6';   // v6: 아카이브 주력 판단 = 공략 DB 여정 스탯 우선순위, 장비×기록 조합 비교 / v5: 기록 통째 교체(칸별 섞기 금지)
+  const OVERWRITE_VERSION='grown-account-v7';   // v7: 명시적 개방 판정·돌파 상한 / v6: 아카이브 주력 판단 = 공략 DB 여정 스탯 우선순위, 장비×기록 조합 비교 / v5: 기록 통째 교체(칸별 섞기 금지)
   // Recommendation policy, not a battle rule. Included verbatim in history/cache signatures.
   const THRESHOLD_POLICY=Object.freeze({skillMax:7,skillTarget:10,passive:false,
     equipMin:12,equipSum:84,archiveMain:950,favorMax:20,favorTarget:30,
@@ -140,7 +160,8 @@
   function growthFields(old,info,growth,spec,content,slots,rows=null){
     const fields=[],level=Stats.level_info(old,info);
     const fixed=Stats.rule_for_content(content)==='fixed200';
-    if(!fixed&&level.source!=='legacy'&&!info.star_link?.source?.includes(old.id)
+    if(!fixed&&info.star_link?.unlocked===false&&level.source!=='legacy')fields.push('level');
+    if(!fixed&&info.star_link?.unlocked===true&&level.source!=='legacy'&&!info.star_link?.source?.includes(old.id)
       &&info.star_link.level-level.level>=THRESHOLD_POLICY.linkGap)fields.push('level');
     const equip=old.equip||[],parts=new Set(equip.map(e=>slots?.[e.item_id]));
     if([0,1,2,3,4,5].some(i=>!parts.has(i))||equip.some(e=>e.enhance<THRESHOLD_POLICY.equipMin)
@@ -192,13 +213,13 @@
         if(!a.changedFields.length)continue;
         out=assumedProfile(out,a,info,growth,content);
         const i=target.units.findIndex(x=>x.id===u.id);if(i<0)target.units.push(u);else target.units[i]=u;
-        if(a.levelTarget!=null){target.star_link ||= clone(a.targetInfo.star_link);
+        if(a.levelTarget!=null&&!a.prelink){target.star_link ||= clone(a.targetInfo.star_link);
           target.star_link.slots=target.star_link.slots.filter(x=>x.id!==u.id).concat({index:-1,id:u.id});}
         changes[s.key]=a;
       }catch(e){errors.push({key:s.key,reason:e.message});}
     }
     return {info:target,profile:out,changes,errors,version:OVERWRITE_VERSION,preset:growth.assumed.version};
   }
-  const api = {hash, profile, team, judgment, assume, assumedProfile, overwrite, OVERWRITE_VERSION, THRESHOLD_POLICY};
+  const api = {hash, profile, team, judgment, prelinkLevel, prelinkNote, assume, assumedProfile, overwrite, OVERWRITE_VERSION, THRESHOLD_POLICY};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.MyInfoReco = api;
 })(typeof window !== "undefined" ? window : globalThis);

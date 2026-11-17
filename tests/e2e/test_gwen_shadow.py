@@ -57,7 +57,9 @@ def contract(browser,base,width):
     p=ready(browser,base,width,setup=fake,touch=width==360)
     # Home may select a cropped portrait, so verify its omission and the SD path.
     p.evaluate("GwenLane.CHOICES.home.splice(0,3,'guide2');GwenLane.sync({mode:'home',phase:'idle',step:'shadow'})")
-    p.wait_for_function("document.querySelector('.gwen-lane-image')?.dataset.gwenExpression==='guide2'")
+    # Mobile uses its own SD candidates; CHOICES.home only controls desktop.
+    home_arts=['guide2'] if width>=1200 else ['guide2','welcome','present']
+    p.wait_for_function("arts=>arts.includes(document.querySelector('.gwen-lane-image')?.dataset.gwenExpression)",arg=home_arts)
     loaded(p);present(p)
     if width==1280:capture(p,'home',width)
     enter(p);pick_four(p,width==360)

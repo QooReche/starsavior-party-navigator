@@ -45,6 +45,8 @@ def level_info(unit, info):
     link = link if isinstance(link, dict) else {}
     valid_level = lambda v: _number(v) and v == math.floor(v) and 1 <= v <= 2147483647
     missing = []
+    if link.get("unlocked") is False and valid_level(unit.get("level")):
+        return dict(level=unit["level"], source="unit", missing=[])
     if not valid_level(unit.get("level")):
         missing.append("unit.level")
     if not valid_level(link.get("level")):
@@ -203,7 +205,7 @@ def final_stats(unit, info, growth, rule="normal", breakdown=False):
         favor = number(unit, "favor", "favor")
         base = template.get("base", {})
         inc = template.get("per_level", {})
-        syn = {} if rule == "fixed200" else at(growth.get("star_link"), level, "growth:star_link")
+        syn = {} if rule == "fixed200" or (info.get("star_link") or {}).get("unlocked") is False else at(growth.get("star_link"), level, "growth:star_link")
         # IUnitResonanceTemplet (NKM.Templets.cs:25673-25690) stops at
         # UnlockLevel. Even an inconsistent imported grade cannot bypass it.
         unlock = template.get("resonance_unlock", {})

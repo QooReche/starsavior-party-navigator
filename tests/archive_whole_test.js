@@ -18,7 +18,7 @@ const plain=x=>x===undefined?undefined:JSON.parse(JSON.stringify(x)),same=(a,b,m
 function load(code){const ctx={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,ctx);return ctx.module.exports;}
 const specOf=key=>growth.assumed.units[key];
 // 다른 항목은 모두 기준 이상(아카이브·장비만 본다): 기준표 세팅으로 만든 뒤 고친다
-function account(key,journey,edit){const info=structuredClone(raw);info.units=[];info.star_link={level:240,source:[],slots:[]};info.star_link_level=240;
+function account(key,journey,edit){const info=structuredClone(raw);info.units=[];info.star_link={unlocked:true,level:240,source:[],slots:[]};info.star_link_level=240;
  for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
  const u=M.assume(key,info,growth).unit;u.level=240;u.favor=30;
  if(journey===null)delete u.gauntlet;else u.gauntlet.journey=journey.slice();
@@ -101,7 +101,7 @@ function check(m=M,ux=U){
   assert(!tie.equipChanged&&!tie.changed,'동률이면 지금 장비');assert(tie.unit.equip.every(e=>e.importTag==='kept'));assert.equal(tie.power,tie.original);}
  // 플래시 포인트(Lv200 고정)도 같은 원칙
  {const x=run(m,A,ASHERAH,{content:'rush'});assert(!x.changed);assert(x.power>=x.original);}
- assert.equal(m.OVERWRITE_VERSION,'grown-account-v6');assert.equal(m.THRESHOLD_POLICY.archiveWhole,true);assert.equal(m.THRESHOLD_POLICY.archivePriority,'guide');assert.equal(m.THRESHOLD_POLICY.archiveMain,950);
+ assert.equal(m.OVERWRITE_VERSION,'grown-account-v7');assert.equal(m.THRESHOLD_POLICY.archiveWhole,true);assert.equal(m.THRESHOLD_POLICY.archivePriority,'guide');assert.equal(m.THRESHOLD_POLICY.archiveMain,950);
 }
 // 공략 DB 지연 대비: 페이지 로스터에는 있는데 DB 에 없는 구원자는 직업 기본값으로 채우고 fallback 에 적는다(조용히 대체하지 않음). 실제 도구를 가짜 로스터로 돌린다
 {const cp=require('node:child_process'),os=require('node:os'),path=require('node:path'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'journey-priority-'));

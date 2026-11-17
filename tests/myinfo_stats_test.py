@@ -487,7 +487,7 @@ class SyntheticTests(unittest.TestCase):
                 check_stats(row)
 
         for u in g["units"].values():
-            self.assertEqual(set(u), {"base", "per_level", "journey_mul", "tactics_groups", "resonance", "resonance_unlock", "favor", "star", "passive"})
+            self.assertEqual(set(u), {"base", "per_level", "journey_mul", "tactics_groups", "resonance", "resonance_unlock", "favor", "star", "passive", "grade"})
             self.assertEqual(set(u["base"]), set(ms.KEYS))
             check_stats(u["base"])
             check_stats(u["per_level"])

@@ -6,7 +6,7 @@ const slots=require('../data/myinfo_slots.json'),grades=require('../data/archive
 const spec=growth.assumed.units.luna,roster=Object.entries(growth.assumed.units).map(([key,s])=>({key,uid:s.uid}));
 const clone=structuredClone,plain=x=>JSON.parse(JSON.stringify(x));
 function account(){
-  const info=clone(raw);info.units=[];info.star_link={level:240,source:[],slots:[]};info.star_link_level=240;
+  const info=clone(raw);info.units=[];info.star_link={unlocked:true,level:240,source:[],slots:[]};info.star_link_level=240;
   for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
   const u=M.assume('luna',info,growth).unit;u.level=240;u.favor=30;u.skills.passive=2;
   info.units=[u];return info;

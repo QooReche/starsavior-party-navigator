@@ -10,7 +10,7 @@ const M=adapter();
 function fixture(){const info=structuredClone(raw);info.star_link_level=120;
   for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
   info.units=roster.slice(0,8).map(s=>({...structuredClone(M.assume(s.key,{...info,star_link:null,units:[]},growth).unit),level:82}));
-  info.star_link={level:120,source:info.units.slice(0,4).map(u=>u.id),slots:info.units.slice(4,6).map((u,index)=>({index,id:u.id}))};
+  info.star_link={unlocked:true,level:120,source:info.units.slice(0,4).map(u=>u.id),slots:info.units.slice(4,6).map((u,index)=>({index,id:u.id}))};
   return info;
 }
 function sourceLevels(m=M){const info=fixture();

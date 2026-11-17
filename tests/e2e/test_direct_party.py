@@ -165,7 +165,7 @@ def editor(browser,base,width,touch=False):
 def power_link_conditions(browser,base):
     page=ready(browser,base);enter(page);pick_four(page)
     applied=page.evaluate('''async() => {const i=structuredClone(MI.info);i.units.forEach(u=>u.level=100);i.star_link_level=200;
-      i.star_link={level:200,source:[],slots:[{index:0,id:i.units.at(-1).id}]};return await miApply(i);}''')
+      i.star_link={unlocked:true,level:200,source:[],slots:[{index:0,id:i.units.at(-1).id}]};return await miApply(i);}''')
     assert applied,'modern synthetic account was rejected'
     page.wait_for_timeout(350)
     page.locator('[data-direct-action=grown][data-slot="0"]').click()

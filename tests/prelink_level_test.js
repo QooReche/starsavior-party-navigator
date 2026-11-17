@@ -37,7 +37,7 @@ function check(p=P){
     }
   }
   const c=context(),u=c.info.units[0],key=roster.find(s=>s.uid===u.id).key;
-  c.info.star_link={level:200,source:[],slots:[]};c.info.star_link_level=200;u.level=199;
+  c.info.star_link={unlocked:true,level:200,source:[],slots:[]};c.info.star_link_level=200;u.level=199;
   const d=p.edit(p.empty(),{type:'put',key,slot:0});d.slots[0].grown=true;
   const on=p.powers(d,c);assert.deepEqual(plain(on.levelUnknown),[]);assert.deepEqual(plain(on.linked),[key]);
   assert.equal(S.effective_level(on.profile.units[key],{...c.info,star_link:{level:200,source:[],slots:[{id:u.id}]}}),200);

@@ -11,6 +11,19 @@ from myinfo_stats_test import fixture, node_cases, ms
 
 
 class EffectiveLevelTests(unittest.TestCase):
+    def test_explicit_locked_own_level_and_no_link_bonus(self):
+        cases = []
+        for state in (False, True, None):
+            for level in (40, 80, 160, 180, 200, 240):
+                u, info, growth = fixture()
+                u['level'] = level
+                info.update(star_link_level=250, star_link=dict(
+                    level=250, source=[u['id']], slots=[dict(index=0, id=u['id'])], unlocked=state))
+                self.assertEqual(ms.effective_level(u, info), level if state is False else 250)
+                for rule in ('normal', 'fixed200'):
+                    cases.append([u, info, growth, rule, True])
+        self.assertEqual(node_cases(cases), [ms.final_stats(*x) for x in cases])
+
     def test_levels_and_stats(self):
         cases, descriptions, expected_levels = [], [], []
         for link_level in (1, 120, 199, 200, 201, 250):

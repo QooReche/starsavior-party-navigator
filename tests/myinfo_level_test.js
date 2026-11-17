@@ -1,6 +1,6 @@
 const assert=require('node:assert/strict');
 const M=require('../myinfo_import.js'),S=require('../myinfo_stats.js'),V=require('../myinfo_view.js');
-const info={format:M.FORMAT,star_link_level:201,star_link:{level:201,source:[900002],slots:[{index:0,id:900001},{index:99,id:0}]},
+const info={format:M.FORMAT,star_link_level:201,star_link:{unlocked:true,level:201,source:[900002],slots:[{index:0,id:900001},{index:99,id:0}]},
   units:[{id:900001,level:23},{id:900002,level:200},{id:900003,level:17}]};
 assert.equal(M.validate(info),'');
 assert.deepEqual(M.warnings(info),[]);

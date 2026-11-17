@@ -2120,7 +2120,7 @@
    "level": 91
   }
  ],
- "star_link": {
+ "star_link": {"unlocked": true,
   "level": 120,
   "source": [
    1001,

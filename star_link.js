@@ -5,6 +5,8 @@
   const LIMITS=Object.freeze({maxRuns:12000,maxMs:120000,maxSwaps:3,maxCandidates:8,maxPairs:24});
   function availability(info){
     const l=info?.star_link;
+    if(l?.unlocked===false)return '스타링크 미개방';
+    if(l?.unlocked!==true)return '다시 불러오기 필요';
     if(!l||!Array.isArray(l.slots)||!Array.isArray(l.source)||!Number.isInteger(l.level)||l.level<1||
       info.units.some(u=>!Number.isInteger(u.level)||u.level<1))return '다시 불러오기 필요';
     const ids=l.slots.map(s=>s.id).filter(Boolean),owned=new Set(info.units.map(u=>u.id));

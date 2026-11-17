@@ -22,7 +22,7 @@
 
 - `direct_party.js`: 순수 초안·검증·배치 변환·사용자 배치 직렬화·전투력·서명·저장/공유 허용 목록. `direct_ui.js`는 편집, `direct_run.js`는 실행 스냅샷·행별 캐시·비교 표시를 맡음. 둘 다 물리 작업자를 만들지 않음.
 - 초안 `{v:1, slots:[{key,grown}|null × 4], leader:key|null, brk:'auto'|null|{name,level}}`. 저장/엔진 순서는 전열1·전열2·후열1·후열2, `toScreen` 결과는 후열1·전열1·전열2·후열2. 리더·육성 선택은 구원자를 따라감.
-- `powers`는 전체 로스터에서 선택하지 않은 구원자를 excluded로 넘겨 추천의 overwrite를 호출함. 장비 부위와 journeyPriority를 같이 전달하며 레벨 자료가 유효한 선택 구원자는 사본의 스타링크 slots에 추가한 뒤 profile을 재계산함. 불완전 자료는 미개방으로 추측하지 않고 legacy 계산·재불러오기 안내를 유지하며 가상 등록하지 않음. 칸 수·원천·격차 조건은 보지 않으며 원계정은 보존함. 고정 200 콘텐츠는 기존 능력치 규칙대로 스타링크 효과가 없음. 별도 체크·경고·가상 등록 표시는 없고 칸 상세에 등록 가정 포함만 알림. 옛 저장값·공유의 starLink 필드는 무시함.
+- `powers`는 선택하지 않은 구원자를 excluded로 넘겨 추천의 overwrite를 호출함. 장비 부위와 journeyPriority를 같이 전달함. 개방 판정 true이고 레벨 자료가 유효하면 체크한 구원자를 사본의 스타링크 slots에 추가해 profile을 재계산함. false면 현재 돌파·실제 개화 기준 최대 레벨을 자기 레벨에 적용하고 4명 조건은 안내만 함. unknown은 현재 수치 계산을 유지하되 레벨 가정·가상 등록 없이 재불러오기를 안내함. 개방 계정의 칸 수·원천·격차 제한을 두지 않는 기존 직접 편성 정책과 원계정 보존은 유지함. fixed200은 기존 능력치 규칙을 쓰며 미개방 안내를 숨김. 옛 저장값·공유의 starLink 필드는 무시함.
 - `serialize`는 arrangeOf를 호출하지 않음. B단계 실행 직전 `validate`로 계정·속성·콘텐츠를 검사하고 `serialize(draft, profile.results)`로 직렬화함. `signature`에는 최종 party, stage, break 이름/레벨, seed, runs, options, engine/data/policy/preset versions를 모두 전달해야 함.
 - 로컬 저장은 `LS.set('direct.v1', DirectParty.storage(DIRECT))`의 허용 목록만 사용. 공유받은 세션의 storage는 null이고 편집 후에도 로컬을 덮어쓰지 않음. 공유 `dp`는 초안+entry만, `pm`은 화면 모드이며 기존 `m/mode`·`#shared=`와 구분함. 명시적 pm은 공유 초안과 독립적으로 복원함.
 - 실행/비교는 B단계에서 연결했음. `SIMPOOL` 관리자가 코어·메모리·모바일 상한 안에서 작업자를 독점 대여함. `scrPool`은 예약 배열이며 `simDispatch` 배정 전에는 비어 있음. 직접 작업은 진행 중인 추천 팀을 끊지 않고 다음 배정부터 우선함. 무진행 타이머는 예약별이며 대기 중에는 멈춤. `simPoolDrop(owner, requestId?, group?)`의 기본 owner는 추천 묶음(`reco`)임.

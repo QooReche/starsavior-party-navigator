@@ -6,7 +6,7 @@
 
 2026-11-17 기준 **지금 사실만** 적음. 날짜별 경과는 [docs/HISTORY.md](docs/HISTORY.md). 여기 없는 기본값·수치는 아래 정본 파일로 확인함.
 
-- **미개방 육성 판정**: 현 추출의 `star_link.level/source/slots`만으로 미개방·누락을 구분할 수 없어 최대 레벨 가정·4명 안내는 적용하지 않음. 불완전 자료는 legacy 계산과 재불러오기 안내를 유지하며 가상 등록하지 않음. `assume`의 스킬 교체는 돌파 0 패시브를 끄고 `overwrite`는 기존 패시브를 유지함.
+- **미개방 육성 판정**: 미개방 판정 = myinfo `star_link.unlocked`, 옛 자료는 재불러오기. false면 현재 돌파·실제 개화 기준 최대 레벨을 가정하고 현재 레벨은 낮추지 않음. 4명 조건은 안내만, 가짜 스타링크 등록 없음. true는 기존 경로, unknown은 레벨 가정 없음, fixed200은 안내 숨김. `assume`의 돌파 0 고유 패시브 차단·`overwrite`의 기존 패시브 유지를 보존함.
 - **정본 위치**: 규칙 기본값 = `battlesim/rules/default.json`(value·legacy·grade·source) — 이 문서에 기본값 목록을 옮겨 적지 않음. 빠른 계산 일치율 = `data/quick.json` `calib.acc`. 생성물 도장 = `tools/gen_rules_stamp.json`. 푸시 여부 = `git status`.
 - **근거 클라**: 빌드 26610546(비공개 static-data `decompiled/`·`tables/`, 11/12 재추출). **클라 코드와 사람 관찰이 충돌하면 클라 우선**(사용자 확정) — 옛 사용자 관찰 규칙은 legacy 로 남김.
 - **시험**: 전체 검증은 `tools/run_tests.py --rebuild --e2e <venv-pw python> --timeout 3600`. 작업별 결과는 `docs/HISTORY.md`, 환경상 건너뜀은 실행 로그로 확인함.

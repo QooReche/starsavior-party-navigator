@@ -8,7 +8,7 @@ assert(source.includes(guard));
 function load(code){const ctx={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,ctx);return ctx.module.exports;}
 const old=load(source.replace(guard,''));
 function account(key){
-  const info=structuredClone(raw);info.units=[];info.star_link_level=240;info.star_link={level:240,source:[],slots:[]};
+  const info=structuredClone(raw);info.units=[];info.star_link_level=240;info.star_link={unlocked:true,level:240,source:[],slots:[]};
   for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
   const u=M.assume(key,info,growth).unit;u.level=80;u.star=0;u.skills={basic:1,special:1,ultimate:1,passive:0};
   info.units=[u];return info;

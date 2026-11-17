@@ -183,6 +183,7 @@ def build_growth(static, game_build=None):
         if passive_slots != [3] or len(unit_skills) != 4:
             raise ValueError(f"Review exported passive slot for unit {uid}")
         units[str(uid)] = dict(
+            grade=row["UnitGrade"],
             base={k: base.get(k, 0) for k in KEYS},
             per_level=increments[template["m_StatAddPerLevelStrID"]],
             journey_mul=[role[k] for k in ("MultiplyPower", "MultiplyHealth", "MultiplyEndurance")],

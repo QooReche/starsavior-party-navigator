@@ -21,6 +21,7 @@
     unit = unit || {}; info = info || {};
     const link = info.star_link || {}, missing = [];
     const validLevel = v => Number.isInteger(v) && v >= 1 && v <= 2147483647;
+    if (link.unlocked === false && validLevel(unit.level)) return {level:unit.level,source:'unit',missing:[]};
     if (!validLevel(unit.level)) missing.push('unit.level');
     if (!validLevel(link.level)) missing.push('star_link.level');
     for (const field of ['source', 'slots']) if (!Array.isArray(link[field])) missing.push('star_link.' + field);
@@ -145,7 +146,7 @@
       const star = number(unit, "sigil", "sigil");
       const favor = number(unit, "favor", "favor");
       const base = template.base || {}, inc = template.per_level || {};
-      const syn = rule === "fixed200" ? {} : at(growth.star_link, level, "growth:star_link");
+      const syn = rule === "fixed200" || info.star_link?.unlocked===false ? {} : at(growth.star_link, level, "growth:star_link");
       // IUnitResonanceTemplet, NKM.Templets.cs:25673-25690: UnlockLevel gate.
       const unlock = template.resonance_unlock || {};
       let unlocked = resonance;

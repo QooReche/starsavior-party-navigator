@@ -250,7 +250,7 @@ def exercise(page, base, width, shots):
     assert page.locator('#growth-result [data-gwen]').count() == 0
     page.evaluate('''() => {
       REQ=true;$('grow').add(new Option('내 정보','myinfo'));$('grow').value='myinfo';
-      MI.info={units:[],star_link:{slots:[],source:[],level:1}};
+      MI.info={units:[],star_link:{unlocked:true,slots:[],source:[],level:1}};
       SLOT.phase='running';SLOT.msg='슬롯 후보 확인 2/8';SLOT.result=null;
       slotPaint();$('star-link-result').open=true;
     }''')

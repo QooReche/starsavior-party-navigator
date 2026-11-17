@@ -6,7 +6,7 @@ const source=fs.readFileSync(require.resolve('../myinfo_reco'),'utf8');
 const ui=fs.readFileSync(require.resolve('../growth_ui'),'utf8'),page=fs.readFileSync('party_template.html','utf8');
 const roster=[{key:'luna',uid:growth.assumed.units.luna.uid}],preset=growth.assumed.units.luna.equip;
 function account(){const info=structuredClone(raw);info.units=[];
-  info.star_link={level:120,source:[],slots:[]};
+  info.star_link={unlocked:true,level:120,source:[],slots:[]};
   for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
   const a=M.assume('luna',info,growth);a.unit.favor=30;return {...a.targetInfo,units:[a.unit]};
 }

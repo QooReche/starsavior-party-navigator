@@ -31,7 +31,7 @@ function overwrite(m=M){const info=synthetic(),before=JSON.stringify(info);
   u.level=300;u.favor=30;u.resonance=Math.max(...Object.keys(growth.units[u.id].resonance).map(Number));u.gauntlet.journey=[1500,1500,1500,1500,1500];
   u.gauntlet.potentials[0][1]=Math.max(...growth.assumed.combat_support.potentials[u.gauntlet.potentials[0][0]].map(Number));
   u.equip.forEach(e=>{e.enhance=16;e.main.value*=2;});
-  const high={...info,units:[u],star_link:{level:120,source:[],slots:[]}};
+  const high={...info,units:[u],star_link:{unlocked:true,level:120,source:[],slots:[]}};
   const h=m.overwrite(high,roster,growth,'op',{includeMissing:false});
   assert.equal(h.errors.length,0);assert.deepEqual(h.info,high);assert.deepEqual(h.changes,{});
   // Mixed fields: preserve the stronger equipment bundle while raising skills.

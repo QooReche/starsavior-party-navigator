@@ -5,7 +5,11 @@
 
 11/10 리뷰 보완: 추출기의 슬롯 목록 null 원소는 건너뛰고 나머지 슬롯·옛 필드를 유지함. 새 `star_link.level`·`units[].level`의 0도 파일 전체를 거부하지 않으며 기존 실효 레벨 대체 계산으로 처리함(유효한 옛 계정 레벨, 없으면 1). 이 경우 레벨 진단·다시 불러오기 안내를 유지하고 슬롯 추천은 보류함. 서버가 실제 null 원소·레벨 0을 보내는지는 미확인임.
 
-11/17 미개방 판정: 현재 추출의 `star_link`는 `level/source/slots`뿐이고 CT_SYNCHRO 개방 플래그·SECTOR 3-15 클리어 정보가 없음(`myinfo.ps1:904-918`). 숫자 null도 0으로 내보냄(`myinfo.ps1:830`). 객체 존재·레벨 0·빈 배열은 미개방 확정 근거가 아니므로 legacy와 같은 계산을 유지함. 직접 편성의 체크 칸에는 다시 불러오기 필요·레벨 가정 없음으로 안내하고 가상 등록하지 않음. 최대 레벨 가정은 개방 상태를 구분할 실제 추출 근거가 마련되기 전에는 적용하지 않음.
+11/17 미개방 판정: `star_link.unlocked`는 선택 boolean이며 누락·null은 unknown임. LOGIN_ACK(403) `ack[2][6]`의 클리어 이력에서 `entry[0] == 11003018`(SECTOR 3-15)이 있으면 true, 정상 목록에 없으면 false. 이력 누락·구조 오류는 생략함. `NKM.Templets.decompiled.cs:25984,20118-20131`, `CONTENTS_UNLOCK_TEMPLET.json:445-447`, `NKC.decompiled.cs:540159-540163,539509,579633` 근거: 로그인 때 사전을 비우고 전체 목록을 채워 키 존재로 판단하며 이 경로에 페이지·커서·부분 갱신은 없음(서버 구현 자체·운영 LOCKDOWN은 별도). 정상 해독된 패킷 전체를 소비한 뒤에만 내보냄.
+
+`unlocked === false`인 계정의 직접 편성 「육성했다면」은 현재 돌파 단계의 최대 레벨을 가정함. R 80 / SR 160 / SSR 돌파 0·1=160, 2=180, 3=200이며 실제 `units[].blossom === true`이면 SSR 상한을 적용함(`NKM.Templets.decompiled.cs:29202-29221`). `blossom`은 선택 boolean, 로그인 유닛 `rec[14]`의 실제 상태임(`NKM.Templets.decompiled.cs:19987,20005`, `NKC.decompiled.cs:506823`). 없으면 개화를 가정하지 않음. 돌파·개화 상태는 올리지 않으며 현재 레벨이 상한보다 높으면 유지하고 상세에 자료 불일치를 표시함. 가짜 슬롯·스타링크 강화 보너스를 넣지 않음. 4명 조건은 원본 계정의 상위 4명 실제 레벨로 안내만 함. 미보유 계산이 필요한 호출은 0돌파 기준이며 직접 편성의 미보유 선택 금지는 유지함.
+
+`unlocked === true`는 기존 스타링크 계산, unknown은 기존 현재 수치 계산을 유지하되 육성 레벨 가정·가상 등록 없이 재불러오기를 안내함. fixed200은 기존 규칙을 유지하며 안내를 숨김. 저장·공유는 JSON 전체를 보존하므로 두 선택 필드도 유지함. `unlocked`는 boolean/null/누락만, `blossom`은 boolean/누락만 허용함.
 
 ```jsonc
 {
@@ -14,6 +18,7 @@
   "exported_at": "2026-10-22T00:20:00+09:00",
   "star_link_level": 240,                // 스타링크 공유 레벨(전원에게 적용되는 값은 아님)
   "star_link": {                        // 선택 필드. 아래 값은 합성 예시
+    "unlocked": true,                   // false=미개방, 누락·null=unknown
     "level": 240,                       // star_link_level과 같음
     "source": [1001, 1002, 1003, 1005],  // 소스 구원자 ID, 최대 4명
     "slots": [{"index": 0, "id": 1040}, {"index": 1, "id": 0}] // 0은 빈 슬롯
@@ -31,7 +36,8 @@
     {
       "id": 1040,                        // 정적 표 UNIT_TEMPLET_BASE1.m_UnitID
       "level": 23,                       // 선택 필드. 자기 레벨(합성 예시)
-      "star": 3,                         // ★ 수(0~3)
+      "star": 3,                         // 돌파 단계(0~3)
+      "blossom": false,                  // 선택 boolean. 실제 개화 상태
       "sigil": 2,                        // 수호성 각인(별의 인장) 단계(0~6)
       "resonance": 10,                   // 공명 단계(0~10)
       "skills": {"basic": 7, "special": 7, "ultimate": 7, "passive": 4},
@@ -56,7 +62,8 @@
 
 `format`은 `ss-myinfo-v1`을 유지함. `units[].level`과 `star_link`는 선택 필드이며 옛 파일도 읽음.
 
-- 슬롯에 등록됨 → `star_link.level`.
+- 명시적으로 미개방이고 자기 레벨이 유효함 → 자기 레벨, 스타링크 강화 보너스 없음.
+- 그 밖에 슬롯에 등록됨 → `star_link.level`.
 - 소스에 포함되고 스타링크가 201 이상임 → `star_link.level`.
 - 그 밖 → `units[].level`.
 - `cosmo`·`rush`의 `fixed200`은 슬롯 여부와 관계없이 기존처럼 레벨 200·공명 10을 씀.

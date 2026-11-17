@@ -5,7 +5,7 @@ const clone=x=>structuredClone(x),roster=Object.entries(growth.assumed.units).ma
 function fixture(){const info=clone(raw);info.star_link_level=240;
   for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
   info.units=roster.slice(0,8).map(s=>({...M.assume(s.key,{...info,units:[]},growth).unit,level:82}));
-  info.star_link={level:240,source:info.units.slice(0,4).map(u=>u.id),slots:info.units.slice(4,6).map((u,index)=>({index,id:u.id}))};
+  info.star_link={unlocked:true,level:240,source:info.units.slice(0,4).map(u=>u.id),slots:info.units.slice(4,6).map((u,index)=>({index,id:u.id}))};
   return info;}
 function bundle(){const info=fixture(),key=roster[6].key,u=info.units[6];
   u.resonance=0;u.equip=[];u.skills={basic:1,special:1,ultimate:1,passive:1};u.gauntlet.journey=[0,0,0,0,0];u.gauntlet.potentials=[];

@@ -1946,7 +1946,7 @@ def overwrite_account(page, legacy=False, corridor=False):
       for(const k of Object.keys(MI.growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
       if(corridor){const keys=R.filter(s=>s.el==='moon'&&MI.growth.assumed.units[s.key]).slice(0,5).map(s=>s.key);
         info.units=keys.map(k=>MyInfoReco.assume(k,{...info,units:[]},MI.growth).unit);}
-      info.star_link={level:240,source:[],slots:[]};info.star_link_level=240;
+      info.star_link={unlocked:true,level:240,source:[],slots:[]};info.star_link_level=240;
       for(const u of info.units){u.level=1;u.equip=[];u.skills={basic:1,special:1,ultimate:1,passive:1};
         u.resonance=0;u.gauntlet.journey=[0,0,0,0,0];u.gauntlet.potentials=[];}
       if(legacy){delete info.star_link;info.units.forEach(u=>delete u.level);}
@@ -2174,7 +2174,7 @@ def test_star_link_slots(browser, ctx):
         if(key!=='scarlet'){u.equip=[];u.gauntlet.journey=[0,0,0,0,0];u.gauntlet.potentials=[];
           u.skills={basic:1,special:1,ultimate:1,passive:1};u.resonance=0;}return u;});
       delete info.units[7].gauntlet;info.units[7].level=82;
-      info.star_link={level:240,source:info.units.slice(0,4).map(u=>u.id),slots:info.units.slice(4,6).map((u,index)=>({index,id:u.id}))};
+      info.star_link={unlocked:true,level:240,source:info.units.slice(0,4).map(u=>u.id),slots:info.units.slice(4,6).map((u,index)=>({index,id:u.id}))};
       await miApply(info);window.slotOriginal=JSON.stringify(MI.info);showReco();
     }''')
     settle(page)
@@ -2264,7 +2264,7 @@ def test_growth_stage23(browser, ctx):
       info.units=keys.map(k=>{const u=MyInfoReco.assume(k,{...info,units:[]},MI.growth).unit;
         return {...u,level:1,equip:[],skills:{basic:1,special:1,ultimate:1,passive:1},resonance:0,
           gauntlet:{journey:[0,0,0,0,0],potentials:[],blessings:[],level:0}};});
-      info.star_link={level:240,source:[],slots:[]};info.star_link_level=240;
+      info.star_link={unlocked:true,level:240,source:[],slots:[]};info.star_link_level=240;
       await miApply(info);window.stage23Original=JSON.stringify(MI.info);
       window.stage23Version=(await fetch('sim/manifest.json').then(r=>r.json())).ver;
       window.stage23Requests=[];window.stage23Active=0;window.stage23Peak=0;

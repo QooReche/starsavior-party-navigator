@@ -125,7 +125,7 @@ function fixed(){
  const roster=Object.entries(growth.assumed.units).map(([key,s])=>({key,uid:s.uid}));
  const info=structuredClone(require('./fixtures/myinfo_synthetic.json'));
  for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
- info.star_link={level:240,source:[],slots:[]};info.star_link_level=240;
+ info.star_link={unlocked:true,level:240,source:[],slots:[]};info.star_link_level=240;
  for(const x of info.units){x.level=80;x.resonance=0;x.equip=[];x.skills={basic:1,special:1,ultimate:1,passive:1};x.gauntlet.journey=[0,0,0,0,0];x.gauntlet.potentials=[];}
  const rush=M.overwrite(info,roster,growth,'rush',{includeMissing:false}),equip=M.overwrite(info,roster,growth,'equip',{includeMissing:false});
  assert.equal(rush.errors.length,0);assert.equal(equip.errors.length,0);assert(Object.keys(rush.changes).length>0);

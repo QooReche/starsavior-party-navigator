@@ -248,7 +248,7 @@ def real_starlink(browser,base,mutant=False):
     p.select_option('#stage',p.evaluate("String(cur.findIndex(s=>s.tab==='태양 회랑'&&s.name==='FLOOR 180'))"))
     p.evaluate('''() => {
       MI.info.units.forEach(u=>{u.level=200;u.star=5;u.resonance=10});
-      MI.info.star_link={level:200,source:[],slots:[]};
+      MI.info.star_link={unlocked:true,level:200,source:[],slots:[]};
       MI.info=MyInfoReco.overwrite(MI.info,R,MI.growth,'clo',{slots:DIRECT.slots,priority:D.journeyPriority}).info;
       DIRECT.draft=DirectParty.empty();
       ['charlotte','scarlet','cristelle','serpang'].forEach((key,slot)=>DIRECT.draft=DirectParty.edit(DIRECT.draft,{type:'put',key,slot}));

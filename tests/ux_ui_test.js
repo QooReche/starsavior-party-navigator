@@ -10,7 +10,7 @@ function checkGrades(u=U){for(const [n,label] of [[1250,'SG'],[1150,''],[497,'A+
 assert.equal(u.grade(1501,0,grades),'');}
 function checkPower(u=U){const info=structuredClone(require('./fixtures/myinfo_synthetic.json'));
   for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
-  info.star_link={level:240,source:[],slots:[]};info.star_link_level=240;
+  info.star_link={unlocked:true,level:240,source:[],slots:[]};info.star_link_level=240;
   for(const x of info.units){x.level=80;x.resonance=0;x.equip=[];x.skills={basic:1,special:1,ultimate:1,passive:1};x.gauntlet.journey=[66,148,373,181,435];x.gauntlet.potentials=[];}
   const original=JSON.stringify(info),snapshot=M.overwrite(info,roster,growth,'op',{includeMissing:false});
   assert.equal(snapshot.errors.length,0);const counts={};
