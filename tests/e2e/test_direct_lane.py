@@ -127,12 +127,12 @@ def contract(browser, base, width):
     p.evaluate('window.holdDirect=true;void directRun()')
     for _ in range(30):
         advance(p,100)
-        if state(p)['lane']=='direct-progress-lane':break
-    assert state(p)['lane']=='direct-progress-lane', state(p)
+        if state(p)['lane']=='direct-board-lane':break
+    assert state(p)['lane']=='direct-board-lane', state(p)
     p.clock.run_for(15000)
     assert not state(p)['playing']
     p.evaluate("GwenLane.edit('leader',0)")
-    assert state(p)['lane']=='direct-progress-lane'
+    assert state(p)['lane']=='direct-board-lane'
     p.locator('#direct-run').click()
     fallback(p)
     assert not p.errors, p.errors

@@ -5,7 +5,7 @@
   const CHOICES={home:['guide2','st_welcome','welcome'],empty:['ready','present'],
     ready:['ready'],vacant:['think','sulk','peek'],put:['present','shy'],remove:['surprised','sulk'],
     swap:['think'],leader:['verdict'],complete:['jump'],grown:['train'],
-    withReco:['files','board'],withGrowth:['train'],reco:['stakeout','magnify','files'],growth:['train','walk'],skip:['surprised'],recoHigher:['st_point','thoughtful'],brk:['charge'],start:['zap'],work:['magnify','stamp','stakeout','walk','files'],
+    withReco:['files','board'],withGrowth:['train'],reco:['stakeout','magnify','files'],growth:['train','walk'],skip:['surprised'],recoHigher:['st_point','thoughtful'],brk:['charge'],work:['investigate','magnify','think','board','coffee','stakeout','stamp','files'],
     high:['st_verdict','st_cheer','st_ok'],medium:['st_point','thoughtful'],low:['st_cry','notes'],
     highSD:['verdict','cheer','report'],mediumSD:['report','verdict'],lowSD:['cry'],
     better:['st_wink'],past:['think'],error:['cry','surprised','sulk'],wait:['wait'],doze:['doze'],wake:['wake']};
@@ -16,7 +16,7 @@
     complete:['네 명 다 모였어, 단장님!','후후후, 준비됐으면 나만 믿어!'],grown:['이만큼 키웠다고 치고 볼게!','단장님, 달라진 능력치도 확인해 봐!','스타링크까지 더해서 볼게!'],
     withReco:['후후후, 내 추천이랑 겨뤄 보자는 거지?','좋아, 내 추천도 같이 꺼내 올게!'],withGrowth:['키웠을 때 편성도 찾아볼게!'],reco:['이번엔 내 추천 차례야, 단장님!','후보를 하나씩 살펴볼게.'],growth:['키우면 누가 좋을지 보고 있어!'],skip:['알았어, 그건 넘어갈게!'],recoHigher:['내 추천 쪽이 조금 더 높네. 비교해 봐, 단장님!'],
     brk:['브레이크 준비, 확인했어!','단장님, 이 스킬로 볼게!'],
-    start:['천재 조사관에게 맡겨!','후후후, 지금부터 확인할게!'],work:['하나씩 꼼꼼히 살펴볼게.','단장님, 조금만 기다려!','끝까지 확인할 테니 나만 믿어!'],
+    work:['하나씩 꼼꼼히 살펴볼게.','단장님, 조금만 기다려!','끝까지 확인할 테니 나만 믿어!'],
     high:['후후후, 든든한 편성이네!','잘 골랐어, 단장님!','천재 조사관의 확인도 끝!'],medium:['아슬아슬하네. 숫자도 살펴봐!','단장님, 한 번 더 비교해 볼까?'],
     low:['으아앙, 쉽지 않겠는걸!','단장님, 육성도 같이 살펴보자.'],better:['후후후, 추천보다 높게 나왔어!','단장님, 멋진 선택이야!'],past:['편성이 바뀌었네. 지난 결과야!','지금 편성으로 다시 확인해 봐!'],
     error:['으아앙, 잠깐! 다시 확인해 줘!','단장님, 안내문부터 살펴봐!'],wait:['편성을 짜고 실행하면 내가 봐줄게!','단장님, 준비되면 불러!'],
@@ -61,17 +61,58 @@
       duration:2000+random()*1000
     })};
   }
+  // A bundle's first numbers can appear while Gwen is still investigating.
+  function bannerState(state,onBoard){
+    if(state.mode!=='direct'||onBoard)return '';
+    if(state.bundleRunning||state.phase==='work')return '';
+    if(state.phase==='result'&&!state.stale)return 'result';
+    return state.phase==='error'?'error':'';
+  }
+  const BANNER_COPY={investigation:'조사 완료!',inquiry:'수사 완료!',calculation:'계산 완료!',error:'수사 난항…'};
+  function bannerPicker(random=Math.random){
+    let previous='';const reports=new Map();
+    return (state,id)=>{
+      if(state==='result'){
+        if(!reports.has(id)){
+          const pool=['investigation','inquiry','calculation'].filter(x=>x!==previous);
+          previous=pool[Math.floor(random()*pool.length)];reports.set(id,previous);
+          if(reports.size>128)reports.delete(reports.keys().next().value);
+        }
+        return reports.get(id);
+      }
+      return state==='error'?'error':'';
+    };
+  }
   let controller,serial=0;const resultIds=new WeakMap();
   function resultId(result){if(!resultIds.has(result))resultIds.set(result,++serial);return resultIds.get(result);}
   function mount(){
     if(controller||!root.document)return controller;
     const doc=root.document,mq=root.matchMedia('(prefers-reduced-motion: reduce)'),p=policy(),play=playground(),resultArts=new Map();
     let actor=null,lane=null,current={},clock=0,last=performance.now(),idleAt=0,vacant=false,phaseKey='',cycleAt=0,
-      restoreAt=0,bubbleUntil=0,speechShownAt=-Infinity,move=null,landing=0,pending=null,x=0,quiet=false,art='',lastEvent='',sleeping=false,exit=null,startAt=0,startAction=null;
+      restoreAt=0,bubbleUntil=0,speechShownAt=-Infinity,move=null,landing=0,pending=null,x=0,quiet=false,art='',lastEvent='',sleeping=false,workRestAt=0;
     let playAt=play.delay(),playing=null;
     function resetPlay(){playing=null;playAt=clock+play.delay();}
     try{quiet=JSON.parse(localStorage.getItem('pn.gwen.quiet')||'false')===true;}catch{}
     doc.documentElement.dataset.gwenQuiet=String(quiet);
+    const banner=doc.getElementById('direct-lane-banner');
+    const pickBanner=bannerPicker();
+    let bannerKey='';
+    function syncBanner(){if(!banner)return;
+      const state=bannerState(current,actor?.parentElement?.id==='direct-board-lane');
+      banner.hidden=!state;
+      if(state!==bannerKey){banner.dataset.state=state;bannerKey=state;}
+      const phrase=pickBanner(state,current.result);
+      banner.dataset.phrase=phrase;
+      for(const title of banner.querySelectorAll('[data-phrase]'))title.hidden=title.dataset.phrase!==phrase;
+      // Static titles leave the single animation slot to Gwen, including offscreen.
+    }
+    for(const bannerImage of banner?.querySelectorAll('img')||[]){
+      const title=bannerImage.parentElement;
+      const decoded=()=>bannerImage.decode().then(()=>{title.dataset.imageReady='true';},()=>{delete title.dataset.imageReady;});
+      bannerImage.addEventListener('load',decoded);
+      bannerImage.addEventListener('error',()=>{delete title.dataset.imageReady;});
+      if(bannerImage.complete&&bannerImage.naturalWidth)decoded();
+    }
     function ensure(){if(actor)return;actor=doc.createElement('div');actor.className='gwen-lane-actor';actor.dataset.gwen='lane';
       actor.innerHTML='<span class="gwen-lane-speech" aria-hidden="true"></span><button type="button" class="gwen-lane-poke" aria-label="그웬 부르기"></button><span class="gwen-announcement" role="status" aria-live="polite"></span>';
       actor.querySelector('button').addEventListener('click',()=>{
@@ -83,33 +124,37 @@
     function cancelMove(){if(move){const pos=move.animation.currentTime||0;const ratio=Math.min(1,pos/Math.max(1,move.ms));x=move.from+(move.to-move.from)*ratio;move.animation.cancel();move=null;}
       if(actor)actor.style.transform=`translateX(${x}px)`;landing=0;pending=null;actor?.removeAttribute('data-moving');}
     function setLane(id){ensure();const target=doc.getElementById(id);if(!target)return false;
-      if(lane!==target||actor.parentElement!==target){cancelMove();lane=target;lane.append(actor);x=id==='direct-progress-lane'?0:Math.max(0,(lane.clientWidth-actor.offsetWidth)/2);actor.style.transform=`translateX(${x}px)`;}
+      if(lane!==target||actor.parentElement!==target){cancelMove();lane=target;lane.append(actor);x=Math.max(0,(lane.clientWidth-actor.offsetWidth)/2);actor.style.transform=`translateX(${x}px)`;}
+      syncBanner();
       return true;}
     function image(key){if(key===art)return;art=key;actor.querySelector('button').innerHTML=root.Ux.gwenImage(key,'gwen-lane-image',80).replace('data-gwen-art=', 'data-gwen-managed="true" data-gwen-art=');
       actor.dataset.gwenExpression=key;actor.dataset.event=lastEvent;}
+    function positionSpeech(){const bubble=actor.querySelector('.gwen-lane-speech');
+      if(!bubble.hidden){const half=bubble.offsetWidth/2;
+        bubble.style.left=Math.max(half-x,Math.min(actor.offsetWidth/2,lane.clientWidth-half-x))+'px';}}
     function display(e){if(!e)return;lastEvent=e.kind;image(e.art);actor.dataset.event=e.kind;actor.dataset.priority=String(e.priority);
       const bubble=actor.querySelector('.gwen-lane-speech');
       if(e.speech&&!quiet&&clock-speechShownAt>=6000){const lines=SAY[e.kind]||SAY.work;bubble.textContent=lines[Math.floor(Math.random()*lines.length)];bubbleUntil=clock+2500;speechShownAt=clock;p.state.lastSpeech=clock;}
       else bubbleUntil=0;
-      bubble.hidden=clock>=bubbleUntil;}
-    function moveTo(target,{run=false,reaction=null,leave=false,adjust=true}={}){
+      bubble.hidden=clock>=bubbleUntil;positionSpeech();}
+    function moveTo(target,{run=false,reaction=null,adjust=true}={}){
       cancelMove();const mobile=innerWidth<=400,size=actor.offsetWidth,max=Math.max(0,lane.clientWidth-size);
       target=Math.max(0,Math.min(max,target));
-      if(mobile&&!leave&&adjust)target=x+(target-x)*.5;
+      if(mobile&&adjust)target=x+(target-x)*.5;
       const step=travel(x,target,lane.clientWidth,size,{run,mobile,reduced:mq.matches,quiet,home:lane.id==='home-gwen-lane'});
-      if(!step.ms){if(reaction)display(mq.matches&&reaction.art==='jump'?{...reaction,art:'ready'}:reaction);if(leave)exit=clock;return;}
+      if(!step.ms){if(reaction)display(mq.matches&&reaction.art==='jump'?{...reaction,art:'ready'}:reaction);return;}
       actor.querySelector('.gwen-lane-speech').hidden=true;image(run?'run':'walk');actor.dataset.moving='true';
       actor.querySelector('button').style.transform=target<x?'scaleX(-1)':'none';
       pending=reaction;const from=x;
       const animation=actor.animate([{transform:`translateX(${from}px)`},{transform:`translateX(${step.x}px)`}],{duration:step.ms,easing:'linear',fill:'forwards'});
-      move={animation,from,to:step.x,ms:step.ms,target,run,leave};
+      move={animation,from,to:step.x,ms:step.ms,target,run};
     }
     function request(kind,opts={}){const e=p.event(kind,clock,{quiet,...opts});if(!e)return false;
       resetPlay();
       if(opts.target!=null)moveTo(opts.target,{run:opts.run,reaction:e});else{cancelMove();display(e);}
       if(opts.level==='edit'||!opts.level)restoreAt=clock+1500+(move?move.ms+150:0);return true;}
     function base(){if(current.mode==='home')return ['home','home-gwen-lane'];
-      if(current.phase==='work')return [current.step==='reco'?'reco':current.step==='growth'?'growth':'work','direct-progress-lane'];
+      if(current.phase==='work')return ['work','direct-board-lane'];
       if(current.phase==='error')return ['error','direct-result-lane'];
       if(current.phase==='result')return [current.recoHigher?'recoHigher':current.better?'better':current.clear>=.7?'high':current.clear>=.05?'medium':'low','direct-result-lane'];
       if(current.stale)return ['past','direct-board-lane'];
@@ -135,22 +180,26 @@
       if(level!=='result')delete actor.dataset.gwenReport;
       cycleAt=clock+(mq.matches?20000:9000);restoreAt=0;resetPlay();
     }
-    function sync(next){current={...next};if(!['home','direct'].includes(current.mode)){if(actor){cancelMove();actor.remove();}phaseKey='';return;}
-      const key=JSON.stringify([current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
-      if(key!==phaseKey){resetPlay();cancelMove();const stepChanged=current.phase==='work'&&lane?.id==='direct-progress-lane';phaseKey=key;if(stepChanged){x=0;if(actor)actor.style.transform='translateX(0px)';}
-        startAt=0;startAction=null;
-        if(current.phase==='work'&&visible()&&lane?.id==='direct-board-lane'&&!quiet&&!mq.matches){
-          const e=p.event('start',clock,{level:'work',duration:Infinity});display(e);exit=Infinity;startAt=clock+250;startAction='exit';
-        }else{exit=null;settle();if(current.phase==='work'&&!quiet){display(p.event('start',clock,{level:'work',duration:Infinity}));startAt=clock+250;startAction='cycle';}}
+    function progressMove(){
+      if(current.phase!=='work'||!visible()||quiet||mq.matches||move||landing||restoreAt||clock<workRestAt)return;
+      if(!Number.isFinite(current.progress))return;
+      const target=Math.max(0,Math.min(1,current.progress))*Math.max(0,lane.clientWidth-actor.offsetWidth);
+      if(target>x+.5)moveTo(target,{reaction:{kind:'work',art:p.pick(CHOICES.work),speech:false,priority:PRIORITY.work},adjust:false});
+    }
+    function sync(next){current={...next};
+      // The first bundle result updates the numbers while Gwen continues investigating.
+      if(current.bundleRunning&&current.phase==='result')current.phase='work';
+      syncBanner();if(!['home','direct'].includes(current.mode)){if(actor){cancelMove();actor.remove();}phaseKey='';return;}
+      const key=JSON.stringify(current.phase==='work'?[current.mode,'work',current.step]:[current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
+      if(key!==phaseKey){resetPlay();cancelMove();phaseKey=key;settle();
+        if(current.phase==='work'){x=0;actor.style.transform='translateX(0px)';positionSpeech();workRestAt=clock+250;}
       }
-      if(current.phase==='work'&&exit==null&&!startAt&&!move&&clock>=landing&&lane){
-        if(Number.isFinite(current.progress)){const reaction={kind:'work',art,speech:false,priority:PRIORITY.work};moveTo(current.progress*(lane.clientWidth-actor.offsetWidth),{reaction});}
-      }
+      progressMove();
     }
     function edit(action,slot){idleAt=clock;vacant=false;sleeping=false;
       if(playing){cancelMove();resetPlay();}
       if(current.mode==='direct'&&current.phase==='work'&&action==='skip'&&!quiet){
-        if(setLane('direct-progress-lane')){request('skip',{level:'work',duration:1500});restoreAt=clock+1500;}return;
+        if(setLane('direct-board-lane')){request('skip',{level:'work',duration:1500});restoreAt=clock+1500;}return;
       }
       if(current.mode!=='direct'||current.phase==='work'||current.phase==='error'||quiet)return;
       if(p.state.priority>=PRIORITY.result&&clock<p.state.until)return;
@@ -169,24 +218,21 @@
     function tick(){const now=performance.now(),on=visible(),delta=Math.max(0,now-last);last=now;
       if(!on){move?.animation.pause();if(actor)actor.dataset.lanePaused='true';return;}
       clock+=Math.min(delta,1000);actor.dataset.lanePaused=String(mq.matches);if(move?.animation.playState==='paused')move.animation.play();
-      if(startAt&&clock>=startAt){startAt=0;if(startAction==='exit')moveTo(lane.clientWidth-actor.offsetWidth,{run:true,leave:true});else request(base()[0],{level:'work',duration:Infinity});startAction=null;}
       if(move&&move.animation.playState==='finished'){
         const m=move,reaction=pending;x=m.to;m.animation.cancel();move=null;actor.style.transform=`translateX(${x}px)`;
         // A long lane is crossed in bounded segments, never by a cross-column absolute jump.
-        if(Math.abs(m.target-x)>.5){moveTo(m.target,{run:m.run,reaction,leave:m.leave,adjust:false});}
-        else{landing=clock+150;pending=reaction;actor.removeAttribute('data-moving');if(m.leave)exit=landing;}
+        if(Math.abs(m.target-x)>.5){moveTo(m.target,{run:m.run,reaction,adjust:false});}
+        else{landing=clock+150;pending=reaction;actor.removeAttribute('data-moving');workRestAt=landing+900;}
       }
       if(!move&&landing&&clock>=landing){landing=0;if(pending){if(playing)pending={...pending,art:play.pose()};display(pending);restoreAt=pending.priority===PRIORITY.edit?clock+1500:0;pending=null;
         if(playing){playing.until=clock+playing.duration;actor.querySelector('button').style.transform='none';}}}
-      if(exit!=null&&clock>=exit){exit=null;settle();}
       const bubble=actor.querySelector('.gwen-lane-speech');bubble.hidden=!!move||clock>=bubbleUntil;
-      if(!bubble.hidden){const half=bubble.offsetWidth/2;
-        bubble.style.left=Math.max(half-x,Math.min(actor.offsetWidth/2,lane.clientWidth-half-x))+'px';}
+      positionSpeech();
       if(restoreAt&&clock>=restoreAt&&!move&&!landing){restoreAt=0;settle();}
-      if(current.phase==='work'&&exit==null&&clock>=cycleAt&&!move){
+      if(current.phase==='work'&&clock>=cycleAt&&!move&&!landing&&!restoreAt){
         request(base()[0],{level:'work',duration:Infinity});cycleAt=clock+(mq.matches?20000:9000);
-        if(!Number.isFinite(current.progress))moveTo(Math.random()*(lane.clientWidth-actor.offsetWidth));
       }
+      progressMove();
       if(!['work','error'].includes(current.phase)&&!quiet){
         if(!sleeping&&clock-idleAt>=60000){sleeping=true;if(current.mode==='direct'){setLane('direct-board-lane');lane.dataset.portrait='false';}request('doze',{level:'idle',target:0});}
         else if(!vacant&&!sleeping&&current.mode==='direct'&&current.count<4&&clock-idleAt>=20000){vacant=true;request('vacant',{level:'idle'});}
@@ -205,10 +251,10 @@
     }
     for(const type of ['pointerdown','pointermove','keydown','input'])doc.addEventListener(type,input,{passive:true});
     doc.addEventListener('focusin',input);
-    doc.addEventListener('visibilitychange',()=>{last=performance.now();if(doc.hidden)move?.animation.pause();});
+    doc.addEventListener('visibilitychange',()=>{last=performance.now();if(doc.hidden)move?.animation.pause();syncBanner();});
     root.addEventListener('scroll',()=>{if(!visible())move?.animation.pause();},{passive:true,capture:true});
     root.addEventListener('resize',()=>{cancelMove();resetPlay();if(lane){x=Math.min(x,Math.max(0,lane.clientWidth-actor.offsetWidth));actor.style.transform=`translateX(${x}px)`;}sync(current);});
-    mq.addEventListener('change',()=>{cancelMove();resetPlay();cycleAt=clock+(mq.matches?20000:9000);});
+    mq.addEventListener('change',()=>{cancelMove();resetPlay();cycleAt=clock+(mq.matches?20000:9000);syncBanner();});
     const toggle=doc.getElementById('gwen-quiet');if(toggle){toggle.checked=quiet;toggle.addEventListener('change',()=>{
       quiet=toggle.checked;try{localStorage.setItem('pn.gwen.quiet',JSON.stringify(quiet));}catch{}
       doc.documentElement.dataset.gwenQuiet=String(quiet);cancelMove();bubbleUntil=0;settle();doc.dispatchEvent(new Event('gwenquietchange'));
@@ -216,6 +262,6 @@
     root.setInterval(tick,50);
     controller={sync,edit,policy:p,get state(){return {clock,x,moving:!!move,art,quiet,phase:current.phase,lane:lane?.id,playing:!!playing,playAt};}};return controller;
   }
-  const api={PRIORITY,CHOICES,SAY,policy,travel,playground,mount,resultId,sync:s=>mount()?.sync(s),edit:(a,i)=>mount()?.edit(a,i)};
+  const api={PRIORITY,CHOICES,SAY,policy,travel,playground,bannerState,bannerPicker,BANNER_COPY,mount,resultId,sync:s=>mount()?.sync(s),edit:(a,i)=>mount()?.edit(a,i)};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GwenLane=api;
 })(typeof window!=='undefined'?window:globalThis);

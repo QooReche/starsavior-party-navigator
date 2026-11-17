@@ -354,12 +354,19 @@ summary{padding:9px 4px}
    <button id="direct-run" type="button" data-direct-action="run" disabled>모의 전투 실행</button>
    <p id="direct-run-state" role="status" aria-live="polite"></p><button id="direct-steps-toggle" type="button" class="sec" aria-expanded="false" aria-controls="direct-steps" hidden></button><ol id="direct-steps" hidden></ol>
    <div class="direct-result-hero"><div class="direct-result-numbers"><div id="direct-result-summary" class="mi-verdict"><b>조사 대기</b><b id="direct-summary-power">—</b></div><span id="direct-standard" class="tag" hidden>표준 육성 기준</span></div>
-   <div id="direct-gwen" class="direct-gwen"><div id="direct-result-lane" class="gwen-lane gwen-result-lane" aria-label="그웬 결과 자리"></div><div id="direct-progress-lane" class="gwen-lane" aria-label="그웬 진행 길"></div><small id="direct-stage-number"></small><progress id="direct-progress" max="100" value="0" aria-label="모의 전투 진행"></progress></div></div>
+   <div id="direct-gwen" class="direct-gwen"><div id="direct-result-lane" class="gwen-lane gwen-result-lane" aria-label="그웬 결과 자리"></div><small id="direct-stage-number"></small><progress id="direct-progress" max="100" value="0" aria-label="모의 전투 진행"></progress></div></div>
    <details id="direct-comparison" open><summary>결과·비교</summary><div id="direct-results"></div></details>
    <div class="direct-summary-options"><details id="direct-with"><summary id="direct-with-summary" aria-expanded="false">같이 볼 것</summary><label><input id="direct-with-reco" type="checkbox"> 자동 추천도 같이</label><label class="direct-with-growth"><input id="direct-with-growth" type="checkbox"> 육성 포함 추천도 같이<small>후보가 많아 가장 오래 걸림 <span id="direct-growth-info">· 내 정보 필요</span></small></label><small>같이 돌리면 오래 걸림 · 내 편성 결과가 먼저 나옴</small></details><span id="direct-conditions" class="tag"></span></div>
   </div>
   <div class="result-team">
-   <div id="direct-board-lane" class="gwen-lane" aria-label="그웬 길"></div>
+   <div id="direct-board-lane" class="gwen-lane" aria-label="그웬 길">
+    <div id="direct-lane-banner" aria-hidden="true" hidden>
+     <span class="gwen-banner-title" data-phrase="investigation" hidden><span class="gwen-banner-fallback">조사 완료!</span><img src="assets/ui_icons/case_banner_investigation.webp" width="640" height="160" alt="" decoding="async"></span>
+     <span class="gwen-banner-title" data-phrase="inquiry" hidden><span class="gwen-banner-fallback">수사 완료!</span><img src="assets/ui_icons/case_banner_inquiry.webp" width="640" height="160" alt="" decoding="async"></span>
+     <span class="gwen-banner-title" data-phrase="calculation" hidden><span class="gwen-banner-fallback">계산 완료!</span><img src="assets/ui_icons/case_banner_calculation.webp" width="640" height="160" alt="" decoding="async"></span>
+     <span class="gwen-banner-title" data-phrase="error" hidden><span class="gwen-banner-fallback">수사 난항…</span><img src="assets/ui_icons/case_banner_error.webp" width="640" height="160" alt="" decoding="async"></span>
+    </div>
+   </div>
    <p class="mut direct-drag-help">끌어서 넣고 바꿈 · ☆로 리더 · ☐ 육성했다면 체크</p>
    <div id="direct-board" aria-label="편성판"></div>
    <div id="direct-selection" hidden></div><div id="direct-drop-remove" hidden>여기 놓으면 빼기</div>
@@ -381,7 +388,7 @@ summary{padding:9px 4px}
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 확인.</div></div>
-<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관</p><details class="note" id="update-history"><summary>업데이트 내역(11/15)</summary>11/15: 전투 판정을 게임 클라 기준으로 정정(버프 해제·면역·회피·지속 피해·행동 순서·전투력 차이 보정) · 클리어 확률이 낮을 때 결과 카드에 안내 · 코스모 힐데 적 정보 추가 · 화력 지표 재계산<br>11/12: 신규 구원자 길레·편애의 마녀 반영 · 격파된 아군도 다음 턴 행동(클라 기준) · 길드 방어전은 시즌 종료로 미오픈</details><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않음(관리자가 자료를 갱신한 뒤 반영).<br>그웬 길 배경: 게임 클라이언트 배경 이미지(© STUDIOBSIDE).<br>게임 이미지·만화의 권리는 원 권리자에게 있음.<br>저장소 라이선스는 게임 이미지·만화에 적용되지 않음.</details>
+<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관</p><details class="note" id="update-history"><summary>업데이트 내역(11/15)</summary>11/15: 전투 판정을 게임 클라 기준으로 정정(버프 해제·면역·회피·지속 피해·행동 순서·전투력 차이 보정) · 클리어 확률이 낮을 때 결과 카드에 안내 · 코스모 힐데 적 정보 추가 · 화력 지표 재계산<br>11/12: 신규 구원자 길레·편애의 마녀 반영 · 격파된 아군도 다음 턴 행동(클라 기준) · 길드 방어전은 시즌 종료로 미오픈</details><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않음(관리자가 자료를 갱신한 뒤 반영).<br>그웬 길 배경: 게임 클라이언트 배경 이미지(© STUDIOBSIDE).<br>조사 배너: 자율 여정 타이틀 스타일을 참고한 자체 제작 글자 그림(Noto Sans KR, SIL OFL 1.1).<br>게임 이미지·만화의 권리는 원 권리자에게 있음.<br>저장소 라이선스는 게임 이미지·만화에 적용되지 않음.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 계정 정보 불러오기</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
  <div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장함.</div>

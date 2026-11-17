@@ -80,7 +80,7 @@ def ui(browser,base,width):
     snapshot(p,'growth',width);bounds(p)
     p.evaluate('window.directDelay=3500')
     p.locator('#direct-run').click()
-    try:p.wait_for_function("GwenLane.mount().state.lane==='direct-progress-lane'")
+    try:p.wait_for_function("GwenLane.mount().state.lane==='direct-board-lane'")
     except Exception:
         print('progress audit:',p.evaluate('({gwen:GwenLane.mount().state,active:!!DIRECT.active,rows:Object.fromEntries(Object.entries(DIRECT.rows).map(([k,r])=>[k,r.status])),scroll:scrollY})'),flush=True)
         raise

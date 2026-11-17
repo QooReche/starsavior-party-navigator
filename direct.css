@@ -77,7 +77,7 @@ body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-
 .gwen-lane-poke img,#direct-gwen .gwen-lane-poke img{display:block;width:100%;height:100%;object-fit:contain}
 .gwen-lane-speech{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:180px;max-width:calc(100vw - 48px);font-size:11px;line-height:15px;text-align:center;color:var(--fg);background:var(--ink);border-radius:6px;padding:3px 5px;pointer-events:none}
 /* Text occupies a separate line above the 88px body track. */
-#direct-board-lane,#direct-progress-lane{height:122px;padding-top:34px;box-sizing:border-box}
+#direct-board-lane{height:122px;padding-top:34px;box-sizing:border-box}
 .gwen-lane-actor[data-moving=true] .gwen-lane-speech{visibility:hidden}
 #home-gwen-lane{height:220px;padding-top:40px;box-sizing:border-box}
 #home-gwen-lane .gwen-lane-actor,#home-gwen-lane .gwen-lane-poke{width:160px;height:160px}
@@ -86,6 +86,15 @@ body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-
 .gwen-quiet-option{display:block;margin-bottom:12px;font-size:13px}
 /* Quiet mode keeps one still illustration in its reserved lane. */
 #direct-board-lane{background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat;border-radius:8px}
+#direct-lane-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;text-align:center}
+#direct-lane-banner[hidden],#direct-lane-banner [hidden]{display:none}
+.gwen-banner-title{position:relative;display:block;width:min(320px,86%);aspect-ratio:4/1}
+.gwen-banner-title img{position:absolute;inset:0;width:100%;height:100%;visibility:hidden;object-fit:contain}
+.gwen-banner-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:italic 900 clamp(22px,3vw,38px)/1.2 "Noto Sans KR","Malgun Gothic",sans-serif;color:#ffe7a0;-webkit-text-stroke:3px #15243e;paint-order:stroke fill;text-shadow:1px 3px 0 #15243e}
+.gwen-banner-title[data-image-ready=true] img{visibility:visible}
+.gwen-banner-title[data-image-ready=true] .gwen-banner-fallback{visibility:hidden}
+#direct-lane-banner[data-state=error] .gwen-banner-fallback{color:#c2cedc}
+@media(max-width:400px){.gwen-banner-title{width:min(260px,86%)}}
 @media(min-width:1200px){
  #direct-board-lane{height:162px}
  #direct-board-lane .gwen-lane-actor,#direct-board-lane .gwen-lane-poke{width:120px;height:120px}
@@ -97,7 +106,7 @@ body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-
  #home-gwen-lane .gwen-lane-actor,#home-gwen-lane .gwen-lane-poke{width:88px;height:88px}
  #home-gwen-lane .gwen-lane-speech{display:none}
  .gwen-lane-actor,.gwen-lane-poke{width:64px;height:64px}
- #direct-board-lane,#direct-progress-lane,.gwen-result-lane{height:106px}
+ #direct-board-lane,.gwen-result-lane{height:106px}
 }
 @media(prefers-reduced-motion:reduce){.gwen-lane-actor{will-change:auto}.gwen-lane-image{animation:none!important}}
 /* Travel is scheduled in <=0.6s transform-only segments by the scene controller. */

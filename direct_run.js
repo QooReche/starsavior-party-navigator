@@ -155,13 +155,13 @@ function directResultsPaint(){
   }).join('')}</tbody></table>`;
   if(focused)resultHost.querySelector(`[data-direct-action="${focused.directAction}"]${focused.kind?'[data-kind="'+focused.kind+'"]':''}`)?.focus({preventScroll:true});
   const gwenError=!!error||activeRows.some(r=>r.status==='error');
-  const firstReport=bundling&&validNow&&Date.now()<(bundle.reportUntil||0),finalReport=bundle?.finished&&validNow&&(compatible||growthCompatible);
-  const phase=gwenError?'error':firstReport?'result':DIRECT.active||bundling?'work':validNow?'result':'idle';
-  $('direct-progress-lane').hidden=phase!=='work';$('direct-progress').hidden=phase!=='work';
+  const finalReport=bundle?.finished&&validNow&&(compatible||growthCompatible);
+  const phase=gwenError?'error':DIRECT.active||bundling?'work':validNow?'result':'idle';
+  $('direct-progress').hidden=phase!=='work';
   const memberCount=DIRECT.draft.slots.filter(Boolean).length;
   $('direct-result-lane').hidden=!(['result','error'].includes(phase)||phase==='idle'&&memberCount>0&&memberCount<4);
   $('direct-progress').value=RECO.task&&!RECO.task.done?Math.round((RECO.task.progress||0)*100):running?.progress||0;
-  GwenLane.sync({mode:DIRECT.mode,phase,result:validNow?(finalReport?'bundle-'+bundle.id:GwenLane.resultId(now.result)):null,step:bundling?bundle.current:null,recoHigher:finalReport&&compatible&&now.result[metric]<reco.result[metric],clear:now?.result?.clear,
+  GwenLane.sync({mode:DIRECT.mode,phase,bundleRunning:!!bundling,result:validNow?(finalReport?'bundle-'+bundle.id:GwenLane.resultId(now.result)):null,step:bundling?bundle.current:null,recoHigher:finalReport&&compatible&&now.result[metric]<reco.result[metric],clear:now?.result?.clear,
     progress:RECO.task&&!RECO.task.done?RECO.task.progress:running?.progress>0?running.progress/running.snapshot.runs:null,count:DIRECT.draft.slots.filter(Boolean).length,
     stale:past(now),better:compatible&&validNow&&now.result[metric]>reco.result[metric]});
 

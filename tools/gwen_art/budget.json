@@ -26,5 +26,15 @@
   "art4_pairs_bytes": 500000,
   "art4_blink_bytes": 175000,
   "art4_measurement": "Representative run PNG 19038 + WebP 26942 = 45980; wait PNG 20102 + prototype WebP 10514 = 30616. Reserve 10 pairs at 50000 and 7 blinks at 25000; baseline 1282902 + 675000 = 1957902, rounded to 2010000 with headroom. Masters and eye patches excluded from served total.",
-  "merge_measurement": "Shared art3 limit 1450000 + art4 pairs 500000 + blinks 175000 + art5 1700000, each allocation once; all files <=80000, no exceptions."
+  "merge_measurement": "Shared art3 limit 1450000 + art4 pairs 500000 + blinks 175000 + art5 1700000, each allocation once; all files <=80000, no exceptions.",
+  "case_banner": {
+    "file_bytes": 80000,
+    "served_bytes": 61148,
+    "files": {
+      "case_banner_investigation.webp": 14288,
+      "case_banner_inquiry.webp": 14594,
+      "case_banner_calculation.webp": 14718,
+      "case_banner_error.webp": 17548
+    }
+  }
 }
