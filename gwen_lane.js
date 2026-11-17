@@ -90,7 +90,7 @@
     const doc=root.document,mq=root.matchMedia('(prefers-reduced-motion: reduce)'),p=policy(),play=playground(),resultArts=new Map();
     let actor=null,lane=null,current={},clock=0,last=performance.now(),idleAt=0,vacant=false,phaseKey='',cycleAt=0,
       restoreAt=0,bubbleUntil=0,speechShownAt=-Infinity,move=null,landing=0,pending=null,x=0,quiet=false,art='',lastEvent='',sleeping=false,workRestAt=0;
-    let playAt=play.delay(),playing=null;
+    let playAt=play.delay(),playing=null,imageRequest=0;
     function resetPlay(){playing=null;playAt=clock+play.delay();}
     try{quiet=JSON.parse(localStorage.getItem('pn.gwen.quiet')||'false')===true;}catch{}
     doc.documentElement.dataset.gwenQuiet=String(quiet);
@@ -127,8 +127,17 @@
       if(lane!==target||actor.parentElement!==target){cancelMove();lane=target;lane.append(actor);x=Math.max(0,(lane.clientWidth-actor.offsetWidth)/2);actor.style.transform=`translateX(${x}px)`;}
       syncBanner();
       return true;}
-    function image(key){if(key===art)return;art=key;actor.querySelector('button').innerHTML=root.Ux.gwenImage(key,'gwen-lane-image',80).replace('data-gwen-art=', 'data-gwen-managed="true" data-gwen-art=');
-      actor.dataset.gwenExpression=key;actor.dataset.event=lastEvent;}
+    function image(key){if(key===art)return;art=key;const request=++imageRequest;
+      const holder=doc.createElement('div');holder.innerHTML=root.Ux.gwenImage(key,'gwen-lane-image',80);
+      const next=holder.firstElementChild;if(!next)return;
+      next.dataset.gwenManaged='true';next.loading='eager';next.src=new URL(next.dataset.gwenStatic,doc.baseURI).href;
+      // Keep the previous decoded pixels until the candidate is ready. A later
+      // pose/result supersedes this request even when its decode finishes first.
+      next.decode().then(()=>{if(request!==imageRequest)return;
+        next.dataset.gwenLoaded='true';actor.querySelector('button').replaceChildren(next);
+        actor.dataset.gwenExpression=key;
+      }).catch(()=>{}); // Failed candidates leave the preceding illustration visible.
+      actor.dataset.event=lastEvent;}
     function positionSpeech(){const bubble=actor.querySelector('.gwen-lane-speech');
       if(!bubble.hidden){const half=bubble.offsetWidth/2;
         bubble.style.left=Math.max(half-x,Math.min(actor.offsetWidth/2,lane.clientWidth-half-x))+'px';}}
