@@ -3,6 +3,7 @@
   'use strict';
   const node=typeof module!=='undefined'&&module.exports;
   const M=node?require('./myinfo_reco'):root.MyInfoReco;
+  const Stats=node?require('./myinfo_stats'):root.MyInfoStats;
   const S=node?require('./star_link'):root.StarLink;
   const VERSION=1;
   const key=v=>typeof v==='string'&&/^[a-z][a-z0-9_-]{0,63}$/.test(v)?v:null;
@@ -69,20 +70,21 @@
     const original=M.profile(info,roster,growth,content);
     const snapshot=M.overwrite(info,roster,growth,content,{excluded:roster.filter(s=>!selected.has(s.key)).map(s=>s.key),slots,priority});
     let profile=snapshot.profile,account=snapshot.info;const warnings=[];
-    const linked=[];
+    const linked=[],levelUnknown=original.rule==='fixed200'?[]:d.slots.filter(m=>m?.grown&&
+      Stats.level_info(original.units[m.key],info).source==='legacy').map(m=>m.key);
     // Direct-only PM policy: a grown, unregistered member is registered in the copy.
     // Capacity/source restrictions do not gate a hypothetical build. Legacy data stays legacy.
     if(account.star_link&&Array.isArray(account.star_link.slots)){
       const ids=account.star_link.slots.map(s=>s.id),previous=new Set(info.star_link?.slots?.map(s=>s.id)||[]);
       for(const m of d.slots.filter(m=>m?.grown)){
-        const unit=profile.units[m.key];if(!unit||previous.has(unit.id))continue;
+        const unit=profile.units[m.key];if(!unit||previous.has(unit.id)||Stats.level_info(unit,info).source==='legacy')continue;
         if(!ids.includes(unit.id))ids.push(unit.id);
         if(original.rule!=='fixed200')linked.push(m.key);
       }
       account=S.withSlots(account,ids);profile=M.profile(account,roster,growth,content);
     }
     const values=d.slots.map(s=>s?profile.results[s.key]||null:null),before=d.slots.map(s=>s?original.results[s.key]||null:null);
-    return {values,before,total:values.reduce((n,r)=>n+(r?.power||0),0),profile,linked,changes:snapshot.changes,errors:snapshot.errors,warnings};
+    return {values,before,total:values.reduce((n,r)=>n+(r?.power||0),0),profile,linked,levelUnknown,changes:snapshot.changes,errors:snapshot.errors,warnings};
   }
   function stable(v){if(Array.isArray(v))return v.map(stable);if(v&&typeof v==='object')return Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])]));return v;}
   function signature({party,stage,brk,seed,runs,options,versions}){

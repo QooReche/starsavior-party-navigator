@@ -35,6 +35,7 @@
 .direct-grow[aria-pressed=true] .direct-power{color:var(--acc)}
 .direct-grow:disabled{opacity:.45;cursor:default}.direct-grow>span{white-space:nowrap}
 .direct-stats{font-size:11px;overflow-wrap:anywhere;margin-top:4px}.direct-stats summary{min-height:28px}.direct-invalid{display:block;color:var(--bad)}
+.direct-level-note{display:block;margin-top:4px;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
 #direct-selection{margin-top:10px}#direct-selection>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}#direct-selection button{min-height:64px;padding:5px;font-size:12px}
 #direct-drop-remove{border:2px dashed var(--mut);border-radius:10px;min-height:64px;box-sizing:border-box;display:grid;place-items:center;margin-top:10px}
 .direct-member,.direct-candidate{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:pan-y}.direct-member img,.direct-candidate img{pointer-events:none}

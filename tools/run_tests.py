@@ -61,6 +61,7 @@ def main():
         tests.append(('e2e/test_gwen_shadow.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_shadow.py']))
         tests.append(('e2e/test_gwen_lane_image.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_lane_image.py']))
         tests.append(('e2e/test_case_banner.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_case_banner.py']))
+        tests.append(('e2e/test_prelink_level.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_prelink_level.py']))
         tests.append(('e2e/test_direct_lane.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_direct_lane.py']))
         tests.append(('e2e/test_direct_affordance.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_direct_affordance.py']))
         tests.append(('e2e/test_direct_compact.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_direct_compact.py']))

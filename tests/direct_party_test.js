@@ -102,7 +102,7 @@ test('local/share allowlist, received session edits never replace local',()=>{
 });
 // Execute mutated production modules in an isolated VM; each protected behavior must fail.
 const source=fs.readFileSync(require.resolve('../direct_party'),'utf8');
-function mutant(change,M2=M){const code=change(source);assert.notEqual(code,source);const c={MyInfoReco:M2,StarLink:S};vm.createContext(c);vm.runInContext(code,c);return c.DirectParty;}
+function mutant(change,M2=M){const code=change(source);assert.notEqual(code,source);const c={MyInfoReco:M2,MyInfoStats:require('../myinfo_stats'),StarLink:S};vm.createContext(c);vm.runInContext(code,c);return c.DirectParty;}
 test('mutation harness control: unchanged VM passes protected behavior',()=>{const p=mutant(s=>s.replace('// Pure DIRECT','// Control Pure DIRECT'));payloads(p);overwriteParity(p);isolation(p);});
 test('mutation detected: silently restore automatic rearrangement',()=>assert.throws(()=>payloads(mutant(s=>s.replace('const units=d.slots.map','const units=[...d.slots].sort((a,b)=>a.key.localeCompare(b.key)).map')))));
 test('mutation detected: remove leader from signature',()=>assert.throws(()=>payloads(mutant(s=>s.replace('leader:party.leader,stage','stage')))));
