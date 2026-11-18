@@ -426,6 +426,192 @@ def test_js_parity():
     assert eff == [[], [], [940011], [940011, 940101], [940011, 940101, 940021, 940301, 940091, 940191]]
 
 
+# ---------------------------------------------------------------- EX 챌린지 효과 8종
+def test_ex_grow():
+    """SET 01 grow: 스킬 사용 후 주는 피해 +5% 중첩 최대 10 (SE 9400101, BI_STAR_CHALLENGE_EX_1 IsLevel BuffLevelMax 10)"""
+    # 대조군: grow 없을 때 1회 시전 후 inc
+    b0 = battle('티리아', 3, 0, seed=99)
+    boss0 = boss_of(b0)
+    b0.cast(boss0, boss0.d.skills['기본기'])
+    ctrl_inc = boss0.mods()['inc']
+    assert boss0.stack(C.CH_GROW_EX) == 0 and b0.gb.stats.get('grow', 0) == 0
+    # grow 적용
+    b = battle('티리아', 3, 0, seed=99)
+    boss = boss_of(b)
+    b.gb.fx['grow'] = {'pct': 5, 'max': 10}
+    sk = boss.d.skills['기본기']
+    b.cast(boss, sk)
+    assert boss.stack(C.CH_GROW_EX) == 1 and b.gb.stats['grow'] == 1
+    assert abs(boss.mods()['inc'] - (ctrl_inc + 0.05)) < 1e-9, 'ctrl=%r actual=%r' % (ctrl_inc, boss.mods()['inc'])
+    for _ in range(11):
+        b.cast(boss, sk)
+    assert boss.stack(C.CH_GROW_EX) == 10, boss.stack(C.CH_GROW_EX)   # 상한 10
+
+
+def test_ex_armor():
+    """SET 04 armor: 강인도 최대치 +5 (SE 9400401, NSEAT_AFTER_SPAWN, BI_STAT_NST_SUPER_ARMOR_INFINITE)"""
+    import copy
+    sa_base = boss_of(battle('티리아', 3, 1)).sa_max   # level 1 기준선(armor 없음)
+    # 데이터 캐시를 임시 교체: armor 효과를 넣어 on_wave 가 실제로 처리하게 한다
+    orig = C._DATA[C.SRC]
+    G_copy = copy.deepcopy(orig)
+    fake_eid = 99999
+    G_copy['effects'].append(dict(id=fake_eid, kind='armor', params=dict(add=5), name='armor_test', key='T', num=4, desc='', target=None))
+    tyr = next(b for b in G_copy['bosses'] if b['key'] == 'tyria')
+    tyr['levels'][0]['effects'].append(fake_eid)
+    C._DATA[C.SRC] = G_copy
+    try:
+        b = battle('티리아', 3, 1)
+        boss = boss_of(b)
+        assert boss.sa_max == sa_base + 5, 'sa_max=%d expected=%d' % (boss.sa_max, sa_base + 5)
+        assert boss.sa == boss.sa_max
+    finally:
+        C._DATA[C.SRC] = orig
+
+
+def test_ex_hit_gauge():
+    """SET 07 hit_gauge: 보스를 대상으로 한 아군 공격 스킬 1번당 행동 게이지 +5% (SE 9400701 NSEAT_DAMAGE_END — NKM:15742 -> 21183:
+    공격 처리 끝에 시전자의 대상 목록 각자에게 1회. 타격·대상 수만큼이 아님)"""
+    b = battle('벨그라스', 3, 0)          # 보스 + 부속 2 = 광역 한 번에 3명 타격
+    boss = boss_of(b)
+    b.gb.fx['hit_gauge'] = {'pct': 5}
+    boss.gauge = 0.0
+    hit(b, boss, all_=True)
+    assert b.gb.stats['hit_gauge'] == 1, b.gb.stats['hit_gauge']
+    assert 499 <= boss.gauge <= 501, boss.gauge
+    hit(b, boss)                           # 단일 공격 1번 더 -> 누적 2회
+    assert b.gb.stats['hit_gauge'] == 2
+    b2 = battle('벨그라스', 3, 0)          # 대조군: 효과 없음
+    boss2 = boss_of(b2)
+    boss2.gauge = 0.0
+    hit(b2, boss2, all_=True)
+    assert b2.gb.stats.get('hit_gauge', 0) == 0 and boss2.gauge < 100
+
+
+def test_ex_debuff_amp():
+    """SET 21 debuff_amp: 자신 약화 개수당 주는 피해 +10% 최대 10 (SE 9402101, NegativeBuffCount CountMax 10)"""
+    b = battle('티리아', 3, 0)
+    boss = boss_of(b)
+    b.gb.fx['debuff_amp'] = {'pct': 10, 'max': 10}
+    # 보스에 약화 3개 부여
+    for i in range(3):
+        boss.eff['약화%d' % i] = Eff('약화%d' % i, {'공격력%': -1}, 1, 3, boss, True)
+        boss.eff['약화%d' % i].stacks = 1
+        boss.eff['약화%d' % i].category = 'debuff'
+    assert boss.n_harmful() == 3
+    sk = boss.d.skills['기본기']
+    ctx_before = [None]
+    orig = b.gb.before_cast
+
+    def spy(u, sk2, ctx):
+        orig(u, sk2, ctx)
+        ctx_before[0] = ctx.inc
+    b.gb.before_cast = spy
+    b.cast(boss, sk)
+    assert abs(ctx_before[0] - 0.30) < 1e-9, ctx_before[0]   # 3 x 10% = 30%
+    assert b.gb.stats['debuff_amp'] == 3
+    # 상한 10
+    for i in range(3, 15):
+        boss.eff['약화%d' % i] = Eff('약화%d' % i, {'공격력%': -1}, 1, 3, boss, True)
+        boss.eff['약화%d' % i].stacks = 1
+        boss.eff['약화%d' % i].category = 'debuff'
+    b.cast(boss, sk)
+    assert b.gb.stats['debuff_amp'] == 3 + 10   # 두 번째 시전에서 max 10
+
+
+def test_ex_ult_cd():
+    """SET 22 ult_cd: 타격 후 대상의 궁극기 쿨 +1 (SE 9402201, SkillCoolturnUpValue 1, AutoTargetId 21)"""
+    b = battle('티리아', 3, 0)
+    boss = boss_of(b)
+    b.gb.fx['ult_cd'] = {'turns': 1}
+    ally = b.allies[0]
+    cd0 = ally.cd.get('궁극기', 0)
+    sk = boss.d.skills['기본기']
+    b.cast(boss, sk)
+    # 적어도 맞은 아군의 궁극기 쿨이 1 증가해야 함
+    assert b.gb.stats['ult_cd'] >= 1
+    hit_allies = [u for u in b.allies if not u.dead and u.cd.get('궁극기', 0) > cd0]
+    assert len(hit_allies) >= 1, [u.cd.get('궁극기') for u in b.allies]
+    # 대조군
+    b2 = battle('티리아', 3, 0)
+    boss2 = boss_of(b2)
+    ally2 = b2.allies[0]
+    cd_before = ally2.cd.get('궁극기', 0)
+    b2.cast(boss2, boss2.d.skills['기본기'])
+    assert b2.gb.stats.get('ult_cd', 0) == 0
+
+
+def test_ex_no_shield_amp():
+    """SET 24 no_shield_amp: 보스 공격 시 대상 중 하나라도 보호막 계열(조건 31010 NotTargetBuffStrId)이 없으면 이번 스킬 피해 +20
+    (OnMyAttack NKM:9590-9606 -> NKM.Templets 42715: 광역도 대상 전원으로 판정). 보호막 판정은 수치가 아니라 버프 이름"""
+    names = ['보호막', '보호막(해제불가)', '공허 방패(해제불가)', '저항 장막(해제불가)', '파프닐의 강림(해제불가)']
+    def run(shield_all, name='보호막', slot='기본기'):
+        b = battle('티리아', 3, 0)
+        boss = boss_of(b)
+        b.gb.fx['no_shield_amp'] = {'pct': 20, 'names': names}
+        if shield_all:
+            for u in b.allies:
+                e = b.put_eff(u, name, {}, dur=5, maxs=1, add=1, src=u, cat='buff', fixed=False)
+                e.shield = 999999
+        b.cast(boss, boss.d.skills[slot])
+        return b.gb.stats.get('no_shield_amp', 0)
+    assert run(False) == 1
+    assert run(True) == 0                                   # 전원 보호막 -> 미발동
+    assert run(True, '공허 방패(해제불가)') == 0              # 목록의 다른 이름도 보호막 계열
+    assert run(True, '보호막 아님') == 1                     # 이름이 목록에 없으면 수치가 있어도 보호막 아님
+    assert run(False, slot='궁극기') == 1                   # 광역(티리아 궁극기)도 판정함
+
+
+def test_ex_no_shield_chain():
+    """SET 25 no_shield_chain: 기본기 후 피해 기록 중 하나라도 처치 안 됨 + 보호막 계열 없음이면 적 전체에 공격력 30 연쇄 1회씩
+    (AfterMyAttack NKM:8037 -> 15963, 조건 32167 기본기·NotTargetBuffStrId·NotEliminateEnemy)"""
+    names = ['보호막', '보호막(해제불가)', '공허 방패(해제불가)', '저항 장막(해제불가)', '파프닐의 강림(해제불가)']
+    def run(shield_all, name='보호막', slot='기본기'):
+        b = battle('티리아', 3, 0)
+        boss = boss_of(b)
+        b.gb.fx['no_shield_chain'] = {'atkRate': 30.0, 'names': names}
+        kinds = []
+        orig = b.apply_damage
+        b.apply_damage = lambda a, v, dmg, kind, shieldable=True, **kw: (kinds.append(kind), orig(a, v, dmg, kind, shieldable, **kw))[1]
+        if shield_all:
+            for u in b.allies:
+                e = b.put_eff(u, name, {}, dur=5, maxs=1, add=1, src=u, cat='buff', fixed=False)
+                e.shield = 999999
+        b.cast(boss, boss.d.skills[slot])
+        return b, b.gb.stats.get('no_shield_chain', 0), kinds.count('chain')
+    b, n, chains = run(False)
+    assert n == 1 and chains == len(b.alive(0)), (n, chains)
+    assert run(True)[1] == 0
+    assert run(True, '보호막 아님')[1] == 1
+    assert run(False, slot='궁극기')[1] == 0                # 기본기 조건
+
+
+def test_ex_strip():
+    """SET 28 strip: 타격 후 적 강화 1개 해제 저항 무시 (SE 9402801, cond 2107, BI_DELETEBUFF_NONEFFECTHIT)"""
+    b = battle('티리아', 3, 0)
+    boss = boss_of(b)
+    b.gb.fx['strip'] = {'count': 1}
+    # 모든 아군에게 강화 2개씩 부여 (보스가 누구를 때릴지 모름)
+    for u in b.allies:
+        b.put_eff(u, '공격력 증가', {'공격력%': 50}, dur=5, maxs=1, add=1, src=u, cat='buff', fixed=False)
+        b.put_eff(u, '방어력 증가', {'방어력%': 50}, dur=5, maxs=1, add=1, src=u, cat='buff', fixed=False)
+    sk = boss.d.skills['기본기']
+    b.cast(boss, sk)
+    # 적어도 맞은 아군 하나의 강화가 1개 해제되어야 함
+    assert b.gb.stats['strip'] >= 1
+    stripped = [u for u in b.allies if not (u.on('공격력 증가') and u.on('방어력 증가'))]
+    assert len(stripped) >= 1, '맞은 아군의 강화가 해제되지 않음'
+    for u in stripped:
+        assert sum(1 for n in ('공격력 증가', '방어력 증가') if u.on(n)) == 1, '1개만 해제해야 함'
+    # 대조군: strip 없으면 해제 없음
+    b2 = battle('티리아', 3, 0)
+    boss2 = boss_of(b2)
+    for u in b2.allies:
+        b2.put_eff(u, '공격력 증가', {'공격력%': 50}, dur=5, maxs=1, add=1, src=u, cat='buff', fixed=False)
+    b2.cast(boss2, boss2.d.skills['기본기'])
+    assert all(u.on('공격력 증가') for u in b2.allies) and b2.gb.stats.get('strip', 0) == 0
+
+
 def test_data_matches_tables():
     tables = os.environ.get('COSMO_TABLES')
     if not tables or not os.path.isdir(tables):
@@ -444,7 +630,10 @@ TESTS = [test_data_shape, test_stage_stats_match_existing_cosmo, test_build_wave
          test_challenge_effects_attached, test_drain_rewind_backflow_direct, test_pressure_march_bleed_thorn_punish_direct,
          test_belgras_erosion_and_rot, test_belgras_thorn_gauge_growth, test_minions, test_simulate_clear_step1_step2,
          test_simulate_belgras_path_taken, test_simulate_challenge_paths_and_level_scale, test_existing_results_unchanged_fields,
-         test_score_values_and_bounds, test_data_driven_defaults, test_js_parity, test_data_matches_tables]
+         test_score_values_and_bounds, test_data_driven_defaults, test_js_parity,
+         test_ex_grow, test_ex_armor, test_ex_hit_gauge, test_ex_debuff_amp, test_ex_ult_cd,
+         test_ex_no_shield_amp, test_ex_no_shield_chain, test_ex_strip,
+         test_data_matches_tables]
 
 if __name__ == '__main__':
     bad = 0

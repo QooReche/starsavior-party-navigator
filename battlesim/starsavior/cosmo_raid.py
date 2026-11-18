@@ -49,6 +49,7 @@ SEED = '생멸의 씨앗(해제불가)'
 STACKS = '응집된 생기(해제불가)'
 AMP = '상급 공격력 증가'
 BARRIER = '보호막'
+CH_GROW_EX = '피해 증가(EX)'
 
 
 def load(src=SRC):
@@ -241,6 +242,7 @@ class Controller:
         self.over = {}               # 부속 유닛 -> 영양 과잉이 끝나는 전역 턴
         self.stats = defaultdict(int)
         self.pending_damage = []      # (대상, 시전 시작 때 확정한 고정 피해)
+        self._shield_amp_ctx = None   # no_shield_amp: 시전당 한 번만 적용하기 위한 ctx 참조
 
     def before_cast(self, u, sk, ctx):
         if (u is self.boss and self.cfg['model'] == 'belgras' and sk.slot == '궁극기'
@@ -250,6 +252,13 @@ class Controller:
             if n > 0:
                 self.pending_damage.append((u, p['perStack'] * n))
                 self.stats['self_damage_queued'] += 1
+        # EX: debuff_amp — NSEAT_SKILL_START, 자신 약화 개수당 피해 증가 (SE 9402101)
+        if u is self.boss and not self.boss.dead and 'debuff_amp' in self.fx and sk.is_attack:
+            p = self.fx['debuff_amp']
+            count = min(self.boss.n_harmful(), p['max'])
+            if count > 0:
+                ctx.inc += p['pct'] / 100.0 * count
+                self.stats['debuff_amp'] += count
 
     def flush_damage(self):
         # NKM:13539-13544: 반응 종료 → 예약 피해 → 보유자 턴 종료 효과.
@@ -333,7 +342,11 @@ class Controller:
                 self._put(boss, IMMUNE, {}, dur=p['turns'])
             elif k == 'tough':
                 self._put(boss, CH_TOUGH, {'강인도 피해': p['add']})
-            elif k in ('drain', 'bleed', 'pressure', 'rewind', 'backflow', 'thorn', 'punish', 'march'):
+            elif k == 'armor':
+                boss.sa_max += p['add']
+                boss.sa += p['add']
+            elif k in ('drain', 'bleed', 'pressure', 'rewind', 'backflow', 'thorn', 'punish', 'march',
+                       'grow', 'hit_gauge', 'debuff_amp', 'ult_cd', 'no_shield_amp', 'no_shield_chain', 'strip'):
                 self.fx[k] = p
             else:
                 b.unsup['cosmo_raid: 미지원 챌린지 효과 %s' % e['name']] += 1
@@ -379,6 +392,11 @@ class Controller:
             self._put(self.boss, name, props, maxs=maxs, add=0)
 
     # ---------- 시전 후
+    @staticmethod
+    def _no_shield(x, names):
+        """조건 NotTargetBuffStrId(31010·32167): 보호막 계열 버프(이름 목록)를 하나도 갖지 않음(NKM.Templets:43294-43306)"""
+        return not any(x.has(n) for n in names)
+
     def _cur_ctx(self):
         return getattr(self.b, '_cast_ctx', None)
 
@@ -390,6 +408,11 @@ class Controller:
         if self.cfg['model'] == 'belgras':
             self._minion_tick()
         if u.side == 0:
+            # EX: hit_gauge — SE 9400701 NSEAT_DAMAGE_END: 공격 스킬 처리 끝에 시전자의 대상 목록 각자에게 1회(NKM:15742 → 21183).
+            # 타격·다단 히트마다가 아니라 «보스를 대상으로 한 아군 공격 스킬 1번당 1회»
+            if 'hit_gauge' in self.fx and sk.is_attack and not boss.dead and boss in (getattr(ctx, 'targets', None) or []):
+                self.stats['hit_gauge'] += 1
+                b.set_gauge(boss, boss.gauge + self.fx['hit_gauge']['pct'] * 100)
             if self.cfg['model'] == 'belgras' and not boss.dead and not sk.is_attack:
                 bm = self.cfg['bel']
                 self._ensure_belgras_eff()
@@ -428,6 +451,35 @@ class Controller:
                         if not x.dead and x.n_harmful() > 0:
                             self._chain_atk(boss, x, fx['punish']['atkRate'] / 100.0)
                             self.stats['punish'] += 1
+            # EX: ult_cd — NSEAT_SKILL_END, 타격 후 대상 궁극기 쿨 증가 (SE 9402201, AutoTargetId 21)
+            if 'ult_cd' in fx:
+                for x in hit:
+                    if not x.dead and '궁극기' in x.cd:
+                        x.cd['궁극기'] = x.cd['궁극기'] + fx['ult_cd']['turns']
+                        self.stats['ult_cd'] += 1
+            # EX: no_shield_chain — NSEAT_SKILL_END cond 32167, 기본기 타격 후 보호막 없는 대상이면 적 전체 연쇄 (SE 9402501)
+            if 'no_shield_chain' in fx and sk.slot == '기본기':
+                for x in hit:
+                    # AfterMyAttack(NKM:8037 → 15963): 피해 기록 중 하나라도 «처치 안 됨 + 보호막 계열 없음(이번 타격에 깨진 것 포함)»이면 참
+                    if not x.dead and self._no_shield(x, fx['no_shield_chain']['names']):
+                        for v in b.alive(0):
+                            self._chain_atk(boss, v, fx['no_shield_chain']['atkRate'] / 100.0)
+                        self.stats['no_shield_chain'] += 1
+                        break
+            # EX: strip — NSEAT_SKILL_END cond 2107, 타격 후 대상 강화 1개 해제 저항 무시 (SE 9402801)
+            if 'strip' in fx:
+                for x in hit:
+                    if not x.dead and not b._harm_evaded(x, ctx):
+                        names = [n for n, e in x.eff.items() if e.category == 'buff' and not e.fixed
+                                 and b._dispel_shield_ok(e)]
+                        if names:
+                            b._dispel_n_ordered(x, names, fx['strip']['count'])
+                            b.dirty(x)
+                            self.stats['strip'] += 1
+        # EX: grow — NSEAT_SKILL_END, 스킬 사용 후 주는 피해 중첩 증가 (SE 9400101)
+        if 'grow' in fx and not boss.dead:
+            self._put(boss, CH_GROW_EX, {'피해 증가': fx['grow']['pct']}, maxs=fx['grow']['max'])
+            self.stats['grow'] += 1
         if self.cfg['model'] == 'belgras':
             self._belgras_cast(sk, ctx, hit)
 
@@ -522,7 +574,17 @@ class Controller:
 
     # ---------- 피격
     def pre_hit(self, a, v):
-        return
+        # EX: no_shield_amp — NSEAT_SKILL_START cond 31010, 보호막 없는 대상 단일 타격 시 피해 증가 (SE 9402401)
+        # OnMyAttack(NKM:9590-9606 → 9675 → NKM.Templets 42715): 스킬 대상 유형대로 모은 대상 중 하나라도 보호막 계열이 없으면 참 —
+        # 표 주석의 «광역이면 미동작»과 달리 코드는 광역도 대상 전원으로 판정(클라 코드 우선). 첫 타격 전 = 스킬 시작 때 상태
+        if a is self.boss and 'no_shield_amp' in self.fx:
+            ctx = self._cur_ctx()
+            if ctx is not None and ctx is not self._shield_amp_ctx and ctx.skill is not None and ctx.skill.is_attack:
+                self._shield_amp_ctx = ctx
+                pool = [x for x in (ctx.targets or []) if x.side != a.side] or ([v] if v is not None else [])
+                if any(self._no_shield(x, self.fx['no_shield_amp']['names']) for x in pool):
+                    ctx.inc += self.fx['no_shield_amp']['pct'] / 100.0
+                    self.stats['no_shield_amp'] += 1
 
     def post_hit(self, a, v):
         boss = self.boss

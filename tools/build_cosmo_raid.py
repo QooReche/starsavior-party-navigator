@@ -44,7 +44,9 @@ STAT_PROP = {
 }
 # 챌린지 효과 종류(BattleEffectStrId 끝 번호 SET_NN -> 엔진 kind). 번호는 표 이름 규칙, 의미는 한국어 설명으로 검증한다.
 EFFECT_KIND = {2: 'drain', 3: 'speed', 6: 'immune', 10: 'bleed', 11: 'tough', 18: 'pressure', 19: 'rewind', 20: 'backflow',
-               29: 'single_red', 30: 'thorn', 31: 'punish', 32: 'march'}
+               29: 'single_red', 30: 'thorn', 31: 'punish', 32: 'march',
+               1: 'grow', 4: 'armor', 7: 'hit_gauge', 21: 'debuff_amp', 22: 'ult_cd',
+               24: 'no_shield_amp', 25: 'no_shield_chain', 28: 'strip'}
 # kind -> 설명문에서 수치를 읽는 정규식(순서대로 params 의 이름). 설명이 바뀌면 Changed.
 EFFECT_RX = {
     'drain': (r'최대 생명력을 (\d+)%씩 감소.*최대 (\d+)회', ('pct', 'max')),
@@ -59,6 +61,14 @@ EFFECT_RX = {
     'thorn': (r'잔멸의 가시를 추가로 (\d+)개', ('count',)),
     'punish': (r'', ()),
     'march': (r'행동 게이지를 (\d+)% 증가', ('pct',)),
+    'grow': (r'', ()),
+    'armor': (r'', ()),
+    'hit_gauge': (r'', ()),
+    'debuff_amp': (r'', ()),
+    'ult_cd': (r'', ()),
+    'no_shield_amp': (r'', ()),
+    'no_shield_chain': (r'', ()),
+    'strip': (r'', ()),
 }
 
 
@@ -178,6 +188,18 @@ def build(T, season_id, game_build):
     se_battle = {r['m_SEStrID']: r for r in load(T / 'CLIENT_SE_TEMPLET_BATTLE_EFFECT.json')}
     effects = {}
 
+    cond_rows = {x['Id']: x for x in load(T / 'plain' / 'SKILL_CONDITION_TEMPLET.json')}
+
+    def names_of(ids):
+        """버프 id 목록 -> 중복 없는 한국어 이름(엔진 효과 이름). 표에 없거나 이름 없으면 Changed"""
+        out = []
+        for i in ids:
+            need(i in buffs and plain(buffs[i].get('m_BuffName')), '보호막 조건 버프 이름 없음: %s' % i)
+            n = plain(buffs[i]['m_BuffName'])
+            if n not in out:
+                out.append(n)
+        return out
+
     def effect(eid):
         if eid in effects:
             return
@@ -202,6 +224,44 @@ def build(T, season_id, game_build):
                 params['turns'] = se['m_BuffLifeTurn']
             if kind == 'rewind':
                 params['state'] = '타임 패러독스'
+            if kind == 'grow':
+                se = se_battle[e['BattleEffectSeStrId'][0]]
+                bt = buffs[se['m_BuffStrID']]
+                need(bt.get('IsLevel') and bt.get('TurnInfinite'), 'grow 버프 구조 변경')
+                params = {'pct': se['Stats'][0]['NKM_STAT_TYPE_RATE'] // 100, 'max': bt['BuffLevelMax']}
+            if kind == 'armor':
+                se = se_battle[e['BattleEffectSeStrId'][0]]
+                need(se.get('m_Condition', {}).get('m_ActiveType') == 'NSEAT_AFTER_SPAWN', 'armor 시점 변경')
+                params = {'add': se['Stats'][0]['NKM_STAT_TYPE_VALUE']}
+            if kind == 'hit_gauge':
+                se = se_battle[e['BattleEffectSeStrId'][0]]
+                need(se.get('m_Condition', {}).get('m_ActiveType') == 'NSEAT_DAMAGE_END', 'hit_gauge 시점 변경')
+                params = {'pct': se['SpeedGaugeRate'] // 100}
+            if kind == 'debuff_amp':
+                se = se_battle[e['BattleEffectSeStrId'][0]]
+                bt = buffs[se['m_BuffStrID']]
+                need(bt.get('NegativeBuffCount'), 'debuff_amp 버프 구조 변경')
+                params = {'pct': se['Stats'][0]['NKM_STAT_TYPE_RATE'] // 100, 'max': bt.get('CountMax', 10)}
+            if kind == 'ult_cd':
+                se = se_battle[e['BattleEffectSeStrId'][0]]
+                params = {'turns': se['SkillCoolturnUpValue']}
+            if kind == 'no_shield_amp':
+                se = se_battle[e['BattleEffectSeStrId'][0]]
+                # 조건(SKILL_CONDITION 31010) OnMyAttack.NotTargetBuffStrId = 보호막 계열 버프 — 이름으로 판정(클라와 같게)
+                c = cond_rows.get(se.get('SkillConditionId'), {}).get('OnMyAttack') or {}
+                need(set(c) == {'NotTargetBuffStrId'}, 'no_shield_amp 조건 구조 변경: %s' % c)
+                params = {'pct': se['Stats'][0]['NKM_STAT_TYPE_RATE'] // 100, 'names': names_of(c['NotTargetBuffStrId'])}
+            if kind == 'no_shield_chain':
+                se = se_battle[e['BattleEffectSeStrId'][0]]
+                need(se.get('AddDamageStatType') == 'NST_ATK' and se.get('AddDamageTargetType') == 'NSETT_SELF', 'no_shield_chain SE 구조 변경')
+                # 조건(32167) AfterMyAttack: 기본기·NotTargetBuffStrId·NotEliminateEnemy
+                c = cond_rows.get(se.get('SkillConditionId'), {}).get('AfterMyAttack') or {}
+                need(set(c) == {'SkillIndex', 'NotTargetBuffStrId', 'NotEliminateEnemy'} and c['SkillIndex'] == 'NSI_SKILL_1_ATTACK'
+                     and c['NotEliminateEnemy'] is True, 'no_shield_chain 조건 구조 변경: %s' % c)
+                params = {'atkRate': se['AddDamageRate'] / 100.0, 'names': names_of(c['NotTargetBuffStrId'])}
+            if kind == 'strip':
+                se = se_battle[e['BattleEffectSeStrId'][0]]
+                params = {'count': se['BuffDeleteCount']}
         effects[eid] = dict(id=eid, key=e['BattleEffectStrId'], num=num, name=plain(e.get('BattleEffectName')), desc=desc, kind=kind,
                             params=params, target=e.get('BteamEffectTarget'))
 
