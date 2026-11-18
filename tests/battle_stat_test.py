@@ -12,6 +12,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, 'tests'))
 from simkit import battle, give, unit  # noqa: E402
+from unittest.mock import patch  # noqa: E402
+from battlesim.mc import Battle, Ctx  # noqa: E402
 
 
 def pair(hp=10000):
@@ -105,6 +107,100 @@ class InstantStat(unittest.TestCase):
         b._instant_damage(a, a)
         self.assertEqual((a.dmg_stat, a.taken_stat), (0, 0))
         self.assertEqual(a.dmg, 0)
+
+
+class CallSiteStat(unittest.TestCase):
+    """실제 호출 경로(codex 2차 리뷰 권고): 연쇄·고정 피해 수호 분담은 받은 피해만, 오비탈·타격 무효도 계산 피해를 셈."""
+
+    def _chain(self, eff_extra=None, mc=None):
+        b = battle([unit('a', df=1000), unit('g', df=3000)], [unit('f', atk=1000)],
+                   mc=dict({'chain_round': 'client', 'chain_guard': 'client'}, **(mc or {})))
+        a, g, f = b.allies[0], b.allies[1], b.foes[0]
+        give(g, '수호', {'피해 분담(수호)': 50})
+        ctx = Ctx(f, a, a.d.skills['기본기'])
+        ctx.target, ctx.targets = f, [f]
+        b.chain(f, dict(stat='atk', coef=0.3337, target='attacker', **(eff_extra or {})), ctx)
+        return b, a, g, f
+
+    def test_chain_guard_share_taken_only(self):
+        b, a, g, f = self._chain()
+        self.assertEqual(b.rule_hits['chain_guard'], 1)
+        self.assertGreater(g.taken, 0)
+        self.assertEqual((a.taken_stat, g.taken_stat), (a.taken, g.taken))
+        self.assertEqual(f.dmg_stat, a.taken)                     # 수호자 몫은 공격자 통계에 안 들어감(NKM:8378)
+        self.assertEqual(f.dmg, a.taken + g.taken)                # 기존 집계는 그대로
+
+    def test_chain_stat_true_guard_share_taken_only(self):
+        b, a, g, f = self._chain({'damage_type': 'ADT_STAT_TRUE'}, {'chain_stat_true': 'client'})
+        self.assertEqual(b.rule_hits['chain_stat_true'], 1)
+        self.assertGreater(g.taken, 0)
+        self.assertEqual(f.dmg_stat, a.taken)
+        self.assertEqual(g.taken_stat, g.taken)
+
+    def test_fixed_true_guard_share_taken_only(self):
+        b = battle([unit('s')], [unit('t', hp=10 ** 6), unit('g', hp=10 ** 6)], mc={'fixed_true_formula': 'client'})
+        s, (t, g) = b.allies[0], b.foes
+        give(g, '수호', {'피해 분담(수호)': 50})
+        b.fixed_true_damage(s, t, 1000)
+        self.assertEqual(b.rule_hits['add_damage_guard'], 1)
+        self.assertEqual((t.taken, g.taken), (500, 500))
+        self.assertEqual((s.dmg_stat, t.taken_stat, g.taken_stat), (500, 500, 500))
+
+    def _orbital(self, nullify):
+        foe = unit('boss', hp=10 ** 9, skills=[dict(slot='기본기', dm=0)])
+        b = battle([unit('a0'), unit('a1')], [foe], break_skill={'name': '차원 강습', 'level': 5},
+                   mc={'bskill_nullify': 'client'})
+        b.break_points = 3
+        f = b.foes[0]
+        if nullify:
+            give(f, '스킬 피해 무효')
+        hp = f.hp
+        b._use_break_skill(b.allies[0])
+        return b, f, hp
+
+    def test_orbital_no_attacker_share(self):
+        b, f, hp = self._orbital(False)
+        self.assertEqual(f.taken_stat, hp - f.hp)
+        self.assertTrue(all(u.dmg_stat == 0 for u in b.allies))
+
+    def test_orbital_nullified_counts_calculated(self):
+        b, f, hp = self._orbital(True)
+        _, f0, hp0 = self._orbital(False)
+        self.assertEqual(f.hp, hp)
+        self.assertEqual(b.rule_hits['bskill_nullify'], 1)
+        self.assertEqual(f.taken_stat, hp0 - f0.hp)              # 무효가 없을 때 들어갔을 계산 피해와 같음
+        self.assertTrue(all(u.dmg_stat == 0 for u in b.allies))
+
+    def _strike(self, nullify, mc):
+        b = battle([unit('a', atk=1000)], [unit('v', hp=10 ** 6)], mc=mc)
+        a, v = b.allies[0], b.foes[0]
+        if nullify:
+            give(v, '스킬 피해 무효')
+        ctx = Ctx(a, a, a.d.skills['기본기'])
+        ctx.target, ctx.targets = v, [v]
+        b.strike(a, v, 1000, ctx, False, 0, 0, [])
+        return b, a, v
+
+    def test_strike_nullified_counts_calculated_both_paths(self):
+        _, a0, v0 = self._strike(False, {})
+        for mc in ({'damage_vampirism': 'client'}, {'damage_vampirism': 'off', 'sleep_wake': 'off'}):
+            b, a, v = self._strike(True, mc)
+            self.assertEqual((v.taken, v.hp), (0, 10 ** 6), mc)
+            self.assertEqual((a.dmg_stat, v.taken_stat), (v0.taken, v0.taken), mc)
+
+    def test_strike_nullified_stat_calc_is_quiet(self):
+        # 흡혈·수면 해제 규칙이 꺼진 경로의 통계용 계산은 quiet 로 감쌈 — 계산 안에서 센 rule_hits 가 남지 않아야 함
+        real = Battle.final_dmg
+
+        def counting(self_, *args):
+            self_.rule_hits['probe_final_dmg'] += 1
+            return real(self_, *args)
+        with patch.object(Battle, 'final_dmg', counting):
+            b, a, v = self._strike(True, {'damage_vampirism': 'off', 'sleep_wake': 'off'})
+            self.assertGreater(a.dmg_stat, 0)
+            self.assertEqual(b.rule_hits.get('probe_final_dmg', 0), 0)
+            b, a, v = self._strike(True, {'damage_vampirism': 'client'})   # 대조군: 판정에 쓰는 계산은 그대로 셈
+            self.assertEqual(b.rule_hits['probe_final_dmg'], 1)
 
 
 class ApiStat(unittest.TestCase):
