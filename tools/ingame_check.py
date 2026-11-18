@@ -374,6 +374,9 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
     t = sum(v['dmg_taken'] for v in r['per_unit'].values())
     acts = measured['ally'] / runs
     ok_d, ok_t = measured['overkill_dealt'] / runs, measured['overkill_taken'] / runs
+    bstat = r.get('battle_stat') or {}
+    stat_d = sum(v['dmg'] for v in bstat.values())
+    stat_t = sum(v['taken'] for v in bstat.values())
     return dict(stage=name, runs=runs, seed=seed, real_ratio=round(dealt / taken, 2), sim_ratio=round(d / max(1.0, t), 2), sim_clear=r['outcome']['clear_p'],
                 **turn_comparison(dealt, taken, turn, d, t, acts, measured['enemy'] / runs),
                 real=res, real_turn=turn, real_extra=REAL_EXTRA.get(name), sim_ally_actions=round(acts, 1), foe_breaks=r['breaks']['foe'], ally_breaks=r['breaks']['ally'],
@@ -389,7 +392,12 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
                 # 오버킬 포함 대조(게임 결과 화면 기준). 받은 피해 쪽 포함은 준 피해 쪽 증거에서의 대칭 가정(assumed)
                 sim_overkill_dealt=round(ok_d), sim_overkill_taken=round(ok_t),
                 dealt_ratio_with_overkill=round((d + ok_d) / dealt, 3) if dealt else None,
-                taken_ratio_with_overkill=round((t + ok_t) / taken, 3) if taken else None)
+                taken_ratio_with_overkill=round((t + ok_t) / taken, 3) if taken else None,
+                # 게임 전투 통계와 같은 정의(무적·무효·보호막·불사·오버킬 전 계산 피해, battlesim/api.py battle_stat) — 실측 대조는 이 값으로
+                battle_stat=r.get('battle_stat'),
+                sim_stat_dealt=stat_d, sim_stat_taken=stat_t,
+                dealt_ratio_stat=round(stat_d / dealt, 3) if dealt else None,
+                taken_ratio_stat=round(stat_t / taken, 3) if taken else None)
 
 
 def _q(xs, ps=(0.1, 0.5, 0.9)):

@@ -625,6 +625,11 @@ class Unit:
         self.taken = 0.0
         self.healed = 0.0
         self.healed_raw = 0.0     # 게임 통계의 «회복»과 같은 집계: 방어·증감 반영 뒤 원래 회복량(초과 회복 포함, 클라 SkillEffectHeal NKM:5472-5483 num3 를 그대로 합산)
+        # 게임 전투 통계의 «피해»·«받은 피해»와 같은 집계: 무적·스킬 무효·보호막·불사·피해 제한·오버킬로 깎이기 전 계산 피해
+        # (클라 OBF_15712·OBF_15639 NKM:2678-2686 이 OBF_32563 을 그대로 더함, 차감은 OBF_23259 의 지역값만 — 2697-2787).
+        # 판정·로직에는 쓰지 않음(dmg·taken 은 그대로) — 결과의 dmg_stat·taken_stat 로만 나감.
+        self.dmg_stat = 0.0
+        self.taken_stat = 0.0
         self.shield_given = 0.0
         self.death_t = None
         self.nova = 0.0          # 개인 노바 포스(nova_pool='unit' 일 때만 씀)
@@ -854,6 +859,16 @@ class Ctx:
         self.local = None    # 피격 직전 줄의 이번 피격 한정 보정 {unit: {'defp':..,'guard':..}}
         self.nb = False
         self.hit_victim = None
+
+
+def _record_stat(a, v, amount):
+    """게임 전투 통계(OBF_15712 피해·OBF_15639 받은 피해, NKM:2678-2686) 누적. a=None 이면 받은 피해만.
+    시험용 가짜 유닛에도 쓰이도록 필드가 없으면 0 에서 시작한다."""
+    if amount <= 0:
+        return
+    if a is not None:
+        a.dmg_stat = getattr(a, 'dmg_stat', 0.0) + amount
+    v.taken_stat = getattr(v, 'taken_stat', 0.0) + amount
 
 
 # ------------------------------------------------------------------ 전투
@@ -1658,6 +1673,7 @@ class Battle:
                     self._use_nullifier(v)
                     self.log(nullify=v.name)
                     self._hit_wake(v, hit)
+                    self.record_stat(None, v, hit)     # 통계는 무효 전 계산 피해(NKM:7993-7996), 오비탈 공격자 몫 없음(3290)
                     self.log(bskill_damage=self.break_skill_name, to=v.name, amount=0)
                     continue
                 self.apply_damage(None, v, hit, 'bskill')
@@ -3002,6 +3018,9 @@ class Battle:
                 sync = self.final_dmg(a, v, base, ctx, crit, cdv, pen, r, hctx)
                 self._vampirism_hit(a, v, ctx, sync)
                 self._hit_wake(v, sync)
+            else:
+                sync = self.quiet(self.final_dmg, a, v, base, ctx, crit, cdv, pen, r, hctx)
+            self.record_stat(a, v, sync)       # 통계는 무효 전 계산 피해(NKM:7993-7996)
             reactions.append((v, hctx))
             return
         if guard is None or share <= 0:
@@ -3267,14 +3286,31 @@ class Battle:
         self.rule_hits['chain_guard'] += 1
         return guard, base * min(1.0, gs)
 
-    def apply_damage(self, a, v, dmg, kind, shieldable=True):
-        """보호막 -> HP 순. 사망하면 True."""
+    def record_stat(self, a, v, amount):
+        """게임 전투 통계 집계(dmg_stat·taken_stat). a=None 이면 받은 피해만(오비탈·연쇄 수호 분담 — NKM:3290 빈 구현, 8378)."""
+        _record_stat(a, v, amount)
+
+    def quiet(self, fn, *args):
+        """통계용 추가 계산: rule_hits 를 건드리지 않도록 되돌린다(난수는 쓰지 않는 계산에만)."""
+        saved = dict(self.rule_hits)
+        try:
+            return fn(*args)
+        finally:
+            self.rule_hits.clear()
+            self.rule_hits.update(saved)
+
+    def apply_damage(self, a, v, dmg, kind, shieldable=True, stat='both'):
+        """보호막 -> HP 순. 사망하면 True.
+        stat: 게임 전투 통계 집계 — both(공격자 피해+대상 받은 피해), taken(받은 피해만), none(호출부가 따로 셈)."""
         if kind in ('guard', 'chain', 'true') and not v.dead:
             # 수호 분담·연쇄/고정 피해를 받는 유닛도 피격 결과 = NormalHit(회피 거부 OBF_13659 의 OBF_20548): 일반 수호
             # NKM:8356 → 17898 → 2861, 연쇄 수호·고정 피해 8376/8168 → OBF_9963 17788. 피해 계산 전에 덮으므로 0·무적이어도.
             v.hit_evaded = False
         if v.dead or dmg <= 0:
             return False
+        if stat != 'none':
+            # 통계는 무적·보호막·불사·오버킬 처리 전 값(NKM:7993-7996·8070-8071·8173-8176·8213-8214·8357-8359·8378)
+            _record_stat(a if stat == 'both' else None, v, dmg)
         if v.invincible():
             self.log(invincible=v.name, kind=kind)
             return False
@@ -3353,7 +3389,8 @@ class Battle:
         damage = finish(target, damage)
         self.apply_damage(source, target, damage, 'true', shieldable=True)
         if guard is not None and shared >= 1 and not guard.dead:
-            self.apply_damage(source, guard, finish(guard, shared), 'guard', shieldable=True)
+            # 추가 피해 경로의 수호 분담은 받은 피해만 기록(NKM:8378)
+            self.apply_damage(source, guard, finish(guard, shared), 'guard', shieldable=True, stat='taken')
         return damage
 
     def _instant_damage(self, owner, x):
@@ -3366,17 +3403,27 @@ class Battle:
             # 검사(유닛 피해 함수)보다 먼저. 같은 편 다른 시전자는 17743 에서 먼저 빠짐.
             x.hit_evaded = False
             self.rule_hits['dot_hit_result'] += 1
+        def amount():
+            de = self.def_stat(x)
+            return max(1.0, math.floor((self.atk_stat(owner) + owner.maxhp * 10.0) * (1 - de / (de + _rules.DEF_K))))
+
+        def stat(value):
+            # 게임 통계: 즉시 피해는 대상이 시전자 자신이 아니고 피해 적용 뒤 살아 있을 때만(NKM:8131-8135, OBF_14168 = HP>0·사망 상태 아님 2083-2088)
+            if x is not owner and not x.dead and x.hp > 0:
+                self.record_stat(owner, x, value)
         if x.invincible():
             self.log(invincible=x.name, kind='instant')
+            stat(self.quiet(amount))
             return
         if x.on('스킬 피해 무효'):
             self._use_nullifier(x)
             self.log(nullify=x.name)
+            stat(self.quiet(amount))
             return
-        de = self.def_stat(x)
-        dmg = max(1.0, math.floor((self.atk_stat(owner) + owner.maxhp * 10.0) * (1 - de / (de + _rules.DEF_K))))
+        dmg = amount()
         dealt = owner.dmg
-        self.apply_damage(owner, x, dmg, 'instant', shieldable=True)
+        self.apply_damage(owner, x, dmg, 'instant', shieldable=True, stat='none')
+        stat(dmg)
         if x is owner:
             owner.dmg = dealt     # 자폭은 자기 피해 — 적 피해 집계(per_foe)에 넣지 않음
 
@@ -5211,7 +5258,7 @@ class Battle:
                 if guard is not None and share_base >= 1.0 and not guard.dead:
                     gdmg = max(1, math.floor(share_base * self.pen[owner.side]))
                     self.log(guard=guard.name, protects=v.name, dmg=gdmg)
-                    self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True)
+                    self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True, stat='taken')   # 연쇄 수호 분담: 받은 피해만(NKM:8378)
                 continue
             de = self.def_stat(v)
             dr = de / (de + _rules.DEF_K)
@@ -5243,7 +5290,7 @@ class Battle:
                     gdr = max(0.0, gdr - gdr * min(1.0, m['pen']))
                 gdmg = max(1.0, math.floor(share_base * (1 - gdr) * self.rand(owner.side) * self.pen[owner.side]))
                 self.log(guard=guard.name, protects=v.name, dmg=gdmg)
-                self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True)
+                self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True, stat='taken')   # 연쇄 수호 분담: 받은 피해만(NKM:8378)
 
     # ---------- 효과 부여
     def roll_hit(self, owner, ctx, x, name):

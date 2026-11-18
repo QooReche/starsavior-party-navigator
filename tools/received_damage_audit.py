@@ -76,7 +76,7 @@ def measure(stage, runs, seed, myinfo, override=None):
                            base=base, incoming=result, tick=b.t)
         return result
 
-    def apply(b, a, v, dmg, kind, shieldable=True):
+    def apply(b, a, v, dmg, kind, shieldable=True, **kw):
         nonlocal pending
         hp, taken, shield = v.hp, v.taken, v.shield_total()
         # Death clears even an unused shield (e.g. lethal DoT). That is not
@@ -85,7 +85,7 @@ def measure(stage, runs, seed, myinfo, override=None):
                      and not (v.buff_blocked() and not e.harmful))
         absorbed = min(max(0, dmg), usable) if shieldable and not v.dead else 0
         info, pending = pending, None
-        result = original['apply_damage'](b, a, v, dmg, kind, shieldable)
+        result = original['apply_damage'](b, a, v, dmg, kind, shieldable, **kw)
         if v.side != 0:
             return result
         source = next((label for actor, label in reversed(stack) if actor is a), kind)
