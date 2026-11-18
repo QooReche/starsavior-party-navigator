@@ -171,7 +171,13 @@ SAMPLES = {
     # 2026-11-13 09:20 영상(성간 회랑 FLOOR 450, 권장 522,010, 팀 전투력 425,885(암전 편성 화면 판독), 전원 Lv.358, 오토, 큐브 과부하(사용자 확인), 웨이브 2 «업화의 추적자»): 세레스(후, 샤프 앤 스위트)·힐데(전)·에밀리(전)·아세라(후, 금발=왈츠 오브 스타라이트로 추정). 리더는 영상에 없어 에밀리로 가정(미확인)
     # 패배, TURN 107. 준 / 받은 / 회복: 힐데 104,235/500,044/38,988 · 에밀리 316,984/368,316/0 · 아세라 312,141/289,247/337,235 · 세레스(MVP) 44,120/335,796/883,830
     'clo450': ('clo', '성간 회랑|FLOOR 450', ['ceres-sun-supporter', 'hilde', 'emily', 'waltz-asherah'], 'emily', 425885, 0, 777480, 1493403, 107, 'fail'),
+    # 2026-11-17 영상(작전 SECTOR 41-36 해식 동굴, 오토, 전원 Lv.362, 재점화 0, 스타피어서 Lv.4 — 내 정보 브레이크 스킬 102번): 세레스(후, 서부 탈환대 = ceres)·아세라(전, 왈츠 오브 스타라이트, 왕관 리더)·프로페서M(전)·클레어(후)
+    # 판 2: 패배(전멸), TURN 34, 달성도 52%, 보스 HP T34 333,466, 보스 격파 BREAK T12·스타피어서 T13. 준 / 받은: 프로페서M 161,755/134,532 · 아세라 47,134/170,369 · 세레스 179,376/122,786 · 클레어 240,702/117,810, 아세라 회복 81,578(다른 구원자 회복은 판독 기록 없음)
+    # 팀 전투력은 영상에 없음 -> 내 정보 전용(MYINFO_ONLY). 표준 육성은 세레스 고유 패시브를 최대 단계로 계산해 행동 순서가 어긋남(docs/HISTORY.md 2026-11-18)
+    'op4136-b': ('op', '해식 동굴|SECTOR 41-36', ['ceres', 'waltz-asherah', 'professor-m', 'claire'], 'waltz-asherah', None, 0, 628967, 545497, 34, 'fail'),
 }
+# 팀 전투력 실측이 없어 표준 육성 경로로 못 돌리는 샘플 — --myinfo 가 있을 때만 돈다(전체 실행에서는 건너뜀)
+MYINFO_ONLY = {'op4136-b'}
 # 보스 잔여 HP·달성도 같은 부가 실측:SAMPLES 튜플에는 못 넣고(형식 고정) 여기에 둔다 — 도구가 출력에 real_extra 로 붙인다
 REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, rekindle=0, boss_breaks=3, cube_overload_uses=3),
               '18x2-b': dict(achieve=1.0, boss_left_hp=0, heal=0, boss_hp_start=652064, rekindle=0, boss_breaks=3, cube_overload_uses=3),
@@ -186,6 +192,7 @@ REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, r
               'op3836-b': dict(achieve=0.65, boss_left_hp=175128, heal=95621, rekindle=0, cube_overload_uses=1),
               'op3933': dict(achieve=1.0, boss_left_hp=0, heal=939819, rekindle=0, boss_breaks=2, cube_overload_uses=2),
               'op403': dict(achieve=0.81, boss_left_hp=175303, rekindle=0),
+              'op4136-b': dict(achieve=0.52, boss_left_hp=333466, boss_hp_start=860270, asherah_heal=81578, rekindle=0, boss_break_turn=12, break_skill_turn=13),
               'eq3019': dict(achieve=1.0, boss_left_hp=0, heal=300735),
               'eq3119': dict(achieve=1.0, boss_left_hp=0, heal=709909),
               'eq3219': dict(achieve=0.71, heal=246645),
@@ -209,7 +216,8 @@ BS_REAL = {'37-36r': ('행성 정화', 3), '37-36r2': ('행성 정화', 3), '17x
            'op3736b-a': ('큐브 과부하', 6), 'op3736b-b': ('큐브 과부하', 6),
            'op3736c-a': ('큐브 과부하', 6), 'op3736c-b': ('큐브 과부하', 6),
            'op3736d-a': ('큐브 과부하', 6), 'op3736d-b': ('큐브 과부하', 6),
-           'op3836-b': ('큐브 과부하', 6), 'op3933': ('큐브 과부하', 6), 'op403': ('큐브 과부하', 6), 'eq3019': ('스타피어서', 4), 'eq3119': ('큐브 과부하', 6), 'eq3219': ('큐브 과부하', 6), 'eq1113': ('큐브 과부하', 6), 'clo450': ('큐브 과부하', 6)}
+           'op3836-b': ('큐브 과부하', 6), 'op3933': ('큐브 과부하', 6), 'op403': ('큐브 과부하', 6), 'eq3019': ('스타피어서', 4), 'eq3119': ('큐브 과부하', 6), 'eq3219': ('큐브 과부하', 6), 'eq1113': ('큐브 과부하', 6), 'clo450': ('큐브 과부하', 6),
+           'op4136-b': ('스타피어서', 4)}
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
 from tools.runtime import low_priority
@@ -291,6 +299,8 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
     import gen_quick_calib as G
     from battlesim import quick, simulate
     ck, sk, order, lead, pw, rk, dealt, taken, turn, res = SAMPLES[name]
+    if myinfo is None and name in MYINFO_ONLY:
+        raise ValueError(name + ' 는 팀 전투력 실측이 없어 --myinfo 로만 돌릴 수 있음')
     diagnostics = None
     if myinfo is not None:
         spec, diagnostics = myinfo_party(ck, order, lead, myinfo)
@@ -435,6 +445,8 @@ def main():
         if args.only and name != args.only:
             continue
         if name in PRE_PATCH and not args.only and not args.include_old:
+            continue
+        if name in MYINFO_ONLY and not args.myinfo and not args.only:
             continue
         out = run(name, args.runs, args.ov, args.seed, args.bs, args.myinfo, args.bs_name, args.bs_real)
         if name in PRE_PATCH:
