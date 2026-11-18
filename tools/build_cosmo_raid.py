@@ -244,6 +244,9 @@ def build(T, season_id, game_build):
                 params = {'pct': se['Stats'][0]['NKM_STAT_TYPE_RATE'] // 100, 'max': bt.get('CountMax', 10)}
             if kind == 'ult_cd':
                 se = se_battle[e['BattleEffectSeStrId'][0]]
+                need(se.get('m_Condition', {}).get('m_ActiveType') == 'NSEAT_SKILL_END' and se.get('m_BuffTargetType') == 'NSETT_AUTO_ENEMY'
+                     and se.get('AutoTargetId') == 21 and not se.get('SkillConditionId') and se.get('m_BuffStrID') == 'BI_HYPER_COOL_TURN_UP'
+                     and not buffs[se['m_BuffStrID']].get('ForceApplyEffect'), 'ult_cd SE 구조 변경')
                 params = {'turns': se['SkillCoolturnUpValue']}
             if kind == 'no_shield_amp':
                 se = se_battle[e['BattleEffectSeStrId'][0]]
@@ -261,6 +264,10 @@ def build(T, season_id, game_build):
                 params = {'atkRate': se['AddDamageRate'] / 100.0, 'names': names_of(c['NotTargetBuffStrId'])}
             if kind == 'strip':
                 se = se_battle[e['BattleEffectSeStrId'][0]]
+                need(se.get('m_Condition', {}).get('m_ActiveType') == 'NSEAT_SKILL_END' and se.get('m_BuffTargetType') == 'NSETT_AUTO_ENEMY'
+                     and se.get('AutoTargetId') == 21 and se.get('m_BuffStrID') == 'BI_DELETEBUFF_NONEFFECTHIT'
+                     and {k: v for k, v in cond_rows.get(se.get('SkillConditionId'), {}).items() if k != 'Id'} == {'AfterMyAttack': {}},
+                     'strip SE·조건 구조 변경')
                 params = {'count': se['BuffDeleteCount']}
         effects[eid] = dict(id=eid, key=e['BattleEffectStrId'], num=num, name=plain(e.get('BattleEffectName')), desc=desc, kind=kind,
                             params=params, target=e.get('BteamEffectTarget'))

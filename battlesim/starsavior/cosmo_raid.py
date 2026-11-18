@@ -454,7 +454,9 @@ class Controller:
             # EX: ult_cd — NSEAT_SKILL_END, 타격 후 대상 궁극기 쿨 증가 (SE 9402201, AutoTargetId 21)
             if 'ult_cd' in fx:
                 for x in hit:
-                    if not x.dead and '궁극기' in x.cd:
+                    # BI_HYPER_COOL_TURN_UP(2505): EffectHitCheck=false 라 저항 판정만 없고, 비강제(ForceApplyEffect=false)라
+                    # 회피·면역 거부는 받음(NKM:4323·4394·4559 — 압박과 같음, codex 2차 리뷰)
+                    if not x.dead and '궁극기' in x.cd and not b._harm_evaded(x, ctx) and not b._harm_immune(x):
                         x.cd['궁극기'] = x.cd['궁극기'] + fx['ult_cd']['turns']
                         self.stats['ult_cd'] += 1
             # EX: no_shield_chain — NSEAT_SKILL_END cond 32167, 기본기 타격 후 보호막 없는 대상이면 적 전체 연쇄 (SE 9402501)
@@ -463,7 +465,7 @@ class Controller:
                     # AfterMyAttack(NKM:8037 → 15963): 피해 기록 중 하나라도 «처치 안 됨 + 보호막 계열 없음(이번 타격에 깨진 것 포함)»이면 참
                     if not x.dead and self._no_shield(x, fx['no_shield_chain']['names']):
                         for v in b.alive(0):
-                            self._chain_atk(boss, v, fx['no_shield_chain']['atkRate'] / 100.0)
+                            self._chain_atk(boss, v, fx['no_shield_chain']['atkRate'] / 100.0, ctx)
                         self.stats['no_shield_chain'] += 1
                         break
             # EX: strip — NSEAT_SKILL_END cond 2107, 타격 후 대상 강화 1개 해제 저항 무시 (SE 9402801)
@@ -489,15 +491,19 @@ class Controller:
         self.b.add_effect(self.boss, x, dict(kind='buff', target='', name=THORN, chance=1.0, dur=turns, props={}, max=5, times=times,
                                              judge=False, ignore_resist=True, dot=('atk', bm['atkRatePct'] / 100.0)), ctx)
 
-    def _chain_atk(self, owner, v, coef):
-        """공격력 비례 연쇄 피해: mc.Battle.chain 과 같은 식(대상 1명)"""
+    def _chain_atk(self, owner, v, coef, ctx=None):
+        """공격력 비례 연쇄 피해: mc.Battle.chain 과 같은 식(대상 1명). ctx 를 주면 시전자의 이번 스킬 피해 증가(ctx.inc·대상별)도 읽음 —
+        클라는 연쇄 생성 때 현재 NST_RATE_DAMAGE_UP 을 읽음(NKM:4734·6226, mc.chain_skill_damage_up 과 같은 조건)"""
         from .. import rules as R
         b = self.b
         m = owner.mods()
+        inc = m['inc']
+        if ctx is not None and ctx.src is owner and b.mc['chain_skill_damage_up']:
+            inc += ctx.inc + ctx.local_by[v]['inc']
         de = b.def_stat(v)
         dr = de / (de + R.DEF_K)
         dr = max(0.0, dr - dr * min(1.0, m['pen']))
-        dmg = max(1.0, math.floor(b.atk_stat(owner) * coef * (1 + m['inc']) * R.BASE_MULT * (1 - dr) * b.rand(owner.side) * b.pen[owner.side]))
+        dmg = max(1.0, math.floor(b.atk_stat(owner) * coef * (1 + inc) * R.BASE_MULT * (1 - dr) * b.rand(owner.side) * b.pen[owner.side]))
         b.apply_damage(owner, v, dmg, 'chain', shieldable=True)
 
     def _ensure_belgras_eff(self):

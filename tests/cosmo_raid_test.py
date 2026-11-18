@@ -541,6 +541,17 @@ def test_ex_ult_cd():
     assert b2.gb.stats.get('ult_cd', 0) == 0
 
 
+    # 면역 대상은 거부(비강제 효과 — NKM:4394, codex 2차 리뷰). 저항 판정은 없음(EffectHitCheck=false)
+    b3 = battle('티리아', 3, 0)
+    boss3 = boss_of(b3)
+    b3.gb.fx['ult_cd'] = {'turns': 1}
+    before = {id(u): u.cd.get('궁극기', 0) for u in b3.allies}
+    for u in b3.allies:
+        b3.put_eff(u, '면역', {}, dur=5, maxs=1, add=1, src=u, cat='buff', fixed=False)
+    b3.cast(boss3, boss3.d.skills['기본기'])
+    assert b3.gb.stats.get('ult_cd', 0) == 0
+    assert all(u.cd.get('궁극기', 0) <= before[id(u)] for u in b3.allies)
+
 def test_ex_no_shield_amp():
     """SET 24 no_shield_amp: 보스 공격 시 대상 중 하나라도 보호막 계열(조건 31010 NotTargetBuffStrId)이 없으면 이번 스킬 피해 +20
     (OnMyAttack NKM:9590-9606 -> NKM.Templets 42715: 광역도 대상 전원으로 판정). 보호막 판정은 수치가 아니라 버프 이름"""
@@ -585,6 +596,20 @@ def test_ex_no_shield_chain():
     assert run(True, '보호막 아님')[1] == 1
     assert run(False, slot='궁극기')[1] == 0                # 기본기 조건
 
+
+    # 24(이번 스킬 피해 +20)가 함께 걸리면 25의 연쇄도 그 증가를 읽음(NKM:4734·6226, codex 2차 리뷰)
+    def chain_total(with_amp):
+        b = battle('티리아', 3, 0, seed=7)
+        boss = boss_of(b)
+        b.gb.fx['no_shield_chain'] = {'atkRate': 30.0, 'names': names}
+        if with_amp:
+            b.gb.fx['no_shield_amp'] = {'pct': 20, 'names': names}
+        got = []
+        orig = b.apply_damage
+        b.apply_damage = lambda a, v, dmg, kind, shieldable=True, **kw: (got.append(dmg) if kind == 'chain' else None, orig(a, v, dmg, kind, shieldable, **kw))[1]
+        b.cast(boss, boss.d.skills['기본기'])
+        return sum(got)
+    assert chain_total(True) > chain_total(False) * 1.15
 
 def test_ex_strip():
     """SET 28 strip: 타격 후 적 강화 1개 해제 저항 무시 (SE 9402801, cond 2107, BI_DELETEBUFF_NONEFFECTHIT)"""
