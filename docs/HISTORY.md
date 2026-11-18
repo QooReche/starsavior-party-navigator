@@ -1,3 +1,9 @@
+## 2026-11-18 — battle_stat 남은 확인 3건 클라로 닫음 (HANDOFF 29 ②)
+
+- «턴 종료 전투 효과» 추가 피해(공격자 통계 제외, NKM:8171-8174): 이 시점(NSEAT_TURN_END_BATTLE_EFFECT)은 행동 끝 전원 처리(OBF_33847, NKM:13998-14003)에서만 쓰이고, 표에서는 `SE_TEMPLET_BATTLE_EFFECT` 11줄 — PvP 비동기 `COND_BATTLE_EFFECT_PVP_ASYNC_A_LEVEL1~9`(BI_ASYNC_ADD_TRUE_DAMAGE)와 시험용 `TEST1` 2줄뿐. 엔진은 PvP 를 다루지 않으므로 차이 없음.
+- 부활: 통계는 유닛별 목록(OBF_5219, NKM:1669)에 웨이브 번호(OBF_25190)로 한 줄씩 쌓이고 지우는 곳이 없음(OBF_12856, 3016-3031). 부활(Resurrection, 5435-5470)은 같은 유닛 객체를 칸에 다시 세우므로 통계가 이어 쌓임. 엔진 부활도 같은 Unit 을 되살려(`mc.py` 부활 줄, dead=False) dmg_stat·taken_stat 를 그대로 이어감 — 같음.
+- 아군 소환물: 소환 버프(BUFF_TEMPLET `Summon`=true 인 BI_SUMMON)를 쓰는 SE 는 `SE_TEMPLET_SKILL_2` 의 보스·몬스터 45줄뿐이고 `SE_TEMPLET_SKILL_1`(구원자)에는 없음(처음 걸린 BI_MAGICIAN_DRUID_2 는 `Summon`: false 칸이 문자열로 걸린 오탐). 아군 소환 대상 없음.
+
 ## 2026-11-18 — 재점화 풀(SCR_RK) 켬/끔 실측 (HANDOFF 26 ①)
 
 - `tools/bench_screen.py`(실제 화면·Pyodide 작업자 8개, 표준 육성)로 저장소 그대로(`SCR_RK`=40)와 `SCR_RK`=0 사본을 같은 스테이지에서 돌림: 작전 31-36·37-18(재점화 3), 31-36·38-36(재점화 5), 41-36(재점화 3).
