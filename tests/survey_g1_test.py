@@ -157,6 +157,8 @@ class SurveyG1(unittest.TestCase):
         for key, slot, state in [('lydia', '특수기', '수배 전단'), ('wedding-epindel', '궁극기', '보호막')]:
             with self.subTest(key=key):
                 b, a, v = setup(key)
+                # Preserve the old snapshot rule; native marker sets are tested in marker_se_test.
+                b.mc['marker_se_flow'] = 'legacy'
                 lines = [ln for ln in b.lines_of(a) if ln.eff.get('start_filter')]
                 self.assertTrue(lines)
                 state = lines[0].eff['start_filter']

@@ -11,6 +11,7 @@
 
 - **미개방 육성 판정**: 미개방 판정 = myinfo `star_link.unlocked`, 옛 자료는 재불러오기. false면 현재 돌파·실제 개화 기준 최대 레벨을 가정하고 현재 레벨은 낮추지 않음. 4명 조건은 안내만, 가짜 스타링크 등록 없음. true는 기존 경로, unknown은 레벨 가정 없음, fixed200은 안내 숨김. `assume`의 돌파 0 고유 패시브 차단·`overwrite`의 기존 패시브 유지를 보존함.
 - **정본 위치**: 규칙 기본값 = `battlesim/rules/default.json`(value·legacy·grade·source) — 이 문서에 기본값 목록을 옮겨 적지 않음. 빠른 계산 일치율 = `data/quick.json` `calib.acc`. 생성물 도장 = `tools/gen_rules_stamp.json`. 푸시 여부 = `git status`.
+- **구원자 표지 SE**: U1~U7의 숨은 표지 부여·현재 보유 집합 선택·효과·해제를 복원했음. 원형/옛 대체식 선택은 규칙 정본의 `marker_se_flow`, PC 근거·26행 대응·경계·통합 주의는 `docs/marker_se_26752678.md`에 있음. 공통 자동 대상 필터 본문은 변경하지 않았음.
 - **근거 클라**: 기존 공통 규칙은 빌드 26610546(비공개 static-data `decompiled/`·`tables/`, 11/12 재추출), 시즌 1023·바스커빌은 설치본과 DLL 해시를 대조한 빌드 26752678(`docs/baskerville_26752678.md`). **클라 코드와 사람 관찰이 충돌하면 클라 우선**(사용자 확정) — 옛 사용자 관찰 규칙은 legacy 로 남김.
 - **시험**: 전체 검증은 `tools/run_tests.py --rebuild --e2e <venv-pw python> --timeout 3600`. 작업별 결과는 `docs/HISTORY.md`, 환경상 건너뜀은 실행 로그로 확인함.
 - **바스커빌 시나리오**: 블랙박스 실패 3건은 기절 면역 부분 일치·별도 회복 혼입·송곳니 조건 가정 오류였음. 엔진 변경 없이 측정 도우미를 교정했고, 클라 기대·판정 근거는 `docs/baskerville_scenarios_26752678.md`, 회귀·변이는 `tests/baskerville_scenario_test.py`가 정본임.

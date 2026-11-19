@@ -71,6 +71,7 @@ _KEEP.update(revive_toughness='legacy', potential_11026_vampirism='legacy', heal
 _KEEP['last_damager_timing'] = 'per_target'
 _KEEP.update(fixstats_speed_zero='off', superarmor_damage_ban='off')
 _KEEP['self_hp_condition'] = 'ratio'
+_KEEP['marker_se_flow'] = 'legacy'
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

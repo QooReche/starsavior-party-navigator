@@ -28,6 +28,7 @@ from .starsavior.data import SRC
 from .starsavior import foe as _foe
 from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger, explicit_target
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules, after_active_se
+from .starsavior import marker_se
 
 with open(os.path.join(SRC, 'data', 'buff_force.json'), encoding='utf-8') as _f:
     FORCE_BUFF_NAMES = frozenset(json.load(_f))
@@ -1079,7 +1080,7 @@ class Battle:
         if u.side == 1 and not self.enemy_lines:
             return ()
         modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end'))
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow'))
         key = id(u.d)
         sc = self._semantic_cache
         if sc is not None:
@@ -1113,7 +1114,7 @@ class Battle:
         raw = d.lines
         hit = u._kind_index
         modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end'))
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow'))
         if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw) or hit[4] != modes:
             grouped = {}
             for ln in self.lines_of(u):
@@ -2218,6 +2219,8 @@ class Battle:
 
     def resolve(self, owner, text, ctx, kind='buff'):
         """줄의 대상 문구 -> 유닛 목록(owner 기준 상대 진영). 해석 못 하면 None."""
+        if self._cur_line is not None and self._cur_line.eff.get('native_target'):
+            return marker_se.targets(self, owner, self._cur_line, ctx)
         t = text.strip()
         spec = explicit_target(t)
         if spec is not None:
@@ -4410,6 +4413,8 @@ class Battle:
         추가 발동(시전)은 묶음의 나머지 효과(중첩 소비 등) 뒤에 실행한다(같은 사건에서 자기 자신을 다시 부르는 무한 연쇄 방지)."""
         if not lines:
             return
+        if marker_se.run_batch(self, owner, lines, ctx):
+            return
         if getattr(owner.d, 'client_model', None) == 'baskerville':
             # NKM:16103-16116,16374-16405,16526-16528: 같은 사건에서도 SE마다 즉시 재판정.
             for ln in lines:
@@ -4493,6 +4498,8 @@ class Battle:
 
     def _exec_line(self, owner, ln, ctx):
         if owner.dead and line_kind(ln) not in ('death_self',):
+            return
+        if marker_se.apply_hidden(self, owner, ln, ctx):
             return
         eff = ln.eff
         kd = eff['kind']
