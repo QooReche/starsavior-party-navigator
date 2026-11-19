@@ -112,7 +112,9 @@
   // 1단계 -> 2단계로 넘길 상위 n 팀. 그냥 상위 n 개만 자르면 «1위 구원자 X 가 든 팀»만 남아 보스 3명이 모두 X 를 원할 때 겹치지 않는 삼중이 없거나 나빠진다.
   // 그래서 절반(올림)은 순위대로, 나머지는 구원자마다 «그 구원자가 든 가장 좋은 팀»을 돌려 가며 채운다(다양성 확보). n 이상이면 전부.
   function pickDiverse(jobs, res, mode, n) {
-    const all = pickTop(jobs, res, mode);
+    return diverseRows(pickTop(jobs, res, mode), n);
+  }
+  function diverseRows(all, n) {
     if (all.length <= n) return all;
     const head = Math.ceil(n / 2), out = all.slice(0, head).map((e, i) => i), used = new Set(out);
     const queues = new Map();
@@ -131,7 +133,7 @@
 
   // 겹치지 않는 (A,B,C) 삼중 중 합이 큰 순 n 개(분기한정). lists = 보스별 항목 배열(각각 pickTop 처럼 점수 큰 순 정렬), 항목 = {keys, score}
   // 같은 합이면 세 팀 id 문자열이 작은 순. 구원자는 비트 마스크(30비트 단위)로 겹침을 확인한다.
-  function bestTriples(lists, n) {
+  function bestTriples(lists, n, budget) {
     if (lists.length !== BOSSES || lists.some(l => !l.length)) return [];
     const index = new Map();
     lists.forEach(l => l.forEach(e => e.keys.forEach(k => { if (!index.has(k)) index.set(k, index.size); })));
@@ -151,13 +153,16 @@
       if (top.length > n) top.pop();
     }
     const c0 = L[2][0].e.score, b0 = L[1][0].e.score;
-    for (const a of L[0]) {
+    const visit = () => !budget || (budget.remaining-- > 0 || (budget.exhausted = true, false));
+    search: for (const a of L[0]) {
       if (a.e.score + b0 + c0 < floor()) break;
       for (const b of L[1]) {
+        if (!visit()) break search;
         if (a.e.score + b.e.score + c0 < floor()) break;
         if (hit(a.m, b.m)) continue;
         const ab = or(a.m, b.m), base = a.e.score + b.e.score;
         for (const c of L[2]) {
+          if (!visit()) break search;
           if (base + c.e.score < floor()) break;
           if (hit(ab, c.m)) continue;
           put(base + c.e.score, [a, b, c].map(x => ({id: x.id, e: x.e})));
@@ -235,6 +240,40 @@
   }
   // 2단계로 넘길 팀 수: 조합 수가 keep 의 2배 이하면 «상위 자르기+다양성 채우기»가 거의 의미가 없고 분할이 불발하므로 조합 전체를 넘긴다
   const effKeep = (S, L) => L <= 2 * S.rerank.keep ? L : S.rerank.keep;
+  // 단계·계산 상한은 시즌 설정이 정본. 옛 자료에는 재시도 없이 기존 후보만 사용한다.
+  function retryPlan(S, L) {
+    const cfg = S.retry;
+    if (!cfg) return {limits: [effKeep(S, L)], maxChecks: Infinity};
+    const positive = x => Number.isSafeInteger(x) && x > 0;
+    if (!Array.isArray(cfg.keepMultipliers) || cfg.keepMultipliers.length > 3 || cfg.keepMultipliers[0] !== 1 ||
+        cfg.keepMultipliers.some(x => x !== null && !positive(x)) ||
+        ![cfg.maxCandidatesPerBoss, cfg.maxRerankGames, cfg.maxTripleChecks, S.rerank.runs].every(positive))
+      throw Object.assign(new Error("후보 확대 설정이 올바르지 않음"), {gwenCause: "calculation"});
+    const cap = Math.min(L, cfg.maxCandidatesPerBoss, Math.floor(cfg.maxRerankGames / (BOSSES * S.rerank.runs)));
+    if (cap < 1) throw Object.assign(new Error("후보 확대 계산 상한이 너무 작음"), {gwenCause: "calculation"});
+    const base = Math.min(effKeep(S, L), cap), limits = [];
+    for (const m of cfg.keepMultipliers) {
+      const k = m === null ? cap : Math.min(cap, base * m);
+      if (!limits.length || k > limits[limits.length - 1]) limits.push(k);
+    }
+    return {limits, maxChecks: cfg.maxTripleChecks};
+  }
+  // 보스별 상위 20팀의 과반에서 사용하고, 둘 이상 보스에 집중된 구원자 최대 2명.
+  function overlapMessage(lists, roster, limited) {
+    const counts = new Map(), names = new Map(roster.map(r => [r.key, (r.name || r.key) + (r.sub ? `(${r.sub})` : "")]));
+    for (const list of lists) {
+      const top = list.slice(0, 20), local = new Map();
+      for (const e of top) for (const k of e.keys) local.set(k, (local.get(k) || 0) + 1);
+      for (const [k, n] of local) if (n > top.length / 2) {
+        const c = counts.get(k) || {bosses: 0, ratio: 0};
+        c.bosses++; c.ratio += n / top.length; counts.set(k, c);
+      }
+    }
+    const keys = [...counts].filter(([, c]) => c.bosses >= 2)
+      .sort((a, b) => b[1].bosses - a[1].bosses || b[1].ratio - a[1].ratio || a[0].localeCompare(b[0])).slice(0, 2).map(([k]) => names.get(k));
+    const who = keys.join("·"), reason = who ? `여러 보스의 상위 팀이 ${who}에 몰려 있음` : "보스별 후보 팀의 구원자가 서로 겹침";
+    return `겹치지 않는 3팀을 찾지 못했음 · ${reason}${limited ? " · 계산 상한에 도달해 일부 후보·조합은 확인하지 못했음" : " · 후보 확대 후에도 3팀을 나누지 못했음"}. ${who ? who + " 대신 쓸 구원자" : "다른 구원자"}를 더 키우거나 난이도를 낮춰 보세요`;
+  }
   // 순차 반감에서 보스마다 두 번째 판을 돌릴 팀 수(동점 포함 전의 기준 수). 반감을 쓰지 않으면(firstRuns 가 없거나 판 수 이상) 조합 전체.
   // 2단계 후보가 keep 보다 적어지면 «상위 자르기+다양성 채우기»가 불발하므로 최소 passMinMult×keep 팀은 통과시킨다.
   function passCount(S, L, keep) {
@@ -244,7 +283,7 @@
   }
   // 단계별 판 수 계획(시작 전에 알 수 있음). 3단계 팀 수는 삼중이 정해져야 알 수 있어 상한(topTriples×3팀)으로 두고 단계 전환 때 바로잡는다.
   function plan(S, rows, nBrk) {   // nBrk = 브레이크 스킬 후보 수(마지막 단계는 팀마다 «장착 안 함 + 후보» 각각을 돌림)
-    const L = countCombos(S, rows), keep = effKeep(S, L), t4 = BOSSES * S.combine.topTriples * (1 + (nBrk | 0)), pass = passCount(S, L, keep), halved = pass < L, fr = halved ? S.screen.firstRuns | 0 : 0;
+    const L = countCombos(S, rows), keep = retryPlan(S, L).limits[0], t4 = BOSSES * S.combine.topTriples * (1 + (nBrk | 0)), pass = passCount(S, L, keep), halved = pass < L, fr = halved ? S.screen.firstRuns | 0 : 0;
     // 단계: 0 = 1단계 첫 판(전 조합), 1 = 1단계 보충 판(상위 pass 팀 + 경계 동점 + 구원자별 대안이라 실제 팀 수는 달라질 수 있어 단계 전환 때 바로잡음), 2 = 상위 keep 팀 정밀, 3 = 삼중 팀 재시뮬
     const requested = speedValue(S, "surrogate", false), cfg = requested ? S.speed.surrogate : null;
     // 통과 경계가 대리 core 끝에 닿는 작은 풀은 선별 이득이 없어 전수 확인한다.
@@ -343,7 +382,7 @@
   }
   // 시작 전 안내. pl = plan(), prior = priorFrom(...) 또는 null
   function preText(pl, prior) {
-    const g = `조합 ${num(pl.combos)}개 · ${pl.fast ? "선별 예상 " : "총 "}${num(pl.total)}판${pl.fast ? " · 놓침 감지 시 전수 확인으로 늘어남" : pl.fastSkipped ? " · 조합 수가 적어 빠른 탐색을 적용하지 않고 전수 확인" : ""}`;
+    const g = `조합 ${num(pl.combos)}개 · ${pl.fast ? "선별 예상 " : "기본 "}${num(pl.total)}판 · 후보가 겹치면 상한 내에서 확대 재시도하며 예상 시간도 늘어남${pl.fast ? " · 놓침 감지 시 전수 확인으로 늘어남" : pl.fastSkipped ? " · 조합 수가 적어 빠른 탐색을 적용하지 않고 전수 확인" : ""}`;
     if (!prior) return `시작하면 몇 초 뒤 예상 시간이 표시됨 (${g})`;
     const sec = pl.stages.reduce((a, s, i) => a + s.games * prior[i], 0);
     return `이 PC의 지난 실행 속도 기준 예상 ${fmtDur(sec)} (${g})`;
@@ -377,6 +416,7 @@
     try {
     const run = async (jobs, runs, seed, msg, idx, carry = 0) => {
       if (cx.onPhase) cx.onPhase(msg, jobs.length + carry, {stage: idx, teams: jobs.length + carry, runs, games: (jobs.length + carry) * runs});
+      if (carry && cx.onProgress) cx.onProgress(carry, jobs.length + carry);
       if (speedValue(S, "rngStreams", false)) jobs = jobs.map(j => Object.assign({}, j, {options: Object.assign({}, j.options, {rng_streams: true})}));
       const h = GS.runPhase({makeWorker: cx.makeWorker, pool: workersPool, jobs, workers: cx.workers, runs, seed, stage: cx.stage, base: cx.base,
         onProgress: cx.onProgress ? (d, t) => cx.onProgress(d + carry, t + carry) : null, chunk: Math.max(1, Math.min(50, Math.ceil(jobs.length / (cx.workers * 40))))});
@@ -385,16 +425,20 @@
     };
     const stale = () => cx.stale && cx.stale();
     let jobsA = [].concat(...bosses.map(b => bossJobs(S, b, level, list, results, cls))), auditInfo = null;
+    const allJobs = jobsA;
+    let firstResults;
     let resA, jobsK, passed = list.length;      // jobsK = 2단계 후보를 뽑을 작업 목록(반감이면 보충 판을 돌린 팀만), resA = 그 팀들의 결과
     if (!pl.halved) {
       resA = await run(shuffled(jobsA, 20261106), S.screen.runs, 1, `1단계: 보스 3명 × 조합 ${list.length}개를 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`, 0);
       if (stale()) return null;
       jobsK = jobsA;
+      firstResults = resA;
     } else {
       const fr = S.screen.firstRuns, more = S.screen.runs - fr;
       const selection = pl.fast ? bosses.map((b, i) => surrogateSelect(S, jobsA.filter(j => j.boss === b), results, 20261110 + i)) : null;
       const firstJobs = selection ? [].concat(...selection.map(s => s.jobs)) : jobsA;
       const res1 = await run(shuffled(firstJobs, 20261106), fr, 1, `1단계 (1/2): ${selection ? "빠른 탐색·무작위 놓침 확인" : "전체 조합 확인"} · ${num(firstJobs.length)}팀을 ${fr}판씩 훑는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`, 0);
+      firstResults = res1;
       if (stale()) return null;
       if (selection) {
         auditInfo = selection.map((s, i) => Object.assign({boss: bosses[i]}, surrogateAudit(S, s, res1, mode, pl.pass)));
@@ -421,13 +465,38 @@
         else if (a && a.cosmo) resA[j.key] = a;
       }
     }
-    const keep = bosses.map(b => pickDiverse(jobsK.filter(j => j.boss === b), resA, mode, pl.keep));
-    const jobsB = [].concat(...keep.map((k, i) => bossJobs(S, bosses[i], level, k.map(e => e.keys), results, cls)));
-    const resB = await run(shuffled(jobsB, 20261107), S.rerank.runs, 3, `2단계: 보스별 상위 ${pl.keep}팀을 더 정확히 확인 중`, 2);
-    if (stale()) return null;
-    const lists = bosses.map(b => pickTop(jobsB.filter(j => j.boss === b), resB, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
-    let triples = bestTriples(lists, S.combine.topTriples);
-    if (!triples.length) throw Object.assign(new Error("겹치지 않는 3팀을 찾지 못했음(후보가 서로 겹침). 내 정보에 육성된 구원자 추가 필요"),{gwenCause:"empty"});
+    const retry = retryPlan(S, list.length), budget = {remaining: retry.maxChecks, exhausted: false};
+    const jobsB = [], resB = {}, evaluated = new Set(), attempts = [];
+    const screening = Object.assign({}, firstResults, resA);
+    let triples = [], lists = [], kept = pl.keep;
+    for (const [attempt, limit] of retry.limits.entries()) {
+      const extra = [];
+      bosses.forEach(b => {
+        const source = (attempt ? allJobs : jobsK).filter(j => j.boss === b);
+        const ranked = pickTop(source, attempt ? screening : resA, mode);
+        // 빠른 선별에서 한 번도 계산하지 않은 후보도 복귀한다. 정밀 계산은 여기서 한 번만 한다.
+        const rankedIds = new Set(ranked.map(e => idOf(e.keys)));
+        if (attempt) for (const j of source) if (!rankedIds.has(idOf(j.keys))) ranked.push(j);
+        const selected = diverseRows(ranked, limit), have = jobsB.filter(j => j.boss === b).length;
+        const fresh = selected.filter(e => !evaluated.has(jobKey(b, e.keys, level))).slice(0, Math.max(0, limit - have));
+        extra.push(...bossJobs(S, b, level, fresh.map(e => e.keys), results, cls));
+      });
+      if (!extra.length) continue;
+      const carry = jobsB.length;
+      const msg = attempt ? `후보 확대 ${attempt}/${retry.limits.length - 1}: 겹침 없는 3팀을 위해 보스별 최대 ${num(limit)}팀 확인 중(기존 결과 재사용)` : `2단계: 보스별 상위 ${limit}팀을 더 정확히 확인 중`;
+      Object.assign(resB, await run(shuffled(extra, 20261107), S.rerank.runs, 3, msg, 2, carry));
+      if (stale()) return null;
+      if (extra.some(j => !resB[j.key] || !resB[j.key].cosmo))
+        throw Object.assign(new Error("정밀 계산 결과가 누락됨. 다시 시도 필요"), {gwenCause: "calculation"});
+      extra.forEach(j => evaluated.add(j.key)); jobsB.push(...extra);
+      lists = bosses.map(b => pickTop(jobsB.filter(j => j.boss === b), resB, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
+      kept = Math.max(...lists.map(l => l.length));
+      triples = bestTriples(lists, S.combine.topTriples, budget);
+      if (budget.remaining <= 0) budget.exhausted = true;
+      attempts.push({limit, added: extra.length, teams: jobsB.length, triples: triples.length});
+      if (triples.length || budget.exhausted) break;
+    }
+    if (!triples.length) throw Object.assign(new Error(overlapMessage(lists, roster, budget.exhausted || kept < list.length)), {gwenCause: "empty", attempts});
     // 난이도 자동: 보스마다 난이도를 따로 고를 수 있으므로(게임이 허용), 뽑은 삼중의 모든 팀을 난이도 0~최대에서 짧게 돌려 팀별로 점수가 가장 큰 난이도를 정하고
     // 그 합이 큰 순으로 삼중을 다시 매긴다. 이 뒤 단계는 시간 안내(ETA) 단계에 없어 stage=null 로 알린다(화면은 안내를 끈다)
     let probe = null, levelOf = () => level;
@@ -456,7 +525,7 @@
     const resC = await run(jobsC, S.final.runs, 2, `${auto ? "마지막 확인" : "3단계"}: 합이 큰 ${triples.length}개 편성의 팀 ${seen.size}개${brks.length > 1 ? "를 브레이크 스킬 " + (brks.length - 1) + "종과 함께" : ""} ${S.final.runs}판씩 확인 중`, auto ? null : 3);
     if (stale()) return null;
     const rows2 = finalRankBrk(triples, bosses, levelOf, brks, resC, mode, S.combine.show);
-    return {rows: rows2, growthOwned: jobsB.map(j=>({...j,result:resB[j.key]})), pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: pl.keep, triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
+    return {rows: rows2, growthOwned: jobsB.map(j=>({...j,result:resB[j.key]})), pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: kept, attempts, combineLimited: budget.exhausted, triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
       halved: pl.halved, firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed,
       ...(speedValue(S, "surrogate", false) ? {fast: true, audit: auditInfo || [], ...(pl.fastSkipped ? {fastSkipped: true} : {})} : {})};
     } finally { if (workersPool) workersPool.close(); }
@@ -498,9 +567,9 @@
       const rows = st.rows || [];
       const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐음(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
       const first = rows.length ? `${cx.report?.(st.rows)||""}<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : `${error('empty')}<div class="mut">결과 없음</div>`;
-      const rest = rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx, i+1)}</details>`).join("");
+      const rest = (st.combineLimited ? '<div class="gd-warn" data-k="cs-limit">조합 검사 상한에 도달했음. 이번 결과는 확인한 조합 중에서 골랐으며, 더 높은 점수의 조합이 남아 있을 수 있음.</div>' : '') + rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx, i+1)}</details>`).join("");
       const scr = st.halved ? `${st.fast && !st.fastSkipped ? "대리 선별·무작위 확인" + (st.audit.some(a => a.fallback) ? "·놓침 보스 전수 복귀" : "") + " 뒤" : "보스마다 조합 " + num(st.combos) + "개를"} ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
-      body = `${old}${stale}${first}${rest}${btn("다시 찾기")}${opt}<details class="season-options" data-fold="cs-result-basis"><summary>탐색 결과 상세</summary>${lvInfo}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값임(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순임. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있음.</div></details>`;
+      body = `${old}${stale}${first}${rest}${btn("다시 찾기")}${opt}<details class="season-options" data-fold="cs-result-basis"><summary>탐색 결과 상세</summary>${lvInfo}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값임(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순임. 확인한 후보 조합 중에서 골랐으므로 전체 조합의 수학적 최적은 아닐 수 있음.</div></details>`;
     } else body = `${btn("보스 3마리 편성 찾기")}<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>${opt}`;
     return `<div class="gd-search" data-k="cs-search" data-state="${st.phase}">${head}${body}<details class="season-options" data-fold="cs-basis"><summary>계산 기준·예상 시간 ⓘ</summary><span class="gd-est">추정</span>${pre}${warn}</details></div>`;
   }

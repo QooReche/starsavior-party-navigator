@@ -1771,6 +1771,60 @@ def test_cosmo_search(browser, ctx):
         pre0_ok, pre0[:1], eta_run_ok, eta_run[:1], keep_btn, speed_ok, (old0, old1, old2))
 
 
+def test_cosmo_retry(browser, ctx):
+    """집중된 합성 점수 → 확대 성공 → 실제 직접 편성 버튼, 전 후보 겹침 → 이름·그웬 안내."""
+    page = open_page(browser, ctx, raid_ui=True)
+    page.select_option('#content', page.evaluate("String(contents.findIndex(c=>c.key==='cosmo'))"))
+    settle(page)
+    page.evaluate("""() => {
+      const S=D.cosmoRaid.search;
+      S.maxPool=13;S.minRole={};S.minPowerRatio=0;S.minFront=0;S.minDealer=0;
+      S.screen={runs:1};S.rerank={keep:1,runs:2};S.combine={topTriples:2,show:2};S.final.runs=2;
+      S.retry={keepMultipliers:[1,3,null],maxCandidatesPerBoss:100,maxRerankGames:600,maxTripleChecks:10000};
+      const keys=CosmoSearch.poolAll(S,csProfile().results,R.filter(s=>!EXCL.has(s.key))).map(r=>r.key);
+      window.retryTeams=[[0,1,2,3],[0,4,5,6],[0,7,8,9],[0,10,11,12],[4,5,6,7],[8,9,10,11]].map(t=>t.map(i=>keys[i]));
+      window.retryName=BYKEY[keys[0]].name;window.retryHot=false;window.retryPosts=[];
+      GuildSearch.combos=()=>retryHot?retryTeams.slice(0,4):retryTeams;
+      window.Worker=class {
+        terminate(){this.dead=true}
+        postMessage(m){retryPosts.push(m);setTimeout(()=>{
+          if(this.dead)return;
+          for(const t of m.teams){const ks=t.party.units.map(u=>u.key),i=retryTeams.findIndex(t=>CosmoSearch.idOf(t)===CosmoSearch.idOf(ks));
+            const v=100+(ks.includes(keys[0])?10000:0)+6-i;
+            this.onmessage({data:{id:m.id,type:'team',key:t.key,result:{n:m.n_runs,clear:.5,prog:.5,progs:null,via:{},
+              cosmo:{mean:v,top:v,frac:.5,clear:.5,n:m.n_runs}}}});
+          }
+          this.onmessage({data:{id:m.id,type:'done'}});
+        },200)}
+      };
+    }""")
+    open_fold(page, 'cs-options')
+    page.select_option('#cosmo-search [data-cs=level]', '3')
+    page.click('#cosmo-search [data-cs=start]')
+    page.wait_for_function("CSR.phase==='run' && CSR.msg.startsWith('후보 확대')")
+    assert '후보 확대' in page.locator('#cosmo-search [data-k=cs-prog]').inner_text()
+    assert page.locator('#cosmo-search [data-k=cs-eta]').inner_text()
+    page.wait_for_function("CSR.phase==='done' || CSR.phase==='err'")
+    assert page.evaluate("CSR.phase==='done' && CSR.attempts.length===3 && CSR.attempts[0].triples===0"), page.evaluate('CSR.msg')
+    assert page.evaluate("new Set(CSR.rows[0].teams.flatMap(t=>t.keys)).size===12 && CSR.rows[0].sum>0")
+    assert page.evaluate("(() => {const ks=retryPosts.filter(m=>m.seed===3).flatMap(m=>m.teams.map(t=>t.key));return ks.length===18 && new Set(ks).size===18})()")
+    page.evaluate('window.retryResult=CSR.rows[0]')
+    page.locator('#cosmo-search [data-k=cs-best] [data-cs=edit]').click()
+    assert page.locator('#cosmo-direct-panel').is_visible()
+    assert page.evaluate('JSON.stringify(CDIRECT.state)===JSON.stringify(CosmoDirect.fromSearch(retryResult,cdSeason()))')
+    assert page.evaluate('JSON.stringify(LS.get(CosmoDirect.STORAGE_KEY))===JSON.stringify(CosmoDirect.storage(CDIRECT.state))')
+    page.evaluate("retryHot=true;directNavigate('reco');renderCosmoSearch()")
+    page.click('#cosmo-search [data-cs=start]')
+    page.wait_for_function("CSR.phase==='err'")
+    message = page.locator('#cosmo-search [data-k=cs-err]').inner_text()
+    assert page.evaluate('retryName') in message and '대신 쓸 구원자' in message and '난이도를 낮춰' in message
+    assert page.evaluate("CSR.errorCause==='empty'")
+    assert page.locator('#cosmo-search [data-k=cs-err] img').count() > 0
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '확대 2회·12명 중복 없음·18 job 재사용·진행/ETA·직접 편성 저장·실패 이름/그웬'
+
+
 def test_cosmo_auto_level(browser, ctx):
     """코스모 난이도 «자동»(기본값) 실제 화면 경로: 기본 선택이 자동이고, 끝까지 돌아 오류 없이 «점수가 가장 높은 난이도»가 표시됨.
     (2026-11-08: 화면이 levelMax 를 안 넘겨 35분 계산 뒤 오류가 난 사고 — 시험이 화면 호출을 안 거쳐 놓쳤음)"""
@@ -1778,7 +1832,7 @@ def test_cosmo_auto_level(browser, ctx):
     page = open_page(browser, ctx, raid_ui=True)
     page.select_option("#content", label=next(l for l in page.eval_on_selector_all("#content option", "o => o.map(x => x.textContent)") if l.startswith("코스모 게이트(시즌")))
     settle(page)
-    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;S.auto.probeRuns=1;try{localStorage.removeItem('pn.cosmo.speed.v2')}catch(e){}}""")
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;S.auto.probeRuns=1;try{localStorage.removeItem('pn.cosmo.speed.v2')}catch(e){}}""")
     default_auto = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value") == "-1"
     page.click('#cosmo-search button[data-cs="start"]')
     page.wait_for_selector('#cosmo-search [data-k="cs-table"], #cosmo-search [data-k="cs-err"]', timeout=300000)
@@ -2516,6 +2570,7 @@ TESTS.append(test_stage_search)
 TESTS.append(test_equip_goal_option)
 TESTS.append(test_guild_defense)
 TESTS.append(test_cosmo_search)
+TESTS.append(test_cosmo_retry)
 
 
 def test_patch1112_cards(browser, ctx):

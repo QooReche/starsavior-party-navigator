@@ -20,6 +20,8 @@
 
 ### 직접 편성
 
+- 코스모 자동 검색은 정밀 후보에서 비중복 삼중을 못 찾으면 `search.retry.keepMultipliers` 순서로 확대함(null은 전체 후보, 상한 적용). `maxCandidatesPerBoss`와 `maxRerankGames`는 기존 정밀 계산을 포함한 누계이며, `maxTripleChecks`는 모든 재시도의 삼중 검사 누계임. 예선에서 탈락한 후보는 첫 판 결과를 재사용하고, 빠른 선별 미계산 후보도 복귀 대상으로 두어 새 정밀 job만 요청함. ETA는 같은 정밀 단계의 완료 수·전체 판 수를 누적함. 보스별 상위 20팀 과반에서 쓰이고 둘 이상 보스에 반복되는 구원자 최대 2명을 실패 안내에 표시함. `tests/cosmo_retry_test.js`, `tools/check_cosmo_retry_mutations.py`, 종합 페이지의 `test_cosmo_retry`가 회귀 기준임.
+
 - 코스모 게이트는 `cosmo_direct.js`(순수 상태)·`cosmo_direct_ui.js`(보스 카드·편집 패널)·`cosmo_direct_page.js`(페이지/작업자 연결)를 사용함. 컨테이너 `#cosmo-direct-panel`, LS `direct.cosmo.v1`, 공유 `cd`, 소유자 `cdirect`를 기존 1팀과 분리했음. 슬롯은 엔진 순서이며 팀별 리더는 `party.leader`, 육성은 최종 능력치로 직렬화함. 자동 브레이크는 기존 `pickBreak`를 사용함. 팀별 서명에는 시즌·보스·난이도·브레이크·최종 파티·계정·버전·seed·판수를 포함하며 현재 서명의 3팀 결과가 모두 있을 때만 합계를 표시함. 탭 전환은 실행을 유지하고 편집·계정 변경은 코스모 소유 작업만 취소함. 팀별 되돌리기는 다른 팀으로 옮겨 간 구원자를 빼앗지 않음. 공유 초안은 편집 후에도 로컬 저장을 덮어쓰지 않음. 자동 결과는 `CosmoDirectUI.summaryHtml`을 공유하고 실제 선택 행을 `fromSearch`로 가져옴. 공사모 자산·`GWEN_SCENES.construction`은 유지함. 진입 검사는 기존 construction 이름의 시험, 통합 검사는 `tests/cosmo_direct_page_test.js`·`tests/e2e/test_cosmo_direct.py`임.
 
 - `direct_party.js`: 순수 초안·검증·배치 변환·사용자 배치 직렬화·전투력·서명·저장/공유 허용 목록. `direct_ui.js`는 편집, `direct_run.js`는 실행 스냅샷·행별 캐시·비교 표시를 맡음. 둘 다 물리 작업자를 만들지 않음.
