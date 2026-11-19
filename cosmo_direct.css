@@ -1,0 +1,140 @@
+/* 코스모 게이트 직접 편성(3파티) — cosmo_direct_ui.js 가 그리는 부품의 모양.
+   색·폰트는 사이트 변수(--card --line --mut --acc --gold --warn --ink --fg …)만 씀. 칸·후보 같은 공용 모양은 direct.css·ux.css 의 class 를 그대로 쓰고,
+   그 파일들이 id 로만 걸어 둔 규칙(#direct-panel·#direct-board·#direct-board-lane·#direct-picker-*·#direct-result-summary)은
+   기존 직접 편성과 id 가 겹치지 않게 여기서 cd- class 로 다시 적음. */
+.cd-panel{padding:18px}
+/* 단계 안내 한 줄 */
+.cd-root .direct-heading{display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px}
+.cd-root .direct-heading h2{margin:0}
+.cg-steps{list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin:0;padding:0;font-size:13px;color:var(--mut)}
+.cg-steps li{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.cg-steps li+li::before{content:'→';color:var(--mut);font-weight:normal}
+.cg-steps li>span{padding:2px 8px;border:1px solid transparent;border-radius:999px}
+.cg-steps li[aria-current=step]>span{color:var(--acc);font-weight:bold;border-color:var(--acc)}
+.cg-steps li.done>span{color:var(--fg)}
+.cg-steps .s{display:none}
+/* 보스 카드(탭) + 합계 상자 */
+.cg-top{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;align-items:stretch;margin:0 0 16px}
+.cg-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}
+.cg-tab{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"face head" "face count" "face score";gap:1px 12px;align-items:center;text-align:left;min-width:0;padding:10px 12px!important;border:1px solid var(--line)!important;border-radius:12px;background:var(--ink)!important;color:var(--fg)!important;position:relative}
+.cg-tab[aria-selected=true]{border-color:var(--acc)!important;box-shadow:0 0 0 2px var(--acc) inset}
+.cg-tab[aria-selected=true]::after{content:'';position:absolute;left:50%;bottom:-9px;width:14px;height:14px;transform:translateX(-50%) rotate(45deg);background:var(--ink);border-right:3px solid var(--acc);border-bottom:3px solid var(--acc);box-sizing:border-box}
+.cg-tab:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.cg-face{grid-area:face;position:relative;width:56px;height:56px;flex:none}
+.cg-face img.lead{width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--gold);box-sizing:border-box;display:block}
+.cg-face .vacant{width:100%;height:100%;border-radius:50%;border:2px dashed var(--mut);box-sizing:border-box;display:grid;place-items:center;color:var(--mut);font-size:22px}
+.cg-face svg{position:absolute;left:-4px;top:-6px;width:20px;height:16px}
+.cg-head{grid-area:head;display:flex;align-items:center;gap:6px;min-width:0}
+.cg-head img{width:20px;height:20px;flex:none}
+.cg-head b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.cg-name-short{display:none}
+.cg-count{grid-area:count;font-size:12px;color:var(--mut);white-space:nowrap}
+.cg-count .need{color:var(--warn);font-weight:bold}
+.cg-score{grid-area:score;display:flex;align-items:baseline;flex-wrap:wrap;gap:0 8px;min-width:0}
+.cg-score b{font-size:18px;white-space:nowrap}.cg-score small{font-size:12px;color:var(--mut);white-space:nowrap}
+.cg-score.none b{font-size:13px;color:var(--mut);font-weight:normal;white-space:normal}
+.cg-total{border:1px solid var(--line);border-radius:12px;background:var(--ink);padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:0}
+.cg-total-line{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--mut)}
+.cg-total-num{font-size:22px;line-height:28px;letter-spacing:-.5px;color:var(--fg)}
+.cg-total-num.pending{font-size:17px;color:var(--warn)}
+.cg-level-all{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px}
+.cg-level-all label{white-space:nowrap}
+.cg-level-all select{min-width:0;flex:1 1 84px}.cg-level-all button{white-space:nowrap;flex:none}
+/* 왼쪽 칸: 브레이크·난이도 → 확인 단추 → 이유 → 선택 팀 결과. 넓은 화면에서는 스크롤을 따라옴 */
+.cg-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0}
+.cg-actions button{min-height:44px;padding:6px 4px}
+.cg-actions button[aria-disabled=true],.cg-actions button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.cg-reason{font-size:12px;color:var(--warn);margin:8px 0 0}
+.cg-result{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.cg-result-title{font-size:12px;color:var(--mut);margin:0 0 4px}
+.cg-gwen-slot{display:grid;place-items:end center}
+.cg-gwen-slot img{width:120px;height:120px;object-fit:contain;display:block}
+.cd-root .result-summary{align-self:start;padding:10px}
+.cd-result-summary{gap:4px;margin:0;min-width:0}
+.cd-result-summary .verdict-number{font-size:25px}
+.cd-result-summary .verdict-number small{font-size:12px}
+.cd-result-summary .verdict-stats{gap:4px 12px}
+.cd-result-summary .verdict-stats b{font-size:14px}
+.cd-result-summary .verdict-stats small{font-size:11px}
+@media(min-width:761px){
+ .cd-root .result-layout{display:grid;grid-template-columns:268px minmax(0,1fr);gap:16px;align-items:start}
+ .cd-root .result-team{grid-column:2;grid-row:1}
+ .cd-root .result-summary{grid-column:1;grid-row:1;position:sticky;top:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--ink);align-self:start}
+ .cd-root .direct-result-hero{grid-template-columns:minmax(0,1fr)}
+ .cd-root .cd-result-summary .verdict-stats{gap:4px 20px}
+ .cg-gwen-slot{margin-top:4px}
+ .cg-actions button{white-space:nowrap;font-size:14px}
+ .cg-controls label>span{white-space:nowrap}
+}
+@media(min-width:1200px){.cd-root .result-layout{grid-template-columns:296px minmax(0,1fr);gap:20px}}
+/* 그웬 거리 레인 자리(안은 메인이 채움) */
+.cd-lane{height:122px;padding-top:34px;box-sizing:border-box;border-radius:12px;background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat}
+@media(min-width:1200px){.cd-lane{height:162px}.cd-lane .gwen-lane-actor,.cd-lane .gwen-lane-poke{width:120px;height:120px}}
+/* 보드 */
+.cd-board{display:grid;grid-template-columns:repeat(4,minmax(0,180px));justify-content:center;gap:8px}
+.cd-board .direct-slot-tools [data-cd-act=remove]{bottom:33px}
+.cd-board .direct-member:not(.direct-vacant){cursor:pointer}
+.cg-board-head{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;margin:12px 0 8px}
+.cg-board-title{display:flex;align-items:center;gap:8px;margin:0;font-size:15px}
+.cg-board-title img{width:22px;height:22px}
+.cg-board-head .direct-drag-help{margin:0 0 0 auto;display:flex;align-items:center;gap:4px}
+.cg-help-text{flex-basis:100%;margin:0;font-size:12px;color:var(--fg);text-align:right}
+.cd-selection{margin-top:10px;font-size:12px}.cd-selection:empty{display:none}
+.cd-selection>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:4px}
+.cd-selection button{min-height:44px;padding:5px;font-size:12px}
+.cg-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin:0 0 12px}
+.cg-controls label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut);margin:0;min-width:0}
+.cg-controls label i{font-style:normal}
+.cg-controls select{width:100%;min-width:0}
+.cg-tools{display:flex;justify-content:center;gap:6px;margin:12px 0 0}
+.cg-tools button{white-space:nowrap;min-height:40px}
+.cg-tools button:disabled{opacity:.45;cursor:default}
+.cg-tools .s{display:none}
+/* 구원자 고르기. 다른 팀에서 쓰는 구원자: 흐리게 + 이유 라벨. 누르면 그 팀 탭으로 가므로 disabled 대신 aria-disabled */
+.cd-picker-open{display:none}
+.cd-picker{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.cd-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(156px,1fr));gap:6px;max-height:440px;overflow:auto;padding:3px;margin-top:10px}
+.direct-candidate.cg-used{border-style:dashed;border-color:var(--line);color:var(--mut)}
+.direct-candidate.cg-used img{opacity:.4;filter:grayscale(.6)}
+.direct-candidate.cg-used>span{opacity:.8}
+.direct-candidate.cg-used small{color:var(--warn);font-size:10px}
+.direct-candidate.cg-in small{color:var(--acc)}
+.cd-list .direct-candidate small{white-space:nowrap}
+.cd-list .direct-candidate[aria-disabled=true]{cursor:pointer}
+.cd-list .direct-candidate.direct-unowned{cursor:not-allowed}
+.cg-pick-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.cg-pick-head b{white-space:nowrap}.cg-pick-head input[type=search]{flex:1 1 200px;width:auto;margin:0}
+.cg-pick-head label{white-space:nowrap;font-size:13px}
+@media(max-width:1200px){.cg-top{grid-template-columns:1fr}.cg-total{flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap}}
+@media(max-width:760px){
+ .cd-panel{padding:10px}
+ /* 좁은 화면: 가로 스크롤 없이 3칸 압축(이름 줄임, 세로 배치) */
+ .cg-steps{font-size:11px;gap:2px 2px}.cg-steps li{gap:2px}.cg-steps li>span{padding:1px 4px}
+ .cg-steps .f{display:none}.cg-steps .s{display:inline}
+ .cg-top{margin-bottom:14px;gap:8px}
+ .cg-tabs{gap:4px}
+ .cg-tab{grid-template-columns:minmax(0,1fr);grid-template-areas:"head" "face" "count" "score";justify-items:center;text-align:center;padding:8px 4px!important;gap:3px;align-content:start}
+ .cg-name-full{display:none}.cg-name-short{display:inline}
+ .cg-head{justify-content:center;max-width:100%;gap:4px}.cg-head b{font-size:13px}.cg-head img{width:16px;height:16px}
+ .cg-face{width:44px;height:44px}
+ .cg-count{font-size:11px}.cg-count .lbl{display:none}
+ .cg-score{flex-direction:column;align-items:center;gap:0;width:100%}
+ .cg-score b{font-size:13px}.cg-score small{font-size:10px}.cg-score.none b{font-size:11px}
+ .cg-total{padding:8px 10px;flex-direction:column;align-items:stretch;gap:6px}.cg-total-num{font-size:19px}.cg-total-num.pending{font-size:16px}
+ .cg-board-head .direct-drag-help{margin-left:0}.cg-help-text{text-align:left}
+ .cd-lane{height:106px}
+ .cd-board{gap:4px}
+ .cd-board .direct-slot-tools [data-cd-act=remove]{left:2px;right:auto;bottom:2px}
+ /* 단추 3개는 균등 3칸 한 줄 */
+ .cg-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:8px 0 0}
+ .cg-tools button{padding:6px 2px;min-height:44px;font-size:13px}
+ .cg-tools .f{display:none}.cg-tools .s{display:inline}
+ /* 목록은 «＋ 구원자 고르기» 를 눌러야 펼쳐짐 */
+ .cd-picker-open{display:inline-block;width:100%;min-height:44px;margin-top:8px}
+ .cd-picker{display:none;margin-top:12px;padding-top:12px}
+ .cd-picker[data-open=true]{display:block}
+ /* 순서: 보드 → 구원자 고르기 → 브레이크·난이도 → 확인 단추 → 선택 팀 결과 */
+ .cd-root .result-summary{margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--line)}
+ .cd-root .direct-result-hero{grid-template-columns:minmax(0,1fr) 120px;align-items:end}
+ .cg-gwen-slot img{width:88px;height:88px}
+}
