@@ -118,7 +118,77 @@ def test_ex_few_buff_guard():
     assert abs(d0 / d_off - 0.7) < 0.02, (d0, d_off)  # 받는 피해 -30%
 
 
-TESTS = [test_season_1023_shape, test_baskerville_calculated, test_mogulus_disparity_simulate, test_api_default_boss_is_season_first,
+PARTY_SUN = ['ceres-sun-supporter', 'wedding-epindel', 'bunny-charlotte', 'cristelle']
+
+
+def _battle_with(boss, party, level):
+    waves, meta = C.build_waves(boss, 3, level)
+    defs, _ = _norm_party({'units': party}, DB, 'fixed', 'standard')
+    b = Battle(defs, waves, random.Random(1), mc=dict(MC_OPTS, cosmo_raid_boss='on'), leader=0,
+               turn_limit=meta['turn_limit'], battle_mode='boss_kill')
+    b.spawn_wave()
+    return b
+
+
+def test_season_buffs_1023():
+    # 전투 보너스: 시즌 1023 세 보스 각각, 속성/직업 조건이 맞는 아군에게만 붙고 보스에는 안 붙음
+    hits = 0
+    for bd in G['bosses']:
+        assert len(bd['seasonBuffs']) == 2, bd['key']
+        for party in (PARTY, PARTY_SUN):
+            for level in (0, 18):
+                b = _battle_with(bd['name'], party, level)
+                for sb in bd['seasonBuffs']:
+                    kind, val = next(iter(sb['filter'].items()))
+                    tag = '%s %d' % (C.SEASON, sb['id'])
+                    for u in b.allies:
+                        want = (u.element if kind == 'element' else u.role) == val
+                        assert (u.stack(tag) > 0) == want, (bd['key'], sb['id'], u.name, level)
+                        hits += want
+                    assert b.gb.boss.stack(tag) == 0, (bd['key'], sb['id'])
+    assert hits > 0, '시험 파티에 전투 보너스 대상이 하나도 없음'
+
+
+def test_challenge_levels_1023():
+    # 도전 효과: 단계별 목록이 보스에 그대로 붙음(시공=속도, 불굴=강인도 최대치, 그 밖 = 전투 효과 목록)
+    eff = {e['id']: e for e in G['effects']}
+    stat_kinds = {'speed', 'armor'}
+    for bd in G['bosses']:
+        base = _battle_with(bd['name'], PARTY, 0).gb.boss
+        for row in bd['levels']:
+            b = _battle_with(bd['name'], PARTY, row['level'])
+            boss = b.gb.boss
+            kinds = [eff[i]['kind'] for i in row['effects']]
+            assert set(b.gb.fx) == {k for k in kinds if k not in stat_kinds} - {'tough'}, (bd['key'], row['level'], b.gb.fx)
+            assert boss.mods()['spdp'] == (0.3 if 'speed' in kinds else 0), (bd['key'], row['level'])
+            add = sum(eff[i]['params'].get('add', 0) for i in row['effects'] if eff[i]['kind'] == 'armor')
+            assert boss.sa_max == base.sa_max + add, (bd['key'], row['level'], boss.sa_max, base.sa_max)
+
+
+def test_data_matches_tables_1023():
+    # COSMO_TABLES(PC 클라 표 추출 폴더)가 있으면 시즌 1023 을 표에서 다시 뽑아 data/cosmo_raid.json 과 대조(날짜·출처는 공지 값이라 제외)
+    import json
+    import subprocess
+    import tempfile
+    tables = os.environ.get('COSMO_TABLES')
+    if not tables or not os.path.isdir(tables):
+        from tools.runtime import skip_note
+        skip_note('cosmo_s23_test.test_data_matches_tables_1023: COSMO_TABLES 없음')
+        return
+    out = os.path.join(tempfile.mkdtemp(), 'c.json')
+    p = subprocess.run([sys.executable, '-X', 'utf8', '-I', os.path.join(ROOT, 'tools', 'build_cosmo_raid.py'), '--tables', tables,
+                        '--season', '1023', '--build', str(G['gameBuild']), '--out', out], capture_output=True, text=True, encoding='utf-8')
+    assert p.returncode == 0, p.stdout + p.stderr
+    new = json.load(open(out, encoding='utf-8'))
+    cur = json.loads(json.dumps(G))
+    for d in (new, cur):
+        for k in ('start', 'end', 'settleEnd', 'src'):
+            d['season'].pop(k, None)
+    assert new == cur, '시즌 1023 을 클라 표에서 다시 뽑은 값이 data/cosmo_raid.json 과 다름'
+
+
+TESTS = [test_season_buffs_1023, test_challenge_levels_1023, test_data_matches_tables_1023,
+         test_season_1023_shape, test_baskerville_calculated, test_mogulus_disparity_simulate, test_api_default_boss_is_season_first,
          test_ex_few_buff_guard]
 
 if __name__ == '__main__':
