@@ -87,6 +87,17 @@ def flow(browser,base,width):
     assert '2/3' in panel.locator('[data-cd-total]').inner_text()
     panel.locator('[data-cd-act=undo]').click()
     assert panel.locator('[data-cd-total]').inner_text()=='33,000'
+    # Finishing while the «내 구원자» tab hides the editor must not leave it blank on return.
+    panel.locator('#cd-level').select_option('6')
+    panel.locator('#cd-run-one').click()
+    p.wait_for_function('!!CDIRECT.active')
+    p.locator('#tab-info').click()
+    assert panel.is_hidden()
+    p.wait_for_function('!CDIRECT.active')
+    p.locator('#tab-reco').click()
+    assert panel.is_visible()
+    assert panel.locator('[role=tab]').count()==3 and panel.locator('#cd-run-one').count()==1,panel.inner_html()[:200]
+    assert panel.locator('[data-cd-total]').inner_text()=='33,000'
     # Actual automatic-result button, exact engine positions/breaks/levels on import.
     p.evaluate("""() => {
       const teams=Object.entries(CDIRECT.state.teams).map(([boss,t],i)=>({boss,order:t.draft.slots.map(s=>s.key).reverse(),level:i+7,

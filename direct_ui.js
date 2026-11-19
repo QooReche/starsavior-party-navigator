@@ -78,7 +78,10 @@ function directVisibility(){
   if(!DIRECT.draft)return;
   const info=!$('mi-panel').hidden,cosmo=contents[$('content').value]?.key==='cosmo';
   $('start-screen').hidden=info||DIRECT.mode!=='home';$('direct-panel').hidden=info||DIRECT.mode!=='direct'||cosmo;
-  $('cosmo-direct-panel').hidden=info||DIRECT.mode!=='direct'||!cosmo;
+  const cdPanel=$('cosmo-direct-panel'),cdWasHidden=cdPanel.hidden;
+  cdPanel.hidden=info||DIRECT.mode!=='direct'||!cosmo;
+  // A hidden editor is emptied by late callbacks (cdPaint); repaint it when it becomes visible again.
+  if(cdWasHidden&&!cdPanel.hidden&&typeof cdPaint==='function')cdPaint();
   if(cosmo&&$('direct-picker-dialog').open)$('direct-picker-dialog').close();
   $('mode-strip').hidden=info||DIRECT.mode==='home';$('out').hidden=info||DIRECT.mode!=='reco';
   document.body.dataset.partyMode=DIRECT.mode;
