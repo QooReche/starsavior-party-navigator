@@ -20,6 +20,8 @@
 
 ### 직접 편성
 
+- 코스모 게이트의 3파티 직접 편성은 다음 패치 범위임. `direct_ui.js`는 코스모에서만 모드 줄·시작 카드의 직접 진입을 막고 `disabled`·`aria-disabled`·`aria-describedby`로 사유를 표시함. 이미 직접 모드인 링크·초안은 편집 패널 대신 `direct-construction` 안내를 보며, 초안은 보존함. 승인 v2 원본을 `assets/ui_icons/gwen/construction{,_512}.png`로 복사하고 무손실 정지 WebP를 만들었음. `Ux.gwenImage('construction')`을 사용하며 정지 이미지 decode 실패 시 board로 대체함. 깜빡임은 없음. DOM·변이는 `tests/cosmo_construction_test.js`, 1280/360px 실브라우저 검증은 `tests/e2e/test_cosmo_construction.py`임.
+
 - `direct_party.js`: 순수 초안·검증·배치 변환·사용자 배치 직렬화·전투력·서명·저장/공유 허용 목록. `direct_ui.js`는 편집, `direct_run.js`는 실행 스냅샷·행별 캐시·비교 표시를 맡음. 둘 다 물리 작업자를 만들지 않음.
 - 초안 `{v:1, slots:[{key,grown}|null × 4], leader:key|null, brk:'auto'|null|{name,level}}`. 저장/엔진 순서는 전열1·전열2·후열1·후열2, `toScreen` 결과는 후열1·전열1·전열2·후열2. 리더·육성 선택은 구원자를 따라감.
 - `powers`는 선택하지 않은 구원자를 excluded로 넘겨 추천의 overwrite를 호출함. 장비 부위와 journeyPriority를 같이 전달함. 개방 판정 true이고 레벨 자료가 유효하면 체크한 구원자를 사본의 스타링크 slots에 추가해 profile을 재계산함. false면 현재 돌파·실제 개화 기준 최대 레벨을 자기 레벨에 적용하고 4명 조건은 안내만 함. unknown은 현재 수치 계산을 유지하되 레벨 가정·가상 등록 없이 재불러오기를 안내함. 개방 계정의 칸 수·원천·격차 제한을 두지 않는 기존 직접 편성 정책과 원계정 보존은 유지함. fixed200은 기존 능력치 규칙을 쓰며 미개방 안내를 숨김. 옛 저장값·공유의 starLink 필드는 무시함.

@@ -135,7 +135,7 @@ def result_audit(page,probability,art,width,shots):
     reaction=page.locator('#out .gwen-reaction')
     assert reaction.count()==1,'only the first party should carry a portrait'
     actual=reaction.get_attribute('data-gwen-reaction')
-    assert actual in ({'confident':['confident','st_verdict','st_cheer','st_ok'],'thoughtful':['thoughtful','st_point'],'notes':['notes','st_cry']}[art])
+    assert actual in ({'confident':['st_verdict','st_cheer','st_ok','st_reach'],'thoughtful':['thoughtful','st_point'],'notes':['notes','st_cry']}[art])
     art=actual
     pic=loaded(page,'#out .gwen-reaction img')
     playing(page,pic)
@@ -223,7 +223,7 @@ def main():
                           ('walk-loop',"walk:{file:'walk',loop:true}","walk:{file:'walk'}",walk_audit),
                           ('interval','rand(4000,4001)','0',timer_audit),
                           ('reduced',"root.matchMedia('(prefers-reduced-motion: reduce)')","({matches:false,addEventListener(){}})",timer_audit),
-                          ('result',"if(!Number.isFinite(p))return '';","return '';",lambda p:result_audit(p,.95,'confident',1280,False)),
+                          ('result',"if(result)return gwenReport(result,{clear:p,portrait:true});","if(result)return '';",lambda p:result_audit(p,.95,'confident',1280,False)),
                           ('drawer',"c.visibility==='hidden'",'false',drawer_audit),
                           ('clipping',"if(el!==img){","if(false){",clipped_audit),
                           ('cleanup','s.stop();observer.unobserve(img);states.delete(img);','observer.unobserve(img);states.delete(img);',timer_audit)]

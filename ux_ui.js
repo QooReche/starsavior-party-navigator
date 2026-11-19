@@ -3,6 +3,7 @@
   'use strict';
   const U=typeof module!=='undefined'&&module.exports?require('./ui_shared'):root.UiShared;
   const S=typeof module!=='undefined'&&module.exports?require('./myinfo_stats'):root.MyInfoStats;
+  const GP=typeof module!=='undefined'&&module.exports?require('./gwen_policy'):root.GwenPolicy;
   const esc=U.esc, num=v=>Number.isFinite(v)?Math.round(v).toLocaleString('ko-KR'):'—';
   const labels={level:'스타링크',equip:'장비',skills:'스킬',resonance:'공명',journey:'스텔라 아카이브',potentials:'잠재력',favor:'호감도'};
   const names=['힘','체력','인내','집중','보호'];
@@ -67,6 +68,7 @@
     sulk:{file:'sulk',blink:'sulk_blink.png'},shy:{file:'shy',blink:'shy_blink.png'},doze:{file:'doze'},
     think:{file:'think',blink:'think_blink.png'},magnify:{file:'magnify'},
     stamp:{file:'stamp'},board:{file:'board'},coffee:{file:'coffee'},
+    construction:{file:'construction',fallback:'board'},
     stakeout:{file:'stakeout'},zap:{file:'zap'},
     run:{file:'run' ,loop:true},
     point:{file:'point'},
@@ -87,7 +89,8 @@
     st_sulk:{file:'st_sulk',blink:'st_sulk_blink.png'},
     st_wink:{file:'st_wink',blink:'st_wink_blink.png'},
     st_zap:{file:'st_zap',blink:'st_zap_blink.png'},
-    st_welcome:{file:'st_welcome',blink:'st_welcome_blink.png'}
+    st_welcome:{file:'st_welcome',blink:'st_welcome_blink.png'},
+    st_reach:{file:'st_reach'}
   };
   const GWEN_CYCLES={inspect:['investigate','think','magnify'],screen:['files','stamp','board'],long:['walk','stakeout','zap','coffee']};
   function gwenAsset(key){
@@ -100,10 +103,10 @@
     const a=gwenAsset(art);if(!a)return '';
     return `<img class="${cls}" data-gwen-expression="${art}" data-gwen-art="${a.art}" data-gwen-static="${a.still}" data-gwen-motion="${a.motion}" width="${size}" height="${size}" alt="" aria-hidden="true" loading="lazy">`;
   }
-  function gwenReaction(p){
+  function gwenReaction(p,result=null){
+    if(result)return gwenReport(result,{clear:p,portrait:true});
     if(!Number.isFinite(p))return '';
-    const candidates=p<.05?['notes','st_cry']:p<.7?['thoughtful','st_point']:['confident','st_verdict','st_cheer','st_ok'];
-    const art=candidates[Math.floor(gwenSeed*candidates.length)];
+    const art=GP.resultArt(p,{seed:gwenSeed,portrait:true});
     return `<div class="gwen-reaction" data-gwen-reaction="${art}" aria-hidden="true"><div class="gwen-bubble-space">${gwenSay(gwenSayBand(p))}</div>${gwenImage(art,'gwen-reaction-art',240)}</div>`;
   }
   // 대기 칸: 그림만 버튼으로 감싸고 자동 말풍선은 읽기 도구에 숨김.
@@ -128,11 +131,11 @@
     let state=gwenResults.get(result);
     if(!state){
       const p=context.kind==='score'||Array.isArray(result)?undefined:context.clear;
-      const art=!Number.isFinite(p)?'report':p<.05?'cry':p>=.7?(gwenSeed<.5?'verdict':'cheer'):'report';
+      const art=GP.resultArt(p,{kind:context.kind,seed:gwenSeed,portrait:true});
       state={id:String(++gwenSerial),remaining:1800,done:false,art};gwenResults.set(result,state);
     }
-    if(state.done)return '';
     gwenPending.set(state.id,new WeakRef(state));
+    if(context.portrait)return `<div class="gwen-reaction" data-gwen="report" data-gwen-expression="${state.art}" data-gwen-report="${state.id}" data-gwen-reaction="${state.art}" aria-hidden="true"><div class="gwen-bubble-space">${gwenSay(gwenSayBand(context.clear))}</div>${gwenImage(state.art,'gwen-reaction-art',240).replace('<img ','<img data-gwen-managed="true" ')}</div>`;
     return gwenWork('report',state.art,state.art).replace('data-gwen="report"',`data-gwen="report" data-gwen-report="${state.id}"`);
   }
   function gwenError(cause){
@@ -160,7 +163,7 @@
   // clock은 보이는 시간만 소비함. fetch/decode는 토큰을 확인한 뒤에만 그림을 교체함.
   function mountGwen(){
     const doc=root.document,media=root.matchMedia('(prefers-reduced-motion: reduce)');
-    const states=new Map(),decoded=new Map(),blobs=new Map();
+    const states=new Map(),decoded=new Map(),blobs=new Map(),playedReports=new Set();
     const rand=(lo,span)=>lo+Math.floor(Math.random()*span);
     function decode(path){
       if(!decoded.has(path)){
@@ -213,6 +216,7 @@
       }
       function valid(token){return token===s.token&&s.active&&gwenVisible(img);}
       function say(key){
+        if(report?.done||report&&img.hasAttribute('data-gwen-managed')&&doc.documentElement.dataset.gwenQuiet==='true'){if(bubble)bubble.style.visibility='hidden';return;}
         if(!bubble||!GWEN_SAY[key])return;
         if(!idle&&s.clock-s.lastSpeech<6000)return;
         s.lastSpeech=s.clock;bubble.style.visibility='';if(!idle)s.due.hide=s.clock+2500;
@@ -229,6 +233,10 @@
             const probe=new root.Image();probe.src=next;await probe.decode();
           }else await decode(path);
           if(!valid(token)){if(url&&s.pendingURL===url){root.URL.revokeObjectURL(url);s.pendingURL=null;}return;}
+          if(phase==='action'){
+            if(report)report.started=true;
+            if(img.dataset.gwenOnce){playedReports.add(img.dataset.gwenOnce);if(playedReports.size>256)playedReports.delete(playedReports.values().next().value);}
+          }
           account();const previous=s.url;img.src=next;img.dataset.gwenLoaded='true';
           s.url=url;s.pendingURL=null;if(previous)root.URL.revokeObjectURL(previous);
           s.phase=phase;img.dataset.gwenPlaying=String(phase==='action');
@@ -247,6 +255,7 @@
       }
       function action(){
         delete s.due.action;
+        if(report?.done||report?.started||img.dataset.gwenOnce&&playedReports.has(img.dataset.gwenOnce))return;
         if(!s.asset.motion||reduced())return;
         show(s.asset.motion,'action',!s.asset.loop);
       }
@@ -280,12 +289,16 @@
           if(!valid(token))return;
           account();s.still=s.asset.still;img.src=s.still;img.dataset.gwenLoaded='true';
           breathing();action();schedule();
-        }).catch(()=>{if(valid(token)){breathing();schedule();}});
+        }).catch(()=>{if(valid(token)){
+          const fallback=GWEN_SCENES[s.expression]?.fallback;
+          if(fallback&&fallback!==s.expression){select(fallback);return;}
+          breathing();schedule();
+        }});
         schedule();
       }
       function tick(){
         s.timer=null;if(!gwenVisible(img)){s.update();return;}account();
-        if(report&&!report.done&&report.remaining<=0){report.done=true;gwenPending.delete(report.id);scene.remove();s.stop();return;}
+        if(report&&!report.done&&report.remaining<=0){report.done=true;invalidate();s.due={};if(bubble)bubble.style.visibility='hidden';breathing();return;}
         const due=key=>s.due[key]!=null&&s.due[key]<=s.clock;
         if(due('land')){delete s.due.land;img.dataset.gwenLanded='true';}
         if(due('travel')){
@@ -366,7 +379,7 @@
       for(const [img,s] of states)if(!img.isConnected){s.stop();observer.unobserve(img);states.delete(img);}
       doc.querySelectorAll('.result-summary').forEach(summary=>{
         const report=summary.querySelector('[data-gwen-report]'),portrait=summary.querySelector('.gwen-reaction');
-        if(portrait&&portrait.hidden!==!!report)portrait.hidden=!!report;
+        if(portrait&&portrait!==report&&portrait.hidden!==!!report)portrait.hidden=!!report;
       });
       let motionOwner=false;
       doc.querySelectorAll('img[data-gwen-art]').forEach(img=>{

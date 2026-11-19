@@ -13,6 +13,7 @@ TMP.mkdir(exist_ok=True)
 os.environ['TEMP'] = os.environ['TMP'] = str(TMP)
 
 from test_page import test_server
+from test_gwen_auto import lane_audit
 from playwright.sync_api import sync_playwright, TimeoutError
 
 
@@ -27,7 +28,10 @@ def check_scene(page, mode, scope='#out', reduced=False, cause='other', art=None
     page.wait_for_function('(e)=>!!e.getAttribute("src")', arg=scene.locator('img').element_handle())
     scene.locator('img').evaluate('(img)=>img.decode()')
     assert scene.locator('img').evaluate('(img)=>img.naturalWidth>0')
-    assert scene.locator('.gwen-scene').bounding_box()['height'] == (120 if page.viewport_size['width'] == 360 else 140)
+    if scene.get_attribute('data-gwen-reaction'):
+        assert abs(scene.locator('img').bounding_box()['height']-(240 if page.viewport_size['width']>=1200 else 112))<1
+    else:
+        assert scene.locator('.gwen-scene').bounding_box()['height'] == (120 if page.viewport_size['width'] == 360 else 140)
     art = art or (ERROR_ART[cause] if mode == 'error' else
         {'inspect':'investigate','screen':'files','long':'walk','report':'report','welcome':'welcome'}[mode])
     assert scene.locator('img').get_attribute('data-gwen-art') == art, f'{mode}/{cause}: wrong art'
@@ -109,25 +113,25 @@ def exercise(page, base, width, shots):
       SIMQ.scr[scrKey(__loadSt,1)]={got:2,left:80};
       growthControlPlace(true);$('out').innerHTML=simProgress(__loadSt);
       window.__cancel=document.querySelector('[data-simcancel]');
-      window.__face=document.querySelector('.gwen-worker');
+      window.__face=document.querySelector('#reco-board-lane .gwen-lane-actor');
     }''')
-    check_scene(page, 'screen')
-    shot('screen')
+    lane_audit(page)
+    shot('screen', '#reco-board-lane')
     page.evaluate('''() => {
       SIMQ.scr[scrKey(__loadSt,1)].got=3;
       simProgressSync(document.querySelector('[data-k="progress"]'),__loadSt);
     }''')
-    assert page.evaluate('__cancel===document.querySelector("[data-simcancel]") && __face===document.querySelector(".gwen-worker")')
+    assert page.evaluate('__cancel===document.querySelector("[data-simcancel]") && __face===document.querySelector("#reco-board-lane .gwen-lane-actor")')
     assert page.locator('[role=progressbar]').get_attribute('aria-valuenow') == '3'
-    # 본선으로 전환, 엔진 준비 → 긴 계산은 단추 모양이 같아도 그림이 바뀌어야 함.
+    # 본선으로 전환해도 공용 진행 레인과 취소 단추를 유지함.
     page.evaluate('''() => {
       LASTQ[1].rows=[];SIMQ.screening=false;SIMQ.loaded=false;
       simProgressSync(document.querySelector('[data-k="progress"]'),__loadSt);
       window.__cancel=document.querySelector('[data-simcancel]');
     }''')
-    check_scene(page, 'inspect')
+    lane_audit(page)
     page.evaluate('SIMQ.loaded=true;simProgressSync(document.querySelector("[data-k=progress]"),__loadSt)')
-    check_scene(page, 'long')
+    lane_audit(page)
     assert page.evaluate('__cancel===document.querySelector("[data-simcancel]")')
     shot('final')
     for mode in ['inspect', 'screen', 'long', 'error', 'welcome']:
@@ -158,25 +162,26 @@ def exercise(page, base, width, shots):
     shot('error')
     page.evaluate('SIMQ.err="";$("out").innerHTML=simBar(1,[],__loadSt,false)')
     assert page.locator('#out [data-gwen]').count() == 0
-    # 실제 simBar 완료 분기: 한 결과는 한 번 발표, 1.8초 뒤 제거.
+    # 결과 초상은 유지하고 1.8초 발표 반응만 종료함. 실제 quickBox 연결은 auto/ux 시험이 검사함.
     for reduced in (False, True):
         page.emulate_media(reduced_motion='reduce' if reduced else 'no-preference')
         page.evaluate('''() => {
-          window.__artSimBar=new Function('simSig','return ('+simBar.toString()+')')(()=> '__art_report');
           SIMQ.res.__art_report={n:100,clear:1};
-          $('out').innerHTML=__artSimBar(1,[{}],__loadSt,false);
+          $('out').innerHTML=Ux.gwenReaction(1,SIMQ.res.__art_report);
         }''')
-        check_scene(page, 'report', reduced=reduced, art='cheer')
+        check_scene(page, 'report', reduced=reduced, art=page.locator('#out img').get_attribute('data-gwen-art'))
         page.wait_for_timeout(500)
         shot('report_reduced' if reduced else 'report')
-        page.evaluate('$("out").innerHTML=__artSimBar(1,[{}],__loadSt,false)')
-        check_scene(page, 'report', reduced=reduced, art='cheer')
+        page.evaluate('$("out").innerHTML=Ux.gwenReaction(1,SIMQ.res.__art_report)')
+        check_scene(page, 'report', reduced=reduced, art=page.locator('#out img').get_attribute('data-gwen-art'))
         page.wait_for_timeout(1900)
-        assert page.locator('#out [data-gwen]').count() == 0
+        assert page.locator('#out [data-gwen]').count() == 1
+        assert page.locator('#out img').get_attribute('data-gwen-playing') == 'false'
         page.evaluate('''() => {
-          $('out').innerHTML=__artSimBar(1,[{}],__loadSt,false);
+          $('out').innerHTML=Ux.gwenReaction(1,SIMQ.res.__art_report);
         }''')
-        assert page.locator('#out [data-gwen]').count() == 0
+        assert page.locator('#out [data-gwen]').count() == 1
+        assert page.locator('#out img').get_attribute('data-gwen-playing') == 'false'
     page.emulate_media(reduced_motion='no-preference')
     # HTML만 만들다 버렸거나 숨긴 탭에 넣었어도 처음 보일 때 발표함.
     page.evaluate('''() => {
@@ -186,9 +191,10 @@ def exercise(page, base, width, shots):
     page.wait_for_timeout(1900)
     assert page.locator('#art-hidden [data-gwen="report"]').count() == 1
     page.evaluate('$("art-hidden").hidden=false')
-    check_scene(page, 'report')
+    check_scene(page, 'report', art='st_point')
     page.wait_for_timeout(1900)
-    assert page.locator('#art-hidden [data-gwen="report"]').count() == 0
+    assert page.locator('#art-hidden [data-gwen="report"]').count() == 1
+    assert page.locator('#art-hidden img').get_attribute('data-gwen-playing') == 'false'
     # 旧SD 이미지로 되돌리면 실제 currentSrc 검사가 실패해야 함.
     page.emulate_media(reduced_motion='reduce')
     page.evaluate('$("out").innerHTML=Ux.gwenWork("screen")')
@@ -286,7 +292,7 @@ def main():
                     context.close()
                 if page.video:
                     page.video.save_as(str(ROOT / '_shot_load.webm'))
-                print(f'PASS Gwen {width}px: stages, errors, removal, stable buttons, reduced-motion mutation')
+                print(f'PASS Gwen {width}px: stages, errors, persistent results, stable buttons, reduced-motion mutation')
         finally:
             browser.close()
 

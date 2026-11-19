@@ -58,6 +58,8 @@ def main():
     if a.only:
         tests = [t for t in tests if any(w in t[0] for w in a.only)]
     if a.e2e:
+        tests.append(('e2e/test_cosmo_construction.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_cosmo_construction.py']))
+        tests.append(('e2e/test_gwen_auto.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_auto.py']))
         tests.append(('e2e/test_gwen_shadow.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_shadow.py']))
         tests.append(('e2e/test_gwen_lane_image.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_lane_image.py']))
         tests.append(('e2e/test_case_banner.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_case_banner.py']))

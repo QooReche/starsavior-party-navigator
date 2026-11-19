@@ -1,14 +1,14 @@
-// Presentation only. One movable actor, reserved lanes, and a visible-time clock.
+// Presentation only. One movable actor, registered stages, and a visible-time clock.
 (function(root){
   'use strict';
+  const P=typeof module!=='undefined'&&module.exports?require('./gwen_policy'):root.GwenPolicy;
   const PRIORITY={idle:0,edit:1,work:2,result:3,error:4};
   const CHOICES={home:['guide2','st_welcome','welcome'],empty:['ready','present'],
     ready:['ready'],vacant:['think','sulk','peek'],put:['present','shy'],remove:['surprised','sulk'],
     swap:['think'],leader:['verdict'],complete:['jump'],grown:['train'],
     withReco:['files','board'],withGrowth:['train'],reco:['stakeout','magnify','files'],growth:['train','walk'],skip:['surprised'],recoHigher:['st_point','thoughtful'],brk:['charge'],work:['investigate','magnify','think','board','coffee','stakeout','stamp','files'],
-    high:['st_verdict','st_cheer','st_ok'],medium:['st_point','thoughtful'],low:['st_cry','notes'],
-    highSD:['verdict','cheer','report'],mediumSD:['report','verdict'],lowSD:['cry'],
-    better:['st_wink'],past:['think'],error:['cry','surprised','sulk'],wait:['wait'],doze:['doze'],wake:['wake']};
+    high:['st_verdict','st_cheer','st_ok','st_reach'],medium:['st_point','thoughtful'],low:['st_cry','notes'],
+    better:['st_wink','st_reach'],past:['think'],error:['cry','surprised','sulk'],wait:['wait'],doze:['doze'],wake:['wake']};
   const SAY={home:['단장님, 어떤 방법으로 골라 볼까?','후후후, 두 방법 다 나만 믿어!','천재 조사관은 준비 끝이야!'],
     empty:['단장님, 구원자부터 골라 봐!','후후후, 어떤 조합이 될까?'],vacant:['빈 칸이 남았네, 단장님.','천천히 골라도 돼. 내가 기다릴게!'],
     put:['좋아, 이쪽으로 모실게!','후후후, 한 명 더 모였어!','단장님, 자리 확인해 봐!'],remove:['잠깐! 다른 조합도 볼까?','단장님, 다음 구원자는 누구야?'],
@@ -61,28 +61,27 @@
       duration:2000+random()*1000
     })};
   }
-  // A bundle's first numbers can appear while Gwen is still investigating.
-  function bannerState(state,onBoard){
-    if(state.mode!=='direct'||onBoard)return '';
-    if(state.bundleRunning||state.phase==='work')return '';
-    if(state.phase==='result'&&!state.stale)return 'result';
-    return state.phase==='error'?'error':'';
+
+  // --- 무대 등록(register) ---
+  // 각 무대(stage)는 mode 이름에 대응하며 {board, result, banner} DOM 요소를 가짐.
+  // GwenLane.sync({mode}) 가 해당 무대를 사용함.
+  const stages=new Map();
+  function initBannerImages(bannerEl){
+    for(const img of bannerEl?.querySelectorAll('img')||[]){
+      const title=img.parentElement;
+      const decoded=()=>img.decode().then(()=>{title.dataset.imageReady='true';},()=>{delete title.dataset.imageReady;});
+      img.addEventListener('load',decoded);img.addEventListener('error',()=>{delete title.dataset.imageReady;});
+      if(img.complete&&img.naturalWidth)decoded();
+    }
   }
-  const BANNER_COPY={investigation:'조사 완료!',inquiry:'수사 완료!',calculation:'계산 완료!',error:'수사 난항…'};
-  function bannerPicker(random=Math.random){
-    let previous='';const reports=new Map();
-    return (state,id)=>{
-      if(state==='result'){
-        if(!reports.has(id)){
-          const pool=['investigation','inquiry','calculation'].filter(x=>x!==previous);
-          previous=pool[Math.floor(random()*pool.length)];reports.set(id,previous);
-          if(reports.size>128)reports.delete(reports.keys().next().value);
-        }
-        return reports.get(id);
-      }
-      return state==='error'?'error':'';
-    };
+  function registerStage(key,elements){
+    const previous=stages.get(key);
+    if(previous?.banner&&previous.banner!==elements.banner)previous.banner.hidden=true;
+    stages.set(key,elements);
+    if(elements.banner&&previous?.banner!==elements.banner)initBannerImages(elements.banner);
+    controller?.rebind(key);
   }
+
   let controller,serial=0;const resultIds=new WeakMap();
   function resultId(result){if(!resultIds.has(result))resultIds.set(result,++serial);return resultIds.get(result);}
   function mount(){
@@ -91,27 +90,25 @@
     let actor=null,lane=null,current={},clock=0,last=performance.now(),idleAt=0,vacant=false,phaseKey='',cycleAt=0,
       restoreAt=0,bubbleUntil=0,speechShownAt=-Infinity,move=null,landing=0,pending=null,x=0,quiet=false,art='',lastEvent='',sleeping=false,workRestAt=0;
     let playAt=play.delay(),playing=null,imageRequest=0;
+    const stageStates=new Map();let activeMode=null;
     function resetPlay(){playing=null;playAt=clock+play.delay();}
     try{quiet=JSON.parse(localStorage.getItem('pn.gwen.quiet')||'false')===true;}catch{}
     doc.documentElement.dataset.gwenQuiet=String(quiet);
-    const banner=doc.getElementById('direct-lane-banner');
-    const pickBanner=bannerPicker();
+    const pickBanner=P.bannerPicker();
     let bannerKey='';
-    function syncBanner(){if(!banner)return;
-      const state=bannerState(current,actor?.parentElement?.id==='direct-board-lane');
+    function currentBanner(){return stages.get(current.mode)?.banner||null;}
+    function syncBanner(){const banner=currentBanner();
+      // 비활성 무대의 배너는 숨김
+      for(const [,s] of stages)if(s.banner&&s.banner!==banner)s.banner.hidden=true;
+      if(!banner)return;
+      const stage=stages.get(current.mode);
+      const onBoard=!!stage?.board&&actor?.parentElement===stage.board;
+      const state=P.bannerState(current,onBoard);
       banner.hidden=!state;
-      if(state!==bannerKey){banner.dataset.state=state;bannerKey=state;}
+      if(state!==bannerKey||banner.dataset.state!==state){banner.dataset.state=state;bannerKey=state;}
       const phrase=pickBanner(state,current.result);
       banner.dataset.phrase=phrase;
       for(const title of banner.querySelectorAll('[data-phrase]'))title.hidden=title.dataset.phrase!==phrase;
-      // Static titles leave the single animation slot to Gwen, including offscreen.
-    }
-    for(const bannerImage of banner?.querySelectorAll('img')||[]){
-      const title=bannerImage.parentElement;
-      const decoded=()=>bannerImage.decode().then(()=>{title.dataset.imageReady='true';},()=>{delete title.dataset.imageReady;});
-      bannerImage.addEventListener('load',decoded);
-      bannerImage.addEventListener('error',()=>{delete title.dataset.imageReady;});
-      if(bannerImage.complete&&bannerImage.naturalWidth)decoded();
     }
     function ensure(){if(actor)return;actor=doc.createElement('div');actor.className='gwen-lane-actor';actor.dataset.gwen='lane';
       actor.innerHTML='<span class="gwen-lane-speech" aria-hidden="true"></span><button type="button" class="gwen-lane-poke" aria-label="그웬 부르기"></button><span class="gwen-announcement" role="status" aria-live="polite"></span>';
@@ -123,20 +120,19 @@
       const r=actor.getBoundingClientRect();return lane.getClientRects().length>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth&&!lane.closest('[hidden]');}
     function cancelMove(){if(move){const pos=move.animation.currentTime||0;const ratio=Math.min(1,pos/Math.max(1,move.ms));x=move.from+(move.to-move.from)*ratio;move.animation.cancel();move=null;}
       if(actor)actor.style.transform=`translateX(${x}px)`;landing=0;pending=null;actor?.removeAttribute('data-moving');}
-    function setLane(id){ensure();const target=doc.getElementById(id);if(!target)return false;
-      if(lane!==target||actor.parentElement!==target){cancelMove();lane=target;lane.append(actor);x=Math.max(0,(lane.clientWidth-actor.offsetWidth)/2);actor.style.transform=`translateX(${x}px)`;}
+    function setLane(el){ensure();if(!el)return false;
+      if(lane!==el||actor.parentElement!==el){cancelMove();lane=el;lane.append(actor);x=Math.max(0,(lane.clientWidth-actor.offsetWidth)/2);actor.style.transform=`translateX(${x}px)`;}
       syncBanner();
       return true;}
     function image(key){if(key===art)return;art=key;const request=++imageRequest;
       const holder=doc.createElement('div');holder.innerHTML=root.Ux.gwenImage(key,'gwen-lane-image',80);
       const next=holder.firstElementChild;if(!next)return;
       next.dataset.gwenManaged='true';next.loading='eager';next.src=new URL(next.dataset.gwenStatic,doc.baseURI).href;
-      // Keep the previous decoded pixels until the candidate is ready. A later
-      // pose/result supersedes this request even when its decode finishes first.
+      if(current.phase==='result')next.dataset.gwenOnce=String(current.result);
       next.decode().then(()=>{if(request!==imageRequest)return;
         next.dataset.gwenLoaded='true';actor.querySelector('button').replaceChildren(next);
         actor.dataset.gwenExpression=key;
-      }).catch(()=>{}); // Failed candidates leave the preceding illustration visible.
+      }).catch(()=>{});
       actor.dataset.event=lastEvent;}
     function positionSpeech(){const bubble=actor.querySelector('.gwen-lane-speech');
       if(!bubble.hidden){const half=bubble.offsetWidth/2;
@@ -150,7 +146,9 @@
       cancelMove();const mobile=innerWidth<=400,size=actor.offsetWidth,max=Math.max(0,lane.clientWidth-size);
       target=Math.max(0,Math.min(max,target));
       if(mobile&&adjust)target=x+(target-x)*.5;
-      const step=travel(x,target,lane.clientWidth,size,{run,mobile,reduced:mq.matches,quiet,home:lane.id==='home-gwen-lane'});
+      const stage=stages.get(current.mode);
+      const isHome=stage?.board===lane&&current.mode==='home';
+      const step=travel(x,target,lane.clientWidth,size,{run,mobile,reduced:mq.matches,quiet,home:isHome});
       if(!step.ms){if(reaction)display(mq.matches&&reaction.art==='jump'?{...reaction,art:'ready'}:reaction);return;}
       actor.querySelector('.gwen-lane-speech').hidden=true;image(run?'run':'walk');actor.dataset.moving='true';
       actor.querySelector('button').style.transform=target<x?'scaleX(-1)':'none';
@@ -162,18 +160,25 @@
       resetPlay();
       if(opts.target!=null)moveTo(opts.target,{run:opts.run,reaction:e});else{cancelMove();display(e);}
       if(opts.level==='edit'||!opts.level)restoreAt=clock+1500+(move?move.ms+150:0);return true;}
-    function base(){if(current.mode==='home')return ['home','home-gwen-lane'];
-      if(current.phase==='work')return ['work','direct-board-lane'];
-      if(current.phase==='error')return ['error','direct-result-lane'];
-      if(current.phase==='result')return [current.recoHigher?'recoHigher':current.better?'better':current.clear>=.7?'high':current.clear>=.05?'medium':'low','direct-result-lane'];
-      if(current.stale)return ['past','direct-board-lane'];
-      if(current.count>0&&current.count<4)return ['wait','direct-result-lane'];
-      return [current.count===0?'empty':'ready','direct-board-lane'];}
-    function settle(){const [kind,id]=base();if(!setLane(id))return;
-      const portrait=id==='direct-result-lane'&&innerWidth>=1200;lane.dataset.portrait=String(portrait);
-      let candidates=CHOICES[kind];if(['high','medium','low'].includes(kind)&&!portrait)candidates=CHOICES[kind+'SD'];
-      if(kind==='recoHigher'&&!portrait)candidates=['report','think'];
-      if(kind==='better'&&!portrait)candidates=['verdict','cheer','report'];
+    function base(){
+      const stage=stages.get(current.mode);if(!stage)return [null,null];
+      if(current.mode==='home')return ['home',stage.board];
+      if(current.phase==='work')return ['work',stage.board];
+      if(current.phase==='error')return ['error',stage.result||stage.board];
+      if(current.phase==='result')return [current.recoHigher?'recoHigher':current.better?'better':!Number.isFinite(current.clear)?'medium':current.clear>=.7?'high':current.clear>=.05?'medium':'low',stage.result||stage.board];
+      if(current.stale)return ['past',stage.board];
+      if(current.count>0&&current.count<4)return ['wait',stage.result||stage.board];
+      return [current.count===0?'empty':'ready',stage.board];
+    }
+    function settle(){
+      if(stages.get(current.mode)?.resultExternal&&current.phase==='result'){render(current);return;}
+      const [kind,el]=base();if(!setLane(el))return;
+      const stage=stages.get(current.mode);
+      // 결과는 항상 등신대(st_*). 좁은 화면에서도 CSS 가 크기를 줄여 표시함.
+      const portrait=!!stage?.result&&lane===stage.result;
+      lane.dataset.portrait=String(portrait);
+      let candidates=CHOICES[kind];
+      if(current.phase==='result')candidates=P.resultCandidates(current.clear,current.better,current.recoHigher);
       if(kind==='home')candidates=innerWidth>=1200?CHOICES.home:['guide2','welcome','present'];
       const level=current.phase==='error'?'error':current.phase==='result'?'result':current.phase==='work'?'work':'idle';
       p.state.until=clock;const idKey=level==='result'?current.result:null;
@@ -195,24 +200,45 @@
       const target=Math.max(0,Math.min(1,current.progress))*Math.max(0,lane.clientWidth-actor.offsetWidth);
       if(target>x+.5)moveTo(target,{reaction:{kind:'work',art:p.pick(CHOICES.work),speech:false,priority:PRIORITY.work},adjust:false});
     }
-    function sync(next){current={...next};
-      // The first bundle result updates the numbers while Gwen continues investigating.
+    // State writers own one stage; only navigation chooses the visible stage.
+    function sync(next){stageStates.set(next.mode,{...next});if(next.mode===activeMode)render(next);}
+    function activate(mode){activeMode=mode;render(stageStates.get(mode)||{mode,phase:'idle',count:0});}
+    function rebind(mode){
+      if(mode!==current.mode)return;
+      if(stages.get(mode)?.resultExternal&&current.phase==='result'){render(current);return;}
+      const [,el]=base();
+      if(!el||lane===el&&actor?.parentElement===el){syncBanner();return;}
+      // A replaced host invalidates decode and movement, but not report/speech history.
+      ++imageRequest;const previousArt=art;art='';
+      cancelMove();resetPlay();setLane(el);
+      lane.dataset.portrait=String(el===stages.get(mode)?.result);
+      if(previousArt)image(previousArt);
+      positionSpeech();
+    }
+    function render(next){current={...next};
       if(current.bundleRunning&&current.phase==='result')current.phase='work';
-      syncBanner();if(!['home','direct'].includes(current.mode)){if(actor){cancelMove();actor.remove();}phaseKey='';return;}
+      syncBanner();
+      if(!stages.has(current.mode)){if(actor){cancelMove();actor.remove();}phaseKey='';return;}
+      // Automatic results own a portrait inside their summary; the lane keeps only its banner.
+      if(stages.get(current.mode).resultExternal&&current.phase==='result'){
+        ++imageRequest;cancelMove();resetPlay();actor?.remove();lane=null;art='';phaseKey='';syncBanner();return;
+      }
       const key=JSON.stringify(current.phase==='work'?[current.mode,'work',current.step]:[current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
       if(key!==phaseKey){resetPlay();cancelMove();phaseKey=key;settle();
         if(current.phase==='work'){x=0;actor.style.transform='translateX(0px)';positionSpeech();workRestAt=clock+250;}
       }
+      else rebind(current.mode);
       progressMove();
     }
     function edit(action,slot){idleAt=clock;vacant=false;sleeping=false;
       if(playing){cancelMove();resetPlay();}
+      const stage=stages.get(current.mode);
       if(current.mode==='direct'&&current.phase==='work'&&action==='skip'&&!quiet){
-        if(setLane('direct-board-lane')){request('skip',{level:'work',duration:1500});restoreAt=clock+1500;}return;
+        if(stage?.board&&setLane(stage.board)){request('skip',{level:'work',duration:1500});restoreAt=clock+1500;}return;
       }
       if(current.mode!=='direct'||current.phase==='work'||current.phase==='error'||quiet)return;
       if(p.state.priority>=PRIORITY.result&&clock<p.state.until)return;
-      if(!setLane('direct-board-lane'))return;lane.dataset.portrait='false';
+      if(!stage?.board||!setLane(stage.board))return;lane.dataset.portrait='false';
       const kind=action==='put'&&current.count===4?'complete':({put:'put',remove:'remove',swap:'swap',leader:'leader',grown:'grown',withReco:'withReco',withGrowth:'withGrowth',skip:'skip',brk:'brk',arrange:'swap',clear:'empty',undo:'swap',focus:'point'}[action]||'empty');
       const cell=doc.querySelector(`[data-direct-slot="${slot}"]`),r=cell?.getBoundingClientRect(),l=lane.getBoundingClientRect();
       const target=kind==='complete'?(lane.clientWidth-actor.offsetWidth)/2:r?r.x+r.width/2-l.x-actor.offsetWidth/2:null;
@@ -229,7 +255,6 @@
       clock+=Math.min(delta,1000);actor.dataset.lanePaused=String(mq.matches);if(move?.animation.playState==='paused')move.animation.play();
       if(move&&move.animation.playState==='finished'){
         const m=move,reaction=pending;x=m.to;m.animation.cancel();move=null;actor.style.transform=`translateX(${x}px)`;
-        // A long lane is crossed in bounded segments, never by a cross-column absolute jump.
         if(Math.abs(m.target-x)>.5){moveTo(m.target,{run:m.run,reaction,adjust:false});}
         else{landing=clock+150;pending=reaction;actor.removeAttribute('data-moving');workRestAt=landing+900;}
       }
@@ -242,15 +267,15 @@
         request(base()[0],{level:'work',duration:Infinity});cycleAt=clock+(mq.matches?20000:9000);
       }
       progressMove();
-      if(!['work','error'].includes(current.phase)&&!quiet){
-        if(!sleeping&&clock-idleAt>=60000){sleeping=true;if(current.mode==='direct'){setLane('direct-board-lane');lane.dataset.portrait='false';}request('doze',{level:'idle',target:0});}
+      const stage=stages.get(current.mode);
+      if(!['work','error','result'].includes(current.phase)&&!quiet){
+        if(!sleeping&&clock-idleAt>=60000){sleeping=true;if(stage?.board){setLane(stage.board);lane.dataset.portrait='false';}request('doze',{level:'idle',target:0});}
         else if(!vacant&&!sleeping&&current.mode==='direct'&&current.count<4&&clock-idleAt>=20000){vacant=true;request('vacant',{level:'idle'});}
       }
-      // Only the idle editor borrows the board lane. Results retain their own presentation.
       if(current.mode==='direct'&&!['work','error','result'].includes(current.phase)&&!mq.matches&&!quiet&&!sleeping){
         if(playing?.until&&clock>=playing.until){playing=null;image('ready');playAt=clock+play.delay();}
         if(!playing&&!move&&!landing&&!restoreAt&&clock>=playAt&&clock>=p.state.until){
-          setLane('direct-board-lane');lane.dataset.portrait='false';
+          if(stage?.board)setLane(stage.board);lane.dataset.portrait='false';
           const plan=play.next(x,Math.max(0,lane.clientWidth-actor.offsetWidth));
           const e=p.event('play',clock,{level:'idle',candidates:['ready'],duration:0,silent:true});
           if(e){playing=plan;moveTo(plan.target,{run:plan.run,reaction:{...e,speech:false},adjust:false});
@@ -269,8 +294,9 @@
       doc.documentElement.dataset.gwenQuiet=String(quiet);cancelMove();bubbleUntil=0;settle();doc.dispatchEvent(new Event('gwenquietchange'));
     });}
     root.setInterval(tick,50);
-    controller={sync,edit,policy:p,get state(){return {clock,x,moving:!!move,art,quiet,phase:current.phase,lane:lane?.id,playing:!!playing,playAt};}};return controller;
+    controller={sync,activate,rebind,edit,policy:p,get state(){return {clock,x,moving:!!move,art,quiet,mode:current.mode,phase:current.phase,lane:lane?.id,playing:!!playing,playAt};}};return controller;
   }
-  const api={PRIORITY,CHOICES,SAY,policy,travel,playground,bannerState,bannerPicker,BANNER_COPY,mount,resultId,sync:s=>mount()?.sync(s),edit:(a,i)=>mount()?.edit(a,i)};
+  // 하위 호환: bannerState·bannerPicker·BANNER_COPY 는 gwen_policy 에서 재내보냄
+  const api={PRIORITY,CHOICES,SAY,policy,travel,playground,bannerState:P.bannerState,bannerPicker:P.bannerPicker,BANNER_COPY:P.BANNER_COPY,registerStage,mount,resultId,sync:s=>mount()?.sync(s),activate:mode=>mount()?.activate(mode),edit:(a,i)=>mount()?.edit(a,i)};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GwenLane=api;
 })(typeof window!=='undefined'?window:globalThis);

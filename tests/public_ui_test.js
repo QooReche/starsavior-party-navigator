@@ -175,33 +175,42 @@ assert.doesNotMatch(card,/SOME_RAW_KEY|RAW_KEY|- ·/);
 assert.match(card,/min-height:40px/);
 const cfg=require('../party_contents.json');
 function checkLoading(page){
- const Ux=require('../ux_ui'),state={Ux,SIMQ:{busy:1,res:{},scr:{s:{got:2,left:80}},screening:true,loaded:true},
-  LASTQ:{1:{rows:[{},{}]}},scrKey:()=> 's',simSig:()=> 'r',growthEnabled:()=>false,SCR_N:8,scrWorkers:()=>2,simEtaText:()=> '남은 시간 계산 중',esc:String};
+ const Ux=require('../ux_ui'),gwenCalls=[];
+ const state={Ux,SIMQ:{busy:1,res:{},scr:{s:{got:2,left:80}},screening:true,loaded:true},
+  LASTQ:{1:{rows:[{},{}]}},scrKey:()=> 's',simSig:()=> 'r',growthEnabled:()=>false,SCR_N:8,scrWorkers:()=>2,simEtaText:()=> '남은 시간 계산 중',esc:String,
+  DIRECT:{mode:'reco'},GwenLane:{sync:o=>gwenCalls.push(o)},recoGwenShow:(show,p)=>gwenCalls.push({show,progress:p}),$:()=>null};
  const run=vm.createContext(state),start=page.indexOf('function simProgress(st)');
  vm.runInContext(page.slice(start,page.indexOf('function buildCands(',start)),run);
- const paint=()=>vm.runInContext('simProgress({})',run);
- assert.match(paint(),/data-gwen="screen"/);assert.match(paint(),/후보 거르는 중 2\/80/);
- assert.match(paint(),/aria-valuenow="2"/);assert.match(paint(),/data-scrstop="1"/);assert.match(paint(),/data-simcancel="1"/);
- state.SIMQ.screening=false;assert.match(paint(),/data-gwen="long"/);
- state.SIMQ.loaded=false;assert.match(paint(),/data-gwen="inspect"/);
+ const paint=()=>{gwenCalls.length=0;return vm.runInContext('simProgress({})',run);};
+ // 그웬 걷기 연출은 reco-gwen-stage(#out 밖 고정)가 맡아 simProgress HTML 에 없음.
+ const html=paint();assert.match(html,/후보 거르는 중 2\/80/);
+ assert.match(html,/aria-valuenow="2"/);assert.match(html,/data-scrstop="1"/);assert.match(html,/data-simcancel="1"/);
+ assert(gwenCalls.some(c=>c.show===true),'recoGwenShow(true) called during progress');
+ state.SIMQ.screening=false;paint();state.SIMQ.loaded=false;paint();
  const bar=page.indexOf('function simBar(');vm.runInContext(page.slice(bar,page.indexOf('function simInvalidate(',bar)),run);
  assert.match(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen="inspect"/);
  state.SIMQ.busy=null;state.SIMQ.err='통신 오류';state.SIMQ.errP=1;
  assert.match(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen="error"/);
  state.SIMQ.err='';state.SIMQ.res.r={n:100,clear:1};state.goalVal=r=>r.clear;
- assert.match(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen="report"/);
- assert.match(vm.runInContext('simBar(1,[{}],{},false)',run),/data-gwen="report"/);
+ const completed=vm.runInContext('simBar(1,[{}],{},false)',run);
+ assert.match(completed,/data-state="done"/);
+ assert.doesNotMatch(completed,/data-gwen="report"/,'result illustration belongs to the shared lane');
+ assert.match(page,/id="reco-result-lane" class="gwen-lane gwen-result-lane"/);
  const css=page.match(/@media\(prefers-reduced-motion:reduce\)\{\.gwen-work[^}]+\}/)?.[0]||'';
  for(const rule of ['.gwen-worker','animation:none','transform:none'])assert(css.includes(rule),rule);
  assert.match(page,/\.gwen-scene\{[^}]*width:140px;height:140px;flex:0 0 140px/);
 }
 for(const file of ['party_template.html','index.html']){
  const page=fs.readFileSync(require.resolve('../'+file),'utf8');checkLoading(page);
+ // simProgress 의 gwenWork 는 reco-gwen-stage(#out 밖 고정 무대)로 대체함.
+ // 남은 변이: gwenError 와 CSS reduced-motion
  for(const [from,to] of [
-  ['${Ux.gwenWork(sc?"screen":SIMQ.loaded?"long":"inspect")}',''],
   ['${Ux.gwenError(SIMQ.cancelled?"cancel":"calculation")}<span class="bad"','<span class="bad"'],
   ['.gwen-work .gwen-worker{animation:none;transform:none}', '.gwen-work .gwen-worker{animation:gwen-report 1s infinite;transform:none}'],
  ]){assert(page.includes(from));assert.throws(()=>checkLoading(page.replace(from,to)),{code:'ERR_ASSERTION'});}
+ // reco-gwen-stage 가 HTML 에 존재하는지 확인
+ assert(page.includes('id="reco-gwen-stage"'),`${file}: reco stage host must exist`);
+ assert(page.includes('id="reco-board-lane"'),`${file}: reco board lane must exist`);
 }
 // 대기 칸(결과 전): 「추천 편성 보기」 단추 옆에 그웬 한 번(계산 준비 중에는 기존 수사 그림만), 단추·체크박스는 그대로.
 function checkIdle(page,file){

@@ -5,6 +5,11 @@
 #start-screen{display:grid;grid-template-columns:minmax(0,1fr) 200px minmax(0,1fr);gap:16px;align-items:stretch;margin:18px 0}
 .start-choice{padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--ink);cursor:pointer}
 .start-choice h2{margin:8px 0}.start-choice>button{width:100%;min-height:48px;margin:12px 0}
+.start-direct[aria-disabled=true]{cursor:default;border-style:dashed}
+#mode-strip button:disabled,.start-direct button:disabled{opacity:.5;cursor:not-allowed}
+#direct-construction{text-align:center;padding:24px}
+#direct-construction p{max-width:560px;margin:12px auto;line-height:1.7;word-break:keep-all;overflow-wrap:anywhere}
+.direct-construction-art{width:160px;height:160px;max-width:100%;object-fit:contain}
 .start-gwen{align-self:center;text-align:center;font-size:13px}.start-gwen img{max-width:100%;object-fit:contain}
 #start-growth{margin-top:14px}#start-growth #growth-control{display:flex;flex-wrap:wrap}
 #direct-panel{padding:18px}.direct-heading{margin:0 0 12px}.direct-heading h2{margin:0 0 6px}
@@ -76,8 +81,6 @@ body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-
 /* The SD feet sit near 94% of the square; the shadow shares the actor's transform. */
 .gwen-lane-actor::before{content:"";position:absolute;left:20%;bottom:0;width:60%;height:12%;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.3) 0%,rgba(0,0,0,.18) 40%,transparent 72%);pointer-events:none;z-index:0;transform:scale(1);opacity:1;transition:transform .2s ease,opacity .2s ease}
 .gwen-lane-actor:has(.gwen-lane-image[data-gwen-expression=jump]:not([data-gwen-landed=true]))::before{transform:scale(.7);opacity:.5}
-/* These waist-up illustrations have no feet in the image. */
-.gwen-lane-actor:has(.gwen-lane-image:is([data-gwen-expression^="st_"],[data-gwen-expression=confident],[data-gwen-expression=thoughtful],[data-gwen-expression=notes]))::before{content:none}
 .gwen-lane-poke{position:relative;z-index:1}
 .gwen-lane-speech{z-index:2}
 html[data-gwen-quiet=true] .gwen-lane-actor::before{transition:none}
@@ -87,7 +90,7 @@ html[data-gwen-quiet=true] .gwen-lane-actor::before{transition:none}
 .gwen-lane-poke img,#direct-gwen .gwen-lane-poke img{display:block;width:100%;height:100%;object-fit:contain}
 .gwen-lane-speech{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:180px;max-width:calc(100vw - 48px);font-size:11px;line-height:15px;text-align:center;color:var(--fg);background:var(--ink);border-radius:6px;padding:3px 5px;pointer-events:none}
 /* Text occupies a separate line above the 88px body track. */
-#direct-board-lane{height:122px;padding-top:34px;box-sizing:border-box}
+#direct-board-lane,#reco-board-lane{height:122px;padding-top:34px;box-sizing:border-box}
 .gwen-lane-actor[data-moving=true] .gwen-lane-speech{visibility:hidden}
 #home-gwen-lane{height:220px;padding-top:40px;box-sizing:border-box}
 #home-gwen-lane .gwen-lane-actor,#home-gwen-lane .gwen-lane-poke{width:160px;height:160px}
@@ -95,19 +98,22 @@ html[data-gwen-quiet=true] .gwen-lane-actor::before{transition:none}
 #direct-progress{display:block;width:100%;height:8px;margin:4px 0 12px}
 .gwen-quiet-option{display:block;margin-bottom:12px;font-size:13px}
 /* Quiet mode keeps one still illustration in its reserved lane. */
-#direct-board-lane{background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat;border-radius:8px}
-#direct-lane-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;text-align:center}
-#direct-lane-banner[hidden],#direct-lane-banner [hidden]{display:none}
+/* 수동·자동 무대 공용 배경 */
+#direct-board-lane,#reco-board-lane{background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat;border-radius:8px}
+#direct-lane-banner,#reco-lane-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;text-align:center}
+#direct-lane-banner[hidden],#direct-lane-banner [hidden],#reco-lane-banner[hidden],#reco-lane-banner [hidden]{display:none}
+.reco-gwen-stage{margin-bottom:8px}.reco-gwen-stage[hidden]{display:none}
+.reco-gwen-stage[data-phase=result] #reco-board-lane{height:80px;padding-top:0;background:none}
 .gwen-banner-title{position:relative;display:block;width:min(320px,86%);aspect-ratio:4/1}
 .gwen-banner-title img{position:absolute;inset:0;width:100%;height:100%;visibility:hidden;object-fit:contain}
 .gwen-banner-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:italic 900 clamp(22px,3vw,38px)/1.2 "Noto Sans KR","Malgun Gothic",sans-serif;color:#ffe7a0;-webkit-text-stroke:3px #15243e;paint-order:stroke fill;text-shadow:1px 3px 0 #15243e}
 .gwen-banner-title[data-image-ready=true] img{visibility:visible}
 .gwen-banner-title[data-image-ready=true] .gwen-banner-fallback{visibility:hidden}
-#direct-lane-banner[data-state=error] .gwen-banner-fallback{color:#c2cedc}
+#direct-lane-banner[data-state=error] .gwen-banner-fallback,#reco-lane-banner[data-state=error] .gwen-banner-fallback{color:#c2cedc}
 @media(max-width:400px){.gwen-banner-title{width:min(260px,86%)}}
 @media(min-width:1200px){
- #direct-board-lane{height:162px}
- #direct-board-lane .gwen-lane-actor,#direct-board-lane .gwen-lane-poke{width:120px;height:120px}
+ #direct-board-lane,#reco-board-lane{height:162px}
+ #direct-board-lane .gwen-lane-actor,#direct-board-lane .gwen-lane-poke,#reco-board-lane .gwen-lane-actor,#reco-board-lane .gwen-lane-poke{width:120px;height:120px}
  .gwen-result-lane{height:282px}
  .gwen-result-lane .gwen-lane-actor,.gwen-result-lane .gwen-lane-poke{width:240px;height:240px}
 }
@@ -116,7 +122,7 @@ html[data-gwen-quiet=true] .gwen-lane-actor::before{transition:none}
  #home-gwen-lane .gwen-lane-actor,#home-gwen-lane .gwen-lane-poke{width:88px;height:88px}
  #home-gwen-lane .gwen-lane-speech{display:none}
  .gwen-lane-actor,.gwen-lane-poke{width:64px;height:64px}
- #direct-board-lane,.gwen-result-lane{height:106px}
+ #direct-board-lane,#reco-board-lane,.gwen-result-lane{height:106px}
 }
 @media(prefers-reduced-motion:reduce){.gwen-lane-actor{will-change:auto}.gwen-lane-image{animation:none!important}}
 /* Travel is scheduled in <=0.6s transform-only segments by the scene controller. */
@@ -144,9 +150,9 @@ html[data-gwen-quiet=true] :is(.gwen-traveler,.gwen-scene,img[data-gwen-rest=tru
 #direct-result-summary .verdict-stats b{font-size:14px}
 #direct-result-summary .verdict-stats small{font-size:11px}
 #direct-gwen{min-width:0}
-#direct-result-lane{height:160px;padding-top:32px}
-#direct-result-lane .gwen-lane-actor,#direct-result-lane .gwen-lane-poke{width:120px;height:120px}
-#direct-result-lane .gwen-lane-speech{width:110px;font-size:10px;line-height:12px;padding:2px 5px}
+:is(#direct-result-lane,#reco-result-lane){height:160px;padding-top:32px}
+:is(#direct-result-lane,#reco-result-lane) .gwen-lane-actor,:is(#direct-result-lane,#reco-result-lane) .gwen-lane-poke{width:120px;height:120px}
+:is(#direct-result-lane,#reco-result-lane) .gwen-lane-speech{width:110px;font-size:10px;line-height:12px;padding:2px 5px}
 #direct-comparison>summary{font-size:12px}
 .direct-comparison{margin:4px 0;font-size:11px}
 .direct-comparison caption{margin:0;font-size:11px}
@@ -164,8 +170,8 @@ html[data-gwen-quiet=true] :is(.gwen-traveler,.gwen-scene,img[data-gwen-rest=tru
 @media(max-width:760px){
  #direct-panel .result-summary{padding:0}
  .direct-result-hero{grid-template-columns:minmax(0,1fr) 120px}
- #direct-result-lane{height:106px;padding-top:34px}
- #direct-result-lane .gwen-lane-actor,#direct-result-lane .gwen-lane-poke{width:64px;height:64px}
+ :is(#direct-result-lane,#reco-result-lane){height:106px;padding-top:34px}
+ :is(#direct-result-lane,#reco-result-lane) .gwen-lane-actor,:is(#direct-result-lane,#reco-result-lane) .gwen-lane-poke{width:64px;height:64px}
  .direct-comparison .direct-compare-toggle{grid-template-columns:minmax(0,1fr) 30px 50px 61px}
  .direct-compare-faces .face{width:14px;height:14px}
 }
@@ -179,3 +185,6 @@ html[data-gwen-quiet=true] :is(.gwen-traveler,.gwen-scene,img[data-gwen-rest=tru
 .direct-result-numbers{min-width:0}
 .direct-row-name::before{content:'▸ ';font-size:9px}
 [aria-expanded=true]>.direct-row-name::before{content:'▾ '}
+
+/* Cropped large portraits retain their original shadow treatment; compact actors need ground contact. */
+@media(min-width:1200px){.gwen-lane-actor:has(.gwen-lane-image:is([data-gwen-expression^="st_"],[data-gwen-expression=confident],[data-gwen-expression=thoughtful],[data-gwen-expression=notes]))::before{content:none}}

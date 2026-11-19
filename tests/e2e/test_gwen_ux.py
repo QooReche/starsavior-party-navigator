@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from test_gwen_art2 import ready, fixture, loaded, playing
 from test_page import test_server
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError
 
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'_tmp/gwen-ux'
@@ -128,19 +128,21 @@ def result_audit(page):
       __paintReport();
     }''')
     loaded(page,'#out [data-gwen=report] img')
-    assert expression(page.locator('#out [data-gwen=report]'))=='cry','shown result must drive report'
+    assert expression(page.locator('#out [data-gwen=report]'))=='st_cry','shown result must drive report'
     assert page.locator('#out [data-gwen-reaction]').get_attribute('data-gwen-reaction') in ['notes','st_cry']
     page.clock.run_for(600)
     page.evaluate('__paintReport()');page.clock.run_for(1300)
-    assert page.locator('#out [data-gwen=report]').count()==0,'rerender restarted report lifetime'
+    assert page.locator('#out [data-gwen=report]').count()==1,'result portrait disappeared after reaction'
     page.evaluate('__paintReport()')
-    assert page.locator('#out [data-gwen=report]').count()==0,'completed result replayed'
+    assert page.locator('#out [data-gwen=report]').count()==1,'completed result disappeared'
+    assert page.locator('#out [data-gwen=report] img').get_attribute('data-gwen-playing')=='false','completed result replayed'
     # Horizontal clipping uses exactly the same visibility predicate as image playback.
     page.evaluate('''() => {window.__clipResult={};$('out').innerHTML='<div id="reportclip" style="position:fixed;left:110vw;top:0;width:200px">'+Ux.gwenReport(__clipResult)+'</div>';}''')
     page.clock.run_for(10000)
     assert page.locator('#reportclip [data-gwen]').count()==1,'offscreen report was consumed'
     page.evaluate('$("reportclip").style.left="0"');loaded(page,'#reportclip img');page.clock.run_for(1900)
-    assert page.locator('#reportclip [data-gwen]').count()==0
+    assert page.locator('#reportclip [data-gwen]').count()==1
+    assert page.locator('#reportclip img').get_attribute('data-gwen-playing')=='false'
 
 
 def decode_gate(page):
@@ -207,22 +209,29 @@ def fetch_audit(page):
 
 def report_loading_audit(page):
     page.clock.install();held=[]
-    page.route('**/report.png',lambda route:held.append(route))
+    page.route('**/st_point.png',lambda route:held.append(route))
     fixture(page,page.evaluate('window.__slowReport={};Ux.gwenReport(__slowReport)'))
     page.wait_for_timeout(100)
     assert held,'report PNG delay was not exercised'
     page.clock.run_for(2100)
     assert page.locator('#out [data-gwen-report]').count()==1,'report expired before decoding'
     for route in held:route.continue_()
-    page.wait_for_function('document.querySelector("#out [data-gwen-report] img").dataset.gwenLoaded==="true"')
+    try:
+        page.wait_for_function('document.querySelector("#out [data-gwen-report] img").dataset.gwenLoaded==="true"')
+        page.wait_for_function('document.querySelector("#out [data-gwen-report] img").dataset.gwenPlaying==="true"')
+    except TimeoutError as error:
+        raise AssertionError('report expired before decoding: reaction never started') from error
     page.clock.run_for(1700)
     assert page.locator('#out [data-gwen-report]').count()==1,'report did not get 1.8 visible seconds'
     page.clock.run_for(200)
-    assert page.locator('#out [data-gwen-report]').count()==0
-    assert page.evaluate('Ux.gwenReport(__slowReport)')==''
+    assert page.locator('#out [data-gwen-report]').count()==1
+    assert page.locator('#out [data-gwen-report] img').get_attribute('data-gwen-playing')=='false','report expired before decoding'
+    assert page.evaluate('Ux.gwenReport(__slowReport)')!=''
 
 
 def seasonal_errors_audit(page):
+    # Candidate-shortage fixture needs supported bosses to reach that validation.
+    page.evaluate('D.cosmoRaid.bosses.forEach(b=>b.sim=true)')
     for kind,state,start in [('guild','GSR','guildSearchStart'),('cosmo','CSR','cosmoSearchStart')]:
         page.evaluate(f'''async () => {{
           MI.info={{units:[]}};MI.profiles.op={{results:{{}}}};MI.profiles.cosmo={{results:{{}}}};
@@ -345,8 +354,8 @@ def main():
                         assert message in str(e),(name,str(e));print('CAUGHT intended assertion: '+name,flush=True)
                     else:raise AssertionError('mutation survived: '+name)
                 html=(ROOT/'index.html').read_text(encoding='utf-8')
-                old='simBar(p,rows,st,uniq>rows.length,shown)';assert old in html
-                try:run_case(browser,base,result_audit,template=html.replace(old,'simBar(p,rows,st,uniq>rows.length,rows[0])'))
+                old='Ux.gwenReaction(SIMQ.res[simSig(st,shown)]?.clear,SIMQ.res[simSig(st,shown)])';assert old in html
+                try:run_case(browser,base,result_audit,template=html.replace(old,'Ux.gwenReaction(SIMQ.res[simSig(st,rows[0])]?.clear,SIMQ.res[simSig(st,rows[0])])'))
                 except AssertionError as e:
                     assert 'shown result must drive report' in str(e);print('CAUGHT intended assertion: shown',flush=True)
                 else:raise AssertionError('shown mutation survived')

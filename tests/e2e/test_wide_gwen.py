@@ -12,6 +12,7 @@ TMP = ROOT / '_tmp'
 TMP.mkdir(exist_ok=True)
 os.environ['TEMP'] = os.environ['TMP'] = str(TMP)
 from test_page import test_server, seed, FULL, wait_myinfo
+from test_gwen_auto import lane_audit
 from playwright.sync_api import sync_playwright
 
 
@@ -52,6 +53,8 @@ def pause_roam(page, time):
 
 
 def loading_audit(page, reduced=False, scope='#out'):
+    if scope=='#out':
+        return lane_audit(page,reduced)
     w = scope+' [data-gwen]'
     if not reduced:
         assert page.locator(w).get_attribute('class').split().count('gwen-roam') == 1
@@ -119,12 +122,12 @@ def exercise(page, base, width, shots):
     loading_audit(page)
     shot('loading')
     if width==1280:
-        mutation(page,'.gwen-work{align-items:flex-start!important}',lambda:loading_audit(page))
-        mutation(page,'.gwen-roam .gwen-traveler{transform:translateX(-999px)!important}',lambda:loading_audit(page))
+        mutation(page,'#reco-board-lane .gwen-lane-actor{top:-80px!important}',lambda:loading_audit(page))
+        mutation(page,'#reco-board-lane .gwen-lane-actor{transform:translateX(-999px)!important}',lambda:loading_audit(page))
     page.emulate_media(reduced_motion='reduce')
     loading_audit(page,True)
     if width==1280:
-        mutation(page,'#out .gwen-roam .gwen-traveler{animation:gwen-roam 12s infinite!important}',lambda:loading_audit(page,True))
+        mutation(page,'#reco-board-lane .gwen-lane-actor{top:-80px!important}',lambda:loading_audit(page,True))
     page.emulate_media(reduced_motion='no-preference')
     # Files stay centered, while progress and cancellation nodes survive updates.
     page.evaluate('''() => {SIMQ.screening=true;SIMQ.scr[scrKey(__loadSt,1)]={got:3,left:80};
@@ -132,7 +135,7 @@ def exercise(page, base, width, shots):
       window.__cancel=document.querySelector('[data-simcancel]');
     }''')
     assert page.locator('#out .gwen-roam').count()==0
-    centered(page,'#out .gwen-scene','#out')
+    lane_audit(page)
     page.evaluate('SIMQ.scr[scrKey(__loadSt,1)].got=4;simProgressSync(document.querySelector("[data-k=progress]"),__loadSt)')
     assert page.evaluate('__cancel===document.querySelector("[data-simcancel]")')
     # Render actual recommendation cards and verdicts, with documented synthetic results.

@@ -179,7 +179,7 @@ function checkGwenSay(u=U){
     assert.equal(u.gwenSayBand(p),band,String(p));
     assert(u.gwenReaction(p).includes(`<div class="gwen-bubble-space">${u.gwenSay(band)}</div>`),String(p));}
   for(const p of [NaN,undefined,null])assert.equal(u.gwenSayBand(p),'');
-  assert.match(u.gwenReaction(.95),/^<div class="gwen-reaction" data-gwen-reaction="confident" aria-hidden="true">/);
+  assert.match(u.gwenReaction(.95),/^<div class="gwen-reaction" data-gwen-reaction="st_verdict" aria-hidden="true">/);
   assert.match(u.GWEN_SAY.high[0],/사건 해결/);assert.match(u.GWEN_SAY.shaky[0],/아슬아슬/);assert.match(u.GWEN_SAY.low[0],/육성부터/);
 }
 // 방문당 하나 고정: 브라우저에서는 처음 한 번만 고르고, 불러오기 창의 빈 말풍선은 mount 가 한 번 채움.

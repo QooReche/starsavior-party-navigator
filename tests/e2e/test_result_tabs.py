@@ -41,7 +41,9 @@ def tabs_audit(page, width):
     reaction = page.locator(NOW + ' .result-summary .gwen-reaction')
     assert reaction.count() == 1 and reaction.locator('img').is_visible()
     bubble = reaction.locator('.gwen-bubble')
-    assert bubble.is_visible() and bubble.inner_text().strip(), '그웬 말풍선'
+    # Speech is one-shot; the portrait must survive repeated tab switches.
+    assert bubble.count()==1 and bubble.text_content().strip(), '그웬 말풍선 문구'
+    assert reaction.locator('img').is_visible(), '결과 그웬 유지'
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'), '가로 넘침'
 
 

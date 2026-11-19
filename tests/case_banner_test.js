@@ -1,10 +1,14 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
-const G=require('../gwen_lane');
+const G=require('../gwen_lane'),P=require('../gwen_policy');
 const base={mode:'direct',phase:'idle',count:4};
 for(const phase of ['idle','work','result','error']){
   assert.equal(G.bannerState({...base,phase},true),'','actor must hide banner');
   assert.equal(G.bannerState({...base,phase},false),['idle','work'].includes(phase)?'':phase);
   assert.equal(G.bannerState({...base,mode:'home',phase},false),'');
+}
+// reco 무대도 배너 표시
+for(const phase of ['idle','work','result','error']){
+  assert.equal(P.bannerState({...base,mode:'reco',phase},false),['idle','work'].includes(phase)?'':phase);
 }
 for(const count of [0,1,2,3,4])assert.equal(G.bannerState({...base,count},false),'');
 assert.equal(G.bannerState({...base,phase:'result',stale:true},false),'');

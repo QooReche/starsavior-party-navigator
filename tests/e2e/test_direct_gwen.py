@@ -104,21 +104,21 @@ def ui(browser,base,width):
     assert p.evaluate('GwenLane.mount().state.art')==work,'edit overrode calculation'
     done(p);snapshot(p,'high',width);bounds(p)
     art=p.evaluate('GwenLane.mount().state.art')
-    assert art in (['st_verdict','st_cheer','st_ok'] if width>=1200 else ['verdict','cheer','report'])
+    assert art in ['st_verdict','st_cheer','st_ok','st_reach']
     count=p.locator(ACTOR).get_attribute('data-announcements')
     p.evaluate('directResultsPaint();directResultsPaint()')
     assert p.locator(ACTOR).get_attribute('data-announcements')==count,'result announced twice'
     if width==1280:
         p.set_viewport_size({'width':360,'height':1000});shown(p)
-        assert p.evaluate('GwenLane.mount().state.art') in ['verdict','cheer','report']
+        assert p.evaluate('GwenLane.mount().state.art') in ['st_verdict','st_cheer','st_ok','st_reach']
         p.set_viewport_size({'width':1280,'height':1000});shown(p)
         assert p.evaluate('GwenLane.mount().state.art')==art
         assert p.locator(ACTOR).get_attribute('data-announcements')==count
     p.wait_for_timeout(2000)
     for i,kind in enumerate(['shy','sulk','cry'],1):
         p.locator('.gwen-lane-poke').click()
-        assert p.evaluate('GwenLane.mount().state.art')==('st_' if width>=1200 else '')+kind
-        snapshot(p,f'click-{i}',width,expected=('st_' if width>=1200 else '')+kind)
+        assert p.evaluate('GwenLane.mount().state.art')=='st_'+kind
+        snapshot(p,f'click-{i}',width,expected='st_'+kind)
     before=p.evaluate('GwenLane.mount().state.art');p.locator('.gwen-lane-poke').click()
     assert p.evaluate('GwenLane.mount().state.art')==before,'10-second poke lock missing'
     p.locator('#optbox > summary').click();p.locator('#gwen-quiet').check()
@@ -128,7 +128,7 @@ def ui(browser,base,width):
     # New low result, same physical actor.
     p.evaluate('DIRECT.cache.clear();window.clearDirect=0;window.directDelay=100;directRun()')
     done(p);snapshot(p,'low',width);bounds(p)
-    assert p.evaluate('GwenLane.mount().state.art') in (['st_cry','notes'] if width>=1200 else ['cry'])
+    assert p.evaluate('GwenLane.mount().state.art') in ['st_cry','notes']
     # Same payload re-execution can produce a new result object: announcement key must use result identity.
     assert not p.errors,p.errors
     p.close()

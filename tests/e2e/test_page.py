@@ -2290,6 +2290,8 @@ def test_growth_stage23(browser, ctx):
       C.poolSize=12;C.maxPool=12;C.rerank.keep=18;
       $('assume-growth').checked=true;condChanged();
     }''')
+    # Synthetic loader/worker contract: all fixture bosses are supported. Live sim=false remains covered by cosmo_search/auto_level.
+    page.evaluate("D.cosmoRaid.bosses.forEach(b=>b.sim=true)")
     for kind, state, selector in [('guild', 'GSR', '#guild-search [data-gs="start"]'), ('cosmo', 'CSR', '#cosmo-search [data-cs="start"]')]:
         page.select_option('#content', value=page.evaluate(f"String(contents.findIndex(c=>c.key==='{kind}'))"))
         settle(page)
@@ -2417,6 +2419,8 @@ def test_season_gate(browser, ctx):
       window.gatePeriod={start:'2026-11-01T04:00:00+09:00',end:'2026-11-05T04:00:00+09:00'};
       Object.assign(D.guild.season,gatePeriod);D.cosmoRaid.seasonPeriod={...gatePeriod};
     }''')
+    # Synthetic loader/worker contract: all fixture bosses are supported. Live sim=false remains covered by cosmo_search/auto_level.
+    page.evaluate("D.cosmoRaid.bosses.forEach(b=>b.sim=true)")
     for key, selector, state in [('guild', '#guild-search [data-gs="start"]', 'GSR'), ('cosmo', '#cosmo-search [data-cs="start"]', 'CSR')]:
         page.select_option('#content', value=page.evaluate(f"String(contents.findIndex(c=>c.key==='{key}'))"))
         settle(page)
@@ -3042,6 +3046,8 @@ def test_ux_step3(browser, ctx):
     # The real search entry and cancel handlers must stop their workers, with no late result.
     page.evaluate("""() => {window.ui3Created=0;window.ui3Stopped=0;
       window.Worker=class {constructor(){ui3Created++} postMessage(){} terminate(){ui3Stopped++}};}""")
+    # Synthetic loader/worker contract: all fixture bosses are supported. Live sim=false remains covered by cosmo_search/auto_level.
+    page.evaluate("D.cosmoRaid.bosses.forEach(b=>b.sim=true)")
     for kind, prefix, state in [('guild','gs','GSR'),('cosmo','cs','CSR')]:
         select(kind)
         first_screen(kind)

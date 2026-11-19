@@ -205,7 +205,7 @@ def delayed(browser,base):
 
 def mutations(browser,base):
     source=(ROOT/'gwen_lane.js').read_text(encoding='utf-8')
-    cases=[('work lane',"return ['work','direct-board-lane']", "return ['work','direct-result-lane']",working),
+    cases=[('work lane',"return ['work',stage.board]", "return ['work',stage.result]",working),
            ('progress disabled',"if(target>x+.5)moveTo(target", "if(false)moveTo(target",None)]
     for name,old,new,check in cases:
         assert old in source

@@ -152,9 +152,9 @@ button.ux-help.ux-help,.season-reference .ux-help{font-size:0;line-height:0;padd
 .gwen-reaction{display:flex;flex-direction:column;align-items:flex-end;max-width:100%;margin-top:12px;pointer-events:none}
 /* 말풍선 자리(220×64 이상)는 얼굴 위에 따로 잡아 조작부를 덮지 않음. */
 .gwen-bubble-space{display:flex;align-items:flex-end;justify-content:flex-end;width:100%;min-height:64px;padding-right:48px;box-sizing:border-box}
-.gwen-reaction-art{display:block;width:200px;height:200px;object-fit:contain;max-width:100%}
-.result-summary:has(.gwen-reaction) [data-gwen="report"]{--gwen-size:72px;min-height:0;margin:4px auto;font-size:12px}
-.result-summary:has(.gwen-reaction) [data-gwen="report"] .gwen-scene{width:72px;height:72px}
+.gwen-reaction-art{display:block;width:240px;height:240px;object-fit:contain;max-width:100%}
+.result-summary:has(.gwen-reaction) .gwen-work[data-gwen="report"]{--gwen-size:72px;min-height:0;margin:4px auto;font-size:12px}
+.result-summary:has(.gwen-reaction) .gwen-work[data-gwen="report"] .gwen-scene{width:72px;height:72px}
 .mi-empty .gwen-work{max-width:360px}.mi-empty .gwen-caption{display:none}
 .gwen-paused .gwen-roam :is(.gwen-traveler,.gwen-scene,.gwen-worker,.gwen-bubble,.gwen-bubble::after){animation-play-state:paused}
 @media(max-width:1199px){.gwen-reaction{flex-direction:row;align-items:center;justify-content:flex-end}.gwen-reaction-art{width:112px;height:112px}.gwen-bubble-space{flex:0 1 240px;width:auto;min-width:0;align-items:center;padding-right:4px}.gwen-reaction .gwen-bubble{--tx:calc(100% + .5px);--ty:50%;--tr:-45deg;transform-origin:100% 50%}}

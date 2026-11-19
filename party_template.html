@@ -330,7 +330,7 @@ summary{padding:9px 4px}
 <div id="growth-control-home"><span id="growth-control"><label><input type="checkbox" id="assume-growth"> 클리어를 위한 추천 육성도 같이 보기</label><button id="growth-hint" type="button" class="ux-help" aria-label="클리어 추천 육성 설명" aria-expanded="false" data-help="덜 키운 구원자를 맞췄다고 치고 함께 찾음. 더 잘 깨는 편성이 있으면 결과 아래에 보여줌. 목표는 프리셋 기준이며 최소 육성치를 찾는 기능은 아님.">ⓘ</button><span id="growth-requires-info" class="tag">내 정보 필요</span></span></div>
 </div>
 <div id="control-home" hidden><div id="stinfo"></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
-<nav id="mode-strip" aria-label="편성 모드" hidden><button type="button" class="sec" data-pn-mode="home">← 처음으로</button><button type="button" class="sec" data-pn-mode="reco">자동 추천</button><button type="button" class="sec" data-pn-mode="direct">직접 편성</button></nav>
+<nav id="mode-strip" aria-label="편성 모드" hidden><button type="button" class="sec" data-pn-mode="home">← 처음으로</button><button type="button" class="sec" data-pn-mode="reco">자동 추천</button><button type="button" class="sec" data-pn-mode="direct">직접 편성</button><span id="mode-direct-reason" class="mut" hidden>공사 중 · 코스모 게이트 직접 편성(3파티)</span></nav>
 <section id="start-screen" aria-label="시작 방법 고르기" hidden></section>
 <section id="mi-panel" class="panel" aria-label="내 정보" hidden>
  <div class="mi-toolbar"><details id="mi-menu" class="ux-menu"><summary aria-label="내 구원자 메뉴">⋯</summary><button id="mi-panel-clear" type="button" class="sec">지우기</button></details><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
@@ -346,7 +346,19 @@ summary{padding:9px 4px}
 <section id="guild-search" class="panel" aria-label="길드 방어전 편성 찾기" hidden></section>
 <section id="guild-extra" class="panel" aria-label="길드 방어전 설정·설명" hidden></section>
 <section id="cosmo-search" class="panel" aria-label="코스모 게이트 3보스 편성 찾기" hidden></section>
+<div id="reco-gwen-stage" class="reco-gwen-stage" hidden>
+ <div id="reco-result-lane" class="gwen-lane gwen-result-lane" aria-label="그웬 결과 자리" hidden></div>
+ <div id="reco-board-lane" class="gwen-lane reco-lane" aria-label="그웬 길">
+  <div id="reco-lane-banner" aria-hidden="true" hidden>
+   <span class="gwen-banner-title" data-phrase="investigation" hidden><span class="gwen-banner-fallback">조사 완료!</span><img src="assets/ui_icons/case_banner_investigation.webp" width="640" height="160" alt="" decoding="async"></span>
+   <span class="gwen-banner-title" data-phrase="inquiry" hidden><span class="gwen-banner-fallback">수사 완료!</span><img src="assets/ui_icons/case_banner_inquiry.webp" width="640" height="160" alt="" decoding="async"></span>
+   <span class="gwen-banner-title" data-phrase="calculation" hidden><span class="gwen-banner-fallback">계산 완료!</span><img src="assets/ui_icons/case_banner_calculation.webp" width="640" height="160" alt="" decoding="async"></span>
+   <span class="gwen-banner-title" data-phrase="error" hidden><span class="gwen-banner-fallback">수사 난항…</span><img src="assets/ui_icons/case_banner_error.webp" width="640" height="160" alt="" decoding="async"></span>
+  </div>
+ </div>
+</div>
 <div id="out"></div>
+<section id="direct-construction" class="party" aria-label="코스모 게이트 직접 편성 공사 중" hidden></section>
 <section id="direct-panel" class="party" aria-label="직접 편성" hidden>
  <header class="direct-heading"><h2>직접 편성</h2><p class="mut">편성만 직접 고름 · 전투는 오토로 돌림</p></header>
  <div class="result-layout">
@@ -427,6 +439,7 @@ summary{padding:9px 4px}
 <script src="ui_shared.js"></script>
 <script src="myinfo_import.js"></script>
 <script src="myinfo_stats.js"></script>
+<script src="gwen_policy.js"></script>
 <script src="gwen_lane.js"></script>
 <script src="ux_ui.js"></script>
 <script src="myinfo_view.js"></script>
@@ -455,6 +468,9 @@ const D=/*DATA*/null;
 UiShared.setSkillIcons?.(D.skillIcons);
 Ux.mount();
 Ux.setGrades(D.archiveGrades);
+// 무대 등록: 직접 편성·자동 추천 무대의 DOM 요소를 GwenLane 에 알림
+GwenLane.registerStage('direct',{board:document.getElementById('direct-board-lane'),result:document.getElementById('direct-result-lane'),banner:document.getElementById('direct-lane-banner')});
+GwenLane.registerStage('reco',{resultExternal:true,board:document.getElementById('reco-board-lane'),result:document.getElementById('reco-result-lane'),banner:document.getElementById('reco-lane-banner')});
 const EL={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
 const BG={"특이점 관측":"✦","스타피어서":"➶","큐브 과부하":"▣","행성 정화":"◍","차원 강습":"⟁"};
 const $=id=>document.getElementById(id);
@@ -916,7 +932,7 @@ function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+t
    ${k===pickKey?"":`<span class="qt">${sr?simCell(p,t,st):'<span class="mut" data-state="pending">계산 전</span>'}</span><button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">보기</button>`}</div>`};
  const selected=rows.findIndex(t=>t.keys.slice().sort().join(",")===pickKey),active=selected<0?0:selected;
  const alternatives=rows.flatMap((t,i)=>i===active?[]:[row(t,i)]);
- return `<div class="qbox" data-k="quick"><div class="result-layout"><div class="result-summary">${miVerdict(shown,st)}${scrNote(p,st)}${simBar(p,rows,st,uniq>rows.length,shown)}${p===1&&!SIMQ.busy?Ux.gwenReaction(SIMQ.res[simSig(st,shown)]?.clear):''}</div><div class="result-team">${main}</div></div>${alternatives.length?`<div class="alternatives" data-k="alternatives">${alternatives.slice(0,2).join('')}${alternatives.length>2?`<details class="alternatives-more" data-fold="alternatives-${p}"><summary><span class="more-label">더 보기(+${alternatives.length-2})</span><span class="less-label">접기</span></summary>${alternatives.slice(2).join('')}</details>`:''}</div>`:''}${tail}</div>`}
+ return `<div class="qbox" data-k="quick"><div class="result-layout"><div class="result-summary">${miVerdict(shown,st)}${scrNote(p,st)}${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?Ux.gwenReaction(SIMQ.res[simSig(st,shown)]?.clear,SIMQ.res[simSig(st,shown)]):""}</div><div class="result-team">${main}</div></div>${alternatives.length?`<div class="alternatives" data-k="alternatives">${alternatives.slice(0,2).join('')}${alternatives.length>2?`<details class="alternatives-more" data-fold="alternatives-${p}"><summary><span class="more-label">더 보기(+${alternatives.length-2})</span><span class="less-label">접기</span></summary>${alternatives.slice(2).join('')}</details>`:''}</div>`:''}${tail}</div>`}
 
 
 
@@ -992,7 +1008,7 @@ function simBar(p,rows,st,hasMore,shown=rows[0]){
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
  const st8=SIMQ.busy===p&&!SIMQ.compareKey?`${Ux.gwenWork("inspect")}<span class="mut" data-k="simstate" data-state="running">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
   SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`${Ux.gwenError(SIMQ.cancelled?"cancel":"calculation")}<span class="bad" data-k="simstate" data-state="error">모의 전투 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
-  all?`${rows.length?(Ux.gwenReport?.(SIMQ.res[simSig(st,shown)],{clear:p===1?SIMQ.res[simSig(st,shown)]?.clear:undefined})||''):''}<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
+  all?`<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">모의 전투 실행</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
 function simInvalidate(){if(typeof recoTaskCancel==='function')recoTaskCancel('입력이 바뀜');if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;if(Object.keys(x.res).length)scrClose(x);else delete SIMQ.scr[k]}simPoolDrop();SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
@@ -1130,7 +1146,7 @@ function simRunAdd(ms){if(ms>=0)SIMQ.runMs=SIMQ.runMs?SIMQ.runMs*0.5+ms*0.5:ms}
 function simProgressSync(pv,st){const box=document.createElement("div");box.innerHTML=simProgress(st);const nv=box.firstElementChild;
  const shape=x=>[...x.querySelectorAll("button")].map(b=>b.textContent).join("|")+"/"+x.querySelectorAll(".tag").length+"/"+x.dataset.party;
  const a=pv.querySelector(".pbar"),b=nv.querySelector(".pbar");
- Ux.syncGwen(pv,nv.querySelector("[data-gwen]")?.dataset.gwen);
+ // 그웬 걷기 진행률은 recoGwenShow 가 simProgress 안에서 갱신함(#out 밖 고정 무대).
  if(shape(pv)!==shape(nv)||!a||!b){pv.replaceWith(nv);return}
  for(const q of ['[data-k="simstate"]','[data-k="eta"]']){const x=pv.querySelector(q),y=nv.querySelector(q);if(x&&y&&x.textContent!==y.textContent)x.textContent=y.textContent}
  a.setAttribute("aria-valuemax",b.getAttribute("aria-valuemax"));a.setAttribute("aria-valuenow",b.getAttribute("aria-valuenow"));a.firstElementChild.style.width=b.firstElementChild.style.width}
@@ -1271,7 +1287,7 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
    stage(w,m){if(m.msg==="준비 끝")chk();if(/^시뮬 \d+\//.test(m.msg||""))w._t=Date.now();show(`후보 거르는 중 ${sc.got||0}/${sc.left}`)},
    team(key,m,w){into[key]=Object.assign(m.result,{n});sc.got++;if(w._t){simRateAdd((Date.now()-w._t)/w._n,"scr");w._t=0}scrEta();
     show(`후보 거르는 중 ${sc.got}/${sc.left}`);
-    const bar=document.querySelector('[data-k="progress"] .pbar i');if(bar)bar.style.width=Math.round(sc.got/sc.left*100)+"%"},
+    const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)},
    done:next,
    error:(msg,w,crash)=>{SIMQ.screening=false;simStop(crash?"작업자 오류: "+msg:msg)}});
   chk()};
@@ -1289,10 +1305,24 @@ function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.bus
  for(const p of Object.keys(LASTQ)){const b=LASTQ[p];if(!b)continue;if(scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done)return true;if(b.rows.some(t=>!SIMQ.res[simSig(st,t)]))return true;
   if(b.rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&b.rows.length<9&&b.total>b.rows.length)return true}
  return false}
+// 추천 상태의 소유자는 이 경로 하나. 화면 전환은 저장된 상태의 가시성만 바꿈.
+function recoGwenVisibility(){
+ const host=$('reco-gwen-stage');if(!host)return;
+ host.hidden=DIRECT.mode!=='reco'||!$('mi-panel').hidden||!['work','result'].includes(host.dataset.phase);
+}
+function recoGwenShow(show,progress,result=null){
+ const host=$('reco-gwen-stage');if(!host)return;
+ const phase=show?'work':result?'result':'idle';
+ host.dataset.phase=phase;$('reco-result-lane').hidden=true;
+ GwenLane.sync({mode:'reco',phase,progress:progress||0,count:4,result:result?GwenLane.resultId(result):null,clear:result?.clear});
+ recoGwenVisibility();
+}
 function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap(b=>b.rows),p=SIMQ.busy??(Number(Object.keys(LASTQ)[0])||1);
  const sc=SIMQ.screening?SIMQ.scr[scrKey(st,p)]:null,done=sc?sc.got||0:rows.filter(t=>SIMQ.res[simSig(st,t)]).length,all=sc?sc.left:rows.length;
  const pct=all?Math.round(done/all*100):0;
- return `<div class="party progress" data-party="${p}" data-k="progress" data-state="running"><b class="case-title">추천 편성 확인 중</b>${Ux.gwenWork(sc?"screen":SIMQ.loaded?"long":"inspect")}${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':""}<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
+ // 그웬 걷기 연출은 reco-gwen-stage(#out 밖 고정)가 맡으므로 여기엔 넣지 않음.
+ recoGwenShow(true,all?done/all:0);
+ return `<div class="party progress" data-party="${p}" data-k="progress" data-state="running"><b class="case-title">추천 편성 확인 중</b>${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':""}<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
   <p><span data-k="simstate" title="후보 ${SCR_N}판 · 작업자 ${scrWorkers()}개">${sc?"후보 거르는 중":"상위 팀 확인 중"} ${done}/${all}</span></p>
   ${Ux.help("진행 방식","후보를 거른 뒤 상위 팀을 100판씩 모의 전투함. 남은 시간은 이 기기의 최근 계산 속도를 기준으로 표시함. 후보를 거르는 중에 「지금까지 결과로 보기」를 누르면 그때까지 확인한 팀으로 먼저 보여 주고, 나머지는 「끝까지 확인」으로 이어서 볼 수 있음.")}<p data-k="eta">${esc(simEtaText())}</p>
   ${sc?'<button type="button" class="sec" data-scrstop="1">지금까지 결과로 보기</button> <button type="button" class="sec" data-simcancel="1">취소</button>':'<button type="button" class="sec" data-simcancel="1">중단하고 결과 보기</button>'}</div>`}
@@ -1305,6 +1335,7 @@ const AUTO=!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'&&/[?&]auto=1(&|$)/.
 const RECO={timer:null,revision:0,standard:false,sharedPending:!!SHARE.c&&!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'};
 function recoClearTimer(){clearTimeout(RECO.timer);RECO.timer=null;RECO.revision++}
 function idleView(){
+ recoGwenShow(false);
  const waiting=!!RECO.timer,kind=waiting?(RECO.sharedPending?"cancel":"wait"):"go",out=$('out'),now=out.children&&out.children.length===1?out.firstElementChild:null;
  // 같은 안내면 다시 그리지 않는다: 조건·자료 로딩으로 연달아 불려도 누르는 중인 단추(중단·추천 편성 보기)가 사라지지 않게
  if(now&&now.dataset.k==="idle"&&now.dataset.kind===kind){growthControlPlace();return}
@@ -1349,7 +1380,7 @@ function runCore(skipAuto=false){
  const have=[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);SCROWN=[...own].sort().join(",")+"|"+have.join(",");
  GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty);
  const sid=c.key+"|"+st.tab+"|"+st.name;
- const used=new Set();let html="";const allParties=[];
+ const used=new Set();let html="";const allParties=[];let gwenResult=null;
  const qi0=quickIn(c,st),initial=recoCandidates(c,st,own,used,defPen,qi0);
  const cands0=initial.cands,ranked0=initial.ranked,qr0=initial.qt;
  JOINT=jointPick(c,st,own,defPen,qr0);
@@ -1371,6 +1402,7 @@ function runCore(skipAuto=false){
   const br=breakChoice(party,c,have);
   // 이 팀의 브라우저 시뮬 결과(있으면): 카드에 피해 기여·쓰러질 확률
   const qr=LASTQ[p]&&LASTQ[p].rows.find(t=>t.keys.slice().sort().join(",")===pick.key),sr=qr&&SIMQ.res[simSig(st,qr)];
+  if(p===1)gwenResult=sr||null;
   const r=sr&&sr.u?{g:true,u:sr.u}:null;
   const main=`<div class="rowcards">${card(bk[0],"back",r)}${card(fr[0],"front",r)}${card(fr[1],"front",r)}${card(bk[1],"back",r)}</div>${breakCard(br,sr,p,qr,st)}${gimNote(party,c,st,p)}`;
   const tail=`${altChips(party,alt,p)}<details class="score-details" data-fold="score-${p}"><summary>더 보기</summary><div class="unit-metrics">${party.map(x=>`<div>${esc(x.s.name)}${simUnit(r,x.s.key)}</div>`).join("")}</div>${miFlags(qr?.b.assumed)}${starNote(c.key)}${bigBoss(c,st)?bigBossNote(bigBoss(c,st)):""}${p===1?'<div data-controls="score"></div><div data-controls="graph"></div>':""}<div class="scoredata">추천 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10${party.map(x=>`<div>${esc(x.s.name)}: ${Object.entries(x.parts).map(([k,v])=>`${esc(k)} ${v.toFixed(1)}`).join(" · ")}</div>`).join("")}${synSummary(party)}</div></details>`;
@@ -1380,6 +1412,7 @@ function runCore(skipAuto=false){
  document.querySelectorAll('#out .party[data-party]').forEach(p=>{const more=p.querySelector('.score-details');if(more)p.querySelectorAll('.break-extra,.gimbox,.gimavoid').forEach(e=>more.append(e));if(allParties.length>1)p.insertAdjacentHTML('afterbegin',`<h2 class="party-label">파티 ${p.dataset.party}</h2>`);});
  if(skipAuto!==true)simAutoKick();
  if(SIMQ.busy!=="growth"&&simWaiting(st)){$("out").innerHTML=simProgress(st);if(window.onParties)onParties(allParties);return}
+ recoGwenShow(false,null,gwenResult);
  slotRemember(c,st);growthMaybe(c,st);slotPaint();
  for(const p of Object.keys(BRCMP.open))if(!document.querySelector(`.party[data-party="${p}"] .bcompare`))delete BRCMP.open[p];
  // 비교가 도는 중 1안 팀이 바뀌어 비교 목록이 사라졌으면, 그 파티의 시뮬 줄에 진행 상태와 취소를 대신 보인다(멈춘 채 다른 시뮬이 막히지 않게)
