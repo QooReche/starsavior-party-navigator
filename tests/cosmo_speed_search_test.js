@@ -4,6 +4,7 @@ const roster=Array.from({length:18},(_,i)=>({key:'u'+String(i).padStart(2,'0'),c
 const results=Object.fromEntries(roster.map((r,i)=>[r.key,{power:1000-i*40,stats:{atk:1000-i*40}}]));
 const cls=Object.fromEntries(roster.map(r=>[r.key,r.cls]));
 const settings=()=>{const s=JSON.parse(JSON.stringify(G.search));
+ s.learned.value=false; // 기존 빠른 탐색 전용 회귀
  s.speed.workerReuse.value=false;s.speed.surrogate.value=false;s.speed.rngStreams.value=false;
  s.rerank.keep=60;s.combine.topTriples=5;return s;};
 function factory(state,constant=false){return ()=>{

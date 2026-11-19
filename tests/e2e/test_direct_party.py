@@ -5,6 +5,7 @@ The recommendation regression runs the existing real Pyodide pipeline separately
 """
 import argparse
 import json
+import os
 from pathlib import Path
 from urllib.parse import quote
 from test_page import test_server, seed, SYNTH, wait_myinfo, wait_sim_done
@@ -17,6 +18,9 @@ OUT.mkdir(parents=True,exist_ok=True)
 
 def ready(browser,base,width=1280,info=SYNTH,query='',touch=False,setup=None):
     page=browser.new_page(viewport={'width':width,'height':1000},has_touch=touch)
+    if os.environ.get('PN_E2E_LOW_MEMORY') == '1':
+        # 우선순위 시험은 2개 워커를 전제로 함. 합성 워커의 별도 코어 설정도 존중함.
+        page.add_init_script("for(const [key,value] of [['hardwareConcurrency',3],['deviceMemory',2]]){const d=Object.getOwnPropertyDescriptor(navigator,key);if(!d||d.configurable)Object.defineProperty(navigator,key,{get:()=>value,configurable:true});}")
     seed(page,info)
     if info:
         groups=list(json.loads((ROOT/'data/growth.json').read_text(encoding='utf-8'))['tactics'])

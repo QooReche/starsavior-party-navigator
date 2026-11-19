@@ -6,9 +6,9 @@
   function random(seed) { let s=seed>>>0; return () => {s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;}; }
   function config(S, units) {
     const c=S.learned;
-    for(const k of ['S','m','K','M','A','overlapStarts','overlapKeep','folds','epochs'])
+    for(const k of ['S','m','K','M','A','overlapStarts','overlapKeep','folds','epochs','maxScoreCombos','fallbackMultiplier'])
       if(!Number.isInteger(c[k]) || c[k] < (['m','M','overlapStarts','overlapKeep'].includes(k)?0:1)) throw Error('학습 선별 설정 오류: '+k);
-    if(c.S < units*c.m || c.folds<2 || !(c.ridge>0) || !(c.minCorrelation>=-1 && c.minCorrelation<=1) || !(c.missThreshold>=0 && c.missThreshold<=1)) throw Error('학습 선별 설정·표본 상한 오류');
+    if(c.S < units*c.m || c.folds<2 || c.fallbackMultiplier<2 || !(c.ridge>0) || !(c.minCorrelation>=-1 && c.minCorrelation<=1) || !(c.missThreshold>=0 && c.missThreshold<=1)) throw Error('학습 선별 설정·표본 상한 오류');
     return c;
   }
   // 작은 최솟값 힙. 동점은 키 오름차순으로 결정해서 순회/워커 순서에 독립.

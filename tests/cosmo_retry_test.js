@@ -8,6 +8,7 @@ const teams = [[0,1,2,3], [0,4,5,6], [0,7,8,9], [0,10,11,12], [4,5,6,7], [8,9,10
 const score = keys => 100 + (keys.includes('u0') ? 10000 : 0) + teams.length - teams.findIndex(t => C.idOf(t) === C.idOf(keys));
 function settings() {
   const S = structuredClone(G.search);
+  S.learned.value = false; // 기존 전수·빠른 탐색의 겹침 재시도 회귀
   S.minFront = S.minDealer = 0; S.maxPool = null;
   S.screen = {runs: 2, firstRuns: 1, passFrac: .001, passMinMult: 1};
   S.rerank = {keep: 1, runs: 3}; S.final.runs = 4; S.combine = {topTriples: 2, show: 2};

@@ -463,20 +463,20 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
 
 
 # «3보스 최고 점수 편성 찾기»(cosmo_search.js) 설정 — 표에서 오는 값이 아니라 탐색 비용 정책이라 여기에 고정해 data 에 싣는다.
-# 기본은 전수 탐색: 보유 육성 구원자 전부가 후보(maxPool=None). 조합 수 C(후보,4)×3보스가 1단계 판 수를 정한다(docs/cosmo_raid.md 2단계).
-# maxPool(숫자)을 주면 그때만 전투력 상위 maxPool 명 + minRole 보충(minPowerRatio 이상)으로 자른다. maxCombos 는 보스당 조합 수 안전 상한(넘으면 시작하지 않고 안내).
+# 기본은 보유 육성 구원자 전체에서 학습 선별. learned를 끄면 기존 전수 탐색(docs/cosmo_raid.md 2단계).
+# maxPool(숫자)을 주면 그때만 전투력 상위 maxPool 명 + minRole 보충(minPowerRatio 이상)으로 자른다. maxCombos 는 전수 경로의 보스당 조합 상한. 학습 경로는 learned.maxScoreCombos를 적용함.
 # etaWeights = 단계별 «한 판 상대 비용»(남은 시간 계산에서 아직 안 해 본 단계의 속도를 추정할 때 쓰는 초기값, 실측으로 조정).
 SEARCH = dict(
-    learned=dict(value=False, S=3000, m=8, K=4000, M=8, A=256, overlapStarts=10, overlapKeep=8,
+    learned=dict(value=True, maxScoreCombos=2000000, fallbackMultiplier=4, S=3000, m=8, K=4000, M=8, A=256, overlapStarts=10, overlapKeep=8,
                  folds=3, epochs=40, ridge=10, minCorrelation=0.1, missThreshold=0.04,
-                 note="계정·보스별 점수 회귀 실험. 품질 미달 보스 전수 복귀. 기본 꺼짐."),
+                 note="계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀."),
     speed=dict(
         workerReuse=dict(value=True, legacy=False, alt=True, note='단계 사이 워커 재사용. 측정: docs/cosmo_speed_rd_1110.md'),
         rngStreams=dict(value=False, legacy=False, alt=True, note='공통 난수 동기화 실험. 판 수 유지.'),
         surrogate=dict(value=False, legacy=False, alt=True, ratio=0.7, auditFrac=0.02, minAudit=64,
                        minPerUnit=3, missThreshold=0.04, proxy={'tyria': 'attack'},
                        note='빠른 탐색(실험). 제외 무작위 표본의 경계 이상 비율이 문턱을 넘으면 해당 보스 전수 복귀.')),
-    _note='3보스 구원자 겹침 금지 편성 찾기(cosmo_search.js) 설정. 기본은 보유 육성 구원자 전수 탐색이고, 판 수·keep 은 정밀도와 계산 시간의 절충이라 실측으로 조정한다.',
+    _note='3보스 구원자 겹침 금지 편성 찾기(cosmo_search.js) 설정. 기본은 보유 육성 구원자 전체에서 학습 선별이고, 판 수·keep 은 정밀도와 계산 시간의 절충이라 실측으로 조정한다.',
     maxPool=None, maxCombos=363000, minPowerRatio=0.6, minRole={'서포터': 2, '디펜더': 2}, minFront=1, minDealer=1,
     # 1단계 순차 반감: 전 조합을 firstRuns 판 돌려 순위를 매기고, 상위 passFrac(경계 동점 포함, 최소 passMinMult×keep 팀)만 runs 판이 되도록 더 돌린다. firstRuns 를 빼거나 runs 이상이면 반감 없음.
     screen=dict(runs=2, firstRuns=1, passFrac=0.10, passMinMult=3), rerank=dict(keep=300, runs=20), combine=dict(topTriples=10, show=5), final=dict(runs=40),

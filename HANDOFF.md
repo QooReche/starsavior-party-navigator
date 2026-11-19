@@ -1,10 +1,10 @@
 # 인수인계
 
-갱신 2026-11-19. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md) — 코드·note·문서에 남은 «HANDOFF 의 ○○ 절» 참조도 거기서 찾음.
+갱신 2026-11-20. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md) — 코드·note·문서에 남은 «HANDOFF 의 ○○ 절» 참조도 거기서 찾음.
 
 ## 현재 상태
 
-- **코스모 게이트 계정별 점수 학습 선별**: `search.learned`로 켜는 실험 경로를 추가했음. 기본 꺼짐이며 설정 정본은 `data/cosmo_raid.json`·빌더 `SEARCH.learned`임. 표본 MC로 계정·보스별 회귀를 학습하고 전체 조합을 순회해 상위·구원자별·겹침 회피·감사 후보를 평가함. 학습 상관·감사 품질 미달은 해당 보스만 전수 복귀하며 첫 판을 재사용함. 측정·한계·CLI 사용은 `docs/cosmo_learned_1119.md`에 정리함.
+- **코스모 게이트 계정별 점수 학습 선별**: 기본 켜짐이며 탐색 설정에서 끌 수 있음. 설정 정본은 `data/cosmo_raid.json`·빌더 `SEARCH.learned`임. 학습 순회 상한과 기존 전수 상한을 분리했고, 품질 미달 보스가 전수 상한을 넘으면 K·M·감사 표본을 설정 배수로 확대해 재선별하고 결과에 안내함. 기존 계산·겹침 회피 후보를 재사용하며 진행·ETA를 누계로 갱신함. 측정·한계·CLI 사용은 `docs/cosmo_learned_1119.md`에 정리함.
 
 - **코스모 게이트 후보 겹침 재시도**: 비중복 3팀이 없으면 보스별 정밀 후보를 단계적으로 확대하고 기존 결과를 재사용함. 예선 반감·빠른 선별 제외 후보도 복귀하며 단계·후보·판 수·조합 검사 상한은 `data/cosmo_raid.json`의 `search.retry`가 정본임. 확대 시 진행·ETA를 누계로 갱신하고, 끝까지 없으면 상위 팀에 집중된 구원자 이름과 대체 육성·난이도 조정 안내를 기존 그웬 오류에 표시함. 조합 검사 상한에 걸린 성공 결과에도 제한 안내를 표시함. 확대 결과의 직접 편성 가져오기·저장까지 합성 페이지 시험으로 확인했음.
 

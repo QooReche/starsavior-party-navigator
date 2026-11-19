@@ -47,6 +47,6 @@ async function main(){const S=settings(),rows=C.poolAll(S,results,roster),all=GS
    old._compile(execFileSync('git',['show','ddb3842:cosmo_search.js'],{encoding:'utf8'}),old.filename);
    const baseline=await search(off,'linear',old.exports);assert.deepEqual(b.out,baseline.out);assert.deepEqual(b.sent,baseline.sent);console.log('PASS ddb3842 legacy requests/results identical');
  }
- assert.equal(G.search.learned.value,false);assert(C.plan(S,rows,0).total<C.plan({...S,learned:{value:false}},rows,0).total);
+ assert.equal(G.search.learned.value,true);assert(C.plan(S,rows,0).total<C.plan({...S,learned:{value:false}},rows,0).total);
  console.log('PASS learned: ridge/CV, streaming, stratification, K/M/overlap/audit caps, fallback, reuse, multiple triples, legacy equality');}
 main().catch(e=>{console.error(e);process.exitCode=1;});

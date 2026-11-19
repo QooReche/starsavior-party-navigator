@@ -6,7 +6,7 @@ from test_page import test_server, Ctx, open_page, settle, open_fold
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def flow(browser, ctx):
+def flow(browser, ctx, expanded=False):
     p = open_page(browser, ctx, raid_ui=True)
     p.select_option('#content', p.evaluate("String(contents.findIndex(c=>c.key==='cosmo'))"))
     settle(p)
@@ -25,11 +25,15 @@ def flow(browser, ctx):
         this.onmessage({data:{type:'done',id:m.id}});
       },80);}};renderCosmoSearch();
     }""")
+    if expanded:
+        p.evaluate('D.cosmoRaid.search.maxCombos=100;D.cosmoRaid.search.learned.minCorrelation=1')
     open_fold(p, 'cs-options')
     checkbox=p.locator('#cosmo-search [data-cs=learned]')
-    assert not checkbox.is_checked()
+    assert checkbox.is_checked()
+    checkbox.uncheck()
+    assert p.evaluate('!CSR.optLearned && D.cosmoRaid.search.learned.value')
     checkbox.check()
-    assert p.evaluate('CSR.optLearned && !D.cosmoRaid.search.learned.value')
+    assert p.evaluate('CSR.optLearned && D.cosmoRaid.search.learned.value')
     p.select_option('#cosmo-search [data-cs=level]', '6')
     p.click('#cosmo-search [data-cs=start]')
     p.wait_for_function("CSR.phase==='run' && CSR.msg.includes('표본 학습')")
@@ -37,6 +41,10 @@ def flow(browser, ctx):
     p.wait_for_function("CSR.phase==='done' || CSR.phase==='err'", timeout=120000)
     assert p.evaluate("CSR.phase==='done' && CSR.learned && CSR.rows[0].sum>0"), p.evaluate('CSR.msg')
     assert p.evaluate("learnedMessages.some(s=>s.includes('예측 채점'))")
+    if expanded:
+        assert p.evaluate("learnedMessages.some(s=>s.includes('후보 확대 복귀')) && CSR.audit.every(a=>a.expanded)")
+        assert p.locator('#cosmo-search [data-k=cs-expanded]').count()==3
+        assert '이 보스는 예측 확인이 부족해 후보를 넓혀 찾았음' in p.locator('#cosmo-search [data-k=cs-expanded]').first.inner_text()
     assert p.evaluate('new Set(CSR.rows[0].teams.flatMap(t=>t.keys)).size===12')
     assert p.locator('#cosmo-search [data-k=cs-best] [data-k=cs-team]').count()==3
     p.evaluate('window.learnedBest=CSR.rows[0]')
@@ -54,6 +62,8 @@ if __name__ == '__main__':
         browser=pw.chromium.launch()
         try:
             flow(browser,Ctx(base,str(out)))
-            print('PASS learned switch/progress/result/direct import')
+            print('PASS learned default/switch/progress/result/direct import')
+            flow(browser,Ctx(base,str(out)),expanded=True)
+            print('PASS learned expanded fallback/notice/direct import')
         finally:
             browser.close()

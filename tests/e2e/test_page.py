@@ -177,7 +177,8 @@ def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", exc
     시뮬은 시험이 「시뮬로 확인」을 누를 때만 돈다."""
     page = browser.new_page(viewport=viewport or {"width": 1280, "height": 900}, has_touch=has_touch)
     if os.environ.get('PN_E2E_LOW_MEMORY') == '1':
-        page.add_init_script("Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>2});Object.defineProperty(navigator,'deviceMemory',{get:()=>1});")
+        # 실제 시뮬은 워커 2개로 제한해 전체 e2e의 메모리와 실행 시간을 함께 관리함.
+        page.add_init_script("Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>3});Object.defineProperty(navigator,'deviceMemory',{get:()=>2});")
     attach(page, ctx)
     seed(page, info, simauto, excl)
     if not raid_ui:
@@ -1703,7 +1704,7 @@ def test_cosmo_search(browser, ctx):
     fast.uncheck()
     assert page.evaluate('() => !CSR.optFast')
     # 시험 풀은 maxPool=12(역할 보충 가능)로 줄이되 후보 조합은 모두 유지한다. keep=40은 시즌에 따라 중복 없는 삼중까지 잘라 냄.
-    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed.v2');localStorage.setItem('pn.cosmo.speed',JSON.stringify({sec:[999,999,999,999],workers:4}))}catch(e){}}""")
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;const pool=CosmoSearch.poolAll(CosmoSearch.searchSettings(S,null,false),csProfile().results,R);for(const r of R)if(!pool.some(x=>x.key===r.key))EXCL.add(r.key);S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed.v2');localStorage.setItem('pn.cosmo.speed',JSON.stringify({sec:[999,999,999,999],workers:4}))}catch(e){}}""")
     page.select_option('#cosmo-search select[data-cs="level"]', "3")
     lvl = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value")
     # 시작 전 안내: 이 PC 속도를 모르면 «시작하면 몇 초 뒤 예상 시간이 표시됨»
@@ -1728,7 +1729,7 @@ def test_cosmo_search(browser, ctx):
     page.wait_for_selector('#cosmo-search [data-k="cs-table"], #cosmo-search [data-k="cs-err"]', timeout=300000)
     err_txt = page.locator('#cosmo-search [data-k="cs-err"]').all_text_contents()
     assert not err_txt, err_txt
-    assert page.evaluate('() => CSR.fast===false && CSR.fastSkipped===false && CSR.audit===null'), '일반 탐색 완료 시 옛 실험 상태 제거'
+    assert page.evaluate('() => CSR.fast===false && CSR.fastSkipped===false && CSR.learned && Array.isArray(CSR.audit)'), '일반 탐색 완료 시 옛 실험 상태 제거'
     rows = page.locator('#cosmo-search [data-k="cs-best"] [data-k="cs-team"]').count()
     state = page.evaluate("""() => { const r = CSR.rows[0]; const keys = r.teams.flatMap(t => t.keys);
       return {n: CSR.rows.length, bosses: r.teams.map(t => t.boss), expected: D.cosmoRaid.bosses.map(b=>b.key), uniq: new Set(keys).size, nkeys: keys.length, sum: r.sum,
@@ -1744,13 +1745,18 @@ def test_cosmo_search(browser, ctx):
     pre1_ok = len(pre1) == 1 and "지난 실행 속도 기준 예상 약" in pre1[0]
     # 추천 제외 목록이 바뀌면 «낡은 결과»
     old0 = page.locator('#cosmo-search [data-k="cs-old"]').count()
-    page.evaluate("() => { EXCL.add(R[0].key); renderCosmoSearch() }")
+    page.evaluate("() => { window.cosmoExcludeKey=CSR.rows[0].teams[0].keys[0]; EXCL.add(cosmoExcludeKey); renderCosmoSearch() }")
     old1 = page.locator('#cosmo-search [data-k="cs-old"]').count()
-    page.evaluate("() => { EXCL.delete(R[0].key); renderCosmoSearch() }")
+    page.evaluate("() => { EXCL.delete(cosmoExcludeKey); renderCosmoSearch() }")
     old2 = page.locator('#cosmo-search [data-k="cs-old"]').count()
     open_fold(page, 'cs-options')
     fast.check()
+    assert page.locator('#cosmo-search [data-k="cs-stale"]').count() == 0, '학습 선별이 빠른 탐색보다 우선함'
+    learned = page.locator('#cosmo-search [data-cs="learned"]')
+    learned.uncheck()
     assert page.locator('#cosmo-search [data-k="cs-stale"]').count() == 1
+    learned.check()
+    assert page.locator('#cosmo-search [data-k="cs-stale"]').count() == 0
     fast.uncheck()
     assert page.locator('#cosmo-search [data-k="cs-stale"]').count() == 0
     # 난이도를 바꾸면 낡은 결과 경고
@@ -1778,10 +1784,11 @@ def test_cosmo_retry(browser, ctx):
     settle(page)
     page.evaluate("""() => {
       const S=D.cosmoRaid.search;
+      CSR.optLearned=false; // 기존 전수 재시도 전용 시험
       S.maxPool=13;S.minRole={};S.minPowerRatio=0;S.minFront=0;S.minDealer=0;
       S.screen={runs:1};S.rerank={keep:1,runs:2};S.combine={topTriples:2,show:2};S.final.runs=2;
       S.retry={keepMultipliers:[1,3,null],maxCandidatesPerBoss:100,maxRerankGames:600,maxTripleChecks:10000};
-      const keys=CosmoSearch.poolAll(S,csProfile().results,R.filter(s=>!EXCL.has(s.key))).map(r=>r.key);
+      const keys=CosmoSearch.poolAll(CosmoSearch.searchSettings(S,null,false),csProfile().results,R.filter(s=>!EXCL.has(s.key))).map(r=>r.key);
       window.retryTeams=[[0,1,2,3],[0,4,5,6],[0,7,8,9],[0,10,11,12],[4,5,6,7],[8,9,10,11]].map(t=>t.map(i=>keys[i]));
       window.retryName=BYKEY[keys[0]].name;window.retryHot=false;window.retryPosts=[];
       GuildSearch.combos=()=>retryHot?retryTeams.slice(0,4):retryTeams;
@@ -1832,7 +1839,7 @@ def test_cosmo_auto_level(browser, ctx):
     page = open_page(browser, ctx, raid_ui=True)
     page.select_option("#content", label=next(l for l in page.eval_on_selector_all("#content option", "o => o.map(x => x.textContent)") if l.startswith("코스모 게이트(시즌")))
     settle(page)
-    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;S.auto.probeRuns=1;try{localStorage.removeItem('pn.cosmo.speed.v2')}catch(e){}}""")
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;const pool=CosmoSearch.poolAll(CosmoSearch.searchSettings(S,null,false),csProfile().results,R);for(const r of R)if(!pool.some(x=>x.key===r.key))EXCL.add(r.key);S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;S.auto.probeRuns=1;try{localStorage.removeItem('pn.cosmo.speed.v2')}catch(e){}}""")
     default_auto = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value") == "-1"
     page.click('#cosmo-search button[data-cs="start"]')
     page.wait_for_selector('#cosmo-search [data-k="cs-table"], #cosmo-search [data-k="cs-err"]', timeout=300000)

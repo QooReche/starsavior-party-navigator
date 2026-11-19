@@ -20,13 +20,27 @@ from playwright.sync_api import sync_playwright, TimeoutError
 ERROR_ART = {'calculation':'cry', 'few':'sulk', 'empty':'sulk', 'other':'surprised'}
 
 
+
+def wait_decoded(page, image):
+    # 정지 그림→애니메이션 전환이 decode 도중 일어나면 이전 요청은 EncodingError로 취소됨.
+    # 실제 src 변경만 다시 기다리고, 손상된 그림 등 다른 디코드 오류는 그대로 실패시킴.
+    page.wait_for_function("""async img => {
+      const source=img.src;
+      try { await img.decode(); }
+      catch(error) {
+        if(error.name==='EncodingError' && img.src!==source)return false;
+        throw error;
+      }
+      return img.src===source && img.naturalWidth>0;
+    }""", arg=image.element_handle())
+
 def check_scene(page, mode, scope='#out', reduced=False, cause='other', art=None):
     scene = page.locator(f'{scope} [data-gwen]')
     assert scene.count() == 1, (scope, scene.count())
     assert scene.get_attribute('data-gwen') == mode
     scene.scroll_into_view_if_needed()
     page.wait_for_function('(e)=>!!e.getAttribute("src")', arg=scene.locator('img').element_handle())
-    scene.locator('img').evaluate('(img)=>img.decode()')
+    wait_decoded(page, scene.locator('img'))
     assert scene.locator('img').evaluate('(img)=>img.naturalWidth>0')
     if scene.get_attribute('data-gwen-reaction'):
         assert abs(scene.locator('img').bounding_box()['height']-(240 if page.viewport_size['width']>=1200 else 112))<1
@@ -82,7 +96,7 @@ def exercise(page, base, width, shots):
     welcome.scroll_into_view_if_needed()
     page.wait_for_function('(e)=>!!e.getAttribute("src")', arg=welcome.element_handle())
     assert welcome.get_attribute('data-gwen-static') == 'assets/ui_icons/gwen/welcome.png'
-    welcome.evaluate('(img)=>img.decode()')
+    wait_decoded(page, welcome)
     if shots:
         welcome.scroll_into_view_if_needed()
         page.screenshot(path=str(ROOT / f'_shot_art_welcome_{width}.png'))
