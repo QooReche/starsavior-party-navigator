@@ -2,6 +2,7 @@
 """코스모 게이트 시즌 전투 시험(battlesim/starsavior/cosmo_raid.py, mc.cosmo_raid_boss, data/cosmo_raid.json, cosmo_raid.js).
 실행: python -X utf8 -I tests/cosmo_raid_test.py
 새 클라 표 폴더(CLIENT_ 접두 추출본)가 환경변수 COSMO_TABLES 에 있으면 data/cosmo_raid.json 이 표와 같은지도 확인한다(공개 저장소에는 표 원문이 없음)."""
+import collections
 import json
 import math
 import os
@@ -13,6 +14,8 @@ import tempfile
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, 'tests'))
+from cosmo_fixture import use_1022, FIXTURE_1022  # noqa: E402
+use_1022()  # 시즌 1022 fixture(벨그라스 등 지난 시즌 모델 회귀)
 from nodejs import node_available, node_json                      # noqa: E402
 from battlesim import simulate                                   # noqa: E402
 from battlesim.api import _norm_party                            # noqa: E402
@@ -194,12 +197,69 @@ def test_pressure_march_bleed_thorn_punish_direct():
     orig_apply = b.apply_damage
     b.apply_damage = lambda a, v, dmg, kind, shieldable=True: (kinds.append((kind, v)), orig_apply(a, v, dmg, kind, shieldable))[1]
     b.cast(boss, boss.d.skills['궁극기'])
+    b.gb.flush_damage()          # 응징은 반격·반응 뒤 추가 피해 처리 단계
     assert b.gb.stats['punish'] == len(b.allies)
     assert sum(1 for k, _ in kinds if k == 'chain') == len(b.allies), '응징 연쇄 피해가 대상마다 한 번씩 들어가야 함'
     b = battle('벨그라스', 3, 18)
     boss = boss_of(b)
     b.cast(boss, boss.d.skills['궁극기'])
     assert b.gb.stats['thorn'] >= 1 and any(u.has(C.THORN) for u in b.allies)
+
+
+def test_punish_client_timing():
+    """SET 31 응징(SE 9403101): 궁극기 «스킬 시작»(대상 확정 직후·타격 전) 때 조건 1161(스킬 대상 중 하나라도 약화) → 약화 상태인 적
+    «전원»(AutoTargetId 10, 스킬 대상만이 아님)에게 공격력 30% 추가 피해. 공격자 쪽 값은 생성 때, 대상 방어는 넣을 때(NKM:4734·6226·8168),
+    넣는 시점은 반격·반응 뒤 추가 피해 처리 단계(NKM:15382·13961 → flush_damage). 옛 엔진은 궁극기 «뒤» 맞은 대상 기준(codex 2차 리뷰 3건 반영)"""
+    from types import SimpleNamespace
+
+    def setup(debuffed):
+        b = battle('카넬리아', 3, 18)
+        boss = boss_of(b)
+        for i in debuffed:
+            u = b.allies[i]
+            u.eff['공격력 감소'] = Eff('공격력 감소', {'공격력%': -30}, 1, 3, boss, True)
+            u.eff['공격력 감소'].stacks = 1
+        return b, boss
+    hyper = lambda boss: boss.d.skills['궁극기']    # noqa: E731
+    lb = lambda: collections.defaultdict(lambda: {'inc': 0.0})    # noqa: E731
+    # 대상 판정: 스킬 대상이 아군 0 하나(약화 없음)이면, 약화된 아군 2 가 있어도 미발동
+    b, boss = setup([2])
+    b.gb.skill_start(boss, hyper(boss), SimpleNamespace(src=boss, skill=hyper(boss), targets=[b.allies[0]], inc=0.0, local_by=lb()))
+    assert b.gb._punish_q == []
+    # 스킬 대상(아군 1)이 약화면 참 → 대상이 아닌 약화 아군 2 도 포함, 약화 없는 아군 0 은 제외
+    b, boss = setup([1, 2])
+    b.gb.skill_start(boss, hyper(boss), SimpleNamespace(src=boss, skill=hyper(boss), targets=[b.allies[0], b.allies[1]], inc=0.0, local_by=lb()))
+    assert sorted(x.pos for x, _ in b.gb._punish_q) == sorted([b.allies[1].pos, b.allies[2].pos])
+    # 대상 방어는 넣을 때 값: 생성 뒤 방어가 오르면 피해가 줄어듦(공격자 쪽 값만 생성 때 확정)
+    x, pre = b.gb._punish_q[0]
+    lo = b.gb._chain_hit(boss, x, dict(pre))
+    b.put_eff(x, '시험 방어 증가', {'방어력%': 200}, dur=5, maxs=1, add=1, src=x, cat='buff', fixed=False)
+    assert b.gb._chain_hit(boss, x, dict(pre)) < lo
+    # 실제 시전: 약화 아군 1명이면 연쇄 1회(전원 광역 궁극기라도), 큐는 행동 뒤(flush_damage)에 비워짐
+    b, boss = setup([3])
+    b.cast(boss, hyper(boss))
+    assert b.gb._punish_q, '시전 직후(반격·반응 전)에는 아직 넣지 않음'
+    b.gb.flush_damage()
+    assert b.gb.stats['punish'] == 1 and b.gb._punish_q == []
+    # 약화 아군 전원이 「스킬 피해 무효」여도(타격 경로가 pre_hit 전에 끝나도) 스킬 시작 판정이라 응징은 들어감
+    b, boss = setup([1, 2])
+    for i in (1, 2):
+        b.put_eff(b.allies[i], '스킬 피해 무효', {}, dur=5, maxs=1, add=1, src=b.allies[i], cat='buff', fixed=False)
+    b.cast(boss, hyper(boss))
+    b.gb.flush_damage()
+    assert b.gb.stats['punish'] == 2, dict(b.gb.stats)
+    # 같은 행동 안에서 궁극기가 두 번 시작되면(반응 재시전) 예약이 누적됨 — 덮어쓰지 않음(NKM:6239-6241, codex 재검토)
+    b, boss = setup([1, 2])
+    for _ in range(2):
+        b.gb.skill_start(boss, hyper(boss), SimpleNamespace(src=boss, skill=hyper(boss), targets=list(b.allies), inc=0.0, local_by=lb()))
+    assert len(b.gb._punish_q) == 4
+    b.gb.flush_damage()
+    assert b.gb.stats['punish'] == 4 and b.gb._punish_q == []
+    # 시작 때 약화가 아무도 없으면 미발동(궁극기가 거는 약화는 시작 뒤라 세지 않음)
+    b, boss = setup([])
+    b.cast(boss, hyper(boss))
+    b.gb.flush_damage()
+    assert b.gb.stats.get('punish', 0) == 0
 
 
 # ---------------------------------------------------------------- 벨그라스 상태 기계
@@ -382,23 +442,25 @@ def test_data_driven_defaults():
         for b in other['bosses']:
             if b['key'] == 'tyria':
                 b['immuneGroup'] = 9999
-        C._DATA['fake-src'] = other
+        key, keep = C.data_path(), C._DATA[C.data_path()]
+        C._DATA[key] = other         # 자료 캐시 키 = 자료 파일 경로(cosmo_raid.data_path)
         try:
-            C._donor_immune(next(b for b in other['bosses'] if b['key'] == 'belgras'), 'fake-src')
+            C._donor_immune(next(b for b in other['bosses'] if b['key'] == 'belgras'), C.SRC)
         except Exception:
             pass       # 가짜 src 로는 databook 줄을 못 읽음: 호출 인자만 본다
         assert calls[-1][1:] == ('카넬리아', '카넬리아 3단계'), calls
         for b in other['bosses']:
             b['immuneGroup'] = b['raidGroupId']          # 같은 면역 그룹이 없으면 분명한 오류
         try:
-            C._donor_immune(next(b for b in other['bosses'] if b['key'] == 'belgras'), 'fake-src')
+            C._donor_immune(next(b for b in other['bosses'] if b['key'] == 'belgras'), C.SRC)
         except ValueError as e:
             assert '면역' in str(e)
         else:
             raise AssertionError('빌려 줄 보스가 없는데 통과')
     finally:
         foe.stage_waves = real
-        C._DATA.pop('fake-src', None)
+        if 'key' in locals():
+            C._DATA[key] = keep
 
 
 def test_js_parity():
@@ -417,11 +479,11 @@ def test_js_parity():
     cf = os.path.join(tempfile.mkdtemp(), 'cases.json')
     with open(cf, 'w', encoding='utf-8') as f:
         json.dump(cases, f)
-    js = node_json("const V=require('./cosmo_raid.js'),fs=require('fs'),G=JSON.parse(fs.readFileSync('data/cosmo_raid.json','utf8'));"
+    js = node_json("const V=require('./cosmo_raid.js'),fs=require('fs'),G=JSON.parse(fs.readFileSync(" + json.dumps(FIXTURE_1022) + ",'utf8'));"
                    "console.log(JSON.stringify(JSON.parse(fs.readFileSync(" + json.dumps(cf) + ",'utf8')).map(c=>V.cosmoScore(G,...c))))")
     assert js == [C.cosmo_score(G, *c) for c in cases]
     assert len(set(js)) > 50
-    eff = node_json("const V=require('./cosmo_raid.js'),G=JSON.parse(require('fs').readFileSync('data/cosmo_raid.json','utf8'));"
+    eff = node_json("const V=require('./cosmo_raid.js'),G=JSON.parse(require('fs').readFileSync(" + json.dumps(FIXTURE_1022) + ",'utf8'));"
                     "console.log(JSON.stringify([0,2,3,6,18].map(l=>V.levelEffects(G,'carnelia',l).map(e=>e.id))))")
     assert eff == [[], [], [940011], [940011, 940101], [940011, 940101, 940021, 940301, 940091, 940191]]
 
@@ -453,20 +515,20 @@ def test_ex_armor():
     import copy
     sa_base = boss_of(battle('티리아', 3, 1)).sa_max   # level 1 기준선(armor 없음)
     # 데이터 캐시를 임시 교체: armor 효과를 넣어 on_wave 가 실제로 처리하게 한다
-    orig = C._DATA[C.SRC]
+    orig = C._DATA[C.data_path()]
     G_copy = copy.deepcopy(orig)
     fake_eid = 99999
     G_copy['effects'].append(dict(id=fake_eid, kind='armor', params=dict(add=5), name='armor_test', key='T', num=4, desc='', target=None))
     tyr = next(b for b in G_copy['bosses'] if b['key'] == 'tyria')
     tyr['levels'][0]['effects'].append(fake_eid)
-    C._DATA[C.SRC] = G_copy
+    C._DATA[C.data_path()] = G_copy
     try:
         b = battle('티리아', 3, 1)
         boss = boss_of(b)
         assert boss.sa_max == sa_base + 5, 'sa_max=%d expected=%d' % (boss.sa_max, sa_base + 5)
         assert boss.sa == boss.sa_max
     finally:
-        C._DATA[C.SRC] = orig
+        C._DATA[C.data_path()] = orig
 
 
 def test_ex_hit_gauge():
@@ -652,7 +714,7 @@ def test_data_matches_tables():
 
 
 TESTS = [test_data_shape, test_stage_stats_match_existing_cosmo, test_build_waves_and_scale, test_switch_off_no_controller, test_season_buffs,
-         test_challenge_effects_attached, test_drain_rewind_backflow_direct, test_pressure_march_bleed_thorn_punish_direct,
+         test_challenge_effects_attached, test_drain_rewind_backflow_direct, test_pressure_march_bleed_thorn_punish_direct, test_punish_client_timing,
          test_belgras_erosion_and_rot, test_belgras_thorn_gauge_growth, test_minions, test_simulate_clear_step1_step2,
          test_simulate_belgras_path_taken, test_simulate_challenge_paths_and_level_scale, test_existing_results_unchanged_fields,
          test_score_values_and_bounds, test_data_driven_defaults, test_js_parity,

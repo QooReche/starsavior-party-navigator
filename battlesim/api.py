@@ -207,6 +207,9 @@ def _norm_encounter(enc):
         k = json.dumps(enc, sort_keys=True, ensure_ascii=False)
     except (TypeError, ValueError):
         return _norm_encounter_raw(enc)
+    if 'cosmo_raid' in enc:
+        from .starsavior.cosmo_raid import data_path
+        k += '|' + data_path()        # 시즌 자료 파일이 바뀌면(시험 fixture 등) 다른 키
     hit = _ENC_CACHE.get(k)
     if hit is None:
         hit = _norm_encounter_raw(enc)
@@ -229,10 +232,11 @@ def _norm_encounter_raw(enc):
         fx, unknown = parse_fx(fx_texts or [])
         return waves, turn_limit, fx, unknown, meta
     if 'cosmo_raid' in enc:
-        # 코스모 게이트 시즌 전투: {"cosmo_raid": {"boss": "벨그라스|티리아|카넬리아"(또는 belgras|tyria|carnelia), "step": 1~3, "level": 0~18(Step 3 만)}} — starsavior/cosmo_raid.py
-        from .starsavior.cosmo_raid import build_waves as cosmo_waves
+        # 코스모 게이트 시즌 전투: {"cosmo_raid": {"boss": 보스 key 또는 한글 이름(시즌 자료 bosses), "step": 1~3, "level": 0~18(Step 3 만)}}
+        # — starsavior/cosmo_raid.py. boss 생략 = 시즌 자료의 첫 보스(bossOrder[0], 시즌마다 다름)
+        from .starsavior.cosmo_raid import build_waves as cosmo_waves, load as cosmo_load
         c = enc['cosmo_raid'] or {}
-        waves, meta = cosmo_waves(c.get('boss', '벨그라스'), int(c.get('step', 3)), int(c.get('level', 0)))
+        waves, meta = cosmo_waves(c.get('boss') or cosmo_load()['season']['bossOrder'][0], int(c.get('step', 3)), int(c.get('level', 0)))
         if turn_limit is None:
             turn_limit = meta['turn_limit']
         fx, unknown = parse_fx(fx_texts or [])

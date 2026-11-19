@@ -46,7 +46,10 @@ STAT_PROP = {
 EFFECT_KIND = {2: 'drain', 3: 'speed', 6: 'immune', 10: 'bleed', 11: 'tough', 18: 'pressure', 19: 'rewind', 20: 'backflow',
                29: 'single_red', 30: 'thorn', 31: 'punish', 32: 'march',
                1: 'grow', 4: 'armor', 7: 'hit_gauge', 21: 'debuff_amp', 22: 'ult_cd',
-               24: 'no_shield_amp', 25: 'no_shield_chain', 28: 'strip'}
+               24: 'no_shield_amp', 25: 'no_shield_chain', 28: 'strip', 33: 'few_buff_guard'}
+# Step 3 배치 스크립트 이름 조각 -> 보스 key(엔진·화면이 쓰는 이름). 모르는 스크립트는 Changed
+BOSS_SCRIPT_KEY = {'CORRUPTED_TREE': 'belgras', 'TYRIA': 'tyria', 'CARNELIA': 'carnelia',
+                   'MOGULUS': 'mogulus', 'DISPARITY_OF_REPRESENTATION': 'disparity', 'DOOMSDAY_BEAST': 'baskerville'}
 # kind -> 설명문에서 수치를 읽는 정규식(순서대로 params 의 이름). 설명이 바뀌면 Changed.
 EFFECT_RX = {
     'drain': (r'최대 생명력을 (\d+)%씩 감소.*최대 (\d+)회', ('pct', 'max')),
@@ -69,11 +72,21 @@ EFFECT_RX = {
     'no_shield_amp': (r'', ()),
     'no_shield_chain': (r'', ()),
     'strip': (r'', ()),
+    'few_buff_guard': (r'', ()),
 }
 
 
 class Changed(Exception):
     pass
+
+
+def databook_stage_ok(name, step):
+    """엔진이 쓰는 경로 그대로(starsavior.foe.stage_waves('cosmo', 이름, '이름 N단계')) 적 정의를 찾을 수 있는가"""
+    from battlesim.starsavior.foe import stage_waves
+    try:
+        return bool(stage_waves('cosmo', name, '%s %d단계' % (name, step))[1])
+    except (KeyError, ValueError, IndexError):
+        return False
 
 
 def need(cond, msg):
@@ -269,6 +282,19 @@ def build(T, season_id, game_build):
                      and {k: v for k, v in cond_rows.get(se.get('SkillConditionId'), {}).items() if k != 'Id'} == {'AfterMyAttack': {}},
                      'strip SE·조건 구조 변경')
                 params = {'count': se['BuffDeleteCount']}
+            if kind == 'few_buff_guard':
+                # SET_33(SE 9403301): NSEAT_DAMAGE_START(NKM:15689, 스킬 피해 처리 직전 1회)에 조건 5509 MyEffectiveDamageStart
+                # (NKM:10171 OBF_0520 — 공격자의 강화 효과 수로 판정, 공격자 스킬이 SAT_ATTACK 일 때만)가 참이면 보스 자신에게
+                # 받는 피해 감소. 개수 판정 OBF_7056(NKM.Templets:43320): BuffCountLess=N 이면 개수 > N 일 때만 거짓 → 0개도 참
+                se = se_battle[e['BattleEffectSeStrId'][0]]
+                c = {k: v for k, v in cond_rows.get(se.get('SkillConditionId'), {}).items() if k != 'Id'}
+                need(se.get('m_Condition', {}).get('m_ActiveType') == 'NSEAT_DAMAGE_START' and se.get('m_BuffTargetType') == 'NSETT_SELF'
+                     and se.get('m_BuffStrID') == 'BI_STAT_NST_RATE_DAMAGE_REDUCE' and se.get('m_BuffLifeTurn') == 0
+                     and len(se.get('Stats', [])) == 1 and set(se['Stats'][0]) == {'NKM_STAT_TYPE_RATE'}
+                     and set(c) == {'MyEffectiveDamageStart'} and set(c['MyEffectiveDamageStart']) == {'EnemyPositiveBuff', 'BuffCountLess'}
+                     and c['MyEffectiveDamageStart']['EnemyPositiveBuff'] is True and c['MyEffectiveDamageStart']['BuffCountLess'] > 0,
+                     'few_buff_guard SE·조건 구조 변경')
+                params = {'pct': se['Stats'][0]['NKM_STAT_TYPE_RATE'] // 100, 'maxBuffs': c['MyEffectiveDamageStart']['BuffCountLess']}
         effects[eid] = dict(id=eid, key=e['BattleEffectStrId'], num=num, name=plain(e.get('BattleEffectName')), desc=desc, kind=kind,
                             params=params, target=e.get('BteamEffectTarget'))
 
@@ -322,15 +348,21 @@ def build(T, season_id, game_build):
             kind, val = BCT[b['BuffTarget']]
             sbuffs.append(dict(id=b['BuffId'], target=b['BuffTarget'], filter={kind: val}, name=plain(bt.get('m_BuffName')),
                                desc=plain(bt.get('m_BuffDesc')), props=props))
-        key = {'CORRUPTED_TREE': 'belgras', 'TYRIA': 'tyria', 'CARNELIA': 'carnelia'}.get(
-            next((k for k in ('CORRUPTED_TREE', 'TYRIA', 'CARNELIA') if k in r3['BattleTempletFileName']), ''))
+        key = next((v for k, v in BOSS_SCRIPT_KEY.items() if k in r3['BattleTempletFileName']), '')
         need(key, '모르는 보스 스크립트: %s' % r3['BattleTempletFileName'])
-        bosses.append(dict(key=key, name=plain(r3['BattleName']), raidGroupId=gid, element=boss_meta['element'], role=boss_meta['role'],
+        # 계산 가능 여부: 벨그라스는 전용 모델, 그 밖은 공개 databook 의 cosmo «<이름> N단계» 적 정의를 재사용한다(엔진 build_waves).
+        # databook 에 없으면(시즌 1023 바스커빌의 괴수) sim=false — 엔진·화면이 계산을 막고 simNote 를 보여 준다.
+        name = plain(r3['BattleName'])
+        sim = key == 'belgras' or all(databook_stage_ok(name, s) for s in (1, 2, 3))
+        bosses.append(dict(key=key, name=name, sim=sim,
+                           simNote=None if sim else '%s은(는) 공개 데이터북에 적 정의(스킬·패턴)가 없어 아직 계산할 수 없음' % name, raidGroupId=gid, element=boss_meta['element'], role=boss_meta['role'],
                            title=boss_meta['title'], attackKind=boss_meta['attackKind'], unitId=boss_meta['id'],
                            immuneGroup=boss_meta['immuneGroup'], map=r3['BattleMapStrID'], difficultyGroupId=dg,
                            steps=steps, levels=levels, seasonBuffs=sbuffs, spawn=spawn3))
-    bel = next(b for b in bosses if b['key'] == 'belgras')
-    return season, bosses, effects, belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row, unit_meta, plain, ko, need, sk_coef, sk_ses)
+    # 벨그라스 전용 모델(기록자·처단자·침식)은 벨그라스가 있는 시즌에만 만든다(시즌 23 = 모굴루스·바스커빌의 괴수·괴리의 표상)
+    bel = next((b for b in bosses if b['key'] == 'belgras'), None)
+    model = belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row, unit_meta, plain, ko, need, sk_coef, sk_ses) if bel else None
+    return season, bosses, effects, model
 
 
 def hyper_true_damage(h_ses, conditions):

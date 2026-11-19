@@ -2398,6 +2398,9 @@ class Battle:
                     w.hit_evaded = True
             for w in ctx.targets:
                 w.hit_evaded = False
+            # 시즌 기믹: 스킬 시작(NSEAT_SKILL_START) 시점, 대상 확정 직후·타격 전(코스모 응징 SET_31 판정)
+            if self.gb is not None and hasattr(self.gb, 'skill_start'):
+                self.gb.skill_start(u, sk, ctx)
             if self.timeline is not None:
                 t0 = ctx.targets[0] if ctx.targets else None
                 self.log(actor=u.name, side=u.side, pos=u.pos, skill=sk.slot + ('(추가)' if extra else ''), skill_name=sk.name,

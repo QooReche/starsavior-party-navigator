@@ -57,7 +57,8 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 시즌 값(보스 3종·Step 스탯·난이도 레벨 표·챌린지 효과·시즌 전투 버프·점수 상수·벨그라스 수치)은 `data/cosmo_raid.json` **한 곳**에 있고 코드(`battlesim/starsavior/cosmo_raid.py`, `cosmo_raid.js`)는 시즌 공통이다. 자세한 근사 목록은 `docs/cosmo_raid.md`.
 - 새 시즌 표를 추출한 폴더(파일명 `CLIENT_` 접두, 문자열 `hard/STRING_COMMON.json`, 배치 스크립트 `plain/`)를 만든다. 비공개 static-data 에 새 표를 반영하는 일과는 별개이며 빌더는 폴더를 인자로 받는다.
 - `python -X utf8 -I tools/build_cosmo_raid.py --tables <폴더> --season <RankingRaidSeasonId> --build <빌드>` → `data/cosmo_raid.json`. 기대한 표 구조(벨그라스 스킬·버프·SE)와 다르면 `Changed` 로 멈춘다 — 그때는 상태 기계(`Controller`)를 사람이 다시 확인한다. 새 챌린지 효과 번호(`SET_NN`)는 `EFFECT_KIND` 에 추가하고 엔진 처리(`on_wave`/`after_cast`/`post_hit`)를 넣는다(없으면 `kind=null` → 시뮬 결과 `unsupported.runtime` 에 «미지원 챌린지 효과» 로 남음).
-- 보스가 바뀌면(벨그라스가 아닌 새 보스) `build()` 의 보스 key 매핑과 엔진의 보스 정의(`build_waves`)를 추가한다. 티리아·카넬리아처럼 databook 에 스킬 줄이 있는 보스는 기존 `cosmo` 콘텐츠 N단계를 재사용한다(`tools/update.py` 로 foe 자료를 먼저 갱신).
+- 보스가 바뀌면 `BOSS_SCRIPT_KEY`(배치 스크립트 이름 → key)에 추가한다. databook 에 cosmo «이름 N단계» 적 정의가 있는 보스는 그대로 재사용되고, 없으면 빌더가 `sim=false`(엔진·화면이 사유와 함께 막음)로 둔다. 벨그라스처럼 전용 모델이 필요하면 엔진의 보스 정의(`build_waves`)를 추가한다.
+- 시즌을 바꾸기 전에 지금 자료를 `tests/fixtures/cosmo_raid_<시즌>.json` 으로 동결할지 본다 — 그 시즌 전용 모델·효과의 회귀 시험은 fixture 로 돌린다(`tests/cosmo_fixture.py`, 1022 선례). foe 자료는 `tools/update.py` 로 먼저 갱신.
 - «3보스 최고 점수 편성 찾기» 설정(풀 크기·판 수·K 등)은 `data/cosmo_raid.json` 의 `search`(빌더 `tools/build_cosmo_raid.py` 의 `SEARCH` 상수에서 옴). 시즌이 바뀌어도 값은 그대로 두되, 판 시간이 달라지면 조정(`docs/cosmo_raid.md` 2단계).
 - `python -X utf8 -I tools/build_simpack.py`(`data/cosmo_raid.json` 은 시뮬 파일 목록에 포함) → `python -X utf8 -I tests/cosmo_raid_test.py`(`COSMO_TABLES=<폴더>` 를 주면 표에서 다시 뽑은 값과 대조) → `tools/run_tests.py --rebuild`.
 

@@ -5,6 +5,9 @@ const C=require('../cosmo_search.js'),G=require('../data/cosmo_raid.json');
 const [out,goldFile='gold.json.gz']=process.argv.slice(2);
 const read=p=>JSON.parse(p.endsWith('.gz')?zlib.gunzipSync(fs.readFileSync(p)):fs.readFileSync(p,'utf8'));
 const gold=read(path.join(out,goldFile)),catalog=read(path.join(out,'catalog.json'));
+// 보스 순서 = 측정한 gold 자료의 보스(현재 시즌 자료가 아님: 지난 시즌에 저장한 gold 도 그 시즌 보스로 읽는다). 현재 시즌 순서에 모두 있으면 그 순서를 따른다
+const goldBosses=[...new Set(gold.rows.map(g=>g.boss))];
+const BOSS_ORDER=goldBosses.every(b=>G.season.bossOrder.includes(b))?G.season.bossOrder.filter(b=>goldBosses.includes(b)):goldBosses;
 const tid=t=>t.teams.map(e=>C.idOf(e.keys)).join('/');
 const jobkey=t=>C.jobKey(t.boss,t.keys,6);
 const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
@@ -22,7 +25,7 @@ const output={goldFile,goldSignature:gold.signature??null,goldTeams:gold.rows.le
 for(const size of [...new Set(reports.map(r=>r.size))]){
  const keys=new Set(catalog.slice(0,size).map(r=>r.key)),valid=gold.rows.filter(g=>g.keys.every(k=>keys.has(k)));
  const gm=new Map(valid.map(g=>[g.key,g]));
- const lists=G.season.bossOrder.map(b=>valid.filter(g=>g.boss===b).map(g=>({...g,score:g.summary.top})).sort((a,b)=>b.score-a.score||(a.key<b.key?-1:1)));
+ const lists=BOSS_ORDER.map(b=>valid.filter(g=>g.boss===b).map(g=>({...g,score:g.summary.top})).sort((a,b)=>b.score-a.score||(a.key<b.key?-1:1)));
  const best=C.bestTriples(lists,5),opt=best[0].sum;
  const bestUnits=new Set(best[0].teams.flatMap(t=>t.keys));
  const pool={candidateUnion:lists.map(l=>l.length),goldBest:best[0],goldBestKeys:best[0].teams.map(t=>t.key),methods:{}};
@@ -32,9 +35,9 @@ for(const size of [...new Set(reports.map(r=>r.size))]){
   for(const r of group){
    const phases=fs.readdirSync(path.join(out,r.dir)).filter(n=>/^phase-.*gz$/.test(n)).map(n=>read(path.join(out,r.dir,n)));
    const rerank=phases.find(p=>p.seed%100===3),passed=phases.find(p=>p.seed%100===4),initial=phases.find(p=>p.seed%100===1);
-   const initialSets=G.season.bossOrder.map(b=>new Set(initial.jobs.filter(j=>j.boss===b).map(j=>j.key)));
-   const passSets=G.season.bossOrder.map(b=>new Set((passed||rerank).jobs.filter(j=>j.boss===b).map(j=>j.key)));
-   const rerankSets=G.season.bossOrder.map(b=>new Set(rerank.jobs.filter(j=>j.boss===b).map(j=>j.key)));
+   const initialSets=BOSS_ORDER.map(b=>new Set(initial.jobs.filter(j=>j.boss===b).map(j=>j.key)));
+   const passSets=BOSS_ORDER.map(b=>new Set((passed||rerank).jobs.filter(j=>j.boss===b).map(j=>j.key)));
+   const rerankSets=BOSS_ORDER.map(b=>new Set(rerank.jobs.filter(j=>j.boss===b).map(j=>j.key)));
    const picked=r.result.rows[0],goldValue=picked.teams.reduce((v,t)=>{const g=gm.get(jobkey(t));if(!g)throw Error('missing gold '+jobkey(t));return v+g.summary.top;},0);
    const recall=sets=>lists.map((l,i)=>Object.fromEntries([50,100,300].map(k=>[k,l.slice(0,k).filter(g=>sets[i].has(g.key)).length/Math.min(k,l.length)])));
    const represented=new Set((passed||rerank).jobs.flatMap(j=>j.keys));
@@ -44,7 +47,7 @@ for(const size of [...new Set(reports.map(r=>r.size))]){
     const full=read(path.join(out,baseline.dir,'phase-0.json.gz'));
     const results=Object.fromEntries(catalog.slice(0,size).map(x=>[x.key,x]));
     const pl=C.plan(r.search,catalog.slice(0,size));
-    monitor=G.season.bossOrder.map((b,i)=>{
+    monitor=BOSS_ORDER.map((b,i)=>{
      const jobs=full.jobs.filter(j=>j.boss===b),sel=C.surrogateSelect(r.search,jobs,results,20261110+i);
      const core=new Set(sel.core.map(j=>j.key));
      // Exhaustive baseline gives the true FIRST-RUN miss fraction, independently of the audit sample.
@@ -76,7 +79,7 @@ for(const size of [...new Set(reports.map(r=>r.size))]){
  pool.baselineBetween={top1Match:mean(pairs.map(p=>+p.same)),top5Jaccard:mean(pairs.map(p=>p.jaccard))};
  pool.regretThreshold=baseline.regretMean+baseline.regretSD;
  for(const [name,m] of Object.entries(pool.methods)){
-  const recallOK=G.season.bossOrder.every((_,b)=>mean(m.runs.map(r=>r.passRecall[b][50]))>=mean(baseline.runs.map(r=>r.passRecall[b][50])));
+  const recallOK=BOSS_ORDER.every((_,b)=>mean(m.runs.map(r=>r.passRecall[b][50]))>=mean(baseline.runs.map(r=>r.passRecall[b][50])));
   m.gate={regret:m.regretMean<=pool.regretThreshold,top50:recallOK,noSaviorLoss:m.runs.every(r=>r.missedSaviors.length===0),faster:m.meanSeconds<baseline.meanSeconds};
  }
  output.pools[size]=pool;

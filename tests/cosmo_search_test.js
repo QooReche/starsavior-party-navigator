@@ -1,7 +1,7 @@
 // 코스모 게이트 «3보스 최고 점수 편성 찾기» 로직 시험: 설정, 겹침 없는 삼중 탐색(분기한정) = 전수 비교, 가짜 작업자로 전체 흐름(겹침 금지·최적성·판 수), 화면 조각.
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 const C = require('../cosmo_search.js'), GS = require('../guild_search.js');
-const G = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'cosmo_raid.json'), 'utf8'));
+const G = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'cosmo_raid_1022.json'), 'utf8'));
 const SE = G.search;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 const BOSSES = G.season.bossOrder;

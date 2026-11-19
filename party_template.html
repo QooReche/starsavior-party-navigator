@@ -617,6 +617,8 @@ async function cosmoSearchStart(target=CSR,profileOverride=null){
  const C=D.cosmoRaid,id=++CSR.id,stale=()=>CSR.id!==id,paint=()=>profileOverride?growthPaint():renderCosmoSearch(),level=CSR.optLevel,mode=CSR.optMode;
  try{
   CSR.phase="run";CSR.sig=csSig();CSR.msg="내 구원자 능력치 계산 중";CSR.done=0;CSR.total=0;CSR.eta=null;CSR.etaText="";CSR.runs=1;paint();
+  const noSim=C.bosses.filter(b=>b.sim===false);   // 적 자료가 없는 보스(시즌 1023 바스커빌의 괴수)가 있으면 3보스 탐색을 시작하지 않음
+  if(noSim.length)throw new Error(noSim.map(b=>b.simNote||b.name+"은(는) 아직 계산할 수 없음").join(" / ")+" — 3보스 편성 찾기는 지원 후 열림");
   const growth=await miGrowth();if(stale())return;
   const profile=profileOverride||MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,growth,"cosmo"));
   const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=CosmoSearch.searchSettings(C.search,CSR.optFast);

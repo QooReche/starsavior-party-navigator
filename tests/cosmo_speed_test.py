@@ -10,6 +10,8 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
+from cosmo_fixture import use_1022  # noqa: E402
+use_1022()  # 시즌 1022 fixture(벨그라스 등 지난 시즌 모델 회귀)
 from battlesim import api, mc, simulate
 from battlesim.starsavior.data import get_db
 from battlesim.starsavior.parser import Line, _map_prop

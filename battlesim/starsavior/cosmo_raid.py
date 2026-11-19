@@ -28,7 +28,6 @@ from .parser import Skill
 
 _DATA = {}
 
-BOSS_KEYS = ('belgras', 'tyria', 'carnelia')
 CAST_PROPS = ('특수기', '궁극기')
 
 # 효과 이름(엔진 Eff 키)
@@ -50,13 +49,31 @@ STACKS = '응집된 생기(해제불가)'
 AMP = '상급 공격력 증가'
 BARRIER = '보호막'
 CH_GROW_EX = '피해 증가(EX)'
+CH_GUARD = '폭주 : 장벽'
+
+
+_DATA_FILE = None      # None = <src>/data/cosmo_raid.json(현재 시즌). 시험이 지난 시즌 fixture 를 쓸 때만 use_data 로 지정
+
+
+def use_data(path=None):
+    """이 프로세스의 코스모 시즌 자료 파일을 바꾼다(None = 기본 실자료). 시험 전용 — 지난 시즌 모델(벨그라스 등) 회귀 시험이
+    tests/fixtures/cosmo_raid_<시즌>.json 을 읽게 한다. 자료·전투 입력 캐시는 경로를 키에 넣고, 바꿀 때 엔진 캐시도 비운다."""
+    global _DATA_FILE
+    _DATA_FILE = os.path.normcase(os.path.abspath(path)) if path else None
+    from .. import api
+    api.clear_engine_caches()
+
+
+def data_path(src=SRC):
+    return _DATA_FILE or os.path.normcase(os.path.abspath(os.path.join(src, 'data', 'cosmo_raid.json')))
 
 
 def load(src=SRC):
-    if src not in _DATA:
-        with open(os.path.join(src, 'data', 'cosmo_raid.json'), encoding='utf-8') as f:
-            _DATA[src] = json.load(f)
-    return _DATA[src]
+    p = data_path(src)
+    if p not in _DATA:
+        with open(p, encoding='utf-8') as f:
+            _DATA[p] = json.load(f)
+    return _DATA[p]
 
 
 def boss_data(key, src=SRC):
@@ -188,11 +205,13 @@ def build_waves(boss, step, level=0, src=SRC):
         raise ValueError('난이도 레벨은 정수: %r' % (level,))
     if level and step != 3:
         raise ValueError('난이도 레벨은 Step 3 에서만 선택할 수 있음(Step %d)' % step)
+    if b.get('sim') is False:          # 빌더가 databook 적 정의 유무로 정함(시즌 1023 바스커빌의 괴수)
+        raise ValueError(b.get('simNote') or '%s 은(는) 아직 계산할 수 없음' % b['name'])
     row = level_row(b, level)
     st = b['steps'][step - 1]
     G = load(src)
     cfg = dict(boss=b['key'], step=step, level=level, row=row, season_buffs=b['seasonBuffs'], effects=effect_table(src),
-               model='belgras' if b['key'] == 'belgras' else 'stage', bel=G['belgras'])
+               model='belgras' if b['key'] == 'belgras' else 'stage', bel=G.get('belgras'))
     if b['key'] == 'belgras':
         bm = cfg['bel']
         sk = bm['skills']
@@ -243,6 +262,8 @@ class Controller:
         self.stats = defaultdict(int)
         self.pending_damage = []      # (대상, 시전 시작 때 확정한 고정 피해)
         self._shield_amp_ctx = None   # no_shield_amp: 시전당 한 번만 적용하기 위한 ctx 참조
+        self._guard_ctx = None        # few_buff_guard: 시전당 한 번만 판정
+        self._punish_q = []           # punish: (대상, 생성 때 정한 공격자 쪽 값) — 반격·반응 뒤 flush_damage 에서 처리
 
     def before_cast(self, u, sk, ctx):
         if (u is self.boss and self.cfg['model'] == 'belgras' and sk.slot == '궁극기'
@@ -260,8 +281,28 @@ class Controller:
                 ctx.inc += p['pct'] / 100.0 * count
                 self.stats['debuff_amp'] += count
 
+    def skill_start(self, u, sk, ctx):
+        # EX: punish(SET_31, SE 9403101) — NSEAT_SKILL_START(대상 확정 직후·타격 전). 조건 1161 OnMyAttack(SkillIndex 궁극기,
+        # TargetNegativeBuff: 스킬 대상 유형대로 모은 대상 중 하나라도 약화 1개 이상 — NKM:9590-9700, NKM.Templets OBF_2765)이 참이면
+        # AutoTargetId 10(IsNegativeBuffUnit: 약화 상태인 적 전원, 스킬 대상만이 아님)에게 BI_ADD_DAMAGE_1(공격력 30%).
+        # 생성 때 공격자 쪽 값(공격력·피해 증가·관통)만 정하고(NKM:4734·6226), 대상 방어·분담은 넣을 때 계산(NKM:8168·17797).
+        # 넣는 시점 = 반격·예약 반응이 끝난 뒤 추가 피해 처리 단계(NKM:15382·13961 → flush_damage).
+        boss = self.boss
+        if (u is boss and not boss.dead and 'punish' in self.fx and sk.is_attack and sk.slot == '궁극기'):
+            pool = [x for x in (ctx.targets or []) if x.side != u.side]
+            if any(x.n_harmful() > 0 for x in pool):
+                coef = self.fx['punish']['atkRate'] / 100.0
+                # 누적(클라 추가 피해 목록 Add, NKM:6239-6241): 같은 행동 안 반응으로 궁극기가 다시 시작되면 따로 쌓임
+                self._punish_q.extend((x, self._chain_pre(boss, x, coef, ctx)) for x in self.b.alive(1 - boss.side) if x.n_harmful() > 0)
+
     def flush_damage(self):
         # NKM:13539-13544: 반응 종료 → 예약 피해 → 보유자 턴 종료 효과.
+        queue, self._punish_q = self._punish_q, []
+        for x, pre in queue:                       # 응징 추가 피해(생성 뒤 죽은 대상은 건너뜀)
+            boss = self.boss
+            if not x.dead and boss is not None:
+                self.b.apply_damage(boss, x, self._chain_hit(boss, x, pre), 'chain', shieldable=True)
+                self.stats['punish'] += 1
         pending, self.pending_damage = self.pending_damage, []
         for target, damage in pending:
             if target.dead:
@@ -346,7 +387,7 @@ class Controller:
                 boss.sa_max += p['add']
                 boss.sa += p['add']
             elif k in ('drain', 'bleed', 'pressure', 'rewind', 'backflow', 'thorn', 'punish', 'march',
-                       'grow', 'hit_gauge', 'debuff_amp', 'ult_cd', 'no_shield_amp', 'no_shield_chain', 'strip'):
+                       'grow', 'hit_gauge', 'debuff_amp', 'ult_cd', 'no_shield_amp', 'no_shield_chain', 'strip', 'few_buff_guard'):
                 self.fx[k] = p
             else:
                 b.unsup['cosmo_raid: 미지원 챌린지 효과 %s' % e['name']] += 1
@@ -407,6 +448,8 @@ class Controller:
         b = self.b
         if self.cfg['model'] == 'belgras':
             self._minion_tick()
+        if boss.eff.get(CH_GUARD) is not None:
+            self._drop(boss, CH_GUARD)            # few_buff_guard: 지속 0턴 — 그 시전 동안만
         if u.side == 0:
             # EX: hit_gauge — SE 9400701 NSEAT_DAMAGE_END: 공격 스킬 처리 끝에 시전자의 대상 목록 각자에게 1회(NKM:15742 → 21183).
             # 타격·다단 히트마다가 아니라 «보스를 대상으로 한 아군 공격 스킬 1번당 1회»
@@ -446,11 +489,6 @@ class Controller:
                     for x in hit:
                         if not x.dead:
                             self._thorn(x, ctx, fx['thorn'].get('count', 1), fx['thorn'].get('turns', 3))
-                if 'punish' in fx:
-                    for x in hit:
-                        if not x.dead and x.n_harmful() > 0:
-                            self._chain_atk(boss, x, fx['punish']['atkRate'] / 100.0)
-                            self.stats['punish'] += 1
             # EX: ult_cd — NSEAT_SKILL_END, 타격 후 대상 궁극기 쿨 증가 (SE 9402201, AutoTargetId 21)
             if 'ult_cd' in fx:
                 for x in hit:
@@ -494,17 +532,29 @@ class Controller:
     def _chain_atk(self, owner, v, coef, ctx=None):
         """공격력 비례 연쇄 피해: mc.Battle.chain 과 같은 식(대상 1명). ctx 를 주면 시전자의 이번 스킬 피해 증가(ctx.inc·대상별)도 읽음 —
         클라는 연쇄 생성 때 현재 NST_RATE_DAMAGE_UP 을 읽음(NKM:4734·6226, mc.chain_skill_damage_up 과 같은 조건)"""
-        from .. import rules as R
+        self.b.apply_damage(owner, v, self._chain_dmg(owner, v, coef, ctx), 'chain', shieldable=True)
+
+    def _chain_dmg(self, owner, v, coef, ctx=None):
+        """연쇄 피해량(즉시 넣는 경로): 공격자 쪽 값(_chain_pre) + 대상 쪽 계산(_chain_hit)"""
+        return self._chain_hit(owner, v, self._chain_pre(owner, v, coef, ctx))
+
+    def _chain_pre(self, owner, v, coef, ctx=None):
+        """클라 AddDamage 생성 때 정하는 공격자 쪽 값(NKM:4734·6226): 공격력 x 계수 x (1 + 주는 피해 증가), 관통"""
         b = self.b
         m = owner.mods()
         inc = m['inc']
         if ctx is not None and ctx.src is owner and b.mc['chain_skill_damage_up']:
             inc += ctx.inc + ctx.local_by[v]['inc']
+        return dict(base=b.atk_stat(owner) * coef * (1 + inc), pen=m['pen'], side=owner.side)
+
+    def _chain_hit(self, owner, v, pre):
+        """넣을 때 계산하는 대상 쪽(NKM:8168·17797): 대상 방어(그때 값)·난수·전투력 보정"""
+        from .. import rules as R
+        b = self.b
         de = b.def_stat(v)
         dr = de / (de + R.DEF_K)
-        dr = max(0.0, dr - dr * min(1.0, m['pen']))
-        dmg = max(1.0, math.floor(b.atk_stat(owner) * coef * (1 + inc) * R.BASE_MULT * (1 - dr) * b.rand(owner.side) * b.pen[owner.side]))
-        b.apply_damage(owner, v, dmg, 'chain', shieldable=True)
+        dr = max(0.0, dr - dr * min(1.0, pre['pen']))
+        return max(1.0, math.floor(pre['base'] * R.BASE_MULT * (1 - dr) * b.rand(pre['side']) * b.pen[pre['side']]))
 
     def _ensure_belgras_eff(self):
         bm = self.cfg['bel']
@@ -580,6 +630,20 @@ class Controller:
 
     # ---------- 피격
     def pre_hit(self, a, v):
+        # EX: few_buff_guard(SET_33, SE 9403301) — NSEAT_DAMAGE_START 는 스킬 피해 처리 직전 1회(NKM:15689). 조건 5509
+        # MyEffectiveDamageStart(NKM:10171): 시전자가 다른 편·스킬이 SAT_ATTACK·시전자 강화 효과 수 <= maxBuffs(0개도 참,
+        # NKM.Templets:43320). 참이면 보스 자신에게 받는 피해 감소(지속 0턴 = 그 행동 동안) → 그 시전의 보스 피해 전부에 적용,
+        # 시전이 끝나면(after_cast) 지운다. 판정은 시전당 한 번, 그 시전의 첫 보스 타격 직전 상태로.
+        boss = self.boss
+        if 'few_buff_guard' in self.fx and v is boss and a is not None and a.side != boss.side:
+            ctx = self._cur_ctx()
+            if (ctx is not None and ctx is not self._guard_ctx and getattr(ctx, 'src', None) is a
+                    and ctx.skill is not None and ctx.skill.is_attack):
+                self._guard_ctx = ctx
+                p = self.fx['few_buff_guard']
+                if a.n_good() <= p['maxBuffs']:
+                    self.stats['few_buff_guard'] += 1
+                    self._put(boss, CH_GUARD, {'받는 피해 감소': p['pct']}, cat='marker', src=boss)
         # EX: no_shield_amp — NSEAT_SKILL_START cond 31010, 보호막 없는 대상 단일 타격 시 피해 증가 (SE 9402401)
         # OnMyAttack(NKM:9590-9606 → 9675 → NKM.Templets 42715): 스킬 대상 유형대로 모은 대상 중 하나라도 보호막 계열이 없으면 참 —
         # 표 주석의 «광역이면 미동작»과 달리 코드는 광역도 대상 전원으로 판정(클라 코드 우선). 첫 타격 전 = 스킬 시작 때 상태

@@ -7,6 +7,9 @@ import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.insert(0, ROOT)
+sys.path.insert(0, str(ROOT) + '/tests')
+from cosmo_fixture import use_1022  # noqa: E402
+use_1022()  # 시즌 1022 fixture(벨그라스 등 지난 시즌 모델 회귀)
 from battlesim import simulate                                   # noqa: E402
 from battlesim import web                                        # noqa: E402
 
