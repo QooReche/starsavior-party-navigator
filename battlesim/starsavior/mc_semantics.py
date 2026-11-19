@@ -5,6 +5,7 @@ import re
 from collections import defaultdict
 
 from .parser import Line, Skill, ally_stack_trigger, parse_props, _perm_apply
+from . import marker_se
 
 
 def after_active_se(key, ln):
@@ -15,6 +16,8 @@ def after_active_se(key, ln):
     markers, whose normalized replacement already performs the operation.
     NKM:2612-2620,2813-2823 keeps these after the active slot.
     """
+    if ln.eff.get('native_se'):
+        return ln.eff.get('native_after', False)
     if ln.src_kind != 'passive':
         return False
     e = ln.eff
@@ -59,6 +62,8 @@ def trigger_rule(sk, lines):
 
 def normalized_lines(d, rules=None):
     """카운팅용 내부 효과를 원자적 승급/실제 타격 수로 치환한다."""
+    rules = rules or {}
+    native = marker_se.enabled(d, rules)
     lines = list(d.lines)
     # 최대 스택 -> 임시 표지 -> 소비/승급 -> 표지 삭제의 공통 패턴.
     for marker in list(lines):
@@ -82,6 +87,8 @@ def normalized_lines(d, rules=None):
                  and not (ln.eff['kind'] == 'remove' and ln.eff['name'] == e['name'])]
 
     for raw in getattr(d, 'u', {}).get('sk', []):
+        if native and d.key in ('ceres', 'lydia-moon-caster'):
+            continue
         desc = raw.get('dx') or raw.get('d1') or ''
         if '타격한 대상의 수' not in desc:
             continue
@@ -224,7 +231,8 @@ def unit_glossary(d):
 def description_lines(d, lines, rules=None):
     """정본에 명시된 범위·순서를 ef에 보충한다. key별 예외를 만들지 않는다."""
     rules = rules or {}
-    if rules.get('smile_waterbomb_scope') == 'client' and d.key == 'sunshine-cat-smile':
+    native = marker_se.enabled(d, rules)
+    if not native and rules.get('smile_waterbomb_scope') == 'client' and d.key == 'sunshine-cat-smile':
         # SE10464012..21: duplicated grant rows straddle the ultimate marker.
         # Preserve the marker state machine without manufacturing timed buffs.
         related = [ln for ln in lines if ln.src_kind == 'passive' and ln.kind == 'own_post'
@@ -241,6 +249,9 @@ def description_lines(d, lines, rules=None):
         return lines
     out = []
     for original in lines:
+        if native and marker_se.scope(d.key, original):
+            out.append(marker_se.clone(original))
+            continue
         if original.kind == 'perm' and ',' in original.raw:
             _, props = parse_props(original.raw.split('능력치:', 1)[1])
             for stat, val in props.items():
@@ -344,6 +355,8 @@ def description_lines(d, lines, rules=None):
     references = {n.strip() for ln in out for k, v in ln.params
                   if k in ('자신이 보유', '자신이 미보유', '대상이 보유', '시전자가 보유') for n in v.split(',')}
     for ln in out:
+        if native and marker_se.scope(d.key, ln):
+            continue
         e = ln.eff
         if (e['kind'] == 'buff' and not e.get('consume') and e['name'] in references and not e['props']
                 and ln.phase in ('스킬 사용 시작 시', '스킬 사용 후', '피해 처리 직전', '피해 처리 후')
@@ -364,7 +377,7 @@ def description_lines(d, lines, rules=None):
             e.pop('cast_marker', None)
             e.pop('pre_grant', None)
             e.update(persistent_marker=True, rule_key='gauge_lock_order')
-    return out
+    return marker_se.normalize(d, out) if native else out
 
 
 def selection_lines(d, lines, raws, rules=None):
@@ -379,6 +392,9 @@ def selection_lines(d, lines, raws, rules=None):
             random_markers.update(v for k, v in ln.params if k == '자신이 미보유' and '카운팅' in v)
     for ln in lines:
         desc = raws.get(ln.slot, {})
+        if marker_se.enabled(d, rules) and marker_se.scope(d.key, ln):
+            out.append(ln)
+            continue
         desc = desc.get('dx') or desc.get('d1') or ''
         e = ln.eff
         name = e.get('name') or ''

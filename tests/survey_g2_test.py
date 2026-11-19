@@ -64,6 +64,7 @@ class SurveyG2(unittest.TestCase):
     def test_smile_special_no_move_or_refresh(self):
         for marked in (False, True):
             b, a, v = setup('sunshine-cat-smile')
+            b.mc['marker_se_flow'] = 'legacy'  # this suite mutates the old replacement switches
             if marked:
                 give(v, '물폭탄', harmful=True, dur=1)
             b.cast(a, a.d.trigger_skills['특수기'], target=v)
@@ -74,6 +75,7 @@ class SurveyG2(unittest.TestCase):
 
     def test_smile_crit_basic_only(self):
         b, a, v = setup('sunshine-cat-smile')
+        b.mc['marker_se_flow'] = 'legacy'
         give(v, '물폭탄', harmful=True)
         for slot, expected in [('기본기', .2), ('특수기', 0), ('궁극기', 0)]:
             c = Ctx(a, a, a.d.skills.get(slot) or a.d.trigger_skills[slot])
@@ -85,6 +87,7 @@ class SurveyG2(unittest.TestCase):
         for slot, outcomes, moved in [('기본기', [False, True], True),
                 ('기본기', [False, False], False), ('궁극기', [False], False)]:
             b = battle([selected('sunshine-cat-smile')], [unit('new'), unit('old')])
+            b.mc['marker_se_flow'] = 'legacy'
             a, new, old = b.allies[0], *b.foes
             give(old, '물폭탄', harmful=True)
             c = Ctx(a, a, a.d.skills[slot])
@@ -128,6 +131,7 @@ class SurveyG2(unittest.TestCase):
 
     def test_shield_counts_enemies(self):
         b, a, v = setup('wedding-epindel')
+        b.mc['marker_se_flow'] = 'legacy'  # native uses shield template IDs and hidden marks
         for name in ('shield1', 'shield2'):
             give(v, name).shield = 100
         ln = next(x for x in b.lines_of(a) if x.eff.get('scope') == 'shield_all')
@@ -137,6 +141,7 @@ class SurveyG2(unittest.TestCase):
 
     def test_gauge_before_lock(self):
         b = battle([selected('lydia-moon-caster'), unit('caster', skills=[dict(slot='기본기', dm=1)])], [unit('foe')])
+        b.mc['marker_se_flow'] = 'legacy'  # native requires an actual TURN_START marker
         a, actor = b.allies
         actor.acting = True
         give(actor, '책임 전가(해제불가)')

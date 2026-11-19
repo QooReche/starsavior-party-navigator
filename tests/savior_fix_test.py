@@ -49,10 +49,11 @@ def test_ceres_targets():
 
 
 def test_lydia_targets():
+    """legacy per_hit 대체식 회귀. 원형 표지 경로는 marker_se_test에서 검사."""
     out = []
     for n, own_turn in [(1, True), (2, True), (5, True), (6, True), (2, False)]:
         b, a, _ = setup('lydia-moon-caster', [unit('ally', skills=[dict(slot='기본기', dm=100, all=True)])],
-                        [unit(str(i), hp=1 if i == 0 else 10**9, sa=1000) for i in range(n)])
+                        [unit(str(i), hp=1 if i == 0 else 10**9, sa=1000) for i in range(n)], mc={'marker_se_flow': 'legacy'})
         actor = b.allies[1]
         give(actor, '책임 전가(해제불가)')
         actor.acting = own_turn
@@ -236,7 +237,7 @@ def test_trigger_reentry():
 
 def test_lydia_threshold():
     b, a, _ = setup('lydia-moon-caster', [unit('actor', skills=[dict(slot='기본기', dm=100, all=True)])],
-                    [unit(str(i), hp=10**9, sa=1000) for i in range(2)])
+                    [unit(str(i), hp=10**9, sa=1000) for i in range(2)], mc={'marker_se_flow': 'legacy'})
     actor = b.allies[1]
     give(actor, '책임 전가(해제불가)')
     give(a, '퇴근 재촉(해제불가)', stacks=3).maxs = 10
@@ -316,7 +317,7 @@ def test_fix2_count_damage():
 def test_fix2_shield_count():
     out = []
     for n in [0, 1, 3, 4]:
-        b, a, _ = setup('wedding-epindel', foes=[unit(str(i), hp=10**9, sa=1000) for i in range(4)])
+        b, a, _ = setup('wedding-epindel', foes=[unit(str(i), hp=10**9, sa=1000) for i in range(4)], mc={'marker_se_flow': 'legacy'})
         for f in b.foes[:n]:
             give(f, '보호막').shield = 10000
         c = pre(b, a, '궁극기')
@@ -526,7 +527,7 @@ def test_fix2_nested_marker():
 
 
 def test_fix2_shield_context():
-    b, a, f = setup('wedding-epindel', foes=[unit('plain', hp=10**9, sa=1000), unit('shield', hp=10**9, sa=1000)])
+    b, a, f = setup('wedding-epindel', foes=[unit('plain', hp=10**9, sa=1000), unit('shield', hp=10**9, sa=1000)], mc={'marker_se_flow': 'legacy'})
     shielded = b.foes[1]
     give(shielded, '보호막').shield = 1
     for x in b.foes:
