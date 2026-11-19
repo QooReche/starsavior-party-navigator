@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "c842e95a19e6635c",
+  "hash": "530c00d991033452",
   "history": [
-   {
-    "hash": "fa6a0b89622210c2",
-    "reason": "11/15 전수조사 수정 G1, 길드 방어전 시즌 미오픈"
-   },
    {
     "hash": "fa6a0b89622210c2",
     "reason": "11/15 전수조사 수정 G1, 길드 방어전 시즌 미오픈"
@@ -41,16 +37,16 @@
    {
     "hash": "c842e95a19e6635c",
     "reason": "표지 SE 원형 복원(marker_se_flow). 길드 방어전 시즌4 종료로 기존 비활성 생성물 재계산 생략; 새 시즌 자료 반영 때 재생성(HANDOFF). 현재 결과 불변을 뜻하는 인정은 아님."
+   },
+   {
+    "hash": "530c00d991033452",
+    "reason": "build_guild_sim 재생성"
    }
   ]
  },
  "quick": {
-  "hash": "c842e95a19e6635c",
+  "hash": "530c00d991033452",
   "history": [
-   {
-    "hash": "fa6a0b89622210c2",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "fa6a0b89622210c2",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +81,10 @@
    },
    {
     "hash": "c842e95a19e6635c",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "530c00d991033452",
     "reason": "calibrate_quick --write 재보정"
    }
   ]
