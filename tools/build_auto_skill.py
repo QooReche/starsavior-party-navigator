@@ -264,6 +264,10 @@ def build_lines(static, report, *, legacy=False, client=False):
                         continue
                     if tt.startswith('NSETT_AUTO_ALLY'):
                         spec['ally'] = True
+                    if client and int(r.get('RepeatBuffCount', 1)) > 1:
+                        # 26752678 SE10253015: 두 독립 SE가 아닌 한 SE의 반복.
+                        # 대상은 반복마다 재선택하되 전체 실패 시 중단해야 함.
+                        spec['repeat_buff'] = True
                     if tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF':
                         if client:
                             spec['exclude_self'] = True

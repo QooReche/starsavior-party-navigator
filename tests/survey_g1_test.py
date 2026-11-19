@@ -279,7 +279,7 @@ if __name__ == '__main__':
             r = unittest.TextTestRunner(stream=io.StringIO()).run(SurveyG1('test_passive_precedes_new_debuff_and_stack'))
         assert not r.wasSuccessful() and not r.errors
         print('KILLED AfterActiveSkillSe exception')
-        source_mutation('apply_buff', "if eff.get('repeat_buff') and not applied:",
+        source_mutation('apply_buff', "if repeat_buff and not applied:",
                         'if False:', 'test_repeat_buff_stops_only_after_whole_iteration_fails')
         source_mutation('run_own',
                         "potentials = [ln for ln in passive if ln.slot == '잠재력']\n"
