@@ -69,6 +69,7 @@ _KEEP.update(hit_ally_skill_end='legacy', skill_end_timing='legacy', passive_se_
 _KEEP.update(bloom_passive_levels='legacy', independent_stack_limits='legacy', smile_waterbomb_scope='legacy', scarlet_pinball_marker='legacy', cristelle_ignite_targets='legacy', shield_enemy_count='legacy', gauge_lock_order='legacy', damage_break_boundary='legacy')
 _KEEP.update(revive_toughness='legacy', potential_11026_vampirism='legacy', heal_cleanse_skill_end='legacy')
 _KEEP['last_damager_timing'] = 'per_target'
+_KEEP.update(fixstats_speed_zero='off', superarmor_damage_ban='off')
 _KEEP['self_hp_condition'] = 'ratio'
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 

@@ -1,0 +1,1321 @@
+{
+ "_note": "PC 빌드 26752678 바스커빌 조각. se는 원본 순서·ID·대상·조건과 실행 담당을 보존함. 데이터북 스테이지 우선.",
+ "u": [
+  {
+   "n": "바스커빌의 괴수",
+   "g": "보스",
+   "el": "질서",
+   "r": "스트라이커",
+   "k": "원소",
+   "b": [
+    56000,
+    2060,
+    700,
+    140,
+    1500,
+    3000,
+    12000,
+    2000,
+    0,
+    15
+   ],
+   "gw": [
+    0,
+    0,
+    0
+   ],
+   "sk": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "im": [
+    {
+     "n": "도발"
+    },
+    {
+     "n": "기절"
+    },
+    {
+     "n": "수면"
+    },
+    {
+     "n": "침묵"
+    },
+    {
+     "n": "강화 불가"
+    },
+    {
+     "n": "스킬 쿨타임 증가"
+    }
+   ],
+   "client_model": "baskerville"
+  },
+  {
+   "n": "바스커빌의 괴수",
+   "g": "보스",
+   "el": "질서",
+   "r": "스트라이커",
+   "k": "원소",
+   "b": [
+    84000,
+    2940,
+    1400,
+    160,
+    1500,
+    3000,
+    14000,
+    4000,
+    0,
+    15
+   ],
+   "gw": [
+    0,
+    0,
+    0
+   ],
+   "sk": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "im": [
+    {
+     "n": "도발"
+    },
+    {
+     "n": "기절"
+    },
+    {
+     "n": "수면"
+    },
+    {
+     "n": "침묵"
+    },
+    {
+     "n": "강화 불가"
+    },
+    {
+     "n": "스킬 쿨타임 증가"
+    }
+   ],
+   "client_model": "baskerville"
+  },
+  {
+   "n": "바스커빌의 괴수",
+   "g": "보스",
+   "el": "질서",
+   "r": "스트라이커",
+   "k": "원소",
+   "b": [
+    1000000,
+    5255,
+    3000,
+    180,
+    1500,
+    3000,
+    16000,
+    6000,
+    0,
+    15
+   ],
+   "gw": [
+    0,
+    0,
+    0
+   ],
+   "sk": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "im": [
+    {
+     "n": "도발"
+    },
+    {
+     "n": "기절"
+    },
+    {
+     "n": "수면"
+    },
+    {
+     "n": "침묵"
+    },
+    {
+     "n": "강화 불가"
+    },
+    {
+     "n": "스킬 쿨타임 증가"
+    }
+   ],
+   "client_model": "baskerville"
+  }
+ ],
+ "s": [
+  {
+   "id": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_ATTACK",
+   "sl": "기본기",
+   "n": "뼈를 부수는 발톱",
+   "ty": "액티브",
+   "tg": "적 단일",
+   "cd": 0,
+   "ab": 1,
+   "d1": "강력한 힘으로 발톱을 휘둘러 적을 공격합니다. 적에게 100% 확률로 1턴 간 [명중률 감소]를 발생시킵니다.",
+   "ef": [
+    "[스킬 사용 후] 스킬 대상에게 〈명중률 감소〉 (1턴 / 명중률 -30%) {효과 적중 판정}"
+   ],
+   "se": [
+    {
+     "order": 0,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_ATTACK_01",
+     "ef": "[스킬 사용 후] 스킬 대상에게 〈명중률 감소〉 (1턴 / 명중률 -30%) {효과 적중 판정}",
+     "target": "NSETT_TARGET",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": false,
+      "buff": {
+       "name": "명중률 감소",
+       "unique": false,
+       "category": "debuff",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    }
+   ],
+   "gl": [
+    {
+     "n": "명중률 감소",
+     "k": "약화",
+     "d": "명중률이 30% 감소합니다.",
+     "x": "명중률 -30% / 1턴"
+    }
+   ],
+   "replacement": false,
+   "dm": "공격력×80%"
+  },
+  {
+   "id": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_SPECIAL",
+   "sl": "특수기",
+   "n": "핏빛 절규",
+   "ty": "액티브",
+   "tg": "적 전체",
+   "cd": 1,
+   "ab": 0,
+   "d1": "괴수의 머리가 섬뜩하게 포효합니다. 적 전체에게 100% 확률로 [심장 마비(해제불가)]를 4회 발생시킵니다. 자신에게 [바스커빌의 역작(해제불가)]을 발생시키고 2턴 간 [억제된 야성(해제불가)]을 발생시킵니다. [핏빛 절규] 사용 후 [핏빛 절규]를 [파멸의 숨결]로 변경하고 [파멸의 숨결]의 쿨타임을 최대로 증가시킵니다.\n파멸의 숨결 : 괴수의 꼬리가 치명적인 숨결로 적을 공격합니다. 적에게 100% 확률로 2턴 간 [공격력 감소]와 [속도 감소]를 발생시킵니다.",
+   "ef": [
+    "[스킬 사용 후] 적 전체에게 〈심장 마비(해제불가)〉 (지속 무한) {해제 불가, 최대 4중첩, 4회 부여}",
+    "[스킬 사용 후] 적 전체에게 〈심장 마비 중첩 카운팅 버프〉 (지속 무한 / 생명력% -15%) {해제 불가, 4회 부여}",
+    "[스킬 사용 후] 자신에게 〈바스커빌의 역작(해제불가)〉 (지속 무한) {해제 불가}",
+    "[스킬 사용 후] 자신에게 〈억제된 야성(해제불가)〉 (2턴) {해제 불가}",
+    "[스킬 사용 후] 자신에게 스킬 교체: 핏빛 절규 → 파멸의 숨결",
+    "[스킬 사용 후] 자신에게 〈바스커빌의 괴수 애니메이션 변경용 버프〉 (지속 무한) {해제 불가}",
+    "[스킬 사용 후] 자신에게 〈바스커빌의 괴수 쿨타임 체크용 버프〉 (지속 무한) {해제 불가}"
+   ],
+   "se": [
+    {
+     "order": 0,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_01",
+     "ef": "[스킬 사용 후] 적 전체에게 〈심장 마비(해제불가)〉 (지속 무한) {해제 불가, 최대 4중첩, 4회 부여}",
+     "target": "NSETT_ENEMY_ALL",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "심장 마비(해제불가)",
+       "unique": false,
+       "category": "debuff",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 1,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_02",
+     "ef": "[스킬 사용 후] 적 전체에게 〈심장 마비 중첩 카운팅 버프〉 (지속 무한 / 생명력% -15%) {해제 불가, 4회 부여}",
+     "target": "NSETT_ENEMY_ALL",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "심장 마비 중첩 카운팅 버프",
+       "unique": true,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 2,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_03",
+     "ef": "[스킬 사용 후] 자신에게 〈바스커빌의 역작(해제불가)〉 (지속 무한) {해제 불가}",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "바스커빌의 역작(해제불가)",
+       "unique": false,
+       "category": "buff",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": true
+      }
+     }
+    },
+    {
+     "order": 3,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_04",
+     "ef": "[스킬 사용 후] 자신에게 〈억제된 야성(해제불가)〉 (2턴) {해제 불가}",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "억제된 야성(해제불가)",
+       "unique": false,
+       "category": "debuff",
+       "unlimited": false,
+       "speed_zero": true,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 4,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_05",
+     "ef": "[스킬 사용 후] 자신에게 스킬 교체: 핏빛 절규 → 파멸의 숨결",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "cosmo",
+     "meta": {
+      "op": "change_skill",
+      "before": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_SPECIAL",
+      "after": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_SPECIAL2",
+      "force": false,
+      "buff": {
+       "name": "스킬 교체",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 5,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_06",
+     "ef": "[스킬 사용 후] 자신에게 〈바스커빌의 괴수 애니메이션 변경용 버프〉 (지속 무한) {해제 불가}",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "바스커빌의 괴수 애니메이션 변경용 버프",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 6,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_07",
+     "ef": "[스킬 사용 후] 자신에게 〈바스커빌의 괴수 쿨타임 체크용 버프〉 (지속 무한) {해제 불가}",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "바스커빌의 괴수 쿨타임 체크용 버프",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    }
+   ],
+   "gl": [
+    {
+     "n": "심장 마비(해제불가)",
+     "k": "약화",
+     "d": "최대 생명력이 15%씩 감소합니다. 최대 4회 중첩됩니다. 명중, 효과 저항, 면역 효과와 관계없이 발생합니다. 시전자가 사망 시 해제됩니다.",
+     "x": "지속 무한 / 최대 4중첩 / 해제 불가"
+    },
+    {
+     "n": "바스커빌의 역작(해제불가)",
+     "k": "강화",
+     "d": "모든 약화 효과와 일부 감소, 연장, 단축 효과가 적용되지 않으며 강인도 피해를 받지 않습니다.",
+     "x": "지속 무한 / 해제 불가"
+    },
+    {
+     "n": "억제된 야성(해제불가)",
+     "k": "약화",
+     "d": "속도가 0으로 고정됩니다. 명중, 효과 저항, 면역 효과와 관계없이 발생합니다.",
+     "x": "2턴 / 해제 불가"
+    }
+   ],
+   "replacement": false,
+   "all": 1
+  },
+  {
+   "id": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_HYPER",
+   "sl": "궁극기",
+   "n": "학살의 달밤",
+   "ty": "액티브",
+   "tg": "적 전체",
+   "cd": 0,
+   "ab": 2,
+   "d1": "자신이 [억제된 야성(해제불가)] 상태가 아니면서 [바스커빌의 역작(해제불가)] 상태이면 [학살의 달밤]을 발동합니다. 타격 시 적 전체의 [심장 마비(해제불가)] 중첩 횟수 당 피해량이 10%씩 증가합니다. 타격 후 적 전체에게 100% 확률로 2턴 간 [회복 감소]를 발생시키고 [심장 마비(해제불가)] 상태인 대상에게 1턴 간 [기절]을 발생시킨 후 적 전체의 [심장 마비(해제불가)]와 [아드레날린(해제불가)]을 해제시키고 자신의 [바스커빌의 역작(해제불가)]을 모두 해제시킵니다. [기절]은 명중, 효과 저항, 면역 효과와 관계없이 발생합니다. [학살의 달밤] 사용 후 [파멸의 숨결]을 [핏빛 절규]로 변경하고 [핏빛 절규]의 쿨타임을 최대로 증가시킵니다.",
+   "ef": [
+    "[스킬 사용 시작 시] 자신에게 특정 효과 개수 보정: 심장 마비 중첩 카운팅 버프 1개당 피해 증가 +10%",
+    "[스킬 사용 후] 적 전체에게 〈회복 감소〉 (2턴 / 받는 회복량 -50%) {효과 적중 판정}",
+    "[스킬 사용 후] 「심장 마비(해제불가)」 상태인 적 전체에게 〈기절〉 (1턴)",
+    "[스킬 사용 후] 적 전체에게 '심장 마비(해제불가)' 해제",
+    "[스킬 사용 후] 적 전체에게 '심장 마비 중첩 카운팅 버프' 해제",
+    "[스킬 사용 후] 적 전체에게 '아드레날린(해제불가)' 해제",
+    "[스킬 사용 후] 자신에게 '바스커빌의 역작(해제불가)' 해제",
+    "[스킬 사용 후] 자신에게 '무뎌진 송곳니(해제불가)' 해제",
+    "[스킬 사용 후] 자신에게 스킬 교체: 파멸의 숨결 → 핏빛 절규",
+    "[스킬 사용 후] 자신에게 '바스커빌의 괴수 애니메이션 변경용 버프' 해제",
+    "[스킬 사용 후] 자신에게 〈바스커빌의 괴수 쿨타임 체크용 버프〉 (지속 무한) {해제 불가}"
+   ],
+   "se": [
+    {
+     "order": 0,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_01",
+     "ef": "[스킬 사용 시작 시] 자신에게 특정 효과 개수 보정: 심장 마비 중첩 카운팅 버프 1개당 피해 증가 +10%",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "cosmo",
+     "meta": {
+      "op": "specific_count",
+      "name": "심장 마비 중첩 카운팅 버프",
+      "rate": 0.1,
+      "force": true,
+      "buff": {
+       "name": "심장 마비 피해 증가 체크",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 1,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_02",
+     "ef": "[스킬 사용 후] 적 전체에게 〈회복 감소〉 (2턴 / 받는 회복량 -50%) {효과 적중 판정}",
+     "target": "NSETT_ENEMY_ALL",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": false,
+      "buff": {
+       "name": "회복 감소",
+       "unique": false,
+       "category": "debuff",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 2,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_03",
+     "ef": "[스킬 사용 후] 「심장 마비(해제불가)」 상태인 적 전체에게 〈기절〉 (1턴)",
+     "target": "NSETT_AUTO_ENEMY",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "auto": {
+       "one": false,
+       "f": [
+        [
+         "has",
+         [
+          "심장 마비(해제불가)"
+         ]
+        ]
+       ]
+      },
+      "force": true,
+      "buff": {
+       "name": "기절",
+       "unique": false,
+       "category": "debuff",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 3,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_04",
+     "ef": "[스킬 사용 후] 적 전체에게 '심장 마비(해제불가)' 해제",
+     "target": "NSETT_ENEMY_ALL",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 4,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_05",
+     "ef": "[스킬 사용 후] 적 전체에게 '심장 마비 중첩 카운팅 버프' 해제",
+     "target": "NSETT_ENEMY_ALL",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 5,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_06",
+     "ef": "[스킬 사용 후] 적 전체에게 '아드레날린(해제불가)' 해제",
+     "target": "NSETT_ENEMY_ALL",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 6,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_07",
+     "ef": "[스킬 사용 후] 자신에게 '바스커빌의 역작(해제불가)' 해제",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 7,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_08",
+     "ef": "[스킬 사용 후] 자신에게 '무뎌진 송곳니(해제불가)' 해제",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 8,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_09",
+     "ef": "[스킬 사용 후] 자신에게 스킬 교체: 파멸의 숨결 → 핏빛 절규",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "cosmo",
+     "meta": {
+      "op": "change_skill",
+      "before": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_SPECIAL2",
+      "after": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_SPECIAL",
+      "force": false,
+      "buff": {
+       "name": "스킬 교체",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 9,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_10",
+     "ef": "[스킬 사용 후] 자신에게 '바스커빌의 괴수 애니메이션 변경용 버프' 해제",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 10,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_11",
+     "ef": "[스킬 사용 후] 자신에게 〈바스커빌의 괴수 쿨타임 체크용 버프〉 (지속 무한) {해제 불가}",
+     "target": "NSETT_SELF",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "바스커빌의 괴수 쿨타임 체크용 버프",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    }
+   ],
+   "gl": [
+    {
+     "n": "회복 감소",
+     "k": "약화",
+     "d": "받는 회복량이 50% 감소합니다.",
+     "x": "받는 회복량 -50% / 2턴"
+    },
+    {
+     "n": "기절",
+     "k": "약화",
+     "d": "지속 턴 동안 행동할 수 없습니다.",
+     "x": "1턴"
+    }
+   ],
+   "replacement": false,
+   "dm": "공격력×320%",
+   "all": 1,
+   "auto": {
+    "t": "enemy_one",
+    "rows": [
+     {
+      "c": [
+       [
+        "self_has",
+        [
+         "바스커빌의 역작(해제불가)"
+        ]
+       ],
+       [
+        "self_not_has",
+        [
+         "억제된 야성(해제불가)"
+        ]
+       ]
+      ],
+      "f": [
+       "not_invincible",
+       "boss",
+       "elite",
+       "advantage",
+       "low_hp_rate",
+       "low_max_hp"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "id": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_PASSIVE1",
+   "sl": "패시브",
+   "n": "불완전한 육체",
+   "ty": "패시브",
+   "tg": "-",
+   "cd": 0,
+   "ab": 0,
+   "d1": "피격 후 자신이 [바스커빌의 역작(해제불가)] 상태이면 타격자의 [심장 마비(해제불가)]를 1회 감소시킵니다. 피격 후 타격자의 [심장 마비(해제불가)]가 해제될 때 마다 타격자의 생명력을 모두 회복시키고 [아드레날린(해제불가)]을 발생시킨 후 자신에게 [무뎌진 송곳니(해제불가)]를 1회 발생시킵니다.",
+   "ef": [
+    "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 바스커빌의 역작(해제불가); 시전자가 보유: 심장 마비(해제불가); 중첩수: 1]) 적 1명(자동 지정)에게 〈생명력 회복 체크용 버프〉 (0턴)",
+    "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 바스커빌의 역작(해제불가); 시전자가 보유: 심장 마비(해제불가); 중첩수: 1]) 자신에게 〈무뎌진 송곳니(해제불가)〉 (지속 무한 / 피해 증가 -5%) {해제 불가, 최대 4중첩}",
+    "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 바스커빌의 역작(해제불가)]) 적 1명(자동 지정)에게 '심장 마비(해제불가)' 1중첩 감소",
+    "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 바스커빌의 역작(해제불가)]) 적 1명(자동 지정)에게 '심장 마비 중첩 카운팅 버프' 해제 (1개)",
+    "[피해 처리 후] (조건: 내가 피격될 때 [시전자가 보유: 생명력 회복 체크용 버프]) 적 1명(자동 지정)에게 회복 = 대상 최대 생명력×100%",
+    "[피해 처리 후] (조건: 내가 피격될 때 [시전자가 보유: 생명력 회복 체크용 버프]) 적 1명(자동 지정)에게 〈아드레날린(해제불가)〉 (지속 무한 / 공격력% +20%, 치명타 피해 +20%) {해제 불가}",
+    "[피해 처리 후] (조건: 내가 피격될 때 [시전자가 보유: 생명력 회복 체크용 버프]) 적 1명(자동 지정)에게 '생명력 회복 체크용 버프' 해제"
+   ],
+   "se": [
+    {
+     "order": 0,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_01",
+     "ef": "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 바스커빌의 역작(해제불가); 시전자가 보유: 심장 마비(해제불가); 중첩수: 1]) 적 1명(자동 지정)에게 〈생명력 회복 체크용 버프〉 (0턴)",
+     "target": "NSETT_AUTO_ENEMY",
+     "condition": 55181,
+     "executor": "engine",
+     "meta": {
+      "auto": {
+       "one": false,
+       "f": [
+        "last_damager"
+       ]
+      },
+      "force": true,
+      "buff": {
+       "name": "생명력 회복 체크용 버프",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 1,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_02",
+     "ef": "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 바스커빌의 역작(해제불가); 시전자가 보유: 심장 마비(해제불가); 중첩수: 1]) 자신에게 〈무뎌진 송곳니(해제불가)〉 (지속 무한 / 피해 증가 -5%) {해제 불가, 최대 4중첩}",
+     "target": "NSETT_SELF",
+     "condition": 55181,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "무뎌진 송곳니(해제불가)",
+       "unique": false,
+       "category": "debuff",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 2,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_03",
+     "ef": "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 바스커빌의 역작(해제불가)]) 적 1명(자동 지정)에게 '심장 마비(해제불가)' 1중첩 감소",
+     "target": "NSETT_AUTO_ENEMY",
+     "condition": 55180,
+     "executor": "engine",
+     "meta": {
+      "auto": {
+       "one": false,
+       "f": [
+        "last_damager"
+       ]
+      },
+      "force": true,
+      "buff": {
+       "name": "심장 마비(해제불가)",
+       "unique": false,
+       "category": "debuff",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 3,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_04",
+     "ef": "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 바스커빌의 역작(해제불가)]) 적 1명(자동 지정)에게 '심장 마비 중첩 카운팅 버프' 해제 (1개)",
+     "target": "NSETT_AUTO_ENEMY",
+     "condition": 55180,
+     "executor": "cosmo",
+     "meta": {
+      "op": "delete_count",
+      "name": "심장 마비 중첩 카운팅 버프",
+      "count": 1,
+      "auto": {
+       "one": false,
+       "f": [
+        "last_damager"
+       ]
+      },
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 4,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_05",
+     "ef": "[피해 처리 후] (조건: 내가 피격될 때 [시전자가 보유: 생명력 회복 체크용 버프]) 적 1명(자동 지정)에게 회복 = 대상 최대 생명력×100%",
+     "target": "NSETT_AUTO_ENEMY",
+     "condition": 55182,
+     "executor": "engine",
+     "meta": {
+      "auto": {
+       "one": false,
+       "f": [
+        "last_damager"
+       ]
+      },
+      "force": false,
+      "buff": {
+       "name": "회복",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 5,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_06",
+     "ef": "[피해 처리 후] (조건: 내가 피격될 때 [시전자가 보유: 생명력 회복 체크용 버프]) 적 1명(자동 지정)에게 〈아드레날린(해제불가)〉 (지속 무한 / 공격력% +20%, 치명타 피해 +20%) {해제 불가}",
+     "target": "NSETT_AUTO_ENEMY",
+     "condition": 55182,
+     "executor": "engine",
+     "meta": {
+      "auto": {
+       "one": false,
+       "f": [
+        "last_damager"
+       ]
+      },
+      "force": false,
+      "buff": {
+       "name": "아드레날린(해제불가)",
+       "unique": false,
+       "category": "buff",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 6,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_07",
+     "ef": "[피해 처리 후] (조건: 내가 피격될 때 [시전자가 보유: 생명력 회복 체크용 버프]) 적 1명(자동 지정)에게 '생명력 회복 체크용 버프' 해제",
+     "target": "NSETT_AUTO_ENEMY",
+     "condition": 55182,
+     "executor": "engine",
+     "meta": {
+      "auto": {
+       "one": false,
+       "f": [
+        "last_damager"
+       ]
+      },
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    }
+   ],
+   "gl": [
+    {
+     "n": "무뎌진 송곳니(해제불가)",
+     "k": "약화",
+     "d": "주는 피해량이 5%씩 감소합니다. 최대 4회 중첩됩니다. 궁극기 타격 후 해제됩니다.",
+     "x": "피해 증가 -5% / 지속 무한 / 최대 4중첩 / 해제 불가"
+    },
+    {
+     "n": "아드레날린(해제불가)",
+     "k": "강화",
+     "d": "공격력과 치명타 피해가 20% 증가합니다.",
+     "x": "공격력% +20%, 치명타 피해 +20% / 지속 무한 / 해제 불가"
+    }
+   ],
+   "replacement": false
+  },
+  {
+   "id": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_PASSIVE2",
+   "sl": "패시브",
+   "n": "폭주하는 피",
+   "ty": "패시브",
+   "tg": "-",
+   "cd": 0,
+   "ab": 0,
+   "d1": "적 턴 시작 시 자신이 [억제된 야성(해제불가)] 상태이면 자신의 행동 게이지를 25% 증가시킵니다. 적이 공격이 아닌 스킬 사용 후 자신이 [억제된 야성(해제불가)] 상태이면 자신의 행동 게이지를 50% 증가시킵니다.",
+   "ef": [
+    "[턴 시작 시] (조건: 적 턴 시작 시 [자신이 보유: 억제된 야성(해제불가)]) 자신에게 행동 게이지 25%p 증가",
+    "[스킬 사용 후] (조건: 적 비공격 스킬 후 [자신이 보유: 억제된 야성(해제불가)]) 자신에게 행동 게이지 50%p 증가",
+    "[턴 시작 시] (조건: 내 턴 시작 시 [자신이 보유: 바스커빌의 괴수 쿨타임 체크용 버프]) 자신에게 특수기 쿨타임 1턴 증가",
+    "[턴 시작 시] (조건: 내 턴 시작 시 [자신이 보유: 바스커빌의 괴수 쿨타임 체크용 버프]) 자신에게 '바스커빌의 괴수 쿨타임 체크용 버프' 해제 (1개)",
+    "[턴 시작 시] (조건: 적 턴 시작 시 [자신이 보유: 바스커빌의 괴수 쿨타임 체크용 버프]) 자신에게 특수기 쿨타임 1턴 증가",
+    "[턴 시작 시] (조건: 적 턴 시작 시 [자신이 보유: 바스커빌의 괴수 쿨타임 체크용 버프]) 자신에게 '바스커빌의 괴수 쿨타임 체크용 버프' 해제 (1개)"
+   ],
+   "se": [
+    {
+     "order": 0,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_01",
+     "ef": "[턴 시작 시] (조건: 적 턴 시작 시 [자신이 보유: 억제된 야성(해제불가)]) 자신에게 행동 게이지 25%p 증가",
+     "target": "NSETT_SELF",
+     "condition": 59404,
+     "executor": "engine",
+     "meta": {
+      "force": false,
+      "buff": {
+       "name": "행동 게이지 증가",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 1,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_02",
+     "ef": "[스킬 사용 후] (조건: 적 비공격 스킬 후 [자신이 보유: 억제된 야성(해제불가)]) 자신에게 행동 게이지 50%p 증가",
+     "target": "NSETT_SELF",
+     "condition": 57600,
+     "executor": "engine",
+     "meta": {
+      "force": false,
+      "buff": {
+       "name": "행동 게이지 증가",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 2,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_03",
+     "ef": "[턴 시작 시] (조건: 내 턴 시작 시 [자신이 보유: 바스커빌의 괴수 쿨타임 체크용 버프]) 자신에게 특수기 쿨타임 1턴 증가",
+     "target": "NSETT_SELF",
+     "condition": 59021,
+     "executor": "cosmo",
+     "meta": {
+      "op": "cool_up",
+      "slot": "특수기",
+      "value": 1,
+      "force": true,
+      "buff": {
+       "name": "바스커빌의 괴수 쿨타임 증가용 버프",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 3,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_04",
+     "ef": "[턴 시작 시] (조건: 내 턴 시작 시 [자신이 보유: 바스커빌의 괴수 쿨타임 체크용 버프]) 자신에게 '바스커빌의 괴수 쿨타임 체크용 버프' 해제 (1개)",
+     "target": "NSETT_SELF",
+     "condition": 59021,
+     "executor": "cosmo",
+     "meta": {
+      "op": "delete_count",
+      "name": "바스커빌의 괴수 쿨타임 체크용 버프",
+      "count": 1,
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 4,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_05",
+     "ef": "[턴 시작 시] (조건: 적 턴 시작 시 [자신이 보유: 바스커빌의 괴수 쿨타임 체크용 버프]) 자신에게 특수기 쿨타임 1턴 증가",
+     "target": "NSETT_SELF",
+     "condition": 59405,
+     "executor": "cosmo",
+     "meta": {
+      "op": "cool_up",
+      "slot": "특수기",
+      "value": 1,
+      "force": true,
+      "buff": {
+       "name": "바스커빌의 괴수 쿨타임 증가용 버프",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 5,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_06",
+     "ef": "[턴 시작 시] (조건: 적 턴 시작 시 [자신이 보유: 바스커빌의 괴수 쿨타임 체크용 버프]) 자신에게 '바스커빌의 괴수 쿨타임 체크용 버프' 해제 (1개)",
+     "target": "NSETT_SELF",
+     "condition": 59405,
+     "executor": "cosmo",
+     "meta": {
+      "op": "delete_count",
+      "name": "바스커빌의 괴수 쿨타임 체크용 버프",
+      "count": 1,
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    }
+   ],
+   "gl": [],
+   "replacement": false
+  },
+  {
+   "id": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_PASSIVE3",
+   "sl": "패시브",
+   "n": "끝나지 않는 사냥",
+   "ty": "패시브",
+   "tg": "-",
+   "cd": 0,
+   "ab": 0,
+   "d1": "적 처치 시 자신의 피해량이 25%씩 증가합니다. 해당 효과는 중첩됩니다.",
+   "ef": [
+    "[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예]) 자신에게 〈끝나지 않는 사냥〉 (지속 무한 / 피해 증가 +25%) {해제 불가, 중첩 상한 없음}",
+    "[사망 시] (조건: 내가 사망할 때) 적 전체에게 '심장 마비(해제불가)' 해제",
+    "[사망 시] (조건: 내가 사망할 때) 적 전체에게 '심장 마비 중첩 카운팅 버프' 해제"
+   ],
+   "se": [
+    {
+     "order": 0,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE3_01",
+     "ef": "[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예]) 자신에게 〈끝나지 않는 사냥〉 (지속 무한 / 피해 증가 +25%) {해제 불가, 중첩 상한 없음}",
+     "target": "NSETT_SELF",
+     "condition": 2003,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "끝나지 않는 사냥",
+       "unique": false,
+       "category": "marker",
+       "unlimited": true,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 1,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE3_02",
+     "ef": "[사망 시] (조건: 내가 사망할 때) 적 전체에게 '심장 마비(해제불가)' 해제",
+     "target": "NSETT_ENEMY_ALL",
+     "condition": 9600,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 2,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE3_03",
+     "ef": "[사망 시] (조건: 내가 사망할 때) 적 전체에게 '심장 마비 중첩 카운팅 버프' 해제",
+     "target": "NSETT_ENEMY_ALL",
+     "condition": 9600,
+     "executor": "engine",
+     "meta": {
+      "force": true,
+      "buff": {
+       "name": "특정 버프 해제",
+       "unique": false,
+       "category": "marker",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    }
+   ],
+   "gl": [],
+   "replacement": false
+  },
+  {
+   "id": "NKM_UNIT_MON_DOOMSDAY_BEAST_BOSS_COSMO_01_SPECIAL2",
+   "sl": "특수기",
+   "n": "파멸의 숨결",
+   "ty": "액티브",
+   "tg": "적 단일",
+   "cd": 1,
+   "ab": 2,
+   "d1": "괴수의 머리가 섬뜩하게 포효합니다. 적 전체에게 100% 확률로 [심장 마비(해제불가)]를 4회 발생시킵니다. 자신에게 [바스커빌의 역작(해제불가)]을 발생시키고 2턴 간 [억제된 야성(해제불가)]을 발생시킵니다. [핏빛 절규] 사용 후 [핏빛 절규]를 [파멸의 숨결]로 변경하고 [파멸의 숨결]의 쿨타임을 최대로 증가시킵니다.\n파멸의 숨결 : 괴수의 꼬리가 치명적인 숨결로 적을 공격합니다. 적에게 100% 확률로 2턴 간 [공격력 감소]와 [속도 감소]를 발생시킵니다.",
+   "ef": [
+    "[스킬 사용 후] 스킬 대상에게 〈공격력 감소〉 (2턴 / 공격력% -30%) {효과 적중 판정}",
+    "[스킬 사용 후] 스킬 대상에게 〈속도 감소〉 (2턴 / 속도% -20%) {효과 적중 판정}"
+   ],
+   "se": [
+    {
+     "order": 0,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL2_01",
+     "ef": "[스킬 사용 후] 스킬 대상에게 〈공격력 감소〉 (2턴 / 공격력% -30%) {효과 적중 판정}",
+     "target": "NSETT_TARGET",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": false,
+      "buff": {
+       "name": "공격력 감소",
+       "unique": false,
+       "category": "debuff",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    },
+    {
+     "order": 1,
+     "id": "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL2_02",
+     "ef": "[스킬 사용 후] 스킬 대상에게 〈속도 감소〉 (2턴 / 속도% -20%) {효과 적중 판정}",
+     "target": "NSETT_TARGET",
+     "condition": null,
+     "executor": "engine",
+     "meta": {
+      "force": false,
+      "buff": {
+       "name": "속도 감소",
+       "unique": false,
+       "category": "debuff",
+       "unlimited": false,
+       "speed_zero": false,
+       "armor_ban": false
+      }
+     }
+    }
+   ],
+   "gl": [
+    {
+     "n": "공격력 감소",
+     "k": "약화",
+     "d": "공격력이 30% 감소합니다.",
+     "x": "공격력% -30% / 2턴"
+    },
+    {
+     "n": "속도 감소",
+     "k": "약화",
+     "d": "속도가 20% 감소합니다.",
+     "x": "속도% -20% / 2턴"
+    }
+   ],
+   "replacement": true,
+   "dm": "공격력×95%"
+  }
+ ],
+ "x": [],
+ "ak": [],
+ "g": [
+  {
+   "k": "cosmo",
+   "t": "코스모 게이트",
+   "tabs": [
+    {
+     "t": "바스커빌의 괴수",
+     "s": [
+      {
+       "n": "바스커빌의 괴수 1단계",
+       "lv": 1,
+       "bp": 33450,
+       "w": [
+        [
+         [
+          0
+         ]
+        ]
+       ]
+      },
+      {
+       "n": "바스커빌의 괴수 2단계",
+       "lv": 1,
+       "bp": 48950,
+       "w": [
+        [
+         [
+          1
+         ]
+        ]
+       ]
+      },
+      {
+       "n": "바스커빌의 괴수 3단계",
+       "lv": 1,
+       "bp": 64450,
+       "w": [
+        [
+         [
+          2
+         ]
+        ]
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "aux": {
+  "spawn": {
+   "cosmo|바스커빌의 괴수|바스커빌의 괴수 1단계": [
+    "S"
+   ],
+   "cosmo|바스커빌의 괴수|바스커빌의 괴수 2단계": [
+    "S"
+   ],
+   "cosmo|바스커빌의 괴수|바스커빌의 괴수 3단계": [
+    "S"
+   ]
+  },
+  "slots": {
+   "cosmo|바스커빌의 괴수|바스커빌의 괴수 1단계": [
+    [
+     2
+    ]
+   ],
+   "cosmo|바스커빌의 괴수|바스커빌의 괴수 2단계": [
+    [
+     2
+    ]
+   ],
+   "cosmo|바스커빌의 괴수|바스커빌의 괴수 3단계": [
+    [
+     2
+    ]
+   ]
+  }
+ },
+ "boss_kill": [
+  "cosmo|바스커빌의 괴수|바스커빌의 괴수 1단계",
+  "cosmo|바스커빌의 괴수|바스커빌의 괴수 2단계",
+  "cosmo|바스커빌의 괴수|바스커빌의 괴수 3단계"
+ ],
+ "unmodeled": [],
+ "check": {
+  "converted": 37,
+  "failed": 0,
+  "rows": [
+   "COND_MON_DOOMSDAY_BEAST_BOSS_ATTACK_01",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_01",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_02",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_03",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_04",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_05",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_06",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL_07",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_01",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_02",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_03",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_04",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_05",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_06",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_07",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_08",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_09",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_10",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_HYPER_11",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_01",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_02",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_03",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_04",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_05",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_06",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE1_07",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_01",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_02",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_03",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_04",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_05",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE2_06",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE3_01",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE3_02",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_PASSIVE3_03",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL2_01",
+   "COND_MON_DOOMSDAY_BEAST_BOSS_SPECIAL2_02"
+  ]
+ }
+}

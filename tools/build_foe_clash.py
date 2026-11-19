@@ -34,7 +34,7 @@ SLOT = {'ATTACK': '기본기', 'SPECIAL': '특수기', 'HYPER': '궁극기'}
 TARGET_TG = {'NSTT_ENEMY_ONE': '적 단일', 'NSTT_ENEMY_ALL': '적 전체', 'NSTT_MYSELF': '자신', 'NSTT_INVALID': '-'}
 SKILL_TY = {'NST_ACTIVE': '액티브', 'NST_PASSIVE': '패시브', 'NST_REACT': '트리거'}
 PHASE = {'NSEAT_SKILL_START': '스킬 사용 시작 시', 'NSEAT_SKILL_END': '스킬 사용 후', 'NSEAT_DAMAGE_END': '피해 처리 후',
-         'NSEAT_DAMAGE_START': '피해 처리 직전', 'NSEAT_DIE': '사망 시'}
+         'NSEAT_DAMAGE_START': '피해 처리 직전', 'NSEAT_DIE': '사망 시', 'NSEAT_TURN_START': '턴 시작 시'}
 TARGET_HEAD = {'NSETT_SELF': '자신', 'NSETT_TARGET': '스킬 대상', 'NSETT_ENEMY_ALL': '적 전체', 'NSETT_MYTEAM_ALL': '아군 전체',
                'NSETT_MYTEAM_ALL_NOT_SELF': '자신 제외 아군 전체'}
 ALL_TARGETS = {'NSETT_ENEMY_ALL', 'NSETT_MYTEAM_ALL', 'NSETT_MYTEAM_ALL_NOT_SELF'}
@@ -42,7 +42,8 @@ ALL_TARGETS = {'NSETT_ENEMY_ALL', 'NSETT_MYTEAM_ALL', 'NSETT_MYTEAM_ALL_NOT_SELF
 STAT_LABEL = {'NST_NV_RATE_ATK': '공격력%', 'NST_NV_RATE_DEF': '방어력%', 'NST_NV_RATE_HP': '생명력%', 'NST_NV_RATE_TURN_SPEED': '속도%',
               'NST_RATE_EFFECT_EVADE': '효과 저항', 'NST_RATE_EFFECT_HIT': '효과 적중', 'NST_RATE_DAMAGE_REDUCE': '피해 감소',
               'NST_RATE_HIT': '명중률', 'NST_RATE_CRITICAL': '치명타 확률', 'NST_RATE_DAMAGE_UP': '피해 증가',
-              'NST_RATE_DAMAGE_REDUCE_SKILL_ENEMY_ONE': '단일 대상 피해 감소'}
+              'NST_RATE_DAMAGE_REDUCE_SKILL_ENEMY_ONE': '단일 대상 피해 감소',
+              'NST_RATE_HEAL_RECEIVE': '받는 회복량', 'NST_RATE_CRITICAL_DAMAGE': '치명타 피해'}
 # 이번 스킬 한정 «능력치 보정» 버프(BI_STAT_*) -> 라벨, 값 종류(RATE=만분율 %, VALUE=정수)
 LOCAL_STAT = {'BI_STAT_NST_RATE_DAMAGE_UP': '피해 증가', 'BI_STAT_NST_RATE_DAMAGE_REDUCE': '피해 감소',
               'BI_STAT_NST_SUPER_ARMOR_DAMAGE': '강인도 피해',
@@ -168,7 +169,8 @@ class SeConverter:
         head, body = keys[0], dict(row[keys[0]])
         heads = {'OnMyAttack': '내 공격 시', 'AfterMyAttack': '내 공격 후', 'MyEffectiveHit': '내가 피격될 때',
                  'MyEffectiveDamageStart': '내가 피해를 받기 직전', 'MyEffectiveDie': '내가 사망할 때',
-                 'OnEnemyNonAttack': '적 비공격 스킬 시'}
+                 'OnEnemyNonAttack': '적 비공격 스킬 시', 'AfterEnemyNonAttack': '적 비공격 스킬 후',
+                 'OnMyTurnStart': '내 턴 시작 시', 'OnEnemyTurnStart': '적 턴 시작 시'}
         if head not in heads:
             raise Unconvertible('조건 %s 머리 %s 미지원' % (cid, head))
         # 발동 시점과 머리가 어긋나는지(예: DAMAGE_END 인데 OnMyAttack)는 데이터북도 시점 단어로 구분하지 않으므로 그대로 둠
@@ -196,6 +198,14 @@ class SeConverter:
             parts.append('자신이 보유: ' + ', '.join(names))
             if 'SelfBuffLevelCount' in body:
                 parts.append('중첩수: %d' % body.pop('SelfBuffLevelCount'))
+        if 'CasterBuffStrId' in body:
+            ids = body.pop('CasterBuffStrId')
+            parts.append('시전자가 보유: ' + ', '.join(tb.buff_name(b) for b in ids))
+            self.cond_buffs.extend(ids)
+            if 'CasterBuffLevelCount' in body:
+                parts.append('중첩수: %d' % body.pop('CasterBuffLevelCount'))
+        if body.pop('EliminateEnemy', False):
+            parts.append('적 처치: 예')
         if body.get('TargetPositiveBuff') is True and 'BuffCountLess' in body:
             # 클라: 대상의 강화 효과 수를 세어 «≤ N»(0개 포함)로 판정(NKM.Templets 42752 `TargetPositiveBuff && !CountOk(n)`, 43328 `N>0 && N<count → 거짓`).
             # «대상 강화효과 보유: 예»(≥1) 와 합치면 0개가 빠지므로 엔진 전용 키 «대상 강화효과 개수 이하»(mc.line_ok)를 쓴다.
@@ -232,6 +242,10 @@ class SeConverter:
             if cond is None:
                 raise Unconvertible('자동 대상 %s 의 조건 행 없음(AutoTargetId=%s)' % (tt, row.get('AutoTargetId')))
             c = dict(cond)
+            if c == {'IsLastDamageTarget': True}:
+                return '적 1명(자동 지정)'
+            if set(c) == {'IsSpecificBuff'} and len(c['IsSpecificBuff']) == 1:
+                return '「%s」 상태인 적 전체' % self.tb.buff_name(c['IsSpecificBuff'][0])
             if (tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF' and c == {
                     'IsNotUnableToAct': True, 'IsNotSpecificBuff': ['BI_DISABLE_CROSS_ATTACK'], 'IsHighAtk': True}):
                 # AutoTargetId 52: NKM:7149-7152,7535-7536,7572-7574,7754-7755,7901-7912.
@@ -331,6 +345,11 @@ class SeConverter:
     def convert(self, se_id):
         it = self._convert(se_id)
         it['cond_buffs'] = list(self.cond_buffs)
+        row = self.tb.se[se_id]
+        if row.get('RepeatBuffCount', 1) > 1:
+            n = row['RepeatBuffCount']
+            it['line'] = (it['line'][:-1] + ', %d회 부여}' % n if it['line'].endswith('}')
+                          else it['line'] + ' {%d회 부여}' % n)
         return it
 
     def base_gl(self, bid):
@@ -388,6 +407,38 @@ class SeConverter:
             return dict(line='%s 자신에게 능력치 보정 %s %s {이번 스킬에만 적용}' % (head, LOCAL_STAT[bid], val), gl=None, collapse='none', kind='local', se=se_id)
         th = self.target_head(row)
         who = th + '에게'
+        # 26752678 NKM:2922-2933,3084-3090: 교체는 슬롯 상태를 바꾸는 즉시 효과.
+        # 실행은 코스모 Controller만 맡으며 일반 버프를 중복 부여하지 않는다.
+        if buff.get('ChangeSkill'):
+            before, after = row['BeforeChangeSkillStrId'], row['AfterChangeSkillStrId']
+            return dict(line='%s %s 스킬 교체: %s → %s' % (head, who, tb.ko(tb.skill[before]['m_SkillName']), tb.ko(tb.skill[after]['m_SkillName'])),
+                        gl=None, collapse='none', kind='cosmo', se=se_id,
+                        meta=dict(op='change_skill', before=before, after=after))
+        if buff.get('SpecificBuffCount'):
+            if buff.get('CheckTargetType') != 'NSETT_ENEMY_ALL':
+                raise Unconvertible('SpecificBuffCount 대상 미지원')
+            stats = self.stats_of(row)
+            if len(stats) != 1 or stats[0][:2] != ('NST_RATE_DAMAGE_UP', 'RATE'):
+                raise Unconvertible('SpecificBuffCount 속성 미지원')
+            name = tb.buff_name(buff['SpecificBuffCount'])
+            return dict(line='%s %s 특정 효과 개수 보정: %s 1개당 피해 증가 %s%%' % (head, who, name, sgn(stats[0][2] / 100)),
+                        gl=None, collapse='none', kind='cosmo', se=se_id,
+                        meta=dict(op='specific_count', name=name, rate=stats[0][2] / 10000))
+        if bid == 'BI_HEAL':
+            if row.get('HealTargetType') != 'NSETT_TARGET' or row.get('HealStatType') != 'NST_HP':
+                raise Unconvertible('BI_HEAL 기준 미지원')
+            return dict(line='%s %s 회복 = 대상 최대 생명력×%s%%' % (head, who, fnum(row['HealRate'] / 100)),
+                        gl=None, collapse='none', kind='heal', se=se_id)
+        if row.get('LevelBuffDecrease'):
+            return dict(line="%s %s '%s' 1중첩 감소" % (head, who, tb.buff_name(bid)),
+                        gl=None, collapse='none', kind='stack_down', se=se_id)
+        if buff.get('SkillCoolturnUp'):
+            slot = {'NSI_SKILL_2_SPECIAL': '특수기'}.get(buff.get('SkillCoolturnType'))
+            if slot is None:
+                raise Unconvertible('쿨타임 증가 칸 미지원')
+            return dict(line='%s %s %s 쿨타임 %d턴 증가' % (head, who, slot, row['SkillCoolturnUpValue']),
+                        gl=None, collapse='none', kind='cdup', se=se_id,
+                        meta=dict(op='cool_up', slot=slot, value=row['SkillCoolturnUpValue']))
         if buff.get('SuperArmorUp'):
             if row.get('m_BuffTargetType') != 'NSETT_SELF' or 'SuperArmorUpValue' not in row:
                 raise Unconvertible('강인도 회복 형식')
@@ -416,7 +467,10 @@ class SeConverter:
             nm = tb.buff_name(tgt) if tgt else None
             if not nm:
                 raise Unconvertible('해제할 버프 이름을 못 읽음(DeleteSpecificBuffStrId=%s)' % tgt)
-            return dict(line="%s %s '%s' 해제" % (head, who, nm), gl=None, collapse='none', kind='remove', se=se_id)
+            count = row.get('BuffDeleteCount', 0)
+            return dict(line="%s %s '%s' 해제%s" % (head, who, nm, (' (%d개)' % count) if count else ''),
+                        gl=None, collapse='none', kind='remove', se=se_id,
+                        **({'meta': dict(op='delete_count', name=nm, count=count)} if count else {}))
         if buff.get('AddDamage'):
             if row.get('AddDamageStatType') != 'NST_ATK' or row.get('AddDamageTargetType') != 'NSETT_SELF' or 'AddDamageRate' not in row:
                 raise Unconvertible('추가 피해 형식')
@@ -432,7 +486,7 @@ class SeConverter:
         stats = self.stats_of(row)
         life = 'TurnInfinite' in buff and buff.get('TurnInfinite')
         dur = '지속 무한' if life else '%d턴' % row['m_BuffLifeTurn']
-        if not life and row['m_BuffLifeTurn'] <= 0:
+        if not life and row['m_BuffLifeTurn'] <= 0 and not bid.startswith('BI_DOOMSDAY_BEAST_'):
             raise Unconvertible('버프 %s 지속 턴 0' % bid)
         props = self.props_text(stats) if stats else ''
         dot = self.dot_text(buff)
@@ -445,10 +499,10 @@ class SeConverter:
         if buff.get('CanNotDispel'):
             flags.append('해제 불가')
         if buff.get('IsLevel'):
-            if not buff.get('BuffLevelMax'):
+            if not buff.get('BuffLevelMax') and bid != 'BI_DOOMSDAY_BEAST_BOSS_7':
                 raise Unconvertible('버프 %s IsLevel 인데 BuffLevelMax 없음' % bid)
-            flags.append('최대 %d중첩' % buff['BuffLevelMax'])
-        if buff.get('EffectHitCheck'):
+            flags.append('최대 %d중첩' % buff['BuffLevelMax'] if buff.get('BuffLevelMax') else '중첩 상한 없음')
+        if row.get('EffectHitCheck', buff.get('EffectHitCheck')):
             flags.insert(0, '효과 적중 판정')
         line = '%s %s %s〈%s〉 (%s)%s%s%s' % (head, who, self.chance_prefix(row), name, paren, barrier,
                                               (' ‹%s›' % dot) if dot else '', (' {%s}' % ', '.join(flags)) if flags else '')
@@ -463,7 +517,7 @@ class SeConverter:
         if dot:
             x_parts.append(dot)
         if buff.get('IsLevel'):
-            x_parts.append('최대 %d중첩' % buff['BuffLevelMax'])
+            x_parts.append('최대 %d중첩' % buff['BuffLevelMax'] if buff.get('BuffLevelMax') else '중첩 상한 없음')
         if buff.get('CanNotDispel'):
             x_parts.append('해제 불가')
         # 데이터북 x 는 «속성 / 지속 / 최대 중첩 / 해제 불가», 속성이 없으면 «지속 / 지속 피해»
@@ -560,16 +614,29 @@ def unverified_parts(line, shapes):
     # 기존 구원자 파서·forced_coop 경로가 읽는 즉시 플래그. 신규 적 줄은 전용 시험으로 검사.
     engine_coop = line == ('[스킬 사용 후] (조건: 내 공격 후 [사용 스킬: 기본기]) '
                            '자신 제외 아군 1명(자동 지정)에게 〈강제 협공〉 (0턴)')
+    # PC 26752678 SE:33497-34065 / NKM:5663-5678,10356-10377,16374-16405.
+    # 데이터북에 없는 바스커빌 문법만 좁게 허용. tests/baskerville_client_test.py에서 실제 실행 검사.
+    cosmo_shapes = {
+        1: {'내가 피격될 때 [자신이 보유: *; 시전자가 보유: 심장 마비(해제불가); 중첩수: #]',
+            '내가 피격될 때 [시전자가 보유: 생명력 회복 체크용 버프]',
+            '적 턴 시작 시 [자신이 보유: *]', '내 턴 시작 시 [자신이 보유: *]',
+            '적 비공격 스킬 후 [자신이 보유: *]', '내 공격 후 [적 처치: 예]'},
+        2: {'「심장 마비(해제불가)」 상태인 적 전체'},
+        3: {'스킬 교체: 핏빛 절규 → 파멸의 숨결', '스킬 교체: 파멸의 숨결 → 핏빛 절규',
+            '특정 효과 개수 보정: 심장 마비 중첩 카운팅 버프 #개당 피해 증가 +#%',
+            "'*' 해제 (#개)", '회복 = 대상 최대 생명력×#%', '특수기 쿨타임 #턴 증가'},
+        4: {'중첩 상한 없음'},
+    }
     # 위 조건은 엔진 전용 키(mc.line_ok)라 데이터북에 없어도 클라 코드(NKM.Templets 42752·43328)로 의미가 확인된 문법으로 본다
     for i, label in enumerate(('시점', '조건', '대상 머리', '본문')):
         if i == 1 and engine_cond:
             continue
         if engine_coop and i in (2, 3):
             continue
-        if p[i] is not None and p[i] not in shapes[i]:
+        if p[i] is not None and p[i] not in shapes[i] and p[i] not in cosmo_shapes.get(i, set()):
             bad.append('%s: %s' % (label, p[i]))
     for f in p[4]:
-        if f not in shapes[4]:
+        if f not in shapes[4] and f not in cosmo_shapes[4]:
             bad.append('플래그: %s' % f)
     return bad
 

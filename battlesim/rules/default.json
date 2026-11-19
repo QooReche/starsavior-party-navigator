@@ -59,6 +59,8 @@
                     "source": "databook #d-sum #d-break (docs/formulas_local.md 3장), 상태 효과 사전(속박·표적 각인, formulas_web.md 4.2)"}
  },
  "mc": {
+  "fixstats_speed_zero": {"value": "off", "legacy": "off", "alt": ["client"], "grade": "code", "note": "FixStats 속도 0은 직접 게이지 증가를 막지 않음. 보유자 턴 종료 차감, 부여한 턴 차감 제외. 기본 기존 동작, 바스커빌 전투에서만 켬.", "source": "build 26752678 NKM.decompiled.cs:5111-5116,12426-12446,13962-13969,4004; CLIENT_BUFF_TEMPLET.json:51039"},
+  "superarmor_damage_ban": {"value": "off", "legacy": "off", "alt": ["client"], "grade": "code", "note": "효과 이름과 별개로 버프 SuperArmorDamageBan 플래그가 강인도 피해를 차단함. 기본 기존 동작, 바스커빌 전투에서만 켬.", "source": "build 26752678 CLIENT_BUFF_TEMPLET.json:51018; NKM.decompiled.cs:17206-17210"},
   "self_hp_condition": {"value": "client", "legacy": "ratio", "alt": ["ratio"], "grade": "code", "note": "자신 HP 이상/이하 SE 조건: client=클라 float 비율과 float 만분율 곱을 정수 절삭 후 비교. ratio=실수 비율을 그대로 비교. 잠재력31002의 4999 이하 경계 등.", "source": "build 26610546: NKM.decompiled.cs:2191-2198,16508-16516"},
   "last_damager_timing": {"value": "client", "legacy": "per_target", "alt": ["per_target"], "grade": "code", "note": "공격 스킬의 최근 가해자 기록 시점. client=살아 있는 적 대상 전체를 DAMAGE_START·첫 피해 전에 기록; per_target=각 대상 피해 직전에 기록하던 동작. 추가 피해·지속 피해는 갱신하지 않음. 비공격 지원 스킬의 대상 기억은 이 규칙 범위 밖.", "source": "build 26610546: NKM.decompiled.cs:2854-2857,15669-15689,15706-15717,7681-7689"},
   "heal_cleanse_skill_end": {"value": "client", "legacy": "legacy", "alt": ["legacy", "client"], "grade": "code", "note": "웨딩 카르멘 궁극기는 기본 회복을 먼저 처리하고 SKILL_END에 약화를 해제함.", "source": "build 26610546: NKM.decompiled.cs:15598,15759-15789 / tables/SE_TEMPLET_SKILL_1.json:35404-35414"},

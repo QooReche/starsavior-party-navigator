@@ -28,7 +28,8 @@ from battlesim.fileio import atomic_json  # noqa: E402
 NUAT = {'NUAT_ORDER': '질서', 'NUAT_SUN': '태양', 'NUAT_MOON': '달', 'NUAT_STAR': '별', 'NUAT_CHAOS': '혼돈'}
 ROLE = {'NURT_STRIKER': '스트라이커', 'NURT_CASTER': '캐스터', 'NURT_ASSASSIN': '어쌔신', 'NURT_RANGER': '레인저',
         'NURT_DEFENDER': '디펜더', 'NURT_SUPPORTER': '서포터'}
-ATK_KIND = {'UAT_SLASH': '참격', 'UAT_SPIRIT': '정신', 'UAT_VOID': '공허', 'UAT_IMPACT': '충격', 'UAT_PIERCE': '관통'}
+# 26752678 hard/STRING_COMMON.json:52816-52818 SKILL_TAG_ELEMENT = 원소 피해.
+ATK_KIND = {'UAT_SLASH': '참격', 'UAT_SPIRIT': '정신', 'UAT_VOID': '공허', 'UAT_IMPACT': '충격', 'UAT_PIERCE': '관통', 'UAT_ELEMENT': '원소'}
 # 시즌 버프 대상(BCT_*) -> 아군 조건. 대상 표기는 속성/직업 이름 그대로(BCT_MOON = 달 속성, BCT_SUPPORTER = 서포터 직업)
 BCT = {'BCT_MOON': ('element', '달'), 'BCT_SUN': ('element', '태양'), 'BCT_STAR': ('element', '별'),
        'BCT_CHAOS': ('element', '혼돈'), 'BCT_ORDER': ('element', '질서'),
@@ -351,7 +352,7 @@ def build(T, season_id, game_build):
         key = next((v for k, v in BOSS_SCRIPT_KEY.items() if k in r3['BattleTempletFileName']), '')
         need(key, '모르는 보스 스크립트: %s' % r3['BattleTempletFileName'])
         # 계산 가능 여부: 벨그라스는 전용 모델, 그 밖은 공개 databook 의 cosmo «<이름> N단계» 적 정의를 재사용한다(엔진 build_waves).
-        # databook 에 없으면(시즌 1023 바스커빌의 괴수) sim=false — 엔진·화면이 계산을 막고 simNote 를 보여 준다.
+        # 데이터북 또는 PC 클라 조각으로 세 단계 정의를 모두 로드할 수 있어야 계산한다.
         name = plain(r3['BattleName'])
         sim = key == 'belgras' or all(databook_stage_ok(name, s) for s in (1, 2, 3))
         bosses.append(dict(key=key, name=name, sim=sim,

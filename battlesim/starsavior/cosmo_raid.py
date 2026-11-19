@@ -281,6 +281,45 @@ class Controller:
                 ctx.inc += p['pct'] / 100.0 * count
                 self.stats['debuff_amp'] += count
 
+    def execute_se(self, owner, ln, ctx):
+        """조각에서 실행 담당이 cosmo인 SE만 처리. 일반 버프·회복·게이지는 mc가 실행함."""
+        if getattr(owner.d, 'client_model', None) != 'baskerville':
+            raise ValueError('코스모 SE의 적 정의가 다름')
+        b, p = self.b, ln.eff['meta']
+        op = p['op']
+        if op == 'change_skill':
+            # NKM:2922-2933,3084-3090,2412: 즉시 슬롯 교체·유지, RESET은 쿨 0.
+            before = owner.d.client_skills[p['before']]
+            current = owner.skill_overrides.get(before.slot, owner.d.skills[before.slot])
+            if current is before:
+                owner.skill_overrides[before.slot] = owner.d.client_skills[p['after']]
+                owner.cd[before.slot] = 0
+                self.stats['bask_change'] += 1
+        elif op == 'specific_count':
+            # NKM:5663-5678: 적 전체의 버프 객체 수 합, IsLevel 중첩수 합이 아님.
+            count = 0
+            for x in b.alive(1 - owner.side):
+                e = x.eff.get(p['name'])
+                if e is not None and e.stacks > 0:
+                    count += len(e.inst) if e.inst is not None else 1
+            ctx.inc += p['rate'] * count
+            self.stats['bask_count'] += count
+        elif op == 'cool_up':
+            # NKM:3105-3109: 최대 쿨로 제한. COOL_TURN_UP_2는 면역 그룹 1001의 ID가 아님.
+            slot = p['slot']
+            sk = owner.skill_overrides.get(slot, owner.d.skills[slot])
+            owner.cd[slot] = min(sk.cd, owner.cd.get(slot, 0) + p['value'])
+            self.stats['bask_cool_up'] += 1
+        elif op == 'delete_count':
+            targets = b.line_auto_targets(owner, p['auto'], ctx) if p.get('auto') else [owner]
+            for x in targets:
+                if p['name'] in x.eff:
+                    b._dispel_n_ordered(x, [p['name']], p['count'])
+                    b.dirty(x)   # NKM:3070-3081: 상한만 갱신, 해제로 회복하지 않음.
+                    self.stats['bask_delete_one'] += 1
+        else:
+            raise ValueError('코스모 SE 미지원: ' + op)
+
     def skill_start(self, u, sk, ctx):
         # EX: punish(SET_31, SE 9403101) — NSEAT_SKILL_START(대상 확정 직후·타격 전). 조건 1161 OnMyAttack(SkillIndex 궁극기,
         # TargetNegativeBuff: 스킬 대상 유형대로 모은 대상 중 하나라도 약화 1개 이상 — NKM:9590-9700, NKM.Templets OBF_2765)이 참이면
@@ -360,6 +399,9 @@ class Controller:
         if boss is None:
             return
         self.boss, self.cfg = boss, boss.d.cosmo
+        if getattr(boss.d, 'client_model', None) == 'baskerville':
+            b.mc['fixstats_speed_zero'] = 'client'
+            b.mc['superarmor_damage_ban'] = 'client'
         cfg = self.cfg
         # 시즌 전투 보너스 BUFF: 조건(속성/직업)에 맞는 아군에게 상시 효과(마커: 강화 개수·해제에 안 셈)
         for sb in cfg['season_buffs']:
