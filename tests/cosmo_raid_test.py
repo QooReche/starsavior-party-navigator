@@ -716,7 +716,15 @@ def test_data_matches_tables():
                         '--build', str(G['gameBuild']), '--out', out], capture_output=True, text=True, encoding='utf-8')
     assert p.returncode == 0, p.stdout + p.stderr
     new = json.load(open(out, encoding='utf-8'))
-    assert new == G, '표에서 다시 뽑은 값이 data/cosmo_raid.json 과 다름'
+    cur = json.loads(json.dumps(G))
+    for d in (new, cur):  # 표에 없는 값: 공지 날짜·출처, 빌더 계산 가능 표시, 탐색 설정
+        for k in ('start', 'end', 'settleEnd', 'src'):
+            d['season'].pop(k, None)
+        for b in d['bosses']:
+            b.pop('sim', None)
+            b.pop('simNote', None)
+        d.pop('search', None)
+    assert new == cur, '표에서 다시 뽑은 값이 data/cosmo_raid.json 과 다름'
 
 
 TESTS = [test_data_shape, test_stage_stats_match_existing_cosmo, test_build_waves_and_scale, test_switch_off_no_controller, test_season_buffs,
