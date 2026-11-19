@@ -22,12 +22,14 @@
 
   // 4인 조합 전수. 규칙: 앞열 역할(디펜더·서포터) 최소 minFront 명, 딜러(앞열 역할 아님) 최소 minDealer 명
   function combos(S, rows) {
-    const out = [], n = rows.length, mf = S.minFront || 0, md = S.minDealer || 0;
+    return [...iterateCombos(S, rows)];
+  }
+  function* iterateCombos(S, rows) {
+    const n = rows.length, mf = S.minFront || 0, md = S.minDealer || 0;
     for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) for (let c = b + 1; c < n; c++) for (let d = c + 1; d < n; d++) {
       const t = [rows[a], rows[b], rows[c], rows[d]], fr = t.filter(x => FRONT.includes(x.cls)).length;
-      if (fr >= mf && 4 - fr >= md) out.push(t.map(x => x.key));
+      if (fr >= mf && 4 - fr >= md) yield t.map(x => x.key);
     }
-    return out;
   }
 
   // 시뮬 칸 순서(앞열 역할 먼저, 같으면 전투력 큰 순) + 내 최종 능력치. 리더는 0번(오프라인 탐색과 같은 규칙)
@@ -243,5 +245,6 @@
 
   const breakLabel = (t, esc) => `브레이크 스킬: ${esc(t.brk || "없음")}${t.brk ? ` Lv.${t.brkLv}` : ""}`;
   const api = {FRONT, TOP_Q, BREAK_CHECK, breakSignature, breakJobs, breakLabel, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, progText, SUP_NAME, countDropped, notesHtml, BASIS, unsupportedFields, unsupportedHtml};
+  api.iterateCombos = iterateCombos;
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

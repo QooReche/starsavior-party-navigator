@@ -5,11 +5,13 @@
   "use strict";
   const {num} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const GS = typeof require !== "undefined" ? require("./guild_search.js") : root.GuildSearch;
+  const Learned = typeof require !== "undefined" ? require("./cosmo_learned.js") : root.CosmoLearned;
   const TEAM = 4, BOSSES = 3, EPS = 1e-9;
   const speedValue = (S, key, fallback) => S.speed && S.speed[key] ? S.speed[key].value : fallback;
-  function searchSettings(S, fast) {
+  function searchSettings(S, fast, learned) {
     const out = Object.assign({}, S, {speed: Object.assign({}, S.speed)});
     if (fast != null && S.speed && S.speed.surrogate) out.speed.surrogate = Object.assign({}, S.speed.surrogate, {value: !!fast});
+    if (learned != null && S.learned) out.learned = Object.assign({}, S.learned, {value: !!learned});
     return out;
   }
   // 의도적으로 단순한 대리 값. 전투 기믹을 대신하지 않으며 무작위 제외 표본으로 감시한다.
@@ -218,7 +220,7 @@
   // 기본은 전수: 내 정보에서 육성된(전투력>0) 보유 구원자 전부. 전투력 하한·역할 보충 없음.
   // 안전 장치로 S.maxPool(숫자)을 주면 그때만 «전투력 상위 maxPool 명 + minRole 보충(minPowerRatio 이상)»으로 자른다. 기본 null.
   function poolAll(S, results, roster) {
-    const capped = S.maxPool > 0;
+    const capped = !S.learned?.value && S.maxPool > 0;
     return GS.pool({banCoop: false, excluded: [], poolSize: capped ? S.maxPool : undefined, minPowerRatio: capped ? S.minPowerRatio || 0 : 0, minRole: capped ? S.minRole || {} : {}}, results, roster);
   }
   const isFront = r => GS.FRONT.includes(r.cls);
@@ -283,6 +285,15 @@
   }
   // 단계별 판 수 계획(시작 전에 알 수 있음). 3단계 팀 수는 삼중이 정해져야 알 수 있어 상한(topTriples×3팀)으로 두고 단계 전환 때 바로잡는다.
   function plan(S, rows, nBrk) {   // nBrk = 브레이크 스킬 후보 수(마지막 단계는 팀마다 «장착 안 함 + 후보» 각각을 돌림)
+    if (S.learned?.value) {
+      const c=Learned.config(S,rows.length), L=countCombos(S,rows), first=Math.min(L,c.S+c.K+rows.length*c.M+c.overlapStarts*(c.overlapKeep+2)+c.A);
+      const keep=retryPlan(S,L).limits[0], pass=passCount(S,first,keep), fr=S.screen.firstRuns||1;
+      const stages=[{id:1,teams:3*first,runs:fr,upper:true},{id:2,teams:3*first,runs:Math.max(0,S.screen.runs-fr),upper:true},
+        {id:3,teams:3*Math.min(L,keep+rows.length*c.M+c.overlapStarts*(c.overlapKeep+2)),runs:S.rerank.runs,upper:true},
+        {id:4,teams:3*S.combine.topTriples*(1+(nBrk|0)),runs:S.final.runs,upper:true}];
+      stages.forEach(s=>s.games=s.teams*s.runs);
+      return {pool:rows.length,combos:L,keep,pass,halved:true,learned:true,stages,total:stages.reduce((a,s)=>a+s.games,0)};
+    }
     const L = countCombos(S, rows), keep = retryPlan(S, L).limits[0], t4 = BOSSES * S.combine.topTriples * (1 + (nBrk | 0)), pass = passCount(S, L, keep), halved = pass < L, fr = halved ? S.screen.firstRuns | 0 : 0;
     // 단계: 0 = 1단계 첫 판(전 조합), 1 = 1단계 보충 판(상위 pass 팀 + 경계 동점 + 구원자별 대안이라 실제 팀 수는 달라질 수 있어 단계 전환 때 바로잡음), 2 = 상위 keep 팀 정밀, 3 = 삼중 팀 재시뮬
     const requested = speedValue(S, "surrogate", false), cfg = requested ? S.speed.surrogate : null;
@@ -382,7 +393,7 @@
   }
   // 시작 전 안내. pl = plan(), prior = priorFrom(...) 또는 null
   function preText(pl, prior) {
-    const g = `조합 ${num(pl.combos)}개 · ${pl.fast ? "선별 예상 " : "기본 "}${num(pl.total)}판 · 후보가 겹치면 상한 내에서 확대 재시도하며 예상 시간도 늘어남${pl.fast ? " · 놓침 감지 시 전수 확인으로 늘어남" : pl.fastSkipped ? " · 조합 수가 적어 빠른 탐색을 적용하지 않고 전수 확인" : ""}`;
+    const g = `조합 ${num(pl.combos)}개 · ${pl.learned ? "학습 선별 예상 상한 " : pl.fast ? "선별 예상 " : "기본 "}${num(pl.total)}판 · 후보가 겹치면 상한 내에서 확대 재시도하며 예상 시간도 늘어남${pl.fast || pl.learned ? " · 놓침 감지 시 전수 확인으로 늘어남" : pl.fastSkipped ? " · 조합 수가 적어 빠른 탐색을 적용하지 않고 전수 확인" : ""}`;
     if (!prior) return `시작하면 몇 초 뒤 예상 시간이 표시됨 (${g})`;
     const sec = pl.stages.reduce((a, s, i) => a + s.games * prior[i], 0);
     return `이 PC의 지난 실행 속도 기준 예상 ${fmtDur(sec)} (${g})`;
@@ -410,25 +421,83 @@
     const pl = plan(S, rows, (cx.breaks || []).length);
     if (!pl.combos) throw Object.assign(new Error("조건에 맞는 4인 조합이 없음"),{gwenCause:"few"});
     if (S.maxCombos > 0 && pl.combos > S.maxCombos) throw new Error(`4인 조합이 ${num(pl.combos)}개로 안전 상한(${num(S.maxCombos)}개)을 넘음. 추천에서 뺄 구원자를 늘리거나 설정의 maxPool/maxCombos 를 조정해야 함`);
-    const list = GS.combos(S, rows), cls = Object.fromEntries(roster.map(s => [s.key, s.cls]));
+    const learned=!!S.learned?.value;
+    const list = learned ? {length:pl.combos} : GS.combos(S, rows), cls = Object.fromEntries(roster.map(s => [s.key, s.cls]));
     if (cx.onPlan) cx.onPlan(pl);
     const workersPool = speedValue(S, "workerReuse", false) ? GS.workerPool(cx.makeWorker) : null;
     try {
-    const run = async (jobs, runs, seed, msg, idx, carry = 0) => {
-      if (cx.onPhase) cx.onPhase(msg, jobs.length + carry, {stage: idx, teams: jobs.length + carry, runs, games: (jobs.length + carry) * runs});
-      if (carry && cx.onProgress) cx.onProgress(carry, jobs.length + carry);
+    const run = async (jobs, runs, seed, msg, idx, carry = 0, expected = jobs.length + carry) => {
+      if (cx.onPhase) cx.onPhase(msg, expected, {stage: idx, teams: expected, runs, games: expected * runs});
+      if (carry && cx.onProgress) cx.onProgress(carry, expected);
       if (speedValue(S, "rngStreams", false)) jobs = jobs.map(j => Object.assign({}, j, {options: Object.assign({}, j.options, {rng_streams: true})}));
       const h = GS.runPhase({makeWorker: cx.makeWorker, pool: workersPool, jobs, workers: cx.workers, runs, seed, stage: cx.stage, base: cx.base,
-        onProgress: cx.onProgress ? (d, t) => cx.onProgress(d + carry, t + carry) : null, chunk: Math.max(1, Math.min(50, Math.ceil(jobs.length / (cx.workers * 40))))});
+        onProgress: cx.onProgress ? d => cx.onProgress(d + carry, expected) : null, chunk: Math.max(1, Math.min(50, Math.ceil(jobs.length / (cx.workers * 40))))});
       if (cx.onHandle) cx.onHandle(h);
       return h.promise;
     };
     const stale = () => cx.stale && cx.stale();
-    let jobsA = [].concat(...bosses.map(b => bossJobs(S, b, level, list, results, cls))), auditInfo = null;
-    const allJobs = jobsA;
+    let jobsA = learned ? [] : [].concat(...bosses.map(b => bossJobs(S, b, level, list, results, cls))), auditInfo = null;
+    let allJobs = jobsA, learnedSelections=null;
     let firstResults;
     let resA, jobsK, passed = list.length;      // jobsK = 2단계 후보를 뽑을 작업 목록(반감이면 보충 판을 돌린 팀만), resA = 그 팀들의 결과
-    if (!pl.halved) {
+    if (learned) {
+      const c=S.learned, fr=S.screen.firstRuns||1, res1={}, models=[], selections=[], enc=Learned.encoder(rows,results,roster);
+      let completed=0, stageTeams=pl.stages[0].teams;
+      const evaluate=async (jobs,msg)=>{
+        const missing=jobs.filter(j=>!res1[j.key]?.cosmo);
+        if(missing.length){Object.assign(res1,await run(missing,fr,1,msg,0,completed,stageTeams));completed+=missing.length;}
+        if(stale())throw Object.assign(new Error('취소'),{gwenCause:'cancel'});
+        if(jobs.some(j=>!res1[j.key]?.cosmo))throw new Error('학습 선별 결과가 누락됨');
+      };
+      for(let b=0;b<3;b++){
+        const sample=await Learned.sample(S,rows,(cx.sampleSeed||20261119)+b,stale),jobs=bossJobs(S,bosses[b],level,sample,results,cls);
+        await evaluate(jobs,`표본 학습: ${bosses[b]} · ${sample.length}팀`);
+        const model=await Learned.train(enc,sample,jobs.map(j=>metric(res1[j.key].cosmo,mode)),c,stale);models.push(model);
+        if(cx.onPhase)cx.onPhase(`예측 채점: ${bosses[b]} · 전체 ${pl.combos}조합`,stageTeams,{stage:0,teams:stageTeams,runs:fr,games:stageTeams*fr});
+        if(cx.onProgress)cx.onProgress(completed,stageTeams);
+        selections.push(await Learned.select(S,rows,model,stale));
+      }
+      await Learned.overlap(S,rows,models,selections,bestTriples,stale);
+      const prepared=[],plannedByBoss=[];
+      for(let b=0;b<3;b++){
+        const sel=selections[b],audit=await Learned.auditSample(S,rows,sel,(cx.sampleSeed||20261119)+100+b,stale);
+        const core=bossJobs(S,bosses[b],level,[...sel.core.values()].map(e=>e.keys),results,cls),aj=bossJobs(S,bosses[b],level,audit.teams,results,cls);
+        const keys=new Set(Object.keys(res1).filter(k=>k.startsWith(bosses[b]+'|')));for(const j of [...core,...aj])keys.add(j.key);
+        plannedByBoss.push(keys.size);prepared.push({sel,audit,core,aj});
+      }
+      stageTeams=plannedByBoss.reduce((a,b)=>a+b,0);
+      auditInfo=[];
+      for(let b=0;b<3;b++){
+        const {sel,audit,core,aj}=prepared[b];
+        await evaluate([...core,...aj],`1단계: 학습 후보·무작위 감사 ${bosses[b]}`);
+        const info=Learned.audit(c,models[b].rho,core.map(j=>metric(res1[j.key].cosmo,mode)),aj.map(j=>metric(res1[j.key].cosmo,mode)),aj.length,audit.excluded,passCount(S,core.length,pl.keep));
+        auditInfo.push({boss:bosses[b],...info,core:core.length,overlap:sel.overlap.size});
+        if(info.fallback){
+          stageTeams+=pl.combos-plannedByBoss[b];
+          // 복귀도 작업은 512팀씩 생성. 이미 완료한 표본·후보의 첫 판은 그대로 재사용.
+          let batch=[];
+          for(const keys of GS.iterateCombos(S,rows)){
+            batch.push(keys);
+            if(batch.length===512){await evaluate(bossJobs(S,bosses[b],level,batch,results,cls),`학습 감사 복귀: ${bosses[b]} 전수 확인 (결과 재사용)`);batch=[];}
+          }
+          if(batch.length)await evaluate(bossJobs(S,bosses[b],level,batch,results,cls),`학습 감사 복귀: ${bosses[b]} 전수 확인 (결과 재사용)`);
+        }
+      }
+      // 결과 인덱스에는 가벼운 조합 정보만 유지한다. party/options는 실제 실행 직전에 생성.
+      for(let i=0;i<3;i++){
+        const b=bosses[i],eligible=new Set([...prepared[i].core,...prepared[i].aj].map(j=>j.key));
+        for(const keys of GS.iterateCombos(S,rows)){
+          const key=jobKey(b,keys,level);
+          if(res1[key]?.cosmo&&(auditInfo[i].fallback||eligible.has(key)))jobsA.push({key,boss:b,keys,order:GS.party(keys,results,cls).order});
+        }
+      }
+      learnedSelections=selections;allJobs=jobsA;firstResults=res1;
+      jobsK=[];
+      bosses.forEach((b,i)=>{const jb=jobsA.filter(j=>j.boss===b),n=passCount(S,jb.length,pl.keep),ranked=pickTop(jb,res1,mode),keep=Learned.preserve(ranked,pickPass(jb,res1,mode,n),c.M,selections[i].overlap);jobsK.push(...bossJobs(S,b,level,keep.map(e=>e.keys),results,cls));});
+      passed=Math.max(...bosses.map(b=>jobsK.filter(j=>j.boss===b).length));
+      const more=S.screen.runs-fr,res2=more>0?await run(shuffled(jobsK,20261108),more,4,'1단계 보충: 학습 후보·구원자별 대안·겹침 회피 확인',1):{};
+      if(stale())return null;resA={};for(const j of jobsK){const a=res1[j.key],b=res2[j.key];if(more>0&&!b?.cosmo)throw new Error('보충 계산 결과가 누락됨');resA[j.key]=b?{...b,cosmo:mergeSummary(a.cosmo,b.cosmo,S.topQ)}:a;}
+    } else if (!pl.halved) {
       resA = await run(shuffled(jobsA, 20261106), S.screen.runs, 1, `1단계: 보스 3명 × 조합 ${list.length}개를 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`, 0);
       if (stale()) return null;
       jobsK = jobsA;
@@ -477,8 +546,10 @@
         // 빠른 선별에서 한 번도 계산하지 않은 후보도 복귀한다. 정밀 계산은 여기서 한 번만 한다.
         const rankedIds = new Set(ranked.map(e => idOf(e.keys)));
         if (attempt) for (const j of source) if (!rankedIds.has(idOf(j.keys))) ranked.push(j);
-        const selected = diverseRows(ranked, limit), have = jobsB.filter(j => j.boss === b).length;
-        const fresh = selected.filter(e => !evaluated.has(jobKey(b, e.keys, level))).slice(0, Math.max(0, limit - have));
+        const selected = learned ? Learned.preserve(ranked,diverseRows(ranked,limit),S.learned.M,learnedSelections[bosses.indexOf(b)].overlap) : diverseRows(ranked, limit), have = jobsB.filter(j => j.boss === b).length;
+        const pending=selected.filter(e => !evaluated.has(jobKey(b,e.keys,level)));
+        if(learned && have+pending.length>retry.limits[retry.limits.length-1])throw new Error('구원자별 보장을 유지하기에 정밀 후보 상한이 부족함');
+        const fresh = learned ? pending : pending.slice(0, Math.max(0, limit - have));
         extra.push(...bossJobs(S, b, level, fresh.map(e => e.keys), results, cls));
       });
       if (!extra.length) continue;
@@ -494,7 +565,7 @@
       triples = bestTriples(lists, S.combine.topTriples, budget);
       if (budget.remaining <= 0) budget.exhausted = true;
       attempts.push({limit, added: extra.length, teams: jobsB.length, triples: triples.length});
-      if (triples.length || budget.exhausted) break;
+      if ((learned ? triples.length >= S.combine.topTriples : triples.length) || budget.exhausted) break;
     }
     if (!triples.length) throw Object.assign(new Error(overlapMessage(lists, roster, budget.exhausted || kept < list.length)), {gwenCause: "empty", attempts});
     // 난이도 자동: 보스마다 난이도를 따로 고를 수 있으므로(게임이 허용), 뽑은 삼중의 모든 팀을 난이도 0~최대에서 짧게 돌려 팀별로 점수가 가장 큰 난이도를 정하고
@@ -525,9 +596,10 @@
     const resC = await run(jobsC, S.final.runs, 2, `${auto ? "마지막 확인" : "3단계"}: 합이 큰 ${triples.length}개 편성의 팀 ${seen.size}개${brks.length > 1 ? "를 브레이크 스킬 " + (brks.length - 1) + "종과 함께" : ""} ${S.final.runs}판씩 확인 중`, auto ? null : 3);
     if (stale()) return null;
     const rows2 = finalRankBrk(triples, bosses, levelOf, brks, resC, mode, S.combine.show);
-    return {rows: rows2, growthOwned: jobsB.map(j=>({...j,result:resB[j.key]})), pool: rows.length, capped: S.maxPool > 0, combos: list.length, keep: kept, attempts, combineLimited: budget.exhausted, triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
+    return {rows: rows2, growthOwned: jobsB.map(j=>({...j,result:resB[j.key]})), pool: rows.length, capped: !learned && S.maxPool > 0, combos: list.length, keep: kept, attempts, combineLimited: budget.exhausted, triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
       halved: pl.halved, firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed,
-      ...(speedValue(S, "surrogate", false) ? {fast: true, audit: auditInfo || [], ...(pl.fastSkipped ? {fastSkipped: true} : {})} : {})};
+      ...(learned ? {learned:true,audit:auditInfo} : {}),
+      ...(!learned && speedValue(S, "surrogate", false) ? {fast: true, audit: auditInfo || [], ...(pl.fastSkipped ? {fastSkipped: true} : {})} : {})};
     } finally { if (workersPool) workersPool.close(); }
   }
 
@@ -554,7 +626,7 @@
     if (!cx.hasInfo) return `<div class="gd-search" data-k="cs-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자 불러오기 필요. 불러온 구원자 중에서 3보스 점수 합이 가장 큰 3팀을 찾음.</div></div>`;
     const lv = [`<option value="-1"${cx.level === AUTO ? " selected" : ""}>자동 (최고 점수 난이도)</option>`].concat(Array.from({length: cx.levelMax + 1}, (_, i) => `<option value="${i}"${i === cx.level ? " selected" : ""}>${i === 0 ? "레벨 0(없음)" : "레벨 " + i}</option>`)).join("");
     const md = Object.entries(MODES).map(([k, v]) => `<option value="${k}"${k === cx.mode ? " selected" : ""}>${v}</option>`).join("");
-    const opt = `<details class="season-options" data-fold="cs-options"><summary>탐색 설정 <span class="tag">${cx.level===AUTO?'난이도 자동':'난이도 '+cx.level} · ${MODES[cx.mode]}${cx.fast?' · 빠른 탐색':''}</span></summary><div class="season-fields"><label>난이도 <select data-cs="level">${lv}</select></label> <label>순위 기준 <select data-cs="mode">${md}</select></label> <label><input type="checkbox" data-cs="fast"${cx.fast ? " checked" : ""}> 빠른 탐색(실험)</label></div><p class="mut">3단계(Step 3) 기준. 상위 점수 = 판별 점수 상위 20%의 평균. 빠른 탐색은 추천이 달라질 수 있고, 놓침 감지 시 전수 확인함.</p></details>`;
+    const opt = `<details class="season-options" data-fold="cs-options"><summary>탐색 설정 <span class="tag">${cx.level===AUTO?'난이도 자동':'난이도 '+cx.level} · ${MODES[cx.mode]}${cx.learned?' · 학습 선별':cx.fast?' · 빠른 탐색':''}</span></summary><div class="season-fields"><label>난이도 <select data-cs="level">${lv}</select></label> <label>순위 기준 <select data-cs="mode">${md}</select></label> <label><input type="checkbox" data-cs="fast"${cx.fast ? " checked" : ""}> 빠른 탐색(실험)</label> <label><input type="checkbox" data-cs="learned"${cx.learned ? " checked" : ""}> 계정별 점수 학습 선별(실험)</label></div><p class="mut">3단계(Step 3) 기준. 상위 점수 = 판별 점수 상위 20%의 평균. 학습 선별을 켜면 우선 적용함. 실험 탐색은 추천이 달라질 수 있고, 놓침 감지 시 전수 확인함.</p></details>`;
     const btn = label => `<button type="button" data-cs="start">${label}</button>`;
     const pre = cx.preEta ? `<div class="mut gd-small" data-k="cs-eta-pre">${esc(cx.preEta)}</div>` : "";
     let body;
@@ -562,13 +634,13 @@
     if (st.phase === "run") body = `<div data-k="cs-progress">${work(cx.workMode || "long")}<span data-k="cs-prog">${esc(progText(st))}</span><div class="mut gd-small" data-k="cs-eta">${esc(st.etaText || "")}</div><button type="button" class="sec" data-cs="cancel">취소</button></div>`;
     else if (st.phase === "err") body = `<div class="bad" data-k="cs-err">${error(st.errorCause||"other")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}${opt}`;
     else if (st.phase === "done") {
-      const stale = (st.reqLevel != null ? st.reqLevel : st.level) !== cx.level || st.mode !== cx.mode || !!st.fast !== !!cx.fast ? '<div class="gd-warn" data-k="cs-stale">고른 탐색 설정이 바뀌었음. 아래 결과는 이전 선택 기준이므로 다시 찾기 필요.</div>' : "";
+      const stale = (st.reqLevel != null ? st.reqLevel : st.level) !== cx.level || st.mode !== cx.mode || !!st.learned !== !!cx.learned || (!cx.learned && !!st.fast !== !!cx.fast) ? '<div class="gd-warn" data-k="cs-stale">고른 탐색 설정이 바뀌었음. 아래 결과는 이전 선택 기준이므로 다시 찾기 필요.</div>' : "";
       const old = cx.sig != null && st.sig !== cx.sig ? '<div class="gd-warn" data-k="cs-old">낡은 결과: 내 정보를 다시 불러왔거나 추천에서 뺄 구원자 목록이 바뀌었음. 아래 결과는 이전 기준이므로 다시 찾기 필요.</div>' : "";
       const rows = st.rows || [];
       const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐음(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
       const first = rows.length ? `${cx.report?.(st.rows)||""}<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : `${error('empty')}<div class="mut">결과 없음</div>`;
       const rest = (st.combineLimited ? '<div class="gd-warn" data-k="cs-limit">조합 검사 상한에 도달했음. 이번 결과는 확인한 조합 중에서 골랐으며, 더 높은 점수의 조합이 남아 있을 수 있음.</div>' : '') + rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx, i+1)}</details>`).join("");
-      const scr = st.halved ? `${st.fast && !st.fastSkipped ? "대리 선별·무작위 확인" + (st.audit.some(a => a.fallback) ? "·놓침 보스 전수 복귀" : "") + " 뒤" : "보스마다 조합 " + num(st.combos) + "개를"} ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
+      const scr = st.learned ? `계정별 표본 학습·예측 선별·무작위 감사를 거쳐${st.audit.some(a=>a.fallback)?" 품질 미달 보스는 전수 확인으로 복귀하고":""} 후보를 ${st.screenRuns}판씩 확인하고` : st.halved ? `${st.fast && !st.fastSkipped ? "대리 선별·무작위 확인" + (st.audit.some(a => a.fallback) ? "·놓침 보스 전수 복귀" : "") + " 뒤" : "보스마다 조합 " + num(st.combos) + "개를"} ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
       body = `${old}${stale}${first}${rest}${btn("다시 찾기")}${opt}<details class="season-options" data-fold="cs-result-basis"><summary>탐색 결과 상세</summary>${lvInfo}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값임(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순임. 확인한 후보 조합 중에서 골랐으므로 전체 조합의 수학적 최적은 아닐 수 있음.</div></details>`;
     } else body = `${btn("보스 3마리 편성 찾기")}<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>${opt}`;
     return `<div class="gd-search" data-k="cs-search" data-state="${st.phase}">${head}${body}<details class="season-options" data-fold="cs-basis"><summary>계산 기준·예상 시간 ⓘ</summary><span class="gd-est">추정</span>${pre}${warn}</details></div>`;

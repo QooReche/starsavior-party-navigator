@@ -65,6 +65,8 @@ function sharedReload(){const storage={},before=context(ui,storage),key='op|a,b,
 }
 function signatureScope(code=ui){const ctx=context(code),sig=key=>ctx.growthSig(content(key),stage);
   const op=sig('op'),guild=sig('guild'),cosmo=sig('cosmo');
+  ctx.CSR.optLearned=true;assert.notEqual(sig('cosmo'),cosmo,'learned selection invalidates seasonal growth results');
+  assert.equal(sig('op'),op);ctx.CSR.optLearned=false;assert.equal(sig('cosmo'),cosmo);
   assert(G.compatible(op,guild)&&G.compatible(guild,cosmo),'content options are not common rules');
   ctx.GSR.rows.push({keys:['a','b','c','d']});assert.notEqual(sig('guild'),guild);assert.equal(sig('op'),op);assert.equal(sig('cosmo'),cosmo);
   const changed=sig('guild');ctx.CSR.optLevel++;assert.equal(sig('guild'),changed);assert.notEqual(sig('cosmo'),cosmo);

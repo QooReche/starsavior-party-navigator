@@ -467,6 +467,9 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
 # maxPool(숫자)을 주면 그때만 전투력 상위 maxPool 명 + minRole 보충(minPowerRatio 이상)으로 자른다. maxCombos 는 보스당 조합 수 안전 상한(넘으면 시작하지 않고 안내).
 # etaWeights = 단계별 «한 판 상대 비용»(남은 시간 계산에서 아직 안 해 본 단계의 속도를 추정할 때 쓰는 초기값, 실측으로 조정).
 SEARCH = dict(
+    learned=dict(value=False, S=3000, m=8, K=4000, M=8, A=256, overlapStarts=10, overlapKeep=8,
+                 folds=3, epochs=40, ridge=10, minCorrelation=0.1, missThreshold=0.04,
+                 note="계정·보스별 점수 회귀 실험. 품질 미달 보스 전수 복귀. 기본 꺼짐."),
     speed=dict(
         workerReuse=dict(value=True, legacy=False, alt=True, note='단계 사이 워커 재사용. 측정: docs/cosmo_speed_rd_1110.md'),
         rngStreams=dict(value=False, legacy=False, alt=True, note='공통 난수 동기화 실험. 판 수 유지.'),
