@@ -66,11 +66,8 @@
   }
   function totalLine(m){const all=m.total!=null;return `<div class="cg-total-line"><span>합계</span><b class="cg-total-num${all?'':' pending'}" role="status" aria-live="polite" data-cd-total>${all?num(m.total):`미완료 · ${m.doneCount}/${m.bosses.length}`}</b></div>`;}
   function summaryHtml(view){const m=read(view);return `<div class="cg-top"><div class="cg-tabs" data-k="cs-boss-summary">${tabsHtml(m,false)}</div><aside class="cg-total">${totalLine(m).replace('data-cd-total','data-k="cs-sum"')}</aside></div>`;}
-  function totalHtml(m,ui){
-    const sel=ui.levelAll??m.team(m.active).level;
-    return totalLine(m)
-      +`<div class="cg-level-all"><label for="cd-level-all">3팀 모두 같은 난이도로</label><select id="cd-level-all" data-cd-change="level-all">${levels(m.levelMax,sel)}</select><button type="button" class="sec" data-cd-act="level-all">적용</button></div>`;
-  }
+  // 팀별 난이도는 왼쪽 «이 팀 난이도»에서만 고름(11/19 PM: 3팀 일괄 난이도 줄 제거)
+  function totalHtml(m){return totalLine(m);}
   const titleHtml=m=>`${m.attr(m.boss.element)}<span>${esc(m.boss.name)} 팀</span><span class="tag">${esc(EL[m.boss.element]||m.boss.element||'')}</span>`;
   function boardHtml(m,ui){
     const d=m.draft(m.active),powers=m.view.powers?.[m.active],errors=m.check(m.active)?.errors||[];
@@ -225,7 +222,6 @@
     if(off)return;
     if(act==='help'){ui.help=!ui.help;paint(host);return;}
     if(act==='picker'){ui.picker=!ui.picker;paint(host);return;}
-    if(act==='level-all'){h.onLevelAll?.(ui.levelAll??m.team(boss).level);return;}
     if(act==='slot'){
       if(ui.sel!=null&&ui.sel!==slot){const a=ui.sel;ui.sel=null;h.onDraft?.(boss,{type:'swap',a,b:slot});paint(host);return;}
       ui.sel=ui.sel===slot?null:slot;
@@ -252,7 +248,6 @@
     const el=e.target.closest('[data-cd-change]');if(!el)return;
     const ui=host.__cdui,m=read(ui.view),kind=el.getAttribute('data-cd-change'),v=el.value;
     if(kind==='level')ui.h.onLevel?.(m.active,Number(v));
-    if(kind==='level-all')ui.levelAll=Number(v);
     if(kind==='unowned'){ui.unowned=!!el.checked;paint(host);}
     if(kind==='brk'){
       const known=(m.view.breaks||[]).find(b=>b.name===v),cur=m.draft(m.active).brk;

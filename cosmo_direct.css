@@ -37,9 +37,6 @@
 .cg-total-line{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--mut)}
 .cg-total-num{font-size:22px;line-height:28px;letter-spacing:-.5px;color:var(--fg)}
 .cg-total-num.pending{font-size:17px;color:var(--warn)}
-.cg-level-all{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px}
-.cg-level-all label{white-space:nowrap}
-.cg-level-all select{min-width:0;flex:1 1 84px}.cg-level-all button{white-space:nowrap;flex:none}
 /* 왼쪽 칸: 브레이크·난이도 → 확인 단추 → 이유 → 선택 팀 결과. 넓은 화면에서는 스크롤을 따라옴 */
 .cg-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0}
 .cg-actions button{min-height:44px;padding:6px 4px}

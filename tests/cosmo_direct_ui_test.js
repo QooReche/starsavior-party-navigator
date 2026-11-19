@@ -221,9 +221,7 @@ function suite(U){
     const change=(el,value)=>{el.value=value;fire(t.host,'change',el);};
     change(brk,'차원 강습');change(brk,'');change(brk,'auto');change(lv,'14');
     assert.deepEqual(t.calls,[['draft','baskerville',{type:'brk',value:{name:'차원 강습',level:8}}],['draft','baskerville',{type:'brk',value:null}],['draft','baskerville',{type:'brk',value:'auto'}],['level','baskerville',14]]);
-    t.calls.length=0;t.click('[data-cd-act="level-all"]');assert.deepEqual(t.calls,[['levelAll',10]],'고르지 않고 적용 = 지금 팀 난이도');
-    t.calls.length=0;change(t.q('#cd-level-all'),'7');assert.deepEqual(t.calls,[],'고르기만 해서는 안 바뀜');
-    t.click('[data-cd-act="level-all"]');assert.deepEqual(t.calls,[['levelAll',7]]);
+    assert.equal(t.q('#cd-level-all'),null,'3팀 일괄 난이도 줄 없음 — 난이도는 팀별로만');assert.equal(t.q('[data-cd-act="level-all"]'),null);
     const m=mount(U,fixture({state:{active:'mogulus'}}));assert.equal(m.q('#cd-break option[selected]').textContent,'스타피어서 Lv.10');
     const a=fixture();a.state.teams.baskerville.draft.brk='auto';assert.equal(mount(U,a).q('#cd-break option[selected]').textContent,'자동 선택');
   }
