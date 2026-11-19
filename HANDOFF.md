@@ -6,10 +6,13 @@
 
 - **코스모 게이트 직접 편성**: 공사 중 차단을 해제하고 `cosmo_direct_page.js`로 3팀 패널을 연결했음. 팀별 난이도·리더·육성·브레이크·되돌리기, 중복 금지, 팀별/전체 실행과 현재 서명의 결과 합계를 지원함. 저장 `direct.cosmo.v1`·공유 `cd`·워커 소유자 `cdirect`는 기존 1팀과 분리함. 자동 탐색 요약은 같은 보스 카드 부품을 쓰며 «직접 편성에서 고치기»로 가져옴. 그웬은 진행 레인→결과 하단 한 명만 유지함. 길드 방어전은 기존 미지원이며 공사모 자산·등록은 재사용용으로 남겼음.
 
+- **구원자 자동 대상**: 26752678 PC 감사의 «다름» 12개 SE를 공통 MC 선택 경로에서 교정했음. 브레이크 후보·선정자 해제 제외·독립 SE/RepeatBuffCount 대상 재선택·HP float32 선택·단일 표지 부재 처리를 반영했음. 규칙 기본·legacy는 `battlesim/rules/default.json`, SE별 근거·전수 표준 육성 영향·시험은 `docs/autotarget_12_26752678.md`가 정본임. 원형 미지원 U1~U7의 정규화 대체식과 기대값 엔진은 별도 범위로 유지함.
+
 2026-11-19 기준 **지금 사실만** 적음. 날짜별 경과는 [docs/HISTORY.md](docs/HISTORY.md). 여기 없는 기본값·수치는 아래 정본 파일로 확인함.
 
 - **미개방 육성 판정**: 미개방 판정 = myinfo `star_link.unlocked`, 옛 자료는 재불러오기. false면 현재 돌파·실제 개화 기준 최대 레벨을 가정하고 현재 레벨은 낮추지 않음. 4명 조건은 안내만, 가짜 스타링크 등록 없음. true는 기존 경로, unknown은 레벨 가정 없음, fixed200은 안내 숨김. `assume`의 돌파 0 고유 패시브 차단·`overwrite`의 기존 패시브 유지를 보존함.
 - **정본 위치**: 규칙 기본값 = `battlesim/rules/default.json`(value·legacy·grade·source) — 이 문서에 기본값 목록을 옮겨 적지 않음. 빠른 계산 일치율 = `data/quick.json` `calib.acc`. 생성물 도장 = `tools/gen_rules_stamp.json`. 푸시 여부 = `git status`.
+- **구원자 표지 SE**: U1~U7의 숨은 표지 부여·현재 보유 집합 선택·효과·해제를 복원했음. 원형/옛 대체식 선택은 규칙 정본의 `marker_se_flow`, PC 근거·26행 대응·경계·통합 주의는 `docs/marker_se_26752678.md`에 있음. 공통 자동 대상 필터 본문은 변경하지 않았음.
 - **근거 클라**: 기존 공통 규칙은 빌드 26610546(비공개 static-data `decompiled/`·`tables/`, 11/12 재추출), 시즌 1023·바스커빌은 설치본과 DLL 해시를 대조한 빌드 26752678(`docs/baskerville_26752678.md`). **클라 코드와 사람 관찰이 충돌하면 클라 우선**(사용자 확정) — 옛 사용자 관찰 규칙은 legacy 로 남김.
 - **시험**: 전체 검증은 `tools/run_tests.py --rebuild --e2e <venv-pw python> --timeout 3600`. 작업별 결과는 `docs/HISTORY.md`, 환경상 건너뜀은 실행 로그로 확인함.
 - **바스커빌 시나리오**: 블랙박스 실패 3건은 기절 면역 부분 일치·별도 회복 혼입·송곳니 조건 가정 오류였음. 엔진 변경 없이 측정 도우미를 교정했고, 클라 기대·판정 근거는 `docs/baskerville_scenarios_26752678.md`, 회귀·변이는 `tests/baskerville_scenario_test.py`가 정본임.

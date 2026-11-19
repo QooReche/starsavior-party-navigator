@@ -1,15 +1,7 @@
 {
  "guild_sim": {
-  "hash": "3676e26eccd8a8f5",
+  "hash": "530c00d991033452",
   "history": [
-   {
-    "hash": "26d5a0d4bbafcf9a",
-    "reason": "프로페서M 냉각 소비 시점 클라 방식 등, 길드 방어전 시즌 미오픈"
-   },
-   {
-    "hash": "fa6a0b89622210c2",
-    "reason": "11/15 전수조사 수정 G1, 길드 방어전 시즌 미오픈"
-   },
    {
     "hash": "fa6a0b89622210c2",
     "reason": "11/15 전수조사 수정 G1, 길드 방어전 시즌 미오픈"
@@ -41,20 +33,20 @@
    {
     "hash": "3676e26eccd8a8f5",
     "reason": "새 규칙 두 개는 기본 off이며 바스커빌 코스모 전투에서만 on. 길드 방어전 경로·기존 생성 수치 불변"
+   },
+   {
+    "hash": "c842e95a19e6635c",
+    "reason": "표지 SE 원형 복원(marker_se_flow). 길드 방어전 시즌4 종료로 기존 비활성 생성물 재계산 생략; 새 시즌 자료 반영 때 재생성(HANDOFF). 현재 결과 불변을 뜻하는 인정은 아님."
+   },
+   {
+    "hash": "530c00d991033452",
+    "reason": "build_guild_sim 재생성"
    }
   ]
  },
  "quick": {
-  "hash": "3676e26eccd8a8f5",
+  "hash": "530c00d991033452",
   "history": [
-   {
-    "hash": "26d5a0d4bbafcf9a",
-    "reason": "calibrate_quick --write 재보정"
-   },
-   {
-    "hash": "fa6a0b89622210c2",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "fa6a0b89622210c2",
     "reason": "calibrate_quick --write 재보정"
@@ -86,6 +78,14 @@
    {
     "hash": "3676e26eccd8a8f5",
     "reason": "바스커빌 전용 조각과 기본 off인 속도 고정·강인도 플래그 추가. 기존 콘텐츠 경로와 quick 계산 값은 불변이며 골든·mc_cache 대조 유지"
+   },
+   {
+    "hash": "c842e95a19e6635c",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "530c00d991033452",
+    "reason": "calibrate_quick --write 재보정"
    }
   ]
  }

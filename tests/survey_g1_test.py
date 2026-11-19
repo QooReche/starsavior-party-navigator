@@ -157,6 +157,8 @@ class SurveyG1(unittest.TestCase):
         for key, slot, state in [('lydia', '특수기', '수배 전단'), ('wedding-epindel', '궁극기', '보호막')]:
             with self.subTest(key=key):
                 b, a, v = setup(key)
+                # Preserve the old snapshot rule; native marker sets are tested in marker_se_test.
+                b.mc['marker_se_flow'] = 'legacy'
                 lines = [ln for ln in b.lines_of(a) if ln.eff.get('start_filter')]
                 self.assertTrue(lines)
                 state = lines[0].eff['start_filter']
@@ -279,7 +281,7 @@ if __name__ == '__main__':
             r = unittest.TextTestRunner(stream=io.StringIO()).run(SurveyG1('test_passive_precedes_new_debuff_and_stack'))
         assert not r.wasSuccessful() and not r.errors
         print('KILLED AfterActiveSkillSe exception')
-        source_mutation('apply_buff', "if eff.get('repeat_buff') and not applied:",
+        source_mutation('apply_buff', "if repeat_buff and not applied:",
                         'if False:', 'test_repeat_buff_stops_only_after_whole_iteration_fails')
         source_mutation('run_own',
                         "potentials = [ln for ln in passive if ln.slot == '잠재력']\n"

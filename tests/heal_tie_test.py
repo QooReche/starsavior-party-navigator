@@ -16,11 +16,12 @@ from battlesim.mc import Battle                                  # noqa: E402
 
 
 def _stub(mode, seed=1):
-    b = NS(mc={'heal_tie': mode, 'stat_select_int': 'floor'}, rule_hits=defaultdict(int))
+    b = NS(mc=dict(MC_OPTS, heal_tie=mode, stat_select_int='floor'), rule_hits=defaultdict(int))
     rng = random.Random(seed)
     b.R = lambda side: rng
     b.filter_chain = lambda *a, **k: Battle.filter_chain(b, *a, **k)
     b._filter = lambda *a, **k: Battle._filter(b, *a, **k)
+    b.auto_hp_basis_points = lambda *a, **k: Battle.auto_hp_basis_points(b, *a, **k)
     return b
 
 

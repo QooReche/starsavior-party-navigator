@@ -366,8 +366,14 @@ def test_simulate_belgras_path_taken():
 
 
 def test_simulate_challenge_paths_and_level_scale():
-    ctl = run('카넬리아', 3, 18, n=10)['cosmo_raid']['ctl']
-    assert ctl.get('punish', 0) > 0 and ctl.get('bleed', 0) > 0, ctl
+    # 티리아 SE10253015의 반복별 선택·부여로 난수 소비 횟수가 달라짐.
+    # 이전 seed=2는 legacy에서 응징 1회, client에서는 0회였음.
+    # 두 모드에서 실제 응징·출혈 경로가 실행되는 시드를 각각 보존함.
+    for mode, seed in (('client', 1), ('legacy', 2)):
+        r = run('카넬리아', 3, 18, n=10, seed=seed, rules_override={'auto_se_reselect': mode})
+        ctl = r['cosmo_raid']['ctl']
+        assert r['outcome']['progress'] > 0
+        assert ctl.get('punish', 0) > 0 and ctl.get('bleed', 0) > 0, (mode, ctl)
     ctl = run('티리아', 3, 18, n=10)['cosmo_raid']['ctl']
     assert ctl.get('pressure', 0) > 0 and ctl.get('march', 0) > 0 and ctl.get('drain', 0) > 0, ctl
     ctl = run('벨그라스', 3, 18, n=10)['cosmo_raid']['ctl']

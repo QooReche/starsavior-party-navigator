@@ -205,7 +205,11 @@ class TyriaTest(unittest.TestCase):
     def distribution(self, mode=None, unequal=False):
         selected = collections.Counter()
         for seed in range(40):
-            b, u = setup('tyria', seed=seed, **({} if mode is None else {'auto_marker_lines': mode}))
+            rules = {} if mode is None else {'auto_marker_lines': mode}
+            if mode == 'drop':
+                # 명시적인 옛 설명문 폴백 시험은 새 표지 부재 규칙도 legacy로 고정.
+                rules['auto_empty_marker'] = 'legacy'
+            b, u = setup('tyria', seed=seed, **rules)
             if unequal:
                 give(b.foes[1], '방어력 시험', props={'방어력%': 100})
             b.cast(u, u.d.skills['궁극기'])

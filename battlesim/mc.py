@@ -28,6 +28,7 @@ from .starsavior.data import SRC
 from .starsavior import foe as _foe
 from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger, explicit_target
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules, after_active_se
+from .starsavior import marker_se
 
 with open(os.path.join(SRC, 'data', 'buff_force.json'), encoding='utf-8') as _f:
     FORCE_BUFF_NAMES = frozenset(json.load(_f))
@@ -1079,7 +1080,7 @@ class Battle:
         if u.side == 1 and not self.enemy_lines:
             return ()
         modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end'))
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow'))
         key = id(u.d)
         sc = self._semantic_cache
         if sc is not None:
@@ -1113,7 +1114,7 @@ class Battle:
         raw = d.lines
         hit = u._kind_index
         modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end'))
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow'))
         if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw) or hit[4] != modes:
             grouped = {}
             for ln in self.lines_of(u):
@@ -1907,6 +1908,12 @@ class Battle:
             for st in spec['f']:
                 if isinstance(st, list) and st[0] == 'has' and all(CHECK_NAME.search(n) or '판별용' in n for n in st[1]):
                     if not any(v.has(n) for v in pool for n in st[1]):
+                        if self.mc['auto_empty_marker'] == 'client' and spec.get('one'):
+                            # 26752678 NKM:7539-7545,7170: 실패한 필터도
+                            # 원래 SE 규칙 유지. 단일은 남은 후보 중 무작위.
+                            # 복수의 미지원 원형(U1 등) 설명문 대체는 별도 작업.
+                            self.rule_hits['auto_empty_marker'] += 1
+                            return spec
                         self.unsup['selector: 표지 보유자 없음(설명문 근사) ' + ln.raw[:50]] += 1
                         return None
         return spec
@@ -1952,11 +1959,25 @@ class Battle:
             return [got[0] if len(got) == 1 else self.R(owner.side).choice(got)]
         return got if ok else []
 
+    def auto_hp_basis_points(self, hp, maxhp):
+        """26752678 NKM:2191-2198,7590: float/float → float * 10000f → int.
+        HP 조건식(hp_basis_points)의 double 곱셈과 별개인 대상 선택 연산.
+        """
+        if self.mc['auto_hp_float32'] != 'client':
+            return int(hp / maxhp * 10000) if maxhp else 0
+        denominator = _float32(maxhp)
+        ratio = _float32(_float32(hp) / denominator) if denominator else 0.0
+        result = int(_float32(ratio * 10000.0))
+        self.rule_hits['auto_hp_float32'] += 1
+        if maxhp and result != int(hp / maxhp * 10000):
+            self.rule_hits['auto_hp_float32_changed'] += 1
+        return result
+
     def _filter(self, att, pool, st, arg=None, ctx=None):
         if st == 'not_invincible':
             return None
         if st in ('high_hp_rate', 'high_max_hp', 'high_atk', 'low_atk', 'high_def', 'low_def', 'high_gauge', 'low_gauge', 'high_spd', 'low_spd'):
-            key = {'high_hp_rate': lambda v: int(v.hp / v.maxhp * 10000), 'high_max_hp': lambda v: v.maxhp,
+            key = {'high_hp_rate': lambda v: self.auto_hp_basis_points(v.hp, v.maxhp), 'high_max_hp': lambda v: v.maxhp,
                    'high_atk': self.live_atk, 'low_atk': self.live_atk,
                    'high_def': lambda v: self.def_stat(v), 'low_def': lambda v: self.def_stat(v),
                    'high_gauge': lambda v: v.gauge, 'low_gauge': lambda v: v.gauge,
@@ -1996,7 +2017,11 @@ class Battle:
         if st in ('broken', 'not_broken'):
             return [v for v in pool if bool(v.broken) == (st == 'broken')]
         if st == 'not_unable_to_act':
-            # IsNotUnableToAct(NKM 1189~1199): 행동 불가가 아닌 대상만(사망·기절·수면 제외). 풀에서 사망은 이미 빠져 있으므로 기절·수면만.
+            # 26752678 NKM:7901-7913: 이 자동 대상 필터는 break도 제외함.
+            # 일반 자기 턴 incapacitated 의미는 바꾸지 않음.
+            if self.mc['auto_unable_break'] == 'client':
+                self.rule_hits['auto_unable_break'] += 1
+                return [v for v in pool if not self.no_react(v)]
             return [v for v in pool if not self.incapacitated(v)]
         if st == 'not_unable_to_coop':
             # AutoTargetId 52, build 26610546 NKM:7901-7912: break, stun, sleep.
@@ -2013,7 +2038,7 @@ class Battle:
             good = [v for v in pool if att.element and ELEM_BEATS.get(att.element) == v.element]
             return good or [v for v in pool if not (att.element and ELEM_BEATS.get(v.element) == att.element)]
         if st in ('low_hp_rate', 'low_max_hp'):
-            key = (lambda v: int(v.hp / v.maxhp * 10000)) if st == 'low_hp_rate' else (lambda v: v.maxhp)
+            key = (lambda v: self.auto_hp_basis_points(v.hp, v.maxhp)) if st == 'low_hp_rate' else (lambda v: v.maxhp)
             if st == 'low_max_hp' and self.mc['stat_select_int'] == 'floor':
                 key = lambda v: math.floor(v.maxhp)
             best = min(key(v) for v in pool)
@@ -2218,6 +2243,8 @@ class Battle:
 
     def resolve(self, owner, text, ctx, kind='buff'):
         """줄의 대상 문구 -> 유닛 목록(owner 기준 상대 진영). 해석 못 하면 None."""
+        if self._cur_line is not None and self._cur_line.eff.get('native_target'):
+            return marker_se.targets(self, owner, self._cur_line, ctx)
         t = text.strip()
         spec = explicit_target(t)
         if spec is not None:
@@ -2261,13 +2288,14 @@ class Battle:
         cur = self._cur_line
         if ('자동 지정' in t and (t.startswith('아군') or t.startswith('자신 제외') or t.startswith('자신을 제외'))
                 and not (cur is not None and cur.eff.get('name') == '강제 협공'
-                         and self.opts['forced_coop_target'] != 'random') and kind != 'remove'):
-            spec = self.line_spec(owner, cur)
+                         and self.opts['forced_coop_target'] != 'random')):
+            spec = self.line_spec(owner, cur) if kind != 'remove' or self.mc['auto_remove_filter'] == 'client' else None
             if spec is not None and spec.get('ally'):
                 return self.line_auto_targets(owner, spec, ctx)
-            got = self.select_auto(owner, t, ctx, kind)
-            if got is not None:
-                return got
+            if kind != 'remove':
+                got = self.select_auto(owner, t, ctx, kind)
+                if got is not None:
+                    return got
         excl = t.startswith('자신 제외') or t.startswith('자신을 제외')
         pool = [x for x in self.alive(owner.side) if (x is not owner or not excl)]
         mm = re.search(r'(태양|달|별|질서|혼돈) 속성 아군', t)
@@ -4410,6 +4438,8 @@ class Battle:
         추가 발동(시전)은 묶음의 나머지 효과(중첩 소비 등) 뒤에 실행한다(같은 사건에서 자기 자신을 다시 부르는 무한 연쇄 방지)."""
         if not lines:
             return
+        if marker_se.run_batch(self, owner, lines, ctx):
+            return
         if getattr(owner.d, 'client_model', None) == 'baskerville':
             # NKM:16103-16116,16374-16405,16526-16528: 같은 사건에서도 SE마다 즉시 재판정.
             for ln in lines:
@@ -4493,6 +4523,8 @@ class Battle:
 
     def _exec_line(self, owner, ln, ctx):
         if owner.dead and line_kind(ln) not in ('death_self',):
+            return
+        if marker_se.apply_hidden(self, owner, ln, ctx):
             return
         eff = ln.eff
         kd = eff['kind']
@@ -4811,9 +4843,12 @@ class Battle:
             self.chain(owner, eff, ctx)
             return
         if kd == 'remove':
-            # 「아군(자동 지정)에게 'X' 해제」 = 표지 효과를 가진 아군 누구에게서든 해제(가정)
+            # 26752678 NKM:7535-7545: 해제도 원래 SE의 not_has 대상만.
+            mapped_remove = self.mc['auto_remove_filter'] == 'client' and self.line_spec(owner, ln) is not None
             tg = self.resolve(owner, eff['target'], ctx, kind='remove')
-            if tg and '자동 지정' in eff['target'] and not eff['target'].startswith('적'):
+            if mapped_remove:
+                self.rule_hits['auto_remove_filter'] += 1
+            elif tg and '자동 지정' in eff['target'] and not eff['target'].startswith('적'):
                 tg = [x for x in self.alive(owner.side) if (x is not owner or not eff['target'].startswith('자신 제외'))]
             for x in tg or []:
                 if eff['name'] in x.eff:
@@ -5343,15 +5378,21 @@ class Battle:
         return self.R(owner.side).random() < calc_hit(a, b)
 
     def apply_buff(self, owner, eff, ctx, hot=0.0, raw=''):
-        if (self.mc['se_independent_roll'] == 'client' and eff.get('times', 1) > 1
+        auto_spec = (self.line_spec(owner, self._cur_line)
+                     if self.mc['auto_se_reselect'] == 'client' and eff.get('times', 1) > 1 else None)
+        reselect = auto_spec is not None
+        repeat_buff = eff.get('repeat_buff') or bool(auto_spec and auto_spec.get('repeat_buff'))
+        if (eff.get('times', 1) > 1
                 and not eff.get('consume') and not eff.get('per_hit') and not eff.get('per_crit')
-                and (eff.get('repeat_buff') or eff.get('chance', 1) < 1 or eff.get('judge'))):
+                and (reselect or (self.mc['se_independent_roll'] == 'client'
+                     and (eff.get('repeat_buff') or eff.get('chance', 1) < 1 or eff.get('judge'))))):
             # Separate SEs keep rolling after failure. RepeatBuffCount stops
             # only when a whole iteration fails (NKM:16396-16438).
-            self.rule_hits['se_independent_roll'] += 1
+            # 확정 부여도 독립 SE마다 resolve부터 다시 호출(할리 점화).
+            self.rule_hits['auto_se_reselect' if reselect else 'se_independent_roll'] += 1
             for _ in range(eff['times']):
                 applied = self.apply_buff(owner, dict(eff, times=1), ctx, hot=hot, raw=raw)
-                if eff.get('repeat_buff') and not applied:
+                if repeat_buff and not applied:
                     break
             return
         if eff['name'] == '강제 협공' and owner.side == 1 and self.mc['foe_forced_coop'] != 'on':
