@@ -41,7 +41,7 @@ class ClashLoaderTest(unittest.TestCase):
     def test_real_merge_offsets_and_databook_precedence(self):
         frag = F.load_extra()
         original = copy.deepcopy(frag)
-        raw = dict(u=[dict(sk=[0])], s=[dict(n='base')], x=[{}], ak=[], g=[dict(k='base')])
+        raw = dict(u=[dict(sk=[0])], s=[dict(n='base')], x=[{}], ak=[], g=[dict(k='base', tabs=[])])
         self.assertTrue(F.merge_extra(raw, frag))
         self.assertEqual(frag, original)
         self.assertEqual(raw['u'][1]['sk'], [i + 1 for i in frag['u'][0]['sk']])
@@ -63,7 +63,8 @@ class ClashLoaderTest(unittest.TestCase):
                 root = Path(tmp)
                 (root / 'data').mkdir()
                 (root / 'rawdata').mkdir()
-                raw = dict(u=[], s=[], x=[], ak=[], g=[] if mode != 'databook' else [dict(k='clash')])
+                # 콘텐츠 키만으로 제외하지 않고 실제 스테이지가 모두 있을 때 조각 aux를 제외함.
+                raw = dict(u=[], s=[], x=[], ak=[], g=[] if mode != 'databook' else copy.deepcopy(F.load_extra()['g']))
                 (root / 'rawdata/foe.js').write_text('window.__SSD.foe='+json.dumps(raw), encoding='utf8')
                 if mode != 'missing':
                     (root / 'data/foe_clash.json').write_text(json.dumps(F.load_extra()), encoding='utf8')

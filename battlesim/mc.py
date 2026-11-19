@@ -532,7 +532,7 @@ DISPEL_ON_ATTACK = ('여유로운 응수', '헥사 너트')
 class Eff:
     """유닛에 붙은 효과 1개(강화·약화·보호막·지속 피해·지속 회복). stacks 는 정수."""
     __slots__ = ('name', 'props', 'stacks', 'maxs', 'dur', 'src', 'harmful', 'fresh', 'shield', 'dot', 'inst', 'hot',
-                 'check', 'fixed', 'clock', 'category', 'skip_tick', 'dead_keep', 'seq', 'check_turn')
+                 'check', 'fixed', 'clock', 'category', 'skip_tick', 'dead_keep', 'seq', 'check_turn', 'speed_zero', 'armor_ban')
 
     def __init__(self, name, props, maxs, dur, src, harmful):
         self.name, self.props, self.maxs, self.dur, self.src, self.harmful = name, props, maxs, dur, src, harmful
@@ -549,6 +549,7 @@ class Eff:
         self.dead_keep = False   # DeadNotDispel: 해제 불가와 별개(NKM:5385)
         self.skip_tick = False   # 단계 그룹: 더 낮은 단계가 지속만 늘린 뒤 다음 차감 1회를 건너뜀(NKM:4297-4305, 3978-3988)
         self.clock = 'owner_turn'   # 영역은 global 또는 legacy의 ally_turn/round로 차감
+        self.speed_zero = self.armor_ban = False
         self.seq = next(_EFF_SEQ)    # 클라 버프 목록에 들어간 순서(재부여 = 지우고 다시 넣음, mc.dispel_order)
 
 
@@ -585,6 +586,7 @@ class Unit:
         self.gauge = 0.0
         self.eff = {}
         self.cd = {}
+        self.skill_overrides = {}    # 코스모 BI_CHANGE_SKILL의 판별 슬롯 상태(공유 FoeDef는 불변).
         frac = b.mc['enemy_init_cd'] if side == 1 else b.mc['ally_init_cd']
         # 적 시작 쿨: 배치 표시(게임 코드 — AllSkillAvailable 이면 전부 0, 아니면 전부 가득, Special/Hyper 는 그 스킬만 0).
         # 표시가 없는 스테이지는 등급 규칙(보스 S, 그 밖 A — 배치 2만여 기 중 95% 가 이 꼴). legacy = 옛 규칙(enemy_init_cd*)
@@ -704,6 +706,8 @@ class Unit:
         return any(self.on(n) for n in INVINCIBLE_NAMES if n in self.eff)
 
     def spd(self):
+        if self.b.mc['fixstats_speed_zero'] == 'client' and any(e.speed_zero and e.stacks > 0 for e in self.eff.values()):
+            return 0.0              # NKM:5111-5116: 속도만 0, 직접 게이지 증가는 그대로 받음.
         if self.zero_stats:
             return 0.0      # 〈들러리〉 300872 FixStats NST_TURN_SPEED 0 — pick_next 는 속도 0 이면 게이지가 차지 않는 것으로 처리
         m = self.mods()
@@ -1803,7 +1807,7 @@ class Battle:
             # 적도 같은 SkillOrderList 순회(NKM:6378). 배치별 연결은 foe_auto 빌더에서 검증함.
             slots = getattr(u.d, 'skill_order', ()) or slots
         for slot in slots:
-            sk = u.d.skills.get(slot)
+            sk = u.skill_overrides.get(slot, u.d.skills.get(slot))
             if sk is None or u.cd.get(slot, 0) > 0:
                 continue
             if silenced and sk.cd:
@@ -2323,6 +2327,7 @@ class Battle:
 
     # ---------- 시전
     def cast(self, u, sk, extra=False, target=None, skip_lines=False, via=None, local_pre=False, parent=None):
+        sk = u.skill_overrides.get(sk.slot, sk)
         if u.dead:
             return None
         if self.incapacitated(u):
@@ -3077,6 +3082,9 @@ class Battle:
             # 그동안 같은 대상을 맞히는 타격마다 포인트를 다시 적립(상한은 break_skill_point_cap)
             self.rule_hits['break_point_window'] += 1
             self._add_break_points(v)
+            return
+        if self.mc['superarmor_damage_ban'] == 'client' and any(e.armor_ban and e.stacks > 0 for e in v.eff.values()):
+            self.rule_hits['superarmor_damage_ban'] += 1
             return
         if v.broken or v.sa_max <= 0 or v.has('강인도 피해 무효'):
             return
@@ -4402,6 +4410,12 @@ class Battle:
         추가 발동(시전)은 묶음의 나머지 효과(중첩 소비 등) 뒤에 실행한다(같은 사건에서 자기 자신을 다시 부르는 무한 연쇄 방지)."""
         if not lines:
             return
+        if getattr(owner.d, 'client_model', None) == 'baskerville':
+            # NKM:16103-16116,16374-16405,16526-16528: 같은 사건에서도 SE마다 즉시 재판정.
+            for ln in lines:
+                if self.line_ok(owner, ln, ctx):
+                    self.exec_line(owner, ln, ctx)
+            return
         # 같은 시점의 선행 부여를 참조하는 조건은 부여가 끝난 뒤 판정한다.
         # 나머지 조건은 소거 전에 함께 판정하여 조건부 효과 묶음의 일관성을 지킨다.
         hit_grants = []
@@ -4482,6 +4496,12 @@ class Battle:
             return
         eff = ln.eff
         kd = eff['kind']
+        if kd == 'cosmo':
+            if self.gb is not None and hasattr(self.gb, 'execute_se'):
+                self.gb.execute_se(owner, ln, ctx)
+            else:
+                self.unsup['코스모 전용 SE 실행기 없음'] += 1
+            return
         if kd == 'random_ally_basic':
             # AutoTargetId=5 / EnforceAutoTargetId=4: random ally (self allowed),
             # random enemy. Extra cast, not ordinary cooperation.
@@ -5580,8 +5600,12 @@ class Battle:
         e = x.eff.get(name)
         independent_cap = None
         unlimited_dot = False
+        unique_cosmo = (getattr(owner.d, 'client_model', None) == 'baskerville' and info.get('unique'))
+        if unique_cosmo:
+            # NKM:4505-4524,16396-16405: 반복 부여마다 독립 객체. 묶음 안에 개별 수명·순번 보존.
+            independent_cap = math.inf
         if self.mc['independent_stack_limits'] == 'client':
-            independent_cap = {'파사인': 3, '상쾌한 기분(해제불가)': 5}.get(name)
+            independent_cap = independent_cap or {'파사인': 3, '상쾌한 기분(해제불가)': 5}.get(name)
             unlimited_dot = bool(dot and name in ('출혈', '연소'))
             if independent_cap or unlimited_dot:
                 self.rule_hits['independent_stack_limits'] += 1
@@ -5643,6 +5667,8 @@ class Battle:
             e.category = category
             e.fixed = fixed
             e.clock = clock
+            e.speed_zero = bool(info.get('speed_zero'))
+            e.armor_ban = bool(info.get('armor_ban'))
             if check:
                 e.check = True
                 e.check_turn = self.global_turns
@@ -5824,7 +5850,7 @@ def support_report(defs):
 
 
 def _marker_names(d):
-    all_marker_names = set()
+    all_marker_names = {n for n, info in getattr(d, 'effect_info', {}).items() if info.get('category') == 'marker'}
     if True:
         for ln in d.lines:
             for p, v in ln.params:

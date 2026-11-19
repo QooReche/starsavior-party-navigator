@@ -2,7 +2,7 @@
 """코스모 게이트 시즌 1023(프리즘 시즌 8, 11/19 클라 빌드 26752678) 실자료 시험.
 
 - 자료: data/cosmo_raid.json = 시즌 1023(모굴루스·바스커빌의 괴수·괴리의 표상). 지난 시즌(1022) 모델 회귀는 tests/fixtures/cosmo_raid_1022.json.
-- 바스커빌의 괴수는 공개 데이터북에 적 정의가 없어 sim=false → 엔진·API 가 계산을 막는다(조용히 다른 적으로 바꾸지 않음).
+- 바스커빌의 괴수는 PC 클라 조각으로 세 단계 모두 계산한다.
 - EX SET_33 «폭주 : 장벽»(SE 9403301): 피해 처리 직전(NSEAT_DAMAGE_START, NKM:15689) 조건 5509 MyEffectiveDamageStart
   (NKM:10171 — 공격자 강화 효과 수 <= 1, 0개도 참: NKM.Templets:43320 OBF_7056, 공격 스킬만)면 보스 받는 피해 -30%.
 """
@@ -39,7 +39,7 @@ def test_season_1023_shape():
     assert (s['start'], s['end'], s['settleEnd']) == ('2026-11-19T12:00:00+09:00', '2026-11-26T04:00:00+09:00', '2026-12-03T04:00:00+09:00')
     by = {b['key']: b for b in G['bosses']}
     assert [by[k]['difficultyGroupId'] for k in s['bossOrder']] == [1011, 1002, 1009]
-    assert {k: by[k]['sim'] for k in by} == {'mogulus': True, 'baskerville': False, 'disparity': True}
+    assert {k: by[k]['sim'] for k in by} == {'mogulus': True, 'baskerville': True, 'disparity': True}
     # 공지 이미지의 시즌 버프·별의 도전 EX 18단계 구성과 같음(HISTORY 11/18 대조)
     assert {k: sorted(x['id'] for x in by[k]['seasonBuffs']) for k in by} == {
         'mogulus': [8060, 8066], 'baskerville': [8058, 8063], 'disparity': [8057, 8062]}
@@ -51,20 +51,14 @@ def test_season_1023_shape():
     assert G.get('belgras') is None
 
 
-def test_baskerville_blocked():
+def test_baskerville_calculated():
     for step, level in ((1, 0), (3, 0), (3, 18)):
-        try:
-            C.build_waves('baskerville', step, level)
-        except ValueError as e:
-            assert '바스커빌' in str(e) and '계산할 수 없음' in str(e)
-        else:
-            raise AssertionError('바스커빌 계산이 막히지 않음')
-    try:
-        simulate({'units': PARTY}, {'cosmo_raid': {'boss': '바스커빌의 괴수', 'step': 3, 'level': 0}}, {'seed': 1, 'n_runs': 1})
-    except ValueError as e:
-        assert '바스커빌' in str(e)
-    else:
-        raise AssertionError('API 가 바스커빌을 계산함')
+        waves, meta = C.build_waves('baskerville', step, level)
+        assert waves[0][0].client_model == 'baskerville'
+        r = simulate({'units': PARTY}, {'cosmo_raid': {'boss': '바스커빌의 괴수', 'step': step, 'level': level}},
+                     {'seed': 1, 'n_runs': 1, 'build': 'standard'})
+        assert r['outcome']['progress'] > 0, (step, level, r['outcome'])
+        assert not any('바스커빌' in str(x) for x in (r.get('unsupported') or {}).get('lines', []))
 
 
 def test_mogulus_disparity_simulate():
@@ -124,7 +118,7 @@ def test_ex_few_buff_guard():
     assert abs(d0 / d_off - 0.7) < 0.02, (d0, d_off)  # 받는 피해 -30%
 
 
-TESTS = [test_season_1023_shape, test_baskerville_blocked, test_mogulus_disparity_simulate, test_api_default_boss_is_season_first,
+TESTS = [test_season_1023_shape, test_baskerville_calculated, test_mogulus_disparity_simulate, test_api_default_boss_is_season_first,
          test_ex_few_buff_guard]
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 {
  "_note": "브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시",
- "ver": "f65ff16fa304",
+ "ver": "78e0d91aab29",
  "files": [
   "battlesim/__init__.py",
   "battlesim/api.py",
@@ -52,7 +52,8 @@
   "data/buff_flags.json",
   "data/guild_bfb.json",
   "data/guild_defense.json",
-  "data/cosmo_raid.json"
+  "data/cosmo_raid.json",
+  "data/foe_cosmo_extra.json"
  ],
- "bytes": 7298144
+ "bytes": 7347680
 }

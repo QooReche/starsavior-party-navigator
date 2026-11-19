@@ -43,7 +43,8 @@ def spawn_slots(src=SRC):
         if os.path.exists(p):
             with open(p, encoding='utf-8') as f:
                 d = json.load(f)
-        _SLOTS[src] = (d.get('slots', {}), d.get('deck', {}))
+        ax = extra_aux(src)
+        _SLOTS[src] = ({**ax.get('slots', {}), **d.get('slots', {})}, {**ax.get('deck', {}), **d.get('deck', {})})
     return _SLOTS[src]
 
 
@@ -138,8 +139,8 @@ _EXTRA_ON = {}
 
 
 def load_extra(src=SRC):
-    """data/foe_clash.json(tools/build_foe_clash.py) -> 데이터북 foe.js 에 아직 없는 콘텐츠(격전 의뢰)의 적 조각. 없으면 None.
-    데이터북에 같은 콘텐츠 키(g[].k)가 이미 들어오면 조각은 쓰지 않는다(데이터북 우선, 조각은 임시 보충)."""
+    """data/foe_clash.json(tools/build_foe_clash.py)의 격전 적 조각. 없으면 None.
+    merge_extra가 기존 데이터북에 없는 스테이지만 채택한다."""
     if src not in _EXTRA:
         p = os.path.join(src, 'data', 'foe_clash.json')
         _EXTRA[src] = None
@@ -150,9 +151,32 @@ def load_extra(src=SRC):
 
 
 def merge_extra(raw, frag):
-    """조각을 foe.js 원본 뒤에 덧붙인다(규칙은 조각 _note): 조각 안 인덱스는 «조각 내부 0 기준»이라 오프셋을 더한다.
-    raw 를 제자리에서 바꾼다. 이미 같은 콘텐츠 키가 있으면(데이터북이 반영함) 아무것도 하지 않고 False."""
-    if not frag or any(g['k'] == c['k'] for c in frag['g'] for g in raw['g']):
+    """여러 조각을 스테이지 단위로 병합하며 기존 자료를 우선한다.
+    조각 내부 u/s/x 인덱스를 재배치하고 채택된 스테이지의 aux만 가져온다. 반복 병합은 False."""
+    if isinstance(frag, (list, tuple)):
+        changed = False
+        for item in frag:
+            changed = merge_extra(raw, item) or changed
+        return changed
+    if not frag:
+        return False
+    existing = {(g['k'], t['t'], st['n']) for g in raw['g'] for t in g['tabs'] for st in t['s']}
+    groups, accepted = [], set()
+    for g in frag['g']:
+        new = dict(g, tabs=[])
+        for t in g['tabs']:
+            stages = []
+            for st in t['s']:
+                key = (g['k'], t['t'], st['n'])
+                if key not in existing:
+                    stages.append(st)
+                    accepted.add('|'.join(key))
+                    existing.add(key)
+            if stages:
+                new['tabs'].append(dict(t, s=stages))
+        if new['tabs']:
+            groups.append(new)
+    if not groups:
         return False
     if frag.get('ak'):
         raise ValueError('조각 ak 가 비어 있지 않으면 이 병합 규칙으로는 부족함')
@@ -163,18 +187,36 @@ def merge_extra(raw, frag):
         u2 = json.loads(json.dumps(u))
         u2['sk'] = [i + so for i in u['sk']]
         raw['u'].append(u2)
-    for g in json.loads(json.dumps(frag['g'])):
+    for g in json.loads(json.dumps(groups)):
         for t in g['tabs']:
             for st in t['s']:
                 st['w'] = [[[e[0] + uo] + ([e[1] + xo] if len(e) > 1 else []) for e in w] for w in st['w']]
                 for sm in st.get('sm', []):
                     sm[2] = [[a + uo, b + xo, c] for a, b, c in sm[2]]
-        raw['g'].append(g)
+        dest = next((x for x in raw['g'] if x['k'] == g['k']), None)
+        if dest is None:
+            raw['g'].append(g)
+        else:
+            for t in g['tabs']:
+                tab = next((x for x in dest['tabs'] if x['t'] == t['t']), None)
+                if tab is None:
+                    dest['tabs'].append(t)
+                else:
+                    tab['s'].extend(t['s'])
+    # 기존 자료가 있는 스테이지의 aux는 가져오지 않는다. 반복 호출도 위 accepted 관문에서 끝난다.
+    aux = raw.setdefault('_extra_aux', {})
+    for name, values in frag.get('aux', {}).items():
+        selected = {k: v for k, v in values.items() if k in accepted}
+        if name == 'summon_groups':
+            used = {str(sm[0]) for g in groups for t in g['tabs'] for st in t['s'] for sm in st.get('sm', [])}
+            selected = {k: v for k, v in values.items() if k in used}
+        aux.setdefault(name, {}).update(json.loads(json.dumps(selected)))
+    raw.setdefault('_extra_boss_kill', []).extend(k for k in frag.get('boss_kill', []) if k in accepted)
     return True
 
 
 def load_foe(src=SRC):
-    """foe.js 원본(dict: g/u/s/ak/x/star)에 data/foe_clash.json 조각을 덧붙인 것. 한 번만 읽는다."""
+    """foe.js 원본에 격전·코스모 조각의 새 스테이지를 덧붙인 것. 한 번만 읽는다."""
     global _FOE
     if _FOE is None or _FOE[0] != src:
         with open(os.path.join(src, 'rawdata', 'foe.js'), encoding='utf-8') as f:
@@ -182,6 +224,10 @@ def load_foe(src=SRC):
         m = re.search(r'__SSD\.foe=', s)
         d, _ = json.JSONDecoder().raw_decode(s[m.end():])
         _EXTRA_ON[src] = merge_extra(d, load_extra(src))
+        p = os.path.join(src, 'data', 'foe_cosmo_extra.json')
+        if os.path.exists(p):
+            with open(p, encoding='utf-8') as f:
+                _EXTRA_ON[src] = merge_extra(d, json.load(f)) or _EXTRA_ON[src]
         _FOE = (src, d)
     return _FOE[1]
 
@@ -189,13 +235,13 @@ def load_foe(src=SRC):
 def extra_aux(src=SRC):
     """병합된 조각의 aux(스폰 표시·소환 그룹·칸 번호). 병합되지 않았으면(없음·데이터북이 이미 반영) 빈 dict."""
     load_foe(src)
-    return (load_extra(src) or {}).get('aux', {}) if _EXTRA_ON.get(src) else {}
+    return load_foe(src).get('_extra_aux', {})
 
 
 def extra_boss_kill(src=SRC):
     """병합된 조각의 스테이지 키('콘텐츠|탭|스테이지') 중 BM_BOSS_KILL 인 것(조각 boss_kill, 클라 BattleMode 기준)."""
     load_foe(src)
-    return list((load_extra(src) or {}).get('boss_kill', [])) if _EXTRA_ON.get(src) else []
+    return list(load_foe(src).get('_extra_boss_kill', []))
 
 
 def foe_stats(raw, u, x, st):
@@ -293,6 +339,9 @@ class FoeDef:
         self.manual = None
         self.gear_atkp = 0.0
         self.effect_info = {}
+        self.client_model = u.get('client_model')
+        self.client_skills, self.client_se = {}, {}
+        client_auto, client_lines, client_force = {}, {}, set()
         for si in u['sk']:
             sd = raw['s'][si]
             for e in sd.get('gl') or []:
@@ -310,14 +359,44 @@ class FoeDef:
                             all=sd.get('all'), cd=sd.get('cd'), nv=0))
             sk.ab = sd.get('ab') or 0
             src = 'passive' if slot == '패시브' else ('trigger' if sd['ty'] == '트리거' else 'active')
-            if src == 'active':
+            if src == 'active' and not sd.get('replacement'):
                 self.skills[slot] = sk
             elif src == 'trigger':
                 self.trigger_skills[slot] = sk
             if dm and not mm:
                 self.unmodeled.append('적 피해 계수 형식 미해석: %s' % dm)
-            for raw_line in sd.get('ef') or []:
-                self.lines.append(Line(raw_line, slot, src))
+            parsed = [Line(raw_line, slot, src) for raw_line in sd.get('ef') or []]
+            if not sd.get('replacement'):
+                self.lines.extend(parsed)
+            if sd.get('id'):
+                self.client_skills[sd['id']] = sk
+                if src == 'active':
+                    sk.semantic_lines = parsed
+                if sd.get('auto'):
+                    client_auto[slot] = sd['auto']
+            for se in sd.get('se', []):
+                key = (slot, se['ef'])
+                meta = se['meta']
+                self.client_se[key] = meta
+                if meta.get('auto'):
+                    client_lines[key] = meta['auto']
+                if meta.get('force'):
+                    client_force.add(key)
+                info = meta.get('buff', {})
+                if info.get('name'):
+                    self.effect_info.setdefault(info['name'], {}).update(info, clock='owner_turn')
+                for ln in parsed:
+                    if ln.raw == se['ef']:
+                        if meta.get('op'):
+                            ln.eff = dict(kind='cosmo', meta=meta)
+                        elif ln.eff['kind'] == 'buff':
+                            if info.get('unlimited'):
+                                ln.eff['max'] = float('inf')
+                            if ln.eff.get('times', 1) > 1:
+                                ln.eff['repeat_buff'] = True
+                            # 수명 0은 같은 시전 끝에서 사라지는 표지(NKM:16374-16405).
+                            if ln.eff.get('dur') == 0:
+                                ln.eff['dur'] = None
         self.spd_base = self.stats['spd']
         if _EXTRA_ON.get(SRC) or any(_EXTRA_ON.values()):
             # 조각(data/foe_clash.json)으로 들어온 유닛: 효과 줄로 만들지 못한 SE 행을 지원 보고(mc.support_report)에 올린다
@@ -364,6 +443,9 @@ class FoeDef:
             self.enforce_self[key] = spec
         for key in clash:
             del self.enforce_self[key]
+        self.auto.update(client_auto)
+        self.auto_lines.update(client_lines)
+        self.force_lines.update(client_force)
 
 
 def find_raw_stage(content, tab, name, src=SRC):
