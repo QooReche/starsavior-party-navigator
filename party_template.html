@@ -330,7 +330,7 @@ summary{padding:9px 4px}
 <div id="growth-control-home"><span id="growth-control"><label><input type="checkbox" id="assume-growth"> 클리어를 위한 추천 육성도 같이 보기</label><button id="growth-hint" type="button" class="ux-help" aria-label="클리어 추천 육성 설명" aria-expanded="false" data-help="덜 키운 구원자를 맞췄다고 치고 함께 찾음. 더 잘 깨는 편성이 있으면 결과 아래에 보여줌. 목표는 프리셋 기준이며 최소 육성치를 찾는 기능은 아님.">ⓘ</button><span id="growth-requires-info" class="tag">내 정보 필요</span></span></div>
 </div>
 <div id="control-home" hidden><div id="stinfo"></div><label id="score-controls" class="whytoggle"><input type="checkbox" id="showwhy"> 점수 표시</label></div>
-<nav id="mode-strip" aria-label="편성 모드" hidden><button type="button" class="sec" data-pn-mode="home">← 처음으로</button><button type="button" class="sec" data-pn-mode="reco">자동 추천</button><button type="button" class="sec" data-pn-mode="direct">직접 편성</button><span id="mode-direct-reason" class="mut" hidden>공사 중 · 코스모 게이트 직접 편성(3파티)</span></nav>
+<nav id="mode-strip" aria-label="편성 모드" hidden><button type="button" class="sec" data-pn-mode="home">← 처음으로</button><button type="button" class="sec" data-pn-mode="reco">자동 추천</button><button type="button" class="sec" data-pn-mode="direct">직접 편성</button></nav>
 <section id="start-screen" aria-label="시작 방법 고르기" hidden></section>
 <section id="mi-panel" class="panel" aria-label="내 정보" hidden>
  <div class="mi-toolbar"><details id="mi-menu" class="ux-menu"><summary aria-label="내 구원자 메뉴">⋯</summary><button id="mi-panel-clear" type="button" class="sec">지우기</button></details><input type="search" id="mi-q" placeholder="이름 검색" aria-label="구원자 이름 검색" style="max-width:150px"><label>정렬<select id="mi-sort"><option value="power">전투력순</option><option value="name">이름순</option></select></label></div>
@@ -358,7 +358,7 @@ summary{padding:9px 4px}
  </div>
 </div>
 <div id="out"></div>
-<section id="direct-construction" class="party" aria-label="코스모 게이트 직접 편성 공사 중" hidden></section>
+<section id="cosmo-direct-panel" class="party cd-panel" aria-label="코스모 게이트 직접 편성" hidden></section>
 <section id="direct-panel" class="party" aria-label="직접 편성" hidden>
  <header class="direct-heading"><h2>직접 편성</h2><p class="mut">편성만 직접 고름 · 전투는 오토로 돌림</p></header>
  <div class="result-layout">
@@ -452,13 +452,17 @@ summary{padding:9px 4px}
 <script src="star_link.js"></script>
 <script src="star_link_ui.js"></script>
 <script src="direct_party.js"></script>
+<script src="cosmo_direct.js"></script>
+<script src="cosmo_direct_ui.js"></script>
 <script src="share_state.js"></script>
 <script src="direct_drag.js"></script>
 <script src="direct_ui.js"></script>
 <script src="direct_run.js"></script>
+<script src="cosmo_direct_page.js"></script>
 <script src="recommend_runtime.js"></script>
 <script src="direct_bundle.js"></script>
 <link rel="stylesheet" href="direct.css">
+<link rel="stylesheet" href="cosmo_direct.css">
 <script src="guild_view.js"></script>
 <script src="guild_search.js"></script>
 <script src="cosmo_search.js"></script>
@@ -624,7 +628,7 @@ function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").v
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
- const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:Ux.gwenWork,error:Ux.gwenError,report:Ux.gwenReport,workMode:Ux.gwenStage(CSR.msg),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo')}
+ const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:Ux.gwenWork,error:Ux.gwenError,report:Ux.gwenReport,workMode:Ux.gwenStage(CSR.msg),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,summary:cdSearchSummary,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo')}
 async function cosmoSearchStart(target=CSR,profileOverride=null){
  if(seasonBlocked('cosmo'))return;
  const CSR=target;
@@ -652,7 +656,8 @@ $("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("[data-
  else if(t.dataset.cs==="level"){CSR.optLevel=+t.value;LS.set("cosmo.level",CSR.optLevel)}else if(t.dataset.cs==="mode"){CSR.optMode=t.value;LS.set("cosmo.mode",CSR.optMode)}
  growthCancel();if(CSR.phase!=="run")renderCosmoSearch();growthPaint()});
 $("cosmo-search").addEventListener("click",e=>{const b=e.target.closest("button[data-cs]");if(!b)return;
- if(b.dataset.cs==="start")cosmoSearchStart();
+ if(b.dataset.cs==="edit")cdFromSearch(CSR.rows?.[Number(b.dataset.row)]);
+ else if(b.dataset.cs==="start")cosmoSearchStart();
  else if(b.dataset.cs==="cancel"){CSR.id++;if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.phase="idle";CSR.eta=null;renderCosmoSearch()}});
 
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.title||c.name)}</option>`).join("");
@@ -1102,9 +1107,9 @@ function simPump(){if(SIMPOOL.pumping)return;SIMPOOL.pumping=true;
   for(const b of SIMPOOL.batches.slice())if(!b.o.live()){b.closed=true;b.o.arm?.cancel?.();for(const w of b.ws.slice())simRelease(w,true)}
   SIMPOOL.batches=SIMPOOL.batches.filter(b=>!b.closed);
   for(;;){
-   const pending=SIMPOOL.batches.filter(b=>!b.closed&&b.next<b.jobs.length).sort((a,b)=>(b.owner==='direct')-(a.owner==='direct')||a.serial-b.serial);
-   const priority=pending.some(b=>b.owner==='direct');
-   const b=pending.find(b=>(!priority||b.owner==='direct')&&b.ws.length<b.ws.capacity);if(!b)break;
+   const pending=SIMPOOL.batches.filter(b=>!b.closed&&b.next<b.jobs.length).sort((a,b)=>(['direct','cdirect'].includes(b.owner))-(['direct','cdirect'].includes(a.owner))||a.serial-b.serial);
+   const priority=pending.some(b=>['direct','cdirect'].includes(b.owner));
+   const b=pending.find(b=>(!priority||['direct','cdirect'].includes(b.owner))&&b.ws.length<b.ws.capacity);if(!b)break;
    let w=SIMPOOL.workers.find(w=>!w._lease&&!w._dead);
    if(!w){if(SIMPOOL.workers.length>=scrWorkers())break;
     w=new Worker('sim_worker.js');w.onmessage=e=>simReceive(w,e.data);
@@ -1598,7 +1603,7 @@ function drawGraph(){
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=()=>{graphDirty=true;drawGraph()});
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party"){graphDirty=true;drawGraph()}};
 function shareUrl(){const c=contents[$("content").value],s=cur&&cur[$("stage").value],state={c:c.key,s:s?s.tab+"|"+s.name:"",rk:+$("rk").value,ag:growthOptions().growth,ao:growthOptions().owned};
- if(DIRECT.mode==='direct'){state.pm='direct';state.dp=DirectParty.share(DIRECT.draft);}
+ if(DIRECT.mode==='direct'){state.pm='direct';if(c.key==='cosmo')state.cd=CosmoDirect.share(CDIRECT.state);else state.dp=DirectParty.share(DIRECT.draft);}
  document.querySelectorAll(".party[data-party] .bsel").forEach(el=>{state[el.closest(".party").dataset.party==="2"?"b2":"b"]=el.value});
  return ShareState.url(location.href,state)}
 async function shareUrlMi(){let url=shareUrl();if(!MI.info||!$("share-mi").checked)return url;

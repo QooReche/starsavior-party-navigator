@@ -2,11 +2,13 @@
 (function(root){
   "use strict";
   const Direct=typeof module!=="undefined"&&module.exports?require('./direct_party'):root.DirectParty;
+  const Cosmo=typeof module!=="undefined"&&module.exports?require('./cosmo_direct'):root.CosmoDirect;
   const growths=["1","0.8","1.25","manual","myinfo"];
   function parse(search,contents,breakKeys){
     const q=new URLSearchParams(search),out={};
     if(['home','reco','direct'].includes(q.get('pm')))out.pm=q.get('pm');
     if(q.has('dp')&&q.get('dp').length<4096){try{const d=JSON.parse(q.get('dp'));if(d?.v===Direct.VERSION){out.dp=Direct.share(d);out.pm||='direct';}}catch(e){}}
+    if(q.has('cd')&&q.get('cd').length<16384){try{const d=JSON.parse(q.get('cd'));if(d?.v===Cosmo.VERSION&&d.teams&&typeof d.teams==='object'){out.cd=Cosmo.share(d);out.pm||='direct';}}catch(e){}}
     if(q.has("c")||q.has("s")){
       const c=contents.find(c=>c.key===q.get("c"))||contents[0];
       out.c=c.key;
@@ -28,6 +30,7 @@
   function stringify(state){
     const q=new URLSearchParams();
     if(['home','reco','direct'].includes(state.pm))q.set('pm',state.pm);
+    if(state.cd)q.set('cd',JSON.stringify(Cosmo.share(state.cd)));
     if(state.dp)q.set('dp',JSON.stringify(Direct.share(state.dp)));
     for(const key of ["c","s","g","rk"])if(state[key]!=null)q.set(key,String(state[key]));
     for(const key of ['ag','ao'])if(typeof state[key]==='boolean')q.set(key,state[key]?'1':'0');

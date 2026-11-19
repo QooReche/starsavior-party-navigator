@@ -20,7 +20,7 @@
 
 ### 직접 편성
 
-- 코스모 게이트의 3파티 직접 편성은 다음 패치 범위임. `direct_ui.js`는 코스모에서만 모드 줄·시작 카드의 직접 진입을 막고 `disabled`·`aria-disabled`·`aria-describedby`로 사유를 표시함. 이미 직접 모드인 링크·초안은 편집 패널 대신 `direct-construction` 안내를 보며, 초안은 보존함. 승인 v2 원본을 `assets/ui_icons/gwen/construction{,_512}.png`로 복사하고 무손실 정지 WebP를 만들었음. `Ux.gwenImage('construction')`을 사용하며 정지 이미지 decode 실패 시 board로 대체함. 깜빡임은 없음. DOM·변이는 `tests/cosmo_construction_test.js`, 1280/360px 실브라우저 검증은 `tests/e2e/test_cosmo_construction.py`임.
+- 코스모 게이트는 `cosmo_direct.js`(순수 상태)·`cosmo_direct_ui.js`(보스 카드·편집 패널)·`cosmo_direct_page.js`(페이지/작업자 연결)를 사용함. 컨테이너 `#cosmo-direct-panel`, LS `direct.cosmo.v1`, 공유 `cd`, 소유자 `cdirect`를 기존 1팀과 분리했음. 슬롯은 엔진 순서이며 팀별 리더는 `party.leader`, 육성은 최종 능력치로 직렬화함. 자동 브레이크는 기존 `pickBreak`를 사용함. 팀별 서명에는 시즌·보스·난이도·브레이크·최종 파티·계정·버전·seed·판수를 포함하며 현재 서명의 3팀 결과가 모두 있을 때만 합계를 표시함. 탭 전환은 실행을 유지하고 편집·계정 변경은 코스모 소유 작업만 취소함. 팀별 되돌리기는 다른 팀으로 옮겨 간 구원자를 빼앗지 않음. 공유 초안은 편집 후에도 로컬 저장을 덮어쓰지 않음. 자동 결과는 `CosmoDirectUI.summaryHtml`을 공유하고 실제 선택 행을 `fromSearch`로 가져옴. 공사모 자산·`GWEN_SCENES.construction`은 유지함. 진입 검사는 기존 construction 이름의 시험, 통합 검사는 `tests/cosmo_direct_page_test.js`·`tests/e2e/test_cosmo_direct.py`임.
 
 - `direct_party.js`: 순수 초안·검증·배치 변환·사용자 배치 직렬화·전투력·서명·저장/공유 허용 목록. `direct_ui.js`는 편집, `direct_run.js`는 실행 스냅샷·행별 캐시·비교 표시를 맡음. 둘 다 물리 작업자를 만들지 않음.
 - 초안 `{v:1, slots:[{key,grown}|null × 4], leader:key|null, brk:'auto'|null|{name,level}}`. 저장/엔진 순서는 전열1·전열2·후열1·후열2, `toScreen` 결과는 후열1·전열1·전열2·후열2. 리더·육성 선택은 구원자를 따라감.
@@ -34,7 +34,7 @@
 
 - 2차의 실행 선택은 `pn.direct.with.v1={reco:boolean}` 하나이며 초안·공유·서명에 포함하지 않음. 종속 육성 체크는 `assume-growth`의 change 이벤트를 사용하며 별도 값·저장소가 없음. 추천 탭과 같은 완료 저장소와 서명을 읽어 재계산 없이 연결함.
 - `recommend_pipeline.js`는 주입된 계획·예선·본선 함수로 순차 계산함. `recommend_runtime.js`가 입력 사본과 결과 저장소를 연결하고, 기존 추천도 `recoCandidates`·`recoScreenSequence`·`simSignature`와 육성 `growthStageSearch`/`growthEvaluate`를 공유함. `direct_bundle.js`는 작업 소유자와 단계를 관리함. 실행 도중 직접 편집은 direct owner만 중단함. 조건 변경은 묶음을 중단하며, 합류한 추천 탭 작업은 묶음 취소만으로 죽이지 않음.
-- 기존 육성 결과를 직접 비교로 가져올 때도 완료된 추천 rows[0]을 `baselineFirst` 기준으로 고정함. 추천 탭 본문·탭 제목도 그 기준을 사용함. 추천 자체의 후보·결과값·정렬은 변하지 않음. 길드 방어전·코스모는 「이 줄만 계산」과 실행 진입점 양쪽에서 차단함.
+- 기존 육성 결과를 직접 비교로 가져올 때도 완료된 추천 rows[0]을 `baselineFirst` 기준으로 고정함. 추천 탭 본문·탭 제목도 그 기준을 사용함. 추천 자체의 후보·결과값·정렬은 변하지 않음. 기존 1팀 묶음의 길드 방어전·코스모 「이 줄만 계산」은 계속 차단함. 코스모 3팀은 별도 실행 경로를 사용함.
 - 기존 추천 결과 보존을 위해 예선/육성의 rng_streams와 일반 본선 난수 정책을 그대로 사용함. 비교는 짝지은 실험이라고 표시하지 않으며 기존 보수적 구간을 사용함.
 - `direct_drag.js`는 마우스 6px, 터치 350ms 이후 끌기를 시작함. 터치 대기 중 8px 이동은 일반 스크롤임. 미리보기 동안 편집·그리기를 보류하고 놓을 때 `directChange`를 한 번 호출함. ESC·바깥 놓기는 취소하며 후속 click을 삼킴. 키보드/누르기는 기존 편집 경로임. 얼굴은 추천의 art·1:1.12·그림 112% 규칙을 사용하고 전원 검토 결과 별도 예외는 없음.
 - 2차 화면·실제 스타링크·되돌림·리뷰 회귀 시험은 `tests/e2e/test_direct_phase2.py`, 영상은 `--only video`로 생성함. 59명 얼굴 시트·단계·끌기·실제 전투력 전후 캡처는 `_tmp/phase2/`에 생성하며 공개 커밋에 넣지 않음.

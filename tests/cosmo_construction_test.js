@@ -4,56 +4,35 @@ const read=p=>fs.readFileSync(require.resolve('../'+p),'utf8').replace(/\r\n/g,'
 const source=read('direct_ui.js'),template=read('party_template.html');
 function check(code=source){
   const h=harness(),{c}=h;
-  for(const id of ['content','mi-panel','start-screen','direct-panel','out','growth-control-home','growth-control','direct-picker-dialog'])h.add(id);
-  h.c.$=id=>h.doc.getElementById(id);c.$('content').value=0;c.$('mi-panel').hidden=true;
+  for(const id of ['content','mi-panel','start-screen','direct-panel','cosmo-direct-panel','out','growth-control-home','growth-control','direct-picker-dialog'])h.add(id);
+  c.$=id=>h.doc.getElementById(id);c.$('content').value=0;c.$('mi-panel').hidden=true;
   const strip=h.add('mode-strip');strip.innerHTML=template.match(/<nav id="mode-strip"[^>]*>([\s\S]*?)<\/nav>/)[1];
-  const notice=h.add('direct-construction');
-  notice.hidden=true;
   Object.assign(c,{contents:[{key:'cosmo'},{key:'op'},{key:'cube'},{key:'guild'}],MI:{info:null},
-    Ux:require('../ux_ui'),RECO:{},recoGwenVisibility(){},growthControlPlace(){},
+    Ux:require('../ux_ui'),RECO:{},recoGwenVisibility(){},growthControlPlace(){},cdRefresh(){c.cosmoRefresh++},cosmoRefresh:0,
     GwenLane:{activate:m=>c.activeStage=m,registerStage(){}},
     history:{state:{},replaceState(){c.navigations++},pushState(){c.navigations++}},
     location:{href:'http://test/?c=cosmo&pm=direct'},navigations:0});
   h.load(code);
   h.load("DIRECT.draft={v:1,slots:[null,null,null,null]};DIRECT.mode='direct';DIRECT.slots={};directSync=()=>{};directResultsPaint=()=>{};directPaintInput=()=>'';directPaint=()=>{painted++};");
   c.painted=0;c.directRefresh();
-  const button=()=>strip.querySelector('[data-pn-mode="direct"]');
-  const homeButton=()=>c.$('start-screen').querySelector('[data-pn-mode="direct"]');
-  const checkButtons=blocked=>{
-    for(const b of [button(),homeButton()]){
-      assert.equal(b.disabled,blocked,'native disabled');assert.equal(b.getAttribute('aria-disabled'),String(blocked),'aria-disabled');
-      if(blocked){assert.equal(b.title,'공사 중');assert(c.$(b.getAttribute('aria-describedby')),'reason target exists');}
-      else assert.equal(b.getAttribute('aria-describedby'),null);
-    }
-    assert.equal(c.$('start-screen').querySelector('.start-direct').getAttribute('aria-disabled'),String(blocked));
-  };
-  checkButtons(true);assert.equal(notice.hidden,false,'direct URL must show construction');
-  assert.equal(c.$('direct-panel').hidden,true,'editor must be hidden');assert.equal(c.activeStage,null);
-  assert.equal(c.painted,0,'blocked editor must not paint');
-  assert.match(notice.innerHTML,/코스모 게이트 직접 편성\(3파티\)은 공사 중이에요 · 지금은 자동 추천의 «3보스 편성 찾기»를 써 주세요/);
-  assert.match(notice.innerHTML,/data-pn-mode="reco"/);assert.match(notice.innerHTML,/aria-hidden="true"/);
-  c.directNavigate('direct');assert.equal(c.navigations,0,'programmatic/card entry must be blocked');
+  assert.equal(c.$('cosmo-direct-panel').hidden,false);assert.equal(c.$('direct-panel').hidden,true);assert.equal(c.activeStage,'cdirect');
+  assert.equal(c.painted,0);assert(c.cosmoRefresh>0);
+  for(const host of [strip,c.$('start-screen')])assert(!host.querySelector('[data-pn-mode="direct"]').disabled);
+  c.directNavigate('direct');assert.equal(c.navigations,1,'cosmo entry allowed');
   for(const index of [1,2,3,0,1]){
-    c.$('content').value=index;c.directRefresh();checkButtons(index===0);
-    assert.equal(notice.hidden,index!==0);assert.equal(c.$('direct-panel').hidden,index===0);
+    c.$('content').value=index;c.directRefresh();
+    assert.equal(c.$('cosmo-direct-panel').hidden,index!==0);assert.equal(c.$('direct-panel').hidden,index===0);
   }
-  assert(c.painted>0,'normal editor path must run');
-  c.$('content').value=0;h.load("DIRECT.mode='home'");c.directRefresh();checkButtons(true);
-  assert.equal(notice.hidden,true);assert.equal(c.$('start-screen').hidden,false);
-  // Rebuilding the account-dependent start cards must keep the block.
-  c.MI.info={};c.directRefresh();checkButtons(true);
-  c.directNavigate('reco');assert.equal(c.navigations,1);assert.equal(c.$('out').hidden,false);
+  assert(c.painted>0);assert(!template.includes('direct-construction'));
+  c.$('content').value=0;c.directNavigate('reco');assert.equal(c.$('cosmo-direct-panel').hidden,true);
 }
 check();
 const mutations=[
-  ["return contents[$('content').value]?.key==='cosmo'",'return false'],
-  ['b.disabled=blocked','b.disabled=false'],
-  ["b.setAttribute('aria-disabled',String(blocked))","b.setAttribute('aria-disabled','false')"],
-  ["b.setAttribute('aria-describedby',reason)",'b.removeAttribute(\'aria-describedby\')'],
-  ["if(mode==='direct'&&directConstructionBlocked())return;",''],
-  ["info||DIRECT.mode!=='direct'||blocked","info||DIRECT.mode!=='direct'"],
-  ["info||DIRECT.mode!=='direct'||!blocked","true"],
-  ["if(DIRECT.mode==='direct'&&!directConstructionBlocked())","if(DIRECT.mode==='direct')"],
+  ["info||DIRECT.mode!=='direct'||!cosmo","true"],
+  ["info||DIRECT.mode!=='direct'||cosmo","info||DIRECT.mode!=='direct'"],
+  ["?'cdirect':DIRECT.mode","?null:DIRECT.mode"],
+  ['directVisibility();cdRefresh();','directVisibility();'],
+  ["  const before=source?.closest", "  if(mode==='direct'&&contents[$('content').value]?.key==='cosmo')return;\n  const before=source?.closest"]
 ];
 for(const [before,after] of mutations){assert(source.includes(before),before);assert.throws(()=>check(source.replace(before,after)),{code:'ERR_ASSERTION'},before);}
 const U=require('../ux_ui');
@@ -74,5 +53,5 @@ async function fallback(code=read('ux_ui.js')){
   const ux=read('ux_ui.js'),guard='if(fallback&&fallback!==s.expression)';assert(ux.includes(guard));
   await assert.rejects(()=>fallback(ux.replace(guard,'if(false)')),{code:'ERR_ASSERTION'});
   await fallback();
-  console.log(`PASS cosmo direct buttons, accessible reasons, transitions, restored entry, home rebuild, navigation, missing-art fallback; ${mutations.length+1} mutations caught`);
+  console.log(`PASS cosmo direct entry, isolated panels, transitions, navigation, reusable construction art fallback; ${mutations.length+1} mutations caught`);
 })().catch(e=>{console.error(e);process.exitCode=1;});

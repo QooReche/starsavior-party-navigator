@@ -2,7 +2,7 @@
 const DIRECT={mode:'home',draft:null,shared:false,selected:null,undo:null,revision:0,slots:null,loading:null,error:'',valueKey:null,values:null};
 function directInit(){
   Object.assign(DIRECT,DirectParty.restore(LS.get('direct.v1'),SHARE.dp));
-  DIRECT.mode=SHARE.pm||(SHARE.dp?'direct':(SHARE.c||AUTO||/[#&]shared=/.test(location.hash))?'reco':'home');
+  DIRECT.mode=SHARE.pm||((SHARE.dp||SHARE.cd)?'direct':(SHARE.c||AUTO||/[#&]shared=/.test(location.hash))?'reco':'home');
   history.replaceState({...history.state,pnMode:DIRECT.mode},'',location.href);
   directDragInit();directBundleInit();
   document.addEventListener('click',e=>{
@@ -58,53 +58,34 @@ function directInit(){
 }
 function directNavigate(mode,source){
   if(!['home','reco','direct'].includes(mode))return;
-  if(mode==='direct'&&directConstructionBlocked())return;
   const before=source?.closest('.start-choice')?.getBoundingClientRect();
   if(mode==='home'&&history.state?.pnModeEntry){history.back();return;}
   const wasHome=DIRECT.mode==='home',u=new URL(location.href);u.searchParams.set('pm',mode);
   // A received draft remains session-only even after edits. Remove it from navigation URLs
   // only on returning home; copying a link explicitly emits the current allowlisted draft.
-  if(mode==='home'){u.searchParams.delete('dp');u.searchParams.delete('auto');}
+  if(mode==='home'){u.searchParams.delete('dp');u.searchParams.delete('cd');u.searchParams.delete('auto');}
   const state={...history.state,pnMode:mode,pnModeEntry:mode==='home'?false:(wasHome||!!history.state?.pnModeEntry)};
   history[wasHome&&mode!=='home'?'pushState':'replaceState'](state,'',u);
   DIRECT.mode=mode;directRefresh();
-  const target=$(mode==='direct'?'direct-panel':mode==='reco'?'out':'start-screen');
+  const target=$(mode==='direct'?(contents[$('content').value]?.key==='cosmo'?'cosmo-direct-panel':'direct-panel'):mode==='reco'?'out':'start-screen');
   if(before&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
     const after=target.getBoundingClientRect();if(after.width&&after.height)target.animate([
       {transformOrigin:'top left',transform:`translate(${before.x-after.x}px,${before.y-after.y}px) scale(${before.width/after.width},${before.height/after.height})`,opacity:.6},
       {transformOrigin:'top left',transform:'none',opacity:1}],{duration:250,easing:'ease-out'});
   }
 }
-function directConstructionBlocked(){return contents[$('content').value]?.key==='cosmo';}
-function directAvailability(blocked){
-  for(const [host,reason] of [[$('mode-strip'),'mode-direct-reason'],[$('start-screen'),'start-direct-reason']]){
-    $(reason).hidden=!blocked;
-    for(const b of host.querySelectorAll('[data-pn-mode="direct"]')){
-      b.disabled=blocked;b.setAttribute('aria-disabled',String(blocked));
-      if(blocked){b.title='공사 중';b.setAttribute('aria-describedby',reason);}
-      else{b.removeAttribute('title');b.removeAttribute('aria-describedby');}
-    }
-  }
-  const card=$('start-screen').querySelector('.start-direct');
-  card.setAttribute('aria-disabled',String(blocked));
-  if(blocked){card.title='공사 중';card.setAttribute('aria-describedby','start-direct-reason');}
-  else{card.removeAttribute('title');card.removeAttribute('aria-describedby');}
-}
 function directVisibility(){
   if(!DIRECT.draft)return;
-  const info=!$('mi-panel').hidden,blocked=directConstructionBlocked(),notice=$('direct-construction');
-  directAvailability(blocked);
-  $('start-screen').hidden=info||DIRECT.mode!=='home';$('direct-panel').hidden=info||DIRECT.mode!=='direct'||blocked;
-  notice.hidden=info||DIRECT.mode!=='direct'||!blocked;
-  if(!notice.hidden&&!notice.innerHTML)notice.innerHTML=`${Ux.gwenImage('construction','direct-construction-art')}<p>코스모 게이트 직접 편성(3파티)은 공사 중이에요 · 지금은 자동 추천의 «3보스 편성 찾기»를 써 주세요</p><button type="button" data-pn-mode="reco">자동 추천으로 가기</button>`;
-  if(blocked&&$('direct-picker-dialog').open)$('direct-picker-dialog').close();
+  const info=!$('mi-panel').hidden,cosmo=contents[$('content').value]?.key==='cosmo';
+  $('start-screen').hidden=info||DIRECT.mode!=='home';$('direct-panel').hidden=info||DIRECT.mode!=='direct'||cosmo;
+  $('cosmo-direct-panel').hidden=info||DIRECT.mode!=='direct'||!cosmo;
+  if(cosmo&&$('direct-picker-dialog').open)$('direct-picker-dialog').close();
   $('mode-strip').hidden=info||DIRECT.mode==='home';$('out').hidden=info||DIRECT.mode!=='reco';
   document.body.dataset.partyMode=DIRECT.mode;
   for(const b of $('mode-strip').querySelectorAll('[data-pn-mode]'))b.setAttribute('aria-pressed',String(b.dataset.pnMode===DIRECT.mode));
   if($('result-tabs'))$('result-tabs').hidden=info||DIRECT.mode!=='reco';
-  GwenLane.activate(info||(blocked&&DIRECT.mode==='direct')?null:DIRECT.mode);
-  recoGwenVisibility();
-  growthControlPlace();
+  GwenLane.activate(info?null:DIRECT.mode==='direct'&&cosmo?'cdirect':DIRECT.mode);
+  recoGwenVisibility();growthControlPlace();
 }
 function directHome(){
   const home=$('start-screen'),stamp=String(!!MI.info);
@@ -116,7 +97,7 @@ function directHome(){
     <p>내 구원자로 스테이지를 깰 편성을 찾음.</p><button type="button" data-pn-mode="reco">자동 추천</button>
     ${!MI.info?'<div class="case-request"><h3>사건 의뢰서 · 접수 대기</h3><p>내 정보를 불러오면 내 구원자에 맞춰 추천함.</p><button type="button" class="sec" data-miopen="1">계정 정보 불러오기</button><p class="mut">정보 없이도 표준 육성으로 추천 가능</p></div>':''}<div id="start-growth"></div></div>
     <div class="start-gwen"><div id="home-gwen-lane" class="gwen-lane" aria-label="그웬 길"></div><p>단장님, 어떤 방법으로 골라 볼까?<br>후후후, 나만 믿어!</p></div>
-    <div class="start-choice start-direct" data-pn-choice="direct"><p class="case-tag">내가 고르기</p><h2>직접 편성</h2><p>구원자와 자리, 리더를 직접 고름.</p><button type="button" data-pn-mode="direct">직접 편성</button><p id="start-direct-reason" class="mut" hidden>공사 중 · 코스모 게이트 직접 편성(3파티)</p><p class="mut">${MI.info?'내 구원자 기준':'내 정보 없이도 표준 육성 기준으로 가능'} · 편성만 직접 고름</p></div>`;
+    <div class="start-choice start-direct" data-pn-choice="direct"><p class="case-tag">내가 고르기</p><h2>직접 편성</h2><p>구원자와 자리, 리더를 직접 고름.</p><button type="button" data-pn-mode="direct">직접 편성</button><p class="mut">${MI.info?'내 구원자 기준':'내 정보 없이도 표준 육성 기준으로 가능'} · 편성만 직접 고름</p></div>`;
   GwenLane.registerStage('home',{board:document.getElementById('home-gwen-lane')});
 }
 function directSave(){const payload=DirectParty.storage(DIRECT);if(payload&&!LS.set('direct.v1',payload))DIRECT.error='초안 저장 실패 · 이 세션에서만 유지됨';}
@@ -133,8 +114,8 @@ function directRefresh(){
   // A reserved auto/share recommendation has not started yet. Switching away
   // must not launch it later; already running jobs/results remain untouched.
   if(DIRECT.mode!=='reco'&&RECO.timer){recoClearTimer();RECO.sharedPending=false;}
-  directHome();directVisibility();
-  if(DIRECT.mode==='direct'&&!directConstructionBlocked()){
+  directHome();directVisibility();cdRefresh();
+  if(DIRECT.mode==='direct'&&contents[$('content').value]?.key!=='cosmo'){
     if(!DIRECT.slots&&!DIRECT.loading&&!DIRECT.error){
       DIRECT.loading=Promise.all([MI.info?miGrowth():Promise.resolve(),fetch('data/myinfo_slots.json').then(r=>{if(!r.ok)throw Error('장비 부위 자료 오류');return r.json();})])
         .then(([,slots])=>{DIRECT.slots=slots;}).catch(e=>{DIRECT.error=e.message;}).finally(()=>{DIRECT.loading=null;directPaint();});

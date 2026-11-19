@@ -50,22 +50,25 @@
       return `<li${n===cur?' aria-current="step"':''}${done?' class="done"':''}><span>${done?'✓':'①②③④'[i]} <span class="f">${f}</span><span class="s">${s}</span></span></li>`;}).join('');
   }
   // 보스 카드 = 탭: 리더 초상 · 편성 n/4 · 점수(+클리어율)만. 실행 못 하는 이유(4명 필요 등)도 여기 한 낱말로.
-  function tabsHtml(m){
+  function tabsHtml(m,interactive=true){
     return m.bosses.map(b=>{
       const d=m.draft(b.key),n=m.count(b.key),lead=m.by.get(d.leader),sel=b.key===m.active,r=m.res(b.key),done=m.done(b.key),bad=n===4&&m.blocks(b.key).length>0;
       const clear=r.clear!=null?`클리어 ${pct(r.clear)}%`:'';
       const wait=n===0?'비어 있음 · 눌러서 편성':n<4?'편성 중':'확인 전';
       const need=n<4?'4명 필요':bad?'고칠 곳 있음':'';
       const label=[`${b.name} 팀`,`편성 ${n}/4`,need,lead?'리더 '+lead.name:'',done?`${num(r.score)}점${clear?', '+clear:''}`:n===0?'비어 있음, 눌러서 편성':n<4?'':'확인 전'].filter(Boolean).join(' · ');
-      return `<button type="button" role="tab" class="cg-tab" id="cd-tab-${esc(b.key)}" data-cd-boss="${esc(b.key)}" aria-selected="${sel}" aria-controls="cd-panel" tabindex="${sel?0:-1}" aria-label="${esc(label)}">`
+      const open=interactive?`<button type="button" role="tab" class="cg-tab" id="cd-tab-${esc(b.key)}" data-cd-boss="${esc(b.key)}" aria-selected="${sel}" aria-controls="cd-panel" tabindex="${sel?0:-1}" aria-label="${esc(label)}">`:`<section class="cg-tab" aria-label="${esc(label)}">`;
+      return open
         +`<span class="cg-face" aria-hidden="true">${lead?`<img class="lead" src="${esc(lead.img)}" alt="">${CROWN}`:'<span class="vacant">＋</span>'}</span>`
         +`<span class="cg-head" aria-hidden="true">${m.attr(b.element)}<b><span class="cg-name-full">${esc(b.name)}</span><span class="cg-name-short">${esc(shortOf(b))}</span></b></span>`
         +`<span class="cg-count" aria-hidden="true"><span class="lbl">편성 </span>${n}/4${need?` · <span class="need">${need}</span>`:''}</span>`
-        +`<span class="cg-score${done?'':' none'}" aria-hidden="true">${done?`<b>${num(r.score)}</b>${clear?`<small>${clear}</small>`:''}`:`<b>${wait}</b>`}</span></button>`;}).join('');
+        +`<span class="cg-score${done?'':' none'}" aria-hidden="true">${done?`<b>${num(r.score)}</b>${clear?`<small>${clear}</small>`:''}`:`<b>${wait}</b>`}</span>${interactive?'</button>':'</section>'}`;}).join('');
   }
+  function totalLine(m){const all=m.total!=null;return `<div class="cg-total-line"><span>합계</span><b class="cg-total-num${all?'':' pending'}" role="status" aria-live="polite" data-cd-total>${all?num(m.total):`미완료 · ${m.doneCount}/${m.bosses.length}`}</b></div>`;}
+  function summaryHtml(view){const m=read(view);return `<div class="cg-top"><div class="cg-tabs" data-k="cs-boss-summary">${tabsHtml(m,false)}</div><aside class="cg-total">${totalLine(m).replace('data-cd-total','data-k="cs-sum"')}</aside></div>`;}
   function totalHtml(m,ui){
-    const all=m.total!=null,sel=ui.levelAll??m.team(m.active).level;
-    return `<div class="cg-total-line"><span>합계</span><b class="cg-total-num${all?'':' pending'}" role="status" aria-live="polite" data-cd-total>${all?num(m.total):`미완료 · ${m.doneCount}/${m.bosses.length}`}</b></div>`
+    const sel=ui.levelAll??m.team(m.active).level;
+    return totalLine(m)
       +`<div class="cg-level-all"><label for="cd-level-all">3팀 모두 같은 난이도로</label><select id="cd-level-all" data-cd-change="level-all">${levels(m.levelMax,sel)}</select><button type="button" class="sec" data-cd-act="level-all">적용</button></div>`;
   }
   const titleHtml=m=>`${m.attr(m.boss.element)}<span>${esc(m.boss.name)} 팀</span><span class="tag">${esc(EL[m.boss.element]||m.boss.element||'')}</span>`;
@@ -111,7 +114,7 @@
   function controlsHtml(m){
     const t=m.team(m.active),brk=t.draft?.brk,name=brk&&brk!=='auto'?brk.name:null,list=m.view.breaks||[];
     return `<label><span>브레이크 스킬 <i>(선택)</i></span><select id="cd-break" data-cd-change="brk" aria-label="브레이크 스킬(선택)">`
-      +(brk==='auto'?'<option value="auto" selected>자동 선택</option>':'')+`<option value=""${brk?'':' selected'}>장착 안 함</option>`
+      +`<option value="auto"${brk==='auto'?' selected':''}>자동 선택</option><option value=""${brk?'':' selected'}>장착 안 함</option>`
       +list.map(b=>`<option value="${esc(b.name)}" data-level="${b.level}"${b.name===name?' selected':''}>${esc(b.name)} Lv.${b.name===name?brk.level:b.level}</option>`).join('')
       +(name&&!list.some(b=>b.name===name)?`<option value="${esc(name)}" data-level="${brk.level}" selected>${esc(name)} Lv.${brk.level}</option>`:'')+`</select></label>`
       +`<label><span>이 팀 난이도</span><select id="cd-level" data-cd-change="level" aria-label="이 팀 난이도">${levels(m.levelMax,t.level)}</select></label>`;
@@ -273,6 +276,6 @@
     paint(host);
     return host;
   }
-  const api={render,html,shortOf,SCREEN,LABELS};
+  const api={render,html,summaryHtml,shortOf,SCREEN,LABELS};
   if(node)module.exports=api;else root.CosmoDirectUI=api;
 })(typeof window!=='undefined'?window:globalThis);

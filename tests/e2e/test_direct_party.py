@@ -267,7 +267,7 @@ def shared(browser,base,mutate=False):
         page.add_init_script('localStorage.setItem("pn.direct.v1",'+json.dumps(json.dumps(local))+')')
         if mutate:
             src=(ROOT/'direct_ui.js').read_text(encoding='utf-8')
-            old="DIRECT.mode=SHARE.pm||(SHARE.dp?'direct':(SHARE.c||AUTO||/[#&]shared=/.test(location.hash))?'reco':'home');"
+            old="DIRECT.mode=SHARE.pm||((SHARE.dp||SHARE.cd)?'direct':(SHARE.c||AUTO||/[#&]shared=/.test(location.hash))?'reco':'home');"
             assert old in src
             page.route('**/direct_ui.js',lambda route:route.fulfill(body=src.replace(old,"DIRECT.mode='home';"),content_type='text/javascript'))
     page=ready(browser,base,query='?c=op&auto=1&pm=direct&dp='+quote(json.dumps({**draft,'starLink':True})),setup=setup)

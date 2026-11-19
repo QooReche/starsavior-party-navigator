@@ -464,13 +464,13 @@
 
   const pct = x => Math.round((x || 0) * 100) + "%";
   // 화면 조각. st = {phase: idle|run|done|err, msg, done, total, rows, level, mode, bosses, ...}, cx = {hasInfo, label(key), esc, bossName(key), levelMax, level, mode}
-  function table(r, mode, cx) {
+  function table(r, mode, cx, index=0) {
     const esc = cx.esc;
     const warning = GS.unsupportedHtml(r.teams, esc);
     if (cx.team) {   // 화면이 카드 모양(앞열·뒤열·리더·브레이크 스킬)을 그려 준다: 보스마다 한 덩어리
       const blocks = r.teams.map(t => `<div class="cs-boss" data-k="cs-team"><div class="cs-bh"><b>${esc(cx.bossName(t.boss))}</b>${t.level != null ? ` <span class="cs-lv">난이도 ${t.level}</span>` : ""}<span class="cs-sc">${MODES[mode]} <b>${num(metric(t.st, mode))}</b> · ${MODES[mode === "top" ? "mean" : "top"]} ${num(other(t.st, mode))} · 클리어율 ${pct(t.st.clear)} · 보스 깎음 ${pct(t.st.frac)}</span></div>${cx.team(t)}</div>`).join("");
-      const summary=r.teams.map(t=>`<div><b>${esc(cx.bossName(t.boss))}</b><span class="tag">난이도 ${t.level??'—'}</span><span>${esc(t.brk||'브레이크 없음')}${t.brkLv?' · Lv.'+t.brkLv:''}</span></div>`).join('');
-      return `${warning}<div data-k="cs-table"><div class="season-score"><span>3팀 합산 점수</span><b data-k="cs-sum">${num(r.sum)}</b><small>${MODES[mode]} 기준</small></div><div class="season-boss-summary" data-k="cs-boss-summary">${summary}</div>${blocks}</div>`;
+      const summary=cx.summary?cx.summary(r,mode):`<div class="season-score"><span>3팀 합산 점수</span><b data-k="cs-sum">${num(r.sum)}</b><small>${MODES[mode]} 기준</small></div>`;
+      return `${warning}<div data-k="cs-table">${summary}${cx.summary?`<p class="mut">${MODES[mode]} 기준</p><button type="button" class="sec" data-cs="edit" data-row="${index}">직접 편성에서 고치기</button>`:''}${blocks}</div>`;
     }
     const body = r.teams.map(t => `<tr><td>${esc(cx.bossName(t.boss))}${t.level != null ? "<br>난이도 " + t.level : ""}${t.brk ? "<br>" + esc(t.brk) : ""}</td><td>${t.order.map(k => esc(cx.label(k))).join("<br>")}</td><td><b>${num(metric(t.st, mode))}</b></td><td>${num(other(t.st, mode))}</td><td>${pct(t.st.clear)}</td><td>${pct(t.st.frac)}</td></tr>`).join("");
     return `${warning}<div class="gd-scroll"><table data-k="cs-table"><thead><tr><th>보스</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>${MODES[mode]}(순위 기준)</th><th>${MODES[mode === "top" ? "mean" : "top"]}</th><th>클리어율</th><th>보스 깎음</th></tr></thead><tbody>${body}<tr><td colspan="2"><b>합계</b></td><td colspan="4"><b data-k="cs-sum">${num(r.sum)}</b></td></tr></tbody></table></div>`;
@@ -498,7 +498,7 @@
       const rows = st.rows || [];
       const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐음(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
       const first = rows.length ? `${cx.report?.(st.rows)||""}<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : `${error('empty')}<div class="mut">결과 없음</div>`;
-      const rest = rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx)}</details>`).join("");
+      const rest = rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx, i+1)}</details>`).join("");
       const scr = st.halved ? `${st.fast && !st.fastSkipped ? "대리 선별·무작위 확인" + (st.audit.some(a => a.fallback) ? "·놓침 보스 전수 복귀" : "") + " 뒤" : "보스마다 조합 " + num(st.combos) + "개를"} ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
       body = `${old}${stale}${first}${rest}${btn("다시 찾기")}${opt}<details class="season-options" data-fold="cs-result-basis"><summary>탐색 결과 상세</summary>${lvInfo}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값임(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순임. 보스별 상위 팀 안에서 고른 최적이라 전체 조합의 수학적 최적은 아닐 수 있음.</div></details>`;
     } else body = `${btn("보스 3마리 편성 찾기")}<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>${opt}`;

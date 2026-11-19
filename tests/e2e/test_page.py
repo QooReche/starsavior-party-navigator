@@ -1702,8 +1702,8 @@ def test_cosmo_search(browser, ctx):
     assert '전수 확인' in page.locator('#cosmo-search [data-k="cs-eta-pre"]').inner_text()
     fast.uncheck()
     assert page.evaluate('() => !CSR.optFast')
-    # 기본은 전수 탐색이라 시험에서만 풀을 12명으로 제한(maxPool)하고 저장된 이 PC 속도를 지운다
-    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=40;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed.v2');localStorage.setItem('pn.cosmo.speed',JSON.stringify({sec:[999,999,999,999],workers:4}))}catch(e){}}""")
+    # 시험 풀은 maxPool=12(역할 보충 가능)로 줄이되 후보 조합은 모두 유지한다. keep=40은 시즌에 따라 중복 없는 삼중까지 잘라 냄.
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed.v2');localStorage.setItem('pn.cosmo.speed',JSON.stringify({sec:[999,999,999,999],workers:4}))}catch(e){}}""")
     page.select_option('#cosmo-search select[data-cs="level"]', "3")
     lvl = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value")
     # 시작 전 안내: 이 PC 속도를 모르면 «시작하면 몇 초 뒤 예상 시간이 표시됨»
@@ -1731,7 +1731,7 @@ def test_cosmo_search(browser, ctx):
     assert page.evaluate('() => CSR.fast===false && CSR.fastSkipped===false && CSR.audit===null'), '일반 탐색 완료 시 옛 실험 상태 제거'
     rows = page.locator('#cosmo-search [data-k="cs-best"] [data-k="cs-team"]').count()
     state = page.evaluate("""() => { const r = CSR.rows[0]; const keys = r.teams.flatMap(t => t.keys);
-      return {n: CSR.rows.length, bosses: r.teams.map(t => t.boss), uniq: new Set(keys).size, nkeys: keys.length, sum: r.sum,
+      return {n: CSR.rows.length, bosses: r.teams.map(t => t.boss), expected: D.cosmoRaid.bosses.map(b=>b.key), uniq: new Set(keys).size, nkeys: keys.length, sum: r.sum,
               parts: r.teams.reduce((a, t) => a + CosmoSearch.metric(t.st, CSR.mode), 0), level: CSR.level, phase: CSR.phase,
               shown: document.querySelector('[data-k=cs-sum]').textContent.replace(/,/g, '')} }""")
     names = page.locator('#cosmo-search [data-k="cs-best"] .cs-bh > b').all_text_contents()[:3]
@@ -1761,7 +1761,7 @@ def test_cosmo_search(browser, ctx):
     errs = list(ctx.errors)
     page.close()
     ok = (hidden_first and shown and has_btn == 1 and lvl == "3" and cancel_ok and rows == 3
-          and state["bosses"] == ["belgras", state["bosses"][1], state["bosses"][2]] and len(set(state["bosses"])) == 3 and len(set(names)) == 3
+          and state["bosses"] == state["expected"] and len(set(state["bosses"])) == 3 and len(set(names)) == 3
           and state["nkeys"] == 12 and state["uniq"] == 12 and state["sum"] > 0 and abs(state["sum"] - state["parts"]) < 1e-6
           and state["shown"] == str(round(state["sum"])) and state["level"] == 3 and state["phase"] == "done"
           and stale == 1 and hidden_after and not errs
@@ -3081,7 +3081,7 @@ def test_ux_step3(browser, ctx):
         audit=page.evaluate("""() => {const best=document.querySelector('[data-k=cs-best]'),first=best.querySelector('.rowcards').getBoundingClientRect().top;
           return [best.querySelector('[data-k=cs-sum]').getBoundingClientRect().bottom<first,
             best.querySelector('[data-k=cs-boss-summary]').getBoundingClientRect().bottom<=first,
-            best.querySelectorAll('[data-k=cs-boss-summary]>div').length===3] }""")
+            best.querySelectorAll('[data-k=cs-boss-summary]>.cg-tab').length===3] }""")
         assert all(audit),audit
         assert page.locator('[data-k="cs-best"] .gc').count() == 12
     cosmo_result()

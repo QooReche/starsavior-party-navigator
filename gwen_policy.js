@@ -37,7 +37,7 @@
   // --- 배너 ---
 
   function bannerState(state,onBoard){
-    if(!['direct','reco'].includes(state.mode)||onBoard)return '';
+    if(!['direct','cdirect','reco'].includes(state.mode)||onBoard)return '';
     if(state.bundleRunning||state.phase==='work')return '';
     if(state.phase==='result'&&!state.stale)return 'result';
     return state.phase==='error'?'error':'';

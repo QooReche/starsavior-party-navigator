@@ -93,6 +93,7 @@
   function jobs(state,ctx={}){
     const check=validate(state,ctx),out=[];
     for(const [boss,t] of Object.entries(state.teams)){
+      if(ctx.boss&&ctx.boss!==boss)continue;
       if(!check.teams[boss].ok)continue;
       const d=P.draft(t.draft);
       const brk=d.brk==='auto'?(ctx.resolveBreak?ctx.resolveBreak(P.draft(d),boss):null):d.brk;

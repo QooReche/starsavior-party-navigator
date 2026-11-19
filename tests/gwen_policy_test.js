@@ -37,6 +37,8 @@ assert.equal(P.resultArt(undefined,{kind:'score',portrait:false}),'report');
 
 // --- bannerState ---
 assert.equal(P.bannerState({mode:'direct',phase:'result',count:4},false),'result');
+assert.equal(P.bannerState({mode:'cdirect',phase:'result',count:4},false),'result');
+assert.equal(P.bannerState({mode:'cdirect',phase:'work',count:4},true),'');
 assert.equal(P.bannerState({mode:'reco',phase:'result',count:4},false),'result');
 assert.equal(P.bannerState({mode:'reco',phase:'error',count:4},false),'error');
 assert.equal(P.bannerState({mode:'reco',phase:'work',count:4},false),'');
