@@ -537,7 +537,7 @@
     const esc = cx.esc;
     const warning = GS.unsupportedHtml(r.teams, esc);
     if (cx.team) {   // 화면이 카드 모양(앞열·뒤열·리더·브레이크 스킬)을 그려 준다: 보스마다 한 덩어리
-      const blocks = r.teams.map(t => `<div class="cs-boss" data-k="cs-team"><div class="cs-bh"><b>${esc(cx.bossName(t.boss))}</b>${t.level != null ? ` <span class="cs-lv">난이도 ${t.level}</span>` : ""}<span class="cs-sc">${MODES[mode]} <b>${num(metric(t.st, mode))}</b> · ${MODES[mode === "top" ? "mean" : "top"]} ${num(other(t.st, mode))} · 클리어율 ${pct(t.st.clear)} · 보스 깎음 ${pct(t.st.frac)}</span></div>${cx.team(t)}</div>`).join("");
+      const blocks = r.teams.map(t => `<div class="cs-boss" data-k="cs-team"><div class="cs-bh"><b>${esc(cx.bossName(t.boss))}</b>${t.level != null ? ` <span class="cs-lv">난이도 ${t.level}</span>` : ""}<span class="cs-sc">${cx.summary ? "" : `${MODES[mode]} <b>${num(metric(t.st, mode))}</b> · `}${MODES[mode === "top" ? "mean" : "top"]} ${num(other(t.st, mode))}${cx.summary ? "" : ` · 클리어율 ${pct(t.st.clear)}`} · 보스 깎음 ${pct(t.st.frac)}</span></div>${cx.team(t)}</div>`).join("");
       const summary=cx.summary?cx.summary(r,mode):`<div class="season-score"><span>3팀 합산 점수</span><b data-k="cs-sum">${num(r.sum)}</b><small>${MODES[mode]} 기준</small></div>`;
       return `${warning}<div data-k="cs-table">${summary}${cx.summary?`<p class="mut">${MODES[mode]} 기준</p><button type="button" class="sec" data-cs="edit" data-row="${index}">직접 편성에서 고치기</button>`:''}${blocks}</div>`;
     }
