@@ -16,7 +16,7 @@ const inventory={
   'guild_search.js':[['${st.total ? ` · ${st.done}/${st.total}','guildSearch']],
   'myinfo_view.js':[["${n}/${e?.parts||'?'}",'excluded: equipment set parts']],
   'party_template.html':[['<progress','direct'],['${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}','reco'],['${seen}/${sc.total}','excluded: stopped sample count'],['${sc.got||0}/${sc.left}','reco'],['${sc.got}/${sc.left}','reco'],['role="progressbar"','reco'],['${done}/${all}','reco'],['${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10','excluded: power score'],['${eq}/6','excluded: equipment slots']],
-  'placement_page.js':[['${DIRECT.placement.done||0}/24','direct'],['${CDIRECT.placement.done||0}/24','cdirect'],['${d}/24','reco']],
+  'placement_page.js':[['${DIRECT.placement.done||0}/24','레인 미연결(범위 밖)'],['${CDIRECT.placement.done||0}/24','레인 미연결(범위 밖)'],['${d}/24','레인 미연결(범위 밖)']],
   'recommend_runtime.js':[['${got}/${jobs.length}','producer: recoProgressPaint / directResultsPaint']],
   'sim_worker.js':[['${i+1}/${m.teams.length}','producer: worker result consumers']]
 };

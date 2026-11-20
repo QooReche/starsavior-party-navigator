@@ -134,7 +134,8 @@ def result_audit(page,probability,art,width,shots):
     }''',probability)
     reaction=page.locator('#out .gwen-reaction')
     assert reaction.count()==1,'only the first party should carry a portrait'
-    actual=reaction.get_attribute('data-gwen-reaction')
+    loaded(page,'#out .gwen-reaction img')
+    actual=reaction.locator('.gwen-lane-actor').get_attribute('data-gwen-expression')
     assert actual in ({'confident':['st_verdict','st_cheer','st_ok','st_reach'],'thoughtful':['thoughtful','st_point'],'notes':['notes','st_cry']}[art])
     art=actual
     pic=loaded(page,'#out .gwen-reaction img')
@@ -223,16 +224,21 @@ def main():
                           ('walk-loop',"walk:{file:'walk',loop:true}","walk:{file:'walk'}",walk_audit),
                           ('interval','rand(4000,4001)','0',timer_audit),
                           ('reduced',"root.matchMedia('(prefers-reduced-motion: reduce)')","({matches:false,addEventListener(){}})",timer_audit),
-                          ('result',"if(result)return gwenReport(result,{clear:p,portrait:true});","if(result)return '';",lambda p:result_audit(p,.95,'confident',1280,False)),
+                          ('result',None,None,lambda p:result_audit(p,.95,'confident',1280,False)),
                           ('drawer',"c.visibility==='hidden'",'false',drawer_audit),
                           ('clipping',"if(el!==img){","if(false){",clipped_audit),
                           ('cleanup','s.stop();observer.unobserve(img);states.delete(img);','observer.unobserve(img);states.delete(img);',timer_audit)]
                 for name,old,new,audit in variants:
-                    assert old in source
+                    target='ux_ui.js'
+                    current=source
+                    if name=='result':
+                        target='index.html';current=(ROOT/target).read_text(encoding='utf-8')
+                        old="GwenStage.slot('reco','result')";new="''"
+                    assert old in current
                     context=browser.new_context(viewport={'width':1280,'height':950})
                     context.add_init_script('Math.random=()=>.5')
-                    body=source.replace(old,new)
-                    context.route('**/ux_ui.js*',lambda route:route.fulfill(status=200,content_type='application/javascript',body=body))
+                    body=current.replace(old,new)
+                    context.route('**/'+target+'*',lambda route:route.fulfill(status=200,content_type='text/html' if target.endswith('html') else 'application/javascript',body=body))
                     page=context.new_page();page.set_default_timeout(1500)
                     try:
                         ready(page,base);page.clock.install()

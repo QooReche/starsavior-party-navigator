@@ -1,4 +1,6 @@
 """Guild EX shares recommendation/search: the last user action owns Gwen."""
+import argparse
+from pathlib import Path
 from playwright.sync_api import sync_playwright
 from test_page import test_server, FULL
 from test_direct_party import ready
@@ -8,6 +10,7 @@ from test_gwen_search_stage import FAKE
 def owner(p, mode):
     assert p.evaluate('GwenLane.mount().state.mode') == mode, 'last action lost Gwen ownership'
     assert p.locator('.gwen-lane-actor:visible').count() == 1, 'one visible Gwen required'
+    assert p.locator('#out [data-gwen-idle]:visible, #out .gwen-work:visible').count()==0, 'inactive inline Gwen still visible'
     other = 'guildSearch' if mode == 'reco' else 'reco'
     for part in ('board', 'result'):
         slot = p.locator(f'[data-gwen-slot="{other}-{part}"]')
@@ -30,8 +33,14 @@ def recommendation(p):
     owner(p, 'reco')
 
 
-def flow(browser, base, width):
-    p=ready(browser,base,width,info=FULL,query='?pm=reco&season=force')
+def flow(browser, base, width, variant=None):
+    def setup(page):
+        if variant:
+            file,old,new=variant
+            source=(Path(__file__).resolve().parents[2]/file).read_text(encoding='utf-8')
+            assert old in source,(file,old)
+            page.route('**/'+file+'*',lambda r:r.fulfill(body=source.replace(old,new),content_type='text/html' if file.endswith('html') else 'application/javascript'))
+    p=ready(browser,base,width,info=FULL,query='?pm=reco&season=force',setup=setup)
     try:
         p.select_option('#content',p.evaluate('String(contents.findIndex(c=>c.key==="guild"))'))
         assert 'EX' in p.locator('#stage option:checked').inner_text()
@@ -86,10 +95,26 @@ def flow(browser, base, width):
 
 
 if __name__=='__main__':
+    ap=argparse.ArgumentParser();ap.add_argument('--mutations',action='store_true');args=ap.parse_args()
     with test_server() as base,sync_playwright() as pw:
         browser=pw.chromium.launch()
         try:
             for width in (1280,390):
                 flow(browser,base,width)
                 print('PASS guild EX ownership',width,flush=True)
+            if args.mutations:
+                for name,variant,message in [
+                    ('progress steals',('index.html',"GwenStage.activate(mode==='guildSearch'?guildGwenMode():mode)","GwenStage.activate(mode)"),'last action lost Gwen ownership'),
+                    ('empty slot',('index.html','slot.hidden=guild&&owner!==mode||','slot.hidden='),'inactive lane leaves empty space'),
+                    ('navigation steals',('direct_ui.js','(cosmo?searchMode:guildGwenMode())','searchMode'),'last action lost Gwen ownership'),
+                    ('hidden content leak',('index.html',"for(const mode of ['reco','guildSearch'])", "if(guild)for(const mode of ['reco','guildSearch'])"),'guild hiding leaked'),
+                    ('inline duplicate',('direct.css','body[data-guild-gwen-owner=guildSearch] #out :is([data-gwen-idle],.gwen-work){display:none}',''),'inactive inline Gwen still visible'),
+                ]:
+                    try:flow(browser,base,1280,variant)
+                    except AssertionError as e:
+                        assert message in str(e),(name,str(e))
+                        print('CAUGHT',name,flush=True)
+                    else:raise AssertionError('mutation survived: '+name)
+                flow(browser,base,1280)
+                print('PASS restored ownership',flush=True)
         finally:browser.close()

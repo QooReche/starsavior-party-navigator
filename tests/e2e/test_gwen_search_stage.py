@@ -1,4 +1,5 @@
 """Real search planners + controlled workers; one actor through progress/result/cancel."""
+import argparse
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from test_page import test_server, FULL
@@ -33,8 +34,10 @@ FAKE='''() => {
 }'''
 
 
-def flow(browser,base,width,kind):
-    p=ready(browser,base,width,info=FULL if kind=='guild' else account(),query='?pm=reco&season=force')
+def flow(browser,base,width,kind,template=None):
+    def setup(page):
+        if template:page.route('**/index.html*',lambda r:r.fulfill(body=template,content_type='text/html'))
+    p=ready(browser,base,width,info=FULL if kind=='guild' else account(),query='?pm=reco&season=force',setup=setup)
     p.select_option('#content',p.evaluate('k=>String(contents.findIndex(c=>c.key===k))',kind))
     mode='cosmoSearch' if kind=='cosmo' else 'guildSearch'
     state='CSR' if kind=='cosmo' else 'GSR'
@@ -137,6 +140,7 @@ def flow(browser,base,width,kind):
 
 
 if __name__=='__main__':
+    ap=argparse.ArgumentParser();ap.add_argument('--mutations',action='store_true');args=ap.parse_args()
     OUT.mkdir(parents=True,exist_ok=True);ACCOUNT_OUT.mkdir(parents=True,exist_ok=True)
     with test_server() as base,sync_playwright() as pw:
         browser=pw.chromium.launch()
@@ -145,4 +149,15 @@ if __name__=='__main__':
                 for kind in ('cosmo','guild'):
                     flow(browser,base,width,kind)
                     print(f'PASS {kind} {width}: progress, cancel, stale replies, result, rebind, navigation',flush=True)
+            if args.mutations:
+                html=(ROOT/'index.html').read_text(encoding='utf-8')
+                old='if(GSR.phase==="run"){GSR.phase="idle";GSR.id++}GwenStage.destroy'
+                assert old in html
+                try:flow(browser,base,1280,'guild',html.replace(old,'GSR.phase="idle";GSR.id++;GwenStage.destroy'))
+                except AssertionError as e:
+                    assert 'content return lost completed search' in str(e),str(e)
+                    print('CAUGHT completed search reset on destroy',flush=True)
+                else:raise AssertionError('destroy mutation survived')
+                flow(browser,base,1280,'guild')
+                print('PASS restored destroy/remount',flush=True)
         finally:browser.close()

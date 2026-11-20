@@ -76,29 +76,30 @@ def result_audit(page):
     assert portrait.evaluate('e=>e.parentElement.classList.contains("result-summary")'), 'portrait outside summary'
     assert portrait.evaluate('e=>e===e.parentElement.lastElementChild'), 'portrait must follow verdict and simulation summary'
     assert page.locator('#reco-gwen-stage .gwen-lane-actor').count() == 0, 'duplicate result lane actor'
-    page.evaluate("GwenLane.registerStage('reco',{resultExternal:true,board:$('reco-board-lane'),result:$('reco-result-lane'),banner:$('reco-lane-banner')})")
+    page.evaluate("$('reco-result-lane').replaceWith($('reco-result-lane').cloneNode(false));GwenStage.mount(document,{mode:'reco'})")
     assert page.locator('#reco-gwen-stage .gwen-lane-actor').count() == 0, 'result rebind restored lane actor'
     assert page.locator('#reco-lane-banner').is_visible(), 'completion banner missing'
     portrait.scroll_into_view_if_needed()
     page.wait_for_function('document.querySelector("#out .gwen-reaction img").dataset.gwenLoaded==="true"')
     assert abs(portrait.locator('img').bounding_box()['height']-(240 if page.viewport_size['width']>=1200 else 112))<1
-    art = portrait.get_attribute('data-gwen-reaction')
+    art = portrait.locator('.gwen-lane-actor').get_attribute('data-gwen-expression')
     assert art in ['st_verdict','st_cheer','st_ok','st_reach']
     page.wait_for_timeout(2100)
     page.evaluate('run(true)')
     portrait.scroll_into_view_if_needed()
     page.wait_for_timeout(150)
-    assert portrait.is_visible() and portrait.get_attribute('data-gwen-reaction') == art
+    assert portrait.is_visible() and portrait.locator('.gwen-lane-actor').get_attribute('data-gwen-expression') == art
     assert portrait.locator('img').get_attribute('data-gwen-playing') == 'false', 'result reaction replayed'
-    page.evaluate('''() => {window.autoScore={score:100};$('out').innerHTML='<div class="result-summary">'+Ux.gwenReaction(undefined,autoScore)+'</div>';recoGwenShow(false,null,autoScore)}''')
-    assert page.locator('#out .gwen-reaction').get_attribute('data-gwen-reaction') == 'st_point', 'score must be neutral'
+    page.evaluate('''() => {window.autoScore={score:100};$('out').innerHTML='<div class="result-summary">'+GwenStage.slot('reco','result')+'</div>';recoGwenShow(false,null,autoScore)}''')
+    page.wait_for_function("document.querySelector('#out .gwen-reaction img')?.dataset.gwenOnce===String(GwenLane.resultId(autoScore))")
+    assert page.locator('#out .gwen-lane-actor').get_attribute('data-gwen-expression') in ['st_point','thoughtful'], 'score must be neutral'
     assert page.locator('#reco-gwen-stage .gwen-lane-actor').count() == 0
     page.evaluate("const q=$('gwen-quiet');q.checked=true;q.dispatchEvent(new Event('change'))")
     assert page.locator('#reco-gwen-stage .gwen-lane-actor').count() == 0, 'quiet restored result lane actor'
     page.evaluate('''() => {window.autoQuietPlayed=false;
       new MutationObserver(()=>{if(document.querySelector('#out .gwen-reaction img')?.dataset.gwenPlaying==='true')autoQuietPlayed=true})
         .observe($('out'),{subtree:true,attributes:true,attributeFilter:['data-gwen-playing']});
-      window.autoQuietResult={clear:.9};$('out').innerHTML='<div class="result-summary">'+Ux.gwenReaction(.9,autoQuietResult)+'</div>';
+      window.autoQuietResult={clear:.9};$('out').innerHTML='<div class="result-summary">'+GwenStage.slot('reco','result')+'</div>';recoGwenShow(false,null,autoQuietResult);
     }''')
     portrait.scroll_into_view_if_needed()
     page.wait_for_function('document.querySelector("#out .gwen-reaction img").dataset.gwenLoaded==="true"')
@@ -131,15 +132,15 @@ if __name__ == '__main__':
         for width in [390,1280]:
             run(browser,base,width);print('PASS auto result/screening/speech',width,flush=True)
         cases=[
-            ('summary placement',('index.html','${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?Ux.gwenReaction','</div><div>${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?Ux.gwenReaction'),'result','portrait outside summary'),
-            ('summary order',('index.html','${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?Ux.gwenReaction(SIMQ.res[simSig(st,shown)]?.clear,SIMQ.res[simSig(st,shown)]):""}','${p===1?Ux.gwenReaction(SIMQ.res[simSig(st,shown)]?.clear,SIMQ.res[simSig(st,shown)]):""}${simBar(p,rows,st,uniq>rows.length,shown)}'),'result','portrait must follow verdict'),
-            ('result actor',('index.html','resultExternal:true,','resultExternal:false,'),'result','duplicate result lane actor'),
-            ('result rebind',('gwen_lane.js',"if(stages.get(mode)?.resultExternal&&current.phase==='result'){render(current);return;}",''),'result','result rebind restored lane actor'),
-            ('quiet result stage',('gwen_lane.js',"if(stages.get(current.mode)?.resultExternal&&current.phase==='result'){render(current);return;}",''),'result','quiet restored result lane actor'),
+            ('summary placement',('index.html','${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?GwenStage.slot','</div><div>${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?GwenStage.slot'),'result','portrait outside summary'),
+            ('summary order',('index.html','${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?GwenStage.slot(\'reco\',\'result\'):""}','${p===1?GwenStage.slot(\'reco\',\'result\'):""}${simBar(p,rows,st,uniq>rows.length,shown)}'),'result','portrait must follow verdict'),
+            ('result actor',('gwen_lane.js',"stage.result||stage.board];\n      if(current.stale)","stage.board];\n      if(current.stale)"),'result','duplicate result lane actor'),
+            ('result rebind',('gwen_lane.js','setLane(el);workRestAt=clock+250;',"setLane(mode==='reco'&&current.phase==='result'?stages.get(mode).board:el);workRestAt=clock+250;"),'result','result rebind restored lane actor'),
+            ('quiet result stage',('gwen_lane.js',"cancelMove();bubbleUntil=0;settle();", "cancelMove();bubbleUntil=0;if(current.mode==='reco'&&current.phase==='result')current.phase='work';settle();"),'result','quiet restored result lane actor'),
             ('quiet result reaction',('ux_ui.js',"media.matches||(img.hasAttribute('data-gwen-managed')&&doc.documentElement.dataset.gwenQuiet==='true')","media.matches"),'result','quiet result reaction played'),
-            ('quiet result speech',('ux_ui.js',"report?.done||report&&img.hasAttribute('data-gwen-managed')&&doc.documentElement.dataset.gwenQuiet==='true'","report?.done"),'result','quiet result speech visible'),
+            ('quiet result speech',('direct.css','html[data-gwen-quiet=true] .gwen-summary-result .gwen-bubble{visibility:hidden}',''),'result','quiet result speech visible'),
             ('screen callback',('index.html','const pv=document.querySelector(\'[data-k="progress"]\');if(pv)simProgressSync(pv,st)},','/* mutation: lost callback update */ },'),'screen','screening progress/aria not delivered'),
-            ('lane progress',('index.html','recoGwenShow(true,all?done/all:0);','recoGwenShow(true,0);'),'screen','screening progress not delivered to lane'),
+            ('lane progress',('index.html','recoGwenShow(true,all?done/all:0,null,','recoGwenShow(true,0,null,'),'screen','screening progress not delivered to lane'),
             ('speech padding',('direct.css','#direct-board-lane,#reco-board-lane{height:122px;padding-top:34px;','#direct-board-lane,#reco-board-lane{height:122px;padding-top:0;'),'screen','speech clipped vertically'),
         ]
         for name,variant,audit,message in cases:

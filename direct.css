@@ -96,6 +96,9 @@ html[data-gwen-quiet=true] .gwen-lane-actor::before{transition:none}
 #reco-result-lane.gwen-summary-result[hidden]{display:none}
 #reco-result-lane.gwen-summary-result .gwen-lane-actor{top:0;transform:none!important;flex-shrink:0;order:1}
 #reco-result-lane.gwen-summary-result .gwen-lane-speech{display:none}
+html[data-gwen-quiet=true] .gwen-summary-result .gwen-bubble{visibility:hidden}
+body[data-guild-gwen-owner=guildSearch] #out :is([data-gwen-idle],.gwen-work){display:none}
+body[data-guild-gwen-owner=guildSearch] #out .idle{display:block}
 #reco-result-lane.gwen-summary-result .gwen-lane-actor::before{content:none}
 #reco-result-lane.gwen-summary-result .gwen-lane-actor,#reco-result-lane.gwen-summary-result .gwen-lane-poke{width:240px;height:240px}
 @media(min-width:1200px){.search-gwen-lane{height:162px}.search-gwen-lane .gwen-lane-actor,.search-gwen-lane .gwen-lane-poke{width:120px;height:120px}}

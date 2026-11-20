@@ -196,6 +196,12 @@ function checkLoading(page){
  assert.match(completed,/data-state="done"/);
  assert.doesNotMatch(completed,/data-gwen="report"/,'result illustration belongs to the shared lane');
  assert.match(page,/GwenStage\.slot\('reco','result'\)/);
+ const h=require('./helpers/gwen_dom')();
+ for(const file of ['gwen_policy.js','ux_ui.js','gwen_lane.js'])h.load(fs.readFileSync(require.resolve('../'+file),'utf8'));
+ for(const part of ['board','result'])h.add('test-reco-'+part).dataset.gwenSlot='reco-'+part;
+ const result=h.c.GwenStage.mount(h.doc,{mode:'reco'}).elements.result;
+ assert(result.classList.contains('gwen-summary-result'),'result summary layout class missing');
+ assert(result.classList.contains('gwen-reaction'),'result portrait class missing');
  const css=page.match(/@media\(prefers-reduced-motion:reduce\)\{\.gwen-work[^}]+\}/)?.[0]||'';
  for(const rule of ['.gwen-worker','animation:none','transform:none'])assert(css.includes(rule),rule);
  assert.match(page,/\.gwen-scene\{[^}]*width:140px;height:140px;flex:0 0 140px/);

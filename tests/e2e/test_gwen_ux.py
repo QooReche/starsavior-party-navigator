@@ -123,18 +123,24 @@ def cycle_audit(page):
 
 def result_audit(page):
     page.clock.install()
-    # Execute the actual quickBox + simBar with only heavy recommendation helpers stubbed.
+    # Real runCore chooses the displayed pick and passes its result to Gwen.
+    # Only simulation responses are supplied; ranking, PICK, quickBox and simBar stay real.
     page.evaluate('''() => {
-      window.__rows=[{combo:{key:'a'},keys:['a'],q:{power:1},b:{},vd:'ok'}, {combo:{key:'b'},keys:['b'],q:{power:1},b:{},vd:'ok'}];
+      recoClearTimer();clearTimeout(_rt);SIMQ.auto=false;SIMQ.kick=false;SIMQ.busy=null;
+      REQ=true;RECO.standard=true;
+      document.querySelectorAll('#own input').forEach((x,i)=>x.checked=i<8);updCount();runCore(true);
+      const st=cur[$('stage').value],c=contents[$('content').value],rows=LASTQ[1].rows;
+      if(rows.length<2)throw Error('two distinct recommendation teams required');
       window.__resultA={clear:.95,n:100};window.__resultB={clear:0,n:100};
-      const sig=(st,t)=>t.combo.key;
-      window.__reportBar=new Function('simSig','return ('+simBar.toString()+')')(sig);
-      window.__reportBox=new Function('quickRows','ckey','quickWeak','simSig','miVerdict','scrNote','simBar','simCell','return ('+quickBox.toString()+')')(
-        ()=>__rows,c=>c.key,()=>[],sig,()=>'',()=>'',__reportBar,()=>'');
-      SIMQ.busy=null;SIMQ.err='';SIMQ.res.a=__resultA;SIMQ.res.b=__resultB;
-      window.__paintReport=()=>{$('out').innerHTML=__reportBox(1,__rows,{}, {},'b','', '');recoGwenShow(false,null,__resultB);$('out').scrollIntoView({block:'center'});};
+      for(const t of rows)SIMQ.res[simSig(st,t)]=__resultA;
+      const shown=rows[1];SIMQ.res[simSig(st,shown)]=__resultB;
+      window.__shownKey=shown.keys.slice().sort().join(',');
+      PICK[c.key+'|'+st.tab+'|'+st.name+'|1']=__shownKey;
+      window.__paintReport=()=>{runCore(true);$('out').scrollIntoView({block:'center'});};
       __paintReport();
     }''')
+    assert page.locator('#out .party[data-party="1"]').get_attribute('data-team')==page.evaluate('__shownKey')
+    assert page.evaluate("SIMQ.res[simSig(cur[$('stage').value],LASTQ[1].rows[0])]===__resultA"), 'different top team required'
     loaded(page,'#out .gwen-lane-actor img')
     assert expression(page.locator('#out .gwen-lane-actor'))in ['st_cry','notes'],'shown result must drive report'
     page.clock.run_for(600)
@@ -361,8 +367,8 @@ def main():
                         assert message in str(e),(name,str(e));print('CAUGHT intended assertion: '+name,flush=True)
                     else:raise AssertionError('mutation survived: '+name)
                 html=(ROOT/'index.html').read_text(encoding='utf-8')
-                old='RECO_GWEN.done(result)';assert old in html
-                try:run_case(browser,base,result_audit,template=html.replace(old,'RECO_GWEN.done({...result,clear:1})'))
+                old='if(p===1)gwenResult=sr||null;';assert old in html
+                try:run_case(browser,base,result_audit,template=html.replace(old,'if(p===1)gwenResult=SIMQ.res[simSig(st,LASTQ[p].rows[0])]||null;'))
                 except AssertionError as e:
                     assert 'shown result must drive report' in str(e);print('CAUGHT intended assertion: shown',flush=True)
                 else:raise AssertionError('shown mutation survived')

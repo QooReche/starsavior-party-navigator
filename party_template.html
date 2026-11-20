@@ -1315,6 +1315,7 @@ function guildGwenClaim(mode){guildGwenClaim.owner=mode;}
 function recoGwenVisibility(){
  const host=$('reco-gwen-stage');if(!host)return;
  const guild=contents[$('content').value]?.key==='guild',owner=guildGwenMode();
+ document.body.dataset.guildGwenOwner=guild?owner:'';
  host.hidden=DIRECT.mode!=='reco'||!$('mi-panel').hidden||!(['work','result'].includes(host.dataset.phase)||guild&&REQ)||guild&&owner!=='reco';
  for(const mode of ['reco','guildSearch'])for(const part of ['board','result']){
   const slot=document.querySelector(`[data-gwen-slot="${mode}-${part}"]`);
