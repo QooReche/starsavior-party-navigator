@@ -182,7 +182,7 @@
     bosses.forEach(b => {
       const list = [];
       seen.forEach((keys, k) => { if (k.startsWith(b + "|")) list.push(keys); });
-      jobs.push(...bossJobs(S, b, level, list, results, cls));
+      pushAll(jobs, bossJobs(S, b, level, list, results, cls));
     });
     return jobs;
   }
@@ -519,7 +519,7 @@
       }
       learnedSelections=selections;allJobs=jobsA;firstResults=res1;
       jobsK=[];
-      bosses.forEach((b,i)=>{const jb=jobsA.filter(j=>j.boss===b),n=passCount(S,jb.length,pl.keep),ranked=pickTop(jb,res1,mode),keep=Learned.preserve(ranked,pickPass(jb,res1,mode,n),c.M*(auditInfo[i].multiplier||1),selections[i].overlap);jobsK.push(...bossJobs(S,b,level,keep.map(e=>e.keys),results,cls));});
+      bosses.forEach((b,i)=>{const jb=jobsA.filter(j=>j.boss===b),n=passCount(S,jb.length,pl.keep),ranked=pickTop(jb,res1,mode),keep=Learned.preserve(ranked,pickPass(jb,res1,mode,n),c.M*(auditInfo[i].multiplier||1),selections[i].overlap);pushAll(jobsK, bossJobs(S,b,level,keep.map(e=>e.keys),results,cls));});
       passed=Math.max(...bosses.map(b=>jobsK.filter(j=>j.boss===b).length));
       const more=S.screen.runs-fr,res2=more>0?await run(shuffled(jobsK,20261108),more,4,'1단계 보충: 학습 후보·구원자별 대안·겹침 회피 확인',1):{};
       if(stale())return null;resA={};for(const j of jobsK){const a=res1[j.key],b=res2[j.key];if(more>0&&!b?.cosmo)throw new Error('보충 계산 결과가 누락됨');resA[j.key]=b?{...b,cosmo:mergeSummary(a.cosmo,b.cosmo,S.topQ)}:a;}
@@ -576,7 +576,7 @@
         const pending=selected.filter(e => !evaluated.has(jobKey(b,e.keys,level)));
         if(learned && have+pending.length>retry.limits[retry.limits.length-1])throw new Error('구원자별 보장을 유지하기에 정밀 후보 상한이 부족함');
         const fresh = learned ? pending : pending.slice(0, Math.max(0, limit - have));
-        extra.push(...bossJobs(S, b, level, fresh.map(e => e.keys), results, cls));
+        pushAll(extra, bossJobs(S, b, level, fresh.map(e => e.keys), results, cls));
       });
       if (!extra.length) continue;
       const carry = jobsB.length;
@@ -585,7 +585,7 @@
       if (stale()) return null;
       if (extra.some(j => !resB[j.key] || !resB[j.key].cosmo))
         throw Object.assign(new Error("정밀 계산 결과가 누락됨. 다시 시도 필요"), {gwenCause: "calculation"});
-      extra.forEach(j => evaluated.add(j.key)); jobsB.push(...extra);
+      extra.forEach(j => evaluated.add(j.key)); pushAll(jobsB, extra);
       lists = bosses.map(b => pickTop(jobsB.filter(j => j.boss === b), resB, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
       kept = Math.max(...lists.map(l => l.length));
       triples = bestTriples(lists, S.combine.topTriples, budget);
@@ -618,7 +618,7 @@
     const seen = new Map();
     triples.forEach(t => t.teams.forEach((e, i) => { const l = levelOf(bosses[i], e.keys), k = jobKey(bosses[i], e.keys, l); if (!seen.has(k)) seen.set(k, {boss: bosses[i], keys: e.keys, level: l}); }));
     const jobsC = [];
-    seen.forEach(v => brks.forEach(b => jobsC.push(...bossJobs(S, v.boss, v.level, [v.keys], results, cls, b))));
+    seen.forEach(v => brks.forEach(b => pushAll(jobsC, bossJobs(S, v.boss, v.level, [v.keys], results, cls, b))));
     const resC = await run(jobsC, S.final.runs, 2, `${auto ? "마지막 확인" : "3단계"}: 합이 큰 ${triples.length}개 편성의 팀 ${seen.size}개${brks.length > 1 ? "를 브레이크 스킬 " + (brks.length - 1) + "종과 함께" : ""} ${S.final.runs}판씩 확인 중`, auto ? null : 3);
     if (stale()) return null;
     const rows2 = finalRankBrk(triples, bosses, levelOf, brks, resC, mode, S.combine.show);
@@ -629,6 +629,8 @@
     } finally { if (workersPool) workersPool.close(); }
   }
 
+  // 큰 배열을 push(...arr) 로 넘기면 함수 인자 한도(약 12만~)를 넘어 RangeError — 하나씩 넣는다
+  function pushAll(out, items) { for (const x of items) out.push(x); return out; }
   const pct = x => Math.round((x || 0) * 100) + "%";
   // 화면 조각. st = {phase: idle|run|done|err, msg, done, total, rows, level, mode, bosses, ...}, cx = {hasInfo, label(key), esc, bossName(key), levelMax, level, mode}
   function table(r, mode, cx, index=0) {
@@ -686,6 +688,6 @@
     return Math.max(W.min, Math.floor(n));
   }
 
-  const api = {MODES, searchSettings, proxyScore, surrogateSelect, surrogateAudit, workerCount, pickPass, passCount, mergeSummary, shuffled, poolAll, countCombos, feasibility, effKeep, plan, etaNew, priorFrom, fmtDur, etaLine, preText, progText, metric, idOf, jobKey, bossJobs, pickTop, pickDiverse, bestTriples, finalJobs, finalRank, finalRankBrk, search, html, table};
+  const api = {MODES, pushAll, searchSettings, proxyScore, surrogateSelect, surrogateAudit, workerCount, pickPass, passCount, mergeSummary, shuffled, poolAll, countCombos, feasibility, effKeep, plan, etaNew, priorFrom, fmtDur, etaLine, preText, progText, metric, idOf, jobKey, bossJobs, pickTop, pickDiverse, bestTriples, finalJobs, finalRank, finalRankBrk, search, html, table};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.CosmoSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);
