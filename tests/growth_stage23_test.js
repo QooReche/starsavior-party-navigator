@@ -79,6 +79,7 @@ async function workerContract(){const ui=fs.readFileSync(require.resolve('../gro
   ctx.SIMQ={};
   // 작업자 풀·대기열은 화면 것 그대로(코어 16·메모리 모름 = 6개까지, 작업 3개 → 작업자 3개)
   const page=fs.readFileSync(require.resolve('../party_template.html'),'utf8');vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(require.resolve('../search_executor.js'),'utf8'),ctx);
   vm.runInContext(page.slice(page.indexOf('// ── 작업자 풀·작업 대기열'),page.indexOf('// 이 기기의 시뮬 속도')),ctx);
   vm.runInContext(ui.slice(ui.indexOf('async function growthEvaluate'),ui.indexOf('function growthMaybe')),ctx);
   const jobs=Array.from({length:3},(_,i)=>({id:'j'+i,party:{},options:{}}));

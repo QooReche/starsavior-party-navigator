@@ -3,7 +3,7 @@
  'use strict';
  function createWorker(){return new root.Worker('sim_worker.js')}
 function shared(env){
- const now=env.now||(()=>Date.now()),setTimer=env.setTimer||setTimeout,clearTimer=env.clearTimer||clearTimeout;
+ const now=env.now||(()=>Date.now()),setTimer=env.setTimer||((...args)=>setTimeout(...args)),clearTimer=env.clearTimer||((...args)=>clearTimeout(...args));
  // Same resource owner as phase execution; scheduling/retention remain caller contracts.
  const resources=workerPool(()=>{
   const w=(env.makeWorker||createWorker)();w.onmessage=e=>simReceive(w,e.data);
