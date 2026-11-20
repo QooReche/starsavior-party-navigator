@@ -1,8 +1,10 @@
 # 인수인계
 
-갱신 2026-11-20. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md) — 코드·note·문서에 남은 «HANDOFF 의 ○○ 절» 참조도 거기서 찾음.
+갱신 2026-11-21. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md) — 코드·note·문서에 남은 «HANDOFF 의 ○○ 절» 참조도 거기서 찾음.
 
 ## 현재 상태
+
+- **자리 자동 배치 경합 정리(11/21)**: 24조건 배치 비교가 비동기가 된 뒤 취소된 결과가 새 요청·되돌리기를 덮어쓸 수 있던 것을 고쳤음. 결과는 같은 요청·같은 입력일 때만 적용하고, 되돌리기·콘텐츠/탭/스테이지 변경 때 즉시 취소하며, 적용된 배치는 결과가 같아도 되돌리기 1건을 가짐. 직접 편성·코스모 직접 편성 둘 다 같은 규칙. 회귀·변이 시험은 `tests/e2e/test_placement.py --mutations`.
 
 - **미지원·근사 허용 목록 관문**: `tests/unsupported_gate_test.py`가 구원자 정적/실행 중·현재 시즌 적·규칙 가정·전 스테이지 적 진단의 키 집합을 양방향 비교함. 허용 목록·사유·클라 조사 단서·담당은 `tests/fixtures/unsupported_allowlist.json`, 고정 입력은 `tests/fixtures/unsupported_scenarios.json`, 갱신은 `tools/unsupported_allowlist.py --diff/--write`가 정본임. 새 항목·해소 항목·빈 사유·미실행을 실패 처리함. 분기 미실행과 API가 보고하지 않는 조용한 근사는 별도 감사 대상이며 클라 확정으로 취급하지 않음. 범위·시즌 갱신·한계는 `docs/unsupported_gate.md` 참조. API gate·화면·엔진·탐색 변경 없음.
 
