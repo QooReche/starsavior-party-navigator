@@ -34,21 +34,28 @@
         const c=S.learned,f=c.fallbackMultiplier,expanded={...S,learned:{...c,K:c.K*f,M:c.M*f,A:c.A*f}};
         selection=await L.select(expanded,rows,model,stale);
         jobs=[...selection.core.values()].map(e=>make(e.keys));
-        await evaluate(jobs);quality.expanded=true;
+        const more=await L.auditSample(expanded,rows,selection,(cx.sampleSeed||20261120)+2,stale);
+        aj=[...new Map([...aj,...more.teams.map(k=>make(k))].map(j=>[j.key,j])).values()];
+        await evaluate([...jobs,...aj]);quality.expanded=true;quality.expandedAudit=more.teams.length;
       }
       const known=[...new Map([...jobs,...aj,...sj].map(j=>[j.key,j])).values()];
       const rankedKnown=ranked(known,res).map(j=>({...j,score:j.top}));
       const top=L.preserve(rankedKnown,rankedKnown.slice(0,S.screen2.keep),S.learned.M,new Set()).map(j=>j.keys);
       // Audit representative level/support and alternative layouts on excluded samples.
-      const selected=new Set(top.map(P.id)),sampled=aj.filter(j=>!selected.has(P.id(j.keys))).slice(0,S.placement?.auditTeams??12),auditJobs=[];
+      const selected=new Set(top.map(P.id)),auditN=S.placement?.auditTeams??12;
+      const auditBoundary=rankedKnown.filter(j=>!selected.has(P.id(j.keys))).slice(0,Math.floor(auditN/2)),boundaryIds=new Set(auditBoundary.map(j=>P.id(j.keys)));
+      const random=aj.filter(j=>!selected.has(P.id(j.keys))&&!boundaryIds.has(P.id(j.keys))).slice(0,auditN-auditBoundary.length),sampled=[...auditBoundary,...random],auditJobs=[];
       for(const j of sampled)for(const p of P.variants(j.keys,results,Object.fromEntries(roster.map(r=>[r.key,r.placementTraits||[]]))))for(const leaderKey of j.keys)for(const level of [0,S.screen.level,12])for(const sup of GS.finalSupports(S,j.keys,cls))auditJobs.push(make(j.keys,level,sup,null,{...p,leaderKey}));
       let representative={sampled:sampled.length,misses:0,rate:0};const rescued=[];
       if(auditJobs.length){const ar=await run(auditJobs,S.screen.runs,1,'길드 대표 단계·지원·배치 놓침 감사'),edge=ranked(known,res)[Math.min(S.screen2.keep,known.length)-1]?.top||0,miss=new Map();
         for(const j of ranked(auditJobs,ar))if(j.top>=edge)miss.set(P.id(j.keys),j.keys);
-        representative={sampled:sampled.length,misses:miss.size,rate:miss.size/sampled.length};for(const k of miss.values()){top.push(k);rescued.push(k);}
+        representative={sampled:sampled.length,misses:miss.size,rate:miss.size/sampled.length,boundarySampled:auditBoundary.length,randomSampled:random.length,randomMisses:random.filter(j=>miss.has(P.id(j.keys))).length};for(const k of miss.values()){top.push(k);rescued.push(k);}
         if(representative.rate>S.learned.missThreshold){for(const j of rankedKnown.slice(0,S.screen2.keep*2))if(!top.some(k=>P.id(k)===P.id(j.keys)))top.push(j.keys);representative.expanded=true;}
       }
-      const traits=Object.fromEntries(roster.map(r=>[r.key,r.placementTraits||[]])),second=top.flatMap(k=>P.variants(k,results,traits).flatMap(p=>(representative.expanded?k:[p.leaderKey]).map(leaderKey=>make(k,undefined,undefined,null,{...p,leaderKey}))));
+      const traits=Object.fromEntries(roster.map(r=>[r.key,r.placementTraits||[]]));
+      let second=top.flatMap(k=>P.variants(k,results,traits).flatMap(p=>(representative.expanded?k:[p.leaderKey]).map(leaderKey=>make(k,undefined,undefined,null,{...p,leaderKey}))));
+      if(representative.expanded){const sr=await run(second,S.placement?.screenRuns||2,13,'길드 확대 후보 배치·리더 예비 비교'),seen=new Map();
+        second=ranked(second,sr).filter(j=>{const k=P.id(j.keys),n=seen.get(k)||0;seen.set(k,n+1);return n<(S.placement?.keep||2);});}
       const rr=await run(second,S.screen2.runs,3,'길드 후보 복수 배치 비교');
       const finalists=[...new Map([...GS.pickTop(V,G,second,rr,tiers,S.finalists,S),...rescued].map(k=>[P.id(k),k])).values()],keep=[];
       let conditions=0,moved=0;

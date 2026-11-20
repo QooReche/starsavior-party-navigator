@@ -1,5 +1,7 @@
 // Page transport for the pure placement candidates; shares the physical worker pool.
 const PLACEMENT_CACHE=new Map();
+let placementEngine=null;
+function placementSetEngine(ver){if(ver!==placementEngine){PLACEMENT_CACHE.clear();placementEngine=ver;}}
 let placementSerial=0;
 function placementCompare(a,b){return b.cosmo&&a.cosmo?PlacementSearch.cmp(typeof CSR==='undefined'?'top':CSR.optMode||'top')(a,b):
   (b.t60??b.clear)-(a.t60??a.clear)||b.clear-a.clear||(b.prog||0)-(a.prog||0)||(a.ttk??Infinity)-(b.ttk??Infinity);}
@@ -26,7 +28,9 @@ async function directArrangeSim(){
   const input=directInputKey(),state={};DIRECT.placement=state;
   const paint=()=>{$('direct-arrange').textContent=DIRECT.placement?`배치 비교 ${state.done||0}/24 · 취소`:'자리 자동 배치';};paint();
   try{
-    const values=directValues(),party=DirectParty.serialize(DIRECT.draft,values?.profile?.results||{});
+    const values=directValues();
+    if(!values||values.errors?.length||MI.error||DIRECT.error)throw Error('계정 능력치 자료를 확인한 뒤 다시 배치 필요');
+    const party=DirectParty.serialize(DIRECT.draft,values.profile?.results||{});
     const auto=pickBreak(DIRECT.draft.slots.map(m=>({s:BYKEY[m.key]})),c.name,ownedSimBreaks().map(b=>b.name));
     const brk=DIRECT.draft.brk==='auto'?(auto?{name:auto[1],level:brkLv(auto[1])}:null):DIRECT.draft.brk;
     const winner=await placementRun({party,stage:c.key+'/'+st.tab+'/'+st.name,options:simOpt(c.key),brk,owner:'placement-direct',
@@ -46,14 +50,14 @@ async function cdArrangeSim(boss){
   }catch(e){CDIRECT.error=e.message;cdPaint();}finally{if(CDIRECT.placement===state)CDIRECT.placement=null;paint();}
 }
 function recommendationPlacementKey(t,party){const c=contents[$('content').value],st=cur?.[$('stage').value];
-  return JSON.stringify([PartyPlacement.VERSION,c.key,st?.tab,st?.name,simOpt(c.key),teamBreak(t),party.units.slice().sort((a,b)=>a.key.localeCompare(b.key))]);}
+  return JSON.stringify([PartyPlacement.VERSION,placementEngine,c.key,st?.tab,st?.name,simOpt(c.key),teamBreak(t),party.units.slice().sort((a,b)=>a.key.localeCompare(b.key))]);}
 function rememberPlacement(t,key,p){PLACEMENT_CACHE.set(key,p);t.placement=p;
   const byEngine=new Map(t.combo.map(x=>[ekey(x.s.key),x.s.key]));
   t.combo.placement={order:p.order.map(k=>byEngine.get(k)||k),leaderKey:byEngine.get(p.leaderKey)||p.leaderKey};}
 async function recommendationArrange(p,rows){
   const id=++SIMQ.requestId;SIMQ.busy=p;SIMQ.msg='배치·리더 24조건 비교 중';run(true);
   const live=()=>SIMQ.requestId===id;
-  try{for(const t of rows){const party=simParty(t),key=t.placementKey;if(PLACEMENT_CACHE.has(key))continue;
+  try{await directManifest({});if(!live())return;for(const t of rows){const party=simParty(t),key=t.placementKey;if(PLACEMENT_CACHE.has(key))continue;
     const c=contents[$('content').value],st=cur[$('stage').value];
     const winner=await placementRun({party,stage:c.key+'/'+st.tab+'/'+st.name,options:simOpt(c.key),brk:teamBreak(t),owner:'reco',live,
       onProgress:d=>{SIMQ.msg=`배치·리더 비교 ${d}/24`;simPaintProgress();}});

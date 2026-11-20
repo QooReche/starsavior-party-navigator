@@ -23,5 +23,11 @@ async function check(source=src){
  const arrange=c.cdArrangeSim('x'),actualBreak=sent.o.msg(sent.jobs[0]).teams[0].options.break_skill;
  for(const j of sent.jobs)sent.o.team(j,{result:{clear:1,prog:1,cosmo:{mean:j.p.leaderKey==='d'?9:1,top:j.p.leaderKey==='d'?9:1}}});
  sent.o.done();await arrange;assert.equal(actualBreak?.level,7);assert.equal(edit.action.leaderKey,'d');assert.equal(edit.type,'draft');
+ // Loading account stats must not silently launch a standard-build comparison.
+ c.contents=[{key:'op'}];c.cur=[{tab:'x',name:'y'}];c.DIRECT={draft:{}};c.MI={};
+ c.$=()=>({value:0});c.DirectParty={validate:()=>({ok:true}),serialize:()=>assert.fail('must wait for account stats')};
+ c.directContext=()=>({});c.directInputKey=()=>1;c.directValues=()=>null;c.directResultsPaint=()=>{};
+ await c.directArrangeSim();assert.match(c.DIRECT.runError,/능력치/);assert.equal(c.DIRECT.placement,null);
+ vm.runInContext("placementSetEngine('a');PLACEMENT_CACHE.set('x',1);placementSetEngine('a');if(PLACEMENT_CACHE.size!==1)throw Error('same engine lost cache');placementSetEngine('b');if(PLACEMENT_CACHE.size)throw Error('stale engine cache');",c);
 }
 (async()=>{await check();const from='brk:job.options.break_skill';assert(src.includes(from));await assert.rejects(()=>check(src.replace(from,'brk:null')));console.log('PASS placement page: 24 conditions, options/stats, leader, cancel, stale/missing, break mutation');})().catch(e=>{console.error(e);process.exitCode=1;});

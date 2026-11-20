@@ -142,13 +142,14 @@ function imported(c=C){
   const bosses=season.bosses.map(b=>b.key),brk={name:'큐브 과부하',level:3};
   const teams=bosses.map((boss,i)=>Search.bossJobs({topQ:0.2},boss,6,[keys.slice(i*4,i*4+4)],finals,{})[0]);
   assert.notDeepEqual(teams[0].order,teams[0].keys,'fixture must expose accidental keys/order confusion');
+  teams.forEach(t=>{t.leaderKey=t.order[3];t.party.leader=3;});
   const triple={teams},res={},levelOf=boss=>bosses.indexOf(boss)+4;
-  for(const [i,t] of teams.entries())for(const b of [null,brk])res[Search.jobKey(t.boss,t.keys,i+4,b)]={cosmo:{mean:b?20+i:10+i,top:b?30+i:20+i,clear:0.5,frac:0.7,n:40},via:{},progs:[0.5,1],bs:b};
+  for(const [i,t] of teams.entries())for(const b of [null,brk])res[Search.jobKey(t.boss,t.keys,i+4,b,t)]={cosmo:{mean:b?20+i:10+i,top:b?30+i:20+i,clear:0.5,frac:0.7,n:40},via:{},progs:[0.5,1],bs:b};
   const row=Search.finalRankBrk([triple],bosses,levelOf,[null,brk],res,'mean',1)[0],before=JSON.stringify(row);
   const state=c.fromSearch(row,season),jobs=c.jobs(state,{roster});assert.equal(jobs.length,3);
-  row.teams.forEach((t,i)=>{assert.deepEqual(Array.from(state.teams[t.boss].draft.slots,m=>m.key),t.order);assert.equal(state.teams[t.boss].draft.leader,t.order[0]);
+  row.teams.forEach((t,i)=>{assert.deepEqual(Array.from(state.teams[t.boss].draft.slots,m=>m.key),t.order);assert.equal(state.teams[t.boss].draft.leader,t.leaderKey);
     assert.equal(state.teams[t.boss].level,i+4);assert.deepEqual(clean(state.teams[t.boss].draft.brk),brk);
-    assert.deepEqual(clean(jobs[i].party),P.serialize(state.teams[t.boss].draft));assert.equal(jobs[i].party.leader,0);
+    assert.deepEqual(clean(jobs[i].party),P.serialize(state.teams[t.boss].draft));assert.equal(jobs[i].party.leader,3);
   });assert.equal(JSON.stringify(row),before);assert(!JSON.stringify(c.share(state)).includes('mean'));
   const fallback={teams:[{boss:'alpha',keys:keys.slice(0,4),level:0,brk:null,brkLv:null}]};
   const simple=c.fromSearch(fallback,season);assert.equal(simple.teams.alpha.level,0);assert.equal(simple.teams.alpha.draft.brk,null);

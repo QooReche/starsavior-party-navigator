@@ -597,13 +597,15 @@
     }
     const traits=Object.fromEntries(roster.map(r=>[r.key,r.placementTraits||[]]));
     const representative=[],tacticalByBoss=new Map();
-    // Uniform excluded samples: measure the single-level/single-layout screen's misses.
+    // Audit both the rerank boundary and uniform excluded samples; keep strata visible.
     for(const [bi,b] of bosses.entries()){
       const selected=new Set(jobsK.filter(j=>j.boss===b).map(j=>idOf(j.keys))),samples=[];
-      const rng=Learned.random((cx.sampleSeed||20261119)+900+bi),n=S.placement?.auditTeams??12;let seen=0;
+      const rng=Learned.random((cx.sampleSeed||20261119)+900+bi),n=S.placement?.auditTeams??12;
+      const ranked=pickTop(jobsK.filter(j=>j.boss===b),resA,mode),boundary=ranked.slice(pl.keep,pl.keep+Math.floor(n/2)).map(t=>t.keys),randomN=n-boundary.length;let seen=0;
       for(const keys of GS.iterateCombos(S,rows))if(!selected.has(idOf(keys))){
-        ++seen;if(samples.length<n)samples.push(keys);else {const i=Math.floor(rng()*seen);if(i<n)samples[i]=keys;}
+        ++seen;if(samples.length<randomN)samples.push(keys);else {const i=Math.floor(rng()*seen);if(i<randomN)samples[i]=keys;}
       }
+      const randomIds=new Set(samples.map(idOf));pushAll(samples,boundary);
       const levels=auto?[...new Set([0,level,cx.levelMax,...(cx.boundaries?.[b]||[])])]:[level],auditJobs=[];
       for(const keys of samples)for(const p of Placement.variants(keys,results,traits))for(const leaderKey of keys)for(const l of levels)
         pushAll(auditJobs,bossJobs(S,b,l,[keys],results,cls,null,{...p,leaderKey}));
@@ -611,21 +613,21 @@
       const ar=await run(auditJobs,S.screen.runs,11,'예선 대표 난이도·배치 놓침 감사',null);
       if(stale())return null;
       if(auditJobs.some(j=>!ar[j.key]?.cosmo))throw Error('배치 감사 결과가 누락됨');
-      const ranked=pickTop(jobsK.filter(j=>j.boss===b),resA,mode),edge=metric(ranked[Math.min(pl.keep,ranked.length)-1]?.st||{},mode)||0;
+      const edge=metric(ranked[Math.min(pl.keep,ranked.length)-1]?.st||{},mode)||0;
       const misses=pickTop(auditJobs,ar,mode,undefined,true).filter(t=>metric(t.st,mode)>=edge);
       // Recover sampled tactical teams at the representative level before reranking.
       tacticalByBoss.set(b,misses);
       const recovered=bossJobs(S,b,level,misses.map(t=>t.keys),results,cls);
       if(recovered.length){const rr=await run(recovered,S.screen.runs,12,'감사에서 찾은 후보 복귀',null);Object.assign(resA,rr);pushAll(jobsK,recovered);pushAll(allJobs,recovered);}
-      representative.push({boss:b,sampled:samples.length,misses:misses.length,rate:misses.length/samples.length,expanded:misses.length/samples.length>(S.learned?.missThreshold??.04)});
+      representative.push({boss:b,sampled:samples.length,misses:misses.length,rate:misses.length/samples.length,randomSampled:randomIds.size,randomMisses:misses.filter(t=>randomIds.has(idOf(t.keys))).length,boundarySampled:boundary.length,expanded:misses.length/samples.length>(S.learned?.missThreshold??.04)});
     }
     const searchS=representative.some(a=>a.expanded)?{...S,rerank:{...S.rerank,keep:S.rerank.keep*2}}:S;
     const retry = retryPlan(searchS, list.length), budget = {remaining: retry.maxChecks, exhausted: false};
     const jobsB = [], resB = {}, evaluated = new Set(), attempts = [];
     const screening = Object.assign({}, firstResults, resA);
-    let triples = [], lists = [], kept = pl.keep;
+    let triples = [], lists = [], kept = pl.keep, rerankSpent=0;
     for (const [attempt, limit] of retry.limits.entries()) {
-      const extra = [];
+      let extra = [];
       bosses.forEach(b => {
         const source = (attempt ? allJobs : jobsK).filter(j => j.boss === b);
         const ranked = pickTop(source, attempt ? screening : resA, mode);
@@ -640,10 +642,19 @@
         for(const e of fresh)for(const p of Placement.variants(e.keys,results,traits))for(const leaderKey of (leaders?e.keys:[p.leaderKey]))pushAll(extra,bossJobs(S,b,level,[e.keys],results,cls,null,{...p,leaderKey}));
       });
       if (!extra.length) continue;
+      // A missed tactical screen expands leaders, not the number of full 20-run trials.
+      // Compare every variant/leader briefly, then refine two layouts per composition.
+      if(representative.some(a=>a.expanded)){
+        const shortRuns=Math.min(S.rerank.runs,S.placement?.screenRuns||2);
+        if(S.retry&&rerankSpent+extra.length*shortRuns>S.retry.maxRerankGames)throw Error('복수 배치 정밀 계산 상한에 도달함');
+        const screened=await run(extra,shortRuns,13,'확대 후보 배치·리더 예비 비교',null);rerankSpent+=extra.length*shortRuns;
+        const seen=new Map();extra=Placement.best(extra,screened,PlacementSearch.cmp(mode),r=>!!r?.cosmo).filter(j=>{const k=j.boss+'|'+idOf(j.keys),n=seen.get(k)||0;seen.set(k,n+1);return n<(S.placement?.keep||2);});
+      }
       const carry = jobsB.length;
-      if(S.retry && (carry+extra.length)*S.rerank.runs>S.retry.maxRerankGames)throw Object.assign(Error('복수 배치 정밀 계산 상한에 도달함'),{gwenCause:'calculation'});
+      if(S.retry && rerankSpent+extra.length*S.rerank.runs>S.retry.maxRerankGames)throw Object.assign(Error('복수 배치 정밀 계산 상한에 도달함'),{gwenCause:'calculation'});
       const msg = attempt ? `후보 확대 ${attempt}/${retry.limits.length - 1}: 겹침 없는 3팀을 위해 보스별 최대 ${num(limit)}팀 확인 중(기존 결과 재사용)` : `2단계: 보스별 상위 ${num(limit)}팀을 더 정확히 확인 중`;
       Object.assign(resB, await run(shuffled(extra, 20261107), S.rerank.runs, 3, msg, 2, carry));
+      rerankSpent+=extra.length*S.rerank.runs;
       if (stale()) return null;
       if (extra.some(j => !resB[j.key] || !resB[j.key].cosmo))
         throw Object.assign(new Error("정밀 계산 결과가 누락됨. 다시 시도 필요"), {gwenCause: "calculation"});

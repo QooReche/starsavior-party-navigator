@@ -146,7 +146,13 @@ def test_content_registration():
 
 def test_existing_contents_unchanged():
     from public_inputs_1111 import recommendation_inputs
-    with recommendation_inputs():
+    from unittest.mock import patch
+    # This hash protects pre-guild output. Freeze the intentionally replaced role/placement
+    # policy instead of overwriting its expected hash; current policy has separate tests.
+    frozen = {}
+    source = open(os.path.join(ROOT, 'tests/fixtures/reco_role_legacy.py'), encoding='utf8').read()
+    exec(compile(source, 'reco_role_legacy.py', 'exec'), pr.__dict__, frozen)
+    with recommendation_inputs(), patch.multiple(pr, create=True, **frozen):
         _existing_contents_unchanged()
 
 
