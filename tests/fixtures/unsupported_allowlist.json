@@ -1,0 +1,666 @@
+{
+  "version": 1,
+  "areas": {
+    "A": [],
+    "B": [],
+    "C": [],
+    "D": [
+      {
+        "key": "[\"cosmo_approx\",\"난이도 배율: 서버가 적용해 전송하고 클라는 표시만 함. 엔진 현행 능력치 x (1 + ScaleFactor/10000) 유지\"]",
+        "reason": "API가 공개하는 코스모 잔여 근사/서버 미확정 범위를 유지함: 난이도 배율: 서버가 적용해 전송하고 클라는 표시만 함. 엔진 현행 능력치 x (1 + ScaleFactor/10000) 유지",
+        "client_clue": "docs/engine_fix2_26752678.md 코스모 문구 정리의 NKM/NKC/Star.Templets 근거에서 확인된 부분과 서버 전용 부분을 나누어 재조사하기; 서버 최종 값은 클라만으로 확정 불가",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"cosmo_approx\",\"시즌 버프: BCT 속성/직업 매핑은 클라 확인, 아군만 적용(PM 확정). 중도 소환물 적용은 미확인\"]",
+        "reason": "API가 공개하는 코스모 잔여 근사/서버 미확정 범위를 유지함: 시즌 버프: BCT 속성/직업 매핑은 클라 확인, 아군만 적용(PM 확정). 중도 소환물 적용은 미확인",
+        "client_clue": "docs/engine_fix2_26752678.md 코스모 문구 정리의 NKM/NKC/Star.Templets 근거에서 확인된 부분과 서버 전용 부분을 나누어 재조사하기; 서버 최종 값은 클라만으로 확정 불가",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"cosmo_approx\",\"전투력 보정: 코스모에도 적용됨(클라 확인). 배율 산출과 기준 전투력 선택은 서버\"]",
+        "reason": "API가 공개하는 코스모 잔여 근사/서버 미확정 범위를 유지함: 전투력 보정: 코스모에도 적용됨(클라 확인). 배율 산출과 기준 전투력 선택은 서버",
+        "client_clue": "docs/engine_fix2_26752678.md 코스모 문구 정리의 NKM/NKC/Star.Templets 근거에서 확인된 부분과 서버 전용 부분을 나누어 재조사하기; 서버 최종 값은 클라만으로 확정 불가",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"cosmo_approx\",\"점수: HUD 식·반/처치 달성 판정은 클라 확인. 생존 점수는 서버 전용. 최종 합산·배율 반올림은 추정\"]",
+        "reason": "API가 공개하는 코스모 잔여 근사/서버 미확정 범위를 유지함: 점수: HUD 식·반/처치 달성 판정은 클라 확인. 생존 점수는 서버 전용. 최종 합산·배율 반올림은 추정",
+        "client_clue": "docs/engine_fix2_26752678.md 코스모 문구 정리의 NKM/NKC/Star.Templets 근거에서 확인된 부분과 서버 전용 부분을 나누어 재조사하기; 서버 최종 값은 클라만으로 확정 불가",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.add_damage_guard\"]",
+        "reason": "예약 추가 피해의 수호 분담 경로 전수 검증이 미완료라 기본 off를 유지함.",
+        "client_clue": "현재 미확정 범위 재조사: static-data decompiled/NKM/NKM.decompiled.cs:7996-8041,8173-8190,17333-17366; decompiled/NKM/NKM.decompiled.cs:1286-1308",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.ally_init_cd\"]",
+        "reason": "클라 로컬 초기화는 0을 지지하지만 실전 서버의 덱 쿨 설정은 미확인이라 user 등급을 유지함.",
+        "client_clue": "현재 미확정 범위 재조사: 사용자 인게임 확인 2026-10-21; static-data decompiled/NKM/NKM.decompiled.cs:1673,1838-1879,1927-1958,3431-3443,3467-3473,14372-14410; decompiled/NKC/NKC.decompiled.cs:26550-26568,551218-551239",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.break_skill_residuals\"]",
+        "reason": "핵심 브레이크 피해식과 별개인 큐브 회복 사망자 합산·수호 분담·개인 노바 풀 대체 모델은 미확정임.",
+        "client_clue": "현재 미확정 범위 재조사: PC 26752678 NKM:18247-18296은 피해식 확인 범위. 회복·수호·개인 풀 경로의 전체 대응은 미확인; docs/engine_fix2_26752678.md",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.caster_death\"]",
+        "reason": "시전자 사망 뒤 타인에게 준 효과의 잔존을 일괄 처리하는 가정임. 효과별 클라 수명 전수 대조가 필요함.",
+        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 사망/해제 수명 필드와 NKM 시전자 사망 시 타 유닛 버프 정리 경로를 효과별로 확인하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.clash_no_turn_limit\"]",
+        "reason": "격전 의뢰 패배 턴 제한을 제거하는 현행 정책과 안전 상한을 유지함. 서버 제한값 입력은 미확인임.",
+        "client_clue": "현재 미확정 범위 재조사: docs/clash_handoff_1112.md 남은 일 2; build 26610546: static-data decompiled/NKM/NKM.decompiled.cs:538-560,638-668,768-803; decompiled/Star.Templets/Star.Templets.decompiled.cs:8115; 격전 BATTLE_TEMPLET_NORMAL 18행 LimitTurn 미지정",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.cosmo_raid_boss\"]",
+        "reason": "시즌 상태 기계의 부분 미확정 설명 규칙임. 서버 배율·소환물·옛 벨그라스 경계의 잔여 범위를 유지함.",
+        "client_clue": "현재 미확정 범위 재조사: data/cosmo_raid.json(빌드 26429597 표: RANKING_RAID 전투·DIFFICULTY_LEVEL_GROUP·BATTLE_EFFECT·BUFF·SKILL·SE 표); decompiled/NKM/NKM.decompiled.cs:15138-15203,15345-15397,15586-15603,15701-15745,4021-4028; tables/SE_TEMPLET_SKILL_2.json:35605-35645; tables/Plain/SKILL_CONDITION_TEMPLET.json:10501-10506",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.enemy_hit_buff_cmp\"]",
+        "reason": "일부 클라 조건의 이하 비교 근거가 있어도 현재 규칙 등급은 video임. 등급 정리 작업에서 적용 범위를 확인하기 전 보고를 유지함.",
+        "client_clue": "현재 미확정 범위 재조사: docs/enemy_cond_audit.md; static-data decompiled/NKM.Templets/NKM.Templets.decompiled.cs:42752,43328",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.enemy_init_cd\"]",
+        "reason": "영상 기반 적 궁극기 시작 쿨 가정임. enemy_spawn=data의 비활성 legacy 항목도 API 보고에서 임의 제외하지 않음.",
+        "client_clue": "현재 미확정 범위 재조사: youtube ChgzulK7VI4 15.5초·1aowou-SO0k 11초",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.enemy_init_cd_special\"]",
+        "reason": "영상 기반 적 특수기 시작 쿨 가정임. enemy_spawn=data의 비활성 legacy 항목도 API 보고에서 임의 제외하지 않음.",
+        "client_clue": "현재 미확정 범위 재조사: youtube ChgzulK7VI4 16.5초·1aowou-SO0k 12초",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.enemy_same_formula\"]",
+        "reason": "적 공격에 공통 피해식을 쓰는 모델의 전역 동등성은 아직 가정 등급이라 유지함.",
+        "client_clue": "현재 미확정 범위 재조사: databook 피해식은 양방향 서술(formulas_local.md 1.2)",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.enemy_skill_ai\"]",
+        "reason": "현재 API가 가정으로 보고하는 적 스킬 선택 설명 규칙임. 기본 경로에서 실제 참조되지 않는 항목도 관문에서 임의 제외하지 않음.",
+        "client_clue": "현재 미확정 범위 재조사: 설계 3절 표(실측 대상)",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.evade_model\"]",
+        "reason": "회피 기본 확률과 증감 모델의 남은 가정을 유지함. note의 선제 방어 미지원 문구는 낡았으며 그 문구를 새 미지원 판정으로 쓰지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_CONST_TEMPLET 기본 명중/회피 값, NKM 명중·회피 판정과 NST_RATE 계열 증감 소비 경로를 대조하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.heal_target\"]",
+        "reason": "클라 자동 대상 연결이 없는 아군 단일 회복/버프의 설명문 폴백 가정이 남아 있음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json AutoTargetId와 NKM 아군 생명력 비율·공격력 대상 필터를 설명문 폴백 줄마다 대조하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.manual_burst\"]",
+        "reason": "오토 기본에서 비활성인 수동 노바 정책 가정임. API가 보고하는 legacy 선택 항목을 임의 제거하지 않음.",
+        "client_clue": "현재 미확정 범위 재조사: 설계 4-1절(수동 서순), P4 상세",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.max_depth\"]",
+        "reason": "연쇄 실행 깊이의 모델 안전 상한임. 초과 경로를 건너뛰고 runtime에 기록하는 현행을 유지함.",
+        "client_clue": "미확정 조사 단서: 클라 수치가 아닌 모델 안전 상한임. NKM 추가 발동/반응 재귀 제한 유무와 실제 초과 runtime 키의 원인을 먼저 조사하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.max_events\"]",
+        "reason": "무한 실행을 막는 모델 안전 상한임. 클라 규칙으로 확정한 수치가 아니므로 가정 목록에 유지함.",
+        "client_clue": "미확정 조사 단서: 클라 수치가 아닌 모델 안전 상한임. NKM 전투 종료·반복 이벤트 차단 경로를 확인하고 EventLimitError 재현 원인을 조사하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.revive_after_spawn\"]",
+        "reason": "부활 HP 대입과 등장 후 HP 조건부 효과 순서가 미확정이라 기본 off를 유지함.",
+        "client_clue": "현재 미확정 범위 재조사: static-data decompiled/NKM/NKM.decompiled.cs:1207-1221,1927-1964,5379-5407",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.summon\"]",
+        "reason": "소환 칸·쿨은 표를 쓰지만 시작 게이지 0과 소환물 처치까지의 웨이브 종료 조건은 가정이 남아 있음.",
+        "client_clue": "현재 미확정 범위 재조사: static-data decompiled/NKM/NKM.decompiled.cs:5640-5688,1224-1239,1887-1920,1966-1985; tables SUMMON_TEMPLET; foe.js sm",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.target_defender_mult\"]",
+        "reason": "옛 설명문 대상 선택의 디펜더 가중 가정임. 기본 table 경로에서 쓰이지 않는다는 이유로 숨기지 않음.",
+        "client_clue": "현재 미확정 범위 재조사: 나무위키·아카(수치 미상)",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.target_mode\"]",
+        "reason": "옛 가중 대상 선택 방식의 가정임. 기본 table 경로와 분리돼 있어도 API 보고를 유지함.",
+        "client_clue": "미확정 조사 단서: plain/AUTO_SKILL_TARGET_TEMPLET.json의 적 규칙 1001 및 NKM 순차 필터와 옛 weighted_pick 경로의 실제 사용 여부를 대조하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.target_row_weight\"]",
+        "reason": "옛 설명문 대상 선택의 열 가중 가정임. 기본 table 대상 선택에서는 비활성이어도 API 보고를 유지함.",
+        "client_clue": "현재 미확정 범위 재조사: 나무위키(docs/research.md 1.1), formulas_web.md 4.3",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.turn_ticks\"]",
+        "reason": "모델 시간 단위와 실제 게임 턴 카운터의 전역 동등성은 미확정임.",
+        "client_clue": "미확정 조사 단서: NKM 턴 카운터 증가·추가 턴/웨이브 전환과 NKC 턴 HUD 소비 경로를 모델 tick 제한과 대조하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.unknown_cond\"]",
+        "reason": "미해석 조건 줄을 skip하고 진단하는 모델 정책임. 조건 전수 해석이 끝나지 않아 유지함.",
+        "client_clue": "미확정 조사 단서: runtime에 남은 condition 키를 CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json 조건 필드와 NKM 조건 평가기에 하나씩 연결하기; skip 자체는 모델 정책임; docs/unsupported_26752678.md 남은 가정 목록",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"mc.wave_foe_battle_start\"]",
+        "reason": "후속 웨이브 전투 시작 줄의 설명문과 클라 SE 전수 대응이 미완료라 현행 all을 유지함.",
+        "client_clue": "현재 미확정 범위 재조사: static-data decompiled/NKM/NKM.decompiled.cs:1959,813-832,12829-12836",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"model.not_modeled\"]",
+        "reason": "표에 없는 피해 제한·일부 노바 슬롯/성장/시즌 효과·연쇄 피해 턴 끝 시점의 포괄 미지원 안내를 유지함.",
+        "client_clue": "docs/unsupported_26752678.md 검증·남는 범위; API model.not_modeled 각 항목의 클라 표 존재와 NKM 실행 경로를 개별 확인하기",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"opts.init_cd_frac\"]",
+        "reason": "기대값 엔진의 시작 쿨 가정임. MC 분기 실행 추적이 아닌 선택 규칙 목록의 성격을 유지함.",
+        "client_clue": "미확정 조사 단서: 기대값 엔진 전용 상수임. CLIENT_SKILL_TEMPLET 쿨 값과 NKM 덱 생성/등장 시 쿨 초기화, 서버 전달 쿨의 적용 범위를 분리 확인하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"opts.nova_policy\"]",
+        "reason": "노바 운영 모드는 계산 정책 선택임. 클라 불일치로 단정하지 않고 API의 community 등급 보고를 유지함.",
+        "client_clue": "현재 미확정 범위 재조사: 사용자 결정 2026-10-20(docs/battlesim_design.md 4-1), 아카 2026-10-14 오토 미사용 글 (docs/formulas_web.md 4.3·7.2)",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"score_conf\",\"추정\"]",
+        "reason": "최종 점수 합산 조건·배율 반올림이 서버 전용/추정이라 score_conf=추정을 유지함.",
+        "client_clue": "docs/engine_fix2_26752678.md: HUD NKM:17373, 반/처치 NKC:76585-76603, 최종 서버 결과 NKC:76558-76564; 실제 결과 대조 필요",
+        "owner": "엔진 규칙 유지보수"
+      }
+    ],
+    "E": [
+      {
+        "key": "[\"BFB\",\"특수기\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] 자신에게 (약화효과 해제) 행동 게이지 0%\",false]",
+        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"BFB\",\"특수기\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] 자신에게 스킬 교체: 「정실 어필」 → 「독점 선언」\",false]",
+        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"BFB\",\"특수기\",\"skill\",\"트리거 스킬 미반영: 정실 어필\",false]",
+        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"BFB\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 내 공격 후 [사용 스킬: 궁극기; 추가발동 스킬: 예; 자기 추가발동 트리거: 예]) 자신에게 스킬 교체: 「독점 선언」 → 「정실 어필」\",false]",
+        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"BFB\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 내 공격 후 [사용 스킬: 궁극기; 추가발동 스킬: 예; 자기 추가발동 트리거: 예]) 자신에게 스킬 교체: 「축복의 대피로연」 → 「황홀한 허니문」\",false]",
+        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"BFB\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 정실 어필; 중첩수: 5]) 자신에게 스킬 교체: 「황홀한 허니문」 → 「축복의 대피로연」\",false]",
+        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"BFB\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예; 자신이 보유: 정실 어필]) 자신에게 스킬 교체: 「황홀한 허니문」 → 「축복의 대피로연」\",false]",
+        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"BFB\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 적 공격 후 [자신이 보유: BFB 애니메이션 변경용 버프; 자신이 미보유: 보호막, 보호막(해제불가), 공허 방패(해제불가), 저항 장막(해제불가), 파프닐의 강림(해제불가)]) 자신에게 스킬 교체: 「독점 선언」 → 「정실 어필」\",false]",
+        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"공허결집자\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 대상이 보유: 공허 포자]) 자신에게 능력치 보정 피해 증가 +30% 연쇄 피해 = 자신 공격력×10% (×1.85, 방어력 적용) {이번 스킬에만 적용}\",false]",
+        "reason": "현행 일반 콘텐츠의 스킬 한정 피해 증가와 연쇄 피해 복합 줄이 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json 공허결집자 궁극기/공허 포자 조건의 피해 증가·연쇄 SE 및 NKM 해당 시전 적용 순서를 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"공허투영자\",\"패시브\",\"effect: 의미 미해석 효과 〈억류(해제불가)〉(속성 없음)\",\"[웨이브 시작 시] 적 전체에게 〈억류(해제불가)〉 (지속 무한 / 행동게이지 증가 면역) {해제 불가}\",true]",
+        "reason": "억류의 행동 게이지 증가 면역은 이름 플래그로 실행될 수 있어 정적 오탐 가능성이 남음. 클라 대조 없이 보고를 제거하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 억류 행과 data/buff_flags.json gauge_up_immune, NKM 게이지 증가 차단 소비 경로 및 support_report 의미 판정을 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 10]) 자신에게 고정 피해 50000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 11]) 자신에게 고정 피해 55000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 12]) 자신에게 고정 피해 60000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 13]) 자신에게 고정 피해 65000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 14]) 자신에게 고정 피해 70000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 15]) 자신에게 고정 피해 75000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 16]) 자신에게 고정 피해 80000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 17]) 자신에게 고정 피해 85000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 18]) 자신에게 고정 피해 90000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 19]) 자신에게 고정 피해 95000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 1]) 자신에게 고정 피해 5000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 20]) 자신에게 고정 피해 100000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 21]) 자신에게 고정 피해 105000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 22]) 자신에게 고정 피해 110000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 23]) 자신에게 고정 피해 115000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 24]) 자신에게 고정 피해 120000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 25]) 자신에게 고정 피해 125000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 26]) 자신에게 고정 피해 130000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 27]) 자신에게 고정 피해 135000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 28]) 자신에게 고정 피해 140000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 29]) 자신에게 고정 피해 145000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 2]) 자신에게 고정 피해 10000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 30]) 자신에게 고정 피해 150000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 31]) 자신에게 고정 피해 155000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 32]) 자신에게 고정 피해 160000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 33]) 자신에게 고정 피해 165000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 34]) 자신에게 고정 피해 170000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 35]) 자신에게 고정 피해 175000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 36]) 자신에게 고정 피해 180000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 37]) 자신에게 고정 피해 185000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 38]) 자신에게 고정 피해 190000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 39]) 자신에게 고정 피해 195000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 3]) 자신에게 고정 피해 15000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 40]) 자신에게 고정 피해 200000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 41]) 자신에게 고정 피해 205000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 42]) 자신에게 고정 피해 210000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 43]) 자신에게 고정 피해 215000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 44]) 자신에게 고정 피해 220000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 45]) 자신에게 고정 피해 225000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 46]) 자신에게 고정 피해 230000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 47]) 자신에게 고정 피해 235000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 48]) 자신에게 고정 피해 240000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 49]) 자신에게 고정 피해 245000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 4]) 자신에게 고정 피해 20000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 50]) 자신에게 고정 피해 250000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 5]) 자신에게 고정 피해 25000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 6]) 자신에게 고정 피해 30000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 7]) 자신에게 고정 피해 35000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 8]) 자신에게 고정 피해 40000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 9]) 자신에게 고정 피해 45000\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"벨그라스\",\"패시브\",\"trigger: 적 행동 시\",\"[스킬 사용 시작 시] (조건: 적 행동 시 [자신이 보유: 침식된 의지(해제불가)]) 자신에게 〈썩은 의지 발생 방지 버프〉\",false]",
+        "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
+        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"시엔\",\"기본기\",\"skill\",\"트리거 스킬 미반영: 쌍성각이에요\",false]",
+        "reason": "지난 길드 방어전 일반 경로의 속도 0·약화 면역 고유 효과와 트리거가 미지원임. critical도 숨기지 않고 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 시엔 고유 버프의 속도/면역 스탯과 CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json 쌍성각/화륜쌍추 트리거 행 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"시엔\",\"특수기\",\"skill\",\"트리거 스킬 미반영: 화륜쌍추예요\",false]",
+        "reason": "지난 길드 방어전 일반 경로의 속도 0·약화 면역 고유 효과와 트리거가 미지원임. critical도 숨기지 않고 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 시엔 고유 버프의 속도/면역 스탯과 CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json 쌍성각/화륜쌍추 트리거 행 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"시엔\",\"패시브\",\"effect: 의미 미해석 효과 〈시엔 고유 버프(해제불가)〉(속성 없음)\",\"[웨이브 시작 시] 자신에게 〈시엔 고유 버프(해제불가)〉 (지속 무한 / 속도 0 고정 / 약화효과 면역) {해제 불가}\",true]",
+        "reason": "지난 길드 방어전 일반 경로의 속도 0·약화 면역 고유 효과와 트리거가 미지원임. critical도 숨기지 않고 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 시엔 고유 버프의 속도/면역 스탯과 CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json 쌍성각/화륜쌍추 트리거 행 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"심해의 폭군\",\"패시브\",\"effect: 의미 미해석 효과 〈다음 턴〉(속성 없음)\",\"[턴 시작 시] (조건: 적 턴 시작 시 [자신이 보유: 굼뜬 이동(해제불가); 중첩수: 4]) 자신에게 〈다음 턴〉 (1턴 / 확정 다음 턴) {해제 불가}\",false]",
+        "reason": "지난 길드 방어전 일반 경로의 속도 0 고유 효과·확정 다음 턴 효과가 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 심해의 폭군 고유 버프·굼뜬 이동·다음 턴 행 및 NKM 행동 게이지/턴 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"심해의 폭군\",\"패시브\",\"effect: 의미 미해석 효과 〈심해의 폭군 고유 버프(해제불가)〉(속성 없음)\",\"[웨이브 시작 시] 자신에게 〈심해의 폭군 고유 버프(해제불가)〉 (지속 무한 / 속도 0 고정) {해제 불가}\",false]",
+        "reason": "지난 길드 방어전 일반 경로의 속도 0 고유 효과·확정 다음 턴 효과가 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 심해의 폭군 고유 버프·굼뜬 이동·다음 턴 행 및 NKM 행동 게이지/턴 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"처단자\",\"패시브\",\"effect: 보호막/회복\",\"[스킬 사용 후] (조건: 아군 공격 후 [자신 포함: 아니오; 자신이 보유: 응집된 생기(해제불가)]) 보스인 아군 전체에게 〈보호막〉 (2턴) 보호막 = 대상 생명력×1%\",true]",
+        "reason": "지난 시즌 일반 스테이지 경로의 조건부 보호막 줄이 미해석임. 현재 시즌 runtime 0과 별도로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 처단자 보호막 SE와 CLIENT_BUFF_TEMPLET 보호막 비율/대상 및 NKM 조건·보호막 적용 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"처단자\",\"패시브\",\"effect: 보호막/회복\",\"[스킬 사용 후] (조건: 적 비공격 스킬 후 [자신이 미보유: 응집된 생기(해제불가), 영양 과잉]) 적 전체에게 〈보호막〉 (2턴) 보호막 = 대상 생명력×25%\",true]",
+        "reason": "지난 시즌 일반 스테이지 경로의 조건부 보호막 줄이 미해석임. 현재 시즌 runtime 0과 별도로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 처단자 보호막 SE와 CLIENT_BUFF_TEMPLET 보호막 비율/대상 및 NKM 조건·보호막 적용 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"처단자\",\"패시브\",\"effect: 보호막/회복\",\"[피해 처리 후] (조건: 내가 피격될 때 [자신이 미보유: 응집된 생기(해제불가), 영양 과잉; 단일 대상 공격: 예]) 적 전체에게 〈보호막〉 (2턴) 보호막 = 대상 생명력×25%\",true]",
+        "reason": "지난 시즌 일반 스테이지 경로의 조건부 보호막 줄이 미해석임. 현재 시즌 runtime 0과 별도로 유지함.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 처단자 보호막 SE와 CLIENT_BUFF_TEMPLET 보호막 비율/대상 및 NKM 조건·보호막 적용 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"티엔\",\"궁극기\",\"skill\",\"트리거 스킬 미반영: 백팔철선진!\",false]",
+        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"티엔\",\"기본기\",\"effect: 의미 미해석 효과 〈기본기 타겟팅용 디버프〉(속성 없음)\",\"[스킬 사용 후] 스킬 대상에게 〈기본기 타겟팅용 디버프〉 (1턴) {해제 불가}\",false]",
+        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"티엔\",\"변형 궁극기\",\"skill\",\"트리거 스킬 미반영: 백팔철선진·극!\",false]",
+        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"티엔\",\"특수기\",\"effect: 의미 미해석 효과 〈특수기 타겟팅용 디버프〉(속성 없음)\",\"[스킬 사용 후] 스킬 대상에게 〈특수기 타겟팅용 디버프〉 (1턴) {해제 불가}\",false]",
+        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"티엔\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 아군 공격 후 [자신 포함: 아니오; 자신이 보유: 티엔 궁극기 강화1용 버프]) 자신에게 스킬 교체: 「백팔철선진!」 → 「백팔철선진·멸!」\",false]",
+        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"티엔\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 아군 공격 후 [자신 포함: 아니오; 자신이 보유: 티엔 궁극기 강화2용 버프]) 자신에게 스킬 교체: 「백팔철선진·멸!」 → 「백팔철선진·극!」\",false]",
+        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"티엔\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 적 공격 후 [자신이 미보유: 결속(해제불가); 자신이 보유: 티엔 궁극기 강화1용 버프]) 자신에게 스킬 교체: 「백팔철선진·멸!」 → 「백팔철선진!」\",false]",
+        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      },
+      {
+        "key": "[\"티엔\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 적 공격 후 [자신이 미보유: 결속(해제불가); 자신이 보유: 티엔 궁극기 강화2용 버프]) 자신에게 스킬 교체: 「백팔철선진·극!」 → 「백팔철선진!」\",false]",
+        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
+        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
+        "owner": "적 데이터·시즌 변환 유지보수"
+      }
+    ]
+  }
+}

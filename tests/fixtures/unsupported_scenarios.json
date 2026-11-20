@@ -1,0 +1,21 @@
+{
+  "source": "PC 26752678 감사 inventory.md/audit.py의 고정 조건. 코스모 상위 편성 표본은 season_teams_runtime.json의 보스별 첫 편성에서 키만 취했고 수치는 모두 standard임. 길드 방어전은 tools/build_guild_sim.py COMMUNITY 공개 표본임. 표본 난이도/지원 스킬은 관문 고정 조건이며 계정 수치나 결과가 아님.",
+  "bosses": ["mogulus", "baskerville", "disparity"],
+  "fill": ["carmen", "frey", "claire"],
+  "fill_alternate": ["haydee", "serpang", "fei"],
+  "stage": "cosmo/길레/길레 1단계",
+  "season_samples": [
+    {"encounter": "mogulus", "party": ["carmen", "asherah-order-striker", "gille", "cristelle"], "leader": 0,
+     "spec": {"cosmo_raid": {"boss": "mogulus", "step": 3, "level": 8}},
+     "options": {"break_skill": {"name": "큐브 과부하", "level": 1}}},
+    {"encounter": "baskerville", "party": ["haydee", "muriel", "professor-m", "claire"], "leader": 0,
+     "spec": {"cosmo_raid": {"boss": "baskerville", "step": 3, "level": 8}},
+     "options": {"break_skill": {"name": "스타피어서", "level": 1}}},
+    {"encounter": "disparity", "party": ["white-pearl-luna", "lydia", "gwen", "sunshine-cat-smile"], "leader": 0,
+     "spec": {"cosmo_raid": {"boss": "disparity", "step": 3, "level": 8}},
+     "options": {"break_skill": {"name": "큐브 과부하", "level": 1}}},
+    {"encounter": "guild", "party": ["wedding-carmen", "ceres-sun-supporter", "amora", "tyria"], "leader": 0,
+     "spec": {"guild": {"level": 0, "support": "fire"}},
+     "options": {"break_skill": {"name": "행성 정화", "level": 1}}}
+  ]
+}

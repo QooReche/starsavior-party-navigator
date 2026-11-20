@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from test_gwen_art2 import ready, fixture, loaded, playing
 from test_page import test_server
-from playwright.sync_api import sync_playwright, TimeoutError
+from playwright.sync_api import sync_playwright, TimeoutError, expect
 
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'_tmp/gwen-ux'
@@ -83,13 +83,21 @@ def idle_audit(page):
     loaded(page,'#out img')
     page.clock.run_for(1000)
     assert expression(scene)=='ready'
+    # 호스트 부하/클릭 자동 대기 시간이 1.5초 반응 수명을 소비하지 않게 함.
+    # 이후 가상 시간은 run_for로만 진행하고, 비동기 전환은 DOM 상태로 기다림.
+    page.clock.pause_at(page.evaluate('Date.now() / 1000'))
     page.emulate_media(reduced_motion='reduce')
-    page.wait_for_function('document.querySelector("[data-gwen-idle]").dataset.gwenPaused==="true"')
+    expect(scene).to_have_attribute('data-gwen-paused','true')
+    expect(scene).to_have_attribute('data-gwen-expression','ready')
+    expect(scene.locator('img')).to_have_attribute('src',scene.locator('img').get_attribute('data-gwen-static'))
+    expect(scene.locator('img')).to_have_attribute('data-gwen-playing','false')
     text=scene.locator('.gwen-bubble').inner_text()
     page.clock.run_for(90000)
     assert expression(scene)=='ready' and scene.locator('.gwen-bubble').inner_text()==text,'reduced motion rotated'
-    button.click();assert expression(scene)=='shy','reduced motion blocks user feedback'
-    page.clock.run_for(3100);assert expression(scene)=='ready'
+    button.click()
+    expect(scene,'reduced motion blocks user feedback').to_have_attribute('data-gwen-expression','shy')
+    page.clock.run_for(3100)
+    expect(scene).to_have_attribute('data-gwen-expression','ready')
     page.emulate_media(reduced_motion='no-preference')
 
 

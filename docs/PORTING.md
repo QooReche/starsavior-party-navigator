@@ -52,6 +52,7 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 - 갱신 절차: `data/guild_defense.json` 의 `howToUpdate` 참고(시즌·날짜, 단계 표, 별의 도전, 보스, 점수 가설) → `python -X utf8 -I tests/guild_defense_test.py`(일관성·화면 계산 일치·만든 index.html 최신 여부) → `python -X utf8 -I build_party_html.py index.html`.
 - 단계 표 값은 클라 표 `GUILD_DUNGEON` 전투 표의 새 시즌 행(`static-data/tables`)에서, 날짜·별의 도전 문구는 공식 공지에서 확인한다. 점수 계산식이 확인되면 `score.hypotheses` 를 하나로 줄이고 `conf` 를 «확인» 으로.
 - 추천 연결: 콘텐츠는 `party_contents.json` 의 «길드방어전»(`seasonal`, 보스 BFB 별(배치 ChangeAdjustType)), 스테이지·기믹은 시즌 파일에서 만든다(`guild_defense.foe_content`, `stage_gimmicks`). `data/foe_stages.json`·`stage_gimmicks.json` 은 건드리지 않는다.
+- 미지원 관문: `python -X utf8 -I tools/unsupported_allowlist.py --diff` → 새 항목은 클라 확정 또는 사유 등록(해소된 항목은 삭제) → `python -X utf8 -I tools/run_tests.py`. 고정 편성·시즌 보스 갱신 기준은 [관문 문서](unsupported_gate.md) 참조.
 
 ### 4-2. 코스모 게이트 시즌 갱신(시즌제 콘텐츠)
 시즌 값(보스 3종·Step 스탯·난이도 레벨 표·챌린지 효과·시즌 전투 버프·점수 상수·벨그라스 수치)은 `data/cosmo_raid.json` **한 곳**에 있고 코드(`battlesim/starsavior/cosmo_raid.py`, `cosmo_raid.js`)는 시즌 공통이다. 자세한 근사 목록은 `docs/cosmo_raid.md`.
@@ -61,6 +62,7 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 - 시즌을 바꾸기 전에 지금 자료를 `tests/fixtures/cosmo_raid_<시즌>.json` 으로 동결할지 본다 — 그 시즌 전용 모델·효과의 회귀 시험은 fixture 로 돌린다(`tests/cosmo_fixture.py`, 1022 선례). foe 자료는 `tools/update.py` 로 먼저 갱신.
 - «3보스 최고 점수 편성 찾기» 설정(풀 크기·판 수·K 등)은 `data/cosmo_raid.json` 의 `search`(빌더 `tools/build_cosmo_raid.py` 의 `SEARCH` 상수에서 옴). 시즌이 바뀌어도 값은 그대로 두되, 판 시간이 달라지면 조정(`docs/cosmo_raid.md` 2단계).
 - `python -X utf8 -I tools/build_simpack.py`(`data/cosmo_raid.json` 은 시뮬 파일 목록에 포함) → `python -X utf8 -I tests/cosmo_raid_test.py`(`COSMO_TABLES=<폴더>` 를 주면 표에서 다시 뽑은 값과 대조) → `tools/run_tests.py --rebuild`.
+- 미지원 관문: `python -X utf8 -I tools/unsupported_allowlist.py --diff` → 새 항목은 클라 확정 또는 사유 등록(해소된 항목은 삭제) → `python -X utf8 -I tools/run_tests.py`. 고정 편성·시즌 보스 갱신 기준은 [관문 문서](unsupported_gate.md) 참조.
 
 ## 5. 저장소에 없는 것(다른 PC에서 다시 설정)
 - Claude 의 메모리·`AI\CLAUDE.md` 규약은 저장소에 없다. 이 저장소의 `HANDOFF.md` 와 이 문서가 같은 내용을 담았다.
