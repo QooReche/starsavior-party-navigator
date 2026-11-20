@@ -4,11 +4,17 @@
  function createWorker(){return new root.Worker('sim_worker.js')}
 function shared(env){
  const now=env.now||(()=>Date.now()),setTimer=env.setTimer||setTimeout,clearTimer=env.clearTimer||clearTimeout;
-const SIMPOOL={workers:[],batches:[],serial:0,pumping:false};
+ // Same resource owner as phase execution; scheduling/retention remain caller contracts.
+ const resources=workerPool(()=>{
+  const w=(env.makeWorker||createWorker)();w.onmessage=e=>simReceive(w,e.data);
+  w.onerror=e=>{const b=w._lease?.batch;if(b&&!b.closed&&b.o.live())b.o.error(e.message||'알 수 없음',w,true)};
+  return w;
+ });
+const SIMPOOL={get workers(){return resources.workers},batches:[],serial:0,pumping:false};
 function scrPool(want){const ws=[];ws.capacity=Math.max(1,Math.min(env.capacity(),want||Infinity));return ws}
 function simPoolSync(){env.sync?.(SIMPOOL.workers)}
 function simRelease(w,kill=false){const lease=w._lease;if(lease){const ws=lease.batch.ws,i=ws.indexOf(w);if(i>=0)ws.splice(i,1);w._lease=null;w._job=null;lease.batch.o.arm?.()}
- if(kill){w._dead=true;w.terminate();SIMPOOL.workers=SIMPOOL.workers.filter(x=>x!==w)}simPoolSync()}
+ if(kill)resources.drop(w);simPoolSync()}
 function simPoolDrop(owner='reco',requestId=null,group=null){
  const matches=b=>b.owner===owner&&(requestId==null||b.o.id===requestId)&&(group==null||b.o.group===group);
  for(const b of SIMPOOL.batches.filter(matches)){b.closed=true;b.o.arm?.cancel?.()}
@@ -41,9 +47,7 @@ function simPump(){if(SIMPOOL.pumping)return;SIMPOOL.pumping=true;
    const b=pending.find(b=>(!priority||env.priority(b.owner))&&b.ws.length<b.ws.capacity);if(!b)break;
    let w=SIMPOOL.workers.find(w=>!w._lease&&!w._dead);
    if(!w){if(SIMPOOL.workers.length>=env.capacity())break;
-    w=(env.makeWorker||createWorker)();w.onmessage=e=>simReceive(w,e.data);
-    w.onerror=e=>{const b=w._lease?.batch;if(b&&!b.closed&&b.o.live())b.o.error(e.message||'알 수 없음',w,true)};
-    SIMPOOL.workers.push(w)}
+    w=resources.get(SIMPOOL.workers.length)}
    const j=b.next++,m=b.o.msg(b.jobs[j],j),token=++SIMPOOL.serial;
    w._owner=b.owner;w._lastBatch={owner:b.owner,o:{id:b.o.id,group:b.o.group}};w._lease={batch:b,index:j,token,got:false};w._job=j;w._key=m.teams[0].key;w._n=m.n_runs;w._t=0;w._last=now();b.ws.push(w);simPoolSync();
    b.o.assigned?.(w,b.jobs[j]);
@@ -74,21 +78,24 @@ return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watc
     jobs.forEach((j, i) => out[i % out.length].push(j));
     return out;
   }
-  function workerPool(makeWorker) {
+  function workerPool(makeWorker=createWorker) {
     const ws = []; let closed = false, serial = 0;
     return {
+      get workers() { return ws; },
       get(i) { if (closed) throw new Error("닫힌 작업자 풀"); return ws[i] || (ws[i] = makeWorker()); },
       nextId() { return ++serial; },
+      drop(w) { const i=ws.indexOf(w);if(i<0)return;w._dead=true;w.terminate();ws.splice(i,1); },
       close() { if (closed) return; closed = true; ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; w.terminate(); }); }
     };
   }
   function runPhase({makeWorker, pool, jobs, workers, runs, seed, stage, base, onProgress, chunk, options, onResult, project=x=>x}) {
+    const resources=pool||workerPool(makeWorker);
     const dyn = chunk > 0;
     const parts = dyn ? Array.from({length: Math.max(1, Math.min(workers, Math.ceil(jobs.length / chunk)))}, () => []) : split(jobs, workers), res = {}, ws = [];
     let done = 0, finished = 0, dead = false, rejectFn, next = 0, seq = 0;
     const clean = fatal => {
-      ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; if (!pool) w.terminate(); });
-      if (fatal && pool) pool.close();
+      if (!pool || fatal) resources.close();
+      else ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; });
     };
     const fail = err => { err.gwenCause ||= "calculation"; if (dead) return; dead = true; clean(true); rejectFn(err); };
     const p = new Promise((resolve, reject) => {
@@ -96,7 +103,7 @@ return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watc
       if (!jobs.length) { dead = true; resolve(res); return; }
       try { parts.forEach((part, wi) => {
         if (dead) return;
-        const w = pool ? pool.get(wi) : makeWorker(); ws.push(w);
+        const w = resources.get(wi); ws.push(w);
         let requestId;
         const send = list => {
           requestId = pool ? pool.nextId() : ++seq;

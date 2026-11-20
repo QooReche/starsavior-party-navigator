@@ -21,6 +21,8 @@ function contract(files){
  assert.match(files['guild_search.js'],/Executor\.runPhase\(/);assert.match(files['guild_search.js'],/Executor\.workerPool\(/);
  assert.match(files['cosmo_search.js'],/Executor\.etaNew\(/);assert.match(files['growth_ui.js'],/SearchExecutor\.timedWorker\(/);
  assert(!/\bdocument\b|\bSIMQ\b|\bGuildSearch\b/.test(files['search_executor.js']),'core depends on DOM/content');
+ assert.match(files['search_executor.js'],/const resources=workerPool\(\(\)=>/,'shared pool must use common resource owner');
+ assert.match(files['search_executor.js'],/const resources=pool\|\|workerPool\(makeWorker\)/,'phase pool must use common resource owner');
 }
 contract(sources);
 for(const file of ['party_template.html','guild_search.js','recommend_runtime.js','direct_run.js','cosmo_direct_page.js','future_search.js']){
@@ -28,4 +30,5 @@ for(const file of ['party_template.html','guild_search.js','recommend_runtime.js
 }
 assert.throws(()=>contract({...sources,'party_template.html':sources['party_template.html'].replace('return SIM_EXEC.dispatch(','return localDispatch(')}),assert.AssertionError);
 assert.throws(()=>contract({...sources,'party_template.html':sources['party_template.html'].replace('<script src="search_executor.js"></script>','')}),assert.AssertionError);
-console.log('PASS executor-only construction/delegation/loading; 8 bypass mutations rejected');
+assert.throws(()=>contract({...sources,'search_executor.js':sources['search_executor.js'].replace('const resources=pool||workerPool(makeWorker)','const resources=pool||localPool(makeWorker)')}),assert.AssertionError);
+console.log('PASS executor-only construction/delegation/loading/resource ownership; 9 bypass mutations rejected');

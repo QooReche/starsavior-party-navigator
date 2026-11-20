@@ -16,6 +16,7 @@ const ctx=vm.createContext({Ux:require('../ux_ui'),console,URL,JSON,Number,Promi
  contents:[{key:'op',name:'작전 (일반)'}],ckey:party=>party.map(x=>x.s.key).sort().join(','),
  simParty:t=>({units:t.keys}),rkOf:()=>0,starOf:()=>0,simOpt:()=>({build:'standard'}),run:()=>{},
  SIMQ:{n:100,seed:1,res:{},busy:null,LOAD_MS:100,RUN_MS:100},cur:[{tab:'tab',name:'stage'}],LASTQ:{}});
+vm.runInContext(fs.readFileSync(path.join(root,'search_executor.js'),'utf8'),ctx);
 vm.runInContext('const bkeys=Object.keys(CFG.breakSkills);',ctx);
 ctx.CFG.breakSupported=['큐브 과부하',...Object.keys(rules.mc.break_skills)];
 vm.runInContext(section('function brkLv(', 'function syncBrk('),ctx);
