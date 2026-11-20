@@ -56,6 +56,12 @@ def left(p):
     assert p.locator(B).evaluate('e=>e.getAnimations({subtree:true}).length')==0,'banner competed with Gwen for motion'
 
 
+def completion(p):
+    for result in [901,902]:
+        sync(p,result=result);expect(p,'result')
+        assert p.locator(B).get_attribute('data-phrase')=='inquiry', 'completion banner changed phrase'
+
+
 def progress(p,n):
     p.evaluate("""n=>{const w=directWorkers.findLast(w=>!w.dead&&w.req),m=w.req;
       w.onmessage({data:{id:m.id,requestId:m.requestId,job:m.job,jobId:m.jobId,owner:m.owner,revision:m.revision,type:'stage',msg:'계산 중',completed:n,total:100}});
@@ -107,13 +113,16 @@ def contract(browser,base,width):
     done(p);expect(p,'result');left(p)
     p.wait_for_function('document.querySelector("#direct-lane-banner .gwen-banner-title:not([hidden])").dataset.imageReady==="true"')
     first=p.locator(B).get_attribute('data-phrase')
+    assert first=='inquiry', 'completion banner changed phrase'
+    first_report=p.locator('#direct-result-lane .gwen-lane-actor').get_attribute('data-gwen-report')
     assert p.locator(TITLE+' .gwen-banner-fallback').is_hidden()
     shot(p,'result',width)
     p.evaluate('directResultsPaint();directResultsPaint()')
     assert p.locator(B).get_attribute('data-phrase')==first
     assert p.locator(TITLE).evaluate('e=>e.getAnimations().length')==0
     p.evaluate('DIRECT.cache.clear();void directRun()');done(p);expect(p,'result')
-    assert p.locator(B).get_attribute('data-phrase')!=first
+    assert p.locator(B).get_attribute('data-phrase')==first, 'completion banner changed phrase'
+    assert p.locator('#direct-result-lane .gwen-lane-actor').get_attribute('data-gwen-report')!=first_report, 'new calculation reused the previous report'
     # Geometry remains fixed through pending image, decode and error.
     lane=p.locator('#direct-board-lane').bounding_box();board=p.locator('#direct-board').bounding_box()
     img=p.locator(TITLE+' img');fallback=p.locator(TITLE+' .gwen-banner-fallback')
@@ -206,6 +215,7 @@ def delayed(browser,base):
 def mutations(browser,base):
     source=(ROOT/'gwen_lane.js').read_text(encoding='utf-8')
     cases=[('work lane',"return ['work',stage.board]", "return ['work',stage.result]",working),
+           ('result phrase',"state==='result'?'inquiry':pickBanner(state,current.result)","pickBanner(state,current.result)",completion),
            ('progress disabled',"if(target>x+.5)moveTo(target", "if(false)moveTo(target",None)]
     for name,old,new,check in cases:
         assert old in source
@@ -230,6 +240,9 @@ def mutations(browser,base):
         working(p);progress(p,50)
         p.wait_for_function('GwenLane.mount().state.x>0')
         bounds(p);p.close()
+    # The fixed completion copy must also hold after restoring the production source.
+    p=ready(browser,base,setup=fake);enter(p);pick_four(p)
+    completion(p);p.close()
 
 
 
