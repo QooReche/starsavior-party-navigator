@@ -1,0 +1,116 @@
+{
+  "requests": [
+    {
+      "type": "run",
+      "stage": "clo/달 회랑/FLOOR 100",
+      "n_runs": 2,
+      "seed": 20261121,
+      "options": {
+        "build": "standard",
+        "rules_override": {
+          "power_penalty": "model"
+        }
+      },
+      "teams": [
+        {
+          "key": "golden",
+          "party": {
+            "units": [
+              {
+                "key": "luna",
+                "build": "standard"
+              },
+              {
+                "key": "smile",
+                "build": "standard"
+              },
+              {
+                "key": "carnelia",
+                "build": "standard"
+              },
+              {
+                "key": "bell",
+                "build": "standard"
+              }
+            ],
+            "leader": 0
+          },
+          "options": {
+            "raw_runs": true
+          }
+        }
+      ]
+    }
+  ],
+  "replies": [
+    [
+      "golden",
+      {
+        "clear": 1,
+        "t60": null,
+        "prog": 1,
+        "progs": [
+          1,
+          1
+        ],
+        "via": {},
+        "wipe": 0,
+        "timeout": 0,
+        "ci": [
+          0.3424,
+          1
+        ],
+        "n": 2,
+        "ttk": 1.63,
+        "ta": 10,
+        "first": null,
+        "first_p": 0,
+        "gate": true,
+        "power": 158966,
+        "u": {
+          "luna": [
+            0.373,
+            0
+          ],
+          "smile": [
+            0.132,
+            0
+          ],
+          "carnelia": [
+            0.186,
+            0
+          ],
+          "bell": [
+            0.309,
+            0
+          ]
+        },
+        "bs": {
+          "name": null,
+          "uses": 0,
+          "dmg": 0,
+          "supported": false
+        },
+        "raw": "[[\"clear\", 1.6309216436223068, 10, 1.0], [\"clear\", 1.6309216436223068, 10, 1.0]]",
+        "ver": "7e95862bc0ea"
+      }
+    ]
+  ],
+  "result": {
+    "golden": {
+      "prog": 1,
+      "clear": 1,
+      "n": 2,
+      "via": {},
+      "progs": [
+        1,
+        1
+      ],
+      "cosmo": null
+    }
+  },
+  "pins": {
+    "sim/manifest.json": "5d962a6b98ba51ca42a8dae57296aa055f24032dc79c50fd1408dc1ef4d56327",
+    "battlesim/rules/default.json": "30f0190aa61103e6217587f2aeed0627dadd727c2c8ae6b470429abfb2487f8f"
+  }
+}
