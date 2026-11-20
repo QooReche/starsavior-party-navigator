@@ -73,7 +73,8 @@ LEGACY_OPTS = {k: v['legacy'] for k, v in RULES['opts'].items() if 'legacy' in v
 LEGACY_FORMULA = {k: v['legacy'] for k, v in RULES['formula'].items() if 'legacy' in v}
 # P3 확률 엔진 규칙. dmg_cap_scope는 기대값 엔진도 읽는다. DEFAULT_OPTS·damage_index 옵션 목록과는 따로 둔다.
 MC_RULES = {k: v for k, v in RULES.get('mc', {}).items() if not k.startswith('_') and k != 'break_skills'}
-# kind='note' 항목: 설명용이며 엔진 코드가 읽지 않는다. MC_OPTS 에서 제외하되 MC_RULES·assumptions_used 출력엔 유지.
+# kind='note' 항목: 설명용이며 엔진 코드가 읽지 않는다. MC_OPTS 에서 제외하고 MC_RULES 에 유지.
+# assumptions_used 는 note 여부와 무관하게 가정·관찰 등급만 출력한다.
 MC_NOTE_KEYS = frozenset(k for k, v in MC_RULES.items() if v.get('kind') == 'note')
 MC_OPTS = {k: v['value'] for k, v in MC_RULES.items() if k not in MC_NOTE_KEYS}
 MC_OPTS['break_skills'] = {k: v['value'] for k, v in RULES.get('mc', {}).get('break_skills', {}).items()}

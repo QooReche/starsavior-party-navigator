@@ -36,7 +36,9 @@ result
    battle_stat{이름#칸: {dmg, taken}} = 게임 전투 통계와 같은 정의(무적·무효·보호막·불사·오버킬 전 계산 피해, 판 평균 — 실측 대조용),
    foes{...}, break_skill{name, uses, dmg, supported, points_gained}(판 평균, dmg 는 개인 기여 제외, points_gained 는 상한 적용 후 실제 적립),
    nova_burst{total, uses, by_unit{이름#칸: {슬롯: 전체 판 횟수}}}(uses는 판 평균),
-   timeline?, assumptions_used[], unsupported{static[], runtime{}, critical, gate_ok}, runtime_ms_per_run}"""
+   timeline?, assumptions_used[], unsupported{static[], runtime{}, critical, runtime_approx, gate_ok}, runtime_ms_per_run}
+  assumptions_used: 가정·관찰 등급만(code/data 제외), 실제 분기 발동 추적은 아님.
+  gate_ok: 정적 critical과 실행 runtime이 모두 비어 있으면 true. 허용 목록 판정·자동 중단은 하지 않음."""
 import math
 import random
 import statistics
@@ -294,24 +296,27 @@ def _pct(xs, q):
     return xs[lo] + (xs[hi] - xs[lo]) * (i - lo)
 
 
+ASSUMPTION_GRADES = frozenset(('assumed', 'community', 'video', 'user', 'inference', 'game'))
+
+
 def assumptions_used(mc, opts):
-    """이번 실행에서 쓴 규칙 중 근거 등급이 data 가 아닌 것(값 포함)"""
+    """선택된 규칙 중 가정·관찰 등급만(값 포함). 실제 분기 발동 횟수는 아님."""
     out = []
     for k, v in MC_RULES.items():
-        if v.get('grade') != 'data':
+        if v.get('grade') in ASSUMPTION_GRADES:
             # note 키는 MC_OPTS 에 없으므로 규칙 기본값으로 채워 출력 목록 유지
             out.append(dict(rule='mc.' + k, value=mc.get(k, v.get('value')), grade=v.get('grade'), note=v.get('note')))
     for k, v in RULES['mc'].get('break_skills', {}).items():
-        out.append(dict(rule='mc.break_skills.' + k, value=mc['break_skills'].get(k), grade=v.get('grade'), note=v.get('note')))
+        if v.get('grade') in ASSUMPTION_GRADES:
+            out.append(dict(rule='mc.break_skills.' + k, value=mc['break_skills'].get(k), grade=v.get('grade'), note=v.get('note')))
     for k in ('coop_trigger', 'coop_single', 'coop_order', 'coop_dead_target', 'nova_policy', 'nova_pool', 'forced_coop_target', 'init_cd_frac'):
         r = RULES['opts'].get(k, {})
-        out.append(dict(rule='opts.' + k, value=opts.get(k), grade=r.get('grade'), note=r.get('note')))
+        if r.get('grade') in ASSUMPTION_GRADES:
+            out.append(dict(rule='opts.' + k, value=opts.get(k), grade=r.get('grade'), note=r.get('note')))
     out.append(dict(rule='model.not_modeled', value=None, grade='assumed',
-                    note='선제 방어(회피는 evade_model, 반격은 mc.revenge 로 지원), 표에 없는 「피해 제한」 효과(실행 전 검사에서 중요 미지원으로 표시), '
+                    note='표에 없는 「피해 제한」 효과(실행 전 검사에서 중요 미지원으로 표시), '
                          '노바 버스트 슬롯 효과(+15% 외), 일반 잠재력(감각·솜씨)·전술 분석·호감도, 시즌 보너스, Lv200 초과 성장, '
-                         '대부분의 반응 트리거 스킬(웨딩 카르멘 「수호의 기사」·프로페서M 「악에서 악으로」만 지원), 연쇄 피해의 「턴 끝에 발생」 시점'))
-    out.append(dict(rule='model.random_choice', value='uniform', grade='assumed',
-                    note='가중치가 명시되지 않은 무작위 효과·무작위 적은 균등 추첨. 핀볼 타임!·특급 배송의 실제 개별 확률은 자료 미기재로 미확인'))
+                         '연쇄 피해의 「턴 끝에 발생」 시점'))
     return out
 
 
@@ -605,7 +610,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         foes={k: dict(dmg=round(sum(v['dmg']) / n), appeared_p=round(len(v['seen']) / n, 4)) for k, v in foe_agg.items()},
         assumptions_used=assumptions_used(mc, opts),
         unsupported=dict(static=static[:300], static_count=len(static), runtime=dict(runtime), runs_affected=runs_affected,
-                         depth_runs=depth_runs, critical=crit_lines[:50], gate_ok=not crit_lines),
+                         depth_runs=depth_runs, critical=crit_lines[:50], runtime_approx=bool(runtime),
+                         gate_ok=not crit_lines and not runtime),
         runtime_ms_per_run=round(elapsed * 1000 / max(1, n), 2),
         seed=seed,
     )

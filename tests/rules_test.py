@@ -305,7 +305,7 @@ def test_index_uses_merged_opts():
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
     'auto_unable_break', 'auto_remove_filter', 'auto_se_reselect', 'auto_hp_float32', 'auto_empty_marker',
-    'marker_se_flow',
+    'marker_se_flow', 'supported_marker_targets', 'claire_preemptive_marker',
     'fixstats_speed_zero', 'superarmor_damage_ban',
     'last_damager_timing', 'self_hp_condition',
     'revive_toughness', 'potential_11026_vampirism', 'heal_cleanse_skill_end',
@@ -355,11 +355,11 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     # 2026-11-14 클라 대조(해제·면역 16건)
     'dispel_shield', 'dispel_instance', 'dispel_order', 'dispel_evade', 'sleep_wake', 'dispel_attack_names', 'debuff_ban_flag', 'gauge_cd_immune', 'gauge_up_immune', 'cc_immune_buff', 'immune_group_resist', 'abs_hit_terms', 'nullifier_count', 'se_force_apply', 'bskill_nullify', 'evade_ignore_resist', 'dot_hit_result',
 ])
-_NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'break_skill_model'})
+_NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'break_skill_model', 'random_buff_draw'})
 
 
 def test_mc_note_not_in_opts():
-    """MC_NOTE_KEYS 가 정확히 3개이며 MC_OPTS 에 없고 MC_RULES 에는 있어야 한다."""
+    """MC_NOTE_KEYS 가 정확히 4개이며 MC_OPTS 에 없고 MC_RULES 에는 있어야 한다."""
     wrong_note = MC_NOTE_KEYS ^ _NOTE_KEYS          # 대칭 차: 예상과 다른 키
     in_opts = [k for k in MC_NOTE_KEYS if k in MC_OPTS]
     not_in_rules = [k for k in MC_NOTE_KEYS if k not in MC_RULES]
@@ -377,11 +377,13 @@ def test_mc_opts_keys_snapshot():
 
 
 def test_assumptions_used_note_keys_present():
-    """assumptions_used 출력에 note 키 4개가 여전히 포함되고 값이 규칙 기본값이어야 한다."""
+    """assumptions_used 출력에는 가정 등급 note만 포함되고 값이 규칙 기본값이어야 한다."""
     mc_for_test = dict(MC_OPTS)   # note 키 없는 상태
     out = assumptions_used(mc_for_test, dict(DEFAULT_OPTS))
     rules_in_out = {x['rule'] for x in out}
-    missing = [k for k in _NOTE_KEYS if ('mc.' + k) not in rules_in_out]
+    expected = {k for k in _NOTE_KEYS if MC_RULES[k].get('grade') not in ('code', 'data')}
+    missing = [k for k in expected if ('mc.' + k) not in rules_in_out]
+    missing += [k for k in _NOTE_KEYS - expected if ('mc.' + k) in rules_in_out]
     # 값은 규칙 기본값(MC_OPTS 에 없어서 v['value'] 로 채워야 함)
     wrong_val = []
     for x in out:
