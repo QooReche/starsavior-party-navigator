@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "f89a8c57fa3c327f",
+  "hash": "e774bd298f4794dc",
   "history": [
-   {
-    "hash": "c103067eceff8481",
-    "reason": "11/15 전수조사 수정 G2, 길드 방어전 시즌 미오픈"
-   },
    {
     "hash": "c103067eceff8481",
     "reason": "11/15 전수조사 수정 G2, 길드 방어전 시즌 미오픈"
@@ -41,16 +37,16 @@
    {
     "hash": "f89a8c57fa3c327f",
     "reason": "구원자 미지원 감사 8건 교정. 길드 방어전 시즌4 종료 상태이므로 기존 방침대로 새 시즌 자료 반영 때 재생성. 현재 시즌 상태는 data/guild_defense.json 참조."
+   },
+   {
+    "hash": "e774bd298f4794dc",
+    "reason": "시즌4 종료 상태 유지. level_max_source 적용은 옛 길드/일반 버프에도 영향을 줄 수 있어 결과 불변을 주장하지 않음. HANDOFF 기존 방침대로 새 길드 시즌 자료 반영 때 guild_sim 재생성."
    }
   ]
  },
  "quick": {
-  "hash": "f89a8c57fa3c327f",
+  "hash": "e774bd298f4794dc",
   "history": [
-   {
-    "hash": "c103067eceff8481",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "c103067eceff8481",
     "reason": "calibrate_quick --write 재보정"
@@ -85,6 +81,10 @@
    },
    {
     "hash": "f89a8c57fa3c327f",
+    "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "e774bd298f4794dc",
     "reason": "calibrate_quick --write 재보정"
    }
   ]

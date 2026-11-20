@@ -301,9 +301,10 @@ def test_index_uses_merged_opts():
 
 
 # ---------------------------------------------------------------- 12. MC_OPTS·assumptions_used 목록 스냅샷 + note/alt/legacy 일관성
-# note 키 4개를 MC_OPTS 에서 뺐을 때 기존 출력이 그대로인지 고정한다.
+# note 키를 MC_OPTS 에서 뺐을 때 기존 출력이 그대로인지 고정한다.
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
+    'level_max_source',
     'auto_unable_break', 'auto_remove_filter', 'auto_se_reselect', 'auto_hp_float32', 'auto_empty_marker',
     'marker_se_flow', 'supported_marker_targets', 'claire_preemptive_marker',
     'fixstats_speed_zero', 'superarmor_damage_ban',
@@ -355,11 +356,11 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     # 2026-11-14 클라 대조(해제·면역 16건)
     'dispel_shield', 'dispel_instance', 'dispel_order', 'dispel_evade', 'sleep_wake', 'dispel_attack_names', 'debuff_ban_flag', 'gauge_cd_immune', 'gauge_up_immune', 'cc_immune_buff', 'immune_group_resist', 'abs_hit_terms', 'nullifier_count', 'se_force_apply', 'bskill_nullify', 'evade_ignore_resist', 'dot_hit_result',
 ])
-_NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'break_skill_model', 'random_buff_draw'})
+_NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'break_skill_model', 'random_buff_draw', 'break_skill_residuals'})
 
 
 def test_mc_note_not_in_opts():
-    """MC_NOTE_KEYS 가 정확히 4개이며 MC_OPTS 에 없고 MC_RULES 에는 있어야 한다."""
+    """MC_NOTE_KEYS 가 예상 집합과 같으며 MC_OPTS 에 없고 MC_RULES 에는 있어야 한다."""
     wrong_note = MC_NOTE_KEYS ^ _NOTE_KEYS          # 대칭 차: 예상과 다른 키
     in_opts = [k for k in MC_NOTE_KEYS if k in MC_OPTS]
     not_in_rules = [k for k in MC_NOTE_KEYS if k not in MC_RULES]
@@ -368,7 +369,7 @@ def test_mc_note_not_in_opts():
 
 
 def test_mc_opts_keys_snapshot():
-    """MC_OPTS 키 목록이 고정 집합과 일치해야 한다(note 4개 제거 반영)."""
+    """MC_OPTS 키 목록이 고정 집합과 일치해야 한다(note 제외 반영)."""
     got = frozenset(MC_OPTS)
     extra = sorted(got - _EXPECTED_MC_OPTS_KEYS)
     missing = sorted(_EXPECTED_MC_OPTS_KEYS - got)
@@ -424,7 +425,7 @@ def test_power_penalty_default():
 
 
 def test_note_keys_not_in_code():
-    """note 키 4개는 battlesim/*.py·tools/*.py·sim_worker.js·party_template.html 에서 읽지 않아야 한다.
+    """note 키는 battlesim/*.py·tools/*.py·sim_worker.js·party_template.html 에서 읽지 않아야 한다.
     grep 기반: 키 이름이 문자열로 나타나면 안 됨(JSON 의 키 정의 자체는 제외, 파이썬·JS 소비 코드만 체크)."""
     import re
     check_dirs = [os.path.join(ROOT, 'battlesim'), os.path.join(ROOT, 'tools')]
