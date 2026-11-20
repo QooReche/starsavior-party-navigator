@@ -618,7 +618,8 @@
       // Recover sampled tactical teams at the representative level before reranking.
       tacticalByBoss.set(b,misses);
       const recovered=bossJobs(S,b,level,misses.map(t=>t.keys),results,cls);
-      if(recovered.length){const rr=await run(recovered,S.screen.runs,12,'감사에서 찾은 후보 복귀',null);Object.assign(resA,rr);pushAll(jobsK,recovered);pushAll(allJobs,recovered);}
+      if(recovered.length){const rr=await run(recovered,S.screen.runs,12,'감사에서 찾은 후보 복귀',null);Object.assign(resA,rr);
+        for(const target of new Set([jobsK,allJobs])){const existing=new Set(target.map(j=>j.key));pushAll(target,recovered.filter(j=>!existing.has(j.key)));}}
       representative.push({boss:b,sampled:samples.length,misses:misses.length,rate:misses.length/samples.length,randomSampled:randomIds.size,randomMisses:misses.filter(t=>randomIds.has(idOf(t.keys))).length,boundarySampled:boundary.length,expanded:misses.length/samples.length>(S.learned?.missThreshold??.04)});
     }
     const searchS=representative.some(a=>a.expanded)?{...S,rerank:{...S.rerank,keep:S.rerank.keep*2}}:S;
@@ -641,6 +642,7 @@
         const leaders=representative.find(a=>a.boss===b)?.expanded;
         for(const e of fresh)for(const p of Placement.variants(e.keys,results,traits))for(const leaderKey of (leaders?e.keys:[p.leaderKey]))pushAll(extra,bossJobs(S,b,level,[e.keys],results,cls,null,{...p,leaderKey}));
       });
+      extra=[...new Map(extra.map(j=>[j.key,j])).values()];
       if (!extra.length) continue;
       // A missed tactical screen expands leaders, not the number of full 20-run trials.
       // Compare every variant/leader briefly, then refine two layouts per composition.

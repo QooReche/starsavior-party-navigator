@@ -4,14 +4,14 @@ const {transport}=require('./measure_role_search'),root=path.resolve(__dirname,'
 const read=f=>JSON.parse(fs.readFileSync(f,'utf8').replace(/^\uFEFF/,''));
 const top=a=>{const b=a.slice().sort((x,y)=>y-x);return b.slice(0,Math.ceil(b.length*.2)).reduce((s,x)=>s+x,0)/Math.ceil(b.length*.2);};
 function interval(a,b){let seed=20261125;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;},draws=[];
- for(let k=0;k<2000;k++){let x=0,y=0;for(let t=0;t<a.length;t++){const ids=Array.from({length:200},()=>Math.floor(random()*200));x+=top(ids.map(i=>a[t][i]));y+=top(ids.map(i=>b[t][i]));}draws.push((y/x-1)*100);}
+ for(let k=0;k<2000;k++){let x=0,y=0;const ids=Array.from({length:200},()=>Math.floor(random()*200));for(let t=0;t<a.length;t++){x+=top(ids.map(i=>a[t][i]));y+=top(ids.map(i=>b[t][i]));}draws.push((y/x-1)*100);}
  draws.sort((x,y)=>x-y);return [draws[50],draws[1949]];}
 async function main(){const [input,dir,mode='independent']=process.argv.slice(2),dest=fs.realpathSync(dir);
  if(dest.toLowerCase().startsWith(root.toLowerCase()))throw Error('private output must be outside repository');
  const D=JSON.parse(fs.readFileSync(path.join(root,'index.html'),'utf8').match(/const D=(\{[^\n]+\});/)[1]),info=read(input),growth=require('../data/growth.json'),G=require('../data/cosmo_raid.json'),GG=require('../data/guild_defense.json');
  const profiles={cosmo:require('../myinfo_reco').profile(info,D.roster,growth,'cosmo'),guild:require('../myinfo_reco').profile(info,D.roster,growth,'op')};
  const T=transport(GS,'role_validation_worker.py'),pool=GS.workerPool(T.makeWorker),start=performance.now();
- const run=(jobs,runs,seed)=>GS.runPhase({jobs,runs,seed,workers:2,makeWorker:T.makeWorker,pool,stage:'validation',base:''}).promise;
+ const run=(jobs,runs,seed)=>runValidation({jobs,runs,seed,workers:2,makeWorker:T.makeWorker,pool,stage:'validation',base:''});
  const save=(name,value)=>fs.writeFileSync(path.join(dest,name+'.json'),JSON.stringify(value,null,2));
  const job=(t,guild=false)=>{const results=profiles[guild?'guild':'cosmo'].results,layout={order:t.order,leaderKey:t.leaderKey||t.order[0]};
   if(!guild)return C.bossJobs(G.search,t.boss,t.level,[t.keys||t.order],results,{},t.brk?{name:t.brk,level:t.brkLv}:null,layout)[0];
@@ -24,10 +24,8 @@ async function main(){const [input,dir,mode='independent']=process.argv.slice(2)
     evaluated[name].sum=evaluated[name].teams.reduce((s,t)=>s+top(t.scores),0);save('independent-progress',evaluated);console.error('independent complete',name);
    }
    // Paired bootstrap across independent battle seeds; selection seeds are disjoint.
-   let rng=20261122;const random=()=>{rng=(Math.imul(rng,1664525)+1013904223)>>>0;return rng/4294967296;};
-   const comparisons={};for(const [a,b] of [['rules','free'],['rules','B'],['rules','A'],['guild-old','guild-new']]){const diffs=[];
-    for(let k=0;k<2000;k++){let x=0,y=0;for(let team=0;team<evaluated[a].teams.length;team++){const ids=Array.from({length:200},()=>Math.floor(random()*200));x+=top(ids.map(i=>evaluated[a].teams[team].scores[i]));y+=top(ids.map(i=>evaluated[b].teams[team].scores[i]));}diffs.push((y/x-1)*100);}
-    diffs.sort((x,y)=>x-y);comparisons[a+'→'+b]={differencePct:(evaluated[b].sum/evaluated[a].sum-1)*100,ci95:[diffs[50],diffs[1949]]};
+   const comparisons={};for(const [a,b] of [['rules','free'],['rules','B'],['rules','A'],['guild-old','guild-new']]){
+    comparisons[a+'→'+b]={differencePct:(evaluated[b].sum/evaluated[a].sum-1)*100,ci95:interval(evaluated[a].teams.map(t=>t.scores),evaluated[b].teams.map(t=>t.scores))};
    }save('independent',{evaluated,comparisons,seconds:(performance.now()-start)/1000,games:T.games});
   }else if(mode==='small'){
    const results=profiles.cosmo.results,eligible=D.roster.filter(r=>results[r.key]?.power>0).sort((a,b)=>results[b.key].power-results[a.key].power);
@@ -53,4 +51,10 @@ async function main(){const [input,dir,mode='independent']=process.argv.slice(2)
   }else throw Error('unknown validation mode');
  }finally{pool.close();T.close();}
 }
-main().catch(e=>{console.error(e);process.exitCode=1;});
+async function runValidation(options){
+ const raw={};await GS.runPhase({...options,onResult:(key,result)=>{raw[key]=result;}}).promise;
+ for(const j of options.jobs){const r=raw[j.key],values=r?.cosmo?r.scores:r?.progs;if(!Array.isArray(values)||values.length!==options.runs||values.some(x=>!Number.isFinite(x)))throw Error('independent per-run scores missing: '+j.key);}
+ return raw;
+}
+module.exports={runValidation,interval};
+if(require.main===module)main().catch(e=>{console.error(e);process.exitCode=1;});
