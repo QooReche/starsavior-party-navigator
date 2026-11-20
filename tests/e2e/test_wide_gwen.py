@@ -55,35 +55,37 @@ def pause_roam(page, time):
 def loading_audit(page, reduced=False, scope='#out'):
     if scope=='#out':
         return lane_audit(page,reduced)
-    w = scope+' [data-gwen]'
-    if not reduced:
-        assert page.locator(w).get_attribute('class').split().count('gwen-roam') == 1
-    centered(page, w+' .gwen-track', scope)
-    centered(page, w+' .gwen-caption', scope)
-    if page.locator(scope+' .pbar').count():
-        centered(page, scope+' .pbar', scope)
+    mode='guildSearch' if scope=='#guild-search' else 'cosmoSearch'
+    lane=scope+f' [data-gwen-slot="{mode}-board"]'
+    actor=page.locator(lane+' .gwen-lane-actor')
+    assert actor.count()==1, 'search actor disconnected'
+    page.locator(lane).scroll_into_view_if_needed()
+    centered(page,lane,scope)
+    page.wait_for_function('(e)=>!!e.querySelector("img")?.naturalWidth',arg=actor.element_handle())
+    a,b=actor.bounding_box(),page.locator(lane).bounding_box()
+    assert b['x']-.5<=a['x'] and a['x']+a['width']<=b['x']+b['width']+.5, 'Gwen left reserved track'
+    assert b['y']<=a['y'] and a['y']+a['height']<=b['y']+b['height'], 'Gwen outside search lane'
     if reduced:
-        for selector in ('.gwen-traveler', '.gwen-scene', '.gwen-worker'):
-            assert page.locator(w+' '+selector).evaluate('(e)=>getComputedStyle(e).animationName') == 'none'
-        centered(page, w+' .gwen-scene', w+' .gwen-track')
-        assert page.locator(w+' img').evaluate('(i)=>i.currentSrc.endsWith(".png")')
+        page.wait_for_function('!GwenLane.mount().state.moving')
+        page.wait_for_function('(e)=>e.currentSrc.endsWith(".png")',arg=actor.locator('img').element_handle())
+        assert actor.evaluate('(e)=>e.getAnimations().length')==0
     else:
-        traveler=page.locator(w+' .gwen-traveler')
-        body,track=page.locator(w+' .gwen-scene').bounding_box(),page.locator(w+' .gwen-track').bounding_box()
-        assert body['x']>=track['x']-.5 and body['x']+body['width']<=track['x']+track['width']+.5, 'Gwen left reserved track'
-        page.wait_for_function('(e)=>e.getAnimations().some(a=>a.effect.getTiming().duration<=600)',arg=traveler.element_handle())
-        # The production controller now uses bounded transform segments, not a 12s left animation.
-        details=traveler.evaluate('''e=>{const a=e.getAnimations()[0];a.pause();a.currentTime=0;
-          return {duration:a.effect.getTiming().duration,frames:a.effect.getKeyframes()}}''')
+        page.wait_for_function('(e)=>e.getAnimations().some(a=>a.effect.getTiming().duration<=600)',arg=actor.element_handle())
+        details=actor.evaluate('''e=>{
+          const a=e.getAnimations()[0],caption=e.closest('[id$="-search"]').querySelector('[data-k$="-prog"],.cs-progress');
+          a.pause();a.currentTime=0;
+          const before=e.getBoundingClientRect(),text=caption.getBoundingClientRect();
+          a.currentTime=a.effect.getTiming().duration;
+          const after=e.getBoundingClientRect();
+          return {duration:a.effect.getTiming().duration,frames:a.effect.getKeyframes(),
+            dx:Math.abs(after.x-before.x),captionStable:JSON.stringify(text)===JSON.stringify(caption.getBoundingClientRect()),
+            separated:after.bottom<=text.y};
+        }''')
         assert 0<details['duration']<=600
         assert all('transform' in f and 'left' not in f for f in details['frames'])
-        a = page.locator(w+' .gwen-scene').bounding_box()
-        caption = page.locator(w+' .gwen-caption').bounding_box()
-        traveler.evaluate('e=>{const a=e.getAnimations()[0];a.currentTime=a.effect.getTiming().duration}')
-        b = page.locator(w+' .gwen-scene').bounding_box()
-        assert 1<abs(b['x']-a['x'])<=36.1, (a,b)
-        assert caption == page.locator(w+' .gwen-caption').bounding_box(), 'caption moved'
-        assert b['y']+b['height'] <= caption['y'], 'Gwen overlaps caption'
+        assert 1<details['dx']<=36.1, details
+        assert details['captionStable'], 'caption moved'
+        assert details['separated'], 'Gwen overlaps caption'
     fits(page)
 
 
@@ -154,8 +156,14 @@ def exercise(page, base, width, shots):
     # Guild and Cosmo use their production search renderers, independent of workers.
     for kind,state,renderer in [('guild','GSR','renderGuildSearch(true)'),('cosmo','CSR','renderCosmoSearch()')]:
         page.evaluate(f'''() => {{MI.info={{units:[]}};growthControlPlace(true);$('out').innerHTML='';$('content').value=contents.findIndex(c=>c.key==='{kind}');
-          Object.assign({state},{{phase:'run',msg:'3단계: 상위 팀 확인 중',done:2,total:80,sig:{'gsSig()' if kind=='guild' else 'csSig()'}}});{renderer};}}''')
+          if('{kind}'==='guild')guildGwenClaim('guildSearch');
+          Object.assign({state},{{phase:'run',phaseSerial:1,msg:'3단계: 상위 팀 확인 중',done:68,total:80,sig:{'gsSig()' if kind=='guild' else 'csSig()'}}});{renderer};}}''')
         loading_audit(page,scope='#'+kind+'-search')
+        if width==1280:
+            mutation(page,f'#{kind}-search .gwen-lane-actor{{transform:translateX(-999px)!important}}',lambda:loading_audit(page,scope='#'+kind+'-search'))
+        page.emulate_media(reduced_motion='reduce')
+        loading_audit(page,True,scope='#'+kind+'-search')
+        page.emulate_media(reduced_motion='no-preference')
         centered(page,f'#{kind}-search [data-{"gs" if kind=="guild" else "cs"}=cancel]','#'+kind+'-search')
         page.evaluate(f'''() => {{
           const order=R.slice(0,4).map(s=>s.key),stats={{top:10000,mean:9000,clear:.95,frac:.98,cap:.95}};

@@ -88,6 +88,22 @@ def error_wiring_audit(page):
     page.emulate_media(reduced_motion='no-preference')
 
 
+def check_search_lane(page, kind):
+    mode=kind+'Search';scope='#'+kind+'-search'
+    lane=page.locator(f'{scope} [data-gwen-slot="{mode}-board"]')
+    assert lane.is_visible(), 'search work lane hidden'
+    actor=lane.locator('.gwen-lane-actor')
+    assert actor.count()==1, 'search actor disconnected'
+    assert actor.get_attribute('data-gwen')=='lane'
+    assert page.evaluate('GwenLane.mount().state.mode')==mode
+    assert page.evaluate('GwenLane.mount().state.phase')=='work', 'search progress disconnected'
+    lane.scroll_into_view_if_needed()
+    page.wait_for_function('(e)=>!!e.querySelector("img")?.naturalWidth',arg=actor.element_handle())
+    wait_decoded(page,actor.locator('img'))
+    assert actor.locator('img').get_attribute('data-gwen-art') in ['walk','investigate','magnify','think','board','coffee','stakeout','stamp','files']
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+
+
 def exercise(page, base, width, shots):
     page.goto(base + '/index.html?season=force&pm=reco', wait_until='networkidle')
     page.wait_for_function('typeof Ux!=="undefined" && typeof SIMQ!=="undefined"')
@@ -231,16 +247,20 @@ def exercise(page, base, width, shots):
     for kind, state, renderer in [('guild', 'GSR', 'renderGuildSearch(true)'), ('cosmo', 'CSR', 'renderCosmoSearch()')]:
         page.evaluate(f'''() => {{
           MI.info={{units:[]}};$('content').value=contents.findIndex(c=>c.key==='{kind}');
-          Object.assign({state},{{phase:'run',msg:'1단계: 후보 훑는 중',done:2,total:80,sig:{'gsSig()' if kind=='guild' else 'csSig()'}}});
+          Object.assign({state},{{phase:'run',phaseSerial:1,msg:'1단계: 후보 훑는 중',done:2,total:80,sig:{'gsSig()' if kind=='guild' else 'csSig()'}}});
+          if('{kind}'==='guild')guildGwenClaim('guildSearch');
           {renderer};
         }}''')
         scope = '#' + kind + '-search'
-        check_scene(page, 'screen', scope)
+        check_search_lane(page,kind)
         page.evaluate(f'''window.__cancel=document.querySelector('{scope} button[data-{'gs' if kind=='guild' else 'cs'}="cancel"]');
-            window.__face=document.querySelector('{scope} .gwen-worker');{state}.done=3;{renderer}''')
-        assert page.evaluate(f"__face===document.querySelector('{scope} .gwen-worker')")
-        page.evaluate(f'{state}.msg="3단계: 상위 팀 확인 중";{renderer}')
-        check_scene(page, 'long', scope)
+            window.__face=document.querySelector('{scope} .gwen-lane-actor');{state}.done=3;{renderer}''')
+        assert page.evaluate(f"__face===document.querySelector('{scope} .gwen-lane-actor')")
+        assert page.evaluate(f"GwenStage.mount($('{kind}-search'),{{mode:'{kind}Search'}}).state.progress") == 3/80
+        page.wait_for_function('GwenLane.mount().state.x>0')
+        page.evaluate(f'{state}.msg="3단계: 상위 팀 확인 중";{state}.phaseSerial++;{state}.done=0;{renderer}')
+        assert page.evaluate('GwenLane.mount().state.x')==0, 'new search phase retained movement'
+        check_search_lane(page,kind)
         assert page.evaluate(f'''__cancel===document.querySelector('{scope} button[data-{'gs' if kind=='guild' else 'cs'}="cancel"]')''')
         shot(kind, scope)
         page.evaluate(f'{state}.phase="err";{state}.msg="시험 오류";{renderer}')
@@ -283,6 +303,31 @@ def exercise(page, base, width, shots):
     error_wiring_audit(page)
 
 
+def search_progress_mutation(browser,base):
+    source=(ROOT/'index.html').read_text(encoding='utf-8')
+    old="if(state.phase==='run')stage.progress("
+    assert old in source
+    for mutated in [False,True,False]:
+        context=browser.new_context(viewport={'width':1280,'height':850})
+        try:
+            if mutated:context.route('**/index.html*',lambda r:r.fulfill(body=source.replace(old,"if(state.phase==='run')stage.reset("),content_type='text/html'))
+            page=context.new_page()
+            page.goto(base+'/index.html?season=force&pm=reco',wait_until='networkidle')
+            page.wait_for_function('window._ready && QK.d')
+            page.evaluate('''() => {
+              recoClearTimer();clearTimeout(_rt);MI.info={units:[]};
+              $('content').value=contents.findIndex(c=>c.key==='guild');guildGwenClaim('guildSearch');
+              Object.assign(GSR,{phase:'run',phaseSerial:1,msg:'progress fixture',done:2,total:80,sig:gsSig()});
+              renderGuildSearch(true);
+            }''')
+            try:check_search_lane(page,'guild')
+            except AssertionError as e:
+                assert mutated and 'search progress disconnected' in str(e),str(e)
+                print('CAUGHT search progress disconnection',flush=True)
+            else:assert not mutated, 'search progress mutation survived'
+        finally:context.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--shots', action='store_true')
@@ -307,6 +352,7 @@ def main():
                 if page.video:
                     page.video.save_as(str(ROOT / '_shot_load.webm'))
                 print(f'PASS Gwen {width}px: stages, errors, persistent results, stable buttons, reduced-motion mutation')
+            search_progress_mutation(browser,base)
         finally:
             browser.close()
 
