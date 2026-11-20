@@ -52,7 +52,7 @@ async function cdArrangeSim(boss){
   try{
     const winner=await placementRun({party:job.party,stage:job.stage,options:job.options,brk:job.options.break_skill,owner:'placement-cosmo',
       live,register:f=>{state.cancel=()=>{if(CDIRECT.placement===state)CDIRECT.placement=null;f();paint();};},onProgress:d=>{state.done=d;paint();}});
-    if(live()){CDIRECT.placement=null;cdChange({type:'draft',boss,action:{type:'arrange',order:winner.p.order,leaderKey:winner.p.leaderKey}});}
+    if(live()){CDIRECT.placement=null;cdChange({type:'draft',boss,action:{type:'arrange',order:winner.p.order,leaderKey:winner.p.leaderKey}},{record:true});}
   }catch(e){if(CDIRECT.placement===state){CDIRECT.error=e.message;cdPaint();}}finally{if(CDIRECT.placement===state)CDIRECT.placement=null;paint();}
 }
 function recommendationPlacementKey(t,party){const c=contents[$('content').value],st=cur?.[$('stage').value];

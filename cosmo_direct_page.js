@@ -10,10 +10,11 @@ function cdInit(){
 }
 function cdSave(){if(!CDIRECT.shared)CDIRECT.saveError=LS.set(CosmoDirect.STORAGE_KEY,CosmoDirect.storage(CDIRECT.state))?'':'초안 저장 실패 · 이 세션에서만 유지됨';}
 function cdCancel(){const a=CDIRECT.active;if(!a)return;CDIRECT.active=null;CDIRECT.id++;a.abort?.();simPoolDrop('cdirect',a.id);}
-function cdChange(action){
+function cdChange(action,{record=false}={}){
   CDIRECT.placement?.cancel?.();
   const previous=CDIRECT.state,next=CosmoDirect.edit(previous,action);
-  if(JSON.stringify(previous)===JSON.stringify(next))return;
+  // An applied arrangement owns one undo entry even when the winner equals the current team.
+  if(JSON.stringify(previous)===JSON.stringify(next)){if(record&&action.boss){CDIRECT.undo[action.boss]=previous.teams[action.boss];cdPaint();}return;}
   if(action.type!=='team'){
     cdCancel();CDIRECT.error='';
     for(const boss of Object.keys(previous.teams))if(JSON.stringify(previous.teams[boss])!==JSON.stringify(next.teams[boss]))CDIRECT.undo[boss]=previous.teams[boss];
@@ -22,6 +23,7 @@ function cdChange(action){
 }
 function cdUndo(boss){
   const team=CDIRECT.undo[boss];if(!team)return;
+  CDIRECT.placement?.cancel?.();
   // A vacated member may have since been placed in another team. Never steal it.
   const used=CosmoDirect.usedBy(CDIRECT.state);
   if(team.draft.slots.some(m=>m&&used.has(m.key)&&used.get(m.key)!==boss)){CDIRECT.error='되돌릴 구원자가 다른 팀에서 사용 중임';cdPaint();return;}
