@@ -1,3 +1,21 @@
+## 2026-11-21 — 그웬 공통 무대 리뷰 2차: 전체 경로 검증
+
+시작 커밋 5bfe3d9의 UX 결과 시험에 runCore가 선택 팀 대신 1위 팀 결과를 쓰는 변이를 적용해도 통과함을 재현했음. 복구한 시험은 같은 변이를 표정 단언에서 검출했음. 마지막 로딩 재검증도 실제 이동 후 단계 초기화와 진행 연결 제거 변이를 통과했음.
+
+`tools/run_tests.py --e2e`의 등록 목록과 그웬 파일 목록을 대조했음. 아래 24파일을 브라우저 하나씩 순차 실행해 통과했음. `test_page.py`는 그웬 아트 항목만 실행했으며, 실제 시뮬 워커는 최대 2개로 제한했음.
+
+- PASS: `test_gwen_auto.py`(10변이), `test_gwen_art2.py`(8변이), `test_gwen_ux.py`(14변이).
+- PASS: `test_gwen_guild_owner.py`(5변이), `test_gwen_search_stage.py`(완료 상태 초기화 변이).
+- PASS: `test_gwen_shadow.py`, `test_gwen_lane_image.py`, `test_gwen_loading.py`, `test_wide_gwen.py`.
+- PASS: `test_direct_gwen.py`, `test_direct_party.py --mutations`, `test_cosmo_direct.py`.
+- PASS: `test_case_banner.py`, `test_direct_lane.py`, `test_direct_compact.py`, `test_direct_phase2.py`.
+- PASS: `test_result_tabs.py`, `test_direct_execution.py --real --mutations`, `test_direct_affordance.py`.
+- PASS: `test_cosmo_construction.py`, `test_cosmo_learned.py`, `test_placement.py`, `test_prelink_level.py`, `test_page.py gwen_art`.
+
+기존 home·추천·직접 편성·코스모 직접 편성의 1280·390 폭 캡처 14장을 다시 생성해 이전 캡처와 비교했음. 이미지 크기와 픽셀 차이는 전부 0이었음. 로그·캡처·합성 입력의 실행 결과는 공개 커밋에서 제외했음.
+
+최종 `python -X utf8 -I tools/run_tests.py --rebuild`는 234파일 통과·실패 0이었음. `COSMO_TABLES` 미설정으로 시즌 원표 대조 2건은 건너뛰었음. 엔진·HANDOFF·그림 자산 변경과 push 없음. 고정 커밋 범위 독립 리뷰의 소유권 숨김 누출 지적을 반영했고, 이후 검사 보완 범위에서 확정 결함이나 검사 약화 없음으로 확인했음.
+
 ## 2026-11-21 — 그웬 공통 무대 리뷰 2차: 완료 배너 검사 보완
 
 목록 대조로 추가 실행한 `test_case_banner.py`도 시작 커밋 5bfe3d9에서 실패했음. 공통 무대의 완료 문구는 고정인데 옛 시험이 문구 교체를 기대했음. 고정 문구 유지와 새 계산의 report 식별자 갱신을 나눠 검사하고, 회전 문구를 되살리는 변이가 실패함을 확인했음. 세 폭·실제 묶음 진행·이미지 지연 CLS·변이 3개를 통과했으며 독립 리뷰에서 검사 약화 없음으로 확인했음.
