@@ -1,0 +1,193 @@
+// Content/DOM-free worker execution. Callers own candidate, score, seed and ordering policies.
+(function(root){
+ 'use strict';
+ function createWorker(){return new root.Worker('sim_worker.js')}
+function shared(env){
+ const now=env.now||(()=>Date.now()),setTimer=env.setTimer||setTimeout,clearTimer=env.clearTimer||clearTimeout;
+const SIMPOOL={workers:[],batches:[],serial:0,pumping:false};
+function scrPool(want){const ws=[];ws.capacity=Math.max(1,Math.min(env.capacity(),want||Infinity));return ws}
+function simPoolSync(){env.sync?.(SIMPOOL.workers)}
+function simRelease(w,kill=false){const lease=w._lease;if(lease){const ws=lease.batch.ws,i=ws.indexOf(w);if(i>=0)ws.splice(i,1);w._lease=null;w._job=null;lease.batch.o.arm?.()}
+ if(kill){w._dead=true;w.terminate();SIMPOOL.workers=SIMPOOL.workers.filter(x=>x!==w)}simPoolSync()}
+function simPoolDrop(owner='reco',requestId=null,group=null){
+ const matches=b=>b.owner===owner&&(requestId==null||b.o.id===requestId)&&(group==null||b.o.group===group);
+ for(const b of SIMPOOL.batches.filter(matches)){b.closed=true;b.o.arm?.cancel?.()}
+ for(const w of SIMPOOL.workers.slice())if(matches(w._lease?.batch||w._lastBatch))simRelease(w,true);
+ SIMPOOL.batches=SIMPOOL.batches.filter(b=>!b.closed);simPump()}
+function simReceive(w,m){
+ const lease=w._lease;if(w._dead||!lease)return;
+ const b=lease.batch,o=b.o;
+ if(b.closed||!o.live())return;
+ // Only legacy boot notifications may omit id. Calculation replies must match the lease.
+ const boot=m.type==='stage'&&m.id==null&&m.requestId==null;
+ if(!boot&&(m.id!==o.id||(m.requestId!=null&&m.requestId!==o.id)))return;
+ if(m.owner!=null&&m.owner!==b.owner||m.revision!=null&&m.revision!==(o.revision||0)||m.jobId!=null&&m.jobId!==lease.token)return;
+ if(m.job!=null&&m.job!==lease.index)return;
+ if(m.type==='stage'){if(m.msg==='준비 끝')w._ready=true;w._last=now();o.stage?.(w,m);if(!b.closed)o.arm?.();return}
+ if(m.type==='error'){o.error(m.msg,w,false);return}
+ if(m.type==='team'){if(lease.got||m.key!==w._key)return;lease.got=true;w._last=now();o.team(b.jobs[lease.index],m,w);if(!b.closed)o.arm?.();return}
+ if(m.type==='done'){
+  if(!lease.got){o.error('결과 없이 끝난 작업',w,false);return}
+  simRelease(w);b.left--;
+  if(!b.left){b.closed=true;o.arm?.cancel?.();SIMPOOL.batches=SIMPOOL.batches.filter(x=>x!==b);o.done()}
+  simPump()}}
+function simPump(){if(SIMPOOL.pumping)return;SIMPOOL.pumping=true;
+ try{
+  for(const b of SIMPOOL.batches.slice())if(!b.o.live()){b.closed=true;b.o.arm?.cancel?.();for(const w of b.ws.slice())simRelease(w,true)}
+  SIMPOOL.batches=SIMPOOL.batches.filter(b=>!b.closed);
+  for(;;){
+   const pending=SIMPOOL.batches.filter(b=>!b.closed&&b.next<b.jobs.length).sort((a,b)=>(env.priority(b.owner))-(env.priority(a.owner))||a.serial-b.serial);
+   const priority=pending.some(b=>env.priority(b.owner));
+   const b=pending.find(b=>(!priority||env.priority(b.owner))&&b.ws.length<b.ws.capacity);if(!b)break;
+   let w=SIMPOOL.workers.find(w=>!w._lease&&!w._dead);
+   if(!w){if(SIMPOOL.workers.length>=env.capacity())break;
+    w=(env.makeWorker||createWorker)();w.onmessage=e=>simReceive(w,e.data);
+    w.onerror=e=>{const b=w._lease?.batch;if(b&&!b.closed&&b.o.live())b.o.error(e.message||'알 수 없음',w,true)};
+    SIMPOOL.workers.push(w)}
+   const j=b.next++,m=b.o.msg(b.jobs[j],j),token=++SIMPOOL.serial;
+   w._owner=b.owner;w._lastBatch={owner:b.owner,o:{id:b.o.id,group:b.o.group}};w._lease={batch:b,index:j,token,got:false};w._job=j;w._key=m.teams[0].key;w._n=m.n_runs;w._t=0;w._last=now();b.ws.push(w);simPoolSync();
+   b.o.assigned?.(w,b.jobs[j]);
+   w.postMessage({...m,id:b.o.id,requestId:b.o.id,owner:b.owner,revision:b.o.revision||0,job:j,jobId:token});b.o.arm?.();
+  }
+ }finally{SIMPOOL.pumping=false}}
+// 대기열: 작업(팀 하나)을 순서대로 하나씩 맡기고, 작업자가 그 작업의 done 을 보내면 다음 작업을 준다(고정 분배가 아니라 먼저 끝난 작업자가 더 가져간다).
+//  작업마다 번호(job)를 달아 보내고 작업자가 되돌려 준다 — 지금 맡긴 작업(번호·팀 key 가 같은 것)의 답만 받고, 같은 작업의 결과는 한 번만 받는다. 결과 없이 done 이 오면 오류.
+//  결과는 어느 작업자가 언제 돌렸는지와 무관하다(팀마다 같은 시드·판 번호). 순위 동률도 끝난 순서가 아니라 후보 순서로 가른다(scrOrder).
+//  o = {owner='reco', id, revision, group?, live(), msg(작업, 번호), assigned?, stage?, team, done, error, arm?}
+//  물리 작업자의 핸들러는 생성 때 한 번만 설치함. 대기 시간에는 무진행 시계를 돌리지 않음.
+function simDispatch(ws,jobs,o){const b={ws,jobs,o,owner:o.owner||'reco',next:0,left:jobs.length,serial:++SIMPOOL.serial,closed:false};
+ SIMPOOL.batches.push(b);simPump();return b}
+// 무진행 감시(작업자별): 일하는 작업자마다 «마지막 소식(w._last) + 상한»을 넘기면 stop(그 작업자가 엔진을 준비했는가). 상한 = 엔진 준비 전 LOAD_MS, 준비 뒤 limit().
+//  가려진 탭이거나 타이머가 예정보다 크게 늦게 돌았으면(탭 동결·절전 복귀 — 그동안 계산도 멈춤) 끝내지 않고 다시 잰다. 늦게 돈 경우 그동안 잰 팀 시간(w._t)은 속도 표본에서 버린다
+function simWatch(ws,limit,live,stop){let timer;const lim=w=>w._ready?limit():env.loadMs();
+ const arm=()=>{clearTimer(timer);const busy=ws.filter(w=>w._job!=null);if(!busy.length)return;
+  const wait=Math.max(1,Math.min(...busy.map(w=>w._last+lim(w)))-now()),due=now()+wait;
+  timer=setTimer(()=>{if(!live())return;const late=now()-due>5000;
+   if(late||env.hidden?.()){for(const w of ws){w._last=now();if(late)w._t=0}arm();return}
+   const dead=ws.find(w=>w._job!=null&&now()-w._last>=lim(w));if(!dead){arm();return}
+   stop(!!dead._ready)},wait)};
+ arm.cancel=()=>clearTimer(timer);return arm}
+return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watch:simWatch,release:simRelease};
+}
+  function split(jobs, n) {
+    const out = Array.from({length: Math.max(1, Math.min(n, jobs.length))}, () => []);
+    jobs.forEach((j, i) => out[i % out.length].push(j));
+    return out;
+  }
+  function workerPool(makeWorker) {
+    const ws = []; let closed = false, serial = 0;
+    return {
+      get(i) { if (closed) throw new Error("닫힌 작업자 풀"); return ws[i] || (ws[i] = makeWorker()); },
+      nextId() { return ++serial; },
+      close() { if (closed) return; closed = true; ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; w.terminate(); }); }
+    };
+  }
+  function runPhase({makeWorker, pool, jobs, workers, runs, seed, stage, base, onProgress, chunk, options, onResult, project=x=>x}) {
+    const dyn = chunk > 0;
+    const parts = dyn ? Array.from({length: Math.max(1, Math.min(workers, Math.ceil(jobs.length / chunk)))}, () => []) : split(jobs, workers), res = {}, ws = [];
+    let done = 0, finished = 0, dead = false, rejectFn, next = 0, seq = 0;
+    const clean = fatal => {
+      ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; if (!pool) w.terminate(); });
+      if (fatal && pool) pool.close();
+    };
+    const fail = err => { err.gwenCause ||= "calculation"; if (dead) return; dead = true; clean(true); rejectFn(err); };
+    const p = new Promise((resolve, reject) => {
+      rejectFn = reject;
+      if (!jobs.length) { dead = true; resolve(res); return; }
+      try { parts.forEach((part, wi) => {
+        if (dead) return;
+        const w = pool ? pool.get(wi) : makeWorker(); ws.push(w);
+        let requestId;
+        const send = list => {
+          requestId = pool ? pool.nextId() : ++seq;
+          try { w.postMessage({type: "run", id: requestId, base, stage, n_runs: runs, seed, options: options || {build: "standard", rules_override: {power_penalty: "model"}},
+            teams: list.map(j => ({key: j.key, party: j.party, options: j.options}))}); }
+          catch (e) { fail(e); }
+        };
+        w.onmessage = e => {
+          const m = e.data; if (dead || (m.id != null && m.id !== requestId)) return;
+          if (m.type === "team") { res[m.key] = project(m.result); if(onResult)onResult(m.key,m.result); done++; if (onProgress) onProgress(done, jobs.length); }
+          else if (m.type === "done" && dyn && next < jobs.length) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); }
+          else if (m.type === "done") { if (++finished === parts.length) { dead = true; clean(false); resolve(res); } }
+          else if (m.type === "error") fail(new Error(m.msg || "작업자 오류"));
+        };
+        w.onerror = ev => fail(new Error("작업자 오류: " + (ev && ev.message || "알 수 없음")));
+        if (dyn) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); return; }
+        send(part);
+      }); } catch (e) { fail(e); }
+    });
+    return {promise: p, cancel() { if (dead) { if (pool) pool.close(); return; } fail(Object.assign(new Error("취소"),{gwenCause:"cancel"})); }};
+  }
+  function etaNew(o) {
+    const W = o.weights.slice(), warm = o.warmup == null ? 3 : o.warmup, win = o.window == null ? 20 : o.window, prior = o.prior || null, GAP = 0.25, blend = o.blend == null ? 0 : o.blend, frac = o.winFrac == null ? 0 : o.winFrac;
+    const st = o.stages.map(s => ({games: s.games, done: 0, samples: [], cur: null, first: null, c: null, cAvg: null, lat: null, startT: null}));
+    let cur = -1;
+    const obs = s => s.cAvg != null && s.done >= s.games ? s.cAvg : s.c;      // 끝난 단계는 구간 전체 평균(더 안정적), 진행 중이면 최근 구간
+    function begin(i, games, t) {
+      if(i==null||!st[i]){cur=-1;return;}
+      if (i === cur && st[i].done > 0) { if (games != null) st[i].games = games; return; }
+      cur = i; const s = st[i];
+      if (games != null) s.games = games;
+      s.startT = t; s.done = 0; s.samples = []; s.cur = null; s.first = null;
+    }
+    function update(done, t) {
+      const s = st[cur]; if (!s) return;
+      s.done = done;
+      if (s.first == null) { if (done > 0) { s.first = {t, g: done}; s.lat = t - s.startT; s.samples = [{t, g: done}]; s.cur = {t, g: done}; } return; }
+      s.cur = {t, g: done};
+      const last = s.samples[s.samples.length - 1], el = t - s.first.t, span = Math.max(win, frac * el);
+      if (t - last.t >= Math.max(GAP, 0.02 * el)) s.samples.push({t, g: done});          // 오래 갈수록 표본 간격을 늘려 개수를 제한
+      while (s.samples.length > 2 && s.samples[1].t < t - 2 * span) s.samples.shift();
+      if (done > s.first.g && t > s.first.t) s.cAvg = (t - s.first.t) / (done - s.first.g);
+      if (el >= warm) {
+        let ref = s.samples[0];
+        for (const x of s.samples) { if (x.t >= t - span) { ref = x; break; } ref = x; }
+        if (ref.t >= t) ref = s.first;
+        if (done > ref.g && t > ref.t) s.c = (t - ref.t) / (done - ref.g);
+      }
+    }
+    // 단계 s 의 한 판 비용(초). 기준 = 자기 실측 > 가장 가까운 이전 단계 실측 × 가중치 비 > 저장된 prior > 없음
+    function cost(s) {
+      if (s <= cur && obs(st[s]) != null) {
+        const m = obs(st[s]);
+        // 저장된 속도가 있으면 측정 초반(blend 초)에는 둘을 섞는다: 초반 속도는 엔진 데워지는 중이라 낮게 나옴
+        if (prior && prior[s] > 0 && s === cur && st[s].cur && blend > 0) { const a = Math.min(1, (st[s].cur.t - st[s].first.t) / blend); return a * m + (1 - a) * prior[s]; }
+        return m;
+      }
+      for (let r = Math.min(cur, st.length - 1); r >= 0; r--) { const c = obs(st[r]); if (c != null) return c * W[s] / W[r]; }
+      return prior && prior[s] > 0 ? prior[s] : null;
+    }
+    function estimate(t) {
+      if (cur < 0) return {ready: false};
+      let lat = 0;
+      for (let i = st.length - 1; i >= 1; i--) if (st[i].lat != null) { lat = st[i].lat; break; }
+      let rem = 0;
+      for (let s = cur; s < st.length; s++) {
+        const c = cost(s); if (c == null) return {ready: false};
+        const left = s === cur ? Math.max(0, st[s].games - st[s].done) : st[s].games;
+        rem += left * c + (s > cur ? lat : 0);
+      }
+      return {ready: true, remainSec: rem, finishAt: t + rem, stage: cur, cost: st.map((_, s) => cost(s))};
+    }
+    // 저장용: 단계별 초/판(실측 없는 단계는 실측 있는 단계 × 가중치 비). 실측이 하나도 없으면 null
+    function summary() {
+      let ref = -1;
+      st.forEach((s, i) => { if (s.cAvg != null) ref = i; });      // 가장 나중에 실측한 단계를 기준으로 비어 있는 단계를 채운다
+      if (ref < 0) return null;
+      return st.map((s, i) => s.cAvg != null ? s.cAvg : st[ref].cAvg * W[i] / W[ref]);
+    }
+    return {begin, update, estimate, summary, state: () => ({cur, st})};
+  }
+function timedWorker(env){
+  const raw=createWorker();let timer=null,ready=false,runs=1;
+  const wrapper={onmessage:null,onerror:null,postMessage(message){runs=message.n_runs;arm();raw.postMessage(message);},
+    terminate(){clearTimeout(timer);raw.terminate();}};
+  function arm(){clearTimeout(timer);timer=setTimeout(()=>wrapper.onerror?.({message:'시간 초과'}),ready?env.limit(runs):env.loadMs());}
+  raw.onmessage=e=>{if(e.data.type==='done'||e.data.type==='error')clearTimeout(timer);
+    else {if(e.data.msg==='준비 끝'||e.data.type==='team')ready=true;arm();}wrapper.onmessage?.(e);};
+  raw.onerror=e=>{clearTimeout(timer);wrapper.onerror?.(e);};return wrapper;
+}
+
+ const api={createWorker,shared,split,workerPool,runPhase,etaNew,timedWorker};
+ if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SearchExecutor=api;
+})(typeof window!=='undefined'?window:globalThis);

@@ -35,7 +35,7 @@ async function run(legacy,{small,banCoop,breaks,tiers,newSearch=false}){
    MI:{info:{synthetic:true},profiles:{op:{results}}},SIMQ:{busy:null},CSR:{phase:'idle'},R:roster,EXCL:new Set(),
    contents:[{key:'guild'}],cur:[{tab:'EX',name:'7'}],$:()=>({value:0}),seasonBlocked:()=>false,growthCancel(){},guildGwenClaim(){},
    renderGuildSearch(){},miGrowth:async()=>({}),gsTiers:()=>tiers,ownedSimBreaks:()=>breaks,gsSig:()=>'',growthOwnedContext:()=>'',
-   navigator:{hardwareConcurrency:2},location:{href:'http://example.test/index.html'},Worker,growthEnabled:()=>false};
+   navigator:{hardwareConcurrency:2},location:{href:'http://example.test/index.html'},Worker,SearchExecutor:{...require('../search_executor'),createWorker:()=>new Worker()},growthEnabled:()=>false};
  const out=await vm.runInNewContext((legacy?source:currentSource)+';guildSearchStart()',ctx);
  assert.equal(ctx.GSR.phase,'done',ctx.GSR.msg);
  assert.equal(life.active,0);assert.equal(life.max,1);assert(out.rows.length&&out.rows.every(r=>r.prog>0&&r.score>0));

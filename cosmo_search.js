@@ -3,6 +3,7 @@
 // 시즌 값(풀 크기·판 수·K 등)은 data/cosmo_raid.json 의 search. 점수는 시뮬 쪽(battlesim/web.py cosmo_summary)이 판마다 점수식에 넣어 요약값으로 돌려준다.
 (function (root) {
   "use strict";
+  const Executor = typeof module !== "undefined" && module.exports ? require("./search_executor.js") : root.SearchExecutor;
   const {num} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const GS = typeof require !== "undefined" ? require("./guild_search.js") : root.GuildSearch;
   const Learned = typeof require !== "undefined" ? require("./cosmo_learned.js") : root.CosmoLearned;
@@ -353,66 +354,7 @@
   //  - prior(저장된 이 PC 속도, 단계별 초/판)가 있으면 실측 전에 그 값을 쓴다.
   const DEF_W = [1, 1, 0.6, 0.25];
   const NSTAGE = 4;
-  function etaNew(o) {
-    const W = (o.weights || DEF_W).slice(), warm = o.warmup == null ? 3 : o.warmup, win = o.window == null ? 20 : o.window, prior = o.prior || null, GAP = 0.25, blend = o.blend == null ? 0 : o.blend, frac = o.winFrac == null ? 0 : o.winFrac;
-    const st = o.stages.map(s => ({games: s.games, done: 0, samples: [], cur: null, first: null, c: null, cAvg: null, lat: null, startT: null}));
-    let cur = -1;
-    const obs = s => s.cAvg != null && s.done >= s.games ? s.cAvg : s.c;      // 끝난 단계는 구간 전체 평균(더 안정적), 진행 중이면 최근 구간
-    function begin(i, games, t) {
-      if(i==null||!st[i]){cur=-1;return;}
-      if (i === cur && st[i].done > 0) { if (games != null) st[i].games = games; return; }
-      cur = i; const s = st[i];
-      if (games != null) s.games = games;
-      s.startT = t; s.done = 0; s.samples = []; s.cur = null; s.first = null;
-    }
-    function update(done, t) {
-      const s = st[cur]; if (!s) return;
-      s.done = done;
-      if (s.first == null) { if (done > 0) { s.first = {t, g: done}; s.lat = t - s.startT; s.samples = [{t, g: done}]; s.cur = {t, g: done}; } return; }
-      s.cur = {t, g: done};
-      const last = s.samples[s.samples.length - 1], el = t - s.first.t, span = Math.max(win, frac * el);
-      if (t - last.t >= Math.max(GAP, 0.02 * el)) s.samples.push({t, g: done});          // 오래 갈수록 표본 간격을 늘려 개수를 제한
-      while (s.samples.length > 2 && s.samples[1].t < t - 2 * span) s.samples.shift();
-      if (done > s.first.g && t > s.first.t) s.cAvg = (t - s.first.t) / (done - s.first.g);
-      if (el >= warm) {
-        let ref = s.samples[0];
-        for (const x of s.samples) { if (x.t >= t - span) { ref = x; break; } ref = x; }
-        if (ref.t >= t) ref = s.first;
-        if (done > ref.g && t > ref.t) s.c = (t - ref.t) / (done - ref.g);
-      }
-    }
-    // 단계 s 의 한 판 비용(초). 기준 = 자기 실측 > 가장 가까운 이전 단계 실측 × 가중치 비 > 저장된 prior > 없음
-    function cost(s) {
-      if (s <= cur && obs(st[s]) != null) {
-        const m = obs(st[s]);
-        // 저장된 속도가 있으면 측정 초반(blend 초)에는 둘을 섞는다: 초반 속도는 엔진 데워지는 중이라 낮게 나옴
-        if (prior && prior[s] > 0 && s === cur && st[s].cur && blend > 0) { const a = Math.min(1, (st[s].cur.t - st[s].first.t) / blend); return a * m + (1 - a) * prior[s]; }
-        return m;
-      }
-      for (let r = Math.min(cur, st.length - 1); r >= 0; r--) { const c = obs(st[r]); if (c != null) return c * W[s] / W[r]; }
-      return prior && prior[s] > 0 ? prior[s] : null;
-    }
-    function estimate(t) {
-      if (cur < 0) return {ready: false};
-      let lat = 0;
-      for (let i = st.length - 1; i >= 1; i--) if (st[i].lat != null) { lat = st[i].lat; break; }
-      let rem = 0;
-      for (let s = cur; s < st.length; s++) {
-        const c = cost(s); if (c == null) return {ready: false};
-        const left = s === cur ? Math.max(0, st[s].games - st[s].done) : st[s].games;
-        rem += left * c + (s > cur ? lat : 0);
-      }
-      return {ready: true, remainSec: rem, finishAt: t + rem, stage: cur, cost: st.map((_, s) => cost(s))};
-    }
-    // 저장용: 단계별 초/판(실측 없는 단계는 실측 있는 단계 × 가중치 비). 실측이 하나도 없으면 null
-    function summary() {
-      let ref = -1;
-      st.forEach((s, i) => { if (s.cAvg != null) ref = i; });      // 가장 나중에 실측한 단계를 기준으로 비어 있는 단계를 채운다
-      if (ref < 0) return null;
-      return st.map((s, i) => s.cAvg != null ? s.cAvg : st[ref].cAvg * W[i] / W[ref]);
-    }
-    return {begin, update, estimate, summary, state: () => ({cur, st})};
-  }
+  const etaNew = o => Executor.etaNew({...o,weights:o.weights||DEF_W});
   // 저장된 {sec:[3], workers} -> 지금 작업자 수에 맞춰 환산한 단계별 초/판. 값이 이상하면 null
   function priorFrom(saved, workers) {
     if (!saved || !Array.isArray(saved.sec) || saved.sec.length !== NSTAGE || !(saved.workers > 0) || !(workers > 0)) return null;      // 단계 구성이 다른 옛 저장값(3단계)은 버린다

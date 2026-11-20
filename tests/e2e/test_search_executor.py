@@ -60,6 +60,9 @@ def main():
             if a.bench:
                 result=page.evaluate(BENCH)
                 result['revision']='6688d7a' if a.legacy else subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
+                result['sourceHashes']={p:hashlib.sha256(subprocess.check_output(['git','show','6688d7a:'+p],cwd=ROOT) if a.legacy else (ROOT/p).read_bytes()).hexdigest() for p in ['guild_search.js','guild_planner.js']}
+                if not a.legacy and (ROOT/'search_executor.js').exists():
+                    result['sourceHashes']['search_executor.js']=hashlib.sha256((ROOT/'search_executor.js').read_bytes()).hexdigest()
                 result['engine']=json.loads((ROOT/'sim/manifest.json').read_text(encoding='utf8'))['ver']
                 a.bench.parent.mkdir(parents=True,exist_ok=True)
                 a.bench.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')

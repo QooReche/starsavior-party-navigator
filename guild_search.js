@@ -5,6 +5,7 @@
   "use strict";
   const {num} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const Placement = typeof module !== "undefined" && module.exports ? require("./party_placement.js") : root.PartyPlacement;
+  const Executor = typeof module !== "undefined" && module.exports ? require("./search_executor.js") : root.SearchExecutor;
   const FRONT = ["디펜더", "서포터"];
 
   // 후보 풀: 내 최종 전투력이 최고의 minPowerRatio 배 이상인 구원자(최대 poolSize 명) + 역할별 최소 인원(minRole: 서포터·디펜더는 전투력이 낮아도 역할 때문에 쓰이므로 따로 보충). rows = [{key, cls, power}]
@@ -83,11 +84,7 @@
   const jobKey = (keys, level, sup, tiers, brk = null, p = null) => !p?.leaderKey ? [keys.join("+"), level, sup, (tiers || []).join(""), JSON.stringify(brk && [brk.name, brk.level])].join("|") : JSON.stringify([Placement.executionKey(keys,p),level,sup,tiers||[],brk&&[brk.name,brk.level]]);
 
   // 작업 목록 → 작업자 수만큼 나눈 묶음(라운드 로빈). job = {key, party, options:{guild}}
-  function split(jobs, n) {
-    const out = Array.from({length: Math.max(1, Math.min(n, jobs.length))}, () => []);
-    jobs.forEach((j, i) => out[i % out.length].push(j));
-    return out;
-  }
+  const split = (jobs,n) => Executor.split(jobs,n);
 
   function screenJobs(S, G, V, list, results, cls, tiers) {
     return list.map(keys => {
@@ -162,50 +159,8 @@
   // chunk(숫자, 선택): 주면 정적 분할 대신 «작업 큐»로 chunk 팀씩 끝나는 작업자에게 나눠 준다(빠른 작업자가 더 많이 처리, 끝 꼬리 지연 감소).
   // 작업자는 run 메시지를 여러 번 받을 수 있다(sim_worker.js 가 메시지마다 처리). 안 주면 예전처럼 정적 분할.
   // 한 탐색이 소유하는 풀. 동시에 두 단계를 실행하지 않는다. 취소/오류/탐색 종료 때 close.
-  function workerPool(makeWorker) {
-    const ws = []; let closed = false, serial = 0;
-    return {
-      get(i) { if (closed) throw new Error("닫힌 작업자 풀"); return ws[i] || (ws[i] = makeWorker()); },
-      nextId() { return ++serial; },
-      close() { if (closed) return; closed = true; ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; w.terminate(); }); }
-    };
-  }
-  function runPhase({makeWorker, pool, jobs, workers, runs, seed, stage, base, onProgress, chunk, options, onResult}) {
-    const dyn = chunk > 0;
-    const parts = dyn ? Array.from({length: Math.max(1, Math.min(workers, Math.ceil(jobs.length / chunk)))}, () => []) : split(jobs, workers), res = {}, ws = [];
-    let done = 0, finished = 0, dead = false, rejectFn, next = 0, seq = 0;
-    const clean = fatal => {
-      ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; if (!pool) w.terminate(); });
-      if (fatal && pool) pool.close();
-    };
-    const fail = err => { err.gwenCause ||= "calculation"; if (dead) return; dead = true; clean(true); rejectFn(err); };
-    const p = new Promise((resolve, reject) => {
-      rejectFn = reject;
-      if (!jobs.length) { dead = true; resolve(res); return; }
-      try { parts.forEach((part, wi) => {
-        if (dead) return;
-        const w = pool ? pool.get(wi) : makeWorker(); ws.push(w);
-        let requestId;
-        const send = list => {
-          requestId = pool ? pool.nextId() : ++seq;
-          try { w.postMessage({type: "run", id: requestId, base, stage, n_runs: runs, seed, options: options || {build: "standard", rules_override: {power_penalty: "model"}},
-            teams: list.map(j => ({key: j.key, party: j.party, options: j.options}))}); }
-          catch (e) { fail(e); }
-        };
-        w.onmessage = e => {
-          const m = e.data; if (dead || (m.id != null && m.id !== requestId)) return;
-          if (m.type === "team") { res[m.key] = {prog: m.result.prog == null ? 0 : m.result.prog, clear: m.result.clear, n: m.result.n, via: m.result.via || {}, progs: m.result.progs || null, cosmo: m.result.cosmo || null, ...unsupportedFields(m.result)}; if(onResult)onResult(m.key,m.result); done++; if (onProgress) onProgress(done, jobs.length); }
-          else if (m.type === "done" && dyn && next < jobs.length) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); }
-          else if (m.type === "done") { if (++finished === parts.length) { dead = true; clean(false); resolve(res); } }
-          else if (m.type === "error") fail(new Error(m.msg || "작업자 오류"));
-        };
-        w.onerror = ev => fail(new Error("작업자 오류: " + (ev && ev.message || "알 수 없음")));
-        if (dyn) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); return; }
-        send(part);
-      }); } catch (e) { fail(e); }
-    });
-    return {promise: p, cancel() { if (dead) { if (pool) pool.close(); return; } fail(Object.assign(new Error("취소"),{gwenCause:"cancel"})); }};
-  }
+  const workerPool = makeWorker => Executor.workerPool(makeWorker);
+  const runPhase = o => Executor.runPhase({...o,project:r=>({prog:r.prog==null?0:r.prog,clear:r.clear,n:r.n,via:r.via||{},progs:r.progs||null,cosmo:r.cosmo||null,...unsupportedFields(r)})});
 
   const BASIS = {client: "클라 자료 확인", community: "커뮤니티 근거(중간 신뢰)", inference: "추정"};
   // «제외·주의 구원자» 접이식 목록. notes = [{key, kind: exclude|caution, basis, why}], 제외는 체크박스를 켠 때만 실제로 빠진다

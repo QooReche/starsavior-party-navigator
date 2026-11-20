@@ -16,6 +16,7 @@ const ctx=vm.createContext({CFG:require('../party_contents.json'),recommendation
  setTimeout:(fn,ms)=>{const t={fn,at:now+ms};timers.push(t);return t},clearTimeout:t=>{timers=timers.filter(x=>x!==t)},run(){},
  simStop:msg=>{stops.push(msg);ctx.SIMQ.busy=null;ctx.SIMQ.requestId++},
  Worker:class{constructor(){workers.push(this)}postMessage(req){this.req=req}terminate(){this.stopped=true}}});
+vm.runInContext(fs.readFileSync(require.resolve('../search_executor.js'),'utf8'),ctx);
 vm.runInContext(section('const simSigB=','// 표시 상태는'),ctx);
 vm.runInContext(section('function simStart(','document.querySelectorAll(\'input[name="runs"]\')'),ctx);
 const ev=s=>vm.runInContext(s,ctx);
@@ -95,6 +96,7 @@ function screeningHarness(names=['d','e','f','g','h','i'],vOf=i=>10-i,nav={hardw
   Date:{now:()=>clock},performance:{now:()=>clock},
   setTimeout:(fn,ms)=>{const t={fn,at:clock+ms};queue.push(t);return t},clearTimeout:t=>{queue=queue.filter(x=>x!==t)},run(){},
   Worker:class{constructor(){ws.push(this)}postMessage(req){this.req=req;posts.push({w:this,req})}terminate(){this.stopped=true}}});
+ vm.runInContext(fs.readFileSync(require.resolve('../search_executor.js'),'utf8'),c);
  for(const [a,b] of [['const simSigB=','// 표시 상태는'],['function simInvalidate()','// 자동 확인'],
   ['function simStart(',"document.querySelectorAll('input[name=\"runs\"]')"],['const SCR_ROUNDS=','function simWaiting(']])vm.runInContext(section(a,b),c);
  const evalJS=s=>vm.runInContext(s,c);

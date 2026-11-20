@@ -72,10 +72,10 @@ mutate('higher equipment preserved',source,"const equips=fields.includes('equip'
 mutate('strict improvement only',ui,'metric(result)>(metric(baseline)??0)','metric(result)>=(metric(baseline)??0)',display);
 // Per-field presentation mutation coverage is in ux_ui_test.js.
 console.log('ALL OK whole-account overwrite');
-async function timeout(code=ui){let active=0;
+async function timeout(code=ui,executor=fs.readFileSync(require.resolve('../search_executor.js'),'utf8')){let active=0;
   const ctx={setTimeout,clearTimeout,SIMQ:{LOAD_MS:5},simTeamLimit:()=>5,
     Worker:class {constructor(){active++;}postMessage(){}terminate(){if(!this.dead){this.dead=true;active--;}}}};
-  vm.createContext(ctx);vm.runInContext(code,ctx);
+  vm.createContext(ctx);vm.runInContext(executor,ctx);vm.runInContext(code,ctx);
   const handle=require('../guild_search').runPhase({makeWorker:()=>ctx.growthWorker(),workers:2,jobs:[{key:'a',party:{}},{key:'b',party:{}}],runs:4,
     stage:'guild/test/EX',base:'http://example.test/'});
   try{const reason=await Promise.race([handle.promise.then(()=>'completed',e=>e.message),new Promise(ok=>setTimeout(()=>ok('hung'),40))]);
@@ -89,6 +89,7 @@ async function warmup(code=ui){const ctx={setTimeout,clearTimeout,Date,MODE:'aut
     this.onmessage({data:{id:req.id,type:'team',key:'team',result:{ver:'test',prog:.8,n:req.n_runs,progs:Array(req.n_runs).fill(.8),via:{}}}});
     this.onmessage({data:{id:req.id,type:'done'}});},25);}terminate(){this.dead=true;}}};
   vm.createContext(ctx);   // 작업자 풀·대기열은 화면 것 그대로(navigator 없음 = 작업자 1개)
+  vm.runInContext(fs.readFileSync(require.resolve('../search_executor.js'),'utf8'),ctx);
   const page=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
   vm.runInContext(page.slice(page.indexOf('// ── 작업자 풀·작업 대기열'),page.indexOf('// 이 기기의 시뮬 속도')),ctx);
   vm.runInContext(code.slice(code.indexOf('async function growthEvaluate'),code.indexOf('function growthMaybe')),ctx);
@@ -96,7 +97,7 @@ async function warmup(code=ui){const ctx={setTimeout,clearTimeout,Date,MODE:'aut
   assert(!r.incomplete&&r.team?.prog>0,'engine preparation must use the load limit, not the short no-progress limit');ctx.SIMQ.w?.terminate();
 }
 (async()=>{await warmup();await timeout();let caught=false;
-  try{await timeout(ui.replace("timer=setTimeout(()=>wrapper.onerror?.({message:'시간 초과'})","timer=setTimeout(()=>{}"));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}
+  try{await timeout(ui,fs.readFileSync(require.resolve('../search_executor.js'),'utf8').replace("timer=setTimeout(()=>wrapper.onerror?.({message:'시간 초과'})","timer=setTimeout(()=>{}"));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}
   assert(caught,'timeout mutation survived');console.log('MUTATION caught + restored: seasonal worker timeout');
   caught=false;
   try{await warmup(ui.replace("stall.ready?simTeamLimit(n,'auto'):SIMQ.LOAD_MS","true?simTeamLimit(n,'auto'):SIMQ.LOAD_MS"));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}

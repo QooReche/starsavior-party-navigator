@@ -168,5 +168,9 @@
     "runs": 1
   },
   "revision": "6688d7aefc7c637b776898d7f07451cf5f0d9961",
-  "engine": "7e95862bc0ea"
+  "engine": "7e95862bc0ea",
+  "sourceHashes": {
+    "guild_search.js": "906001bb599ff92c5d4d53e1b0ce3c72867a4eab794c1430683df7871d357560",
+    "guild_planner.js": "b6078901edf116fcef0d2ed24d35048da517e5675d072f8cacbbffb8874ef642"
+  }
 }

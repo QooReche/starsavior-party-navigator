@@ -422,6 +422,7 @@ summary{padding:9px 4px}
 </dialog>
 <script src="quick.js"></script>
 <script src="ui_shared.js"></script>
+<script src="search_executor.js"></script>
 <script src="myinfo_import.js"></script>
 <script src="myinfo_stats.js"></script>
 <script src="gwen_policy.js"></script>
@@ -555,7 +556,7 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   const growth=await miGrowth();if(stale())return;
   const profile=profileOverride||MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
   const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers(),breaks=ownedSimBreaks(),sig=gsSig(),context=growthOwnedContext('guild');
-  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>profileOverride?growthWorker():new Worker("sim_worker.js");
+  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>profileOverride?growthWorker():SearchExecutor.createWorker();
   const out=await GuildPlanner.search({S,G,V,results,roster:R.filter(s=>!EXCL.has(s.key)),tiers,breaks,stage,base,workers:Math.max(1,Math.min(2,(navigator.hardwareConcurrency||4)-1)),makeWorker:mk,stale,
     onHandle:h=>GSR.handle=h,onPhase:(msg,total)=>{if(stale())return;GSR.phaseSerial=(GSR.phaseSerial||0)+1;GSR.msg=msg;GSR.done=0;GSR.total=total;paint();},onProgress:(d,t)=>{if(!stale()){GSR.done=d;GSR.total=t;paint();}}});
   if(stale())return;Object.assign(GSR,out,{sig});
@@ -626,7 +627,7 @@ async function cosmoSearchStart(target=CSR,profileOverride=null){
   const profile=profileOverride||MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,growth,"cosmo"));
   const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=CosmoSearch.searchSettings(C.search,CSR.optFast,CSR.optLearned);
   const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),bossName:csBoss,level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
-   makeWorker:()=>profileOverride?growthWorker():new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,boundaries:Object.fromEntries(C.bosses.map(b=>[b.key,b.boundaries||[]])),breaks:csBreaks(),
+   makeWorker:()=>profileOverride?growthWorker():SearchExecutor.createWorker(),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,boundaries:Object.fromEntries(C.bosses.map(b=>[b.key,b.boundaries||[]])),breaks:csBreaks(),
    onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed.v2"),workers)})},
    onPhase:(m,t,info)=>{if(stale())return;CSR.phaseSerial=(CSR.phaseSerial||0)+1;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm&&!profileOverride)LS.set("cosmo.speed.v2",{sec:sm,workers});CSR.eta=null;CSR.etaText="배치·리더 등 추가 비교가 포함돼 남은 시간은 표시하지 않음"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();if(!profileOverride)csTick(true)},
    onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());if(!profileOverride)csTick(false)},onHandle:h=>{CSR.handle=h}});
@@ -1073,69 +1074,15 @@ function scrWorkers(){return typeof navigator==="undefined"?1:scrWorkerCount({co
 // 풀은 SIMPOOL 하나가 소유함. scrPool은 독점 대여 예약이며 실제 배정 때 배열에 작업자를 넣음.
 // 정상 종료는 반환·재사용, 취소는 owner/requestId/group에 속한 작업자만 종료함.
 // SIMQ.w/pool은 기존 진단용 별칭이며 메시지 핸들러·타이머 소유권은 없음.
-const SIMPOOL={workers:[],batches:[],serial:0,pumping:false};
-function scrPool(want){const ws=[];ws.capacity=Math.max(1,Math.min(scrWorkers(),want||Infinity));return ws}
-function simPoolSync(){SIMQ.pool=SIMPOOL.workers.length?SIMPOOL.workers:null;SIMQ.w=SIMPOOL.workers[0]||null;SIMQ.loaded=!!SIMQ.w?._ready}
-function simRelease(w,kill=false){const lease=w._lease;if(lease){const ws=lease.batch.ws,i=ws.indexOf(w);if(i>=0)ws.splice(i,1);w._lease=null;w._job=null;lease.batch.o.arm?.()}
- if(kill){w._dead=true;w.terminate();SIMPOOL.workers=SIMPOOL.workers.filter(x=>x!==w)}simPoolSync()}
-function simPoolDrop(owner='reco',requestId=null,group=null){
- const matches=b=>b.owner===owner&&(requestId==null||b.o.id===requestId)&&(group==null||b.o.group===group);
- for(const b of SIMPOOL.batches.filter(matches)){b.closed=true;b.o.arm?.cancel?.()}
- for(const w of SIMPOOL.workers.slice())if(matches(w._lease?.batch||w._lastBatch))simRelease(w,true);
- SIMPOOL.batches=SIMPOOL.batches.filter(b=>!b.closed);simPump()}
-function simReceive(w,m){
- const lease=w._lease;if(w._dead||!lease)return;
- const b=lease.batch,o=b.o;
- if(b.closed||!o.live())return;
- // Only legacy boot notifications may omit id. Calculation replies must match the lease.
- const boot=m.type==='stage'&&m.id==null&&m.requestId==null;
- if(!boot&&(m.id!==o.id||(m.requestId!=null&&m.requestId!==o.id)))return;
- if(m.owner!=null&&m.owner!==b.owner||m.revision!=null&&m.revision!==(o.revision||0)||m.jobId!=null&&m.jobId!==lease.token)return;
- if(m.job!=null&&m.job!==lease.index)return;
- if(m.type==='stage'){if(m.msg==='준비 끝')w._ready=true;w._last=Date.now();o.stage?.(w,m);if(!b.closed)o.arm?.();return}
- if(m.type==='error'){o.error(m.msg,w,false);return}
- if(m.type==='team'){if(lease.got||m.key!==w._key)return;lease.got=true;w._last=Date.now();o.team(b.jobs[lease.index],m,w);if(!b.closed)o.arm?.();return}
- if(m.type==='done'){
-  if(!lease.got){o.error('결과 없이 끝난 작업',w,false);return}
-  simRelease(w);b.left--;
-  if(!b.left){b.closed=true;o.arm?.cancel?.();SIMPOOL.batches=SIMPOOL.batches.filter(x=>x!==b);o.done()}
-  simPump()}}
-function simPump(){if(SIMPOOL.pumping)return;SIMPOOL.pumping=true;
- try{
-  for(const b of SIMPOOL.batches.slice())if(!b.o.live()){b.closed=true;b.o.arm?.cancel?.();for(const w of b.ws.slice())simRelease(w,true)}
-  SIMPOOL.batches=SIMPOOL.batches.filter(b=>!b.closed);
-  for(;;){
-   const pending=SIMPOOL.batches.filter(b=>!b.closed&&b.next<b.jobs.length).sort((a,b)=>(['direct','cdirect'].includes(b.owner))-(['direct','cdirect'].includes(a.owner))||a.serial-b.serial);
-   const priority=pending.some(b=>['direct','cdirect'].includes(b.owner));
-   const b=pending.find(b=>(!priority||['direct','cdirect'].includes(b.owner))&&b.ws.length<b.ws.capacity);if(!b)break;
-   let w=SIMPOOL.workers.find(w=>!w._lease&&!w._dead);
-   if(!w){if(SIMPOOL.workers.length>=scrWorkers())break;
-    w=new Worker('sim_worker.js');w.onmessage=e=>simReceive(w,e.data);
-    w.onerror=e=>{const b=w._lease?.batch;if(b&&!b.closed&&b.o.live())b.o.error(e.message||'알 수 없음',w,true)};
-    SIMPOOL.workers.push(w)}
-   const j=b.next++,m=b.o.msg(b.jobs[j],j),token=++SIMPOOL.serial;
-   w._owner=b.owner;w._lastBatch={owner:b.owner,o:{id:b.o.id,group:b.o.group}};w._lease={batch:b,index:j,token,got:false};w._job=j;w._key=m.teams[0].key;w._n=m.n_runs;w._t=0;w._last=Date.now();b.ws.push(w);simPoolSync();
-   b.o.assigned?.(w,b.jobs[j]);
-   w.postMessage({...m,id:b.o.id,requestId:b.o.id,owner:b.owner,revision:b.o.revision||0,job:j,jobId:token});b.o.arm?.();
-  }
- }finally{SIMPOOL.pumping=false}}
-// 대기열: 작업(팀 하나)을 순서대로 하나씩 맡기고, 작업자가 그 작업의 done 을 보내면 다음 작업을 준다(고정 분배가 아니라 먼저 끝난 작업자가 더 가져간다).
-//  작업마다 번호(job)를 달아 보내고 작업자가 되돌려 준다 — 지금 맡긴 작업(번호·팀 key 가 같은 것)의 답만 받고, 같은 작업의 결과는 한 번만 받는다. 결과 없이 done 이 오면 오류.
-//  결과는 어느 작업자가 언제 돌렸는지와 무관하다(팀마다 같은 시드·판 번호). 순위 동률도 끝난 순서가 아니라 후보 순서로 가른다(scrOrder).
-//  o = {owner='reco', id, revision, group?, live(), msg(작업, 번호), assigned?, stage?, team, done, error, arm?}
-//  물리 작업자의 핸들러는 생성 때 한 번만 설치함. 대기 시간에는 무진행 시계를 돌리지 않음.
-function simDispatch(ws,jobs,o){const b={ws,jobs,o,owner:o.owner||'reco',next:0,left:jobs.length,serial:++SIMPOOL.serial,closed:false};
- SIMPOOL.batches.push(b);simPump();return b}
-// 무진행 감시(작업자별): 일하는 작업자마다 «마지막 소식(w._last) + 상한»을 넘기면 stop(그 작업자가 엔진을 준비했는가). 상한 = 엔진 준비 전 LOAD_MS, 준비 뒤 limit().
-//  가려진 탭이거나 타이머가 예정보다 크게 늦게 돌았으면(탭 동결·절전 복귀 — 그동안 계산도 멈춤) 끝내지 않고 다시 잰다. 늦게 돈 경우 그동안 잰 팀 시간(w._t)은 속도 표본에서 버린다
-function simWatch(ws,limit,live,stop){let timer;const lim=w=>w._ready?limit():SIMQ.LOAD_MS;
- const arm=()=>{clearTimeout(timer);const busy=ws.filter(w=>w._job!=null);if(!busy.length)return;
-  const wait=Math.max(1,Math.min(...busy.map(w=>w._last+lim(w)))-Date.now()),due=Date.now()+wait;
-  timer=setTimeout(()=>{if(!live())return;const late=Date.now()-due>5000;
-   if(late||(typeof document!=="undefined"&&document.hidden)){for(const w of ws){w._last=Date.now();if(late)w._t=0}arm();return}
-   const dead=ws.find(w=>w._job!=null&&Date.now()-w._last>=lim(w));if(!dead){arm();return}
-   stop(!!dead._ready)},wait)};
- arm.cancel=()=>clearTimeout(timer);return arm}
+const SIM_EXEC=SearchExecutor.shared({capacity:scrWorkers,loadMs:()=>SIMQ.LOAD_MS,
+ priority:owner=>['direct','cdirect'].includes(owner),hidden:()=>typeof document!=="undefined"&&document.hidden,
+ sync:workers=>{SIMQ.pool=workers.length?workers:null;SIMQ.w=workers[0]||null;SIMQ.loaded=!!SIMQ.w?._ready;}});
+const SIMPOOL=SIM_EXEC.state;
+function scrPool(want){return SIM_EXEC.reserve(want)}
+function simPoolDrop(owner='reco',requestId=null,group=null){return SIM_EXEC.drop(owner,requestId,group)}
+function simDispatch(ws,jobs,o){return SIM_EXEC.dispatch(ws,jobs,o)}
+function simWatch(ws,limit,live,stop){return SIM_EXEC.watch(ws,limit,live,stop)}
+function simRelease(w,kill=false){return SIM_EXEC.release(w,kill)}
 // 이 기기의 시뮬 속도(1판당 ms, 최근 값 쪽으로 평균). 예선·본선 팀이 끝날 때마다 갱신
 // 본선 = SIMQ.rate, 예선("scr") = SIMQ.rateS
 function simRateAdd(r,kind){if(!(r>0))return;const k=kind==="scr"?"rateS":"rate";SIMQ[k]=SIMQ[k]?SIMQ[k]*0.5+r*0.5:r}

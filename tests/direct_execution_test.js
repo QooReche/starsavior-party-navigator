@@ -1,7 +1,7 @@
 // Real scheduler with controlled workers/clock. No engine results are asserted from mocks.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
-const source=html.slice(html.indexOf('const SCR_WMAX='),html.indexOf('// 이 기기의 시뮬 속도'));
+const source=fs.readFileSync(require.resolve('../search_executor.js'),'utf8')+'\n'+html.slice(html.indexOf('const SCR_WMAX='),html.indexOf('// 이 기기의 시뮬 속도'));
 function harness(src=source,cores=3){let time=0,timers=[];const workers=[],events=[];
  const c=vm.createContext({console,Date:{now:()=>time},SIMQ:{LOAD_MS:180000},navigator:{hardwareConcurrency:cores,deviceMemory:8},document:{hidden:false},
   setTimeout:(fn,ms)=>{const t={fn,due:time+ms};timers.push(t);return t},clearTimeout:t=>timers=timers.filter(x=>x!==t),

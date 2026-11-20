@@ -61,10 +61,11 @@ async function ownership(code=lane,src=direct){
   h.g.activate('direct');assert.equal(h.g.mount().state.phase,'idle');
   h.g.activate('reco');assert.equal(h.actor().dataset.announcements,'1');
 }
-async function lateResponse(template=html){
+async function lateResponse(template=html,executor=read('search_executor.js')){
   const h=setup(lane,template),c=h.c;
   c.SIMQ={};c.navigator={hardwareConcurrency:2,deviceMemory:8};const workers=[];
   c.Worker=class{constructor(){workers.push(this)}postMessage(m){this.req=m}terminate(){this.dead=true}};
+  h.load(executor);
   h.load(section(template,'const SCR_WMAX=','// 이 기기의 시뮬 속도'));
   const start=(owner,id)=>{const ws=c.scrPool(1);c.simDispatch(ws,['team'],{owner,id,revision:0,live:()=>true,
     msg:()=>({type:'run',teams:[{key:'team'}]}),stage:(w,m)=>c.GwenLane.sync({mode:owner,phase:'work',progress:m.completed,count:4}),
@@ -142,9 +143,9 @@ async function mutation(name,source,from,to,check){assert(source.includes(from),
   });
   await mutation('direct writer ownership',direct,"DIRECT_GWEN.update({mode:'direct'",'RECO_GWEN.update({mode:DIRECT.mode' ,src=>ownership(lane,src));
   await mutation('inactive stage isolation',lane,'if(next.mode===activeMode)render(next);','render(next);',ownership);
-  await mutation('late request validation',html,
+  await mutation('late request validation',read('search_executor.js'),
     'if(!boot&&(m.id!==o.id||(m.requestId!=null&&m.requestId!==o.id)))return;',
-    'm.owner=b.owner;m.revision=o.revision||0;m.jobId=lease.token;',lateResponse);
+    'm.owner=b.owner;m.revision=o.revision||0;m.jobId=lease.token;',src=>lateResponse(html,src));
   await mutation('internal result host hidden',html,"host.hidden=DIRECT.mode!=='reco'", "host.hidden=host.dataset.phase==='result'||DIRECT.mode!=='reco'",persistent);
   await mutation('result lane registration',html,"host.dataset.phase=phase;GwenStage.mount(document,{mode:'reco'});",'host.dataset.phase=phase;',async template=>{const h=setup(lane,template);h.c.$('reco-result-lane').remove();h.slot('reco','result');h.c.recoGwenShow(false,null,{clear:.8});await h.flush();assert(h.actor()?.isConnected);});
   await mutation('score policy bypass',lane,'candidates=P.resultCandidates(current.clear,current.better,current.recoHigher)','candidates=CHOICES.low',code=>persistent(html,code));

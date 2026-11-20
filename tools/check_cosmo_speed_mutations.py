@@ -13,7 +13,7 @@ MUTATIONS = [
     ('missing result retry', 'cosmo_search.js', 'firstJobs.filter(j => res1[j.key] && res1[j.key].cosmo).map(j => j.key)', 'firstJobs.map(j => j.key)'),
     ('incomplete retry error', 'cosmo_search.js', 'missing.some(j => !res1[j.key] || !res1[j.key].cosmo)', 'false'),
     ('small pool guard', 'cosmo_search.js', 'requested && halved && pass < Math.ceil(cfg.ratio * L)', 'requested && halved'),
-    ('pool reuse', 'guild_search.js', 'return ws[i] || (ws[i] = makeWorker())', 'return (ws[i] = makeWorker())'),
+    ('pool reuse', 'search_executor.js', 'return ws[i] || (ws[i] = makeWorker())', 'return (ws[i] = makeWorker())'),
     ('pool close', 'cosmo_search.js', 'if (workersPool) workersPool.close();', 'if (false) workersPool.close();'),
 ]
 for name, file, old, new in MUTATIONS:

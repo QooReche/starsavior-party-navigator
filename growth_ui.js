@@ -216,15 +216,7 @@ function growthBetter(kind,baseline,result){
   return Number.isFinite(metric(result))&&metric(result)>(metric(baseline)??0);
 }
 // Same load/idle limits as the normal stage simulator, per seasonal worker.
-function growthWorker(){
-  const raw=new Worker('sim_worker.js');let timer=null,ready=false,runs=1;
-  const wrapper={onmessage:null,onerror:null,postMessage(message){runs=message.n_runs;arm();raw.postMessage(message);},
-    terminate(){clearTimeout(timer);raw.terminate();}};
-  function arm(){clearTimeout(timer);timer=setTimeout(()=>wrapper.onerror?.({message:'시간 초과'}),ready?simTeamLimit(runs,'auto'):SIMQ.LOAD_MS);}
-  raw.onmessage=e=>{if(e.data.type==='done'||e.data.type==='error')clearTimeout(timer);
-    else {if(e.data.msg==='준비 끝'||e.data.type==='team')ready=true;arm();}wrapper.onmessage?.(e);};
-  raw.onerror=e=>{clearTimeout(timer);wrapper.onerror?.(e);};return wrapper;
-}
+function growthWorker(){return SearchExecutor.timedWorker({limit:runs=>simTeamLimit(runs,'auto'),loadMs:()=>SIMQ.LOAD_MS})}
 async function growthStageSearch(c,st,profile,id,env={}){
   const live=env.live||(()=>GROW.id===id),seed=env.seed??SIMQ.seed,n=env.n??SIMQ.n;
   const restrict=(CFG.restrict[c.name]||{})[st.tab],qi=env.qi||quickIn(c,st);
