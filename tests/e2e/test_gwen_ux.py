@@ -132,18 +132,17 @@ def result_audit(page):
       window.__reportBox=new Function('quickRows','ckey','quickWeak','simSig','miVerdict','scrNote','simBar','simCell','return ('+quickBox.toString()+')')(
         ()=>__rows,c=>c.key,()=>[],sig,()=>'',()=>'',__reportBar,()=>'');
       SIMQ.busy=null;SIMQ.err='';SIMQ.res.a=__resultA;SIMQ.res.b=__resultB;
-      window.__paintReport=()=>{$('out').innerHTML=__reportBox(1,__rows,{}, {},'b','', '');$('out').scrollIntoView({block:'center'});};
+      window.__paintReport=()=>{$('out').innerHTML=__reportBox(1,__rows,{}, {},'b','', '');recoGwenShow(false,null,__resultB);$('out').scrollIntoView({block:'center'});};
       __paintReport();
     }''')
-    loaded(page,'#out [data-gwen=report] img')
-    assert expression(page.locator('#out [data-gwen=report]'))=='st_cry','shown result must drive report'
-    assert page.locator('#out [data-gwen-reaction]').get_attribute('data-gwen-reaction') in ['notes','st_cry']
+    loaded(page,'#out .gwen-lane-actor img')
+    assert expression(page.locator('#out .gwen-lane-actor'))in ['st_cry','notes'],'shown result must drive report'
     page.clock.run_for(600)
     page.evaluate('__paintReport()');page.clock.run_for(1300)
-    assert page.locator('#out [data-gwen=report]').count()==1,'result portrait disappeared after reaction'
+    assert page.locator('#out .gwen-lane-actor').count()==1,'result portrait disappeared after reaction'
     page.evaluate('__paintReport()')
-    assert page.locator('#out [data-gwen=report]').count()==1,'completed result disappeared'
-    assert page.locator('#out [data-gwen=report] img').get_attribute('data-gwen-playing')=='false','completed result replayed'
+    assert page.locator('#out .gwen-lane-actor').count()==1,'completed result disappeared'
+    assert page.locator('#out .gwen-lane-actor img').get_attribute('data-gwen-playing')=='false','completed result replayed'
     # Horizontal clipping uses exactly the same visibility predicate as image playback.
     page.evaluate('''() => {window.__clipResult={};$('out').innerHTML='<div id="reportclip" style="position:fixed;left:110vw;top:0;width:200px">'+Ux.gwenReport(__clipResult)+'</div>';}''')
     page.clock.run_for(10000)
@@ -362,8 +361,8 @@ def main():
                         assert message in str(e),(name,str(e));print('CAUGHT intended assertion: '+name,flush=True)
                     else:raise AssertionError('mutation survived: '+name)
                 html=(ROOT/'index.html').read_text(encoding='utf-8')
-                old='Ux.gwenReaction(SIMQ.res[simSig(st,shown)]?.clear,SIMQ.res[simSig(st,shown)])';assert old in html
-                try:run_case(browser,base,result_audit,template=html.replace(old,'Ux.gwenReaction(SIMQ.res[simSig(st,rows[0])]?.clear,SIMQ.res[simSig(st,rows[0])])'))
+                old='RECO_GWEN.done(result)';assert old in html
+                try:run_case(browser,base,result_audit,template=html.replace(old,'RECO_GWEN.done({...result,clear:1})'))
                 except AssertionError as e:
                     assert 'shown result must drive report' in str(e);print('CAUGHT intended assertion: shown',flush=True)
                 else:raise AssertionError('shown mutation survived')

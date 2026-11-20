@@ -10,6 +10,7 @@ function harness(){
     get firstElementChild(){return this.children[0]||null;}
     append(...els){for(const el of els){el.remove();el.parentElement=this;this.children.push(el);}}
     remove(){if(this.parentElement)this.parentElement.children=this.parentElement.children.filter(c=>c!==this);this.parentElement=null;}
+    replaceWith(el){const parent=this.parentElement;if(!parent)return;const at=parent.children.indexOf(this);el.remove();parent.children[at]=el;el.parentElement=parent;this.parentElement=null;}
     replaceChildren(...els){for(const c of [...this.children])c.remove();this.append(...els);}
     setAttribute(k,v){v=String(v);this.attrs[k]=v;if(k.startsWith('data-'))this.dataset[dataKey(k.slice(5))]=v;else if(k==='class')this.className=v;else if(k==='hidden')this.hidden=true;else this[k]=v;}
     getAttribute(k){return k.startsWith('data-')?this.dataset[dataKey(k.slice(5))]??null:this.attrs[k]??this[k]??null;}

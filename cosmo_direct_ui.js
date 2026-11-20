@@ -163,7 +163,7 @@
       +`<div class="cg-top"><div class="cg-tabs" role="tablist" aria-label="보스별 팀" data-cd-part="tabs">${p.tabs}</div><aside class="cg-total" aria-label="3팀 합계" data-cd-part="total">${p.total}</aside></div>`
       +`<div class="result-layout" role="tabpanel" id="cd-panel" tabindex="0" aria-labelledby="${esc(a.labelledby)}" data-cd-panel>`
       +`<div class="result-team">`
-      +`<div class="gwen-lane cd-lane" aria-label="그웬 길" data-cd-lane-slot></div>`
+      +`<div data-gwen-slot="cdirect-board" data-cd-lane-slot></div>`
       +`<div class="cg-board-head"><h3 class="cg-board-title" data-cd-part="title">${p.title}</h3>`
       +`<p class="mut direct-drag-help"><span data-cd-part="hint">${p.hint}</span> · ☆ 리더 · ☐ 육성했다면 <button type="button" class="ux-help" id="cd-grow-help" data-cd-act="help" aria-expanded="${!!ui.help}" aria-controls="cd-grow-help-text" aria-label="«육성했다면» 도움말" title="${GROW_HELP}">?</button></p>`
       +`<p class="cg-help-text" id="cd-grow-help-text" data-cd-help${ui.help?'':' hidden'}>☐ 육성했다면 — ${GROW_HELP}</p></div>`
@@ -180,7 +180,7 @@
       +`<div class="cd-run" data-cd-part="run">${p.run}</div>`
       +`<div class="cg-result" data-cd-result${a.result?'':' hidden'}><p class="cg-result-title" data-cd-part="result-title">${p['result-title']}</p>`
       +`<div class="direct-result-hero"><div class="direct-result-numbers"><div class="mi-verdict cd-result-summary" data-cd-part="result">${p.result}</div></div>`
-      +`<div class="direct-gwen"><div class="cg-gwen-slot" data-cd-gwen-slot></div></div></div></div>`
+      +`<div class="direct-gwen"><div data-gwen-slot="cdirect-result" data-cd-gwen-slot></div></div></div></div>`
       +`</div></div></div>`;
   }
   const flag=(el,name,on)=>{if(!el)return;if(on)el.setAttribute(name,'');else el.removeAttribute(name);};

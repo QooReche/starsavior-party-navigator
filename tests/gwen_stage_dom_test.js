@@ -3,33 +3,26 @@ const harness=require('./helpers/gwen_dom');
 const read=p=>fs.readFileSync(require.resolve('../'+p),'utf8').replace(/\r\n/g,'\n');
 const lane=read('gwen_lane.js'),policy=read('gwen_policy.js'),ux=read('ux_ui.js'),html=read('party_template.html'),direct=read('direct_run.js');
 const section=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
-// Retain the physical result-stage contracts (used by direct mode).
-// Automatic summary placement and resultExternal are checked by test_gwen_auto.py.
-function setup(code=lane,template=html.replace('resultExternal:true,','')){
-  template=template.replace("$('reco-result-lane').hidden=true","$('reco-result-lane').hidden=phase!=='result'");
+// Production component + producers. Layout supplies empty slots, never hand-built lanes.
+function setup(code=lane,template=html){
   const h=harness();h.load(policy);h.load(ux);h.load(code);
   const {c}=h;h.host=h.add('reco-gwen-stage');h.add('mi-panel').hidden=true;
-  for(const mode of ['direct','reco']){
-    const parent=mode==='reco'?h.host:h.doc.body;
-    h.add(mode+'-board-lane',parent);h.add(mode+'-result-lane',parent);
-    const banner=h.add(mode+'-lane-banner',h.doc.getElementById(mode+'-board-lane'));
-    banner.innerHTML=c.GwenPolicy.bannerMarkup();
-  }
+  h.slot=(mode,part,parent=mode==='reco'?h.host:h.doc.body)=>{const e=h.add(mode+'-'+part+'-slot',parent);e.dataset.gwenSlot=mode+'-'+part;return e;};
+  for(const mode of ['direct','reco'])for(const part of ['board','result'])h.slot(mode,part);
   c.$=id=>h.doc.getElementById(id);c.DIRECT={mode:'reco'};
-  // Exercise production registration and result writer, including their DOM wiring.
-  h.load(template.match(/GwenLane.registerStage\('direct'.*\n/)[0]+template.match(/GwenLane.registerStage\('reco'.*\n/)[0]);
+  h.load(template.match(/const DIRECT_GWEN=GwenStage.mount.*\n/)[0]+template.match(/const RECO_GWEN=GwenStage.mount.*\n/)[0]);
   h.load(section(template,'function recoGwenVisibility()','function simProgress('));
-  c.GwenLane.activate('reco');h.g=c.GwenLane;h.actor=()=>h.doc.querySelector('[data-gwen=lane]');
-  return h;
+  c.GwenStage.activate('reco');h.g=c.GwenLane;h.actor=()=>h.doc.querySelector('[data-gwen=lane]');
+  h.bind=mode=>c.GwenStage.mount(h.doc,{mode});return h;
 }
 async function remount(code=lane){
   const h=setup(code),g=h.g;
   h.c.recoGwenShow(false,null,{clear:.8});await h.flush();
   const actor=h.actor(),old=h.c.$('reco-result-lane'),report=actor.dataset.announcements,speech=actor.querySelector('.gwen-lane-speech').textContent;
   const state={...g.mount().policy.state},phrase=h.c.$('reco-lane-banner').dataset.phrase;
-  old.remove();const replacement=h.add('reco-result-lane',h.host);replacement.clientWidth=140;
-  const banner=h.add('new-banner',h.c.$('reco-board-lane'));banner.innerHTML=h.c.GwenPolicy.bannerMarkup();
-  g.registerStage('reco',{board:h.c.$('reco-board-lane'),result:replacement,banner});await h.flush();
+  const create=h.doc.createElement;h.doc.createElement=tag=>{const el=create(tag);el.clientWidth=140;return el;};
+  old.remove();h.slot('reco','result');h.bind('reco');const replacement=h.c.$('reco-result-lane');h.doc.createElement=create;
+  const banner=h.c.$('reco-lane-banner');h.bind('reco');await h.flush();
   assert.equal(actor.parentElement,replacement,'same phase must attach actor to the replacement lane');
   assert.equal(actor.dataset.announcements,report,'host replacement replayed report');
   assert.equal(actor.querySelector('.gwen-lane-speech').textContent,speech);
@@ -39,11 +32,9 @@ async function remount(code=lane){
   // Pending old decode must not commit, even if it completes before the new request.
   h.c.recoGwenShow(true,.9);await h.tick(300);assert(g.mount().state.moving);
   h.holdDecode(true);const board=h.c.$('reco-board-lane');board.remove();
-  const board2=h.add('reco-board-lane',h.host);board2.clientWidth=100;
-  g.registerStage('reco',{board:board2,result:replacement,banner});
+  h.slot('reco','board');h.bind('reco');const board2=h.c.$('reco-board-lane');board2.clientWidth=100;
   assert(!g.mount().state.moving,'host replacement must cancel movement');
-  const pendingOld=h.decodes.at(-1);board2.remove();const board3=h.add('reco-board-lane',h.host);board3.clientWidth=90;
-  g.registerStage('reco',{board:board3,result:replacement,banner});
+  const pendingOld=h.decodes.at(-1);board2.remove();h.slot('reco','board');h.bind('reco');const board3=h.c.$('reco-board-lane');board3.clientWidth=90;
   pendingOld.resolve();await h.flush();
   assert.notEqual(actor.querySelector('button').firstElementChild,pendingOld.el,'old decode committed after replacement');
   h.decodes.at(-1).resolve();await h.flush();assert.equal(actor.parentElement,board3);
@@ -52,7 +43,7 @@ function directPaintSync(h,src=direct){
   // Execute the real producer's sync expression, with directResultsPaint's local values.
   Object.assign(h.c,{phase:'idle',bundling:false,validNow:false,bundle:null,finalReport:false,compatible:false,now:null,metric:'clear',
     running:null,RECO:{},past:()=>false});h.c.DIRECT.draft={slots:[]};
-  h.load(section(src,'  GwenLane.sync(', '\n\n  const detail='));
+  h.load(src.match(/  \w+_GWEN\.update\([\s\S]*?\);\n/)[0]);
 }
 async function ownership(code=lane,src=direct){
   const h=setup(code);h.c.recoGwenShow(true,.8);await h.tick(300);
@@ -89,7 +80,7 @@ async function lateResponse(template=html){
   assert.equal(h.actor().parentElement,c.$('reco-board-lane'));assert.equal(h.actor().dataset.announcements,undefined);
   send(worker.req,'team');assert.equal(h.g.mount().state.phase,'result','current response must reach the DOM');
 }
-async function persistent(template=html.replace('resultExternal:true,',''),code=lane){
+async function persistent(template=html,code=lane){
   const h=setup(code,template),result={score:100};h.c.recoGwenShow(false,null,result);await h.flush();
   const actor=h.actor();assert.equal(actor.parentElement,h.c.$('reco-result-lane'));
   assert.equal(h.host.hidden,false);assert.equal(h.c.$('reco-lane-banner').hidden,false);
@@ -124,23 +115,23 @@ async function mutation(name,source,from,to,check){assert(source.includes(from),
   await assert.rejects(()=>check(source.replace(from,to)),{code:'ERR_ASSERTION'},name);console.log('MUTATION caught + restored (isolated VM):',name);}
 (async()=>{
   await remount();await ownership();await lateResponse();await persistent();await inlineReport();await reactionOnce();
-  await mutation('same-phase host reattachment',lane,'controller?.rebind(key);','',remount);
+  await mutation('same-phase host reattachment',lane,'function rebind(mode){','function rebind(mode){return;',remount);
   await mutation('stale image decode',lane,'if(request!==imageRequest)return;','',remount);
   await mutation('movement cancellation',lane,"actor?.removeAttribute('data-moving');",'',async code=>{
     // This mutation deliberately leaves the DOM moving marker behind.
     const h=setup(code);h.c.recoGwenShow(true,.9);await h.tick(300);const actor=h.actor();
-    const replacement=h.add('new-board');h.g.registerStage('reco',{board:replacement});
+    h.c.$('reco-board-lane').remove();h.slot('reco','board');h.bind('reco');
     assert.equal(actor.dataset.moving,undefined,'moving marker survived reattachment');
   });
-  await mutation('direct writer ownership',direct,"GwenLane.sync({mode:'direct'",'GwenLane.sync({mode:DIRECT.mode',src=>ownership(lane,src));
+  await mutation('direct writer ownership',direct,"DIRECT_GWEN.update({mode:'direct'",'RECO_GWEN.update({mode:DIRECT.mode' ,src=>ownership(lane,src));
   await mutation('inactive stage isolation',lane,'if(next.mode===activeMode)render(next);','render(next);',ownership);
   await mutation('late request validation',html,
     'if(!boot&&(m.id!==o.id||(m.requestId!=null&&m.requestId!==o.id)))return;',
     'm.owner=b.owner;m.revision=o.revision||0;m.jobId=lease.token;',lateResponse);
-  await mutation('internal result host hidden',html.replace('resultExternal:true,',''),"host.hidden=DIRECT.mode!=='reco'", "host.hidden=host.dataset.phase==='result'||DIRECT.mode!=='reco'",persistent);
-  await mutation('result lane registration',html.replace('resultExternal:true,',''),"result:document.getElementById('reco-result-lane'),",'',persistent);
-  await mutation('score policy bypass',lane,'candidates=P.resultCandidates(current.clear,current.better,current.recoHigher)','candidates=CHOICES.low',code=>persistent(html.replace('resultExternal:true,',''),code));
-  await mutation('result idle expiration',lane,"if(!['work','error','result'].includes(current.phase)&&!quiet)","if(!['work','error'].includes(current.phase)&&!quiet)",code=>persistent(html.replace('resultExternal:true,',''),code));
+  await mutation('internal result host hidden',html,"host.hidden=DIRECT.mode!=='reco'", "host.hidden=host.dataset.phase==='result'||DIRECT.mode!=='reco'",persistent);
+  await mutation('result lane registration',html,"host.dataset.phase=phase;GwenStage.mount(document,{mode:'reco'});",'host.dataset.phase=phase;',async template=>{const h=setup(lane,template);h.c.$('reco-result-lane').remove();h.slot('reco','result');h.c.recoGwenShow(false,null,{clear:.8});await h.flush();assert(h.actor()?.isConnected);});
+  await mutation('score policy bypass',lane,'candidates=P.resultCandidates(current.clear,current.better,current.recoHigher)','candidates=CHOICES.low',code=>persistent(html,code));
+  await mutation('result idle expiration',lane,"if(!['work','error','result'].includes(current.phase)&&!quiet)","if(!['work','error'].includes(current.phase)&&!quiet)",code=>persistent(html,code));
   await mutation('inline result removal',ux,'report.done=true;invalidate();','report.done=true;scene.remove();invalidate();',inlineReport);
   await mutation('completed report rerender removal',ux,'gwenPending.set(state.id,new WeakRef(state));',"if(state.done)return '';gwenPending.set(state.id,new WeakRef(state));",inlineReport);
   await mutation('result action replay',ux,'||img.dataset.gwenOnce&&playedReports.has(img.dataset.gwenOnce)','',reactionOnce);

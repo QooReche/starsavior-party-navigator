@@ -74,7 +74,7 @@ function cdRefresh(){
 function cdPaint(){
   if(!CDIRECT.state)return;cdSync();
   const host=$('cosmo-direct-panel');
-  if(host.hidden){host.replaceChildren();return;}
+  if(host.hidden){GwenStage.destroy('cdirect');host.replaceChildren();return;}
   const results=cdResults(),summary=CosmoDirect.summary(CDIRECT.state,results),boss=CDIRECT.state.active;
   for(const [b,r] of Object.entries(results))summary.teams[b].turn=r.ta??r.ttk;
   const owned=new Set(MI.info?.units.map(u=>u.id)||[]);
@@ -91,12 +91,8 @@ function cdPaint(){
     (active?`확인 중 · ${active.bosses.reduce((n,b)=>n+(CDIRECT.rows[b]?.progress||0),0)}/${active.bosses.length*SIMQ.n}판`:!MI.info?'내 정보 없음 · 표준 육성 기준':'');
   if(MI.info&&!MI.growth&&(MI.error||CDIRECT.loadError)){const retry=document.createElement('button');retry.type='button';retry.className='sec';retry.textContent='자료 다시 불러오기';retry.dataset.cdRetry='';retry.onclick=()=>{MI.error='';CDIRECT.loadError='';cdRefresh();};status.append(retry);}
   if(active){const cancel=document.createElement('button');cancel.type='button';cancel.className='sec';cancel.textContent='취소';cancel.onclick=()=>{cdCancel();cdPaint();};status.append(cancel);}
-  const board=host.querySelector('[data-cd-lane-slot]'),result=host.querySelector('[data-cd-gwen-slot]');
-  let banner=board.querySelector('.cd-lane-banner');
-  if(!banner){banner=document.createElement('div');banner.className='cd-lane-banner';banner.hidden=true;banner.innerHTML=GwenPolicy.bannerMarkup();board.append(banner);}
-  result.classList.add('gwen-lane','gwen-result-lane');
-  GwenLane.registerStage('cdirect',{board,result,banner});
-  const r=results[boss];GwenLane.sync({mode:'cdirect',phase:active?'work':r?'result':'idle',
+  const stage=GwenStage.mount(host,{mode:'cdirect'});
+  const r=results[boss];stage.update({mode:'cdirect',phase:active?'work':r?'result':'idle',
     result:r?GwenLane.resultId(r):null,clear:r?.cosmo?.clear??r?.clear,count:CDIRECT.state.teams[boss].draft.slots.filter(Boolean).length,
     progress:active?active.bosses.reduce((n,b)=>n+(CDIRECT.rows[b]?.progress||0),0)/(active.bosses.length*SIMQ.n):null});
 }

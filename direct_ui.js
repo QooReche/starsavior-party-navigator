@@ -80,7 +80,9 @@ function directVisibility(){
   document.body.dataset.partyMode=DIRECT.mode;
   for(const b of $('mode-strip').querySelectorAll('[data-pn-mode]'))b.setAttribute('aria-pressed',String(b.dataset.pnMode===DIRECT.mode));
   if($('result-tabs'))$('result-tabs').hidden=info||DIRECT.mode!=='reco';
-  GwenLane.activate(info?null:DIRECT.mode==='direct'&&cosmo?'cdirect':DIRECT.mode);
+  const searchMode=cosmo?'cosmoSearch':contents[$('content').value]?.key==='guild'?'guildSearch':null;
+  const stageMode=DIRECT.mode==='reco'&&searchMode&&document.querySelector(`[data-gwen-slot="${searchMode}-board"]`)?searchMode:DIRECT.mode;
+  GwenStage.activate(info?null:DIRECT.mode==='direct'&&cosmo?'cdirect':stageMode);
   recoGwenVisibility();growthControlPlace();
 }
 function directHome(){
@@ -92,9 +94,9 @@ function directHome(){
   home.innerHTML=`<div class="start-choice start-reco" data-pn-choice="reco"><p class="case-tag">그웬에게 맡기기</p><h2>자동 추천</h2>
     <p>내 구원자로 스테이지를 깰 편성을 찾음.</p><button type="button" data-pn-mode="reco">자동 추천</button>
     ${!MI.info?'<div class="case-request"><h3>사건 의뢰서 · 접수 대기</h3><p>내 정보를 불러오면 내 구원자에 맞춰 추천함.</p><button type="button" class="sec" data-miopen="1">계정 정보 불러오기</button><p class="mut">정보 없이도 표준 육성으로 추천 가능</p></div>':''}<div id="start-growth"></div></div>
-    <div class="start-gwen"><div id="home-gwen-lane" class="gwen-lane" aria-label="그웬 길"></div><p>단장님, 어떤 방법으로 골라 볼까?<br>후후후, 나만 믿어!</p></div>
+    <div class="start-gwen"><div data-gwen-slot="home-board"></div><p>단장님, 어떤 방법으로 골라 볼까?<br>후후후, 나만 믿어!</p></div>
     <div class="start-choice start-direct" data-pn-choice="direct"><p class="case-tag">내가 고르기</p><h2>직접 편성</h2><p>구원자와 자리, 리더를 직접 고름.</p><button type="button" data-pn-mode="direct">직접 편성</button><p class="mut">${MI.info?'내 구원자 기준':'내 정보 없이도 표준 육성 기준으로 가능'} · 편성만 직접 고름</p></div>`;
-  GwenLane.registerStage('home',{board:document.getElementById('home-gwen-lane')});
+  GwenStage.mount(home,{mode:'home'});
 }
 function directSave(){const payload=DirectParty.storage(DIRECT);if(payload&&!LS.set('direct.v1',payload))DIRECT.error='초안 저장 실패 · 이 세션에서만 유지됨';}
 function directChange(action,{record=false}={}){

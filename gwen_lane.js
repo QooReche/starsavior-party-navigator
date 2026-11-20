@@ -106,7 +106,7 @@
       const state=P.bannerState(current,onBoard);
       banner.hidden=!state;
       if(state!==bannerKey||banner.dataset.state!==state){banner.dataset.state=state;bannerKey=state;}
-      const phrase=pickBanner(state,current.result);
+      const phrase=state==='result'?'inquiry':pickBanner(state,current.result);
       banner.dataset.phrase=phrase;
       for(const title of banner.querySelectorAll('[data-phrase]'))title.hidden=title.dataset.phrase!==phrase;
     }
@@ -171,7 +171,6 @@
       return [current.count===0?'empty':'ready',stage.board];
     }
     function settle(){
-      if(stages.get(current.mode)?.resultExternal&&current.phase==='result'){render(current);return;}
       const [kind,el]=base();if(!setLane(el))return;
       const stage=stages.get(current.mode);
       // 결과는 항상 등신대(st_*). 좁은 화면에서도 CSS 가 크기를 줄여 표시함.
@@ -205,12 +204,11 @@
     function activate(mode){activeMode=mode;render(stageStates.get(mode)||{mode,phase:'idle',count:0});}
     function rebind(mode){
       if(mode!==current.mode)return;
-      if(stages.get(mode)?.resultExternal&&current.phase==='result'){render(current);return;}
       const [,el]=base();
       if(!el||lane===el&&actor?.parentElement===el){syncBanner();return;}
       // A replaced host invalidates decode and movement, but not report/speech history.
       ++imageRequest;const previousArt=art;art='';
-      cancelMove();resetPlay();setLane(el);
+      cancelMove();resetPlay();setLane(el);workRestAt=clock+250;
       lane.dataset.portrait=String(el===stages.get(mode)?.result);
       if(previousArt)image(previousArt);
       positionSpeech();
@@ -219,10 +217,6 @@
       if(current.bundleRunning&&current.phase==='result')current.phase='work';
       syncBanner();
       if(!stages.has(current.mode)){if(actor){cancelMove();actor.remove();}phaseKey='';return;}
-      // Automatic results own a portrait inside their summary; the lane keeps only its banner.
-      if(stages.get(current.mode).resultExternal&&current.phase==='result'){
-        ++imageRequest;cancelMove();resetPlay();actor?.remove();lane=null;art='';phaseKey='';syncBanner();return;
-      }
       const key=JSON.stringify(current.phase==='work'?[current.mode,'work',current.step]:[current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
       if(key!==phaseKey){resetPlay();cancelMove();phaseKey=key;settle();
         if(current.phase==='work'){x=0;actor.style.transform='translateX(0px)';positionSpeech();workRestAt=clock+250;}
@@ -296,7 +290,77 @@
     root.setInterval(tick,50);
     controller={sync,activate,rebind,edit,policy:p,get state(){return {clock,x,moving:!!move,art,quiet,mode:current.mode,phase:current.phase,lane:lane?.id,playing:!!playing,playAt};}};return controller;
   }
-  // 하위 호환: bannerState·bannerPicker·BANNER_COPY 는 gwen_policy 에서 재내보냄
-  const api={PRIORITY,CHOICES,SAY,policy,travel,playground,bannerState:P.bannerState,bannerPicker:P.bannerPicker,BANNER_COPY:P.BANNER_COPY,registerStage,mount,resultId,sync:s=>mount()?.sync(s),activate:mode=>mount()?.activate(mode),edit:(a,i)=>mount()?.edit(a,i)};
+  // One presentation component owns all stage DOM. Callers provide layout slots only.
+  const components=new Map();
+  const skins={
+    home:{boardId:'home-gwen-lane'},
+    direct:{boardId:'direct-board-lane',resultId:'direct-result-lane',bannerId:'direct-lane-banner'},
+    reco:{boardId:'reco-board-lane',boardClass:'reco-lane',resultId:'reco-result-lane',resultClass:'gwen-summary-result gwen-reaction',bannerId:'reco-lane-banner'},
+    cdirect:{boardClass:'cd-lane',resultClass:'cg-gwen-slot',bannerClass:'cd-lane-banner'},
+    cosmoSearch:{boardClass:'search-gwen-lane',resultClass:'search-gwen-result'},
+    guildSearch:{boardClass:'search-gwen-lane',resultClass:'search-gwen-result'}
+  };
+  function stageMount(container,{mode}){
+    if(!container||!skins[mode])throw Error('Unknown Gwen stage: '+mode);
+    let handle=components.get(mode);
+    if(!handle){
+      const skin=skins[mode];let elements={},state={mode,phase:'idle',count:0},dead=false;
+      function bind(host){
+        dead=false;
+        for(const part of ['board','result']){
+          const slot=host.querySelector(`[data-gwen-slot="${mode}-${part}"]`);
+          if(!slot){elements[part]=null;continue;}
+          if(slot!==elements[part]){
+            const el=root.document.createElement('div');
+            el.dataset.gwenSlot=mode+'-'+part;
+            el.className='gwen-lane '+(part==='result'?'gwen-result-lane ':'')+(skin[part+'Class']||'');
+            if(skin[part+'Id'])el.id=skin[part+'Id'];
+            el.setAttribute('aria-label',part==='board'?'그웬 길':'그웬 결과 자리');
+            if(mode==='cdirect')el.setAttribute(part==='board'?'data-cd-lane-slot':'data-cd-gwen-slot','');
+            slot.replaceWith(el);elements[part]=el;
+          }
+        }
+        const board=elements.board;
+        if(board&&mode!=='home'&&elements.banner?.parentElement!==board){
+          const banner=root.document.createElement('div');
+          banner.className='gwen-stage-banner '+(skin.bannerClass||'');
+          if(skin.bannerId)banner.id=skin.bannerId;
+          banner.hidden=true;banner.setAttribute('aria-hidden','true');banner.innerHTML=P.bannerMarkup();board.append(banner);elements.banner=banner;
+        }
+        if(!board)elements.banner=null;
+        registerStage(mode,{...elements});
+        update(state);
+        return handle;
+      }
+      function update(next){
+        if(dead)return handle;
+        state={...next,mode};
+        const resultOn=['result','error'].includes(state.phase)||state.phase==='idle'&&state.count>0&&state.count<4;
+        if(elements.result)elements.result.hidden=!resultOn;
+        if(mode==='reco'&&elements.result&&state.phase==='result'){
+          let bubble=elements.result.querySelector('.gwen-bubble-space');
+          if(!bubble){bubble=root.document.createElement('div');bubble.className='gwen-bubble-space';elements.result.append(bubble);}
+          const band=root.Ux.gwenSayBand(state.clear);
+          if(bubble.dataset.band!==band){bubble.dataset.band=band;bubble.innerHTML=root.Ux.gwenSay(band);}
+        }
+        if(elements.board)elements.board.dataset.phase=state.phase;
+        mount()?.sync(state);return handle;
+      }
+      handle={bind,update,
+        progress:(p,msg='',extra={})=>update({...extra,phase:'work',progress:p,msg,count:extra.count??4}),
+        done:(result,extra={})=>update({phase:'result',count:4,...extra,result:result&&typeof result==='object'?resultId(result):result,clear:extra.clear??result?.clear}),
+        reset:()=>update({phase:'idle',count:0}),
+        destroy(){if(dead)return;dead=true;stages.delete(mode);components.delete(mode);mount()?.sync({mode,phase:'idle',count:0});
+          for(const part of ['board','result'])if(elements[part]){const slot=root.document.createElement('div');slot.dataset.gwenSlot=mode+'-'+part;elements[part].replaceWith(slot);}elements={};},
+        get elements(){return elements;},get state(){return {...state};}};
+      components.set(mode,handle);
+    }
+    return handle.bind(container);
+  }
+  const Stage={mount:stageMount,slot:(mode,part)=>`<div data-gwen-slot="${mode}-${part}"></div>`,
+    destroy:mode=>components.get(mode)?.destroy(),activate:mode=>mount()?.activate(mode)};
+  // Low-level registration stays inside this module, including home.
+  const api={PRIORITY,CHOICES,SAY,policy,travel,playground,bannerState:P.bannerState,bannerPicker:P.bannerPicker,BANNER_COPY:P.BANNER_COPY,mount,resultId,sync:s=>mount()?.sync(s),activate:mode=>mount()?.activate(mode),edit:(a,i)=>mount()?.edit(a,i),Stage};
+  root.GwenStage=Stage;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GwenLane=api;
 })(typeof window!=='undefined'?window:globalThis);

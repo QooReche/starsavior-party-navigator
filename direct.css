@@ -87,6 +87,19 @@ html[data-gwen-quiet=true] .gwen-lane-actor::before{transition:none}
 /* Text occupies a separate line above the 88px body track. */
 #direct-board-lane,#reco-board-lane{height:122px;padding-top:34px;box-sizing:border-box}
 .gwen-lane-actor[data-moving=true] .gwen-lane-speech{visibility:hidden}
+.search-gwen-lane{height:122px;padding-top:34px;box-sizing:border-box;border-radius:8px;background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat}
+.gwen-stage-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;text-align:center}
+.gwen-stage-banner[hidden],.gwen-stage-banner [hidden]{display:none}
+.search-gwen-lane[data-phase=result]{height:80px;padding-top:0;background:none}
+.search-gwen-result{max-width:320px;margin:0 auto 8px}
+#reco-result-lane.gwen-summary-result{height:auto;padding:0;margin-top:12px;overflow:visible}
+#reco-result-lane.gwen-summary-result[hidden]{display:none}
+#reco-result-lane.gwen-summary-result .gwen-lane-actor{top:0;transform:none!important;flex-shrink:0;order:1}
+#reco-result-lane.gwen-summary-result .gwen-lane-speech{display:none}
+#reco-result-lane.gwen-summary-result .gwen-lane-actor,#reco-result-lane.gwen-summary-result .gwen-lane-poke{width:240px;height:240px}
+@media(min-width:1200px){.search-gwen-lane{height:162px}.search-gwen-lane .gwen-lane-actor,.search-gwen-lane .gwen-lane-poke{width:120px;height:120px}}
+@media(max-width:1199px){#reco-result-lane.gwen-summary-result .gwen-lane-actor,#reco-result-lane.gwen-summary-result .gwen-lane-poke{width:112px;height:112px}}
+@media(max-width:760px){.search-gwen-lane{height:106px}}
 #home-gwen-lane{height:220px;padding-top:40px;box-sizing:border-box}
 #home-gwen-lane .gwen-lane-actor,#home-gwen-lane .gwen-lane-poke{width:160px;height:160px}
 .gwen-result-lane{height:122px;padding-top:34px;box-sizing:border-box}

@@ -347,15 +347,7 @@ summary{padding:9px 4px}
 <section id="guild-extra" class="panel" aria-label="길드 방어전 설정·설명" hidden></section>
 <section id="cosmo-search" class="panel" aria-label="코스모 게이트 3보스 편성 찾기" hidden></section>
 <div id="reco-gwen-stage" class="reco-gwen-stage" hidden>
- <div id="reco-result-lane" class="gwen-lane gwen-result-lane" aria-label="그웬 결과 자리" hidden></div>
- <div id="reco-board-lane" class="gwen-lane reco-lane" aria-label="그웬 길">
-  <div id="reco-lane-banner" aria-hidden="true" hidden>
-   <span class="gwen-banner-title" data-phrase="investigation" hidden><span class="gwen-banner-fallback">조사 완료!</span><img src="assets/ui_icons/case_banner_investigation.webp" width="640" height="160" alt="" decoding="async"></span>
-   <span class="gwen-banner-title" data-phrase="inquiry" hidden><span class="gwen-banner-fallback">수사 완료!</span><img src="assets/ui_icons/case_banner_inquiry.webp" width="640" height="160" alt="" decoding="async"></span>
-   <span class="gwen-banner-title" data-phrase="calculation" hidden><span class="gwen-banner-fallback">계산 완료!</span><img src="assets/ui_icons/case_banner_calculation.webp" width="640" height="160" alt="" decoding="async"></span>
-   <span class="gwen-banner-title" data-phrase="error" hidden><span class="gwen-banner-fallback">수사 난항…</span><img src="assets/ui_icons/case_banner_error.webp" width="640" height="160" alt="" decoding="async"></span>
-  </div>
- </div>
+ <div data-gwen-slot="reco-board"></div>
 </div>
 <div id="out"></div>
 <section id="cosmo-direct-panel" class="party cd-panel" aria-label="코스모 게이트 직접 편성" hidden></section>
@@ -366,19 +358,12 @@ summary{padding:9px 4px}
    <button id="direct-run" type="button" data-direct-action="run" disabled>모의 전투 실행</button>
    <p id="direct-run-state" role="status" aria-live="polite"></p><button id="direct-steps-toggle" type="button" class="sec" aria-expanded="false" aria-controls="direct-steps" hidden></button><ol id="direct-steps" hidden></ol>
    <div class="direct-result-hero"><div class="direct-result-numbers"><div id="direct-result-summary" class="mi-verdict"><b>조사 대기</b><b id="direct-summary-power">—</b></div><span id="direct-standard" class="tag" hidden>표준 육성 기준</span></div>
-   <div id="direct-gwen" class="direct-gwen"><div id="direct-result-lane" class="gwen-lane gwen-result-lane" aria-label="그웬 결과 자리"></div><small id="direct-stage-number"></small><progress id="direct-progress" max="100" value="0" aria-label="모의 전투 진행"></progress></div></div>
+   <div id="direct-gwen" class="direct-gwen"><div data-gwen-slot="direct-result"></div><small id="direct-stage-number"></small><progress id="direct-progress" max="100" value="0" aria-label="모의 전투 진행"></progress></div></div>
    <details id="direct-comparison" open><summary>결과·비교</summary><div id="direct-results"></div></details>
    <div class="direct-summary-options"><details id="direct-with"><summary id="direct-with-summary" aria-expanded="false">같이 볼 것</summary><label><input id="direct-with-reco" type="checkbox"> 자동 추천도 같이</label><label class="direct-with-growth"><input id="direct-with-growth" type="checkbox"> 육성 포함 추천도 같이<small>후보가 많아 가장 오래 걸림 <span id="direct-growth-info">· 내 정보 필요</span></small></label><small>같이 돌리면 오래 걸림 · 내 편성 결과가 먼저 나옴</small></details><span id="direct-conditions" class="tag"></span></div>
   </div>
   <div class="result-team">
-   <div id="direct-board-lane" class="gwen-lane" aria-label="그웬 길">
-    <div id="direct-lane-banner" aria-hidden="true" hidden>
-     <span class="gwen-banner-title" data-phrase="investigation" hidden><span class="gwen-banner-fallback">조사 완료!</span><img src="assets/ui_icons/case_banner_investigation.webp" width="640" height="160" alt="" decoding="async"></span>
-     <span class="gwen-banner-title" data-phrase="inquiry" hidden><span class="gwen-banner-fallback">수사 완료!</span><img src="assets/ui_icons/case_banner_inquiry.webp" width="640" height="160" alt="" decoding="async"></span>
-     <span class="gwen-banner-title" data-phrase="calculation" hidden><span class="gwen-banner-fallback">계산 완료!</span><img src="assets/ui_icons/case_banner_calculation.webp" width="640" height="160" alt="" decoding="async"></span>
-     <span class="gwen-banner-title" data-phrase="error" hidden><span class="gwen-banner-fallback">수사 난항…</span><img src="assets/ui_icons/case_banner_error.webp" width="640" height="160" alt="" decoding="async"></span>
-    </div>
-   </div>
+   <div data-gwen-slot="direct-board"></div>
    <p class="mut direct-drag-help">끌어서 넣고 바꿈 · ☆로 리더 · ☐ 육성했다면 체크</p>
    <div id="direct-board" aria-label="편성판"></div>
    <div id="direct-selection" hidden></div><div id="direct-drop-remove" hidden>여기 놓으면 빼기</div>
@@ -477,9 +462,9 @@ const D=/*DATA*/null;
 UiShared.setSkillIcons?.(D.skillIcons);
 Ux.mount();
 Ux.setGrades(D.archiveGrades);
-// 무대 등록: 직접 편성·자동 추천 무대의 DOM 요소를 GwenLane 에 알림
-GwenLane.registerStage('direct',{board:document.getElementById('direct-board-lane'),result:document.getElementById('direct-result-lane'),banner:document.getElementById('direct-lane-banner')});
-GwenLane.registerStage('reco',{resultExternal:true,board:document.getElementById('reco-board-lane'),result:document.getElementById('reco-result-lane'),banner:document.getElementById('reco-lane-banner')});
+// 화면은 자리만 제공하고 공통 부품이 무대 DOM·상태를 소유함.
+const DIRECT_GWEN=GwenStage.mount(document,{mode:'direct'});
+const RECO_GWEN=GwenStage.mount(document,{mode:'reco'});
 const EL={sun:"태양",moon:"달",star:"별",order:"질서",chaos:"혼돈"};
 const BG={"특이점 관측":"✦","스타피어서":"➶","큐브 과부하":"▣","행성 정화":"◍","차원 강습":"⟁"};
 const $=id=>document.getElementById(id);
@@ -540,11 +525,22 @@ const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild.v2")).tiers;
 function searchPlacementTag(kind){const p=(kind==='guild'?D.guild:D.cosmoRaid)?.search?.placement;return [...(kind==='guild'&&D.guild.search.newSearch===true?['guild-new-search']:[]),...(p?.baseline||p?.enabled?[PartyPlacement.VERSION,!!p.baseline,!!p.enabled]:[])];}
 const gsSig=() => JSON.stringify([MI.hash,[...EXCL].sort(),gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks()),...searchPlacementTag('guild')]);
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
+function searchGwenPaint(host,mode,state){
+ if(!host.querySelector('[data-gwen-slot]')){GwenStage.destroy(mode);return;}
+ const stage=GwenStage.mount(host,{mode});
+ if(state.phase==='run')stage.progress(state.total?state.done/state.total:0,state.msg);
+ else if(state.phase==='done'){
+  const first=state.rows?.[0],rates=first?.teams?.map(t=>t.st?.clear).filter(Number.isFinite);
+  const clear=rates?.length?Math.min(...rates):first?.clear;
+  stage.done(state.rows,{clear});
+ }else stage.reset();
+ if(DIRECT.mode==='reco'&&$('mi-panel').hidden)GwenStage.activate(mode);
+}
 function renderGuildSearch(on){const p=$("guild-search");
- if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
+ if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;GwenStage.destroy('guildSearch');p.hidden=true;p.innerHTML="";return}
  const prog=p.querySelector('[data-k="gd-search-prog"]');
- if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);Ux.syncGwen(p,Ux.gwenStage(GSR.msg));return}
- const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:Ux.gwenWork,error:Ux.gwenError,report:Ux.gwenReport,workMode:Ux.gwenStage(GSR.msg),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,newSearch:D.guild.search.newSearch,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
+ if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);searchGwenPaint(p,'guildSearch',GSR);return}
+ const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:()=>GwenStage.slot('guildSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('guildSearch','board')+GwenStage.slot('guildSearch','result'),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,newSearch:D.guild.search.newSearch,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild');searchGwenPaint(p,'guildSearch',GSR)}
 function gsTeam(t){LEADKEY=t.leaderKey||t.order[0];return seasonBreakBar(t,true)+`<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
 async function guildSearchStart(target=GSR,profileOverride=null){
  if(seasonBlocked('guild'))return;
@@ -587,7 +583,7 @@ function csTick(force){   // 진행 글자만 200ms 이상 간격으로 갱신(�
  csLast=now;if(CSR.phase!=="run")return;
  if(CSR.eta)CSR.etaText=CosmoSearch.etaLine(CSR.eta.estimate(csNow()),Date.now());
  const a=document.querySelector('#cosmo-search [data-k="cs-prog"]'),b=document.querySelector('#cosmo-search [data-k="cs-eta"]');
- Ux.syncGwen(document.getElementById("cosmo-search"),Ux.gwenStage(CSR.msg));
+ searchGwenPaint($('cosmo-search'),'cosmoSearch',CSR);
  if(a)a.textContent=CosmoSearch.progText(CSR);if(b)b.textContent=CSR.etaText}
 function csReset(){   // 내 정보 다시 불러오기·제외 목록 변경: 진행 중인 검색은 취소(끝난 결과는 남기되 서명이 달라 «낡은 결과»로 표시)
  if(CSR.phase==="run"){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.id++;CSR.phase="idle";CSR.eta=null}}
@@ -610,11 +606,11 @@ function ownedSimBreaks(){const lv=MI.brkLv||null,have=lv?Object.keys(lv):breakO
 function csBreaks(){return ownedSimBreaks()}
 const csBoss=k=>((D.cosmoRaid.bosses.find(b=>b.key===k))||{}).name||k;
 function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").value];
- if(!c||c.key!=="cosmo"||!D.cosmoRaid||!window.CosmoSearch){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}if(CSR.phase==="run"){CSR.phase="idle";CSR.id++}p.hidden=true;p.innerHTML="";return}
+ if(!c||c.key!=="cosmo"||!D.cosmoRaid||!window.CosmoSearch){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}if(CSR.phase==="run"){CSR.phase="idle";CSR.id++}GwenStage.destroy('cosmoSearch');p.hidden=true;p.innerHTML="";return}
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
- const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:Ux.gwenWork,error:Ux.gwenError,report:Ux.gwenReport,workMode:Ux.gwenStage(CSR.msg),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,summary:cdSearchSummary,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,learned:CSR.optLearned,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo')}
+ const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:()=>GwenStage.slot('cosmoSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('cosmoSearch','board')+GwenStage.slot('cosmoSearch','result'),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,summary:cdSearchSummary,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,learned:CSR.optLearned,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo');searchGwenPaint(p,'cosmoSearch',CSR)}
 async function cosmoSearchStart(target=CSR,profileOverride=null){
  if(seasonBlocked('cosmo'))return;
  const CSR=target;
@@ -934,7 +930,7 @@ function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+t
    ${k===pickKey?"":`<span class="qt">${sr?simCell(p,t,st):'<span class="mut" data-state="pending">계산 전</span>'}</span><button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">보기</button>`}</div>`};
  const selected=rows.findIndex(t=>t.keys.slice().sort().join(",")===pickKey),active=selected<0?0:selected;
  const alternatives=rows.flatMap((t,i)=>i===active?[]:[row(t,i)]);
- return `<div class="qbox" data-k="quick"><div class="result-layout"><div class="result-summary">${miVerdict(shown,st)}${scrNote(p,st)}${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?Ux.gwenReaction(SIMQ.res[simSig(st,shown)]?.clear,SIMQ.res[simSig(st,shown)]):""}</div><div class="result-team">${main}</div></div>${alternatives.length?`<div class="alternatives" data-k="alternatives">${alternatives.slice(0,2).join('')}${alternatives.length>2?`<details class="alternatives-more" data-fold="alternatives-${p}"><summary><span class="more-label">더 보기(+${alternatives.length-2})</span><span class="less-label">접기</span></summary>${alternatives.slice(2).join('')}</details>`:''}</div>`:''}${tail}</div>`}
+ return `<div class="qbox" data-k="quick"><div class="result-layout"><div class="result-summary">${miVerdict(shown,st)}${scrNote(p,st)}${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?GwenStage.slot('reco','result'):""}</div><div class="result-team">${main}</div></div>${alternatives.length?`<div class="alternatives" data-k="alternatives">${alternatives.slice(0,2).join('')}${alternatives.length>2?`<details class="alternatives-more" data-fold="alternatives-${p}"><summary><span class="more-label">더 보기(+${alternatives.length-2})</span><span class="less-label">접기</span></summary>${alternatives.slice(2).join('')}</details>`:''}</div>`:''}${tail}</div>`}
 
 
 
@@ -1319,8 +1315,8 @@ function recoGwenVisibility(){
 function recoGwenShow(show,progress,result=null){
  const host=$('reco-gwen-stage');if(!host)return;
  const phase=show?'work':result?'result':'idle';
- host.dataset.phase=phase;$('reco-result-lane').hidden=true;
- GwenLane.sync({mode:'reco',phase,progress:progress||0,count:4,result:result?GwenLane.resultId(result):null,clear:result?.clear});
+ host.dataset.phase=phase;GwenStage.mount(document,{mode:'reco'});
+ if(show)RECO_GWEN.progress(progress||0);else if(result)RECO_GWEN.done(result);else RECO_GWEN.reset();
  recoGwenVisibility();
 }
 function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap(b=>b.rows),p=SIMQ.busy??(Number(Object.keys(LASTQ)[0])||1);

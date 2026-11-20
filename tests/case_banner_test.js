@@ -42,5 +42,5 @@ assert(!html.includes('direct-progress-lane'));
 assert(!fs.readFileSync('direct.css','utf8').includes('gwen-banner-dot'));
 assert(!fs.readFileSync('direct.css','utf8').includes('gwen-banner-pop'));
 for(const key of ['magnify','think','board','coffee','stakeout','stamp'])assert(G.CHOICES.work.includes(key));
-for(const [key,text] of Object.entries(G.BANNER_COPY))assert(html.includes(`data-phrase="${key}" hidden><span class="gwen-banner-fallback">${text}</span>`));
+for(const [key,text] of Object.entries(G.BANNER_COPY))assert(P.bannerMarkup().includes(`data-phrase="${key}" hidden><span class="gwen-banner-fallback">${text}</span>`));
 console.log('PASS case banner states / nonrepeat / stable reports / copy / budgets');

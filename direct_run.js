@@ -159,9 +159,8 @@ function directResultsPaint(){
   const phase=gwenError?'error':DIRECT.active||bundling?'work':validNow?'result':'idle';
   $('direct-progress').hidden=phase!=='work';
   const memberCount=DIRECT.draft.slots.filter(Boolean).length;
-  $('direct-result-lane').hidden=!(['result','error'].includes(phase)||phase==='idle'&&memberCount>0&&memberCount<4);
   $('direct-progress').value=RECO.task&&!RECO.task.done?Math.round((RECO.task.progress||0)*100):running?.progress||0;
-  GwenLane.sync({mode:'direct',phase,bundleRunning:!!bundling,result:validNow?(finalReport?'bundle-'+bundle.id:GwenLane.resultId(now.result)):null,step:bundling?bundle.current:null,recoHigher:finalReport&&compatible&&now.result[metric]<reco.result[metric],clear:now?.result?.clear,
+  DIRECT_GWEN.update({mode:'direct',phase,bundleRunning:!!bundling,result:validNow?(finalReport?'bundle-'+bundle.id:GwenLane.resultId(now.result)):null,step:bundling?bundle.current:null,recoHigher:finalReport&&compatible&&now.result[metric]<reco.result[metric],clear:now?.result?.clear,
     progress:RECO.task&&!RECO.task.done?RECO.task.progress:running?.progress>0?running.progress/running.snapshot.runs:null,count:DIRECT.draft.slots.filter(Boolean).length,
     stale:past(now),better:compatible&&validNow&&now.result[metric]>reco.result[metric]});
 

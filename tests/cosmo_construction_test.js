@@ -9,7 +9,7 @@ function check(code=source){
   const strip=h.add('mode-strip');strip.innerHTML=template.match(/<nav id="mode-strip"[^>]*>([\s\S]*?)<\/nav>/)[1];
   Object.assign(c,{contents:[{key:'cosmo'},{key:'op'},{key:'cube'},{key:'guild'}],MI:{info:null},
     Ux:require('../ux_ui'),RECO:{},recoGwenVisibility(){},growthControlPlace(){},cdRefresh(){c.cosmoRefresh++},cosmoRefresh:0,
-    GwenLane:{activate:m=>c.activeStage=m,registerStage(){}},
+    GwenStage:{activate:m=>c.activeStage=m,mount(){}},
     history:{state:{},replaceState(){c.navigations++},pushState(){c.navigations++}},
     location:{href:'http://test/?c=cosmo&pm=direct'},navigations:0});
   h.load(code);
@@ -30,7 +30,7 @@ check();
 const mutations=[
   ["info||DIRECT.mode!=='direct'||!cosmo","true"],
   ["info||DIRECT.mode!=='direct'||cosmo","info||DIRECT.mode!=='direct'"],
-  ["?'cdirect':DIRECT.mode","?null:DIRECT.mode"],
+  ["?'cdirect':stageMode","?null:stageMode"],
   ['directVisibility();cdRefresh();','directVisibility();'],
   ["  const before=source?.closest", "  if(mode==='direct'&&contents[$('content').value]?.key==='cosmo')return;\n  const before=source?.closest"]
 ];
