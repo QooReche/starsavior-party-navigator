@@ -31,3 +31,22 @@ reco·direct·cdirect·cosmoSearch·guildSearch가 같은 부품을 사용함. h
 전체 비브라우저 시험과 지정된 브라우저 시험만 순차 실행함. HANDOFF·엔진은 변경하지 않음.
 
 독립 리뷰는 `1892ce2..c0a497b`, `c0a497b..40da38e`, `40da38e..7657df4` 고정 범위로 진행했음. 단계 토큰·신규 진행 표시 발견·추천 묶음 토큰 지적을 반영했으며 마지막 범위에서 추가 확정 결함 없음으로 끝났음.
+
+기존 네 화면의 진행/대기 8장과 결과 6장, 합계 14장은 1280·390 폭에서 픽셀까지 같았음. PIL ImageChops로 크기와 모든 RGB 픽셀을 비교했으며 차이 영역은 모두 없음임. 비교 기록은 `local/gwen_after/comparison.json`임. 첫 비교에서 드러난 reco 말풍선·자리 크기·모바일 그림자는 기존 배치에 맞췄음. 최종 CSS·시험 계약 수정 `7657df4..03adf41`도 독립 리뷰에서 추가 확정 결함 없음으로 끝났음.
+
+집중 검증 결과:
+
+| 명령 | 결과 |
+| --- | --- |
+| `node tests/gwen_stage_contract_test.js` | 다섯 화면 연결·변이 10개 통과 |
+| `node tests/gwen_stage_dom_test.js` | DOM 7시나리오·변이 15개 통과 |
+| `test_gwen_search_stage.py` | 코스모·길드 × 1280·390, 4흐름 통과 |
+| `test_gwen_ux.py --mutations` | 22검사·변이 14개 통과 |
+| `test_direct_party.py --mutations` | 10그룹·변이 1개 통과 |
+| `test_cosmo_direct.py` | 3그룹 통과, 실제 워커로 3보스 × 2판 확인 |
+
+브라우저 명령은 `E:\AI_mk2\venv-pw\Scripts\python.exe -X utf8 tests/e2e/파일명`으로 실행했음. `PLAYWRIGHT_BROWSERS_PATH=E:\AI_mk2\pw-browsers`, `PN_E2E_WORKERS=1`이며 모두 한 파일씩 실행했음. 신규 탐색 시험은 실제 planner와 제어된 가짜 워커를 사용하며 `progs`·`via`도 반환함. 진행률이 실제로 증가하고 배우 위치가 0보다 큰지, 같은 문구의 다음 단계 초기화·취소·늦은 응답·재실행·결과 위치·그웬 1명·재반응 없음까지 확인했음. 실제 탐색 결과 품질이나 전역 클라 일치율 검증은 아님.
+
+UX 시험에서 `pause_at(Date.now())`가 명령 도착 전에 과거가 되는 경합이 한 번 발생해 목표를 1초 뒤로 지정했음. 해당 식은 기준 커밋 `0f7b89f`와 같음을 확인했으며 기준 커밋의 원본 화면·원본 idle 검사 1회는 통과했음. 기존부터 항상 실패했다고 판정하지 않았음.
+
+최종 `python -X utf8 -I tools/run_tests.py --rebuild`는 234개 파일 통과·실패 0이었음. 로그는 `local/gwen_full_test.log`임. 기준선도 통과했지만 COSMO_TABLES가 없어 시즌 1022·1023의 클라 원표 재생성 대조 2건은 양쪽 모두 건너뛰었음. 첫 전체 실행에서 새 GwenStage 스텁이 빠진 기존 코스모 페이지 시험이 실패해 스텁과 제거 변이를 새 계약으로 고쳤고, 위 최종 실행으로 실패 0을 확인했음. 이미지 재생성 시험 이후 자산 변경 없음도 확인했음.
