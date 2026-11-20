@@ -11,7 +11,8 @@ function setup(code=lane,template=html){
   for(const mode of ['direct','reco'])for(const part of ['board','result'])h.slot(mode,part);
   c.$=id=>h.doc.getElementById(id);c.DIRECT={mode:'reco'};
   h.load(template.match(/const DIRECT_GWEN=GwenStage.mount.*\n/)[0]+template.match(/const RECO_GWEN=GwenStage.mount.*\n/)[0]);
-  h.load(section(template,'function recoGwenVisibility()','function simProgress('));
+  c.contents=[{key:'op'}];h.add('content').value=0;
+  h.load(section(template,'function guildGwenMode()','function simProgress('));
   c.GwenStage.activate('reco');h.g=c.GwenLane;h.actor=()=>h.doc.querySelector('[data-gwen=lane]');
   h.bind=mode=>c.GwenStage.mount(h.doc,{mode});return h;
 }

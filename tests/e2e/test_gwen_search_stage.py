@@ -115,6 +115,19 @@ def flow(browser,base,width,kind):
         assert result().locator('.gwen-lane-actor').count()==1
         assert result().locator('.gwen-lane-actor').get_attribute('data-announcements')==announcements
         assert p.locator('.gwen-lane-actor').count()==1
+        # Content changes destroy the component. Returning must retain both the
+        # result object and the consumed announcement/animation, not just repaint.
+        old_content=p.locator('#content').input_value()
+        p.evaluate(f'window.savedSearchRows={state}.rows')
+        p.select_option('#content',p.evaluate('String(contents.findIndex(c=>c.key==="op"))'))
+        assert p.locator(f'[data-gwen-slot="{mode}-result"]').count()==0
+        p.select_option('#content',old_content)
+        assert p.evaluate(f'{state}.phase==="done" && {state}.rows===savedSearchRows'), 'content return lost completed search'
+        result().scroll_into_view_if_needed()
+        p.wait_for_function(f'document.querySelector(\'[data-gwen-slot="{mode}-result"] img\')?.naturalWidth>0')
+        assert result().locator('.gwen-lane-actor').get_attribute('data-announcements')==announcements, 'remount repeated result announcement'
+        p.wait_for_timeout(300)
+        assert result().locator('img').get_attribute('data-gwen-playing')=='false', 'remount replayed result animation'
         p.screenshot(path=str(OUT/f'{kind}-result-{width}.png'))
         assert p.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
         assert not p.errors,p.errors

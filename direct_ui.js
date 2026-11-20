@@ -81,7 +81,7 @@ function directVisibility(){
   for(const b of $('mode-strip').querySelectorAll('[data-pn-mode]'))b.setAttribute('aria-pressed',String(b.dataset.pnMode===DIRECT.mode));
   if($('result-tabs'))$('result-tabs').hidden=info||DIRECT.mode!=='reco';
   const searchMode=cosmo?'cosmoSearch':contents[$('content').value]?.key==='guild'?'guildSearch':null;
-  const stageMode=DIRECT.mode==='reco'&&searchMode&&document.querySelector(`[data-gwen-slot="${searchMode}-board"]`)?searchMode:DIRECT.mode;
+  const stageMode=DIRECT.mode==='reco'&&searchMode&&document.querySelector(`[data-gwen-slot="${searchMode}-board"]`)?(cosmo?searchMode:guildGwenMode()):DIRECT.mode;
   GwenStage.activate(info?null:DIRECT.mode==='direct'&&cosmo?'cdirect':stageMode);
   recoGwenVisibility();growthControlPlace();
 }
