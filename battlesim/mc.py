@@ -1080,7 +1080,7 @@ class Battle:
         if u.side == 1 and not self.enemy_lines:
             return ()
         modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow'))
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow', 'claire_preemptive_marker'))
         key = id(u.d)
         sc = self._semantic_cache
         if sc is not None:
@@ -1114,7 +1114,7 @@ class Battle:
         raw = d.lines
         hit = u._kind_index
         modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow'))
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow', 'claire_preemptive_marker'))
         if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw) or hit[4] != modes:
             grouped = {}
             for ln in self.lines_of(u):
@@ -1893,6 +1893,14 @@ class Battle:
             rows = lines.get(owner.key, {}) if variants else (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {}))
             spec = rows.get((ln.slot, ln.raw))
         if spec is not None:
+            if (self.mc['supported_marker_targets'] == 'client'
+                    and ((owner.key == 'sunshine-cat-smile' and ln.eff.get('native_target'))
+                         or (owner.key == 'gille' and ln.eff['kind'] == 'remove'
+                             and ln.eff.get('name') == '길레 마지막 타격 체크용 버프'))):
+                # PC 26752678 NKM:7152-7178: Smile/Gille markers can have no
+                # holders. Keep the native selector; a plural miss is empty.
+                self.rule_hits['supported_marker_targets'] += 1
+                return spec
             if (self.mc['gille_promotion_target'] == 'marker' and owner.key == 'gille'
                     and ln.slot == '특수기' and ln.eff.get('name') == '피날레(해제불가)'):
                 # NKM:7135-7187,7523-7546: 전체 대상 필터가 불일치하면 대상 없음.
@@ -5140,6 +5148,9 @@ class Battle:
                 self._fired(owner)
                 repeats = ln.eff.get('random_times', 1)
                 for _ in range(repeats):
+                    # 26752678 NKM:16468-16477: equal weight 10000 per case.
+                    # Pinball/Express Delivery use BuffCount=1; repeats are
+                    # separate SEs, each with a fresh candidate list.
                     name = self.R(owner.side).choice(names)
                     info = g.get(name)
                     if info is None:
@@ -5848,6 +5859,7 @@ def _meaning_gap(ln, k, markers):
     if tail and not RX_HOT.search(ln.raw) and not e.get('dot') and '보호막 =' not in tail:
         return 'effect: 효과 뒤 문구 미해석 〈%s〉 %s' % (name, tail[:30])
     if (not props and not e.get('dot') and name not in _rules.KNOWN_DOT and name not in HANDLED_NAMES
+            and name not in no_preemptive()['buffs']
             and name not in markers and not CHECK_NAME.search(name) and not RX_HOT.search(ln.raw)):
         return 'effect: 의미 미해석 효과 〈%s〉(속성 없음)' % name
     return None

@@ -261,8 +261,7 @@ class CoopOrderTest(unittest.TestCase):
         self.assertGreater(len(checked), 0)
         self.assertGreater(result['outcome']['progress'], 0)
         self.assertGreater(result['ally_via'].get('coop', 0), 0)
-        self.assertEqual(next(r['value'] for r in result['assumptions_used']
-                              if r['rule'] == 'opts.coop_order'), 'random_success')
+        self.assertNotIn('opts.coop_order', {r['rule'] for r in result['assumptions_used']})
         print('random_success: 새 후보 분기 %d회, progress=%.4f' % (len(checked), result['outcome']['progress']))
 
     def test_standard_battle_reaches_above_cap_branch(self):
@@ -304,8 +303,7 @@ class CoopOrderTest(unittest.TestCase):
             self.assertGreater(len(checked), 0)
             self.assertGreater(result['outcome']['progress'], 0)
             self.assertGreater(result['ally_via'].get('coop', 0), 0)
-            self.assertEqual(next(r['value'] for r in result['assumptions_used']
-                                  if r['rule'] == 'opts.coop_order'), mode)
+            self.assertNotIn('opts.coop_order', {r['rule'] for r in result['assumptions_used']})
             print('coop_order=%s: 초과 후보 검증 %d회, progress=%.4f' %
                   (mode, len(checked), result['outcome']['progress']))
 

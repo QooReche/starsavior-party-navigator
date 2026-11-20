@@ -275,6 +275,12 @@ def description_lines(d, lines, rules=None):
                       damage_type=ln.eff.get('damage_type', 'ADT_NORMAL'))
         e = ln.eff
         name = e.get('name') or ''
+        if (rules.get('claire_preemptive_marker') == 'client'
+                and d.key == 'bunny-claire@개화(SSR)' and ln.slot == '궁극기'
+                and e['kind'] == 'buff' and name == '선제 방어 무시'):
+            # SE16093014 / BI_MAID_SPEAR_SSR_2: NoPreemptiveDefend flag,
+            # IsBuff=false, hidden, life 0. Not a preemptive-reduce stat.
+            e.update(native_hidden=True, rule_key='claire_preemptive_marker')
         if e['kind'] == 'buff' and name:
             # RepeatBuffCount is not a bundle of independent SE rows. The
             # probabilistic repeat in playable skills is Cristelle's burn:

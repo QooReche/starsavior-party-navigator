@@ -38,7 +38,8 @@ python -X utf8 -I tools/sim_damage.py simulate ... --rules "{\"target_defender_m
 파이썬: `from battlesim import simulate; simulate({"units": ["gwen", "fei", "professor-m", "amora"], "leader": 0}, {"stage": "rush/매니저 그레고리/매니저 그레고리 Ⅰ"}, {"seed": 1, "n_runs": 200})`.
 입력·출력 형식은 `api.py` 머리말, 규칙·근거는 `rules/default.json` 의 `mc` 절, 설계는 `docs/battlesim_design.md` 9절, 검증은 `docs/sim_p3_report.md`.
 - 편성 칸 0·1 = 전열, 2·3 = 후열. 레벨·공명 기본 Lv200·공명10(fixed 모드, 장비·잠재력·여정 없음).
-- 결과의 턴은 「모델 기준 턴」(100틱)이고 처치 턴은 클리어한 판만 센다. `unsupported` 의 `gate_ok=false` 면 적 생존 기믹이 빠진 결과라 추천 관문에 쓰지 말 것.
+- 결과의 턴은 「모델 기준 턴」(100틱)이고 처치 턴은 클리어한 판만 센다. `unsupported.gate_ok=false`는 정적 중요 미지원 또는 실행 중 미지원·근사 기록이 있다는 뜻임. `critical`과 `runtime`으로 사유를 구분하고, `runtime_approx`·`runs_affected`로 실행 중 기록 여부·영향 판 수를 확인함. 허용 목록 판정과 자동 중단은 아직 구현하지 않았음.
+- `assumptions_used`는 가정·관찰 등급만 담으며 클라 코드·표 근거(code/data)는 제외함. 선택된 규칙 목록이므로 각 분기가 실제 발동했다는 뜻은 아님.
 - 이벤트 한도를 넘으면 `EventLimitError` 가 나고 결과를 돌려주지 않는다.
 - 기대값 엔진(`engine.Sim`, 웹 화력 지표)은 P3 에서 동결 — 새 규칙은 `mc.py` 에만 넣는다(퇴역 조건은 설계 9절).
 
