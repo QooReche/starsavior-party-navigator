@@ -8,7 +8,10 @@ const Q = require('../quick.js');
 
 const ROOT     = path.resolve(__dirname, '..');
 const EXPECTED = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'reuse_baseline.json'), 'utf8'));
-const html     = fs.readFileSync(path.join(ROOT, 'party_template.html'), 'utf8');
+// Preserve this refactor's old scoring fixture; current neutral scoring has separate Python/JS parity tests.
+const html = fs.readFileSync(path.join(ROOT,'party_template.html'),'utf8').replace(
+ 'let v=combo.reduce((a,x)=>a+x.score,0);',
+ 'let v=combo.reduce((a,x)=>a+x.score,0);const roles=combo.map(x=>x.s.cls),ns=roles.filter(r=>r==="서포터").length;if(ns)v+=CFG.weights.supportBonus;v-=defPen*Math.max(0,roles.filter(r=>r==="디펜더").length-1);if(ns>1)v-=4;');
 const frozen = JSON.parse(require('node:zlib').gunzipSync(fs.readFileSync(path.join(__dirname, 'fixtures/public_inputs_1111.json.gz'))));
 const D        = JSON.parse(frozen['web.json']);
 // Keep pre-refactor outputs fixed when engine data/calibration is rebuilt.

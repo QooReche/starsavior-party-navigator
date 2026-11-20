@@ -469,6 +469,7 @@ summary{padding:9px 4px}
 <script src="cosmo_learned.js"></script>
 <script src="guild_planner.js"></script>
 <script src="placement_search.js"></script>
+<script src="placement_page.js"></script>
 <script src="cosmo_search.js"></script>
 <script src="skill_view.js"></script>
 <script>
@@ -534,9 +535,9 @@ function gsWatch(){if(!D.guild||!D.guild.season||!window.GuildView)return;const 
  if(next)setTimeout(()=>{if(!$("guild-panel").hidden)renderGuild();gsWatch()},Math.min(next-now+1000,2147483000))}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!$("guild-panel").hidden)renderGuild()});
 // ── 길방 «내 정보로 최고 점수 편성 찾기»(guild_search.js): 예선(전 조합 짧게) → 본선(상위 팀을 단계·지원별로). 작업자는 시뮬 창구(sim_worker.js)를 그대로 쓴다
-const GSR={banCoop:false,phase:"idle",msg:"",done:0,total:0,rows:[],sig:"",handle:null,id:0};
+const GSR={phase:"idle",msg:"",done:0,total:0,rows:[],sig:"",handle:null,id:0};
 const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild.v2")).tiers;
-const gsSig=() => JSON.stringify([MI.hash,[...EXCL].sort(),gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]);
+const gsSig=() => JSON.stringify([PartyPlacement.VERSION,MI.hash,[...EXCL].sort(),gsTiers(),GuildSearch.breakSignature(ownedSimBreaks())]);
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
 function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
@@ -549,7 +550,7 @@ async function guildSearchStart(target=GSR,profileOverride=null){
  const GSR=target;
  if(!MI.info||GSR.phase==="run"||(SIMQ.busy!=null&&!profileOverride)||CSR.phase==="run")return;
  if(!profileOverride)growthCancel();
- const S=D.guild.search;S.banCoop=GSR.banCoop;const V=GuildView,G=D.guild,id=++GSR.id,c=contents[$("content").value],st=cur&&cur[$("stage").value];
+ const S=D.guild.search;const V=GuildView,G=D.guild,id=++GSR.id,c=contents[$("content").value],st=cur&&cur[$("stage").value];
  const stale=()=>GSR.id!==id,paint=()=>profileOverride?growthPaint():renderGuildSearch(true);
  try{
   GSR.phase="run";GSR.msg="내 구원자 능력치 계산 중";GSR.done=0;GSR.total=0;paint();
@@ -557,18 +558,17 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   const profile=profileOverride||MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
   const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers(),breaks=ownedSimBreaks(),sig=gsSig(),context=growthOwnedContext('guild');
   const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>profileOverride?growthWorker():new Worker("sim_worker.js");
-  const out=await GuildPlanner.search({S,G,V,results,roster:R.filter(s=>!EXCL.has(s.key)),tiers,breaks,stage,base,workers:Math.max(2,Math.min(4,(navigator.hardwareConcurrency||4)-1)),makeWorker:mk,stale,
+  const out=await GuildPlanner.search({S,G,V,results,roster:R.filter(s=>!EXCL.has(s.key)),tiers,breaks,stage,base,workers:Math.max(1,Math.min(2,(navigator.hardwareConcurrency||4)-1)),makeWorker:mk,stale,
     onHandle:h=>GSR.handle=h,onPhase:(msg,total)=>{GSR.msg=msg;GSR.done=0;GSR.total=total;paint();},onProgress:(d,t)=>{if(!stale()){GSR.done=d;GSR.total=t;paint();}}});
   Object.assign(GSR,out,{sig,dropped:0});
   GSR.context=context;GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
  }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.errorCause=e.gwenCause||"other";GSR.phase=GSR.errorCause==="cancel"?"idle":"err";GSR.msg=e.message||String(e);paint()}}
-$("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
 $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[data-gs]");if(!b)return;
  if(b.dataset.gs==="start")guildSearchStart();
  else if(b.dataset.gs==="cancel"){GSR.id++;if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";renderGuildSearch(true)}});
 // ── 코스모 게이트 «3보스 최고 점수 편성 찾기»(cosmo_search.js): 보스별 전 조합 짧게 → 상위 팀 정확히 → 겹침 없는 3팀 최대 합 → 상위 편성 재확인. 난이도 레벨(Step 3)은 사용자가 고름
 const CSR={phase:"idle",msg:"",done:0,total:0,rows:[],handle:null,id:0,optLevel:null,optMode:null,sig:"",etaText:"",eta:null,runs:1};
-const csSig=()=>(MI.hash||"")+"|"+[...EXCL].sort().join(",");   // 내 정보·추천 제외가 바뀌었는지 비교하는 서명
+const csSig=()=>PartyPlacement.VERSION+"|"+(MI.hash||"")+"|"+[...EXCL].sort().join(",");   // 배치 정책·내 정보·추천 제외 서명
 const csNow=()=>performance.now()/1000;
 const csMobile=()=>{try{return !!((navigator.userAgentData&&navigator.userAgentData.mobile)||/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent||"")||(/Macintosh/.test(navigator.userAgent||"")&&navigator.maxTouchPoints>1))}catch(e){return false}};
 const csWorkers=()=>CosmoSearch.workerCount(D.cosmoRaid.search,{cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory,mobile:csMobile()});
@@ -594,7 +594,7 @@ function csOpt(){const C=D.cosmoRaid;
  if(CSR.optFast==null)CSR.optFast=!!(C.search.speed&&C.search.speed.surrogate&&C.search.speed.surrogate.value);
  if(CSR.optLevel==null){const v=LS.get("cosmo.level");CSR.optLevel=Number.isInteger(v)&&v>=-1&&v<=C.levelMax?v:C.search.defaultLevel}
  if(CSR.optMode==null){const v=LS.get("cosmo.mode");CSR.optMode=CosmoSearch.MODES[v]?v:C.search.defaultMode}}
-// 코스모 결과 한 팀: 기존 추천 카드와 같은 모양(앞열 2·뒤열 2, 리더 왕관, 브레이크 스킬 줄). 시뮬이 가정한 칸 순서 = order(앞열 먼저, 첫 구원자가 리더)
+// 코스모 결과 한 팀: 기존 추천 카드와 같은 모양(앞열 2·뒤열 2, 리더 왕관, 브레이크 스킬 줄). 시뮬이 가정한 칸 순서 = order(앞열 먼저), 리더는 leaderKey
 function csTeam(t){LEADKEY=t.leaderKey||t.order[0];const xs=t.order.map(k=>({s:BYKEY[k]}));
  const cards=`<div class="rowcards cs-cards">${card(xs[2],"back")}${card(xs[0],"front")}${card(xs[1],"front")}${card(xs[3],"back")}</div>`;
  return seasonBreakBar(t)+cards}
@@ -627,7 +627,7 @@ async function cosmoSearchStart(target=CSR,profileOverride=null){
   const profile=profileOverride||MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,growth,"cosmo"));
   const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=CosmoSearch.searchSettings(C.search,CSR.optFast,CSR.optLearned);
   const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),bossName:csBoss,level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
-   makeWorker:()=>profileOverride?growthWorker():new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,breaks:csBreaks(),
+   makeWorker:()=>profileOverride?growthWorker():new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,boundaries:Object.fromEntries(C.bosses.map(b=>[b.key,b.boundaries||[]])),breaks:csBreaks(),
    onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed.v2"),workers)})},
    onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm&&!profileOverride)LS.set("cosmo.speed.v2",{sec:sm,workers});CSR.eta=null;CSR.etaText="마무리 단계(난이도 비교·최종 확인)는 남은 시간을 따로 계산하지 않음"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();if(!profileOverride)csTick(true)},
    onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());if(!profileOverride)csTick(false)},onHandle:h=>{CSR.handle=h}});
@@ -711,10 +711,7 @@ function partySyn(keys){const sw=CFG.synergy,hits=[];
   for(const p of (SYN.get(k)||[]))hits.push({p,pts:sw.typeWeight[p.t]*p.s*(sw.confWeight[p.c]??0.6)})}
  return hits.sort((x,y)=>y.pts-x.pts)}
 function teamValue(combo,defPen){
- const g=CFG.weights;let v=combo.reduce((a,x)=>a+x.score,0);const roles=combo.map(x=>x.s.cls);
-
-
-
+ let v=combo.reduce((a,x)=>a+x.score,0);
  const got=new Set();combo.forEach(x=>(x.s.tags||[]).forEach(t=>got.add(t)));
  for(const [t,wt] of Object.entries(CFG.tagWeights))v+=got.has(t)?wt:0;
  v+=Math.min(partySyn(combo.map(x=>x.s.key)).reduce((a,h)=>a+h.pts,0),CFG.synergy.cap);v+=gimTeam(combo)[0];v+=DMW[1]*dmgScore(combo.map(x=>x.s.key),DMW[0]);
@@ -789,14 +786,14 @@ function gimNote(party,c,st,p){
  return `${chips?`<div class="gim-missing">${chips}</div>`:""}${gimAvoid(party,types,p)}<details class="gimbox${missing.length?" has-miss":""}" data-fold="gim-${p}"><summary>${title}</summary><div class="gimcols"><div class="stagefacts">${foe}<br>${esc(elText(st.ec||st.w))} · 권장 ${st.rp.toLocaleString()}<br>상성: ${matchup||"없음"}${rs?` · ${EL[rs]}만 편성`:""}${sbText(st)}</div><div class="gimlist">${hint}${rows.join("")||"기믹 정보 없음"}</div></div></details>`}
 
 let LEADKEY=null;
-const LEAD_TAGS=["힐","보호막","속도증가","적방어력감소","아군공격력증가"];
-function leaderPick(party){
- const keys=party.map(x=>x.s.key),gain=Object.fromEntries(keys.map(k=>[k,0])),why=Object.fromEntries(keys.map(k=>[k,[]]));
- for(const h of partySyn(keys)){if(h.p.t>4)continue;const gv=h.p.d?[h.p.a]:[h.p.a,h.p.b];gv.forEach(g=>{gain[g]+=h.pts/gv.length;why[g].push(h.p.r)})}
- party.forEach(x=>{gain[x.s.key]+=0.3*(x.s.tags||[]).filter(t=>LEAD_TAGS.includes(t)).length});
- const k=keys.reduce((a,b)=>gain[b]>gain[a]?b:a,keys[0]);if(gain[k]<=0)return null;
- return {x:party.find(x=>x.s.key===k),g:gain[k],why:why[k].slice(0,2)}}
-function place(p){const fr=["디펜더","서포터"];const o=[...p].sort((x,y)=>(fr.includes(x.s.cls)?0:1)-(fr.includes(y.s.cls)?0:1)||y.score-x.score);return [o.slice(0,2),o.slice(2)]}
+function placementOf(combo){
+ if(combo.placement)return combo.placement;
+ const finals=miMode()?miProfile()?.results:{},sv=QK.d?.sv||{};
+ const results=Object.fromEntries(combo.map(x=>{const k=x.s.key,u=sv[ekey(k)]||[];return [k,finals?.[k]||{stats:{hp:u[2],def:u[3],spd:u[4]}}];}));
+ return PartyPlacement.baseline(combo.map(x=>x.s.key),results);
+}
+function leaderPick(party){const p=placementOf(party);return {x:party.find(x=>x.s.key===p.leaderKey),g:0,why:[]};}
+function place(p){const layout=placementOf(p),o=layout.order.map(k=>p.find(x=>x.s.key===k));return [o.slice(0,2),o.slice(2)];}
 function pickBreak(party,content,have){
  let best=null;const roles=party.map(x=>x.s.cls);
  for(const k of bkeys){if(!have.includes(k))continue;const b=CFG.breakSkills[k];
@@ -950,7 +947,9 @@ function simParty(t,engineKey=ekey){const ar=arrangeOf(t.combo),sv=QK.d.sv;
   if(t.b.finals?.[k0])return {key:k,build:"none",stats_override:t.b.finals[k0].stats,stats_final:true,power:t.b.finals[k0].power,myinfo_combat:t.b.finals[k0].combat};
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
- const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null}}
+ const stats=Object.fromEntries(units.map(u=>[u.key,{stats:{spd:sv[u.key]?.[4]||0,...(u.stats_override||{})}}])),baseline=PartyPlacement.baseline(units.map(u=>u.key),stats);
+ const raw=PartyPlacement.reorder({units},baseline),key=recommendationPlacementKey(t,raw);t.placementKey=key;
+ const p=PLACEMENT_CACHE.get(key);if(p){rememberPlacement(t,key,p);return PartyPlacement.reorder(raw,p);}return raw;}
 const simSigB=(st,t,bname,n=SIMQ.n,context=null)=>{const ck=contents[$("content").value].key;
  const x=context||{ck,rk:rkOf(ck),sn:starOf(ck),account:miMode()?MI.hash:null,growth:typeof growthEnabled==="function"&&growthEnabled()?growthCacheTag():null,party:simParty};
  return simSignature(x,st,t,bname,n,SIMQ.refined);};
@@ -1011,6 +1010,7 @@ function simAutoKick(){if(RECO.task&&!RECO.task.done||DIRECT.bundle?.running&&!D
   if(b&&b.rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&b.rows.length<9&&b.total>b.rows.length){const k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run(true);simQueue(()=>simStart(p));return}}}
 function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy||(miMode()&&MI.pending))return false;
  const box=LASTQ[p];if(!box)return false;
+ if(!jobs){const pending=box.rows.filter(t=>{simParty(t);return !PLACEMENT_CACHE.has(t.placementKey);});if(pending.length){recommendationArrange(p,pending);return true;}}
  const rows=(jobs||box.rows.map(t=>({key:t.keys.slice().sort().join(","),t,bname:teamBreak(t)?.name||null,sig:simSig(st,t)}))).filter(j=>!SIMQ.res[j.sig]);if(!rows.length)return false;
  SIMQ.err="";SIMQ.errCompare=null;SIMQ.busy=p;SIMQ.compareKey=compareKey;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
  // 본선도 팀 단위로 작업자에 나눈다(팀마다 판 수·시드가 그대로라 결과는 작업자 수와 무관). 작업자는 팀 수보다 많이 쓰지 않는다
@@ -1387,11 +1387,13 @@ function runCore(skipAuto=false){
   const pick=forced||qpick||approxOnly[0];pick.isPick=!forced;
   const party=pick.combo;party.shareParty=p;party.forEach(x=>used.add(x.s.key));allParties.push(party);
   const v=pick.v;
+  const qr=LASTQ[p]&&LASTQ[p].rows.find(t=>t.keys.slice().sort().join(",")===pick.key),sr=qr&&SIMQ.res[simSig(st,qr)];
+  if(qr?.combo.placement)party.placement=qr.combo.placement;
   const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
   const br=breakChoice(party,c,have);
   // 이 팀의 브라우저 시뮬 결과(있으면): 카드에 피해 기여·쓰러질 확률
-  const qr=LASTQ[p]&&LASTQ[p].rows.find(t=>t.keys.slice().sort().join(",")===pick.key),sr=qr&&SIMQ.res[simSig(st,qr)];
+
   if(p===1)gwenResult=sr||null;
   const r=sr&&sr.u?{g:true,u:sr.u}:null;
   const main=`<div class="rowcards">${card(bk[0],"back",r)}${card(fr[0],"front",r)}${card(fr[1],"front",r)}${card(bk[1],"back",r)}</div>${breakCard(br,sr,p,qr,st)}${gimNote(party,c,st,p)}`;

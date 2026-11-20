@@ -1,7 +1,10 @@
+// This suite isolates candidate selection/retry; layout cross-products are covered by party_placement_test.
+const PlacementFixture=require('../party_placement.js');
+PlacementFixture.variants=(keys,results)=>[PlacementFixture.baseline(keys,results)];
 // 실제 search와 합성 작업자를 통해 상한·확대·결과 재사용·ETA·안내를 검사한다.
 const assert=require('node:assert/strict');
 const C=require('../cosmo_search.js'), L=require('../cosmo_learned.js'), GS=require('../guild_search.js'), G=require('../data/cosmo_raid.json');
-function settings(){const S=structuredClone(G.search);
+function settings(){const S=structuredClone(G.search);S.placement={auditTeams:0};
   Object.assign(S.learned,{S:80,m:2,K:25,M:1,A:12,overlapStarts:2,overlapKeep:2,minCorrelation:1});
   S.screen={firstRuns:1,runs:2,passFrac:.1,passMinMult:1};S.rerank={keep:15,runs:2};S.final.runs=3;
   S.combine={topTriples:2,show:2};S.minFront=S.minDealer=0;return S;}
@@ -55,7 +58,7 @@ async function main(){
   const firstPhases=e.phases.filter(p=>p.info.stage===0),last=firstPhases.at(-1);
   assert.equal(last.total,first.length,'ETA 최종 전체 판 수');
   assert(last.total>firstPhases.find(p=>p.msg.includes('학습 후보·무작위 감사')).total,'확대 ETA 누계 증가');
-  assert(e.progress.every((p,i,ps)=>p[1]<=p[2]&&(i===0||p[0]!==ps[i-1][0]||p[1]>=ps[i-1][1])),'진행률 완료 수 유지');
+  assert(e.progress.filter(p=>p[0]!=null).every((p,i,ps)=>p[1]<=p[2]&&(i===0||p[0]!==ps[i-1][0]||p[1]>=ps[i-1][1])),'진행률 완료 수 유지');
   assert(firstPhases.every(p=>p.estimate.ready&&Number.isFinite(p.estimate.remainSec)&&p.estimate.remainSec>=0));
   for(const boss of G.season.bossOrder)assert(render(e.out).includes(boss+': 이 보스는 예측 확인이 부족해 후보를 넓혀 찾았음'));
   assert(!render(e.out).includes('품질 미달 보스는 전수 확인으로 복귀'));

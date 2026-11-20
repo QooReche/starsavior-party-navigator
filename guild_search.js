@@ -7,12 +7,12 @@
   const Placement = typeof module !== "undefined" && module.exports ? require("./party_placement.js") : root.PartyPlacement;
   const FRONT = ["디펜더", "서포터"];
 
-  // 후보 풀: 내 최종 전투력이 최고의 minPowerRatio 배 이상인 구원자(최대 poolSize 명) + 역할별 최소 인원(minRole: 서포터·디펜더는 전투력이 낮아도 역할 때문에 쓰이므로 따로 보충). rows = [{key, cls, power}]
+  // 육성된 보유 구원자 전원. 직업·전투력 비율·협공으로 자르지 않음.
   function pool(S, results, roster) {
     return roster.filter(s => results[s.key]?.power > 0).map(s => ({key:s.key,cls:s.cls,power:results[s.key].power})).sort((a,b)=>b.power-a.power||a.key.localeCompare(b.key));
   }
 
-  // 4인 조합 전수. 규칙: 앞열 역할(디펜더·서포터) 최소 minFront 명, 딜러(앞열 역할 아님) 최소 minDealer 명
+  // 직업 구성 제한 없는 4인 조합 전수.
   function combos(S, rows) {
     return [...iterateCombos(S, rows)];
   }
@@ -24,7 +24,7 @@
   function party(keys,results,cls,placement){return Placement.party(keys,results,placement);}
 
   const hasSupporter = (keys, cls) => keys.some(k => cls[k] === "서포터");
-  // 예선 지원: 서포터가 있으면 S.screen.supporter(격돌의 돌풍), 없으면 S.screen.other
+  // 예선 대표 지원. 최종 결합 비교에서는 지원 후보를 함께 평가함.
   const screenSupport = (S, keys, cls) => S.screen.support || "none";
   // 본선 지원 후보: 특정 직업에만 걸리는 지원(S.supportRole: 지원 → 직업)은 팀에 그 직업이 없으면 뺀다
   const finalSupports = (S, keys, cls) => S.final.supports.filter(s => !(S.supportRole || {})[s] || keys.some(k => cls[k] === S.supportRole[s]));
@@ -93,7 +93,7 @@
     if (!breaks.length) return [];
     const jobs = [];
     for (const r of ranked.slice(0, BREAK_CHECK.teams)) {
-      const p = party(r.keys, results, cls);
+      const p = party(r.keys, results, cls, r.leaderKey?r:undefined);
       for (let level = Math.max(0, r.level - 1); level <= Math.min(12, r.level + 1); level++) {
         for (const brk of [null, ...breaks]) jobs.push({
           key: jobKey(r.keys, level, r.sup, tiers, brk, p), keys: r.keys, level, sup: r.sup,
@@ -185,8 +185,8 @@
     if (!notes.length) return "";
     const esc = cx.esc;
     const row = n => `<li data-k="gd-note-${esc(n.key)}"><b>${esc(cx.label(n.key))}</b> <span class="mut">[주의 · ${esc(BASIS[n.basis] || n.basis)}]</span><br>${esc(n.why)}</li>`;
-    const dropped = false ? `<div class="gd-small" data-k="gd-search-dropped">시뮬에서 협공이 나가 결과에서 뺀 팀: ${st.dropped}개</div>` : "";
-    return `<details class="gd-small" data-k="gd-notes"><summary>제외·주의 구원자 ${notes.length}명 (보스·맵 기믹 때문)</summary><ul>${notes.map(row).join("")}</ul>${dropped}<div class="mut">길방 보스는 정실 어필 뒤 신부 경쟁 보유자 한 명만 정상이고 나머지는 «들러리»가 됨. 보호막이 있는 보스를 들러리가 치면 들러리 전원이 큰 연쇄 피해를 받아서, 내 턴이 아닐 때 공격하는 구원자가 위험함. 클라 표에 «협공 금지» 규칙 자체는 없고 이 기믹의 결과임. 시즌이 바뀌면 보스가 달라져 이 목록도 다시 봐야 함.</div></details>`;
+
+    return `<details class="gd-small" data-k="gd-notes"><summary>기믹 주의 구원자 ${notes.length}명 (보스·맵 기믹 때문)</summary><ul>${notes.map(row).join("")}</ul><div class="mut">길방 보스는 정실 어필 뒤 신부 경쟁 보유자 한 명만 정상이고 나머지는 «들러리»가 됨. 보호막이 있는 보스를 들러리가 치면 들러리 전원이 큰 연쇄 피해를 받아서, 내 턴이 아닐 때 공격하는 구원자가 위험함. 클라 표에 «협공 금지» 규칙 자체는 없고 이 기믹의 결과임. 시즌이 바뀌면 보스가 달라져 이 목록도 다시 봐야 함.</div></details>`;
   }
 
   const SUP_NAME = {none: "지원 안 고름", gust: "격돌의 돌풍", focus: "날카로운 집중력", strike: "강인한 타격", mountain: "태산의 의지", fire: "불의 고동"};
@@ -208,7 +208,7 @@
     else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">${error(st.errorCause||"other")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;
     else if (st.phase === "done") {
       const stale = st.sig !== cx.sig ? '<div class="gd-warn" data-k="gd-search-stale">계산 조건이 바뀌었음. 아래 결과는 이전 선택 기준이므로 다시 찾기 필요.</div>' : "";
-      const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${r.level}단계</td><td>${esc(SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
+      const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))+(k===r.leaderKey?" (리더)":"")).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${r.level}단계</td><td>${esc(SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
       const best=st.rows[0];
       const result=best?`<div class="season-result" data-k="gs-best"><div class="season-score"><span>상위 점수</span><b data-k="gs-score">${num(best.score)}</b><small>점</small></div><div class="season-chips"><span class="tag">${best.level}단계</span><span class="tag">${esc(SUP_NAME[best.sup]||best.sup)}</span><span class="tag">클리어 ${Math.round(best.clear*100)}%</span></div>${cx.team?cx.team(best):''}</div>`:'';
       body = `${stale}${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 리더 별도 표시)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>보스 깎음</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>

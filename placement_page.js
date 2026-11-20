@@ -1,0 +1,63 @@
+// Page transport for the pure placement candidates; shares the physical worker pool.
+const PLACEMENT_CACHE=new Map();
+let placementSerial=0;
+function placementCompare(a,b){return b.cosmo&&a.cosmo?PlacementSearch.cmp(typeof CSR==='undefined'?'top':CSR.optMode||'top')(a,b):
+  (b.t60??b.clear)-(a.t60??a.clear)||b.clear-a.clear||(b.prog||0)-(a.prog||0)||(a.ttk??Infinity)-(b.ttk??Infinity);}
+function placementRun({party,stage,options,brk,owner='placement',live=()=>true,onProgress=()=>{},register=()=>{},runs=8}){
+  const id='placement-'+(++placementSerial),keys=party.units.map(u=>u.key),jobs=PartyPlacement.all(keys).map(p=>({key:PartyPlacement.executionKey(keys,p),p,party:PartyPlacement.reorder(party,p)}));
+  return new Promise((resolve,reject)=>{
+    const ws=scrPool(2),res={};let ended=false;
+    const finish=error=>{if(ended)return;ended=true;clearInterval(watch);if(error){simPoolDrop(owner,id);reject(Error(error));}else{
+      try{resolve(PartyPlacement.best(jobs,res,placementCompare,r=>Number.isFinite(r?.clear))[0]);}catch(e){reject(e);}
+    }};
+    const watch=setInterval(()=>{if(!live())finish('입력이 바뀌어 배치 비교를 중단함');},200);
+    register(()=>finish('배치 비교를 취소함'));
+    const arm=simWatch(ws,()=>simTeamLimit(runs),()=>!ended&&live(),()=>finish('배치 비교 시간 초과'));
+    simDispatch(ws,jobs,{owner,id,live:()=>!ended&&live(),arm,
+      msg:j=>({type:'run',base:new URL('.',location.href).href,stage,n_runs:runs,seed:77123,options,
+        teams:[{key:j.key,party:j.party,options:{break_skill:brk}}]}),
+      team(j,m){res[j.key]=m.result;onProgress(Object.keys(res).length,jobs.length);},done:()=>finish(),error:finish});
+  });
+}
+async function directArrangeSim(){
+  if(DIRECT.placement){DIRECT.placement.cancel?.();return;}
+  const c=contents[$('content').value],st=cur?.[$('stage').value];
+  if(!st||!DirectParty.validate(DIRECT.draft,directContext()).ok)return;
+  const input=directInputKey(),state={};DIRECT.placement=state;
+  const paint=()=>{$('direct-arrange').textContent=DIRECT.placement?`배치 비교 ${state.done||0}/24 · 취소`:'자리 자동 배치';};paint();
+  try{
+    const values=directValues(),party=DirectParty.serialize(DIRECT.draft,values?.profile?.results||{});
+    const auto=pickBreak(DIRECT.draft.slots.map(m=>({s:BYKEY[m.key]})),c.name,ownedSimBreaks().map(b=>b.name));
+    const brk=DIRECT.draft.brk==='auto'?(auto?{name:auto[1],level:brkLv(auto[1])}:null):DIRECT.draft.brk;
+    const winner=await placementRun({party,stage:c.key+'/'+st.tab+'/'+st.name,options:simOpt(c.key),brk,owner:'placement-direct',
+      live:()=>DIRECT.placement===state&&directInputKey()===input,register:f=>state.cancel=f,onProgress:d=>{state.done=d;paint();}});
+    if(directInputKey()===input){DIRECT.placement=null;directChange({type:'arrange',order:winner.p.order,leaderKey:winner.p.leaderKey});}
+  }catch(e){DIRECT.runError=e.message;directResultsPaint();}finally{if(DIRECT.placement===state)DIRECT.placement=null;paint();}
+}
+async function cdArrangeSim(boss){
+  if(CDIRECT.placement){CDIRECT.placement.cancel?.();return;}
+  cdSync();const job=CDIRECT.jobs?.[boss];if(!job)return;
+  const input=cdInput(),state={boss};CDIRECT.placement=state;
+  const paint=()=>{const b=$('cosmo-direct-panel').querySelector('[data-cd-act="arrange"]');if(b)b.textContent=CDIRECT.placement?`배치 비교 ${state.done||0}/24 · 취소`:'자리 자동 배치';};paint();
+  try{
+    const winner=await placementRun({party:job.party,stage:job.stage,options:job.options,brk:job.options.break_skill,owner:'placement-cosmo',
+      live:()=>CDIRECT.placement===state&&cdInput()===input,register:f=>state.cancel=f,onProgress:d=>{state.done=d;paint();}});
+    if(cdInput()===input){CDIRECT.placement=null;cdChange({type:'draft',boss,action:{type:'arrange',order:winner.p.order,leaderKey:winner.p.leaderKey}});}
+  }catch(e){CDIRECT.error=e.message;cdPaint();}finally{if(CDIRECT.placement===state)CDIRECT.placement=null;paint();}
+}
+function recommendationPlacementKey(t,party){const c=contents[$('content').value],st=cur?.[$('stage').value];
+  return JSON.stringify([PartyPlacement.VERSION,c.key,st?.tab,st?.name,simOpt(c.key),teamBreak(t),party.units.slice().sort((a,b)=>a.key.localeCompare(b.key))]);}
+function rememberPlacement(t,key,p){PLACEMENT_CACHE.set(key,p);t.placement=p;
+  const byEngine=new Map(t.combo.map(x=>[ekey(x.s.key),x.s.key]));
+  t.combo.placement={order:p.order.map(k=>byEngine.get(k)||k),leaderKey:byEngine.get(p.leaderKey)||p.leaderKey};}
+async function recommendationArrange(p,rows){
+  const id=++SIMQ.requestId;SIMQ.busy=p;SIMQ.msg='배치·리더 24조건 비교 중';run(true);
+  const live=()=>SIMQ.requestId===id;
+  try{for(const t of rows){const party=simParty(t),key=t.placementKey;if(PLACEMENT_CACHE.has(key))continue;
+    const c=contents[$('content').value],st=cur[$('stage').value];
+    const winner=await placementRun({party,stage:c.key+'/'+st.tab+'/'+st.name,options:simOpt(c.key),brk:teamBreak(t),owner:'reco',live,
+      onProgress:d=>{SIMQ.msg=`배치·리더 비교 ${d}/24`;simPaintProgress();}});
+    if(!live())return;rememberPlacement(t,key,winner.p);
+  }if(live()){SIMQ.busy=null;run(true);simStart(p);}}
+  catch(e){if(live())simStop(e.message,true);}
+}

@@ -35,11 +35,12 @@
     return orders.flatMap(order=>k.map(leaderKey=>({order:order.slice(),leaderKey})));
   }
   const executionKey=(keys,p)=>JSON.stringify([VERSION,id(keys),p.order,p.leaderKey]);
+  const boundaries=levels=>levels.filter((l,i)=>JSON.stringify(l.effects||[])!==JSON.stringify(levels[i-1]?.effects||[])).map(l=>l.level);
   function reorder(spec,p){const byKey=new Map(spec.units.map(u=>[u.key,u]));validate([...byKey.keys()],p);return {units:p.order.map(k=>byKey.get(k)),leader:p.order.indexOf(p.leaderKey)};}
   function best(jobs,res,compare,valid=Boolean){
     const rows=jobs.filter(j=>valid(res[j.key])).map(j=>({...j,result:res[j.key]}));
     if(rows.length!==jobs.length)throw Error('배치 비교 결과가 누락됨');
-    return rows.sort((a,b)=>compare(a.result,b.result)||a.key.localeCompare(b.key));
+    return rows.sort((a,b)=>compare(a.result,b.result)||(a.level-b.level)||a.key.localeCompare(b.key));
   }
   // Every arrangement gets a short run. Only complete results may enter later rounds.
   async function race({jobs,run,compare,valid,runs=40,screenRuns=2,keep=2,seed=2}){
@@ -52,10 +53,11 @@
   }
   // Probe leaders/rows and both sides of each newly enabled effect, plus best levels.
   function levels(probes,max,boundaries=[],top=2){
-    const chosen=new Set(probes.slice().sort((a,b)=>b.score-a.score||a.level-b.level).slice(0,top).map(x=>x.level));
+    const ranked=probes.slice().sort((a,b)=>b.score-a.score||a.level-b.level);
+    const chosen=new Set([...new Set(ranked.map(x=>x.level))].slice(0,top));
     for(const l of boundaries)for(const x of [l-1,l])if(x>=0&&x<=max)chosen.add(x);
     return [...chosen].sort((a,b)=>a-b);
   }
-  const api={VERSION,id,ehp,baseline,validate,party,variants,all,executionKey,reorder,best,race,levels};
+  const api={VERSION,id,ehp,baseline,validate,party,variants,all,executionKey,reorder,best,race,levels,boundaries};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PartyPlacement=api;
 })(typeof window!=='undefined'?window:globalThis);

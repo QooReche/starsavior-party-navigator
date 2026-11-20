@@ -3,42 +3,15 @@
  "asOf": "2026-10-30",
  "gameBuild": "26291832",
  "sources": {
-  "notice1029": {
-   "name": "공식 공지 2026-10-29 (길드 방어전 시즌 4)",
-   "url": "https://www.starsavior.com/kr/news/01a17c9e-5aa3-7019-a3e5-f17694bf2e1e"
-  },
-  "notice1001": {
-   "name": "공식 공지 2026-10-01 (별의 도전 효과 표, 이미지)",
-   "url": ""
-  },
-  "notice0319": {
-   "name": "공식 공지 2026-03-19 (갤럭시 시즌 1, 별의 도전 도입)",
-   "url": "https://starsavior.com/kr/news/019cff63-c160-7433-b65b-22746f0a08be"
-  },
-  "client": {
-   "name": "게임 클라이언트 표(빌드 26291832): 길드 방어전 전투·시즌·난이도·전투효과 표",
-   "url": ""
-  },
-  "arca187413171": {
-   "name": "아카라이브 187413171 (EX 12단 클리어 조합 글)",
-   "url": "https://arca.live/b/starsavior/187413171"
-  },
-  "arca187456382": {
-   "name": "아카라이브 187456382 (EX 만점 사례 글)",
-   "url": "https://arca.live/b/starsavior/187456382"
-  },
-  "arca187484690": {
-   "name": "아카라이브 187484690 (난이도 후기 글)",
-   "url": "https://arca.live/b/starsavior/187484690"
-  },
-  "video1101": {
-   "name": "실제 플레이 영상 1판 (2026-11-01, 별의 도전 EX 6단계, 패배 — 점수식 확인)",
-   "url": ""
-  },
-  "arca187430822": {
-   "name": "아카라이브 187430822 (댓글 공략)",
-   "url": "https://arca.live/b/starsavior/187430822"
-  }
+  "notice1029": {"name": "공식 공지 2026-10-29 (길드 방어전 시즌 4)", "url": "https://www.starsavior.com/kr/news/01a17c9e-5aa3-7019-a3e5-f17694bf2e1e"},
+  "notice1001": {"name": "공식 공지 2026-10-01 (별의 도전 효과 표, 이미지)", "url": ""},
+  "notice0319": {"name": "공식 공지 2026-03-19 (갤럭시 시즌 1, 별의 도전 도입)", "url": "https://starsavior.com/kr/news/019cff63-c160-7433-b65b-22746f0a08be"},
+  "client": {"name": "게임 클라이언트 표(빌드 26291832): 길드 방어전 전투·시즌·난이도·전투효과 표", "url": ""},
+  "arca187413171": {"name": "아카라이브 187413171 (EX 12단 클리어 조합 글)", "url": "https://arca.live/b/starsavior/187413171"},
+  "arca187456382": {"name": "아카라이브 187456382 (EX 만점 사례 글)", "url": "https://arca.live/b/starsavior/187456382"},
+  "arca187484690": {"name": "아카라이브 187484690 (난이도 후기 글)", "url": "https://arca.live/b/starsavior/187484690"},
+  "video1101": {"name": "실제 플레이 영상 1판 (2026-11-01, 별의 도전 EX 6단계, 패배 — 점수식 확인)", "url": ""},
+  "arca187430822": {"name": "아카라이브 187430822 (댓글 공략)", "url": "https://arca.live/b/starsavior/187430822"}
  },
  "season": {
   "id": 30111,
@@ -48,124 +21,41 @@
   "end": "2026-11-05T04:00:00+09:00",
   "settleEnd": "2026-11-12T04:00:00+09:00",
   "conf": "확인",
-  "src": [
-   "notice1029",
-   "client"
-  ],
+  "src": ["notice1029", "client"],
   "note": "시작은 10/29 점검 후(시각 미확인). 결산 중에는 플레이할 수 없고, 04:00 를 넘기면 진행 중이던 전투는 무효(갤럭시 시즌 1 공지 기준).",
-  "boss": {
-   "name": "BFB",
-   "element": "star",
-   "role": "레인저",
-   "conf": "확인",
-   "src": [
-    "notice1029",
-    "client"
-   ]
-  }
+  "boss": {"name": "BFB", "element": "star", "role": "레인저", "conf": "확인", "src": ["notice1029", "client"]}
  },
  "rules": {
   "turnLimit": 50,
   "partyCount": 1,
   "partySize": 4,
-  "entryDaysEx": [
-   "화",
-   "목",
-   "토"
-  ],
+  "entryDaysEx": ["화", "목", "토"],
   "entryItemEx": 2,
   "skipEx": false,
   "reuse": "쓴 구원자·장비·알리시아 지원은 일일 초기화 전까지 다시 쓸 수 없음",
   "abandon": "중도 포기·재도전은 포인트를 받지 못하고 입장 재화는 돌려받음",
   "conf": "확인",
-  "src": [
-   "notice1029",
-   "client"
-  ]
+  "src": ["notice1029", "client"]
  },
  "steps": [
-  {
-   "step": 1,
-   "ex": false,
-   "battleLevel": 45,
-   "power": 8300,
-   "base": 2000,
-   "bossKill": 375,
-   "kill": 500
-  },
-  {
-   "step": 2,
-   "ex": false,
-   "battleLevel": 120,
-   "power": 21000,
-   "base": 2000,
-   "bossKill": 750,
-   "kill": 500
-  },
-  {
-   "step": 3,
-   "ex": false,
-   "battleLevel": 175,
-   "power": 29500,
-   "base": 2000,
-   "bossKill": 1500,
-   "kill": 500
-  },
-  {
-   "step": 4,
-   "ex": false,
-   "battleLevel": 400,
-   "power": 64500,
-   "base": 2000,
-   "bossKill": 3000,
-   "kill": 500
-  },
-  {
-   "step": 5,
-   "ex": false,
-   "battleLevel": 665,
-   "power": 105500,
-   "base": 2000,
-   "bossKill": 6000,
-   "kill": 500
-  },
-  {
-   "step": 6,
-   "ex": false,
-   "battleLevel": 1047,
-   "power": 164800,
-   "base": 2000,
-   "bossKill": 12000,
-   "kill": 500
-  },
-  {
-   "step": 7,
-   "ex": true,
-   "battleLevel": 1275,
-   "power": 200075,
-   "base": 2500,
-   "bossKill": 25000,
-   "kill": 1250
-  }
+  {"step": 1, "ex": false, "battleLevel": 45, "power": 8300, "base": 2000, "bossKill": 375, "kill": 500},
+  {"step": 2, "ex": false, "battleLevel": 120, "power": 21000, "base": 2000, "bossKill": 750, "kill": 500},
+  {"step": 3, "ex": false, "battleLevel": 175, "power": 29500, "base": 2000, "bossKill": 1500, "kill": 500},
+  {"step": 4, "ex": false, "battleLevel": 400, "power": 64500, "base": 2000, "bossKill": 3000, "kill": 500},
+  {"step": 5, "ex": false, "battleLevel": 665, "power": 105500, "base": 2000, "bossKill": 6000, "kill": 500},
+  {"step": 6, "ex": false, "battleLevel": 1047, "power": 164800, "base": 2000, "bossKill": 12000, "kill": 500},
+  {"step": 7, "ex": true, "battleLevel": 1275, "power": 200075, "base": 2500, "bossKill": 25000, "kill": 1250}
  ],
  "stepsMeta": {
   "minions": 2,
   "minionsNote": "모든 단계가 1웨이브 졸개 2기 → 2웨이브 보스. 졸개 속성은 미확인(처치 점수만 계산).",
   "conf": "확인",
-  "src": [
-   "client"
-  ]
+  "src": ["client"]
  },
  "exBoss": {
-  "hp": 260000,
-  "speed": 230,
-  "atk": 17000,
-  "def": 4650,
-  "superArmor": 14,
+  "hp": 260000, "speed": 230, "atk": 17000, "def": 4650, "superArmor": 14,
   "conf": "추정",
-  "src": [
-   "client"
-  ],
+  "src": ["client"],
   "note": "게임 표의 EX 보스 기준값. 단계 스크립트의 보스 배율(속도 -25%, 공격 -17.5%, 생명력 +80%) 중 생명력 +80%는 영상으로 확인(26만 × 1.8 × 별의 도전 6단계 1.3 = 608,400 = 영상 역산값). 시뮬은 세 가지를 모두 적용."
  },
  "challenge": {
@@ -173,157 +63,22 @@
   "group": 2001,
   "cumulative": true,
   "conf": "확인",
-  "src": [
-   "notice1001",
-   "client"
-  ],
+  "src": ["notice1001", "client"],
   "note": "단계마다 앞 단계 효과가 이어짐(공지 표는 새로 생긴 효과만 적음).",
   "statNote": "7~12단계 능력치 상승폭은 게임 표 값이고 실제 게임 화면(1·5·7·12단계)과 일치함. 공지 표(공격 +70~120%, 생명력·방어 +35~60%)는 옛 값임. (사용자 화면 확인 2026-11-01)",
   "levels": [
-   {
-    "level": 1,
-    "atk": 10,
-    "hp": 5,
-    "def": 5,
-    "score": 10,
-    "skillStack": 3,
-    "hpDrain": 0,
-    "speed": 0,
-    "immune": 0
-   },
-   {
-    "level": 2,
-    "atk": 20,
-    "hp": 10,
-    "def": 10,
-    "score": 20,
-    "skillStack": 4,
-    "hpDrain": 0,
-    "speed": 0,
-    "immune": 0
-   },
-   {
-    "level": 3,
-    "atk": 30,
-    "hp": 15,
-    "def": 15,
-    "score": 30,
-    "skillStack": 5,
-    "hpDrain": 0,
-    "speed": 0,
-    "immune": 0
-   },
-   {
-    "level": 4,
-    "atk": 40,
-    "hp": 20,
-    "def": 20,
-    "score": 40,
-    "skillStack": 5,
-    "hpDrain": 3,
-    "speed": 0,
-    "immune": 0
-   },
-   {
-    "level": 5,
-    "atk": 50,
-    "hp": 25,
-    "def": 25,
-    "score": 50,
-    "skillStack": 5,
-    "hpDrain": 4,
-    "speed": 0,
-    "immune": 0
-   },
-   {
-    "level": 6,
-    "atk": 60,
-    "hp": 30,
-    "def": 30,
-    "score": 60,
-    "skillStack": 5,
-    "hpDrain": 5,
-    "speed": 0,
-    "immune": 0
-   },
-   {
-    "level": 7,
-    "atk": 80,
-    "hp": 40,
-    "def": 40,
-    "score": 70,
-    "skillStack": 5,
-    "hpDrain": 5,
-    "speed": 10,
-    "immune": 0,
-    "noticeAtk": 70,
-    "noticeHp": 35
-   },
-   {
-    "level": 8,
-    "atk": 100,
-    "hp": 50,
-    "def": 50,
-    "score": 80,
-    "skillStack": 5,
-    "hpDrain": 5,
-    "speed": 20,
-    "immune": 0,
-    "noticeAtk": 80,
-    "noticeHp": 40
-   },
-   {
-    "level": 9,
-    "atk": 120,
-    "hp": 60,
-    "def": 60,
-    "score": 90,
-    "skillStack": 5,
-    "hpDrain": 5,
-    "speed": 30,
-    "immune": 0,
-    "noticeAtk": 90,
-    "noticeHp": 45
-   },
-   {
-    "level": 10,
-    "atk": 140,
-    "hp": 70,
-    "def": 70,
-    "score": 100,
-    "skillStack": 5,
-    "hpDrain": 5,
-    "speed": 30,
-    "immune": 1,
-    "noticeAtk": 100,
-    "noticeHp": 50
-   },
-   {
-    "level": 11,
-    "atk": 160,
-    "hp": 80,
-    "def": 80,
-    "score": 110,
-    "skillStack": 5,
-    "hpDrain": 5,
-    "speed": 30,
-    "immune": 2,
-    "noticeAtk": 110,
-    "noticeHp": 55
-   },
-   {
-    "level": 12,
-    "atk": 180,
-    "hp": 90,
-    "def": 90,
-    "score": 120,
-    "skillStack": 5,
-    "hpDrain": 5,
-    "speed": 30,
-    "immune": 3,
-    "noticeAtk": 120,
-    "noticeHp": 60
-   }
+   {"level": 1, "atk": 10, "hp": 5, "def": 5, "score": 10, "skillStack": 3, "hpDrain": 0, "speed": 0, "immune": 0},
+   {"level": 2, "atk": 20, "hp": 10, "def": 10, "score": 20, "skillStack": 4, "hpDrain": 0, "speed": 0, "immune": 0},
+   {"level": 3, "atk": 30, "hp": 15, "def": 15, "score": 30, "skillStack": 5, "hpDrain": 0, "speed": 0, "immune": 0},
+   {"level": 4, "atk": 40, "hp": 20, "def": 20, "score": 40, "skillStack": 5, "hpDrain": 3, "speed": 0, "immune": 0},
+   {"level": 5, "atk": 50, "hp": 25, "def": 25, "score": 50, "skillStack": 5, "hpDrain": 4, "speed": 0, "immune": 0},
+   {"level": 6, "atk": 60, "hp": 30, "def": 30, "score": 60, "skillStack": 5, "hpDrain": 5, "speed": 0, "immune": 0},
+   {"level": 7, "atk": 80, "hp": 40, "def": 40, "score": 70, "skillStack": 5, "hpDrain": 5, "speed": 10, "immune": 0, "noticeAtk": 70, "noticeHp": 35},
+   {"level": 8, "atk": 100, "hp": 50, "def": 50, "score": 80, "skillStack": 5, "hpDrain": 5, "speed": 20, "immune": 0, "noticeAtk": 80, "noticeHp": 40},
+   {"level": 9, "atk": 120, "hp": 60, "def": 60, "score": 90, "skillStack": 5, "hpDrain": 5, "speed": 30, "immune": 0, "noticeAtk": 90, "noticeHp": 45},
+   {"level": 10, "atk": 140, "hp": 70, "def": 70, "score": 100, "skillStack": 5, "hpDrain": 5, "speed": 30, "immune": 1, "noticeAtk": 100, "noticeHp": 50},
+   {"level": 11, "atk": 160, "hp": 80, "def": 80, "score": 110, "skillStack": 5, "hpDrain": 5, "speed": 30, "immune": 2, "noticeAtk": 110, "noticeHp": 55},
+   {"level": 12, "atk": 180, "hp": 90, "def": 90, "score": 120, "skillStack": 5, "hpDrain": 5, "speed": 30, "immune": 3, "noticeAtk": 120, "noticeHp": 60}
   ],
   "effectText": {
    "skillStack": "보스가 스킬을 쓸 때마다 이후 주는 피해 +{v}%씩 쌓임(최대 10회)",
@@ -335,289 +90,144 @@
  "sets": {
   "scope": "EX(7단계) 선택 효과",
   "conf": "확인",
-  "src": [
-   "notice1001",
-   "client"
-  ],
+  "src": ["notice1001", "client"],
   "note": "길방에 선택 효과 없음(클라 확인, 서버 처리는 미확인). 클라 표에 효과별 추가 점수(5/10/15%, 4개 최대 +60%)는 정의돼 있으나 길방 화면·전투에는 연결돼 있지 않아 기본은 끔이고, 아래 선택은 가정 계산용임.",
   "items": [
-   {
-    "name": "소멸",
-    "tiers": [
-     {
-      "add": 5,
-      "text": "보스가 주는 피해 +10%"
-     },
-     {
-      "add": 10,
-      "text": "보스가 주는 피해 +20%"
-     },
-     {
-      "add": 15,
-      "text": "보스가 주는 피해 +30%"
-     }
-    ]
-   },
-   {
-    "name": "불멸",
-    "tiers": [
-     {
-      "add": 5,
-      "text": "보스가 받는 피해 -20%"
-     },
-     {
-      "add": 10,
-      "text": "보스가 받는 피해 -30%"
-     },
-     {
-      "add": 15,
-      "text": "보스가 받는 피해 -40%"
-     }
-    ]
-   },
-   {
-    "name": "쇠락",
-    "tiers": [
-     {
-      "add": 5,
-      "text": "보스에게 맞은 뒤 최대 생명력 -3%"
-     },
-     {
-      "add": 10,
-      "text": "보스에게 맞은 뒤 최대 생명력 -4%"
-     },
-     {
-      "add": 15,
-      "text": "보스에게 맞은 뒤 최대 생명력 -5%"
-     }
-    ]
-   },
-   {
-    "name": "허무",
-    "tiers": [
-     {
-      "add": 5,
-      "text": "보스가 1턴 면역"
-     },
-     {
-      "add": 10,
-      "text": "보스가 2턴 면역"
-     },
-     {
-      "add": 15,
-      "text": "보스가 3턴 면역"
-     }
-    ]
-   }
+   {"name": "소멸", "tiers": [{"add": 5, "text": "보스가 주는 피해 +10%"}, {"add": 10, "text": "보스가 주는 피해 +20%"}, {"add": 15, "text": "보스가 주는 피해 +30%"}]},
+   {"name": "불멸", "tiers": [{"add": 5, "text": "보스가 받는 피해 -20%"}, {"add": 10, "text": "보스가 받는 피해 -30%"}, {"add": 15, "text": "보스가 받는 피해 -40%"}]},
+   {"name": "쇠락", "tiers": [{"add": 5, "text": "보스에게 맞은 뒤 최대 생명력 -3%"}, {"add": 10, "text": "보스에게 맞은 뒤 최대 생명력 -4%"}, {"add": 15, "text": "보스에게 맞은 뒤 최대 생명력 -5%"}]},
+   {"name": "허무", "tiers": [{"add": 5, "text": "보스가 1턴 면역"}, {"add": 10, "text": "보스가 2턴 면역"}, {"add": 15, "text": "보스가 3턴 면역"}]}
   ]
  },
  "score": {
   "conf": "확인",
-  "src": [
-   "notice0319",
-   "client",
-   "video1101"
-  ],
+  "src": ["notice0319", "client", "video1101"],
   "note": "점수식은 실제 플레이 영상(2026-11-01, 별의 도전 6단계, 패배)으로 확인했음: 전투 중 점수 = 기본 2,500 + 졸개 처치 1,250×기 + 25,000×(보스 생명력을 깎은 비율). 별의 도전 추가 점수는 이 합계 전체에 곱해지고, 패배해도 깎은 만큼 받음(보스를 99.9% 깎고 패배 → 29,975 × 1.6 = 47,960). 보스를 다 깎아 클리어하면 만점임. 한 번의 영상으로 확인한 식이라 다른 조건에서 달라질 수 있음.",
-  "model": {
-   "partialByBossDamage": true,
-   "bonusOnAll": true,
-   "evidence": "영상 1판: 보스 남은 생명력 571(최대 608,400), 점수 29,975 → 최종 47,960 = 29,975 × 1.6"
-  },
+  "model": {"partialByBossDamage": true, "bonusOnAll": true, "evidence": "영상 1판: 보스 남은 생명력 571(최대 608,400), 점수 29,975 → 최종 47,960 = 29,975 × 1.6"},
   "hypotheses": [
-   {
-    "id": "A",
-    "name": "클리어(보스 100% 처치)",
-    "desc": "기본·졸개·보스 점수 합계 전체에 추가 점수를 곱함. 보스를 덜 깎으면 보스 점수가 깎은 비율만큼 줄어듦",
-    "bossExcluded": false
-   }
+   {"id": "A", "name": "클리어(보스 100% 처치)", "desc": "기본·졸개·보스 점수 합계 전체에 추가 점수를 곱함. 보스를 덜 깎으면 보스 점수가 깎은 비율만큼 줄어듦", "bossExcluded": false}
   ]
  },
  "gimmicks": {
   "conf": "낮음",
   "note": "추천 점수에 약하게 반영하는 특징(커뮤니티 주장). 심각도 1~3.",
   "items": [
-   {
-    "code": "TARGET_PRIORITY",
-    "steps": [
-     1,
-     2,
-     3,
-     4,
-     5,
-     6
-    ],
-    "severity": 2,
-    "src": [
-     "arca187413171",
-     "arca187484690"
-    ],
-    "text": "보스가 1명을 강제로 지정해 공격(피해 감소·보호가 없으면 딜러가 한 번에 쓰러짐)"
-   },
-   {
-    "code": "TARGET_PRIORITY",
-    "steps": [
-     7
-    ],
-    "severity": 3,
-    "src": [
-     "arca187413171",
-     "arca187484690"
-    ],
-    "text": "보스가 1명을 강제로 지정해 공격(피해 감소·보호가 없으면 딜러가 한 번에 쓰러짐)"
-   },
-   {
-    "code": "SHIELD_GEN",
-    "steps": [
-     7
-    ],
-    "severity": 2,
-    "src": [
-     "arca187484690",
-     "arca187456382"
-    ],
-    "text": "보스 보호막이 매우 큼"
-   },
-   {
-    "code": "PCT_HP_DAMAGE",
-    "steps": [
-     7
-    ],
-    "severity": 2,
-    "src": [
-     "client"
-    ],
-    "text": "별의 도전 4단계부터 맞은 뒤 최대 생명력이 줄어듦"
-   }
+   {"code": "TARGET_PRIORITY", "steps": [1, 2, 3, 4, 5, 6], "severity": 2, "src": ["arca187413171", "arca187484690"], "text": "보스가 1명을 강제로 지정해 공격(피해 감소·보호가 없으면 딜러가 한 번에 쓰러짐)"},
+   {"code": "TARGET_PRIORITY", "steps": [7], "severity": 3, "src": ["arca187413171", "arca187484690"], "text": "보스가 1명을 강제로 지정해 공격(피해 감소·보호가 없으면 딜러가 한 번에 쓰러짐)"},
+   {"code": "SHIELD_GEN", "steps": [7], "severity": 2, "src": ["arca187484690", "arca187456382"], "text": "보스 보호막이 매우 큼"},
+   {"code": "PCT_HP_DAMAGE", "steps": [7], "severity": 2, "src": ["client"], "text": "별의 도전 4단계부터 맞은 뒤 최대 생명력이 줄어듦"}
   ]
  },
  "community": {
   "conf": "낮음",
   "note": "아카라이브 글쓴이 주장이며 직접 검증하지 못했음.",
   "items": [
-   {
-    "text": "BFB는 1명을 강제 지정해 공격하는 보스라 피해 감소·보호 수단(웨르멘의 서약 등)이 사실상 필요하다는 후기가 많음",
-    "src": [
-     "arca187413171",
-     "arca187484690"
-    ]
-   },
-   {
-    "text": "10단계부터 3턴 면역이 있어 명중 깎기(적중 세트)는 의미가 없다는 주장",
-    "src": [
-     "arca187413171"
-    ]
-   },
-   {
-    "text": "고득점·클리어 사례: 웨르멘 + 아모라 + 메레스 + 티리아 또는 바샤를 계열(EX 12단 클리어, 파티 전투력 약 39만)",
-    "src": [
-     "arca187413171",
-     "arca187456382"
-    ]
-   },
-   {
-    "text": "9단계 이하는 기믹을 무시하고 가능하다는 댓글, 10단계부터는 다른 방식이 필요하다는 의견",
-    "src": [
-     "arca187430822"
-    ]
-   }
+   {"text": "BFB는 1명을 강제 지정해 공격하는 보스라 피해 감소·보호 수단(웨르멘의 서약 등)이 사실상 필요하다는 후기가 많음", "src": ["arca187413171", "arca187484690"]},
+   {"text": "10단계부터 3턴 면역이 있어 명중 깎기(적중 세트)는 의미가 없다는 주장", "src": ["arca187413171"]},
+   {"text": "고득점·클리어 사례: 웨르멘 + 아모라 + 메레스 + 티리아 또는 바샤를 계열(EX 12단 클리어, 파티 전투력 약 39만)", "src": ["arca187413171", "arca187456382"]},
+   {"text": "9단계 이하는 기믹을 무시하고 가능하다는 댓글, 10단계부터는 다른 방식이 필요하다는 의견", "src": ["arca187430822"]}
   ]
  },
  "search": {
-  "_note": "전원 학습 선별. 직업·전투력·협공으로 제외하지 않고 배치·리더·단계·지원·브레이크를 시뮬로 비교함.",
-  "poolSize": null,
-  "minPowerRatio": 0,
-  "minRole": {},
-  "minFront": 0,
-  "minDealer": 0,
-  "screen": {
-   "level": 6,
-   "runs": 2,
-   "support": "none"
-  },
-  "screen2": {
-   "keep": 400,
-   "runs": 10
-  },
-  "finalists": 12,
-  "final": {
-   "runs": 40,
-   "levels": [
-    2,
-    4,
-    6,
-    8,
-    10,
-    12
-   ],
-   "supports": [
-    "fire",
-    "gust",
-    "focus",
-    "strike",
-    "mountain"
-   ]
-  },
-  "supportRole": {
-   "gust": "서포터",
-   "focus": "캐스터",
-   "strike": "스트라이커"
-  },
-  "excludeText": [],
-  "excludeKeys": [],
-  "notes": [
-   {
-    "key": "professor-m",
-    "kind": "caution",
-    "basis": "client",
-    "why": "강제 협공: 아군이 기본기를 쓰면 다른 아군이 같은 대상에게 따라 공격함. 내 턴이 아닐 때 들러리가 보호막 보스를 치면 «신부의 응징»으로 들러리 전원이 큰 연쇄 피해를 받음."
-   },
-   {
-    "key": "waltz-asherah",
-    "kind": "caution",
-    "basis": "client",
-    "why": "고유 패시브가 자신의 협공 확률을 올림. 들러리가 보호막 보스를 때리면 신부의 응징이 발생하며, 시뮬이 손익을 계산함."
-   },
-   {
-    "key": "gwen",
-    "kind": "caution",
-    "basis": "community",
-    "why": "아군이 공격하면 특수기를 추가로 발동함(협공은 아니고 엔포스). 커뮤니티는 «남의 턴 추가타 캐릭»이라며 뺀다고 하지만 클라 표에는 길방 전용 금지 규칙이 없어 빼지 않았음. 시뮬이 신부의 응징을 계산하므로 응징이 나는 편성이면 기대 점수가 깎임(시뮬에서 상위 팀에 넣으면 응징이 나고 클리어율이 크게 떨어지는 경우가 있음)."
-   },
-   {
-    "key": "cristelle",
-    "kind": "caution",
-    "basis": "client",
-    "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 이 구원자가 팀에서 공격력이 가장 높으면 정실 어필 뒤 신부 경쟁자가 되어 보호막(보스 생명력 22.5%)을 혼자 깨야 하는데, 딜이 약해 못 깨면 대피로연 전체 공격으로 전멸함(응징이 아니라 이 이유로 클리어율이 크게 떨어질 수 있음). 딜러가 신부 경쟁자가 되도록 공격력 1위를 맞추는 편성이 유리함."
-   },
-   {
-    "key": "sunshine-cat-smile",
-    "kind": "caution",
-    "basis": "client",
-    "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 시뮬이 신부의 응징을 계산하므로, 실제로 응징이 나는 편성이면 기대 점수가 그만큼 깎여서 나옴."
-   }
-  ],
-  "excludeWhy": "클라에 협공 금지 규칙 없음. 잠재력·강제 협공과 신부의 응징은 엔진으로 평가함. 이 빌드에는 장비 협공이 없음.",
-  "learned": {
-   "value": true,
-   "S": 3000,
-   "m": 8,
-   "K": 4000,
-   "M": 8,
-   "A": 256,
-   "overlapStarts": 10,
-   "overlapKeep": 8,
-   "folds": 3,
-   "epochs": 40,
-   "ridge": 10,
-   "minCorrelation": 0.1,
-   "missThreshold": 0.04,
-   "note": "계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀.",
-   "maxScoreCombos": 2000000,
-   "maxOverlapChecks": 2000000,
-   "fallbackMultiplier": 4
-  }
+ "_note": "전원 학습 선별. 직업·전투력·협공으로 제외하지 않고 배치·리더·단계·지원·브레이크를 시뮬로 비교함.",
+ "poolSize": null,
+ "minPowerRatio": 0,
+ "minRole": {},
+ "minFront": 0,
+ "minDealer": 0,
+ "screen": {
+  "level": 6,
+  "runs": 2,
+  "support": "none"
  },
+ "screen2": {
+  "keep": 400,
+  "runs": 10
+ },
+ "finalists": 12,
+ "final": {
+  "runs": 40,
+  "levels": [
+   2,
+   4,
+   6,
+   8,
+   10,
+   12
+  ],
+  "supports": [
+   "fire",
+   "gust",
+   "focus",
+   "strike",
+   "mountain"
+  ]
+ },
+ "supportRole": {
+  "gust": "서포터",
+  "focus": "캐스터",
+  "strike": "스트라이커"
+ },
+ "excludeText": [],
+ "excludeKeys": [],
+ "notes": [
+  {
+   "key": "professor-m",
+   "kind": "caution",
+   "basis": "client",
+   "why": "강제 협공: 아군이 기본기를 쓰면 다른 아군이 같은 대상에게 따라 공격함. 내 턴이 아닐 때 들러리가 보호막 보스를 치면 «신부의 응징»으로 들러리 전원이 큰 연쇄 피해를 받음."
+  },
+  {
+   "key": "waltz-asherah",
+   "kind": "caution",
+   "basis": "client",
+   "why": "고유 패시브가 자신의 협공 확률을 올림. 들러리가 보호막 보스를 때리면 신부의 응징이 발생하며, 시뮬이 손익을 계산함."
+  },
+  {
+   "key": "gwen",
+   "kind": "caution",
+   "basis": "community",
+   "why": "아군이 공격하면 특수기를 추가로 발동함(협공은 아니고 엔포스). 커뮤니티는 «남의 턴 추가타 캐릭»이라며 뺀다고 하지만 클라 표에는 길방 전용 금지 규칙이 없어 빼지 않았음. 시뮬이 신부의 응징을 계산하므로 응징이 나는 편성이면 기대 점수가 깎임(시뮬에서 상위 팀에 넣으면 응징이 나고 클리어율이 크게 떨어지는 경우가 있음)."
+  },
+  {
+   "key": "cristelle",
+   "kind": "caution",
+   "basis": "client",
+   "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 이 구원자가 팀에서 공격력이 가장 높으면 정실 어필 뒤 신부 경쟁자가 되어 보호막(보스 생명력 22.5%)을 혼자 깨야 하는데, 딜이 약해 못 깨면 대피로연 전체 공격으로 전멸함(응징이 아니라 이 이유로 클리어율이 크게 떨어질 수 있음). 딜러가 신부 경쟁자가 되도록 공격력 1위를 맞추는 편성이 유리함."
+  },
+  {
+   "key": "sunshine-cat-smile",
+   "kind": "caution",
+   "basis": "client",
+   "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 시뮬이 신부의 응징을 계산하므로, 실제로 응징이 나는 편성이면 기대 점수가 그만큼 깎여서 나옴."
+  }
+ ],
+ "excludeWhy": "클라에 협공 금지 규칙 없음. 잠재력·강제 협공과 신부의 응징은 엔진으로 평가함. 이 빌드에는 장비 협공이 없음.",
+ "learned": {
+  "value": true,
+  "S": 3000,
+  "m": 8,
+  "K": 4000,
+  "M": 8,
+  "A": 256,
+  "overlapStarts": 10,
+  "overlapKeep": 8,
+  "folds": 3,
+  "epochs": 40,
+  "ridge": 10,
+  "minCorrelation": 0.1,
+  "missThreshold": 0.04,
+  "note": "계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀.",
+  "maxScoreCombos": 2000000,
+  "maxOverlapChecks": 2000000,
+  "fallbackMultiplier": 4
+ },
+ "placement": {
+  "screenRuns": 2,
+  "keep": 2,
+  "auditTeams": 12
+ }
+},
  "howToUpdate": [
   "시즌 id 가 바뀌면 season(id·label·name·start·end·settleEnd)과 asOf 를 고친다. 날짜는 공식 공지 기준",
   "단계 표(steps)는 게임 표 GUILD_DUNGEON 전투 표의 새 시즌 행(BasePoint·BossKillPoint·KillPoint·BattleLevel·BattlePower)으로 바꾼다",

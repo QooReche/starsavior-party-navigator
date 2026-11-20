@@ -20,6 +20,7 @@ async function check(code=source){
     score:()=>[0,{}],arrangeOf:combo=>({order:combo.map(x=>x.s.key).reverse()}),
     csBoss:b=>b,simPoolDrop:(...a)=>dropped.push(a),directCopy:clean,directManifest:async()=>({ver:'engine-a'}),
     scrPool:()=>[],simWatch:()=>()=>{},simTeamLimit:()=>100,simDispatch:(ws,jobs,o)=>sent.push({jobs,o}),
+    cdArrangeSim:boss=>c.cdChange({type:'draft',boss,action:{type:'arrange',order:c.cd.state.teams[boss].draft.slots.map(m=>m.key).reverse(),leaderKey:keys[2]}}),
     location:{href:'http://localhost/index.html'},directNavigate:m=>{c.DIRECT.mode=m;},GwenLane:{}};
   vm.createContext(c);vm.runInContext(code+'\nglobalThis.paintOriginal=cdPaint;cdPaint=()=>cdSync();globalThis.cd=CDIRECT;',c);
   c.cdInit();assert.equal(c.cd.state.seasonId,1023);
@@ -55,7 +56,7 @@ async function check(code=source){
   c.cdChange({type:'levelAll',level:12});assert(Object.values(c.cd.jobs).every(j=>j.options.cosmo_raid.level===12));
   assert.equal(C.summary(c.cd.state,c.cdResults()).done,0);
   c.cdUndo('baskerville');assert.equal(c.cd.state.teams.baskerville.level,6);assert.equal(c.cd.state.teams.mogulus.level,12);
-  c.cdArrange('mogulus');assert.equal(c.cd.state.teams.mogulus.draft.leader,keys[0]);assert.notDeepEqual(clean(c.cd.state.teams.mogulus.draft.slots),original.teams.mogulus.draft.slots);
+  c.cdArrange('mogulus');assert.equal(c.cd.state.teams.mogulus.draft.leader,keys[2]);assert.notDeepEqual(clean(c.cd.state.teams.mogulus.draft.slots),original.teams.mogulus.draft.slots);
   await c.cdRun('mogulus');assert.equal(sent.length,4);const old=sent.at(-1);
   c.cdChange({type:'level',boss:'mogulus',level:11});assert(!old.o.live());assert.equal(dropped.at(-1)[0],'cdirect');
   assert.equal(C.summary(c.cd.state,c.cdResults()).done,1);

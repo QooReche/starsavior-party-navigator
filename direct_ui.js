@@ -36,14 +36,7 @@ function directInit(){
     if(a==='grown')directChange({type:'grown',slot:i,value:!DIRECT.draft.slots[i].grown});
     if(a==='clear'){DIRECT.selected=null;directChange({type:'clear'});}
     if(a==='undo'&&DIRECT.undo){const d=DIRECT.undo;DIRECT.undo=null;DIRECT.draft=d;DIRECT.revision++;directSave();directPaint();GwenLane.edit('undo');}
-    if(a==='arrange'){
-      const members=DIRECT.draft.slots.filter(Boolean);
-      if(members.length===4&&members.every(s=>BYKEY[s.key])){
-        const c=contents[$('content').value],st=cur?.[$('stage').value];
-        const combo=members.map(m=>{const s=BYKEY[m.key],[v,parts]=score(s,st?.w||{},c.main,c.boss);return {s,score:v,parts};});
-        directChange({type:'arrange',order:DirectParty.toEngine(arrangeOf(combo).order)});
-      }
-    }
+    if(a==='arrange')directArrangeSim();
     if(a==='open'){$('direct-picker-dialog').showModal();$('direct-picker-dialog').querySelector('input').focus();}
     if(a==='close')$('direct-picker-dialog').close();
     if(a==='retry'){DIRECT.error='';DIRECT.valueKey=null;directRefresh();}
@@ -105,6 +98,7 @@ function directHome(){
 }
 function directSave(){const payload=DirectParty.storage(DIRECT);if(payload&&!LS.set('direct.v1',payload))DIRECT.error='초안 저장 실패 · 이 세션에서만 유지됨';}
 function directChange(action){
+  DIRECT.placement?.cancel?.();
   const next=DirectParty.edit(DIRECT.draft,action);if(JSON.stringify(next)===JSON.stringify(DIRECT.draft))return;
   const changedSlot=action.type==='put'?next.slots.findIndex((s,i)=>s?.key!==DIRECT.draft.slots[i]?.key):action.slot;
   DIRECT.undo=DIRECT.draft;DIRECT.draft=next;DIRECT.revision++;directSave();directPaint();GwenLane.edit(action.type,changedSlot);

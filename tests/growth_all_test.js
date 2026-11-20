@@ -12,7 +12,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const M=require('../myinfo_reco'),S=require('../myinfo_stats'),U=require('../ux_ui');
 const growth=require('../data/growth.json'),grades=require('../data/archive_grades.json');
 const view={...require('../data/myinfo_view.json'),itemSlots:require('../data/myinfo_slots.json')};
-const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8'),ui=fs.readFileSync(require.resolve('../growth_ui.js'),'utf8'),ux=fs.readFileSync(require.resolve('../ux_ui.js'),'utf8');
+const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8').replace(/\r\n/g,'\n'),ui=fs.readFileSync(require.resolve('../growth_ui.js'),'utf8').replace(/\r\n/g,'\n'),ux=fs.readFileSync(require.resolve('../ux_ui.js'),'utf8').replace(/\r\n/g,'\n');
 const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,'구간 없음: '+a);return s.slice(i,j)};
 const line=(s,start)=>{const m=s.match(new RegExp('^'+start.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'.*$','m'));assert(m,'줄 없음: '+start);return m[0]};
 const STAGE=['op','oph','daily','equip','cube','rush','clo','clash'],STAR=['equip','clash'];

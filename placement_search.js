@@ -13,7 +13,7 @@
     for(const t of teams){
       const scores=probeJobs.filter(j=>group(j)===group(t)).map(j=>({level:j.level,score:probe[j.key].cosmo[mode]}));
       const levels=auto?P.levels(scores,maxLevel,boundaries[t.boss]||[],2):[level];
-      const layouts=P.all(t.keys);
+      const layouts=settings.enabled===false?[t]:P.all(t.keys);
       // Keep the rerank winner too: within-row tie order can matter in the engine.
       if(!layouts.some(p=>P.executionKey(t.keys,p)===P.executionKey(t.keys,t)))layouts.push(t);
       for(const p of layouts)for(const l of levels)for(const b of brks)jobs.push(makeJob(t,l,b,p));
@@ -33,18 +33,23 @@
     const reBest=new Map();
     for(const j of P.best(reJobs,re,cmp(mode),r=>!!r?.cosmo))if(!reBest.has(group(j)))reBest.set(group(j),j);
     const moved=[];
-    for(const [k,t] of reBest)if(t.level!==best.get(k).level)for(const p of P.all(t.keys))for(const b of brks)moved.push(makeJob(t,t.level,b,p));
+    for(const [k,t] of reBest)if(t.level!==best.get(k).level)for(const p of (settings.enabled===false?[t]:P.all(t.keys)))for(const b of brks)moved.push(makeJob(t,t.level,b,p));
     let extra=[];
     if(moved.length){
       const r=await run(moved,settings.screenRuns||2,9,'난이도 변경 배치 재비교'),seen=new Map();
       for(const j of P.best(moved,r,cmp(mode),v=>!!v?.cosmo)){const k=group(j),n=seen.get(k)||0;if(n<(settings.keep||2)){extra.push(j);seen.set(k,n+1);}}
     }
     // Shared final seed and run count for every finalist, including unchanged incumbents.
-    const finals=[...new Map([...selected,...extra].map(j=>[j.key,j])).values()];
+    // Test every break on the selected arrangements at the same precision/seed.
+    const finals=[...new Map([...selected,...extra].flatMap(j=>brks.map(b=>makeJob(j,j.level,b,j))).map(j=>[j.key,j])).values()];
     const res=await run(finals,runs,10,'선택 배치 최종 확인');
     const winners=new Map();
     for(const j of P.best(finals,res,cmp(mode),r=>!!r?.cosmo))if(!winners.has(group(j)))winners.set(group(j),j);
-    return {teams:[...winners.values()].map(j=>({boss:j.boss,keys:j.keys,order:j.order,leaderKey:j.leaderKey,level:j.level,brk:j.brk?.name||null,brkLv:j.brk?.level||null,st:res[j.key].cosmo,...(res[j.key].unsupported?.length?{unsupported:res[j.key].unsupported}:{})})),probe,conditions:jobs.length,moved:moved.length};
+    return {teams:[...winners.values()].map(j=>{
+      const siblings=finals.filter(x=>group(x)===group(j)&&x.level===j.level&&P.executionKey(x.keys,x)===P.executionKey(j.keys,j));
+      const brkTie=brks.length>1&&siblings.length===brks.length&&siblings.every(x=>res[x.key].cosmo.top===res[j.key].cosmo.top&&res[x.key].cosmo.mean===res[j.key].cosmo.mean);
+      return {boss:j.boss,keys:j.keys,order:j.order,leaderKey:j.leaderKey,level:j.level,brk:brkTie?null:j.brk?.name||null,brkLv:brkTie?null:j.brk?.level||null,...(brkTie?{brkTie:true}:{}),st:res[j.key].cosmo,...(res[j.key].unsupported?.length?{unsupported:res[j.key].unsupported}:{})};
+    }),probe,conditions:jobs.length,moved:moved.length};
   }
   const api={cosmo,cmp,group};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PlacementSearch=api;
