@@ -37,8 +37,12 @@ const tests = {
   },
   party() {
     const keys=['d3','s1','d0','f2'],p=S.party(keys,results,cls);
-    assert.deepEqual(p.order,['d0','d3','f2','s1']);
-    assert.equal(p.leaderKey,'d0');assert(p.spec.units.every(u=>u.stats_final));
+    assert.deepEqual(p.order,['s1','f2','d0','d3']);
+    assert.equal(p.spec.leader,0);assert.equal(p.leaderKey,undefined);
+    assert(p.spec.units.every(u=>u.stats_final));
+    const experimental=S.party(keys,results,cls,S.baseline(keys,results));
+    assert.deepEqual(experimental.order,['d0','d3','f2','s1']);
+    assert.equal(experimental.leaderKey,'d0');assert(experimental.spec.units.every(u=>u.stats_final));
   },
   supports() {
     assert.equal(S.screenSupport(SE,['s0','d0','d1','d2'],cls),'none');

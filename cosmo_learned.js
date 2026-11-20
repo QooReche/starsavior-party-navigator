@@ -28,14 +28,14 @@
     await scan(S,rows,keys=>{reservoir(a,keys,c.S,++n,rng);for(const k of keys){const p=per.get(k);reservoir(p.a,keys,c.m,++p.n,rng);}},stale);
     const out=new Map();for(const p of per.values())for(const k of p.a)out.set(id(k),k);for(const k of a){if(out.size>=c.S)break;out.set(id(k),k);}return [...out.values()];}
   // Sparse one-hot unit, front/back and leader effects; role/element pair counts.
-  function encoder(rows,results,roster){const cls=Object.fromEntries(rows.map(r=>[r.key,r.cls])),meta=new Map(roster.map(r=>[r.key,r])),ix=new Map();
+  function encoder(rows,results,roster,placement={}){const cls=Object.fromEntries(rows.map(r=>[r.key,r.cls])),meta=new Map(roster.map(r=>[r.key,r])),ix=new Map();
     const index=s=>{if(!ix.has(s))ix.set(s,ix.size);return ix.get(s);};
     for(const r of rows)for(const s of ['unit','front','back','leader'])index(s+':'+r.key);
     const roles=[...new Set(rows.map(r=>r.cls))].sort(), elems=[...new Set(rows.map(r=>meta.get(r.key)?.el||meta.get(r.key)?.elem||meta.get(r.key)?.element||'?'))].sort();
     for(const [name,vs] of [['role',roles],['elem',elems]])for(let i=0;i<vs.length;i++)for(let j=i;j<vs.length;j++)index(name+':'+vs[i]+'/'+vs[j]);
-    function encode(keys){const p=GS.party(keys,results,cls),order=p.order,v=new Map();
+    function encode(keys){const p=GS.party(keys,results,cls,placement.baseline?GS.baseline(keys,results):undefined),order=p.order,v=new Map();
       const add=(s,n=1)=>{const i=ix.get(s);v.set(i,(v.get(i)||0)+n);};
-      order.forEach((k,i)=>{add('unit:'+k);add((i<2?'front:':'back:')+k);if(k===p.leaderKey)add('leader:'+k);});
+      order.forEach((k,i)=>{add('unit:'+k);add((i<2?'front:':'back:')+k);if(p.leaderKey?k===p.leaderKey:i===0)add('leader:'+k);});
       for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){
         add('role:'+ [cls[keys[i]],cls[keys[j]]].sort().join('/'));
         add('elem:'+ [meta.get(keys[i])?.el||meta.get(keys[i])?.elem||meta.get(keys[i])?.element||'?',meta.get(keys[j])?.el||meta.get(keys[j])?.elem||meta.get(keys[j])?.element||'?'].sort().join('/'));}

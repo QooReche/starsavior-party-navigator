@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const M=require('../myinfo_reco.js'),S=require('../myinfo_stats.js'),Q=require('../quick.js');
 const info=require('./fixtures/myinfo_synthetic.json'),growth=require('../data/growth.json');
 const roster=info.units.map(u=>({uid:u.id,key:String(u.id)}));
-const placementContext={PartyPlacement:require('../party_placement'),PLACEMENT_CACHE:new Map(),recommendationPlacementKey:()=>''};
+const placementContext={CFG:{recommendation:{placementBaseline:true}},PartyPlacement:require('../party_placement'),PLACEMENT_CACHE:new Map(),recommendationPlacementKey:()=>''};
 const tests={
   mapping(){for(const ck of ['op','clo'])assert.equal(S.rule_for_content(ck),'normal');
     for(const ck of ['cosmo','rush'])assert.equal(S.rule_for_content(ck),'fixed200');

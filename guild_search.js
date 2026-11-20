@@ -21,7 +21,11 @@
     for(let a=0;a<n;a++)for(let b=a+1;b<n;b++)for(let c=b+1;c<n;c++)for(let d=c+1;d<n;d++)yield [a,b,c,d].map(i=>rows[i].key);
   }
 
-  function party(keys,results,cls,placement){return Placement.party(keys,results,placement);}
+  function party(keys, results, cls, placement) {
+    if(placement)return Placement.party(keys,results,placement);
+    const order = keys.slice().sort((x, y) => (FRONT.includes(cls[x]) ? 0 : 1) - (FRONT.includes(cls[y]) ? 0 : 1) || results[y].power - results[x].power || (x < y ? -1 : 1));
+    return {order, spec: {units: order.map(k => ({key: k, build: "none", stats_override: results[k].stats, stats_final: true, power: results[k].power, myinfo_combat: results[k].combat})), leader: 0}};
+  }
 
   const hasSupporter = (keys, cls) => keys.some(k => cls[k] === "서포터");
   // 예선 대표 지원. 최종 결합 비교에서는 지원 후보를 함께 평가함.
@@ -63,7 +67,7 @@
 
   const BREAK_CHECK = {teams: 8, runs: 40, version: 1};
   const breakSignature = breaks => JSON.stringify([BREAK_CHECK.version, breaks.map(b => [b.name, b.level]).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] - b[1])]);
-  const jobKey = (keys, level, sup, tiers, brk = null, p = {order:keys,leaderKey:keys[0]}) => JSON.stringify([Placement.executionKey(keys,p),level,sup,tiers||[],brk&&[brk.name,brk.level]]);
+  const jobKey = (keys, level, sup, tiers, brk = null, p = null) => !p?.leaderKey ? [keys.join("+"), level, sup, (tiers || []).join(""), JSON.stringify(brk && [brk.name, brk.level])].join("|") : JSON.stringify([Placement.executionKey(keys,p),level,sup,tiers||[],brk&&[brk.name,brk.level]]);
 
   // 작업 목록 → 작업자 수만큼 나눈 묶음(라운드 로빈). job = {key, party, options:{guild}}
   function split(jobs, n) {
@@ -218,7 +222,7 @@
   }
 
   const breakLabel = (t, esc) => `브레이크 스킬: ${esc(t.brk || "없음")}${t.brk ? ` Lv.${t.brkLv}` : ""}`;
-  const api = {FRONT, TOP_Q, BREAK_CHECK, breakSignature, breakJobs, breakLabel, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, progText, SUP_NAME, countDropped, notesHtml, BASIS, unsupportedFields, unsupportedHtml};
+  const api = {baseline:Placement.baseline, FRONT, TOP_Q, BREAK_CHECK, breakSignature, breakJobs, breakLabel, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, progText, SUP_NAME, countDropped, notesHtml, BASIS, unsupportedFields, unsupportedHtml};
   api.iterateCombos = iterateCombos;
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

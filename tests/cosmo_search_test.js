@@ -45,7 +45,7 @@ function factory(log, score = fakeScore) {
     }
   });
 }
-const mkS = over => JSON.parse(JSON.stringify(Object.assign({}, SE, {placement:{auditTeams:0},rerank: {keep: 100000, runs: 10}, combine: {topTriples: 10, show: 5}}, over || {})));
+const mkS = over => JSON.parse(JSON.stringify(Object.assign({}, SE, {placement:{baseline:true,enabled:true,auditTeams:0},rerank: {keep: 100000, runs: 10}, combine: {topTriples: 10, show: 5}}, over || {})));
 const cxOf = (S, log, over) => Object.assign({S, bosses: BOSSES, level: 6, mode: 'mean', results, roster, makeWorker: factory(log), workers: 3, stage: 'x', base: ''}, over || {});
 
 // 전수 비교용: 보스별 모든 조합의 점수 -> 겹치지 않는 모든 삼중 -> 합 큰 순 n 개(같으면 id 작은 순)

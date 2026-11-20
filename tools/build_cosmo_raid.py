@@ -477,7 +477,7 @@ SEARCH = dict(
                        minPerUnit=3, missThreshold=0.04, proxy={'tyria': 'attack'},
                        note='빠른 탐색(실험). 제외 무작위 표본의 경계 이상 비율이 문턱을 넘으면 해당 보스 전수 복귀.')),
     _note='3보스 구원자 겹침 금지 편성 찾기(cosmo_search.js) 설정. 기본은 보유 육성 구원자 전체에서 학습 선별이고, 판 수·keep 은 정밀도와 계산 시간의 절충이라 실측으로 조정한다.',
-    placement=dict(screenRuns=2, keep=2, auditTeams=12),
+    placement=dict(baseline=False, enabled=False, screenRuns=2, keep=2, auditTeams=12),
     maxPool=None, maxCombos=363000, minPowerRatio=0, minRole={}, minFront=0, minDealer=0,
     # 1단계 순차 반감: 전 조합을 firstRuns 판 돌려 순위를 매기고, 상위 passFrac(경계 동점 포함, 최소 passMinMult×keep 팀)만 runs 판이 되도록 더 돌린다. firstRuns 를 빼거나 runs 이상이면 반감 없음.
     screen=dict(runs=2, firstRuns=1, passFrac=0.10, passMinMult=3), rerank=dict(keep=300, runs=20), combine=dict(topTriples=10, show=5), final=dict(runs=40),

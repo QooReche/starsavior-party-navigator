@@ -2,7 +2,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const source=fs.readFileSync(require.resolve('../growth_ui'),'utf8');
 const start=source.indexOf('async function growthEvaluate('),end=source.indexOf('function growthMaybe',start),code=source.slice(start,end);
 async function check(src=code){let now=0,dispatched=0;
- const c={Date:{now:()=>now},Number,Promise,PLACEMENT_CACHE:new Map(),GROW:{},growthPaint:()=>{},simOpt:()=>({}),
+ const c={Date:{now:()=>now},Number,Promise,CFG:{recommendation:{placementCompare:true}},PLACEMENT_CACHE:new Map(),GROW:{},growthPaint:()=>{},simOpt:()=>({}),
   placementRun:async()=>{now=101;return {party:{units:[]}};},scrPool:()=>{dispatched++;throw Error('final dispatch');}};
  vm.createContext(c);vm.runInContext(src,c);
  const state={errors:[],versions:{engine:'v'}},jobs=[{id:'x',party:{units:[]},options:{}}],env={final:true,live:()=>true,state,version:'v'};

@@ -239,6 +239,13 @@ def _sum_in_order(values):
 def team_value(combo, cfg, tags, def_pen):
     w = cfg["weights"]
     v = _sum_in_order(x["score"] for x in combo)
+    if not cfg.get("recommendation", {}).get("neutralRoles", False):
+        roles = [x["s"]["className"] for x in combo]
+        if SUPPORT in roles:
+            v += w["supportBonus"]
+        v -= def_pen * max(0, roles.count(DEFENDER) - 1)  # 2번째 디펜더부터 감점
+        if roles.count(SUPPORT) > 1:
+            v -= 4
     got = set()
     for x in combo:
         got.update(tags.get(x["s"]["key"], []))
@@ -259,7 +266,32 @@ def placement_stats(member):
     return {"hp": u[2], "def": u[3], "spd": u[4]} if u else {}
 
 
+LEAD_OPEN_TAGS = ("힐", "보호막", "속도증가", "적방어력감소", "아군공격력증가")  # 첫 턴에 먼저 나가면 이득인 효과
+
+
 def leader_pick(party, cfg, tags):
+    if cfg.get("recommendation", {}).get("placementBaseline", False):
+        return neutral_leader_pick(party, cfg, tags)
+    """리더(속도 +10) 추천: 팀 동료에게 제공하는 연계(유형 1~4) 점수가 가장 큰 구성원. (구성원, 점수, 이유 목록) 또는 None."""
+    keys = [x["s"]["key"] for x in party]
+    gain = {k: 0.0 for k in keys}
+    why = {k: [] for k in keys}
+    for pts, p in party_synergy(keys, cfg):
+        if int(p["type"].split(":")[0]) > 4:
+            continue
+        givers = [p["a"]] if p.get("directed") else [p["a"], p["b"]]
+        for g in givers:
+            gain[g] += pts / len(givers)
+            why[g].append(p["reason"])
+    for x in party:  # 동률이면 첫 턴 지원 효과(힐·보호막 등)가 있는 쪽
+        gain[x["s"]["key"]] += 0.3 * sum(1 for t in tags.get(x["s"]["key"], []) if t in LEAD_OPEN_TAGS)
+    k = max(keys, key=lambda k: gain[k])
+    if gain[k] <= 0:
+        return None
+    return next(x for x in party if x["s"]["key"] == k), gain[k], why[k][:2]
+
+
+def neutral_leader_pick(party, cfg, tags):
     """시뮬 전 예선 리더. 직업·태그 가중치 없이 속도 기준."""
     member = min(party, key=lambda x: (-placement_stats(x).get("spd", 0), x["s"]["key"]))
     return member, 0, []
@@ -344,7 +376,10 @@ def best_party(cands, cfg, tags, def_pen, size=4):
     return top[0]
 
 
-def place(party):
+def place(party, cfg=None):
+    if not (cfg or _json(CONT)).get("recommendation", {}).get("placementBaseline", False):
+        order = sorted(party, key=lambda x: (x["s"]["className"] not in FRONT_ROLES, -x["score"]))
+        return order[:2], order[2:]
     """시뮬 전 예선: 유효 생명력 상위 2명 전열."""
     def ehp(x):
         st = placement_stats(x)
@@ -484,12 +519,12 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
         front, back = place(party)
         out(f"  [화력 지표] {dmg_score([x['s']['key'] for x in party], _DM[0]):.1f}/10 (10턴 기대 피해 근사, 장비 제외 상대 비교용)")
         ld = leader_pick(party, cfg, tags)
-        if stage and FOE_KEYS[content] not in ("cosmo", "guild"):
+        if cfg.get("recommendation", {}).get("placementCompare", False) and stage and FOE_KEYS[content] not in ("cosmo", "guild"):
             bk = pick_break(party, cfg, content, note, have_break)
             arranged, leader = simulate_placement(party, f"{FOE_KEYS[content]}/{tab}/{st['name']}", {"name": bk[1], "level": 5} if bk else None)
             front, back, ld = arranged[:2], arranged[2:], (leader, 0, [])
         if ld:
-            out(f"  [리더 추천] {ld[0]['s']['name']}({ld[0]['s']['subtitle']}) - 속도 +10 (스테이지 지정 시 배치·리더 24조건 비교)")
+            out(f"  [리더 추천] {ld[0]['s']['name']}({ld[0]['s']['subtitle']}) - 속도 +10 (추천 규칙 기준)")
         for label, grp in (("전열", front), ("후열", back)):
             for x in grp:
                 out(f"  [{label}] " + fmt(x))

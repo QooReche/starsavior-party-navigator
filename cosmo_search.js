@@ -63,12 +63,12 @@
   const idOf = keys => keys.slice().sort().join("+");
 
   const AUTO = -1;   // 난이도 선택값: 자동(가장 점수가 높은 난이도)
-  const jobKey = (boss, keys, level, brk, p={order:keys,leaderKey:keys[0]}) => boss+"|"+JSON.stringify([Placement.executionKey(keys,p),level,brk?[brk.name,brk.level]:null]);
+  const jobKey = (boss, keys, level, brk, p=null) => !p?.leaderKey ? [boss,idOf(keys),level].concat(brk?[brk.name]:[]).join("|") : boss+"|"+JSON.stringify([Placement.executionKey(keys,p),level,brk?[brk.name,brk.level]:null]);
 
   // 보스 하나의 작업 목록. 구원자 칸 순서·능력치는 guild_search.party 와 같다(leaderKey 별도)
   function bossJobs(S, boss, level, list, results, cls, brk, placement) {
     return list.map(keys => {
-      const p = GS.party(keys, results, cls, placement);
+      const p = GS.party(keys, results, cls, placement||(S.placement?.baseline?Placement.baseline(keys,results):undefined));
       return {key: jobKey(boss, keys, level, brk, p), boss, keys, order: p.order, leaderKey:p.leaderKey, level, brk: brk || null, party: p.spec,
         options: Object.assign({cosmo_raid: {boss, step: 3, level}, cosmo_top_q: S.topQ}, brk ? {break_skill: {name: brk.name, level: brk.level}} : {})};
     });
@@ -220,11 +220,11 @@
   // 마지막 재시뮬 작업: 삼중에 든 (보스, 조합) 중복 제거
   function finalJobs(S, triples, bosses, level, results, cls) {
     const seen = new Map();
-    triples.forEach(t => t.teams.forEach((e,i) => {
-      const p=e.order&&e.leaderKey?e:GS.party(e.keys,results,cls);
+    triples.forEach(t=>t.teams.forEach((e,i)=>{
+      const p=e.order&&e.leaderKey?e:undefined;
       const j=bossJobs(S,bosses[i],level,[e.keys],results,cls,null,p)[0];seen.set(j.key,j);
     }));
-    const jobs=[...seen.values()];
+    const jobs=bosses.flatMap(b=>[...seen.values()].filter(j=>j.boss===b));
     return jobs;
   }
 
@@ -243,7 +243,7 @@
         // 미장착 포함 전체 후보를 확인했을 때만 선언함. 후보 하나·결과 누락은 동점 근거가 아님.
         const brkTie=candidates.length>1 && candidates.length===brks.length && brks.includes(null)
           && candidates.every(c=>metric(c.st,mode)===metric(pick.st,mode) && other(c.st,mode)===other(pick.st,mode));
-        return pick ? {boss: bosses[i], keys: e.keys, order: e.order, leaderKey:e.leaderKey||e.order[0], level: lv, st: pick.st, brk: pick.brk, brkLv: pick.brkLv, ...(brkTie?{brkTie:true}:{}), ...GS.unsupportedFields(pick)} : null;
+        return pick ? {boss: bosses[i], keys: e.keys, order: e.order, ...(e.leaderKey?{leaderKey:e.leaderKey}:{}), level: lv, st: pick.st, brk: pick.brk, brkLv: pick.brkLv, ...(brkTie?{brkTie:true}:{}), ...GS.unsupportedFields(pick)} : null;
       });
       if (teams.some(x => !x)) continue;
       out.push({sum: teams.reduce((a, x) => a + metric(x.st, mode), 0), sum2: teams.reduce((a, x) => a + other(x.st, mode), 0), teams});
@@ -256,7 +256,7 @@
   function finalRank(triples, bosses, level, res, mode, show) {
     const out = [];
     for (const t of triples) {
-      const teams = t.teams.map((e, i) => { const r = res[jobKey(bosses[i], e.keys, level,null,e.leaderKey?e:undefined)]; return r && r.cosmo ? {boss: bosses[i], keys: e.keys, order: e.order, leaderKey:e.leaderKey||e.order[0], st: r.cosmo, ...GS.unsupportedFields(r)} : null; });
+      const teams = t.teams.map((e, i) => { const r = res[jobKey(bosses[i], e.keys, level,null,e.leaderKey?e:undefined)]; return r && r.cosmo ? {boss: bosses[i], keys: e.keys, order: e.order, ...(e.leaderKey?{leaderKey:e.leaderKey}:{}), st: r.cosmo, ...GS.unsupportedFields(r)} : null; });
       if (teams.some(x => !x)) continue;
       out.push({sum: teams.reduce((a, x) => a + metric(x.st, mode), 0), sum2: teams.reduce((a, x) => a + other(x.st, mode), 0), teams});
     }
@@ -434,7 +434,7 @@
   }
   // 시작 전 안내. pl = plan(), prior = priorFrom(...) 또는 null
   function preText(pl, prior) {
-    const g = `조합 ${num(pl.combos)}개 · ${pl.learned ? "학습 선별 기본 예상 " : pl.fast ? "선별 예상 " : "기본 "}${num(pl.total)}판 · 배치·리더 결합 비교와 대표값 감사는 별도 추가 · 후보가 겹치면 확대 재시도하며 예상 시간도 늘어남${pl.learned ? " · 예측 확인 부족 시 전수 확인 또는 후보 확대만큼 늘어남" : pl.fast ? " · 놓침 감지 시 전수 확인으로 늘어남" : pl.fastSkipped ? " · 조합 수가 적어 빠른 탐색을 적용하지 않고 전수 확인" : ""}`;
+    const g = `조합 ${num(pl.combos)}개 · ${pl.learned ? "학습 선별 기본 예상 " : pl.fast ? "선별 예상 " : "기본 "}${num(pl.total)}판 · 후보가 겹치면 확대 재시도하며 예상 시간도 늘어남${pl.learned ? " · 예측 확인 부족 시 전수 확인 또는 후보 확대만큼 늘어남" : pl.fast ? " · 놓침 감지 시 전수 확인으로 늘어남" : pl.fastSkipped ? " · 조합 수가 적어 빠른 탐색을 적용하지 않고 전수 확인" : ""}`;
     if (!prior) return `시작하면 몇 초 뒤 예상 시간이 표시됨 (${g})`;
     const sec = pl.stages.reduce((a, s, i) => a + s.games * prior[i], 0);
     return `이 PC의 지난 실행 속도 기준 예상 ${fmtDur(sec)} (${g})`;
@@ -484,7 +484,7 @@
     let firstResults;
     let resA, jobsK, passed = list.length;      // jobsK = 2단계 후보를 뽑을 작업 목록(반감이면 보충 판을 돌린 팀만), resA = 그 팀들의 결과
     if (learned) {
-      const c=S.learned, fr=S.screen.firstRuns||1, res1={}, models=[], selections=[], enc=Learned.encoder(rows,results,roster);
+      const c=S.learned, fr=S.screen.firstRuns||1, res1={}, models=[], selections=[], enc=Learned.encoder(rows,results,roster,S.placement);
       let completed=0, stageTeams=pl.stages[0].teams;
       const evaluate=async (jobs,msg)=>{
         const missing=jobs.filter(j=>!res1[j.key]?.cosmo);
@@ -548,7 +548,7 @@
       for(let i=0;i<3;i++){
         const b=bosses[i],eligible=new Set([...prepared[i].core,...prepared[i].aj].map(j=>j.key));
         for(const keys of GS.iterateCombos(S,rows)){
-          const p=GS.party(keys,results,cls),key=jobKey(b,keys,level,null,p);
+          const p=GS.party(keys,results,cls,S.placement?.baseline?Placement.baseline(keys,results):undefined),key=jobKey(b,keys,level,null,p);
           if(res1[key]?.cosmo&&(auditInfo[i].fallback||eligible.has(key)))jobsA.push({key,boss:b,keys,order:p.order,leaderKey:p.leaderKey});
         }
       }
@@ -598,7 +598,7 @@
     const traits=Object.fromEntries(roster.map(r=>[r.key,r.placementTraits||[]]));
     const representative=[],tacticalByBoss=new Map();
     // Audit both the rerank boundary and uniform excluded samples; keep strata visible.
-    for(const [bi,b] of bosses.entries()){
+    for(const [bi,b] of (S.placement?.enabled?bosses:[]).entries()){
       const selected=new Set(jobsK.filter(j=>j.boss===b).map(j=>idOf(j.keys))),samples=[];
       const rng=Learned.random((cx.sampleSeed||20261119)+900+bi),n=S.placement?.auditTeams??12;
       const ranked=pickTop(jobsK.filter(j=>j.boss===b),resA,mode),boundary=ranked.slice(pl.keep,pl.keep+Math.floor(n/2)).map(t=>t.keys),randomN=n-boundary.length;let seen=0;
@@ -608,7 +608,7 @@
       const randomIds=new Set(samples.map(idOf));pushAll(samples,boundary);
       const levels=auto?[...new Set([0,level,cx.levelMax,...(cx.boundaries?.[b]||[])])]:[level],auditJobs=[];
       for(const keys of samples)for(const p of Placement.variants(keys,results,traits))for(const leaderKey of keys)for(const l of levels)
-        pushAll(auditJobs,bossJobs(S,b,l,[keys],results,cls,null,{...p,leaderKey}));
+        pushAll(auditJobs,bossJobs(S,b,l,[keys],results,cls,null,leaderKey?{...p,leaderKey}:undefined));
       if(!auditJobs.length){representative.push({boss:b,sampled:0,misses:0,rate:0});continue;}
       const ar=await run(auditJobs,S.screen.runs,11,'예선 대표 난이도·배치 놓침 감사',null);
       if(stale())return null;
@@ -640,7 +640,7 @@
         if(learned && have+pending.length>retry.limits[retry.limits.length-1])throw new Error('구원자별 보장을 유지하기에 정밀 후보 상한이 부족함');
         const fresh = learned ? pending : pending.slice(0, Math.max(0, limit - have));
         const leaders=representative.find(a=>a.boss===b)?.expanded;
-        for(const e of fresh)for(const p of Placement.variants(e.keys,results,traits))for(const leaderKey of (leaders?e.keys:[p.leaderKey]))pushAll(extra,bossJobs(S,b,level,[e.keys],results,cls,null,{...p,leaderKey}));
+        for(const e of fresh)for(const p of (S.placement?.enabled?Placement.variants(e.keys,results,traits):[GS.party(e.keys,results,cls,S.placement?.baseline?Placement.baseline(e.keys,results):undefined)]))for(const leaderKey of (leaders?e.keys:[p.leaderKey]))pushAll(extra,bossJobs(S,b,level,[e.keys],results,cls,null,leaderKey?{...p,leaderKey}:undefined));
       });
       extra=[...new Map(extra.map(j=>[j.key,j])).values()];
       if (!extra.length) continue;
@@ -662,7 +662,7 @@
         throw Object.assign(new Error("정밀 계산 결과가 누락됨. 다시 시도 필요"), {gwenCause: "calculation"});
       extra.forEach(j => evaluated.add(j.boss+"|"+idOf(j.keys))); pushAll(jobsB, extra);
       lists = bosses.map(b => pickTop(jobsB.filter(j => j.boss === b), resB, mode,undefined,true).map(e => Object.assign({score: metric(e.st, mode)}, e)));
-      lists=lists.map((list,i)=>{
+      if(S.placement?.enabled)lists=lists.map((list,i)=>{
         const by=new Map(list.map(t=>[idOf(t.keys),t]));
         for(const t of tacticalByBoss.get(bosses[i])||[]){const old=by.get(idOf(t.keys));if(!old||metric(t.st,mode)>old.score)by.set(idOf(t.keys),{...t,score:metric(t.st,mode)});}
         return [...by.values()].sort((a,b)=>b.score-a.score||idOf(a.keys).localeCompare(idOf(b.keys)));
@@ -674,18 +674,50 @@
       if ((learned ? triples.length >= S.combine.topTriples : triples.length) || budget.exhausted) break;
     }
     if (!triples.length) throw Object.assign(new Error(overlapMessage(lists, roster, budget.exhausted || kept < list.length)), {gwenCause: "empty", attempts});
+    let rows2,probe=null,joint=null,finalBudget=null;
+    if(S.placement?.enabled){
     const unique=new Map();
     triples.forEach(t=>t.teams.forEach((e,i)=>unique.set(bosses[i]+'|'+idOf(e.keys),{...e,boss:bosses[i]})));
-    const joint=await PlacementSearch.cosmo({teams:[...unique.values()],
+    joint=await PlacementSearch.cosmo({teams:[...unique.values()],
       makeJob:(t,l,b,p)=>bossJobs(S,t.boss,l,[t.keys],results,cls,b,p)[0],
       run:(jobs,runs,seed,msg)=>run(jobs,runs,seed,msg,null),mode,level,maxLevel:cx.levelMax,auto,
       breaks:cx.breaks||[],runs:S.final.runs,probeRuns:S.auto?.probeRuns||10,boundaries:cx.boundaries||{},stale,settings:S.placement||{}});
     const finalLists=bosses.map(b=>joint.teams.filter(t=>t.boss===b).map(t=>({...t,score:metric(t.st,mode)})).sort((a,b)=>b.score-a.score));
-    const finalBudget={remaining:retry.maxChecks};
-    const rows2=(await bestTriplesAsync(finalLists,S.combine.show,finalBudget,stale)).map(r=>({...r,sum2:r.teams.reduce((s,t)=>s+other(t.st,mode),0)}));
-    const probe=null;
-    return {rows: rows2, growthOwned: jobsB.map(j=>({...j,result:resB[j.key]})), pool: rows.length, capped: !learned && S.maxPool > 0, combos: list.length, keep: kept, attempts, combineLimited: triplesLimited(triples, S.combine.topTriples, budget)||triplesLimited(rows2,S.combine.show,finalBudget), triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
-      halved: pl.halved, representative, placement:{version:Placement.VERSION,conditions:joint.conditions,moved:joint.moved}, firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed,
+    finalBudget={remaining:retry.maxChecks};
+    rows2=(await bestTriplesAsync(finalLists,S.combine.show,finalBudget,stale)).map(r=>({...r,sum2:r.teams.reduce((s,t)=>s+other(t.st,mode),0)}));
+
+    }else{
+    // 난이도 자동: 보스마다 난이도를 따로 고를 수 있으므로(게임이 허용), 뽑은 삼중의 모든 팀을 난이도 0~최대에서 짧게 돌려 팀별로 점수가 가장 큰 난이도를 정하고
+    // 그 합이 큰 순으로 삼중을 다시 매긴다. 이 뒤 단계는 시간 안내(ETA) 단계에 없어 stage=null 로 알린다(화면은 안내를 끈다)
+    let levelOf = () => level;
+    if (auto) {
+      const lvls = Array.from({length: cx.levelMax + 1}, (_, i) => i), pr = S.auto.probeRuns | 0 || 10;
+      const jobsP = [].concat(...lvls.map(l => finalJobs(S, triples, bosses, l, results, cls)));
+      const resP = await run(jobsP, pr, 5, `난이도 비교: 후보 편성을 난이도 0~${num(cx.levelMax)}에서 ${num(pr)}판씩 확인 중`, null);
+      if (stale()) return null;
+      const best = new Map();   // 보스|조합 -> 점수가 가장 큰 난이도(같으면 낮은 난이도)
+      for (const t of triples) t.teams.forEach((e, i) => {
+        const id = bosses[i] + "|" + idOf(e.keys);
+        if (best.has(id)) return;
+        let bl = 0, bv = -1;
+        for (const l of lvls) { const r = resP[jobKey(bosses[i], e.keys, l,null,e.leaderKey?e:undefined)]; const v = r && r.cosmo ? metric(r.cosmo, mode) : -1; if (v > bv) { bv = v; bl = l; } }
+        best.set(id, {level: bl, v: bv});
+      });
+      levelOf = (b, keys) => best.get(b + "|" + idOf(keys)).level;
+      probe = lvls.map(l => { const f = finalRank(triples, bosses, l, resP, mode, 1)[0]; return {level: l, sum: f ? f.sum : 0}; });
+    }
+    // 마지막 확인: 팀마다 (고른 난이도) × (브레이크 스킬 없음 + 보유·시뮬 지원 스킬 각각). 팀별로 점수가 큰 브레이크 스킬을 고른다
+    const brks = [null].concat(cx.breaks || []);
+    const seen = new Map();
+    triples.forEach(t => t.teams.forEach((e, i) => { const l = levelOf(bosses[i], e.keys), k = jobKey(bosses[i], e.keys, l); if (!seen.has(k)) seen.set(k, {boss: bosses[i], keys: e.keys, level: l}); }));
+    const jobsC = [];
+    seen.forEach(v => brks.forEach(b => pushAll(jobsC, bossJobs(S, v.boss, v.level, [v.keys], results, cls, b))));
+    const resC = await run(jobsC, S.final.runs, 2, `${auto ? "마지막 확인" : "3단계"}: 합이 큰 ${num(triples.length)}개 편성의 팀 ${num(seen.size)}개${brks.length > 1 ? "를 브레이크 스킬 " + num(brks.length - 1) + "종과 함께" : ""} ${num(S.final.runs)}판씩 확인 중`, auto ? null : 3);
+    if (stale()) return null;
+    rows2 = finalRankBrk(triples, bosses, levelOf, brks, resC, mode, S.combine.show);
+    }
+    return {rows: rows2, growthOwned: jobsB.map(j=>({...j,result:resB[j.key]})), pool: rows.length, capped: !learned && S.maxPool > 0, combos: list.length, keep: kept, attempts, combineLimited: triplesLimited(triples, S.combine.topTriples, budget)||(finalBudget?triplesLimited(rows2,S.combine.show,finalBudget):false), triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
+      halved: pl.halved, ...(joint?{representative,placement:{version:Placement.VERSION,conditions:joint.conditions,moved:joint.moved}}:{}), firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed,
       ...(learned ? {learned:true,audit:auditInfo} : {}),
       ...(!learned && speedValue(S, "surrogate", false) ? {fast: true, audit: auditInfo || [], ...(pl.fastSkipped ? {fastSkipped: true} : {})} : {})};
     } finally { if (workersPool) workersPool.close(); }

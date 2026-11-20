@@ -113,8 +113,8 @@ function mainStop(src){
  assert(!more('manual',{clear:.9,t60:.9,n:100,man:{c:.1,t60:.1}}),'옛 수동 값(man)·MODE 는 보지 않음');
  const sg=vm.runInContext('goalVal',mk('auto',{}));assert.equal(sg({clear:.9,t60:.4}),.4);assert.equal(sg({clear:.9}),.9);assert.equal(sg(undefined),null);
  // ④ 목표를 바꾸면 예선 캐시를 다시 쓴다
- const key=goal=>{const ctx=vm.createContext({JSON,contents:[{key:'equip'}],$:()=>({value:0}),rkOf:()=>0,miMode:()=>false,MI:{},SCROWN:'',MM:'',starOf:()=>goal});
-  vm.runInContext(line(src.html,'const scrKey='),ctx);return vm.runInContext('scrKey({tab:"t",name:"n"},1)',ctx)};
+ const key=goal=>{const ctx=vm.createContext({CFG:require('../party_contents.json'),JSON,contents:[{key:'equip'}],$:()=>({value:0}),rkOf:()=>0,miMode:()=>false,MI:{},SCROWN:'',MM:'',starOf:()=>goal});
+  vm.runInContext(line(src.html,'function recommendationPolicyTag('),ctx);vm.runInContext(line(src.html,'const scrKey='),ctx);return vm.runInContext('scrKey({tab:"t",name:"n"},1)',ctx)};
  assert.notEqual(key(60),key(0),'3별 목표와 클리어만의 예선 결과를 섞지 않음');assert.equal(key(60),key(60));
 }
 

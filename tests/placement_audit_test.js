@@ -2,7 +2,7 @@ const fs=require('node:fs'),vm=require('node:vm');
 const assert=require('node:assert/strict'),C=require('../cosmo_search'),G=require('../data/cosmo_raid.json');
 const roster=Array.from({length:12},(_,i)=>({key:'u'+String(i).padStart(2,'0'),cls:'캐스터'}));
 const results=Object.fromEntries(roster.map((r,i)=>[r.key,{power:100-i,stats:{hp:100,def:0,spd:1}}]));
-async function check(search=C){const S=structuredClone(G.search),seen=[];S.learned.value=false;S.maxPool=0;
+async function check(search=C){const S=structuredClone(G.search),seen=[];S.placement={...S.placement,baseline:true,enabled:true};S.learned.value=false;S.maxPool=0;
  S.screen={runs:2,firstRuns:1,passFrac:.1,passMinMult:1};S.rerank={keep:30,runs:3};S.final.runs=3;S.combine={topTriples:2,show:1};S.retry.maxCandidatesPerBoss=495;
  const out=await search.search({S,bosses:G.season.bossOrder,roster,results,level:6,levelMax:18,mode:'top',breaks:[],workers:2,stage:'x',base:'',
  makeWorker:()=>({terminate(){},postMessage(m){seen.push(m);setImmediate(()=>{for(const t of m.teams){const keys=t.party.units.map(u=>u.key),v=keys.reduce((s,k)=>s+Number(k.slice(1)),100)+(keys[t.party.leader]===keys.slice().sort().at(-1)?1000:0);

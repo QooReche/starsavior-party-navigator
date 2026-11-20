@@ -278,5 +278,10 @@
   "_note": "팀 화력 점수 = 10 x 팀 10턴 기대 피해 / ref95(무작위 4딜러 팀 95백분위), 상한 10. 파티 점수에 weight 를 곱해 더한다. 서포터·디펜더는 직접 화력 대신 아군 피해 증가(g)로 반영. 값은 임의.",
   "weightBoss": 0.6,
   "weightMob": 0.35
+ },
+ "recommendation": {
+  "neutralRoles": false,
+  "placementBaseline": false,
+  "placementCompare": false
  }
 }

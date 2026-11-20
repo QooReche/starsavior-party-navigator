@@ -537,7 +537,8 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!$("guild
 // ── 길방 «내 정보로 최고 점수 편성 찾기»(guild_search.js): 예선(전 조합 짧게) → 본선(상위 팀을 단계·지원별로). 작업자는 시뮬 창구(sim_worker.js)를 그대로 쓴다
 const GSR={phase:"idle",msg:"",done:0,total:0,rows:[],sig:"",handle:null,id:0};
 const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild.v2")).tiers;
-const gsSig=() => JSON.stringify([PartyPlacement.VERSION,MI.hash,[...EXCL].sort(),gsTiers(),GuildSearch.breakSignature(ownedSimBreaks())]);
+function searchPlacementTag(kind){const p=(kind==='guild'?D.guild:D.cosmoRaid)?.search?.placement;return p?.baseline||p?.enabled?[PartyPlacement.VERSION,!!p.baseline,!!p.enabled]:[];}
+const gsSig=() => JSON.stringify([MI.hash,[...EXCL].sort(),gsTiers(),GuildSearch.breakSignature(ownedSimBreaks()),...searchPlacementTag('guild')]);
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
 function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";GSR.id++;p.hidden=true;p.innerHTML="";return}
@@ -568,7 +569,7 @@ $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[
  else if(b.dataset.gs==="cancel"){GSR.id++;if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";renderGuildSearch(true)}});
 // ── 코스모 게이트 «3보스 최고 점수 편성 찾기»(cosmo_search.js): 보스별 전 조합 짧게 → 상위 팀 정확히 → 겹침 없는 3팀 최대 합 → 상위 편성 재확인. 난이도 레벨(Step 3)은 사용자가 고름
 const CSR={phase:"idle",msg:"",done:0,total:0,rows:[],handle:null,id:0,optLevel:null,optMode:null,sig:"",etaText:"",eta:null,runs:1};
-const csSig=()=>PartyPlacement.VERSION+"|"+(MI.hash||"")+"|"+[...EXCL].sort().join(",");   // 배치 정책·내 정보·추천 제외 서명
+const csSig=()=>(MI.hash||"")+"|"+[...EXCL].sort().join(",")+(searchPlacementTag('cosmo').length?'|'+JSON.stringify(searchPlacementTag('cosmo')):'');
 const csNow=()=>performance.now()/1000;
 const csMobile=()=>{try{return !!((navigator.userAgentData&&navigator.userAgentData.mobile)||/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent||"")||(/Macintosh/.test(navigator.userAgent||"")&&navigator.maxTouchPoints>1))}catch(e){return false}};
 const csWorkers=()=>CosmoSearch.workerCount(D.cosmoRaid.search,{cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory,mobile:csMobile()});
@@ -710,8 +711,14 @@ function partySyn(keys){const sw=CFG.synergy,hits=[];
  for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++){const a=keys[i],b=keys[j],k=a<b?a+"|"+b:b+"|"+a;
   for(const p of (SYN.get(k)||[]))hits.push({p,pts:sw.typeWeight[p.t]*p.s*(sw.confWeight[p.c]??0.6)})}
  return hits.sort((x,y)=>y.pts-x.pts)}
+function recommendationPolicyTag(){const r=CFG.recommendation;return r&&(r.neutralRoles||r.placementBaseline||r.placementCompare)?[JSON.stringify(r)]:[];}
 function teamValue(combo,defPen){
  let v=combo.reduce((a,x)=>a+x.score,0);
+ if(!CFG.recommendation?.neutralRoles){const g=CFG.weights;const roles=combo.map(x=>x.s.cls);
+ const ns=roles.filter(r=>r==="서포터").length;if(ns)v+=g.supportBonus;
+ v-=defPen*Math.max(0,roles.filter(r=>r==="디펜더").length-1);
+ if(ns>1)v-=4;
+ }
  const got=new Set();combo.forEach(x=>(x.s.tags||[]).forEach(t=>got.add(t)));
  for(const [t,wt] of Object.entries(CFG.tagWeights))v+=got.has(t)?wt:0;
  v+=Math.min(partySyn(combo.map(x=>x.s.key)).reduce((a,h)=>a+h.pts,0),CFG.synergy.cap);v+=gimTeam(combo)[0];v+=DMW[1]*dmgScore(combo.map(x=>x.s.key),DMW[0]);
@@ -787,13 +794,20 @@ function gimNote(party,c,st,p){
 
 let LEADKEY=null;
 function placementOf(combo){
- if(combo.placement)return combo.placement;
+ if(CFG.recommendation?.placementCompare&&combo.placement)return combo.placement;
  const finals=miMode()?miProfile()?.results:{},sv=QK.d?.sv||{};
  const results=Object.fromEntries(combo.map(x=>{const k=x.s.key,u=sv[ekey(k)]||[];return [k,finals?.[k]||{stats:{hp:u[2],def:u[3],spd:u[4]}}];}));
  return PartyPlacement.baseline(combo.map(x=>x.s.key),results);
 }
-function leaderPick(party){const p=placementOf(party);return {x:party.find(x=>x.s.key===p.leaderKey),g:0,why:[]};}
-function place(p){const layout=placementOf(p),o=layout.order.map(k=>p.find(x=>x.s.key===k));return [o.slice(0,2),o.slice(2)];}
+const LEAD_TAGS=["힐","보호막","속도증가","적방어력감소","아군공격력증가"];
+function leaderPick(party){
+ if(CFG.recommendation?.placementBaseline||CFG.recommendation?.placementCompare&&party.placement){const p=placementOf(party);return {x:party.find(x=>x.s.key===p.leaderKey),g:0,why:[]};}
+ const keys=party.map(x=>x.s.key),gain=Object.fromEntries(keys.map(k=>[k,0])),why=Object.fromEntries(keys.map(k=>[k,[]]));
+ for(const h of partySyn(keys)){if(h.p.t>4)continue;const gv=h.p.d?[h.p.a]:[h.p.a,h.p.b];gv.forEach(g=>{gain[g]+=h.pts/gv.length;why[g].push(h.p.r)})}
+ party.forEach(x=>{gain[x.s.key]+=0.3*(x.s.tags||[]).filter(t=>LEAD_TAGS.includes(t)).length});
+ const k=keys.reduce((a,b)=>gain[b]>gain[a]?b:a,keys[0]);if(gain[k]<=0)return null;
+ return {x:party.find(x=>x.s.key===k),g:gain[k],why:why[k].slice(0,2)}}
+function place(p){if(CFG.recommendation?.placementBaseline||CFG.recommendation?.placementCompare&&p.placement){const layout=placementOf(p),o=layout.order.map(k=>p.find(x=>x.s.key===k));return [o.slice(0,2),o.slice(2)];}const fr=["디펜더","서포터"];const o=[...p].sort((x,y)=>(fr.includes(x.s.cls)?0:1)-(fr.includes(y.s.cls)?0:1)||y.score-x.score);return [o.slice(0,2),o.slice(2)]}
 function pickBreak(party,content,have){
  let best=null;const roles=party.map(x=>x.s.cls);
  for(const k of bkeys){if(!have.includes(k))continue;const b=CFG.breakSkills[k];
@@ -947,9 +961,10 @@ function simParty(t,engineKey=ekey){const ar=arrangeOf(t.combo),sv=QK.d.sv;
   if(t.b.finals?.[k0])return {key:k,build:"none",stats_override:t.b.finals[k0].stats,stats_final:true,power:t.b.finals[k0].power,myinfo_combat:t.b.finals[k0].combat};
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
- const stats=Object.fromEntries(units.map(u=>[u.key,{stats:{spd:sv[u.key]?.[4]||0,...(u.stats_override||{})}}])),baseline=PartyPlacement.baseline(units.map(u=>u.key),stats);
+ if(!CFG.recommendation?.placementBaseline&&!CFG.recommendation?.placementCompare){const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null};}
+ const stats=Object.fromEntries(units.map(u=>[u.key,{stats:{spd:sv[u.key]?.[4]||0,...(u.stats_override||{})}}])),baseline=CFG.recommendation?.placementBaseline?PartyPlacement.baseline(units.map(u=>u.key),stats):{order:units.map(u=>u.key),leaderKey:engineKey(ar.lead||so[0])};
  const raw=PartyPlacement.reorder({units},baseline),key=recommendationPlacementKey(t,raw);t.placementKey=key;
- const p=PLACEMENT_CACHE.get(key);if(p){rememberPlacement(t,key,p);return PartyPlacement.reorder(raw,p);}return raw;}
+ const p=CFG.recommendation?.placementCompare?PLACEMENT_CACHE.get(key):null;if(p){rememberPlacement(t,key,p);return PartyPlacement.reorder(raw,p);}return raw;}
 const simSigB=(st,t,bname,n=SIMQ.n,context=null)=>{const ck=contents[$("content").value].key;
  const x=context||{ck,rk:rkOf(ck),sn:starOf(ck),account:miMode()?MI.hash:null,growth:typeof growthEnabled==="function"&&growthEnabled()?growthCacheTag():null,party:simParty};
  return simSignature(x,st,t,bname,n,SIMQ.refined);};
@@ -1010,7 +1025,7 @@ function simAutoKick(){if(RECO.task&&!RECO.task.done||DIRECT.bundle?.running&&!D
   if(b&&b.rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&b.rows.length<9&&b.total>b.rows.length){const k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run(true);simQueue(()=>simStart(p));return}}}
 function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy||(miMode()&&MI.pending))return false;
  const box=LASTQ[p];if(!box)return false;
- if(!jobs){const pending=box.rows.filter(t=>{simParty(t);return !PLACEMENT_CACHE.has(t.placementKey);});if(pending.length){recommendationArrange(p,pending);return true;}}
+ if(CFG.recommendation?.placementCompare&&!jobs){const pending=box.rows.filter(t=>{simParty(t);return !PLACEMENT_CACHE.has(t.placementKey);});if(pending.length){recommendationArrange(p,pending);return true;}}
  const rows=(jobs||box.rows.map(t=>({key:t.keys.slice().sort().join(","),t,bname:teamBreak(t)?.name||null,sig:simSig(st,t)}))).filter(j=>!SIMQ.res[j.sig]);if(!rows.length)return false;
  SIMQ.err="";SIMQ.errCompare=null;SIMQ.busy=p;SIMQ.compareKey=compareKey;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
  // 본선도 팀 단위로 작업자에 나눈다(팀마다 판 수·시드가 그대로라 결과는 작업자 수와 무관). 작업자는 팀 수보다 많이 쓰지 않는다
@@ -1217,7 +1232,7 @@ function scrPick(all,rkTop){const ck=t=>t.keys.slice().sort().join(","),R0=SCR_R
  const lists=[all.slice(0,R0.q).map(ck),all.slice().sort((a,b)=>b.v-a.v).slice(0,R0.v).map(ck),(rkTop||[]).map(ck)],out=[],seen=new Set(),m=Math.max(...lists.map(l=>l.length));
  for(let i=0;i<m;i++)for(const l of lists){const k=l[i];if(k!=null&&!seen.has(k)){seen.add(k);out.push(k)}}return out}
 // (목표가 다르면 예선 결과의 t60 유무·순위가 다르다 → 키에 starOf)
-const scrKey=(st,p)=>JSON.stringify([contents[$("content").value].key,st.tab,st.name,+p,rkOf(contents[$("content").value].key),starOf(contents[$("content").value].key),miMode()?MI.hash:"",SCROWN,MM||"",...(typeof growthEnabled==="function"&&growthEnabled()?[growthCacheTag()]:[])]);
+const scrKey=(st,p)=>JSON.stringify([contents[$("content").value].key,st.tab,st.name,+p,rkOf(contents[$("content").value].key),starOf(contents[$("content").value].key),miMode()?MI.hash:"",SCROWN,MM||"",...recommendationPolicyTag(),...(typeof growthEnabled==="function"&&growthEnabled()?[growthCacheTag()]:[])]);
 let SCROWN="";
 const scrOn=()=>(contents[$("content").value].parties||1)===1;
 const scrCmp=(a,b)=>(b.t60??b.clear)-(a.t60??a.clear)||b.clear-a.clear||(b.prog??0)-(a.prog??0)||(a.ttk??1e9)-(b.ttk??1e9);

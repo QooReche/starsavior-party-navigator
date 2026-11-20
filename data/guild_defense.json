@@ -223,6 +223,8 @@
   "fallbackMultiplier": 4
  },
  "placement": {
+  "baseline": false,
+  "enabled": false,
   "screenRuns": 2,
   "keep": 2,
   "auditTeams": 12

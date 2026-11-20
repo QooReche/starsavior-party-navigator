@@ -2,7 +2,7 @@
 // DIRECT never calls showReco/runCore to start work or changes the input controls.
 function recoIdentity(){
   const c=contents[$('content').value],st=cur?.[$('stage').value];
-  return JSON.stringify([c.key,st?.tab,st?.name,MI.hash,simOpt(c.key),SIMQ.n,SIMQ.seed,
+  return JSON.stringify([c.key,st?.tab,st?.name,MI.hash,...recommendationPolicyTag(),simOpt(c.key),SIMQ.n,SIMQ.seed,
     [...document.querySelectorAll('#own input:checked')].map(x=>x.dataset.k),breakOwned(),MI.brkLv,
     [...EXCL],MM,BLOOM,PW,$('grow').value,$('mypow').value,growthOptions(),MI.growth?.assumed?.version,
     Object.hasOwn(SHARE,'b')?SESSION_BR:BRSEL]);
@@ -22,7 +22,7 @@ function recoSnapshot(){
   const qi=copy(quickIn(c,st));if(!info){qi.growth=1;qi.power=null;}
   const x={ck:c.key,rk:rkOf(c.key),sn:starOf(c.key),account:profile?MI.hash:null,growth:growthEnabled()?growthCacheTag():null,party:t=>simParty(t,engineKey)};
   const scrown=[...own].sort().join(',')+'|'+have.join(','),mm=MM||'';
-  const screenKey=p=>JSON.stringify([c.key,st.tab,st.name,+p,x.rk,x.sn,x.account||'',scrown,mm,...(x.growth?[x.growth]:[])]);
+  const screenKey=p=>JSON.stringify([c.key,st.tab,st.name,+p,x.rk,x.sn,x.account||'',scrown,mm,...recommendationPolicyTag(),...(x.growth?[x.growth]:[])]);
   const n=SIMQ.n,seed=SIMQ.seed,refined=new Set(SIMQ.refined||[]);
   const sig=t=>simSignature(x,st,t,breakFor(t)?.name||null,n,refined);
   const scoring={gim:gimTop(c,st),season:st.sb||[],damage:[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob]};
@@ -101,7 +101,7 @@ async function recoCalculate(snapshot,task){
     screen:(p,box)=>recoScreenCalculate(snapshot,task,p,box),more:snapshot.more,result:snapshot.result,goal:goalVal,first:snapshot.first,
     async final(p,box){
       SIMQ.busy=p;SIMQ.screening=false;task.message='본선 준비 중';
-      for(const t of box.rows.filter(t=>!snapshot.result(t))){
+      for(const t of (CFG.recommendation?.placementCompare?box.rows.filter(t=>!snapshot.result(t)):[])){
         const party=snapshot.party(t),key=t.placementKey;if(PLACEMENT_CACHE.has(key))continue;
         task.message='배치·리더 24조건 비교 중';recoProgressPaint(task);
         const winner=await placementRun({party,stage:snapshot.c.key+'/'+snapshot.st.tab+'/'+snapshot.st.name,options:snapshot.options,brk:snapshot.breakFor(t),owner:task.owner,

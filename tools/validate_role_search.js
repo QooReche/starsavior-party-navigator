@@ -43,7 +43,7 @@ async function main(){const [input,dir,mode='independent']=process.argv.slice(2)
    }
    const best=type=>C.bestTriples(state[type].map(l=>l.sort((a,b)=>b.score-a.score)),1)[0];
    const full=best('full'),reduced=best('reduced');
-   const S=structuredClone(G.search);S.learned.value=false;S.speed.surrogate.value=false;S.maxPool=0;
+   const S=structuredClone(G.search);S.placement={...S.placement,baseline:true,enabled:true};S.learned.value=false;S.speed.surrogate.value=false;S.maxPool=0;
    const search=await C.search({S,bosses,results,roster,level:6,levelMax:18,mode:'top',breaks:[],workers:2,makeWorker:T.makeWorker,stage:'cosmo',base:'',onPhase:(m,n)=>console.error(m,n)});
    const chosen=search.rows[0],selectedJobs=chosen.teams.map(t=>job(t)),one=await run(selectedJobs,1,20261123);
    const selectedScore=selectedJobs.reduce((s,j)=>s+one[j.key].cosmo.top,0),independent={};

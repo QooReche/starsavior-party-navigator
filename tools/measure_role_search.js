@@ -23,16 +23,17 @@ async function main(){const [input,out,variant='rules']=process.argv.slice(2);if
   const breaks=Object.entries(require('../myinfo_import.js').mapBreak(info)||{}).filter(([n])=>D.cfg.breakSupported.includes(n)).map(([name,level])=>({name,level}));
   const old=['rules','free','B','guild-old'].includes(variant),mods=old?oldModules('5139b2e'):{C:require('../cosmo_search.js'),GS:require('../guild_search.js')};
   // Isolate B: only baseline layout/leader and its matching learned features change.
-  if(variant==='B'){mods.GS.party=(keys,results)=>P.party(keys,results);mods.L.encoder=require('../cosmo_learned.js').encoder;}
+  if(variant==='B'){mods.GS.party=(keys,results)=>P.party(keys,results);mods.L.encoder=(...args)=>require('../cosmo_learned.js').encoder(...args,{baseline:true});}
   const T=transport(mods.GS),start=performance.now(),phases=[];
   const onPhase=(msg,total)=>{phases.push({msg,total,seconds:(performance.now()-start)/1000});console.error(variant,msg,total);};
   try{let result;
     if(!guild){const G=require('../data/cosmo_raid.json'),S=structuredClone(G.search);
-      S.minFront=S.minDealer=variant==='rules'?1:0;S.placement={...S.placement,enabled:variant!=='B'};
+      S.minFront=S.minDealer=variant==='rules'?1:0;if(variant!=='default')S.placement={...S.placement,baseline:true,enabled:variant!=='B'};
       result=await mods.C.search({S,bosses:G.season.bossOrder,results:profile.results,roster:D.roster,level:-1,levelMax:Math.min(...G.bosses.map(b=>b.levels.length)),mode:'top',workers:2,makeWorker:T.makeWorker,
         stage:'코스모 게이트',base:'',breaks,boundaries:Object.fromEntries(G.bosses.map(b=>[b.key,P.boundaries(b.levels)])),sampleSeed:20261119,onPhase});
     }else{const G=require('../data/guild_defense.json'),V=require('../guild_view.js'),GS=mods.GS,tiers=[0,0,0,0],cls=Object.fromEntries(D.roster.map(r=>[r.key,r.cls]));
-      if(!old)result=await require('../guild_planner.js').search({S:G.search,G,V,results:profile.results,roster:D.roster,tiers,breaks,workers:2,makeWorker:T.makeWorker,stage:'길드방어전',base:'',onPhase});
+      if(!old){const S=structuredClone(G.search);if(variant==='guild-new')S.placement={...S.placement,baseline:true,enabled:true};
+        result=await require('../guild_planner.js').search({S,G,V,results:profile.results,roster:D.roster,tiers,breaks,workers:2,makeWorker:T.makeWorker,stage:'길드방어전',base:'',onPhase});}
       else{const S=JSON.parse(cp.execFileSync('git',['show','5139b2e:data/guild_defense.json'],{cwd:root,encoding:'utf8'})).search;
         S.excluded=require('../data/guild_defense.json').search.notes.filter(n=>['professor-m','waltz-asherah'].includes(n.key)).map(n=>n.key);
         const rows=GS.pool(S,profile.results,D.roster),combos=GS.combos(S,rows),run=async(jobs,runs,seed)=>{onPhase('길드 기존 단계',jobs.length);return GS.runPhase({jobs,runs,seed,workers:2,makeWorker:T.makeWorker,stage:'길드방어전',base:''}).promise;};

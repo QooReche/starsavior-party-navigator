@@ -90,7 +90,7 @@ async function growthCandidates(c,st,alive,deadline,config={}){const original=co
   }return targets;}
 async function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.state||GROW,paint=env.paint||growthPaint,live=env.live||(()=>GROW.id===id),owner=env.owner||'reco',version=env.version||GROW.versions.engine;
   const placementStarted=Date.now();
-  if(env.final)for(const j of jobs){
+  if(env.final&&CFG.recommendation?.placementCompare)for(const j of jobs){
     if(j.t&&PLACEMENT_CACHE.has(j.t.placementKey))continue;
     const winner=await placementRun({party:j.party,stage:c.key+'/'+st.tab+'/'+st.name,options:env.options||simOpt(c.key),brk:j.options?.break_skill,owner,
       live,register:f=>state.stop=f,onProgress:d=>{state.msg=`육성 배치·리더 비교 ${d}/24`;paint();}});
@@ -205,7 +205,7 @@ function growthRankPaint(){const el=$('growth-priority');if(!el)return;
 }
 function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.context===growthOwnedContext('guild'):
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
-function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),PartyPlacement.VERSION,kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks(),...(CSR.optLearned?['learned']:[])],simOpt(kind)]);}
+function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks(),...(CSR.optLearned?['learned']:[])],simOpt(kind),...searchPlacementTag(kind)]);}
 // Whole-account pass: the owned recommendation and its caches remain untouched.
 // 스테이지형: 목표 지표(3별 목표면 N턴 내 클리어율, 아니면 클리어율)가 올라야 «더 나음». 목표 지표가 같으면 3별 목표일 때만 클리어율이 오른 경우를 인정한다
 //  (N턴 내 확률은 그대로여도 깨는 확률이 오른 것). 진척도·처치 턴만 나아진 것은 «더 잘 깸»이 아니다 — 표시하지 않는다
