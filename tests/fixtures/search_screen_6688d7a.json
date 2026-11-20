@@ -1,0 +1,1584 @@
+{
+  "direct": {
+    "now": {
+      "progress": 4,
+      "result": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 4,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      },
+      "sig": "now",
+      "snapshot": {
+        "options": {},
+        "party": {
+          "units": [
+            {
+              "key": "u0"
+            }
+          ]
+        },
+        "revision": 1,
+        "runs": 4,
+        "seed": 20261121,
+        "sig": "now",
+        "stage": "op/a/b",
+        "versions": {
+          "engine": "synthetic"
+        }
+      },
+      "status": "done"
+    }
+  },
+  "recommendation": {
+    "candidate0": {
+      "ci": [
+        0.1,
+        0.9
+      ],
+      "clear": 0.5,
+      "n": 4,
+      "prog": 0.75,
+      "progs": [
+        0.5,
+        1,
+        0.5,
+        1
+      ],
+      "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+      "t60": 0.5,
+      "unsupported": [
+        {
+          "raw": "synthetic-only",
+          "unit": "u0"
+        }
+      ],
+      "ver": "synthetic",
+      "via": {
+        "coop": 0.1
+      }
+    },
+    "team1": {
+      "ci": [
+        0.1,
+        0.9
+      ],
+      "clear": 0.5,
+      "n": 4,
+      "prog": 0.75,
+      "progs": [
+        0.5,
+        1,
+        0.5,
+        1
+      ],
+      "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+      "t60": 0.5,
+      "unsupported": [
+        {
+          "raw": "synthetic-only",
+          "unit": "u0"
+        }
+      ],
+      "ver": "synthetic",
+      "via": {
+        "coop": 0.1
+      }
+    },
+    "team2": {
+      "ci": [
+        0.1,
+        0.9
+      ],
+      "clear": 0.5,
+      "n": 4,
+      "prog": 0.75,
+      "progs": [
+        0.5,
+        1,
+        0.5,
+        1
+      ],
+      "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+      "t60": 0.5,
+      "unsupported": [
+        {
+          "raw": "synthetic-only",
+          "unit": "u0"
+        }
+      ],
+      "ver": "synthetic",
+      "via": {
+        "coop": 0.1
+      }
+    }
+  },
+  "responses": [
+    [
+      "team1",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 4,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "team2",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 4,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "a,b,c,u0",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 8,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "a,b,c,u1",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 8,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "a,b,c,u2",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 8,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "a,b,c,u3",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 8,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "a,b,c,u4",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 8,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "a,b,c,u0",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 32,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "a,b,c,u1",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 32,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "a,b,c,u2",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 32,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "a,b,c,u3",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 32,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "a,b,c,u4",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 32,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "candidate0",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 4,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ],
+    [
+      "now",
+      {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 4,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    ]
+  ],
+  "screening": {
+    "done": true,
+    "free": false,
+    "got": 5,
+    "left": 5,
+    "n": 5,
+    "order": [
+      "a,b,c,u0",
+      "a,b,c,u1",
+      "a,b,c,u2",
+      "a,b,c,u3",
+      "a,b,c,u4"
+    ],
+    "pool": [
+      "a,b,c,u0",
+      "a,b,c,u1",
+      "a,b,c,u2",
+      "a,b,c,u3",
+      "a,b,c,u4"
+    ],
+    "res": {
+      "a,b,c,u0": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 8,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      },
+      "a,b,c,u1": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 8,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      },
+      "a,b,c,u2": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 8,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      },
+      "a,b,c,u3": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 8,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      },
+      "a,b,c,u4": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 8,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    },
+    "res2": {
+      "a,b,c,u0": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 32,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      },
+      "a,b,c,u1": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 32,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      },
+      "a,b,c,u2": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 32,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      },
+      "a,b,c,u3": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 32,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      },
+      "a,b,c,u4": {
+        "ci": [
+          0.1,
+          0.9
+        ],
+        "clear": 0.5,
+        "n": 32,
+        "prog": 0.75,
+        "progs": [
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1,
+          0.5,
+          1
+        ],
+        "raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+        "t60": 0.5,
+        "unsupported": [
+          {
+            "raw": "synthetic-only",
+            "unit": "u0"
+          }
+        ],
+        "ver": "synthetic",
+        "via": {
+          "coop": 0.1
+        }
+      }
+    },
+    "round": 1,
+    "short": false,
+    "total": 5,
+    "up": [
+      "a,b,c,u0",
+      "a,b,c,u1",
+      "a,b,c,u2",
+      "a,b,c,u3",
+      "a,b,c,u4"
+    ]
+  },
+  "trace": [
+    {
+      "base": "https://synthetic.test/",
+      "job": 0,
+      "n_runs": 4,
+      "options": {},
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "team1",
+          "options": {
+            "break_skill": null
+          },
+          "party": {
+            "units": [
+              {
+                "key": "team1"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 0,
+      "n_runs": 4,
+      "options": {},
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "team2",
+          "options": {
+            "break_skill": null
+          },
+          "party": {
+            "units": [
+              {
+                "key": "team2"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 0,
+      "n_runs": 8,
+      "options": {
+        "rng_streams": true
+      },
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "a,b,c,u0",
+          "options": {
+            "break_skill": null,
+            "raw_runs": true
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate0"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 1,
+      "n_runs": 8,
+      "options": {
+        "rng_streams": true
+      },
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "a,b,c,u1",
+          "options": {
+            "break_skill": null,
+            "raw_runs": true
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate1"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 2,
+      "n_runs": 8,
+      "options": {
+        "rng_streams": true
+      },
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "a,b,c,u2",
+          "options": {
+            "break_skill": null,
+            "raw_runs": true
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate2"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 3,
+      "n_runs": 8,
+      "options": {
+        "rng_streams": true
+      },
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "a,b,c,u3",
+          "options": {
+            "break_skill": null,
+            "raw_runs": true
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate3"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 4,
+      "n_runs": 8,
+      "options": {
+        "rng_streams": true
+      },
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "a,b,c,u4",
+          "options": {
+            "break_skill": null,
+            "raw_runs": true
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate4"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 0,
+      "n_runs": 24,
+      "options": {
+        "rng_streams": true
+      },
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "a,b,c,u0",
+          "options": {
+            "break_skill": null,
+            "merge_raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+            "run_offset": 8
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate0"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 1,
+      "n_runs": 24,
+      "options": {
+        "rng_streams": true
+      },
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "a,b,c,u1",
+          "options": {
+            "break_skill": null,
+            "merge_raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+            "run_offset": 8
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate1"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 2,
+      "n_runs": 24,
+      "options": {
+        "rng_streams": true
+      },
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "a,b,c,u2",
+          "options": {
+            "break_skill": null,
+            "merge_raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+            "run_offset": 8
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate2"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 3,
+      "n_runs": 24,
+      "options": {
+        "rng_streams": true
+      },
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "a,b,c,u3",
+          "options": {
+            "break_skill": null,
+            "merge_raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+            "run_offset": 8
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate3"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 4,
+      "n_runs": 24,
+      "options": {
+        "rng_streams": true
+      },
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "a,b,c,u4",
+          "options": {
+            "break_skill": null,
+            "merge_raw": "[[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1],[\"wipe\",10,20,0.5],[\"clear\",10,20,1]]",
+            "run_offset": 8
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate4"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 0,
+      "n_runs": 4,
+      "options": {},
+      "owner": "reco",
+      "revision": 0,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "candidate0",
+          "options": {
+            "break_skill": null
+          },
+          "party": {
+            "units": [
+              {
+                "key": "candidate0"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    },
+    {
+      "base": "https://synthetic.test/",
+      "job": 0,
+      "n_runs": 4,
+      "options": {},
+      "owner": "direct",
+      "progress": true,
+      "revision": 1,
+      "seed": 20261121,
+      "stage": "op/a/b",
+      "teams": [
+        {
+          "key": "now",
+          "options": {},
+          "party": {
+            "units": [
+              {
+                "key": "u0"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "run"
+    }
+  ]
+}

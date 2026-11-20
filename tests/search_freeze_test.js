@@ -41,8 +41,9 @@ async function capture(){
  out.runtime=await runtime();
  return normalize(out);
 }
-async function runtime(){
- const html=fs.readFileSync(path.join(ROOT,'party_template.html'),'utf8'),cut=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
+async function runtime({legacy=false,screen=false}={}){
+ const read=p=>legacy?require('node:child_process').execFileSync('git',['show','6688d7a:'+p],{cwd:ROOT,encoding:'utf8'}):fs.readFileSync(path.join(ROOT,p),'utf8');
+ const html=read('party_template.html'),cut=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
  const trace=[],responses=[],raw={ver:'synthetic',n:4,prog:.75,clear:.5,t60:.5,ci:[.1,.9],progs:[.2,1,.8,1],via:{coop:.1},raw:[[1,.2],[2,1],[3,.8],[4,1]],unsupported:[{unit:'u0',raw:'synthetic-only'}]};
  const ctx=vm.createContext({console,URL,Date,setTimeout,clearTimeout,SearchExecutor:globalThis.SearchExecutor,
   navigator:{hardwareConcurrency:2},document:{hidden:false},location:{href:'https://synthetic.test/index.html'},
@@ -50,27 +51,39 @@ async function runtime(){
   recoIdentity:()=> 'fixed',recoProgressPaint(){},directResultsPaint(){},simTeamLimit:()=>240000,simRateAdd(){},goalVal:r=>r?.t60,
   RecommendPipeline:require('../recommend_pipeline'),
   Worker:class{postMessage(m){trace.push(plain(m));setImmediate(()=>{if(this.dead)return;const send=x=>this.onmessage({data:{...m,...x}});
-   send({type:'stage',msg:'준비 끝'});for(const t of m.teams){responses.push([t.key,plain(raw)]);send({type:'team',key:t.key,result:plain(raw)});}send({type:'done'});});}terminate(){this.dead=true;}}
+   send({type:'stage',msg:'준비 끝'});for(const t of m.teams){
+    const n=m.n_runs+(t.options?.run_offset||0),r=screen?{...plain(raw),n,progs:Array.from({length:n},(_,i)=>i%2?1:.5),raw:JSON.stringify(Array.from({length:n},(_,i)=>[i%2?'clear':'wipe',10,20,i%2?1:.5]))}:plain(raw);
+    responses.push([t.key,plain(r)]);send({type:'team',key:t.key,result:r});}send({type:'done'});});}terminate(){this.dead=true;}}
  });
  // Load the real executor in the same realm as its injected fake clock/worker.
- const executor=path.join(ROOT,'search_executor.js');if(fs.existsSync(executor))vm.runInContext(fs.readFileSync(executor,'utf8'),ctx);
+ const executor=path.join(ROOT,'search_executor.js');if(!legacy&&fs.existsSync(executor))vm.runInContext(fs.readFileSync(executor,'utf8'),ctx);
  vm.runInContext(cut(html,'const SCR_WMAX=','// 이 기기의 시뮬 속도'),ctx);
- const src=fs.readFileSync(path.join(ROOT,'recommend_runtime.js'),'utf8');
+ const src=read('recommend_runtime.js');
  vm.runInContext(cut(src,'function recoEvaluate(','async function recoEnsure('),ctx);
  const task={owner:'reco',request:0,engine:'synthetic'},snap={key:'fixed',c:{key:'op',parties:2},st:{tab:'a',name:'b'},seed:20261121,n:4,options:{},
   screenKey:p=>'screen'+p,plan:p=>({all:[{key:'team'+p}],rows:[{key:'team'+p}],total:1}),sig:t=>t.key,party:t=>({units:[{key:t.key}]}),breakFor:()=>null,
   result:t=>ctx.SIMQ.res[t.key],meta:{parts:Array.from({length:8},()=>({}))},first:()=>ctx.SIMQ.res.team1};
  ctx.RECO.task=task;await ctx.recoCalculate(snap,task);
  const before=trace.length;await ctx.recoCalculate(snap,task);assert.equal(trace.length,before,'cached recommendation resubmitted');
- const direct=fs.readFileSync(path.join(ROOT,'direct_run.js'),'utf8');
+ let screening;
+ if(screen){
+  for(const [a,b] of [['const SCR_ROUNDS=','const scrKey='],['const scrCmp=','function scrNote('],['function recoScreenSequence(','function simWaiting(']])vm.runInContext(cut(html,a,b),ctx);
+  ctx.ckey=combo=>combo.map(x=>x.s.key).sort().join(',');
+  const all=Array.from({length:5},(_,i)=>({key:'candidate'+i,keys:['a','b','c','u'+i],combo:['a','b','c','u'+i].map(key=>({s:{key}})),v:5-i}));
+  const screened={...snap,c:{key:'op',parties:1},screenKey:()=> 'screen-full',plan:()=>({all,rows:[all[0]],total:5})};
+  await ctx.recoCalculate(screened,task);screening=plain(ctx.SIMQ.scr['screen-full']);
+  assert.equal(screening.up.length,5);assert.equal(Object.keys(screening.res2).length,5);
+  assert.equal(trace.filter(m=>m.teams[0].options?.run_offset===8&&m.n_runs===24).length,5);
+ }
+ const direct=read('direct_run.js');
  Object.assign(ctx,{DIRECT:{draft:{},revision:1,requestId:0,rows:{},cache:new Map(),expected:{now:{sig:'now',revision:1,runs:4,seed:20261121,stage:'op/a/b',party:{units:[{key:'u0'}]},options:{},versions:{engine:'synthetic'}}}},
   MI:{},D:{},QK:{},MyInfoReco:{hash:()=> 'synthetic'},DirectParty:{validate:()=>({ok:true})},directContext:()=>({}),directSync(){},directValues:()=>({errors:[]}),directInputKey:()=> 'fixed',directCopy:plain,directManifest:async()=>({ver:'synthetic'})});
  vm.runInContext(cut(direct,'async function directRunRows(','// Only the completed first'),ctx);
  await ctx.directRunRows();while(ctx.DIRECT.active)await new Promise(setImmediate);
  const directCount=trace.length;await ctx.directRunRows();assert.equal(trace.length,directCount,'cached direct resubmitted');
  ctx.simPoolDrop('reco');ctx.simPoolDrop('direct');
- assert(trace.length===3&&responses.length===3);assert(ctx.DIRECT.rows.now.result.prog>0);
- return plain({trace,responses,recommendation:ctx.SIMQ.res,direct:ctx.DIRECT.rows});
+ assert(trace.length===(screen?14:3)&&responses.length===trace.length);assert(ctx.DIRECT.rows.now.result.prog>0);
+ return plain({trace,responses,recommendation:ctx.SIMQ.res,direct:ctx.DIRECT.rows,...(screen?{screening}:{})});
 }
 if(require.main===module)(async()=>{
  const actual=await capture();
@@ -80,5 +93,5 @@ if(require.main===module)(async()=>{
   mutated.runtime.responses=actual.runtime.responses.slice().reverse();assert.throws(()=>assert.deepEqual(mutated,expected));}
  console.log('PASS frozen search requests, ordered phases/results, raw/t60/ci/progs/via/unsupported, multi-party recommendation, direct/cache');
 })().catch(e=>{console.error(e);process.exitCode=1;});
-module.exports={capture,normalize};
+module.exports={capture,normalize,runtime};
 
