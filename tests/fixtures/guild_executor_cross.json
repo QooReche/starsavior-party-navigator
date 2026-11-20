@@ -1,0 +1,817 @@
+{
+  "order": [
+    "before",
+    "after",
+    "after",
+    "before"
+  ],
+  "meanMs": {
+    "before": 7824.5,
+    "after": 7773.600000000559
+  },
+  "ratio": 0.9934947919995603,
+  "limit": 1.3,
+  "idleDefinition": "2 * phase elapsed - sum(postMessage to done); engine load is busy, not CPU utilization",
+  "phaseMeans": {
+    "before": [
+      {
+        "phase": "1단계: 조합 5개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)",
+        "elapsedMs": 1666.3499999996275,
+        "busyMs": 3302.800000000745,
+        "idleMs": 29.899999998509884
+      },
+      {
+        "phase": "2단계: 상위 2팀을 더 정확히 확인 중",
+        "elapsedMs": 1936.7000000001863,
+        "busyMs": 3862.149999999441,
+        "idleMs": 11.250000000931323
+      },
+      {
+        "phase": "3단계: 상위 1팀을 단계·지원별로 확인 중",
+        "elapsedMs": 1995.6499999994412,
+        "busyMs": 3979.85000000149,
+        "idleMs": 11.449999997392297
+      },
+      {
+        "phase": "4단계: 브레이크 스킬 확인 중",
+        "elapsedMs": 2224.7999999998137,
+        "busyMs": 4441.5,
+        "idleMs": 8.099999999627471
+      }
+    ],
+    "after": [
+      {
+        "phase": "1단계: 조합 5개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)",
+        "elapsedMs": 1688.6000000005588,
+        "busyMs": 3346.600000000559,
+        "idleMs": 30.600000000558794
+      },
+      {
+        "phase": "2단계: 상위 2팀을 더 정확히 확인 중",
+        "elapsedMs": 1877.0999999996275,
+        "busyMs": 3747.849999998696,
+        "idleMs": 6.3500000005587935
+      },
+      {
+        "phase": "3단계: 상위 1팀을 단계·지원별로 확인 중",
+        "elapsedMs": 2129.4500000001863,
+        "busyMs": 4256.5999999996275,
+        "idleMs": 2.300000000745058
+      },
+      {
+        "phase": "4단계: 브레이크 스킬 확인 중",
+        "elapsedMs": 2077.550000000745,
+        "busyMs": 4142.049999999814,
+        "idleMs": 13.05000000167638
+      }
+    ]
+  },
+  "samples": [
+    {
+      "totalMs": 7570.4000000003725,
+      "workers": 2,
+      "settings": {
+        "_note": "기본은 200c2d3 길드 탐색. newSearch=true면 전원 학습 선별·지원 결합 비교를 켜며 전투력 풀·직업 보충·역할 최소 인원·협공 제외·예선 지원 고정을 적용하지 않음. 새 방식은 30분 이내 조정 후 별도 배포하기로 함.",
+        "poolSize": 5,
+        "minPowerRatio": 0,
+        "minRole": {},
+        "minFront": 0,
+        "minDealer": 0,
+        "screen": {
+          "level": 6,
+          "runs": 1,
+          "supporter": "gust",
+          "other": "fire",
+          "support": "none"
+        },
+        "screen2": {
+          "keep": 2,
+          "runs": 1
+        },
+        "finalists": 1,
+        "final": {
+          "runs": 1,
+          "levels": [
+            0,
+            2
+          ],
+          "supports": [
+            "none"
+          ]
+        },
+        "supportRole": {
+          "gust": "서포터",
+          "focus": "캐스터",
+          "strike": "스트라이커"
+        },
+        "excludeText": [
+          "협공"
+        ],
+        "excludeKeys": [],
+        "notes": [
+          {
+            "key": "professor-m",
+            "kind": "exclude",
+            "basis": "client",
+            "why": "강제 협공: 아군이 기본기를 쓰면 다른 아군이 같은 대상에게 따라 공격함. 내 턴이 아닐 때 들러리가 보호막 보스를 치면 «신부의 응징»으로 들러리 전원이 큰 연쇄 피해를 받음."
+          },
+          {
+            "key": "waltz-asherah",
+            "kind": "exclude",
+            "basis": "client",
+            "why": "고유 패시브가 자신의 협공 확률을 올림. 들러리가 보호막 보스를 때리면 신부의 응징이 발생하며, 시뮬이 손익을 계산함."
+          },
+          {
+            "key": "gwen",
+            "kind": "caution",
+            "basis": "community",
+            "why": "아군이 공격하면 특수기를 추가로 발동함(협공은 아니고 엔포스). 커뮤니티는 «남의 턴 추가타 캐릭»이라며 뺀다고 하지만 클라 표에는 길방 전용 금지 규칙이 없어 빼지 않았음. 시뮬이 신부의 응징을 계산하므로 응징이 나는 편성이면 기대 점수가 깎임(시뮬에서 상위 팀에 넣으면 응징이 나고 클리어율이 크게 떨어지는 경우가 있음)."
+          },
+          {
+            "key": "cristelle",
+            "kind": "caution",
+            "basis": "client",
+            "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 이 구원자가 팀에서 공격력이 가장 높으면 정실 어필 뒤 신부 경쟁자가 되어 보호막(보스 생명력 22.5%)을 혼자 깨야 하는데, 딜이 약해 못 깨면 대피로연 전체 공격으로 전멸함(응징이 아니라 이 이유로 클리어율이 크게 떨어질 수 있음). 딜러가 신부 경쟁자가 되도록 공격력 1위를 맞추는 편성이 유리함."
+          },
+          {
+            "key": "sunshine-cat-smile",
+            "kind": "caution",
+            "basis": "client",
+            "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 시뮬이 신부의 응징을 계산하므로, 실제로 응징이 나는 편성이면 기대 점수가 그만큼 깎여서 나옴."
+          }
+        ],
+        "excludeWhy": "길방 EX는 협공 구원자 금지(아카라이브 글 187421752 등, 중간 신뢰). 스킬 문구에 excludeText 단어가 있거나 excludeKeys 에 적힌 구원자를 탐색에서 뺀다. 클라 표에는 협공 구원자 전용 금지 규칙이 없고, 실제 위험은 들러리가 보호막 보스를 치면 나는 «신부의 응징»이다(시뮬이 계산). 그래서 협공 스탯을 거는 구원자(프로페서M·왈츠 아세라)만 빼고, 그웬·크리스텔·스마일(선샤인 캣) 같은 추가 발동형은 빼지 않고 notes 에 주의로 적어 시뮬이 점수로 가린다. 세레스는 커뮤니티가 필수로 써서 뺀 것이 아님. 시즌이 바뀌어 규칙이 달라지면 비우기",
+        "newSearch": false,
+        "learned": {
+          "value": true,
+          "S": 3000,
+          "m": 8,
+          "K": 4000,
+          "M": 8,
+          "A": 256,
+          "overlapStarts": 10,
+          "overlapKeep": 8,
+          "folds": 3,
+          "epochs": 40,
+          "ridge": 10,
+          "minCorrelation": 0.1,
+          "missThreshold": 0.04,
+          "note": "계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀.",
+          "maxScoreCombos": 2000000,
+          "maxOverlapChecks": 2000000,
+          "fallbackMultiplier": 4
+        },
+        "placement": {
+          "baseline": false,
+          "enabled": false,
+          "screenRuns": 2,
+          "keep": 2,
+          "auditTeams": 12
+        },
+        "excluded": [],
+        "banCoop": false
+      },
+      "keys": [
+        "smile",
+        "luna",
+        "carnelia",
+        "bell",
+        "emily"
+      ],
+      "allPhases": true,
+      "breakRuns": 1,
+      "timings": [
+        {
+          "phase": "1단계: 조합 5개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)",
+          "jobs": 5,
+          "elapsedMs": 1669.7999999988824,
+          "busyMs": 3308.7000000011176,
+          "idleMs": 30.89999999664724
+        },
+        {
+          "phase": "2단계: 상위 2팀을 더 정확히 확인 중",
+          "jobs": 2,
+          "elapsedMs": 1822.2000000011176,
+          "busyMs": 3635,
+          "idleMs": 9.400000002235174
+        },
+        {
+          "phase": "3단계: 상위 1팀을 단계·지원별로 확인 중",
+          "jobs": 2,
+          "elapsedMs": 1844.5999999996275,
+          "busyMs": 3671.7000000011176,
+          "idleMs": 17.499999998137355
+        },
+        {
+          "phase": "4단계: 브레이크 스킬 확인 중",
+          "jobs": 6,
+          "elapsedMs": 2232.5999999996275,
+          "busyMs": 4455.300000000745,
+          "idleMs": 9.899999998509884
+        }
+      ],
+      "out": {
+        "rows": [
+          {
+            "keys": [
+              "luna",
+              "carnelia",
+              "bell",
+              "emily"
+            ],
+            "order": [
+              "emily",
+              "luna",
+              "carnelia",
+              "bell"
+            ],
+            "leaderKey": null,
+            "level": 3,
+            "sup": "none",
+            "brk": null,
+            "brkLv": null,
+            "score": 4875,
+            "mean": 4875,
+            "cap": 0,
+            "clear": 0,
+            "prog": 0.3442,
+            "frac": 0,
+            "n": 1
+          }
+        ],
+        "dropped": 0,
+        "pool": 5,
+        "combos": 5,
+        "finalists": 1,
+        "runs": 1
+      },
+      "revision": "6688d7a",
+      "sourceHashes": {
+        "guild_search.js": "906001bb599ff92c5d4d53e1b0ce3c72867a4eab794c1430683df7871d357560",
+        "guild_planner.js": "b6078901edf116fcef0d2ed24d35048da517e5675d072f8cacbbffb8874ef642"
+      },
+      "engine": "7e95862bc0ea",
+      "implementation": "before"
+    },
+    {
+      "totalMs": 7535,
+      "workers": 2,
+      "settings": {
+        "_note": "기본은 200c2d3 길드 탐색. newSearch=true면 전원 학습 선별·지원 결합 비교를 켜며 전투력 풀·직업 보충·역할 최소 인원·협공 제외·예선 지원 고정을 적용하지 않음. 새 방식은 30분 이내 조정 후 별도 배포하기로 함.",
+        "poolSize": 5,
+        "minPowerRatio": 0,
+        "minRole": {},
+        "minFront": 0,
+        "minDealer": 0,
+        "screen": {
+          "level": 6,
+          "runs": 1,
+          "supporter": "gust",
+          "other": "fire",
+          "support": "none"
+        },
+        "screen2": {
+          "keep": 2,
+          "runs": 1
+        },
+        "finalists": 1,
+        "final": {
+          "runs": 1,
+          "levels": [
+            0,
+            2
+          ],
+          "supports": [
+            "none"
+          ]
+        },
+        "supportRole": {
+          "gust": "서포터",
+          "focus": "캐스터",
+          "strike": "스트라이커"
+        },
+        "excludeText": [
+          "협공"
+        ],
+        "excludeKeys": [],
+        "notes": [
+          {
+            "key": "professor-m",
+            "kind": "exclude",
+            "basis": "client",
+            "why": "강제 협공: 아군이 기본기를 쓰면 다른 아군이 같은 대상에게 따라 공격함. 내 턴이 아닐 때 들러리가 보호막 보스를 치면 «신부의 응징»으로 들러리 전원이 큰 연쇄 피해를 받음."
+          },
+          {
+            "key": "waltz-asherah",
+            "kind": "exclude",
+            "basis": "client",
+            "why": "고유 패시브가 자신의 협공 확률을 올림. 들러리가 보호막 보스를 때리면 신부의 응징이 발생하며, 시뮬이 손익을 계산함."
+          },
+          {
+            "key": "gwen",
+            "kind": "caution",
+            "basis": "community",
+            "why": "아군이 공격하면 특수기를 추가로 발동함(협공은 아니고 엔포스). 커뮤니티는 «남의 턴 추가타 캐릭»이라며 뺀다고 하지만 클라 표에는 길방 전용 금지 규칙이 없어 빼지 않았음. 시뮬이 신부의 응징을 계산하므로 응징이 나는 편성이면 기대 점수가 깎임(시뮬에서 상위 팀에 넣으면 응징이 나고 클리어율이 크게 떨어지는 경우가 있음)."
+          },
+          {
+            "key": "cristelle",
+            "kind": "caution",
+            "basis": "client",
+            "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 이 구원자가 팀에서 공격력이 가장 높으면 정실 어필 뒤 신부 경쟁자가 되어 보호막(보스 생명력 22.5%)을 혼자 깨야 하는데, 딜이 약해 못 깨면 대피로연 전체 공격으로 전멸함(응징이 아니라 이 이유로 클리어율이 크게 떨어질 수 있음). 딜러가 신부 경쟁자가 되도록 공격력 1위를 맞추는 편성이 유리함."
+          },
+          {
+            "key": "sunshine-cat-smile",
+            "kind": "caution",
+            "basis": "client",
+            "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 시뮬이 신부의 응징을 계산하므로, 실제로 응징이 나는 편성이면 기대 점수가 그만큼 깎여서 나옴."
+          }
+        ],
+        "excludeWhy": "길방 EX는 협공 구원자 금지(아카라이브 글 187421752 등, 중간 신뢰). 스킬 문구에 excludeText 단어가 있거나 excludeKeys 에 적힌 구원자를 탐색에서 뺀다. 클라 표에는 협공 구원자 전용 금지 규칙이 없고, 실제 위험은 들러리가 보호막 보스를 치면 나는 «신부의 응징»이다(시뮬이 계산). 그래서 협공 스탯을 거는 구원자(프로페서M·왈츠 아세라)만 빼고, 그웬·크리스텔·스마일(선샤인 캣) 같은 추가 발동형은 빼지 않고 notes 에 주의로 적어 시뮬이 점수로 가린다. 세레스는 커뮤니티가 필수로 써서 뺀 것이 아님. 시즌이 바뀌어 규칙이 달라지면 비우기",
+        "newSearch": false,
+        "learned": {
+          "value": true,
+          "S": 3000,
+          "m": 8,
+          "K": 4000,
+          "M": 8,
+          "A": 256,
+          "overlapStarts": 10,
+          "overlapKeep": 8,
+          "folds": 3,
+          "epochs": 40,
+          "ridge": 10,
+          "minCorrelation": 0.1,
+          "missThreshold": 0.04,
+          "note": "계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀.",
+          "maxScoreCombos": 2000000,
+          "maxOverlapChecks": 2000000,
+          "fallbackMultiplier": 4
+        },
+        "placement": {
+          "baseline": false,
+          "enabled": false,
+          "screenRuns": 2,
+          "keep": 2,
+          "auditTeams": 12
+        },
+        "excluded": [],
+        "banCoop": false
+      },
+      "keys": [
+        "smile",
+        "luna",
+        "carnelia",
+        "bell",
+        "emily"
+      ],
+      "allPhases": true,
+      "breakRuns": 1,
+      "timings": [
+        {
+          "phase": "1단계: 조합 5개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)",
+          "jobs": 5,
+          "elapsedMs": 1683.9000000003725,
+          "busyMs": 3336,
+          "idleMs": 31.800000000745058
+        },
+        {
+          "phase": "2단계: 상위 2팀을 더 정확히 확인 중",
+          "jobs": 2,
+          "elapsedMs": 1763.300000000745,
+          "busyMs": 3516.9999999981374,
+          "idleMs": 9.600000003352761
+        },
+        {
+          "phase": "3단계: 상위 1팀을 단계·지원별로 확인 중",
+          "jobs": 2,
+          "elapsedMs": 2133.9000000003725,
+          "busyMs": 4264.800000000745,
+          "idleMs": 3
+        },
+        {
+          "phase": "4단계: 브레이크 스킬 확인 중",
+          "jobs": 6,
+          "elapsedMs": 1953,
+          "busyMs": 3896.4000000003725,
+          "idleMs": 9.599999999627471
+        }
+      ],
+      "out": {
+        "rows": [
+          {
+            "keys": [
+              "luna",
+              "carnelia",
+              "bell",
+              "emily"
+            ],
+            "order": [
+              "emily",
+              "luna",
+              "carnelia",
+              "bell"
+            ],
+            "leaderKey": null,
+            "level": 3,
+            "sup": "none",
+            "brk": null,
+            "brkLv": null,
+            "score": 4875,
+            "mean": 4875,
+            "cap": 0,
+            "clear": 0,
+            "prog": 0.3442,
+            "frac": 0,
+            "n": 1
+          }
+        ],
+        "dropped": 0,
+        "pool": 5,
+        "combos": 5,
+        "finalists": 1,
+        "runs": 1
+      },
+      "revision": "173492edf26968f297442f8fc08f799f0f22d274",
+      "sourceHashes": {
+        "guild_search.js": "8d8351a9778599d7c79b91f6993b991b96db78a19633560fcaaf7a008a631b9e",
+        "guild_planner.js": "b6078901edf116fcef0d2ed24d35048da517e5675d072f8cacbbffb8874ef642",
+        "search_executor.js": "563f7fa308d5b97bafa21c1a7f9033db0e46fe82a5369df749423eb2028e9d9f"
+      },
+      "engine": "7e95862bc0ea",
+      "implementation": "after"
+    },
+    {
+      "totalMs": 8012.200000001118,
+      "workers": 2,
+      "settings": {
+        "_note": "기본은 200c2d3 길드 탐색. newSearch=true면 전원 학습 선별·지원 결합 비교를 켜며 전투력 풀·직업 보충·역할 최소 인원·협공 제외·예선 지원 고정을 적용하지 않음. 새 방식은 30분 이내 조정 후 별도 배포하기로 함.",
+        "poolSize": 5,
+        "minPowerRatio": 0,
+        "minRole": {},
+        "minFront": 0,
+        "minDealer": 0,
+        "screen": {
+          "level": 6,
+          "runs": 1,
+          "supporter": "gust",
+          "other": "fire",
+          "support": "none"
+        },
+        "screen2": {
+          "keep": 2,
+          "runs": 1
+        },
+        "finalists": 1,
+        "final": {
+          "runs": 1,
+          "levels": [
+            0,
+            2
+          ],
+          "supports": [
+            "none"
+          ]
+        },
+        "supportRole": {
+          "gust": "서포터",
+          "focus": "캐스터",
+          "strike": "스트라이커"
+        },
+        "excludeText": [
+          "협공"
+        ],
+        "excludeKeys": [],
+        "notes": [
+          {
+            "key": "professor-m",
+            "kind": "exclude",
+            "basis": "client",
+            "why": "강제 협공: 아군이 기본기를 쓰면 다른 아군이 같은 대상에게 따라 공격함. 내 턴이 아닐 때 들러리가 보호막 보스를 치면 «신부의 응징»으로 들러리 전원이 큰 연쇄 피해를 받음."
+          },
+          {
+            "key": "waltz-asherah",
+            "kind": "exclude",
+            "basis": "client",
+            "why": "고유 패시브가 자신의 협공 확률을 올림. 들러리가 보호막 보스를 때리면 신부의 응징이 발생하며, 시뮬이 손익을 계산함."
+          },
+          {
+            "key": "gwen",
+            "kind": "caution",
+            "basis": "community",
+            "why": "아군이 공격하면 특수기를 추가로 발동함(협공은 아니고 엔포스). 커뮤니티는 «남의 턴 추가타 캐릭»이라며 뺀다고 하지만 클라 표에는 길방 전용 금지 규칙이 없어 빼지 않았음. 시뮬이 신부의 응징을 계산하므로 응징이 나는 편성이면 기대 점수가 깎임(시뮬에서 상위 팀에 넣으면 응징이 나고 클리어율이 크게 떨어지는 경우가 있음)."
+          },
+          {
+            "key": "cristelle",
+            "kind": "caution",
+            "basis": "client",
+            "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 이 구원자가 팀에서 공격력이 가장 높으면 정실 어필 뒤 신부 경쟁자가 되어 보호막(보스 생명력 22.5%)을 혼자 깨야 하는데, 딜이 약해 못 깨면 대피로연 전체 공격으로 전멸함(응징이 아니라 이 이유로 클리어율이 크게 떨어질 수 있음). 딜러가 신부 경쟁자가 되도록 공격력 1위를 맞추는 편성이 유리함."
+          },
+          {
+            "key": "sunshine-cat-smile",
+            "kind": "caution",
+            "basis": "client",
+            "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 시뮬이 신부의 응징을 계산하므로, 실제로 응징이 나는 편성이면 기대 점수가 그만큼 깎여서 나옴."
+          }
+        ],
+        "excludeWhy": "길방 EX는 협공 구원자 금지(아카라이브 글 187421752 등, 중간 신뢰). 스킬 문구에 excludeText 단어가 있거나 excludeKeys 에 적힌 구원자를 탐색에서 뺀다. 클라 표에는 협공 구원자 전용 금지 규칙이 없고, 실제 위험은 들러리가 보호막 보스를 치면 나는 «신부의 응징»이다(시뮬이 계산). 그래서 협공 스탯을 거는 구원자(프로페서M·왈츠 아세라)만 빼고, 그웬·크리스텔·스마일(선샤인 캣) 같은 추가 발동형은 빼지 않고 notes 에 주의로 적어 시뮬이 점수로 가린다. 세레스는 커뮤니티가 필수로 써서 뺀 것이 아님. 시즌이 바뀌어 규칙이 달라지면 비우기",
+        "newSearch": false,
+        "learned": {
+          "value": true,
+          "S": 3000,
+          "m": 8,
+          "K": 4000,
+          "M": 8,
+          "A": 256,
+          "overlapStarts": 10,
+          "overlapKeep": 8,
+          "folds": 3,
+          "epochs": 40,
+          "ridge": 10,
+          "minCorrelation": 0.1,
+          "missThreshold": 0.04,
+          "note": "계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀.",
+          "maxScoreCombos": 2000000,
+          "maxOverlapChecks": 2000000,
+          "fallbackMultiplier": 4
+        },
+        "placement": {
+          "baseline": false,
+          "enabled": false,
+          "screenRuns": 2,
+          "keep": 2,
+          "auditTeams": 12
+        },
+        "excluded": [],
+        "banCoop": false
+      },
+      "keys": [
+        "smile",
+        "luna",
+        "carnelia",
+        "bell",
+        "emily"
+      ],
+      "allPhases": true,
+      "breakRuns": 1,
+      "timings": [
+        {
+          "phase": "1단계: 조합 5개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)",
+          "jobs": 5,
+          "elapsedMs": 1693.300000000745,
+          "busyMs": 3357.2000000011176,
+          "idleMs": 29.40000000037253
+        },
+        {
+          "phase": "2단계: 상위 2팀을 더 정확히 확인 중",
+          "jobs": 2,
+          "elapsedMs": 1990.8999999985099,
+          "busyMs": 3978.699999999255,
+          "idleMs": 3.099999997764826
+        },
+        {
+          "phase": "3단계: 상위 1팀을 단계·지원별로 확인 중",
+          "jobs": 2,
+          "elapsedMs": 2125,
+          "busyMs": 4248.39999999851,
+          "idleMs": 1.6000000014901161
+        },
+        {
+          "phase": "4단계: 브레이크 스킬 확인 중",
+          "jobs": 6,
+          "elapsedMs": 2202.10000000149,
+          "busyMs": 4387.699999999255,
+          "idleMs": 16.50000000372529
+        }
+      ],
+      "out": {
+        "rows": [
+          {
+            "keys": [
+              "luna",
+              "carnelia",
+              "bell",
+              "emily"
+            ],
+            "order": [
+              "emily",
+              "luna",
+              "carnelia",
+              "bell"
+            ],
+            "leaderKey": null,
+            "level": 3,
+            "sup": "none",
+            "brk": null,
+            "brkLv": null,
+            "score": 4875,
+            "mean": 4875,
+            "cap": 0,
+            "clear": 0,
+            "prog": 0.3442,
+            "frac": 0,
+            "n": 1
+          }
+        ],
+        "dropped": 0,
+        "pool": 5,
+        "combos": 5,
+        "finalists": 1,
+        "runs": 1
+      },
+      "revision": "173492edf26968f297442f8fc08f799f0f22d274",
+      "sourceHashes": {
+        "guild_search.js": "8d8351a9778599d7c79b91f6993b991b96db78a19633560fcaaf7a008a631b9e",
+        "guild_planner.js": "b6078901edf116fcef0d2ed24d35048da517e5675d072f8cacbbffb8874ef642",
+        "search_executor.js": "563f7fa308d5b97bafa21c1a7f9033db0e46fe82a5369df749423eb2028e9d9f"
+      },
+      "engine": "7e95862bc0ea",
+      "implementation": "after"
+    },
+    {
+      "totalMs": 8078.5999999996275,
+      "workers": 2,
+      "settings": {
+        "_note": "기본은 200c2d3 길드 탐색. newSearch=true면 전원 학습 선별·지원 결합 비교를 켜며 전투력 풀·직업 보충·역할 최소 인원·협공 제외·예선 지원 고정을 적용하지 않음. 새 방식은 30분 이내 조정 후 별도 배포하기로 함.",
+        "poolSize": 5,
+        "minPowerRatio": 0,
+        "minRole": {},
+        "minFront": 0,
+        "minDealer": 0,
+        "screen": {
+          "level": 6,
+          "runs": 1,
+          "supporter": "gust",
+          "other": "fire",
+          "support": "none"
+        },
+        "screen2": {
+          "keep": 2,
+          "runs": 1
+        },
+        "finalists": 1,
+        "final": {
+          "runs": 1,
+          "levels": [
+            0,
+            2
+          ],
+          "supports": [
+            "none"
+          ]
+        },
+        "supportRole": {
+          "gust": "서포터",
+          "focus": "캐스터",
+          "strike": "스트라이커"
+        },
+        "excludeText": [
+          "협공"
+        ],
+        "excludeKeys": [],
+        "notes": [
+          {
+            "key": "professor-m",
+            "kind": "exclude",
+            "basis": "client",
+            "why": "강제 협공: 아군이 기본기를 쓰면 다른 아군이 같은 대상에게 따라 공격함. 내 턴이 아닐 때 들러리가 보호막 보스를 치면 «신부의 응징»으로 들러리 전원이 큰 연쇄 피해를 받음."
+          },
+          {
+            "key": "waltz-asherah",
+            "kind": "exclude",
+            "basis": "client",
+            "why": "고유 패시브가 자신의 협공 확률을 올림. 들러리가 보호막 보스를 때리면 신부의 응징이 발생하며, 시뮬이 손익을 계산함."
+          },
+          {
+            "key": "gwen",
+            "kind": "caution",
+            "basis": "community",
+            "why": "아군이 공격하면 특수기를 추가로 발동함(협공은 아니고 엔포스). 커뮤니티는 «남의 턴 추가타 캐릭»이라며 뺀다고 하지만 클라 표에는 길방 전용 금지 규칙이 없어 빼지 않았음. 시뮬이 신부의 응징을 계산하므로 응징이 나는 편성이면 기대 점수가 깎임(시뮬에서 상위 팀에 넣으면 응징이 나고 클리어율이 크게 떨어지는 경우가 있음)."
+          },
+          {
+            "key": "cristelle",
+            "kind": "caution",
+            "basis": "client",
+            "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 이 구원자가 팀에서 공격력이 가장 높으면 정실 어필 뒤 신부 경쟁자가 되어 보호막(보스 생명력 22.5%)을 혼자 깨야 하는데, 딜이 약해 못 깨면 대피로연 전체 공격으로 전멸함(응징이 아니라 이 이유로 클리어율이 크게 떨어질 수 있음). 딜러가 신부 경쟁자가 되도록 공격력 1위를 맞추는 편성이 유리함."
+          },
+          {
+            "key": "sunshine-cat-smile",
+            "kind": "caution",
+            "basis": "client",
+            "why": "그웬과 같은 «아군 타격 후 추가 발동» 형태임. 빼지는 않았음. 시뮬이 신부의 응징을 계산하므로, 실제로 응징이 나는 편성이면 기대 점수가 그만큼 깎여서 나옴."
+          }
+        ],
+        "excludeWhy": "길방 EX는 협공 구원자 금지(아카라이브 글 187421752 등, 중간 신뢰). 스킬 문구에 excludeText 단어가 있거나 excludeKeys 에 적힌 구원자를 탐색에서 뺀다. 클라 표에는 협공 구원자 전용 금지 규칙이 없고, 실제 위험은 들러리가 보호막 보스를 치면 나는 «신부의 응징»이다(시뮬이 계산). 그래서 협공 스탯을 거는 구원자(프로페서M·왈츠 아세라)만 빼고, 그웬·크리스텔·스마일(선샤인 캣) 같은 추가 발동형은 빼지 않고 notes 에 주의로 적어 시뮬이 점수로 가린다. 세레스는 커뮤니티가 필수로 써서 뺀 것이 아님. 시즌이 바뀌어 규칙이 달라지면 비우기",
+        "newSearch": false,
+        "learned": {
+          "value": true,
+          "S": 3000,
+          "m": 8,
+          "K": 4000,
+          "M": 8,
+          "A": 256,
+          "overlapStarts": 10,
+          "overlapKeep": 8,
+          "folds": 3,
+          "epochs": 40,
+          "ridge": 10,
+          "minCorrelation": 0.1,
+          "missThreshold": 0.04,
+          "note": "계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀.",
+          "maxScoreCombos": 2000000,
+          "maxOverlapChecks": 2000000,
+          "fallbackMultiplier": 4
+        },
+        "placement": {
+          "baseline": false,
+          "enabled": false,
+          "screenRuns": 2,
+          "keep": 2,
+          "auditTeams": 12
+        },
+        "excluded": [],
+        "banCoop": false
+      },
+      "keys": [
+        "smile",
+        "luna",
+        "carnelia",
+        "bell",
+        "emily"
+      ],
+      "allPhases": true,
+      "breakRuns": 1,
+      "timings": [
+        {
+          "phase": "1단계: 조합 5개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)",
+          "jobs": 5,
+          "elapsedMs": 1662.9000000003725,
+          "busyMs": 3296.9000000003725,
+          "idleMs": 28.90000000037253
+        },
+        {
+          "phase": "2단계: 상위 2팀을 더 정확히 확인 중",
+          "jobs": 2,
+          "elapsedMs": 2051.199999999255,
+          "busyMs": 4089.2999999988824,
+          "idleMs": 13.099999999627471
+        },
+        {
+          "phase": "3단계: 상위 1팀을 단계·지원별로 확인 중",
+          "jobs": 2,
+          "elapsedMs": 2146.699999999255,
+          "busyMs": 4288.000000001863,
+          "idleMs": 5.399999996647239
+        },
+        {
+          "phase": "4단계: 브레이크 스킬 확인 중",
+          "jobs": 6,
+          "elapsedMs": 2217,
+          "busyMs": 4427.699999999255,
+          "idleMs": 6.300000000745058
+        }
+      ],
+      "out": {
+        "rows": [
+          {
+            "keys": [
+              "luna",
+              "carnelia",
+              "bell",
+              "emily"
+            ],
+            "order": [
+              "emily",
+              "luna",
+              "carnelia",
+              "bell"
+            ],
+            "leaderKey": null,
+            "level": 3,
+            "sup": "none",
+            "brk": null,
+            "brkLv": null,
+            "score": 4875,
+            "mean": 4875,
+            "cap": 0,
+            "clear": 0,
+            "prog": 0.3442,
+            "frac": 0,
+            "n": 1
+          }
+        ],
+        "dropped": 0,
+        "pool": 5,
+        "combos": 5,
+        "finalists": 1,
+        "runs": 1
+      },
+      "revision": "6688d7a",
+      "sourceHashes": {
+        "guild_search.js": "906001bb599ff92c5d4d53e1b0ce3c72867a4eab794c1430683df7871d357560",
+        "guild_planner.js": "b6078901edf116fcef0d2ed24d35048da517e5675d072f8cacbbffb8874ef642"
+      },
+      "engine": "7e95862bc0ea",
+      "implementation": "before"
+    }
+  ]
+}

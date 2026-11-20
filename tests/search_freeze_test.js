@@ -9,7 +9,7 @@ function prelude(name,exports,marker='(async()=>'){
 }
 function normalize(x){
  if(Array.isArray(x))return x.map(normalize);
- if(x&&typeof x==='object')return Object.fromEntries(Object.keys(x).sort().filter(k=>!['id','requestId','jobId'].includes(k)).map(k=>[k,normalize(x[k])]));
+ if(x&&typeof x==='object')return Object.fromEntries(Object.keys(x).sort().filter(k=>!(x.type==='run'&&['id','requestId','jobId'].includes(k))).map(k=>[k,normalize(x[k])]));
  return x;
 }
 async function capture(){

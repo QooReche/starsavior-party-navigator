@@ -8,6 +8,7 @@ const ctx=vm.createContext({CFG:require('../party_contents.json'),recommendation
  ckey:()=>t.keys.join(','),simMain:r=>r,simCls:()=>'',esc:String,simOpt:()=>({}),
  document:{querySelector:()=>null},location:{href:'https://test/index.html'},setTimeout:()=>1,clearTimeout(){},run(){},simStop(){},
  Worker:class{constructor(){workers.push(this)}postMessage(req){this.req=req}terminate(){this.stopped=true}}});
+vm.runInContext(fs.readFileSync(require.resolve('../search_executor.js'),'utf8'),ctx);
 vm.runInContext(section('const simSigB=','// 표시 상태는'),ctx);
 vm.runInContext(section('function simTitle(','function simBar('),ctx);
 vm.runInContext(section('function simStart(','document.querySelectorAll(\'input[name="runs"]\')'),ctx);
