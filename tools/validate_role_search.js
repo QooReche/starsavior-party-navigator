@@ -24,7 +24,7 @@ async function main(){const [input,dir,mode='independent']=process.argv.slice(2)
     evaluated[name].sum=evaluated[name].teams.reduce((s,t)=>s+top(t.scores),0);save('independent-progress',evaluated);console.error('independent complete',name);
    }
    // Paired bootstrap across independent battle seeds; selection seeds are disjoint.
-   const comparisons={};for(const [a,b] of [['rules','free'],['rules','B'],['rules','A'],['free','B'],['B','A'],['guild-old','guild-new']]){
+   const comparisons={};for(const [a,b] of [['rules','free'],['rules','B'],['rules','A'],['free','B'],['free','A'],['B','A'],['guild-old','guild-new']]){
     comparisons[a+'→'+b]={differencePct:(evaluated[b].sum/evaluated[a].sum-1)*100,ci95:interval(evaluated[a].teams.map(t=>t.scores),evaluated[b].teams.map(t=>t.scores))};
    }save('independent',{evaluated,comparisons,seconds:(performance.now()-start)/1000,games:T.games});
   }else if(mode==='small'){
