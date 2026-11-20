@@ -195,7 +195,7 @@ function checkLoading(page){
  const completed=vm.runInContext('simBar(1,[{}],{},false)',run);
  assert.match(completed,/data-state="done"/);
  assert.doesNotMatch(completed,/data-gwen="report"/,'result illustration belongs to the shared lane');
- assert.match(page,/id="reco-result-lane" class="gwen-lane gwen-result-lane"/);
+ assert.match(page,/GwenStage\.slot\('reco','result'\)/);
  const css=page.match(/@media\(prefers-reduced-motion:reduce\)\{\.gwen-work[^}]+\}/)?.[0]||'';
  for(const rule of ['.gwen-worker','animation:none','transform:none'])assert(css.includes(rule),rule);
  assert.match(page,/\.gwen-scene\{[^}]*width:140px;height:140px;flex:0 0 140px/);
@@ -210,7 +210,7 @@ for(const file of ['party_template.html','index.html']){
  ]){assert(page.includes(from));assert.throws(()=>checkLoading(page.replace(from,to)),{code:'ERR_ASSERTION'});}
  // reco-gwen-stage 가 HTML 에 존재하는지 확인
  assert(page.includes('id="reco-gwen-stage"'),`${file}: reco stage host must exist`);
- assert(page.includes('id="reco-board-lane"'),`${file}: reco board lane must exist`);
+ assert(page.includes('data-gwen-slot="reco-board"'),`${file}: reco board slot must exist`);
 }
 // 대기 칸(결과 전): 「추천 편성 보기」 단추 옆에 그웬 한 번(계산 준비 중에는 기존 수사 그림만), 단추·체크박스는 그대로.
 function checkIdle(page,file){

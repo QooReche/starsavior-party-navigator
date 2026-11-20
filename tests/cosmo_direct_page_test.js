@@ -21,7 +21,7 @@ async function check(code=source){
     csBoss:b=>b,simPoolDrop:(...a)=>dropped.push(a),directCopy:clean,directManifest:async()=>({ver:'engine-a'}),
     scrPool:()=>[],simWatch:()=>()=>{},simTeamLimit:()=>100,simDispatch:(ws,jobs,o)=>sent.push({jobs,o}),
     cdArrangeSim:boss=>c.cdChange({type:'draft',boss,action:{type:'arrange',order:c.cd.state.teams[boss].draft.slots.map(m=>m.key).reverse(),leaderKey:keys[2]}}),
-    location:{href:'http://localhost/index.html'},directNavigate:m=>{c.DIRECT.mode=m;},GwenLane:{}};
+    location:{href:'http://localhost/index.html'},directNavigate:m=>{c.DIRECT.mode=m;},GwenLane:{},GwenStage:{destroy:()=>{}}};
   vm.createContext(c);vm.runInContext(code+'\nglobalThis.paintOriginal=cdPaint;cdPaint=()=>cdSync();globalThis.cd=CDIRECT;',c);
   c.cdInit();assert.equal(c.cd.state.seasonId,1023);
   const lookup=c.$;let cleared=0;
@@ -95,7 +95,7 @@ async function check(code=source){
     ['CDIRECT.state=CosmoDirect.fromSearch(row,cdSeason())','CDIRECT.state=CosmoDirect.create(cdSeason())'],
     ["if(MI.growth||!MI.info)CDIRECT.loadError='';",''],
     ["CDIRECT.input=input;CDIRECT.error='';","CDIRECT.input=input;CDIRECT.error='';CDIRECT.saveError='';"],
-    ['if(host.hidden){host.replaceChildren();return;}',''],
+    ["if(host.hidden){GwenStage.destroy('cdirect');host.replaceChildren();return;}",''],
   ];
   for(const [a,b] of mutations){assert(source.includes(a),a);await assert.rejects(()=>check(source.replace(a,b)),{code:'ERR_ASSERTION'},a);}
   console.log(`PASS cosmo page: state/jobs/undo/ownership/signatures/summary/search/share; ${mutations.length}/${mutations.length} mutations caught`);
