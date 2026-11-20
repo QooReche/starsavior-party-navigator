@@ -176,6 +176,16 @@ def buff_priority(name):
     return buff_flags()['priority'].get(name, 0)
 
 
+def level_max(name):
+    """PC BuffLevelMax: 0은 무제한. 동명 충돌·미등록은 None."""
+    if not name:  # 효과 지속 턴 변경 등 버프 이름이 없는 효과
+        return None
+    key = re.sub(r'\(해제\s*불가\)$', '', name).strip()
+    caps = buff_flags().get('level_max', {})
+    value = caps.get(name, caps.get(key))
+    return math.inf if value == 'inf' else value
+
+
 _EFF_SEQ = itertools.count(1)
 
 
@@ -5713,7 +5723,12 @@ class Battle:
         if eff.get('persistent_marker'):
             check = False
         if e is None:
-            mx = independent_cap or (math.inf if unlimited_dot else eff['max'] or (5 if dot else 1))
+            cap = eff['max']
+            if cap is None and self.mc['level_max_source'] == 'client':
+                cap = level_max(name)
+                if cap is not None:
+                    self.rule_hits['level_max_source'] += 1
+            mx = independent_cap or (math.inf if unlimited_dot else cap or (5 if dot else 1))
             e = Eff(name, eff['props'], mx, dur, owner, harmful)
             e.dead_keep = self.mc['dead_keep_dnp'] == 'client' and dead_keep_name(name)
             e.category = category
@@ -5932,6 +5947,11 @@ def _support_one(d, markers_all):
             k = line_kind(ln)
             rest = line_rest(ln)
             reason = None
+            cap = level_max(ln.eff.get('name', ''))
+            if ln.eff.get('max') is not None and cap is not None and ln.eff['max'] != cap:
+                out.append(dict(unit=d.name, foe=foe, slot=ln.slot,
+                                reason='level_max: databook 최대 %s / 클라 %s (databook 우선)' % (ln.eff['max'], cap),
+                                raw=ln.raw, critical=False))
             if k == 'unmodeled':
                 reason = 'trigger: ' + (ln.trig or ln.phase or '')
             elif ln.eff['kind'] == 'summon':
