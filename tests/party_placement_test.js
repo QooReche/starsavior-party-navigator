@@ -13,9 +13,9 @@ function candidates(p=P){assert.deepEqual(JSON.parse(JSON.stringify(p.baseline(k
 candidates();
 const control={module:{exports:{}}};vm.runInNewContext(fs.readFileSync(require.resolve('../party_placement'),'utf8'),control);candidates(control.module.exports);
 const roster=keys.map((key,i)=>({key,cls:i%2?'캐스터':'디펜더'}));
-assert.equal(GS.pool({poolSize:1,minPowerRatio:1,minRole:{},excluded:keys,banCoop:true},results,roster).length,4);
-assert.equal(GS.combos({minFront:4,minDealer:4},roster).length,1);
-assert(!GS.coopHit({banCoop:true},{via:{coop:5,forced_coop:8}}));
+assert.equal(GS.pool({newSearch:true,poolSize:1,minPowerRatio:1,minRole:{},excluded:keys,banCoop:true},results,roster).length,4);
+assert.equal(GS.combos({newSearch:true,minFront:4,minDealer:4},roster).length,1);
+assert(!GS.coopHit({newSearch:true,banCoop:true},{via:{coop:5,forced_coop:8}}));
 const p=P.baseline(keys,results),job=C.bossJobs({topQ:.2},'x',3,[keys],results,{},null,p)[0];
 assert.notEqual(job.key,C.bossJobs({topQ:.2},'x',3,[keys],results,{},null,{...p,leaderKey:'b'})[0].key);
 assert.notEqual(C.jobKey('x',keys,3,{name:'cube',level:1},p),C.jobKey('x',keys,3,{name:'cube',level:2},p));

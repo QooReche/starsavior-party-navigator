@@ -19,35 +19,52 @@ const tests = {
   config() {
     // 시즌 설정이 코드가 쓰는 모양인지(시즌 갱신 때 빠뜨리면 여기서 걸림)
     for (const k of ['poolSize', 'minPowerRatio', 'minRole', 'screen2', 'minFront', 'minDealer', 'screen', 'finalists', 'final', 'supportRole']) assert(k in SE, k);
-    for (const k of ['level', 'runs', 'support']) assert(k in SE.screen, k);
+    for (const k of ['level', 'runs', 'supporter', 'other']) assert(k in SE.screen, k);
     for (const k of ['keep', 'runs']) assert(k in SE.screen2, k);
     for (const k of ['runs', 'levels', 'supports']) assert(k in SE.final, k);
     assert(SE.final.levels.every(l => l >= 0 && l <= G.challenge.levels.length));
-    for (const s of [SE.screen.support, SE.screen.support, ...SE.final.supports]) assert(S.SUP_NAME[s], s);
+    for (const s of [SE.screen.supporter, SE.screen.other, ...SE.final.supports]) assert(S.SUP_NAME[s], s);
   },
   pool() {
-    for(const cfg of [{poolSize:1},{minPowerRatio:1},{minRole:{'서포터':99}},{excluded:['d0','s0'],banCoop:true}])
-      assert.equal(S.pool(cfg,results,roster).length,18);
-    assert.deepEqual(S.pool({}, {d0:results.d0},roster).map(r=>r.key),['d0']);
+    const rows = S.pool({poolSize: 6, minRole: {'서포터': 2, '디펜더': 1}}, results, roster);
+    const keys = rows.map(r => r.key);
+    assert.deepEqual(keys.slice(0, 6), ['d0', 'd1', 'd2', 'd3', 'd4', 'd5']);   // 전투력 순 상위 6
+    assert(keys.includes('s0') && keys.includes('s1') && keys.includes('f0'), '역할 최소 인원 보충');
+    assert.equal(keys.length, 9);
+    // 전투력 하한: 최고의 0.985배 이상만(= d0,d1) + 역할 보충
+    const r3 = S.pool({poolSize: 99, minPowerRatio: 0.985, minRole: {'서포터': 1}}, results, roster).map(r => r.key);
+    assert(r3.includes('d0') && r3.includes('d1') && !r3.includes('d5') && r3.includes('s0'), r3.join());
+    // 협공 구원자 제외(S.excluded), 끄면(banCoop=false) 포함
+    const ex = S.pool({poolSize: 99, excluded: ['d0', 's1']}, results, roster).map(r => r.key);
+    assert(!ex.includes('d0') && !ex.includes('s1') && ex.includes('d1'));
+    assert(S.pool({poolSize: 99, excluded: ['d0'], banCoop: false}, results, roster).map(r => r.key).includes('d0'));
+    // 능력치 없는 구원자(미보유)는 뺀다
+    const r2 = S.pool({poolSize: 99}, {d0: results.d0}, roster);
+    assert.deepEqual(r2.map(r => r.key), ['d0']);
   },
   combos() {
-    const all=S.combos({minFront:0,minDealer:0},roster);
-    assert.equal(all.length,3060);
-    assert.deepEqual(S.combos({minFront:4,minDealer:4},roster),all);
+    const rows = S.pool({poolSize: 99}, results, roster);
+    const all = S.combos({minFront: 0, minDealer: 0}, rows);
+    assert.equal(all.length, 3060);   // C(18,4)
+    const ok = S.combos({minFront: 1, minDealer: 1}, rows);
+    assert(ok.every(t => t.some(k => S.FRONT.includes(cls[k])) && t.some(k => !S.FRONT.includes(cls[k]))));
+    assert(ok.length < all.length && !ok.some(t => t.every(k => k[0] === 'd')));
   },
   party() {
-    const keys=['d3','s1','d0','f2'],p=S.party(keys,results,cls);
-    assert.deepEqual(p.order,['s1','f2','d0','d3']);
-    assert.equal(p.spec.leader,0);assert.equal(p.leaderKey,undefined);
-    assert(p.spec.units.every(u=>u.stats_final));
-    const experimental=S.party(keys,results,cls,S.baseline(keys,results));
-    assert.deepEqual(experimental.order,['d0','d3','f2','s1']);
-    assert.equal(experimental.leaderKey,'d0');assert(experimental.spec.units.every(u=>u.stats_final));
+    const p = S.party(['d3', 's1', 'd0', 'f2'], results, cls);
+    // 앞열 역할 먼저(전투력 큰 순), 다음 딜러(전투력 큰 순) — s1(990-... 낮음) vs f2: 전투력은 key 생성 순서상 s1 > f2
+    assert.deepEqual(p.order, ['s1', 'f2', 'd0', 'd3']);
+    assert.equal(p.spec.leader, 0);
+    assert.deepEqual(Object.keys(p.spec.units[0]).sort(), ['build', 'key', 'myinfo_combat', 'power', 'stats_final', 'stats_override']);
+    assert(p.spec.units.every(u => u.build === 'none' && u.stats_final === true));
   },
   supports() {
-    assert.equal(S.screenSupport(SE,['s0','d0','d1','d2'],cls),'none');
-    assert.equal(S.screenSupport(SE,['f0','d0','d1','d2'],cls),'none');
-    assert(S.finalSupports(SE,['s0','d0','d1','d2'],cls).includes('gust'));
+    assert.equal(S.screenSupport(SE, ['s0', 'd0', 'd1', 'd2'], cls), SE.screen.supporter);
+    assert.equal(S.screenSupport(SE, ['f0', 'd0', 'd1', 'd2'], cls), SE.screen.other);
+    const noSup = S.finalSupports(SE, ['f0', 'd1', 'd3', 'd5'], cls);   // 서포터·캐스터 없음 → gust·focus 제외
+    assert(!noSup.includes('gust') && !noSup.includes('focus') && noSup.includes('fire') && noSup.includes('strike'));
+    const withSup = S.finalSupports(SE, ['s0', 'd0', 'd1', 'd2'], cls);
+    assert(withSup.includes('gust') && withSup.includes('focus'));
   },
   split() {
     const parts = S.split([1, 2, 3, 4, 5], 2);
@@ -60,7 +77,7 @@ const tests = {
     const list = [['d0', 'd1', 's0', 'f0'], ['d2', 'd3', 's1', 'f1']];
     const jobsA = S.screenJobs(SE, G, V, list, results, cls, tiers);
     assert.equal(jobsA.length, 2);
-    assert.deepEqual(jobsA[0].options.guild, {level: SE.screen.level, sets: tiers, support: SE.screen.support});
+    assert.deepEqual(jobsA[0].options.guild, {level: SE.screen.level, sets: tiers, support: SE.screen.supporter});
     const resA = {[jobsA[0].key]: {prog: 0.6, clear: 0}, [jobsA[1].key]: {prog: 0.9, clear: 0.1}};
     const fin = S.pickFinalists({...SE, finalists: 1}, V, G, jobsA, resA, tiers);
     assert.deepEqual(S.pickTop(V, G, jobsA, resA, tiers, 2), [list[1], list[0]]);
@@ -75,12 +92,12 @@ const tests = {
     assert(top[0].score >= top[1].score);
     // 시뮬에서 협공이 나간 팀은 예선 선발·최종 순위에서 빠진다(banCoop 끄면 포함)
     const resC = {[jobsA[0].key]: {prog: 0.6, clear: 0}, [jobsA[1].key]: {prog: 0.9, clear: 0.1, via: {forced_coop: 2}}};
-    assert.deepEqual(S.pickTop(V, G, jobsA, resC, tiers, 2, SE), [list[1],list[0]]);
+    assert.deepEqual(S.pickTop(V, G, jobsA, resC, tiers, 2, SE), [list[0]]);
     assert.deepEqual(S.pickTop(V, G, jobsA, resC, tiers, 2, {...SE, banCoop: false}), [list[1], list[0]]);
     const resD = {}; jobsB.forEach(j => { resD[j.key] = {prog: 0.9, clear: 0, n: 1, via: j.keys === list[1] ? {coop: 1} : {reaction: 3}}; });
-    assert.deepEqual(S.rank(V, G, jobsB, resD, tiers, 5, SE).length, 2);
+    assert.deepEqual(S.rank(V, G, jobsB, resD, tiers, 5, SE).map(t => t.keys), [list[0]]);
     // 걸러낸 팀 수: 단계마다 같은 팀이 또 걸려도 한 번만 센다
-    assert.equal(S.countDropped(SE, [[jobsA, resC], [jobsA, resC]]), 0);
+    assert.equal(S.countDropped(SE, [[jobsA, resC], [jobsA, resC]]), 1);
     assert.equal(S.countDropped({...SE, banCoop: false}, [[jobsA, resC]]), 0);
     // 기대 점수(평균) = 확인된 식: 진행도 0.5 → 보스 0% 깎음, 1 → 100%
     assert.equal(S.expected(V, G, 4, tiers, 0.5), V.scoreAt(G, V.extraPct(G, 4, tiers), 0));
@@ -137,7 +154,7 @@ const tests = {
     assert.deepEqual(seen[seen.length - 1], [7, 7]);
     // 작업자 결과의 via·progs 가 끊기지 않고 실려 협공 배제까지 이어짐(끊기면 이 줄이 실패)
     assert.deepEqual(res.k3.via, {coop: 1.5}); assert.deepEqual(res.k0.progs, [0.5, 0.9]);
-    assert(!S.coopHit({banCoop: true}, res.k3) && !S.coopHit({banCoop: true}, res.k0), '협공 난 팀만 걸러짐');
+    assert(S.coopHit({banCoop: true}, res.k3) && !S.coopHit({banCoop: true}, res.k0), '협공 난 팀만 걸러짐');
     // 작업자 오류 → reject
     const bad = () => ({terminate() {}, onmessage: null, postMessage(m) { setTimeout(() => this.onmessage({data: {type: 'error', msg: '터짐'}}), 1); }});
     await assert.rejects(S.runPhase({makeWorker: bad, jobs, workers: 2, runs: 5, seed: 1, stage: 'x', base: ''}).promise, /터짐/);
@@ -189,12 +206,16 @@ const tests = {
     assert(S.html({phase: 'done', rows, sig: '2222', pool: 14, combos: 9, finalists: 1, runs: 1}, cx).includes('gd-search-stale'), '선택 효과가 바뀌면 낡은 결과 표시');
     assert(h.includes('추정') && h.includes('새 시즌'), '추정·시즌 경고');
     const hc = S.html({phase: 'idle'}, {...cx, excluded: ['d0']});
-    assert(!hc.includes('data-gs="coop"'));
-    const notes=[{key:'d0',kind:'caution',basis:'client',why:'이유-가'}];
-    const hn=S.html({phase:'idle',dropped:7},{...cx,excluded:['d0'],notes});
-    assert(hn.includes('이유-가')&&hn.includes('[주의 ·'));
-    assert(!hn.includes('gd-search-dropped')&&!hn.includes('data-gs="coop"'));
-
+    assert(hc.includes('data-gs="coop"') && /data-gs="coop" checked/.test(hc) && hc.includes('이름-d0'), '협공 제외 체크(기본 켬)');
+    assert(!/data-gs="coop" checked/.test(S.html({phase: 'idle', banCoop: false}, {...cx, excluded: ['d0']})), '끄면 체크 해제');
+    // 제외·주의 구원자 목록: 이유·근거 수준 표시, 걸러낸 팀 수, 체크 해제 시 «제외 해제됨»
+    const notes = [{key: 'd0', kind: 'exclude', basis: 'client', why: '이유-가'}, {key: 'd1', kind: 'caution', basis: 'community', why: '이유-나'}];
+    const hn = S.html({phase: 'done', rows, sig: '3333', pool: 1, combos: 1, finalists: 1, runs: 1, dropped: 7}, {...cx, excluded: ['d0'], notes});
+    assert(hn.includes('data-k="gd-notes"') && hn.includes('이유-가') && hn.includes('이유-나') && hn.includes('클라 자료 확인') && hn.includes('커뮤니티 근거') && hn.includes('[제외 ·') && hn.includes('[주의 ·'));
+    assert(hn.includes('data-k="gd-search-dropped"') && hn.includes('7개'), '걸러낸 팀 수');
+    assert(S.html({phase: 'idle', banCoop: false}, {...cx, excluded: ['d0'], notes}).includes('제외 해제됨'));
+    assert(!S.html({phase: 'idle'}, {...cx, excluded: ['d0'], notes}).includes('gd-search-dropped'), '0이면 숨김');
+    assert(!S.html({phase: 'idle'}, cx).includes('data-gs="coop"'), '제외 대상 없으면 체크 없음');
   },
 };
 (async () => {

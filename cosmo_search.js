@@ -268,7 +268,7 @@
   // 기본은 전수: 내 정보에서 육성된(전투력>0) 보유 구원자 전부. 전투력 하한·역할 보충 없음.
   // 안전 장치로 S.maxPool(숫자)을 주면 그때만 «전투력 상위 maxPool 명»으로 자른다. 기본 null.
   function poolAll(S, results, roster) {
-    const rows=GS.pool({},results,roster);
+    const rows=GS.pool({newSearch:true},results,roster);
     return !S.learned?.value&&S.maxPool>0?rows.slice(0,S.maxPool):rows;
   }
   const isFront = r => GS.FRONT.includes(r.cls);
@@ -465,7 +465,7 @@
     const learned=!!S.learned?.value;
     const comboCap=learned ? S.learned.maxScoreCombos : S.maxCombos;
     if (comboCap > 0 && pl.combos > comboCap) throw new Error(`4인 조합이 ${num(pl.combos)}개로 안전 상한(${num(comboCap)}개)을 넘음. 추천에서 뺄 구원자를 늘리거나 설정의 ${learned ? 'learned.maxScoreCombos' : 'maxPool/maxCombos'} 를 조정해야 함`);
-    const list = learned ? {length:pl.combos} : GS.combos(S, rows), cls = Object.fromEntries(roster.map(s => [s.key, s.cls]));
+    const list = learned ? {length:pl.combos} : GS.combos({...S,newSearch:true}, rows), cls = Object.fromEntries(roster.map(s => [s.key, s.cls]));
     if (cx.onPlan) cx.onPlan(pl);
     const workersPool = speedValue(S, "workerReuse", false) ? GS.workerPool(cx.makeWorker) : null;
     try {
@@ -537,7 +537,7 @@
           stageTeams+=pl.combos-plannedByBoss[b];
           // 복귀도 작업은 512팀씩 생성. 이미 완료한 표본·후보의 첫 판은 그대로 재사용.
           let batch=[];
-          for(const keys of GS.iterateCombos(S,rows)){
+          for(const keys of GS.iterateCombos({...S,newSearch:true},rows)){
             batch.push(keys);
             if(batch.length===512){await evaluate(bossJobs(S,bosses[b],level,batch,results,cls),`학습 감사 복귀: ${bossName(bosses[b])} 전수 확인 (결과 재사용)`);batch=[];}
           }
@@ -547,7 +547,7 @@
       // 결과 인덱스에는 가벼운 조합 정보만 유지한다. party/options는 실제 실행 직전에 생성.
       for(let i=0;i<3;i++){
         const b=bosses[i],eligible=new Set([...prepared[i].core,...prepared[i].aj].map(j=>j.key));
-        for(const keys of GS.iterateCombos(S,rows)){
+        for(const keys of GS.iterateCombos({...S,newSearch:true},rows)){
           const p=GS.party(keys,results,cls,S.placement?.baseline?Placement.baseline(keys,results):undefined),key=jobKey(b,keys,level,null,p);
           if(res1[key]?.cosmo&&(auditInfo[i].fallback||eligible.has(key)))jobsA.push({key,boss:b,keys,order:p.order,leaderKey:p.leaderKey});
         }
@@ -602,7 +602,7 @@
       const selected=new Set(jobsK.filter(j=>j.boss===b).map(j=>idOf(j.keys))),samples=[];
       const rng=Learned.random((cx.sampleSeed||20261119)+900+bi),n=S.placement?.auditTeams??12;
       const ranked=pickTop(jobsK.filter(j=>j.boss===b),resA,mode),boundary=ranked.slice(pl.keep,pl.keep+Math.floor(n/2)).map(t=>t.keys),randomN=n-boundary.length;let seen=0;
-      for(const keys of GS.iterateCombos(S,rows))if(!selected.has(idOf(keys))){
+      for(const keys of GS.iterateCombos({...S,newSearch:true},rows))if(!selected.has(idOf(keys))){
         ++seen;if(samples.length<randomN)samples.push(keys);else {const i=Math.floor(rng()*seen);if(i<randomN)samples[i]=keys;}
       }
       const randomIds=new Set(samples.map(idOf));pushAll(samples,boundary);

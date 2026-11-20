@@ -8,7 +8,7 @@ const roster=Array.from({length:13},(_,i)=>({key:'u'+String(i).padStart(2,'0'),c
 const results=Object.fromEntries(roster.map((r,i)=>[r.key,{power:1000-i*13,stats:{hp:100+i*21,def:i*10,spd:i*5},combat:{}}]));
 const cls=Object.fromEntries(roster.map(r=>[r.key,r.cls])),keys=roster.slice(0,4).map(r=>r.key);
 assert.deepEqual(G.search.placement.baseline,false);assert.deepEqual(G.search.placement.enabled,false);
-for(const s of [G.search,require('../data/guild_defense.json').search])assert.equal(s.minFront+s.minDealer,0);
+assert.equal(G.search.minFront+G.search.minDealer,0);assert.equal(require('../data/guild_defense.json').search.newSearch,false);
 assert.deepEqual(plain(GS.party(keys,results,cls)),plain(old.GS.party(keys,results,cls)));
 assert.deepEqual(plain(L.encoder(roster,results,roster).encode(keys)),plain(old.L.encoder(roster,results,roster).encode(keys)));
 assert.notDeepEqual(plain(L.encoder(roster,results,roster,{baseline:true}).encode(keys)),plain(old.L.encoder(roster,results,roster).encode(keys)));
@@ -18,7 +18,7 @@ async function check(mod){
  const S=structuredClone(G.search);S.learned={...S.learned,S:40,m:1,K:40,M:1,A:8,overlapStarts:2,overlapKeep:2,epochs:3,minCorrelation:-1,missThreshold:1};
  S.screen={runs:2,firstRuns:1,passFrac:.1,passMinMult:1};S.rerank={keep:20,runs:3};S.final.runs=4;S.combine={topTriples:2,show:2};
  const trace=[];
- const out=await mod.search({S,bosses:G.season.bossOrder,results,roster,mode:'top',level:-1,levelMax:2,breaks:[{name:'cube',level:3}],workers:2,stage:'x',base:'',sampleSeed:20261119,
+ const out=await mod.search({S,bosses:G.season.bossOrder,results,roster,mode:'top',level:-1,levelMax:2,breaks:[{name:'cube',level:3}],workers:1,stage:'x',base:'',sampleSeed:20261119,
  makeWorker:()=>({terminate(){},postMessage(m){trace.push(plain(m));setImmediate(()=>{
   for(const t of m.teams){const level=t.options.cosmo_raid.level,ks=t.party.units.map(u=>u.key),bi=G.season.bossOrder.indexOf(t.options.cosmo_raid.boss);
    const v=100+ks.reduce((a,k,i)=>a+((Number(k.slice(1))*17+bi*37)%113)*(i+1),0)-Math.abs(level-1)*3+(t.options.break_skill?7:0);

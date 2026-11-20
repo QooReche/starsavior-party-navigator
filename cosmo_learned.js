@@ -22,7 +22,7 @@
   }
   function reservoir(a,e,n,seen,rng){if(a.length<n)a.push(e);else{const j=Math.floor(rng()*seen);if(j<n)a[j]=e;}}
   const pause=()=>new Promise(r=>setTimeout(r,0));
-  async function scan(S,rows,visit,stale){const check=()=>{if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});};check();let n=0;for(const keys of GS.iterateCombos(S,rows)){visit(keys);if(++n%4096===0){await pause();check();}}check();return n;}
+  async function scan(S,rows,visit,stale){const check=()=>{if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});};check();let n=0;for(const keys of GS.iterateCombos({...S,newSearch:true},rows)){visit(keys);if(++n%4096===0){await pause();check();}}check();return n;}
   // 균등 reservoir + 구원자별 reservoir. 전원을 m회 포함하는 예약분을 먼저 두고 S까지 균등 표본으로 채움.
   async function sample(S,rows,seed,stale=()=>false){const c=config(S,rows.length),rng=random(seed),a=[],per=new Map(rows.map(r=>[r.key,{a:[],n:0}]));let n=0;
     await scan(S,rows,keys=>{reservoir(a,keys,c.S,++n,rng);for(const k of keys){const p=per.get(k);reservoir(p.a,keys,c.m,++p.n,rng);}},stale);

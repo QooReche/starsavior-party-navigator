@@ -32,7 +32,7 @@ async function main(){const [input,out,variant='rules']=process.argv.slice(2);if
       result=await mods.C.search({S,bosses:G.season.bossOrder,results:profile.results,roster:D.roster,level:-1,levelMax:Math.min(...G.bosses.map(b=>b.levels.length)),mode:'top',workers:2,makeWorker:T.makeWorker,
         stage:'코스모 게이트',base:'',breaks,boundaries:Object.fromEntries(G.bosses.map(b=>[b.key,P.boundaries(b.levels)])),sampleSeed:20261119,onPhase});
     }else{const G=require('../data/guild_defense.json'),V=require('../guild_view.js'),GS=mods.GS,tiers=[0,0,0,0],cls=Object.fromEntries(D.roster.map(r=>[r.key,r.cls]));
-      if(!old){const S=structuredClone(G.search);if(variant==='guild-new')S.placement={...S.placement,baseline:true,enabled:true};
+      if(!old){const S=structuredClone(G.search);S.newSearch=true;if(variant==='guild-new')S.placement={...S.placement,baseline:true,enabled:true};
         result=await require('../guild_planner.js').search({S,G,V,results:profile.results,roster:D.roster,tiers,breaks,workers:2,makeWorker:T.makeWorker,stage:'길드방어전',base:'',onPhase});}
       else{const S=JSON.parse(cp.execFileSync('git',['show','5139b2e:data/guild_defense.json'],{cwd:root,encoding:'utf8'})).search;
         S.excluded=require('../data/guild_defense.json').search.notes.filter(n=>['professor-m','waltz-asherah'].includes(n.key)).map(n=>n.key);

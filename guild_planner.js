@@ -7,7 +7,37 @@
     const party=GS.party(keys,results,cls,(p?.leaderKey?p:undefined)||(S.placement?.baseline?P.baseline(keys,results):undefined));
     return {key:GS.jobKey(keys,level,sup,tiers,brk,party),keys,order:party.order,leaderKey:party.leaderKey,level,sup,party:party.spec,options:{guild:{level,sets:tiers.slice(),support:sup},break_skill:brk}};
   }
+  // 200c2d3 page pipeline: preserve candidates, ordering, seeds, runs and break recheck.
+  async function searchLegacy(cx){
+    const {S,G,V,results,roster,tiers}=cx,cls=Object.fromEntries(roster.map(r=>[r.key,r.cls]));
+    const rows=GS.pool(S,results,roster),combos=GS.combos(S,rows);
+    if(!combos.length)throw Object.assign(Error('편성할 수 있는 구원자가 부족함(내 정보에 육성된 구원자 4명 이상 필요)'),{gwenCause:'few'});
+    const stale=cx.stale||(()=>false);
+    const run=async(jobs,runs,seed,msg)=>{
+      if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});
+      cx.onPhase?.(msg,jobs.length);
+      const h=GS.runPhase({makeWorker:cx.makeWorker,jobs,workers:Math.max(1,Math.min(2,cx.workers||2)),runs,seed,stage:cx.stage,base:cx.base,onProgress:cx.onProgress});
+      cx.onHandle?.(h);const res=await h.promise;
+      if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});
+      return res;
+    };
+    const jobsA=GS.screenJobs(S,G,V,combos,results,cls,tiers);
+    const resA=await run(jobsA,S.screen.runs,1,`1단계: 조합 ${jobsA.length}개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`);
+    const keep2=GS.pickTop(V,G,jobsA,resA,tiers,S.screen2.keep,S),jobsA2=GS.screenJobs(S,G,V,keep2,results,cls,tiers);
+    const resA2=await run(jobsA2,S.screen2.runs,3,`2단계: 상위 ${jobsA2.length}팀을 더 정확히 확인 중`);
+    const fin=GS.pickFinalists(S,V,G,jobsA2,resA2,tiers),jobsB=GS.finalJobs(S,G,V,fin,results,cls,tiers);
+    const resB=await run(jobsB,S.final.runs,2,`3단계: 상위 ${fin.length}팀을 단계·지원별로 확인 중`);
+    const pairs=[[jobsA,resA],[jobsA2,resA2],[jobsB,resB]];
+    let ranked=GS.rank(V,G,jobsB,resB,tiers,GS.BREAK_CHECK.teams,S);
+    const jobsC=GS.breakJobs(ranked,cx.breaks||[],results,cls,tiers);
+    if(jobsC.length){
+      const resC=await run(jobsC,GS.BREAK_CHECK.runs,2,'4단계: 브레이크 스킬 확인 중');
+      pairs.push([jobsC,resC]);ranked=GS.rank(V,G,jobsC,resC,tiers,5,S);
+    }
+    return {rows:ranked.slice(0,5),dropped:GS.countDropped(S,pairs),pool:rows.length,combos:combos.length,finalists:fin.length,runs:jobsC.length?GS.BREAK_CHECK.runs:S.final.runs};
+  }
   async function search(cx){
+    if(cx.S.newSearch !== true)return searchLegacy(cx);
     const {S,G,V,results,roster,tiers}=cx,rows=GS.pool(S,results,roster),cls=Object.fromEntries(roster.map(r=>[r.key,r.cls]));
     if(rows.length<4)throw Object.assign(Error('육성된 보유 구원자 4명 이상 필요'),{gwenCause:'few'});
     const combos=rows.length*(rows.length-1)*(rows.length-2)*(rows.length-3)/24;
@@ -83,7 +113,7 @@
       }
       const finalJobs=[...new Map(keep.map(j=>[j.key,j])).values()];
       const final=await run(finalJobs,S.final.runs,9,'길드 결합 후보 정밀 비교');
-      return {rows:GS.rank(V,G,finalJobs,final,tiers,5,S),pool:rows.length,combos,finalists:finalists.length,runs:S.final.runs,audit:quality,representative,placement:{version:P.VERSION,conditions,moved},growthOwned:second.map(j=>({...j,result:rr[j.key]}))};
+      return {rows:GS.rank(V,G,finalJobs,final,tiers,5,S),dropped:0,pool:rows.length,combos,finalists:finalists.length,runs:S.final.runs,audit:quality,representative,placement:{version:P.VERSION,conditions,moved},growthOwned:second.map(j=>({...j,result:rr[j.key]}))};
     }finally{pool.close();}
   }
   const api={search,job};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GuildPlanner=api;

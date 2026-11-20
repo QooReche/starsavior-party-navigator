@@ -50,7 +50,7 @@ const cxOf = (S, log, over) => Object.assign({S, bosses: BOSSES, level: 6, mode:
 
 // 전수 비교용: 보스별 모든 조합의 점수 -> 겹치지 않는 모든 삼중 -> 합 큰 순 n 개(같으면 id 작은 순)
 function brute(S, mode, n) {
-  const rows = C.poolAll(S, results, roster), list = GS.combos(S, rows);
+  const rows = C.poolAll(S, results, roster), list = GS.combos({...S,newSearch:true}, rows);
   const f =(b, keys) => { const s = fakeScore(b, keys); return mode === 'top' ? fakeTop(s) : s; };
   const L = BOSSES.map(b => list.map(keys => ({keys, id: C.idOf(keys), s: f(b, keys)})));
   const out = [];
@@ -131,7 +131,7 @@ const tests = {
   async search_optimal_and_disjoint() {
     for (const mode of ['mean', 'top']) {
       const S = mkS(), log = [];
-      const naive = BOSSES.map(b => { let best = null; for (const keys of GS.combos(S, C.poolAll(S, results, roster))) { const s = fakeScore(b, keys); if (!best || s > best.s) best = {s, keys}; } return best.keys; });
+      const naive = BOSSES.map(b => { let best = null; for (const keys of GS.combos({...S,newSearch:true}, C.poolAll(S, results, roster))) { const s = fakeScore(b, keys); if (!best || s > best.s) best = {s, keys}; } return best.keys; });
       assert(new Set(naive.flat()).size < 12, '전제: 보스별 1위 팀을 따로 고르면 겹친다(d0)');
       const out = await C.search(cxOf(S, log, {mode}));
       assert(out.rows.length > 0 && out.rows.length <= S.combine.show);
@@ -151,7 +151,7 @@ const tests = {
       const sent = log.flatMap(m => m.teams);
       assert(sent.every(t => t.options.cosmo_raid.step === 3 && t.options.cosmo_raid.level === 6 && BOSSES.includes(t.options.cosmo_raid.boss) && t.options.cosmo_top_q === SE.topQ));
       assert(sent.every(t => t.party.units.length === 4 && t.party.units.every(u => u.stats_final === true && u.stats_override === results[u.key].stats)), '내 최종 능력치가 그대로 작업자에게 감');
-      const nCombos = GS.combos(S, C.poolAll(S, results, roster)).length;
+      const nCombos = GS.combos({...S,newSearch:true}, C.poolAll(S, results, roster)).length;
       assert.equal(log.filter(m => m.seed === 1).reduce((a, m) => a + m.teams.length, 0), nCombos * 3, '1단계는 보스 3 × 전 조합');
       assert(log.filter(m => m.n_runs === SE.final.runs).reduce((a, m) => a + m.teams.length, 0) <= out.triples * 3 * 6);
     }
@@ -210,7 +210,7 @@ const tests = {
     })();
   },
   jobs_distinct_and_summary_only() {
-    const rows = C.poolAll(mkS(), results, roster), list = GS.combos(mkS(), rows);
+    const rows = C.poolAll(mkS(), results, roster), list = GS.combos({...mkS(),newSearch:true}, rows);
     const jobs = C.bossJobs(mkS(), 'tyria', 7, list, results, cls);
     assert.equal(new Set(jobs.map(j => j.key)).size, jobs.length);
     assert(jobs.every(j => j.key.startsWith('tyria|') && j.options.cosmo_raid.level === 7));
@@ -242,7 +242,7 @@ const tests = {
   countCombos_matches_enumeration() {
     for (const over of [{}, {minFront: 0, minDealer: 0}, {minFront: 2, minDealer: 1}, {minFront: 1, minDealer: 3}]) {
       const S = mkS(over), rows = C.poolAll(S, results, roster);
-      assert.equal(C.countCombos(S, rows), GS.combos(S, rows).length, JSON.stringify(over));
+      assert.equal(C.countCombos(S, rows), GS.combos({...S,newSearch:true}, rows).length, JSON.stringify(over));
     }
   },
   feasibility_messages() {
@@ -256,7 +256,7 @@ const tests = {
     const rr = Object.fromEntries(many.map((r, i) => [r.key, {power: 100 - i, stats: {}, combat: {}}]));
     const rows = C.poolAll(S0, rr, many);
     assert.equal(C.feasibility(S0, rows),null);
-    assert.equal(C.countCombos(S0, rows), GS.combos(S0, rows).length);
+    assert.equal(C.countCombos(S0, rows), GS.combos({...S0,newSearch:true}, rows).length);
   },
   async role_shortage_is_not_rejected() {
     const many=Array.from({length:12},(_,i)=>({key:'x'+i,cls:'캐스터'}));
@@ -423,7 +423,7 @@ const tests = {
     // d0 는 3보스 모두에서 압도적(fakeScore 의 val=5000) -> 보스별 1위권이 전부 d0 팀이라, 최적 삼중(d0 는 한 보스에만)의 나머지 두 팀은 보스 목록에서 순위가 낮다.
     // 그 팀들이 반감의 통과 범위 안에 있고 반감을 끈 결과와 같은 1위가 나오는지 확인한다.
     const S = mkS({rerank: {keep: 200, runs: 10}});
-    const rows = C.poolAll(S, results, roster), list = GS.combos(S, rows), pl = C.plan(S, rows);
+    const rows = C.poolAll(S, results, roster), list = GS.combos({...S,newSearch:true}, rows), pl = C.plan(S, rows);
     assert.equal(pl.halved, true);
     for (const mode of ['mean', 'top']) {
       // 기준 = 반감을 끈(전 조합 screen.runs 판) 같은 설정의 1위. keep 200 이 전수 최적(brute)보다 낮은 합을 낼 수 있어(keep 한계, 반감과 무관) brute 와는 비교하지 않는다
