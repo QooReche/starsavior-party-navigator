@@ -42,7 +42,7 @@ function check(src){
   assert.match(html,/const RECO_GWEN=GwenStage\.mount\(document,\{mode:'reco'\}\)/);
   assert.match(body(html,'csTick'),/searchGwenPaint\(\$\('cosmo-search'\),'cosmoSearch',CSR\)/);
   assert.match(body(html,'searchGwenPaint'),/GwenStage\.mount\(host,\{mode\}\)/);
-  assert(body(html,'searchGwenPaint').includes("step:state.id+':'+state.msg"),'search phase token missing');
+  assert(body(html,'searchGwenPaint').includes("step:state.id+':'+state.phaseSerial"),'search phase token missing');
   assert.match(body(src['direct_bundle.js'],'recoProgressPaint'),/recoGwenShow\(true,task\.progress/);
   assert(!/Ux\.gwenWork/.test(body(src['direct_bundle.js'],'recoProgressPaint')),'bundle progress duplicates the actor');
   assert.match(src['recommend_runtime.js'],/recoProgressPaint\(task\)/);
@@ -56,11 +56,11 @@ check(sources);
 for(const [file,from] of [
   ['party_template.html',"searchGwenPaint(p,'guildSearch',GSR)"],
   ['party_template.html',"searchGwenPaint(p,'cosmoSearch',CSR)"],
-  ['party_template.html','RECO_GWEN.progress(progress||0)'],
+  ['party_template.html',"RECO_GWEN.progress(progress||0,'',{step})"],
   ['direct_run.js','DIRECT_GWEN.update('],
   ['cosmo_direct_page.js',"GwenStage.mount(host,{mode:'cdirect'})"],
-  ['direct_bundle.js','recoGwenShow(true,task.progress||0)'],
-  ['party_template.html',"step:state.id+':'+state.msg"]
+  ['direct_bundle.js',"recoGwenShow(true,task.progress||0,null,GwenLane.resultId(task)+':'+task.request)"],
+  ['party_template.html',"step:state.id+':'+state.phaseSerial"]
 ]){
   assert(sources[file].includes(from));
   const replacement=from.endsWith('(')?'Boolean(':from.startsWith('step:')?'step:null':'void 0';

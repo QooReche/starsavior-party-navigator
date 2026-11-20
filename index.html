@@ -528,7 +528,7 @@ const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} 
 function searchGwenPaint(host,mode,state){
  if(!host.querySelector('[data-gwen-slot]')){GwenStage.destroy(mode);return;}
  const stage=GwenStage.mount(host,{mode});
- if(state.phase==='run')stage.progress(state.total?state.done/state.total:0,state.msg,{step:state.id+':'+state.msg});
+ if(state.phase==='run')stage.progress(state.total?state.done/state.total:0,state.msg,{step:state.id+':'+state.phaseSerial});
  else if(state.phase==='done'){
   const first=state.rows?.[0],rates=first?.teams?.map(t=>t.st?.clear).filter(Number.isFinite);
   const clear=rates?.length?Math.min(...rates):first?.clear;
@@ -556,7 +556,7 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers(),breaks=ownedSimBreaks(),sig=gsSig(),context=growthOwnedContext('guild');
   const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>profileOverride?growthWorker():new Worker("sim_worker.js");
   const out=await GuildPlanner.search({S,G,V,results,roster:R.filter(s=>!EXCL.has(s.key)),tiers,breaks,stage,base,workers:Math.max(1,Math.min(2,(navigator.hardwareConcurrency||4)-1)),makeWorker:mk,stale,
-    onHandle:h=>GSR.handle=h,onPhase:(msg,total)=>{GSR.msg=msg;GSR.done=0;GSR.total=total;paint();},onProgress:(d,t)=>{if(!stale()){GSR.done=d;GSR.total=t;paint();}}});
+    onHandle:h=>GSR.handle=h,onPhase:(msg,total)=>{if(stale())return;GSR.phaseSerial=(GSR.phaseSerial||0)+1;GSR.msg=msg;GSR.done=0;GSR.total=total;paint();},onProgress:(d,t)=>{if(!stale()){GSR.done=d;GSR.total=t;paint();}}});
   if(stale())return;Object.assign(GSR,out,{sig});
   GSR.context=context;GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
  }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.errorCause=e.gwenCause||"other";GSR.phase=GSR.errorCause==="cancel"?"idle":"err";GSR.msg=e.message||String(e);paint()}}
@@ -627,7 +627,7 @@ async function cosmoSearchStart(target=CSR,profileOverride=null){
   const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),bossName:csBoss,level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
    makeWorker:()=>profileOverride?growthWorker():new Worker("sim_worker.js"),workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,boundaries:Object.fromEntries(C.bosses.map(b=>[b.key,b.boundaries||[]])),breaks:csBreaks(),
    onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed.v2"),workers)})},
-   onPhase:(m,t,info)=>{if(stale())return;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm&&!profileOverride)LS.set("cosmo.speed.v2",{sec:sm,workers});CSR.eta=null;CSR.etaText="배치·리더 등 추가 비교가 포함돼 남은 시간은 표시하지 않음"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();if(!profileOverride)csTick(true)},
+   onPhase:(m,t,info)=>{if(stale())return;CSR.phaseSerial=(CSR.phaseSerial||0)+1;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm&&!profileOverride)LS.set("cosmo.speed.v2",{sec:sm,workers});CSR.eta=null;CSR.etaText="배치·리더 등 추가 비교가 포함돼 남은 시간은 표시하지 않음"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();if(!profileOverride)csTick(true)},
    onProgress:(d,t)=>{if(stale())return;CSR.done=d;CSR.total=t;if(CSR.eta)CSR.eta.update(d*CSR.runs,csNow());if(!profileOverride)csTick(false)},onHandle:h=>{CSR.handle=h}});
   if(!out||stale())return;
   const sum=CSR.eta&&CSR.eta.summary();if(sum&&!profileOverride)LS.set("cosmo.speed.v2",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
@@ -1312,18 +1312,18 @@ function recoGwenVisibility(){
  const host=$('reco-gwen-stage');if(!host)return;
  host.hidden=DIRECT.mode!=='reco'||!$('mi-panel').hidden||!['work','result'].includes(host.dataset.phase);
 }
-function recoGwenShow(show,progress,result=null){
+function recoGwenShow(show,progress,result=null,step=null){
  const host=$('reco-gwen-stage');if(!host)return;
  const phase=show?'work':result?'result':'idle';
  host.dataset.phase=phase;GwenStage.mount(document,{mode:'reco'});
- if(show)RECO_GWEN.progress(progress||0);else if(result)RECO_GWEN.done(result);else RECO_GWEN.reset();
+ if(show)RECO_GWEN.progress(progress||0,'',{step});else if(result)RECO_GWEN.done(result);else RECO_GWEN.reset();
  recoGwenVisibility();
 }
 function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap(b=>b.rows),p=SIMQ.busy??(Number(Object.keys(LASTQ)[0])||1);
  const sc=SIMQ.screening?SIMQ.scr[scrKey(st,p)]:null,done=sc?sc.got||0:rows.filter(t=>SIMQ.res[simSig(st,t)]).length,all=sc?sc.left:rows.length;
  const pct=all?Math.round(done/all*100):0;
  // 그웬 걷기 연출은 reco-gwen-stage(#out 밖 고정)가 맡으므로 여기엔 넣지 않음.
- recoGwenShow(true,all?done/all:0);
+ recoGwenShow(true,all?done/all:0,null,JSON.stringify([p,SIMQ.screening,sc?.round]));
  return `<div class="party progress" data-party="${p}" data-k="progress" data-state="running"><b class="case-title">추천 편성 확인 중</b>${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':""}<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
   <p><span data-k="simstate" title="후보 ${SCR_N}판 · 작업자 ${scrWorkers()}개">${sc?"후보 거르는 중":"상위 팀 확인 중"} ${done}/${all}</span></p>
   ${Ux.help("진행 방식","후보를 거른 뒤 상위 팀을 100판씩 모의 전투함. 남은 시간은 이 기기의 최근 계산 속도를 기준으로 표시함. 후보를 거르는 중에 「지금까지 결과로 보기」를 누르면 그때까지 확인한 팀으로 먼저 보여 주고, 나머지는 「끝까지 확인」으로 이어서 볼 수 있음.")}<p data-k="eta">${esc(simEtaText())}</p>

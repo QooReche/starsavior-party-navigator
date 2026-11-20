@@ -110,11 +110,27 @@ async function reactionOnce(code=ux){
   assert.equal(h.actor().querySelector('img').dataset.gwenPlaying,'false','return to a result replayed its action');
   assert.equal(h.actor().dataset.announcements,'1');
 }
+async function bundlePhases(source=read('direct_bundle.js')){
+  const h=setup(),c=h.c;h.add('out');
+  h.load(section(source,'function recoProgressPaint(','async function directAwait('));
+  const task={owner:'reco-bundle',request:1,progress:.7,message:'예선'};
+  c.recoProgressPaint(task);
+  const animate=h.actor().animate;
+  h.actor().animate=function(frames,opts){const a=animate.call(this,frames,opts);a.playState='finished';a.currentTime=opts.duration;return a;};
+  await h.tick(3000);assert(h.g.mount().state.x>0,'bundle test never walked');
+  task.request++;task.progress=0;c.recoProgressPaint(task);
+  assert.equal(h.g.mount().state.x,0,'next bundle request retained position');
+  task.progress=.7;c.recoProgressPaint(task);await h.tick(3000);assert(h.g.mount().state.x>0);
+  c.recoProgressPaint({...task,progress:0});
+  assert.equal(h.g.mount().state.x,0,'different bundle task retained position');
+}
 async function mutation(name,source,from,to,check){assert(source.includes(from),name+' target');
   await check(source);
   await assert.rejects(()=>check(source.replace(from,to)),{code:'ERR_ASSERTION'},name);console.log('MUTATION caught + restored (isolated VM):',name);}
 (async()=>{
-  await remount();await ownership();await lateResponse();await persistent();await inlineReport();await reactionOnce();
+  await remount();await ownership();await lateResponse();await persistent();await inlineReport();await reactionOnce();await bundlePhases();
+  await mutation('bundle request phase',read('direct_bundle.js'),"GwenLane.resultId(task)+':'+task.request","GwenLane.resultId(task)",bundlePhases);
+  await mutation('bundle task identity',read('direct_bundle.js'),"GwenLane.resultId(task)+':'+task.request","task.request",bundlePhases);
   await mutation('same-phase host reattachment',lane,'function rebind(mode){','function rebind(mode){return;',remount);
   await mutation('stale image decode',lane,'if(request!==imageRequest)return;','',remount);
   await mutation('movement cancellation',lane,"actor?.removeAttribute('data-moving');",'',async code=>{
@@ -135,5 +151,5 @@ async function mutation(name,source,from,to,check){assert(source.includes(from),
   await mutation('inline result removal',ux,'report.done=true;invalidate();','report.done=true;scene.remove();invalidate();',inlineReport);
   await mutation('completed report rerender removal',ux,'gwenPending.set(state.id,new WeakRef(state));',"if(state.done)return '';gwenPending.set(state.id,new WeakRef(state));",inlineReport);
   await mutation('result action replay',ux,'||img.dataset.gwenOnce&&playedReports.has(img.dataset.gwenOnce)','',reactionOnce);
-  console.log('PASS 6 DOM scenarios / 13 mutations');
+  console.log('PASS 7 DOM scenarios / 15 mutations');
 })().catch(e=>{console.error(e);process.exitCode=1});

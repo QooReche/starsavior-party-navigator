@@ -9,6 +9,15 @@ ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'local/gwen-search'
 FAKE='''() => {
   window.stageQueue=[];window.stageAuto=false;window.stagePosts=[];
+  for(const engine of [CosmoSearch,GuildPlanner]){
+    const search=engine.search;
+    engine.search=opts=>{
+      const onPhase=opts.onPhase;let last;
+      opts.onPhase=(...args)=>{last=args;onPhase(...args);};
+      window.stageRepeatPhase=()=>onPhase(...last);
+      return search(opts);
+    };
+  }
   window.stageStep=()=>{const f=stageQueue.shift();if(f)f();};
   window.stageFlush=()=>{stageAuto=true;const next=()=>{for(let i=0;i<100&&stageQueue.length;i++)stageStep();if(stageAuto)setTimeout(next,10);};next();};
   window.Worker=class {
@@ -62,6 +71,12 @@ def flow(browser,base,width,kind):
         assert p.locator('.gwen-lane-actor').count()==1
         p.evaluate('window.stageActor=document.querySelector(".gwen-lane-actor")')
         p.screenshot(path=str(OUT/f'{kind}-work-{width}.png'))
+        # Different bosses can emit identical phase text. Exercise the real page callback.
+        p.evaluate('stageRepeatPhase()')
+        assert p.evaluate(f'{state}.done')==0
+        assert p.evaluate('GwenLane.mount().state.x')==0,'same-text phase retained previous position'
+        p.evaluate(f'while({state}.done<Math.max(1,Math.floor({state}.total*.3))&&stageQueue.length)stageStep()')
+        p.wait_for_function('GwenLane.mount().state.x>0')
         p.evaluate(f'''async () => {{
           const phase={state}.msg;
           while({state}.msg===phase){{

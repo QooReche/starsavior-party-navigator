@@ -55,7 +55,7 @@ function recoProgressPaint(task){
   if(!el){$('out').innerHTML=`<div class="party progress" data-bundle-progress data-state="running"><b class="case-title">추천 편성 확인 중</b><div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i></i></div><p role="status"></p><p class="mut">예선 뒤 상위 팀을 모의 전투함 · 직접 편성과 같은 작업임</p><button type="button" class="sec" data-direct-action="skip" data-kind="reco">건너뛰기</button></div>`;el=$('out').firstElementChild;}
   el.querySelector('[role=status]').textContent=task.message;
   const value=Math.round((task.progress||0)*100),bar=el.querySelector('.pbar');bar.setAttribute('aria-valuenow',value);bar.firstElementChild.style.width=value+'%';
-  recoGwenShow(true,task.progress||0);
+  recoGwenShow(true,task.progress||0,null,GwenLane.resultId(task)+':'+task.request);
 }
 async function directAwait(b,predicate,step){
   while(!predicate()){
