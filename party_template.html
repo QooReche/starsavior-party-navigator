@@ -464,8 +464,11 @@ summary{padding:9px 4px}
 <link rel="stylesheet" href="direct.css">
 <link rel="stylesheet" href="cosmo_direct.css">
 <script src="guild_view.js"></script>
+<script src="party_placement.js"></script>
 <script src="guild_search.js"></script>
 <script src="cosmo_learned.js"></script>
+<script src="guild_planner.js"></script>
+<script src="placement_search.js"></script>
 <script src="cosmo_search.js"></script>
 <script src="skill_view.js"></script>
 <script>
@@ -531,7 +534,7 @@ function gsWatch(){if(!D.guild||!D.guild.season||!window.GuildView)return;const 
  if(next)setTimeout(()=>{if(!$("guild-panel").hidden)renderGuild();gsWatch()},Math.min(next-now+1000,2147483000))}
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!$("guild-panel").hidden)renderGuild()});
 // ── 길방 «내 정보로 최고 점수 편성 찾기»(guild_search.js): 예선(전 조합 짧게) → 본선(상위 팀을 단계·지원별로). 작업자는 시뮬 창구(sim_worker.js)를 그대로 쓴다
-const GSR={banCoop:true,phase:"idle",msg:"",done:0,total:0,rows:[],sig:"",handle:null,id:0};
+const GSR={banCoop:false,phase:"idle",msg:"",done:0,total:0,rows:[],sig:"",handle:null,id:0};
 const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild.v2")).tiers;
 const gsSig=() => JSON.stringify([MI.hash,[...EXCL].sort(),gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]);
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
@@ -540,7 +543,7 @@ function renderGuildSearch(on){const p=$("guild-search");
  const prog=p.querySelector('[data-k="gd-search-prog"]');
  if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);Ux.syncGwen(p,Ux.gwenStage(GSR.msg));return}
  const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:Ux.gwenWork,error:Ux.gwenError,report:Ux.gwenReport,workMode:Ux.gwenStage(GSR.msg),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild')}
-function gsTeam(t){LEADKEY=t.order[0];return seasonBreakBar(t,true)+`<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
+function gsTeam(t){LEADKEY=t.leaderKey||t.order[0];return seasonBreakBar(t,true)+`<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
 async function guildSearchStart(target=GSR,profileOverride=null){
  if(seasonBlocked('guild'))return;
  const GSR=target;
@@ -553,32 +556,10 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   const growth=await miGrowth();if(stale())return;
   const profile=profileOverride||MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
   const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers(),breaks=ownedSimBreaks(),sig=gsSig(),context=growthOwnedContext('guild');
-  const rows=GuildSearch.pool(S,results,R.filter(s=>!EXCL.has(s.key))),list=GuildSearch.combos(S,rows.map(r=>r));
-  if(list.length<1)throw Object.assign(new Error("편성할 수 있는 구원자가 부족함(내 정보에 육성된 구원자 4명 이상 필요)"),{gwenCause:"few"});
-  const combos=list.map(k=>k),workers=Math.max(2,Math.min(8,(navigator.hardwareConcurrency||4)-1));
   const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>profileOverride?growthWorker():new Worker("sim_worker.js");
-  const jobsA=GuildSearch.screenJobs(S,G,V,combos,results,cls,tiers);
-  GSR.msg=`1단계: 조합 ${jobsA.length}개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`;GSR.total=jobsA.length;paint();
-  const hA=GuildSearch.runPhase({makeWorker:mk,jobs:jobsA,workers,runs:S.screen.runs,seed:1,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
-  GSR.handle=hA;const resA=await hA.promise;if(stale())return;
-  const keep2=GuildSearch.pickTop(V,G,jobsA,resA,tiers,S.screen2.keep,S),jobsA2=GuildSearch.screenJobs(S,G,V,keep2,results,cls,tiers);
-  GSR.msg=`2단계: 상위 ${jobsA2.length}팀을 더 정확히 확인 중`;GSR.done=0;GSR.total=jobsA2.length;paint();
-  const hA2=GuildSearch.runPhase({makeWorker:mk,jobs:jobsA2,workers,runs:S.screen2.runs,seed:3,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
-  GSR.handle=hA2;const resA2=await hA2.promise;if(stale())return;
-  const fin=GuildSearch.pickFinalists(S,V,G,jobsA2,resA2,tiers),jobsB=GuildSearch.finalJobs(S,G,V,fin,results,cls,tiers);
-  GSR.msg=`3단계: 상위 ${fin.length}팀을 단계·지원별로 확인 중`;GSR.done=0;GSR.total=jobsB.length;paint();
-  const hB=GuildSearch.runPhase({makeWorker:mk,jobs:jobsB,workers,runs:S.final.runs,seed:2,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
-  GSR.handle=hB;const resB=await hB.promise;if(stale())return;
-  const pairs=[[jobsA,resA],[jobsA2,resA2],[jobsB,resB]];
-  let ranked=GuildSearch.rank(V,G,jobsB,resB,tiers,GuildSearch.BREAK_CHECK.teams,S);
-  const jobsC=GuildSearch.breakJobs(ranked,breaks,results,cls,tiers);
-  if(jobsC.length){
-   GSR.msg="4단계: 브레이크 스킬 확인 중";GSR.done=0;GSR.total=jobsC.length;paint();
-   const hC=GuildSearch.runPhase({makeWorker:mk,jobs:jobsC,workers,runs:GuildSearch.BREAK_CHECK.runs,seed:2,stage,base,onProgress:(d,t)=>{if(stale())return;GSR.done=d;GSR.total=t;paint()}});
-   GSR.handle=hC;const resC=await hC.promise;if(stale())return;
-   pairs.push([jobsC,resC]);ranked=GuildSearch.rank(V,G,jobsC,resC,tiers,5,S);
-  }
-  GSR.dropped=GuildSearch.countDropped(S,pairs);GSR.rows=ranked.slice(0,5);GSR.sig=sig;GSR.pool=rows.length;GSR.combos=combos.length;GSR.finalists=fin.length;GSR.runs=jobsC.length?GuildSearch.BREAK_CHECK.runs:S.final.runs;
+  const out=await GuildPlanner.search({S,G,V,results,roster:R.filter(s=>!EXCL.has(s.key)),tiers,breaks,stage,base,workers:Math.max(2,Math.min(4,(navigator.hardwareConcurrency||4)-1)),makeWorker:mk,stale,
+    onHandle:h=>GSR.handle=h,onPhase:(msg,total)=>{GSR.msg=msg;GSR.done=0;GSR.total=total;paint();},onProgress:(d,t)=>{if(!stale()){GSR.done=d;GSR.total=t;paint();}}});
+  Object.assign(GSR,out,{sig,dropped:0});
   GSR.context=context;GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
  }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.errorCause=e.gwenCause||"other";GSR.phase=GSR.errorCause==="cancel"?"idle":"err";GSR.msg=e.message||String(e);paint()}}
 $("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
@@ -614,7 +595,7 @@ function csOpt(){const C=D.cosmoRaid;
  if(CSR.optLevel==null){const v=LS.get("cosmo.level");CSR.optLevel=Number.isInteger(v)&&v>=-1&&v<=C.levelMax?v:C.search.defaultLevel}
  if(CSR.optMode==null){const v=LS.get("cosmo.mode");CSR.optMode=CosmoSearch.MODES[v]?v:C.search.defaultMode}}
 // 코스모 결과 한 팀: 기존 추천 카드와 같은 모양(앞열 2·뒤열 2, 리더 왕관, 브레이크 스킬 줄). 시뮬이 가정한 칸 순서 = order(앞열 먼저, 첫 구원자가 리더)
-function csTeam(t){LEADKEY=t.order[0];const xs=t.order.map(k=>({s:BYKEY[k]}));
+function csTeam(t){LEADKEY=t.leaderKey||t.order[0];const xs=t.order.map(k=>({s:BYKEY[k]}));
  const cards=`<div class="rowcards cs-cards">${card(xs[2],"back")}${card(xs[0],"front")}${card(xs[1],"front")}${card(xs[3],"back")}</div>`;
  return seasonBreakBar(t)+cards}
 function seasonBreakBar(t,compact=false){
@@ -731,9 +712,9 @@ function partySyn(keys){const sw=CFG.synergy,hits=[];
  return hits.sort((x,y)=>y.pts-x.pts)}
 function teamValue(combo,defPen){
  const g=CFG.weights;let v=combo.reduce((a,x)=>a+x.score,0);const roles=combo.map(x=>x.s.cls);
- const ns=roles.filter(r=>r==="서포터").length;if(ns)v+=g.supportBonus;
- v-=defPen*Math.max(0,roles.filter(r=>r==="디펜더").length-1);
- if(ns>1)v-=4;
+
+
+
  const got=new Set();combo.forEach(x=>(x.s.tags||[]).forEach(t=>got.add(t)));
  for(const [t,wt] of Object.entries(CFG.tagWeights))v+=got.has(t)?wt:0;
  v+=Math.min(partySyn(combo.map(x=>x.s.key)).reduce((a,h)=>a+h.pts,0),CFG.synergy.cap);v+=gimTeam(combo)[0];v+=DMW[1]*dmgScore(combo.map(x=>x.s.key),DMW[0]);

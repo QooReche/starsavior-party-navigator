@@ -188,6 +188,9 @@ def main(out=None):
         skill_bytes = f.read()
     skills = json.loads(skill_bytes)
     assert all(str(s["uid"]) in skills for s in r), "Missing public skills for roster uid"
+    for savior in r:
+        text = json.dumps(skills[str(savior['uid'])], ensure_ascii=False)
+        savior['placementTraits'] = [kind for word, kind in [('은신', 'stealth'), ('도발', 'taunt')] if word in text]
     skill_url = "data/savior_skills.json?v=" + hashlib.sha256(skill_bytes).hexdigest()[:12]
     # 여정 스탯 우선순위(공략 DB): 로스터에 있는데 표에 없으면 다시 뽑아야 하고(중단), 공략 DB 에 아직 없어 직업 기본값으로 채운 구원자는 알린다 — 중단 점검은 저장 전에(빠진 구원자가 있으면 페이지를 쓰지 않음)
     jp = pr._json(os.path.join(pr.DATA, "journey_priority.json"))

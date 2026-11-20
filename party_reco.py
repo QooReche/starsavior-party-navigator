@@ -239,12 +239,6 @@ def _sum_in_order(values):
 def team_value(combo, cfg, tags, def_pen):
     w = cfg["weights"]
     v = _sum_in_order(x["score"] for x in combo)
-    roles = [x["s"]["className"] for x in combo]
-    if SUPPORT in roles:
-        v += w["supportBonus"]
-    v -= def_pen * max(0, roles.count(DEFENDER) - 1)  # 2번째 디펜더부터 감점
-    if roles.count(SUPPORT) > 1:
-        v -= 4
     got = set()
     for x in combo:
         got.update(tags.get(x["s"]["key"], []))

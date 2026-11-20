@@ -196,7 +196,7 @@ function growthRankPaint(){const el=$('growth-priority');if(!el)return;
 }
 function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.context===growthOwnedContext('guild'):
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
-function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks(),...(CSR.optLearned?['learned']:[])],simOpt(kind)]);}
+function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),PartyPlacement.VERSION,kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks(),...(CSR.optLearned?['learned']:[])],simOpt(kind)]);}
 // Whole-account pass: the owned recommendation and its caches remain untouched.
 // 스테이지형: 목표 지표(3별 목표면 N턴 내 클리어율, 아니면 클리어율)가 올라야 «더 나음». 목표 지표가 같으면 3별 목표일 때만 클리어율이 오른 경우를 인정한다
 //  (N턴 내 확률은 그대로여도 깨는 확률이 오른 것). 진척도·처치 턴만 나아진 것은 «더 잘 깸»이 아니다 — 표시하지 않는다
@@ -405,8 +405,8 @@ function growthPaint(){
   const marks=r.snapshot.changes;
   const cards=(order,lead)=>{LEADKEY=lead;return `<div class="rowcards">${order.map((k,i)=>card({s:BYKEY[k]},i===0||i===3?'back':'front',null,marks[k]||null)).join('')}</div><div class="growth-tasks">${order.map(k=>marks[k]?growthTodoRow(marks[k],BYKEY[k].name):'').join('')}</div>`;};
   let body='';
-  if(c.key==='cosmo')body=r.best.teams.map(t=>`<div class="growth-score-card"><div class="season-chips"><b>${esc(csBoss(t.boss))}</b><span class="tag">난이도 ${t.level}</span><span class="tag">${esc(t.brk||'브레이크 없음')}${t.brkLv?' · Lv.'+t.brkLv:''}</span></div>${cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0])}</div>`).join('');
-  else if(c.key==='guild'){const t=r.best;body=`<div class="season-chips"><span class="tag">${t.level}단계</span><span class="tag">${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</span></div>`+cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0]);}
+  if(c.key==='cosmo')body=r.best.teams.map(t=>`<div class="growth-score-card"><div class="season-chips"><b>${esc(csBoss(t.boss))}</b><span class="tag">난이도 ${t.level}</span><span class="tag">${esc(t.brk||'브레이크 없음')}${t.brkLv?' · Lv.'+t.brkLv:''}</span></div>${cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.leaderKey||t.order[0])}</div>`).join('');
+  else if(c.key==='guild'){const t=r.best;body=`<div class="season-chips"><span class="tag">${t.level}단계</span><span class="tag">${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</span></div>`+cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.leaderKey||t.order[0]);}
   else if(r.team){const ar=arrangeOf(r.team.t.combo);body=cards(ar.order,ar.lead)+`<p class="mut">${esc(r.team.breakName||'브레이크 없음')}</p>`;}
   const keys=c.key==='cosmo'?r.best.teams.flatMap(t=>t.keys||t.order):c.key==='guild'?(r.best.keys||r.best.order):r.team?.t.keys||[];
   const grown=keys.reduce((sum,k)=>sum+(r.snapshot.profile.results[k]?.power||0),0);

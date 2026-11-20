@@ -9,7 +9,7 @@
   // 본선 한 팀의 판 수(오토만 — 11/14 수동 모드 제거)
   const finalCost=n=>n;
   const completed=r=>r.completed??Object.keys(r).length;
-  const VERSION='growth-stage23-v8';   // v8: 수동 모드 제거(오토만)   // v7: 스테이지형 전 콘텐츠·목표 지표(3별이면 N턴 내 클리어율)
+  const VERSION='growth-stage23-v9-placement';   // v8: 수동 모드 제거(오토만)   // v7: 스테이지형 전 콘텐츠·목표 지표(3별이면 N턴 내 클리어율)
   const HISTORY_VERSION='grown-history-v7';
   function signature(s){return JSON.stringify([s.account,s.options,s.targets,s.preset,s.content,
     [...s.excluded].sort(),s.breaks,s.mode,s.rules,s.engine,s.data,s.modifiers,VERSION,

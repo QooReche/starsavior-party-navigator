@@ -126,12 +126,12 @@
     const raw=create(season),seen=new Set();
     for(const t of Array.isArray(row?.teams)?row.teams:[]){
       if(!t||!own(raw.teams,t.boss)||seen.has(t.boss))continue;seen.add(t.boss);
-      // CosmoSearch.finalRankBrk: order is ENGINE order; leader = order[0].
+      // CosmoSearch.finalRankBrk: order is ENGINE order; leaderKey is independent.
       // keys is the unordered combination, used only when no order was supplied.
       const order=Array.isArray(t.order)?t.order:t.keys;
       if(!Array.isArray(order)||order.length!==4||!order.every(key)||new Set(order).size!==4)continue;
       raw.teams[t.boss]={level:t.level??raw.teams[t.boss].level,draft:{v:VERSION,
-        slots:order.map(key=>({key,grown:false})),leader:order[0],brk:!t.brkTie&&t.brk?{name:t.brk,level:t.brkLv}:null}};
+        slots:order.map(key=>({key,grown:false})),leader:order.includes(t.leaderKey)?t.leaderKey:order[0],brk:!t.brkTie&&t.brk?{name:t.brk,level:t.brkLv}:null}};
     }
     return restore(raw,season);
   }
