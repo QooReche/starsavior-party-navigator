@@ -24,18 +24,20 @@ async function main(){const [input,dir,mode='independent']=process.argv.slice(2)
     evaluated[name].sum=evaluated[name].teams.reduce((s,t)=>s+top(t.scores),0);save('independent-progress',evaluated);console.error('independent complete',name);
    }
    // Paired bootstrap across independent battle seeds; selection seeds are disjoint.
-   const comparisons={};for(const [a,b] of [['rules','free'],['rules','B'],['rules','A'],['guild-old','guild-new']]){
+   const comparisons={};for(const [a,b] of [['rules','free'],['rules','B'],['rules','A'],['free','B'],['B','A'],['guild-old','guild-new']]){
     comparisons[a+'→'+b]={differencePct:(evaluated[b].sum/evaluated[a].sum-1)*100,ci95:interval(evaluated[a].teams.map(t=>t.scores),evaluated[b].teams.map(t=>t.scores))};
    }save('independent',{evaluated,comparisons,seconds:(performance.now()-start)/1000,games:T.games});
   }else if(mode==='small'){
    const results=profiles.cosmo.results,eligible=D.roster.filter(r=>results[r.key]?.power>0).sort((a,b)=>results[b.key].power-results[a.key].power);
    const tactical=eligible.filter(r=>r.placementTraits?.length||r.cls==='서포터').slice(0,3),roster=[...new Map([...tactical,...eligible].map(r=>[r.key,r])).values()].slice(0,12),keys=roster.map(r=>r.key);
    const combos=GS.combos({},roster),bosses=G.season.bossOrder,checkpoint=path.join(dest,'small-progress.json');
-   const state=fs.existsSync(checkpoint)?read(checkpoint):{keys,done:0,full:bosses.map(()=>[]),reduced:bosses.map(()=>[]),conditions:0};
+   const state=fs.existsSync(checkpoint)?read(checkpoint):{keys,done:0,full:bosses.map(()=>[]),reduced:bosses.map(()=>[]),conditions:0,diagnostics:{positiveConditions:0,clearConditions:0,groups:0,variableLayoutGroups:0}};
    if(JSON.stringify(state.keys)!==JSON.stringify(keys))throw Error('small checkpoint pool mismatch');
+   if(!state.diagnostics)throw Error('small checkpoint lacks layout diagnostics');
    for(let i=state.done;i<combos.length;i+=8){const batch=combos.slice(i,i+8),jobs=batch.flatMap(k=>bosses.flatMap(b=>P.all(k,true).flatMap(p=>C.bossJobs(G.search,b,6,[k],results,{},null,p)))),res=await run(jobs,1,20261123);
     for(const k of batch){const reduced=new Set(P.all(k).map(p=>P.executionKey(k,p)));for(let b=0;b<bosses.length;b++){
      const selected=jobs.filter(j=>j.boss===bosses[b]&&P.id(j.keys)===P.id(k));
+     const values=selected.map(j=>res[j.key]);state.diagnostics.groups++;state.diagnostics.positiveConditions+=values.filter(r=>r.prog>0).length;state.diagnostics.clearConditions+=values.filter(r=>r.clear>0).length;state.diagnostics.variableLayoutGroups+=Number(new Set(values.map(r=>r.cosmo.top)).size>1);
      for(const type of ['full','reduced']){const ranked=P.best(selected.filter(j=>type==='full'||reduced.has(P.executionKey(k,j))),res,(a,b)=>b.cosmo.top-a.cosmo.top,r=>Number.isFinite(r?.cosmo?.top)),j=ranked[0];state[type][b].push({keys:k,order:j.order,leaderKey:j.leaderKey,level:6,boss:bosses[b],score:j.result.cosmo.top,st:j.result.cosmo});}
     }}state.done=i+batch.length;state.conditions+=jobs.length;save('small-progress',state);console.error('small',state.done,'/',combos.length);
    }
@@ -47,7 +49,8 @@ async function main(){const [input,dir,mode='independent']=process.argv.slice(2)
    const selectedScore=selectedJobs.reduce((s,j)=>s+one[j.key].cosmo.top,0),independent={};
    for(const [name,row] of Object.entries({full,reduced,search:chosen})){const jobs=row.teams.map(t=>job(t)),r=await run(jobs,200,20261124);independent[name]={teams:jobs.map(j=>r[j.key]),sum:jobs.reduce((s,j)=>s+r[j.key].cosmo.top,0)};}
    const comparisons=Object.fromEntries(['reduced','search'].map(name=>[name,{differencePct:(independent[name].sum/independent.full.sum-1)*100,ci95:interval(independent.full.teams.map(r=>r.scores),independent[name].teams.map(r=>r.scores))}]));
-   save('small',{keys,conditions:state.conditions,full,reduced,selected:chosen,structuralLossPct:(1-reduced.sum/full.sum)*100,searchLossPct:(1-selectedScore/full.sum)*100,independent,comparisons,seconds:(performance.now()-start)/1000,games:T.games,audit:search.representative});
+   if(!(full.sum>0&&state.diagnostics.positiveConditions>0))throw Error('small reference has no positive progress');
+   save('small',{keys,conditions:state.conditions,diagnostics:state.diagnostics,full,reduced,selected:chosen,structuralLossPct:(1-reduced.sum/full.sum)*100,searchLossPct:(1-selectedScore/full.sum)*100,independent,comparisons,seconds:(performance.now()-start)/1000,games:T.games,audit:search.representative});
   }else throw Error('unknown validation mode');
  }finally{pool.close();T.close();}
 }
