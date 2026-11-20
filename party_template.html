@@ -618,6 +618,7 @@ function csTeam(t){LEADKEY=t.order[0];const xs=t.order.map(k=>({s:BYKEY[k]}));
  const cards=`<div class="rowcards cs-cards">${card(xs[2],"back")}${card(xs[0],"front")}${card(xs[1],"front")}${card(xs[3],"back")}</div>`;
  return seasonBreakBar(t)+cards}
 function seasonBreakBar(t,compact=false){
+ if(t.brkTie)return '<div class="bbar"><div class="bbody"><b>브레이크 스킬: 점수 차이 없음(아무거나 장착 가능)</b></div></div>';
  if(compact)return `<div class="bbar"><div class="bbody">${GuildSearch.breakLabel(t,esc)}</div></div>`;
  const b=t.brk,info=b&&CFG.breakSkills[b],im=b&&D.bicons[b];
  const bar=`<div class="bbar" title="${esc(info?info.text:"브레이크 스킬 미장착")}">${im?`<img src="${im}" alt="">`:`<span class="bicon">${b&&BG[b]||"◆"}</span>`}<div class="bbody"><b>${esc(b||"브레이크 스킬 장착 안 함")}</b>${b?` <span class="mut">Lv.${t.brkLv}</span>`:""}${info?` <span class="mut">${esc(info.text)}</span>`:""}</div></div>`;

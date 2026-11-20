@@ -160,10 +160,12 @@ def exercise(page, base, width, shots):
         page.evaluate(f'''() => {{
           const order=R.slice(0,4).map(s=>s.key),stats={{top:10000,mean:9000,clear:.95,frac:.98,cap:.95}};
           {state}.phase='done';{state}.pool=12;{state}.combos=20;{state}.finalists=3;{state}.runs=100;
-          {state}.rows={'[{order,level:5,sup:"none",score:10000,...stats}]' if kind=='guild' else '[{sum:30000,teams:D.cosmoRaid.bosses.map(b=>({boss:b.key,order,level:5,st:stats}))}]'};
+          {state}.rows={'[{order,level:5,sup:"none",score:10000,...stats}]' if kind=='guild' else '[{sum:30000,teams:D.cosmoRaid.bosses.map(b=>({boss:b.key,order,level:5,brkTie:true,st:stats}))}]'};
           {renderer};
         }}''')
         cards=page.locator('#'+kind+'-search '+('.season-result>.rowcards' if kind=='guild' else '.cs-boss>.cs-cards')).first
+        if kind=='cosmo':
+            assert page.locator('#cosmo-search .bbar').first.inner_text()=='브레이크 스킬: 점수 차이 없음(아무거나 장착 가능)'
         assert cards.locator('.gc').count()==4
         if width>=1200:
             side=page.locator('#'+kind+'-search '+('.season-result>.season-score' if kind=='guild' else '.cs-boss>.cs-bh')).first

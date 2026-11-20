@@ -15,6 +15,7 @@ def flow(browser, ctx, expanded=False):
       const pool=CosmoSearch.poolAll(S,csProfile().results,R).slice(0,16);
       for(const r of R)if(!pool.some(x=>x.key===r.key))EXCL.add(r.key);
       S.workers.max=2;S.screen={firstRuns:1,runs:2,passFrac:.1,passMinMult:1};
+      ownedSimBreaks=()=>[{name:'특이점 관측',level:3},{name:'큐브 과부하',level:5}];
       S.rerank={keep:30,runs:2};S.final.runs=2;S.combine={topTriples:3,show:3};
       Object.assign(S.learned,{S:160,m:2,K:60,M:2,A:20,overlapStarts:3,overlapKeep:2,minCorrelation:-1,missThreshold:1});
       window.learnedMessages=[];const search=CosmoSearch.search;
@@ -47,10 +48,15 @@ def flow(browser, ctx, expanded=False):
         assert '이 보스는 예측 확인이 부족해 후보를 넓혀 찾았음' in p.locator('#cosmo-search [data-k=cs-expanded]').first.inner_text()
     assert p.evaluate('new Set(CSR.rows[0].teams.flatMap(t=>t.keys)).size===12')
     assert p.locator('#cosmo-search [data-k=cs-best] [data-k=cs-team]').count()==3
+    assert p.evaluate('CSR.rows[0].teams.every(t=>t.brkTie===true && t.brk===null)')
+    bars=p.locator('#cosmo-search [data-k=cs-best] [data-k=cs-team] .bbar')
+    assert bars.count()==3
+    assert all('브레이크 스킬: 점수 차이 없음(아무거나 장착 가능)' in text for text in bars.all_text_contents())
     p.evaluate('window.learnedBest=CSR.rows[0]')
     p.locator('#cosmo-search [data-k=cs-best] [data-cs=edit]').click()
     assert p.locator('#cosmo-direct-panel').is_visible()
     assert p.evaluate('JSON.stringify(CDIRECT.state)===JSON.stringify(CosmoDirect.fromSearch(learnedBest,cdSeason()))')
+    assert p.evaluate('Object.values(CDIRECT.state.teams).every(t=>t.draft.brk===null)')
     assert not ctx.errors, ctx.errors
     p.close()
 

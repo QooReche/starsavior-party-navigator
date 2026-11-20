@@ -187,15 +187,22 @@
     return jobs;
   }
 
-  // 팀마다 난이도(levelOf)와 브레이크 스킬(brks 중 점수가 큰 것, 같으면 앞쪽 = 장착 안 함)을 고른 마지막 순위. 결과가 빠진 삼중은 뺀다
+  // 브레이크는 기준 점수 → 반대 점수 → 클리어율 순. 모든 후보의 두 점수가 같으면 장착 차이 없음으로 표시함.
   function finalRankBrk(triples, bosses, levelOf, brks, res, mode, show) {
     const out = [];
     for (const t of triples) {
       const teams = t.teams.map((e, i) => {
         const lv = levelOf(bosses[i], e.keys);
-        let pick = null;
-        for (const b of brks) { const r = res[jobKey(bosses[i], e.keys, lv, b)]; if (r && r.cosmo && (!pick || metric(r.cosmo, mode) > metric(pick.st, mode))) pick = {st: r.cosmo, brk: b ? b.name : null, brkLv: b ? b.level : null, bs: r.bs || null, ...GS.unsupportedFields(r)}; }
-        return pick ? {boss: bosses[i], keys: e.keys, order: e.order, level: lv, st: pick.st, brk: pick.brk, brkLv: pick.brkLv, ...GS.unsupportedFields(pick)} : null;
+        const candidates = brks.flatMap(b => {
+          const r = res[jobKey(bosses[i], e.keys, lv, b)];
+          return r?.cosmo ? [{st:r.cosmo,brk:b?.name||null,brkLv:b?.level||null,...GS.unsupportedFields(r)}] : [];
+        });
+        candidates.sort((a,b) => metric(b.st,mode)-metric(a.st,mode) || other(b.st,mode)-other(a.st,mode) || (b.st.clear||0)-(a.st.clear||0));
+        const pick=candidates[0];
+        // 미장착 포함 전체 후보를 확인했을 때만 선언함. 후보 하나·결과 누락은 동점 근거가 아님.
+        const brkTie=candidates.length>1 && candidates.length===brks.length && brks.includes(null)
+          && candidates.every(c=>metric(c.st,mode)===metric(pick.st,mode) && other(c.st,mode)===other(pick.st,mode));
+        return pick ? {boss: bosses[i], keys: e.keys, order: e.order, level: lv, st: pick.st, brk: pick.brk, brkLv: pick.brkLv, ...(brkTie?{brkTie:true}:{}), ...GS.unsupportedFields(pick)} : null;
       });
       if (teams.some(x => !x)) continue;
       out.push({sum: teams.reduce((a, x) => a + metric(x.st, mode), 0), sum2: teams.reduce((a, x) => a + other(x.st, mode), 0), teams});
@@ -632,7 +639,7 @@
       const summary=cx.summary?cx.summary(r,mode):`<div class="season-score"><span>3팀 합산 점수</span><b data-k="cs-sum">${num(r.sum)}</b><small>${MODES[mode]} 기준</small></div>`;
       return `${warning}<div data-k="cs-table">${summary}${cx.summary?`<p class="mut">${MODES[mode]} 기준</p><button type="button" class="sec" data-cs="edit" data-row="${index}">직접 편성에서 고치기</button>`:''}${blocks}</div>`;
     }
-    const body = r.teams.map(t => `<tr><td>${esc(cx.bossName(t.boss))}${t.level != null ? "<br>난이도 " + t.level : ""}${t.brk ? "<br>" + esc(t.brk) : ""}</td><td>${t.order.map(k => esc(cx.label(k))).join("<br>")}</td><td><b>${num(metric(t.st, mode))}</b></td><td>${num(other(t.st, mode))}</td><td>${pct(t.st.clear)}</td><td>${pct(t.st.frac)}</td></tr>`).join("");
+    const body = r.teams.map(t => `<tr><td>${esc(cx.bossName(t.boss))}${t.level != null ? "<br>난이도 " + t.level : ""}${t.brkTie ? "<br>브레이크 스킬: 점수 차이 없음(아무거나 장착 가능)" : t.brk ? "<br>" + esc(t.brk) : ""}</td><td>${t.order.map(k => esc(cx.label(k))).join("<br>")}</td><td><b>${num(metric(t.st, mode))}</b></td><td>${num(other(t.st, mode))}</td><td>${pct(t.st.clear)}</td><td>${pct(t.st.frac)}</td></tr>`).join("");
     return `${warning}<div class="gd-scroll"><table data-k="cs-table"><thead><tr><th>보스</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>${MODES[mode]}(순위 기준)</th><th>${MODES[mode === "top" ? "mean" : "top"]}</th><th>클리어율</th><th>보스 깎음</th></tr></thead><tbody>${body}<tr><td colspan="2"><b>합계</b></td><td colspan="4"><b data-k="cs-sum">${num(r.sum)}</b></td></tr></tbody></table></div>`;
   }
   const progText = st => `${st.msg || ""}${st.total ? ` · ${num(st.done)}/${num(st.total)}` : ""}`;

@@ -131,7 +131,7 @@
       const order=Array.isArray(t.order)?t.order:t.keys;
       if(!Array.isArray(order)||order.length!==4||!order.every(key)||new Set(order).size!==4)continue;
       raw.teams[t.boss]={level:t.level??raw.teams[t.boss].level,draft:{v:VERSION,
-        slots:order.map(key=>({key,grown:false})),leader:order[0],brk:t.brk?{name:t.brk,level:t.brkLv}:null}};
+        slots:order.map(key=>({key,grown:false})),leader:order[0],brk:!t.brkTie&&t.brk?{name:t.brk,level:t.brkLv}:null}};
     }
     return restore(raw,season);
   }
