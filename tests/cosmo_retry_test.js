@@ -17,7 +17,7 @@ function settings() {
   return S;
 }
 async function run(S = settings(), onlyHot = false, missing = false, cancel = false) {
-  const original = GS.combos, sent = [], phases = [], progress = [];
+  const original = GS.combos, sent = [], phases = [], progress = [], listsSeen = [];
   GS.combos = () => onlyHot ? teams.slice(0, 4) : teams;
   let eta, time = 0, idx, closed = 0, created = 0, stop = false;
   try {
@@ -26,6 +26,7 @@ async function run(S = settings(), onlyHot = false, missing = false, cancel = fa
       onPhase: (msg, total, info) => { idx = info.stage; eta.begin(idx, info.games, ++time); phases.push({msg, total, info, estimate: eta.estimate(time)}); },
       onProgress: (d, t) => { eta.update(d * (idx === 2 ? S.rerank.runs : idx === 3 ? S.final.runs : 1), ++time); progress.push([idx,d,t]); },
       stale: () => stop,
+      onLists: lists => listsSeen.push(lists),
       makeWorker: () => {
         created++;
         return {terminate() { closed++; }, postMessage(m) {
@@ -42,7 +43,7 @@ async function run(S = settings(), onlyHot = false, missing = false, cancel = fa
           });
         }};
       }});
-    return {out, sent, phases, progress};
+    return {out, sent, phases, progress, listsSeen};
   } catch (error) { return {error, sent, phases, progress}; }
   finally { GS.combos = original; assert.equal(closed, created, '성공·실패·취소 모두 작업자 반환'); }
 }
@@ -92,7 +93,7 @@ async function main() {
     const evaluated = jobs(capped, 3);
     if (name === 'maxCandidatesPerBoss') assert(evaluated.length <= 9, name);
     if (name === 'maxRerankGames') assert(evaluated.length * S.rerank.runs <= value, name);
-    if (name === 'maxTripleChecks') assert.equal(capped.error.attempts.length, 1, name);
+    if (name === 'maxTripleChecks') assert.equal(capped.error.attempts.length, 3, '앞 두 단계는 호환 목록이 비어 검사 예산을 쓰지 않음');
     assert(capped.error.attempts.length <= 3);
   }
   const budget = {remaining: 2, exhausted: false};
@@ -104,13 +105,36 @@ async function main() {
   assert.equal((await run(bad)).sent.length, 0, '잘못된 설정은 계산 전에 차단');
   console.log('PASS candidate/game/triple/stage caps');
 
-  const partial = settings(); partial.retry.maxTripleChecks = 21;
+  // 실제 search 호출부도 정확히 0으로 완료되면 경고를 만들지 않아야 함.
+  const counted = {remaining: 10000};
+  for (const lists of r.listsSeen) C.bestTriples(lists, 2, counted);
+  const exact = settings(); exact.retry.maxTripleChecks = 10000 - counted.remaining;
+  const completed = await run(exact);
+  assert(!completed.error && !completed.out.combineLimited, '정확히 마지막 확인에서 예산 0: 소진 오탐 금지');
+  assert.deepEqual(completed.out.rows, r.out.rows);
+  let certificateCap = null;
+  for (let cap = 1; cap < exact.retry.maxTripleChecks; cap++) {
+    const b = {remaining: cap}; let found;
+    for (const lists of r.listsSeen) {
+      found = C.bestTriples(lists, 2, b);
+      if (found.length || b.exhausted) break;
+    }
+    if (b.exhausted && !C.triplesLimited(found, 2, b)) { certificateCap = cap; break; }
+  }
+  assert(certificateCap != null, '합성 목록에도 소진 후 상위 확정 경로가 있어야 함');
+  const certified = settings(); certified.retry.maxTripleChecks = certificateCap;
+  const proven = await run(certified);
+  assert(!proven.error && !proven.out.combineLimited, '상한이 하한보다 작으면 실제 결과 경고 생략');
+  assert.deepEqual(proven.out.rows, r.out.rows);
+
+  const partial = settings(); partial.retry.maxTripleChecks = 3;
   const limited = await run(partial);
   assert(!limited.error && limited.out.rows.length > 0 && limited.out.combineLimited, '검사 상한까지 일부 삼중은 찾은 경우');
   const limitedHtml = C.html({...limited.out, phase:'done'}, {hasInfo:true, level:3, levelMax:18, mode:'mean', esc:String, label:k=>k, bossName:k=>k});
   assert.match(limitedHtml, /data-k="cs-limit"/); assert.match(limitedHtml, /더 높은 점수의 조합이 남아/);
   assert(!limitedHtml.includes('고른 최적'), '상한 내 결과를 후보 전체의 최적이라고 단정하지 않음');
   assert.match(limitedHtml, /이번 결과는/);
+  assert.match(limitedHtml, /2단계 후보 점수 기준/);
   console.log('PASS partial success limit notice');
 
   const broken = await run(settings(), false, true);

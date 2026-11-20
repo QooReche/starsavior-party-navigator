@@ -467,7 +467,7 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
 # maxPool(숫자)을 주면 그때만 전투력 상위 maxPool 명 + minRole 보충(minPowerRatio 이상)으로 자른다. maxCombos 는 전수 경로의 보스당 조합 상한. 학습 경로는 learned.maxScoreCombos를 적용함.
 # etaWeights = 단계별 «한 판 상대 비용»(남은 시간 계산에서 아직 안 해 본 단계의 속도를 추정할 때 쓰는 초기값, 실측으로 조정).
 SEARCH = dict(
-    learned=dict(value=True, maxScoreCombos=2000000, fallbackMultiplier=4, S=3000, m=8, K=4000, M=8, A=256, overlapStarts=10, overlapKeep=8,
+    learned=dict(value=True, maxScoreCombos=2000000, maxOverlapChecks=2000000, fallbackMultiplier=4, S=3000, m=8, K=4000, M=8, A=256, overlapStarts=10, overlapKeep=8,
                  folds=3, epochs=40, ridge=10, minCorrelation=0.1, missThreshold=0.04,
                  note="계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀."),
     speed=dict(
@@ -481,7 +481,7 @@ SEARCH = dict(
     # 1단계 순차 반감: 전 조합을 firstRuns 판 돌려 순위를 매기고, 상위 passFrac(경계 동점 포함, 최소 passMinMult×keep 팀)만 runs 판이 되도록 더 돌린다. firstRuns 를 빼거나 runs 이상이면 반감 없음.
     screen=dict(runs=2, firstRuns=1, passFrac=0.10, passMinMult=3), rerank=dict(keep=300, runs=20), combine=dict(topTriples=10, show=5), final=dict(runs=40),
     # 겹침 없는 삼중이 없을 때만 확대. null=전체 후보(상한 내), 정밀 판 수는 기존 계산 포함 누계.
-    retry=dict(keepMultipliers=[1, 3, None], maxCandidatesPerBoss=3000, maxRerankGames=180000, maxTripleChecks=2000000),
+    retry=dict(keepMultipliers=[1, 3, None], maxCandidatesPerBoss=3000, maxRerankGames=180000, maxTripleChecks=8000000),
     # 작업자 수 자동 결정(cosmo_search.js workerCount): 논리 코어의 coreFrac, 메모리(deviceMemory, 모르면 unknownMemGB)의 memFrac 을 perWorkerMB 로 나눈 수, max 상한, 모바일은 mobileMax. 고정값이 아니라 PC마다 달라지는 값
     workers=dict(coreFrac=0.75, memFrac=0.5, perWorkerMB=250, unknownMemGB=4, min=1, max=24, mobileMax=2),
     topQ=0.2, defaultMode='top', defaultLevel=-1, auto=dict(screenLevel=6, probeRuns=10), etaWeights=[1, 1, 0.6, 0.25], etaWarmupSec=10, etaWindowSec=20, etaWinFrac=0, etaBlendSec=30)

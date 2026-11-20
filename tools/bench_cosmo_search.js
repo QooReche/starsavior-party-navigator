@@ -66,7 +66,7 @@ GS.runPhase=o=>{
  })};
 };
 const started=performance.now();
-C.search({S,bosses:G.season.bossOrder,mode,level:6,results,roster,workers,makeWorker,stage:'cosmo',base:'',
+C.search({S,bosses:G.season.bossOrder,bossName:key=>G.bosses.find(b=>b.key===key)?.name||key,mode,level:6,results,roster,workers,makeWorker,stage:'cosmo',base:'',
  onPlan:pl=>console.log(JSON.stringify({size,repeat,variant,plan:pl})),
  onPhase:(msg,total,info)=>console.log(JSON.stringify({size,repeat,variant,msg,total,info})),
  onProgress:(d,t)=>{if(d%10000===0)console.log(JSON.stringify({progress:d,total:t,phase:phase-1,seconds:(performance.now()-started)/1000}));}

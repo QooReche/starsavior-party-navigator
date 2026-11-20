@@ -6,7 +6,7 @@ import subprocess
 ROOT = Path(__file__).resolve().parents[1]
 MUTATIONS = [
     ('확대 제거', 'of retry.limits.entries()', 'of retry.limits.slice(0, 1).entries()'),
-    ('기존 job 재요청', '!evaluated.has(jobKey(b, e.keys, level))', 'true'),
+    ('기존 job 재요청', '!evaluated.has(jobKey(b,e.keys,level))', 'true'),
     ('반감 후보 복귀 제거', '(attempt ? allJobs : jobsK)', 'jobsK'),
     ('구원자 이름 제거', 'const who = keys.join("·")', 'const who = ""'),
     ('후보 상한 제거', 'Math.min(L, cfg.maxCandidatesPerBoss, Math.floor', 'Math.min(L, Infinity, Math.floor'),

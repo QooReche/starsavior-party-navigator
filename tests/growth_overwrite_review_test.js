@@ -91,10 +91,10 @@ async function speed(code=page){
     const writes=[],state={id:0,phase:'idle',optLevel:0,optMode:'mean'};
     const ctx={seasonBlocked:()=>false,CSR:state,MI:{info:{},profiles:{}},SIMQ:{busy:null},GSR:{phase:'idle'},D:{cosmoRaid:{search:{},bosses:[],levelMax:18}},R:[],EXCL:new Set(),
       location:{href:'http://example.test/'},LS:{get:()=>({sec:{old:1}}),set:(k,v)=>writes.push([k,v])},
-      csSig:()=>'',csWorkers:()=>2,csBreaks:()=>[],csNow:()=>1,csTick(){},growthCancel(){},growthPaint(){},renderCosmoSearch(){},growthEnabled:()=>false,growthOwnedContext:()=>'',
+      csSig:()=>'',csBoss:k=>'boss '+k,csWorkers:()=>2,csBreaks:()=>[],csNow:()=>1,csTick(){},growthCancel(){},growthPaint(){},renderCosmoSearch(){},growthEnabled:()=>false,growthOwnedContext:()=>'',
       miGrowth:async()=>growth,MyInfoReco:{profile:()=>({results:{}})},
       CosmoSearch:{searchSettings:s=>s,priorFrom:v=>v,etaNew:()=>({summary:()=>({new:2}),begin(){},update(){}}),
-        search:async opts=>{opts.onPlan({stages:[]});opts.onPhase('running',1,{stage:'screen',games:4,runs:4});opts.onProgress(1,1);
+        search:async opts=>{assert.equal(opts.bossName,ctx.csBoss);opts.onPlan({stages:[]});opts.onPhase('running',1,{stage:'screen',games:4,runs:4});opts.onProgress(1,1);
           if(finalPhase)opts.onPhase('finish',1,{stage:null,runs:100});return {rows:[{sum:1,teams:[]}],runs:100};}}};
     vm.createContext(ctx);vm.runInContext(fn,ctx);await ctx.cosmoSearchStart(state,grown?{results:{}}:null);
     assert.equal(state.phase,'done');assert.equal(writes.length,grown?0:1,`speed storage: grown=${grown}, finalPhase=${finalPhase}`);

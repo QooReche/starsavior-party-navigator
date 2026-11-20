@@ -8,6 +8,7 @@
     const c=S.learned;
     for(const k of ['S','m','K','M','A','overlapStarts','overlapKeep','folds','epochs','maxScoreCombos','fallbackMultiplier'])
       if(!Number.isInteger(c[k]) || c[k] < (['m','M','overlapStarts','overlapKeep'].includes(k)?0:1)) throw Error('학습 선별 설정 오류: '+k);
+    if(c.maxOverlapChecks!=null && (!Number.isInteger(c.maxOverlapChecks)||c.maxOverlapChecks<1))throw Error('학습 선별 설정 오류: maxOverlapChecks');
     if(c.S < units*c.m || c.folds<2 || c.fallbackMultiplier<2 || !(c.ridge>0) || !(c.minCorrelation>=-1 && c.minCorrelation<=1) || !(c.missThreshold>=0 && c.missThreshold<=1)) throw Error('학습 선별 설정·표본 상한 오류');
     return c;
   }
@@ -55,7 +56,7 @@
   async function overlap(S,rows,models,selections,bestTriples,stale=()=>false){const c=S.learned;
     if(!c.overlapStarts||!c.overlapKeep)return;
     const lists=selections.map(s=>[...s.core.values()].sort((a,b)=>better(b,a)));
-    const triples=bestTriples(lists,c.overlapStarts,{remaining:S.retry?.maxTripleChecks||2000000});
+    const triples=await bestTriples(lists,c.overlapStarts,{remaining:c.maxOverlapChecks??2000000});
     for(let b=0;b<3;b++){
       const others=[0,1,2].filter(i=>i!==b),pairs=triples.map(t=>others.flatMap(i=>t.teams[i].keys));
       // 삼중이 없더라도 두 팀을 피하는 대체 팀을 찾는다. 단순히 하나 찾고 끝내지 않음.

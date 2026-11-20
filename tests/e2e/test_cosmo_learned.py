@@ -1,7 +1,7 @@
 """Synthetic account/worker: learned switch, progress, completion and direct import."""
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from test_page import test_server, Ctx, open_page, settle, open_fold
+from test_page import test_server, Ctx, open_page, settle, open_fold, wait_myinfo
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -10,6 +10,18 @@ def flow(browser, ctx, expanded=False):
     p = open_page(browser, ctx, raid_ui=True)
     p.select_option('#content', p.evaluate("String(contents.findIndex(c=>c.key==='cosmo'))"))
     settle(p)
+    open_fold(p, 'cs-options')
+    assert p.locator('#cosmo-search [data-cs=learned]').is_checked()
+    for enabled in (False, True):
+        p.locator('#cosmo-search [data-cs=learned]').set_checked(enabled)
+        assert p.evaluate("LS.get('cosmo.learned')") is enabled
+        p.reload()
+        wait_myinfo(p)
+        p.select_option('#content', p.evaluate("String(contents.findIndex(c=>c.key==='cosmo'))"))
+        settle(p)
+        open_fold(p, 'cs-options')
+        assert p.locator('#cosmo-search [data-cs=learned]').is_checked() is enabled
+        assert p.evaluate('CSR.optLearned') is enabled
     p.evaluate("""() => {
       const S=D.cosmoRaid.search;
       const pool=CosmoSearch.poolAll(S,csProfile().results,R).slice(0,16);
@@ -42,6 +54,9 @@ def flow(browser, ctx, expanded=False):
     p.wait_for_function("CSR.phase==='done' || CSR.phase==='err'", timeout=120000)
     assert p.evaluate("CSR.phase==='done' && CSR.learned && CSR.rows[0].sum>0"), p.evaluate('CSR.msg')
     assert p.evaluate("learnedMessages.some(s=>s.includes('예측 채점'))")
+    assert p.evaluate("D.cosmoRaid.bosses.every(b=>learnedMessages.some(s=>s.includes(b.name)))")
+    assert p.evaluate("D.cosmoRaid.bosses.every(b=>learnedMessages.every(s=>!s.includes(b.key)))")
+    assert p.evaluate("learnedMessages.some(s=>s.includes('예측 채점') && /[0-9],[0-9]{3}/.test(s))")
     if expanded:
         assert p.evaluate("learnedMessages.some(s=>s.includes('후보 확대 복귀')) && CSR.audit.every(a=>a.expanded)")
         assert p.locator('#cosmo-search [data-k=cs-expanded]').count()==3

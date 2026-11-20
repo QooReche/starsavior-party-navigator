@@ -135,7 +135,7 @@
 
   // 겹치지 않는 (A,B,C) 삼중 중 합이 큰 순 n 개(분기한정). lists = 보스별 항목 배열(각각 pickTop 처럼 점수 큰 순 정렬), 항목 = {keys, score}
   // 같은 합이면 세 팀 id 문자열이 작은 순. 구원자는 비트 마스크(30비트 단위)로 겹침을 확인한다.
-  function bestTriples(lists, n, budget) {
+  function* tripleSteps(lists, n, budget) {
     if (lists.length !== BOSSES || lists.some(l => !l.length)) return [];
     const index = new Map();
     lists.forEach(l => l.forEach(e => e.keys.forEach(k => { if (!index.has(k)) index.set(k, index.size); })));
@@ -146,7 +146,6 @@
     const better = (a, b) => { const ia = idOfT(a.t), ib = idOfT(b.t); return a.sum - b.sum || (ia < ib ? 1 : ia > ib ? -1 : 0); };   // >0 이면 a 가 더 좋음(합이 크거나, 같으면 id 가 작음)
     const floor = () => top.length < n ? -Infinity : top[top.length - 1].sum;
     const hit = (x, y) => { for (let w = 0; w < W; w++) if (x[w] & y[w]) return true; return false; };
-    const or = (x, y) => x.map((v, w) => v | y[w]);
     function put(sum, t) {
       const c = {sum, t};
       let i = top.length;
@@ -156,22 +155,62 @@
     }
     const c0 = L[2][0].e.score, b0 = L[1][0].e.score;
     const visit = () => !budget || (budget.remaining-- > 0 || (budget.exhausted = true, false));
-    search: for (const a of L[0]) {
+    let checks = 0;
+    search: for (let ai = 0; ai < L[0].length; ai++) {
+      yield; // 호환 목록 구성도 a마다 화면에 제어를 돌려줄 수 있게 함.
+      const a = L[0][ai];
       if (a.e.score + b0 + c0 < floor()) break;
-      for (const b of L[1]) {
-        if (!visit()) break search;
-        if (a.e.score + b.e.score + c0 < floor()) break;
-        if (hit(a.m, b.m)) continue;
-        const ab = or(a.m, b.m), base = a.e.score + b.e.score;
-        for (const c of L[2]) {
-          if (!visit()) break search;
+      const Ba = L[1].filter(b => !hit(a.m, b.m)), Ca = L[2].filter(c => !hit(a.m, c.m));
+      // 이 경계는 a에 종속됨. 다음 a의 호환 최고점은 더 높을 수 있으므로 break 금지.
+      if (!Ba.length || !Ca.length || a.e.score + Ba[0].e.score + Ca[0].e.score < floor()) continue;
+      const ca0 = Ca[0].e.score;
+      const stop = (bi, ci) => {
+        // 현재 c 꼬리 / 다음 b / 다음 a. 다음 a는 아직 거르지 않았으므로 전역 최고점 사용.
+        const tail = a.e.score + Ba[bi].e.score + Ca[ci == null ? 0 : ci].e.score;
+        const nextB = bi + 1 < Ba.length ? a.e.score + Ba[bi + 1].e.score + ca0 : -Infinity;
+        const nextA = ai + 1 < L[0].length ? L[0][ai + 1].e.score + b0 + c0 : -Infinity;
+        budget.upperBound = Math.max(tail, nextB, nextA);
+        budget.position = {a: ai, b: bi, c: ci}; // b·c는 호환 목록 안의 0부터 세는 위치.
+      };
+      for (let bi = 0; bi < Ba.length; bi++) {
+        if (++checks % 4096 === 0) yield;
+        const b = Ba[bi];
+        if (!visit()) { stop(bi, null); break search; }
+        if (a.e.score + b.e.score + ca0 < floor()) break;
+        const base = a.e.score + b.e.score;
+        for (let ci = 0; ci < Ca.length; ci++) {
+          if (++checks % 4096 === 0) yield;
+          const c = Ca[ci];
+          if (!visit()) { stop(bi, ci); break search; }
           if (base + c.e.score < floor()) break;
-          if (hit(ab, c.m)) continue;
+          if (hit(b.m, c.m)) continue; // a와의 겹침은 Ca에서 이미 제거했음.
           put(base + c.e.score, [a, b, c].map(x => ({id: x.id, e: x.e})));
         }
       }
     }
     return top.map(x => ({sum: x.sum, teams: x.t.map(y => y.e)}));
+  }
+  function bestTriples(lists, n, budget) {
+    const steps = tripleSteps(lists, n, budget);
+    let step; do { step = steps.next(); } while (!step.done);
+    return step.value;
+  }
+  // 동일한 탐색·횟수·동점 순서. 시간은 결과를 자르지 않고 화면/취소 응답만 양보함.
+  async function bestTriplesAsync(lists, n, budget, stale = () => false) {
+    const steps = tripleSteps(lists, n, budget);
+    let since = performance.now();
+    for (;;) {
+      if (stale()) throw Object.assign(new Error('취소'), {gwenCause: 'cancel'});
+      const step = steps.next();
+      if (step.done) return step.value;
+      if (performance.now() - since >= 16) {
+        await new Promise(resolve => setTimeout(resolve, 0));
+        since = performance.now();
+      }
+    }
+  }
+  function triplesLimited(triples, n, budget) {
+    return !!budget.exhausted && !(triples.length >= n && budget.upperBound < triples[n - 1].sum);
   }
 
   // 마지막 재시뮬 작업: 삼중에 든 (보스, 조합) 중복 제거
@@ -419,6 +458,7 @@
   // cx = {S, bosses:[boss key 3개], level, mode, results, roster, makeWorker, workers, stage, base, onPlan(plan), onPhase(msg,total,{stage,teams,runs,games}), onProgress(done,total), onHandle(handle), stale()}
   async function search(cx) {
     const {S, bosses, mode, results, roster} = cx;
+    const bossName = cx.bossName || (key => key);
     const auto = cx.level === AUTO, level = auto ? (S.auto && S.auto.screenLevel) || 6 : cx.level;   // 자동이면 1·2단계는 대표 난이도로
     if (bosses.length !== BOSSES) throw new Error("보스는 3명이어야 함");
     if (auto && !(Number.isInteger(cx.levelMax) && cx.levelMax >= 1)) throw new Error("난이도 최대값(levelMax)이 없음");   // 긴 계산을 돌리기 전에 막는다
@@ -459,13 +499,13 @@
       };
       for(let b=0;b<3;b++){
         const sample=await Learned.sample(S,rows,(cx.sampleSeed||20261119)+b,stale),jobs=bossJobs(S,bosses[b],level,sample,results,cls);
-        await evaluate(jobs,`표본 학습: ${bosses[b]} · ${sample.length}팀`);
+        await evaluate(jobs,`표본 학습: ${bossName(bosses[b])} · ${num(sample.length)}팀`);
         const model=await Learned.train(enc,sample,jobs.map(j=>metric(res1[j.key].cosmo,mode)),c,stale);models.push(model);
-        if(cx.onPhase)cx.onPhase(`예측 채점: ${bosses[b]} · 전체 ${pl.combos}조합`,stageTeams,{stage:0,teams:stageTeams,runs:fr,games:stageTeams*fr});
+        if(cx.onPhase)cx.onPhase(`예측 채점: ${bossName(bosses[b])} · 전체 ${num(pl.combos)}조합`,stageTeams,{stage:0,teams:stageTeams,runs:fr,games:stageTeams*fr});
         if(cx.onProgress)cx.onProgress(completed,stageTeams);
         selections.push(await Learned.select(S,rows,model,stale));
       }
-      await Learned.overlap(S,rows,models,selections,bestTriples,stale);
+      await Learned.overlap(S,rows,models,selections,(lists,n,budget)=>bestTriplesAsync(lists,n,budget,stale),stale);
       const prepared=[],plannedByBoss=[];
       for(let b=0;b<3;b++){
         const sel=selections[b],audit=await Learned.auditSample(S,rows,sel,(cx.sampleSeed||20261119)+100+b,stale);
@@ -477,14 +517,14 @@
       auditInfo=[];
       for(let b=0;b<3;b++){
         const {sel,audit,core,aj}=prepared[b];
-        await evaluate([...core,...aj],`1단계: 학습 후보·무작위 감사 ${bosses[b]}`);
+        await evaluate([...core,...aj],`1단계: 학습 후보·무작위 감사 ${bossName(bosses[b])}`);
         const info=Learned.audit(c,models[b].rho,core.map(j=>metric(res1[j.key].cosmo,mode)),aj.map(j=>metric(res1[j.key].cosmo,mode)),aj.length,audit.excluded,passCount(S,core.length,pl.keep));
         const record={boss:bosses[b],...info,core:core.length,overlap:sel.overlap.size};
         auditInfo.push(record);
         if(info.fallback && S.maxCombos > 0 && pl.combos > S.maxCombos){
           const factor=c.fallbackMultiplier;
           const expanded={...S,learned:{...c,K:c.K*factor,M:c.M*factor,A:c.A*factor}};
-          if(cx.onPhase)cx.onPhase(`후보 확대 복귀: ${bosses[b]} · 예측 재선별 ${factor}배`,stageTeams,{stage:0,teams:stageTeams,runs:fr,games:stageTeams*fr});
+          if(cx.onPhase)cx.onPhase(`후보 확대 복귀: ${bossName(bosses[b])} · 예측 재선별 ${num(factor)}배`,stageTeams,{stage:0,teams:stageTeams,runs:fr,games:stageTeams*fr});
           if(cx.onProgress)cx.onProgress(completed,stageTeams);
           const wider=await Learned.select(expanded,rows,models[b],stale);
           // 기존 겹침 회피 후보도 유지한다. 이미 계산한 표본·감사 결과는 evaluate가 재사용한다.
@@ -494,7 +534,7 @@
           const extraCore=bossJobs(S,bosses[b],level,[...wider.core.values()].map(e=>e.keys),results,cls);
           const extraJobs=bossJobs(S,bosses[b],level,extraAudit.teams,results,cls);
           stageTeams+=[...extraCore,...extraJobs].filter(j=>!res1[j.key]?.cosmo).length;
-          await evaluate([...extraCore,...extraJobs],`후보 확대 복귀: ${bosses[b]} · 후보·감사 ${factor}배 확인 (결과 재사용)`);
+          await evaluate([...extraCore,...extraJobs],`후보 확대 복귀: ${bossName(bosses[b])} · 후보·감사 ${num(factor)}배 확인 (결과 재사용)`);
           selections[b]=wider;
           Object.assign(record,{expanded:true,multiplier:factor,expandedCore:extraCore.length,
             expandedAudit:Learned.audit(expanded.learned,models[b].rho,extraCore.map(j=>metric(res1[j.key].cosmo,mode)),extraJobs.map(j=>metric(res1[j.key].cosmo,mode)),extraJobs.length,extraAudit.excluded,passCount(S,extraCore.length,pl.keep))});
@@ -504,9 +544,9 @@
           let batch=[];
           for(const keys of GS.iterateCombos(S,rows)){
             batch.push(keys);
-            if(batch.length===512){await evaluate(bossJobs(S,bosses[b],level,batch,results,cls),`학습 감사 복귀: ${bosses[b]} 전수 확인 (결과 재사용)`);batch=[];}
+            if(batch.length===512){await evaluate(bossJobs(S,bosses[b],level,batch,results,cls),`학습 감사 복귀: ${bossName(bosses[b])} 전수 확인 (결과 재사용)`);batch=[];}
           }
-          if(batch.length)await evaluate(bossJobs(S,bosses[b],level,batch,results,cls),`학습 감사 복귀: ${bosses[b]} 전수 확인 (결과 재사용)`);
+          if(batch.length)await evaluate(bossJobs(S,bosses[b],level,batch,results,cls),`학습 감사 복귀: ${bossName(bosses[b])} 전수 확인 (결과 재사용)`);
         }
       }
       // 결과 인덱스에는 가벼운 조합 정보만 유지한다. party/options는 실제 실행 직전에 생성.
@@ -524,7 +564,7 @@
       const more=S.screen.runs-fr,res2=more>0?await run(shuffled(jobsK,20261108),more,4,'1단계 보충: 학습 후보·구원자별 대안·겹침 회피 확인',1):{};
       if(stale())return null;resA={};for(const j of jobsK){const a=res1[j.key],b=res2[j.key];if(more>0&&!b?.cosmo)throw new Error('보충 계산 결과가 누락됨');resA[j.key]=b?{...b,cosmo:mergeSummary(a.cosmo,b.cosmo,S.topQ)}:a;}
     } else if (!pl.halved) {
-      resA = await run(shuffled(jobsA, 20261106), S.screen.runs, 1, `1단계: 보스 3명 × 조합 ${list.length}개를 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`, 0);
+      resA = await run(shuffled(jobsA, 20261106), S.screen.runs, 1, `1단계: 보스 3명 × 조합 ${num(list.length)}개를 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`, 0);
       if (stale()) return null;
       jobsK = jobsA;
       firstResults = resA;
@@ -532,7 +572,7 @@
       const fr = S.screen.firstRuns, more = S.screen.runs - fr;
       const selection = pl.fast ? bosses.map((b, i) => surrogateSelect(S, jobsA.filter(j => j.boss === b), results, 20261110 + i)) : null;
       const firstJobs = selection ? [].concat(...selection.map(s => s.jobs)) : jobsA;
-      const res1 = await run(shuffled(firstJobs, 20261106), fr, 1, `1단계 (1/2): ${selection ? "빠른 탐색·무작위 놓침 확인" : "전체 조합 확인"} · ${num(firstJobs.length)}팀을 ${fr}판씩 훑는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`, 0);
+      const res1 = await run(shuffled(firstJobs, 20261106), fr, 1, `1단계 (1/2): ${selection ? "빠른 탐색·무작위 놓침 확인" : "전체 조합 확인"} · ${num(firstJobs.length)}팀을 ${num(fr)}판씩 훑는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`, 0);
       firstResults = res1;
       if (stale()) return null;
       if (selection) {
@@ -551,7 +591,7 @@
       const keepJobs = bosses.map(b => { const jb = jobsA.filter(j => j.boss === b), ks = new Set(pickPass(jb, res1, mode, pl.pass).map(e => idOf(e.keys))); return jb.filter(j => ks.has(idOf(j.keys))); });
       jobsK = [].concat(...keepJobs);
       passed = Math.max(...keepJobs.map(k => k.length));
-      const res2 = await run(shuffled(jobsK, 20261108), more, 4, `1단계 (2/2): 첫 판 상위 약 ${num(pl.pass)}팀(동점 포함 보스당 최대 ${num(passed)}팀)을 ${more}판 더 확인 중`, 1);
+      const res2 = await run(shuffled(jobsK, 20261108), more, 4, `1단계 (2/2): 첫 판 상위 약 ${num(pl.pass)}팀(동점 포함 보스당 최대 ${num(passed)}팀)을 ${num(more)}판 더 확인 중`, 1);
       if (stale()) return null;
       resA = {};
       for (const j of jobsK) {
@@ -580,16 +620,16 @@
       });
       if (!extra.length) continue;
       const carry = jobsB.length;
-      const msg = attempt ? `후보 확대 ${attempt}/${retry.limits.length - 1}: 겹침 없는 3팀을 위해 보스별 최대 ${num(limit)}팀 확인 중(기존 결과 재사용)` : `2단계: 보스별 상위 ${limit}팀을 더 정확히 확인 중`;
+      const msg = attempt ? `후보 확대 ${attempt}/${retry.limits.length - 1}: 겹침 없는 3팀을 위해 보스별 최대 ${num(limit)}팀 확인 중(기존 결과 재사용)` : `2단계: 보스별 상위 ${num(limit)}팀을 더 정확히 확인 중`;
       Object.assign(resB, await run(shuffled(extra, 20261107), S.rerank.runs, 3, msg, 2, carry));
       if (stale()) return null;
       if (extra.some(j => !resB[j.key] || !resB[j.key].cosmo))
         throw Object.assign(new Error("정밀 계산 결과가 누락됨. 다시 시도 필요"), {gwenCause: "calculation"});
       extra.forEach(j => evaluated.add(j.key)); pushAll(jobsB, extra);
       lists = bosses.map(b => pickTop(jobsB.filter(j => j.boss === b), resB, mode).map(e => Object.assign({score: metric(e.st, mode)}, e)));
+      if (cx.onLists) cx.onLists(lists, {attempt, bosses: bosses.slice()});
       kept = Math.max(...lists.map(l => l.length));
-      triples = bestTriples(lists, S.combine.topTriples, budget);
-      if (budget.remaining <= 0) budget.exhausted = true;
+      triples = await bestTriplesAsync(lists, S.combine.topTriples, budget, stale);
       attempts.push({limit, added: extra.length, teams: jobsB.length, triples: triples.length});
       if ((learned ? triples.length >= S.combine.topTriples : triples.length) || budget.exhausted) break;
     }
@@ -600,7 +640,7 @@
     if (auto) {
       const lvls = Array.from({length: cx.levelMax + 1}, (_, i) => i), pr = S.auto.probeRuns | 0 || 10;
       const jobsP = [].concat(...lvls.map(l => finalJobs(S, triples, bosses, l, results, cls)));
-      const resP = await run(jobsP, pr, 5, `난이도 비교: 후보 편성을 난이도 0~${cx.levelMax}에서 ${pr}판씩 확인 중`, null);
+      const resP = await run(jobsP, pr, 5, `난이도 비교: 후보 편성을 난이도 0~${num(cx.levelMax)}에서 ${num(pr)}판씩 확인 중`, null);
       if (stale()) return null;
       const best = new Map();   // 보스|조합 -> 점수가 가장 큰 난이도(같으면 낮은 난이도)
       for (const t of triples) t.teams.forEach((e, i) => {
@@ -619,10 +659,10 @@
     triples.forEach(t => t.teams.forEach((e, i) => { const l = levelOf(bosses[i], e.keys), k = jobKey(bosses[i], e.keys, l); if (!seen.has(k)) seen.set(k, {boss: bosses[i], keys: e.keys, level: l}); }));
     const jobsC = [];
     seen.forEach(v => brks.forEach(b => pushAll(jobsC, bossJobs(S, v.boss, v.level, [v.keys], results, cls, b))));
-    const resC = await run(jobsC, S.final.runs, 2, `${auto ? "마지막 확인" : "3단계"}: 합이 큰 ${triples.length}개 편성의 팀 ${seen.size}개${brks.length > 1 ? "를 브레이크 스킬 " + (brks.length - 1) + "종과 함께" : ""} ${S.final.runs}판씩 확인 중`, auto ? null : 3);
+    const resC = await run(jobsC, S.final.runs, 2, `${auto ? "마지막 확인" : "3단계"}: 합이 큰 ${num(triples.length)}개 편성의 팀 ${num(seen.size)}개${brks.length > 1 ? "를 브레이크 스킬 " + num(brks.length - 1) + "종과 함께" : ""} ${num(S.final.runs)}판씩 확인 중`, auto ? null : 3);
     if (stale()) return null;
     const rows2 = finalRankBrk(triples, bosses, levelOf, brks, resC, mode, S.combine.show);
-    return {rows: rows2, growthOwned: jobsB.map(j=>({...j,result:resB[j.key]})), pool: rows.length, capped: !learned && S.maxPool > 0, combos: list.length, keep: kept, attempts, combineLimited: budget.exhausted, triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
+    return {rows: rows2, growthOwned: jobsB.map(j=>({...j,result:resB[j.key]})), pool: rows.length, capped: !learned && S.maxPool > 0, combos: list.length, keep: kept, attempts, combineLimited: triplesLimited(triples, S.combine.topTriples, budget), triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
       halved: pl.halved, firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed,
       ...(learned ? {learned:true,audit:auditInfo} : {}),
       ...(!learned && speedValue(S, "surrogate", false) ? {fast: true, audit: auditInfo || [], ...(pl.fastSkipped ? {fastSkipped: true} : {})} : {})};
@@ -668,7 +708,7 @@
       const lvInfo = st.probe ? '<div class="mut gd-small" data-k="cs-level">난이도는 보스마다 점수가 가장 높은 값을 따로 골랐음(보스별 난이도·브레이크 스킬은 아래 편성에 표시, 짧은 표본이라 참고용).</div>' : "";
       const first = rows.length ? `${cx.report?.(st.rows)||""}<div data-k="cs-best">${table(rows[0], st.mode, cx)}</div>` : `${error('empty')}<div class="mut">결과 없음</div>`;
       const expanded = (st.audit || []).filter(a=>a.expanded).map(a=>`<div class="gd-warn" data-k="cs-expanded">${esc(cx.bossName(a.boss))}: 이 보스는 예측 확인이 부족해 후보를 넓혀 찾았음</div>`).join("");
-      const rest = expanded + (st.combineLimited ? '<div class="gd-warn" data-k="cs-limit">조합 검사 상한에 도달했음. 이번 결과는 확인한 조합 중에서 골랐으며, 더 높은 점수의 조합이 남아 있을 수 있음.</div>' : '') + rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx, i+1)}</details>`).join("");
+      const rest = expanded + (st.combineLimited ? '<div class="gd-warn" data-k="cs-limit">조합 검사 상한에 도달했음. 이번 결과는 2단계 후보 점수 기준으로 확인한 조합 중에서 골랐으며, 더 높은 점수의 조합이 남아 있을 수 있음.</div>' : '') + rows.slice(1).map((r, i) => `<details class="gd-small"><summary>${i + 2}위 · 합계 ${num(r.sum)}</summary>${table(r, st.mode, cx, i+1)}</details>`).join("");
       const scr = st.learned ? `계정별 표본 학습·예측 선별·무작위 감사를 거쳐${st.audit.some(a=>a.fallback&&!a.expanded)?" 품질 미달 보스는 전수 확인으로 복귀하고":""} 후보를 ${st.screenRuns}판씩 확인하고` : st.halved ? `${st.fast && !st.fastSkipped ? "대리 선별·무작위 확인" + (st.audit.some(a => a.fallback) ? "·놓침 보스 전수 복귀" : "") + " 뒤" : "보스마다 조합 " + num(st.combos) + "개를"} ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
       body = `${old}${stale}${first}${rest}${btn("다시 찾기")}${opt}<details class="season-options" data-fold="cs-result-basis"><summary>탐색 결과 상세</summary>${lvInfo}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값임(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순임. 확인한 후보 조합 중에서 골랐으므로 전체 조합의 수학적 최적은 아닐 수 있음.</div></details>`;
     } else body = `${btn("보스 3마리 편성 찾기")}<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>${opt}`;
@@ -688,6 +728,6 @@
     return Math.max(W.min, Math.floor(n));
   }
 
-  const api = {MODES, pushAll, searchSettings, proxyScore, surrogateSelect, surrogateAudit, workerCount, pickPass, passCount, mergeSummary, shuffled, poolAll, countCombos, feasibility, effKeep, plan, etaNew, priorFrom, fmtDur, etaLine, preText, progText, metric, idOf, jobKey, bossJobs, pickTop, pickDiverse, bestTriples, finalJobs, finalRank, finalRankBrk, search, html, table};
+  const api = {MODES, pushAll, searchSettings, proxyScore, surrogateSelect, surrogateAudit, workerCount, pickPass, passCount, mergeSummary, shuffled, poolAll, countCombos, feasibility, effKeep, plan, etaNew, priorFrom, fmtDur, etaLine, preText, progText, metric, idOf, jobKey, bossJobs, pickTop, pickDiverse, bestTriples, bestTriplesAsync, triplesLimited, finalJobs, finalRank, finalRankBrk, search, html, table};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.CosmoSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

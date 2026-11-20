@@ -9,6 +9,7 @@ data = json.loads((ROOT / 'data/cosmo_raid.json').read_text(encoding='utf8'))['s
 assert config == data, '빌더 SEARCH와 공개 탐색 설정이 다름'
 assert config['learned']['value'] is True
 assert config['learned']['maxScoreCombos'] == 2_000_000
+assert config['learned']['maxOverlapChecks'] == 2_000_000
 assert config['learned']['fallbackMultiplier'] == 4
 assert config['maxCombos'] == 363_000
 print('PASS learned default/config parity')

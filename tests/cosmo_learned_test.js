@@ -20,6 +20,10 @@ async function main(){const S=settings(),rows=C.poolAll(S,results,roster),all=GS
  const tiny=settings();tiny.learned.K=1;tiny.learned.M=2;
  const sel=await L.select(tiny,rows,model);assert(sel.core.size>1,'M 제거 변이 검출');for(const r of rows)assert([...sel.core.values()].filter(e=>e.keys.includes(r.key)).length>=2);
  const ss=await Promise.all([0,1,2].map(()=>L.select(tiny,rows,model)));
+ const budgetProbe=structuredClone(tiny);budgetProbe.retry.maxTripleChecks=1;budgetProbe.learned.maxOverlapChecks=123;
+ let overlapBudget;
+ await L.overlap(budgetProbe,rows,[model,model,model],structuredClone(ss),async(lists,n,budget)=>{overlapBudget=budget.remaining;return [];});
+ assert.equal(overlapBudget,123,'학습 겹침 예산은 최종 조합 예산과 별도');
  await L.overlap(tiny,rows,[model,model,model],ss,C.bestTriples);assert(ss.some(s=>s.overlap.size>0),'겹침 후보 제거 변이 검출');
  const triples=C.bestTriples(ss.map(s=>[...s.core.values()].sort((a,b)=>b.score-a.score)),4);assert(triples.length>=4,'겹침 없는 여러 삼중');
  const aud=await L.auditSample(S,rows,selection,18);assert.equal(new Set(aud.teams.map(L.id)).size,aud.teams.length);assert(aud.teams.every(k=>!selection.core.has(L.id(k))));assert(aud.teams.length<=S.learned.A);
