@@ -9,7 +9,8 @@ const gold=read(path.join(out,goldFile)),catalog=read(path.join(out,'catalog.jso
 const goldBosses=[...new Set(gold.rows.map(g=>g.boss))];
 const BOSS_ORDER=goldBosses.every(b=>G.season.bossOrder.includes(b))?G.season.bossOrder.filter(b=>goldBosses.includes(b)):goldBosses;
 const tid=t=>t.teams.map(e=>C.idOf(e.keys)).join('/');
-const jobkey=t=>C.jobKey(t.boss,t.keys,6);
+const goldKeys=new Set(gold.rows.map(g=>g.key));
+const jobkey=t=>t.key&&goldKeys.has(t.key)?t.key:t.leaderKey?C.jobKey(t.boss,t.keys,t.level??6,t.brk?{name:t.brk,level:t.brkLv}:null,t):[t.boss,C.idOf(t.keys),6].join('|');
 const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
 const sd=a=>a.length<2?0:Math.sqrt(a.reduce((s,v)=>s+(v-mean(a))**2,0)/(a.length-1));
 const jac=(a,b)=>{const x=new Set(a),y=new Set(b);return [...x].filter(v=>y.has(v)).length/new Set([...x,...y]).size;};

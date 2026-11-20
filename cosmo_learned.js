@@ -22,20 +22,20 @@
   }
   function reservoir(a,e,n,seen,rng){if(a.length<n)a.push(e);else{const j=Math.floor(rng()*seen);if(j<n)a[j]=e;}}
   const pause=()=>new Promise(r=>setTimeout(r,0));
-  async function scan(S,rows,visit,stale){const check=()=>{if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});};check();let n=0;for(const keys of GS.iterateCombos(S,rows)){visit(keys);if(++n%4096===0){await pause();check();}}check();return n;}
+  async function scan(S,rows,visit,stale){const check=()=>{if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});};check();let n=0;for(const keys of GS.iterateCombos({...S,newSearch:true},rows)){visit(keys);if(++n%4096===0){await pause();check();}}check();return n;}
   // 균등 reservoir + 구원자별 reservoir. 전원을 m회 포함하는 예약분을 먼저 두고 S까지 균등 표본으로 채움.
   async function sample(S,rows,seed,stale=()=>false){const c=config(S,rows.length),rng=random(seed),a=[],per=new Map(rows.map(r=>[r.key,{a:[],n:0}]));let n=0;
     await scan(S,rows,keys=>{reservoir(a,keys,c.S,++n,rng);for(const k of keys){const p=per.get(k);reservoir(p.a,keys,c.m,++p.n,rng);}},stale);
     const out=new Map();for(const p of per.values())for(const k of p.a)out.set(id(k),k);for(const k of a){if(out.size>=c.S)break;out.set(id(k),k);}return [...out.values()];}
   // Sparse one-hot unit, front/back and leader effects; role/element pair counts.
-  function encoder(rows,results,roster){const cls=Object.fromEntries(rows.map(r=>[r.key,r.cls])),meta=new Map(roster.map(r=>[r.key,r])),ix=new Map();
+  function encoder(rows,results,roster,placement={}){const cls=Object.fromEntries(rows.map(r=>[r.key,r.cls])),meta=new Map(roster.map(r=>[r.key,r])),ix=new Map();
     const index=s=>{if(!ix.has(s))ix.set(s,ix.size);return ix.get(s);};
     for(const r of rows)for(const s of ['unit','front','back','leader'])index(s+':'+r.key);
     const roles=[...new Set(rows.map(r=>r.cls))].sort(), elems=[...new Set(rows.map(r=>meta.get(r.key)?.el||meta.get(r.key)?.elem||meta.get(r.key)?.element||'?'))].sort();
     for(const [name,vs] of [['role',roles],['elem',elems]])for(let i=0;i<vs.length;i++)for(let j=i;j<vs.length;j++)index(name+':'+vs[i]+'/'+vs[j]);
-    function encode(keys){const order=keys.slice().sort((x,y)=>(GS.FRONT.includes(cls[x])?0:1)-(GS.FRONT.includes(cls[y])?0:1)||results[y].power-results[x].power||(x<y?-1:1)),v=new Map();
+    function encode(keys){const p=GS.party(keys,results,cls,placement.baseline?GS.baseline(keys,results):undefined),order=p.order,v=new Map();
       const add=(s,n=1)=>{const i=ix.get(s);v.set(i,(v.get(i)||0)+n);};
-      order.forEach((k,i)=>{add('unit:'+k);add((i<2?'front:':'back:')+k);if(!i)add('leader:'+k);});
+      order.forEach((k,i)=>{add('unit:'+k);add((i<2?'front:':'back:')+k);if(p.leaderKey?k===p.leaderKey:i===0)add('leader:'+k);});
       for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){
         add('role:'+ [cls[keys[i]],cls[keys[j]]].sort().join('/'));
         add('elem:'+ [meta.get(keys[i])?.el||meta.get(keys[i])?.elem||meta.get(keys[i])?.element||'?',meta.get(keys[j])?.el||meta.get(keys[j])?.elem||meta.get(keys[j])?.element||'?'].sort().join('/'));}

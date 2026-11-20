@@ -54,7 +54,7 @@
     if(action.type==='clear')return empty();
     // Explicit automatic placement changes positions only; leader/growth follow their savior.
     if(action.type==='arrange'&&action.order?.length===4&&new Set(action.order).size===4&&action.order.every(k=>slots.some(s=>s?.key===k)))
-      d.slots=action.order.map(k=>slots.find(s=>s.key===k));
+      {d.slots=action.order.map(k=>slots.find(s=>s.key===k));if(action.order.includes(action.leaderKey))d.leader=action.leaderKey;}
     return d;
   }
   function serialize(d,finals={},engineKey=k=>k){

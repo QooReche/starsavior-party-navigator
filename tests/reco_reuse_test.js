@@ -8,7 +8,7 @@ const Q = require('../quick.js');
 
 const ROOT     = path.resolve(__dirname, '..');
 const EXPECTED = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'reuse_baseline.json'), 'utf8'));
-const html     = fs.readFileSync(path.join(ROOT, 'party_template.html'), 'utf8');
+const html = fs.readFileSync(path.join(ROOT,'party_template.html'),'utf8');
 const frozen = JSON.parse(require('node:zlib').gunzipSync(fs.readFileSync(path.join(__dirname, 'fixtures/public_inputs_1111.json.gz'))));
 const D        = JSON.parse(frozen['web.json']);
 // Keep pre-refactor outputs fixed when engine data/calibration is rebuilt.

@@ -3099,11 +3099,8 @@ def test_ux_step3(browser, ctx):
     page.click('#guild-extra [data-g="best"]')
     assert page.evaluate('gsTiers().every(x=>x===0)')
     page.locator('[data-fold="gd-effects"] > summary').click()
-    open_fold(page,'gs-options')
-    page.uncheck('[data-gs="coop"]')
-    assert page.evaluate('GSR.banCoop===false')
-    page.check('[data-gs="coop"]')
-    page.locator('[data-fold="gs-options"] > summary').click()
+    assert page.locator('[data-gs="coop"]').count()==1
+    assert page.evaluate("D.guild.search.excluded.includes('professor-m')&&D.guild.search.excluded.includes('waltz-asherah')")
 
     # The real search entry and cancel handlers must stop their workers, with no late result.
     page.evaluate("""() => {window.ui3Created=0;window.ui3Stopped=0;

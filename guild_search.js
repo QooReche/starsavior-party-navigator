@@ -4,10 +4,12 @@
 (function (root) {
   "use strict";
   const {num} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
+  const Placement = typeof module !== "undefined" && module.exports ? require("./party_placement.js") : root.PartyPlacement;
   const FRONT = ["디펜더", "서포터"];
 
   // 후보 풀: 내 최종 전투력이 최고의 minPowerRatio 배 이상인 구원자(최대 poolSize 명) + 역할별 최소 인원(minRole: 서포터·디펜더는 전투력이 낮아도 역할 때문에 쓰이므로 따로 보충). rows = [{key, cls, power}]
   function pool(S, results, roster) {
+    if (S.newSearch === true) return roster.filter(s => results[s.key]?.power > 0).map(s => ({key:s.key,cls:s.cls,power:results[s.key].power})).sort((a,b)=>b.power-a.power||a.key.localeCompare(b.key));
     const ban = new Set(S.banCoop === false ? [] : (S.excluded || []));
     const rows = roster.filter(s => results[s.key] && results[s.key].power > 0 && !ban.has(s.key)).map(s => ({key: s.key, cls: s.cls, power: results[s.key].power}));
     rows.sort((a, b) => b.power - a.power || (a.key < b.key ? -1 : 1));
@@ -25,22 +27,22 @@
     return [...iterateCombos(S, rows)];
   }
   function* iterateCombos(S, rows) {
-    const n = rows.length, mf = S.minFront || 0, md = S.minDealer || 0;
+    const n = rows.length, mf = S.newSearch === true ? 0 : S.minFront || 0, md = S.newSearch === true ? 0 : S.minDealer || 0;
     for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) for (let c = b + 1; c < n; c++) for (let d = c + 1; d < n; d++) {
       const t = [rows[a], rows[b], rows[c], rows[d]], fr = t.filter(x => FRONT.includes(x.cls)).length;
       if (fr >= mf && 4 - fr >= md) yield t.map(x => x.key);
     }
   }
 
-  // 시뮬 칸 순서(앞열 역할 먼저, 같으면 전투력 큰 순) + 내 최종 능력치. 리더는 0번(오프라인 탐색과 같은 규칙)
-  function party(keys, results, cls) {
+  function party(keys, results, cls, placement) {
+    if(placement)return Placement.party(keys,results,placement);
     const order = keys.slice().sort((x, y) => (FRONT.includes(cls[x]) ? 0 : 1) - (FRONT.includes(cls[y]) ? 0 : 1) || results[y].power - results[x].power || (x < y ? -1 : 1));
     return {order, spec: {units: order.map(k => ({key: k, build: "none", stats_override: results[k].stats, stats_final: true, power: results[k].power, myinfo_combat: results[k].combat})), leader: 0}};
   }
 
   const hasSupporter = (keys, cls) => keys.some(k => cls[k] === "서포터");
-  // 예선 지원: 서포터가 있으면 S.screen.supporter(격돌의 돌풍), 없으면 S.screen.other
-  const screenSupport = (S, keys, cls) => hasSupporter(keys, cls) ? S.screen.supporter : S.screen.other;
+  // 예선 대표 지원. 최종 결합 비교에서는 지원 후보를 함께 평가함.
+  const screenSupport = (S, keys, cls) => S.newSearch === true ? S.screen.support || "none" : hasSupporter(keys, cls) ? S.screen.supporter : S.screen.other;
   // 본선 지원 후보: 특정 직업에만 걸리는 지원(S.supportRole: 지원 → 직업)은 팀에 그 직업이 없으면 뺀다
   const finalSupports = (S, keys, cls) => S.final.supports.filter(s => !(S.supportRole || {})[s] || keys.some(k => cls[k] === S.supportRole[s]));
 
@@ -78,7 +80,7 @@
 
   const BREAK_CHECK = {teams: 8, runs: 40, version: 1};
   const breakSignature = breaks => JSON.stringify([BREAK_CHECK.version, breaks.map(b => [b.name, b.level]).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] - b[1])]);
-  const jobKey = (keys, level, sup, tiers, brk = null) => [keys.join("+"), level, sup, (tiers || []).join(""), JSON.stringify(brk && [brk.name, brk.level])].join("|");
+  const jobKey = (keys, level, sup, tiers, brk = null, p = null) => !p?.leaderKey ? [keys.join("+"), level, sup, (tiers || []).join(""), JSON.stringify(brk && [brk.name, brk.level])].join("|") : JSON.stringify([Placement.executionKey(keys,p),level,sup,tiers||[],brk&&[brk.name,brk.level]]);
 
   // 작업 목록 → 작업자 수만큼 나눈 묶음(라운드 로빈). job = {key, party, options:{guild}}
   function split(jobs, n) {
@@ -90,7 +92,7 @@
   function screenJobs(S, G, V, list, results, cls, tiers) {
     return list.map(keys => {
       const sup = screenSupport(S, keys, cls), p = party(keys, results, cls);
-      return {key: jobKey(keys, S.screen.level, sup, tiers), keys, level: S.screen.level, sup, party: p.spec, order: p.order, options: {guild: {level: S.screen.level, sets: tiers.slice(), support: sup}}};
+      return {key: jobKey(keys, S.screen.level, sup, tiers, null, p), keys, level: S.screen.level, sup, party: p.spec, order: p.order, leaderKey:p.leaderKey, options: {guild: {level: S.screen.level, sets: tiers.slice(), support: sup}}};
     });
   }
   function finalJobs(S, G, V, finalists, results, cls, tiers) {
@@ -98,7 +100,7 @@
     for (const keys of finalists) {
       const p = party(keys, results, cls);
       for (const level of S.final.levels) for (const sup of finalSupports(S, keys, cls))
-        jobs.push({key: jobKey(keys, level, sup, tiers), keys, level, sup, party: p.spec, order: p.order, options: {guild: {level, sets: tiers.slice(), support: sup}}});
+        jobs.push({key: jobKey(keys, level, sup, tiers, null, p), keys, level, sup, party: p.spec, order: p.order, leaderKey:p.leaderKey, options: {guild: {level, sets: tiers.slice(), support: sup}}});
     }
     return jobs;
   }
@@ -108,11 +110,11 @@
     if (!breaks.length) return [];
     const jobs = [];
     for (const r of ranked.slice(0, BREAK_CHECK.teams)) {
-      const p = party(r.keys, results, cls);
+      const p = party(r.keys, results, cls, r.leaderKey?r:undefined);
       for (let level = Math.max(0, r.level - 1); level <= Math.min(12, r.level + 1); level++) {
         for (const brk of [null, ...breaks]) jobs.push({
-          key: jobKey(r.keys, level, r.sup, tiers, brk), keys: r.keys, level, sup: r.sup,
-          party: p.spec, order: p.order,
+          key: jobKey(r.keys, level, r.sup, tiers, brk, p), keys: r.keys, level, sup: r.sup,
+          party: p.spec, order: p.order, leaderKey:p.leaderKey,
           options: {guild: {level, sets: tiers.slice(), support: r.sup}, break_skill: brk}
         });
       }
@@ -123,7 +125,7 @@
   // 시뮬에서 협공류(S.banVia, 기본 coop·forced_coop)가 판당 평균 0.05회 이상 나간 팀은 «협공 금지» 규칙에 걸린 것으로 보고 거른다. 장비·조합으로 붙는 협공까지 잡는다.
   const COOP_VIA = ["coop", "forced_coop"], COOP_EPS = 0.05;
   function coopHit(S, r) {
-    if (!r || S.banCoop === false) return false;
+    if (!r || S.newSearch === true || S.banCoop === false) return false;
     const via = r.via || {};
     return (S.banVia || COOP_VIA).some(k => (via[k] || 0) >= COOP_EPS);
   }
@@ -139,7 +141,8 @@
   function pickTop(V, G, jobs, res, tiers, n, S) {
     const sc = jobs.filter(j => res[j.key] && !coopHit(S || {}, res[j.key])).map(j => ({keys: j.keys, ...rankStats(V, G, j.level, tiers, res[j.key].prog, res[j.key].progs, res[j.key].clear)}));
     sc.sort((a, b) => byRank(a, b) || (a.keys.join() < b.keys.join() ? -1 : 1));
-    return sc.slice(0, n).map(x => x.keys);
+    if (S?.newSearch !== true) return sc.slice(0, n).map(x => x.keys);
+    return [...new Map(sc.map(x=>[Placement.id(x.keys),x.keys])).values()].slice(0,n);
   }
   const pickFinalists = (S, V, G, jobs, res, tiers) => pickTop(V, G, jobs, res, tiers, S.finalists, S);
 
@@ -149,7 +152,7 @@
     for (const j of jobs) {
       const r = res[j.key]; if (!r || coopHit(S || {}, r)) continue;
       const st = rankStats(V, G, j.level, tiers, r.prog, r.progs, r.clear), id = j.keys.slice().sort().join("+"), cur = best.get(id);
-      if (!cur || byRank(st, {top: cur.score, cap: cur.cap, mean: cur.mean}) < 0) best.set(id, {keys: j.keys, order: j.order, level: j.level, sup: j.sup, brk: j.options?.break_skill?.name || null, brkLv: j.options?.break_skill?.level || null, score: st.top, mean: st.mean, cap: st.cap, clear: r.clear, prog: r.prog, frac: Math.max(0, Math.min(1, 2 * r.prog - 1)), n: r.n, ...unsupportedFields(r)});
+      if (!cur || byRank(st, {top: cur.score, cap: cur.cap, mean: cur.mean}) < 0) best.set(id, {keys: j.keys, order: j.order, leaderKey:j.leaderKey, level: j.level, sup: j.sup, brk: j.options?.break_skill?.name || null, brkLv: j.options?.break_skill?.level || null, score: st.top, mean: st.mean, cap: st.cap, clear: r.clear, prog: r.prog, frac: Math.max(0, Math.min(1, 2 * r.prog - 1)), n: r.n, ...unsupportedFields(r)});
     }
     return [...best.values()].sort((a, b) => b.score - a.score || b.cap - a.cap || b.mean - a.mean || (a.order.join() < b.order.join() ? -1 : 1)).slice(0, top || 5);
   }
@@ -209,10 +212,10 @@
   function notesHtml(st, cx) {
     const notes = cx.notes || [];
     if (!notes.length) return "";
-    const esc = cx.esc, on = st.banCoop !== false;
-    const row = n => `<li data-k="gd-note-${esc(n.key)}"><b>${esc(cx.label(n.key))}</b> <span class="mut">[${n.kind === "exclude" ? (on ? "제외" : "제외 해제됨") : "주의"} · ${esc(BASIS[n.basis] || n.basis)}]</span><br>${esc(n.why)}</li>`;
-    const dropped = st.dropped ? `<div class="gd-small" data-k="gd-search-dropped">시뮬에서 협공이 나가 결과에서 뺀 팀: ${st.dropped}개</div>` : "";
-    return `<details class="gd-small" data-k="gd-notes"><summary>제외·주의 구원자 ${notes.length}명 (보스·맵 기믹 때문)</summary><ul>${notes.map(row).join("")}</ul>${dropped}<div class="mut">길방 보스는 정실 어필 뒤 신부 경쟁 보유자 한 명만 정상이고 나머지는 «들러리»가 됨. 보호막이 있는 보스를 들러리가 치면 들러리 전원이 큰 연쇄 피해를 받아서, 내 턴이 아닐 때 공격하는 구원자가 위험함. 클라 표에 «협공 금지» 규칙 자체는 없고 이 기믹의 결과임. 시즌이 바뀌면 보스가 달라져 이 목록도 다시 봐야 함.</div></details>`;
+    const esc = cx.esc, on = !cx.newSearch && st.banCoop !== false;
+    const row = n => `<li data-k="gd-note-${esc(n.key)}"><b>${esc(cx.label(n.key))}</b> <span class="mut">[${!cx.newSearch && n.kind === "exclude" ? (on ? "제외" : "제외 해제됨") : "주의"} · ${esc(BASIS[n.basis] || n.basis)}]</span><br>${esc(n.why)}</li>`;
+    const dropped = !cx.newSearch && st.dropped ? `<div class="gd-small" data-k="gd-search-dropped">시뮬에서 협공이 나가 결과에서 뺀 팀: ${st.dropped}개</div>` : "";
+    return `<details class="gd-small" data-k="gd-notes"><summary>${cx.newSearch ? "기믹 주의" : "제외·주의"} 구원자 ${notes.length}명 (보스·맵 기믹 때문)</summary><ul>${notes.map(row).join("")}</ul>${dropped}<div class="mut">길방 보스는 정실 어필 뒤 신부 경쟁 보유자 한 명만 정상이고 나머지는 «들러리»가 됨. 보호막이 있는 보스를 들러리가 치면 들러리 전원이 큰 연쇄 피해를 받아서, 내 턴이 아닐 때 공격하는 구원자가 위험함. 클라 표에 «협공 금지» 규칙 자체는 없고 이 기믹의 결과임. 시즌이 바뀌면 보스가 달라져 이 목록도 다시 봐야 함.</div></details>`;
   }
 
   const SUP_NAME = {none: "지원 안 고름", gust: "격돌의 돌풍", focus: "날카로운 집중력", strike: "강인한 타격", mountain: "태산의 의지", fire: "불의 고동"};
@@ -228,23 +231,23 @@
     const btn = (label) => `<button type="button" data-gs="start">${label}</button>`;
     const ex = cx.excluded || [];
     const notes = notesHtml(st, cx);
-    const coop = ex.length ? `<details class="season-options" data-fold="gs-options"><summary>협공 제외·주의 구원자 <span class="tag">${st.banCoop===false?'제외 꺼짐':'제외 켜짐'}</span></summary>${notes}<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 길방 EX는 협공 금지라는 글이 많음(스킬 문구로 먼저 빼고, 시뮬에서 협공이 나간 팀도 거름)</span></label></details>` : "";
+    const coop = cx.newSearch ? notes : ex.length ? `<details class="season-options" data-fold="gs-options"><summary>협공 제외·주의 구원자 <span class="tag">${st.banCoop===false?'제외 꺼짐':'제외 켜짐'}</span></summary>${notes}<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 길방 EX는 협공 금지라는 글이 많음(스킬 문구로 먼저 빼고, 시뮬에서 협공이 나간 팀도 거름)</span></label></details>` : "";
     let body;
     if (st.phase === "run") body = `<div data-k="gd-search-progress">${work(cx.workMode || "long")}<span data-k="gd-search-prog">${esc(progText(st))}</span> <button type="button" class="sec" data-gs="cancel">취소</button></div>`;
     else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">${error(st.errorCause||"other")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;
     else if (st.phase === "done") {
       const stale = st.sig !== cx.sig ? '<div class="gd-warn" data-k="gd-search-stale">계산 조건이 바뀌었음. 아래 결과는 이전 선택 기준이므로 다시 찾기 필요.</div>' : "";
-      const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${r.level}단계</td><td>${esc(SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
+      const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))+(k===(r.leaderKey||r.order[0])?" (리더)":"")).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${r.level}단계</td><td>${esc(SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
       const best=st.rows[0];
       const result=best?`<div class="season-result" data-k="gs-best"><div class="season-score"><span>상위 점수</span><b data-k="gs-score">${num(best.score)}</b><small>점</small></div><div class="season-chips"><span class="tag">${best.level}단계</span><span class="tag">${esc(SUP_NAME[best.sup]||best.sup)}</span><span class="tag">클리어 ${Math.round(best.clear*100)}%</span></div>${cx.team?cx.team(best):''}</div>`:'';
-      body = `${stale}${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 첫 구원자가 리더)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>보스 깎음</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
+      body = `${stale}${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 리더 별도 표시)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>보스 깎음</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
 <div class="mut gd-small">후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값임(표본이 작아 한두 단계·수천 점은 오차). 고른 선택 효과 기준(기본 끔). 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순임. 점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받음.</div></details>`;
     } else body = btn("내 구원자로 편성 찾기") + '<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>'+coop;
     return `<div class="gd-search" data-k="gd-search" data-state="${st.phase}">${head}${body}${st.phase === "done" ? unsupportedHtml(st.rows || [], esc) : ""}<details class="season-options" data-fold="gs-basis"><summary>계산 기준 ⓘ</summary><span class="gd-est">추정</span>${warn}</details></div>`;
   }
 
   const breakLabel = (t, esc) => `브레이크 스킬: ${esc(t.brk || "없음")}${t.brk ? ` Lv.${t.brkLv}` : ""}`;
-  const api = {FRONT, TOP_Q, BREAK_CHECK, breakSignature, breakJobs, breakLabel, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, progText, SUP_NAME, countDropped, notesHtml, BASIS, unsupportedFields, unsupportedHtml};
+  const api = {baseline:Placement.baseline, FRONT, TOP_Q, BREAK_CHECK, breakSignature, breakJobs, breakLabel, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, progText, SUP_NAME, countDropped, notesHtml, BASIS, unsupportedFields, unsupportedHtml};
   api.iterateCombos = iterateCombos;
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

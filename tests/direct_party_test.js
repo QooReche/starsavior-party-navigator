@@ -21,7 +21,7 @@ test('screen/engine inverse and recommendation legacy order',()=>{
   const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
   const start=html.indexOf('function simParty('),end=html.indexOf('const simSigB=',start),code=html.slice(start,end);
   for(const order of permutations(keys))for(const leader of keys){
-    const c={DirectParty:P,arrangeOf:()=>({order,lead:leader}),QK:{d:{sv:Object.fromEntries(keys.map(k=>[k,[0,150,200,30,0,10]]))}},Quick:{MUL:1},ekey:k=>k};
+    const c={CFG:{recommendation:{}},PartyPlacement:require('../party_placement'),PLACEMENT_CACHE:new Map(),recommendationPlacementKey:()=>'test',DirectParty:P,arrangeOf:()=>({order,lead:leader}),QK:{d:{sv:Object.fromEntries(keys.map(k=>[k,[0,150,200,30,0,10]]))}},Quick:{MUL:1},ekey:k=>k};
     vm.createContext(c);vm.runInContext(code,c);const next=c.simParty({combo:[],ek:keys,b:{}});
     vm.runInContext(code.replace('DirectParty.toEngine(ar.order)','[ar.order[1],ar.order[2],ar.order[0],ar.order[3]]'),c);
     assert.equal(JSON.stringify(next),JSON.stringify(c.simParty({combo:[],ek:keys,b:{}})));

@@ -1,3 +1,6 @@
+// This suite isolates candidate selection/retry; layout cross-products are covered by party_placement_test.
+const PlacementFixture=require('../party_placement.js');
+PlacementFixture.variants=(keys,results)=>[PlacementFixture.baseline(keys,results)];
 // 합성 점수가 특정 구원자에 집중된 실제 search/작업자 경로. 계정 자료는 사용하지 않는다.
 const assert = require('node:assert/strict');
 const C = require('../cosmo_search.js'), GS = require('../guild_search.js');
@@ -7,7 +10,7 @@ const results = Object.fromEntries(roster.map((r, i) => [r.key, {power: 1000 - i
 const teams = [[0,1,2,3], [0,4,5,6], [0,7,8,9], [0,10,11,12], [4,5,6,7], [8,9,10,11]].map(t => t.map(i => 'u' + i));
 const score = keys => 100 + (keys.includes('u0') ? 10000 : 0) + teams.length - teams.findIndex(t => C.idOf(t) === C.idOf(keys));
 function settings() {
-  const S = structuredClone(G.search);
+  const S = structuredClone(G.search);S.placement={auditTeams:0};
   S.learned.value = false; // 기존 전수·빠른 탐색의 겹침 재시도 회귀
   S.minFront = S.minDealer = 0; S.maxPool = null;
   S.screen = {runs: 2, firstRuns: 1, passFrac: .001, passMinMult: 1};

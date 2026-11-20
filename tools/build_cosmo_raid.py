@@ -464,7 +464,7 @@ def belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row
 
 # «3보스 최고 점수 편성 찾기»(cosmo_search.js) 설정 — 표에서 오는 값이 아니라 탐색 비용 정책이라 여기에 고정해 data 에 싣는다.
 # 기본은 보유 육성 구원자 전체에서 학습 선별. learned를 끄면 기존 전수 탐색(docs/cosmo_raid.md 2단계).
-# maxPool(숫자)을 주면 그때만 전투력 상위 maxPool 명 + minRole 보충(minPowerRatio 이상)으로 자른다. maxCombos 는 전수 경로의 보스당 조합 상한. 학습 경로는 learned.maxScoreCombos를 적용함.
+# maxPool(숫자)을 주면 그때만 전투력 상위 maxPool 명으로 자른다. maxCombos 는 전수 경로의 보스당 조합 상한. 학습 경로는 learned.maxScoreCombos를 적용함.
 # etaWeights = 단계별 «한 판 상대 비용»(남은 시간 계산에서 아직 안 해 본 단계의 속도를 추정할 때 쓰는 초기값, 실측으로 조정).
 SEARCH = dict(
     learned=dict(value=True, maxScoreCombos=2000000, maxOverlapChecks=2000000, fallbackMultiplier=4, S=3000, m=8, K=4000, M=8, A=256, overlapStarts=10, overlapKeep=8,
@@ -477,11 +477,12 @@ SEARCH = dict(
                        minPerUnit=3, missThreshold=0.04, proxy={'tyria': 'attack'},
                        note='빠른 탐색(실험). 제외 무작위 표본의 경계 이상 비율이 문턱을 넘으면 해당 보스 전수 복귀.')),
     _note='3보스 구원자 겹침 금지 편성 찾기(cosmo_search.js) 설정. 기본은 보유 육성 구원자 전체에서 학습 선별이고, 판 수·keep 은 정밀도와 계산 시간의 절충이라 실측으로 조정한다.',
-    maxPool=None, maxCombos=363000, minPowerRatio=0.6, minRole={'서포터': 2, '디펜더': 2}, minFront=1, minDealer=1,
+    placement=dict(baseline=False, enabled=False, screenRuns=2, keep=2, auditTeams=12),
+    maxPool=None, maxCombos=363000, minPowerRatio=0, minRole={}, minFront=0, minDealer=0,
     # 1단계 순차 반감: 전 조합을 firstRuns 판 돌려 순위를 매기고, 상위 passFrac(경계 동점 포함, 최소 passMinMult×keep 팀)만 runs 판이 되도록 더 돌린다. firstRuns 를 빼거나 runs 이상이면 반감 없음.
     screen=dict(runs=2, firstRuns=1, passFrac=0.10, passMinMult=3), rerank=dict(keep=300, runs=20), combine=dict(topTriples=10, show=5), final=dict(runs=40),
     # 겹침 없는 삼중이 없을 때만 확대. null=전체 후보(상한 내), 정밀 판 수는 기존 계산 포함 누계.
-    retry=dict(keepMultipliers=[1, 3, None], maxCandidatesPerBoss=3000, maxRerankGames=180000, maxTripleChecks=8000000),
+    retry=dict(keepMultipliers=[1, 3, None], maxCandidatesPerBoss=3000, maxRerankGames=2880000, maxTripleChecks=8000000),
     # 작업자 수 자동 결정(cosmo_search.js workerCount): 논리 코어의 coreFrac, 메모리(deviceMemory, 모르면 unknownMemGB)의 memFrac 을 perWorkerMB 로 나눈 수, max 상한, 모바일은 mobileMax. 고정값이 아니라 PC마다 달라지는 값
     workers=dict(coreFrac=0.75, memFrac=0.5, perWorkerMB=250, unknownMemGB=4, min=1, max=24, mobileMax=2),
     topQ=0.2, defaultMode='top', defaultLevel=-1, auto=dict(screenLevel=6, probeRuns=10), etaWeights=[1, 1, 0.6, 0.25], etaWarmupSec=10, etaWindowSec=20, etaWinFrac=0, etaBlendSec=30)

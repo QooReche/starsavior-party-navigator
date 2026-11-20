@@ -68,7 +68,7 @@ def cosmo_raid_payload():
     """코스모 게이트 «3보스 최고 점수 편성 찾기» 화면 자료: 시즌·보스 이름·난이도 최대 레벨·탐색 설정(data/cosmo_raid.json 의 search). 스탯·챌린지 표 등은 싣지 않는다(시뮬 쪽이 읽음)."""
     g = pr._json(os.path.join(pr.DATA, "cosmo_raid.json"))
     return {"season": g["season"]["id"], "seasonPeriod": {k: g["season"].get(k) for k in ("start", "end")},
-            "bosses": [{"key": b["key"], "name": b["name"], "element": b["element"], "sim": b.get("sim", True), "simNote": b.get("simNote")}
+            "bosses": [{"key": b["key"], "name": b["name"], "element": b["element"], "sim": b.get("sim", True), "simNote": b.get("simNote"), "boundaries": [x["level"] for i,x in enumerate(b["levels"]) if x.get("effects",[]) != (b["levels"][i-1].get("effects",[]) if i else [])]}
                        for b in g["bosses"]],
             "levelMax": min(len(b["levels"]) for b in g["bosses"]), "search": g["search"], "scoreConf": g["score"]["conf"]}
 
@@ -138,7 +138,7 @@ def main(out=None):
     assert not problems, "guild_defense.json 오류: " + "; ".join(problems)
     contents.append({"key": gd.CONTENT_KEY, "name": gd.content_title(gdef), "main": cfg["contents"][gd.CONTENT_NAME]["main"], "parties": gdef["rules"]["partyCount"],
                      "boss": True, "seasonal": True, "stages": stages_of(gd.foe_content(gdef))})
-    out_cfg = {k: cfg[k] for k in ("advantage", "weights", "tagWeights", "breakSkills", "synergy", "power", "gimmick", "seasonBonus", "matchupModes", "damage")}
+    out_cfg = {k: cfg[k] for k in ("advantage", "weights", "tagWeights", "breakSkills", "synergy", "power", "gimmick", "seasonBonus", "matchupModes", "damage", "recommendation")}
     out_cfg["restrict"] = {"성간 회랑": cfg["contents"]["회랑"]["restrictTabs"]}
     # mc._break_skill_rule: 표 기반 스킬 + 기존 평면 규칙을 쓰는 큐브 예외.
     mc_rules = pr._json(os.path.join(pr.HERE, "battlesim", "rules", "default.json"))["mc"]
@@ -188,6 +188,9 @@ def main(out=None):
         skill_bytes = f.read()
     skills = json.loads(skill_bytes)
     assert all(str(s["uid"]) in skills for s in r), "Missing public skills for roster uid"
+    for savior in r:
+        text = json.dumps(skills[str(savior['uid'])], ensure_ascii=False)
+        savior['placementTraits'] = [kind for word, kind in [('은신', 'stealth'), ('도발', 'taunt')] if word in text]
     skill_url = "data/savior_skills.json?v=" + hashlib.sha256(skill_bytes).hexdigest()[:12]
     # 여정 스탯 우선순위(공략 DB): 로스터에 있는데 표에 없으면 다시 뽑아야 하고(중단), 공략 DB 에 아직 없어 직업 기본값으로 채운 구원자는 알린다 — 중단 점검은 저장 전에(빠진 구원자가 있으면 페이지를 쓰지 않음)
     jp = pr._json(os.path.join(pr.DATA, "journey_priority.json"))

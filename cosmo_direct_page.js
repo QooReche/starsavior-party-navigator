@@ -11,6 +11,7 @@ function cdInit(){
 function cdSave(){if(!CDIRECT.shared)CDIRECT.saveError=LS.set(CosmoDirect.STORAGE_KEY,CosmoDirect.storage(CDIRECT.state))?'':'초안 저장 실패 · 이 세션에서만 유지됨';}
 function cdCancel(){const a=CDIRECT.active;if(!a)return;CDIRECT.active=null;CDIRECT.id++;a.abort?.();simPoolDrop('cdirect',a.id);}
 function cdChange(action){
+  CDIRECT.placement?.cancel?.();
   const previous=CDIRECT.state,next=CosmoDirect.edit(previous,action);
   if(JSON.stringify(previous)===JSON.stringify(next))return;
   if(action.type!=='team'){
@@ -27,13 +28,7 @@ function cdUndo(boss){
   cdCancel();CDIRECT.state=CosmoDirect.restore({...CDIRECT.state,teams:{...CDIRECT.state.teams,[boss]:team}},cdSeason());
   delete CDIRECT.undo[boss];CDIRECT.error='';cdSave();cdPaint();
 }
-function cdArrange(boss){
-  const members=CDIRECT.state.teams[boss].draft.slots.filter(Boolean);
-  if(members.length!==4||members.some(m=>!BYKEY[m.key]))return;
-  const c=contents.find(c=>c.key==='cosmo'),st=c.stages.find(s=>s.name.includes(csBoss(boss)))||c.stages[0];
-  const combo=members.map(m=>{const s=BYKEY[m.key],[v,parts]=score(s,st?.w||{},c.main,c.boss);return {s,score:v,parts};});
-  cdChange({type:'draft',boss,action:{type:'arrange',order:DirectParty.toEngine(arrangeOf(combo).order)}});
-}
+function cdArrange(boss){return cdArrangeSim(boss);}
 function cdContext(){return {roster:R,info:MI.info,growth:MI.growth,slots:D.growthView.itemSlots,priority:D.journeyPriority,
   breaks:ownedSimBreaks(),options:simOpt('cosmo'),resolveBreak(draft){
     const automatic=pickBreak(draft.slots.filter(Boolean).map(m=>({s:BYKEY[m.key]})),'코스모 게이트',ownedSimBreaks().map(b=>b.name));

@@ -12,7 +12,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const M=require('../myinfo_reco'),S=require('../myinfo_stats'),U=require('../ux_ui');
 const growth=require('../data/growth.json'),grades=require('../data/archive_grades.json');
 const view={...require('../data/myinfo_view.json'),itemSlots:require('../data/myinfo_slots.json')};
-const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8'),ui=fs.readFileSync(require.resolve('../growth_ui.js'),'utf8'),ux=fs.readFileSync(require.resolve('../ux_ui.js'),'utf8');
+const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8').replace(/\r\n/g,'\n'),ui=fs.readFileSync(require.resolve('../growth_ui.js'),'utf8').replace(/\r\n/g,'\n'),ux=fs.readFileSync(require.resolve('../ux_ui.js'),'utf8').replace(/\r\n/g,'\n');
 const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,'구간 없음: '+a);return s.slice(i,j)};
 const line=(s,start)=>{const m=s.match(new RegExp('^'+start.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'.*$','m'));assert(m,'줄 없음: '+start);return m[0]};
 const STAGE=['op','oph','daily','equip','cube','rush','clo','clash'],STAR=['equip','clash'];
@@ -113,8 +113,8 @@ function mainStop(src){
  assert(!more('manual',{clear:.9,t60:.9,n:100,man:{c:.1,t60:.1}}),'옛 수동 값(man)·MODE 는 보지 않음');
  const sg=vm.runInContext('goalVal',mk('auto',{}));assert.equal(sg({clear:.9,t60:.4}),.4);assert.equal(sg({clear:.9}),.9);assert.equal(sg(undefined),null);
  // ④ 목표를 바꾸면 예선 캐시를 다시 쓴다
- const key=goal=>{const ctx=vm.createContext({JSON,contents:[{key:'equip'}],$:()=>({value:0}),rkOf:()=>0,miMode:()=>false,MI:{},SCROWN:'',MM:'',starOf:()=>goal});
-  vm.runInContext(line(src.html,'const scrKey='),ctx);return vm.runInContext('scrKey({tab:"t",name:"n"},1)',ctx)};
+ const key=goal=>{const ctx=vm.createContext({CFG:require('../party_contents.json'),JSON,contents:[{key:'equip'}],$:()=>({value:0}),rkOf:()=>0,miMode:()=>false,MI:{},SCROWN:'',MM:'',starOf:()=>goal});
+  vm.runInContext(line(src.html,'function recommendationPolicyTag('),ctx);vm.runInContext(line(src.html,'const scrKey='),ctx);return vm.runInContext('scrKey({tab:"t",name:"n"},1)',ctx)};
  assert.notEqual(key(60),key(0),'3별 목표와 클리어만의 예선 결과를 섞지 않음');assert.equal(key(60),key(60));
 }
 

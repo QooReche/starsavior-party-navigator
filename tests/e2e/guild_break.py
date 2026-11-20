@@ -67,4 +67,46 @@ def register(h):
         page.close()
         return True, '브레이크 순위 역전·Lv 표시·기록 만료·4단계 취소·미보유/미지원 생략'
 
-    return [test_guild_break_search]
+    def test_guild_search_switch(browser, ctx):
+        page = h.open_page(browser, ctx)
+        page.select_option('#content', value=page.evaluate("String(contents.findIndex(c=>c.key==='guild'))"))
+        h.settle(page)
+        page.evaluate("""() => {
+          const keys=['professor-m',...R.filter(s=>s.key!=='professor-m'&&!D.guild.search.excluded.includes(s.key)).slice(0,5).map(s=>s.key)];
+          MI.profiles.op={results:Object.fromEntries(keys.map(key=>[key,{power:1000,stats:{hp:1000,atk:100,def:100,spd:100},combat:{}}]))};
+          MI.brkLv={};
+          const S=D.guild.search;
+          Object.assign(S,{poolSize:4,minPowerRatio:1,minRole:{},minFront:0,minDealer:0,screen2:{keep:5,runs:2},finalists:1});
+          Object.assign(S.learned,{S:15,m:1,K:15,M:1,A:4,epochs:3,minCorrelation:-1,missThreshold:1});
+          S.screen.runs=2;S.final={runs:2,levels:[4],supports:['fire']};
+          window.switchTrace=[];window.switchActive=0;window.switchMax=0;
+          window.Worker=class {
+            constructor(){switchActive++;switchMax=Math.max(switchMax,switchActive)}
+            terminate(){this.dead=true;switchActive--}
+            postMessage(req){switchTrace.push(req);setTimeout(()=>{
+              if(this.dead)return;
+              for(const t of req.teams){const coop=t.party.units.some(u=>u.key==='professor-m'),prog=coop?1:.6;
+                this.onmessage({data:{type:'team',id:req.id,key:t.key,result:{n:req.n_runs,prog,progs:Array(req.n_runs).fill(prog),clear:coop?1:0,via:coop?{forced_coop:1}:{}}}});
+              }this.onmessage({data:{type:'done',id:req.id}});
+            },0)}
+          };
+        }""")
+        page.click('#guild-search [data-gs="start"]')
+        page.wait_for_selector('#guild-search [data-k="gs-best"]')
+        assert page.evaluate("!D.guild.search.newSearch&&GSR.pool===4&&GSR.rows[0].prog>0&&!GSR.rows[0].keys.includes('professor-m')")
+        assert page.locator('#guild-search [data-gs="coop"]').count() == 1
+        page.evaluate('D.guild.search.newSearch=true;renderGuildSearch(true);switchTrace=[]')
+        assert page.locator('#guild-search [data-k="gd-search-stale"]').count() == 1
+        assert page.locator('#guild-search [data-gs="coop"]').count() == 0
+        page.click('#guild-search [data-gs="start"]')
+        page.wait_for_selector('#guild-search [data-k="gs-best"]')
+        assert page.evaluate("GSR.pool===6&&GSR.rows[0].keys.includes('professor-m')&&GSR.rows[0].prog===1&&GSR.dropped===0")
+        assert page.evaluate('switchTrace.some(r=>r.seed===9)&&switchActive===0&&switchMax<=2')
+        page.evaluate('D.guild.search.newSearch=false;renderGuildSearch(true)')
+        assert page.locator('#guild-search [data-k="gd-search-stale"]').count() == 1
+        assert page.locator('#guild-search [data-gs="coop"]').count() == 1
+        assert not ctx.errors, ctx.errors
+        page.close()
+        return True, '기본 기존 풀·협공 제외 → 스위치 하나로 전원 학습·지원 결합·협공 포함, 서명·UI·작업자 2개'
+
+    return [test_guild_break_search, test_guild_search_switch]

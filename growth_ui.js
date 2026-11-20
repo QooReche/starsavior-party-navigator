@@ -88,7 +88,16 @@ async function growthCandidates(c,st,alive,deadline,config={}){const original=co
     }catch(e){targets.push({...target,id,error:String(e.message),errorCode:e.code,candidates:[],controls:[]});}
     if(!config.profile){GROW.msg=`육성 후보 준비 ${targets.length}건`;growthPaint();}await new Promise(ok=>setTimeout(ok,0));
   }return targets;}
-function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.state||GROW,paint=env.paint||growthPaint,live=env.live||(()=>GROW.id===id),owner=env.owner||'reco',version=env.version||GROW.versions.engine;return new Promise(resolve=>{
+async function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.state||GROW,paint=env.paint||growthPaint,live=env.live||(()=>GROW.id===id),owner=env.owner||'reco',version=env.version||GROW.versions.engine;
+  const placementStarted=Date.now();
+  if(env.final&&CFG.recommendation?.placementCompare)for(const j of jobs){
+    if(j.t&&PLACEMENT_CACHE.has(j.t.placementKey))continue;
+    const winner=await placementRun({party:j.party,stage:c.key+'/'+st.tab+'/'+st.name,options:env.options||simOpt(c.key),brk:j.options?.break_skill,owner,
+      live,register:f=>state.stop=f,onProgress:d=>{state.msg=`육성 배치·리더 비교 ${d}/24`;paint();}});
+    j.party=winner.party;if(j.t)rememberPlacement(j.t,j.t.placementKey,winner.p);state.stop=null;
+  }
+  if(env.final&&Number.isFinite(deadline))deadline+=Date.now()-placementStarted;
+  return new Promise(resolve=>{
   const results={};if(!jobs.length||Date.now()>=deadline||!live()||state.errors.length){resolve(results);return;}
   // 작업자 풀·대기열은 추천 예선·본선과 같은 것(scrPool·simDispatch): 정상으로 끝나면 작업자를 살려 두고, 끊길 때(중단·시간 초과·오류)만 풀을 끈다
   const workers=scrPool(jobs.length),request=env.nextRequest?env.nextRequest():(SIMQ.requestId=(SIMQ.requestId||0)+1);let done=false;
@@ -145,7 +154,7 @@ function growthDisplay(a){const c=contents[$('content').value].key,content=c==='
 function growthSeasonContent(){const c=contents[$('content').value];return c?.key==='cosmo'||(c?.key==='guild'&&parseInt(cur?.[$('stage').value]?.name,10)===D.guild.steps.find(s=>s.ex)?.step)?c:null;}
 function growthConditions(c,trackTeams=true){const rules=simOpt(c.key);
   if(c.key==='guild')return {rules,season:D.guild?.season,
-    difficulty:GuildView.normSel(D.guild,GS.sel||LS.get('guild.v2')),banCoop:GSR.banCoop,ranking:'guild-top-cap-mean',breakCheck:GuildSearch.breakSignature(ownedSimBreaks()),
+    ...(D.guild.search?.newSearch===true?{newSearch:true}:{}),difficulty:GuildView.normSel(D.guild,GS.sel||LS.get('guild.v2')),banCoop:GSR.banCoop,ranking:'guild-top-cap-mean',breakCheck:GuildSearch.breakSignature(ownedSimBreaks()),
     teams:GSR.rows.map(r=>[r.keys,r.order,r.sup,r.level,r.brk,r.brkLv])};
   if(c.key==='cosmo')return {rules,season:D.cosmoRaid?.season,
     difficulty:CSR.optLevel,fast:CSR.optFast,ranking:CSR.optMode,...(CSR.optLearned?{learned:true}:{}),
@@ -196,7 +205,7 @@ function growthRankPaint(){const el=$('growth-priority');if(!el)return;
 }
 function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.context===growthOwnedContext('guild'):
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
-function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks(),...(CSR.optLearned?['learned']:[])],simOpt(kind)]);}
+function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks(),...(CSR.optLearned?['learned']:[])],simOpt(kind),...searchPlacementTag(kind)]);}
 // Whole-account pass: the owned recommendation and its caches remain untouched.
 // 스테이지형: 목표 지표(3별 목표면 N턴 내 클리어율, 아니면 클리어율)가 올라야 «더 나음». 목표 지표가 같으면 3별 목표일 때만 클리어율이 오른 경우를 인정한다
 //  (N턴 내 확률은 그대로여도 깨는 확률이 오른 것). 진척도·처치 턴만 나아진 것은 «더 잘 깸»이 아니다 — 표시하지 않는다
@@ -405,8 +414,8 @@ function growthPaint(){
   const marks=r.snapshot.changes;
   const cards=(order,lead)=>{LEADKEY=lead;return `<div class="rowcards">${order.map((k,i)=>card({s:BYKEY[k]},i===0||i===3?'back':'front',null,marks[k]||null)).join('')}</div><div class="growth-tasks">${order.map(k=>marks[k]?growthTodoRow(marks[k],BYKEY[k].name):'').join('')}</div>`;};
   let body='';
-  if(c.key==='cosmo')body=r.best.teams.map(t=>`<div class="growth-score-card"><div class="season-chips"><b>${esc(csBoss(t.boss))}</b><span class="tag">난이도 ${t.level}</span><span class="tag">${esc(t.brk||'브레이크 없음')}${t.brkLv?' · Lv.'+t.brkLv:''}</span></div>${cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0])}</div>`).join('');
-  else if(c.key==='guild'){const t=r.best;body=`<div class="season-chips"><span class="tag">${t.level}단계</span><span class="tag">${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</span></div>`+cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.order[0]);}
+  if(c.key==='cosmo')body=r.best.teams.map(t=>`<div class="growth-score-card"><div class="season-chips"><b>${esc(csBoss(t.boss))}</b><span class="tag">난이도 ${t.level}</span><span class="tag">${esc(t.brk||'브레이크 없음')}${t.brkLv?' · Lv.'+t.brkLv:''}</span></div>${cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.leaderKey||t.order[0])}</div>`).join('');
+  else if(c.key==='guild'){const t=r.best;body=`<div class="season-chips"><span class="tag">${t.level}단계</span><span class="tag">${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</span></div>`+cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.leaderKey||t.order[0]);}
   else if(r.team){const ar=arrangeOf(r.team.t.combo);body=cards(ar.order,ar.lead)+`<p class="mut">${esc(r.team.breakName||'브레이크 없음')}</p>`;}
   const keys=c.key==='cosmo'?r.best.teams.flatMap(t=>t.keys||t.order):c.key==='guild'?(r.best.keys||r.best.order):r.team?.t.keys||[];
   const grown=keys.reduce((sum,k)=>sum+(r.snapshot.profile.results[k]?.power||0),0);

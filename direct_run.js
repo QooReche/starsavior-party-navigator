@@ -53,7 +53,7 @@ async function directManifest(active){
     timedOut=true;controller.abort();
   },SIMQ.LOAD_MS);};
   active.abort=()=>{clearTimeout(timer);controller.abort();};arm();
-  try{const response=await fetch('sim/manifest.json',{cache:'no-cache',signal:controller.signal});if(!response.ok)throw Error('계산 엔진 자료 오류');return await response.json();}
+  try{const response=await fetch('sim/manifest.json',{cache:'no-cache',signal:controller.signal});if(!response.ok)throw Error('계산 엔진 자료 오류');const manifest=await response.json();if(typeof placementSetEngine==='function')placementSetEngine(manifest.ver);return manifest;}
   catch(e){if(timedOut)throw Error('계산 엔진 준비 시간 초과');throw e;}
   finally{clearTimeout(timer);delete active.abort;}
 }

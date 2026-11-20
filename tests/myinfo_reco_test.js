@@ -3,6 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const M=require('../myinfo_reco.js'),S=require('../myinfo_stats.js'),Q=require('../quick.js');
 const info=require('./fixtures/myinfo_synthetic.json'),growth=require('../data/growth.json');
 const roster=info.units.map(u=>({uid:u.id,key:String(u.id)}));
+const placementContext={CFG:{recommendation:{placementBaseline:true}},PartyPlacement:require('../party_placement'),PLACEMENT_CACHE:new Map(),recommendationPlacementKey:()=>''};
 const tests={
   mapping(){for(const ck of ['op','clo'])assert.equal(S.rule_for_content(ck),'normal');
     for(const ck of ['cosmo','rush'])assert.equal(S.rule_for_content(ck),'fixed200');
@@ -31,19 +32,22 @@ const tests={
     const start=html.indexOf('function simParty('),end=html.indexOf('// 표시 상태',start);
     const profile=M.profile(info,roster,growth,'op'),keys=['1001','1002','1003','missing'];
     const finals=M.team(keys,profile,k=>k),sv=Object.fromEntries(keys.map(k=>[k,[0,100,1000,50,100,10000]]));
-    const ctx=vm.createContext({DirectParty:require('../direct_party'),arrangeOf:()=>({order:keys,lead:'1002'}),QK:{d:{sv}},Quick:Q,ekey:k=>k,
+    const ctx=vm.createContext({...placementContext,DirectParty:require('../direct_party'),arrangeOf:()=>({order:keys,lead:'1002'}),QK:{d:{sv}},Quick:Q,ekey:k=>k,
       contents:[{key:'op'}],$:()=>({value:0}),rkOf:()=>0,starOf:()=>0,SIMQ:{n:100},MODE:'auto',miMode:()=>true,MI:{hash:'first'},teamBreak:()=>null});
     vm.runInContext(html.slice(start,end),ctx);ctx.t={combo:[],ek:keys,base:40000,b:finals};ctx.st={tab:'x',name:'y'};
     const party=JSON.parse(JSON.stringify(vm.runInContext('simParty(t)',ctx)));
-    assert.equal(party.leader,0);assert.deepEqual(party.units[0],{key:'1002',build:'none',stats_override:profile.results['1002'].stats,stats_final:true,power:profile.results['1002'].power,myinfo_combat:profile.results['1002'].combat});
-    assert.deepEqual(party.units[2],{key:'1001',build:'none',stats_override:profile.results['1001'].stats,stats_final:true,power:profile.results['1001'].power,myinfo_combat:profile.results['1001'].combat});
+    const byKey=Object.fromEntries(party.units.map(u=>[u.key,u]));
+    const baseline=placementContext.PartyPlacement.baseline(keys,Object.fromEntries(keys.map(k=>[k,{stats:{spd:100,...(profile.results[k]?.stats||{hp:1000,def:50})}}])));
+    assert.equal(party.units[party.leader].key,baseline.leaderKey);assert.deepEqual(party.units.map(u=>u.key),baseline.order);
+    assert.deepEqual(byKey['1002'],{key:'1002',build:'none',stats_override:profile.results['1002'].stats,stats_final:true,power:profile.results['1002'].power,myinfo_combat:profile.results['1002'].combat});
+    assert.deepEqual(byKey['1001'],{key:'1001',build:'none',stats_override:profile.results['1001'].stats,stats_final:true,power:profile.results['1001'].power,myinfo_combat:profile.results['1001'].combat});
     assert.deepEqual(party.units[3],{key:'missing',stats_override:{atk:100,hp:1000,def:50}});
     const before=vm.runInContext('simSig(st,t)',ctx);ctx.MI.hash='second';assert.notEqual(vm.runInContext('simSig(st,t)',ctx),before);
     ctx.miMode=()=>false;assert.notEqual(vm.runInContext('simSig(st,t)',ctx),before);},
   sim_power(){const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
     // Keep the original power/penalty contract on its original input.
     const keys=['1001','1002','1003','1005'],profile=M.profile(require('./fixtures/myinfo_legacy.json'),roster,growth,'op');
-    const ctx=vm.createContext({DirectParty:require('../direct_party'),arrangeOf:()=>({order:keys,lead:'1001'}),ekey:k=>k,Quick:Q,
+    const ctx=vm.createContext({...placementContext,DirectParty:require('../direct_party'),arrangeOf:()=>({order:keys,lead:'1001'}),ekey:k=>k,Quick:Q,
       QK:{d:{sv:Object.fromEntries(keys.map(k=>[k,[0,100,1000,50,100,10000]]))}},
       t:{ek:keys,base:40000,b:M.team(keys,profile,k=>k)}});
     vm.runInContext(html.slice(html.indexOf('function simParty('),html.indexOf('const simSigB=')),ctx);

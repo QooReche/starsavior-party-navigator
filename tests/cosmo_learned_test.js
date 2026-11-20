@@ -1,8 +1,11 @@
 const assert=require('node:assert/strict');
+// Isolate learned candidate selection; full layout/audit behavior has dedicated tests.
+const PlacementFixture=require('../party_placement.js');
+PlacementFixture.variants=(keys,results)=>[PlacementFixture.baseline(keys,results)];
 const L=require('../cosmo_learned.js'),C=require('../cosmo_search.js'),GS=require('../guild_search.js'),G=require('../data/cosmo_raid.json');
 const roster=Array.from({length:16},(_,i)=>({key:'u'+i,cls:i%3?'캐스터':'서포터',el:i%2?'달':'태양'}));
 const results=Object.fromEntries(roster.map((r,i)=>[r.key,{power:i?1000+i:1,stats:{atk:100+i}}]));
-function settings(){const S=structuredClone(G.search);Object.assign(S.learned,{value:true,S:180,m:3,K:70,M:2,A:40,overlapStarts:4,overlapKeep:3,minCorrelation:-1,missThreshold:1});S.rerank={keep:30,runs:2};S.screen={firstRuns:1,runs:2,passFrac:.1,passMinMult:1};S.final.runs=3;S.combine={topTriples:4,show:4};return S;}
+function settings(){const S=structuredClone(G.search);S.placement.auditTeams=0;Object.assign(S.learned,{value:true,S:180,m:3,K:70,M:2,A:40,overlapStarts:4,overlapKeep:3,minCorrelation:-1,missThreshold:1});S.rerank={keep:30,runs:2};S.screen={firstRuns:1,runs:2,passFrac:.1,passMinMult:1};S.final.runs=3;S.combine={topTriples:4,show:4};return S;}
 const score=keys=>1000+keys.reduce((v,k)=>v+(k==='u0'?180:Number(k.slice(1))*7),0);
 async function search(S,kind='linear',engine=C){const sent=[],phases=[];let made=0,closed=0,stop=false;
  try{const out=await engine.search({S,bosses:G.season.bossOrder,results,roster,level:6,mode:'mean',workers:2,stage:'cosmo',stale:()=>stop,
