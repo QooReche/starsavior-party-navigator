@@ -379,7 +379,7 @@
       for(const [img,s] of states)if(!img.isConnected){s.stop();observer.unobserve(img);states.delete(img);}
       doc.querySelectorAll('.result-summary').forEach(summary=>{
         const report=summary.querySelector('[data-gwen-report]'),portrait=summary.querySelector('.gwen-reaction');
-        if(portrait&&portrait!==report&&portrait.hidden!==!!report)portrait.hidden=!!report;
+        if(portrait&&!portrait.hasAttribute('data-gwen-slot')&&portrait!==report&&portrait.hidden!==!!report)portrait.hidden=!!report;
       });
       let motionOwner=false;
       doc.querySelectorAll('img[data-gwen-art]').forEach(img=>{

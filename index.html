@@ -528,7 +528,7 @@ const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} 
 function searchGwenPaint(host,mode,state){
  if(!host.querySelector('[data-gwen-slot]')){GwenStage.destroy(mode);return;}
  const stage=GwenStage.mount(host,{mode});
- if(state.phase==='run')stage.progress(state.total?state.done/state.total:0,state.msg);
+ if(state.phase==='run')stage.progress(state.total?state.done/state.total:0,state.msg,{step:state.id+':'+state.msg});
  else if(state.phase==='done'){
   const first=state.rows?.[0],rates=first?.teams?.map(t=>t.st?.clear).filter(Number.isFinite);
   const clear=rates?.length?Math.min(...rates):first?.clear;

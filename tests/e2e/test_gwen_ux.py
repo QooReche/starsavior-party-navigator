@@ -85,7 +85,7 @@ def idle_audit(page):
     assert expression(scene)=='ready'
     # 호스트 부하/클릭 자동 대기 시간이 1.5초 반응 수명을 소비하지 않게 함.
     # 이후 가상 시간은 run_for로만 진행하고, 비동기 전환은 DOM 상태로 기다림.
-    page.clock.pause_at(page.evaluate('Date.now() / 1000'))
+    page.clock.pause_at(page.evaluate('Date.now() / 1000 + 1'))
     page.emulate_media(reduced_motion='reduce')
     expect(scene).to_have_attribute('data-gwen-paused','true')
     expect(scene).to_have_attribute('data-gwen-expression','ready')

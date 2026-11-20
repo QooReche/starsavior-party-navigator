@@ -1,7 +1,7 @@
 """Real search planners + controlled workers; one actor through progress/result/cancel."""
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from test_page import test_server
+from test_page import test_server, FULL
 from test_direct_party import ready
 from test_cosmo_direct import account, OUT as ACCOUNT_OUT
 
@@ -25,7 +25,8 @@ FAKE='''() => {
 
 
 def flow(browser,base,width,kind):
-    p=ready(browser,base,width,info=account(),query=f'?c={kind}&pm=reco&season=force')
+    p=ready(browser,base,width,info=FULL if kind=='guild' else account(),query='?pm=reco&season=force')
+    p.select_option('#content',p.evaluate('k=>String(contents.findIndex(c=>c.key===k))',kind))
     mode='cosmoSearch' if kind=='cosmo' else 'guildSearch'
     state='CSR' if kind=='cosmo' else 'GSR'
     panel='#cosmo-search' if kind=='cosmo' else '#guild-search'
@@ -50,9 +51,10 @@ def flow(browser,base,width,kind):
             }''')
         start=f'{panel} [data-{prefix}=start]'
         p.locator(start).click()
-        p.wait_for_function('stageQueue.length>0')
+        p.wait_for_function(f'stageQueue.length>0 || {state}.phase==="err"')
+        assert p.evaluate('stageQueue.length>0'),p.evaluate(f'[{state}.phase,{state}.msg]')
         # A completed worker team must update both the existing N/M label and movement.
-        p.evaluate('stageStep()')
+        p.evaluate(f'while({state}.done<Math.max(1,Math.floor({state}.total*.2))&&stageQueue.length)stageStep()')
         p.wait_for_function(f'{state}.done>0 && {state}.total>{state}.done')
         board().scroll_into_view_if_needed()
         p.wait_for_function(f'GwenLane.mount().state.mode==="{mode}" && GwenLane.mount().state.x>0')
@@ -60,6 +62,16 @@ def flow(browser,base,width,kind):
         assert p.locator('.gwen-lane-actor').count()==1
         p.evaluate('window.stageActor=document.querySelector(".gwen-lane-actor")')
         p.screenshot(path=str(OUT/f'{kind}-work-{width}.png'))
+        p.evaluate(f'''async () => {{
+          const phase={state}.msg;
+          while({state}.msg===phase){{
+            if(stageQueue.length)stageStep();else await new Promise(r=>setTimeout(r,0));
+          }}
+        }}''')
+        assert p.evaluate(f'{state}.done')==0
+        assert p.evaluate('GwenLane.mount().state.x')==0,'next search phase retained previous position'
+        p.evaluate(f'while({state}.done<Math.max(1,Math.floor({state}.total*.2))&&stageQueue.length)stageStep()')
+        p.wait_for_function('GwenLane.mount().state.x>0')
         # Cancel, then deliver every queued obsolete reply before starting again.
         p.locator(f'{panel} [data-{prefix}=cancel]').click()
         p.evaluate('while(stageQueue.length)stageStep()')

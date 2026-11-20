@@ -216,7 +216,7 @@
     function render(next){current={...next};
       if(current.bundleRunning&&current.phase==='result')current.phase='work';
       syncBanner();
-      if(!stages.has(current.mode)){if(actor){cancelMove();actor.remove();}phaseKey='';return;}
+      if(!stages.has(current.mode)){++imageRequest;cancelMove();resetPlay();actor?.remove();lane=null;art='';phaseKey='';return;}
       const key=JSON.stringify(current.phase==='work'?[current.mode,'work',current.step]:[current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
       if(key!==phaseKey){resetPlay();cancelMove();phaseKey=key;settle();
         if(current.phase==='work'){x=0;actor.style.transform='translateX(0px)';positionSpeech();workRestAt=clock+250;}
