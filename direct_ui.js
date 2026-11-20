@@ -35,7 +35,7 @@ function directInit(){
     if(a==='leader')directChange({type:'leader',key:b.dataset.key});
     if(a==='grown')directChange({type:'grown',slot:i,value:!DIRECT.draft.slots[i].grown});
     if(a==='clear'){DIRECT.selected=null;directChange({type:'clear'});}
-    if(a==='undo'&&DIRECT.undo){const d=DIRECT.undo;DIRECT.undo=null;DIRECT.draft=d;DIRECT.revision++;directSave();directPaint();GwenLane.edit('undo');}
+    if(a==='undo'&&DIRECT.undo){DIRECT.placement?.cancel?.();const d=DIRECT.undo;DIRECT.undo=null;DIRECT.draft=d;DIRECT.revision++;directSave();directPaint();GwenLane.edit('undo');}
     if(a==='arrange')directArrangeSim();
     if(a==='open'){$('direct-picker-dialog').showModal();$('direct-picker-dialog').querySelector('input').focus();}
     if(a==='close')$('direct-picker-dialog').close();
@@ -97,9 +97,9 @@ function directHome(){
   GwenLane.registerStage('home',{board:document.getElementById('home-gwen-lane')});
 }
 function directSave(){const payload=DirectParty.storage(DIRECT);if(payload&&!LS.set('direct.v1',payload))DIRECT.error='초안 저장 실패 · 이 세션에서만 유지됨';}
-function directChange(action){
+function directChange(action,{record=false}={}){
   DIRECT.placement?.cancel?.();
-  const next=DirectParty.edit(DIRECT.draft,action);if(JSON.stringify(next)===JSON.stringify(DIRECT.draft))return;
+  const next=DirectParty.edit(DIRECT.draft,action);if(JSON.stringify(next)===JSON.stringify(DIRECT.draft)){if(record){DIRECT.undo=DIRECT.draft;directPaint();}return;}
   const changedSlot=action.type==='put'?next.slots.findIndex((s,i)=>s?.key!==DIRECT.draft.slots[i]?.key):action.slot;
   DIRECT.undo=DIRECT.draft;DIRECT.draft=next;DIRECT.revision++;directSave();directPaint();GwenLane.edit(action.type,changedSlot);
 }

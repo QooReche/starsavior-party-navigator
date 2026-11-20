@@ -18,6 +18,8 @@ OUT.mkdir(parents=True,exist_ok=True)
 
 def ready(browser,base,width=1280,info=SYNTH,query='',touch=False,setup=None):
     page=browser.new_page(viewport={'width':width,'height':1000},has_touch=touch)
+    if os.environ.get('PN_E2E_WORKERS') == '1':
+        page.add_init_script("Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>2});Object.defineProperty(navigator,'deviceMemory',{get:()=>1});")
     if os.environ.get('PN_E2E_LOW_MEMORY') == '1':
         # 우선순위 시험은 2개 워커를 전제로 함. 합성 워커의 별도 코어 설정도 존중함.
         page.add_init_script("for(const [key,value] of [['hardwareConcurrency',3],['deviceMemory',2]]){const d=Object.getOwnPropertyDescriptor(navigator,key);if(!d||d.configurable)Object.defineProperty(navigator,key,{get:()=>value,configurable:true});}")
@@ -137,7 +139,11 @@ def editor(browser,base,width,touch=False):
     assert page.evaluate('DIRECT.draft.leader===DIRECT.draft.slots[1].key')
     order=page.evaluate('JSON.stringify(DIRECT.draft)')
     page.locator('#direct-arrange').click()
-    assert page.evaluate('DIRECT.draft.leader')==swapped['slots'][1]['key']
+    page.wait_for_function('!DIRECT.placement',timeout=180000)
+    assert page.evaluate('!DIRECT.runError'),page.evaluate('DIRECT.runError')
+    # The simulation selects both rows and leader; growth follows the savior.
+    assert page.evaluate('DIRECT.draft.slots.some(s=>s.key===DIRECT.draft.leader)')
+    assert page.evaluate('JSON.stringify(DIRECT.undo)')==order
     assert page.evaluate('(key)=>DIRECT.draft.slots.find(s=>s.key===key)?.grown',original['slots'][0]['key'])
     page.locator('#direct-undo').click()
     assert page.evaluate('JSON.stringify(DIRECT.draft)')==order
