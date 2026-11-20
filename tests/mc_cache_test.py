@@ -56,6 +56,7 @@ _KEEP = {'rekindle_apply': 'multiply', 'dmg_cap_scope': 'reduce', 'ally_break_ga
          # 2026-11-04 기본 전환분은 legacy 로 고정
          'preemptive_defense': 'recognize', 'toughness_elem': 'db', 'break_point_hits': 'once', 'break_auto_blocked_cc': 'off'}   # 해시는 옛 규칙 기준(캐시 동일성 시험이 목적)
 _KEEP.update(target_row_slot='legacy', living_slot_order='legacy', role_damage_terms='off')
+_KEEP.update(supported_marker_targets='legacy', claire_preemptive_marker='legacy')
 _KEEP['myinfo_potential_coverage'] = False
 _KEEP['stack_react_timing'] = 'book'
 _KEEP['clash_no_turn_limit'] = False
@@ -74,6 +75,7 @@ _KEEP['last_damager_timing'] = 'per_target'
 _KEEP.update(fixstats_speed_zero='off', superarmor_damage_ban='off')
 _KEEP['self_hp_condition'] = 'ratio'
 _KEEP['marker_se_flow'] = 'legacy'
+_KEEP['level_max_source'] = 'legacy'
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

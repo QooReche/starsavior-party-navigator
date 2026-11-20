@@ -79,8 +79,11 @@ def teams():
 
 
 def save_samples(out, runs):
-    if not out or any(r[4] is None for r in out):
+    if not out:
         raise ValueError('보정 표본 없음 또는 시뮬 실패: 기존 표본을 보존했음')
+    failed = [r for r in out if r[4] is None]
+    if failed:
+        raise ValueError('시뮬 실패 %d건: 기존 표본을 보존했음. 첫 실패 표본: %r' % (len(failed), failed[:3]))
     rows = sorted(out, key=lambda r: (r[0], r[1], r[2], r[3]))
     with atomic_open(OUT) as f:
         json.dump(dict(growths=GROWTHS, runs=runs, rows=rows), f, ensure_ascii=False)

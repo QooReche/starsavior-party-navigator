@@ -90,6 +90,14 @@ class EngineCacheTest(unittest.TestCase):
         rnd = random.Random(11)
         groups = [rnd.sample(defs, rnd.randint(1, 6)) for _ in range(150)]
         groups += [[d] for d in defs] + [defs] + [[d] for d in defs]      # 혼자일 때 / 전원이 모였을 때(다른 구원자의 표지 이름 때문에 보고가 달라지는 정의가 있음) / 다시 혼자일 때
+        # Real savior reports can all become empty as support improves.
+        # Keep an actual unsupported line so cached empty reports cannot pass.
+        import copy
+        from battlesim.starsavior.parser import Line
+        unknown = copy.deepcopy(defs[0])
+        unknown.lines = list(unknown.lines) + [Line(
+            '[스킬 사용 후] 자신에게 〈캐시 시험 미지원 효과〉 (2턴)', '기본기', 'active')]
+        groups += [[unknown], [defs[0], unknown], [unknown]]
         nonempty = 0
         with Switch(True):
             memo_runs = []

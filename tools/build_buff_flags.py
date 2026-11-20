@@ -49,9 +49,11 @@ def flagged(rows, strings, key, warn=print):
 
 def extract(rows, strings, warn=print):
     pri = by_name(rows, strings, lambda r: int(r.get('ShowIconPriority') or 0), warn, 'ShowIconPriority')
+    caps = by_name(rows, strings, level_cap, warn, 'BuffLevelMax')
     return {
         '_note': '이름별 버프 표식(tools/build_buff_flags.py, BUFF_TEMPLET). 같은 이름 행끼리 값이 다르면 뺌.',
         'priority': {n: v for n, v in pri.items() if v},
+        'level_max': {n: v for n, v in caps.items() if v is not None},
         'sleep': flagged(rows, strings, 'm_bSleep', warn),
         'cant_more_debuff': flagged(rows, strings, 'm_bDebuffBan', warn),
         'immune_gauge_up': flagged(rows, strings, 'ImmuneSpeedGaugeUp', warn),
@@ -65,14 +67,35 @@ def extract(rows, strings, warn=print):
     }
 
 
+def level_cap(row):
+    """IsLevel=false도 충돌 판정에 포함. 0은 무제한이며 음수는 잘못된 표."""
+    if not row.get('IsLevel'):
+        return None
+    value = int(row['BuffLevelMax'])
+    if value < 0:
+        raise ValueError('IsLevel BuffLevelMax must be nonnegative')
+    return 'inf' if value == 0 else value
+
+
+def client_strings(rows):
+    """추출본은 Key 단일 또는 Keys 별칭 목록을 사용함."""
+    return {key: {'ko': row['Value']} for row in rows if row.get('Value')
+            for key in ([row['Key']] if row.get('Key') else row.get('Keys', []))}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--static')
+    ap.add_argument('--tables', type=Path, help='CLIENT_* 추출본(번역은 hard/STRING_COMMON.json)')
     ap.add_argument('--out', default=str(ROOT / 'data/buff_flags.json'))
     args = ap.parse_args()
-    tables = static_path(args.static) / 'tables'
-    rows = jsonc(tables / 'BUFF_TEMPLET.json')['Data']
-    strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
+    if args.tables:
+        rows = jsonc(args.tables / 'CLIENT_BUFF_TEMPLET.json')['Data']
+        strings = client_strings(jsonc(args.tables / 'hard/STRING_COMMON.json')['Data'])
+    else:
+        tables = static_path(args.static) / 'tables'
+        rows = jsonc(tables / 'BUFF_TEMPLET.json')['Data']
+        strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
     out = extract(rows, strings, lambda msg: print(msg, file=sys.stderr))
     atomic_json(args.out, out)
     print('저장:', args.out, {k: len(v) for k, v in out.items() if isinstance(v, (dict, list))})
