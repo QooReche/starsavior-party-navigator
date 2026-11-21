@@ -1,5 +1,13 @@
 # 길드 새 탐색 시간 검증
 
+## 네 조건 스위치 분리 측정
+
+`python -X utf8 -I tools/run_guild_attr.py ACCOUNT PRIVATE_DIR`로 A(기존), B(기존+배치), C(새 방식), D(새 방식+배치)를 순차 실행함. 기존 네이티브 측정·독립 평가 도구를 그대로 사용하며 워커는 최대 2개임. 배치 켬은 `search.placement.baseline=true`와 `enabled=true`를 함께 뜻함. 나머지 배치 예산은 현재 정본을 유지함. 11/20 `measure_role_search.js`의 `guild-new`와 같은 배치 설정임.
+
+현재 `guild_planner.js`의 기존 분기는 두 배치 스위치를 읽지 않으므로 B는 설정만 켠 비활성 대조임. A/B 전체 요청 해시·응답과 독립 판별 결과의 동일성을 검사함. 배치 효과는 D−C로 해석하며, 기존 탐색에서 실제 배치 확장을 실행한 효과나 `baseline`·`enabled` 각각의 효과를 분리했다고 주장하지 않음. 이 측정을 위해 탐색·엔진 동작을 바꾸지 않음.
+
+조건별 탐색 직후 선택 편성을 고정하고 독립 1,000판을 저장함. 기존 도구의 응답별 저널·재개 검사를 유지하고 전체 실험의 계정·입력 소스도 고정함. 동일 출력 폴더의 동시 실행은 잠금으로 막음. `tools/report_guild_attr.js PRIVATE_DIR`가 저장 결과만으로 A 대비 시간·점수 비율, 클리어 차이와 짝지은 95% 구간을 계산함. 시간은 조건마다 새 실행 1회이며 시간 신뢰구간은 없음. 재개 실행은 시간 상한 판정에서 제외함. 전환 후보의 시간 상한은 A의 1.3배임.
+
 ## 측정 조건
 
 `tools/measure_guild_time.js ACCOUNT PRIVATE_DIR old|new [SETTINGS_JSON]`으로 실제 페이지에 실린 시즌·제외 목록·보유 지원 브레이크·계정 능력치를 사용함. 선택 효과는 기본값인 모두 끔, 사용자가 제외한 구원자는 없음, 워커는 최대 2개임. `GuildPlanner` → `GuildSearch` → `SearchExecutor`는 화면과 같으며 전송만 네이티브 Python 엔진으로 바꿈. 브라우저 Pyodide 절대 시간으로 환산하지 않음.
