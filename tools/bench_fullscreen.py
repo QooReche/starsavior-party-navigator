@@ -40,8 +40,18 @@ STAGES = [
 
 INIT_JS = """(() => {
   const W=window.Worker,B={posts:[]};window.__bench=B;
-  window.Worker=class extends W{postMessage(m,...r){if(m&&m.type==='run')B.posts.push({n:m.n_runs,teams:(m.teams||[]).length,t:Date.now()});return super.postMessage(m,...r)}};
+  B.rt=0;B.rtN=0;
+  window.Worker=class extends W{constructor(...a){super(...a);this.addEventListener('message',e=>{if(e.data&&e.data.type==='done'&&this.__t){B.rt+=Date.now()-this.__t;B.rtN++;this.__t=0}})}
+    postMessage(m,...r){if(m&&m.type==='run'){B.posts.push({n:m.n_runs,teams:(m.teams||[]).length,t:Date.now()});this.__t=Date.now()}return super.postMessage(m,...r)}};
 })()"""
+
+# 메인 스레드 계측(--profile): 전역 함수를 감싸 누적 ms·호출 수를 잰다. 작업자 왕복(보냄→done)과 메인 지연(setTimeout 0 지연 합)도 잰다.
+PROF_JS = """() => {
+  const P=window.__prof={fn:{},lag:0,lagN:0,rt:0,rtN:0};
+  for(const name of ['scrOrder','scrFullRank','simProgressSync','simProgress','recoGwenShow','scrDone']){const f=window[name];if(typeof f!=='function')continue;
+    window[name]=function(...a){const t=performance.now();try{return f.apply(this,a)}finally{const o=P.fn[name]||(P.fn[name]={ms:0,n:0});o.ms+=performance.now()-t;o.n++}}}
+  let last=performance.now();setInterval(()=>{const t=performance.now(),d=t-last-50;if(d>0){P.lag+=d;P.lagN++}last=t},50);
+}"""
 
 COLLECT_JS = """() => {
   const c=contents[$('content').value],st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)]||null,B=window.__bench;
@@ -55,11 +65,11 @@ COLLECT_JS = """() => {
   return {stage:st.tab+'|'+st.name,stageStr:c.key+'/'+st.tab+'/'+st.name,options:simOpt(c.key),workers:scrWorkers(),
     fullFlag:!!CFG.recommendation.fullScreen,full:!!(sc&&sc.full),fullN:sc?.fullN??null,scanned:sc?.full?.length??null,poolN:sc?.pool?.length??null,
     short:!!sc?.short,candidates:LASTQ[1].all.length,vd,byN,runs:B.posts.reduce((s,p)=>s+p.n*p.teams,0),
-    top:spec(top),rows:rows.map(spec),err:SIMQ.err||''}
+    top:spec(top),rows:rows.map(spec),err:SIMQ.err||'',prof:window.__prof||null,rt:B.rt,rtN:B.rtN,teamsPosted:B.posts.reduce((s,p)=>s+p.teams,0)}
 }"""
 
 
-def browser(myinfo, out, only, modes, timeout):
+def browser(myinfo, out, only, modes, timeout, profile=False, chunk=None):
     os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', r'E:\AI_mk2\pw-browsers')
     sys.path.insert(0, str(ROOT / 'tests' / 'e2e'))
     import test_page as tp
@@ -99,6 +109,10 @@ def browser(myinfo, out, only, modes, timeout):
                     tp.settle(page)
                     assert page.evaluate("()=>cur[$('stage').value].name") == sname
                     page.evaluate("on=>{CFG.recommendation.fullScreen=on}", mode == 'on')
+                    if profile:
+                        page.evaluate(PROF_JS)
+                    if chunk:       # 묶음 크기 고정(1 = 묶기 전 배차, 단계별 측정용)
+                        page.evaluate("n=>{SearchExecutor.chunkSize=()=>n}", chunk)
                     t0 = time.time()
                     page.evaluate('() => { window.__bench.t0 = Date.now() }')
                     page.click('button[data-go]')
@@ -106,7 +120,7 @@ def browser(myinfo, out, only, modes, timeout):
                     tp.wait_sim_done(page, timeout=timeout)
                     dt = time.time() - t0
                     r = page.evaluate(COLLECT_JS)
-                    r.update(name=name, mode=mode, seconds=round(dt, 1), errors=errors)
+                    r.update(name=name, mode=mode, seconds=round(dt, 1), errors=errors, chunk=chunk)
                     ctx.close()
                     res.append(r)
                     print('%s %s: %.1f초 작업자 %d 훑기 %s(%s팀→%s) 판 %d 1안 진행 %s' % (name, mode, dt, r['workers'], r['full'], r['scanned'], r['fullN'], r['runs'],
@@ -192,10 +206,12 @@ def main():
     ap.add_argument('--timeout', type=int, default=7200)
     ap.add_argument('--runs', type=int, default=400)
     ap.add_argument('--workers', type=int, default=8)
+    ap.add_argument('--profile', action='store_true', help='메인 스레드 함수 누적 시간을 결과(prof)에 남김')
+    ap.add_argument('--chunk', type=int, help='훑기·예선 묶음 크기 고정(1 = 묶기 전 배차)')
     a = ap.parse_args()
     out = Path(a.out)
     if a.cmd == 'browser':
-        browser(a.myinfo, out, set(a.only.split(',')) if a.only else None, a.modes.split(','), a.timeout * 1000)
+        browser(a.myinfo, out, set(a.only.split(',')) if a.only else None, a.modes.split(','), a.timeout * 1000, a.profile, a.chunk)
     elif a.cmd == 'eval':
         evaluate(out, a.runs, a.workers)
     else:
