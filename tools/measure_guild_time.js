@@ -21,6 +21,8 @@ function instrument(dir,pins){
  save(pinFile,pins);
  const previous=new Map();let resumed=false;
  if(fs.existsSync(journal))for(const line of fs.readFileSync(journal,'utf8').split('\n')){if(!line)continue;let e;try{e=JSON.parse(line);}catch{continue;}if(e.type==='result'){previous.set(e.id,e.result);resumed=true;}}
+ // A killed writer may leave a torn last line; keep it separate from new replies.
+ if(fs.existsSync(journal)&&fs.statSync(journal).size){const tail=fs.readFileSync(journal);if(tail.at(-1)!==10)fs.appendFileSync(journal,'\n');}
  const fd=fs.openSync(journal,'a'),emit=e=>fs.writeSync(fd,JSON.stringify(e)+'\n'),children=new Set(),phaseOriginal=GS.runPhase;
  let phase=null,phaseIndex=0,active,submitted=0,phaseName='',lastProgress=0;
  const phases=[],start=performance.now();
@@ -47,8 +49,9 @@ function instrument(dir,pins){
 async function main(){
  const [input,output,variant,settings]=process.argv.slice(2);if(!input||!output||!['old','new'].includes(variant))throw Error('ACCOUNT PRIVATE_DIR old|new [SETTINGS_JSON]');
  const dir=privateDir(output),cx=context(input);cx.S.newSearch=variant==='new';if(settings)Object.assign(cx.S,read(settings));
- const files=['guild_planner.js','guild_search.js','search_executor.js','cosmo_learned.js','party_placement.js','sim/manifest.json','data/growth.json','tools/bench_cosmo_search.py'];
+ const files=['guild_planner.js','guild_search.js','search_executor.js','cosmo_learned.js','party_placement.js','sim/manifest.json','data/growth.json','tools/bench_cosmo_search.py','tools/measure_guild_time.js'];
  const pins={variant,transport:'native Python / shared JS executor',workers:2,accountHash:hash(fs.readFileSync(input)),settings:cx.S,season:cx.G.season,stage:cx.stage,tiers:cx.tiers,breaks:cx.breaks,profileHash:hash(cx.results),sources:Object.fromEntries(files.map(f=>[f,hash(fs.readFileSync(path.join(ROOT,f)))]))};
+ if(fs.existsSync(path.join(dir,'result.json'))){if(JSON.stringify(read(path.join(dir,'result.json')).pins)!==JSON.stringify(pins))throw Error('completed result input/source mismatch');console.error('existing complete result',variant);return;}
  const T=instrument(dir,pins);
  try{const result=await Planner.search({...cx,makeWorker:T.makeWorker,onPhase:T.onPhase});delete result.growthOwned;save(path.join(dir,'result.json'),{...T.summary(),pins,result});console.error('complete',variant);}
  finally{T.close();}
