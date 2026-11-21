@@ -188,7 +188,8 @@ def test_pressure_march_bleed_thorn_punish_direct():
     boss = boss_of(b)
     b.cast(boss, boss.d.skills['기본기'])
     assert b.gb.stats['bleed'] >= 1 and any(u.has(C.BLEED) for u in b.allies)
-    b = battle('카넬리아', 3, 18)
+    # 옛 코스모 전용 응징 큐(chain_timing=client_mapped 이하). 기본 통합 큐는 tests/chain_queue_conn_test.py
+    b = battle('카넬리아', 3, 18, mc={'chain_timing': 'client_mapped'})
     boss = boss_of(b)
     for u in b.allies:
         u.eff['공격력 감소'] = Eff('공격력 감소', {'공격력%': -30}, 1, 3, boss, True)
@@ -213,7 +214,8 @@ def test_punish_client_timing():
     from types import SimpleNamespace
 
     def setup(debuffed):
-        b = battle('카넬리아', 3, 18)
+        # 옛 코스모 전용 응징 큐 경로(chain_timing=client_mapped). 기본 통합 큐는 tests/chain_queue_conn_test.py
+        b = battle('카넬리아', 3, 18, mc={'chain_timing': 'client_mapped'})
         boss = boss_of(b)
         for i in debuffed:
             u = b.allies[i]

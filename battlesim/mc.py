@@ -951,6 +951,8 @@ class Battle:
         self._has_belgras_stage = any(belgras_se.is_stage(d) for w in waves for d in w)
         self._belgras_damage = []
         self._chain_damage = []
+        # chain_timing=client_queue: 모든 예약 추가 피해의 등록 순서 (종류, 항목). NKM:6239-6241 Add 순서.
+        self._add_order = []
         self.wave_i = -1
         self.foes = []
         self.fx = fx or {}
@@ -1525,12 +1527,16 @@ class Battle:
         finally:
             self._react_q = self._react_seen = self._revenged = None
         self._hit_log = None
-        if self.gb is not None and hasattr(self.gb, 'flush_damage'):
-            self.gb.flush_damage()
-        if self._belgras_damage:
-            self.flush_belgras_damage()
-        if self._chain_damage:
-            self.flush_chain_damage()
+        if self.mc['chain_timing'] == 'client_queue':
+            # NKM:13838-13849 → 6244-6320: 연쇄·고정 피해·응징을 한 큐에서 BuffId 묶음으로 처리.
+            self.flush_add_damage()
+        else:
+            if self.gb is not None and hasattr(self.gb, 'flush_damage'):
+                self.gb.flush_damage()
+            if self._belgras_damage:
+                self.flush_belgras_damage()
+            if self._chain_damage:
+                self.flush_chain_damage()
         if not u.dead:
             if end_cd and not ally_end_cd and self.mc['enemy_cd_end_order'] == 'before_effects':
                 self._tick_cooldowns(u)
@@ -3566,6 +3572,77 @@ class Battle:
             return True
         return False
 
+    def queue_add(self, kind, entry):
+        """client_queue 일 때 예약 추가 피해의 전역 등록 순서를 기록(목록 자체는 종류별로 둠)."""
+        if self.mc['chain_timing'] == 'client_queue':
+            self._add_order.append((kind, entry))
+
+    def _add_entries(self):
+        """(종류, 항목, BuffId, 대상) 등록 순. 종류별 목록에 남은 것만(직접 비운 항목 제외), 기록 없는 항목은 뒤에."""
+        gb = self.gb
+        lists = {'chain': self._chain_damage, 'belgras': self._belgras_damage,
+                 'cosmo_fixed': getattr(gb, 'pending_damage', None) or [], 'punish': self._chain_damage}
+        seen, out = set(), []
+        for kind, e in self._add_order + [(k, e) for k in ('chain', 'belgras', 'cosmo_fixed') for e in lists[k]]:
+            if id(e) in seen or not any(x is e for x in lists[kind]):
+                continue
+            seen.add(id(e))
+            if kind in ('chain', 'punish'):
+                out.append((kind, e, e[0], e[2]))
+            else:
+                out.append((kind, e, chain_se.fixed('belgras_hyper'), e[0]))
+        return out
+
+    def flush_add_damage(self):
+        """NKM:6244-6320 추가 피해 큐. 서로 다른 대상 수 내림차순·BuffId 오름차순 묶음, 묶음 안 등록순.
+        처리 시작 때 죽은 대상은 건너뜀. 처리 도중 죽은 대상은 재선택 가능한 SE(AutoTarget 조건 0개)만
+        그 편 생존자 중 균등 추첨(NKM:6332-6359), 아니면 건너뜀. 방어·수호·난수는 실행 때 읽음."""
+        rows = self._add_entries()
+        self._add_order = []
+        self._chain_damage = []
+        self._belgras_damage = []
+        if self.gb is not None and hasattr(self.gb, 'pending_damage'):
+            self.gb.pending_damage = []
+        if not rows:
+            return
+        dead_at_start = {t for _, _, _, t in rows if t.dead}
+        groups = defaultdict(list)
+        for row in rows:
+            groups[row[2]].append(row)
+        for bid in sorted(groups, key=lambda k: (-len({r[3] for r in groups[k]}), k)):
+            for kind, e, _, target in groups[bid]:
+                if target in dead_at_start:
+                    continue
+                if kind in ('chain', 'punish'):
+                    _, owner, _, amount, true, pen, *rest = e
+                    retarget = rest[0] if rest else False
+                    if target.dead:
+                        pool = self.alive(target.side) if retarget else []
+                        if not pool:
+                            continue
+                        target = self.R(owner.side).choice(pool)
+                        self.rule_hits['chain_timing_retarget'] += 1
+                        if not true:
+                            val, coef = rest[1]
+                            amount = self._chain_amount(owner, target, val, coef, None, owner.mods(), true)
+                    self._apply_chain_amount(owner, target, amount, true, pen)
+                    self.rule_hits['chain_timing_applied'] += 1
+                    if kind == 'punish':
+                        self.gb.stats['punish'] += 1
+                elif kind == 'belgras':
+                    self._belgras_one(target, e[1])
+                else:
+                    self.gb.apply_pending(target, e[1])
+                self.rule_hits['add_damage_queue_applied'] += 1
+
+    def _belgras_one(self, target, amount):
+        if target.dead:
+            return
+        hp = target.hp
+        damage = self.fixed_true_damage(None, target, amount, source_side=target.side)
+        self.rule_hits['belgras_fixed_applied'] += 1
+        self.log(belgras_self_damage=target.name, damage=damage, hp_damage=hp-target.hp)
+
     def flush_belgras_damage(self):
         """NKM:4742,6239-6287,13957-13965: 반응 뒤·턴 종료 전에 예약 피해 적용."""
         pending, self._belgras_damage = self._belgras_damage, []
@@ -4777,6 +4854,7 @@ class Battle:
             return
         if kd == 'belgras_fixed':
             self._belgras_damage.append((owner, eff['value']))
+            self.queue_add('belgras', self._belgras_damage[-1])
             self.rule_hits['belgras_fixed_queued'] += 1
             return
         if eff.get('belgras_marker'):
@@ -5626,12 +5704,15 @@ class Battle:
             tg = self.resolve(owner, eff['target'], ctx)
         if not tg:
             return
-        spec = chain_se.spec(owner, self._cur_line) if self.mc['chain_timing'] == 'client_mapped' else None
-        # Mixed season/fixed-damage queues still lack unified BuffId grouping.
-        # Keep that explicit legacy scope instead of inventing relative order.
-        if spec is not None and (self.gb is not None or self._has_belgras_stage):
+        mode = self.mc['chain_timing']
+        spec = (chain_se.spec(owner, self._cur_line, foe=mode == 'client_queue')
+                if mode in ('client_mapped', 'client_queue') else None)
+        # client_mapped(round2 범위): 시즌/벨그라스 큐와 섞이는 전투는 즉시 실행으로 남김.
+        if mode == 'client_mapped' and spec is not None and (self.gb is not None or self._has_belgras_stage):
             self.rule_hits['chain_timing_mixed_fallback'] += 1
             spec = None
+        if spec is None and mode == 'client_queue':
+            self.rule_hits['chain_timing_unmapped'] += 1
         m = owner.mods()
         tstat = eff['stat'].startswith('target_')
         if tstat and eff['stat'] != 'target_hp' and self.mc['chain_target_stat'] == 'off':
@@ -5654,7 +5735,11 @@ class Battle:
             true = self.mc['chain_stat_true'] == 'client' and eff.get('damage_type') == 'ADT_STAT_TRUE'
             b0 = self._chain_amount(owner, v, val, eff['coef'], ctx, m, true)
             if spec is not None:
-                self._chain_damage.append((spec['buff'], owner, v, b0, true, m['pen']))
+                if mode == 'client_queue':
+                    self._chain_damage.append((spec['buff'], owner, v, b0, true, m['pen'], spec['retarget'], (val, eff['coef'])))
+                    self.queue_add('chain', self._chain_damage[-1])
+                else:
+                    self._chain_damage.append((spec['buff'], owner, v, b0, true, m['pen']))
                 self.rule_hits['chain_timing_queued'] += 1
             else:
                 self._apply_chain_amount(owner, v, b0, true, m['pen'])
@@ -5672,6 +5757,18 @@ class Battle:
             self.rule_hits['chain_round'] += 1
             return _stat.chain_value(val, coef, inc, _rules.BASE_MULT)
         return val * coef * (1 + inc) * _rules.BASE_MULT
+
+    def queue_punish(self, owner, targets, coef, ctx):
+        """코스모 EX 응징(SE9403101 BI_ADD_DAMAGE_1, 공격력 x 계수, AutoTarget 10 조건 있음 → 재선택 없음).
+        클라 AddDamage 생성(NKM:4721-4742, 6212-6236)은 일반 연쇄와 같은 식이라 같은 함수로 만든다."""
+        m = owner.mods()
+        val = self.atk_stat(owner, ctx)
+        bid = chain_se.fixed('cosmo_punish')
+        for v in targets:
+            b0 = self._chain_amount(owner, v, val, coef, ctx, m, False)
+            self._chain_damage.append((bid, owner, v, b0, False, m['pen'], False, (val, coef)))
+            self.queue_add('punish', self._chain_damage[-1])
+            self.rule_hits['chain_timing_queued'] += 1
 
     def _apply_chain_amount(self, owner, v, b0, true, penetration):
         # NKM:8151-8168,17774-17815: defense/guard/team/RNG are read at execution.
@@ -5706,7 +5803,7 @@ class Battle:
         for row in pending:
             groups[row[0]].append(row)
         for bid in sorted(groups, key=lambda k: (-len({r[2] for r in groups[k]}), k)):
-            for _, owner, target, amount, true, penetration in groups[bid]:
+            for _, owner, target, amount, true, penetration, *_ in groups[bid]:
                 if target in dead_at_start or target.dead:
                     continue
                 self._apply_chain_amount(owner, target, amount, true, penetration)

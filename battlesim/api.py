@@ -333,9 +333,9 @@ def assumptions_used(mc, opts):
     for key, note in (
         ('effect_mapping', '공개 효과 줄과 원형 SE의 전수 대응은 미확인. 실행·정적 미지원은 unsupported 참조. '
                            '지원한 노바 슬롯·잠재력·피해 제한은 제외함.'),
-        ('chain_timing', '크리스텔·아세라 일반 전투의 BuffId 예약은 연결함. 다른 원형 줄과 시즌/벨그라스 고정 피해 큐의 '
-                         '전역 통합은 남아 즉시 실행함. 클라의 BuffId별 대상 수 정렬·도중 사망 대상 재선택을 '
-                         '전 범위에 적용할 원형 BuffId/AutoTargetId 대응이 남음.'),
+        ('chain_timing', '구원자·적 연쇄(원형 BuffId 연결분)와 벨그라스/코스모 고정 피해·코스모 응징은 한 클라 큐로 예약함. '
+                         '남은 즉시 실행: 스테이지·유닛 연결이 안 되는 길드 방어전 적 일부(티엔·시엔·레타르기아의 마술사)의 연쇄 줄과 '
+                         '길드 BFB 전용 모델의 연쇄(응징·부케). docs/allowlist_conn_1121.md.'),
         ('season_inputs', '시즌 서버 주입 값의 전수 대응은 미확인. 코스모 난이도·시즌 버프·전투력·점수의 구체적 범위는 cosmo_approx 참조.'),
     ):
         out.append(dict(rule='model.' + key, value=None, grade='assumed',

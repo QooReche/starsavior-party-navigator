@@ -276,6 +276,7 @@ class Controller:
             n = min(self._stacks(u, ROT), p['max'])
             if n > 0:
                 self.pending_damage.append((u, p['perStack'] * n))
+                self.b.queue_add('cosmo_fixed', self.pending_damage[-1])
                 self.stats['self_damage_queued'] += 1
         # EX: debuff_amp — NSEAT_SKILL_START, 자신 약화 개수당 피해 증가 (SE 9402101)
         if u is self.boss and not self.boss.dead and 'debuff_amp' in self.fx and sk.is_attack:
@@ -335,6 +336,10 @@ class Controller:
             pool = [x for x in (ctx.targets or []) if x.side != u.side]
             if any(x.n_harmful() > 0 for x in pool):
                 coef = self.fx['punish']['atkRate'] / 100.0
+                if self.b.mc['chain_timing'] == 'client_queue':
+                    # 같은 클라 추가 피해 큐(BI_ADD_DAMAGE_1, NKM:4721-4742 → 6244-6320). 일반 연쇄와 같은 생성·실행 식.
+                    self.b.queue_punish(boss, [x for x in self.b.alive(1 - boss.side) if x.n_harmful() > 0], coef, ctx)
+                    return
                 # 누적(클라 추가 피해 목록 Add, NKM:6239-6241): 같은 행동 안 반응으로 궁극기가 다시 시작되면 따로 쌓임
                 self._punish_q.extend((x, self._chain_pre(boss, x, coef, ctx)) for x in self.b.alive(1 - boss.side) if x.n_harmful() > 0)
 
@@ -348,15 +353,19 @@ class Controller:
                 self.stats['punish'] += 1
         pending, self.pending_damage = self.pending_damage, []
         for target, damage in pending:
-            if target.dead:
-                continue
-            hp, shield = target.hp, target.shield_total()
-            damage = self.b.fixed_true_damage(None, target, damage, source_side=target.side)
-            self.stats['true_damage_hits'] += 1
-            self.stats['self_damage_hp'] += hp - target.hp
-            self.stats['self_damage_shield'] += shield - target.shield_total()
-            self.b.log(self_damage=target.name, damage=damage, hp_damage=hp - target.hp,
-                       absorbed=shield - target.shield_total())
+            self.apply_pending(target, damage)
+
+    def apply_pending(self, target, damage):
+        """예약 고정 피해 1건(BI_ADD_TRUE_DAMAGE). 통합 큐(mc.flush_add_damage)도 이 함수를 부름."""
+        if target.dead:
+            return
+        hp, shield = target.hp, target.shield_total()
+        damage = self.b.fixed_true_damage(None, target, damage, source_side=target.side)
+        self.stats['true_damage_hits'] += 1
+        self.stats['self_damage_hp'] += hp - target.hp
+        self.stats['self_damage_shield'] += shield - target.shield_total()
+        self.b.log(self_damage=target.name, damage=damage, hp_damage=hp - target.hp,
+                   absorbed=shield - target.shield_total())
 
     # ---------- 효과 도우미
     def _put(self, x, name, props, dur=math.inf, cat='marker', maxs=1, add=1, fixed=True, src=None, dead_keep=False):

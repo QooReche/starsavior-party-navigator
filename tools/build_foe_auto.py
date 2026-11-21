@@ -248,16 +248,41 @@ def build(static):
     bname = buff_names(tables)
     se = se_rows(tables, skills)
     raw = F.load_foe(str(ROOT))
+    link = unit_links(static, raw, units)
+    out = {}
+    for (ui, xi), gids in sorted(link.items(), key=lambda kv: (kv[0][0], -1 if kv[0][1] is None else kv[0][1])):
+        u = raw['u'][ui]
+        variants = []
+        for gid in sorted(gids):
+            try:
+                variants.append(json.dumps(unit_rules(u, raw, units[gid], skills, auto, target, se, bname), ensure_ascii=False, sort_keys=True))
+            except Unknown as ex:
+                REPORT['모르는 어휘: ' + str(ex)[:60]] += 1
+                variants.append(None)
+        if None in variants or len(set(variants)) != 1:
+            REPORT['한 유닛에 다른 규칙(제외)' if None not in variants else '모르는 어휘로 유닛 제외'] += 1
+            continue
+        rules = json.loads(variants[0])
+        if rules['skills'] or rules['lines'] or rules.get('order') or rules.get('enforce_self') or rules.get('force'):
+            out['foe:%d' % ui + (':%d' % xi if xi is not None else '')] = rules
+    return out
+
+
+def unit_links(static, raw, units, guild=False):
+    """(ui, xi) -> 게임 UnitStrId 집합. 조건에 맞는 배치가 하나뿐인 스테이지에서 칸마다 역할·속성이 같을 때만.
+    guild=True: 길드 방어전도 GUILD_DUNGEON_* 전체를 후보로 두고 칸마다 적 이름까지 같은 배치만(기본 끔 — foe_auto 출력 불변)."""
     rows = SP.battle_rows(static)
     link = defaultdict(set)      # (ui, xi) -> 게임 UnitStrId 집합
     for c in raw['g']:
+        named = guild and c['k'] == 'guild'
         for ti, t in enumerate(c['tabs']):
             for si, s in enumerate(t['s']):
                 hits = []
-                cands = SP.candidates(c['k'], t['t'], s['n'], ti, si, rows)
+                cands = (sorted(k for k in rows if k.startswith('GUILD_DUNGEON_')) if named
+                         else SP.candidates(c['k'], t['t'], s['n'], ti, si, rows))
                 for sid in cands:
                     row = rows.get(sid)
-                    if not row or not row[0].exists() or not SP.same_battle(c['k'], s, row, raw, static):
+                    if not row or not row[0].exists() or not SP.same_battle('daily' if named else c['k'], s, row, raw, static):
                         continue
                     waves = (SP.jsonc(row[0]).get('Data') or {}).get('Waves') or []
                     lists = [[[sp['UnitStrId'], sp.get('ChangeAdjustType')] for sp in (w.get('TeamBSpawnList') or [])] for w in waves]
@@ -282,23 +307,7 @@ def build(static):
                             REPORT['칸 역할·속성 불일치'] += 1
                             continue
                         link[(ui, xi)].add(gid)
-    out = {}
-    for (ui, xi), gids in sorted(link.items(), key=lambda kv: (kv[0][0], -1 if kv[0][1] is None else kv[0][1])):
-        u = raw['u'][ui]
-        variants = []
-        for gid in sorted(gids):
-            try:
-                variants.append(json.dumps(unit_rules(u, raw, units[gid], skills, auto, target, se, bname), ensure_ascii=False, sort_keys=True))
-            except Unknown as ex:
-                REPORT['모르는 어휘: ' + str(ex)[:60]] += 1
-                variants.append(None)
-        if None in variants or len(set(variants)) != 1:
-            REPORT['한 유닛에 다른 규칙(제외)' if None not in variants else '모르는 어휘로 유닛 제외'] += 1
-            continue
-        rules = json.loads(variants[0])
-        if rules['skills'] or rules['lines'] or rules.get('order') or rules.get('enforce_self') or rules.get('force'):
-            out['foe:%d' % ui + (':%d' % xi if xi is not None else '')] = rules
-    return out
+    return link
 
 
 def unit_rules(u, raw, gu, skills, auto, target, se, bname):

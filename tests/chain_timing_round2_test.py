@@ -116,8 +116,9 @@ class ChainTimingTest(unittest.TestCase):
 
 def mutations():
     cases = [
-        ('chain', "self.mc['chain_timing'] == 'client_mapped'", 'False', 'test_snapshot_survives_source_death_and_uses_live_defense'),
-        ('_act_turn', 'self.flush_chain_damage()', 'None', 'test_flush_after_reactions_before_turn_end'),
+        ('chain', "if mode in ('client_mapped', 'client_queue') else None", 'if False else None', 'test_snapshot_survives_source_death_and_uses_live_defense'),
+        # 기본 chain_timing=client_queue 는 통합 큐(flush_add_damage)를 부름(tests/chain_queue_conn_test.py).
+        ('_act_turn', 'self.flush_add_damage()', 'None', 'test_flush_after_reactions_before_turn_end'),
         ('flush_chain_damage', '(-len({r[2] for r in groups[k]}), k)', '(k, 0)', 'test_group_order_and_dead_targets'),
         ('flush_chain_damage', 'if target in dead_at_start or target.dead:', 'if target.dead:', 'test_group_order_and_dead_targets'),
     ]
