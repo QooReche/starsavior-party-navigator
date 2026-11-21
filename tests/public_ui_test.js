@@ -17,7 +17,7 @@ function checkNotice(page,file){
  assert.equal(history.open,true);
 }
 function checkTone(page,file){
- for(const phrase of ['모의 전투 결과라 실제 플레이와 다를 수 있음','게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함','사이트가 자동으로 열리며 반영됨'])assert(page.includes(phrase),`${file}: ${phrase}`);
+ for(const phrase of ['모의 전투 결과라 실제 플레이와 다를 수 있음','게임이 켜져 있다면 먼저 <b>완전히 종료</b>','사이트가 자동으로 열리며 반영됨'])assert(page.includes(phrase),`${file}: ${phrase}`);
 }
 function checkGwen(page,file){
  for(const [rel,size] of [['icon',32],['icon',512],['apple-touch-icon',180]]){
@@ -40,7 +40,7 @@ function checkGwen(page,file){
  const drawer=page.slice(page.indexOf('<aside id="drawer"'),page.indexOf('</aside>'));
  assert.match(drawer,/<div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장함\.<\/div>/);
  // 불러오기 창: 그웬 말은 말풍선(장식, 대사는 ux_ui.js 가 채움), 순서 안내는 말풍선 밖에 사이트 문구로 그대로.
- assert.match(drawer,/<div class="gwen-greet"><img class="gwen-welcome" [^>]*alt="" aria-hidden="true" loading="lazy"><div class="gwen-greet-text"><span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"><\/span><p class="gwen-greet-note mut">아래 5단계를 순서대로 하면 됨<\/p><\/div><\/div>/);
+ assert.match(drawer,/<div class="gwen-greet"><img class="gwen-welcome" [^>]*alt="" aria-hidden="true" loading="lazy"><div class="gwen-greet-text"><span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"><\/span><p class="gwen-greet-note mut">아래 6단계를 순서대로 하면 됨<\/p><\/div><\/div>/);
  assert.equal((drawer.match(/class="gwen-bubble"/g)||[]).length,1,`${file}: 불러오기 창 말풍선 한 개`);
  // 말풍선: 그웬 그림마다 한 개, 꼬리는 그림 쪽. 대사는 화면 파일에 직접 쓰지 않고 대사 표에서만 가져옴.
  const Ux=require('../ux_ui'),bubble=Ux.gwenSay('welcome','right');
@@ -49,7 +49,7 @@ function checkGwen(page,file){
  assert.equal((guide.match(/class="gwen-bubble"/g)||[]).length,1,`${file}: 첫 안내 말풍선 한 개`);
  assert.match(guide,/<p class="account-safe">[^<]+<\/p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨<\/p>/,`${file}: 보안 안내는 말풍선 밖 기존 자리`);
  for(const lines of Object.values(Ux.GWEN_SAY))for(const line of lines)assert(!page.includes(line),`${file}: 대사는 ux_ui.js 한곳에만: ${line}`);
- assert.equal((drawer.match(/<li>/g)||[]).length,5,`${file}: 불러오기 5단계 유지`);
+ assert.equal((drawer.match(/<li>/g)||[]).length,6,`${file}: 불러오기 6단계 유지`);
  const emptyAt=page.indexOf('function miEmpty()'),empty=vm.runInNewContext(page.slice(emptyAt,page.indexOf('function miGuide()',emptyAt))+';miEmpty()', {Ux:require('../ux_ui')});
  assert.match(empty,/data-gwen-art="files"/);
  assert(empty.includes(`<span class="gwen-say-lane">${Ux.gwenSay('empty')}</span>`),`${file}: 빈 명단 말풍선`);assert.equal((empty.match(/class="gwen-bubble"/g)||[]).length,1);
@@ -74,7 +74,7 @@ for(const file of ['party_template.html','index.html']){
   ['${Ux.gwenWork("screen","empty")}','${Ux.gwenWork("screen")}',checkGwen],
   ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-gwen-say="import" data-tail="left"></span>',checkGwen],
   ['<span class="gwen-bubble" data-gwen-say="import" data-tail="left" aria-hidden="true"></span>','<span class="gwen-bubble" data-tail="left" aria-hidden="true">단장님의 정보! 내가 받아 갈게</span>',checkGwen],
-  ['<p class="gwen-greet-note mut">아래 5단계를 순서대로 하면 됨</p>','',checkGwen],
+  ['<p class="gwen-greet-note mut">아래 6단계를 순서대로 하면 됨</p>','',checkGwen],
   ['${waiting?Ux.gwenWork("inspect"):Ux.gwenIdle()}<div id="reco-actions">','${waiting?Ux.gwenWork("inspect"):""}<div id="reco-actions">',checkIdle],
   ['${waiting?Ux.gwenWork("inspect"):Ux.gwenIdle()}<div id="reco-actions">','${Ux.gwenIdle()}${waiting?Ux.gwenWork("inspect"):""}<div id="reco-actions">',checkIdle],
   ['<div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">','<div class="acts">${Ux.gwenIdle()}<button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">',checkIdle],
@@ -88,7 +88,7 @@ for(const file of ['party_template.html','index.html']){
   ['border:1px solid var(--acc);border-radius:8px','border:0;border-radius:0',checkNotice],
   ["document.getElementById('update-history').open=true","document.getElementById('update-history').open=false",checkNotice],
   ['모의 전투 결과라 실제 플레이와 다를 수 있음','모의 전투 결과라 실제 플레이와 다를 수 있어요',checkTone],
-  ['게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함','게임이 이미 켜져 있으면 <b>완전히 끄고</b> 다시 켜세요',checkTone],
+  ['게임이 켜져 있다면 먼저 <b>완전히 종료</b>','게임이 이미 켜져 있으면 <b>완전히 끄고</b> 다시 켜세요',checkTone],
   ['사이트가 자동으로 열리며 반영됨','사이트가 자동으로 열리며 반영돼요',checkTone]
  ]){assert(page.includes(from));assert.throws(()=>check(page.replace(from,to),file),{code:'ERR_ASSERTION'},`${file}: mutation caught: ${from}`);check(page,file);}
  assert.equal((page.match(/data-k="update-notice"/g)||[]).length,1);
@@ -103,17 +103,18 @@ for(const file of ['party_template.html','index.html']){
  // Each step: bold one-line title, then detail line(s); the restart warning is its own line in step 4.
  const T=t=>`<b class="mi-step-title">${t}</b>`,D=d=>` <span class="mi-step-do">${d}</span>`;
  assert.deepEqual(steps,[
+  T('게임 끄기')+' <span class="mi-import-warning">⚠ 게임이 켜져 있다면 먼저 <b>완전히 종료</b></span>',
   T('PowerShell 열기')+D('<span class="mi-keys"><kbd>Windows</kbd>+<kbd>R</kbd></span> → <b>powershell</b> 입력 → <kbd>Enter</kbd>'),
   T('명령 붙여넣기')+D('위쪽 <b>[명령 복사]</b> 단추 클릭')+D('→ PowerShell 창에 붙여넣기')+D('<span class="mi-keys"><kbd>Ctrl</kbd>+<kbd>V</kbd></span> 또는 마우스 오른쪽 클릭 → <kbd>Enter</kbd>'),
   T('관리자 확인')+D('「관리자 확인」 창이 뜨면 <b>[예]</b>'),
-  T('게임 로그인')+D('게임에 로그인해 로비 화면까지 들어가기')+D('→ 명령을 붙여넣었던 <b>PowerShell 창</b>으로 돌아와 <kbd>Enter</kbd>')+' <span class="mi-step-do mut">(게임 화면이 아니라 PowerShell 창에서 누름 · 반응 없으면 몇 번 더 눌러도 됨)</span>'+' <span class="mi-import-warning">⚠ 기존에 이미 게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함</span>',
+  T('게임 실행')+D('게임을 실행해 로비 화면까지 진입')+D('→ 명령을 붙여넣었던 <b>PowerShell 창</b>으로 돌아와 <kbd>Enter</kbd>')+' <span class="mi-step-do mut">(게임 화면이 아니라 PowerShell 창에서 누름 · 반응 없으면 몇 번 더 눌러도 됨)</span>',
   T('자동 반영')+D('사이트가 자동으로 열리며 반영됨')
- ],`${file}: five titled steps and separate restart warning`);
+ ],`${file}: six titled steps, game shutdown first`);
  assert.equal(guide[2],'<b class="mi-fallback-title">안 될 때·다른 기기에서</b><span class="mi-step-do">바탕화면 <b>내정보.json</b>을 [파일 선택]으로 올리기</span>');
  // Summary card mirrors the five step titles in the same order.
  const summary=page.match(/<ol class="guide-steps">([\s\S]*?)<\/ol>/);
  assert(summary,`${file}: summary steps exist`);
- assert.deepEqual([...summary[1].matchAll(/<li><b>([^<]+)<\/b>/g)].map(m=>m[1]),['PowerShell 열기','명령 붙여넣기','관리자 확인','게임 로그인','자동 반영'],`${file}: summary matches five steps`);
+ assert.deepEqual([...summary[1].matchAll(/<li><b>([^<]+)<\/b>/g)].map(m=>m[1]),['게임 끄기','PowerShell 열기','명령 붙여넣기','관리자 확인','게임 실행','자동 반영'],`${file}: summary matches six steps`);
  // Execute the real renderer through empty -> loaded -> cleared states.
  const nodes=Object.fromEntries(['mi-chip','mi-panel','option-chips','content','rk','mi-open-import','share-mi','share-link','mi-view','mi-clear','mi-panel-clear'].map(id=>[id,{dataset:{},classList:{toggle(){}},closest(){return this;}}]));
  nodes.content.value='op';nodes['mi-panel'].hidden=true;

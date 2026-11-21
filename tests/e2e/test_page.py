@@ -952,13 +952,13 @@ def test_myinfo_required(browser, ctx):
       dbtn:!!document.querySelector('#dbtn'), own:document.querySelectorAll('#own input:checked').length})''')
     page.click('#out button[data-miopen="1"]')
     box = page.locator('.mi-import-guide')
-    assert box.locator('ol > li').count() == 5
-    assert box.locator('ol > li > .mi-step-title').all_inner_texts() == ['PowerShell 열기', '명령 붙여넣기', '관리자 확인', '게임 로그인', '자동 반영']
+    assert box.locator('ol > li').count() == 6
+    assert box.locator('ol > li > .mi-step-title').all_inner_texts() == ['게임 끄기', 'PowerShell 열기', '명령 붙여넣기', '관리자 확인', '게임 실행', '자동 반영']
     assert box.locator('#mi-copy').count() == 1
     assert box.evaluate('(box) => box.firstElementChild.contains(document.getElementById("mi-copy"))')
     assert not page.locator('#mi-cmd').is_visible()
     assert all(page.locator('#' + key).is_hidden() for key in ('share-link', 'mi-view', 'mi-clear'))
-    assert '⚠ 기존에 이미 게임이 켜져 있으면 완전히 껐다 다시 켜야 함' in box.inner_text()
+    assert '⚠ 게임이 켜져 있다면 먼저 완전히 종료' in box.inner_text()
     assert page.locator('header.site-head #mi-open-import').count() == 1 and page.locator('#mi-panel #mi-open-import').count() == 0
     assert '사이트가 자동으로 열리며 반영' in page.inner_text('.mihow')
     assert page.locator('#dclose').bounding_box()['height'] >= 39.9
@@ -3246,7 +3246,7 @@ def test_public_tone(browser, ctx):
     page.set_viewport_size({'width': 1280, 'height': 900})
     page.click('#mi-open-import')
     text = page.inner_text('#drawer')
-    assert '게임이 켜져 있으면 완전히 껐다 다시 켜야 함' in text
+    assert '게임이 켜져 있다면 먼저 완전히 종료' in text
     assert '사이트가 자동으로 열리며 반영됨' in text
     assert page.inner_text('#mi-copy') == '명령 복사'
     page.screenshot(path=os.path.join(ctx.shots, 'tone_import.png'))
