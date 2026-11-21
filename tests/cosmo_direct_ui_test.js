@@ -344,14 +344,14 @@ const MUTATIONS=[
   ['보강: 깎음 줄 없을 때도 빈 줄',"r.frac!=null?`<span class=\"cg-more-line\" data-cg-more=\"frac\">보스 깎음 ${pct(r.frac)}%</span>`:''","`<span class=\"cg-more-line\" data-cg-more=\"frac\">보스 깎음 ${r.frac!=null?pct(r.frac):''}%</span>`"],
   ['말풍선 꼬리 표시 뺌','cg-say-bubble" data-tail="down"','cg-say-bubble"'],
   ['말풍선이 그웬 아래',null,src=>{const a='<p class="gwen-bubble cg-say-bubble" data-tail="down"${say}</p>',b='<div class="cg-say-gwen">${gwen}</div>';assert(src.includes(a+b));return src.replace(a+b,b+a);}],
-  ['이름을 HTML 로 그대로 넣음',"const esc=s=>String(s??'').replace(","const esc=s=>String(s??'');const esc0=s=>String(s??'').replace("],
+  ['이름을 HTML 로 그대로 넣음',"const esc=s=>U.escKeep(s??'');","const esc=s=>String(s??'');"],
 ];
 if(!process.argv.includes('--no-mutations')){
   let caught=0;
   for(const [name,from,to] of MUTATIONS){
     const src=from===null?to(SRC):SRC.split(from).join(to);
     assert.notEqual(src,SRC,`변이가 적용되지 않음(코드가 바뀌었는지 확인): ${name}`);
-    const mod={exports:{}};new Function('module','require',src)(mod,require);
+    const mod={exports:{}};new Function('module','require',src)(mod,p=>require(p.startsWith('.')?path.join(__dirname,'..',p):p));
     let failed=false;try{suite(mod.exports);}catch(e){failed=true;}
     assert(failed,`변이를 못 잡음: ${name}`);caught++;
   }

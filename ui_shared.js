@@ -3,8 +3,26 @@
   'use strict';
   const keys=['atk','hp','def','spd','cr','cd','eh','er','atkP','hpP','defP'];
   const NST=Object.fromEntries(['NST_ATK','NST_HP','NST_DEF','NST_TURN_SPEED','NST_RATE_CRITICAL','NST_RATE_CRITICAL_DAMAGE','NST_RATE_EFFECT_HIT','NST_RATE_EFFECT_EVADE','NST_NV_RATE_ATK','NST_NV_RATE_HP','NST_NV_RATE_DEF'].map((k,i)=>[k,keys[i]]));
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  // 글자 서식 정본. 화면마다 조금씩 다르던 판은 화면 글자가 그대로이도록 이름을 나눠 둠(docs/HISTORY.md 2026-11-22 «화면 공통화» 목록).
+  const ESC={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>ESC[c]);
+  // 작은따옴표를 그대로 두고 null·undefined 를 글자 그대로("null") 쓰는 판 — party_template.html 의 esc
+  const escKeep=v=>String(v).replace(/[&<>"]/g,c=>ESC[c]);
   const num = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  // 반올림 + 한국어 천 단위 쉼표, 수가 아니면 «—»
+  const numText=v=>Number.isFinite(v)?Math.round(v).toLocaleString('ko-KR'):'—';
+  // 비율 -> «NN%»(정수), pctText1 = 10% 미만은 소수 한 자리
+  const pctText=x=>Math.round(x*100)+'%';
+  const pctText1=p=>{const v=Math.round(p*1000)/10;return (v>=10?Math.round(v):v)+'%';};
+  // 걸린 시간 글자: durText(밀리초) = 추천 화면 «N분 M0초», durTextSec(초) = 코스모 탐색 «약 N시간 M분»
+  function durText(ms){const s=Math.ceil(ms/1000);if(s<60)return s+"초";const m=Math.floor(s/60),r=Math.round((s%60)/10)*10;return r>=60?(m+1)+"분":m+"분"+(r?" "+r+"초":"")}
+  function durTextSec(sec){
+    const s = Math.max(0, Math.round(sec));
+    if (s < 60) return `약 ${s}초`;
+    if (s < 3600) { const m = Math.floor(s / 60), r = s % 60; return `약 ${m}분${r ? " " + r + "초" : ""}`; }
+    const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
+    return `약 ${h}시간${m ? " " + m + "분" : ""}`;
+  }
   // 선 아이콘(Lucide, ISC 라이선스 https://lucide.dev — 모양만 옮김). currentColor 로 그린다
   const SH='<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>',SW='<polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" x2="19" y1="19" y2="13"/><line x1="16" x2="20" y1="16" y2="20"/><line x1="19" x2="21" y1="21" y2="19"/>';
   const ICON={atk:SW,hp:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',def:SH,
@@ -44,6 +62,6 @@
   function stable(v){if(Array.isArray(v))return v.map(stable);if(v&&typeof v==='object')return Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])]));return v;}
   // FNV-1a 32비트 문자열 해시(16진)
   function fnv(s){let h=2166136261;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return (h>>>0).toString(16);}
-  const api={NST,esc,num,ICON,icon,setSkillIcons,skillIcon,teamKey,teamId,uniqBy,clone,stable,fnv};
+  const api={NST,esc,escKeep,num,numText,pctText,pctText1,durText,durTextSec,ICON,icon,setSkillIcons,skillIcon,teamKey,teamId,uniqBy,clone,stable,fnv};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.UiShared=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -4,7 +4,7 @@
 (function (root) {
   "use strict";
   const Executor = typeof module !== "undefined" && module.exports ? require("./search_executor.js") : root.SearchExecutor;
-  const {num, teamId} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
+  const {num, teamId, pctText, durTextSec} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const GS = typeof require !== "undefined" ? require("./guild_search.js") : root.GuildSearch;
   const Learned = typeof require !== "undefined" ? require("./cosmo_learned.js") : root.CosmoLearned;
   const Placement = typeof require !== "undefined" ? require("./party_placement.js") : root.PartyPlacement;
@@ -361,13 +361,7 @@
     if (!saved.sec.every(x => typeof x === "number" && isFinite(x) && x > 0)) return null;
     return saved.sec.map(x => x * saved.workers / workers);
   }
-  function fmtDur(sec) {
-    const s = Math.max(0, Math.round(sec));
-    if (s < 60) return `약 ${s}초`;
-    if (s < 3600) { const m = Math.floor(s / 60), r = s % 60; return `약 ${m}분${r ? " " + r + "초" : ""}`; }
-    const h = Math.floor(s / 3600), m = Math.round((s % 3600) / 60);
-    return `약 ${h}시간${m ? " " + m + "분" : ""}`;
-  }
+  const fmtDur = durTextSec;
   const clock = ms => { const d = new Date(ms), p = n => String(n).padStart(2, "0"); return `${p(d.getHours())}:${p(d.getMinutes())}`; };
   // est = etaNew().estimate(..), nowMs = 지금 시각(ms)
   function etaLine(est, nowMs) {
@@ -667,7 +661,7 @@
 
   // 큰 배열을 push(...arr) 로 넘기면 함수 인자 한도(약 12만~)를 넘어 RangeError — 하나씩 넣는다
   function pushAll(out, items) { for (const x of items) out.push(x); return out; }
-  const pct = x => Math.round((x || 0) * 100) + "%";
+  const pct = x => pctText(x || 0);
   // 화면 조각. st = {phase: idle|run|done|err, msg, done, total, rows, level, mode, bosses, ...}, cx = {hasInfo, label(key), esc, bossName(key), levelMax, level, mode}
   function table(r, mode, cx, index=0) {
     const esc = cx.esc;

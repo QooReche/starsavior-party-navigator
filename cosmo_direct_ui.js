@@ -10,7 +10,8 @@
   const SCREEN=[2,0,1,3],LABELS=['전열1','전열2','후열1','후열2'];
   const STEPS=[['보스 고르기','보스'],['구원자 4명 넣기','구원자 4명'],['브레이크·난이도(선택)','브레이크(선택)'],['확인','확인']];
   const GROW_HELP='체크하면 이 구원자를 더 키웠다고 치고 계산';
-  const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const U=node?require('./ui_shared.js'):root.UiShared;
+  const esc=s=>U.escKeep(s??'');
   const num=n=>Math.round(n).toLocaleString('ko-KR');
   const pct=x=>Math.round(x*100);
   // 이 값보다 클리어율이 낮은 팀은 카드에서 ⚠ + 경고색으로 보여 줌(약한 보스가 눈에 띄게).

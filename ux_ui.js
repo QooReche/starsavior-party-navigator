@@ -4,7 +4,7 @@
   const U=typeof module!=='undefined'&&module.exports?require('./ui_shared'):root.UiShared;
   const S=typeof module!=='undefined'&&module.exports?require('./myinfo_stats'):root.MyInfoStats;
   const GP=typeof module!=='undefined'&&module.exports?require('./gwen_policy'):root.GwenPolicy;
-  const esc=U.esc, num=v=>Number.isFinite(v)?Math.round(v).toLocaleString('ko-KR'):'—';
+  const esc=U.esc, num=U.numText;
   const labels={level:'스타링크',equip:'장비',skills:'스킬',resonance:'공명',journey:'스텔라 아카이브',potentials:'잠재력',favor:'호감도'};
   const names=['힘','체력','인내','집중','보호'];
   const skillNames={basic:'기본',special:'특수',ultimate:'궁'};
@@ -434,7 +434,7 @@
   // 운에 크게 좌우되는 결과 안내: 클리어율 5% 미만이거나, 95% 구간이 1% 밑에서 5% 이상까지 걸쳐 결론이 흔들릴 때만 문구를 낸다.
   // r = 시뮬 요약({clear, ci:[하한,상한], n}). 「30번 도전 시 한 번이라도 깰 확률」 = 1-(1-p)^30(판마다 독립 가정).
   const LUCK={low:.05,ciLo:.01,ciHi:.05,tries:30};
-  const pctText=p=>{const v=Math.round(p*1000)/10;return (v>=10?Math.round(v):v)+'%';};
+  const pctText=U.pctText1;
   function luckNote(r){const p=r?.clear;if(!Number.isFinite(p))return '';
     const ci=Array.isArray(r.ci)&&r.ci.every(Number.isFinite)?r.ci:null;
     const low=p<LUCK.low,shaky=!!ci&&ci[0]<LUCK.ciLo&&ci[1]>=LUCK.ciHi;
