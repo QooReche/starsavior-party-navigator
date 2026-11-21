@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "171b3e0cdbecac6c",
+  "hash": "c798d60da0c167ee",
   "history": [
-   {
-    "hash": "c842e95a19e6635c",
-    "reason": "표지 SE 원형 복원(marker_se_flow). 길드 방어전 시즌4 종료로 기존 비활성 생성물 재계산 생략; 새 시즌 자료 반영 때 재생성(HANDOFF). 현재 결과 불변을 뜻하는 인정은 아님."
-   },
    {
     "hash": "530c00d991033452",
     "reason": "build_guild_sim 재생성"
@@ -41,16 +37,16 @@
    {
     "hash": "171b3e0cdbecac6c",
     "reason": "반응 단일 대상 난수·자신 기준 보호막 클라 교정(reaction_single_target_rng·barrier_formula client) 병합. quick 보정 입력엔 적 반응·자신 기준 보호막 줄이 없음(4e82fab 기록), guild_sim 시즌 종료로 재생성 생략"
+   },
+   {
+    "hash": "c798d60da0c167ee",
+    "reason": "2차 명중/수호/연쇄 교정(main 위 재정렬). 종료된 길드 방어전 시즌4 생성물이라 재생성 생략, 새 시즌 갱신 때 재생성. docs/allowlist_round2_1121.md"
    }
   ]
  },
  "quick": {
-  "hash": "171b3e0cdbecac6c",
+  "hash": "c798d60da0c167ee",
   "history": [
-   {
-    "hash": "c842e95a19e6635c",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "530c00d991033452",
     "reason": "calibrate_quick --write 재보정"
@@ -86,6 +82,10 @@
    {
     "hash": "171b3e0cdbecac6c",
     "reason": "반응 단일 대상 난수·자신 기준 보호막 클라 교정(reaction_single_target_rng·barrier_formula client) 병합. quick 보정 입력엔 적 반응·자신 기준 보호막 줄이 없음(4e82fab 기록), guild_sim 시즌 종료로 재생성 생략"
+   },
+   {
+    "hash": "c798d60da0c167ee",
+    "reason": "2차 회피/수호/연쇄 교정(main 위 재정렬). 영향 335표본 각40판 재생성에서 보정 기준 clear>=0.5 판정 변경0(88dcc2b 기록), quick 계수 유지. docs/allowlist_round2_1121.md"
    }
   ]
  }
