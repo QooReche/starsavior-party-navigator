@@ -2,6 +2,17 @@
 import json
 
 
+def comparison_payload(value, package_version):
+    """Validate the actual package tag before comparing all simulation fields."""
+    out = {key: item for key, item in value.items() if key != 'pins'}
+    replies = []
+    for key, result in value['replies']:
+        assert result['ver'] == package_version, 'worker package version mismatch'
+        replies.append([key, {name: item for name, item in result.items() if name != 'ver'}])
+    out['replies'] = replies
+    return out
+
+
 def assert_engine_inputs(old_files, new_files, old_read, new_read):
     assert old_files == new_files, 'simulation file list changed'
     for name in old_files:

@@ -12,7 +12,7 @@ from test_direct_party import ready
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT/'tests/fixtures/search_pyodide_6688d7a.json'
 sys.path.insert(0, str(ROOT/'tests'))
-from engine_input_guard import assert_engine_inputs
+from engine_input_guard import assert_engine_inputs, comparison_payload
 
 
 def assert_frozen_engine(pins):
@@ -24,6 +24,7 @@ def assert_frozen_engine(pins):
     assert_engine_inputs(json.loads(original_manifest)['files'],
                          json.loads((ROOT/'sim/manifest.json').read_bytes())['files'],
                          frozen, lambda name: (ROOT/name).read_bytes())
+    return json.loads(original_manifest)['ver']
 
 REAL = """async () => {
  const requests=[], replies=[];
@@ -97,8 +98,9 @@ def main():
                     expected=json.loads(FIXTURE.read_text(encoding='utf8'))
                     # The package also contains search settings. Keep the old
                     # golden intact and verify every engine input separately.
-                    assert_frozen_engine(expected['pins'])
-                    assert {k:v for k,v in result.items() if k!='pins'}=={k:v for k,v in expected.items() if k!='pins'},'real Pyodide complete request/raw result changed'
+                    frozen_version = assert_frozen_engine(expected['pins'])
+                    current_version = json.loads((ROOT/'sim/manifest.json').read_bytes())['ver']
+                    assert comparison_payload(result,current_version)==comparison_payload(expected,frozen_version),'real Pyodide complete request/raw result changed'
                 print('PASS real Pyodide frozen request, complete raw result, positive progress',flush=True)
             assert not page.errors,page.errors
         finally:browser.close()
