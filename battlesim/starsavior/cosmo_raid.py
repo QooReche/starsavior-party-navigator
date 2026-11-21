@@ -28,6 +28,7 @@ import os
 from collections import defaultdict
 
 from .. import datafile
+from .. import statcalc as _stat
 from .controller import BaseController
 from .data import SRC
 from .foe_base import FoeBase, make_skill
@@ -566,7 +567,11 @@ class Controller(BaseController):
         return self._chain_hit(owner, v, self._chain_pre(owner, v, coef, ctx))
 
     def _chain_pre(self, owner, v, coef, ctx=None):
-        """클라 AddDamage 생성 때 정하는 공격자 쪽 값(NKM:4734·6226): 공격력 x 계수 x (1 + 주는 피해 증가), 관통"""
+        """클라 AddDamage 생성 때 정하는 공격자 쪽 값(NKM:4734·6226): 공격력 x 계수 x (1 + 주는 피해 증가), 관통
+
+        정본(mc.Battle._chain_amount + _apply_chain_amount)과 다른 점 — chain_timing 즉시 경로에서만 탐(client_queue 는 정본 queue_punish):
+        속성별 증가(inc_vs)·브레이크 증가·역할 증가 없음, chain_round(정수 절삭) 없음, 관통을 chain_pen 과 무관하게 항상 적용,
+        수호 분담(_chain_guard) 없음, BASE_MULT 를 _chain_hit 에서 pre['base'] 뒤에 곱함. 통합(설계 B3-b)은 결과가 바뀌어 하지 않음."""
         b = self.b
         m = owner.mods()
         inc = m['inc']
@@ -578,9 +583,7 @@ class Controller(BaseController):
         """넣을 때 계산하는 대상 쪽(NKM:8168·17797): 대상 방어(그때 값)·난수·전투력 보정"""
         from .. import rules as R
         b = self.b
-        de = b.def_stat(v)
-        dr = de / (de + R.DEF_K)
-        dr = max(0.0, dr - dr * min(1.0, pre['pen']))
+        dr = _stat.def_rate_pen(_stat.def_rate(b.def_stat(v)), pre['pen'])
         return max(1.0, math.floor(pre['base'] * R.BASE_MULT * (1 - dr) * b.rand(pre['side']) * b.pen[pre['side']]))
 
     def _ensure_belgras_eff(self):

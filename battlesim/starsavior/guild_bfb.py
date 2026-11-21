@@ -22,6 +22,7 @@ import json
 import math
 
 from .. import datafile
+from .. import statcalc as _stat
 from .controller import BaseController
 from .data import SRC
 from .foe_base import FoeBase, make_skill
@@ -511,15 +512,17 @@ class Controller(BaseController):
         self._chain(boss, boss, bq['selfChainHp'] / 10000, None)     # 보스가 자기에게 주는 연쇄: 아군 딜로 세지 않음(영상 전투 통계 합계 대조, work/guild_defense/dmg_split.md)
 
     def _chain(self, owner, v, coef, credit):
-        """연쇄 피해: mc.Battle.chain 과 같은 식(시전자 최대 생명력 x 계수 x 피해 증가 x 1.85 x 방어 감소 x 난수 x 전투력 보정)"""
+        """연쇄 피해: mc.Battle.chain 과 같은 식(시전자 최대 생명력 x 계수 x 피해 증가 x 1.85 x 방어 감소 x 난수 x 전투력 보정)
+
+        정본(mc.Battle._chain_amount + _apply_chain_amount)과 다른 점: 같은 편이면 관통·전투력 보정을 뺌, 수호 분담·chain_round 없음,
+        credit 으로 피해 귀속을 바꿈, BASE_MULT 를 floor 안 같은 곱에 둠(코스모 _chain_hit 와 곱 순서 다름). 통합(설계 B3-b)은 하지 않음."""
         from .. import rules as R
         b = self.b
         m = owner.mods()
-        de = b.def_stat(v)
-        dr = de / (de + R.DEF_K)
+        dr = _stat.def_rate(b.def_stat(v))
         inc, pen = m['inc'], 1.0          # 시전자 피해 증가는 대상 진영과 무관하게 반영(NKM 5605 연쇄 피해 계산) — 부케 보스 자해에도
         if v.side != owner.side:
-            dr = max(0.0, dr - dr * min(1.0, m['pen']))
+            dr = _stat.def_rate_pen(dr, m['pen'])
             pen = b.pen[owner.side]
         dmg = max(1.0, math.floor(owner.maxhp * coef * (1 + inc) * R.BASE_MULT * (1 - dr) * b.rand(owner.side) * pen))
         b.log(chain=owner.name, to=v.name, dmg=dmg)

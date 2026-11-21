@@ -327,10 +327,9 @@ class Sim:
                     pen = clamp(src.mods()['pen'])
                     ea = self.opts['enemy_element'] if e.element is None else e.element
                     if ea and src.element:
-                        if ELEM_BEATS.get(src.element) == ea:
-                            inc += 0.05
-                        elif ELEM_LOSES.get(src.element) == ea:
-                            inc -= 0.05
+                        adv = _stat.elem_adv(src.element, ea)
+                        if adv:
+                            inc += adv
                 dmg = base * self._damage_mult(inc, dec) * part['stacks'] * (1 - self.dr(e, pen))
                 self.hurt(e, dmg, part['src'], 'dot', hit=0.0)
         if e.dead:
@@ -364,9 +363,8 @@ class Sim:
             a.forced_coop = 0.0
 
     def dr(self, e, pen):
-        de = e.def_eff()
-        dr = de / (de + DEF_K)
-        dr -= dr * clamp(pen)
+        dr = _stat.def_rate(e.def_eff())
+        dr -= dr * clamp(pen)              # clamp = 0~1(하한도 자름) — statcalc.def_rate_pen 과 달라 그대로
         return max(0.0, dr)
 
     def hurt(self, e, dmg, src, kind, hit=1.0):
@@ -693,10 +691,9 @@ class Sim:
             inc = ctx.inc + m['inc'] + m['inc_slot'].get(sk.slot, 0.0) + m['inc_vs'].get(e.element, 0.0)
             ea = self.opts['enemy_element'] if e.element is None else e.element
             if ea and d.element:
-                if ELEM_BEATS.get(d.element) == ea:
-                    inc += 0.05
-                elif ELEM_LOSES.get(d.element) == ea:
-                    inc -= 0.05
+                adv = _stat.elem_adv(d.element, ea)
+                if adv:
+                    inc += adv
             dec = 0.0
             if self.opts['dmg_reduction'] == 'sum_cap':
                 # 감소 합: 대상 약화(전체/단일·슬롯별) - 브레이크 15%p. 상한은 _damage_mult에서.
@@ -1213,10 +1210,9 @@ class Sim:
         a = hit - e.resist_eff()
         ea = self.opts['enemy_element'] if e.element is None else e.element
         if ea and owner.element:
-            if ELEM_BEATS.get(owner.element) == ea:
-                a += ELEM_HIT
-            elif ELEM_LOSES.get(owner.element) == ea:
-                a -= ELEM_HIT
+            adv = _stat.elem_adv(owner.element, ea, ELEM_HIT)
+            if adv:
+                a += adv
         return calc_hit(a, 0.0 - e.abs_resist)
 
 # ------------------------------------------------------------------ 더미(개인 지표용 파트너, 합성 딜러)

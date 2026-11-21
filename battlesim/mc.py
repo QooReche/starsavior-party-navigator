@@ -1627,8 +1627,7 @@ class Battle:
 
     def _break_dmg(self, v, base):
         """파티 광역 피해: 공격자·치명·증가 합·피격/강인도 처리 없는 final_dmg 축약판."""
-        de = self.def_stat(v)
-        dr = de / (de + _rules.DEF_K)
+        dr = _stat.def_rate(self.def_stat(v))
         if self.mc['break_skill_reduce'] == 'client':
             dec = 0.0       # 오비탈은 유닛이 아니라 피해 감소 항(전체·역할·브레이크 등)이 모두 0(NKM:17773,18028-18033,18078-18083)
         else:
@@ -3302,18 +3301,15 @@ class Battle:
         m = a.mods()
         vm = v.mods()
         local_def = hctx.local[v]['defp'] if hctx is not None and hctx.local is not None else 0.0
-        de = self.def_stat(v, local_def)
-        dr = de / (de + _rules.DEF_K)
-        dr = max(0.0, dr - dr * pen)
+        dr = _stat.def_rate_pen(_stat.def_rate(self.def_stat(v, local_def)), pen, cap=False)
         inc = ctx.inc + ctx.local_by[v]['inc'] + m['inc'] + m['inc_slot'].get(sk.slot, 0.0) + m['inc_vs'].get(v.element, 0.0)
         inc += m['inc_aoe'] if sk.all else m['inc_single']
         role_inc, role_red = self._role_damage_terms(a, v, ctx)
         inc += role_inc
         if a.element and v.element:
-            if ELEM_BEATS.get(a.element) == v.element:
-                inc += 0.05
-            elif ELEM_LOSES.get(a.element) == v.element:
-                inc -= 0.05
+            adv = _stat.elem_adv(a.element, v.element)
+            if adv:
+                inc += adv
         if v.last_slot is not None and v.last_slot == sk.slot:
             inc += self.mc['counter_inc']
         if v.broken:
@@ -3649,8 +3645,7 @@ class Battle:
             x.hit_evaded = False
             self.rule_hits['dot_hit_result'] += 1
         def amount():
-            de = self.def_stat(x)
-            return max(1.0, math.floor((self.atk_stat(owner) + owner.maxhp * 10.0) * (1 - de / (de + _rules.DEF_K))))
+            return max(1.0, math.floor((self.atk_stat(owner) + owner.maxhp * 10.0) * (1 - _stat.def_rate(self.def_stat(x)))))
 
         def stat(value):
             # 게임 통계: 즉시 피해는 대상이 시전자 자신이 아니고 피해 적용 뒤 살아 있을 때만(NKM:8131-8135, OBF_14168 = HP>0·사망 상태 아님 2083-2088)
@@ -4093,16 +4088,14 @@ class Battle:
                             if v.broken:
                                 inc += sm['inc_break']
                                 dec -= _rules.BREAK_DEC
-                            de = self.def_stat(v)
-                            dr = de / (de + _rules.DEF_K)
+                            dr = _stat.def_rate(self.def_stat(v))
                             if dot_client:
                                 # NKM:17314,17786-17816: 방어율 관통(시전자 방어 관통) / NKM:17545-17561,17918-17922: 상성 ±5%
-                                dr = max(0.0, dr - dr * min(1.0, sm['pen']))
+                                dr = _stat.def_rate_pen(dr, sm['pen'])
                                 if src.element and v.element:
-                                    if ELEM_BEATS.get(src.element) == v.element:
-                                        inc += 0.05
-                                    elif ELEM_LOSES.get(src.element) == v.element:
-                                        inc -= 0.05
+                                    adv = _stat.elem_adv(src.element, v.element)
+                                    if adv:
+                                        inc += adv
                                 self.rule_hits['dot_client'] += 1
                             mult = self._damage_mult(inc, dec)
                             return max(1.0, math.floor(b * mult * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
@@ -5742,20 +5735,18 @@ class Battle:
         if true:
             dmg = max(1, math.floor((b0 - share_base) * self.pen[owner.side]))
         else:
-            de = self.def_stat(v)
-            dr = de / (de + _rules.DEF_K)
+            dr = _stat.def_rate(self.def_stat(v))
             if self.mc['chain_pen'] != 'client':
-                dr = max(0.0, dr - dr * min(1.0, penetration))
+                dr = _stat.def_rate_pen(dr, penetration)
             dmg = max(1.0, math.floor((b0 - share_base) * (1 - dr) * self.rand(owner.side) * self.pen[owner.side]))
         self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
         if guard is not None and share_base >= 1.0 and not guard.dead:
             if true:
                 gdmg = max(1, math.floor(share_base * self.pen[owner.side]))
             else:
-                gde = self.def_stat(guard)
-                gdr = gde / (gde + _rules.DEF_K)
+                gdr = _stat.def_rate(self.def_stat(guard))
                 if self.mc['chain_pen'] != 'client':
-                    gdr = max(0.0, gdr - gdr * min(1.0, penetration))
+                    gdr = _stat.def_rate_pen(gdr, penetration)
                 gdmg = max(1.0, math.floor(share_base * (1 - gdr) * self.rand(owner.side) * self.pen[owner.side]))
             self.log(guard=guard.name, protects=v.name, dmg=gdmg)
             self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True, stat='taken')
@@ -5786,10 +5777,9 @@ class Battle:
         xm = x.mods()
         a = hit - (x.d.stats.get('er', 0) / 10000.0 + xm['er'])
         if owner.element and x.element:
-            if ELEM_BEATS.get(owner.element) == x.element:
-                a += _rules.ELEM_HIT
-            elif ELEM_LOSES.get(owner.element) == x.element:
-                a -= _rules.ELEM_HIT
+            adv = _stat.elem_adv(owner.element, x.element, _rules.ELEM_HIT)
+            if adv:
+                a += adv
         b = 0.0 - (x.d.stats.get('der', 0) / 10000.0 + xm['der'])
         if self.mc['abs_hit_terms'] == 'client':
             # 클라 OBF_23872(NKM:20255-20302): 절대값 = 시전자 절대 적중 - (대상 절대 저항 + 역상성일 때 대상 역상성 절대 저항).

@@ -11,6 +11,29 @@
 """
 import math
 
+from .rules import DEF_K, ELEM_BEATS, ELEM_LOSES
+
+
+# ------------------------------------------------------------------ 피해식 조각(설계 fable_unify B1·B2) — 연산 순서를 옮겨 온 그대로
+def def_rate(de):
+    """방어율 = 방어 / (방어 + DEF_K)."""
+    return de / (de + DEF_K)
+
+
+def def_rate_pen(dr, pen, cap=True):
+    """관통 뒤 방어율 max(0, dr - dr x pen). cap=True 면 pen 을 1 로 자른다(min(1, pen)) — 일반 피해식(mc.final_dmg)만 cap=False
+    (호출부가 이미 min(1, pen + 추가) 로 잘라 넘김)."""
+    return max(0.0, dr - dr * (min(1.0, pen) if cap else pen))
+
+
+def elem_adv(a_el, v_el, step=0.05):
+    """속성 상성: a 가 v 를 이기면 +step, 지면 -step, 아니면 0. 원소 None 가드는 호출부 몫(None 끼리 비교하면 «이김»이 됨)."""
+    if ELEM_BEATS.get(a_el) == v_el:
+        return step
+    if ELEM_LOSES.get(a_el) == v_el:
+        return -step
+    return 0.0
+
 
 def rate3(r):
     """3단(버프) 비율: 만분율 정수 합 x 0.0001(NKM:18892-18897)."""
