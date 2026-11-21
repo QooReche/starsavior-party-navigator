@@ -175,9 +175,12 @@ SAMPLES = {
     # 판 2: 패배(전멸), TURN 34, 달성도 52%, 보스 HP T34 333,466, 보스 격파 BREAK T12·스타피어서 T13. 준 / 받은: 프로페서M 161,755/134,532 · 아세라 47,134/170,369 · 세레스 179,376/122,786 · 클레어 240,702/117,810, 아세라 회복 81,578(다른 구원자 회복은 판독 기록 없음)
     # 팀 전투력은 영상에 없음 -> 내 정보 전용(MYINFO_ONLY). 표준 육성은 세레스 고유 패시브를 최대 단계로 계산해 행동 순서가 어긋남(docs/HISTORY.md 2026-11-18)
     'op4136-b': ('op', '해식 동굴|SECTOR 41-36', ['ceres', 'waltz-asherah', 'professor-m', 'claire'], 'waltz-asherah', None, 0, 628967, 545497, 34, 'fail'),
+    # 2026-11-21 영상(작전 SECTOR 42-12 NOA 중앙지구, 어려움 II, 오토, 전원 Lv.363, 사이트 자동 추천 1안 그대로, 스타피어서 Lv.4, 재점화 0(사용자 확인)): 프로페서M(후)·프레이(전, 왕관 리더)·아세라(전, 왈츠 오브 스타라이트)·그웬(후)
+    # 패배, TURN 37, 보스(공허선도자) HP 약 50%대 잔존. 준 / 받은 / 회복: 프로페서M 231,957/142,355/0 · 프레이 2,681/218,706/133,099 · 아세라 17,488/155,995/63,232 · 그웬 225,754/162,448/0. 사이트 예측은 클리어 23%·약 43턴
+    'op4212': ('op', 'NOA 중앙지구|SECTOR 42-12', ['professor-m', 'frey', 'waltz-asherah', 'gwen'], 'frey', None, 0, 477880, 679504, 37, 'fail'),
 }
 # 팀 전투력 실측이 없어 표준 육성 경로로 못 돌리는 샘플 — --myinfo 가 있을 때만 돈다(전체 실행에서는 건너뜀)
-MYINFO_ONLY = {'op4136-b'}
+MYINFO_ONLY = {'op4136-b', 'op4212'}
 # 보스 잔여 HP·달성도 같은 부가 실측:SAMPLES 튜플에는 못 넣고(형식 고정) 여기에 둔다 — 도구가 출력에 real_extra 로 붙인다
 REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, rekindle=0, boss_breaks=3, cube_overload_uses=3),
               '18x2-b': dict(achieve=1.0, boss_left_hp=0, heal=0, boss_hp_start=652064, rekindle=0, boss_breaks=3, cube_overload_uses=3),
@@ -193,6 +196,7 @@ REAL_EXTRA = {'18x2-a': dict(boss_left_hp=32482, heal=0, boss_hp_start=652064, r
               'op3933': dict(achieve=1.0, boss_left_hp=0, heal=939819, rekindle=0, boss_breaks=2, cube_overload_uses=2),
               'op403': dict(achieve=0.81, boss_left_hp=175303, rekindle=0),
               'op4136-b': dict(achieve=0.52, boss_left_hp=333466, boss_hp_start=860270, asherah_heal=81578, rekindle=0, boss_break_turn=12, break_skill_turn=13),
+              'op4212': dict(rekindle=0, boss_hp_start=854550, break_skill_turns=(21, 23, 23, 21, 23)),
               'eq3019': dict(achieve=1.0, boss_left_hp=0, heal=300735),
               'eq3119': dict(achieve=1.0, boss_left_hp=0, heal=709909),
               'eq3219': dict(achieve=0.71, heal=246645),
@@ -217,7 +221,7 @@ BS_REAL = {'37-36r': ('행성 정화', 3), '37-36r2': ('행성 정화', 3), '17x
            'op3736c-a': ('큐브 과부하', 6), 'op3736c-b': ('큐브 과부하', 6),
            'op3736d-a': ('큐브 과부하', 6), 'op3736d-b': ('큐브 과부하', 6),
            'op3836-b': ('큐브 과부하', 6), 'op3933': ('큐브 과부하', 6), 'op403': ('큐브 과부하', 6), 'eq3019': ('스타피어서', 4), 'eq3119': ('큐브 과부하', 6), 'eq3219': ('큐브 과부하', 6), 'eq1113': ('큐브 과부하', 6), 'clo450': ('큐브 과부하', 6),
-           'op4136-b': ('스타피어서', 4)}
+           'op4136-b': ('스타피어서', 4), 'op4212': ('스타피어서', 4)}
 NOVA_POLICY = {name: ('heal' if name == '36-36' else 'auto') for name in SAMPLES}
 
 from tools.runtime import low_priority
