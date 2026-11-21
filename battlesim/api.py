@@ -325,6 +325,9 @@ def assumptions_used(mc, opts):
         r = RULES['opts'].get(k, {})
         if r.get('grade') in ASSUMPTION_GRADES:
             out.append(dict(rule='opts.' + k, value=opts.get(k), grade=r.get('grade'), note=r.get('note')))
+        elif k == 'nova_policy' and opts.get(k) not in (None, r.get('value')):
+            # 클라 확정은 오토(auto)뿐. manual/heal은 사람 운영 대체 정책이라 고르면 가정으로 보고한다.
+            out.append(dict(rule='opts.' + k, value=opts.get(k), grade='assumed', note=r.get('note')))
     # Do not label already connected growth (favor/tactics/star-link/potentials)
     # as absent. Missing account inputs have their own myinfo diagnostics.
     for key, note in (

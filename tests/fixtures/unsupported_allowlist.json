@@ -96,12 +96,6 @@
         "owner": "엔진 규칙 유지보수"
       },
       {
-        "key": "[\"rule\",\"opts.nova_policy\"]",
-        "reason": "클라 확정 불가(운영 정책): NKM:7087–7113은 오토 스킬 선택,17064–17096은 노바 조작 상태임. manual/heal의 ‘다음 공격/회복에 예약’은 사람 운영 대체 정책임. 기본 auto와 기존 대안 유지",
-        "client_clue": "PC 26752678 직접 조사: NKM:7087–7113은 오토 스킬 선택,17064–17096은 노바 조작 상태임. manual/heal의 ‘다음 공격/회복에 예약’은 사람 운영 대체 정책임. 기본 auto와 기존 대안 유지; docs/allowlist_rules_1121.md",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
         "key": "[\"score_conf\",\"추정\"]",
         "reason": "최종 서버 합산·반올림 식이 없어 score_conf=추정을 유지함. HUD 일치만으로 확정 등급을 올리지 않음.",
         "client_clue": "PC 26752678 직접 조사: NKM:17373 HUD 식; Star.Templets:9374–9376 점수 표 필드; NKC:102759–102794 서버 결과 패킷 표시. 최종 합산 식은 이 경로에 없음; docs/allowlist_rules_1121.md",
