@@ -20,6 +20,7 @@
 
 - **벨그라스 허용 목록 정리(11/21)**: 일반 스테이지의 궁극기 자기 피해 50줄·적 행동 시작 표지 1줄을 PC 26752678로 연결하고 광역 침식 감소 반복도 복원했음. 영역 E의 담당 51건을 해소했고 담당 밖 키는 그대로임. 규칙은 `battlesim/rules/default.json`의 `belgras_stage_se`, 근거·시험·표준 육성 결과는 `docs/allowlist_belgras_1121.md`가 정본임.
 - **브레이크 허용 목록 2건(11/21)**: PC 26752678의 회복 템플릿·광역 수호 누적·팀 노바·예약 피해 분담을 추적했음. 큐브 생존자 회복·브레이크 수호를 고치고 예약 피해 분담을 기본으로 켰으며 개인 노바는 legacy 대안으로 구분함. 담당 두 키만 허용 목록에서 제거했음. 규칙 기본값은 `battlesim/rules/default.json`, 근거·시험·표준 육성/통제 입력 영향은 `docs/allowlist_break_1121.md`가 정본임.
+- **규칙 허용 목록 D 감사(브레이크 제외)**: PC 26752678과 일치하는 비공개 `decompiled/`로 30건을 조사했음. 판정·남긴 사유·근거·영향은 `docs/allowlist_rules_1121.md`, 목록은 `tests/fixtures/unsupported_allowlist.json`이 정본임. 웨이브·부활·소환·시전자 사망 규칙을 고쳤으며 기본값·legacy는 `battlesim/rules/default.json` 참조. 비활성 옛 옵션은 선택한 경로에 따라 가정으로 보고함.
 
 - **그웬 시험 타이밍**: `tests/e2e/test_gwen_ux.py`의 reduced-motion idle 검사는 가상 시간을 정지하고 전환·이미지·클릭 반응·복귀 상태를 기다림. 호스트 부하가 짧은 반응 수명을 소비하지 않게 했음. 화면 코드 변경 없음. 단독 반복·변이 검증 결과는 HISTORY 참조.
 

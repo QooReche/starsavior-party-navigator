@@ -339,7 +339,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
     'enemy_leader', 'enemy_same_formula', 'enemy_spawn', 'evade_model',
     'foe_auto', 'foe_react', 'foe_react_buff_count', 'foe_react_timing', 'gauge_conditional', 'guild_boss', 'guild_count', 'gauge_overflow', 'guard_mode', 'guard_normal_hit',
-    'heal_target', 'instant_damage', 'leader_speed', 'level_buff_decrease', 'local_vs_element', 'role_damage_terms', 'manual_burst',
+    'heal_target', 'instant_damage', 'leader_speed', 'level_buff_decrease', 'local_vs_element', 'role_damage_terms', 'manual_burst', 'caster_death',
     'max_depth', 'max_events', 'myinfo_combat', 'myinfo_potential_coverage',
     'nova_force_effects', 'nova_skill_gain', 'nova_slot_effects', 'nova_force_cap',
     'power_penalty', 'preemptive_defense', 'rand_range', 'reaction_timing', 'revenge',
@@ -357,7 +357,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     # 2026-11-14 클라 대조(해제·면역 16건)
     'dispel_shield', 'dispel_instance', 'dispel_order', 'dispel_evade', 'sleep_wake', 'dispel_attack_names', 'debuff_ban_flag', 'gauge_cd_immune', 'gauge_up_immune', 'cc_immune_buff', 'immune_group_resist', 'abs_hit_terms', 'nullifier_count', 'se_force_apply', 'bskill_nullify', 'evade_ignore_resist', 'dot_hit_result',
 ])
-_NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'break_skill_model', 'random_buff_draw'})
+_NOTE_KEYS = frozenset({'enemy_skill_ai', 'break_skill_model', 'random_buff_draw'})
 
 
 def test_mc_note_not_in_opts():

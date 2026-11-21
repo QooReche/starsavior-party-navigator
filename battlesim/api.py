@@ -302,21 +302,32 @@ ASSUMPTION_GRADES = frozenset(('assumed', 'community', 'video', 'user', 'inferen
 def assumptions_used(mc, opts):
     """선택된 규칙 중 가정·관찰 등급만(값 포함). 실제 분기 발동 횟수는 아님."""
     out = []
+    # These alternatives are unreachable under the selected parent rule. Keep
+    # their assumed grade (and report them when explicitly selected), rather
+    # than relabeling the old approximation as client-confirmed.
+    inactive = set()
+    if mc.get('enemy_spawn') == 'data':
+        inactive.update(('enemy_init_cd', 'enemy_init_cd_special'))
+    if mc.get('enemy_auto_target') == 'table':
+        inactive.update(('target_row_weight', 'target_defender_mult', 'target_mode'))
+    if opts.get('nova_policy') != 'manual':
+        inactive.add('manual_burst')
     for k, v in MC_RULES.items():
-        if v.get('grade') in ASSUMPTION_GRADES:
+        if k not in inactive and v.get('grade') in ASSUMPTION_GRADES:
             # note 키는 MC_OPTS 에 없으므로 규칙 기본값으로 채워 출력 목록 유지
             out.append(dict(rule='mc.' + k, value=mc.get(k, v.get('value')), grade=v.get('grade'), note=v.get('note')))
     for k, v in RULES['mc'].get('break_skills', {}).items():
         if v.get('grade') in ASSUMPTION_GRADES:
             out.append(dict(rule='mc.break_skills.' + k, value=mc['break_skills'].get(k), grade=v.get('grade'), note=v.get('note')))
-    for k in ('coop_trigger', 'coop_single', 'coop_order', 'coop_dead_target', 'nova_policy', 'nova_pool', 'forced_coop_target', 'init_cd_frac'):
+    # init_cd_frac belongs to engine.Sim only; this API always runs mc.Battle.
+    for k in ('coop_trigger', 'coop_single', 'coop_order', 'coop_dead_target', 'nova_policy', 'nova_pool', 'forced_coop_target'):
         r = RULES['opts'].get(k, {})
         if r.get('grade') in ASSUMPTION_GRADES:
             out.append(dict(rule='opts.' + k, value=opts.get(k), grade=r.get('grade'), note=r.get('note')))
     out.append(dict(rule='model.not_modeled', value=None, grade='assumed',
-                    note='표에 없는 「피해 제한」 효과(실행 전 검사에서 중요 미지원으로 표시), '
-                         '노바 버스트 슬롯 효과(+15% 외), 일반 잠재력(감각·솜씨)·전술 분석·호감도, 시즌 보너스, Lv200 초과 성장, '
-                         '연쇄 피해의 「턴 끝에 발생」 시점'))
+                    note='공개 정의에 연결되지 않은 효과·성장 입력, 시즌 서버 값, 연쇄 피해의 턴 끝 시점은 전수 대응 미확인. '
+                         '지원한 노바 슬롯·잠재력·피해 제한까지 모두 미지원이라는 뜻은 아님. '
+                         '실행별 미지원은 unsupported, 26752678 조사 범위는 docs/allowlist_rules_1121.md 참조'))
     return out
 
 

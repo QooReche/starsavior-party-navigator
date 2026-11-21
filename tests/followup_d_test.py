@@ -43,8 +43,8 @@ class FollowupTest(unittest.TestCase):
         for key, value, legacy in [('wave_extra_turn', 'clear', 'keep'),
                                   ('turn_start_order', 'client', 'dot_first'),
                                   ('guard_skip_immune', 'client', 'off'),
-                                  ('wave_foe_battle_start', 'all', 'all'),
-                                  ('revive_after_spawn', 'off', 'off'),
+                                  ('wave_foe_battle_start', 'after_spawn_only', 'all'),
+                                  ('revive_after_spawn', 'client', 'off'),
                                   ('dead_keep_dnp', 'client', 'off'),   # 11/14 기본 client 전환
                                   ('add_damage_guard', 'client', 'off'),
                                   ('stat_select_int', 'floor', 'float')]:

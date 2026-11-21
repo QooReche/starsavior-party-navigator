@@ -5,7 +5,7 @@
   예외(11/15): 행동 게이지(turn_gauge=client)는 battlesim/gauge.py 공통 식을 두 엔진이 같이 쓴다.
 - 같은 줄 파서(parser.Line)·스킬(Skill)·스탯(calc_stats)·효과 적중 판정(engine.calc_hit)·피해식 상수(rules)를 쓴다.
 - 치명·효과 적중·확률 효과·협공·대상 선택·피해 난수를 실제로 굴린다. 중첩은 정수.
-- 시간: 시뮬 틱(게이지) / 개체별 행동 횟수(Unit.actions) / 「모델 기준 턴」 = 틱 / turn_ticks(100). 턴 제한은 모델 기준 턴으로 비교.
+- 시간: 시뮬 틱(게이지) / 개체별 행동 횟수(Unit.actions) / 「모델 기준 턴」 = 틱 / turn_ticks(100). 기본 턴 제한은 전역 행동 수, max_turns 안전 상한·legacy 제한은 모델 시간으로 비교.
 - 이벤트 한도 초과는 EventLimitError(정상 결과를 돌려주지 않는다).
 P3 규칙 값은 rules/default.json 의 "mc" 절(MC_OPTS)."""
 import copy
@@ -598,26 +598,8 @@ class Unit:
         self.sd = {}                             # 서든데스 단계 효과(전투 효과 층, 버프 아님 — 정화·약화 개수에 안 잡힘)
         self.gauge = 0.0
         self.eff = {}
-        self.cd = {}
         self.skill_overrides = {}    # 코스모 BI_CHANGE_SKILL의 판별 슬롯 상태(공유 FoeDef는 불변).
-        frac = b.mc['enemy_init_cd'] if side == 1 else b.mc['ally_init_cd']
-        # 적 시작 쿨: 배치 표시(게임 코드 — AllSkillAvailable 이면 전부 0, 아니면 전부 가득, Special/Hyper 는 그 스킬만 0).
-        # 표시가 없는 스테이지는 등급 규칙(보스 S, 그 밖 A — 배치 2만여 기 중 95% 가 이 꼴). legacy = 옛 규칙(enemy_init_cd*)
-        code = None
-        if side == 1 and b.mc.get('enemy_spawn', 'data') == 'data':
-            code = getattr(d, 'spawn', None) or ('S' if getattr(d, 'boss', False) else 'A')
-        for slot, sk in d.skills.items():
-            if code is not None:
-                zero = code == 'A' or (slot == '특수기' and code in 'SB') or (slot == '궁극기' and code in 'HB')
-                f = 0.0 if zero else 1.0
-            else:
-                f = b.mc['enemy_init_cd_special'] if side == 1 and slot == '특수기' else frac
-            self.cd[slot] = (sk.cd * f) if sk.cd else 0
-            # legacy 근사에서만 시작 감소를 보완하는 +1을 적용함.
-            # 적의 고유 턴 종료 방식은 표시된 쿨타임을 그대로 저장함.
-            if (side == 1 and self.cd[slot] > 0 and b.mc['enemy_cd_tick'] == 'turn_end'
-                    and not b.mc['enemy_cd_native']):
-                self.cd[slot] += 1
+        self.reset_initial_cooldowns()
         self.dead = False
         self.slot = None             # 게임 팀 칸(적 0~4, 소환 추적용). None = 추적 안 함
         self.summoned = False        # 소환으로 생성된 유닛
@@ -654,6 +636,28 @@ class Unit:
         self.breaks = 0
         self.zero_stats = False      # 길방 BFB 〈들러리〉: 공격력·방어력·속도 0 고정, 행동 게이지 증가 무효(guild_bfb, mc.guild_boss=on 일 때만 켜짐)
         self._m = None
+
+    def reset_initial_cooldowns(self):
+        d, side, b = self.d, self.side, self.b
+        self.cd = {}
+        frac = b.mc['enemy_init_cd'] if side == 1 else b.mc['ally_init_cd']
+        # AllSkillAvailable clears all; Special/Hyper flags clear that slot.
+        # Missing spawn records keep the existing boss S / ordinary A fallback.
+        code = None
+        if side == 1 and b.mc.get('enemy_spawn', 'data') == 'data':
+            code = getattr(d, 'spawn', None) or ('S' if getattr(d, 'boss', False) else 'A')
+        for slot, original in d.skills.items():
+            # NKM:2389-2407,2467-2469 reads the CURRENT skill after AFTER_SPAWN.
+            sk = self.skill_overrides.get(slot, original)
+            if code is not None:
+                zero = code == 'A' or (slot == '특수기' and code in 'SB') or (slot == '궁극기' and code in 'HB')
+                f = 0.0 if zero else 1.0
+            else:
+                f = b.mc['enemy_init_cd_special'] if side == 1 and slot == '특수기' else frac
+            self.cd[slot] = (sk.cd * f) if sk.cd else 0
+            if (side == 1 and self.cd[slot] > 0 and b.mc['enemy_cd_tick'] == 'turn_end'
+                    and not b.mc['enemy_cd_native']):
+                self.cd[slot] += 1
 
     @property
     def maxhp(self):
@@ -952,10 +956,10 @@ class Battle:
         self._revenged = None     # 이번 행동에서 이미 반격한 유닛(행동 전체 공유, NKM 7765~7800)
         self.revenges = [0, 0]    # 진영별 반격 횟수
         self.all_foes = []
-        # 소환 칸 추적(mc.summon=data 이고 웨이브에 소환 그룹이 있을 때만 활성)
+        # 소환 칸 추적(client=등장 이벤트, data=옛 시작 이벤트).
         self._foe_slots = None
         has_sm = any(hasattr(d, 'summon_groups') for w in waves for d in w)
-        if has_sm and self.mc.get('summon', 'data') == 'data':
+        if has_sm and self.mc.get('summon', 'client') in ('client', 'data'):
             self._foe_slots = [None] * 5
         self._cur_line = None    # 실행 중인 줄(자동 지정 대상 규칙을 그 스킬 설명에서 찾을 때 씀)
         self.once = set()        # {전투당 1회} 줄 사용 기록
@@ -2580,6 +2584,16 @@ class Battle:
                 self._expire_checks(skill=True)
             if self._has_belgras_stage and self.mc['belgras_stage_se'] == 'client':
                 belgras_se.expire_marker(self, ctx)
+            if self.mc['caster_death'] == 'client':
+                # 26752678 NKM:15825-15827,16017-16028,3968-3981.
+                # Clear only taunts whose caster no longer lives. Other effects
+                # on surviving recipients keep their own lifetime.
+                for holder in self.alive(0) + self.alive(1):
+                    taunt = holder.eff.get('도발')
+                    if taunt is not None and taunt.src is not None and taunt.src.dead:
+                        del holder.eff['도발']
+                        self.dirty(holder)
+                        self.rule_hits['caster_death'] += 1
             if ((u.side == 0 or (self.mc['foe_forced_coop'] == 'on'
                                 and any(b.side == u.side for b in self._forced_coop_candidates)))
                     and sk.is_attack and not extra and not u.dead
@@ -3650,8 +3664,8 @@ class Battle:
                     self.kill(other, a, cascade=False)
 
     def _do_summon(self, owner):
-        """소환 실행: owner.d.summon_groups 의 빈 칸에 유닛 생성(NKM 5174~5212, 1156~1171 빈 칸만).
-        시작 쿨 = Unit.__init__ 의 spawn 코드 재사용. 행동 게이지 0(assumed)."""
+        """26752678 NKM:1224-1238,1927-1985,3493-3498,5713-5754.
+        빈 칸에 생성·게이지 0·AFTER_SPAWN, 소환 표 쿨 적용. BATTLE/WAVE_START 없음."""
         groups = getattr(owner.d, 'summon_groups', None)
         if not groups or self._foe_slots is None:
             return
@@ -3669,12 +3683,23 @@ class Battle:
                 self._foe_slots[pos] = u
                 self.foes.append(u)
                 self.all_foes.append(u)
-                # 전투 시작 줄(패시브)은 소환 유닛에도 적용
+                if self.mc['summon'] == 'client':
+                    self.rule_hits['summon'] += 1
+                    # NKM:1887-1920 leaves the ordinary spawn record null.
+                    # 1235 runs AFTER_SPAWN with zero initial cooldowns, then
+                    # 1236/1966-1985 applies the summon-specific flags.
+                    u.cd = dict.fromkeys(u.cd, 0.0)
                 for ln in self.lines_of(u):
-                    if line_kind(ln) in ('battle_start', 'wave_start'):
+                    if self.mc['summon'] == 'client':
+                        active = ln.phase == '등장 후'
+                    else:
+                        active = line_kind(ln) in ('battle_start', 'wave_start')
+                    if active:
                         self.run_line(u, ln, Ctx(u, u, None))
                 if self.mc['buff_maxhp'] == 'on' and not u.dead:
                     u.hp = max(u.hp, u.maxhp)
+                if self.mc['summon'] == 'client':
+                    u.reset_initial_cooldowns()
                 self.log(summon=u.name, pos=pos, summoner=owner.name)
 
     def reaction_skills(self, v, a, sk, crit=False, evaded=False):
@@ -5124,7 +5149,7 @@ class Battle:
                         self.dirty(x)
                     self._restore_break_domain(x)
                     if self.mc['revive_after_spawn'] == 'client':
-                        # NKM:5395 -> 1218 -> 1959: 주입기 뒤 등장 후 SE, 그 뒤 부활 HP.
+                        # 26752678 NKM:5461 -> 1218 -> 1959: 주입기 뒤 등장 후 SE, 그 뒤 부활 HP.
                         for ln in self.lines_of(x):
                             if ln.phase == '등장 후':
                                 self.run_line(x, ln, Ctx(x, x, None))

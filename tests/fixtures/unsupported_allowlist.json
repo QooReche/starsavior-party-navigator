@@ -7,182 +7,98 @@
     "D": [
       {
         "key": "[\"cosmo_approx\",\"난이도 배율: 서버가 적용해 전송하고 클라는 표시만 함. 엔진 현행 능력치 x (1 + ScaleFactor/10000) 유지\"]",
-        "reason": "API가 공개하는 코스모 잔여 근사/서버 미확정 범위를 유지함: 난이도 배율: 서버가 적용해 전송하고 클라는 표시만 함. 엔진 현행 능력치 x (1 + ScaleFactor/10000) 유지",
-        "client_clue": "docs/engine_fix2_26752678.md 코스모 문구 정리의 NKM/NKC/Star.Templets 근거에서 확인된 부분과 서버 전용 부분을 나누어 재조사하기; 서버 최종 값은 클라만으로 확정 불가",
+        "reason": "클라 확정 불가: ST:13548–13556은 ScaleFactorAttack/Hp/Defence를 읽음. NKM:18811–18897은 전송된 능력치와 버프 층 계산임. 표를 읽는 것만으로 서버의 곱 순서·정수화를 증명할 수 없음",
+        "client_clue": "PC 26752678 직접 조사: ST:13548–13556은 ScaleFactorAttack/Hp/Defence를 읽음. NKM:18811–18897은 전송된 능력치와 버프 층 계산임. 표를 읽는 것만으로 서버의 곱 순서·정수화를 증명할 수 없음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"cosmo_approx\",\"시즌 버프: BCT 속성/직업 매핑은 클라 확인, 아군만 적용(PM 확정). 중도 소환물 적용은 미확인\"]",
-        "reason": "API가 공개하는 코스모 잔여 근사/서버 미확정 범위를 유지함: 시즌 버프: BCT 속성/직업 매핑은 클라 확인, 아군만 적용(PM 확정). 중도 소환물 적용은 미확인",
-        "client_clue": "docs/engine_fix2_26752678.md 코스모 문구 정리의 NKM/NKC/Star.Templets 근거에서 확인된 부분과 서버 전용 부분을 나누어 재조사하기; 서버 최종 값은 클라만으로 확정 불가",
+        "reason": "클라 확정 불가: ST:9181–9240,9368–9373은 BCT·BuffId와 표시용 연결, NT:32990–33013은 속성/직업 매핑. NKM:1932–1938의 등장 주입기는 있으나 코스모 시즌용 생성/진영 필터 전달 경로가 없음. 중도 소환물 적용·아군 한정은 새로 확정하지 않음",
+        "client_clue": "PC 26752678 직접 조사: ST:9181–9240,9368–9373은 BCT·BuffId와 표시용 연결, NT:32990–33013은 속성/직업 매핑. NKM:1932–1938의 등장 주입기는 있으나 코스모 시즌용 생성/진영 필터 전달 경로가 없음. 중도 소환물 적용·아군 한정은 새로 확정하지 않음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"cosmo_approx\",\"전투력 보정: 코스모에도 적용됨(클라 확인). 배율 산출과 기준 전투력 선택은 서버\"]",
-        "reason": "API가 공개하는 코스모 잔여 근사/서버 미확정 범위를 유지함: 전투력 보정: 코스모에도 적용됨(클라 확인). 배율 산출과 기준 전투력 선택은 서버",
-        "client_clue": "docs/engine_fix2_26752678.md 코스모 문구 정리의 NKM/NKC/Star.Templets 근거에서 확인된 부분과 서버 전용 부분을 나누어 재조사하기; 서버 최종 값은 클라만으로 확정 불가",
+        "reason": "클라 확정 불가: NKM:479–482가 양 팀 배율을 입력받아18369–18426에서 적용함. NKC:83210–83224는 경고 표시임. 서버의 배율 산출과 기준 전투력 선택은 없음",
+        "client_clue": "PC 26752678 직접 조사: NKM:479–482가 양 팀 배율을 입력받아18369–18426에서 적용함. NKC:83210–83224는 경고 표시임. 서버의 배율 산출과 기준 전투력 선택은 없음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"cosmo_approx\",\"점수: HUD 식·반/처치 달성 판정은 클라 확인. 생존 점수는 서버 전용. 최종 합산·배율 반올림은 추정\"]",
-        "reason": "API가 공개하는 코스모 잔여 근사/서버 미확정 범위를 유지함: 점수: HUD 식·반/처치 달성 판정은 클라 확인. 생존 점수는 서버 전용. 최종 합산·배율 반올림은 추정",
-        "client_clue": "docs/engine_fix2_26752678.md 코스모 문구 정리의 NKM/NKC/Star.Templets 근거에서 확인된 부분과 서버 전용 부분을 나누어 재조사하기; 서버 최종 값은 클라만으로 확정 불가",
+        "reason": "클라 확정 불가: NKM:17373 HUD 식과 ST:9374–9376의 세 점수 필드 확인. NKC:102759–102794는 결과 패킷 점수·반/처치 상태를 표시함. RemainingSaviorPoint 및 최종 합산·반올림의 서버 식 없음",
+        "client_clue": "PC 26752678 직접 조사: NKM:17373 HUD 식과 ST:9374–9376의 세 점수 필드 확인. NKC:102759–102794는 결과 패킷 점수·반/처치 상태를 표시함. RemainingSaviorPoint 및 최종 합산·반올림의 서버 식 없음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"mc.ally_init_cd\"]",
-        "reason": "클라 로컬 초기화는 0을 지지하지만 실전 서버의 덱 쿨 설정은 미확인이라 user 등급을 유지함.",
-        "client_clue": "현재 미확정 범위 재조사: 사용자 인게임 확인 2026-10-21; static-data decompiled/NKM/NKM.decompiled.cs:1673,1838-1879,1927-1958,3431-3443,3467-3473,14372-14410; decompiled/NKC/NKC.decompiled.cs:26550-26568,551218-551239",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.caster_death\"]",
-        "reason": "시전자 사망 뒤 타인에게 준 효과의 잔존을 일괄 처리하는 가정임. 효과별 클라 수명 전수 대조가 필요함.",
-        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 사망/해제 수명 필드와 NKM 시전자 사망 시 타 유닛 버프 정리 경로를 효과별로 확인하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "reason": "클라 확정 불가: NKM:1838–1879,1940–1958,3457은 로컬 덱 쿨0을 지지함. 실제 덱 생성 호출은 이 NKM에 없고 14825는 개발용임. NKC:26569,26585–26602는 서버 쿨 배열 복사. 서버 덱의 초기값까지 확정할 수 없어 0 유지",
+        "client_clue": "PC 26752678 직접 조사: NKM:1838–1879,1940–1958,3457은 로컬 덱 쿨0을 지지함. 실제 덱 생성 호출은 이 NKM에 없고 14825는 개발용임. NKC:26569,26585–26602는 서버 쿨 배열 복사. 서버 덱의 초기값까지 확정할 수 없어 0 유지; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"mc.clash_no_turn_limit\"]",
-        "reason": "격전 의뢰 패배 턴 제한을 제거하는 현행 정책과 안전 상한을 유지함. 서버 제한값 입력은 미확인임.",
-        "client_clue": "현재 미확정 범위 재조사: docs/clash_handoff_1112.md 남은 일 2; build 26610546: static-data decompiled/NKM/NKM.decompiled.cs:538-560,638-668,768-803; decompiled/Star.Templets/Star.Templets.decompiled.cs:8115; 격전 BATTLE_TEMPLET_NORMAL 18행 LimitTurn 미지정",
+        "reason": "클라 확정 불가: NKM:437,447,768–803의 제한 목록/전역 제한값을 조사함. 이 클라 파일에서 서버 주입을 찾지 못했음. T/CLIENT_BATTLE_TEMPLET_NORMAL의 격전 18행 LimitTurn 미지정과 별 미션 턴 조건은 서버의 패배 제한 부재를 증명하지 않음",
+        "client_clue": "PC 26752678 직접 조사: NKM:437,447,768–803의 제한 목록/전역 제한값을 조사함. 이 클라 파일에서 서버 주입을 찾지 못했음. T/CLIENT_BATTLE_TEMPLET_NORMAL의 격전 18행 LimitTurn 미지정과 별 미션 턴 조건은 서버의 패배 제한 부재를 증명하지 않음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"mc.cosmo_raid_boss\"]",
-        "reason": "시즌 상태 기계의 부분 미확정 설명 규칙임. 서버 배율·소환물·옛 벨그라스 경계의 잔여 범위를 유지함.",
-        "client_clue": "현재 미확정 범위 재조사: data/cosmo_raid.json(빌드 26429597 표: RANKING_RAID 전투·DIFFICULTY_LEVEL_GROUP·BATTLE_EFFECT·BUFF·SKILL·SE 표); decompiled/NKM/NKM.decompiled.cs:15138-15203,15345-15397,15586-15603,15701-15745,4021-4028; tables/SE_TEMPLET_SKILL_2.json:35605-35645; tables/Plain/SKILL_CONDITION_TEMPLET.json:10501-10506",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.enemy_hit_buff_cmp\"]",
-        "reason": "일부 클라 조건의 이하 비교 근거가 있어도 현재 규칙 등급은 video임. 등급 정리 작업에서 적용 범위를 확인하기 전 보고를 유지함.",
-        "client_clue": "현재 미확정 범위 재조사: docs/enemy_cond_audit.md; static-data decompiled/NKM.Templets/NKM.Templets.decompiled.cs:42752,43328",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.enemy_init_cd\"]",
-        "reason": "영상 기반 적 궁극기 시작 쿨 가정임. enemy_spawn=data의 비활성 legacy 항목도 API 보고에서 임의 제외하지 않음.",
-        "client_clue": "현재 미확정 범위 재조사: youtube ChgzulK7VI4 15.5초·1aowou-SO0k 11초",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.enemy_init_cd_special\"]",
-        "reason": "영상 기반 적 특수기 시작 쿨 가정임. enemy_spawn=data의 비활성 legacy 항목도 API 보고에서 임의 제외하지 않음.",
-        "client_clue": "현재 미확정 범위 재조사: youtube ChgzulK7VI4 16.5초·1aowou-SO0k 12초",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.enemy_same_formula\"]",
-        "reason": "적 공격에 공통 피해식을 쓰는 모델의 전역 동등성은 아직 가정 등급이라 유지함.",
-        "client_clue": "현재 미확정 범위 재조사: databook 피해식은 양방향 서술(formulas_local.md 1.2)",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.enemy_skill_ai\"]",
-        "reason": "현재 API가 가정으로 보고하는 적 스킬 선택 설명 규칙임. 기본 경로에서 실제 참조되지 않는 항목도 관문에서 임의 제외하지 않음.",
-        "client_clue": "현재 미확정 범위 재조사: 설계 3절 표(실측 대상)",
+        "reason": "클라 확정 불가: NKM:479–482,1932–1938,18811–18897; ST:9368–9382. 기본 off/코스모 요청 on은 경로 선택이고 시즌 버프 주입·능력치 배율의 서버 산출까지 나타내는 항목이므로 포괄 code 승격하지 않음",
+        "client_clue": "PC 26752678 직접 조사: NKM:479–482,1932–1938,18811–18897; ST:9368–9382. 기본 off/코스모 요청 on은 경로 선택이고 시즌 버프 주입·능력치 배율의 서버 산출까지 나타내는 항목이므로 포괄 code 승격하지 않음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"mc.evade_model\"]",
-        "reason": "회피 기본 확률과 증감 모델의 남은 가정을 유지함. note의 선제 방어 미지원 문구는 낡았으며 그 문구를 새 미지원 판정으로 쓰지 않음.",
-        "client_clue": "미확정 조사 단서: CLIENT_CONST_TEMPLET 기본 명중/회피 값, NKM 명중·회피 판정과 NST_RATE 계열 증감 소비 경로를 대조하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "reason": "근거 못 찾음(입력 연결): NKM:8267–8286은 최종 HIT−EVADE와 ForceHit/ForceEvade 상쇄,18622–18628은 회피 감소50%를 확인함. T/CLIENT_BUFF_TEMPLET:6590–6622 BI_FORCEEVADE는 숨은 표지임. 현재 공개 정의로 이 표지와 모든 최종 명중/회피 스탯을 연결하는 근거가 없으며, 단순 보정값 차감 모델 전체를 확정하지 않음",
+        "client_clue": "PC 26752678 직접 조사: NKM:8267–8286은 최종 HIT−EVADE와 ForceHit/ForceEvade 상쇄,18622–18628은 회피 감소50%를 확인함. T/CLIENT_BUFF_TEMPLET:6590–6622 BI_FORCEEVADE는 숨은 표지임. 현재 공개 정의로 이 표지와 모든 최종 명중/회피 스탯을 연결하는 근거가 없으며, 단순 보정값 차감 모델 전체를 확정하지 않음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"mc.heal_target\"]",
-        "reason": "클라 자동 대상 연결이 없는 아군 단일 회복/버프의 설명문 폴백 가정이 남아 있음.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json AutoTargetId와 NKM 아군 생명력 비율·공격력 대상 필터를 설명문 폴백 줄마다 대조하기; docs/unsupported_26752678.md 남은 가정 목록",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.manual_burst\"]",
-        "reason": "오토 기본에서 비활성인 수동 노바 정책 가정임. API가 보고하는 legacy 선택 항목을 임의 제거하지 않음.",
-        "client_clue": "현재 미확정 범위 재조사: 설계 4-1절(수동 서순), P4 상세",
+        "reason": "근거 못 찾음(대상 연결): NKM:7132–7181,7572–7594,7605 이후 및 T/plain/AUTO_SKILL_TARGET_TEMPLET Id2 확인. 회복 규칙2는 스킬별 선택이지 모든 단일 아군 효과의 공통 규칙이 아님. line_spec이 없는 설명문 폴백의 원형 SE/AutoTargetId 연결을 전부 확보하지 못했음. 공격력 최대·첫 사망자 폴백을 클라 확정으로 바꾸지 않음",
+        "client_clue": "PC 26752678 직접 조사: NKM:7132–7181,7572–7594,7605 이후 및 T/plain/AUTO_SKILL_TARGET_TEMPLET Id2 확인. 회복 규칙2는 스킬별 선택이지 모든 단일 아군 효과의 공통 규칙이 아님. line_spec이 없는 설명문 폴백의 원형 SE/AutoTargetId 연결을 전부 확보하지 못했음. 공격력 최대·첫 사망자 폴백을 클라 확정으로 바꾸지 않음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"mc.max_depth\"]",
-        "reason": "연쇄 실행 깊이의 모델 안전 상한임. 초과 경로를 건너뛰고 runtime에 기록하는 현행을 유지함.",
-        "client_clue": "미확정 조사 단서: 클라 수치가 아닌 모델 안전 상한임. NKM 추가 발동/반응 재귀 제한 유무와 실제 초과 runtime 키의 원인을 먼저 조사하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "reason": "클라 확정 불가(안전 상한): NKM:13872–13879의 10은 다음 행동 유닛 재선택 깊이임. MC cast의 재귀 깊이4와 같은 상한이 아님. 4를 클라 값으로 바꾸지 않고 초과 진단 유지",
+        "client_clue": "PC 26752678 직접 조사: NKM:13872–13879의 10은 다음 행동 유닛 재선택 깊이임. MC cast의 재귀 깊이4와 같은 상한이 아님. 4를 클라 값으로 바꾸지 않고 초과 진단 유지; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"mc.max_events\"]",
-        "reason": "무한 실행을 막는 모델 안전 상한임. 클라 규칙으로 확정한 수치가 아니므로 가정 목록에 유지함.",
-        "client_clue": "미확정 조사 단서: 클라 수치가 아닌 모델 안전 상한임. NKM 전투 종료·반복 이벤트 차단 경로를 확인하고 EventLimitError 재현 원인을 조사하기; docs/unsupported_26752678.md 남은 가정 목록",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.revive_after_spawn\"]",
-        "reason": "부활 HP 대입과 등장 후 HP 조건부 효과 순서가 미확정이라 기본 off를 유지함.",
-        "client_clue": "현재 미확정 범위 재조사: static-data decompiled/NKM/NKM.decompiled.cs:1207-1221,1927-1964,5379-5407",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.summon\"]",
-        "reason": "소환 칸·쿨은 표를 쓰지만 시작 게이지 0과 소환물 처치까지의 웨이브 종료 조건은 가정이 남아 있음.",
-        "client_clue": "현재 미확정 범위 재조사: static-data decompiled/NKM/NKM.decompiled.cs:5640-5688,1224-1239,1887-1920,1966-1985; tables SUMMON_TEMPLET; foe.js sm",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.target_defender_mult\"]",
-        "reason": "옛 설명문 대상 선택의 디펜더 가중 가정임. 기본 table 경로에서 쓰이지 않는다는 이유로 숨기지 않음.",
-        "client_clue": "현재 미확정 범위 재조사: 나무위키·아카(수치 미상)",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.target_mode\"]",
-        "reason": "옛 가중 대상 선택 방식의 가정임. 기본 table 경로와 분리돼 있어도 API 보고를 유지함.",
-        "client_clue": "미확정 조사 단서: plain/AUTO_SKILL_TARGET_TEMPLET.json의 적 규칙 1001 및 NKM 순차 필터와 옛 weighted_pick 경로의 실제 사용 여부를 대조하기; docs/unsupported_26752678.md 남은 가정 목록",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.target_row_weight\"]",
-        "reason": "옛 설명문 대상 선택의 열 가중 가정임. 기본 table 대상 선택에서는 비활성이어도 API 보고를 유지함.",
-        "client_clue": "현재 미확정 범위 재조사: 나무위키(docs/research.md 1.1), formulas_web.md 4.3",
+        "reason": "클라 확정 불가(안전 상한): NKM:13872–13900 및15345–15470의 행동/예약 순회를 조사함. MC의 50,000개 이벤트 예산과 대응하는 클라 상수 없음. 초과 시 EventLimitError인 도구 보호 장치 유지",
+        "client_clue": "PC 26752678 직접 조사: NKM:13872–13900 및15345–15470의 행동/예약 순회를 조사함. MC의 50,000개 이벤트 예산과 대응하는 클라 상수 없음. 초과 시 EventLimitError인 도구 보호 장치 유지; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"mc.turn_ticks\"]",
-        "reason": "모델 시간 단위와 실제 게임 턴 카운터의 전역 동등성은 미확정임.",
-        "client_clue": "미확정 조사 단서: NKM 턴 카운터 증가·추가 턴/웨이브 전환과 NKC 턴 HUD 소비 경로를 모델 tick 제한과 대조하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "reason": "클라 확정 불가(모델 시간): NKM:13880–13883은 행동마다 전역 턴 증가임. MC turn_limit_unit=actions가 이미 이 단위를 사용함. 100틱은 max_turns 안전 지평선·legacy model 계산용이며 실제 게임 턴이라고 한 옛 설명을 정정함",
+        "client_clue": "PC 26752678 직접 조사: NKM:13880–13883은 행동마다 전역 턴 증가임. MC turn_limit_unit=actions가 이미 이 단위를 사용함. 100틱은 max_turns 안전 지평선·legacy model 계산용이며 실제 게임 턴이라고 한 옛 설명을 정정함; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"mc.unknown_cond\"]",
-        "reason": "미해석 조건 줄을 skip하고 진단하는 모델 정책임. 조건 전수 해석이 끝나지 않아 유지함.",
-        "client_clue": "미확정 조사 단서: runtime에 남은 condition 키를 CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json 조건 필드와 NKM 조건 평가기에 하나씩 연결하기; skip 자체는 모델 정책임; docs/unsupported_26752678.md 남은 가정 목록",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.wave_foe_battle_start\"]",
-        "reason": "후속 웨이브 전투 시작 줄의 설명문과 클라 SE 전수 대응이 미완료라 현행 all을 유지함.",
-        "client_clue": "현재 미확정 범위 재조사: static-data decompiled/NKM/NKM.decompiled.cs:1959,813-832,12829-12836",
+        "reason": "클라 확정 불가(파서 정책): NT:42260–42279,43318–43336과 NKM:7179–7207은 알려진 원형 조건을 판정함. MC가 모르는 한국어 조건을 건너뛰는 정책은 클라 규칙이 아님. 기본 skip·진단 유지, roll 대안은 클라 확정으로 승격하지 않음",
+        "client_clue": "PC 26752678 직접 조사: NT:42260–42279,43318–43336과 NKM:7179–7207은 알려진 원형 조건을 판정함. MC가 모르는 한국어 조건을 건너뛰는 정책은 클라 규칙이 아님. 기본 skip·진단 유지, roll 대안은 클라 확정으로 승격하지 않음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"model.not_modeled\"]",
-        "reason": "표에 없는 피해 제한·일부 노바 슬롯/성장/시즌 효과·연쇄 피해 턴 끝 시점의 포괄 미지원 안내를 유지함.",
-        "client_clue": "docs/unsupported_26752678.md 검증·남는 범위; API model.not_modeled 각 항목의 클라 표 존재와 NKM 실행 경로를 개별 확인하기",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"opts.init_cd_frac\"]",
-        "reason": "기대값 엔진의 시작 쿨 가정임. MC 분기 실행 추적이 아닌 선택 규칙 목록의 성격을 유지함.",
-        "client_clue": "미확정 조사 단서: 기대값 엔진 전용 상수임. CLIENT_SKILL_TEMPLET 쿨 값과 NKM 덱 생성/등장 시 쿨 초기화, 서버 전달 쿨의 적용 범위를 분리 확인하기; docs/unsupported_26752678.md 남은 가정 목록",
+        "reason": "근거 못 찾음(포괄 대응): NKM:17369–17414 점수/HUD,1932–1938 주입기,15825–15828 스킬 끝 정리를 대조함. 이 포괄 항목은 미연결 효과·성장 입력·시즌 서버 값·연쇄 피해 시점이 섞여 있음. 원표 행과 공개 정의의 전수 대응을 찾지 못한 범위를 명시하며 전체 지원이라고 지우지 않음",
+        "client_clue": "PC 26752678 직접 조사: NKM:17369–17414 점수/HUD,1932–1938 주입기,15825–15828 스킬 끝 정리를 대조함. 이 포괄 항목은 미연결 효과·성장 입력·시즌 서버 값·연쇄 피해 시점이 섞여 있음. 원표 행과 공개 정의의 전수 대응을 찾지 못한 범위를 명시하며 전체 지원이라고 지우지 않음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"opts.nova_policy\"]",
-        "reason": "노바 운영 모드는 계산 정책 선택임. 클라 불일치로 단정하지 않고 API의 community 등급 보고를 유지함.",
-        "client_clue": "현재 미확정 범위 재조사: 사용자 결정 2026-10-20(docs/battlesim_design.md 4-1), 아카 2026-10-14 오토 미사용 글 (docs/formulas_web.md 4.3·7.2)",
+        "reason": "클라 확정 불가(운영 정책): NKM:7087–7113은 오토 스킬 선택,17064–17096은 노바 조작 상태임. manual/heal의 ‘다음 공격/회복에 예약’은 사람 운영 대체 정책임. 기본 auto와 기존 대안 유지",
+        "client_clue": "PC 26752678 직접 조사: NKM:7087–7113은 오토 스킬 선택,17064–17096은 노바 조작 상태임. manual/heal의 ‘다음 공격/회복에 예약’은 사람 운영 대체 정책임. 기본 auto와 기존 대안 유지; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"score_conf\",\"추정\"]",
-        "reason": "최종 점수 합산 조건·배율 반올림이 서버 전용/추정이라 score_conf=추정을 유지함.",
-        "client_clue": "docs/engine_fix2_26752678.md: HUD NKM:17373, 반/처치 NKC:76585-76603, 최종 서버 결과 NKC:76558-76564; 실제 결과 대조 필요",
+        "reason": "최종 서버 합산·반올림 식이 없어 score_conf=추정을 유지함. HUD 일치만으로 확정 등급을 올리지 않음.",
+        "client_clue": "PC 26752678 직접 조사: NKM:17373 HUD 식; Star.Templets:9374–9376 점수 표 필드; NKC:102759–102794 서버 결과 패킷 표시. 최종 합산 식은 이 경로에 없음; docs/allowlist_rules_1121.md",
         "owner": "엔진 규칙 유지보수"
       }
     ],
