@@ -88,6 +88,7 @@
   function mount(){
     if(controller||!root.document)return controller;
     const doc=root.document,mq=root.matchMedia('(prefers-reduced-motion: reduce)'),p=policy(),play=playground(),resultArts=new Map();
+    const WORK_POSE_MS=8000;   // 계산 중 걷는 포즈를 바꾸는 최소 간격(사용자 11/21: 포즈가 너무 빨리 바뀜)
     let actor=null,lane=null,current={},clock=0,last=performance.now(),idleAt=0,vacant=false,phaseKey='',cycleAt=0,
       restoreAt=0,bubbleUntil=0,speechShownAt=-Infinity,move=null,landing=0,pending=null,x=0,art='',lastEvent='',sleeping=false,workRestAt=0;
     let playAt=play.delay(),playing=null,imageRequest=0;
@@ -202,7 +203,10 @@
       if(current.phase!=='work'||!visible()||mq.matches||move||landing||restoreAt||clock<workRestAt)return;
       const run=runs.get(current.mode);
       if(!run||!Number.isFinite(current.progress))return;
-      const target=workTarget(run),ahead=run.dir*(target-x),reaction={kind:'work',art:p.pick(CHOICES.work),speech:false,priority:PRIORITY.work};
+      const target=workTarget(run),ahead=run.dir*(target-x);
+      // 진행도가 잘게 올라올 때마다 포즈를 새로 뽑으면 너무 자주 바뀜 → 같은 계산 단계 안에서는 최소 WORK_POSE_MS 동안 같은 포즈 유지.
+      if(!run.art||clock-run.artAt>=WORK_POSE_MS){run.art=p.pick(CHOICES.work);run.artAt=clock;}
+      const reaction={kind:'work',art:run.art,speech:false,priority:PRIORITY.work};
       // 앞으로만 걸음. 단, 단계가 진행도 1 전에 끝나 새 시작점과 떨어졌으면 그 지점까지 한 번 걸어감(순간이동 없음).
       if(ahead>.5){run.seek=false;moveTo(target,{reaction,adjust:false});}
       else if(run.seek){if(ahead<-.5)moveTo(target,{reaction,adjust:false});else run.seek=false;}
