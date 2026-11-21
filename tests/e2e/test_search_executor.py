@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import subprocess
+import urllib.parse
 import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -12,19 +13,48 @@ from test_direct_party import ready
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT/'tests/fixtures/search_pyodide_6688d7a.json'
 sys.path.insert(0, str(ROOT/'tests'))
-from engine_input_guard import assert_engine_inputs, comparison_payload
+from engine_input_guard import comparison_payload
 
 
-def assert_frozen_engine(pins):
-    def frozen(name):
-        return subprocess.check_output(['git', 'show', '6688d7a:'+name], cwd=ROOT)
-    original_manifest = frozen('sim/manifest.json')
-    assert hashlib.sha256(original_manifest).hexdigest() == pins['sim/manifest.json']
-    assert hashlib.sha256((ROOT/'battlesim/rules/default.json').read_bytes()).hexdigest() == pins['battlesim/rules/default.json']
-    assert_engine_inputs(json.loads(original_manifest)['files'],
-                         json.loads((ROOT/'sim/manifest.json').read_bytes())['files'],
-                         frozen, lambda name: (ROOT/name).read_bytes())
-    return json.loads(original_manifest)['ver']
+FROZEN = '6688d7a'
+
+
+def frozen(name):
+    return subprocess.check_output(['git', 'show', FROZEN+':'+name], cwd=ROOT)
+
+
+def serve_frozen_engine(page, pins):
+    """Feed the worker the exact 6688d7a engine inputs, whatever the current rules are.
+
+    The golden checks executor equivalence, so engine rule changes after the
+    capture must not break it and must not leak into it. sim_worker.js is
+    compared to the frozen copy because it is the loader of these inputs.
+    """
+    manifest = frozen('sim/manifest.json')
+    for name, digest in pins.items():
+        assert hashlib.sha256(frozen(name)).hexdigest() == digest, 'fixture pin does not match '+FROZEN+': '+name
+    assert frozen('sim_worker.js') == (ROOT/'sim_worker.js').read_bytes(), 'sim_worker.js changed; frozen-input replay is no longer the same loader'
+    data = json.loads(manifest)
+    files = {name: frozen(name) for name in data['files']}
+    served = set()
+
+    def handle(route):
+        url = urllib.parse.urlsplit(route.request.url)
+        name = url.path.lstrip('/')
+        if name == 'sim/manifest.json':
+            body = manifest
+        elif name in files and urllib.parse.parse_qs(url.query).get('v') == [data['ver']]:
+            body = files[name]
+        else:
+            return route.continue_()
+        served.add(name)
+        route.fulfill(status=200, body=body, headers={'Cache-Control': 'no-store'})
+    page.context.route('**/*', handle)
+
+    def check():
+        missing = {'sim/manifest.json', *files} - served
+        assert not missing, 'worker did not load frozen engine inputs: '+', '.join(sorted(missing))
+    return data['ver'], check
 
 REAL = """async () => {
  const requests=[], replies=[];
@@ -88,20 +118,21 @@ def main():
                 a.bench.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
                 print('PASS guild reduced real Pyodide benchmark',round(result['totalMs'],1),'ms',flush=True)
             else:
+                if not a.capture:
+                    expected=json.loads(FIXTURE.read_text(encoding='utf8'))
+                    frozen_version,served_check=serve_frozen_engine(page,expected['pins'])
                 result=page.evaluate(REAL)
                 result['pins']={p:hashlib.sha256((ROOT/p).read_bytes()).hexdigest() for p in ['sim/manifest.json','battlesim/rules/default.json']}
                 assert result['result']['golden']['prog']>0
                 if a.capture:
-                    assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip().startswith('6688d7a')
+                    assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip().startswith(FROZEN)
                     FIXTURE.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
                 else:
-                    expected=json.loads(FIXTURE.read_text(encoding='utf8'))
-                    # The package also contains search settings. Keep the old
-                    # golden intact and verify every engine input separately.
-                    frozen_version = assert_frozen_engine(expected['pins'])
-                    current_version = json.loads((ROOT/'sim/manifest.json').read_bytes())['ver']
-                    assert comparison_payload(result,current_version)==comparison_payload(expected,frozen_version),'real Pyodide complete request/raw result changed'
-                print('PASS real Pyodide frozen request, complete raw result, positive progress',flush=True)
+                    # Engine inputs are replayed from 6688d7a (see docs/search_executor.md),
+                    # so only the current executor/request path can change this payload.
+                    served_check()
+                    assert comparison_payload(result,frozen_version)==comparison_payload(expected,frozen_version),'real Pyodide complete request/raw result changed'
+                print('PASS real Pyodide (frozen 6688d7a engine inputs) request, complete raw result, positive progress',flush=True)
             assert not page.errors,page.errors
         finally:browser.close()
 
