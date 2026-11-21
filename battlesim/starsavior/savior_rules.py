@@ -123,19 +123,19 @@ def marker_target(key, ln):
 
 # ------------------------------------------------------------------ 데이터 자동 대상 규칙을 표지 보유자가 없어도 그대로 씀(mc.Battle.line_spec)
 # PC 26752678 NKM:7152-7178(스마일·길레 표지는 보유자가 없을 수 있음 — 복수 대상 실패는 빈 대상), NKM:7135-7187·7523-7546(길레 승급:
-# 전체 대상 필터 불일치면 대상 없음). (키, 스위치, 스위치 값, 조건, rule_hits 이름) — 먼저 맞는 행.
+# 전체 대상 필터 불일치면 대상 없음). (키, 조건, rule_hits 이름) — 먼저 맞는 행.
+# 옛 스위치 supported_marker_targets·gille_promotion_target 은 엔진 다이어트 4단계에서 지움(항상 클라 동작).
 KEEP_NATIVE_SELECTOR = [
-    ('sunshine-cat-smile', 'supported_marker_targets', 'client', {'native_target': TRUTHY}, 'supported_marker_targets'),
-    ('gille', 'supported_marker_targets', 'client', {'kind': 'remove', 'name': '길레 마지막 타격 체크용 버프'},
-     'supported_marker_targets'),
-    ('gille', 'gille_promotion_target', 'marker', {'ln_slot': '특수기', 'name': '피날레(해제불가)'}, 'gille_promotion_target'),
+    ('sunshine-cat-smile', {'native_target': TRUTHY}, 'supported_marker_targets'),
+    ('gille', {'kind': 'remove', 'name': '길레 마지막 타격 체크용 버프'}, 'supported_marker_targets'),
+    ('gille', {'ln_slot': '특수기', 'name': '피날레(해제불가)'}, 'gille_promotion_target'),
 ]
 
 
-def keep_native_selector(key, ln, mc):
+def keep_native_selector(key, ln):
     """맞는 행의 rule_hits 이름(없으면 None)."""
-    for k, switch, on, cond, hit in KEEP_NATIVE_SELECTOR:
-        if k == key and mc[switch] == on and matches(ln, cond):
+    for k, cond, hit in KEEP_NATIVE_SELECTOR:
+        if k == key and matches(ln, cond):
             return hit
     return None
 

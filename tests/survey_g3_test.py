@@ -116,9 +116,6 @@ class SurveyG3(unittest.TestCase):
 
 
 CASES = {
- 'revive_toughness': ['test_revive_restores_toughness_and_break'],
- 'potential_11026_vampirism': ['test_conditional_vampirism_slots_and_crit',
-    'test_conditional_vampirism_any_target_and_no_leak', 'test_conditional_vampirism_additive_and_heal_received'],
  'heal_cleanse_skill_end': ['test_carmen_heals_before_cleanse'],
 }
 if __name__ == '__main__':
@@ -132,7 +129,7 @@ if __name__ == '__main__':
         assert not r.wasSuccessful() and not r.errors, r.errors
         print('KILLED 11026 derived adapter')
         source = inspect.getsource(Battle.run_special)
-        block = "                    if self.mc['revive_toughness'] == 'client':\n                        x.sa, x.broken = x.sa_max, False\n                        self.rule_hits['revive_toughness'] += 1\n"
+        block = "                    x.sa, x.broken = x.sa_max, False\n                    self.rule_hits['revive_toughness'] += 1\n"
         assert source.count(block) == 1
         source = source.replace(block, '').replace('                    x.dead = False\n', '                    x.dead = False\n' + block)
         ns = dict(Battle.run_special.__globals__)

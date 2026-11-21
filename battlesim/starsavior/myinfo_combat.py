@@ -37,14 +37,14 @@ def combat_input(unit):
                             and p[1] > 0])
 
 
-def select_skills(raw, key, combat, bloom='client'):
+def select_skills(raw, key, combat):
     """L.e/L.ei contain complete selected-level SE groups, not level deltas.
 
     NKM:17744-17757 adds SkillLevelDamageUp to a nonzero ATK coefficient.
     Current tables have zero there; SE damage-up effects stay in L.e instead.
     """
     u = copy.deepcopy(raw)
-    bloom_passive = bloom == 'client' and '@' in key and key.split('@')[0] in combat_data()['units']
+    bloom_passive = '@' in key and key.split('@')[0] in combat_data()['units']
     if key not in combat_data()['units'] and not bloom_passive:
         # 계수 표가 없는 구원자(예: 개화 변형): 파티 전체를 실패시키지 않고 기본 스킬 레벨로 계산한다.
         return u

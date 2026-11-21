@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "e06c79830ecb9052",
+  "hash": "e35fccb6195e16cd",
   "history": [
-   {
-    "hash": "31e284ee166d1604",
-    "reason": "시즌4 종료 후 새 시즌에 재생성하는 기존 방침 유지. E2 지난 시즌 일반 경로의 회귀는 직접 시뮬에서 수정. 기존 guild_sim 재사용의 정확성을 주장하지 않음."
-   },
    {
     "hash": "82ca8b49e5d87cba",
     "reason": "벨그라스 일반 스테이지 SE(belgras_stage_se) 추가와 E2 적 교정 병합. 벨그라스 일반 스테이지 줄은 guild_sim·quick 생성물에 적용 대상 없음(ebc5f18 확인)"
@@ -41,16 +37,16 @@
    {
     "hash": "e06c79830ecb9052",
     "reason": "11/21 2차 묶음 병합(se_cool_clock·dispel_isbuff·revive_se_reset·skill_cool_change·chain_timing=client_queue·local_chance=roll). 각 작업 기록대로 quick 보정 표본 판정 변경 0~4건이라 계수 유지, guild_sim 시즌 종료로 재생성 생략"
+   },
+   {
+    "hash": "e35fccb6195e16cd",
+    "reason": "엔진 다이어트 4단계 1묶음: legacy 스위치 26개 삭제(값 불변·분기만 삭제). 기본값 결과는 diet·unify 기준선·광역 대조 바이트 일치"
    }
   ]
  },
  "quick": {
-  "hash": "e06c79830ecb9052",
+  "hash": "e35fccb6195e16cd",
   "history": [
-   {
-    "hash": "31e284ee166d1604",
-    "reason": "E2 첫 묶음: 심해의 폭군·시엔의 지난 길드 일반 경로만 변경. calib_teams 표본에 guild 없음. 확정 턴 없는 공통 정렬은 기존 키 순서와 동등. 계수 유지."
-   },
    {
     "hash": "82ca8b49e5d87cba",
     "reason": "벨그라스 일반 스테이지 SE(belgras_stage_se) 추가와 E2 적 교정 병합. 벨그라스 일반 스테이지 줄은 guild_sim·quick 생성물에 적용 대상 없음(ebc5f18 확인)"
@@ -86,6 +82,10 @@
    {
     "hash": "e06c79830ecb9052",
     "reason": "11/21 2차 묶음 병합(se_cool_clock·dispel_isbuff·revive_se_reset·skill_cool_change·chain_timing=client_queue·local_chance=roll). 각 작업 기록대로 quick 보정 표본 판정 변경 0~4건이라 계수 유지, guild_sim 시즌 종료로 재생성 생략"
+   },
+   {
+    "hash": "e35fccb6195e16cd",
+    "reason": "엔진 다이어트 4단계 1묶음: legacy 스위치 26개 삭제(값 불변·분기만 삭제). 기본값 결과는 diet·unify 기준선·광역 대조 바이트 일치"
    }
   ]
  }

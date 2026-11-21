@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """회복 전용 노바 정책 및 변경 전 auto/manual 수치 회귀. python -X utf8 -I tests/heal_burst_test.py"""
-import hashlib
 import copy
-import json
 import os
 import random
 import sys
@@ -11,7 +9,7 @@ import unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
-from battlesim.api import _CustomFoe, simulate
+from battlesim.api import _CustomFoe
 from battlesim.mc import Battle, heal_burst_rank
 from battlesim.metrics import unit_def
 from battlesim.starsavior.parser import Line, Skill
@@ -118,60 +116,6 @@ class HealBurstTest(unittest.TestCase):
         u.hp = 1
         self.assertTrue(b.cast(u, u.d.skills['궁극기']).nb)
         self.assertEqual(u.healed, 0)  # 후보 판정이 실제 조건을 무시해 회복시키면 안 됨
-
-    def test_auto_manual_exact_prechange_results(self):
-        expected = {'auto': '1bcc41ffa37245ac81cf5c04203c3c962886615c7aff1236ed836ccb8f270d01',
-                    'manual': 'c47a35ccae24c19dd5c5e8b6d7e4d7e3202879ebb82bc27913991dbd351030cc'}
-        enc = {'waves': [[{'name': 'target', 'hp': 100000000, 'atk': 1000, 'def': 1000, 'spd': 100}]], 'max_turns': 12}
-        for policy, digest in expected.items():
-            # Keep the original digest as a legacy regression. Native skill-end
-            # gain, slot effects, skill-local chain damage and debuff-object
-            # counting change later rules.
-            r = simulate(TEAM, enc, {'n_runs': 3, 'seed': 7, 'nova_policy': policy, 'timeline': True,
-                                    'formula_override': {'COOP_CAP': 0.30},
-                                    'rules_override': {'dmg_cap_scope': 'reduce', 'enemy_leader': 'boss', 'coop_order': 'capped', 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget', 'buff_ban_force': 'off', 'nova_skill_gain': False,
-                                                       'foe_skill_order': 'default', 'empty_attack': 'skip',
-                                                       'nova_force_effects': False,
-                                                       'hit_ally_skill_end': 'legacy', 'skill_end_timing': 'legacy',
-                                                       'passive_se_order': 'legacy', 'se_independent_roll': 'legacy',
-                                                         'bloom_passive_levels': 'legacy', 'independent_stack_limits': 'legacy',
-                                                         'smile_waterbomb_scope': 'legacy', 'scarlet_pinball_marker': 'legacy',
-                                                         'cristelle_ignite_targets': 'legacy', 'shield_enemy_count': 'legacy',
-                                                         'gauge_lock_order': 'legacy', 'damage_break_boundary': 'legacy',
-                                                         'revive_toughness': 'legacy', 'potential_11026_vampirism': 'legacy',
-                                                         'heal_cleanse_skill_end': 'legacy',
-                                                       'enemy_cd_end_order': 'before_effects',
-                                                       'revenge_rate': 'current',
-                                                       'nova_force_cap': 0,
-                                                       'nova_slot_effects': False,
-                                                       'chain_skill_damage_up': False,
-                                                       'evade_model': 'rate_minus_acc', 'guard_precision': 'legacy',
-                                                       'chain_timing': 'immediate',
-                                                       'debuff_instance_count': False,
-                                                       'ally_auto_target': 'boss_first',
-                                                       'enemy_auto_target': 'weighted',
-                                                       'auto_skill': 'off',
-                                                       'reaction_timing': 'nested',
-                                                       'buff_maxhp': 'off',
-                                                       'instant_damage': 'off',
-                                                       'break_skill_level': 'off',
-                                                       'break_skill_scale': 'off',
-                                                       'ally_auto_lines': 'off',
-                                                       'foe_react': 'off',
-                                                       'foe_react_timing': 'legacy',
-                                                       'summon': 'off',
-                                                       'enforce': 'off',
-                                                       'preemptive_defense': 'off',
-                                                       'toughness_elem': 'db', 'break_point_hits': 'once',   # 2026-11-04 기본 전환분은 옛 값
-                                                       'break_auto_blocked_cc': 'off',
-                                                       'effect_dur_extend': 'off',
-                                                       'gauge_conditional': 'off',
-                                                       'local_vs_element': 'off',
-                                                       'stat_floor': 'float', 'chain_round': 'float', 'chain_guard': 'off', 'guard_tie': 'first', 'stat_stage': 'add', 'turn_gauge': 'float'}})   # 2026-11-14 규칙은 옛 값
-            frozen = {k: v for k, v in r.items() if k in ('per_unit', 'outcome', 'timeline', 'breaks', 'break_skill', 'foes')}
-            frozen['outcome'] = {k: v for k, v in frozen['outcome'].items() if k not in ('progress', 'ttk_actions_median')}   # 나중에 더한 요약 칸(전투 규칙 무관)
-            self.assertEqual(hashlib.sha256(json.dumps(frozen, sort_keys=True, ensure_ascii=False).encode()).hexdigest(), digest)
-            self.assertEqual(r['nova_burst']['total'] > 0, policy == 'manual')
 
     def test_ingame_defaults_override_and_all_run_counts(self):
         self.assertEqual(ingame_check.NOVA_POLICY, {k: ('heal' if k == '36-36' else 'auto') for k in ingame_check.SAMPLES})   # 샘플이 늘어도 36-36 만 heal

@@ -41,55 +41,7 @@ def _unit(name='u', role='스트라이커', hp=10000, atk=1000, df=500, spd=100,
     )
 
 
-_KEEP = {'rekindle_apply': 'multiply', 'dmg_cap_scope': 'reduce', 'ally_break_gauge': 'skip', 'own_turn_condition': 'main_only', 'dot_hot_order': 'insertion', 'dot_hot_lifetime': 'turn_end', 'ally_cd_tick': 'turn_start',
-         'stat_select_int': 'float', 'break_domain_category': 'buff', 'ally_turn_self': 'exclude',
-         'fixed_true_formula': 'legacy', 'counter_slot_timing': 'end', 'wave_extra_turn': 'keep', 'turn_start_order': 'dot_first', 'guard_skip_immune': 'off',
-         'buff_fresh_scope': 'self', 'break_gauge_actor': 'exclude', 'purify_nova_scope': 'main_only',
-         'preemptive_reduce': 'attacker_preempt', 'omega_dispel': 'fixed',
-         'cosmo_hyper_true_target': 'enemy_all', 'damage_vampirism': 'off', 'cosmo_drain_category': 'debuff', 'cosmo_speed_floor': False,
-         'variant_self_state': 'off', 'turn_unit_debuff_cond': 'skip', 'auto_marker_lines': 'drop',
-         'shield_tick': 'turn_start', 'wave_carry': 'keep', 'break_domain_revive': 'none',
-         'enemy_leader': 'boss', 'any_turn_source': 'text', 'ally_auto_lines': 'data', 'ally_variant_mapping': 'legacy', 'wave_ally_gauge': 'keep', 'enforce_timing': 'nested', 'enforce_target': 'book', 'buff_ban_force': 'off', 'coop_order': 'capped',
-         'foe_skill_order': 'default', 'foe_forced_coop': 'off', 'empty_attack': 'skip',
-         'enemy_cd_end_order': 'before_effects', 'revenge_rate': 'current',
-         'nova_force_cap': 0, 'forced_coop_target': 'live_atk', 'coop_dead_target': 'retarget',
-         # 2026-11-04 기본 전환분은 legacy 로 고정
-         'preemptive_defense': 'recognize', 'toughness_elem': 'db', 'break_point_hits': 'once', 'break_auto_blocked_cc': 'off'}   # 해시는 옛 규칙 기준(캐시 동일성 시험이 목적)
-_KEEP.update(evade_model='rate_minus_acc', guard_precision='legacy', chain_timing='immediate')
-_KEEP.update(local_chance='expected')
-_KEEP.update(break_skill_residuals='existing_model', add_damage_guard='off')
-_KEEP.update(target_row_slot='legacy', living_slot_order='legacy', role_damage_terms='off')
-_KEEP.update(supported_marker_targets='legacy', claire_preemptive_marker='legacy')
-_KEEP['myinfo_potential_coverage'] = False
-_KEEP['stack_react_timing'] = 'book'
-_KEEP['clash_no_turn_limit'] = False
-_KEEP.update(chain_stat_true='legacy', target_toughness_condition='first')
-_KEEP.update(source_buff_list='literal', gille_promotion_target='fallback')
-_KEEP['self_enforce_target'] = 'last_target'
-_KEEP.update(target_break_condition='state', target_condition_set='first')
-_KEEP.update(target_hp_condition='ratio', not_self_stack='ge', chain_target_stat='off')
-_KEEP.update(stat_floor='float', chain_round='float', chain_guard='off', guard_tie='first', stat_stage='add', turn_gauge='float')
-_KEEP.update(hit_ally_skill_end='legacy', skill_end_timing='legacy', passive_se_order='legacy', se_independent_roll='legacy')
-_KEEP.update(auto_unable_break='legacy', auto_remove_filter='legacy', auto_se_reselect='legacy',
-             auto_hp_float32='legacy', auto_empty_marker='legacy', auto_cond_hp_float32='legacy')
-_KEEP.update(bloom_passive_levels='legacy', independent_stack_limits='legacy', smile_waterbomb_scope='legacy', scarlet_pinball_marker='legacy', cristelle_ignite_targets='legacy', shield_enemy_count='legacy', gauge_lock_order='legacy', damage_break_boundary='legacy')
-_KEEP.update(revive_toughness='legacy', potential_11026_vampirism='legacy', heal_cleanse_skill_end='legacy')
-_KEEP['last_damager_timing'] = 'per_target'
-_KEEP.update(foe_client_flow='off', fixstats_speed_zero='off', superarmor_damage_ban='off', speed_min=1)
-_KEEP.update(wave_foe_battle_start='all', revive_after_spawn='off', summon='data')
-_KEEP['caster_death'] = 'keep_buffs'
-_KEEP['self_hp_condition'] = 'ratio'
-_KEEP['marker_se_flow'] = 'legacy'
-_KEEP['level_max_source'] = 'legacy'
-_KEEP['belgras_stage_se'] = 'legacy'
-_KEEP['barrier_formula'] = 'legacy'
-_KEEP['reaction_single_target_rng'] = 'legacy'
-_KEEP['unique_id_stack'] = 'off'
-_KEEP['random_basic_not_self'] = 'legacy'
-_KEEP['se_cool_clock'] = 'legacy'
-_KEEP['dispel_isbuff'] = 'legacy'
-_KEEP['revive_se_reset'] = 'legacy'
-_KEEP['skill_cool_change'] = 'legacy'
+# 공식 상수 COOP_CAP 0.30 만 고정(옛 legacy 스위치 묶음 _KEEP 은 엔진 다이어트 4단계에서 지움 — 옛 해시 비교는 태그 engine-legacy-final)
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 
@@ -106,26 +58,7 @@ class CacheIdentityTest(unittest.TestCase):
     """semantic_cache 유무와 무관하게 결과가 동일해야 한다."""
 
     # 고정 해시 — 구현이 바뀌어도 이 값이 달라지면 결과 바이트가 달라진 것이다.
-    _H_GWEN_MULTIWAVE = '54bd080d2cb4'       # gwen 1인 10판, seed=7, 2웨이브
-    _H_PM_GWEN_MULTIWAVE = 'c4af24f6167e'   # professor-m + gwen 10판, seed=7, 2웨이브 (반응 스킬)
-    _H_GWEN_RNG_STREAMS = 'b3893e9e7fa5'    # gwen 1인 rng_streams=True 10판, seed=7
-
-    def test_gwen_multiwave_hash_locked(self):
-        """[캐시-1] gwen 2웨이브 결과 해시 고정 — 캐시 때문에 바뀌면 안 된다."""
-        r = simulate([{'key': 'gwen'}], _ENC, {'n_runs': 10, 'seed': 7, 'rules_override': _KEEP, 'formula_override': _KEEP_FORMULA})
-        self.assertEqual(_h(_sig(r)), self._H_GWEN_MULTIWAVE)
-
-    def test_pm_gwen_multiwave_hash_locked(self):
-        """[캐시-2] professor-m + gwen 2웨이브 해시 고정 — 반응 스킬 포함 시나리오."""
-        r = simulate(['professor-m', 'gwen'], _ENC, {'n_runs': 10, 'seed': 7, 'rules_override': _KEEP, 'formula_override': _KEEP_FORMULA})
-        self.assertEqual(_h(_sig(r)), self._H_PM_GWEN_MULTIWAVE)
-
-    def test_gwen_rng_streams_hash_locked(self):
-        """[캐시-3] rng_streams=True 해시 고정 — 스트림 분리 모드에서도 캐시 안전."""
-        r = simulate([{'key': 'gwen'}], _ENC, {'n_runs': 10, 'seed': 7, 'rng_streams': True, 'rules_override': _KEEP, 'formula_override': _KEEP_FORMULA})
-        self.assertEqual(_h(_sig(r)), self._H_GWEN_RNG_STREAMS)
-
-    # 기본 프로필(rules_override 없음, 공식 상수 COOP_CAP 0.30 만) 해시 — 엔진 다이어트 4단계(스위치 삭제)에서 바뀌면 안 됨
+    # 기본 프로필(rules_override 없음, 공식 상수 COOP_CAP 0.30 만) — 엔진 다이어트 4단계(스위치 삭제)에서 바뀌면 안 됨
     _H_GWEN_MULTIWAVE_DEFAULT = 'f3c073bc040a'
     _H_PM_GWEN_MULTIWAVE_DEFAULT = 'e07ab07e72cb'
     _H_GWEN_RNG_STREAMS_DEFAULT = '00505f6e67bc'

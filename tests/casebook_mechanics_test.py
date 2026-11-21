@@ -49,11 +49,10 @@ class CasebookMechanicsTest(unittest.TestCase):
         b.dirty(a)
         self.assertGreater(a.spd(), 0)
 
-    def test_speed_floor_and_legacy(self):
-        self.assertEqual(MC_OPTS['speed_min'], 0)
-        for minimum in (0, 1):
+    def test_speed_floor(self):
+        for minimum in (0,):
             for reduction, expected in ((-50, 50), (-100, minimum), (-300, minimum)):
-                b = battle([unit('a')], [unit('f')], mc={'speed_min': minimum})
+                b = battle([unit('a')], [unit('f')])
                 a = b.allies[0]
                 give(a, '타임 패러독스', {'속도%': reduction})
                 self.assertEqual(a.spd(), expected)
@@ -73,11 +72,6 @@ class CasebookMechanicsTest(unittest.TestCase):
             b._tick_any_turn()
         self.assertFalse(a.has(FALL))
         self.assertGreater(a.spd(), 0)
-        # The old rule ignores the fixed field, while keeping normal modifiers.
-        a.hp = a.maxhp
-        b.cast(boss, boss.d.skills['기본기'], target=a)
-        with patch.dict(b.mc, fixstats_speed_zero='off'):
-            self.assertGreater(a.spd(), 0)
 
     def test_mogulus_shield_at_skill_start(self):
         for slot in ('기본기', '궁극기'):
@@ -322,7 +316,6 @@ def mutations():
         if eff.get('name') != '속도 감소':
             return original_add(b, owner, target, eff, *args, **kw)
     cases = [
-        ('zero speed off', 'test_mogulus_zero_speed_and_direct_gauge', patch.dict(MC_OPTS, fixstats_speed_zero='off')),
         ('lost fall', 'test_mogulus_shield_at_skill_start', patch.object(Battle, 'add_effect', drop_fall)),
         ('boss gauge off', 'test_mogulus_gauge_requires_marker_and_hit', patch.object(Battle, 'set_gauge', no_gauge)),
         ('ceres gauge off', 'test_ceres_gauge_delays_broken_target', patch.object(Battle, 'set_gauge', no_gauge)),

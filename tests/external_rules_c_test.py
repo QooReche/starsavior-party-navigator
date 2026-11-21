@@ -238,8 +238,7 @@ class ShieldTest(unittest.TestCase):
             # power_penalty 도 off 고정: 11/15 기본 model 이면 FLOOR 250(이 편성 전투력 비율 78.67%) 이 아군 x0.786·적 x1.214 라 흡수 장면이 사라짐(보정과 무관한 보호막 경로 시험)
             # 11/15 SKILL_END 교정도 동일한 보호막 장면을 고정할 때만 옛 값 사용.
             result, battles = run_stage('keep', 40, shield_tick='turn_end', turn_gauge='float', power_penalty='off',
-                                        hit_ally_skill_end='legacy', skill_end_timing='legacy', passive_se_order='legacy',
-                                        se_independent_roll='legacy')
+                                        skill_end_timing='legacy', se_independent_roll='legacy')
         self.assertGreater(result['outcome']['progress'], 0)
         self.assertGreater(sum(b.rule_hits['shield_owner_absorb'] for b in battles), 0)
         self.assertGreater(boundaries['start'], 0)

@@ -15,10 +15,8 @@ from battlesim.rules import MC_OPTS, MC_RULES, DEFAULT_OPTS
 from battlesim.starsavior import cosmo_raid as C
 
 
-def setup(name='행성 정화', foes=None, legacy=False, **kw):
+def setup(name='행성 정화', foes=None, **kw):
     opts = dict(break_skill_scale='off', break_skill_level='off')
-    if legacy:
-        opts['break_skill_residuals'] = 'existing_model'
     return battle([unit('ally%d' % i) for i in range(4)],
                   foes or [unit('guard', df=3000), unit('less', df=0), unit('target', df=0)],
                   break_skill={'name': name, 'level': 1}, mc=opts, **kw)
@@ -32,7 +30,7 @@ def fire(b):
 
 class AllowlistBreakTest(unittest.TestCase):
     def test_defaults_and_assumptions(self):
-        for key, legacy in [('break_skill_residuals', 'existing_model'), ('add_damage_guard', 'off')]:
+        for key, legacy in [('add_damage_guard', 'off')]:
             self.assertEqual(MC_OPTS[key], 'client')
             self.assertEqual(MC_RULES[key]['legacy'], legacy)
             self.assertEqual(MC_RULES[key]['grade'], 'code')
@@ -40,9 +38,9 @@ class AllowlistBreakTest(unittest.TestCase):
         self.assertNotIn('mc.break_skill_residuals', names)
         self.assertNotIn('mc.add_damage_guard', names)
 
-    def test_cube_alive_sum_and_legacy(self):
-        for legacy, amount in [(False, 600), (True, 800)]:
-            b = setup('큐브 과부하', legacy=legacy)
+    def test_cube_alive_sum(self):
+        for amount in [600]:
+            b = setup('큐브 과부하')
             b.allies[-1].dead, b.allies[-1].hp = True, 0
             for u in b.allies[:-1]:
                 u.hp = 100
@@ -112,14 +110,14 @@ class AllowlistBreakTest(unittest.TestCase):
         self.assertFalse(guard.has('스킬 피해 무효'))
         self.assertEqual(b.rule_hits['bskill_nullify'], 1)
 
-    def test_guard_single_dead_and_legacy(self):
+    def test_guard_single_dead(self):
         b = setup(foes=[unit('only', df=0)])
         give(b.foes[0], '수호', {'피해 분담(수호)': 50})
         fire(b)
         self.assertEqual(b.foes[0].taken, 1000)
         self.assertEqual(b.rule_hits['break_skill_guard'], 0)
-        for dead, legacy in [(True, False), (False, True)]:
-            b = setup(legacy=legacy)
+        for dead in [True]:
+            b = setup()
             guard = b.foes[0]
             give(guard, '수호', {'피해 분담(수호)': 50})
             guard.dead = dead
@@ -184,7 +182,7 @@ class AllowlistBreakTest(unittest.TestCase):
 
 def mutations():
     cases = [
-        ('_use_break_skill', "self.alive(0) if client_residuals else self.allies", 'self.allies', 'test_cube_alive_sum_and_legacy'),
+        ('_use_break_skill', "heal_team = self.alive(0)", 'heal_team = self.allies', 'test_cube_alive_sum'),
         ('_break_guard', "return guard, share", 'return None, 0.0', 'test_aoe_guard_last_aggregate_before_defense'),
         ('_use_break_skill', 'pending += shared', 'pending += 0', 'test_aoe_guard_last_aggregate_before_defense'),
         ('_use_break_skill', 'targets.append(queued_guard)', 'targets.insert(0, queued_guard)', 'test_aoe_guard_last_aggregate_before_defense'),

@@ -12,10 +12,10 @@ from battlesim.api import _CustomFoe
 from battlesim.starsavior.parser import Line
 
 
-def battle(mode='client'):
+def battle():
     enemies = [_CustomFoe(dict(name='enemy'+str(i), hp=1e9, atk=100, spd=100), i) for i in range(2)]
     b = Battle([unit_def('amora'), unit_def('gwen')], [enemies], random.Random(7),
-               opts=dict(coop=False, nova_policy='auto'), mc={'last_damager_timing': mode})
+               opts=dict(coop=False, nova_policy='auto'))
     b.spawn_wave()
     a, old = b.allies
     for v in b.foes:
@@ -27,8 +27,8 @@ def battle(mode='client'):
 
 class MemoryTests(unittest.TestCase):
     def test_cross_target_reaction_observes_new_attacker(self):
-        for mode, want_new in [('client', True), ('per_target', False)]:
-            b, a, old, c = battle(mode)
+        for want_new in [True]:
+            b, a, old, c = battle()
             observed = []
             original = b.fire
             def fire(v, event, ctx):
@@ -85,9 +85,6 @@ class MemoryTests(unittest.TestCase):
             self.assertEqual(b.cond_ok(a, lower, c), want_low)
             self.assertEqual(b.cond_ok(a, upper, c), want_high)
         self.assertGreater(b.rule_hits['self_hp_condition'], 0)
-        a.hp = 49995
-        b.mc['self_hp_condition'] = 'ratio'
-        self.assertFalse(b.cond_ok(a, lower, c))
 
     def test_self_hp_float_multiplication_before_truncation(self):
         b, a, old, c = battle()

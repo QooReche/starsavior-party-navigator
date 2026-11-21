@@ -372,10 +372,10 @@ def test_simulate_challenge_paths_and_level_scale():
     # 이전 seed=2는 legacy에서 응징 1회, client에서는 0회였음.
     # 끝없는 저주 무제한 중첩 뒤에도 양쪽 대상 선택에서 실제 응징·출혈을 검사함.
     # 옛 중첩/시드 회귀도 보존하며 결과값·경로 assertion은 약화하지 않음.
-    for caps, mode, seed in (('legacy', 'client', 1), ('legacy', 'legacy', 2),
-                             ('client', 'client', 10), ('client', 'legacy', 5)):
+    # level_max_source 옛 값(legacy) 두 경우는 스위치 삭제(엔진 다이어트 4단계)로 뺌.
+    for caps, mode, seed in (('client', 'client', 10), ('client', 'legacy', 5)):
         r = run('카넬리아', 3, 18, n=10, seed=seed,
-                rules_override={'auto_se_reselect': mode, 'level_max_source': caps})
+                rules_override={'auto_se_reselect': mode})
         ctl = r['cosmo_raid']['ctl']
         assert r['outcome']['progress'] > 0
         assert ctl.get('punish', 0) > 0 and ctl.get('bleed', 0) > 0, (caps, mode, ctl)

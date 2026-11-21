@@ -141,9 +141,10 @@ class TargetConditionsTest(unittest.TestCase):
             ln = Line(f'[스킬 사용 후] (조건: 내 공격 후 [{condition}]) 자신에게 행동 게이지 10%p 증가', '기본기', 'active')
             self.assertFalse(b.cond_ok(a, ln, ctx))
     def test_real_reproductions_execute_effects(self):
-        for floor, seed, key, effect in [(250, 13, 'dana', '로로카!(해제불가)'),
-                                         (200, 8, 'lydia', '공허의 추구자'),
-                                         (200, 7, 'frey', '전력지원 생명력 체크용 버프')]:
+        # 판 번호는 엔진 다이어트 4단계(옛 스위치 hit_ally_skill_end 등 삭제)에서 기본 규칙으로 다시 고름
+        for floor, seed, key, effect in [(250, 12, 'dana', '로로카!(해제불가)'),
+                                         (200, 1, 'lydia', '공허의 추구자'),
+                                         (200, 1, 'frey', '전력지원 생명력 체크용 버프')]:
             hits = []
             original = Battle._exec_line
             def record(b, owner, ln, ctx):
@@ -157,9 +158,7 @@ class TargetConditionsTest(unittest.TestCase):
                 r = simulate(dict(units=['dana', 'lydia', 'frey', 'hilde'], leader=0),
                              dict(stage=f'clo/태양 회랑/FLOOR {floor}'),
                              dict(build='standard', n_runs=1, seed=seed,
-                                  rules_override={'turn_gauge': 'float', 'stat_stage': 'add', 'stat_floor': 'float', 'power_penalty': 'off',
-                                                  'hit_ally_skill_end': 'legacy', 'skill_end_timing': 'legacy',
-                                                  'passive_se_order': 'legacy', 'se_independent_roll': 'legacy'}))   # 판 번호로 고른 장면 고정(대상 조건 판정 경로 유지)
+                                  rules_override={'turn_gauge': 'float', 'stat_stage': 'add', 'stat_floor': 'float', 'power_penalty': 'off'}))   # 판 번호로 고른 장면 고정(대상 조건 판정 경로 유지)
             self.assertGreater(r['prog_runs'][0], 0)
             self.assertTrue(hits, (key, effect))
 

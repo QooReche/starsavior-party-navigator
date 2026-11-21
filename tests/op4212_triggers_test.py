@@ -13,7 +13,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, unit
 from battlesim.mc import Battle, Ctx, buff_kind
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.parser import Line
 
 # 프로페서M 잠재력 〈날렵한 자세〉(POTEN_PASSIVE_3200301, SeCoolTurn 1)
@@ -34,9 +33,6 @@ class SeCoolClockTest(unittest.TestCase):
         with patch.object(Battle, 'cond_ok', lambda *a, **k: True):
             return b.line_ok(m, ln, ctx)
 
-    def test_default_is_client(self):
-        self.assertEqual(MC_OPTS['se_cool_clock'], 'client')
-
     def test_fired_between_turns_blocks_through_next_own_turn(self):
         b, m, ln, ctx = self.setup()
         self.assertTrue(self.ok(b, m, ln, ctx))      # 남의 턴에 발동
@@ -53,14 +49,6 @@ class SeCoolClockTest(unittest.TestCase):
         self.assertTrue(self.ok(b, m, ln, ctx))
         self.assertFalse(self.ok(b, m, ln, ctx))
         m.turn_ends += 1                             # 같은 턴 종료 뒤(다음 자기 턴 전) 다시 걸림
-        self.assertTrue(self.ok(b, m, ln, ctx))
-
-    def test_legacy_uses_action_starts(self):
-        b, m, ln, ctx = self.setup(mc={'se_cool_clock': 'legacy'})
-        self.assertTrue(self.ok(b, m, ln, ctx))
-        m.turn_ends += 1
-        self.assertFalse(self.ok(b, m, ln, ctx))
-        m.actions += 1
         self.assertTrue(self.ok(b, m, ln, ctx))
 
     def test_turn_end_counter_advances(self):
@@ -87,7 +75,6 @@ class DispelIsBuffTest(unittest.TestCase):
         return b, w, boss
 
     def test_table(self):
-        self.assertEqual(MC_OPTS['dispel_isbuff'], 'client')
         self.assertEqual(buff_kind('협공 확률 20% 증가 (C)'), (False, True))
         self.assertEqual(buff_kind('효과 저항 증가'), (True, True))
 
@@ -103,12 +90,6 @@ class DispelIsBuffTest(unittest.TestCase):
         b.run_line(boss, Line(DISPEL_ONE, '기본기', 'active'), Ctx(boss, boss, None))
         self.assertFalse(w.has('효과 저항 증가'))
         self.assertTrue(w.has('협공 확률 20% 증가 (C)'))
-
-    def test_legacy_removes_both(self):
-        b, w, boss = self.setup(mc={'dispel_isbuff': 'legacy'})
-        b.run_line(boss, Line(DISPEL_ALL, '궁극기', 'active'), Ctx(boss, boss, None))
-        self.assertFalse(w.has('효과 저항 증가'))
-        self.assertFalse(w.has('협공 확률 20% 증가 (C)'))
 
 
 if __name__ == '__main__':

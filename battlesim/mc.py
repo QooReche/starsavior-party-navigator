@@ -686,7 +686,7 @@ class Unit:
         return any(self.on(n) for n in INVINCIBLE_NAMES if n in self.eff)
 
     def spd(self):
-        if self.b.mc['fixstats_speed_zero'] == 'client' and any(e.speed_zero and e.stacks > 0 for e in self.eff.values()):
+        if any(e.speed_zero and e.stacks > 0 for e in self.eff.values()):
             return 0.0              # NKM:5111-5116: 속도만 0, 직접 게이지 증가는 그대로 받음.
         if self.zero_stats:
             return 0.0      # 〈들러리〉 300872 FixStats NST_TURN_SPEED 0 — pick_next 는 속도 0 이면 게이지가 차지 않는 것으로 처리
@@ -710,7 +710,7 @@ class Unit:
             s += self.b.mc['leader_speed']
         if getattr(self.d, 'cosmo', None) and self.b.mc['cosmo_speed_floor']:
             s = math.floor(s + 1e-9)       # NKM:18293, 코스모 보스 최종 스탯
-        return max(float(self.b.mc['speed_min']), s)
+        return max(0.0, s)
 
     def shield_total(self):
         return sum(e.shield for e in self.eff.values() if e.shield > 0)
@@ -866,6 +866,9 @@ class Battle:
         self.opts = dict(DEFAULT_OPTS)
         self.opts.update(opts or {})
         self.mc = dict(MC_OPTS)
+        unknown = [k for k in (mc or {}) if k not in MC_OPTS]
+        if unknown:   # 지운 스위치(엔진 다이어트 4단계)를 넘기면 조용히 무시하지 않음
+            raise ValueError('모르는 MC 규칙 키: %s' % ', '.join(sorted(unknown)))
         self.mc.update(mc or {})
         self.battle_mode = battle_mode if self.mc['battle_end_mode'] == 'data' else 'all_kill'
         self.rng = rng
@@ -908,8 +911,7 @@ class Battle:
         self.nova_bursts = defaultdict(int)  # (아군 칸, 슬롯)별 실제 사용 횟수
         self.unsup = defaultdict(int)
         self.rule_hits = defaultdict(int)    # 2026-11-04 클라 후보 스위치가 실제로 탄 횟수(시험용, 결과에 싣지 않음)
-        if self.mc['bloom_passive_levels'] == 'client':
-            self.rule_hits['bloom_passive_levels'] += sum(bool(getattr(d, 'u', {}).get('_bloom_level_selected')) for d in ally_defs)
+        self.rule_hits['bloom_passive_levels'] += sum(bool(getattr(d, 'u', {}).get('_bloom_level_selected')) for d in ally_defs)
         self.timeline = [] if timeline else None
         self.enemy_lines = enemy_lines
         self.result = None
@@ -1496,7 +1498,7 @@ class Battle:
                     continue
                 if e.clock != 'owner_turn':
                     continue
-                if e.inst is not None and not e.dot and self.mc['independent_stack_limits'] == 'client':
+                if e.inst is not None and not e.dot:
                     for it in e.inst:
                         if getattr(it, 'fresh', False):
                             it.fresh = False
@@ -1681,14 +1683,13 @@ class Battle:
         self.log(bskill=self.break_skill_name)
         rule = self.break_skill_rule
         dmg_up, heal_up = self._break_level_up()
-        client_residuals = self.mc['break_skill_residuals'] == 'client'
         if rule.get('damage_ratio'):
             base = sum(self.live_atk(u) for u in self.alive(0)) * (rule['damage_ratio'] + dmg_up) / _rules.AOE_DIV
             if self.mc['break_skill_scale'] == 'game':
                 base *= _rules.BASE_MULT   # 오비탈 피해도 일반 피해식 끝의 DamageScale(1.85)을 곱함(NKM 17742~17817, 오비탈 시전자 OBF_26964)
             had_barrier = self.gb is not None and self.gb.barrier()
             targets = list(self.alive(1))
-            queued_guard = self._break_guard()[0] if client_residuals and len(targets) > 1 else None
+            queued_guard = self._break_guard()[0] if len(targets) > 1 else None
             if queued_guard is not None:
                 # NKM:15983-16014: 광역 수호자를 마지막에 맞히며, 타격별 분담 원값을 모은다.
                 targets.remove(queued_guard)
@@ -1699,7 +1700,7 @@ class Battle:
                     continue
                 raw = base + (pending if v is queued_guard else 0.0)
                 guard, shared = None, 0.0
-                if client_residuals and not v.invincible() and not v.on('스킬 피해 무효'):
+                if not v.invincible() and not v.on('스킬 피해 무효'):
                     guard, share = self._break_guard()
                     if guard is not None and guard is not v:
                         # NKM:18157-18185: 누적 몫을 더한 뒤 방어 적용 전에 분리한다.
@@ -1738,7 +1739,7 @@ class Battle:
         if self.opts['nova_pool'] == 'team':
             self.nova_add(self.allies[0], nova)  # 공용 풀도 NovaForceUp의 상한을 거침
         # PC 26752678 NKM:17934-17950,1032: 회복의 팀 HP 합도 생존자만. legacy는 사망자 포함.
-        heal_team = self.alive(0) if client_residuals else self.allies
+        heal_team = self.alive(0)
         amount = sum(u.maxhp for u in heal_team) * (rule.get('heal_ratio', 0) + (heal_up if 'heal_ratio' in rule else 0.0))
         self.break_domain_remaining = self.break_domain_turns
         for u in self.alive(0):
@@ -1857,14 +1858,13 @@ class Battle:
             sk = u.skill_overrides.get(slot, u.d.skills.get(slot))
             if sk is None or u.cd.get(slot, 0) > 0:
                 continue
-            if self.mc['foe_client_flow'] == 'client':
-                sk = getattr(u.d, 'client_named_skills', {}).get(sk.name, sk)
-                if sk.ty == '트리거':
-                    continue
+            sk = getattr(u.d, 'client_named_skills', {}).get(sk.name, sk)
+            if sk.ty == '트리거':
+                continue
             if silenced and sk.cd:
                 continue
             spec = specs.get(slot)
-            if self.mc['foe_client_flow'] == 'client' and getattr(sk, 'client_auto', None):
+            if getattr(sk, 'client_auto', None):
                 spec = {'rows': sk.client_auto}
             if spec is None or spec.get('react'):
                 return sk, None
@@ -1886,14 +1886,12 @@ class Battle:
 
     def auto_cond_ok(self, u, c):
         if c[0] == 'ally_hp_le_bp':
-            if self.mc['auto_cond_hp_float32'] == 'client':
-                # PC 26752678 NKM:7484-7500: 임계 0이면 거짓, (int)(HP비율 float × 10000f) <= 임계.
-                # HP 비율은 NKM:2191-2198의 float 나눗셈. 대상 선택(auto_hp_float32)과 별도 스위치.
-                self.rule_hits['auto_cond_hp_float32'] += 1
-                if not c[1]:
-                    return False
-                return any(_float32_bp(v.hp, v.maxhp) <= c[1] for v in self.alive(u.side))
-            return any(int(v.hp / v.maxhp * 10000) <= c[1] for v in self.alive(u.side))
+            # PC 26752678 NKM:7484-7500: 임계 0이면 거짓, (int)(HP비율 float × 10000f) <= 임계.
+            # HP 비율은 NKM:2191-2198의 float 나눗셈. 대상 선택(auto_hp_float32)과 별도 스위치.
+            self.rule_hits['auto_cond_hp_float32'] += 1
+            if not c[1]:
+                return False
+            return any(_float32_bp(v.hp, v.maxhp) <= c[1] for v in self.alive(u.side))
         if c[0] == 'ally_dead':
             return any(v.dead for v in self.side_units(u.side))
         if c[0] == 'self_stack_eq':
@@ -1952,7 +1950,7 @@ class Battle:
             rows = lines.get(owner.key, {}) if variants else (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {}))
             spec = rows.get((ln.slot, ln.raw))
         if spec is not None:
-            hit = savior_rules.keep_native_selector(owner.key, ln, self.mc)   # 표지 보유자 없어도 데이터 규칙 유지(스마일·길레)
+            hit = savior_rules.keep_native_selector(owner.key, ln)   # 표지 보유자 없어도 데이터 규칙 유지(스마일·길레)
             if hit:
                 self.rule_hits[hit] += 1
                 return spec
@@ -2305,7 +2303,7 @@ class Battle:
         if self._cur_line is not None and self._cur_line.eff.get('native_target'):
             return marker_se.targets(self, owner, self._cur_line, ctx)
         t = text.strip()
-        if t == '보스인 아군 전체' and self.mc['foe_client_flow'] == 'client':
+        if t == '보스인 아군 전체':
             return [x for x in self.alive(owner.side) if getattr(x.d, 'boss', False)]
         spec = explicit_target(t)
         if spec is not None:
@@ -2419,8 +2417,7 @@ class Battle:
     # ---------- 시전
     def cast(self, u, sk, extra=False, target=None, skip_lines=False, via=None, local_pre=False, parent=None):
         sk = u.skill_overrides.get(sk.slot, sk)
-        if self.mc['foe_client_flow'] == 'client':
-            sk = getattr(u.d, 'client_named_skills', {}).get(sk.name, sk)
+        sk = getattr(u.d, 'client_named_skills', {}).get(sk.name, sk)
         if u.dead:
             return None
         if self.incapacitated(u):
@@ -2547,7 +2544,7 @@ class Battle:
             self.fire_side(u, ctx, 'ally_post')
             self.fire_foes(u, ctx, 'foe_post' if sk.is_attack else 'foe_post_na')
             self.fire_foes(u, ctx, 'foe_post_any')      # 「적 행동 후」(공격·비공격 모두)
-            if sk.is_attack and self.mc['hit_ally_skill_end'] == 'client':
+            if sk.is_attack:
                 self.fire_hit_allies(u, ctx)
             if self.gb is not None:
                 self.gb.after_cast(u, sk, ctx, extra)
@@ -2674,19 +2671,18 @@ class Battle:
         cand = self.kind_lines(u, kind) if source is plain else [ln for ln in source if line_kind(ln) == kind]
         lines = [ln for ln in cand if not (ln.bound and ln.slot != sk.slot)
                  and not (ln.trig and '공격' in ln.trig and ln.na == sk.is_attack)]   # 「내 행동 시/후」는 공격·비공격 모두
-        if kind == 'own_post' or (kind == 'own_pre' and self.mc['passive_se_order'] == 'client'):
+        if kind == 'own_post' or kind == 'own_pre':
             groups = ([ln for ln in lines if ln.src_kind in ('active', 'trigger', 'nova')],
                       [ln for ln in lines if ln.src_kind not in ('active', 'trigger', 'nova')])
-            if self.mc['passive_se_order'] == 'client':
-                active, passive = groups
-                # Poten SEs follow active AND AfterActiveSkillSe passives
-                # (NKM:2658-2674,2818-2822), despite sharing src_kind.
-                potentials = [ln for ln in passive if ln.slot == '잠재력']
-                passive = [ln for ln in passive if ln.slot != '잠재력']
-                groups = ([ln for ln in passive if not after_active_se(u.key, ln)], active,
-                          [ln for ln in passive if after_active_se(u.key, ln)], potentials)
-                if active and (passive or potentials):
-                    self.rule_hits['passive_se_order'] += 1
+            active, passive = groups
+            # Poten SEs follow active AND AfterActiveSkillSe passives
+            # (NKM:2658-2674,2818-2822), despite sharing src_kind.
+            potentials = [ln for ln in passive if ln.slot == '잠재력']
+            passive = [ln for ln in passive if ln.slot != '잠재력']
+            groups = ([ln for ln in passive if not after_active_se(u.key, ln)], active,
+                      [ln for ln in passive if after_active_se(u.key, ln)], potentials)
+            if active and (passive or potentials):
+                self.rule_hits['passive_se_order'] += 1
             if self.mc['skill_end_timing'] == 'client':
                 self.rule_hits['skill_end_timing'] += sum(ln.eff['kind'] == 'remove' for ln in lines)
             for group in groups:
@@ -2738,29 +2734,27 @@ class Battle:
 
     def trigger_cast(self, owner, sk, target=None, **kw):
         """반응·트리거 공통 진입점: 상태와 쿨 확인 후 재진입 전에 예약."""
-        if self.mc['foe_client_flow'] == 'client':
-            sk = owner.skill_overrides.get(sk.slot, sk)
-            sk = getattr(owner.d, 'client_named_skills', {}).get(sk.name, sk)
+        sk = owner.skill_overrides.get(sk.slot, sk)
+        sk = getattr(owner.d, 'client_named_skills', {}).get(sk.name, sk)
         key = (id(owner), sk.slot)
         if (owner.dead or self.no_react(owner) or owner.cd.get(sk.slot, 0) > 0
                 or key in self._triggering or (owner.side == 1 and not self.enemy_lines)):
             return None
-        if self.mc['foe_client_flow'] == 'client':
-            if getattr(sk, 'client_auto', None):
-                for row in sk.client_auto:
-                    if all(self.auto_cond_ok(owner, c) for c in row['c']):
-                        pool, _ = self.filter_chain(owner, self.targetable(1 - owner.side), row['f'])
-                        if not pool:
-                            return None
-                        # PC 26752678 NKM:7255: a sole candidate consumes no RNG.
-                        if len(pool) == 1 and self.mc['reaction_single_target_rng'] == 'client':
-                            target = pool[0]
-                            self.rule_hits['reaction_single_target_rng'] += 1
-                        else:
-                            target = self.R(owner.side).choice(pool)
-                        break
-                else:
-                    return None
+        if getattr(sk, 'client_auto', None):
+            for row in sk.client_auto:
+                if all(self.auto_cond_ok(owner, c) for c in row['c']):
+                    pool, _ = self.filter_chain(owner, self.targetable(1 - owner.side), row['f'])
+                    if not pool:
+                        return None
+                    # PC 26752678 NKM:7255: a sole candidate consumes no RNG.
+                    if len(pool) == 1:
+                        target = pool[0]
+                        self.rule_hits['reaction_single_target_rng'] += 1
+                    else:
+                        target = self.R(owner.side).choice(pool)
+                    break
+            else:
+                return None
         owner.cd[sk.slot] = sk.cd or 0
         self._triggering.add(key)
         try:
@@ -3051,30 +3045,28 @@ class Battle:
         pen = min(1.0, max(0.0, m['pen'] + ctx.pen))
         ctx.crit = False
         prepared = None
-        if self.mc['potential_11026_vampirism'] == 'client':
-            rates = [ln.eff['rate'] for ln in self.lines_of(a)
-                     if ln.eff['kind'] == 'hit_vampirism' and ln.eff['slot'] == sk.slot]
-            if rates:
-                # NSEAT_HIT is fired once AFTER collecting every target result,
-                # BEFORE any damage (15668-15687). MyAttackHit tests ANY result.
-                prepared = {}
-                for v in ctx.targets:
-                    if v.dead:
-                        continue
-                    ev = self.evade_rate(a, v, ctx)
-                    evaded = ev > 0 and self.R(a.side).random() < ev
-                    crit = not evaded and (self.R(a.side).random() < min(1.0, cr + ctx.local_by[v]['cr']) or ctx.force_crit)
-                    prepared[v] = (evaded, crit)
-                if any(crit for _, crit in prepared.values()):
-                    ctx.hit_vampirism = sum(rates)
-                self.rule_hits['potential_11026_vampirism'] += 1
-        if self.mc['last_damager_timing'] == 'client':
-            # build 26610546 NKM:15669-15689: remember all skill victims before
-            # DAMAGE_START or any hit. AddDamage/DoT do not write this memory.
+        rates = [ln.eff['rate'] for ln in self.lines_of(a)
+                 if ln.eff['kind'] == 'hit_vampirism' and ln.eff['slot'] == sk.slot]
+        if rates:
+            # NSEAT_HIT is fired once AFTER collecting every target result,
+            # BEFORE any damage (15668-15687). MyAttackHit tests ANY result.
+            prepared = {}
             for v in ctx.targets:
-                if not v.dead and a.side != v.side:
-                    v.last_damager = a
-            self.rule_hits['last_damager_timing'] += 1
+                if v.dead:
+                    continue
+                ev = self.evade_rate(a, v, ctx)
+                evaded = ev > 0 and self.R(a.side).random() < ev
+                crit = not evaded and (self.R(a.side).random() < min(1.0, cr + ctx.local_by[v]['cr']) or ctx.force_crit)
+                prepared[v] = (evaded, crit)
+            if any(crit for _, crit in prepared.values()):
+                ctx.hit_vampirism = sum(rates)
+            self.rule_hits['potential_11026_vampirism'] += 1
+        # build 26610546 NKM:15669-15689: remember all skill victims before
+        # DAMAGE_START or any hit. AddDamage/DoT do not write this memory.
+        for v in ctx.targets:
+            if not v.dead and a.side != v.side:
+                v.last_damager = a
+        self.rule_hits['last_damager_timing'] += 1
         reactions = []
         for v in list(ctx.targets):
             if v.dead:
@@ -3095,8 +3087,6 @@ class Battle:
             if evaded:
                 ctx.evaded.add(v)
             t0 = v.taken
-            if self.mc['last_damager_timing'] == 'per_target' and a.side != v.side:
-                v.last_damager = a
             self.strike(a, v, base, ctx, crit, min(3.0, cdv + by['cd']), min(1.0, pen + by['pen']), reactions, evaded)
             if self._hit_log is not None and ctx.via != 'revenge' and v.taken > t0:
                 # 반격 후보 = 피해(보호막 흡수 포함)가 0보다 큰 타격(NKM 7203~7215, 회피도 피해가 남으면 포함). 반격으로 낸 타격은 제외
@@ -3118,15 +3108,6 @@ class Battle:
             if v.dead:
                 continue
             self.fire(v, 'hit_self', hctx)
-            for w in (self.alive(v.side) if self.mc['hit_ally_skill_end'] != 'client' else []):
-                if w is v:
-                    continue
-                lines = self.kind_lines(w, 'hit_ally')
-                if lines:
-                    c2 = Ctx(w, a, sk, ctx.extra)
-                    c2.target, c2.targets, c2.crit, c2.hit_victim = v, [v], hctx.crit, v
-                    c2.break_targets = hctx.break_targets
-                    self.run_batch(w, lines, c2)
             self.reaction_skills(v, a, sk, hctx.crit, v in hctx.evaded)
         ctx.target = ctx.targets[0] if ctx.targets else None
 
@@ -3230,7 +3211,7 @@ class Battle:
             return
         if any(e.armor_ban and e.stacks > 0 and
                (self.mc['superarmor_damage_ban'] == 'client' or
-                (e.client_1121 and self.mc['foe_client_flow'] == 'client')) for e in v.eff.values()):
+                e.client_1121) for e in v.eff.values()):
             self.rule_hits['superarmor_damage_ban'] += 1
             return
         if v.broken or v.sa_max <= 0 or v.has('강인도 피해 무효'):
@@ -3676,10 +3657,9 @@ class Battle:
             rule = DAMAGE_LIMIT[name]
             if rule['kind'] == 'floor':
                 floor_hp = math.floor(v.maxhp * rule['pct'])
-                eligible = v.hp >= floor_hp if self.mc['damage_break_boundary'] == 'client' else v.hp > floor_hp
+                eligible = v.hp >= floor_hp
                 if eligible and left < floor_hp:
-                    if self.mc['damage_break_boundary'] == 'client':
-                        self.rule_hits['damage_break_boundary'] += 1
+                    self.rule_hits['damage_break_boundary'] += 1
                     left = floor_hp
                     self._consume_limit(v, name, rule)
             elif rule['kind'] == 'lethal' and left <= 1e-9:
@@ -3823,13 +3803,10 @@ class Battle:
             return
         extended = self.mc.get('foe_react_timing', 'extended') == 'extended'
         for slot, rule in react.items():
-            if rule.get('client_1121') and self.mc['foe_client_flow'] != 'client':
-                continue
             ts = u.d.trigger_skills.get(slot)
-            if self.mc['foe_client_flow'] == 'client':
-                ts = u.skill_overrides.get(slot, ts)
-                if ts is not None and ts.ty != '트리거':
-                    continue
+            ts = u.skill_overrides.get(slot, ts)
+            if ts is not None and ts.ty != '트리거':
+                continue
             if ts is None:
                 continue
             timing = rule['timing']
@@ -3941,8 +3918,7 @@ class Battle:
             target = None
             if rule['target'] == 'react_target':
                 target = ctx.target if (ctx.target and not ctx.target.dead) else None
-                selected = (getattr(u.d, 'client_named_skills', {}).get(ts.name, ts)
-                            if self.mc['foe_client_flow'] == 'client' else ts)
+                selected = getattr(u.d, 'client_named_skills', {}).get(ts.name, ts)
                 # PC NKM:9146-9153: automatic reaction targets are selected
                 # afresh; the original victim need not survive the attack.
                 if target is None and not getattr(selected, 'client_auto', None):
@@ -4131,7 +4107,7 @@ class Battle:
                                 guard.hit_evaded = False      # 수호자 몫 계산 OBF_21375(NKM:8080 → 6212 → 17898)도 NormalHit
                             self.apply_damage(src, guard, dot_dmg(guard, share_base), 'dot', shieldable=False)
                 if phase != 'dot' and e.hot > 0 and not u.dead and u.on(name):
-                    if e.inst is not None and self.mc['independent_stack_limits'] == 'client':
+                    if e.inst is not None:
                         for instance in e.inst:
                             src = instance[0] or u
                             self.heal(src, u, u.maxhp * e.hot, src.sd.get('주는 회복량', 0.0) / 100.0)
@@ -4190,8 +4166,7 @@ class Battle:
             return
         total = ctx.vamp_damage.pop(target)
         rate = a.mods()['vampirism']
-        if self.mc['potential_11026_vampirism'] == 'client':
-            rate += ctx.hit_vampirism
+        rate += ctx.hit_vampirism
         if damage <= 0 or total <= 0 or rate <= 0 or a.dead:
             return
         raw = math.floor(total * rate * (1 + a.mods()['heal_recv']))
@@ -4299,7 +4274,7 @@ class Battle:
         mh = RX_HP_COND.search(ln.raw)
         if mh:
             frac = owner.hp / owner.maxhp * 100
-            if self.mc['self_hp_condition'] == 'client' and mh.group(2) in ('이상', '이하'):
+            if mh.group(2) in ('이상', '이하'):
                 # NKM:2191-2198,16508-16516: float division, float *10000,
                 # then integer truncation. This differs from target condition's
                 # double multiplication (hp_basis_points).
@@ -4604,8 +4579,6 @@ class Battle:
         self.run_batch(owner, [ln], ctx)
 
     def line_ok(self, owner, ln, ctx):
-        if ln.eff.get('requires_foe_client') and self.mc['foe_client_flow'] != 'client':
-            return False
         rule = ln.eff.get('rule_key')
         if rule and self.mc[rule] == 'client':
             self.rule_hits[rule] += 1
@@ -4629,7 +4602,7 @@ class Battle:
             return False
         mrc = RX_RECAST.search(ln.raw) if '재발동 불가' in ln.raw else None
         if mrc and self._recast_clock(owner) < self.recast.get((id(owner), id(ln)), -10 ** 9) + int(mrc.group(1)):
-            if self.mc['se_cool_clock'] == 'client' and owner.actions >= self._recast_legacy.get((id(owner), id(ln)), -10 ** 9) + int(mrc.group(1)):
+            if owner.actions >= self._recast_legacy.get((id(owner), id(ln)), -10 ** 9) + int(mrc.group(1)):
                 self.rule_hits['se_cool_clock'] += 1      # legacy(행동 시작 기준)였다면 풀렸을 차단
             return False      # {발동 후 N턴 재발동 불가}: SeCoolTurn. client = 주인의 자기 턴 종료 N번 뒤 해제(NKM:3534-3560·3604-3617), legacy = 주인의 행동 시작 N번 뒤
         if ln.params or RX_HP_COND.search(ln.raw):
@@ -4649,16 +4622,13 @@ class Battle:
             self._mark_recast(owner, ln)
 
     def _recast_clock(self, owner):
-        return owner.turn_ends if self.mc['se_cool_clock'] == 'client' else owner.actions
+        return owner.turn_ends
 
     def _mark_recast(self, owner, ln):
         clock = self._recast_clock(owner)
-        if self.mc['se_cool_clock'] == 'client':
-            # legacy 비교용 시점도 남긴다(규칙 실행 기록 rule_hits 용).
-            self.recast[(id(owner), id(ln))] = clock
-            self._recast_legacy[(id(owner), id(ln))] = owner.actions
-        else:
-            self.recast[(id(owner), id(ln))] = clock
+        # legacy 비교용 시점도 남긴다(규칙 실행 기록 rule_hits 용).
+        self.recast[(id(owner), id(ln))] = clock
+        self._recast_legacy[(id(owner), id(ln))] = owner.actions
 
     @staticmethod
     def _is_cast_line(ln):
@@ -4677,8 +4647,7 @@ class Battle:
         if marker_se.run_batch(self, owner, lines, ctx):
             return
         if (getattr(owner.d, 'client_model', None) == 'baskerville' or
-                (self.mc['foe_client_flow'] == 'client' and
-                 all(line_kind(ln) in getattr(owner.d, 'client_sequential_events', ()) for ln in lines))):
+                all(line_kind(ln) in getattr(owner.d, 'client_sequential_events', ()) for ln in lines)):
             # NKM:16103-16116,16374-16405,16526-16528: 같은 사건에서도 SE마다 즉시 재판정.
             for ln in lines:
                 if self.line_ok(owner, ln, ctx):
@@ -4719,8 +4688,6 @@ class Battle:
     def _per_target(self, owner, ln, ctx):
         """대상 조건(대상 속성·대상이 보유 등)이 붙은 「받는 회복량」 줄, 또는 여러 대상을 치는 내 공격의 「이번 스킬에만」 보정 줄:
         조건을 대상마다 따로 판정해야 한다(첫 대상 하나로 판정해 전원에게 적용하면 틀림)."""
-        if ln.eff.get('requires_foe_client') and self.mc['foe_client_flow'] != 'client':
-            return False
         if ctx.skill is None or ctx.src is not owner or not any(k in TARGET_KEYS for k, _ in ln.params):
             return False
         if ln.eff['kind'] == 'ignored' and RX_RECV_HEAL.match(line_rest(ln)):
@@ -4769,8 +4736,6 @@ class Battle:
         eff = ln.eff
         kd = eff['kind']
         if kd == 'foe_change_skill':
-            if self.mc['foe_client_flow'] != 'client':
-                return
             before = owner.d.client_named_skills[eff['before']]
             current = owner.skill_overrides.get(before.slot, owner.d.skills.get(before.slot) or owner.d.trigger_skills.get(before.slot))
             if current is not None and current.name == before.name:
@@ -4781,8 +4746,7 @@ class Battle:
                 self.rule_hits['foe_change_skill'] += 1
             return
         if kd == 'foe_cleanse':
-            if self.mc['foe_client_flow'] == 'client':
-                self.run_special(owner, ln, ctx, '자신에게 〈디버프 해제〉 (약화효과 해제)')
+            self.run_special(owner, ln, ctx, '자신에게 〈디버프 해제〉 (약화효과 해제)')
             return
         if kd == 'belgras_fixed':
             self._belgras_damage.append((owner, eff['value']))
@@ -4803,16 +4767,13 @@ class Battle:
             enemies = self.alive(1 - owner.side)
             if allies and enemies and self.R(owner.side).random() < eff['chance']:
                 self._fired(owner)
-                if self.mc['random_basic_not_self'] == 'client':
-                    # PC 26752678 AUTO_SKILL_TARGET Id5 IsAllyOneNotSelf(NKM:7566-7568): 시전자 제외, 0명이면 목록 유지(7758-7763),
-                    # 단일 대상은 2명 이상일 때만 ArrayIndex 난수(7170-7175). legacy는 자신 포함 choice.
-                    others = [u for u in allies if u is not owner]
-                    if others:
-                        allies = others
-                        self.rule_hits['random_basic_not_self'] += 1
-                    actor = allies[0] if len(allies) == 1 else self.R(owner.side).choice(allies)
-                else:
-                    actor = self.R(owner.side).choice(allies)
+                # PC 26752678 AUTO_SKILL_TARGET Id5 IsAllyOneNotSelf(NKM:7566-7568): 시전자 제외, 0명이면 목록 유지(7758-7763),
+                # 단일 대상은 2명 이상일 때만 ArrayIndex 난수(7170-7175). legacy는 자신 포함 choice.
+                others = [u for u in allies if u is not owner]
+                if others:
+                    allies = others
+                    self.rule_hits['random_basic_not_self'] += 1
+                actor = allies[0] if len(allies) == 1 else self.R(owner.side).choice(allies)
                 if self._exec_pick():     # 클라: 예약엔 시전자·자동 대상 규칙만, 적은 실행 직전에 고름(NKM 7973·13181~13189)
                     def fn(actor=actor):
                         pool = self.alive(1 - owner.side)
@@ -4853,11 +4814,8 @@ class Battle:
         if kd == 'count_damage':
             if ctx.src is owner and ctx.skill is not None:
                 if eff['scope'] == 'shield_all':
-                    if self.mc['shield_enemy_count'] == 'client':
-                        n = sum(any(e.shield > 0 for e in x.eff.values()) for x in self.alive(1 - owner.side))
-                        self.rule_hits['shield_enemy_count'] += 1
-                    else:
-                        n = sum(sum(e.shield > 0 for e in x.eff.values()) for x in self.alive(1 - owner.side))
+                    n = sum(any(e.shield > 0 for e in x.eff.values()) for x in self.alive(1 - owner.side))
+                    self.rule_hits['shield_enemy_count'] += 1
                     ctx.inc += min(n, eff['cap']) * eff['val'] / 100
                 elif eff['scope'] == 'self_good':
                     ctx.inc += min(owner.n_good(), eff['cap']) * eff['val'] / 100
@@ -5066,7 +5024,7 @@ class Battle:
                 if x.gauge > eff['threshold'] * 100.0:
                     self.set_gauge(x, eff['val'] * 100.0)
             return
-        if kd == 'cdr' and self.mc['skill_cool_change'] == 'client':
+        if kd == 'cdr':
             # PC 26752678 BattleBuff.cs(NKM:5008-5011) -> OBF_19444(NKM:2063-2078)·OBF_34909(3120-3133): SE 대상(SE m_BuffTargetType)마다
             # SkillCoolturnType 칸(특수기·궁극기) 또는 NSI_INVALID(«스킬 쿨타임»)면 1~4칸 전부를 max(현재 − N, 0).
             tgt = eff.get('target') or '자신'
@@ -5214,8 +5172,6 @@ class Battle:
         m = RX_SHIELD.match(rest)
         if m:
             target_base = '보호막 = 대상 ' in rest
-            if target_base and self.mc['foe_client_flow'] != 'client':
-                return
             tg = self.resolve(owner, m.group(1), ctx, kind='shield')
             stat = {'생명력': owner.maxhp, '공격력': self.atk_stat(owner), '방어력': self.def_stat(owner)}[m.group(5)]
             amount = math.floor(stat * float(m.group(6)) / 100.0 * max(0.0, 1 + owner.mods()['barrier_give']))
@@ -5226,20 +5182,17 @@ class Battle:
                     if mm:
                         props[mm.group(1).strip()] = float(mm.group(2))
             for x in tg or []:
-                if target_base or self.mc['barrier_formula'] == 'client':
-                    # PC 26752678 NKM:4773-4802: basis owns GIVE, recipient owns
-                    # RECEIVE; truncate base and signed bonus separately. A zero
-                    # grant returns null even when an older barrier exists.
-                    basis = x if target_base else owner
-                    stat = {'생명력': basis.maxhp, '공격력': self.atk_stat(basis), '방어력': self.def_stat(basis)}[m.group(5)]
-                    base = int(stat * float(m.group(6)) / 100.0)
-                    receive = sum(e.props.get('받는 보호막량', 0) * e.stacks / 100.0 for e in x.eff.values() if e.stacks > 0)
-                    if self.mc['barrier_formula'] == 'client':
-                        receive = x.mods()['barrier_receive']
-                    amount = max(0, base + int(base * (basis.mods()['barrier_give'] + receive)))
-                    self.rule_hits['foe_target_barrier' if target_base else 'barrier_formula'] += 1
-                    if amount == 0:
-                        continue
+                # PC 26752678 NKM:4773-4802: basis owns GIVE, recipient owns
+                # RECEIVE; truncate base and signed bonus separately. A zero
+                # grant returns null even when an older barrier exists.
+                basis = x if target_base else owner
+                stat = {'생명력': basis.maxhp, '공격력': self.atk_stat(basis), '방어력': self.def_stat(basis)}[m.group(5)]
+                base = int(stat * float(m.group(6)) / 100.0)
+                receive = x.mods()['barrier_receive']
+                amount = max(0, base + int(base * (basis.mods()['barrier_give'] + receive)))
+                self.rule_hits['foe_target_barrier' if target_base else 'barrier_formula'] += 1
+                if amount == 0:
+                    continue
                 if self.refuse_buff(x, m.group(2)):
                     continue     # 〈강화 불가〉: 보호막도 강화 효과라 새로 받지 못함(합산 포함)
                 e = x.eff.get(m.group(2))
@@ -5278,18 +5231,17 @@ class Battle:
             for x in tg or []:
                 if x.dead:
                     x.dead = False
-                    if self.mc['revive_se_reset'] == 'client':
-                        # PC 26752678 Resurrection.cs(NKM:5461) -> OBF_20318(1218) -> OBF_0597(1930) -> OBF_35004(3493-3499):
-                        # 부활하면 SE 재발동 제한(SeCoolTurn)·전투당 1회(m_bNoReuse) 기록(OBF_16992)을 통째로 비운다.
-                        k = id(x)
-                        dropped = [key for key in self.recast if key[0] == k]
-                        for key in dropped:
-                            del self.recast[key]
-                            self._recast_legacy.pop(key, None)
-                        once = {key for key in self.once if key[0] == k}
-                        self.once -= once
-                        if dropped or once:
-                            self.rule_hits['revive_se_reset'] += 1
+                    # PC 26752678 Resurrection.cs(NKM:5461) -> OBF_20318(1218) -> OBF_0597(1930) -> OBF_35004(3493-3499):
+                    # 부활하면 SE 재발동 제한(SeCoolTurn)·전투당 1회(m_bNoReuse) 기록(OBF_16992)을 통째로 비운다.
+                    k = id(x)
+                    dropped = [key for key in self.recast if key[0] == k]
+                    for key in dropped:
+                        del self.recast[key]
+                        self._recast_legacy.pop(key, None)
+                    once = {key for key in self.once if key[0] == k}
+                    self.once -= once
+                    if dropped or once:
+                        self.rule_hits['revive_se_reset'] += 1
                     if self.mc['dead_keep_dnp'] == 'client':
                         x.eff = {n: e for n, e in x.eff.items()
                                  if e.dead_keep and not (n == '도발' and e.src is not None and e.src.dead)}
@@ -5317,9 +5269,8 @@ class Battle:
                         self.dirty(x)
                     # C5461 -> 1218 -> 1959: AFTER_SPAWN precedes 5472's
                     # toughness restore, which precedes 5473's revival HP.
-                    if self.mc['revive_toughness'] == 'client':
-                        x.sa, x.broken = x.sa_max, False
-                        self.rule_hits['revive_toughness'] += 1
+                    x.sa, x.broken = x.sa_max, False
+                    self.rule_hits['revive_toughness'] += 1
                     if self.mc['revive_after_spawn'] == 'client':
                         x.hp = float(math.floor(x.maxhp * int(m.group(2)) / 100.0))
                     if self.mc['dead_keep_dnp'] == 'client' and any(e.dead_keep for e in x.eff.values()):
@@ -5408,7 +5359,7 @@ class Battle:
                     selected = explicit_slot[1] if explicit_slot else ln.eff.get('cd_slot')
                     if sk.cd and (not selected or slot == selected):
                         up = x.cd.get(slot, 0) + int(m.group(2))
-                        if self.mc['skill_cool_change'] == 'client' and up > sk.cd:
+                        if up > sk.cd:
                             # PC 26752678 OBF_18296(NKM:2043-2058)·OBF_32846(3100-3117): 증가 뒤 값은 그 칸 최대 쿨(OBF_14012)을 넘지 않음.
                             up = sk.cd
                             self.rule_hits['skill_cool_change'] += 1
@@ -5465,8 +5416,6 @@ class Battle:
         (NKM.Templets:40597-40618). IsBuff=false 인 표지·스택(예: 왈츠 아세라 〈협공 확률 20% 증가 (C)〉 BI_DRESS_STRANIS_4)은 지우지 않고 개수도 안 셈.
         표에 없거나 동명 충돌이면 기존 분류(category). legacy = 기존 분류만."""
         legacy = e.category == ('debuff' if harmful else 'buff')
-        if self.mc['dispel_isbuff'] != 'client':
-            return legacy
         kind = buff_kind(name)
         if kind is None:
             return legacy
@@ -5995,8 +5944,6 @@ class Battle:
         name = eff['name']
         opp = x.side != owner.side
         info = getattr(owner.d, 'effect_info', {}).get(name, {})
-        if info.get('client_1121') and self.mc['foe_client_flow'] != 'client':
-            info = {}
         marker = eff.get('cast_marker') or bool(CHECK_NAME.search(name)) or '판별용' in name
         category = ('marker' if marker else info.get('category')) or ('debuff' if opp else 'buff')
         forced = self._forced(owner, name)
@@ -6067,14 +6014,13 @@ class Battle:
         if unique_cosmo:
             # NKM:4505-4524,16396-16405: 반복 부여마다 독립 객체. 묶음 안에 개별 수명·순번 보존.
             independent_cap = math.inf
-        if self.mc['independent_stack_limits'] == 'client':
-            independent_cap = independent_cap or _INDEPENDENT_CAPS.get(name)
-            unlimited_dot = bool(dot and name in ('출혈', '연소'))
-            if independent_cap or unlimited_dot:
-                self.rule_hits['independent_stack_limits'] += 1
-            if independent_cap and e is not None and e.stacks >= independent_cap:
-                return  # UniqueIdStackMax: 상한에서 신규 부여를 거부, 기존 지속도 유지.
-        if (self.mc['unique_id_stack'] == 'client' and not independent_cap and not dot and name not in _rules.KNOWN_DOT
+        independent_cap = independent_cap or _INDEPENDENT_CAPS.get(name)
+        unlimited_dot = bool(dot and name in ('출혈', '연소'))
+        if independent_cap or unlimited_dot:
+            self.rule_hits['independent_stack_limits'] += 1
+        if independent_cap and e is not None and e.stacks >= independent_cap:
+            return  # UniqueIdStackMax: 상한에서 신규 부여를 거부, 기존 지속도 유지.
+        if (not independent_cap and not dot and name not in _rules.KNOWN_DOT
                 and not hot and eff['props'] and category != 'marker' and name not in _INDEPENDENT_CAPS):
             # PC 26752678 NKM:4331-4336,4505-4518,4520-4528: IsUniqueID(비 IsLevel) 버프는 같은 ID 재부여 때 옛 객체를
             # 지우지 않고 새 객체를 더한다(UniqueIdStackMax 0=무제한). 능력치는 객체마다 합산. 이름 표 = buff_flags.unique_id.
@@ -6136,7 +6082,7 @@ class Battle:
             check = False
         if e is None:
             cap = eff['max']
-            if cap is None and self.mc['level_max_source'] == 'client':
+            if cap is None:
                 cap = level_max(name)
                 if cap is not None:
                     self.rule_hits['level_max_source'] += 1
@@ -6149,7 +6095,7 @@ class Battle:
             e.speed_zero = bool(info.get('speed_zero') or eff.get('speed_zero'))
             e.armor_ban = bool(info.get('armor_ban'))
             e.client_1121 = bool(info.get('client_1121'))
-            e.next_turn_catch = bool(eff.get('next_turn_catch') and self.mc['foe_client_flow'] == 'client')
+            e.next_turn_catch = bool(eff.get('next_turn_catch'))
             if check:
                 e.check = True
                 e.check_turn = self.global_turns
@@ -6339,74 +6285,72 @@ def support_report(defs):
 
 def _marker_names(d):
     all_marker_names = {n for n, info in getattr(d, 'effect_info', {}).items() if info.get('category') == 'marker'}
-    if True:
-        for ln in d.lines:
-            for p, v in ln.params:
-                if p in ('자신이 보유', '자신이 미보유', '대상이 보유', '대상이 미보유', '시전자가 보유', '턴 유닛이 보유', '특정 효과 보유 적 존재'):
-                    all_marker_names.update(x.strip() for x in v.split(','))
-        # foe_react 조건에서 참조하는 버프 이름도 포함(맹약결속 등)
-        for slot, rc in getattr(d, 'react', {}).items():
-            for cond in rc.get('conds', []):
-                if not isinstance(cond, (list, tuple)) or not cond:
-                    continue
-                tag = cond[0]
-                if tag in ('self_stack_eq', 'self_stack_ge') and len(cond) >= 2:
-                    all_marker_names.add(cond[1])
-                elif tag in ('self_has', 'self_not_has', 'target_has') and len(cond) >= 2:
-                    for n in (cond[1] if isinstance(cond[1], list) else [cond[1]]):
-                        all_marker_names.add(n)
+    for ln in d.lines:
+        for p, v in ln.params:
+            if p in ('자신이 보유', '자신이 미보유', '대상이 보유', '대상이 미보유', '시전자가 보유', '턴 유닛이 보유', '특정 효과 보유 적 존재'):
+                all_marker_names.update(x.strip() for x in v.split(','))
+    # foe_react 조건에서 참조하는 버프 이름도 포함(맹약결속 등)
+    for slot, rc in getattr(d, 'react', {}).items():
+        for cond in rc.get('conds', []):
+            if not isinstance(cond, (list, tuple)) or not cond:
+                continue
+            tag = cond[0]
+            if tag in ('self_stack_eq', 'self_stack_ge') and len(cond) >= 2:
+                all_marker_names.add(cond[1])
+            elif tag in ('self_has', 'self_not_has', 'target_has') and len(cond) >= 2:
+                for n in (cond[1] if isinstance(cond[1], list) else [cond[1]]):
+                    all_marker_names.add(n)
     return all_marker_names
 
 
 def _support_one(d, markers_all):
     out = []
     markers = {id(d): markers_all}
-    if True:
-        foe = getattr(d, 'is_foe', False)
-        for ln in norm_lines_cached(d):
-            k = line_kind(ln)
-            rest = line_rest(ln)
-            reason = None
-            cap = level_max(ln.eff.get('name', ''))
-            if ln.eff.get('max') is not None and cap is not None and ln.eff['max'] != cap:
-                out.append(dict(unit=d.name, foe=foe, slot=ln.slot,
-                                reason='level_max: databook 최대 %s / 클라 %s (databook 우선)' % (ln.eff['max'], cap),
-                                raw=ln.raw, critical=False))
-            if k == 'unmodeled':
-                reason = 'trigger: ' + (ln.trig or ln.phase or '')
-            elif ln.eff['kind'] == 'summon':
-                pass   # mc.summon=data 이면 지원됨 — 여기서는 정적 검사라 unsupported 로 세지 않음
-            elif ln.eff['kind'] == 'ignored' and k != 'ignored' and not any(rx.match(rest) for rx in SPECIAL_RX):
-                reason = 'effect: ' + (ln.eff.get('why') or '')
-            if not reason and k != 'unmodeled':
-                reason = _meaning_gap(ln, k, markers[id(d)])
-            tgt = rest.split('에게', 1)[0] if '에게' in rest else ''
-            nm = ln.eff.get('name') or ''
-            if (not reason and '자동 지정' in tgt and not tgt.startswith('적') and nm != '강제 협공' and ln.eff['kind'] not in ('remove', 'random_ally_basic')
-                    and not (CHECK_NAME.search(nm) or '판별용' in nm) and auto_rule(d, ln, None) is None):
-                reason = 'selector: 자동 지정 대상 규칙을 설명문에서 못 찾음(기본 규칙 사용)'
-            bad = [p for p, _ in ln.params if p not in COND_KEYS]
-            if not reason and bad:
-                reason = 'condition: ' + ','.join(bad)
-            if reason:
-                raw = ln.raw
-                label = getattr(d, 'potential_line_names', {}).get(raw)
-                if label:
-                    raw = label + ' — ' + raw
-                out.append(dict(unit=d.name, foe=foe, slot=ln.slot, reason=reason, raw=raw,
-                                critical=bool(foe and CRITICAL_RX.search(rest) and '강인도' not in rest)))
-        for ts in d.trigger_skills.values():
-            if not supported_trigger(d, ts) and ts.slot not in getattr(d, 'react', {}):
-                out.append(dict(unit=d.name, foe=foe, slot=ts.slot, reason='skill',
-                                raw='트리거 스킬 미반영: ' + ts.name, critical=False))
-        supported_variants = {sk.name for _, sk in variant_rules(d).values()}
-        for msg in getattr(d, 'unmodeled', []):
-            if msg.startswith('격전 의뢰 효과 미반영'):
-                out.append(dict(unit=d.name, foe=foe, slot=None, reason='data', raw=msg, critical=False))
-            if msg.startswith('myinfo '):
-                out.append(dict(unit=d.name, foe=foe, slot='잠재력', reason='data', raw=msg, critical=False))
-            if msg.startswith('변형'):
-                if msg.split(': ', 1)[-1] in supported_variants:
-                    continue
-                out.append(dict(unit=d.name, foe=foe, slot=None, reason='skill', raw=msg, critical=False))
+    foe = getattr(d, 'is_foe', False)
+    for ln in norm_lines_cached(d):
+        k = line_kind(ln)
+        rest = line_rest(ln)
+        reason = None
+        cap = level_max(ln.eff.get('name', ''))
+        if ln.eff.get('max') is not None and cap is not None and ln.eff['max'] != cap:
+            out.append(dict(unit=d.name, foe=foe, slot=ln.slot,
+                            reason='level_max: databook 최대 %s / 클라 %s (databook 우선)' % (ln.eff['max'], cap),
+                            raw=ln.raw, critical=False))
+        if k == 'unmodeled':
+            reason = 'trigger: ' + (ln.trig or ln.phase or '')
+        elif ln.eff['kind'] == 'summon':
+            pass   # mc.summon=data 이면 지원됨 — 여기서는 정적 검사라 unsupported 로 세지 않음
+        elif ln.eff['kind'] == 'ignored' and k != 'ignored' and not any(rx.match(rest) for rx in SPECIAL_RX):
+            reason = 'effect: ' + (ln.eff.get('why') or '')
+        if not reason and k != 'unmodeled':
+            reason = _meaning_gap(ln, k, markers[id(d)])
+        tgt = rest.split('에게', 1)[0] if '에게' in rest else ''
+        nm = ln.eff.get('name') or ''
+        if (not reason and '자동 지정' in tgt and not tgt.startswith('적') and nm != '강제 협공' and ln.eff['kind'] not in ('remove', 'random_ally_basic')
+                and not (CHECK_NAME.search(nm) or '판별용' in nm) and auto_rule(d, ln, None) is None):
+            reason = 'selector: 자동 지정 대상 규칙을 설명문에서 못 찾음(기본 규칙 사용)'
+        bad = [p for p, _ in ln.params if p not in COND_KEYS]
+        if not reason and bad:
+            reason = 'condition: ' + ','.join(bad)
+        if reason:
+            raw = ln.raw
+            label = getattr(d, 'potential_line_names', {}).get(raw)
+            if label:
+                raw = label + ' — ' + raw
+            out.append(dict(unit=d.name, foe=foe, slot=ln.slot, reason=reason, raw=raw,
+                            critical=bool(foe and CRITICAL_RX.search(rest) and '강인도' not in rest)))
+    for ts in d.trigger_skills.values():
+        if not supported_trigger(d, ts) and ts.slot not in getattr(d, 'react', {}):
+            out.append(dict(unit=d.name, foe=foe, slot=ts.slot, reason='skill',
+                            raw='트리거 스킬 미반영: ' + ts.name, critical=False))
+    supported_variants = {sk.name for _, sk in variant_rules(d).values()}
+    for msg in getattr(d, 'unmodeled', []):
+        if msg.startswith('격전 의뢰 효과 미반영'):
+            out.append(dict(unit=d.name, foe=foe, slot=None, reason='data', raw=msg, critical=False))
+        if msg.startswith('myinfo '):
+            out.append(dict(unit=d.name, foe=foe, slot='잠재력', reason='data', raw=msg, critical=False))
+        if msg.startswith('변형'):
+            if msg.split(': ', 1)[-1] in supported_variants:
+                continue
+            out.append(dict(unit=d.name, foe=foe, slot=None, reason='skill', raw=msg, critical=False))
     return out

@@ -17,11 +17,11 @@ from battlesim.starsavior.parser import Line
 from battlesim.starsavior import foe_client
 
 
-def guild(tab, mode='client', allies=1):
+def guild(tab, allies=1):
     _, waves = stage_waves('guild', tab, '길드 방어전 6단계')
     defs = copy.deepcopy(waves[-1])
     b = Battle([unit('dummy%d' % i, hp=10**9, atk=10) for i in range(allies)], [defs], random.Random(3),
-               mc={'foe_client_flow': mode}, opts={'coop': False, 'nova': False}, timeline=True)
+               opts={'coop': False, 'nova': False}, timeline=True)
     b.spawn_wave()
     return b
 
@@ -53,9 +53,6 @@ class FoeClientTest(unittest.TestCase):
         self.assertEqual(minion.shield_total(), 0)
         self.assertEqual(owner.shield_total(), 0)
         self.assertGreater(b.rule_hits['foe_target_barrier'], 0)
-        with patch.dict(b.mc, foe_client_flow='off'):
-            b.run_line(owner, ln, ctx)
-        self.assertEqual(boss.shield_total(), 1000)
 
     def test_cohesion_target_local(self):
         _, waves = stage_waves('oph', '고대 지하 유적', 'SECTOR 39-10')
@@ -70,11 +67,6 @@ class FoeClientTest(unittest.TestCase):
         self.assertEqual(ctx.local_by[b.allies[0]]['inc'], .3)
         self.assertEqual(ctx.local_by[b.allies[1]]['inc'], 0)
         self.assertEqual([a.hp for a in b.allies], [a.maxhp for a in b.allies])
-        with patch.dict(b.mc, foe_client_flow='off'):
-            old = Ctx(boss, boss, boss.d.skills['궁극기'])
-            old.target, old.targets = b.allies[0], list(b.allies)
-            b.run_line(boss, ln, old)
-        self.assertEqual(old.local_by[b.allies[0]]['inc'], 0)
 
     def test_projection_detainment(self):
         _, waves = stage_waves('oph', '버려진 요새', 'SECTOR 40-10')
@@ -201,9 +193,6 @@ class FoeClientTest(unittest.TestCase):
             b.tough_hit(a, shien, Ctx(a, a, a.d.skills['기본기']))
             self.assertEqual(shien.sa, before)
             self.assertGreater(b.rule_hits['superarmor_damage_ban'], 0)
-            with patch.dict(b.mc, foe_client_flow='off'):
-                b.tough_hit(a, shien, Ctx(a, a, a.d.skills['기본기']))
-            self.assertEqual(shien.sa, before - 2)
             with patch.object(b, 'choose_skill', return_value=(tien.d.skills[slot], b.allies[0])):
                 b.act(tien)
             self.assertEqual(shien.gauge, gain)
@@ -213,13 +202,6 @@ class FoeClientTest(unittest.TestCase):
             self.assertEqual(b.pick_next([shien]), (shien, 0))
             b.act(shien)
             self.assertEqual(shien.actions, 1)
-
-    def test_legacy_no_catch(self):
-        b = guild('심해의 폭군', 'off')
-        shark = next(u for u in b.foes if u.d.name == '심해의 폭군')
-        for _ in range(4):
-            b.act(b.allies[0])
-        self.assertEqual(shark.gauge, 0)
 
 
 def mutations():

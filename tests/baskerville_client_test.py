@@ -185,7 +185,6 @@ class BaskervilleClientTest(unittest.TestCase):
         self.assertEqual(boss.sa, sa)
         self.assertGreater(b.rule_hits['superarmor_damage_ban'], 0)
         self.assertEqual(MC_OPTS['superarmor_damage_ban'], 'off')
-        self.assertEqual(MC_OPTS['fixstats_speed_zero'], 'client')
         ln = next(x for x in b.lines_of(boss) if '중첩 상한 없음' in x.raw)
         for _ in range(12):
             b.exec_line(boss, ln, Ctx(boss, boss, boss.d.skills['기본기']))
@@ -263,8 +262,14 @@ def mutations():
         with patch.dict(info, unique=False):
             return original_add(self, owner, x, eff, ctx, **kw)
     def no_zero(self):
-        with patch.dict(self.b.mc, fixstats_speed_zero='off'):
+        saved = [(e, e.speed_zero) for e in self.eff.values()]
+        for e, _ in saved:
+            e.speed_zero = False
+        try:
             return original_spd(self)
+        finally:
+            for e, v in saved:
+                e.speed_zero = v
     def no_armor(self, a, v, ctx):
         with patch.dict(self.mc, superarmor_damage_ban='off'):
             return original_tough(self, a, v, ctx)

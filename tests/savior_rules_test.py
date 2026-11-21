@@ -55,7 +55,7 @@ def conds():
     yield from (c for _, c in R.AFTER_ACTIVE)
     yield from R.MARKER_SCOPE.values()
     yield from (c for rows in R.MARKER_TARGETS.values() for c, _ in rows)
-    yield from (row[3] for row in R.KEEP_NATIVE_SELECTOR)
+    yield from (row[1] for row in R.KEEP_NATIVE_SELECTOR)
 
 
 class SaviorRules(unittest.TestCase):
@@ -74,11 +74,6 @@ class SaviorRules(unittest.TestCase):
     def test_marker_tables(self):
         self.assertEqual(marker_se.KEYS, frozenset(R.MARKER_SCOPE))
         self.assertLessEqual(set(R.MARKER_TARGETS), set(R.MARKER_SCOPE))
-
-    def test_switches_exist(self):
-        from battlesim.rules import MC_OPTS
-        for _, switch, on, _, hit in R.KEEP_NATIVE_SELECTOR:
-            self.assertIn(switch, MC_OPTS)
 
     def test_baseline_covers_table(self):
         import unify_baseline as U
@@ -106,7 +101,7 @@ class SaviorRules(unittest.TestCase):
             for cond, _ in R.MARKER_TARGETS.get(key, ()):
                 if not any(R.matches(ln, cond) for ln in pool):
                     unused.append(('MARKER_TARGETS', key, cond))
-            for k, _, _, cond, _ in R.KEEP_NATIVE_SELECTOR:
+            for k, cond, _ in R.KEEP_NATIVE_SELECTOR:
                 if k == key and not any(R.matches(ln, cond) for ln in pool):
                     unused.append(('KEEP_NATIVE_SELECTOR', key, cond))
         # 옛 marker_se.normalize 가 세레스·메이드 리디아 공용 블록에 둔 규칙 — 현재 세레스 줄에는 해당 표지가 없다(동작 보존으로 둠)

@@ -1,5 +1,4 @@
 """Build 26610546 G2 regressions, synthetic inputs and independent assertions."""
-import io
 import itertools
 import sys
 import unittest
@@ -11,7 +10,6 @@ from simkit import battle, unit, give
 from battlesim.mc import Battle, Ctx
 from battlesim.metrics import get_db
 from battlesim.starsavior.myinfo_combat import select_skills
-from battlesim.rules import MC_OPTS
 
 
 class SurveyG2(unittest.TestCase):
@@ -166,20 +164,13 @@ class SurveyG2(unittest.TestCase):
 
 
 CASES = {
- 'independent_stack_limits': ['test_independent_caps_and_duration', 'test_independent_hot', 'test_unlimited_dots'],
  'smile_waterbomb_scope': ['test_smile_special_no_move_or_refresh', 'test_smile_crit_basic_only', 'test_smile_new_target_retries_and_after_active_cleanup'],
  'scarlet_pinball_marker': ['test_scarlet_skipped_turn_keeps_roll'],
  'cristelle_ignite_targets': ['test_cristelle_all_elements'],
- 'shield_enemy_count': ['test_shield_counts_enemies'],
  'gauge_lock_order': ['test_gauge_before_lock'],
- 'damage_break_boundary': ['test_damage_break_equal_boundary'],
 }
 if __name__ == '__main__':
     if '--mutate' in sys.argv:
         mutations(SurveyG2, CASES)
-        with patch.dict(MC_OPTS, bloom_passive_levels='legacy'):
-            r = unittest.TextTestRunner(stream=io.StringIO()).run(SurveyG2('test_bloom_level'))
-        assert not r.wasSuccessful() and not r.errors, r.errors
-        print('KILLED bloom_passive_levels test_bloom_level')
     else:
         unittest.main()

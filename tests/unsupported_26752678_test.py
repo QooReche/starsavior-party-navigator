@@ -70,15 +70,10 @@ class UnsupportedTest(unittest.TestCase):
                 self.assertFalse(any(x.has(name) for x in b.foes))
                 self.assertFalse(b.unsup)
 
-    def test_marker_legacy_and_unrelated_scope(self):
-        b, a = setup('gille', supported_marker_targets='legacy')
-        ln = next(x for x in b.lines_of(a) if x.eff['kind'] == 'remove'
-                  and x.eff.get('name') == '길레 마지막 타격 체크용 버프')
-        self.assertIsNone(b.line_spec(a, ln))
-        self.assertTrue(b.unsup)
-        # Other U1 retains its previous line_spec contract in both modes.
-        for flow in ('legacy', 'client'):
-            b, a = setup('lyn', marker_se_flow=flow)
+    def test_marker_unrelated_scope(self):
+        # Other U1 retains its previous line_spec contract.
+        for _ in (0,):
+            b, a = setup('lyn')
             ln = next(x for x in b.lines_of(a) if x.eff.get('name') == '치명타 피해 증가')
             self.assertIsNone(b.line_spec(a, ln))
 
@@ -195,15 +190,11 @@ def mutated(owner, method, old, new):
 
 def mutations():
     checks = [
-        ('smile empty fallback', 'test_smile_10464017_10464021_empty_and_current_markers',
-         patch.dict(MC_OPTS, supported_marker_targets='legacy')),
-        ('gille empty fallback', 'test_gille_10201012_10202015_preserve_empty_filter',
-         patch.dict(MC_OPTS, supported_marker_targets='legacy')),
         ('smile native filter removed', 'test_smile_10464017_10464021_empty_and_current_markers',
          mutated(marker_se, 'targets', "selected = [x for x in pool if x.has(name) != ('not_has' in kind)]", 'selected = list(pool)')),
         ('gille plural empty selects all', 'test_gille_10201012_10202015_preserve_empty_filter',
          patch.object(Battle, 'line_auto_targets', lambda b, owner, spec, ctx: b.alive(1 - owner.side))),
-        ('unrelated native scope leak', 'test_marker_legacy_and_unrelated_scope',
+        ('unrelated native scope leak', 'test_marker_unrelated_scope',
          mutated(Battle, 'line_spec', "(owner.key == 'sunshine-cat-smile' and ln.eff.get('native_target'))", "ln.eff.get('native_target')")),
         ('claire native marker', 'test_claire_16093014_flag_lifetime_and_category',
          patch.dict(MC_OPTS, claire_preemptive_marker='legacy')),

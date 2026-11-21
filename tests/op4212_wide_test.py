@@ -13,7 +13,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, unit
 from battlesim.mc import Battle, Ctx, buff_flags
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.parser import Line
 
 SOUL = '[스킬 사용 후] 적 전체에게 〈영혼 구속〉 (지속 무한 / 생명력% -15%) {효과 적중 판정}'
@@ -30,7 +29,6 @@ class UniqueIdStackTest(unittest.TestCase):
         return b
 
     def test_default_is_client(self):
-        self.assertEqual(MC_OPTS['unique_id_stack'], 'client')
         flags = buff_flags()['unique_id']
         self.assertEqual(flags['영혼 구속'], 'inf')
         # 기존 독립 상한 규칙과 같은 표 값(UniqueIdStackMax).
@@ -56,13 +54,6 @@ class UniqueIdStackTest(unittest.TestCase):
         for x in b.allies:
             self.assertFalse(x.has('영혼 구속'))
             self.assertEqual(x.maxhp, x.maxhp0)
-
-    def test_legacy_off_refreshes_single(self):
-        b = self.apply(mc={'unique_id_stack': 'off'}, times=3)
-        for a in b.allies:
-            self.assertEqual(a.stack('영혼 구속'), 1)
-            self.assertEqual(a.maxhp, math.floor(a.maxhp0 * (1 - 0.15)))
-        self.assertEqual(b.rule_hits['unique_id_stack'], 0)
 
     def test_non_unique_name_unchanged(self):
         b = battle([unit('a', hp=100000)], [unit('boss')])
@@ -101,10 +92,6 @@ class RandomBasicNotSelfTest(unittest.TestCase):
     def test_alone_keeps_caster(self):
         _, seen = self.actors(1, trials=5)
         self.assertEqual(seen, ['a0'] * 5)
-
-    def test_legacy_includes_caster(self):
-        _, seen = self.actors(3, mc={'random_basic_not_self': 'legacy'})
-        self.assertIn('a0', seen)
 
 
 if __name__ == '__main__':

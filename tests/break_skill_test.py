@@ -34,7 +34,7 @@ def setup(bs=CUBE, mc=None, roles=('스트라이커',), **kw):
 
 
 def legacy_setup(bs=CUBE, mc=None, **kw):
-    return setup(bs, mc=dict(break_skill_residuals='existing_model', break_skill_domain_clock='legacy', break_skill_reduce='all',
+    return setup(bs, mc=dict(break_skill_domain_clock='legacy', break_skill_reduce='all',
                             break_gauge_actor='exclude', omega_dispel='fixed', **(mc or {})), **kw)
 
 
@@ -345,7 +345,7 @@ class BreakSkillLegacyTest(unittest.TestCase):
         b.kill(b.allies[3], f)
         hit(b, a, f, ab=1)
         b.act(a)
-        self.assertEqual([u.hp for u in b.allies], [1000, 1400, 1800, 0])
+        self.assertEqual([u.hp for u in b.allies], [1000, 1300, 1600, 0])   # 회복 팀 HP 합은 생존자만(break_skill_residuals 삭제, 클라)
         self.assertFalse(b.allies[3].eff)
         self.assertEqual(sum(u.healed for u in b.allies), 0)  # 파티 스킬 힐을 개인 힐로 오귀속하지 않음
         give(a, '일반 강화', {'공격력%': 10})

@@ -12,7 +12,6 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, unit
-from battlesim.rules import MC_OPTS
 from battlesim.mc import Ctx
 from battlesim.starsavior.parser import Line
 
@@ -68,20 +67,12 @@ class ReviveSeResetTest(unittest.TestCase):
         after = self.hit(b, boss, r)
         return b, first, again, after
 
-    def test_default_client(self):
-        self.assertEqual(MC_OPTS['revive_se_reset'], 'client')
-
     def test_client_resets_on_revive(self):
         b, first, again, after = self.run_case()
         self.assertEqual(first, (True, True))
         self.assertEqual(again, (False, False))     # 전투당 1회·재발동 제한 3턴
         self.assertEqual(after, (True, True))       # 부활하면 둘 다 다시 걸림
         self.assertGreater(b.rule_hits['revive_se_reset'], 0)
-
-    def test_legacy_keeps_records(self):
-        b, first, again, after = self.run_case({'revive_se_reset': 'legacy'})
-        self.assertEqual(first, (True, True))
-        self.assertEqual(after, (False, False))
 
 
 class SkillCoolChangeTest(unittest.TestCase):
@@ -91,21 +82,12 @@ class SkillCoolChangeTest(unittest.TestCase):
         b = battle([a], [boss], mc=mc)
         return b, b.allies[0], b.side_units(1)[0]
 
-    def test_default_client(self):
-        self.assertEqual(MC_OPTS['skill_cool_change'], 'client')
-
     def test_self_skill_cool_all_slots(self):
         b, a, boss = self.setup(boss_lines=[SELF_ALL])
         boss.cd.update({'특수기': 3, '궁극기': 4})
         b.cast(a, a.d.skills['기본기'], target=boss)
         self.assertEqual((boss.cd['특수기'], boss.cd['궁극기']), (2, 3))
         self.assertGreater(b.rule_hits['skill_cool_change'], 0)
-
-    def test_self_skill_cool_legacy_one_slot(self):
-        b, a, boss = self.setup(mc={'skill_cool_change': 'legacy'}, boss_lines=[SELF_ALL])
-        boss.cd.update({'특수기': 3, '궁극기': 4})
-        b.cast(a, a.d.skills['기본기'], target=boss)
-        self.assertEqual((boss.cd['특수기'], boss.cd['궁극기']), (3, 3))
 
     def test_enemy_all_targets_opponents(self):
         b, a, boss = self.setup(boss_lines=[ENEMY_ALL])
@@ -123,12 +105,6 @@ class SkillCoolChangeTest(unittest.TestCase):
         boss.cd['궁극기'] = 2
         b.cast(a, a.d.skills['기본기'], target=boss)
         self.assertEqual(boss.cd['궁극기'], 3)
-
-    def test_cool_up_legacy_uncapped(self):
-        b, a, boss = self.setup(mc={'skill_cool_change': 'legacy'}, ally_lines=[ULT_UP])
-        boss.cd.update({'궁극기': 4})
-        b.cast(a, a.d.skills['기본기'], target=boss)
-        self.assertEqual(boss.cd['궁극기'], 5)
 
 
 if __name__ == '__main__':

@@ -16,9 +16,9 @@ from battlesim.rules import MC_OPTS
 from tools.build_buff_flags import extract, client_strings
 
 
-def apply_boss(key, name, count, mode=None):
+def apply_boss(key, name, count):
     waves, _ = C.build_waves(key, 3, 0)
-    b = battle([unit('ally')], waves[0], mc={} if mode is None else {'level_max_source': mode})
+    b = battle([unit('ally')], waves[0])
     boss = next(u for u in b.foes if u.d.boss)
     line = next(l for l in boss.d.lines if l.eff.get('name') == name and l.eff['kind'] == 'buff')
     boss.eff.pop(name, None)
@@ -40,10 +40,6 @@ class LevelMaxTest(unittest.TestCase):
 
     def test_explicit_cap(self):
         self.assertEqual(apply_boss('mogulus', '그릇된 의지', 5)[2].stacks, 3)
-
-    def test_legacy(self):
-        for key, name in [('mogulus', '보주의 축성'), ('disparity', '기억의 증폭')]:
-            self.assertEqual(apply_boss(key, name, 3, 'legacy')[2].stacks, 1)
 
     def test_mutation_catches_both_bosses(self):
         with patch('battlesim.mc.level_max', return_value=1):

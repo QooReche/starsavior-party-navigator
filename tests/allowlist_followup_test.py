@@ -10,7 +10,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit
 from battlesim.mc import Battle, Ctx
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.foe import stage_waves
 from battlesim.starsavior.parser import Line
 from battlesim.starsavior import cosmo_raid
@@ -64,18 +63,6 @@ class FollowupTest(unittest.TestCase):
         b.cast(boss, boss.d.skills['기본기'], target=a)
         self.assertTrue(a.has('몰락한 사념(해제불가)'))
         self.assertEqual(a.spd(), 0)
-
-    def test_barrier_legacy_preserved(self):
-        b = battle([unit('caster', hp=1011)], [unit('foe')], mc={'barrier_formula': 'legacy'})
-        a = b.allies[0]
-        give(a, 'give', {'주는 보호막량': 50, '받는 보호막량': 20})
-        self.shield(b, a)
-        self.assertEqual(a.shield_total(), 379)
-        a.eff.clear()
-        give(a, 'give', {'주는 보호막량': -100})
-        self.shield(b, a)
-        self.assertTrue(a.has('보호막'))
-        self.assertEqual(a.shield_total(), 0)
 
     def test_barrier_receive_from_recipient_stats(self):
         b = battle([unit('caster', hp=1011), unit('recipient')], [unit('foe')])
@@ -131,32 +118,11 @@ class FollowupTest(unittest.TestCase):
                 self.assertEqual(rng.getstate() == before, count == 1)
             self.assertEqual(b.rule_hits['reaction_single_target_rng'], int(count == 1))
 
-    def test_reaction_legacy_consumes_single_candidate(self):
-        with patch.dict(MC_OPTS, reaction_single_target_rng='legacy'):
-            _, waves = stage_waves('guild', 'BFB', '길드 방어전 6단계')
-            b = battle([unit('a')], copy.deepcopy(waves[-1]))
-        boss = next(u for u in b.foes if u.d.name == 'BFB')
-        give(b.allies[0], '신부 경쟁(해제불가)')
-        before = b.R(boss.side).getstate()
-        with patch.object(b, 'cast', return_value='cast'):
-            b.trigger_cast(boss, boss.d.trigger_skills['특수기'])
-        self.assertNotEqual(before, b.R(boss.side).getstate())
-
 
 def mutations():
     cases = [
         ('victim-local off', 'test_cohesion_each_victim_independent_of_primary',
          patch.object(Battle, 'run_per_target', lambda *a: None)),
-        ('single RNG restored', 'test_reaction_single_and_multiple_candidates',
-         patch.dict(MC_OPTS, reaction_single_target_rng='legacy')),
-        ('old barrier formula', 'test_barrier_basis_receive_and_signed_truncation',
-         patch.dict(MC_OPTS, barrier_formula='legacy')),
-        ('zero shield retained', 'test_zero_barrier_does_not_exist_or_refresh',
-         patch.dict(MC_OPTS, barrier_formula='legacy')),
-        ('zero shield blocks Mogulus', 'test_zero_barrier_mogulus_skill_start',
-         patch.dict(MC_OPTS, barrier_formula='legacy')),
-        ('recipient stat omitted', 'test_barrier_receive_from_recipient_stats',
-         patch.dict(MC_OPTS, barrier_formula='legacy')),
     ]
     for label, name, mutation in cases:
         with mutation:

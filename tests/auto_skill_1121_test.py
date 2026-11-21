@@ -43,7 +43,6 @@ class AutoCondHpTest(unittest.TestCase):
 
     def test_client_float32_boundary(self):
         b = battle()
-        self.assertEqual(b.mc['auto_cond_hp_float32'], 'client')
         self._set(b, EDGE_HP, EDGE_MAX)
         self.assertFalse(b.auto_cond_ok(b.allies[0], ['ally_hp_le_bp', 7500]))
         self.assertGreater(b.rule_hits['auto_cond_hp_float32'], 0)
@@ -56,19 +55,10 @@ class AutoCondHpTest(unittest.TestCase):
         sk, target = b.choose_skill(frey)
         self.assertEqual((sk.slot, target), ('궁극기', None))   # 궁극기(아군 전체) 먼저, 같은 조건
 
-    def test_legacy_float64(self):
-        b = battle(auto_cond_hp_float32='legacy')
-        self._set(b, EDGE_HP, EDGE_MAX)
-        self.assertTrue(b.auto_cond_ok(b.allies[0], ['ally_hp_le_bp', 7500]))
-        self.assertEqual(b.rule_hits['auto_cond_hp_float32'], 0)
-
     def test_zero_threshold_is_false(self):
         b = battle()
         self._set(b, 1, 10**6)   # int(비율×10000) = 0
         self.assertFalse(b.auto_cond_ok(b.allies[0], ['ally_hp_le_bp', 0]))
-        legacy = battle(auto_cond_hp_float32='legacy')
-        self._set(legacy, 1, 10**6)
-        self.assertTrue(legacy.auto_cond_ok(legacy.allies[0], ['ally_hp_le_bp', 0]))
 
 
 class NovaPolicyTest(unittest.TestCase):

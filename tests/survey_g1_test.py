@@ -241,9 +241,7 @@ class SurveyG1(unittest.TestCase):
 
 
 MUTATIONS = {
-    'hit_ally_skill_end': ['test_hit_ally_once_and_same_victim'],
     'skill_end_timing': ['test_stack_consumption_at_end', 'test_gauge_snapshot_then_end'],
-    'passive_se_order': ['test_passive_precedes_new_debuff_and_stack'],
     'se_independent_roll': ['test_independent_cooling', 'test_independent_freeze_resistance', 'test_extend_probability_preserved'],
 }
 
@@ -285,7 +283,7 @@ if __name__ == '__main__':
                         'if False:', 'test_repeat_buff_stops_only_after_whole_iteration_fails')
         source_mutation('run_own',
                         "potentials = [ln for ln in passive if ln.slot == '잠재력']\n"
-                        "            passive = [ln for ln in passive if ln.slot != '잠재력']",
+                        "        passive = [ln for ln in passive if ln.slot != '잠재력']",
                         'potentials = []',
                         'test_potential_chain_after_active_and_after_active_passive')
         source_mutation('run_own', "[ln for ln in passive if after_active_se(u.key, ln)], potentials)",

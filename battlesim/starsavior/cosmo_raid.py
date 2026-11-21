@@ -384,7 +384,6 @@ class Controller(BaseController):
             return
         self.boss, self.cfg = boss, boss.d.cosmo
         if getattr(boss.d, 'client_model', None) == 'baskerville':
-            b.mc['fixstats_speed_zero'] = 'client'
             b.mc['superarmor_damage_ban'] = 'client'
         cfg = self.cfg
         # 시즌 전투 보너스 BUFF: 조건(속성/직업)에 맞는 아군에게 상시 효과(마커: 강화 개수·해제에 안 셈)

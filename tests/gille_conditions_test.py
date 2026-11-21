@@ -117,13 +117,6 @@ class GillePromotionTest(unittest.TestCase):
         self.assertTrue(finale.has(FINALE))
         self.assertFalse(any(empty.has(n) for n in (OVERTURE, RHAPSODY, FINALE)))
 
-    def test_legacy_reproduces_premature_finale(self):
-        b = self.make_battle(gille_promotion_target='fallback')
-        gille = b.allies[0]
-        give(gille, OVERTURE, dur=float('inf'))
-        b.cast(gille, gille.d.skills['특수기'], target=b.foes[0])
-        self.assertTrue(any(u.has(FINALE) for u in b.allies))
-
     def test_standard_battle_reaches_both_steps(self):
         team = ['asherah-order-striker', 'gille', 'fei', 'amora']
         seen = []
@@ -156,8 +149,6 @@ def mutations():
          patch.dict(MC_OPTS, source_buff_list='literal')),
         ('lost ally trigger', SourceBuffListTest('test_ally_break_triggers_gille_special_once'),
          patch.dict(MC_OPTS, source_buff_list='literal')),
-        ('promotion fallback', GillePromotionTest('test_no_marker_requires_two_specials'),
-         patch.dict(MC_OPTS, gille_promotion_target='fallback')),
         ('disabled extra casts', SourceBuffListTest('test_ally_break_triggers_gille_special_once'),
          patch.object(Battle, 'exec_line', drop_extra)),
     ]
