@@ -88,7 +88,7 @@
   function mount(){
     if(controller||!root.document)return controller;
     const doc=root.document,mq=root.matchMedia('(prefers-reduced-motion: reduce)'),p=policy(),play=playground(),resultArts=new Map();
-    const WORK_POSE_MS=8000;   // 계산 중 걷는 포즈를 바꾸는 최소 간격(사용자 11/21: 포즈가 너무 빨리 바뀜)
+    const WORK_POSE_MS=2500;   // 계산 중 걷는 포즈를 바꾸는 최소 간격(사용자 11/21: 너무 빨리 바뀜 → 2~3초)
     let actor=null,lane=null,current={},clock=0,last=performance.now(),idleAt=0,vacant=false,phaseKey='',cycleAt=0,
       restoreAt=0,bubbleUntil=0,speechShownAt=-Infinity,move=null,landing=0,pending=null,x=0,art='',lastEvent='',sleeping=false,workRestAt=0;
     let playAt=play.delay(),playing=null,imageRequest=0;
