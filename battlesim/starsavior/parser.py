@@ -143,7 +143,8 @@ def parse_flags(s):
 def parse_effect(rest, damage_type='ADT_NORMAL'):
     """효과 문장 -> dict(kind=...). 해석 못 하면 kind='ignored'"""
     rest = rest.strip()
-    # 「N% 확률로 능력치 보정」(큐브 펌웨어 복제체 리디아): MC 기대값으로 처리
+    # 「N% 확률로 능력치 보정」(큐브 펌웨어 복제체 리디아): val 은 기대값(기대값 엔진용). chance 를 따로 남겨
+    # MC 는 mc.local_chance=roll 일 때 클라처럼 SE 발동 판정(NKM:16504 RollDice(m_fActiveRate)) 뒤 전체 수치를 적용.
     # 「{해제 불가}」(올베로스 하수인 등장 후 속도% -1000%): 영구 버프로 변환
     m = re.match(r'^자신에게 (?:(\d+)% 확률로 )?능력치 보정 (.+?) (' + NUM + r')%?\s*(\{.*\})?$', rest)
     if m:
@@ -153,7 +154,10 @@ def parse_effect(rest, damage_type='ADT_NORMAL'):
         if '해제 불가' in flags_s and '이번 스킬' not in flags_s:
             return dict(kind='buff', target='자신', name='능력치보정(%s)' % stat,
                         chance=1.0, dur=None, props={stat: val}, max=None, times=1, judge=False)
-        return dict(kind='local', stat=stat, val=val * chance)
+        out = dict(kind='local', stat=stat, val=val * chance)
+        if chance < 1:
+            out['chance'] = chance
+        return out
     # 타 대상 능력치 보정(오르트로스 「적 전체에게 피해 증가 +30%」 — 이번 스킬에만): 자신과 같은 효과
     m = re.match(r'^(.+?)에게 (?:(\d+)% 확률로 )?능력치 보정 (.+?) (' + NUM + r')%?\s*(\{.*\})?$', rest)
     if m:
@@ -163,7 +167,10 @@ def parse_effect(rest, damage_type='ADT_NORMAL'):
         # 「받는 회복량」은 대상마다 따로 거는 보정이라 run_special(RX_RECV_HEAL)이 처리한다 — 여기서 가로채지 않음(프레이·세르팡·베라)
         if '이번 스킬' in flags_s and not tgt.startswith('(') and m.group(3).strip() != '받는 회복량':
             chance = int(m.group(2)) / 100.0 if m.group(2) else 1.0
-            return dict(kind='local', stat=m.group(3).strip(), val=float(m.group(4)) * chance, target=tgt)
+            out = dict(kind='local', stat=m.group(3).strip(), val=float(m.group(4)) * chance, target=tgt)
+            if chance < 1:
+                out['chance'] = chance
+            return out
         return dict(kind='ignored', why='타 대상 능력치 보정')
     m = re.match(r'^(.+?)에게 행동 게이지 ([\d.]+)%p (증가|감소)', rest)
     if m:

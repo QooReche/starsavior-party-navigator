@@ -4990,6 +4990,12 @@ class Battle:
             self.run_special(owner, ln, ctx, line_rest(ln))
             return
         if kd == 'local':
+            if eff.get('chance', 1) < 1 and self.mc['local_chance'] == 'roll':
+                # NKM:16504: SE 조건 m_fActiveRate<10000 이면 발동 판정 후 SE 수치 전체 적용(예: SE930031302 7500·3000).
+                self.rule_hits['local_chance'] += 1
+                if self.R(owner.side).random() >= eff['chance']:
+                    return
+                eff = dict(eff, val=eff['val'] / eff['chance'])
             st, v = eff['stat'], eff['val'] / 100.0
             role = _role_prop(st)
             if role and self.mc['role_damage_terms'] == 'client':

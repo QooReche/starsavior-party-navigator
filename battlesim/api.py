@@ -331,8 +331,10 @@ def assumptions_used(mc, opts):
     # Do not label already connected growth (favor/tactics/star-link/potentials)
     # as absent. Missing account inputs have their own myinfo diagnostics.
     for key, note in (
-        ('effect_mapping', '공개 효과 줄과 원형 SE의 전수 대응은 미확인. 실행·정적 미지원은 unsupported 참조. '
-                           '지원한 노바 슬롯·잠재력·피해 제한은 제외함.'),
+        ('effect_mapping', '공개 효과 줄과 원형 SE의 기계 대조(tools/effect_mapping_audit.py)에서 짝지은 줄은 클라와 일치. '
+                           '남은 미증명: 줄 수·대상이 안 맞아 짝짓지 못한 스킬 묶음과 스테이지 연결이 없는 적, '
+                           '대조 항목 밖의 수치(버프 능력치 표·발동 조건). 실행·정적 미지원은 unsupported 참조. '
+                           '지원한 노바 슬롯·잠재력·피해 제한은 제외함. docs/allowlist_conn_1121.md.'),
         ('chain_timing', '구원자·적 연쇄(원형 BuffId 연결분)와 벨그라스/코스모 고정 피해·코스모 응징은 한 클라 큐로 예약함. '
                          '남은 즉시 실행: 스테이지·유닛 연결이 안 되는 길드 방어전 적 일부(티엔·시엔·레타르기아의 마술사)의 연쇄 줄과 '
                          '길드 BFB 전용 모델의 연쇄(응징·부케). docs/allowlist_conn_1121.md.'),
