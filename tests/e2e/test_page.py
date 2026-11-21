@@ -434,9 +434,13 @@ def test_screen_stop_notice(browser, ctx):
       simAuto(true);run();
     }""")
     page.wait_for_function('() => SIMQ.screening && __busy().length>0', timeout=10000)
+    page.evaluate("() => {__ready();for(let i=0;i<7;i++){const ws=__busy();__serve(ws[i%ws.length])}}")
+    # 진행 글자·남은 시간은 SearchExecutor.PAINT_MS(200ms) 간격으로만 다시 그린다(훑기 A-1) → 끝 갱신을 기다린 뒤 읽는다(2초 넘으면 그대로 읽어 실패로 드러남)
+    try:
+        page.wait_for_function("() => /거르는 중 7\\//.test(document.querySelector('#out [data-k=\"progress\"] [data-k=\"simstate\"]')?.textContent||'')", timeout=2000)
+    except Exception:
+        pass
     first = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)],id=SIMQ.requestId;
-      __ready();
-      for(let i=0;i<7;i++){const ws=__busy();__serve(ws[i%ws.length])}
       const pg=document.querySelector('#out [data-k="progress"]'),bt=pg&&pg.querySelector('button[data-scrstop]'),r=bt&&bt.getBoundingClientRect();
       return {sent:new Set(__sent(id).map(p=>p.req.teams[0].key)).size-__busy().length,total:sc.total,runs:[...new Set(__sent(id).map(p=>p.req.n_runs))],
         bar:!!(pg&&pg.querySelector('.pbar')),eta:!!(pg&&pg.querySelector('[data-k="eta"]')),state:pg?pg.querySelector('[data-k="simstate"]').textContent:'',

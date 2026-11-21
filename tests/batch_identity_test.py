@@ -60,6 +60,10 @@ def batches():
     parties = [G.party_spec(q, o, o[1], o, 1.0, st) for o in _teams(q)[:3]]
     cos = [{'key': 'c%d' % i, 'party': parties[i % 3], 'options': {'cosmo_raid': {'step': 3, 'level': lv}}} for i, lv in enumerate((0, 12, 0, 18))]
     out.append(('cosmo/x/y', 2, dict(BASE), cos))
+    # 길방: 팀마다 다른 EX 선택(레벨·지원·세트 = 다른 조우·BFB 상태 기계)을 한 묶음에
+    gd = [({'level': 6, 'support': 'fire', 'sets': [0] * 4}), ({'level': 6, 'support': 'fire', 'sets': [3] * 4}),
+          ({'level': 2, 'support': 'none', 'sets': [0] * 4}), ({'level': 6, 'support': 'fire', 'sets': [0] * 4})]
+    out.append(('guild/x/EX', 2, dict(BASE), [{'key': 'g%d' % i, 'party': parties[i % 3], 'options': {'guild': g}} for i, g in enumerate(gd)]))
     return out
 
 

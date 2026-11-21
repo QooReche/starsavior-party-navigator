@@ -159,12 +159,14 @@ console.log('PASS 비교 재표시 범위·부분 캐시 숨김·선택 변경/�
  const sent=[],calls=[];
  const worker=vm.createContext({Ux:require('../ux_ui'),URL,self:{location:{href:'https://example.test/sim_worker.js'}},postMessage:m=>sent.push(m)});
  vm.runInContext(fs.readFileSync(path.join(root,'sim_worker.js'),'utf8'),worker);
- worker.fake={toPy:x=>x,globals:{get:fn=>(stage,party,n,seed,extra)=>{const opts=JSON.parse(extra);calls.push({fn,opts});return JSON.stringify({bs:{name:opts.break_skill?.name??null}})}}};
+ const fakeRun=fn=>(stage,party,n,seed,extra)=>{const opts=JSON.parse(extra);calls.push({fn,opts});return JSON.stringify({bs:{name:opts.break_skill?.name??null}})};
+ // 여러 팀 요청은 AutoBatch(stage,n,seed).run(party,extra) 로 돈다(훑기 묶음 A-3) — 팀마다 오토 한 번은 같음
+ worker.fake={toPy:x=>x,globals:{get:fn=>fn==='AutoBatch'?(stage,n,seed)=>({run:(party,extra)=>fakeRun('AutoBatch.run')(stage,party,n,seed,extra),destroy(){}}):fakeRun(fn)}};
  vm.runInContext('ready=Promise.resolve({p:fake,ver:"test"})',worker);
  await worker.onmessage({data:{...plain(req),mode:'manual',options:{build:'standard',rules_override:{power_penalty:'model',basic_tough:1}},
   teams:[{key:'a',party:{},options:{break_skill:{name:'차원 강습',level:5},rules_override:{basic_tough:0}}},{key:'b',party:{},options:{break_skill:null}}]}});
  // 요청에 mode:'manual' 이 붙어 와도(옛 화면) 오토만 돈다: 팀마다 run_auto 한 번, 결과에 man 없음
- assert.equal(calls.length,2);assert(calls.every(c=>c.fn==='run_auto'));
+ assert.equal(calls.length,2);assert(calls.every(c=>c.fn==='AutoBatch.run'));
  assert.deepEqual(calls.map(c=>c.opts.break_skill),[{name:'차원 강습',level:5},null]);
  assert.deepEqual(calls[0].opts.rules_override,{power_penalty:'model',basic_tough:0});
  assert.deepEqual(calls[1].opts.rules_override,{power_penalty:'model',basic_tough:1});

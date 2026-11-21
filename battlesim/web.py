@@ -91,7 +91,8 @@ def run_auto(stage, party, n, seed, extra=None, _shared=None):
         if int(op.get('run_offset', 0)) != len(prior):
             raise ValueError('merge_raw 는 run_offset(%r) 판만큼 있어야 함: %d' % (op.get('run_offset', 0), len(prior)))
         op['raw_runs'] = True
-    r = simulate(party, _enc(stage, op), op, shared=_shared)
+    # 묶음일 때만 shared 를 넘긴다(단독 호출은 예전과 같은 호출 — simulate 를 바꿔 끼우는 시험·도구 호환)
+    r = simulate(party, _enc(stage, op), op, **({'shared': _shared} if _shared is not None else {}))
     o = r['outcome']
     extra_out = {'cosmo': cosmo_summary(r['cosmo_raid'], top_q)} if r.get('cosmo_raid') else {}
     extra_out.update(_potential_unsupported(r))
