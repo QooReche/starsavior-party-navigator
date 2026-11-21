@@ -131,6 +131,14 @@ def _float32(value):
     return _FLOAT32.unpack(_FLOAT32.pack(value))[0]
 
 
+def _float32_bp(hp, maxhp):
+    """NKM:2191-2198,7496: float HP/float 최대 HP → float × 10000f → int 절삭(오토 조건·선택 공통 float32 연산)."""
+    denominator = _float32(maxhp)
+    if not denominator:
+        return 0
+    return int(_float32(_float32(_float32(hp) / denominator) * 10000.0))
+
+
 def hp_basis_points(hp, maxhp):
     """NKM:2191-2198 → Templets:43131: float/float → float → double*10000 → int."""
     denominator = _float32(maxhp)
@@ -1905,6 +1913,13 @@ class Battle:
 
     def auto_cond_ok(self, u, c):
         if c[0] == 'ally_hp_le_bp':
+            if self.mc['auto_cond_hp_float32'] == 'client':
+                # PC 26752678 NKM:7484-7500: 임계 0이면 거짓, (int)(HP비율 float × 10000f) <= 임계.
+                # HP 비율은 NKM:2191-2198의 float 나눗셈. 대상 선택(auto_hp_float32)과 별도 스위치.
+                self.rule_hits['auto_cond_hp_float32'] += 1
+                if not c[1]:
+                    return False
+                return any(_float32_bp(v.hp, v.maxhp) <= c[1] for v in self.alive(u.side))
             return any(int(v.hp / v.maxhp * 10000) <= c[1] for v in self.alive(u.side))
         if c[0] == 'ally_dead':
             return any(v.dead for v in self.side_units(u.side))

@@ -307,7 +307,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'barrier_formula',
     'reaction_single_target_rng',
     'level_max_source',
-    'auto_unable_break', 'auto_remove_filter', 'auto_se_reselect', 'auto_hp_float32', 'auto_empty_marker',
+    'auto_unable_break', 'auto_remove_filter', 'auto_se_reselect', 'auto_hp_float32', 'auto_empty_marker', 'auto_cond_hp_float32',
     'marker_se_flow', 'supported_marker_targets', 'claire_preemptive_marker',
     'fixstats_speed_zero', 'superarmor_damage_ban', 'speed_min', 'foe_client_flow',
     'last_damager_timing', 'self_hp_condition',
