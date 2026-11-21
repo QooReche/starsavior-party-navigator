@@ -1,0 +1,39 @@
+// Independent holdout: selected rows are fixed before any evaluation is observed.
+// node tools/evaluate_guild_time.js ACCOUNT PRIVATE_DIR SEARCH_DIR [SEARCH_DIR ...]
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),GS=require('../guild_search'),Planner=require('../guild_planner'),V=require('../guild_view');
+const {context,instrument,privateDir,save,hash}=require('./measure_guild_time');
+const read=f=>JSON.parse(fs.readFileSync(f,'utf8'));
+function stats(scores,clears){const sorted=scores.slice().sort((a,b)=>b-a),n=scores.length,k=Math.ceil(n*.2-1e-9);return {top:sorted.slice(0,k).reduce((a,b)=>a+b,0)/k,mean:scores.reduce((a,b)=>a+b,0)/n,clear:clears.reduce((a,b)=>a+b,0)/n,n};}
+function wilson(p,n){const z=1.959963984540054,d=1+z*z/n,c=(p+z*z/(2*n))/d,h=z*Math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d;return [Math.max(0,c-h),Math.min(1,c+h)];}
+function comparison(a,b,draws=4000){
+ if(a.scores.length!==b.scores.length||!a.scores.length)throw Error('paired holdout lengths differ');
+ let seed=20261121;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ const n=a.scores.length,boot={topRatio:[],meanRatio:[],clearDifference:[]};
+ const delta=(x,y)=>({topRatio:y.top/x.top,meanRatio:y.mean/x.mean,clearDifference:y.clear-x.clear});
+ for(let i=0;i<draws;i++){const ids=Array.from({length:n},()=>Math.floor(rand()*n)),sample=r=>stats(ids.map(j=>r.scores[j]),ids.map(j=>r.clears[j])),d=delta(sample(a),sample(b));for(const k of Object.keys(boot))boot[k].push(d[k]);}
+ const point=delta(a.summary,b.summary),ci95=Object.fromEntries(Object.entries(boot).map(([k,values])=>{values.sort((x,y)=>x-y);return [k,[values[Math.floor(draws*.025)],values[Math.ceil(draws*.975)-1]]];}));
+ return {point,ci95,method:'paired percentile bootstrap over independent battle seeds; top 20% recalculated per draw',draws};
+}
+async function main(){
+ const [input,output,...searchDirs]=process.argv.slice(2);if(!input||!output||!searchDirs.length)throw Error('ACCOUNT PRIVATE_DIR SEARCH_DIR ...');
+ const dir=privateDir(output),cx=context(input),selections=searchDirs.map(d=>({name:path.basename(d),search:read(path.join(d,'result.json'))}));
+ for(const s of selections){if(s.search.pins.accountHash!==hash(fs.readFileSync(input))||s.search.pins.profileHash!==hash(cx.results)||JSON.stringify(s.search.pins.tiers)!==JSON.stringify(cx.tiers)||s.search.pins.stage!==cx.stage)throw Error('holdout account/conditions mismatch');}
+ const cls=Object.fromEntries(cx.roster.map(r=>[r.key,r.cls]));
+ const jobs=selections.map(({name,search})=>{const t=search.result.rows[0],j=Planner.job(cx.S,t.keys,cx.results,cls,cx.tiers,t.level,t.sup,t.brk?{name:t.brk,level:t.brkLv}:null,{order:t.order,leaderKey:t.leaderKey||t.order[0]});return {...j,key:name};});
+ const pins={accountHash:hash(fs.readFileSync(input)),profileHash:hash(cx.results),jobs,engine:hash(fs.readFileSync(path.join(__dirname,'../sim/manifest.json'))),seedStart:20270101,batches:50,runsPerBatch:20};
+ const T=instrument(dir,pins),pool=GS.workerPool(T.makeWorker),evaluated=Object.fromEntries(jobs.map(j=>[j.key,{scores:[],clears:[],selected:selections.find(s=>s.name===j.key).search.result.rows[0]}]));
+ try{
+  for(let batch=0;batch<pins.batches;batch++){
+   T.onPhase('independent '+batch,jobs.length);
+   const r=await GS.runPhase({jobs,pool,makeWorker:T.makeWorker,workers:2,chunk:1,runs:pins.runsPerBatch,seed:pins.seedStart+batch,stage:cx.stage,base:''}).promise;
+   for(const j of jobs){const progs=r[j.key]?.progs;if(progs?.length!==pins.runsPerBatch||progs.some(p=>!Number.isFinite(p)))throw Error('missing independent per-run progress');const v=evaluated[j.key];v.scores.push(...progs.map(p=>V.scoreFromProg(cx.G,V.extraPct(cx.G,j.level,cx.tiers),p)));v.clears.push(...progs.map(p=>Number(p>=1-1e-9)));}
+   save(path.join(dir,'holdout-progress.json'),{batch:batch+1,evaluated});
+  }
+  for(const v of Object.values(evaluated)){v.summary=stats(v.scores,v.clears);v.clearCI95=wilson(v.summary.clear,v.summary.n);}
+  const comparisons={};for(let i=0;i<jobs.length;i++)for(let j=i+1;j<jobs.length;j++)comparisons[jobs[i].key+' -> '+jobs[j].key]=comparison(evaluated[jobs[i].key],evaluated[jobs[j].key]);
+  save(path.join(dir,'result.json'),{pins,evaluated,comparisons,...T.summary()});console.error('holdout complete');
+ }finally{pool.close();T.close();}
+}
+module.exports={stats,wilson,comparison};
+if(require.main===module)main().catch(e=>{console.error(e);process.exitCode=1;});
