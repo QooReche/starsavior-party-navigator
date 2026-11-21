@@ -125,6 +125,23 @@ class CacheIdentityTest(unittest.TestCase):
         r = simulate([{'key': 'gwen'}], _ENC, {'n_runs': 10, 'seed': 7, 'rng_streams': True, 'rules_override': _KEEP, 'formula_override': _KEEP_FORMULA})
         self.assertEqual(_h(_sig(r)), self._H_GWEN_RNG_STREAMS)
 
+    # 기본 프로필(rules_override 없음, 공식 상수 COOP_CAP 0.30 만) 해시 — 엔진 다이어트 4단계(스위치 삭제)에서 바뀌면 안 됨
+    _H_GWEN_MULTIWAVE_DEFAULT = 'f3c073bc040a'
+    _H_PM_GWEN_MULTIWAVE_DEFAULT = 'e07ab07e72cb'
+    _H_GWEN_RNG_STREAMS_DEFAULT = '00505f6e67bc'
+
+    def test_gwen_multiwave_hash_default(self):
+        r = simulate([{'key': 'gwen'}], _ENC, {'n_runs': 10, 'seed': 7, 'formula_override': _KEEP_FORMULA})
+        self.assertEqual(_h(_sig(r)), self._H_GWEN_MULTIWAVE_DEFAULT)
+
+    def test_pm_gwen_multiwave_hash_default(self):
+        r = simulate(['professor-m', 'gwen'], _ENC, {'n_runs': 10, 'seed': 7, 'formula_override': _KEEP_FORMULA})
+        self.assertEqual(_h(_sig(r)), self._H_PM_GWEN_MULTIWAVE_DEFAULT)
+
+    def test_gwen_rng_streams_hash_default(self):
+        r = simulate([{'key': 'gwen'}], _ENC, {'n_runs': 10, 'seed': 7, 'rng_streams': True, 'formula_override': _KEEP_FORMULA})
+        self.assertEqual(_h(_sig(r)), self._H_GWEN_RNG_STREAMS_DEFAULT)
+
 
 class CacheMechanicsTest(unittest.TestCase):
     """Battle.lines_of 캐시 메커니즘 단위 시험."""
