@@ -91,6 +91,12 @@ body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-
 .gwen-stage-banner[hidden],.gwen-stage-banner [hidden]{display:none}
 .search-gwen-lane[data-phase=result]{height:80px;padding-top:0;background:none}
 .search-gwen-result{max-width:320px;margin:0 auto 8px}
+/* 코스모 찾기 결과: «수사 완료!» 는 보스 카드 줄 바로 위에 작게(그웬은 카드 줄 4번째 칸으로 감) */
+#cosmo-search .search-gwen-lane[data-phase=result]{height:40px;margin:0 0 6px;overflow:visible}
+#cosmo-search .search-gwen-lane[data-phase=result] .gwen-stage-banner{gap:0;color:var(--gold);font-size:14px}
+#cosmo-search .search-gwen-lane[data-phase=result] .gwen-stage-banner::before,#cosmo-search .search-gwen-lane[data-phase=result] .gwen-stage-banner::after{content:'✦'}
+#cosmo-search .search-gwen-lane[data-phase=result] .gwen-banner-title{width:160px}
+#cosmo-search .search-gwen-lane[data-phase=result] .gwen-banner-fallback{font-size:18px;-webkit-text-stroke:2px #15243e}
 #reco-result-lane.gwen-summary-result{height:auto;padding:0;margin-top:12px;overflow:visible}
 #reco-result-lane.gwen-summary-result[hidden]{display:none}
 #reco-result-lane.gwen-summary-result .gwen-lane-actor{top:0;transform:none!important;flex-shrink:0;order:1}

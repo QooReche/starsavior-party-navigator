@@ -117,7 +117,14 @@ def flow(browser,base,width,kind,template=None):
         assert result().locator('.gwen-lane-actor').count()==1
         assert p.locator('.gwen-lane-actor').count()==1
         assert p.evaluate('stageActor===document.querySelector(".gwen-lane-actor")')
-        assert result().bounding_box()['y']<p.locator(f'{panel} [data-k={"cs-best" if kind=="cosmo" else "gs-best"}]').bounding_box()['y']
+        if kind=='cosmo':
+            # 코스모: 그웬은 보스 카드 줄의 4번째 칸(합계 말풍선 옆), «수사 완료!» 는 카드 줄 바로 위
+            assert p.evaluate('''() => {const r=document.querySelector('[data-gwen-slot="cosmoSearch-result"]'),say=document.querySelector('#cosmo-search [data-k=cs-best] .cg-summary .cg-say');
+              return !!say&&say.contains(r)&&say.querySelector('.cg-say-bubble [data-k=cs-sum]')!=null}''')
+            gap=p.evaluate('''() => {const b=document.querySelector('[data-gwen-slot="cosmoSearch-board"]').getBoundingClientRect(),c=document.querySelector('#cosmo-search .cg-summary').getBoundingClientRect(),
+              r=document.querySelector('[data-gwen-slot="cosmoSearch-result"] img').getBoundingClientRect();return [c.top-b.bottom,b.height,r.top>=c.top-1&&r.bottom<=c.bottom+1]}''')
+            assert 0<=gap[0]<=16 and gap[1]<=48 and gap[2],gap
+        else:assert result().bounding_box()['y']<p.locator(f'{panel} [data-k=gs-best]').bounding_box()['y']
         p.wait_for_function(f'document.querySelector(\'[data-gwen-slot="{mode}-result"] img\')?.dataset.gwenPlaying==="false"')
         announcements=result().locator('.gwen-lane-actor').get_attribute('data-announcements')
         p.evaluate('renderCosmoSearch()' if kind=='cosmo' else 'renderGuildSearch(true)')

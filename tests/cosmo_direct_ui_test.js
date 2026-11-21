@@ -171,13 +171,18 @@ function suite(U){
     // 순환: 마지막에서 → 는 처음
     t.calls.length=0;fire(t.host,'keydown',t.q('#cd-tab-disparity'),{key:'ArrowRight'});assert.deepEqual(t.calls,[['team','mogulus']]);
   }
-  // 5. 문서 순서(= 좁은 화면 순서): 카드 → 합계 → 레인 자리 → 보드 → 고르기 → 브레이크·난이도 → 확인 → 결과
+  // 5. 문서 순서(= 좁은 화면 순서): 카드 → 합계(말풍선 → 그웬 결과 자리) → 레인 자리 → 보드 → 고르기 → 브레이크·난이도 → 확인 → 결과
   {
     const t=mount(U,fixture()),all=t.host.all(),at=s=>{const el=t.q(s);assert(el,s);return all.indexOf(el);};
-    const seq=['[role=tablist]','.cg-total','[data-cd-lane-slot]','.cd-board','.cg-tools','[data-cd-picker]','.cg-controls','#cd-break','#cd-level','.cg-actions','#cd-reason','[data-cd-result]','[data-cd-gwen-slot]'].map(at);
+    const seq=['[role=tablist]','.cg-total','.cg-say-bubble','[data-cd-gwen-slot]','[data-cd-lane-slot]','.cd-board','.cg-tools','[data-cd-picker]','.cg-controls','#cd-break','#cd-level','.cg-actions','#cd-reason','[data-cd-result]'].map(at);
     assert.deepEqual(seq,[...seq].sort((a,b)=>a-b),'좁은 화면 순서가 DOM 순서와 같아야 함');
     assert(t.q('.result-team').contains(t.q('[data-cd-picker]'))&&t.q('.result-summary').contains(t.q('.cg-controls')));
-    assert(t.q('[data-cd-result]').contains(t.q('[data-cd-gwen-slot]')));
+    // 그웬 결과 자리는 결과 칸이 아니라 4번째 칸(합계) 안 — 자동 찾기 결과 요약과 같은 모양
+    const say=t.q('.cg-total');assert(say.contains(t.q('[data-cd-gwen-slot]'))&&!t.q('[data-cd-result]').contains(t.q('[data-cd-gwen-slot]')));
+    assert(!t.q('[data-cd-part=total]').contains(t.q('[data-cd-gwen-slot]')),'다시 그리는 말풍선 조각 안에 그웬 자리가 있으면 안 됨');
+    const sum=new El('div');sum.innerHTML=U.summaryHtml(fixture(),{gwen:'<div data-gwen-slot="cosmoSearch-result"></div>'});
+    assert(sum.querySelector('.cg-total').contains(sum.querySelector('[data-gwen-slot="cosmoSearch-result"]')),'찾기 결과도 그웬은 4번째 칸');
+    sum.innerHTML=U.summaryHtml(fixture());assert(!sum.querySelector('[data-gwen-slot]')&&sum.querySelector('.cg-say-bubble [data-k=cs-sum]'),'2위 이하: 말풍선만');
     assert.equal(U.html(fixture()).indexOf('data-direct-'),-1,'기존 직접 편성의 문서 전체 핸들러에 걸리는 속성을 쓰지 않음');
     for(const id of ['direct-panel','direct-board','direct-break','direct-picker-open'])assert(!t.q('#'+id),'기존 화면과 id 가 겹치면 안 됨: '+id);
   }
@@ -236,6 +241,13 @@ function suite(U){
     const v=fixture();v.summary={teams:{mogulus:{status:'done',score:1182400,clear:.82},baskerville:{status:'done',score:968300,clear:.74,turn:38},disparity:{status:'done',score:901750,clear:.68}},total:3052450,done:3,need:0};
     U.render(t.host,v,t.h);
     assert.equal(t.q('.cg-total-num').textContent,'3,052,450');assert(!t.q('.cg-total-num').className.includes('pending'));
+    assert.equal(t.q('.cg-say-bubble').textContent,'합계 3,052,450!');
+    // 클리어율이 LOW_CLEAR 미만인 팀만 ⚠ 경고색
+    assert.equal(U.LOW_CLEAR,.5);assert(!t.q('#cd-tab-disparity .cg-clear-low'));
+    v.summary.teams.disparity.clear=.49;U.render(t.host,v,t.h);
+    assert.equal(t.q('#cd-tab-disparity .cg-clear-low')?.textContent,'⚠ 클리어 49%');assert.equal(t.qa('.cg-clear-low').length,1);
+    assert.match(t.q('#cd-tab-disparity').getAttribute('aria-label'),/클리어 49%\(낮음\)/);
+    v.summary.teams.disparity.clear=.5;U.render(t.host,v,t.h);assert.equal(t.qa('.cg-clear-low').length,0,'기준값과 같으면 경고 아님');
     assert.match(t.q('[data-cd-result]').textContent,/38예상 턴/);assert.equal(t.qa('.cg-steps li.done').length,4);assert(!t.q('.cg-steps [aria-current=step]'));
     assert(t.q('[data-cd-lane-slot]')===lane&&t.q('[data-cd-gwen-slot]')===gwen&&gwen.children.length===1,'다시 그려도 그웬 자리(와 그 안에 붙인 것)는 그대로');
   }

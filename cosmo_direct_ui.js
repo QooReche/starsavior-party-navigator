@@ -13,6 +13,8 @@
   const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const num=n=>Math.round(n).toLocaleString('ko-KR');
   const pct=x=>Math.round(x*100);
+  // 이 값보다 클리어율이 낮은 팀은 카드에서 ⚠ + 경고색으로 보여 줌(약한 보스가 눈에 띄게).
+  const LOW_CLEAR=.5;
   // 줄인 보스 이름(좁은 화면·이유 문구). season 에 short 가 있으면 그것, 없으면 «○○의 △△» → ○○, 그 밖엔 마지막 낱말.
   const shortOf=b=>b.short||(/^(.+?)의\s/.exec(b.name)||[])[1]||b.name.split(/\s+/).pop();
   const emptyDraft=()=>({v:1,slots:[null,null,null,null],leader:null,brk:null});
@@ -53,21 +55,24 @@
   function tabsHtml(m,interactive=true){
     return m.bosses.map(b=>{
       const d=m.draft(b.key),n=m.count(b.key),lead=m.by.get(d.leader),sel=b.key===m.active,r=m.res(b.key),done=m.done(b.key),bad=n===4&&m.blocks(b.key).length>0;
-      const clear=r.clear!=null?`클리어 ${pct(r.clear)}%`:'';
+      const low=r.clear!=null&&r.clear<LOW_CLEAR,clear=r.clear!=null?`클리어 ${pct(r.clear)}%`:'';
       const wait=n===0?'비어 있음 · 눌러서 편성':n<4?'편성 중':'확인 전';
       const need=n<4?'4명 필요':bad?'고칠 곳 있음':'';
-      const label=[`${b.name} 팀`,`편성 ${n}/4`,need,lead?'리더 '+lead.name:'',done?`${num(r.score)}점${clear?', '+clear:''}`:n===0?'비어 있음, 눌러서 편성':n<4?'':'확인 전'].filter(Boolean).join(' · ');
+      const label=[`${b.name} 팀`,`편성 ${n}/4`,need,lead?'리더 '+lead.name:'',done?`${num(r.score)}점${clear?', '+clear+(low?'(낮음)':''):''}`:n===0?'비어 있음, 눌러서 편성':n<4?'':'확인 전'].filter(Boolean).join(' · ');
       const open=interactive?`<button type="button" role="tab" class="cg-tab" id="cd-tab-${esc(b.key)}" data-cd-boss="${esc(b.key)}" aria-selected="${sel}" aria-controls="cd-panel" tabindex="${sel?0:-1}" aria-label="${esc(label)}">`:`<section class="cg-tab" aria-label="${esc(label)}">`;
       return open
         +`<span class="cg-face" aria-hidden="true">${lead?`<img class="lead" src="${esc(lead.img)}" alt="">${CROWN}`:'<span class="vacant">＋</span>'}</span>`
         +`<span class="cg-head" aria-hidden="true">${m.attr(b.element)}<b><span class="cg-name-full">${esc(b.name)}</span><span class="cg-name-short">${esc(shortOf(b))}</span></b></span>`
         +`<span class="cg-count" aria-hidden="true"><span class="lbl">편성 </span>${n}/4${need?` · <span class="need">${need}</span>`:''}</span>`
-        +`<span class="cg-score${done?'':' none'}" aria-hidden="true">${done?`<b>${num(r.score)}</b>${clear?`<small>${clear}</small>`:''}`:`<b>${wait}</b>`}</span>${interactive?'</button>':'</section>'}`;}).join('');
+        +`<span class="cg-score${done?'':' none'}" aria-hidden="true">${done?`<b>${num(r.score)}</b>${clear?low?`<small class="cg-clear-low" title="클리어 확률이 낮음">⚠ ${clear}</small>`:`<small>${clear}</small>`:''}`:`<b>${wait}</b>`}</span>${interactive?'</button>':'</section>'}`;}).join('');
   }
-  function totalLine(m){const all=m.total!=null;return `<div class="cg-total-line"><span>합계</span><b class="cg-total-num${all?'':' pending'}" role="status" aria-live="polite" data-cd-total>${all?num(m.total):`미완료 · ${m.doneCount}/${m.bosses.length}`}</b></div>`;}
-  function summaryHtml(view){const m=read(view);return `<div class="cg-top"><div class="cg-tabs" data-k="cs-boss-summary">${tabsHtml(m,false)}</div><aside class="cg-total">${totalLine(m).replace('data-cd-total','data-k="cs-sum"')}</aside></div>`;}
+  // 4번째 칸: 그웬이 말풍선으로 합계를 알려 줌. 말풍선(갈아 끼우는 조각)과 그웬 자리(GwenStage 가 채움)는 형제라 다시 그려도 그웬은 그대로.
+  function sayHtml(m,attr){const all=m.total!=null;return `합계 <b class="cg-total-num${all?'':' pending'}" role="status" aria-live="polite" ${attr}>${all?num(m.total):`미완료 · ${m.doneCount}/${m.bosses.length}`}</b>${all?'<span>!</span>':''}`;}
+  const totalBox=(say,gwen)=>`<aside class="cg-total cg-say" aria-label="3팀 합계"><p class="gwen-bubble cg-say-bubble"${say}</p><div class="cg-say-gwen">${gwen}</div></aside>`;
+  // 결과 요약(자동 3보스 찾기). gwen = 그웬 결과 자리 표시자(GwenStage.slot) — 없으면 말풍선만.
+  function summaryHtml(view,opts={}){const m=read(view);return `<div class="cg-top cg-summary"><div class="cg-tabs" data-k="cs-boss-summary">${tabsHtml(m,false)}</div>${totalBox(`>${sayHtml(m,'data-k="cs-sum"')}`,opts.gwen||'')}</div>`;}
   // 팀별 난이도는 왼쪽 «이 팀 난이도»에서만 고름(11/19 PM: 3팀 일괄 난이도 줄 제거)
-  function totalHtml(m){return totalLine(m);}
+  function totalHtml(m){return sayHtml(m,'data-cd-total');}
   const titleHtml=m=>`${m.attr(m.boss.element)}<span>${esc(m.boss.name)} 팀</span><span class="tag">${esc(EL[m.boss.element]||m.boss.element||'')}</span>`;
   function boardHtml(m,ui){
     const d=m.draft(m.active),powers=m.view.powers?.[m.active],errors=m.check(m.active)?.errors||[];
@@ -155,12 +160,12 @@
       attrs:{labelledby:'cd-tab-'+m.active,result:m.done(m.active)}};
   }
   const freshUi=()=>({sel:null,team:null,query:'',unowned:false,help:false,picker:false,levelAll:null,focus:null,last:{}});
-  // 문서 순서 = 좁은 화면 순서: 카드 → 합계 → 레인 자리 → 보드 → 고르기 → 브레이크·난이도 → 확인 → 결과. 넓은 화면은 CSS 가 뒤쪽 칸을 왼쪽에 붙임.
+  // 문서 순서 = 좁은 화면 순서: 카드 → 합계(말풍선+그웬 결과 자리) → 레인 자리 → 보드 → 고르기 → 브레이크·난이도 → 확인 → 결과. 넓은 화면은 CSS 가 뒤쪽 칸을 왼쪽에 붙임.
   function html(view,ui){
     ui=ui||freshUi();const {parts:p,attrs:a}=model(view,ui);
     return `<div class="cd-root" data-cd-root>`
       +`<header class="direct-heading"><h2>직접 편성 · 코스모 게이트</h2><ol class="cg-steps" aria-label="편성 순서" data-cd-part="steps">${p.steps}</ol></header>`
-      +`<div class="cg-top"><div class="cg-tabs" role="tablist" aria-label="보스별 팀" data-cd-part="tabs">${p.tabs}</div><aside class="cg-total" aria-label="3팀 합계" data-cd-part="total">${p.total}</aside></div>`
+      +`<div class="cg-top"><div class="cg-tabs" role="tablist" aria-label="보스별 팀" data-cd-part="tabs">${p.tabs}</div>${totalBox(` data-cd-part="total">${p.total}`,'<div data-gwen-slot="cdirect-result" data-cd-gwen-slot></div>')}</div>`
       +`<div class="result-layout" role="tabpanel" id="cd-panel" tabindex="0" aria-labelledby="${esc(a.labelledby)}" data-cd-panel>`
       +`<div class="result-team">`
       +`<div data-gwen-slot="cdirect-board" data-cd-lane-slot></div>`
@@ -179,8 +184,7 @@
       +`<div class="cg-controls" data-cd-part="controls">${p.controls}</div>`
       +`<div class="cd-run" data-cd-part="run">${p.run}</div>`
       +`<div class="cg-result" data-cd-result${a.result?'':' hidden'}><p class="cg-result-title" data-cd-part="result-title">${p['result-title']}</p>`
-      +`<div class="direct-result-hero"><div class="direct-result-numbers"><div class="mi-verdict cd-result-summary" data-cd-part="result">${p.result}</div></div>`
-      +`<div class="direct-gwen"><div data-gwen-slot="cdirect-result" data-cd-gwen-slot></div></div></div></div>`
+      +`<div class="direct-result-hero"><div class="direct-result-numbers"><div class="mi-verdict cd-result-summary" data-cd-part="result">${p.result}</div></div></div></div>`
       +`</div></div></div>`;
   }
   const flag=(el,name,on)=>{if(!el)return;if(on)el.setAttribute(name,'');else el.removeAttribute(name);};
@@ -271,6 +275,6 @@
     paint(host);
     return host;
   }
-  const api={render,html,summaryHtml,shortOf,SCREEN,LABELS};
+  const api={render,html,summaryHtml,shortOf,SCREEN,LABELS,LOW_CLEAR};
   if(node)module.exports=api;else root.CosmoDirectUI=api;
 })(typeof window!=='undefined'?window:globalThis);

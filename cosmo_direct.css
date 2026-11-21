@@ -143,3 +143,36 @@
  .cg-gwen-slot.gwen-result-lane{height:154px}
  .cg-gwen-slot .gwen-lane-actor,.cg-gwen-slot .gwen-lane-poke{width:112px;height:112px}
 }
+/* 4번째 칸(합계): 그웬이 말풍선으로 합계를 알려 줌 — 자동 3보스 찾기 결과·직접 편성 공통.
+   그웬(카드 높이 정도) 왼쪽 · 말풍선 오른쪽, 꼬리는 그웬 쪽. 좁은 화면에서도 같은 한 줄. */
+.cg-say{flex-direction:row-reverse;align-items:center;justify-content:center;gap:12px;padding:4px 12px;overflow:hidden}
+.cg-say-bubble{--tx:-.5px;--ty:50%;--tr:135deg;transform-origin:0 50%;animation:none;min-width:0;max-width:100%;padding:6px 14px;font-size:13px;font-weight:700;color:var(--mut)}
+.cg-say-bubble .cg-total-num{margin-left:4px;font-size:20px;line-height:26px;color:var(--fg)}
+.cg-say-bubble .cg-total-num.pending{font-size:15px;color:var(--warn)}
+.cg-say-bubble .cg-total-num+span{font-size:20px;color:var(--fg)}
+.cg-say-gwen{width:96px;flex:none;min-width:0}
+.cg-say .cg-say-gwen .gwen-result-lane{display:block;height:100px;max-width:none;margin:0;padding:0}
+.cg-say .cg-say-gwen .gwen-result-lane[hidden]{display:none}
+.cg-say .gwen-result-lane .gwen-lane-actor,.cg-say .gwen-result-lane .gwen-lane-poke{width:96px;height:96px}
+.cg-say .gwen-result-lane .gwen-lane-actor{top:2px}
+.cg-say .gwen-lane-speech{display:none}
+/* 그웬이 없을 때(결과 전)는 꼬리 없는 말풍선만 */
+.cg-say:not(:has(.gwen-lane:not([hidden]))) .cg-say-gwen{display:none}
+.cg-say:not(:has(.gwen-lane:not([hidden]))) .cg-say-bubble::after{display:none}
+/* 클리어율이 낮은 팀(LOW_CLEAR 미만) */
+.cg-score small.cg-clear-low{color:var(--warn);font-weight:bold}
+@media(max-width:760px){
+ .cg-say{gap:10px;padding:4px 10px}
+ .cg-say-gwen{width:80px}
+ .cg-say .cg-say-gwen .gwen-result-lane{height:84px}
+ .cg-say .gwen-result-lane .gwen-lane-actor,.cg-say .gwen-result-lane .gwen-lane-poke{width:80px;height:80px}
+ .cg-say-bubble .cg-total-num,.cg-say-bubble .cg-total-num+span{font-size:18px}
+ /* 결과 요약(자동 찾기)은 보스 카드를 세로로 쌓음: 초상 왼쪽 · 이름·편성·점수 오른쪽 */
+ .cg-summary .cg-tabs{grid-template-columns:minmax(0,1fr);gap:6px}
+ .cg-summary .cg-tab{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"face head" "face count" "face score";justify-items:stretch;text-align:left;padding:8px 12px!important;gap:1px 12px;align-content:center}
+ .cg-summary .cg-name-full{display:inline}.cg-summary .cg-name-short{display:none}
+ .cg-summary .cg-head{justify-content:flex-start}.cg-summary .cg-head b{font-size:14px}
+ .cg-summary .cg-count .lbl{display:inline}
+ .cg-summary .cg-score{flex-direction:row;align-items:baseline;gap:0 8px}
+ .cg-summary .cg-score b{font-size:16px}.cg-summary .cg-score small{font-size:12px}
+}

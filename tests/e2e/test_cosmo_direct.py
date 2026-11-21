@@ -74,6 +74,9 @@ def flow(browser,base,width):
     bounds=panel.locator('[data-cd-gwen-slot]').evaluate("""el=>{const a=el.getBoundingClientRect(),b=el.querySelector('img').getBoundingClientRect();return {left:b.left-a.left,right:a.right-b.right,bottom:a.bottom-b.bottom,top:b.top-a.top};}""")
     assert min(bounds.values())>=-1,bounds
     assert abs(bounds['left']-bounds['right'])<2,bounds
+    # 결과 그웬은 합계 칸(4번째 칸) 안, 말풍선이 합계를 말함 — 자동 찾기 결과 요약과 같은 모양
+    assert panel.locator('.cg-top .cg-say [data-cd-gwen-slot] .gwen-lane-actor').count()==1
+    say=panel.locator('.cg-say-bubble').text_content();assert say=='합계 33,000!',say
     announcements=panel.locator('[data-gwen-report]').get_attribute('data-announcements')
     p.evaluate('cdPaint();cdPaint();directRefresh()')
     assert panel.locator('[data-gwen-report]').get_attribute('data-announcements')==announcements

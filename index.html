@@ -626,7 +626,7 @@ function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").v
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
- const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:()=>GwenStage.slot('cosmoSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('cosmoSearch','board')+GwenStage.slot('cosmoSearch','result'),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,summary:cdSearchSummary,levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,learned:CSR.optLearned,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo');searchGwenPaint(p,'cosmoSearch',CSR)}
+ const folds=seasonFoldState(p);p.innerHTML=CosmoSearch.html(CSR,{work:()=>GwenStage.slot('cosmoSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('cosmoSearch','board'),hasInfo:!!MI.info,label:gsLabel,esc,bossName:csBoss,team:csTeam,summary:(row,mode,i)=>cdSearchSummary(row,mode,i?'':GwenStage.slot('cosmoSearch','result')),levelMax:D.cosmoRaid.levelMax,level:CSR.optLevel,mode:CSR.optMode,fast:CSR.optFast,learned:CSR.optLearned,sig:csSig(),preEta:MI.info&&!seasonBlocked('cosmo')?csPre():""});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'cosmo');searchGwenPaint(p,'cosmoSearch',CSR)}
 async function cosmoSearchStart(target=CSR,profileOverride=null){
  if(seasonBlocked('cosmo'))return;
  const CSR=target;

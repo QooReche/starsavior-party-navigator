@@ -131,7 +131,8 @@ function cdFromSearch(row){
   if(!row)return;cdInit();cdCancel();CDIRECT.state=CosmoDirect.fromSearch(row,cdSeason());CDIRECT.undo={};CDIRECT.error='';
   cdSave();directNavigate('direct');
 }
-function cdSearchSummary(row,mode){
+// gwen: 1위 결과에만 넣는 그웬 결과 자리(GwenStage.slot) — 4번째 칸에서 말풍선으로 합계를 알려 줌.
+function cdSearchSummary(row,mode,gwen=''){
   const season=cdSeason(),state=CosmoDirect.fromSearch(row,season),results=Object.fromEntries(row.teams.map(t=>[t.boss,{cosmo:t.st}]));
-  return CosmoDirectUI.summaryHtml({state,season,roster:R,summary:CosmoDirect.summary(state,results,mode)});
+  return CosmoDirectUI.summaryHtml({state,season,roster:R,summary:CosmoDirect.summary(state,results,mode)},{gwen});
 }
