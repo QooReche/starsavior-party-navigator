@@ -185,7 +185,7 @@ class BaskervilleClientTest(unittest.TestCase):
         self.assertEqual(boss.sa, sa)
         self.assertGreater(b.rule_hits['superarmor_damage_ban'], 0)
         self.assertEqual(MC_OPTS['superarmor_damage_ban'], 'off')
-        self.assertEqual(MC_OPTS['fixstats_speed_zero'], 'off')
+        self.assertEqual(MC_OPTS['fixstats_speed_zero'], 'client')
         ln = next(x for x in b.lines_of(boss) if '중첩 상한 없음' in x.raw)
         for _ in range(12):
             b.exec_line(boss, ln, Ctx(boss, boss, boss.d.skills['기본기']))

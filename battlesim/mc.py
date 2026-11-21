@@ -741,7 +741,7 @@ class Unit:
             s += self.b.mc['leader_speed']
         if getattr(self.d, 'cosmo', None) and self.b.mc['cosmo_speed_floor']:
             s = math.floor(s + 1e-9)       # NKM:18293, 코스모 보스 최종 스탯
-        return max(1.0, s)
+        return max(float(self.b.mc['speed_min']), s)
 
     def shield_total(self):
         return sum(e.shield for e in self.eff.values() if e.shield > 0)
@@ -5734,7 +5734,7 @@ class Battle:
             e.category = category
             e.fixed = fixed
             e.clock = clock
-            e.speed_zero = bool(info.get('speed_zero'))
+            e.speed_zero = bool(info.get('speed_zero') or eff.get('speed_zero'))
             e.armor_ban = bool(info.get('armor_ban'))
             if check:
                 e.check = True

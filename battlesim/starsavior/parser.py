@@ -210,6 +210,8 @@ def parse_effect(rest, damage_type='ADT_NORMAL'):
         fl = parse_flags(flags)
         eff = dict(kind='buff', target=target, name=name, chance=chance, dur=dur, props=pr,
                    max=fl['max'], times=fl['times'], judge=fl['judge'] or (props is not None and '효과 적중 판정' in rest))
+        if props and '속도 0 고정' in props:
+            eff['speed_zero'] = True  # BUFF_TEMPLET.FixStats NST_TURN_SPEED=0.
         if dot:
             dm = re.search(r'턴마다 (공격력|생명력)×([\d.]+)%', dot)
             if dm:

@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "e774bd298f4794dc",
+  "hash": "98eff90e6022663e",
   "history": [
-   {
-    "hash": "c103067eceff8481",
-    "reason": "11/15 전수조사 수정 G2, 길드 방어전 시즌 미오픈"
-   },
    {
     "hash": "6a9b2b5a75618e30",
     "reason": "11/15 전수조사 수정 G3, 길드 방어전 시즌 미오픈"
@@ -41,16 +37,16 @@
    {
     "hash": "e774bd298f4794dc",
     "reason": "시즌4 종료 상태 유지. level_max_source 적용은 옛 길드/일반 버프에도 영향을 줄 수 있어 결과 불변을 주장하지 않음. HANDOFF 기존 방침대로 새 길드 시즌 자료 반영 때 guild_sim 재생성."
+   },
+   {
+    "hash": "98eff90e6022663e",
+    "reason": "사례집 속도 교정. data/guild_defense.json 시즌4 종료 상태와 기존 재생성 방침 유지. 비활성 guild_sim은 새 시즌 자료 반영 때 재생성하며 이번 결과 불변을 뜻하는 인정은 아님. 탐색 정책은 변경하지 않음."
    }
   ]
  },
  "quick": {
-  "hash": "e774bd298f4794dc",
+  "hash": "98eff90e6022663e",
   "history": [
-   {
-    "hash": "c103067eceff8481",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "6a9b2b5a75618e30",
     "reason": "calibrate_quick --write 재보정"
@@ -86,6 +82,10 @@
    {
     "hash": "e774bd298f4794dc",
     "reason": "calibrate_quick --write 재보정"
+   },
+   {
+    "hash": "98eff90e6022663e",
+    "reason": "사례집 속도 교정: gen_quick_calib --per-content 400 --opboss와 같은 2323표본×40판에서 속도1 미만 경로 215표본을 legacy와 재대조. 클리어 확률 차이11표본, 보정에 쓰는 clear>=0.5 라벨 차이0. quick 계수는 같은 라벨에 맞추므로 유지. docs/casebook_engine_check.md"
    }
   ]
  }
