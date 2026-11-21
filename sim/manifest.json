@@ -1,6 +1,6 @@
 {
  "_note": "브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시",
- "ver": "c8f7372b34c6",
+ "ver": "be16bbd5d487",
  "files": [
   "battlesim/__init__.py",
   "battlesim/api.py",
@@ -16,6 +16,7 @@
   "battlesim/starsavior/cosmo_raid.py",
   "battlesim/starsavior/data.py",
   "battlesim/starsavior/foe.py",
+  "battlesim/starsavior/foe_client.py",
   "battlesim/starsavior/guild_bfb.py",
   "battlesim/starsavior/marker_se.py",
   "battlesim/starsavior/mc_semantics.py",
@@ -47,6 +48,7 @@
   "data/buff_immune_pass.json",
   "data/buff_global_turn.json",
   "data/foe_react.json",
+  "data/foe_client.json",
   "data/foe_summon.json",
   "data/foe_clash.json",
   "data/buff_dead_keep.json",
@@ -56,5 +58,5 @@
   "data/cosmo_raid.json",
   "data/foe_cosmo_extra.json"
  ],
- "bytes": 7374402
+ "bytes": 7379251
 }

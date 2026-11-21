@@ -566,36 +566,6 @@
         "owner": "적 데이터·시즌 변환 유지보수"
       },
       {
-        "key": "[\"시엔\",\"기본기\",\"skill\",\"트리거 스킬 미반영: 쌍성각이에요\",false]",
-        "reason": "지난 길드 방어전 일반 경로의 속도 0·약화 면역 고유 효과와 트리거가 미지원임. critical도 숨기지 않고 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 시엔 고유 버프의 속도/면역 스탯과 CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json 쌍성각/화륜쌍추 트리거 행 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"시엔\",\"특수기\",\"skill\",\"트리거 스킬 미반영: 화륜쌍추예요\",false]",
-        "reason": "지난 길드 방어전 일반 경로의 속도 0·약화 면역 고유 효과와 트리거가 미지원임. critical도 숨기지 않고 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 시엔 고유 버프의 속도/면역 스탯과 CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json 쌍성각/화륜쌍추 트리거 행 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"시엔\",\"패시브\",\"effect: 의미 미해석 효과 〈시엔 고유 버프(해제불가)〉(속성 없음)\",\"[웨이브 시작 시] 자신에게 〈시엔 고유 버프(해제불가)〉 (지속 무한 / 속도 0 고정 / 약화효과 면역) {해제 불가}\",true]",
-        "reason": "지난 길드 방어전 일반 경로의 속도 0·약화 면역 고유 효과와 트리거가 미지원임. critical도 숨기지 않고 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 시엔 고유 버프의 속도/면역 스탯과 CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json 쌍성각/화륜쌍추 트리거 행 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"심해의 폭군\",\"패시브\",\"effect: 의미 미해석 효과 〈다음 턴〉(속성 없음)\",\"[턴 시작 시] (조건: 적 턴 시작 시 [자신이 보유: 굼뜬 이동(해제불가); 중첩수: 4]) 자신에게 〈다음 턴〉 (1턴 / 확정 다음 턴) {해제 불가}\",false]",
-        "reason": "지난 길드 방어전 일반 경로의 속도 0 고유 효과·확정 다음 턴 효과가 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 심해의 폭군 고유 버프·굼뜬 이동·다음 턴 행 및 NKM 행동 게이지/턴 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"심해의 폭군\",\"패시브\",\"effect: 의미 미해석 효과 〈심해의 폭군 고유 버프(해제불가)〉(속성 없음)\",\"[웨이브 시작 시] 자신에게 〈심해의 폭군 고유 버프(해제불가)〉 (지속 무한 / 속도 0 고정) {해제 불가}\",false]",
-        "reason": "지난 길드 방어전 일반 경로의 속도 0 고유 효과·확정 다음 턴 효과가 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 심해의 폭군 고유 버프·굼뜬 이동·다음 턴 행 및 NKM 행동 게이지/턴 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
         "key": "[\"처단자\",\"패시브\",\"effect: 보호막/회복\",\"[스킬 사용 후] (조건: 아군 공격 후 [자신 포함: 아니오; 자신이 보유: 응집된 생기(해제불가)]) 보스인 아군 전체에게 〈보호막〉 (2턴) 보호막 = 대상 생명력×1%\",true]",
         "reason": "지난 시즌 일반 스테이지 경로의 조건부 보호막 줄이 미해석임. 현재 시즌 runtime 0과 별도로 유지함.",
         "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 처단자 보호막 SE와 CLIENT_BUFF_TEMPLET 보호막 비율/대상 및 NKM 조건·보호막 적용 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",

@@ -1,0 +1,68 @@
+{
+  "units": {
+    "심해의 폭군": {
+      "sequential_events": [
+        "enemy_ts"
+      ]
+    },
+    "시엔": {
+      "react": {
+        "쌍성각이에요": {
+          "timing": "after_ally_attack",
+          "conds": [
+            [
+              "skill_basic"
+            ],
+            [
+              "include_self",
+              false
+            ],
+            [
+              "self_has",
+              [
+                "결속(해제불가)"
+              ]
+            ]
+          ],
+          "target": "react_target",
+          "client_1121": true
+        },
+        "화륜쌍추예요": {
+          "timing": "after_ally_attack",
+          "conds": [
+            [
+              "skill_special"
+            ],
+            [
+              "include_self",
+              false
+            ],
+            [
+              "self_has",
+              [
+                "결속(해제불가)"
+              ]
+            ]
+          ],
+          "target": "react_target",
+          "client_1121": true
+        }
+      }
+    }
+  },
+  "buffs": {
+    "다음 턴": {
+      "category": "marker",
+      "next_turn_catch": true
+    },
+    "시엔 고유 버프(해제불가)": {
+      "category": "marker",
+      "armor_ban": true,
+      "speed_zero": true
+    },
+    "심해의 폭군 고유 버프(해제불가)": {
+      "category": "marker",
+      "speed_zero": true
+    }
+  }
+}

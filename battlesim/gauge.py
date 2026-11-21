@@ -21,7 +21,9 @@ def int_gain(acc):
     return int(acc)
 
 
-def turn_key(extra_turn, gauge, spd, prio):
+def turn_key(extra_turn, gauge, spd, prio, next_turn_seq=None):
     """정렬 키(NKM:12332-12364 CompareTo) — 작은 쪽이 먼저 행동. 추가 턴 먼저, 게이지 높은 순, 속도 높은 순,
-    유닛 우선순위 높은 순. 확정 턴(NextTurnCatch) 항은 엔진 콘텐츠에 없어 뺀다."""
-    return (not extra_turn, -gauge, -spd, -prio)
+    PC 26752678 NKM:12331-12369: 추가 턴, 확정 다음 턴, 그 버프 부여 순번,
+    게이지, 속도, 유닛 우선순위 순서."""
+    return (not extra_turn, next_turn_seq is None,
+            next_turn_seq if next_turn_seq is not None else float('inf'), -gauge, -spd, -prio)

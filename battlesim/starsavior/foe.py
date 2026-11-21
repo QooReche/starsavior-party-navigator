@@ -405,7 +405,8 @@ class FoeDef:
                 if self.name in um.get('units', ()) and um.get('skill_name') in skill_names:
                     self.unmodeled.append('격전 의뢰 효과 미반영: %s — %s' % (um['skill_name'], um.get('reason', '')))
         # 적 반응(트리거) 스킬 발동 조건(mc.foe_react): 칸 -> {timing, conds, target}
-        react_data = foe_react().get(self.key) or {}
+        from .foe_client import attach
+        react_data = {**(foe_react().get(self.key) or {}), **attach(self)}
         self.react = {}
         for slot, tsk in self.trigger_skills.items():
             if slot in react_data:

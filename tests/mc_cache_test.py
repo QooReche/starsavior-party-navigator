@@ -72,7 +72,7 @@ _KEEP.update(auto_unable_break='legacy', auto_remove_filter='legacy', auto_se_re
 _KEEP.update(bloom_passive_levels='legacy', independent_stack_limits='legacy', smile_waterbomb_scope='legacy', scarlet_pinball_marker='legacy', cristelle_ignite_targets='legacy', shield_enemy_count='legacy', gauge_lock_order='legacy', damage_break_boundary='legacy')
 _KEEP.update(revive_toughness='legacy', potential_11026_vampirism='legacy', heal_cleanse_skill_end='legacy')
 _KEEP['last_damager_timing'] = 'per_target'
-_KEEP.update(fixstats_speed_zero='off', superarmor_damage_ban='off', speed_min=1)
+_KEEP.update(foe_client_flow='off', fixstats_speed_zero='off', superarmor_damage_ban='off', speed_min=1)
 _KEEP['self_hp_condition'] = 'ratio'
 _KEEP['marker_se_flow'] = 'legacy'
 _KEEP['level_max_source'] = 'legacy'

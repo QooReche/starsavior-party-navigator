@@ -543,7 +543,7 @@ DISPEL_ON_ATTACK = ('여유로운 응수', '헥사 너트')
 class Eff:
     """유닛에 붙은 효과 1개(강화·약화·보호막·지속 피해·지속 회복). stacks 는 정수."""
     __slots__ = ('name', 'props', 'stacks', 'maxs', 'dur', 'src', 'harmful', 'fresh', 'shield', 'dot', 'inst', 'hot',
-                 'check', 'fixed', 'clock', 'category', 'skip_tick', 'dead_keep', 'seq', 'check_turn', 'speed_zero', 'armor_ban')
+                 'check', 'fixed', 'clock', 'category', 'skip_tick', 'dead_keep', 'seq', 'check_turn', 'speed_zero', 'armor_ban', 'next_turn_catch', 'client_1121')
 
     def __init__(self, name, props, maxs, dur, src, harmful):
         self.name, self.props, self.maxs, self.dur, self.src, self.harmful = name, props, maxs, dur, src, harmful
@@ -561,6 +561,8 @@ class Eff:
         self.skip_tick = False   # 단계 그룹: 더 낮은 단계가 지속만 늘린 뒤 다음 차감 1회를 건너뜀(NKM:4297-4305, 3978-3988)
         self.clock = 'owner_turn'   # 영역은 global 또는 legacy의 ally_turn/round로 차감
         self.speed_zero = self.armor_ban = False
+        self.next_turn_catch = False
+        self.client_1121 = False
         self.seq = next(_EFF_SEQ)    # 클라 버프 목록에 들어간 순서(재부여 = 지우고 다시 넣음, mc.dispel_order)
 
 
@@ -1362,11 +1364,13 @@ class Battle:
 
     def _turn_key(self, x):
         """turn_gauge=client 정렬 키(NKM:12332-12364 CompareTo): 추가 턴 먼저, 게이지 높은 순, 속도 높은 순,
-        유닛 우선순위(등장 때 RandomGenerator.Next(10000), :1962) 높은 순. 확정 턴(NextTurnCatch) 항은 엔진에 없는 효과라 뺌"""
+        PC 26752678: 확정 다음 턴·부여 순번은 추가 턴과 게이지 사이에 비교함."""
         pr = x._turn_prio
         if pr is None:
             pr = x._turn_prio = self._roll_prio()
-        return _gauge.turn_key(x.extra_turn, x.gauge, x.spd(), pr)
+        caught = [e.seq for e in x.eff.values() if e.next_turn_catch and e.stacks > 0]
+        return _gauge.turn_key(x.extra_turn, x.gauge, x.spd(), pr,
+                               min(caught) if caught else None)
 
     def _roll_prio(self):
         """유닛 등장 때 굴리는 행동 우선순위(NKM:1962 RandomGenerator.Next(10000)). 전용 난수라 다른 흐름에 영향 없음"""
@@ -3129,7 +3133,9 @@ class Battle:
             self.rule_hits['break_point_window'] += 1
             self._add_break_points(v)
             return
-        if self.mc['superarmor_damage_ban'] == 'client' and any(e.armor_ban and e.stacks > 0 for e in v.eff.values()):
+        if any(e.armor_ban and e.stacks > 0 and
+               (self.mc['superarmor_damage_ban'] == 'client' or
+                (e.client_1121 and self.mc['foe_client_flow'] == 'client')) for e in v.eff.values()):
             self.rule_hits['superarmor_damage_ban'] += 1
             return
         if v.broken or v.sa_max <= 0 or v.has('강인도 피해 무효'):
@@ -3629,6 +3635,8 @@ class Battle:
             return
         extended = self.mc.get('foe_react_timing', 'extended') == 'extended'
         for slot, rule in react.items():
+            if rule.get('client_1121') and self.mc['foe_client_flow'] != 'client':
+                continue
             ts = u.d.trigger_skills.get(slot)
             if ts is None:
                 continue
@@ -4458,7 +4466,9 @@ class Battle:
             return
         if marker_se.run_batch(self, owner, lines, ctx):
             return
-        if getattr(owner.d, 'client_model', None) == 'baskerville':
+        if (getattr(owner.d, 'client_model', None) == 'baskerville' or
+                (self.mc['foe_client_flow'] == 'client' and
+                 all(line_kind(ln) in getattr(owner.d, 'client_sequential_events', ()) for ln in lines))):
             # NKM:16103-16116,16374-16405,16526-16528: 같은 사건에서도 SE마다 즉시 재판정.
             for ln in lines:
                 if self.line_ok(owner, ln, ctx):
@@ -4760,6 +4770,8 @@ class Battle:
             for x in tg:
                 if not snapshot and eff.get('shield_only') and x.shield_total() <= 0:
                     continue
+                if self._next_turn_caught(x):
+                    continue
                 forced = self._forced(owner)
                 down = x.side != owner.side and eff['val'] < 0 and not forced
                 if down and self._harm_evaded(x, ctx):
@@ -4781,6 +4793,8 @@ class Battle:
             if not tg:
                 return
             for x in tg:
+                if self._next_turn_caught(x):
+                    continue
                 if x.side != owner.side and eff.get('judge') and not self.roll_hit(owner, ctx, x, None):
                     continue
                 if x.gauge > eff['threshold'] * 100.0:
@@ -5579,6 +5593,11 @@ class Battle:
             return True
         return False
 
+    def _next_turn_caught(self, x):
+        # PC 26752678 NKM:4469-4473,4931-4938: all four gauge buff types are
+        # rejected even when forced; natural gauge/reset is a separate path.
+        return any(e.next_turn_catch and e.stacks > 0 for e in x.eff.values())
+
     def _debuff_banned(self, x):
         """새 약화를 거부하는 상태(CantGetMoreDebuff)인가. table = BUFF_TEMPLET m_bDebuffBan 이름 전부(면역·면역(해제불가)·
         면역(영역 전개)·시엔 고유 버프(해제불가)·바스커빌의 역작(해제불가), data/buff_flags.json) — 클라는 이름이 아니라
@@ -5596,6 +5615,8 @@ class Battle:
         name = eff['name']
         opp = x.side != owner.side
         info = getattr(owner.d, 'effect_info', {}).get(name, {})
+        if info.get('client_1121') and self.mc['foe_client_flow'] != 'client':
+            info = {}
         marker = eff.get('cast_marker') or bool(CHECK_NAME.search(name)) or '판별용' in name
         category = ('marker' if marker else info.get('category')) or ('debuff' if opp else 'buff')
         forced = self._forced(owner, name)
@@ -5736,6 +5757,8 @@ class Battle:
             e.clock = clock
             e.speed_zero = bool(info.get('speed_zero') or eff.get('speed_zero'))
             e.armor_ban = bool(info.get('armor_ban'))
+            e.client_1121 = bool(info.get('client_1121'))
+            e.next_turn_catch = bool(eff.get('next_turn_catch') and self.mc['foe_client_flow'] == 'client')
             if check:
                 e.check = True
                 e.check_turn = self.global_turns
@@ -5784,6 +5807,10 @@ class Battle:
             e.stacks = min(e.maxs, e.stacks + eff['times'])
         if hot:
             e.hot = hot
+        if e.next_turn_catch:
+            # PC NKM:5336-5342. Set, do not add; bypass SpeedGaugeUp immunity.
+            x.gauge = 10000.0
+            self.rule_hits['foe_client_flow'] += 1
         if name == '스킬 피해 무효' and self.mc['nullifier_count'] == 'client':
             # SkillNullifierValue(«스킬 무효화 N회»): 새 횟수가 남은 횟수보다 클 때만 갈아 끼움(NKM:5585-5591 OBF_9349).
             # 갈아 끼움 = 새 객체(4474-4487: OBF_2204 생성 → OBF_5657 옛 객체 삭제 → OBF_27309 삽입, 4505-4518)를 넣음 —
@@ -5874,6 +5901,7 @@ def _meaning_gap(ln, k, markers):
     if tail and not RX_HOT.search(ln.raw) and not e.get('dot') and '보호막 =' not in tail:
         return 'effect: 효과 뒤 문구 미해석 〈%s〉 %s' % (name, tail[:30])
     if (not props and not e.get('dot') and name not in _rules.KNOWN_DOT and name not in HANDLED_NAMES
+            and not e.get('client_1121')
             and name not in no_preemptive()['buffs']
             and name not in markers and not CHECK_NAME.search(name) and not RX_HOT.search(ln.raw)):
         return 'effect: 의미 미해석 효과 〈%s〉(속성 없음)' % name
