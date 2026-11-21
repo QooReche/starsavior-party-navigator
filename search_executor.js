@@ -31,12 +31,23 @@ function simReceive(w,m){
  if(m.job!=null&&m.job!==lease.index)return;
  if(m.type==='stage'){if(m.msg==='준비 끝')w._ready=true;w._last=now();o.stage?.(w,m);if(!b.closed)o.arm?.();return}
  if(m.type==='error'){o.error(m.msg,w,false);return}
- if(m.type==='team'){if(lease.got||m.key!==w._key)return;lease.got=true;w._last=now();o.team(b.jobs[lease.index],m,w);if(!b.closed)o.arm?.();return}
+ // 묶음(lease.keys = 팀 key → 작업 번호): 묶음 안의 key 이고 아직 안 받은 것만 받는다. done 은 전부 받았을 때만 인정
+ if(m.type==='team'){const j=lease.keys.get(m.key);if(j==null||lease.got.has(m.key))return;lease.got.add(m.key);w._last=now();o.team(b.jobs[j],m,w);if(!b.closed)o.arm?.();return}
  if(m.type==='done'){
-  if(!lease.got){o.error('결과 없이 끝난 작업',w,false);return}
-  simRelease(w);b.left--;
+  if(lease.got.size<lease.keys.size){o.error('결과 없이 끝난 작업',w,false);return}
+  simRelease(w);b.left-=lease.keys.size;
   if(!b.left){b.closed=true;o.arm?.cancel?.();SIMPOOL.batches=SIMPOOL.batches.filter(x=>x!==b);o.done()}
   simPump()}}
+// 다음 작업 묶음: o.chunk(기본 1)개까지, 팀 key 가 겹치지 않고 팀 말고는 요청이 같은(판 수·옵션·시드…) 이어진 작업만 한 메시지로.
+//  작업 하나 = 팀 하나(msg 의 teams 가 1개)일 때만 묶는다. 다음 묶음 첫 작업의 msg 는 b.peek 에 두어 두 번 만들지 않음
+function take(b){const size=Math.max(1,Math.floor(b.o.chunk||1)),keys=new Map(),teams=[];let head=null,m0=null;
+ while(b.next<b.jobs.length&&keys.size<size){const j=b.next,m=b.peek?.j===j?b.peek.m:b.o.msg(b.jobs[j],j);b.peek=null;
+  const solo=m.teams.length===1,k=m.teams[0].key;
+  if(m0){const h=JSON.stringify({...m,teams:null});if(!solo||keys.has(k)||h!==head){b.peek={j,m};break}}
+  else{m0=m;if(size>1&&solo)head=JSON.stringify({...m,teams:null})}
+  b.next++;if(!solo||size===1){keys.set(k,j);return {m,keys}}      // 지금과 같음: 받는 것은 첫 팀 key 하나
+  keys.set(k,j);teams.push(m.teams[0])}
+ return {m:{...m0,teams},keys}}
 function simPump(){if(SIMPOOL.pumping)return;SIMPOOL.pumping=true;
  try{
   for(const b of SIMPOOL.batches.slice())if(!b.o.live()){b.closed=true;b.o.arm?.cancel?.();for(const w of b.ws.slice())simRelease(w,true)}
@@ -48,16 +59,17 @@ function simPump(){if(SIMPOOL.pumping)return;SIMPOOL.pumping=true;
    let w=SIMPOOL.workers.find(w=>!w._lease&&!w._dead);
    if(!w){if(SIMPOOL.workers.length>=env.capacity())break;
     w=resources.get(SIMPOOL.workers.length)}
-   const j=b.next++,m=b.o.msg(b.jobs[j],j),token=++SIMPOOL.serial;
-   w._owner=b.owner;w._lastBatch={owner:b.owner,o:{id:b.o.id,group:b.o.group}};w._lease={batch:b,index:j,token,got:false};w._job=j;w._key=m.teams[0].key;w._n=m.n_runs;w._t=0;w._last=now();b.ws.push(w);simPoolSync();
-   b.o.assigned?.(w,b.jobs[j]);
+   const j=b.next,{m,keys}=take(b),token=++SIMPOOL.serial;
+   w._owner=b.owner;w._lastBatch={owner:b.owner,o:{id:b.o.id,group:b.o.group}};w._lease={batch:b,index:j,token,keys,got:new Set()};w._job=j;w._key=m.teams[0].key;w._n=m.n_runs;w._t=0;w._last=now();b.ws.push(w);simPoolSync();
+   for(const i of keys.values())b.o.assigned?.(w,b.jobs[i]);
    w.postMessage({...m,id:b.o.id,requestId:b.o.id,owner:b.owner,revision:b.o.revision||0,job:j,jobId:token});b.o.arm?.();
   }
  }finally{SIMPOOL.pumping=false}}
 // 대기열: 작업(팀 하나)을 순서대로 하나씩 맡기고, 작업자가 그 작업의 done 을 보내면 다음 작업을 준다(고정 분배가 아니라 먼저 끝난 작업자가 더 가져간다).
 //  작업마다 번호(job)를 달아 보내고 작업자가 되돌려 준다 — 지금 맡긴 작업(번호·팀 key 가 같은 것)의 답만 받고, 같은 작업의 결과는 한 번만 받는다. 결과 없이 done 이 오면 오류.
 //  결과는 어느 작업자가 언제 돌렸는지와 무관하다(팀마다 같은 시드·판 번호). 순위 동률도 끝난 순서가 아니라 후보 순서로 가른다(scrOrder).
-//  o = {owner='reco', id, revision, group?, live(), msg(작업, 번호), assigned?, stage?, team, done, error, arm?}
+//  o = {owner='reco', id, revision, group?, chunk?, live(), msg(작업, 번호), assigned?, stage?, team, done, error, arm?}
+//  chunk>1 이면 작업 여러 개(팀 여러 개)를 한 메시지로 맡긴다(take). 받기·무진행 감시·속도 표본은 그대로 팀 단위, 취소는 terminate(이미 온 팀 결과는 남음)
 //  물리 작업자의 핸들러는 생성 때 한 번만 설치함. 대기 시간에는 무진행 시계를 돌리지 않음.
 function simDispatch(ws,jobs,o){const b={ws,jobs,o,owner:o.owner||'reco',next:0,left:jobs.length,serial:++SIMPOOL.serial,closed:false};
  SIMPOOL.batches.push(b);simPump();return b}
@@ -71,7 +83,7 @@ function simWatch(ws,limit,live,stop){let timer;const lim=w=>w._ready?limit():en
    const dead=ws.find(w=>w._job!=null&&now()-w._last>=lim(w));if(!dead){arm();return}
    stop(!!dead._ready)},wait)};
  arm.cancel=()=>clearTimer(timer);return arm}
-return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watch:simWatch,release:simRelease};
+return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watch:simWatch,release:simRelease,chunkSize};
 }
   function split(jobs, n) {
     const out = Array.from({length: Math.max(1, Math.min(n, jobs.length))}, () => []);
@@ -185,6 +197,13 @@ return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watc
     }
     return {begin, update, estimate, summary, state: () => ({cur, st})};
   }
+// 화면 갱신 간격 제한(11/22, 훑기 A-1): 첫 호출은 바로, 그 뒤 ms 안의 호출은 끝에 한 번만(live() 가 거짓이면 버림).
+//  표시만 늦을 뿐 결과·순위·배차는 그대로. flush = 밀린 것 바로 실행, cancel = 버림. env.trailing=false 면 끝 호출을 버림(타이머 없음 — 다른 갱신이 곧 덮어쓸 때)
+function throttle(fn,ms=200,live=()=>true,env={}){const now=env.now||(()=>Date.now()),setTimer=env.setTimer||((...a)=>setTimeout(...a)),clearTimer=env.clearTimer||((...a)=>clearTimeout(...a)),trailing=env.trailing!==false;
+ let last=-Infinity,timer=null;
+ const run=()=>{timer=null;last=now();if(live())fn()};
+ const f=()=>{if(timer!=null)return;const wait=last+ms-now();if(wait<=0){run();return}if(trailing)timer=setTimer(run,wait)};
+ f.flush=()=>{if(timer!=null){clearTimer(timer);run()}};f.cancel=()=>{if(timer!=null)clearTimer(timer);timer=null};return f}
 function timedWorker(env){
   const raw=createWorker();let timer=null,ready=false,runs=1;
   const wrapper={onmessage:null,onerror:null,postMessage(message){runs=message.n_runs;arm();raw.postMessage(message);},
@@ -195,6 +214,9 @@ function timedWorker(env){
   raw.onerror=e=>{clearTimeout(timer);wrapper.onerror?.(e);};return wrapper;
 }
 
- const api={createWorker,shared,split,workerPool,runPhase,etaNew,timedWorker};
+ // 묶음 크기(훑기·예선): 코스모 식 min(50, ceil(팀 수/(작업자×40))) — 작업자마다 40묶음 이상 남겨 끝이 고르게. 8개·10,626팀이면 34팀, 120팀이면 1팀(지금과 같음)
+ const chunkSize=(teams,workers)=>Math.max(1,Math.min(50,Math.ceil(teams/(Math.max(1,workers)*40))));
+ const PAINT_MS=200;      // 훑기·예선 진행 표시 갱신 간격(ms, throttle)
+ const api={createWorker,shared,split,workerPool,runPhase,etaNew,timedWorker,throttle,chunkSize,PAINT_MS};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SearchExecutor=api;
 })(typeof window!=='undefined'?window:globalThis);

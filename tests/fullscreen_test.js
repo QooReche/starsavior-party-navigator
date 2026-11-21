@@ -27,8 +27,9 @@ function screenRun(full,vds,{stopAfter=null}={}){
   setTimeout:()=>0,clearTimeout(){},run(){},
   Worker:class{postMessage(req){posts.push({req,msg:c.SIMQ.msg});const send=m=>this.onmessage({data:{id:req.id,job:req.job,...m}});
    if(stopAfter!=null&&posts.length>stopAfter){this.parked=req;return}
-   send({type:'stage',id:undefined,msg:'준비 끝'});const k=req.teams[0].key,n=req.n_runs+(req.teams[0].options.run_offset||0),p=progOf(k);
-   send({type:'team',key:k,result:{n,clear:0,prog:p,progs:[p],via:{coop:0},ttk:20,...(req.teams[0].options.raw_runs?{raw:'[raw'+n+']'}:{})}});send({type:'done'})}
+   send({type:'stage',id:undefined,msg:'준비 끝'});
+   for(const [i,t] of req.teams.entries()){const k=t.key,n=req.n_runs+(t.options.run_offset||0),p=progOf(k);send({type:'stage',msg:`시뮬 ${i+1}/${req.teams.length}팀`});
+    send({type:'team',key:k,result:{n,clear:0,prog:p,progs:[p],via:{coop:0},ttk:20,...(t.options.raw_runs?{raw:'[raw'+n+']'}:{})}})}send({type:'done'})}
    terminate(){this.stopped=true}}});
  vm.runInContext(fs.readFileSync(require.resolve('../search_executor.js'),'utf8'),c);
  for(const [a,b] of [['const simSigB=','// 표시 상태는'],['function simInvalidate()','// 자동 확인'],
@@ -36,8 +37,10 @@ function screenRun(full,vds,{stopAfter=null}={}){
  assert.equal(vm.runInContext('simScreen(1)',c),true);
  return {c,posts,sc:()=>plain(Object.values(c.SIMQ.scr)[0]),ev:s=>vm.runInContext(s,c)};
 }
-const legs=posts=>{const out=[];for(const p of posts){const n=p.req.n_runs,last=out[out.length-1];if(last&&last.n===n)last.keys.push(p.req.teams[0].key);else out.push({n,keys:[p.req.teams[0].key]})}return out};
-const reqs=posts=>plain(posts.map(p=>({n:p.req.n_runs,team:p.req.teams[0]})));
+// 요청 하나에 팀 여럿(묶음, A-2)일 수 있음 → 팀 단위로 펼쳐 비교
+const legs=posts=>{const out=[];for(const p of posts){const n=p.req.n_runs,last=out[out.length-1],ks=p.req.teams.map(t=>t.key);if(last&&last.n===n)last.keys.push(...ks);else out.push({n,keys:[...ks]})}return out};
+const reqs=posts=>plain(posts.flatMap(p=>p.req.teams.map(team=>({n:p.req.n_runs,team}))));
+const sizes=(posts,n)=>posts.filter(p=>p.req.n_runs===n).map(p=>p.req.teams.length);
 const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
 
 {
@@ -52,6 +55,10 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
  // 켬 + 전원 못 깸 = 훑기 단계 추가
  const on=screenRun(true,hard),M=legs(on.posts),sc=on.sc();
  assert.deepEqual(M.map(x=>[x.n,x.keys.length]),[[1,200],[8,80],[24,20]],'켬: 1판 200팀 → 8판 80팀 → 24판 20팀');
+ // 묶음(A-2): 작업자 2개(코어 3) → 훑기 200팀은 ceil(200/80)=3팀씩, 예선 80팀·20팀은 1팀씩(지금과 같음)
+ assert.deepEqual([...new Set(sizes(on.posts,1).slice(0,-1))],[3],'훑기는 3팀 묶음');assert.equal(sizes(on.posts,1).reduce((a,b)=>a+b),200);
+ assert(sizes(on.posts,8).every(x=>x===1)&&sizes(on.posts,24).every(x=>x===1),'예선은 묶음 1(지금과 같음)');
+ assert(sizes(off.posts,8).every(x=>x===1),'끔: 묶음 없음');
  assert.deepEqual(M[0].keys,teamsOf(hard).map(t=>keyOf(t.keys[3])),'훑기는 빠른 계산 순서 그대로 전부');
  assert(on.posts.filter(p=>p.req.n_runs===1).every(p=>!p.req.teams[0].options.raw_runs&&!p.req.teams[0].options.run_offset),'훑기는 raw 를 안 받음');
  assert(on.posts.filter(p=>p.req.n_runs===24).every(p=>p.req.teams[0].options.run_offset===8&&p.req.teams[0].options.merge_raw),'2차는 1차 8판에 이어 돌림');
@@ -60,8 +67,9 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
  assert.deepEqual(sc.pool.slice(0,50),want,'예선 후보 = 1판 결과 순(진행도 높은 뒤쪽 팀부터)');
  assert.equal(sc.order[0],keyOf('t199'),'최종 예선 1위 = 진행도 최고');
  assert.equal(sc.done,true);assert.equal(sc.short,false);
- assert(on.posts.slice(1,200).every(p=>/^후보 전체 훑는 중/.test(p.msg)),'훑는 동안 진행 문구');
- assert(on.posts.slice(201,280).every(p=>/^후보 거르는 중/.test(p.msg)),'예선 진행 문구');
+ const of=n=>on.posts.filter(p=>p.req.n_runs===n);
+ assert(of(1).slice(1).every(p=>/^후보 전체 훑는 중/.test(p.msg)),'훑는 동안 진행 문구');
+ assert(of(8).slice(1).every(p=>/^후보 거르는 중/.test(p.msg)),'예선 진행 문구');
 }
 // 진행 문구: 훑는 동안 «후보 전체 훑는 중»
 {
@@ -102,8 +110,8 @@ async function bundleRun(full,vds){
   SIMQ:{LOAD_MS:180000,res:{},scr:{},meta:{}},RECO:{},LASTQ:{},recoIdentity:()=> 'fixed',recoProgressPaint(){},directResultsPaint(){},simTeamLimit:()=>240000,simRateAdd(){},goalVal:r=>r?.clear,
   RecommendPipeline:require('../recommend_pipeline'),SCR_RK:0,rkQuickTop:()=>[],messages:[],
   Worker:class{postMessage(m){trace.push(plain(m));setImmediate(()=>{if(this.dead)return;const send=x=>this.onmessage({data:{...m,...x}});
-   send({type:'stage',msg:'준비 끝'});const t=m.teams[0],n=m.n_runs+(t.options?.run_offset||0),p=progOf(t.key)||0.5;
-   send({type:'team',key:t.key,result:{ver:'synthetic',n,clear:0,prog:p,progs:[p],...(t.options?.raw_runs?{raw:'[raw]'}:{})}});send({type:'done'});});}terminate(){this.dead=true;}}});
+   send({type:'stage',msg:'준비 끝'});for(const t of m.teams){const n=m.n_runs+(t.options?.run_offset||0),p=progOf(t.key)||0.5;
+   send({type:'team',key:t.key,result:{ver:'synthetic',n,clear:0,prog:p,progs:[p],...(t.options?.raw_runs?{raw:'[raw]'}:{})}})}send({type:'done'});});}terminate(){this.dead=true;}}});
  vm.runInContext(fs.readFileSync(path.join(ROOT,'search_executor.js'),'utf8'),ctx);
  vm.runInContext(section(html,'const SCR_WMAX=','// 이 기기의 시뮬 속도'),ctx);
  for(const [a,b] of [['const SCR_ROUNDS=','const scrKey='],['const scrCmp=','function scrNote('],['function recoScreenSequence(','function simWaiting(']])vm.runInContext(section(html,a,b),ctx);
@@ -120,7 +128,7 @@ async function bundleRun(full,vds){
 }
 (async()=>{
  const off=await bundleRun(false,hard),on=await bundleRun(true,hard),offE=await bundleRun(false,easy),onE=await bundleRun(true,easy);
- const strip=t=>t.map(m=>({n:m.n_runs,team:m.teams[0]}));
+ const strip=t=>t.flatMap(m=>m.teams.map(team=>({n:m.n_runs,team})));
  assert.deepEqual(legs(off.trace.map(req=>({req}))).map(x=>[x.n,x.keys.length]),[[8,80],[24,20],[4,9]],'묶음 끔: 예선 → 본선(목표 미달이라 9팀)');
  assert.deepEqual(legs(on.trace.map(req=>({req}))).map(x=>[x.n,x.keys.length]),[[1,200],[8,80],[24,20],[4,9]],'묶음 켬: 훑기 추가');
  assert.deepEqual(strip(onE.trace),strip(offE.trace),'묶음 켬 + 쉬운 스테이지: 요청 같음');

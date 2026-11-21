@@ -65,7 +65,9 @@ function recoEvaluate(snapshot,task,jobs,n,{screen=false,label=null,onTeam=()=>{
     task.stop=()=>finish('중단함');
     const arm=simWatch(ws,()=>simTeamLimit(n),live,ready=>finish(ready?'계산 시간 초과':'계산 엔진 준비 시간 초과'));
     let got=0;task.progress=0;recoProgressPaint(task);
-    simDispatch(ws,jobs,{owner:task.owner,id,live,arm,
+    // 진행·결과 칸 갱신은 SearchExecutor.PAINT_MS 간격으로만(훑기 A-1, 결과 불변). 끝(done)에는 밀린 갱신을 바로 함
+    const paint=SearchExecutor.throttle(()=>{recoProgressPaint(task);directResultsPaint();},SearchExecutor.PAINT_MS,live);
+    simDispatch(ws,jobs,{owner:task.owner,id,live,arm,chunk:screen?SearchExecutor.chunkSize(jobs.length,ws.capacity):1,     // 훑기·예선 묶음(A-2), 본선은 팀 하나씩
       msg:j=>({type:'run',base:new URL('.',location.href).href,stage:snapshot.c.key+'/'+snapshot.st.tab+'/'+snapshot.st.name,
         n_runs:j.runs||n,seed:snapshot.seed,options:{...snapshot.options,...(screen?{rng_streams:true}:{})},
         teams:[{key:j.key,party:j.party,options:j.options}]}),
@@ -74,8 +76,8 @@ function recoEvaluate(snapshot,task,jobs,n,{screen=false,label=null,onTeam=()=>{
         if(w._t)simRateAdd((Date.now()-w._t)/(j.runs||n),screen?'scr':'final');w._t=0;
         onTeam(j,{...m.result,n});got++;task.progress=got/jobs.length;task.message=`${label||(screen?'예선':'본선')} ${got}/${jobs.length}팀`;
         const rate=screen?SIMQ.rateS:SIMQ.rate;task.remaining=rate?(jobs.length-got)*n*rate/Math.max(1,ws.length):null;
-        SIMQ.msg=task.message;recoProgressPaint(task);directResultsPaint();
-      },done(){finish();},error:msg=>finish(msg)});
+        SIMQ.msg=task.message;paint();
+      },done(){paint.flush();finish();},error:msg=>{paint.cancel();finish(msg);}});
   });
 }
 function recoScreenCalculate(snapshot,task,p,box){

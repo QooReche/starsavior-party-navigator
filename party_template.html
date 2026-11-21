@@ -1239,7 +1239,9 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
  // 정상으로 끝나면 작업자를 끄지 않는다(본선이 바로 다시 쓴다 — scrPool 주석)
  const finish=()=>{if(sc.done)return;scrClose(sc);SIMQ.screening=false;SIMQ.busy=null};
- const el=()=>document.querySelector('[data-k="progress"] [data-k="simstate"]'),show=m=>{SIMQ.msg=m;const x=el();if(x)x.textContent=m};
+ // 진행 문구: SIMQ.msg 는 바로, 글자 DOM 은 PAINT_MS 간격으로만(훑기 A-1). 본문 MutationObserver(ux_ui.js 그웬 refresh)가 DOM 이 바뀔 때마다
+ //  getClientRects 로 배치를 강제해, 팀 소식마다 글자를 바꾸면 훑기 중 메인 스레드의 약 90%가 여기에 쓰였음(11/22 CDP 프로파일)
+ const el=()=>document.querySelector('[data-k="progress"] [data-k="simstate"]'),showDom=SearchExecutor.throttle(()=>{const x=el();if(x&&x.textContent!==SIMQ.msg)x.textContent=SIMQ.msg},SearchExecutor.PAINT_MS,undefined,{trailing:false}),show=m=>{SIMQ.msg=m;showDom()};   // 끝 글자는 paint(simProgressSync)·다음 단계가 다시 씀
  let id=0;
  // 후보를 대기열(simDispatch)로 작업자들에 맡기고, 모두 끝나면 next. i = 단계(-1 훑기·0·1), 결과는 훑기 sc.res0 · 1차 sc.res · 2차 sc.res2
  // 2차는 1차의 8판을 다시 돌리지 않는다: 1차 결과의 raw(판별 원시값, 작업자가 준 문자열 그대로)를 되돌려 보내 뒤쪽 24판(run_offset 8)만 돌리고
@@ -1251,22 +1253,24 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
   // 본선 = 보이는 팀 수 × 판 수 × 본선 속도(모르면 예선 속도), 작업자에 나눔 + 화면 다시 계산 2번(예선 끝·본선 끝)
   const scrEta=()=>{const rs=SIMQ.rateS;if(!rs||!sc.allReady){SIMQ.eta=null;return}const nw=ws.length;
    const n1=i<0?sc.fullN:sc.left,ms=(sc.left-(sc.got||0))*per*rs/nw+(i<0?n1*R0.n*rs/nw:0)+(i>0?0:Math.min(R1.top,n1)*(R1.n-R0.n)*rs/nw);
-   const ord=scrOrder(sc),k=ord.findIndex(x=>goalVal(sc.res2[x]||sc.res[x])>=0.5),nb=Math.max(1,Math.min(k<0?3:Math.floor(k/3)+1,Math.ceil(Math.min(9,box.total||3)/3)));
+   const ord=i<0?[]:scrOrder(sc),k=ord.findIndex(x=>goalVal(sc.res2[x]||sc.res[x])>=0.5),nb=Math.max(1,Math.min(k<0?3:Math.floor(k/3)+1,Math.ceil(Math.min(9,box.total||3)/3)));
    SIMQ.eta=Date.now()+ms+nb*simBatchMs(SIMQ.n,simRate()||rs)};
   // 무진행 상한(작업자별, simWatch): 엔진 준비 전에는 내려받기 상한, 준비 뒤에는 팀 하나 상한. 전체 시간 상한은 없다
   const arm=simWatch(ws,()=>simTeamLimit(n),live,ready=>{SIMQ.screening=false;simStop(ready?"모의 전투 시간 초과":"엔진 준비 시간 초과")});
+  // 남은 시간(scrEta)·진행 칸 갱신은 SearchExecutor.PAINT_MS(200ms) 간격으로만(SearchExecutor.throttle — 훑기 10,626팀마다 정렬·DOM 을 다시 하면 배차를 겸하는 메인이 막힘). 단계 끝(done)에는 다음 단계 시작이 진행 칸을 다시 그린다
+  const paint=SearchExecutor.throttle(()=>{scrEta();const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)},SearchExecutor.PAINT_MS,live);
   // 남은 시간은 작업자가 «모두» 엔진을 준비한 뒤부터 보인다
   const chk=()=>{if(!sc.allReady&&ws.every(x=>x._ready)){sc.allReady=true;SIMQ.loaded=true}};
   const opt=Object.assign({},simOpt(c.key),{rng_streams:true}),stage=c.key+"/"+st.tab+"/"+st.name;
-  simDispatch(ws,keys,{id,live,arm,
+  // 묶음(A-2): 팀 여러 개를 한 요청으로(SearchExecutor.chunkSize — 훑기 10,626팀·작업자 8개면 34팀, 예선 120팀이면 1팀). 결과는 팀마다 같은 시드라 그대로
+  simDispatch(ws,keys,{id,live,arm,chunk:SearchExecutor.chunkSize(keys.length,ws.capacity),
    msg:key=>{const t=byKey.get(key),bn=teamBreak(t)?.name||null,raw=prior(key);
     return {type:"run",base,stage,n_runs:raw?n-R0.n:n,seed:SIMQ.seed,options:opt,
      teams:[{key,party:simParty(t),options:Object.assign({break_skill:bn?{name:bn,level:brkLv(bn)}:null},raw?{run_offset:R0.n,merge_raw:raw}:i<0?{}:{raw_runs:true})}]}},
    stage(w,m){if(m.msg==="준비 끝")chk();if(/^시뮬 \d+\//.test(m.msg||""))w._t=Date.now();show(`${label} ${sc.got||0}/${sc.left}`)},
-   team(key,m,w){into[key]=Object.assign(m.result,{n});sc.got++;if(w._t){simRateAdd((Date.now()-w._t)/w._n,"scr");w._t=0}scrEta();
-    show(`${label} ${sc.got}/${sc.left}`);
-    const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)},
-   done:next,
+   team(key,m,w){into[key]=Object.assign(m.result,{n});sc.got++;if(w._t){simRateAdd((Date.now()-w._t)/w._n,"scr");w._t=0}
+    show(`${label} ${sc.got}/${sc.left}`);paint()},
+   done:()=>{paint.cancel();next()},
    error:(msg,w,crash)=>{SIMQ.screening=false;simStop(crash?"작업자 오류: "+msg:msg)}});
   chk()};
  const end=()=>{finish();run()};
