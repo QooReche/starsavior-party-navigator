@@ -12,13 +12,15 @@ from battlesim.mc import Battle
 from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
 
-OLD = dict(evade_model='rate_minus_acc', guard_precision='legacy')
+OLD = dict(evade_model='rate_minus_acc', guard_precision='legacy', chain_timing='immediate')
 CASES = [
     ('페이·회랑250', ['fei', 'amora', 'frey', 'claire'], {'stage': 'clo/태양 회랑/FLOOR 250'}),
     ('페이·모굴루스3', ['fei', 'amora', 'frey', 'claire'], {'cosmo_raid': {'boss': 'mogulus', 'step': 3, 'level': 0}}),
     ('루·부활', ['lugh', 'epindel', 'amora', 'claire'], {'stage': 'clo/태양 회랑/FLOOR 250'}),
     ('도발', ['white-pearl-luna', 'amora', 'frey', 'claire'], {'stage': 'clo/태양 회랑/FLOOR 250'}),
-    ('브레이크 수호', ['gwen', 'amora', 'frey', 'claire'], {'stage': 'equip/잊혀진 맹세/잊혀진 맹세 X'}),
+    ('잊혀진 맹세 X', ['gwen', 'amora', 'frey', 'claire'], {'stage': 'equip/잊혀진 맹세/잊혀진 맹세 X'}),
+    ('크리스텔·회랑250', ['cristelle', 'smile', 'amora', 'claire'], {'stage': 'clo/태양 회랑/FLOOR 250'}),
+    ('아세라·회랑250', ['asherah-order-striker', 'amora', 'frey', 'claire'], {'stage': 'clo/태양 회랑/FLOOR 250'}),
     # Controlled encounter: 13000 HIT is an actual journey boss table value;
     # other stats are declared synthetic inputs, not a real journey stage.
     ('명중130% 통제', ['fei', 'amora', 'frey', 'claire'], {'waves': [[dict(

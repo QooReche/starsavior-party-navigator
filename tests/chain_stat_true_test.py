@@ -134,6 +134,8 @@ class TargetToughnessTest(unittest.TestCase):
             return original(src, target, damage, kind, **kw)
         with patch.object(b, 'apply_damage', record):
             b.cast(a, a.d.skills['특수기'], target=b.foes[0])
+            self.assertEqual(seen, [])
+            b.flush_chain_damage()
         self.assertGreater(b.progress(), 0)
         self.assertEqual([f.broken for f in b.foes], [False, True])
         self.assertEqual(a.stack('마녀의 성흔(해제불가)'), 1)

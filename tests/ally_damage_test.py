@@ -55,6 +55,8 @@ class ChainDamageTest(unittest.TestCase):
                 return original(src, target, dmg, kind, **kw)
             with patch.object(b, 'apply_damage', record):
                 b.cast(a, a.d.skills['궁극기'], target=v)
+                self.assertEqual(received, [])
+                b.flush_chain_damage()
             self.assertEqual(len(received), 1)
             totals.append(received[0])
         self.assertAlmostEqual(totals[1] / totals[0], 1.15, delta=0.001)

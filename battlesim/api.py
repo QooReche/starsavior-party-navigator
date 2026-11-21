@@ -330,8 +330,9 @@ def assumptions_used(mc, opts):
     for key, note in (
         ('effect_mapping', '공개 효과 줄과 원형 SE의 전수 대응은 미확인. 실행·정적 미지원은 unsupported 참조. '
                            '지원한 노바 슬롯·잠재력·피해 제한은 제외함.'),
-        ('chain_timing', '일반 연쇄 피해는 현재 줄 실행 즉시 처리함. 클라는 반응·반격 뒤 추가 피해를 처리하며 '
-                         'BuffId별 대상 수 정렬·도중 사망 대상 재선택을 사용함. 공개 줄의 BuffId/AutoTargetId 전수 연결이 남음.'),
+        ('chain_timing', '크리스텔·아세라 일반 전투의 BuffId 예약은 연결함. 다른 원형 줄과 시즌/벨그라스 고정 피해 큐의 '
+                         '전역 통합은 남아 즉시 실행함. 클라의 BuffId별 대상 수 정렬·도중 사망 대상 재선택을 '
+                         '전 범위에 적용할 원형 BuffId/AutoTargetId 대응이 남음.'),
         ('season_inputs', '시즌 서버 주입 값의 전수 대응은 미확인. 코스모 난이도·시즌 버프·전투력·점수의 구체적 범위는 cosmo_approx 참조.'),
     ):
         out.append(dict(rule='model.' + key, value=None, grade='assumed',

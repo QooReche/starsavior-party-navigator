@@ -39,6 +39,8 @@ def cristelle_cast(slot, burns=0, legacy=False, extra_debuffs=0):
         return original(src, target, damage, kind, **kw)
     with patch.object(b, 'apply_damage', record):
         b.cast(a, a.d.skills[slot], target=v)
+        assert not any(kind == 'chain' for kind, _ in pieces)
+        b.flush_chain_damage()
     return b, pieces
 
 

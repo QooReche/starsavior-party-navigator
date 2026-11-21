@@ -28,7 +28,7 @@ from .starsavior.data import SRC
 from .starsavior import foe as _foe
 from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger, explicit_target
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules, after_active_se
-from .starsavior import marker_se, belgras_se
+from .starsavior import marker_se, belgras_se, chain_se
 
 with open(os.path.join(SRC, 'data', 'buff_force.json'), encoding='utf-8') as _f:
     FORCE_BUFF_NAMES = frozenset(json.load(_f))
@@ -925,6 +925,7 @@ class Battle:
         self.waves = waves
         self._has_belgras_stage = any(belgras_se.is_stage(d) for w in waves for d in w)
         self._belgras_damage = []
+        self._chain_damage = []
         self.wave_i = -1
         self.foes = []
         self.fx = fx or {}
@@ -1502,6 +1503,8 @@ class Battle:
             self.gb.flush_damage()
         if self._belgras_damage:
             self.flush_belgras_damage()
+        if self._chain_damage:
+            self.flush_chain_damage()
         if not u.dead:
             if end_cd and not ally_end_cd and self.mc['enemy_cd_end_order'] == 'before_effects':
                 self._tick_cooldowns(u)
@@ -5520,6 +5523,12 @@ class Battle:
             tg = self.resolve(owner, eff['target'], ctx)
         if not tg:
             return
+        spec = chain_se.spec(owner, self._cur_line) if self.mc['chain_timing'] == 'client_mapped' else None
+        # Mixed season/fixed-damage queues still lack unified BuffId grouping.
+        # Keep that explicit legacy scope instead of inventing relative order.
+        if spec is not None and (self.gb is not None or self._has_belgras_stage):
+            self.rule_hits['chain_timing_mixed_fallback'] += 1
+            spec = None
         m = owner.mods()
         tstat = eff['stat'].startswith('target_')
         if tstat and eff['stat'] != 'target_hp' and self.mc['chain_target_stat'] == 'off':
@@ -5527,7 +5536,7 @@ class Battle:
             return
         val = 0.0 if tstat else {'atk': self.atk_stat(owner, ctx), 'hp': owner.maxhp, 'def': self.def_stat(owner)}[eff['stat']]
         for v in tg:
-            if v.side == owner.side or v.dead:
+            if v.dead or (spec is None and v.side == owner.side):
                 continue
             if tstat:
                 # NKM:4730-4735: NSETT_TARGET는 각 피해 수신자의 현재 능력치.
@@ -5539,50 +5548,66 @@ class Battle:
                     val = self.def_stat(v)
                 if eff['stat'] != 'target_hp':
                     self.rule_hits['chain_target_stat'] += 1
-            if self.mc['chain_stat_true'] == 'client' and eff.get('damage_type') == 'ADT_STAT_TRUE':
-                # NKM:6214-6217에서 먼저 정수화. 최종 팀 보정은 17815/18407,
-                # 방어·증감·1.85·난수는 4748-4756/17791-17815/18435에서 제외.
-                b0 = _stat.chain_true_value(val, eff['coef'])
-                guard, share_base = self._chain_guard(v, b0)
-                dmg = max(1, math.floor((b0 - share_base) * self.pen[owner.side]))
-                self.rule_hits['chain_stat_true'] += 1
-                self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
-                if guard is not None and share_base >= 1.0 and not guard.dead:
-                    gdmg = max(1, math.floor(share_base * self.pen[owner.side]))
-                    self.log(guard=guard.name, protects=v.name, dmg=gdmg)
-                    self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True, stat='taken')   # 연쇄 수호 분담: 받은 피해만(NKM:8378)
-                continue
+            true = self.mc['chain_stat_true'] == 'client' and eff.get('damage_type') == 'ADT_STAT_TRUE'
+            b0 = self._chain_amount(owner, v, val, eff['coef'], ctx, m, true)
+            if spec is not None:
+                self._chain_damage.append((spec['buff'], owner, v, b0, true, m['pen']))
+                self.rule_hits['chain_timing_queued'] += 1
+            else:
+                self._apply_chain_amount(owner, v, b0, true, m['pen'])
+
+    def _chain_amount(self, owner, v, val, coef, ctx, m, true):
+        # NKM:4721-4742,6212-6236: source stats and increases are snapshots.
+        if true:
+            self.rule_hits['chain_stat_true'] += 1
+            return _stat.chain_true_value(val, coef)
+        inc = m['inc'] + m['inc_vs'].get(v.element, 0.0) + (m['inc_break'] if v.broken else 0.0)
+        inc += self._role_damage_terms(owner, v, ctx, chain=True)[0]
+        if self.mc['chain_skill_damage_up'] and ctx is not None and ctx.src is owner:
+            inc += ctx.inc + ctx.local_by[v]['inc']
+        if self.mc['chain_round'] == 'client':
+            self.rule_hits['chain_round'] += 1
+            return _stat.chain_value(val, coef, inc, _rules.BASE_MULT)
+        return val * coef * (1 + inc) * _rules.BASE_MULT
+
+    def _apply_chain_amount(self, owner, v, b0, true, penetration):
+        # NKM:8151-8168,17774-17815: defense/guard/team/RNG are read at execution.
+        guard, share_base = self._chain_guard(v, b0)
+        if true:
+            dmg = max(1, math.floor((b0 - share_base) * self.pen[owner.side]))
+        else:
             de = self.def_stat(v)
             dr = de / (de + _rules.DEF_K)
             if self.mc['chain_pen'] != 'client':
-                dr = max(0.0, dr - dr * min(1.0, m['pen']))     # client: 추가 피해는 공격자 관통을 쓰지 않음(NKM:17356,17837-17855)
-            inc = m['inc'] + m['inc_vs'].get(v.element, 0.0) + (m['inc_break'] if v.broken else 0.0)
-            inc += self._role_damage_terms(owner, v, ctx, chain=True)[0]
-            # AddDamageController reads the caster's live DAMAGE_UP, including
-            # skill-local stat effects (NKM:5601-5611). Do not inherit the
-            # incoming attack's modifiers when a defender reacts.
-            if self.mc['chain_skill_damage_up'] and ctx is not None and ctx.src is owner:
-                inc += ctx.inc + ctx.local_by[v]['inc']
-            if self.mc['chain_round'] == 'client':
-                # NKM:4730-4740·6212-6236: 추가 피해 값 = (int)((능력치 x 계수 + 그 x 증가합) x 1.85) 로 먼저 정수화한 뒤
-                # 방어(17791-17796)·팀 배율(17815)·난수와 정수 절삭(18431-18456)을 적용
-                b0 = _stat.chain_value(val, eff['coef'], inc, _rules.BASE_MULT)
-                self.rule_hits['chain_round'] += 1
+                dr = max(0.0, dr - dr * min(1.0, penetration))
+            dmg = max(1.0, math.floor((b0 - share_base) * (1 - dr) * self.rand(owner.side) * self.pen[owner.side]))
+        self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
+        if guard is not None and share_base >= 1.0 and not guard.dead:
+            if true:
+                gdmg = max(1, math.floor(share_base * self.pen[owner.side]))
             else:
-                b0 = val * eff['coef'] * (1 + inc) * _rules.BASE_MULT
-            guard, share_base = self._chain_guard(v, b0)
-            b0 -= share_base
-            dmg = max(1.0, math.floor(b0 * (1 - dr) * self.rand(owner.side) * self.pen[owner.side]))
-            self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
-            if guard is not None and share_base >= 1.0 and not guard.dead:
-                # NKM:8188-8191,8371-8386: 수호자 몫은 수호자 방어·별도 난수로 다시 계산(수호자에게서 다시 분담하지 않음)
                 gde = self.def_stat(guard)
                 gdr = gde / (gde + _rules.DEF_K)
                 if self.mc['chain_pen'] != 'client':
-                    gdr = max(0.0, gdr - gdr * min(1.0, m['pen']))
+                    gdr = max(0.0, gdr - gdr * min(1.0, penetration))
                 gdmg = max(1.0, math.floor(share_base * (1 - gdr) * self.rand(owner.side) * self.pen[owner.side]))
-                self.log(guard=guard.name, protects=v.name, dmg=gdmg)
-                self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True, stat='taken')   # 연쇄 수호 분담: 받은 피해만(NKM:8378)
+            self.log(guard=guard.name, protects=v.name, dmg=gdmg)
+            self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True, stat='taken')
+
+    def flush_chain_damage(self):
+        # NKM:6250-6284: distinct-target count descending, then native BuffId;
+        # preserve enqueue order inside a group. These verified SEs cannot retarget.
+        pending, self._chain_damage = self._chain_damage, []
+        dead_at_start = {row[2] for row in pending if row[2].dead}
+        groups = defaultdict(list)
+        for row in pending:
+            groups[row[0]].append(row)
+        for bid in sorted(groups, key=lambda k: (-len({r[2] for r in groups[k]}), k)):
+            for _, owner, target, amount, true, penetration in groups[bid]:
+                if target in dead_at_start or target.dead:
+                    continue
+                self._apply_chain_amount(owner, target, amount, true, penetration)
+                self.rule_hits['chain_timing_applied'] += 1
 
     # ---------- 효과 부여
     def roll_hit(self, owner, ctx, x, name):
