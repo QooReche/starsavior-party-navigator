@@ -153,7 +153,7 @@ class ClientSmallfixTest(unittest.TestCase):
         data = json.loads((ROOT / 'data/buff_count.json').read_text(encoding='utf8'))
         self.assertEqual(build_levels(static), data['levels'])
         self.assertIsNone(data['levels']['참극의 가시(해제불가)'])
-        from tools.build_auto_skill import jsonc
+        from tools.tables import jsonc
         rows = json.loads((tables / 'SE_TEMPLET_SKILL_1.json').read_text(encoding='utf8'))['Data']
         by = {r['m_SEStrID']: r for r in rows}
         grant = by['COND_DARK_UNKNOWN_HYPER_01_01']

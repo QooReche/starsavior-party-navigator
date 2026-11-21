@@ -8,18 +8,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path
+from tools.tables import name_sets, strings as table_strings
 from battlesim.fileio import atomic_text
 
 
 def build(static):
     tables = Path(static) / 'tables'
-    strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
     rows = json.loads((tables / 'BUFF_TEMPLET.json').read_text(encoding='utf-8'))['Data']
-    flags = {}
-    for row in rows:
-        name = strings.get(row.get('m_BuffName'), {}).get('ko')
-        if name:
-            flags.setdefault(name.removesuffix('(해제불가)'), set()).add(bool(row.get('DeadNotDispel', False)))
+    flags = name_sets(rows, table_strings(tables), lambda row: bool(row.get('DeadNotDispel', False)),
+                      rename=lambda name: name.removesuffix('(해제불가)'))
     return {'_note': '동명 행 모두 DeadNotDispel=true인 이름만 보존. ambiguous는 기존 삭제 유지.',
             'names': sorted(n for n, values in flags.items() if values == {True}),
             'ambiguous': sorted(n for n, values in flags.items() if len(values) > 1)}

@@ -21,8 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
-from tools.tables import UnknownName, buff_names, names_of   # noqa: E402,F401
-from tools.build_auto_skill import jsonc   # noqa: E402
+from tools.tables import UnknownName, buff_names, jsonc, names_of   # noqa: E402,F401
 from tools import build_foe_spawn as SP   # noqa: E402
 from tools.build_foe_auto import ROLE, ELEM   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
@@ -151,7 +150,7 @@ def build(static):
                     row = rows.get(cid)
                     if not row or not row[0].exists() or not SP.same_battle(c['k'], s, row, raw, static):
                         continue
-                    waves = (SP.jsonc(row[0]).get('Data') or {}).get('Waves') or []
+                    waves = (jsonc(row[0]).get('Data') or {}).get('Waves') or []
                     lists = [[[sp['UnitStrId'], sp.get('ChangeAdjustType')] for sp in (w.get('TeamBSpawnList') or [])] for w in waves]
                     if [len(x) for x in lists] != [len(w) for w in s['w']]:
                         continue

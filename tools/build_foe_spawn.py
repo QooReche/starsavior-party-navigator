@@ -28,7 +28,7 @@ sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior import foe as F   # noqa: E402
-from tools.tables import jsonc   # noqa: E402,F401  (다른 빌더가 여기서 가져다 씀)
+from tools.tables import jsonc, strings as table_strings   # noqa: E402
 
 CLO = {'성간 회랑': 'INTERSTELLAR', '태양 회랑': 'SUN', '달 회랑': 'MOON', '별 회랑': 'STAR'}
 ROMAN = {'Ⅰ': 1, 'Ⅱ': 2, 'Ⅲ': 3, 'Ⅳ': 4, 'Ⅴ': 5, 'Ⅵ': 6, 'Ⅶ': 7, 'Ⅷ': 8, 'Ⅸ': 9, 'Ⅹ': 10}
@@ -64,7 +64,7 @@ def game_names(static):
     key = str(static)
     if key not in _NAMES:
         tables = Path(static) / 'tables'
-        strings = json.loads((tables / 'Strings' / 'STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
+        strings = table_strings(tables)
         out = {}
         for n in (1, 2, 3, 4):
             for u in json.loads((tables / ('UNIT_TEMPLET_BASE%d.json' % n)).read_text(encoding='utf-8'))['Data']:

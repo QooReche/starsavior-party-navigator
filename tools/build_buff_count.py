@@ -13,22 +13,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path
+from tools.tables import name_sets, strings as table_strings
 from battlesim.fileio import atomic_text
 
 
 def build(static):
     tables = Path(static) / 'tables'
-    strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
+    strings = table_strings(tables)
     rows = json.loads((tables / 'BUFF_TEMPLET.json').read_text(encoding='utf-8'))['Data']
-    out = {}
-    for row in rows:
-        name = strings.get(row.get('m_BuffName'), {}).get('ko')
-        if not name:
-            continue
-        flags = (row['IsBuff'], row['IsPositive'])
-        if not all(isinstance(v, bool) for v in flags):
-            raise ValueError('invalid buff flags: ' + name)
-        out.setdefault(name, set()).add(flags)
+
+    def flags(row):
+        pair = (row['IsBuff'], row['IsPositive'])
+        if not all(isinstance(v, bool) for v in pair):
+            raise ValueError('invalid buff flags: ' + strings[row['m_BuffName']]['ko'])
+        return pair
+    out = name_sets(rows, strings, flags)
     return {name: sorted(out[name]) for name in sorted(out)}
 
 
@@ -47,13 +46,8 @@ def main():
 def build_levels(static):
     """이름별 IsLevel. 충돌은 None으로 남겨 꼬리표 제거 조회로도 확정하지 않음."""
     tables = Path(static) / 'tables'
-    strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf8'))
     rows = json.loads((tables / 'BUFF_TEMPLET.json').read_text(encoding='utf8'))['Data']
-    flags = {}
-    for row in rows:
-        name = strings.get(row.get('m_BuffName'), {}).get('ko')
-        if name:
-            flags.setdefault(name, set()).add(bool(row.get('IsLevel', False)))
+    flags = name_sets(rows, table_strings(tables), lambda row: bool(row.get('IsLevel', False)))
     return {name: next(iter(values)) if len(values) == 1 else None for name, values in sorted(flags.items())}
 
 

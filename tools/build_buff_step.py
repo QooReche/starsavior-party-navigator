@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path                      # noqa: E402
-from tools.tables import buff_names, rows                  # noqa: E402
+from tools.tables import buff_names, rows, unanimous       # noqa: E402
 from battlesim.fileio import atomic_json                   # noqa: E402
 
 
@@ -33,13 +33,8 @@ def extract(step_rows, bname, warn=print):
             else:
                 warn('이름 없는 단계 버프: %s (그룹 %s)' % (sid, g))
             step += 1
-    out = {}
-    for name, pairs in sorted(found.items()):
-        if len(pairs) > 1:
-            warn('단계 모호, 제외: %s %s' % (name, sorted(pairs)))
-            continue
-        out[name] = list(next(iter(pairs)))
-    return out
+    one = unanimous(found, warn, lambda name, pairs: '단계 모호, 제외: %s %s' % (name, sorted(pairs)))
+    return {name: list(pair) for name, pair in one.items()}
 
 
 def main():

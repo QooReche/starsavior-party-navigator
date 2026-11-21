@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools import build_foe_spawn as spawn
 from tools.runtime import static_path, low_priority
+from tools.tables import jsonc
 from battlesim.fileio import atomic_text
 
 
@@ -31,7 +32,7 @@ def build(static):
                 # Victory depends on IsBoss, not on the enemy's display grade.
                 # Only export stages whose runtime boss flags match every slot.
                 _, waves = spawn.F.stage_waves(content['k'], tab['t'], stage['n'])
-                native = spawn.jsonc(rows[bid][0])['Data']['Waves']
+                native = jsonc(rows[bid][0])['Data']['Waves']
                 if [[d.boss for d in w] for w in waves] != [
                         [bool(u.get('IsBoss')) for u in w['TeamBSpawnList']] for w in native]:
                     continue

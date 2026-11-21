@@ -7,14 +7,14 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from tools.tables import rows, buff_names
+from tools.tables import rows, buff_names, strings as table_strings
 from tools.build_foe_react import translate_conds, TIMING, TARGET_TYPE
 from tools.build_foe_auto import conds as auto_conds, filters
 
 
 def build(static):
     tables = Path(static) / 'tables'
-    strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
+    strings = table_strings(tables)
     names = buff_names(tables)
     conditions = {r['Id']: r for r in rows(tables / 'Plain/SKILL_CONDITION_TEMPLET.json')}
     skills = rows(tables / 'SKILL_TEMPLET_2.json')

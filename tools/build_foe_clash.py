@@ -22,7 +22,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from tools.tables import jsonc   # noqa: E402
+from tools.tables import jsonc, strings as table_strings   # noqa: E402
 from tools.runtime import static_path, low_priority   # noqa: E402
 
 ROLE = {'NURT_STRIKER': '스트라이커', 'NURT_CASTER': '캐스터', 'NURT_ASSASSIN': '어쌔신', 'NURT_RANGER': '레인저',
@@ -71,7 +71,7 @@ class Tables:
     def __init__(self, static):
         t = Path(static) / 'tables'
         self.t = t
-        self.strings = json.loads((t / 'Strings' / 'STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
+        self.strings = table_strings(t)
         self.buff = {r['m_BuffStrID']: r for r in jsonc(t / 'BUFF_TEMPLET.json')['Data']}
         self.se = {}
         for n in (1, 2):

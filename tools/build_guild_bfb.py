@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
-from tools.build_foe_spawn import jsonc                # noqa: E402
+from tools.tables import jsonc, rows                   # noqa: E402
 from battlesim.fileio import atomic_json               # noqa: E402
 
 NUAT = {'NUAT_ORDER': '질서', 'NUAT_SUN': '태양', 'NUAT_MOON': '달', 'NUAT_STAR': '별', 'NUAT_CHAOS': '혼돈'}
@@ -44,12 +44,6 @@ PASSIVE2_CONDS = [32002] + [52094] * 8 + [52095] * 8 + [2144] * 3 + [55148] * 9 
 
 class Changed(Exception):
     pass
-
-
-def rows(p):
-    d = jsonc(p)
-    d = d.get('Data', d) if isinstance(d, dict) else d
-    return d
 
 
 def need(cond, msg):

@@ -17,30 +17,19 @@ python -X utf8 -I tools/build_buff_flags.py --static <비공개 저장소>
 import argparse
 import json
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path
-from tools.build_foe_spawn import jsonc
+from tools.tables import jsonc, name_sets, strings as table_strings, unanimous
 from battlesim.fileio import atomic_json
 
 
 def by_name(rows, strings, value, warn=print, label=''):
     """이름 -> 값(같은 이름 행이 모두 같은 값일 때만)."""
-    names = defaultdict(set)
-    for row in rows:
-        name = strings.get(row.get('m_BuffName'), {}).get('ko')
-        if name:
-            names[name].add(value(row))
-    out = {}
-    for name, vals in sorted(names.items()):
-        if len(vals) == 1:
-            out[name] = vals.pop()
-        else:
-            warn('WARNING: 동명 효과 %s 혼재, 제외: %s %s' % (label, name, sorted(vals, key=str)))
-    return out
+    return unanimous(name_sets(rows, strings, value), warn,
+                     lambda name, vals: 'WARNING: 동명 효과 %s 혼재, 제외: %s %s' % (label, name, sorted(vals, key=str)))
 
 
 def flagged(rows, strings, key, warn=print):
@@ -116,7 +105,7 @@ def main():
     else:
         tables = static_path(args.static) / 'tables'
         rows = jsonc(tables / 'BUFF_TEMPLET.json')['Data']
-        strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
+        strings = table_strings(tables)
     out = extract(rows, strings, lambda msg: print(msg, file=sys.stderr))
     if args.only:
         previous = json.loads(Path(args.out).read_text(encoding='utf8'))

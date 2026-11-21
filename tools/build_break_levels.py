@@ -17,12 +17,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
+from tools.tables import strings as table_strings   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 
 
 def build(static):
     tables = Path(static) / 'tables'
-    strings = json.loads((tables / 'Strings' / 'STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
+    strings = table_strings(tables)
     levels = json.loads((tables / 'ORBITAL_LEVEL_GROUP_TEMPLET.json').read_text(encoding='utf-8'))['Data']
     out = {}
     for a in json.loads((tables / 'ORBITAL_ARRAY_TEMPLET.json').read_text(encoding='utf-8'))['Data']:

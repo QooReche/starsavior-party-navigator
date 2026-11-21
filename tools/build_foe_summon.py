@@ -23,7 +23,8 @@ sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
 from battlesim.fileio import atomic_json               # noqa: E402
 from battlesim.starsavior import foe as F              # noqa: E402
-from tools.build_foe_spawn import battle_rows, candidates, jsonc, same_battle  # noqa: E402
+from tools.build_foe_spawn import battle_rows, candidates, same_battle  # noqa: E402
+from tools.tables import jsonc  # noqa: E402
 
 NUAT = {
     'NUAT_ORDER': '질서', 'NUAT_SUN': '태양', 'NUAT_MOON': '달',

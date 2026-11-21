@@ -22,14 +22,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
 from tools import build_foe_spawn as SP   # noqa: E402
+from tools.tables import table   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior import foe as F   # noqa: E402
 
 STAT = {'NST_NV_RATE_HP': 1, 'NST_NV_RATE_DEF': 2, 'NST_RATE_HEAL_GIVE': 3, 'NST_RATE_BARRIER_GIVE': 4}
-
-
-def table(static, name):
-    return json.loads((Path(static) / 'tables' / (name + '.json')).read_text(encoding='utf-8'))['Data']
 
 
 def groups(static, report):

@@ -325,7 +325,7 @@ class ImmuneForceTest(unittest.TestCase):
             self.skipTest('표 없음')
         import json
         from tools.build_buff_force import extract_immune_pass
-        from tools.build_foe_spawn import jsonc
+        from tools.tables import jsonc
         rows = jsonc(table)['Data']
         with open(strings, encoding='utf-8') as f:
             names = json.load(f)

@@ -27,7 +27,7 @@ sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior.savior_ids import keys_by_id   # noqa: E402
-from tools.tables import jsonc, buff_names   # noqa: E402,F401  (jsonc: 다른 빌더가 여기서 가져다 씀)
+from tools.tables import jsonc, buff_names, strings as table_strings   # noqa: E402,F401
 from battlesim.starsavior.parser import explicit_target, split_head
 
 
@@ -363,7 +363,7 @@ def build_self_enforce(static, report):
 def build_no_preemptive(static):
     """build 26314877의 버프/스킬 NoPreemptiveDefend를 공개 이름·칸으로 연결."""
     tables = Path(static) / 'tables'
-    strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf8'))
+    strings = table_strings(tables)
     buffs = sorted({strings[r['m_BuffName']]['ko']
                     for r in json.loads((tables / 'BUFF_TEMPLET.json').read_text(encoding='utf8'))['Data']
                     if r.get('NoPreemptiveDefend')})

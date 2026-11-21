@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path, low_priority   # noqa: E402
 from tools import build_foe_spawn as SP   # noqa: E402
+from tools.tables import table   # noqa: E402
 from battlesim.fileio import atomic_text   # noqa: E402
 from battlesim.starsavior import foe as F   # noqa: E402
 
@@ -41,10 +42,6 @@ TEXT = {
     'BI_STAT_NST_RATE_EFFECT_HIT_INFINITE': r'^효과 적중이 (\d+)% 증가합니다\.$',
     'BI_STAT_NST_RATE_DAMAGE_VAMPIRISM_INFINITE': r'^생명력 흡수율이 (\d+)% 증가합니다\.$',
 }
-
-
-def table(static, name):
-    return json.loads((Path(static) / 'tables' / (name + '.json')).read_text(encoding='utf-8'))['Data']
 
 
 def build(static):
