@@ -115,6 +115,19 @@ python -X utf8 -I tools/build_growth.py --static <비공개 표 경로>   # 내 
 ```
 엔진(`battlesim/*.py`)을 고치면 `tools/build_simpack.py` 도 실행.
 
+### 새 구원자 추가 때 손대는 곳
+- 특수 규칙이 없는 구원자: 데이터만(`tools/update.py` + 비공개 표 빌더 `tools/build_auto_skill.py`·`build_buff_*.py` 재실행). 엔진 코드는 안 고친다.
+- 숨은 표지·특수 대상 규칙이 있는 구원자: `battlesim/starsavior/savior_rules.py` 표에 행만 더한다.
+  - `AFTER_ACTIVE` — 패시브 줄을 액티브 뒤에 실행(클라 AfterActiveSkillSe 예외).
+  - `MARKER_SCOPE`·`MARKER_TARGETS` — 숨은 표지 SE 로 다시 펴는 줄의 범위와 줄별 AutoTarget 대상(스위치 `marker_se_flow`). 표 키 = `marker_se.KEYS`.
+  - `KEEP_NATIVE_SELECTOR` — 표지 보유자가 없어도 데이터 자동 대상 규칙을 그대로 쓰는 줄(스위치 칸 포함).
+  - 조건 문법은 파일 머리말. 행 순서 = 우선순위(먼저 맞는 행). 5쌍 전개처럼 절차인 것은 `marker_se.normalize` 후처리에.
+  - 확인: `tests/savior_rules_test.py`(키 오타·조건 열쇠·죽은 행·표 대상 정규화 줄 골든). 표 결과를 의도적으로 바꾸면 `--write` 로 골든 갱신, 새 키는 `tools/unify_baseline.py` 파티에도 넣는다.
+- 표로 아직 못 옮긴 키 분기: `mc_semantics.py` 본문 키 비교(`description_lines` 의 스마일 물폭탄 등), `mc.py` 크리스텔 점화(`cristelle_ignite_targets`), `parser.py` 스킬 이름 쌍. 해당 구원자면 여기도 본다.
+- 시즌 보스(코스모·길드 다음): 적 정의는 `starsavior/foe_base.FoeBase`·`make_skill`, 훅은 `starsavior/controller.BaseController` 를 상속해 필요한 훅만 덮어쓴다(`mc.py` 수정 불필요).
+- 새 자료 파일(`data/*.json`)을 엔진이 읽으면 `battlesim.datafile.load('이름')` 한 줄 + `tools/build_simpack.py` 의 `FIXED` 목록에 추가.
+- 엔진을 바꾼 커밋은 기준선 바이트 일치: `tests/diet_baseline_test.py`·`tests/unify_baseline_test.py`(결과가 의도적으로 바뀌면 각 `tools/*_baseline.py --write`).
+
 ## 참고
 - https://starsavior-guide.github.io (구원자·티어·편성·이미지)
 - https://starsavior-databook.pages.dev (스킬·적 데이터)

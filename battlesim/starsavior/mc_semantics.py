@@ -5,7 +5,7 @@ import re
 from collections import defaultdict
 
 from .parser import Line, Skill, ally_stack_trigger, parse_props, _perm_apply
-from . import marker_se, belgras_se
+from . import marker_se, belgras_se, savior_rules
 
 
 def after_active_se(key, ln):
@@ -20,16 +20,9 @@ def after_active_se(key, ln):
         return ln.eff.get('native_after', False)
     if ln.src_kind != 'passive':
         return False
-    e = ln.eff
-    if e['kind'] == 'waterbomb_cleanup':
+    if ln.eff['kind'] == 'waterbomb_cleanup':
         return True
-    return ((key in ('smile', 'tyria', 'gwen', 'claire') and e['kind'] == 'extra_cast')
-            or (key == 'trish' and e.get('name') == '도약')
-            or (key == 'cristelle' and e['kind'] == 'chain')
-            or (key == 'tyria' and e.get('name') == '참극의 가시(해제불가)')
-            or (key == 'gwen' and e.get('name') == '전기 충격(해제불가)' and e.get('consume'))
-            or (key == 'scarlet' and e['kind'] == 'remove'
-                and e.get('name') in ('노멀볼(해제불가)', '세븐볼(해제불가)')))
+    return savior_rules.after_active(key, ln)     # 구원자별 예외 = savior_rules.AFTER_ACTIVE 표
 
 
 def description(sk):

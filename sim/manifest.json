@@ -1,6 +1,6 @@
 {
  "_note": "브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시",
- "ver": "001ce8acafa0",
+ "ver": "7405623ce815",
  "files": [
   "battlesim/__init__.py",
   "battlesim/api.py",
@@ -28,6 +28,7 @@
   "battlesim/starsavior/myinfo_stats.py",
   "battlesim/starsavior/parser.py",
   "battlesim/starsavior/savior_ids.py",
+  "battlesim/starsavior/savior_rules.py",
   "battlesim/starsavior/stats.py",
   "battlesim/statcalc.py",
   "battlesim/web.py",
@@ -64,5 +65,5 @@
   "data/cosmo_raid.json",
   "data/foe_cosmo_extra.json"
  ],
- "bytes": 7427950
+ "bytes": 7431853
 }

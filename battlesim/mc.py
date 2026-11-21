@@ -28,7 +28,7 @@ from .starsavior.data import SRC
 from .starsavior import foe as _foe
 from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger, explicit_target
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules, after_active_se
-from .starsavior import marker_se, belgras_se, chain_se
+from .starsavior import marker_se, belgras_se, chain_se, savior_rules
 
 FORCE_BUFF_NAMES = frozenset(datafile.load('buff_force'))
 IMMUNE_PASS_NAMES = frozenset(datafile.load('buff_immune_pass'))
@@ -1953,18 +1953,9 @@ class Battle:
             rows = lines.get(owner.key, {}) if variants else (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {}))
             spec = rows.get((ln.slot, ln.raw))
         if spec is not None:
-            if (self.mc['supported_marker_targets'] == 'client'
-                    and ((owner.key == 'sunshine-cat-smile' and ln.eff.get('native_target'))
-                         or (owner.key == 'gille' and ln.eff['kind'] == 'remove'
-                             and ln.eff.get('name') == '길레 마지막 타격 체크용 버프'))):
-                # PC 26752678 NKM:7152-7178: Smile/Gille markers can have no
-                # holders. Keep the native selector; a plural miss is empty.
-                self.rule_hits['supported_marker_targets'] += 1
-                return spec
-            if (self.mc['gille_promotion_target'] == 'marker' and owner.key == 'gille'
-                    and ln.slot == '특수기' and ln.eff.get('name') == '피날레(해제불가)'):
-                # NKM:7135-7187,7523-7546: 전체 대상 필터가 불일치하면 대상 없음.
-                self.rule_hits['gille_promotion_target'] += 1
+            hit = savior_rules.keep_native_selector(owner.key, ln, self.mc)   # 표지 보유자 없어도 데이터 규칙 유지(스마일·길레)
+            if hit:
+                self.rule_hits[hit] += 1
                 return spec
             if (ln.eff.get('stat') == '강인도 피해 감소'
                     or (self.mc['chain_stat_true'] == 'client' and ln.eff.get('damage_type') == 'ADT_STAT_TRUE')):

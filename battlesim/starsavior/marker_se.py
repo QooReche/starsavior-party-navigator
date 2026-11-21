@@ -7,33 +7,18 @@ docs/marker_se_26752678.md. Normal targeting remains owned by mc.py.
 import copy
 import math
 
+from .savior_rules import (MARKER_SCOPE, CERES_X, CERES_Z, COUNT, DAMAGE, FRESH, LOCK, LYDIA, LYN, OLD, PRAYER,  # noqa: F401
+                           TURN, WEDDING, marker_target, matches)
+
 RULE = 'marker_se_flow'
-KEYS = frozenset(('lyn', 'elisa', 'ceres', 'lydia', 'sunshine-cat-smile',
-                  'wedding-epindel', 'lydia-moon-caster'))
-LYN = '린 아군 버프 타겟 판별용'
-PRAYER = '소심한 기도'
-CERES_Z, CERES_X = '특수기 체크용 Z', '특수기 체크용 X'
-LYDIA = '게이지 감소 체크용 버프'
-FRESH, OLD = '물폭탄 미부착 체크용 버프', '물폭탄 제거 체크용 버프'
-WEDDING, DAMAGE = '궁극기 카운팅 디버프', '피해량 개별 체크용 버프'
-TURN, COUNT = '아군 턴 카운팅 버프', '대상 수 체크용 버프'
-LOCK = '메이드 리디아 패시브 행게 카운팅 버프'
+KEYS = frozenset(MARKER_SCOPE)      # 구원자 키·범위·대상 규칙 = savior_rules.MARKER_SCOPE·MARKER_TARGETS 표
 HIDDEN = frozenset((LYN, PRAYER, CERES_Z, CERES_X, LYDIA, FRESH, OLD,
                     WEDDING, DAMAGE, TURN, COUNT, LOCK))
 
 
 def scope(key, ln):
-    if key in ('lyn', 'elisa', 'wedding-epindel'):
-        return ln.src_kind == 'active' and ln.slot == '궁극기'
-    if key == 'lydia':
-        return ln.src_kind == 'active' and ln.slot == '특수기'
-    if key == 'ceres':
-        return ln.src_kind == 'passive' and '특수기 체크용' in ln.raw
-    if key == 'sunshine-cat-smile':
-        return ln.src_kind == 'passive' and ln.kind == 'own_post'
-    if key == 'lydia-moon-caster':
-        return ln.src_kind == 'passive' and ln.kind in ('ally_ts', 'ally_pre', 'ally_post', 'enemy_ts')
-    return False
+    cond = MARKER_SCOPE.get(key)
+    return cond is not None and matches(ln, cond)
 
 
 def enabled(d, rules):
@@ -58,41 +43,9 @@ def normalize(d, lines):
         e.update(native_se=True, rule_key=RULE)
         if e['kind'] == 'buff' and name in HIDDEN:
             e['native_hidden'] = True
-        if d.key == 'lyn':
-            if name == LYN and e['kind'] == 'buff':
-                e['native_target'] = ('ally_element', '별')  # AutoTarget 40
-            elif name == '치명타 피해 증가':
-                e['native_target'] = ('ally_has', LYN)  # 41; empty stays empty
-        elif d.key == 'elisa':
-            if name == PRAYER:
-                e['native_target'] = ('ally_all', None)
-            elif e['kind'] == 'gauge' and e['val'] == 80:
-                e['native_target'] = ('ally_not_has', PRAYER)  # 1010
-            # TARGET excludes dead units, except Resurrection itself.
-            elif e.get('target') == '스킬 대상' and e['kind'] in ('buff', 'gauge'):
-                e['native_target'] = ('target', None)
-        elif d.key == 'lydia':
-            if name == LYDIA:
-                e['native_target'] = ('enemy_has', '미지의 주문')  # 10341
-            elif e['kind'] == 'gauge':
-                e['native_target'] = ('enemy_has', LYDIA)  # 10342
-        elif d.key == 'wedding-epindel':
-            if name == WEDDING:
-                e['native_target'] = ('enemy_shield', None)  # 42
-            elif name == DAMAGE:
-                e['native_count_damage'] = True
-            elif e['kind'] == 'gauge':
-                e['native_target'] = ('enemy_has', WEDDING)  # 10561
-        elif d.key == 'sunshine-cat-smile':
-            if name == OLD:
-                e['native_target'] = ('enemy_not_has', FRESH)  # 10461
-            elif name == '물폭탄' and e['kind'] == 'remove':
-                e.update(native_target=('enemy_has', OLD), native_after=True)  # 10463
-            elif name == '물폭탄' and e.get('times') == 2:
-                # SE10464016 and 10464020 are separate, not RepeatBuffCount.
-                e.update(times=1, native_target=('enemy_has', FRESH))  # 10462
-            elif e.get('target') == '스킬 대상':
-                e['native_target'] = ('target', None)
+        upd = marker_target(d.key, ln)        # 키별 대상 규칙 표(savior_rules.MARKER_TARGETS), 먼저 맞는 행 하나
+        if upd:
+            e.update(upd)
         if d.key in ('ceres', 'lydia-moon-caster'):
             counter = CERES_X if d.key == 'ceres' else COUNT
             mark = CERES_Z if d.key == 'ceres' else COUNT
@@ -111,8 +64,6 @@ def normalize(d, lines):
                 continue
             if e['kind'] == 'remove' and name == mark and '자동 지정' in e['target']:
                 continue
-            if name == TURN:
-                e['native_target'] = ('ally_other_one_has', '책임 전가(해제불가)')
         out.append(ln)
     if d.key == 'sunshine-cat-smile':
         # The public text folds two unconditional grants into its first row.
