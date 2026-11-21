@@ -388,7 +388,18 @@
       });
       for(const [id,ref] of gwenPending)if(!ref.deref())gwenPending.delete(id);
     }
-    new root.MutationObserver(refresh).observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','style','data-gwen-expression']});
+    // 그웬이 볼 변화에만 refresh: 그웬 그림·결과 요약이 들어오거나 나감, 그웬 그림을 품은 요소의 표시 속성, 바깥에서 바꾼 표정.
+    // 진행 글자(텍스트 노드)·그웬과 무관한 요소의 속성은 무시함 — 화면 밖·잘림 여부는 IntersectionObserver 가 따로 봄.
+    const GWEN_NODE='img[data-gwen-art],.result-summary,[data-gwen-report],.gwen-reaction';
+    const gwenNode=n=>n.nodeType===1&&(n.matches(GWEN_NODE)||!!n.querySelector(GWEN_NODE));
+    function relevant(records){
+      for(const r of records){
+        if(r.type==='attributes'){if(r.attributeName==='data-gwen-expression'||gwenNode(r.target))return true;}
+        else for(const list of [r.addedNodes,r.removedNodes])for(const n of list)if(gwenNode(n))return true;
+      }
+      return false;
+    }
+    new root.MutationObserver(records=>{if(relevant(records))refresh();}).observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','style','data-gwen-expression']});
     doc.addEventListener('visibilitychange',()=>{doc.documentElement.classList.toggle('gwen-paused',doc.hidden);refresh();});
     media.addEventListener('change',refresh);root.addEventListener('resize',refresh);root.addEventListener('scroll',refresh,true);
     for(const type of ['pointerdown','pointermove','keydown','input'])doc.addEventListener(type,()=>{for(const s of states.values())s.input();},{passive:true});

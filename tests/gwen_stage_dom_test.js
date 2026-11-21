@@ -103,6 +103,16 @@ async function inlineReport(code=ux){
   host.innerHTML=output;h.refresh();await h.flush();
   assert.equal(host.querySelector('img').dataset.gwenPlaying,'false','completed report reaction replayed');
 }
+// 감시 범위: 진행 글자(텍스트 노드)·그웬과 무관한 요소의 속성 변화로는 새 그웬을 등록하지 않고, 그웬 그림이 들어오면 등록함.
+async function refreshFilter(code=ux){
+  const h=harness();h.load(policy);h.load(code);const host=h.add('work'),other=h.add('other');h.c.Ux.mount();await h.flush();
+  host.innerHTML=h.c.Ux.gwenWork('long');const img=host.querySelector('img');
+  h.refresh([{type:'childList',target:other,addedNodes:[{nodeType:3}],removedNodes:[{nodeType:3}]}]);await h.flush();
+  h.refresh([{type:'attributes',attributeName:'style',target:other}]);await h.flush();
+  assert.equal(img.dataset.gwenLoaded,undefined,'progress text or unrelated style refreshed Gwen');
+  h.refresh([{type:'childList',target:host,addedNodes:[host.firstElementChild],removedNodes:[]}]);await h.flush();
+  assert.equal(img.dataset.gwenLoaded,'true','added Gwen image not registered');
+}
 async function reactionOnce(code=ux){
   const h=setup(lane);h.load(code);h.c.recoGwenShow(false,null,{clear:.8});await h.flush();h.c.Ux.mount();await h.flush();
   assert.equal(h.actor().querySelector('img').dataset.gwenPlaying,'true','initial result action was not reached');
@@ -160,7 +170,7 @@ async function mutation(name,source,from,to,check){assert(source.includes(from),
   await check(source);
   await assert.rejects(()=>check(source.replace(from,to)),{code:'ERR_ASSERTION'},name);console.log('MUTATION caught + restored (isolated VM):',name);}
 (async()=>{
-  await remount();await ownership();await lateResponse();await persistent();await inlineReport();await reactionOnce();await bundlePhases();await pingpong();
+  await remount();await ownership();await lateResponse();await persistent();await inlineReport();await refreshFilter();await reactionOnce();await bundlePhases();await pingpong();
   await mutation('bundle request phase',read('direct_bundle.js'),"GwenLane.resultId(task)+':'+task.request","GwenLane.resultId(task)",bundlePhases);
   await mutation('bundle task identity',read('direct_bundle.js'),"GwenLane.resultId(task)+':'+task.request","task.request",bundlePhases);
   await mutation('same-phase host reattachment',lane,'function rebind(mode){','function rebind(mode){return;',remount);
@@ -188,5 +198,7 @@ async function mutation(name,source,from,to,check){assert(source.includes(from),
   await mutation('mirror on reverse',lane,"run?.dir<0?'scaleX(-1)':'none';}","'none';}",pingpong);
   await mutation('walk to new start',lane,'run.seek=true;','run.seek=false;',pingpong);
   await mutation('result restores direction',lane,"current.phase==='result'||",'',pingpong);
-  console.log('PASS 8 DOM scenarios / 20 mutations');
+  await mutation('refresh on any change',ux,'function relevant(records){','function relevant(records){return true;',refreshFilter);
+  await mutation('ignore added Gwen',ux,'for(const n of list)if(gwenNode(n))return true;','for(const n of list)if(false)return true;',refreshFilter);
+  console.log('PASS 9 DOM scenarios / 22 mutations');
 })().catch(e=>{console.error(e);process.exitCode=1});

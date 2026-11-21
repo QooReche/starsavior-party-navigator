@@ -6,6 +6,7 @@ function harness(){
   class Element{
     constructor(tag='div'){this.tagName=tag;this.children=[];this.dataset={};this.style={};this.attrs={};this.hidden=false;this.clientWidth=600;this.offsetWidth=80;this.listeners={};
       this.classList={toggle:(s,on)=>{const a=new Set(this.className?.split(' ')||[]);if(on)a.add(s);else a.delete(s);this.className=[...a].join(' ')},contains:s=>(this.className||'').split(' ').includes(s)};}
+    get nodeType(){return 1;}
     get isConnected(){return this===doc.body||this.parentElement?.isConnected||false;}
     get firstElementChild(){return this.children[0]||null;}
     append(...els){for(const el of els){el.remove();el.parentElement=this;this.children.push(el);}}
@@ -53,7 +54,8 @@ function harness(){
     fetch:async()=>({ok:true,blob:async()=>new Blob()}),Blob});
   c.window=c;c.UiShared=require('../../ui_shared');c.URL=class extends URL{static createObjectURL(){return 'blob:test'}static revokeObjectURL(){}};
   const flush=async()=>{for(let i=0;i<12;i++)await Promise.resolve();};
-  return {c,doc,Element,decodes,holdDecode:v=>holdDecode=v,flush,refresh:()=>observers.forEach(fn=>fn()),
+  return {c,doc,Element,decodes,holdDecode:v=>holdDecode=v,flush,// refresh(records): MutationObserver 콜백에 넘길 기록. 생략하면 «body 안이 바뀜»(그웬 그림을 품은 노드 추가)
+    refresh:records=>observers.forEach(fn=>fn(records||[{type:'childList',target:doc.body,addedNodes:[doc.body],removedNodes:[]}])),
     load:src=>vm.runInContext(src,c),add(id,parent=doc.body,tag='div'){const e=new Element(tag);e.id=id;parent.append(e);return e;},
     async tick(ms){const end=now+ms;for(let guard=0;guard<10000;guard++){const pair=[...timers].sort((a,b)=>a[1].at-b[1].at)[0];if(!pair||pair[1].at>end)break;
       const [id,t]=pair;now=t.at;if(t.repeat)t.at+=t.ms;else timers.delete(id);t.fn();await flush();}now=end;await flush();}};
