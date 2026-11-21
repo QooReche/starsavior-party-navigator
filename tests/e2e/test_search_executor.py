@@ -3,6 +3,7 @@ import argparse
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from test_page import test_server
@@ -10,6 +11,19 @@ from test_direct_party import ready
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT/'tests/fixtures/search_pyodide_6688d7a.json'
+sys.path.insert(0, str(ROOT/'tests'))
+from engine_input_guard import assert_engine_inputs
+
+
+def assert_frozen_engine(pins):
+    def frozen(name):
+        return subprocess.check_output(['git', 'show', '6688d7a:'+name], cwd=ROOT)
+    original_manifest = frozen('sim/manifest.json')
+    assert hashlib.sha256(original_manifest).hexdigest() == pins['sim/manifest.json']
+    assert hashlib.sha256((ROOT/'battlesim/rules/default.json').read_bytes()).hexdigest() == pins['battlesim/rules/default.json']
+    assert_engine_inputs(json.loads(original_manifest)['files'],
+                         json.loads((ROOT/'sim/manifest.json').read_bytes())['files'],
+                         frozen, lambda name: (ROOT/name).read_bytes())
 
 REAL = """async () => {
  const requests=[], replies=[];
@@ -81,7 +95,10 @@ def main():
                     FIXTURE.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf8')
                 else:
                     expected=json.loads(FIXTURE.read_text(encoding='utf8'))
-                    assert result==expected,'real Pyodide complete request/raw result changed'
+                    # The package also contains search settings. Keep the old
+                    # golden intact and verify every engine input separately.
+                    assert_frozen_engine(expected['pins'])
+                    assert {k:v for k,v in result.items() if k!='pins'}=={k:v for k,v in expected.items() if k!='pins'},'real Pyodide complete request/raw result changed'
                 print('PASS real Pyodide frozen request, complete raw result, positive progress',flush=True)
             assert not page.errors,page.errors
         finally:browser.close()
