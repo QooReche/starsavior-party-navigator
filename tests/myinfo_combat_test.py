@@ -131,9 +131,11 @@ class CombatTests(unittest.TestCase):
         n = b.nova_of(a)
         self.assertEqual(n, 2)
         a.actions += 1
+        a.turn_ends += 1  # mc.se_cool_clock=client: 재발동 제한은 자기 턴 끝에 차감
         b.fire(a, 'own_ts', Ctx(a, a, None))
         self.assertEqual(b.nova_of(a), n)
         a.actions += 1
+        a.turn_ends += 1  # mc.se_cool_clock=client: 재발동 제한은 자기 턴 끝에 차감
         b.fire(a, 'own_ts', Ctx(a, a, None))
         self.assertEqual(b.nova_of(a), n + 2)
         b.cast(a, a.d.skills['궁극기'], target=b.foes[0])
@@ -160,10 +162,12 @@ class CombatTests(unittest.TestCase):
             b.run_line(a, ln, ctx)
             self.assertEqual(cast.call_count, 1)  # 추가 발동→본행동도 같은 턴 제한
             a.actions += 1
+            a.turn_ends += 1  # mc.se_cool_clock=client: 재발동 제한은 자기 턴 끝에 차감
             ctx.extra = True
             b.run_line(a, ln, ctx)
             self.assertEqual(cast.call_count, 2)
             a.actions += 1
+            a.turn_ends += 1  # mc.se_cool_clock=client: 재발동 제한은 자기 턴 끝에 차감
             ctx.crit = False
             b.run_line(a, ln, ctx)
             self.assertEqual(cast.call_count, 2)

@@ -78,6 +78,7 @@ class VideoToughnessTest(unittest.TestCase):
         for _ in range(3):
             f.sa = 18
             a.actions += 1
+            a.turn_ends += 1  # mc.se_cool_clock=client: 재발동 제한은 자기 턴 끝에 차감
             b.cast(a, a.d.skills['기본기'], target=f)
             self.assertEqual(18 - f.sa, 2)
         self.assertEqual(a.cast_count['기본기(추가)'], 3)

@@ -29,7 +29,7 @@ def _case(mode, evaded):
     b = NS(mc=dict(MC_OPTS, dispel_evade=mode), rule_hits=defaultdict(int), dirty=lambda u: None,
            R=lambda side: random.Random(1), _fired=lambda u: None, log=lambda **k: None,
            resolve=lambda o, expr, c, kind=None: [x], roll_hit=lambda *a: True, _cur_line=None)
-    for f in ('_dispel_ok', '_dispel_shield_ok', '_dispel_n_ordered', '_evade_rejects', '_evade_gate'):
+    for f in ('_dispel_ok', '_dispel_cand', '_dispel_shield_ok', '_dispel_n_ordered', '_evade_rejects', '_evade_gate'):
         setattr(b, f, (lambda g: (lambda *a: g(b, *a)))(getattr(Battle, f)))
     Battle.run_special(b, owner, NS(raw=''), ctx, '스킬 대상에게 〈버프 해제〉 (강화효과 해제) {효과 적중 판정}')
     return x, b

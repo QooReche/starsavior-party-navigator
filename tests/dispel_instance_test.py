@@ -28,7 +28,7 @@ def _run(mode, x, rest, order='client'):
     b = NS(mc=dict(MC_OPTS, dispel_instance=mode, dispel_order=order), rule_hits=defaultdict(int), dirty=lambda u: None,
            R=lambda side: random.Random(1), _fired=lambda u: None, log=lambda **k: None,
            resolve=lambda owner, expr, ctx, kind=None: [x])
-    for f in ('_dispel_ok', '_dispel_shield_ok', '_dispel_n_ordered'):
+    for f in ('_dispel_ok', '_dispel_cand', '_dispel_shield_ok', '_dispel_n_ordered'):
         setattr(b, f, (lambda g: (lambda *a: g(b, *a)))(getattr(Battle, f)))
     Battle.run_special(b, x, NS(raw=''), None, rest)
     return b
