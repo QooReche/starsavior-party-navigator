@@ -1,3 +1,15 @@
+## 2026-11-22 — 엔진·빌더 공통 함수 통일(통일 설계 0·1·2·3·4·5·9단계)
+
+통일 설계(`fable_unify.md`)의 엔진·tools 쪽 단계를 했음. 모든 커밋에서 엔진 결과가 기준선과 바이트 일치함(diet 36케이스 + 새 보강 기준선 137케이스). 화면 파일은 손대지 않았음.
+- 0단계 기준선 보강(`tools/unify_baseline.py`·`tests/unify_baseline_test.py`): 수정 전 엔진(main c81df06)으로 고정. 코스모 1023 보스 3종 + 1022 fixture(벨그라스·티리아·카넬리아), 길드 지원 none+5종, 분기 표 대상 구원자 14명+smile, 연쇄 4경로(기본 연쇄 1402·응징 큐 120·코스모 즉시 348·길드 82회 발동)를 덮음.
+- 1단계 tools: `jsonc` 재수출 8곳을 `tools.tables`로, 번역 표 읽기 9곳을 `tables.strings`로, «동명 행 값이 하나일 때만» 루프 7벌을 `tables.name_sets`·`unanimous`로 합쳤음. static-data로 바꾼 빌더 17개를 전후 실행해 `data/*.json`·stderr·stdout이 바이트 같음을 확인했음.
+- 2단계 자료 읽기: `battlesim/datafile.py`(경로별 1회 파싱·`@cached`·`clear`). `mc.py` 앞머리 13개·`foe.py` 10개·코스모·길드·기대값 엔진·`chain_se`·`hit_stats`·`foe_client`·`myinfo_combat` 읽기를 한 줄로. `auto_skill.json` 6회·`buff_count.json` 3회 중복 파싱이 없어졌음. `(해제불가)` 떼기는 `base_name`(dead_keep 의 `removesuffix`는 의미가 달라 그대로). `api.clear_engine_caches`가 `datafile.clear()`를 부름. `cosmo_raid._DATA`는 시험이 경로 열쇠로 바꿔 끼우는 계약이라 datafile 캐시의 별칭으로 남겼음. `clear`를 빈 함수로 하면 새 `datafile_test` 2건이 실패함(기존 use_data 시험은 경로 열쇠 캐시라 이 변이를 못 잡음).
+- 3·9단계 뼈대: `starsavior/foe_base.py`(`FoeBase`·`make_skill`)를 `CosmoFoe`·`GuildFoe`·`api._CustomFoe`가 상속. `starsavior/controller.py`(`BaseController`)를 코스모·길드 컨트롤러가 상속하고 `mc.py`의 `hasattr(self.gb, ...)` 5곳을 직접 호출로 바꿨음(`pending_damage`는 클래스 속성 None 표식). 정의 객체 `vars()` 전후 비교: 새 속성은 `_CustomFoe`의 desc·effect_info·auto·auto_lines(빈 사전, 호출부가 모두 빈 값으로 읽음)와 길드 컨트롤러의 빈 훅뿐. `fileio.short_hash`를 `hit_stats.signature`·`rules_stamp`가 쓰고 `build_hit_stats`는 엔진 signature를 가져다 씀.
+- 4단계 분기 표: `starsavior/savior_rules.py`에 `AFTER_ACTIVE`·`MARKER_SCOPE`·`MARKER_TARGETS`·`KEEP_NATIVE_SELECTOR` + 해석기 한 벌. 구원자 67명의 정규화 줄(효과 사전 키 순서까지) 덤프가 전후 바이트 같음. `tests/savior_rules_test.py`가 키 오타·조건 열쇠·죽은 행·정규화 줄 골든을 봄. 행 지우기 변이: trish → 기준선 2건, 길레 승급 → 기준선 17건·gille_conditions 3건, 린 표지 → 전투 기준선으로는 안 드러나 골든이 잡음. 세레스 TURN 행은 옛 공용 블록 그대로 두었고 현재 맞는 줄이 없음.
+- 5단계 피해식 조각: `statcalc.def_rate`·`def_rate_pen(cap)`·`elem_adv`로 `mc.py` 7곳·기대값 엔진·코스모·길드 연쇄를 치환. 기대값 엔진 관통(`clamp`, 하한도 자름)은 그대로. `golden_check`·`sim_damage index`(HEAD 엔진 사본과 대조) 일치. 연쇄 사본 2곳 머리에 «정본과 다른 점» 주석만 달고 통합(B3-b)은 하지 않았음.
+- 줄 수(엔진+tools, 새 기준선 도구 제외): +678 / −644. 공통 모듈·표·주석이 생겨 순감은 작음. 설계 추정(−250~350줄)에는 못 미침.
+- 새 구원자 추가 때 손대는 곳은 `docs/DEVELOPMENT.md`에 정리했음.
+
 ## 2026-11-22 — e2e 실패 6건: 모두 시험 쪽 문제(화면 코드 변경 없음)
 
 공통화 작업 중 나온 e2e 실패 6건의 원인을 찾았음. 임시 worktree에서 커밋을 갈라 봤고(ed64b93에서도 6건 모두 실패하거나 흔들림), 6건 모두 «시험이 바뀐 화면을 따라가지 못한 것»이었음. 실제 화면 버그는 없었음. 고친 곳은 `tests/e2e/`뿐임.
