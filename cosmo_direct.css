@@ -176,3 +176,6 @@
  .cg-summary .cg-score{flex-direction:row;align-items:baseline;gap:0 8px}
  .cg-summary .cg-score b{font-size:16px}.cg-summary .cg-score small{font-size:12px}
 }
+.cg-say-bubble .cg-say-line{display:block;margin-bottom:2px;font-size:12px;font-weight:600;color:var(--fg);word-break:keep-all;white-space:normal;max-width:100%}
+.cg-say-bubble{display:flex;flex-direction:column;align-items:flex-start;text-align:left;max-width:calc(100% - 108px)}
+.cg-say-bubble .cg-say-sum{white-space:nowrap}

@@ -67,7 +67,16 @@
         +`<span class="cg-score${done?'':' none'}" aria-hidden="true">${done?`<b>${num(r.score)}</b>${clear?low?`<small class="cg-clear-low" title="클리어 확률이 낮음">⚠ ${clear}</small>`:`<small>${clear}</small>`:''}`:`<b>${wait}</b>`}</span>${interactive?'</button>':'</section>'}`;}).join('');
   }
   // 4번째 칸: 그웬이 말풍선으로 합계를 알려 줌. 말풍선(갈아 끼우는 조각)과 그웬 자리(GwenStage 가 채움)는 형제라 다시 그려도 그웬은 그대로.
-  function sayHtml(m,attr){const all=m.total!=null;return `합계 <b class="cg-total-num${all?'':' pending'}" role="status" aria-live="polite" ${attr}>${all?num(m.total):`미완료 · ${m.doneCount}/${m.bosses.length}`}</b>${all?'<span>!</span>':''}`;}
+  // 그웬 한마디(합계 위): 결과에 따라 고름. 약한 팀이 있으면 그 팀을, 다 튼튼하면 자신감을, 아니면 운을 언급.
+  function sayLine(m){
+    if(m.total==null)return '아직 조사 중인 팀이 있어';
+    const clears=m.bosses.map(b=>({b,c:m.res(b.key).clear})).filter(x=>x.c!=null);
+    const low=clears.filter(x=>x.c<LOW_CLEAR).sort((a,b)=>a.c-b.c);
+    if(low.length)return `${esc(m.short(low[0].b.key))} 쪽이 아슬아슬해!`;
+    if(clears.length&&clears.every(x=>x.c>=.8))return '다 해볼 만해, 자신 있어!';
+    return '클리어는 운이 좀 필요해';
+  }
+  function sayHtml(m,attr){const all=m.total!=null;return `<span class="cg-say-line">${sayLine(m)}</span><span class="cg-say-sum">합계 <b class="cg-total-num${all?'':' pending'}" role="status" aria-live="polite" ${attr}>${all?num(m.total):`미완료 · ${m.doneCount}/${m.bosses.length}`}</b>${all?'<span>!</span>':''}</span>`;}
   const totalBox=(say,gwen)=>`<aside class="cg-total cg-say" aria-label="3팀 합계"><p class="gwen-bubble cg-say-bubble"${say}</p><div class="cg-say-gwen">${gwen}</div></aside>`;
   // 결과 요약(자동 3보스 찾기). gwen = 그웬 결과 자리 표시자(GwenStage.slot) — 없으면 말풍선만.
   function summaryHtml(view,opts={}){const m=read(view);return `<div class="cg-top cg-summary"><div class="cg-tabs" data-k="cs-boss-summary">${tabsHtml(m,false)}</div>${totalBox(`>${sayHtml(m,'data-k="cs-sum"')}`,opts.gwen||'')}</div>`;}

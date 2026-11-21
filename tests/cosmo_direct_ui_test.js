@@ -241,13 +241,17 @@ function suite(U){
     const v=fixture();v.summary={teams:{mogulus:{status:'done',score:1182400,clear:.82},baskerville:{status:'done',score:968300,clear:.74,turn:38},disparity:{status:'done',score:901750,clear:.68}},total:3052450,done:3,need:0};
     U.render(t.host,v,t.h);
     assert.equal(t.q('.cg-total-num').textContent,'3,052,450');assert(!t.q('.cg-total-num').className.includes('pending'));
-    assert.equal(t.q('.cg-say-bubble').textContent,'합계 3,052,450!');
+    assert.equal(t.q('.cg-say-bubble').textContent,'클리어는 운이 좀 필요해합계 3,052,450!');
+    assert.equal(t.q('.cg-say-line').textContent,'클리어는 운이 좀 필요해');
     // 클리어율이 LOW_CLEAR 미만인 팀만 ⚠ 경고색
     assert.equal(U.LOW_CLEAR,.5);assert(!t.q('#cd-tab-disparity .cg-clear-low'));
     v.summary.teams.disparity.clear=.49;U.render(t.host,v,t.h);
     assert.equal(t.q('#cd-tab-disparity .cg-clear-low')?.textContent,'⚠ 클리어 49%');assert.equal(t.qa('.cg-clear-low').length,1);
     assert.match(t.q('#cd-tab-disparity').getAttribute('aria-label'),/클리어 49%\(낮음\)/);
+    assert.match(t.q('.cg-say-line').textContent,/^괴리.* 쪽이 아슬아슬해!$/,'가장 약한 팀을 그웬이 짚음');
     v.summary.teams.disparity.clear=.5;U.render(t.host,v,t.h);assert.equal(t.qa('.cg-clear-low').length,0,'기준값과 같으면 경고 아님');
+    for(const k of ['mogulus','baskerville','disparity'])v.summary.teams[k].clear=.9;U.render(t.host,v,t.h);
+    assert.equal(t.q('.cg-say-line').textContent,'다 해볼 만해, 자신 있어!');
     assert.match(t.q('[data-cd-result]').textContent,/38예상 턴/);assert.equal(t.qa('.cg-steps li.done').length,4);assert(!t.q('.cg-steps [aria-current=step]'));
     assert(t.q('[data-cd-lane-slot]')===lane&&t.q('[data-cd-gwen-slot]')===gwen&&gwen.children.length===1,'다시 그려도 그웬 자리(와 그 안에 붙인 것)는 그대로');
   }
