@@ -5033,6 +5033,20 @@ class Battle:
                 if x.gauge > eff['threshold'] * 100.0:
                     self.set_gauge(x, eff['val'] * 100.0)
             return
+        if kd == 'cdr' and self.mc['skill_cool_change'] == 'client':
+            # PC 26752678 BattleBuff.cs(NKM:5008-5011) -> OBF_19444(NKM:2063-2078)·OBF_34909(3120-3133): SE 대상(SE m_BuffTargetType)마다
+            # SkillCoolturnType 칸(특수기·궁극기) 또는 NSI_INVALID(«스킬 쿨타임»)면 1~4칸 전부를 max(현재 − N, 0).
+            tgt = eff.get('target') or '자신'
+            xs = [owner] if tgt == '자신' else (self.resolve(owner, tgt, ctx) or [])
+            for x in xs:
+                if x.dead:
+                    continue
+                for sl in ([eff['slot']] if eff.get('slot') else list(x.cd)):
+                    if sl in x.cd:
+                        x.cd[sl] = max(0.0, x.cd[sl] - eff['val'])
+            if tgt != '자신' or not eff.get('slot'):
+                self.rule_hits['skill_cool_change'] += 1
+            return
         if kd == 'cdr':
             # 내 시전 문맥 = 그 스킬 칸. 피격 반응 등 남의 시전 문맥이면 공격자의 칸이 아니라 줄 주인 쪽 칸:
             # 줄이 달린 스킬 칸 -> (패시브면) 궁극기 -> 쿨타임이 가장 긴 칸 (에밀리·길레 설명은 모두 궁극기 쿨타임 감소, 가정)
@@ -5231,6 +5245,18 @@ class Battle:
             for x in tg or []:
                 if x.dead:
                     x.dead = False
+                    if self.mc['revive_se_reset'] == 'client':
+                        # PC 26752678 Resurrection.cs(NKM:5461) -> OBF_20318(1218) -> OBF_0597(1930) -> OBF_35004(3493-3499):
+                        # 부활하면 SE 재발동 제한(SeCoolTurn)·전투당 1회(m_bNoReuse) 기록(OBF_16992)을 통째로 비운다.
+                        k = id(x)
+                        dropped = [key for key in self.recast if key[0] == k]
+                        for key in dropped:
+                            del self.recast[key]
+                            self._recast_legacy.pop(key, None)
+                        once = {key for key in self.once if key[0] == k}
+                        self.once -= once
+                        if dropped or once:
+                            self.rule_hits['revive_se_reset'] += 1
                     if self.mc['dead_keep_dnp'] == 'client':
                         x.eff = {n: e for n, e in x.eff.items()
                                  if e.dead_keep and not (n == '도발' and e.src is not None and e.src.dead)}
@@ -5348,7 +5374,12 @@ class Battle:
                 for slot, sk in x.d.skills.items():
                     selected = explicit_slot[1] if explicit_slot else ln.eff.get('cd_slot')
                     if sk.cd and (not selected or slot == selected):
-                        x.cd[slot] = x.cd.get(slot, 0) + int(m.group(2))
+                        up = x.cd.get(slot, 0) + int(m.group(2))
+                        if self.mc['skill_cool_change'] == 'client' and up > sk.cd:
+                            # PC 26752678 OBF_18296(NKM:2043-2058)·OBF_32846(3100-3117): 증가 뒤 값은 그 칸 최대 쿨(OBF_14012)을 넘지 않음.
+                            up = sk.cd
+                            self.rule_hits['skill_cool_change'] += 1
+                        x.cd[slot] = up
             return
         m = RX_LOCAL_PER.match(rest)
         if m:   # 「피해 증가 +N% (○의 강화/약화 효과 1개당 …)」: 이번 스킬, 개수 = 그 시점

@@ -123,7 +123,7 @@ def _counters_of(b, fn):
 
 
 def test_spotter_recast_and_condition():
-    """조건 5002(광역 피격만)·SeCoolTurn 3({발동 후 3턴 재발동 불가} = 감시자 행동 3번 동안 막힘)·대상 = 마지막 타격자"""
+    """조건 5002(광역 피격만)·SeCoolTurn 3({발동 후 3턴 재발동 불가} = 감시자 자기 턴 종료 3번 동안 막힘)·대상 = 마지막 타격자"""
     b, s = _spotter_battle('client')
     amora, pm = b.allies
     ult, basic = amora.d.skills['궁극기'], amora.d.skills['기본기']
@@ -132,10 +132,10 @@ def test_spotter_recast_and_condition():
     assert got == [amora], got                               # 광역에 맞음 → 아모라에게 반격
     got = _counters_of(b, lambda: b.cast(amora, ult))
     assert got == [], got                                    # 같은 턴 다시: 재발동 제한
-    s.actions += 2
+    s.turn_ends += 2                                         # mc.se_cool_clock=client: 감시자 자기 턴 종료 횟수
     got = _counters_of(b, lambda: b.cast(amora, ult))
     assert got == [], got                                    # 2턴 뒤: 아직 막힘
-    s.actions += 1
+    s.turn_ends += 1
     got = _counters_of(b, lambda: b.cast(pm, pm.d.skills['기본기']))
     assert got == [], got                                    # 단일 공격엔 반격 없음(조건 5002)
     got = _counters_of(b, lambda: b.cast(amora, ult))

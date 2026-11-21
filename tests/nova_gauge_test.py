@@ -111,8 +111,8 @@ class NovaGaugeTest(unittest.TestCase):
         b.run_line(u, once, ctx)
         self.assertEqual(b.team_nova, 2)
         cd = Line('[턴 시작 시] 자신에게 노바 포스 +2 {발동 후 2턴 재발동 불가}', '잠재력', 'potential')
-        for action in (0, 1, 2):
-            u.actions = action
+        for ends in (0, 1, 2):     # mc.se_cool_clock=client: 주인의 자기 턴 종료 횟수로 셈(NKM:3604-3617)
+            u.turn_ends = ends
             b.run_line(u, cd, ctx)
         self.assertEqual(b.team_nova, 6)
 

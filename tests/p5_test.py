@@ -492,6 +492,7 @@ def test_recast_limit():
     b.cast(A, A.d.skills['특수기'])
     n2 = A.cast_count['특수기(추가)']
     A.actions = 2
+    A.turn_ends += 1      # mc.se_cool_clock=client: 자기 턴 종료에 1 차감(NKM:3604-3617)
     b.cast(A, A.d.skills['특수기'])
     n3 = A.cast_count['특수기(추가)']
     depth = b.unsup.get('depth: 연쇄 깊이 상한으로 시전 생략', 0)

@@ -87,6 +87,8 @@ _KEEP['unique_id_stack'] = 'off'
 _KEEP['random_basic_not_self'] = 'legacy'
 _KEEP['se_cool_clock'] = 'legacy'
 _KEEP['dispel_isbuff'] = 'legacy'
+_KEEP['revive_se_reset'] = 'legacy'
+_KEEP['skill_cool_change'] = 'legacy'
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 
