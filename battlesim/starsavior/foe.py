@@ -341,6 +341,7 @@ class FoeDef:
         self.effect_info = {}
         self.client_model = u.get('client_model')
         self.client_skills, self.client_se = {}, {}
+        self.client_cards = {}
         client_auto, client_lines, client_force = {}, {}, set()
         for si in u['sk']:
             sd = raw['s'][si]
@@ -366,6 +367,7 @@ class FoeDef:
             if dm and not mm:
                 self.unmodeled.append('적 피해 계수 형식 미해석: %s' % dm)
             parsed = [Line(raw_line, slot, src) for raw_line in sd.get('ef') or []]
+            self.client_cards[sk.name] = (sk, parsed)
             if not sd.get('replacement'):
                 self.lines.extend(parsed)
             if sd.get('id'):

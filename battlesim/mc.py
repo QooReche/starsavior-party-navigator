@@ -330,7 +330,7 @@ COND_KEYS = set(['사용 스킬', '추가발동 스킬', '추가발동 스킬이
 
 # 회복·보호막·부활·해제·무작위 효과 원문 해석(parser 는 이 줄들을 'ignored' 로 둔다)
 RX_HEAL = re.compile(r'^(.+?)에게 회복 = (자신|대상) (최대 생명력|생명력|공격력|방어력)×([\d.]+)%')
-RX_SHIELD = re.compile(r'^(.+?)에게 〈([^〉]+)〉\s*\((\d+턴|지속 무한)(?:\s*/\s*([^)]*))?\)\s*보호막 = 자신 (생명력|공격력|방어력)×([\d.]+)%')
+RX_SHIELD = re.compile(r'^(.+?)에게 〈([^〉]+)〉\s*\((\d+턴|지속 무한)(?:\s*/\s*([^)]*))?\)\s*보호막 = (?:자신|대상) (생명력|공격력|방어력)×([\d.]+)%')
 RX_REVIVE = re.compile(r'^(.+?)에게 부활\(생명력 (\d+)%\)')
 RX_HOT = re.compile(r'‹턴마다 회복: 대상 최대 생명력×([\d.]+)%›')
 RX_DISPEL = re.compile(r'^(.+?)에게 (?:\(대상마다 (\d+)% 판정\) )?〈[^〉]+〉\s*\((?:\d+턴 / )?(약화|강화)효과 해제\)')
@@ -1825,9 +1825,15 @@ class Battle:
             sk = u.skill_overrides.get(slot, u.d.skills.get(slot))
             if sk is None or u.cd.get(slot, 0) > 0:
                 continue
+            if self.mc['foe_client_flow'] == 'client':
+                sk = getattr(u.d, 'client_named_skills', {}).get(sk.name, sk)
+                if sk.ty == '트리거':
+                    continue
             if silenced and sk.cd:
                 continue
             spec = specs.get(slot)
+            if self.mc['foe_client_flow'] == 'client' and getattr(sk, 'client_auto', None):
+                spec = {'rows': sk.client_auto}
             if spec is None or spec.get('react'):
                 return sk, None
             for row in spec['rows']:
@@ -2268,6 +2274,8 @@ class Battle:
         if self._cur_line is not None and self._cur_line.eff.get('native_target'):
             return marker_se.targets(self, owner, self._cur_line, ctx)
         t = text.strip()
+        if t == '보스인 아군 전체' and self.mc['foe_client_flow'] == 'client':
+            return [x for x in self.alive(owner.side) if getattr(x.d, 'boss', False)]
         spec = explicit_target(t)
         if spec is not None:
             if owner.side == 1 and self.mc['foe_auto'] == 'off':
@@ -2378,6 +2386,8 @@ class Battle:
     # ---------- 시전
     def cast(self, u, sk, extra=False, target=None, skip_lines=False, via=None, local_pre=False, parent=None):
         sk = u.skill_overrides.get(sk.slot, sk)
+        if self.mc['foe_client_flow'] == 'client':
+            sk = getattr(u.d, 'client_named_skills', {}).get(sk.name, sk)
         if u.dead:
             return None
         if self.incapacitated(u):
@@ -2607,7 +2617,8 @@ class Battle:
         source = self.lines_of(u)
         plain = source        # 추가 줄이 없으면 줄 종류 색인(kind_lines)을 그대로 쓴다
         if hasattr(sk, 'semantic_lines'):
-            source = [ln for ln in source if not (ln.src_kind == 'active' and ln.slot == sk.slot)] + sk.semantic_lines
+            bound_kinds = ('active', 'trigger') if getattr(sk, 'client_1121', False) else ('active',)
+            source = [ln for ln in source if not (ln.src_kind in bound_kinds and ln.slot == sk.slot)] + sk.semantic_lines
         # Slot effects depend on activation, not on the selection policy.
         if ctx.nb and (self.mc['nova_slot_effects'] or self.opts['nova_policy'] == 'heal'):
             source = source + [Line(raw, sk.slot, 'nova')
@@ -2679,10 +2690,24 @@ class Battle:
 
     def trigger_cast(self, owner, sk, target=None, **kw):
         """반응·트리거 공통 진입점: 상태와 쿨 확인 후 재진입 전에 예약."""
+        if self.mc['foe_client_flow'] == 'client':
+            sk = owner.skill_overrides.get(sk.slot, sk)
+            sk = getattr(owner.d, 'client_named_skills', {}).get(sk.name, sk)
         key = (id(owner), sk.slot)
         if (owner.dead or self.no_react(owner) or owner.cd.get(sk.slot, 0) > 0
                 or key in self._triggering or (owner.side == 1 and not self.enemy_lines)):
             return None
+        if self.mc['foe_client_flow'] == 'client':
+            if getattr(sk, 'client_auto', None):
+                for row in sk.client_auto:
+                    if all(self.auto_cond_ok(owner, c) for c in row['c']):
+                        pool, _ = self.filter_chain(owner, self.targetable(1 - owner.side), row['f'])
+                        if not pool:
+                            return None
+                        target = self.R(owner.side).choice(pool)
+                        break
+                else:
+                    return None
         owner.cd[sk.slot] = sk.cd or 0
         self._triggering.add(key)
         try:
@@ -3638,6 +3663,10 @@ class Battle:
             if rule.get('client_1121') and self.mc['foe_client_flow'] != 'client':
                 continue
             ts = u.d.trigger_skills.get(slot)
+            if self.mc['foe_client_flow'] == 'client':
+                ts = u.skill_overrides.get(slot, ts)
+                if ts is not None and ts.ty != '트리거':
+                    continue
             if ts is None:
                 continue
             timing = rule['timing']
@@ -3749,7 +3778,11 @@ class Battle:
             target = None
             if rule['target'] == 'react_target':
                 target = ctx.target if (ctx.target and not ctx.target.dead) else None
-                if target is None:
+                selected = (getattr(u.d, 'client_named_skills', {}).get(ts.name, ts)
+                            if self.mc['foe_client_flow'] == 'client' else ts)
+                # PC NKM:9146-9153: automatic reaction targets are selected
+                # afresh; the original victim need not survive the attack.
+                if target is None and not getattr(selected, 'client_auto', None):
                     continue
             elif rule['target'] == 'react_ally_target':
                 # 아군 대상 반응(NSTT_REACT_ALLY_TARGET): 게임은 시전자의 아군 중 대상 선택.
@@ -4410,6 +4443,8 @@ class Battle:
         self.run_batch(owner, [ln], ctx)
 
     def line_ok(self, owner, ln, ctx):
+        if ln.eff.get('requires_foe_client') and self.mc['foe_client_flow'] != 'client':
+            return False
         rule = ln.eff.get('rule_key')
         if rule and self.mc[rule] == 'client':
             self.rule_hits[rule] += 1
@@ -4509,6 +4544,8 @@ class Battle:
     def _per_target(self, owner, ln, ctx):
         """대상 조건(대상 속성·대상이 보유 등)이 붙은 「받는 회복량」 줄, 또는 여러 대상을 치는 내 공격의 「이번 스킬에만」 보정 줄:
         조건을 대상마다 따로 판정해야 한다(첫 대상 하나로 판정해 전원에게 적용하면 틀림)."""
+        if ln.eff.get('requires_foe_client') and self.mc['foe_client_flow'] != 'client':
+            return False
         if ctx.skill is None or ctx.src is not owner or not any(k in TARGET_KEYS for k, _ in ln.params):
             return False
         if ln.eff['kind'] == 'ignored' and RX_RECV_HEAL.match(line_rest(ln)):
@@ -4556,6 +4593,22 @@ class Battle:
             return
         eff = ln.eff
         kd = eff['kind']
+        if kd == 'foe_change_skill':
+            if self.mc['foe_client_flow'] != 'client':
+                return
+            before = owner.d.client_named_skills[eff['before']]
+            current = owner.skill_overrides.get(before.slot, owner.d.skills.get(before.slot) or owner.d.trigger_skills.get(before.slot))
+            if current is not None and current.name == before.name:
+                after = owner.d.client_named_skills[eff['after']]
+                owner.skill_overrides[before.slot] = after
+                if after.client_reset_cd:
+                    owner.cd[before.slot] = 0
+                self.rule_hits['foe_change_skill'] += 1
+            return
+        if kd == 'foe_cleanse':
+            if self.mc['foe_client_flow'] == 'client':
+                self.run_special(owner, ln, ctx, '자신에게 〈디버프 해제〉 (약화효과 해제)')
+            return
         if kd == 'cosmo':
             if self.gb is not None and hasattr(self.gb, 'execute_se'):
                 self.gb.execute_se(owner, ln, ctx)
@@ -4933,6 +4986,9 @@ class Battle:
             return
         m = RX_SHIELD.match(rest)
         if m:
+            target_base = '보호막 = 대상 ' in rest
+            if target_base and self.mc['foe_client_flow'] != 'client':
+                return
             tg = self.resolve(owner, m.group(1), ctx, kind='shield')
             stat = {'생명력': owner.maxhp, '공격력': self.atk_stat(owner), '방어력': self.def_stat(owner)}[m.group(5)]
             amount = math.floor(stat * float(m.group(6)) / 100.0 * max(0.0, 1 + owner.mods()['barrier_give']))
@@ -4943,6 +4999,16 @@ class Battle:
                     if mm:
                         props[mm.group(1).strip()] = float(mm.group(2))
             for x in tg or []:
+                if target_base:
+                    # NKM:4772-4785: target's stat and give/receive rates;
+                    # both the base and the signed bonus truncate independently.
+                    stat = {'생명력': x.maxhp, '공격력': self.atk_stat(x), '방어력': self.def_stat(x)}[m.group(5)]
+                    base = int(stat * float(m.group(6)) / 100.0)
+                    receive = sum(e.props.get('받는 보호막량', 0) * e.stacks / 100.0 for e in x.eff.values() if e.stacks > 0)
+                    amount = max(0, base + int(base * (x.mods()['barrier_give'] + receive)))
+                    self.rule_hits['foe_target_barrier'] += 1
+                    if amount == 0:
+                        continue
                 if self.refuse_buff(x, m.group(2)):
                     continue     # 〈강화 불가〉: 보호막도 강화 효과라 새로 받지 못함(합산 포함)
                 e = x.eff.get(m.group(2))
@@ -5067,6 +5133,8 @@ class Battle:
         m = RX_GAUGE_SET.match(rest)
         if m:   # 행동 게이지를 N%로 설정
             for x in self.resolve(owner, m.group(1), ctx) or []:
+                if self._next_turn_caught(x):
+                    continue
                 if x.side != owner.side and '효과 적중 판정' in rest and not self.roll_hit(owner, ctx, x, None):
                     continue
                 x.gauge = float(m.group(2)) * 100.0
@@ -5197,6 +5265,8 @@ class Battle:
             dv = float(m.group(3)) * 100.0 * (1 if m.group(4) == '증가' else -1)
             for x in tg or []:
                 if self.R(owner.side).random() >= int(m.group(2)) / 100.0:
+                    continue
+                if self._next_turn_caught(x):
                     continue
                 down = x.side != owner.side and dv < 0
                 if down and self._harm_evaded(x, ctx):
@@ -5902,6 +5972,7 @@ def _meaning_gap(ln, k, markers):
         return 'effect: 효과 뒤 문구 미해석 〈%s〉 %s' % (name, tail[:30])
     if (not props and not e.get('dot') and name not in _rules.KNOWN_DOT and name not in HANDLED_NAMES
             and not e.get('client_1121')
+            and name not in buff_flags()['immune_gauge_up']
             and name not in no_preemptive()['buffs']
             and name not in markers and not CHECK_NAME.search(name) and not RX_HOT.search(ln.raw)):
         return 'effect: 의미 미해석 효과 〈%s〉(속성 없음)' % name

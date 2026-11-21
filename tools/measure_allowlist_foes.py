@@ -35,15 +35,20 @@ def main():
     Battle.run = run
     team = ['asherah-order-striker', 'gille', 'amora', 'wedding-carmen']
     rows = []
-    for tab in ('심해의 폭군', '티엔'):
-        for stage in [f'길드 방어전 {i}단계' for i in range(1, 7)] + ['길드 방어전 EX스테이지']:
-            counts.clear()
-            encounter = f'guild/{tab}/{stage}'
-            r = simulate(team, {'stage': encounter}, {'build': 'standard', 'n_runs': 8, 'seed': 20261121})
+    encounters = [f'guild/{tab}/{stage}'
+                  for tab in (('BFB',) if '--bfb' in sys.argv else ('심해의 폭군', '티엔'))
+                  for stage in [f'길드 방어전 {i}단계' for i in range(1, 7)] + ['길드 방어전 EX스테이지']]
+    if '--general' in sys.argv:
+        encounters = ['cosmo/벨그라스/벨그라스 1단계', 'oph/고대 지하 유적/SECTOR 39-10',
+                      'oph/버려진 요새/SECTOR 40-10', 'clo/태양 회랑/FLOOR 490', 'clo/태양 회랑/FLOOR 500']
+    for encounter in encounters:
+        counts.clear()
+        r = simulate(team, {'stage': encounter}, {'build': 'standard', 'n_runs': 8, 'seed': 20261121})
+        if '--general' not in sys.argv:
             assert r['outcome']['progress'] > 0, encounter
-            row = dict(stage=encounter, party=team, outcome=r['outcome'], actions=list(counts), foes=r['foes'])
-            rows.append(row)
-            print(encounter, r['outcome']['clear_p'], r['outcome']['progress'], counts, flush=True)
+        row = dict(stage=encounter, party=team, outcome=r['outcome'], actions=list(counts), foes=r['foes'])
+        rows.append(row)
+        print(encounter, r['outcome']['clear_p'], r['outcome']['progress'], counts, flush=True)
     dest = ROOT / 'local' / 'allow-e2'
     dest.mkdir(parents=True, exist_ok=True)
     (dest / (label + '.json')).write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding='utf-8')

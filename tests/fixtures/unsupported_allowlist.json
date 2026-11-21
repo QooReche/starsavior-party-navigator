@@ -200,66 +200,6 @@
     ],
     "E": [
       {
-        "key": "[\"BFB\",\"특수기\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] 자신에게 (약화효과 해제) 행동 게이지 0%\",false]",
-        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"BFB\",\"특수기\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] 자신에게 스킬 교체: 「정실 어필」 → 「독점 선언」\",false]",
-        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"BFB\",\"특수기\",\"skill\",\"트리거 스킬 미반영: 정실 어필\",false]",
-        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"BFB\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 내 공격 후 [사용 스킬: 궁극기; 추가발동 스킬: 예; 자기 추가발동 트리거: 예]) 자신에게 스킬 교체: 「독점 선언」 → 「정실 어필」\",false]",
-        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"BFB\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 내 공격 후 [사용 스킬: 궁극기; 추가발동 스킬: 예; 자기 추가발동 트리거: 예]) 자신에게 스킬 교체: 「축복의 대피로연」 → 「황홀한 허니문」\",false]",
-        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"BFB\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 정실 어필; 중첩수: 5]) 자신에게 스킬 교체: 「황홀한 허니문」 → 「축복의 대피로연」\",false]",
-        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"BFB\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예; 자신이 보유: 정실 어필]) 자신에게 스킬 교체: 「황홀한 허니문」 → 「축복의 대피로연」\",false]",
-        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"BFB\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 적 공격 후 [자신이 보유: BFB 애니메이션 변경용 버프; 자신이 미보유: 보호막, 보호막(해제불가), 공허 방패(해제불가), 저항 장막(해제불가), 파프닐의 강림(해제불가)]) 자신에게 스킬 교체: 「독점 선언」 → 「정실 어필」\",false]",
-        "reason": "지난 길드 방어전 탭의 일반 스테이지 경로에서 스킬 교체·트리거가 미지원임. 현행 guild_bfb 전용 경로와 별개로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 BFB 정실 어필·독점 선언·황홀한 허니문·축복의 대피로연 교체 조건을 guild_bfb와 일반 변환 경로 양쪽에 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"공허결집자\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 대상이 보유: 공허 포자]) 자신에게 능력치 보정 피해 증가 +30% 연쇄 피해 = 자신 공격력×10% (×1.85, 방어력 적용) {이번 스킬에만 적용}\",false]",
-        "reason": "현행 일반 콘텐츠의 스킬 한정 피해 증가와 연쇄 피해 복합 줄이 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json 공허결집자 궁극기/공허 포자 조건의 피해 증가·연쇄 SE 및 NKM 해당 시전 적용 순서를 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"공허투영자\",\"패시브\",\"effect: 의미 미해석 효과 〈억류(해제불가)〉(속성 없음)\",\"[웨이브 시작 시] 적 전체에게 〈억류(해제불가)〉 (지속 무한 / 행동게이지 증가 면역) {해제 불가}\",true]",
-        "reason": "억류의 행동 게이지 증가 면역은 이름 플래그로 실행될 수 있어 정적 오탐 가능성이 남음. 클라 대조 없이 보고를 제거하지 않음.",
-        "client_clue": "미확정 조사 단서: CLIENT_BUFF_TEMPLET 억류 행과 data/buff_flags.json gauge_up_immune, NKM 게이지 증가 차단 소비 경로 및 support_report 의미 판정을 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
         "key": "[\"벨그라스\",\"궁극기\",\"effect: 미해석\",\"[스킬 사용 시작 시] (조건: 내 공격 시 [사용 스킬: 궁극기; 자신이 보유: 썩은 의지(해제불가); 중첩수: 10]) 자신에게 고정 피해 50000\",false]",
         "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
         "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
@@ -563,72 +503,6 @@
         "key": "[\"벨그라스\",\"패시브\",\"trigger: 적 행동 시\",\"[스킬 사용 시작 시] (조건: 적 행동 시 [자신이 보유: 침식된 의지(해제불가)]) 자신에게 〈썩은 의지 발생 방지 버프〉\",false]",
         "reason": "지난 시즌 일반 스테이지 경로에서 공허 붕괴 고정 피해·트리거 줄이 미해석임. 시즌 전용 상태 기계와 일반 경로를 같다고 판정하지 않음.",
         "client_clue": "미확정 조사 단서: CLIENT_SKILL_TEMPLET_2/CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 벨그라스 공허 붕괴 행과 NKM 시전/추가 피해 소비 경로를 단계별로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"처단자\",\"패시브\",\"effect: 보호막/회복\",\"[스킬 사용 후] (조건: 아군 공격 후 [자신 포함: 아니오; 자신이 보유: 응집된 생기(해제불가)]) 보스인 아군 전체에게 〈보호막〉 (2턴) 보호막 = 대상 생명력×1%\",true]",
-        "reason": "지난 시즌 일반 스테이지 경로의 조건부 보호막 줄이 미해석임. 현재 시즌 runtime 0과 별도로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 처단자 보호막 SE와 CLIENT_BUFF_TEMPLET 보호막 비율/대상 및 NKM 조건·보호막 적용 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"처단자\",\"패시브\",\"effect: 보호막/회복\",\"[스킬 사용 후] (조건: 적 비공격 스킬 후 [자신이 미보유: 응집된 생기(해제불가), 영양 과잉]) 적 전체에게 〈보호막〉 (2턴) 보호막 = 대상 생명력×25%\",true]",
-        "reason": "지난 시즌 일반 스테이지 경로의 조건부 보호막 줄이 미해석임. 현재 시즌 runtime 0과 별도로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 처단자 보호막 SE와 CLIENT_BUFF_TEMPLET 보호막 비율/대상 및 NKM 조건·보호막 적용 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"처단자\",\"패시브\",\"effect: 보호막/회복\",\"[피해 처리 후] (조건: 내가 피격될 때 [자신이 미보유: 응집된 생기(해제불가), 영양 과잉; 단일 대상 공격: 예]) 적 전체에게 〈보호막〉 (2턴) 보호막 = 대상 생명력×25%\",true]",
-        "reason": "지난 시즌 일반 스테이지 경로의 조건부 보호막 줄이 미해석임. 현재 시즌 runtime 0과 별도로 유지함.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 처단자 보호막 SE와 CLIENT_BUFF_TEMPLET 보호막 비율/대상 및 NKM 조건·보호막 적용 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"티엔\",\"궁극기\",\"skill\",\"트리거 스킬 미반영: 백팔철선진!\",false]",
-        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"티엔\",\"기본기\",\"effect: 의미 미해석 효과 〈기본기 타겟팅용 디버프〉(속성 없음)\",\"[스킬 사용 후] 스킬 대상에게 〈기본기 타겟팅용 디버프〉 (1턴) {해제 불가}\",false]",
-        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"티엔\",\"변형 궁극기\",\"skill\",\"트리거 스킬 미반영: 백팔철선진·극!\",false]",
-        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"티엔\",\"특수기\",\"effect: 의미 미해석 효과 〈특수기 타겟팅용 디버프〉(속성 없음)\",\"[스킬 사용 후] 스킬 대상에게 〈특수기 타겟팅용 디버프〉 (1턴) {해제 불가}\",false]",
-        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"티엔\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 아군 공격 후 [자신 포함: 아니오; 자신이 보유: 티엔 궁극기 강화1용 버프]) 자신에게 스킬 교체: 「백팔철선진!」 → 「백팔철선진·멸!」\",false]",
-        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"티엔\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 아군 공격 후 [자신 포함: 아니오; 자신이 보유: 티엔 궁극기 강화2용 버프]) 자신에게 스킬 교체: 「백팔철선진·멸!」 → 「백팔철선진·극!」\",false]",
-        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"티엔\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 적 공격 후 [자신이 미보유: 결속(해제불가); 자신이 보유: 티엔 궁극기 강화1용 버프]) 자신에게 스킬 교체: 「백팔철선진·멸!」 → 「백팔철선진!」\",false]",
-        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
-        "owner": "적 데이터·시즌 변환 유지보수"
-      },
-      {
-        "key": "[\"티엔\",\"패시브\",\"effect: 해제/교체/무작위\",\"[스킬 사용 후] (조건: 적 공격 후 [자신이 미보유: 결속(해제불가); 자신이 보유: 티엔 궁극기 강화2용 버프]) 자신에게 스킬 교체: 「백팔철선진·극!」 → 「백팔철선진!」\",false]",
-        "reason": "지난 길드 방어전 일반 스테이지 경로의 대상 표지·스킬 승급·트리거가 미해석임.",
-        "client_clue": "미확정 조사 단서: CLIENT_SE_TEMPLET_SKILL_1.json·CLIENT_SE_TEMPLET_SKILL_2.json의 티엔 타겟팅 표지 및 백팔철선진 승급 행, AutoTargetId와 NKM 트리거 선택 경로 대조하기; docs/unsupported_26752678.md 검증·남는 범위",
         "owner": "적 데이터·시즌 변환 유지보수"
       }
     ]

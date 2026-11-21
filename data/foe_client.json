@@ -5,6 +5,9 @@
         "enemy_ts"
       ]
     },
+    "공허결집자": {
+      "local_damage_only": 30.0
+    },
     "시엔": {
       "react": {
         "쌍성각이에요": {
@@ -47,13 +50,317 @@
           "target": "react_target",
           "client_1121": true
         }
-      }
+      },
+      "skills": {
+        "쌍성각이에요": {
+          "slot": "기본기",
+          "reset_cd": false,
+          "auto": [
+            {
+              "c": [
+                [
+                  "enemy_has",
+                  [
+                    "기본기 타겟팅용 디버프"
+                  ]
+                ]
+              ],
+              "f": [
+                [
+                  "has",
+                  [
+                    "기본기 타겟팅용 디버프"
+                  ]
+                ]
+              ]
+            }
+          ]
+        },
+        "화륜쌍추예요": {
+          "slot": "특수기",
+          "reset_cd": false,
+          "auto": [
+            {
+              "c": [
+                [
+                  "enemy_has",
+                  [
+                    "특수기 타겟팅용 디버프"
+                  ]
+                ]
+              ],
+              "f": [
+                [
+                  "has",
+                  [
+                    "특수기 타겟팅용 디버프"
+                  ]
+                ]
+              ]
+            }
+          ]
+        },
+        "타종초염이에요": {
+          "slot": "궁극기",
+          "reset_cd": false
+        }
+      },
+      "changes": []
+    },
+    "티엔": {
+      "react": {
+        "백팔철선진!": {
+          "timing": "after_ally_attack",
+          "conds": [
+            [
+              "skill_hyper"
+            ],
+            [
+              "include_self",
+              false
+            ]
+          ],
+          "target": "all",
+          "client_1121": true
+        },
+        "백팔철선진·멸!": {
+          "timing": "after_ally_attack",
+          "conds": [
+            [
+              "skill_hyper"
+            ],
+            [
+              "include_self",
+              false
+            ]
+          ],
+          "target": "all",
+          "client_1121": true
+        },
+        "백팔철선진·극!": {
+          "timing": "after_ally_attack",
+          "conds": [
+            [
+              "skill_hyper"
+            ],
+            [
+              "include_self",
+              false
+            ]
+          ],
+          "target": "all",
+          "client_1121": true
+        }
+      },
+      "skills": {
+        "삼연선격!": {
+          "slot": "기본기",
+          "reset_cd": false
+        },
+        "십삼선열풍!": {
+          "slot": "특수기",
+          "reset_cd": false
+        },
+        "백팔철선진!": {
+          "slot": "궁극기",
+          "reset_cd": false
+        },
+        "백팔철선진·멸!": {
+          "slot": "궁극기",
+          "reset_cd": false
+        },
+        "백팔철선진·극!": {
+          "slot": "궁극기",
+          "reset_cd": false
+        }
+      },
+      "changes": [
+        [
+          "백팔철선진!",
+          "백팔철선진·멸!"
+        ],
+        [
+          "백팔철선진·멸!",
+          "백팔철선진·극!"
+        ],
+        [
+          "백팔철선진·멸!",
+          "백팔철선진!"
+        ],
+        [
+          "백팔철선진·극!",
+          "백팔철선진!"
+        ]
+      ],
+      "sequential_events": [
+        "own_post",
+        "ally_post",
+        "foe_post"
+      ]
+    },
+    "BFB": {
+      "react": {
+        "정실 어필": {
+          "timing": "after_attack",
+          "conds": [
+            [
+              "self_stack_ge",
+              "신부 경쟁 카운팅용 버프",
+              5
+            ],
+            [
+              "enemy_has",
+              [
+                "신부 경쟁(해제불가)"
+              ]
+            ]
+          ],
+          "target": "react_target",
+          "client_1121": true
+        }
+      },
+      "skills": {
+        "퍼스트 댄스": {
+          "slot": "기본기",
+          "reset_cd": false,
+          "auto": [
+            {
+              "c": [],
+              "f": [
+                [
+                  "has",
+                  [
+                    "신부 경쟁 확인용 버프"
+                  ]
+                ],
+                [
+                  "front",
+                  0.8
+                ],
+                [
+                  "디펜더",
+                  0.8
+                ]
+              ]
+            }
+          ]
+        },
+        "정실 어필": {
+          "slot": "특수기",
+          "reset_cd": true,
+          "auto": [
+            {
+              "c": [],
+              "f": [
+                [
+                  "has",
+                  [
+                    "신부 경쟁(해제불가)"
+                  ]
+                ],
+                "high_atk"
+              ]
+            }
+          ]
+        },
+        "황홀한 허니문": {
+          "slot": "궁극기",
+          "reset_cd": false,
+          "auto": [
+            {
+              "c": [],
+              "f": [
+                [
+                  "has",
+                  [
+                    "신부 경쟁 확인용 버프"
+                  ]
+                ],
+                [
+                  "front",
+                  0.8
+                ],
+                [
+                  "디펜더",
+                  0.8
+                ]
+              ]
+            }
+          ]
+        },
+        "독점 선언": {
+          "slot": "특수기",
+          "reset_cd": true,
+          "auto": [
+            {
+              "c": [],
+              "f": [
+                [
+                  "has",
+                  [
+                    "신부 경쟁 확인용 버프"
+                  ]
+                ],
+                [
+                  "front",
+                  0.8
+                ],
+                [
+                  "디펜더",
+                  0.8
+                ]
+              ]
+            }
+          ]
+        },
+        "축복의 대피로연": {
+          "slot": "궁극기",
+          "reset_cd": false
+        }
+      },
+      "changes": [
+        [
+          "정실 어필",
+          "독점 선언"
+        ],
+        [
+          "황홀한 허니문",
+          "축복의 대피로연"
+        ],
+        [
+          "황홀한 허니문",
+          "축복의 대피로연"
+        ],
+        [
+          "축복의 대피로연",
+          "황홀한 허니문"
+        ],
+        [
+          "독점 선언",
+          "정실 어필"
+        ],
+        [
+          "독점 선언",
+          "정실 어필"
+        ]
+      ],
+      "sequential_events": [
+        "own_post",
+        "ally_post",
+        "foe_post"
+      ]
     }
   },
   "buffs": {
     "다음 턴": {
       "category": "marker",
       "next_turn_catch": true
+    },
+    "기본기 타겟팅용 디버프": {
+      "category": "marker"
+    },
+    "특수기 타겟팅용 디버프": {
+      "category": "marker"
     },
     "시엔 고유 버프(해제불가)": {
       "category": "marker",
