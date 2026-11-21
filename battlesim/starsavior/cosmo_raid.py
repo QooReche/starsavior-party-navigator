@@ -27,10 +27,11 @@ import math
 import os
 from collections import defaultdict
 
+from .. import datafile
 from .data import SRC
 from .parser import Skill
 
-_DATA = {}
+_DATA = datafile._CACHE   # 경로 -> 자료(datafile.load_path 캐시 그대로). 시험이 data_path() 열쇠로 바꿔 끼운다
 
 CAST_PROPS = ('특수기', '궁극기')
 
@@ -73,11 +74,7 @@ def data_path(src=SRC):
 
 
 def load(src=SRC):
-    p = data_path(src)
-    if p not in _DATA:
-        with open(p, encoding='utf-8') as f:
-            _DATA[p] = json.load(f)
-    return _DATA[p]
+    return datafile.load_path(data_path(src))   # 경로가 캐시 열쇠 — use_data 로 바꾼 fixture 와 실자료가 섞이지 않는다
 
 
 def boss_data(key, src=SRC):

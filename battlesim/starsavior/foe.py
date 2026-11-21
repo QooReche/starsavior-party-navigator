@@ -9,6 +9,7 @@ import os
 import re
 from collections import defaultdict
 
+from .. import datafile
 from .data import SRC
 from .parser import Line, Skill
 
@@ -19,135 +20,67 @@ RATE = {'NST_NV_RATE_HP': 0, 'NST_NV_RATE_ATK': 1, 'NST_NV_RATE_DEF': 2, 'NST_NV
 ROLE_EN = {'스트라이커': 'striker', '캐스터': 'caster', '어쌔신': 'assassin', '레인저': 'ranger', '디펜더': 'defender', '서포터': 'supporter'}
 
 _FOE = None
-_SPAWN = {}
 
 
+@datafile.cached
 def spawn_flags(src=SRC):
     """data/foe_spawn.json(tools/build_foe_spawn.py) -> {'콘텐츠|탭|스테이지': ['웨이브별 칸 표시', ...]}. 없으면 빈 dict"""
-    if src not in _SPAWN:
-        p = os.path.join(src, 'data', 'foe_spawn.json')
-        _SPAWN[src] = json.load(open(p, encoding='utf-8')).get('stages', {}) if os.path.exists(p) else {}
-        _SPAWN[src] = {**_SPAWN[src], **extra_aux(src).get('spawn', {})}
-    return _SPAWN[src]
+    return {**datafile.load('foe_spawn', src, {}).get('stages', {}), **extra_aux(src).get('spawn', {})}
 
 
-_SLOTS = {}
-
-
+@datafile.cached
 def spawn_slots(src=SRC):
     """data/foe_spawn.json -> (slots, deck). slots['콘텐츠|탭|스테이지'] = 웨이브별 칸마다 게임 SpawnPosIndex,
     deck[...] = DeckSlotMax(BATTLE_SLOT_4 가 아닐 때만). 없으면 빈 dict 둘"""
-    if src not in _SLOTS:
-        p = os.path.join(src, 'data', 'foe_spawn.json')
-        d = {}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                d = json.load(f)
-        ax = extra_aux(src)
-        _SLOTS[src] = ({**ax.get('slots', {}), **d.get('slots', {})}, {**ax.get('deck', {}), **d.get('deck', {})})
-    return _SLOTS[src]
-
-
-_AUTO = {}
+    d, ax = datafile.load('foe_spawn', src, {}), extra_aux(src)
+    return {**ax.get('slots', {}), **d.get('slots', {})}, {**ax.get('deck', {}), **d.get('deck', {})}
 
 
 def foe_auto(src=SRC):
     """data/foe_auto.json(tools/build_foe_auto.py) -> {'foe:유닛[:변형]': {skills, lines}}. 없으면 빈 dict"""
-    if src not in _AUTO:
-        p = os.path.join(src, 'data', 'foe_auto.json')
-        _AUTO[src] = {}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                _AUTO[src] = json.load(f).get('units', {})
-    return _AUTO[src]
-
-
-_REACT = {}
+    return datafile.load('foe_auto', src, {}).get('units', {})
 
 
 def foe_react(src=SRC):
     """data/foe_react.json(tools/build_foe_react.py) -> {'foe:유닛[:변형]': {칸: 규칙}}. 없으면 빈 dict"""
-    if src not in _REACT:
-        p = os.path.join(src, 'data', 'foe_react.json')
-        _REACT[src] = {}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                _REACT[src] = json.load(f).get('units', {})
-    return _REACT[src]
+    return datafile.load('foe_react', src, {}).get('units', {})
 
 
-_SUMMON = {}
-
-
+@datafile.cached
 def foe_summon(src=SRC):
     """data/foe_summon.json(tools/build_foe_summon.py) -> {groups: {gid: {slots:[...]}}, stages: {key: {wave_slots:[[...]]}}}"""
-    if src not in _SUMMON:
-        p = os.path.join(src, 'data', 'foe_summon.json')
-        _SUMMON[src] = {'groups': {}, 'stages': {}}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                d = json.load(f)
-            _SUMMON[src] = {'groups': d.get('groups', {}), 'stages': d.get('stages', {})}
-        ax = extra_aux(src)
-        _SUMMON[src] = {'groups': {**_SUMMON[src]['groups'], **ax.get('summon_groups', {})},
-                        'stages': {**_SUMMON[src]['stages'], **ax.get('summon_stages', {})}}
-    return _SUMMON[src]
+    d, ax = datafile.load('foe_summon', src, {}), extra_aux(src)
+    return {'groups': {**d.get('groups', {}), **ax.get('summon_groups', {})},
+            'stages': {**d.get('stages', {}), **ax.get('summon_stages', {})}}
 
 
-_SUDDEN = {}
-_STAGE_FX = {}
-_BATTLE_END = {}
-
-
+@datafile.cached
 def battle_end(src=SRC):
     """Validated BM_BOSS_KILL stages. Missing data retains the previous all-kill behavior."""
-    if src not in _BATTLE_END:
-        p = os.path.join(src, 'data', 'battle_end.json')
-        _BATTLE_END[src] = frozenset()
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                _BATTLE_END[src] = frozenset(json.load(f)['boss_kill'])
-        _BATTLE_END[src] = _BATTLE_END[src] | frozenset(extra_boss_kill(src))
-    return _BATTLE_END[src]
+    d = datafile.load('battle_end', src, None)
+    return (frozenset(d['boss_kill']) if d is not None else frozenset()) | frozenset(extra_boss_kill(src))
 
 
+@datafile.cached
 def stage_fx_cond(src=SRC):
     """data/stage_fx.json(tools/build_stage_fx.py) -> {'콘텐츠|탭|스테이지': [[속성|None, 직업|None], ...]}(fx 문장 순서). 없으면 빈 표"""
-    if src not in _STAGE_FX:
-        p = os.path.join(src, 'data', 'stage_fx.json')
-        _STAGE_FX[src] = {}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                _STAGE_FX[src] = json.load(f).get('stages', {})
-    return _STAGE_FX[src]
+    return datafile.load('stage_fx', src, {}).get('stages', {})
 
 
+@datafile.cached
 def sudden_death(src=SRC):
     """data/sudden_death.json(tools/build_sudden_death.py) -> {'groups': {그룹: 단계표}, 'stages': {'콘텐츠|탭|스테이지': 그룹}}. 없으면 빈 표"""
-    if src not in _SUDDEN:
-        p = os.path.join(src, 'data', 'sudden_death.json')
-        _SUDDEN[src] = {'groups': {}, 'stages': {}}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                d = json.load(f)
-            _SUDDEN[src] = {'groups': d.get('groups', {}), 'stages': d.get('stages', {})}
-    return _SUDDEN[src]
+    d = datafile.load('sudden_death', src, {})
+    return {'groups': d.get('groups', {}), 'stages': d.get('stages', {})}
 
 
-_EXTRA = {}
 _EXTRA_ON = {}
 
 
 def load_extra(src=SRC):
     """data/foe_clash.json(tools/build_foe_clash.py)의 격전 적 조각. 없으면 None.
-    merge_extra가 기존 데이터북에 없는 스테이지만 채택한다."""
-    if src not in _EXTRA:
-        p = os.path.join(src, 'data', 'foe_clash.json')
-        _EXTRA[src] = None
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                _EXTRA[src] = json.load(f)
-    return _EXTRA[src]
+    merge_extra가 기존 데이터북에 없는 스테이지만 채택한다(조각은 깊은 복사해 붙이므로 캐시 객체는 안 바뀐다)."""
+    return datafile.load('foe_clash', src, None)
 
 
 def merge_extra(raw, frag):
@@ -224,10 +157,9 @@ def load_foe(src=SRC):
         m = re.search(r'__SSD\.foe=', s)
         d, _ = json.JSONDecoder().raw_decode(s[m.end():])
         _EXTRA_ON[src] = merge_extra(d, load_extra(src))
-        p = os.path.join(src, 'data', 'foe_cosmo_extra.json')
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                _EXTRA_ON[src] = merge_extra(d, json.load(f)) or _EXTRA_ON[src]
+        extra = datafile.load('foe_cosmo_extra', src, None)
+        if extra is not None:
+            _EXTRA_ON[src] = merge_extra(d, extra) or _EXTRA_ON[src]
         _FOE = (src, d)
     return _FOE[1]
 

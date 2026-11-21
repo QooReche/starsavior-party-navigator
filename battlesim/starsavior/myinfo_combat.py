@@ -2,9 +2,9 @@
 import copy
 import json
 import math
-from functools import lru_cache
 from pathlib import Path
 
+from .. import datafile
 from .parser import Line
 
 SLOTS = {'기본기': 'basic', '특수기': 'special', '궁극기': 'ultimate', '고유 패시브': 'passive'}
@@ -19,9 +19,8 @@ POTENTIAL_STAT_PROPS = {
 }
 
 
-@lru_cache(maxsize=1)
 def combat_data():
-    return json.loads((Path(__file__).resolve().parents[2] / 'data/myinfo_combat.json').read_text(encoding='utf8'))
+    return datafile.load_path(str(Path(__file__).resolve().parents[2] / 'data/myinfo_combat.json'))   # PN_SRC 와 무관하게 이 저장소 자료
 
 
 def combat_input(unit):

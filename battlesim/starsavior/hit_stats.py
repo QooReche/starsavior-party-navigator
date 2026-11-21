@@ -1,9 +1,7 @@
 """PC base HIT/EVADE joined by exact public name and base-stat fingerprint."""
-from functools import lru_cache
 import hashlib
 import json
-from pathlib import Path
-from .data import SRC
+from .. import datafile
 
 
 def signature(name, base):
@@ -11,9 +9,8 @@ def signature(name, base):
                                     separators=(',', ':')).encode()).hexdigest()[:20]
 
 
-@lru_cache(maxsize=1)
 def data():
-    return json.loads((Path(SRC) / 'data/hit_stats.json').read_text(encoding='utf-8'))['units']
+    return datafile.load('hit_stats')['units']
 
 
 def rates(raw, unit, variant):

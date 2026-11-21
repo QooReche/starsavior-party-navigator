@@ -1,15 +1,11 @@
 """Audited PC fields missing from the old guild description adapter."""
-import json
 import copy
 import re
-from functools import lru_cache
-from pathlib import Path
-from .data import SRC
+from .. import datafile
 
 
-@lru_cache(maxsize=1)
 def data():
-    return json.loads((Path(SRC) / 'data/foe_client.json').read_text(encoding='utf-8'))
+    return datafile.load('foe_client')
 
 
 def attach(definition):

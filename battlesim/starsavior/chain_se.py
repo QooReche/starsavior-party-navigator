@@ -1,22 +1,18 @@
 """Native grouping metadata for verified chain SE lines (PC 26752678)."""
-from functools import lru_cache
-import json
-from pathlib import Path
-from .data import SRC
+from .. import datafile
 
 
-@lru_cache(maxsize=1)
 def _raw():
-    return json.loads((Path(SRC) / 'data/chain_se.json').read_text(encoding='utf8'))
+    return datafile.load('chain_se')
 
 
-@lru_cache(maxsize=1)
+@datafile.cached
 def data():
     """구원자 연쇄(크리스텔·아세라). round2 범위."""
     return {key: {(slot, text): spec for slot, text, spec in rows} for key, rows in _raw()['units'].items()}
 
 
-@lru_cache(maxsize=1)
+@datafile.cached
 def foes():
     """적 정의 연쇄(tools/build_chain_se.py build_foes)."""
     return {key: {(slot, text): spec for slot, text, spec in rows} for key, rows in _raw().get('foes', {}).items()}

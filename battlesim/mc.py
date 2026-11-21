@@ -12,13 +12,13 @@ import copy
 import itertools
 import json
 import math
-import os
 import random
 import re
 import struct
 from collections import defaultdict
 from functools import lru_cache
 
+from . import datafile
 from . import rules as _rules
 from .engine import calc_hit
 from . import gauge as _gauge
@@ -30,10 +30,31 @@ from .starsavior.parser import Line, _map_prop, parse_props, split_head, support
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules, after_active_se
 from .starsavior import marker_se, belgras_se, chain_se
 
-with open(os.path.join(SRC, 'data', 'buff_force.json'), encoding='utf-8') as _f:
-    FORCE_BUFF_NAMES = frozenset(json.load(_f))
-with open(os.path.join(SRC, 'data', 'buff_immune_pass.json'), encoding='utf-8') as _f:
-    IMMUNE_PASS_NAMES = frozenset(json.load(_f))
+FORCE_BUFF_NAMES = frozenset(datafile.load('buff_force'))
+IMMUNE_PASS_NAMES = frozenset(datafile.load('buff_immune_pass'))
+
+
+@lru_cache(maxsize=4096)
+def base_name(name):
+    """효과 이름에서 끝의 «(해제불가)»(사이 공백 허용) 꼬리표를 떼고 양끝 공백을 지운 이름 — 이름표 조회의 두 번째 열쇠."""
+    return re.sub(r'\(해제\s*불가\)$', '', name).strip()
+
+
+def _by_name(table, name, default=None):
+    """이름 그대로, 없으면 꼬리표 뗀 이름으로 찾는다(level_buff·positive_buff·buff_kind·level_max 공통)."""
+    return table.get(name, table.get(base_name(name), default))
+
+
+def _dedup_rows(rows):
+    """[(칸, 원문, spec)] -> {(칸, 원문): spec}. 같은 (칸, 원문)에 spec 이 둘 이상이면 그 열쇠는 버림."""
+    d, clash = {}, set()
+    for slot, raw, spec in rows:
+        if (slot, raw) in d and d[(slot, raw)] != spec:
+            clash.add((slot, raw))
+        d[(slot, raw)] = spec
+    for k in clash:
+        del d[k]
+    return d
 
 
 class EventLimitError(RuntimeError):
@@ -47,82 +68,36 @@ RULE1 = ('not_invincible', 'boss', 'elite', 'advantage', 'low_hp_rate', 'low_max
 RULE1001 = (('front', 0.8), ('defender', 0.8))
 ROLE_NAMES = ('스트라이커', '캐스터', '어쌔신', '레인저', '디펜더', '서포터')
 RATE_STEPS = ('front', 'back', 'defender') + ROLE_NAMES     # 확률 필터 이름([이름, p])
-_AUTO = {}
-_AUTO_ORDER = {}
 
 
-_ALINES = {}
-_NO_PREEMPTIVE = None
-_DEAD_KEEP = None
+@datafile.cached
+def _dead_keep():
+    return frozenset(datafile.load('buff_dead_keep')['names'])
 
 
 def dead_keep_name(name):
-    """동명 표 행 모두 DeadNotDispel인 이름만 보존. 모호한 이름은 제외."""
-    global _DEAD_KEEP
-    if _DEAD_KEEP is None:
-        with open(os.path.join(SRC, 'data', 'buff_dead_keep.json'), encoding='utf-8') as f:
-            _DEAD_KEEP = frozenset(json.load(f)['names'])
-    return name.removesuffix('(해제불가)') in _DEAD_KEEP
+    """동명 표 행 모두 DeadNotDispel인 이름만 보존. 모호한 이름은 제외.
+    base_name 이 아니라 removesuffix 다 — 공백 낀 꼬리표·양끝 공백은 그대로 둔다(빌더 build_buff_dead_keep 과 같은 규칙)."""
+    return name.removesuffix('(해제불가)') in _dead_keep()
 
 
 def no_preemptive():
-    global _NO_PREEMPTIVE
-    if _NO_PREEMPTIVE is None:
-        with open(os.path.join(SRC, 'data', 'auto_skill.json'), encoding='utf8') as f:
-            _NO_PREEMPTIVE = json.load(f)['no_preemptive']
-    return _NO_PREEMPTIVE
+    return datafile.load('auto_skill')['no_preemptive']
+
+
+@datafile.cached
+def _ally_lines(src, field):
+    return {key: _dedup_rows(rows) for key, rows in (datafile.load('auto_skill', src, {}).get(field) or {}).items()}
 
 
 def ally_auto_lines(src=SRC, *, variants=False, client=False):
     """옛/형태별 매핑과 client 대상 의미를 독립 선택. {key: {(칸, 원문): spec}}, 충돌은 버림."""
-    cache_key = (src, variants, client)
-    field = ('client_' if client else '') + ('variant_lines' if variants else 'lines')
-    if cache_key not in _ALINES:
-        p = os.path.join(src, 'data', 'auto_skill.json')
-        out = {}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                for key, rows in (json.load(f).get(field) or {}).items():
-                    d, clash = {}, set()
-                    for slot, raw, spec in rows:
-                        if (slot, raw) in d and d[(slot, raw)] != spec:
-                            clash.add((slot, raw))
-                        d[(slot, raw)] = spec
-                    for k in clash:
-                        del d[k]
-                    out[key] = d
-        _ALINES[cache_key] = out
-    return _ALINES[cache_key]
-
-
-_SELF_ENF = {}
+    return _ally_lines(src, ('client_' if client else '') + ('variant_lines' if variants else 'lines'))
 
 
 def ally_self_enforce(src=SRC):
     """구원자 자신 추가 발동(BI_ENFORCE)의 적 대상 규칙 {key: {(칸, 원문): {slot, eat, f}}} — data/auto_skill.json self_enforce. 충돌은 버림."""
-    if src not in _SELF_ENF:
-        p = os.path.join(src, 'data', 'auto_skill.json')
-        out = {}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                for key, rows in (json.load(f).get('self_enforce') or {}).items():
-                    d, clash = {}, set()
-                    for slot, raw, spec in rows:
-                        if (slot, raw) in d and d[(slot, raw)] != spec:
-                            clash.add((slot, raw))
-                        d[(slot, raw)] = spec
-                    for k in clash:
-                        del d[k]
-                    out[key] = d
-        _SELF_ENF[src] = out
-    return _SELF_ENF[src]
-
-
-_BLV = {}
-
-_BUFF_COUNT = None
-_BUFF_KIND = None
-_BUFF_LEVEL = None
+    return _ally_lines(src, 'self_enforce')
 
 
 _FLOAT32 = struct.Struct('f')
@@ -148,27 +123,17 @@ def hp_basis_points(hp, maxhp):
 
 def level_buff(name):
     """표에서 확정된 IsLevel. 미등록/동명 충돌은 None(기존 중첩 판정 유지)."""
-    global _BUFF_LEVEL
-    if _BUFF_LEVEL is None:
-        with open(os.path.join(SRC, 'data', 'buff_count.json'), encoding='utf8') as f:
-            _BUFF_LEVEL = json.load(f)['levels']
-    key = re.sub(r'\(해제\s*불가\)$', '', name).strip()
-    return _BUFF_LEVEL.get(name, _BUFF_LEVEL.get(key))
+    return _by_name(datafile.load('buff_count')['levels'], name)
 
 
-_GLOBAL_TURN = None
+@datafile.cached
+def _global_turn():
+    return {base_name(n) for n in datafile.load('buff_global_turn')}   # 양쪽 모두 꼬리표를 뗀 이름으로 비교
 
 
 def global_turn_buff(name):
     """표 BUFF_TEMPLET.GlobalTurnCounting 이 참인 효과 이름인가(data/buff_global_turn.json, tools/build_buff_force.py). (해제불가) 꼬리표는 떼고 비교한다."""
-    global _GLOBAL_TURN
-    if _GLOBAL_TURN is None:
-        with open(os.path.join(SRC, 'data', 'buff_global_turn.json'), encoding='utf-8') as f:
-            _GLOBAL_TURN = {re.sub(r'\(해제\s*불가\)$', '', n).strip() for n in json.load(f)}   # 양쪽 모두 꼬리표를 뗀 이름으로 비교
-    return re.sub(r'\(해제\s*불가\)$', '', name).strip() in _GLOBAL_TURN
-
-
-_BUFF_FLAGS = None
+    return base_name(name) in _global_turn()
 
 
 # mc.independent_stack_limits 가 맡는 이름별 독립 상한(UniqueIdStackMax). unique_id_stack 은 이 이름을 건드리지 않는다.
@@ -177,11 +142,7 @@ _INDEPENDENT_CAPS = {'파사인': 3, '상쾌한 기분(해제불가)': 5}
 
 def buff_flags():
     """data/buff_flags.json(tools/build_buff_flags.py): 이름별 BUFF_TEMPLET 표식. 같은 이름 행끼리 다르면 빠져 있음."""
-    global _BUFF_FLAGS
-    if _BUFF_FLAGS is None:
-        with open(os.path.join(SRC, 'data', 'buff_flags.json'), encoding='utf-8') as f:
-            _BUFF_FLAGS = json.load(f)
-    return _BUFF_FLAGS
+    return datafile.load('buff_flags')
 
 
 def buff_priority(name):
@@ -193,9 +154,7 @@ def level_max(name):
     """PC BuffLevelMax: 0은 무제한. 동명 충돌·미등록은 None."""
     if not name:  # 효과 지속 턴 변경 등 버프 이름이 없는 효과
         return None
-    key = re.sub(r'\(해제\s*불가\)$', '', name).strip()
-    caps = buff_flags().get('level_max', {})
-    value = caps.get(name, caps.get(key))
+    value = _by_name(buff_flags().get('level_max', {}), name)
     return math.inf if value == 'inf' else value
 
 
@@ -207,76 +166,55 @@ class _Inst(list):
     __slots__ = ('seq', 'fresh')
 
 
-_BUFF_STEP = None
+@datafile.cached
+def _buff_step():
+    return {base_name(n): tuple(v) for n, v in datafile.load('buff_step')['names'].items()}
 
 
 def buff_step(name):
     """표 BUFF_STEP_TEMPLET 의 단계 그룹 버프면 (그룹 id, 단계), 아니면 None(data/buff_step.json, tools/build_buff_step.py).
     (해제불가) 꼬리표는 떼고 비교한다. 이름만으로 단계를 못 가르는 효과는 담지 않았다."""
-    global _BUFF_STEP
-    if _BUFF_STEP is None:
-        with open(os.path.join(SRC, 'data', 'buff_step.json'), encoding='utf-8') as f:
-            _BUFF_STEP = {re.sub(r'\(해제\s*불가\)$', '', n).strip(): tuple(v) for n, v in json.load(f)['names'].items()}
-    return _BUFF_STEP.get(re.sub(r'\(해제\s*불가\)$', '', name).strip())
+    return _buff_step().get(base_name(name))
+
+
+@datafile.cached
+def _positive():
+    out = {}
+    for key, flags in datafile.load('buff_count')['buffs'].items():
+        values = {is_buff and is_positive for is_buff, is_positive in flags}
+        if len(values) == 1:
+            out[key] = values.pop()
+    return out
 
 
 def positive_buff(name, legacy):
     """표의 IsBuff && IsPositive. 미등록·동명 충돌은 기존 분류로 처리한다."""
-    global _BUFF_COUNT
-    if _BUFF_COUNT is None:
-        with open(os.path.join(SRC, 'data', 'buff_count.json'), encoding='utf-8') as f:
-            rows = json.load(f)['buffs']
-        _BUFF_COUNT = {}
-        for key, flags in rows.items():
-            values = {is_buff and is_positive for is_buff, is_positive in flags}
-            if len(values) == 1:
-                _BUFF_COUNT[key] = values.pop()
-    key = re.sub(r'\(해제\s*불가\)$', '', name).strip()
-    return _BUFF_COUNT.get(name, _BUFF_COUNT.get(key, legacy))
+    return _by_name(_positive(), name, legacy)
+
+
+@datafile.cached
+def _buff_kind():
+    return {k: tuple(v[0]) for k, v in datafile.load('buff_count')['buffs'].items() if len({tuple(x) for x in v}) == 1}
 
 
 def buff_kind(name):
     """표의 (IsBuff, IsPositive). 미등록·동명 충돌(값이 여러 개)은 None."""
-    global _BUFF_KIND
-    if _BUFF_KIND is None:
-        with open(os.path.join(SRC, 'data', 'buff_count.json'), encoding='utf-8') as f:
-            rows = json.load(f)['buffs']
-        _BUFF_KIND = {k: tuple(v[0]) for k, v in rows.items() if len({tuple(x) for x in v}) == 1}
-    key = re.sub(r'\(해제\s*불가\)$', '', name).strip()
-    return _BUFF_KIND.get(name, _BUFF_KIND.get(key))
+    return _by_name(_buff_kind(), name)
 
 
 def break_skill_levels(src=SRC):
     """data/break_skill_levels.json(tools/build_break_levels.py) -> {이름: {dmg, heal}}. 없으면 빈 dict"""
-    if src not in _BLV:
-        p = os.path.join(src, 'data', 'break_skill_levels.json')
-        _BLV[src] = {}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                _BLV[src] = json.load(f).get('skills', {})
-    return _BLV[src]
+    return datafile.load('break_skill_levels', src, {}).get('skills', {})
 
 
 def auto_skill_order(src=SRC):
     """data/auto_skill.json 의 order -> {구원자 key: [칸, ...]}(게임 SkillOrderList). 없으면 빈 dict"""
-    if src not in _AUTO_ORDER:
-        p = os.path.join(src, 'data', 'auto_skill.json')
-        _AUTO_ORDER[src] = {}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                _AUTO_ORDER[src] = json.load(f).get('order', {})
-    return _AUTO_ORDER[src]
+    return datafile.load('auto_skill', src, {}).get('order', {})
 
 
 def auto_skill_rules(src=SRC):
     """data/auto_skill.json(tools/build_auto_skill.py) -> {구원자 key: {칸: 규칙}}. 없으면 빈 dict"""
-    if src not in _AUTO:
-        p = os.path.join(src, 'data', 'auto_skill.json')
-        _AUTO[src] = {}
-        if os.path.exists(p):
-            with open(p, encoding='utf-8') as f:
-                _AUTO[src] = json.load(f).get('units', {})
-    return _AUTO[src]
+    return datafile.load('auto_skill', src, {}).get('units', {})
 
 
 # ------------------------------------------------------------------ 줄 분류(반응 트리거)

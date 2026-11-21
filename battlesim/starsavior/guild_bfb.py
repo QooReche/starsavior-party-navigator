@@ -20,22 +20,14 @@
 import copy
 import json
 import math
-import os
 
+from .. import datafile
 from .data import SRC
 from .parser import Line, Skill
 
-_DATA = {}
-
 
 def load(src=SRC):
-    if src not in _DATA:
-        with open(os.path.join(src, 'data', 'guild_bfb.json'), encoding='utf-8') as f:
-            bfb = json.load(f)
-        with open(os.path.join(src, 'data', 'guild_defense.json'), encoding='utf-8') as f:
-            gd = json.load(f)
-        _DATA[src] = (bfb, gd)
-    return _DATA[src]
+    return datafile.load('guild_bfb', src), datafile.load('guild_defense', src)
 
 
 # 효과 이름(엔진 Eff 키)

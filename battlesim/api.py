@@ -46,6 +46,7 @@ import time
 import json
 from collections import OrderedDict, defaultdict
 
+from . import datafile
 from . import rules as _rules
 from .mc import Battle, EventLimitError, support_report
 from .rules import DEFAULT_OPTS, MC_NOTE_KEYS, MC_OPTS, MC_RULES, RULES
@@ -130,6 +131,7 @@ _ENC_CACHE = _LRU(ENC_CACHE_MAX)
 def clear_engine_caches():
     _UNIT_CACHE.clear()
     _ENC_CACHE.clear()
+    datafile.clear()
 
 
 def _cache_on():

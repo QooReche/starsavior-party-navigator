@@ -2,9 +2,6 @@
 """행동 게이지 방식 이벤트 시뮬레이터(기대값). 런타임 개체(Buff/Actor/Enemy/Ctx), Sim, 더미 딜러(DummyDef)."""
 import math
 import re
-import json
-import os
-from functools import lru_cache
 from collections import defaultdict
 
 from .rules import (AOE_DIV, BASE_MULT, BREAK_DEC, COOP_CAP, DEC_CAP, DEF_K, DEFAULT_OPTS, ELEM_BEATS, ELEM_HIT, ELEM_LOSES,  # noqa: F401
@@ -25,9 +22,9 @@ def calc_hit(a, b=0.0):
         f = a
     return max(0.0, min(1.0, f))
 from .starsavior.parser import Line, Skill, _map_prop, explicit_target
+from . import datafile
 from . import gauge as _gauge
 from . import statcalc as _stat
-from .starsavior.data import SRC
 
 
 # 기대값 엔진도 읽는 MC 규칙(rules/default.json "mc" 절). 지표·골든은 opts 로 옛 값을 명시할 수 있다.
@@ -43,11 +40,10 @@ def _stat_rules(opts):
             o.get('stat_floor', MC_OPTS['stat_floor']) == 'client')
 
 
-@lru_cache(maxsize=1)
+@datafile.cached
 def _forced_coop_lines():
     """강제 협공의 대상 표지/해제/강화/부여에 쓰는 공개 자동 대상 규칙."""
-    with open(os.path.join(SRC, 'data', 'auto_skill.json'), encoding='utf8') as f:
-        rows = json.load(f)['client_variant_lines']
+    rows = datafile.load('auto_skill')['client_variant_lines']
     return {(key, slot, raw): spec for key, lines in rows.items() for slot, raw, spec in lines
             if '표본 행동 분석' in raw or '〈강제 협공〉' in raw}
 
