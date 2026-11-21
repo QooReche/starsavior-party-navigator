@@ -3,11 +3,8 @@
   "use strict";
   const Stats = typeof module !== "undefined" && module.exports ? require("./myinfo_stats.js") : root.MyInfoStats;
   const itemSlots = typeof module !== "undefined" && module.exports ? require("./data/myinfo_slots.json") : null;
-  function hash(info) {
-    const s = JSON.stringify(info); let h = 2166136261;
-    for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-    return (h >>> 0).toString(16);
-  }
+  const U = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
+  const hash = info => U.fnv(JSON.stringify(info));
   function profile(info, roster, growth, content) {
     const rule = Stats.rule_for_content(content), results = {}, units = {};
     if (info) {
@@ -30,7 +27,7 @@
     }
     return {powers: Object.keys(powers).length ? powers : null, finals, assumed};
   }
-  const clone = x => JSON.parse(JSON.stringify(x));
+  const clone = U.clone;
   // NKM.Templets.decompiled.cs:29202-29221. Blossom is the imported actual state.
   function prelinkLevel(unit, growth) {
     const grade = unit.blossom === true ? 'SSR' : growth.units[unit.id]?.grade;

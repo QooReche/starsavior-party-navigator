@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
   const VERSION='placement-ehp-joint-v1';
-  const id=keys=>keys.slice().sort().join('+');
+  const {teamId:id}=typeof module!=='undefined'&&module.exports?require('./ui_shared.js'):root.UiShared;
   const stats=(results,k)=>results[k]?.stats||{};
   const ehp=s=>(s.hp||0)*(1+(s.def||0)/3000);
   function baseline(keys,results){

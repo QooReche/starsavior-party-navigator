@@ -75,7 +75,7 @@ async function growthCandidates(c,st,alive,deadline,config={}){const original=co
         if(++steps%64===0){await new Promise(ok=>setTimeout(ok,0));if(!alive())return [];}
         const t=growthTeam([u,pool[a],pool[b],pool[d]],profile,qi,defPen,config.scoring);aq.push(t);qq.push(t);}
       aq.sort((a,b)=>b.v-a.v);qq.sort(growthQuickCmp);
-      const pick=new Map();for(const t of [qq[0],aq[0],qq[1],aq[1]])if(t&&pick.size<2)pick.set(t.keys.slice().sort().join(','),t);
+      const pick=new Map();for(const t of [qq[0],aq[0],qq[1],aq[1]])if(t&&pick.size<2)pick.set(UiShared.teamKey(t.keys),t);
       const makeJob=config.makeJob||((t,id)=>growthJob(t,id,c));
       const candidates=[...pick].map(([k,t])=>makeJob(t,id+'|'+k)),controls=[];let controlsComplete=true;
       for(const job of candidates){if(Date.now()>=deadline){controlsComplete=false;break;}const three=job.t.combo.filter(x=>x.s.key!==target.key);
@@ -83,7 +83,7 @@ async function growthCandidates(c,st,alive,deadline,config={}){const original=co
         choices.sort((a,b)=>b.v-a.v);const quick=choices.slice().sort(growthQuickCmp);
         if(config.exactControls&&original.results[target.key])choices.unshift(growthTeam(job.t.combo,original,qi,defPen,config.scoring));
         if(!choices.length)controlsComplete=false;
-        for(const t of [choices[0],quick[0]])if(t)controls.push(makeJob(t,'owned|'+t.keys.slice().sort().join(',')));}
+        for(const t of [choices[0],quick[0]])if(t)controls.push(makeJob(t,'owned|'+UiShared.teamKey(t.keys)));}
       targets.push({...target,...assumed,id,candidates,controls,controlsComplete});
     }catch(e){targets.push({...target,id,error:String(e.message),errorCode:e.code,candidates:[],controls:[]});}
     if(!config.profile){GROW.msg=`육성 후보 준비 ${targets.length}건`;growthPaint();}await new Promise(ok=>setTimeout(ok,0));
@@ -161,7 +161,7 @@ function growthConditions(c,trackTeams=true){const rules=simOpt(c.key);
     teams:CSR.rows.map(r=>Array.isArray(r?.teams)?r.teams.map(t=>[t?.boss,t?.keys,t?.order,t?.level,t?.brk,t?.brkLv]):[])};
   const prefix=c.key+'|',shared=typeof SHARE!=='undefined'&&Object.hasOwn(SHARE,'b');
   const selected=shared?SESSION_BR:BRSEL;
-  const teams=!trackTeams||typeof LASTQ==='undefined'?null:(LASTQ[1]?.rows||[]).map(t=>prefix+t.keys.slice().sort().join(','));
+  const teams=!trackTeams||typeof LASTQ==='undefined'?null:(LASTQ[1]?.rows||[]).map(t=>prefix+UiShared.teamKey(t.keys));
   const breaks=Object.fromEntries(Object.entries(selected).filter(([k])=>k.startsWith(prefix)&&(!teams?.length||teams.includes(k))).sort(([a],[b])=>a.localeCompare(b)));
   if(shared&&teams)for(const k of teams)breaks[k]??=SHARE.b;
   return {rules,mode:'auto',breaks:[breaks,{}],...(shared?{breakDefault:SHARE.b}:{}),...(teams?.length?{breakTeams:teams}:{})};}
@@ -225,7 +225,7 @@ async function growthStageSearch(c,st,profile,id,env={}){
     .map(s=>{const [scoreValue,parts]=score(s,st.w,c.main,c.boss);return {s,score:scoreValue,parts};});
   if(candidates.length<4)return {best:null,runs:0,reason:'few'};
   const defPen=CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty;
-  const all=env.all||quickRank(rankAll(candidates,defPen),qi,profile),key=t=>t.keys.slice().sort().join(','),by=new Map(all.map(t=>[key(t),t]));
+  const all=env.all||quickRank(rankAll(candidates,defPen),qi,profile),key=t=>UiShared.teamKey(t.keys),by=new Map(all.map(t=>[key(t),t]));
   // 후보 순서는 추천 예선(simScreen)과 같은 규칙(scrPick, 재점화 풀 포함). 전체 시간 상한 없이 끝까지 돌고, 멈추는 것은 「중단」(전체 취소)뿐
   let keys=env.keys||scrPick(all,SCR_RK&&rkOf(c.key)?rkQuickTop(c,st,all,SCR_RK,qi):null),runs=0;
   // 예선 2차는 1차 판을 다시 돌리지 않는다(추천 예선과 같음): prev = 앞 단계 {n, r}. 앞 결과의 raw 를 되돌려 보내 뒤쪽 판(run_offset)만 돌리고 작업자가 합친다
@@ -298,7 +298,7 @@ async function growthStart(c,st){
 }
 function growthBaseline(c,st){
   const q=LASTQ[1],selected=PICK[c.key+'|'+st.tab+'|'+st.name+'|1'];
-  const current=selected&&(q?.all||q?.rows||[]).find(t=>t.keys.slice().sort().join(',')===selected)||q?.rows[0];
+  const current=selected&&(q?.all||q?.rows||[]).find(t=>UiShared.teamKey(t.keys)===selected)||q?.rows[0];
   return current?(SIMQ.res[simSig(st,current)]||{clear:0}):null;
 }
 function growthTabsPaint(c,el,show,none=''){

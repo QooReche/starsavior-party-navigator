@@ -2,7 +2,7 @@
 (function(root) {
   'use strict';
   const GS = typeof module !== 'undefined' && module.exports ? require('./guild_search.js') : root.GuildSearch;
-  const id = keys => keys.slice().sort().join('+');
+  const {teamId: id} = typeof module !== 'undefined' && module.exports ? require('./ui_shared.js') : root.UiShared;
   function random(seed) { let s=seed>>>0; return () => {s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;}; }
   function config(S, units) {
     const c=S.learned;

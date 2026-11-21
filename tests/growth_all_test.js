@@ -25,7 +25,7 @@ function page(src,o={}){
  const party={nextElementSibling:null,after(el){this.nextElementSibling=el;out.append(el)}};
  const c={key:o.kind||'op',name:'콘텐츠'},st={tab:'tab',name:o.stageName||'stage',rp:1000};
  const started=[],tabs=[];
- const ctx=vm.createContext({console,Object,Math,JSON,Set,Map,Number,Error,Promise,
+ const ctx=vm.createContext({UiShared:require('../ui_shared'),console,Object,Math,JSON,Set,Map,Number,Error,Promise,
   REQ:o.req!==false,MODE:o.mode||'auto',MI:{info:{},growth:{assumed:{version:'v'}},hash:'h'},SIMQ:{busy:null,err:'',n:100,seed:1},
   contents:[c],cur:[st],D:{guild:{steps:[{ex:true,step:10}]},archiveGrades:{}},LASTQ:{},PICK:{},BYKEY:{},R:[],
   $:id=>id==='growth-result'?out.children.find(e=>e.id==='growth-result')||null:id==='out'?out:id==='growth-priority'?null:{value:0,hidden:false},
@@ -73,7 +73,7 @@ async function stop(src){
  const P={plan:cut(src.html,'const SCR_ROUNDS=','const scrKey='),cmp:cut(src.html,'const scrCmp=','// 예선 상태 sc'),
   goal:cut(src.ui,'function growthStageKind(','function growthJob'),search:cut(src.ui,'async function growthStageSearch','async function growthStart')};
  const run=async(o)=>{const calls=[],teams=Array.from({length:o.teams||12},(_,i)=>({keys:['a','b','c','t'+i],v:i}));
-  const ctx=vm.createContext({console,Object,Math,JSON,Set,Map,Infinity,Error,SIMQ:{seed:1,n:100,LOAD_MS:1000},GROW:{id:1},MODE:'auto',
+  const ctx=vm.createContext({UiShared:require('../ui_shared'),console,Object,Math,JSON,Set,Map,Infinity,Error,SIMQ:{seed:1,n:100,LOAD_MS:1000},GROW:{id:1},MODE:'auto',
    CFG:{restrict:{},defPenByContent:{},weights:{defenderPenalty:0}},R:(o.roster||['u0','u1','u2','u3']).map(k=>({key:k,el:'x'})),EXCL:new Set(),
    score:()=>[1,{}],rankAll:x=>x,quickIn:()=>o.noQuick?null:{},quickRank:()=>teams,rkOf:k=>['op','oph'].includes(k)?o.rk||0:0,starOf:()=>0,
    rkQuickTop:(c,st,all,n)=>{calls.push({rkPool:n,kind:c.key});return []},growthJob:(t,k)=>({id:k,t}),simTeamLimit:()=>1000,GrowthGuide:{finalCost:n=>n},Date:{now:()=>1000},
@@ -104,7 +104,7 @@ async function stop(src){
 
 // ②-b 추천 본선: 보여 준 팀이 모두 목표 지표 50% 미만이면 「더 보기」(다음 3팀). ④ 예선 캐시 키
 function mainStop(src){
- const mk=(mode,res)=>{const ctx=vm.createContext({Ux:require('../ux_ui'),MODE:mode,SIMQ:{res,n:100,busy:null,err:''},simSig:(st,t)=>t.k,esc:String,simEtaText:()=>''});
+ const mk=(mode,res)=>{const ctx=vm.createContext({UiShared:require('../ui_shared'),Ux:require('../ux_ui'),MODE:mode,SIMQ:{res,n:100,busy:null,err:''},simSig:(st,t)=>t.k,esc:String,simEtaText:()=>''});
   for(const s of [line(src.html,'const goalVal='),cut(src.html,'function simBar(','function simInvalidate(')])vm.runInContext(s,ctx);return ctx};
  const rows=[{k:'a'},{k:'b'},{k:'c'}],more=(mode,r)=>/data-more/.test(mk(mode,{a:r,b:r,c:r}).simBar(1,rows,{},true));
  assert(more('auto',{clear:.9,t60:.4,n:100}),'클리어율 90% 여도 60턴 내 40% 면 더 본다');
@@ -112,7 +112,7 @@ function mainStop(src){
  assert(!more('manual',{clear:.9,t60:.9,n:100,man:{c:.1,t60:.1}}),'옛 수동 값(man)·MODE 는 보지 않음');
  const sg=vm.runInContext('goalVal',mk('auto',{}));assert.equal(sg({clear:.9,t60:.4}),.4);assert.equal(sg({clear:.9}),.9);assert.equal(sg(undefined),null);
  // ④ 목표를 바꾸면 예선 캐시를 다시 쓴다
- const key=goal=>{const ctx=vm.createContext({CFG:require('../party_contents.json'),JSON,contents:[{key:'equip'}],$:()=>({value:0}),rkOf:()=>0,miMode:()=>false,MI:{},SCROWN:'',MM:'',starOf:()=>goal});
+ const key=goal=>{const ctx=vm.createContext({UiShared:require('../ui_shared'),CFG:require('../party_contents.json'),JSON,contents:[{key:'equip'}],$:()=>({value:0}),rkOf:()=>0,miMode:()=>false,MI:{},SCROWN:'',MM:'',starOf:()=>goal});
   vm.runInContext(line(src.html,'function recommendationPolicyTag('),ctx);vm.runInContext(line(src.html,'const scrKey='),ctx);return vm.runInContext('scrKey({tab:"t",name:"n"},1)',ctx)};
  assert.notEqual(key(60),key(0),'3별 목표와 클리어만의 예선 결과를 섞지 않음');assert.equal(key(60),key(60));
 }

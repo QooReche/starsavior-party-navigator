@@ -90,7 +90,7 @@
     const values=d.slots.map(s=>s?profile.results[s.key]||null:null),before=d.slots.map(s=>s?original.results[s.key]||null:null);
     return {values,before,total:values.reduce((n,r)=>n+(r?.power||0),0),profile,linked,levelUnknown,prelink,changes:snapshot.changes,errors:snapshot.errors,warnings};
   }
-  function stable(v){if(Array.isArray(v))return v.map(stable);if(v&&typeof v==='object')return Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])]));return v;}
+  const {stable}=node?require('./ui_shared'):root.UiShared;
   function signature({party,stage,brk,seed,runs,options,versions}){
     return JSON.stringify(stable({v:VERSION,units:party.units,leader:party.leader,stage,brk,seed,runs,options,versions}));
   }

@@ -16,7 +16,7 @@ const key=k=>['a','b','c',k].sort().join(',');
 // ① 탐색 흐름. o.stop = {call, done}: call 번째 평가가 done 팀만 끝낸 채 미완료로 돌아옴(무진행 상한·오류)
 function searchHarness(src,o){
  const calls=[],teams=Array.from({length:o.teams},(_,i)=>({keys:['a','b','c','t'+i],v:i}));
- const ctx=vm.createContext({console,Object,Math,JSON,Set,Map,Infinity,Error,
+ const ctx=vm.createContext({UiShared:require('../ui_shared'),console,Object,Math,JSON,Set,Map,Infinity,Error,
   SIMQ:{seed:1,n:100,LOAD_MS:1000},GROW:{id:1},MODE:'auto',
   CFG:{restrict:{},defPenByContent:{},weights:{defenderPenalty:0}},R:['u0','u1','u2','u3'].map(k=>({key:k,el:'x'})),EXCL:new Set(),
   score:()=>[1,{}],rankAll:x=>x,quickIn:()=>({}),quickRank:()=>teams,rkOf:()=>o.rk||0,
@@ -34,7 +34,7 @@ function searchHarness(src,o){
 // ② 실제 growthEvaluate 를 가짜 시계·가짜 작업자로 돌린다
 function evalHarness(src,n=8){
  let clock=1000,queue=[];const ws=[];
- const ctx=vm.createContext({console,Object,Math,Promise,Infinity,MODE:'auto',Date:{now:()=>clock},document:{hidden:false},
+ const ctx=vm.createContext({UiShared:require('../ui_shared'),console,Object,Math,Promise,Infinity,MODE:'auto',Date:{now:()=>clock},document:{hidden:false},
   setTimeout:(fn,ms)=>{const t={fn,at:clock+ms};queue.push(t);return t},clearTimeout:t=>{queue=queue.filter(x=>x!==t)},
   SIMQ:{LOAD_MS:180000,seed:1},GROW:{id:1,errors:[],versions:{engine:'v'}},simTeamLimit:()=>240000,
   location:{href:'https://test/index.html'},simOpt:()=>({}),growthPaint(){},

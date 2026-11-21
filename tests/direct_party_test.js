@@ -21,7 +21,7 @@ test('screen/engine inverse and recommendation legacy order',()=>{
   const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
   const start=html.indexOf('function simParty('),end=html.indexOf('const simSigB=',start),code=html.slice(start,end);
   for(const order of permutations(keys))for(const leader of keys){
-    const c={CFG:{recommendation:{}},PartyPlacement:require('../party_placement'),PLACEMENT_CACHE:new Map(),recommendationPlacementKey:()=>'test',DirectParty:P,arrangeOf:()=>({order,lead:leader}),QK:{d:{sv:Object.fromEntries(keys.map(k=>[k,[0,150,200,30,0,10]]))}},Quick:{MUL:1},ekey:k=>k};
+    const c={UiShared:require('../ui_shared'),CFG:{recommendation:{}},PartyPlacement:require('../party_placement'),PLACEMENT_CACHE:new Map(),recommendationPlacementKey:()=>'test',DirectParty:P,arrangeOf:()=>({order,lead:leader}),QK:{d:{sv:Object.fromEntries(keys.map(k=>[k,[0,150,200,30,0,10]]))}},Quick:{MUL:1},ekey:k=>k};
     vm.createContext(c);vm.runInContext(code,c);const next=c.simParty({combo:[],ek:keys,b:{}});
     vm.runInContext(code.replace('DirectParty.toEngine(ar.order)','[ar.order[1],ar.order[2],ar.order[0],ar.order[3]]'),c);
     assert.equal(JSON.stringify(next),JSON.stringify(c.simParty({combo:[],ek:keys,b:{}})));
@@ -102,7 +102,7 @@ test('local/share allowlist, received session edits never replace local',()=>{
 });
 // Execute mutated production modules in an isolated VM; each protected behavior must fail.
 const source=fs.readFileSync(require.resolve('../direct_party'),'utf8');
-function mutant(change,M2=M){const code=change(source);assert.notEqual(code,source);const c={MyInfoReco:M2,MyInfoStats:require('../myinfo_stats'),StarLink:S};vm.createContext(c);vm.runInContext(code,c);return c.DirectParty;}
+function mutant(change,M2=M){const code=change(source);assert.notEqual(code,source);const c={UiShared:require('../ui_shared'),MyInfoReco:M2,MyInfoStats:require('../myinfo_stats'),StarLink:S};vm.createContext(c);vm.runInContext(code,c);return c.DirectParty;}
 test('mutation harness control: unchanged VM passes protected behavior',()=>{const p=mutant(s=>s.replace('// Pure DIRECT','// Control Pure DIRECT'));payloads(p);overwriteParity(p);isolation(p);});
 test('mutation detected: silently restore automatic rearrangement',()=>assert.throws(()=>payloads(mutant(s=>s.replace('const units=d.slots.map','const units=[...d.slots].sort((a,b)=>a.key.localeCompare(b.key)).map')))));
 test('mutation detected: remove leader from signature',()=>assert.throws(()=>payloads(mutant(s=>s.replace('leader:party.leader,stage','stage')))));

@@ -4,7 +4,7 @@
 (function (root) {
   "use strict";
   const Executor = typeof module !== "undefined" && module.exports ? require("./search_executor.js") : root.SearchExecutor;
-  const {num} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
+  const {num, teamId} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const GS = typeof require !== "undefined" ? require("./guild_search.js") : root.GuildSearch;
   const Learned = typeof require !== "undefined" ? require("./cosmo_learned.js") : root.CosmoLearned;
   const Placement = typeof require !== "undefined" ? require("./party_placement.js") : root.PartyPlacement;
@@ -61,7 +61,7 @@
   const metric = (st, mode) => mode === "top" ? st.top : st.mean;
   const other = (st, mode) => mode === "top" ? st.mean : st.top;
   const byRank = mode => (a, b) => metric(b.st, mode) - metric(a.st, mode) || other(b.st, mode) - other(a.st, mode) || (b.st.clear || 0) - (a.st.clear || 0);
-  const idOf = keys => keys.slice().sort().join("+");
+  const idOf = teamId;
 
   const AUTO = -1;   // 난이도 선택값: 자동(가장 점수가 높은 난이도)
   const jobKey = (boss, keys, level, brk, p=null) => !p?.leaderKey ? [boss,idOf(keys),level].concat(brk?[brk.name]:[]).join("|") : boss+"|"+JSON.stringify([Placement.executionKey(keys,p),level,brk?[brk.name,brk.level]:null]);

@@ -32,6 +32,18 @@
     if(!name||!/^[A-Za-z0-9_]+$/.test(name))return base;
     return `<span class="sk-ic">${base}<img src="assets/skill_icons/${name}.png" alt="" width="128" height="128" loading="lazy" decoding="async" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"></span>`;
   };
-  const api={NST,esc,num,ICON,icon,setSkillIcons,skillIcon};
+  // 파티 식별 키 두 가지 — 서로 다른 저장 캐시의 키라 구분자를 섞지 않는다(섞으면 저장된 결과를 못 찾음).
+  // teamKey(",") = 추천 화면·예선·성장·스타링크의 캐시·선택 키, teamId("+") = 길드·코스모 탐색·배치·학습 결과 키
+  const teamKey=keys=>keys.slice().sort().join(',');
+  const teamId=keys=>keys.slice().sort().join('+');
+  // keyFn 이 같은 것은 처음 것만 남김(limit 개까지)
+  function uniqBy(list,keyFn,limit=Infinity){const seen=new Set(),out=[];
+    for(const x of list){if(out.length>=limit)break;const k=keyFn(x);if(seen.has(k))continue;seen.add(k);out.push(x);}return out;}
+  const clone=x=>JSON.parse(JSON.stringify(x));
+  // 객체 키를 정렬한 사본(서명 JSON 용)
+  function stable(v){if(Array.isArray(v))return v.map(stable);if(v&&typeof v==='object')return Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])]));return v;}
+  // FNV-1a 32비트 문자열 해시(16진)
+  function fnv(s){let h=2166136261;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return (h>>>0).toString(16);}
+  const api={NST,esc,num,ICON,icon,setSkillIcons,skillIcon,teamKey,teamId,uniqBy,clone,stable,fnv};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.UiShared=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

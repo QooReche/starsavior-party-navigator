@@ -11,7 +11,7 @@ function candidates(p=P){assert.deepEqual(JSON.parse(JSON.stringify(p.baseline(k
   assert.deepEqual(JSON.parse(JSON.stringify(p.levels([{level:6,score:8},{level:6,score:7},{level:4,score:6}],8,[3]))),[2,3,4,6]);
 }
 candidates();
-const control={module:{exports:{}}};vm.runInNewContext(fs.readFileSync(require.resolve('../party_placement'),'utf8'),control);candidates(control.module.exports);
+const control={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(fs.readFileSync(require.resolve('../party_placement'),'utf8'),control);candidates(control.module.exports);
 const roster=keys.map((key,i)=>({key,cls:i%2?'캐스터':'디펜더'}));
 assert.equal(GS.pool({newSearch:true,poolSize:1,minPowerRatio:1,minRole:{},excluded:keys,banCoop:true},results,roster).length,4);
 assert.equal(GS.combos({newSearch:true,minFront:4,minDealer:4},roster).length,1);
@@ -41,7 +41,7 @@ async function joint(){const team={boss:'x',keys,...p},seen=[];
 }
 joint().then(()=>{
  for(const [from,to] of [["k.map(leaderKey=>","k.slice(0,1).map(leaderKey=>"],["(s.def||0)/3000","0"]]){
-  const src=fs.readFileSync(require.resolve('../party_placement'),'utf8');assert(src.includes(from));const ctx={module:{exports:{}}};vm.runInNewContext(src.replace(from,to),ctx);
+  const src=fs.readFileSync(require.resolve('../party_placement'),'utf8');assert(src.includes(from));const ctx={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(src.replace(from,to),ctx);
   assert.throws(()=>candidates(ctx.module.exports));
  }
  console.log('PASS placement candidates, cache identity, final API, direct roundtrip, joint boundaries/break tie, missing results, 2 mutations');

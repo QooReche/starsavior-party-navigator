@@ -3,7 +3,7 @@
 // 시뮬 자체는 battlesim(guild 옵션)이 하고, 이 파일은 «어떤 팀을 어떤 조건으로 돌릴지»와 «결과를 어떻게 순위 매길지»만 정한다.
 (function (root) {
   "use strict";
-  const {num} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
+  const {num, teamId} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const Placement = typeof module !== "undefined" && module.exports ? require("./party_placement.js") : root.PartyPlacement;
   const Executor = typeof module !== "undefined" && module.exports ? require("./search_executor.js") : root.SearchExecutor;
   const FRONT = ["디펜더", "서포터"];
@@ -130,7 +130,7 @@
   // 협공 때문에 걸러진 팀 수(조합 기준 중복 제거). 화면에 «시뮬에서 협공이 나가 제외된 팀 N개» 로 보여 줌
   function countDropped(S, pairs) {
     const ids = new Set();
-    for (const [jobs, res] of pairs) for (const j of jobs) if (coopHit(S, res[j.key])) ids.add(j.keys.slice().sort().join("+"));
+    for (const [jobs, res] of pairs) for (const j of jobs) if (coopHit(S, res[j.key])) ids.add(teamId(j.keys));
     return ids.size;
   }
 
@@ -148,7 +148,7 @@
     const best = new Map();
     for (const j of jobs) {
       const r = res[j.key]; if (!r || coopHit(S || {}, r)) continue;
-      const st = rankStats(V, G, j.level, tiers, r.prog, r.progs, r.clear), id = j.keys.slice().sort().join("+"), cur = best.get(id);
+      const st = rankStats(V, G, j.level, tiers, r.prog, r.progs, r.clear), id = teamId(j.keys), cur = best.get(id);
       if (!cur || byRank(st, {top: cur.score, cap: cur.cap, mean: cur.mean}) < 0) best.set(id, {keys: j.keys, order: j.order, leaderKey:j.leaderKey, level: j.level, sup: j.sup, brk: j.options?.break_skill?.name || null, brkLv: j.options?.break_skill?.level || null, score: st.top, mean: st.mean, cap: st.cap, clear: r.clear, prog: r.prog, frac: Math.max(0, Math.min(1, 2 * r.prog - 1)), n: r.n, ...unsupportedFields(r)});
     }
     return [...best.values()].sort((a, b) => b.score - a.score || b.cap - a.cap || b.mean - a.mean || (a.order.join() < b.order.join() ? -1 : 1)).slice(0, top || 5);

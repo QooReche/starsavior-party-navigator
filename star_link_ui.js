@@ -8,7 +8,7 @@ function slotSync(){const scope=slotScope();if(SLOT.scope!==scope){slotCancel();
 function slotRemember(c,st){if(!miMode()||!MI.growth||StarLink.availability(MI.info))return;
   slotSync();if(!MyInfoStats.rule_for_content(c.key)||SIMQ.busy!=null)return;
   const jobs=(LASTQ[1]?.all||[]).filter(t=>{const r=SIMQ.res[simSig(st,t)];return r&&r.n>=100;})
-    .map(t=>({...growthJob(t,'owned|'+t.keys.slice().sort().join(','),c),result:SIMQ.res[simSig(st,t)]}));
+    .map(t=>({...growthJob(t,'owned|'+UiShared.teamKey(t.keys),c),result:SIMQ.res[simSig(st,t)]}));
   if(!jobs.length)return;
   const id=c.key+'/'+st.tab+'/'+st.name;
   const version=jobs[0].result.ver;
@@ -21,11 +21,11 @@ async function slotEvaluateState({info,referenceInfo=info,context,focus,remainin
   if(remaining<cost||Date.now()>=deadline)return {runs:0,paired:true};
   const profiles=[info,referenceInfo].map(i=>MyInfoReco.profile(i,R,MI.growth,c.key)),restrict=(CFG.restrict[c.name]||{})[st.tab];
   const keys=focus.map(uid=>R.find(s=>s.uid===uid)).filter(s=>s&&!EXCL.has(s.key)&&(!restrict||restrict===s.el)).map(s=>s.key);
-  const combos=new Map(context.jobs.map(j=>[j.t.keys.slice().sort().join(','),j.t.combo]));
+  const combos=new Map(context.jobs.map(j=>[UiShared.teamKey(j.t.keys),j.t.combo]));
   for(const profile of profiles){
     const targets=await growthCandidates(c,st,alive,deadline,{original:profile,profile,qi,scoring:context.scoring,
       targets:keys.map(key=>({key,kind:'slot',id:key+'|slot'}))});
-    for(const t of targets)for(const j of [...t.candidates,...t.controls])combos.set(j.t.keys.slice().sort().join(','),j.t.combo);
+    for(const t of targets)for(const j of [...t.candidates,...t.controls])combos.set(UiShared.teamKey(j.t.keys),j.t.combo);
   }
   if(!alive())return {runs:0,paired:true};
   const defPen=CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty;
@@ -41,7 +41,7 @@ async function slotEvaluateState({info,referenceInfo=info,context,focus,remainin
   const screen=unique(screenPairs.flatMap(p=>p.jobs));
   const sr=await growthEvaluate(screen.jobs,4,17011,c,st,id,deadline,env);let runs=Object.keys(sr).length*4;expand(sr,screen.aliases);
   const established=context.jobs.slice().sort((a,b)=>GrowthGuide.cmp(a.result,b.result))[0];
-  const keep=pairs.find(p=>p.key===established?.t.keys.slice().sort().join(','));
+  const keep=pairs.find(p=>p.key===(established?UiShared.teamKey(established.t.keys):undefined));
   const ranked=[0,1].map(i=>screenPairs.filter(p=>p.jobs.every(j=>sr[j.id])).sort((a,b)=>GrowthGuide.cmp(sr[a.jobs[i].id],sr[b.jobs[i].id])));
   const chosen=[...new Map([keep,ranked[0][0],ranked[1][0]].filter(Boolean).map(p=>[p.key,p])).values()]
     .slice(0,Math.floor((remaining-runs)/(2*cost)));

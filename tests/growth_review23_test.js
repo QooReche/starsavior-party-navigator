@@ -4,7 +4,7 @@ const {readSrc}=require('./helpers/page');
 const G=require('../growth_guide'),GS=require('../guild_search'),V=require('../guild_view'),D=require('../data/guild_defense.json');
 const ui=readSrc('growth_ui.js'),source=readSrc('growth_guide.js');
 function context(code=ui,storage={}){
-  const ctx={GrowthGuide:G,GuildView:V,GuildSearch:GS,ownedSimBreaks:()=>[],MI:{hash:'synthetic',info:{},growth:{assumed:{version:'test'}}},
+  const ctx={UiShared:require('../ui_shared'),GrowthGuide:G,GuildView:V,GuildSearch:GS,ownedSimBreaks:()=>[],MI:{hash:'synthetic',info:{},growth:{assumed:{version:'test'}}},
     CFG:{restrict:{}},R:[],EXCL:new Set(),MODE:'auto',MM:'myinfo',SCROWN:0,BRSEL:{},SESSION_BR:{},
     SIMOPT:{build:'standard'},GS:{sel:{level:0,tiers:[0,0,0,0]}},GSR:{rows:[],banCoop:true},
     CSR:{rows:[],optLevel:0,optMode:'top',optFast:false},D:{guild:D,cosmoRaid:{season:'test',bosses:['a','b','c'].map(key=>({key})),search:{}}},

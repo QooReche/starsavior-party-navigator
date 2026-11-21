@@ -8,7 +8,7 @@
   const labels={level:'스타링크',equip:'장비',skills:'스킬',resonance:'공명',journey:'스텔라 아카이브',potentials:'잠재력',favor:'호감도'};
   const names=['힘','체력','인내','집중','보호'];
   const skillNames={basic:'기본',special:'특수',ultimate:'궁'};
-  const clone=x=>JSON.parse(JSON.stringify(x));
+  const clone=U.clone;
   function verdict(p){return p>=.9?['safe','안정적']:p>=.7?['ok','깰 수 있음']:p>=.5?['shaky','아슬아슬']:['risk','어려움'];}
   function help(title,text){return `<button type="button" class="ux-help" data-help="${esc(text)}" aria-label="${esc(title)} 설명" aria-expanded="false">ⓘ</button>`;}
   // 공식 SD를 참고한 팬 그림. 동작 줄이기에서는 정지 PNG만 사용함.

@@ -57,7 +57,7 @@ function equipment(overwrite=M.overwrite){
 }
 function baseline(code=ui){
   const first={keys:['a','b','c','d']},picked={keys:['e','f','g','h']};
-  const ctx={PICK:{},LASTQ:{1:{rows:[first],all:[first,picked]}},SIMQ:{res:{a:{clear:.9,man:{c:.8}},e:{clear:.3,man:{c:.2}}}},MODE:'auto',simSig:(st,t)=>t.keys[0]};
+  const ctx={UiShared:require('../ui_shared'),PICK:{},LASTQ:{1:{rows:[first],all:[first,picked]}},SIMQ:{res:{a:{clear:.9,man:{c:.8}},e:{clear:.3,man:{c:.2}}}},MODE:'auto',simSig:(st,t)=>t.keys[0]};
   vm.createContext(ctx);vm.runInContext(code,ctx);
   const c={key:'op'},st={tab:'sector',name:'stage'};
   assert.equal(ctx.growthBaseline(c,st).clear,.9);
@@ -113,7 +113,7 @@ async function mutation(name,code,from,to,test){assert(code.includes(from),name+
   await mutation('tie retains original',source,'if(!best||power>best.power)','if(!best||power>=best.power)',s=>equipment(load(s)));
   await mutation('preset substats only',source,"const equips=fields.includes('equip')?[old.equip,u.equip]:[u.equip];",
     "u.equip.forEach((e,i)=>e.subs.push(...(old.equip[i]?.subs||[])));const equips=fields.includes('equip')?[old.equip,u.equip]:[u.equip];",s=>equipment(load(s)));
-  await mutation('picked comparison',ui,"selected&&(q?.all||q?.rows||[]).find(t=>t.keys.slice().sort().join(',')===selected)",'null',baseline);
+  await mutation('picked comparison',ui,"selected&&(q?.all||q?.rows||[]).find(t=>UiShared.teamKey(t.keys)===selected)",'null',baseline);
   await mutation('selection after completion',ui,"if(r&&stage&&!r.baselineFirst)r.baseline=growthBaseline(c,cur[$('stage').value]);",'',baseline);
   await mutation('cosmo phase speed isolation',page,'if(sm&&!profileOverride)LS.set','if(sm)LS.set',speed);
   await mutation('cosmo final speed isolation',page,'if(sum&&!profileOverride)LS.set','if(sum)LS.set',speed);

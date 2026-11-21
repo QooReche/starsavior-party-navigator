@@ -46,6 +46,6 @@ function check(p=P){
 check();
 const source=fs.readFileSync(require.resolve('../direct_party'),'utf8');
 const guard="||Stats.level_info(unit,info).source==='legacy'";assert(source.includes(guard));
-const ctx={MyInfoReco:M,MyInfoStats:S,StarLink:L};vm.runInNewContext(source.replace(guard,''),ctx);
+const ctx={UiShared:require('../ui_shared'),MyInfoReco:M,MyInfoStats:S,StarLink:L};vm.runInNewContext(source.replace(guard,''),ctx);
 assert.throws(()=>check(ctx.DirectParty),assert.AssertionError);check();
 console.log('PASS unknown vs legacy fallback, 0..3 breaks/high own level, no fake registration, fixed/standard hidden, opened preserved; mutation caught/restored');
