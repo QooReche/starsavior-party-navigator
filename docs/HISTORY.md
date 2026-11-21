@@ -1,3 +1,15 @@
+## 2026-11-22 — e2e 실패 6건: 모두 시험 쪽 문제(화면 코드 변경 없음)
+
+공통화 작업 중 나온 e2e 실패 6건의 원인을 찾았음. 임시 worktree에서 커밋을 갈라 봤고(ed64b93에서도 6건 모두 실패하거나 흔들림), 6건 모두 «시험이 바뀐 화면을 따라가지 못한 것»이었음. 실제 화면 버그는 없었음. 고친 곳은 `tests/e2e/`뿐임.
+- `test_gwen_loading`·`test_case_banner`·`test_gwen_shadow`: 2dbaca6(11/21, 그웬 진행 레인 왕복)부터 실패. 그 직전 278b485에서는 통과함.
+  - loading: 단계 전환 때 `x==0`을 기대했음. `test_gwen_search_stage`처럼 «위치는 그대로(±1px), 방향은 반전»을 보게 바꿨음.
+  - case_banner: 변이 문자열 `if(target>x+.5)moveTo(target`가 없어졌음. 현재 코드 `if(ahead>.5){run.seek=false;moveTo(target`로 바꿨음. 변이는 여전히 잡힘(CAUGHT progress disabled).
+  - shadow: `pose()`가 `progress:0`으로 단계를 바꾸면, 왕복 때문에 그웬이 반대쪽 끝으로 걸어가 그림이 `walk`로 바뀌었음. 그래서 그림자 transform을 걷는 도중에 읽었음. `progress:null`(진행 걸음 없이 포즈만)으로 바꿨음.
+- `test_direct_compact`: 0ffa849(실행기 팀 묶음 A-2)부터 실패. 79d109f에서는 통과함. 시험 가짜 작업자(`test_direct_execution.FAKE`)가 `m.teams[0]` 하나만 답했음. 그래서 묶음 요청은 «결과 없이 끝난 작업»이 됐고, «자동 추천 실패 · 다시 시도» 줄이 생겨 왼쪽 칸이 470→544px로 길어졌음. 가짜 작업자가 실제 `sim_worker.js`처럼 묶음 안의 팀마다 답하게 바꿨음.
+- `test_page` `test_ux_step12`: 9f2a218(내 정보 안내 6단계)부터 실패. 769e075에서는 통과함. 안내가 한 줄 길어져 안내 그웬 그림이 1280×900 첫 화면 아래(top 1003px)로 밀렸음. 그웬 그림은 화면에 들어와야 주소를 받으므로(의도된 동작) `naturalWidth` 검사에 걸렸음. `shot()`이 보이는 그웬 그림을 하나씩 화면 안으로 스크롤하고, 실제로 받아질 때까지 기다린 뒤 검사하게 바꿨음.
+- `test_gwen_search_stage`: f9ff4a2(코스모 결과 말풍선 위치)부터 흔들림. 4회 중 실패 횟수는 c103939 0회, f9ff4a2·ed64b93 1회, HEAD 3회 중 3회였음. 390px 코스모에서 결과 그웬의 1회 동작이 시작되기 전에 `playing==="false"`(rest 값)만 보고 다음으로 넘어갔음. 그 결과 다시 마운트할 때 첫 재생이 «재생 반복»으로 잡혔음. 결과 동작이 실제로 시작된 것(`data-gwen-playing` true를 관찰, 동작 그림이 없으면 생략)을 기다리게 바꿨음. 고친 뒤 3회 반복 모두 통과했음. `ux_ui.js`의 1회 재생 방지(`playedReports`)를 빼는 변이는 여전히 실패로 잡힘.
+- `test_gwen_shadow`: 고친 뒤 3회 반복 모두 통과했음.
+
 ## 2026-11-22 — 화면·시험·quick 공통화(통일 설계 6·7·8a~c단계)와 그웬 감시 범위 좁히기
 
 통일 설계(`fable_unify.md`)의 화면 쪽 단계를 했음. 저장 캐시 키·화면 글자는 그대로임. 엔진(`battlesim/**`)과 `tools/` 빌더는 손대지 않았음.

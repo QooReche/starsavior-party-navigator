@@ -40,9 +40,11 @@ def present(p):
 
 def pose(p,key):
     # Drive the real policy/display path with a deterministic candidate.
+    # A new step reverses the work lane (gwen_lane.js pingpong); progress 0 would then walk Gwen to the
+    # opposite end and replace the pose with 'walk'. progress:null = pose only, no progress walk.
     p.evaluate('''key=>{
       GwenLane.CHOICES.work.splice(0,GwenLane.CHOICES.work.length,key);
-      GwenLane.sync({mode:'direct',count:4,phase:'work',step:key+Math.random(),progress:0});
+      GwenLane.sync({mode:'direct',count:4,phase:'work',step:key+Math.random(),progress:null});
     }''',key)
     p.wait_for_function('key=>document.querySelector(".gwen-lane-image")?.dataset.gwenExpression===key',arg=key)
     loaded(p)

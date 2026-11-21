@@ -2823,6 +2823,16 @@ def test_ux_step12(browser, ctx):
             page.evaluate('window.scrollTo(0,0)')
             page.evaluate("document.querySelectorAll('img[loading=lazy]').forEach(i=>i.loading='eager')")
             page.wait_for_function("[...document.images].filter(i=>i.getBoundingClientRect().width).every(i=>i.complete)")
+            # 그웬 그림은 화면(뷰포트)에 들어와야 주소를 받음(ux_ui.js IntersectionObserver). 안내가 길어져(9f2a218 6단계)
+            # 첫 화면 아래로 밀린 그림이 있으므로, 보이는 그웬 그림마다 화면 안으로 스크롤해 실제로 받아질 때까지 기다림.
+            page.evaluate('''async () => {
+              for(const i of document.querySelectorAll('img[data-gwen-art]')){
+                if(!i.getBoundingClientRect().width||!i.checkVisibility({visibilityProperty:true}))continue;
+                i.scrollIntoView({block:'center'});
+                for(let t=0;t<200&&!(i.hasAttribute('src')&&i.complete&&i.naturalWidth>0);t++)await new Promise(r=>setTimeout(r,25));
+              }
+              scrollTo(0,0);
+            }''')
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), state
             # 그웬 그림은 실제로 보일 때까지 주소(src)를 받지 않는다(닫힌 서랍·숨긴 탭). 주소가 있거나 보이는 그림만 깨졌는지 본다
             assert page.evaluate("[...document.images].filter(i=>i.getBoundingClientRect().width&&(i.hasAttribute('src')||i.checkVisibility({visibilityProperty:true}))).every(i=>i.naturalWidth>0)"), state

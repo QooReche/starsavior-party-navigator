@@ -103,6 +103,10 @@ def flow(browser,base,width,kind,template=None):
         p.evaluate('while(stageQueue.length)stageStep()')
         assert p.evaluate(f'{state}.phase')=='idle'
         assert p.locator(f'[data-gwen-slot="{mode}-board"] .gwen-lane-actor').count()==0
+        # The result animation is consumed when its one-shot action starts (ux_ui.js show 'action' -> playedReports).
+        p.evaluate(f'''() => {{window.resultPlayed=false;new MutationObserver(ms=>{{
+          if(ms.some(m=>m.target.closest?.('[data-gwen-slot="{mode}-result"]')&&m.target.dataset.gwenPlaying==='true'))resultPlayed=true;
+        }}).observe(document,{{subtree:true,attributes:true,attributeFilter:['data-gwen-playing']}});}}''')
         p.locator(start).click()
         p.wait_for_function('stageQueue.length>0')
         p.evaluate('stageFlush()')
@@ -125,7 +129,10 @@ def flow(browser,base,width,kind,template=None):
               r=document.querySelector('[data-gwen-slot="cosmoSearch-result"] img').getBoundingClientRect();return [c.top-b.bottom,b.height,r.top>=c.top-1&&r.bottom<=c.bottom+1]}''')
             assert 0<=gap[0]<=16 and gap[1]<=48 and gap[2],gap
         else:assert result().bounding_box()['y']<p.locator(f'{panel} [data-k=gs-best]').bounding_box()['y']
-        p.wait_for_function(f'document.querySelector(\'[data-gwen-slot="{mode}-result"] img\')?.dataset.gwenPlaying==="false"')
+        # Wait until the one-shot action has actually started (or the art has no motion), then finished.
+        # playing==="false" alone also held before the action began (common at 390px since f9ff4a2), so a
+        # never-played animation was "replayed" on remount — a test race, not a product replay.
+        p.wait_for_function(f'(i=>!!i&&(resultPlayed||!i.dataset.gwenMotion)&&i.dataset.gwenPlaying==="false")(document.querySelector(\'[data-gwen-slot="{mode}-result"] img\'))')
         announcements=result().locator('.gwen-lane-actor').get_attribute('data-announcements')
         p.evaluate('renderCosmoSearch()' if kind=='cosmo' else 'renderGuildSearch(true)')
         assert result().locator('.gwen-lane-actor').get_attribute('data-announcements')==announcements

@@ -258,8 +258,14 @@ def exercise(page, base, width, shots):
         assert page.evaluate(f"__face===document.querySelector('{scope} .gwen-lane-actor')")
         assert page.evaluate(f"GwenStage.mount($('{kind}-search'),{{mode:'{kind}Search'}}).state.progress") == 3/80
         page.wait_for_function('GwenLane.mount().state.x>0')
-        page.evaluate(f'{state}.msg="3단계: 상위 팀 확인 중";{state}.phaseSerial++;{state}.done=0;{renderer}')
-        assert page.evaluate('GwenLane.mount().state.x')==0, 'new search phase retained movement'
+        # 단계 전환은 시작점 순간이동이 아니라 방향 반전(왕복, gwen_lane.js pingpong): 화면상 위치는 그대로.
+        jump = page.evaluate(f'''() => {{
+          const box=()=>document.querySelector('{scope} .gwen-lane-actor').getBoundingClientRect().x,before=box(),was=GwenLane.mount().state.dir;
+          {state}.msg="3단계: 상위 팀 확인 중";{state}.phaseSerial++;{state}.done=0;{renderer};
+          return {{before,after:box(),was,dir:GwenLane.mount().state.dir}};
+        }}''')
+        assert abs(jump['after']-jump['before'])<=1, ('new search phase teleported', jump)
+        assert jump['dir']==-jump['was'], ('new search phase did not reverse', jump)
         check_search_lane(page,kind)
         assert page.evaluate(f'''__cancel===document.querySelector('{scope} button[data-{'gs' if kind=='guild' else 'cs'}="cancel"]')''')
         shot(kind, scope)

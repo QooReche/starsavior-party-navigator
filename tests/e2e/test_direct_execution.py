@@ -19,7 +19,8 @@ FAKE="""(() => {Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>3
  setTimeout(()=>emit({type:'stage',msg:'계산 중',completed:62,total:100}),50);
  setTimeout(async()=>{const ver=(await fetch('sim/manifest.json').then(r=>r.json())).ver;
   if(window.failGrown&&m.teams[0].key==='grown'){emit({type:'error',msg:'controlled failure'});return;}
-  emit({type:'team',key:m.teams[0].key,result:{ver,n:m.n_runs,clear:window.clearDirect??.82,t60:.55,ttk:42,ta:60,ci:[.7,.9],power:100000,progs:[.8],via:{},u:{},bs:{name:m.teams[0].options.break_skill?.name||null}}});emit({type:'done'});
+  // A batched request (SearchExecutor chunk>1) carries several teams; the real worker answers each team, then one done.
+  for(const t of m.teams)emit({type:'team',key:t.key,result:{ver,n:m.n_runs,clear:window.clearDirect??.82,t60:.55,ttk:42,ta:60,ci:[.7,.9],power:100000,progs:[.8],via:{},u:{},bs:{name:t.options.break_skill?.name||null}}});emit({type:'done'});
  },window.directDelay||500);
  }terminate(){this.dead=true}};})();"""
 

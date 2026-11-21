@@ -215,7 +215,7 @@ def mutations(browser,base):
     source=(ROOT/'gwen_lane.js').read_text(encoding='utf-8')
     cases=[('work lane',"return ['work',stage.board]", "return ['work',stage.result]",working),
            ('result phrase',"state==='result'?'inquiry':pickBanner(state,current.result)","pickBanner(state,current.result)",completion),
-           ('progress disabled',"if(target>x+.5)moveTo(target", "if(false)moveTo(target",None)]
+           ('progress disabled',"if(ahead>.5){run.seek=false;moveTo(target", "if(false){run.seek=false;moveTo(target",None)]
     for name,old,new,check in cases:
         assert old in source
         def setup(p):
