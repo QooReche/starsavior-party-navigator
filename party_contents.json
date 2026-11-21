@@ -282,6 +282,7 @@
  "recommendation": {
   "neutralRoles": false,
   "placementBaseline": false,
-  "placementCompare": false
+  "placementCompare": false,
+  "fullScreen": false
  }
 }
