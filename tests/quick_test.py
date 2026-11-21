@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
 """빠른 계산 시험: ① Python(battlesim/quick.py) 과 JS(quick.js) 가 같은 입력에 같은 결과를 내는가(node 로 실행)
 ② 육성이 늘면 결과가 나빠지지 않는가(단조성) ③ 역보정이 걸리면 결과가 좋아지지 않는가 ④ 재료 없는 구원자는 ok=False.
+⑤ 두 구현의 상수(DEF_K·BASE_MULT·MAX_ROUNDS·SAFE·LADDER·FINE·역보정 상한)가 서로·battlesim/rules 와 같은가.
 
 사용: python -X utf8 -I tests/quick_test.py   (node 필요)
-일부러 깨뜨려 보기: quick.js 의 1.85 를 1.8 로 바꾸면 ① 이 실패해야 한다."""
+일부러 깨뜨려 보기: quick.js 의 BASE_MULT=1.85 를 1.8 로 바꾸면 ①·⑤ 가 실패해야 한다."""
 import json
 import os
 import random
+import re
 import subprocess
 import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from battlesim import quick   # noqa: E402
+from battlesim import quick, rules   # noqa: E402
 
 FAIL = []
 
@@ -77,7 +79,28 @@ def js_side(cs):
     return json.loads(p.stdout)
 
 
+def py_consts():
+    """quick.py 의 상수. 1.85·9000 은 quick.py 본문에 글자로 박혀 있어 소스에서 읽는다(battlesim 은 이 작업 범위 밖)."""
+    src = open(os.path.join(ROOT, 'battlesim', 'quick.py'), encoding='utf-8').read()
+    bm = re.findall(r'hp -= dmg \* ([0-9.]+) \*', src)
+    pf = re.findall(r'if r >= (\d+):', src)
+    return dict(MUL=quick.MUL, MAX_ROUNDS=quick.MAX_ROUNDS, SAFE=quick.SAFE, DEF_K=rules.DEF_K,
+                BASE_MULT=float(bm[0]) if len(bm) == 1 else None, PEN_FULL=int(pf[0]) if len(pf) == 1 else None,
+                LADDER=list(quick.LADDER), FINE=quick.FINE)
+
+
+def js_consts():
+    p = subprocess.run(['node', '-e', 'process.stdout.write(JSON.stringify(require(process.argv[1]).consts))',
+                        os.path.join(ROOT, 'quick.js')], capture_output=True, text=True, encoding='utf-8')
+    if p.returncode != 0:
+        raise RuntimeError(p.stderr)
+    return json.loads(p.stdout)
+
+
 def main():
+    pc, jc = py_consts(), js_consts()
+    check('quick.py 피해 배수 = rules.BASE_MULT', pc['BASE_MULT'] == rules.BASE_MULT, '%s != %s' % (pc['BASE_MULT'], rules.BASE_MULT))
+    check('quick.js 상수 = quick.py·rules', jc == pc, 'js=%s py=%s' % (jc, pc))
     q, pen = quick.load(ROOT)
     check('계수(params)가 저장돼 있음', bool(q.get('params')))
     cs = cases(q)
