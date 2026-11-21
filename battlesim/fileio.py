@@ -1,4 +1,5 @@
 """산출물 쓰기: UTF-8·LF, 같은 디렉터리의 임시 파일을 완성한 뒤 교체."""
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -23,6 +24,11 @@ def atomic_open(path):
 def atomic_text(path, text):
     with atomic_open(path) as f:
         f.write(text.replace('\r\n', '\n').replace('\r', '\n'))
+
+
+def short_hash(data, n=12):
+    """sha256 16진 앞 n 자(문자열은 UTF-8 로). 생성물 도장·버전·지문 공용."""
+    return hashlib.sha256(data.encode('utf-8') if isinstance(data, str) else data).hexdigest()[:n]
 
 
 def atomic_json(path, value, **kwargs):

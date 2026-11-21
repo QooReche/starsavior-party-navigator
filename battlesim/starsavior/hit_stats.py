@@ -1,12 +1,12 @@
 """PC base HIT/EVADE joined by exact public name and base-stat fingerprint."""
-import hashlib
 import json
 from .. import datafile
+from ..fileio import short_hash
 
 
 def signature(name, base):
-    return hashlib.sha256(json.dumps([name, base], ensure_ascii=False,
-                                    separators=(',', ':')).encode()).hexdigest()[:20]
+    """이름 + 기본 능력치 지문(tools/build_hit_stats.py 가 같은 함수로 열쇠를 만든다)."""
+    return short_hash(json.dumps([name, base], ensure_ascii=False, separators=(',', ':')), 20)
 
 
 def data():

@@ -5,7 +5,6 @@ row must agree on the two missing stats. Ambiguity/missing rows fail the build.
 """
 import argparse
 from collections import defaultdict
-import hashlib
 import json
 from pathlib import Path
 import sys
@@ -14,11 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.tables import jsonc
 from battlesim.starsavior.foe import load_foe, SK_NST
-
-
-def signature(name, base):
-    return hashlib.sha256(json.dumps([name, base], ensure_ascii=False,
-                                    separators=(',', ':')).encode()).hexdigest()[:20]
+from battlesim.starsavior.hit_stats import signature   # 엔진과 같은 열쇠(한 벌)
 
 
 def build(tables, raw):

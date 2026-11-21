@@ -11,7 +11,6 @@ tests/gen_rules_stamp_test.py 가 «생성물이 옛 규칙 기준»이라고 �
   python -X utf8 -I tools/rules_stamp.py            # 현재 지문과 도장 비교
 """
 import argparse
-import hashlib
 import json
 import os
 import sys
@@ -26,7 +25,8 @@ def fingerprint():
     from battlesim import rules
     payload = {'formula': rules._F, 'opts': rules._O, 'mc': rules.MC_OPTS}
     blob = json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str)
-    return hashlib.sha256(blob.encode('utf-8')).hexdigest()[:16]
+    from battlesim.fileio import short_hash
+    return short_hash(blob, 16)
 
 
 def load():

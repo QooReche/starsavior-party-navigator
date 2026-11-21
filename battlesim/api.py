@@ -52,43 +52,31 @@ from .mc import Battle, EventLimitError, support_report
 from .rules import DEFAULT_OPTS, MC_NOTE_KEYS, MC_OPTS, MC_RULES, RULES
 from .starsavior.data import _find_key, get_db
 from .starsavior.foe import FoeDef, load_foe, parse_fx, stage_waves, sudden_death, battle_end, stage_fx_cond
-from .starsavior.parser import Skill, UnitDef
+from .starsavior.foe_base import FoeBase, make_skill
+from .starsavior.parser import UnitDef
 from .starsavior.mc_semantics import normalized_definition
 
 SCHEMA_VERSION = 'p5-1'   # p5-1: 육성 프리셋(build)·강인도/브레이크·피해 제한·전투력 보정 옵션, result.party.power·breaks·depth_runs
 
 
-class _CustomFoe:
-    """encounter_spec 에 직접 적은 적(시험·가상 보스용)"""
-    is_foe = True
+class _CustomFoe(FoeBase):
+    """encounter_spec 에 직접 적은 적(시험·가상 보스용). 공통 속성은 FoeBase — desc·effect_info·auto·auto_lines 는 빈 사전
+    (엔진은 getattr(..., None) or {} / getattr(..., {}) 로 읽으므로 «없음»과 같다). 가상 스킬엔 ab·semantic_lines 를 만들지 않는다."""
 
     def __init__(self, spec, i):
-        from collections import defaultdict as dd
-        self.key = 'custom:%d' % i
-        self.name = spec.get('name', 'enemy%d' % i)
-        self.id, self.variant = -1, '적'
-        self.role = spec.get('role', '스트라이커')
-        self.element = spec.get('element')
-        self.boss = bool(spec.get('boss', False))
-        self.grade = '보스' if self.boss else '일반'
-        self.attack_kind = None
-        self.stats = dict(hp=spec.get('hp', 100000), atk=spec.get('atk', 1000), **{'def': spec.get('def', 1000)},
-                          spd=spec.get('spd', 100), cr=spec.get('cr', 1500), cd=spec.get('cd', 3000), eh=spec.get('eh', 10000),
-                          er=spec.get('er', 0), der=spec.get('der', 0), sa=spec.get('sa', 10),
-                          hit=spec.get('hit', 10000), evade=spec.get('evade', 0))
-        self.immune = set(spec.get('immune', []))
-        self.skills, self.trigger_skills, self.lines, self.unmodeled = {}, {}, [], []
+        boss = bool(spec.get('boss', False))
+        stats = dict(hp=spec.get('hp', 100000), atk=spec.get('atk', 1000), **{'def': spec.get('def', 1000)},
+                     spd=spec.get('spd', 100), cr=spec.get('cr', 1500), cd=spec.get('cd', 3000), eh=spec.get('eh', 10000),
+                     er=spec.get('er', 0), der=spec.get('der', 0), sa=spec.get('sa', 10),
+                     hit=spec.get('hit', 10000), evade=spec.get('evade', 0))
+        skills = {}
         for s in spec.get('skills') or [dict(slot='기본기', dm=100)]:
-            sk = Skill(dict(sl=s['slot'], n=s.get('name', s['slot']), ty='액티브', tg=s.get('tg', '적 전체' if s.get('all') else '적 단일'),
-                            act='공격' if s.get('dm') else '비공격', cf=[round(float(s.get('dm') or 0) * 100), 0, 0, 0],
-                            all=s.get('all'), cd=s.get('cd'), nv=0))
-            self.skills[s['slot']] = sk
-        self.passive = dd(float)
-        self.nb = {}
-        self.manual = None
-        self.gear_atkp = 0.0
-        self.spd_base = self.stats['spd']
-        self.react = {}
+            skills[s['slot']] = make_skill(s['slot'], s.get('name', s['slot']), round(float(s.get('dm') or 0) * 100), s.get('cd'),
+                                           tg=s.get('tg', '적 전체' if s.get('all') else '적 단일'), all_=s.get('all'),
+                                           attack=bool(s.get('dm')))
+        super().__init__('custom:%d' % i, spec.get('name', 'enemy%d' % i), role=spec.get('role', '스트라이커'),
+                         element=spec.get('element'), boss=boss, attack_kind=None, stats=stats, skills=skills,
+                         immune=spec.get('immune', []))
 
 
 # 능력치 화면에 이미 들어 있는 상시 % (parser._perm_apply) — 입력 능력치 -> 뺄 passive 키
