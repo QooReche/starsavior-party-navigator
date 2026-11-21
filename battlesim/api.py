@@ -397,7 +397,20 @@ def power_pen(power, rec, db):
     return r / 100.0, row[2] / 10000.0, row[3] / 10000.0
 
 
-def simulate(party_spec, encounter_spec, options=None):
+class BatchShared:
+    """한 묶음(web.run_auto_batch / AutoBatch: 같은 요청의 여러 팀) 안에서만 공유하는 준비물. 묶음이 끝나면 버린다(전역 아님).
+    - enc: 조우 정규화 결과(입력 JSON 별). 적 정의는 전투에서 읽기 전용이라(코스모·길방 _ENC_CACHE 가 이미 호출 간 공유) 팀끼리 같아도 결과가 같다.
+      공유하면 적 정의에 붙는 의미 해석 메모(_pn_nl·_pn_sr)도 팀마다 다시 만들지 않는다.
+    - semantic: Battle 의 런 간 의미 해석 캐시(키 = 정의 id + 줄 목록 동일성 + 모드). 묶음 안의 정의는 alive 에 붙잡아 id 재사용을 막는다.
+    판 시드(seed*1000003 + run_offset + r)는 팀·판 번호만으로 정해지므로 묶음 결과 == 팀별 개별 호출 결과(tests/batch_identity_test.py)."""
+
+    def __init__(self):
+        self.enc = {}
+        self.semantic = {}
+        self.alive = []
+
+
+def simulate(party_spec, encounter_spec, options=None, shared=None):
     o = dict(options or {})
     seed = int(o.get('seed', 1))
     n_runs = o.get('n_runs', 100)
@@ -420,7 +433,7 @@ def simulate(party_spec, encounter_spec, options=None):
     try:
         for k, v in fo.items():
             setattr(_rules, k, v)
-        return _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts)
+        return _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared)
     finally:
         for k, v in saved.items():
             setattr(_rules, k, v)
@@ -451,7 +464,22 @@ def _ally_stage_fx(encounter_spec, meta, fx):
     return out
 
 
-def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
+def _shared_encounter(encounter_spec, shared):
+    """묶음 공유 조우: 첫 팀에서 만든 것을 다음 팀이 받는다(목록·사전은 _norm_encounter 캐시 적중과 같게 얕은 복사)."""
+    if shared is None:
+        return _norm_encounter(encounter_spec)
+    try:
+        k = json.dumps(encounter_spec, sort_keys=True, ensure_ascii=False)
+    except (TypeError, ValueError):
+        return _norm_encounter(encounter_spec)
+    hit = shared.enc.get(k)
+    if hit is None:
+        hit = shared.enc[k] = _norm_encounter(encounter_spec)
+    waves, turn_limit, fx, unknown, meta = hit
+    return [list(w) for w in waves], turn_limit, (dict(fx) if isinstance(fx, dict) else fx), unknown, dict(meta)
+
+
+def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared=None):
     db = get_db()
     build = o.get('build', 'none')
     defs, leader = _norm_party(party_spec, db, o.get('stat_mode', 'fixed'), build, mc)
@@ -459,7 +487,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
         raise ValueError('party_spec 이 비어 있음')
     if o.get('cosmo_raid') and 'cosmo_raid' not in encounter_spec:
         encounter_spec = dict(encounter_spec, cosmo_raid=o['cosmo_raid'])     # options.cosmo_raid 로도 받음(encounter 가 우선)
-    waves, turn_limit, fx, fx_unknown, meta = _norm_encounter(encounter_spec)
+    waves, turn_limit, fx, fx_unknown, meta = _shared_encounter(encounter_spec, shared)
     if meta.get('guild') and 'guild_boss' not in (o.get('rules_override') or {}):
         mc = dict(mc, guild_boss='on')     # 길방 전투에서만 BFB 상태 기계를 켠다(명시하면 그 값)
     if meta.get('cosmo_raid') and 'cosmo_raid_boss' not in (o.get('rules_override') or {}):
@@ -523,8 +551,12 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     via_tot = defaultdict(int)   # 아군 시전 경로별 합계(coop 등), 결과에는 판당 평균
     t0 = time.perf_counter()
     # 런 간 공유 의미 해석 캐시: 같은 def 객체의 normalized_lines 를 runs 전체에서 한 번만 계산한다.
-    # 전역·모듈 캐시 없음 — _simulate 호출마다 새로 생성해 호출 간 격리를 보장한다.
-    semantic_cache: dict = {}
+    # 전역·모듈 캐시 없음 — _simulate 호출마다 새로 생성해 호출 간 격리를 보장한다. 묶음(shared)이면 묶음 하나가 한 호출(묶음 안에서만 공유)
+    if shared is not None:
+        semantic_cache = shared.semantic
+        shared.alive.append(defs)
+    else:
+        semantic_cache = {}
     for r in range(n_runs):
         rng = random.Random(seed * 1000003 + offset + r)
         b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {}, ally_fx=ally_fx,
@@ -663,4 +695,4 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts):
     return res
 
 
-__all__ = ['simulate', 'EventLimitError', 'SCHEMA_VERSION']
+__all__ = ['simulate', 'BatchShared', 'EventLimitError', 'SCHEMA_VERSION']

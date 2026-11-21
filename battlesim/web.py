@@ -3,6 +3,9 @@
 화면은 오토 기준만 쓴다(2026-11-14 수동 모드 제거: run_manual·서순 변환을 지움. 엔진의 수동 정책 규칙 nova_policy=manual 은 도구·시험이 써서 그대로).
 
 run_auto(stage, party, n, seed, extra)   -> JSON 문자열: 오토 결과 요약
+run_auto_batch(stage, parties, n, seed, extra) -> 팀마다 (key, JSON 문자열) 생성기. parties = [{key, party, options}] (작업자 메시지의 teams 와 같은 모양).
+    팀 옵션은 작업자와 같게 extra 위에 덮고 rules_override 는 합친다. 조우 정규화·의미 해석 캐시를 묶음 안에서 한 번만 만든다(api.BatchShared).
+    결과는 팀마다 run_auto 를 따로 부른 것과 글자 그대로 같다(tests/batch_identity_test.py). 작업자는 AutoBatch 로 팀 사이에 진행 소식을 보낸다.
     extra.raw_runs = true 면 결과에 raw(판별 원시값의 JSON «문자열») 를 붙인다. 화면은 이 문자열을 뜯어 보지 않고 그대로 보관했다가
     extra.merge_raw 로 되돌려 준다 → 이번에 돌린 판(run_offset 뒤쪽) 앞에 붙여 «처음부터 한 번에 돌린 것»과 같은 요약을 낸다(merge_summary).
     예선 1차 8판을 2차 32판에 다시 쓰는 용도: 2차는 n=24·run_offset=8·merge_raw=1차 raw.
@@ -14,7 +17,7 @@ import math
 
 import statistics
 
-from .api import simulate, _wilson
+from .api import simulate, _wilson, BatchShared
 
 
 def _opts(extra, **kw):
@@ -79,7 +82,7 @@ def merge_summary(raw, star_turns=None):
                 t60=(round(sum(1 for a in ttk_actions if a <= int(star_turns)) / n, 4) if star_turns else None))
 
 
-def run_auto(stage, party, n, seed, extra=None):
+def run_auto(stage, party, n, seed, extra=None, _shared=None):
     op = _opts(extra, n_runs=n, seed=seed)
     top_q = op.pop('cosmo_top_q', 0.2)
     prior = op.pop('merge_raw', None)       # 앞서 돌린 판의 raw(JSON 문자열). 있으면 이번 판(run_offset = 앞 판 수)과 합친 요약을 낸다
@@ -88,7 +91,7 @@ def run_auto(stage, party, n, seed, extra=None):
         if int(op.get('run_offset', 0)) != len(prior):
             raise ValueError('merge_raw 는 run_offset(%r) 판만큼 있어야 함: %d' % (op.get('run_offset', 0), len(prior)))
         op['raw_runs'] = True
-    r = simulate(party, _enc(stage, op), op)
+    r = simulate(party, _enc(stage, op), op, shared=_shared)
     o = r['outcome']
     extra_out = {'cosmo': cosmo_summary(r['cosmo_raid'], top_q)} if r.get('cosmo_raid') else {}
     extra_out.update(_potential_unsupported(r))
@@ -104,3 +107,30 @@ def run_auto(stage, party, n, seed, extra=None):
     if prior is not None:       # 합친 요약으로 덮는다(u·via·first·bs·power 등 나머지는 이번에 돌린 판만의 값이라 예선 순위 밖에서는 쓰지 말 것)
         out.update(merge_summary(raw, op.get('star_turns')), merged=[len(prior), len(r['raw_runs'])])
     return json.dumps(out, ensure_ascii=False)
+
+
+def team_options(extra, team_extra):
+    """작업자(sim_worker.js)와 같은 옵션 합치기: 요청 options 위에 팀 options, rules_override 는 둘을 합침"""
+    base = _opts(extra)
+    t = _opts(team_extra)
+    out = dict(base, **t)
+    if base.get('rules_override') or t.get('rules_override'):
+        out['rules_override'] = dict(base.get('rules_override') or {}, **(t.get('rules_override') or {}))
+    return out
+
+
+class AutoBatch:
+    """같은 요청(stage·n·seed)의 여러 팀을 차례로 돌리는 묶음. 묶음이 끝나면(객체를 버리면) 공유 준비물도 사라진다."""
+
+    def __init__(self, stage, n, seed):
+        self.stage, self.n, self.seed = stage, n, seed
+        self.shared = BatchShared()
+
+    def run(self, party, extra=None):
+        return run_auto(self.stage, party, self.n, self.seed, extra, _shared=self.shared)
+
+
+def run_auto_batch(stage, parties, n, seed, extra=None):
+    b = AutoBatch(stage, n, seed)
+    for t in parties:
+        yield t.get('key'), b.run(t['party'], json.dumps(team_options(extra, t.get('options'))))

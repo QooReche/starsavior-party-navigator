@@ -311,15 +311,25 @@ console.log('PASS 속도 개선: 순위는 작업자 수와 무관·대기열(�
 
 // 18) 실제 sim_worker.js: 작업 번호(job)를 진행·결과·done·오류에 그대로 되돌려 주고, 요청마다 만든 파이썬 객체(toPy)는 오류가 나도 해제하며, 함수 핸들은 한 번만 얻는다
 (async()=>{
- const out=[];let made=0,freed=0,gets=0;
+ const out=[];let made=0,freed=0,gets=0,batches=0,batchFreed=0,batchRuns=0;
  const wk=vm.createContext({URL,self:{location:{href:'https://example.test/sim_worker.js'}},postMessage:m=>out.push(m)});
  vm.runInContext(fs.readFileSync(require.resolve('../sim_worker.js'),'utf8'),wk);
- wk.fake={toPy:()=>{made++;return {destroy(){freed++}}},globals:{get:()=>{gets++;return (stage,party,n,seed,extra)=>{if(JSON.parse(extra).boom)throw Error('boom');return JSON.stringify({n})}}}};
+ wk.fake={toPy:()=>{made++;return {destroy(){freed++}}},globals:{get:name=>{gets++;const run=(stage,party,n,seed,extra)=>{if(JSON.parse(extra).boom)throw Error('boom');return JSON.stringify({n})};
+  // AutoBatch(stage,n,seed) → {run(party,extra), destroy()} — 여러 팀 요청만 씀
+  return name==='AutoBatch'?(stage,n,seed)=>{batches++;return {run:(party,extra)=>{batchRuns++;return run(stage,party,n,seed,extra)},destroy(){batchFreed++}}}:run}}};
  vm.runInContext('ready=Promise.resolve({p:fake,ver:"t"})',wk);
  for(const job of [0,1,2])await wk.onmessage({data:{type:'run',id:7,job,stage:'op/a/b',n_runs:8,seed:1,mode:job===1?'manual':undefined,teams:[{key:'k'+job,party:{},options:job===2?{boom:1}:{}}]}});
  assert(out.length>0&&out.every(m=>m.id===7&&[0,1,2].includes(m.job)));
  for(const job of [0,1])assert.deepEqual(out.filter(m=>m.job===job).map(m=>m.type),['stage','team','done'],'요청에 mode:manual 이 와도 오토만 돈다');
  assert.deepEqual(out.filter(m=>m.job===2).map(m=>m.type),['stage','error']);
- assert.equal(made,3);assert.equal(freed,3,'toPy 객체 해제(오류가 나도)');assert.equal(gets,1,'run_auto 핸들은 한 번만');
- console.log('PASS 작업자: 작업 번호 되돌림·파이썬 객체 해제·핸들 재사용');
+ assert.equal(made,3);assert.equal(freed,3,'toPy 객체 해제(오류가 나도)');assert.equal(gets,2,'함수 핸들(run_auto·AutoBatch)은 한 번만');
+ assert.equal(batches,0,'팀 하나 요청은 묶음 안 씀(지금과 같음)');
+ // 여러 팀 요청(훑기 묶음): 묶음 하나로 팀마다 «시뮬 i/N팀» → team, 끝에 done. 묶음·toPy 객체는 오류가 나도 해제
+ out.length=0;await wk.onmessage({data:{type:'run',id:8,job:3,stage:'op/a/b',n_runs:1,seed:1,teams:['a','b','c'].map(key=>({key,party:{},options:{}}))}});
+ assert.deepEqual(out.map(m=>m.type+(m.key||'')),['stage','teama','stage','teamb','stage','teamc','done']);
+ assert.deepEqual(out.filter(m=>m.type==='stage').map(m=>m.msg),['시뮬 1/3팀 (1판)','시뮬 2/3팀 (1판)','시뮬 3/3팀 (1판)']);
+ assert(out.every(m=>m.id===8&&m.job===3));assert.equal(batches,1);assert.equal(batchRuns,3);assert.equal(batchFreed,1);assert.equal(freed,6);
+ out.length=0;await wk.onmessage({data:{type:'run',id:9,job:4,stage:'op/a/b',n_runs:1,seed:1,teams:[{key:'a',party:{},options:{}},{key:'x',party:{},options:{boom:1}}]}});
+ assert.deepEqual(out.map(m=>m.type),['stage','team','stage','error']);assert.equal(batchFreed,2,'오류가 나도 묶음 해제');assert.equal(freed,8);assert.equal(gets,2);
+ console.log('PASS 작업자: 작업 번호 되돌림·파이썬 객체 해제·핸들 재사용·여러 팀 요청 묶음(팀마다 진행·결과, 묶음 해제)');
 })().catch(e=>{console.error(e);process.exit(1)});

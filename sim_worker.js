@@ -1,5 +1,6 @@
 // 브라우저 시뮬 작업자(Web Worker) — Pyodide 로 battlesim(파이썬 엔진)을 그대로 돌린다. 엔진은 한 벌(설계 docs/redesign_v1.md 2단계).
 // 메시지: {type:"run", id, job, stage:"content/tab/name", teams:[{key, party:{units:[{key,stats_override}],leader}, options}], n_runs, seed, options}
+//  teams 가 여럿이면 한 묶음(battlesim.web.AutoBatch). 팀마다 «시뮬 i/N팀» 진행 → team 결과 순서(무진행 감시·속도 표본은 팀 단위)
 // 응답: {type:"stage", id, job, msg} 진행 / {type:"team", id, job, key, result} 팀 하나 끝 / {type:"done", id, job} / {type:"error", id, job, msg}
 //  job = 화면 대기열(simDispatch)이 단 작업 번호 — 그대로 되돌려 준다(화면은 맡긴 작업의 done 을 확인한 뒤에만 다음 작업을 보낸다)
 // 작업자는 계산이 끝나도 살아서 다음 요청을 받는다 → 요청마다 만든 파이썬 객체(toPy)는 바로 해제하고, 함수 핸들은 한 번만 얻는다
@@ -25,7 +26,7 @@ async function boot(base,send=postMessage){
 import os, sys
 os.environ['PN_SRC'] = '/repo'
 sys.path.insert(0, '/repo')
-from battlesim.web import run_auto
+from battlesim.web import run_auto, AutoBatch
 `);
  send({type:"stage",msg:"준비 끝"});
  return {p,ver:man.ver}}
@@ -35,8 +36,11 @@ onmessage=async e=>{const m=e.data;
   if(!ready)ready=boot(m.base,send);
   const {p,ver}=await ready;
   if(m.type!=="run")return;
-  if(!fns)fns={run:p.globals.get("run_auto")};   // battlesim/web.py — 오토 기준만(11/14 수동 모드 제거)
-  const {run}=fns;
+  if(!fns)fns={run:p.globals.get("run_auto"),batch:p.globals.get("AutoBatch")};   // battlesim/web.py — 오토 기준만(11/14 수동 모드 제거)
+  // 여러 팀 요청(훑기·예선 묶음, 코스모·길방 chunk)은 AutoBatch 한 개로: 조우 정규화·의미 해석 캐시를 묶음 안에서만 공유(결과 = 팀별 run_auto, tests/batch_identity_test.py)
+  const ab=m.teams.length>1&&!m.progress&&fns.batch?fns.batch(m.stage,m.n_runs,m.seed):null;
+  const run=ab?(stage,party,n,seed,ex)=>ab.run(party,ex):fns.run;
+  try{
   for(let i=0;i<m.teams.length;i++){const t=m.teams[i];
    const opts=Object.assign({},m.options||{},t.options||{});
    if(m.options?.rules_override||t.options?.rules_override)opts.rules_override=Object.assign({},m.options?.rules_override,t.options?.rules_override);
@@ -59,5 +63,6 @@ _pn_battle.run = _pn_observed_run
    try{res=Object.assign(JSON.parse(run(m.stage,party,m.n_runs,m.seed,ex)),{ver});
    }finally{if(m.progress){p.runPython('_pn_battle.run = _pn_original_run');p.globals.delete('_pn_progress');}if(party&&party.destroy)party.destroy()}
    send({type:"team",key:t.key,result:res})}
+  }finally{if(ab)ab.destroy()}
   send({type:"done"})
  }catch(err){send({type:"error",msg:String(err&&err.message||err).slice(-400)})}};
