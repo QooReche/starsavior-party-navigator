@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "f675bd21f0823daf",
+  "hash": "e06c79830ecb9052",
   "history": [
-   {
-    "hash": "98eff90e6022663e",
-    "reason": "사례집 속도 교정. data/guild_defense.json 시즌4 종료 상태와 기존 재생성 방침 유지. 비활성 guild_sim은 새 시즌 자료 반영 때 재생성하며 이번 결과 불변을 뜻하는 인정은 아님. 탐색 정책은 변경하지 않음."
-   },
    {
     "hash": "31e284ee166d1604",
     "reason": "시즌4 종료 후 새 시즌에 재생성하는 기존 방침 유지. E2 지난 시즌 일반 경로의 회귀는 직접 시뮬에서 수정. 기존 guild_sim 재사용의 정확성을 주장하지 않음."
@@ -41,16 +37,16 @@
    {
     "hash": "f675bd21f0823daf",
     "reason": "추가 피해 큐 통합(chain_timing=client_queue)·local_chance=roll 병합(main 위 재정렬). quick 재계산 237건 중 0.5 판정 변경 4건, 탐색 정책 유지로 계수 유지(conn 기록), guild_sim 시즌 종료로 재생성 생략"
+   },
+   {
+    "hash": "e06c79830ecb9052",
+    "reason": "11/21 2차 묶음 병합(se_cool_clock·dispel_isbuff·revive_se_reset·skill_cool_change·chain_timing=client_queue·local_chance=roll). 각 작업 기록대로 quick 보정 표본 판정 변경 0~4건이라 계수 유지, guild_sim 시즌 종료로 재생성 생략"
    }
   ]
  },
  "quick": {
-  "hash": "f675bd21f0823daf",
+  "hash": "e06c79830ecb9052",
   "history": [
-   {
-    "hash": "98eff90e6022663e",
-    "reason": "사례집 속도 교정: gen_quick_calib --per-content 400 --opboss와 같은 2323표본×40판에서 속도1 미만 경로 215표본을 legacy와 재대조. 클리어 확률 차이11표본, 보정에 쓰는 clear>=0.5 라벨 차이0. quick 계수는 같은 라벨에 맞추므로 유지. docs/casebook_engine_check.md"
-   },
    {
     "hash": "31e284ee166d1604",
     "reason": "E2 첫 묶음: 심해의 폭군·시엔의 지난 길드 일반 경로만 변경. calib_teams 표본에 guild 없음. 확정 턴 없는 공통 정렬은 기존 키 순서와 동등. 계수 유지."
@@ -86,6 +82,10 @@
    {
     "hash": "f675bd21f0823daf",
     "reason": "추가 피해 큐 통합(chain_timing=client_queue)·local_chance=roll 병합(main 위 재정렬). quick 재계산 237건 중 0.5 판정 변경 4건, 탐색 정책 유지로 계수 유지(conn 기록), guild_sim 시즌 종료로 재생성 생략"
+   },
+   {
+    "hash": "e06c79830ecb9052",
+    "reason": "11/21 2차 묶음 병합(se_cool_clock·dispel_isbuff·revive_se_reset·skill_cool_change·chain_timing=client_queue·local_chance=roll). 각 작업 기록대로 quick 보정 표본 판정 변경 0~4건이라 계수 유지, guild_sim 시즌 종료로 재생성 생략"
    }
   ]
  }
