@@ -37,9 +37,12 @@ class UnsupportedGateTest(unittest.TestCase):
         gate.assert_gate(self.found, self.document)
 
     def test_removed_and_same_count_replacement(self):
-        for area in ('D', 'E'):
+        # 비어 있는 영역은 지울 줄이 없음(해소 완료). 새 줄 추가 검출은 위 시험이 모든 영역에서 확인함.
+        areas = [area for area in gate.AREAS if self.found[area]]
+        if not areas:
+            self.skipTest('모든 영역 0건')
+        for area in areas:
             changed = deepcopy(self.found)
-            self.assertTrue(changed[area], area)
             changed[area].pop()
             with self.assertRaisesRegex(AssertionError, '해소됨, 목록에서 지우기'):
                 gate.assert_gate(changed, self.document)
