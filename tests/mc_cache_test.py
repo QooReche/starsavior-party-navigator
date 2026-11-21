@@ -80,6 +80,8 @@ _KEEP['self_hp_condition'] = 'ratio'
 _KEEP['marker_se_flow'] = 'legacy'
 _KEEP['level_max_source'] = 'legacy'
 _KEEP['belgras_stage_se'] = 'legacy'
+_KEEP['barrier_formula'] = 'legacy'
+_KEEP['reaction_single_target_rng'] = 'legacy'
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

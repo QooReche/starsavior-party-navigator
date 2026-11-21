@@ -73,7 +73,7 @@ def test_dispel_n_counts_shield_client():
 def test_shield_grant_marks_undispellable():
     for name, raw, want in (('보호막(해제불가)', '{해제 불가}', True), ('보호막', '', False)):
         owner = NS(side=0, name='o', maxhp=1000.0, shield_given=0.0, mods=lambda: {'barrier_give': 0.0})
-        x = NS(side=0, name='x', eff={}, acting=False)
+        x = NS(side=0, name='x', eff={}, acting=False, mods=lambda: {'barrier_receive': 0.0})
         b = _battle('client', x)
         b.refuse_buff = lambda u, n: False
         b._is_any_turn = lambda o, n: False

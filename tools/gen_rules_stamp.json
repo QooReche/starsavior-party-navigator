@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "a882f0c0727b8aa1",
+  "hash": "171b3e0cdbecac6c",
   "history": [
-   {
-    "hash": "3676e26eccd8a8f5",
-    "reason": "새 규칙 두 개는 기본 off이며 바스커빌 코스모 전투에서만 on. 길드 방어전 경로·기존 생성 수치 불변"
-   },
    {
     "hash": "c842e95a19e6635c",
     "reason": "표지 SE 원형 복원(marker_se_flow). 길드 방어전 시즌4 종료로 기존 비활성 생성물 재계산 생략; 새 시즌 자료 반영 때 재생성(HANDOFF). 현재 결과 불변을 뜻하는 인정은 아님."
@@ -41,16 +37,16 @@
    {
     "hash": "a882f0c0727b8aa1",
     "reason": "규칙 D 14건 교정(wave_foe_battle_start·revive_after_spawn·summon·caster_death) 병합. quick 은 D 작업에서 calibrate_quick --write 로 재보정(계수 유지), 앞선 브레이크·벨그라스·적 교정은 보정 입력에서 실행되지 않음(각 커밋 기록). guild_sim 은 시즌 종료로 재생성 생략"
+   },
+   {
+    "hash": "171b3e0cdbecac6c",
+    "reason": "반응 단일 대상 난수·자신 기준 보호막 클라 교정(reaction_single_target_rng·barrier_formula client) 병합. quick 보정 입력엔 적 반응·자신 기준 보호막 줄이 없음(4e82fab 기록), guild_sim 시즌 종료로 재생성 생략"
    }
   ]
  },
  "quick": {
-  "hash": "a882f0c0727b8aa1",
+  "hash": "171b3e0cdbecac6c",
   "history": [
-   {
-    "hash": "3676e26eccd8a8f5",
-    "reason": "바스커빌 전용 조각과 기본 off인 속도 고정·강인도 플래그 추가. 기존 콘텐츠 경로와 quick 계산 값은 불변이며 골든·mc_cache 대조 유지"
-   },
    {
     "hash": "c842e95a19e6635c",
     "reason": "calibrate_quick --write 재보정"
@@ -86,6 +82,10 @@
    {
     "hash": "a882f0c0727b8aa1",
     "reason": "규칙 D 14건 교정(wave_foe_battle_start·revive_after_spawn·summon·caster_death) 병합. quick 은 D 작업에서 calibrate_quick --write 로 재보정(계수 유지), 앞선 브레이크·벨그라스·적 교정은 보정 입력에서 실행되지 않음(각 커밋 기록). guild_sim 은 시즌 종료로 재생성 생략"
+   },
+   {
+    "hash": "171b3e0cdbecac6c",
+    "reason": "반응 단일 대상 난수·자신 기준 보호막 클라 교정(reaction_single_target_rng·barrier_formula client) 병합. quick 보정 입력엔 적 반응·자신 기준 보호막 줄이 없음(4e82fab 기록), guild_sim 시즌 종료로 재생성 생략"
    }
   ]
  }

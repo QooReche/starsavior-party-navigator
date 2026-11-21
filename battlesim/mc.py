@@ -568,7 +568,7 @@ class Eff:
 
 _MOD_ZERO = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0, defp=0.0, hpp=0.0, coop=0.0, eh=0.0, er=0.0,
                  der=0.0, critred=0.0, guard=0.0, heal_give=0.0, heal_recv=0.0, vampirism=0.0, inc_single=0.0, inc_aoe=0.0, evade=0.0, acc=0.0,
-                 tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, barrier_give=0.0, preempt=0.0, preempt_reduce=0.0, inc_vs=None, inc_slot=None, red=None)
+                 tough=0.0, tough_fixed=0.0, inc_break=0.0, revenge=0.0, barrier_give=0.0, barrier_receive=0.0, preempt=0.0, preempt_reduce=0.0, inc_vs=None, inc_slot=None, red=None)
 
 
 class Unit:
@@ -820,6 +820,8 @@ def _add_prop(m, k, v, stacks):
         m['vampirism'] += v / 10000.0 * stacks
     elif k == '주는 보호막량':              # NST_RATE_BARRIER_GIVE(지금은 서든데스만 씀)
         m['barrier_give'] += val
+    elif k == '받는 보호막량':              # NST_RATE_BARRIER_RECEIVE, 수신자 스탯
+        m['barrier_receive'] += val
     elif k == '단일 대상 피해 증가':
         m['inc_single'] += val
     elif k == '전체 대상 피해 증가':
@@ -2764,7 +2766,12 @@ class Battle:
                         pool, _ = self.filter_chain(owner, self.targetable(1 - owner.side), row['f'])
                         if not pool:
                             return None
-                        target = self.R(owner.side).choice(pool)
+                        # PC 26752678 NKM:7255: a sole candidate consumes no RNG.
+                        if len(pool) == 1 and self.mc['reaction_single_target_rng'] == 'client':
+                            target = pool[0]
+                            self.rule_hits['reaction_single_target_rng'] += 1
+                        else:
+                            target = self.R(owner.side).choice(pool)
                         break
                 else:
                     return None
@@ -5087,14 +5094,18 @@ class Battle:
                     if mm:
                         props[mm.group(1).strip()] = float(mm.group(2))
             for x in tg or []:
-                if target_base:
-                    # NKM:4772-4785: target's stat and give/receive rates;
-                    # both the base and the signed bonus truncate independently.
-                    stat = {'생명력': x.maxhp, '공격력': self.atk_stat(x), '방어력': self.def_stat(x)}[m.group(5)]
+                if target_base or self.mc['barrier_formula'] == 'client':
+                    # PC 26752678 NKM:4773-4802: basis owns GIVE, recipient owns
+                    # RECEIVE; truncate base and signed bonus separately. A zero
+                    # grant returns null even when an older barrier exists.
+                    basis = x if target_base else owner
+                    stat = {'생명력': basis.maxhp, '공격력': self.atk_stat(basis), '방어력': self.def_stat(basis)}[m.group(5)]
                     base = int(stat * float(m.group(6)) / 100.0)
                     receive = sum(e.props.get('받는 보호막량', 0) * e.stacks / 100.0 for e in x.eff.values() if e.stacks > 0)
-                    amount = max(0, base + int(base * (x.mods()['barrier_give'] + receive)))
-                    self.rule_hits['foe_target_barrier'] += 1
+                    if self.mc['barrier_formula'] == 'client':
+                        receive = x.mods()['barrier_receive']
+                    amount = max(0, base + int(base * (basis.mods()['barrier_give'] + receive)))
+                    self.rule_hits['foe_target_barrier' if target_base else 'barrier_formula'] += 1
                     if amount == 0:
                         continue
                 if self.refuse_buff(x, m.group(2)):
