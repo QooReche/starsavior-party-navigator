@@ -14,7 +14,6 @@ sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit
 from battlesim.mc import Battle, Ctx, level_buff
 from battlesim.metrics import unit_def
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.parser import Line
 
 
@@ -35,9 +34,6 @@ class ClientSmallfixTest(unittest.TestCase):
             self.assertEqual(b.cond_ok(a, self.condition('대상 HP% 이상: 5000'), ctx), ge)
             ctx.target, ctx.targets = b.foes[0], b.foes
         self.assertGreater(b.rule_hits['target_hp_condition'], 0)
-        b.foes[1].hp = 50009
-        with patch.dict(b.mc, target_hp_condition='ratio'):
-            self.assertFalse(b.cond_ok(a, self.condition('대상 HP% 이하: 5000'), ctx))
         for bp, hp in [(0, 0), (10000, 100000)]:
             ctx.target, ctx.targets = b.foes[1], [b.foes[1]]
             b.foes[1].hp = hp
@@ -61,10 +57,6 @@ class ClientSmallfixTest(unittest.TestCase):
         a.eff['통찰'].stacks = 3
         self.assertFalse(b.cond_ok(a, ln, ctx))
         self.assertGreater(b.rule_hits['not_self_stack'], 0)
-        a.eff.clear()
-        give(a, '격동', stacks=4).maxs = 5
-        with patch.dict(b.mc, not_self_stack='ge'):
-            self.assertFalse(b.cond_ok(a, ln, ctx))
 
     def test_hp_float32_conversion_before_truncation(self):
         for hp, maxhp, bp, expected in [(25010, 100000, 2500, True), (50009999, 100000000, 5000, False)]:
@@ -98,10 +90,6 @@ class ClientSmallfixTest(unittest.TestCase):
         self.assertEqual([v.taken for v in b.foes], [650, 1000])
         self.assertEqual(b.rule_hits['chain_target_stat'], 2)
         self.assertGreater(b.progress(), 0)
-        before = [v.hp for v in b.foes]
-        with patch.dict(b.mc, chain_target_stat='off'):
-            b.chain(a, ln.eff, ctx)
-        self.assertEqual([v.hp for v in b.foes], before)
 
     def test_target_attack_normal_keeps_caster_damage_modifiers(self):
         b = battle([unit(atk=9000)], [unit('foe', hp=100000, atk=1000, df=0)])
@@ -186,10 +174,7 @@ class ClientSmallfixTest(unittest.TestCase):
 
 
 def mutations():
-    cases = [('HP integer removed', 'test_hp_basis_points_and_target_set', patch.dict(MC_OPTS, target_hp_condition='ratio')),
-             ('HP float32 removed', 'test_hp_float32_conversion_before_truncation', patch('battlesim.mc._float32', side_effect=lambda value: value)),
-             ('stack >= restored', 'test_not_self_stack_exact_not_sum', patch.dict(MC_OPTS, not_self_stack='ge')),
-             ('chain disabled', 'test_target_attack_uses_each_live_receiver', patch.dict(MC_OPTS, chain_target_stat='off')),
+    cases = [('HP float32 removed', 'test_hp_float32_conversion_before_truncation', patch('battlesim.mc._float32', side_effect=lambda value: value)),
              ('synergy link dropped', 'test_synergy_generator_and_other_candidate_report', patch('tools.synergy_self_status.links', return_value=[]))]
     original = Battle.chain
     def self_atk(b, owner, eff, ctx):

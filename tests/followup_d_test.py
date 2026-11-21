@@ -42,9 +42,9 @@ class FollowupTest(unittest.TestCase):
     def test_wave_extra_turn(self):
         for mode in ('clear',):
             for carry in ('client', 'keep'):
-                for gauge in ('keep', 'reset'):
+                for gauge in ('reset',):
                     b = battle([unit('a'), unit('dead')], [unit('one')],
-                               mc=dict(wave_carry=carry, wave_ally_gauge=gauge))
+                               mc=dict(wave_carry=carry))
                     a, dead = b.allies
                     b.kill(dead, b.foes[0])
                     a.extra_turn, a.gauge = True, 10000

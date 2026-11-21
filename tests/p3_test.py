@@ -76,17 +76,6 @@ def test_taunt():
     return t3 > 0 and others == 0 and others2 > 0, '도발자 받은 피해 %d, 다른 아군 %d -> 도발자 사망 뒤 %d' % (t3, others, others2)
 
 
-def test_ally_target_lowest():
-    """옛 규칙(lowest_hp): 구원자 오토 단일 공격 = 보호막+HP 합이 가장 낮은 적"""
-    b = battle([unit('a')], [unit('f0', hp=5000), unit('f1', hp=3000)], mc=dict(ally_auto_target='lowest_hp'))
-    e = give(b.foes[1], '보호막')
-    e.shield = 3000
-    pick = b.pick_attack_target(b.allies[0])
-    b.foes[1].eff = {}
-    b.foes[1]._m = None
-    pick2 = b.pick_attack_target(b.allies[0])
-    return pick is b.foes[0] and pick2 is b.foes[1], '보호막 3000 있을 때 %s / 없을 때 %s' % (pick.name, pick2.name)
-
 
 # ---------------------------------------------------------------- 수호·보호막·회복
 def test_guard_split():
@@ -480,14 +469,12 @@ def test_auto_selector_unknown_flagged():
 
 
 def test_ally_boss_first():
-    """[사용자 관찰] 오토 아군은 살아 있는 보스를 먼저(쫄몹 HP 가 낮아도), lowest_hp 규칙이면 쫄몹"""
+    """[사용자 관찰] 오토 아군은 살아 있는 보스를 먼저(쫄몹 HP 가 낮아도)"""
     b = battle([unit('a')], [unit('minion', hp=1000), unit('boss', hp=50000, boss=True)])
     p1 = b.pick_attack_target(b.allies[0]).name
-    b2 = battle([unit('a')], [unit('minion', hp=1000), unit('boss', hp=50000, boss=True)], mc=dict(ally_auto_target='lowest_hp'))
-    p2 = b2.pick_attack_target(b2.allies[0]).name
     b.foes[1].dead = True
     p3 = b.pick_attack_target(b.allies[0]).name
-    return (p1, p2, p3) == ('boss', 'minion', 'minion'), '보스 우선 %s / 최저 HP %s / 보스 사망 뒤 %s' % (p1, p2, p3)
+    return (p1, p3) == ('boss', 'minion'), '보스 우선 %s / 보스 사망 뒤 %s' % (p1, p3)
 
 
 def test_nullify_prehit_reduction_infinite_shield():
@@ -584,7 +571,7 @@ def test_enemy_spawn_flags():
 
 
 TESTS = [test_enemy_init_cd_pilgrim, test_enemy_init_cd_switches, test_enemy_spawn_flags,
-         test_target_weights, test_untargetable, test_taunt, test_ally_target_lowest, test_guard_split, test_guard_highest_only,
+         test_target_weights, test_untargetable, test_taunt, test_guard_split, test_guard_highest_only,
          test_shield_sum, test_heal_formula, test_death_stops_actions, test_counter, test_leader_speed, test_enemy_leader_default_none, test_determinism,
          test_event_limit, test_foe_loader_matches_stages_json, test_evade, test_check_buff_expiry, test_extra_cast_after_consume,
          test_ev_engine_opts_untouched, test_skill_heal_hl, test_enemy_immunity_and_gate, test_hp_condition_units,

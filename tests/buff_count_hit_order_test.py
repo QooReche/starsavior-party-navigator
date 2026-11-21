@@ -11,7 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from battlesim.mc import Battle, Ctx, Eff, line_kind, positive_buff
 from battlesim.metrics import unit_def
-from battlesim.rules import MC_RULES
 from battlesim.starsavior.foe import stage_waves
 
 
@@ -19,7 +18,7 @@ def battle(boss='웬디고', **rules):
     stage = ('equip', '혹한의 습격', '혹한의 습격 XⅧ') if boss == '웬디고' else ('clo', '달 회랑', 'FLOOR 355')
     _, waves = stage_waves(*stage)
     d = next(d for wave in waves for d in wave if d.name == boss)
-    b = Battle([unit_def('gwen')], [[d]], random.Random(7), mc=rules)
+    b = Battle([unit_def('gwen')], [[d]], random.Random(7), mc=rules or None)
     b.spawn_wave()
     return b, b.allies[0], b.foes[0]
 
@@ -43,8 +42,8 @@ class BuffCountTest(unittest.TestCase):
             self.assertEqual(positive_buff('미등록 시험 효과', fallback), fallback)
 
     def test_wendigo_zero_one_two_boundary_both_modes(self):
-        for mode in ('table', 'legacy'):
-            b, a, foe = battle(buff_count_source=mode)
+        for mode in ('table',):
+            b, a, foe = battle()
             ln = next(l for l in foe.d.lines if ('적 강화효과 보유', '예') in l.params)
             ctx = Ctx(foe, a, a.d.skills['기본기'])
             for count in range(3):
@@ -59,8 +58,8 @@ class BuffCountTest(unittest.TestCase):
                     self.assertEqual(b.cond_ok(foe, ln, ctx), count + (mode == 'legacy') <= 1)
 
     def test_count_consumers_share_classification(self):
-        for mode, count in (('table', 1), ('legacy', 2)):
-            b, a, foe = battle(buff_count_source=mode)
+        for mode, count in (('table', 1),):
+            b, a, foe = battle()
             buff(a, '공격력 증가', fixed=True)
             buff(a, '전투의 열기')
             buff(a, '속도 증가', stacks=0)
@@ -84,18 +83,13 @@ class BuffCountTest(unittest.TestCase):
     def test_rule_metadata(self):
         from tools.build_simpack import files
         self.assertIn('data/buff_count.json', files())
-        for key, value in (('buff_count_source', 'table'), ('hit_stack_order', 'apply_first')):
-            self.assertEqual(MC_RULES[key]['value'], value)
-            self.assertEqual(MC_RULES[key]['legacy'], 'legacy')
-            for field in ('grade', 'note', 'source'):
-                self.assertTrue(MC_RULES[key][field])
 
 
 class HitOrderTest(unittest.TestCase):
     def test_wendigo_fifth_or_sixth_hit_and_reset(self):
-        for mode, threshold in (('apply_first', 5), ('legacy', 6)):
+        for mode, threshold in (('apply_first', 5),):
             with self.subTest(mode=mode):
-                b, a, foe = battle(hit_stack_order=mode)
+                b, a, foe = battle()
                 foe.cd['궁극기'] = 10
                 ctx = Ctx(foe, a, a.d.skills['기본기'])
                 for hit in range(1, threshold * 2 + 1):
@@ -104,9 +98,9 @@ class HitOrderTest(unittest.TestCase):
                     self.assertEqual(foe.stack('끝 없는 냉기 분노'), min(hit % threshold, 5))
 
     def test_tuner_eleventh_or_twelfth_hit_consumes_before_extra(self):
-        for mode, threshold in (('apply_first', 11), ('legacy', 12)):
+        for mode, threshold in (('apply_first', 11),):
             with self.subTest(mode=mode):
-                b, a, foe = battle('공허조율자', hit_stack_order=mode)
+                b, a, foe = battle('공허조율자')
                 ctx = Ctx(foe, a, a.d.skills['기본기'])
                 calls = []
                 def cast(owner, skill, **kwargs):

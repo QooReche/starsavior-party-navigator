@@ -7,7 +7,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, unit5 as unit, give
-from battlesim.mc import Ctx, MC_OPTS
+from battlesim.mc import Ctx
 from battlesim.api import power_pen
 from battlesim.starsavior.data import get_db
 from battlesim.starsavior.parser import UnitDef
@@ -21,11 +21,10 @@ def dot(b, source, target, name='연소', times=1, duration=2):
                                      times=times, judge=False), Ctx(source, source, None))
 
 
-def cristelle_cast(slot, burns=0, legacy=False, extra_debuffs=0):
+def cristelle_cast(slot, burns=0, extra_debuffs=0):
     d = definition('cristelle', skills=dict(basic=10, ultimate=10, passive=4))
     d.stats['cr'] = 0
     b = battle([d], [unit('target', hp=10**9, df=0)],
-               mc={'debuff_instance_count': False} if legacy else {},
                opts={'coop': False, 'nova': False})
     a, v = b.allies[0], b.foes[0]
     if burns:
@@ -89,12 +88,6 @@ class DebuffObjectsTest(unittest.TestCase):
             with self.subTest(burns=burns, other=other):
                 _, pieces = cristelle_cast('궁극기', burns, extra_debuffs=other)
                 self.assertEqual(sum(k == 'chain' for k, _ in pieces), expected)
-
-    def test_legacy_counts_names_and_keeps_old_damage(self):
-        _, one = cristelle_cast('궁극기', 1, legacy=True)
-        _, five = cristelle_cast('궁극기', 5, legacy=True)
-        self.assertEqual(one, five)
-        self.assertEqual(sum(k == 'chain' for k, _ in five), 1)
 
 
 class LeadContractsTest(unittest.TestCase):
@@ -165,14 +158,4 @@ class LeadContractsTest(unittest.TestCase):
 
 if __name__ == '__main__':
     low_priority()
-    if '--mutations' in sys.argv:
-        with patch.dict(MC_OPTS, debuff_instance_count=False):
-            result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromTestCase(DebuffObjectsTest))
-        caught = {getattr(test, 'test_case', test)._testMethodName for test, _ in result.failures}
-        expected = {'test_same_name_dots_from_two_casters_count_separately',
-                    'test_level_stacks_markers_and_gauge_are_not_extra_objects',
-                    'test_expired_instances_stop_counting',
-                    'test_cristelle_ultimate_counts_instances_and_caps_at_five'}
-        print('Legacy omission detected:', caught == expected and not result.errors)
-        sys.exit(0 if caught == expected and not result.errors else 1)
     unittest.main(verbosity=2)

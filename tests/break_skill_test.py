@@ -541,20 +541,20 @@ class BreakSkillGlobalTest(unittest.TestCase):
                 with self.subTest(pool=pool, slot=slot):
                     b = setup({'name': '행성 정화'}, turn_limit=6,
                               opts={'nova_pool': pool, 'coop': False},
-                              mc={'toughness': 'off', 'nova_force_cap': 0})
+                              mc={'toughness': 'off'})
                     a = b.allies[0]
                     sk = a.d.skills.pop('기본기')
-                    sk.slot, sk.nv = slot, 2
+                    sk.slot, sk.nv = slot, 1
                     a.d.skills[slot] = sk
                     a.cd[slot] = 0
                     b.break_points = 3
-                    # 상한을 끄고 마지막 영역 행동까지 +1, 만료 후 원래 스킬 노바만인지 검사.
-                    # 상한12를 켜면 5~6행동의 잘못된 충전도 가려짐(client_recheck_reb_test에서 상한 검사).
+                    # 마지막 영역 행동까지 +1, 만료 후 원래 스킬 노바만인지 검사. 상한 12(nova_force_cap 스위치 삭제)에
+                    # 닿지 않게 스킬 노바를 1로 둠(상한 자체는 client_recheck_reb_test).
                     with patch.object(b, 'pick_next', return_value=(a, 0)):
                         rows = self.observe(b)
-                    self.assertEqual([r['nova'] for r in rows], [3, 6, 9, 12, 15, 17])
-                    self.assertEqual(b.team_nova, 17 if pool == 'team' else 0)
-                    self.assertEqual(a.nova, 17 if pool == 'unit' else 0)
+                    self.assertEqual([r['nova'] for r in rows], [2, 4, 6, 8, 10, 11])
+                    self.assertEqual(b.team_nova, 11 if pool == 'team' else 0)
+                    self.assertEqual(a.nova, 11 if pool == 'unit' else 0)
 
     def test_planet_nova_excludes_extra_casts_and_missing_domain(self):
         for case in ('reaction', 'coop', 'extra', 'missing', 'dead', 'stun'):

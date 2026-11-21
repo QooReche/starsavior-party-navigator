@@ -102,9 +102,8 @@ class WaveTest(unittest.TestCase):
                     self.assertIn('도발', a.eff)
 
     def test_wave_start_order_and_gauge_switch(self):
-        for mode, gauge, expected in [('client', 'reset', 2000), ('keep', 'reset', 0),
-                                      ('client', 'keep', 7000)]:
-            b, a = self.setup_wave(mode, wave_ally_gauge=gauge)
+        for mode, gauge, expected in [('client', 'reset', 2000), ('keep', 'reset', 0)]:
+            b, a = self.setup_wave(mode)
             a.d.lines = [Line('[웨이브 시작 시] 자신에게 행동 게이지 20%p 증가', '고유 패시브', 'passive'),
                          Line('[웨이브 시작 시] 자신에게 〈새 버프〉 (1턴 / 공격력% +10%)', '고유 패시브', 'passive')]
             a.gauge = 5000

@@ -20,10 +20,10 @@ from tools.ingame_check import low_priority
 SCREEN = dict(atk=1000, hp=10000, spd=100, cr=0, cd=5000, eh=10000, er=0, **{'def': 100})
 
 
-def definition(key='wedding-epindel', potentials=(), skills=None, enabled=True):
+def definition(key='wedding-epindel', potentials=(), skills=None):
     payload = dict(skills=skills or dict(basic=1, special=1, ultimate=1, passive=1), potentials=list(potentials))
     return _norm_party([dict(key=key, build='none', stats_override=dict(SCREEN), stats_final=True,
-                             myinfo_combat=payload)], get_db(), 'fixed', 'standard', {'myinfo_combat': enabled})[0][0]
+                             myinfo_combat=payload)], get_db(), 'fixed', 'standard', {})[0][0]
 
 
 class CombatTests(unittest.TestCase):
@@ -47,11 +47,8 @@ class CombatTests(unittest.TestCase):
         self.assertEqual((low.skills['특수기'].cd, high.skills['특수기'].cd), (4, 3))
         self.assertFalse(any(x.slot == '고유 패시브' for x in low.lines))
 
-    def test_legacy_and_shared_database_untouched(self):
+    def test_shared_database_untouched(self):
         before = copy.deepcopy(get_db().units['wedding-epindel'])
-        d = definition(potentials=[(33001, 1)], skills=dict(basic=1), enabled=False)
-        self.assertFalse(any(x.slot == '잠재력' for x in d.lines))
-        self.assertEqual(sum(x.eff['val'] for x in d.lines if x.slot == '기본기' and x.eff['kind'] == 'local'), 15)
         definition(potentials=[(33001, 1)], skills=dict(basic=1))
         self.assertEqual(before, get_db().units['wedding-epindel'])
 

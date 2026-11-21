@@ -29,11 +29,6 @@ class EngineTurnLimitTest(unittest.TestCase):
         self.assertEqual(total_actions(b), 12)
         self.assertEqual(b.global_turns, 12)
 
-    def test_model_unit_legacy(self):
-        b = self.fight(mc=dict(turn_limit_unit='model'))
-        self.assertEqual(b.result, 'timeout')
-        self.assertGreater(total_actions(b), 12 * 4)   # 모델 턴 12 = 100틱 x 12 -> 전체 행동은 그 몇 배
-
     def test_clear_before_limit(self):
         b = battle([unit('a%d' % i, atk=10 ** 6) for i in range(4)], [unit('foe', hp=1000)], turn_limit=3)
         b.run()

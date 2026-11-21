@@ -127,10 +127,10 @@ def _cache_on():
     return _mc.ENGINE_CACHE
 
 
-def _unit_key(u, db, mode, build, use_combat):
+def _unit_key(u, db, mode, build):
     """한 칸의 정의를 정하는 입력 전부(칸 번호·리더는 정의에 영향 없음). JSON 으로 못 만들면 None(캐시 안 함)."""
     try:
-        return (id(db), json.dumps(u, sort_keys=True, ensure_ascii=False), mode, build, bool(use_combat))
+        return (id(db), json.dumps(u, sort_keys=True, ensure_ascii=False), mode, build)
     except (TypeError, ValueError):
         return None
 
@@ -142,11 +142,10 @@ def _norm_party(party_spec, db, mode, build=None, mc=None):
         units, leader = list(party_spec), None
     if not _cache_on():
         return _norm_party_raw(party_spec, db, mode, build, mc)
-    use_combat = (mc or MC_OPTS).get('myinfo_combat', True)
     defs = []
     for u in units:
         uu = dict(key=u) if isinstance(u, str) else u
-        k = _unit_key(uu, db, mode, build, use_combat)
+        k = _unit_key(uu, db, mode, build)
         hit = _UNIT_CACHE.get(k) if k is not None else None
         if hit is not None and hit[0] is db and not any(hit[1] is x for x in defs):     # 같은 파티에 같은 구원자가 두 번이면 객체를 나눈다
             defs.append(hit[1])
@@ -169,7 +168,7 @@ def _norm_party_raw(party_spec, db, mode, build=None, mc=None):
             u = dict(key=u)
         key = _find_key(db, u['key'])
         from .starsavior.myinfo_combat import select_skills, apply_potentials
-        combat = u.get('myinfo_combat') if (mc or MC_OPTS).get('myinfo_combat', True) else None
+        combat = u.get('myinfo_combat')
         unit_data = select_skills(db.units[key], key, combat) if combat is not None else None
         d = UnitDef(db, key, u.get('level', 200), u.get('res', 10), u.get('star', 0), u.get('mode', mode),
                     build='none' if combat is not None else u.get('build', build), unit_data=unit_data)

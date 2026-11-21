@@ -86,11 +86,6 @@ class RevengeTest(unittest.TestCase):
         b.act(a)
         self.assertEqual(counters(b.foes[0]), 0)
 
-    def test_off(self):
-        b, a = self.setup(mc=dict(revenge='off'))
-        b.act(a)
-        self.assertEqual(counters(b.foes[0]), 0)
-
 
 if __name__ == '__main__':
     unittest.main()

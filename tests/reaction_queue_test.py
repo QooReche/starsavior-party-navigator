@@ -18,12 +18,12 @@ from battlesim.metrics import unit_def   # noqa: E402
 
 
 class ReactionQueueTest(unittest.TestCase):
-    def setup(self, timing='queue', guard_atk=1):
+    def setup(self, guard_atk=1):
         # 루나 「썸머 템테이션♡」: 자신 제외 아군이 치명타 피격 후 타격자에게 발동. 피격 아군은 반격 100%
         d = unit_def('white-pearl-luna')
         b = battle([d, unit('guard', hp=10 ** 7, atk=guard_atk)],
                    [unit('attacker', hp=10 ** 6, cr=10000, skills=[dict(slot='기본기', dm=100)])],
-                   mc=dict(toughness='off', reaction_timing=timing), opts={'coop': False, 'nova': False})
+                   mc=dict(toughness='off'), opts={'coop': False, 'nova': False})
         luna, guard = b.allies
         foe = b.foes[0]
         b.fire(luna, 'battle_start', Ctx(luna, luna, None))
@@ -46,13 +46,6 @@ class ReactionQueueTest(unittest.TestCase):
         vias = [(n, v) for n, v, _ in order]
         self.assertEqual(vias, [(foe.name, None), (guard.name, 'revenge'), (luna.name, 'reaction')])
         self.assertEqual(order[-1][2], 0)        # 반응은 본 시전 밖(중첩 아님)
-
-    def test_nested_legacy(self):
-        b, luna, guard, foe, order = self.setup(timing='nested')
-        b.act(foe)
-        vias = [(n, v) for n, v, _ in order]
-        self.assertEqual(vias, [(foe.name, None), (luna.name, 'reaction'), (guard.name, 'revenge')])
-        self.assertEqual(order[1][2], 1)          # 옛 동작: 본 시전 안에서 바로
 
     def test_dead_target_misfires_and_clears_reservation(self):
         b, luna, guard, foe, order = self.setup(guard_atk=10 ** 7)   # 반격이 공격자를 쓰러뜨림

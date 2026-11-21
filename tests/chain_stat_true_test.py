@@ -152,21 +152,10 @@ class TargetToughnessTest(unittest.TestCase):
         ctx.target, ctx.targets = b.foes[0], [b.foes[0]]
         self.assertFalse(b.cond_ok(a, self.condition('대상 강인도 없음'), ctx))
 
-    def test_legacy_first_target(self):
-        b = battle([unit()], [unit('boss', sa=30), unit('soldier', sa=1)],
-                   mc={'target_toughness_condition': 'first'})
-        a = b.allies[0]
-        b.foes[1].sa, b.foes[1].broken = 0, True
-        ctx = Ctx(a, a, a.d.skills['기본기'])
-        ctx.targets, ctx.target = list(b.foes), b.foes[0]
-        self.assertFalse(b.cond_ok(a, self.condition('대상 강인도 없음'), ctx))
-
 
 def mutations():
     cases = [('normal formula', ChainStatTrueTest('test_stat_true_ignores_defense_increase_and_rng'),
-              patch.dict(MC_OPTS, chain_stat_true='legacy')),
-             ('first target', TargetToughnessTest('test_soldier_break_grants_stack_cooldown_and_only_soldier_chain'),
-              patch.dict(MC_OPTS, target_toughness_condition='first'))]
+              patch.dict(MC_OPTS, chain_stat_true='legacy'))]
     original = Battle.chain
     def drop_type(b, owner, eff, ctx):
         return original(b, owner, dict(eff, damage_type='ADT_NORMAL'), ctx)

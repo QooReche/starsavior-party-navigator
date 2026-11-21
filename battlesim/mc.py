@@ -719,16 +719,15 @@ class Unit:
         # Native negative-buff counts enumerate live buff objects, not names.
         # IsUniqueID DoTs have one object per application (NKM:4123-4139).
         # Level stacks on a single non-DoT buff must still count only once.
-        return sum(len(e.inst) if self.b.mc['debuff_instance_count'] and e.inst is not None else 1
+        return sum(len(e.inst) if e.inst is not None else 1
                    for e in self.eff.values() if e.category == 'debuff' and e.stacks > 0 and not e.check)
 
     def n_good(self, dispellable=False):
-        table = self.b.mc['buff_count_source'] == 'table'
         return sum(1 for e in self.eff.values()
                    if e.stacks > 0 and not e.check and (not dispellable or not e.fixed)
                    and not (e.category == 'marker'
                             and self.b.break_skill_enabled and e.name == self.b.break_skill_rule['domain'])
-                   and (positive_buff(e.name, e.category == 'buff') if table else e.category == 'buff'))
+                   and positive_buff(e.name, e.category == 'buff'))
 
 
 @lru_cache(maxsize=256)
@@ -1167,10 +1166,9 @@ class Battle:
                 self._reset_wave_gauge()
 
     def _reset_wave_gauge(self):
-        if self.mc['wave_ally_gauge'] == 'reset':
-            for u in self.alive(0):
-                if not u.extra_turn:   # keep 예약 또는 이번 WAVE_START에서 새로 받은 예약
-                    u.gauge = 0.0
+        for u in self.alive(0):
+            if not u.extra_turn:   # keep 예약 또는 이번 WAVE_START에서 새로 받은 예약
+                u.gauge = 0.0
 
     def _carry_wave_effects(self):
         """NKM:813-832,3973-3989,4030-4056: 새 전역 턴, 양 팀 WAVE_START 전에 지속 -1."""
@@ -1228,7 +1226,7 @@ class Battle:
                         u.hp = max(u.hp, u.maxhp)
         # 턴 제한 단위: actions = 게임 전역 턴(유닛 행동마다 +1, 적 포함 — NKM.decompiled.cs 13796~13798·599~623·755~762,
         # 코스모 게이트 = RANKING_RAID LimitTurn 50·CountEnemyTurnOnly false). model = 옛 동작(모델 기준 턴 = 100틱)
-        by_actions = bool(self.turn_limit) and self.mc['turn_limit_unit'] == 'actions'
+        by_actions = bool(self.turn_limit)
         horizon = (self.turn_limit if (self.turn_limit and not by_actions) else self.max_turns) * self.turn_ticks
         self.global_turns = 0
         self._sudden_step()
@@ -1436,12 +1434,9 @@ class Battle:
             self._dead_turn_add_damage()
             return
         # 회복 턴도 턴 이벤트·지속 차감은 처리하고, 스킬 행동만 생략한다.
-        if self.mc['revenge'] == 'on':
-            self._hit_log = []
-        queue = self.mc['reaction_timing'] == 'queue'
-        if queue:
-            # 게임 순서(NKM 15180~15372): 본 행동 → 협공 → 각 타격의 반격 → 예약된 반응 스킬을 하나씩(각각 직후 그 반격), 최대 11개
-            self._react_q, self._react_seen, self._revenged = [], set(), set()
+        self._hit_log = []
+        # 게임 순서(NKM 15180~15372): 본 행동 → 협공 → 각 타격의 반격 → 예약된 반응 스킬을 하나씩(각각 직후 그 반격), 최대 11개
+        self._react_q, self._react_seen, self._revenged = [], set(), set()
         try:
             cast_ctx = None
             if not u.dead and not skip:
@@ -1463,8 +1458,7 @@ class Battle:
                 if self.mc.get('foe_react_timing', 'extended') == 'extended':
                     for v in self.alive(u.side):
                         self._check_foe_react(v, cast_ctx, timing_filter='ally', caster=u)
-            if queue:
-                self._run_reactions()
+            self._run_reactions()
             if self._hit_log:
                 self.revenge(self._hit_log)   # 반격에서 이어진 공격(반응·추가 발동)의 타격도 같은 목록에 쌓여 차례로 판정
         finally:
@@ -1481,8 +1475,6 @@ class Battle:
             if self._chain_damage:
                 self.flush_chain_damage()
         if not u.dead:
-            if end_cd and not ally_end_cd and self.mc['enemy_cd_end_order'] == 'before_effects':
-                self._tick_cooldowns(u)
             self.fire(u, 'own_te', Ctx(u, u, None))
             changed = False
             for name in list(u.eff):
@@ -1531,7 +1523,7 @@ class Battle:
             if changed:
                 self.dirty(u)
 
-            if end_cd and (ally_end_cd or self.mc['enemy_cd_end_order'] == 'after_effects'):
+            if end_cd:
                 # Build 26314877 NKM:2013-2021: TURN_END effects, buff
                 # durations, then all cooldowns (including newly used skills).
                 self._tick_cooldowns(u)
@@ -1543,8 +1535,7 @@ class Battle:
     def _finish_action(self, u):
         """정상 행동·행동 불가·지속 피해 사망 모두 한 번 거치는 턴 종료.
         브레이크 영역(global)은 run의 _tick_break_domain에서 별도로 차감한다."""
-        if self.mc['any_turn_clock']:
-            self._tick_any_turn()
+        self._tick_any_turn()
         # 단계 그룹 «다음 차감 1회 건너뜀»(OBF_6935)은 행동 끝마다 모든 유닛에서 비워짐: 턴 유닛은 OBF_2849 → OBF_29028,
         # 나머지는 OBF_16373 → OBF_29028(OBF_8763 true) 이 차감 뒤 OBF_6935.Clear()(build 26610546 NKM:13961-13969, 13637-13643, 3999-4014).
         # 남의 행동 중에 붙은 건너뜀이 그 유닛의 다음 자기 턴·웨이브 전환까지 남지 않게 한다.
@@ -1829,18 +1820,17 @@ class Battle:
         아니면 궁극기 -> 특수기 -> 기본기(유닛에 SkillOrderList 가 있으면 그 순서, mc.skill_order) 중 쿨이 찼고 규칙 행(data/auto_skill.json)의 조건이 맞고 대상이 있는 첫 스킬.
         다 안 되면 기본기(조건 무시). auto_skill=off 는 옛 동작(쿨만 보고, 침묵이면 쿨 있는 스킬만 건너뜀)."""
         silenced = u.has('침묵')
-        table = self.mc['auto_skill'] == 'data'
-        if silenced and table:
+        if silenced:
             return u.d.skills.get('기본기'), None
         specs = {}
-        if table and u.side == 0:
+        if u.side == 0:
             # 개화 변형(key@...)은 규칙이 기본 키에 있다(비공개 표에서 변형 스킬도 같은 AutoSkillId 확인)
             rules = auto_skill_rules()
             specs = rules.get(u.key) or rules.get(u.key.split('@')[0], {})
-        elif u.side == 1 and self.mc['foe_auto'] == 'data':
+        elif u.side == 1:
             specs = getattr(u.d, 'auto', None) or {}   # data/foe_auto.json(tools/build_foe_auto.py) — 적 스킬별 규칙 행
         slots = ('궁극기', '특수기', '기본기')
-        if table and u.side == 0:
+        if u.side == 0:
             # 게임 SkillOrderList(에밀리 등 9명 = 특수기 -> 궁극기 -> 기본기). 개화 변형은 기본 키 순서
             orders = auto_skill_order()
             slots = orders.get(u.key) or orders.get(u.key.split('@')[0]) or slots
@@ -1932,8 +1922,6 @@ class Battle:
         if ln is None:
             return None
         if owner.side == 1:
-            if self.mc['foe_auto'] != 'data':
-                return None
             spec = (getattr(owner.d, 'auto_lines', None) or {}).get((ln.slot, ln.raw))
         else:
             if self.mc['ally_auto_lines'] not in ('data', 'client'):
@@ -2129,14 +2117,7 @@ class Battle:
             return None
         if att.side == 0:
             # 구원자 오토: table = 게임 규칙 1(보스 -> 정예 -> 유리 속성 -> 생명력 비율 최저 -> 최대 생명력 최저 -> 무작위)
-            if self.mc['ally_auto_target'] == 'table':
-                return self.filter_pick(att, pool, RULE1)
-            # boss_first = 살아 있는 보스가 있으면 보스(사용자 관찰 2026-10-20), 그다음 보호막+HP 합 최저(같으면 앞 칸)
-            if self.mc['ally_auto_target'] == 'boss_first':
-                bosses = [v for v in pool if getattr(v.d, 'boss', False)]
-                if bosses:
-                    pool = bosses
-            return min(pool, key=lambda v: (v.hp + v.shield_total(), v.pos))
+            return self.filter_pick(att, pool, RULE1)
         if self.gb is not None and self.gb.is_boss(att):
             return self.gb.pick_target(att, sk, pool)
         ranked =self.ranked_enemies(skill_desc(att.d, sk.slot), pool, priority=True) if sk is not None else None
@@ -2300,10 +2281,6 @@ class Battle:
             return [x for x in self.alive(owner.side) if getattr(x.d, 'boss', False)]
         spec = explicit_target(t)
         if spec is not None:
-            if owner.side == 1 and self.mc['foe_auto'] == 'off':
-                # 문구만 풀어 쓴 데이터북에서도 off의 설명문 근사·동률 순서를 보존.
-                old_target = ('아군' if spec['ally'] else '적') + (' 1명' if spec['one'] else '') + '(자동 지정)'
-                return self.resolve(owner, old_target, ctx, kind)
             return self.line_auto_targets(owner, self.line_spec(owner, self._cur_line) or spec, ctx)
         if t.startswith('스킬 대상'):
             if ctx.skill is None:
@@ -2543,8 +2520,7 @@ class Battle:
                 self.gb.after_cast(u, sk, ctx, extra)
             # GetNovaForceValue is paid at every skill end, including reactions
             # and extra casts (NKM:15325-15331,15487,15706-15709).
-            if self.mc['nova_skill_gain'] or (u.side == 0 and not extra and sk.slot in ('특수기', '궁극기')):
-                self.nova_add(u, sk.nv)
+            self.nova_add(u, sk.nv)
             purify = self.mc['purify_nova_scope']
             if ((not extra if purify == 'main_only' else bool(ctx.targets))
                     and not u.dead and self.break_skill_enabled
@@ -2600,12 +2576,9 @@ class Battle:
 
     def nova_add(self, u, v):
         value = self.nova_of(u) + v
-        if self.mc['nova_force_effects']:
-            value = max(0, value)  # Native decrease floors at zero (NKM:1199).
-        # Build 26314877 NKM:1258-1264; CLIENT_CONST_TEMPLET NovaBurst.
-        cap = self.mc['nova_force_cap']
-        if cap > 0 and v > 0:
-            value = min(cap, value)
+        value = max(0, value)  # Native decrease floors at zero (NKM:1199).
+        if v > 0:   # Build 26314877 NKM:1258-1264; CLIENT_CONST_TEMPLET MaxNovaForceValue 12.
+            value = min(12, value)
         if self.opts['nova_pool'] == 'unit':
             u.nova = value
         elif u.side == 1:
@@ -2657,7 +2630,7 @@ class Battle:
             bound_kinds = ('active', 'trigger') if getattr(sk, 'client_1121', False) else ('active',)
             source = [ln for ln in source if not (ln.src_kind in bound_kinds and ln.slot == sk.slot)] + sk.semantic_lines
         # Slot effects depend on activation, not on the selection policy.
-        if ctx.nb and (self.mc['nova_slot_effects'] or self.opts['nova_policy'] == 'heal'):
+        if ctx.nb:
             source = source + [Line(raw, sk.slot, 'nova')
                                for raw in (getattr(u.d, 'nb', {}).get(sk.slot + ' 사용 시') or [])]
         cand = self.kind_lines(u, kind) if source is plain else [ln for ln in source if line_kind(ln) == kind]
@@ -2920,12 +2893,11 @@ class Battle:
                 if (p <= 0 or v.d.skills.get('기본기') is None or v.cd.get('기본기', 0) > 0
                         or self.incapacitated(v)):
                     continue
-                if self.mc['revenge_rate'] == 'hit':
-                    # Build 26314877 NKM:7857,11627-11638: current stat
-                    # can cancel a counter; its probability comes from the hit.
-                    p = hit_rate
-                    if p <= 0:
-                        continue
+                # Build 26314877 NKM:7857,11627-11638: current stat
+                # can cancel a counter; its probability comes from the hit.
+                p = hit_rate
+                if p <= 0:
+                    continue
                 if self.R(v.side).random() < min(1.0, p):
                     picks.append((a, v))
             for a, v in picks:
@@ -3225,8 +3197,6 @@ class Battle:
         if video:
             if a.element and v.element and (a.element == v.element or ELEM_BEATS.get(a.element) == v.element):
                 normal += 1
-            if not self.mc['nova_slot_effects']:
-                fixed += int(ctx.nb)  # Legacy video approximation; native slot lines already add this.
         elif mode in ('db', 'video'):
             # starsavior-db mechanics(2026-10-21 확인): 기본값(상성 유리 1, 아니면 0) + 강인도 피해(스킬 ab·버프) + 고정 피해 − 감소
             if a.element and v.element and ELEM_BEATS.get(a.element) == v.element:
@@ -4322,26 +4292,19 @@ class Battle:
                 pres = any(owner.has(n) for n in names)
                 # NKM.Templets:42427-42450: 이름별 지정 중첩수의 부재.
                 if k == '자신이 미보유' and '자신 미보유 효과 중첩수' in dict(ln.params):
-                    if self.mc['not_self_stack'] == 'exact':
-                        n = float(dict(ln.params)['자신 미보유 효과 중첩수'])
-                        if any(owner.has(name) and (level_buff(name) is False or n <= 0 or owner.stack(name) == n)
-                               for name in names):
-                            return False
-                        self.rule_hits['not_self_stack'] += 1
-                        continue
-                    if any(owner.stack(n) >= float(dict(ln.params)['자신 미보유 효과 중첩수']) for n in names):
+                    n = float(dict(ln.params)['자신 미보유 효과 중첩수'])
+                    if any(owner.has(name) and (level_buff(name) is False or n <= 0 or owner.stack(name) == n)
+                           for name in names):
                         return False
+                    self.rule_hits['not_self_stack'] += 1
                     continue
                 if pres != (k == '자신이 보유'):
                     return False
             elif k == '자신 미보유 효과 중첩수':
-                if self.mc['not_self_stack'] == 'exact':
-                    # 앞의 이름별 검사에서 처리함. 합산하면 서로 다른 효과를 혼동함.
-                    if '자신이 미보유' not in dict(ln.params):
-                        return False
-                    continue
-                if self._count(owner, ctx, last) >= float(v):
+                # 앞의 이름별 검사에서 처리함. 합산하면 서로 다른 효과를 혼동함.
+                if '자신이 미보유' not in dict(ln.params):
                     return False
+                continue
             elif k in ('중첩수', '효과 개수', '대상 효과 중첩수'):
                 n = float(v)
                 st = self._count(owner, ctx, last)
@@ -4386,15 +4349,10 @@ class Battle:
                 if bool(ctx.break_targets) != (v == '예'):
                     return False
             elif k in ('대상 강인도 없음', '대상 강인도 있음', 'IsTargetSuperArmor'):
-                if self.mc['target_toughness_condition'] == 'any':
-                    targets = ctx.targets or ([tgt] if tgt is not None else [])
-                    # NKM.Templets:42453-42501: 현재 강인도 >0/<=0, 빈 집합도 통과.
-                    positive = k != '대상 강인도 없음'
-                    passed = not targets or any((x.sa > 0) == positive for x in targets)
-                elif k == '대상 강인도 있음':
-                    passed = tgt is not None and tgt.sa > 0
-                else:
-                    passed = tgt is not None and tgt.broken == (k == '대상 강인도 없음')
+                targets = ctx.targets or ([tgt] if tgt is not None else [])
+                # NKM.Templets:42453-42501: 현재 강인도 >0/<=0, 빈 집합도 통과.
+                positive = k != '대상 강인도 없음'
+                passed = not targets or any((x.sa > 0) == positive for x in targets)
                 if passed != (v == '예'):
                     return False
             elif k == '대상 브레이크':    # TargetSuperArmorBreak는 별도 사건 조건.
@@ -4430,11 +4388,8 @@ class Battle:
             elif k in ('대상 HP% 이상', '대상 HP% 이하'):
                 if tgt is None:
                     return False
-                if self.mc['target_hp_condition'] == 'bp':
-                    ratio, threshold = hp_basis_points(tgt.hp, tgt.maxhp), float(v)
-                    self.rule_hits['target_hp_condition'] += 1
-                else:
-                    ratio, threshold = tgt.hp / tgt.maxhp, float(v) / 10000.0
+                ratio, threshold = hp_basis_points(tgt.hp, tgt.maxhp), float(v)
+                self.rule_hits['target_hp_condition'] += 1
                 if not (ratio >= threshold if k.endswith('이상') else ratio <= threshold):
                     return False
             elif k == '적 처치':
@@ -4633,14 +4588,13 @@ class Battle:
         # 같은 시점의 선행 부여를 참조하는 조건은 부여가 끝난 뒤 판정한다.
         # 나머지 조건은 소거 전에 함께 판정하여 조건부 효과 묶음의 일관성을 지킨다.
         hit_grants = []
-        if self.mc['hit_stack_order'] == 'apply_first':
-            hit_counts = {name.strip() for ln in lines if line_kind(ln) == 'hit_self'
-                          for key, value in ln.params if key == '자신이 보유' for name in value.split(',')}
-            if hit_counts:
-                hit_grants = [ln for ln in lines if line_kind(ln) == 'hit_self' and ln.eff['kind'] == 'buff'
-                              and ln.eff.get('target') == '자신' and ln.eff.get('max')
-                              and ln.eff.get('name') in hit_counts and not ln.params
-                              and not ln.eff.get('consume')]
+        hit_counts = {name.strip() for ln in lines if line_kind(ln) == 'hit_self'
+                      for key, value in ln.params if key == '자신이 보유' for name in value.split(',')}
+        if hit_counts:
+            hit_grants = [ln for ln in lines if line_kind(ln) == 'hit_self' and ln.eff['kind'] == 'buff'
+                          and ln.eff.get('target') == '자신' and ln.eff.get('max')
+                          and ln.eff.get('name') in hit_counts and not ln.params
+                          and not ln.eff.get('consume')]
         count_grants = [ln for ln in lines if ln in hit_grants or ln.eff.get('pre_grant') or
                         (ln.eff['kind'] == 'buff' and
                          (ln.eff.get('per_hit') or ln.eff.get('per_crit') or ln.eff.get('cast_marker')))]
@@ -5141,7 +5095,7 @@ class Battle:
     def run_special(self, owner, ln, ctx, rest):
         """Execute effect lines outside the expected-value parser's model."""
         m = RX_NOVA.match(rest)
-        if m and self.mc['nova_force_effects']:
+        if m:
             # The effect targets a unit, then changes that unit's team pool.
             for x in self.resolve(owner, m.group(1), ctx) or []:
                 self.nova_add(x, int(m.group(2)))
@@ -5184,7 +5138,7 @@ class Battle:
                     x.eff[m.group(2)] = e
                 if self.mc['shield_tick'] == 'turn_end':
                     # NKM:4565-4583,4739-4746: 재부여도 생성 시점 갱신. 시작 이벤트는 같은 턴에 차감.
-                    e.clock = 'any_turn' if self.mc['any_turn_clock'] and self._is_any_turn(owner, e.name) else 'owner_turn'
+                    e.clock = 'any_turn' if self._is_any_turn(owner, e.name) else 'owner_turn'
                     e.fresh = self._buff_fresh(owner, x, e.name, e.clock, ln, shield=True)
                 e.shield += amount      # 같은 보호막 재부여 = 합산, 지속은 긴 쪽
                 e.dur = max(e.dur, _shield_dur(m.group(3)))
@@ -5591,9 +5545,6 @@ class Battle:
             self.rule_hits['chain_timing_unmapped'] += 1
         m = owner.mods()
         tstat = eff['stat'].startswith('target_')
-        if tstat and eff['stat'] != 'target_hp' and self.mc['chain_target_stat'] == 'off':
-            self.unsup['effect: target stat chain'] += 1
-            return
         val = 0.0 if tstat else {'atk': self.atk_stat(owner, ctx), 'hp': owner.maxhp, 'def': self.def_stat(owner)}[eff['stat']]
         for v in tg:
             if v.dead or (spec is None and v.side == owner.side):
@@ -5775,7 +5726,7 @@ class Battle:
         if info.get('clock') == 'any_turn':
             return True
         # 설명문에 문구가 없는 상태(2회·3회 피격 카운팅 버프·규제 등)도 표의 GlobalTurnCounting 으로 판정한다(any_turn_source=table)
-        return self.mc['any_turn_source'] == 'table' and global_turn_buff(name)
+        return global_turn_buff(name)
 
     def refuse_buff(self, x, name):
         """NKM 4053: 신규 강화 거부에 ForceApplyEffect 예외를 적용한다."""
@@ -5797,7 +5748,7 @@ class Battle:
                     self.rule_hits['buff_fresh_other'] += 1
             return fresh
         return (x is owner and owner.acting) or (
-            self.mc['taunt_skill_end_duration'] and name == '도발' and x.acting
+            name == '도발' and x.acting
             and ln is not None and ln.phase == '스킬 사용 후')
 
     # 회피 거부는 SE 실행 시점이 NSEAT_HIT·NSEAT_SKILL_END 인 줄만(NKM:4546). 데이터북 시점 = SE m_ActiveType:
@@ -6008,7 +5959,7 @@ class Battle:
         # A reaction's SKILL_END can taunt the unit whose turn is still in
         # progress. Native duration ticking excludes that application turn
         # (NKM:3723,4234-4252); otherwise a one-turn taunt never gets used.
-        clock = 'any_turn' if self.mc['any_turn_clock'] and self._is_any_turn(owner, name) else 'owner_turn'
+        clock = 'any_turn' if self._is_any_turn(owner, name) else 'owner_turn'
         fresh = self._buff_fresh(owner, x, name, clock, self._cur_line)
         step = buff_step(name) if self.mc['buff_step_group'] == 'client' else None
         if step is not None:

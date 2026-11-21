@@ -10,9 +10,9 @@ from p3_test import battle, give, unit
 from battlesim.starsavior.foe import FoeDef, gloss, load_foe
 
 
-def setup(rule=True):
+def setup():
     b = battle([unit('slow', spd=100), unit('other', spd=100)], [unit('foe', hp=10**8)],
-               mc=dict(toughness='off', any_turn_clock=rule), opts={'coop': False, 'nova': False})
+               mc=dict(toughness='off'), opts={'coop': False, 'nova': False})
     slow, other = b.allies
     return b, slow, other, b.foes[0]
 
@@ -52,12 +52,12 @@ class AnyTurnClockTest(unittest.TestCase):
         for foe_name, skill_name, clock, remaining in (
                 ('집행자 길레', '천체를 불사르는 재액', 'owner_turn', 2),
                 ('올베로스', '칼무덤', 'any_turn', 4)):
-            for enabled in (True, False):
+            for enabled in (True,):
                 with self.subTest(foe=foe_name, enabled=enabled):
                     ui = next(i for i, u in enumerate(raw['u']) if u['n'] == foe_name)
                     fd = FoeDef(raw, ui, stats_override={'hp': 10**8, 'atk': 1})
                     b = battle([unit('ally', hp=10**8)], [fd],
-                               mc=dict(toughness='off', any_turn_clock=enabled),
+                               mc=dict(toughness='off'),
                                opts={'coop': False, 'nova': False})
                     foe, ally = b.foes[0], b.allies[0]
                     skill = next(s for s in fd.skills.values() if s.name == skill_name)
@@ -113,14 +113,6 @@ class AnyTurnClockTest(unittest.TestCase):
         self.assertEqual(slow.eff['속도 감소'].dur, 2)
         b.act(slow)
         self.assertEqual(slow.eff['속도 감소'].dur, 1)
-
-    def test_rule_off_keeps_legacy_owner_clock(self):
-        b, slow, other, foe = setup(rule=False)
-        e = give(slow, '불협화음(해제불가)', harmful=True, dur=3)
-        e.clock = 'any_turn'
-        b.act(other)
-        b.act(foe)
-        self.assertEqual(slow.eff['불협화음(해제불가)'].dur, 3)
 
     def test_glossary_marks_global_turn_counting_effects(self):
         g = gloss()

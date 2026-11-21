@@ -10,7 +10,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from p3_test import battle, give, unit
-from battlesim.mc import Ctx, MC_OPTS
+from battlesim.mc import Ctx
 from battlesim.starsavior.parser import Line
 
 
@@ -49,15 +49,10 @@ class CooldownOrderTest(unittest.TestCase):
         self.assertEqual(seen, [('effect', 4), ('tick', False)])
         self.assertEqual(u.cd['궁극기'], 1)
 
-    def test_legacy_order(self):
-        u, seen = self.trace({'enemy_cd_end_order': 'before_effects'})
-        self.assertEqual(seen, [('tick', True), ('effect', 3)])
-        self.assertEqual(u.cd['궁극기'], 2)
-
     def test_ally_tick_is_independent_of_enemy_order(self):
-        for order in ('before_effects', 'after_effects'):
+        for order in ('after_effects',):
             for mode in ('turn_end',):
-                u, seen = self.trace({'enemy_cd_end_order': order}, side=0)
+                u, seen = self.trace(side=0)
                 self.assertEqual(seen, [('tick', True), ('effect', 4)] if mode == 'turn_start'
                                  else [('effect', 4), ('tick', False)])
                 self.assertEqual(u.cd['궁극기'], 2 if mode == 'turn_start' else 1)
@@ -97,13 +92,6 @@ class RevengeSnapshotTest(unittest.TestCase):
     def test_removing_current_rate_cancels_saved_counter(self):
         self.assertEqual(self.counter(100, 0), 0)
 
-    def test_legacy_uses_current_rate(self):
-        self.assertEqual(self.counter(100, 25, {'revenge_rate': 'current'}), 0)
-        self.assertEqual(self.counter(0, 100, {'revenge_rate': 'current'}), 1)
-
-    def test_off_still_disables_revenge(self):
-        self.assertEqual(self.counter(100, 100, {'revenge': 'off'}), 0)
-
 
 class NovaCapTest(unittest.TestCase):
     def test_skill_and_explicit_effect_share_cap(self):
@@ -123,17 +111,12 @@ class NovaCapTest(unittest.TestCase):
         b.nova_add(a, -99)
         self.assertEqual(b.team_nova, 0)
 
-    def test_legacy_no_cap(self):
-        b = battle([unit('a')], [unit('v')], mc={'nova_force_cap': 0})
-        b.nova_add(b.allies[0], 20)
-        self.assertEqual(b.team_nova, 20)
-
     def test_break_skill_uses_cap_for_team_and_unit_pools(self):
         for pool in ('team', 'unit'):
-            for cap, expected in ((12, 12), (0, 15)):
+            for cap, expected in ((12, 12),):
                 with self.subTest(pool=pool, cap=cap):
                     b = battle([unit('a'), unit('b')], [unit('v', hp=10**9)],
-                               opts={'nova_pool': pool}, mc={'nova_force_cap': cap},
+                               opts={'nova_pool': pool},
                                break_skill={'name': '차원 강습'})
                     b.team_nova = 11
                     for u in b.allies:
@@ -152,18 +135,4 @@ class NovaCapTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    if '--mutations' in sys.argv:
-        cases = [
-            ('enemy_cd_end_order', 'before_effects', CooldownOrderTest, 1),
-            ('revenge_rate', 'current', RevengeSnapshotTest, 3),
-            ('nova_force_cap', 0, NovaCapTest, 2),
-        ]
-        caught = True
-        for key, value, cls, minimum in cases:
-            with patch.dict(MC_OPTS, {key: value}):
-                result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromTestCase(cls))
-            ok = len(result.failures) >= minimum and not result.errors
-            print(f'{key} legacy mutation detected: {ok} ({len(result.failures)} failures)')
-            caught &= ok
-        sys.exit(0 if caught else 1)
     unittest.main(verbosity=2)

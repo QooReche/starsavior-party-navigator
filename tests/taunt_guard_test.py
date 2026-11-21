@@ -7,21 +7,21 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from p3_test import battle, give, unit
-from battlesim.mc import Ctx, MC_OPTS
+from battlesim.mc import Ctx
 from battlesim.metrics import unit_def
 from battlesim.starsavior.parser import Line
 from tools.ingame_check import low_priority
 
 
 class TauntDurationTest(unittest.TestCase):
-    def setup_reaction(self, legacy=False, immune=False, aoe=False):
+    def setup_reaction(self, immune=False, aoe=False):
         d = unit_def('white-pearl-luna')
         b = battle([d, unit('protected', hp=10**7)],
                    [unit('attacker', hp=10**8, cr=10000,
                          immune=['도발'] if immune else [],
                          skills=[dict(slot='기본기', dm=100, all=aoe),
                                  dict(slot='특수기', dm=100, cd=2)])],
-                   mc=dict(toughness='off', **({'taunt_skill_end_duration': False, 'buff_fresh_scope': 'self'} if legacy else {})),
+                   mc=dict(toughness='off'),
                    opts={'coop': False, 'nova': False}, timeline=True)
         luna, ally = b.allies
         foe = b.foes[0]
@@ -54,12 +54,6 @@ class TauntDurationTest(unittest.TestCase):
         self.assertTrue(foe.has('도발'))
         self.assertIs(foe.eff['도발'].src, luna)
         self.assertEqual(foe.eff['도발'].dur, 1)
-
-    def test_legacy_reproduces_immediate_reaction_expiry(self):
-        b, luna, _, foe = self.setup_reaction(legacy=True)
-        b.act(foe)
-        self.assertEqual(luna.cast_count['특수기(추가)'], 1)
-        self.assertFalse(foe.has('도발'))
 
     def test_immune_still_gets_shield_reaction_but_no_taunt(self):
         b, luna, _, foe = self.setup_reaction(immune=True)
@@ -149,11 +143,4 @@ class DefensiveSkillsTest(unittest.TestCase):
 
 if __name__ == '__main__':
     low_priority()
-    if '--mutations' in sys.argv:
-        with patch.dict(MC_OPTS, taunt_skill_end_duration=False):
-            result = unittest.TextTestRunner().run(
-                unittest.defaultTestLoader.loadTestsFromTestCase(TauntDurationTest))
-        caught = len(result.failures) == 2 and not result.errors
-        print('Premature taunt expiry mutation detected:', caught)
-        sys.exit(0 if caught else 1)
     unittest.main(verbosity=2)

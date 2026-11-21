@@ -61,10 +61,6 @@ class FoeAutoTest(unittest.TestCase):
         self.assertEqual(self.targets(b, foe, l15), [])
         self.assertEqual(len(self.targets(b, foe, l25)), 4)
 
-    def test_wendigo_off_keeps_old_choice(self):
-        b, foe, (l15, _) = self.wendigo_battle(mc=dict(foe_auto='off'))
-        self.assertEqual(len(self.targets(b, foe, l15)), 1)   # 옛 동작: 첫 대상/공격자/기본 규칙 1명
-
     def test_witness_coffin_targets_brand(self):
         d = foe_named('공허목도자', with_skills=True)
         b = battle([unit('a%d' % i, hp=10 ** 6) for i in range(4)], [d])

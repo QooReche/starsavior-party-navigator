@@ -41,9 +41,6 @@ class AllyRule1Test(unittest.TestCase):
         e = give(big, '보호막')
         e.shield = 10 ** 6
         self.assertIs(b.pick_attack_target(b.allies[0]), big)
-        # 옛 규칙(boss_first)은 보호막+생명력 합 최저 -> small
-        b.mc['ally_auto_target'] = 'boss_first'
-        self.assertIs(b.pick_attack_target(b.allies[0]), small)
 
     def test_ties_random_both_sides(self):
         b = battle([unit('a')], [unit('f0'), unit('f1')], seed=3)
@@ -96,11 +93,6 @@ class AutoSkillTest(unittest.TestCase):
         # 실제 시전 대상도 그 아군
         b.cast(h, sk, target=tgt)
         self.assertGreater(h.cast_count['궁극기'], 0)
-
-    def test_off_restores_old_choice(self):
-        b, h = self.healer(mc=dict(auto_skill='off'))
-        sk, tgt = b.choose_skill(h)
-        self.assertEqual((sk.slot, tgt), ('궁극기', None))
 
     def test_self_stack_exact(self):
         b = battle([unit('bunny', skills=[dict(slot='기본기', dm=100), dict(slot='궁극기', dm=300, cd=4)])], [unit('foe')])

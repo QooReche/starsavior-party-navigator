@@ -4,14 +4,12 @@ from pathlib import Path
 import random
 import sys
 import unittest
-from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tools')]
 from battlesim.api import _CustomFoe
 from battlesim.mc import Battle, Ctx
 from battlesim.metrics import unit_def
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.parser import Line, Skill
 from ingame_check import low_priority
 from nova_gauge_audit import audit_measure
@@ -125,18 +123,6 @@ class NovaGaugeTest(unittest.TestCase):
         b.run_line(foe, Line('[스킬 사용 후] 스킬 대상에게 노바 포스 -2', '궁극기', 'active'), ctx)
         self.assertEqual((b.team_nova, b.enemy_nova), (0, 7))
 
-    def test_legacy_switches_restore_omissions(self):
-        b = battle(('white-pearl-luna',), policy='manual', mc=dict(
-            nova_skill_gain=False, nova_slot_effects=False, nova_force_effects=False))
-        u = b.allies[0]
-        b.cast(u, u.d.trigger_skills['특수기'], extra=True, skip_lines=True)
-        self.assertEqual(b.team_nova, 0)
-        b.team_nova = 4
-        b.cast(u, u.d.skills['기본기'])
-        self.assertEqual(u.shield_given, 0)
-        b.run_line(u, Line('[턴 시작 시] 자신에게 노바 포스 +2', '잠재력', 'potential'), Ctx(u, u, None))
-        self.assertEqual(b.team_nova, 0)
-
     def test_support_measurement_does_not_change_battle(self):
         plain = measure('36-36', 2, 7, None)
         measured = audit_measure('36-36', 2, 7, None)
@@ -150,14 +136,4 @@ class NovaGaugeTest(unittest.TestCase):
 
 if __name__ == '__main__':
     low_priority()
-    if '--mutations' in sys.argv:
-        caught = []
-        for flag, test in [('nova_skill_gain', 'test_reactions_pay_declared_gain'),
-                           ('nova_slot_effects', 'test_manual_slot_shield_matches_heal_policy'),
-                           ('nova_force_effects', 'test_explicit_effect_conditions_once_and_cooldown')]:
-            with patch.dict(MC_OPTS, {flag: False}):
-                result = unittest.TextTestRunner().run(NovaGaugeTest(test))
-            caught.append(bool(result.failures) and not result.errors)
-            print(flag, 'mutation detected:', caught[-1])
-        sys.exit(0 if all(caught) else 1)
     unittest.main(verbosity=2)

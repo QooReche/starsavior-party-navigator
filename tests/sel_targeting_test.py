@@ -65,19 +65,6 @@ class FoeHitReactionAutoTargetTest(unittest.TestCase):
             b._cur_line = None
         self.assertEqual(got, [b.allies[2]])
 
-    def test_off_switch_reports_unsupported(self):
-        """foe_auto=off 이면 규칙 미확인 unsup 을 남긴다"""
-        d = foe_by_name('공허선도자', with_lines=True)
-        b = battle([unit('a')], [d], mc=dict(foe_auto='off'))
-        foe = b.foes[0]
-        ln = [ln for ln in foe.d.lines if '자동 지정' in ln.raw and '영혼 구속' in ln.raw][0]
-        b._cur_line = ln
-        try:
-            b.resolve(foe, '적(자동 지정)', Ctx(foe, foe, foe.d.skills['기본기']), kind='damage')
-        finally:
-            b._cur_line = None
-        self.assertTrue(any('적 자동 지정 규칙 미확인' in k for k in b.unsup))
-
 
 class EnforceTest(unittest.TestCase):
     """BI_ENFORCE 강제 추가 행동(올베로스 코스모)."""

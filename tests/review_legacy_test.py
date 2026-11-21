@@ -63,11 +63,11 @@ def purify_case(cls=engine.Battle, overrides=None, near_cap=False):
     return b
 
 
-def wave_case(cls=engine.Battle, overrides=None, *, extra='clear', gauge='keep',
+def wave_case(cls=engine.Battle, overrides=None, *, extra='clear', gauge='reset',
               carry='keep', reserved=False):
     b = cls([unit('a'), unit('dead')], [[unit('first')], [unit('second', hp=10**8)]],
             random.Random(7), mc=dict(overrides or {},
-            wave_ally_gauge=gauge, wave_carry=carry), opts={'coop': False}, timeline=True,
+            wave_carry=carry), opts={'coop': False}, timeline=True,
             max_turns=3)
     b.spawn_wave()
     a, dead = b.allies
@@ -89,7 +89,7 @@ class ReviewLegacyTest(unittest.TestCase):
 
     def test_wave_gauge_and_reservation_independent(self):
         for extra, gauge, carry, reserved in itertools.product(
-                ('clear',), ('keep', 'reset'), ('keep', 'client'), (False, True)):
+                ('clear',), ('reset',), ('keep', 'client'), (False, True)):
             with self.subTest(extra=extra, gauge=gauge, carry=carry, reserved=reserved):
                 b = wave_case(extra=extra, gauge=gauge, carry=carry, reserved=reserved)
                 a, dead = b.allies
@@ -105,8 +105,8 @@ class ReviewLegacyTest(unittest.TestCase):
         # 기본 clear/reset은 예약 없는 유닛도 이벤트 전에 0. 새 이벤트 게이지는 옛 후처리 유지.
         b = wave_case()
         a = b.allies[0]
+        a.gauge = 4321   # 앞 웨이브 전환이 이미 0 으로 만들었으므로 다시 채움(reset 이 WAVE_START 전에 도는지 보려고)
         a.d.lines = [Line('[웨이브 시작 시] 자신에게 〈추가 턴〉', '고유 패시브', 'passive')]
-        b.mc.update(wave_ally_gauge='reset')
         b.waves.append([unit('third')])
         seen = []
         original = b.run_line
@@ -127,7 +127,7 @@ def compare_history():
         b = purify_case(engine.Battle, overrides, cap)
         assert state(a) == state(b), ('purify', cap)
     count = 0
-    for carry, gauge, reserved in itertools.product(('keep', 'client'), ('keep', 'reset'), (False, True)):
+    for carry, gauge, reserved in itertools.product(('keep', 'client'), ('reset',), (False, True)):
         # 예약 없는 아군은 새 clear를 켠 채로도 옛 gauge legacy를 재현해야 함.
         for extra in (() if reserved else ('clear',)):   # wave_extra_turn 스위치 삭제(항상 clear)
             args = dict(extra=extra, gauge=gauge, carry=carry, reserved=reserved)
@@ -143,8 +143,6 @@ def compare_history():
 def mutations():
     cases = [
         ('cast', "if purify == 'all_casts':", 'if True:', 'test_purify_legacy_timeline_and_cap'),
-        ('spawn_wave', 'self._reset_wave_gauge()',
-         'exec("for x in self.alive(0): x.gauge = 0.0")', 'test_wave_gauge_and_reservation_independent'),
         ('spawn_wave', 'self._reset_wave_gauge()', 'pass', 'test_default_reset_before_wave_start'),
     ]
     for method, before, after, test in cases:

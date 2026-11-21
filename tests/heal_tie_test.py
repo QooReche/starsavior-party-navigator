@@ -79,7 +79,7 @@ import battlesim.mc as MCM                                       # noqa: E402
 
 def _path_stub(mode, units, seed=1):
     b = _stub(mode, seed)
-    b.mc.update(heal_target='lowest_hp_ratio', foe_auto='client')
+    b.mc.update(heal_target='lowest_hp_ratio')
     b.opts = {'forced_coop_target': 'random'}
     b._cur_line = None
     b.alive = lambda side: [u for u in units if u.side == side and not u.dead]

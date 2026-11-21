@@ -13,7 +13,6 @@ from simkit import battle, give, unit
 from battlesim.api import _norm_party
 from battlesim.mc import Battle, Ctx, Unit
 from battlesim.metrics import unit_def
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior import cosmo_raid as C
 from battlesim.starsavior import guild_bfb as G
 from battlesim.starsavior.data import get_db
@@ -324,7 +323,6 @@ def mutations():
         ('strip off', 'test_mogulus_challenge_strips_after_attack', patch.object(Battle, '_dispel_n_ordered', lambda *a: None)),
         ('gille slow off', 'test_gille_resistance_before_finale', patch.object(Battle, 'add_effect', no_slow)),
         ('asherah chain off', 'test_asherah_break_extra_turn_and_chain', patch.object(Battle, 'chain', lambda *a: None)),
-        ('nova slots off', 'test_first_turn_nova_requires_force', patch.dict(MC_OPTS, nova_slot_effects=False)),
         ('carnelia gauge off', 'test_carnelia_debuff_gauge_and_challenge_are_separate', patch.object(Battle, 'set_gauge', no_gauge)),
         ('global expiry off', 'test_mogulus_fixed_speed_ignores_increases_and_global_expiry', patch.object(Battle, '_tick_any_turn', lambda *a: None)),
         ('speed floor legacy', 'test_speed_floor_and_legacy', patch.object(Unit, 'spd', lambda u: max(1, original_speed(u)))),

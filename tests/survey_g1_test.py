@@ -22,7 +22,7 @@ def selected(key, **skills):
     return _norm_party([dict(key=key, build='none', stats_final=True,
         stats_override=dict(hp=100000, atk=1000, spd=100, cr=0, cd=5000, eh=10000, er=0, **{'def': 100}),
         myinfo_combat=dict(skills=skills, potentials=[]))],
-        get_db(), 'fixed', 'standard', {'myinfo_combat': True})[0][0]
+        get_db(), 'fixed', 'standard', {})[0][0]
 
 
 def setup(key, **skills):

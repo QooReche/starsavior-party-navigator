@@ -230,8 +230,8 @@ class Patch1112Test(unittest.TestCase):
     def test_foe_described_target_keeps_off_tie_order(self):
         from battlesim.starsavior.foe import stage_waves
         _, waves = stage_waves('cosmo', '티리아', '티리아 3단계')
-        for mode, expected in [('off', [0]), ('data', [0, 1])]:
-            b = battle([unit('first'), unit('second')], [waves[0][0]], mc={'foe_auto': mode})
+        for mode, expected in [('data', [0, 1])]:
+            b = battle([unit('first'), unit('second')], [waves[0][0]])
             f = b.foes[0]
             ln = next(ln for ln in b.lines_of(f) if '타임 패러독스' in ln.raw and ln.eff.get('kind') == 'buff')
             b._cur_line = ln
