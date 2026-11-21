@@ -1,3 +1,26 @@
+## 2026-11-22 — 화면·시험·quick 공통화(통일 설계 6·7·8a~c단계)와 그웬 감시 범위 좁히기
+
+통일 설계(`fable_unify.md`)의 화면 쪽 단계를 했음. 저장 캐시 키·화면 글자는 그대로임. 엔진(`battlesim/**`)과 `tools/` 빌더는 손대지 않았음.
+- 6단계(quick 상수): `quick.js`의 3000·1.85·9000에 `DEF_K`·`BASE_MULT`·`PEN_FULL` 이름을 붙였고 `Quick.consts`로 내보냄. `tests/quick_test.py`가 이 값을 `quick.py`·`battlesim/rules`와 대조함. `BASE_MULT`를 1.8로 바꾸면 실패하는 것을 확인했음. 확장안(`quick.json` `consts` 절)은 `quick.py`·`build_quick_data.py`를 고쳐야 해서 하지 않았음.
+- 7단계(시험 도우미): `simkit.unit5`·`hit`를 두고, `p5_test`에서 가져오던 시험 11개가 simkit을 쓰게 바꿨음. 자체 정의 중 simkit과 글자까지 같은 것은 없었음. `tests/helpers/page.js`(`readSrc`·`cut`·`line`·`loadModule`)를 만들어 `growth_*_test.js` 9개에 적용했음. 바꾼 시험의 출력(통과 수·변이 수)은 전후 같음. 도우미를 일부러 깨뜨리면 실패하는 것도 확인했음.
+- 8a·8b(팀 키·중복 제거·SCROWN): `ui_shared.js`에 `teamKey`(",")·`teamId`("+")·`uniqBy`·`clone`·`stable`·`fnv`를 두었음. 두 구분자는 서로 다른 캐시의 키라 합치지 않았음. 템플릿 20곳·`growth_ui`·`star_link_ui`·탐색·배치·학습 모듈이 이 함수를 씀. SCROWN은 `recommend_runtime.js`의 `scrownOf` 한 곳에서 조립함. `ui_shared.js`는 index에서 `quick.js` 다음, 다른 화면 모듈보다 먼저 로드됨.
+- 8c(서식): `esc`·`escKeep`·`numText`·`pctText`·`pctText1`·`durText`(ms)·`durTextSec`(초)를 `ui_shared.js`에 모았음. 옛 판과 새 판에 경계값(null·NaN·Infinity·.5 반올림·작은따옴표·시간 경계)을 넣어 대조했고 차이는 0건이었음.
+- esc 동작 차이로 화면 글자가 바뀔 수 있는 곳(바뀌지 않게 `escKeep`을 씀):
+  - `party_template.html`의 esc 47곳(줄 620·663·674·679·680·683·684·690·760·780·789·797·799·800·803·806·846~849·857·859·862·945·946·1004·1005·1007·1021·1025·1026·1324·1359·1407·1408·1419·1431·1432·1444·1489·1497·1499·1500·1551·1591·1592·1594). 작은따옴표를 그대로 두고, null·undefined를 글자 그대로 씀.
+  - `cosmo_direct_ui.js`의 esc 27곳. 작은따옴표를 그대로 두고, null은 빈 글자로 씀.
+  - 정본 `esc`로 바꾸면 `'`가 `&#39;`로 바뀜. 공개 data에 `'`가 있음(saviors_index 8·synergy_pairs 444·syn_detail 80 등). 템플릿에서는 null이 빈 글자가 됨.
+- 그대로 둔 서식: `cosmo_direct_ui` num(수가 아니면 NaN)·`myinfo_view` num(소수 8자리)·템플릿 `miNum`(브라우저 지역 서식)·`cosmo_direct_ui` pct(숫자). 결과가 달라서 정본으로 바꾸지 않았음.
+- 그웬 감시: `ux_ui.js` `mountGwen`의 MutationObserver가 이제 다음 변화에만 refresh함. 그웬 그림·결과 요약이 들어오거나 나갈 때, 그웬 그림을 품은 요소의 class·hidden·open·style이 바뀔 때, `data-gwen-expression`이 바뀔 때. 진행 글자(텍스트 노드)와 그웬과 무관한 요소의 속성 변화는 무시함. 화면 밖·잘림은 IntersectionObserver가 봄.
+  - 실측: 길드 레이드 탐색에서 가짜 작업자로 21걸음을 넘겨 진행 글자를 18번 바꿨음. refresh가 **40회 → 9회**로 줄었음. 변경 전 2회·변경 후 2회 모두 같은 값이었음. refresh는 `querySelectorAll('img[data-gwen-art]')` 호출 수로 셌음.
+  - `gwen_stage_dom_test`에 장면 1개와 변이 2개를 더했음. 그웬 e2e(auto·guild_owner·search_stage·shadow·lane_image·direct_gwen)는 변경 직후 단독 실행에서 통과했음.
+- 확인: JS 시험 78개의 마지막 출력이 단계마다 기준선과 같았음(`recommendation_cache_test.js`·`reco_reuse_test.js`·`reuse_baseline` 포함). 다른 것은 위 그웬 시험 장면 추가뿐임. index.html을 다시 만들었고, 8a는 바이트가 같았고 8b·8c는 인라인 `<script>`를 뺀 나머지가 같았음(2,229,740 → 2,229,219B).
+- 전체 `run_tests.py --rebuild --e2e`: 단위 266/266 통과, e2e 19/25 통과. 실패 6개는 작업 전 상태(49f6983 화면 파일)로 되돌려도 똑같이 실패함:
+  - `test_gwen_loading`: phase 전환 때 x==0을 기대하는데, 왕복으로 바뀐 동작과 맞지 않음.
+  - `test_case_banner`: `gwen_lane.js` 변이 문자열이 없음.
+  - `test_direct_compact`: 높이 비율.
+  - `test_page` `test_ux_step12`: 얼굴 그림 로딩 전 naturalWidth.
+  - `test_gwen_search_stage`·`test_gwen_shadow`: 타이밍. 앞선 단독 실행에서는 통과했음.
+
 ## 2026-11-22 — 일반 추천 «후보 전체 훑기» 고정 비용 제거(설계 A, 스위치 기본 끔 그대로)
 
 프로파일 결과, 훑기 1팀당 비용이 큰 원인은 엔진 준비가 아니었음. 네이티브 호출당 고정 비용은 잡음 수준이었음. 원인은 메인 스레드였음: 팀 결과마다 전체 순위 정렬(`scrOrder`·`scrFullRank`)과 진행 칸·글자 DOM 갱신을 다시 했고, 그웬 레인 `MutationObserver`가 배치를 강제했음. 그래서 A-1(`SearchExecutor.throttle`, 200ms 간격 갱신·훑기 중 정렬 생략), A-2(실행기 팀 묶음 `simDispatch` `chunk`, 크기 `min(50, ceil(팀/(작업자×40)))`, 일반 추천 훑기·예선만), A-3(엔진 묶음 `web.run_auto_batch`·`AutoBatch`, 조우 정규화·의미 해석 캐시를 묶음 안에서만 공유)을 넣었음. `tests/batch_identity_test.py`에서 묶음 결과와 팀별 결과가 글자 그대로 같았음(9묶음 50팀). 팀 간에 새게 만든 변이 3건은 실패로 잡힘. 브라우저 실측 10건은 화면 결과·총 판 수·1안이 묶기 전과 같았음. 켬 시간은 회랑 580·590·작전 44-6에서 묶기 전의 ×0.22·×0.29·×0.20이 됐고, 켬÷끔은 ×9~13에서 ×1.8~2.9로 줄었음. 기여는 대부분 A-1임. 끔 상태 예선은 배차가 지금과 같고 시간도 잡음 안이었음. 기본값은 저사양 실측 뒤 정하기를 권함(`docs/fullscreen_measure_1121.md` «묶음 후»).
