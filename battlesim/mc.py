@@ -28,7 +28,7 @@ from .starsavior.data import SRC
 from .starsavior import foe as _foe
 from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger, explicit_target
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules, after_active_se
-from .starsavior import marker_se
+from .starsavior import marker_se, belgras_se
 
 with open(os.path.join(SRC, 'data', 'buff_force.json'), encoding='utf-8') as _f:
     FORCE_BUFF_NAMES = frozenset(json.load(_f))
@@ -917,6 +917,8 @@ class Battle:
             return tot
         self.allies = [Unit(d, 0, i, self, leader=(leader == i), fx=_afx(d)) for i, d in enumerate(ally_defs)]
         self.waves = waves
+        self._has_belgras_stage = any(belgras_se.is_stage(d) for w in waves for d in w)
+        self._belgras_damage = []
         self.wave_i = -1
         self.foes = []
         self.fx = fx or {}
@@ -1092,7 +1094,7 @@ class Battle:
         if u.side == 1 and not self.enemy_lines:
             return ()
         modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow', 'claire_preemptive_marker'))
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow', 'claire_preemptive_marker', 'belgras_stage_se'))
         key = id(u.d)
         sc = self._semantic_cache
         if sc is not None:
@@ -1126,7 +1128,7 @@ class Battle:
         raw = d.lines
         hit = u._kind_index
         modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow', 'claire_preemptive_marker'))
+            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow', 'claire_preemptive_marker', 'belgras_stage_se'))
         if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw) or hit[4] != modes:
             grouped = {}
             for ln in self.lines_of(u):
@@ -1492,6 +1494,8 @@ class Battle:
         self._hit_log = None
         if self.gb is not None and hasattr(self.gb, 'flush_damage'):
             self.gb.flush_damage()
+        if self._belgras_damage:
+            self.flush_belgras_damage()
         if not u.dead:
             if end_cd and not ally_end_cd and self.mc['enemy_cd_end_order'] == 'before_effects':
                 self._tick_cooldowns(u)
@@ -2487,6 +2491,8 @@ class Battle:
                     self.run_batch(u, lines, ctx)
             # 자기 효과 생략과 타 유닛에 대한 사용 통지는 별개다.
             self.fire_side(u, ctx, 'ally_pre')
+            if self._has_belgras_stage:
+                self.fire_foes(u, ctx, 'foe_pre_any')
             self.fire_foes(u, ctx, 'foe_pre' if sk.is_attack else 'foe_pre_na')
             # on_my_attack: 적의 공격 시작 전(스트라이크 전) 반응 예약 — 대상 체력·버프가 피해 전 상태
             if (sk.is_attack and ctx.targets and u.side == 1
@@ -2534,6 +2540,8 @@ class Battle:
             if self.mc['check_buff_expiry'] == 'skill':
                 # NKM:15394-15396,15586-15593: SKILL_END 뒤, 협공보다 먼저 전원 정리.
                 self._expire_checks(skill=True)
+            if self._has_belgras_stage and self.mc['belgras_stage_se'] == 'client':
+                belgras_se.expire_marker(self, ctx)
             if ((u.side == 0 or (self.mc['foe_forced_coop'] == 'on'
                                 and any(b.side == u.side for b in self._forced_coop_candidates)))
                     and sk.is_attack and not extra and not u.dead
@@ -3435,6 +3443,17 @@ class Battle:
             self.kill(v, a)
             return True
         return False
+
+    def flush_belgras_damage(self):
+        """NKM:4742,6239-6287,13957-13965: 반응 뒤·턴 종료 전에 예약 피해 적용."""
+        pending, self._belgras_damage = self._belgras_damage, []
+        for target, amount in pending:
+            if target.dead:
+                continue
+            hp = target.hp
+            damage = self.fixed_true_damage(None, target, amount, source_side=target.side)
+            self.rule_hits['belgras_fixed_applied'] += 1
+            self.log(belgras_self_damage=target.name, damage=damage, hp_damage=hp-target.hp)
 
     def fixed_true_damage(self, source, target, damage, *, source_side=None, remaining_hp_bp=None):
         """ADT_FIXED_TRUE (NKM:17333-17365,17857-17914).
@@ -4609,6 +4628,12 @@ class Battle:
             if self.mc['foe_client_flow'] == 'client':
                 self.run_special(owner, ln, ctx, '자신에게 〈디버프 해제〉 (약화효과 해제)')
             return
+        if kd == 'belgras_fixed':
+            self._belgras_damage.append((owner, eff['value']))
+            self.rule_hits['belgras_fixed_queued'] += 1
+            return
+        if eff.get('belgras_marker'):
+            self.rule_hits['belgras_action_marker'] += 1
         if kd == 'cosmo':
             if self.gb is not None and hasattr(self.gb, 'execute_se'):
                 self.gb.execute_se(owner, ln, ctx)

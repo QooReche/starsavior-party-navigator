@@ -5,7 +5,7 @@ import re
 from collections import defaultdict
 
 from .parser import Line, Skill, ally_stack_trigger, parse_props, _perm_apply
-from . import marker_se
+from . import marker_se, belgras_se
 
 
 def after_active_se(key, ln):
@@ -121,7 +121,7 @@ def normalized_lines(d, rules=None):
                     continue
                 new.append(ln)
             lines = new + [count]
-    return description_lines(d, lines, rules)
+    return belgras_se.normalize(d, description_lines(d, lines, rules), rules)
 
 
 def normalized_definition(d):

@@ -76,6 +76,7 @@ _KEEP.update(foe_client_flow='off', fixstats_speed_zero='off', superarmor_damage
 _KEEP['self_hp_condition'] = 'ratio'
 _KEEP['marker_se_flow'] = 'legacy'
 _KEEP['level_max_source'] = 'legacy'
+_KEEP['belgras_stage_se'] = 'legacy'
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 
