@@ -42,7 +42,7 @@ class CondCountBindTest(unittest.TestCase):
         self.assertEqual(sorted(dict(l.params)['중첩수'] for l in _gauge_lines(a)), ['1', '2', '3'])
 
     def _fired(self, mode, stacks, with_geupgeup=False):
-        b, a, foe = _battle(cond_count_bind=mode)
+        b, a, foe = _battle()
         a.eff.clear()
         _buff(a, SEOLJUNG, stacks)
         if with_geupgeup:
@@ -55,13 +55,8 @@ class CondCountBindTest(unittest.TestCase):
             with self.subTest(stacks=stacks):
                 self.assertEqual(self._fired('holding', stacks), [str(stacks)])
 
-    def test_last_key_never_fires(self):
-        for stacks in (1, 2, 3):
-            with self.subTest(stacks=stacks):
-                self.assertEqual(self._fired('last_key', stacks), [])
-
     def test_geupgeup_present_blocks_in_both_modes(self):
-        for mode in ('holding', 'last_key'):
+        for mode in ('holding',):
             self.assertEqual(self._fired(mode, 2, with_geupgeup=True), [])
 
 

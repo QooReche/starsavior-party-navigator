@@ -694,7 +694,7 @@ class Controller(BaseController):
             fx = self.fx
             if 'drain' in fx and not a.dead:
                 self.stats['drain'] += 1
-                self._put(a, CH_DRAIN, {'생명력%': -fx['drain']['pct']}, cat=b.mc['cosmo_drain_category'], maxs=fx['drain']['max'], fixed=True, dead_keep=True)
+                self._put(a, CH_DRAIN, {'생명력%': -fx['drain']['pct']}, cat='marker', maxs=fx['drain']['max'], fixed=True, dead_keep=True)
             if 'rewind' in fx and boss.has(fx['rewind']['state']):
                 self.stats['rewind'] += 1
                 b.set_gauge(boss, boss.gauge + fx['rewind']['pct'] * 100)

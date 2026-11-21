@@ -24,7 +24,7 @@ class TestStamp(unittest.TestCase):
     def test_fingerprint_follows_rule_values(self):
         from battlesim import rules
         before = S.fingerprint()
-        with mock.patch.dict(rules.MC_OPTS, {'foe_react_buff_count': 'harmful'}):
+        with mock.patch.dict(rules.MC_OPTS, {'enemy_auto_target': 'weighted'}):
             self.assertNotEqual(S.fingerprint(), before)
         self.assertEqual(S.fingerprint(), before)
 

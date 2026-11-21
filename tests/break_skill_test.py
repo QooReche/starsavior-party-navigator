@@ -385,7 +385,7 @@ class BreakSkillGlobalTest(unittest.TestCase):
 
     def test_planet_damage_and_toughness(self):
         b = setup({'name': '행성 정화'}, turn_limit=1,
-                  mc={'toughness_elem': 'db'}, opts={'coop': False})
+                  mc={}, opts={'coop': False})
         a, f = b.allies[0], b.foes[0]
         a.gauge, b.break_points = 10000, 3
         f.sa = f.sa_max = 100
@@ -442,6 +442,8 @@ class BreakSkillGlobalTest(unittest.TestCase):
                     b.run()
                 self.assertEqual(b.team_nova, 0)
 
+
+
     def test_duration_override_and_api_legacy(self):
         for name in ('큐브 과부하', '행성 정화'):
             for clock in ('global',):
@@ -472,7 +474,6 @@ class BreakSkillGlobalTest(unittest.TestCase):
                             simulate(['fei'], {'waves': [[{'hp': 10 ** 9}]], 'max_turns': .01},
                                      {'n_runs': 1, 'break_skill': {'name': name}, 'rules_override': mc})
                         self.assertEqual(made[0].break_domain_turns, expected)
-
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -496,20 +496,14 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared=None
     elif mc['power_penalty'] not in ('off', 'model'):
         raise ValueError('power_penalty 는 off|model: %r' % mc['power_penalty'])
     rk = int(o.get('rekindle') or 0)
-    if mc['rekindle_apply'] not in ('sum', 'multiply'):
-        raise ValueError('rekindle_apply 는 sum|multiply: %r' % mc['rekindle_apply'])
     if rk and meta.get('content') in ('op', 'oph'):
         if not 0 < rk < len(REKINDLE):
             raise ValueError('rekindle 은 0~%d: %r' % (len(REKINDLE) - 1, rk))
         x = REKINDLE[rk]
-        if mc['rekindle_apply'] == 'multiply':
-            a0, e0 = pen or (1.0, 1.0)
-            pen = (a0 * (1 + x), e0 * (1 - x))
-        else:
-            # IsBuff=false·ForceApplyEffect·TurnInfinite·DeadNotDispel: 강화 개수/해제/금지와
-            # 독립인 상시 스탯. stage_fx_target=off여도 재점화는 별도로 적용한다.
-            # NKM:2371,3885-3892,18864-18897 → mc.Unit.mods → 일반/지속/연쇄 피해.
-            ally_fx = list(ally_fx or ()) + [({'피해 증가': x * 100, '피해 감소': x * 100}, None, None)]
+        # IsBuff=false·ForceApplyEffect·TurnInfinite·DeadNotDispel: 강화 개수/해제/금지와
+        # 독립인 상시 스탯. stage_fx_target=off여도 재점화는 별도로 적용한다.
+        # NKM:2371,3885-3892,18864-18897 → mc.Unit.mods → 일반/지속/연쇄 피해.
+        ally_fx = list(ally_fx or ()) + [({'피해 증가': x * 100, '피해 감소': x * 100}, None, None)]
     static = support_report(defs + [d for w in waves for d in w])
     names = ['%s#%d' % (d.name, i) for i, d in enumerate(defs)]
     agg = defaultdict(lambda: defaultdict(list))

@@ -11,7 +11,6 @@ from p3_test import battle, give, unit
 from battlesim.api import _norm_encounter
 from battlesim.mc import Battle
 from battlesim.metrics import unit_def
-from battlesim.rules import MC_RULES
 from battlesim.starsavior.foe import stage_waves, sudden_death, battle_end
 from battlesim.starsavior.parser import Line
 
@@ -22,9 +21,9 @@ def tuner():
 
 class CorridorTest(unittest.TestCase):
     def test_tuner_accuracy_blocks_fei_evade_trigger(self):
-        for mode, count in [('data', 0), ('legacy', 1)]:
+        for mode, count in [('data', 0)]:
             with self.subTest(mode=mode):
-                b = battle([unit_def('fei')], [tuner()], mc={'permanent_accuracy': mode})
+                b = battle([unit_def('fei')], [tuner()], mc={})
                 fei, boss = b.allies[0], b.foes[0]
                 fei.hp = fei.maxhp = boss.hp = boss.maxhp = 10 ** 9
                 give(fei, '회피율 증가', {'회피율': 50})
@@ -122,10 +121,6 @@ class CorridorTest(unittest.TestCase):
     def test_metadata_and_package_input(self):
         from tools.build_simpack import files
         self.assertIn('data/battle_end.json', files())
-        for key in ('permanent_accuracy', 'battle_end_mode'):
-            self.assertEqual(MC_RULES[key]['legacy'], 'legacy')
-            for field in ('grade', 'source', 'note'):
-                self.assertTrue(MC_RULES[key][field])
 
 
 if __name__ == '__main__':

@@ -68,8 +68,8 @@ class Patch1112Test(unittest.TestCase):
     def test_ceres_own_turn_extra_is_live(self):
         ln=next(ln for ln in unit_def('ceres-sun-supporter').lines
                 if ln.eff.get('consume') and ln.eff.get('name')=='먼지 포착(해제불가)')
-        for mode,remaining in [('client',3),('main_only',8)]:
-            b=battle([unit_def('ceres-sun-supporter')],[unit('f',hp=10**8)],mc={'own_turn_condition':mode})
+        for mode,remaining in [('client', 3),]:
+            b=battle([unit_def('ceres-sun-supporter')],[unit('f',hp=10**8)],mc={})
             a=b.allies[0];a.acting=True
             ctx=Ctx(a,a,a.d.skills['특수기'],True);ctx.via='extra'
             ctx.parent=Ctx(a,a,a.d.skills['특수기'])
@@ -87,10 +87,10 @@ class Patch1112Test(unittest.TestCase):
     def test_wedding_epindel_own_turn_extra_effects(self):
         # 실제 부케 토스의 내 턴 줄 3개: 추가 턴·공격력 증가·점화 소비.
         # 상태만 준비하고 추가 시전의 피해와 조건/효과 실행은 실제 엔진을 쓴다.
-        for mode, expected in [('client', ['extra_turn', 'buff', 'remove']), ('main_only', [])]:
+        for mode, expected in [('client', ['extra_turn', 'buff', 'remove']),]:
             with self.subTest(mode=mode):
                 b = battle([unit_def('wedding-epindel')], [unit('f', hp=10**8)],
-                           mc={'own_turn_condition': mode}, opts={'coop': False, 'nova': False})
+                           mc={}, opts={'coop': False, 'nova': False})
                 a = b.allies[0]
                 a.acting = True
                 give(a, '점화', {}, stacks=5).maxs = 5
@@ -116,9 +116,9 @@ class Patch1112Test(unittest.TestCase):
                 self.assertEqual(a.stack('점화'), 0 if mode == 'client' else 5)
 
     def test_own_turn_uses_owner_state_with_other_event_source(self):
-        for mode in ('client', 'main_only'):
+        for mode in ('client',):
             b = battle([unit_def('wedding-epindel'), unit('partner')], [unit('f')],
-                       mc={'own_turn_condition': mode})
+                       mc={})
             a, partner = b.allies
             give(a, '점화', {}, stacks=5).maxs = 5
             lines = [ln for ln in b.lines_of(a) if dict(ln.params).get('내 턴') == '예']
@@ -132,6 +132,7 @@ class Patch1112Test(unittest.TestCase):
                         self.assertEqual([b.cond_ok(a, ln, ctx) for ln in lines], [expected] * 3,
                                          (mode, acting, source.key, extra))
 
+
     def test_old_mislabelled_stack_grant_keeps_legacy_switch(self):
         for mode, stacks in [('on', 3)]:
             b = battle([unit()], [unit('f')])
@@ -142,9 +143,9 @@ class Patch1112Test(unittest.TestCase):
             self.assertEqual(a.stack('먼지 포착(해제불가)'), stacks)
 
     def test_named_duration_extends_buff_and_keeps_legacy(self):
-        for mode, duration in [('on', 5), ('off', 3)]:
+        for mode, duration in [('on', 5)]:
             with self.subTest(mode=mode):
-                b = battle([unit()], [unit('f')], mc={'effect_dur_extend': mode})
+                b = battle([unit()], [unit('f')])
                 a, f = b.allies[0], b.foes[0]
                 selected = give(a, '공격력 증가', {'공격력%': 30})
                 other = give(a, '속도 증가', {'속도%': 20})
@@ -183,9 +184,9 @@ class Patch1112Test(unittest.TestCase):
         raws = named_lines(get_db().main)
         self.assertEqual(len(raws), 3)
         for raw in raws:
-            for mode in ('on', 'off'):
+            for mode in ('on',):
                 with self.subTest(raw=raw, mode=mode):
-                    b = battle([unit()], [unit('f')], mc={'effect_dur_extend': mode})
+                    b = battle([unit()], [unit('f')], mc={})
                     a, f = b.allies[0], b.foes[0]
                     burn = give(f, '연소', harmful=True)
                     burn.inst = [[a, 2], [a, 3]]

@@ -162,10 +162,6 @@ class DrainSpeedTest(unittest.TestCase):
                 b.gb._drop(boss, C.ERO)
                 b.gb._put(boss, C.ERO, {'속도%': 1}, maxs=35, add=n)
                 self.assertEqual(boss.spd(), math.floor(180 * (1 + n / 100 + (.3 if level == 9 else 0)) + 1e-9))
-            b.mc['cosmo_speed_floor'] = False
-            b.mc['stat_floor'] = 'float'     # 전역 최종 속도 정수화(stat_floor=client)도 꺼야 cosmo_speed_floor 의 효과가 보임
-            b.gb._set_stacks(boss, C.ERO, 34)
-            self.assertAlmostEqual(boss.spd(), 180 * (1.34 + (.3 if level == 9 else 0)))
 
     def test_thorn_gauge_only_single_attack(self):
         for thorn, all_, attack in ((False, False, True), (True, True, True), (True, False, False), (True, False, True)):
@@ -252,17 +248,6 @@ class VampirismTest(unittest.TestCase):
         b._vampirism_hit(a, v, ctx, 0)
         self.assertEqual(a.hp, 1000)
         self.assertEqual(ctx.vamp_damage, {})
-
-    def test_off_and_no_supplier(self):
-        b, a, v = self.setup_hit(mc={'damage_vampirism': 'off'})
-        with patch.object(b, 'final_dmg', return_value=10000):
-            b.cast(a, a.d.skills['기본기'], target=v)
-        self.assertEqual(a.hp, 1000)
-        b.mc['damage_vampirism'] = 'client'
-        a.eff.clear()
-        b.dirty(a)
-        b.cast(a, a.d.skills['기본기'], target=v)
-        self.assertEqual(a.hp, 1000)
 
     def test_explicit_xx2_build_and_corridors(self):
         db = get_db()

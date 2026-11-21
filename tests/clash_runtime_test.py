@@ -84,13 +84,13 @@ class ClashCombatTest(unittest.TestCase):
         cast = Battle.cast
         for tab, prefix, buff, minimum in [
                 (0, ['재충전', '포착', '포착', '재충전', '침입자 청소'], '버전 업그레이드(해제불가)', 1),   # mc.barrier_depletion=client: 〈저항 장막〉(BI_MOTIVATOR_HANDS_1, Barrier) 보호막이 깨지면 장막째 사라져 중첩 조건이 덜 맞음
-                (1, ['서리 지진', '차가운 고통', '차가운 고통', '서리 지진', '눈보라를 가르는 포효'], '혹한의 기운', 2),
+                (1, ['서리 지진', '차가운 고통', '차가운 고통', '눈보라를 가르는 포효'], '혹한의 기운', 2),   # living_slot_order=client(옛 legacy 고정 삭제) 순서
                 (2, ['소집', '판별', '판별'], '방위', 2)]:
             with self.subTest(tab=tab):
                 waves, limit, fx, _, meta = _norm_encounter({'stage': 'clash/%s/%s Ⅲ' % (TABS[tab], TABS[tab])})
                 b = Battle([unit_def(k, build='standard') for k in ['gwen','fei','professor-m','amora']],
                            waves, random.Random(3), leader=0, turn_limit=limit, fx=fx,
-                           timeline=True, battle_mode=meta['battle_mode'], mc={'living_slot_order': 'legacy'})
+                           timeline=True, battle_mode=meta['battle_mode'], mc={})
                 observed = dict(stacks=0, shield=0, soldier_stacks=0)
                 def observe(battle, *args, **kwargs):
                     result = cast(battle, *args, **kwargs)
@@ -123,6 +123,7 @@ class ClashCombatTest(unittest.TestCase):
         ctx = Ctx(boss, boss, boss.d.skills['궁극기'])
         self.assertTrue(ctx.skill.all)
         self.assertIs(b._coop_target(ctx), b.allies[0])
+
 
     def test_summon_then_forced_coop_and_legacy(self):
         for mode in ('on',):
@@ -238,6 +239,7 @@ class ClashTurnLimitTest(unittest.TestCase):
         self.assertLess(b.t / b.turn_ticks, 50)
         self.assertEqual(r['runs'], [['wipe', None]])
         self.assertEqual((r['outcome']['wipe_p'], r['outcome']['timeout_p']), (1, 0))
+
 
     def test_legacy_keeps_50_model_turn_cap(self):
         r, b = self.run_case(rules_override={'clash_no_turn_limit': False})

@@ -113,7 +113,7 @@ class CallSiteStat(unittest.TestCase):
 
     def _chain(self, eff_extra=None, mc=None):
         b = battle([unit('a', df=1000), unit('g', df=3000)], [unit('f', atk=1000)],
-                   mc=dict({'chain_round': 'client', 'chain_guard': 'client'}, **(mc or {})))
+                   mc=dict({'chain_round': 'client'}, **(mc or {})))
         a, g, f = b.allies[0], b.allies[1], b.foes[0]
         give(g, '수호', {'피해 분담(수호)': 50})
         ctx = Ctx(f, a, a.d.skills['기본기'])

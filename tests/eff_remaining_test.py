@@ -128,19 +128,10 @@ class EngineTest(unittest.TestCase):
         # 잊혀진 맹세 Ⅰ 시뮬
         r = simulate(['professor-m', 'gwen', 'fei', 'amora'],
                      {'stage': 'equip/잊혀진 맹세/잊혀진 맹세 Ⅰ'},
-                     {'n_runs': 2, 'seed': 1, 'rules_override': {'local_vs_element': 'on'}})
+                     {'n_runs': 2, 'seed': 1, 'rules_override': {}})
         rt = r.get('unsupported', {}).get('runtime', {})
         vs_unsup = [k for k in rt if 'vs 달' in k]
         self.assertEqual(vs_unsup, [], 'vs 달 속성 피해 증가가 여전히 미지원: %s' % vs_unsup)
-
-    def test_vs_element_off(self):
-        """off 로 하면 unsupported 에 기록."""
-        r = simulate(['professor-m', 'gwen', 'fei', 'amora'],
-                     {'stage': 'equip/잊혀진 맹세/잊혀진 맹세 Ⅰ'},
-                     {'n_runs': 2, 'seed': 1, 'rules_override': {'local_vs_element': 'off'}})
-        rt = r.get('unsupported', {}).get('runtime', {})
-        vs_unsup = [k for k in rt if 'local_vs_element off' in k]
-        self.assertGreater(len(vs_unsup), 0, 'off 일 때 unsupported 기록이 없음')
 
 
 if __name__ == '__main__':

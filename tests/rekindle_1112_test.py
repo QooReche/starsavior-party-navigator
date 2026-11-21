@@ -11,7 +11,6 @@ sys.path[:0] = [ROOT, os.path.join(ROOT, 'tests')]
 from simkit import unit, give
 from battlesim import api
 from battlesim.mc import Battle, Ctx
-from battlesim.rules import MC_RULES
 
 
 def api_battle(content='oph', level=5, mode='sum', power='off'):
@@ -29,7 +28,7 @@ def api_battle(content='oph', level=5, mode='sum', power='off'):
          patch.object(api, '_norm_encounter', return_value=enc), patch.object(api, 'Battle', Capture):
         result = api.simulate(['gwen'], {'stage': 'stub', 'max_turns': 3},
                               {'rekindle': level, 'n_runs': 1, 'seed': 3,
-                               'rules_override': {'rekindle_apply': mode, 'power_penalty': power,
+                               'rules_override': {'power_penalty': power,
                                                   'toughness': 'off',
                                                   'rand_range': [1, 1]}})
     b = seen[0]
@@ -61,17 +60,11 @@ class RekindleTest(unittest.TestCase):
             self.assertFalse(buff['IsBuff'])
             self.assertTrue(all(buff[k] for k in ('TurnInfinite', 'DeadNotDispel', 'ForceApplyEffect')))
 
-    def test_rule(self):
-        r = MC_RULES['rekindle_apply']
-        self.assertEqual((r['value'], r['legacy'], r['grade']), ('sum', 'multiply', 'code'))
-        self.assertIn('multiply', r['alt'])
-        self.assertIn('18864-18897', r['source'])
-
     def test_api_all_levels_content_and_power_independence(self):
         for content in ('op', 'oph', 'clo'):
             for level, x in enumerate(api.REKINDLE):
                 for power in ('off', 'model'):
-                    for mode in ('sum', 'multiply'):
+                    for mode in ('sum',):
                         with self.subTest(content=content, level=level, power=power, mode=mode):
                             base, r0 = api_battle(content, 0, mode, power)
                             if power == 'model':
@@ -89,7 +82,7 @@ class RekindleTest(unittest.TestCase):
                             self.assertEqual(b.pen, expected)
 
     def test_general_critical_and_net_cap(self):
-        for mode, outgoing, incoming in [('sum', 2250, 500), ('multiply', 2500, 375)]:
+        for mode, outgoing, incoming in [('sum', 2250, 500),]:
             b, _ = api_battle(mode=mode)
             a, v = b.allies[0], b.foes[0]
             a.last_slot = v.last_slot = None
@@ -101,7 +94,7 @@ class RekindleTest(unittest.TestCase):
             self.assertEqual(b.rule_hits['dmg_cap_scope'], int(mode == 'sum'))
 
     def test_dot_and_chain_both_directions(self):
-        for mode in ('sum', 'multiply'):
+        for mode in ('sum',):
             for side in (0, 1):
                 for kind in ('dot', 'chain'):
                     with self.subTest(mode=mode, side=side, kind=kind):
@@ -148,10 +141,6 @@ class RekindleTest(unittest.TestCase):
         self.assertAlmostEqual(a.mods()['inc'], .35)
         self.assertEqual(a.mods()['red'].get('all', 0), .25)
         self.assertEqual(b.foes[0].mods()['inc'], 0)
-
-    def test_invalid_mode(self):
-        with self.assertRaisesRegex(ValueError, 'rekindle_apply'):
-            api_battle(mode='invalid')
 
     def test_real_hard_stage_progress_and_affected_hits(self):
         seen = {'calls': 0, 'changed': 0}

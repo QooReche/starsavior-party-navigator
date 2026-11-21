@@ -46,7 +46,7 @@ def _make_summoner(name='boss', summon_name='minion', hp=200000, atk=5000, slots
 
 
 def _battle(ally_keys=TEAM, foe_defs=None, mc_override=None, **kw):
-    mc = dict(summon='data')
+    mc = dict()
     mc.update(mc_override or {})
     foes = foe_defs or [_make_summoner()]
     b = Battle([unit_def(k) for k in ally_keys], [foes], random.Random(42), mc=mc, **kw)
@@ -187,7 +187,7 @@ class SummonBehaviorTest(unittest.TestCase):
     def test_real_stage_positions_are_slots(self):
         """실제 스테이지(잊혀진 맹세 Ⅰ): 처음 적·소환 적 모두 위치 = 게임 칸, 칸이 겹치지 않음(codex 리뷰)"""
         _st, waves = stage_waves('equip', '잊혀진 맹세', '잊혀진 맹세 Ⅰ')
-        b = Battle([unit_def(k) for k in TEAM], waves, random.Random(3), mc=dict(summon='data'), max_turns=30)
+        b = Battle([unit_def(k) for k in TEAM], waves, random.Random(3), mc=dict(), max_turns=30)
         b.spawn_wave()
         boss = b.foes[0]
         self.assertEqual((boss.pos, boss.slot), (2, 2))
@@ -201,7 +201,7 @@ class SummonBehaviorTest(unittest.TestCase):
     def test_summoned_units_take_turns_in_run(self):
         """실제 전투에서 소환 유닛이 행동하고 전역 턴에 들어감"""
         summoner = _make_summoner(slots=[0, 4], summon_hp=10 ** 7, summon_spd=200, hp=10 ** 8)
-        b = Battle([unit_def(k) for k in TEAM], [[summoner]], random.Random(42), mc=dict(summon='data'), turn_limit=40)
+        b = Battle([unit_def(k) for k in TEAM], [[summoner]], random.Random(42), mc=dict(), turn_limit=40)
         b.run()
         summoned = [u for u in b.all_foes + b.foes if u.summoned]
         self.assertTrue(summoned and any(u.actions > 0 for u in summoned))
@@ -233,17 +233,6 @@ class SummonBehaviorTest(unittest.TestCase):
         # 소환자 처치
         b.kill(b._foe_slots[2], b.allies[0])
         self.assertTrue(len(b.alive(1)) > 0, '소환 유닛 생존')
-
-    def test_off_switch(self):
-        """mc.summon=off 일 때 소환 안 되고 unsupported 에 기록됨."""
-        summoner = _make_summoner(slots=[0, 4])
-        wave = [summoner]
-        b = _battle(foe_defs=wave, mc_override={'summon': 'off'})
-        b.spawn_wave()
-        sk = list(b.foes[0].d.skills.values())[0]
-        b.cast(b.foes[0], sk)
-        self.assertEqual(len(b.foes), 1, 'off 면 소환 안 됨')
-        self.assertTrue(any('summon' in k for k in b.unsup), 'unsupported 에 기록')
 
     def test_progress_excludes_summons(self):
         """progress() 는 소환 유닛을 분모에 넣지 않음."""

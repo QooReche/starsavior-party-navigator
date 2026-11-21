@@ -102,7 +102,7 @@ class CombatTests(unittest.TestCase):
 
     def test_random_ally_basic_conditions_and_once_per_turn(self):
         d = definition(potentials=[(40405, 1)])
-        b = battle([d, unit('partner')], [unit('one'), unit('two')], mc={'own_turn_condition': 'main_only'})
+        b = battle([d, unit('partner')], [unit('one'), unit('two')], mc={})
         a = b.allies[0]
         a.acting = True
         ln = next(x for x in d.lines if x.slot == '잠재력')
@@ -147,7 +147,6 @@ class CombatTests(unittest.TestCase):
         ln = next(x for x in d.lines if x.slot == '잠재력')
         ctx = Ctx(a, a, a.d.skills['기본기'], True)
         ctx.via, ctx.crit = 'extra', True
-        self.assertEqual(b.mc['own_turn_condition'], 'client')
         with patch.object(b.rng, 'random', return_value=0), \
                 patch.object(b.rng, 'choice', lambda xs: xs[-1]), \
                 patch.object(b, 'cast', wraps=b.cast) as cast:

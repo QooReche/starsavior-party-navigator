@@ -152,7 +152,7 @@ def measure(stage, runs, seed, myinfo, override=None):
                    buff_speed_pct=u.mods()['spdp'], speed=u.spd(),
                    alive_allies=len(b.alive(0)), ally_actions=sum(x.actions for x in b.allies),
                    broken=u.broken, cd_before=dict(u.cd),
-                   break_skip=(u.broken and u.side == 0 and b.mc['ally_break_gauge'] == 'skip'),
+                   break_skip=False,   # ally_break_gauge 스위치 삭제(엔진 다이어트 4단계) — 회복 턴을 건너뛰지 않음
                    interval=round(b.t - b._audit_last.get(u, 0), 6))
         originals['act'](b, u)
         if u.actions == before:  # support skill ended the wave before actor's turn

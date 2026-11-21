@@ -9,15 +9,13 @@ sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from p3_test import battle, give, unit
 from battlesim.mc import Ctx
 from battlesim.metrics import unit_def
-from battlesim.rules import MC_OPTS
 
 
 class PreemptiveClientTest(unittest.TestCase):
     def test_buff_gate_reaches_actual_attack(self):
-        self.assertEqual(MC_OPTS['preemptive_defense'], 'client_main')   # 2026-11-04 기본 전환(legacy recognize)
-        for mode, blocked in [('client', True), ('on', False)]:
+        for mode, blocked in [('client', True)]:   # preemptive_defense 스위치 삭제(항상 client_main)
             b = battle([unit('victim', hp=10**7), unit('guard', hp=10**7)],
-                       [unit('attacker', hp=10**7)], mc={'preemptive_defense': mode})
+                       [unit('attacker', hp=10**7)], mc={})
             victim, guard = b.allies
             guard.d.passive['preempt'] = 1.0
             attacker = b.foes[0]
@@ -33,7 +31,7 @@ class PreemptiveClientTest(unittest.TestCase):
                                    ('bunny-claire@개화(SSR)', '궁극기', True),
                                    ('bunny-claire', '궁극기', False)]:
             b = battle([unit_def(key)], [unit('victim'), unit('guard')],
-                       mc={'preemptive_defense': 'client'})
+                       mc={})
             attacker = b.allies[0]
             victim, guard = b.foes
             guard.d.passive['preempt'] = 1.0

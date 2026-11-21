@@ -1,8 +1,7 @@
-"""ChgzulK7VI4 영상 관측 회귀. --legacy는 동일 관측을 db로 검사해 실패해야 한다.
+"""ChgzulK7VI4 영상 관측 회귀 중 기본 규칙(클라 강인도 식)에서도 성립하는 것만 남김.
+옛 스위치 toughness_elem(video·db 모델)은 엔진 다이어트 4단계에서 지움 — 영상 모델 전용 시험(관측 표·협공 일반화)은 삭제.
 
 python -X utf8 -I tests/toughness_video_test.py
-python -X utf8 -I tests/toughness_video_test.py --legacy
-버스트 궁 4와 다른 구원자 협공 0은 관측 확정이 아닌 후보 규칙 시험이다.
 """
 import os
 import random
@@ -15,9 +14,7 @@ from battlesim.api import _norm_encounter, _norm_party
 from battlesim.mc import Battle, Ctx, Eff
 from battlesim.starsavior.data import get_db
 
-MODE = 'db' if '--legacy' in sys.argv else 'video'   # 현행 video 규칙 검증, --legacy는 db 반례 재현
-if '--legacy' in sys.argv:
-    sys.argv.remove('--legacy')
+MODE = 'client'
 
 # key, slot, expected, measured repeats. 궁 4는 버스트 여부 미상이라 아래 별도 가설 시험.
 OBSERVED = [
@@ -36,7 +33,7 @@ def fixture(key, mode=MODE, **opts):
     waves = _norm_encounter({'stage': 'op/아가논 시가지/SECTOR 36-36'})[0]
     boss = next(d for d in waves[0] if d.boss)
     b = Battle(defs, [[boss]], random.Random(7), opts=dict(coop=False, **opts),
-               mc=dict(toughness_elem=mode, rand_range=[1, 1]), enemy_lines=False, timeline=True)
+               mc=dict(rand_range=[1, 1]), enemy_lines=False, timeline=True)
     b.spawn_wave()
     a, f = b.allies[0], b.foes[0]
     a.acting = True
@@ -50,15 +47,6 @@ def give(u, name, props=None):
 
 
 class VideoToughnessTest(unittest.TestCase):
-    def test_observed_skills(self):
-        for key, slot, expected, repeats in OBSERVED:
-            with self.subTest(key=key, slot=slot):
-                b, a, f = fixture(key)
-                for _ in range(repeats):
-                    f.sa, f.broken = 18, False
-                    a.actions += 1
-                    b.cast(a, a.d.skills[slot], target=f)
-                    self.assertEqual(18 - f.sa, expected)
 
     def test_ab_and_effect_data(self):
         expected = {
@@ -91,13 +79,6 @@ class VideoToughnessTest(unittest.TestCase):
         self.assertEqual(f.sa, 18)
         self.assertLess(f.hp, hp)  # 피해가 들어가도 강인도는 0
 
-    def test_coop_generalization_candidate(self):
-        # 아세라 외/강제 협공은 영상 미측정. 추가 발동과 구분되는 경로를 검사.
-        for via in ('coop', 'forced_coop', 'extra'):
-            b, a, f = fixture('wedding-epindel')
-            b.cast(a, a.d.skills['기본기'], extra=True, target=f, via=via)
-            self.assertEqual(18 - f.sa, 1 if via == 'extra' else 0)
-
     def test_burst_explains_four_conditionally(self):
         # 3/4/3 재현의 충분조건일 뿐, 영상에서 버스트를 썼다는 증거는 아니다.
         got = []
@@ -108,23 +89,6 @@ class VideoToughnessTest(unittest.TestCase):
             self.assertEqual(ctx.nb, burst)
             got.append(18 - f.sa)
         self.assertEqual(got, [3, 4, 3])
-
-    def test_once_per_cast_target(self):
-        b, a, f = fixture('wedding-epindel')
-        c = Ctx(a, a, a.d.skills['특수기'])
-        c.targets, c.target = [f], f
-        for _ in range(4):
-            b.deal(a, c)
-        self.assertEqual(18 - f.sa, 2)
-        # 별도 시전 Ctx에는 제한이 전파되지 않는다.
-        b.cast(a, a.d.skills['특수기'], extra=True, target=f)
-        self.assertEqual(18 - f.sa, 4)
-        # 전체 공격의 다른 대상도 각각 한 번.
-        c.tough_targets.clear()
-        other = type(f)(f.d, 1, 1, b)
-        c.targets = [f, other]
-        b.deal(a, c)
-        self.assertEqual((f.sa, other.sa), (12, 16))
 
     def test_no_tough_on_evade_nullify_immunity_or_break(self):
         for effect in ('회피', '스킬 피해 무효', '강인도 피해 무효', 'broken'):
@@ -157,13 +121,6 @@ class VideoToughnessTest(unittest.TestCase):
             results.append(start - a.sa)
         self.assertEqual(results[0], results[1])
 
-    def test_legacy_counterexample(self):
-        reductions = []
-        for mode in ('db', 'video'):
-            b, a, f = fixture('haydee', mode)
-            b.cast(a, a.d.skills['기본기'], target=f)
-            reductions.append(18 - f.sa)
-        self.assertEqual(reductions, [0, 1])
 
 
 if __name__ == '__main__':

@@ -81,7 +81,7 @@ class EnforceTest(unittest.TestCase):
     def test_enforce_makes_ally_cast(self):
         """enforce=data 이면 〈초즌〉 보유 아군이 기본기를 시전한다"""
         d = foe_by_name('올베로스', with_lines=True)
-        b = battle([unit('a%d' % i, hp=10**6) for i in range(4)], [d], mc=dict(enforce='data'))
+        b = battle([unit('a%d' % i, hp=10**6) for i in range(4)], [d], mc=dict())
         foe = b.foes[0]
         # 적 편 아군(= foe 진영 = side 1)에게 초즌 부여 — 올베로스가 자기 진영 아군에게 enforce
         # 여기서는 allies (side 0) 가 foe 의 상대이므로, foe 의 아군 = side 1 = foes
@@ -98,21 +98,6 @@ class EnforceTest(unittest.TestCase):
             b._cur_line = None
         # 초즌 보유 아군이 없으면 아무 일도 안 하고 unsupported 도 없어야 함
         self.assertFalse(any('enforce' in k or '추가 발동' in k for k in b.unsup), f'unsup: {dict(b.unsup)}')
-
-    def test_enforce_off_reports_unsupported(self):
-        """enforce=off 이면 미지원으로 보고한다"""
-        d = foe_by_name('올베로스', with_lines=True)
-        b = battle([unit('a')], [d], mc=dict(enforce='off'))
-        foe = b.foes[0]
-        ln = [ln for ln in foe.d.lines if '추가 발동' in ln.raw][0]
-        b._cur_line = ln
-        ctx = Ctx(foe, foe, foe.d.skills['기본기'])
-        try:
-            from battlesim.mc import line_rest
-            b._run_special_rest(foe, ln, ctx, line_rest(ln))
-        finally:
-            b._cur_line = None
-        self.assertTrue(any('effect:' in k for k in b.unsup))
 
 
 class AllyAutoNotSelfTest(unittest.TestCase):

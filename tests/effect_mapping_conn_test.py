@@ -13,7 +13,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, unit   # noqa: E402
 from battlesim.mc import Battle, Ctx   # noqa: E402
-from battlesim.rules import MC_OPTS   # noqa: E402
 from battlesim.starsavior.parser import Line   # noqa: E402
 from tools import effect_mapping_audit as A   # noqa: E402
 
@@ -26,7 +25,7 @@ class FakeTables:
 
 class LocalChanceTest(unittest.TestCase):
     def run_local(self, mode, roll):
-        b = battle([unit('a')], [unit('f')], mc={'local_chance': mode})
+        b = battle([unit('a')], [unit('f')], mc={})
         a = b.allies[0]
         ctx = Ctx(a, a, a.d.skills['기본기'])
         ln = Line(RAW, '기본기', 'active')
@@ -34,8 +33,6 @@ class LocalChanceTest(unittest.TestCase):
             b.run_line(a, ln, ctx)
         return ctx.inc, b.rule_hits['local_chance']
 
-    def test_default(self):
-        self.assertEqual(MC_OPTS['local_chance'], 'roll')
 
     def test_parser_keeps_expected_value_and_chance(self):
         eff = Line(RAW, '기본기', 'active').eff
@@ -48,7 +45,7 @@ class LocalChanceTest(unittest.TestCase):
 
     def test_no_roll_when_line_is_not_this_casters_se(self):
         # 클라 OBF_18609(NKM:16493-16505): 시전자의 이 시점 SE일 때만 RollDice. 남의 스킬 문맥(ctx.src is not owner)에선 굴리지 않음.
-        b = battle([unit('a')], [unit('f')], mc={'local_chance': 'roll'})
+        b = battle([unit('a')], [unit('f')], mc={})
         a, f = b.allies[0], b.foes[0]
         ctx = Ctx(a, f, f.d.skills['기본기'])
         calls = []
@@ -56,10 +53,6 @@ class LocalChanceTest(unittest.TestCase):
             b.run_line(a, Line(RAW, '기본기', 'active'), ctx)
         self.assertEqual((calls, b.rule_hits['local_chance'], ctx.inc), ([], 0, 0))
 
-    def test_legacy_expected(self):
-        inc, hits = self.run_local('expected', 0.99)
-        self.assertAlmostEqual(inc, 0.225)
-        self.assertEqual(hits, 0)
 
 
 class AuditCompareTest(unittest.TestCase):
@@ -108,7 +101,7 @@ class AuditCompareTest(unittest.TestCase):
 
 def mutations():
     cases = [
-        (Battle, '_exec_line', "self.mc['local_chance'] == 'roll'", 'False', LocalChanceTest, 'test_roll_applies_full_value_or_nothing'),
+        (Battle, '_exec_line', "roll = chance < 1", 'roll = False', LocalChanceTest, 'test_roll_applies_full_value_or_nothing'),
         (Battle, '_exec_line', "        if ctx.src is not owner:\n            return\n        if not fired():",
          "        fired()\n        if ctx.src is not owner:\n            return\n        if not fired():",
          LocalChanceTest, 'test_no_roll_when_line_is_not_this_casters_se'),

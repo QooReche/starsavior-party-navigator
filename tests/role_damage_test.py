@@ -13,7 +13,7 @@ class RoleDamageTest(unittest.TestCase):
     def setup_pair(self, mode='client', ar='레인저', vr='디펜더'):
         b = battle([unit('a', role=ar, hp=10**7, df=0)],
                    [unit('v', role=vr, hp=10**7, df=0)],
-                   mc={'role_damage_terms': mode, 'counter_inc': 0})
+                   mc={'counter_inc': 0})
         return b, b.allies[0], b.foes[0]
 
     def damage(self, b, a, v):
@@ -40,8 +40,6 @@ class RoleDamageTest(unittest.TestCase):
         give(a, 'up', {'NST_RATE_DAMAGE_UP_ROLE_DEFENDER': 1000}, stacks=2)
         give(v, 'down', {'NST_RATE_DAMAGE_REDUCE_ROLE_RANGER': 500})
         self.assertEqual(self.damage(b, a, v), 1150)
-        b.mc['role_damage_terms'] = 'off'
-        self.assertEqual(self.damage(b, a, v), 1000)
 
     def test_normal_chain_increase_only(self):
         b, a, v = self.setup_pair()

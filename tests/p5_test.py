@@ -122,68 +122,38 @@ def test_toughness_break():
         s0, s1, broke, gauge0, ratio, 0.85 / 0.70, F.sa, F.broken)
 
 
-def test_tough_elem_and_fixed():
-    """강인도 상성 옛 규칙(on): 불리하면 ab 몫 0, 유리하면 +1(ab>0 일 때), 「강인도 고정 피해」는 상성과 무관. 회피하면 안 깎임.
-    기본 규칙(db, starsavior-db): 기본값(유리 1, 아니면 0) + ab + 고정 — 유리하면 ab 0 기본기도 1, 불리해도 ab 는 그대로"""
-    out, db = {}, {}
-    for el, fixed in (('태양', 0), ('별', 0), ('달', 0), ('달', 1)):
-        for mode, dst in (('on', out), ('db', db)):
-            a, f = unit('a', element=el), unit('foe', hp=10 ** 9, sa=10, element='별')
-            b = battle([a], [f], mc=dict(toughness_elem=mode))
-            A, F = b.allies[0], b.foes[0]
-            if fixed:
-                give(A, '파쇄', {'강인도 고정 피해': 1.0})
-            hit(b, A, F, '기본기', ab=1)
-            dst[(el, fixed)] = 10 - F.sa
-    a, f = unit('a', element='태양'), unit('foe', hp=10 ** 9, sa=10, element='별')
-    b = battle([a], [f], mc=dict(toughness_elem='db'))
-    hit(b, b.allies[0], b.foes[0], '기본기', ab=0)
-    db_basic0 = 10 - b.foes[0].sa
-    a, f = unit('a'), unit('foe', hp=10 ** 9, sa=10)
-    b = battle([a], [f])
-    A, F = b.allies[0], b.foes[0]
-    give(F, '회피', {'회피율': 100.0})
-    hit(b, A, F, '기본기', ab=2)
-    ev = 10 - F.sa
-    # 태양 -> 별 유리(+1), 별 -> 별 보통, 달 -> 별 불리(0), 불리 + 고정 1 = 1
-    ok = (out == {('태양', 0): 2, ('별', 0): 1, ('달', 0): 0, ('달', 1): 1} and ev == 0
-          and db == {('태양', 0): 2, ('별', 0): 1, ('달', 0): 1, ('달', 1): 2} and db_basic0 == 1)
-    return ok, '옛 규칙 %s, db %s, db 유리 ab0 %s, 회피 시 %s' % (out, db, db_basic0, ev)
-
-
 def test_ally_break_gauge_and_coop():
-    """구원자 브레이크: 기본 keep은 유지·회복 후 정상 행동, legacy skip은 회복 턴 생략.
-    reset은 즉시 게이지 0. 격파 중에는 협공 후보에서 빠짐."""
+    """구원자 브레이크: 게이지 유지·회복 후 정상 행동(옛 ally_break_gauge skip·reset 삭제). 격파 중에는 협공 후보에서 빠짐."""
     res = {}
-    for mode in ('keep', 'reset', None):
+    for mode in ('keep', None):
         a, f = unit('a', sa=1), unit('foe', hp=10 ** 9)
-        b = battle([a], [f], mc=dict(ally_break_gauge=mode) if mode else None)
+        b = battle([a], [f])
         A, F = b.allies[0], b.foes[0]
         A.gauge = 6000.0
         hit(b, F, A, '기본기', ab=1)
         res[mode] = (A.broken, A.gauge)
     no_react = b.no_react(b.allies[0])
     acted = {}
-    for mode in ('skip', 'keep', None):
+    for mode in ('keep', None):
         a, f = unit('a', sa=1), unit('foe', hp=10 ** 9)
-        bb = battle([a], [f], mc=dict(ally_break_gauge=mode) if mode else None)
+        bb = battle([a], [f])
         A, F = bb.allies[0], bb.foes[0]
         hit(bb, F, A, '기본기', ab=1)
         hp0 = F.hp
         bb.act(A)
         acted[mode] = (A.broken, F.hp < hp0)      # 회복했는가, 그 턴에 공격했는가
-    ok = (res == {'keep': (True, 6000.0), 'reset': (True, 0.0), None: (True, 6000.0)} and no_react
-          and acted == {'skip': (False, False), 'keep': (False, True), None: (False, True)})
+    ok = (res == {'keep': (True, 6000.0), None: (True, 6000.0)} and no_react
+          and acted == {'keep': (False, True), None: (False, True)})
     return ok, '결과 %s / 다음 턴 %s' % (res, acted)
 
 
 def test_break_recovery_turn_effects():
     """연속 회복 턴도 지속 효과·턴 이벤트를 처리하며 스킬/행동 이벤트는 발생하지 않는다."""
     out = {}
-    for mode in ('skip', 'keep', 'reset'):
+    for mode in ('keep',):
         for shield_tick in ('turn_end',):
             b = battle([unit('a', hp=10**9), unit('ally')], [unit('foe', hp=10**9)],
-                       mc=dict(ally_break_gauge=mode), opts=dict(coop=False))
+                       opts=dict(coop=False))
             a, ally = b.allies
             f = b.foes[0]
             a.d.lines = [Line('[턴 종료 시] 자신에게 행동 게이지 1%p 증가', '고유 패시브', 'passive')]
@@ -555,7 +525,7 @@ def test_buff_ban_refuse():
 
 # ---------------------------------------------------------------- 사전 계산 연결
 TESTS = [test_build_light_values, test_stat_order_journey, test_potential_pick, test_build_missing_is_error, test_build_speed_range,
-         test_toughness_break, test_tough_elem_and_fixed, test_ally_break_gauge_and_coop, test_break_recovery_turn_effects,
+         test_toughness_break, test_ally_break_gauge_and_coop, test_break_recovery_turn_effects,
          test_break_conditions, test_damage_limit,
          test_power_penalty, test_new_enemy_effects, test_new_conditions, test_action_trigger, test_cast_pre_events,
          test_cristelle_stack_trigger, test_cristelle_ignite_amount, test_trigger_support_report,

@@ -14,10 +14,10 @@ from battlesim.mc import Ctx                                     # noqa: E402
 from battlesim.rules import MC_OPTS                              # noqa: E402
 
 
+
 def test_defaults_client():
     assert MC_OPTS['stat_floor'] == 'client'
     assert MC_OPTS['chain_round'] == 'client'
-    assert MC_OPTS['chain_guard'] == 'client'
 
 
 def _atk_def(mode):
@@ -56,30 +56,26 @@ def _chain(mc, guard=False, nullify=False, coef=0.3337):
 
 def test_chain_round_client():
     # 1000 x 0.3337 x 1.85 = 617.345 → int 617, 방어율 0.25 → 462.75 → 462
-    b, da, _ = _chain({'chain_round': 'client', 'chain_guard': 'off'})
+    b, da, _ = _chain({'chain_round': 'client'})
     assert da == 462, da
     assert b.rule_hits['chain_round'] == 1
 
 
 def test_chain_round_float():
-    _, da, _ = _chain({'chain_round': 'float', 'chain_guard': 'off'})
+    _, da, _ = _chain({'chain_round': 'float'})
     assert da == 463, da                     # 617.345 x 0.75 = 463.008
 
 
 def test_chain_guard_client():
     # 617 중 50% = 308.5 를 수호자가: 대상 308.5 x 0.75 = 231, 수호자(방어 3000, 방어율 0.5) 308.5 x 0.5 = 154
-    b, da, dg = _chain({'chain_round': 'client', 'chain_guard': 'client'}, guard=True)
+    b, da, dg = _chain({'chain_round': 'client'}, guard=True)
     assert (da, dg) == (231, 154), (da, dg)
     assert b.rule_hits['chain_guard'] == 1
 
 
-def test_chain_guard_off():
-    _, da, dg = _chain({'chain_round': 'client', 'chain_guard': 'off'}, guard=True)
-    assert (da, dg) == (462, 0), (da, dg)
-
 
 def test_chain_guard_skips_nullified_target():
-    b, da, dg = _chain({'chain_round': 'client', 'chain_guard': 'client'}, guard=True, nullify=True)
+    b, da, dg = _chain({'chain_round': 'client'}, guard=True, nullify=True)
     assert dg == 0 and b.rule_hits.get('chain_guard', 0) == 0, (da, dg)
 
 
@@ -102,7 +98,7 @@ def test_stat_floor_def_coef_skill():
 def _tie(mode):
     """아군 4칸(엔진 칸 0·1 전열, 2·3 후열) 중 칸 1(전열)·칸 2(후열)·칸 3(후열)이 같은 분담 비율. 대상 = 칸 0."""
     b = battle([unit('t'), unit('f2'), unit('b1'), unit('b2')], [unit('foe', atk=1000)],
-               mc={'guard_tie': mode, 'chain_guard': 'client', 'chain_round': 'client', 'living_slot_order': 'legacy'})
+               mc={'chain_round': 'client'})
     t, f2, b1, b2 = b.allies
     for w in (b2, b1, f2):
         give(w, '수호', {'피해 분담(수호)': 30})
@@ -117,18 +113,15 @@ def test_guard_tie_client_prefers_front():
     assert b.rule_hits['guard_tie'] >= 1
 
 
-def test_guard_tie_first():
-    _, g, (t, f2, b1, b2) = _tie('first')
-    assert g is b2, g.name
-
 
 def test_guard_tie_both_back_keeps_first():
-    b = battle([unit('t'), unit('f2'), unit('b1'), unit('b2')], [unit('foe')], mc={'guard_tie': 'client', 'chain_guard': 'client', 'living_slot_order': 'legacy'})
+    b = battle([unit('t'), unit('f2'), unit('b1'), unit('b2')], [unit('foe')], mc={})
     t, f2, b1, b2 = b.allies
     for w in (b1, b2):
         give(w, '수호', {'피해 분담(수호)': 30})
     b.allies[:] = [t, b2, b1, f2]
-    assert b._chain_guard(t, 1000.0)[0] is b2
+    # 생존 목록은 게임 칸 순서(living_slot_order 스위치 삭제): b1(칸 0)이 먼저 보이므로 b1
+    assert b._chain_guard(t, 1000.0)[0] is b1
 
 
 if __name__ == '__main__':

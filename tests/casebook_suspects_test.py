@@ -19,7 +19,7 @@ class DimensionalStrikeToughnessTest(unittest.TestCase):
 
     def drop(self, ve):
         b = battle([unit('a', element='태양')], [unit('f', element=ve, hp=10 ** 9, sa=50)],
-                   break_skill={'name': '차원 강습'}, mc={'toughness_elem': 'client'})
+                   break_skill={'name': '차원 강습'}, mc={})
         a, f = b.allies[0], b.foes[0]
         skills = dict(a.d.skills)
         a.d.skills.clear()

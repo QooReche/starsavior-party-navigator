@@ -312,36 +312,35 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'skill_end_timing', 'se_independent_roll',
     'chain_stat_true', 
     'dmg_cap_scope',
-    'rekindle_apply',
     'fixed_true_formula', 'counter_slot_timing',
-    'buff_ban', 'permanent_accuracy', 'battle_end_mode',
-    'ally_break_gauge', 'ally_init_cd', 'ally_variant_mapping', 'own_turn_condition',
-    'basic_tough', 'enforce',
+    'buff_ban', 'battle_end_mode',
+    'ally_init_cd', 'ally_variant_mapping', 
+    'basic_tough', 
     'break_skill_atk_pct', 'break_skill_boss_points', 'break_skill_buff_turns',
     'break_skill_cd_unit', 'break_skill_cooldown', 'break_skill_cost',
     'break_skill_domain_turns', 'break_skill_fixed', 'break_skill_heal_ratio',
     'break_skill_hit_pct', 'break_skill_normal_points',
     'break_skill_point_cap', 'break_skill_role_speed_pct', 
     'break_skill_speed_pct', 'break_skills',
-    'buff_maxhp', 'chain_pen', 'chain_round', 'chain_guard', 'stat_floor', 'target_row_slot', 'living_slot_order', 'guard_tie', 'stat_stage', 'turn_gauge', 'chain_skill_damage_up', 'cond_count_bind', 'cosmo_boss_barrier', 'counter_inc',
-    'effect_dur_extend', 'enemy_auto_target', 'enemy_cd_native',
+    'buff_maxhp', 'chain_pen', 'chain_round', 'stat_floor', 'stat_stage', 'turn_gauge', 'chain_skill_damage_up', 'counter_inc',
+    'enemy_auto_target', 'enemy_cd_native',
     'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
     'enemy_same_formula', 'enemy_spawn', 
-    'foe_react_buff_count', 'foe_react_timing', 'gauge_conditional', 'guild_boss', 'guild_count', 'gauge_overflow', 'guard_mode', 
-    'heal_target', 'leader_speed', 'local_vs_element', 'role_damage_terms', 'manual_burst', 
+    'guild_boss', 'guild_count', 'gauge_overflow', 'guard_mode', 
+    'heal_target', 'leader_speed', 'manual_burst', 
     'max_depth', 'max_events', 
-    'power_penalty', 'preemptive_defense', 'rand_range', 
-    'sudden_death', 'summon',
+    'power_penalty', 'rand_range', 
+    'sudden_death', 
     'target_defender_mult', 'target_mode', 'target_row_weight',
-    'toughness', 'toughness_elem',
-    'guard_precision', 'chain_timing', 'local_chance', 
+    'toughness', 
+    'chain_timing', 
     'turn_ticks', 'unknown_cond', 'clash_no_turn_limit',
     # 2026-11-04 클라 후보 스위치(break_point_hits·break_auto_blocked_cc 는 같은 날 기본 = 클라 값으로 전환)
     'break_point_hits', 'dot_formula', 'react_hist_unit', 'break_auto_blocked_cc',
     # 2026-11-05 길방 보스 속도·공격력 NV 합산
     'guild_boss_nv_sum', 'guild_bridal_kill_reset',
     # 2026-11-06 코스모 게이트 시즌 전투(벨그라스·난이도 레벨·챌린지 효과)
-    'cosmo_raid_boss', 'damage_vampirism', 'cosmo_drain_category', 'cosmo_speed_floor', 'belgras_stage_se',
+    'cosmo_raid_boss', 'belgras_stage_se',
     # 2026-11-14 클라 대조(해제·면역 16건)
 ])
 _NOTE_KEYS = frozenset({'enemy_skill_ai', 'break_skill_model', 'random_buff_draw'})
@@ -383,20 +382,6 @@ def test_assumptions_used_note_keys_present():
                 wrong_val.append('%s:%r!=%r' % (k, x['value'], expected_val))
     ok = not missing and not wrong_val
     return ok, 'note 누락=%s / 값 불일치=%s' % (missing, wrong_val)
-
-
-def test_toughness_elem_no_legacy():
-    """toughness_elem 의 legacy 는 value 와 같으면 안 된다(2026-11-04 기본 client 전환 뒤 legacy = 옛 기본 db)."""
-    entry = RULES['mc'].get('toughness_elem', {})
-    ok = entry.get('legacy') == 'db' and entry.get('value') != entry.get('legacy')
-    return ok, 'toughness_elem value=%s legacy=%s' % (entry.get('value'), entry.get('legacy', '(없음)'))
-
-
-def test_ally_break_default():
-    entry = RULES['mc']['ally_break_gauge']
-    ok = (MC_OPTS['ally_break_gauge'] == 'keep' and entry['legacy'] == 'skip'
-          and 'reset' in entry['alt'] and entry['grade'] == 'code' and bool(entry['source']))
-    return ok, '격파 기본 keep / legacy skip / reset 대안 / 코드 근거'
 
 
 def test_power_penalty_default():
@@ -478,7 +463,7 @@ TESTS = [test_coop_trigger, test_coop_single, test_nova_policy, test_nova_pool, 
          test_dot_snapshot, test_gear_order, test_dmg_reduction, test_forced_coop_slot, test_debuff_state_zero_p,
          test_debuff_state_multi_caster, test_gauge_expect, test_index_uses_merged_opts, test_legacy_reproduces_p1_golden,
          test_mc_note_not_in_opts, test_mc_opts_keys_snapshot, test_assumptions_used_note_keys_present,
-         test_toughness_elem_no_legacy, test_ally_break_default, test_power_penalty_default, test_note_keys_not_in_code, test_alt_legacy_keys_in_code]
+         test_power_penalty_default, test_note_keys_not_in_code, test_alt_legacy_keys_in_code]
 
 
 def main():

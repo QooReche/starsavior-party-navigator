@@ -16,7 +16,7 @@ class AsherahToughnessTest(unittest.TestCase):
     def setup_battle(self, crush=True, bosses=(True, False), sa=30, mode='client'):
         b = battle([unit_def('asherah-order-striker')],
                    [unit('foe%d' % i, hp=10**9, sa=sa, boss=boss) for i, boss in enumerate(bosses)],
-                   mc={'toughness_elem': mode}, opts={'coop': False, 'nova': False})
+                   mc={}, opts={'coop': False, 'nova': False})
         a = b.allies[0]
         if crush:
             give(a, '파쇄', {'공격력%': 10, '강인도 고정 피해': 1})
@@ -76,14 +76,15 @@ class AsherahToughnessTest(unittest.TestCase):
             self.cast(b, a)
             self.assertEqual([f.sa for f in b.foes], [expected, 26])
 
+
+
     def test_break_and_legacy(self):
-        for mode, expected in (('client', [0, 3]), ('db', [3, 3])):
+        for mode, expected in (('client', [0, 3]),):
             b, a = self.setup_battle(sa=7, mode=mode)
             self.cast(b, a)
             self.assertEqual([f.sa for f in b.foes], expected)
             self.assertEqual(b.foes[0].breaks, int(mode == 'client'))
             self.assertEqual(b.foes[0].broken, mode == 'client')
-
 
 def mutations():
     original_exec, original_hit, original_targets = Battle._exec_line, Battle.tough_hit, Battle.line_auto_targets

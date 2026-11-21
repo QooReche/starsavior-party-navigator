@@ -548,7 +548,7 @@ class Unit:
         self.permanent_accuracy = sum(
             parse_props(ln.raw.split('능력치:', 1)[1])[1].get('명중률', 0.0) / 100.0
             for ln in d.lines if ln.kind == 'perm' and '능력치:' in ln.raw
-        ) if b.mc['permanent_accuracy'] == 'data' else 0.0
+        )
         self.ban_refuse = b.mc['buff_ban'] == 'refuse'   # 〈강화 불가〉: 새 강화만 거부(클라) / 걸린 강화도 끔(옛 동작)
         st = d.stats
         self.fx = dict(fx or {})                 # 스테이지 효과(상시)
@@ -708,7 +708,7 @@ class Unit:
             s = math.floor(s + 1e-9)       # 클라 최종 스탯 (int)Math.Floor (NKM:18268-18280)
         if self.leader:
             s += self.b.mc['leader_speed']
-        if getattr(self.d, 'cosmo', None) and self.b.mc['cosmo_speed_floor']:
+        if getattr(self.d, 'cosmo', None):
             s = math.floor(s + 1e-9)       # NKM:18293, 코스모 보스 최종 스탯
         return max(0.0, s)
 
@@ -928,7 +928,7 @@ class Battle:
         # 소환 칸 추적(client=등장 이벤트, data=옛 시작 이벤트).
         self._foe_slots = None
         has_sm = any(hasattr(d, 'summon_groups') for w in waves for d in w)
-        if has_sm and self.mc.get('summon', 'client') in ('client', 'data'):
+        if has_sm:
             self._foe_slots = [None] * 5
         self._cur_line = None    # 실행 중인 줄(자동 지정 대상 규칙을 그 스킬 설명에서 찾을 때 씀)
         self.once = set()        # {전투당 1회} 줄 사용 기록
@@ -985,15 +985,14 @@ class Battle:
 
     def alive(self, side):
         pool = [u for u in (self.allies if side == 0 else self.foes) if not u.dead]
-        if self.mc['living_slot_order'] == 'client':
-            # NKM:992,1032,1217,13021-13023: living teams enumerate the
-            # original game slot array. Engine ally positions use a different order.
-            slots = [self._game_slot(u) for u in pool]
-            if all(slot is not None for slot in slots):
-                ordered = [u for _, u in sorted(zip(slots, pool), key=lambda pair: pair[0])]
-                if ordered != pool:
-                    self.rule_hits['living_slot_order'] += 1
-                return ordered
+        # NKM:992,1032,1217,13021-13023: living teams enumerate the
+        # original game slot array. Engine ally positions use a different order.
+        slots = [self._game_slot(u) for u in pool]
+        if all(slot is not None for slot in slots):
+            ordered = [u for _, u in sorted(zip(slots, pool), key=lambda pair: pair[0])]
+            if ordered != pool:
+                self.rule_hits['living_slot_order'] += 1
+            return ordered
         return pool
 
     def turn_now(self):
@@ -1380,16 +1379,13 @@ class Battle:
         u.extra_turn = False      # 추가 턴은 이 행동으로 소비(행동 끝에 지우면 다음 차례 판정에서 우선권이 사라짐)
         u.actions += 1
         u.acting = True
-        skip = False
         if u.broken:
             # 브레이크(강인도 격파)는 그 유닛의 다음 자기 턴 시작에 끝나고 강인도 전회복, 그 턴은 정상 행동(mc.break_recover, assumed)
-            # 구원자 + ally_break_gauge=skip: 게이지는 그대로 두었다가, 자기 턴이 오면 회복하는 데 그 턴을 쓴다(행동 없음)
-            # — 사용자 인게임 설명 2026-10-21 「브레이크돼도 턴은 안 밀리는데, 자기 턴 왔을 때 회복되고 턴이 밀린다」
-            skip = u.side == 0 and self.mc['ally_break_gauge'] == 'skip'
+            # (옛 스위치 ally_break_gauge=skip 의 «회복에 그 턴을 씀»은 엔진 다이어트 4단계에서 지움)
             u.broken = False
             u.sa = u.sa_max
             self.dirty(u)
-            self.log(recover=u.name, skip=skip)
+            self.log(recover=u.name, skip=False)
         ally_end_cd = u.side == 0
         end_cd = ally_end_cd or (u.side == 1 and self.mc['enemy_cd_tick'] == 'turn_end'
                                 and self.mc['enemy_cd_native'])
@@ -1420,7 +1416,7 @@ class Battle:
         self._react_q, self._react_seen, self._revenged = [], set(), set()
         try:
             cast_ctx = None
-            if not u.dead and not skip:
+            if not u.dead:
                 if any(u.has(n) for n in HARD_CC):
                     self.log(actor=u.name, skip='행동 불가')
                 else:
@@ -1436,9 +1432,8 @@ class Battle:
             if cast_ctx is not None and u.side == 1:
                 self._check_foe_react(u, cast_ctx, timing_filter=None)
                 # after_ally_attack / ally_hit: 같은 편 다른 유닛의 반응 규칙 확인
-                if self.mc.get('foe_react_timing', 'extended') == 'extended':
-                    for v in self.alive(u.side):
-                        self._check_foe_react(v, cast_ctx, timing_filter='ally', caster=u)
+                for v in self.alive(u.side):
+                    self._check_foe_react(v, cast_ctx, timing_filter='ally', caster=u)
             self._run_reactions()
             if self._hit_log:
                 self.revenge(self._hit_log)   # 반격에서 이어진 공격(반응·추가 발동)의 타격도 같은 목록에 쌓여 차례로 판정
@@ -2131,13 +2126,11 @@ class Battle:
         if not targets:
             return targets
         orig = targets[0]
-        mode = self.mc['preemptive_defense']
-        if mode in ('client', 'client_main'):
-            rule = no_preemptive()
-            if any(attacker.on(name) for name in rule['buffs']):
-                return targets
-            if ctx.skill and ctx.skill.slot in rule['skills'].get(attacker.key, []):
-                return targets
+        rule = no_preemptive()
+        if any(attacker.on(name) for name in rule['buffs']):
+            return targets
+        if ctx.skill and ctx.skill.slot in rule['skills'].get(attacker.key, []):
+            return targets
         if attacker.on('필중') or attacker.on('은신'):
             # 필중·은신은 선제 방어 무시(docs/formulas_web.md 4.3). 클라는 별도 분기 없이 두 버프의 NoPreemptiveDefend 플래그로 막음(no_preemptive 목록)
             return targets
@@ -2163,8 +2156,7 @@ class Battle:
         # 게임은 후보를 순서대로 굴림(첫 성공 시 멈춤). 엔진은 같은 방식.
         for v, rate in defenders:
             if self.R(orig.side).random() * 100.0 < rate:
-                if mode == 'client_main':
-                    self.rule_hits['preemptive_client_main'] += 1
+                self.rule_hits['preemptive_client_main'] += 1
                 return [v]
         return targets
 
@@ -2401,12 +2393,8 @@ class Battle:
                             and instant.eff.get('name') == '노바 버스트 발동 확인용 버프'):
                         self.exec_line(u, instant, ctx)
             ctx.targets = self.skill_targets(u, sk, target)
-            # 선제 방어: 적 단일 공격 전, 아군 중 선제 방어 확률이 있으면 대상 전환(NKM 8040~8071 PreemptiveDefenseController)
-            pd_mode = self.mc.get('preemptive_defense')
-            if (pd_mode in ('on', 'client') and u.side == 1 and sk.is_attack and not sk.all
-                    and len(ctx.targets) == 1 and not ctx.targets[0].dead):
-                ctx.targets = self._preemptive_check(u, ctx.targets, ctx)
-            elif (pd_mode == 'client_main' and not extra and u.acting and sk.is_attack and not sk.all
+            # 선제 방어: 본 행동 단일 공격 전, 대상 편에 선제 방어 확률이 있으면 대상 전환(NKM 8040~8071 PreemptiveDefenseController)
+            if (not extra and u.acting and sk.is_attack and not sk.all
                     and len(ctx.targets) == 1 and not ctx.targets[0].dead):
                 # build 26314877 NKM:14855: 턴 본행동(ProcessTurn_DoSkill)에서만 호출, 진영 구분 없음
                 ctx.targets = self._preemptive_check(u, ctx.targets, ctx)
@@ -2448,8 +2436,7 @@ class Battle:
                 self.fire_foes(u, ctx, 'foe_pre_any')
             self.fire_foes(u, ctx, 'foe_pre' if sk.is_attack else 'foe_pre_na')
             # on_my_attack: 적의 공격 시작 전(스트라이크 전) 반응 예약 — 대상 체력·버프가 피해 전 상태
-            if (sk.is_attack and ctx.targets and u.side == 1
-                    and self.mc.get('foe_react_timing', 'extended') == 'extended'):
+            if (sk.is_attack and ctx.targets and u.side == 1):
                 self._check_foe_react(u, ctx, timing_filter='on_my_attack')
             # 이미 시작한 공격은 대상 목록이 비어도 DAMAGE_END 전 DC_ATTACK을 해제함.
             # NKM:15552의 조기 반환은 대상이 아니라 UnitState 공격 이벤트가 없는 경우임.
@@ -3102,10 +3089,7 @@ class Battle:
         reactions.append((v, hctx))
 
     def tough_hit(self, a, v, ctx):
-        """video: 구원자 공격 시전·대상당 ab + 상성 기본값 + 강인도 보정 + 버스트 1.
-        기본값은 유리/동일 1, 그 외 0(동일은 ChgzulK7VI4 헤이디 관측으로 추론).
-        협공 0, 추가 발동은 별도 시전. 적 공격은 미측정이므로 종전 db를 유지한다.
-        db/on/off는 종전 타격별 계산을 보존. 상세 근거·미확인 범위는 규칙 파일 참조.
+        """타격별 강인도 피해(클라 NKM:16754-16769). 옛 toughness_elem(db·video·on) 경로는 엔진 다이어트 4단계에서 지움.
         〈강인도 피해 무효〉·회피·스킬 피해 무효는 강인도를 깎지 않는다."""
         if (v.broken and v in ctx.break_targets and self.mc['break_point_hits'] == 'window'
                 and v.side == 1 and self.break_skill_enabled):
@@ -3121,12 +3105,6 @@ class Battle:
             return
         if v.broken or v.sa_max <= 0 or v.has('강인도 피해 무효'):
             return
-        mode = self.mc['toughness_elem']
-        video = mode == 'video' and a.side == 0
-        if video:
-            if not ctx.skill.is_attack or ctx.via in ('coop', 'forced_coop') or v in ctx.tough_targets:
-                return
-            ctx.tough_targets.add(v)
         sk = ctx.skill
         m = a.mods()
         ab = getattr(sk, 'ab', None)
@@ -3136,30 +3114,15 @@ class Battle:
             ab = self.mc['basic_tough'] if sk.slot == '기본기' else 0
         normal = ab + m['tough'] + ctx.tough
         fixed = m['tough_fixed'] + ctx.tough_fixed
-        if video:
-            if a.element and v.element and (a.element == v.element or ELEM_BEATS.get(a.element) == v.element):
-                normal += 1
-        elif mode in ('db', 'video'):
-            # starsavior-db mechanics(2026-10-21 확인): 기본값(상성 유리 1, 아니면 0) + 강인도 피해(스킬 ab·버프) + 고정 피해 − 감소
-            if a.element and v.element and ELEM_BEATS.get(a.element) == v.element:
-                normal += 1
-        elif mode == 'on' and a.element and v.element:
-            if ELEM_LOSES.get(a.element) == v.element:
-                normal = 0
-            elif ELEM_BEATS.get(a.element) == v.element and normal > 0:
-                normal += 1
-        if mode == 'client':
-            # build 26314877 NKM:16754-16769: 불리 = 스킬값·강인도 피해 0(고정 피해만), 유리 = +1, 그 뒤 고정 피해 더하고
-            # 대상 강인도 피해 감소를 뺀 합이 0보다 클 때만 깎음. 유리/불리 판정 NKM:17486-17508.
-            if a.element and v.element and ELEM_LOSES.get(a.element) == v.element:
-                normal = 0
-                self.rule_hits['tough_client_lose'] += 1
-            elif a.element and v.element and ELEM_BEATS.get(a.element) == v.element:
-                normal += 1
-            td = int(round(normal + fixed - v.mods().get('tough_red', 0.0)
-                           - ctx.local_by[v].get('tough_red', 0.0)))
-        else:
-            td = int(round(max(0.0, normal) + max(0.0, fixed)))
+        # build 26314877 NKM:16754-16769: 불리 = 스킬값·강인도 피해 0(고정 피해만), 유리 = +1, 그 뒤 고정 피해 더하고
+        # 대상 강인도 피해 감소를 뺀 합이 0보다 클 때만 깎음. 유리/불리 판정 NKM:17486-17508.
+        if a.element and v.element and ELEM_LOSES.get(a.element) == v.element:
+            normal = 0
+            self.rule_hits['tough_client_lose'] += 1
+        elif a.element and v.element and ELEM_BEATS.get(a.element) == v.element:
+            normal += 1
+        td = int(round(normal + fixed - v.mods().get('tough_red', 0.0)
+                       - ctx.local_by[v].get('tough_red', 0.0)))
         if td <= 0:
             return
         v.sa = max(0, v.sa - td)
@@ -3169,7 +3132,7 @@ class Battle:
             v.breaks += 1
             if v.side == 1 and self.break_skill_enabled:
                 self._add_break_points(v)
-            if v.side == 1 or self.mc['ally_break_gauge'] == 'reset':
+            if v.side == 1:
                 v.gauge = 0.0      # 몬스터 또는 구원자 reset 대안. 구원자 기본 keep은 게이지 유지.
             self.dirty(v)
             self.log(brk=v.name, by=a.name)
@@ -3215,8 +3178,6 @@ class Battle:
     def _role_damage_terms(self, attacker, victim, ctx=None, *, chain=False):
         # NKM:18006-18021,18059-18074; normal sums:18508,18636.
         # Add damage reads only the attacker's role increase (6212-6236).
-        if self.mc['role_damage_terms'] != 'client':
-            return 0.0, 0.0
         inc = attacker.mods().get('inc_role', {}).get(victim.role, 0.0)
         if ctx is not None and ctx.src is attacker:
             inc += ctx.inc_role.get(victim.role, 0.0)
@@ -3242,7 +3203,7 @@ class Battle:
 
     def guard_share(self, share):
         # NKM:17801,18181: no 100% cap before splitting damage.
-        return share if self.mc['guard_precision'] == 'client' else min(1.0, share)
+        return share
 
     def _guard_better(self, cur, cur_s, w, s):
         """수호자 후보 w(분담 비율 s)가 지금 후보 cur(cur_s)보다 앞서는가(NKM:1286-1311 OBF_18133).
@@ -3253,7 +3214,7 @@ class Battle:
             return False
         if cur is None or s > cur_s + 1e-12:
             return True
-        if s < cur_s - 1e-12 or self.mc['guard_tie'] != 'client':
+        if s < cur_s - 1e-12:
             return False
         ci, wi = self._game_slot(cur), self._game_slot(w)
         if ci is None or wi is None:
@@ -3301,22 +3262,21 @@ class Battle:
         Slot 4 in a four-slot host is neither front nor back (13247-13263).
         Unknown custom placements retain the previous approximation.
         """
-        if self.mc['target_row_slot'] == 'client':
-            slot = self._game_slot(u)
-            if slot is not None:
-                self.rule_hits['target_row_slot'] += 1
-                deck = self._game_deck()
-                if front:
-                    return self._front_slot(slot, deck)
-                if deck in ('BATTLE_SLOT_1', 'BATTLE_SLOT_2'):
-                    return False
-                return slot in ((0, 2) if deck == 'BATTLE_SLOT_3' else (0, 3))
+        slot = self._game_slot(u)
+        if slot is not None:
+            self.rule_hits['target_row_slot'] += 1
+            deck = self._game_deck()
+            if front:
+                return self._front_slot(slot, deck)
+            if deck in ('BATTLE_SLOT_1', 'BATTLE_SLOT_2'):
+                return False
+            return slot in ((0, 2) if deck == 'BATTLE_SLOT_3' else (0, 3))
         return (u.pos < 2) if front else (u.pos >= 2)
 
     def _chain_guard(self, v, base):
         """연쇄(추가) 피해의 수호 분담(NKM:8167 OBF_18133 → 17799-17803). (수호자, 분담 몫).
         대상 제외 같은 편 중 분담 비율 최대 1명(1286-1308), 대상이 무적·스킬 무효면 분담 없음. legacy off = 분담 없음."""
-        if self.mc['chain_guard'] != 'client' or v.invincible() or v.on('스킬 피해 무효'):
+        if v.invincible() or v.on('스킬 피해 무효'):
             return None, 0.0
         guard, gs = None, 0.0
         for w in self.alive(v.side):
@@ -3497,7 +3457,7 @@ class Battle:
 
         def finish(v, value):
             if not client:
-                return (max(1, int(value)) if v is guard else max(1, value)) if self.mc['guard_precision'] == 'client' else value
+                return (max(1, int(value)) if v is guard else max(1, value))
             self.rule_hits['fixed_true_formula'] += 1
             if side is not None and side != v.side and self.pen[side] > 0:
                 value *= self.pen[side]
@@ -3646,23 +3606,18 @@ class Battle:
                 self._foe_slots[pos] = u
                 self.foes.append(u)
                 self.all_foes.append(u)
-                if self.mc['summon'] == 'client':
-                    self.rule_hits['summon'] += 1
-                    # NKM:1887-1920 leaves the ordinary spawn record null.
-                    # 1235 runs AFTER_SPAWN with zero initial cooldowns, then
-                    # 1236/1966-1985 applies the summon-specific flags.
-                    u.cd = dict.fromkeys(u.cd, 0.0)
+                self.rule_hits['summon'] += 1
+                # NKM:1887-1920 leaves the ordinary spawn record null.
+                # 1235 runs AFTER_SPAWN with zero initial cooldowns, then
+                # 1236/1966-1985 applies the summon-specific flags.
+                u.cd = dict.fromkeys(u.cd, 0.0)
                 for ln in self.lines_of(u):
-                    if self.mc['summon'] == 'client':
-                        active = ln.phase == '등장 후'
-                    else:
-                        active = line_kind(ln) in ('battle_start', 'wave_start')
+                    active = ln.phase == '등장 후'
                     if active:
                         self.run_line(u, ln, Ctx(u, u, None))
                 if self.mc['buff_maxhp'] == 'on' and not u.dead:
                     u.hp = max(u.hp, u.maxhp)
-                if self.mc['summon'] == 'client':
-                    u.reset_initial_cooldowns()
+                u.reset_initial_cooldowns()
                 self.log(summon=u.name, pos=pos, summoner=owner.name)
 
     def reaction_skills(self, v, a, sk, crit=False, evaded=False):
@@ -3703,7 +3658,6 @@ class Battle:
         react = getattr(u.d, 'react', None)
         if not react:
             return
-        extended = self.mc.get('foe_react_timing', 'extended') == 'extended'
         for slot, rule in react.items():
             ts = u.d.trigger_skills.get(slot)
             ts = u.skill_overrides.get(slot, ts)
@@ -3804,12 +3758,10 @@ class Battle:
                     neg = tag.endswith('_neg_buff')
                     if holder is None:
                         ok = False
-                    elif self.mc['foe_react_buff_count'] == 'client':
+                    else:
                         # 클라: 강화/약화 개수(IsBuff 와 IsPositive 기준, 표시 효과 제외)가 0 보다 커야 함
                         if not (holder.n_harmful() if neg else holder.n_good()) > 0:
                             ok = False
-                    elif not any((e.harmful == neg) for e in holder.eff.values() if e.stacks > 0):
-                        ok = False
                 else:
                     self.unsup['foe_react: 모르는 조건 ' + tag] += 1
                     ok = False
@@ -4051,8 +4003,6 @@ class Battle:
         동기화 피해(보호막·과잉 피해 포함, 수호 분담 제외)를 사용한다.
         현재 strike는 시각적 다단 타격을 대상별 총 피해 한 건으로 나타낸다.
         """
-        if self.mc['damage_vampirism'] != 'client':
-            return
         ctx.vamp_damage[target] += damage
         if not last:
             return
@@ -4114,8 +4064,6 @@ class Battle:
     # ---------- 조건
     def cosmo_boss_barrier_pct(self, mm):
         """코스모 벨그라스: 처단자가 보스에게 주는 보호막 비율(최대 HP %). cosmo_boss_barrier=legacy 면 아군용 값을 그대로 씀."""
-        if self.mc['cosmo_boss_barrier'] == 'legacy':
-            return mm['barrierHpPct']
         return mm.get('bossBarrierHpPct', mm['barrierHpPct'])
 
     def cond_ok(self, owner, ln, ctx):
@@ -4224,7 +4172,7 @@ class Battle:
                 names = [x.strip() for x in v.split(',')]
                 # cond_count_bind=holding: 「미보유」 키는 뒤따르는 중첩수·효과 개수의 대상이 되지 않는다(표의
                 # SelfBuffLevelCount 는 SelfBuffStrId 에 붙고 NotSelfBuffStrId 에는 붙지 않음, 루그 52189~52191).
-                if not (k == '자신이 미보유' and self.mc['cond_count_bind'] == 'holding'
+                if not (k == '자신이 미보유'
                         and '자신 미보유 효과 중첩수' not in dict(ln.params)):
                     last = ('A', names)
                 pres = any(owner.has(n) for n in names)
@@ -4338,8 +4286,6 @@ class Battle:
                     return False
             elif k == '내 턴':
                 own_turn = owner.acting
-                if self.mc['own_turn_condition'] == 'main_only':
-                    own_turn = own_turn and ctx.src is owner and not ctx.extra
                 if (v == '예') != own_turn:
                     return False
             elif k == '자신 포함':
@@ -4695,11 +4641,7 @@ class Battle:
                         ctx.local_by[x]['inc'] += min(n, eff['cap']) * eff['val'] / 100
             return
         if kd == 'extend':
-            # 설명문으로 효과 이름을 정하는 연장(mc_semantics, 크리스텔 등)은 원래부터 실행됨.
-            # off는 일반 연장(src='parser')을 미지원으로, 이름 지정 연장을 종전 약화 전용으로 둔다.
-            if eff.get('src') == 'parser' and self.mc.get('effect_dur_extend') == 'off':
-                self.run_special(owner, ln, ctx, line_rest(ln))   # 옛 동작 = 미해석 줄로 처리(옛 결과 그대로 재현)
-                return
+            # 설명문으로 효과 이름을 정하는 연장(mc_semantics, 크리스텔 등)도 같은 경로
             if self.mc['se_independent_roll'] == 'client':
                 self.rule_hits['se_independent_roll'] += 1
                 if eff.get('chance', 1) < 1 and self.R(owner.side).random() >= eff['chance']:
@@ -4712,7 +4654,7 @@ class Battle:
                         continue
                     # 이름 지정 연장은 강화에도 적용(NKM:5123-5134,
                     # Star.Templets:4535-4557,4708-4711). 일반 약화 연장은 그대로.
-                    if not e.harmful and not (eff.get('named') and self.mc['effect_dur_extend'] == 'on'
+                    if not e.harmful and not (eff.get('named')
                                              and not e.check and positive_buff(name, True)):
                         continue
                     e.dur += eff['val']
@@ -4750,7 +4692,7 @@ class Battle:
             return
         if kd == 'local':
             chance = eff.get('chance', 1)
-            roll = chance < 1 and self.mc['local_chance'] == 'roll'
+            roll = chance < 1
             if roll:
                 eff = dict(eff, val=eff['val'] / chance)
 
@@ -4764,7 +4706,7 @@ class Battle:
                 return self.R(owner.side).random() < chance
             st, v = eff['stat'], eff['val'] / 100.0
             role = _role_prop(st)
-            if role and self.mc['role_damage_terms'] == 'client':
+            if role:
                 key, target_role, scale = role
                 value = eff['val'] / scale
                 if key == 'red_role' and ctx.local is not None and line_kind(ln) in ('prehit_self', 'prehit_ally'):
@@ -4831,26 +4773,22 @@ class Battle:
             elif st == '강인도 피해 감소':
                 # build 26610546 NKM:17221-17225, SE 10612016: 피격자 정수 보정.
                 # 기존 toughness_elem=client 경로만 읽으며 시전 간에는 누적되지 않는다.
-                if self.mc['toughness_elem'] == 'client':
-                    spec = self.line_spec(owner, ln)
-                    if spec is None:
-                        self.unsup['local: 강인도 피해 감소 대상 미확인'] += 1
-                    else:
-                        for x in self.line_auto_targets(owner, spec, ctx):
-                            ctx.local_by[x]['tough_red'] += eff['val']
+                spec = self.line_spec(owner, ln)
+                if spec is None:
+                    self.unsup['local: 강인도 피해 감소 대상 미확인'] += 1
+                else:
+                    for x in self.line_auto_targets(owner, spec, ctx):
+                        ctx.local_by[x]['tough_red'] += eff['val']
             elif st == '브레이크 대상 피해 증가':
                 ctx.inc_break += v
             elif st == '대상 약화효과 1개당 피해 증가':    # 대상마다 그 대상의 약화 개수(P5)
                 for x in ctx.targets:
                     ctx.local_by[x]['inc'] += v * x.n_harmful()
             elif _m_vs and _m_vs.match(st):          # 「vs X 속성 피해 증가」 이번 스킬 한정(잊혀진 맹세 페르세스 등)
-                if self.mc.get('local_vs_element') == 'off':
-                    self.unsup['local_vs_element off: ' + st] += 1
-                else:
-                    elem = st[3:].replace(' 속성 피해 증가', '')
-                    for x in ctx.targets:
-                        if getattr(x, 'element', None) == elem:
-                            ctx.local_by[x]['inc'] += v
+                elem = st[3:].replace(' 속성 피해 증가', '')
+                for x in ctx.targets:
+                    if getattr(x, 'element', None) == elem:
+                        ctx.local_by[x]['inc'] += v
             else:
                 self.unsup['local: ' + st] += 1
             return
@@ -4879,9 +4817,6 @@ class Battle:
             return
         if kd == 'gauge_set_if':
             # 「행동 게이지가 N%보다 높으면 M%로 낮춤」(티리아 시계태엽 인형): 조건부 게이지 설정
-            if self.mc.get('gauge_conditional') == 'off':
-                self.unsup['gauge_conditional off'] += 1
-                return
             tg = self.resolve(owner, eff['target'], ctx)
             if not tg:
                 return
@@ -5380,9 +5315,6 @@ class Battle:
             return
         m = RX_ENFORCE.match(rest)
         if m:   # BI_ENFORCE 강제 추가 행동: 「아군 1명(자동 지정)에게 기본기 추가 발동」 (NKM 4555~4572, 7955~7992)
-            if self.mc['enforce'] != 'data':
-                self.unsup['effect: ' + rest[:60]] += 1
-                return
             cur = self._cur_line
             spec = self.line_spec(owner, cur) if cur is not None else None
             if spec is None or not spec.get('enforce'):

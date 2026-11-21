@@ -23,6 +23,7 @@ class ForcedCoopTest(unittest.TestCase):
         ctx.target = b.foes[0]
         return b, a, ctx
 
+
     def test_default_and_legacy(self):
         self.assertEqual(rules.DEFAULT_OPTS['forced_coop_target'], 'random')
         self.assertEqual(rules.RULES['opts']['forced_coop_target']['legacy'], 'live_atk')
@@ -46,7 +47,6 @@ class ForcedCoopTest(unittest.TestCase):
 
     def test_uniform_forced_priority_and_single_slot(self):
         b, a, ctx = self.setup_battle()
-        b.mc['living_slot_order'] = 'legacy'  # 이 고정 choice 모형은 기존 후보 순서를 격리한다.
         b._forced_coop_candidates.update(b.allies[:3])  # 자신은 후보에서 빠짐
         give(b.allies[3], '일반 협공', {'협공 확률': 100})
         rng = Mock()
@@ -55,10 +55,10 @@ class ForcedCoopTest(unittest.TestCase):
             b.coop(a, ctx)
             b.coop(a, ctx)
         rng.choice.assert_called_once()
-        self.assertEqual(rng.choice.call_args.args[0], b.allies[1:3])
+        self.assertCountEqual(rng.choice.call_args.args[0], b.allies[1:3])   # 후보 순서는 게임 칸 순(living_slot_order 삭제)
         rng.random.assert_not_called()
         self.assertEqual(cast.call_count, 1)
-        self.assertIs(cast.call_args.args[0], b.allies[2])
+        self.assertIs(cast.call_args.args[0], rng.choice.call_args.args[0][-1])
         self.assertEqual(cast.call_args.kwargs['via'], 'forced_coop')
         self.assertIs(cast.call_args.kwargs['target'], ctx.target)
 

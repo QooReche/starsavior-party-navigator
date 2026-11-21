@@ -24,9 +24,6 @@ class PositionRulesTest(unittest.TestCase):
         self.assertEqual(b._filter(a, b.foes, 'front'), [b.foes[1]])
         self.assertEqual(b._filter(a, b.foes, 'back'), [b.foes[0]])
         self.assertGreater(b.rule_hits['target_row_slot'], 0)
-        b.mc['target_row_slot'] = 'legacy'
-        self.assertEqual(b._filter(a, b.foes, 'front'), b.foes[:2])
-        self.assertEqual(b._filter(a, b.foes, 'back'), b.foes[2:])
 
     def test_deck_sizes_and_neutral_fifth_slot(self):
         for deck, front, back in [('BATTLE_SLOT_1', [0], []),
@@ -60,8 +57,6 @@ class PositionRulesTest(unittest.TestCase):
         b.kill(b.allies[0], b.foes[0])
         self.assertEqual([v.pos for v in b.alive(0)], [2, 1, 3])
         self.assertGreater(b.rule_hits['living_slot_order'], 0)
-        b.mc['living_slot_order'] = 'legacy'
-        self.assertEqual([v.pos for v in b.alive(0)], [1, 2, 3])
 
     def test_aoe_target_order_follows_game_slots(self):
         b = self.make()
@@ -70,15 +65,13 @@ class PositionRulesTest(unittest.TestCase):
         self.assertEqual([v.pos for v in b.skill_targets(a, a.d.skills['기본기'])], [2, 0, 1, 3])
 
     def test_preemptive_first_success_can_be_back_row(self):
-        b = self.make(preemptive_defense='client_main')
+        b = self.make()
         a = b.foes[0]
         # Two certain interceptors: game slot 0 must win before game slot 1.
         b.allies[0].d.passive['preempt'] = 1.0
         b.allies[2].d.passive['preempt'] = 1.0
         ctx = Ctx(a, a, a.d.skills['기본기'], False)
         self.assertEqual(b._preemptive_check(a, [b.allies[3]], ctx), [b.allies[2]])
-        b.mc['living_slot_order'] = 'legacy'
-        self.assertEqual(b._preemptive_check(a, [b.allies[3]], ctx), [b.allies[0]])
 
 
 if __name__ == '__main__':

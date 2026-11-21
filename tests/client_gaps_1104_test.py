@@ -16,8 +16,7 @@ from battlesim.mc import Ctx, FORCE_BUFF_NAMES     # noqa: E402
 from battlesim.rules import MC_OPTS, MC_RULES      # noqa: E402
 
 # 기본 = 클라 값으로 전환한 스위치: (기본, legacy)
-SWITCHED = {'preemptive_defense': ('client_main', 'recognize'), 'toughness_elem': ('client', 'db'),
-            'break_point_hits': ('window', 'once'), 'break_auto_blocked_cc': ('on', 'off'),
+SWITCHED = {'break_point_hits': ('window', 'once'), 'break_auto_blocked_cc': ('on', 'off'),
             # 11/05 전환(dot_formula·react_hist_unit·immune_force_apply)
             'dot_formula': ('client', 'legacy'), 'react_hist_unit': ('unit', 'slot')}
 # 옛 값 유지(기본 == legacy): 없음
@@ -71,17 +70,16 @@ class PreemptiveClientMainTest(unittest.TestCase):
         foes = [unit('attacker', hp=10 ** 7)]
         if attacker_side == 0:
             allies, foes = foes, allies
-        b = battle(allies, foes, mc={} if mode is None else {'preemptive_defense': mode})
+        b = battle(allies, foes)
         team = b.foes if attacker_side == 0 else b.allies
         attacker = b.allies[0] if attacker_side == 0 else b.foes[0]
         team[1].d.passive['preempt'] = 1.0
         return b, attacker, team[0], team[1]
 
     def test_main_action_only(self):
-        # None = 규칙 기본값(client_main), recognize = legacy(가로채기 없음)
+        # preemptive_defense 스위치 삭제(항상 client_main)
         for mode, buff, want_guard in [('client_main', None, True), ('client_main', '필중', False),
-                                       ('client_main', '선제 방어 무시', False), ('on', None, True),
-                                       (None, None, True), ('recognize', None, False)]:
+                                       ('client_main', '선제 방어 무시', False), (None, None, True)]:
             b, attacker, victim, guard = self.setup(mode)
             if buff:
                 give(attacker, buff)            # 필중·은신·선제 방어 무시 = NoPreemptiveDefend 플래그 버프
@@ -99,7 +97,7 @@ class PreemptiveClientMainTest(unittest.TestCase):
             self.assertEqual(guard.hp, guard.maxhp)
 
     def test_ally_attack_intercepted(self):
-        for mode, want_guard in [('client_main', True), ('client', False)]:
+        for mode, want_guard in [('client_main', True)]:
             b, attacker, victim, guard = self.setup(mode, attacker_side=0)
             attacker.acting = True
             b.cast(attacker, attacker.d.skills['기본기'], target=victim)
@@ -132,7 +130,7 @@ class BreakPointWindowTest(unittest.TestCase):
 class ToughnessClientTest(unittest.TestCase):
     def tough(self, mode, ae, ve, ab, fixed=0):
         b = battle([unit('a', element=ae)], [unit('f', element=ve, sa=10)],
-                   mc={} if mode is None else {'toughness_elem': mode})
+                   )
         a, f = b.allies[0], b.foes[0]
         if fixed:
             give(a, '고정', {'강인도 고정 피해': fixed})
@@ -140,20 +138,18 @@ class ToughnessClientTest(unittest.TestCase):
         return before - after, b.rule_hits['tough_client_lose']
 
     def test_elements(self):
-        # 태양→달 불리: db 는 ab 유지, client 는 스킬값 0·고정 피해만
-        self.assertEqual(self.tough('db', '태양', '달', 2), (2, 0))
+        # 태양→달 불리: 스킬값 0·고정 피해만(toughness_elem 스위치 삭제)
         self.assertEqual(self.tough('client', '태양', '달', 2), (0, 1))
         self.assertEqual(self.tough('client', '태양', '달', 2, fixed=1), (1, 1))
         self.assertEqual(self.tough(None, '태양', '달', 2), (0, 1))       # 규칙 기본값 = client, legacy = db
         self.assertEqual(self.tough(None, '태양', '별', 0)[0], 1)
-        # 태양→별 유리: client 는 ab 0 이어도 +1, on 은 ab>0 일 때만
+        # 태양→별 유리: ab 0 이어도 +1
         self.assertEqual(self.tough('client', '태양', '별', 0)[0], 1)
-        self.assertEqual(self.tough('on', '태양', '별', 0)[0], 0)
         # 동일 속성: 가산 없음
         self.assertEqual(self.tough('client', '태양', '태양', 1)[0], 1)
 
     def test_reduce_stat(self):
-        b = battle([unit('a', element='태양')], [unit('f', element='별', sa=10)], mc={'toughness_elem': 'client'})
+        b = battle([unit('a', element='태양')], [unit('f', element='별', sa=10)])
         a, f = b.allies[0], b.foes[0]
         give(f, '감소', {'강인도 피해 감소': 2})
         _dmg, before, after = hit(b, a, f, ab=2)
@@ -360,7 +356,6 @@ class StageTest(unittest.TestCase):
         # 브레이크 두 스위치는 이 편성·스테이지에서 0회(엔진에 타수 모델이 없고 턴 유닛 CC 중 포인트 3이 드묾) — 경로는 위 합성 시험이 지킴.
         # 선제 방어(client_main)·면역(client)은 표준 편성에 확률/면역 보유자가 없어 합성 시험만 둠.
         cases = [({}, 'tough_client_lose', {}),                       # 규칙 기본값(client)이 실제 전투에서 탐
-                 ({'toughness_elem': 'client'}, 'tough_client_lose', {}),
                  ({'dot_formula': 'client'}, 'dot_client', {}),
                  ({'react_hist_unit': 'unit'}, 'react_hist_unit', {}),
                  ({'break_auto_blocked_cc': 'on', 'break_point_hits': 'window'}, None, {'break_skill': CUBE})]

@@ -22,7 +22,7 @@ def test_defaults_client():
 def _foe_tie(mode, slots):
     """적 3기: 대상 칸 slots[0], 수호 후보 둘(같은 비율) 칸 slots[1]·slots[2]. 먼저 보는 쪽 = 두 번째 적"""
     b = battle([unit('a')], [unit('t'), unit('g1'), unit('g2')],
-               mc={'guard_tie': mode, 'chain_guard': 'client', 'living_slot_order': 'legacy'})
+               mc={})
     t, g1, g2 = b.foes
     for u, sl in zip((t, g1, g2), slots):
         u.d.game_slot = sl
@@ -32,8 +32,8 @@ def _foe_tie(mode, slots):
 
 
 def test_foe_guard_tie_front_slot():
-    # 485 꼴(칸 0·2·4): 칸 4(전열·후열 모두 아님)가 먼저 보여도 칸 2(전열)가 수호
-    b, g, (t, g1, g2) = _foe_tie('client', (0, 4, 2))
+    # 485 꼴(칸 0·2·4): 게임 칸 순서로 칸 0(후열)이 먼저 보여도 칸 2(전열)가 수호(생존 목록은 칸 순서 — living_slot_order 삭제)
+    b, g, (t, g1, g2) = _foe_tie('client', (4, 0, 2))
     assert g is g2, g.name
     assert b.rule_hits['guard_tie'] >= 1
 
@@ -44,8 +44,6 @@ def test_foe_guard_tie_both_front_smaller():
 
 
 def test_foe_guard_tie_first_or_unknown():
-    _, g, (t, g1, g2) = _foe_tie('first', (0, 4, 2))
-    assert g is g1
     _, g, (t, g1, g2) = _foe_tie('client', (0, None, 2))     # 칸을 모르는 후보가 있으면 먼저 본 쪽
     assert g is g1
 
@@ -74,6 +72,7 @@ def test_stat_stage_client_multiplies_buff_stage():
     b, a = _stats('client')
     assert (b.atk_stat(a), b.def_stat(a), a.spd()) == (1560.0, 1560.0, 132), (b.atk_stat(a), b.def_stat(a), a.spd())
     assert b.live_atk(a) == 1560.0
+
 
 
 def test_stat_stage_add_legacy():
