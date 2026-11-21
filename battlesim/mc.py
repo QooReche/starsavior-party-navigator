@@ -170,6 +170,10 @@ def global_turn_buff(name):
 _BUFF_FLAGS = None
 
 
+# mc.independent_stack_limits 가 맡는 이름별 독립 상한(UniqueIdStackMax). unique_id_stack 은 이 이름을 건드리지 않는다.
+_INDEPENDENT_CAPS = {'파사인': 3, '상쾌한 기분(해제불가)': 5}
+
+
 def buff_flags():
     """data/buff_flags.json(tools/build_buff_flags.py): 이름별 BUFF_TEMPLET 표식. 같은 이름 행끼리 다르면 빠져 있음."""
     global _BUFF_FLAGS
@@ -4754,13 +4758,21 @@ class Battle:
                 self.unsup['코스모 전용 SE 실행기 없음'] += 1
             return
         if kd == 'random_ally_basic':
-            # AutoTargetId=5 / EnforceAutoTargetId=4: random ally (self allowed),
-            # random enemy. Extra cast, not ordinary cooperation.
+            # AutoTargetId=5 / EnforceAutoTargetId=4: 아군 1명(자동 지정), 적 무작위. 협공이 아닌 추가 발동.
             allies = [u for u in self.alive(owner.side) if '기본기' in u.d.skills]
             enemies = self.alive(1 - owner.side)
             if allies and enemies and self.R(owner.side).random() < eff['chance']:
                 self._fired(owner)
-                actor = self.R(owner.side).choice(allies)
+                if self.mc['random_basic_not_self'] == 'client':
+                    # PC 26752678 AUTO_SKILL_TARGET Id5 IsAllyOneNotSelf(NKM:7566-7568): 시전자 제외, 0명이면 목록 유지(7758-7763),
+                    # 단일 대상은 2명 이상일 때만 ArrayIndex 난수(7170-7175). legacy는 자신 포함 choice.
+                    others = [u for u in allies if u is not owner]
+                    if others:
+                        allies = others
+                        self.rule_hits['random_basic_not_self'] += 1
+                    actor = allies[0] if len(allies) == 1 else self.R(owner.side).choice(allies)
+                else:
+                    actor = self.R(owner.side).choice(allies)
                 if self._exec_pick():     # 클라: 예약엔 시전자·자동 대상 규칙만, 적은 실행 직전에 고름(NKM 7973·13181~13189)
                     def fn(actor=actor):
                         pool = self.alive(1 - owner.side)
@@ -5927,12 +5939,23 @@ class Battle:
             # NKM:4505-4524,16396-16405: 반복 부여마다 독립 객체. 묶음 안에 개별 수명·순번 보존.
             independent_cap = math.inf
         if self.mc['independent_stack_limits'] == 'client':
-            independent_cap = independent_cap or {'파사인': 3, '상쾌한 기분(해제불가)': 5}.get(name)
+            independent_cap = independent_cap or _INDEPENDENT_CAPS.get(name)
             unlimited_dot = bool(dot and name in ('출혈', '연소'))
             if independent_cap or unlimited_dot:
                 self.rule_hits['independent_stack_limits'] += 1
             if independent_cap and e is not None and e.stacks >= independent_cap:
                 return  # UniqueIdStackMax: 상한에서 신규 부여를 거부, 기존 지속도 유지.
+        if (self.mc['unique_id_stack'] == 'client' and not independent_cap and not dot and name not in _rules.KNOWN_DOT
+                and not hot and eff['props'] and category != 'marker' and name not in _INDEPENDENT_CAPS):
+            # PC 26752678 NKM:4331-4336,4505-4518,4520-4528: IsUniqueID(비 IsLevel) 버프는 같은 ID 재부여 때 옛 객체를
+            # 지우지 않고 새 객체를 더한다(UniqueIdStackMax 0=무제한). 능력치는 객체마다 합산. 이름 표 = buff_flags.unique_id.
+            # 능력치 효과만 적용: 지속 피해·회복은 기존 독립 경로, 능력치 없는 표지(확정 다음 턴·불사·카운팅)는 전용 경로 유지.
+            ucap = buff_flags().get('unique_id', {}).get(name)
+            if ucap is not None:
+                independent_cap = math.inf if ucap == 'inf' else int(ucap)
+                self.rule_hits['unique_id_stack'] += 1
+                if e is not None and e.inst is not None and e.stacks >= independent_cap:
+                    return
         cast_ctx = getattr(self, '_cast_ctx', None)
         if eff.get('cast_marker') and cast_ctx is not None and (x, name) not in cast_ctx.markers:
             cast_ctx.markers[(x, name)] = copy.copy(e) if e is not None else None

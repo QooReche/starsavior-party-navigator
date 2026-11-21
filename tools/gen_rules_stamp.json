@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "422ebb671b2fff72",
+  "hash": "6bef21fadf0c58d7",
   "history": [
-   {
-    "hash": "f89a8c57fa3c327f",
-    "reason": "구원자 미지원 감사 8건 교정. 길드 방어전 시즌4 종료 상태이므로 기존 방침대로 새 시즌 자료 반영 때 재생성. 현재 시즌 상태는 data/guild_defense.json 참조."
-   },
    {
     "hash": "e774bd298f4794dc",
     "reason": "시즌4 종료 상태 유지. level_max_source 적용은 옛 길드/일반 버프에도 영향을 줄 수 있어 결과 불변을 주장하지 않음. HANDOFF 기존 방침대로 새 길드 시즌 자료 반영 때 guild_sim 재생성."
@@ -41,16 +37,16 @@
    {
     "hash": "422ebb671b2fff72",
     "reason": "오토 HP 조건 float32·임계0(auto_cond_hp_float32)과 nova_policy 등급 변경(값 그대로). 종료된 길드 방어전 시즌 생성물이라 재생성을 생략하고 새 시즌 갱신 때 재생성함. quick 표본에서 갈린 판정 0회. docs/auto_skill_1121.md"
+   },
+   {
+    "hash": "6bef21fadf0c58d7",
+    "reason": "42-12 전수 대조 교정(unique_id_stack·random_basic_not_self client) 병합. quick 보정 표본 영향 529건 재계산 판정 변경 3건(0.13%)으로 계수 유지(eb8c6aa 기록), guild_sim 시즌 종료로 재생성 생략"
    }
   ]
  },
  "quick": {
-  "hash": "422ebb671b2fff72",
+  "hash": "6bef21fadf0c58d7",
   "history": [
-   {
-    "hash": "f89a8c57fa3c327f",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "e774bd298f4794dc",
     "reason": "calibrate_quick --write 재보정"
@@ -86,6 +82,10 @@
    {
     "hash": "422ebb671b2fff72",
     "reason": "오토 HP 조건 float32·임계0(auto_cond_hp_float32 client)과 nova_policy 등급 변경(값 auto 그대로). quick 보정 표본 1455건x40판을 다시 돌려 ally_hp_le_bp 판정 105588회 중 legacy와 갈린 판정 0회, 임계0 0회였음. 그래서 결과가 같고 quick 계수를 유지함. docs/auto_skill_1121.md"
+   },
+   {
+    "hash": "6bef21fadf0c58d7",
+    "reason": "42-12 전수 대조 교정(unique_id_stack·random_basic_not_self client) 병합. quick 보정 표본 영향 529건 재계산 판정 변경 3건(0.13%)으로 계수 유지(eb8c6aa 기록), guild_sim 시즌 종료로 재생성 생략"
    }
   ]
  }

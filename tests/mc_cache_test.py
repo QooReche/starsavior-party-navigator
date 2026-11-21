@@ -83,6 +83,8 @@ _KEEP['level_max_source'] = 'legacy'
 _KEEP['belgras_stage_se'] = 'legacy'
 _KEEP['barrier_formula'] = 'legacy'
 _KEEP['reaction_single_target_rng'] = 'legacy'
+_KEEP['unique_id_stack'] = 'off'
+_KEEP['random_basic_not_self'] = 'legacy'
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

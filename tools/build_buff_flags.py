@@ -11,6 +11,7 @@ python -X utf8 -I tools/build_buff_flags.py --static <비공개 저장소>
 - turn_infinite: TurnInfinite(수명 무한). 지속 표기 없는 효과 줄이라도 수명 0 정리 대상이 아님(mc.check_buff_scope=all, «타격 후 해제» 나태·헥사 너트).
 - force_apply: ForceApplyEffect(버프 강제 적용). 부여 검사의 면역 목록·회피·강화/약화 불가·상태이상/게이지 증가 면역을 건너뜀
   (OBF_8151 = SE 행 강제 || 버프 강제, 생성자 NKM:6112, mc.se_force_apply).
+- unique_id: IsUniqueID 이고 IsLevel 이 아닌 이름 -> 독립 객체 상한(UniqueIdStackMax, 0=무제한 'inf'). 재부여마다 새 객체(mc.unique_id_stack).
 - sleep: m_bSleep(수면). 마지막 타격 피해가 0보다 크면 피격자에게서 제거(OBF_2209 NKM:8314-8335, mc.sleep_wake).
 """
 import argparse
@@ -66,7 +67,23 @@ def extract(rows, strings, warn=print):
                                 ('silence', 'm_bSilence', 'm_bImmuneSilence'), ('aggro', 'm_bAggro', 'm_bImmuneAggro'))},
         'dispel_attack': sorted(n for n, v in by_name(rows, strings, lambda r: r.get('DispelCondition') == 'DC_ATTACK', warn,
                                                       'DispelCondition').items() if v),
+        # 이름에 «스탯»이 든 범용 능력치 보정 효과는 설명문 상한·전용 경로(코스모·길드)로 처리하므로 제외.
+        'unique_id': {n: v for n, v in by_name(rows, strings, unique_cap, warn, 'IsUniqueID').items()
+                      if v is not None and '스탯' not in n},
     }
+
+
+def unique_cap(row):
+    """IsUniqueID(비 IsLevel) 버프의 독립 객체 상한: UniqueIdStackMax, 0은 무제한('inf').
+    같은 ID 재부여 때 옛 객체를 지우지 않고 새 객체를 더한다(PC 26752678 NKM:4331-4336,4505-4518,4520-4528)."""
+    if not row.get('IsUniqueID') or row.get('IsLevel'):
+        return None
+    if str(row.get('m_BuffStrID', '')).startswith('BI_STAT_'):
+        return None   # 범용 능력치 보정(이번 스킬·SE 스탯) 행: 설명문 상한·전용 경로(코스모·길드)로 처리, 이름 표에서 제외
+    value = int(row.get('UniqueIdStackMax') or 0)
+    if value < 0:
+        raise ValueError('UniqueIdStackMax must be nonnegative')
+    return 'inf' if value == 0 else value
 
 
 def level_cap(row):
@@ -90,7 +107,7 @@ def main():
     ap.add_argument('--static')
     ap.add_argument('--tables', type=Path, help='CLIENT_* 추출본(번역은 hard/STRING_COMMON.json)')
     ap.add_argument('--out', default=str(ROOT / 'data/buff_flags.json'))
-    ap.add_argument('--only', nargs='+', choices=['force_hit', 'force_evade'],
+    ap.add_argument('--only', nargs='+', choices=['force_hit', 'force_evade', 'unique_id'],
                     help='선택한 신규 표식만 갱신하고 기존 공개 이름/표식은 유지')
     args = ap.parse_args()
     if args.tables:
