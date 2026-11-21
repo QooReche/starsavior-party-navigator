@@ -45,7 +45,7 @@
     const pool=GS.workerPool(cx.makeWorker),stale=cx.stale||(()=>false);
     const run=async(jobs,runs,seed,msg)=>{
       if(stale())throw Error('취소');cx.onPhase?.(msg,jobs.length);
-      const h=GS.runPhase({makeWorker:cx.makeWorker,pool,jobs,workers:Math.max(1,Math.min(2,cx.workers||2)),runs,seed,stage:cx.stage,base:cx.base,chunk:8,onProgress:cx.onProgress});cx.onHandle?.(h);
+      const h=GS.runPhase({makeWorker:cx.makeWorker,pool,jobs,workers:Math.max(1,Math.min(2,cx.workers||2)),runs,seed,stage:cx.stage,base:cx.base,chunk:S.execution?.chunk||8,onProgress:cx.onProgress});cx.onHandle?.(h);
       const r=await h.promise;if(stale())throw Error('취소');if(jobs.some(j=>!Number.isFinite(r[j.key]?.prog)||!Array.isArray(r[j.key]?.progs)))throw Error('길드 계산 결과가 누락됨');return r;
     };
     const make=(keys,level=S.screen.level,sup=S.screen.support||'none',brk=null,p)=>job(S,keys,results,cls,tiers,level,sup,brk,p);

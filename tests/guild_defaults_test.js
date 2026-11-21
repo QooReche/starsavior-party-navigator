@@ -13,7 +13,8 @@ const currentSource=currentHtml.slice(currentStart,currentHtml.indexOf('$("guild
 const roster=Array.from({length:13},(_,i)=>({key:i===0?'professor-m':'u'+String(i).padStart(2,'0'),cls:i<7?'캐스터':i<10?'서포터':'디펜더'}));
 const results=Object.fromEntries(roster.map((r,i)=>[r.key,{power:i<7?1000-i*30:400-i,stats:{hp:1000+i*100,atk:100+i,def:i*10,spd:100+i},combat:{}}]));
 const excluded=['professor-m'];
-function settings(base,small){const s=structuredClone(base);s.excluded=excluded;if(small)s.poolSize=5;s.screen2={keep:8,runs:3};s.finalists=3;s.final={...s.final,runs:4,levels:[2,4,6]};return s;}
+// Freeze the archived dispatch policy too; current chunking is compared separately.
+function settings(base,small){const s=structuredClone(base);s.execution={chunk:8};s.excluded=excluded;if(small)s.poolSize=5;s.screen2={keep:8,runs:3};s.finalists=3;s.final={...s.final,runs:4,levels:[2,4,6]};return s;}
 function fakeWorker(trace,life){return class {
  constructor(){life.active++;life.max=Math.max(life.max,life.active);}
  terminate(){life.active--;this.dead=true;}
