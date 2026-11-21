@@ -85,6 +85,8 @@ _KEEP['barrier_formula'] = 'legacy'
 _KEEP['reaction_single_target_rng'] = 'legacy'
 _KEEP['unique_id_stack'] = 'off'
 _KEEP['random_basic_not_self'] = 'legacy'
+_KEEP['se_cool_clock'] = 'legacy'
+_KEEP['dispel_isbuff'] = 'legacy'
 _KEEP_FORMULA = {'COOP_CAP': 0.30}
 
 

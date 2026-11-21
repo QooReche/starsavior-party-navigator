@@ -121,6 +121,7 @@ def ally_self_enforce(src=SRC):
 _BLV = {}
 
 _BUFF_COUNT = None
+_BUFF_KIND = None
 _BUFF_LEVEL = None
 
 
@@ -232,6 +233,17 @@ def positive_buff(name, legacy):
                 _BUFF_COUNT[key] = values.pop()
     key = re.sub(r'\(해제\s*불가\)$', '', name).strip()
     return _BUFF_COUNT.get(name, _BUFF_COUNT.get(key, legacy))
+
+
+def buff_kind(name):
+    """표의 (IsBuff, IsPositive). 미등록·동명 충돌(값이 여러 개)은 None."""
+    global _BUFF_KIND
+    if _BUFF_KIND is None:
+        with open(os.path.join(SRC, 'data', 'buff_count.json'), encoding='utf-8') as f:
+            rows = json.load(f)['buffs']
+        _BUFF_KIND = {k: tuple(v[0]) for k, v in rows.items() if len({tuple(x) for x in v}) == 1}
+    key = re.sub(r'\(해제\s*불가\)$', '', name).strip()
+    return _BUFF_KIND.get(name, _BUFF_KIND.get(key))
 
 
 def break_skill_levels(src=SRC):
@@ -626,6 +638,7 @@ class Unit:
         self.acting = False
         self.leader = leader
         self.actions = 0
+        self.turn_ends = 0       # 자기 턴 종료 처리 횟수(SE 재발동 제한 차감 시계, mc.se_cool_clock=client)
         self._g0, self._gacc = None, 0.0     # turn_gauge=client 라운드 분할 구간의 실수 증가분
         # turn_gauge=client 행동 우선순위: 등장 처리에서 굴림(NKM:1962). 그 밖에는 처음 정렬 때 굴림(_turn_key)
         self._turn_prio = b._roll_prio() if b.mc.get('turn_gauge') == 'client' else None
@@ -978,7 +991,8 @@ class Battle:
             self._foe_slots = [None] * 5
         self._cur_line = None    # 실행 중인 줄(자동 지정 대상 규칙을 그 스킬 설명에서 찾을 때 씀)
         self.once = set()        # {전투당 1회} 줄 사용 기록
-        self.recast = {}         # {발동 후 N턴 재발동 불가} 줄: (주인, 줄) -> 발동한 때의 주인 행동 횟수
+        self.recast = {}         # {발동 후 N턴 재발동 불가} 줄: (주인, 줄) -> 발동한 때의 재발동 시계(se_cool_clock: 자기 턴 종료 횟수 / legacy 행동 횟수)
+        self._recast_legacy = {}  # client 일 때 legacy 시계 값(규칙 실행 기록 비교용, 판정에는 안 씀)
         self._semantic_lines = {}
         # 호출자(_simulate)가 건네는 런 간 공유 캐시. None 이면 per-Battle 캐시(_semantic_lines)만 쓴다.
         # {id(def_obj): (lines_ref, len, normalized)} — def 객체가 바뀌거나 lines 가 교체되면 자동 무효화.
@@ -1574,6 +1588,8 @@ class Battle:
                 self._tick_cooldowns(u)
                 if ally_end_cd:
                     self.rule_hits['ally_cd_tick'] += 1
+            # PC 26752678 NKM:2013-2021·3604-3617: 턴 유닛(생존)의 TURN_END 처리 끝에 SE 재발동 제한(SeCoolTurn)도 1 차감.
+            u.turn_ends += 1
 
     def _finish_action(self, u):
         """정상 행동·행동 불가·지속 피해 사망 모두 한 번 거치는 턴 종료.
@@ -4603,8 +4619,10 @@ class Battle:
         if '전투당 1회' in ln.raw and (id(owner), id(ln)) in self.once:
             return False
         mrc = RX_RECAST.search(ln.raw) if '재발동 불가' in ln.raw else None
-        if mrc and owner.actions < self.recast.get((id(owner), id(ln)), -10 ** 9) + int(mrc.group(1)):
-            return False      # P5 {발동 후 N턴 재발동 불가}: 발동한 자기 턴부터 N턴(주인의 행동 횟수) 동안 다시 안 걸림(설명문 「1턴에 1번만」)
+        if mrc and self._recast_clock(owner) < self.recast.get((id(owner), id(ln)), -10 ** 9) + int(mrc.group(1)):
+            if self.mc['se_cool_clock'] == 'client' and owner.actions >= self._recast_legacy.get((id(owner), id(ln)), -10 ** 9) + int(mrc.group(1)):
+                self.rule_hits['se_cool_clock'] += 1      # legacy(행동 시작 기준)였다면 풀렸을 차단
+            return False      # {발동 후 N턴 재발동 불가}: SeCoolTurn. client = 주인의 자기 턴 종료 N번 뒤 해제(NKM:3534-3560·3604-3617), legacy = 주인의 행동 시작 N번 뒤
         if ln.params or RX_HP_COND.search(ln.raw):
             ok = self.cond_ok(owner, ln, ctx)
         else:
@@ -4612,14 +4630,26 @@ class Battle:
         if ok and '전투당 1회' in ln.raw:
             self.once.add((id(owner), id(ln)))
         if ok and mrc and not ('확률로' in ln.raw or '% 판정)' in ln.raw):
-            self.recast[(id(owner), id(ln))] = owner.actions   # 확률 효과는 실제로 발동했을 때 _fired 가 기록(실패하면 같은 턴 재시도 가능)
+            self._mark_recast(owner, ln)   # 확률 효과는 실제로 발동했을 때 _fired 가 기록(실패하면 같은 턴 재시도 가능)
         return ok
 
     def _fired(self, owner):
         """지금 실행 중인 확률 줄이 실제로 발동함 -> {발동 후 N턴 재발동 불가} 기록(재귀 시전 전에 부른다)"""
         ln = self._cur_line
         if ln is not None and '재발동 불가' in ln.raw:
-            self.recast[(id(owner), id(ln))] = owner.actions
+            self._mark_recast(owner, ln)
+
+    def _recast_clock(self, owner):
+        return owner.turn_ends if self.mc['se_cool_clock'] == 'client' else owner.actions
+
+    def _mark_recast(self, owner, ln):
+        clock = self._recast_clock(owner)
+        if self.mc['se_cool_clock'] == 'client':
+            # legacy 비교용 시점도 남긴다(규칙 실행 기록 rule_hits 용).
+            self.recast[(id(owner), id(ln))] = clock
+            self._recast_legacy[(id(owner), id(ln))] = owner.actions
+        else:
+            self.recast[(id(owner), id(ln))] = clock
 
     @staticmethod
     def _is_cast_line(ln):
@@ -5247,7 +5277,7 @@ class Battle:
                     continue
                 for name in list(x.eff):
                     e = x.eff[name]
-                    if e.category == ('debuff' if harmful else 'buff') and not e.fixed and self._dispel_shield_ok(e):
+                    if self._dispel_cand(name, e, harmful) and not e.fixed and self._dispel_shield_ok(e):
                         if e.shield > 0:
                             self.rule_hits['dispel_shield'] += 1
                         del x.eff[name]
@@ -5261,7 +5291,7 @@ class Battle:
             for x in tg or []:
                 if not self._dispel_ok(owner, ctx, x, p, rest):
                     continue
-                names = [n for n, e in x.eff.items() if e.category == ('debuff' if harmful else 'buff') and not e.fixed
+                names = [n for n, e in x.eff.items() if self._dispel_cand(n, e, harmful) and not e.fixed
                          and self._dispel_shield_ok(e)]
                 left = int(m.group(4))
                 if self.mc['dispel_order'] == 'client':
@@ -5365,6 +5395,21 @@ class Battle:
             if e.shield > 0:
                 self.rule_hits['dispel_shield'] += 1
             del x.eff[n]
+
+    def _dispel_cand(self, name, e, harmful):
+        """강화/약화 해제 후보. client = 클라 OBF_15506(NKM:4229-4253)처럼 표의 IsBuff 가 참인 것만, 강화 = IsPositive, 약화 = 비 IsPositive
+        (NKM.Templets:40597-40618). IsBuff=false 인 표지·스택(예: 왈츠 아세라 〈협공 확률 20% 증가 (C)〉 BI_DRESS_STRANIS_4)은 지우지 않고 개수도 안 셈.
+        표에 없거나 동명 충돌이면 기존 분류(category). legacy = 기존 분류만."""
+        legacy = e.category == ('debuff' if harmful else 'buff')
+        if self.mc['dispel_isbuff'] != 'client':
+            return legacy
+        kind = buff_kind(name)
+        if kind is None:
+            return legacy
+        ok = kind[0] and (kind[1] != harmful)
+        if ok != legacy:
+            self.rule_hits['dispel_isbuff'] += 1
+        return ok
 
     def _dispel_shield_ok(self, e):
         """해제 후보에 보호막을 넣는가. client = 클라 OBF_33563(NKM:4229-4253)은 Barrier 를 따로 빼지 않는다 —

@@ -312,7 +312,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'fixstats_speed_zero', 'superarmor_damage_ban', 'speed_min', 'foe_client_flow',
     'last_damager_timing', 'self_hp_condition',
     'revive_toughness', 'potential_11026_vampirism', 'heal_cleanse_skill_end',
-    'unique_id_stack', 'random_basic_not_self',
+    'unique_id_stack', 'random_basic_not_self', 'se_cool_clock', 'dispel_isbuff',
     'bloom_passive_levels', 'independent_stack_limits', 'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'shield_enemy_count', 'gauge_lock_order', 'damage_break_boundary',
     'hit_ally_skill_end', 'skill_end_timing', 'passive_se_order', 'se_independent_roll',
     'stack_react_timing',
