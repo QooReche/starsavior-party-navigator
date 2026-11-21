@@ -278,7 +278,9 @@ def myinfo_party(content, order, lead, path):
 
 
 def turn_comparison(dealt, taken, turn, sim_dealt, sim_taken, ally, enemy):
-    """TURN is all selected unit turns, excluding out-of-turn skill casts.
+    """Compare result-screen damage (battle_stat), never HP-clamped per_unit.
+
+    TURN is all selected unit turns, excluding out-of-turn skill casts.
 
     The real ally share is unknown. Its estimate uses the simulation's share;
     this is a diagnostic assumption, not an observed action count.
@@ -288,12 +290,16 @@ def turn_comparison(dealt, taken, turn, sim_dealt, sim_taken, ally, enemy):
     estimated = turn * share
     real_rate = dealt / estimated if estimated else None
     sim_rate = sim_dealt / ally if ally else None
-    return dict(sim_total_actions=round(total, 3),
+    return dict(turn_damage_basis='battle_stat',
+                ally_action_basis='estimated_from_simulation_share',
+                sim_total_actions=round(total, 3),
                 sim_total_actions_vs_turn=total / turn if turn else None,
                 sim_total_actions_minus_turn=total - turn,
                 sim_ally_action_share=share, real_estimated_ally_actions=estimated,
                 real_taken_per_global_turn=taken / turn if turn else None,
                 sim_taken_per_global_turn=sim_taken / total if total else None,
+                real_dealt_per_global_turn=dealt / turn if turn else None,
+                sim_dealt_per_global_turn=sim_dealt / total if total else None,
                 real_estimated_dealt_per_ally_action=real_rate,
                 sim_dealt_per_ally_action=sim_rate,
                 estimated_ally_damage_ratio=real_rate / sim_rate if sim_rate else None)
@@ -382,7 +388,7 @@ def run(name, runs=100, ov=None, seed=7, bs=False, myinfo=None, bs_name='큐브 
     stat_d = sum(v['dmg'] for v in bstat.values())
     stat_t = sum(v['taken'] for v in bstat.values())
     return dict(stage=name, runs=runs, seed=seed, real_ratio=round(dealt / taken, 2), sim_ratio=round(d / max(1.0, t), 2), sim_clear=r['outcome']['clear_p'],
-                **turn_comparison(dealt, taken, turn, d, t, acts, measured['enemy'] / runs),
+                **turn_comparison(dealt, taken, turn, stat_d, stat_t, acts, measured['enemy'] / runs),
                 real=res, real_turn=turn, real_extra=REAL_EXTRA.get(name), sim_ally_actions=round(acts, 1), foe_breaks=r['breaks']['foe'], ally_breaks=r['breaks']['ally'],
                 sim_boss_actions=round(measured['boss'] / runs, 2), sim_enemy_actions=round(measured['enemy'] / runs, 2),
                 enemy_skills={k: {s: round(n / runs, 3) for s, n in v.items()} for k, v in enemy_skills.items()},
