@@ -14,7 +14,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 sys.path.insert(0, ROOT)
 from battlesim.engine import Buff, Ctx, DummyDef, Sim, calc_hit  # noqa: E402
 from battlesim.metrics import ref_enemies, unit_def  # noqa: E402
-from battlesim.api import assumptions_used  # noqa: E402
+from battlesim.api import ASSUMPTION_GRADES, assumptions_used  # noqa: E402
 from battlesim.rules import DEFAULT_OPTS, LEGACY_OPTS, MC_NOTE_KEYS, MC_OPTS, MC_RULES, RULES  # noqa: E402
 from battlesim.starsavior.data import get_db  # noqa: E402
 from battlesim.starsavior.stats import calc_stats  # noqa: E402
@@ -386,7 +386,7 @@ def test_assumptions_used_note_keys_present():
     mc_for_test = dict(MC_OPTS)   # note 키 없는 상태
     out = assumptions_used(mc_for_test, dict(DEFAULT_OPTS))
     rules_in_out = {x['rule'] for x in out}
-    expected = {k for k in _NOTE_KEYS if MC_RULES[k].get('grade') not in ('code', 'data')}
+    expected = {k for k in _NOTE_KEYS if MC_RULES[k].get('grade') in ASSUMPTION_GRADES}
     missing = [k for k in expected if ('mc.' + k) not in rules_in_out]
     missing += [k for k in _NOTE_KEYS - expected if ('mc.' + k) in rules_in_out]
     # 값은 규칙 기본값(MC_OPTS 에 없어서 v['value'] 로 채워야 함)

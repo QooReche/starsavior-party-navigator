@@ -54,30 +54,6 @@
         "owner": "엔진 규칙 유지보수"
       },
       {
-        "key": "[\"rule\",\"mc.max_depth\"]",
-        "reason": "클라 확정 불가(안전 상한): NKM:13872–13879의 10은 다음 행동 유닛 재선택 깊이임. MC cast의 재귀 깊이4와 같은 상한이 아님. 4를 클라 값으로 바꾸지 않고 초과 진단 유지",
-        "client_clue": "PC 26752678 직접 조사: NKM:13872–13879의 10은 다음 행동 유닛 재선택 깊이임. MC cast의 재귀 깊이4와 같은 상한이 아님. 4를 클라 값으로 바꾸지 않고 초과 진단 유지; docs/allowlist_rules_1121.md",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.max_events\"]",
-        "reason": "클라 확정 불가(안전 상한): NKM:13872–13900 및15345–15470의 행동/예약 순회를 조사함. MC의 50,000개 이벤트 예산과 대응하는 클라 상수 없음. 초과 시 EventLimitError인 도구 보호 장치 유지",
-        "client_clue": "PC 26752678 직접 조사: NKM:13872–13900 및15345–15470의 행동/예약 순회를 조사함. MC의 50,000개 이벤트 예산과 대응하는 클라 상수 없음. 초과 시 EventLimitError인 도구 보호 장치 유지; docs/allowlist_rules_1121.md",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.turn_ticks\"]",
-        "reason": "클라 확정 불가(모델 시간): NKM:13880–13883은 행동마다 전역 턴 증가임. MC turn_limit_unit=actions가 이미 이 단위를 사용함. 100틱은 max_turns 안전 지평선·legacy model 계산용이며 실제 게임 턴이라고 한 옛 설명을 정정함",
-        "client_clue": "PC 26752678 직접 조사: NKM:13880–13883은 행동마다 전역 턴 증가임. MC turn_limit_unit=actions가 이미 이 단위를 사용함. 100틱은 max_turns 안전 지평선·legacy model 계산용이며 실제 게임 턴이라고 한 옛 설명을 정정함; docs/allowlist_rules_1121.md",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.unknown_cond\"]",
-        "reason": "클라 확정 불가(파서 정책): NT:42260–42279,43318–43336과 NKM:7179–7207은 알려진 원형 조건을 판정함. MC가 모르는 한국어 조건을 건너뛰는 정책은 클라 규칙이 아님. 기본 skip·진단 유지, roll 대안은 클라 확정으로 승격하지 않음",
-        "client_clue": "PC 26752678 직접 조사: NT:42260–42279,43318–43336과 NKM:7179–7207은 알려진 원형 조건을 판정함. MC가 모르는 한국어 조건을 건너뛰는 정책은 클라 규칙이 아님. 기본 skip·진단 유지, roll 대안은 클라 확정으로 승격하지 않음; docs/allowlist_rules_1121.md",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
         "key": "[\"rule\",\"model.chain_timing\"]",
         "reason": "근거 못 찾음(연결 남음, 길드 방어전만): 클라 추가 피해 큐(NKM:6244-6320)는 chain_timing=client_queue로 구원자·적 연쇄 358/384곳과 벨그라스/코스모 고정 피해·코스모 응징에 적용함. 남은 즉시 실행은 길드 방어전 티엔·시엔(26752678 추출본에 JSON_GUILD_DUNGEON_TIENSIEN_04·G3_04 없음, 원한맹·티엔·시엔 유닛 이름 문자열 없음)·레타르기아의 마술사(변형 속성이 배치 칸과 다름) 26곳과 길드 BFB 전용 모델의 연쇄(응징·부케)",
         "client_clue": "PC 26752678: NKM:4721-4742,6085-6109,6212-6359,13838-13849; ST:29248-29330; NT:41933; rebuild T CLIENT_BATTLE_TEMPLET_GUILD_DUNGEON·plain/JSON_GUILD_DUNGEON_*·hard/STRING_COMMON; data/chain_se.json(report); tools/build_chain_se.py; docs/allowlist_conn_1121.md",

@@ -297,6 +297,9 @@ def _pct(xs, q):
     return xs[lo] + (xs[hi] - xs[lo]) * (i - lo)
 
 
+# 결과에 «가정»으로 싣는 등급. code·data(클라·게임 자료), approx(기대값 엔진 전용 근사, MC 미사용),
+# tool(안전 상한·모델 시간·파서 정책 — 실제 발동은 unsupported runtime·timeout·EventLimitError 로 보고)은 싣지 않음.
+RULE_GRADES = frozenset(('code', 'data', 'official', 'community', 'video', 'user', 'assumed', 'inference', 'game', 'approx', 'tool'))
 ASSUMPTION_GRADES = frozenset(('assumed', 'community', 'video', 'user', 'inference', 'game'))
 
 
