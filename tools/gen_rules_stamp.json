@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "c798d60da0c167ee",
+  "hash": "422ebb671b2fff72",
   "history": [
-   {
-    "hash": "530c00d991033452",
-    "reason": "build_guild_sim 재생성"
-   },
    {
     "hash": "f89a8c57fa3c327f",
     "reason": "구원자 미지원 감사 8건 교정. 길드 방어전 시즌4 종료 상태이므로 기존 방침대로 새 시즌 자료 반영 때 재생성. 현재 시즌 상태는 data/guild_defense.json 참조."
@@ -41,16 +37,16 @@
    {
     "hash": "c798d60da0c167ee",
     "reason": "2차 명중/수호/연쇄 교정(main 위 재정렬). 종료된 길드 방어전 시즌4 생성물이라 재생성 생략, 새 시즌 갱신 때 재생성. docs/allowlist_round2_1121.md"
+   },
+   {
+    "hash": "422ebb671b2fff72",
+    "reason": "오토 HP 조건 float32·임계0(auto_cond_hp_float32)과 nova_policy 등급 변경(값 그대로). 종료된 길드 방어전 시즌 생성물이라 재생성을 생략하고 새 시즌 갱신 때 재생성함. quick 표본에서 갈린 판정 0회. docs/auto_skill_1121.md"
    }
   ]
  },
  "quick": {
-  "hash": "c798d60da0c167ee",
+  "hash": "422ebb671b2fff72",
   "history": [
-   {
-    "hash": "530c00d991033452",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "f89a8c57fa3c327f",
     "reason": "calibrate_quick --write 재보정"
@@ -86,6 +82,10 @@
    {
     "hash": "c798d60da0c167ee",
     "reason": "2차 회피/수호/연쇄 교정(main 위 재정렬). 영향 335표본 각40판 재생성에서 보정 기준 clear>=0.5 판정 변경0(88dcc2b 기록), quick 계수 유지. docs/allowlist_round2_1121.md"
+   },
+   {
+    "hash": "422ebb671b2fff72",
+    "reason": "오토 HP 조건 float32·임계0(auto_cond_hp_float32 client)과 nova_policy 등급 변경(값 auto 그대로). quick 보정 표본 1455건x40판을 다시 돌려 ally_hp_le_bp 판정 105588회 중 legacy와 갈린 판정 0회, 임계0 0회였음. 그래서 결과가 같고 quick 계수를 유지함. docs/auto_skill_1121.md"
    }
   ]
  }
