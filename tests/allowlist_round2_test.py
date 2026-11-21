@@ -45,9 +45,6 @@ class Round2Test(unittest.TestCase):
         give(v, '회피', {'회피율': 20})
         ctx = Ctx(a, a, a.d.skills['기본기'])
         self.assertEqual(b.evade_rate(a, v, ctx), 0)
-        b.mc['evade_model'] = 'rate_minus_acc'
-        self.assertAlmostEqual(b.evade_rate(a, v, ctx), .2)
-        b.mc['evade_model'] = 'client'
         give(v, '강제 회피')
         self.assertEqual(b.evade_rate(a, v, ctx), 1)
         give(a, '필중')
@@ -70,8 +67,8 @@ class Round2Test(unittest.TestCase):
         self.assertEqual(b.evade_rate(a, v, ctx), 1)
 
     def test_evade_damage_and_debuff_integration(self):
-        for mode in ('rate_minus_acc', 'client'):
-            b = battle([unit('target')], [unit('boss', hit=13000)], mc={'evade_model': mode})
+        for mode in ('client',):
+            b = battle([unit('target')], [unit('boss', hit=13000)])
             a, v = b.foes[0], b.allies[0]
             a.d.lines = [Line('[스킬 사용 후] 스킬 대상에게 〈공격력 감소〉 (2턴 / 공격력% -20%)', '기본기', 'active')]
             give(v, '회피', {'회피율': 30})

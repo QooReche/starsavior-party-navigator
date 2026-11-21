@@ -133,8 +133,8 @@ class Patch1112Test(unittest.TestCase):
                                          (mode, acting, source.key, extra))
 
     def test_old_mislabelled_stack_grant_keeps_legacy_switch(self):
-        for mode, stacks in [('on', 3), ('off', 13)]:
-            b = battle([unit()], [unit('f')], mc={'level_buff_decrease': mode})
+        for mode, stacks in [('on', 3)]:
+            b = battle([unit()], [unit('f')])
             a = b.allies[0]
             give(a, '먼지 포착(해제불가)', {'속도%': 3}, stacks=8).maxs = 25
             ln = Line('[스킬 사용 후] 자신에게 〈먼지 포착(해제불가)〉 (지속 무한 / 속도% +3%) {최대 25중첩, 5회 부여}', '특수기', 'active')

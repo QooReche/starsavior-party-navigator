@@ -40,34 +40,10 @@ def state(b):
               u.dmg, u.taken, u.healed, dict(u.cd), dict(u.cast_count)) for u in b.allies + b.foes])
 
 
-def purify_case(cls=engine.Battle, overrides=None, near_cap=False):
-    b = cls([unit('a')], [[unit('f', hp=10**8)]], random.Random(7),
-            mc=dict(overrides or {}, purify_nova_scope='main_only'),
-            opts={'coop': False, 'nova': False}, timeline=True,
-            break_skill={'name': '행성 정화'}, max_turns=3)
-    b.spawn_wave()
-    a, f = b.allies[0], b.foes[0]
-    b.break_points = 3
-    b._use_break_skill(a)
-    b.team_nova = 0
-    if near_cap:
-        while len(b.timeline) < 2992:
-            b.log(padding=True)
-    b.cast(a, a.d.skills['기본기'], target=f)
-    assert b.team_nova == 1 and f.taken > 0
-    b.cast(a, a.d.skills['기본기'], extra=True, via='coop', target=f)
-    assert b.team_nova == 1
-    b.log(review_tail=True)
-    b.run()
-    assert b.progress() > 0
-    return b
-
-
 def wave_case(cls=engine.Battle, overrides=None, *, extra='clear', gauge='reset',
-              carry='keep', reserved=False):
+              carry='client', reserved=False):
     b = cls([unit('a'), unit('dead')], [[unit('first')], [unit('second', hp=10**8)]],
-            random.Random(7), mc=dict(overrides or {},
-            wave_carry=carry), opts={'coop': False}, timeline=True,
+            random.Random(7), mc=dict(overrides or {}), opts={'coop': False}, timeline=True,
             max_turns=3)
     b.spawn_wave()
     a, dead = b.allies
@@ -79,17 +55,10 @@ def wave_case(cls=engine.Battle, overrides=None, *, extra='clear', gauge='reset'
 
 
 class ReviewLegacyTest(unittest.TestCase):
-    def test_purify_legacy_timeline_and_cap(self):
-        for cap in (False, True):
-            b = purify_case(near_cap=cap)
-            self.assertFalse(any('purify_nova' in row for row in b.timeline))
-            self.assertTrue(any('review_tail' in row for row in b.timeline))
-            if cap:
-                self.assertEqual(len(b.timeline), 3000)
 
     def test_wave_gauge_and_reservation_independent(self):
         for extra, gauge, carry, reserved in itertools.product(
-                ('clear',), ('reset',), ('keep', 'client'), (False, True)):
+                ('clear',), ('reset',), ('client',), (False, True)):
             with self.subTest(extra=extra, gauge=gauge, carry=carry, reserved=reserved):
                 b = wave_case(extra=extra, gauge=gauge, carry=carry, reserved=reserved)
                 a, dead = b.allies
@@ -122,12 +91,8 @@ class ReviewLegacyTest(unittest.TestCase):
 
 def compare_history():
     old, overrides = historical('93d300f')
-    for cap in (False, True):
-        a = purify_case(old, overrides, cap)
-        b = purify_case(engine.Battle, overrides, cap)
-        assert state(a) == state(b), ('purify', cap)
     count = 0
-    for carry, gauge, reserved in itertools.product(('keep', 'client'), ('reset',), (False, True)):
+    for carry, gauge, reserved in itertools.product(('client',), ('reset',), (False, True)):
         # 예약 없는 아군은 새 clear를 켠 채로도 옛 gauge legacy를 재현해야 함.
         for extra in (() if reserved else ('clear',)):   # wave_extra_turn 스위치 삭제(항상 clear)
             args = dict(extra=extra, gauge=gauge, carry=carry, reserved=reserved)
@@ -137,13 +102,12 @@ def compare_history():
             b.run()
             assert a.progress() > .5 and state(a) == state(b), args
             count += 1
-    print(f'93d300f legacy: purify 2 + wave {count}, 상태·진행도·시간선·난수 일치')
+    print(f'93d300f legacy: wave {count}, 상태·진행도·시간선·난수 일치')
 
 
 def mutations():
     cases = [
-        ('cast', "if purify == 'all_casts':", 'if True:', 'test_purify_legacy_timeline_and_cap'),
-        ('spawn_wave', 'self._reset_wave_gauge()', 'pass', 'test_default_reset_before_wave_start'),
+        ('_reset_wave_gauge', 'u.gauge = 0.0', 'pass', 'test_default_reset_before_wave_start'),
     ]
     for method, before, after, test in cases:
         source = textwrap.dedent(inspect.getsource(getattr(engine.Battle, method)))

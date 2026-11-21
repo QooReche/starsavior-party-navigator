@@ -145,9 +145,9 @@ class Rules1121Test(unittest.TestCase):
         self.assertEqual(b.choose_skill(f)[0].slot, '기본기')
 
     def test_dead_caster_taunt_is_removed_after_skill_ordinary_buff_stays(self):
-        for mode in ('client', 'keep_buffs'):
+        for mode in ('client',):
             b = battle([unit('a'), unit('other')], [unit('caster'), unit('f', hp=100000)],
-                       mc={'caster_death': mode}, opts={'coop': False})
+                       opts={'coop': False})
             a, other = b.allies
             source, foe = b.foes
             give(a, '도발', src=source, harmful=True)
@@ -212,7 +212,7 @@ def mutations():
         ('choose_skill', "slots = ('궁극기', '특수기', '기본기')", "slots = ('기본기', '특수기', '궁극기')", 'test_enemy_skill_order_and_silence'),
         ('deal', "not self.mc['enemy_same_formula']", 'True', 'test_enemy_formula_is_symmetric'),
         ('_cond_values', 'else n <= float(lim)', 'else n < float(lim)', 'test_buff_count_includes_zero_and_undispellable'),
-        ('cast', "self.mc['caster_death'] == 'client'", 'False', 'test_dead_caster_taunt_is_removed_after_skill_ordinary_buff_stays'),
+        ('cast', "if taunt is not None and taunt.src is not None and taunt.src.dead:", 'if False:', 'test_dead_caster_taunt_is_removed_after_skill_ordinary_buff_stays'),
     ]
     for method, old, new, test in cases:
         cls = Unit if method == 'reset_initial_cooldowns' else Battle

@@ -11,7 +11,7 @@ sys.path[:0] = [ROOT, os.path.join(ROOT, 'tests')]
 from simkit import battle, give, unit
 from battlesim.api import simulate
 from battlesim.mc import Battle, Ctx, line_rest
-from battlesim.rules import MC_OPTS, MC_RULES
+from battlesim.rules import MC_OPTS
 from battlesim.starsavior.parser import Line
 
 PARTY = ['sunshine-cat-smile', 'cristelle', 'white-pearl-luna', 'wedding-carmen']
@@ -31,7 +31,7 @@ def run_stage(mode, runs=4, **overrides):
     with patch.object(Battle, 'run', spy):
         result = simulate(PARTY, {'stage': 'clo/태양 회랑/FLOOR 250'},
                           {'build': 'standard', 'n_runs': runs, 'seed': 3,
-                           'rules_override': dict(wave_carry=mode, **overrides)})
+                           'rules_override': dict(**overrides)})
     return result, seen
 
 
@@ -44,26 +44,20 @@ def effect(b, owner, target, text, phase='스킬 사용 후'):
 
 class DefaultsTest(unittest.TestCase):
     def test_switch_contract(self):
-        for key, value, legacy in [('wave_carry', 'client', 'keep'),   # 2026-11-14 기본 client(영상 근거)
-                                   ('shield_tick', 'turn_end', 'turn_start'),
-                                   ('break_domain_revive', 'client', 'none')]:
-            self.assertEqual(MC_OPTS[key], value)
-            self.assertEqual(MC_RULES[key]['legacy'], legacy)
-            self.assertEqual(MC_RULES[key]['grade'], 'code')
-            self.assertTrue(MC_RULES[key]['source'])
+        # wave_carry·shield_tick·break_domain_revive 스위치는 엔진 다이어트 4단계에서 지움(항상 클라 동작)
         self.assertEqual(MC_OPTS['power_penalty'], 'model')   # 2026-11-15 기본 model 전환(rules_test test_power_penalty_default)
 
 
 class WaveTest(unittest.TestCase):
     def setup_wave(self, mode, **mc):
         b = battle([unit('a'), unit('dead')], [unit('first')],
-                   mc=dict(wave_carry=mode, **mc), break_skill=CUBE)
+                   mc=mc or None, break_skill=CUBE)
         b.waves.append([unit('second')])
         b.kill(b.allies[1], b.foes[0])
         return b, b.allies[0]
 
     def test_effects_instances_and_exclusions(self):
-        for mode in ('keep', 'client'):
+        for mode in ('client',):
             with self.subTest(mode=mode):
                 b, a = self.setup_wave(mode)
                 old_foe = b.foes[0]
@@ -102,7 +96,7 @@ class WaveTest(unittest.TestCase):
                     self.assertIn('도발', a.eff)
 
     def test_wave_start_order_and_gauge_switch(self):
-        for mode, gauge, expected in [('client', 'reset', 2000), ('keep', 'reset', 0)]:
+        for mode, gauge, expected in [('client', 'reset', 2000)]:
             b, a = self.setup_wave(mode)
             a.d.lines = [Line('[웨이브 시작 시] 자신에게 행동 게이지 20%p 증가', '고유 패시브', 'passive'),
                          Line('[웨이브 시작 시] 자신에게 〈새 버프〉 (1턴 / 공격력% +10%)', '고유 패시브', 'passive')]
@@ -112,7 +106,7 @@ class WaveTest(unittest.TestCase):
             self.assertEqual(a.eff['새 버프'].dur, 1)
 
     def test_both_teams_wave_start_after_carry(self):
-        for mode in ('client', 'keep'):
+        for mode in ('client',):
             with self.subTest(mode=mode):
                 b, a = self.setup_wave(mode)
                 give(a, '기존 효과', dur=2)
@@ -134,26 +128,18 @@ class WaveTest(unittest.TestCase):
                 self.assertEqual(a.eff['아군 새 효과'].dur, 2)
                 self.assertEqual(a.eff['적 새 효과'].dur, 2)
 
-    def test_standard_wave_path(self):
-        old, _ = run_stage('keep')
-        new, battles = run_stage('client')
-        self.assertGreater(new['outcome']['progress'], 0)
-        self.assertGreater(old['outcome']['progress'], 0)
-        self.assertGreater(sum(b.rule_hits['wave_carry'] for b in battles), 0)
-        self.assertNotEqual(old['outcome'], new['outcome'])
-
 
 class ShieldTest(unittest.TestCase):
     def setup_shield(self, mode='turn_end'):
         b = battle([unit('a'), unit('b')], [unit('foe', hp=10**9)],
-                   mc={'shield_tick': mode}, opts={'coop': False})
+                   opts={'coop': False})
         return b, *b.allies
 
     def shield(self, b, owner, target, phase='스킬 사용 후'):
         effect(b, owner, target, '아군 전체에게 〈보호막〉 (1턴) 보호막 = 자신 생명력×10%', phase)
 
     def test_outside_turn_absorbs_until_owner_end(self):
-        for mode in ('turn_start', 'turn_end'):
+        for mode in ('turn_end',):
             b, a, other = self.setup_shield(mode)
             self.shield(b, other, a)
             hp = a.hp
@@ -230,7 +216,7 @@ class ShieldTest(unittest.TestCase):
             # turn_gauge=client 면 행동 순서가 바뀌어 이 편성·판 수에서 흡수 장면이 안 생김 → 장면 고정용으로 float(시험 대상 경로는 그대로)
             # power_penalty 도 off 고정: 11/15 기본 model 이면 FLOOR 250(이 편성 전투력 비율 78.67%) 이 아군 x0.786·적 x1.214 라 흡수 장면이 사라짐(보정과 무관한 보호막 경로 시험)
             # 11/15 SKILL_END 교정도 동일한 보호막 장면을 고정할 때만 옛 값 사용.
-            result, battles = run_stage('keep', 40, shield_tick='turn_end', turn_gauge='float', power_penalty='off',
+            result, battles = run_stage('client', 40, turn_gauge='float', power_penalty='off',
                                         skill_end_timing='legacy', se_independent_roll='legacy')
         self.assertGreater(result['outcome']['progress'], 0)
         self.assertGreater(sum(b.rule_hits['shield_owner_absorb'] for b in battles), 0)
@@ -241,7 +227,7 @@ class ShieldTest(unittest.TestCase):
 class ReviveTest(unittest.TestCase):
     def setup_domain(self, mode='client', clock='global'):
         b = battle([unit('a'), unit('b', role='서포터')], [unit('foe', hp=10**9)],
-                   mc={'break_domain_revive': mode, 'break_skill_domain_clock': clock}, break_skill=CUBE)
+                   break_skill=CUBE)
         b.break_points = 3
         b._use_break_skill(b.allies[0])
         return b, *b.allies
@@ -250,8 +236,8 @@ class ReviveTest(unittest.TestCase):
         effect(b, owner, target, '스킬 대상에게 부활(생명력 50%)')
 
     def test_remaining_lifetime_role_props_and_expiry(self):
-        for mode in ('none', 'client'):
-            for clock in ('global', 'legacy'):
+        for mode in ('client',):
+            for clock in ('global',):
                 b, a, other = self.setup_domain(mode, clock)
                 b.kill(other, b.foes[0])
                 b._tick_break_domain(b.break_domain_clock)

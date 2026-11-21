@@ -6,8 +6,6 @@ python -X utf8 -I tests/skill_effects_b_test.py --mutations
 python -X utf8 -I tests/skill_effects_b_test.py --ab
 """
 import collections
-import io
-import json
 import sys
 import unittest
 from pathlib import Path
@@ -20,7 +18,6 @@ from simkit import battle, give, unit
 from battlesim.api import simulate
 from battlesim.mc import Battle, Ctx, ally_auto_lines, normalized_lines
 from battlesim.metrics import unit_def
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
 from battlesim.starsavior.parser import Line
 
@@ -93,8 +90,7 @@ class LughTest(unittest.TestCase):
         self.assertEqual(u.stack(SNOW), 1)  # 일반 부여가 감소로 바뀌면 안 됨
 
     def test_legacy_extra_and_not_own(self):
-        for rules, acting, extra in [({'variant_self_state': 'off'}, True, False),
-                                     ({}, True, True), ({}, False, False)]:
+        for rules, acting, extra in [({}, True, True), ({}, False, False)]:
             with self.subTest(rules=rules, acting=acting, extra=extra):
                 b, u = setup('lugh', **rules)
                 u.acting = acting
@@ -129,14 +125,6 @@ class LughTest(unittest.TestCase):
         self.assertAlmostEqual(ctx.inc, .2)
         self.assertFalse(u.has(NOVA))
 
-    def test_existing_variants_survive_legacy(self):
-        for key, slot, name, stacks in [('lyn', '궁극기', '명월(해제불가)', 1),
-                                        ('bunny-frey', '기본기', '하이 롤러(해제불가)', 5)]:
-            b, u = setup(key, variant_self_state='off')
-            give(u, name, stacks=stacks).maxs = stacks
-            ctx = b.cast(u, u.d.skills[slot])
-            self.assertIsNot(ctx.skill, u.d.skills[slot])
-
     def test_live_cycle(self):
         r = measured(['lugh', 'emily', 'hilde', 'ceres-sun-supporter'], 'clo/달 회랑/FLOOR 100')
         self.assertGreater(r['outcome']['progress'], 0)
@@ -161,14 +149,10 @@ class CeresTest(unittest.TestCase):
                                    (state == 'debuff') == (key == 'TurnUnitNegativeBuff'))
                         self.assertEqual(b.cond_ok(owner, ln, ctx), expected)
                         self.assertNotIn('cond: ' + key, b.unsup)
-                        b.mc['turn_unit_debuff_cond'] = 'skip'
-                        self.assertFalse(b.cond_ok(owner, ln, ctx))
-                        self.assertGreater(b.unsup['cond: ' + key], 0)
 
     def test_turn_unit_debuff(self):
-        for mode in (None, 'skip'):
-            b = battle([unit_def('ceres-sun-supporter'), unit('ally')], [unit(hp=10**9)],
-                       mc={} if mode is None else {'turn_unit_debuff_cond': mode})
+        for mode in (None,):
+            b = battle([unit_def('ceres-sun-supporter'), unit('ally')], [unit(hp=10**9)])
             u, ally = b.allies
             u.eff.clear()
             ln, = [ln for ln in b.lines_of(u) if any(k == 'TurnUnitNegativeBuff' for k, _ in ln.params)]
@@ -205,10 +189,7 @@ class TyriaTest(unittest.TestCase):
     def distribution(self, mode=None, unequal=False):
         selected = collections.Counter()
         for seed in range(40):
-            rules = {} if mode is None else {'auto_marker_lines': mode}
-            if mode == 'drop':
-                # 명시적인 옛 설명문 폴백 시험은 새 표지 부재 규칙도 legacy로 고정.
-                rules['auto_empty_marker'] = 'legacy'
+            rules = {}
             b, u = setup('tyria', seed=seed, **rules)
             if unequal:
                 give(b.foes[1], '방어력 시험', props={'방어력%': 100})
@@ -226,8 +207,7 @@ class TyriaTest(unittest.TestCase):
         self.assertGreaterEqual(counts[1], 10)
 
     def test_legacy_and_unique_max(self):
-        self.assertEqual(self.distribution('drop'), {0: 40})
-        for mode in ('keep', 'drop'):
+        for mode in ('keep',):
             self.assertEqual(self.distribution(mode, unequal=True), {1: 40})
 
     def test_automatic_mapping_scope(self):
@@ -249,30 +229,5 @@ class TyriaTest(unittest.TestCase):
         self.assertGreater(r['counts'].get('marker_lines', 0), 0, r)
 
 
-def mutation_check():
-    cases = [('variant_self_state', 'off', LughTest, ['test_cycle', 'test_nova_damage_and_reset', 'test_live_cycle']),
-             ('turn_unit_debuff_cond', 'skip', CeresTest, ['test_turn_unit_debuff', 'test_live_debuff']),
-             ('auto_marker_lines', 'drop', TyriaTest, ['test_ties_random', 'test_live_marker'])]
-    for key, value, cls, names in cases:
-        with patch.dict(MC_OPTS, {key: value}):
-            result = unittest.TextTestRunner(stream=io.StringIO()).run(unittest.TestSuite(cls(n) for n in names))
-        assert len(result.failures) == len(names) and not result.errors, (key, result.failures, result.errors)
-        print('%s=%s: %d/%d개 시험 실패 확인' % (key, value, len(result.failures), len(names)))
-
-
-def ab_report():
-    party = ['lugh', 'emily', 'hilde', 'ceres-sun-supporter']
-    for floor in (100, 250):
-        for mode in ('off', 'client'):
-            r = measured(party, 'clo/달 회랑/FLOOR %d' % floor, runs=24, variant_self_state=mode)
-            assert r['outcome']['progress'] > 0, r
-            print(json.dumps(dict(floor=floor, mode=mode, runs=24, party=party, **r), ensure_ascii=False))
-
-
 if __name__ == '__main__':
-    if '--mutations' in sys.argv:
-        mutation_check()
-    elif '--ab' in sys.argv:
-        ab_report()
-    else:
-        unittest.main()
+    unittest.main()

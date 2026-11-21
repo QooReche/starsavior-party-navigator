@@ -170,12 +170,12 @@ def test_counter():
 
 
 def test_leader_speed():
-    """리더 속도 +10(아군 리더 칸, 적은 웨이브의 보스)"""
+    """리더 속도 +10(아군 리더 칸만, 적은 리더 없음 — enemy_leader 스위치 삭제)"""
     b = Battle([unit('a', spd=100), unit('b', spd=100)], [[unit('f0', spd=100), unit('boss', spd=100, boss=True)]],
-               random.Random(1), mc=dict(FIXED, enemy_leader='boss'), leader=1)
+               random.Random(1), mc=dict(FIXED), leader=1)
     b.spawn_wave()
     s = [u.spd() for u in b.allies] + [u.spd() for u in b.foes]
-    return s == [100, 110, 100, 110], '속도 %s' % s
+    return s == [100, 110, 100, 100], '속도 %s' % s
 
 
 def test_enemy_leader_default_none():

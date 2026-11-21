@@ -2,24 +2,22 @@
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from p3_test import battle, give, unit
-from battlesim.mc import Ctx, MC_OPTS
+from battlesim.mc import Ctx
 from tools import ingame_check as check
 from tools.received_damage_audit import measure
 
 
 class GuardNormalHitTest(unittest.TestCase):
-    def hit(self, side=1, legacy=False, shield=False, force=False, reduction=False):
+    def hit(self, side=1, shield=False, force=False, reduction=False):
         defenders = [unit('target', df=1000), unit('guard', df=2000)]
         attacker = unit('attacker', atk=1000, cr=0 if force else 10000)
         attacker.stats['cd'] = 10000
         b = battle(defenders if side == 1 else [attacker],
-                   [attacker] if side == 1 else defenders,
-                   mc={'guard_normal_hit': False} if legacy else {})
+                   [attacker] if side == 1 else defenders)
         a = (b.foes if side == 1 else b.allies)[0]
         v, g = b.allies if side == 1 else b.foes
         give(g, '수호', {'피해 분담(수호)': 40})
@@ -54,10 +52,6 @@ class GuardNormalHitTest(unittest.TestCase):
         self.assertEqual(g.taken, 355)
         self.assertEqual(g.maxhp - g.hp, 255)
 
-    def test_legacy_restores_critical_transfer(self):
-        _, _, v, g = self.hit(legacy=True)
-        self.assertEqual((v.taken, g.taken), (1665, 888))
-
 
 class AuditTest(unittest.TestCase):
     def test_conservation_and_no_combat_change(self):
@@ -79,11 +73,4 @@ class AuditTest(unittest.TestCase):
 
 if __name__ == '__main__':
     check.low_priority()
-    if '--mutations' in sys.argv:
-        with patch.dict(MC_OPTS, guard_normal_hit=False):
-            result = unittest.TextTestRunner().run(
-                unittest.defaultTestLoader.loadTestsFromTestCase(GuardNormalHitTest))
-        caught = len(result.failures) == 4 and not result.errors
-        print('Legacy critical-sharing mutation detected:', caught)
-        sys.exit(0 if caught else 1)
     unittest.main(verbosity=2)

@@ -181,9 +181,9 @@ def test_break_recovery_turn_effects():
     """연속 회복 턴도 지속 효과·턴 이벤트를 처리하며 스킬/행동 이벤트는 발생하지 않는다."""
     out = {}
     for mode in ('skip', 'keep', 'reset'):
-        for shield_tick in ('turn_start', 'turn_end'):
+        for shield_tick in ('turn_end',):
             b = battle([unit('a', hp=10**9), unit('ally')], [unit('foe', hp=10**9)],
-                       mc=dict(ally_break_gauge=mode, shield_tick=shield_tick), opts=dict(coop=False))
+                       mc=dict(ally_break_gauge=mode), opts=dict(coop=False))
             a, ally = b.allies
             f = b.foes[0]
             a.d.lines = [Line('[턴 종료 시] 자신에게 행동 게이지 1%p 증가', '고유 패시브', 'passive')]

@@ -47,7 +47,7 @@ def batches():
                 if i == 2:
                     o['raw_runs'] = True
                 if i == 3:
-                    o['rules_override'] = {'stage_fx_target': 'enemies'}
+                    o['rules_override'] = {'enemy_auto_target': 'weighted'}   # 팀별 규칙 차이(남은 스위치)
                 teams.append({'key': 't%d' % i, 'party': p, 'options': o})
             out.append((stage, n, dict(BASE, **extra), teams))
     # 이어 돌리기(예선 2차): 1차 raw 를 merge_raw 로

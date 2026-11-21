@@ -125,8 +125,8 @@ def experiment(mode, runs, bs):
         return result
 
     ov = {'enemy_same_formula': False} if mode == 'all_enemy_no_185' else {}
-    if mode == 'no_fx':
-        ov['stage_fx_target'] = 'off'
+    if mode == 'no_fx':   # 스위치 stage_fx_target 은 엔진 다이어트 4단계에서 지움(항상 아군 적용)
+        raise SystemExit('no_fx 모드는 태그 engine-legacy-final 의 worktree 에서 실행')
     with patch.multiple(Battle, deal=deal, final_dmg=final, apply_damage=apply, lines_of=lines, spawn_wave=spawn):
         ratios = [check.run(name, runs, ov=ov, bs=bs) for name in check.SAMPLES]
     by_name = defaultdict(list)

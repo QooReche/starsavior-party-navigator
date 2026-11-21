@@ -156,8 +156,7 @@ class StageSE(unittest.TestCase):
                 self.assertEqual(boss.stack(S.ROT), gain)
 
     def test_marker_clears_before_coop_and_nested_casts_do_not_inherit(self):
-        # 이 새 표지의 수명은 공통 옛 check_buff_expiry 선택에도 시전 단위여야 함.
-        b, boss = setup(2, mc={'check_buff_expiry': 'action'})
+        b, boss = setup(2)
         b.opts['coop'] = True
         a = b.allies[0]
         give(boss, S.ERO, stacks=1)

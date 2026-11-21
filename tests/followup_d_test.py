@@ -41,10 +41,9 @@ class FollowupTest(unittest.TestCase):
 
     def test_wave_extra_turn(self):
         for mode in ('clear',):
-            for carry in ('client', 'keep'):
+            for carry in ('client',):
                 for gauge in ('reset',):
-                    b = battle([unit('a'), unit('dead')], [unit('one')],
-                               mc=dict(wave_carry=carry))
+                    b = battle([unit('a'), unit('dead')], [unit('one')])
                     a, dead = b.allies
                     b.kill(dead, b.foes[0])
                     a.extra_turn, a.gauge = True, 10000
@@ -56,8 +55,8 @@ class FollowupTest(unittest.TestCase):
                     self.assertEqual(b.rule_hits['wave_extra_turn'], int(mode == 'clear'))
 
     def test_new_wave_reservation_survives(self):
-        for carry in ('client', 'keep'):
-            b = battle([unit('a')], [unit('one')], mc=dict(wave_carry=carry))
+        for carry in ('client',):
+            b = battle([unit('a')], [unit('one')])
             a = b.allies[0]
             a.d.lines = [passive('웨이브 시작 시', '자신에게 〈추가 턴〉')]
             b.waves.append([unit('two')])
@@ -71,8 +70,7 @@ class FollowupTest(unittest.TestCase):
                 foe.lines = [passive('등장 후', '적 전체에게 〈등장 약화〉 (2턴 / 방어력% -10%)'),
                              passive('전투 시작 시', '자신에게 〈개전〉 (지속 무한 / 공격력% +10%)'),
                              passive('웨이브 시작 시', '적 전체에게 〈웨이브 약화〉 (2턴 / 방어력% -10%)')]
-                b = battle([unit('a')], [foe if wave == 0 else unit('one')],
-                           mc=dict(wave_carry='client'))
+                b = battle([unit('a')], [foe if wave == 0 else unit('one')])
                 if wave:
                     b.waves.append([foe])
                     b.spawn_wave()
@@ -249,16 +247,14 @@ class FollowupTest(unittest.TestCase):
 
 
 CERES = ['ceres-sun-supporter', 'wedding-epindel', 'bunny-charlotte', 'cristelle']
-WAVE = CERES  # FLOOR 250에서 기존 추가 턴 예약을 실제로 보유한 채 웨이브 전환
+WAVE_EXTRA = ['elisa', 'emily', 'epindel', 'fei']  # FLOOR 250(power_penalty off)에서 추가 턴 예약을 보유한 채 웨이브 전환
 
 
 class StandardTest(unittest.TestCase):
     def test_wave_and_turn_start_paths(self):
-        # 이 편성·시드에서 «추가 턴 예약을 가진 채 웨이브 전환»이 일어나는 장면은 옛 자신 추가 발동 대상(최근에 때린 적)에서 생김.
-        # self_enforce_target=client(세레스 추가 특수기가 보스 우선)에선 96판에도 0회라, 웨이브 경로 시험은 장면을 고정해 둠(11/14)
-        # power_penalty 는 off 로 고정: 11/15 기본 model 전환 뒤 FLOOR 250 은 전투력 비율 80.94% → 아군 x0.859·적 x1.141 이라
-        # 전투 흐름이 바뀌어 이 장면이 사라짐. 이 시험은 웨이브 전환 경로(보정과 무관)를 보는 것이므로 장면을 만든 11/14 조건 그대로 둠
-        r = measured(WAVE, 'clo/태양 회랑/FLOOR 250', self_enforce_target='last_target', power_penalty='off')
+        # «추가 턴 예약을 가진 채 웨이브 전환» 장면: 옛 self_enforce_target=last_target 고정은 스위치 삭제로 빼고
+        # 기본 규칙에서 장면이 나는 편성(WAVE_EXTRA)으로 바꿈. power_penalty off 는 11/15 이전 흐름 고정(웨이브 경로와 무관).
+        r = measured(WAVE_EXTRA, 'clo/태양 회랑/FLOOR 250', power_penalty='off')
         self.assertGreater(r['hits'].get('wave_extra_turn', 0), 0)
         r = measured(CERES, 'clo/태양 회랑/FLOOR 200')
         self.assertGreater(r['hits'].get('turn_start_order', 0), 0)

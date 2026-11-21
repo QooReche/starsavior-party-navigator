@@ -1,4 +1,4 @@
-"""11/10 과제 E: 공개 standard·합성 입력. --ab: 30판 쌍 비교, --mutate: 변이 검증."""
+"""11/10 과제 E: 공개 standard·합성 입력. --mutate: 변이 검증."""
 import collections
 import inspect
 import io
@@ -17,14 +17,11 @@ from simkit import battle, unit, give
 from battlesim import mc as mcmod
 from battlesim.api import simulate
 from battlesim.mc import Battle, Ctx, line_kind
-from battlesim.rules import MC_OPTS, MC_RULES
 from battlesim.metrics import unit_def
 from battlesim.engine import Actor, Buff
 from battlesim.starsavior.parser import Line, _map_prop, _perm_apply
 from tools.runtime import static_path_or_none, skip_note
 
-LEGACY = dict(buff_fresh_scope='self', break_gauge_actor='exclude', purify_nova_scope='main_only',
-              preemptive_reduce='attacker_preempt', omega_dispel='fixed')
 PARTY = ['sunshine-cat-smile', 'cristelle', 'white-pearl-luna', 'wedding-carmen']
 
 
@@ -52,12 +49,12 @@ class FreshTest(unittest.TestCase):
             a.lines = [Line('[스킬 사용 시작 시] 자신에게 〈시험 강화〉 (2턴 / 공격력% +10%)', '기본기', 'active')]
         else:
             other.lines = [Line('[스킬 사용 후] (조건: 아군 공격 후) 아군 전체에게 〈시험 강화〉 (1턴 / 공격력% +10%)', '고유 패시브', 'passive')]
-        b = battle([a, other], [unit('적', hp=10**8)], mc={'buff_fresh_scope': mode},
+        b = battle([a, other], [unit('적', hp=10**8)],
                    opts={'coop': False, 'nova': False})
         return b, b.allies[0], b.allies[1]
 
     def test_other_source_survives_current_end(self):
-        for mode in ('client', 'self'):
+        for mode in ('client',):
             b, a, other = self.setup(mode)
             b.act(a)
             self.assertGreater(b.foes[0].taken, 0)
@@ -79,7 +76,7 @@ class FreshTest(unittest.TestCase):
             self.assertFalse(a.has('시험 강화'))
 
     def test_start_source_ticks_current_end(self):
-        for mode in ('client', 'self'):
+        for mode in ('client',):
             b, a, _ = self.setup(mode, True)
             b.act(a)
             self.assertGreater(b.foes[0].taken, 0)
@@ -132,9 +129,9 @@ class BreakTest(unittest.TestCase):
         return b
 
     def test_actor_gauge_survives_normal_action_and_kill(self):
-        for mode in ('client', 'exclude'):
+        for mode in ('client',):
             for kill in (False, True):
-                b = self.setup('스타피어서', break_gauge_actor=mode)
+                b = self.setup('스타피어서')
                 a = b.allies[0]
                 a.gauge = 10000
                 if kill:
@@ -146,9 +143,9 @@ class BreakTest(unittest.TestCase):
                 self.assertGreater(b.foes[0].taken, 0)
 
     def test_purify_extra_and_empty_targets(self):
-        for scope in ('all_casts', 'main_only'):
+        for scope in ('all_casts',):
             for via in ('coop', 'reaction', 'trigger', 'revenge'):
-                b = self.setup('행성 정화', purify_nova_scope=scope)
+                b = self.setup('행성 정화')
                 a, f = b.allies[0], b.foes[0]
                 b._use_break_skill(a)
                 b.team_nova = 0
@@ -163,8 +160,8 @@ class BreakTest(unittest.TestCase):
                 self.assertEqual(b.team_nova, 0)
 
     def test_omega_dispel_leaves_domain(self):
-        for mode in ('client', 'fixed'):
-            b = self.setup('큐브 과부하', omega_dispel=mode)
+        for mode in ('client',):
+            b = self.setup('큐브 과부하')
             a, f = b.allies[0], b.foes[0]
             b.act(a)
             self.assertEqual(b.break_skill_uses, 1)
@@ -178,7 +175,7 @@ class BreakTest(unittest.TestCase):
 class PreemptTest(unittest.TestCase):
     def rate(self, mode, own=-50, reduce=0, side=1):
         b = battle([unit('a'), unit('guard')], [unit('f'), unit('fguard')],
-                   mc={'preemptive_reduce': mode}, seed=7)
+                   seed=7)
         attacker = (b.foes if side else b.allies)[0]
         target, guard = b.allies if side else b.foes
         give(guard, '시험 강화', {'선제 방어 확률': 30})
@@ -190,7 +187,6 @@ class PreemptTest(unittest.TestCase):
     def test_isolation_does_not_reduce_opposing_defense(self):
         for side in (0, 1):
             self.assertTrue(250 <= self.rate('client', side=side) <= 350)
-            self.assertEqual(self.rate('attacker_preempt', side=side), 0)
         self.assertEqual(self.rate('client', reduce=30), 0)
         self.assertTrue(550 <= self.rate('client', reduce=-30) <= 650)
         self.assertEqual(self.rate('client', own=50), self.rate('client', own=-50))
@@ -211,8 +207,8 @@ class PreemptTest(unittest.TestCase):
 class CheckTest(unittest.TestCase):
     def test_reapply_updates_zero_turn_expiry(self):
         for dur in (2, math.inf):
-            for scope in ('name', 'all'):
-                b = battle([unit('a')], [unit('f')], mc={'check_buff_expiry': 'skill', 'check_buff_scope': scope})
+            for scope in ('all',):
+                b = battle([unit('a')], [unit('f')])
                 a = b.allies[0]
                 def apply(turns):
                     b.add_effect(a, a, dict(name='시험 체크용 버프', props={}, max=1, dur=turns, times=1), None)
@@ -227,12 +223,12 @@ class CheckTest(unittest.TestCase):
                 self.assertFalse(a.has('시험 체크용 버프'))
 
     def test_skill_expiry_precedes_coop_condition(self):
-        for mode in ('action', 'skill'):
+        for mode in ('skill',):
             a, other = unit('a'), unit('b')
             a.lines = [Line('[스킬 사용 후] 아군 전체에게 〈시험 체크용 버프〉', '기본기', 'active')]
             other.lines = [Line('[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 시험 체크용 버프]) 자신에게 〈조건 통과〉 (1턴)',
                                 '기본기', 'active')]
-            b = battle([a, other], [unit('f', hp=10**8)], mc={'check_buff_expiry': mode},
+            b = battle([a, other], [unit('f', hp=10**8)],
                        opts={'coop': True, 'nova': False})
             a, other = b.allies
             give(other, '협공', {'협공 확률': 100})
@@ -252,12 +248,12 @@ class CheckTest(unittest.TestCase):
             self.assertEqual(b.rule_hits['check_expire_skill'], 2 * int(mode == 'skill'))
 
     def test_all_scope_keeps_explicit_infinite_and_finite(self):
-        for scope in ('name', 'all'):
+        for scope in ('all',):
             a = unit('a')
             a.lines = [Line('[스킬 사용 후] 자신에게 〈무지속 강화〉 (공격력% +10%)', '기본기', 'active'),
                        Line('[스킬 사용 후] 자신에게 〈유한 강화〉 (2턴 / 공격력% +10%)', '기본기', 'active'),
                        Line('[스킬 사용 후] 자신에게 〈무한 강화〉 (지속 무한 / 공격력% +10%)', '기본기', 'active')]
-            b = battle([a], [unit('f', hp=10**8)], mc={'check_buff_expiry': 'skill', 'check_buff_scope': scope})
+            b = battle([a], [unit('f', hp=10**8)])
             b.act(b.allies[0])
             self.assertEqual(b.allies[0].has('무지속 강화'), scope == 'name')
             self.assertTrue(b.allies[0].has('유한 강화'))
@@ -267,7 +263,7 @@ class CheckTest(unittest.TestCase):
 class StandardTest(unittest.TestCase):
     def test_actor_gauge_at_real_turn_start(self):
         use, fire = Battle._use_break_skill, Battle.fire
-        for mode in ('client', 'exclude'):
+        for mode in ('client',):
             pending, gauges = {}, []
             def observe_use(b, actor=None):
                 before = b.break_skill_uses
@@ -282,8 +278,7 @@ class StandardTest(unittest.TestCase):
                 return fire(b, u, kind, ctx)
             with patch.object(Battle, '_use_break_skill', observe_use), patch.object(Battle, 'fire', observe_start):
                 # 기존 배우·턴 장면을 고정: G2의 크리스텔 분배/연소 중첩은 별도 시험.
-                r, _ = run_stage('clo/태양 회랑/FLOOR 200', {'break_gauge_actor': mode,
-                                 'cristelle_ignite_targets': 'legacy'}, n=5,
+                r, _ = run_stage('clo/태양 회랑/FLOOR 200', {'cristelle_ignite_targets': 'legacy'}, n=5,
                                  skill='스타피어서', party=['hilde', 'professor-m', 'cristelle', 'wedding-carmen'])
             self.assertGreater(r['outcome']['progress'], 0)
             self.assertGreater(r['break_skill']['uses'], 0)
@@ -291,12 +286,7 @@ class StandardTest(unittest.TestCase):
             self.assertEqual(set(gauges), {2000.0} if mode == 'client' else {0.0})
 
     def test_defaults_and_real_paths(self):
-        for k, old in LEGACY.items():
-            self.assertNotEqual(MC_OPTS[k], old)
-            self.assertEqual(MC_RULES[k]['legacy'], old)
-        # 11/14 기본 전환(클라 수명 0 효과 전수 대조 뒤): skill/all
-        self.assertEqual((MC_OPTS['check_buff_expiry'], MC_OPTS['check_buff_scope']), ('skill', 'all'))
-        cases = [('clo/달 회랑/FLOOR 100', None, {'check_buff_expiry': 'skill'},
+        cases = [('clo/달 회랑/FLOOR 100', None, {},
                   ['buff_fresh_other', 'buff_fresh_start', 'check_expire_skill']),
                  ('clo/태양 회랑/FLOOR 200', '행성 정화', {}, ['purify_extra']),
                  ('clo/태양 회랑/FLOOR 200', '스타피어서', {}, ['break_gauge_actor', 'preemptive_client_main'])]
@@ -311,31 +301,24 @@ class StandardTest(unittest.TestCase):
                 self.assertGreater(hits[key], 0, (stage, key, hits))
 
 
-def ab():
-    for stage in ('clo/달 회랑/FLOOR 100', 'clo/태양 회랑/FLOOR 200', 'clo/태양 회랑/FLOOR 250'):
-        for mode in ('self', 'client'):
-            r, hits = run_stage(stage, {'buff_fresh_scope': mode}, n=30, skill='스타피어서')
-            assert r['outcome']['progress'] > 0
-            print(json.dumps(dict(stage=stage, mode=mode, outcome=r['outcome'], hits=hits), ensure_ascii=False))
-
 
 def mutate():
     mutations = [
-        ('_buff_fresh', "if shield or self.mc['buff_fresh_scope'] == 'client':", 'if shield:',
+        ('_buff_fresh', "fresh = bool(x.acting and clock == 'owner_turn' and owner is not None and not start)", 'fresh = bool(x is owner and owner.acting)',
          [FreshTest('test_other_source_survives_current_end'), FreshTest('test_start_source_ticks_current_end')]),
-        ('_use_break_skill', "u is not actor or self.mc['break_gauge_actor'] == 'client'", 'u is not actor',
+        ('_use_break_skill', "if (rule.get('gauge')", "if (rule.get('gauge') and u is not actor",
          [BreakTest('test_actor_gauge_survives_normal_action_and_kill')]),
-        ('cast', "purify = self.mc['purify_nova_scope']", "purify = 'main_only'",
+        ('cast', "if (ctx.targets", "if (not extra and ctx.targets",
          [BreakTest('test_purify_extra_and_empty_targets')]),
-        ('_preemptive_check', "if self.mc['preemptive_reduce'] == 'client':", 'if False:',
+        ('_preemptive_check', "reduce_pct = (attacker.mods().get('preempt_reduce', 0.0)", "reduce_pct = (-attacker.mods().get('preempt', 0.0)",
          [PreemptTest('test_isolation_does_not_reduce_opposing_defense')]),
-        ('_use_break_skill', "if name == '오메가 프로토콜' and self.mc['omega_dispel'] == 'client':", 'if False:',
+        ('_use_break_skill', "if name == '오메가 프로토콜':", 'if False:',
          [BreakTest('test_omega_dispel_leaves_domain')]),
-        ('cast', "if self.mc['check_buff_expiry'] == 'skill':", 'if False:',
+        ('cast', "self._expire_checks(skill=True)", 'pass',
          [CheckTest('test_skill_expiry_precedes_coop_condition')]),
-        ('add_effect', "self.mc['check_buff_scope'] == 'all'", 'False',
+        ('add_effect', "(name not in buff_flags()['turn_infinite']", '(False',
          [CheckTest('test_all_scope_keeps_explicit_infinite_and_finite')]),
-        ('add_effect', "refresh_check = self.mc['check_buff_expiry'] == 'skill' or self.mc['check_buff_scope'] == 'all'", 'refresh_check = False',
+        ('add_effect', "if e.check:", 'if False:',
          [CheckTest('test_reapply_updates_zero_turn_expiry')]),
     ]
     for method, before, after, tests in mutations:
@@ -351,9 +334,7 @@ def mutate():
 
 
 if __name__ == '__main__':
-    if '--ab' in sys.argv:
-        ab()
-    elif '--mutate' in sys.argv:
+    if '--mutate' in sys.argv:
         mutate()
     else:
         unittest.main()

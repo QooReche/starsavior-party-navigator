@@ -860,7 +860,7 @@ def _record_stat(a, v, amount):
 class Battle:
     def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None, ally_fx=None,
                  timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None, rng_streams=False, sudden=None,
-                 semantic_cache=None, mc_overrides=None, battle_mode='all_kill'):
+                 semantic_cache=None, battle_mode='all_kill'):
         self.pen = tuple(pen) if pen else (1.0, 1.0)    # P5 전투력 보정(아군이 주는 피해 배율, 적이 주는 피해 배율) — 스킬·지속·연쇄만
         self.opts = dict(DEFAULT_OPTS)
         self.opts.update(opts or {})
@@ -945,16 +945,8 @@ class Battle:
         self.break_skill_enabled = self.break_skill_rule is not None
         self.break_domain_remaining = 0   # 팀 주입기 수명: 사망·개별 효과 제거와 독립(NKM:13555-13567)
         if self.break_skill_enabled:
-            # API는 기본값까지 합친 mc를 넘기므로 원래 override를 별도로 받는다.
-            explicit = (mc or {}) if mc_overrides is None else mc_overrides
             self.break_domain_turns = self.break_skill_rule['domain_turns']
-            if self.mc['break_skill_domain_clock'] == 'legacy':
-                turns_override = ('break_skill_domain_turns' in explicit if self.break_skill_name == '큐브 과부하'
-                                  else 'domain_turns' in explicit.get('break_skills', {}).get(self.break_skill_name, {}))
-                if not turns_override:
-                    self.break_domain_turns = 4
-            self.break_domain_clock = ('global' if self.mc['break_skill_domain_clock'] == 'global'
-                                       else self.mc['break_skill_cd_unit'])
+            self.break_domain_clock = 'global'
         self.break_points = self.break_points_gained = self.break_skill_uses = 0
         self.ally_via = {}   # 아군 시전 경로별 횟수(coop·forced_coop·trigger·potential·enforce·revenge·reaction) — 길방 편성 찾기가 협공 발생 팀을 거르는 데 씀
         self._forced_coop_candidates = set()  # ForceCrossAttack: 효과 대상에 부여, 턴 끝 초기화
@@ -965,8 +957,6 @@ class Battle:
             self.unsup['break_skill:' + self.break_skill_name] += 1
         if self.break_skill_enabled and self.mc['break_skill_cd_unit'] not in ('ally_turn', 'round'):
             raise ValueError('break_skill_cd_unit 은 ally_turn|round')
-        if self.break_skill_enabled and self.mc['break_skill_domain_clock'] not in ('global', 'legacy'):
-            raise ValueError('break_skill_domain_clock 은 global|legacy')
         # 길드 방어전 BFB 상태 기계(starsavior/guild_bfb.py): 스위치가 켜져 있고 BFB 정의가 웨이브에 있을 때만
         self.gb = None
         if self.mc['guild_boss'] == 'on' and any(getattr(d, 'bfb', None) for w in waves for d in w):
@@ -1116,11 +1106,6 @@ class Battle:
         self.wave_i += 1
         defs = self.waves[self.wave_i]
         lead = None
-        rule = self.mc['enemy_leader']
-        if rule == 'boss':
-            lead = next((i for i, d in enumerate(defs) if getattr(d, 'boss', False)), 0 if defs else None)
-        elif rule == 'first':
-            lead = 0
         self.foes = [Unit(d, 1, i, self, leader=(lead == i), fx=self.fx) for i, d in enumerate(defs)]
         self.all_foes.extend(self.foes)   # 웨이브별 적 기록(피해 집계는 전 웨이브 합)
         # 소환 칸 추적: 웨이브 적에게 게임 칸을 배정(BattleScript SpawnPosIndex 또는 배열 순서)
@@ -1135,7 +1120,7 @@ class Battle:
             self.foes.sort(key=lambda x: x.pos)
         if self.gb is not None:
             self.gb.on_wave()
-        client_carry = self.wave_i > 0 and self.mc['wave_carry'] == 'client'
+        client_carry = self.wave_i > 0
         for u in self.foes:
             for ln in self.lines_of(u):
                 kind = line_kind(ln)
@@ -1285,7 +1270,7 @@ class Battle:
             self.global_turns += 1
             self._sudden_step()
             self.act(best)
-            if self.break_skill_enabled and self.mc['break_skill_domain_clock'] == 'global':
+            if self.break_skill_enabled:
                 self._tick_break_domain('global')
         return self
 
@@ -1368,10 +1353,8 @@ class Battle:
     def act(self, u):
         # 턴 유닛의 스킬·대상 선택 초기화(NKM:13903-13907 OBF_16608(NSI_INVALID)·OBF_2333(-1)) — 행동 못 하면 비운 채로 남음
         u.sel_skill = u.sel_target = None
-        reset_gauge = self.mc['break_gauge_actor'] == 'client'
-        if reset_gauge:
-            # NKM:13483-13488: 턴 선택 때 초기화, 오비탈의 게이지 증가는 이후 보존.
-            u.gauge = 0.0
+        # NKM:13483-13488: 턴 선택 때 초기화, 오비탈의 게이지 증가는 이후 보존.
+        u.gauge = 0.0
         if u.side == 0 and self.break_skill_enabled:
             if self.mc['break_skill_cd_unit'] == 'ally_turn':
                 self._tick_break_skill()
@@ -1380,7 +1363,7 @@ class Battle:
                 # 일반 공격 뒤와 동일하게 run에서 종료/웨이브 전환을 판정한다.
                 # 브레이크는 일반 턴 밖의 행동이므로 게이지·쿨·지속 효과를 소비하지 않는다.
                 return
-        self._act_turn(u, reset_gauge=not reset_gauge)
+        self._act_turn(u, reset_gauge=False)
         self._finish_action(u)
 
     def _dead_turn_add_damage(self):
@@ -1407,8 +1390,6 @@ class Battle:
             u.sa = u.sa_max
             self.dirty(u)
             self.log(recover=u.name, skip=skip)
-        if self.mc['shield_tick'] == 'turn_start':
-            self._tick_shields(u)
         ally_end_cd = u.side == 0
         end_cd = ally_end_cd or (u.side == 1 and self.mc['enemy_cd_tick'] == 'turn_end'
                                 and self.mc['enemy_cd_native'])
@@ -1511,8 +1492,6 @@ class Battle:
                         del u.eff[name]
                         changed = True
                     continue
-                if e.shield > 0 and self.mc['shield_tick'] == 'turn_start':
-                    continue
                 if e.dur != math.inf:
                     e.dur -= 1
                     if e.dur <= 0:
@@ -1585,8 +1564,6 @@ class Battle:
     def _tick_break_skill(self):
         """공용 쿨 차감. legacy 영역만 같은 경계에서 차감한다."""
         self.break_skill_cd = max(0, self.break_skill_cd - 1)
-        if self.mc['break_skill_domain_clock'] == 'legacy':
-            self._tick_break_domain(self.mc['break_skill_cd_unit'])
 
     def _tick_break_domain(self, clock):
         """영역만 차감. global은 발동 행동을 포함해 act 반환 직후 센다."""
@@ -1614,21 +1591,12 @@ class Battle:
     def _break_dmg(self, v, base):
         """파티 광역 피해: 공격자·치명·증가 합·피격/강인도 처리 없는 final_dmg 축약판."""
         dr = _stat.def_rate(self.def_stat(v))
-        if self.mc['break_skill_reduce'] == 'client':
-            dec = 0.0       # 오비탈은 유닛이 아니라 피해 감소 항(전체·역할·브레이크 등)이 모두 0(NKM:17773,18028-18033,18078-18083)
-        else:
-            red = v.mods()['red']
-            dec = red.get('all', 0.0) + red.get('aoe', 0.0)
-            if v.broken:
-                dec -= _rules.BREAK_DEC
-            dec = min(_rules.DEC_CAP, dec)
+        dec = 0.0       # 오비탈은 유닛이 아니라 피해 감소 항(전체·역할·브레이크 등)이 모두 0(NKM:17773,18028-18033,18078-18083)
         return max(1.0, math.floor(base * (1 - dr) * (1 - dec) * self.rand(0) * self.pen[0]))
 
     def _break_level_up(self):
         """(피해 계수 가산, 회복 계수 가산): 레벨 L 이하 행의 SkillLevelDamageUp·HealUp 합/10000(mc.break_skill_level=data).
         레벨이 없거나 범위 밖이면 1(가산 0)로 하고 기록."""
-        if self.mc['break_skill_level'] != 'data':
-            return 0.0, 0.0
         row = break_skill_levels().get(self.break_skill_name)
         if row is None:
             self.unsup['break_skill: 레벨 표 없음 ' + str(self.break_skill_name)] += 1
@@ -1669,8 +1637,7 @@ class Battle:
         dmg_up, heal_up = self._break_level_up()
         if rule.get('damage_ratio'):
             base = sum(self.live_atk(u) for u in self.alive(0)) * (rule['damage_ratio'] + dmg_up) / _rules.AOE_DIV
-            if self.mc['break_skill_scale'] == 'game':
-                base *= _rules.BASE_MULT   # 오비탈 피해도 일반 피해식 끝의 DamageScale(1.85)을 곱함(NKM 17742~17817, 오비탈 시전자 OBF_26964)
+            base *= _rules.BASE_MULT   # 오비탈 피해도 일반 피해식 끝의 DamageScale(1.85)을 곱함(NKM 17742~17817, 오비탈 시전자 OBF_26964)
             had_barrier = self.gb is not None and self.gb.barrier()
             targets = list(self.alive(1))
             queued_guard = self._break_guard()[0] if len(targets) > 1 else None
@@ -1732,7 +1699,7 @@ class Battle:
                 self.log(heal=self.break_skill_name, to=u.name, amount=got)
             if self.opts['nova_pool'] == 'unit':
                 self.nova_add(u, nova)
-            if (rule.get('gauge') and (u is not actor or self.mc['break_gauge_actor'] == 'client')
+            if (rule.get('gauge')
                     and not (rule['gauge'] > 0 and self._gauge_up_blocked(u))):
                 # 오비탈 게이지 증가도 SE 행(SE_TEMPLET_ORBITAL_ARRAY 102011, 비강제) → BI_SPEED_GAUGE_UP(2002) 버프라
                 # 행동 게이지 증가 면역(억류·들러리)이면 거부(NKM:4412-4416, mc.gauge_up_immune)
@@ -1748,7 +1715,7 @@ class Battle:
             for name, props, dur, clock in effects:
                 e = Eff(name, props, 1, dur, None, False)
                 e.stacks, e.fixed, e.clock = 1, self.mc['break_skill_fixed'], clock
-                if name == '오메가 프로토콜' and self.mc['omega_dispel'] == 'client':
+                if name == '오메가 프로토콜':
                     e.fixed = False
                 if name == rule['domain']:
                     e.category = 'marker'
@@ -1767,7 +1734,7 @@ class Battle:
 
     def _restore_break_domain(self, u):
         """부활 시 살아 있는 팀 주입기 재등록(NKM:1927-1939,8263-8287). 일반 버프는 제외."""
-        if (self.mc['break_domain_revive'] != 'client' or u.side != 0
+        if (u.side != 0
                 or not self.break_skill_enabled or self.break_domain_remaining <= 0):
             return
         name = self.break_skill_rule['domain']
@@ -1798,12 +1765,11 @@ class Battle:
         다른 턴에 생긴 것(전투·웨이브 시작 등 턴 사이에 부여)은 남고, 행동 끝 차감(OBF_29028, 3999-4014: 생성 턴이 다르면 차감)에서
         사라진다 — 턴 유닛(OBF_2849)은 전부, 나머지 유닛(OBF_16373, OBF_8763)은 전체 턴 시계 버프(OBF_10355)만.
         action(legacy) = 생성 턴을 보지 않고 행동 끝에 전부 지우던 옛 동작."""
-        same_turn = self.mc['check_buff_expiry'] == 'skill'
         keep = []
         for holder, name in self.check_pending:
             e = holder.eff.get(name)
             if e is not None and e.check:
-                if same_turn and e.check_turn is not None and e.check_turn != self.global_turns:
+                if e.check_turn is not None and e.check_turn != self.global_turns:
                     # 행동 끝 차감으로만 사라짐: 턴 유닛이거나 전체 턴 시계 효과일 때
                     if actor is None or not (holder is actor or e.clock != 'owner_turn'):
                         keep.append((holder, name))
@@ -1924,10 +1890,8 @@ class Battle:
         if owner.side == 1:
             spec = (getattr(owner.d, 'auto_lines', None) or {}).get((ln.slot, ln.raw))
         else:
-            if self.mc['ally_auto_lines'] not in ('data', 'client'):
-                return None
             variants = self.mc['ally_variant_mapping'] == 'data'
-            lines = ally_auto_lines(variants=variants, client=self.mc['ally_auto_lines'] == 'client')
+            lines = ally_auto_lines(variants=variants, client=True)
             rows = lines.get(owner.key, {}) if variants else (lines.get(owner.key) or lines.get(owner.key.split('@')[0], {}))
             spec = rows.get((ln.slot, ln.raw))
         if spec is not None:
@@ -1958,7 +1922,7 @@ class Battle:
     def self_enforce_spec(self, owner, ln):
         """자신이 시전하는 추가 발동 줄의 클라 대상 규칙(mc.self_enforce_target=client): 적 = data/foe_auto.json enforce_self,
         구원자 = data/auto_skill.json self_enforce. 자료가 없는 줄은 None(옛 동작: 자신이 최근에 때린 적·설명문 표지)."""
-        if ln is None or self.mc['self_enforce_target'] != 'client':
+        if ln is None:
             return None
         if owner.side == 1:
             return (getattr(owner.d, 'enforce_self', None) or {}).get((ln.slot, ln.raw))
@@ -2178,11 +2142,8 @@ class Battle:
             # 필중·은신은 선제 방어 무시(docs/formulas_web.md 4.3). 클라는 별도 분기 없이 두 버프의 NoPreemptiveDefend 플래그로 막음(no_preemptive 목록)
             return targets
         # NKM:8732-8734: 공격자의 방어 확률과 방어 무시 확률은 별도 스탯.
-        if self.mc['preemptive_reduce'] == 'client':
-            reduce_pct = (attacker.mods().get('preempt_reduce', 0.0)
-                          + (getattr(attacker.d, 'passive', None) or {}).get('preempt_reduce', 0.0)) * 100.0
-        else:
-            reduce_pct = -attacker.mods().get('preempt', 0.0) * 100.0
+        reduce_pct = (attacker.mods().get('preempt_reduce', 0.0)
+                      + (getattr(attacker.d, 'passive', None) or {}).get('preempt_reduce', 0.0)) * 100.0
         defenders = []
         for v in self.alive(orig.side):
             if v is orig or v.dead:
@@ -2399,8 +2360,7 @@ class Battle:
         variant = getattr(u.d, 'variants', {}).get(sk.slot)
         if variant:
             rule, replacement = variant
-            enabled = rule.get('kind') != 'self_state' or self.mc['variant_self_state'] == 'client'
-            if enabled and u.stack(rule['name']) >= rule['count'] and (not rule['own'] or (u.acting and not extra)):
+            if u.stack(rule['name']) >= rule['count'] and (not rule['own'] or (u.acting and not extra)):
                 sk = replacement
         self.tick()
         if via and u.side == 0:
@@ -2437,12 +2397,11 @@ class Battle:
                 self.nova_bursts[u.pos, sk.slot] += 1
                 # 루그 InstantNovaBurstSe 10270002: 슬롯 SE보다 먼저 확인용 부여.
                 # 공통 피해 +15%는 위 ctx.inc에 이미 반영하므로 중복 실행하지 않는다.
-                if self.mc['variant_self_state'] == 'client':
-                    for raw in (getattr(u.d, 'nb', {}).get('발동 즉시') or []):
-                        instant = Line(raw, sk.slot, 'nova')
-                        if (instant.eff['kind'] == 'buff'
-                                and instant.eff.get('name') == '노바 버스트 발동 확인용 버프'):
-                            self.exec_line(u, instant, ctx)
+                for raw in (getattr(u.d, 'nb', {}).get('발동 즉시') or []):
+                    instant = Line(raw, sk.slot, 'nova')
+                    if (instant.eff['kind'] == 'buff'
+                            and instant.eff.get('name') == '노바 버스트 발동 확인용 버프'):
+                        self.exec_line(u, instant, ctx)
             ctx.targets = self.skill_targets(u, sk, target)
             # 선제 방어: 적 단일 공격 전, 아군 중 선제 방어 확률이 있으면 대상 전환(NKM 8040~8071 PreemptiveDefenseController)
             pd_mode = self.mc.get('preemptive_defense')
@@ -2521,8 +2480,7 @@ class Battle:
             # GetNovaForceValue is paid at every skill end, including reactions
             # and extra casts (NKM:15325-15331,15487,15706-15709).
             self.nova_add(u, sk.nv)
-            purify = self.mc['purify_nova_scope']
-            if ((not extra if purify == 'main_only' else bool(ctx.targets))
+            if (ctx.targets
                     and not u.dead and self.break_skill_enabled
                     and u.has(self.break_skill_rule['domain'])):
                 # 조건 8000: 시전자 자신의 이력이 있는 매 시전. targets는 기록 존재의 근사.
@@ -2530,24 +2488,21 @@ class Battle:
                     self.nova_add(u, self.break_skill_rule['skill_nova'])
                     if extra:
                         self.rule_hits['purify_extra'] += 1
-                    if purify == 'all_casts':
-                        self.log(purify_nova=u.name, via=ctx.via, nova=self.nova_of(u))
-            if self.mc['check_buff_expiry'] == 'skill':
-                # NKM:15394-15396,15586-15593: SKILL_END 뒤, 협공보다 먼저 전원 정리.
-                self._expire_checks(skill=True)
+                    self.log(purify_nova=u.name, via=ctx.via, nova=self.nova_of(u))
+            # NKM:15394-15396,15586-15593: SKILL_END 뒤, 협공보다 먼저 전원 정리.
+            self._expire_checks(skill=True)
             if self._has_belgras_stage and self.mc['belgras_stage_se'] == 'client':
                 belgras_se.expire_marker(self, ctx)
-            if self.mc['caster_death'] == 'client':
-                # 26752678 NKM:15825-15827,16017-16028,3968-3981.
-                # Clear only taunts whose caster no longer lives. Other effects
-                # on surviving recipients keep their own lifetime.
-                for holder in self.alive(0) + self.alive(1):
-                    for name in buff_flags()['cc']['aggro']['effects']:
-                        taunt = holder.eff.get(name)
-                        if taunt is not None and taunt.src is not None and taunt.src.dead:
-                            del holder.eff[name]
-                            self.dirty(holder)
-                            self.rule_hits['caster_death'] += 1
+            # 26752678 NKM:15825-15827,16017-16028,3968-3981.
+            # Clear only taunts whose caster no longer lives. Other effects
+            # on surviving recipients keep their own lifetime.
+            for holder in self.alive(0) + self.alive(1):
+                for name in buff_flags()['cc']['aggro']['effects']:
+                    taunt = holder.eff.get(name)
+                    if taunt is not None and taunt.src is not None and taunt.src.dead:
+                        del holder.eff[name]
+                        self.dirty(holder)
+                        self.rule_hits['caster_death'] += 1
             if ((u.side == 0 or any(b.side == u.side for b in self._forced_coop_candidates))
                     and sk.is_attack and not extra and not u.dead
                     and (self.opts['coop'] or (self.opts['forced_coop']
@@ -2967,11 +2922,6 @@ class Battle:
 
     def evade_rate(self, a, v, ctx):
         """NKM:8267-8286. Force flags cancel; roll final HIT minus EVADE."""
-        mode = self.mc['evade_model']
-        if mode == 'off':
-            return 0.0
-        if mode != 'client':
-            return 0.0 if a.on('필중') else max(0.0, v.mods()['evade'] - a.mods()['acc'] - ctx.acc)
         self.rule_hits['evade_model'] += 1
         force_hit = any(a.on(n) for n in buff_flags()['force_hit'])
         force_evade = any(v.on(n) for n in buff_flags()['force_evade'])
@@ -3137,7 +3087,7 @@ class Battle:
             else:
                 # Native shared damage re-enters GetFinalDamage with a supplied
                 # base; that path forces NormalHit (NKM:7494,17384,17418).
-                shared_normal = w is guard and self.mc['guard_normal_hit']
+                shared_normal = w is guard
                 dmg = self.final_dmg(a, w, pc[1], ctx, crit and not shared_normal, cdv, pen, r, hctx)
             if w is guard:
                 self.log(guard=guard.name, protects=v.name, dmg=dmg)
@@ -3919,14 +3869,13 @@ class Battle:
 
     def _exec_pick(self):
         """추가 발동 대상을 실행 직전에 고르는가(mc.enforce_target=exec, 예약 큐를 쓸 때만)"""
-        return (self.mc.get('enforce_target', 'exec') == 'exec' and self.mc.get('enforce_timing', 'queue') == 'queue'
-                and self._react_q is not None)
+        return self._react_q is not None
 
     def _defer_extra(self, fn, key=None):
         """추가 발동(엔포스·잠재력·트리거 스킬) 시전 fn 을 반응 큐에 예약(mc.enforce_timing=queue 이고 행동 안일 때). 예약했으면 True.
         클라: BI_ENFORCE(EnforceSkillBooking)·반응형(ReactSkillBooking)은 같은 FIFO 큐에 들어가 본 행동 → 협공 → 반격 뒤 실행(DoSkill 2827~2926).
         key 가 있으면 반응형처럼 한 행동에 유닛·칸당 1개(실행 불발이면 fn 이 None 을 돌려 다시 예약 가능)."""
-        if self.mc.get('enforce_timing', 'queue') != 'queue' or self._react_q is None:
+        if self._react_q is None:
             return False
         if key is not None:
             if key in self._react_seen:
@@ -4246,8 +4195,7 @@ class Battle:
         sk = ctx.skill
         tgt = ctx.target if ctx.target is not None else None
         for k, v in ln.params:
-            if k not in COND_KEYS or (k in ('TurnUnitNegativeBuff', 'NotTurnUnitNegativeBuff')
-                                      and self.mc['turn_unit_debuff_cond'] != 'client'):
+            if k not in COND_KEYS:
                 self.unsup['cond: ' + k] += 1
                 if self.mc['unknown_cond'] == 'roll':
                     if self.R(owner.side).random() >= self.opts['unknown_cond_p']:
@@ -4515,10 +4463,10 @@ class Battle:
         if rule and self.mc[rule] == 'client':
             self.rule_hits[rule] += 1
         if ln.eff.get('auto_marker_candidate'):
-            if self.mc['auto_marker_lines'] != 'keep' or owner.side != 0 or self.mc['ally_auto_lines'] not in ('data', 'client'):
+            if owner.side != 0:
                 return False
             variants = self.mc['ally_variant_mapping'] == 'data'
-            mapping = ally_auto_lines(variants=variants, client=self.mc['ally_auto_lines'] == 'client')
+            mapping = ally_auto_lines(variants=variants, client=True)
             rows = mapping.get(owner.key, {}) if variants else (mapping.get(owner.key) or mapping.get(owner.key.split('@')[0], {}))
             if not any(isinstance(f, list) and f[0] == 'has' and ln.eff['name'] in f[1]
                        for spec in rows.values() for f in spec['f']):
@@ -5067,12 +5015,9 @@ class Battle:
                     eff = dict(eff, target='자신 제외 태양 속성 아군 전체')
             if eff['name'] in IGNORED_NAMES:
                 return
-            if eff['name'] in SELF_KILL_NAMES and self.mc['instant_damage'] in ('damage', 'self_kill'):
+            if eff['name'] in SELF_KILL_NAMES:
                 for x in self.resolve(owner, eff['target'], ctx) or []:
                     if x.dead:
-                        continue
-                    if self.mc['instant_damage'] == 'self_kill':
-                        self.kill(x, owner)       # 옛 근사: 무적·무효화·보호막·불사 무시하고 사망
                         continue
                     self._instant_damage(owner, x)
                 return
@@ -5136,10 +5081,9 @@ class Battle:
                         # BI_BARRIER_CAN_NOT_DISPEL 등 «(해제불가)» 보호막만 해제 대상에서 빠진다(BUFF_TEMPLET CanNotDispel).
                         e.fixed = '해제불가' in m.group(2) or (ln is not None and '해제 불가' in ln.raw)
                     x.eff[m.group(2)] = e
-                if self.mc['shield_tick'] == 'turn_end':
-                    # NKM:4565-4583,4739-4746: 재부여도 생성 시점 갱신. 시작 이벤트는 같은 턴에 차감.
-                    e.clock = 'any_turn' if self._is_any_turn(owner, e.name) else 'owner_turn'
-                    e.fresh = self._buff_fresh(owner, x, e.name, e.clock, ln, shield=True)
+                # NKM:4565-4583,4739-4746: 재부여도 생성 시점 갱신. 시작 이벤트는 같은 턴에 차감.
+                e.clock = 'any_turn' if self._is_any_turn(owner, e.name) else 'owner_turn'
+                e.fresh = self._buff_fresh(owner, x, e.name, e.clock, ln, shield=True)
                 e.shield += amount      # 같은 보호막 재부여 = 합산, 지속은 긴 쪽
                 e.dur = max(e.dur, _shield_dur(m.group(3)))
                 owner.shield_given += amount
@@ -5697,7 +5641,7 @@ class Battle:
                 self.forced_coop(owner, ctx, len(tg))
             return
         # LevelBuffDecrease: 표에서 «5회 부여»로 적힌 먼지 포착(해제불가)는 실제로 5 감소(level_buff_decrease 규칙)
-        if (self.mc['level_buff_decrease'] == 'on' and not eff.get('consume')
+        if (not eff.get('consume')
                 and (eff['name'], eff.get('times')) in LEVEL_DECREASE_EFFECTS):
             eff = dict(eff, consume=True)
         if eff.get('consume'):
@@ -5736,20 +5680,16 @@ class Battle:
     def _buff_fresh(self, owner, x, name, clock, ln, shield=False):
         """부여 턴 차감 제외(NKM:3973-3989,4565-4583). 오비탈은 owner=None.
         보호막 turn_end는 기존부터 client 판정이므로 일반 버프 스위치와 독립임."""
-        if shield or self.mc['buff_fresh_scope'] == 'client':
-            start = ln is not None and line_kind(ln) in (
-                'own_pre', 'ally_pre', 'foe_pre', 'foe_pre_na', 'own_ts', 'ally_ts',
-                'enemy_ts', 'battle_start', 'wave_start')
-            fresh = bool(x.acting and clock == 'owner_turn' and owner is not None and not start)
-            if not shield and x.acting and clock == 'owner_turn' and owner is not None:
-                if start:
-                    self.rule_hits['buff_fresh_start'] += 1
-                elif x is not owner:
-                    self.rule_hits['buff_fresh_other'] += 1
-            return fresh
-        return (x is owner and owner.acting) or (
-            name == '도발' and x.acting
-            and ln is not None and ln.phase == '스킬 사용 후')
+        start = ln is not None and line_kind(ln) in (
+            'own_pre', 'ally_pre', 'foe_pre', 'foe_pre_na', 'own_ts', 'ally_ts',
+            'enemy_ts', 'battle_start', 'wave_start')
+        fresh = bool(x.acting and clock == 'owner_turn' and owner is not None and not start)
+        if not shield and x.acting and clock == 'owner_turn' and owner is not None:
+            if start:
+                self.rule_hits['buff_fresh_start'] += 1
+            elif x is not owner:
+                self.rule_hits['buff_fresh_other'] += 1
+        return fresh
 
     # 회피 거부는 SE 실행 시점이 NSEAT_HIT·NSEAT_SKILL_END 인 줄만(NKM:4546). 데이터북 시점 = SE m_ActiveType:
     # «스킬 사용 후» = SKILL_END(2621행), «피격 시» = HIT(13행), «피해 처리 후» = DAMAGE_END(381행 — 레이시 SE 10494016 등),
@@ -5995,10 +5935,9 @@ class Battle:
         old_props = e.props if e is not None else None
         transient = eff['dur'] is None and ctx is not None and ctx.local is not None
         # scope all: 지속 표기 없는 효과 = 클라 수명 0(SE m_BuffLifeTurn 0). 단 버프 자체가 TurnInfinite(«타격 후 해제» 나태 등)면 무한.
-        check = bool(self.mc['check_buff_expiry'] in ('action', 'skill') and (transient or (eff['dur'] is None and
-                     ((self.mc['check_buff_scope'] == 'all' and name not in buff_flags()['turn_infinite'])
+        check = bool((transient or (eff['dur'] is None and
+                     (name not in buff_flags()['turn_infinite']
                       or (CHECK_NAME.search(name) and not eff['props'])))))
-        refresh_check = self.mc['check_buff_expiry'] == 'skill' or self.mc['check_buff_scope'] == 'all'
         if eff.get('persistent_marker'):
             check = False
         if e is None:
@@ -6029,23 +5968,19 @@ class Battle:
             if not dot and self.mc['dispel_order'] == 'client':
                 e.seq = next(_EFF_SEQ)   # 같은 ID 재부여는 옛 객체를 지우고 새로 넣는다(NKM:4524-4531 OBF_5657→OBF_11376, 4505 OBF_27309)
             if eff['dur'] is not None:
-                if e.check and refresh_check:
+                if e.check:
                     # 기존 0턴 효과를 유한/명시 무한으로 재부여하면 만료 예약도 갱신.
                     # NKM:4419(새 객체),4021-4028(실제 남은 턴으로 제거).
                     e.dur = dur
                 else:
                     e.dur = max(e.dur, dur) if e.dur != math.inf else e.dur
-                if self.mc['buff_fresh_scope'] == 'client':
-                    e.fresh = fresh
-                elif fresh:
-                    e.fresh = True
+                e.fresh = fresh
             e.props = eff['props'] or e.props
             e.src = owner
-            if refresh_check:
-                e.check = check
-                if check:
-                    e.check_turn = self.global_turns    # 재부여 = 새 버프 객체(NKM:4474-4487), 생성 턴도 새로
-                    self.check_pending.append((x, name))
+            e.check = check
+            if check:
+                e.check_turn = self.global_turns    # 재부여 = 새 버프 객체(NKM:4474-4487), 생성 턴도 새로
+                self.check_pending.append((x, name))
         if dot or independent_cap:
             e.dot = dot
             if e.inst is None:

@@ -61,12 +61,6 @@ def test_reapply_renews_turn():
     assert '귀족의 품격' not in a.eff
 
 
-def test_legacy_action_ignores_turn():
-    b, a = _give({'check_buff_expiry': 'action'}, 3)
-    b.global_turns = 4
-    b._expire_checks()
-    assert '귀족의 품격' not in a.eff
-
 
 if __name__ == '__main__':
     n = 0

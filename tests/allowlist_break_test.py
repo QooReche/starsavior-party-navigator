@@ -16,15 +16,16 @@ from battlesim.starsavior import cosmo_raid as C
 
 
 def setup(name='행성 정화', foes=None, **kw):
-    opts = dict(break_skill_scale='off', break_skill_level='off')
     return battle([unit('ally%d' % i) for i in range(4)],
                   foes or [unit('guard', df=3000), unit('less', df=0), unit('target', df=0)],
-                  break_skill={'name': name, 'level': 1}, mc=opts, **kw)
+                  break_skill={'name': name, 'level': 1}, **kw)
 
 
 def fire(b):
+    # 분담 산수만 보려고 DamageScale(1.85)을 1 로 둠 — 배율 자체는 break_skill_test.BreakLevelScaleTest(옛 스위치 break_skill_scale 삭제)
     b.break_points, b.break_skill_cd = 3, 0
-    b._use_break_skill(next(u for u in b.allies if not u.dead))
+    with patch.object(mc._rules, 'BASE_MULT', 1.0):
+        b._use_break_skill(next(u for u in b.allies if not u.dead))
     assert b.break_skill_uses > 0
 
 
@@ -49,7 +50,6 @@ class AllowlistBreakTest(unittest.TestCase):
 
     def test_cube_current_hp_stat_level_and_rounding(self):
         b = setup('큐브 과부하')
-        b.mc['break_skill_level'] = 'data'
         b.break_skill['level'] = 2
         give(b.allies[0], '최대 HP 증가', {'생명력%': 50})
         b.dirty(b.allies[0])

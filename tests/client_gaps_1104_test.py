@@ -113,7 +113,7 @@ class BreakPointWindowTest(unittest.TestCase):
         got = {}
         for mode in ('once', 'window', None):          # None = 규칙 기본값(window), once = legacy
             foe = unit('f', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
-            mc = {'break_skill_level': 'off'}
+            mc = {}
             if mode is not None:
                 mc['break_point_hits'] = mode
             b = battle([unit('a')], [foe], break_skill=CUBE, mc=mc)

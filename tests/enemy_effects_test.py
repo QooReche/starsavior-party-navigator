@@ -56,10 +56,6 @@ class EnemyEffectsTest(unittest.TestCase):
                 self.assertNotIn(name, watch.eff)       # 1회 소모
             if name == '불사':
                 self.assertEqual(watch.hp, 1.0)
-            b, watch, mob = self.setup(mc=dict(instant_damage='self_kill'))
-            give(watch, name, props)
-            self.fire_line(b, watch, BOMB)
-            self.assertTrue(watch.dead, name + ' (self_kill)')
         # 보호막: 생명력 10배 + 공격력 넘게 막으면 생존, 모자라면 사망
         b, watch, mob = self.setup()
         give(watch, '보호막').shield = 10 ** 8
@@ -91,11 +87,6 @@ class EnemyEffectsTest(unittest.TestCase):
         watch._m = None
         b.deal(a, ctx)
         self.assertNotIn('스킬 피해 무효', watch.eff)
-
-    def test_instant_damage_off_legacy(self):
-        b, watch, mob = self.setup(mc=dict(instant_damage='off'))
-        self.fire_line(b, watch, BOMB)
-        self.assertFalse(watch.dead)
 
     def test_anim_buff_ignored(self):
         b, watch, mob = self.setup()

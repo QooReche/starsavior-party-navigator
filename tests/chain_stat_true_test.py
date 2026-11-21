@@ -89,7 +89,7 @@ class TargetToughnessTest(unittest.TestCase):
     def test_not_broken_fallback_has_no_empty_status_filter(self):
         text = '브레이크 상태가 아닌 적 전체'
         self.assertEqual(explicit_target(text)['f'], ['not_broken'])
-        b = battle([unit()], [unit('boss'), unit('soldier')], mc={'ally_auto_lines': 'off'})
+        b = battle([unit()], [unit('boss'), unit('soldier')])
         a = b.allies[0]
         ctx = Ctx(a, a, a.d.skills['기본기'])
         b.foes[0].broken = True

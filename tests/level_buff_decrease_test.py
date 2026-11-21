@@ -11,7 +11,6 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.insert(0, ROOT)
 from battlesim import simulate                                   # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 
 PARTY = ['emily', 'waltz-asherah', 'hilde', 'ceres-sun-supporter']
 STAGE = {'stage': 'clo/태양 회랑/FLOOR 250'}
@@ -33,14 +32,10 @@ def _run(mode):
         return out
     mc.Battle.apply_buff = spy
     try:
-        r = simulate(PARTY, STAGE, {'seed': 3, 'n_runs': 6, 'build': 'standard', 'rules_override': {'level_buff_decrease': mode}})
+        r = simulate(PARTY, STAGE, {'seed': 3, 'n_runs': 6, 'build': 'standard'})
     finally:
         mc.Battle.apply_buff = orig
     return seen, r
-
-
-def test_default_is_on():
-    assert MC_OPTS['level_buff_decrease'] == 'on'
 
 
 def test_on_decreases():
@@ -51,14 +46,7 @@ def test_on_decreases():
     assert 0 < r['outcome']['progress'] <= 1, r['outcome']
 
 
-def test_explicit_decrease_ignores_legacy_inference_switch():
-    seen, _ = _run('off')
-    assert len(seen) >= 3, seen
-    assert all(after == max(0, before - 5) for before, after in seen), seen[:8]
-    assert any(before >= 5 for before, _ in seen), seen[:8]
-
-
-TESTS = [test_default_is_on, test_on_decreases, test_explicit_decrease_ignores_legacy_inference_switch]
+TESTS = [test_on_decreases]
 
 if __name__ == '__main__':
     for t in TESTS:

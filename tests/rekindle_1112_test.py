@@ -14,7 +14,7 @@ from battlesim.mc import Battle, Ctx
 from battlesim.rules import MC_RULES
 
 
-def api_battle(content='oph', level=5, mode='sum', power='off', stage_fx='off'):
+def api_battle(content='oph', level=5, mode='sum', power='off'):
     seen = []
     class Capture(Battle):
         def __init__(self, *a, **kw):
@@ -30,7 +30,7 @@ def api_battle(content='oph', level=5, mode='sum', power='off', stage_fx='off'):
         result = api.simulate(['gwen'], {'stage': 'stub', 'max_turns': 3},
                               {'rekindle': level, 'n_runs': 1, 'seed': 3,
                                'rules_override': {'rekindle_apply': mode, 'power_penalty': power,
-                                                  'stage_fx_target': stage_fx, 'toughness': 'off',
+                                                  'toughness': 'off',
                                                   'rand_range': [1, 1]}})
     b = seen[0]
     assert result['outcome']['progress'] > 0
@@ -139,7 +139,7 @@ class RekindleTest(unittest.TestCase):
 
     def test_stage_effect_composes_and_wave_keeps_stats(self):
         with patch.object(api, '_ally_stage_fx', return_value=[({'피해 증가': 10}, None, None)]):
-            b, _ = api_battle(stage_fx='allies')
+            b, _ = api_battle()
         a = b.allies[0]
         self.assertAlmostEqual(a.mods()['inc'], .35)
         b.waves.append([unit('next', hp=100000)])

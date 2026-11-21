@@ -14,7 +14,6 @@ sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, unit                                  # noqa: E402
 from battlesim import mc as M                                    # noqa: E402
 from battlesim.mc import Ctx                                     # noqa: E402
-from battlesim.rules import MC_OPTS, MC_RULES                    # noqa: E402
 from battlesim.starsavior.parser import Line                     # noqa: E402
 
 
@@ -27,23 +26,11 @@ def _give(mc, text):
     return b, a
 
 
-def test_defaults_client():
-    assert (MC_OPTS['check_buff_scope'], MC_OPTS['check_buff_expiry']) == ('all', 'skill')
-    assert (MC_RULES['check_buff_scope']['legacy'], MC_RULES['check_buff_expiry']['legacy']) == ('name', 'action')
-
-
 def test_life0_effect_cleared_at_skill_end_default():
     b, a = _give({}, '자신에게 〈귀족의 품격〉')
     assert '귀족의 품격' in a.eff and a.eff['귀족의 품격'].check
     b._expire_checks(skill=True)
     assert '귀족의 품격' not in a.eff
-
-
-def test_life0_effect_kept_legacy():
-    b, a = _give({'check_buff_scope': 'name', 'check_buff_expiry': 'action'}, '자신에게 〈귀족의 품격〉')
-    assert not a.eff['귀족의 품격'].check
-    b._expire_checks(skill=True)
-    assert '귀족의 품격' in a.eff
 
 
 def test_turn_infinite_not_cleared():

@@ -13,8 +13,8 @@ from tools.build_guild_bfb import validate_kill_reset, Changed
 class BridalKillTest(unittest.TestCase):
     def test_standard_encounter_reaches_kill_reset(self):
         # 실제 1단계·공개 standard·seed 1. HP/피해/보스 진입을 조작하지 않음.
-        # wave_carry 는 옛 값으로 장면 고정(시험 대상은 처치 초기화 경로 — 새 기본값에선 seed 1 장면이 처치 초기화까지 안 감)
-        b, _ = battle(level=1, seed=1, mc={'wave_carry': 'keep'})
+        # 판 번호는 기본 규칙에서 처치 초기화까지 가는 장면(옛 wave_carry=keep 고정은 스위치 삭제로 뺌)
+        b, _ = battle(level=1, seed=13)
         b.run()
         self.assertEqual(b.wave_i, 1)
         self.assertGreater(b.progress(), .5)

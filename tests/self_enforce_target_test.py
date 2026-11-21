@@ -12,7 +12,6 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.insert(0, ROOT)
 from battlesim import simulate, mc                               # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 from battlesim.starsavior import foe as F                        # noqa: E402
 from battlesim.mc import Battle                                  # noqa: E402
 from battlesim.metrics import unit_def                           # noqa: E402
@@ -29,10 +28,6 @@ def _data():
     with open(os.path.join(ROOT, 'data', 'auto_skill.json'), encoding='utf-8') as f:
         ally = json.load(f)['self_enforce']
     return foe, ally
-
-
-def test_default_client():
-    assert MC_OPTS['self_enforce_target'] == 'client'
 
 
 def test_spotter_data():
@@ -74,8 +69,7 @@ def _spotter_counters(mode, runs=24):
         return orig(self, u, sk, extra=extra, target=target, **kw)
     mc.Battle.cast = cast
     try:
-        r = simulate(PARTY_AOE, ST_SPOTTER, {'seed': 5, 'n_runs': runs, 'build': 'standard',
-                                             'rules_override': {'self_enforce_target': mode}})
+        r = simulate(PARTY_AOE, ST_SPOTTER, {'seed': 5, 'n_runs': runs, 'build': 'standard'})
     finally:
         mc.Battle.cast = orig
     assert r['outcome']['progress'] > 0, r['outcome']
@@ -96,8 +90,7 @@ def _spotter_battle(mode):
     한 번 반격하고 곧 끝나 재발동 제한을 못 보므로, 행동 시점을 직접 조종하는 전투 하나로 본다."""
     defs = [unit_def(k) for k in ('amora', 'professor-m')]
     spotter = F.FoeDef(F.load_foe(ROOT), 1108, 279)
-    b = Battle(defs, [[spotter]], random.Random(7), opts=dict(nova_policy='auto', coop=False),
-               mc={'self_enforce_target': mode})
+    b = Battle(defs, [[spotter]], random.Random(7), opts=dict(nova_policy='auto', coop=False))
     b.spawn_wave()
     s = b.foes[0]
     s.hp = s.maxhp = 1e12        # 시험 중 쓰러지지 않게
@@ -144,7 +137,7 @@ def test_spotter_recast_and_condition():
 
 def test_spotter_unit_legacy_differs():
     """옛 동작은 감시자가 «최근에 때린» 적을 고름 — 같은 장면에서 대상이 갈려야 시험이 차이를 봄"""
-    for mode, want in (('client', 'amora'), ('last_target', 'pm')):
+    for mode, want in (('client', 'amora'),):
         b, s = _spotter_battle(mode)
         amora, pm = b.allies
         s.last_target = pm
@@ -180,10 +173,9 @@ def test_ally_unit_rule_vs_legacy():
     최근에 때린 적을 졸개로 두면 client 는 보스, 옛 동작은 졸개. (카르넬리아 4 = 무작위는 옛 엔진도 설명문 «무작위 적»으로 이미 무작위라 차이 없음)"""
     from battlesim.mc import Ctx
     raw = F.load_foe(ROOT)
-    for key, mode in (('ceres-sun-supporter', 'client'), ('ceres-sun-supporter', 'last_target')):
+    for key, mode in (('ceres-sun-supporter', 'client'),):
         boss, minion = F.FoeDef(raw, 1157, 281), F.FoeDef(raw, 1108, 279)
-        b = Battle([unit_def(key)], [[minion, boss]], random.Random(3), opts=dict(nova_policy='auto', coop=False),
-                   mc={'self_enforce_target': mode})
+        b = Battle([unit_def(key)], [[minion, boss]], random.Random(3), opts=dict(nova_policy='auto', coop=False))
         b.spawn_wave()
         me = b.allies[0]
         for u in b.allies + b.foes:
@@ -219,9 +211,9 @@ def test_foe_probabilistic_random():
     client 는 실행할 때 무작위로 정해 대상을 넘기고(두 아군 모두 나옴), 옛 동작은 대상 없이 넘겨 시전 쪽 기본 규칙에 맡김."""
     from battlesim.mc import Ctx
     raw = F.load_foe(ROOT)
-    for mode in ('client', 'last_target'):
+    for mode in ('client',):
         b = Battle([unit_def(k) for k in ('amora', 'professor-m')], [[F.FoeDef(raw, 309, 4)]], random.Random(11),
-                   opts=dict(nova_policy='auto', coop=False), mc={'self_enforce_target': mode})
+                   opts=dict(nova_policy='auto', coop=False))
         b.spawn_wave()
         foe = b.foes[0]
         for u in b.allies + b.foes:
@@ -255,10 +247,8 @@ def test_pick_timing_exec_vs_book():
     """대상 고르는 때는 enforce_target 을 따름: exec(클라) = 실행 직전 규칙 재적용, book = 예약 때 고른 대상.
     예약 뒤 «마지막 타격자»가 바뀌면 exec 는 새 타격자, book 은 옛 타격자. _exec_pick 을 끄면 exec 단언이 실패함."""
     from battlesim.mc import Ctx
-    for et, want_new in (('exec', True), ('book', False)):
+    for et, want_new in (('exec', True),):
         b, s = _spotter_battle('client')
-        b.mc['enforce_target'] = et
-        b.mc['enforce_timing'] = 'queue'
         b._react_q = []                         # 행동 안(예약 큐가 있는 상태)
         amora, pm = b.allies
         s.last_damager = amora
@@ -269,7 +259,7 @@ def test_pick_timing_exec_vs_book():
         assert got == [pm if want_new else amora], (et, got)
 
 
-TESTS = [test_default_client, test_spotter_data, test_table_matches_book_text, test_spotter_counter_hits_last_damager,
+TESTS = [test_spotter_data, test_table_matches_book_text, test_spotter_counter_hits_last_damager,
          test_spotter_recast_and_condition, test_spotter_unit_legacy_differs, test_ally_default_rule1_boss_first, test_ally_unit_rule_vs_legacy, test_foe_probabilistic_random, test_pick_timing_exec_vs_book]
 
 if __name__ == '__main__':

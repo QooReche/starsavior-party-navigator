@@ -6,7 +6,6 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.insert(0, ROOT)
 from battlesim import simulate                                   # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 
 PARTY = ['sunshine-cat-smile', 'cristelle', 'white-pearl-luna', 'wedding-carmen']
 

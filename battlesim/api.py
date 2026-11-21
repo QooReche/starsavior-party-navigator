@@ -482,9 +482,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared=None
         # 11/12 사용자 판단: 클라에 격전 의뢰 제한값 주입 경로 없음. 별 미션 턴과 별개.
         turn_limit = None
     max_turns = encounter_spec.get('max_turns', 200 if clash_no_limit else 50)
-    if mc['stage_fx_target'] not in ('enemies', 'allies', 'off'):
-        raise ValueError('stage_fx_target 은 enemies|allies|off: %r' % mc['stage_fx_target'])
-    ally_fx = _ally_stage_fx(encounter_spec, meta, fx) if mc['stage_fx_target'] == 'allies' else None
+    ally_fx = _ally_stage_fx(encounter_spec, meta, fx)
     sudden = sudden_death()['groups'].get(meta.get('sudden_death')) if meta.get('sudden_death') else None
     power = party_power(defs)
     pp = power_pen(power, meta.get('recommended_power'), db)
@@ -544,10 +542,10 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared=None
         semantic_cache = {}
     for r in range(n_runs):
         rng = random.Random(seed * 1000003 + offset + r)
-        b = Battle(defs, waves, rng, opts, mc, leader=leader, fx=fx if mc['stage_fx_target'] == 'enemies' else {}, ally_fx=ally_fx,
+        b = Battle(defs, waves, rng, opts, mc, leader=leader, fx={}, ally_fx=ally_fx,
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
                    enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'), rng_streams=bool(o.get('rng_streams')),
-                   sudden=sudden, semantic_cache=semantic_cache, mc_overrides=o.get('rules_override') or {},
+                   sudden=sudden, semantic_cache=semantic_cache,
                    battle_mode=meta.get('battle_mode', 'all_kill'))
         b.run()   # EventLimitError 는 그대로 올린다(정상 결과 금지)
         for (pos, slot), count in b.nova_bursts.items():

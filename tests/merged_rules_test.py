@@ -1,5 +1,4 @@
-"""11/10 D/E 병합 경계. 합성 전투로 각 경로를 직접 실행함."""
-import io
+"""11/10 D/E 병합 경계. 합성 전투로 각 경로를 직접 실행함(옛 스위치 조합은 엔진 다이어트 4단계에서 지워 기본 규칙만 검사)."""
 import itertools
 from pathlib import Path
 import sys
@@ -9,7 +8,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit
-from battlesim.mc import Battle, Ctx
+from battlesim.mc import Ctx
 from battlesim.starsavior.parser import Line
 
 
@@ -21,12 +20,12 @@ def effect(b, owner, target, text, phase='스킬 사용 후'):
 
 class MergedRulesTest(unittest.TestCase):
     def test_turn_start_buff_precedes_lethal_dot_and_expires(self):
-        for order, fresh in itertools.product(('client',), ('client', 'self')):
+        for order, fresh in itertools.product(('client',), ('client',)):
             with self.subTest(order=order, fresh=fresh):
                 actor = unit('a')
                 actor.lines = [Line('[턴 시작 시] 자신에게 〈무적〉 (1턴)', '고유 패시브', 'passive')]
                 b = battle([actor], [unit('f', hp=10**8)],
-                           mc=dict(buff_fresh_scope=fresh), opts={'coop': False})
+                           opts={'coop': False})
                 a, f = b.allies[0], b.foes[0]
                 a.hp = 1
                 e = give(a, '연소', src=f, harmful=True, dur=1)
@@ -42,7 +41,7 @@ class MergedRulesTest(unittest.TestCase):
 
     def test_shield_clock_independent_of_general_fresh(self):
         for order, fresh, shield, phase in itertools.product(
-                ('client',), ('client', 'self'), ('turn_start', 'turn_end'),
+                ('client',), ('client',), ('turn_end',),
                 ('턴 시작 시', '스킬 사용 후')):
             with self.subTest(order=order, fresh=fresh, shield=shield, phase=phase):
                 adef, otherdef = unit('a'), unit('other')
@@ -53,7 +52,6 @@ class MergedRulesTest(unittest.TestCase):
                     otherdef.lines = [Line('[스킬 사용 후] (조건: 아군 공격 후) 아군 전체에게 〈시험 보호막〉 (1턴) 보호막 = 자신 생명력×10%',
                                            '고유 패시브', 'passive')]
                 b = battle([adef, otherdef], [unit('f', hp=10**8)],
-                           mc=dict(buff_fresh_scope=fresh, shield_tick=shield),
                            opts={'coop': False})
                 a, other = b.allies
                 b.act(a)
@@ -65,10 +63,9 @@ class MergedRulesTest(unittest.TestCase):
 
     def test_revive_domain_spawn_and_dead_keep(self):
         for spawn, domain, keep, fresh in itertools.product(
-                ('client',), ('client', 'none'), ('client',), ('client', 'self')):
+                ('client',), ('client',), ('client',), ('client',)):
             with self.subTest(spawn=spawn, domain=domain, keep=keep, fresh=fresh):
                 b = battle([unit('a'), unit('other', role='서포터')], [unit('f', hp=10**8)],
-                           mc=dict(break_domain_revive=domain, buff_fresh_scope=fresh),
                            break_skill={'name': '큐브 과부하'})
                 a, other = b.allies
                 b.break_points = 3
@@ -101,10 +98,9 @@ class MergedRulesTest(unittest.TestCase):
 
     def test_break_kill_new_wave_gauge_and_reservation(self):
         for gauge, extra, carry in itertools.product(
-                ('client', 'exclude'), ('clear',), ('keep', 'client')):
+                ('client',), ('clear',), ('client',)):
             with self.subTest(gauge=gauge, extra=extra, carry=carry):
                 b = battle([unit('a')], [unit('first', hp=1)], break_skill={'name': '스타피어서'},
-                           mc=dict(break_gauge_actor=gauge, wave_carry=carry),
                            opts={'coop': False})
                 a = b.allies[0]
                 a.gauge, a.extra_turn, b.break_points = 10000, True, 3
@@ -122,29 +118,5 @@ class MergedRulesTest(unittest.TestCase):
                 self.assertGreater(b.foes[0].taken, 0)
 
 
-def mutations():
-    cases = [
-        ('buff_fresh_scope', 'self', 'test_turn_start_buff_precedes_lethal_dot_and_expires'),
-        ('shield_tick', 'turn_start', 'test_shield_clock_independent_of_general_fresh'),
-        ('break_domain_revive', 'none', 'test_revive_domain_spawn_and_dead_keep'),
-        ('break_gauge_actor', 'exclude', 'test_break_kill_new_wave_gauge_and_reservation'),
-    ]
-    original = Battle.__init__
-    for key, value, method in cases:
-        def force(self, *args, **kw):
-            original(self, *args, **kw)
-            self.mc = dict(self.mc, **{key: value})
-        def run():
-            return unittest.TextTestRunner(stream=io.StringIO()).run(MergedRulesTest(method))
-        assert run().wasSuccessful(), method
-        with patch.object(Battle, '__init__', force):
-            result = run()
-        assert result.failures and not result.errors, (key, result.errors)
-        print(key, 'assertion failures:', len(result.failures))
-
-
 if __name__ == '__main__':
-    if '--mutations' in sys.argv:
-        mutations()
-    else:
-        unittest.main()
+    unittest.main()

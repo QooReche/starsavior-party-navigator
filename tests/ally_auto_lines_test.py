@@ -22,9 +22,8 @@ def line_of(u, slot, head):
 class AllyAutoLinesTest(unittest.TestCase):
     def test_client_not_self_type_does_not_fall_back_to_caster(self):
         # 실제 공개 스킬의 전투 시작 효과로 검증: 혼자 남은 리디아에게 책임 전가 금지.
-        for mode, expected in [('client', False), ('data', True)]:
-            b = battle([unit_def('lydia-moon-caster')], [unit('boss', hp=10**9)],
-                       mc={'ally_auto_lines': mode})
+        for mode, expected in [('client', False)]:
+            b = battle([unit_def('lydia-moon-caster')], [unit('boss', hp=10**9)])
             a = b.allies[0]
             ln = line_of(a, '고유 패시브', '책임 전가(해제불가)')
             spec = b.line_spec(a, ln)
@@ -74,10 +73,6 @@ class AllyAutoLinesTest(unittest.TestCase):
         self.assertEqual(spec, {'one': True, 'f': ['not_self', 'high_atk'], 'ally': True})
         got = b.resolve(dana, '아군 1명(자동 지정)', Ctx(dana, dana, dana.d.skills['특수기']))
         self.assertEqual([u.name for u in got], ['high_atk'])
-
-    def test_off_switch_uses_description(self):
-        b, dana, ln = self.setup(mc=dict(ally_auto_lines='off'))
-        self.assertIsNone(b.line_spec(dana, ln))
 
     def test_data_shape(self):
         d = json.loads((ROOT / 'data' / 'auto_skill.json').read_text(encoding='utf-8'))
