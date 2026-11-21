@@ -70,3 +70,54 @@ E:/AI_mk2/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser -
 python -X utf8 -I tools/bench_fullscreen.py eval --workers 8
 python -X utf8 -I tools/bench_fullscreen.py report
 ```
+
+## 묶음 후(설계 A: 고정 비용 제거) — 2026-11-22
+
+설계는 «A. 고정 비용 제거»의 1~3단계임(B 학습 선별은 다음 작업). 스위치 `recommendation.fullScreen`은 **기본 끔 그대로**임. 같은 PC·내 정보(11/21)·작업자 8개·스테이지 다섯 곳으로 다시 쟀음. 원값(초·팀)은 비공개 폴더(`fullscreen/batch/`)에만 둠.
+
+### 0. 프로파일 — 고정 비용은 엔진이 아니라 메인 스레드였음
+
+- **네이티브**(`tools/profile_fullscreen.py`, cProfile): 1판 호출과 8판 호출의 팀당 시간으로 역산한 호출당 고정 비용은 회랑 580·590·작전 44-6에서 1판 호출의 −19~+4%였음(측정 잡음 안). 조우 정규화(`_norm_encounter_raw`)는 호출당 약 1.5~3ms, `support_report`는 1~2ms, `_ally_stage_fx`·`_norm_party`·`party_power`는 1ms 미만임. 시간 대부분은 `mc.run`(전투 자체)임. 설계서의 «1팀당 = 예선 1판의 3~4배»는 엔진 준비 비용 때문이 아니었음.
+- **브라우저**(`bench_fullscreen browser --profile`, 작전 44-6 켬, 묶기 전): 메인 스레드 함수 누적이 `simProgressSync`(진행 칸)와 그 안의 `recoGwenShow`·`simProgress`가 약 95초, `scrEta`가 부르는 `scrOrder`·`scrFullRank`(전체 정렬)가 약 53초였음. 이벤트 루프 지연 합은 전체 시간의 약 75%였음. 메인이 배차를 겸하므로 작업자 8개가 함께 굶었음.
+- 1차 정리(정렬 제거·진행 칸 간격 제한)만 넣었을 때 남은 지연의 대부분은 진행 «글자» 갱신이었음. 본문 `MutationObserver`(그웬 레인 refresh)가 DOM이 바뀔 때마다 배치를 강제했음. 그래서 글자도 간격 제한에 넣었음.
+
+### 넣은 것
+
+- **A-1 메인 스레드 정리**: `SearchExecutor.throttle`(`PAINT_MS` 200ms)로 훑기·예선 중 남은 시간(`scrEta`)·진행 칸(`simProgressSync`)·진행 글자를 간격 제한함. 훑기 중 `scrEta`는 `scrOrder`를 부르지 않음. 직접 편성 묶음(`recoEvaluate`)도 같음. 표시만 최대 200ms 늦고 결과·순위·배차는 그대로임.
+- **A-2 실행기 묶음**: `simDispatch`의 `chunk`. 계약은 `docs/search_executor.md` «작업 묶음»에 있음(`lease.keys`, 묶음 밖·중복 key 거부, 전부 받아야 `done`, 팀 단위 무진행 감시·속도 표본, 취소는 `terminate`). 묶음 크기는 `min(50, ceil(팀/(작업자×40)))`이고 일반 추천 훑기·예선에만 씀. 훑기 10,626팀은 34팀씩(313요청)이고, 예선 120팀 이하는 1팀씩이라 지금과 같음. 본선·직접 편성·코스모·길드 배차는 바꾸지 않음.
+- **A-3 엔진 묶음**: `web.run_auto_batch`·`AutoBatch`(`api.BatchShared`). 조우 정규화와 의미 해석 캐시를 묶음 안에서만 공유함. 작업자는 팀이 여럿인 요청을 `AutoBatch` 하나로 돌림(코스모·길드 chunk 요청 포함). `support_report`는 아군·적 정의를 함께 받아 팀마다 달라서, `ally_fx`는 1ms 미만이라 공유하지 않았음(프로파일상 이득이 잡음 수준).
+
+### 결정성
+
+- `tests/batch_identity_test.py`: 9묶음 50팀(작전·재점화 작전·회랑 별 턴·예선 2차 이어 돌리기·코스모 난이도 혼합·길방 EX 혼합, 1·2·8·24판)에서 묶음 결과와 팀별 `run_auto` 결과가 글자 그대로 같았음. 일부러 팀 간에 새게 만든 변이 3건은 모두 실패로 잡힘: 조우 키에서 팀 옵션 누락, 의미 해석 캐시 키를 칸 이름으로, 아군 정의 재사용.
+- `tests/search_executor_batch_test.js`: 실행기 계약 시험이고, 변이 7건을 거부함.
+- 브라우저 실측 10건(5곳 × 끔·켬)에서 화면 1~9안의 팀·결과 전체, 총 판 수, 1안이 묶기 전과 모두 같았음.
+
+### 시간(작업자 8개)
+
+|스테이지|켬: 묶기 전 대비|켬: A-1만(묶음 1팀)|켬÷끔(묶은 뒤)|켬÷끔(묶기 전)|끔: 묶기 전 대비|
+|---|---|---|---|---|---|
+|회랑 FLOOR 580|**×0.22**|×0.24|×1.8|×9.0|×1.08|
+|회랑 FLOOR 590|**×0.29**|—|×2.9|×10.1|×1.02|
+|작전 SECTOR 44-6|**×0.20**|×0.24|×2.7|×13.0|×1.00|
+|작전 1-1(쉬움, 훑기 없음)|×0.80|—|×1.0|×1.02|×0.80|
+|작전 36-36(쉬움, 훑기 없음)|×0.95|—|×1.0|×1.02|×0.98|
+
+- 훑기 단계만 보면 묶기 전 5~7분대가 A-1 뒤 1분 안팎, A-2·A-3 뒤 40~75초가 됐음. 이는 작업자 8개 × 엔진 1판 시간(네이티브 33~79ms)의 바닥과 거의 같음. 켬 전체는 끔보다 40~95초 더 걸리는 정도임.
+- 기여는 대부분 A-1(메인 스레드)임. A-2·A-3은 A-1 뒤 훑기 단계를 추가로 약 20%(전체 −8~14%) 줄였음.
+- 끔(훑기 없음)의 예선은 묶음 크기가 1이라 배차가 지금과 같음. 시간도 측정 잡음 안(×0.98~1.08)이었음. 1-1의 ×0.80은 짧은 측정(수 초)의 잡음과 진행 표시 간격 제한이 섞인 값임.
+- 묶은 뒤 측정은 `--profile`을 켠 채로 했음. 켜면 묶기 전 44-6에서 약 9% 느렸지만, 묶은 뒤에는 감싼 함수 호출이 적어 영향이 작음. 따라서 표의 배수는 보수적임.
+
+### 권고
+
+- 품질 이득(+20~24%)은 그대로 두고, 켬의 추가 시간이 이 PC에서 «분 단위 → 1분 안팎»으로 줄었음. 기본값을 켤지는 저사양(작업자 1~2개) 실측 뒤에 정하기를 권함. 판 수가 그대로라 작업자 수에 반비례할 것이므로, 2개면 훑기만 약 3~5분으로 봄(**추정, 미측정**).
+- B(학습 선별)는 이제 «기본 켬»보다 저사양 기기용으로 의미가 큼. A 뒤 남은 비용은 판 수 자체임.
+
+### 재현(묶은 뒤)
+
+```
+E:/AI_mk2/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <비공개 myinfo.json> --out <비공개>/batch/final --profile
+E:/AI_mk2/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/batch/a1full_chunk1 --profile --chunk 1 --modes on --only "작전 44-6,회랑 580"
+python -X utf8 -I tools/profile_fullscreen.py --batch
+python -X utf8 -I tests/batch_identity_test.py
+```
