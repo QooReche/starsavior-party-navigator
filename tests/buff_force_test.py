@@ -10,7 +10,7 @@ sys.path.insert(0, str(ROOT / 'tests'))
 from tools.build_buff_force import extract
 from battlesim import mc
 from battlesim.starsavior.parser import Line
-from p5_test import battle, unit, give
+from simkit import battle, unit5 as unit, give
 
 
 class ForceBuffTest(unittest.TestCase):

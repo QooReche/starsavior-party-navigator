@@ -8,7 +8,7 @@ import unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, 'tests'))
-from p5_test import battle, give, hit, unit
+from simkit import battle, give, hit, unit5 as unit
 from battlesim.api import simulate
 from battlesim.mc import Ctx
 from battlesim.rules import MC_OPTS

@@ -9,7 +9,7 @@ import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [ROOT, os.path.join(ROOT, 'tests')]
-from p5_test import battle, give, hit, unit        # noqa: E402
+from simkit import battle, give, hit, unit5 as unit  # noqa: E402
 import battlesim.mc as mcmod                       # noqa: E402
 from battlesim.api import simulate                 # noqa: E402
 from battlesim.mc import Ctx, FORCE_BUFF_NAMES     # noqa: E402

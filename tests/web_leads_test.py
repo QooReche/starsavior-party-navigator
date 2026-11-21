@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
-from p5_test import battle, unit, give
+from simkit import battle, unit5 as unit, give
 from battlesim.mc import Ctx, MC_OPTS
 from battlesim.api import power_pen
 from battlesim.starsavior.data import get_db

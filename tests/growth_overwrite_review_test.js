@@ -1,17 +1,18 @@
 // Public synthetic fixtures only. Run the real calculators and UI entry points.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {readSrc,loadModule}=require('./helpers/page');
 const M=require('../myinfo_reco'),Stats=require('../myinfo_stats'),growth=require('../data/growth.json');
 const slots=require('../data/myinfo_slots.json'),raw=require('./fixtures/myinfo_synthetic.json');
-const source=fs.readFileSync(require.resolve('../myinfo_reco'),'utf8');
-const ui=fs.readFileSync(require.resolve('../growth_ui'),'utf8'),page=fs.readFileSync('party_template.html','utf8');
+const source=readSrc('myinfo_reco.js');
+const ui=readSrc('growth_ui.js'),page=readSrc('party_template.html');
 const roster=[{key:'luna',uid:growth.assumed.units.luna.uid}],preset=growth.assumed.units.luna.equip;
 function account(){const info=structuredClone(raw);info.units=[];
   info.star_link={unlocked:true,level:120,source:[],slots:[]};
   for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
   const a=M.assume('luna',info,growth);a.unit.favor=30;return {...a.targetInfo,units:[a.unit]};
 }
-function load(code){const ctx={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,ctx);
-  return (...args)=>JSON.parse(JSON.stringify(ctx.module.exports.overwrite(...args)));
+function load(code){const api=loadModule(code);
+  return (...args)=>JSON.parse(JSON.stringify(api.overwrite(...args)));
 }
 function equipment(overwrite=M.overwrite){
   const info=account(),u=info.units[0];

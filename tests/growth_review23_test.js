@@ -1,7 +1,8 @@
 // Review regressions exercise production UI signatures, persistence and scheduling.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {readSrc}=require('./helpers/page');
 const G=require('../growth_guide'),GS=require('../guild_search'),V=require('../guild_view'),D=require('../data/guild_defense.json');
-const ui=fs.readFileSync(require.resolve('../growth_ui'),'utf8'),source=fs.readFileSync(require.resolve('../growth_guide'),'utf8');
+const ui=readSrc('growth_ui.js'),source=readSrc('growth_guide.js');
 function context(code=ui,storage={}){
   const ctx={GrowthGuide:G,GuildView:V,GuildSearch:GS,ownedSimBreaks:()=>[],MI:{hash:'synthetic',info:{},growth:{assumed:{version:'test'}}},
     CFG:{restrict:{}},R:[],EXCL:new Set(),MODE:'auto',MM:'myinfo',SCROWN:0,BRSEL:{},SESSION_BR:{},
@@ -141,7 +142,7 @@ async function exactControls(code=ui){const ctx=context(code),keys=['x','a','b',
   for(const c of targets[0].candidates)assert(targets[0].controls.some(j=>j.keys.slice().sort().join()===c.keys.slice().sort().join()),
     'owned target must retain its own same-companion control even when approximations prefer another owner');
 }
-async function workerProgs(code=fs.readFileSync(require.resolve('../sim_worker'),'utf8')){
+async function workerProgs(code=readSrc('sim_worker.js')){
   const messages=[],ctx={URL,self:{location:{href:'https://example.test/sim_worker.js'}},postMessage:m=>messages.push(m)};
   vm.createContext(ctx);vm.runInContext(code,ctx);
   const p={globals:{get:name=>name==='run_auto'?(_stage,_party,n)=>JSON.stringify({n,prog:.8,progs:Array(n).fill(.8),via:{trigger:1}}):()=>{}},toPy:x=>x};
@@ -192,7 +193,7 @@ async function mutation(name,code,from,to,test){assert(code.includes(from),name)
     await mutation(name,ui,'policy:[MyInfoReco.OVERWRITE_VERSION','policy:[JSON.stringify([GS.sel,GSR,CSR]),MyInfoReco.OVERWRITE_VERSION',test);
   await mutation('boss tab',ui,"(c.key==='cosmo'?[]:[st.tab,st.name])",'[st.tab,st.name]',signatureScope);
   await mutation('exact owned control',ui,'config.exactControls&&original.results[target.key]','false',exactControls);
-  await mutation('worker progs',fs.readFileSync(require.resolve('../sim_worker'),'utf8'),
+  await mutation('worker progs',readSrc('sim_worker.js'),
     'key:t.key,result:res','key:t.key,result:{...res,progs:null}',workerProgs);
   await mutation('guild controls reservation',source,'[t.best,mean,cap,...(t.controls||[])]','[t.best,mean,cap]',s=>controls(load(s)));
   await mutation('guild controls completion',source,'selected.has(t.id)&&(t.controls||[]).every(j=>fr[j.id])','selected.has(t.id)',s=>controls(load(s)));

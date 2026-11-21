@@ -6,7 +6,7 @@ import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [ROOT, os.path.join(ROOT, 'tests')]
-from p5_test import battle, give, unit
+from simkit import battle, give, unit5 as unit
 from battlesim.mc import Ctx
 from battlesim.starsavior.foe import load_foe, FoeDef
 

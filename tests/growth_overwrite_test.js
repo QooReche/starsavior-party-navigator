@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {readSrc,loadModule}=require('./helpers/page');
 const M=require('../myinfo_reco'),growth=require('../data/growth.json'),raw=require('./fixtures/myinfo_synthetic.json');
-const source=fs.readFileSync(require.resolve('../myinfo_reco'),'utf8'),ui=fs.readFileSync(require.resolve('../growth_ui'),'utf8');
+const source=readSrc('myinfo_reco.js'),ui=readSrc('growth_ui.js');
 const roster=Object.entries(growth.assumed.units).map(([key,s])=>({key,uid:s.uid}));
 function synthetic(){const info=structuredClone(raw);
   for(const k of Object.keys(growth.tactics))info.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
@@ -58,8 +59,8 @@ function display(code=ui){const ctx={GrowthGuide:require('../growth_guide'),esc:
     for(const [f,label] of Object.entries(labels))assert.equal(html.includes('data-growth-field="'+f+'"'),ctx.growthDisplay(a).fields.some(x=>x.field===f&&x.delta!==0));
   }
 }
-function load(code){const ctx={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,ctx);
-  const raw=ctx.module.exports;return {...raw,overwrite:(...args)=>JSON.parse(JSON.stringify(raw.overwrite(...args)))};}
+function load(code){
+  const raw=loadModule(code);return {...raw,overwrite:(...args)=>JSON.parse(JSON.stringify(raw.overwrite(...args)))};}
 function mutate(name,code,from,to,test){assert(code.includes(from));let caught=false;
   try{test(code.replace(from,to));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}
   assert(caught,'mutation survived: '+name);console.log('MUTATION caught + restored:',name);
@@ -72,7 +73,7 @@ mutate('higher equipment preserved',source,"const equips=fields.includes('equip'
 mutate('strict improvement only',ui,'metric(result)>(metric(baseline)??0)','metric(result)>=(metric(baseline)??0)',display);
 // Per-field presentation mutation coverage is in ux_ui_test.js.
 console.log('ALL OK whole-account overwrite');
-async function timeout(code=ui,executor=fs.readFileSync(require.resolve('../search_executor.js'),'utf8')){let active=0;
+async function timeout(code=ui,executor=readSrc('search_executor.js')){let active=0;
   const ctx={setTimeout,clearTimeout,SIMQ:{LOAD_MS:5},simTeamLimit:()=>5,
     Worker:class {constructor(){active++;}postMessage(){}terminate(){if(!this.dead){this.dead=true;active--;}}}};
   vm.createContext(ctx);vm.runInContext(executor,ctx);vm.runInContext(code,ctx);
@@ -89,15 +90,15 @@ async function warmup(code=ui){const ctx={setTimeout,clearTimeout,Date,MODE:'aut
     this.onmessage({data:{id:req.id,type:'team',key:'team',result:{ver:'test',prog:.8,n:req.n_runs,progs:Array(req.n_runs).fill(.8),via:{}}}});
     this.onmessage({data:{id:req.id,type:'done'}});},25);}terminate(){this.dead=true;}}};
   vm.createContext(ctx);   // 작업자 풀·대기열은 화면 것 그대로(navigator 없음 = 작업자 1개)
-  vm.runInContext(fs.readFileSync(require.resolve('../search_executor.js'),'utf8'),ctx);
-  const page=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
+  vm.runInContext(readSrc('search_executor.js'),ctx);
+  const page=readSrc('party_template.html');
   vm.runInContext(page.slice(page.indexOf('// ── 작업자 풀·작업 대기열'),page.indexOf('// 이 기기의 시뮬 속도')),ctx);
   vm.runInContext(code.slice(code.indexOf('async function growthEvaluate'),code.indexOf('function growthMaybe')),ctx);
   const r=await ctx.growthEvaluate([{id:'team',party:{}}],8,1,{key:'op'},{tab:'a',name:'b'},1,Infinity,{screenClock:{deadline:null}});
   assert(!r.incomplete&&r.team?.prog>0,'engine preparation must use the load limit, not the short no-progress limit');ctx.SIMQ.w?.terminate();
 }
 (async()=>{await warmup();await timeout();let caught=false;
-  try{await timeout(ui,fs.readFileSync(require.resolve('../search_executor.js'),'utf8').replace("timer=setTimeout(()=>wrapper.onerror?.({message:'시간 초과'})","timer=setTimeout(()=>{}"));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}
+  try{await timeout(ui,readSrc('search_executor.js').replace("timer=setTimeout(()=>wrapper.onerror?.({message:'시간 초과'})","timer=setTimeout(()=>{}"));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}
   assert(caught,'timeout mutation survived');console.log('MUTATION caught + restored: seasonal worker timeout');
   caught=false;
   try{await warmup(ui.replace("stall.ready?simTeamLimit(n,'auto'):SIMQ.LOAD_MS","true?simTeamLimit(n,'auto'):SIMQ.LOAD_MS"));}catch(e){if(e.code==='ERR_ASSERTION')caught=true;else throw e;}

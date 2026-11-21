@@ -13,7 +13,7 @@ from battlesim.api import _norm_party
 from battlesim.mc import Ctx, support_report
 from battlesim.starsavior.data import get_db
 from battlesim.starsavior import myinfo_combat as combat
-from p5_test import battle, unit
+from simkit import battle, unit5 as unit
 from tools.ingame_check import low_priority
 
 

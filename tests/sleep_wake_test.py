@@ -47,12 +47,12 @@ def test_nullified_hit_still_wakes_client():
 
 def _orbital(mode):
     """공격형 브레이크 스킬(오비탈 〈차원 강습〉)도 공통 타격 경로(NKM:7997-8018, 오비탈 식별 3234)라 피해 > 0 이면 수면 해제."""
-    import p5_test as P
-    foe = P.unit('boss', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
+    from simkit import unit5
+    foe = unit5('boss', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
     foe.boss = True
-    b = P.battle([P.unit('a')], [foe], break_skill={'name': '차원 강습', 'level': 5}, mc={'sleep_wake': mode})
+    b = battle([unit5('a')], [foe], break_skill={'name': '차원 강습', 'level': 5}, mc={'sleep_wake': mode})
     a, f = b.allies[0], b.foes[0]
-    P.give(f, '수면', harmful=True, dur=2)
+    give(f, '수면', harmful=True, dur=2)
     b.break_points = 3
     hp = f.hp
     b._use_break_skill(a)

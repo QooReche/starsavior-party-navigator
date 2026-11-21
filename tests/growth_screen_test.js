@@ -7,9 +7,9 @@
 // 화면 예선(simScreen) 쪽은 sim_timeout_test.js 9~14. 끝에서 고친 코드를 일부러 되돌려(결함 주입) 이 시험이 실패하는지 확인한다.
 // 실행: node tests/growth_screen_test.js
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8'),ui=fs.readFileSync(require.resolve('../growth_ui.js'),'utf8');
-const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,'구간 없음: '+a);return s.slice(i,j)};
-const SRC={plan:cut(html,'const SCR_ROUNDS=','const scrKey='),cmp:cut(html,'const scrCmp=','// 예선 상태 sc'),pool:fs.readFileSync(require.resolve('../search_executor.js'),'utf8')+'\n'+cut(html,'// ── 작업자 풀·작업 대기열','// 이 기기의 시뮬 속도'),
+const {readSrc,cut}=require('./helpers/page');
+const html=readSrc('party_template.html'),ui=readSrc('growth_ui.js');
+const SRC={plan:cut(html,'const SCR_ROUNDS=','const scrKey='),cmp:cut(html,'const scrCmp=','// 예선 상태 sc'),pool:readSrc('search_executor.js')+'\n'+cut(html,'// ── 작업자 풀·작업 대기열','// 이 기기의 시뮬 속도'),
  goal:cut(ui,'function growthStageKind(','function growthJob'),search:cut(ui,'async function growthStageSearch','async function growthStart'),evaluate:cut(ui,'async function growthEvaluate','function growthMaybe')};
 const key=k=>['a','b','c',k].sort().join(',');
 

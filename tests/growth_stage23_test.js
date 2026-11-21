@@ -1,8 +1,9 @@
 // Invented teams only. Mutations alter isolated module instances, never source files.
-const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{createRequire}=require('node:module');
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {readSrc,loadModule}=require('./helpers/page');
 const G=require('../growth_guide'),GS=require('../guild_search'),V=require('../guild_view'),CS=require('../cosmo_search'),D=require('../data/guild_defense.json');
-const source=fs.readFileSync(require.resolve('../growth_guide'),'utf8');
-function load(code){const ctx={module:{exports:{}},require:createRequire(require.resolve('../growth_guide'))};vm.runInNewContext(code,ctx);return ctx.module.exports;}
+const source=readSrc('growth_guide.js');
+const load=code=>loadModule(code);
 function signature(g=G){const s={account:'synthetic',options:{growth:true},targets:['x'],content:['guild','EX'],excluded:[],
   equipment:['hash',[]],policy:['v',7200,120000,17011,900001]};
   const sig=g.signature(s),history={a:{signature:sig,content:'guild/EX',rows:[{key:'x',kind:'growth',delta:10,confirmed:true}]}};
@@ -67,7 +68,7 @@ async function guildSchedule(g=G){const metric=g.guildMetric(GS,V,D,0,[]),calls=
     evaluate:async(jobs,n,seed)=>{const out=await evaluate(jobs,n,seed);if(n===4){delete out.cap;Object.defineProperty(out,'completed',{value:jobs.length});}return out;}});
   assert.equal(dropped.runs,8,'filtered coop runs still consume budget');
 }
-async function workerContract(){const ui=fs.readFileSync(require.resolve('../growth_ui'),'utf8');let active=0,peak=0;
+async function workerContract(){const ui=readSrc('growth_ui.js');let active=0,peak=0;
   const ctx={GuildSearch:GS,GROW:{id:1,versions:{engine:'e'},errors:[]},navigator:{hardwareConcurrency:16},location:{href:'https://example.test/index.html'},
     simOpt:()=>({rule:'test'}),growthPaint(){},setTimeout,clearTimeout,Worker:class {
       constructor(){active++;peak=Math.max(peak,active);}
@@ -78,8 +79,8 @@ async function workerContract(){const ui=fs.readFileSync(require.resolve('../gro
     }};
   ctx.SIMQ={};
   // 작업자 풀·대기열은 화면 것 그대로(코어 16·메모리 모름 = 6개까지, 작업 3개 → 작업자 3개)
-  const page=fs.readFileSync(require.resolve('../party_template.html'),'utf8');vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(require.resolve('../search_executor.js'),'utf8'),ctx);
+  const page=readSrc('party_template.html');vm.createContext(ctx);
+  vm.runInContext(readSrc('search_executor.js'),ctx);
   vm.runInContext(page.slice(page.indexOf('// ── 작업자 풀·작업 대기열'),page.indexOf('// 이 기기의 시뮬 속도')),ctx);
   vm.runInContext(ui.slice(ui.indexOf('async function growthEvaluate'),ui.indexOf('function growthMaybe')),ctx);
   const jobs=Array.from({length:3},(_,i)=>({id:'j'+i,party:{},options:{}}));
@@ -106,7 +107,7 @@ async function workerContract(){const ui=fs.readFileSync(require.resolve('../gro
     ['three boss screening','screenPlan(targets,Math.max(0,...targets.map(t=>t.candidates?.length||0)))','screenPlan(targets)',scheduling],
     ['new owned baseline','const finalOwned=lists(allOwned,fr)','const finalOwned=lists(owned.flat(),fr)',scheduling]
   ]){assert(source.includes(from),name);const mutant=load(source.replace(from,to));let failed=false;try{await test(mutant);}catch{failed=true;}assert(failed,'mutation survived: '+name);console.log('MUTATION caught + restored:',name);}
-  const csSource=fs.readFileSync(require.resolve('../cosmo_search'),'utf8'),ctx={module:{exports:{}},require:createRequire(require.resolve('../cosmo_search'))};
-  vm.runInNewContext(csSource.replace('if (x[w] & y[w])','if (false)'),ctx);assert.throws(()=>triples(G,ctx.module.exports));console.log('MUTATION caught + restored: savior overlap');
+  const csSource=readSrc('cosmo_search.js');
+  assert.throws(()=>triples(G,loadModule(csSource.replace('if (x[w] & y[w])','if (false)'))));console.log('MUTATION caught + restored: savior overlap');
   signature();guild();triples();await scheduling();await guildSchedule();console.log('ALL OK growth stage23');
 })().catch(e=>{console.error(e);process.exitCode=1;});

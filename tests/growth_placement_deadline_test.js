@@ -1,5 +1,6 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const source=fs.readFileSync(require.resolve('../growth_ui'),'utf8');
+const {readSrc}=require('./helpers/page');
+const source=readSrc('growth_ui.js');
 const start=source.indexOf('async function growthEvaluate('),end=source.indexOf('function growthMaybe',start),code=source.slice(start,end);
 async function check(src=code){let now=0,dispatched=0;
  const c={Date:{now:()=>now},Number,Promise,CFG:{recommendation:{placementCompare:true}},PLACEMENT_CACHE:new Map(),GROW:{},growthPaint:()=>{},simOpt:()=>({}),

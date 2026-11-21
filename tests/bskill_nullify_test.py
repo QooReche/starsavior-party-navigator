@@ -8,14 +8,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
-import p5_test as P                                              # noqa: E402
+import simkit as P                                               # noqa: E402
 from battlesim.rules import MC_OPTS                              # noqa: E402
 
 
 def _battle(name, mc, roles=('스트라이커',)):
-    foe = P.unit('boss', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
+    foe = P.unit5('boss', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
     foe.boss = True
-    allies = [P.unit('a%d' % i, role=r) for i, r in enumerate(roles)]
+    allies = [P.unit5('a%d' % i, role=r) for i, r in enumerate(roles)]
     b = P.battle(allies, [foe], break_skill={'name': name, 'level': 5}, mc=mc)
     b.break_points = 3
     return b

@@ -4,7 +4,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from p5_test import battle, give, unit, Ctx, Line, UnitDef, get_db
+from simkit import battle, give, unit5 as unit  # noqa: E402
+from battlesim.mc import Ctx  # noqa: E402
+from battlesim.starsavior.data import get_db  # noqa: E402
+from battlesim.starsavior.parser import Line, UnitDef  # noqa: E402
 
 
 def setup(key, allies=(), foes=None, mc=None):

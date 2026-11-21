@@ -9,12 +9,11 @@
 //  ⑦ 오토 기준만(수동 모드 제거): 옛 결과에 수동 값(man)이 붙어 있어도 쓰지 않는다
 // 끝에서 고친 코드를 일부러 되돌려(결함 주입) 이 시험이 실패하는지 확인한다. 실행: node tests/growth_all_test.js
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {readSrc,cut,line}=require('./helpers/page');
 const M=require('../myinfo_reco'),S=require('../myinfo_stats'),U=require('../ux_ui');
 const growth=require('../data/growth.json'),grades=require('../data/archive_grades.json');
 const view={...require('../data/myinfo_view.json'),itemSlots:require('../data/myinfo_slots.json')};
-const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8').replace(/\r\n/g,'\n'),ui=fs.readFileSync(require.resolve('../growth_ui.js'),'utf8').replace(/\r\n/g,'\n'),ux=fs.readFileSync(require.resolve('../ux_ui.js'),'utf8').replace(/\r\n/g,'\n');
-const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,'구간 없음: '+a);return s.slice(i,j)};
-const line=(s,start)=>{const m=s.match(new RegExp('^'+start.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'.*$','m'));assert(m,'줄 없음: '+start);return m[0]};
+const html=readSrc('party_template.html'),ui=readSrc('growth_ui.js'),ux=readSrc('ux_ui.js');
 const STAGE=['op','oph','daily','equip','cube','rush','clo','clash'],STAR=['equip','clash'];
 const SRC={ui,html,ux};
 

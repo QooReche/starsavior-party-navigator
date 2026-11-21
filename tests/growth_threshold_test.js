@@ -1,5 +1,6 @@
 // Public synthetic account; exercise actual overwrite, stat calculation and presentation.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {readSrc,loadModule}=require('./helpers/page');
 const M=require('../myinfo_reco'),S=require('../myinfo_stats'),G=require('../growth_guide'),U=require('../ux_ui');
 const growth=require('../data/growth.json'),raw=require('./fixtures/myinfo_synthetic.json');
 const slots=require('../data/myinfo_slots.json'),grades=require('../data/archive_grades.json');
@@ -85,7 +86,7 @@ function options(g=G){for(const owned of [undefined,true,false])for(const ao of 
   assert.deepEqual(plain(g.options({growth:true,owned},{ao})),{growth:true,owned:false});
   assert.deepEqual(plain(g.options({growth:true,owned},{ag:false,ao})),{growth:false,owned:false});
 }}
-function signature(code=fs.readFileSync(require.resolve('../growth_ui'),'utf8')){
+function signature(code=readSrc('growth_ui.js')){
   const ctx={GrowthGuide:G,MyInfoReco:{...M},MI:{hash:'test',info:account(),growth},CFG:{restrict:{}},EXCL:new Set(),R:roster,
     document:{getElementById:()=>({checked:true})},miProfile:()=>M.profile(account(),roster,growth,'op'),
     breakOwned:()=>[],MM:'myinfo',SCROWN:0,SIMOPT:{},growthConditions:()=>({})};
@@ -99,9 +100,9 @@ function signature(code=fs.readFileSync(require.resolve('../growth_ui'),'utf8'))
   ctx.MyInfoReco.THRESHOLD_POLICY=M.THRESHOLD_POLICY;ctx.MyInfoReco.OVERWRITE_VERSION='old';
   assert.notEqual(ctx.growthSig(...args),before);assert.notEqual(ctx.growthCacheTag(),cache);
 }
-function load(code){const ctx={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,ctx);
-  const api=ctx.module.exports;return api.overwrite?{...api,overwrite:(...args)=>plain(api.overwrite(...args))}:api;}
-const source=fs.readFileSync(require.resolve('../myinfo_reco'),'utf8');
+function load(code){
+  const api=loadModule(code);return api.overwrite?{...api,overwrite:(...args)=>plain(api.overwrite(...args))}:api;}
+const source=readSrc('myinfo_reco.js');
 check();check(load(source));options();signature();
 const mutations=[
   ['skill boundary','(old.skills?.[k]||0)<=THRESHOLD_POLICY.skillMax','(old.skills?.[k]||0)<THRESHOLD_POLICY.skillMax'],
@@ -121,6 +122,6 @@ for(const [name,from,to] of mutations){assert(source.includes(from),name+' ancho
   assert.throws(()=>check(load(source.replace(from,to))),{code:'ERR_ASSERTION'},name+' mutation must fail');
   console.log('MUTATION caught (isolated source):',name);
 }
-const guide=fs.readFileSync(require.resolve('../growth_guide'),'utf8');
+const guide=readSrc('growth_guide.js');
 assert.throws(()=>options(load(guide.replace('owned:false','owned:(shared.ao??saved.owned)!==false'))),{code:'ERR_ASSERTION'});
 console.log('PASS threshold boundaries, real stats, ownership, options, signatures; 13 mutations caught');

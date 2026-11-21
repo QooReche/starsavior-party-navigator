@@ -1,9 +1,10 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),cp=require('node:child_process');
+const {readSrc,loadModule}=require('./helpers/page');
 const G=require('../growth_guide'),S=require('../star_link');
-const gs=fs.readFileSync(require.resolve('../growth_guide'),'utf8'),ss=fs.readFileSync(require.resolve('../star_link'),'utf8');
-const ui=fs.readFileSync(require.resolve('../growth_ui'),'utf8');
+const gs=readSrc('growth_guide.js'),ss=readSrc('star_link.js');
+const ui=readSrc('growth_ui.js');
 const plain=x=>JSON.parse(JSON.stringify(x));
-function load(code){const ctx={module:{exports:{}},require:p=>require('../'+p)};vm.runInNewContext(code,ctx);return ctx.module.exports;}
+const load=code=>loadModule(code);
 function history(g=G){
   let data={};const store={get:k=>data[k],set:(k,v)=>(data[k]=plain(v),true)};
   const cond=mode=>({mode,rules:{},breaks:[{},{}]});
