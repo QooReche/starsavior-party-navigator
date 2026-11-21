@@ -1,0 +1,1101 @@
+{
+ "_note": "엔진 공통 함수 통일 보강 기준선(tools/unify_baseline.py --write). 코스모(1022 fixture 포함)·길드 지원 6종·분기 표 구원자. 6판, 표준 육성, rules_override power_penalty=model. 해시 = sha256 앞 20자",
+ "cases": {
+  "clo_FLOOR100/M1/s1": {
+   "clear": 1.0,
+   "per_run": "d355b3416c6a7213f6bf",
+   "prog": 1.0,
+   "raw_runs": "615d5ebb10422e6376c7",
+   "result": "835ec7c94d6282fd0ae0",
+   "web": "a6120e49f21e1143c3da"
+  },
+  "clo_FLOOR100/M1/s2": {
+   "clear": 1.0,
+   "per_run": "73bf37429a41337423e4",
+   "prog": 1.0,
+   "raw_runs": "9de544a46ac890b02171",
+   "result": "47198e5edb71003d292b",
+   "web": "2e6d735004b5c3ea44a8"
+  },
+  "clo_FLOOR100/M2/s1": {
+   "clear": 1.0,
+   "per_run": "1148b1ef52a3e794741d",
+   "prog": 1.0,
+   "raw_runs": "6a9929f48074460d7214",
+   "result": "25455ce273040b683fb9",
+   "web": "2f5021f540e547d16812"
+  },
+  "clo_FLOOR100/M2/s2": {
+   "clear": 1.0,
+   "per_run": "976a13c4fd3bb48fea16",
+   "prog": 1.0,
+   "raw_runs": "ef05eeee3950811301ce",
+   "result": "7824d3490d59f2170adf",
+   "web": "679c6ed0f21abf2cce80"
+  },
+  "clo_FLOOR100/M3/s1": {
+   "clear": 1.0,
+   "per_run": "eb2ce4af837e1dbf1e1f",
+   "prog": 1.0,
+   "raw_runs": "b379e2143c9f268f05d8",
+   "result": "dc1e318c1e8844a4fef9",
+   "web": "cd6c0ade37d0bedc2b7f"
+  },
+  "clo_FLOOR100/M3/s2": {
+   "clear": 1.0,
+   "per_run": "16aa9cf9e11236c2e367",
+   "prog": 1.0,
+   "raw_runs": "df0c188107e4b55c28d4",
+   "result": "a5b25c3a005268b15204",
+   "web": "65563a808a27451095f1"
+  },
+  "clo_FLOOR100/M4/s1": {
+   "clear": 1.0,
+   "per_run": "187aed373a4ebb8f73f8",
+   "prog": 1.0,
+   "raw_runs": "f8e5446bb65af9d61057",
+   "result": "826cfa7a8918bca87666",
+   "web": "d90491ad5b9bcdd0ed2e"
+  },
+  "clo_FLOOR100/M4/s2": {
+   "clear": 1.0,
+   "per_run": "3cfda3ed6e344b9f322a",
+   "prog": 1.0,
+   "raw_runs": "21e754a61e699eccf8c3",
+   "result": "eb2f481f668c25adc198",
+   "web": "fbae21ab633154031697"
+  },
+  "cosmo_길레1단계/M1/s1": {
+   "clear": 1.0,
+   "per_run": "5a996f8ab8cbf0dadbc4",
+   "prog": 1.0,
+   "raw_runs": "0fb289e3afd853893419",
+   "result": "2663ab58cb463754a84f",
+   "web": "a96ec3864175101426cd"
+  },
+  "cosmo_길레1단계/M1/s2": {
+   "clear": 1.0,
+   "per_run": "83c1e18a752b6b575dbe",
+   "prog": 1.0,
+   "raw_runs": "011fc9419eca282efd70",
+   "result": "171e99a9d887d5fa6c85",
+   "web": "1b1ea0ba983f0c178694"
+  },
+  "cosmo_길레1단계/M2/s1": {
+   "clear": 1.0,
+   "per_run": "7ee944a99b6d45cb4116",
+   "prog": 1.0,
+   "raw_runs": "d2a04cafa9b318a90b39",
+   "result": "5b577c0fde36537760cc",
+   "web": "764ba4960be739ad5408"
+  },
+  "cosmo_길레1단계/M2/s2": {
+   "clear": 1.0,
+   "per_run": "cf19b6c9fd3d218097a2",
+   "prog": 1.0,
+   "raw_runs": "99d076fe1d44d1c78406",
+   "result": "3155c81958070ebcc5fe",
+   "web": "c58189a756e88baac981"
+  },
+  "cosmo_길레1단계/M3/s1": {
+   "clear": 1.0,
+   "per_run": "e80090d05a076faf9a6c",
+   "prog": 1.0,
+   "raw_runs": "0c537f446e6b2ea116cf",
+   "result": "fc62fe64f8201feec0dd",
+   "web": "1bebfe10996d19ea0697"
+  },
+  "cosmo_길레1단계/M3/s2": {
+   "clear": 1.0,
+   "per_run": "d0cce4ac340683e7e7e2",
+   "prog": 1.0,
+   "raw_runs": "381e1df938a845c76937",
+   "result": "03b8b1be24c0e5601799",
+   "web": "0b2c2154d3112afe50f8"
+  },
+  "cosmo_길레1단계/M4/s1": {
+   "clear": 1.0,
+   "per_run": "0541ab33931cf199b302",
+   "prog": 1.0,
+   "raw_runs": "d614949e7318ba8c7bdd",
+   "result": "b8e68f78cbfbb1239591",
+   "web": "0355eedb8941264d01a2"
+  },
+  "cosmo_길레1단계/M4/s2": {
+   "clear": 1.0,
+   "per_run": "0541ab33931cf199b302",
+   "prog": 1.0,
+   "raw_runs": "7e2bbd126b5386dcf1a7",
+   "result": "360ee89efef2558a5c14",
+   "web": "6b3550519169e781ba7c"
+  },
+  "guild_fire_L1/G/s1": {
+   "clear": 0.0,
+   "per_run": "0e760e3795f074b54d40",
+   "prog": 0.6429,
+   "raw_runs": "4b31c8e0521cc44b177f",
+   "result": "e39bc8550f2c5f6eeac1",
+   "web": "078c35edaa716b781e87"
+  },
+  "guild_fire_L1/G/s2": {
+   "clear": 0.0,
+   "per_run": "566862960d09ce47192e",
+   "prog": 0.6775,
+   "raw_runs": "81b84ffc98ee5513b077",
+   "result": "003ebbd10073ab2952fe",
+   "web": "7edb14720939614d180e"
+  },
+  "guild_fire_L1/M2/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5544,
+   "raw_runs": "c43381d72eff42bf09c3",
+   "result": "21360234292401ac2171",
+   "web": "dbbc223ef956d4fff281"
+  },
+  "guild_fire_L1/M2/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5628,
+   "raw_runs": "3aa4b03feb5d5e2f69f0",
+   "result": "abb8f0011f8a2a6fe6ed",
+   "web": "162f776b1adc2f610331"
+  },
+  "guild_fire_L1/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5326,
+   "raw_runs": "e78c9d79140ee7ef227f",
+   "result": "f852f5ecd2263636d8fc",
+   "web": "5f0c148b9801249bd71a"
+  },
+  "guild_fire_L1/M3/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.564,
+   "raw_runs": "33778963d5e4c950f0a8",
+   "result": "645fab8a07998bafff0a",
+   "web": "451774e5e752f4633f1f"
+  },
+  "guild_fire_L5/G/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5429,
+   "raw_runs": "850bfb9e5d0d6b073e7c",
+   "result": "c0f20c3b9e179858bd6d",
+   "web": "d8b87dc4ef1d0b6690e4"
+  },
+  "guild_fire_L5/G/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5381,
+   "raw_runs": "e9f9cc10da6dddf69bf6",
+   "result": "58255fd122b1bc4283ec",
+   "web": "4f2016c44d32ece40107"
+  },
+  "guild_focus_L1/G/s1": {
+   "clear": 0.0,
+   "per_run": "b9213d23f3ca279624b2",
+   "prog": 0.6061,
+   "raw_runs": "dfc021b8ccf12a2802e9",
+   "result": "79cba1cdd1569318205b",
+   "web": "9400aa355391391b8ed3"
+  },
+  "guild_focus_L1/G/s2": {
+   "clear": 0.0,
+   "per_run": "b150ae7004644317376a",
+   "prog": 0.6422,
+   "raw_runs": "7cb2fb8de6d295562b63",
+   "result": "8e5974037044e468a502",
+   "web": "35e51a60e223c246e5cb"
+  },
+  "guild_focus_L1/M2/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5616,
+   "raw_runs": "0e9569dfb367952d899e",
+   "result": "459eb81b69b86465f5e0",
+   "web": "83f274fe54624df6b6fc"
+  },
+  "guild_focus_L1/M2/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5638,
+   "raw_runs": "8e056d4ac646c3bca2e8",
+   "result": "9d6b8458f7d602b46ec8",
+   "web": "38f650b8048aed58e7af"
+  },
+  "guild_focus_L1/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5295,
+   "raw_runs": "e1c7ecfa908e6193d710",
+   "result": "d97fa0fba9c200a57547",
+   "web": "3627c504cfcd3af96fa1"
+  },
+  "guild_focus_L1/M3/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5394,
+   "raw_runs": "d36a97b4d6968c6b3fcc",
+   "result": "701b4c86c6cf8d189ebd",
+   "web": "fb9ae75e2bd31b6b75b7"
+  },
+  "guild_focus_L5/G/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5392,
+   "raw_runs": "956dadea7166951681a2",
+   "result": "22d46162f0a6f5d796ba",
+   "web": "42dfd36be9fb48b13f6f"
+  },
+  "guild_focus_L5/G/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.534,
+   "raw_runs": "60293be18f92468578dc",
+   "result": "beb55a38f2befeacf671",
+   "web": "36b9313b07e712627f29"
+  },
+  "guild_gust_L1/G/s1": {
+   "clear": 0.0,
+   "per_run": "5d9fec0c24e7084ede22",
+   "prog": 0.5967,
+   "raw_runs": "68e31636d4b0bc4e0450",
+   "result": "30cd2d0d4380c664547e",
+   "web": "84db44cfda43d0f8218d"
+  },
+  "guild_gust_L1/G/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5524,
+   "raw_runs": "13e1c6b0568b7c1a219e",
+   "result": "93bc8f313a76bde75e3b",
+   "web": "72bd29b22a5ef70f0134"
+  },
+  "guild_gust_L1/M2/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5508,
+   "raw_runs": "ba4b7a15b6b4a09bea5c",
+   "result": "70a62168bf683c0db63d",
+   "web": "003bb0ea9a37991e5b13"
+  },
+  "guild_gust_L1/M2/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5509,
+   "raw_runs": "e98df6099dc2e3b10267",
+   "result": "d0892f0ef96009c439c5",
+   "web": "bce2d445aa4e29bde05b"
+  },
+  "guild_gust_L1/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5295,
+   "raw_runs": "e1c7ecfa908e6193d710",
+   "result": "9e2e9c0682522efb844c",
+   "web": "3627c504cfcd3af96fa1"
+  },
+  "guild_gust_L1/M3/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5394,
+   "raw_runs": "d36a97b4d6968c6b3fcc",
+   "result": "e1fb879497b55d24f04a",
+   "web": "fb9ae75e2bd31b6b75b7"
+  },
+  "guild_gust_L5/G/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5235,
+   "raw_runs": "bd3134cb912fcc9bc90e",
+   "result": "3817e16c89c7e0a3b190",
+   "web": "6d8419bcc686a4e5f4be"
+  },
+  "guild_gust_L5/G/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5158,
+   "raw_runs": "1da1ec0e30d084949ec7",
+   "result": "f5aa31210638a817f041",
+   "web": "301adbf047eed03dceb2"
+  },
+  "guild_mountain_L1/G/s1": {
+   "clear": 0.0,
+   "per_run": "b056e782bf92c3755c27",
+   "prog": 0.6716,
+   "raw_runs": "7d026497dee86571d37d",
+   "result": "64d0ab33097505ff89ab",
+   "web": "89f7c7dcef77786cf4b3"
+  },
+  "guild_mountain_L1/G/s2": {
+   "clear": 0.0,
+   "per_run": "c064864ab5463f61e3e6",
+   "prog": 0.7001,
+   "raw_runs": "0afc69a7691e1b8fc90f",
+   "result": "f37892f7dcddb888db62",
+   "web": "a01ba4cf1ec73f42cc61"
+  },
+  "guild_mountain_L1/M2/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5521,
+   "raw_runs": "6b56943e0c5b845ab563",
+   "result": "006ac69f42b92f8e8582",
+   "web": "b9527e83dde9c4a94b95"
+  },
+  "guild_mountain_L1/M2/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5541,
+   "raw_runs": "2dc176d3cc86409bbb0f",
+   "result": "23885175cf89ac3a5247",
+   "web": "f836f7756db9910ef9d3"
+  },
+  "guild_mountain_L1/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5313,
+   "raw_runs": "f90b6bd5042eed5620fd",
+   "result": "bdc14b5fba488555817b",
+   "web": "2e2fa658fa372b04b3ac"
+  },
+  "guild_mountain_L1/M3/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.559,
+   "raw_runs": "ff44e75551c7fb8d0be8",
+   "result": "5836c7b6c77408770bb1",
+   "web": "3dcfa21051ac3bb9c388"
+  },
+  "guild_mountain_L1_imm/G/s1": {
+   "clear": 0.0,
+   "per_run": "b056e782bf92c3755c27",
+   "prog": 0.6716,
+   "raw_runs": "7d026497dee86571d37d",
+   "result": "64d0ab33097505ff89ab",
+   "web": "89f7c7dcef77786cf4b3"
+  },
+  "guild_mountain_L1_imm/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5313,
+   "raw_runs": "f90b6bd5042eed5620fd",
+   "result": "bdc14b5fba488555817b",
+   "web": "2e2fa658fa372b04b3ac"
+  },
+  "guild_mountain_L5/G/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5411,
+   "raw_runs": "44ff42799d69bfefb3f9",
+   "result": "07867455e575dd7638e6",
+   "web": "04e3880a5864a09374a7"
+  },
+  "guild_mountain_L5/G/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5366,
+   "raw_runs": "bdbd4115559ca467505e",
+   "result": "a46f0d55691143ff4fc7",
+   "web": "d9feb3b24f38f36be7d9"
+  },
+  "guild_none_L1/G/s1": {
+   "clear": 0.0,
+   "per_run": "b9213d23f3ca279624b2",
+   "prog": 0.6061,
+   "raw_runs": "dfc021b8ccf12a2802e9",
+   "result": "60a9a16e3e88760e49bc",
+   "web": "9400aa355391391b8ed3"
+  },
+  "guild_none_L1/G/s2": {
+   "clear": 0.0,
+   "per_run": "b150ae7004644317376a",
+   "prog": 0.6422,
+   "raw_runs": "7cb2fb8de6d295562b63",
+   "result": "1261f6a228dce2d6db95",
+   "web": "35e51a60e223c246e5cb"
+  },
+  "guild_none_L1/M2/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5508,
+   "raw_runs": "ba4b7a15b6b4a09bea5c",
+   "result": "b8d826de8ec319910bcf",
+   "web": "003bb0ea9a37991e5b13"
+  },
+  "guild_none_L1/M2/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5509,
+   "raw_runs": "e98df6099dc2e3b10267",
+   "result": "0494e42f2a01e296abeb",
+   "web": "bce2d445aa4e29bde05b"
+  },
+  "guild_none_L1/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5295,
+   "raw_runs": "e1c7ecfa908e6193d710",
+   "result": "d83a3a149770d778fcbb",
+   "web": "3627c504cfcd3af96fa1"
+  },
+  "guild_none_L1/M3/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5394,
+   "raw_runs": "d36a97b4d6968c6b3fcc",
+   "result": "94d410a1a543148cf9fe",
+   "web": "fb9ae75e2bd31b6b75b7"
+  },
+  "guild_none_L5/G/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5392,
+   "raw_runs": "956dadea7166951681a2",
+   "result": "cc2a4008ae7e1a1c12bf",
+   "web": "42dfd36be9fb48b13f6f"
+  },
+  "guild_none_L5/G/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.534,
+   "raw_runs": "60293be18f92468578dc",
+   "result": "6f55b25236464dccda1e",
+   "web": "36b9313b07e712627f29"
+  },
+  "guild_strike_L1/G/s1": {
+   "clear": 0.0,
+   "per_run": "23ae17550f099eb16895",
+   "prog": 0.5849,
+   "raw_runs": "9a5e06593b4d2b3cae70",
+   "result": "8d8851e79800f7c3f57f",
+   "web": "cd620caf96da2a5dc501"
+  },
+  "guild_strike_L1/G/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5747,
+   "raw_runs": "68b2453181b57b2f751f",
+   "result": "99c90c46ca1313a10c2f",
+   "web": "2a6ae7c030cb463873f4"
+  },
+  "guild_strike_L1/M2/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5508,
+   "raw_runs": "ba4b7a15b6b4a09bea5c",
+   "result": "5e0a887862b6211b663c",
+   "web": "003bb0ea9a37991e5b13"
+  },
+  "guild_strike_L1/M2/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5509,
+   "raw_runs": "e98df6099dc2e3b10267",
+   "result": "0047ed61705e86a0f4dc",
+   "web": "bce2d445aa4e29bde05b"
+  },
+  "guild_strike_L1/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5334,
+   "raw_runs": "ad3cceadc626c11d1986",
+   "result": "88d3e3efd493915f0b66",
+   "web": "894b3b50661a57e0853e"
+  },
+  "guild_strike_L1/M3/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5505,
+   "raw_runs": "6a895a03f148bd1e703c",
+   "result": "e5e13efdd8846bb2c905",
+   "web": "5745efa3ca03440e4326"
+  },
+  "guild_strike_L5/G/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5394,
+   "raw_runs": "72fa6cd13b709d892d71",
+   "result": "b8e96d0427d4edc8ef3e",
+   "web": "1acdf3d57fbdb574596a"
+  },
+  "guild_strike_L5/G/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5379,
+   "raw_runs": "b6924dbd7b40bdd8d5e8",
+   "result": "aa8300ef18c769705598",
+   "web": "608d44ff03a5b5c558c0"
+  },
+  "op_SECTOR1-3/M1/s1": {
+   "clear": 1.0,
+   "per_run": "74f78306dceb2409388b",
+   "prog": 1.0,
+   "raw_runs": "13c4a3f1a127afcbb5b8",
+   "result": "e8dc765a34b78ecf89d0",
+   "web": "520ac0181b23797b8ee5"
+  },
+  "op_SECTOR1-3/M1/s2": {
+   "clear": 1.0,
+   "per_run": "74f78306dceb2409388b",
+   "prog": 1.0,
+   "raw_runs": "13c4a3f1a127afcbb5b8",
+   "result": "77833a203036c428ee72",
+   "web": "520ac0181b23797b8ee5"
+  },
+  "op_SECTOR1-3/M2/s1": {
+   "clear": 1.0,
+   "per_run": "50a8a16c905cbfa08393",
+   "prog": 1.0,
+   "raw_runs": "e450abf3d7f6678ac281",
+   "result": "a1884e5cd94ef53d90aa",
+   "web": "8f86577464cb08d5bed6"
+  },
+  "op_SECTOR1-3/M2/s2": {
+   "clear": 1.0,
+   "per_run": "50a8a16c905cbfa08393",
+   "prog": 1.0,
+   "raw_runs": "e450abf3d7f6678ac281",
+   "result": "287acf24d7511e3f55cc",
+   "web": "8f86577464cb08d5bed6"
+  },
+  "op_SECTOR1-3/M3/s1": {
+   "clear": 1.0,
+   "per_run": "ecc95907abf19a657bb5",
+   "prog": 1.0,
+   "raw_runs": "568ed519c0c61c63c013",
+   "result": "4484a9eecd193edb4133",
+   "web": "3a07dbf903f476acccfa"
+  },
+  "op_SECTOR1-3/M3/s2": {
+   "clear": 1.0,
+   "per_run": "ecc95907abf19a657bb5",
+   "prog": 1.0,
+   "raw_runs": "568ed519c0c61c63c013",
+   "result": "eb109c816390680003e5",
+   "web": "3a07dbf903f476acccfa"
+  },
+  "op_SECTOR1-3/M4/s1": {
+   "clear": 1.0,
+   "per_run": "ecc95907abf19a657bb5",
+   "prog": 1.0,
+   "raw_runs": "568ed519c0c61c63c013",
+   "result": "20065dd1c7e6932d177f",
+   "web": "5cacff2987aa0f27283b"
+  },
+  "op_SECTOR1-3/M4/s2": {
+   "clear": 1.0,
+   "per_run": "ecc95907abf19a657bb5",
+   "prog": 1.0,
+   "raw_runs": "568ed519c0c61c63c013",
+   "result": "f2b47c6ceae0e22fb356",
+   "web": "5cacff2987aa0f27283b"
+  },
+  "raid1022_belgras_L0/BG/s1": {
+   "clear": 0.0,
+   "per_run": "7f8a5882638b2a65f749",
+   "prog": 0.3856,
+   "raw_runs": "860be6325a46b2838655",
+   "result": "e2f876110098603dd248",
+   "web": "4ee4f88fd47e7eee94b6"
+  },
+  "raid1022_belgras_L0/BG/s2": {
+   "clear": 0.0,
+   "per_run": "7f8a5882638b2a65f749",
+   "prog": 0.3583,
+   "raw_runs": "289cba29a98ab2e7d5be",
+   "result": "5cb667b474b4bc79c7a6",
+   "web": "6a8449ca1dc7f10d0f19"
+  },
+  "raid1022_belgras_L0/M4/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0865,
+   "raw_runs": "6028a34da9c60e8d3dd8",
+   "result": "196d9903056e9cd95c08",
+   "web": "1baf63fcb9a0ce2af2e0"
+  },
+  "raid1022_belgras_L0/M4/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0781,
+   "raw_runs": "2c5bbb9e6aee4e935040",
+   "result": "802ac6319b816d9d45e5",
+   "web": "a30a32484620eecf9423"
+  },
+  "raid1022_belgras_L8/BG/s1": {
+   "clear": 0.0,
+   "per_run": "a19f28743fa77c4ae096",
+   "prog": 0.1461,
+   "raw_runs": "7d412332e3e9a2617d79",
+   "result": "bc4232180f9432bfb7a8",
+   "web": "693d7a60d9199bd7f454"
+  },
+  "raid1022_belgras_L8/BG/s2": {
+   "clear": 0.0,
+   "per_run": "64c3f84ded534019a857",
+   "prog": 0.1566,
+   "raw_runs": "b329d038b4d3b040b720",
+   "result": "90ff3f0b309d95852bc8",
+   "web": "8bea22d56244b5d25b7d"
+  },
+  "raid1022_belgras_L8/M4/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0259,
+   "raw_runs": "de3cb4f6c877d66ef5fb",
+   "result": "19e2d065dadaef65a5c3",
+   "web": "d1cfad2f48e0b0f458a0"
+  },
+  "raid1022_belgras_L8/M4/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0265,
+   "raw_runs": "ac9d66a247aad9657dae",
+   "result": "def3516250e6ee30aadc",
+   "web": "3eaed9a4eb4f8342093b"
+  },
+  "raid1022_carnelia_L0/BG/s1": {
+   "clear": 0.0,
+   "per_run": "7f8a5882638b2a65f749",
+   "prog": 0.2264,
+   "raw_runs": "d4f9b62ddda15a44986d",
+   "result": "6b0af38ec72dbe13d0c2",
+   "web": "3fb8164e5d62e830403e"
+  },
+  "raid1022_carnelia_L0/BG/s2": {
+   "clear": 0.0,
+   "per_run": "7f8a5882638b2a65f749",
+   "prog": 0.2105,
+   "raw_runs": "f3b3f5fab4014b9849e2",
+   "result": "5e1fa83fd99a4f461294",
+   "web": "f9afa21fdfc4021d14a6"
+  },
+  "raid1022_carnelia_L0/M4/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.1253,
+   "raw_runs": "fe6932989b3fa700163c",
+   "result": "73738cc361a5869bb0b9",
+   "web": "740c7b2e5241f0f39abf"
+  },
+  "raid1022_carnelia_L0/M4/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.1271,
+   "raw_runs": "aaba564563f9a3daf69b",
+   "result": "814ace956719ce6ce90e",
+   "web": "1d48efc332919dab3097"
+  },
+  "raid1022_carnelia_L8/BG/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0725,
+   "raw_runs": "1fc37617c4c87c4393fd",
+   "result": "1b4ac2c1c0b375f97899",
+   "web": "aba06590d0542f8da823"
+  },
+  "raid1022_carnelia_L8/BG/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0832,
+   "raw_runs": "2d7fa2438f89aa4b62e6",
+   "result": "9d4b6cbd3e0cb437147a",
+   "web": "c065f1192e9095b3efc1"
+  },
+  "raid1022_carnelia_L8/M4/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0387,
+   "raw_runs": "0d7977733cb43e39fb36",
+   "result": "6a78b0d27d4677bf8c64",
+   "web": "235f5ea2da457f2062ae"
+  },
+  "raid1022_carnelia_L8/M4/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0481,
+   "raw_runs": "9d2a585343e13d13f8c9",
+   "result": "4b2efef094010ddc9341",
+   "web": "32cd75b758eb8b6d89cd"
+  },
+  "raid1022_tyria_L0/BG/s1": {
+   "clear": 0.0,
+   "per_run": "7f8a5882638b2a65f749",
+   "prog": 0.1986,
+   "raw_runs": "d354b76d2b0edb9ab3d4",
+   "result": "7a63c7f9947549565edc",
+   "web": "34580464321d73a956a2"
+  },
+  "raid1022_tyria_L0/BG/s2": {
+   "clear": 0.0,
+   "per_run": "7f8a5882638b2a65f749",
+   "prog": 0.1741,
+   "raw_runs": "6849da5c8f5ddb7986bc",
+   "result": "11065e3b716f14afc873",
+   "web": "1e109c1e56929dc55496"
+  },
+  "raid1022_tyria_L0/M4/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.1918,
+   "raw_runs": "3a05772f5df69d0681e3",
+   "result": "5f12afba88b1411d0755",
+   "web": "de8034da6297acb9b952"
+  },
+  "raid1022_tyria_L0/M4/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.1921,
+   "raw_runs": "9d5abb010ab90e6b4046",
+   "result": "49ec6f6a21b7c6fd20c2",
+   "web": "d44ff5574a11842a89d3"
+  },
+  "raid1022_tyria_L8/BG/s1": {
+   "clear": 0.0,
+   "per_run": "af080fc7888e42d9dacd",
+   "prog": 0.1039,
+   "raw_runs": "6a67f2d296dc99eacbc6",
+   "result": "a801ff729d3dd5b90794",
+   "web": "de4eb9cbae59a70e6601"
+  },
+  "raid1022_tyria_L8/BG/s2": {
+   "clear": 0.0,
+   "per_run": "e7f2de452fc9de04384c",
+   "prog": 0.1022,
+   "raw_runs": "a711e36d48880616738f",
+   "result": "7eefbb8025032b49cd7b",
+   "web": "9b03e6247aaba088e79b"
+  },
+  "raid1022_tyria_L8/M4/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0617,
+   "raw_runs": "677a557fcefb33f20c06",
+   "result": "a51fb4af675abdd97cbf",
+   "web": "c676da955f61207ea252"
+  },
+  "raid1022_tyria_L8/M4/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0794,
+   "raw_runs": "2ba423655a5557d1fb72",
+   "result": "b7110fef171f68bb6138",
+   "web": "fd3622e1a80155a73da1"
+  },
+  "raid_baskerville/C/s1": {
+   "clear": 0.0,
+   "per_run": "7f8a5882638b2a65f749",
+   "prog": 0.5246,
+   "raw_runs": "9993f3c6ff0fe127cf7a",
+   "result": "038012b843b37cd173ba",
+   "web": "0311975b47923f93a7d6"
+  },
+  "raid_baskerville/M1/s1": {
+   "clear": 0.0,
+   "per_run": "b1e8a7497408a9d2ab61",
+   "prog": 0.2569,
+   "raw_runs": "78492d959c311ef52870",
+   "result": "ead16168e0db0282aca7",
+   "web": "938fd63578c2a4d83ae8"
+  },
+  "raid_baskerville/M2/s1": {
+   "clear": 0.0,
+   "per_run": "1d70cae9eba07fa2ce65",
+   "prog": 0.4176,
+   "raw_runs": "97083513207df74b3cdc",
+   "result": "a6b07df24a0c96f31040",
+   "web": "cb3053ad494f917fcfc8"
+  },
+  "raid_baskerville/M3/s1": {
+   "clear": 0.0,
+   "per_run": "25835d659e27ef167c60",
+   "prog": 0.5595,
+   "raw_runs": "47f1eca277f873af85e9",
+   "result": "776af55696afbbd67a4b",
+   "web": "8386d5770887f8ad9c14"
+  },
+  "raid_baskerville/M4/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.2615,
+   "raw_runs": "e7eea67d8a77bf533c70",
+   "result": "53ded6a6d0b33135220c",
+   "web": "ab23cd2bc4510a2ab486"
+  },
+  "raid_disparity/C/s1": {
+   "clear": 0.0,
+   "per_run": "7f8a5882638b2a65f749",
+   "prog": 0.6031,
+   "raw_runs": "fccd832a9cc7da5b92af",
+   "result": "70edcab4455108a0c6d7",
+   "web": "bf2e779a31842dd3eaa5"
+  },
+  "raid_disparity/M1/s1": {
+   "clear": 0.0,
+   "per_run": "7f8a5882638b2a65f749",
+   "prog": 0.3518,
+   "raw_runs": "bba1f3d8c25087180181",
+   "result": "cf849c5923c020a9fcd4",
+   "web": "e42afcfae64bf14b351d"
+  },
+  "raid_disparity/M2/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5497,
+   "raw_runs": "0434b4cfc0ee8f85d738",
+   "result": "c60c23946ad19ab9f8bb",
+   "web": "881ffcb1e5035d37b527"
+  },
+  "raid_disparity/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.5585,
+   "raw_runs": "09c7c9a1cf361fe908ba",
+   "result": "eb6bc31e7190354f33e9",
+   "web": "9bc7d04879a9e4c7e874"
+  },
+  "raid_disparity/M4/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.3201,
+   "raw_runs": "7e229b75c1feeb6c0190",
+   "result": "bf7f35995ead15038365",
+   "web": "4543717078a414536bc1"
+  },
+  "raid_mogulus/C/s1": {
+   "clear": 0.0,
+   "per_run": "7f8a5882638b2a65f749",
+   "prog": 0.4799,
+   "raw_runs": "b1a65aef87c6be4ead27",
+   "result": "3c8ec14d16e1cd992e57",
+   "web": "cffadb9b53526f50151d"
+  },
+  "raid_mogulus/M1/s1": {
+   "clear": 0.0,
+   "per_run": "d0ff3f0f3b12021b469f",
+   "prog": 0.2933,
+   "raw_runs": "9826f5113a1efb1d504a",
+   "result": "47a4b557fa17d11669e6",
+   "web": "6de2661581a62a40f49d"
+  },
+  "raid_mogulus/M2/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.2593,
+   "raw_runs": "77875a23ddd61c717fdf",
+   "result": "4b8be15e4d3631482d53",
+   "web": "b2a9a74afd65e555399b"
+  },
+  "raid_mogulus/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.3591,
+   "raw_runs": "6fa227baa51b904e1ce2",
+   "result": "9613ea01c615f9149a90",
+   "web": "9a0a057160a58174d2d5"
+  },
+  "raid_mogulus/M4/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.1753,
+   "raw_runs": "4ce0b4856002e665c2fe",
+   "result": "54828a95a4bd9594bf91",
+   "web": "72c29aa5c9a1362bc5e9"
+  },
+  "raidex_carnelia_L12/BG/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0488,
+   "raw_runs": "2da8f21c5146a859055e",
+   "result": "d064edd1b4d31b43a1e3",
+   "web": "558d1e54aacdba89234c"
+  },
+  "raidex_carnelia_L12/BG/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0544,
+   "raw_runs": "dd0ad447694d5643de54",
+   "result": "f547beca106abde5b669",
+   "web": "7afda41bb12188d0e16c"
+  },
+  "raidex_carnelia_L12/C/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.037,
+   "raw_runs": "f39d2a35735d55e4e3f4",
+   "result": "e5e5a0dc1fe3cacfaeb1",
+   "web": "29416bd3c3a41216ad4a"
+  },
+  "raidex_carnelia_L12/C/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.053,
+   "raw_runs": "9ca86662de6ab2005cae",
+   "result": "6a4c4188c98e52504057",
+   "web": "fce0b909025a5251e63c"
+  },
+  "raidex_carnelia_L12/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0167,
+   "raw_runs": "7a273bc1649ad972e54b",
+   "result": "78096ab0eddb777ec5c9",
+   "web": "f7397f06e59d19904b53"
+  },
+  "raidex_carnelia_L12/M3/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0185,
+   "raw_runs": "919a199894aa3721019d",
+   "result": "dfffa930e571c30fc67d",
+   "web": "f06d7b8999b37727514c"
+  },
+  "raidex_carnelia_L12_imm/BG/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0488,
+   "raw_runs": "2da8f21c5146a859055e",
+   "result": "d064edd1b4d31b43a1e3",
+   "web": "558d1e54aacdba89234c"
+  },
+  "raidex_carnelia_L12_imm/BG/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0544,
+   "raw_runs": "dd0ad447694d5643de54",
+   "result": "f547beca106abde5b669",
+   "web": "7afda41bb12188d0e16c"
+  },
+  "raidex_carnelia_L12_imm/C/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.037,
+   "raw_runs": "f39d2a35735d55e4e3f4",
+   "result": "e5e5a0dc1fe3cacfaeb1",
+   "web": "29416bd3c3a41216ad4a"
+  },
+  "raidex_carnelia_L12_imm/C/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.053,
+   "raw_runs": "9ca86662de6ab2005cae",
+   "result": "6a4c4188c98e52504057",
+   "web": "fce0b909025a5251e63c"
+  },
+  "raidex_carnelia_L12_imm/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0167,
+   "raw_runs": "7a273bc1649ad972e54b",
+   "result": "78096ab0eddb777ec5c9",
+   "web": "f7397f06e59d19904b53"
+  },
+  "raidex_carnelia_L12_imm/M3/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0185,
+   "raw_runs": "919a199894aa3721019d",
+   "result": "dfffa930e571c30fc67d",
+   "web": "f06d7b8999b37727514c"
+  },
+  "raidex_mogulus_L15/BG/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0457,
+   "raw_runs": "1599a72c8c9606a1b000",
+   "result": "a42fa70da8f709bc3561",
+   "web": "573e76997a46bff9e3b4"
+  },
+  "raidex_mogulus_L15/BG/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0494,
+   "raw_runs": "a83795ffaf90e1de9297",
+   "result": "15f88d8c3fb30626ac30",
+   "web": "f0e98f441c4853ab6d3a"
+  },
+  "raidex_mogulus_L15/C/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0476,
+   "raw_runs": "ab01b959bbfd9c21d92d",
+   "result": "7d82c8e4face0936409b",
+   "web": "0462b897520af96167a6"
+  },
+  "raidex_mogulus_L15/C/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0593,
+   "raw_runs": "47a77fe626522ed7a2c4",
+   "result": "b96bb522e82e1e6114a9",
+   "web": "b7f98f7f5a87c97704af"
+  },
+  "raidex_mogulus_L15/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0344,
+   "raw_runs": "c4337cdc52f4c209f6e1",
+   "result": "3f24495f5b10608c101b",
+   "web": "b5e5567bf1abbc06ab80"
+  },
+  "raidex_mogulus_L15/M3/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0375,
+   "raw_runs": "63636e8375b0ab1fd02b",
+   "result": "c39c1e5a4bcb3a431a9d",
+   "web": "139b5e09a809daf17f2f"
+  },
+  "raidex_mogulus_L15_imm/BG/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0457,
+   "raw_runs": "1599a72c8c9606a1b000",
+   "result": "b15bba33bcb5a69240a1",
+   "web": "573e76997a46bff9e3b4"
+  },
+  "raidex_mogulus_L15_imm/BG/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0494,
+   "raw_runs": "a83795ffaf90e1de9297",
+   "result": "fdb05c407cb36ae25d1d",
+   "web": "f0e98f441c4853ab6d3a"
+  },
+  "raidex_mogulus_L15_imm/C/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0399,
+   "raw_runs": "05e04983a4a5d65da6b4",
+   "result": "4ace816b75388d631fea",
+   "web": "cebd593bf667be7650a1"
+  },
+  "raidex_mogulus_L15_imm/C/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0524,
+   "raw_runs": "ee238c1fffce46f47692",
+   "result": "a8c032604094d86746e3",
+   "web": "5cdd4fa99e61e0911bc7"
+  },
+  "raidex_mogulus_L15_imm/M3/s1": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0343,
+   "raw_runs": "a81b347cc3e9186a9356",
+   "result": "6d834c9c6596e406a487",
+   "web": "3107a07fcbdacc550ac1"
+  },
+  "raidex_mogulus_L15_imm/M3/s2": {
+   "clear": 0.0,
+   "per_run": "2c467c4746d790c5a61c",
+   "prog": 0.0379,
+   "raw_runs": "c1aff7be093fc7fe2cb3",
+   "result": "34a0f2794fe896a4f4d7",
+   "web": "1a73f3a731d2e2b11884"
+  }
+ }
+}
