@@ -1,0 +1,293 @@
+{
+ "_note": "엔진 다이어트 결과 불변 기준선(tools/diet_baseline.py --write). 케이스 = 콘텐츠/파티/시드, 8판, 표준 육성, rules_override power_penalty=model. 해시 = sha256 앞 20자(raw_runs·runs·결과 전체(runtime 제외)·web.run_auto 문자열)",
+ "cases": {
+  "clo_moon100/A/s1": {
+   "clear": 1.0,
+   "per_run": "d2c8e24a4f2219e9a9ab",
+   "prog": 1.0,
+   "raw_runs": "0b03f1441e061c21a003",
+   "result": "8a08dc747b70366c0ab1",
+   "web": "2bd9451a1e910ecb314a"
+  },
+  "clo_moon100/A/s2": {
+   "clear": 1.0,
+   "per_run": "8e161e45d18a1a59aab6",
+   "prog": 1.0,
+   "raw_runs": "d1175d6f905f68f19aa8",
+   "result": "cc658e902865cae255e0",
+   "web": "42cfa76528bda57cb0b7"
+  },
+  "clo_moon100/A/s3": {
+   "clear": 1.0,
+   "per_run": "4098b73a12de8c70b202",
+   "prog": 1.0,
+   "raw_runs": "c4e14a730412bc50e692",
+   "result": "2f4b6dd3e61aa967b894",
+   "web": "fb4b9f2ebd13b863dd9c"
+  },
+  "clo_moon100/B/s1": {
+   "clear": 1.0,
+   "per_run": "665a296e2d6a21da7627",
+   "prog": 1.0,
+   "raw_runs": "aa7ca4cc092ca0c42e3f",
+   "result": "992207a2b6bb347c8a6e",
+   "web": "ac947cd7abddff11ce93"
+  },
+  "clo_moon100/B/s2": {
+   "clear": 1.0,
+   "per_run": "b2b5721336ca4097cf00",
+   "prog": 1.0,
+   "raw_runs": "a9ee8b3c5d47da849f1d",
+   "result": "02c289ba3c2af44fe57f",
+   "web": "eaba1abb2f336d59ac95"
+  },
+  "clo_moon100/B/s3": {
+   "clear": 1.0,
+   "per_run": "4836e2de7373b4d8cd01",
+   "prog": 1.0,
+   "raw_runs": "1f50af81bab90ca409ff",
+   "result": "0a5ca27a82bda43908f5",
+   "web": "11ea64bb83c1eb31b667"
+  },
+  "clo_sun250/A/s1": {
+   "clear": 0.75,
+   "per_run": "f65d9e1cf72243061f1c",
+   "prog": 0.9749,
+   "raw_runs": "da6fd49cb153107296ef",
+   "result": "fa6eafa1e630701347bb",
+   "web": "2ab1c983ba5100d0e2c7"
+  },
+  "clo_sun250/A/s2": {
+   "clear": 1.0,
+   "per_run": "afa43ef832c263527e4a",
+   "prog": 1.0,
+   "raw_runs": "d44b2fa2bff56636f794",
+   "result": "a9f952fa8f35d9dcb0dc",
+   "web": "f90f656f47712bc7e556"
+  },
+  "clo_sun250/A/s3": {
+   "clear": 0.5,
+   "per_run": "d61fb391fd18ecf789d0",
+   "prog": 0.9371,
+   "raw_runs": "6547fd6840464849f45f",
+   "result": "e97bc10e90d6c3e02334",
+   "web": "5c8319321a943d0d0d1f"
+  },
+  "clo_sun250/B/s1": {
+   "clear": 0.125,
+   "per_run": "6d7a2c19ed6b54d3f203",
+   "prog": 0.7605,
+   "raw_runs": "2f6891f07867b232b08d",
+   "result": "283d324a2e594f2554e2",
+   "web": "121788089ccc3b0b28fc"
+  },
+  "clo_sun250/B/s2": {
+   "clear": 0.125,
+   "per_run": "942457c18d46243f83cf",
+   "prog": 0.8135,
+   "raw_runs": "de19f8f6a95207e5ef31",
+   "result": "40beb740ff5ba83be117",
+   "web": "ef21b73ad8ab0966cfe0"
+  },
+  "clo_sun250/B/s3": {
+   "clear": 0.0,
+   "per_run": "d583c25afb77d0f9c416",
+   "prog": 0.7616,
+   "raw_runs": "f3caef3ea17eacc9b350",
+   "result": "d4be168c5b5da03aa93f",
+   "web": "6afb33451a7e11a8627c"
+  },
+  "cosmo_gille1/A/s1": {
+   "clear": 1.0,
+   "per_run": "f51a225de8c3c15d034a",
+   "prog": 1.0,
+   "raw_runs": "0e15901f49cacae468c0",
+   "result": "b2aa723a7c841ed90dd4",
+   "web": "a3e9daa43d288f9cb95e"
+  },
+  "cosmo_gille1/A/s2": {
+   "clear": 1.0,
+   "per_run": "ef2341e28dd707d31197",
+   "prog": 1.0,
+   "raw_runs": "1f9408bd1f95a98731af",
+   "result": "3c25541aa268d846967d",
+   "web": "b75a3af0e27f88d38ae3"
+  },
+  "cosmo_gille1/A/s3": {
+   "clear": 1.0,
+   "per_run": "fbfede0a61ca86f68f12",
+   "prog": 1.0,
+   "raw_runs": "7b21a816833a1092a2ce",
+   "result": "ddca54fb638527e3e03d",
+   "web": "6c3460b5ac03cb1ac8a3"
+  },
+  "cosmo_gille1/B/s1": {
+   "clear": 1.0,
+   "per_run": "9ff1859cb5b480516387",
+   "prog": 1.0,
+   "raw_runs": "8dc6cde0f0242dbe6d29",
+   "result": "63bba1cf93f85043ca45",
+   "web": "b9aa5ad79ab564557396"
+  },
+  "cosmo_gille1/B/s2": {
+   "clear": 1.0,
+   "per_run": "6a5afbd3c6c7a7375733",
+   "prog": 1.0,
+   "raw_runs": "1257ab476b2360992444",
+   "result": "3bb6ccc82ce6f975af76",
+   "web": "5a99fc1811caa82ca362"
+  },
+  "cosmo_gille1/B/s3": {
+   "clear": 1.0,
+   "per_run": "aee7b564906f322a79b2",
+   "prog": 1.0,
+   "raw_runs": "2846a32703f6ac479218",
+   "result": "cafd9d1e25f1ffaef246",
+   "web": "6d69a78611f9bfbf58b8"
+  },
+  "cosmo_raid_bask3/A/s1": {
+   "clear": 0.0,
+   "per_run": "d151b72360acf4b2b812",
+   "prog": 0.5249,
+   "raw_runs": "fdadb37f0ada5c473013",
+   "result": "11db83300cd1e78398f9",
+   "web": "921b6db86a9f4e5c3c93"
+  },
+  "cosmo_raid_bask3/A/s2": {
+   "clear": 0.0,
+   "per_run": "d151b72360acf4b2b812",
+   "prog": 0.4844,
+   "raw_runs": "779aba4b0b39fb2c89f8",
+   "result": "50b94d0b3afb9216f73e",
+   "web": "bea1e7f9b9a99c164def"
+  },
+  "cosmo_raid_bask3/A/s3": {
+   "clear": 0.0,
+   "per_run": "d151b72360acf4b2b812",
+   "prog": 0.3964,
+   "raw_runs": "b954ce458b46443f22f3",
+   "result": "7d9cf44871cabe562784",
+   "web": "7a285de65e242a0c5417"
+  },
+  "cosmo_raid_bask3/B/s1": {
+   "clear": 0.0,
+   "per_run": "d151b72360acf4b2b812",
+   "prog": 0.3081,
+   "raw_runs": "143e10c16c4c88390880",
+   "result": "b8a94c5f37be5e1a6545",
+   "web": "fe31a727d62d862c6e76"
+  },
+  "cosmo_raid_bask3/B/s2": {
+   "clear": 0.0,
+   "per_run": "d151b72360acf4b2b812",
+   "prog": 0.3042,
+   "raw_runs": "7795547953463e969634",
+   "result": "2d3a3ea499aca41622f1",
+   "web": "b756d5624509be9962fb"
+  },
+  "cosmo_raid_bask3/B/s3": {
+   "clear": 0.0,
+   "per_run": "d151b72360acf4b2b812",
+   "prog": 0.3188,
+   "raw_runs": "a92ec588f3ddaa6fd603",
+   "result": "3e17c92026c8a26cc5e2",
+   "web": "2fc2555da6697a7b56e1"
+  },
+  "guild_l1/A/s1": {
+   "clear": 0.0,
+   "per_run": "d583c25afb77d0f9c416",
+   "prog": 0.5387,
+   "raw_runs": "f0311b78dcab527e0aea",
+   "result": "42a41b20745a8f6547f8",
+   "web": "350b8277986b62f994ae"
+  },
+  "guild_l1/A/s2": {
+   "clear": 0.0,
+   "per_run": "d583c25afb77d0f9c416",
+   "prog": 0.5599,
+   "raw_runs": "cfdb3d1d800716644902",
+   "result": "bc7e8a03c2c916e3679b",
+   "web": "6f0c6d0aa0f802c884d8"
+  },
+  "guild_l1/A/s3": {
+   "clear": 0.0,
+   "per_run": "d583c25afb77d0f9c416",
+   "prog": 0.5482,
+   "raw_runs": "dad8dd3119b5112a0e4f",
+   "result": "d8c3b5afd5a9ce477d07",
+   "web": "e22443b8d5629cd1f506"
+  },
+  "guild_l1/B/s1": {
+   "clear": 0.0,
+   "per_run": "dcc634b122c00cf0ef64",
+   "prog": 0.6214,
+   "raw_runs": "a997ac8b64b2e0e1084d",
+   "result": "9bd317c9d4a0958867a6",
+   "web": "5168318f819ec3ac80fe"
+  },
+  "guild_l1/B/s2": {
+   "clear": 0.0,
+   "per_run": "c9a4ffeb5635d2123aac",
+   "prog": 0.6674,
+   "raw_runs": "83fa42fc68cb5adbee76",
+   "result": "31299aeb0c26a2406701",
+   "web": "af74eb0082bc8aebfe3f"
+  },
+  "guild_l1/B/s3": {
+   "clear": 0.0,
+   "per_run": "5656c2db8899a3b0ca61",
+   "prog": 0.6979,
+   "raw_runs": "09aa92d5cfb24b5ea9d2",
+   "result": "7ff05de1ca8232485c78",
+   "web": "25332264d99d62cafe63"
+  },
+  "op/A/s1": {
+   "clear": 1.0,
+   "per_run": "102dbf43be3b4cb9799c",
+   "prog": 1.0,
+   "raw_runs": "6a2c33170b26603d712d",
+   "result": "28d5cefd7cc9100dc0bb",
+   "web": "7d6dc966b539abbe9ce6"
+  },
+  "op/A/s2": {
+   "clear": 1.0,
+   "per_run": "102dbf43be3b4cb9799c",
+   "prog": 1.0,
+   "raw_runs": "0866733a0553b5295b31",
+   "result": "dc1dc1e43693b9205e7c",
+   "web": "315e52881b18a3c90dbe"
+  },
+  "op/A/s3": {
+   "clear": 1.0,
+   "per_run": "102dbf43be3b4cb9799c",
+   "prog": 1.0,
+   "raw_runs": "05578c8d0fc5d5f54b4e",
+   "result": "a33f3c6b68b73cd86214",
+   "web": "496d8bcc23e4b9fd35cf"
+  },
+  "op/B/s1": {
+   "clear": 1.0,
+   "per_run": "81d1bf940e97867a81ff",
+   "prog": 1.0,
+   "raw_runs": "61325fd0fe4921788c22",
+   "result": "e90f04f1687597c7257f",
+   "web": "0f5f808916e315b0c179"
+  },
+  "op/B/s2": {
+   "clear": 1.0,
+   "per_run": "81d1bf940e97867a81ff",
+   "prog": 1.0,
+   "raw_runs": "61325fd0fe4921788c22",
+   "result": "10daccc5e29df4818b99",
+   "web": "0f5f808916e315b0c179"
+  },
+  "op/B/s3": {
+   "clear": 1.0,
+   "per_run": "81d1bf940e97867a81ff",
+   "prog": 1.0,
+   "raw_runs": "61325fd0fe4921788c22",
+   "result": "993864afede168a81438",
+   "web": "0f5f808916e315b0c179"
+  }
+ }
+}

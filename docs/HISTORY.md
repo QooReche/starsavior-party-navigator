@@ -1,6 +1,9 @@
 ## 2026-11-22 — 일반 추천 «후보 전체 훑기» 고정 비용 제거(설계 A, 스위치 기본 끔 그대로)
 
 프로파일 결과, 훑기 1팀당 비용이 큰 원인은 엔진 준비가 아니었음. 네이티브 호출당 고정 비용은 잡음 수준이었음. 원인은 메인 스레드였음: 팀 결과마다 전체 순위 정렬(`scrOrder`·`scrFullRank`)과 진행 칸·글자 DOM 갱신을 다시 했고, 그웬 레인 `MutationObserver`가 배치를 강제했음. 그래서 A-1(`SearchExecutor.throttle`, 200ms 간격 갱신·훑기 중 정렬 생략), A-2(실행기 팀 묶음 `simDispatch` `chunk`, 크기 `min(50, ceil(팀/(작업자×40)))`, 일반 추천 훑기·예선만), A-3(엔진 묶음 `web.run_auto_batch`·`AutoBatch`, 조우 정규화·의미 해석 캐시를 묶음 안에서만 공유)을 넣었음. `tests/batch_identity_test.py`에서 묶음 결과와 팀별 결과가 글자 그대로 같았음(9묶음 50팀). 팀 간에 새게 만든 변이 3건은 실패로 잡힘. 브라우저 실측 10건은 화면 결과·총 판 수·1안이 묶기 전과 같았음. 켬 시간은 회랑 580·590·작전 44-6에서 묶기 전의 ×0.22·×0.29·×0.20이 됐고, 켬÷끔은 ×9~13에서 ×1.8~2.9로 줄었음. 기여는 대부분 A-1임. 끔 상태 예선은 배차가 지금과 같고 시간도 잡음 안이었음. 기본값은 저사양 실측 뒤 정하기를 권함(`docs/fullscreen_measure_1121.md` «묶음 후»).
+## 2026-11-22 — 엔진 다이어트 0~1단계: 실측·결과 불변 기준선·묶음 1차 경량화
+
+`run_auto` 1·8·100판을 작전·회랑·코스모·길드 6곳에서 cProfile·횟수×단가·`mc.py` AST 변형 사본으로 쟀음(`tools/diet_profile.py`). 진단 몫은 판당 약 1.5~2.5%(self.mc 읽기 1.0~1.7%, lines_of 모드 튜플 약 1%, rule_hits 0.2% 안팎, 타임라인 꺼진 log 0.04% 이하)로 설계 추정 3~8%보다 작고, 변형 간 차이는 wall 잡음 안이었음. 결과 불변 기준선(콘텐츠 6 × 파티 2 × 시드 3, raw_runs·runs·결과 전체·run_auto 문자열 해시)을 `tests/golden/diet_baseline.json` 에 고정하고 `tests/diet_baseline_test.py` 를 더했음. 브라우저 묶음에서 `metrics.py`·`quick.py` 를 빼고 규칙 파일을 축약본 `battlesim/rules/default.min.json`(value·grade·kind + 결과에 실리는 가정 등급 note 만)으로 바꿔 60개 7,625,097B → 58개 7,424,409B(gzip −6.7%). 묶음 파일만으로 돌린 결과가 기준선과 바이트 같고 실제 Pyodide 페이지 시험도 통과. 태그 `engine-legacy-final`(ed64b93)은 로컬에만. 실측표·`_KEEP` 재고정 설계는 `docs/engine_diet_1122.md`.
 
 ## 2026-11-21 — 일반 추천 «후보 전체 훑기» 스위치(기본 끔)와 브라우저 실측
 

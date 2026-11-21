@@ -10,7 +10,12 @@ RULES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rules')
 
 
 def load_rules(profile='default'):
-    with open(os.path.join(RULES_DIR, profile + '.json'), encoding='utf-8') as f:
+    p = os.path.join(RULES_DIR, profile + '.json')
+    if not os.path.exists(p):
+        # 브라우저 묶음(sim/manifest.json)은 축약본만 싣는다: value·grade·kind 와 결과에 실리는 가정 등급 note 만(tools/build_simpack.py).
+        # 설명·근거·legacy 가 없어 LEGACY_OPTS 등은 비지만 엔진·web.run_auto 결과는 같다(tests/diet_baseline_test.py).
+        p = os.path.join(RULES_DIR, profile + '.min.json')
+    with open(p, encoding='utf-8') as f:
         return json.load(f)
 
 
