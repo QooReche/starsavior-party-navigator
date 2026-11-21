@@ -51,22 +51,37 @@
     return STEPS.map(([f,s],i)=>{const n=i+1,done=cur===0||n<cur&&n!==3;
       return `<li${n===cur?' aria-current="step"':''}${done?' class="done"':''}><span>${done?'✓':'①②③④'[i]} <span class="f">${f}</span><span class="s">${s}</span></span></li>`;}).join('');
   }
-  // 보스 카드 = 탭: 리더 초상 · 편성 n/4 · 점수(+클리어율)만. 실행 못 하는 이유(4명 필요 등)도 여기 한 낱말로.
+  // 카드 보강 줄(결과가 있을 때만, 값 없는 줄은 생략): 난이도 태그 + 반대 점수 / 보스 깎음 % / 브레이크 이름·레벨.
+  // 4번째 칸(그웬 위 말풍선)이 높아 카드도 같이 커지므로 아래 상세 결과의 핵심 값을 한 줄씩 짧게 보여 줌.
+  function moreHtml(r){
+    if(r.status!=='done')return '';
+    const other=r.other!=null?`<span>${r.mode==='top'?'평균':'상위'} ${num(r.other)}</span>`:'';
+    const lines=[
+      r.level!=null||other?`<span class="cg-more-line" data-cg-more="level">${r.level!=null?`<span class="tag cg-lv">난이도 ${esc(r.level)}</span>`:''}${other}</span>`:'',
+      r.frac!=null?`<span class="cg-more-line" data-cg-more="frac">보스 깎음 ${pct(r.frac)}%</span>`:'',
+      r.brk==='auto'?`<span class="cg-more-line" data-cg-more="brk">브레이크 자동 선택</span>`
+        :r.brk?.name?`<span class="cg-more-line" data-cg-more="brk" title="${esc(r.brk.name)}">브레이크 <b>${esc(r.brk.name)}</b>${r.brk.level!=null?` Lv.${esc(r.brk.level)}`:''}</span>`:''].filter(Boolean);
+    return lines.length?`<span class="cg-more" aria-hidden="true">${lines.join('')}</span>`:'';
+  }
+  const moreLabel=r=>r.status!=='done'?'':[r.level!=null?`난이도 ${r.level}`:'',r.other!=null?`${r.mode==='top'?'평균':'상위'} ${num(r.other)}점`:'',
+    r.frac!=null?`보스 깎음 ${pct(r.frac)}%`:'',r.brk==='auto'?'브레이크 자동 선택':r.brk?.name?`브레이크 ${r.brk.name}${r.brk.level!=null?' 레벨 '+r.brk.level:''}`:''].filter(Boolean).join(' · ');
+  // 보스 카드 = 탭: 리더 초상 · 편성 n/4 · 점수(+클리어율) · 보강 줄. 실행 못 하는 이유(4명 필요 등)도 여기 한 낱말로.
   function tabsHtml(m,interactive=true){
     return m.bosses.map(b=>{
       const d=m.draft(b.key),n=m.count(b.key),lead=m.by.get(d.leader),sel=b.key===m.active,r=m.res(b.key),done=m.done(b.key),bad=n===4&&m.blocks(b.key).length>0;
       const low=r.clear!=null&&r.clear<LOW_CLEAR,clear=r.clear!=null?`클리어 ${pct(r.clear)}%`:'';
       const wait=n===0?'비어 있음 · 눌러서 편성':n<4?'편성 중':'확인 전';
       const need=n<4?'4명 필요':bad?'고칠 곳 있음':'';
-      const label=[`${b.name} 팀`,`편성 ${n}/4`,need,lead?'리더 '+lead.name:'',done?`${num(r.score)}점${clear?', '+clear+(low?'(낮음)':''):''}`:n===0?'비어 있음, 눌러서 편성':n<4?'':'확인 전'].filter(Boolean).join(' · ');
+      const label=[`${b.name} 팀`,`편성 ${n}/4`,need,lead?'리더 '+lead.name:'',done?`${num(r.score)}점${clear?', '+clear+(low?'(낮음)':''):''}`:n===0?'비어 있음, 눌러서 편성':n<4?'':'확인 전',moreLabel(r)].filter(Boolean).join(' · ');
       const open=interactive?`<button type="button" role="tab" class="cg-tab" id="cd-tab-${esc(b.key)}" data-cd-boss="${esc(b.key)}" aria-selected="${sel}" aria-controls="cd-panel" tabindex="${sel?0:-1}" aria-label="${esc(label)}">`:`<section class="cg-tab" aria-label="${esc(label)}">`;
       return open
         +`<span class="cg-face" aria-hidden="true">${lead?`<img class="lead" src="${esc(lead.img)}" alt="">${CROWN}`:'<span class="vacant">＋</span>'}</span>`
         +`<span class="cg-head" aria-hidden="true">${m.attr(b.element)}<b><span class="cg-name-full">${esc(b.name)}</span><span class="cg-name-short">${esc(shortOf(b))}</span></b></span>`
         +`<span class="cg-count" aria-hidden="true"><span class="lbl">편성 </span>${n}/4${need?` · <span class="need">${need}</span>`:''}</span>`
-        +`<span class="cg-score${done?'':' none'}" aria-hidden="true">${done?`<b>${num(r.score)}</b>${clear?low?`<small class="cg-clear-low" title="클리어 확률이 낮음">⚠ ${clear}</small>`:`<small>${clear}</small>`:''}`:`<b>${wait}</b>`}</span>${interactive?'</button>':'</section>'}`;}).join('');
+        +`<span class="cg-score${done?'':' none'}" aria-hidden="true">${done?`<b>${num(r.score)}</b>${clear?low?`<small class="cg-clear-low" title="클리어 확률이 낮음">⚠ ${clear}</small>`:`<small>${clear}</small>`:''}`:`<b>${wait}</b>`}</span>${moreHtml(r)}${interactive?'</button>':'</section>'}`;}).join('');
   }
-  // 4번째 칸: 그웬이 말풍선으로 합계를 알려 줌. 말풍선(갈아 끼우는 조각)과 그웬 자리(GwenStage 가 채움)는 형제라 다시 그려도 그웬은 그대로.
+  // 4번째 칸: 그웬이 말풍선으로 합계를 알려 줌. 다른 결과 화면과 같은 규칙 — 말풍선은 그웬 머리 위, 꼬리는 아래로 그웬을 가리킴(모든 폭).
+  // 말풍선(갈아 끼우는 조각)과 그웬 자리(GwenStage 가 채움)는 형제라 다시 그려도 그웬은 그대로.
   // 그웬 한마디(합계 위): 결과에 따라 고름. 약한 팀이 있으면 그 팀을, 다 튼튼하면 자신감을, 아니면 운을 언급.
   function sayLine(m){
     if(m.total==null)return '아직 조사 중인 팀이 있어';
@@ -77,7 +92,7 @@
     return '클리어는 운이 좀 필요해';
   }
   function sayHtml(m,attr){const all=m.total!=null;return `<span class="cg-say-line">${sayLine(m)}</span><span class="cg-say-sum">합계 <b class="cg-total-num${all?'':' pending'}" role="status" aria-live="polite" ${attr}>${all?num(m.total):`미완료 · ${m.doneCount}/${m.bosses.length}`}</b>${all?'<span>!</span>':''}</span>`;}
-  const totalBox=(say,gwen)=>`<aside class="cg-total cg-say" aria-label="3팀 합계"><p class="gwen-bubble cg-say-bubble"${say}</p><div class="cg-say-gwen">${gwen}</div></aside>`;
+  const totalBox=(say,gwen)=>`<aside class="cg-total cg-say" aria-label="3팀 합계"><p class="gwen-bubble cg-say-bubble" data-tail="down"${say}</p><div class="cg-say-gwen">${gwen}</div></aside>`;
   // 결과 요약(자동 3보스 찾기). gwen = 그웬 결과 자리 표시자(GwenStage.slot) — 없으면 말풍선만.
   function summaryHtml(view,opts={}){const m=read(view);return `<div class="cg-top cg-summary"><div class="cg-tabs" data-k="cs-boss-summary">${tabsHtml(m,false)}</div>${totalBox(`>${sayHtml(m,'data-k="cs-sum"')}`,opts.gwen||'')}</div>`;}
   // 팀별 난이도는 왼쪽 «이 팀 난이도»에서만 고름(11/19 PM: 3팀 일괄 난이도 줄 제거)
@@ -284,6 +299,6 @@
     paint(host);
     return host;
   }
-  const api={render,html,summaryHtml,shortOf,SCREEN,LABELS,LOW_CLEAR};
+  const api={render,html,summaryHtml,shortOf,moreHtml,SCREEN,LABELS,LOW_CLEAR};
   if(node)module.exports=api;else root.CosmoDirectUI=api;
 })(typeof window!=='undefined'?window:globalThis);

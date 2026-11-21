@@ -134,6 +134,14 @@ function summaries(c=C){
   assert.equal(c.summary(s,rs,'top').total,63);
   for(const mean of [null,undefined,NaN,Infinity,'20']){sum=c.summary(s,{...rs,gamma:{cosmo:{mean}}});assert.equal(sum.done,2);assert.equal(sum.total,null);}
   const partial=change(c,s,'alpha',{type:'remove',slot:0});assert.equal(c.summary(partial,rs).done,2);
+  // Card detail lines: level, the OTHER score (mean<->top), boss cut, break. Only for done teams; missing values stay absent.
+  let b=change(c,s,'alpha',{type:'brk',value:{name:'Skill',level:4}});b=change(c,b,'beta',{type:'brk',value:'auto'});b=change(c,b,'gamma',{type:'brk',value:null});
+  const fr={...rs,alpha:{cosmo:{...rs.alpha.cosmo,frac:0.75}}};
+  sum=c.summary(b,fr,'top');const a=sum.teams.alpha;
+  assert.equal(JSON.stringify([a.mode,a.level,a.other,a.frac,a.brk]),JSON.stringify(['top',b.teams.alpha.level,10.5,0.75,{name:'Skill',level:4}]));
+  assert.equal(sum.teams.beta.brk,'auto');assert.equal(sum.teams.gamma.brk,null);assert(!('frac' in sum.teams.beta),'no frac -> no field');
+  sum=c.summary(b,fr);assert.equal(sum.teams.alpha.mode,'mean');assert.equal(sum.teams.alpha.other,20.25);
+  sum=c.summary(b,{alpha:fr.alpha});assert(!('level' in sum.teams.beta)&&!('brk' in sum.teams.beta),'not done -> no detail');
 }
 test('summary mean/top, raw sums, zero, partial/null/nonfinite results, done/need',()=>summaries());
 function imported(c=C){
@@ -180,6 +188,8 @@ const mutations=[
   ['remove leader','const party=P.serialize(d,','d.leader=d.slots[0].key;const party=P.serialize(d,',growthJobs],
   ['ignore grown','const values=P.powers(d,','d.slots.forEach(m=>m.grown=false);const values=P.powers(d,',growthJobs],
   ['publish partial total','need>0&&done===need?total:null','total',summaries],
+  ['detail other score not swapped',"other=mode==='top'?'mean':'top'","other=mode==='top'?'top':'mean'",summaries],
+  ['detail on unfinished teams','if(complete){const o=teams[boss]','if(true){const o=teams[boss]',summaries],
   ['wrong done count','total+=score;done++','total+=score;done+=0',summaries],
   ['discard search order','Array.isArray(t.order)?t.order:t.keys','t.keys',imported],
   ['leak state through storage','return {v:VERSION,seasonId:typeof','return {...state,v:VERSION,seasonId:typeof',privacy],

@@ -144,9 +144,10 @@
  .cg-gwen-slot .gwen-lane-actor,.cg-gwen-slot .gwen-lane-poke{width:112px;height:112px}
 }
 /* 4번째 칸(합계): 그웬이 말풍선으로 합계를 알려 줌 — 자동 3보스 찾기 결과·직접 편성 공통.
-   그웬(카드 높이 정도) 왼쪽 · 말풍선 오른쪽, 꼬리는 그웬 쪽. 좁은 화면에서도 같은 한 줄. */
-.cg-say{flex-direction:row-reverse;align-items:center;justify-content:center;gap:12px;padding:4px 12px;overflow:hidden}
-.cg-say-bubble{--tx:-.5px;--ty:50%;--tr:135deg;transform-origin:0 50%;animation:none;min-width:0;max-width:100%;padding:6px 14px;font-size:13px;font-weight:700;color:var(--mut)}
+   다른 결과 화면(추천 결과 그웬)과 같은 규칙: 말풍선은 그웬 머리 위, 꼬리는 아래로 그웬을 가리킴. 모든 폭에서 세로 배치라
+   넓은 화면에서도 옆으로 넘쳐 잘리지 않음. 칸이 높아진 만큼 보스 카드(.cg-more)에 핵심 값 줄을 더함. */
+.cg-say{flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:10px 12px 4px;overflow:hidden}
+.cg-say-bubble{--tail:50%;--tx:var(--tail);--ty:calc(100% + .5px);--tr:45deg;transform-origin:var(--tail) 100%;animation:none;flex:none;min-width:0;max-width:100%;padding:6px 14px;font-size:13px;font-weight:700;color:var(--mut)}
 .cg-say-bubble .cg-total-num{margin-left:4px;font-size:20px;line-height:26px;color:var(--fg)}
 .cg-say-bubble .cg-total-num.pending{font-size:15px;color:var(--warn)}
 .cg-say-bubble .cg-total-num+span{font-size:20px;color:var(--fg)}
@@ -156,14 +157,27 @@
 .cg-say .gwen-result-lane .gwen-lane-actor,.cg-say .gwen-result-lane .gwen-lane-poke{width:96px;height:96px}
 .cg-say .gwen-result-lane .gwen-lane-actor{top:2px}
 .cg-say .gwen-lane-speech{display:none}
-/* 그웬이 없을 때(결과 전)는 꼬리 없는 말풍선만 */
+/* 그웬이 없을 때(결과 전·2위 이하)는 꼬리 없는 말풍선만 */
+.cg-say:not(:has(.gwen-lane:not([hidden]))){padding-bottom:10px}
 .cg-say:not(:has(.gwen-lane:not([hidden]))) .cg-say-gwen{display:none}
 .cg-say:not(:has(.gwen-lane:not([hidden]))) .cg-say-bubble::after{display:none}
+/* 보스 카드 보강 줄: 난이도 태그+반대 점수 / 보스 깎음 / 브레이크. 한 줄씩, 넘치면 말줄임. */
+.cg-more{grid-area:more;display:flex;flex-direction:column;gap:2px;min-width:0;margin-top:4px;font-size:12px;line-height:18px;color:var(--mut)}
+.cg-more-line{display:flex;align-items:center;gap:6px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cg-more-line b{font-weight:600;color:var(--fg);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.cg-more .cg-lv{margin:0;padding:0 6px;font-size:11px;line-height:17px}
+.cg-tab:has(.cg-more){grid-template-areas:"face head" "face count" "face score" "face more"}
+.cg-tab{align-content:center}
 /* 클리어율이 낮은 팀(LOW_CLEAR 미만) */
 .cg-score small.cg-clear-low{color:var(--warn);font-weight:bold}
 @media(max-width:760px){
- .cg-say{gap:10px;padding:4px 10px}
+ .cg-say{gap:8px;padding:8px 10px 4px}
  .cg-say-gwen{width:80px}
+ /* 직접 편성 탭(좁은 3칸 세로)은 보강 줄을 숨김 — 세로로 쌓는 결과 요약 카드에서만 보임 */
+ .cg-tabs:not(.cg-summary *) .cg-more{display:none}
+ .cg-tab:not(.cg-summary *):has(.cg-more){grid-template-areas:"head" "face" "count" "score"}
+ .cg-summary .cg-tab:has(.cg-more){grid-template-areas:"face head" "face count" "face score" "face more"}
+.cg-tab{align-content:center}
  .cg-say .cg-say-gwen .gwen-result-lane{height:84px}
  .cg-say .gwen-result-lane .gwen-lane-actor,.cg-say .gwen-result-lane .gwen-lane-poke{width:80px;height:80px}
  .cg-say-bubble .cg-total-num,.cg-say-bubble .cg-total-num+span{font-size:18px}
@@ -177,5 +191,5 @@
  .cg-summary .cg-score b{font-size:16px}.cg-summary .cg-score small{font-size:12px}
 }
 .cg-say-bubble .cg-say-line{display:block;margin-bottom:2px;font-size:12px;font-weight:600;color:var(--fg);word-break:keep-all;white-space:normal;max-width:100%}
-.cg-say-bubble{display:flex;flex-direction:column;align-items:flex-start;text-align:left;max-width:calc(100% - 108px)}
+.cg-say-bubble{display:flex;flex-direction:column;align-items:center;text-align:center}
 .cg-say-bubble .cg-say-sum{white-space:nowrap}

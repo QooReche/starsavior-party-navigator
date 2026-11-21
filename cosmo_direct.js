@@ -117,6 +117,13 @@
       const complete=full&&Number.isFinite(score);
       teams[boss]={status:complete?'done':members.length?'ready':'empty',score:complete?score:null,
         clear:complete&&Number.isFinite(st.clear??results[boss].clear)?(st.clear??results[boss].clear):null};
+      // 카드 보강 줄(있을 때만): 난이도·반대 점수(순위 기준이 평균이면 상위, 아니면 평균)·보스 깎음·브레이크.
+      if(complete){const o=teams[boss],other=mode==='top'?'mean':'top',b=t.draft.brk;
+        o.mode=mode==='top'?'top':'mean';
+        if(Number.isInteger(t.level))o.level=t.level;
+        if(Number.isFinite(st[other]))o.other=st[other];
+        if(Number.isFinite(st.frac))o.frac=st.frac;
+        o.brk=b==='auto'?'auto':b&&typeof b.name==='string'?{name:b.name,level:Number.isInteger(b.level)?b.level:null}:null;}
       if(complete){total+=score;done++;}
     }
     const need=Object.keys(teams).length;

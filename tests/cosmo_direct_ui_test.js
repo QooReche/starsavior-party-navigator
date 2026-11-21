@@ -254,6 +254,38 @@ function suite(U){
     assert.equal(t.q('.cg-say-line').textContent,'다 해볼 만해, 자신 있어!');
     assert.match(t.q('[data-cd-result]').textContent,/38예상 턴/);assert.equal(t.qa('.cg-steps li.done').length,4);assert(!t.q('.cg-steps [aria-current=step]'));
     assert(t.q('[data-cd-lane-slot]')===lane&&t.q('[data-cd-gwen-slot]')===gwen&&gwen.children.length===1,'다시 그려도 그웬 자리(와 그 안에 붙인 것)는 그대로');
+    // 보스 카드 보강 줄: 난이도 태그+반대 점수 / 보스 깎음 / 브레이크. 값이 없으면 그 줄만 생략, 결과 전 카드엔 없음.
+    assert(!t.q('#cd-tab-mogulus .cg-more'),'보강 값이 하나도 없으면 줄 없음');
+    Object.assign(v.summary.teams.mogulus,{mode:'top',level:7,other:1100000,frac:.913,brk:{name:'특이점 <관측>',level:4}});
+    Object.assign(v.summary.teams.baskerville,{mode:'mean',level:3,brk:'auto'});
+    Object.assign(v.summary.teams.disparity,{frac:.5,brk:{name:'스타피어서',level:null}});
+    U.render(t.host,v,t.h);
+    const more=k=>t.qa(`#cd-tab-${k} [data-cg-more]`).map(e=>e.getAttribute('data-cg-more')+':'+e.textContent);
+    assert.deepEqual(more('mogulus'),['level:난이도 7평균 1,100,000','frac:보스 깎음 91%','brk:브레이크 특이점 <관측> Lv.4']);
+    assert.equal(t.q('#cd-tab-mogulus .cg-lv')?.textContent,'난이도 7','난이도는 태그');
+    assert.deepEqual(more('baskerville'),['level:난이도 3','brk:브레이크 자동 선택'],'점수·깎음 없으면 그 줄(조각) 생략');
+    assert.deepEqual(more('disparity'),['frac:보스 깎음 50%','brk:브레이크 스타피어서'],'난이도·반대 점수 없으면 첫 줄 생략, 레벨 없으면 Lv 생략');
+    v.summary.teams.disparity.other=5;U.render(t.host,v,t.h);assert.deepEqual(more('disparity')[0],'level:상위 5','순위 기준이 평균이면 반대 점수는 상위');
+    assert.match(t.q('#cd-tab-mogulus').getAttribute('aria-label'),/난이도 7 · 평균 1,100,000점 · 보스 깎음 91% · 브레이크 특이점 <관측> 레벨 4$/);
+    assert.match(t.q('#cd-tab-mogulus').textContent,/1,182,400클리어 90%난이도 7/,'기존 점수·클리어율은 그대로, 보강 줄은 그 아래');
+    assert(t.q('#cd-tab-mogulus .cg-face img.lead')&&t.q('#cd-tab-mogulus .cg-count'),'리더 초상·편성 유지');
+    v.summary.teams.disparity={status:'ready',level:9,frac:.9,brk:{name:'x',level:1}};U.render(t.host,v,t.h);
+    assert(!t.q('#cd-tab-disparity .cg-more'),'결과 없는 카드엔 보강 줄 없음');
+  }
+  // 8-2. 4번째 칸 말풍선은 그웬 머리 위(꼬리 아래) — 다른 결과 화면과 같은 규칙, 찾기 결과·직접 편성 공통 부품
+  {
+    const t=mount(U,fixture()),bub=t.q('.cg-say-bubble'),all=t.host.all();
+    assert.equal(bub.getAttribute('data-tail'),'down');assert(all.indexOf(bub)<all.indexOf(t.q('[data-cd-gwen-slot]')),'말풍선이 그웬보다 먼저(위)');
+    const sum=new El('div');sum.innerHTML=U.summaryHtml(fixture(),{gwen:'<div data-gwen-slot="cosmoSearch-result"></div>'});
+    const sb=sum.querySelector('.cg-say-bubble'),sall=sum.all();
+    assert.equal(sb.getAttribute('data-tail'),'down');assert(sall.indexOf(sb)<sall.indexOf(sum.querySelector('[data-gwen-slot="cosmoSearch-result"]')));
+    const css=fs.readFileSync(path.join(__dirname,'..','cosmo_direct.css'),'utf8').replace(/\/\*[\s\S]*?\*\//g,'');
+    const rule=sel=>[...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(m=>m[1].trim()===sel).map(m=>m[2]).join(';');
+    assert.match(rule('.cg-say'),/flex-direction:column(;|$)/,'세로: 말풍선 위·그웬 아래(모든 폭)');
+    assert.doesNotMatch(css,/\.cg-say\{[^}]*flex-direction:row/,'어느 폭에서도 옆 배치로 돌아가지 않음');
+    assert.match(rule('.cg-say-bubble'),/--ty:calc\(100% \+ \.5px\);--tr:45deg/,'꼬리는 아래(그웬 쪽)');
+    assert.doesNotMatch(css,/--tr:135deg/,'옆(왼쪽) 꼬리 없음');
+    assert.doesNotMatch(css,/calc\(100% - 108px\)/,'그웬 옆 자리만큼 말풍선을 줄이던 규칙 없음');
   }
   // 9. 화면 안 상태: 도움말 펼침, 검색, 고르기 펼침(좁은 화면)
   {
@@ -300,6 +332,13 @@ const MUTATIONS=[
   ['브레이크 «장착 안 함» 이 null 이 아님',"v===''?null:","v===''?'auto':"],
   ['다시 그릴 때 그웬 자리까지 갈아엎음',"if(!host.querySelector('[data-cd-root]')){","if(true){"],
   ['결과 칸을 결과 전에도 보임',"data-cd-result${a.result?'':' hidden'}","data-cd-result"],
+  ['보강 줄을 카드에 안 붙임',"`<b>${wait}</b>`}</span>${moreHtml(r)}","`<b>${wait}</b>`}</span>"],
+  ['보강 줄을 결과 전 카드에도 붙임',"if(r.status!=='done')return '';","if(false)return '';"],
+  ['보강: 브레이크 레벨 안 보임',"${r.brk.level!=null?` Lv.${esc(r.brk.level)}`:''}",""],
+  ['보강: 반대 점수 이름 뒤바뀜',"`<span>${r.mode==='top'?'평균':'상위'}","`<span>${r.mode==='top'?'상위':'평균'}"],
+  ['보강: 깎음 줄 없을 때도 빈 줄',"r.frac!=null?`<span class=\"cg-more-line\" data-cg-more=\"frac\">보스 깎음 ${pct(r.frac)}%</span>`:''","`<span class=\"cg-more-line\" data-cg-more=\"frac\">보스 깎음 ${r.frac!=null?pct(r.frac):''}%</span>`"],
+  ['말풍선 꼬리 표시 뺌','cg-say-bubble" data-tail="down"','cg-say-bubble"'],
+  ['말풍선이 그웬 아래',null,src=>{const a='<p class="gwen-bubble cg-say-bubble" data-tail="down"${say}</p>',b='<div class="cg-say-gwen">${gwen}</div>';assert(src.includes(a+b));return src.replace(a+b,b+a);}],
   ['이름을 HTML 로 그대로 넣음',"const esc=s=>String(s??'').replace(","const esc=s=>String(s??'');const esc0=s=>String(s??'').replace("],
 ];
 if(!process.argv.includes('--no-mutations')){

@@ -76,7 +76,17 @@ def flow(browser,base,width):
     assert abs(bounds['left']-bounds['right'])<2,bounds
     # 결과 그웬은 합계 칸(4번째 칸) 안, 말풍선이 합계를 말함 — 자동 찾기 결과 요약과 같은 모양
     assert panel.locator('.cg-top .cg-say [data-cd-gwen-slot] .gwen-lane-actor').count()==1
-    say=panel.locator('.cg-say-bubble').text_content();assert say=='합계 33,000!',say
+    say=panel.locator('.cg-say-bubble').text_content();assert say=='다 해볼 만해, 자신 있어!합계 33,000!',say
+    # 말풍선은 그웬 머리 위(꼬리 아래) — 다른 결과 화면과 같은 규칙. 칸 밖으로 잘리지 않고 말풍선 글자도 안 잘림.
+    geo=panel.locator('.cg-say').evaluate("""el=>{const r=e=>e.getBoundingClientRect(),c=r(el),b=r(el.querySelector('.cg-say-bubble')),g=r(el.querySelector('[data-cd-gwen-slot] img'));
+      return {gap:g.top-b.bottom,mid:Math.abs((b.left+b.right)/2-(g.left+g.right)/2),inside:b.left>=c.left-.5&&b.right<=c.right+.5&&b.top>=c.top-.5&&g.bottom<=c.bottom+1,
+        clipped:[...el.querySelectorAll('.cg-say-bubble,.cg-say-bubble *')].some(e=>e.scrollWidth>e.clientWidth+1),
+        tail:getComputedStyle(el.querySelector('.cg-say-bubble'),'::after').rotate}}""")
+    assert geo['gap']>=-8 and geo['mid']<=12 and geo['inside'] and not geo['clipped'] and geo['tail']=='45deg',geo
+    # 결과가 있는 카드는 보강 줄(난이도 태그 등)을 가짐 — 좁은 직접 편성 탭(760px 이하)에서는 숨김
+    more=panel.locator('#cd-tab-alpha .cg-more, .cg-tab .cg-more').first
+    assert more.count()==1 and ('난이도' in more.text_content()),more.count()
+    assert more.is_visible()==(width>760),(width,more.is_visible())
     announcements=panel.locator('[data-gwen-report]').get_attribute('data-announcements')
     p.evaluate('cdPaint();cdPaint();directRefresh()')
     assert panel.locator('[data-gwen-report]').get_attribute('data-announcements')==announcements
