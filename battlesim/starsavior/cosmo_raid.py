@@ -250,8 +250,7 @@ class Controller(BaseController):
         self._punish_q = []           # punish: (대상, 생성 때 정한 공격자 쪽 값) — 반격·반응 뒤 flush_damage 에서 처리
 
     def before_cast(self, u, sk, ctx):
-        if (u is self.boss and self.cfg['model'] == 'belgras' and sk.slot == '궁극기'
-                and self.b.mc['cosmo_hyper_true_target'] == 'self'):
+        if (u is self.boss and self.cfg['model'] == 'belgras' and sk.slot == '궁극기'):
             p = self.cfg['bel']['hyperTrueDamage']
             n = min(self._stacks(u, ROT), p['max'])
             if n > 0:
@@ -537,8 +536,7 @@ class Controller(BaseController):
             if 'strip' in fx:
                 for x in hit:
                     if not x.dead and not b._harm_evaded(x, ctx):
-                        names = [n for n, e in x.eff.items() if e.category == 'buff' and not e.fixed
-                                 and b._dispel_shield_ok(e)]
+                        names = [n for n, e in x.eff.items() if e.category == 'buff' and not e.fixed]
                         if names:
                             b._dispel_n_ordered(x, names, fx['strip']['count'])
                             b.dirty(x)
@@ -714,13 +712,3 @@ class Controller(BaseController):
                     b.set_gauge(boss, boss.gauge + bm['passive1']['thornHitGaugePct'] * 100)    # 패시브1: 가시 상태 적의 단일 공격에 피격 후 게이지 +20%
         elif a.side == 0 and v.side == 1 and self.cfg['model'] == 'belgras' and getattr(v.d, 'cosmo', None) and v.d.cosmo.get('model') == 'minion':
             self._minion_hit(a, v)
-        elif (a is boss and v.side == 0 and self.cfg['model'] == 'belgras' and sk is not None and sk.slot == '궁극기'
-              and b.mc['cosmo_hyper_true_target'] == 'enemy_all'):
-            n = min(self._stacks(boss, ROT), self.cfg['bel']['hyperTrueDamage']['max'])
-            if n > 0:
-                damage = self.cfg['bel']['hyperTrueDamage']['perStack'] * n
-                if b.mc['fixed_true_formula'] == 'client':
-                    b.fixed_true_damage(boss, v, damage)
-                else:
-                    b.apply_damage(boss, v, damage, 'true', shieldable=True)
-                self.stats['true_damage_hits'] += 1

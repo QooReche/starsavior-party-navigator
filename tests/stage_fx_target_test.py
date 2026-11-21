@@ -10,7 +10,6 @@ import unittest
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.insert(0, ROOT)
 import battlesim.api as api                                      # noqa: E402
-from battlesim.rules import MC_RULES                             # noqa: E402
 
 STAGE = 'rush/공허말살자/공허말살자 Ⅰ'
 PARTY = ['emily', 'gwen', 'fei']        # 달 디펜더 / 별 스트라이커 / 달 어쌔신

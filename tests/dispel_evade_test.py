@@ -26,17 +26,14 @@ def _case(mode, evaded):
     owner = NS(side=0, name='o')
     x = U(side=1, name='x', eff={buff.name: buff}, hit_evaded=False)
     ctx = NS(evaded={x} if evaded else set(), src=owner, skill=NS(tg='적 단일', all=False), targets=[x], hit_targets=[])
-    b = NS(mc=dict(MC_OPTS, dispel_evade=mode), rule_hits=defaultdict(int), dirty=lambda u: None,
+    b = NS(mc=dict(MC_OPTS), rule_hits=defaultdict(int), dirty=lambda u: None,
            R=lambda side: random.Random(1), _fired=lambda u: None, log=lambda **k: None,
            resolve=lambda o, expr, c, kind=None: [x], roll_hit=lambda *a: True, _cur_line=None)
-    for f in ('_dispel_ok', '_dispel_cand', '_dispel_shield_ok', '_dispel_n_ordered', '_evade_rejects', '_evade_gate'):
+    for f in ('_dispel_ok', '_dispel_cand', '_dispel_n_ordered', '_evade_rejects', '_evade_gate'):
         setattr(b, f, (lambda g: (lambda *a: g(b, *a)))(getattr(Battle, f)))
     Battle.run_special(b, owner, NS(raw=''), ctx, '스킬 대상에게 〈버프 해제〉 (강화효과 해제) {효과 적중 판정}')
     return x, b
 
-
-def test_default_client():
-    assert MC_OPTS['dispel_evade'] == 'client'
 
 
 def test_evaded_keeps_buff_client():
@@ -44,13 +41,9 @@ def test_evaded_keeps_buff_client():
     assert '공격력 증가' in x.eff and b.rule_hits['dispel_evade'] == 1
 
 
-def test_evaded_loses_buff_legacy():
-    x, b = _case('off', True)
-    assert '공격력 증가' not in x.eff and b.rule_hits['dispel_evade'] == 0
-
 
 def test_not_evaded_dispelled_both():
-    for mode in ('client', 'off'):
+    for mode in ('client',):
         x, _ = _case(mode, False)
         assert '공격력 증가' not in x.eff
 

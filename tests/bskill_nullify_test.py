@@ -9,7 +9,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 import simkit as P                                               # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 
 
 def _battle(name, mc, roles=('스트라이커',)):
@@ -22,7 +21,7 @@ def _battle(name, mc, roles=('스트라이커',)):
 
 
 def _nullify(mode):
-    b = _battle('차원 강습', {'bskill_nullify': mode})
+    b = _battle('차원 강습', {})
     f = b.foes[0]
     P.give(f, '스킬 피해 무효')
     P.give(f, '수면', harmful=True, dur=2)
@@ -31,9 +30,6 @@ def _nullify(mode):
     return b, f, hp
 
 
-def test_default_client():
-    assert MC_OPTS['bskill_nullify'] == 'client'
-
 
 def test_orbital_nullified_client():
     b, f, hp = _nullify('client')
@@ -41,10 +37,6 @@ def test_orbital_nullified_client():
     assert '수면' not in f.eff                                   # 동기화 피해 기준 수면 해제는 그대로
     assert b.rule_hits['bskill_nullify'] == 1
 
-
-def test_orbital_ignores_nullify_legacy():
-    b, f, hp = _nullify('off')
-    assert f.hp < hp and '스킬 피해 무효' in f.eff
 
 
 def test_invincible_first_keeps_nullifier():
@@ -58,7 +50,7 @@ def test_invincible_first_keeps_nullifier():
 
 
 def _gauge(mode):
-    b = _battle('스타피어서', {'gauge_up_immune': mode}, roles=('스트라이커', '스트라이커'))
+    b = _battle('스타피어서', {}, roles=('스트라이커', '스트라이커'))
     a0, a1 = b.allies
     a1.gauge = 1000.0
     P.give(a1, '억류(해제불가)', harmful=True, dur=3)
@@ -68,7 +60,6 @@ def _gauge(mode):
 
 def test_orbital_gauge_blocked_by_immune_client():
     assert _gauge('client').gauge == 1000.0
-    assert _gauge('off').gauge > 1000.0
 
 
 if __name__ == '__main__':

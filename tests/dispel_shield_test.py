@@ -23,10 +23,10 @@ def _eff(name, shield=0.0, fixed=False, props=None):
 
 
 def _battle(mode, target):
-    b = NS(mc=dict(MC_OPTS, dispel_shield=mode), rule_hits=defaultdict(int), dirty=lambda u: None,
+    b = NS(mc=dict(MC_OPTS), rule_hits=defaultdict(int), dirty=lambda u: None,
            R=lambda side: random.Random(1), _fired=lambda u: None, log=lambda **k: None)
     b.resolve = lambda owner, expr, ctx, kind=None: [target]
-    for f in ('_dispel_ok', '_dispel_cand', '_dispel_shield_ok', '_dispel_n_ordered'):
+    for f in ('_dispel_ok', '_dispel_cand', '_dispel_n_ordered'):
         setattr(b, f, (lambda g: (lambda *a: g(b, *a)))(getattr(Battle, f)))
     return b
 
@@ -38,9 +38,6 @@ def _target():
     return x
 
 
-def test_default_client():
-    assert MC_OPTS['dispel_shield'] == 'client'
-
 
 def test_dispel_all_removes_shield_client():
     x = _target()
@@ -50,24 +47,12 @@ def test_dispel_all_removes_shield_client():
     assert b.rule_hits['dispel_shield'] == 1
 
 
-def test_dispel_all_keeps_shield_legacy():
-    x = _target()
-    b = _battle('skip', x)
-    Battle.run_special(b, x, NS(raw=''), None, '자신에게 〈버프 해제〉 (강화효과 해제)')
-    assert sorted(x.eff) == ['공허 방패(해제불가)', '보호막']
-    assert b.rule_hits['dispel_shield'] == 0
-
 
 def test_dispel_n_counts_shield_client():
     x = _target()
     b = _battle('client', x)
     Battle.run_special(b, x, NS(raw=''), None, '자신에게 (강화효과 해제) 효과 1개 해제')
     assert '보호막' not in x.eff and '공격력 증가' in x.eff    # 먼저 붙은 보호막이 1개 몫으로 지워짐
-    b2 = _battle('skip', _target())
-    x2 = _target()
-    b2.resolve = lambda owner, expr, ctx, kind=None: [x2]
-    Battle.run_special(b2, x2, NS(raw=''), None, '자신에게 (강화효과 해제) 효과 1개 해제')
-    assert '보호막' in x2.eff and '공격력 증가' not in x2.eff
 
 
 def test_shield_grant_marks_undispellable():

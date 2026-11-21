@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "9cc5adb204c68bc2",
+  "hash": "165e57256ba5f236",
   "history": [
-   {
-    "hash": "171b3e0cdbecac6c",
-    "reason": "반응 단일 대상 난수·자신 기준 보호막 클라 교정(reaction_single_target_rng·barrier_formula client) 병합. quick 보정 입력엔 적 반응·자신 기준 보호막 줄이 없음(4e82fab 기록), guild_sim 시즌 종료로 재생성 생략"
-   },
    {
     "hash": "c798d60da0c167ee",
     "reason": "2차 명중/수호/연쇄 교정(main 위 재정렬). 종료된 길드 방어전 시즌4 생성물이라 재생성 생략, 새 시즌 갱신 때 재생성. docs/allowlist_round2_1121.md"
@@ -41,16 +37,16 @@
    {
     "hash": "9cc5adb204c68bc2",
     "reason": "엔진 다이어트 4단계 4묶음: legacy 스위치 28개 삭제(값 불변·분기만 삭제). 기본값 결과는 diet·unify 기준선·광역 대조 바이트 일치"
+   },
+   {
+    "hash": "165e57256ba5f236",
+    "reason": "엔진 다이어트 4단계 5묶음: legacy 스위치 23개 삭제(값 불변·분기만 삭제). 기본값 결과는 diet·unify 기준선·광역 대조 바이트 일치"
    }
   ]
  },
  "quick": {
-  "hash": "9cc5adb204c68bc2",
+  "hash": "165e57256ba5f236",
   "history": [
-   {
-    "hash": "171b3e0cdbecac6c",
-    "reason": "반응 단일 대상 난수·자신 기준 보호막 클라 교정(reaction_single_target_rng·barrier_formula client) 병합. quick 보정 입력엔 적 반응·자신 기준 보호막 줄이 없음(4e82fab 기록), guild_sim 시즌 종료로 재생성 생략"
-   },
    {
     "hash": "c798d60da0c167ee",
     "reason": "2차 회피/수호/연쇄 교정(main 위 재정렬). 영향 335표본 각40판 재생성에서 보정 기준 clear>=0.5 판정 변경0(88dcc2b 기록), quick 계수 유지. docs/allowlist_round2_1121.md"
@@ -86,6 +82,10 @@
    {
     "hash": "9cc5adb204c68bc2",
     "reason": "엔진 다이어트 4단계 4묶음: legacy 스위치 28개 삭제(값 불변·분기만 삭제). 기본값 결과는 diet·unify 기준선·광역 대조 바이트 일치"
+   },
+   {
+    "hash": "165e57256ba5f236",
+    "reason": "엔진 다이어트 4단계 5묶음: legacy 스위치 23개 삭제(값 불변·분기만 삭제). 기본값 결과는 diet·unify 기준선·광역 대조 바이트 일치"
    }
   ]
  }

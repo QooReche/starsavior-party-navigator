@@ -11,12 +11,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit                            # noqa: E402
 from battlesim.mc import Ctx                                     # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 from battlesim.starsavior.parser import Line                     # noqa: E402
 
 
 def _run(mode, guard, effect='기절'):
-    b = battle([unit('a')], [unit('f')], mc={'cc_immune_buff': mode})
+    b = battle([unit('a')], [unit('f')], mc={})
     a, f = b.allies[0], b.foes[0]
     b.roll_hit = lambda *args: True
     if guard:
@@ -27,17 +26,11 @@ def _run(mode, guard, effect='기절'):
     return b, f
 
 
-def test_default_client():
-    assert MC_OPTS['cc_immune_buff'] == 'client'
-
 
 def test_stun_immune_blocks_client():
     b, f = _run('client', '기절 면역')
     assert '기절' not in f.eff and b.rule_hits['cc_immune_buff'] == 1
 
-
-def test_stun_immune_ignored_legacy():
-    assert '기절' in _run('off', '기절 면역')[1].eff
 
 
 def test_other_immune_does_not_block():

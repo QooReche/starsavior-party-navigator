@@ -19,8 +19,7 @@ from battlesim.rules import MC_OPTS, MC_RULES      # noqa: E402
 SWITCHED = {'preemptive_defense': ('client_main', 'recognize'), 'toughness_elem': ('client', 'db'),
             'break_point_hits': ('window', 'once'), 'break_auto_blocked_cc': ('on', 'off'),
             # 11/05 전환(dot_formula·react_hist_unit·immune_force_apply)
-            'dot_formula': ('client', 'legacy'), 'react_hist_unit': ('unit', 'slot'),
-            'immune_force_apply': ('client', 'legacy')}
+            'dot_formula': ('client', 'legacy'), 'react_hist_unit': ('unit', 'slot')}
 # 옛 값 유지(기본 == legacy): 없음
 KEPT = {}
 CUBE = {'name': '큐브 과부하', 'level': 1}
@@ -64,7 +63,6 @@ class DefaultsTest(unittest.TestCase):
             self.assertEqual(MC_OPTS[k], v, k)
             self.assertEqual(MC_RULES[k]['legacy'], v, k)
             self.assertTrue(MC_RULES[k]['source'] and MC_RULES[k]['note'], k)
-        self.assertIn('legacy', MC_RULES['immune_force_apply']['alt'])
 
 
 class PreemptiveClientMainTest(unittest.TestCase):
@@ -289,16 +287,14 @@ class ImmuneForceTest(unittest.TestCase):
         force = '기절(해제불가)'
         self.assertIn(force, FORCE_BUFF_NAMES)
         got = {}
-        for mode in ('legacy', 'client'):
-            # se_force_apply(버프 강제 이름도 면역 통과, 2026-11-14)가 같은 장면을 통과시키므로 이 규칙만 보도록 끔
-            b = battle([unit('a')], [unit('f')], mc={'immune_force_apply': mode, 'se_force_apply': 'off'})
+        for mode in ('client',):   # immune_force_apply·se_force_apply 스위치 삭제(항상 클라)
+            b = battle([unit('a')], [unit('f')])
             a, f = b.allies[0], b.foes[0]
             give(f, '면역')
             b.add_effect(a, f, dict(eff(force), ignore_resist=False), Ctx(a, a, a.d.skills['기본기']))
             b.add_effect(a, f, dict(eff('표적'), ignore_resist=True), Ctx(a, a, a.d.skills['기본기']))
             got[mode] = (force in f.eff, '표적' in f.eff, b.rule_hits['immune_force_pass'])
-        self.assertEqual(got['legacy'], (False, True, 0))   # 현재: 저항 판정 약화만 거부
-        self.assertEqual(got['client'], (True, False, 1))   # 클라: 강제 적용 통과, 그 밖 비양성 거부
+        self.assertEqual(got['client'][:2], (True, False))   # 클라: 강제 적용 통과, 그 밖 비양성 거부
 
     def test_pass_list_covers_delete_and_mixed_rejected(self):
         """11/05 통과 목록(IsPositive|DeleteBuff|ForceApplyEffect): 버프 해제(DeleteBuff)는 통과, 혼재 이름은 거부"""
@@ -306,7 +302,7 @@ class ImmuneForceTest(unittest.TestCase):
         self.assertEqual(FORCE_BUFF_NAMES - mcmod.IMMUNE_PASS_NAMES, set())      # 기존 강제 강화 이름은 전부 포함
         self.assertNotIn('행동 게이지 감소', mcmod.IMMUNE_PASS_NAMES)      # 같은 이름에 거부 행(X)과 통과 행(X_FORCE) 혼재
         self.assertNotIn('공격력 감소', mcmod.IMMUNE_PASS_NAMES)
-        b = battle([unit('a')], [unit('f')], mc={'immune_force_apply': 'client'})
+        b = battle([unit('a')], [unit('f')])
         a, f = b.allies[0], b.foes[0]
         give(f, '면역')
         for name in ('버프 해제', '행동 게이지 감소'):
@@ -333,7 +329,7 @@ class ImmuneForceTest(unittest.TestCase):
 
     def test_wave_start_mark_passes(self):
         """전투·웨이브 시작 표식(unique_enemy+ignore_resist, 물폭탄 SE 강제 행)은 면역을 통과"""
-        b = battle([unit('a')], [unit('f')], mc={'immune_force_apply': 'client'})
+        b = battle([unit('a')], [unit('f')])
         a, f = b.allies[0], b.foes[0]
         give(f, '면역')
         b.add_effect(a, f, dict(eff('표시'), ignore_resist=True, unique_enemy=True), Ctx(a, a, None))

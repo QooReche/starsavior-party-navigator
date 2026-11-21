@@ -25,10 +25,10 @@ def _poison(n):
 
 
 def _run(mode, x, rest, order='client'):
-    b = NS(mc=dict(MC_OPTS, dispel_instance=mode, dispel_order=order), rule_hits=defaultdict(int), dirty=lambda u: None,
+    b = NS(mc=dict(MC_OPTS), rule_hits=defaultdict(int), dirty=lambda u: None,
            R=lambda side: random.Random(1), _fired=lambda u: None, log=lambda **k: None,
            resolve=lambda owner, expr, ctx, kind=None: [x])
-    for f in ('_dispel_ok', '_dispel_cand', '_dispel_shield_ok', '_dispel_n_ordered'):
+    for f in ('_dispel_ok', '_dispel_cand', '_dispel_n_ordered'):
         setattr(b, f, (lambda g: (lambda *a: g(b, *a)))(getattr(Battle, f)))
     Battle.run_special(b, x, NS(raw=''), None, rest)
     return b
@@ -41,12 +41,9 @@ def _unit():
     return NS(side=0, name='x', eff={'중독': poison, '속도 감소': slow})
 
 
-def test_default_client():
-    assert MC_OPTS['dispel_instance'] == 'client'
-
 
 def test_one_removes_one_instance_client():
-    for order in ('client', 'insertion'):      # 해제 순서 규칙(mc.dispel_order)과 무관하게 인스턴스 1개
+    for order in ('client',):      # 해제 순서 규칙(mc.dispel_order)과 무관하게 인스턴스 1개
         x = _unit()
         b = _run('client', x, '자신에게 (약화효과 해제) 효과 1개 해제', order)
         assert x.eff['중독'].stacks == 2 and len(x.eff['중독'].inst) == 2
@@ -55,16 +52,9 @@ def test_one_removes_one_instance_client():
         assert b.rule_hits['dispel_instance'] == 1
 
 
-def test_one_removes_whole_name_legacy():
-    for order in ('client', 'insertion'):
-        x = _unit()
-        b = _run('name', x, '자신에게 (약화효과 해제) 효과 1개 해제', order)
-        assert '중독' not in x.eff and '속도 감소' in x.eff
-        assert b.rule_hits['dispel_instance'] == 0
-
 
 def test_count_spills_to_next_effect_client():
-    for order in ('client', 'insertion'):
+    for order in ('client',):
         x = _unit()
         _run('client', x, '자신에게 (약화효과 해제) 효과 4개 해제', order)
         assert '중독' not in x.eff and '속도 감소' not in x.eff          # 중독 3 + 속도 감소 1
@@ -74,7 +64,7 @@ def test_count_spills_to_next_effect_client():
 
 
 def test_dispel_all_unchanged():
-    for mode in ('client', 'name'):
+    for mode in ('client',):
         x = _unit()
         _run(mode, x, '자신에게 〈디버프 해제〉 (약화효과 해제)')
         assert x.eff == {}

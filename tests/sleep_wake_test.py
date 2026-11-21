@@ -9,11 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit                            # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 
 
 def _hit(mode, nullify=False):
-    b = battle([unit('a')], [unit('f')], mc={'sleep_wake': mode})
+    b = battle([unit('a')], [unit('f')], mc={})
     a, f = b.allies[0], b.foes[0]
     give(f, '수면', harmful=True, dur=2)
     if nullify:
@@ -23,19 +22,12 @@ def _hit(mode, nullify=False):
     return b, f, hp
 
 
-def test_default_client():
-    assert MC_OPTS['sleep_wake'] == 'client'
-
 
 def test_hit_wakes_client():
     b, f, hp = _hit('client')
     assert f.hp < hp                                  # 실제로 맞음
     assert '수면' not in f.eff and b.rule_hits['sleep_wake'] == 1
 
-
-def test_hit_keeps_sleep_legacy():
-    b, f, hp = _hit('off')
-    assert f.hp < hp and '수면' in f.eff and b.rule_hits['sleep_wake'] == 0
 
 
 def test_nullified_hit_still_wakes_client():
@@ -50,7 +42,7 @@ def _orbital(mode):
     from simkit import unit5
     foe = unit5('boss', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
     foe.boss = True
-    b = battle([unit5('a')], [foe], break_skill={'name': '차원 강습', 'level': 5}, mc={'sleep_wake': mode})
+    b = battle([unit5('a')], [foe], break_skill={'name': '차원 강습', 'level': 5}, mc={})
     a, f = b.allies[0], b.foes[0]
     give(f, '수면', harmful=True, dur=2)
     b.break_points = 3
@@ -64,10 +56,6 @@ def test_orbital_damage_wakes_client():
     assert b.break_skill_uses == 1 and f.hp < hp                 # 오비탈이 실제로 피해를 줌
     assert '수면' not in f.eff and b.rule_hits['sleep_wake'] == 1
 
-
-def test_orbital_keeps_sleep_legacy():
-    b, f, hp = _orbital('off')
-    assert f.hp < hp and '수면' in f.eff
 
 if __name__ == '__main__':
     n = 0

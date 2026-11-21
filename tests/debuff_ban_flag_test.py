@@ -11,14 +11,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit                            # noqa: E402
 from battlesim.mc import Ctx                                     # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 from battlesim.starsavior.parser import Line                     # noqa: E402
 
 SHIEN = '시엔 고유 버프(해제불가)'
 
 
 def _apply(mode, guard):
-    b = battle([unit('a')], [unit('f')], mc={'debuff_ban_flag': mode})
+    b = battle([unit('a')], [unit('f')], mc={})
     a, f = b.allies[0], b.foes[0]
     if guard:
         give(f, guard, dur=10 ** 6)
@@ -28,22 +27,15 @@ def _apply(mode, guard):
     return b, f
 
 
-def test_default_table():
-    assert MC_OPTS['debuff_ban_flag'] == 'table'
-
 
 def test_shien_blocks_table():
     b, f = _apply('table', SHIEN)
     assert '공격력 감소' not in f.eff and b.rule_hits['debuff_ban_flag'] == 1
 
 
-def test_shien_ignored_legacy():
-    b, f = _apply('name', SHIEN)
-    assert '공격력 감소' in f.eff
-
 
 def test_plain_immune_and_none_both():
-    for mode in ('table', 'name'):
+    for mode in ('table',):
         assert '공격력 감소' not in _apply(mode, '면역')[1].eff
         assert '공격력 감소' in _apply(mode, None)[1].eff
 

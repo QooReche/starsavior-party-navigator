@@ -11,12 +11,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit                            # noqa: E402
 from battlesim.mc import Ctx                                     # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 from battlesim.starsavior.parser import Line                     # noqa: E402
 
 
 def _run(mode, held):
-    b = battle([unit('a')], [unit('f')], mc={'gauge_up_immune': mode})
+    b = battle([unit('a')], [unit('f')], mc={})
     a = b.allies[0]
     if held:
         give(a, '억류(해제불가)', harmful=True, dur=10 ** 6)
@@ -27,21 +26,15 @@ def _run(mode, held):
     return b, a
 
 
-def test_default_client():
-    assert MC_OPTS['gauge_up_immune'] == 'client'
-
 
 def test_detained_blocked_client():
     b, a = _run('client', True)
     assert a.gauge == 1000.0 and b.rule_hits['gauge_up_immune'] == 1
 
 
-def test_detained_applied_legacy():
-    assert _run('off', True)[1].gauge == 4000.0
-
 
 def test_free_unit_gains_both():
-    for mode in ('client', 'off'):
+    for mode in ('client',):
         assert _run(mode, False)[1].gauge == 4000.0
 
 

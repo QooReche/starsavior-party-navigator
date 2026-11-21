@@ -314,7 +314,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'dmg_cap_scope',
     'rekindle_apply',
     'fixed_true_formula', 'counter_slot_timing',
-    'buff_ban', 'heal_tie', 'barrier_depletion', 'permanent_accuracy', 'battle_end_mode',
+    'buff_ban', 'permanent_accuracy', 'battle_end_mode',
     'ally_break_gauge', 'ally_init_cd', 'ally_variant_mapping', 'own_turn_condition',
     'basic_tough', 'enforce',
     'break_skill_atk_pct', 'break_skill_boss_points', 'break_skill_buff_turns',
@@ -323,11 +323,11 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'break_skill_hit_pct', 'break_skill_normal_points',
     'break_skill_point_cap', 'break_skill_role_speed_pct', 
     'break_skill_speed_pct', 'break_skills',
-    'buff_maxhp', 'buff_step_group', 'chain_pen', 'chain_round', 'chain_guard', 'stat_floor', 'target_row_slot', 'living_slot_order', 'guard_tie', 'stat_stage', 'turn_gauge', 'chain_skill_damage_up', 'cond_count_bind', 'cosmo_boss_barrier', 'counter_inc',
+    'buff_maxhp', 'chain_pen', 'chain_round', 'chain_guard', 'stat_floor', 'target_row_slot', 'living_slot_order', 'guard_tie', 'stat_stage', 'turn_gauge', 'chain_skill_damage_up', 'cond_count_bind', 'cosmo_boss_barrier', 'counter_inc',
     'effect_dur_extend', 'enemy_auto_target', 'enemy_cd_native',
     'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
     'enemy_same_formula', 'enemy_spawn', 
-    'foe_react', 'foe_react_buff_count', 'foe_react_timing', 'gauge_conditional', 'guild_boss', 'guild_count', 'gauge_overflow', 'guard_mode', 
+    'foe_react_buff_count', 'foe_react_timing', 'gauge_conditional', 'guild_boss', 'guild_count', 'gauge_overflow', 'guard_mode', 
     'heal_target', 'leader_speed', 'local_vs_element', 'role_damage_terms', 'manual_burst', 
     'max_depth', 'max_events', 
     'power_penalty', 'preemptive_defense', 'rand_range', 
@@ -337,13 +337,12 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'guard_precision', 'chain_timing', 'local_chance', 
     'turn_ticks', 'unknown_cond', 'clash_no_turn_limit',
     # 2026-11-04 클라 후보 스위치(break_point_hits·break_auto_blocked_cc 는 같은 날 기본 = 클라 값으로 전환)
-    'break_point_hits', 'dot_formula', 'react_hist_unit', 'immune_force_apply', 'break_auto_blocked_cc',
+    'break_point_hits', 'dot_formula', 'react_hist_unit', 'break_auto_blocked_cc',
     # 2026-11-05 길방 보스 속도·공격력 NV 합산
     'guild_boss_nv_sum', 'guild_bridal_kill_reset',
     # 2026-11-06 코스모 게이트 시즌 전투(벨그라스·난이도 레벨·챌린지 효과)
-    'cosmo_raid_boss', 'cosmo_hyper_true_target', 'damage_vampirism', 'cosmo_drain_category', 'cosmo_speed_floor', 'belgras_stage_se',
+    'cosmo_raid_boss', 'damage_vampirism', 'cosmo_drain_category', 'cosmo_speed_floor', 'belgras_stage_se',
     # 2026-11-14 클라 대조(해제·면역 16건)
-    'dispel_shield', 'dispel_instance', 'dispel_order', 'dispel_evade', 'sleep_wake', 'dispel_attack_names', 'debuff_ban_flag', 'gauge_cd_immune', 'gauge_up_immune', 'cc_immune_buff', 'immune_group_resist', 'abs_hit_terms', 'nullifier_count', 'se_force_apply', 'bskill_nullify', 'evade_ignore_resist', 'dot_hit_result',
 ])
 _NOTE_KEYS = frozenset({'enemy_skill_ai', 'break_skill_model', 'random_buff_draw'})
 

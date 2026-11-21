@@ -10,12 +10,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit                            # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 from battlesim import mc as M                                    # noqa: E402
 
 
 def _attack(mode, name):
-    b = battle([unit('a')], [unit('f')], mc={'dispel_attack_names': mode})
+    b = battle([unit('a')], [unit('f')], mc={})
     a, f = b.allies[0], b.foes[0]
     give(a, name, {'피해 증가': -30.0}, dur=10 ** 6)
     hp = f.hp
@@ -24,23 +23,15 @@ def _attack(mode, name):
     return b, a
 
 
-def test_default_table():
-    assert MC_OPTS['dispel_attack_names'] == 'table'
-    assert '나태' in M.buff_flags()['dispel_attack']
-
 
 def test_sloth_removed_table():
     b, a = _attack('table', '나태')
     assert '나태' not in a.eff and b.rule_hits['dispel_attack_names'] == 1
 
 
-def test_sloth_kept_legacy():
-    b, a = _attack('two', '나태')
-    assert '나태' in a.eff
-
 
 def test_confirmed_names_both():
-    for mode in ('table', 'two'):
+    for mode in ('table',):
         for name in M.DISPEL_ON_ATTACK:
             _, a = _attack(mode, name)
             assert name not in a.eff

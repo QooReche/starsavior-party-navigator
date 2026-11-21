@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""단계 그룹 버프(BUFF_STEP_TEMPLET): 같은 그룹은 높은 단계가 이긴다(buff_step_group=client).
+"""단계 그룹 버프(BUFF_STEP_TEMPLET): 같은 그룹은 높은 단계가 이긴다().
 클라 NKM:4283-4305,4450-4458. 실행: python -X utf8 -I tests/buff_step_test.py"""
 import json
 import math
@@ -70,13 +70,6 @@ class TestStepGroup(unittest.TestCase):
         self.assertNotIn(LOW, a.eff)
         self.assertEqual(a.eff[HIGH].dur, 5)
         self.assertTrue(a.eff[HIGH].skip_tick)
-
-    def test_off_keeps_both(self):
-        b = _battle(buff_step_group='off')
-        a = _give(b, LOW, 3)
-        _give(b, HIGH, 2)
-        self.assertIn(LOW, a.eff)
-        self.assertIn(HIGH, a.eff)
 
     def test_other_group_untouched(self):
         b = _battle()

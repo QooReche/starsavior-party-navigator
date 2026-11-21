@@ -26,8 +26,6 @@ from tools.runtime import static_path_or_none
 from tools.tables import rows
 
 PARTY = ['frey', 'emily', 'rosaria', 'fei']
-LEGACY = dict(cosmo_hyper_true_target='enemy_all', damage_vampirism='off',
-              cosmo_drain_category='debuff', cosmo_speed_floor=False)
 
 
 def raid(level=8, count=4, mc=None, seed=3, standard=False, spawn=True):
@@ -125,14 +123,6 @@ class HyperTest(unittest.TestCase):
         b.gb.flush_damage()
         self.assertEqual(b.gb.pending_damage, [])
         self.assertEqual(b.gb.stats['self_damage_hp'], 0)
-
-    def test_legacy_enemy_all(self):
-        b = raid(mc={'cosmo_hyper_true_target': 'enemy_all'})
-        rot(b, 11)
-        b.cast(b.gb.boss, b.gb.boss.d.skills['궁극기'])
-        self.assertEqual(b.gb.stats['true_damage_hits'], 4)
-        self.assertEqual(b.gb.pending_damage, [])
-        self.assertTrue(all(a.taken >= 55000 for a in b.allies))
 
 
 class DrainSpeedTest(unittest.TestCase):

@@ -10,12 +10,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, unit                                  # noqa: E402
 from battlesim.mc import Ctx                                     # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 from battlesim.starsavior.parser import Line                     # noqa: E402
 
 
 def _apply(mode, name, evaded=True, phase=None, ally=False, ignore_resist=True, **extra):
-    b = battle([unit('a'), unit('a2')], [unit('f')], mc={'evade_ignore_resist': mode})
+    b = battle([unit('a'), unit('a2')], [unit('f')], mc={})
     a, f = b.allies[0], b.foes[0]
     owner = b.allies[1] if ally else f
     ctx = Ctx(owner, owner, owner.d.skills['기본기'])
@@ -30,9 +29,6 @@ def _apply(mode, name, evaded=True, phase=None, ally=False, ignore_resist=True, 
     return b, a
 
 
-def test_default_client():
-    assert MC_OPTS['evade_ignore_resist'] == 'client'
-
 
 def test_evaded_blocks_ignore_resist_client():
     b, a = _apply('client', '출혈', dot=('atk', 0.1))
@@ -40,10 +36,6 @@ def test_evaded_blocks_ignore_resist_client():
     _, a = _apply('client', '출혈', evaded=False, dot=('atk', 0.1))
     assert '출혈' in a.eff                                       # 회피 안 했으면 그대로 걸림
 
-
-def test_evaded_passes_legacy():
-    _, a = _apply('off', '출혈', dot=('atk', 0.1))
-    assert '출혈' in a.eff
 
 
 def test_forced_buff_still_passes():
@@ -66,8 +58,6 @@ def test_skill_start_line_not_blocked():
     assert '공격력 감소' in a.eff
     _, a = _apply('client', '출혈', phase='턴 시작 시', dot=('atk', 0.1))
     assert '출혈' in a.eff
-    _, a = _apply('off', '공격력 감소', phase='스킬 사용 시작 시', ignore_resist=False, props={'공격력%': -30})
-    assert '공격력 감소' not in a.eff                              # legacy: 시점 구분 없이 저항 대상 약화 거부
 
 
 def test_ally_target_not_blocked():
@@ -80,8 +70,6 @@ def test_marker_on_enemy_blocked():
     # 클라 회피 거부는 강화/약화를 가리지 않음 — 적에게 거는 체크용 표식도 회피하면 안 붙음
     b, a = _apply('client', '피격 체크용 버프', phase='스킬 사용 후')
     assert '피격 체크용 버프' not in a.eff and b.rule_hits['evade_ignore_resist'] == 1
-    _, a = _apply('off', '피격 체크용 버프', phase='스킬 사용 후')
-    assert '피격 체크용 버프' in a.eff
 
 
 def test_forced_marker_passes():
@@ -94,7 +82,7 @@ def _side(mode='client', sel=None, sel_target='a', hit_evaded=True, in_ctx=False
     스킬(OBF_5963)·대상(OBF_35462)과 x 의 마지막 피격 결과(OBF_20548)로 판정(NKM:4542·4559·4564)."""
     b = battle([unit('a'), unit('a2')], [unit('f'), unit('f2', skills=[dict(slot='기본기', dm=100), dict(slot='궁극기', dm=100, all=True),
                                                                          dict(slot='특수기', dm=0, tg='자신')])],
-               mc={'evade_ignore_resist': mode})
+               mc={})
     a, f, f2 = b.allies[0], b.foes[0], b.foes[1]
     sk = {'single': f2.d.skills['기본기'], 'all': f2.d.skills['궁극기'], 'self': f2.d.skills['특수기'], None: None}[sel]
     f2.sel_skill, f2.sel_target = sk, {'a': a, 'a2': b.allies[1]}[sel_target]
@@ -125,7 +113,6 @@ def test_side_owner_single_target_rule():
 def test_side_owner_all_and_self_skill():
     assert _side(sel='all', sel_target='a2')                         # 적 전체 스킬: x 마지막 피격 회피면 거부(4564)
     assert not _side(sel='self')                                     # 자신 대상 스킬: 거부 없음
-    assert not _side(sel='all', mode='off')                          # legacy 는 저항 대상 약화·ctx.evaded 만
 
 
 def test_this_cast_result_overrides_stale():
@@ -144,7 +131,7 @@ def test_strike_records_last_hit_result():
 def test_damage_end_line_not_blocked():
     """«피해 처리 후» = NSEAT_DAMAGE_END(레이시 SE 10494016 등) — 회피 거부 시점(HIT·SKILL_END, NKM:4546)이 아님.
     레이시 기본기를 회피했던 적이 레이시를 때릴 때 피격 반응 〈뒤엉킨 꿈결〉이 붙어야 함(codex 재현)."""
-    b = battle([unit('a')], [unit('f')], mc={'evade_ignore_resist': 'client'})
+    b = battle([unit('a')], [unit('f')], mc={})
     a, f = b.allies[0], b.foes[0]
     f.sel_skill, f.sel_target = f.d.skills['기본기'], a       # 반응 주인(f)이 전에 a 를 고름
     a.hit_evaded = True                                       # a 는 f 의 공격을 회피했었음

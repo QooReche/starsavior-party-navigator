@@ -12,8 +12,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, 'tests'))
 from simkit import battle, give, unit  # noqa: E402
-from unittest.mock import patch  # noqa: E402
-from battlesim.mc import Battle, Ctx  # noqa: E402
+from battlesim.mc import Ctx   # noqa: E402
 
 
 def pair(hp=10000):
@@ -148,8 +147,7 @@ class CallSiteStat(unittest.TestCase):
 
     def _orbital(self, nullify):
         foe = unit('boss', hp=10 ** 9, skills=[dict(slot='기본기', dm=0)])
-        b = battle([unit('a0'), unit('a1')], [foe], break_skill={'name': '차원 강습', 'level': 5},
-                   mc={'bskill_nullify': 'client'})
+        b = battle([unit('a0'), unit('a1')], [foe], break_skill={'name': '차원 강습', 'level': 5})
         b.break_points = 3
         f = b.foes[0]
         if nullify:
@@ -183,24 +181,10 @@ class CallSiteStat(unittest.TestCase):
 
     def test_strike_nullified_counts_calculated_both_paths(self):
         _, a0, v0 = self._strike(False, {})
-        for mc in ({'damage_vampirism': 'client'}, {'damage_vampirism': 'off', 'sleep_wake': 'off'}):
+        for mc in ({},):
             b, a, v = self._strike(True, mc)
             self.assertEqual((v.taken, v.hp), (0, 10 ** 6), mc)
             self.assertEqual((a.dmg_stat, v.taken_stat), (v0.taken, v0.taken), mc)
-
-    def test_strike_nullified_stat_calc_is_quiet(self):
-        # 흡혈·수면 해제 규칙이 꺼진 경로의 통계용 계산은 quiet 로 감쌈 — 계산 안에서 센 rule_hits 가 남지 않아야 함
-        real = Battle.final_dmg
-
-        def counting(self_, *args):
-            self_.rule_hits['probe_final_dmg'] += 1
-            return real(self_, *args)
-        with patch.object(Battle, 'final_dmg', counting):
-            b, a, v = self._strike(True, {'damage_vampirism': 'off', 'sleep_wake': 'off'})
-            self.assertGreater(a.dmg_stat, 0)
-            self.assertEqual(b.rule_hits.get('probe_final_dmg', 0), 0)
-            b, a, v = self._strike(True, {'damage_vampirism': 'client'})   # 대조군: 판정에 쓰는 계산은 그대로 셈
-            self.assertEqual(b.rule_hits['probe_final_dmg'], 1)
 
 
 class ApiStat(unittest.TestCase):

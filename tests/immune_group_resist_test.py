@@ -10,11 +10,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, unit                                  # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 
 
 def _run(mode, ignore_resist):
-    b = battle([unit('a')], [unit('f')], mc={'immune_group_resist': mode})
+    b = battle([unit('a')], [unit('f')], mc={})
     a, f = b.allies[0], b.foes[0]
     f.d.immune = {'기절'}
     eff = dict(name='기절', props={}, dur='1턴', max=None, times=1, target='스킬 대상', judge=False,
@@ -23,22 +22,16 @@ def _run(mode, ignore_resist):
     return b, f
 
 
-def test_default_client():
-    assert MC_OPTS['immune_group_resist'] == 'client'
-
 
 def test_ignore_resist_blocked_client():
     b, f = _run('client', True)
     assert '기절' not in f.eff and b.rule_hits['immune_group_resist'] == 1
 
 
-def test_ignore_resist_pierces_legacy():
-    assert '기절' in _run('resist_only', True)[1].eff
-
 
 def test_forced_waterbomb_passes_client():
     # 물폭탄(SE COND_SUMMER_SMILE_UNIQUE_PASSIVE_01_01 ForceApplyEffect)은 면역 목록 검사도 통과(!OBF_8151)
-    b = battle([unit('a')], [unit('f')], mc={'immune_group_resist': 'client'})
+    b = battle([unit('a')], [unit('f')], mc={})
     a, f = b.allies[0], b.foes[0]
     f.d.immune = {'물폭탄'}
     b.add_effect(a, f, dict(name='물폭탄', props={}, dur=None, max=None, times=1, target='스킬 대상', judge=False,
@@ -47,7 +40,7 @@ def test_forced_waterbomb_passes_client():
 
 
 def test_normal_debuff_blocked_both():
-    for mode in ('client', 'resist_only'):
+    for mode in ('client',):
         assert '기절' not in _run(mode, False)[1].eff
 
 

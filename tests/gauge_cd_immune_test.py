@@ -11,7 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit                            # noqa: E402
 from battlesim.mc import Ctx                                     # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 from battlesim.starsavior.parser import Line                     # noqa: E402
 
 GAUGE = '[스킬 사용 후] 스킬 대상에게 행동 게이지 20%p 감소 {효과 적중 판정}'
@@ -21,7 +20,7 @@ GAUGE_P = '[스킬 사용 후] 스킬 대상에게 100% 확률로 행동 게이�
 
 def _run(mode, text, immune=False, evaded=False):
     b = battle([unit('a', skills=[dict(slot='기본기', dm=100), dict(slot='특수기', dm=100, cd=3)])], [unit('f')],
-               mc={'gauge_cd_immune': mode})
+               mc={})
     a, f = b.allies[0], b.foes[0]
     b.roll_hit = lambda *args: True
     if immune:
@@ -36,9 +35,6 @@ def _run(mode, text, immune=False, evaded=False):
     return b, a
 
 
-def test_default_client():
-    assert MC_OPTS['gauge_cd_immune'] == 'client'
-
 
 def test_gauge_blocked_client():
     for kw in (dict(immune=True), dict(evaded=True)):
@@ -47,24 +43,16 @@ def test_gauge_blocked_client():
         assert b.rule_hits['gauge_cd_immune'] == 1
 
 
-def test_gauge_applied_legacy_and_plain():
-    for kw in (dict(immune=True), dict(evaded=True)):
-        assert _run('off', GAUGE, **kw)[1].gauge == 3000.0
-    assert _run('client', GAUGE)[1].gauge == 3000.0
-
 
 def test_chance_gauge_blocked_client():
     for kw in (dict(immune=True), dict(evaded=True)):
         assert _run('client', GAUGE_P, **kw)[1].gauge == 5000.0, kw
-        assert _run('off', GAUGE_P, **kw)[1].gauge == 3000.0, kw
 
 
 def test_cd_blocked_client():
     for kw in (dict(immune=True), dict(evaded=True)):
         _, a = _run('client', CD, **kw)
         assert all(v == 0 for v in a.cd.values()), kw
-        _, a = _run('off', CD, **kw)
-        assert any(v > 0 for v in a.cd.values()), kw
 
 
 if __name__ == '__main__':

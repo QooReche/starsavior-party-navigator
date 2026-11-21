@@ -22,7 +22,7 @@ def _immune_all(b):
 
 
 def _run(boss_name, slot, mode, immune):
-    b = battle(boss_name, 3, 18, mc={'gauge_cd_immune': mode})
+    b = battle(boss_name, 3, 18, mc={})
     boss = boss_of(b)
     if immune:
         _immune_all(b)
@@ -36,15 +36,11 @@ def _run(boss_name, slot, mode, immune):
 def test_pressure_blocked_by_immune():
     b, g = _run('티리아', '기본기', 'client', True)
     assert b.gb.stats['pressure'] == 0 and g >= 8000, (dict(b.gb.stats), g)
-    b, g = _run('티리아', '기본기', 'off', True)                 # 옛 동작: 면역이어도 깎임
-    assert b.gb.stats['pressure'] >= 1 and g < 8000
 
 
 def test_belgras_hyper_gauge_blocked_by_immune():
     _, g = _run('벨그라스', '궁극기', 'client', True)
     assert g >= 8000, g
-    _, g = _run('벨그라스', '궁극기', 'off', True)
-    assert g < 8000, g
     _, g = _run('벨그라스', '궁극기', 'client', False)           # 면역 없으면 그대로 깎임
     assert g < 8000, g
 

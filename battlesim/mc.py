@@ -1032,7 +1032,7 @@ class Battle:
             x.eff[name] = e
         else:
             e.dur = max(e.dur, dur)
-            if self.mc['dispel_order'] == 'client' and e.inst is None:
+            if e.inst is None:
                 e.seq = next(_EFF_SEQ)   # 기믹 효과 재부여도 옛 객체를 지우고 다시 넣어 목록 뒤로(NKM:4505-4537, add_effect 와 같음)
             if refresh_props:
                 # A nonempty replacement may change values OR their addition order.
@@ -1433,7 +1433,7 @@ class Battle:
                         if sk is not None:
                             cast_ctx = self.cast(u, sk, target=tgt)
             # 적 반응(트리거) 스킬: 공격 뒤(after_attack) / 유효 타격(hit) 조건 판정 → _react 로 예약
-            if cast_ctx is not None and u.side == 1 and self.mc.get('foe_react') == 'data':
+            if cast_ctx is not None and u.side == 1:
                 self._check_foe_react(u, cast_ctx, timing_filter=None)
                 # after_ally_attack / ally_hit: 같은 편 다른 유닛의 반응 규칙 확인
                 if self.mc.get('foe_react_timing', 'extended') == 'extended':
@@ -1660,7 +1660,7 @@ class Battle:
                         self.rule_hits['break_skill_guard'] += 1
                 before = v.taken
                 hit = self._break_dmg(v, raw)
-                if self.mc['bskill_nullify'] == 'client' and v.on('스킬 피해 무효') and not v.invincible():
+                if v.on('스킬 피해 무효') and not v.invincible():
                     # 오비탈 피해도 DAMAGE_SKILL 이라 〈스킬 피해 무효〉가 막고 1회 소모(NKM:7993 OBF_23259(…, true, DAMAGE_SKILL),
                     # 2693-2710: 무적이 먼저 0 반환, 아니면 SkillNullifier 카운트 차감). 동기화 피해는 그대로라 수면은 풀림.
                     self.rule_hits['bskill_nullify'] += 1
@@ -2203,8 +2203,6 @@ class Battle:
     def heal_order(self, owner, pool, k):
         """생명력 비율이 낮은 순서의 아군 목록(회복·보호막 대체 경로). mc.heal_tie=client: 클라 회복 규칙 2(AUTO_SKILL_TARGET_TEMPLET Id 2 =
         IsLowHpRate → IsLowMaxHp, 그래도 여럿이면 무작위 — build 26610546 NKM 7132-7181 필터 사슬·7590-7594 비율 비교)로 앞 k명을 차례로 고른다. slot = 옛 동작(비율 실수 비교, 동률이면 앞 칸)."""
-        if self.mc['heal_tie'] != 'client':
-            return sorted(pool, key=lambda v: (v.hp / v.maxhp, v.pos))
         left, out = sorted(pool, key=lambda v: v.pos), []
         while left and len(out) < k:
             got, _ = self.filter_chain(owner, left, ('low_hp_rate', 'low_max_hp'))
@@ -2451,7 +2449,6 @@ class Battle:
             self.fire_foes(u, ctx, 'foe_pre' if sk.is_attack else 'foe_pre_na')
             # on_my_attack: 적의 공격 시작 전(스트라이크 전) 반응 예약 — 대상 체력·버프가 피해 전 상태
             if (sk.is_attack and ctx.targets and u.side == 1
-                    and self.mc.get('foe_react') == 'data'
                     and self.mc.get('foe_react_timing', 'extended') == 'extended'):
                 self._check_foe_react(u, ctx, timing_filter='on_my_attack')
             # 이미 시작한 공격은 대상 목록이 비어도 DAMAGE_END 전 DC_ATTACK을 해제함.
@@ -3007,14 +3004,12 @@ class Battle:
                 self._hit_log.append((a, v, ctx, v.mods()['revenge']))
         if ctx.hit_targets:
             a.last_target = ctx.hit_targets[-1]
-        # 〈공격 시 해제〉(DispelCondition=DC_ATTACK): 공격 스킬의 모든 타격·대상 처리 뒤, 피격 반응 전에 시전자에게서 지움(NKM 15580). 반격·협공도 이 경로
-        table = self.mc['dispel_attack_names'] == 'table'
         # 표 이름(동명 혼재로 빠진 여유로운 응수는 기존 확인분 DISPEL_ON_ATTACK 로 보탬)
-        for nm in (DISPEL_ON_ATTACK + tuple(n for n in buff_flags()['dispel_attack'] if n not in DISPEL_ON_ATTACK)
-                   if table else DISPEL_ON_ATTACK):
+        # 〈공격 시 해제〉(DispelCondition=DC_ATTACK): 공격 스킬의 모든 타격·대상 처리 뒤, 피격 반응 전에 시전자에게서 지움(NKM 15580). 반격·협공도 이 경로
+        for nm in DISPEL_ON_ATTACK + tuple(n for n in buff_flags()['dispel_attack'] if n not in DISPEL_ON_ATTACK):
             if a.eff.pop(nm, None) is not None:
                 self.dirty(a)
-                if table and nm not in DISPEL_ON_ATTACK:
+                if nm not in DISPEL_ON_ATTACK:
                     self.rule_hits['dispel_attack_names'] += 1
         # 피격 반응은 전체 공격의 모든 대상 처리가 끝난 뒤(동시성 규칙)
         for v, hctx in reactions:
@@ -3061,12 +3056,9 @@ class Battle:
             self._use_nullifier(v)
             self.log(nullify=v.name)
             # NKM:7841-7859: 피해 동기화 값은 무효·보호막·HP 차감 반환값과 별개.
-            if self.mc['damage_vampirism'] == 'client' or self.mc['sleep_wake'] == 'client':
-                sync = self.final_dmg(a, v, base, ctx, crit, cdv, pen, r, hctx)
-                self._vampirism_hit(a, v, ctx, sync)
-                self._hit_wake(v, sync)
-            else:
-                sync = self.quiet(self.final_dmg, a, v, base, ctx, crit, cdv, pen, r, hctx)
+            sync = self.final_dmg(a, v, base, ctx, crit, cdv, pen, r, hctx)
+            self._vampirism_hit(a, v, ctx, sync)
+            self._hit_wake(v, sync)
             self.record_stat(a, v, sync)       # 통계는 무효 전 계산 피해(NKM:7993-7996)
             reactions.append((v, hctx))
             return
@@ -3377,7 +3369,7 @@ class Battle:
                     e.shield -= take
                     rest -= take
                     absorbed += take
-                    if e.shield <= 1e-9 and (not e.props or self.mc['barrier_depletion'] == 'client'):
+                    if e.shield <= 1e-9:
                         # 클라: Barrier 버프는 보호막 HP 0 이 되면 버프째 제거 — 같은 버프의 능력치(〈파프닐의 강림〉 방어력% 등)도 함께 사라짐
                         # (build 26610546 NKM:2746-2765 OBF_29097 흡수 뒤 OBF_8841<=0 → OBF_11376 제거, 5858-5861 Barrier 플래그 → OBF_29097). legacy = 능력치가 있으면 남김.
                         if e.props:
@@ -3531,7 +3523,7 @@ class Battle:
         무적 → 〈스킬 피해 무효〉(1회 소모) → 보호막 → 불사 순으로 거친다(apply_damage).
         피해량 = DT_BUFF_INSTANT(AtkFactor 10000·HpFactor 100000) = 시전자 공격력 100% + 최대 생명력 1000%, 대상 방어율만 적용
         (근사: 치명·난수·피해 증감·수호 분담 없음 — 생명력 10배라 결과는 사실상 같음)."""
-        if self.mc['dot_hit_result'] == 'client' and not (owner.side == x.side and owner is not x):
+        if not (owner.side == x.side and owner is not x):
             # NKM:8119 → 17733 → 18150·18163: 즉시 피해도 계산(OBF_7777)에서 대상 피격 결과를 NormalHit 로 덮음 — 무적·무효
             # 검사(유닛 피해 함수)보다 먼저. 같은 편 다른 시전자는 17743 에서 먼저 빠짐.
             x.hit_evaded = False
@@ -3706,7 +3698,7 @@ class Battle:
         timing_filter: None = 기존(after_attack/hit), 'on_my_attack' = 내 공격 시(스트라이크 전),
                        'ally' = after_ally_attack/ally_hit(caster 가 행동한 뒤 같은 편 다른 유닛 확인).
         caster: timing_filter='ally' 일 때 행동한 유닛(ctx 의 주인)."""
-        if self.mc['foe_react'] != 'data' or u.side != 1 or not self.enemy_lines:
+        if u.side != 1 or not self.enemy_lines:
             return
         react = getattr(u.d, 'react', None)
         if not react:
@@ -3996,11 +3988,10 @@ class Battle:
                                 share_base = base * self.guard_share(gs)
                                 base -= share_base
                                 self.rule_hits['dot_guard'] += 1
-                        if self.mc['dot_hit_result'] == 'client':
-                            # NKM:8045 → 17733 → 18150·18163: 지속 피해 계산(OBF_7777)이 대상 피격 결과 OBF_20548 을 NormalHit 로
-                            # 덮는다(무적·0 피해여도 계산이 먼저). 같은 편 다른 시전자는 17743 에서 먼저 빠져 덮지 않음(위 continue).
-                            u.hit_evaded = False
-                            self.rule_hits['dot_hit_result'] += 1
+                        # NKM:8045 → 17733 → 18150·18163: 지속 피해 계산(OBF_7777)이 대상 피격 결과 OBF_20548 을 NormalHit 로
+                        # 덮는다(무적·0 피해여도 계산이 먼저). 같은 편 다른 시전자는 17743 에서 먼저 빠져 덮지 않음(위 continue).
+                        u.hit_evaded = False
+                        self.rule_hits['dot_hit_result'] += 1
                         self.apply_damage(src, u, dot_dmg(u, base), 'dot', shieldable=False)
                         instance[1] -= 1
                         self.rule_hits['dot_hot_lifetime'] += 1
@@ -4008,8 +3999,7 @@ class Battle:
                                 and not (src.side == guard.side and src is not guard)):
                             # NKM:7925-7928,8153-8171,17368-17409: 수호자 몫은 수호자 방어·증감·상성·별도 난수로 다시 계산, 보호막 무시
                             # (NKM:17376-17379: 시전자가 수호자와 같은 편이면서 수호자 본인이 아니면 수호자 몫 0 — 자기 지속 피해)
-                            if self.mc['dot_hit_result'] == 'client':
-                                guard.hit_evaded = False      # 수호자 몫 계산 OBF_21375(NKM:8080 → 6212 → 17898)도 NormalHit
+                            guard.hit_evaded = False      # 수호자 몫 계산 OBF_21375(NKM:8080 → 6212 → 17898)도 NormalHit
                             self.apply_damage(src, guard, dot_dmg(guard, share_base), 'dot', shieldable=False)
                 if phase != 'dot' and e.hot > 0 and not u.dead and u.on(name):
                     if e.inst is not None:
@@ -4086,7 +4076,7 @@ class Battle:
         """〈스킬 피해 무효〉 1회 소모. client = 남은 횟수(stacks)를 1 줄이고 0 이면 제거(SkillNullifier OBF_4403.OBF_23259 의
         카운트 차감, build 26610546 NKM:5571-5583). legacy = 횟수와 무관하게 통째로 제거."""
         e = v.eff['스킬 피해 무효']
-        if self.mc['nullifier_count'] == 'client' and e.stacks > 1:
+        if e.stacks > 1:
             e.stacks -= 1
             self.rule_hits['nullifier_count'] += 1
         else:
@@ -4096,7 +4086,7 @@ class Battle:
     def _hit_wake(self, v, sync):
         """마지막 스킬 타격의 동기화 피해가 0보다 크면 피격자의 수면(m_bSleep) 효과를 지운다(OBF_2209, build 26610546
         NKM:7997-8011 호출 조건 IsLastHit && 피해 > 0, 8335 OBF_11376(Sleep)). 무효·보호막으로 HP 가 안 깎여도 동기화 피해 기준."""
-        if self.mc['sleep_wake'] != 'client' or sync <= 0 or v.dead:
+        if sync <= 0 or v.dead:
             return
         hit = False
         for n in buff_flags()['sleep']:
@@ -5072,14 +5062,13 @@ class Battle:
                 if self.refuse_buff(x, m.group(2)):
                     continue     # 〈강화 불가〉: 보호막도 강화 효과라 새로 받지 못함(합산 포함)
                 e = x.eff.get(m.group(2))
-                if e is not None and self.mc['dispel_order'] == 'client':
+                if e is not None:
                     e.seq = next(_EFF_SEQ)   # 보호막 재부여도 합산한 새 객체로 다시 넣음(NKM:4524-4531, 5368-5381)
                 if e is None:
                     e = Eff(m.group(2), props, 1, _shield_dur(m.group(3)), owner, False)
                     e.stacks = 1
-                    if self.mc['dispel_shield'] == 'client':
-                        # BI_BARRIER_CAN_NOT_DISPEL 등 «(해제불가)» 보호막만 해제 대상에서 빠진다(BUFF_TEMPLET CanNotDispel).
-                        e.fixed = '해제불가' in m.group(2) or (ln is not None and '해제 불가' in ln.raw)
+                    # BI_BARRIER_CAN_NOT_DISPEL 등 «(해제불가)» 보호막만 해제 대상에서 빠진다(BUFF_TEMPLET CanNotDispel).
+                    e.fixed = '해제불가' in m.group(2) or (ln is not None and '해제 불가' in ln.raw)
                     x.eff[m.group(2)] = e
                 # NKM:4565-4583,4739-4746: 재부여도 생성 시점 갱신. 시작 이벤트는 같은 턴에 차감.
                 e.clock = 'any_turn' if self._is_any_turn(owner, e.name) else 'owner_turn'
@@ -5157,7 +5146,7 @@ class Battle:
                     continue
                 for name in list(x.eff):
                     e = x.eff[name]
-                    if self._dispel_cand(name, e, harmful) and not e.fixed and self._dispel_shield_ok(e):
+                    if self._dispel_cand(name, e, harmful) and not e.fixed:
                         if e.shield > 0:
                             self.rule_hits['dispel_shield'] += 1
                         del x.eff[name]
@@ -5171,32 +5160,10 @@ class Battle:
             for x in tg or []:
                 if not self._dispel_ok(owner, ctx, x, p, rest):
                     continue
-                names = [n for n, e in x.eff.items() if self._dispel_cand(n, e, harmful) and not e.fixed
-                         and self._dispel_shield_ok(e)]
+                # 보호막도 해제 후보(클라 OBF_33563, NKM:4229-4253 은 Barrier 를 따로 빼지 않음 — 옛 스위치 dispel_shield 삭제)
+                names = [n for n, e in x.eff.items() if self._dispel_cand(n, e, harmful) and not e.fixed]
                 left = int(m.group(4))
-                if self.mc['dispel_order'] == 'client':
-                    self._dispel_n_ordered(x, names, left)
-                    self.dirty(x)
-                    continue
-                for n in names:
-                    if left <= 0:
-                        break
-                    e = x.eff[n]
-                    if self.mc['dispel_instance'] == 'client' and e.inst is not None and len(e.inst) > 1:
-                        # 클라 해제 후보는 버프 객체 단위(OBF_33563 의 num 은 객체마다 +1). 지속 피해 묶음은 객체가 인스턴스마다 따로라
-                        # N개 해제는 먼저 붙은 인스턴스부터 N개만 지운다(NKM:4229-4253, 4321-4334 IsUniqueID 별 객체).
-                        k = min(left, len(e.inst))
-                        del e.inst[:k]
-                        left -= k
-                        self.rule_hits['dispel_instance'] += 1
-                        if e.inst:
-                            e.stacks = len(e.inst)
-                            continue
-                    else:
-                        left -= 1
-                    if e.shield > 0:
-                        self.rule_hits['dispel_shield'] += 1
-                    del x.eff[n]
+                self._dispel_n_ordered(x, names, left)
                 self.dirty(x)
             return
         m = RX_GAUGE_SET.match(rest)
@@ -5256,7 +5223,7 @@ class Battle:
         for n in names:
             e = x.eff[n]
             pri = buff_priority(n)
-            if self.mc['dispel_instance'] == 'client' and e.inst:
+            if e.inst:
                 # 인스턴스가 1개만 남아도 그 인스턴스의 순번으로 — 묶음 최초 seq 로 세우면 사이에 들어온 객체보다 앞선다
                 objs += [(-pri, getattr(it, 'seq', e.seq), n, it) for it in e.inst]
             else:
@@ -5294,15 +5261,10 @@ class Battle:
             self.rule_hits['dispel_isbuff'] += 1
         return ok
 
-    def _dispel_shield_ok(self, e):
-        """해제 후보에 보호막을 넣는가. client = 클라 OBF_33563(NKM:4229-4253)은 Barrier 를 따로 빼지 않는다 —
-        BI_BARRIER(1038)는 IsBuff·IsPositive·CanNotDispel=false 라 강화 해제에 지워진다. skip = 보호막을 빼던 옛 동작."""
-        return e.shield <= 0 or self.mc['dispel_shield'] == 'client'
-
     def _dispel_ok(self, owner, ctx, x, p, rest):
         if p < 1.0 and self.R(owner.side).random() >= p:
             return False
-        if ctx is not None and self.mc['dispel_evade'] == 'client' and self._evade_rejects(owner, x, ctx):
+        if ctx is not None and self._evade_rejects(owner, x, ctx):
             # 해제도 버프 부여라 공통 부여 검사(OBF_32436)의 회피 거부(OBF_13659)를 먼저 탄다: 이번 시전을 회피한 적 대상은
             # HIT·SKILL_END 줄의 효과를 받지 않는다(강제 적용만 예외, NKM:4323-4327·4540-4566).
             self.rule_hits['dispel_evade'] += 1
@@ -5597,15 +5559,14 @@ class Battle:
             if adv:
                 a += adv
         b = 0.0 - (x.d.stats.get('der', 0) / 10000.0 + xm['der'])
-        if self.mc['abs_hit_terms'] == 'client':
-            # 클라 OBF_23872(NKM:20255-20302): 절대값 = 시전자 절대 적중 - (대상 절대 저항 + 역상성일 때 대상 역상성 절대 저항).
-            # 표(UNIT_STAT_TEMPLET)의 두 값은 현재 전 유닛 0 이라 로더가 채우지 않음 — 들어오면(stats dhit·adher) 반영.
-            extra = owner.d.stats.get('dhit', 0) / 10000.0
-            if owner.element and x.element and ELEM_LOSES.get(owner.element) == x.element:
-                extra -= x.d.stats.get('adher', 0) / 10000.0
-            if extra:
-                self.rule_hits['abs_hit_terms'] += 1
-                b += extra
+        # 클라 OBF_23872(NKM:20255-20302): 절대값 = 시전자 절대 적중 - (대상 절대 저항 + 역상성일 때 대상 역상성 절대 저항).
+        # 표(UNIT_STAT_TEMPLET)의 두 값은 현재 전 유닛 0 이라 로더가 채우지 않음 — 들어오면(stats dhit·adher) 반영.
+        extra = owner.d.stats.get('dhit', 0) / 10000.0
+        if owner.element and x.element and ELEM_LOSES.get(owner.element) == x.element:
+            extra -= x.d.stats.get('adher', 0) / 10000.0
+        if extra:
+            self.rule_hits['abs_hit_terms'] += 1
+            b += extra
         return self.R(owner.side).random() < calc_hit(a, b)
 
     def apply_buff(self, owner, eff, ctx, hot=0.0, raw=''):
@@ -5739,14 +5700,14 @@ class Battle:
     def _harm_evaded(self, x, ctx):
         """행동 게이지 감소·쿨타임 증가(비양성 IsBuff=false 버프, BUFF_TEMPLET 2502·2504-2506 강제 아님)도 공통 부여 검사를 탄다:
         이번 시전을 회피한 적 대상은 거부(OBF_13659, NKM:4323-4327·4540-4566). 규칙 mc.gauge_cd_immune."""
-        if self.mc['gauge_cd_immune'] == 'client' and ctx is not None and self._evade_rejects(ctx.owner, x, ctx):
+        if ctx is not None and self._evade_rejects(ctx.owner, x, ctx):
             self.rule_hits['gauge_cd_immune'] += 1
             return True
         return False
 
     def _harm_immune(self, x):
         """같은 효과를 CantGetMoreDebuff(면역 계열) 대상은 거부(비양성·비DeleteBuff·비강제, NKM:4394-4398)."""
-        if self.mc['gauge_cd_immune'] == 'client' and self._debuff_banned(x):
+        if self._debuff_banned(x):
             self.rule_hits['gauge_cd_immune'] += 1
             return True
         return False
@@ -5755,8 +5716,6 @@ class Battle:
         """지금 실행 중인 줄이 SE 행 ForceApplyEffect 인가(data/foe_auto.json force, tools/build_foe_auto.py). 강제 적용은
         유닛 면역 목록·회피·CantGetMoreBuff/Debuff·상태이상 면역·게이지 증가 면역을 건너뛴다(NKM:4318-4327·4394-4416 의
         !OBF_8151, 생성자 6112: SE 강제 || 버프 강제). 효과 적중 판정은 별개. 규칙 mc.se_force_apply."""
-        if self.mc['se_force_apply'] != 'client':
-            return False
         if name is not None and name in buff_flags()['force_apply']:
             return True     # 버프 자체 ForceApplyEffect(BUFF_TEMPLET, data/buff_flags.json force_apply) — 클라는 SE 강제와 OR(NKM:6112)
         ln = self._cur_line
@@ -5776,8 +5735,6 @@ class Battle:
     def _gauge_up_blocked(self, x):
         """행동 게이지 증가 면역(ImmuneSpeedGaugeUp: 억류(해제불가)·들러리(해제불가), data/buff_flags.json)이면 게이지 증가 효과를
         거부한다(SpeedGaugeUp 버프, 강제 아님 — NKM:4412-4416). 규칙 mc.gauge_up_immune. 자연 충전은 해당 없음."""
-        if self.mc['gauge_up_immune'] != 'client':
-            return False
         if any(x.on(n) for n in buff_flags()['immune_gauge_up'] if n in x.eff):
             self.rule_hits['gauge_up_immune'] += 1
             return True
@@ -5794,8 +5751,6 @@ class Battle:
         플래그로 본다(NKM:4394-4398). name = 이름 〈면역〉만 보던 옛 동작."""
         if x.on('면역'):
             return True
-        if self.mc['debuff_ban_flag'] != 'table':
-            return False
         if any(x.on(n) for n in buff_flags()['cant_more_debuff'] if n in x.eff):
             self.rule_hits['debuff_ban_flag'] += 1
             return True
@@ -5815,7 +5770,7 @@ class Battle:
                 return     # 〈강화 불가〉: 새 강화 효과(갱신·합산 포함)는 거부(클라 버프 부여 함수 650줄)
             self.rule_hits['se_force_apply'] += 1   # CantGetMoreBuff 거부도 강제 적용이면 생략(NKM:4389 !OBF_8151)
         resist = category == 'debuff' and not eff.get('ignore_resist')
-        if (self.mc['immune_group_resist'] == 'client' and not resist and name in getattr(x.d, 'immune', ())
+        if (not resist and name in getattr(x.d, 'immune', ())
                 and not forced and not (eff.get('unique_enemy') and eff.get('ignore_resist'))):
             # 물폭탄류(unique_enemy+ignore_resist)는 SE 행 ForceApplyEffect 라 면역 목록도 통과(immune_force_apply 와 같은 식별).
             # 유닛 면역 목록(ImmuneGroupId)은 효과 적중·저항 무시와 독립된 첫 검사(NKM:4318-4322, 강제 적용만 예외).
@@ -5824,11 +5779,8 @@ class Battle:
             return
         # 회피 거부(OBF_13659)는 저항 판정과 별개라 효과 저항 무시 약화에도 적용(NKM:4323-4327·4540-4566, 강제만 예외).
         # 물폭탄류(unique_enemy+ignore_resist)는 SE 강제라 제외. 규칙 mc.evade_ignore_resist(legacy = 저항 대상 약화만).
-        if self.mc['evade_ignore_resist'] == 'client':
-            evaded = (ctx is not None and self._evade_rejects(owner, x, ctx)
-                      and not (eff.get('unique_enemy') and eff.get('ignore_resist')))
-        else:
-            evaded = resist and ctx is not None and x in ctx.evaded
+        evaded = (ctx is not None and self._evade_rejects(owner, x, ctx)
+                  and not (eff.get('unique_enemy') and eff.get('ignore_resist')))
         if evaded:
             if not resist and not forced:
                 self.rule_hits['evade_ignore_resist'] += 1
@@ -5836,28 +5788,25 @@ class Battle:
                 self.rule_hits['se_force_apply'] += 1
             else:
                 return     # 회피한 대상에는 약화가 걸리지 않음(공식 2026-06-04 오류 수정 공지)
-        if self.mc['immune_force_apply'] == 'client':
-            # build 26314877 NKM:4339-4343: CantGetMoreDebuff는 비양성·비DeleteBuff·비ForceApply 효과만 IMMUNE 거부
-            # (효과 저항 무시 여부와 무관). 통과 이름 = data/buff_immune_pass.json(IsPositive|DeleteBuff|ForceApplyEffect,
-            # 같은 이름 행이 모두 통과일 때만). 이름만으로 못 가르는 혼재 이름·표에 없는 효과·SE 행 강제 4건은 거부로 둠.
-            if category == 'debuff' and self._debuff_banned(x):
-                # 전투·웨이브 시작에 거는 «기존 표식 해제» 표식(물폭탄 등, unique_enemy+ignore_resist)은 SE 행 ForceApplyEffect
-                # (SE_TEMPLET_SKILL_1 COND_SUMMER_SMILE_UNIQUE_PASSIVE_01_01)로 통과로 본다(엔진은 SE 행 ID 를 몰라 이 경로로 대신 식별).
-                if name in IMMUNE_PASS_NAMES or (eff.get('unique_enemy') and eff.get('ignore_resist')):
-                    self.rule_hits['immune_force_pass'] += 1
-                elif forced:
-                    self.rule_hits['se_force_apply'] += 1
-                else:
-                    return
-        elif resist and not forced and self._debuff_banned(x):
-            return     # 〈면역〉 (약화효과 면역): 상대가 거는 효과(약화) 전부 막음
+        # build 26314877 NKM:4339-4343: CantGetMoreDebuff는 비양성·비DeleteBuff·비ForceApply 효과만 IMMUNE 거부
+        # (효과 저항 무시 여부와 무관). 통과 이름 = data/buff_immune_pass.json(IsPositive|DeleteBuff|ForceApplyEffect,
+        # 같은 이름 행이 모두 통과일 때만). 이름만으로 못 가르는 혼재 이름·표에 없는 효과·SE 행 강제 4건은 거부로 둠.
+        if category == 'debuff' and self._debuff_banned(x):
+            # 전투·웨이브 시작에 거는 «기존 표식 해제» 표식(물폭탄 등, unique_enemy+ignore_resist)은 SE 행 ForceApplyEffect
+            # (SE_TEMPLET_SKILL_1 COND_SUMMER_SMILE_UNIQUE_PASSIVE_01_01)로 통과로 본다(엔진은 SE 행 ID 를 몰라 이 경로로 대신 식별).
+            if name in IMMUNE_PASS_NAMES or (eff.get('unique_enemy') and eff.get('ignore_resist')):
+                self.rule_hits['immune_force_pass'] += 1
+            elif forced:
+                self.rule_hits['se_force_apply'] += 1
+            else:
+                return
         immune_name = name in getattr(x.d, 'immune', ())
         if forced and immune_name and resist:
             self.rule_hits['se_force_apply'] += 1      # 강제 적용은 유닛 면역 목록 통과(NKM:4318), 효과 적중 판정은 별개
         if resist and (eff.get('judge') or (immune_name and not forced)):
             if not self.roll_hit(owner, ctx, x, None if forced else name):
                 return
-        if self.mc['cc_immune_buff'] == 'client' and not forced and self._cc_immune(x, name):
+        if not forced and self._cc_immune(x, name):
             return
         dot = eff.get('dot')
         if dot is None and name in _rules.KNOWN_DOT and not eff['props']:
@@ -5901,7 +5850,7 @@ class Battle:
         # (NKM:3723,4234-4252); otherwise a one-turn taunt never gets used.
         clock = 'any_turn' if self._is_any_turn(owner, name) else 'owner_turn'
         fresh = self._buff_fresh(owner, x, name, clock, self._cur_line)
-        step = buff_step(name) if self.mc['buff_step_group'] == 'client' else None
+        step = buff_step(name)
         if step is not None:
             # 같은 단계 그룹: 더 높은 단계가 이미 있으면 새 효과는 걸리지 않고(지속이 더 길 때만) 기존 지속을 늘린 뒤 다음 차감을 건너뜀,
             # 아니면 같은 그룹의 낮은 단계를 지우고 새로 걸림(NKM:4283-4305,4450-4458)
@@ -5920,7 +5869,7 @@ class Battle:
                 del x.eff[n]
                 self.rule_hits['buff_step_replace'] += 1
             e = x.eff.get(name)
-        if e is not None and name == '스킬 피해 무효' and self.mc['nullifier_count'] == 'client':
+        if e is not None and name == '스킬 피해 무효':
             # 재부여는 새 «스킬 무효화 N회»가 남은 횟수보다 클 때만 받는다 — 같거나 작으면 부여 자체를 거부해 지속·순서도
             # 그대로(NKM:4338-4340 OBF_9349 거짓이면 return false, 5585-5591 SkillNullifierValue > 남은 횟수).
             mn = RX_NULLIFY_N.search(self._cur_line.raw) if self._cur_line is not None else None
@@ -5965,7 +5914,7 @@ class Battle:
         else:
             changed = changed or e.category != category or bool(eff['props'])
             e.category, e.harmful = category, harmful
-            if not dot and self.mc['dispel_order'] == 'client':
+            if not dot:
                 e.seq = next(_EFF_SEQ)   # 같은 ID 재부여는 옛 객체를 지우고 새로 넣는다(NKM:4524-4531 OBF_5657→OBF_11376, 4505 OBF_27309)
             if eff['dur'] is not None:
                 if e.check:
@@ -6004,7 +5953,7 @@ class Battle:
             # PC NKM:5336-5342. Set, do not add; bypass SpeedGaugeUp immunity.
             x.gauge = 10000.0
             self.rule_hits['foe_client_flow'] += 1
-        if name == '스킬 피해 무효' and self.mc['nullifier_count'] == 'client':
+        if name == '스킬 피해 무효':
             # SkillNullifierValue(«스킬 무효화 N회»): 새 횟수가 남은 횟수보다 클 때만 갈아 끼움(NKM:5585-5591 OBF_9349).
             # 갈아 끼움 = 새 객체(4474-4487: OBF_2204 생성 → OBF_5657 옛 객체 삭제 → OBF_27309 삽입, 4505-4518)를 넣음 —
             # 횟수 = 새 SE 값(OBF_4403 생성자 5558-5562), 지속 = 새 SE 값(버프 생성자 4893)이지 max(옛, 새)가 아니다.

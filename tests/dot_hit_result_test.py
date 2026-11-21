@@ -11,13 +11,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit                            # noqa: E402
 from battlesim.mc import Ctx                                     # noqa: E402
-from battlesim.rules import MC_OPTS, MC_RULES                    # noqa: E402
 from battlesim.starsavior.parser import Line                     # noqa: E402
 
 
 def _dot(mode='client', guard=False, same_side=False, invincible=False):
     foes = [unit('v', hp=10**7)] + ([unit('g', hp=10**7)] if guard else [])
-    b = battle([unit('a'), unit('a2')], foes, mc={'dot_hit_result': mode, 'toughness': 'off'})
+    b = battle([unit('a'), unit('a2')], foes, mc={'toughness': 'off'})
     a, v = b.allies[0], b.foes[0]
     src = b.foes[1] if same_side and guard else a
     if guard:
@@ -32,17 +31,10 @@ def _dot(mode='client', guard=False, same_side=False, invincible=False):
     return b, v
 
 
-def test_default_client():
-    r = MC_RULES['dot_hit_result']
-    assert MC_OPTS['dot_hit_result'] == 'client' and r['legacy'] == 'off' and r['grade'] == 'code'
-    assert '18163' in r['source']
-
 
 def test_dot_tick_marks_normal_hit():
     b, v = _dot()
     assert v.hit_evaded is False and b.rule_hits['dot_hit_result'] == 1
-    b, v = _dot('off')
-    assert v.hit_evaded is True and b.rule_hits['dot_hit_result'] == 0
 
 
 def test_dot_on_invincible_still_marks():
@@ -54,8 +46,6 @@ def test_dot_guard_share_marks_guard():
     b, v = _dot(guard=True)
     g = b.foes[1]
     assert g.hp < g.maxhp and v.hit_evaded is False and g.hit_evaded is False
-    b, v = _dot('off', guard=True)
-    assert b.foes[1].hit_evaded is True and v.hit_evaded is True
 
 
 def test_same_side_caster_dot_does_not_mark():
@@ -64,15 +54,15 @@ def test_same_side_caster_dot_does_not_mark():
 
 
 def test_instant_damage_marks_normal_hit():
-    for mode, want in (('client', False), ('off', True)):
-        b = battle([unit('a')], [unit('v', hp=10**7), unit('v2')], mc={'dot_hit_result': mode})
+    for mode, want in (('client', False),):
+        b = battle([unit('a')], [unit('v', hp=10**7), unit('v2')], mc={})
         a, v, v2 = b.allies[0], b.foes[0], b.foes[1]
         v.hit_evaded = v2.hit_evaded = True
         give(v, '무적')
         b._instant_damage(a, v)
         assert v.hit_evaded is want, mode
         b._instant_damage(v2, v)                                 # 같은 편 다른 시전자 → 덮지 않음
-    b = battle([unit('a')], [unit('v', hp=10**7), unit('v2')], mc={'dot_hit_result': 'client'})
+    b = battle([unit('a')], [unit('v', hp=10**7), unit('v2')], mc={})
     v, v2 = b.foes
     v.hit_evaded = True
     b._instant_damage(v2, v)
@@ -82,10 +72,10 @@ def test_instant_damage_marks_normal_hit():
 def test_dot_tick_lifts_evade_reject():
     """관찰 가능한 결과: 지속 피해 틱 뒤 «적 전체» 스킬을 고른 다른 유닛의 피격 시 줄(_evade_rejects)이 더는 거부하지 않음."""
     res = {}
-    for mode in ('client', 'off'):
+    for mode in ('client',):
         b = battle([unit('a'), unit('a2')], [unit('f'), unit('f2', skills=[dict(slot='기본기', dm=100),
                                                                        dict(slot='궁극기', dm=100, all=True)])],
-                   mc={'dot_hit_result': mode, 'evade_ignore_resist': 'client', 'toughness': 'off'})
+                   mc={'toughness': 'off'})
         a, f, f2 = b.allies[0], b.foes[0], b.foes[1]
         a.hp = a.maxhp = 10**7
         f2.sel_skill, f2.sel_target = f2.d.skills['궁극기'], a
@@ -97,7 +87,7 @@ def test_dot_tick_lifts_evade_reject():
         ctx.target, ctx.targets = b.allies[1], [b.allies[1]]
         b._cur_line = Line('[스킬 사용 후] (조건: 아군 공격 후) 적 전체에게 〈출혈〉 (2턴)', '기본기', 'active')
         res[mode] = b._evade_rejects(f2, a, ctx)
-    assert res == {'client': False, 'off': True}, res
+    assert res == {'client': False}, res
 
 
 if __name__ == '__main__':

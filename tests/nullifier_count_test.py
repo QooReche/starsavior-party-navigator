@@ -10,12 +10,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, unit                                  # noqa: E402
 from battlesim.mc import Ctx                                     # noqa: E402
-from battlesim.rules import MC_OPTS                              # noqa: E402
 from battlesim.starsavior.parser import Line                     # noqa: E402
 
 
 def _run(mode, n, hits):
-    b = battle([unit('a')], [unit('f')], mc={'nullifier_count': mode})
+    b = battle([unit('a')], [unit('f')], mc={})
     a, f = b.allies[0], b.foes[0]
     ctx = Ctx(f, f, f.d.skills['기본기'])
     ctx.target, ctx.targets = f, [f]
@@ -27,9 +26,6 @@ def _run(mode, n, hits):
     return b, f, hp
 
 
-def test_default_client():
-    assert MC_OPTS['nullifier_count'] == 'client'
-
 
 def test_three_charges_client():
     b, f, hp = _run('client', 3, 2)
@@ -38,20 +34,16 @@ def test_three_charges_client():
     assert f.hp < hp and '스킬 피해 무효' not in f.eff
 
 
-def test_three_charges_once_legacy():
-    b, f, hp = _run('once', 3, 2)
-    assert f.hp < hp and '스킬 피해 무효' not in f.eff               # 첫 공격 뒤 사라져 두 번째에 맞음
-
 
 def test_single_charge_same_both():
-    for mode in ('client', 'once'):
+    for mode in ('client',):
         b, f, hp = _run(mode, 1, 1)
         assert f.hp == hp and '스킬 피해 무효' not in f.eff
 
 
 
 def _reapply(mode, first, second, dur2='5턴', dur1='1턴'):
-    b = battle([unit('a')], [unit('f')], mc={'nullifier_count': mode})
+    b = battle([unit('a')], [unit('f')], mc={})
     f = b.foes[0]
     ctx = Ctx(f, f, f.d.skills['기본기'])
     ctx.target, ctx.targets = f, [f]
@@ -71,8 +63,6 @@ def test_reapply_smaller_or_equal_refused_client():
         assert e.stacks == 3 and e.dur == 1 and e.seq == seq, (second, e.stacks, e.dur)
     e, _ = _reapply('client', 3, 5)                                 # 더 크면 받음
     assert e.stacks == 5 and e.dur == 5
-    e, _ = _reapply('once', 1, 1)                                   # 옛 동작: 같은 1회 재부여로 지속 갱신
-    assert e.dur == 5
 
 
 def test_reapply_larger_new_object_duration_client():

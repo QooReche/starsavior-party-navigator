@@ -16,7 +16,7 @@ from battlesim.mc import Battle                                  # noqa: E402
 
 
 def _stub(mode, seed=1):
-    b = NS(mc=dict(MC_OPTS, heal_tie=mode, stat_select_int='floor'), rule_hits=defaultdict(int))
+    b = NS(mc=dict(MC_OPTS, stat_select_int='floor'), rule_hits=defaultdict(int))
     rng = random.Random(seed)
     b.R = lambda side: rng
     b.filter_chain = lambda *a, **k: Battle.filter_chain(b, *a, **k)
@@ -29,13 +29,10 @@ def _u(name, pos, hp, maxhp):
     return NS(name=name, pos=pos, hp=hp, maxhp=maxhp, side=0, dead=False)
 
 
-def test_default_client():
-    assert MC_OPTS['heal_tie'] == 'client'
-
 
 def test_lowest_ratio_first():
     a, b, c = _u('a', 0, 50, 100), _u('b', 1, 30, 100), _u('c', 2, 90, 100)
-    for mode in ('client', 'slot'):
+    for mode in ('client',):
         assert Battle.heal_order(_stub(mode), a, [a, b, c], 1)[0] is b
 
 
@@ -45,7 +42,6 @@ def test_tie_lower_maxhp_wins():
     st = _stub('client')
     assert Battle.heal_order(st, big, [big, small], 1)[0] is small
     assert st.rule_hits['heal_tie'] == 0      # 최대 생명력에서 갈렸으면 무작위 아님
-    assert Battle.heal_order(_stub('slot'), big, [big, small], 1)[0] is big   # 옛 동작 = 앞 칸
 
 
 def test_full_tie_random():
@@ -55,14 +51,12 @@ def test_full_tie_random():
     got = Counter(Battle.heal_order(st, a, [a, b], 1)[0].name for _ in range(400))
     assert 120 < got['a'] < 280 and 120 < got['b'] < 280, got
     assert st.rule_hits['heal_tie'] == 400
-    assert {Battle.heal_order(_stub('slot'), a, [a, b], 1)[0].name for _ in range(20)} == {'a'}
 
 
 def test_basis_point_compare():
     """1/10000 정수로 비교: 49.995% 와 49.999% 는 같은 4999 → 최대 생명력으로 갈림"""
     a, b = _u('a', 0, 49995, 100000), _u('b', 1, 4999.9, 10000)
     assert Battle.heal_order(_stub('client'), a, [a, b], 1)[0] is b
-    assert Battle.heal_order(_stub('slot'), a, [a, b], 1)[0] is a
 
 
 def test_k_picks_and_full_list():
@@ -106,14 +100,12 @@ def test_path_pick_ally():
     call = lambda b, us: Battle.pick_ally(b, us[2], 'heal').name
     c = _draws(call, 'client')
     assert set(c) == {'a', 'b'} and min(c.values()) > 60, c        # 동률은 무작위
-    assert _draws(call, 'slot', 20) == Counter(a=20)                # 옛 동작 = 앞 칸
 
 
 def test_path_text_resolve():
     call = lambda b, us: Battle.resolve(b, us[2], '아군 1명', NS(), 'heal')[0].name
     c = _draws(call, 'client')
     assert set(c) == {'a', 'b'} and min(c.values()) > 60, c
-    assert _draws(call, 'slot', 20) == Counter(a=20)
 
 
 def test_path_select_auto_lowest_hp():

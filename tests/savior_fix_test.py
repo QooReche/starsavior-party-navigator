@@ -193,15 +193,13 @@ def test_trigger_blocking():
     out = []
     for key in ['roberta', 'fei', 'smile', 'sunshine-cat-smile', 'professor-m']:
         for block in ['기절', '수면', 'break', 'cd']:
-            # mc.sleep_wake=client 면 적 공격에 맞는 순간 수면이 풀려(클라 OBF_2209) «수면 중 차단» 장면이 안 생김 → 이 시험만 off 로 고정
             b, a, f = setup(key, [unit('actor')], [unit('foe', atk=1, hp=10**9, sa=1000,
-                                                       skills=[dict(slot='기본기', dm=100, all=True)])],
-                            mc={'sleep_wake': 'off'})
+                                                       skills=[dict(slot='기본기', dm=100, all=True)])])
             if block == 'break':
                 a.broken = True
             elif block == 'cd':
                 a.cd['특수기'] = 3
-            else:
+            elif block != '수면':
                 give(a, block)
             give(a, '냉각', stacks=5).maxs = 5
             if key == 'sunshine-cat-smile':
@@ -210,10 +208,14 @@ def test_trigger_blocking():
             give(f, '물폭탄', harmful=True)
             f.hp = f.maxhp * 0.49
             b.cast(f, f.d.skills['기본기'], target=a)
+            base = 0
+            if block == '수면':   # 맞으면 수면이 풀리므로(클라 OBF_2209, 옛 스위치 sleep_wake 삭제) 적 타격 뒤에 걸고 그 뒤 발동만 셈
+                base = casts(a)
+                give(a, block)
             b.cast(b.allies[1], b.allies[1].d.skills['기본기'], target=f)
             b.cast(a, a.d.skills['기본기'], target=f)
-            if casts(a):
-                out.append((key, block, casts(a)))
+            if casts(a) - base:
+                out.append((key, block, casts(a) - base))
     return not out, str(out)
 
 

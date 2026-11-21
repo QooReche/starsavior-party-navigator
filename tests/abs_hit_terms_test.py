@@ -21,30 +21,21 @@ def _roll(mode, owner_stats, target_stats, oel='별', xel='별', r=0.7):
     owner = NS(d=NS(stats=dict(eh=5000, **owner_stats), passive=defaultdict(float)), mods=lambda: MODS, element=oel, side=0)
     x = NS(d=NS(stats=dict(er=0, **target_stats), immune=()), mods=lambda: MODS, element=xel, side=1)
     rng = NS(random=lambda: r)
-    b = NS(mc=dict(MC_OPTS, abs_hit_terms=mode), rule_hits=defaultdict(int), R=lambda side: rng)
+    b = NS(mc=dict(MC_OPTS), rule_hits=defaultdict(int), R=lambda side: rng)
     return Battle.roll_hit(b, owner, None, x, None), b
 
-
-def test_default_client():
-    assert MC_OPTS['abs_hit_terms'] == 'client'
 
 
 def test_attacker_abs_hit_client():
     ok, b = _roll('client', dict(dhit=9000), {})          # 적중 50% < 절대 적중 90% → 90%
     assert ok and b.rule_hits['abs_hit_terms'] == 1
-    assert not _roll('zero', dict(dhit=9000), {})[0]
 
 
 def test_reverse_element_abs_resist_client():
     # 별 → 태양 은 불리(ELEM_LOSES): 적중 50%-30%=20%, 절대값 -(0+역상성 9000) → min(20%, 10%) = 10%
     assert not _roll('client', {}, dict(adher=9000), oel='별', xel='태양', r=0.15)[0]
-    assert _roll('zero', {}, dict(adher=9000), oel='별', xel='태양', r=0.15)[0]
     assert _roll('client', {}, dict(adher=9000), oel='별', xel='별', r=0.15)[0]      # 같은 속성이면 무관
 
-
-def test_zero_values_unchanged():
-    for r in (0.1, 0.49, 0.51):
-        assert _roll('client', {}, {}, r=r)[0] == _roll('zero', {}, {}, r=r)[0]
 
 
 if __name__ == '__main__':

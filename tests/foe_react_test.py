@@ -91,12 +91,6 @@ class TestClockworkBomb(unittest.TestCase):
         b.act(foe)   # 쿨 4 — 아직 안 찰 것
         self.assertEqual(_count_react_casts(b), 0, '쿨타임 중에는 발동하면 안 됨')
 
-    def test_off_switch_disables(self):
-        b = _battle(self._foe(), foe_react='off')
-        foe = b.foes[0]
-        b.act(foe)
-        self.assertEqual(_count_react_casts(b), 0, 'foe_react=off 에서는 발동하면 안 됨')
-
 
 # ================================================================ 소거 (self_has + self_not_has)
 class TestErasure(unittest.TestCase):
@@ -259,13 +253,6 @@ class TestReactOrder(unittest.TestCase):
         self.assertTrue(basics, '기본기 시전이 있어야 함')
         self.assertGreater(min(reacts), min(basics), '반응은 본 행동(기본기) 뒤')
 
-    def test_off_preserves_old_behavior(self):
-        """foe_react=off 에서 반응 스킬이 0회 발동."""
-        foe = _foe({'특수기': {'timing': 'after_attack', 'conds': [], 'target': 'all', 'is_attack': True}})
-        b = _battle(foe, foe_react='off')
-        b.act(b.foes[0])
-        self.assertEqual(_count_react_casts(b), 0)
-
 
 # ================================================================ on_my_attack (내 공격 시, 스트라이크 전)
 class TestOnMyAttack(unittest.TestCase):
@@ -302,19 +289,6 @@ class TestOnMyAttack(unittest.TestCase):
         b.cast(b.foes[0], b.foes[0].d.skills['특수기'])
         self.assertEqual(_count_react_casts(b), 0)
 
-    def test_off_switch(self):
-        b = _battle(self._foe(), foe_react='off')
-        ally = b.allies[0]
-        _set_buff(ally, '속박', harmful=True)
-        b.act(b.foes[0])
-        self.assertEqual(_count_react_casts(b), 0)
-
-    def test_legacy_switch_disables(self):
-        b = _battle(self._foe(), foe_react_timing='legacy')
-        ally = b.allies[0]
-        _set_buff(ally, '속박', harmful=True)
-        b.act(b.foes[0])
-        self.assertEqual(_count_react_casts(b), 0, 'foe_react_timing=legacy 에서는 on_my_attack 미발동')
 
 
 # ================================================================ after_ally_attack (아군 공격 뒤)
@@ -368,13 +342,6 @@ class TestAfterAllyAttack(unittest.TestCase):
         b.act(minion)   # 기본기
         self.assertEqual(_count_react_casts(b), 0, '기본기는 skill_hyper 미충족')
 
-    def test_legacy_switch_disables(self):
-        hyper_sk = Skill(dict(sl='궁극기', n='화염', ty='액티브', tg='적 단일',
-                              act='공격', cf=[20000, 0, 0, 0], all=False, cd=0, nv=0))
-        b = _battle_two_foes(self._boss(), minion_skills={'궁극기': hyper_sk}, foe_react_timing='legacy')
-        minion = b.foes[1]
-        b.act(minion)
-        self.assertEqual(_count_react_casts(b), 0, 'legacy 에서는 after_ally_attack 미발동')
 
 
 # ================================================================ damage_result (피해 결과 조건)
@@ -483,9 +450,6 @@ class TestBuffPresence(unittest.TestCase):
     def test_check_marker_not_a_buff(self):
         self.assertFalse(self._fires('target_pos_buff', lambda f, a: self._marker(a)))
 
-    def test_check_marker_counted_in_legacy(self):
-        self.assertTrue(self._fires('target_pos_buff', lambda f, a: self._marker(a),
-                                    foe_react_buff_count='harmful'))
 
     def test_self_neg_and_target_neg(self):
         self.assertTrue(self._fires('self_neg_buff', lambda f, a: _set_buff(f, '공격력 감소', harmful=True)))

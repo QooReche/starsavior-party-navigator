@@ -24,17 +24,14 @@ def _eff(name, harmful=False):
 
 
 def _run(mode, x, rest):
-    b = NS(mc=dict(MC_OPTS, dispel_order=mode), rule_hits=defaultdict(int), dirty=lambda u: None,
+    b = NS(mc=dict(MC_OPTS), rule_hits=defaultdict(int), dirty=lambda u: None,
            R=lambda side: random.Random(1), _fired=lambda u: None, log=lambda **k: None,
            resolve=lambda owner, expr, ctx, kind=None: [x])
-    for f in ('_dispel_ok', '_dispel_cand', '_dispel_shield_ok', '_dispel_n_ordered'):
+    for f in ('_dispel_ok', '_dispel_cand', '_dispel_n_ordered'):
         setattr(b, f, (lambda g: (lambda *a: g(b, *a)))(getattr(Battle, f)))
     Battle.run_special(b, x, NS(raw=''), None, rest)
     return b
 
-
-def test_default_client():
-    assert MC_OPTS['dispel_order'] == 'client'
 
 
 def test_priority_table_has_omega():
@@ -48,11 +45,6 @@ def test_higher_priority_first_client():
     b = _run('client', x, '자신에게 (강화효과 해제) 효과 1개 해제')
     assert sorted(x.eff) == ['공격력 증가']                    # 늦게 받은 오메가(우선순위 1)가 먼저 지워짐
     assert b.rule_hits['dispel_order'] == 1
-    x = NS(side=0, name='x', eff={})
-    for e in (_eff('공격력 증가'), _eff('오메가 프로토콜')):
-        x.eff[e.name] = e
-    _run('insertion', x, '자신에게 (강화효과 해제) 효과 1개 해제')
-    assert sorted(x.eff) == ['오메가 프로토콜']
 
 
 def test_reapplied_goes_last_client():
@@ -68,9 +60,9 @@ def test_reapply_updates_seq_in_add_effect():
     owner = NS(side=0, name='o', d=NS(effect_info={}), acting=False)
     x = NS(side=0, name='x', eff={}, acting=False, ban_refuse=False, buff_banned=lambda: False, on=lambda n: False,
            d=NS(immune=()))
-    for mode, moved in (('client', True), ('insertion', False)):
+    for mode, moved in (('client', True),):
         x.eff = {}
-        b = NS(mc=dict(MC_OPTS, dispel_order=mode), rule_hits=defaultdict(int), dirty=lambda u: None,
+        b = NS(mc=dict(MC_OPTS), rule_hits=defaultdict(int), dirty=lambda u: None,
                _cur_line=None, check_pending=[], refuse_buff=lambda u, n: False, _is_any_turn=lambda o, n: False,
                _buff_fresh=lambda *a: False, alive=lambda side: [], _cc_immune=lambda u, n: False,
                _forced=lambda o, n=None: False, _evade_gate=lambda o, u, c: False)
@@ -84,8 +76,8 @@ def test_reapply_updates_seq_in_add_effect():
 
 def test_put_eff_reapply_updates_seq():
     """기믹 모듈 put_eff(코스모·길방) 재부여도 클라에선 재삽입이라 목록 뒤로 간다(NKM:4505-4537)."""
-    for mode, moved in (('client', True), ('insertion', False)):
-        b = NS(mc=dict(MC_OPTS, dispel_order=mode), dirty=lambda u: None)
+    for mode, moved in (('client', True),):
+        b = NS(mc=dict(MC_OPTS), dirty=lambda u: None)
         x = NS(side=0, name='x', eff={}, acting=False, ban_refuse=False)
         Battle.put_eff(b, x, '상급 공격력 증가', {'공격력%': 10.0}, dur=2)
         first = x.eff['상급 공격력 증가'].seq
