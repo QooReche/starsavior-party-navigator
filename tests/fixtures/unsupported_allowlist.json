@@ -79,14 +79,14 @@
       },
       {
         "key": "[\"rule\",\"model.chain_timing\"]",
-        "reason": "근거 못 찾음(엔진 연결 남음): 클라 규칙(NKM:4721-4742,6212-6284,13957-14002)은 이미 확인됨. 남은 것은 다른 적 원형 줄·시즌/벨그라스 고정 피해 큐의 BuffId 대응 구현이며 확대 조사에서 새 클라 근거 없음. 미연결 범위는 즉시 실행 유지",
-        "client_clue": "PC 26752678 확대 조사(NKM·NT·ST·NKC·Assembly-CSharp, tables/·rebuild T, 설치본 Data, 시작/결과 패킷, STRING_COMMON): NKM:4721-4742,6105-6109,6212-6284,13838-13868,13957-14002; data/chain_se.json; docs/allowlist_round2_1121.md; docs/allowlist_remain_1121.md",
+        "reason": "근거 못 찾음(연결 남음, 길드 방어전만): 클라 추가 피해 큐(NKM:6244-6320)는 chain_timing=client_queue로 구원자·적 연쇄 358/384곳과 벨그라스/코스모 고정 피해·코스모 응징에 적용함. 남은 즉시 실행은 길드 방어전 티엔·시엔(26752678 추출본에 JSON_GUILD_DUNGEON_TIENSIEN_04·G3_04 없음, 원한맹·티엔·시엔 유닛 이름 문자열 없음)·레타르기아의 마술사(변형 속성이 배치 칸과 다름) 26곳과 길드 BFB 전용 모델의 연쇄(응징·부케)",
+        "client_clue": "PC 26752678: NKM:4721-4742,6085-6109,6212-6359,13838-13849; ST:29248-29330; NT:41933; rebuild T CLIENT_BATTLE_TEMPLET_GUILD_DUNGEON·plain/JSON_GUILD_DUNGEON_*·hard/STRING_COMMON; data/chain_se.json(report); tools/build_chain_se.py; docs/allowlist_conn_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
         "key": "[\"rule\",\"model.effect_mapping\"]",
-        "reason": "근거 못 찾음(전수 대응): 원형 표(T/CLIENT_SE_TEMPLET_SKILL_1·2, CLIENT_BUFF_TEMPLET)는 클라에 모두 있으나 공개 설명문 줄과의 전수 대응을 증명할 수단이 없음. 실행별 미지원은 unsupported가 맡음",
-        "client_clue": "PC 26752678 확대 조사(NKM·NT·ST·NKC·Assembly-CSharp, tables/·rebuild T, 설치본 Data, 시작/결과 패킷, STRING_COMMON): T/CLIENT_SE_TEMPLET_SKILL_1·2, CLIENT_BUFF_TEMPLET; NKM:4318-4566,4721-4742; docs/allowlist_remain_1121.md",
+        "reason": "근거 못 찾음(전수 증명 불가 범위만): tools/effect_mapping_audit.py가 구원자 67형태 전 레벨·현행 적 4,359정의의 SE 짝 4,226줄과 상시 능력치 231줄을 클라와 대조해 불일치 0(엔진 내부 표지 이름 1건 제외)이고 확률 이번 스킬 보정은 고쳤음. 남은 것은 줄 수·대상 머리말이 안 맞아 짝짓지 못한 26묶음 150줄, 스테이지 연결이 없는 적 123정의, 대조 항목 밖 수치(버프 표 능력치·SkillConditionId 조건)",
+        "client_clue": "PC 26752678: rebuild T CLIENT_SE_TEMPLET_SKILL_1·2, CLIENT_SKILL_LEVEL_GROUP_TEMPLET_1·2(SkillLevelSE·SkillLevelStat), CLIENT_BUFF_TEMPLET; ST:29248-29330; NT:41933; NKM:16504,20238-20256; tools/effect_mapping_audit.py; docs/allowlist_conn_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {

@@ -10,6 +10,10 @@
 
 내 정보 1121로 장착된 네 구원자(스킬 레벨·잠재력 7종)와 공허선도자·감시자의 조건부 효과를 SE 표 단위로 전부 나열해 PC 26752678 decompiled·T 표와 대조했음. 치명은 대상마다 스킬 1회에 1번 굴리고(NKM:8242–8264) «치명 시» 조건은 이번 스킬 대상 중 하나라도 치명이면 참(NKM.Templets:43184–43197)이라 엔진과 같았음. 재발동 제한(SeCoolTurn)이 클라는 주인의 자기 턴 종료마다 줄어드는데(NKM:16496–16538·3604–3617·2013–2021) 엔진은 행동 시작으로 세던 것을 고쳤고(`mc.se_cool_clock`), 강화/약화 해제 후보를 표의 IsBuff로 고르도록 고쳤음(NKM:4229–4253, `mc.dispel_isbuff`, 왈츠 아세라 〈협공 확률 20% 증가 (C)〉는 해제 대상 아님). 둘 다 client 기본·legacy 보존. 42-12 1000판 클리어는 고치기 전 대비 약 0.54배(전부 재발동 제한 시계, 프로페서M 〈날렵한 자세〉). 적 약화·해제·구원자 절대 효과 저항(전 SSR 2000, 늘리는 표 없음)은 엔진과 같음. 회귀 9건·변이 2건, 표준 육성 대조 샘플 4개 전후 같음. 전체 시험은 메인 일괄 실행으로 넘김. 상세 `docs/op4212_triggers_1121.md`.
 
+## 2026-11-21 — 허용 목록 엔진 연결 2건: 추가 피해 통합 큐·효과 줄 원형 대조
+
+PC 26752678 NKM:6244–6320·13838–13849에 맞춰 연쇄·고정 피해·응징을 BuffId 묶음 하나의 큐로 처리하도록 고쳤음(`chain_timing=client_queue`, 옛 값 `client_mapped`·`immediate`). 적 연쇄 줄 358/384곳을 원형 SE BuffId에 연결했고(원형 불일치 0), 벨그라스·코스모 자기 고정 피해(2509)와 코스모 응징(2510)을 같은 큐에 넣었음. 처리 도중 사망 재선택(NKM:6332–6359)도 구현했음. 효과 줄 ↔ 원형 SE 기계 대조 도구 `tools/effect_mapping_audit.py`를 만들어 구원자 67형태 전 레벨·현행 적 4,359정의의 4,226줄·상시 능력치 231줄을 대조했고 불일치는 엔진 내부 표지 이름 1건뿐이었음. 대조에서 찾은 확률 이번 스킬 보정의 기대값 처리를 클라 발동 판정(NKM:16504)으로 고쳤음(`local_chance=roll`). 남은 범위(길드 방어전 연결 불가 26곳·BFB 전용 모델, 짝짓기 불가 26묶음 150줄)는 허용 목록 사유로 남겼음. 시험 `tests/chain_queue_conn_test.py`·`tests/effect_mapping_conn_test.py`(변이 11건 거부), 정본 `docs/allowlist_conn_1121.md`.
+
 ## 2026-11-21 — 허용 목록 D 남은 항목 재조사(범위 확대, 엔진 불변)
 
 PC 26752678 다섯 어셈블리·tables/·rebuild T·설치본 Data·시작/결과 패킷·STRING_COMMON까지 넓혀 담당 12건 중 전투력(wt-power 결과 공유)을 뺀 11건(코스모 난이도·시즌 버프·점수, score_conf, ally_init_cd, clash_no_turn_limit, cosmo_raid_boss, heal_target, chain_timing, effect_mapping, season_inputs)을 다시 찾았음. 엔진과 다른 클라 동작은 없어 고친 것 0건·남긴 것 12건이며 사유·조사 위치만 갱신했음(D 17 그대로). 단일 호스트의 턴 제한 필드는 클라 코드에서 대입 0건(NKM:437–451)이고 점수는 결과 패킷 단일 정수(NT:20419–20503)라 서버 전용으로 확정했음. 코스모 표 StatScale/TacticsScale/StarLinkScale(10000/10000/0)을 엔진이 쓰지 않는 차이는 RankingRaid 묶음 생성이 서버라 추정으로 고치지 않고 기록함. 시험 `tests/allowlist_remain_1121_test.py`, 정본 `docs/allowlist_remain_1121.md`.
