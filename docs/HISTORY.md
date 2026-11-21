@@ -1,3 +1,7 @@
+## 2026-11-21 — 허용 목록 D 남은 항목 재조사(범위 확대, 엔진 불변)
+
+PC 26752678 다섯 어셈블리·tables/·rebuild T·설치본 Data·시작/결과 패킷·STRING_COMMON까지 넓혀 담당 12건 중 전투력(wt-power 결과 공유)을 뺀 11건(코스모 난이도·시즌 버프·점수, score_conf, ally_init_cd, clash_no_turn_limit, cosmo_raid_boss, heal_target, chain_timing, effect_mapping, season_inputs)을 다시 찾았음. 엔진과 다른 클라 동작은 없어 고친 것 0건·남긴 것 12건이며 사유·조사 위치만 갱신했음(D 17 그대로). 단일 호스트의 턴 제한 필드는 클라 코드에서 대입 0건(NKM:437–451)이고 점수는 결과 패킷 단일 정수(NT:20419–20503)라 서버 전용으로 확정했음. 코스모 표 StatScale/TacticsScale/StarLinkScale(10000/10000/0)을 엔진이 쓰지 않는 차이는 RankingRaid 묶음 생성이 서버라 추정으로 고치지 않고 기록함. 시험 `tests/allowlist_remain_1121_test.py`, 정본 `docs/allowlist_remain_1121.md`.
+
 ## 2026-11-21 — 전투력 차이 보정 클라 재조사(엔진 불변)
 
 PC 26752678 다섯 어셈블리·표·설치 폴더를 다시 뒤졌으나 배율을 만드는 코드는 없었음. 배율은 전투 호스트 입력(NKM:479–482,12500–12532)이고 클라가 만드는 호스트는 로컬 1배(NKC:556331–556342)뿐, 서버 배율은 타격별 피해 기록(NT:24510,24602,24726)으로만 내려옴. RANGE·LEVEL 표는 클라 데이터에 있으나 로더 0건. 클라가 표시하는 경고 계산(ST:6514–6544, 정수 내림 비율)·편성 전투력(NKC:514826, 전 구원자 MIX)·권장 전투력·경고 21단계 격자는 엔진 model·표와 모두 같아 기본값·식은 그대로 둠. 새 시험 tests/power_penalty_client_test.py(표·비율·격자 대조), rules note·코스모 허용 목록 사유 갱신. 42-12 클리어 29% 전후 같음. 상세 docs/power_penalty_1121.md.
