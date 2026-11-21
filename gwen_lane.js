@@ -177,7 +177,7 @@
       const portrait=!!stage?.result&&lane===stage.result;
       lane.dataset.portrait=String(portrait);
       let candidates=CHOICES[kind];
-      if(current.phase==='result')candidates=P.resultCandidates(current.clear,current.better,current.recoHigher);
+      if(current.phase==='result')candidates=Array.isArray(current.arts)&&current.arts.length?current.arts:P.resultCandidates(current.clear,current.better,current.recoHigher);   // 화면이 등신대 후보를 직접 주면 그것(코스모 3팀 요약)
       if(kind==='home')candidates=innerWidth>=1200?CHOICES.home:['guide2','welcome','present'];
       const level=current.phase==='error'?'error':current.phase==='result'?'result':current.phase==='work'?'work':'idle';
       p.state.until=clock;const idKey=level==='result'?current.result:null;

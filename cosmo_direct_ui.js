@@ -299,6 +299,13 @@
     paint(host);
     return host;
   }
-  const api={render,html,summaryHtml,shortOf,moreHtml,SCREEN,LABELS,LOW_CLEAR};
+  // 결과 그웬 등신대 후보(말풍선 한마디와 같은 기준). 등신대(st_*·confident·thoughtful·notes)만.
+  function gwenArts(clears){
+    const c=(clears||[]).filter(Number.isFinite);if(!c.length)return null;
+    if(c.some(x=>x<LOW_CLEAR))return ['st_point','thoughtful','st_sulk','notes'];
+    if(c.every(x=>x>=.8))return ['confident','st_verdict','st_cheer','st_ok','st_wink'];
+    return ['st_point','st_reach','thoughtful','st_ok'];
+  }
+  const api={render,html,summaryHtml,shortOf,moreHtml,gwenArts,SCREEN,LABELS,LOW_CLEAR};
   if(node)module.exports=api;else root.CosmoDirectUI=api;
 })(typeof window!=='undefined'?window:globalThis);

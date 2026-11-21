@@ -178,7 +178,7 @@ async function mutation(name,source,from,to,check){assert(source.includes(from),
     'm.owner=b.owner;m.revision=o.revision||0;m.jobId=lease.token;',src=>lateResponse(html,src));
   await mutation('internal result host hidden',html,"host.hidden=DIRECT.mode!=='reco'", "host.hidden=host.dataset.phase==='result'||DIRECT.mode!=='reco'",persistent);
   await mutation('result lane registration',html,"host.dataset.phase=phase;GwenStage.mount(document,{mode:'reco'});",'host.dataset.phase=phase;',async template=>{const h=setup(lane,template);h.c.$('reco-result-lane').remove();h.slot('reco','result');h.c.recoGwenShow(false,null,{clear:.8});await h.flush();assert(h.actor()?.isConnected);});
-  await mutation('score policy bypass',lane,'candidates=P.resultCandidates(current.clear,current.better,current.recoHigher)','candidates=CHOICES.low',code=>persistent(html,code));
+  await mutation('score policy bypass',lane,'candidates=Array.isArray(current.arts)&&current.arts.length?current.arts:P.resultCandidates(current.clear,current.better,current.recoHigher)','candidates=CHOICES.low',code=>persistent(html,code));
   await mutation('result idle expiration',lane,"if(!['work','error','result'].includes(current.phase))","if(!['work','error'].includes(current.phase))",code=>persistent(html,code));
   await mutation('inline result removal',ux,'report.done=true;invalidate();','report.done=true;scene.remove();invalidate();',inlineReport);
   await mutation('completed report rerender removal',ux,'gwenPending.set(state.id,new WeakRef(state));',"if(state.done)return '';gwenPending.set(state.id,new WeakRef(state));",inlineReport);

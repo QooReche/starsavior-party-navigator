@@ -547,7 +547,8 @@ function searchGwenPaint(host,mode,state){
  else if(state.phase==='done'){
   const first=state.rows?.[0],rates=first?.teams?.map(t=>t.st?.clear).filter(Number.isFinite);
   const clear=rates?.length?Math.min(...rates):first?.clear;
-  stage.done(state.rows,{clear});
+  const arts=mode==='cosmoSearch'&&window.CosmoDirectUI?.gwenArts?CosmoDirectUI.gwenArts(rates):null;
+  stage.done(state.rows,arts?{clear,arts}:{clear});
  }else stage.reset();
  if(DIRECT.mode==='reco'&&$('mi-panel').hidden)GwenStage.activate(mode==='guildSearch'?guildGwenMode():mode);
  recoGwenVisibility();

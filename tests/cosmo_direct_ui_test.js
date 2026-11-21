@@ -244,7 +244,12 @@ function suite(U){
     assert.equal(t.q('.cg-say-bubble').textContent,'클리어는 운이 좀 필요해합계 3,052,450!');
     assert.equal(t.q('.cg-say-line').textContent,'클리어는 운이 좀 필요해');
     // 클리어율이 LOW_CLEAR 미만인 팀만 ⚠ 경고색
-    assert.equal(U.LOW_CLEAR,.5);assert(!t.q('#cd-tab-disparity .cg-clear-low'));
+    assert.equal(U.LOW_CLEAR,.5);
+    assert.deepEqual(U.gwenArts([.9,.85,.8]),['confident','st_verdict','st_cheer','st_ok','st_wink'],'모두 튼튼 → 자신만만 등신대');
+    assert.deepEqual(U.gwenArts([.88,.2,.7]),['st_point','thoughtful','st_sulk','notes'],'약한 팀 → 짚는 등신대');
+    assert.deepEqual(U.gwenArts([.6,.7,.75]),['st_point','st_reach','thoughtful','st_ok']);
+    assert.equal(U.gwenArts([]),null);
+    for(const a of [...U.gwenArts([.9]),...U.gwenArts([.1]),...U.gwenArts([.6])])assert(/^(st_|confident$|thoughtful$|notes$)/.test(a),'등신대만: '+a);assert(!t.q('#cd-tab-disparity .cg-clear-low'));
     v.summary.teams.disparity.clear=.49;U.render(t.host,v,t.h);
     assert.equal(t.q('#cd-tab-disparity .cg-clear-low')?.textContent,'⚠ 클리어 49%');assert.equal(t.qa('.cg-clear-low').length,1);
     assert.match(t.q('#cd-tab-disparity').getAttribute('aria-label'),/클리어 49%\(낮음\)/);
