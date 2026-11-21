@@ -952,7 +952,8 @@ def test_myinfo_required(browser, ctx):
       dbtn:!!document.querySelector('#dbtn'), own:document.querySelectorAll('#own input:checked').length})''')
     page.click('#out button[data-miopen="1"]')
     box = page.locator('.mi-import-guide')
-    assert box.locator('ol > li').count() == 4
+    assert box.locator('ol > li').count() == 5
+    assert box.locator('ol > li > .mi-step-title').all_inner_texts() == ['PowerShell 열기', '명령 붙여넣기', '관리자 확인', '게임 로그인', '자동 반영']
     assert box.locator('#mi-copy').count() == 1
     assert box.evaluate('(box) => box.firstElementChild.contains(document.getElementById("mi-copy"))')
     assert not page.locator('#mi-cmd').is_visible()
@@ -968,10 +969,13 @@ def test_myinfo_required(browser, ctx):
         assert box.evaluate('''(el) => {
           const s = getComputedStyle(el), warning = el.querySelector('.mi-import-warning');
           return parseFloat(s.borderLeftWidth) >= 3 && parseFloat(s.borderRadius) > 0
-            && s.borderLeftColor === getComputedStyle(el.querySelector('li'), '::marker').color
+            && s.borderLeftColor === getComputedStyle(el.querySelector('li'), '::before').backgroundColor
+            && getComputedStyle(el.querySelector('li'), '::before').borderRadius === '50%'
             && s.backgroundColor !== 'rgba(0, 0, 0, 0)' && getComputedStyle(warning).display === 'block'
-            && getComputedStyle(warning).color !== s.color;
-        }'''), '강조 테두리·배경·별도 주의 줄'
+            && getComputedStyle(warning).color !== s.color
+            && getComputedStyle(el.querySelector('.mi-step-do')).display === 'block'
+            && parseFloat(getComputedStyle(el.querySelector('.mi-import-fallback')).borderTopWidth) >= 1;
+        }'''), '강조 테두리·배경·원형 번호·제목 아래 세부 줄·별도 주의 줄·대체 방법 구분선'
         page.screenshot(path=os.path.join(ctx.shots, 'import_%d.png' % width), full_page=True)
     page.set_viewport_size({'width': 1280, 'height': 900})
     opened = page.evaluate('() => document.querySelector("#drawer").classList.contains("open") && document.activeElement === $("dclose")')

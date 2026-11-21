@@ -74,9 +74,13 @@ details summary{cursor:pointer;color:var(--acc)}
 .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:16px}.dhead button{background:transparent;color:var(--fg);padding:2px 8px;font-size:18px}
 .dtools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dtools button{padding:3px 10px}.mibtn{display:inline-block;padding:3px 10px;border-radius:6px;background:var(--acc);color:#fff}
 .mi-import-guide{margin:10px 0;padding:12px;border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:10px;background:color-mix(in srgb,var(--acc) 8%,var(--bg));color:var(--fg);overflow-wrap:anywhere;word-break:keep-all}
-@counter-style mi-import-step{system:fixed;symbols:"①" "②" "③" "④";suffix:" "}
-.mi-import-guide ol{margin:12px 0 0;padding-left:1.5em;list-style-type:mi-import-step}.mi-import-guide li{padding-left:3px;margin:8px 0}.mi-import-guide li::marker{color:var(--acc)}
-.mi-import-warning{display:block;margin-top:4px;color:var(--warn);font-size:12px}.mi-import-fallback{font-size:12px;margin:10px 0 0}
+.mi-import-guide ol{margin:14px 0 0;padding:0;list-style:none;counter-reset:mi-step}
+.mi-import-guide li{position:relative;counter-increment:mi-step;padding-left:36px;margin:0 0 18px;line-height:1.55}.mi-import-guide li:last-child{margin-bottom:0}
+.mi-import-guide li::before{content:counter(mi-step);position:absolute;left:0;top:0;width:24px;height:24px;border-radius:50%;background:var(--acc);color:var(--bg);font-weight:700;font-size:13px;line-height:24px;text-align:center}
+.mi-step-title,.mi-fallback-title{display:block;font-size:14px;line-height:24px;color:var(--fg)}.mi-step-do{display:block;margin-top:3px;font-size:13px;color:var(--fg);opacity:.88}
+.mi-keys{white-space:nowrap}.mi-import-guide kbd{display:inline-block;padding:0 6px;margin:0 1px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:var(--bg);color:var(--fg);font-family:inherit;font-weight:600;font-size:12px;line-height:1.6;white-space:nowrap}
+.mi-import-warning{display:block;margin-top:6px;padding:6px 8px;border-radius:6px;background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--warn);font-size:12px}
+.mi-import-fallback{font-size:12px;margin:16px 0 0;padding-top:12px;border-top:1px dashed var(--line)}.mi-import-fallback .mi-fallback-title{font-size:13px;line-height:1.5;color:var(--mut)}
 .crown{position:absolute;top:6px;left:6px;z-index:3;display:flex;align-items:center;gap:3px;padding:2px 7px 2px 4px;border-radius:8px;background:rgba(8,10,16,.72);box-shadow:0 1px 4px #0008}
 .crown svg{width:18px;height:14px}.crown span{font-size:12px;font-weight:800;color:var(--gold);letter-spacing:.04em}
 .powinfo{margin-top:6px;font-size:13px}.powinfo .ok{color:var(--good)}.powinfo .warn{color:var(--warn)}.powinfo .bad2{color:var(--bad);font-weight:700}
@@ -394,14 +398,20 @@ summary{padding:9px 4px}
   <div class="mi-import-guide">
    <div class="dtools"><button id="mi-copy" type="button">명령 복사</button></div>
    <ol>
-    <li><b>PowerShell</b> 열기: 키보드 <b>Windows 키</b> → <b>powershell</b> 입력 → <b>Enter</b></li>
-    <li>위쪽 <b>[명령 복사]</b> 단추 클릭 → PowerShell 창에 붙여넣기(<b>Ctrl+V</b> 또는 마우스 오른쪽 클릭) → <b>Enter</b></li>
-    <li>「관리자 확인」 창이 뜨면 <b>[예]</b></li>
-    <li>게임에 로그인 → 로비가 보이면 <b>도구 창에서 Enter</b>
+    <li><b class="mi-step-title">PowerShell 열기</b>
+     <span class="mi-step-do">키보드 <kbd>Windows</kbd> 키 → <b>powershell</b> 입력 → <kbd>Enter</kbd></span></li>
+    <li><b class="mi-step-title">명령 붙여넣기</b>
+     <span class="mi-step-do">위쪽 <b>[명령 복사]</b> 단추 클릭</span>
+     <span class="mi-step-do">→ PowerShell 창에 붙여넣기(<span class="mi-keys"><kbd>Ctrl</kbd>+<kbd>V</kbd></span> 또는 마우스 오른쪽 클릭) → <kbd>Enter</kbd></span></li>
+    <li><b class="mi-step-title">관리자 확인</b>
+     <span class="mi-step-do">「관리자 확인」 창이 뜨면 <b>[예]</b></span></li>
+    <li><b class="mi-step-title">게임 로그인</b>
+     <span class="mi-step-do">게임에 로그인 → 로비가 보이면 <b>도구 창에서 <kbd>Enter</kbd></b></span>
      <span class="mi-import-warning">⚠ 게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함</span></li>
-    <li>사이트가 자동으로 열리며 반영됨</li>
+    <li><b class="mi-step-title">자동 반영</b>
+     <span class="mi-step-do">사이트가 자동으로 열리며 반영됨</span></li>
    </ol>
-   <p class="mut mi-import-fallback">안 될 때·다른 기기에서: 바탕화면 <b>내정보.json</b>을 [파일 선택]으로 올리기</p>
+   <p class="mut mi-import-fallback"><b class="mi-fallback-title">안 될 때·다른 기기에서</b><span class="mi-step-do">바탕화면 <b>내정보.json</b>을 [파일 선택]으로 올리기</span></p>
   </div>
   <details><summary>명령 보기</summary><code id="mi-cmd" style="display:block;font-size:11px;word-break:break-all;user-select:all">$f="$env:TEMP\ss_myinfo.ps1"; iwr -UseBasicParsing https://raw.githubusercontent.com/QooReche/starsavior-myinfo/main/myinfo.ps1 -OutFile $f; powershell -NoProfile -ExecutionPolicy Bypass -File $f</code></details>
   <p class="mut">게임 파일은 건드리지 않고, 내 PC에서만 해독함(관리자 확인 1회)</p>
@@ -1312,7 +1322,7 @@ function condChanged(){
 }
 function miEmpty(){return `<div class="mi-empty" data-k="mi-empty">${Ux.gwenWork("screen","empty")}<b>아직 명단이 비어 있음</b><p class="mut">계정 정보를 불러오면 내 구원자 명단과 육성 상태를 여기에 정리함</p><button type="button" data-mi-empty-open>계정 정보 불러오기</button></div>`}
 function miGuide(){return `<div class="party guide case-request" data-k="miguide" data-state="needs-info"><img class="case-clip" src="assets/ui_icons/office_clip.svg" width="18" height="30" alt="" aria-hidden="true"><p class="case-tag">사건 의뢰서 · 접수 대기</p><h3>내 구원자로 깰 파티 찾기</h3>
- <p class="mut">계정 정보를 맡기면 그웬이 내 구원자에 맞춰 조사해 추천함. 정보 없이도 표준 육성으로 살펴볼 수 있음.</p><ol class="guide-steps"><li><b>명령 복사</b><small>PowerShell에 붙여넣기</small></li><li><b>게임 로그인</b><small>로비에서 도구 창에 엔터</small></li><li><b>자동 반영</b><small>이 화면에 바로 표시</small></li></ol>
+ <p class="mut">계정 정보를 맡기면 그웬이 내 구원자에 맞춰 조사해 추천함. 정보 없이도 표준 육성으로 살펴볼 수 있음.</p><ol class="guide-steps"><li><b>PowerShell 열기</b><small>Windows 키 → powershell</small></li><li><b>명령 붙여넣기</b><small>명령 복사 → 붙여넣고 Enter</small></li><li><b>관리자 확인</b><small>확인 창에서 [예]</small></li><li><b>게임 로그인</b><small>로비에서 도구 창에 Enter</small></li><li><b>자동 반영</b><small>이 화면에 바로 표시</small></li></ol>
  <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div>${Ux.gwenSay("welcome","right")}${Ux.gwenImage("welcome","gwen-guide-art")}</div></div>`}
 function showReco(){if(seasonBlocked(contents[$('content').value]?.key))return;guildGwenClaim('reco');recoClearTimer();if(!MI.info){RECO.standard=true;$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
 function run(skipAuto=false){directRefresh();seasonPaint();growthControlPlace(true);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}

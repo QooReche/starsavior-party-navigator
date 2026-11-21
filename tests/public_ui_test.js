@@ -100,14 +100,20 @@ for(const file of ['party_template.html','index.html']){
  assert.match(guide[1],/^\s*<div class="dtools"><button id="mi-copy" type="button">명령 복사<\/button><\/div>\s*<ol>/,`${file}: existing copy button comes first inside box`);
  assert.equal((page.match(/id="mi-copy"/g)||[]).length,1,`${file}: one copy button`);
  const steps=[...guide[1].matchAll(/<li>([\s\S]*?)<\/li>/g)].map(m=>m[1].trim().replace(/\s+/g,' '));
+ // Each step: bold one-line title, then detail line(s); the restart warning is its own line in step 4.
+ const T=t=>`<b class="mi-step-title">${t}</b>`,D=d=>` <span class="mi-step-do">${d}</span>`;
  assert.deepEqual(steps,[
-  '<b>PowerShell</b> 열기: 키보드 <b>Windows 키</b> → <b>powershell</b> 입력 → <b>Enter</b>',
-  '위쪽 <b>[명령 복사]</b> 단추 클릭 → PowerShell 창에 붙여넣기(<b>Ctrl+V</b> 또는 마우스 오른쪽 클릭) → <b>Enter</b>',
-  '「관리자 확인」 창이 뜨면 <b>[예]</b>',
-  '게임에 로그인 → 로비가 보이면 <b>도구 창에서 Enter</b>\n     <span class="mi-import-warning">⚠ 게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함</span>',
-  '사이트가 자동으로 열리며 반영됨'
- ].map(s=>s.replace(/\s+/g,' ')),`${file}: five short steps and separate restart warning`);
- assert.equal(guide[2],'안 될 때·다른 기기에서: 바탕화면 <b>내정보.json</b>을 [파일 선택]으로 올리기');
+  T('PowerShell 열기')+D('키보드 <kbd>Windows</kbd> 키 → <b>powershell</b> 입력 → <kbd>Enter</kbd>'),
+  T('명령 붙여넣기')+D('위쪽 <b>[명령 복사]</b> 단추 클릭')+D('→ PowerShell 창에 붙여넣기(<span class="mi-keys"><kbd>Ctrl</kbd>+<kbd>V</kbd></span> 또는 마우스 오른쪽 클릭) → <kbd>Enter</kbd>'),
+  T('관리자 확인')+D('「관리자 확인」 창이 뜨면 <b>[예]</b>'),
+  T('게임 로그인')+D('게임에 로그인 → 로비가 보이면 <b>도구 창에서 <kbd>Enter</kbd></b>')+' <span class="mi-import-warning">⚠ 게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함</span>',
+  T('자동 반영')+D('사이트가 자동으로 열리며 반영됨')
+ ],`${file}: five titled steps and separate restart warning`);
+ assert.equal(guide[2],'<b class="mi-fallback-title">안 될 때·다른 기기에서</b><span class="mi-step-do">바탕화면 <b>내정보.json</b>을 [파일 선택]으로 올리기</span>');
+ // Summary card mirrors the five step titles in the same order.
+ const summary=page.match(/<ol class="guide-steps">([\s\S]*?)<\/ol>/);
+ assert(summary,`${file}: summary steps exist`);
+ assert.deepEqual([...summary[1].matchAll(/<li><b>([^<]+)<\/b>/g)].map(m=>m[1]),['PowerShell 열기','명령 붙여넣기','관리자 확인','게임 로그인','자동 반영'],`${file}: summary matches five steps`);
  // Execute the real renderer through empty -> loaded -> cleared states.
  const nodes=Object.fromEntries(['mi-chip','mi-panel','option-chips','content','rk','mi-open-import','share-mi','share-link','mi-view','mi-clear','mi-panel-clear'].map(id=>[id,{dataset:{},classList:{toggle(){}},closest(){return this;}}]));
  nodes.content.value='op';nodes['mi-panel'].hidden=true;
@@ -327,4 +333,4 @@ assert.deepEqual(cfg.breakSkills['행성 정화'].bonusRoles,[]);
 assert.equal(cfg.breakSkills['행성 정화'].text,'광역 피해(공격력 100%), 강인도 피해 +1, 스킬 후 노바 +1');
 // Parse all template scripts as JavaScript; data replacement is an identifier in the template.
 for(const [,code] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g))new vm.Script(code);
-console.log('PASS idle-panel Gwen (once, beside the button, hidden under the import drawer), one help icon per spot, Gwen speech bubbles (guide, import drawer, empty roster, stylesheet), update notice, import label and four-step box (template + index), public headline, mode consistency, boss contents, saved date, skill labels, break description, script syntax');
+console.log('PASS idle-panel Gwen (once, beside the button, hidden under the import drawer), one help icon per spot, Gwen speech bubbles (guide, import drawer, empty roster, stylesheet), update notice, import label and five-step box (template + index), public headline, mode consistency, boss contents, saved date, skill labels, break description, script syntax');
