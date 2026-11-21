@@ -557,8 +557,13 @@ class Controller:
                 for x in hit:
                     # AfterMyAttack(NKM:8037 → 15963): 피해 기록 중 하나라도 «처치 안 됨 + 보호막 계열 없음(이번 타격에 깨진 것 포함)»이면 참
                     if not x.dead and self._no_shield(x, fx['no_shield_chain']['names']):
-                        for v in b.alive(0):
-                            self._chain_atk(boss, v, fx['no_shield_chain']['atkRate'] / 100.0, ctx)
+                        coef = fx['no_shield_chain']['atkRate'] / 100.0
+                        if b.mc['chain_timing'] == 'client_queue':
+                            # SE9402501 = BI_ADD_DAMAGE_1(2510, 응징과 같음): 같은 클라 추가 피해 큐·같은 묶음(NKM:4721-4742 → 6244-6320)
+                            b.queue_punish(boss, b.alive(0), coef, ctx, se='cosmo_no_shield_chain')
+                        else:
+                            for v in b.alive(0):
+                                self._chain_atk(boss, v, coef, ctx)
                         self.stats['no_shield_chain'] += 1
                         break
             # EX: strip — NSEAT_SKILL_END cond 2107, 타격 후 대상 강화 1개 해제 저항 무시 (SE 9402801)

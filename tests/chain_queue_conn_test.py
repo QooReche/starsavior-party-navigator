@@ -43,7 +43,7 @@ class ChainQueueTest(unittest.TestCase):
         doc = json.loads((ROOT / 'data/chain_se.json').read_text(encoding='utf8'))
         self.assertEqual(chain_se.foes()[FOE_KEY][(FOE_SLOT, FOE_RAW)], {'buff': 2510, 'retarget': False})
         self.assertFalse([k for k in doc['report'] if k.startswith('원형 불일치') or '다른 BuffId' in k])
-        self.assertEqual(doc['fixed'], {'belgras_hyper': 2509, 'cosmo_punish': 2510})
+        self.assertEqual(doc['fixed'], {'belgras_hyper': 2509, 'cosmo_punish': 2510, 'cosmo_no_shield_chain': 2510})
         self.assertGreaterEqual(sum(len(v) for v in doc['foes'].values()), 300)
 
     def test_generated_mapping_matches_client(self):
@@ -180,6 +180,39 @@ class ChainQueueTest(unittest.TestCase):
         self.assertEqual(order, [('fixed', 5000), ('chain', 1)])   # 둘 다 대상 1: BuffId 2509 < 2510
         self.assertEqual(b.gb.pending_damage, [])
 
+    def test_cosmo_no_shield_chain_joins_punish_group(self):
+        # SE9402501(EX SET_25) = BI_ADD_DAMAGE_1 2510, 응징 SE9403101 과 같은 BuffId → 같은 큐·같은 묶음(NKM:6253-6257)
+        names = ['보호막', '보호막(해제불가)']
+        b = self.cosmo('카넬리아')
+        boss = b.gb.boss
+        b.gb.fx['no_shield_chain'] = {'atkRate': 30.0, 'names': names}
+        kinds = []
+        orig = b.apply_damage
+        b.apply_damage = lambda a, v, dmg, kind, **kw: (kinds.append(kind), orig(a, v, dmg, kind, **kw))[1]
+        b.cast(boss, boss.d.skills['기본기'])
+        self.assertEqual(b.gb.stats['no_shield_chain'], 1)
+        self.assertNotIn('chain', kinds)                      # 시전 중 즉시 넣지 않음
+        alive = b.alive(0)
+        self.assertEqual([(r[0], r[2]) for r in b._chain_damage], [(2510, v) for v in alive])
+        b.queue_punish(boss, alive[:1], 0.3, None)            # 응징 1건 뒤에 등록
+        order = []
+        with patch.object(b, '_apply_chain_amount', lambda o, t, amt, *r: order.append(t)):
+            b.flush_add_damage()
+        self.assertEqual(order, alive + alive[:1])             # 한 묶음(대상 수 = 생존 아군 수), 등록순
+        self.assertFalse(b._chain_damage or b._add_order)
+
+    def test_dot_death_turn_still_flushes_queue(self):
+        # NKM:13919-13935: 차례 유닛이 행동 불가·사망이어도 OBF_2606 → OBF_4586(추가 피해) 처리
+        b, a, f, ln, ctx = self.setup_foe()
+        b.run_line(f, ln, ctx)
+        self.assertEqual(a.taken, 0)
+        with patch.object(b, '_tick_dot_hot', lambda u: b.kill(u, None) if u is f else None):
+            b.act(f)
+        self.assertTrue(f.dead)
+        self.assertGreater(a.taken, 0)
+        self.assertEqual(b.rule_hits['add_damage_dead_turn'], 1)
+        self.assertFalse(b._chain_damage or b._add_order)
+
     def test_turn_flushes_unified_queue(self):
         b, a, f, ln, ctx = self.setup_foe()
         with patch.object(b, 'flush_add_damage', wraps=b.flush_add_damage) as fl, \
@@ -201,6 +234,9 @@ def mutations():
          "out.append((kind, e, 99999, e[0]))", 'test_cosmo_fixed_damage_joins_queue'),
         (C.Controller, 'skill_start', "if self.b.mc['chain_timing'] == 'client_queue':", 'if False:', 'test_cosmo_punish_uses_shared_queue'),
         (Battle, '_act_turn', 'self.flush_add_damage()', 'self.flush_chain_damage()', 'test_turn_flushes_unified_queue'),
+        (C.Controller, 'after_cast', "if b.mc['chain_timing'] == 'client_queue':", 'if False:',
+         'test_cosmo_no_shield_chain_joins_punish_group'),
+        (Battle, '_dead_turn_add_damage', 'self.flush_add_damage()', 'pass', 'test_dot_death_turn_still_flushes_queue'),
     ]
     for cls, method, old, new, test in cases:
         original = getattr(cls, method)

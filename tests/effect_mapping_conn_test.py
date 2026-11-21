@@ -46,6 +46,16 @@ class LocalChanceTest(unittest.TestCase):
         self.assertEqual(self.run_local('roll', 0.74), (0.30, 1))
         self.assertEqual(self.run_local('roll', 0.75), (0.0, 1))
 
+    def test_no_roll_when_line_is_not_this_casters_se(self):
+        # 클라 OBF_18609(NKM:16493-16505): 시전자의 이 시점 SE일 때만 RollDice. 남의 스킬 문맥(ctx.src is not owner)에선 굴리지 않음.
+        b = battle([unit('a')], [unit('f')], mc={'local_chance': 'roll'})
+        a, f = b.allies[0], b.foes[0]
+        ctx = Ctx(a, f, f.d.skills['기본기'])
+        calls = []
+        with patch.object(b.R(0), 'random', lambda: calls.append(1) or 0.0):
+            b.run_line(a, Line(RAW, '기본기', 'active'), ctx)
+        self.assertEqual((calls, b.rule_hits['local_chance'], ctx.inc), ([], 0, 0))
+
     def test_legacy_expected(self):
         inc, hits = self.run_local('expected', 0.99)
         self.assertAlmostEqual(inc, 0.225)
@@ -99,6 +109,9 @@ class AuditCompareTest(unittest.TestCase):
 def mutations():
     cases = [
         (Battle, '_exec_line', "self.mc['local_chance'] == 'roll'", 'False', LocalChanceTest, 'test_roll_applies_full_value_or_nothing'),
+        (Battle, '_exec_line', "        if ctx.src is not owner:\n            return\n        if not fired():",
+         "        fired()\n        if ctx.src is not owner:\n            return\n        if not fired():",
+         LocalChanceTest, 'test_no_roll_when_line_is_not_this_casters_se'),
         (None, 'compare', "enemy_side and bool(eff.get('judge')) != hit", "bool(eff.get('judge')) != hit", AuditCompareTest,
          'test_hit_check_follows_client'),
         (None, 'compare', "mine = round(full * 100) if k == 'NKM_STAT_TYPE_RATE' else round(full)", 'mine = round(full * 100)',

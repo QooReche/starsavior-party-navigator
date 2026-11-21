@@ -662,6 +662,7 @@ def test_ex_no_shield_chain():
                 e = b.put_eff(u, name, {}, dur=5, maxs=1, add=1, src=u, cat='buff', fixed=False)
                 e.shield = 999999
         b.cast(boss, boss.d.skills[slot])
+        b.flush_add_damage()   # chain_timing=client_queue: SE9402501 은 추가 피해 큐로 예약(NKM:4721-4742)
         return b, b.gb.stats.get('no_shield_chain', 0), kinds.count('chain')
     b, n, chains = run(False)
     assert n == 1 and chains == len(b.alive(0)), (n, chains)
@@ -681,6 +682,7 @@ def test_ex_no_shield_chain():
         orig = b.apply_damage
         b.apply_damage = lambda a, v, dmg, kind, shieldable=True, **kw: (got.append(dmg) if kind == 'chain' else None, orig(a, v, dmg, kind, shieldable, **kw))[1]
         b.cast(boss, boss.d.skills['기본기'])
+        b.flush_add_damage()
         return sum(got)
     assert chain_total(True) > chain_total(False) * 1.15
 

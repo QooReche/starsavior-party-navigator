@@ -1446,6 +1446,14 @@ class Battle:
         self._act_turn(u, reset_gauge=not reset_gauge)
         self._finish_action(u)
 
+    def _dead_turn_add_damage(self):
+        """턴 시작 지속 피해로 차례 유닛이 죽었을 때. 클라 SelectTurnUnit(NKM:13919-13935)은 OBF_23544(행동 불가 또는 사망)이면
+        스킬 없이 OBF_2606 → OBF_4586(추가 피해 큐)을 부름(NKM:13955-13961). client_queue 에서만 그대로 처리하고,
+        옛 모드(client_mapped 이하)는 예전 동작(다음 처리 때로 미룸)을 유지."""
+        if self.mc['chain_timing'] == 'client_queue':
+            self.rule_hits['add_damage_dead_turn'] += 1
+            self.flush_add_damage()
+
     def _act_turn(self, u, reset_gauge=True):
         if reset_gauge:
             u.gauge = 0.0
@@ -1472,6 +1480,7 @@ class Battle:
         if self.mc['turn_start_order'] == 'dot_first':
             self._tick_dot_hot(u)
             if u.dead:
+                self._dead_turn_add_damage()
                 return
         if not u.dead:
             self.fire(u, 'own_ts', Ctx(u, u, None))
@@ -1491,6 +1500,7 @@ class Battle:
                 self.rule_hits['turn_start_order'] += 1
             self._tick_dot_hot(u)
             if u.dead:
+                self._dead_turn_add_damage()
                 return
         # 회복 턴도 턴 이벤트·지속 차감은 처리하고, 스킬 행동만 생략한다.
         if self.mc['revenge'] == 'on':
@@ -4990,27 +5000,40 @@ class Battle:
             self.run_special(owner, ln, ctx, line_rest(ln))
             return
         if kd == 'local':
-            if eff.get('chance', 1) < 1 and self.mc['local_chance'] == 'roll':
-                # NKM:16504: SE 조건 m_fActiveRate<10000 이면 발동 판정 후 SE 수치 전체 적용(예: SE930031302 7500·3000).
+            chance = eff.get('chance', 1)
+            roll = chance < 1 and self.mc['local_chance'] == 'roll'
+            if roll:
+                eff = dict(eff, val=eff['val'] / chance)
+
+            def fired():
+                # 클라 OBF_18609(NKM:16493-16537): SE 쿨·발동 유형(이 시전자의 이 시점 SE인가)을 본 뒤 RollDice(m_fActiveRate),
+                # 그다음 HP·턴·SkillCondition 판정. 그래서 «이 줄이 이 행동의 SE가 아닌» 반환(ctx.src is not owner 등) 뒤에만 굴리고,
+                # 효과 종류(지원 여부)·대상 조건 판정 전에 굴림. 성공 시 SE 수치 전체(예: SE930031302 7500·3000).
+                if not roll:
+                    return True
                 self.rule_hits['local_chance'] += 1
-                if self.R(owner.side).random() >= eff['chance']:
-                    return
-                eff = dict(eff, val=eff['val'] / eff['chance'])
+                return self.R(owner.side).random() < chance
             st, v = eff['stat'], eff['val'] / 100.0
             role = _role_prop(st)
             if role and self.mc['role_damage_terms'] == 'client':
                 key, target_role, scale = role
                 value = eff['val'] / scale
                 if key == 'red_role' and ctx.local is not None and line_kind(ln) in ('prehit_self', 'prehit_ally'):
+                    if not fired():
+                        return
                     if ctx.src is not None and ctx.src.role == target_role:
                         ctx.local[owner]['red'] += value
                         self.rule_hits['role_damage_terms'] += 1
                     return
                 if key == 'inc_role' and ctx.src is owner and ctx.skill is not None:
+                    if not fired():
+                        return
                     ctx.inc_role[target_role] += value
                     self.rule_hits['role_damage_terms'] += 1
                     return
             if ctx.local is not None and line_kind(ln) in ('prehit_self', 'prehit_ally'):
+                if not fired():
+                    return
                 if st == '방어력%':
                     ctx.local[owner]['defp'] += v
                 elif st == '피해 분담(수호)':
@@ -5024,6 +5047,8 @@ class Battle:
                 return
             if ctx.skill is None:
                 if getattr(owner.d, 'is_foe', False):
+                    if not fired():
+                        return
                     # 등장 후·웨이브 시작 시 능력치 보정(올베로스의 하수인 속도% -1000% 등): 적 전용, 영구 패시브로 적용
                     from .starsavior.parser import _perm_apply
                     _perm_apply(owner.d.stats, owner.d.passive, dict(kind='perm', stat=st, val=eff['val']))
@@ -5031,6 +5056,8 @@ class Battle:
                     self.dirty(owner)
                 return
             if ctx.src is not owner:
+                return
+            if not fired():
                 return
             if st == '피해 증가':
                 ctx.inc += v
@@ -5764,16 +5791,20 @@ class Battle:
             return _stat.chain_value(val, coef, inc, _rules.BASE_MULT)
         return val * coef * (1 + inc) * _rules.BASE_MULT
 
-    def queue_punish(self, owner, targets, coef, ctx):
-        """코스모 EX 응징(SE9403101 BI_ADD_DAMAGE_1, 공격력 x 계수, AutoTarget 10 조건 있음 → 재선택 없음).
-        클라 AddDamage 생성(NKM:4721-4742, 6212-6236)은 일반 연쇄와 같은 식이라 같은 함수로 만든다."""
+    def queue_punish(self, owner, targets, coef, ctx, se='cosmo_punish'):
+        """코스모 EX 추가 피해(공격력 x 계수)를 클라 추가 피해 큐에 넣음. 재선택 없음.
+        se='cosmo_punish': 응징 SE9403101 BI_ADD_DAMAGE_1(AutoTarget 10 조건 있음).
+        se='cosmo_no_shield_chain': 보호막 없는 대상 연쇄 SE9402501 BI_ADD_DAMAGE_1(AutoTargetId 없음, NKM:6105-6109).
+        클라 AddDamage 생성(NKM:4721-4742, 6212-6236)은 일반 연쇄와 같은 식이라 같은 함수로 만든다.
+        둘 다 BuffId 2510이라 처리 때 같은 묶음(NKM:6253-6257)."""
         m = owner.mods()
         val = self.atk_stat(owner, ctx)
-        bid = chain_se.fixed('cosmo_punish')
+        bid = chain_se.fixed(se)
+        kind = 'punish' if se == 'cosmo_punish' else 'chain'
         for v in targets:
             b0 = self._chain_amount(owner, v, val, coef, ctx, m, False)
             self._chain_damage.append((bid, owner, v, b0, False, m['pen'], False, (val, coef)))
-            self.queue_add('punish', self._chain_damage[-1])
+            self.queue_add(kind, self._chain_damage[-1])
             self.rule_hits['chain_timing_queued'] += 1
 
     def _apply_chain_amount(self, owner, v, b0, true, penetration):

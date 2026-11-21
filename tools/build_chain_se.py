@@ -170,7 +170,11 @@ def build_fixed(tables):
     # 코스모 EX 응징(SET_31): SE9403101, 공격력 30%, AutoTargetId 10(조건 있음 → 재선택 없음).
     p = rows[9403101]
     assert (p['AddDamageRate'], p['AddDamageStatType'], p['AutoTargetId']) == (3000, 'NST_ATK', 10)
-    return {'belgras_hyper': buffs[hyper.pop()], 'cosmo_punish': buffs[p['m_BuffStrID']]}
+    # 코스모 EX 보호막 없는 대상 연쇄(SET_25): SE9402501, 적 전체 공격력 30%, AutoTargetId 없음(OBF_9190 null → 재선택 없음, NKM:6105-6109).
+    c = rows[9402501]
+    assert (c['AddDamageRate'], c['AddDamageStatType'], c['m_BuffTargetType'], c.get('AutoTargetId')) == (3000, 'NST_ATK', 'NSETT_ENEMY_ALL', None)
+    return {'belgras_hyper': buffs[hyper.pop()], 'cosmo_punish': buffs[p['m_BuffStrID']],
+            'cosmo_no_shield_chain': buffs[c['m_BuffStrID']]}
 
 
 if __name__ == '__main__':

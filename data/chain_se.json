@@ -3396,7 +3396,8 @@
  },
  "fixed": {
   "belgras_hyper": 2509,
-  "cosmo_punish": 2510
+  "cosmo_punish": 2510,
+  "cosmo_no_shield_chain": 2510
  },
  "report": {
   "연쇄 줄만 순서 대응": 49
