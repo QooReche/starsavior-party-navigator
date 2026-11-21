@@ -22,8 +22,10 @@ import json
 import math
 
 from .. import datafile
+from .controller import BaseController
 from .data import SRC
-from .parser import Line, Skill
+from .foe_base import FoeBase, make_skill
+from .parser import Line
 
 
 def load(src=SRC):
@@ -55,40 +57,21 @@ SUP_TMP_INC = '알리시아 지원(임시 피해 증가)'
 SUP_TMP_RED = '알리시아 지원(임시 받는 피해 감소)'
 
 
-class GuildFoe:
+class GuildFoe(FoeBase):
     """FoeDef 와 같은 모양의 길방 적 정의(시험·api 의 _CustomFoe 와 같은 계약)."""
-    is_foe = True
 
     def __init__(self, key, name, u, stats, skills, lines, boss, bfb=None):
-        self.key, self.name = key, name
-        self.id, self.variant = -1, '적'
-        self.role, self.element = u['role'], u['element']
-        self.boss = boss
-        self.grade = '보스' if boss else '일반'
-        self.attack_kind = '충격'
-        self.stats = stats
-        self.immune = set()
-        self.skills = skills
-        self.trigger_skills, self.unmodeled = {}, []
-        self.lines = lines
-        self.desc = {}
-        from collections import defaultdict
-        self.passive = defaultdict(float)
-        self.nb, self.manual, self.gear_atkp = {}, None, 0.0
-        self.effect_info = {}
-        self.spd_base = stats['spd']
-        self.react, self.auto, self.auto_lines = {}, {}, {}
+        super().__init__(key, name, role=u['role'], element=u['element'], boss=boss, attack_kind='충격',
+                         stats=stats, skills=skills, lines=lines)
         self.spawn = u['spawn']
         self.slot = u['pos']
         self.bfb = bfb
 
 
 def _skill(slot, name, coef, cd, tough, all_=False, tg='적 단일', lines=()):
-    sk = Skill(dict(sl=slot, n=name, ty='액티브', tg='적 전체' if all_ else tg, act='공격', cf=[int(coef), 0, 0, 0],
-                    all=all_, cd=cd or None, nv=0))
-    sk.ab = tough
-    sk.semantic_lines = [Line(r, slot, 'active') for r in lines]
-    return sk
+    """계수 단위: 표 coef(이미 정수 %) -> int(coef)"""
+    return make_skill(slot, name, int(coef), cd or None, tg='적 전체' if all_ else tg, all_=all_, tough=tough,
+                      lines=[Line(r, slot, 'active') for r in lines])
 
 
 def _stats(u, scale=(0, 0, 0)):
@@ -171,15 +154,14 @@ def _set_value(item, tier):
     return int(re.findall(r'\d+', item['tiers'][tier - 1]['text'])[-1])
 
 
-class Controller:
-    """mc.Battle 훅: on_wave / pick_target / after_cast / pre_hit / post_hit. Battle 이 guild_boss=on 일 때만 만든다."""
+class Controller(BaseController):
+    """mc.Battle 훅(controller.BaseController 계약): on_wave / pick_target / after_cast / pre_hit / post_hit / barrier /
+    after_break_skill. Battle 이 guild_boss=on 일 때만 만든다."""
 
     def __init__(self, b):
-        self.b = b
+        super().__init__(b)
         if b.mc['guild_bridal_kill_reset'] not in ('client', 'off'):
             raise ValueError('guild_bridal_kill_reset 은 client|off')
-        self.boss = None
-        self.cfg = None
         self.count = 0          # 신부 경쟁 카운팅(BOSS_7)
         self.anim = False       # 정실 어필 상태(ANIMSET2)
         self.shield_hits = 0    # 보호막 중 공격 수(BOSS_3)

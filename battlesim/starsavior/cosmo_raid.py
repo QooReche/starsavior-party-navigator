@@ -28,8 +28,9 @@ import os
 from collections import defaultdict
 
 from .. import datafile
+from .controller import BaseController
 from .data import SRC
-from .parser import Skill
+from .foe_base import FoeBase, make_skill
 
 _DATA = datafile._CACHE   # 경로 -> 자료(datafile.load_path 캐시 그대로). 시험이 data_path() 열쇠로 바꿔 끼운다
 
@@ -153,35 +154,17 @@ def _scale_stats(stats, row):
 
 
 def _skill(slot, name, coef, cd, tough, all_=False, attack=True, tg=None):
-    sk = Skill(dict(sl=slot, n=name, ty='액티브', tg=tg or ('적 전체' if all_ else '자신'), act='공격' if attack else '비공격',
-                    cf=[round(float(coef) * 100), 0, 0, 0], all=all_, cd=cd or None, nv=0))
-    sk.ab = tough
-    sk.semantic_lines = []
-    return sk
+    """계수 단위: 표 coef(배수) -> round(coef*100)"""
+    return make_skill(slot, name, round(float(coef) * 100), cd or None, tg=tg or ('적 전체' if all_ else '자신'),
+                      all_=all_, attack=attack, tough=tough, lines=[])
 
 
-class CosmoFoe:
+class CosmoFoe(FoeBase):
     """FoeDef/GuildFoe 와 같은 모양의 적 정의(벨그라스·기록자·처단자)"""
-    is_foe = True
 
     def __init__(self, key, name, meta, stats, skills, boss, spawn, slot, immune=(), cosmo=None):
-        self.key, self.name = key, name
-        self.id, self.variant = -1, '적'
-        self.role, self.element = meta['role'], meta['element']
-        self.boss = boss
-        self.grade = '보스' if boss else '일반'
-        self.attack_kind = meta.get('attackKind')
-        self.stats = stats
-        self.immune = set(immune)
-        self.skills = skills
-        self.trigger_skills, self.unmodeled = {}, []
-        self.lines = []
-        self.desc = {}
-        self.passive = defaultdict(float)
-        self.nb, self.manual, self.gear_atkp = {}, None, 0.0
-        self.effect_info = {}
-        self.spd_base = stats['spd']
-        self.react, self.auto, self.auto_lines = {}, {}, {}
+        super().__init__(key, name, role=meta['role'], element=meta['element'], boss=boss,
+                         attack_kind=meta.get('attackKind'), stats=stats, skills=skills, immune=immune)
         self.spawn = spawn
         self.slot = slot
         self.cosmo = cosmo
@@ -250,13 +233,12 @@ def build_waves(boss, step, level=0, src=SRC):
 
 
 # ---------------------------------------------------------------- 상태 기계
-class Controller:
-    """mc.Battle 훅(guild_bfb.Controller 와 같은 계약): on_wave / after_cast / pre_hit / post_hit. Battle 이 cosmo_raid_boss=on 일 때만 만든다."""
+class Controller(BaseController):
+    """mc.Battle 훅(controller.BaseController 계약): on_wave / before_cast / skill_start / after_cast / pre_hit / post_hit /
+    flush_damage / execute_se. Battle 이 cosmo_raid_boss=on 일 때만 만든다."""
 
     def __init__(self, b):
-        self.b = b
-        self.boss = None
-        self.cfg = None
+        super().__init__(b)
         self.fx = {}                 # 이벤트형 챌린지 효과 kind -> params
         self.minions = {}            # kind -> 유닛
         self.over = {}               # 부속 유닛 -> 영양 과잉이 끝나는 전역 턴
@@ -393,15 +375,6 @@ class Controller:
         if e is not None and (e.props or (name == '강화 불가' and not x.ban_refuse)):
             self.b.dirty(x)
 
-    def barrier(self):
-        return False
-
-    def is_boss(self, u):
-        return False
-
-    def after_break_skill(self, had_barrier):
-        return
-
     # ---------- 웨이브
     def on_wave(self):
         b = self.b
@@ -489,9 +462,6 @@ class Controller:
     def _no_shield(x, names):
         """조건 NotTargetBuffStrId(31010·32167): 보호막 계열 버프(이름 목록)를 하나도 갖지 않음(NKM.Templets:43294-43306)"""
         return not any(x.has(n) for n in names)
-
-    def _cur_ctx(self):
-        return getattr(self.b, '_cast_ctx', None)
 
     def after_cast(self, u, sk, ctx, extra):
         boss = self.boss

@@ -1479,7 +1479,7 @@ class Battle:
             # NKM:13838-13849 → 6244-6320: 연쇄·고정 피해·응징을 한 큐에서 BuffId 묶음으로 처리.
             self.flush_add_damage()
         else:
-            if self.gb is not None and hasattr(self.gb, 'flush_damage'):
+            if self.gb is not None:
                 self.gb.flush_damage()
             if self._belgras_damage:
                 self.flush_belgras_damage()
@@ -2460,7 +2460,7 @@ class Battle:
             ctx = Ctx(u, u, sk, extra)
             self._cast_ctx = ctx
             ctx.via, ctx.parent = via or ('extra' if extra else None), parent
-            if self.gb is not None and hasattr(self.gb, 'before_cast'):
+            if self.gb is not None:
                 self.gb.before_cast(u, sk, ctx)
             u.cast_count[sk.slot + ('(추가)' if extra else '')] += 1
             if not extra and sk.cd:
@@ -2507,7 +2507,7 @@ class Battle:
             for w in ctx.targets:
                 w.hit_evaded = False
             # 시즌 기믹: 스킬 시작(NSEAT_SKILL_START) 시점, 대상 확정 직후·타격 전(코스모 응징 SET_31 판정)
-            if self.gb is not None and hasattr(self.gb, 'skill_start'):
+            if self.gb is not None:
                 self.gb.skill_start(u, sk, ctx)
             if self.timeline is not None:
                 t0 = ctx.targets[0] if ctx.targets else None
@@ -3549,7 +3549,7 @@ class Battle:
         self._add_order = []
         self._chain_damage = []
         self._belgras_damage = []
-        if self.gb is not None and hasattr(self.gb, 'pending_damage'):
+        if self.gb is not None and self.gb.pending_damage is not None:   # 예약 고정 피해 목록이 있는 컨트롤러(코스모)만
             self.gb.pending_damage = []
         if not rows:
             return
@@ -4808,8 +4808,8 @@ class Battle:
         if eff.get('belgras_marker'):
             self.rule_hits['belgras_action_marker'] += 1
         if kd == 'cosmo':
-            if self.gb is not None and hasattr(self.gb, 'execute_se'):
-                self.gb.execute_se(owner, ln, ctx)
+            if self.gb is not None:
+                self.gb.execute_se(owner, ln, ctx)     # 실행기 없는 컨트롤러는 BaseController 가 미지원으로 셈
             else:
                 self.unsup['코스모 전용 SE 실행기 없음'] += 1
             return
