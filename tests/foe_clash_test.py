@@ -184,6 +184,8 @@ class ClashBuildTest(unittest.TestCase):
             atk=int((s['NST_ATK'] + p['NST_ATK'] * (level - 1)) * rate('NST_NV_RATE_ATK') + 1e-9),
             **{'def': int((s['NST_DEF'] + p['NST_DEF'] * (level - 1)) * rate('NST_NV_RATE_DEF') + 1e-9)},
             spd=int(s['NST_TURN_SPEED'] * rate('NST_NV_RATE_TURN_SPEED') + 1e-9),
+            hit=s.get('NST_RATE_HIT', 0) + add.get('NST_RATE_HIT', 0),
+            evade=s.get('NST_RATE_EVADE', 0) + add.get('NST_RATE_EVADE', 0),
             cr=s['NST_RATE_CRITICAL'], cd=s['NST_RATE_CRITICAL_DAMAGE'], eh=s['NST_RATE_EFFECT_HIT'],
             er=s['NST_RATE_EFFECT_EVADE'], der=s['NST_RATE_DEFINITE_EFFECT_EVADE'], sa=s['NST_SUPER_ARMOR'])
 

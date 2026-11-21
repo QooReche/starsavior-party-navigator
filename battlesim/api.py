@@ -73,7 +73,8 @@ class _CustomFoe:
         self.attack_kind = None
         self.stats = dict(hp=spec.get('hp', 100000), atk=spec.get('atk', 1000), **{'def': spec.get('def', 1000)},
                           spd=spec.get('spd', 100), cr=spec.get('cr', 1500), cd=spec.get('cd', 3000), eh=spec.get('eh', 10000),
-                          er=spec.get('er', 0), der=spec.get('der', 0), sa=spec.get('sa', 10))
+                          er=spec.get('er', 0), der=spec.get('der', 0), sa=spec.get('sa', 10),
+                          hit=spec.get('hit', 10000), evade=spec.get('evade', 0))
         self.immune = set(spec.get('immune', []))
         self.skills, self.trigger_skills, self.lines, self.unmodeled = {}, {}, [], []
         for s in spec.get('skills') or [dict(slot='기본기', dm=100)]:
@@ -324,10 +325,17 @@ def assumptions_used(mc, opts):
         r = RULES['opts'].get(k, {})
         if r.get('grade') in ASSUMPTION_GRADES:
             out.append(dict(rule='opts.' + k, value=opts.get(k), grade=r.get('grade'), note=r.get('note')))
-    out.append(dict(rule='model.not_modeled', value=None, grade='assumed',
-                    note='공개 정의에 연결되지 않은 효과·성장 입력, 시즌 서버 값, 연쇄 피해의 턴 끝 시점은 전수 대응 미확인. '
-                         '지원한 노바 슬롯·잠재력·피해 제한까지 모두 미지원이라는 뜻은 아님. '
-                         '실행별 미지원은 unsupported, 26752678 조사 범위는 docs/allowlist_rules_1121.md 참조'))
+    # Do not label already connected growth (favor/tactics/star-link/potentials)
+    # as absent. Missing account inputs have their own myinfo diagnostics.
+    for key, note in (
+        ('effect_mapping', '공개 효과 줄과 원형 SE의 전수 대응은 미확인. 실행·정적 미지원은 unsupported 참조. '
+                           '지원한 노바 슬롯·잠재력·피해 제한은 제외함.'),
+        ('chain_timing', '일반 연쇄 피해는 현재 줄 실행 즉시 처리함. 클라는 반응·반격 뒤 추가 피해를 처리하며 '
+                         'BuffId별 대상 수 정렬·도중 사망 대상 재선택을 사용함. 공개 줄의 BuffId/AutoTargetId 전수 연결이 남음.'),
+        ('season_inputs', '시즌 서버 주입 값의 전수 대응은 미확인. 코스모 난이도·시즌 버프·전투력·점수의 구체적 범위는 cosmo_approx 참조.'),
+    ):
+        out.append(dict(rule='model.' + key, value=None, grade='assumed',
+                        note=note + ' PC 26752678: docs/allowlist_round2_1121.md'))
     return out
 
 

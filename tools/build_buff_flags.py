@@ -55,6 +55,8 @@ def extract(rows, strings, warn=print):
         'priority': {n: v for n, v in pri.items() if v},
         'level_max': {n: v for n, v in caps.items() if v is not None},
         'sleep': flagged(rows, strings, 'm_bSleep', warn),
+        'force_hit': flagged(rows, strings, 'm_bForceHit', warn),
+        'force_evade': flagged(rows, strings, 'm_bForceEvade', warn),
         'cant_more_debuff': flagged(rows, strings, 'm_bDebuffBan', warn),
         'immune_gauge_up': flagged(rows, strings, 'ImmuneSpeedGaugeUp', warn),
         'turn_infinite': flagged(rows, strings, 'TurnInfinite', warn),
@@ -88,6 +90,8 @@ def main():
     ap.add_argument('--static')
     ap.add_argument('--tables', type=Path, help='CLIENT_* 추출본(번역은 hard/STRING_COMMON.json)')
     ap.add_argument('--out', default=str(ROOT / 'data/buff_flags.json'))
+    ap.add_argument('--only', nargs='+', choices=['force_hit', 'force_evade'],
+                    help='선택한 신규 표식만 갱신하고 기존 공개 이름/표식은 유지')
     args = ap.parse_args()
     if args.tables:
         rows = jsonc(args.tables / 'CLIENT_BUFF_TEMPLET.json')['Data']
@@ -97,6 +101,10 @@ def main():
         rows = jsonc(tables / 'BUFF_TEMPLET.json')['Data']
         strings = json.loads((tables / 'Strings/STRING_COMMON_ko_en.json').read_text(encoding='utf-8'))
     out = extract(rows, strings, lambda msg: print(msg, file=sys.stderr))
+    if args.only:
+        previous = json.loads(Path(args.out).read_text(encoding='utf8'))
+        previous.update({key: out[key] for key in args.only})
+        out = previous
     atomic_json(args.out, out)
     print('저장:', args.out, {k: len(v) for k, v in out.items() if isinstance(v, (dict, list))})
 

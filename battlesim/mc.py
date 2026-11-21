@@ -2303,6 +2303,7 @@ class Battle:
         return out + sorted(left, key=lambda v: (v.hp / v.maxhp, v.pos))
 
     def pick_ally(self, u, sk_kind='buff', exclude_self=False):
+        self.rule_hits['heal_target_fallback'] += 1
         if sk_kind == 'revive':
             dead = [v for v in self.side_units(u.side) if v.dead]
             if dead:
@@ -2386,6 +2387,7 @@ class Battle:
                 return []
             n = re.search(r'(\d+)명', t)
             k = int(n.group(1)) if n else 1
+            self.rule_hits['heal_target_fallback'] += 1
             if kind in ('heal', 'shield') and self.mc['heal_target'] == 'lowest_hp_ratio':
                 pool = self.heal_order(owner, pool, k)
             else:
@@ -2410,6 +2412,7 @@ class Battle:
                 self.unsup['selector: 대상 규칙 미확인(기본 규칙 사용) ' + (ln.raw[:50] if ln is not None else t)] += 1
             return None
         excl = spec.get('excl_self') or t.startswith('자신 제외') or t.startswith('자신을 제외')
+        self.rule_hits['heal_target_description'] += 1
         pool = [x for x in self.alive(owner.side) if not (excl and x is owner)]
         if spec.get('element'):
             pool = [x for x in pool if x.element == spec['element']]
@@ -2591,11 +2594,12 @@ class Battle:
                 # Clear only taunts whose caster no longer lives. Other effects
                 # on surviving recipients keep their own lifetime.
                 for holder in self.alive(0) + self.alive(1):
-                    taunt = holder.eff.get('도발')
-                    if taunt is not None and taunt.src is not None and taunt.src.dead:
-                        del holder.eff['도발']
-                        self.dirty(holder)
-                        self.rule_hits['caster_death'] += 1
+                    for name in buff_flags()['cc']['aggro']['effects']:
+                        taunt = holder.eff.get(name)
+                        if taunt is not None and taunt.src is not None and taunt.src.dead:
+                            del holder.eff[name]
+                            self.dirty(holder)
+                            self.rule_hits['caster_death'] += 1
             if ((u.side == 0 or (self.mc['foe_forced_coop'] == 'on'
                                 and any(b.side == u.side for b in self._forced_coop_candidates)))
                     and sk.is_attack and not extra and not u.dead
@@ -3021,6 +3025,23 @@ class Battle:
         steps = int(round((hi - lo) * 10000))
         return lo + self.R(side).randint(0, steps) / 10000.0
 
+    def evade_rate(self, a, v, ctx):
+        """NKM:8267-8286. Force flags cancel; roll final HIT minus EVADE."""
+        mode = self.mc['evade_model']
+        if mode == 'off':
+            return 0.0
+        if mode != 'client':
+            return 0.0 if a.on('필중') else max(0.0, v.mods()['evade'] - a.mods()['acc'] - ctx.acc)
+        self.rule_hits['evade_model'] += 1
+        force_hit = any(a.on(n) for n in buff_flags()['force_hit'])
+        force_evade = any(v.on(n) for n in buff_flags()['force_evade'])
+        if force_hit != force_evade:
+            return 0.0 if force_hit else 1.0
+        # NKM:19001-19006; neither HIT nor EVADE allows negative final stats.
+        hit = max(0, math.floor(a.d.stats.get('hit', 10000) + (a.mods()['acc'] + ctx.acc) * 10000))
+        evade = max(0, math.floor(v.d.stats.get('evade', 0) + v.mods()['evade'] * 10000))
+        return min(1.0, max(0.0, (10000 - hit + evade) / 10000.0))
+
     def deal(self, a, ctx):
         sk = ctx.skill
         m = a.mods()
@@ -3058,7 +3079,7 @@ class Battle:
                 for v in ctx.targets:
                     if v.dead:
                         continue
-                    ev = 0.0 if (a.on('필중') or self.mc['evade_model'] == 'off') else v.mods()['evade'] - (m['acc'] + ctx.acc)
+                    ev = self.evade_rate(a, v, ctx)
                     evaded = ev > 0 and self.R(a.side).random() < ev
                     crit = not evaded and (self.R(a.side).random() < min(1.0, cr + ctx.local_by[v]['cr']) or ctx.force_crit)
                     prepared[v] = (evaded, crit)
@@ -3078,12 +3099,12 @@ class Battle:
                 continue
             ctx.hit_targets.append(v)
             ctx.target = v
-            # 회피(가정: 회피율 - 공격자 명중률 보정, 필중이면 0). 회피하면 치명 없음·감소 합 +50%·약화 안 걸림
+            # 회피하면 치명 없음·감소 합 +50%·해당 시점의 비강제 약화 거부.
             by = ctx.local_by[v]
             if prepared is not None:
                 evaded, crit = prepared[v]
             else:
-                ev = 0.0 if (a.on('필중') or self.mc['evade_model'] == 'off') else v.mods()['evade'] - (m['acc'] + ctx.acc)
+                ev = self.evade_rate(a, v, ctx)
                 evaded = ev > 0 and self.R(a.side).random() < ev
                 crit = (not evaded) and (self.R(a.side).random() < min(1.0, cr + by['cr']) or ctx.force_crit)
             ctx.crit = ctx.crit or crit
@@ -3153,7 +3174,7 @@ class Battle:
             s = w.mods()['guard'] + hctx.local[w]['guard']
             if self._guard_better(guard, share, w, s):
                 guard, share = w, s
-        share = min(1.0, share)
+        share = self.guard_share(share)
         if self.mc['guard_skip_immune'] == 'client' and (v.invincible() or v.on('스킬 피해 무효')):
             if guard is not None:
                 self.rule_hits['guard_skip_immune'] += 1
@@ -3356,6 +3377,10 @@ class Battle:
             mult = 1 - _rules.DEC_CAP
         return mult
 
+    def guard_share(self, share):
+        # NKM:17801,18181: no 100% cap before splitting damage.
+        return share if self.mc['guard_precision'] == 'client' else min(1.0, share)
+
     def _guard_better(self, cur, cur_s, w, s):
         """수호자 후보 w(분담 비율 s)가 지금 후보 cur(cur_s)보다 앞서는가(NKM:1286-1311 OBF_18133).
         비율이 크면 교체. 같으면 guard_tie=client 일 때 클라 OBF_30007: 둘 다 전열이면 앞 칸, 한쪽만 전열이면 그쪽,
@@ -3439,7 +3464,7 @@ class Battle:
         if guard is None:
             return None, 0.0
         self.rule_hits['chain_guard'] += 1
-        return guard, base * min(1.0, gs)
+        return guard, base * self.guard_share(gs)
 
     def record_stat(self, a, v, amount):
         """게임 전투 통계 집계(dmg_stat·taken_stat). a=None 이면 받은 피해만(오비탈·연쇄 수호 분담 — NKM:3290 빈 구현, 8378)."""
@@ -3532,13 +3557,13 @@ class Battle:
                 if u is not target and self._guard_better(guard, share, u, u.mods()['guard']):
                     guard, share = u, u.mods()['guard']
             if guard is not None:
-                shared = damage * min(1.0, share)
+                shared = damage * self.guard_share(share)
                 damage -= shared
                 self.rule_hits['add_damage_guard'] += 1
 
         def finish(v, value):
             if not client:
-                return value
+                return (max(1, int(value)) if v is guard else max(1, value)) if self.mc['guard_precision'] == 'client' else value
             self.rule_hits['fixed_true_formula'] += 1
             if side is not None and side != v.side and self.pen[side] > 0:
                 value *= self.pen[side]
@@ -4039,7 +4064,7 @@ class Battle:
                                     if self._guard_better(guard, gs, w, s):
                                         guard, gs = w, s
                             if guard is not None:
-                                share_base = base * min(1.0, gs)
+                                share_base = base * self.guard_share(gs)
                                 base -= share_base
                                 self.rule_hits['dot_guard'] += 1
                         if self.mc['dot_hit_result'] == 'client':
@@ -5160,6 +5185,11 @@ class Battle:
                         self.dirty(x)
                     self._restore_break_domain(x)
                     if self.mc['revive_after_spawn'] == 'client':
+                        # NKM:1940-1957: only ordinary enemies retain a spawn
+                        # record; summoned units have null records (1905).
+                        if x.side == 1 and not x.summoned and getattr(x.d, 'spawn', None):
+                            x.reset_initial_cooldowns()
+                            self.rule_hits['revive_spawn_cd'] += 1
                         # 26752678 NKM:5461 -> 1218 -> 1959: 주입기 뒤 등장 후 SE, 그 뒤 부활 HP.
                         for ln in self.lines_of(x):
                             if ln.phase == '등장 후':
@@ -6020,7 +6050,7 @@ LEVEL_DECREASE_EFFECTS = frozenset([('먼지 포착(해제불가)', 5)])
 
 # ------------------------------------------------------------------ 지원성 검사
 # 속성 숫자가 없어도 엔진이 이름으로 동작을 아는 효과
-HANDLED_NAMES = set(['도발', '은신', '현장 대기', '기절', '수면', '침묵', '필중', '면역', '강제 협공', '추가 턴', '보호막', '스킬 피해 무효',
+HANDLED_NAMES = set(['도발', '은신', '현장 대기', '기절', '수면', '침묵', '필중', '강제 명중', '강제 회피', '면역', '강제 협공', '추가 턴', '보호막', '스킬 피해 무효',
                      '강인도 피해 무효', '불사', '강화 불가', '협공 불가', '강제 치명타 발생']) | set(CD_RESET_NAMES) | set(SELF_KILL_NAMES) | set(IGNORED_NAMES) \
     | set(INVINCIBLE_NAMES)
 LOCAL_OK = ('피해 증가', '공격력%', '치명타 확률', '치명타 피해', '방어 관통', '효과 적중', '주는 회복량', '명중률',

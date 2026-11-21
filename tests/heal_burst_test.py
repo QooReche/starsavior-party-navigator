@@ -145,6 +145,7 @@ class HealBurstTest(unittest.TestCase):
                                                        'nova_force_cap': 0,
                                                        'nova_slot_effects': False,
                                                        'chain_skill_damage_up': False,
+                                                       'evade_model': 'rate_minus_acc', 'guard_precision': 'legacy',
                                                        'debuff_instance_count': False,
                                                        'ally_auto_target': 'boss_first',
                                                        'enemy_auto_target': 'weighted',

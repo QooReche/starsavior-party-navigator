@@ -37,8 +37,8 @@
       },
       {
         "key": "[\"rule\",\"mc.clash_no_turn_limit\"]",
-        "reason": "클라 확정 불가: NKM:437,447,768–803의 제한 목록/전역 제한값을 조사함. 이 클라 파일에서 서버 주입을 찾지 못했음. T/CLIENT_BATTLE_TEMPLET_NORMAL의 격전 18행 LimitTurn 미지정과 별 미션 턴 조건은 서버의 패배 제한 부재를 증명하지 않음",
-        "client_clue": "PC 26752678 직접 조사: NKM:437,447,768–803의 제한 목록/전역 제한값을 조사함. 이 클라 파일에서 서버 주입을 찾지 못했음. T/CLIENT_BATTLE_TEMPLET_NORMAL의 격전 18행 LimitTurn 미지정과 별 미션 턴 조건은 서버의 패배 제한 부재를 증명하지 않음; docs/allowlist_rules_1121.md",
+        "reason": "클라 확정 불가: 일반 전투 HUD는 진행 턴만 표시하고 결과도 LimitTurn을 읽지 않음. 격전18행 LimitTurn 미지정과 이 표시만으로 서버 패배 제한 부재를 확정할 수 없음.",
+        "client_clue": "PC 26752678: NKC:596670-596697,99347-99426,31629-31660; ST:8115; NKM:768-803; T/CLIENT_BATTLE_TEMPLET_NORMAL 격전18행; docs/allowlist_round2_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
@@ -48,15 +48,9 @@
         "owner": "엔진 규칙 유지보수"
       },
       {
-        "key": "[\"rule\",\"mc.evade_model\"]",
-        "reason": "근거 못 찾음(입력 연결): NKM:8267–8286은 최종 HIT−EVADE와 ForceHit/ForceEvade 상쇄,18622–18628은 회피 감소50%를 확인함. T/CLIENT_BUFF_TEMPLET:6590–6622 BI_FORCEEVADE는 숨은 표지임. 현재 공개 정의로 이 표지와 모든 최종 명중/회피 스탯을 연결하는 근거가 없으며, 단순 보정값 차감 모델 전체를 확정하지 않음",
-        "client_clue": "PC 26752678 직접 조사: NKM:8267–8286은 최종 HIT−EVADE와 ForceHit/ForceEvade 상쇄,18622–18628은 회피 감소50%를 확인함. T/CLIENT_BUFF_TEMPLET:6590–6622 BI_FORCEEVADE는 숨은 표지임. 현재 공개 정의로 이 표지와 모든 최종 명중/회피 스탯을 연결하는 근거가 없으며, 단순 보정값 차감 모델 전체를 확정하지 않음; docs/allowlist_rules_1121.md",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
         "key": "[\"rule\",\"mc.heal_target\"]",
-        "reason": "근거 못 찾음(대상 연결): NKM:7132–7181,7572–7594,7605 이후 및 T/plain/AUTO_SKILL_TARGET_TEMPLET Id2 확인. 회복 규칙2는 스킬별 선택이지 모든 단일 아군 효과의 공통 규칙이 아님. line_spec이 없는 설명문 폴백의 원형 SE/AutoTargetId 연결을 전부 확보하지 못했음. 공격력 최대·첫 사망자 폴백을 클라 확정으로 바꾸지 않음",
-        "client_clue": "PC 26752678 직접 조사: NKM:7132–7181,7572–7594,7605 이후 및 T/plain/AUTO_SKILL_TARGET_TEMPLET Id2 확인. 회복 규칙2는 스킬별 선택이지 모든 단일 아군 효과의 공통 규칙이 아님. line_spec이 없는 설명문 폴백의 원형 SE/AutoTargetId 연결을 전부 확보하지 못했음. 공격력 최대·첫 사망자 폴백을 클라 확정으로 바꾸지 않음; docs/allowlist_rules_1121.md",
+        "reason": "근거 못 찾음(남은 입력 연결): 현행 SE AutoTargetId 연결은 standard 67형태에서 누락0·설명문/기본 폴백0회였음. 옛 옵션·원형 SE 없는 사용자 정의 입력의 최저HP/첫 사망자/최고공격력 선택은 가정으로 유지하며 rule_hits로 실제 사용을 셈.",
+        "client_clue": "PC 26752678: NKM:7132-7181,7572-7594; T/plain/AUTO_SKILL_TARGET_TEMPLET Id2; tools/build_auto_skill.py form_bindings/build_lines(client=True); docs/allowlist_round2_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {
@@ -84,9 +78,21 @@
         "owner": "엔진 규칙 유지보수"
       },
       {
-        "key": "[\"rule\",\"model.not_modeled\"]",
-        "reason": "근거 못 찾음(포괄 대응): NKM:17369–17414 점수/HUD,1932–1938 주입기,15825–15828 스킬 끝 정리를 대조함. 이 포괄 항목은 미연결 효과·성장 입력·시즌 서버 값·연쇄 피해 시점이 섞여 있음. 원표 행과 공개 정의의 전수 대응을 찾지 못한 범위를 명시하며 전체 지원이라고 지우지 않음",
-        "client_clue": "PC 26752678 직접 조사: NKM:17369–17414 점수/HUD,1932–1938 주입기,15825–15828 스킬 끝 정리를 대조함. 이 포괄 항목은 미연결 효과·성장 입력·시즌 서버 값·연쇄 피해 시점이 섞여 있음. 원표 행과 공개 정의의 전수 대응을 찾지 못한 범위를 명시하며 전체 지원이라고 지우지 않음; docs/allowlist_rules_1121.md",
+        "key": "[\"rule\",\"model.chain_timing\"]",
+        "reason": "근거 못 찾음(원형 전수 연결): 클라의 반응·반격 뒤 예약 처리는 확인했지만 일반 연쇄는 현재 즉시 실행임. 공개 줄의 BuffId 묶음·AutoTargetId 재선택 전수 연결이 남았음. 시점만 변경하면 대상 수 정렬·도중 사망 재선택이 달라짐. 기존 벨그라스 예약은 유지.",
+        "client_clue": "PC 26752678: NKM:4721-4742,6105-6109,6244-6284,6332-6358,13957-13969; SE10173012..16 서로 다른 BuffId, SE10614011..18 같은 BI_DARK_UNKNOWN_1; docs/allowlist_round2_1121.md",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"model.effect_mapping\"]",
+        "reason": "근거 못 찾음(전수 대응): 공개 설명문에서 생략된 원형 SE·숨은 효과까지 모두 연결됐다는 근거는 없음. 이미 연결한 성장·노바·잠재력·피해 제한은 제외하며 실행별 미지원은 unsupported가 맡음.",
+        "client_clue": "PC 26752678: T/CLIENT_SE_TEMPLET_SKILL_1·2, CLIENT_BUFF_TEMPLET; NKM:4318-4566,4721-4742; parser.Line은 원형 SE/BuffId를 전부 보유하지 않음; docs/allowlist_round2_1121.md",
+        "owner": "엔진 규칙 유지보수"
+      },
+      {
+        "key": "[\"rule\",\"model.season_inputs\"]",
+        "reason": "클라 확정 불가: 시즌 서버 주입 값의 전수 대응은 미확인. 세부 난이도·시즌 버프·전투력·점수의 기존 cosmo_approx 범위는 그대로 유지함.",
+        "client_clue": "PC 26752678: NKM:479-482,1932-1938; ST:9368-9382; NKC:102759-102794; docs/allowlist_round2_1121.md",
         "owner": "엔진 규칙 유지보수"
       },
       {

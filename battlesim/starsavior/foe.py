@@ -329,6 +329,8 @@ class FoeDef:
         self.level = L
         self.stats = dict(hp=s['hp'], atk=s['atk'], **{'def': s['def']}, spd=s['spd'], cr=s['crit'], cd=s['critdmg'],
                           eh=s['hit'], er=s['evade'], der=s['abs_evade'], sa=s['tough'])
+        from .hit_stats import rates
+        self.stats['hit'], self.stats['evade'] = rates(raw, u, x)
         if stats_override:
             self.stats.update(stats_override)
         self.immune = set(i['n'] for i in u.get('im', []))

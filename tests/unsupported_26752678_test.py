@@ -149,7 +149,7 @@ class UnsupportedTest(unittest.TestCase):
         self.assertTrue(out)
         self.assertFalse(any(x['grade'] in ('code', 'data') for x in out))
         self.assertTrue(any(x['grade'] == 'assumed' for x in out))
-        self.assertNotIn('선제 방어(', next(x['note'] for x in out if x['rule'] == 'model.not_modeled'))
+        self.assertNotIn('선제 방어(', next(x['note'] for x in out if x['rule'] == 'model.effect_mapping'))
         for section, prefix in ((MC_RULES, 'mc.'), (RULES['mc']['break_skills'], 'mc.break_skills.'),
                                 ({k: RULES['opts'][k] for k in ('coop_order', 'nova_policy')}, 'opts.')):
             for key, rule in section.items():
