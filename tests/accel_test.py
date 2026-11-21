@@ -121,32 +121,6 @@ class AccelTest(unittest.TestCase):
                 if clock == 'owner_turn':
                     self.assertEqual(u.actions, 2)
 
-    def test_owner_dot_stack_expiry_fresh_and_skip_tick(self):
-        # This cache regression protects the legacy owner-turn duration path.
-        b = mc.Battle([definition()], [], random.Random(1), opts={'coop': False},
-                      mc={'dot_hot_lifetime': 'turn_end'})
-        u = b.allies[0]
-        e = b.put_eff(u, 'instances', {'생명력%': 25}, maxs=2, add=2)
-        e.dot = ('atk', 0)
-        e.inst = [[u, 1], [u, 2]]
-        u.hp = u.maxhp
-        e.fresh = True
-        cached = u.mods()
-        b._act_turn(u)
-        self.assertFalse(e.fresh)
-        self.assertIs(u.mods(), cached)
-        e.skip_tick = True
-        b._act_turn(u)
-        self.assertFalse(e.skip_tick)
-        self.assertIs(u.mods(), cached)
-        b._act_turn(u)
-        self.assertEqual(e.stacks, 1)
-        self.assertEqual(u.hp, u.maxhp0 * 1.25)
-        b._act_turn(u)
-        self.assertNotIn(e.name, u.eff)
-        self.assertEqual(u.hp, u.maxhp0)
-        self.assertEqual(u.actions, 4)
-
     def test_cosmo_marker_and_modifier_stack_drop(self):
         for name, props, suppressed in [('marker', {}, False), ('HP', {'생명력%': 25}, False),
                                         ('강화 불가', {}, True)]:

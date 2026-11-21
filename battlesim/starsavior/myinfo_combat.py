@@ -85,7 +85,7 @@ def select_skills(raw, key, combat):
     return u
 
 
-def apply_potentials(d, db, combat, coverage=True):
+def apply_potentials(d, db, combat):
     tables = combat_data()['potentials']
     public = {p['id']: p for p in db.main['dict']['pot']}
     seen = set()
@@ -99,21 +99,21 @@ def apply_potentials(d, db, combat, coverage=True):
         pot = public.get(pid)
         name = combat_data().get('potential_names', {}).get(str(pid)) or (pot or {}).get('n') or '이름 미확인'
         label = '%s (%s/%s)' % (name, pid, level)
-        if row is None or (not coverage and pot is None):
+        if row is None:
             d.unmodeled.append('myinfo potential: %s — 지원하지 않음: unknown ID/level' % label)
             continue
-        source = row.get('effects') if coverage else None
+        source = row.get('effects')
         if source is None:
             source = next((x[4] for x in (pot or {}).get('lv', []) if x[0] == level), None)
         if source is None:
             d.unmodeled.append('myinfo potential: %s — 지원하지 않음: 효과 문구 없음' % label)
             continue
-        for gap in combat_data().get('potential_unsupported', {}).get(f'{pid}/{level}', []) if coverage else []:
+        for gap in combat_data().get('potential_unsupported', {}).get(f'{pid}/{level}', []):
             d.unmodeled.append('myinfo potential: %s — 지원하지 않음: %s' % (label, gap))
         for stat, value in row['stats'].items():
             if stat == 'NST_SUPER_ARMOR':
                 d.stats['sa'] += value
-            elif coverage and stat in POTENTIAL_STAT_PROPS:
+            elif stat in POTENTIAL_STAT_PROPS:
                 props = getattr(d, 'potential_props', None)
                 if props is None:
                     d.potential_props = props = {}
@@ -123,12 +123,12 @@ def apply_potentials(d, db, combat, coverage=True):
                 d.unmodeled.append('myinfo potential stat: %s — 지원하지 않음: %s' % (label, stat))
         for i in row['lines']:
             ln = Line(source[i], '잠재력', 'passive')
-            if coverage and str(i) in row.get('hit_vampirism', {}):
+            if str(i) in row.get('hit_vampirism', {}):
                 ln.eff = dict(kind='hit_vampirism', **row['hit_vampirism'][str(i)])
                 ln.kind, ln.params = 'own_hit', []
-            if coverage and str(i) in row.get('chains', {}):
+            if str(i) in row.get('chains', {}):
                 ln.eff = dict(kind='chain', **row['chains'][str(i)])
-            if coverage and ln.eff.get('stat') == '치명타 피해 감소':
+            if ln.eff.get('stat') == '치명타 피해 감소':
                 ln.eff['potential_coverage'] = True
                 ln.params = [('대상 강인도 있음' if k == 'IsTargetSuperArmor' else k, v) for k, v in ln.params]
             if not hasattr(d, 'potential_line_names'):

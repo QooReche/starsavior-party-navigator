@@ -21,12 +21,12 @@ def effect(b, owner, target, text, phase='스킬 사용 후'):
 
 class MergedRulesTest(unittest.TestCase):
     def test_turn_start_buff_precedes_lethal_dot_and_expires(self):
-        for order, fresh in itertools.product(('client', 'dot_first'), ('client', 'self')):
+        for order, fresh in itertools.product(('client',), ('client', 'self')):
             with self.subTest(order=order, fresh=fresh):
                 actor = unit('a')
                 actor.lines = [Line('[턴 시작 시] 자신에게 〈무적〉 (1턴)', '고유 패시브', 'passive')]
                 b = battle([actor], [unit('f', hp=10**8)],
-                           mc=dict(turn_start_order=order, buff_fresh_scope=fresh), opts={'coop': False})
+                           mc=dict(buff_fresh_scope=fresh), opts={'coop': False})
                 a, f = b.allies[0], b.foes[0]
                 a.hp = 1
                 e = give(a, '연소', src=f, harmful=True, dur=1)
@@ -42,7 +42,7 @@ class MergedRulesTest(unittest.TestCase):
 
     def test_shield_clock_independent_of_general_fresh(self):
         for order, fresh, shield, phase in itertools.product(
-                ('client', 'dot_first'), ('client', 'self'), ('turn_start', 'turn_end'),
+                ('client',), ('client', 'self'), ('turn_start', 'turn_end'),
                 ('턴 시작 시', '스킬 사용 후')):
             with self.subTest(order=order, fresh=fresh, shield=shield, phase=phase):
                 adef, otherdef = unit('a'), unit('other')
@@ -53,7 +53,7 @@ class MergedRulesTest(unittest.TestCase):
                     otherdef.lines = [Line('[스킬 사용 후] (조건: 아군 공격 후) 아군 전체에게 〈시험 보호막〉 (1턴) 보호막 = 자신 생명력×10%',
                                            '고유 패시브', 'passive')]
                 b = battle([adef, otherdef], [unit('f', hp=10**8)],
-                           mc=dict(turn_start_order=order, buff_fresh_scope=fresh, shield_tick=shield),
+                           mc=dict(buff_fresh_scope=fresh, shield_tick=shield),
                            opts={'coop': False})
                 a, other = b.allies
                 b.act(a)
@@ -65,11 +65,10 @@ class MergedRulesTest(unittest.TestCase):
 
     def test_revive_domain_spawn_and_dead_keep(self):
         for spawn, domain, keep, fresh in itertools.product(
-                ('client', 'off'), ('client', 'none'), ('client', 'off'), ('client', 'self')):
+                ('client',), ('client', 'none'), ('client',), ('client', 'self')):
             with self.subTest(spawn=spawn, domain=domain, keep=keep, fresh=fresh):
                 b = battle([unit('a'), unit('other', role='서포터')], [unit('f', hp=10**8)],
-                           mc=dict(revive_after_spawn=spawn, break_domain_revive=domain,
-                                   dead_keep_dnp=keep, buff_fresh_scope=fresh),
+                           mc=dict(break_domain_revive=domain, buff_fresh_scope=fresh),
                            break_skill={'name': '큐브 과부하'})
                 a, other = b.allies
                 b.break_points = 3
@@ -102,10 +101,10 @@ class MergedRulesTest(unittest.TestCase):
 
     def test_break_kill_new_wave_gauge_and_reservation(self):
         for gauge, extra, carry in itertools.product(
-                ('client', 'exclude'), ('clear', 'keep'), ('keep', 'client')):
+                ('client', 'exclude'), ('clear',), ('keep', 'client')):
             with self.subTest(gauge=gauge, extra=extra, carry=carry):
                 b = battle([unit('a')], [unit('first', hp=1)], break_skill={'name': '스타피어서'},
-                           mc=dict(break_gauge_actor=gauge, wave_extra_turn=extra, wave_carry=carry),
+                           mc=dict(break_gauge_actor=gauge, wave_carry=carry),
                            opts={'coop': False})
                 a = b.allies[0]
                 a.gauge, a.extra_turn, b.break_points = 10000, True, 3
@@ -125,14 +124,10 @@ class MergedRulesTest(unittest.TestCase):
 
 def mutations():
     cases = [
-        ('turn_start_order', 'dot_first', 'test_turn_start_buff_precedes_lethal_dot_and_expires'),
         ('buff_fresh_scope', 'self', 'test_turn_start_buff_precedes_lethal_dot_and_expires'),
         ('shield_tick', 'turn_start', 'test_shield_clock_independent_of_general_fresh'),
-        ('revive_after_spawn', 'off', 'test_revive_domain_spawn_and_dead_keep'),
         ('break_domain_revive', 'none', 'test_revive_domain_spawn_and_dead_keep'),
-        ('dead_keep_dnp', 'off', 'test_revive_domain_spawn_and_dead_keep'),
         ('break_gauge_actor', 'exclude', 'test_break_kill_new_wave_gauge_and_reservation'),
-        ('wave_extra_turn', 'keep', 'test_break_kill_new_wave_gauge_and_reservation'),
     ]
     original = Battle.__init__
     for key, value, method in cases:

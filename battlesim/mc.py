@@ -726,7 +726,7 @@ class Unit:
         table = self.b.mc['buff_count_source'] == 'table'
         return sum(1 for e in self.eff.values()
                    if e.stacks > 0 and not e.check and (not dispellable or not e.fixed)
-                   and not (self.b.mc['break_domain_category'] == 'marker' and e.category == 'marker'
+                   and not (e.category == 'marker'
                             and self.b.break_skill_enabled and e.name == self.b.break_skill_rule['domain'])
                    and (positive_buff(e.name, e.category == 'buff') if table else e.category == 'buff'))
 
@@ -1051,7 +1051,7 @@ class Battle:
                 e.props = dict(props)
         old_stacks = e.stacks
         e.stacks = max(0, min(e.maxs, e.stacks + add))
-        e.dead_keep = dead_keep or (self.mc['dead_keep_dnp'] == 'client' and dead_keep_name(name))
+        e.dead_keep = dead_keep or dead_keep_name(name)
         # mods depends on props/stacks/category and 강화 불가, not duration/fresh/dead_keep.
         # Empty markers cannot change stats; suppress-mode 강화 불가 is the exception.
         # Both old/new props matter when refresh_props removes the last modifier.
@@ -1140,7 +1140,7 @@ class Battle:
         for u in self.foes:
             for ln in self.lines_of(u):
                 kind = line_kind(ln)
-                if (self.wave_i > 0 and self.mc['wave_foe_battle_start'] == 'after_spawn_only'
+                if (self.wave_i > 0
                         and ln.phase == '전투 시작 시'):
                     self.rule_hits['wave_foe_battle_start'] += 1
                     continue
@@ -1148,14 +1148,13 @@ class Battle:
                     self.run_line(u, ln, Ctx(u, u, None))
         if self.wave_i > 0:
             # NKM:826: 기존 예약만 WAVE_START 전에 제거. 새 이벤트의 예약은 유지.
-            if self.mc['wave_extra_turn'] == 'clear':
-                for u in self.alive(0):
-                    if u.extra_turn:
-                        self.rule_hits['wave_extra_turn'] += 1
-                        u.extra_turn = False
-                        u.gauge = 0.0  # 추가 턴 예약의 10000 표시도 제거.
-                # 일반 게이지는 별도 규칙(NKM:822). reset의 기존 이벤트 전 순서 유지.
-                self._reset_wave_gauge()
+            for u in self.alive(0):
+                if u.extra_turn:
+                    self.rule_hits['wave_extra_turn'] += 1
+                    u.extra_turn = False
+                    u.gauge = 0.0  # 추가 턴 예약의 10000 표시도 제거.
+            # 일반 게이지는 별도 규칙(NKM:822). reset의 기존 이벤트 전 순서 유지.
+            self._reset_wave_gauge()
             if client_carry:
                 self._carry_wave_effects()
                 self._reset_wave_gauge()
@@ -1412,22 +1411,17 @@ class Battle:
             self.log(recover=u.name, skip=skip)
         if self.mc['shield_tick'] == 'turn_start':
             self._tick_shields(u)
-        ally_end_cd = u.side == 0 and self.mc['ally_cd_tick'] == 'turn_end'
+        ally_end_cd = u.side == 0
         end_cd = ally_end_cd or (u.side == 1 and self.mc['enemy_cd_tick'] == 'turn_end'
                                 and self.mc['enemy_cd_native'])
         if not end_cd:
             self._tick_cooldowns(u)
-        if self.mc['turn_start_order'] == 'dot_first':
-            self._tick_dot_hot(u)
-            if u.dead:
-                self._dead_turn_add_damage()
-                return
         if not u.dead:
             self.fire(u, 'own_ts', Ctx(u, u, None))
         for v in self.alive(u.side):
             if v is not u:
                 self.fire(v, 'ally_ts', Ctx(v, u, None))
-            elif self.mc['ally_turn_self'] == 'condition':
+            else:
                 lines = [ln for ln in self.kind_lines(v, 'ally_ts')
                          if dict(ln.params).get('자신 포함') == '예']
                 if lines:
@@ -1435,13 +1429,12 @@ class Battle:
                     self.run_batch(v, lines, Ctx(v, u, None))
         for v in self.alive(1 - u.side):
             self.fire(v, 'enemy_ts', Ctx(v, u, None))
-        if self.mc['turn_start_order'] == 'client':
-            if any(e.dot or e.hot for e in u.eff.values()):
-                self.rule_hits['turn_start_order'] += 1
-            self._tick_dot_hot(u)
-            if u.dead:
-                self._dead_turn_add_damage()
-                return
+        if any(e.dot or e.hot for e in u.eff.values()):
+            self.rule_hits['turn_start_order'] += 1
+        self._tick_dot_hot(u)
+        if u.dead:
+            self._dead_turn_add_damage()
+            return
         # 회복 턴도 턴 이벤트·지속 차감은 처리하고, 스킬 행동만 생략한다.
         if self.mc['revenge'] == 'on':
             self._hit_log = []
@@ -1494,7 +1487,7 @@ class Battle:
             changed = False
             for name in list(u.eff):
                 e = u.eff[name]
-                if self.mc['dot_hot_lifetime'] == 'tick' and (e.dot or e.hot):
+                if (e.dot or e.hot):
                     continue
                 if e.clock != 'owner_turn':
                     continue
@@ -1577,7 +1570,7 @@ class Battle:
                 changed = False
                 for name in list(v.eff):
                     e = v.eff[name]
-                    if self.mc['dot_hot_lifetime'] == 'tick' and (e.dot or e.hot):
+                    if (e.dot or e.hot):
                         continue
                     if e.clock != 'any_turn':
                         continue
@@ -1767,7 +1760,7 @@ class Battle:
                 if name == '오메가 프로토콜' and self.mc['omega_dispel'] == 'client':
                     e.fixed = False
                 if name == rule['domain']:
-                    e.category = self.mc['break_domain_category']
+                    e.category = 'marker'
                     if e.category == 'marker':
                         self.rule_hits['break_domain_category'] += 1
                 u.eff[name] = e
@@ -1789,7 +1782,7 @@ class Battle:
         name = self.break_skill_rule['domain']
         e = Eff(name, self._domain_props(u), 1, self.break_domain_remaining, None, False)
         e.stacks, e.fixed, e.clock = 1, self.mc['break_skill_fixed'], self.break_domain_clock
-        e.category = self.mc['break_domain_category']
+        e.category = 'marker'
         if e.category == 'marker':
             self.rule_hits['break_domain_category'] += 1
         u.eff[name] = e
@@ -1847,11 +1840,11 @@ class Battle:
         elif u.side == 1 and self.mc['foe_auto'] == 'data':
             specs = getattr(u.d, 'auto', None) or {}   # data/foe_auto.json(tools/build_foe_auto.py) — 적 스킬별 규칙 행
         slots = ('궁극기', '특수기', '기본기')
-        if table and u.side == 0 and self.mc['skill_order'] == 'data':
+        if table and u.side == 0:
             # 게임 SkillOrderList(에밀리 등 9명 = 특수기 -> 궁극기 -> 기본기). 개화 변형은 기본 키 순서
             orders = auto_skill_order()
             slots = orders.get(u.key) or orders.get(u.key.split('@')[0]) or slots
-        elif u.side == 1 and self.mc['foe_skill_order'] == 'data':
+        elif u.side == 1:
             # 적도 같은 SkillOrderList 순회(NKM:6378). 배치별 연결은 foe_auto 빌더에서 검증함.
             slots = getattr(u.d, 'skill_order', ()) or slots
         for slot in slots:
@@ -2038,7 +2031,7 @@ class Battle:
                    'high_def': lambda v: self.def_stat(v), 'low_def': lambda v: self.def_stat(v),
                    'high_gauge': lambda v: v.gauge, 'low_gauge': lambda v: v.gauge,
                    'high_spd': lambda v: v.spd(), 'low_spd': lambda v: v.spd()}[st]
-            if self.mc['stat_select_int'] == 'floor' and st not in ('high_hp_rate', 'high_gauge', 'low_gauge'):
+            if st not in ('high_hp_rate', 'high_gauge', 'low_gauge'):
                 self.rule_hits['stat_select_int'] += 1
                 raw_key = key
                 key = lambda v: math.floor(raw_key(v))
@@ -2095,7 +2088,7 @@ class Battle:
             return good or [v for v in pool if not (att.element and ELEM_BEATS.get(v.element) == att.element)]
         if st in ('low_hp_rate', 'low_max_hp'):
             key = (lambda v: self.auto_hp_basis_points(v.hp, v.maxhp)) if st == 'low_hp_rate' else (lambda v: v.maxhp)
-            if st == 'low_max_hp' and self.mc['stat_select_int'] == 'floor':
+            if st == 'low_max_hp':
                 key = lambda v: math.floor(v.maxhp)
             best = min(key(v) for v in pool)
             return [v for v in pool if key(v) == best]
@@ -2532,7 +2525,7 @@ class Battle:
                 # state-only cards must not acquire history just by reaching cast().
                 u.last_slot = sk.slot
                 self.rule_hits['counter_slot_timing'] += 1
-            if sk.is_attack and (ctx.targets or self.mc['empty_attack'] == 'process'):
+            if sk.is_attack:
                 self.deal(u, ctx)
             if not u.dead:
                 if not skip_lines:
@@ -2579,8 +2572,7 @@ class Battle:
                             del holder.eff[name]
                             self.dirty(holder)
                             self.rule_hits['caster_death'] += 1
-            if ((u.side == 0 or (self.mc['foe_forced_coop'] == 'on'
-                                and any(b.side == u.side for b in self._forced_coop_candidates)))
+            if ((u.side == 0 or any(b.side == u.side for b in self._forced_coop_candidates))
                     and sk.is_attack and not extra and not u.dead
                     and (self.opts['coop'] or (self.opts['forced_coop']
                          and self.opts['forced_coop_target'] == 'random'))):
@@ -2784,7 +2776,7 @@ class Battle:
                                    and ('mark' not in rule or v.has(rule['mark']))), None)
                     if target is None:
                         continue
-                deferred_stack = rule.get('consume_all') and self.mc['stack_react_timing'] == 'client'
+                deferred_stack = rule.get('consume_all')
                 if rule.get('recent') and not deferred_stack:
                     target = owner.last_target
                     if target is not None and target.dead:
@@ -3094,15 +3086,14 @@ class Battle:
         if ctx.hit_targets:
             a.last_target = ctx.hit_targets[-1]
         # 〈공격 시 해제〉(DispelCondition=DC_ATTACK): 공격 스킬의 모든 타격·대상 처리 뒤, 피격 반응 전에 시전자에게서 지움(NKM 15580). 반격·협공도 이 경로
-        if self.mc['dispel_on_attack'] == 'on':
-            table = self.mc['dispel_attack_names'] == 'table'
-            # 표 이름(동명 혼재로 빠진 여유로운 응수는 기존 확인분 DISPEL_ON_ATTACK 로 보탬)
-            for nm in (DISPEL_ON_ATTACK + tuple(n for n in buff_flags()['dispel_attack'] if n not in DISPEL_ON_ATTACK)
-                       if table else DISPEL_ON_ATTACK):
-                if a.eff.pop(nm, None) is not None:
-                    self.dirty(a)
-                    if table and nm not in DISPEL_ON_ATTACK:
-                        self.rule_hits['dispel_attack_names'] += 1
+        table = self.mc['dispel_attack_names'] == 'table'
+        # 표 이름(동명 혼재로 빠진 여유로운 응수는 기존 확인분 DISPEL_ON_ATTACK 로 보탬)
+        for nm in (DISPEL_ON_ATTACK + tuple(n for n in buff_flags()['dispel_attack'] if n not in DISPEL_ON_ATTACK)
+                   if table else DISPEL_ON_ATTACK):
+            if a.eff.pop(nm, None) is not None:
+                self.dirty(a)
+                if table and nm not in DISPEL_ON_ATTACK:
+                    self.rule_hits['dispel_attack_names'] += 1
         # 피격 반응은 전체 공격의 모든 대상 처리가 끝난 뒤(동시성 규칙)
         for v, hctx in reactions:
             if v.dead:
@@ -3138,7 +3129,7 @@ class Battle:
             if self._guard_better(guard, share, w, s):
                 guard, share = w, s
         share = self.guard_share(share)
-        if self.mc['guard_skip_immune'] == 'client' and (v.invincible() or v.on('스킬 피해 무효')):
+        if (v.invincible() or v.on('스킬 피해 무효')):
             if guard is not None:
                 self.rule_hits['guard_skip_immune'] += 1
             guard = None
@@ -3582,7 +3573,7 @@ class Battle:
         client = self.mc['fixed_true_formula'] == 'client'
         side = source.side if source is not None else source_side
         guard, shared = None, 0.0
-        if (client or self.mc['add_damage_guard'] == 'client') and not target.invincible() and not target.on('스킬 피해 무효'):
+        if not target.invincible() and not target.on('스킬 피해 무효'):
             share = 0.0
             for u in self.alive(target.side):
                 if u is not target and self._guard_better(guard, share, u, u.mods()['guard']):
@@ -3666,13 +3657,13 @@ class Battle:
                 forced = max(1.0, math.floor(v.maxhp * rule['keep']))
                 left = forced
                 self._consume_limit(v, name, rule)
-                if self.mc['buff_ban_force'] == 'off' or not self.refuse_buff(v, '불사'):
+                if not self.refuse_buff(v, '불사'):
                     e = Eff('불사', {}, 1, rule['undying'], v, False)
                     e.stacks = 1
                     e.fresh = v.acting
                     v.eff['불사'] = e
                 for nm, dur, props in rule.get('then', ()):
-                    if self.mc['buff_ban_force'] != 'off' and self.refuse_buff(v, nm):
+                    if self.refuse_buff(v, nm):
                         continue
                     e2 = Eff(nm, dict(props), 1, dur, v, False)
                     e2.stacks, e2.fixed, e2.fresh = 1, True, v.acting
@@ -3711,8 +3702,7 @@ class Battle:
             self.fire(w, 'death_ally', Ctx(w, a, None))
         for w in self.alive(1 - v.side):
             self.fire(w, 'death_enemy', Ctx(w, a, None))
-        v.eff = ({n: e for n, e in v.eff.items() if e.dead_keep}
-                 if self.mc['dead_keep_dnp'] == 'client' else {})
+        v.eff = {n: e for n, e in v.eff.items() if e.dead_keep}
         if v.eff:
             self.rule_hits['dead_keep_dnp'] += 1
         v.gauge = 0.0
@@ -4027,11 +4017,9 @@ class Battle:
         """턴 시작: 지속 피해(시전자별 중첩, 매 틱 시전자 현재 스탯, 보호막 무시)와 지속 회복"""
         try:
             names = list(u.eff)
-            hot_first = self.mc['dot_hot_order'] == 'hot_first'
-            if hot_first and any(e.hot for e in u.eff.values()) and any(e.dot for e in u.eff.values()):
+            if any(e.hot for e in u.eff.values()) and any(e.dot for e in u.eff.values()):
                 self.rule_hits['dot_hot_order'] += 1
-            items = ([(n, 'hot') for n in names] + [(n, 'dot') for n in names]
-                     if hot_first else [(n, 'both') for n in names])
+            items = ([(n, 'hot') for n in names] + [(n, 'dot') for n in names])
             for name, phase in items:
                 e = u.eff.get(name)
                 if e is None:
@@ -4044,9 +4032,8 @@ class Battle:
                         if u.dead:
                             return
                         if dot_client and src.side == u.side and src is not u:
-                            if self.mc['dot_hot_lifetime'] == 'tick':
-                                instance[1] -= 1
-                                self.rule_hits['dot_hot_lifetime'] += 1
+                            instance[1] -= 1
+                            self.rule_hits['dot_hot_lifetime'] += 1
                             continue      # NKM:17278-17281: 같은 편 다른 유닛의 피해는 0
                         sm = src.mods()
                         val = self.atk_stat(src) if stat == 'atk' else src.maxhp
@@ -4096,9 +4083,8 @@ class Battle:
                             u.hit_evaded = False
                             self.rule_hits['dot_hit_result'] += 1
                         self.apply_damage(src, u, dot_dmg(u, base), 'dot', shieldable=False)
-                        if self.mc['dot_hot_lifetime'] == 'tick':
-                            instance[1] -= 1
-                            self.rule_hits['dot_hot_lifetime'] += 1
+                        instance[1] -= 1
+                        self.rule_hits['dot_hot_lifetime'] += 1
                         if (guard is not None and share_base >= 1.0 and not guard.dead
                                 and not (src.side == guard.side and src is not guard)):
                             # NKM:7925-7928,8153-8171,17368-17409: 수호자 몫은 수호자 방어·증감·상성·별도 난수로 다시 계산, 보호막 무시
@@ -4111,30 +4097,27 @@ class Battle:
                         for instance in e.inst:
                             src = instance[0] or u
                             self.heal(src, u, u.maxhp * e.hot, src.sd.get('주는 회복량', 0.0) / 100.0)
-                            if self.mc['dot_hot_lifetime'] == 'tick':
-                                instance[1] -= 1
+                            instance[1] -= 1
                         self.rule_hits['independent_stack_limits'] += 1
                         continue
                     # 지속 회복은 원래 주는 회복량 보정을 안 쓰지만, 서든데스 감소는 시전자 기준으로 적용(근사)
                     self.heal(e.src or u, u, u.maxhp * e.hot, (e.src or u).sd.get('주는 회복량', 0.0) / 100.0)
-                    if self.mc['dot_hot_lifetime'] == 'tick':
-                        e.dur -= 1
-                        self.rule_hits['dot_hot_lifetime'] += 1
+                    e.dur -= 1
+                    self.rule_hits['dot_hot_lifetime'] += 1
         finally:
-            if self.mc['dot_hot_lifetime'] == 'tick':
-                self._expire_dot_hot(u)
-                # GlobalTurnCounting on other units ticks here (NKM:13427-13431).
-                for v in self.alive(0) + self.alive(1):
-                    if v is u:
-                        continue
-                    for e in v.eff.values():
-                        if e.clock == 'any_turn' and (e.dot or e.hot):
-                            if e.inst is not None:
-                                for it in e.inst:
-                                    it[1] -= 1
-                            else:
-                                e.dur -= 1
-                    self._expire_dot_hot(v)
+            self._expire_dot_hot(u)
+            # GlobalTurnCounting on other units ticks here (NKM:13427-13431).
+            for v in self.alive(0) + self.alive(1):
+                if v is u:
+                    continue
+                for e in v.eff.values():
+                    if e.clock == 'any_turn' and (e.dot or e.hot):
+                        if e.inst is not None:
+                            for it in e.inst:
+                                it[1] -= 1
+                        else:
+                            e.dur -= 1
+                self._expire_dot_hot(v)
 
     def _expire_dot_hot(self, u):
         changed = False
@@ -4230,7 +4213,7 @@ class Battle:
         # 재현된 HP 이하·약화 보유 조건만 대상 집합으로 확장한다.
         # NKM:9446-9479,10480-10504: 공격 후에는 한 피격 기록이 조건 전부를 만족해야 함.
         keys = ('대상 HP% 이하', '대상 약화효과 보유')
-        if (self.mc['target_condition_set'] == 'any' and len(ctx.targets) > 1
+        if (len(ctx.targets) > 1
                 and any(k in keys for k, _ in ln.params)):
             self.rule_hits['target_condition_set'] += 1
             if '[스킬 사용 시작 시]' not in ln.raw:
@@ -4301,7 +4284,7 @@ class Battle:
                         return False
                     continue
                 return False
-            if (last and last[0] == 'XS' and self.mc['source_buff_list'] == 'any'
+            if (last and last[0] == 'XS'
                     and k == '중첩수'):
                 # NKM.Templets:42617-42640,42849-42864: 이름별로 보유·중첩을 함께 검사.
                 # 효과 개수(인스턴스 수)는 별도 개념이라 기존 경로를 유지함.
@@ -4415,12 +4398,9 @@ class Battle:
                 if passed != (v == '예'):
                     return False
             elif k == '대상 브레이크':    # TargetSuperArmorBreak는 별도 사건 조건.
-                if self.mc['target_break_condition'] == 'event':
-                    targets = ctx.targets or ([tgt] if tgt is not None else [])
-                    passed = any(x in ctx.break_targets for x in targets)
-                    self.rule_hits['target_break_condition'] += 1
-                else:
-                    passed = tgt is not None and tgt.broken
+                targets = ctx.targets or ([tgt] if tgt is not None else [])
+                passed = any(x in ctx.break_targets for x in targets)
+                self.rule_hits['target_break_condition'] += 1
                 if passed != (v == '예'):
                     return False
             elif k == '피해 증가(조건부)':     # 「이 줄은 조건부 피해 증가」 표지로 봄(값 '예'만 나옴, assumed)
@@ -4476,13 +4456,10 @@ class Battle:
                     return False
             elif k in ('시전자가 보유', '턴 유닛이 보유'):
                 names = [x.strip() for x in v.split(',')]
-                use_list = self.mc['source_buff_list'] == 'any'
-                if ctx.src is None or not any(ctx.src.has(n) for n in (names if use_list else [v])):
+                if ctx.src is None or not any(ctx.src.has(n) for n in names):
                     return False
-                if use_list:
-                    self.rule_hits['source_buff_list'] += 1
-                if use_list or k == '시전자가 보유':
-                    last = ('XS', names)  # 후속 중첩수도 조건의 시전자/턴 유닛에 바인딩.
+                self.rule_hits['source_buff_list'] += 1
+                last = ('XS', names)  # 후속 중첩수도 조건의 시전자/턴 유닛에 바인딩.
             elif k == '자신에게 약화효과 없음':
                 if (owner.n_harmful() == 0) != (v == '예'):
                     return False
@@ -5242,12 +5219,9 @@ class Battle:
                     self.once -= once
                     if dropped or once:
                         self.rule_hits['revive_se_reset'] += 1
-                    if self.mc['dead_keep_dnp'] == 'client':
-                        x.eff = {n: e for n, e in x.eff.items()
-                                 if e.dead_keep and not (n == '도발' and e.src is not None and e.src.dead)}
+                    x.eff = {n: e for n, e in x.eff.items()
+                             if e.dead_keep and not (n == '도발' and e.src is not None and e.src.dead)}
                     self.dirty(x)
-                    if self.mc['revive_after_spawn'] == 'off':
-                        x.hp = float(math.floor(x.maxhp * int(m.group(2)) / 100.0))
                     x.gauge = 0.0
                     x.death_t = None
                     if x.zero_stats:          # 길방 〈들러리〉(300872)는 사망 시 사라진다: 부활하면 정상 능력치·표지 없음
@@ -5255,25 +5229,23 @@ class Battle:
                         x.eff.pop('들러리(해제불가)', None)
                         self.dirty(x)
                     self._restore_break_domain(x)
-                    if self.mc['revive_after_spawn'] == 'client':
-                        # NKM:1940-1957: only ordinary enemies retain a spawn
-                        # record; summoned units have null records (1905).
-                        if x.side == 1 and not x.summoned and getattr(x.d, 'spawn', None):
-                            x.reset_initial_cooldowns()
-                            self.rule_hits['revive_spawn_cd'] += 1
-                        # 26752678 NKM:5461 -> 1218 -> 1959: 주입기 뒤 등장 후 SE, 그 뒤 부활 HP.
-                        for ln in self.lines_of(x):
-                            if ln.phase == '등장 후':
-                                self.run_line(x, ln, Ctx(x, x, None))
-                                self.rule_hits['revive_after_spawn'] += 1
-                        self.dirty(x)
+                    # NKM:1940-1957: only ordinary enemies retain a spawn
+                    # record; summoned units have null records (1905).
+                    if x.side == 1 and not x.summoned and getattr(x.d, 'spawn', None):
+                        x.reset_initial_cooldowns()
+                        self.rule_hits['revive_spawn_cd'] += 1
+                    # 26752678 NKM:5461 -> 1218 -> 1959: 주입기 뒤 등장 후 SE, 그 뒤 부활 HP.
+                    for ln in self.lines_of(x):
+                        if ln.phase == '등장 후':
+                            self.run_line(x, ln, Ctx(x, x, None))
+                            self.rule_hits['revive_after_spawn'] += 1
+                    self.dirty(x)
                     # C5461 -> 1218 -> 1959: AFTER_SPAWN precedes 5472's
                     # toughness restore, which precedes 5473's revival HP.
                     x.sa, x.broken = x.sa_max, False
                     self.rule_hits['revive_toughness'] += 1
-                    if self.mc['revive_after_spawn'] == 'client':
-                        x.hp = float(math.floor(x.maxhp * int(m.group(2)) / 100.0))
-                    if self.mc['dead_keep_dnp'] == 'client' and any(e.dead_keep for e in x.eff.values()):
+                    x.hp = float(math.floor(x.maxhp * int(m.group(2)) / 100.0))
+                    if any(e.dead_keep for e in x.eff.values()):
                         self.rule_hits['dead_keep_dnp_revive'] += 1
                     self.log(revive=x.name)
             return
@@ -5759,8 +5731,6 @@ class Battle:
                 if repeat_buff and not applied:
                     break
             return
-        if eff['name'] == '강제 협공' and owner.side == 1 and self.mc['foe_forced_coop'] != 'on':
-            return  # legacy는 자동 대상 추첨의 난수도 소비하지 않음.
         tg = self.resolve(owner, eff['target'], ctx)
         if not tg:
             return
@@ -5810,7 +5780,7 @@ class Battle:
     def refuse_buff(self, x, name):
         """NKM 4053: 신규 강화 거부에 ForceApplyEffect 예외를 적용한다."""
         return (x.ban_refuse and x.buff_banned()
-                and not (self.mc['buff_ban_force'] == 'client' and name in FORCE_BUFF_NAMES))
+                and name not in FORCE_BUFF_NAMES)
 
     def _buff_fresh(self, owner, x, name, clock, ln, shield=False):
         """부여 턴 차감 제외(NKM:3973-3989,4565-4583). 오비탈은 owner=None.
@@ -5950,7 +5920,7 @@ class Battle:
         if category == 'buff' and self.refuse_buff(x, name):
             # 강화 불가 예외: SE 행 강제는 se_force_apply, 버프 자체 강제(이름 291개)는 buff_ban_force 가 끄지 않았을 때만
             # (refuse_buff 안의 buff_ban_force 는 IsBuff&&강제 78개 이름만 봄 — 클라는 ForceApplyEffect 만 본다, NKM:4389·6112)
-            if not (self._forced(owner) or (forced and self.mc['buff_ban_force'] != 'off')):
+            if not (self._forced(owner) or forced):
                 return     # 〈강화 불가〉: 새 강화 효과(갱신·합산 포함)는 거부(클라 버프 부여 함수 650줄)
             self.rule_hits['se_force_apply'] += 1   # CantGetMoreBuff 거부도 강제 적용이면 생략(NKM:4389 !OBF_8151)
         resist = category == 'debuff' and not eff.get('ignore_resist')
@@ -6088,7 +6058,7 @@ class Battle:
                     self.rule_hits['level_max_source'] += 1
             mx = independent_cap or (math.inf if unlimited_dot else cap or (5 if dot else 1))
             e = Eff(name, eff['props'], mx, dur, owner, harmful)
-            e.dead_keep = self.mc['dead_keep_dnp'] == 'client' and dead_keep_name(name)
+            e.dead_keep = dead_keep_name(name)
             e.category = category
             e.fixed = fixed
             e.clock = clock

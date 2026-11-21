@@ -11,7 +11,6 @@ from simkit import battle, give, unit
 from battlesim import simulate
 from battlesim.mc import Battle, Ctx
 from battlesim.metrics import unit_def
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.parser import Line
 
 OVERTURE, RHAPSODY, FINALE = [n + '(해제불가)' for n in ('서곡', '광시곡', '피날레')]
@@ -54,14 +53,13 @@ class SourceBuffListTest(unittest.TestCase):
             ln.params.insert(0, ('자신이 보유', 'A'))
             self.assertTrue(b.cond_ok(owner, ln, ctx))
 
-    def test_single_name_and_literal_legacy(self):
+    def test_single_name(self):
         for key in ('시전자가 보유', '턴 유닛이 보유'):
-            b = battle([unit('owner'), unit('source')], [unit('foe')], mc={'source_buff_list': 'literal'})
+            b = battle([unit('owner'), unit('source')], [unit('foe')])
             owner, src = b.allies
             give(src, OVERTURE)
             ctx = Ctx(owner, src, src.d.skills['기본기'])
             self.assertTrue(b.cond_ok(owner, condition(key, OVERTURE), ctx))
-            self.assertFalse(b.cond_ok(owner, condition(key, f'{OVERTURE}, {RHAPSODY}'), ctx))
 
     def test_ally_break_triggers_gille_special_once(self):
         b = battle([unit_def('gille'), unit_def('asherah-order-striker')],
@@ -145,10 +143,6 @@ def mutations():
         if ln.eff['kind'] != 'extra_cast':
             return original(b, owner, ln, ctx)
     cases = [
-        ('literal caster/turn lists', SourceBuffListTest('test_each_list_member_and_absent_source'),
-         patch.dict(MC_OPTS, source_buff_list='literal')),
-        ('lost ally trigger', SourceBuffListTest('test_ally_break_triggers_gille_special_once'),
-         patch.dict(MC_OPTS, source_buff_list='literal')),
         ('disabled extra casts', SourceBuffListTest('test_ally_break_triggers_gille_special_once'),
          patch.object(Battle, 'exec_line', drop_extra)),
     ]

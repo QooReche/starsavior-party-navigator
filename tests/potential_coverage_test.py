@@ -126,9 +126,7 @@ class CoverageTests(unittest.TestCase):
         entries = [(22009, 1), (22010, 1), (30006, 1), (41001, 1), (41002, 1), (23019, 1), (23024, 1)]
         payload = dict(units=[dict(key='wedding-epindel', stats_override=SCREEN, stats_final=True,
                                   myinfo_combat={'potentials': entries})])
-        on = api._norm_party(payload, get_db(), 'fixed', 'standard', {'myinfo_potential_coverage': True})[0][0]
-        off = api._norm_party(payload, get_db(), 'fixed', 'standard', {'myinfo_potential_coverage': False})[0][0]
-        self.assertIsNot(on, off)
+        on = api._norm_party(payload, get_db(), 'fixed', 'standard', {})[0][0]
         b = battle([on], [unit('dummy')])
         m = b.allies[0].mods()
         expected = {'coop': .015, 'revenge': .215, 'preempt': .2, 'vampirism': .15}
@@ -136,7 +134,6 @@ class CoverageTests(unittest.TestCase):
             self.assertAlmostEqual(m[k], v, msg=k)
         self.assertAlmostEqual(m['inc_slot']['기본기'], .05)
         self.assertAlmostEqual(m['red']['궁극기'], .05)
-        self.assertFalse(getattr(off, 'potential_props', {}))
 
     def test_new_arcana_unique_promotes_are_journey_only(self):
         data = combat.combat_data()['arcana_unique']

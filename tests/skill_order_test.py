@@ -11,7 +11,6 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [ROOT, os.path.join(ROOT, 'tests')]
 from p3_test import battle, unit   # noqa: E402
 from battlesim import mc   # noqa: E402
-from battlesim.rules import MC_RULES   # noqa: E402
 from battlesim.starsavior.foe import stage_waves   # noqa: E402
 from tools.build_foe_auto import Unknown, unit_rules   # noqa: E402
 
@@ -19,8 +18,8 @@ SK = [dict(slot='기본기', dm=100), dict(slot='특수기', dm=150, cd=3), dict
 
 
 class SkillOrderTest(unittest.TestCase):
-    def pick(self, key, mode='data', ready=('특수기', '궁극기')):
-        b = battle([unit(key, skills=SK)], [unit('f', hp=10 ** 7)], mc={'auto_skill': 'data', 'skill_order': mode})
+    def pick(self, key, ready=('특수기', '궁극기')):
+        b = battle([unit(key, skills=SK)], [unit('f', hp=10 ** 7)])
         a = b.allies[0]
         a.key = key
         a.cd = {s: (0 if s in ready else 2) for s in ('특수기', '궁극기')}
@@ -43,9 +42,6 @@ class SkillOrderTest(unittest.TestCase):
         self.assertEqual(self.pick('emily', ready=('궁극기',)), '궁극기')
         self.assertEqual(self.pick('emily', ready=()), '기본기')
 
-    def test_legacy_default(self):
-        self.assertEqual(self.pick('emily', mode='default'), '궁극기')
-
 
 class FoeSkillOrderTest(unittest.TestCase):
     def setup(self, **opts):
@@ -66,9 +62,9 @@ class FoeSkillOrderTest(unittest.TestCase):
             unit_rules({'sk': []}, {}, gu, {}, {}, {}, {}, {})
 
     def test_cube_mapping_and_actual_cast(self):
-        for mode, slot in (('data', '특수기'), ('default', '궁극기')):
+        for mode, slot in (('data', '특수기'),):
             with self.subTest(mode=mode):
-                b, f = self.setup(foe_skill_order=mode)
+                b, f = self.setup()
                 self.assertEqual(f.key, 'foe:1563:388')
                 self.assertEqual(f.d.skill_order, ['특수기', '궁극기', '기본기'])
                 self.assertEqual(b.choose_skill(f)[0].slot, slot)
@@ -94,14 +90,6 @@ class FoeSkillOrderTest(unittest.TestCase):
         b = battle([unit('a')], [unit('ordinary', skills=SK)])
         b.foes[0].cd = {}
         self.assertEqual(b.choose_skill(b.foes[0])[0].slot, '궁극기')
-
-    def test_default_and_legacy_metadata(self):
-        for key, value, legacy in (('foe_skill_order', 'data', 'default'), ('empty_attack', 'process', 'skip')):
-            rule = MC_RULES[key]
-            self.assertEqual(rule['value'], value)
-            self.assertEqual(rule['legacy'], legacy)
-            for field in ('alt', 'grade', 'note', 'source'):
-                self.assertTrue(rule[field])
 
 
 if __name__ == '__main__':

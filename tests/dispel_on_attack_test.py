@@ -28,12 +28,6 @@ class DispelOnAttackTest(unittest.TestCase):
         self.assertNotIn('헥사 너트', a.eff)
         self.assertIn('다른 강화', a.eff)        # 이름에 없는 효과는 그대로
 
-    def test_off_keeps_old_behavior(self):
-        b, a = self.setup(mc={'dispel_on_attack': 'off'})
-        give(a, '헥사 너트', props={'치명타 피해': 30}, dur=999)
-        b.act(a)
-        self.assertIn('헥사 너트', a.eff)
-
     def test_aoe_applies_to_every_target_then_removed(self):
         # 광역 공격: 버프는 모든 대상 타격에 적용되고(대상마다 지우지 않음) 공격이 끝난 뒤 한 번 지워진다
         b, a = self.setup(n_foes=3, skills=AOE)
@@ -58,23 +52,13 @@ class DispelOnAttackTest(unittest.TestCase):
         self.assertEqual(f.cast_count.get('기본기(추가)', 0), 1)
         self.assertNotIn('여유로운 응수', f.eff)
 
-    def test_counter_keeps_retort_when_off(self):
-        b, a = self.setup(mc={'dispel_on_attack': 'off'})
-        f = b.foes[0]
-        give(f, '여유로운 응수', props={'반격 확률': 100}, dur=999)
-        b.act(a)
-        a.cd = {}
-        b.act(a)
-        self.assertEqual(f.cast_count.get('기본기(추가)', 0), 2)
-        self.assertIn('여유로운 응수', f.eff)
-
     def test_empty_attack_processes_dispel_before_own_post(self):
         # 실제 대상 선택 함수가 빈 목록을 돌려주는 단일·광역 공격을 직접 시전함.
         for aoe in (False, True):
-            for mode, dispel, removed in (('process', 'on', True), ('skip', 'on', False), ('process', 'off', False)):
+            for mode, dispel, removed in (('process', 'on', True),):
                 for via in (None, 'revenge', 'coop', 'enforce'):
                     with self.subTest(aoe=aoe, mode=mode, dispel=dispel, via=via):
-                        b, a = self.setup(mc={'empty_attack': mode, 'dispel_on_attack': dispel},
+                        b, a = self.setup(
                                           skills=[dict(slot='기본기', dm=100, all=aoe)])
                         b.foes[0].dead, b.foes[0].hp = True, 0
                         for name in ('헥사 너트', '여유로운 응수', '다른 강화'):

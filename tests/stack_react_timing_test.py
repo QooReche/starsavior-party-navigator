@@ -1,7 +1,6 @@
 """M reaction booking vs skill-end consumption (build 26610546).
 Native evidence: NKM 8645-8651, 9101-9151; SE 10392011 SKILL_END.
 """
-import os
 import sys
 import unittest
 from pathlib import Path
@@ -15,8 +14,7 @@ class StackReactTimingTest(unittest.TestCase):
     def setup_battle(self):
         b = battle([unit_def('professor-m'), unit('ally')],
                    [unit('old', hp=10**9), unit('new', hp=10**9)],
-                   mc={'stack_react_timing': os.environ.get('STACK_REACT_MUTATION', 'client'),
-                       'toughness': 'off'}, opts={'coop': False, 'nova': False})
+                   mc={'toughness': 'off'}, opts={'coop': False, 'nova': False})
         m, ally = b.allies
         give(m, '냉각', stacks=5)
         b.dirty(m)

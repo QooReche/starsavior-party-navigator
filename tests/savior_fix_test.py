@@ -696,7 +696,7 @@ def test_fix3_delivery_duration_hot():
     for key, dur in [('vera', 1), ('vera@개화(SSR)', 2)]:
         for selected in ['공격력 증가', '방어력 증가', '속도 증가', '지속 회복']:
             b, a, _ = setup(key, [unit('buffed'), unit('plain')],
-                            mc={'buff_ban': 'suppress', 'dot_hot_lifetime': 'turn_end'})  # 옛 강화 억제·수명 경로 고정
+                            mc={'buff_ban': 'suppress'})  # 옛 강화 억제 경로 고정(dot_hot_lifetime 은 스위치 삭제)
             v = b.allies[1]
             give(v, '시험 강화', {'공격력%': 1})
             b.rng.choice = lambda names: selected
@@ -707,10 +707,12 @@ def test_fix3_delivery_duration_hot():
                 v.hp = 100
                 b._tick_dot_hot(v)
                 assert v.hp == 1600, v.hp
-                give(v, '강화 불가', harmful=True)
-                b._tick_dot_hot(v)
-                assert v.hp == 1600
-            out.append((key, selected, v.eff[selected].dur))
+                assert v.has(selected) == (dur == 2)   # 틱마다 수명 -1(지속 효과 수명은 클라 틱 기준)
+                if dur == 2:
+                    give(v, '강화 불가', harmful=True)
+                    b._tick_dot_hot(v)
+                    assert v.hp == 1600
+            out.append((key, selected, v.eff[selected].dur if selected in v.eff else 0))
     return True, str(out)
 
 

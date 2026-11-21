@@ -66,7 +66,7 @@ def purify_case(cls=engine.Battle, overrides=None, near_cap=False):
 def wave_case(cls=engine.Battle, overrides=None, *, extra='clear', gauge='keep',
               carry='keep', reserved=False):
     b = cls([unit('a'), unit('dead')], [[unit('first')], [unit('second', hp=10**8)]],
-            random.Random(7), mc=dict(overrides or {}, wave_extra_turn=extra,
+            random.Random(7), mc=dict(overrides or {},
             wave_ally_gauge=gauge, wave_carry=carry), opts={'coop': False}, timeline=True,
             max_turns=3)
     b.spawn_wave()
@@ -89,7 +89,7 @@ class ReviewLegacyTest(unittest.TestCase):
 
     def test_wave_gauge_and_reservation_independent(self):
         for extra, gauge, carry, reserved in itertools.product(
-                ('clear', 'keep'), ('keep', 'reset'), ('keep', 'client'), (False, True)):
+                ('clear',), ('keep', 'reset'), ('keep', 'client'), (False, True)):
             with self.subTest(extra=extra, gauge=gauge, carry=carry, reserved=reserved):
                 b = wave_case(extra=extra, gauge=gauge, carry=carry, reserved=reserved)
                 a, dead = b.allies
@@ -106,7 +106,7 @@ class ReviewLegacyTest(unittest.TestCase):
         b = wave_case()
         a = b.allies[0]
         a.d.lines = [Line('[웨이브 시작 시] 자신에게 〈추가 턴〉', '고유 패시브', 'passive')]
-        b.mc.update(wave_extra_turn='clear', wave_ally_gauge='reset')
+        b.mc.update(wave_ally_gauge='reset')
         b.waves.append([unit('third')])
         seen = []
         original = b.run_line
@@ -129,7 +129,7 @@ def compare_history():
     count = 0
     for carry, gauge, reserved in itertools.product(('keep', 'client'), ('keep', 'reset'), (False, True)):
         # 예약 없는 아군은 새 clear를 켠 채로도 옛 gauge legacy를 재현해야 함.
-        for extra in (('keep',) if reserved else ('keep', 'clear')):
+        for extra in (() if reserved else ('clear',)):   # wave_extra_turn 스위치 삭제(항상 clear)
             args = dict(extra=extra, gauge=gauge, carry=carry, reserved=reserved)
             a, b = wave_case(old, overrides, **args), wave_case(engine.Battle, overrides, **args)
             assert state(a) == state(b), args

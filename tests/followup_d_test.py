@@ -18,7 +18,6 @@ from simkit import battle, give, unit
 from battlesim.api import simulate
 from battlesim.mc import Battle, Ctx, dead_keep_name, line_rest
 from battlesim.metrics import unit_def
-from battlesim.rules import MC_OPTS, MC_RULES
 from battlesim.starsavior import cosmo_raid as C
 from battlesim.starsavior.parser import Line
 
@@ -39,25 +38,13 @@ def passive(phase, text):
 
 
 class FollowupTest(unittest.TestCase):
-    def test_defaults(self):
-        for key, value, legacy in [('wave_extra_turn', 'clear', 'keep'),
-                                  ('turn_start_order', 'client', 'dot_first'),
-                                  ('guard_skip_immune', 'client', 'off'),
-                                  ('wave_foe_battle_start', 'after_spawn_only', 'all'),
-                                  ('revive_after_spawn', 'client', 'off'),
-                                  ('dead_keep_dnp', 'client', 'off'),   # 11/14 기본 client 전환
-                                  ('add_damage_guard', 'client', 'off'),
-                                  ('stat_select_int', 'floor', 'float')]:
-            self.assertEqual(MC_OPTS[key], value)
-            self.assertEqual(MC_RULES[key]['legacy'], legacy)
-            self.assertTrue(MC_RULES[key]['source'])
 
     def test_wave_extra_turn(self):
-        for mode in ('clear', 'keep'):
+        for mode in ('clear',):
             for carry in ('client', 'keep'):
                 for gauge in ('keep', 'reset'):
                     b = battle([unit('a'), unit('dead')], [unit('one')],
-                               mc=dict(wave_extra_turn=mode, wave_carry=carry, wave_ally_gauge=gauge))
+                               mc=dict(wave_carry=carry, wave_ally_gauge=gauge))
                     a, dead = b.allies
                     b.kill(dead, b.foes[0])
                     a.extra_turn, a.gauge = True, 10000
@@ -70,7 +57,7 @@ class FollowupTest(unittest.TestCase):
 
     def test_new_wave_reservation_survives(self):
         for carry in ('client', 'keep'):
-            b = battle([unit('a')], [unit('one')], mc=dict(wave_extra_turn='clear', wave_carry=carry))
+            b = battle([unit('a')], [unit('one')], mc=dict(wave_carry=carry))
             a = b.allies[0]
             a.d.lines = [passive('웨이브 시작 시', '자신에게 〈추가 턴〉')]
             b.waves.append([unit('two')])
@@ -78,14 +65,14 @@ class FollowupTest(unittest.TestCase):
             self.assertTrue(a.extra_turn)
 
     def test_wave_spawn_and_battle_start(self):
-        for mode in ('all', 'after_spawn_only'):
+        for mode in ('after_spawn_only',):
             for wave in (0, 1):
                 foe = unit('foe')
                 foe.lines = [passive('등장 후', '적 전체에게 〈등장 약화〉 (2턴 / 방어력% -10%)'),
                              passive('전투 시작 시', '자신에게 〈개전〉 (지속 무한 / 공격력% +10%)'),
                              passive('웨이브 시작 시', '적 전체에게 〈웨이브 약화〉 (2턴 / 방어력% -10%)')]
                 b = battle([unit('a')], [foe if wave == 0 else unit('one')],
-                           mc=dict(wave_foe_battle_start=mode, wave_carry='client'))
+                           mc=dict(wave_carry='client'))
                 if wave:
                     b.waves.append([foe])
                     b.spawn_wave()
@@ -96,10 +83,10 @@ class FollowupTest(unittest.TestCase):
                 self.assertEqual(b.rule_hits['wave_foe_battle_start'], int(wave == 1 and mode == 'after_spawn_only'))
 
     def test_turn_start_order(self):
-        for mode in ('client', 'dot_first'):
+        for mode in ('client',):
             for lethal in (False, True):
                 b = battle([unit_def('ceres-sun-supporter'), unit('turn')], [unit('foe')],
-                           mc=dict(turn_start_order=mode, dot_hot_lifetime='turn_end'), opts={'coop': False})
+                           opts={'coop': False})
                 ceres, turn = b.allies
                 ceres.eff.clear()
                 e = give(turn, '연소', harmful=True, dur=1)
@@ -130,10 +117,10 @@ class FollowupTest(unittest.TestCase):
 
     def test_guard_immune_and_vampirism(self):
         heals = {}
-        for mode in ('client', 'off'):
+        for mode in ('client',):
             for immune in ('무적', '스킬 피해 무효', 'both', 'none'):
                 b = battle([unit('target'), unit('guard')], [unit('attacker')],
-                           mc=dict(guard_skip_immune=mode), opts={'coop': False})
+                           opts={'coop': False})
                 target, guard = b.allies
                 attacker = b.foes[0]
                 give(guard, '수호', {'피해 분담(수호)': 50})
@@ -149,13 +136,11 @@ class FollowupTest(unittest.TestCase):
                 self.assertEqual(target.has('스킬 피해 무효'), immune == 'both')
                 heals[mode, immune] = attacker.healed
                 self.assertGreater(attacker.healed, 0)
-        for immune in ('무적', '스킬 피해 무효', 'both'):
-            self.assertEqual(heals['client', immune], heals['off', immune])
 
     def test_dnp_and_stage_fx_revive(self):
-        for mode in ('client', 'off'):
+        for mode in ('client',):
             b = battle([unit('owner'), unit('target')], [unit('foe')],
-                       mc=dict(dead_keep_dnp=mode, stage_fx_target='allies'), ally_fx=[({'공격력%': 20}, None, None)])
+                       ally_fx=[({'공격력%': 20}, None, None)])
             owner, target = b.allies
             c = C.Controller(b)
             c.boss, c.cfg, c.fx = b.foes[0], {'model': 'test'}, {'drain': {'pct': 5, 'max': 10}}
@@ -178,7 +163,7 @@ class FollowupTest(unittest.TestCase):
     def test_dnp_names_and_aggro(self):
         self.assertTrue(dead_keep_name('폭주 : 쇠락'))
         self.assertFalse(dead_keep_name('전투 모드'))  # 표 동명 충돌
-        b = battle([unit('owner'), unit('target')], [unit('foe')], mc={'dead_keep_dnp': 'client'})
+        b = battle([unit('owner'), unit('target')], [unit('foe')])
         owner, target = b.allies
         effect(b, owner, target, '스킬 대상에게 〈폭주 : 쇠락〉 (지속 무한 / 생명력% -5%)')
         self.assertTrue(target.eff['폭주 : 쇠락'].dead_keep)
@@ -191,8 +176,8 @@ class FollowupTest(unittest.TestCase):
         self.assertIn('폭주 : 쇠락', target.eff)
 
     def test_revive_after_spawn(self):
-        for mode in ('client', 'off'):
-            b = battle([unit('owner'), unit('target')], [unit('foe')], mc={'revive_after_spawn': mode})
+        for mode in ('client',):
+            b = battle([unit('owner'), unit('target')], [unit('foe')])
             owner, target = b.allies
             target.d.lines = [passive('등장 후', '자신에게 〈등장〉 (지속 무한 / 생명력% +20%)'),
                               passive('전투 시작 시', '자신에게 〈개전〉 (지속 무한 / 공격력% +10%)')]
@@ -204,9 +189,9 @@ class FollowupTest(unittest.TestCase):
             self.assertEqual(b.rule_hits['revive_after_spawn'], int(mode == 'client'))
 
     def test_add_damage_guard(self):
-        for mode in ('client', 'off'):
+        for mode in ('client',):
             for immune in ('none', '무적', '스킬 피해 무효'):
-                b = battle([unit('a')], [unit('boss'), unit('guard'), unit('less')], mc={'add_damage_guard': mode})
+                b = battle([unit('a')], [unit('boss'), unit('guard'), unit('less')])
                 target, guard, less = b.foes
                 give(guard, '수호', {'피해 분담(수호)': 50})
                 give(less, '수호', {'피해 분담(수호)': 25})
@@ -225,9 +210,9 @@ class FollowupTest(unittest.TestCase):
                 self.assertEqual(b.rule_hits['add_damage_guard'], int(split))
 
     def test_stat_selection_and_buff_timing(self):
-        for mode in ('float', 'floor'):
+        for mode in ('floor',):
             # stat_floor=client 면 def_stat·atk_stat 이 이미 정수라 선택 규칙의 소수 비교 장면이 안 생김 → 이 시험은 float 고정
-            b = battle([unit('a'), unit('b')], [unit('foe')], mc={'stat_select_int': mode, 'stat_floor': 'float'})
+            b = battle([unit('a'), unit('b')], [unit('foe')], mc={'stat_floor': 'float'})
             a, other = b.allies
             give(other, 'def', {'방어력%': .04})
             self.assertAlmostEqual(b.def_stat(other) - b.def_stat(a), .4)
@@ -273,9 +258,9 @@ class StandardTest(unittest.TestCase):
         # self_enforce_target=client(세레스 추가 특수기가 보스 우선)에선 96판에도 0회라, 웨이브 경로 시험은 장면을 고정해 둠(11/14)
         # power_penalty 는 off 로 고정: 11/15 기본 model 전환 뒤 FLOOR 250 은 전투력 비율 80.94% → 아군 x0.859·적 x1.141 이라
         # 전투 흐름이 바뀌어 이 장면이 사라짐. 이 시험은 웨이브 전환 경로(보정과 무관)를 보는 것이므로 장면을 만든 11/14 조건 그대로 둠
-        r = measured(WAVE, 'clo/태양 회랑/FLOOR 250', wave_extra_turn='clear', self_enforce_target='last_target', power_penalty='off')
+        r = measured(WAVE, 'clo/태양 회랑/FLOOR 250', self_enforce_target='last_target', power_penalty='off')
         self.assertGreater(r['hits'].get('wave_extra_turn', 0), 0)
-        r = measured(CERES, 'clo/태양 회랑/FLOOR 200', turn_start_order='client')
+        r = measured(CERES, 'clo/태양 회랑/FLOOR 200')
         self.assertGreater(r['hits'].get('turn_start_order', 0), 0)
 
     def test_natural_drain_revive(self):
@@ -295,7 +280,7 @@ class StandardTest(unittest.TestCase):
             return result
 
         with patch.object(Battle, 'run_special', watch):
-            r = measured(REVIVE, COSMO, dead_keep_dnp='client')
+            r = measured(REVIVE, COSMO)
         self.assertGreater(counts['drain_revive'], 0)
         self.assertGreater(r['hits'].get('dead_keep_dnp_revive', 0), 0)
 
@@ -316,16 +301,6 @@ def measured(party, stage, runs=24, **rules):
     return {'outcome': r['outcome'], 'hits': dict(counts)}
 
 
-def ab():
-    out = {}
-    for key, modes, party, stage in [
-        ('turn_start_order', ('dot_first', 'client'), CERES, 'clo/태양 회랑/FLOOR 200'),
-        ('wave_extra_turn', ('keep', 'clear'), WAVE, 'clo/태양 회랑/FLOOR 250'),
-        ('wave_foe_battle_start', ('all', 'after_spawn_only'), WAVE, 'clo/태양 회랑/FLOOR 250'),
-        ('dead_keep_dnp', ('off', 'client'), REVIVE, COSMO)]:
-        out[key] = {m: measured(party, stage, **{key: m}) for m in modes}
-    print(json.dumps(out, ensure_ascii=False, indent=2))
-
 
 def mutations():
     # 합성 시험은 mode를 명시하므로 구현 메서드 안 분기를 메모리에서 강제 우회.
@@ -333,14 +308,13 @@ def mutations():
     import textwrap
     import battlesim.mc as M
     cases = [
-        (Battle, 'spawn_wave', "self.mc['wave_extra_turn'] == 'clear'", 'False', ['test_wave_extra_turn']),
-        (Battle, 'spawn_wave', "self.mc['wave_foe_battle_start'] == 'after_spawn_only'", 'False', ['test_wave_spawn_and_battle_start']),
-        (Battle, '_act_turn', "self.mc['turn_start_order']", "'dot_first'", ['test_turn_start_order']),
-        (Battle, 'strike', "self.mc['guard_skip_immune'] == 'client'", 'False', ['test_guard_immune_and_vampirism']),
-        (Battle, 'kill', "if self.mc['dead_keep_dnp'] == 'client' else {}", 'if False else {}', ['test_dnp_and_stage_fx_revive']),
+        (Battle, 'spawn_wave', "if u.extra_turn:", 'if False:', ['test_wave_extra_turn']),
+        (Battle, 'spawn_wave', "if (self.wave_i > 0", 'if (False', ['test_wave_spawn_and_battle_start']),
+        (Battle, 'strike', "if (v.invincible() or v.on('스킬 피해 무효')):", 'if False:', ['test_guard_immune_and_vampirism']),
+        (Battle, 'kill', "v.eff = {n: e for n, e in v.eff.items() if e.dead_keep}", 'v.eff = {}', ['test_dnp_and_stage_fx_revive']),
         (Battle, 'run_special', "if ln.phase == '등장 후':", 'if False:', ['test_revive_after_spawn']),
-        (Battle, 'fixed_true_damage', "(client or self.mc['add_damage_guard'] == 'client')", 'False', ['test_add_damage_guard']),
-        (Battle, '_filter', "self.mc['stat_select_int'] == 'floor'", 'False', ['test_stat_selection_and_buff_timing']),
+        (Battle, 'fixed_true_damage', "if not target.invincible() and not target.on('스킬 피해 무효'):", 'if False:', ['test_add_damage_guard']),
+        (Battle, '_filter', "if st not in ('high_hp_rate', 'high_gauge', 'low_gauge'):", 'if False:', ['test_stat_selection_and_buff_timing']),
         (C.Controller, '_erode', 'if not pre:', "if not (self._stacks(boss, ERO) > 0 or self._stacks(boss, ROOT) > 0):", ['test_erode_cast_boundary']),
         (Battle, 'spawn_wave', 'self._carry_wave_effects()', 'pass', ['test_wave_spawn_and_battle_start']),
     ]
@@ -364,7 +338,5 @@ COSMO = {'cosmo_raid': {'boss': '벨그라스', 'step': 3, 'level': 6}}
 if __name__ == '__main__':
     if '--mutations' in sys.argv:
         mutations()
-    elif '--ab' in sys.argv:
-        ab()
     else:
         unittest.main()

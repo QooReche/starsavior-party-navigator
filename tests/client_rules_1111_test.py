@@ -37,12 +37,6 @@ def dot(u, src, duration=1, name='연소'):
 class RulesTest(unittest.TestCase):
     def test_defaults(self):
         for key, new, legacy in [
-            ('dot_hot_order', 'hot_first', 'insertion'),
-            ('dot_hot_lifetime', 'tick', 'turn_end'),
-            ('ally_cd_tick', 'turn_end', 'turn_start'),
-            ('stat_select_int', 'floor', 'float'),
-            ('break_domain_category', 'marker', 'buff'),
-            ('ally_turn_self', 'condition', 'exclude'),
             ('fixed_true_formula', 'legacy', 'legacy'),
             ('counter_slot_timing', 'end', 'end')]:
             self.assertEqual(MC_OPTS[key], new)
@@ -51,8 +45,8 @@ class RulesTest(unittest.TestCase):
                 self.assertTrue(MC_RULES[key][field])
 
     def test_dot_hot_order(self):
-        for order in ('hot_first', 'insertion'):
-            b = battle([unit()], [unit()], mc={'dot_hot_order': order})
+        for order in ('hot_first',):
+            b = battle([unit()], [unit()])
             u, f = b.allies[0], b.foes[0]
             u.hp = 100
             dot(u, f)
@@ -64,8 +58,8 @@ class RulesTest(unittest.TestCase):
                 self.assertEqual(b.rule_hits['dot_hot_order'], 1)
 
     def test_dot_hot_lifetime(self):
-        for mode in ('tick', 'turn_end'):
-            b = battle([unit()], [unit(hp=10**7)], mc={'dot_hot_lifetime': mode}, opts={'coop': False})
+        for mode in ('tick',):
+            b = battle([unit()], [unit(hp=10**7)], opts={'coop': False})
             u, f = b.allies[0], b.foes[0]
             e = dot(u, f)
             e.inst += [[f, 2], [f, math.inf]]
@@ -117,10 +111,9 @@ class RulesTest(unittest.TestCase):
             self.assertEqual(h.dur, 1)
 
     def test_ally_cd_tick(self):
-        for mode in ('turn_end', 'turn_start'):
+        for mode in ('turn_end',):
             b = battle([unit(skills=[dict(slot='기본기', dm=100), dict(slot='궁극기', dm=100, cd=5)])],
-                       [unit(hp=10**8)], mc={'ally_cd_tick': mode, 'enemy_cd_end_order': 'before_effects'},
-                       opts={'coop': False})
+                       [unit(hp=10**8)], opts={'coop': False})
             u = b.allies[0]
             u.cd['궁극기'] = 1
             give(u, 'expiry', dur=1)
@@ -165,14 +158,10 @@ class RulesTest(unittest.TestCase):
         a, other = b.allies
         self.assertEqual(b._filter(a, b.allies, 'high_def'), b.allies)
         self.assertEqual(b.rule_hits['stat_select_int'], 1)
-        b.mc['stat_select_int'] = 'float'
-        b.mc['stat_floor'] = 'float'     # stat_floor=client 면 def_stat 이 이미 정수라 소수 차이가 안 남음
-        self.assertEqual(b._filter(a, b.allies, 'high_def'), [other])
 
     def test_break_domain_category(self):
-        for mode in ('marker', 'buff'):
-            b = battle([unit()], [unit(hp=10**8)], break_skill={'name': '큐브 과부하'},
-                       mc={'break_domain_category': mode, 'break_domain_revive': 'client'})
+        for mode in ('marker',):
+            b = battle([unit()], [unit(hp=10**8)], break_skill={'name': '큐브 과부하'})
             u = b.allies[0]
             b.break_points = 3
             b._use_break_skill(u)
@@ -186,9 +175,9 @@ class RulesTest(unittest.TestCase):
             self.assertEqual(b.rule_hits['break_domain_category'], 2 if mode == 'marker' else 0)
 
     def test_ally_turn_self(self):
-        for mode in ('condition', 'exclude'):
+        for mode in ('condition',):
             b = battle([unit_def('lydia-moon-caster'), unit('other')], [unit(hp=10**9)],
-                       mc={'ally_turn_self': mode}, opts={'coop': False})
+                       opts={'coop': False})
             u, other = b.allies
             name = '메이드 리디아 패시브 행게 카운팅 버프'
             give(u, name, dur=math.inf)
@@ -201,9 +190,9 @@ class RulesTest(unittest.TestCase):
 
     def test_fixed_true_formula(self):
         for mode in ('client', 'legacy'):
-            # 이 시험의 옛 식 기대값은 분담 off 기준. 새 기본 분담은 allowlist_break_test가 검사함.
+            # 옛 식(legacy) 기대값은 수호 분담 켬(add_damage_guard 스위치 삭제 — 항상 클라 분담) 기준. 분담 세부는 allowlist_break_test.
             b = battle([unit('target'), unit('guard')], [unit('source')],
-                       mc={'fixed_true_formula': mode, 'add_damage_guard': 'off'})
+                       mc={'fixed_true_formula': mode})
             target, guard = b.allies
             source = b.foes[0]
             give(guard, '수호', {'피해 분담(수호)': 50})
@@ -213,8 +202,8 @@ class RulesTest(unittest.TestCase):
             give(guard, 'cap', {'NST_RATE_DAMAGE_LIMIT_BY_HP': 30})  # 30 HP
             give(target, 'shield').shield = 20
             b.fixed_true_damage(source, target, 101.9)
-            self.assertEqual(target.hp, 9970 if mode == 'client' else 9918.1)
-            self.assertEqual(guard.hp, 9970 if mode == 'client' else 10000)
+            self.assertEqual(target.hp, 9970 if mode == 'client' else 9969.05)
+            self.assertEqual(guard.hp, 9970 if mode == 'client' else 9950)
             self.assertEqual(b.rule_hits['fixed_true_formula'], 2 if mode == 'client' else 0)
 
     def test_fixed_boundaries_and_exceptions(self):
@@ -334,12 +323,6 @@ class StandardTest(unittest.TestCase):
 
 def mutations():
     cases = [
-        ('dot_hot_order', '_tick_dot_hot', 'test_dot_hot_order'),
-        ('dot_hot_lifetime', '_tick_dot_hot', 'test_dot_hot_lifetime'),
-        ('ally_cd_tick', '_act_turn', 'test_ally_cd_tick'),
-        ('stat_select_int', '_filter', 'test_stat_select_int'),
-        ('break_domain_category', '_use_break_skill', 'test_break_domain_category'),
-        ('ally_turn_self', '_act_turn', 'test_ally_turn_self'),
         ('fixed_true_formula', 'fixed_true_damage', 'test_fixed_true_formula'),
         ('counter_slot_timing', 'cast', 'test_counter_slot_timing')]
     for key, method, test in cases:

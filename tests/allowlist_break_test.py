@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from simkit import battle, unit, give
 from battlesim import mc
 from battlesim.api import assumptions_used
-from battlesim.rules import MC_OPTS, MC_RULES, DEFAULT_OPTS
+from battlesim.rules import MC_OPTS, DEFAULT_OPTS
 from battlesim.starsavior import cosmo_raid as C
 
 
@@ -30,10 +30,6 @@ def fire(b):
 
 class AllowlistBreakTest(unittest.TestCase):
     def test_defaults_and_assumptions(self):
-        for key, legacy in [('add_damage_guard', 'off')]:
-            self.assertEqual(MC_OPTS[key], 'client')
-            self.assertEqual(MC_RULES[key]['legacy'], legacy)
-            self.assertEqual(MC_RULES[key]['grade'], 'code')
         names = {r['rule'] for r in assumptions_used(MC_OPTS, DEFAULT_OPTS)}
         self.assertNotIn('mc.break_skill_residuals', names)
         self.assertNotIn('mc.add_damage_guard', names)
@@ -189,7 +185,7 @@ def mutations():
         ('_use_break_skill', 'elif not guard.dead:', 'elif False and not guard.dead:', 'test_guard_changes_during_aoe_use_separate_shared_hit'),
         ('_use_break_skill', "and not v.on('스킬 피해 무효')", 'and True', 'test_target_immunity_no_donation'),
         ('_use_break_skill', 'self.nova_add(self.allies[0], nova)', 'self.nova_add(self.allies[0], nova * 4)', 'test_nova_once_team_cap_and_shared_consumption'),
-        ('fixed_true_damage', "(client or self.mc['add_damage_guard'] == 'client')", 'False', 'test_pending_damage_default_guard_and_nonconsuming_nullifier'),
+        ('fixed_true_damage', "if not target.invincible() and not target.on('스킬 피해 무효'):", 'if False:', 'test_pending_damage_default_guard_and_nonconsuming_nullifier'),
     ]
     for method, old, new, test in cases:
         fn = getattr(mc.Battle, method)

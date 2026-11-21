@@ -30,8 +30,8 @@ def vampire():
 
 class SurveyG3(unittest.TestCase):
     def test_revive_restores_toughness_and_break(self):
-        for remaining, broken, spawn in [(0, True, 'off'), (1, False, 'off'), (0, True, 'client'), (1, False, 'client')]:
-            b = battle([unit('reviver', skills=[dict(slot='특수기', dm=0, tg='아군 1명')]), unit('dead', sa=7)], [unit('foe')], mc={'revive_after_spawn': spawn})
+        for remaining, broken, spawn in [(0, True, 'client'), (1, False, 'client')]:
+            b = battle([unit('reviver', skills=[dict(slot='특수기', dm=0, tg='아군 1명')]), unit('dead', sa=7)], [unit('foe')])
             a, dead = b.allies
             dead.dead, dead.hp, dead.sa, dead.broken = True, 0, remaining, broken
             dead.d.lines.append(Line('[등장 후] 자신에게 〈등장 시험〉 (1턴)', '고유 패시브', 'passive'))

@@ -15,7 +15,7 @@ from battlesim import mc as M                                    # noqa: E402
 
 
 def _attack(mode, name):
-    b = battle([unit('a')], [unit('f')], mc={'dispel_attack_names': mode, 'dispel_on_attack': 'on'})
+    b = battle([unit('a')], [unit('f')], mc={'dispel_attack_names': mode})
     a, f = b.allies[0], b.foes[0]
     give(a, name, {'피해 증가': -30.0}, dur=10 ** 6)
     hp = f.hp

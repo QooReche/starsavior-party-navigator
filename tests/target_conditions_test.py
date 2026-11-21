@@ -17,18 +17,18 @@ from battlesim.starsavior.foe import FoeDef, load_foe
 
 
 class TargetConditionsTest(unittest.TestCase):
-    def asherah(self, mode='event', sa=(99, 1)):
+    def asherah(self, sa=(99, 1)):
         b = battle([unit_def('asherah-order-striker')],
                    [unit('foe%d' % i, hp=10**9, sa=s) for i, s in enumerate(sa)],
-                   mc={'target_break_condition': mode}, opts={'coop': False, 'nova': False})
+                   opts={'coop': False, 'nova': False})
         b.allies[0].acting = True
         return b
 
     def test_asherah_second_target_break_and_old_break(self):
-        for mode, expected in [('event', [True, False]), ('state', [False, True])]:
+        for mode, expected in [('event', [True, False])]:
             outcomes = []
             for old in (False, True):
-                b = self.asherah(mode)
+                b = self.asherah()
                 a = b.allies[0]
                 if old:
                     for v in b.foes:
@@ -55,9 +55,9 @@ class TargetConditionsTest(unittest.TestCase):
         raw = load_foe()
         # Real Olberos minion passive, alongside a higher-HP ally receiving the soul.
         foe = FoeDef(raw, 34, stats_override={'hp': 10**8, 'sa': 1})
-        for mode, expected in [('event', [1, 1]), ('state', [1, 2])]:
+        for mode, expected in [('event', [1, 1])]:
             b = battle([unit_def('asherah-order-striker')], [foe, unit('boss', hp=10**9, sa=99)],
-                       mc={'target_break_condition': mode}, opts={'coop': False, 'nova': False})
+                       opts={'coop': False, 'nova': False})
             a, v, boss = b.allies[0], *b.foes
             stacks = []
             for _ in range(2):
@@ -69,9 +69,9 @@ class TargetConditionsTest(unittest.TestCase):
             self.assertFalse(v.has('영웅의 혼(해제불가)'))
 
     def test_dana_self_buff_on_second_low_hp_target(self):
-        for mode, expected in [('any', True), ('first', False)]:
+        for mode, expected in [('any', True)]:
             b = battle([unit_def('dana')], [unit('healthy', hp=10**9), unit('low', hp=10**9)],
-                       mc={'target_condition_set': mode}, opts={'coop': False, 'nova': False})
+                       opts={'coop': False, 'nova': False})
             b.foes[1].hp *= .4
             a = b.allies[0]
             b.cast(a, a.d.skills['궁극기'])
@@ -80,9 +80,9 @@ class TargetConditionsTest(unittest.TestCase):
             self.assertTrue(all(not v.has('로로카!(해제불가)') for v in b.foes))
 
     def test_lydia_self_buff_on_second_debuffed_target(self):
-        for mode, expected in [('any', 1), ('first', 0)]:
+        for mode, expected in [('any', 1)]:
             b = battle([unit_def('lydia')], [unit('clean', hp=10**9), unit('debuffed', hp=10**9)],
-                       mc={'target_condition_set': mode}, opts={'coop': False, 'nova': False})
+                       opts={'coop': False, 'nova': False})
             give(b.foes[0], '면역')
             give(b.foes[1], '속도 감소', {'속도%': -20}, harmful=True)
             a = b.allies[0]
@@ -93,9 +93,9 @@ class TargetConditionsTest(unittest.TestCase):
             self.assertTrue(all(not v.has('공허의 추구자') for v in b.foes))
 
     def test_frey_checks_before_heal_and_gauges_all_allies(self):
-        for mode, expected in [('any', 1500), ('first', 0)]:
+        for mode, expected in [('any', 1500)]:
             b = battle([unit_def('frey'), unit('low'), unit('healthy')], [unit('foe', hp=10**9)],
-                       mc={'target_condition_set': mode}, opts={'coop': False, 'nova': False})
+                       opts={'coop': False, 'nova': False})
             a = b.allies[0]
             b.allies[1].hp *= .7
             b.cast(a, a.d.skills['궁극기'])
@@ -164,23 +164,6 @@ class TargetConditionsTest(unittest.TestCase):
 
 
 def mutations():
-    original = Battle.cond_ok
-    def legacy(rule, value):
-        def broken(b, owner, ln, ctx):
-            with patch.dict(b.mc, {rule: value}):
-                return original(b, owner, ln, ctx)
-        return broken
-    cases = [('break state', 'target_break_condition', 'state', 'test_asherah_second_target_break_and_old_break'),
-             ('victim event', 'target_break_condition', 'state', 'test_enemy_hit_break_is_victim_and_only_new_event'),
-             ('HP first', 'target_condition_set', 'first', 'test_dana_self_buff_on_second_low_hp_target'),
-             ('debuff first', 'target_condition_set', 'first', 'test_lydia_self_buff_on_second_debuffed_target'),
-             ('preheal first', 'target_condition_set', 'first', 'test_frey_checks_before_heal_and_gauges_all_allies')]
-    for name, rule, value, test in cases:
-        with patch.object(Battle, 'cond_ok', legacy(rule, value)):
-            result = unittest.TextTestRunner(stream=io.StringIO()).run(TargetConditionsTest(test))
-        if result.errors or not result.failures:
-            raise AssertionError((name, result.errors, result.failures))
-        print('detected:', name)
     original_strike, original_exec = Battle.strike, Battle._exec_line
     def lose_victim_event(b, a, v, base, ctx, crit, cdv, pen, reactions, evaded=False):
         result = original_strike(b, a, v, base, ctx, crit, cdv, pen, reactions, evaded)

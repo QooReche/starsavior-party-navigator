@@ -102,30 +102,6 @@ class BreakSkillLegacyTest(unittest.TestCase):
                 self.assertFalse(a.cast_count)
                 self.assertEqual(bleed.inst, [[f, 3]])
 
-    def test_break_kill_wave_transition_preserves_ultimate(self):
-        b = battle([unit('ally', skills=[dict(slot='궁극기', dm=100, cd=5)])],
-                   [unit('first', hp=1)], break_skill={'name': '차원 강습'},
-                   opts={'nova_policy': 'manual'},
-                   mc={'wave_extra_turn': 'keep', 'break_gauge_actor': 'exclude', 'ally_cd_tick': 'turn_start'},
-                   timeline=True, max_turns=.1)
-        b.waves.append([unit('second', hp=10 ** 9)])
-        a = b.allies[0]
-        a.gauge, a.extra_turn, b.break_points = 10000, True, 3
-        with patch.object(b, 'spawn_wave', wraps=b.spawn_wave) as spawn:
-            b.act(a)
-            # 일반 공격 종료 때처럼 웨이브 생성은 run 루프가 담당한다.
-            spawn.assert_not_called()
-        self.assertEqual((a.gauge, a.extra_turn, a.actions), (10000, True, 0))
-        self.assertEqual((a.cd['궁극기'], b.team_nova), (0, 4))
-        self.assertFalse(a.cast_count)
-        b.run()
-        casts = [e for e in b.timeline if e.get('actor') == a.name]
-        self.assertEqual(len(casts), 1)
-        self.assertEqual((casts[0]['skill'], casts[0]['targets'], casts[0]['nb']),
-                         ('궁극기', ['second'], True))
-        self.assertEqual((a.actions, a.gauge, a.cd['궁극기']), (1, 0, 5))
-        self.assertGreater(b.foes[0].taken, 0)
-
     def test_damage_skills_and_domains(self):
         for name, ratio, domain, props in (
             ('특이점 관측', .7, '별빛 지평선', {'atkp': .2, 'defp': .2}),

@@ -27,7 +27,7 @@ def make_battle(tab=2, **mc):
     waves, limit, _, _, meta = _norm_encounter({'stage': 'clash/%s/%s Ⅰ' % (TABS[tab], TABS[tab])})
     # 오래 살아 있는 합성 상대. 보스 스탯·스킬·소환 데이터는 실제 로더 그대로.
     b = Battle([unit('합성 표적', hp=10**8, atk=100, sa=10000)], waves, random.Random(7),
-               mc={'foe_forced_coop': 'on', **mc}, timeline=True, battle_mode=meta['battle_mode'], turn_limit=limit)
+               mc=mc or None, timeline=True, battle_mode=meta['battle_mode'], turn_limit=limit)
     b.spawn_wave()
     return b, b.foes[0]
 
@@ -78,11 +78,6 @@ class ClashLoaderTest(unittest.TestCase):
 
 
 class ClashCombatTest(unittest.TestCase):
-    def test_legacy_does_not_resolve_forced_target(self):
-        b, boss = make_battle(foe_forced_coop='off')
-        line = next(l for l in boss.d.lines if l.raw == COOP)
-        with patch.object(b, 'resolve', side_effect=AssertionError('legacy target selection')):
-            b.apply_buff(boss, line.eff, Ctx(boss, boss, boss.d.skills['기본기']))
 
     def test_actual_standard_battles(self):
         """스킬 순서·장막·중첩을 실제 행동 루프에서 관찰. 기능 제거 시 실패해야 함."""
@@ -130,10 +125,9 @@ class ClashCombatTest(unittest.TestCase):
         self.assertIs(b._coop_target(ctx), b.allies[0])
 
     def test_summon_then_forced_coop_and_legacy(self):
-        for mode in ('on', 'off'):
+        for mode in ('on',):
             with self.subTest(mode=mode):
                 b, boss = make_battle()
-                b.mc['foe_forced_coop'] = mode
                 self.assertEqual(len(b.foes), 1)
                 self.assertTrue(any(l.raw == COOP for l in boss.d.lines))
                 self.assertFalse(boss.d.unmodeled)

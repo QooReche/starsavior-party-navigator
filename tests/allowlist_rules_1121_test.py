@@ -185,8 +185,8 @@ class Rules1121Test(unittest.TestCase):
             self.assertEqual(b.cond_ok(f, ln, ctx), n <= 2)
 
     def test_confirmed_grades_have_current_client_evidence(self):
-        for key in ('enemy_skill_ai', 'enemy_same_formula', 'enemy_hit_buff_cmp',
-                    'wave_foe_battle_start', 'summon', 'revive_after_spawn', 'caster_death'):
+        # wave_foe_battle_start·summon·revive_after_spawn·caster_death 는 스위치를 지움(엔진 다이어트 4단계, 항상 클라 동작)
+        for key in ('enemy_skill_ai', 'enemy_same_formula', 'enemy_hit_buff_cmp'):
             self.assertEqual(MC_RULES[key]['grade'], 'code', key)
             self.assertIn('26752678', MC_RULES[key]['source'], key)
 
@@ -203,7 +203,7 @@ def mutations():
     assert result.failures and not result.errors, result.errors
     print('inactive assumptions assertion failures:', len(result.failures))
     cases = [
-        ('spawn_wave', "self.mc['wave_foe_battle_start'] == 'after_spawn_only'", 'False', 'test_wave_default_does_not_repeat_battle_start'),
+        ('spawn_wave', "if (self.wave_i > 0", 'if (False', 'test_wave_default_does_not_repeat_battle_start'),
         ('_do_summon', "self.mc['summon'] == 'client'", 'False', 'test_summon_runs_only_after_spawn_and_respects_occupied_slots'),
         ('_do_summon', 'u.cd = dict.fromkeys(u.cd, 0.0)', 'pass', 'test_summon_flags_follow_after_spawn_cooldown_effects'),
         ('_do_summon', 'u.reset_initial_cooldowns()', 'pass', 'test_summon_flags_follow_after_spawn_cooldown_effects'),

@@ -26,13 +26,12 @@ class ForceBuffTest(unittest.TestCase):
         self.assertEqual(len(warnings), 2)
 
     def test_add_effect_modes(self):
-        self.assertEqual(mc.MC_OPTS['buff_ban_force'], 'client')
         self.assertIn('조율(해제불가)', mc.FORCE_BUFF_NAMES)
         self.assertNotIn('불사', mc.FORCE_BUFF_NAMES)
         self.assertNotIn('칠흑의 잔향(해제불가)', mc.FORCE_BUFF_NAMES)
         self.assertNotIn('참극의 가시(해제불가)', mc.FORCE_BUFF_NAMES)  # 동명 충돌
-        for mode in ('client', 'off'):
-            b = battle([unit()], [unit()], mc={'buff_ban_force': mode})
+        for mode in ('client',):
+            b = battle([unit()], [unit()])
             a = b.allies[0]
             give(a, '강화 불가', harmful=True)
             for name in ('조율(해제불가)', '공격력 증가'):
@@ -43,8 +42,8 @@ class ForceBuffTest(unittest.TestCase):
 
     def test_shield_uses_same_exception(self):
         # 현재 표에 강제 보호막은 없음. 이름 분류를 주입해 보호막의 별도 경로도 검증한다.
-        for mode in ('client', 'off'):
-            b = battle([unit()], [unit()], mc={'buff_ban_force': mode})
+        for mode in ('client',):
+            b = battle([unit()], [unit()])
             a = b.allies[0]
             give(a, '강화 불가', harmful=True)
             raw = '자신에게 〈보호막〉 (2턴) 보호막 = 자신 생명력×10%'
@@ -56,9 +55,9 @@ class ForceBuffTest(unittest.TestCase):
                 self.assertGreater(a.eff['보호막'].shield, 0)
 
     def test_limit_new_and_existing(self):
-        for mode in ('client', 'off'):
+        for mode in ('client',):
             for existing in (False, True):
-                b = battle([unit()], [unit()], mc={'buff_ban_force': mode})
+                b = battle([unit()], [unit()])
                 a = b.allies[0]
                 give(a, '바큇살')
                 give(a, '강화 불가', harmful=True)

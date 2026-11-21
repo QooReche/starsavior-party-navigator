@@ -242,10 +242,8 @@ def test_break_conditions():
     later = b.cond_ok(A, ln, next_ctx)
     state_ln = Line(ln.raw.replace('대상 브레이크', '대상 강인도 없음'), '고유 패시브', 'passive')
     state = b.cond_ok(A, state_ln, next_ctx)
-    b.mc['target_break_condition'] = 'state'
-    legacy = b.cond_ok(A, ln, next_ctx)
-    return (not before) and after and not later and state and legacy and b.progress() > 0, (
-        '격파 전 %s / 같은 시전 %s / 다음 시전 %s / 강인도 없음 %s / legacy %s' % (before, after, later, state, legacy))
+    return (not before) and after and not later and state and b.progress() > 0, (
+        '격파 전 %s / 같은 시전 %s / 다음 시전 %s / 강인도 없음 %s' % (before, after, later, state))
 
 
 # ---------------------------------------------------------------- 피해 제한·불사

@@ -11,12 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit                            # noqa: E402
 from battlesim.mc import Ctx                                     # noqa: E402
-from battlesim.rules import MC_OPTS, MC_RULES                    # noqa: E402
 from battlesim.starsavior.parser import Line                     # noqa: E402
-
-
-def test_default_client():
-    assert MC_OPTS['dead_keep_dnp'] == 'client' and MC_RULES['dead_keep_dnp']['legacy'] == 'off'
 
 
 def test_default_battle_keeps_dnp_on_death():
@@ -32,6 +27,5 @@ def test_default_battle_keeps_dnp_on_death():
 
 
 if __name__ == '__main__':
-    test_default_client()
     test_default_battle_keeps_dnp_on_death()
-    print('ok 2')
+    print('ok 1')
