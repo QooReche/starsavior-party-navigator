@@ -201,7 +201,9 @@ class RulesTest(unittest.TestCase):
 
     def test_fixed_true_formula(self):
         for mode in ('client', 'legacy'):
-            b = battle([unit('target'), unit('guard')], [unit('source')], mc={'fixed_true_formula': mode})
+            # 이 시험의 옛 식 기대값은 분담 off 기준. 새 기본 분담은 allowlist_break_test가 검사함.
+            b = battle([unit('target'), unit('guard')], [unit('source')],
+                       mc={'fixed_true_formula': mode, 'add_damage_guard': 'off'})
             target, guard = b.allies
             source = b.foes[0]
             give(guard, '수호', {'피해 분담(수호)': 50})

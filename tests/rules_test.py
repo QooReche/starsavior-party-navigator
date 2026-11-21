@@ -346,6 +346,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'shield_tick', 'stage_fx_target', 'sudden_death', 'summon',
     'target_defender_mult', 'target_mode', 'target_row_weight',
     'taunt_skill_end_duration', 'toughness', 'toughness_elem',
+    'break_skill_residuals',
     'turn_limit_unit', 'turn_ticks', 'unknown_cond', 'clash_no_turn_limit',
     # 2026-11-04 클라 후보 스위치(break_point_hits·break_auto_blocked_cc 는 같은 날 기본 = 클라 값으로 전환)
     'break_point_hits', 'dot_formula', 'react_hist_unit', 'immune_force_apply', 'break_auto_blocked_cc',
@@ -356,7 +357,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     # 2026-11-14 클라 대조(해제·면역 16건)
     'dispel_shield', 'dispel_instance', 'dispel_order', 'dispel_evade', 'sleep_wake', 'dispel_attack_names', 'debuff_ban_flag', 'gauge_cd_immune', 'gauge_up_immune', 'cc_immune_buff', 'immune_group_resist', 'abs_hit_terms', 'nullifier_count', 'se_force_apply', 'bskill_nullify', 'evade_ignore_resist', 'dot_hit_result',
 ])
-_NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'break_skill_model', 'random_buff_draw', 'break_skill_residuals'})
+_NOTE_KEYS = frozenset({'enemy_skill_ai', 'caster_death', 'break_skill_model', 'random_buff_draw'})
 
 
 def test_mc_note_not_in_opts():

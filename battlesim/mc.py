@@ -1666,6 +1666,16 @@ class Battle:
             lv = 1
         return row['dmg'][lv - 1] / 10000.0, row['heal'][lv - 1] / 10000.0
 
+    def _break_guard(self):
+        """PC 26752678 NKM:1286-1308,7989: 오비탈은 시전자 유닛이 없어 제외 유닛 ID가 0(없음).
+        본 대상도 후보에 포함한다. 최대 수호자 자신을 맞힐 때 다른 수호자로 재분담하지 않는다."""
+        guard, share = None, 0.0
+        for u in self.alive(1):
+            s = u.mods()['guard']
+            if self._guard_better(guard, share, u, s):
+                guard, share = u, s
+        return guard, share
+
     def _use_break_skill(self, actor=None):
         cost = self.mc['break_skill_cost']
         if not self.break_skill_enabled or self.break_skill_cd > 0 or self.break_points < cost:
@@ -1681,14 +1691,33 @@ class Battle:
         self.log(bskill=self.break_skill_name)
         rule = self.break_skill_rule
         dmg_up, heal_up = self._break_level_up()
+        client_residuals = self.mc['break_skill_residuals'] == 'client'
         if rule.get('damage_ratio'):
             base = sum(self.live_atk(u) for u in self.alive(0)) * (rule['damage_ratio'] + dmg_up) / _rules.AOE_DIV
             if self.mc['break_skill_scale'] == 'game':
                 base *= _rules.BASE_MULT   # 오비탈 피해도 일반 피해식 끝의 DamageScale(1.85)을 곱함(NKM 17742~17817, 오비탈 시전자 OBF_26964)
             had_barrier = self.gb is not None and self.gb.barrier()
-            for v in list(self.alive(1)):
+            targets = list(self.alive(1))
+            queued_guard = self._break_guard()[0] if client_residuals and len(targets) > 1 else None
+            if queued_guard is not None:
+                # NKM:15983-16014: 광역 수호자를 마지막에 맞히며, 타격별 분담 원값을 모은다.
+                targets.remove(queued_guard)
+                targets.append(queued_guard)
+            pending = 0.0
+            for v in targets:
+                if v.dead:
+                    continue
+                raw = base + (pending if v is queued_guard else 0.0)
+                guard, shared = None, 0.0
+                if client_residuals and not v.invincible() and not v.on('스킬 피해 무효'):
+                    guard, share = self._break_guard()
+                    if guard is not None and guard is not v:
+                        # NKM:18157-18185: 누적 몫을 더한 뒤 방어 적용 전에 분리한다.
+                        shared = raw * share
+                        raw -= shared
+                        self.rule_hits['break_skill_guard'] += 1
                 before = v.taken
-                hit = self._break_dmg(v, base)
+                hit = self._break_dmg(v, raw)
                 if self.mc['bskill_nullify'] == 'client' and v.on('스킬 피해 무효') and not v.invincible():
                     # 오비탈 피해도 DAMAGE_SKILL 이라 〈스킬 피해 무효〉가 막고 1회 소모(NKM:7993 OBF_23259(…, true, DAMAGE_SKILL),
                     # 2693-2710: 무적이 먼저 0 반환, 아니면 SkillNullifier 카운트 차감). 동기화 피해는 그대로라 수면은 풀림.
@@ -1705,13 +1734,22 @@ class Battle:
                 dmg = v.taken - before
                 self.break_skill_dmg += dmg
                 self.log(bskill_damage=self.break_skill_name, to=v.name, amount=dmg)
+                if guard is not None and shared >= 1:
+                    if guard is queued_guard:
+                        pending += shared
+                    elif not guard.dead:
+                        # NKM:8028-8033,8351-8367: 누적 대상이 아닌 새 수호자는 별도 피해로 받는다.
+                        before = guard.taken
+                        self.apply_damage(None, guard, self._break_dmg(guard, shared), 'guard')
+                        self.break_skill_dmg += guard.taken - before
             if self.gb is not None:
                 self.gb.after_break_skill(had_barrier)      # 길방: 브레이크 스킬이 보호막을 깨면 부케(55148)
         nova = rule.get('nova', 0)
         if self.opts['nova_pool'] == 'team':
             self.nova_add(self.allies[0], nova)  # 공용 풀도 NovaForceUp의 상한을 거침
-        # 큐브 회복의 합에는 사망자도 포함(기존 가정). 효과는 생존자에게만.
-        amount = sum(u.maxhp for u in self.allies) * (rule.get('heal_ratio', 0) + (heal_up if 'heal_ratio' in rule else 0.0))
+        # PC 26752678 NKM:17934-17950,1032: 회복의 팀 HP 합도 생존자만. legacy는 사망자 포함.
+        heal_team = self.alive(0) if client_residuals else self.allies
+        amount = sum(u.maxhp for u in heal_team) * (rule.get('heal_ratio', 0) + (heal_up if 'heal_ratio' in rule else 0.0))
         self.break_domain_remaining = self.break_domain_turns
         for u in self.alive(0):
             if 'heal_ratio' in rule:

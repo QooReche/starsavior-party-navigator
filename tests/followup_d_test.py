@@ -46,7 +46,7 @@ class FollowupTest(unittest.TestCase):
                                   ('wave_foe_battle_start', 'all', 'all'),
                                   ('revive_after_spawn', 'off', 'off'),
                                   ('dead_keep_dnp', 'client', 'off'),   # 11/14 기본 client 전환
-                                  ('add_damage_guard', 'off', 'off'),
+                                  ('add_damage_guard', 'client', 'off'),
                                   ('stat_select_int', 'floor', 'float')]:
             self.assertEqual(MC_OPTS[key], value)
             self.assertEqual(MC_RULES[key]['legacy'], legacy)

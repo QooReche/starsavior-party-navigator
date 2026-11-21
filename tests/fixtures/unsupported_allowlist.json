@@ -30,21 +30,9 @@
         "owner": "엔진 규칙 유지보수"
       },
       {
-        "key": "[\"rule\",\"mc.add_damage_guard\"]",
-        "reason": "예약 추가 피해의 수호 분담 경로 전수 검증이 미완료라 기본 off를 유지함.",
-        "client_clue": "현재 미확정 범위 재조사: static-data decompiled/NKM/NKM.decompiled.cs:7996-8041,8173-8190,17333-17366; decompiled/NKM/NKM.decompiled.cs:1286-1308",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
         "key": "[\"rule\",\"mc.ally_init_cd\"]",
         "reason": "클라 로컬 초기화는 0을 지지하지만 실전 서버의 덱 쿨 설정은 미확인이라 user 등급을 유지함.",
         "client_clue": "현재 미확정 범위 재조사: 사용자 인게임 확인 2026-10-21; static-data decompiled/NKM/NKM.decompiled.cs:1673,1838-1879,1927-1958,3431-3443,3467-3473,14372-14410; decompiled/NKC/NKC.decompiled.cs:26550-26568,551218-551239",
-        "owner": "엔진 규칙 유지보수"
-      },
-      {
-        "key": "[\"rule\",\"mc.break_skill_residuals\"]",
-        "reason": "핵심 브레이크 피해식과 별개인 큐브 회복 사망자 합산·수호 분담·개인 노바 풀 대체 모델은 미확정임.",
-        "client_clue": "현재 미확정 범위 재조사: PC 26752678 NKM:18247-18296은 피해식 확인 범위. 회복·수호·개인 풀 경로의 전체 대응은 미확인; docs/engine_fix2_26752678.md",
         "owner": "엔진 규칙 유지보수"
       },
       {

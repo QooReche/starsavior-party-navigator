@@ -34,7 +34,7 @@ def setup(bs=CUBE, mc=None, roles=('스트라이커',), **kw):
 
 
 def legacy_setup(bs=CUBE, mc=None, **kw):
-    return setup(bs, mc=dict(break_skill_domain_clock='legacy', break_skill_reduce='all',
+    return setup(bs, mc=dict(break_skill_residuals='existing_model', break_skill_domain_clock='legacy', break_skill_reduce='all',
                             break_gauge_actor='exclude', omega_dispel='fixed', **(mc or {})), **kw)
 
 

@@ -79,7 +79,7 @@ class BreakClient2Test(unittest.TestCase):
         names = {r['rule'] for r in assumptions_used(MC_OPTS, DEFAULT_OPTS)}
         for name in ('normal_points', 'boss_points', 'domain_clock', 'fixed', 'model'):
             self.assertNotIn('mc.break_skill_' + name, names)
-        self.assertIn('mc.break_skill_residuals', names)
+        self.assertNotIn('mc.break_skill_residuals', names)
 
 
 if __name__ == '__main__':

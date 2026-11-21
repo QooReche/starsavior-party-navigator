@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "82ca8b49e5d87cba",
+  "hash": "5e5c4e85d85ea44f",
   "history": [
-   {
-    "hash": "6a9b2b5a75618e30",
-    "reason": "11/15 전수조사 리뷰 반영, 길드 방어전 시즌 미오픈"
-   },
    {
     "hash": "923c975eb88644cb",
     "reason": "슬롯 열 판정·클래스 피해 증감·최근 가해자 시점 클라 방식, 길드 방어전 시즌 미오픈"
@@ -41,16 +37,16 @@
    {
     "hash": "82ca8b49e5d87cba",
     "reason": "벨그라스 일반 스테이지 SE(belgras_stage_se) 추가와 E2 적 교정 병합. 벨그라스 일반 스테이지 줄은 guild_sim·quick 생성물에 적용 대상 없음(ebc5f18 확인)"
+   },
+   {
+    "hash": "5e5c4e85d85ea44f",
+    "reason": "브레이크 회복·수호 클라 교정(break_skill_residuals·add_damage_guard client) 병합. 길드 방어전 시즌 종료로 guild_sim 재생성 생략(04b6488 기록), quick 은 브레이크 미사용"
    }
   ]
  },
  "quick": {
-  "hash": "82ca8b49e5d87cba",
+  "hash": "5e5c4e85d85ea44f",
   "history": [
-   {
-    "hash": "6a9b2b5a75618e30",
-    "reason": "calibrate_quick --write 재보정"
-   },
    {
     "hash": "923c975eb88644cb",
     "reason": "calibrate_quick --write 재보정"
@@ -86,6 +82,10 @@
    {
     "hash": "82ca8b49e5d87cba",
     "reason": "벨그라스 일반 스테이지 SE(belgras_stage_se) 추가와 E2 적 교정 병합. 벨그라스 일반 스테이지 줄은 guild_sim·quick 생성물에 적용 대상 없음(ebc5f18 확인)"
+   },
+   {
+    "hash": "5e5c4e85d85ea44f",
+    "reason": "브레이크 회복·수호 클라 교정(break_skill_residuals·add_damage_guard client) 병합. 길드 방어전 시즌 종료로 guild_sim 재생성 생략(04b6488 기록), quick 은 브레이크 미사용"
    }
   ]
  }
