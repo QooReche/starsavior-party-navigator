@@ -119,14 +119,17 @@ def race_case(browser, ctx, mutation=None, main=False):
     def setup(page):
         fake_setup(page)
         if mutation:
-            with open(os.path.join(ROOT, 'index.html'), encoding='utf-8') as f:
+            # The stale-request guard lives in the shared executor since the search executor extraction.
+            name, pattern, kind = (('index.html', '**/index.html?*', 'text/html') if mutation == 'cancel'
+                                   else ('search_executor.js', '**/search_executor.js*', 'text/javascript'))
+            with open(os.path.join(ROOT, name), encoding='utf-8') as f:
                 html = f.read()
             if mutation == 'cancel':
                 old, new = 'simInvalidate(); // cancel old selection immediately', '// cancellation removed'
             else:
                 old, new = 'if(!boot&&(m.id!==o.id||(m.requestId!=null&&m.requestId!==o.id)))return;', '/* stale request guard removed */'
-            assert old in html, mutation
-            page.route('**/index.html?*', lambda r: r.fulfill(body=html.replace(old, new), content_type='text/html'))
+            assert html.count(old) == 1, mutation
+            page.route(pattern, lambda r: r.fulfill(body=html.replace(old, new), content_type=kind))
     page = open_page(browser, ctx, query='?auto=1', info=SYNTH, simauto=None, wait=False, setup=setup)
     wait_myinfo(page)
     page.wait_for_function('autoJobs.length>0')
