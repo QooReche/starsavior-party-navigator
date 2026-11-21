@@ -103,10 +103,10 @@ for(const file of ['party_template.html','index.html']){
  // Each step: bold one-line title, then detail line(s); the restart warning is its own line in step 4.
  const T=t=>`<b class="mi-step-title">${t}</b>`,D=d=>` <span class="mi-step-do">${d}</span>`;
  assert.deepEqual(steps,[
-  T('PowerShell 열기')+D('키보드 <kbd>Windows</kbd> 키 → <b>powershell</b> 입력 → <kbd>Enter</kbd>'),
-  T('명령 붙여넣기')+D('위쪽 <b>[명령 복사]</b> 단추 클릭')+D('→ PowerShell 창에 붙여넣기(<span class="mi-keys"><kbd>Ctrl</kbd>+<kbd>V</kbd></span> 또는 마우스 오른쪽 클릭) → <kbd>Enter</kbd>'),
+  T('PowerShell 열기')+D('<span class="mi-keys"><kbd>Windows</kbd>+<kbd>R</kbd></span> → <b>powershell</b> 입력 → <kbd>Enter</kbd>'),
+  T('명령 붙여넣기')+D('위쪽 <b>[명령 복사]</b> 단추 클릭')+D('→ PowerShell 창에 붙여넣기')+D('<span class="mi-keys"><kbd>Ctrl</kbd>+<kbd>V</kbd></span> 또는 마우스 오른쪽 클릭 → <kbd>Enter</kbd>'),
   T('관리자 확인')+D('「관리자 확인」 창이 뜨면 <b>[예]</b>'),
-  T('게임 로그인')+D('게임에 로그인 → 로비가 보이면 <b>도구 창에서 <kbd>Enter</kbd></b>')+' <span class="mi-import-warning">⚠ 게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함</span>',
+  T('게임 로그인')+D('게임에 로그인 → 로비가 보이면 <b>도구 창에서 <kbd>Enter</kbd></b>')+' <span class="mi-import-warning">⚠ 기존에 이미 게임이 켜져 있으면 <b>완전히 껐다</b> 다시 켜야 함</span>',
   T('자동 반영')+D('사이트가 자동으로 열리며 반영됨')
  ],`${file}: five titled steps and separate restart warning`);
  assert.equal(guide[2],'<b class="mi-fallback-title">안 될 때·다른 기기에서</b><span class="mi-step-do">바탕화면 <b>내정보.json</b>을 [파일 선택]으로 올리기</span>');

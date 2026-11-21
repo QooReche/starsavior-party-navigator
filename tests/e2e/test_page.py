@@ -958,7 +958,7 @@ def test_myinfo_required(browser, ctx):
     assert box.evaluate('(box) => box.firstElementChild.contains(document.getElementById("mi-copy"))')
     assert not page.locator('#mi-cmd').is_visible()
     assert all(page.locator('#' + key).is_hidden() for key in ('share-link', 'mi-view', 'mi-clear'))
-    assert '⚠ 게임이 켜져 있으면 완전히 껐다 다시 켜야 함' in box.inner_text()
+    assert '⚠ 기존에 이미 게임이 켜져 있으면 완전히 껐다 다시 켜야 함' in box.inner_text()
     assert page.locator('header.site-head #mi-open-import').count() == 1 and page.locator('#mi-panel #mi-open-import').count() == 0
     assert '사이트가 자동으로 열리며 반영' in page.inner_text('.mihow')
     assert page.locator('#dclose').bounding_box()['height'] >= 39.9
