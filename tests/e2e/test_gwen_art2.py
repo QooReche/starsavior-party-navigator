@@ -25,10 +25,10 @@ def fixture(page,html):
 
 
 def loaded(page,selector):
-    pic=page.locator(selector)
-    pic.scroll_into_view_if_needed()
-    page.wait_for_function('(e)=>!!e.getAttribute("src")&&e.complete&&e.naturalWidth>0',arg=pic.element_handle())
-    return pic
+    # 결과 칸은 진행 표시 0.2초 간격 갱신(훑기 A-1) 뒤 한 번 더 다시 그려질 수 있다 -> 요소를 잡아 두지 말고 매번 다시 찾는다
+    page.wait_for_function('''s=>{const e=document.querySelector(s);if(!e)return false;e.scrollIntoView({block:'center'});
+      return !!e.getAttribute('src')&&e.complete&&e.naturalWidth>0}''',arg=selector)
+    return page.locator(selector)
 
 
 def playing(page,pic):
