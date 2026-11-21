@@ -29,7 +29,7 @@ const prep = code => code
 
 function buildCtx() {
   const fakePromise = {then() { return fakePromise; }, catch() { return fakePromise; }};
-  const ctx = vm.createContext({
+  const ctx = vm.createContext({UiShared:require('../ui_shared'),
     D, CFG: D.cfg, R: D.roster,
     EL: {sun:'태양', moon:'달', star:'별', order:'질서', chaos:'혼돈'},
     Quick: Q, window: {Quick: Q},

@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'par
 const section=(start,end)=>html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start)));
 let owned=['특이점 관측','스타피어서','큐브 과부하'],saved={},handlers={},workers=[];
 const rules=JSON.parse(fs.readFileSync(path.join(root,'battlesim/rules/default.json'),'utf8'));
-const ctx=vm.createContext({Ux:require('../ux_ui'),console,URL,JSON,Number,Promise,
+const ctx=vm.createContext({UiShared:require('../ui_shared'),Ux:require('../ux_ui'),console,URL,JSON,Number,Promise,
  PLACEMENT_CACHE:{has:()=>true},
  localStorage:{getItem:k=>saved[k]??null,setItem:(k,v)=>{saved[k]=v}},
  document:{querySelectorAll:()=>owned.map(b=>({dataset:{b}})),querySelector:()=>null},
@@ -157,7 +157,7 @@ console.log('PASS 비교 재표시 범위·부분 캐시 숨김·선택 변경/�
 
 (async()=>{
  const sent=[],calls=[];
- const worker=vm.createContext({Ux:require('../ux_ui'),URL,self:{location:{href:'https://example.test/sim_worker.js'}},postMessage:m=>sent.push(m)});
+ const worker=vm.createContext({UiShared:require('../ui_shared'),Ux:require('../ux_ui'),URL,self:{location:{href:'https://example.test/sim_worker.js'}},postMessage:m=>sent.push(m)});
  vm.runInContext(fs.readFileSync(path.join(root,'sim_worker.js'),'utf8'),worker);
  const fakeRun=fn=>(stage,party,n,seed,extra)=>{const opts=JSON.parse(extra);calls.push({fn,opts});return JSON.stringify({bs:{name:opts.break_skill?.name??null}})};
  // 여러 팀 요청은 AutoBatch(stage,n,seed).run(party,extra) 로 돈다(훑기 묶음 A-3) — 팀마다 오토 한 번은 같음

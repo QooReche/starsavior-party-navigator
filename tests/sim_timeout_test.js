@@ -7,7 +7,7 @@ let now=0,timers=[];
 const advance=ms=>{const end=now+ms;for(;;){timers.sort((a,b)=>a.at-b.at);const t=timers[0];if(!t||t.at>end)break;timers.shift();now=t.at;t.fn()}now=end};
 const workers=[],stops=[];
 const mk=keys=>({keys,combo:[]}),st={tab:'1',name:'1-1'};
-const ctx=vm.createContext({CFG:require('../party_contents.json'),recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,Set,Object,JSON,Math,MODE:'auto',MI:{pending:null},miMode:()=>false,
+const ctx=vm.createContext({UiShared:require('../ui_shared'),CFG:require('../party_contents.json'),recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,Set,Object,JSON,Math,MODE:'auto',MI:{pending:null},miMode:()=>false,
  Date:{now:()=>now},
  SIMQ:{n:100,seed:1,busy:null,res:{},LOAD_MS:180000,RUN_MS:240000,loaded:false},LASTQ:{},cur:[st],
  contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,starOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
@@ -88,7 +88,7 @@ console.log('PASS 엔진 준비 초과·느린 기기 완료·속도 비례 상�
 function screeningHarness(names=['d','e','f','g','h','i'],vOf=i=>10-i,nav={hardwareConcurrency:4,deviceMemory:8}){
  let clock=1000,queue=[];
  const ws=[],posts=[],teams=names.map((k,i)=>({...mk(['a','b','c',k]),v:vOf(i)}));
- const c=vm.createContext({CFG:require('../party_contents.json'),recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
+ const c=vm.createContext({UiShared:require('../ui_shared'),CFG:require('../party_contents.json'),recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
   SIMQ:{n:100,seed:1,busy:null,res:{},scr:{},LOAD_MS:180000,RUN_MS:240000},LASTQ:{1:{rows:teams.slice(0,3),all:teams,total:teams.length}},cur:[st],
   contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,starOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
   simMain:r=>r,simCls:()=>'',esc:String,simOpt:()=>({}),document:{querySelector:()=>null,hidden:false},
@@ -312,7 +312,7 @@ console.log('PASS 속도 개선: 순위는 작업자 수와 무관·대기열(�
 // 18) 실제 sim_worker.js: 작업 번호(job)를 진행·결과·done·오류에 그대로 되돌려 주고, 요청마다 만든 파이썬 객체(toPy)는 오류가 나도 해제하며, 함수 핸들은 한 번만 얻는다
 (async()=>{
  const out=[];let made=0,freed=0,gets=0,batches=0,batchFreed=0,batchRuns=0;
- const wk=vm.createContext({URL,self:{location:{href:'https://example.test/sim_worker.js'}},postMessage:m=>out.push(m)});
+ const wk=vm.createContext({UiShared:require('../ui_shared'),URL,self:{location:{href:'https://example.test/sim_worker.js'}},postMessage:m=>out.push(m)});
  vm.runInContext(fs.readFileSync(require.resolve('../sim_worker.js'),'utf8'),wk);
  wk.fake={toPy:()=>{made++;return {destroy(){freed++}}},globals:{get:name=>{gets++;const run=(stage,party,n,seed,extra)=>{if(JSON.parse(extra).boom)throw Error('boom');return JSON.stringify({n})};
   // AutoBatch(stage,n,seed) → {run(party,extra), destroy()} — 여러 팀 요청만 씀

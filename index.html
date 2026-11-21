@@ -865,7 +865,7 @@ function breakCard(br,r,p,t,st){
 // 모의 전투는 오토 기준 하나뿐이다(11/14 수동 모드 제거). 옛 저장값(pn.mode)·옛 링크의 mode/m 값은 읽지 않는다
 const SCORE_CONTROLS=$("score-controls"),GRAPH_WRAP=$("graphwrap");
 window.PN={last:null};
-const ckey=combo=>combo.map(x=>x.s.key).sort().join(",");
+const ckey=combo=>UiShared.teamKey(combo.map(x=>x.s.key));
 function arrangeOf(combo){const [fr,bk]=place(combo),L=leaderPick(combo);return {order:[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key),lead:L?L.x.s.key:null}}
 // 관문 순위(build_sim_results.gate_key 와 같은 규칙): 계산 가능 -> 클리어 확률 5%p 묶음 -> 처치 턴 -> 근사 점수
 function cmpArr(x,y){for(let i=0;i<x.length;i++){if(x[i]<y[i])return -1;if(x[i]>y[i])return 1}return 0}
@@ -923,28 +923,28 @@ const simCls=r=>{const c=r.clear!=null?r.clear:r.c;return c>=0.9?"safe":c>=0.5?"
 // 3팀마다 세 번째 자리는 근사 점수(시너지·팀 화력) 순 최상위 — 빠른 계산은 구원자 수치를 더하기만 해 연계를 못 보므로 시뮬 기회를 나눠 준다(codex 상담: 빠른 계산 2 : 시너지 1)
 function quickRows(qt,st,p,env=null){const n=env?env.n:(SIMQ.more[moreKey(st,p)]||3),rows=[];const seen=new Set();
  const sc=env?env.sc:SIMQ.scr[scrKey(st,p)];
- if(sc&&sc.done&&sc.order.length){const pos=new Map(sc.order.map((k,i)=>[k,i])),ck=t=>t.keys.slice().sort().join(",");
+ if(sc&&sc.done&&sc.order.length){const pos=new Map(sc.order.map((k,i)=>[k,i])),ck=t=>UiShared.teamKey(t.keys);
   qt=qt.filter(t=>pos.has(ck(t))).sort((a,b)=>pos.get(ck(a))-pos.get(ck(b))).concat(qt.filter(t=>!pos.has(ck(t))))}
  const syn=sc&&sc.done?[]:qt.slice().sort((a,b)=>b.v-a.v);let qi=0,si=0;
- const next=(arr,i)=>{for(;i<arr.length;i++){const k=arr[i].keys.slice().sort().join(",");if(!seen.has(k))return i}return i};
+ const next=(arr,i)=>{for(;i<arr.length;i++){const k=UiShared.teamKey(arr[i].keys);if(!seen.has(k))return i}return i};
  while(rows.length<n){const want=rows.length%3===2;let t=null;
   if(want){si=next(syn,si);if(si<syn.length){t=syn[si++];t.src="syn"}}
   if(!t){qi=next(qt,qi);if(qi>=qt.length)break;t=qt[qi++];if(t.src==="syn"&&!want)t.src=null}
-  t.combo.shareParty=p;seen.add(t.keys.slice().sort().join(","));rows.push(t)}
+  t.combo.shareParty=p;seen.add(UiShared.teamKey(t.keys));rows.push(t)}
  const sr=rows.map(t=>env?env.result(t):SIMQ.res[simSig(st,t)]);
  let out=rows;
  if(sr.every(Boolean)){const ix=rows.map((t,i)=>i);ix.sort((a,b)=>(sr[b].t60??sr[b].clear)-(sr[a].t60??sr[a].clear)||sr[b].clear-sr[a].clear||(sr[a].clear?0:(sr[b].prog??0)-(sr[a].prog??0))||a-b);out=ix.map(i=>rows[i])}
  const joint=env?env.joint:JOINT;
- if(joint&&joint[p]){const i=out.findIndex(t=>t.keys.slice().sort().join(",")===joint[p]);if(i>0)out=[out[i]].concat(out.slice(0,i),out.slice(i+1))}
+ if(joint&&joint[p]){const i=out.findIndex(t=>UiShared.teamKey(t.keys)===joint[p]);if(i>0)out=[out[i]].concat(out.slice(0,i),out.slice(i+1))}
  return out}
 function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+tail;
  const rows=quickRows(qt,st,p),shown=rows.find(t=>ckey(t.combo)===pickKey)||rows[0],P0=shown.q.power,ratio=st.rp?P0/st.rp*100:100,npw=rows.reduce((a,t)=>Math.max(a,t.b.powers?Object.keys(t.b.powers).length:0),0);
  for(const t of rows)if(t.vd==="hard"&&t.ng===undefined)t.ng=Quick.needGrowth(t.ek,qi.qs,QK.d.sv,D.pen,qi.prm,"tight",null,t.b);
- const uniq=new Set(qt.map(t=>t.keys.slice().sort().join(","))).size;
- const row=(t,i)=>{const k=t.keys.slice().sort().join(","),w=quickWeak(t),w2=w.filter(x=>!/턴 제한|버티지/.test(x)),need=t.ng!=null?t.ng*t.q.power:null,sr=SIMQ.res[simSig(st,t)],vd=sr?simCls(sr):t.vd;
+ const uniq=new Set(qt.map(t=>UiShared.teamKey(t.keys))).size;
+ const row=(t,i)=>{const k=UiShared.teamKey(t.keys),w=quickWeak(t),w2=w.filter(x=>!/턴 제한|버티지/.test(x)),need=t.ng!=null?t.ng*t.q.power:null,sr=SIMQ.res[simSig(st,t)],vd=sr?simCls(sr):t.vd;
   return `<div class="qrow" data-q="${i}" data-key="${esc(k)}"><span class="qn">${i+1}안</span><div class="faces" title="${esc(teamName(k))}">${t.keys.map(x=>BYKEY[x]?`<button type="button" class="skill-face" data-skill-open="${esc(x)}" aria-label="${esc(BYKEY[x].name)} 스킬 보기" aria-haspopup="dialog" aria-controls="skills-dialog" aria-expanded="false">${face(BYKEY[x])}</button>`:"").join("")}</div>
    ${k===pickKey?"":`<span class="qt">${sr?simCell(p,t,st):'<span class="mut" data-state="pending">계산 전</span>'}</span><button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">보기</button>`}</div>`};
- const selected=rows.findIndex(t=>t.keys.slice().sort().join(",")===pickKey),active=selected<0?0:selected;
+ const selected=rows.findIndex(t=>UiShared.teamKey(t.keys)===pickKey),active=selected<0?0:selected;
  const alternatives=rows.flatMap((t,i)=>i===active?[]:[row(t,i)]);
  return `<div class="qbox" data-k="quick"><div class="result-layout"><div class="result-summary">${miVerdict(shown,st)}${scrNote(p,st)}${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?GwenStage.slot('reco','result'):""}</div><div class="result-team">${main}</div></div>${alternatives.length?`<div class="alternatives" data-k="alternatives">${alternatives.slice(0,2).join('')}${alternatives.length>2?`<details class="alternatives-more" data-fold="alternatives-${p}"><summary><span class="more-label">더 보기(+${alternatives.length-2})</span><span class="less-label">접기</span></summary>${alternatives.slice(2).join('')}</details>`:''}</div>`:''}${tail}</div>`}
 
@@ -1038,7 +1038,7 @@ function simAutoKick(){if(RECO.task&&!RECO.task.done||DIRECT.bundle?.running&&!D
 function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy||(miMode()&&MI.pending))return false;
  const box=LASTQ[p];if(!box)return false;
  if(CFG.recommendation?.placementCompare&&!jobs){const pending=box.rows.filter(t=>{simParty(t);return !PLACEMENT_CACHE.has(t.placementKey);});if(pending.length){recommendationArrange(p,pending);return true;}}
- const rows=(jobs||box.rows.map(t=>({key:t.keys.slice().sort().join(","),t,bname:teamBreak(t)?.name||null,sig:simSig(st,t)}))).filter(j=>!SIMQ.res[j.sig]);if(!rows.length)return false;
+ const rows=(jobs||box.rows.map(t=>({key:UiShared.teamKey(t.keys),t,bname:teamBreak(t)?.name||null,sig:simSig(st,t)}))).filter(j=>!SIMQ.res[j.sig]);if(!rows.length)return false;
  SIMQ.err="";SIMQ.errCompare=null;SIMQ.busy=p;SIMQ.compareKey=compareKey;SIMQ.msg="작업 준비 중";SIMQ.stage=st.tab+"|"+st.name;
  // 본선도 팀 단위로 작업자에 나눈다(팀마다 판 수·시드가 그대로라 결과는 작업자 수와 무관). 작업자는 팀 수보다 많이 쓰지 않는다
  const ws=scrPool(rows.length);
@@ -1144,15 +1144,15 @@ function jointPick(c,st,own,defPen,qr0=null){if((c.parties||1)!==2)return null;c
  const rsEl=(CFG.restrict[c.name]||{})[st.tab];
  const c0=R.filter(s=>own.has(s.key)&&(!rsEl||s.el===rsEl)).map(s=>{const [v,parts]=score(s,st.w,c.main,c.boss);return {s,score:v,parts}});
  if(c0.length<8)return null;
- const top=[],seen=new Set(),qr=qr0||quickRank(rankAll(c0,defPen),qi);for(const t of qr){const k=t.keys.slice().sort().join(",");if(seen.has(k))continue;seen.add(k);top.push(t);if(top.length>=80)break}
+ const ck=t=>UiShared.teamKey(t.keys),qr=qr0||quickRank(rankAll(c0,defPen),qi),top=UiShared.uniqBy(qr,ck,80),seen=new Set(top.map(ck));
  // 상위 80팀이 모두 같은 구원자를 품으면(예: 코스모 길레 2단계 — 힐데·아세라) 짝이 없다 -> 1위와 겹치지 않는 상위 팀을 80개까지 더 넣는다
- if(top.length){let n=0;for(const t of qr){if(n>=80)break;const k=t.keys.slice().sort().join(",");if(seen.has(k)||t.keys.some(x=>top[0].keys.includes(x)))continue;seen.add(k);top.push(t);n++}}
+ if(top.length){let n=0;for(const t of qr){if(n>=80)break;const k=ck(t);if(seen.has(k)||t.keys.some(x=>top[0].keys.includes(x)))continue;seen.add(k);top.push(t);n++}}
  let best=null;const sc=new Map(top.map(t=>[t,qScore(t,st,qi)])),vo=new Map(top.map(t=>[t,QO[qVd(t,st)]]));
  for(let i=0;i<top.length;i++)for(let j=i+1;j<top.length;j++){const a=top[i],b=top[j];if(a.keys.some(k=>b.keys.includes(k)))continue;
   const sa=sc.get(a),sb=sc.get(b),key=[Math.min(vo.get(a),vo.get(b)),vo.get(a)+vo.get(b),Math.min(sa,sb),a.v+b.v];
   if(!best||cmpArr(key,best.key)>0)best={key,a:sa>=sb?a:b,b:sa>=sb?b:a}}
- return best?{1:best.a.keys.slice().sort().join(","),2:best.b.keys.slice().sort().join(",")}:null}
-function jointFirst(qt,p){if(!JOINT||!qt)return;const i=qt.findIndex(t=>t.keys.slice().sort().join(",")===JOINT[p]);if(i>0)qt.unshift(qt.splice(i,1)[0])}window.PN_SIMQ=SIMQ;   // 시험용(브라우저 결과 = 파이썬 결과 대조)
+ return best?{1:UiShared.teamKey(best.a.keys),2:UiShared.teamKey(best.b.keys)}:null}
+function jointFirst(qt,p){if(!JOINT||!qt)return;const i=qt.findIndex(t=>UiShared.teamKey(t.keys)===JOINT[p]);if(i>0)qt.unshift(qt.splice(i,1)[0])}window.PN_SIMQ=SIMQ;   // 시험용(브라우저 결과 = 파이썬 결과 대조)
 $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-sim]");if(b){simAuto(true);simStart(+b.dataset.sim);return}
  const ref=e.target.closest("button[data-refine]");if(ref){simRefine(+ref.dataset.refine,ref.dataset.key);return}
  const bc=e.target.closest("button[data-bcompare]");if(bc){breakCompareStart(+bc.dataset.bcompare,bc.dataset.key);return}
@@ -1185,7 +1185,7 @@ const SCR_ROUNDS=[{n:8,q:80,v:40},{n:32,top:20}],SCR_N=SCR_ROUNDS.map(r=>r.n).jo
 // SCR_RK = 재점화 풀 크기(재점화>0 일 때만 후보에 더함, 0 이면 끔)
 const SCR_RK=40;
 // 예선 후보 순서: 빠른 계산 상위 q · 근사 점수 상위 v · 재점화 풀(rkTop)을 번갈아 한 줄로(중복은 먼저 나온 자리만)
-function scrPick(all,rkTop){const ck=t=>t.keys.slice().sort().join(","),R0=SCR_ROUNDS[0];
+function scrPick(all,rkTop){const ck=t=>UiShared.teamKey(t.keys),R0=SCR_ROUNDS[0];
  const lists=[all.slice(0,R0.q).map(ck),all.slice().sort((a,b)=>b.v-a.v).slice(0,R0.v).map(ck),(rkTop||[]).map(ck)],out=[],seen=new Set(),m=Math.max(...lists.map(l=>l.length));
  for(let i=0;i<m;i++)for(const l of lists){const k=l[i];if(k!=null&&!seen.has(k)){seen.add(k);out.push(k)}}return out}
 // 후보 전체 훑기(11/21, 스위치 CFG.recommendation.fullScreen, 기본 끔 — docs/fullscreen_measure_1121.md):
@@ -1195,7 +1195,7 @@ function scrPick(all,rkTop){const ck=t=>t.keys.slice().sort().join(","),R0=SCR_R
 //  깰 수 있는 팀이 하나라도 있으면(쉬운 스테이지) 아무것도 바꾸지 않는다(sc 에 필드도 안 붙임 — 기준선 대조 시험).
 const SCR_FULL={n:1};
 function scrFullKeys(all,pool){if(!CFG.recommendation?.fullScreen||!all||!all.length||all.some(t=>t.vd!=="hard"))return null;
- const ck=t=>t.keys.slice().sort().join(","),out=[],seen=new Set();for(const t of all){const k=ck(t);if(!seen.has(k)){seen.add(k);out.push(k)}}
+ const ck=t=>UiShared.teamKey(t.keys),out=UiShared.uniqBy(all,ck).map(ck);
  return out.length>pool.length?out:null}
 // sc 에 훑기 상태를 붙임: full = 훑을 키(빠른 계산 순), res0 = 1판 결과, fullN = 넘길 수, fullDone
 function scrFullInit(sc,all){const keys=scrFullKeys(all,sc.pool);if(keys){sc.full=keys;sc.res0={};sc.fullN=sc.pool.length;sc.fullDone=false}return sc}
@@ -1229,7 +1229,7 @@ function scrStop(){const st=cur&&cur[$("stage").value],sc=st&&SIMQ.busy!=null?SI
  if(!SIMQ.screening||!sc||!scrHasRes(sc)){simStop("취소함",true);return}simInvalidate();run()}
 function scrHasRes(sc){return Object.keys(sc.res).length>0||!!(sc.res0&&Object.keys(sc.res0).length)}
 function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("stage").value],box=LASTQ[p];if(!st||!box||SIMQ.busy!=null)return false;
- const k=scrKey(st,p),ck=t=>t.keys.slice().sort().join(","),byKey=new Map(box.all.map(t=>[ck(t),t]));
+ const k=scrKey(st,p),ck=t=>UiShared.teamKey(t.keys),byKey=new Map(box.all.map(t=>[ck(t),t]));
  const R0=SCR_ROUNDS[0],R1=SCR_ROUNDS[1];let sc=SIMQ.scr[k];
  if(more){if(!sc||!sc.done||!sc.short)return false;sc.pool=sc.pool.filter(x=>byKey.has(x));sc.total=sc.pool.length;sc.done=false;sc.free=true;sc.allReady=false}
  else{const pool=scrPick(box.all,SCR_RK&&rkOf(c.key)?rkQuickTop(c,st,box.all,SCR_RK):null);
@@ -1374,7 +1374,7 @@ function runCore(skipAuto=false){
  if(!st){BRCMP.open={};$("out").innerHTML='<div class="party">스테이지를 선택해야 함.</div>';return}
  const own=new Set([...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));
  if(!MI.info&&RECO.standard&&!own.size)for(const s of R)if(!EXCL.has(s.key))own.add(s.key);
- const have=[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);SCROWN=[...own].sort().join(",")+"|"+have.join(",");
+ const have=[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b);SCROWN=scrownOf(own,have);
  GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];showPow();const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty);
  const sid=c.key+"|"+st.tab+"|"+st.name;
  const used=new Set();let html="";const allParties=[];let gwenResult=null;
@@ -1385,16 +1385,16 @@ function runCore(skipAuto=false){
   const plan=p===1?initial:recoCandidates(c,st,own,used,defPen,qi0),{cands,ranked}=plan;
   if(cands.length<4){html+=`<div class="party">${Ux.gwenError("few")}파티 ${p}: 후보가 4명 미만임.</div>`;break}
   const list=buildCands(ranked);
-  const qi=qi0,qt=plan.qt;jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{all:qt,rows:quickRows(qt,st,p),total:new Set(qt.map(t=>t.keys.slice().sort().join(","))).size}:null;
+  const qi=qi0,qt=plan.qt;jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{all:qt,rows:quickRows(qt,st,p),total:new Set(qt.map(t=>UiShared.teamKey(t.keys))).size}:null;
   let qpick=null;
-  if(qt&&qt.length){for(const t of LASTQ[p].rows){const k=t.keys.slice().sort().join(",");if(list.find(x=>x.key===k))continue;list.push({combo:t.combo,v:t.v,got:t.got,rank:null,key:k})}
-   const qk=LASTQ[p].rows[0].keys.slice().sort().join(",");qpick=list.find(x=>x.key===qk)}
+  if(qt&&qt.length){for(const t of LASTQ[p].rows){const k=UiShared.teamKey(t.keys);if(list.find(x=>x.key===k))continue;list.push({combo:t.combo,v:t.v,got:t.got,rank:null,key:k})}
+   const qk=UiShared.teamKey(LASTQ[p].rows[0].keys);qpick=list.find(x=>x.key===qk)}
   const approxOnly=list.slice().sort((x,y)=>(x.rank??99)-(y.rank??99));
   const forced=PICK[sid+"|"+p]&&list.find(x=>x.key===PICK[sid+"|"+p]);
   const pick=forced||qpick||approxOnly[0];pick.isPick=!forced;
   const party=pick.combo;party.shareParty=p;party.forEach(x=>used.add(x.s.key));allParties.push(party);
   const v=pick.v;
-  const qr=LASTQ[p]&&LASTQ[p].rows.find(t=>t.keys.slice().sort().join(",")===pick.key),sr=qr&&SIMQ.res[simSig(st,qr)];
+  const qr=LASTQ[p]&&LASTQ[p].rows.find(t=>UiShared.teamKey(t.keys)===pick.key),sr=qr&&SIMQ.res[simSig(st,qr)];
   if(qr?.combo.placement)party.placement=qr.combo.placement;
   const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};

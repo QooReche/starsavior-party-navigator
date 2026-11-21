@@ -1,5 +1,7 @@
 // Shared recommendation stores, with snapshot-owned calculation and injectable notifications.
 // DIRECT never calls showReco/runCore to start work or changes the input controls.
+// 보유 구원자·브레이크 스킬 서명(SCROWN·예선 키 재료). 화면(party_template.html)과 이 파일이 같이 씀
+function scrownOf(own,have){return UiShared.teamKey([...own])+'|'+have.join(',');}
 function recoIdentity(){
   const c=contents[$('content').value],st=cur?.[$('stage').value];
   return JSON.stringify([c.key,st?.tab,st?.name,MI.hash,...recommendationPolicyTag(),simOpt(c.key),SIMQ.n,SIMQ.seed,
@@ -21,7 +23,7 @@ function recoSnapshot(){
   const bloom=copy(BLOOM),sv=QK.d.sv,engineKey=k=>!(profile?.results[k])&&bloom[k]&&sv[k+BLV]?k+BLV:k;
   const qi=copy(quickIn(c,st));if(!info){qi.growth=1;qi.power=null;}
   const x={ck:c.key,rk:rkOf(c.key),sn:starOf(c.key),account:profile?MI.hash:null,growth:growthEnabled()?growthCacheTag():null,party:t=>simParty(t,engineKey)};
-  const scrown=[...own].sort().join(',')+'|'+have.join(','),mm=MM||'';
+  const scrown=scrownOf(own,have),mm=MM||'';
   const screenKey=p=>JSON.stringify([c.key,st.tab,st.name,+p,x.rk,x.sn,x.account||'',scrown,mm,...recommendationPolicyTag(),...(x.growth?[x.growth]:[])]);
   const n=SIMQ.n,seed=SIMQ.seed,refined=new Set(SIMQ.refined||[]);
   const sig=t=>simSignature(x,st,t,breakFor(t)?.name||null,n,refined);
@@ -36,7 +38,7 @@ function recoSnapshot(){
   function plan(wanted){
     const used=new Set();
     for(let p=1;p<=wanted;p++){
-      const k=[...used].sort().join(',');
+      const k=UiShared.teamKey([...used]);
       if(!plans.has(k))plans.set(k,recoCandidates(c,st,own,used,defPen,qi,profile,scoring));
       const qt=plans.get(k).qt;if(!qt?.length)return null;
       const mk=moreKey(st,p),rows=quickRows(qt,st,p,{n:more[p]||SIMQ.more[mk]||3,sc:SIMQ.scr[screenKey(p)],result,joint});

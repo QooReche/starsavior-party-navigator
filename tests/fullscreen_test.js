@@ -19,7 +19,7 @@ function teamsOf(vds){return NAMES.map((k,i)=>mk(['a','b','c',k],vds(i),200-i))}
 // ── 화면 경로(simScreen) ── 가짜 작업자는 요청마다 바로 결과·done 을 돌려줌
 function screenRun(full,vds,{stopAfter=null}={}){
  const posts=[],teams=teamsOf(vds),CFG=plain(CFG0);CFG.recommendation.fullScreen=full;
- const c=vm.createContext({CFG,recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
+ const c=vm.createContext({UiShared:require('../ui_shared'),CFG,recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
   SIMQ:{n:100,seed:1,busy:null,res:{},scr:{},LOAD_MS:180000,RUN_MS:240000},LASTQ:{1:{rows:teams.slice(0,3),all:teams,total:teams.length}},cur:[{tab:'a',name:'b'}],
   contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,starOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
   simMain:r=>r,simCls:()=>'',esc:String,simOpt:()=>({}),document:{querySelector:()=>null,hidden:false},
@@ -94,7 +94,7 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
 }
 // 순수 함수: 조건
 {
- const c=vm.createContext({CFG:plain(CFG0)});vm.runInContext(section(html,'const SCR_ROUNDS=','const scrKey='),c);
+ const c=vm.createContext({UiShared:require('../ui_shared'),CFG:plain(CFG0)});vm.runInContext(section(html,'const SCR_ROUNDS=','const scrKey='),c);
  const all=[mk(['a','b','c','d'],'hard',1),mk(['a','b','c','e'],'hard',1),mk(['a','b','c','f'],'hard',1)];
  c.all=all;assert.equal(vm.runInContext('scrFullKeys(all,["x"])',c),null,'끔');
  c.CFG.recommendation.fullScreen=true;assert.deepEqual(plain(vm.runInContext('scrFullKeys(all,["x"])',c)),['a,b,c,d','a,b,c,e','a,b,c,f']);
@@ -106,7 +106,7 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
 // ── 직접 편성 묶음 경로(recoCalculate → recoScreenCalculate → recoEvaluate, 실제 공통 실행기) ──
 async function bundleRun(full,vds){
  const trace=[],CFG=plain(CFG0);CFG.recommendation.fullScreen=full;
- const ctx=vm.createContext({console,URL,Date,setTimeout,clearTimeout,CFG,navigator:{hardwareConcurrency:3},document:{hidden:false},location:{href:'https://synthetic.test/index.html'},
+ const ctx=vm.createContext({UiShared:require('../ui_shared'),console,URL,Date,setTimeout,clearTimeout,CFG,navigator:{hardwareConcurrency:3},document:{hidden:false},location:{href:'https://synthetic.test/index.html'},
   SIMQ:{LOAD_MS:180000,res:{},scr:{},meta:{}},RECO:{},LASTQ:{},recoIdentity:()=> 'fixed',recoProgressPaint(){},directResultsPaint(){},simTeamLimit:()=>240000,simRateAdd(){},goalVal:r=>r?.clear,
   RecommendPipeline:require('../recommend_pipeline'),SCR_RK:0,rkQuickTop:()=>[],messages:[],
   Worker:class{postMessage(m){trace.push(plain(m));setImmediate(()=>{if(this.dead)return;const send=x=>this.onmessage({data:{...m,...x}});
