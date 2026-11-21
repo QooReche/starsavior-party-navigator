@@ -78,7 +78,6 @@ body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-
 .gwen-lane-actor:has(.gwen-lane-image[data-gwen-expression=jump]:not([data-gwen-landed=true]))::before{transform:scale(.7);opacity:.5}
 .gwen-lane-poke{position:relative;z-index:1}
 .gwen-lane-speech{z-index:2}
-html[data-gwen-quiet=true] .gwen-lane-actor::before{transition:none}
 @media(prefers-reduced-motion:reduce){.gwen-lane-actor::before{transition:none}}
 .gwen-lane-poke{display:block;width:80px;height:80px;border:0!important;padding:0!important;background:none!important;box-shadow:none!important;pointer-events:auto;cursor:pointer}
 .gwen-lane-poke:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
@@ -96,7 +95,6 @@ html[data-gwen-quiet=true] .gwen-lane-actor::before{transition:none}
 #reco-result-lane.gwen-summary-result[hidden]{display:none}
 #reco-result-lane.gwen-summary-result .gwen-lane-actor{top:0;transform:none!important;flex-shrink:0;order:1}
 #reco-result-lane.gwen-summary-result .gwen-lane-speech{display:none}
-html[data-gwen-quiet=true] .gwen-summary-result .gwen-bubble{visibility:hidden}
 body[data-guild-gwen-owner=guildSearch] #out :is([data-gwen-idle],.gwen-work){display:none}
 body[data-guild-gwen-owner=guildSearch] #out .idle{display:block}
 #reco-result-lane.gwen-summary-result .gwen-lane-actor::before{content:none}
@@ -108,7 +106,6 @@ body[data-guild-gwen-owner=guildSearch] #out .idle{display:block}
 #home-gwen-lane .gwen-lane-actor,#home-gwen-lane .gwen-lane-poke{width:160px;height:160px}
 .gwen-result-lane{height:122px;padding-top:34px;box-sizing:border-box}
 #direct-progress{display:block;width:100%;height:8px;margin:4px 0 12px}
-.gwen-quiet-option{display:block;margin-bottom:12px;font-size:13px}
 /* Quiet mode keeps one still illustration in its reserved lane. */
 /* 수동·자동 무대 공용 배경 */
 #direct-board-lane,#reco-board-lane{background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat;border-radius:8px}
@@ -139,8 +136,6 @@ body[data-guild-gwen-owner=guildSearch] #out .idle{display:block}
 @media(prefers-reduced-motion:reduce){.gwen-lane-actor{will-change:auto}.gwen-lane-image{animation:none!important}}
 /* Travel is scheduled in <=0.6s transform-only segments by the scene controller. */
 .gwen-roam :is(.gwen-traveler,.gwen-scene,.gwen-worker,.gwen-bubble,.gwen-bubble::after){animation:none!important}
-html[data-gwen-quiet=true] [data-gwen-idle]{visibility:hidden}
-html[data-gwen-quiet=true] :is(.gwen-traveler,.gwen-scene,img[data-gwen-rest=true]){animation:none!important;transform:none!important}
 
 #direct-steps{list-style:none;padding:0;margin:8px 0;font-size:12px}#direct-steps li{display:grid;grid-template-columns:1fr auto;gap:5px;padding:8px 0;border-bottom:1px solid var(--line)}#direct-steps [role=status]{grid-column:1;overflow-wrap:anywhere}#direct-steps button{grid-column:2;grid-row:1/3;padding:5px;font-size:11px}#direct-steps button span:last-child{display:none}
 .direct-compare-faces{display:flex;gap:3px;margin:5px 0}.direct-compare-faces .face{width:24px;height:24px;object-fit:cover}.direct-comparison button{font-size:11px;padding:6px;margin:3px 0;max-width:100%}.direct-with-growth{margin-left:14px}#direct-with>label{margin-top:10px}#direct-with>small{margin:10px 0}#direct-stage-number{display:block;font-size:12px}

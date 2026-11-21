@@ -121,10 +121,9 @@ def ui(browser,base,width):
         snapshot(p,f'click-{i}',width,expected='st_'+kind)
     before=p.evaluate('GwenLane.mount().state.art');p.locator('.gwen-lane-poke').click()
     assert p.evaluate('GwenLane.mount().state.art')==before,'10-second poke lock missing'
-    p.locator('#optbox > summary').click();p.locator('#gwen-quiet').check()
-    shown(p);assert p.locator(ACTOR).is_visible(),'quiet mode hid result after poke'
+    assert p.locator('#gwen-quiet').count()==0
+    p.clock.run_for(1700);shown(p)
     assert p.evaluate('GwenLane.mount().state.art')==art
-    p.locator('#gwen-quiet').uncheck();p.locator('#optbox > summary').click()
     # New low result, same physical actor.
     p.evaluate('DIRECT.cache.clear();window.clearDirect=0;window.directDelay=100;directRun()')
     done(p);snapshot(p,'low',width);bounds(p)
@@ -164,17 +163,17 @@ def timing(browser,base,width=1280):
     off=p.evaluate('GwenLane.mount().state.clock');p.clock.run_for(5000)
     assert p.evaluate('GwenLane.mount().state.clock')==off
     p.set_viewport_size({'width':width,'height':1000});shown(p)
-    p.locator('#optbox > summary').click();p.locator('#gwen-quiet').check()
+    assert p.locator('#gwen-quiet').count()==0
+    p.evaluate("localStorage.setItem('pn.gwen.quiet','true')")
     p.evaluate("GwenLane.edit('grown',0)")
-    assert p.evaluate('GwenLane.mount().state.quiet')
     assert not p.evaluate('GwenLane.mount().state.moving')
-    assert p.locator(ACTOR).is_visible(), 'quiet mode should retain a still illustration'
+    assert p.locator(ACTOR).is_visible()
     shown(p)
     p.wait_for_function("document.querySelector('.gwen-lane-image')?.dataset.gwenPlaying==='false'")
     p.evaluate("window.holdDirect=true;for(const s of R.filter(s=>MI.info.units.some(u=>u.id===s.uid)).slice(0,4))directChange({type:'put',key:s.key})")
     p.locator('#direct-run').click()
     p.wait_for_function("DIRECT.rows.now?.status==='running'");shown(p)
-    assert p.locator(ACTOR).is_visible(),'quiet mode hid calculation'
+    assert p.locator(ACTOR).is_visible(),'reduced motion hid calculation'
     assert not p.evaluate('GwenLane.mount().state.moving')
     first=p.evaluate('GwenLane.mount().state.art');p.clock.run_for(19000)
     assert p.evaluate('GwenLane.mount().state.art')==first,'reduced cycle shorter than 20 seconds'
@@ -182,7 +181,11 @@ def timing(browser,base,width=1280):
     assert p.evaluate('GwenLane.mount().state.art')!=first,'reduced cycle did not advance'
     p.locator('#direct-run').click()
     p.reload();p.wait_for_function('window._ready&&DIRECT.slots')
-    assert p.locator('#gwen-quiet').is_checked()
+    assert p.locator('#gwen-quiet').count()==0
+    p.emulate_media(reduced_motion='no-preference');shown(p)
+    p.clock.run_for(100)
+    p.evaluate("GwenLane.edit('leader',3)")
+    assert p.evaluate('GwenLane.mount().state.moving'), p.evaluate('GwenLane.mount().state')
     assert not p.errors,p.errors
     p.close()
 

@@ -35,6 +35,7 @@ def speech_audit(page):
 
 
 def ready(page, base):
+    page.add_init_script("localStorage.setItem('pn.gwen.quiet','true')")
     page.goto(base+'/index.html?season=force&pm=reco', wait_until='networkidle')
     page.wait_for_function('window._ready && QK.d')
     page.evaluate('''() => {recoClearTimer();clearTimeout(_rt);SIMQ.auto=false;SIMQ.kick=false;localStorage.setItem('pn.simauto','0');
@@ -94,18 +95,18 @@ def result_audit(page):
     page.wait_for_function("document.querySelector('#out .gwen-reaction img')?.dataset.gwenOnce===String(GwenLane.resultId(autoScore))")
     assert page.locator('#out .gwen-lane-actor').get_attribute('data-gwen-expression') in ['st_point','thoughtful'], 'score must be neutral'
     assert page.locator('#reco-gwen-stage .gwen-lane-actor').count() == 0
-    page.evaluate("const q=$('gwen-quiet');q.checked=true;q.dispatchEvent(new Event('change'))")
-    assert page.locator('#reco-gwen-stage .gwen-lane-actor').count() == 0, 'quiet restored result lane actor'
-    page.evaluate('''() => {window.autoQuietPlayed=false;
-      new MutationObserver(()=>{if(document.querySelector('#out .gwen-reaction img')?.dataset.gwenPlaying==='true')autoQuietPlayed=true})
+    assert page.locator('#gwen-quiet').count()==0
+    assert page.locator('#reco-gwen-stage .gwen-lane-actor').count()==0
+    page.evaluate("localStorage.setItem('pn.gwen.quiet','true')")
+    page.evaluate('''() => {window.autoResultPlayed=false;
+      new MutationObserver(()=>{if(document.querySelector('#out .gwen-reaction img')?.dataset.gwenPlaying==='true')autoResultPlayed=true})
         .observe($('out'),{subtree:true,attributes:true,attributeFilter:['data-gwen-playing']});
-      window.autoQuietResult={clear:.9};$('out').innerHTML='<div class="result-summary">'+GwenStage.slot('reco','result')+'</div>';recoGwenShow(false,null,autoQuietResult);
+      window.autoNewResult={clear:.9};$('out').innerHTML='<div class="result-summary">'+GwenStage.slot('reco','result')+'</div>';recoGwenShow(false,null,autoNewResult);
     }''')
     portrait.scroll_into_view_if_needed()
-    page.wait_for_function('document.querySelector("#out .gwen-reaction img").dataset.gwenLoaded==="true"')
-    page.wait_for_timeout(500)
-    assert not page.evaluate('autoQuietPlayed'), 'quiet result reaction played'
-    assert portrait.locator('.gwen-bubble').count()==1 and not portrait.locator('.gwen-bubble').is_visible(), 'quiet result speech visible'
+    page.wait_for_function('autoResultPlayed')
+    assert portrait.locator('.gwen-bubble').is_visible(), 'normal result speech missing'
+
 
 
 def run(browser, base, width=390, variant=None, audit=None):
@@ -136,9 +137,6 @@ if __name__ == '__main__':
             ('summary order',('index.html','${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?GwenStage.slot(\'reco\',\'result\'):""}','${p===1?GwenStage.slot(\'reco\',\'result\'):""}${simBar(p,rows,st,uniq>rows.length,shown)}'),'result','portrait must follow verdict'),
             ('result actor',('gwen_lane.js',"stage.result||stage.board];\n      if(current.stale)","stage.board];\n      if(current.stale)"),'result','duplicate result lane actor'),
             ('result rebind',('gwen_lane.js','setLane(el);workRestAt=clock+250;',"setLane(mode==='reco'&&current.phase==='result'?stages.get(mode).board:el);workRestAt=clock+250;"),'result','result rebind restored lane actor'),
-            ('quiet result stage',('gwen_lane.js',"cancelMove();bubbleUntil=0;settle();", "cancelMove();bubbleUntil=0;if(current.mode==='reco'&&current.phase==='result')current.phase='work';settle();"),'result','quiet restored result lane actor'),
-            ('quiet result reaction',('ux_ui.js',"media.matches||(img.hasAttribute('data-gwen-managed')&&doc.documentElement.dataset.gwenQuiet==='true')","media.matches"),'result','quiet result reaction played'),
-            ('quiet result speech',('direct.css','html[data-gwen-quiet=true] .gwen-summary-result .gwen-bubble{visibility:hidden}',''),'result','quiet result speech visible'),
             ('screen callback',('index.html','const pv=document.querySelector(\'[data-k="progress"]\');if(pv)simProgressSync(pv,st)},','/* mutation: lost callback update */ },'),'screen','screening progress/aria not delivered'),
             ('lane progress',('index.html','recoGwenShow(true,all?done/all:0,null,','recoGwenShow(true,0,null,'),'screen','screening progress not delivered to lane'),
             ('speech padding',('direct.css','#direct-board-lane,#reco-board-lane{height:122px;padding-top:34px;','#direct-board-lane,#reco-board-lane{height:122px;padding-top:0;'),'screen','speech clipped vertically'),

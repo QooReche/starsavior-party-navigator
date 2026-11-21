@@ -83,16 +83,18 @@ def test_auto_calculation_controls(browser, ctx):
     page.select_option('#stage', index=3)
     idle()
     assert page.evaluate('autoJobs.length') == old_jobs, 'changing a completed selection must wait for a click'
-    # ?auto=1 still starts recommendation, respecting the separate simulation preference.
-    page.evaluate('simAuto(false)')
+    # URL auto-start ignores the obsolete simulation-off preference.
+    page.evaluate("localStorage.setItem('pn.simauto','0')")
     page.goto(ctx.base + '/index.html?auto=1&dev=1')
     wait_myinfo(page)
-    page.wait_for_selector('.party[data-team]')
-    assert page.locator('#reco-auto, [data-recoretry]').count() == 0
-    assert page.evaluate("LS.get('reco.auto')===true&&localStorage.getItem('pn.simauto')==='0'")
+    page.wait_for_function('autoJobs.length>0')
+    drain(page)
+    assert page.locator('#reco-auto, [data-recoretry], [data-simauto]').count() == 0
+    assert page.evaluate("LS.get('reco.auto')===true&&localStorage.getItem('pn.simauto')==='0'&&simAutoOn()")
+    old_jobs=page.evaluate('autoJobs.length')
     page.select_option('#stage', index=3)
-    page.wait_for_selector('.party[data-team]')
-    assert page.evaluate('autoJobs.length') == 0
+    page.wait_for_function('n=>autoJobs.length>n',arg=old_jobs)
+    drain(page)
     # Seasonal searches also keep their explicit start buttons.
     page.goto(ctx.base + '/index.html?auto=0&dev=1')
     wait_myinfo(page)

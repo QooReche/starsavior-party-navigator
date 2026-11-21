@@ -177,7 +177,7 @@
       return blobs.get(path);
     }
     function create(img){
-      const reduced=()=>media.matches||(img.hasAttribute('data-gwen-managed')&&doc.documentElement.dataset.gwenQuiet==='true');
+      const reduced=()=>media.matches;
       const scene=img.closest('[data-gwen], [data-gwen-idle], .gwen-reaction, .gwen-best, .gwen-greet, .gwen-guide-footer')||img;
       const bubble=scene.querySelector?.('.gwen-bubble'),idle=scene.hasAttribute('data-gwen-idle');
       const report=gwenPending.get(scene.dataset.gwenReport)?.deref();
@@ -216,7 +216,7 @@
       }
       function valid(token){return token===s.token&&s.active&&gwenVisible(img);}
       function say(key){
-        if(report?.done||report&&img.hasAttribute('data-gwen-managed')&&doc.documentElement.dataset.gwenQuiet==='true'){if(bubble)bubble.style.visibility='hidden';return;}
+        if(report?.done){if(bubble)bubble.style.visibility='hidden';return;}
         if(!bubble||!GWEN_SAY[key])return;
         if(!idle&&s.clock-s.lastSpeech<6000)return;
         s.lastSpeech=s.clock;bubble.style.visibility='';if(!idle)s.due.hide=s.clock+2500;
@@ -268,7 +268,7 @@
           if(s.asset.blink&&s.expression!=='walk')s.due.blink=s.clock+rand(3000,3001);
         }
         if(GWEN_CYCLES[scene.dataset.gwen]&&s.baseSay!=='empty')s.due.cycle=s.clock+(reduced()?20000:rand(8000,2001));
-        if(s.expression==='walk'&&!reduced()&&doc.documentElement.dataset.gwenQuiet!=='true')s.due.travel=s.clock+150;
+        if(s.expression==='walk'&&!reduced())s.due.travel=s.clock+150;
         if(bubble&&!idle)s.due.hide=s.clock+2500;
         if(s.restoreAt!=null)s.due.restore=s.restoreAt;
       }
@@ -303,7 +303,7 @@
         if(due('land')){delete s.due.land;img.dataset.gwenLanded='true';}
         if(due('travel')){
           const track=scene.querySelector('.gwen-track'),traveler=scene.querySelector('.gwen-traveler');
-          if(track&&traveler&&s.motionOwner&&!reduced()&&doc.documentElement.dataset.gwenQuiet!=='true'){
+          if(track&&traveler&&s.motionOwner&&!reduced()){
             const max=Math.max(0,track.clientWidth-traveler.clientWidth),from=Math.min(max,s.travelX||0);
             if(s.travelX==null)s.travelRight=true;
             if(from>=max)s.travelRight=false;else if(from<=0)s.travelRight=true;
@@ -361,7 +361,7 @@
       };
       s.poke=()=>{
         if(!s.active)return;account();const now=Date.now();
-        if(doc.documentElement.dataset.gwenQuiet==='true'||s.clock<s.pokeLock)return;
+        if(s.clock<s.pokeLock)return;
         if(s.clock-s.lastPoke>=10000)s.pokeCount=0;
         const art=['shy','sulk','cry'][s.pokeCount++];
         if(s.pokeCount===3){s.pokeCount=0;s.pokeLock=s.clock+10000;}
@@ -390,7 +390,7 @@
     }
     new root.MutationObserver(refresh).observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','style','data-gwen-expression']});
     doc.addEventListener('visibilitychange',()=>{doc.documentElement.classList.toggle('gwen-paused',doc.hidden);refresh();});
-    doc.addEventListener('gwenquietchange',refresh);media.addEventListener('change',refresh);root.addEventListener('resize',refresh);root.addEventListener('scroll',refresh,true);
+    media.addEventListener('change',refresh);root.addEventListener('resize',refresh);root.addEventListener('scroll',refresh,true);
     for(const type of ['pointerdown','pointermove','keydown','input'])doc.addEventListener(type,()=>{for(const s of states.values())s.input();},{passive:true});
     doc.addEventListener('keydown',e=>{if(e.repeat&&['Enter',' '].includes(e.key)&&e.target.closest('.gwen-poke'))e.preventDefault();});
     doc.addEventListener('click',e=>{const b=e.target.closest('.gwen-poke');if(b)states.get(b.querySelector('img'))?.poke();});

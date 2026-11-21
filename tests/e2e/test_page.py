@@ -151,7 +151,7 @@ def load_json(path):
 
 
 def seed(page, info=None, simauto="0", excl=None, extra=None):
-    """화면이 읽는 저장값(pn.*)을 첫 로드 전에 넣는다. simauto "0" = 「자동 확인 끄기」(내 정보 모드는 기본 자동 시뮬)"""
+    """화면이 읽는 저장값(pn.*)을 첫 로드 전에 넣는다. 옛 simauto "0"도 호환 검증용으로 유지함."""
     s = dict(extra or {})
     if info:
         s["pn.myinfo"] = json.dumps(load_json(info), ensure_ascii=False)
@@ -171,16 +171,19 @@ def wait_sim_done(page, parties=(1,), timeout=600000):
     page.wait_for_function(SIM_DONE_JS, arg=list(parties), timeout=timeout)
 
 
-def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", excl=None, setup=None, wait=True, raid_ui=False, season_bypass=True, has_touch=False):
+def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", excl=None, setup=None, wait=True, raid_ui=False, season_bypass=True, has_touch=False, manual_sim=None):
     """내 정보(기본: 로스터 전원 가상 계정)를 넣고 연다. 정보가 없으면 안내에서 표준 추천을 시작한다.
-    ?auto=1 = 버튼 없이 바로 계산(버튼 흐름은 test_press_to_compute). simauto "0" 이면 결과를 바로 보이고(판정 「계산 전」),
-    시뮬은 시험이 「시뮬로 확인」을 누를 때만 돈다."""
+    ?auto=1 = 버튼 없이 바로 계산(버튼 흐름은 test_press_to_compute).
+    수동 계산 시험은 자동 예약 함수만 대체함. 실제 자동 실행 검증은 manual_sim=False로 연다.
+    기존 호출의 simauto="0"은 수동 시험 예약 방식의 기본값으로만 사용하며 제품 저장값 동작과 무관함."""
     page = browser.new_page(viewport=viewport or {"width": 1280, "height": 900}, has_touch=has_touch)
     if os.environ.get('PN_E2E_LOW_MEMORY') == '1':
         # 실제 시뮬은 워커 2개로 제한해 전체 e2e의 메모리와 실행 시간을 함께 관리함.
         page.add_init_script("Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>3});Object.defineProperty(navigator,'deviceMemory',{get:()=>2});")
     attach(page, ctx)
     seed(page, info, simauto, excl)
+    if manual_sim if manual_sim is not None else simauto == "0":
+        page.add_init_script("document.addEventListener('DOMContentLoaded',()=>{simAutoOn=()=>SIMQ.auto||SIMQ.kick;},{once:true})")
     if not raid_ui:
         page.add_init_script("window.__legacyRaid = 1")   # 코스모 시즌 화면 대신 옛 스테이지 화면(보스별 추천 시험용)
     if setup:
@@ -500,23 +503,33 @@ def test_screen_stop_notice(browser, ctx):
 
 
 def test_sim_auto_and_override(browser, ctx):
-    """한 번 시뮬을 누르면 다음 스테이지부터 자동 확인, 시뮬 결과가 있으면 판정 배지가 시뮬 기준(title)으로 바뀜, 「자동 확인 끄기」"""
-    page = open_page(browser, ctx)
-    page.wait_for_selector('.party[data-party="1"] .qbox .qrow[data-key]')
-    page.click('.party[data-party="1"] button[data-sim="1"]')
-    wait_sim_done(page)
-    choose(page, "작전 (일반)", "SECTOR 1-2")
-    wait_sim_done(page)
-    auto = page.locator('.party[data-party="1"] .qsim').count()
-    titles = page.evaluate("() => [...document.querySelectorAll('.party[data-party=\"1\"] .mi-verdict .ux-help[data-help]')].map(e => e.dataset.help)")
-    off = page.locator('button[data-simauto="0"]').count()
-    if off:
-        page.click("#optbox > summary")
-        page.click('button[data-simauto="0"]')
-    flag = page.evaluate("() => localStorage.getItem('pn.simauto')")
+    from auto_calculation import fake_setup, drain
+    page = open_page(browser, ctx, info=SYNTH, simauto="0", manual_sim=False,
+                     setup=fake_setup, wait=False)
+    wait_myinfo(page)
+    assert page.evaluate("localStorage.getItem('pn.simauto')==='0'&&simAutoOn()")
+    assert page.locator('#sim-auto-off, [data-simauto], #gwen-quiet, #tab').count()==0
+    assert '모의 전투 자동 실행 꺼짐' not in page.locator('#option-chips').inner_text()
+    page.wait_for_function('autoJobs.length>0')
+    drain(page)
+    assert page.locator('.party[data-party="1"] .qsim').count()>0
+    titles=page.locator('.party[data-party="1"] .mi-verdict .ux-help[data-help]').evaluate_all('(xs)=>xs.map(e=>e.dataset.help)')
+    assert titles and all('95%' in t for t in titles), titles
+    page.select_option('#stage', index=2)
+    page.wait_for_function('autoJobs.some(j=>!j.finished&&!j.worker.stopped)')
+    drain(page)
+    assert page.locator('.party[data-party="1"] .qsim').count()>0
+    page.reload();wait_myinfo(page)
+    page.wait_for_function('autoJobs.length>0')
+    assert page.evaluate('simAutoOn()')
+    page.click('[data-simcancel]')
+    assert page.locator('[data-sim]').count()>0, 'retry action missing after cancellation'
+    page.locator('[data-sim]').first.click()
+    page.wait_for_function('autoJobs.some(j=>!j.worker.stopped)')
+    drain(page)
+    assert not ctx.errors, ctx.errors
     page.close()
-    ok = auto >= 1 and titles and all("95% 구간" in t for t in titles) and off == 1 and flag == "0"
-    return ok, "자동 시뮬 %d팀, 배지 기준 %s, 끄기 버튼 %d, 끈 뒤 저장값 %s" % (auto, titles[:3], off, flag)
+    return True, 'legacy off ignored; auto runs across stages/reload; cancel/retry retained; removed controls absent'
 
 
 def test_request_diagnostics(browser, ctx):
@@ -654,7 +667,7 @@ def test_break_skill_select(browser, ctx):
     restored = page.input_value(sel)
     fit = page.eval_on_selector(sel, "s => s.getBoundingClientRect().right <= innerWidth && parseFloat(getComputedStyle(s).fontSize) >= 16")
     page.evaluate("""() => {
-      simAuto(false); window.__bw=[];
+      SIMQ.auto=false; window.__bw=[];
       window.Worker=class {constructor(){window.__bw.push(this)} postMessage(req){this.req=req} terminate(){this.stopped=true}};
     }""")
     page.click('button[data-sim="1"]')
@@ -664,7 +677,7 @@ def test_break_skill_select(browser, ctx):
     options_ok = team['options']['break_skill'] == {'name': chosen, 'level': 5} and all('break_skill' in t['options'] for t in req['teams'])
     # 실행 중 선택 변경 후 이전 worker의 지연된 결과를 직접 배달해도 캐시에 넣지 않는다.
     # 시뮬 중에는 진행 화면만 보이므로 자동 확인을 끄고 다시 그려 결과 카드(.bsel)를 띄운다.
-    page.evaluate("() => {simAuto(false); run(true)}")
+    page.evaluate("() => {SIMQ.auto=false; run(true)}")
     page.click('.party[data-party="1"] .score-details > summary')
     page.select_option(sel, '')
     stale = page.evaluate("""() => {const w=window.__bw[0],before=Object.keys(SIMQ.res).length;
@@ -674,7 +687,7 @@ def test_break_skill_select(browser, ctx):
     none_req = page.evaluate("() => SIMQ.lastReq.req")
     none_ok = next(t for t in none_req['teams'] if t['key'] == team_key)['options']['break_skill'] is None
     # 그 팀을 맡은 작업자가 결과를 낸다(작업자가 모자라 아직 못 받았으면 앞 팀들을 먼저 끝낸다)
-    page.evaluate("""key => {simAuto(false);const live=()=>window.__bw.filter(w=>!w.stopped&&w._job!=null);
+    page.evaluate("""key => {SIMQ.auto=false;const live=()=>window.__bw.filter(w=>!w.stopped&&w._job!=null);
       for(let g=0;g<20&&!live().some(w=>w.req.teams[0].key===key);g++){const o=live()[0],r=o.req;
         o.onmessage({data:{type:'team',id:r.id,job:r.job,key:r.teams[0].key,result:{clear:0.4,ci:[0.3,0.5],n:100,bs:{name:null,uses:0,dmg:0,supported:false}}}});o.onmessage({data:{type:'done',id:r.id,job:r.job}})}
       const w=live().find(w=>w.req.teams[0].key===key);w.onmessage({data:{type:'team',id:w.req.id,job:w.req.job,key,
@@ -704,7 +717,7 @@ def test_break_skill_compare(browser, ctx):
     page.click(card + ' .score-details > summary')
     before = page.locator(card + ' .bcompare').count()
     setup = page.evaluate('''() => {
-      simAuto(false); window.PN_SIMQ.n=10; window.__breakRequests=[];
+      SIMQ.auto=false; window.PN_SIMQ.n=10; window.__breakRequests=[];
       const NativeWorker=window.Worker;
       window.Worker=class extends NativeWorker {
         postMessage(req,...args) {if(req.type==='run') window.__breakRequests.push(req);return super.postMessage(req,...args)}
@@ -761,7 +774,7 @@ def test_break_compare_cancel_after_team_change(browser, ctx):
     choose(page, '작전 (일반)', 'SECTOR 1-3')
     card = '.party[data-party="1"]'
     page.click(card + ' .score-details > summary')
-    page.evaluate('() => {simAuto(false); window.PN_SIMQ.n=400}')
+    page.evaluate('() => {SIMQ.auto=false; window.PN_SIMQ.n=400}')
     page.click(card + ' button[data-bcompare]')
     page.wait_for_selector(card + ' [data-k="breakstate"]')
     other = page.evaluate('''() => {const cur=document.querySelector('.party[data-party="1"]').dataset.team;
@@ -1237,7 +1250,7 @@ def test_share_link(browser, ctx):
 def test_sim_runs(browser, ctx):
     """Mock only Worker computation; real UI, request, result handling and cache signatures."""
     page = open_page(browser, ctx, viewport={'width': 390, 'height': 844})
-    page.evaluate('''() => {simAuto(false);window.requests=[];
+    page.evaluate('''() => {SIMQ.auto=false;window.requests=[];
       window.simWorkers=[];
       window.Worker=class {constructor(){simWorkers.push(this)} postMessage(req){requests.push(req);this.req=req} terminate(){this.stopped=true}};
       // 팀마다 따로 온다(대기열): 일하는 작업자마다 결과 + done, 남은 팀이 없을 때까지
@@ -1248,7 +1261,7 @@ def test_sim_runs(browser, ctx):
     assert page.locator('input[name="runs"]').count() == 0      # 시뮬은 100판으로 충분해서 판 수 선택(300판 정밀)을 없앴다
     page.click('button[data-sim="1"]')
     assert page.evaluate('() => requests.at(-1).n_runs') == 100
-    page.evaluate('() => {simAuto(false);completeSim()}')
+    page.evaluate('() => {SIMQ.auto=false;completeSim()}')
     assert page.locator('button[data-refine]').count() == 0
     assert page.evaluate('() => document.documentElement.scrollWidth<=innerWidth')
     page.screenshot(path=os.path.join(ctx.shots, 'share_runs_mobile.png'), full_page=True)
@@ -1624,6 +1637,8 @@ def test_stage_search(browser, ctx):
     out = []
     for vp in ({"width": 1280, "height": 900}, {"width": 390, "height": 844}):
         page = open_page(browser, ctx, viewport=vp)
+        assert page.locator('#tab').count() == 0
+        assert '섹터 / 지역' not in page.locator('#filters').inner_text()
         vis = page.locator("#q").is_visible() and not page.locator('#optbox').evaluate('e => e.open')
         page.select_option('#content', value=page.evaluate("String(contents.findIndex(c=>c.key==='clo'))"))
         settle(page)
@@ -1636,6 +1651,22 @@ def test_stage_search(browser, ctx):
         page.fill("#q", "")
         settle(page)
         restored = page.evaluate("cur.length === contents.find(c => c.key === 'clo').stages.length")
+        duplicates = page.locator('#stage option').all_text_contents()
+        assert any('달 회랑 · FLOOR 100' in s for s in duplicates)
+        assert any('태양 회랑 · FLOOR 100' in s for s in duplicates)
+        # 같은 이름의 다른 회랑도 공유 고유값으로 열리고 새로고침 뒤 유지됨.
+        for corridor in ['달 회랑', '태양 회랑']:
+            page.fill('#q', corridor + ' 100')
+            page.select_option('#stage', value=page.evaluate("String(cur.findIndex(s=>s.name==='FLOOR 100'))"))
+            url = page.evaluate('shareUrl()')
+            page.goto(url)
+            wait_myinfo(page)
+            assert page.evaluate("cur[$('stage').value].tab") == corridor
+            assert page.evaluate("cur[$('stage').value].name") == 'FLOOR 100'
+            assert page.evaluate("cur.length===contents[$('content').value].stages.length")
+            page.reload(); wait_myinfo(page)
+            assert page.evaluate("cur[$('stage').value].tab") == corridor
+            assert page.locator('#tab').count() == 0
         page.close()
         out.append((vis, multi, restored, len(opts)))
     # 스테이지가 적은 콘텐츠(길드 방어전 등)는 검색창을 숨긴다
@@ -2210,7 +2241,8 @@ def test_assumed_corridor(browser, ctx):
     page.click('#optbox > summary')
     if not page.locator('#filters').evaluate('e=>e.open'):
         page.click('#filters > summary')
-    page.select_option('#tab', label='달 회랑')
+    assert page.locator('#tab').count() == 0
+    page.fill('#q', '달 100')
     page.click('#optbox > summary')
     settle(page)
     page.select_option('#stage', value=page.evaluate("String(cur.findIndex(s=>s.name==='FLOOR 100'))"))

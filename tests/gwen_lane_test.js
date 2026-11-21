@@ -9,7 +9,7 @@ function motion(g){const equal=(a,b)=>assert.deepEqual(JSON.parse(JSON.stringify
   const r=g.travel(20,400,500,80,{run:true,reduced,mobile});assert(r.ms<=600);assert(r.x<=164);
   if(reduced)equal(r,{x:20,ms:0});else{assert.equal(r.x,mobile?92:164);assert.equal(r.ms,600);}
  }equal(g.travel(400,9999,500,80,{run:true}),{x:420,ms:1000/12});
- equal(g.travel(20,200,500,80,{quiet:true}),{x:20,ms:0});}
+ assert(g.travel(20,200,500,80,{quiet:true}).ms>0);}
 cooldown(G);priority(G);motion(G);
 function playground(g){
  const p=g.playground(()=>.5),history=[];
@@ -30,7 +30,7 @@ for(const [key,lines] of Object.entries(G.SAY)){assert(lines.length>=1&&lines.le
 const p=G.policy(()=>0),history=[];for(let i=0;i<20;i++){const a=p.pick(G.CHOICES.high);assert(!history.slice(-2).includes(a));history.push(a);}
 const clicks=G.policy(()=>0);assert.equal(clicks.poke(0).art,'shy');assert.equal(clicks.poke(100).art,'sulk');assert.equal(clicks.poke(200).art,'cry');
 assert.equal(clicks.poke(10199),null);assert.equal(clicks.poke(10200).art,'shy');
-const q=G.policy();assert.equal(q.event('put',0,{quiet:true}),null);assert(q.event('work',0,{quiet:true,level:'work'}));
+const q=G.policy();assert(q.event('put',0,{quiet:true}));assert(q.event('work',0,{quiet:true,level:'work'}));
 // st_reach 는 high·better 후보에 포함
 assert(G.CHOICES.high.includes('st_reach'),'st_reach in high candidates');
 assert(G.CHOICES.better.includes('st_reach'),'st_reach in better candidates');
@@ -60,7 +60,7 @@ const healthy={module:{exports:{}},require:p=>require(p.startsWith('./')?'../'+p
 for(const [name,from,to,check] of [
  ['cooldown','now-s.lastReaction<4000','false',g=>{const p=g.policy();p.event('put',0);p.state.lastSpeech=-Infinity;assert(!p.event('put',10).speech)}],
  ['priority','priority<s.priority','priority>s.priority',priority],
- ['reduced-motion','if(reduced||quiet||home&&mobile)','if(quiet||home&&mobile)',motion],
+ ['reduced-motion','if(reduced||home&&mobile)','if(home&&mobile)',motion],
  ['lane-boundary','Math.min(max,target)','target',motion],
 ]){assert(source.includes(from),name);const c={module:{exports:{}},require:p=>require(p.startsWith('./')?'../'+p.slice(2):p)};vm.runInNewContext(source.replace(from,to),c);
  assert.throws(()=>check(c.module.exports),assert.AssertionError,name);console.log('mutation caught:',name);}

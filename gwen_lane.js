@@ -27,10 +27,9 @@
     const pick=candidates=>{let pool=candidates.filter(x=>!s.history.slice(-2).includes(x));
       if(!pool.length)pool=candidates.filter(x=>x!==s.history.at(-1));if(!pool.length)pool=candidates;
       const art=pool[Math.floor(random()*pool.length)];s.history.push(art);s.history=s.history.slice(-2);return art;};
-    function event(kind,now,{level='edit',candidates=CHOICES[kind],duration=1500,quiet=false,silent=false,id=null}={}){
+    function event(kind,now,{level='edit',candidates=CHOICES[kind],duration=1500,silent=false,id=null}={}){
       const priority=PRIORITY[level];
       if(priority<s.priority&&now<s.until)return null;
-      if(quiet&&!['work','result','error'].includes(level))return null;
       if(level==='result'&&id!=null&&s.reports.has(id))return null;
       const cooled=level==='edit'&&now-s.lastReaction<4000;
       const speech=!silent&&!cooled&&now-s.lastSpeech>=6000;
@@ -39,8 +38,8 @@
       if(level==='result'&&id!=null){s.reports.set(id,art);if(s.reports.size>128)s.reports.delete(s.reports.keys().next().value);}
       return {kind,art,speech,priority};
     }
-    function poke(now,portrait=false,quiet=false){
-      if(now<s.locked||quiet||s.priority>=PRIORITY.work&&now<s.until)return null;
+    function poke(now,portrait=false){
+      if(now<s.locked||s.priority>=PRIORITY.work&&now<s.until)return null;
       if(now-s.lastClick>=10000)s.clicks=0;s.lastClick=now;
       const kind=['shy','sulk','cry'][s.clicks++];
       if(s.clicks===3){s.locked=now+10000;s.clicks=0;}
@@ -48,9 +47,9 @@
     }
     return {state:s,pick,event,poke};
   }
-  function travel(from,target,width,size,{run=false,mobile=false,reduced=false,quiet=false,home=false}={}){
+  function travel(from,target,width,size,{run=false,mobile=false,reduced=false,home=false}={}){
     const max=Math.max(0,width-size),end=Math.max(0,Math.min(max,target));
-    if(reduced||quiet||home&&mobile)return {x:Math.min(max,Math.max(0,from)),ms:0};
+    if(reduced||home&&mobile)return {x:Math.min(max,Math.max(0,from)),ms:0};
     const speed=(run?240:60)*(mobile?.5:1),distance=Math.min(Math.abs(end-from),speed*.6);
     return {x:Math.max(0,Math.min(max,from+Math.sign(end-from)*distance)),ms:distance/speed*1000};
   }
@@ -88,12 +87,10 @@
     if(controller||!root.document)return controller;
     const doc=root.document,mq=root.matchMedia('(prefers-reduced-motion: reduce)'),p=policy(),play=playground(),resultArts=new Map();
     let actor=null,lane=null,current={},clock=0,last=performance.now(),idleAt=0,vacant=false,phaseKey='',cycleAt=0,
-      restoreAt=0,bubbleUntil=0,speechShownAt=-Infinity,move=null,landing=0,pending=null,x=0,quiet=false,art='',lastEvent='',sleeping=false,workRestAt=0;
+      restoreAt=0,bubbleUntil=0,speechShownAt=-Infinity,move=null,landing=0,pending=null,x=0,art='',lastEvent='',sleeping=false,workRestAt=0;
     let playAt=play.delay(),playing=null,imageRequest=0;
     const stageStates=new Map();let activeMode=null;
     function resetPlay(){playing=null;playAt=clock+play.delay();}
-    try{quiet=JSON.parse(localStorage.getItem('pn.gwen.quiet')||'false')===true;}catch{}
-    doc.documentElement.dataset.gwenQuiet=String(quiet);
     const pickBanner=P.bannerPicker();
     let bannerKey='';
     function currentBanner(){return stages.get(current.mode)?.banner||null;}
@@ -113,7 +110,7 @@
     function ensure(){if(actor)return;actor=doc.createElement('div');actor.className='gwen-lane-actor';actor.dataset.gwen='lane';
       actor.innerHTML='<span class="gwen-lane-speech" aria-hidden="true"></span><button type="button" class="gwen-lane-poke" aria-label="그웬 부르기"></button><span class="gwen-announcement" role="status" aria-live="polite"></span>';
       actor.querySelector('button').addEventListener('click',()=>{
-        const e=p.poke(clock,lane?.dataset.portrait==='true',quiet);if(e){resetPlay();cancelMove();display(e);restoreAt=clock+1500;}
+        const e=p.poke(clock,lane?.dataset.portrait==='true');if(e){resetPlay();cancelMove();display(e);restoreAt=clock+1500;}
       });
     }
     function visible(){if(!actor||!lane||doc.hidden||!actor.isConnected)return false;
@@ -139,7 +136,7 @@
         bubble.style.left=Math.max(half-x,Math.min(actor.offsetWidth/2,lane.clientWidth-half-x))+'px';}}
     function display(e){if(!e)return;lastEvent=e.kind;image(e.art);actor.dataset.event=e.kind;actor.dataset.priority=String(e.priority);
       const bubble=actor.querySelector('.gwen-lane-speech');
-      if(e.speech&&!quiet&&clock-speechShownAt>=6000){const lines=SAY[e.kind]||SAY.work;bubble.textContent=lines[Math.floor(Math.random()*lines.length)];bubbleUntil=clock+2500;speechShownAt=clock;p.state.lastSpeech=clock;}
+      if(e.speech&&clock-speechShownAt>=6000){const lines=SAY[e.kind]||SAY.work;bubble.textContent=lines[Math.floor(Math.random()*lines.length)];bubbleUntil=clock+2500;speechShownAt=clock;p.state.lastSpeech=clock;}
       else bubbleUntil=0;
       bubble.hidden=clock>=bubbleUntil;positionSpeech();}
     function moveTo(target,{run=false,reaction=null,adjust=true}={}){
@@ -148,7 +145,7 @@
       if(mobile&&adjust)target=x+(target-x)*.5;
       const stage=stages.get(current.mode);
       const isHome=stage?.board===lane&&current.mode==='home';
-      const step=travel(x,target,lane.clientWidth,size,{run,mobile,reduced:mq.matches,quiet,home:isHome});
+      const step=travel(x,target,lane.clientWidth,size,{run,mobile,reduced:mq.matches,home:isHome});
       if(!step.ms){if(reaction)display(mq.matches&&reaction.art==='jump'?{...reaction,art:'ready'}:reaction);return;}
       actor.querySelector('.gwen-lane-speech').hidden=true;image(run?'run':'walk');actor.dataset.moving='true';
       actor.querySelector('button').style.transform=target<x?'scaleX(-1)':'none';
@@ -156,7 +153,7 @@
       const animation=actor.animate([{transform:`translateX(${from}px)`},{transform:`translateX(${step.x}px)`}],{duration:step.ms,easing:'linear',fill:'forwards'});
       move={animation,from,to:step.x,ms:step.ms,target,run};
     }
-    function request(kind,opts={}){const e=p.event(kind,clock,{quiet,...opts});if(!e)return false;
+    function request(kind,opts={}){const e=p.event(kind,clock,opts);if(!e)return false;
       resetPlay();
       if(opts.target!=null)moveTo(opts.target,{run:opts.run,reaction:e});else{cancelMove();display(e);}
       if(opts.level==='edit'||!opts.level)restoreAt=clock+1500+(move?move.ms+150:0);return true;}
@@ -194,7 +191,7 @@
       cycleAt=clock+(mq.matches?20000:9000);restoreAt=0;resetPlay();
     }
     function progressMove(){
-      if(current.phase!=='work'||!visible()||quiet||mq.matches||move||landing||restoreAt||clock<workRestAt)return;
+      if(current.phase!=='work'||!visible()||mq.matches||move||landing||restoreAt||clock<workRestAt)return;
       if(!Number.isFinite(current.progress))return;
       const target=Math.max(0,Math.min(1,current.progress))*Math.max(0,lane.clientWidth-actor.offsetWidth);
       if(target>x+.5)moveTo(target,{reaction:{kind:'work',art:p.pick(CHOICES.work),speech:false,priority:PRIORITY.work},adjust:false});
@@ -227,10 +224,10 @@
     function edit(action,slot){idleAt=clock;vacant=false;sleeping=false;
       if(playing){cancelMove();resetPlay();}
       const stage=stages.get(current.mode);
-      if(current.mode==='direct'&&current.phase==='work'&&action==='skip'&&!quiet){
+      if(current.mode==='direct'&&current.phase==='work'&&action==='skip'){
         if(stage?.board&&setLane(stage.board)){request('skip',{level:'work',duration:1500});restoreAt=clock+1500;}return;
       }
-      if(current.mode!=='direct'||current.phase==='work'||current.phase==='error'||quiet)return;
+      if(current.mode!=='direct'||current.phase==='work'||current.phase==='error')return;
       if(p.state.priority>=PRIORITY.result&&clock<p.state.until)return;
       if(!stage?.board||!setLane(stage.board))return;lane.dataset.portrait='false';
       const kind=action==='put'&&current.count===4?'complete':({put:'put',remove:'remove',swap:'swap',leader:'leader',grown:'grown',withReco:'withReco',withGrowth:'withGrowth',skip:'skip',brk:'brk',arrange:'swap',clear:'empty',undo:'swap',focus:'point'}[action]||'empty');
@@ -241,7 +238,7 @@
     function input(e){if(!visible())return;idleAt=clock;vacant=false;
       if(playing){cancelMove();playing=null;image('ready');}resetPlay();
       if(sleeping){sleeping=false;request('wake',{level:'idle'});restoreAt=clock+1500;}
-      const choice=e.target?.closest?.('[data-pn-choice]');if(current.mode==='home'&&choice&&!quiet){
+      const choice=e.target?.closest?.('[data-pn-choice]');if(current.mode==='home'&&choice){
         const direction=choice.dataset.pnChoice==='direct';actor.querySelector('button').style.transform=direction?'none':'scaleX(-1)';request('point',{candidates:['point']});}
     }
     function tick(){const now=performance.now(),on=visible(),delta=Math.max(0,now-last);last=now;
@@ -262,11 +259,11 @@
       }
       progressMove();
       const stage=stages.get(current.mode);
-      if(!['work','error','result'].includes(current.phase)&&!quiet){
+      if(!['work','error','result'].includes(current.phase)){
         if(!sleeping&&clock-idleAt>=60000){sleeping=true;if(stage?.board){setLane(stage.board);lane.dataset.portrait='false';}request('doze',{level:'idle',target:0});}
         else if(!vacant&&!sleeping&&current.mode==='direct'&&current.count<4&&clock-idleAt>=20000){vacant=true;request('vacant',{level:'idle'});}
       }
-      if(current.mode==='direct'&&!['work','error','result'].includes(current.phase)&&!mq.matches&&!quiet&&!sleeping){
+      if(current.mode==='direct'&&!['work','error','result'].includes(current.phase)&&!mq.matches&&!sleeping){
         if(playing?.until&&clock>=playing.until){playing=null;image('ready');playAt=clock+play.delay();}
         if(!playing&&!move&&!landing&&!restoreAt&&clock>=playAt&&clock>=p.state.until){
           if(stage?.board)setLane(stage.board);lane.dataset.portrait='false';
@@ -283,12 +280,8 @@
     root.addEventListener('scroll',()=>{if(!visible())move?.animation.pause();},{passive:true,capture:true});
     root.addEventListener('resize',()=>{cancelMove();resetPlay();if(lane){x=Math.min(x,Math.max(0,lane.clientWidth-actor.offsetWidth));actor.style.transform=`translateX(${x}px)`;}sync(current);});
     mq.addEventListener('change',()=>{cancelMove();resetPlay();cycleAt=clock+(mq.matches?20000:9000);syncBanner();});
-    const toggle=doc.getElementById('gwen-quiet');if(toggle){toggle.checked=quiet;toggle.addEventListener('change',()=>{
-      quiet=toggle.checked;try{localStorage.setItem('pn.gwen.quiet',JSON.stringify(quiet));}catch{}
-      doc.documentElement.dataset.gwenQuiet=String(quiet);cancelMove();bubbleUntil=0;settle();doc.dispatchEvent(new Event('gwenquietchange'));
-    });}
     root.setInterval(tick,50);
-    controller={sync,activate,rebind,edit,policy:p,get state(){return {clock,x,moving:!!move,art,quiet,mode:current.mode,phase:current.phase,lane:lane?.id,playing:!!playing,playAt};}};return controller;
+    controller={sync,activate,rebind,edit,policy:p,get state(){return {clock,x,moving:!!move,art,mode:current.mode,phase:current.phase,lane:lane?.id,playing:!!playing,playAt};}};return controller;
   }
   // One presentation component owns all stage DOM. Callers provide layout slots only.
   const components=new Map();

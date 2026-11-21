@@ -199,7 +199,7 @@ select,input[type=text],input[type=search],input[type=number]{background:rgba(6,
 /* 필요한 편성 정보부터: 카드 → 기믹 → 브레이크 → 접힌 보조 정보 */
 .input-row{gap:8px}.input-row>label,.filterbody>label{flex:1;min-width:0}
 .input-row select,.input-row input{width:100%;min-width:0}.filters,.filterbody{display:contents}.filters::details-content{display:contents}.filters>summary{display:none}
-.input-row>label:first-child{order:0}.tab-filter{order:1}.search-filter{order:2}.stage-filter{order:3;flex:1.5!important}.search-filter[hidden]{display:none!important}.search-filter input{box-sizing:border-box;min-height:40px}.filterbody>label:last-child{order:4}
+.input-row>label:first-child{order:0}.search-filter{order:2}.stage-filter{order:3;flex:1.5!important}.search-filter[hidden]{display:none!important}.search-filter input{box-sizing:border-box;min-height:40px}.filterbody>label:last-child{order:4}
 #dbtn{position:static;order:5;flex:none;border-radius:6px;padding:7px 10px;box-shadow:none;line-height:1.5;white-space:nowrap}
 #dbtn span{display:inline;margin:0;font-size:inherit;opacity:1}.optbox{margin-top:6px}
 .qbox{padding:0;border:0;background:transparent;margin:0}.qrow{padding:4px 0}.qrow .qn{min-width:28px}.qrow .face{width:34px;height:34px}.qrow .qt{min-width:0;flex:1 1 240px}.qrow .faces{flex:none}
@@ -308,7 +308,6 @@ summary{padding:9px 4px}
  <div class="row input-row">
   <label><span>콘텐츠 <span id="season-chip" class="tag" hidden></span></span><select id="content"></select></label>
   <details id="filters" class="filters" open><summary>필터</summary><div class="filterbody">
-  <label class="tab-filter">섹터 / 지역<select id="tab"></select></label>
 
 
   <label hidden>육성<select id="grow"><option value="myinfo" disabled>내 정보</option><option value="1" selected>평균 (권장 100%)</option><option value="0.8">덜 키움 (권장의 80%)</option><option value="1.25">넉넉히 (권장의 125%)</option><option value="manual">내 전투력</option></select></label>
@@ -320,8 +319,7 @@ summary{padding:9px 4px}
  </div>
 
  <details class="optbox ux-menu" id="optbox"><summary aria-label="옵션·공유 메뉴">⋯</summary>
-  <label class="gwen-quiet-option"><input type="checkbox" id="gwen-quiet"> 그웬 반응 줄이기</label>
-  <button type="button" class="sec" id="sim-auto-off" data-simauto="0">모의 전투 자동 실행 끄기</button><input type="number" id="mypow" hidden><div id="powinfo" class="powinfo" hidden></div>
+  <input type="number" id="mypow" hidden><div id="powinfo" class="powinfo" hidden></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됨.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성<select id="mmode"><option value="">균형</option><option value="avoid">역상성 회피</option></select></label></div>
   <div id="goalbox" style="margin-top:10px" hidden><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px" title="장비 탐사·격전 의뢰는 60턴 안에 이겨야 3별이 되어 소탕이 열림. 모의 전투의 턴 수는 실제와 차이가 있을 수 있음.">3별 목표<select id="goal"><option value="60">60턴 안에 클리어 (3별·소탕)</option><option value="0">클리어만 하면 됨 (턴 무관)</option></select></label></div>
@@ -648,15 +646,14 @@ $("cosmo-search").addEventListener("click",e=>{const b=e.target.closest("button[
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.title||c.name)}</option>`).join("");
 const SEARCH_MIN=20;   // 스테이지가 이보다 적으면 검색창을 숨긴다(길드 방어전 등 — 목록이 짧아 검색이 필요 없음)
 const raidUi=c=>!!c.raid&&!window.__legacyRaid;   // 시즌제 화면(코스모): 섹터·스테이지 선택과 보스별 추천을 숨김. 시험만 __legacyRaid 로 옛 화면을 씀
-function tabsOf(c){const m=new Map();c.stages.forEach(s=>{if(!m.has(s.tab))m.set(s.tab,s.tabLabel)});return [...m]}
 function refreshTabs(){const c=contents[$("content").value];$("goalbox").hidden=!STAR_TURNS[c.key];
  $("filters").hidden=raidUi(c);document.querySelector(".stage-filter").hidden=raidUi(c);document.querySelector(".search-filter").hidden=raidUi(c)||c.stages.length<=SEARCH_MIN;if($("q").hidden||document.querySelector(".search-filter").hidden)$("q").value="";
- $("tab").innerHTML=`<option value="">(전체)</option>`+tabsOf(c).map(([t,l])=>`<option value="${esc(t)}">${esc(l)}</option>`).join("");refreshStages()}
+ refreshStages()}
 function refreshStages(){
- const c=contents[$("content").value],t=$("tab").value,qs=$("q").value.trim().toLowerCase().split(/\s+/).filter(Boolean);   // 띄어 쓴 낱말이 모두 들어간 스테이지(예: «달 36»). 대소문자 무시
- cur=c.stages.filter(s=>{if(t&&s.tab!==t)return false;if(!qs.length)return true;const h=(s.tabLabel+" "+(s.label||"")+" "+s.name).toLowerCase();return qs.every(w=>h.includes(w))});
+ const c=contents[$("content").value],qs=$("q").value.trim().toLowerCase().split(/\s+/).filter(Boolean);   // 띄어 쓴 낱말이 모두 들어간 스테이지(예: «달 36»). 대소문자 무시
+ cur=c.stages.filter(s=>{if(!qs.length)return true;const h=(s.tabLabel+" "+(s.label||"")+" "+s.name).toLowerCase();return qs.every(w=>h.includes(w))});
  {const nums=qs.filter(w=>/^\d+$/.test(w));if(nums.length){const ex=s=>{const ns=(s.tabLabel+" "+(s.label||"")+" "+s.name).match(/\d+/g)||[];return nums.every(w=>ns.includes(w))};const a=cur.filter(ex);cur=a.concat(cur.filter(s=>!a.includes(s)))}}   // 숫자는 딱 맞는 것 먼저(36 → FLOOR 36 이 136 보다 앞)
- const nameN=new Map();cur.forEach(s=>{const k=s.label||s.name;nameN.set(k,(nameN.get(k)||0)+1)});   // 섹터 «전체»에서 같은 이름이 여러 회랑에 겹치면(성간·태양·달·별 FLOOR N) 회랑 이름을 앞에 붙인다
+ const nameN=new Map();cur.forEach(s=>{const k=s.label||s.name;nameN.set(k,(nameN.get(k)||0)+1)});   // 같은 이름이 여러 회랑에 겹치면(성간·태양·달·별 FLOOR N) 회랑 이름을 앞에 붙인다
  $("stage").innerHTML=cur.map((s,i)=>`<option value="${i}">${nameN.get(s.label||s.name)>1&&s.tabLabel?esc(s.tabLabel)+" · ":""}${esc(s.label||s.name)}${s.lv?" Lv"+s.lv:""}</option>`).join("");
  showInfo();showPow();if(window._ready)rerun()}
 function elText(w){return Object.entries(w).sort((a,b)=>b[1]-a[1]).map(([e,n])=>`${EL[e]} ${n}`).join(" / ")}
@@ -664,7 +661,7 @@ function showPow(){const s=cur&&cur[$("stage").value],my=$("grow").value==="manu
  const pp=s&&powPen(my,s.rp);el.innerHTML=pp?`<span class="${pp.ratio<70?"bad2":pp.a<1?"warn":"ok"}">내 전투력 ${my.toLocaleString()} = 권장의 ${pp.ratio.toFixed(1)}% → 아군 피해 ×${+pp.a.toFixed(3)} · 적 ×${+pp.b.toFixed(3)}</span>`:""}
 function sbText(s){return s&&s.sb&&s.sb.length?` · <span class="mut">시즌 보너스(${esc(s.sbn)}): ${s.sb.map(b=>esc(b.cond)+" "+esc(b.text)).join(" / ")}</span>`:""}
 function showInfo(){const s=cur&&cur[$("stage").value];const rsE=s&&(CFG.restrict[contents[$("content").value].name]||{})[s.tab];$("stinfo").innerHTML=s?(rsE?`<b style="color:var(--acc)">※ ${EL[rsE]} 속성 구원자만 편성 가능</b> · `:"")+`${esc(s.tabLabel)} · ${esc(s.label||s.name)} · 적 ${s.n}체 · 속성 ${elText(s.w)} (보스 2배 가중) · 광역 ${Math.round(s.aoe*100)}% · 디펜더 ${Math.round(s.def*100)}%`+sbText(s)+``:"해당 스테이지 없음";renderGuild();renderCosmoSearch()}
-$("content").onchange=()=>{placementCancelInput();refreshTabs()};$("tab").onchange=()=>{placementCancelInput();refreshStages()};$("q").oninput=refreshStages;$("stage").onchange=()=>{placementCancelInput();showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);rerun()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);manualSelect();showPow();rerun()};$("grow").onchange=()=>{miSelect();rerun()};$("goal").onchange=()=>{LS.set("goal",$("goal").value);rerun()};$("rk").onchange=()=>{LS.set("rk",$("rk").value);rerun()};
+$("content").onchange=()=>{placementCancelInput();refreshTabs()};$("q").oninput=refreshStages;$("stage").onchange=()=>{placementCancelInput();showInfo();showPow();rerun()};$("mmode").onchange=()=>{MM=$("mmode").value;LS.set("mm",MM);rerun()};$("mypow").oninput=()=>{LS.set("pow",$("mypow").value);manualSelect();showPow();rerun()};$("grow").onchange=()=>{miSelect();rerun()};$("goal").onchange=()=>{LS.set("goal",$("goal").value);rerun()};$("rk").onchange=()=>{LS.set("rk",$("rk").value);rerun()};
 
 function tile(s){return `<label class="tile" data-n="${esc(s.name+" "+s.sub)}"><input type="checkbox" data-k="${esc(s.key)}" checked><span class="tc">
  <span class="fc">${face(s)}${dia(s,34)}</span><span class="tn">${esc(s.name)}</span><span class="ts">${esc(s.sub)}</span>${kindTxt(s)}</span></label>`}
@@ -940,10 +937,9 @@ function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+t
 // 안전장치(codex 상담): 제한 시간·취소(작업자 종료), 실패해도 빠른 계산은 그대로, 결과는 추정치+95% 구간, 입력이 바뀌면 이전 결과 무효
 const SIMQ={w:null,busy:null,res:{},scr:{},screening:false,msg:"",err:"",n:100,seed:1,LOAD_MS:180000,RUN_MS:240000,more:{},
  auto:(()=>{try{return localStorage.getItem("pn.simauto")==="1"}catch(e){return false}})()};
-$("sim-auto-off").onclick=()=>{simAuto(false);SIMQ.kick=false;run(true)};
-function simAuto(on){SIMQ.auto=on;try{localStorage.setItem("pn.simauto",on?"1":"0")}catch(e){}}
-// 내 정보 모드는 정확도가 중요해서 시뮬을 기본 자동으로 돌린다(사용자가 「자동 확인 끄기」를 누르면 그 선택을 따른다)
-function simAutoOn(){if(SIMQ.auto||SIMQ.kick)return true;try{return miMode()&&localStorage.getItem("pn.simauto")!=="0"}catch(e){return false}}
+function simAuto(){SIMQ.auto=true;try{localStorage.setItem("pn.simauto","1")}catch(e){}}
+// 내 정보 모드는 항상 자동 확인함. 옛 pn.simauto="0" 저장값은 무시함.
+function simAutoOn(){return miMode()||SIMQ.auto||SIMQ.kick}
 // 시뮬 공통 옵션: 표준 육성(P5 build) 위에 공·생·방만 육성 가정 배수로 바꾸고, 역보정은 엔진이 스탯으로 전투력을 계산해 적용
 const SIMOPT={build:"standard",rules_override:{power_penalty:"model"}};
 const STAR_TURNS={equip:60,clash:60};   // 3별 미션 «N턴 이내 승리»(BMT_LIMIT_TURN, 표 BATTLE_TEMPLET_NORMAL: 장비 탐사 60곳·격전 의뢰 SS_EVENT_CLASH 18곳 모두 65·60턴). 3별이 돼야 소탕이 열림
@@ -1146,7 +1142,6 @@ $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-sim]
  const be=e.target.closest("button[data-bequip]");if(be){breakEquip(be.dataset.bkey,be.dataset.bequip,true);return}
  const mo=e.target.closest("button[data-more]");if(mo){const st=cur&&cur[$("stage").value],p=+mo.dataset.more,k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run();simStart(p);return}
  const sm=e.target.closest("button[data-scrmore]");if(sm){simAuto(true);if(simScreen(+sm.dataset.scrmore,true))run();return}
- if(e.target.closest("button[data-simauto]")){simAuto(false);run();return}
  if(e.target.closest("button[data-scrstop]")){scrStop();return}
  if(e.target.closest("button[data-simcancel]"))simStop("취소함",true)});
 $("out").addEventListener("change",e=>{const s=e.target.closest("select.bsel");if(!s)return;
@@ -1405,7 +1400,7 @@ function syncBrk(){const lv=MI.info?MyInfoImport.mapBreak(MI.info):null;MI.brkLv
  const n=$("brk-note");if(n)n.textContent=lv?"내 정보 기준":"직접 선택";
  pruneBreakSel()}
 function renderChip(){const e=$("mi-chip");if(!e)return;const i=MI.info;e.classList.toggle("none",!i);
- e.dataset.state=i?"loaded":"empty";e.innerHTML=i?`${MI.shared?"공유받은 ":""}<b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(5,10).replace("-","/"))} 갱신`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"";document.querySelector(".input-panel").hidden=!$("mi-panel").hidden;$("option-chips").innerHTML=[rkOf(contents[$("content").value]?.key)?`재점화 ${$("rk").value}단계`:"",MM==="avoid"?"불리한 속성 피하기":"",!simAutoOn()?"모의 전투 자동 실행 꺼짐":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("");
+ e.dataset.state=i?"loaded":"empty";e.innerHTML=i?`${MI.shared?"공유받은 ":""}<b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(5,10).replace("-","/"))} 갱신`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"";document.querySelector(".input-panel").hidden=!$("mi-panel").hidden;$("option-chips").innerHTML=[rkOf(contents[$("content").value]?.key)?`재점화 ${$("rk").value}단계`:"",MM==="avoid"?"불리한 속성 피하기":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("");
  $("mi-open-import").textContent=i?"새로 불러오기(내 정보)":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i;$("share-link").hidden=false}
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b))}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
@@ -1573,7 +1568,7 @@ $("share-link").onclick=async()=>{const b=$("share-link"),url=await shareUrlMi()
 function applyShare(){
  if(SHARE.c){$("content").value=String(contents.findIndex(c=>c.key===SHARE.c));refreshTabs();
   const stage=contents[$("content").value].stages.find(s=>s.tab+"|"+s.name===SHARE.s);
-  if(stage){$("tab").value=stage.tab;refreshStages();$("stage").value=String(cur.indexOf(stage))}}
+  if(stage){$("q").value="";refreshStages();$("stage").value=String(cur.indexOf(stage))}}
  if(SHARE.g&&SHARE.g!=="myinfo")SHARE.oldGrow=true;   // 옛 링크의 육성·전투력(g/p)은 쓰지 않는다
  if(SHARE.rk!=null)$("rk").value=String(SHARE.rk);
  for(const key of ["b","b2"]){const name=SHARE[key];if(name)document.querySelectorAll("#brk input").forEach(x=>{if(x.dataset.b===name)x.checked=true})}

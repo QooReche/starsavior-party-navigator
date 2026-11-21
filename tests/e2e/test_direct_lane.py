@@ -118,12 +118,10 @@ def contract(browser, base, width):
     p.clock.run_for(8000)
     assert not state(p)['moving'] and not state(p)['playing'] and state(p)['x']==x
     p.emulate_media(reduced_motion='no-preference')
-    p.locator('#optbox > summary').click();p.locator('#gwen-quiet').check();shown(p)
-    frozen=state(p);p.clock.run_for(10000)
-    assert not state(p)['moving'] and state(p)['x']==frozen['x']
-    still(p)
-    assert p.locator('.gwen-lane-actor').is_visible()
-    p.locator('#gwen-quiet').uncheck()
+    assert p.locator('#gwen-quiet').count()==0
+    p.evaluate("localStorage.setItem('pn.gwen.quiet','true')")
+    shown(p);p.clock.run_for(12000)
+    assert state(p)['moving'] or state(p)['playing'], 'legacy quiet setting stopped normal motion'
     p.evaluate('window.holdDirect=true;void directRun()')
     for _ in range(30):
         advance(p,100)

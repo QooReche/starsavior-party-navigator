@@ -27,19 +27,23 @@ const fs=require('node:fs'),vm=require('node:vm');
 const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
 const section=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a)));
 function restore(query,info=null){
-  const els={content:{value:'0'},tab:{value:''},stage:{value:'0'},grow:{value:'0.8'},mypow:{value:'77777'},rk:{value:'5'}};
+  const els={content:{value:'0'},q:{value:'no-match'},stage:{value:'0'},grow:{value:'0.8'},mypow:{value:'77777'},rk:{value:'5'}};
   const owned=breaks.map(b=>({dataset:{b},checked:false}));
   const ctx=vm.createContext({SHARE:parse(query),contents,MI:{info},$:id=>{if(!(id in els))throw Error('없는 요소: '+id);return els[id]},
     document:{querySelectorAll:()=>owned},showInfo(){},showPow(){},
     LS:{set(){throw Error('URL restore must not write preferences')}},
-    refreshTabs(){els.tab.value='';ctx.cur=contents[+els.content.value].stages},
-    refreshStages(){ctx.cur=contents[+els.content.value].stages.filter(s=>s.tab===els.tab.value)}});
+    refreshTabs(){ctx.refreshStages()},
+    refreshStages(){ctx.cur=contents[+els.content.value].stages.filter(s=>(s.tab+' '+s.name).includes(els.q.value))}});
   vm.runInContext(section('function applyShare(){','{const gv=LS.get("grow.v2")'),ctx);
   vm.runInContext('applyShare()',ctx);
   return {els,ctx,owned};
 }
 const restored=restore('?c=cosmo&s=a%7C길레+2단계&g=manual&p=123456&m=manual&rk=3&b=스타피어서');
 assert.equal(restored.els.content.value,'1');assert.equal(restored.ctx.cur[+restored.els.stage.value].name,'길레 2단계');
+assert.equal(restored.els.q.value,'');assert(!('tab' in restored.els));
+const later=restore('?c=op&s=37%7C37-3');
+assert.equal(later.ctx.cur.length,contents[0].stages.length);
+assert.equal(later.ctx.cur[+later.els.stage.value].name,'37-3');
 // 추천은 내 정보로만: 옛 링크의 육성(g)·전투력(p)은 적용하지 않고 표시만 남긴다
 assert.equal(restored.els.grow.value,'0.8');assert.equal(restored.els.mypow.value,'77777');assert.equal(restored.ctx.SHARE.oldGrow,true);
 assert.equal(restored.els.rk.value,'3');assert(restored.owned[1].checked);

@@ -109,7 +109,7 @@ def register(api):
         text = lambda: page.evaluate("() => {const e=document.getElementById('growth-result');return e?[e.dataset.state,e.innerText.replace(/\\s+/g,' ').trim()]:null}")
         page.evaluate("() => {growthCancel();SIMQ.err='중단함';SIMQ.errStage=cur[$('stage').value].tab+'|'+cur[$('stage').value].name;run(true)}")
         stopped = text()
-        page.evaluate("() => {SIMQ.err='';SIMQ.kick=false;simAuto(false);growthCancel();run(true)}")
+        page.evaluate("() => {SIMQ.err='';SIMQ.kick=false;SIMQ.auto=false;growthCancel();run(true)}")
         manual = text()
         tag = page.locator('#out .growth-on').count()
         page.evaluate("() => {$('assume-growth').checked=false;growthCancel();run(true)}")

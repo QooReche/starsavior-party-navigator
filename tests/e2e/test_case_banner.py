@@ -163,17 +163,16 @@ def contract(browser,base,width):
     assert p.evaluate('GwenLane.mount().state')==frozen
     p.set_viewport_size({'width':width,'height':1000})
     p.locator('#direct-board-lane').scroll_into_view_if_needed()
-    for quiet in [False,True]:
-        if quiet:p.evaluate('const q=document.querySelector("#gwen-quiet");q.checked=true;q.dispatchEvent(new Event("change"))')
-        else:p.emulate_media(reduced_motion='reduce')
-        sync(p,phase='work',progress=1);working(p)
-        x=p.evaluate('GwenLane.mount().state.x')
-        p.wait_for_timeout(400)
-        assert not p.evaluate('GwenLane.mount().state.moving')
-        assert p.evaluate('GwenLane.mount().state.x')==x
-        sync(p,result=999+int(quiet));expect(p,'result')
-        assert p.locator(TITLE).evaluate('e=>getComputedStyle(e).animationName')=='none'
-        p.emulate_media(reduced_motion='no-preference')
+    assert p.locator('#gwen-quiet').count()==0
+    p.emulate_media(reduced_motion='reduce')
+    sync(p,phase='work',progress=1);working(p)
+    x=p.evaluate('GwenLane.mount().state.x')
+    p.wait_for_timeout(400)
+    assert not p.evaluate('GwenLane.mount().state.moving')
+    assert p.evaluate('GwenLane.mount().state.x')==x
+    sync(p,result=999);expect(p,'result')
+    assert p.locator(TITLE).evaluate('e=>getComputedStyle(e).animationName')=='none'
+    p.emulate_media(reduced_motion='no-preference')
     assert not p.errors,p.errors
     p.close()
     print('PASS banner contract',width,flush=True)

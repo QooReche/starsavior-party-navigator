@@ -357,15 +357,18 @@ def drag_safety(browser,base):
     for selector in ['#direct-picker-inline [data-direct-action=pick]:disabled','#direct-picker-inline [data-direct-action=unowned]']:
         p.dispatch_event(selector+' >> nth=0','pointerdown',{'pointerId':23,'pointerType':'mouse','isPrimary':True,'button':0,'clientX':10,'clientY':10})
         assert not p.evaluate('!!DIRECT.drag'),'ineligible candidate could drag'
-    for cancel in ['outside','pointercancel','quiet','reduce']:
+    for cancel in ['outside','pointercancel','escape','reduce']:
         before=p.evaluate('DIRECT.draft')
-        if cancel=='quiet':p.evaluate("document.documentElement.dataset.gwenQuiet='true'")
         if cancel=='reduce':p.emulate_media(reduced_motion='reduce')
         x,y=center(p,source);p.mouse.move(x,y);p.mouse.down();p.mouse.move(x+7,y)
         assert p.evaluate('!!DIRECT.drag?.active')
         if cancel=='outside':p.mouse.move(2,100);p.mouse.up()
         elif cancel=='pointercancel':p.dispatch_event('#direct-panel','pointercancel',{'pointerId':1});p.mouse.up()
-        else:p.keyboard.press('Escape');assert p.locator('.direct-drag-ghost').count()==0;p.mouse.up()
+        else:
+            p.keyboard.press('Escape')
+            if cancel=='reduce':assert p.locator('.direct-drag-ghost').count()==0
+            else:p.locator('.direct-drag-ghost').wait_for(state='detached',timeout=2000)
+            p.mouse.up()
         assert p.evaluate('DIRECT.draft')==before and not p.evaluate('!!DIRECT.drag')
         p.wait_for_timeout(720)
     p.close()
