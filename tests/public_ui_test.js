@@ -106,8 +106,8 @@ for(const file of ['party_template.html','index.html']){
   T('게임 끄기')+' <span class="mi-import-warning">⚠ 게임이 켜져 있다면 먼저 <b>완전히 종료</b></span>',
   T('PowerShell 열기')+D('<span class="mi-keys"><kbd>Windows</kbd>+<kbd>R</kbd></span> → <b>powershell</b> 입력 → <kbd>Enter</kbd>'),
   T('명령 붙여넣기')+D('위쪽 <b>[명령 복사]</b> 단추 클릭')+D('→ PowerShell 창에 붙여넣기')+D('<span class="mi-keys"><kbd>Ctrl</kbd>+<kbd>V</kbd></span> 또는 마우스 오른쪽 클릭 → <kbd>Enter</kbd>'),
-  T('관리자 확인')+D('「관리자 확인」 창이 뜨면 <b>[예]</b>'),
-  T('게임 실행')+D('게임을 실행해 로비 화면까지 진입')+D('→ 명령을 붙여넣었던 <b>PowerShell 창</b>으로 돌아와 <kbd>Enter</kbd>')+' <span class="mi-step-do mut">(게임 화면이 아니라 PowerShell 창에서 누름 · 반응 없으면 몇 번 더 눌러도 됨)</span>',
+  T('관리자 확인')+D('「관리자 확인」 창이 뜨면 <b>[예]</b>')+' <span class="mi-step-do mut">→ 안내 글이 나오는 <b>새 PowerShell 창(관리자)</b>이 열림</span>',
+  T('게임 실행')+D('게임을 실행해 로비 화면까지 진입')+D('→ 안내 글이 떠 있는 <b>PowerShell 창(관리자)</b>을 한 번 클릭하고 <kbd>Enter</kbd>')+' <span class="mi-step-do mut">(게임 화면이 아니라 PowerShell 창에서 누름 · 반응 없으면 몇 번 더 눌러도 됨)</span>',
   T('자동 반영')+D('사이트가 자동으로 열리며 반영됨')
  ],`${file}: six titled steps, game shutdown first`);
  assert.equal(guide[2],'<b class="mi-fallback-title">안 될 때·다른 기기에서</b><span class="mi-step-do">바탕화면 <b>내정보.json</b>을 [파일 선택]으로 올리기</span>');
