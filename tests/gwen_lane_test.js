@@ -10,7 +10,16 @@ function motion(g){const equal=(a,b)=>assert.deepEqual(JSON.parse(JSON.stringify
   if(reduced)equal(r,{x:20,ms:0});else{assert.equal(r.x,mobile?92:164);assert.equal(r.ms,600);}
  }equal(g.travel(400,9999,500,80,{run:true}),{x:420,ms:1000/12});
  assert(g.travel(20,200,500,80,{quiet:true}).ms>0);}
-cooldown(G);priority(G);motion(G);
+function roundTrip(g){
+ // 단계 경계: 앞 단계 끝(진행 1)과 뒤집힌 다음 단계 시작(진행 0)이 같은 자리여야 순간이동이 없음.
+ assert.equal(g.pingpong(0,1,520),0);assert.equal(g.pingpong(.5,1,520),260);assert.equal(g.pingpong(1,1,520),520);
+ assert.equal(g.pingpong(0,-1,520),520);assert.equal(g.pingpong(.25,-1,520),390);assert.equal(g.pingpong(1,-1,520),0);
+ for(const dir of [1,-1])assert.equal(g.pingpong(1,dir,520),g.pingpong(0,-dir,520),'phase boundary teleports');
+ // 진행 중 위치 연속: 진행도가 조금 바뀌면 위치도 조금만 바뀜.
+ for(const dir of [1,-1])for(let i=0;i<100;i++)assert(Math.abs(g.pingpong((i+1)/100,dir,520)-g.pingpong(i/100,dir,520))<=5.21);
+ assert.equal(g.pingpong(2,1,520),520);assert.equal(g.pingpong(-1,-1,520),520);assert.equal(g.pingpong(.5,1,-10),0);
+}
+cooldown(G);priority(G);motion(G);roundTrip(G);
 function playground(g){
  const p=g.playground(()=>.5),history=[];
  for(let i=0;i<12;i++){
@@ -56,12 +65,14 @@ assert(P.resultCandidates(.8,false,false).includes('st_reach'),'policy high incl
 assert(P.resultCandidates(null,true,false).includes('st_reach'),'policy better includes st_reach');
 // 변이 검사: 고친 코드를 되돌려 시험이 실패하는지 확인
 const source=fs.readFileSync(require.resolve('../gwen_lane'),'utf8');
-const healthy={module:{exports:{}},require:p=>require(p.startsWith('./')?'../'+p.slice(2):p)};vm.runInNewContext(source,healthy);cooldown(healthy.module.exports);priority(healthy.module.exports);motion(healthy.module.exports);
+const healthy={module:{exports:{}},require:p=>require(p.startsWith('./')?'../'+p.slice(2):p)};vm.runInNewContext(source,healthy);cooldown(healthy.module.exports);priority(healthy.module.exports);motion(healthy.module.exports);roundTrip(healthy.module.exports);
 for(const [name,from,to,check] of [
  ['cooldown','now-s.lastReaction<4000','false',g=>{const p=g.policy();p.event('put',0);p.state.lastSpeech=-Infinity;assert(!p.event('put',10).speech)}],
  ['priority','priority<s.priority','priority>s.priority',priority],
  ['reduced-motion','if(reduced||home&&mobile)','if(home&&mobile)',motion],
  ['lane-boundary','Math.min(max,target)','target',motion],
+ ['pingpong-reverse','(dir>0?ratio:1-ratio)','ratio',roundTrip],
+ ['pingpong-clamp','Math.max(0,Math.min(1,progress))','progress',roundTrip],
 ]){assert(source.includes(from),name);const c={module:{exports:{}},require:p=>require(p.startsWith('./')?'../'+p.slice(2):p)};vm.runInNewContext(source.replace(from,to),c);
  assert.throws(()=>check(c.module.exports),assert.AssertionError,name);console.log('mutation caught:',name);}
-console.log('PASS lane policy: assets, speech, last two, priorities, result once, three pokes/lock, quiet, movement, st_reach, policy re-export, reco stage support; 4 mutations');
+console.log('PASS lane policy: assets, speech, last two, priorities, result once, three pokes/lock, quiet, movement, st_reach, policy re-export, reco stage support, pingpong position; 6 mutations');

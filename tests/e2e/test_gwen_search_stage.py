@@ -75,19 +75,27 @@ def flow(browser,base,width,kind,template=None):
         p.evaluate('window.stageActor=document.querySelector(".gwen-lane-actor")')
         p.screenshot(path=str(OUT/f'{kind}-work-{width}.png'))
         # Different bosses can emit identical phase text. Exercise the real page callback.
-        p.evaluate('stageRepeatPhase()')
+        jump=p.evaluate('''async () => {
+          const box=()=>document.querySelector('.gwen-lane-actor').getBoundingClientRect().x,before=box();
+          const was=GwenLane.mount().state.dir;stageRepeatPhase();
+          return {before,after:box(),was,dir:GwenLane.mount().state.dir};
+        }''')
         assert p.evaluate(f'{state}.done')==0
-        assert p.evaluate('GwenLane.mount().state.x')==0,'same-text phase retained previous position'
+        # 단계 전환은 시작점 순간이동이 아니라 방향 반전(왕복): 화면상 위치가 그대로여야 함.
+        assert abs(jump['after']-jump['before'])<=1,('same-text phase teleported',jump)
+        assert jump['dir']==-jump['was'],('same-text phase did not reverse',jump)
+        assert p.evaluate('document.querySelector(".gwen-lane-actor").dataset.direction')==('back' if jump['dir']<0 else 'forward')
         p.evaluate(f'while({state}.done<Math.max(1,Math.floor({state}.total*.3))&&stageQueue.length)stageStep()')
         p.wait_for_function('GwenLane.mount().state.x>0')
-        p.evaluate(f'''async () => {{
-          const phase={state}.msg;
-          while({state}.msg===phase){{
-            if(stageQueue.length)stageStep();else await new Promise(r=>setTimeout(r,0));
-          }}
+        jump=p.evaluate(f'''async () => {{
+          const phase={state}.msg,box=()=>document.querySelector('.gwen-lane-actor').getBoundingClientRect().x;
+          let before=box(),was=GwenLane.mount().state.dir;
+          while({state}.msg===phase){{before=box();was=GwenLane.mount().state.dir;if(stageQueue.length)stageStep();else await new Promise(r=>setTimeout(r,0));}}
+          return {{before,after:box(),was,dir:GwenLane.mount().state.dir}};
         }}''')
         assert p.evaluate(f'{state}.done')==0
-        assert p.evaluate('GwenLane.mount().state.x')==0,'next search phase retained previous position'
+        assert abs(jump['after']-jump['before'])<=1,('next search phase teleported',jump)
+        assert jump['dir']==-jump['was'],('next search phase did not reverse',jump)
         p.evaluate(f'while({state}.done<Math.max(1,Math.floor({state}.total*.2))&&stageQueue.length)stageStep()')
         p.wait_for_function('GwenLane.mount().state.x>0')
         # Cancel, then deliver every queued obsolete reply before starting again.

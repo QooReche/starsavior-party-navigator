@@ -53,6 +53,8 @@
     const speed=(run?240:60)*(mobile?.5:1),distance=Math.min(Math.abs(end-from),speed*.6);
     return {x:Math.max(0,Math.min(max,from+Math.sign(end-from)*distance)),ms:distance/speed*1000};
   }
+  // 왕복 위치: 방향 →(1)은 progress×폭, ←(-1)은 (1−progress)×폭. 단계 경계(1→0)에서 위치가 이어짐.
+  function pingpong(progress,dir,max){const ratio=Math.max(0,Math.min(1,progress));return (dir>0?ratio:1-ratio)*Math.max(0,max);}
   function playground(random=Math.random){
     const choices=policy(random);
     return {delay:()=>3000+random()*4000,pose:()=>random()<.15?'jump':choices.pick(['magnify','think','coffee','stamp']),next:(x,max)=>({
@@ -89,7 +91,7 @@
     let actor=null,lane=null,current={},clock=0,last=performance.now(),idleAt=0,vacant=false,phaseKey='',cycleAt=0,
       restoreAt=0,bubbleUntil=0,speechShownAt=-Infinity,move=null,landing=0,pending=null,x=0,art='',lastEvent='',sleeping=false,workRestAt=0;
     let playAt=play.delay(),playing=null,imageRequest=0;
-    const stageStates=new Map();let activeMode=null;
+    const stageStates=new Map(),runs=new Map();let activeMode=null;
     function resetPlay(){playing=null;playAt=clock+play.delay();}
     const pickBanner=P.bannerPicker();
     let bannerKey='';
@@ -190,14 +192,26 @@
       if(level!=='result')delete actor.dataset.gwenReport;
       cycleAt=clock+(mq.matches?20000:9000);restoreAt=0;resetPlay();
     }
+    // 한 계산(work 진입~결과) 안에서 단계가 바뀔 때마다 걷는 방향을 뒤집음(왕복).
+    // 위치 = 방향 →: progress×폭, ←: (1−progress)×폭. 경계에서 진행도가 1→0이 되어도 위치는 끝에 그대로임.
+    function workTarget(run){return pingpong(current.progress,run.dir,lane.clientWidth-actor.offsetWidth);}
+    function face(){if(!actor)return;const run=current.phase==='work'?runs.get(current.mode):null;
+      actor.dataset.direction=run?.dir<0?'back':'forward';
+      if(!move&&(run||current.phase==='result'||current.phase==='error'))actor.querySelector('button').style.transform=run?.dir<0?'scaleX(-1)':'none';}
     function progressMove(){
       if(current.phase!=='work'||!visible()||mq.matches||move||landing||restoreAt||clock<workRestAt)return;
-      if(!Number.isFinite(current.progress))return;
-      const target=Math.max(0,Math.min(1,current.progress))*Math.max(0,lane.clientWidth-actor.offsetWidth);
-      if(target>x+.5)moveTo(target,{reaction:{kind:'work',art:p.pick(CHOICES.work),speech:false,priority:PRIORITY.work},adjust:false});
+      const run=runs.get(current.mode);
+      if(!run||!Number.isFinite(current.progress))return;
+      const target=workTarget(run),ahead=run.dir*(target-x),reaction={kind:'work',art:p.pick(CHOICES.work),speech:false,priority:PRIORITY.work};
+      // 앞으로만 걸음. 단, 단계가 진행도 1 전에 끝나 새 시작점과 떨어졌으면 그 지점까지 한 번 걸어감(순간이동 없음).
+      if(ahead>.5){run.seek=false;moveTo(target,{reaction,adjust:false});}
+      else if(run.seek){if(ahead<-.5)moveTo(target,{reaction,adjust:false});else run.seek=false;}
     }
     // State writers own one stage; only navigation chooses the visible stage.
-    function sync(next){stageStates.set(next.mode,{...next});if(next.mode===activeMode)render(next);}
+    function sync(next){stageStates.set(next.mode,{...next});
+      // work 가 아닌 상태(대기·결과·오류·파괴)가 오면 그 모드의 왕복 기록을 끝냄. 다음 계산은 왼쪽에서 →로 시작함.
+      if(next.phase!=='work'&&!(next.bundleRunning&&next.phase==='result'))runs.delete(next.mode);
+      if(next.mode===activeMode)render(next);}
     function activate(mode){activeMode=mode;render(stageStates.get(mode)||{mode,phase:'idle',count:0});}
     function rebind(mode){
       if(mode!==current.mode)return;
@@ -210,13 +224,23 @@
       if(previousArt)image(previousArt);
       positionSpeech();
     }
-    function render(next){current={...next};
+    function render(next){const previous=current;current={...next};
       if(current.bundleRunning&&current.phase==='result')current.phase='work';
       syncBanner();
       if(!stages.has(current.mode)){++imageRequest;cancelMove();resetPlay();actor?.remove();lane=null;art='';phaseKey='';return;}
       const key=JSON.stringify(current.phase==='work'?[current.mode,'work',current.step]:[current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
-      if(key!==phaseKey){resetPlay();cancelMove();phaseKey=key;settle();
-        if(current.phase==='work'){x=0;actor.style.transform='translateX(0px)';positionSpeech();workRestAt=clock+250;}
+      if(key!==phaseKey){
+        // 같은 레인에서 work 가 이어지는 중인가(직전 표시도 같은 모드의 work 였는가).
+        const continuous=!!phaseKey&&previous.mode===current.mode&&previous.phase==='work'&&actor?.parentElement===stages.get(current.mode)?.board;
+        resetPlay();cancelMove();phaseKey=key;settle();
+        if(current.phase==='work'){let run=runs.get(current.mode);
+          if(!run){run={dir:1,step:current.step,seek:false};runs.set(current.mode,run);x=0;}
+          else if(run.step!==current.step){run.step=current.step;run.dir=-run.dir;run.seek=true;
+            // 다른 화면에서 돌아온 경우만 현재 진행 위치에 바로 놓음. 이어지는 중이면 x 를 그대로 둠.
+            if(!continuous){x=Number.isFinite(current.progress)?workTarget(run):run.dir>0?0:Math.max(0,lane.clientWidth-actor.offsetWidth);run.seek=false;}}
+          else if(!continuous){x=Number.isFinite(current.progress)?workTarget(run):x;}
+          actor.style.transform=`translateX(${x}px)`;positionSpeech();workRestAt=clock+250;}
+        face();
       }
       else rebind(current.mode);
       progressMove();
@@ -247,7 +271,7 @@
       if(move&&move.animation.playState==='finished'){
         const m=move,reaction=pending;x=m.to;m.animation.cancel();move=null;actor.style.transform=`translateX(${x}px)`;
         if(Math.abs(m.target-x)>.5){moveTo(m.target,{run:m.run,reaction,adjust:false});}
-        else{landing=clock+150;pending=reaction;actor.removeAttribute('data-moving');workRestAt=landing+900;}
+        else{landing=clock+150;pending=reaction;actor.removeAttribute('data-moving');workRestAt=landing+900;if(current.phase==='work')face();}
       }
       if(!move&&landing&&clock>=landing){landing=0;if(pending){if(playing)pending={...pending,art:play.pose()};display(pending);restoreAt=pending.priority===PRIORITY.edit?clock+1500:0;pending=null;
         if(playing){playing.until=clock+playing.duration;actor.querySelector('button').style.transform='none';}}}
@@ -281,7 +305,7 @@
     root.addEventListener('resize',()=>{cancelMove();resetPlay();if(lane){x=Math.min(x,Math.max(0,lane.clientWidth-actor.offsetWidth));actor.style.transform=`translateX(${x}px)`;}sync(current);});
     mq.addEventListener('change',()=>{cancelMove();resetPlay();cycleAt=clock+(mq.matches?20000:9000);syncBanner();});
     root.setInterval(tick,50);
-    controller={sync,activate,rebind,edit,policy:p,get state(){return {clock,x,moving:!!move,art,mode:current.mode,phase:current.phase,lane:lane?.id,playing:!!playing,playAt};}};return controller;
+    controller={sync,activate,rebind,edit,policy:p,get state(){return {clock,x,dir:current.phase==='work'?runs.get(current.mode)?.dir||1:1,moving:!!move,art,mode:current.mode,phase:current.phase,lane:lane?.id,playing:!!playing,playAt};}};return controller;
   }
   // One presentation component owns all stage DOM. Callers provide layout slots only.
   const components=new Map();
@@ -353,7 +377,7 @@
   const Stage={mount:stageMount,slot:(mode,part)=>`<div data-gwen-slot="${mode}-${part}"></div>`,
     destroy:mode=>components.get(mode)?.destroy(),activate:mode=>mount()?.activate(mode)};
   // Low-level registration stays inside this module, including home.
-  const api={PRIORITY,CHOICES,SAY,policy,travel,playground,bannerState:P.bannerState,bannerPicker:P.bannerPicker,BANNER_COPY:P.BANNER_COPY,mount,resultId,sync:s=>mount()?.sync(s),activate:mode=>mount()?.activate(mode),edit:(a,i)=>mount()?.edit(a,i),Stage};
+  const api={PRIORITY,CHOICES,SAY,policy,travel,pingpong,playground,bannerState:P.bannerState,bannerPicker:P.bannerPicker,BANNER_COPY:P.BANNER_COPY,mount,resultId,sync:s=>mount()?.sync(s),activate:mode=>mount()?.activate(mode),edit:(a,i)=>mount()?.edit(a,i),Stage};
   root.GwenStage=Stage;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GwenLane=api;
 })(typeof window!=='undefined'?window:globalThis);

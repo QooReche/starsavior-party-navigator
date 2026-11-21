@@ -52,6 +52,21 @@ function check(src){
     assert(!/work:Ux\.gwenWork|report:Ux\.gwenReport/.test(body(html,fn)),fn+' duplicates the actor');
   }
 }
+// 다섯 화면이 공유하는 한 부품의 단계 전환: 시작점 순간이동 대신 왕복(방향 반전·현재 위치 유지).
+function roundTrip(src){const lane=src['gwen_lane.js'],render=lane.slice(lane.indexOf('function render(next)'),lane.indexOf('function edit('));
+  assert(!/x=0;actor\.style\.transform='translateX\(0px\)'/.test(render),'phase change teleports Gwen to the start');
+  assert(render.includes('run.dir=-run.dir;'),'phase change does not reverse direction');
+  assert(/workTarget\(run\)/.test(lane.slice(lane.indexOf('function progressMove('),lane.indexOf('function sync('))),'progress ignores walking direction');
+  assert(lane.includes('const api={PRIORITY,CHOICES,SAY,policy,travel,pingpong,'),'pingpong position not exported');
+  // 화면 코드가 레인 배우를 직접 옮기면 공통 왕복을 우회함.
+  for(const [file,s] of Object.entries(src))if(file!=='gwen_lane.js'&&s.includes('gwen-lane-actor'))assert(!/translateX/.test(s),file+' moves the lane actor itself');
+}
+roundTrip(sources);
+for(const [from,to] of [["phaseKey=key;settle();","phaseKey=key;settle();x=0;actor.style.transform='translateX(0px)';"],['run.dir=-run.dir;',''],['workTarget(run),ahead','0,ahead']]){
+  assert(sources['gwen_lane.js'].includes(from),from);
+  assert.throws(()=>roundTrip({...sources,'gwen_lane.js':sources['gwen_lane.js'].replace(from,to)}),{code:'ERR_ASSERTION'},'round trip mutation '+from);
+  roundTrip(sources);console.log('MUTATION caught + restored: round trip',from);
+}
 check(sources);
 for(const [file,from] of [
   ['party_template.html',"searchGwenPaint(p,'guildSearch',GSR)"],
@@ -73,4 +88,4 @@ for(const indicator of ['<progress id="new-screen">','<div role="progressbar">',
   assert.throws(()=>check(mutated),{code:'ERR_ASSERTION'},'new progress indicator escaped discovery');
   check(sources);console.log('MUTATION caught + restored: new indicator',indicator);
 }
-console.log('PASS 5 progress screens / 10 contract mutations');
+console.log('PASS 5 progress screens + shared round trip / 13 contract mutations');

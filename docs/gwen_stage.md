@@ -8,7 +8,7 @@
 
 `gwen_lane.js`의 `GwenStage.mount(container,{mode})`가 `data-gwen-slot="모드-board/result"` 자리에 진행 레인·완료 배너·결과 자리를 생성함. 자리 표시자는 배치만 정하며 레인 DOM 등록은 부품 내부 전용임.
 
-- `progress(p,msg,extra)`는 0~1 진행률과 짧은 상태를 받음. `extra.step`이 바뀌면 이전 이동·이미지 요청을 취소하고 처음부터 걸음.
+- `progress(p,msg,extra)`는 0~1 진행률과 짧은 상태를 받음. `extra.step`이 바뀌면 이전 이동을 멈추고 **왕복**으로 이어 걸음(아래 «단계 전환 왕복»).
 - `done(result,extra)`는 기존 결과 정책에 따른 등신대 반응을 한 번 실행함. 레인에는 «수사 완료!» 배너만 남기고 같은 배우 노드를 결과 요약 위로 옮김. 결과 객체 식별자를 유지해야 재표시 때 반응을 반복하지 않음.
 - `reset()`은 해당 모드의 대기 상태, `destroy()`는 등록·DOM·진행 중 연출을 정리함. 파괴된 핸들의 늦은 갱신은 무시함.
 - `update()`는 기존 직접 편성의 편집·오류·묶음 상태를 전달하는 호환 경로임. `activate(mode)`가 화면 소유권을 전환하므로 비활성 화면 갱신이 현재 그웬을 가져가지 않음.
@@ -16,6 +16,18 @@
 reco·direct·cdirect·cosmoSearch·guildSearch가 같은 부품을 사용함. home도 같은 생성 경로로 옮겼음. reco의 기존 말풍선과 반신 크기·자리, 직접 편성·코스모 직접 편성의 CSS 식별자를 유지했음.
 
 검색은 요청 id와 onPhase마다 증가하는 phaseSerial을 전달함. 동일 문구를 반복하는 보스별 단계도 구분함. 추천 묶음은 작업 객체 식별자와 request, 기존 추천은 편성 번호·예선 여부·라운드로 단계를 구분함.
+
+## 단계 전환 왕복
+
+한 번의 계산(work 진입~결과) 안에서 `step`이 바뀔 때마다 걷는 방향을 뒤집음(첫 단계 →, 다음 ←, 그다음 → …). 위치는 순수 함수 `GwenLane.pingpong(progress,dir,폭)`으로 정함: →면 progress×폭, ←면 (1−progress)×폭. 단계 경계에서 진행도가 1→0이 되어도 위치가 끝에 그대로라 시작점으로 순간이동하지 않음.
+
+- 단계가 진행도 1 전에 끝나 새 단계 시작점과 떨어져 있으면 그 지점까지 기존 `moveTo` 걷기로 한 번 이동함(`run.seek`). 그 뒤로는 단계 방향으로만 걸음.
+- ← 방향이면 그웬 이미지 버튼만 `scaleX(-1)`로 반전함. 말풍선은 버튼 밖 형제 요소라 위치·글자가 반전되지 않음. 결과·오류로 넘어가면 원래 방향(`none`)으로 복귀함. 배우의 `data-direction`(forward/back)과 `GwenLane.mount().state.dir`(1/−1)로 확인할 수 있음.
+- 방향 기록은 모드별(`runs`)이며 그 모드에 work 가 아닌 상태(대기·결과·오류·파괴)가 오면 지움. 그래서 새 계산(idle/result → work)은 항상 왼쪽에서 →로 시작함. 다른 화면에서 돌아와 레인이 바뀐 경우만 현재 진행 위치에 바로 놓음.
+- «동작 줄이기»면 기존처럼 걷지 않음(위치는 단계 전환 때 그대로 유지).
+- 다섯 화면이 같은 부품이라 `gwen_lane.js` 한 곳만 고쳤음.
+
+시험: `gwen_lane_test.js`(경계 1↔0 같은 자리·진행 중 연속·클램프, 변이 2), `gwen_stage_dom_test.js` pingpong 시나리오(50ms마다 한 걸음 36px 초과 이동 없음·방향 반전·그림 반전·말풍선 비반전·미완 단계 시작점 걷기·결과 복귀·새 계산 왼쪽 시작, 변이 5), 묶음 단계 시험을 «순간이동 없음+반전»으로 고침, `gwen_stage_contract_test.js` 왕복 정적 계약(변이 3), `test_gwen_search_stage.py`가 실제 탐색 콜백의 단계 전환 직전·직후 화면 x 차이 1px 이하와 방향 반전을 확인함.
 
 ## 정적 관문 범위
 
@@ -38,8 +50,8 @@ reco·direct·cdirect·cosmoSearch·guildSearch가 같은 부품을 사용함. h
 
 | 명령 | 결과 |
 | --- | --- |
-| `node tests/gwen_stage_contract_test.js` | 다섯 화면 연결·변이 10개 통과 |
-| `node tests/gwen_stage_dom_test.js` | DOM 7시나리오·변이 15개 통과 |
+| `node tests/gwen_stage_contract_test.js` | 다섯 화면 연결·왕복 계약·변이 13개 통과 |
+| `node tests/gwen_stage_dom_test.js` | DOM 8시나리오(왕복 포함)·변이 20개 통과 |
 | `test_gwen_search_stage.py` | 코스모·길드 × 1280·390, 4흐름 통과 |
 | `test_gwen_ux.py --mutations` | 22검사·변이 14개 통과 |
 | `test_direct_party.py --mutations` | 10그룹·변이 1개 통과 |
