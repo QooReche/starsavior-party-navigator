@@ -1,4 +1,8 @@
-"""Public standard builds, paired seeds; no accounts, workers or browsers."""
+"""Public standard builds, paired seeds; no accounts, workers or browsers.
+
+옛 값 비교(before = OLD 의 evade_model·guard_precision 은 엔진 다이어트 4단계에서 지운 스위치)는 태그 engine-legacy-final 의 worktree 에서만 동작.
+이 브랜치에서는 기본 실행이 바로 종료함. --heal(치유 대상 조사)은 옛 값을 안 써서 그대로 동작.
+"""
 from collections import Counter
 import json
 from pathlib import Path
@@ -88,6 +92,9 @@ def survey_heal():
 
 
 if __name__ == '__main__':
+    gone = sorted(k for k in OLD if k not in MC_OPTS)
+    if gone and '--heal' not in sys.argv:
+        raise SystemExit('옛 값 비교(before)는 %s — 지운 규칙 키: %s' % ('태그 engine-legacy-final 의 worktree 에서만 동작', ', '.join(gone)))
     out = ROOT / 'local/allow-d2'; out.mkdir(parents=True, exist_ok=True)
     result = survey_heal() if '--heal' in sys.argv else measure()
     name = 'heal_survey.json' if '--heal' in sys.argv else 'impact.json'

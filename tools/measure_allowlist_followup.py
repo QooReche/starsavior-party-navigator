@@ -1,4 +1,9 @@
-"""Standard-build follow-up samples, serial execution and no account input."""
+"""Standard-build follow-up samples, serial execution and no account input.
+
+python -X utf8 tools/measure_allowlist_followup.py before|reaction|after
+before·reaction(옛 값 reaction_single_target_rng·barrier_formula — 엔진 다이어트 4단계 1묶음에서 지운 스위치)은
+태그 engine-legacy-final 의 worktree 에서만 동작. 이 브랜치에서는 바로 종료함. after 는 그대로 동작.
+"""
 from collections import Counter
 import json
 from pathlib import Path
@@ -9,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from battlesim.api import simulate
 from battlesim.mc import Battle
+from battlesim.rules import MC_OPTS
 
 TEAM = ['asherah-order-striker', 'gille', 'amora', 'wedding-carmen']
 SHIELDS = ['haydee', 'frey', 'amora', 'wedding-carmen']
@@ -29,6 +35,9 @@ def main():
         'reaction': {'barrier_formula': 'legacy'},
         'after': {},
     }[mode]
+    gone = sorted(k for k in overrides if k not in MC_OPTS)
+    if gone:
+        raise SystemExit('%s 모드는 태그 engine-legacy-final 의 worktree 에서만 동작 — 지운 규칙 키: %s' % (mode, ', '.join(gone)))
     counts = Counter()
     original_run, original_local = Battle.run, Battle.run_per_target
 
