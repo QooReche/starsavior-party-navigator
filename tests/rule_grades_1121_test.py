@@ -28,11 +28,7 @@ def all_rules():
 
 def count_targets(override=None):
     counts = Counter()
-    weighted, filt = Battle.weighted_pick, Battle.filter_pick
-
-    def w(self, pool):
-        counts['weighted'] += 1
-        return weighted(self, pool)
+    filt = Battle.filter_pick
 
     def f(self, att, pool, steps, ctx=None):
         counts['rule1001'] += steps is mcmod.RULE1001
@@ -41,7 +37,7 @@ def count_targets(override=None):
     opts = dict(build='standard', n_runs=2, seed=20261121)
     if override:
         opts['rules_override'] = override
-    with patch.object(Battle, 'weighted_pick', w), patch.object(Battle, 'filter_pick', f):
+    with patch.object(Battle, 'filter_pick', f):
         r = api.simulate(['gwen', 'amora', 'frey', 'claire'], {'stage': 'clo/태양 회랑/FLOOR 250'}, opts)
     return r['outcome']['progress'], counts
 
@@ -74,9 +70,8 @@ class RuleGradesTest(unittest.TestCase):
         self.assertFalse(current & {'mc.' + k for k in TOOL_MC})
         self.assertTrue({'mc.clash_no_turn_limit', 'mc.ally_init_cd', 'mc.heal_target'} <= current)
         legacy = {x['rule'] for x in api.assumptions_used(
-            dict(MC_OPTS, enemy_spawn='legacy', enemy_auto_target='weighted'), dict(DEFAULT_OPTS, nova_policy='manual'))}
-        self.assertTrue({'mc.enemy_init_cd_special', 'mc.target_row_weight', 'mc.target_defender_mult',
-                         'mc.target_mode', 'mc.manual_burst'} <= legacy)
+            dict(MC_OPTS, enemy_spawn='legacy'), dict(DEFAULT_OPTS, nova_policy='manual'))}
+        self.assertTrue({'mc.enemy_init_cd_special', 'mc.manual_burst'} <= legacy)
         # code 로 승격한 옛 경로 값은 그 경로를 골라도 가정으로 싣지 않음
         self.assertNotIn('mc.enemy_init_cd', legacy)
 
@@ -103,15 +98,12 @@ class RuleGradesTest(unittest.TestCase):
         self.assertEqual(legacy, client_s)
         self.assertNotEqual(legacy, client_n)
 
-    def test_default_enemy_target_uses_client_1001_not_weighted(self):
+    def test_default_enemy_target_uses_client_1001(self):
+        # 옛 가중 추첨(enemy_auto_target=weighted·weighted_pick)은 지움(태그 engine-legacy-final). 기본 경로가 실제로 1001 을 탐
         progress, counts = count_targets()
         self.assertGreater(progress, 0)
         self.assertGreater(counts['rule1001'], 0)
-        self.assertEqual(counts['weighted'], 0)
-        # 계측이 실제로 잡는지: legacy 를 고르면 옛 가중 추첨이 돈다
-        progress, counts = count_targets(dict(enemy_auto_target='weighted'))
-        self.assertGreater(progress, 0)
-        self.assertGreater(counts['weighted'], 0)
+        self.assertFalse(hasattr(Battle, 'weighted_pick'))
 
 
 if __name__ == '__main__':

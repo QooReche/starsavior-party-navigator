@@ -86,7 +86,7 @@ class CacheMechanicsTest(unittest.TestCase):
         return [[_unit('f1')], [_unit('f2')]]
 
     def _battle(self, ally, waves, seed=1, semantic_cache=None, **kw):
-        mc = dict(MC_OPTS, rand_range=[1.0, 1.0], target_mode='first')
+        mc = dict(MC_OPTS, rand_range=[1.0, 1.0])
         b = Battle(ally, waves, random.Random(seed), mc=mc, semantic_cache=semantic_cache, **kw)
         return b
 

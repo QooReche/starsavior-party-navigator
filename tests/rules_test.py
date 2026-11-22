@@ -304,7 +304,6 @@ def test_index_uses_merged_opts():
 # note 키를 MC_OPTS 에서 뺐을 때 기존 출력이 그대로인지 고정한다.
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
-    'auto_unable_break', 'auto_remove_filter', 'auto_se_reselect', 'auto_hp_float32', 'auto_empty_marker', 
     'superarmor_damage_ban', 
     'chain_stat_true', 
     'dmg_cap_scope',
@@ -318,7 +317,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'break_skill_point_cap', 'break_skill_role_speed_pct', 
     'break_skill_speed_pct', 'break_skills',
     'buff_maxhp', 'chain_pen', 'chain_round', 'stat_floor', 'stat_stage', 'turn_gauge', 'chain_skill_damage_up', 'counter_inc',
-    'enemy_auto_target', 'enemy_cd_native',
+    'enemy_cd_native',
     'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
     'enemy_same_formula', 'enemy_spawn', 
     'guild_boss', 'gauge_overflow', 'guard_mode', 
@@ -326,7 +325,6 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'max_depth', 'max_events', 
     'power_penalty', 'rand_range', 
     'sudden_death', 
-    'target_defender_mult', 'target_mode', 'target_row_weight',
     'toughness', 
     'chain_timing', 
     'turn_ticks', 'unknown_cond', 'clash_no_turn_limit',

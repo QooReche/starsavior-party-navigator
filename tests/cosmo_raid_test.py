@@ -367,14 +367,12 @@ def test_simulate_challenge_paths_and_level_scale():
     # 티리아 SE10253015의 반복별 선택·부여로 난수 소비 횟수가 달라짐.
     # 이전 seed=2는 legacy에서 응징 1회, client에서는 0회였음.
     # 끝없는 저주 무제한 중첩 뒤에도 양쪽 대상 선택에서 실제 응징·출혈을 검사함.
-    # 옛 중첩/시드 회귀도 보존하며 결과값·경로 assertion은 약화하지 않음.
     # level_max_source 옛 값(legacy) 두 경우는 스위치 삭제(엔진 다이어트 4단계)로 뺌.
-    for caps, mode, seed in (('client', 'client', 10), ('client', 'legacy', 5)):
-        r = run('카넬리아', 3, 18, n=10, seed=seed,
-                rules_override={'auto_se_reselect': mode})
-        ctl = r['cosmo_raid']['ctl']
-        assert r['outcome']['progress'] > 0
-        assert ctl.get('punish', 0) > 0 and ctl.get('bleed', 0) > 0, (caps, mode, ctl)
+    # auto_se_reselect 옛 값(legacy, seed 5) 경우는 스위치 삭제(최종 리뷰 반영)로 뺌 — 기본(client) seed 10 만.
+    r = run('카넬리아', 3, 18, n=10, seed=10)
+    ctl = r['cosmo_raid']['ctl']
+    assert r['outcome']['progress'] > 0
+    assert ctl.get('punish', 0) > 0 and ctl.get('bleed', 0) > 0, ctl
     ctl = run('티리아', 3, 18, n=10)['cosmo_raid']['ctl']
     assert ctl.get('pressure', 0) > 0 and ctl.get('march', 0) > 0 and ctl.get('drain', 0) > 0, ctl
     ctl = run('벨그라스', 3, 18, n=10)['cosmo_raid']['ctl']

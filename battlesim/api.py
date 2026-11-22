@@ -297,8 +297,6 @@ def assumptions_used(mc, opts):
     inactive = set()
     if mc.get('enemy_spawn') == 'data':
         inactive.update(('enemy_init_cd', 'enemy_init_cd_special'))
-    if mc.get('enemy_auto_target') == 'table':
-        inactive.update(('target_row_weight', 'target_defender_mult', 'target_mode'))
     if opts.get('nova_policy') != 'manual':
         inactive.add('manual_burst')
     for k, v in MC_RULES.items():

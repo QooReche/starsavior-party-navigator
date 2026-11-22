@@ -25,37 +25,15 @@ from simkit import FIXED, battle, give, unit  # noqa: E402,F401
 
 
 # ---------------------------------------------------------------- 대상 선택
-def test_target_weights():
-    """적 단일 공격: 전열 0.8 / 후열 0.2, 열 안 디펜더 x2 -> 전열 스트라이커 0.267, 전열 디펜더 0.533, 후열 각 0.1(2만 회)"""
-    roles = ['스트라이커', '디펜더', '스트라이커', '스트라이커']
-    b = battle([unit('a%d' % i, role=r) for i, r in enumerate(roles)], [unit('foe')], seed=7)
-    n = 20000
-    cnt = [0] * 4
-    for _ in range(n):
-        cnt[b.weighted_pick(b.targetable(0)).pos] += 1
-    fr = [c / n for c in cnt]
-    exp = [0.8 / 3, 0.8 * 2 / 3, 0.1, 0.1]
-    ok1 = all(abs(f - e) < 0.015 for f, e in zip(fr, exp))
-    b2 = battle([unit('a%d' % i, role=r) for i, r in enumerate(roles)], [unit('foe')], mc=dict(target_mode='unit_weight'), seed=7)
-    cnt2 = [0] * 4
-    for _ in range(n):
-        cnt2[b2.weighted_pick(b2.targetable(0)).pos] += 1
-    fr2 = [c / n for c in cnt2]
-    exp2 = [0.4 / 1.4, 0.8 / 1.4, 0.1 / 1.4, 0.1 / 1.4]
-    ok2 = all(abs(f - e) < 0.015 for f, e in zip(fr2, exp2))
-    return ok1 and ok2, '열 2단계 %s (기대 %s) / 개인 가중 %s' % ([round(x, 3) for x in fr], [round(x, 3) for x in exp],
-                                                         [round(x, 3) for x in fr2])
-
-
 def test_untargetable():
     """현장 대기·은신 아군은 다른 아군이 살아 있으면 대상이 안 되고, 전원이 그 상태면 다시 대상이 된다"""
     al = [unit('a%d' % i) for i in range(4)]
     b = battle(al, [unit('foe')], seed=3)
     give(b.allies[0], '현장 대기')
-    hit0 = sum(1 for _ in range(3000) if b.weighted_pick(b.targetable(0)) is b.allies[0])
+    hit0 = sum(1 for _ in range(3000) if b.pick_attack_target(b.foes[0]) is b.allies[0])
     for u in b.allies:
         give(u, '은신')
-    hit_all = sum(1 for _ in range(3000) if b.weighted_pick(b.targetable(0)) is b.allies[0])
+    hit_all = sum(1 for _ in range(3000) if b.pick_attack_target(b.foes[0]) is b.allies[0])
     return hit0 == 0 and hit_all > 500, '현장 대기 1명: %d회 / 전원 은신: %d회' % (hit0, hit_all)
 
 
@@ -571,7 +549,7 @@ def test_enemy_spawn_flags():
 
 
 TESTS = [test_enemy_init_cd_pilgrim, test_enemy_init_cd_switches, test_enemy_spawn_flags,
-         test_target_weights, test_untargetable, test_taunt, test_guard_split, test_guard_highest_only,
+         test_untargetable, test_taunt, test_guard_split, test_guard_highest_only,
          test_shield_sum, test_heal_formula, test_death_stops_actions, test_counter, test_leader_speed, test_enemy_leader_default_none, test_determinism,
          test_event_limit, test_foe_loader_matches_stages_json, test_evade, test_check_buff_expiry, test_extra_cast_after_consume,
          test_ev_engine_opts_untouched, test_skill_heal_hl, test_enemy_immunity_and_gate, test_hp_condition_units,

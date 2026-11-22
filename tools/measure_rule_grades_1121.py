@@ -1,10 +1,10 @@
 """남은 가정 등급 규칙의 기본 경로 실행 횟수·결과 계측(2026-11-21). 단일 프로세스, 공개 standard 입력만.
 
-python -X utf8 -I tools/measure_rule_grades_1121.py NAME [--legacy-target]
+python -X utf8 -I tools/measure_rule_grades_1121.py NAME
+  --legacy-target(옛 가중 추첨 enemy_auto_target=weighted)은 최종 리뷰 반영으로 지움 — 태그 engine-legacy-final 의 worktree 에서만 동작.
   결과: local/rule-grades/NAME.json (무시 폴더). 표준 출력엔 시나리오별 진행도·클리어·계측만.
 
 계측(판 합계):
-  weighted_pick    = 적 단일 대상 옛 가중 추첨(target_row_weight·target_defender_mult·target_mode)
   rule1001         = 적 단일 대상 클라 규칙 1001 필터(NKM:7766-7809)
   ranked_priority  = 적 스킬 설명 「~가 가장 높은 적 우선」 근사가 후보를 고른 횟수
   enemy_cd_legacy  = 적 시작 쿨을 enemy_init_cd·enemy_init_cd_special 로 정한 슬롯 수
@@ -39,12 +39,10 @@ def main():
     name = sys.argv[1]
     rows = []
     counts = Counter()
-    orig = dict(run=Battle.run, weighted=Battle.weighted_pick, filt=Battle.filter_pick,
+    if '--legacy-target' in sys.argv:
+        raise SystemExit('--legacy-target 은 태그 engine-legacy-final 의 worktree 에서만 동작 — 지운 규칙 키: enemy_auto_target·target_row_weight·target_defender_mult·target_mode')
+    orig = dict(run=Battle.run, filt=Battle.filter_pick,
                 ranked=Battle.ranked_enemies, reset=Unit.reset_initial_cooldowns)
-
-    def weighted(self, pool):
-        counts['weighted_pick'] += 1
-        return orig['weighted'](self, pool)
 
     def filt(self, att, pool, steps, ctx=None):
         if steps is mcmod.RULE1001:
@@ -76,9 +74,7 @@ def main():
     for case, party, encounter in CASES:
         counts.clear()
         opts = dict(build='standard', n_runs=8, seed=20261121)
-        if '--legacy-target' in sys.argv:
-            opts['rules_override'] = dict(enemy_auto_target='weighted')
-        with patch.object(Battle, 'run', run), patch.object(Battle, 'weighted_pick', weighted), \
+        with patch.object(Battle, 'run', run), \
              patch.object(Battle, 'filter_pick', filt), patch.object(Battle, 'ranked_enemies', ranked), \
              patch.object(Unit, 'reset_initial_cooldowns', reset):
             r = simulate(party, encounter, opts)

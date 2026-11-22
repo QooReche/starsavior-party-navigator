@@ -1838,7 +1838,7 @@ class Battle:
     def auto_cond_ok(self, u, c):
         if c[0] == 'ally_hp_le_bp':
             # PC 26752678 NKM:7484-7500: 임계 0이면 거짓, (int)(HP비율 float × 10000f) <= 임계.
-            # HP 비율은 NKM:2191-2198의 float 나눗셈. 대상 선택(auto_hp_float32)과 별도 스위치.
+            # HP 비율은 NKM:2191-2198의 float 나눗셈. 대상 선택(auto_hp_basis_points, float32)과 별도.
             self.rule_hits['auto_cond_hp_float32'] += 1
             if not c[1]:
                 return False
@@ -1911,7 +1911,7 @@ class Battle:
             for st in spec['f']:
                 if isinstance(st, list) and st[0] == 'has' and all(CHECK_NAME.search(n) or '판별용' in n for n in st[1]):
                     if not any(v.has(n) for v in pool for n in st[1]):
-                        if self.mc['auto_empty_marker'] == 'client' and spec.get('one'):
+                        if spec.get('one'):
                             # 26752678 NKM:7539-7545,7170: 실패한 필터도
                             # 원래 SE 규칙 유지. 단일은 남은 후보 중 무작위.
                             # 복수의 미지원 원형(U1 등) 설명문 대체는 별도 작업.
@@ -1966,8 +1966,6 @@ class Battle:
         """26752678 NKM:2191-2198,7590: float/float → float * 10000f → int.
         HP 조건식(hp_basis_points)의 double 곱셈과 별개인 대상 선택 연산.
         """
-        if self.mc['auto_hp_float32'] != 'client':
-            return int(hp / maxhp * 10000) if maxhp else 0
         denominator = _float32(maxhp)
         ratio = _float32(_float32(hp) / denominator) if denominator else 0.0
         result = int(_float32(ratio * 10000.0))
@@ -2022,10 +2020,8 @@ class Battle:
         if st == 'not_unable_to_act':
             # 26752678 NKM:7901-7913: 이 자동 대상 필터는 break도 제외함.
             # 일반 자기 턴 incapacitated 의미는 바꾸지 않음.
-            if self.mc['auto_unable_break'] == 'client':
-                self.rule_hits['auto_unable_break'] += 1
-                return [v for v in pool if not self.no_react(v)]
-            return [v for v in pool if not self.incapacitated(v)]
+            self.rule_hits['auto_unable_break'] += 1
+            return [v for v in pool if not self.no_react(v)]
         if st == 'not_unable_to_coop':
             # AutoTargetId 52, build 26610546 NKM:7901-7912: break, stun, sleep.
             return [v for v in pool if not self.no_react(v)]
@@ -2086,46 +2082,16 @@ class Battle:
             return self.filter_pick(att, pool, RULE1)
         if self.gb is not None and self.gb.is_boss(att):
             return self.gb.pick_target(att, sk, pool)
-        ranked =self.ranked_enemies(skill_desc(att.d, sk.slot), pool, priority=True) if sk is not None else None
-        if self.mc['enemy_auto_target'] == 'table':
-            # 설명문 「~가 가장 높은 적 우선」 = 그 스킬 고유 규칙의 근사(게임은 고유 규칙이 있으면 1001 을 안 씀) -> 동률은 무작위
-            if ranked:
-                return ranked[0] if len(ranked) == 1 else self.R(att.side).choice(ranked)
-            return self.filter_pick(att, pool, RULE1001)
-        return self.weighted_pick(ranked or pool)
+        ranked = self.ranked_enemies(skill_desc(att.d, sk.slot), pool, priority=True) if sk is not None else None
+        # 설명문 「~가 가장 높은 적 우선」 = 그 스킬 고유 규칙의 근사(게임은 고유 규칙이 있으면 1001 을 안 씀) -> 동률은 무작위.
+        # 옛 가중 추첨(enemy_auto_target=weighted·weighted_pick)은 지움 — 태그 engine-legacy-final
+        if ranked:
+            return ranked[0] if len(ranked) == 1 else self.R(att.side).choice(ranked)
+        return self.filter_pick(att, pool, RULE1001)
 
     def R(self, side):
         """결정 주체 쪽(side 0 아군·1 적)의 난수. 공통 난수가 꺼져 있으면 하나뿐인 self.rng"""
         return self._rs[side] if self._rs is not None and side in (0, 1) else self.rng
-
-    def weighted_pick(self, pool):
-        rw = self.mc['target_row_weight']
-        dm = float(self.mc['target_defender_mult'])
-        w = lambda v: dm if v.role == '디펜더' else 1.0
-        front = [v for v in pool if v.pos < 2]
-        back = [v for v in pool if v.pos >= 2]
-        if self.mc['target_mode'] == 'unit_weight':
-            cands = []
-            for row, share in ((front, rw[0]), (back, rw[1])):
-                for v in row:
-                    cands.append((v, share / len(row) * w(v)))
-            if not front or not back:
-                cands = [(v, w(v)) for v in pool]
-            return self._roll(cands)
-        if front and back:
-            row = front if self.R(1 - pool[0].side).random() < rw[0] / (rw[0] + rw[1]) else back
-        else:
-            row = front or back
-        return self._roll([(v, w(v)) for v in row])
-
-    def _roll(self, cands):
-        tot = sum(x for _, x in cands)
-        r = self.R(1 - cands[0][0].side if cands else None).random() * tot
-        for v, x in cands:
-            r -= x
-            if r < 0:
-                return v
-        return cands[-1][0]
 
     def _preemptive_check(self, attacker, targets, ctx):
         """선제 방어(build 26314877 NKM:8697-8754): 방어 확률이 있으면 대상을 가로챈다.
@@ -2276,7 +2242,7 @@ class Battle:
         if ('자동 지정' in t and (t.startswith('아군') or t.startswith('자신 제외') or t.startswith('자신을 제외'))
                 and not (cur is not None and cur.eff.get('name') == '강제 협공'
                          and self.opts['forced_coop_target'] != 'random')):
-            spec = self.line_spec(owner, cur) if kind != 'remove' or self.mc['auto_remove_filter'] == 'client' else None
+            spec = self.line_spec(owner, cur)
             if spec is not None and spec.get('ally'):
                 return self.line_auto_targets(owner, spec, ctx)
             if kind != 'remove':
@@ -4915,7 +4881,7 @@ class Battle:
             return
         if kd == 'remove':
             # 26752678 NKM:7535-7545: 해제도 원래 SE의 not_has 대상만.
-            mapped_remove = self.mc['auto_remove_filter'] == 'client' and self.line_spec(owner, ln) is not None
+            mapped_remove = self.line_spec(owner, ln) is not None
             tg = self.resolve(owner, eff['target'], ctx, kind='remove')
             if mapped_remove:
                 self.rule_hits['auto_remove_filter'] += 1
@@ -5496,8 +5462,7 @@ class Battle:
         return self.R(owner.side).random() < calc_hit(a, b)
 
     def apply_buff(self, owner, eff, ctx, hot=0.0, raw=''):
-        auto_spec = (self.line_spec(owner, self._cur_line)
-                     if self.mc['auto_se_reselect'] == 'client' and eff.get('times', 1) > 1 else None)
+        auto_spec = self.line_spec(owner, self._cur_line) if eff.get('times', 1) > 1 else None
         reselect = auto_spec is not None
         repeat_buff = eff.get('repeat_buff') or bool(auto_spec and auto_spec.get('repeat_buff'))
         if (eff.get('times', 1) > 1

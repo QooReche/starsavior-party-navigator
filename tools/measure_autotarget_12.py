@@ -4,6 +4,9 @@ python -X utf8 -I tools/measure_autotarget_12.py before
 python -X utf8 -I tools/measure_autotarget_12.py after
 python -X utf8 -I tools/measure_autotarget_12.py compare
 결과는 local/autotarget/에만 저장. 골든 기대값은 쓰지 않음.
+
+legacy 모드(옛 스위치 auto_* 5개를 legacy 로 — 최종 리뷰 반영으로 지움)와 그 결과를 읽는 compare 는 태그 engine-legacy-final 의 worktree 에서만 동작.
+이 브랜치에서는 legacy 가 바로 종료함. before·after 는 그대로 동작.
 """
 import argparse
 import json
@@ -16,6 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from battlesim.api import simulate
 from battlesim.mc import Battle
+from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
 
 LEGACY = dict(auto_unable_break='legacy', auto_remove_filter='legacy',
@@ -100,4 +104,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('mode', choices=('before', 'after', 'legacy', 'compare'))
     mode = parser.parse_args().mode
+    gone = sorted(k for k in LEGACY if k not in MC_OPTS)
+    if mode == 'legacy' and gone:
+        raise SystemExit('legacy 모드는 태그 engine-legacy-final 의 worktree 에서만 동작 — 지운 규칙 키: %s' % ', '.join(gone))
     compare() if mode == 'compare' else measure(mode)

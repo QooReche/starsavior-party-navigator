@@ -150,7 +150,7 @@ def _main(argv=None):
     p.add_argument('--runs', type=int, help='반복 판 수(기본 100)')
     p.add_argument('--seed', type=int, help='난수 시드(기본 1)')
     p.add_argument('--timeline', action='store_true', help='첫 판의 행동 기록 포함')
-    p.add_argument('--rules', help='규칙 덮어쓰기 JSON (예: {"target_defender_mult": 4.0})')
+    p.add_argument('--rules', help='규칙 덮어쓰기 JSON (예: {"power_penalty": "off"})')
     p.add_argument('--out', help='결과 JSON 파일(없으면 화면)')
     args = ap.parse_args(argv)
     if args.cmd == 'simulate':

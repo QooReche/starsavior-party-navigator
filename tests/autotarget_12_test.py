@@ -1,4 +1,7 @@
-"""26752678 PC 자동 대상 불일치 12 SE. 공개 스킬 + 합성 상태, --mutate 지원."""
+"""26752678 PC 자동 대상 불일치 12 SE. 공개 스킬 + 합성 상태, --mutate 지원.
+
+옛 스위치 auto_unable_break·auto_remove_filter·auto_se_reselect·auto_hp_float32·auto_empty_marker 는 지웠음(최종 리뷰 반영,
+옛 값 비교는 태그 engine-legacy-final). 시험은 기본(클라) 경로만 보고, --mutate 는 접힌 코드를 옛 동작으로 되돌린 소스 변이로 확인."""
 import io
 import inspect
 import sys
@@ -16,8 +19,6 @@ from battlesim.mc import Battle, Ctx, ally_auto_lines, line_rest, RX_HEAL, RX_SH
 from battlesim.metrics import get_db
 
 
-LEGACY = dict(auto_unable_break='legacy', auto_remove_filter='legacy',
-              auto_se_reselect='legacy', auto_hp_float32='legacy', auto_empty_marker='legacy')
 MARK = '표본 행동 분석 대상 체크용 버프'
 
 
@@ -204,63 +205,60 @@ class AutoTarget12(unittest.TestCase):
         # 복수 대상 설명문 대체를 끄지 않는지 실제 정규화된 줄로 확인.
         b, a, ln, _ = setup('lyn', '궁극기', '〈치명타 피해 증가〉', ultimate=1)
         self.assertFalse(ally_auto_lines(variants=True, client=True)['lyn'][(ln.slot, ln.raw)]['one'])
-        for mode in ('client', 'legacy'):
-            b.mc['auto_empty_marker'] = mode
-            self.assertIsNone(b.line_spec(a, ln))
+        self.assertIsNone(b.line_spec(a, ln))
+
+
+def _mutant(method, old, new):
+    """Battle.<method> 소스(들여쓰기 그대로)에서 old 한 곳을 new 로 바꾼 함수."""
+    fn = getattr(Battle, method)
+    source = inspect.getsource(fn)
+    assert source.count(old) == 1, (method, old, source.count(old))
+    ns = dict(fn.__globals__)
+    exec(textwrap.dedent(source.replace(old, new)), ns)
+    return ns[method]
+
+
+def _killed(label, patches, matches):
+    names = [n for n in unittest.defaultTestLoader.getTestCaseNames(AutoTarget12) if any(m in n for m in matches)]
+    assert names, label
+    for name in names:
+        ps = [patch.object(Battle, m, _mutant(m, old, new)) for m, old, new in patches]
+        for x in ps:
+            x.start()
+        try:
+            result = unittest.TextTestRunner(stream=io.StringIO()).run(AutoTarget12(name))
+        finally:
+            for x in ps:
+                x.stop()
+        assert result.failures and not result.errors, (label, name, result.errors)
+        print('KILLED', label, name)
+
+
+AUTO_REMOVE = "and self.opts['forced_coop_target'] != 'random')):\n            spec = self.line_spec(owner, cur)\n"
+EMPTY_ONE = "if spec.get('one'):\n                            # 26752678 NKM:7539-7545"
 
 
 def mutations():
-    cases = {
-        'auto_unable_break': ['10394011', '10394013', '10394014'],
-        'auto_remove_filter': ['10394012'],
-        'auto_se_reselect': ['10412012', '10412013', '10412014', 'harley_ties'],
-        'auto_hp_float32': ['10192013', '10193013', '10544021', '16012013'],
-        'auto_empty_marker': ['10253015'],
-    }
-    names = unittest.defaultTestLoader.getTestCaseNames(AutoTarget12)
-    original = Battle.__init__
-    for rule, matches in cases.items():
-        def broken(self, *args, **kw):
-            kw['mc'] = dict(kw.get('mc') or {}, **{rule: 'legacy'})
-            original(self, *args, **kw)
-        for name in names:
-            if not any(m in name for m in matches):
-                continue
-            with patch.object(Battle, '__init__', broken):
-                result = unittest.TextTestRunner(stream=io.StringIO()).run(AutoTarget12(name))
-            assert result.failures and not result.errors, (rule, name, result.errors)
-            print('KILLED', rule, name)
-    # 곱셈 반올림 누락은 legacy 전환만으로 잡히지 않아 별도 실제 소스 변이.
-    source = textwrap.dedent(inspect.getsource(Battle.auto_hp_basis_points))
-    mutant = source.replace('int(_float32(ratio * 10000.0))', 'int(ratio * 10000.0)')
-    assert mutant != source
-    ns = dict(Battle.auto_hp_basis_points.__globals__)
-    exec(mutant, ns)
-    with patch.object(Battle, 'auto_hp_basis_points', ns['auto_hp_basis_points']):
-        result = unittest.TextTestRunner(stream=io.StringIO()).run(
-            AutoTarget12('test_float32_multiply_and_high_hp_filter'))
-    assert result.failures and not result.errors, result.errors
-    print('KILLED float32 multiplication rounding')
-    source = textwrap.dedent(inspect.getsource(Battle.line_spec))
-    mutant = source.replace(" == 'client' and spec.get('one'):", " == 'client':")
-    assert mutant != source
-    ns = dict(Battle.line_spec.__globals__)
-    exec(mutant, ns)
-    with patch.object(Battle, 'line_spec', ns['line_spec']):
-        result = unittest.TextTestRunner(stream=io.StringIO()).run(
-            AutoTarget12('test_unsupported_multi_marker_fallback_unchanged'))
-    assert result.failures and not result.errors, result.errors
-    print('KILLED unsupported multi marker scope leak')
-    source = textwrap.dedent(inspect.getsource(Battle.apply_buff))
-    mutant = source.replace('if repeat_buff and not applied:', 'if False:')
-    assert mutant != source
-    ns = dict(Battle.apply_buff.__globals__)
-    exec(mutant, ns)
-    with patch.object(Battle, 'apply_buff', ns['apply_buff']):
-        result = unittest.TextTestRunner(stream=io.StringIO()).run(
-            AutoTarget12('test_tyria_repeat_stops_after_failed_iteration'))
-    assert result.failures and not result.errors, result.errors
-    print('KILLED RepeatBuffCount failure continuation')
+    # 옛 동작(지운 스위치의 legacy 분기)으로 되돌린 소스 변이 — 기본 경로 시험이 잡아야 함
+    _killed('auto_unable_break', [('_filter', "self.rule_hits['auto_unable_break'] += 1",
+                                   'return [v for v in pool if not self.incapacitated(v)]')],
+            ['10394011', '10394013', '10394014'])
+    _killed('auto_remove_filter', [
+        ('resolve', AUTO_REMOVE, AUTO_REMOVE.replace('spec = self.line_spec(owner, cur)', "spec = self.line_spec(owner, cur) if kind != 'remove' else None")),
+        ('_exec_line', 'mapped_remove = self.line_spec(owner, ln) is not None', 'mapped_remove = False')], ['10394012'])
+    _killed('auto_se_reselect', [('apply_buff', "auto_spec = self.line_spec(owner, self._cur_line) if eff.get('times', 1) > 1 else None",
+                                  'auto_spec = None')], ['10412012', '10412013', '10412014', 'harley_ties'])
+    _killed('auto_hp_float32', [('auto_hp_basis_points', 'denominator = _float32(maxhp)',
+                                 'return int(hp / maxhp * 10000) if maxhp else 0')],
+            ['10192013', '10193013', '10544021', '16012013'])
+    _killed('auto_empty_marker', [('line_spec', EMPTY_ONE, EMPTY_ONE.replace("spec.get('one')", 'False'))], ['10253015'])
+    # 곱셈 반올림 누락은 별도 변이.
+    _killed('float32 multiplication rounding', [('auto_hp_basis_points', 'int(_float32(ratio * 10000.0))', 'int(ratio * 10000.0)')],
+            ['test_float32_multiply_and_high_hp_filter'])
+    _killed('unsupported multi marker scope leak', [('line_spec', EMPTY_ONE, EMPTY_ONE.replace("spec.get('one')", 'True'))],
+            ['test_unsupported_multi_marker_fallback_unchanged'])
+    _killed('RepeatBuffCount failure continuation', [('apply_buff', 'if repeat_buff and not applied:', 'if False:')],
+            ['test_tyria_repeat_stops_after_failed_iteration'])
 
 
 if __name__ == '__main__':

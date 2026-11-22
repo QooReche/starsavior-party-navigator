@@ -23,12 +23,11 @@ def passive(phase, effect):
 class Rules1121Test(unittest.TestCase):
     def test_inactive_legacy_assumptions_return_when_selected(self):
         keys = lambda m, o: {x['rule'] for x in assumptions_used(m, o)}
-        old_enemy = {'mc.enemy_init_cd', 'mc.enemy_init_cd_special',
-                     'mc.target_row_weight', 'mc.target_defender_mult', 'mc.target_mode'}
+        old_enemy = {'mc.enemy_init_cd', 'mc.enemy_init_cd_special'}
         current = keys(MC_OPTS, DEFAULT_OPTS)
         self.assertTrue(current)
         self.assertFalse(current & (old_enemy | {'mc.manual_burst', 'opts.init_cd_frac'}))
-        legacy = keys(dict(MC_OPTS, enemy_spawn='legacy', enemy_auto_target='weighted'),
+        legacy = keys(dict(MC_OPTS, enemy_spawn='legacy'),
                       dict(DEFAULT_OPTS, nova_policy='manual'))
         # enemy_init_cd 는 11/21 code 승격(클라 OBF_7817 가득과 같음) -> legacy 를 골라도 가정 보고 안 함
         self.assertTrue((old_enemy - {'mc.enemy_init_cd'}) | {'mc.manual_burst'} <= legacy)

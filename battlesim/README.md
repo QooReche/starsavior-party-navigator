@@ -33,7 +33,7 @@ python -X utf8 -m battlesim unit 그웬                         # 패키지로 �
 ```
 python -X utf8 -I tools/sim_damage.py simulate --party gwen,fei,professor-m,amora --leader 0 --stage "cosmo/길레/길레 2단계" --runs 200 --out 결과.json
 python -X utf8 -I tools/sim_damage.py simulate --spec 입력.json        # {"party": ..., "encounter": ..., "options": ...}
-python -X utf8 -I tools/sim_damage.py simulate ... --rules "{\"target_defender_mult\": 4.0}"   # 규칙 민감도
+python -X utf8 -I tools/sim_damage.py simulate ... --rules "{\"power_penalty\": \"off\"}"   # 규칙 민감도
 ```
 파이썬: `from battlesim import simulate; simulate({"units": ["gwen", "fei", "professor-m", "amora"], "leader": 0}, {"stage": "rush/매니저 그레고리/매니저 그레고리 Ⅰ"}, {"seed": 1, "n_runs": 200})`.
 입력·출력 형식은 `api.py` 머리말, 규칙·근거는 `rules/default.json` 의 `mc` 절, 설계는 `docs/battlesim_design.md` 9절, 검증은 `docs/sim_p3_report.md`.

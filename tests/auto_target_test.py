@@ -58,9 +58,6 @@ class EnemyRule1001Test(unittest.TestCase):
         exp = {0: 0.09, 1: 0.89, 2: 0.01, 3: 0.01}
         for pos, p in exp.items():
             self.assertAlmostEqual(cnt[pos] / n, p, delta=0.012, msg=dict(cnt))
-        b.mc['enemy_auto_target'] = 'weighted'   # 옛 가중: 디펜더 0.533
-        cnt = Counter(b.pick_attack_target(b.foes[0]).pos for _ in range(n))
-        self.assertAlmostEqual(cnt[1] / n, 0.8 * 2 / 3, delta=0.015)
 
     def test_no_defender_keeps_front(self):
         b = battle([unit('a%d' % i) for i in range(4)], [unit('foe')], seed=2)
