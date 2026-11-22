@@ -427,8 +427,8 @@ def simulate(party_spec, encounter_spec, options=None, shared=None):
 REKINDLE = [0.0, 0.03, 0.07, 0.12, 0.18, 0.25]     # 작전 재점화 버프 단계별 (주는 피해 +x, 받는 피해 −x) — 26610546 BUFF_TEMPLET:55578-55937, NST_RATE_DAMAGE_UP/REDUCE
 
 
-def _ally_stage_fx(encounter_spec, meta, fx):
-    """stage_fx_target=allies: 스테이지 효과를 «속성·직업 조건에 맞는 아군»에게 건다(표: A팀 대상, B팀 없음). [(props, 속성|None, 직업|None)]
+def _ally_stage_fx(encounter_spec, meta):
+    """스테이지 효과를 «속성·직업 조건에 맞는 아군»에게 건다(표: A팀 대상, B팀 없음). [(props, 속성|None, 직업|None)]
     조건은 데이터북 문장 순서대로 data/stage_fx.json 에 있다. 문장을 덮어썼거나 조건이 없으면 아군 전체(조건 없음)로 본다."""
     texts = encounter_spec.get('stage_fx')
     key = '%s|%s|%s' % (meta['content'], meta['tab'], meta['name']) if meta.get('name') and meta.get('content') else None
@@ -482,7 +482,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared=None
         # 11/12 사용자 판단: 클라에 격전 의뢰 제한값 주입 경로 없음. 별 미션 턴과 별개.
         turn_limit = None
     max_turns = encounter_spec.get('max_turns', 200 if clash_no_limit else 50)
-    ally_fx = _ally_stage_fx(encounter_spec, meta, fx)
+    ally_fx = _ally_stage_fx(encounter_spec, meta)
     sudden = sudden_death()['groups'].get(meta.get('sudden_death')) if meta.get('sudden_death') else None
     power = party_power(defs)
     pp = power_pen(power, meta.get('recommended_power'), db)
@@ -501,7 +501,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared=None
             raise ValueError('rekindle 은 0~%d: %r' % (len(REKINDLE) - 1, rk))
         x = REKINDLE[rk]
         # IsBuff=false·ForceApplyEffect·TurnInfinite·DeadNotDispel: 강화 개수/해제/금지와
-        # 독립인 상시 스탯. stage_fx_target=off여도 재점화는 별도로 적용한다.
+        # 독립인 상시 스탯. 스테이지 효과와 별도로 적용한다.
         # NKM:2371,3885-3892,18864-18897 → mc.Unit.mods → 일반/지속/연쇄 피해.
         ally_fx = list(ally_fx or ()) + [({'피해 증가': x * 100, '피해 감소': x * 100}, None, None)]
     static = support_report(defs + [d for w in waves for d in w])
@@ -536,7 +536,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared=None
         semantic_cache = {}
     for r in range(n_runs):
         rng = random.Random(seed * 1000003 + offset + r)
-        b = Battle(defs, waves, rng, opts, mc, leader=leader, fx={}, ally_fx=ally_fx,
+        b = Battle(defs, waves, rng, opts, mc, leader=leader, ally_fx=ally_fx,
                    turn_limit=turn_limit, timeline=bool(o.get('timeline')) and r == 0,
                    enemy_lines=o.get('enemy_lines', True), max_turns=max_turns, pen=pen, break_skill=o.get('break_skill'), rng_streams=bool(o.get('rng_streams')),
                    sudden=sudden, semantic_cache=semantic_cache,

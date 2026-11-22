@@ -872,7 +872,7 @@ CHAIN_TIMING_MODES = ('client_queue', 'client_mapped', 'immediate')
 
 # ------------------------------------------------------------------ 전투
 class Battle:
-    def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None, ally_fx=None,
+    def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, turn_limit=None, ally_fx=None,
                  timeline=False, enemy_lines=True, max_turns=50, pen=None, break_skill=None, rng_streams=False, sudden=None,
                  semantic_cache=None, battle_mode='all_kill'):
         self.pen = tuple(pen) if pen else (1.0, 1.0)    # P5 전투력 보정(아군이 주는 피해 배율, 적이 주는 피해 배율) — 스킬·지속·연쇄만
@@ -894,7 +894,7 @@ class Battle:
         if rng_streams:
             base = rng.getrandbits(64)
             self._rs = (random.Random(base * 2 + 1), random.Random(base * 2 + 2))
-        # 스테이지 효과를 아군에게 거는 모드(mc.stage_fx_target=allies): ally_fx = [(props, 속성|None, 직업|None)] — 조건에 맞는 아군만
+        # 스테이지 효과는 아군에게 건다(클라 — 적에게 걸던 옛 경로는 엔진 다이어트 4단계에서 지움): ally_fx = [(props, 속성|None, 직업|None)] — 조건에 맞는 아군만
         def _afx(d):
             tot = {}
             for props, adj, role in ally_fx or ():
@@ -911,7 +911,6 @@ class Battle:
         self._add_order = []
         self.wave_i = -1
         self.foes = []
-        self.fx = fx or {}
         self.turn_ticks = float(self.mc['turn_ticks'])
         self.turn_limit = turn_limit
         self.max_turns = max_turns
@@ -1113,7 +1112,7 @@ class Battle:
         self.wave_i += 1
         defs = self.waves[self.wave_i]
         lead = None
-        self.foes = [Unit(d, 1, i, self, leader=(lead == i), fx=self.fx) for i, d in enumerate(defs)]
+        self.foes = [Unit(d, 1, i, self, leader=(lead == i)) for i, d in enumerate(defs)]
         self.all_foes.extend(self.foes)   # 웨이브별 적 기록(피해 집계는 전 웨이브 합)
         # 소환 칸 추적: 웨이브 적에게 게임 칸을 배정(BattleScript SpawnPosIndex 또는 배열 순서)
         if self._foe_slots is not None:
@@ -2886,13 +2885,6 @@ class Battle:
             return _stat.def_client(u.d, r3, self.mc['stat_floor'] == 'client')    # 식 = battlesim/statcalc.py(기대값 엔진 공용)
         return max(0.0, self._stat_int(max(0.0, u.d.stats['def'] * (1 + u.d.passive['defp'] + r3))))
 
-    @staticmethod
-    def _stage2(u, key, rate, flat=0.0):
-        """2단까지의 값(NKM:18874-18891: 1단 값 + 2단 고정 + 1단 값 x 2단 % 합). calc_stats 가 남긴 1단 값·각인/장비 % 가 있고
-        그 값으로 다시 계산한 전투 전 능력치가 지금 stats 와 같으면 각인/장비 % 와 패시브 % 를 한 합으로, 아니면(내정보 덮어쓰기 등)
-        전투 전 능력치 x (1 + 패시브 %) 로 근사."""
-        return _stat.unit_stage2(u.d, key, rate, flat)
-
     def _stat_int(self, v, base=None, rate=None):
         """build 26610546 NKM:18892-18897: 최종 능력치 = (int)Math.Floor(앞 단 값 + 앞 단 값 x 3단 비율), 3단 비율 = 만분율 정수 합 x 0.0001.
         base·rate 를 주면 클라와 같은 순서로 계산(보정 없는 Floor), 안 주면 v 를 그대로 Floor. legacy = 실수 그대로(이전 동작)."""
@@ -3606,7 +3598,7 @@ class Battle:
                 if self._foe_slots[pos] is not None:
                     continue   # 칸이 차 있으면 건너뜀
                 foe_def = slot_spec['foe_def']
-                u = Unit(foe_def, 1, pos, self, fx=self.fx)
+                u = Unit(foe_def, 1, pos, self)
                 u.slot = pos
                 u.summoned = True
                 self._foe_slots[pos] = u

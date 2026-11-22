@@ -68,7 +68,7 @@ def experiment(mode, runs, bs):
             b._diag_ctx = ctx
             if not facts:
                 facts.append(dict(atk=b.atk_stat(a, ctx), stats=a.d.stats, effects=list(a.eff),
-                                  mods=dict(a.mods()), fx=b.fx, pen=b.pen, boss_actions=a.actions,
+                                  mods=dict(a.mods()), fx=a.fx, pen=b.pen, boss_actions=a.actions,
                                   allies=[dict(name=u.name, hp=u.maxhp, defense=b.def_stat(u),
                                                element=u.element, shield=u.shield_total()) for u in b.allies]))
         try:

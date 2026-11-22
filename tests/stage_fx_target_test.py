@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""mc.stage_fx_target: 스테이지 효과(fx)를 적(enemies, 옛 동작)에게 걸지 아군(allies, 표대로)에게 걸지.
+"""스테이지 효과(fx)는 표대로 조건에 맞는 아군에게 걸리고 적에게는 안 걸림(옛 스위치 stage_fx_target 은 엔진 다이어트 4단계에서 지움).
 플래시 포인트 «공허말살자 Ⅰ» = 태양 속성 방어력 +30%(60007) + 디펜더 치명타 확률 +30%(60009), 대상은 A팀(아군)만.
 근거: static-data tables/BATTLE_EFFECT_TEMPLET.json·SE_TEMPLET_BATTLE_EFFECT.json, NKM.Templets.decompiled.cs:36765-36799.
 실행: python -X utf8 -I tests/stage_fx_target_test.py"""
