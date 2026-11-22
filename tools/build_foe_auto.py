@@ -271,7 +271,8 @@ def build(static):
 
 def unit_links(static, raw, units, guild=False):
     """(ui, xi) -> 게임 UnitStrId 집합. 조건에 맞는 배치가 하나뿐인 스테이지에서 칸마다 역할·속성이 같을 때만.
-    guild=True: 길드 방어전도 GUILD_DUNGEON_* 전체를 후보로 두고 칸마다 적 이름까지 같은 배치만(기본 끔 — foe_auto 출력 불변)."""
+    guild=True: 길드 방어전도 GUILD_DUNGEON_* 전체를 후보로 두고 칸마다 적 이름까지 같은 배치만. foe_auto 는 끔(켜면 길드 적 8종이
+    더 연결돼 출력이 달라짐 — 11/22 측정), tools/foe_se_link.py 는 켬."""
     rows = SP.battle_rows(static)
     link = defaultdict(set)      # (ui, xi) -> 게임 UnitStrId 집합
     for c in raw['g']:
