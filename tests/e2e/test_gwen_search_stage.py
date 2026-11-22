@@ -53,7 +53,7 @@ def flow(browser,base,width,kind,template=None):
               if(pool.length!==12)throw Error('synthetic pool needs 12');
               for(const r of R)if(!pool.some(x=>x.key===r.key))EXCL.add(r.key);
               S.workers.max=1;S.screen={runs:1};S.rerank={keep:495,runs:2};S.final.runs=2;S.combine={topTriples:1,show:1};
-              CSR.optLearned=false;CSR.optFast=false;CSR.optLevel=3;renderCosmoSearch();
+              CSR.optLearned=false;CSR.optLevel=3;renderCosmoSearch();
             }''')
         else:
             p.evaluate('''() => {

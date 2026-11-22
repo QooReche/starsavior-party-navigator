@@ -24,16 +24,11 @@ function makeWorker(){
  return w;
 }
 const S=JSON.parse(JSON.stringify(G.search));
-// Baseline explicitly preserves the original policy when switches are introduced.
-if(variant==='baseline') delete S.speed;
-else if(variant==='fast'||variant==='fast-replay') S.speed.surrogate.value=true;
-else if(variant==='crn') S.speed.rngStreams.value=true;
-else if(variant!=='reuse') throw new Error('unknown variant '+variant);
-if(variant!=='baseline')S.speed.workerReuse.value=true;
+// 제품 탐색 설정 그대로. 옛 variant(fast·fast-replay·crn·reuse)는 스위치 삭제(11/22) — 태그 engine-legacy-final 에서만
+if(variant!=='baseline') throw new Error('unknown variant '+variant);
 const signature=crypto.createHash('sha256').update(JSON.stringify({roster,S,repeat,variant,mode})).digest('hex');
 const originalRun=GS.runPhase, phases=[];
 let instrumentationSeconds=0,resumed=false;
-const replay=variant.endsWith('-replay'), baseCache=new Map();
 let phase=0, active=null;
 GS.runPhase=o=>{
  const i=phase++, file=path.join(dir,`phase-${i}.json.gz`), started=performance.now();
@@ -45,19 +40,9 @@ GS.runPhase=o=>{
   phases.push(saved.timing);console.log(JSON.stringify({size,repeat,variant,phase:i,resumed:true,...saved.timing}));
   return {promise:Promise.resolve(saved.res),cancel(){}};
  }
- let cached={},todo=o.jobs;
- if(replay){
-  const baseIndex={1:0,4:1,3:2,2:3}[o.seed];
-  if(!baseCache.has(baseIndex))baseCache.set(baseIndex,JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(out,`${size}-${mode}-baseline-${repeat}`,`phase-${baseIndex}.json.gz`)))));
-  const old=baseCache.get(baseIndex);
-  if(old.seed!==seed||old.timing.runs!==o.runs)throw Error('replay seed/runs mismatch');
-  cached=Object.fromEntries(o.jobs.filter(j=>old.res[j.key]).map(j=>[j.key,old.res[j.key]]));
-  todo=o.jobs.filter(j=>!cached[j.key]);
- }
- const h=originalRun({...o,jobs:todo,seed,chunk:100});active=h;
+ const h=originalRun({...o,seed,chunk:100});active=h;
  return {cancel:()=>h.cancel(),promise:h.promise.then(res=>{
-  Object.assign(res,cached);
-  const timing={phase:i,teams:o.jobs.length,runs:o.runs,seconds:(performance.now()-started)/1000,...(replay?{replayed:Object.keys(cached).length,native:todo.length}: {})};
+  const timing={phase:i,teams:o.jobs.length,runs:o.runs,seconds:(performance.now()-started)/1000};
   phases.push(timing);
   const saveStart=performance.now();
   fs.writeFileSync(file,zlib.gzipSync(JSON.stringify({signature,timing,seed,jobs:o.jobs.map(j=>({key:j.key,keys:j.keys,order:j.order,boss:j.boss})),res})));
@@ -71,8 +56,8 @@ C.search({S,bosses:G.season.bossOrder,bossName:key=>G.bosses.find(b=>b.key===key
  onPhase:(msg,total,info)=>console.log(JSON.stringify({size,repeat,variant,msg,total,info})),
  onProgress:(d,t)=>{if(d%10000===0)console.log(JSON.stringify({progress:d,total:t,phase:phase-1,seconds:(performance.now()-started)/1000}));}
 }).then(result=>{
- const report={signature,size,repeat,variant:variant.replace('-replay',''),replay,resumed,mode,workers,search:S,phases,seconds:phases.reduce((s,p)=>s+p.seconds,0),
-  wallSeconds:replay||resumed?null:(performance.now()-started)/1000-instrumentationSeconds,instrumentationSeconds,result};
+ const report={signature,size,repeat,variant,replay:false,resumed,mode,workers,search:S,phases,seconds:phases.reduce((s,p)=>s+p.seconds,0),
+  wallSeconds:resumed?null:(performance.now()-started)/1000-instrumentationSeconds,instrumentationSeconds,result};
  report.resultHash=crypto.createHash('sha256').update(JSON.stringify(result)).digest('hex');
  const reportFile=path.join(dir,'result.json');
  const previous=fs.existsSync(reportFile)?JSON.parse(fs.readFileSync(reportFile,'utf8')):null;

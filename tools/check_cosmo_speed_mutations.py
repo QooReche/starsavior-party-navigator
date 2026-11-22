@@ -5,14 +5,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 MUTATIONS = [
-    ('coverage', 'cosmo_search.js', 'if (n < cfg.minPerUnit)', 'if (false)'),
-    ('monitor', 'cosmo_search.js', 'incomplete || rate > S.speed.surrogate.missThreshold', 'false'),
-    ('audit order', 'cosmo_search.js', 'ranked.filter(x => !chosen.has(x.i)).map(x => x.j)', 'jobs.filter((j, i) => !chosen.has(i))'),
-    ('CRN forwarding', 'cosmo_search.js', 'if (speedValue(S, "rngStreams", false))', 'if (false)'),
-    ('fallback seed', 'cosmo_search.js', 'shuffled(missing, 20261106), fr, 1,', 'shuffled(missing, 20261106), fr, 19,'),
-    ('missing result retry', 'cosmo_search.js', 'firstJobs.filter(j => res1[j.key] && res1[j.key].cosmo).map(j => j.key)', 'firstJobs.map(j => j.key)'),
-    ('incomplete retry error', 'cosmo_search.js', 'missing.some(j => !res1[j.key] || !res1[j.key].cosmo)', 'false'),
-    ('small pool guard', 'cosmo_search.js', 'requested && halved && pass < Math.ceil(cfg.ratio * L)', 'requested && halved'),
+    # 빠른 탐색·공통 난수 변이는 스위치 삭제(11/22)로 없음
     ('pool reuse', 'search_executor.js', 'return ws[i] || (ws[i] = makeWorker())', 'return (ws[i] = makeWorker())'),
     ('pool close', 'cosmo_search.js', 'if (workersPool) workersPool.close();', 'if (false) workersPool.close();'),
 ]

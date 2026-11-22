@@ -11,12 +11,11 @@ const teams = [[0,1,2,3], [0,4,5,6], [0,7,8,9], [0,10,11,12], [4,5,6,7], [8,9,10
 const score = keys => 100 + (keys.includes('u0') ? 10000 : 0) + teams.length - teams.findIndex(t => C.idOf(t) === C.idOf(keys));
 function settings() {
   const S = structuredClone(G.search);S.placement={auditTeams:0};
-  S.learned.value = false; // 기존 전수·빠른 탐색의 겹침 재시도 회귀
+  S.learned.value = false; // 기존 전수 탐색의 겹침 재시도 회귀
   S.minFront = S.minDealer = 0; S.maxPool = null;
   S.screen = {runs: 2, firstRuns: 1, passFrac: .001, passMinMult: 1};
   S.rerank = {keep: 1, runs: 3}; S.final.runs = 4; S.combine = {topTriples: 2, show: 2};
   S.retry = {keepMultipliers: [1, 3, null], maxCandidatesPerBoss: 100, maxRerankGames: 900, maxTripleChecks: 10000};
-  S.speed.workerReuse.value = true; S.speed.surrogate.value = false;
   return S;
 }
 async function run(S = settings(), onlyHot = false, missing = false, cancel = false) {
@@ -70,14 +69,6 @@ async function main() {
   assert(r.progress.some(p => p[0] === 2 && p[1] === 3 && p[2] === 9), '재시도 진행 표시가 기존 완료 건수를 유지');
   assert.equal(r.out.growthOwned.length, 18, '육성 비교에도 확대 결과 재사용');
   console.log('PASS retry success, halving recovery, reuse, ETA, growth');
-
-  const fast = settings();
-  Object.assign(fast.speed.surrogate, {value:true, ratio:.5, minPerUnit:0, minAudit:0, auditFrac:0, missThreshold:1});
-  const recovered = await run(fast);
-  assert(!recovered.error, recovered.error?.stack);
-  assert(jobs(recovered, 1).length < 18 && jobs(recovered, 3).length === 18, '빠른 선별에서 미계산한 후보도 확대 시 복귀');
-  assert.equal(new Set(recovered.out.rows[0].teams.flatMap(t => t.keys)).size, 12);
-  console.log('PASS surrogate uncomputed candidate recovery');
 
   const none = await run(settings(), true);
   assert.equal(none.error?.gwenCause, 'empty');

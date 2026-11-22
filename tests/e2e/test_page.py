@@ -1733,17 +1733,9 @@ def test_cosmo_search(browser, ctx):
     assert season_ui[0] and season_ui[1] and season_ui[2] == "", "시즌 화면에 섹터·스테이지 선택이나 보스별 추천이 남아 있음: %r" % (season_ui,)
     shown = panel.is_visible()
     has_btn = page.locator('#cosmo-search button[data-cs="start"]').count()
-    fast = page.locator('#cosmo-search input[data-cs="fast"]')
-    assert not fast.is_checked(), '실험 옵션은 기본 꺼짐'
-    open_fold(page, 'cs-options')
-    fast.check()
-    assert page.evaluate('() => CSR.optFast && !D.cosmoRaid.search.speed.surrogate.value')
-    open_fold(page, 'cs-basis')
-    assert '전수 확인' in page.locator('#cosmo-search [data-k="cs-eta-pre"]').inner_text()
-    fast.uncheck()
-    assert page.evaluate('() => !CSR.optFast')
+    assert page.locator('#cosmo-search input[data-cs="fast"]').count() == 0, '빠른 탐색(실험) 체크는 11/22 삭제'
     # 시험 풀은 maxPool=12(역할 보충 가능)로 줄이되 후보 조합은 모두 유지한다. keep=40은 시즌에 따라 중복 없는 삼중까지 잘라 냄.
-    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;const pool=CosmoSearch.poolAll(CosmoSearch.searchSettings(S,null,false),csProfile().results,R);for(const r of R)if(!pool.some(x=>x.key===r.key))EXCL.add(r.key);S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed.v2');localStorage.setItem('pn.cosmo.speed',JSON.stringify({sec:[999,999,999,999],workers:4}))}catch(e){}}""")
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;const pool=CosmoSearch.poolAll(CosmoSearch.searchSettings(S,false),csProfile().results,R);for(const r of R)if(!pool.some(x=>x.key===r.key))EXCL.add(r.key);S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed.v2');localStorage.setItem('pn.cosmo.speed',JSON.stringify({sec:[999,999,999,999],workers:4}))}catch(e){}}""")
     page.select_option('#cosmo-search select[data-cs="level"]', "3")
     lvl = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value")
     # 시작 전 안내: 이 PC 속도를 모르면 «시작하면 몇 초 뒤 예상 시간이 표시됨»
@@ -1789,14 +1781,10 @@ def test_cosmo_search(browser, ctx):
     page.evaluate("() => { EXCL.delete(cosmoExcludeKey); renderCosmoSearch() }")
     old2 = page.locator('#cosmo-search [data-k="cs-old"]').count()
     open_fold(page, 'cs-options')
-    fast.check()
-    assert page.locator('#cosmo-search [data-k="cs-stale"]').count() == 0, '학습 선별이 빠른 탐색보다 우선함'
     learned = page.locator('#cosmo-search [data-cs="learned"]')
     learned.uncheck()
     assert page.locator('#cosmo-search [data-k="cs-stale"]').count() == 1
     learned.check()
-    assert page.locator('#cosmo-search [data-k="cs-stale"]').count() == 0
-    fast.uncheck()
     assert page.locator('#cosmo-search [data-k="cs-stale"]').count() == 0
     # 난이도를 바꾸면 낡은 결과 경고
     page.select_option('#cosmo-search select[data-cs="level"]', "4")
@@ -1827,7 +1815,7 @@ def test_cosmo_retry(browser, ctx):
       S.maxPool=13;S.minRole={};S.minPowerRatio=0;S.minFront=0;S.minDealer=0;
       S.screen={runs:1};S.rerank={keep:1,runs:2};S.combine={topTriples:2,show:2};S.final.runs=2;
       S.retry={keepMultipliers:[1,3,null],maxCandidatesPerBoss:100,maxRerankGames:600,maxTripleChecks:10000};
-      const keys=CosmoSearch.poolAll(CosmoSearch.searchSettings(S,null,false),csProfile().results,R.filter(s=>!EXCL.has(s.key))).map(r=>r.key);
+      const keys=CosmoSearch.poolAll(CosmoSearch.searchSettings(S,false),csProfile().results,R.filter(s=>!EXCL.has(s.key))).map(r=>r.key);
       window.retryTeams=[[0,1,2,3],[0,4,5,6],[0,7,8,9],[0,10,11,12],[4,5,6,7],[8,9,10,11]].map(t=>t.map(i=>keys[i]));
       window.retryName=BYKEY[keys[0]].name;window.retryHot=false;window.retryPosts=[];
       GuildSearch.combos=()=>retryHot?retryTeams.slice(0,4):retryTeams;
@@ -1878,7 +1866,7 @@ def test_cosmo_auto_level(browser, ctx):
     page = open_page(browser, ctx, raid_ui=True)
     page.select_option("#content", label=next(l for l in page.eval_on_selector_all("#content option", "o => o.map(x => x.textContent)") if l.startswith("코스모 게이트(시즌")))
     settle(page)
-    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;const pool=CosmoSearch.poolAll(CosmoSearch.searchSettings(S,null,false),csProfile().results,R);for(const r of R)if(!pool.some(x=>x.key===r.key))EXCL.add(r.key);S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;S.auto.probeRuns=1;try{localStorage.removeItem('pn.cosmo.speed.v2')}catch(e){}}""")
+    page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;const pool=CosmoSearch.poolAll(CosmoSearch.searchSettings(S,false),csProfile().results,R);for(const r of R)if(!pool.some(x=>x.key===r.key))EXCL.add(r.key);S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;S.auto.probeRuns=1;try{localStorage.removeItem('pn.cosmo.speed.v2')}catch(e){}}""")
     default_auto = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value") == "-1"
     page.click('#cosmo-search button[data-cs="start"]')
     page.wait_for_selector('#cosmo-search [data-k="cs-table"], #cosmo-search [data-k="cs-err"]', timeout=300000)
@@ -2396,7 +2384,7 @@ def test_growth_stage23(browser, ctx):
     for kind, state, selector in [('guild', 'GSR', '#guild-search [data-gs="start"]'), ('cosmo', 'CSR', '#cosmo-search [data-cs="start"]')]:
         page.select_option('#content', value=page.evaluate(f"String(contents.findIndex(c=>c.key==='{kind}'))"))
         settle(page)
-        page.evaluate("GS.sel={level:0,tiers:[0,0,0,0]};CSR.optLevel=0;CSR.optFast=false;renderGuild();renderCosmoSearch()")
+        page.evaluate("GS.sel={level:0,tiers:[0,0,0,0]};CSR.optLevel=0;renderGuild();renderCosmoSearch()")
         page.click(selector)
         page.wait_for_function("GROW.phase==='done'||GROW.phase==='error'", timeout=180000)
         assert page.evaluate('GROW.phase') == 'done', page.evaluate('GROW.errors')
@@ -3165,10 +3153,8 @@ def test_ux_step3(browser, ctx):
             open_fold(page,'cs-options')
             page.select_option('[data-cs="level"]','3')
             page.select_option('[data-cs="mode"]','mean')
-            page.check('[data-cs="fast"]')
-            assert page.evaluate("CSR.optLevel===3&&CSR.optMode==='mean'&&CSR.optFast")
+            assert page.evaluate("CSR.optLevel===3&&CSR.optMode==='mean'")
             assert page.locator('[data-fold="cs-options"]').evaluate('e=>e.open')
-            page.uncheck('[data-cs="fast"]')
             page.locator('[data-fold="cs-options"] > summary').click()
         count=page.evaluate('ui3Created')
         page.click(f'[data-{prefix}="start"]')

@@ -470,12 +470,6 @@ SEARCH = dict(
     learned=dict(value=True, maxScoreCombos=2000000, maxOverlapChecks=2000000, fallbackMultiplier=4, S=3000, m=8, K=4000, M=8, A=256, overlapStarts=10, overlapKeep=8,
                  folds=3, epochs=40, ridge=10, minCorrelation=0.1, missThreshold=0.04,
                  note="계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀."),
-    speed=dict(
-        workerReuse=dict(value=True, legacy=False, alt=True, note='단계 사이 워커 재사용. 측정: docs/cosmo_speed_rd_1110.md'),
-        rngStreams=dict(value=False, legacy=False, alt=True, note='공통 난수 동기화 실험. 판 수 유지.'),
-        surrogate=dict(value=False, legacy=False, alt=True, ratio=0.7, auditFrac=0.02, minAudit=64,
-                       minPerUnit=3, missThreshold=0.04, proxy={'tyria': 'attack'},
-                       note='빠른 탐색(실험). 제외 무작위 표본의 경계 이상 비율이 문턱을 넘으면 해당 보스 전수 복귀.')),
     _note='3보스 구원자 겹침 금지 편성 찾기(cosmo_search.js) 설정. 기본은 보유 육성 구원자 전체에서 학습 선별이고, 판 수·keep 은 정밀도와 계산 시간의 절충이라 실측으로 조정한다.',
     placement=dict(baseline=False, enabled=False, screenRuns=2, keep=2, auditTeams=12),
     maxPool=None, maxCombos=363000, minPowerRatio=0, minRole={}, minFront=0, minDealer=0,

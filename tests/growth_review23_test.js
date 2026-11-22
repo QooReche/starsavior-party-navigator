@@ -7,7 +7,7 @@ function context(code=ui,storage={}){
   const ctx={UiShared:require('../ui_shared'),GrowthGuide:G,GuildView:V,GuildSearch:GS,ownedSimBreaks:()=>[],MI:{hash:'synthetic',info:{},growth:{assumed:{version:'test'}}},
     CFG:{restrict:{}},R:[],EXCL:new Set(),MODE:'auto',MM:'myinfo',SCROWN:0,BRSEL:{},SESSION_BR:{},
     SIMOPT:{build:'standard'},GS:{sel:{level:0,tiers:[0,0,0,0]}},GSR:{rows:[],banCoop:true},
-    CSR:{rows:[],optLevel:0,optMode:'top',optFast:false},D:{guild:D,cosmoRaid:{season:'test',bosses:['a','b','c'].map(key=>({key})),search:{}}},
+    CSR:{rows:[],optLevel:0,optMode:'top'},D:{guild:D,cosmoRaid:{season:'test',bosses:['a','b','c'].map(key=>({key})),search:{}}},
     document:{getElementById:id=>id==='assume-growth'?{checked:true}:{value:'all'}},
     LS:{get:k=>storage[k],set:(k,v)=>(storage[k]=JSON.parse(JSON.stringify(v)),true)},
     miProfile:()=>({units:{}}),MyInfoReco:{profile:()=>({units:{}})},breakOwned:()=>[],csProfile:()=>({})};
@@ -26,7 +26,7 @@ function historyOp(code=ui){const ctx=context(code),old=save(ctx,'op','first');
   assert.equal(ctx.growthSig(content('op'),{...stage,name:'first'}),old,'op exact signature ignores guild state');
 }
 function historySeason(code=ui){const ctx=context(code);save(ctx,'guild');
-  ctx.CSR.rows=[{teams:[{boss:'a',keys:['e','f','g','h'],level:2}]}];ctx.CSR.optLevel=2;ctx.CSR.optMode='mean';ctx.CSR.optFast=true;
+  ctx.CSR.rows=[{teams:[{boss:'a',keys:['e','f','g','h'],level:2}]}];ctx.CSR.optLevel=2;ctx.CSR.optMode='mean';
   save(ctx,'cosmo');assert(ctx.LS.get('growth.history')['guild/stage'],'cosmo search must not purge guild');
   const p=G.priority(ctx.LS.get('growth.history'),ctx.growthSig(content('cosmo'),stage));assert.equal(p[0].count,2);
 }

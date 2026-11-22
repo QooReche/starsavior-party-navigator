@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),{spawn}=require('node:chil
 const C=require('../cosmo_search.js'),GS=require('../guild_search.js'),G=require('../data/cosmo_raid.json');
 async function run({roster,results,mode='learned',metric='top',level=-1,workers=2,python='python',seed=0,breaks=[],standard=false,onPhase=()=>{},onLists,settings=null,forbidFallback=false}){
  if(!Number.isInteger(workers)||workers<1||workers>4)throw Error('workers must be 1..4');
- const S=structuredClone(settings||G.search);S.learned.value=mode==='learned';S.speed.surrogate.value=false;S.speed.workerReuse.value=true;S.combine.show=10;
+ const S=structuredClone(settings||G.search);S.learned.value=mode==='learned';S.combine.show=10;
  const children=new Set(),phases=[],start=performance.now();let games=0,active=null;
  const oldRun=GS.runPhase,oldParty=GS.party;
  if(standard)GS.party=(...args)=>{const p=oldParty(...args);p.spec={units:p.order.map(key=>({key,build:'standard',...(results[key].override?{stats_override:results[key].override,stats_final:true,power:results[key].power}:{})})),leader:p.spec.leader};return p;};

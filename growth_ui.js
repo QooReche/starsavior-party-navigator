@@ -149,7 +149,7 @@ function growthConditions(c,trackTeams=true){const rules=simOpt(c.key);
     ...(D.guild.search?.newSearch===true?{newSearch:true}:{}),difficulty:GuildView.normSel(D.guild,GS.sel||LS.get('guild.v2')),banCoop:GSR.banCoop,ranking:'guild-top-cap-mean',breakCheck:GuildSearch.breakSignature(ownedSimBreaks()),
     teams:GSR.rows.map(r=>[r.keys,r.order,r.sup,r.level,r.brk,r.brkLv])};
   if(c.key==='cosmo')return {rules,season:D.cosmoRaid?.season,
-    difficulty:CSR.optLevel,fast:CSR.optFast,ranking:CSR.optMode,...(CSR.optLearned?{learned:true}:{}),
+    difficulty:CSR.optLevel,ranking:CSR.optMode,...(CSR.optLearned?{learned:true}:{}),
     teams:CSR.rows.map(r=>Array.isArray(r?.teams)?r.teams.map(t=>[t?.boss,t?.keys,t?.order,t?.level,t?.brk,t?.brkLv]):[])};
   const prefix=c.key+'|',shared=typeof SHARE!=='undefined'&&Object.hasOwn(SHARE,'b');
   const selected=shared?SESSION_BR:BRSEL;
@@ -197,7 +197,7 @@ function growthRankPaint(){const el=$('growth-priority');if(!el)return;
 }
 function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.context===growthOwnedContext('guild'):
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
-function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,CSR.optFast,csBreaks(),...(CSR.optLearned?['learned']:[])],simOpt(kind),...searchPlacementTag(kind)]);}
+function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,csBreaks(),...(CSR.optLearned?['learned']:[])],simOpt(kind),...searchPlacementTag(kind)]);}
 // Whole-account pass: the owned recommendation and its caches remain untouched.
 // 스테이지형: 목표 지표(3별 목표면 N턴 내 클리어율, 아니면 클리어율)가 올라야 «더 나음». 목표 지표가 같으면 3별 목표일 때만 클리어율이 오른 경우를 인정한다
 //  (N턴 내 확률은 그대로여도 깨는 확률이 오른 것). 진척도·처치 턴만 나아진 것은 «더 잘 깸»이 아니다 — 표시하지 않는다

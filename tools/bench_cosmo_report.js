@@ -43,29 +43,11 @@ for(const size of [...new Set(reports.map(r=>r.size))]){
    const recall=sets=>lists.map((l,i)=>Object.fromEntries([50,100,300].map(k=>[k,l.slice(0,k).filter(g=>sets[i].has(g.key)).length/Math.min(k,l.length)])));
    const represented=new Set((passed||rerank).jobs.flatMap(j=>j.keys));
    const baseline=runs.find(x=>x.variant==='baseline'&&x.repeat===r.repeat);
-   let monitor=null;
-   if(r.result.fast && r.search && baseline){
-    const full=read(path.join(out,baseline.dir,'phase-0.json.gz'));
-    const results=Object.fromEntries(catalog.slice(0,size).map(x=>[x.key,x]));
-    const pl=C.plan(r.search,catalog.slice(0,size));
-    monitor=BOSS_ORDER.map((b,i)=>{
-     const jobs=full.jobs.filter(j=>j.boss===b),sel=C.surrogateSelect(r.search,jobs,results,20261110+i);
-     const core=new Set(sel.core.map(j=>j.key));
-     // Exhaustive baseline gives the true FIRST-RUN miss fraction, independently of the audit sample.
-     const actual=C.surrogateAudit(r.search,{...sel,audit:jobs.filter(j=>!core.has(j.key))},full.res,r.mode,pl.pass);
-     const sampled=C.surrogateAudit(r.search,sel,full.res,r.mode,pl.pass);
-     const recorded=r.result.audit.find(a=>a.boss===b);
-     for(const field of ['rate','misses','sampled','fallback'])assert.equal(sampled[field],recorded[field],'recorded audit differs: '+b+' '+field);
-     return {boss:b,sampledRate:sampled.rate,populationFirstRunRate:actual.rate,
-      sampledFallback:sampled.fallback,populationFallback:actual.fallback,
-      goldTop50InitialOmission:1-recall(initialSets)[i][50]};
-    });
-   }
    measure.push({repeat:r.repeat,regret:opt-goldValue,selectedGold:goldValue,selectedKeys:picked.teams.map(jobkey),
     top1:tid(picked),top5:r.result.rows.slice(0,5).map(tid),top1Match:baseline?tid(picked)===tid(baseline.result.rows[0]):null,
     top5Jaccard:baseline?jac(r.result.rows.slice(0,5).map(tid),baseline.result.rows.slice(0,5).map(tid)):null,
     initialRecall:recall(initialSets),passRecall:recall(passSets),rerankRecall:recall(rerankSets),missedSaviors:[...bestUnits].filter(k=>!represented.has(k)),
-    phaseSeconds:r.phases.map(p=>p.seconds),phaseGames:r.phases.map(p=>p.teams*p.runs),seconds:r.replay?null:r.seconds,wallSeconds:r.replay?null:(r.wallSeconds??null),audit:r.result.audit||null,monitor});
+    phaseSeconds:r.phases.map(p=>p.seconds),phaseGames:r.phases.map(p=>p.teams*p.runs),seconds:r.replay?null:r.seconds,wallSeconds:r.replay?null:(r.wallSeconds??null),audit:r.result.audit||null});
   }
   const regrets=measure.map(r=>r.regret);
   pool.methods[variant]={runs:measure,regretMean:mean(regrets),regretSD:sd(regrets),regretSE:sd(regrets)/Math.sqrt(regrets.length),

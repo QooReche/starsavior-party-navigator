@@ -18,7 +18,7 @@ FAKE_RESULT='''() => {
   const teams=D.cosmoRaid.bosses.map((b,i)=>({boss:b.key,keys:keys.slice(i*4,i*4+4),order:keys.slice(i*4,i*4+4),leaderKey:keys[i*4],
     level:i+3,brk:['특이점 관측',null,'스타피어서'][i],brkLv:[7,null,3][i],st:{mean:scores[i]-1e5,top:scores[i],clear:clears[i],frac:.9,n:20}}));
   Object.assign(CSR,{phase:'done',rows:[{sum:scores.reduce((a,b)=>a+b),teams}],level:3,reqLevel:3,mode:'top',fast:false,learned:false,sig:csSig(),pool:12,combos:1,keep:1,triples:1,runs:20});
-  CSR.optLevel=3;CSR.optMode='top';CSR.optFast=false;CSR.optLearned=false;renderCosmoSearch();
+  CSR.optLevel=3;CSR.optMode='top';CSR.optLearned=false;renderCosmoSearch();
 }'''
 AUDIT='''() => {
   const best=document.querySelector('[data-k=cs-best]'),top=best.querySelector('.cg-summary'),tabs=[...top.querySelectorAll('.cg-tab')],say=top.querySelector('.cg-say');
