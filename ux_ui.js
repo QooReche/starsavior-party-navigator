@@ -162,7 +162,7 @@
   // 장면 컨트롤러 한 개 = 마감 시각 표 한 개 + 다음 이벤트 timeout 한 개.
   // clock은 보이는 시간만 소비함. fetch/decode는 토큰을 확인한 뒤에만 그림을 교체함.
   function mountGwen(){
-    const doc=root.document,media=root.matchMedia('(prefers-reduced-motion: reduce)');
+    const doc=root.document;
     const states=new Map(),decoded=new Map(),blobs=new Map(),playedReports=new Set();
     const rand=(lo,span)=>lo+Math.floor(Math.random()*span);
     function decode(path){
@@ -177,13 +177,12 @@
       return blobs.get(path);
     }
     function create(img){
-      const reduced=()=>media.matches;
       const scene=img.closest('[data-gwen], [data-gwen-idle], .gwen-reaction, .gwen-best, .gwen-greet, .gwen-guide-footer')||img;
       const bubble=scene.querySelector?.('.gwen-bubble'),idle=scene.hasAttribute('data-gwen-idle');
       const report=gwenPending.get(scene.dataset.gwenReport)?.deref();
       const s={img,scene,bubble,idle,report,token:0,timer:null,url:null,pendingURL:null,active:false,intersecting:false,
         clock:0,last:0,due:{},expression:img.dataset.gwenExpression||img.dataset.gwenArt,asset:null,still:null,phase:'rest',line:0,
-        baseSay:bubble?.dataset.gwenSay,clicks:[],pokeCount:0,pokeLock:0,lastSpeech:-Infinity,lastPoke:-Infinity,reduced:reduced()};
+        baseSay:bubble?.dataset.gwenSay,clicks:[],pokeCount:0,pokeLock:0,lastSpeech:-Infinity,lastPoke:-Infinity};
       function account(){
         if(!s.active)return;
         const now=Date.now(),delta=Math.max(0,now-s.last);s.last=now;s.clock+=delta;
@@ -204,8 +203,8 @@
         rest();
       }
       function breathing(){
-        img.dataset.gwenRest=String(s.active&&!reduced()&&!img.hasAttribute('data-gwen-managed')&&s.phase==='rest'&&s.expression!=='walk');
-        scene.dataset.gwenPaused=String(!s.active||reduced());
+        img.dataset.gwenRest=String(s.active&&!img.hasAttribute('data-gwen-managed')&&s.phase==='rest'&&s.expression!=='walk');
+        scene.dataset.gwenPaused=String(!s.active);
       }
       function schedule(){
         root.clearTimeout(s.timer);s.timer=null;
@@ -256,19 +255,16 @@
       function action(){
         delete s.due.action;
         if(report?.done||report?.started||img.dataset.gwenOnce&&playedReports.has(img.dataset.gwenOnce))return;
-        if(!s.asset.motion||reduced())return;
+        if(!s.asset.motion)return;
         show(s.asset.motion,'action',!s.asset.loop);
       }
       function resetDeadlines(){
         s.due={};
-        if(!reduced()){
-          s.due.line=s.clock+12000;
-
-          if(idle&&s.expression==='ready')s.due.doze=s.clock+60000;
-          if(s.asset.blink&&s.expression!=='walk')s.due.blink=s.clock+rand(3000,3001);
-        }
-        if(GWEN_CYCLES[scene.dataset.gwen]&&s.baseSay!=='empty')s.due.cycle=s.clock+(reduced()?20000:rand(8000,2001));
-        if(s.expression==='walk'&&!reduced())s.due.travel=s.clock+150;
+        s.due.line=s.clock+12000;
+        if(idle&&s.expression==='ready')s.due.doze=s.clock+60000;
+        if(s.asset.blink&&s.expression!=='walk')s.due.blink=s.clock+rand(3000,3001);
+        if(GWEN_CYCLES[scene.dataset.gwen]&&s.baseSay!=='empty')s.due.cycle=s.clock+rand(8000,2001);
+        if(s.expression==='walk')s.due.travel=s.clock+150;
         if(bubble&&!idle)s.due.hide=s.clock+2500;
         if(s.restoreAt!=null)s.due.restore=s.restoreAt;
       }
@@ -277,7 +273,7 @@
         scene.dataset.gwenExpression=expression;img.dataset.gwenExpression=expression;
         img.dataset.gwenArt=s.asset.art;img.dataset.gwenStatic=s.asset.still;img.dataset.gwenMotion=s.asset.motion;
         scene.classList.toggle('gwen-roam',scene.hasAttribute('data-gwen')&&expression==='walk');
-        if(expression!=='walk'||reduced()){
+        if(expression!=='walk'){
           const traveler=scene.querySelector('.gwen-traveler'),body=scene.querySelector('.gwen-scene');
           if(traveler){traveler.style.left='';traveler.style.transform='';}if(body)body.style.transform='';s.travelX=null;
         }
@@ -303,7 +299,7 @@
         if(due('land')){delete s.due.land;img.dataset.gwenLanded='true';}
         if(due('travel')){
           const track=scene.querySelector('.gwen-track'),traveler=scene.querySelector('.gwen-traveler');
-          if(track&&traveler&&s.motionOwner&&!reduced()){
+          if(track&&traveler&&s.motionOwner){
             const max=Math.max(0,track.clientWidth-traveler.clientWidth),from=Math.min(max,s.travelX||0);
             if(s.travelX==null)s.travelRight=true;
             if(from>=max)s.travelRight=false;else if(from<=0)s.travelRight=true;
@@ -345,18 +341,17 @@
       s.update=()=>{
         const on=gwenVisible(img);
         if(!on){if(s.active)s.stop();return;}
-        if(s.active&&s.reduced===reduced())return;
-        if(s.active)s.stop();
-        s.active=true;s.last=Date.now();s.reduced=reduced();s.waiting=false;
+        if(s.active)return;
+        s.active=true;s.last=Date.now();s.waiting=false;
         // 자동 대사/순환의 남은 시간은 숨김 동안 보존함.
         const deadlines={...s.due},line=s.line;select(s.expression,bubble?.dataset.gwenSay||s.baseSay);s.line=line;say(bubble?.dataset.gwenSay);
-        if(!reduced()){for(const key of ['line','cycle','doze','restore'])if(deadlines[key]!=null)s.due[key]=deadlines[key];}
+        for(const key of ['line','cycle','doze','restore'])if(deadlines[key]!=null)s.due[key]=deadlines[key];
         schedule();
       };
       s.input=()=>{
         if(!idle||!s.active)return;account();
         if(s.expression==='doze'){s.restoreAt=s.clock+1500;select('wake','idle');}
-        if(s.expression==='ready'&&!reduced())s.due.doze=s.clock+60000;
+        if(s.expression==='ready')s.due.doze=s.clock+60000;
         schedule();
       };
       s.poke=()=>{
@@ -401,7 +396,7 @@
     }
     new root.MutationObserver(records=>{if(relevant(records))refresh();}).observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden','open','style','data-gwen-expression']});
     doc.addEventListener('visibilitychange',()=>{doc.documentElement.classList.toggle('gwen-paused',doc.hidden);refresh();});
-    media.addEventListener('change',refresh);root.addEventListener('resize',refresh);root.addEventListener('scroll',refresh,true);
+    root.addEventListener('resize',refresh);root.addEventListener('scroll',refresh,true);
     for(const type of ['pointerdown','pointermove','keydown','input'])doc.addEventListener(type,()=>{for(const s of states.values())s.input();},{passive:true});
     doc.addEventListener('keydown',e=>{if(e.repeat&&['Enter',' '].includes(e.key)&&e.target.closest('.gwen-poke'))e.preventDefault();});
     doc.addEventListener('click',e=>{const b=e.target.closest('.gwen-poke');if(b)states.get(b.querySelector('img'))?.poke();});

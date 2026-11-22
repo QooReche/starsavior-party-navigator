@@ -57,7 +57,7 @@ function roundTrip(src){const lane=src['gwen_lane.js'],render=lane.slice(lane.in
   assert(!/x=0;actor\.style\.transform='translateX\(0px\)'/.test(render),'phase change teleports Gwen to the start');
   assert(render.includes('run.dir=-run.dir;'),'phase change does not reverse direction');
   assert(/workTarget\(run\)/.test(lane.slice(lane.indexOf('function progressMove('),lane.indexOf('function sync('))),'progress ignores walking direction');
-  assert(lane.includes('const api={PRIORITY,CHOICES,SAY,policy,travel,pingpong,'),'pingpong position not exported');
+  assert(lane.includes('const api={PRIORITY,CHOICES,SAY,FORCED,forcedLine,policy,travel,pingpong,'),'pingpong position not exported');
   // 화면 코드가 레인 배우를 직접 옮기면 공통 왕복을 우회함.
   for(const [file,s] of Object.entries(src))if(file!=='gwen_lane.js'&&s.includes('gwen-lane-actor'))assert(!/translateX/.test(s),file+' moves the lane actor itself');
 }

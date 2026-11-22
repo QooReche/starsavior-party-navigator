@@ -69,7 +69,7 @@ function directDragInit(){
     d.source.classList.remove('direct-drag-source');document.body.classList.remove('direct-dragging');
     $('direct-board').classList.remove('direct-drop-ready');$('direct-drop-remove').hidden=true;
     document.querySelectorAll('.direct-drop-over').forEach(el=>{el.classList.remove('direct-drop-over');delete el.dataset.dropLabel;});
-    if(!t&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    if(!t){
       const r=d.source.getBoundingClientRect();d.ghost.animate([{transform:d.ghost.style.transform},{transform:`translate(${r.x+r.width/2-32}px,${r.y+r.height/2-32}px)`,opacity:0}],{duration:150}).finished.finally(()=>d.ghost.remove());
     }else d.ghost.remove();
     DIRECT.paintDeferred=false;DIRECT.selected=null;

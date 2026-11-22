@@ -60,13 +60,6 @@ def timer_audit(page):
     assert pic.get_attribute('src').endswith('.png'),'timer ran in a hidden document'
     page.evaluate('delete document.hidden;document.dispatchEvent(new Event("visibilitychange"))')
     playing(page,pic)
-    page.emulate_media(reduced_motion='reduce')
-    page.wait_for_function('(e)=>e.currentSrc.endsWith("welcome.png")',arg=pic.element_handle())
-    page.clock.run_for(20000)
-    assert pic.get_attribute('src').endswith('.png'),'reduced motion resumed'
-    assert pic.evaluate('(e)=>getComputedStyle(e).animationName')=='none'
-    page.emulate_media(reduced_motion='no-preference')
-    playing(page,pic)
     page.evaluate('$("out").hidden=true')
     page.wait_for_function('(e)=>e.currentSrc.endsWith("welcome.png")',arg=pic.element_handle())
     page.clock.run_for(12000)
@@ -82,16 +75,12 @@ def timer_audit(page):
 
 
 def deferred_audit(page,requests):
-    page.emulate_media(reduced_motion='reduce')
     fixture(page,page.evaluate(''''<div id="deferred-art" hidden>'+Ux.gwenImage('notes')+'</div>' '''))
     page.wait_for_timeout(150)
     assert page.locator('#deferred-art img').get_attribute('src') is None
     assert not any('/notes.' in u for u in requests),'hidden asset was fetched'
     page.evaluate('$("deferred-art").hidden=false')
     pic=loaded(page,'#deferred-art img')
-    assert pic.get_attribute('src').endswith('notes.png')
-    assert not any('/notes.webp' in u for u in requests),'reduced motion downloaded animation'
-    page.emulate_media(reduced_motion='no-preference')
     playing(page,pic)
     assert any('/notes.webp' in u for u in requests)
 
@@ -141,8 +130,6 @@ def result_audit(page,probability,art,width,shots):
     pic=loaded(page,'#out .gwen-reaction img')
     playing(page,pic)
     assert pic.get_attribute('data-gwen-motion').endswith(art+'.webp')
-    page.emulate_media(reduced_motion='reduce')
-    page.wait_for_function('(e)=>e.currentSrc.endsWith(e.dataset.gwenArt+".png")',arg=pic.element_handle())
     space=page.locator('.gwen-bubble-space').bounding_box()
     if width>=1200:
         assert space['width']>=220 and space['height']>=64
@@ -152,7 +139,6 @@ def result_audit(page,probability,art,width,shots):
     assert page.locator('#out .result-team .gc').count()==4
     if shots:
         page.screenshot(path=str(ROOT/f'_shot_art2_{art}_{width}.png'),full_page=True)
-    page.emulate_media(reduced_motion='no-preference')
 
 
 def walk_audit(page):
@@ -167,10 +153,6 @@ def walk_audit(page):
     page.clock.run_for(1500)
     assert pic.get_attribute('src').endswith('walk.webp'),'walking loop stopped after one shot'
     assert pic.get_attribute('data-gwen-playing')=='true'
-    page.emulate_media(reduced_motion='reduce')
-    page.wait_for_function('(e)=>e.currentSrc.endsWith("walk.png")',arg=pic.element_handle())
-    assert pic.evaluate('(e)=>getComputedStyle(e).animationName')=='none'
-    page.emulate_media(reduced_motion='no-preference')
 
 
 def exercise(page,base,width,shots,requests):
@@ -223,7 +205,6 @@ def main():
                 variants=[('walk',"long:'walk'","long:'investigate'",walk_audit),
                           ('walk-loop',"walk:{file:'walk',loop:true}","walk:{file:'walk'}",walk_audit),
                           ('interval','rand(4000,4001)','0',timer_audit),
-                          ('reduced',"root.matchMedia('(prefers-reduced-motion: reduce)')","({matches:false,addEventListener(){}})",timer_audit),
                           ('result',None,None,lambda p:result_audit(p,.95,'confident',1280,False)),
                           ('drawer',"c.visibility==='hidden'",'false',drawer_audit),
                           ('clipping',"if(el!==img){","if(false){",clipped_audit),

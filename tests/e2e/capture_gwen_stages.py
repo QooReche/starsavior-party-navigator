@@ -35,7 +35,6 @@ def result_fixture(p, mode):
 def capture(browser, base, out, width, mode):
     query = '?pm=' + ('direct&c=cosmo' if mode == 'cdirect' else mode)
     def setup(p):
-        p.emulate_media(reduced_motion='reduce')
         p.add_init_script("Math.random=()=>.42; if(navigator.hardwareConcurrency!==2)Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>2,configurable:true});")
     p = ready(browser, base, width, info=None, query=query, setup=setup)
     try:

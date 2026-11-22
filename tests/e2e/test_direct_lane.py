@@ -114,10 +114,6 @@ def contract(browser, base, width):
     frozen=state(p);p.clock.run_for(15000)
     assert state(p)==frozen, (frozen,state(p))
     p.set_viewport_size({'width':width,'height':1000});shown(p)
-    p.emulate_media(reduced_motion='reduce');x=state(p)['x']
-    p.clock.run_for(8000)
-    assert not state(p)['moving'] and not state(p)['playing'] and state(p)['x']==x
-    p.emulate_media(reduced_motion='no-preference')
     assert p.locator('#gwen-quiet').count()==0
     p.evaluate("localStorage.setItem('pn.gwen.quiet','true')")
     shown(p);p.clock.run_for(12000)

@@ -1,3 +1,20 @@
+## 2026-11-22 — 훑기 연출 2차 «강제 탐색» + 움직임 줄이기 분기 삭제
+
+«후보 전체 훑기»에 들어가면 화면이 다른 세계선을 강제로 뒤지는 관측 단말처럼 바뀌게 했음(1차 «관측 경보» 위에 얹음). 계산·스위치는 그대로이고 새 스위치·설정·주소 인자는 없음. 자세한 설명은 `docs/fullscreen_measure_1121.md` 끝 절, 그림은 `docs/forced_art.md`.
+
+- 그웬 길: 훑기에 들어가는 순간 걷기를 멈추고 폐허 장면(배경 한 장 + 뒷모습 그웬 + 안개·재·불씨·고리 빛)으로 바뀜. 끝나면 장면이 걷히고 원래 길과 걷는 그웬이 돌아옴(`gwen_lane.js` `FORCED`·`forcedSync`, `body.is-forced`).
+- 진행 칸: 관측 단말 모양(각진 틀·브래킷·상태줄)과 기록 줄(오염 그웬 + 시스템 메시지 8줄, 진행률 순서). 귀여운 대사 3줄(`SAY.rift`)은 시스템 메시지로 바꿨음.
+- 판정: 훑기를 끝까지 한 스테이지의 결과 위에 «관리 실패»(1안 0%) 또는 «루트 확보»(0 초과) 한 줄(`scrVerdict`).
+- 주기 노이즈: CSS 만으로 불규칙 간격(5.6~8.9초)에 0.2초씩. JS 타이머 없음.
+- 그림: `assets/forced/` 11개 약 246KB, 훑기에 처음 들어갈 때만 받음. 생성 도구 `tools/build_forced_art.py`. 폴더가 없으면 CSS 바탕·색조로 보임.
+- 스타일: 1차 때 `ux.css` 에 넣었던 «관측 경보» 절을 새 파일 `forced.css` 로 옮겨 한곳에 모았음.
+- 공용화: 1차가 따로 만든 천 단위 쉼표 함수(`scrNum`)를 지우고 `UiShared.numText` 를 씀.
+- **움직임 줄이기 분기 삭제**: `party_template.html`(2)·`ux.css`(5)·`direct.css`(2)의 `@media(prefers-reduced-motion)` 와 `gwen_lane.js`·`ux_ui.js`·`direct_drag.js`·`direct_ui.js` 의 `matchMedia` 분기를 지워 동작을 하나로 했음. `GwenLane.travel` 의 `reduced` 인자도 없앴음.
+  - 단위 시험: 그 분기만 보던 검사를 걷어 내고 «분기가 남지 않음» 검사로 바꿨음(`public_ui_test.js`·`gwen_lane_test.js`).
+  - e2e: 그 분기만 보던 구간을 10개 파일에서 걷어 냈음(`capture_gwen_stages`·`test_case_banner`·`test_direct_gwen`·`test_direct_lane`·`test_direct_party`·`test_direct_phase2`·`test_gwen_art2`·`test_gwen_shadow`·`test_gwen_auto`·`test_wide_gwen`). 이 갈래에서는 e2e 를 돌리지 않아 실행 확인은 못 했음. `test_gwen_loading`·`test_gwen_ux` 는 «움직임 줄이기»를 그림 고정 장치로 쓰는 검사가 남아 있어 실행하면서 고쳐야 함.
+- 시험: `tests/forced_test.js` 새로, `tests/fullscreen_test.js` 에 오염 그림 경로·기록 줄·판정 3경우. 일부러 깨뜨려 보기 13건 모두 실패 확인.
+- 시간(작전 44-6, 켬, 기준 3e3a694 와 번갈아): 전체 ×0.99, 훑기 구간 ×1.01(3쌍, 기준끼리 편차 ×1.06). 처음에는 ×1.05·×1.09 였는데, 길 전체를 덮는 층들을 `steps()` 로 1/6초 박자에 맞춰 줄였음. 원값은 비공개 폴더에만 둠.
+
 ## 2026-11-22 — 최종 리뷰(엔진·화면 갈래) 지적 반영
 
 리뷰 두 건(blocking 0)의 지적과 nit 을 반영했음. 엔진 결과는 묶음마다 diet 기준선 36건·unify 기준선 137건·`savior_rules_lines` 골든·`golden_check`·`mc_cache_test` 기본 해시가 바이트 일치했고 `unsupported_allowlist --diff` 는 D=12 E=0 그대로.

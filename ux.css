@@ -37,7 +37,7 @@ button{box-shadow:none;background:var(--acc);border-radius:8px}button:focus-visi
 .result-tabs [role=tab]:focus-visible{outline-offset:-4px}
 .result-tab-title{font-weight:700}.result-recommend{display:inline-flex;align-items:center;gap:4px;margin-left:6px;color:#ffd69a;font-size:11px}.result-recommend[hidden]{display:none}.result-recommend::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
 .result-tabs [data-state=running] [data-tab-metric]::before{content:'';display:inline-block;width:8px;height:8px;margin-right:5px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:tab-spin 1s linear infinite}
-@keyframes tab-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.result-tabs [data-state=running] [data-tab-metric]::before{animation:none}}
+@keyframes tab-spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.result-tabs [role=tab]{font-size:12px;padding:12px 6px}.result-tab-title{display:block}.result-tab-sep{display:none}.result-recommend{margin-left:4px;font-size:10px}.growth-todo{white-space:normal;overflow-wrap:anywhere}}
 
 .alternatives-more>summary{padding:8px 0;font-size:13px;color:var(--acc);cursor:pointer}.alternatives-more .less-label,.alternatives-more[open] .more-label{display:none}.alternatives-more[open] .less-label{display:inline}
@@ -174,10 +174,6 @@ button.ux-help.ux-help,.season-reference .ux-help{font-size:0;line-height:0;padd
 :is(.simbar,.bcstate):has(>.gwen-work)>[data-k=eta]{flex-basis:100%}
 #reco-actions{justify-content:center;align-items:center}
 @media(max-width:400px){.gwen-work{--gwen-size:120px}}
-@media(prefers-reduced-motion:reduce){
- .gwen-roam .gwen-traveler,.gwen-roam .gwen-scene,.gwen-work .gwen-worker{animation:none;transform:none}
- .gwen-roam .gwen-traveler{left:calc(50% - var(--gwen-size)/2)}
-}
 
 /* ── 그웬 말풍선 ─────────────────────────────────────────────────────────
    카드보다 살짝 밝은 바탕 + 얇은 황동 테두리. 꼬리는 --tx/--ty/--tr 로 그림 쪽을 향함(down·up·left·right).
@@ -208,10 +204,6 @@ button.ux-help.ux-help,.season-reference .ux-help{font-size:0;line-height:0;padd
 /* 휴대폰: 말풍선 줄만큼 여백·그림을 줄여 진행 칸 높이와 단추 위치를 그대로 둠. */
 @media(max-width:600px){.gwen-work:has(.gwen-say-lane){--gwen-size:120px;gap:4px;margin:4px auto}.gwen-say-lane{min-height:36px}}
 @media(max-width:400px){.gwen-bubble{font-size:12px;padding:7px 12px}.gwen-work:has(.gwen-say-lane){gap:0;margin:0 auto}.gwen-say-lane{position:relative;z-index:1;margin-bottom:-16px}}
-@media(prefers-reduced-motion:reduce){
- .gwen-bubble,.gwen-roam .gwen-bubble,.gwen-roam .gwen-bubble::after{animation:none}
- .gwen-roam .gwen-say-lane{align-items:center}
-}
 
 /* ── 대기 칸 그웬 ────────────────────────────────────────────────────────
    넓은 화면: 그림 | (말풍선 · 단추 · 체크박스) 가운데 묶음. 휴대폰: 단추 위에 작은 그림 + 말풍선 한 줄.
@@ -258,69 +250,5 @@ img[data-gwen-rest=true]{transform-origin:50% 100%;animation:gwen-breathe 3.6s e
 @keyframes gwen-sway{0%,65%,100%{rotate:0deg}72%{rotate:1deg}83%{rotate:-1deg}90%{rotate:0deg}}
 [data-gwen-paused=true] *,[data-gwen-paused=true] *::after,.gwen-paused img[data-gwen-art]{animation-play-state:paused!important}
 @media(max-width:600px){.idle-gwen>.gwen-bubble{width:100%;min-height:54px}.gwen-say-lane{height:56px;min-height:56px}}
-@media(prefers-reduced-motion:reduce){img[data-gwen-art]{animation:none!important;transform:none;scale:none;translate:none;rotate:none}img[data-gwen-art],img.gwen-head,.gwen-memo img,img.face,img.art{transition:none}}
 .guide-steps li{word-break:keep-all;overflow-wrap:anywhere}.guide-steps li:before{display:block;margin:0 0 4px}
 @media(max-width:600px){.guide-steps li{padding:12px 14px}.guide-steps li:before{display:inline-block;margin:0 8px 0 0}.guide-steps small{margin-top:4px}}
-/* ── 관측 경보: 후보 전체 훑기 연출(party_template.html SCR_ALERT) ──
-   켜짐: .progress[data-alert=scan|found] · .gwen-lane[data-alert=scan] · #direct-steps li[data-alert]. 쉬운 스테이지에는 속성이 안 붙음.
-   움직임은 transform·opacity 만(합성 단계) — 훑기 속도에 영향 없게. 그림은 전부 CSS(이미지 없음). */
-.progress[data-alert],.gwen-lane[data-alert],#direct-steps li[data-alert]{--al-abyss:#ff6fa8;--al-rift:#b78cff;--al-star:var(--gold,#f3cf74);--al-teal:var(--acc,#6fd3ff)}
-.progress[data-alert=scan]{position:relative;isolation:isolate;overflow:hidden;border:1px solid rgba(255,111,168,.6);border-radius:0;box-shadow:none;
- background:linear-gradient(135deg,transparent 8.4px,rgba(255,111,168,.7) 8.4px 9.8px,transparent 9.8px),linear-gradient(315deg,transparent 8.4px,rgba(255,111,168,.7) 8.4px 9.8px,transparent 9.8px),
-  linear-gradient(180deg,rgba(84,22,86,.6),rgba(13,15,42,.94) 48%,rgba(8,12,30,.97)),#0a0f1f;
- clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
-/* 위쪽 경고 띠 · 균열(세로 빛줄기) */
-.progress[data-alert=scan]::before{content:"";position:absolute;z-index:-1;left:0;right:0;top:0;height:5px;pointer-events:none;opacity:.8;
- background:repeating-linear-gradient(-45deg,var(--al-abyss) 0 8px,transparent 8px 16px);animation:al-pulse 1.8s ease-in-out infinite alternate}
-.progress[data-alert=scan]::after{content:"";position:absolute;z-index:-1;top:8%;bottom:8%;left:71%;width:2px;pointer-events:none;opacity:.5;
- background:linear-gradient(180deg,transparent,var(--al-rift) 30%,var(--al-teal) 62%,transparent);animation:al-rift 5.2s steps(1,end) infinite}
-.al-deco{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
-.al-deco i{position:absolute;inset:0}
-/* 별 두 겹(번갈아 반짝) — 팀 수만큼 그리지 않고 점 몇 개로 흉내만 */
-.al-deco i:nth-child(1){opacity:.5;animation:al-twinkle 3.4s ease-in-out infinite alternate;
- background:radial-gradient(circle at 7% 24%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 19% 71%,var(--al-star) 0 1.2px,transparent 1.9px),radial-gradient(circle at 33% 14%,#fff 0 .9px,transparent 1.5px),
-  radial-gradient(circle at 48% 86%,var(--al-teal) 0 1.1px,transparent 1.8px),radial-gradient(circle at 63% 31%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 82% 66%,var(--al-star) 0 1.3px,transparent 2px),radial-gradient(circle at 93% 18%,#fff 0 1px,transparent 1.6px)}
-.al-deco i:nth-child(2){opacity:.5;animation:al-twinkle 2.6s ease-in-out -1.3s infinite alternate-reverse;
- background:radial-gradient(circle at 12% 48%,var(--al-teal) 0 1px,transparent 1.7px),radial-gradient(circle at 27% 90%,#fff 0 .9px,transparent 1.5px),radial-gradient(circle at 41% 38%,var(--al-star) 0 1.1px,transparent 1.8px),
-  radial-gradient(circle at 56% 9%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 74% 82%,#fff 0 .9px,transparent 1.5px),radial-gradient(circle at 88% 43%,var(--al-rift) 0 1.2px,transparent 1.9px),radial-gradient(circle at 97% 78%,#fff 0 1px,transparent 1.6px)}
-/* 관측 스캔 선: 위에서 아래로 */
-.al-deco i:nth-child(3){inset:auto 0 100% 0;height:40%;background:linear-gradient(180deg,transparent,rgba(111,211,255,.07) 80%,rgba(111,211,255,.42));animation:al-scan 4.6s linear infinite}
-/* 진입 경보: 2번 깜빡임(들어온 직후에만 data-alert-enter) */
-.al-deco::after{content:"";position:absolute;inset:0;background:rgba(255,84,146,.42);opacity:0}
-.progress[data-alert-enter] .al-deco::after{animation:al-alarm .5s ease-out 2}
-.progress[data-alert=scan] .case-title{display:block;color:#ffb3d1;font-size:15px;letter-spacing:.02em;text-wrap:balance;word-break:keep-all;text-shadow:-1px 0 rgba(111,211,255,.55),1px 0 rgba(183,140,255,.6);animation:al-glitch 6s steps(1,end) infinite}
-.progress[data-alert=scan] .case-title::before{content:none}
-.progress[data-alert-enter] .case-title{animation:al-blink .5s steps(1,end) 2,al-glitch 6s steps(1,end) 1s infinite}
-.progress[data-alert] .scr-alert{margin:6px auto 0;font-size:13px;word-break:keep-all;text-wrap:balance}
-.progress[data-alert=scan] .scr-alert{color:var(--al-teal)}
-.progress[data-alert=scan] .scr-alert small{display:block;margin-top:3px;font-size:12px;color:var(--mut)}
-/* 별자리 진행 띠: 훑은 만큼 별이 밝아짐(폭 갱신은 기존 진행 갱신 그대로) */
-.progress[data-alert=scan] .pbar{height:11px;border-radius:0;background:radial-gradient(circle,rgba(255,255,255,.3) 0 1px,transparent 1.7px) 0 50%/11px 11px repeat-x,rgba(8,10,34,.85);box-shadow:inset 0 0 0 1px rgba(183,140,255,.28)}
-.progress[data-alert=scan] .pbar i{background:radial-gradient(circle,#fff 0 1.3px,var(--al-star) 1.9px,transparent 3px) 0 50%/11px 11px repeat-x,linear-gradient(90deg,rgba(183,140,255,.4),rgba(111,211,255,.4))}
-.progress[data-alert=scan] :is([data-k=simstate],p[role=status]){color:var(--al-star);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.03em}
-/* 끝: «기억 N개 회수» 한 줄(원래 화면 위에 잠깐) */
-.progress[data-alert=found] .scr-alert{display:block;width:fit-content;max-width:100%;padding:5px 12px;border:1px solid rgba(243,207,116,.55);color:var(--al-star);background:rgba(243,207,116,.08);animation:al-found 3.2s ease-out forwards}
-/* 그웬 길: 별빛이 꺼진 심연 빛 + 균열 */
-.gwen-lane[data-alert=scan]::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(70,16,78,.66),rgba(10,10,36,.5) 70%,rgba(255,111,168,.16));animation:al-fade .5s ease-out}
-.gwen-lane[data-alert=scan]::after{content:"";position:absolute;z-index:-1;top:0;bottom:0;left:50%;width:3px;pointer-events:none;opacity:.55;background:linear-gradient(180deg,transparent,var(--al-rift) 28%,var(--al-teal) 66%,transparent);animation:al-rift 4.4s steps(1,end) infinite}
-/* 직접 편성 단계 줄 */
-#direct-steps li[data-alert]::before{content:attr(data-alert-text);grid-row:1;grid-column:1/-1;font-weight:700;word-break:keep-all}
-#direct-steps li[data-alert]>b{grid-row:2;grid-column:1}#direct-steps li[data-alert] [role=status]{grid-row:3}#direct-steps li[data-alert] button{grid-row:2/4}
-#direct-steps li[data-alert=scan]{padding-left:8px;border-left:3px solid var(--al-abyss);background:linear-gradient(90deg,rgba(84,22,86,.5),rgba(13,15,42,.2))}
-#direct-steps li[data-alert=scan]::before{color:#ffb3d1}#direct-steps li[data-alert=found]::before{color:var(--al-star)}
-#direct-steps li[data-alert=scan] [role=status]{color:var(--al-star);font-weight:700;font-variant-numeric:tabular-nums}
-@keyframes al-pulse{from{opacity:.35}to{opacity:.9}}
-@keyframes al-twinkle{from{opacity:.15}to{opacity:.85}}
-@keyframes al-scan{from{transform:translateY(0)}to{transform:translateY(360%)}}
-@keyframes al-alarm{0%{opacity:.9}100%{opacity:0}}
-@keyframes al-blink{0%{opacity:1}50%{opacity:.25}}
-@keyframes al-glitch{0%,91%,100%{transform:none}92%{transform:translateX(-2px) skewX(-8deg)}94%{transform:translateX(2px) skewX(6deg)}96%{transform:translateX(-1px)}}
-@keyframes al-rift{0%,100%{opacity:.5;transform:none}18%{opacity:.15;transform:translateX(-5px) scaleY(.8)}22%{opacity:.8;transform:translateX(3px)}55%{opacity:.35;transform:translateX(7px) scaleY(.9)}60%{opacity:.7;transform:translateX(-2px)}}
-@keyframes al-found{0%{opacity:0;transform:translateY(4px)}12%,82%{opacity:1;transform:none}100%{opacity:0;transform:none}}
-@keyframes al-fade{from{opacity:0}to{opacity:1}}
-@media(max-width:400px){.progress[data-alert=scan] .case-title{font-size:14px}}
-/* 움직임 줄이기: 깜빡임·움직임 끔(색·문구만) */
-@media(prefers-reduced-motion:reduce){
- .progress[data-alert]::before,.progress[data-alert]::after,.progress[data-alert] .al-deco i,.progress[data-alert] .al-deco::after,.progress[data-alert] .case-title,.progress[data-alert] .scr-alert,.gwen-lane[data-alert]::before,.gwen-lane[data-alert]::after{animation:none!important}
- .al-deco i:nth-child(3){display:none}
-}

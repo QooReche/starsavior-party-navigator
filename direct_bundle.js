@@ -150,7 +150,7 @@ function directBundlePaint(){
     row.hidden=!expanded&&step.status==='done';
     // 관측 경보(훑기): 직접 편성 단계 줄에도 같은 표시(문구는 CSS attr 로)
     const alert=working&&step.kind==='reco'&&!step.joined&&active&&!active.cancelled?scrAlertOf(active.sc):'';
-    if((row.dataset.alert||'')!==alert){if(alert){row.dataset.alert=alert;row.dataset.alertText=alert==='scan'?SCR_ALERT.title:SCR_ALERT.found(scrNum(active.sc.pool.length));}else{delete row.dataset.alert;delete row.dataset.alertText;}}
+    if((row.dataset.alert||'')!==alert){if(alert){row.dataset.alert=alert;row.dataset.alertText=alert==='scan'?SCR_ALERT.title:SCR_ALERT.found(UiShared.numText(active.sc.pool.length));}else{delete row.dataset.alert;delete row.dataset.alertText;}}
     row.dataset.state=step.status;row.querySelector('[role=status]').textContent=own?`계산 중 · ${own.progress||0}/${own.snapshot.runs}판`:working&&step.kind!=='direct'&&!step.joined&&active?active.message:step.message||({waiting:'대기',running:'계산 중',done:'완료',error:'실패 · 다시 시도',cancelled:'중단함',skipped:'건너뜀'}[step.status]);
   }
   $('direct-stage-number').textContent=b.running?`${Math.max(1,b.steps.findIndex(s=>s.kind===b.current)+1)}/${b.steps.length} 단계${active?.remaining?` · 약 ${Math.max(1,Math.ceil(active.remaining/60000))}분 남음`:''}`:'';

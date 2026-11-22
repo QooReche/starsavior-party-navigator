@@ -6,7 +6,7 @@ from test_page import test_server
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def lane_audit(page, reduced=False):
+def lane_audit(page):
     lane = page.locator('#reco-board-lane')
     lane.scroll_into_view_if_needed()
     actor = lane.locator('.gwen-lane-actor')
@@ -16,9 +16,6 @@ def lane_audit(page, reduced=False):
     assert b['x']-.5 <= a['x'] and a['x']+a['width'] <= b['x']+b['width']+.5, 'actor outside lane'
     assert b['y'] <= a['y'] and a['y']+a['height'] <= b['y']+b['height']+.5
     assert page.locator('#out .gwen-lane-actor').count() == 0
-    if reduced:
-        assert not page.evaluate('GwenLane.mount().state.moving')
-        page.wait_for_function('document.querySelector("#reco-board-lane .gwen-lane-image").currentSrc.endsWith(".png")')
     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
 
 

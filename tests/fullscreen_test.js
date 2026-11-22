@@ -2,6 +2,7 @@
 // 후보 전체 훑기(CFG.recommendation.fullScreen, 기본 끔 — docs/fullscreen_measure_1121.md)
 //  끔: 요청·예선 상태가 지금과 같음(필드도 안 붙음). 켬 + 깰 수 있는 팀 있음(쉬운 스테이지): 끔과 같음.
 //  관측 경보(SCR_ALERT, 11/22): 훑기 진입 시 켜짐 · 쉬운 스테이지는 꺼짐 · 끝나거나 멈추면 꺼짐(화면·직접 편성 묶음 둘 다).
+//  강제 탐색: 훑는 동안 진행 칸에 오염 그웬 그림 경로(assets/forced/)·시스템 메시지 줄, 끝·멈춤·쉬운 스테이지엔 없음. 판정 «관리 실패»(0%) / «루트 확보»(0 초과) / 훑기 없음 = 표시 없음.
 //  켬 + 전원 «못 깸»: 후보 전체 1판 → 상위 «예선 후보 수» → 예선 8판 → 32판(24판 이어 돌리기). 화면 경로(simScreen)·직접 편성 묶음 경로(recoCalculate) 둘 다.
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
@@ -20,7 +21,7 @@ function teamsOf(vds){return NAMES.map((k,i)=>mk(['a','b','c',k],vds(i),200-i))}
 // ── 화면 경로(simScreen) ── 가짜 작업자는 요청마다 바로 결과·done 을 돌려줌
 function screenRun(full,vds,{stopAfter=null}={}){
  const posts=[],teams=teamsOf(vds),CFG=plain(CFG0);CFG.recommendation.fullScreen=full;
- const c=vm.createContext({UiShared:require('../ui_shared'),CFG,recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
+ const c=vm.createContext({UiShared:require('../ui_shared'),GwenLane:require('../gwen_lane'),CFG,recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
   SIMQ:{n:100,seed:1,busy:null,res:{},scr:{},LOAD_MS:180000,RUN_MS:240000},LASTQ:{1:{rows:teams.slice(0,3),all:teams,total:teams.length}},cur:[{tab:'a',name:'b'}],
   contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,starOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
   simMain:r=>r,simCls:()=>'',esc:String,simOpt:()=>({}),document:{querySelector:()=>null,hidden:false},
@@ -75,13 +76,20 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
  assert(of(1).slice(1).every(p=>/^세계선 [\d,]+ \/ 200$/.test(p.msg)),'훑는 동안 진행 문구');
  // 관측 경보: 다 끝나면 꺼짐(쉬운 스테이지·끔은 처음부터 끝까지 꺼짐)
  assert.equal(on.alert(),'','끝나면 경보 꺼짐');assert.equal(onE.alert(),'');assert.equal(off.alert(),'');
+ // 판정 표시(결과 위 한 줄): 훑기를 끝까지 한 스테이지만 — 1안 0% = 관리 실패, 0 초과 = 루트 확보. 쉬운 스테이지·끔·결과 없음 = 표시 없음
+ const verdict=(r,x)=>r.ev(`scrVerdict(Object.values(SIMQ.scr)[0],${x})`);
+ assert.match(verdict(on,'{clear:0}'),/^<div class="scr-verdict" data-k="scr-verdict" data-verdict="fail" role="status"><b>관리 실패<\/b><span>현 전력으로 돌파 불가 — 성장 후 재관측 권장<\/span><\/div>$/);
+ assert.match(verdict(on,'{clear:.01}'),/data-verdict="ok" role="status"><b>루트 확보<\/b>/);assert(!/관리 실패/.test(verdict(on,'{clear:.01}')));
+ for(const r of [onE,off])for(const x of ['{clear:0}','{clear:1}'])assert.equal(verdict(r,x),'','훑기 없음: 판정 표시 없음');
+ assert.equal(verdict(on,'undefined'),'','본선 결과가 아직 없으면 표시 없음');
+ assert.match(html,/\$\{miVerdict\(shown,st\)\}\$\{scrVerdict\(SIMQ\.scr\[scrKey\(st,p\)\],SIMQ\.res\[simSig\(st,rows\[0\]\)\]\)\}\$\{scrNote\(p,st\)\}/,'결과 요약(1안 기준)에 판정 줄');
  assert(of(8).slice(1).every(p=>/^후보 거르는 중/.test(p.msg)),'예선 진행 문구');
 }
 // 관측 경보 — 쉬운 스테이지·끔: 계산 도중에도 꺼져 있고 진행 칸이 끔과 글자까지 같음
 {
  const onE=screenRun(true,easy,{stopAfter:30}),offE=screenRun(false,easy,{stopAfter:30}),offH=screenRun(false,hard,{stopAfter:30});
  for(const r of [onE,offE,offH]){assert.equal(r.alert(),'','쉬운 스테이지·끔: 경보 꺼짐');const h=r.card();
-  assert(!/data-alert|scr-alert|al-deco|세계선|경보/.test(h),'쉬운 스테이지·끔: 진행 칸에 경보 흔적 없음');assert.match(h,/<b class="case-title">추천 편성 확인 중<\/b>/);assert.match(h,/후보 거르는 중 \d+\/80/);
+  assert(!/data-alert|scr-alert|al-deco|세계선|경보|fx-|forced|SYSTEM/.test(h),'쉬운 스테이지·끔: 진행 칸에 경보·오염 그림 흔적 없음');assert.match(h,/<b class="case-title">추천 편성 확인 중<\/b>/);assert.match(h,/후보 거르는 중 \d+\/80/);
   assert.deepEqual([...new Set(r.c.gwen)],[''],'그웬 길에도 경보 안 넘김');}
  assert.equal(onE.card(),offE.card(),'켬 + 쉬운 스테이지: 진행 칸이 끔과 같음');
 }
@@ -96,6 +104,15 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
  assert.match(h,/<span data-k="simstate"[^>]*>세계선 \d+ \/ 200<\/span>/);
  assert.match(h,/data-scrstop="1">지금까지 결과로 보기<\/button> <button type="button" class="sec" data-simcancel="1">취소</,'멈춤·취소 단추 그대로');
  assert.equal(on.c.gwen.at(-1),'scan','그웬 길에 경보 넘김');
+ // 강제 탐색: 진행 칸의 기록 줄 = 오염 그웬 그림 경로(없으면 원래 그림으로 폴백) + 시스템 메시지. 줄은 진행률 순서, 숫자는 그 줄이 뜰 때 값
+ {const log=h.match(/<div class="fx-log" data-k="fx-log" data-line="(\d)" aria-hidden="true"><span class="fx-avatar" style="--fx-art:url\('assets\/forced\/gwen\/(\w+)\.webp'\);--fx-eyes:url\('assets\/forced\/gwen\/\2_eyes\.webp'\);--fx-fallback:url\('assets\/ui_icons\/gwen\/\2\.png'\)"><\/span><code>(\[[A-Z]+\] [^<]+)<\/code><\/div>/);
+  assert(log,'훑기 진입: 오염 그림 경로·시스템 메시지 줄');const sc=on.sc(),line=on.c.GwenLane.forcedLine(sc.got,sc.left);assert.equal(+log[1],line.i);assert.equal(log[2],line.art);assert.equal(log[3],line.text);
+  assert.equal(on.c.GwenLane.forcedLine(3412,10626).text,'[WARN] 관측 범위 외 기억 참조 중');assert.equal(on.c.GwenLane.forcedLine(4000,10626).text,'[ROUTE] 루트 강제 개방… 10,626개 중 4,000개 검증');
+  const seen=[];for(let g=0;g<=200;g++){const l=on.c.GwenLane.forcedLine(g,200);if(seen.at(-1)!==l.i)seen.push(l.i);assert.match(l.text,/^\[(SYSTEM|ACK|WARN|ROUTE|LOG)\] /);assert(!/[{}]/.test(l.text));}
+  assert.deepEqual(seen,[0,1,2,3,4,5,6,7],'진행률에 따라 한 줄씩 순서대로');
+  // 줄 번호가 같으면 그대로, 바뀌면 그 줄만 바꿈(단추 DOM 은 안 건드림)
+  const node={dataset:{line:'2'},outerHTML:''},cardEl={querySelector:q=>q==='[data-k="fx-log"]'?node:null};on.c.cardEl=cardEl;
+  on.ev(`scrLogSync(cardEl,'<div data-line="2">같은 줄</div>')`);assert.equal(node.outerHTML,'');on.ev(`scrLogSync(cardEl,'<div data-line="3">다음 줄</div>')`);assert.match(node.outerHTML,/다음 줄/);}
  // 들어온 지 오래면 깜빡임 표시는 안 붙음(다시 그려도 반복 안 함)
  on.ev('Object.values(SIMQ.scr)[0].alertAt-=5000');assert(!/data-alert-enter/.test(on.card()));assert.match(on.card(),/data-alert="scan"/);
  assert.equal(on.ev('scrMsg(-1,3412,10626)'),'세계선 3,412 / 10,626');assert.equal(on.ev('scrMsg(0,3,80)'),'후보 거르는 중 3/80');
@@ -103,6 +120,8 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
  on.ev('scrStop()');const sc=on.sc();
  assert.equal(sc.done,true);assert.equal(sc.short,true);assert.equal(sc.fullDone,false);
  assert.equal(on.alert(),'','멈추면 경보 꺼짐');assert.equal(sc.round,-1);
+ assert.equal(on.ev('scrAlertHtml(scrAlertOf(Object.values(SIMQ.scr)[0]),Object.values(SIMQ.scr)[0])'),'','멈추면 오염 그림·기록 줄 없음(원래 경로)');
+ assert.equal(on.ev('scrVerdict(Object.values(SIMQ.scr)[0],{clear:0})'),'','중간에 멈춘 훑기: 판정 표시 없음');
  assert(sc.order.length>0&&sc.order.length<200);
  const got=Object.keys(sc.res0);assert.deepEqual(sc.order,got.slice().sort((a,b)=>progOf(b)-progOf(a)));
  assert.match(on.ev('scrNote(1,cur[0])'),/후보 전체 200팀 중 \d+팀만 훑었음/);
@@ -119,15 +138,16 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
  const sc=on.sc();assert.equal(sc.fullDone,true);assert.equal(sc.round,0);assert.equal(sc.done,false);
  assert.equal(on.alert(sc.foundAt+100),'found');assert.equal(on.alert(sc.foundAt+on.ev('SCR_ALERT.foundMs')+1),'','전환 문구 시간이 지나면 꺼짐');
  const h=on.card();assert.match(h,/data-alert="found"/);assert.match(h,/<b class="case-title">추천 편성 확인 중<\/b><p class="scr-alert" data-k="scr-alert" aria-live="polite">✦ 돌파 가능성 있는 기억 80개 회수 — 구원자 편성 다시 정렬<\/p>/);
- assert(!/al-deco|data-alert-enter/.test(h));assert.match(h,/후보 거르는 중 \d+\/80/);
+ assert(!/al-deco|data-alert-enter|fx-log|assets\/forced/.test(h),'훑기가 끝나면 오염 그림 경로 없음');assert.match(h,/후보 거르는 중 \d+\/80/);
  on.ev('Object.values(SIMQ.scr)[0].foundAt-=60000');assert(!/data-alert|scr-alert/.test(on.card()),'시간이 지나면 원래 진행 칸');
  // 이미 그려진 칸에 켜고 끄기(직접 편성 묶음 경로 scrAlertSync): 상태가 같으면 DOM 을 안 건드림
- const title={textContent:'추천 편성 확인 중',after:'',insertAdjacentHTML(_,x){this.after=x}};let writes=0;
- const card={dataset:{},attrs:{},head:'',querySelectorAll:()=>[{remove(){writes++}}],toggleAttribute(k,v){this.attrs[k]=v},querySelector:()=>title,insertAdjacentHTML(_,x){this.head=x}};
+ const title={textContent:'추천 편성 확인 중',after:'',insertAdjacentHTML(_,x){this.after=x}};let writes=0;const logEl={dataset:{line:'0'},outerHTML:''};
+ const card={dataset:{},attrs:{},head:'',querySelectorAll:()=>[{remove(){writes++}}],toggleAttribute(k,v){this.attrs[k]=v},querySelector:q=>q==='.case-title'?title:q==='[data-k="fx-log"]'?logEl:null,insertAdjacentHTML(_,x){this.head=x}};
  on.c.card=card;const sync=s=>on.ev(`scrAlertSync(card,${s})`);
  assert.equal(sync('{full:[1],round:-1,alertAt:Date.now(),pool:[]}'),'scan');assert.equal(card.dataset.alert,'scan');assert.equal(card.attrs['data-alert-enter'],true);
- assert.match(title.textContent,/^⚠ 관측 경보/);assert.match(title.after,/scr-alert/);assert.match(card.head,/al-deco/);
- const w=writes;sync('{full:[1],round:-1,alertAt:Date.now(),pool:[]}');assert.equal(writes,w,'같은 상태면 그대로 둠');
+ assert.match(title.textContent,/^⚠ 관측 경보/);assert.match(title.after,/scr-alert/);assert.match(title.after,/assets\/forced\/gwen\/charge\.webp/,'묶음 진행 칸에도 오염 그림 경로');assert.match(card.head,/al-deco/);
+ const w=writes;sync('{full:[1],round:-1,alertAt:Date.now(),pool:[]}');assert.equal(writes,w,'같은 상태면 그대로 둠');assert.equal(logEl.outerHTML,'','같은 줄이면 기록 줄도 그대로');
+ sync('{full:[1],round:-1,alertAt:Date.now(),pool:[],got:150,left:200}');assert.equal(writes,w);assert.match(logEl.outerHTML,/data-line="6".*\[ROUTE\] 잔여 세계선 50개/,'진행률이 넘어가면 기록 줄만 바뀜');
  assert.equal(sync('{full:[1],round:-1,done:true,pool:[]}'),'');assert(!('alert' in card.dataset));assert.equal(title.textContent,'추천 편성 확인 중');assert.equal(title.after,'');assert.equal(card.attrs['data-alert-enter'],false);
  assert.equal(sync('undefined'),'');assert.equal(sync('{round:0,pool:[]}'),'','쉬운 스테이지(훑기 필드 없음)');
 }
@@ -188,5 +208,5 @@ async function bundleRun(full,vds){
  for(const r of [off,offE,onE])assert.deepEqual([...new Set(r.alerts)],[''],'묶음 쉬운 스테이지·끔: 경보 꺼짐');
  assert.match(fs.readFileSync(path.join(ROOT,'direct_bundle.js'),'utf8'),/const alert=scrAlertSync\(el,task\.sc\);/,'묶음 진행 칸이 경보를 맞춤');
  assert.deepEqual(off.messages.slice(0,2),['예선','예선']);
- console.log('PASS fullScreen: 끔=지금 그대로(필드 없음), 켬+쉬움=끔과 같음, 켬+전원 못 깸=1판 전체→8→32(화면·묶음), 멈춤·이어 하기, 조건, 관측 경보(진입 켜짐·쉬움 꺼짐·끝/멈춤 꺼짐)');
+ console.log('PASS fullScreen: 끔=지금 그대로(필드 없음), 켬+쉬움=끔과 같음, 켬+전원 못 깸=1판 전체→8→32(화면·묶음), 멈춤·이어 하기, 조건, 관측 경보(진입 켜짐·쉬움 꺼짐·끝/멈춤 꺼짐), 강제 탐색(오염 그림 경로·기록 줄·판정 3경우)');
 })().catch(e=>{console.error(e);process.exitCode=1;});

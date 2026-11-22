@@ -1,0 +1,137 @@
+/* ── 강제 탐색: 후보 전체 훑기 연출(party_template.html SCR_ALERT · gwen_lane.js FORCED) ──
+   켜짐: body.is-forced(훑는 동안만) + .progress[data-alert=scan|found] · .gwen-lane[data-alert=scan|found] · #direct-steps li[data-alert].
+   쉬운 스테이지에는 클래스·속성이 안 붙음. 끝나면 클래스 제거로 원래 화면.
+   움직임은 transform·opacity 만(합성 단계) — 훑기 속도에 영향 없게. 길 전체를 덮는 큰 층(배경 흐름·고리 빛·안개·재·불씨)은 steps() 로 모두 1/6초 박자에 맞춰 갱신함 — 같은 순간에만 바뀌어 길 전체를 초당 6번만 다시 합성함(주기와 steps 수를 바꿀 때는 주기÷steps = 1/6초를 지킬 것). 그림은 assets/forced/ 에만 있고, 다 받으면 body[data-forced-art] 가 붙음.
+   폴더가 없으면: 장면은 아래 CSS 바탕만, 오염 그웬은 원래 그림 + 색조 필터. */
+:root{--fx-red:#ff4466;--fx-abyss:#ff6fa8;--fx-rift:#b78cff;--fx-ink:#070a1e;--fx-gold:var(--gold,#f3cf74);--fx-teal:#6ff0dc;--fx-mono:ui-monospace,"Cascadia Mono",Consolas,"D2Coding",monospace}
+
+/* 1. 그웬 길 → 폐허 장면. SD 그웬은 숨기고(걷기 정지는 gwen_lane.js), 뒷모습 그웬이 서 있음. 환경만 움직임 */
+.gwen-lane[data-alert]{--fx-h:240px;--fx-ar:3;--fx-x:38%;--fx-gx:44.5%}
+.is-forced :is(#reco-board-lane,#direct-board-lane)[data-alert=scan]{height:var(--fx-h);background:var(--fx-ink);border-radius:0}
+.gwen-lane[data-alert=scan] :is(.gwen-lane-actor,.gwen-stage-banner){clip-path:inset(50%)}
+.fx-scene{position:absolute;z-index:3;left:var(--fx-x);top:58%;width:max(100%,calc(var(--fx-h)*var(--fx-ar)));aspect-ratio:var(--fx-ar);translate:calc(var(--fx-x)*-1) -58%;overflow:hidden;pointer-events:none;background:var(--fx-ink)}
+.fx-scene i{position:absolute;inset:0;display:block}
+/* 배경 한 장(scene.webp). 못 받으면 밤하늘 바탕만. 아주 느리게 흘러 인물과 어긋남(패럴랙스) */
+.fx-scene .fx-bg{inset:-3%;animation:fx-drift 46s steps(276) infinite alternate,fx-jolt 23s linear infinite;
+ background:radial-gradient(circle at 12% 22%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 31% 9%,#cfe6ff 0 1px,transparent 1.7px),radial-gradient(circle at 54% 27%,#fff 0 .9px,transparent 1.5px),radial-gradient(circle at 73% 12%,#ffe9b0 0 1.1px,transparent 1.8px),radial-gradient(circle at 90% 31%,#fff 0 1px,transparent 1.6px),
+  linear-gradient(180deg,#030a2c,#0b2a6e 38%,#3a3f8f 62%,#5a4a8e 78%,#141433 79%,#0a0c22)}
+[data-forced-art] .fx-scene .fx-bg{background:url(assets/forced/scene.webp) center/100% 100% no-repeat}
+/* 금빛 궤도 고리의 느린 일렁임 + 행성 가장자리 청록 빛 */
+[data-forced-art] .fx-scene .fx-glow{background:radial-gradient(ellipse 13% 30% at 49% 13%,rgba(255,214,140,.34),transparent 70%),radial-gradient(ellipse 16% 3% at 43% 19%,rgba(111,240,220,.4),transparent 75%);animation:fx-shimmer 10s steps(12) infinite}
+/* 뒷모습 그웬(gwen_back.webp — 그림을 바꿔 끼울 때는 이 파일만). 서 있고 바람에 아주 살짝 흔들림 */
+[data-forced-art] .fx-scene .fx-gwen{inset:auto auto 13% var(--fx-gx);height:50%;aspect-ratio:284/520;background:url(assets/forced/gwen_back.webp) center/contain no-repeat;transform-origin:50% 100%;
+ filter:brightness(.84) drop-shadow(0 0 2px rgba(111,240,220,.7)) drop-shadow(0 0 7px rgba(111,240,220,.28));animation:fx-sway 7.5s ease-in-out infinite}
+/* 안개 두 겹(서로 반대로 흐름) */
+.fx-scene .fx-fog{inset:38% -60% -6% -60%;animation:fx-fog 74s steps(444) infinite alternate;
+ background:radial-gradient(ellipse 22% 34% at 18% 62%,rgba(176,188,236,.2),transparent 70%),radial-gradient(ellipse 26% 28% at 47% 48%,rgba(160,172,228,.17),transparent 70%),radial-gradient(ellipse 20% 36% at 78% 66%,rgba(186,196,240,.19),transparent 70%)}
+.fx-scene .fx-fog~.fx-fog{inset:52% -60% -10% -60%;animation-duration:103s;animation-timing-function:steps(618);animation-direction:alternate-reverse;opacity:.8}
+/* 재(내려옴)·불씨(올라가며 깜빡임): 무늬 한 칸 크기만큼만 움직여 이음매가 없음 */
+.fx-scene .fx-ash{inset:-360px -200px 0 0;opacity:.75;animation:fx-ash 31s steps(186) infinite;
+ background:radial-gradient(circle at 22px 30px,rgba(226,232,255,.8) 0 1.1px,transparent 1.9px),radial-gradient(circle at 96px 78px,rgba(226,232,255,.55) 0 .9px,transparent 1.6px),radial-gradient(circle at 160px 18px,rgba(255,226,190,.6) 0 1px,transparent 1.7px),
+  radial-gradient(circle at 58px 132px,rgba(226,232,255,.5) 0 1.3px,transparent 2.1px),radial-gradient(circle at 134px 156px,rgba(226,232,255,.7) 0 .8px,transparent 1.5px);background-size:200px 180px}
+.fx-scene .fx-ember{inset:0 0 -260px 0;animation:fx-ember 17s steps(102) infinite,fx-ember-glow 4s steps(6) infinite;
+ background:radial-gradient(circle at 40px 210px,rgba(255,170,96,.95) 0 1.3px,rgba(255,120,60,.3) 2.6px,transparent 3.6px),radial-gradient(circle at 190px 90px,rgba(255,196,120,.8) 0 1px,rgba(255,120,60,.25) 2.2px,transparent 3px),radial-gradient(circle at 270px 180px,rgba(255,150,90,.7) 0 .9px,transparent 2px);background-size:320px 260px}
+/* 주기 노이즈(지지직): 스캔 선 + 붉은/청록 줄. 들어오는 순간 한 번 세게(fx-in), 그 뒤 4~9초 간격으로 0.2초씩(fx-burst) */
+.fx-scene .fx-noise,.al-deco i:nth-child(4),.scr-verdict::after{opacity:0;
+ background:linear-gradient(180deg,transparent 22%,rgba(255,68,102,.5) 22% 24%,transparent 24% 57%,rgba(111,240,220,.45) 57% 58.5%,transparent 58.5% 81%,rgba(255,255,255,.3) 81% 82%,transparent 82%),repeating-linear-gradient(0deg,rgba(255,255,255,.1) 0 1px,transparent 1px 3px)}
+.fx-scene .fx-noise{animation:fx-in .45s linear,fx-burst 23s linear .45s infinite}
+/* 끝(found): 장면이 걷히고 금빛이 한 번 지나감 — «정화». 그 밑에서 원래 길과 걷는 그웬이 돌아옴 */
+.gwen-lane[data-alert=found] .fx-scene{animation:fx-purify 1.3s ease-out forwards}
+.gwen-lane[data-alert=found]::after{content:"";position:absolute;z-index:4;inset:0 auto 0 -40%;width:40%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,236,170,.5) 45%,rgba(255,255,255,.75) 50%,rgba(255,236,170,.5) 55%,transparent);animation:fx-sweep 1.1s ease-out forwards}
+@media(min-width:1200px){.gwen-lane[data-alert]{--fx-h:300px}}
+@media(max-width:760px){.gwen-lane[data-alert]{--fx-h:190px;--fx-ar:1.44;--fx-x:50%;--fx-gx:59%}
+ [data-forced-art] .fx-scene .fx-bg{background-image:url(assets/forced/scene_narrow.webp)}
+ [data-forced-art] .fx-scene .fx-glow{background:radial-gradient(ellipse 26% 30% at 66% 13%,rgba(255,214,140,.34),transparent 70%),radial-gradient(ellipse 30% 3% at 54% 19%,rgba(111,240,220,.4),transparent 75%)}}
+
+/* 2. 진행 칸 → 관측 단말: 각진 틀·모서리 브래킷·위 상태줄·기록 줄. DOM 순서·단추 자리는 그대로 */
+.is-forced .progress[data-alert=scan]{position:relative;isolation:isolate;overflow:hidden;padding-top:34px;border:1px solid rgba(255,68,102,.55);border-radius:0;box-shadow:none;
+ background:linear-gradient(135deg,transparent 8.4px,rgba(255,68,102,.75) 8.4px 9.8px,transparent 9.8px),linear-gradient(315deg,transparent 8.4px,rgba(255,68,102,.75) 8.4px 9.8px,transparent 9.8px),
+  linear-gradient(90deg,var(--fx-red) 0 14px,transparent 14px) right 8px top 8px/14px 2px no-repeat,linear-gradient(180deg,var(--fx-red) 0 14px,transparent 14px) right 8px top 8px/2px 14px no-repeat,
+  linear-gradient(90deg,var(--fx-red) 0 14px,transparent 14px) left 8px bottom 8px/14px 2px no-repeat,linear-gradient(180deg,var(--fx-red) 0 14px,transparent 14px) left 8px bottom 8px/2px 14px no-repeat,
+  linear-gradient(180deg,rgba(70,10,34,.72),rgba(16,10,34,.95) 46%,rgba(7,10,30,.98)),var(--fx-ink);
+ clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+/* 위쪽 경고 띠 · 균열(세로 빛줄기) */
+.is-forced .progress[data-alert=scan]::before{content:"";position:absolute;z-index:-1;left:0;right:0;top:0;height:5px;pointer-events:none;opacity:.8;
+ background:repeating-linear-gradient(-45deg,var(--fx-red) 0 8px,transparent 8px 16px);animation:al-pulse 1.8s ease-in-out infinite alternate}
+.is-forced .progress[data-alert=scan]::after{content:"";position:absolute;z-index:-1;top:8%;bottom:8%;left:71%;width:2px;pointer-events:none;opacity:.5;
+ background:linear-gradient(180deg,transparent,var(--fx-rift) 30%,var(--fx-red) 62%,transparent);animation:al-rift 5.2s ease-in-out infinite}
+.al-deco{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.al-deco i{position:absolute;inset:0}
+/* 상태줄 */
+.al-deco::before{content:"OBSERVATION // FORCED ROUTE";position:absolute;left:16px;top:11px;font:700 10px/1.4 var(--fx-mono);letter-spacing:.2em;color:var(--fx-red);white-space:nowrap}
+/* 별 두 겹(번갈아 반짝) — 팀 수만큼 그리지 않고 점 몇 개로 흉내만 */
+.al-deco i:nth-child(1){opacity:.5;animation:al-twinkle 3.4s ease-in-out infinite alternate;
+ background:radial-gradient(circle at 7% 24%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 19% 71%,var(--fx-gold) 0 1.2px,transparent 1.9px),radial-gradient(circle at 33% 14%,#fff 0 .9px,transparent 1.5px),
+  radial-gradient(circle at 48% 86%,var(--fx-abyss) 0 1.1px,transparent 1.8px),radial-gradient(circle at 63% 31%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 82% 66%,var(--fx-gold) 0 1.3px,transparent 2px),radial-gradient(circle at 93% 18%,#fff 0 1px,transparent 1.6px)}
+.al-deco i:nth-child(2){opacity:.5;animation:al-twinkle 2.6s ease-in-out -1.3s infinite alternate-reverse;
+ background:radial-gradient(circle at 12% 48%,var(--fx-abyss) 0 1px,transparent 1.7px),radial-gradient(circle at 27% 90%,#fff 0 .9px,transparent 1.5px),radial-gradient(circle at 41% 38%,var(--fx-gold) 0 1.1px,transparent 1.8px),
+  radial-gradient(circle at 56% 9%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 74% 82%,#fff 0 .9px,transparent 1.5px),radial-gradient(circle at 88% 43%,var(--fx-rift) 0 1.2px,transparent 1.9px),radial-gradient(circle at 97% 78%,#fff 0 1px,transparent 1.6px)}
+/* 관측 스캔 선: 위에서 아래로 */
+.al-deco i:nth-child(3){inset:auto 0 100% 0;height:40%;background:linear-gradient(180deg,transparent,rgba(255,68,102,.06) 80%,rgba(255,68,102,.36));animation:al-scan 4.6s linear infinite}
+.al-deco i:nth-child(4){animation:fx-burst 23s linear -7s infinite}
+/* 진입 경보: 2번 깜빡임(들어온 직후에만 data-alert-enter) */
+.al-deco::after{content:"";position:absolute;inset:0;background:rgba(255,68,102,.42);opacity:0}
+.progress[data-alert-enter] .al-deco::after{animation:al-alarm .5s ease-out 2}
+.is-forced .progress[data-alert=scan] .case-title{display:block;color:#ffb3c4;font-size:15px;letter-spacing:.02em;text-wrap:balance;word-break:keep-all;text-shadow:-1px 0 rgba(111,240,220,.5),1px 0 rgba(255,68,102,.6);animation:fx-jolt 23s linear -7s infinite}
+.is-forced .progress[data-alert=scan] .case-title::before{content:none}
+.progress[data-alert] .scr-alert{margin:6px auto 0;font-size:13px;word-break:keep-all;text-wrap:balance}
+.is-forced .progress[data-alert=scan] .scr-alert{color:#ffd0da}
+.is-forced .progress[data-alert=scan] .scr-alert small{display:block;margin-top:3px;font-size:12px;color:var(--mut)}
+/* 기록 줄: 오염 그웬(적색 눈) + 시스템 메시지. 줄이 바뀌면 통째로 새로 들어옴(fx-pop) */
+.fx-log{display:flex;align-items:center;gap:10px;width:min(100%,520px);margin:10px auto 0;padding:6px 10px 6px 6px;box-sizing:border-box;text-align:left;border:1px solid rgba(255,68,102,.4);border-left:3px solid var(--fx-red);background:rgba(4,4,14,.72);animation:fx-pop .36s ease-out}
+.fx-log code{flex:1;min-width:0;font:12px/1.5 var(--fx-mono);color:#ffd9e0;word-break:keep-all;overflow-wrap:anywhere;white-space:normal;background:none;padding:0}
+.fx-log code::after{content:"_";margin-left:2px;color:var(--fx-red);animation:fx-flicker 1.2s ease-in-out infinite}
+.fx-avatar{position:relative;flex:none;width:80px;height:80px;margin:-8px 0;animation:fx-jolt 23s linear -11s infinite}
+.fx-avatar::before,.fx-avatar::after{content:"";position:absolute;inset:0;background:center/contain no-repeat}
+.fx-avatar::before{background-image:var(--fx-fallback);filter:grayscale(.6) sepia(.5) hue-rotate(-70deg) saturate(1.6) brightness(.62)}
+[data-forced-art] .fx-avatar::before{background-image:var(--fx-art);filter:none}
+[data-forced-art] .fx-avatar::after{background-image:var(--fx-eyes);animation:fx-eye 3.4s ease-in-out infinite}
+/* 진행 띠·숫자·단추도 같은 계열 */
+.is-forced .progress[data-alert=scan] .pbar{height:11px;border-radius:0;background:radial-gradient(circle,rgba(255,255,255,.3) 0 1px,transparent 1.7px) 0 50%/11px 11px repeat-x,rgba(8,6,24,.85);box-shadow:inset 0 0 0 1px rgba(255,68,102,.3)}
+.is-forced .progress[data-alert=scan] .pbar i{background:radial-gradient(circle,#fff 0 1.3px,var(--fx-gold) 1.9px,transparent 3px) 0 50%/11px 11px repeat-x,linear-gradient(90deg,rgba(183,140,255,.4),rgba(255,68,102,.45))}
+.is-forced .progress[data-alert=scan] :is([data-k=simstate],p[role=status]){color:var(--fx-gold);font:700 13px/1.5 var(--fx-mono);font-variant-numeric:tabular-nums;letter-spacing:.03em}
+.is-forced .progress[data-alert=scan] button.sec{border-radius:0;border-color:rgba(255,68,102,.55);background:rgba(40,8,24,.7);color:#ffe3e8}
+.is-forced .progress[data-alert=scan] button.sec:hover{border-color:var(--fx-red);background:rgba(80,12,36,.8)}
+/* 끝: «기억 N개 회수» 한 줄(원래 화면 위에 잠깐) */
+.progress[data-alert=found] .scr-alert{display:block;width:fit-content;max-width:100%;padding:5px 12px;border:1px solid rgba(243,207,116,.55);color:var(--fx-gold);background:rgba(243,207,116,.08);animation:al-found 3.2s ease-out forwards}
+/* 직접 편성 단계 줄 */
+#direct-steps li[data-alert]::before{content:attr(data-alert-text);grid-row:1;grid-column:1/-1;font-weight:700;word-break:keep-all}
+#direct-steps li[data-alert]>b{grid-row:2;grid-column:1}#direct-steps li[data-alert] [role=status]{grid-row:3}#direct-steps li[data-alert] button{grid-row:2/4}
+#direct-steps li[data-alert=scan]{padding-left:8px;border-left:3px solid var(--fx-red);background:linear-gradient(90deg,rgba(70,10,34,.6),rgba(13,15,42,.2))}
+#direct-steps li[data-alert=scan]::before{color:#ffb3c4}#direct-steps li[data-alert=found]::before{color:var(--fx-gold)}
+#direct-steps li[data-alert=scan] [role=status]{color:var(--fx-gold);font:700 12px/1.5 var(--fx-mono);font-variant-numeric:tabular-nums}
+
+/* 3. 판정(결과 위 한 줄, scrVerdict): «관리 실패» 도장 / «루트 확보». 표·단추를 가리지 않게 흐름 안의 한 줄 */
+.scr-verdict{--v:var(--fx-red);position:relative;overflow:hidden;display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;margin:0 0 12px;padding:14px 12px 10px;border:1px solid var(--v);background:linear-gradient(90deg,rgba(60,8,28,.6),rgba(10,10,30,.25));animation:fx-pop .5s ease-out}
+.scr-verdict[data-verdict=ok]{--v:var(--fx-gold);background:linear-gradient(90deg,rgba(64,48,10,.5),rgba(10,10,30,.25))}
+.scr-verdict::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:repeating-linear-gradient(-45deg,var(--v) 0 8px,transparent 8px 16px);opacity:.85}
+.scr-verdict::after{content:"";position:absolute;inset:0;pointer-events:none;animation:fx-burst 23s linear -2s infinite}
+.scr-verdict b{flex:none;padding:2px 12px;border:3px double var(--v);color:var(--v);font:900 20px/1.3 var(--fx-mono);letter-spacing:.14em;white-space:nowrap;rotate:-3deg;animation:fx-stamp .5s cubic-bezier(.2,1.5,.4,1) .15s backwards}
+.scr-verdict span{flex:1;min-width:150px;font:12px/1.5 var(--fx-mono);color:var(--fg,#e6e9ef);word-break:keep-all}
+
+@keyframes al-pulse{from{opacity:.35}to{opacity:.9}}
+@keyframes al-twinkle{from{opacity:.15}to{opacity:.85}}
+@keyframes al-scan{from{transform:translateY(0)}to{transform:translateY(360%)}}
+@keyframes al-alarm{0%{opacity:.9}100%{opacity:0}}
+@keyframes al-rift{0%,100%{opacity:.5;transform:none}18%{opacity:.2;transform:translateX(-5px) scaleY(.8)}34%{opacity:.8;transform:translateX(3px)}55%{opacity:.35;transform:translateX(7px) scaleY(.9)}76%{opacity:.7;transform:translateX(-2px)}}
+@keyframes al-found{0%{opacity:0;transform:translateY(4px)}12%,82%{opacity:1;transform:none}100%{opacity:0;transform:none}}
+@keyframes fx-drift{from{translate:-1.2% 0;scale:1}to{translate:1.2% -.6%;scale:1.03}}
+@keyframes fx-shimmer{0%,100%{opacity:.35}20%{opacity:.8}40%{opacity:.5}60%{opacity:1}80%{opacity:.6}}
+@keyframes fx-ember-glow{0%,100%{opacity:.4}25%{opacity:.95}50%{opacity:.55}75%{opacity:1}}
+@keyframes fx-sway{0%,100%{transform:rotate(-.45deg)}22%{transform:rotate(.1deg) skewX(.25deg)}48%{transform:rotate(.6deg)}70%{transform:rotate(.2deg) skewX(-.3deg)}86%{transform:rotate(-.25deg)}}
+@keyframes fx-fog{from{transform:translateX(-22%)}to{transform:translateX(22%)}}
+@keyframes fx-ash{from{transform:none}to{transform:translate(-200px,360px)}}
+@keyframes fx-ember{from{transform:none}to{transform:translate(0,-260px)}}
+@keyframes fx-flicker{0%,100%{opacity:.35}24%{opacity:.9}47%{opacity:.55}71%{opacity:1}88%{opacity:.6}}
+@keyframes fx-eye{0%,100%{opacity:.3}18%{opacity:.75}36%{opacity:1}58%{opacity:.6}80%{opacity:.95}}
+/* 23초 주기 안에 4.8초·13.3초·18.9초 → 간격 8.5·5.6·8.9초(불규칙), 한 번에 0.2초. 요소마다 animation-delay 를 달리 줘 서로 안 겹침 */
+@keyframes fx-burst{0%,20.4%,21.5%,57.5%,58.5%,81.7%,82.9%,100%{opacity:0;transform:none}20.7%{opacity:.9;transform:translateX(-6px)}21%{opacity:.45;transform:translateX(5px)}21.3%{opacity:.8;transform:translateX(-2px)}
+ 57.8%{opacity:.85;transform:translateX(4px)}58.2%{opacity:.5;transform:translateX(-5px)}82%{opacity:.9;transform:translateX(-4px)}82.3%{opacity:.4;transform:translateX(6px)}82.6%{opacity:.75;transform:translateX(-3px)}}
+@keyframes fx-jolt{0%,20.4%,21.5%,57.5%,58.5%,81.7%,82.9%,100%{transform:none}20.7%{transform:translateX(-4px) skewX(-6deg)}21%{transform:translateX(3px) skewX(4deg)}21.3%{transform:translateX(-1px)}
+ 57.8%{transform:translateX(3px) skewX(5deg)}58.2%{transform:translateX(-3px)}82%{transform:translateX(-3px) skewX(-5deg)}82.3%{transform:translateX(4px) skewX(3deg)}82.6%{transform:translateX(-2px)}}
+@keyframes fx-in{0%{opacity:1;transform:translateX(-10px)}18%{opacity:.5;transform:translateX(8px)}36%{opacity:.95;transform:translateX(-5px)}58%{opacity:.4;transform:translateX(6px)}80%{opacity:.7;transform:translateX(-2px)}100%{opacity:0;transform:none}}
+@keyframes fx-pop{0%{opacity:0;transform:translateX(-8px) skewX(-10deg)}25%{opacity:.8;transform:translateX(5px) skewX(6deg)}50%{opacity:.5;transform:translateX(-3px)}75%{opacity:1;transform:translateX(1px)}100%{opacity:1;transform:none}}
+@keyframes fx-stamp{0%{opacity:0;scale:1.9}60%{opacity:1;scale:.94}100%{opacity:1;scale:1}}
+@keyframes fx-purify{0%{opacity:1;scale:1}35%{opacity:.85;scale:1.02}100%{opacity:0;scale:1.05}}
+@keyframes fx-sweep{from{transform:none}to{transform:translateX(360%)}}
+@media(max-width:400px){.is-forced .progress[data-alert=scan] .case-title{font-size:14px}.fx-avatar{width:64px;height:64px}.fx-log code{font-size:11px}.scr-verdict b{font-size:17px}}

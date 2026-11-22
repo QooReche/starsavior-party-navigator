@@ -166,7 +166,6 @@ body:not(.show-why) .why,body:not(.show-why) .tg,body:not(.show-why) .syn,body:n
 @media(max-width:600px){#reco-actions{flex-direction:column}#reco-actions>button{width:100%}#growth-control-home{max-width:100%}#growth-control{row-gap:0}}.progress{padding:16px}.progress .pbar{height:6px;border-radius:3px;background:rgba(127,127,127,.2);margin:10px 0;overflow:hidden}.progress .pbar i{display:block;height:100%;background:var(--acc);transition:width .3s}.bigboss{border-color:var(--warn);border-style:solid}.qwarn{margin:6px 0;padding:6px 10px;border:1px dashed var(--warn);border-radius:8px;font-size:13px}
 .pwrow{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:13px}.pwrow .face{width:28px;height:28px}.pwrow span{flex:1}.pwrow input[type=number]{width:110px}.pwrow .bl{font-size:12px;color:var(--mut);display:inline-flex;gap:3px;align-items:center}
 .qsim{display:inline-block;margin-top:3px}.scr-short{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:6px 0;font-size:13px;color:var(--mut)}.scr-short button{white-space:nowrap}.simbar{justify-content:flex-start}
-@media (prefers-reduced-motion:reduce){#drawer{transition:none}}
 @media (max-width:760px){
  main{padding:12px}
  select,input[type=text],input[type=search],input[type=number]{font-size:16px;min-width:0}
@@ -300,9 +299,8 @@ summary{padding:9px 4px}
 [data-gwen="report"] .gwen-worker{animation:gwen-report .45s ease-out 1}
 @keyframes gwen-report{from{transform:translateY(6px);opacity:.4}to{transform:none;opacity:1}}
 @media(max-width:400px){.gwen-work{gap:6px;min-height:120px}.gwen-scene{width:120px;height:120px;flex-basis:120px}}
-@media(prefers-reduced-motion:reduce){.gwen-work .gwen-worker{animation:none;transform:none}}
 
-</style><link rel="stylesheet" href="ux.css"></head><body><main>
+</style><link rel="stylesheet" href="ux.css"><link rel="stylesheet" href="forced.css"></head><body><main>
 <header class="site-head"><h1><img class="gwen-head" src="assets/ui_icons/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true"><span>파티 편성 네비게이터 <small>베타</small></span></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button></span>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천</button><button id="tab-info" type="button" aria-pressed="false">내 구원자</button></nav></header>
 <p class="notice update-notice" data-k="update-notice">📢 11/19 업데이트 · 코스모 시즌 8 · 코스모 3파티 직접 편성 · 자동 대상 클라 기준 교정 <a href="#update-history" onclick="document.getElementById('update-history').open=true">자세히</a></p>
@@ -946,7 +944,7 @@ function quickBox(p,qt,qi,st,pickKey,main,tail){if(!qt||!qt.length)return main+t
    ${k===pickKey?"":`<span class="qt">${sr?simCell(p,t,st):'<span class="mut" data-state="pending">계산 전</span>'}</span><button type="button" class="sec" data-pick="${p}" data-key="${esc(k)}">보기</button>`}</div>`};
  const selected=rows.findIndex(t=>UiShared.teamKey(t.keys)===pickKey),active=selected<0?0:selected;
  const alternatives=rows.flatMap((t,i)=>i===active?[]:[row(t,i)]);
- return `<div class="qbox" data-k="quick"><div class="result-layout"><div class="result-summary">${miVerdict(shown,st)}${scrNote(p,st)}${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?GwenStage.slot('reco','result'):""}</div><div class="result-team">${main}</div></div>${alternatives.length?`<div class="alternatives" data-k="alternatives">${alternatives.slice(0,2).join('')}${alternatives.length>2?`<details class="alternatives-more" data-fold="alternatives-${p}"><summary><span class="more-label">더 보기(+${alternatives.length-2})</span><span class="less-label">접기</span></summary>${alternatives.slice(2).join('')}</details>`:''}</div>`:''}${tail}</div>`}
+ return `<div class="qbox" data-k="quick"><div class="result-layout"><div class="result-summary">${miVerdict(shown,st)}${scrVerdict(SIMQ.scr[scrKey(st,p)],SIMQ.res[simSig(st,rows[0])])}${scrNote(p,st)}${simBar(p,rows,st,uniq>rows.length,shown)}${p===1?GwenStage.slot('reco','result'):""}</div><div class="result-team">${main}</div></div>${alternatives.length?`<div class="alternatives" data-k="alternatives">${alternatives.slice(0,2).join('')}${alternatives.length>2?`<details class="alternatives-more" data-fold="alternatives-${p}"><summary><span class="more-label">더 보기(+${alternatives.length-2})</span><span class="less-label">접기</span></summary>${alternatives.slice(2).join('')}</details>`:''}</div>`:''}${tail}</div>`}
 
 
 
@@ -1112,6 +1110,7 @@ function simProgressSync(pv,st){const box=document.createElement("div");box.inne
  // 그웬 걷기 진행률은 recoGwenShow 가 simProgress 안에서 갱신함(#out 밖 고정 무대).
  if(shape(pv)!==shape(nv)||!a||!b){pv.replaceWith(nv);return}
  for(const q of ['[data-k="simstate"]','[data-k="eta"]']){const x=pv.querySelector(q),y=nv.querySelector(q);if(x&&y&&x.textContent!==y.textContent)x.textContent=y.textContent}
+ {const y=nv.querySelector('[data-k="fx-log"]');if(y)scrLogSync(pv,y.outerHTML)}
  a.setAttribute("aria-valuemax",b.getAttribute("aria-valuemax"));a.setAttribute("aria-valuenow",b.getAttribute("aria-valuenow"));a.firstElementChild.style.width=b.firstElementChild.style.width}
 // 진행 화면이 떠 있으면 진행 칸만 갱신한다(없으면 false — 호출한 쪽이 전체를 다시 그림)
 function simPaintProgress(){const pv=typeof document!=="undefined"&&document.querySelector('#out [data-k="progress"]');if(!pv)return false;
@@ -1204,22 +1203,26 @@ function scrFullRank(sc){const pos=new Map(sc.full.map((k,i)=>[k,i]));return Obj
 const scrRoundN=i=>i<0?SCR_FULL.n:SCR_ROUNDS[i].n;
 // 관측 경보(11/22): 훑는 동안 진행 화면을 «경보» 모양으로. 상태는 sc 에서만 읽는다 — 쉬운 스테이지는 sc.full 이 없어 늘 ''(아무것도 안 바뀜).
 //  'scan' = 훑는 중, 'found' = 훑기가 끝나 예선으로 넘어간 직후 foundMs 동안(전환 문구), '' = 평소. 멈추거나 끝나면(sc.done) ''.
-//  움직임은 전부 CSS(ux.css «관측 경보»). JS 는 단계가 바뀔 때만 DOM 을 바꾸고, 숫자는 기존 진행 글자 갱신(PAINT_MS)에 얹는다.
+//  움직임은 전부 CSS(forced.css). JS 는 단계가 바뀔 때만 DOM 을 바꾸고, 숫자는 기존 진행 글자 갱신(PAINT_MS)에 얹는다.
+//  훑는 동안(scan)은 «강제 탐색»: 그웬 길이 폐허 장면으로 바뀌고(GwenLane forcedSync → body.is-forced) 진행 칸이 관측 단말 모양이 된다. 스위치 없음 — 이 상태 하나로만 정함.
 const SCR_ALERT={foundMs:3200,enterMs:1500,base:"추천 편성 확인 중",label:"세계선",
  title:"⚠ 관측 경보 — 이 세계선에 돌파 경로 없음",sub:"성운 관측 · 다른 세계선의 기억을 찾는 중",note:"빠른 계산으로는 깰 팀이 없어, 후보 전체를 한 판씩 직접 싸워 봄",
  found:n=>`✦ 돌파 가능성 있는 기억 ${n}개 회수 — 구원자 편성 다시 정렬`,
- deco:'<span class="al-deco" aria-hidden="true"><i></i><i></i><i></i></span>'};
+ deco:'<span class="al-deco" aria-hidden="true"><i></i><i></i><i></i><i></i></span>'};
 function scrAlertOf(sc,now=Date.now()){if(!sc||!sc.full||sc.done)return "";if(!sc.fullDone)return sc.round<0?"scan":"";return sc.foundAt&&now-sc.foundAt<SCR_ALERT.foundMs?"found":""}
 const scrAlertEnter=(sc,al)=>al==="scan"&&Date.now()-(sc.alertAt||0)<SCR_ALERT.enterMs;   // 들어온 직후에만 경보 깜빡임(다시 그려도 반복 안 함)
-const scrNum=n=>String(n).replace(/\B(?=(\d{3})+$)/g,",");
 // 진행 글자: 훑기 «세계선 3,412 / 10,626», 예선 «후보 거르는 중 3/80»
-const scrMsg=(i,got,all)=>i<0?`${SCR_ALERT.label} ${scrNum(got)} / ${scrNum(all)}`:`후보 거르는 중 ${got}/${all}`;
+const scrMsg=(i,got,all)=>i<0?`${SCR_ALERT.label} ${UiShared.numText(got)} / ${UiShared.numText(all)}`:`후보 거르는 중 ${got}/${all}`;
 // 단계 시작(화면·직접 편성 묶음 공통): i = -1 훑기 · 0 · 1
 function scrLegEnter(sc,i,n){sc.round=i;sc.left=n;sc.got=0;if(i<0)sc.alertAt=Date.now()}
-function scrAlertHtml(al,sc){return al==="scan"?`<p class="scr-alert" data-k="scr-alert">${SCR_ALERT.sub}<small>${SCR_ALERT.note}</small></p>`:al==="found"?`<p class="scr-alert" data-k="scr-alert" aria-live="polite">${SCR_ALERT.found(scrNum(sc.pool.length))}</p>`:""}
+// 기록 줄: 시스템 메시지 한 줄 + 오염 그웬(그림은 CSS 배경 — 진행 갱신 때 만드는 임시 DOM 이 그림을 다시 받지 않게). 줄 번호가 바뀔 때만 DOM 을 바꿈
+function scrLogHtml(sc){const l=GwenLane.forcedLine(sc.got||0,sc.left||0);
+ return `<div class="fx-log" data-k="fx-log" data-line="${l.i}" aria-hidden="true"><span class="fx-avatar" style="--fx-art:url('${l.src}');--fx-eyes:url('${l.eyes}');--fx-fallback:url('${l.fallback}')"></span><code>${esc(l.text)}</code></div>`}
+function scrLogSync(card,html){const x=card.querySelector('[data-k="fx-log"]');if(x&&!html.includes(`data-line="${x.dataset.line}"`))x.outerHTML=html}
+function scrAlertHtml(al,sc){return al==="scan"?`<p class="scr-alert" data-k="scr-alert">${SCR_ALERT.sub}<small>${SCR_ALERT.note}</small></p>${scrLogHtml(sc)}`:al==="found"?`<p class="scr-alert" data-k="scr-alert" aria-live="polite">${SCR_ALERT.found(UiShared.numText(sc.pool.length))}</p>`:""}
 // 이미 그려진 진행 칸(직접 편성 묶음 경로)에 경보를 켜고 끔. 상태가 같으면 DOM 을 안 건드림
-function scrAlertSync(card,sc){const al=scrAlertOf(sc);if((card.dataset.alert||"")===al)return al;
- card.querySelectorAll('[data-k="scr-alert"],.al-deco').forEach(x=>x.remove());
+function scrAlertSync(card,sc){const al=scrAlertOf(sc);if((card.dataset.alert||"")===al){if(al==="scan")scrLogSync(card,scrLogHtml(sc));return al}
+ card.querySelectorAll('[data-k="scr-alert"],[data-k="fx-log"],.al-deco').forEach(x=>x.remove());
  if(al)card.dataset.alert=al;else delete card.dataset.alert;card.toggleAttribute("data-alert-enter",scrAlertEnter(sc,al));
  const t=card.querySelector(".case-title");if(t){t.textContent=al==="scan"?SCR_ALERT.title:SCR_ALERT.base;t.insertAdjacentHTML("afterend",scrAlertHtml(al,sc))}
  if(al==="scan")card.insertAdjacentHTML("afterbegin",SCR_ALERT.deco);return al}
@@ -1244,6 +1247,9 @@ function scrClose(sc){sc.order=scrOrder(sc);sc.short=scrShort(sc);sc.done=true;s
 function scrNote(p,st){const sc=SIMQ.scr[scrKey(st,p)];if(!sc||!sc.done||!sc.short)return "";
  const seen=Object.keys(sc.res).length,msg=sc.full&&!sc.fullDone?`중간에 멈춰서 후보 전체 ${sc.full.length}팀 중 ${Object.keys(sc.res0).length}팀만 훑었음`:seen<sc.total?`중간에 멈춰서 후보 ${seen}/${sc.total}팀만 확인했음`:"중간에 멈춰서 상위 팀을 짧게만 확인했음";
  return `<div class="scr-short" data-k="scr-short" role="status"><span>${msg}</span>${SIMQ.busy==null?`<button type="button" class="sec" data-scrmore="${p}">끝까지 확인</button>`:""}</div>`}
+// 강제 탐색 판정(결과 위 한 줄): 훑기를 끝까지 한 스테이지에서만. 1안 클리어율 0 = «관리 실패», 0 초과 = «루트 확보». 훑기가 없었거나 중간에 멈췄으면 표시 없음
+function scrVerdict(sc,r){if(!sc||!sc.done||!sc.full||!sc.fullDone||sc.short||!r)return "";const ok=r.clear>0;
+ return `<div class="scr-verdict" data-k="scr-verdict" data-verdict="${ok?"ok":"fail"}" role="status"><b>${ok?"루트 확보":"관리 실패"}</b><span>${ok?"다른 세계선의 기억에서 돌파 경로 회수":"현 전력으로 돌파 불가 — 성장 후 재관측 권장"}</span></div>`}
 // 진행 화면의 「지금까지 결과로 보기」: 끝난 팀이 있으면 그 팀들로 순위를 정하고(simInvalidate 가 scrClose) 본선으로, 하나도 없으면 그냥 취소.
 // 옆의 「취소」(data-simcancel)는 본선으로 가지 않고 전부 멈춘다(끝난 팀 순위는 남고 「끝까지 확인」으로 이어 갈 수 있음)
 function scrStop(){const st=cur&&cur[$("stage").value],sc=st&&SIMQ.busy!=null?SIMQ.scr[scrKey(st,SIMQ.busy)]:null;

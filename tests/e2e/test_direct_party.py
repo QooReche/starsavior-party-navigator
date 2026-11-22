@@ -209,14 +209,11 @@ def power_link_conditions(browser,base):
 
 def pending_and_motion(browser,base):
     page=ready(browser,base)
-    page.emulate_media(reduced_motion='reduce')
     page.locator('#start-screen [data-pn-mode=reco]').click()
-    assert page.locator('#out').evaluate('(e)=>e.getAnimations().length')==0
     page.evaluate("RECO.sharedPending=true;condChanged();directNavigate('direct')")
     page.wait_for_timeout(600)
     assert page.evaluate('!RECO.timer && !REQ && SIMQ.busy==null'),'pending recommendation launched after mode change'
     page.locator('#mode-strip [data-pn-mode=home]').click();page.wait_for_function("DIRECT.mode==='home'")
-    page.emulate_media(reduced_motion='no-preference')
     durations=page.evaluate('''() => {document.querySelector('#start-screen [data-pn-mode=direct]').click();
       return $('direct-panel').getAnimations().map(a=>a.effect.getTiming().duration);}''')
     assert 250 in durations
@@ -317,7 +314,7 @@ def main():
         browser=pw.chromium.launch()
         cases=[('start/navigation 1280',lambda:home_and_navigation(browser,base,1280)),('start/navigation 360',lambda:home_and_navigation(browser,base,360)),
           ('keyboard editor + power 1280',lambda:editor(browser,base,1280)),('touch editor + power 360',lambda:editor(browser,base,360,True)),
-          ('StarLink + restrictions + data error',lambda:power_link_conditions(browser,base)),('pending auto + reduced motion',lambda:pending_and_motion(browser,base)),
+          ('StarLink + restrictions + data error',lambda:power_link_conditions(browser,base)),('pending auto + mode motion',lambda:pending_and_motion(browser,base)),
           ('real recommendation continues behind direct editor',lambda:background_recommendation(browser,base)),
           ('no info + unsupported',lambda:no_info_and_restrictions(browser,base)),('share session isolation',lambda:shared(browser,base)),('unowned link',lambda:missing_from_link(browser,base))]
         try:

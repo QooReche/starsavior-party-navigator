@@ -111,11 +111,6 @@ def contract(browser,base,width):
     assert p.evaluate('shadowShifts.reduce((a,b)=>a+b,0)')==0,p.evaluate('shadowShifts')
     p.evaluate('shadowPO.disconnect()')
     assert p.locator('#gwen-quiet').count()==0
-    p.emulate_media(reduced_motion='reduce')
-    pose(p,'jump');s=present(p)
-    assert all(float(t.rstrip('s'))==0 for t in s['transition'].split(', ')),s
-    pose(p,'ready');present(p)
-    p.emulate_media(reduced_motion='no-preference')
     # Left result: cropped portraits omit the shadow, SD results retain it.
     p.evaluate('''window.holdDirect=false;window.directDelay=100;
       {const w=directWorkers.findLast(w=>!w.dead&&w.req);w.postMessage(w.req)}''')
