@@ -69,19 +69,19 @@
 
   // --- 강제 탐색(후보 전체 훑기) 연출 ---
   // 켜고 끄는 것은 화면이 넘기는 alert 값('scan' → 'found' → '') 하나뿐임. 그림은 assets/forced/ 에만 있고 훑기에 들어갈 때 처음 받음.
-  // 폴더가 없으면 장면은 CSS 바탕만, 오염 그웬은 원래 그림 + CSS 색조로 보임(forced.css).
-  const FORCED={dir:'assets/forced/',arts:['charge','files','investigate','verdict'],scene:['scene.webp','scene_narrow.webp','gwen_back.webp'],
+  // 폴더가 없으면 장면은 CSS 바탕만 보임(forced.css). 그웬은 화면에 한 곳 — 훑는 동안은 장면 속 뒷모습이 그 한 명이라 기록 줄에는 글만 나옴.
+  const FORCED={dir:'assets/forced/',scene:['scene.webp','scene_narrow.webp','gwen_back.webp','gwen_idcard.webp'],
     layers:'<i class="fx-bg"></i><i class="fx-glow"></i><i class="fx-gwen"></i><i class="fx-fog"></i><i class="fx-fog"></i><i class="fx-ash"></i><i class="fx-ember"></i><i class="fx-noise"></i>'};
-  // 진행률 → 시스템 메시지 한 줄 + 그 줄의 오염 그웬 그림. 숫자는 줄이 바뀔 때의 값(매 갱신마다 글자를 바꾸지 않게 i 로 비교)
+  // 진행률 → 시스템 메시지 한 줄. 숫자는 줄이 바뀔 때의 값(매 갱신마다 글자를 바꾸지 않게 i 로 비교)
   function forcedLine(got,all){
-    const lines=SAY.rift,i=Math.min(lines.length-1,Math.floor((all?got/all:0)*lines.length)),art=FORCED.arts[i%FORCED.arts.length],base=FORCED.dir+'gwen/'+art;
-    return {i,art,text:lines[i].replace('{got}',numText(got)).replace('{all}',numText(all)).replace('{left}',numText(all-got)),src:base+'.webp',eyes:base+'_eyes.webp',fallback:'assets/ui_icons/gwen/'+art+'.png'};
+    const lines=SAY.rift,i=Math.min(lines.length-1,Math.floor((all?got/all:0)*lines.length));
+    return {i,text:lines[i].replace('{got}',numText(got)).replace('{all}',numText(all)).replace('{left}',numText(all-got))};
   }
   const forcedOn=new Set();let forcedArt=null;
   function forcedLoad(doc){   // 훑기에 처음 들어갈 때 한 번만 받음(평소 로딩에는 없음). 다 받으면 body[data-forced-art] → forced.css 가 그림으로 바꿈
     if(forcedArt)return;
     const load=file=>{const img=new root.Image();img.src=new URL(FORCED.dir+file,doc.baseURI).href;return img.decode();};
-    forcedArt=Promise.all([FORCED.scene[root.innerWidth<=760?1:0],FORCED.scene[2],...FORCED.arts.flatMap(art=>['gwen/'+art+'.webp','gwen/'+art+'_eyes.webp'])].map(load))
+    forcedArt=Promise.all(FORCED.scene.filter((f,i)=>i>1||i===(root.innerWidth<=760?1:0)).map(load))
       .then(()=>{doc.body.dataset.forcedArt='ready';},()=>{forcedArt=null;});
   }
   // 길(레인) 하나의 경보 상태를 맞춤: scan = 폐허 장면을 깔고 body.is-forced, found = 장면이 걷히는 중(정화), '' = 장면 치움

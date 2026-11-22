@@ -1188,9 +1188,9 @@ const scrAlertEnter=(sc,al)=>al==="scan"&&Date.now()-(sc.alertAt||0)<SCR_ALERT.e
 const scrMsg=(i,got,all)=>i<0?`${SCR_ALERT.label} ${UiShared.numText(got)} / ${UiShared.numText(all)}`:`후보 거르는 중 ${got}/${all}`;
 // 단계 시작(화면·직접 편성 묶음 공통): i = -1 훑기 · 0 · 1
 function scrLegEnter(sc,i,n){sc.round=i;sc.left=n;sc.got=0;if(i<0)sc.alertAt=Date.now()}
-// 기록 줄: 시스템 메시지 한 줄 + 오염 그웬(그림은 CSS 배경 — 진행 갱신 때 만드는 임시 DOM 이 그림을 다시 받지 않게). 줄 번호가 바뀔 때만 DOM 을 바꿈
+// 기록 줄: 시스템 메시지 한 줄(왼쪽 관측 표시 ◉ 는 CSS). 줄 번호가 바뀔 때만 DOM 을 바꿈
 function scrLogHtml(sc){const l=GwenLane.forcedLine(sc.got||0,sc.left||0);
- return `<div class="fx-log" data-k="fx-log" data-line="${l.i}" aria-hidden="true"><span class="fx-avatar" style="--fx-art:url('${l.src}');--fx-eyes:url('${l.eyes}');--fx-fallback:url('${l.fallback}')"></span><code>${esc(l.text)}</code></div>`}
+ return `<div class="fx-log" data-k="fx-log" data-line="${l.i}" aria-hidden="true"><code>${esc(l.text)}</code></div>`}
 function scrLogSync(card,html){const x=card.querySelector('[data-k="fx-log"]');if(x&&!html.includes(`data-line="${x.dataset.line}"`))x.outerHTML=html}
 function scrAlertHtml(al,sc){return al==="scan"?`<p class="scr-alert" data-k="scr-alert">${SCR_ALERT.sub}<small>${SCR_ALERT.note}</small></p>${scrLogHtml(sc)}`:al==="found"?`<p class="scr-alert" data-k="scr-alert" aria-live="polite">${SCR_ALERT.found(UiShared.numText(sc.pool.length))}</p>`:""}
 // 이미 그려진 진행 칸(직접 편성 묶음 경로)에 경보를 켜고 끔. 상태가 같으면 DOM 을 안 건드림

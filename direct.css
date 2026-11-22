@@ -86,7 +86,7 @@ body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-
 /* Text occupies a separate line above the 88px body track. */
 #direct-board-lane,#reco-board-lane{height:122px;padding-top:34px;box-sizing:border-box}
 .gwen-lane-actor[data-moving=true] .gwen-lane-speech{visibility:hidden}
-.search-gwen-lane{height:122px;padding-top:34px;box-sizing:border-box;border-radius:var(--r-ctl);background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat}
+.search-gwen-lane{height:122px;padding-top:34px;box-sizing:border-box}
 .gwen-stage-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;text-align:center}
 .gwen-stage-banner[hidden],.gwen-stage-banner [hidden]{display:none}
 .search-gwen-lane[data-phase=result]{height:80px;padding-top:0;background:none}
@@ -113,8 +113,8 @@ body[data-guild-gwen-owner=guildSearch] #out .idle{display:block}
 .gwen-result-lane{height:122px;padding-top:34px;box-sizing:border-box}
 #direct-progress{display:block;width:100%;height:8px;margin:4px 0 12px}
 /* Quiet mode keeps one still illustration in its reserved lane. */
-/* 수동·자동 무대 공용 배경 */
-#direct-board-lane,#reco-board-lane{background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat;border-radius:var(--r-ctl)}
+/* 수동·자동·탐색 무대 공용 배경: 길 그림 위 하늘 쪽(위 40%)에 별 두 겹과 남보라 번짐 — 훑기 연출(forced.css)의 밤하늘과 색온도를 맞춤 */
+#direct-board-lane,#reco-board-lane,.search-gwen-lane{background:radial-gradient(1px 1px at 22% 30%,rgba(255,255,255,.75) 50%,transparent 51%) 0 0/190px 40% repeat-x,radial-gradient(1.5px 1.5px at 64% 62%,rgba(243,207,116,.6) 50%,transparent 51%) 0 0/270px 40% repeat-x,linear-gradient(180deg,rgba(66,50,138,.5),transparent 55%),linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat;border-radius:var(--r-ctl)}
 #direct-lane-banner,#reco-lane-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;text-align:center}
 #direct-lane-banner[hidden],#direct-lane-banner [hidden],#reco-lane-banner[hidden],#reco-lane-banner [hidden]{display:none}
 .reco-gwen-stage{margin-bottom:8px}.reco-gwen-stage[hidden]{display:none}

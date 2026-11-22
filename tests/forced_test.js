@@ -33,7 +33,7 @@ async function scenario(code=lane){
   let h=setup(code);
   assert.equal(await h.walk('','s1',.1),true,'평소: 진행률을 따라 걸음');
   assert.equal(h.forced(),false);assert(!h.board().dataset.alert);assert.equal(h.board().querySelector('.fx-scene'),null);
-  assert.deepEqual(h.forcedLoads(),[],'쉬운 스테이지: 오염 그림을 받지 않음');
+  assert.deepEqual(h.forcedLoads(),[],'쉬운 스테이지: 연출 그림을 받지 않음');
   // 훑기 진입
   const before=h.loads.length;
   h.c.recoGwenShow(true,.2,null,'s2','scan');
@@ -41,8 +41,8 @@ async function scenario(code=lane){
   assert.equal(h.state().moving,false,'훑기 진입 순간 걷기 멈춤');
   const scene=h.board().querySelector('.fx-scene');assert(scene,'폐허 장면이 깔림');
   assert.deepEqual(scene.children.map(e=>e.className),['fx-bg','fx-glow','fx-gwen','fx-fog','fx-fog','fx-ash','fx-ember','fx-noise']);
-  const want=['scene.webp','gwen_back.webp',...h.c.GwenLane.FORCED.arts.flatMap(a=>['gwen/'+a+'.webp','gwen/'+a+'_eyes.webp'])].map(f=>'http://test/assets/forced/'+f);
-  assert.deepEqual(h.forcedLoads(),want,'훑기 진입 때 오염 그림 경로를 받음');assert(h.loads.length>before);
+  const want=['scene.webp','gwen_back.webp','gwen_idcard.webp'].map(f=>'http://test/assets/forced/'+f);
+  assert.deepEqual(h.forcedLoads(),want,'훑기 진입 때 장면 그림(넓은 배경·뒷모습·신분증 사진)만 받음');assert(h.loads.length>before);
   await h.flush();assert.equal(h.doc.body.dataset.forcedArt,'ready','다 받으면 그림으로 바꿈');
   assert.equal(await h.walk('scan','s2',.2,12000),false,'훑는 동안은 걷지 않음(진행률이 올라도)');
   assert.equal(h.board().querySelectorAll('.fx-scene').length,1,'장면은 한 번만 깖');
@@ -68,11 +68,12 @@ async function scenario(code=lane){
 (async()=>{
   await scenario();
   // 그림·스타일이 서로 맞는가
-  const G=require('../gwen_lane'),U=require('../ux_ui');
-  const used=JSON.parse(read('tools/build_forced_art.py').match(/^USED = (\[.*?\])/m)[1].replace(/'/g,'"'));
-  assert.deepEqual(used,G.FORCED.arts,'그림 생성 목록 = 화면이 쓰는 표정');
-  for(const art of G.FORCED.arts){assert(U.GWEN_SCENES[art]?.blink,art+': 눈 위치를 찾을 깜빡임 그림이 있어야 함');
-    for(const f of [art+'.webp',art+'_eyes.webp'])assert(fs.statSync(path.join(ROOT,'assets/forced/gwen',f)).size<20000,f);}
+  const G=require('../gwen_lane');
+  // 오염 SD 그웬은 없앴음(그웬은 화면에 한 곳): 그림·경로·스타일이 남지 않고, 폴더의 파일 = 화면이 쓰는 목록 = 생성 도구가 만드는 목록
+  assert(!fs.existsSync(path.join(ROOT,'assets/forced/gwen'))&&!('arts' in G.FORCED)&&!/fx-avatar|fx-eye|forced\/gwen\//.test(css+html+lane),'오염 그웬 흔적 없음');
+  assert.deepEqual(fs.readdirSync(path.join(ROOT,'assets/forced')).sort(),G.FORCED.scene.slice().sort(),'폴더에 안 쓰는 그림 없음');
+  const tool=read('tools/build_forced_art.py');for(const f of G.FORCED.scene)assert(tool.includes("'"+f+"'"),f+': 생성 도구가 만듦');
+  assert.deepEqual(Object.keys(G.forcedLine(1,2)).sort(),['i','text'],'기록 줄은 글만');
   let total=0;for(const f of G.FORCED.scene){const size=fs.statSync(path.join(ROOT,'assets/forced',f)).size;total+=size;assert(css.includes('assets/forced/'+f),f+': forced.css 가 씀');}
   assert(total<260000,'장면 그림 합계 용량');
   for(const cls of G.FORCED.layers.match(/fx-[a-z]+/g))assert(css.includes('.fx-scene .'+cls),cls);
@@ -89,5 +90,5 @@ async function scenario(code=lane){
     ['그림 표시가 안 붙음',"doc.body.dataset.forcedArt='ready';",''],
     ['말풍선이 그대로 나옴',"e.speech&&e.kind!=='rift'&&","e.speech&&"],
   ]){assert(lane.includes(from),name);await assert.rejects(scenario(lane.replace(from,to)),{code:'ERR_ASSERTION'},'깨뜨려도 통과함: '+name);}
-  console.log('PASS forced: 훑기 진입(is-forced·폐허 장면·오염 그림 경로·걷기 꺼짐), 끝·멈춤 시 원래대로, 쉬운 스테이지 변화 없음, 폴더 없음 폴백, 그림·스타일 대응; 깨뜨리기 7건');
+  console.log('PASS forced: 훑기 진입(is-forced·폐허 장면·장면 그림·걷기 꺼짐), 끝·멈춤 시 원래대로, 쉬운 스테이지 변화 없음, 폴더 없음 폴백, 그림·스타일 대응; 깨뜨리기 7건');
 })().catch(e=>{console.error(e);process.exitCode=1;});
