@@ -164,7 +164,10 @@
     function base(){
       const stage=stages.get(current.mode);if(!stage)return [null,null];
       if(current.mode==='home')return ['home',stage.board];
-      if(current.phase==='work')return [current.alert==='scan'?'rift':current.alert==='found'?'riftFound':'work',stage.board];   // 관측 경보(후보 전체 훑기) 중에는 전용 표정·대사
+      // 관측 경보(후보 전체 훑기) 중에는 전용 표정·대사
+      if(current.phase==='work'&&current.alert==='scan')return ['rift',stage.board];
+      if(current.phase==='work'&&current.alert==='found')return ['riftFound',stage.board];
+      if(current.phase==='work')return ['work',stage.board];
       if(current.phase==='error')return ['error',stage.result||stage.board];
       if(current.phase==='result')return [current.recoHigher?'recoHigher':current.better?'better':!Number.isFinite(current.clear)?'medium':current.clear>=.7?'high':current.clear>=.05?'medium':'low',stage.result||stage.board];
       if(current.stale)return ['past',stage.board];
