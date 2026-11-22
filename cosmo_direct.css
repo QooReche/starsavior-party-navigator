@@ -16,7 +16,7 @@
 /* 보스 카드(탭) + 합계 상자 */
 .cg-top{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;align-items:stretch;margin:0 0 16px}
 .cg-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}
-.cg-tab{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"face head" "face count" "face score";gap:1px 12px;align-items:center;text-align:left;min-width:0;padding:10px 12px!important;border:1px solid var(--line)!important;border-radius:12px;background:var(--ink)!important;color:var(--fg)!important;position:relative}
+.cg-tab{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"face head" "face count" "face score";gap:1px 12px;align-items:center;text-align:left;min-width:0;padding:10px 12px!important;border:1px solid var(--line)!important;border-radius:var(--r-box);background:var(--ink)!important;color:var(--fg)!important;position:relative}
 .cg-tab[aria-selected=true]{border-color:var(--acc)!important;box-shadow:0 0 0 2px var(--acc) inset}
 .cg-tab[aria-selected=true]::after{content:'';position:absolute;left:50%;bottom:-9px;width:14px;height:14px;transform:translateX(-50%) rotate(45deg);background:var(--ink);border-right:3px solid var(--acc);border-bottom:3px solid var(--acc);box-sizing:border-box}
 .cg-tab:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
@@ -33,7 +33,7 @@
 .cg-score{grid-area:score;display:flex;align-items:baseline;flex-wrap:wrap;gap:0 8px;min-width:0}
 .cg-score b{font-size:18px;white-space:nowrap}.cg-score small{font-size:12px;color:var(--mut);white-space:nowrap}
 .cg-score.none b{font-size:13px;color:var(--mut);font-weight:normal;white-space:normal}
-.cg-total{border:1px solid var(--line);border-radius:12px;background:var(--ink);padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:0}
+.cg-total{border:1px solid var(--line);border-radius:var(--r-box);background:var(--ink);padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:0}
 .cg-total-line{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--mut)}
 .cg-total-num{font-size:22px;line-height:28px;letter-spacing:-.5px;color:var(--fg)}
 .cg-total-num.pending{font-size:17px;color:var(--warn)}

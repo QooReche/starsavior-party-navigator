@@ -5,7 +5,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="assets/ui_icons/gwen_favicon_180.png">
 <title>파티 편성 네비게이터 (베타)</title>
 <style>
-:root{color-scheme:dark;--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e;--warn:#ffb454;--gold:#ffd24a;--ult:#7a4fc0;--spc:#3b6cb4;--bas:#4a5568;--assumed:#cba6ff;--assumed-bg:#332544}
+:root{color-scheme:dark;--bg:#141820;--fg:#e6e9ef;--card:#1d2330;--line:#2c3446;--mut:#9aa4b5;--acc:#4cc2c2;--good:#5fd39a;--bad:#ff8b7e;--warn:#ffb454;--gold:#ffd24a;--ult:#7a4fc0;--spc:#3b6cb4;--bas:#4a5568;--assumed:#cba6ff;--assumed-bg:#332544;--front:#ffb057;--back:#639fe8;--r-panel:14px;--r-box:12px;--r-ctl:8px;--font-mono:ui-monospace,"Cascadia Mono",Consolas,"D2Coding",monospace}
 .assumed-card .card{border:2px dashed var(--assumed)}.assumed-label{color:var(--assumed);background:var(--assumed-bg);font-weight:700;font-size:11px;display:inline-block;padding:3px 5px;border-radius:5px;white-space:nowrap}.assumed-card .card>.assumed-label{position:absolute;top:6px;right:6px;z-index:3;pointer-events:none}.assumed-mark{color:var(--assumed);font-weight:bold}.assumed-owned{border:1px dashed var(--assumed)}.al-short{display:none}
 #growth-result{border:1px dashed var(--assumed);border-top:2px dashed var(--assumed)}
 .growth-score-card{border:1px solid var(--line);border-radius:9px;margin:10px 0;padding:10px;overflow-wrap:anywhere}.growth-score-card p{margin:7px 0}.growth-score-card .tag{white-space:nowrap}.growth-stats{font-size:11px;word-break:keep-all}.growth-stats summary{cursor:pointer}
@@ -124,7 +124,7 @@ body:not(.show-why) .why,body:not(.show-why) .tg,body:not(.show-why) .syn,body:n
 .cnm{font-weight:700;font-size:15px;text-shadow:0 1px 3px #000}.csb{font-size:12px;color:#c3cada}
 .tier{display:inline-block;margin-top:2px;padding:0 10px;border-radius:10px;font-weight:700;font-size:13px;color:#fff}
 .slotlbl{margin-top:-1px;text-align:center;font-weight:800;letter-spacing:.08em;font-size:14px;color:var(--fg);padding:5px 0;border-bottom:1px solid var(--line)}
-.slotlbl.back{color:#6aa5ff}.slotlbl.front{color:var(--warn)}
+.slotlbl.back{color:var(--back)}.slotlbl.front{color:var(--warn)}
 .gc>*:not(.card){padding-left:2px;padding-right:2px}
 .gc .ico,.gc .why,.gc .tg{padding-top:6px;font-size:13px;line-height:1.55}
 .altbox{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}
@@ -190,12 +190,12 @@ body{background-color:var(--bg);background-image:
  background-size:230px 230px,310px 310px,410px 410px,170px 170px,auto,auto;background-attachment:fixed}
 h1{font-size:22px;letter-spacing:.5px;background:linear-gradient(90deg,#fff5d6,var(--gold) 45%,#9fe3ff);-webkit-background-clip:text;background-clip:text;color:transparent}
 h1 small{-webkit-text-fill-color:var(--bad)}
-.panel,.party{border-radius:14px;border-color:var(--line);box-shadow:0 0 0 1px rgba(111,211,255,.05) inset,0 8px 24px rgba(0,0,0,.35);backdrop-filter:blur(2px)}
+.panel,.party{border-radius:var(--r-panel);border-color:var(--line);box-shadow:0 0 0 1px rgba(111,211,255,.05) inset,0 8px 24px rgba(0,0,0,.35);backdrop-filter:blur(2px)}
 .party{border-top:2px solid rgba(243,207,116,.55)}
 button{border-radius:999px;background:linear-gradient(180deg,#86dcff,#3fa9e0);color:#06223a;font-weight:700;box-shadow:0 0 10px rgba(111,211,255,.25)}
 button.sec{background:rgba(111,211,255,.06);color:var(--acc);border:1px solid rgba(111,211,255,.6);box-shadow:none;font-weight:600}
 button:hover{filter:brightness(1.12)}
-select,input[type=text],input[type=search],input[type=number]{background:rgba(6,10,24,.75);border-color:var(--line);border-radius:8px}
+select,input[type=text],input[type=search],input[type=number]{background:rgba(6,10,24,.75);border-color:var(--line);border-radius:var(--r-ctl)}
 .qbox{border:1px solid rgba(243,207,116,.55);background:linear-gradient(180deg,rgba(243,207,116,.08),rgba(111,211,255,.04));border-radius:12px;box-shadow:0 0 18px rgba(243,207,116,.08)}
 .qbox .qh b{color:var(--gold)!important}
 .qrow .qn{color:var(--gold)}
@@ -290,7 +290,7 @@ summary{padding:9px 4px}
 #guild-panel{font-size:13px}.gd-dev{border:2px solid var(--warn);border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:14px;color:var(--warn);background:rgba(255,170,0,.12)}#guild-panel .gd-head{font-size:15px;margin-bottom:4px}#guild-panel .gd-small{font-size:12px;margin:4px 0}.gd-state{display:inline-block;font-size:12px;font-weight:700;border:1px solid currentColor;border-radius:10px;padding:0 8px;margin-left:4px}.gd-state.active{color:var(--good)}.gd-state.settling,.gd-state.upcoming{color:var(--warn)}.gd-state.ended{color:var(--bad)}
 .gd-est{display:inline-block;font-size:11px;font-weight:700;color:var(--warn);border:1px dashed var(--warn);border-radius:8px;padding:0 6px;margin-left:3px;white-space:nowrap}.gd-warn{margin:6px 0;padding:6px 10px;border:1px solid var(--warn);border-radius:8px;color:var(--warn)}
 .gd-best,.gd-now{margin:8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);line-height:1.6}.gd-sel{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.gd-sel label{display:flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px;min-width:0;flex:1 1 150px}.gd-sel select{max-width:100%;font-size:14px}
-.gd-scroll{overflow-x:auto;max-width:100%;margin:6px 0}.gd-scroll table{border-collapse:collapse;width:100%;min-width:420px}.gd-scroll th,.gd-scroll td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;font-size:12px}.gd-scroll tr.cur td{background:rgba(111,211,255,.1);font-weight:700}.gd-fx{min-width:190px;color:var(--mut)}.gd-rules{margin:8px 0;padding-left:18px;line-height:1.6}.gd-comm ul{margin:4px 0;padding-left:18px}
+.gd-scroll{overflow-x:auto;max-width:100%;margin:6px 0}.gd-scroll table{border-collapse:collapse;width:100%;min-width:420px}.gd-scroll th,.gd-scroll td{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top;font-size:12px}.gd-scroll tr.cur td{background:color-mix(in srgb,var(--acc) 10%,transparent);font-weight:700}.gd-fx{min-width:190px;color:var(--mut)}.gd-rules{margin:8px 0;padding-left:18px;line-height:1.6}.gd-comm ul{margin:4px 0;padding-left:18px}
 
 /* 공식 그웬 SD: 소품은 그림 옆, 모든 단계에 같은 높이의 자리 확보. */
 .gwen-work{display:flex;align-items:center;gap:12px;min-height:140px;width:100%;margin:6px 0;box-sizing:border-box;color:var(--mut);font-size:13px;line-height:1.5}
@@ -838,7 +838,7 @@ const dia=(s,px)=>`<span class="dia e-${s.el}" style="width:${px}px;height:${px}
 function art(s){const u=s.art||s.img;return u?`<img class="art" src="${esc(u)}" width="512" height="512" alt="" loading="lazy" onerror="this.remove()">`:""}
 function face(s){return s.img?`<img class="face" src="${esc(s.img)}" width="160" height="160" alt="" loading="lazy" onerror="this.outerHTML='<span class=&quot;face&quot;>${esc(s.name[0])}</span>'">`:`<span class="face">${esc(s.name[0])}</span>`}
 function altChips(party,alt,p){return `<details class="altbox" data-fold="alt-${p}"><summary>대신 넣을 구원자</summary>${party.map(x=>`${esc(x.s.name)}→${alt(x).map(a=>esc(a.s.name)).join("·")||"후보 없음"}`).join(" / ")}</details>`}
-const CROWN='<svg viewBox="0 0 34 26" aria-hidden="true"><path d="M2 22 L5 6 L12 14 L17 3 L22 14 L29 6 L32 22 Z" fill="#ffd24a" stroke="#8a5a00" stroke-width="1.5" stroke-linejoin="round"/><rect x="2" y="22" width="30" height="3" rx="1" fill="#e6a800"/></svg>';
+const CROWN='<svg viewBox="0 0 34 26" aria-hidden="true"><path d="M2 22 L5 6 L12 14 L17 3 L22 14 L29 6 L32 22 Z" fill="var(--gold)" stroke="#8a5a00" stroke-width="1.5" stroke-linejoin="round"/><rect x="2" y="22" width="30" height="3" rx="1" fill="#e6a800"/></svg>';
 function simUnit(r,key){if(!r||!r.g||!r.u||!r.u[key])return '<div class="simu"></div>';const [sh,dp]=r.u[key];const pct=Math.round(sh*100),dpp=Math.round(dp*100);
  const lv=dp>=0.5?3:dp>=0.2?2:dp>=0.05?1:0;
  return `<div class="simu"><div class="sb" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="피해 기여 ${pct}%"><i style="width:${pct}%"></i></div>피해 ${pct}% · <span class="dot d${lv}"></span>탈락 ${dpp}%</div>`}

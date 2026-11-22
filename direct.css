@@ -13,9 +13,9 @@
 .direct-gwen{text-align:center}.direct-gwen img{width:112px;height:112px;object-fit:contain}.direct-gwen p{font-size:13px;margin:0 0 10px}
 #direct-board{display:grid;grid-template-columns:repeat(4,minmax(0,180px));justify-content:center;gap:8px}
 .direct-slot{min-width:0;text-align:center;position:relative}
-.direct-card-wrap{position:relative}.direct-member{position:relative;display:block;width:100%;aspect-ratio:1/1.12;padding:0!important;overflow:hidden;min-width:0;border:1px solid #639fe8!important;border-radius:12px}
-.direct-slot[data-pos=front] .direct-member{border-color:#ffb057!important}
-.direct-slot.direct-leader .direct-member{border-color:#ffd24a!important;box-shadow:0 0 0 2px #ffd24a66}
+.direct-card-wrap{position:relative}.direct-member{position:relative;display:block;width:100%;aspect-ratio:1/1.12;padding:0!important;overflow:hidden;min-width:0;border:1px solid var(--back)!important;border-radius:12px}
+.direct-slot[data-pos=front] .direct-member{border-color:var(--front)!important}
+.direct-slot.direct-leader .direct-member{border-color:var(--gold)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--gold) 40%,transparent)}
 .direct-slot.selected .direct-member{outline:3px solid var(--acc);outline-offset:2px}
 .direct-member .art{position:absolute;inset:0;width:100%;height:112%;object-fit:cover;object-position:center top}
 .direct-member .fallback{position:absolute;inset:0;display:grid;place-items:center;font-size:36px}
@@ -31,7 +31,7 @@
 .direct-slot-tools{display:none}.direct-slot-tools button{position:absolute;z-index:4;right:4px;padding:3px!important;min-height:30px;min-width:30px;background:#181c29dd}.direct-slot-tools [data-direct-action=remove]{bottom:33px}
 @media(hover:hover){.direct-slot-tools{display:block;opacity:0}.direct-card-wrap:hover .direct-slot-tools,.direct-card-wrap:focus-within .direct-slot-tools{opacity:1}}
 .direct-grow{width:100%;padding:5px 1px!important;margin-top:6px;font-size:11px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;min-height:64px}
-.direct-grow[aria-pressed=true]{border-color:var(--acc);color:var(--acc);background:#6fd3ff18}.direct-power{font-size:clamp(9px,1.05vw,14px);white-space:nowrap;color:var(--fg)}
+.direct-grow[aria-pressed=true]{border-color:var(--acc);color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}.direct-power{font-size:clamp(9px,1.05vw,14px);white-space:nowrap;color:var(--fg)}
 .direct-grow[aria-pressed=true] .direct-power{color:var(--acc)}
 .direct-grow:disabled{opacity:.45;cursor:default}.direct-grow>span{white-space:nowrap}
 .direct-stats{font-size:11px;overflow-wrap:anywhere;margin-top:4px}.direct-stats summary{min-height:28px}.direct-invalid{display:block;color:var(--bad)}
@@ -86,7 +86,7 @@ body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-
 /* Text occupies a separate line above the 88px body track. */
 #direct-board-lane,#reco-board-lane{height:122px;padding-top:34px;box-sizing:border-box}
 .gwen-lane-actor[data-moving=true] .gwen-lane-speech{visibility:hidden}
-.search-gwen-lane{height:122px;padding-top:34px;box-sizing:border-box;border-radius:8px;background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat}
+.search-gwen-lane{height:122px;padding-top:34px;box-sizing:border-box;border-radius:var(--r-ctl);background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat}
 .gwen-stage-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;text-align:center}
 .gwen-stage-banner[hidden],.gwen-stage-banner [hidden]{display:none}
 .search-gwen-lane[data-phase=result]{height:80px;padding-top:0;background:none}
@@ -114,7 +114,7 @@ body[data-guild-gwen-owner=guildSearch] #out .idle{display:block}
 #direct-progress{display:block;width:100%;height:8px;margin:4px 0 12px}
 /* Quiet mode keeps one still illustration in its reserved lane. */
 /* 수동·자동 무대 공용 배경 */
-#direct-board-lane,#reco-board-lane{background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat;border-radius:8px}
+#direct-board-lane,#reco-board-lane{background:linear-gradient(90deg,rgba(14,21,38,.58),rgba(14,21,38,.42),rgba(14,21,38,.58)),url('assets/ui_icons/journey_lane.webp') center bottom / cover no-repeat;border-radius:var(--r-ctl)}
 #direct-lane-banner,#reco-lane-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;text-align:center}
 #direct-lane-banner[hidden],#direct-lane-banner [hidden],#reco-lane-banner[hidden],#reco-lane-banner [hidden]{display:none}
 .reco-gwen-stage{margin-bottom:8px}.reco-gwen-stage[hidden]{display:none}

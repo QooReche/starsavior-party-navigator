@@ -6,7 +6,7 @@
   const node=typeof module!=='undefined'&&module.exports;
   const EL={sun:'태양',moon:'달',star:'별',order:'질서',chaos:'혼돈'};
   const ROLE={스트라이커:'striker',레인저:'ranger',캐스터:'caster',디펜더:'defender',서포터:'supporter',어쌔신:'assassin'};
-  const CROWN='<svg viewBox="0 0 34 26" aria-hidden="true"><path d="M2 22 L5 6 L12 14 L17 3 L22 14 L29 6 L32 22 Z" fill="#ffd24a" stroke="#8a5a00" stroke-width="1.5" stroke-linejoin="round"/><rect x="2" y="22" width="30" height="3" rx="1" fill="#e6a800"/></svg>';
+  const CROWN='<svg viewBox="0 0 34 26" aria-hidden="true"><path d="M2 22 L5 6 L12 14 L17 3 L22 14 L29 6 L32 22 Z" fill="var(--gold)" stroke="#8a5a00" stroke-width="1.5" stroke-linejoin="round"/><rect x="2" y="22" width="30" height="3" rx="1" fill="#e6a800"/></svg>';
   const SCREEN=[2,0,1,3],LABELS=['전열1','전열2','후열1','후열2'];
   const STEPS=[['보스 고르기','보스'],['구원자 4명 넣기','구원자 4명'],['브레이크·난이도(선택)','브레이크(선택)'],['확인','확인']];
   const GROW_HELP='체크하면 이 구원자를 더 키웠다고 치고 계산';
