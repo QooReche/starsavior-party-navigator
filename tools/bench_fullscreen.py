@@ -3,7 +3,10 @@
 
 browser: 실제 화면(index.html, Pyodide 작업자)을 Chromium 으로 열어 내 정보(비공개 파일)를 넣고, 스테이지마다
   스위치 끔/켬으로 «추천 편성 보기»부터 예선·본선이 다 끝날 때까지의 시간을 잰다(매번 새 브라우저 문맥 = 엔진 준비 포함, 같은 조건).
-  작업자 수는 이 PC 의 기본값(scrWorkers). 판 수별 요청 수·시작 시각, 훑기 여부, 화면 1안의 시뮬 명세(simParty·브레이크)를 남긴다.
+  작업자 수는 이 PC 의 기본값(scrWorkers). --browser-workers N 이면 저사양 흉내로 N개로 강제한다
+  (navigator.hardwareConcurrency 를 N+1, deviceMemory 를 8 로 덮어 scrWorkers() = N — 공통 실행기는 페이지 로드 때 scrWorkers 함수를
+  capacity 로 잡아 두므로 window.scrWorkers 만 바꿔서는 작업자 수가 안 바뀜. 로드 뒤 window.scrWorkers 도 N 으로 덮고 scrWorkers() = N 을 확인).
+  --stop-after S 이면 켬 모드에서 훑기 시작 S초 뒤 «지금까지 결과로 보기»를 누르고, 누른 뒤 결과(안내 줄)·끝까지 걸린 시간을 잰다(모드 이름 stop). 판 수별 요청 수·시작 시각, 훑기 여부, 화면 1안의 시뮬 명세(simParty·브레이크)를 남긴다.
   한 번에 한 스테이지·한 모드씩만 돈다(무거운 작업 동시 실행 금지). 이미 잰 (스테이지, 모드)는 건너뜀(이어 돌리기).
 eval: 화면 1안(끔·켬)을 네이티브 엔진(battlesim.web.run_auto = 작업자와 같은 함수)으로 시드 20261122·400판 독립 재평가.
   평균 진행도·클리어율과 켬−끔 차의 부트스트랩 95% 구간. 1판 훑기로 고른 팀의 소표본 선택 편향은 이 독립 재평가로 판정한다.
@@ -53,6 +56,17 @@ PROF_JS = """() => {
   let last=performance.now();setInterval(()=>{const t=performance.now(),d=t-last-50;if(d>0){P.lag+=d;P.lagN++}last=t},50);
 }"""
 
+# --browser-workers: 페이지 스크립트보다 먼저 navigator 값을 덮음(scrWorkerCount = min(코어−1, 8, 메모리 예산))
+WORKERS_JS = "Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>%d,configurable:true});Object.defineProperty(navigator,'deviceMemory',{get:()=>8,configurable:true});"
+# --stop-after: 훑기(sc.round = -1)가 시작돼 결과가 하나 이상 들어왔는가 / 지금 훑기 진행 상태
+SCAN_JS = "()=>{const sc=SIMQ.scr[scrKey(cur[$('stage').value],1)];return !!(sc&&sc.full&&sc.round<0&&sc.res0&&Object.keys(sc.res0).length)}"
+STOP_WAIT = 600
+# 멈춘 뒤 결과가 보임 = 진행 화면이 닫히고 1파티 결과 줄이 있음(«중간에 멈춰서 …» 안내 scrNote 유무는 STOP_STATE_JS 로 기록)
+STOP_SHOWN_JS = "()=>!document.querySelector('[data-k=\"progress\"]')&&!!document.querySelector('.party[data-party=\"1\"] .qbox .qrow[data-key]')"
+STOP_STATE_JS = """()=>{const ss=document.querySelector('.party[data-party="1"] [data-k="simstate"]');
+  return {busy:SIMQ.busy,simstate:ss?.dataset?.state||null,done:SIMQ.busy==null&&ss?.dataset?.state==='done',note:document.querySelector('[data-k="scr-short"]')?.textContent||'',err:SIMQ.err||''}}"""
+SCAN_STATE_JS ="()=>{const sc=SIMQ.scr[scrKey(cur[$('stage').value],1)];return {scanning:!!(sc&&sc.full&&sc.round<0&&!sc.done),scanned:Object.keys(sc?.res0||{}).length,all:sc?.full?.length??null}}"
+
 COLLECT_JS = """() => {
   const c=contents[$('content').value],st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)]||null,B=window.__bench;
   const shown=document.querySelector('.party[data-party="1"]')?.dataset.team||null,rows=LASTQ[1].rows;
@@ -69,9 +83,11 @@ COLLECT_JS = """() => {
 }"""
 
 
-def browser(myinfo, out, only, modes, timeout, profile=False, chunk=None):
+def browser(myinfo, out, only, modes, timeout, profile=False, chunk=None, nworkers=None, stop_after=None):
     os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', r'E:\AI_mk2\pw-browsers')
     sys.path.insert(0, str(ROOT / 'tests' / 'e2e'))
+    if stop_after is not None:
+        modes = ['stop']
     import test_page as tp
     from playwright.sync_api import sync_playwright
     info = Path(myinfo).read_text(encoding='utf-8')
@@ -94,6 +110,8 @@ def browser(myinfo, out, only, modes, timeout, profile=False, chunk=None):
                     page.on('pageerror', lambda e: errors.append(str(e)))
                     page.add_init_script("(s=>{for(const [k,v] of Object.entries(s))localStorage.setItem(k,v)})(%s)" % json.dumps({'pn.myinfo': info}))
                     page.add_init_script(INIT_JS)
+                    if nworkers:
+                        page.add_init_script(WORKERS_JS % (nworkers + 1))
                     page.goto(base + '/index.html?auto=0&pm=reco')
                     page.wait_for_function("() => window._ready && MI.info && MI.growth && !MI.pending", timeout=180000)
                     assert page.evaluate('miMode()'), '내 정보 모드가 아님'
@@ -108,7 +126,10 @@ def browser(myinfo, out, only, modes, timeout, profile=False, chunk=None):
                     page.dispatch_event('#stage', 'change')
                     tp.settle(page)
                     assert page.evaluate("()=>cur[$('stage').value].name") == sname
-                    page.evaluate("on=>{CFG.recommendation.fullScreen=on}", mode == 'on')
+                    if nworkers:
+                        page.evaluate("n=>{window.scrWorkers=()=>n}", nworkers)
+                        assert page.evaluate('scrWorkerCount({cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory})') == nworkers, '작업자 수 강제 실패'
+                    page.evaluate("on=>{CFG.recommendation.fullScreen=on}", mode in ('on', 'stop'))
                     if profile:
                         page.evaluate(PROF_JS)
                     if chunk:       # 묶음 크기 고정(1 = 묶기 전 배차, 단계별 측정용)
@@ -117,12 +138,45 @@ def browser(myinfo, out, only, modes, timeout, profile=False, chunk=None):
                     page.evaluate('() => { window.__bench.t0 = Date.now() }')
                     page.click('button[data-go]')
                     page.wait_for_selector('.party[data-party="1"] .qbox .qrow[data-key]', state='visible', timeout=timeout)
-                    tp.wait_sim_done(page, timeout=timeout)
+                    stop = None
+                    if mode == 'stop':
+                        page.wait_for_function(SCAN_JS, timeout=timeout)
+                        ts = time.time()
+                        page.wait_for_timeout(int(stop_after * 1000))
+                        st0 = page.evaluate(SCAN_STATE_JS)
+                        assert st0['scanning'], '훑기가 이미 끝났음 — --stop-after 를 줄일 것'
+                        tc = time.time()
+                        page.click('button[data-scrstop]')
+                        # 멈춘 뒤에는 화면 1~9안 전부가 결과를 갖지 않을 수 있어 «계산 완료»(SIM_DONE_JS)가 안 올 수 있음 —
+                        #  진행 화면이 닫히고 결과·안내 줄이 보일 때까지를 «결과가 나온 시간»으로 잼(그 뒤 쉬는 상태는 최대 STOP_WAIT 초, 넘으면 기록만)
+                        try:
+                            page.wait_for_function(STOP_SHOWN_JS, timeout=STOP_WAIT * 1000)
+                            tn = time.time()
+                        except Exception:
+                            tn = None
+                        try:
+                            page.wait_for_function("()=>SIMQ.busy==null&&!document.querySelector('[data-k=\"progress\"]')", timeout=STOP_WAIT * 1000)
+                            idle = round(time.time() - tc, 1)
+                        except Exception:
+                            idle = None
+                        stop = dict(scan_start=round(ts - t0, 1), click=round(tc - t0, 1), scanned_at_click=st0['scanned'], scan_all=st0['all'],
+                                    to_result=tn and round(tn - tc, 1), to_idle=idle, state=page.evaluate(STOP_STATE_JS))
+                        if not stop['state']['done']:
+                            ctx.close()
+                            res.append(dict(name=name, mode=mode, seconds=round(time.time() - t0, 1), errors=errors, forced_workers=nworkers, stop=stop))
+                            print('  stop:', stop, flush=True)
+                            path.with_suffix('.tmp').write_text(json.dumps(res, ensure_ascii=False), encoding='utf-8')
+                            os.replace(path.with_suffix('.tmp'), path)
+                            continue
+                    else:
+                        tp.wait_sim_done(page, timeout=timeout)
                     dt = time.time() - t0
                     r = page.evaluate(COLLECT_JS)
-                    r.update(name=name, mode=mode, seconds=round(dt, 1), errors=errors, chunk=chunk)
+                    r.update(name=name, mode=mode, seconds=round(dt, 1), errors=errors, chunk=chunk, forced_workers=nworkers, stop=stop)
                     ctx.close()
                     res.append(r)
+                    if stop:
+                        print('  stop:', stop, flush=True)
                     print('%s %s: %.1f초 작업자 %d 훑기 %s(%s팀→%s) 판 %d 1안 진행 %s' % (name, mode, dt, r['workers'], r['full'], r['scanned'], r['fullN'], r['runs'],
                                                                          r['top']['res'] and round(r['top']['res']['prog'] or 0, 3)), flush=True)
                     tmp = path.with_suffix('.tmp')
@@ -208,10 +262,12 @@ def main():
     ap.add_argument('--workers', type=int, default=8)
     ap.add_argument('--profile', action='store_true', help='메인 스레드 함수 누적 시간을 결과(prof)에 남김')
     ap.add_argument('--chunk', type=int, help='훑기·예선 묶음 크기 고정(1 = 묶기 전 배차)')
+    ap.add_argument('--browser-workers', type=int, help='브라우저 작업자 수 강제(저사양 흉내, 예: 2)')
+    ap.add_argument('--stop-after', type=float, help='켬 모드 훑기 시작 이 초 뒤 «지금까지 결과로 보기»(모드 stop 으로 기록)')
     a = ap.parse_args()
     out = Path(a.out)
     if a.cmd == 'browser':
-        browser(a.myinfo, out, set(a.only.split(',')) if a.only else None, a.modes.split(','), a.timeout * 1000, a.profile, a.chunk)
+        browser(a.myinfo, out, set(a.only.split(',')) if a.only else None, a.modes.split(','), a.timeout * 1000, a.profile, a.chunk, a.browser_workers, a.stop_after)
     elif a.cmd == 'eval':
         evaluate(out, a.runs, a.workers)
     else:
