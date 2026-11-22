@@ -1107,7 +1107,7 @@ function simRunAdd(ms){if(ms>=0)SIMQ.runMs=SIMQ.runMs?SIMQ.runMs*0.5+ms*0.5:ms}
 // 진행 칸 갱신: 모양이 같으면(같은 단추·같은 표시) 단추 DOM 은 그대로 두고 글자·막대만 바꾼다.
 // 통째로 다시 그리면 누르는 중이던 단추가 사라져 클릭이 안 먹는다(팀 결과·단계 전환 때마다 다시 그리던 것, 11/13 리뷰)
 function simProgressSync(pv,st){const box=document.createElement("div");box.innerHTML=simProgress(st);const nv=box.firstElementChild;
- const shape=x=>[...x.querySelectorAll("button")].map(b=>b.textContent).join("|")+"/"+x.querySelectorAll(".tag").length+"/"+x.dataset.party;
+ const shape=x=>[...x.querySelectorAll("button")].map(b=>b.textContent).join("|")+"/"+x.querySelectorAll(".tag").length+"/"+x.dataset.party+"/"+(x.dataset.alert||"");
  const a=pv.querySelector(".pbar"),b=nv.querySelector(".pbar");
  // 그웬 걷기 진행률은 recoGwenShow 가 simProgress 안에서 갱신함(#out 밖 고정 무대).
  if(shape(pv)!==shape(nv)||!a||!b){pv.replaceWith(nv);return}
@@ -1202,6 +1202,27 @@ function scrFullInit(sc,all){const keys=scrFullKeys(all,sc.pool);if(keys){sc.ful
 // 훑기 결과 순위(끝난 팀만): scrCmp → 빠른 계산 순서
 function scrFullRank(sc){const pos=new Map(sc.full.map((k,i)=>[k,i]));return Object.keys(sc.res0).sort((a,b)=>scrCmp(sc.res0[a],sc.res0[b])||pos.get(a)-pos.get(b))}
 const scrRoundN=i=>i<0?SCR_FULL.n:SCR_ROUNDS[i].n;
+// 관측 경보(11/22): 훑는 동안 진행 화면을 «경보» 모양으로. 상태는 sc 에서만 읽는다 — 쉬운 스테이지는 sc.full 이 없어 늘 ''(아무것도 안 바뀜).
+//  'scan' = 훑는 중, 'found' = 훑기가 끝나 예선으로 넘어간 직후 foundMs 동안(전환 문구), '' = 평소. 멈추거나 끝나면(sc.done) ''.
+//  움직임은 전부 CSS(ux.css «관측 경보»). JS 는 단계가 바뀔 때만 DOM 을 바꾸고, 숫자는 기존 진행 글자 갱신(PAINT_MS)에 얹는다.
+const SCR_ALERT={foundMs:3200,enterMs:1500,base:"추천 편성 확인 중",label:"세계선",
+ title:"⚠ 관측 경보 — 이 세계선에 돌파 경로 없음",sub:"성운 관측 · 다른 세계선의 기억을 찾는 중",note:"빠른 계산으로는 깰 팀이 없어, 후보 전체를 한 판씩 직접 싸워 봄",
+ found:n=>`✦ 돌파 가능성 있는 기억 ${n}개 회수 — 구원자 편성 다시 정렬`,
+ deco:'<span class="al-deco" aria-hidden="true"><i></i><i></i><i></i></span>'};
+function scrAlertOf(sc,now=Date.now()){if(!sc||!sc.full||sc.done)return "";if(!sc.fullDone)return sc.round<0?"scan":"";return sc.foundAt&&now-sc.foundAt<SCR_ALERT.foundMs?"found":""}
+const scrAlertEnter=(sc,al)=>al==="scan"&&Date.now()-(sc.alertAt||0)<SCR_ALERT.enterMs;   // 들어온 직후에만 경보 깜빡임(다시 그려도 반복 안 함)
+const scrNum=n=>String(n).replace(/\B(?=(\d{3})+$)/g,",");
+// 진행 글자: 훑기 «세계선 3,412 / 10,626», 예선 «후보 거르는 중 3/80»
+const scrMsg=(i,got,all)=>i<0?`${SCR_ALERT.label} ${scrNum(got)} / ${scrNum(all)}`:`후보 거르는 중 ${got}/${all}`;
+// 단계 시작(화면·직접 편성 묶음 공통): i = -1 훑기 · 0 · 1
+function scrLegEnter(sc,i,n){sc.round=i;sc.left=n;sc.got=0;if(i<0)sc.alertAt=Date.now()}
+function scrAlertHtml(al,sc){return al==="scan"?`<p class="scr-alert" data-k="scr-alert">${SCR_ALERT.sub}<small>${SCR_ALERT.note}</small></p>`:al==="found"?`<p class="scr-alert" data-k="scr-alert" aria-live="polite">${SCR_ALERT.found(scrNum(sc.pool.length))}</p>`:""}
+// 이미 그려진 진행 칸(직접 편성 묶음 경로)에 경보를 켜고 끔. 상태가 같으면 DOM 을 안 건드림
+function scrAlertSync(card,sc){const al=scrAlertOf(sc);if((card.dataset.alert||"")===al)return al;
+ card.querySelectorAll('[data-k="scr-alert"],.al-deco').forEach(x=>x.remove());
+ if(al)card.dataset.alert=al;else delete card.dataset.alert;card.toggleAttribute("data-alert-enter",scrAlertEnter(sc,al));
+ const t=card.querySelector(".case-title");if(t){t.textContent=al==="scan"?SCR_ALERT.title:SCR_ALERT.base;t.insertAdjacentHTML("afterend",scrAlertHtml(al,sc))}
+ if(al==="scan")card.insertAdjacentHTML("afterbegin",SCR_ALERT.deco);return al}
 // (목표가 다르면 예선 결과의 t60 유무·순위가 다르다 → 키에 starOf)
 const scrKey=(st,p)=>JSON.stringify([contents[$("content").value].key,st.tab,st.name,+p,rkOf(contents[$("content").value].key),starOf(contents[$("content").value].key),miMode()?MI.hash:"",SCROWN,MM||"",...recommendationPolicyTag(),...(typeof growthEnabled==="function"&&growthEnabled()?[growthCacheTag()]:[])]);
 let SCROWN="";
@@ -1246,7 +1267,7 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
  // 후보를 대기열(simDispatch)로 작업자들에 맡기고, 모두 끝나면 next. i = 단계(-1 훑기·0·1), 결과는 훑기 sc.res0 · 1차 sc.res · 2차 sc.res2
  // 2차는 1차의 8판을 다시 돌리지 않는다: 1차 결과의 raw(판별 원시값, 작업자가 준 문자열 그대로)를 되돌려 보내 뒤쪽 24판(run_offset 8)만 돌리고
  //  작업자(파이썬 web.merge_summary)가 합친다 — 합친 값은 32판을 한 번에 돌린 것과 같다(tests/screen_merge_test.py). raw 가 없으면(옛 엔진 묶음) 32판을 다 돈다
- const leg=(i,keys,next)=>{const n=scrRoundN(i),into=i<0?sc.res0:i?sc.res2:sc.res,label=i<0?"후보 전체 훑는 중":"후보 거르는 중";sc.round=i;sc.left=keys.length;sc.got=0;{const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
+ const leg=(i,keys,next)=>{const n=scrRoundN(i),into=i<0?sc.res0:i?sc.res2:sc.res;scrLegEnter(sc,i,keys.length);{const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
   const rid=id,live=()=>SIMQ.requestId===rid,ws=scrPool(keys.length);
   const prior=key=>i>0&&R0.n<n&&sc.res[key]?sc.res[key].raw:null,per=keys.reduce((a,k)=>a+(prior(k)?n-R0.n:n),0)/keys.length;
   // 남은 시간 = 예선 남은 몫(작업자 수로 나눔) + 본선
@@ -1267,9 +1288,9 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
    msg:key=>{const t=byKey.get(key),bn=teamBreak(t)?.name||null,raw=prior(key);
     return {type:"run",base,stage,n_runs:raw?n-R0.n:n,seed:SIMQ.seed,options:opt,
      teams:[{key,party:simParty(t),options:Object.assign({break_skill:bn?{name:bn,level:brkLv(bn)}:null},raw?{run_offset:R0.n,merge_raw:raw}:i<0?{}:{raw_runs:true})}]}},
-   stage(w,m){if(m.msg==="준비 끝")chk();if(/^시뮬 \d+\//.test(m.msg||""))w._t=Date.now();show(`${label} ${sc.got||0}/${sc.left}`)},
+   stage(w,m){if(m.msg==="준비 끝")chk();if(/^시뮬 \d+\//.test(m.msg||""))w._t=Date.now();show(scrMsg(i,sc.got||0,sc.left))},
    team(key,m,w){into[key]=Object.assign(m.result,{n});sc.got++;if(w._t){simRateAdd((Date.now()-w._t)/w._n,"scr");w._t=0}
-    show(`${label} ${sc.got}/${sc.left}`);paint()},
+    show(scrMsg(i,sc.got,sc.left));paint()},
    done:()=>{paint.cancel();next()},
    error:(msg,w,crash)=>{SIMQ.screening=false;simStop(crash?"작업자 오류: "+msg:msg)}});
   chk()};
@@ -1284,7 +1305,7 @@ function recoScreenSequence(sc,top,byKey,leg,end){
   sc.up=cand.slice(0,top);const todo=sc.up.filter(x=>!sc.res2[x]);if(todo.length)leg(1,todo,end);else end();};
  const first=()=>{const keys=sc.pool.filter(x=>!sc.res[x]);if(keys.length)leg(0,keys,second);else second();};
  if(!sc.full||sc.fullDone){first();return;}
- const pick=()=>{sc.pool=scrFullRank(sc).filter(x=>byKey.has(x)).slice(0,sc.fullN);sc.total=sc.pool.length;sc.fullDone=true;first();};
+ const pick=()=>{sc.pool=scrFullRank(sc).filter(x=>byKey.has(x)).slice(0,sc.fullN);sc.total=sc.pool.length;sc.fullDone=true;sc.foundAt=Date.now();first();};
  const todo=sc.full.filter(x=>!sc.res0[x]&&byKey.has(x));if(todo.length)leg(-1,todo,pick);else pick();
 }
 function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.busy!=null&&!SIMQ.compareKey)return true;
@@ -1305,12 +1326,12 @@ function recoGwenVisibility(){
   if(slot)slot.hidden=guild&&owner!==mode||part==='result'&&(mode==='reco'?host.dataset.phase!=='result':GSR.phase!=='done');
  }
 }
-function recoGwenShow(show,progress,result=null,step=null){
+function recoGwenShow(show,progress,result=null,step=null,alert=""){
  const host=$('reco-gwen-stage');if(!host)return;
  const phase=show?'work':result?'result':'idle';
  if(show&&host.dataset.phase!=='work'||result&&RECO_GWEN.state.result!==GwenLane.resultId(result))guildGwenClaim('reco');
  host.dataset.phase=phase;GwenStage.mount(document,{mode:'reco'});
- if(show)RECO_GWEN.progress(progress||0,'',{step});else if(result)RECO_GWEN.done(result);else if(contents[$('content').value]?.key==='guild'&&REQ)RECO_GWEN.update({phase:'idle',count:4});else RECO_GWEN.reset();
+ if(show)RECO_GWEN.progress(progress||0,'',{step,alert});else if(result)RECO_GWEN.done(result);else if(contents[$('content').value]?.key==='guild'&&REQ)RECO_GWEN.update({phase:'idle',count:4});else RECO_GWEN.reset();
  if(DIRECT.mode==='reco'&&$('mi-panel').hidden&&contents[$('content').value]?.key==='guild')GwenStage.activate(guildGwenMode());
  recoGwenVisibility();
 }
@@ -1318,9 +1339,10 @@ function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap
  const sc=SIMQ.screening?SIMQ.scr[scrKey(st,p)]:null,done=sc?sc.got||0:rows.filter(t=>SIMQ.res[simSig(st,t)]).length,all=sc?sc.left:rows.length;
  const pct=all?Math.round(done/all*100):0;
  // 그웬 걷기 연출은 reco-gwen-stage(#out 밖 고정)가 맡으므로 여기엔 넣지 않음.
- recoGwenShow(true,all?done/all:0,null,JSON.stringify([p,SIMQ.screening,sc?.round]));
- return `<div class="party progress" data-party="${p}" data-k="progress" data-state="running"><b class="case-title">추천 편성 확인 중</b>${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':""}<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
-  <p><span data-k="simstate" title="후보 ${SCR_N}판 · 작업자 ${scrWorkers()}개">${sc?(sc.round<0?"후보 전체 훑는 중":"후보 거르는 중"):"상위 팀 확인 중"} ${done}/${all}</span></p>
+ const al=scrAlertOf(sc),state=sc?scrMsg(sc.round,done,all):`상위 팀 확인 중 ${done}/${all}`;
+ recoGwenShow(true,all?done/all:0,null,JSON.stringify([p,SIMQ.screening,sc?.round]),al);
+ return `<div class="party progress" data-party="${p}" data-k="progress" data-state="running"${al?` data-alert="${al}"`:""}${scrAlertEnter(sc,al)?" data-alert-enter":""}>${al==="scan"?SCR_ALERT.deco:""}<b class="case-title">${al==="scan"?SCR_ALERT.title:SCR_ALERT.base}</b>${scrAlertHtml(al,sc)}${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':""}<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
+  <p><span data-k="simstate" title="후보 ${SCR_N}판 · 작업자 ${scrWorkers()}개">${state}</span></p>
   ${Ux.help("진행 방식","후보를 거른 뒤 상위 팀을 100판씩 모의 전투함. 남은 시간은 이 기기의 최근 계산 속도를 기준으로 표시함. 후보를 거르는 중에 「지금까지 결과로 보기」를 누르면 그때까지 확인한 팀으로 먼저 보여 주고, 나머지는 「끝까지 확인」으로 이어서 볼 수 있음.")}<p data-k="eta">${esc(simEtaText())}</p>
   ${sc?'<button type="button" class="sec" data-scrstop="1">지금까지 결과로 보기</button> <button type="button" class="sec" data-simcancel="1">취소</button>':'<button type="button" class="sec" data-simcancel="1">중단하고 결과 보기</button>'}</div>`}
 

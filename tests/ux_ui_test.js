@@ -131,7 +131,7 @@ function checkGwenWork(u=U){
    assert.match(note,/^<div class="luck-note" data-k="luck-note" role="note"><span class="gwen-memo"><img src="assets\/ui_icons\/gwen_header_72\.png" width="20" height="20" alt="" aria-hidden="true">그웬의 메모<\/span>클리어 확률 매우 낮음/);
    assert.equal((note.match(/<img/g)||[]).length,1);}
   for(const mode of ['idle','done','cancelled',''])assert.equal(u.gwenWork(mode),'');
-  for(const msg of ['후보 거르는 중 3/80','1단계: 조합 훑어보는 중','2단계: 상위 팀 확인 중','표본 학습','예측 채점','후보 확대 복귀','학습 감사 복귀'])assert.equal(u.gwenStage(msg),'screen');
+  for(const msg of ['후보 거르는 중 3/80','세계선 3,412 / 10,626','1단계: 조합 훑어보는 중','2단계: 상위 팀 확인 중','표본 학습','예측 채점','후보 확대 복귀','학습 감사 복귀'])assert.equal(u.gwenStage(msg),'screen');
   for(const msg of ['작업 준비 중','내 구원자 능력치 계산 중'])assert.equal(u.gwenStage(msg),'inspect');
   for(const msg of ['3단계: 상위 팀 확인 중','육성 계획 탐색','난이도 비교'])assert.equal(u.gwenStage(msg),'long');
   const old={dataset:{gwen:'screen'},outerHTML:'unchanged'},parent={querySelector:()=>old};

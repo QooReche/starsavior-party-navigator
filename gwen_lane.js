@@ -6,7 +6,7 @@
   const CHOICES={home:['guide2','st_welcome','welcome'],empty:['ready','present'],
     ready:['ready'],vacant:['think','sulk','peek'],put:['present','shy'],remove:['surprised','sulk'],
     swap:['think'],leader:['verdict'],complete:['jump'],grown:['train'],
-    withReco:['files','board'],withGrowth:['train'],reco:['stakeout','magnify','files'],growth:['train','walk'],skip:['surprised'],recoHigher:['st_point','thoughtful'],brk:['charge'],work:['investigate','magnify','think','board','coffee','stakeout','stamp','files'],
+    withReco:['files','board'],withGrowth:['train'],reco:['stakeout','magnify','files'],growth:['train','walk'],skip:['surprised'],recoHigher:['st_point','thoughtful'],brk:['charge'],rift:['surprised','magnify','stakeout','investigate'],riftFound:['present','stamp'],work:['investigate','magnify','think','board','coffee','stakeout','stamp','files'],
     high:['st_verdict','st_cheer','st_ok','st_reach'],medium:['st_point','thoughtful'],low:['st_cry','notes'],
     better:['st_wink','st_reach'],past:['think'],error:['cry','surprised','sulk'],wait:['wait'],doze:['doze'],wake:['wake']};
   const SAY={home:['단장님, 어떤 방법으로 골라 볼까?','후후후, 두 방법 다 나만 믿어!','천재 조사관은 준비 끝이야!'],
@@ -16,6 +16,7 @@
     complete:['네 명 다 모였어, 단장님!','후후후, 준비됐으면 나만 믿어!'],grown:['이만큼 키웠다고 치고 볼게!','단장님, 달라진 능력치도 확인해 봐!','스타링크까지 더해서 볼게!'],
     withReco:['후후후, 내 추천이랑 겨뤄 보자는 거지?','좋아, 내 추천도 같이 꺼내 올게!'],withGrowth:['키웠을 때 편성도 찾아볼게!'],reco:['이번엔 내 추천 차례야, 단장님!','후보를 하나씩 살펴볼게.'],growth:['키우면 누가 좋을지 보고 있어!'],skip:['알았어, 그건 넘어갈게!'],recoHigher:['내 추천 쪽이 조금 더 높네. 비교해 봐, 단장님!'],
     brk:['브레이크 준비, 확인했어!','단장님, 이 스킬로 볼게!'],
+    rift:['단장님, 이 길은 막혔어. 다른 세계선을 찾아볼게!','잠깐! 별빛이 안 닿아. 기억을 전부 뒤져 볼게!','천재 조사관은 포기 안 해. 끝까지 찾아볼게!'],riftFound:['찾았어, 단장님! 가능성 있는 기억이야!','후후후, 별빛이 다시 보여!'],
     work:['하나씩 꼼꼼히 살펴볼게.','단장님, 조금만 기다려!','끝까지 확인할 테니 나만 믿어!'],
     high:['후후후, 든든한 편성이네!','잘 골랐어, 단장님!','천재 조사관의 확인도 끝!'],medium:['아슬아슬하네. 숫자도 살펴봐!','단장님, 한 번 더 비교해 볼까?'],
     low:['으아앙, 쉽지 않겠는걸!','단장님, 육성도 같이 살펴보자.'],better:['후후후, 추천보다 높게 나왔어!','단장님, 멋진 선택이야!'],past:['편성이 바뀌었네. 지난 결과야!','지금 편성으로 다시 확인해 봐!'],
@@ -163,7 +164,7 @@
     function base(){
       const stage=stages.get(current.mode);if(!stage)return [null,null];
       if(current.mode==='home')return ['home',stage.board];
-      if(current.phase==='work')return ['work',stage.board];
+      if(current.phase==='work')return [current.alert==='scan'?'rift':current.alert==='found'?'riftFound':'work',stage.board];   // 관측 경보(후보 전체 훑기) 중에는 전용 표정·대사
       if(current.phase==='error')return ['error',stage.result||stage.board];
       if(current.phase==='result')return [current.recoHigher?'recoHigher':current.better?'better':!Number.isFinite(current.clear)?'medium':current.clear>=.7?'high':current.clear>=.05?'medium':'low',stage.result||stage.board];
       if(current.stale)return ['past',stage.board];
@@ -232,7 +233,7 @@
       if(current.bundleRunning&&current.phase==='result')current.phase='work';
       syncBanner();
       if(!stages.has(current.mode)){++imageRequest;cancelMove();resetPlay();actor?.remove();lane=null;art='';phaseKey='';return;}
-      const key=JSON.stringify(current.phase==='work'?[current.mode,'work',current.step]:[current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
+      const key=JSON.stringify(current.phase==='work'?[current.mode,'work',current.step,current.alert||'']:[current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
       if(key!==phaseKey){
         // 같은 레인에서 work 가 이어지는 중인가(직전 표시도 같은 모드의 work 였는가).
         const continuous=!!phaseKey&&previous.mode===current.mode&&previous.phase==='work'&&actor?.parentElement===stages.get(current.mode)?.board;
@@ -364,7 +365,9 @@
           const band=root.Ux.gwenSayBand(state.clear);
           if(bubble.dataset.band!==band){bubble.dataset.band=band;bubble.innerHTML=root.Ux.gwenSay(band);}
         }
-        if(elements.board)elements.board.dataset.phase=state.phase;
+        if(elements.board){elements.board.dataset.phase=state.phase;
+          // 관측 경보: 길(레인) 배경 연출은 CSS 가 data-alert 로 켬(값이 바뀔 때만 씀)
+          const alert=(state.phase==='work'||state.bundleRunning)&&state.alert==='scan'?'scan':'';if((elements.board.dataset.alert||'')!==alert){if(alert)elements.board.dataset.alert=alert;else delete elements.board.dataset.alert;}}
         mount()?.sync(state);return handle;
       }
       handle={bind,update,

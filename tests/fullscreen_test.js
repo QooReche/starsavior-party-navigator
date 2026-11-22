@@ -1,6 +1,7 @@
 // node tests/fullscreen_test.js
 // 후보 전체 훑기(CFG.recommendation.fullScreen, 기본 끔 — docs/fullscreen_measure_1121.md)
 //  끔: 요청·예선 상태가 지금과 같음(필드도 안 붙음). 켬 + 깰 수 있는 팀 있음(쉬운 스테이지): 끔과 같음.
+//  관측 경보(SCR_ALERT, 11/22): 훑기 진입 시 켜짐 · 쉬운 스테이지는 꺼짐 · 끝나거나 멈추면 꺼짐(화면·직접 편성 묶음 둘 다).
 //  켬 + 전원 «못 깸»: 후보 전체 1판 → 상위 «예선 후보 수» → 예선 8판 → 32판(24판 이어 돌리기). 화면 경로(simScreen)·직접 편성 묶음 경로(recoCalculate) 둘 다.
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
@@ -34,8 +35,11 @@ function screenRun(full,vds,{stopAfter=null}={}){
  vm.runInContext(fs.readFileSync(require.resolve('../search_executor.js'),'utf8'),c);
  for(const [a,b] of [['const simSigB=','// 표시 상태는'],['function simInvalidate()','// 자동 확인'],
   ['function simStart(',"document.querySelectorAll('input[name=\"runs\"]')"],['const SCR_ROUNDS=','function simWaiting(']])vm.runInContext(section(html,a,b),c);
+ // 진행 칸(simProgress)도 실제 코드로 그림 — 그웬 호출(recoGwenShow)은 받은 경보 값만 적어 둠
+ Object.assign(c,{gwen:[],recoGwenShow:(...a)=>c.gwen.push(a[4]||''),growthEnabled:()=>false,Ux:{help:()=>''},simEtaText:()=>'',simSig:(st,t)=>t.keys.join(),SCR_N:8});
+ vm.runInContext(section(html,'function simProgress(st)','function buildCands('),c);
  assert.equal(vm.runInContext('simScreen(1)',c),true);
- return {c,posts,sc:()=>plain(Object.values(c.SIMQ.scr)[0]),ev:s=>vm.runInContext(s,c)};
+ return {c,posts,card:()=>vm.runInContext('simProgress(cur[0])',c),alert:now=>vm.runInContext(`scrAlertOf(Object.values(SIMQ.scr)[0]${now?','+now:''})`,c),sc:()=>plain(Object.values(c.SIMQ.scr)[0]),ev:s=>vm.runInContext(s,c)};
 }
 // 요청 하나에 팀 여럿(묶음, A-2)일 수 있음 → 팀 단위로 펼쳐 비교
 const legs=posts=>{const out=[];for(const p of posts){const n=p.req.n_runs,last=out[out.length-1],ks=p.req.teams.map(t=>t.key);if(last&&last.n===n)last.keys.push(...ks);else out.push({n,keys:[...ks]})}return out};
@@ -68,16 +72,37 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
  assert.equal(sc.order[0],keyOf('t199'),'최종 예선 1위 = 진행도 최고');
  assert.equal(sc.done,true);assert.equal(sc.short,false);
  const of=n=>on.posts.filter(p=>p.req.n_runs===n);
- assert(of(1).slice(1).every(p=>/^후보 전체 훑는 중/.test(p.msg)),'훑는 동안 진행 문구');
+ assert(of(1).slice(1).every(p=>/^세계선 [\d,]+ \/ 200$/.test(p.msg)),'훑는 동안 진행 문구');
+ // 관측 경보: 다 끝나면 꺼짐(쉬운 스테이지·끔은 처음부터 끝까지 꺼짐)
+ assert.equal(on.alert(),'','끝나면 경보 꺼짐');assert.equal(onE.alert(),'');assert.equal(off.alert(),'');
  assert(of(8).slice(1).every(p=>/^후보 거르는 중/.test(p.msg)),'예선 진행 문구');
 }
-// 진행 문구: 훑는 동안 «후보 전체 훑는 중»
+// 관측 경보 — 쉬운 스테이지·끔: 계산 도중에도 꺼져 있고 진행 칸이 끔과 글자까지 같음
+{
+ const onE=screenRun(true,easy,{stopAfter:30}),offE=screenRun(false,easy,{stopAfter:30}),offH=screenRun(false,hard,{stopAfter:30});
+ for(const r of [onE,offE,offH]){assert.equal(r.alert(),'','쉬운 스테이지·끔: 경보 꺼짐');const h=r.card();
+  assert(!/data-alert|scr-alert|al-deco|세계선|경보/.test(h),'쉬운 스테이지·끔: 진행 칸에 경보 흔적 없음');assert.match(h,/<b class="case-title">추천 편성 확인 중<\/b>/);assert.match(h,/후보 거르는 중 \d+\/80/);
+  assert.deepEqual([...new Set(r.c.gwen)],[''],'그웬 길에도 경보 안 넘김');}
+ assert.equal(onE.card(),offE.card(),'켬 + 쉬운 스테이지: 진행 칸이 끔과 같음');
+}
+// 관측 경보 — 훑기 진입: 켜짐(진행 칸·그웬 길), 숫자는 «세계선 n / N»
 {
  const on=screenRun(true,hard,{stopAfter:30});
- assert.match(on.c.SIMQ.msg,/^후보 전체 훑는 중 \d+\/200$/);assert.equal(on.sc().round,-1);
+ assert.match(on.c.SIMQ.msg,/^세계선 \d+ \/ 200$/);assert.equal(on.sc().round,-1);
+ assert.equal(on.alert(),'scan','훑기 진입: 경보 켜짐');
+ const h=on.card();
+ assert.match(h,/data-k="progress" data-state="running" data-alert="scan" data-alert-enter>/,'진입 직후: 경보 + 깜빡임 표시');
+ assert.match(h,/<b class="case-title">⚠ 관측 경보 — 이 세계선에 돌파 경로 없음<\/b><p class="scr-alert" data-k="scr-alert">성운 관측 · 다른 세계선의 기억을 찾는 중<small>/);
+ assert.match(h,/<span data-k="simstate"[^>]*>세계선 \d+ \/ 200<\/span>/);
+ assert.match(h,/data-scrstop="1">지금까지 결과로 보기<\/button> <button type="button" class="sec" data-simcancel="1">취소</,'멈춤·취소 단추 그대로');
+ assert.equal(on.c.gwen.at(-1),'scan','그웬 길에 경보 넘김');
+ // 들어온 지 오래면 깜빡임 표시는 안 붙음(다시 그려도 반복 안 함)
+ on.ev('Object.values(SIMQ.scr)[0].alertAt-=5000');assert(!/data-alert-enter/.test(on.card()));assert.match(on.card(),/data-alert="scan"/);
+ assert.equal(on.ev('scrMsg(-1,3412,10626)'),'세계선 3,412 / 10,626');assert.equal(on.ev('scrMsg(0,3,80)'),'후보 거르는 중 3/80');
  // 「지금까지 결과로 보기」: 1판 결과 순으로 닫고 short, 안내 문구
  on.ev('scrStop()');const sc=on.sc();
  assert.equal(sc.done,true);assert.equal(sc.short,true);assert.equal(sc.fullDone,false);
+ assert.equal(on.alert(),'','멈추면 경보 꺼짐');assert.equal(sc.round,-1);
  assert(sc.order.length>0&&sc.order.length<200);
  const got=Object.keys(sc.res0);assert.deepEqual(sc.order,got.slice().sort((a,b)=>progOf(b)-progOf(a)));
  assert.match(on.ev('scrNote(1,cur[0])'),/후보 전체 200팀 중 \d+팀만 훑었음/);
@@ -86,6 +111,25 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
  assert.equal(on.ev('simScreen(1,true)'),true);
  const first=on.posts.slice(before).map(p=>p.req);assert(first.length>0);
  assert(first.every(r=>r.n_runs===1&&!seen.has(r.teams[0].key)),'이미 훑은 팀은 다시 안 돎');
+ assert.equal(on.alert(),'scan','이어서 훑으면 경보 다시 켜짐');
+}
+// 관측 경보 — 훑기가 끝나 예선으로: 잠깐 «기억 N개 회수», 그 뒤 원래대로
+{
+ const on=screenRun(true,hard,{stopAfter:80});   // 훑기 67요청(3팀 묶음) 뒤 예선 도중에 멈춘 상태
+ const sc=on.sc();assert.equal(sc.fullDone,true);assert.equal(sc.round,0);assert.equal(sc.done,false);
+ assert.equal(on.alert(sc.foundAt+100),'found');assert.equal(on.alert(sc.foundAt+on.ev('SCR_ALERT.foundMs')+1),'','전환 문구 시간이 지나면 꺼짐');
+ const h=on.card();assert.match(h,/data-alert="found"/);assert.match(h,/<b class="case-title">추천 편성 확인 중<\/b><p class="scr-alert" data-k="scr-alert" aria-live="polite">✦ 돌파 가능성 있는 기억 80개 회수 — 구원자 편성 다시 정렬<\/p>/);
+ assert(!/al-deco|data-alert-enter/.test(h));assert.match(h,/후보 거르는 중 \d+\/80/);
+ on.ev('Object.values(SIMQ.scr)[0].foundAt-=60000');assert(!/data-alert|scr-alert/.test(on.card()),'시간이 지나면 원래 진행 칸');
+ // 이미 그려진 칸에 켜고 끄기(직접 편성 묶음 경로 scrAlertSync): 상태가 같으면 DOM 을 안 건드림
+ const title={textContent:'추천 편성 확인 중',after:'',insertAdjacentHTML(_,x){this.after=x}};let writes=0;
+ const card={dataset:{},attrs:{},head:'',querySelectorAll:()=>[{remove(){writes++}}],toggleAttribute(k,v){this.attrs[k]=v},querySelector:()=>title,insertAdjacentHTML(_,x){this.head=x}};
+ on.c.card=card;const sync=s=>on.ev(`scrAlertSync(card,${s})`);
+ assert.equal(sync('{full:[1],round:-1,alertAt:Date.now(),pool:[]}'),'scan');assert.equal(card.dataset.alert,'scan');assert.equal(card.attrs['data-alert-enter'],true);
+ assert.match(title.textContent,/^⚠ 관측 경보/);assert.match(title.after,/scr-alert/);assert.match(card.head,/al-deco/);
+ const w=writes;sync('{full:[1],round:-1,alertAt:Date.now(),pool:[]}');assert.equal(writes,w,'같은 상태면 그대로 둠');
+ assert.equal(sync('{full:[1],round:-1,done:true,pool:[]}'),'');assert(!('alert' in card.dataset));assert.equal(title.textContent,'추천 편성 확인 중');assert.equal(title.after,'');assert.equal(card.attrs['data-alert-enter'],false);
+ assert.equal(sync('undefined'),'');assert.equal(sync('{round:0,pool:[]}'),'','쉬운 스테이지(훑기 필드 없음)');
 }
 // 훑기 중 1판 결과가 하나도 없을 때 「지금까지 결과로 보기」 = 취소
 {
@@ -118,13 +162,16 @@ async function bundleRun(full,vds){
  vm.runInContext(section(rt,'function recoEvaluate(','async function recoEnsure('),ctx);
  ctx.ckey=combo=>combo.map(x=>x.s.key).sort().join(',');
  let rowsN=3;const all=teamsOf(vds),task={owner:'reco',request:0,engine:'synthetic'};
- const origEval=ctx.recoEvaluate;ctx.recoEvaluate=(s,t,jobs,n,o)=>{ctx.messages.push(o.label||(o.screen?'예선':'본선'));return origEval(s,t,jobs,n,o)};
+ const alerts=[];
+ const origEval=ctx.recoEvaluate;ctx.recoEvaluate=(s,t,jobs,n,o)=>{ctx.messages.push(o.label||(o.screen?'예선':'본선'));alerts.push(vm.runInContext('scrAlertOf',ctx)(t.sc));return origEval(s,t,jobs,n,o).then(()=>{texts.push(t.message)})};
+ const texts=[];
  const snap={key:'fixed',c:{key:'op',parties:1},st:{tab:'a',name:'b'},seed:1,n:4,options:{},screenKey:()=> 'scr',
   plan:()=>({all,rows:all.slice(0,rowsN),total:all.length}),sig:t=>ckeyOf(t),party:t=>({units:t.keys}),breakFor:()=>null,result:t=>ctx.SIMQ.res[ckeyOf(t)],
   more(p,n){rowsN=n},meta:{parts:Array.from({length:8},()=>({}))},first:()=>null};
  const ckeyOf=t=>t.keys.slice().sort().join(',');
  ctx.RECO.task=task;await ctx.recoCalculate(snap,task);ctx.simPoolDrop('reco');
- return {trace,sc:plain(ctx.SIMQ.scr.scr),messages:ctx.messages};
+ alerts.push(vm.runInContext('scrAlertOf',ctx)(task.sc));   // 끝난 뒤
+ return {trace,sc:plain(ctx.SIMQ.scr.scr),messages:ctx.messages,alerts,texts};
 }
 (async()=>{
  const off=await bundleRun(false,hard),on=await bundleRun(true,hard),offE=await bundleRun(false,easy),onE=await bundleRun(true,easy);
@@ -134,7 +181,12 @@ async function bundleRun(full,vds){
  assert.deepEqual(strip(onE.trace),strip(offE.trace),'묶음 켬 + 쉬운 스테이지: 요청 같음');
  assert.deepEqual(onE.sc,offE.sc,'묶음 켬 + 쉬운 스테이지: 예선 상태 같음');
  assert(!('full' in off.sc));assert.equal(on.sc.order[0],keyOf('t199'));
- assert.deepEqual(on.messages.slice(0,3),['후보 전체 훑는 중','예선','예선'],'진행 문구');
+ assert.deepEqual(on.messages.slice(0,3),['세계선','예선','예선'],'진행 문구');
+ assert.equal(on.texts[0],'세계선 200 / 200');assert.match(on.texts[1],/^예선 80\/80팀$/);
+ // 관측 경보(묶음 경로): 훑기 시작 = scan, 예선 시작 = found(전환 문구), 끝난 뒤 = 꺼짐. 쉬운 스테이지·끔 = 늘 꺼짐
+ assert.deepEqual([on.alerts[0],on.alerts[1],on.alerts.at(-1)],['scan','found',''],'묶음 켬: 훑기 진입 켜짐 → 끝나면 꺼짐');
+ for(const r of [off,offE,onE])assert.deepEqual([...new Set(r.alerts)],[''],'묶음 쉬운 스테이지·끔: 경보 꺼짐');
+ assert.match(fs.readFileSync(path.join(ROOT,'direct_bundle.js'),'utf8'),/const alert=scrAlertSync\(el,task\.sc\);/,'묶음 진행 칸이 경보를 맞춤');
  assert.deepEqual(off.messages.slice(0,2),['예선','예선']);
- console.log('PASS fullScreen: 끔=지금 그대로(필드 없음), 켬+쉬움=끔과 같음, 켬+전원 못 깸=1판 전체→8→32(화면·묶음), 멈춤·이어 하기, 조건');
+ console.log('PASS fullScreen: 끔=지금 그대로(필드 없음), 켬+쉬움=끔과 같음, 켬+전원 못 깸=1판 전체→8→32(화면·묶음), 멈춤·이어 하기, 조건, 관측 경보(진입 켜짐·쉬움 꺼짐·끝/멈춤 꺼짐)');
 })().catch(e=>{console.error(e);process.exitCode=1;});

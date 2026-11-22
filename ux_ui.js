@@ -419,7 +419,7 @@
   }
 
   function gwenStage(message=''){
-    return /후보 거르|훑|예선|놓침 감지|표본 학습|예측 채점|후보 확대 복귀|학습 감사 복귀|1단계|2단계/.test(message)?'screen':/준비|능력치 계산/.test(message)?'inspect':'long';
+    return /후보 거르|훑|세계선|예선|놓침 감지|표본 학습|예측 채점|후보 확대 복귀|학습 감사 복귀|1단계|2단계/.test(message)?'screen':/준비|능력치 계산/.test(message)?'inspect':'long';
   }
   // 진행률 갱신 때 단추와 그림 DOM을 보존하고, 단계가 바뀔 때만 연출을 교체함.
   function syncGwen(container,mode){
