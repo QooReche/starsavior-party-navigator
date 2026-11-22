@@ -62,7 +62,14 @@ def contract(browser, base, width):
     (leader.tap if width == 360 else leader.click)()
     assert p.evaluate('DIRECT.draft.leader') == key
     assert leader.get_attribute('aria-pressed') == 'true' and '★' in leader.inner_text()
-    assert leader.locator('.crown').is_visible() and '리더' in leader.inner_text()
+    if width == 360:
+        # 20280da: at <=760px the 40px hit area shows only a circle + star; the leader is the gold ring, not the crown.
+        ring = leader.evaluate('''e=>{const s=getComputedStyle(e,'::before'),g=document.createElement('i');
+          g.style.color='var(--gold)';e.append(g);const gold=getComputedStyle(g).color;g.remove();return {border:s.borderTopColor,gold}}''')
+        assert ring['border'] == ring['gold'], ring
+        assert not leader.locator('.crown').is_visible() and '리더' in leader.get_attribute('aria-label')
+    else:
+        assert leader.locator('.crown').is_visible() and '리더' in leader.inner_text()
     assert p.locator('#direct-board .crown').count() == 1
     capture(p, 'leader-after', width)
     grow = p.locator(f'.direct-grow[data-slot="{slot}"]')

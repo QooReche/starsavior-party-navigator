@@ -65,11 +65,26 @@ def speech_bounds(p):
     b=speech.bounding_box();lane=p.locator('#direct-result-lane').bounding_box()
     assert b['x']>=lane['x']-.5 and b['x']+b['width']<=lane['x']+lane['width']+.5,(b,lane)
     assert b['y']>=lane['y']-.5,(b,lane)
+    # SAY.rift is never a bubble (gwen_lane.js skips kind 'rift'); it is the progress card's log line, checked below.
     clipped=p.evaluate("""()=>{const bubble=document.querySelector('.gwen-lane-speech'),lane=bubble.closest('.gwen-lane').getBoundingClientRect(),original=bubble.textContent;
-      const failed=Object.values(GwenLane.SAY).flat().filter(text=>{bubble.textContent=text;const b=bubble.getBoundingClientRect();return b.top<lane.top-.5||b.left<lane.left-.5||b.right>lane.right+.5;});
+      const failed=Object.entries(GwenLane.SAY).filter(([k])=>k!=='rift').flatMap(([,v])=>v).filter(text=>{bubble.textContent=text;const b=bubble.getBoundingClientRect();return b.top<lane.top-.5||b.left<lane.left-.5||b.right>lane.right+.5;});
       bubble.textContent=original;return failed;}""")
     assert not clipped,clipped
     p.clock.resume()
+    log_bounds(p)
+
+
+def log_bounds(p):
+    # Every forced-scan system line, rendered by the production scrAlertHtml in a real progress card at this width.
+    clipped=p.evaluate("""()=>{const host=document.createElement('div');host.innerHTML='<div class="party progress" data-alert="scan" data-state="running"><b class="case-title">x</b></div>';
+      $('direct-panel').append(host);const card=host.firstElementChild,all=123456789,n=GwenLane.SAY.rift.length,failed=[],seen=new Set();
+      for(let i=0;i<n;i++){const sc={got:Math.ceil(i*all/n),left:all};card.querySelectorAll('.scr-alert,.fx-log').forEach(x=>x.remove());
+        card.querySelector('.case-title').insertAdjacentHTML('afterend',scrAlertHtml('scan',sc));
+        const log=card.querySelector('.fx-log'),code=log.querySelector('code'),r=log.getBoundingClientRect(),c=card.getBoundingClientRect();seen.add(log.dataset.line);
+        if(r.left<c.left-.5||r.right>c.right+.5||code.scrollWidth>code.clientWidth+1||code.scrollHeight>code.clientHeight+1)failed.push(code.textContent);}
+      host.remove();return {failed,seen:seen.size,n};}""")
+    assert clipped['seen']==clipped['n'],clipped
+    assert not clipped['failed'],clipped['failed']
 
 
 def keyboard(p,selector):
@@ -158,6 +173,17 @@ def mutations(browser,base):
             assert str(e)!='reaction speech was not exercised',str(e)
             print('CAUGHT + restored: fixed-width speech clamp',flush=True)
         else:raise AssertionError('speech clamp mutation survived')
+    finally:p.close()
+
+    # A one-line, clipped log (no wrap) on a phone must be caught by the log check.
+    p=start(browser,base,360)
+    try:
+        log_bounds(p)
+        style=p.add_style_tag(content='.fx-log code{white-space:nowrap;overflow:hidden}')
+        try:log_bounds(p)
+        except AssertionError:print('CAUGHT + restored: unwrapped log line',flush=True)
+        else:raise AssertionError('unwrapped log mutation survived')
+        style.evaluate('e=>e.remove()');log_bounds(p)
     finally:p.close()
 
 

@@ -1736,6 +1736,9 @@ def test_cosmo_search(browser, ctx):
     assert page.locator('#cosmo-search input[data-cs="fast"]').count() == 0, '빠른 탐색(실험) 체크는 11/22 삭제'
     # 시험 풀은 maxPool=12(역할 보충 가능)로 줄이되 후보 조합은 모두 유지한다. keep=40은 시즌에 따라 중복 없는 삼중까지 잘라 냄.
     page.evaluate("""() => {const S=D.cosmoRaid.search;S.maxPool=12;const pool=CosmoSearch.poolAll(CosmoSearch.searchSettings(S,false),csProfile().results,R);for(const r of R)if(!pool.some(x=>x.key===r.key))EXCL.add(r.key);S.screen.runs=1;S.rerank.keep=Number.MAX_SAFE_INTEGER;S.rerank.runs=2;S.combine.topTriples=3;S.final.runs=2;try{localStorage.removeItem('pn.cosmo.speed.v2');localStorage.setItem('pn.cosmo.speed',JSON.stringify({sec:[999,999,999,999],workers:4}))}catch(e){}}""")
+    # 난이도는 «탐색 설정» 접기 안(1c202b7부터 기본 닫힘). 18eee72 가 빠른 탐색 체크와 함께 이 열기까지 지웠음
+    assert not page.locator('[data-fold="cs-options"]').evaluate('e=>e.open'), '탐색 설정은 기본 접힘'
+    open_fold(page, 'cs-options')
     page.select_option('#cosmo-search select[data-cs="level"]', "3")
     lvl = page.eval_on_selector('#cosmo-search select[data-cs="level"]', "s => s.value")
     # 시작 전 안내: 이 PC 속도를 모르면 «시작하면 몇 초 뒤 예상 시간이 표시됨»
@@ -1755,12 +1758,12 @@ def test_cosmo_search(browser, ctx):
     page.wait_for_timeout(1500)
     cancel_ok = page.evaluate("() => CSR.phase === 'idle' && !CSR.handle") and page.locator('#cosmo-search [data-k="cs-table"]').count() == 0
     # 실제 완주
-    page.evaluate('() => { CSR.fast=true; CSR.fastSkipped=true; CSR.audit=[]; }')  # 앞선 실험 결과의 선택적 필드
+    page.evaluate('() => { CSR.learned=false; CSR.audit=null; }')  # 완주가 학습 선별 기록을 새로 채우는지(fast·fastSkipped 는 18eee72 에서 필드째 삭제)
     page.click('#cosmo-search button[data-cs="start"]')
     page.wait_for_selector('#cosmo-search [data-k="cs-table"], #cosmo-search [data-k="cs-err"]', timeout=300000)
     err_txt = page.locator('#cosmo-search [data-k="cs-err"]').all_text_contents()
     assert not err_txt, err_txt
-    assert page.evaluate('() => CSR.fast===false && CSR.fastSkipped===false && CSR.learned && Array.isArray(CSR.audit)'), '일반 탐색 완료 시 옛 실험 상태 제거'
+    assert page.evaluate('() => CSR.learned && Array.isArray(CSR.audit) && !("fast" in CSR) && !("fastSkipped" in CSR)'), '일반 탐색 완료 시 학습 선별 기록, 옛 실험 필드 없음'
     rows = page.locator('#cosmo-search [data-k="cs-best"] [data-k="cs-team"]').count()
     state = page.evaluate("""() => { const r = CSR.rows[0]; const keys = r.teams.flatMap(t => t.keys);
       return {n: CSR.rows.length, bosses: r.teams.map(t => t.boss), expected: D.cosmoRaid.bosses.map(b=>b.key), uniq: new Set(keys).size, nkeys: keys.length, sum: r.sum,

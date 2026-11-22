@@ -59,7 +59,7 @@ body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-
  .direct-leader-toggle[aria-pressed=true]::before{border-color:var(--gold)}.direct-leader-toggle .crown{display:none}
  .direct-slot-tools [data-direct-action=remove]{left:2px;right:auto;bottom:2px}
  #start-screen{grid-template-columns:1fr;gap:10px}.start-gwen{grid-row:1;display:flex;align-items:center;justify-content:center;gap:10px}.start-gwen img{width:96px;height:96px}.start-gwen p{text-align:left}
- .start-choice{padding:16px}#direct-panel{padding:10px}#direct-board{gap:4px}.direct-slot{padding:0}.direct-name{font-size:10px;padding:2px;min-height:22px}.direct-name .dia{display:none}.direct-position{font-size:10px;top:2px;left:2px;padding:2px 4px}.direct-power{font-size:10px}.direct-stats summary span{display:none}.direct-grow{font-size:10px;gap:2px}.direct-slot-tools{gap:2px}
+ .start-choice{padding:16px}#direct-panel{padding:10px}#direct-board{gap:4px}.direct-slot{padding:0}.direct-name{font-size:10px;padding:2px;min-height:22px}.direct-name .dia{display:none}.direct-position{font-size:10px;top:2px;left:2px;padding:2px;letter-spacing:-.5px}.direct-power{font-size:10px}.direct-stats summary span{display:none}.direct-grow{font-size:10px;gap:2px}.direct-slot-tools{gap:2px}
  #direct-picker-inline{display:none}#direct-picker-open{display:inline-block;width:100%;min-height:44px}#direct-picker-dialog{position:fixed;top:auto;bottom:0;margin:0 auto;border-radius:16px 16px 0 0}
  #mode-strip{gap:4px}#mode-strip button{font-size:12px;padding:8px}#direct-panel .result-summary{margin-bottom:16px}
 }
