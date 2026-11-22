@@ -20,14 +20,13 @@ OMEGA, MATRIX = '오메가 프로토콜', '치트 매트릭스'
 
 
 # 레벨 가산·DamageScale 는 클라 값(break_skill_level·break_skill_scale 스위치 삭제). 레벨·배율 세부는 BreakLevelScaleTest.
-LEGACY_SCALE = dict(turn_gauge='float')   # 같은 속도 아군·보스 장면의 행동 순서 고정(turn_gauge=client 면 우선순위 난수로 갈림)
 
 
 def setup(bs=CUBE, mc=None, roles=('스트라이커',), **kw):
     allies = [unit('a%d' % i, role=role) for i, role in enumerate(roles)]
     foe = unit('boss', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
     foe.boss = True
-    return battle(allies, [foe], break_skill=bs, mc=dict(LEGACY_SCALE, **(mc or {})), timeline=True, **kw)
+    return battle(allies, [foe], break_skill=bs, mc=mc, timeline=True, **kw)
 
 
 class BreakReduceClientTest(unittest.TestCase):
@@ -141,7 +140,7 @@ class BreakSkillBasicTest(unittest.TestCase):
         self.assertEqual(sum(u.dmg for u in b.allies), 0)
 
     def test_break_aoe_damage_limit_and_nova_policy(self):
-        b = battle([unit()], [unit('f0'), unit('f1')], break_skill={'name': '특이점 관측'}, mc=LEGACY_SCALE)
+        b = battle([unit()], [unit('f0'), unit('f1')], break_skill={'name': '특이점 관측'})
         b.foes[1].hp = 10
         give(b.foes[1], '불사')
         b.allies[0].d.skills.clear()
@@ -380,7 +379,8 @@ class BreakSkillGlobalTest(unittest.TestCase):
         self.assertEqual([r['left'] for r in rows], [5, 4, 3, 2, 1, 0])
         self.assertAlmostEqual(rows[4]['speed'], 110)
         self.assertEqual(rows[5]['speed'], 100)
-        self.assertAlmostEqual(rows[5]['time'], 100 + (10000 - (100 - 10000 / 110) * 110) / 100)
+        # 만료 뒤 속도 100 으로 남은 게이지를 채움(속도 110 그대로면 약 181.8). 정수 게이지·라운드 분할의 소수 처리로 0.01틱 안쪽 차이
+        self.assertAlmostEqual(rows[5]['time'], 100 + (10000 - (100 - 10000 / 110) * 110) / 100, delta=0.01)
         self.assertFalse(a.has(MATRIX))
 
     def test_planet_damage_and_toughness(self):

@@ -65,7 +65,7 @@ class AsherahBreakerIdentityTest(unittest.TestCase):
             return original(src, dst, damage, kind, **kw)
         with patch.object(b, 'apply_damage', record):
             b.cast(a, a.d.skills['기본기'], target=foe)
-            b.flush_chain_damage()
+            b.flush_add_damage()
         return a.extra_turn, any(k == 'chain' and n > 0 for k, n in seen)
 
     def test_breaker_identity(self):

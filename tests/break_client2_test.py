@@ -19,7 +19,7 @@ class BreakClient2Test(unittest.TestCase):
         foe.boss = True
         b = battle([unit('ally%d' % i, sa=100) for i in range(4)], [foe],
                    break_skill={'name': '행성 정화', 'level': 1},
-                   mc={'turn_gauge': 'float'}, max_turns=25, timeline=True)
+                   max_turns=25, timeline=True)
         for ally in b.allies:
             ally.d.skills['기본기'].ab = 2
         b.run()

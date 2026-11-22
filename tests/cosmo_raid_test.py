@@ -188,8 +188,8 @@ def test_pressure_march_bleed_thorn_punish_direct():
     boss = boss_of(b)
     b.cast(boss, boss.d.skills['기본기'])
     assert b.gb.stats['bleed'] >= 1 and any(u.has(C.BLEED) for u in b.allies)
-    # 옛 코스모 전용 응징 큐(chain_timing=client_mapped 이하). 기본 통합 큐는 tests/chain_queue_conn_test.py
-    b = battle('카넬리아', 3, 18, mc={'chain_timing': 'client_mapped'})
+    # 응징은 클라 추가 피해 큐(mc.Battle.flush_add_damage, tests/chain_queue_conn_test.py)
+    b = battle('카넬리아', 3, 18)
     boss = boss_of(b)
     for u in b.allies:
         u.eff['공격력 감소'] = Eff('공격력 감소', {'공격력%': -30}, 1, 3, boss, True)
@@ -198,7 +198,7 @@ def test_pressure_march_bleed_thorn_punish_direct():
     orig_apply = b.apply_damage
     b.apply_damage = lambda a, v, dmg, kind, shieldable=True: (kinds.append((kind, v)), orig_apply(a, v, dmg, kind, shieldable))[1]
     b.cast(boss, boss.d.skills['궁극기'])
-    b.gb.flush_damage()          # 응징은 반격·반응 뒤 추가 피해 처리 단계
+    b.flush_add_damage()          # 응징은 반격·반응 뒤 추가 피해 처리 단계
     assert b.gb.stats['punish'] == len(b.allies)
     assert sum(1 for k, _ in kinds if k == 'chain') == len(b.allies), '응징 연쇄 피해가 대상마다 한 번씩 들어가야 함'
     b = battle('벨그라스', 3, 18)
@@ -210,12 +210,15 @@ def test_pressure_march_bleed_thorn_punish_direct():
 def test_punish_client_timing():
     """SET 31 응징(SE 9403101): 궁극기 «스킬 시작»(대상 확정 직후·타격 전) 때 조건 1161(스킬 대상 중 하나라도 약화) → 약화 상태인 적
     «전원»(AutoTargetId 10, 스킬 대상만이 아님)에게 공격력 30% 추가 피해. 공격자 쪽 값은 생성 때, 대상 방어는 넣을 때(NKM:4734·6226·8168),
-    넣는 시점은 반격·반응 뒤 추가 피해 처리 단계(NKM:15382·13961 → flush_damage). 옛 엔진은 궁극기 «뒤» 맞은 대상 기준(codex 2차 리뷰 3건 반영)"""
+    넣는 시점은 반격·반응 뒤 추가 피해 처리 단계(NKM:15382·13961 → mc.Battle.flush_add_damage). 옛 엔진은 궁극기 «뒤» 맞은 대상 기준(codex 2차 리뷰 3건 반영)"""
     from types import SimpleNamespace
 
+    def queued(b):
+        """추가 피해 큐에 예약된 응징 항목"""
+        return [e for k, e in b._add_order if k == 'punish']
+
     def setup(debuffed):
-        # 옛 코스모 전용 응징 큐 경로(chain_timing=client_mapped). 기본 통합 큐는 tests/chain_queue_conn_test.py
-        b = battle('카넬리아', 3, 18, mc={'chain_timing': 'client_mapped'})
+        b = battle('카넬리아', 3, 18)
         boss = boss_of(b)
         for i in debuffed:
             u = b.allies[i]
@@ -226,41 +229,48 @@ def test_punish_client_timing():
     lb = lambda: collections.defaultdict(lambda: {'inc': 0.0})    # noqa: E731
     # 대상 판정: 스킬 대상이 아군 0 하나(약화 없음)이면, 약화된 아군 2 가 있어도 미발동
     b, boss = setup([2])
-    b.gb.skill_start(boss, hyper(boss), SimpleNamespace(src=boss, skill=hyper(boss), targets=[b.allies[0]], inc=0.0, local_by=lb()))
-    assert b.gb._punish_q == []
+    b.gb.skill_start(boss, hyper(boss), SimpleNamespace(src=boss, skill=hyper(boss), targets=[b.allies[0]], inc=0.0, atkp=0.0, inc_role={}, local_by=lb()))
+    assert queued(b) == []
     # 스킬 대상(아군 1)이 약화면 참 → 대상이 아닌 약화 아군 2 도 포함, 약화 없는 아군 0 은 제외
     b, boss = setup([1, 2])
-    b.gb.skill_start(boss, hyper(boss), SimpleNamespace(src=boss, skill=hyper(boss), targets=[b.allies[0], b.allies[1]], inc=0.0, local_by=lb()))
-    assert sorted(x.pos for x, _ in b.gb._punish_q) == sorted([b.allies[1].pos, b.allies[2].pos])
+    b.gb.skill_start(boss, hyper(boss), SimpleNamespace(src=boss, skill=hyper(boss), targets=[b.allies[0], b.allies[1]], inc=0.0, atkp=0.0, inc_role={}, local_by=lb()))
+    assert sorted(r[2].pos for r in queued(b)) == sorted([b.allies[1].pos, b.allies[2].pos])
     # 대상 방어는 넣을 때 값: 생성 뒤 방어가 오르면 피해가 줄어듦(공격자 쪽 값만 생성 때 확정)
-    x, pre = b.gb._punish_q[0]
-    lo = b.gb._chain_hit(boss, x, dict(pre))
-    b.put_eff(x, '시험 방어 증가', {'방어력%': 200}, dur=5, maxs=1, add=1, src=x, cat='buff', fixed=False)
-    assert b.gb._chain_hit(boss, x, dict(pre)) < lo
-    # 실제 시전: 약화 아군 1명이면 연쇄 1회(전원 광역 궁극기라도), 큐는 행동 뒤(flush_damage)에 비워짐
+    taken = []
+    for buffed in (False, True):
+        b, boss = setup([1])
+        b.gb.skill_start(boss, hyper(boss), SimpleNamespace(src=boss, skill=hyper(boss), targets=[b.allies[1]], inc=0.0, atkp=0.0, inc_role={}, local_by=lb()))
+        x = queued(b)[0][2]
+        if buffed:
+            b.put_eff(x, '시험 방어 증가', {'방어력%': 200}, dur=5, maxs=1, add=1, src=x, cat='buff', fixed=False)
+        hp = x.hp + x.shield_total()
+        b.flush_add_damage()
+        taken.append(hp - x.hp - x.shield_total())
+    assert 0 < taken[1] < taken[0], taken
+    # 실제 시전: 약화 아군 1명이면 연쇄 1회(전원 광역 궁극기라도), 큐는 행동 뒤(flush_add_damage)에 비워짐
     b, boss = setup([3])
     b.cast(boss, hyper(boss))
-    assert b.gb._punish_q, '시전 직후(반격·반응 전)에는 아직 넣지 않음'
-    b.gb.flush_damage()
-    assert b.gb.stats['punish'] == 1 and b.gb._punish_q == []
+    assert queued(b), '시전 직후(반격·반응 전)에는 아직 넣지 않음'
+    b.flush_add_damage()
+    assert b.gb.stats['punish'] == 1 and queued(b) == []
     # 약화 아군 전원이 「스킬 피해 무효」여도(타격 경로가 pre_hit 전에 끝나도) 스킬 시작 판정이라 응징은 들어감
     b, boss = setup([1, 2])
     for i in (1, 2):
         b.put_eff(b.allies[i], '스킬 피해 무효', {}, dur=5, maxs=1, add=1, src=b.allies[i], cat='buff', fixed=False)
     b.cast(boss, hyper(boss))
-    b.gb.flush_damage()
+    b.flush_add_damage()
     assert b.gb.stats['punish'] == 2, dict(b.gb.stats)
     # 같은 행동 안에서 궁극기가 두 번 시작되면(반응 재시전) 예약이 누적됨 — 덮어쓰지 않음(NKM:6239-6241, codex 재검토)
     b, boss = setup([1, 2])
     for _ in range(2):
-        b.gb.skill_start(boss, hyper(boss), SimpleNamespace(src=boss, skill=hyper(boss), targets=list(b.allies), inc=0.0, local_by=lb()))
-    assert len(b.gb._punish_q) == 4
-    b.gb.flush_damage()
-    assert b.gb.stats['punish'] == 4 and b.gb._punish_q == []
+        b.gb.skill_start(boss, hyper(boss), SimpleNamespace(src=boss, skill=hyper(boss), targets=list(b.allies), inc=0.0, atkp=0.0, inc_role={}, local_by=lb()))
+    assert len(queued(b)) == 4
+    b.flush_add_damage()
+    assert b.gb.stats['punish'] == 4 and queued(b) == []
     # 시작 때 약화가 아무도 없으면 미발동(궁극기가 거는 약화는 시작 뒤라 세지 않음)
     b, boss = setup([])
     b.cast(boss, hyper(boss))
-    b.gb.flush_damage()
+    b.flush_add_damage()
     assert b.gb.stats.get('punish', 0) == 0
 
 
@@ -292,7 +302,7 @@ def test_belgras_erosion_and_rot():
     assert gp.stats['true_damage_hits'] == 0 and len(gp.pending_damage) == 1
     hp = boss.hp
     shield = boss.shield_total()
-    gp.flush_damage()
+    b.flush_add_damage()
     assert gp.stats['true_damage_hits'] == 1
     assert hp - boss.hp == max(0, 55000 - shield)
     assert boss.stack(C.ERO) == 0 and boss.stack(C.ROT) == 0 and boss.has(C.ROOT) and boss.has(C.TOUGH_BAN)

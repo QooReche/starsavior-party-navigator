@@ -197,9 +197,9 @@ class FollowupTest(unittest.TestCase):
                     give(target, immune)
                 give(target, 'shield').shield = 100
                 give(guard, 'shield').shield = 100
-                c = C.Controller(b)
+                c = b.gb = C.Controller(b)
                 c.pending_damage.append((target, 1000))
-                c.flush_damage()
+                b.flush_add_damage()
                 split = mode == 'client' and immune == 'none'
                 self.assertEqual(target.hp, 10000 if immune == '무적' else (9600 if split else 9100))
                 self.assertEqual(guard.hp, 9600 if split else 10000)
@@ -208,24 +208,21 @@ class FollowupTest(unittest.TestCase):
                 self.assertEqual(b.rule_hits['add_damage_guard'], int(split))
 
     def test_stat_selection_and_buff_timing(self):
-        for mode in ('floor',):
-            # stat_floor=client 면 def_stat·atk_stat 이 이미 정수라 선택 규칙의 소수 비교 장면이 안 생김 → 이 시험은 float 고정
-            b = battle([unit('a'), unit('b')], [unit('foe')], mc={'stat_floor': 'float'})
-            a, other = b.allies
-            give(other, 'def', {'방어력%': .04})
-            self.assertAlmostEqual(b.def_stat(other) - b.def_stat(a), .4)
-            self.assertEqual(b._filter(a, b.allies, 'high_def'), b.allies if mode == 'floor' else [other])
-            self.assertEqual(b._filter(a, b.allies, 'low_def'), b.allies if mode == 'floor' else [a])
-            del other.eff['def']
-            b.dirty(other)
-            self.assertEqual(b._filter(a, b.allies, 'high_def'), b.allies)
-            for field, positive, negative in [('atk', 'high_atk', 'low_atk'), ('spd', 'high_spd', 'low_spd')]:
-                other.d.stats[field] += .4
-                if field == 'spd':
-                    other.d.spd_base += .4
-                b.dirty(other)
-                self.assertEqual(b._filter(a, b.allies, positive), b.allies if mode == 'floor' else [other])
-                self.assertEqual(b._filter(a, b.allies, negative), b.allies if mode == 'floor' else [a])
+        # 선택 규칙(high_*/low_*)은 능력치를 정수로 비교함. 최종 능력치는 이미 정수(클라 Floor)라 소수 차이 장면이 안 생김 →
+        # 능력치 조회를 소수 값으로 바꿔 선택 규칙의 정수 비교만 봄(1000.4 와 1000 은 같은 값)
+        b = battle([unit('a'), unit('b')], [unit('foe')])
+        a, other = b.allies
+        frac = lambda v, *args, **kw: 1000.4 if v is other else 1000.0   # noqa: E731
+        for name, positive, negative in [('def_stat', 'high_def', 'low_def'), ('live_atk', 'high_atk', 'low_atk')]:
+            with patch.object(b, name, frac):
+                self.assertEqual(b._filter(a, b.allies, positive), b.allies, name)
+                self.assertEqual(b._filter(a, b.allies, negative), b.allies, name)
+        with patch.object(other, 'spd', lambda: 100.4), patch.object(a, 'spd', lambda: 100.0):
+            self.assertEqual(b._filter(a, b.allies, 'high_spd'), b.allies)
+            self.assertEqual(b._filter(a, b.allies, 'low_spd'), b.allies)
+        with patch.object(b, 'def_stat', lambda v, *args, **kw: 1001.0 if v is other else 1000.0):
+            self.assertEqual(b._filter(a, b.allies, 'high_def'), [other])     # 정수 차이는 그대로 갈림
+        self.assertGreater(b.rule_hits['stat_select_int'], 0)
 
     def test_erode_cast_boundary(self):
         b = battle([unit('a')], [unit('boss')])

@@ -506,8 +506,8 @@ class Controller(BaseController):
     def _chain(self, owner, v, coef, credit):
         """연쇄 피해: mc.Battle.chain 과 같은 식(시전자 최대 생명력 x 계수 x 피해 증가 x 1.85 x 방어 감소 x 난수 x 전투력 보정)
 
-        정본(mc.Battle._chain_amount + _apply_chain_amount)과 다른 점: 같은 편이면 관통·전투력 보정을 뺌, 수호 분담·chain_round 없음,
-        credit 으로 피해 귀속을 바꿈, BASE_MULT 를 floor 안 같은 곱에 둠(코스모 _chain_hit 와 곱 순서 다름). 통합(설계 B3-b)은 하지 않음."""
+        정본(mc.Battle._chain_amount + _apply_chain_amount)과 다른 점: 같은 편이면 관통·전투력 보정을 뺌, 수호 분담·연쇄 값 선정수화 없음,
+        credit 으로 피해 귀속을 바꿈, BASE_MULT 를 floor 안 같은 곱에 둠. 통합(설계 B3-b)은 하지 않음."""
         from .. import rules as R
         b = self.b
         m = owner.mods()

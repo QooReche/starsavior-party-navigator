@@ -1,11 +1,7 @@
 {
  "guild_sim": {
-  "hash": "dc86f7253477fb01",
+  "hash": "b7bed4a5f7ead306",
   "history": [
-   {
-    "hash": "f675bd21f0823daf",
-    "reason": "추가 피해 큐 통합(chain_timing=client_queue)·local_chance=roll 병합(main 위 재정렬). quick 재계산 237건 중 0.5 판정 변경 4건, 탐색 정책 유지로 계수 유지(conn 기록), guild_sim 시즌 종료로 재생성 생략"
-   },
    {
     "hash": "e06c79830ecb9052",
     "reason": "11/21 2차 묶음 병합(se_cool_clock·dispel_isbuff·revive_se_reset·skill_cool_change·chain_timing=client_queue·local_chance=roll). 각 작업 기록대로 quick 보정 표본 판정 변경 0~4건이라 계수 유지, guild_sim 시즌 종료로 재생성 생략"
@@ -41,16 +37,16 @@
    {
     "hash": "dc86f7253477fb01",
     "reason": "최종 리뷰 반영: 남긴 스위치 enemy_auto_target(weighted 경로·가정 규칙 target_row_weight·target_defender_mult·target_mode)과 auto_* 5개 삭제(값 불변·분기만 삭제). 기본값 결과는 diet·unify 기준선 바이트 일치"
+   },
+   {
+    "hash": "b7bed4a5f7ead306",
+    "reason": "11/22 미결 정리: 남긴 스위치 ENGINE_MC_KEYS 10개·chain_timing 삭제(값 불변·분기만 삭제). 기본값 결과는 diet·unify 기준선·기대값 엔진 HEAD 대비 해시 일치"
    }
   ]
  },
  "quick": {
-  "hash": "dc86f7253477fb01",
+  "hash": "b7bed4a5f7ead306",
   "history": [
-   {
-    "hash": "f675bd21f0823daf",
-    "reason": "추가 피해 큐 통합(chain_timing=client_queue)·local_chance=roll 병합(main 위 재정렬). quick 재계산 237건 중 0.5 판정 변경 4건, 탐색 정책 유지로 계수 유지(conn 기록), guild_sim 시즌 종료로 재생성 생략"
-   },
    {
     "hash": "e06c79830ecb9052",
     "reason": "11/21 2차 묶음 병합(se_cool_clock·dispel_isbuff·revive_se_reset·skill_cool_change·chain_timing=client_queue·local_chance=roll). 각 작업 기록대로 quick 보정 표본 판정 변경 0~4건이라 계수 유지, guild_sim 시즌 종료로 재생성 생략"
@@ -86,6 +82,10 @@
    {
     "hash": "dc86f7253477fb01",
     "reason": "최종 리뷰 반영: 남긴 스위치 enemy_auto_target(weighted 경로·가정 규칙 target_row_weight·target_defender_mult·target_mode)과 auto_* 5개 삭제(값 불변·분기만 삭제). 기본값 결과는 diet·unify 기준선 바이트 일치"
+   },
+   {
+    "hash": "b7bed4a5f7ead306",
+    "reason": "11/22 미결 정리: 남긴 스위치 ENGINE_MC_KEYS 10개·chain_timing 삭제(값 불변·분기만 삭제). 기본값 결과는 diet·unify 기준선·기대값 엔진 HEAD 대비 해시 일치"
    }
   ]
  }

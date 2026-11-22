@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-"""2026-11-04 클라(build 26314877) 근거 후보 스위치. 같은 날 4개(preemptive_defense·toughness_elem·break_point_hits·
-break_auto_blocked_cc)는 기본=클라 값, legacy=옛 값으로 전환했고, 3개(dot_formula·react_hist_unit·immune_force_apply)는 옛 값 유지.
-새 값과 legacy 값의 경로를 모두 명시해 검사한다.
+"""2026-11-04 클라(build 26314877) 근거 후보 스위치(preemptive_defense·toughness_elem·break_point_hits·break_auto_blocked_cc·
+dot_formula·react_hist_unit·immune_force_apply)의 클라 경로. 스위치는 엔진 다이어트 4단계·11/22 미결 정리에서 모두 지움(항상 클라 동작).
 실행: python -X utf8 -I tests/client_gaps_1104_test.py (계정 자료 없음, 공개 표준 육성·합성 유닛만)."""
 import os
 import sys
@@ -13,14 +12,6 @@ from simkit import battle, give, hit, unit5 as unit  # noqa: E402
 import battlesim.mc as mcmod                       # noqa: E402
 from battlesim.api import simulate                 # noqa: E402
 from battlesim.mc import Ctx, FORCE_BUFF_NAMES     # noqa: E402
-from battlesim.rules import MC_OPTS, MC_RULES      # noqa: E402
-
-# 기본 = 클라 값으로 전환한 스위치: (기본, legacy)
-# 나머지(preemptive_defense·toughness_elem·break_point_hits·break_auto_blocked_cc·react_hist_unit·immune_force_apply)는
-# 엔진 다이어트 4단계에서 스위치를 지움(항상 클라 동작)
-SWITCHED = {'dot_formula': ('client', 'legacy')}
-# 옛 값 유지(기본 == legacy): 없음
-KEPT = {}
 CUBE = {'name': '큐브 과부하', 'level': 1}
 PARTY = ['sunshine-cat-smile', 'cristelle', 'white-pearl-luna', 'wedding-carmen']
 
@@ -48,20 +39,6 @@ def run_stage(stage, override, n_runs=4, seed=3, **extra):
 
 def eff(name, dur=2):
     return {'name': name, 'props': {}, 'dur': dur, 'max': None, 'times': 1}
-
-
-class DefaultsTest(unittest.TestCase):
-    def test_defaults(self):
-        for k, (value, legacy) in SWITCHED.items():
-            self.assertEqual(MC_OPTS[k], value, k)
-            self.assertEqual(MC_RULES[k]['legacy'], legacy, k)
-            self.assertIn(legacy, MC_RULES[k]['alt'], k)
-            self.assertEqual(MC_RULES[k]['grade'], 'code', k)
-            self.assertTrue(MC_RULES[k]['source'] and MC_RULES[k]['note'], k)
-        for k, v in KEPT.items():
-            self.assertEqual(MC_OPTS[k], v, k)
-            self.assertEqual(MC_RULES[k]['legacy'], v, k)
-            self.assertTrue(MC_RULES[k]['source'] and MC_RULES[k]['note'], k)
 
 
 class PreemptiveClientMainTest(unittest.TestCase):
@@ -153,9 +130,9 @@ class ToughnessClientTest(unittest.TestCase):
 
 
 class DotClientTest(unittest.TestCase):
-    def tick(self, mode, ae='태양', ve='별', pen=0, same_side=False):
+    def tick(self, ae='태양', ve='별', pen=0, same_side=False):
         b = battle([unit('a', element=ae), unit('ally2')], [unit('f', element=ve, hp=10 ** 8, df=3000)],
-                   mc={'dot_formula': mode, 'rand_range': [1.0, 1.0]})
+                   mc={'rand_range': [1.0, 1.0]})
         a, f = b.allies[0], b.foes[0]
         if pen:
             give(a, '관통', {'방어 관통': pen})
@@ -167,27 +144,24 @@ class DotClientTest(unittest.TestCase):
         return hp0 - tgt.hp, b.rule_hits['dot_client']
 
     def test_elem_pen_same_side(self):
-        legacy, n0 = self.tick('legacy')
-        client, n1 = self.tick('client')
-        self.assertGreater(legacy, 0)
-        self.assertEqual((n0, n1), (0, 1))
-        self.assertAlmostEqual(client / legacy, 1.05, delta=0.002)     # 유리 +5%
-        lose, _ = self.tick('client', ae='별', ve='태양')
-        self.assertLess(lose, legacy)
-        pen_l, _ = self.tick('legacy', pen=50)
-        pen_c, _ = self.tick('client', pen=50)
-        self.assertEqual(pen_l, legacy)                                 # legacy 는 관통 무시
-        self.assertGreater(pen_c, client)
-        self.assertGreater(self.tick('legacy', same_side=True)[0], 0)
-        self.assertEqual(self.tick('client', same_side=True)[0], 0)    # 같은 편 다른 유닛 지속 피해 0
+        neutral, _ = self.tick(ae=None, ve=None)
+        client, n1 = self.tick()
+        self.assertGreater(neutral, 0)
+        self.assertEqual(n1, 1)
+        self.assertAlmostEqual(client / neutral, 1.05, delta=0.002)    # 유리 +5%
+        lose, _ = self.tick(ae='별', ve='태양')
+        self.assertLess(lose, neutral)
+        pen_c, _ = self.tick(pen=50)
+        self.assertGreater(pen_c, client)                               # 시전자 방어 관통
+        self.assertEqual(self.tick(same_side=True)[0], 0)              # 같은 편 다른 유닛 지속 피해 0
 
 
 class DotGuardTest(unittest.TestCase):
     """11/05: 지속 피해 수호 분담(NKM:1286-1308,7925-7928,17315-17319). 대상 몫은 방어 전 기본 피해에서 뗌, 수호자 몫은 수호자 기준."""
 
-    def tick(self, mode, share=30, invincible=False, g_def=3000):    # share 는 퍼센트 단위(30 = 30%)
+    def tick(self, share=30, invincible=False, g_def=3000):    # share 는 퍼센트 단위(30 = 30%)
         b = battle([unit('a')], [unit('f', hp=10 ** 8, df=3000), unit('g', hp=10 ** 8, df=g_def)],
-                   mc={'dot_formula': mode, 'rand_range': [1.0, 1.0]})
+                   mc={'rand_range': [1.0, 1.0]})
         a, f, g = b.allies[0], b.foes[0], b.foes[1]
         if share:
             give(g, '수호', {'피해 분담(수호)': share})
@@ -200,22 +174,21 @@ class DotGuardTest(unittest.TestCase):
         return f0 - f.hp, g0 - g.hp, b.rule_hits['dot_guard']
 
     def test_split(self):
-        none_f, none_g, _ = self.tick('client', share=0)
-        legacy_f, legacy_g, n0 = self.tick('legacy')
-        f, g, n1 = self.tick('client')
+        none_f, none_g, n0 = self.tick(share=0)
+        f, g, n1 = self.tick()
         self.assertGreater(none_f, 0)
-        self.assertEqual((legacy_f, legacy_g, n0), (none_f, 0, 0))     # legacy 는 분담 없음
+        self.assertEqual((none_g, n0), (0, 0))
         self.assertEqual(n1, 1)
         self.assertAlmostEqual(f / none_f, 0.7, delta=0.01)             # 대상 몫 70%
         self.assertAlmostEqual(g / none_f, 0.3, delta=0.01)             # 같은 방어면 수호자 몫 30%
         # 수호자 몫은 수호자 방어로 다시 계산(방어가 낮으면 더 아픔)
-        _f2, g_low, _ = self.tick('client', g_def=0)
+        _f2, g_low, _ = self.tick(g_def=0)
         self.assertGreater(g_low, g)
 
     def test_self_cast_dot_guardian_takes_nothing(self):
         """NKM:17376-17379: 시전자가 수호자와 같은 편이면(자기 지속 피해) 수호자 몫 0, 대상 몫은 그대로 줆"""
         b = battle([unit('a')], [unit('f', hp=10 ** 8, df=3000), unit('g', hp=10 ** 8, df=3000)],
-                   mc={'dot_formula': 'client', 'rand_range': [1.0, 1.0]})
+                   mc={'rand_range': [1.0, 1.0]})
         f, g = b.foes
         give(g, '수호', {'피해 분담(수호)': 30})
         e = give(f, '연소', harmful=True)
@@ -233,7 +206,7 @@ class DotGuardTest(unittest.TestCase):
     def test_skill_nullify_and_small_share(self):
         """스킬 피해 무효 대상은 분담 없음, 분담 몫이 1 미만이면 수호자 몫 생략(대상 몫은 감액)"""
         b = battle([unit('a')], [unit('f', hp=10 ** 8, df=3000), unit('g', hp=10 ** 8, df=3000)],
-                   mc={'dot_formula': 'client', 'rand_range': [1.0, 1.0]})
+                   mc={'rand_range': [1.0, 1.0]})
         a, f, g = b.allies[0], b.foes[0], b.foes[1]
         give(g, '수호', {'피해 분담(수호)': 30})
         give(f, '스킬 피해 무효')
@@ -244,7 +217,7 @@ class DotGuardTest(unittest.TestCase):
         self.assertEqual((g0 - g.hp, b.rule_hits['dot_guard']), (0, 0))
         # 몫 < 1: 피해 기본값이 작으면 수호자는 맞지 않음
         b2 = battle([unit('a', atk=1)], [unit('f', hp=10 ** 8, df=3000), unit('g', hp=10 ** 8, df=3000)],
-                    mc={'dot_formula': 'client', 'rand_range': [1.0, 1.0]})
+                    mc={'rand_range': [1.0, 1.0]})
         a2, f2, g2 = b2.allies[0], b2.foes[0], b2.foes[1]
         give(g2, '수호', {'피해 분담(수호)': 30})
         e2 = give(f2, '연소', harmful=True)
@@ -254,7 +227,7 @@ class DotGuardTest(unittest.TestCase):
         self.assertEqual((g20 - g2.hp, b2.rule_hits['dot_guard']), (0, 1))
 
     def test_invincible_target_not_shared(self):
-        f, g, n = self.tick('client', invincible=True)
+        f, g, n = self.tick(invincible=True)
         self.assertEqual((f, g, n), (0, 0, 0))                          # 무적 대상은 지속 피해 0, 분담 없음
 
 
@@ -349,7 +322,7 @@ class StageTest(unittest.TestCase):
         # 브레이크 두 스위치는 이 편성·스테이지에서 0회(엔진에 타수 모델이 없고 턴 유닛 CC 중 포인트 3이 드묾) — 경로는 위 합성 시험이 지킴.
         # 선제 방어(client_main)·면역(client)은 표준 편성에 확률/면역 보유자가 없어 합성 시험만 둠.
         cases = [({}, 'tough_client_lose', {}),                       # 규칙 기본값(client)이 실제 전투에서 탐
-                 ({'dot_formula': 'client'}, 'dot_client', {}),
+                 ({}, 'dot_client', {}),
                  ({}, 'react_hist_unit', {}),
                  ({}, None, {'break_skill': CUBE})]
         report = {}

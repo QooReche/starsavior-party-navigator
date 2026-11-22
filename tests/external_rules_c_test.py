@@ -213,10 +213,9 @@ class ShieldTest(unittest.TestCase):
             return result
 
         with patch.object(Battle, '_act_turn', watch_act):
-            # turn_gauge=client 면 행동 순서가 바뀌어 이 편성·판 수에서 흡수 장면이 안 생김 → 장면 고정용으로 float(시험 대상 경로는 그대로)
-            # power_penalty 도 off 고정: 11/15 기본 model 이면 FLOOR 250(이 편성 전투력 비율 78.67%) 이 아군 x0.786·적 x1.214 라 흡수 장면이 사라짐(보정과 무관한 보호막 경로 시험)
+            # power_penalty 는 off 고정: 11/15 기본 model 이면 FLOOR 250(이 편성 전투력 비율 78.67%) 이 아군 x0.786·적 x1.214 라 흡수 장면이 사라짐(보정과 무관한 보호막 경로 시험)
             # 11/15 SKILL_END 교정도 동일한 보호막 장면을 고정할 때만 옛 값 사용.
-            result, battles = run_stage('client', 40, turn_gauge='float', power_penalty='off')
+            result, battles = run_stage('client', 40, power_penalty='off')
         self.assertGreater(result['outcome']['progress'], 0)
         self.assertGreater(sum(b.rule_hits['shield_owner_absorb'] for b in battles), 0)
         self.assertGreater(boundaries['start'], 0)

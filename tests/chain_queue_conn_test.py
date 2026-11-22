@@ -1,4 +1,4 @@
-"""chain_timing=client_queue: 적 연쇄 원형 연결과 연쇄·고정 피해·응징 통합 큐(PC 26752678); --mutations."""
+"""클라 추가 피해 큐(chain_timing 스위치는 11/22 삭제 — 항상 client_queue): 적 연쇄 원형 연결과 연쇄·고정 피해·응징 통합 큐(PC 26752678); --mutations."""
 import inspect
 import io
 import json
@@ -25,8 +25,8 @@ FOE_RAW = '[스킬 사용 후] 스킬 대상에게 연쇄 피해 = 자신 공격
 
 
 class ChainQueueTest(unittest.TestCase):
-    def setup_foe(self, mode='client_queue'):
-        b = battle([unit('ally', df=0, hp=10**6)], [unit('foe', df=0)], mc={'chain_timing': mode},
+    def setup_foe(self):
+        b = battle([unit('ally', df=0, hp=10**6)], [unit('foe', df=0)],
                    opts={'coop': False, 'nova': False})
         a, f = b.allies[0], b.foes[0]
         f.key = f.d.key = FOE_KEY
@@ -35,17 +35,6 @@ class ChainQueueTest(unittest.TestCase):
         ctx = Ctx(f, f, f.d.skills['기본기'])
         ctx.target, ctx.targets = a, [a]
         return b, a, f, ln, ctx
-
-    def test_default_rule(self):
-        self.assertEqual(MC_OPTS['chain_timing'], 'client_queue')
-
-    def test_mode_checked(self):
-        # 허용 값 밖(오타)은 조용히 즉시 경로로 가지 않고 오류
-        for mode in ('client_queue', 'client_mapped', 'immediate'):
-            self.assertEqual(self.setup_foe(mode)[0].mc['chain_timing'], mode)
-        for bad in ('client-queue', 'queue', '', None):
-            with self.assertRaises(ValueError, msg=repr(bad)):
-                self.setup_foe(bad)
 
     def test_mapping_rows_are_clean(self):
         doc = json.loads((ROOT / 'data/chain_se.json').read_text(encoding='utf8'))
@@ -78,20 +67,13 @@ class ChainQueueTest(unittest.TestCase):
         self.assertEqual(b.rule_hits['chain_timing_applied'], 1)
         self.assertFalse(b._chain_damage or b._add_order)
 
-    def test_old_modes_keep_foe_chain_immediate(self):
-        for mode in ('client_mapped', 'immediate'):
-            b, a, f, ln, ctx = self.setup_foe(mode)
-            b.run_line(f, ln, ctx)
-            self.assertGreater(a.taken, 0, mode)
-            self.assertFalse(b._chain_damage)
-
     def test_one_queue_orders_fixed_and_chain_groups(self):
-        b = battle([unit('a')], [unit('boss', hp=10**6), unit('two', hp=10**6)], mc={'chain_timing': 'client_queue'})
+        b = battle([unit('a')], [unit('boss', hp=10**6), unit('two', hp=10**6)])
         a = b.allies[0]
         boss, two = b.foes
         b._belgras_damage.append((boss, 100)); b.queue_add('belgras', b._belgras_damage[-1])
         for bid, v, amt in ((10172, boss, 7), (2510, boss, 3), (2510, two, 4), (2500, two, 9)):
-            b._chain_damage.append((bid, a, v, amt, True, 0, False, (amt, 1)))
+            b._chain_damage.append((bid, a, v, amt, True, False, (amt, 1)))
             b.queue_add('chain', b._chain_damage[-1])
         seen = []
         with patch.object(b, '_apply_chain_amount', lambda o, t, amt, *r: seen.append(amt)), \
@@ -102,14 +84,13 @@ class ChainQueueTest(unittest.TestCase):
         self.assertFalse(b._chain_damage or b._belgras_damage or b._add_order)
 
     def test_dead_at_start_and_retarget(self):
-        b = battle([unit('a')], [unit('x', hp=10**6), unit('y', hp=10**6), unit('z', hp=10**6)],
-                   mc={'chain_timing': 'client_queue'})
+        b = battle([unit('a')], [unit('x', hp=10**6), unit('y', hp=10**6), unit('z', hp=10**6)])
         a = b.allies[0]
         x, y, z = b.foes
         b.kill(z, a)
-        rows = [(1, a, x, 5, True, 0, False, (5, 1)), (1, a, y, 6, True, 0, False, (6, 1)),
-                (2, a, x, 7, True, 0, True, (7, 1)), (3, a, x, 8, True, 0, False, (8, 1)),
-                (4, a, z, 9, True, 0, True, (9, 1))]
+        rows = [(1, a, x, 5, True, False, (5, 1)), (1, a, y, 6, True, False, (6, 1)),
+                (2, a, x, 7, True, True, (7, 1)), (3, a, x, 8, True, False, (8, 1)),
+                (4, a, z, 9, True, True, (9, 1))]
         for r in rows:
             b._chain_damage.append(r); b.queue_add('chain', r)
         seen = []
@@ -126,10 +107,10 @@ class ChainQueueTest(unittest.TestCase):
 
     def test_retarget_recomputes_with_new_target(self):
         # 도중 사망 경로: 첫 항목이 x를 죽인 뒤 같은 x 대상 재선택 항목의 값은 새 대상 기준으로 다시 계산.
-        b = battle([unit('a', atk=1000)], [unit('x', hp=10**6), unit('y', hp=10**6, df=0)], mc={'chain_timing': 'client_queue'})
+        b = battle([unit('a', atk=1000)], [unit('x', hp=10**6), unit('y', hp=10**6, df=0)])
         a = b.allies[0]
         x, y = b.foes
-        rows = [(1, a, x, 1, True, 0, False, (1, 1)), (2, a, x, 999999, False, 0, True, (1000.0, 0.5))]
+        rows = [(1, a, x, 1, True, False, (1, 1)), (2, a, x, 999999, False, True, (1000.0, 0.5))]
         for r in rows:
             b._chain_damage.append(r); b.queue_add('chain', r)
         calls = []
@@ -146,14 +127,14 @@ class ChainQueueTest(unittest.TestCase):
         expect = b._chain_amount(a, y, 1000.0, 0.5, None, a.mods(), False)
         self.assertEqual(calls, [('x', 1), ('y', expect)])
 
-    def cosmo(self, boss, mode='client_queue'):
+    def cosmo(self, boss):
         from battlesim.api import _norm_party
         from battlesim.starsavior.data import get_db
         from cosmo_fixture import use_1022
         use_1022()   # 시즌 1022 fixture(벨그라스·카넬리아 모델 회귀, cosmo_raid_test 와 같음)
         waves, meta = C.build_waves(boss, 3, 18)
         defs, _ = _norm_party({'units': ['wedding-carmen', 'bunny-charlotte', 'amora', 'tyria']}, get_db(), 'fixed', 'standard')
-        b = Battle(defs, waves, random.Random(1), mc=dict(MC_OPTS, cosmo_raid_boss='on', chain_timing=mode),
+        b = Battle(defs, waves, random.Random(1), mc=dict(MC_OPTS, cosmo_raid_boss='on'),
                    leader=0, turn_limit=meta['turn_limit'], battle_mode='boss_kill')
         b.spawn_wave()
         return b
@@ -164,7 +145,6 @@ class ChainQueueTest(unittest.TestCase):
         for u in b.allies:
             give(u, '공격력 감소', {'공격력%': -30}, src=boss, harmful=True)
         b.cast(boss, boss.d.skills['궁극기'])
-        self.assertEqual(b.gb._punish_q, [])
         punish = [r for r in b._chain_damage if r[0] == chain_se.fixed('cosmo_punish')]
         self.assertEqual(len(punish), len(b.allies))
         kinds = []
@@ -180,7 +160,7 @@ class ChainQueueTest(unittest.TestCase):
         boss = b.gb.boss
         b.gb.pending_damage.append((boss, 5000)); b.queue_add('cosmo_fixed', b.gb.pending_damage[-1])
         a = b.allies[0]
-        b._chain_damage.append((2510, a, boss, 1, True, 0, False, (1, 1))); b.queue_add('chain', b._chain_damage[-1])
+        b._chain_damage.append((2510, a, boss, 1, True, False, (1, 1))); b.queue_add('chain', b._chain_damage[-1])
         order = []
         with patch.object(b.gb, 'apply_pending', lambda t, d: order.append(('fixed', d))), \
                 patch.object(b, '_apply_chain_amount', lambda o, t, amt, *r: order.append(('chain', amt))):
@@ -223,11 +203,10 @@ class ChainQueueTest(unittest.TestCase):
 
     def test_turn_flushes_unified_queue(self):
         b, a, f, ln, ctx = self.setup_foe()
-        with patch.object(b, 'flush_add_damage', wraps=b.flush_add_damage) as fl, \
-                patch.object(b, 'flush_chain_damage') as old:
+        with patch.object(b, 'flush_add_damage', wraps=b.flush_add_damage) as fl:
             b.act(f)
         self.assertTrue(fl.called)
-        self.assertFalse(old.called)
+        self.assertGreater(a.taken, 0)
 
 
 def mutations():
@@ -237,12 +216,12 @@ def mutations():
         (Battle, 'flush_add_damage', 'self.alive(target.side) if retarget else []', '[]', 'test_dead_at_start_and_retarget'),
         (Battle, 'flush_add_damage', 'amount = self._chain_amount(owner, target, val, coef, None, owner.mods(), true)', 'pass',
          'test_retarget_recomputes_with_new_target'),
-        (Battle, 'chain', "foe=mode == 'client_queue'", 'foe=False', 'test_foe_chain_is_queued_then_applied'),
+        (Battle, 'chain', "foe=True", 'foe=False', 'test_foe_chain_is_queued_then_applied'),
         (Battle, '_add_entries', "out.append((kind, e, chain_se.fixed('belgras_hyper'), e[0]))",
          "out.append((kind, e, 99999, e[0]))", 'test_cosmo_fixed_damage_joins_queue'),
-        (C.Controller, 'skill_start', "if self.b.mc['chain_timing'] == 'client_queue':", 'if False:', 'test_cosmo_punish_uses_shared_queue'),
-        (Battle, '_act_turn', 'self.flush_add_damage()', 'self.flush_chain_damage()', 'test_turn_flushes_unified_queue'),
-        (C.Controller, 'after_cast', "if b.mc['chain_timing'] == 'client_queue':", 'if False:',
+        (C.Controller, 'skill_start', 'self.b.queue_punish(', 'None and self.b.queue_punish(', 'test_cosmo_punish_uses_shared_queue'),
+        (Battle, '_act_turn', 'self.flush_add_damage()', 'pass', 'test_turn_flushes_unified_queue'),
+        (C.Controller, 'after_cast', "b.queue_punish(boss, b.alive(0), coef, ctx, se='cosmo_no_shield_chain')", 'pass',
          'test_cosmo_no_shield_chain_joins_punish_group'),
         (Battle, '_dead_turn_add_damage', 'self.flush_add_damage()', 'pass', 'test_dot_death_turn_still_flushes_queue'),
     ]

@@ -165,10 +165,10 @@ class AllowlistBreakTest(unittest.TestCase):
             if immune:
                 give(target, immune)
             give(guard, '보호막').shield = 100
-            controller = C.Controller(b)
+            controller = b.gb = C.Controller(b)
             controller.pending_damage.append((target, 1000))
-            controller.flush_damage()
-            controller.flush_damage()
+            b.flush_add_damage()
+            b.flush_add_damage()
             self.assertEqual(guard.hp, 9600 if immune is None else 10000)
             self.assertEqual(target.taken, 0 if immune == '무적' else (500 if immune is None else 1000))
             self.assertEqual(less.taken, 0)

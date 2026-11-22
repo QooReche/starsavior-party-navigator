@@ -12,7 +12,6 @@ sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, give, unit
 from battlesim.mc import Battle, Ctx
 from battlesim.metrics import unit_def
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
 from battlesim.starsavior.myinfo_combat import select_skills
 from battlesim.starsavior.parser import Line, UnitDef, explicit_target
@@ -64,16 +63,15 @@ class ChainStatTrueTest(unittest.TestCase):
             self.assertEqual(b.R(side).getstate(), state)
             self.assertEqual(b.rule_hits['chain_stat_true'], 1)
 
-    def test_legacy_and_normal_use_same_formula(self):
+    def test_normal_and_stat_true_differ(self):
         values = []
-        for mode, kind in [('legacy', 'ADT_STAT_TRUE'), ('client', 'ADT_NORMAL'), ('client', 'ADT_STAT_TRUE')]:
-            b = battle([unit(atk=1000)], [unit('foe', hp=10**8, df=10000)], mc={'chain_stat_true': mode})
+        for kind in ('ADT_NORMAL', 'ADT_STAT_TRUE'):
+            b = battle([unit(atk=1000)], [unit('foe', hp=10**8, df=10000)])
             a, f = b.allies[0], b.foes[0]
             b.chain(a, dict(target='적 전체', stat='atk', coef=1, damage_type=kind), Ctx(a, a, None))
             values.append(f.taken)
-        self.assertEqual(values[0], values[1])
-        self.assertNotEqual(values[0], values[2])
-        self.assertEqual(values[2], 1000)
+        self.assertNotEqual(values[0], values[1])
+        self.assertEqual(values[1], 1000)
 
     def test_stat_true_still_uses_shield(self):
         b = battle([unit(atk=1000)], [unit('foe', hp=10000)])
@@ -135,7 +133,7 @@ class TargetToughnessTest(unittest.TestCase):
         with patch.object(b, 'apply_damage', record):
             b.cast(a, a.d.skills['특수기'], target=b.foes[0])
             self.assertEqual(seen, [])
-            b.flush_chain_damage()
+            b.flush_add_damage()
         self.assertGreater(b.progress(), 0)
         self.assertEqual([f.broken for f in b.foes], [False, True])
         self.assertEqual(a.stack('마녀의 성흔(해제불가)'), 1)
@@ -154,8 +152,7 @@ class TargetToughnessTest(unittest.TestCase):
 
 
 def mutations():
-    cases = [('normal formula', ChainStatTrueTest('test_stat_true_ignores_defense_increase_and_rng'),
-              patch.dict(MC_OPTS, chain_stat_true='legacy'))]
+    cases = []
     original = Battle.chain
     def drop_type(b, owner, eff, ctx):
         return original(b, owner, dict(eff, damage_type='ADT_NORMAL'), ctx)

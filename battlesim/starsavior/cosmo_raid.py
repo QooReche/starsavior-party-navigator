@@ -28,7 +28,6 @@ import os
 from collections import defaultdict
 
 from .. import datafile
-from .. import statcalc as _stat
 from .controller import BaseController
 from .data import SRC
 from .foe_base import FoeBase, make_skill
@@ -236,7 +235,7 @@ def build_waves(boss, step, level=0, src=SRC):
 # ---------------------------------------------------------------- 상태 기계
 class Controller(BaseController):
     """mc.Battle 훅(controller.BaseController 계약): on_wave / before_cast / skill_start / after_cast / pre_hit / post_hit /
-    flush_damage / execute_se. Battle 이 cosmo_raid_boss=on 일 때만 만든다."""
+    execute_se. Battle 이 cosmo_raid_boss=on 일 때만 만든다."""
 
     def __init__(self, b):
         super().__init__(b)
@@ -247,7 +246,6 @@ class Controller(BaseController):
         self.pending_damage = []      # (대상, 시전 시작 때 확정한 고정 피해)
         self._shield_amp_ctx = None   # no_shield_amp: 시전당 한 번만 적용하기 위한 ctx 참조
         self._guard_ctx = None        # few_buff_guard: 시전당 한 번만 판정
-        self._punish_q = []           # punish: (대상, 생성 때 정한 공격자 쪽 값) — 반격·반응 뒤 flush_damage 에서 처리
 
     def before_cast(self, u, sk, ctx):
         if (u is self.boss and self.cfg['model'] == 'belgras' and sk.slot == '궁극기'):
@@ -309,33 +307,18 @@ class Controller(BaseController):
         # TargetNegativeBuff: 스킬 대상 유형대로 모은 대상 중 하나라도 약화 1개 이상 — NKM:9590-9700, NKM.Templets OBF_2765)이 참이면
         # AutoTargetId 10(IsNegativeBuffUnit: 약화 상태인 적 전원, 스킬 대상만이 아님)에게 BI_ADD_DAMAGE_1(공격력 30%).
         # 생성 때 공격자 쪽 값(공격력·피해 증가·관통)만 정하고(NKM:4734·6226), 대상 방어·분담은 넣을 때 계산(NKM:8168·17797).
-        # 넣는 시점 = 반격·예약 반응이 끝난 뒤 추가 피해 처리 단계(NKM:15382·13961 → flush_damage).
+        # 넣는 시점 = 반격·예약 반응이 끝난 뒤 추가 피해 처리 단계(NKM:15382·13961 → mc.Battle.flush_add_damage).
         boss = self.boss
         if (u is boss and not boss.dead and 'punish' in self.fx and sk.is_attack and sk.slot == '궁극기'):
             pool = [x for x in (ctx.targets or []) if x.side != u.side]
             if any(x.n_harmful() > 0 for x in pool):
                 coef = self.fx['punish']['atkRate'] / 100.0
-                if self.b.mc['chain_timing'] == 'client_queue':
-                    # 같은 클라 추가 피해 큐(BI_ADD_DAMAGE_1, NKM:4721-4742 → 6244-6320). 일반 연쇄와 같은 생성·실행 식.
-                    self.b.queue_punish(boss, [x for x in self.b.alive(1 - boss.side) if x.n_harmful() > 0], coef, ctx)
-                    return
-                # 누적(클라 추가 피해 목록 Add, NKM:6239-6241): 같은 행동 안 반응으로 궁극기가 다시 시작되면 따로 쌓임
-                self._punish_q.extend((x, self._chain_pre(boss, x, coef, ctx)) for x in self.b.alive(1 - boss.side) if x.n_harmful() > 0)
-
-    def flush_damage(self):
-        # NKM:13539-13544: 반응 종료 → 예약 피해 → 보유자 턴 종료 효과.
-        queue, self._punish_q = self._punish_q, []
-        for x, pre in queue:                       # 응징 추가 피해(생성 뒤 죽은 대상은 건너뜀)
-            boss = self.boss
-            if not x.dead and boss is not None:
-                self.b.apply_damage(boss, x, self._chain_hit(boss, x, pre), 'chain', shieldable=True)
-                self.stats['punish'] += 1
-        pending, self.pending_damage = self.pending_damage, []
-        for target, damage in pending:
-            self.apply_pending(target, damage)
+                # 같은 클라 추가 피해 큐(BI_ADD_DAMAGE_1, NKM:4721-4742 → 6244-6320). 일반 연쇄와 같은 생성·실행 식.
+                # 같은 행동 안 반응으로 궁극기가 다시 시작되면 따로 쌓임(클라 추가 피해 목록 Add, NKM:6239-6241)
+                self.b.queue_punish(boss, [x for x in self.b.alive(1 - boss.side) if x.n_harmful() > 0], coef, ctx)
 
     def apply_pending(self, target, damage):
-        """예약 고정 피해 1건(BI_ADD_TRUE_DAMAGE). 통합 큐(mc.flush_add_damage)도 이 함수를 부름."""
+        """예약 고정 피해 1건(BI_ADD_TRUE_DAMAGE). 통합 큐(mc.Battle.flush_add_damage)가 부름."""
         if target.dead:
             return
         hp, shield = target.hp, target.shield_total()
@@ -524,12 +507,8 @@ class Controller(BaseController):
                     # AfterMyAttack(NKM:8037 → 15963): 피해 기록 중 하나라도 «처치 안 됨 + 보호막 계열 없음(이번 타격에 깨진 것 포함)»이면 참
                     if not x.dead and self._no_shield(x, fx['no_shield_chain']['names']):
                         coef = fx['no_shield_chain']['atkRate'] / 100.0
-                        if b.mc['chain_timing'] == 'client_queue':
-                            # SE9402501 = BI_ADD_DAMAGE_1(2510, 응징과 같음): 같은 클라 추가 피해 큐·같은 묶음(NKM:4721-4742 → 6244-6320)
-                            b.queue_punish(boss, b.alive(0), coef, ctx, se='cosmo_no_shield_chain')
-                        else:
-                            for v in b.alive(0):
-                                self._chain_atk(boss, v, coef, ctx)
+                        # SE9402501 = BI_ADD_DAMAGE_1(2510, 응징과 같음): 같은 클라 추가 피해 큐·같은 묶음(NKM:4721-4742 → 6244-6320)
+                        b.queue_punish(boss, b.alive(0), coef, ctx, se='cosmo_no_shield_chain')
                         self.stats['no_shield_chain'] += 1
                         break
             # EX: strip — NSEAT_SKILL_END cond 2107, 타격 후 대상 강화 1개 해제 저항 무시 (SE 9402801)
@@ -553,35 +532,6 @@ class Controller(BaseController):
         self.stats['thorn'] += 1
         self.b.add_effect(self.boss, x, dict(kind='buff', target='', name=THORN, chance=1.0, dur=turns, props={}, max=5, times=times,
                                              judge=False, ignore_resist=True, dot=('atk', bm['atkRatePct'] / 100.0)), ctx)
-
-    def _chain_atk(self, owner, v, coef, ctx=None):
-        """공격력 비례 연쇄 피해: mc.Battle.chain 과 같은 식(대상 1명). ctx 를 주면 시전자의 이번 스킬 피해 증가(ctx.inc·대상별)도 읽음 —
-        클라는 연쇄 생성 때 현재 NST_RATE_DAMAGE_UP 을 읽음(NKM:4734·6226, mc.chain_skill_damage_up 과 같은 조건)"""
-        self.b.apply_damage(owner, v, self._chain_dmg(owner, v, coef, ctx), 'chain', shieldable=True)
-
-    def _chain_dmg(self, owner, v, coef, ctx=None):
-        """연쇄 피해량(즉시 넣는 경로): 공격자 쪽 값(_chain_pre) + 대상 쪽 계산(_chain_hit)"""
-        return self._chain_hit(owner, v, self._chain_pre(owner, v, coef, ctx))
-
-    def _chain_pre(self, owner, v, coef, ctx=None):
-        """클라 AddDamage 생성 때 정하는 공격자 쪽 값(NKM:4734·6226): 공격력 x 계수 x (1 + 주는 피해 증가), 관통
-
-        정본(mc.Battle._chain_amount + _apply_chain_amount)과 다른 점 — chain_timing 즉시 경로에서만 탐(client_queue 는 정본 queue_punish):
-        속성별 증가(inc_vs)·브레이크 증가·역할 증가 없음, chain_round(정수 절삭) 없음, 관통을 chain_pen 과 무관하게 항상 적용,
-        수호 분담(_chain_guard) 없음, BASE_MULT 를 _chain_hit 에서 pre['base'] 뒤에 곱함. 통합(설계 B3-b)은 결과가 바뀌어 하지 않음."""
-        b = self.b
-        m = owner.mods()
-        inc = m['inc']
-        if ctx is not None and ctx.src is owner and b.mc['chain_skill_damage_up']:
-            inc += ctx.inc + ctx.local_by[v]['inc']
-        return dict(base=b.atk_stat(owner) * coef * (1 + inc), pen=m['pen'], side=owner.side)
-
-    def _chain_hit(self, owner, v, pre):
-        """넣을 때 계산하는 대상 쪽(NKM:8168·17797): 대상 방어(그때 값)·난수·전투력 보정"""
-        from .. import rules as R
-        b = self.b
-        dr = _stat.def_rate_pen(_stat.def_rate(b.def_stat(v)), pre['pen'])
-        return max(1.0, math.floor(pre['base'] * R.BASE_MULT * (1 - dr) * b.rand(pre['side']) * b.pen[pre['side']]))
 
     def _ensure_belgras_eff(self):
         bm = self.cfg['bel']

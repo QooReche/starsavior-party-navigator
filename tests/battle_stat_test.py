@@ -111,9 +111,8 @@ class InstantStat(unittest.TestCase):
 class CallSiteStat(unittest.TestCase):
     """실제 호출 경로(codex 2차 리뷰 권고): 연쇄·고정 피해 수호 분담은 받은 피해만, 오비탈·타격 무효도 계산 피해를 셈."""
 
-    def _chain(self, eff_extra=None, mc=None):
-        b = battle([unit('a', df=1000), unit('g', df=3000)], [unit('f', atk=1000)],
-                   mc=dict({'chain_round': 'client'}, **(mc or {})))
+    def _chain(self, eff_extra=None):
+        b = battle([unit('a', df=1000), unit('g', df=3000)], [unit('f', atk=1000)])
         a, g, f = b.allies[0], b.allies[1], b.foes[0]
         give(g, '수호', {'피해 분담(수호)': 50})
         ctx = Ctx(f, a, a.d.skills['기본기'])
@@ -130,7 +129,7 @@ class CallSiteStat(unittest.TestCase):
         self.assertEqual(f.dmg, a.taken + g.taken)                # 기존 집계는 그대로
 
     def test_chain_stat_true_guard_share_taken_only(self):
-        b, a, g, f = self._chain({'damage_type': 'ADT_STAT_TRUE'}, {'chain_stat_true': 'client'})
+        b, a, g, f = self._chain({'damage_type': 'ADT_STAT_TRUE'})
         self.assertEqual(b.rule_hits['chain_stat_true'], 1)
         self.assertGreater(g.taken, 0)
         self.assertEqual(f.dmg_stat, a.taken)

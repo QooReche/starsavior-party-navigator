@@ -70,8 +70,8 @@ class HyperTest(unittest.TestCase):
                             self.assertEqual(boss.hp, hp)
                             self.assertEqual(boss.stack(C.ROT), 0)
                             self.assertEqual(b.gb.pending_damage, [(boss, n * 5000)] if n else [])
-                            b.gb.flush_damage()
-                            b.gb.flush_damage()
+                            b.flush_add_damage()
+                            b.flush_add_damage()
                         true = [x for x in seen if x[3] == 'true']
                         self.assertEqual(true, [(None, boss, n * 5000, 'true')] if n else [])
                         self.assertEqual(hp - boss.hp, n * 5000)
@@ -120,7 +120,7 @@ class HyperTest(unittest.TestCase):
             b.cast(boss, boss.d.skills['궁극기'])
         self.assertEqual(b.gb.pending_damage, [(boss, 55000)])
         b.kill(boss, None)
-        b.gb.flush_damage()
+        b.flush_add_damage()
         self.assertEqual(b.gb.pending_damage, [])
         self.assertEqual(b.gb.stats['self_damage_hp'], 0)
 

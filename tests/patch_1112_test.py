@@ -253,14 +253,12 @@ class Patch1112Test(unittest.TestCase):
             d=FoeDef(raw,int(ui),int(xi[0]) if xi else None)
             for slot in row:self.assertIn(slot,d.trigger_skills,key)
 
-    def test_noa_sum_and_reduction_cap(self):
-        b=battle([unit(df=0)],[unit('f',df=0)],mc={'dmg_cap_scope':'reduce'})
+    def test_noa_chain_ignores_reduction(self):
+        # 일반 타격의 감소 상한(순합)은 damage_cap_1112_test 에서 검사. 여기는 연쇄가 받는 감소를 안 받는지만.
+        b=battle([unit(df=0)],[unit('f',df=0)])
         a,f=b.allies[0],b.foes[0];ctx=Ctx(a,a,a.d.skills['기본기'])
         give(a,'증가',{'피해 증가':40});give(f,'감소',{'피해 감소':80})
-        # 구빌드 식 고정: 1 + .4 - min(.5,.8) = .9. 새 빌드는 damage_cap_1112_test에서 검사.
-        self.assertEqual(b.final_dmg(a,f,1000,ctx,False,0,0,1,None),899)
         give(a,'감소',{'피해 증가':-70})
-        self.assertEqual(b.final_dmg(a,f,1000,ctx,False,0,0,1,None),200)
         before=f.taken
         b.chain(a,dict(target='적 전체',stat='atk',coef=1),ctx)
         first=f.taken-before

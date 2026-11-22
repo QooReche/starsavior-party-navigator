@@ -34,10 +34,6 @@ class BaseController:
     def post_hit(self, a, v):
         return
 
-    def flush_damage(self):
-        """chain_timing 즉시 경로의 반응 종료 뒤 예약 피해 처리"""
-        return
-
     def execute_se(self, owner, ln, ctx):
         """시즌 전용 SE 줄(kind=cosmo) 실행기. 없으면 미지원으로 센다."""
         self.b.unsup['코스모 전용 SE 실행기 없음'] += 1

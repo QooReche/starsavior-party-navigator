@@ -24,7 +24,7 @@ class TestStamp(unittest.TestCase):
     def test_fingerprint_follows_rule_values(self):
         from battlesim import rules
         before = S.fingerprint()
-        with mock.patch.dict(rules.MC_OPTS, {'chain_timing': 'immediate'}):
+        with mock.patch.dict(rules.MC_OPTS, {'power_penalty': 'off'}):
             self.assertNotEqual(S.fingerprint(), before)
         self.assertEqual(S.fingerprint(), before)
 

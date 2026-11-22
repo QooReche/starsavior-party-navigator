@@ -64,8 +64,8 @@ class StageSE(unittest.TestCase):
                     self.assertEqual(b._belgras_damage, [(boss, n * 5000)] if n else [])
                     rot(boss, 50)
                     with patch.object(b, 'fixed_true_damage', wraps=b.fixed_true_damage) as damage:
-                        b.flush_belgras_damage()
-                        b.flush_belgras_damage()
+                        b.flush_add_damage()
+                        b.flush_add_damage()
                     self.assertEqual(damage.call_count, int(n > 0))
                     if n:
                         self.assertIs(damage.call_args.args[1], boss)
@@ -101,7 +101,7 @@ class StageSE(unittest.TestCase):
             rot(boss, n)
             b.cast(boss, boss.d.skills['궁극기'], extra=True)
         self.assertEqual(b._belgras_damage, [(boss, 10000), (boss, 35000)])
-        b.flush_belgras_damage()
+        b.flush_add_damage()
         self.assertEqual(hp - boss.hp, 45000)
         self.assertEqual(b.rule_hits['belgras_fixed_applied'], 2)
 
@@ -116,7 +116,7 @@ class StageSE(unittest.TestCase):
                 else:
                     give(boss, protection)
                 hp = boss.hp
-                b.flush_belgras_damage()
+                b.flush_add_damage()
                 self.assertEqual(hp - boss.hp, 250000 if protection == '스킬 피해 무효' else 0)
                 self.assertEqual(b._belgras_damage, [])
                 if protection == '스킬 피해 무효':

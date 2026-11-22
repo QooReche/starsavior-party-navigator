@@ -20,7 +20,7 @@ from battlesim.starsavior.data import get_db  # noqa: E402
 from battlesim.starsavior.stats import calc_stats  # noqa: E402
 
 DB = get_db()
-LEG = dict(LEGACY_OPTS, dmg_cap_scope='reduce')
+LEG = dict(LEGACY_OPTS)
 
 
 def dummies(n, start=0):
@@ -162,8 +162,8 @@ def test_gear_order():
 
 # ---------------------------------------------------------------- 7. 감소 합
 def test_dmg_reduction():
-    """대상 감소 합 80% -> 상한 50%: 피해 비율 = (1+0-0.5+cr x cd)/(1+cr x cd). 받는 피해 +20%(전체 대상)는 전체 스킬에만.
-    브레이크(break_p=1)만 있으면 교정 전(+15% 증가)과 같다."""
+    """대상 감소 합 80% -> 순합 하한 50%(치명 결과마다): 피해 비율 = ((1-cr) x max(0.5, 0.2) + cr x max(0.5, 0.2+cd))/(1+cr x cd).
+    받는 피해 +20%(전체 대상)는 전체 스킬에만. 브레이크(break_p=1)만 있으면 교정 전(+15% 증가)과 같다."""
     def hit_once(mode, red, skill_all=False, break_p=0.0):
         s = Sim(dummies(4), enemy(), 10, dict(LEG, dmg_reduction=mode, break_p=break_p))
         a, e = s.party[0], s.enemies[0]
@@ -175,15 +175,17 @@ def test_dmg_reduction():
             sk.all = True
         s.deal_damage(a, Ctx(a, a, sk, False, 1.0))
         return a.dmg
-    crit = 0.05 * 0.5
+    cr, cd = 0.05, 0.5
+    crit = cr * cd
+    want_cap = ((1 - cr) * 0.5 + cr * (0.2 + cd)) / (1 + crit)
     r_cap = hit_once('sum_cap', {'all': 0.8}) / hit_once('none', {'all': 0.8})
     aoe_up = hit_once('sum_cap', {'aoe': -0.2}, True) / hit_once('none', {'aoe': -0.2}, True)
     single_same = hit_once('sum_cap', {'aoe': -0.2}) / hit_once('none', {'aoe': -0.2})
     brk = hit_once('sum_cap', None, break_p=1.0) / hit_once('none', None, break_p=1.0)
-    ok = (abs(r_cap - (0.5 + crit) / (1 + crit)) < 1e-9 and abs(aoe_up - (1.2 + crit) / (1 + crit)) < 1e-9
+    ok = (abs(r_cap - want_cap) < 1e-9 and abs(aoe_up - (1.2 + crit) / (1 + crit)) < 1e-9
           and abs(single_same - 1) < 1e-12 and abs(brk - 1) < 1e-12)
     return ok, '감소80%%->비율 %.4f(기대 %.4f), 전체+20%% %.4f, 단일 %.4f, 브레이크만 %.4f' % (
-        r_cap, (0.5 + crit) / (1 + crit), aoe_up, single_same, brk)
+        r_cap, want_cap, aoe_up, single_same, brk)
 
 
 # ---------------------------------------------------------------- 0. 교정 전 = P1 골든
@@ -305,8 +307,6 @@ def test_index_uses_merged_opts():
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
     'superarmor_damage_ban', 
-    'chain_stat_true', 
-    'dmg_cap_scope',
     'fixed_true_formula', 'counter_slot_timing',
     'ally_init_cd', 'ally_variant_mapping', 
     'basic_tough', 
@@ -316,7 +316,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'break_skill_hit_pct', 'break_skill_normal_points',
     'break_skill_point_cap', 'break_skill_role_speed_pct', 
     'break_skill_speed_pct', 'break_skills',
-    'buff_maxhp', 'chain_pen', 'chain_round', 'stat_floor', 'stat_stage', 'turn_gauge', 'chain_skill_damage_up', 'counter_inc',
+    'counter_inc',
     'enemy_cd_native',
     'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
     'enemy_same_formula', 'enemy_spawn', 
@@ -326,10 +326,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'power_penalty', 'rand_range', 
     'sudden_death', 
     'toughness', 
-    'chain_timing', 
     'turn_ticks', 'unknown_cond', 'clash_no_turn_limit',
-    # 2026-11-04 클라 후보 스위치(break_point_hits·break_auto_blocked_cc 는 같은 날 기본 = 클라 값으로 전환)
-    'dot_formula', 
     # 2026-11-05 길방 보스 속도·공격력 NV 합산
     # 2026-11-06 코스모 게이트 시즌 전투(벨그라스·난이도 레벨·챌린지 효과)
     'cosmo_raid_boss', 

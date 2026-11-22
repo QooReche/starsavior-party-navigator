@@ -2,8 +2,8 @@
 """엔진 공통 함수 통일 보강 기준선 시험(tools/unify_baseline.py, 설계 fable_unify 0단계).
 
 diet_baseline 이 안 덮는 경로 — 코스모(시즌 1023 + 1022 fixture 벨그라스·티리아·카넬리아), 길드 레이드 지원 6종,
-캐릭터 분기 표 대상 구원자(savior_rules.table_keys()), 연쇄 피해 4경로 — 의 결과 해시가 tests/golden/unify_baseline.json 과 바이트 일치.
-덮는지도 확인: 진행도 > 0, 표의 구원자가 모두 파티에 있음, 연쇄 4경로가 각각 실제로 탔음.
+캐릭터 분기 표 대상 구원자(savior_rules.table_keys()), 연쇄 피해 3경로 — 의 결과 해시가 tests/golden/unify_baseline.json 과 바이트 일치.
+덮는지도 확인: 진행도 > 0, 표의 구원자가 모두 파티에 있음, 연쇄 3경로가 각각 실제로 탔음.
 
   python -X utf8 -I tests/unify_baseline_test.py
 """
@@ -28,8 +28,8 @@ class UnifyBaseline(unittest.TestCase):
         bad = [k for k in got if got[k] != want[k]]
         self.assertEqual(bad, [], '보강 기준선과 다른 케이스')
         self.assertTrue(all(v['prog'] > 0 for v in got.values()), [k for k, v in got.items() if v['prog'] <= 0])
-        # 연쇄 4경로 각각 실제로 탄 판이 있다(5단계 피해식 조각 치환을 잡으려면 필요)
-        for tag in ('battle_chain', 'queue_punish', 'cosmo_chain_hit', 'guild_chain'):
+        # 연쇄 3경로 각각 실제로 탄 판이 있다(5단계 피해식 조각 치환을 잡으려면 필요). 코스모 즉시 연쇄(_chain_hit)는 chain_timing 삭제로 없음
+        for tag in ('battle_chain', 'queue_punish', 'guild_chain'):
             self.assertGreater(cnt[tag], 0, tag)
         # 지원 5종이 모두 있다 + 벨그라스 fixture 케이스가 있다
         for sup in ('gust', 'focus', 'strike', 'mountain', 'fire'):

@@ -178,7 +178,8 @@ def main():
     result = dict(runs=args.runs, seed=args.seed, tables=compare_tables(args.tables),
                   workspace_sha256={f: hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in tracked},
                   profiles={})
-    profiles = [('before', {'chain_skill_damage_up': False}, None), ('after', {}, None),
+    # 옛 'before'(chain_skill_damage_up=false) 프로필은 스위치 삭제(11/22)로 태그 engine-legacy-final 에서만
+    profiles = [('after', {}, None),
                 ('no_break_bonus', {}, 'no_break_bonus'), ('no_toughness', {'toughness': 'off'}, None),
                 ('no_forbidden', {}, 'no_forbidden'), ('no_forbidden_reduction', {}, 'no_forbidden_reduction'),
                 ('no_silhouette', {}, 'no_silhouette'),
@@ -189,7 +190,7 @@ def main():
                 ('no_luna_stack', {}, 'no_luna_stack'),
                 ('no_epindel_shield_bonus', {}, 'no_epindel_shield_bonus'), ('no_luna_damage_bonus', {}, 'no_luna_damage_bonus')]
     for name, override, experiment in profiles:
-        stages = check.SAMPLES if name in ('before', 'after') else ('36-36', '37-3')
+        stages = check.SAMPLES if name == 'after' else ('36-36', '37-3')
         result['profiles'][name] = {stage: measure(stage, args.runs, args.seed, args.myinfo, override, experiment) for stage in stages}
         print(name, {s: r['summary']['sim_ratio'] for s, r in result['profiles'][name].items()}, flush=True)
         atomic_text(args.output, json.dumps(result, ensure_ascii=False, indent=2) + '\n')

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""전투 중 최종 능력치·연쇄 피해 공통 계산(stat_stage·stat_floor·buff_maxhp·chain_round·chain_stat_true =client).
+"""전투 중 최종 능력치·연쇄 피해 공통 계산(클라 3단 구성·단마다 Floor·버프 최대 생명력·연쇄 선정수화·ADT_STAT_TRUE 연쇄).
 몬테카를로 엔진(mc.Battle)과 기대값 엔진(engine.Sim)이 같은 식을 쓴다(gauge.py 와 같은 방식).
 
 근거 = build 26610546 static-data decompiled/NKM/NKM.decompiled.cs
@@ -56,11 +56,9 @@ def unit_stage2(d, key, rate, flat=0.0):
     return stage2((getattr(d, 'stat_stage', None) or {}).get(key), d.stats[key], rate, flat)
 
 
-def stage3(b0, r3, floor):
-    """공격력·방어력 최종값(stat_stage=client): floor 면 Floor(b0 + b0 x 3단 비율), 아니면 b0 x (1 + r3)."""
-    if floor:
-        return float(math.floor(b0 + b0 * rate3(r3)))
-    return b0 * (1 + r3)
+def stage3(b0, r3):
+    """공격력·방어력 최종값: Floor(b0 + b0 x 3단 비율)."""
+    return float(math.floor(b0 + b0 * rate3(r3)))
 
 
 def spd_stage2(d, rate, flat):
@@ -70,36 +68,35 @@ def spd_stage2(d, rate, flat):
     return d.spd_base * (1 + rate) + flat
 
 
-def spd_stage3(s2, r3, f3, floor):
-    """속도 최종값(stat_stage=client, 리더 +10 전): s2 + s2 x 3단 비율 + 3단 고정, floor 면 (int)Math.Floor(NKM:18897)."""
-    s = s2 + s2 * rate3(r3) + f3
-    return math.floor(s) if floor else s
+def spd_stage3(s2, r3, f3):
+    """속도 최종값(리더 +10 전): (int)Math.Floor(s2 + s2 x 3단 비율 + 3단 고정)(NKM:18897)."""
+    return math.floor(s2 + s2 * rate3(r3) + f3)
 
 
-def atk_client(d, r3, floor):
-    """구원자 최종 공격력(stat_stage=client). 2단 = 패시브 공격력% + 장비 공격력%, r3 = 버프(+이번 시전 한정) 공격력%."""
-    return stage3(unit_stage2(d, 'atk', d.passive['atkp'] + d.gear_atkp), r3, floor)
+def atk_client(d, r3):
+    """구원자 최종 공격력. 2단 = 패시브 공격력% + 장비 공격력%, r3 = 버프(+이번 시전 한정) 공격력%."""
+    return stage3(unit_stage2(d, 'atk', d.passive['atkp'] + d.gear_atkp), r3)
 
 
-def def_from_base(b0, r3, floor):
-    """방어력 최종값(stat_stage=client, 0 하한). b0 = 2단까지 값."""
-    return max(0.0, stage3(b0, r3, floor) if floor else max(0.0, b0 * (1 + r3)))
+def def_from_base(b0, r3):
+    """방어력 최종값(0 하한). b0 = 2단까지 값."""
+    return max(0.0, stage3(b0, r3))
 
 
-def def_client(d, r3, floor):
-    """구원자 최종 방어력(stat_stage=client, 0 하한)."""
-    return def_from_base(unit_stage2(d, 'def', d.passive['defp']), r3, floor)
+def def_client(d, r3):
+    """구원자 최종 방어력(0 하한)."""
+    return def_from_base(unit_stage2(d, 'def', d.passive['defp']), r3)
 
 
-def spd_from_base(s2, r3, floor):
-    """2단 고정·3단 고정이 없는 유닛(기대값 엔진의 적)의 최종 속도(stat_stage=client, 하한 전)."""
-    return spd_stage3(s2, r3, 0.0, floor)
+def spd_from_base(s2, r3):
+    """2단 고정·3단 고정이 없는 유닛(기대값 엔진의 적)의 최종 속도(하한 전)."""
+    return spd_stage3(s2, r3, 0.0)
 
 
-def spd_client(d, m_spdp, m_spdf, floor):
-    """구원자 최종 속도(stat_stage=client, 리더 +10·하한 전)."""
+def spd_client(d, m_spdp, m_spdf):
+    """구원자 최종 속도(리더 +10·하한 전)."""
     p = d.passive
-    return spd_stage3(spd_stage2(d, p['spdp'], p['spdf']), m_spdp, m_spdf, floor)
+    return spd_stage3(spd_stage2(d, p['spdp'], p['spdf']), m_spdp, m_spdf)
 
 
 def maxhp0(hp, rate):
@@ -113,10 +110,10 @@ def maxhp(hp0, buff_rate, sd_rate=0.0):
 
 
 def chain_value(val, coef, inc, base_mult):
-    """일반 연쇄 피해 값(chain_round=client): (int)((능력치 x 계수 + 그 x 증가합) x 1.85)."""
+    """일반 연쇄 피해 값: (int)((능력치 x 계수 + 그 x 증가합) x 1.85)."""
     return float(int((val * coef + val * coef * inc) * base_mult))
 
 
 def chain_true_value(val, coef):
-    """ADT_STAT_TRUE 연쇄 피해 값(chain_stat_true=client): (int)(능력치 x 계수)."""
+    """ADT_STAT_TRUE 연쇄 피해 값: (int)(능력치 x 계수)."""
     return float(int(val * coef))

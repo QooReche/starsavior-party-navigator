@@ -2,7 +2,7 @@
 """P3 확률(몬테카를로) 전투 엔진 — 양 진영 대칭(구원자 4명 vs 스테이지 적 웨이브).
 
 설계 = docs/battlesim_design.md 「P3 상세」. 기대값 엔진(engine.Sim)은 동결(웹 화력 지표·골든 유지)하고, 새 규칙은 여기에만 구현한다.
-  예외(11/15): 행동 게이지(turn_gauge=client)는 battlesim/gauge.py 공통 식을 두 엔진이 같이 쓴다.
+  예외(11/15): 행동 게이지는 battlesim/gauge.py 공통 식을 두 엔진이 같이 쓴다.
 - 같은 줄 파서(parser.Line)·스킬(Skill)·스탯(calc_stats)·효과 적중 판정(engine.calc_hit)·피해식 상수(rules)를 쓴다.
 - 치명·효과 적중·확률 효과·협공·대상 선택·피해 난수를 실제로 굴린다. 중첩은 정수.
 - 시간: 시뮬 틱(게이지) / 개체별 행동 횟수(Unit.actions) / 「모델 기준 턴」 = 틱 / turn_ticks(100). 기본 턴 제한은 전역 행동 수, max_turns 안전 상한·legacy 제한은 모델 시간으로 비교.
@@ -587,9 +587,9 @@ class Unit:
         self.leader = leader
         self.actions = 0
         self.turn_ends = 0       # 자기 턴 종료 처리 횟수(SE 재발동 제한 차감 시계, mc.se_cool_clock=client)
-        self._g0, self._gacc = None, 0.0     # turn_gauge=client 라운드 분할 구간의 실수 증가분
-        # turn_gauge=client 행동 우선순위: 등장 처리에서 굴림(NKM:1962). 그 밖에는 처음 정렬 때 굴림(_turn_key)
-        self._turn_prio = b._roll_prio() if b.mc.get('turn_gauge') == 'client' else None
+        self._g0, self._gacc = None, 0.0     # 라운드 분할 구간의 실수 증가분(정수 게이지)
+        # 행동 우선순위: 등장 처리에서 굴림(NKM:1962)
+        self._turn_prio = b._roll_prio()
         self.cast_count = defaultdict(int)
         self.dmg = 0.0
         self.taken = 0.0
@@ -634,10 +634,9 @@ class Unit:
 
     @property
     def maxhp(self):
-        """최대 생명력 = floor(전투 전 최종값 x (1 + 버프 생명력%(mc.buff_maxhp) + 서든데스 생명력%)), 묶음 합 −99% 하한(NKM 18272~18358).
+        """최대 생명력 = floor(전투 전 최종값 x (1 + 버프 생명력% + 서든데스 생명력%)), 묶음 합 −99% 하한(NKM 18272~18358).
         부수효과 없음 — 현재 생명력 자르기는 Battle.dirty 가 한다."""
-        r = self.mods()['hpp_buff'] if self.b.mc['buff_maxhp'] == 'on' else 0.0
-        return _stat.maxhp(self.maxhp0, r, self.sd_hp)
+        return _stat.maxhp(self.maxhp0, self.mods()['hpp_buff'], self.sd_hp)
 
     @maxhp.setter
     def maxhp(self, value):          # 시험·외부에서 최대 생명력을 직접 정할 때(전투 전 값으로 둠)
@@ -706,14 +705,10 @@ class Unit:
         if st1 is not None:
             # 길방 보스 stage: floor(((기본×(1+1단))×(1+2단) + 2단 고정)×(1+3단) + 3단 고정) (NKM:18266-18293)
             s = math.floor((self.d.spd_base * (1 + st1['spdp']) * (1 + p['spdp']) + p['spdf']) * (1 + m['spdp']) + m['spdf'] + 1e-9)
-        elif self.b.mc['stat_stage'] == 'client':
-            # NKM:18874-18897: 2단(패시브 % + 고정) 뒤 3단(버프 % 만분율 정수 합 x 0.0001 + 고정)을 따로 곱함
-            # 최종 속도 (int)Math.Floor(:18897, stat_floor=client). 리더 +10 은 정수 고정값이라 순서 무관. 식 = battlesim/statcalc.py
-            s = _stat.spd_client(self.d, m['spdp'], m['spdf'], self.b.mc['stat_floor'] == 'client')
         else:
-            s = self.d.spd_base * (1 + m['spdp'] + p['spdp']) + m['spdf'] + p['spdf']
-            if self.b.mc['stat_floor'] == 'client':
-                s = math.floor(s)
+            # NKM:18874-18897: 2단(패시브 % + 고정) 뒤 3단(버프 % 만분율 정수 합 x 0.0001 + 고정)을 따로 곱함
+            # 최종 속도 (int)Math.Floor(:18897). 리더 +10 은 정수 고정값이라 순서 무관. 식 = battlesim/statcalc.py
+            s = _stat.spd_client(self.d, m['spdp'], m['spdf'])
         if st1 is None and getattr(self.d, 'bfb', None):
             s = math.floor(s + 1e-9)       # 클라 최종 스탯 (int)Math.Floor (NKM:18268-18280)
         if self.leader:
@@ -866,10 +861,6 @@ def _record_stat(a, v, amount):
     v.taken_stat = getattr(v, 'taken_stat', 0.0) + amount
 
 
-# chain_timing 허용 값(battlesim/rules/default.json value·alt). 기본 client_queue, immediate 는 unify 기준선(_imm 케이스)이 지키는 옛 경로
-CHAIN_TIMING_MODES = ('client_queue', 'client_mapped', 'immediate')
-
-
 # ------------------------------------------------------------------ 전투
 class Battle:
     def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, turn_limit=None, ally_fx=None,
@@ -883,14 +874,12 @@ class Battle:
         if unknown:   # 지운 스위치(엔진 다이어트 4단계)를 넘기면 조용히 무시하지 않음
             raise ValueError('모르는 MC 규칙 키: %s' % ', '.join(sorted(unknown)))
         self.mc.update(mc or {})
-        if self.mc['chain_timing'] not in CHAIN_TIMING_MODES:   # 오타가 조용히 즉시 경로로 가지 않게
-            raise ValueError('chain_timing 값은 %s 중 하나: %r' % ('·'.join(CHAIN_TIMING_MODES), self.mc['chain_timing']))
         self.battle_mode = battle_mode
         self.rng = rng
         # 공통 난수(선택): 아군 쪽(0)·적 쪽(1) 결정에 서로 다른 흐름을 쓴다. 같은 판 번호면 적의 대상 선택·치명 등이
         # 아군 행동 수와 무관하게 같은 순서로 나와 팀끼리 비교할 때 운의 차이가 줄어든다(예선 전용, 기본 꺼짐)
         self._rs = None
-        self._prio_rng = None        # turn_gauge=client 유닛 우선순위 전용 난수(처음 쓸 때 만듦 — legacy 흐름 불변)
+        self._prio_rng = None        # 유닛 우선순위 전용 난수(처음 쓸 때 만듦 — 주 난수 흐름 불변)
         if rng_streams:
             base = rng.getrandbits(64)
             self._rs = (random.Random(base * 2 + 1), random.Random(base * 2 + 2))
@@ -907,7 +896,7 @@ class Battle:
         self._has_belgras_stage = any(belgras_se.is_stage(d) for w in waves for d in w)
         self._belgras_damage = []
         self._chain_damage = []
-        # chain_timing=client_queue: 모든 예약 추가 피해의 등록 순서 (종류, 항목). NKM:6239-6241 Add 순서.
+        # 모든 예약 추가 피해의 등록 순서 (종류, 항목). NKM:6239-6241 Add 순서.
         self._add_order = []
         self.wave_i = -1
         self.foes = []
@@ -1012,21 +1001,20 @@ class Battle:
 
     def dirty(self, u):
         u._m = None
-        if self.mc['buff_maxhp'] == 'on':
-            # mods 전체는 다음 능력치 조회까지 지연한다. HP 절단 시점은 그대로 유지.
-            # _map_prop에서 hpp로 가는 키는 생명력% 하나. mods와 같은 효과 순서·연산 순서.
-            hpp = 0.0
-            blocked = u.buff_blocked()
-            for e in u.eff.values():
-                if e.stacks <= 0 or (blocked and e.category == 'buff'):
-                    continue
-                if '생명력%' in e.props:
-                    hpp += e.props['생명력%'] / 100.0 * e.stacks
-            maxhp = float(math.floor(u.maxhp0 * max(0.01, 1 + hpp + u.sd_hp)))
-            # 효과가 바뀌어 최대 생명력이 줄면 현재 생명력을 바로 자른다(늘어도 전투 중엔 채우지 않음 — NKM 2828~2839).
-            # 조회(maxhp)에는 부수효과를 두지 않는다 — hp/maxhp 를 읽는 순서에 따라 값이 달라지지 않게(codex 리뷰)
-            if u.hp > maxhp:
-                u.hp = maxhp
+        # mods 전체는 다음 능력치 조회까지 지연한다. HP 절단 시점은 그대로 유지.
+        # _map_prop에서 hpp로 가는 키는 생명력% 하나. mods와 같은 효과 순서·연산 순서.
+        hpp = 0.0
+        blocked = u.buff_blocked()
+        for e in u.eff.values():
+            if e.stacks <= 0 or (blocked and e.category == 'buff'):
+                continue
+            if '생명력%' in e.props:
+                hpp += e.props['생명력%'] / 100.0 * e.stacks
+        maxhp = float(math.floor(u.maxhp0 * max(0.01, 1 + hpp + u.sd_hp)))
+        # 효과가 바뀌어 최대 생명력이 줄면 현재 생명력을 바로 자른다(늘어도 전투 중엔 채우지 않음 — NKM 2828~2839).
+        # 조회(maxhp)에는 부수효과를 두지 않는다 — hp/maxhp 를 읽는 순서에 따라 값이 달라지지 않게(codex 리뷰)
+        if u.hp > maxhp:
+            u.hp = maxhp
 
     def put_eff(self, x, name, props, dur=math.inf, maxs=1, add=1, src=None, cat='buff', fixed=True,
                 refresh_props=False, dead_keep=False):
@@ -1210,11 +1198,10 @@ class Battle:
                 for ln in self.lines_of(u):
                     if line_kind(ln) in ('battle_start', 'wave_start'):
                         self.run_line(u, ln, Ctx(u, u, None))
-            if self.mc['buff_maxhp'] == 'on':
-                # 전투 시작 단계(Init·Start)에서는 늘어난 최대 생명력만큼 채운다(NKM 2828~2839 — Play 부터는 자르기만)
-                for u in self.allies + self.foes:
-                    if not u.dead:
-                        u.hp = max(u.hp, u.maxhp)
+            # 전투 시작 단계(Init·Start)에서는 늘어난 최대 생명력만큼 채운다(NKM 2828~2839 — Play 부터는 자르기만)
+            for u in self.allies + self.foes:
+                if not u.dead:
+                    u.hp = max(u.hp, u.maxhp)
         # 턴 제한 단위: actions = 게임 전역 턴(유닛 행동마다 +1, 적 포함 — NKM.decompiled.cs 13796~13798·599~623·755~762,
         # 코스모 게이트 = RANKING_RAID LimitTurn 50·CountEnemyTurnOnly false). model = 옛 동작(모델 기준 턴 = 100틱)
         by_actions = bool(self.turn_limit)
@@ -1245,26 +1232,22 @@ class Battle:
             if self.t + bt > horizon + 1e-9:
                 self.result = 'timeout'
                 break
-            if self.mc['turn_gauge'] == 'client':
-                # NKM:12290-12317,12415-12431(TurnSpeedCalculator): 누가 100% 이상이면 게이지를 안 올리고, 아니면 최소 틱만큼
-                # 유닛마다 (int)(속도 x 틱)을 더함(정수 절삭). 행동 유닛 = 정렬 1위(추가 턴 > 게이지 > 속도 > 전투 시작 때 굴린 우선순위)
-                # 브레이크 라운드 경계로 나눈 구간(round_tick)은 클라에 없는 분할이라 소수를 잃지 않게 실수로 쌓아 두고,
-                # 다음 행동까지의 전체 구간이 끝날 때 한 번만 절삭(_g0 = 구간 시작 게이지, _gacc = 쌓인 실수 증가분)
-                if not _gauge.any_ready(living):
-                    for x in living:
-                        if bt > 0:
-                            if x._g0 is None:
-                                x._g0, x._gacc = x.gauge, 0.0
-                            x._gacc += x.spd() * bt
-                            self.set_gauge(x, x._g0 + (x._gacc if round_tick else _gauge.int_gain(x._gacc)), keep_frac=round_tick)
-                if not round_tick:
-                    for x in living:
-                        x._g0 = None
-                    best = min(living, key=self._turn_key)
-                    self.rule_hits['turn_gauge'] += 1
-            else:
+            # NKM:12290-12317,12415-12431(TurnSpeedCalculator): 누가 100% 이상이면 게이지를 안 올리고, 아니면 최소 틱만큼
+            # 유닛마다 (int)(속도 x 틱)을 더함(정수 절삭). 행동 유닛 = 정렬 1위(추가 턴 > 게이지 > 속도 > 전투 시작 때 굴린 우선순위)
+            # 브레이크 라운드 경계로 나눈 구간(round_tick)은 클라에 없는 분할이라 소수를 잃지 않게 실수로 쌓아 두고,
+            # 다음 행동까지의 전체 구간이 끝날 때 한 번만 절삭(_g0 = 구간 시작 게이지, _gacc = 쌓인 실수 증가분)
+            if not _gauge.any_ready(living):
                 for x in living:
-                    self.set_gauge(x, x.gauge + x.spd() * bt)
+                    if bt > 0:
+                        if x._g0 is None:
+                            x._g0, x._gacc = x.gauge, 0.0
+                        x._gacc += x.spd() * bt
+                        self.set_gauge(x, x._g0 + (x._gacc if round_tick else _gauge.int_gain(x._gacc)), keep_frac=round_tick)
+            if not round_tick:
+                for x in living:
+                    x._g0 = None
+                best = min(living, key=self._turn_key)
+                self.rule_hits['turn_gauge'] += 1
             self.t += bt
             if round_tick:
                 self._break_round += 1
@@ -1312,7 +1295,7 @@ class Battle:
         u.gauge = max(0.0, value)
         if not self.mc['gauge_overflow']:
             u.gauge = min(10000.0, u.gauge)
-        if self.mc['turn_gauge'] == 'client' and not keep_frac:
+        if not keep_frac:
             u.gauge = float(int(u.gauge))     # 클라 게이지는 정수 저장(NKM:5113-5115 (int) 변환 뒤 저장)
 
     def pick_next(self, living):
@@ -1328,7 +1311,7 @@ class Battle:
         return best, bt
 
     def _turn_key(self, x):
-        """turn_gauge=client 정렬 키(NKM:12332-12364 CompareTo): 추가 턴 먼저, 게이지 높은 순, 속도 높은 순,
+        """행동 정렬 키(NKM:12332-12364 CompareTo): 추가 턴 먼저, 게이지 높은 순, 속도 높은 순,
         PC 26752678: 확정 다음 턴·부여 순번은 추가 턴과 게이지 사이에 비교함."""
         pr = x._turn_prio
         if pr is None:
@@ -1374,11 +1357,9 @@ class Battle:
 
     def _dead_turn_add_damage(self):
         """턴 시작 지속 피해로 차례 유닛이 죽었을 때. 클라 SelectTurnUnit(NKM:13919-13935)은 OBF_23544(행동 불가 또는 사망)이면
-        스킬 없이 OBF_2606 → OBF_4586(추가 피해 큐)을 부름(NKM:13955-13961). client_queue 에서만 그대로 처리하고,
-        옛 모드(client_mapped 이하)는 예전 동작(다음 처리 때로 미룸)을 유지."""
-        if self.mc['chain_timing'] == 'client_queue':
-            self.rule_hits['add_damage_dead_turn'] += 1
-            self.flush_add_damage()
+        스킬 없이 OBF_2606 → OBF_4586(추가 피해 큐)을 부름(NKM:13955-13961)."""
+        self.rule_hits['add_damage_dead_turn'] += 1
+        self.flush_add_damage()
 
     def _act_turn(self, u, reset_gauge=True):
         if reset_gauge:
@@ -1447,16 +1428,8 @@ class Battle:
         finally:
             self._react_q = self._react_seen = self._revenged = None
         self._hit_log = None
-        if self.mc['chain_timing'] == 'client_queue':
-            # NKM:13838-13849 → 6244-6320: 연쇄·고정 피해·응징을 한 큐에서 BuffId 묶음으로 처리.
-            self.flush_add_damage()
-        else:
-            if self.gb is not None:
-                self.gb.flush_damage()
-            if self._belgras_damage:
-                self.flush_belgras_damage()
-            if self._chain_damage:
-                self.flush_chain_damage()
+        # NKM:13838-13849 → 6244-6320: 연쇄·고정 피해·응징을 한 큐에서 BuffId 묶음으로 처리.
+        self.flush_add_damage()
         if not u.dead:
             self.fire(u, 'own_te', Ctx(u, u, None))
             changed = False
@@ -1902,7 +1875,7 @@ class Battle:
                 self.rule_hits[hit] += 1
                 return spec
             if (ln.eff.get('stat') == '강인도 피해 감소'
-                    or (self.mc['chain_stat_true'] == 'client' and ln.eff.get('damage_type') == 'ADT_STAT_TRUE')):
+                    or ln.eff.get('damage_type') == 'ADT_STAT_TRUE'):
                 return spec  # 보스 표지가 없으면 대상 없음. 설명문 근사로 일반 적을 고르지 않음.
             # 내부 표지(체크용·판별용 버프)를 찾는 필터인데 그 표지를 가진 유닛이 없으면(표지를 거는 줄을 엔진이 근사로 처리하는 경우)
             # 데이터 규칙 대신 설명문 근사로(티리아는 auto_marker_lines=drop의 옛 동작).
@@ -2192,9 +2165,7 @@ class Battle:
         return max(pool, key=lambda v: (self.live_atk(v), -v.pos))
 
     def live_atk(self, v):
-        if getattr(v.d, 'nv_stage1', None) is not None or self.mc['stat_stage'] == 'client':
-            return self.atk_stat(v)      # 단별 곱(atk_stat 과 같은 식). 길방 보스 stage 또는 stat_stage=client
-        return v.d.stats['atk'] * (1 + v.d.passive['atkp'] + v.mods()['atkp'] + v.d.gear_atkp)
+        return self.atk_stat(v)      # 단별 곱(atk_stat 과 같은 식)
 
     def resolve(self, owner, text, ctx, kind='buff'):
         """줄의 대상 문구 -> 유닛 목록(owner 기준 상대 진영). 해석 못 하면 None."""
@@ -2835,30 +2806,16 @@ class Battle:
             # 길방 보스 stage: 1단(AddStat)·2단(패시브)·3단(버프) 곱. 시전 한정 ctx.atkp 의 단은 미확인이라 버프와 같은 3단에 둠
             b0 = u.d.stats['atk'] * (1 + st1['atkp']) * (1 + u.d.passive['atkp'] + u.d.gear_atkp)
             r3 = m['atkp'] + (ctx.atkp if ctx else 0.0)
-            return self._stat_int(b0 * (1 + r3), b0, r3)
+            return _stat.stage3(b0, r3)     # NKM:18892-18897 Floor(앞 단 값 + 앞 단 값 x 3단 비율)
         r3 = m['atkp'] + (ctx.atkp if ctx else 0.0)
-        if self.mc['stat_stage'] == 'client':
-            # NKM:18874-18897(OBF_16891): 2단(패시브 스킬 능력치 25577·11550, 장비 30723 …) 합을 곱한 뒤 3단(버프 6433 등)을 따로 곱함
-            return _stat.atk_client(u.d, r3, self.mc['stat_floor'] == 'client')    # 식 = battlesim/statcalc.py(기대값 엔진 공용)
-        return self._stat_int(u.d.stats['atk'] * (1 + u.d.passive['atkp'] + r3 + u.d.gear_atkp))
+        # NKM:18874-18897(OBF_16891): 2단(패시브 스킬 능력치 25577·11550, 장비 30723 …) 합을 곱한 뒤 3단(버프 6433 등)을 따로 곱함
+        return _stat.atk_client(u.d, r3)    # 식 = battlesim/statcalc.py(기대값 엔진 공용)
 
     def def_stat(self, u, local=0.0):
         if u.zero_stats:
             return 0.0
         m = u.mods()
-        r3 = m['defp'] + local
-        if self.mc['stat_stage'] == 'client':
-            return _stat.def_client(u.d, r3, self.mc['stat_floor'] == 'client')    # 식 = battlesim/statcalc.py(기대값 엔진 공용)
-        return max(0.0, self._stat_int(max(0.0, u.d.stats['def'] * (1 + u.d.passive['defp'] + r3))))
-
-    def _stat_int(self, v, base=None, rate=None):
-        """build 26610546 NKM:18892-18897: 최종 능력치 = (int)Math.Floor(앞 단 값 + 앞 단 값 x 3단 비율), 3단 비율 = 만분율 정수 합 x 0.0001.
-        base·rate 를 주면 클라와 같은 순서로 계산(보정 없는 Floor), 안 주면 v 를 그대로 Floor. legacy = 실수 그대로(이전 동작)."""
-        if self.mc['stat_floor'] != 'client':
-            return v
-        if base is not None:
-            return _stat.stage3(base, rate, True)
-        return float(math.floor(v))
+        return _stat.def_client(u.d, m['defp'] + local)    # 식 = battlesim/statcalc.py(기대값 엔진 공용)
 
     def hp_stat(self, u):
         return u.maxhp
@@ -2885,16 +2842,11 @@ class Battle:
         m = a.mods()
         d = a.d
         A = self.atk_stat(a, ctx)
-        if self.mc['buff_maxhp'] == 'on':
-            H = a.maxhp    # 생명력 비례 항 = 지금 최대 생명력(전투 전 값 x 버프·서든데스 묶음)
-        else:
-            H = d.stats['hp'] * (1 + d.passive['hpp'] + m['hpp']) * max(0.01, 1 + a.sd_hp)   # 서든데스는 전투 전 값에 곱함(−99% 하한)
+        H = a.maxhp    # 생명력 비례 항 = 지금 최대 생명력(전투 전 값 x 버프·서든데스 묶음)
         if a.zero_stats:
             D = 0.0   # 〈들러리〉 FixStats NST_DEF 0
-        elif self.mc['stat_floor'] == 'client' or self.mc['stat_stage'] == 'client':
-            D = self.def_stat(a)   # 방어 계수 스킬의 방어력 항도 피해식 방어력과 같은 최종 방어력(NKM:18874-18897)
         else:
-            D = d.stats['def'] * (1 + d.passive['defp'] + m['defp'])
+            D = self.def_stat(a)   # 방어 계수 스킬의 방어력 항도 피해식 방어력과 같은 최종 방어력(NKM:18874-18897)
         S = a.spd()
         fa, fh, fd, fs = [x / 10000.0 for x in sk.cf]
         base = (A * fa + H * fh + D * fd) * (1 + S / 100.0 * fs) * _rules.BASE_MULT
@@ -3153,14 +3105,11 @@ class Battle:
     def _damage_mult(self, inc, dec, critical=0.0):
         """26610546 NKM:18187-18193,18314: 치명 포함 순증감에 감소 상한 적용.
 
-        reduce는 종전 덧셈 순서까지 보존한다. 연쇄 피해는 이 식을 쓰지 않는다.
+        연쇄 피해는 이 식을 쓰지 않는다.
         """
-        net = self.mc['dmg_cap_scope'] == 'net'
-        if not net:
-            dec = min(_rules.DEC_CAP, dec)
         mult = 1 + inc - dec
         mult += critical
-        if net and _rules.DEC_CAP > 0 and mult < 1 - _rules.DEC_CAP:
+        if _rules.DEC_CAP > 0 and mult < 1 - _rules.DEC_CAP:
             self.rule_hits['dmg_cap_scope'] += 1
             mult = 1 - _rules.DEC_CAP
         return mult
@@ -3316,9 +3265,8 @@ class Battle:
         return False
 
     def queue_add(self, kind, entry):
-        """client_queue 일 때 예약 추가 피해의 전역 등록 순서를 기록(목록 자체는 종류별로 둠)."""
-        if self.mc['chain_timing'] == 'client_queue':
-            self._add_order.append((kind, entry))
+        """예약 추가 피해의 전역 등록 순서를 기록(목록 자체는 종류별로 둠)."""
+        self._add_order.append((kind, entry))
 
     def _add_entries(self):
         """(종류, 항목, BuffId, 대상) 등록 순. 종류별 목록에 남은 것만(직접 비운 항목 제외), 기록 없는 항목은 뒤에."""
@@ -3357,7 +3305,7 @@ class Battle:
                 if target in dead_at_start:
                     continue
                 if kind in ('chain', 'punish'):
-                    _, owner, _, amount, true, pen, *rest = e
+                    _, owner, _, amount, true, *rest = e
                     retarget = rest[0] if rest else False
                     if target.dead:
                         pool = self.alive(target.side) if retarget else []
@@ -3368,7 +3316,7 @@ class Battle:
                         if not true:
                             val, coef = rest[1]
                             amount = self._chain_amount(owner, target, val, coef, None, owner.mods(), true)
-                    self._apply_chain_amount(owner, target, amount, true, pen)
+                    self._apply_chain_amount(owner, target, amount, true)
                     self.rule_hits['chain_timing_applied'] += 1
                     if kind == 'punish':
                         self.gb.stats['punish'] += 1
@@ -3385,17 +3333,6 @@ class Battle:
         damage = self.fixed_true_damage(None, target, amount, source_side=target.side)
         self.rule_hits['belgras_fixed_applied'] += 1
         self.log(belgras_self_damage=target.name, damage=damage, hp_damage=hp-target.hp)
-
-    def flush_belgras_damage(self):
-        """NKM:4742,6239-6287,13957-13965: 반응 뒤·턴 종료 전에 예약 피해 적용."""
-        pending, self._belgras_damage = self._belgras_damage, []
-        for target, amount in pending:
-            if target.dead:
-                continue
-            hp = target.hp
-            damage = self.fixed_true_damage(None, target, amount, source_side=target.side)
-            self.rule_hits['belgras_fixed_applied'] += 1
-            self.log(belgras_self_damage=target.name, damage=damage, hp_damage=hp-target.hp)
 
     def fixed_true_damage(self, source, target, damage, *, source_side=None, remaining_hp_bp=None):
         """ADT_FIXED_TRUE (NKM:17333-17365,17857-17914).
@@ -3579,7 +3516,7 @@ class Battle:
                     active = ln.phase == '등장 후'
                     if active:
                         self.run_line(u, ln, Ctx(u, u, None))
-                if self.mc['buff_maxhp'] == 'on' and not u.dead:
+                if not u.dead:
                     u.hp = max(u.hp, u.maxhp)
                 u.reset_initial_cooldowns()
                 self.log(summon=u.name, pos=pos, summoner=owner.name)
@@ -3853,12 +3790,11 @@ class Battle:
                     continue
                 if phase != 'hot' and e.dot and e.inst:
                     stat, c = e.dot
-                    dot_client = self.mc['dot_formula'] == 'client'
                     for instance in list(e.inst):
                         src, _left = instance
                         if u.dead:
                             return
-                        if dot_client and src.side == u.side and src is not u:
+                        if src.side == u.side and src is not u:
                             instance[1] -= 1
                             self.rule_hits['dot_hot_lifetime'] += 1
                             continue      # NKM:17278-17281: 같은 편 다른 유닛의 피해는 0
@@ -3879,19 +3815,18 @@ class Battle:
                                 inc += sm['inc_break']
                                 dec -= _rules.BREAK_DEC
                             dr = _stat.def_rate(self.def_stat(v))
-                            if dot_client:
-                                # NKM:17314,17786-17816: 방어율 관통(시전자 방어 관통) / NKM:17545-17561,17918-17922: 상성 ±5%
-                                dr = _stat.def_rate_pen(dr, sm['pen'])
-                                if src.element and v.element:
-                                    adv = _stat.elem_adv(src.element, v.element)
-                                    if adv:
-                                        inc += adv
-                                self.rule_hits['dot_client'] += 1
+                            # NKM:17314,17786-17816: 방어율 관통(시전자 방어 관통) / NKM:17545-17561,17918-17922: 상성 ±5%
+                            dr = _stat.def_rate_pen(dr, sm['pen'])
+                            if src.element and v.element:
+                                adv = _stat.elem_adv(src.element, v.element)
+                                if adv:
+                                    inc += adv
+                            self.rule_hits['dot_client'] += 1
                             mult = self._damage_mult(inc, dec)
                             return max(1.0, math.floor(b * mult * (1 - dr) * self.rand(src.side) * self.pen[src.side]))
 
                         guard, share_base = None, 0.0
-                        if dot_client and not u.invincible() and not u.on('스킬 피해 무효'):
+                        if not u.invincible() and not u.on('스킬 피해 무효'):
                             # NKM:1286-1308,17315-17319: 대상 제외 같은 편 중 분담 비율 최대 1명, 분담 몫은 방어 적용 전 기본 피해에서 뗌
                             # (무적·스킬 무효인 대상은 분담 없음). 동률은 먼저 본 쪽(클라 동률 규칙 OBF_9827 은 미확인).
                             gs = 0.0
@@ -5332,14 +5267,8 @@ class Battle:
             tg = self.resolve(owner, eff['target'], ctx)
         if not tg:
             return
-        mode = self.mc['chain_timing']
-        spec = (chain_se.spec(owner, self._cur_line, foe=mode == 'client_queue')
-                if mode in ('client_mapped', 'client_queue') else None)
-        # client_mapped(round2 범위): 시즌/벨그라스 큐와 섞이는 전투는 즉시 실행으로 남김.
-        if mode == 'client_mapped' and spec is not None and (self.gb is not None or self._has_belgras_stage):
-            self.rule_hits['chain_timing_mixed_fallback'] += 1
-            spec = None
-        if spec is None and mode == 'client_queue':
+        spec = chain_se.spec(owner, self._cur_line, foe=True)
+        if spec is None:
             self.rule_hits['chain_timing_unmapped'] += 1
         m = owner.mods()
         tstat = eff['stat'].startswith('target_')
@@ -5357,17 +5286,14 @@ class Battle:
                     val = self.def_stat(v)
                 if eff['stat'] != 'target_hp':
                     self.rule_hits['chain_target_stat'] += 1
-            true = self.mc['chain_stat_true'] == 'client' and eff.get('damage_type') == 'ADT_STAT_TRUE'
+            true = eff.get('damage_type') == 'ADT_STAT_TRUE'
             b0 = self._chain_amount(owner, v, val, eff['coef'], ctx, m, true)
             if spec is not None:
-                if mode == 'client_queue':
-                    self._chain_damage.append((spec['buff'], owner, v, b0, true, m['pen'], spec['retarget'], (val, eff['coef'])))
-                    self.queue_add('chain', self._chain_damage[-1])
-                else:
-                    self._chain_damage.append((spec['buff'], owner, v, b0, true, m['pen']))
+                self._chain_damage.append((spec['buff'], owner, v, b0, true, spec['retarget'], (val, eff['coef'])))
+                self.queue_add('chain', self._chain_damage[-1])
                 self.rule_hits['chain_timing_queued'] += 1
             else:
-                self._apply_chain_amount(owner, v, b0, true, m['pen'])
+                self._apply_chain_amount(owner, v, b0, true)
 
     def _chain_amount(self, owner, v, val, coef, ctx, m, true):
         # NKM:4721-4742,6212-6236: source stats and increases are snapshots.
@@ -5376,12 +5302,10 @@ class Battle:
             return _stat.chain_true_value(val, coef)
         inc = m['inc'] + m['inc_vs'].get(v.element, 0.0) + (m['inc_break'] if v.broken else 0.0)
         inc += self._role_damage_terms(owner, v, ctx, chain=True)[0]
-        if self.mc['chain_skill_damage_up'] and ctx is not None and ctx.src is owner:
+        if ctx is not None and ctx.src is owner:
             inc += ctx.inc + ctx.local_by[v]['inc']
-        if self.mc['chain_round'] == 'client':
-            self.rule_hits['chain_round'] += 1
-            return _stat.chain_value(val, coef, inc, _rules.BASE_MULT)
-        return val * coef * (1 + inc) * _rules.BASE_MULT
+        self.rule_hits['chain_round'] += 1
+        return _stat.chain_value(val, coef, inc, _rules.BASE_MULT)
 
     def queue_punish(self, owner, targets, coef, ctx, se='cosmo_punish'):
         """코스모 EX 추가 피해(공격력 x 계수)를 클라 추가 피해 큐에 넣음. 재선택 없음.
@@ -5395,19 +5319,17 @@ class Battle:
         kind = 'punish' if se == 'cosmo_punish' else 'chain'
         for v in targets:
             b0 = self._chain_amount(owner, v, val, coef, ctx, m, False)
-            self._chain_damage.append((bid, owner, v, b0, False, m['pen'], False, (val, coef)))
+            self._chain_damage.append((bid, owner, v, b0, False, False, (val, coef)))
             self.queue_add(kind, self._chain_damage[-1])
             self.rule_hits['chain_timing_queued'] += 1
 
-    def _apply_chain_amount(self, owner, v, b0, true, penetration):
+    def _apply_chain_amount(self, owner, v, b0, true):
         # NKM:8151-8168,17774-17815: defense/guard/team/RNG are read at execution.
         guard, share_base = self._chain_guard(v, b0)
         if true:
             dmg = max(1, math.floor((b0 - share_base) * self.pen[owner.side]))
         else:
-            dr = _stat.def_rate(self.def_stat(v))
-            if self.mc['chain_pen'] != 'client':
-                dr = _stat.def_rate_pen(dr, penetration)
+            dr = _stat.def_rate(self.def_stat(v))    # 연쇄는 대상 방어력만(공격자 관통 없음, NKM:18388-18405)
             dmg = max(1.0, math.floor((b0 - share_base) * (1 - dr) * self.rand(owner.side) * self.pen[owner.side]))
         self.apply_damage(owner, v, dmg, 'chain', shieldable=True)
         if guard is not None and share_base >= 1.0 and not guard.dead:
@@ -5415,26 +5337,9 @@ class Battle:
                 gdmg = max(1, math.floor(share_base * self.pen[owner.side]))
             else:
                 gdr = _stat.def_rate(self.def_stat(guard))
-                if self.mc['chain_pen'] != 'client':
-                    gdr = _stat.def_rate_pen(gdr, penetration)
                 gdmg = max(1.0, math.floor(share_base * (1 - gdr) * self.rand(owner.side) * self.pen[owner.side]))
             self.log(guard=guard.name, protects=v.name, dmg=gdmg)
             self.apply_damage(owner, guard, gdmg, 'guard', shieldable=True, stat='taken')
-
-    def flush_chain_damage(self):
-        # NKM:6250-6284: distinct-target count descending, then native BuffId;
-        # preserve enqueue order inside a group. These verified SEs cannot retarget.
-        pending, self._chain_damage = self._chain_damage, []
-        dead_at_start = {row[2] for row in pending if row[2].dead}
-        groups = defaultdict(list)
-        for row in pending:
-            groups[row[0]].append(row)
-        for bid in sorted(groups, key=lambda k: (-len({r[2] for r in groups[k]}), k)):
-            for _, owner, target, amount, true, penetration, *_ in groups[bid]:
-                if target in dead_at_start or target.dead:
-                    continue
-                self._apply_chain_amount(owner, target, amount, true, penetration)
-                self.rule_hits['chain_timing_applied'] += 1
 
     # ---------- 효과 부여
     def roll_hit(self, owner, ctx, x, name):

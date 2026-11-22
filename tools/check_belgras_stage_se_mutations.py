@@ -34,7 +34,7 @@ def main():
     def immediate(self, owner, ln, ctx):
         result = execute(self, owner, ln, ctx)
         if ln.eff['kind'] == 'belgras_fixed':
-            self.flush_belgras_damage()
+            self.flush_add_damage()
         return result
 
     def no_action(self, actor, ctx, kind):
@@ -53,7 +53,7 @@ def main():
          lambda d, lines, rules: lines),
         ('예약 생략', 'test_exactly_one_queued_self_hit_and_cast_snapshot', (Battle, '_exec_line'), no_queue),
         ('예약 대신 즉시 피해', 'test_exactly_one_queued_self_hit_and_cast_snapshot', (Battle, '_exec_line'), immediate),
-        ('예약 피해 실행 생략', 'test_reactions_before_damage_before_turn_end', (Battle, 'flush_belgras_damage'), lambda self: None),
+        ('예약 피해 실행 생략', 'test_reactions_before_damage_before_turn_end', (Battle, '_belgras_one'), lambda self, target, amount: None),
         ('적 행동 시작 통지 생략', 'test_erosion_boundary_marker_for_attack_and_nonattack', (Battle, 'fire_foes'), no_action),
         ('협공 전 표지 정리 생략', 'test_marker_clears_before_coop_and_nested_casts_do_not_inherit', (S, 'expire_marker'), lambda b, ctx: None),
         ('광역 5회 감소 반복 유실', 'test_erosion_boundary_marker_for_attack_and_nonattack', (S, 'normalize'), lost_repeat),

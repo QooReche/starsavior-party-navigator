@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""반응 스킬 대기열(mc.reaction_timing)·버프 생명력%의 최대 생명력 반영(mc.buff_maxhp) 회귀:
+"""반응 스킬 대기열(mc.reaction_timing)·버프 생명력%의 최대 생명력 반영 회귀:
 python -X utf8 -I tests/reaction_queue_test.py
 
 게임 순서(NKM.decompiled.cs 15180~15372): 본 행동 → 협공 → 그 타격의 반격 → 예약된 반응 스킬(각각 직후 반격), 최대 11개.
@@ -160,12 +160,6 @@ class BuffMaxHpTest(unittest.TestCase):
         ctx2.targets = [b2.foes[0]]
         b2.deal(a2, ctx2)
         self.assertEqual(on, b2.foes[0].taken)              # 최대 생명력 8,500 과 같은 생명력 항
-
-    def test_off_switch(self):
-        b = battle([unit('a', hp=10000)], [unit('boss', hp=10 ** 9)], mc=dict(buff_maxhp='off'))
-        a = b.allies[0]
-        apply(b, a, '영혼 구속', {'생명력%': -15}, harmful=True)
-        self.assertEqual((a.hp, a.maxhp), (10000.0, 10000.0))
 
     def test_floor_minus_99(self):
         b = battle([unit('a', hp=10000)], [unit('boss', hp=10 ** 9)])

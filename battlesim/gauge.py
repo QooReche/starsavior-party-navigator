@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""행동 게이지 공통 계산(turn_gauge=client). 몬테카를로 엔진(mc.Battle)과 기대값 엔진(engine.Sim)이 같은 식을 쓴다.
+"""행동 게이지 공통 계산(정수 게이지, 클라 TurnSpeedCalculator). 몬테카를로 엔진(mc.Battle)과 기대값 엔진(engine.Sim)이 같은 식을 쓴다.
 
 근거 = build 26610546 static-data decompiled/NKM/NKM.decompiled.cs
   12286-12370 OBF_21483(TurnSpeedCalculator): 누가 100% 이상이면 게이지를 안 올림, 정렬 키(CompareTo)

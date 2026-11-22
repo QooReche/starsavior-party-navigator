@@ -191,7 +191,7 @@ class CasebookMechanicsTest(unittest.TestCase):
             with patch.object(b, 'apply_damage', record):
                 b.cast(a, a.d.skills['기본기'], target=foe)
                 self.assertFalse(any(k == 'chain' for k, _ in seen))
-                b.flush_chain_damage()
+                b.flush_add_damage()
             self.assertGreater(b.progress(), 0)
             self.assertEqual(foe.broken, sa == 1)
             self.assertEqual(a.extra_turn, sa == 1)

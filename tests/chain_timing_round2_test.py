@@ -64,7 +64,7 @@ class ChainTimingTest(unittest.TestCase):
         v.d.stats['def'] = 1000
         b.dirty(v)
         b.kill(a, v)
-        b.flush_chain_damage()
+        b.flush_add_damage()
         from battlesim import rules
         self.assertEqual(v.taken, int(amount * rules.DEF_K / (1000 + rules.DEF_K)))
         self.assertEqual(b.rule_hits['chain_timing_applied'], 1)
@@ -92,35 +92,28 @@ class ChainTimingTest(unittest.TestCase):
         b = battle([unit('a')], [unit('one'), unit('two'), unit('dead')])
         a = b.allies[0]; one, two, dead = b.foes
         # Smaller BuffId loses to a group hitting two distinct targets.
-        b._chain_damage = [(1, a, one, 3, True, 0), (2, a, one, 4, True, 0),
-                           (2, a, two, 5, True, 0), (3, a, dead, 9, True, 0)]
+        b._chain_damage = [(1, a, one, 3, True, False, (3, 1)), (2, a, one, 4, True, False, (4, 1)),
+                           (2, a, two, 5, True, False, (5, 1)), (3, a, dead, 9, True, False, (9, 1))]
         b.kill(dead, a)
         seen = []
-        def record(owner, target, amount, true, pen):
+        def record(owner, target, amount, true):
             seen.append(amount)
             # A death-trigger revival during an earlier group cannot revive a
             # pending hit that was excluded at the start of the native flush.
             dead.dead, dead.hp = False, 100
         with patch.object(b, '_apply_chain_amount', record):
-            b.flush_chain_damage()
+            b.flush_add_damage()
         self.assertEqual(seen, [4, 5, 3])
-        self.assertFalse(b._chain_damage)
-
-    def test_legacy_stays_immediate(self):
-        b, a, v, ln, ctx = self.setup_chain()
-        b.mc['chain_timing'] = 'immediate'
-        b.run_line(a, ln, ctx)
-        self.assertGreater(v.taken, 0)
         self.assertFalse(b._chain_damage)
 
 
 def mutations():
     cases = [
-        ('chain', "if mode in ('client_mapped', 'client_queue') else None", 'if False else None', 'test_snapshot_survives_source_death_and_uses_live_defense'),
-        # 기본 chain_timing=client_queue 는 통합 큐(flush_add_damage)를 부름(tests/chain_queue_conn_test.py).
+        ('chain', "spec = chain_se.spec(owner, self._cur_line, foe=True)", 'spec = None', 'test_snapshot_survives_source_death_and_uses_live_defense'),
+        # 연쇄는 통합 큐(flush_add_damage)로 처리(tests/chain_queue_conn_test.py).
         ('_act_turn', 'self.flush_add_damage()', 'None', 'test_flush_after_reactions_before_turn_end'),
-        ('flush_chain_damage', '(-len({r[2] for r in groups[k]}), k)', '(k, 0)', 'test_group_order_and_dead_targets'),
-        ('flush_chain_damage', 'if target in dead_at_start or target.dead:', 'if target.dead:', 'test_group_order_and_dead_targets'),
+        ('flush_add_damage', '(-len({r[3] for r in groups[k]}), k)', '(k, 0)', 'test_group_order_and_dead_targets'),
+        ('flush_add_damage', 'if target in dead_at_start:', 'if False:', 'test_group_order_and_dead_targets'),
     ]
     for method, old, new, test in cases:
         original = getattr(Battle, method)

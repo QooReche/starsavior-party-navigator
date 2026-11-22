@@ -5,7 +5,7 @@ import re
 from collections import defaultdict
 
 from .rules import (AOE_DIV, BASE_MULT, BREAK_DEC, COOP_CAP, DEC_CAP, DEF_K, DEFAULT_OPTS, ELEM_BEATS, ELEM_HIT, ELEM_LOSES,  # noqa: F401
-                    INF_HP, KNOWN_DOT, MC_OPTS, TICK_PER_TURN)
+                    INF_HP, KNOWN_DOT, TICK_PER_TURN)
 
 # 적에게 거는 약화 중 대상의 「받는 피해 감소」 값을 바꾸는 속성 -> 적용 범위(감소 합, dmg_reduction='sum_cap')
 _RED_PROPS = {'받는 피해 감소': 'all', '피해 감소': 'all', '전체 대상 피해 감소': 'aoe', '단일 대상 피해 감소': 'single',
@@ -27,17 +27,7 @@ from . import gauge as _gauge
 from . import statcalc as _stat
 
 
-# 기대값 엔진도 읽는 MC 규칙(rules/default.json "mc" 절). 지표·골든은 opts 로 옛 값을 명시할 수 있다.
-# 능력치·피해 계산 규칙(11/15): 식은 battlesim/statcalc.py — mc.Battle 과 공용.
-ENGINE_MC_KEYS = ('dmg_cap_scope', 'turn_gauge', 'stat_stage', 'stat_floor', 'buff_maxhp',
-                  'chain_round', 'chain_pen', 'chain_skill_damage_up', 'chain_stat_true', 'dot_formula')
-
-
-def _stat_rules(opts):
-    """(stat_stage=client 인가, stat_floor=client 인가). opts 에 없으면 MC_OPTS."""
-    o = opts or {}
-    return (o.get('stat_stage', MC_OPTS['stat_stage']) == 'client',
-            o.get('stat_floor', MC_OPTS['stat_floor']) == 'client')
+# 능력치·피해 계산(11/15): 식은 battlesim/statcalc.py·gauge.py — mc.Battle 과 공용.
 
 
 @datafile.cached
@@ -77,7 +67,6 @@ class Actor:
         self.actions = 0
         self.acting = False
         self.forced_coop = 0.0  # ForceCrossAttack 존재 확률. 턴 종료 때 초기화(NKM:13569–13572).
-        self.stage_client, self.floor_client = _stat_rules(opts)
         for slot, sk in d.skills.items():
             if sk.cd:
                 self.cd[slot] = sk.cd * opts['init_cd_frac']
@@ -109,20 +98,13 @@ class Actor:
 
     def spd(self):
         m = self.mods()
-        p = self.d.passive
-        if self.stage_client:
-            # mc.Unit.spd 와 같은 식(NKM:18874-18897): 2단(패시브 % + 고정) 뒤 3단(버프 만분율 정수 합 + 고정), stat_floor=client 면 Floor
-            return max(1.0, _stat.spd_client(self.d, m['spdp'], m['spdf'], self.floor_client))
-        s = self.d.spd_base * (1 + m['spdp'] + p['spdp']) + m['spdf'] + p['spdf']
-        if self.floor_client:
-            return max(1.0, math.floor(s))
-        return s
+        # mc.Unit.spd 와 같은 식(NKM:18874-18897): 2단(패시브 % + 고정) 뒤 3단(버프 만분율 정수 합 + 고정), Floor
+        return max(1.0, _stat.spd_client(self.d, m['spdp'], m['spdf']))
 
 
 class Enemy:
     def __init__(self, spec, idx, opts=None):
         self.idx = idx
-        self.stage_client, self.floor_client = _stat_rules(opts)
         self.name = spec.get('name', 'enemy')
         self.maxhp = float(spec.get('hp', INF_HP))
         self.hp = self.maxhp
@@ -148,20 +130,12 @@ class Enemy:
         return sum(d.get('defp', 0.0) * d['stacks'] for d in self.deb.values())
 
     def def_eff(self):
-        if self.stage_client:
-            # mc.Battle.def_stat(stat_stage=client): 적은 패시브 % 가 없어 2단 값 = 방어력, 3단 = 약화 방어력%
-            return _stat.def_from_base(self.def_, self.defp(), self.floor_client)
-        if self.floor_client:
-            return max(0.0, float(math.floor(max(0.0, self.def_ * (1 + self.defp())))))
-        return max(0.0, self.def_ * (1 + self.defp()))
+        # mc.Battle.def_stat: 적은 패시브 % 가 없어 2단 값 = 방어력, 3단 = 약화 방어력%
+        return _stat.def_from_base(self.def_, self.defp())
 
     def spd_eff(self):
         s = sum(d.get('spdp', 0.0) * d['stacks'] for d in self.deb.values())
-        if self.stage_client:
-            return max(1.0, _stat.spd_from_base(self.spd, s, self.floor_client))
-        if self.floor_client:
-            return max(1.0, math.floor(self.spd * (1 + s)))
-        return max(1.0, self.spd * (1 + s))
+        return max(1.0, _stat.spd_from_base(self.spd, s))
 
 
 class Ctx:
@@ -188,18 +162,6 @@ class Sim:
         self.opts = dict(DEFAULT_OPTS)
         if opts:
             self.opts.update(opts)
-        # MC와 같은 규칙 원본. 지표/골든은 opts로 옛 값을 명시할 수 있다.
-        self.dmg_cap_scope = self.opts.get('dmg_cap_scope', MC_OPTS['dmg_cap_scope'])
-        self.turn_gauge = self.opts.get('turn_gauge', MC_OPTS['turn_gauge'])
-        self.stage_client, self.floor_client = _stat_rules(self.opts)
-        mo = {k: self.opts.get(k, MC_OPTS[k]) for k in ('buff_maxhp', 'chain_round', 'chain_pen', 'chain_skill_damage_up',
-                                                        'chain_stat_true', 'dot_formula')}
-        self.buff_maxhp = mo['buff_maxhp'] == 'on'
-        self.chain_round = mo['chain_round'] == 'client'
-        self.chain_pen_client = mo['chain_pen'] == 'client'
-        self.chain_skill_up = bool(mo['chain_skill_damage_up'])
-        self.chain_stat_true = mo['chain_stat_true'] == 'client'
-        self.dot_client = mo['dot_formula'] == 'client'
         self.party = [Actor(d, i, self.opts) for i, d in enumerate(defs)]
         self.enemies = [Enemy(e, i, self.opts) for i, e in enumerate(enemies)]
         self.turns = turns
@@ -242,8 +204,7 @@ class Sim:
         self.start()
         actors = self.party + self.enemies
         guard = 0
-        client = self.turn_gauge == 'client'
-        # turn_gauge=client: 유닛별 지연 x._gd = 정수 절삭으로 잘린 게이지의 시간 환산(잘린 소수 / 그때 속도) 누적.
+        # 정수 게이지: 유닛별 지연 x._gd = 정수 절삭으로 잘린 게이지의 시간 환산(잘린 소수 / 그때 속도) 누적.
         # 다른 유닛의 행동 중에 게이지를 받으면 그 행동 유닛의 지연을 물려받는다(max) — 게이지가 시간에 선형이라
         # 받은 시각이 밀려도 도달 시각의 밀림은 max(자기 지연, 행동 유닛 지연) 를 넘지 않는다.
         for x in actors:
@@ -260,40 +221,34 @@ class Sim:
             if best is None:
                 break
             slack = 1e-9
-            if client:
-                # 정수 절삭으로 게이지가 덜 찬 만큼 시간축(틱) 위의 행동이 늦게 잡힌다. 모델 지평선(turns x 100틱)은 클라에 없는
-                # 경계라(클라 턴 제한은 행동 수) 그 유닛의 지연(_gd)만큼만 같은 시각으로 본다 — 없으면 속도 100 유닛의
-                # 10번째 행동이 1000틱 바로 뒤로 밀려 잘린다. (진행 횟수·모든 유닛 합으로 여유를 주면 절삭 손실이 없는
-                # 유닛의 지평선 밖 행동까지 들어갔음 — 11/15 2차 리뷰 2회)
-                slack += best._gd
+            # 정수 절삭으로 게이지가 덜 찬 만큼 시간축(틱) 위의 행동이 늦게 잡힌다. 모델 지평선(turns x 100틱)은 클라에 없는
+            # 경계라(클라 턴 제한은 행동 수) 그 유닛의 지연(_gd)만큼만 같은 시각으로 본다 — 없으면 속도 100 유닛의
+            # 10번째 행동이 1000틱 바로 뒤로 밀려 잘린다. (진행 횟수·모든 유닛 합으로 여유를 주면 절삭 손실이 없는
+            # 유닛의 지평선 밖 행동까지 들어갔음 — 11/15 2차 리뷰 2회)
+            slack += best._gd
             if self.t + bt > self.horizon + slack:
                 break
-            if client:
-                # mc.Battle.run 과 같은 계산(battlesim/gauge.py, NKM:12290-12317·12415-12431): 누가 100% 이상이면 안 올리고,
-                # 아니면 최소 틱만큼 유닛마다 (int)(속도 x 틱)을 더함. 행동 유닛 = 정렬 1위(추가 턴 > 게이지 > 속도 > 우선순위).
-                # 우선순위(클라 = 등장 때 난수 0~9999)는 기대값 엔진에 난수가 없어 고정 순서(아군 먼저, 칸 순)로 대신한다.
-                # 게이지 효과의 기대값(gauge_expect)은 소수로 남는다 — 정수 절삭은 시간 진행분에만.
-                if not _gauge.any_ready(living) and bt > 0:
-                    for x in living:
-                        spd = x.spd() if x.is_ally else x.spd_eff()
-                        acc = spd * bt
-                        gain = _gauge.int_gain(acc)
-                        if x.gauge + gain < 10000.0:
-                            x._gd += (acc - gain) / max(spd, 1e-6)
-                        x.gauge = min(10000.0, x.gauge + gain)
-                n = len(living)
-                # 추가 턴: act_ally 끝에서 extra_turn 을 지우고 게이지 100% 로 바꾸므로, 정렬 1위 항은 그 표지(xturn)로 본다
-                best = min(range(n), key=lambda i: _gauge.turn_key(
-                    getattr(living[i], 'xturn', False), living[i].gauge,
-                    living[i].spd() if living[i].is_ally else living[i].spd_eff(), n - i))
-                best = living[best]
-            else:
+            # mc.Battle.run 과 같은 계산(battlesim/gauge.py, NKM:12290-12317·12415-12431): 누가 100% 이상이면 안 올리고,
+            # 아니면 최소 틱만큼 유닛마다 (int)(속도 x 틱)을 더함. 행동 유닛 = 정렬 1위(추가 턴 > 게이지 > 속도 > 우선순위).
+            # 우선순위(클라 = 등장 때 난수 0~9999)는 기대값 엔진에 난수가 없어 고정 순서(아군 먼저, 칸 순)로 대신한다.
+            # 게이지 효과의 기대값(gauge_expect)은 소수로 남는다 — 정수 절삭은 시간 진행분에만.
+            if not _gauge.any_ready(living) and bt > 0:
                 for x in living:
                     spd = x.spd() if x.is_ally else x.spd_eff()
-                    x.gauge = min(10000.0, x.gauge + spd * bt)
+                    acc = spd * bt
+                    gain = _gauge.int_gain(acc)
+                    if x.gauge + gain < 10000.0:
+                        x._gd += (acc - gain) / max(spd, 1e-6)
+                    x.gauge = min(10000.0, x.gauge + gain)
+            n = len(living)
+            # 추가 턴: act_ally 끝에서 extra_turn 을 지우고 게이지 100% 로 바꾸므로, 정렬 1위 항은 그 표지(xturn)로 본다
+            best = min(range(n), key=lambda i: _gauge.turn_key(
+                getattr(living[i], 'xturn', False), living[i].gauge,
+                living[i].spd() if living[i].is_ally else living[i].spd_eff(), n - i))
+            best = living[best]
             self.t += bt
             best.xturn = False
-            before = [(x, x.gauge) for x in living if x is not best] if client else ()
+            before = [(x, x.gauge) for x in living if x is not best]
             if best.is_ally:
                 self.act_ally(best)
             else:
@@ -320,16 +275,14 @@ class Sim:
                 dec = 0.0
                 if self.opts['dmg_reduction'] == 'sum_cap':   # DoT 는 단일/전체·스킬 종류별 증감이 없어 'all' 감소만
                     dec = e.recv_red(('all',)) - BREAK_DEC * self.opts['break_p']
-                pen = 0.0
-                if self.dot_client:
-                    # mc dot_formula=client(NKM:17849-17853 지속 피해도 공통 피해식 → 18337-18366 시전자 방어 관통 / 18041-18056 상성 ±5%)
-                    src = part['src']
-                    pen = clamp(src.mods()['pen'])
-                    ea = self.opts['enemy_element'] if e.element is None else e.element
-                    if ea and src.element:
-                        adv = _stat.elem_adv(src.element, ea)
-                        if adv:
-                            inc += adv
+                # mc 지속 피해(NKM:17849-17853 지속 피해도 공통 피해식 → 18337-18366 시전자 방어 관통 / 18041-18056 상성 ±5%)
+                src = part['src']
+                pen = clamp(src.mods()['pen'])
+                ea = self.opts['enemy_element'] if e.element is None else e.element
+                if ea and src.element:
+                    adv = _stat.elem_adv(src.element, ea)
+                    if adv:
+                        inc += adv
                 dmg = base * self._damage_mult(inc, dec) * part['stacks'] * (1 - self.dr(e, pen))
                 self.hurt(e, dmg, part['src'], 'dot', hit=0.0)
         if e.dead:
@@ -422,7 +375,7 @@ class Sim:
         if a.extra_turn:
             a.extra_turn = False
             a.gauge = 10000.0
-            a.xturn = True      # turn_gauge=client 정렬에서 추가 턴 우선(NKM:12339-12342) — 다음 행동 때 지움
+            a.xturn = True      # 정렬에서 추가 턴 우선(NKM:12339-12342) — 다음 행동 때 지움
 
     def choose_skill(self, a):
         if getattr(a.d, 'dummy', False):
@@ -640,13 +593,8 @@ class Sim:
     def _damage_mult(self, inc, dec, cr=0.0, cdv=0.0):
         """26610546 NKM:18187-18193,18534-18547: 치명별 순합 하한 뒤 기대값.
 
-        상한은 비선형이므로 치명 확률을 먼저 곱하지 않는다.
-        reduce 및 잘림이 없는 경우에는 종전 연산 순서를 유지한다.
+        상한은 비선형이므로 치명 확률을 먼저 곱하지 않는다. 잘림이 없는 경우에는 종전 연산 순서를 유지한다.
         """
-        if self.dmg_cap_scope != 'net':
-            if self.opts['dmg_reduction'] == 'sum_cap':
-                dec = min(DEC_CAP, dec)
-            return (1 + inc - dec) + cr * cdv
         normal = 1 + inc - dec
         if DEC_CAP > 0 and min(normal, normal + cdv) < 1 - DEC_CAP:
             return ((1 - cr) * max(1 - DEC_CAP, normal)
@@ -663,18 +611,9 @@ class Sim:
         m = a.mods()
         d = a.d
         st = d.stats
-        if self.stage_client:
-            A = self.atk_stat(a, ctx.atkp)
-        else:
-            atkp = d.passive['atkp'] + m['atkp'] + ctx.atkp + d.gear_atkp
-            A = st['atk'] * (1 + atkp)
-            if self.floor_client:
-                A = float(math.floor(A))
+        A = self.atk_stat(a, ctx.atkp)
         H = self.hp_stat(a)
-        if self.stage_client or self.floor_client:
-            D = self.def_stat(a)      # mc.Battle.deal: 방어 계수 항도 최종 방어력(NKM:18874-18897)
-        else:
-            D = st['def'] * (1 + d.passive['defp'] + m['defp'])
+        D = self.def_stat(a)      # mc.Battle.deal: 방어 계수 항도 최종 방어력(NKM:18874-18897)
         S = a.spd()
         fa, fh, fd, fs = [x / 10000.0 for x in sk.cf]
         base = (A * fa + H * fh + D * fd) * (1 + S / 100.0 * fs) * BASE_MULT
@@ -720,36 +659,26 @@ class Sim:
         if not side_targets or side_targets[0] != 'e':
             return
         m = a.mods()
-        d = a.d
         stat = eff['stat']
-        if stat == 'atk' and self.stage_client:
+        if stat == 'atk':
             val = self.atk_stat(a, ctx.atkp)
-        elif stat == 'def' and (self.stage_client or self.floor_client):
+        elif stat == 'def':
             val = self.def_stat(a)
-        elif stat == 'hp' and self.buff_maxhp:
-            val = self.hp_stat(a)
         else:
-            atkp = d.passive['atkp'] + m['atkp'] + ctx.atkp
-            val = {'atk': d.stats['atk'] * (1 + atkp), 'hp': d.stats['hp'] * (1 + d.passive['hpp'] + m['hpp']),
-                   'def': d.stats['def'] * (1 + d.passive['defp'] + m['defp'])}[stat]
-            if stat == 'atk' and self.floor_client:
-                val = float(math.floor(val))
-        if self.chain_stat_true and eff.get('damage_type') == 'ADT_STAT_TRUE':
-            # mc chain_stat_true=client(NKM:6214-6217): (int)(능력치 x 계수) — 방어·증감·1.85 없음
+            val = self.hp_stat(a)
+        if eff.get('damage_type') == 'ADT_STAT_TRUE':
+            # mc ADT_STAT_TRUE 연쇄(NKM:6214-6217): (int)(능력치 x 계수) — 방어·증감·1.85 없음
             for e in side_targets[1]:
                 self.hurt(e, _stat.chain_true_value(val, eff['coef']) * w, a, 'chain', hit=w)
             return
         for e in side_targets[1]:
-            # chain_pen=client: 추가 피해는 대상 방어력만(공격자 관통 없음, NKM:18388-18405 — 대상 관통 저항만 봄)
-            dr = self.dr(e, 0.0 if self.chain_pen_client else clamp(m['pen']))
+            # 추가 피해는 대상 방어력만(공격자 관통 없음, NKM:18388-18405 — 대상 관통 저항만 봄)
+            dr = self.dr(e, 0.0)
             inc = m['inc'] + m['inc_vs'].get(e.element, 0.0)
-            if self.chain_skill_up and ctx is not None and ctx.src is a:
-                inc += ctx.inc      # chain_skill_damage_up: 시전자의 이번 스킬 피해 증가도(NKM:5601-5611)
-            if self.chain_round:
-                # chain_round=client(NKM:4730-4740·6212-6236): 추가 피해 값을 먼저 정수화한 뒤 방어 적용
-                dmg = _stat.chain_value(val, eff['coef'], inc, BASE_MULT) * (1 - dr) * w
-            else:
-                dmg = val * eff['coef'] * BASE_MULT * (1 - dr) * (1 + inc) * w
+            if ctx is not None and ctx.src is a:
+                inc += ctx.inc      # 시전자의 이번 스킬 피해 증가도(NKM:5601-5611)
+            # 추가 피해 값을 먼저 정수화한 뒤 방어 적용(NKM:4730-4740·6212-6236)
+            dmg = _stat.chain_value(val, eff['coef'], inc, BASE_MULT) * (1 - dr) * w
             self.hurt(e, dmg, a, 'chain', hit=w)
 
     # ---------- 대상 선택
@@ -1164,41 +1093,29 @@ class Sim:
         """지속 피해 1틱(1중첩)의 (기본값, 피해 증가) = 시전자 현재 스탯·버프 기준"""
         m = src.mods()
         stat, c = coef_kind
-        if stat == 'atk' and self.stage_client:
+        if stat == 'atk':
             val = self.atk_stat(src)        # mc 지속 피해 = 시전자 atk_stat
-        elif stat != 'atk' and self.buff_maxhp:
-            val = self.hp_stat(src)         # mc 지속 피해 = 시전자 현재 최대 생명력
         else:
-            val = src.d.stats['atk'] * (1 + src.d.passive['atkp'] + m['atkp']) if stat == 'atk' else src.d.stats['hp']
-            if stat == 'atk' and self.floor_client:
-                val = float(math.floor(val))
+            val = self.hp_stat(src)         # mc 지속 피해 = 시전자 현재 최대 생명력
         return val * c * BASE_MULT, m['inc']
 
     def live_atk(self, x):
-        """버프 포함 현재 공격력(강제 협공 대상 선정용). stat_stage=client 면 mc.Battle.live_atk 처럼 최종 공격력"""
-        if self.stage_client:
-            return self.atk_stat(x)
-        return x.d.stats['atk'] * (1 + x.d.passive['atkp'] + x.mods()['atkp'] + x.d.gear_atkp)
+        """버프 포함 현재 공격력(강제 협공 대상 선정용) — mc.Battle.live_atk 처럼 최종 공격력"""
+        return self.atk_stat(x)
 
-    # ---------- 능력치(stat_stage·stat_floor·buff_maxhp, 식 = battlesim/statcalc.py — mc.Battle 공용)
+    # ---------- 능력치(식 = battlesim/statcalc.py — mc.Battle 공용)
     def atk_stat(self, a, extra=0.0):
-        """최종 공격력(stat_stage=client). extra = 이번 시전 한정 공격력%(3단)."""
-        return _stat.atk_client(a.d, a.mods()['atkp'] + extra, self.floor_client)
+        """최종 공격력. extra = 이번 시전 한정 공격력%(3단)."""
+        return _stat.atk_client(a.d, a.mods()['atkp'] + extra)
 
     def def_stat(self, a):
-        """최종 방어력(stat_stage 또는 stat_floor=client). add+floor 는 한 합 식을 Floor(mc 와 같음)."""
-        m = a.mods()
-        if self.stage_client:
-            return _stat.def_client(a.d, m['defp'], self.floor_client)
-        v = max(0.0, a.d.stats['def'] * (1 + a.d.passive['defp'] + m['defp']))
-        return max(0.0, float(math.floor(v)) if self.floor_client else v)
+        """최종 방어력."""
+        return _stat.def_client(a.d, a.mods()['defp'])
 
     def hp_stat(self, a):
-        """피해식 생명력 항. buff_maxhp=on: mc 현재 최대 생명력 = floor(floor(생명력 x (1+패시브%)) x (1+버프%)) / off: 한 합(이전)."""
+        """피해식 생명력 항 = mc 현재 최대 생명력 = floor(floor(생명력 x (1+패시브%)) x (1+버프%))."""
         d = a.d
-        if self.buff_maxhp:
-            return _stat.maxhp(_stat.maxhp0(d.stats['hp'], d.passive['hpp']), a.mods()['hpp'])
-        return d.stats['hp'] * (1 + d.passive['hpp'] + a.mods()['hpp'])
+        return _stat.maxhp(_stat.maxhp0(d.stats['hp'], d.passive['hpp']), a.mods()['hpp'])
 
     def hit_chance(self, owner, ctx, e):
         """{효과 적중 판정} 성공률. hit_resist: databook calcHit(적 절대 저항 0, 구원자 절대 적중 0) / constant: debuff_success"""

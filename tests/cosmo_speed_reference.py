@@ -38,7 +38,7 @@ def old_line_kind(ln):
 
 def old_dirty(self, u):
     u._m = None
-    if self.mc['buff_maxhp'] == 'on' and u.hp > u.maxhp:
+    if u.hp > u.maxhp:
         # 효과가 바뀌어 최대 생명력이 줄면 현재 생명력을 바로 자른다(늘어도 전투 중엔 채우지 않음 — NKM 2828~2839).
         # 조회(maxhp)에는 부수효과를 두지 않는다 — hp/maxhp 를 읽는 순서에 따라 값이 달라지지 않게(codex 리뷰)
         u.hp = u.maxhp

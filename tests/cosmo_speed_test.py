@@ -99,26 +99,24 @@ class CosmoSpeedTest(unittest.TestCase):
         # stage fx와 sd의 생명력%는 hpp_buff에 포함하지 않으며 sd_hp는 별도 가산함.
         for banned in (False, True):
             for refuse in (False, True):
-                for enabled in ('off', 'on'):
-                    b, u = unit()
-                    b.mc['buff_maxhp'] = enabled
-                    u.ban_refuse = refuse
-                    u.fx = {'생명력%': 90}
-                    u.sd = {'생명력%': 80}
-                    u.sd_hp = -.17
-                    for i, (val, stacks, cat) in enumerate(((30.1, 2, 'buff'), (-7.7, 3, 'debuff'), (200, 0, 'buff'))):
-                        b.put_eff(u, str(i), {'생명력%': val}, maxs=3, add=stacks, cat=cat)
-                    if banned:
-                        b.put_eff(u, '강화 불가', {}, cat='debuff')
-                    for value in (30.1, -999.9, 0, 77.7):
-                        u.eff['0'].props['생명력%'] = value
-                        u.hp = u.maxhp0 * 10
-                        old_dirty(b, u)
-                        expected = u.hp.hex()
-                        u.hp = u.maxhp0 * 10
-                        b.dirty(u)
-                        self.assertEqual(u.hp.hex(), expected)
-                    self.assertEqual(_map_prop('생명력%'), ('hpp', None))
+                b, u = unit()
+                u.ban_refuse = refuse
+                u.fx = {'생명력%': 90}
+                u.sd = {'생명력%': 80}
+                u.sd_hp = -.17
+                for i, (val, stacks, cat) in enumerate(((30.1, 2, 'buff'), (-7.7, 3, 'debuff'), (200, 0, 'buff'))):
+                    b.put_eff(u, str(i), {'생명력%': val}, maxs=3, add=stacks, cat=cat)
+                if banned:
+                    b.put_eff(u, '강화 불가', {}, cat='debuff')
+                for value in (30.1, -999.9, 0, 77.7):
+                    u.eff['0'].props['생명력%'] = value
+                    u.hp = u.maxhp0 * 10
+                    old_dirty(b, u)
+                    expected = u.hp.hex()
+                    u.hp = u.maxhp0 * 10
+                    b.dirty(u)
+                    self.assertEqual(u.hp.hex(), expected)
+                self.assertEqual(_map_prop('생명력%'), ('hpp', None))
 
     def test_reaction_cache_values_mutation_and_bound(self):
         mc._react_line_kind.cache_clear()

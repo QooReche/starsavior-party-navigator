@@ -231,10 +231,10 @@ class RulesTest(unittest.TestCase):
 
     def test_fixed_queue(self):
         b = battle([unit()], [unit()], mc={'fixed_true_formula': 'client'})
-        c = Controller(b)
+        c = b.gb = Controller(b)
         c.pending_damage = [(b.foes[0], 10.9)]
-        c.flush_damage()
-        c.flush_damage()
+        b.flush_add_damage()
+        b.flush_add_damage()
         self.assertEqual(b.foes[0].hp, 9990)
         self.assertEqual(c.stats['true_damage_hits'], 1)
         self.assertEqual(b.rule_hits['fixed_true_formula'], 1)

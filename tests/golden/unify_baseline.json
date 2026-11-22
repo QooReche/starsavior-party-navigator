@@ -369,22 +369,6 @@
    "result": "5836c7b6c77408770bb1",
    "web": "3dcfa21051ac3bb9c388"
   },
-  "guild_mountain_L1_imm/G/s1": {
-   "clear": 0.0,
-   "per_run": "b056e782bf92c3755c27",
-   "prog": 0.6716,
-   "raw_runs": "7d026497dee86571d37d",
-   "result": "64d0ab33097505ff89ab",
-   "web": "89f7c7dcef77786cf4b3"
-  },
-  "guild_mountain_L1_imm/M3/s1": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5313,
-   "raw_runs": "f90b6bd5042eed5620fd",
-   "result": "bdc14b5fba488555817b",
-   "web": "2e2fa658fa372b04b3ac"
-  },
   "guild_mountain_L5/G/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
@@ -953,54 +937,6 @@
    "result": "dfffa930e571c30fc67d",
    "web": "f06d7b8999b37727514c"
   },
-  "raidex_carnelia_L12_imm/BG/s1": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0488,
-   "raw_runs": "2da8f21c5146a859055e",
-   "result": "d064edd1b4d31b43a1e3",
-   "web": "558d1e54aacdba89234c"
-  },
-  "raidex_carnelia_L12_imm/BG/s2": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0544,
-   "raw_runs": "dd0ad447694d5643de54",
-   "result": "f547beca106abde5b669",
-   "web": "7afda41bb12188d0e16c"
-  },
-  "raidex_carnelia_L12_imm/C/s1": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.037,
-   "raw_runs": "f39d2a35735d55e4e3f4",
-   "result": "e5e5a0dc1fe3cacfaeb1",
-   "web": "29416bd3c3a41216ad4a"
-  },
-  "raidex_carnelia_L12_imm/C/s2": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.053,
-   "raw_runs": "9ca86662de6ab2005cae",
-   "result": "6a4c4188c98e52504057",
-   "web": "fce0b909025a5251e63c"
-  },
-  "raidex_carnelia_L12_imm/M3/s1": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0167,
-   "raw_runs": "7a273bc1649ad972e54b",
-   "result": "78096ab0eddb777ec5c9",
-   "web": "f7397f06e59d19904b53"
-  },
-  "raidex_carnelia_L12_imm/M3/s2": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0185,
-   "raw_runs": "919a199894aa3721019d",
-   "result": "dfffa930e571c30fc67d",
-   "web": "f06d7b8999b37727514c"
-  },
   "raidex_mogulus_L15/BG/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
@@ -1048,54 +984,6 @@
    "raw_runs": "63636e8375b0ab1fd02b",
    "result": "c39c1e5a4bcb3a431a9d",
    "web": "139b5e09a809daf17f2f"
-  },
-  "raidex_mogulus_L15_imm/BG/s1": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0457,
-   "raw_runs": "1599a72c8c9606a1b000",
-   "result": "b15bba33bcb5a69240a1",
-   "web": "573e76997a46bff9e3b4"
-  },
-  "raidex_mogulus_L15_imm/BG/s2": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0494,
-   "raw_runs": "a83795ffaf90e1de9297",
-   "result": "fdb05c407cb36ae25d1d",
-   "web": "f0e98f441c4853ab6d3a"
-  },
-  "raidex_mogulus_L15_imm/C/s1": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0399,
-   "raw_runs": "05e04983a4a5d65da6b4",
-   "result": "4ace816b75388d631fea",
-   "web": "cebd593bf667be7650a1"
-  },
-  "raidex_mogulus_L15_imm/C/s2": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0524,
-   "raw_runs": "ee238c1fffce46f47692",
-   "result": "a8c032604094d86746e3",
-   "web": "5cdd4fa99e61e0911bc7"
-  },
-  "raidex_mogulus_L15_imm/M3/s1": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0343,
-   "raw_runs": "a81b347cc3e9186a9356",
-   "result": "6d834c9c6596e406a487",
-   "web": "3107a07fcbdacc550ac1"
-  },
-  "raidex_mogulus_L15_imm/M3/s2": {
-   "clear": 0.0,
-   "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0379,
-   "raw_runs": "c1aff7be093fc7fe2cb3",
-   "result": "34a0f2794fe896a4f4d7",
-   "web": "1a73f3a731d2e2b11884"
   }
  }
 }

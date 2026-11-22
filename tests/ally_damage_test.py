@@ -7,17 +7,24 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
 from simkit import battle, unit5 as unit, give
-from battlesim.mc import Ctx, MC_OPTS
+from battlesim.mc import Battle, Ctx
 from battlesim.starsavior.data import get_db
 from battlesim.starsavior.parser import UnitDef
 from tools.ingame_check import turn_comparison, run
 from tools.ally_damage_audit import measure
 
 
+_CHAIN_AMOUNT = Battle._chain_amount
+
+
+def _no_skill_local(self, owner, v, val, coef, ctx, m, true):
+    """이번 스킬 피해 증가를 빼고 계산(옛 chain_skill_damage_up=false 동작 — 비교·변이용)"""
+    return _CHAIN_AMOUNT(self, owner, v, val, coef, None, m, true)
+
+
 class ChainDamageTest(unittest.TestCase):
-    def damage(self, *, legacy=False, source=True, targeted=0.0):
-        b = battle([unit('a', atk=1000)], [unit('v', hp=100000, df=0)],
-                   mc={'chain_skill_damage_up': False} if legacy else {})
+    def damage(self, *, source=True, targeted=0.0):
+        b = battle([unit('a', atk=1000)], [unit('v', hp=100000, df=0)])
         a, v = b.allies[0], b.foes[0]
         ctx = Ctx(a, a if source else v, a.d.skills['기본기'])
         ctx.target, ctx.targets = v, [v]
@@ -33,9 +40,6 @@ class ChainDamageTest(unittest.TestCase):
     def test_target_local_stat_is_included(self):
         self.assertEqual(self.damage(targeted=0.5), 1369)
 
-    def test_legacy_is_exact(self):
-        self.assertEqual(self.damage(legacy=True), 888)
-
     def test_reacting_defender_does_not_inherit_incoming_skill_stat(self):
         self.assertEqual(self.damage(source=False, targeted=0.5), 888)
 
@@ -43,8 +47,9 @@ class ChainDamageTest(unittest.TestCase):
         totals = []
         for legacy in (True, False):
             d = UnitDef(get_db(), 'cristelle')
-            b = battle([d], [unit('v', hp=10**8, df=0)],
-                       mc={'chain_skill_damage_up': False} if legacy else {}, opts={'coop': False, 'nova': False})
+            b = battle([d], [unit('v', hp=10**8, df=0)], opts={'coop': False, 'nova': False})
+            if legacy:      # 비교 기준: 이번 스킬 피해 증가를 뺀 연쇄
+                b._chain_amount = _no_skill_local.__get__(b)
             a, v = b.allies[0], b.foes[0]
             give(v, 'test debuff', harmful=True)
             received = []
@@ -56,7 +61,7 @@ class ChainDamageTest(unittest.TestCase):
             with patch.object(b, 'apply_damage', record):
                 b.cast(a, a.d.skills['궁극기'], target=v)
                 self.assertEqual(received, [])
-                b.flush_chain_damage()
+                b.flush_add_damage()
             self.assertEqual(len(received), 1)
             totals.append(received[0])
         self.assertAlmostEqual(totals[1] / totals[0], 1.15, delta=0.001)
@@ -84,7 +89,7 @@ class TurnTest(unittest.TestCase):
 
 if __name__ == '__main__':
     if '--mutations' in sys.argv:
-        with patch.dict(MC_OPTS, chain_skill_damage_up=False):
+        with patch.object(Battle, '_chain_amount', _no_skill_local):
             result = unittest.TextTestRunner().run(unittest.defaultTestLoader.loadTestsFromTestCase(ChainDamageTest))
         caught = len(result.failures) == 3 and not result.errors
         print('Legacy omission detected:', caught)
