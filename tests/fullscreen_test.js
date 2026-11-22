@@ -1,7 +1,7 @@
 // node tests/fullscreen_test.js
 // 후보 전체 훑기(항상 켬, 스위치 없음 — docs/fullscreen_measure_1121.md)
 //  깰 수 있는 팀 있음(쉬운 스테이지): 훑기 없이 예선만(8판 → 32판), 예선 상태에 훑기 필드도 안 붙음.
-//  전원 «못 깸»: 후보 전체 1판 → 상위 «예선 후보 수» → 예선 8판 → 32판(24판 이어 돌리기). 화면 경로(simScreen)·직접 편성 묶음 경로(recoCalculate) 둘 다.
+//  전원 «못 깸»: 후보 전체 1판 → 상위 «예선 후보 수» → 예선 8판(훑기 1판에 7판 이어 돌리기) → 32판(24판 이어 돌리기). 화면 경로(simScreen)·직접 편성 묶음 경로(recoCalculate) 둘 다.
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const ROOT=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(ROOT,'party_template.html'),'utf8'),rt=fs.readFileSync(path.join(ROOT,'recommend_runtime.js'),'utf8');
@@ -29,7 +29,7 @@ function screenRun(vds,{stopAfter=null}={}){
    if(stopAfter!=null&&posts.length>stopAfter){this.parked=req;return}
    send({type:'stage',id:undefined,msg:'준비 끝'});
    for(const [i,t] of req.teams.entries()){const k=t.key,n=req.n_runs+(t.options.run_offset||0),p=progOf(k);send({type:'stage',msg:`시뮬 ${i+1}/${req.teams.length}팀`});
-    send({type:'team',key:k,result:{n,clear:0,prog:p,progs:[p],via:{coop:0},ttk:20,...(t.options.raw_runs?{raw:'[raw'+n+']'}:{})}})}send({type:'done'})}
+    send({type:'team',key:k,result:{n,clear:0,prog:p,progs:[p],via:{coop:0},ttk:20,...(t.options.raw_runs||t.options.merge_raw?{raw:'[raw'+n+']'}:{})}})}send({type:'done'})}
    terminate(){this.stopped=true}}});
  vm.runInContext(fs.readFileSync(require.resolve('../search_executor.js'),'utf8'),c);
  for(const [a,b] of [['const simSigB=','// 표시 상태는'],['function simInvalidate()','// 자동 확인'],
@@ -51,12 +51,16 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
  assert(sizes(onE.posts,8).every(x=>x===1),'쉬운 스테이지: 묶음 없음');
  // 전원 못 깸 = 훑기 단계 추가
  const on=screenRun(hard),M=legs(on.posts),sc=on.sc();
- assert.deepEqual(M.map(x=>[x.n,x.keys.length]),[[1,200],[8,80],[24,20]],'켬: 1판 200팀 → 8판 80팀 → 24판 20팀');
+ assert.deepEqual(M.map(x=>[x.n,x.keys.length]),[[1,200],[7,80],[24,20]],'켬: 1판 200팀 → 7판 80팀(훑기 1판에 이어) → 24판 20팀');
  // 묶음(A-2): 작업자 2개(코어 3) → 훑기 200팀은 ceil(200/80)=3팀씩, 예선 80팀·20팀은 1팀씩(지금과 같음)
  assert.deepEqual([...new Set(sizes(on.posts,1).slice(0,-1))],[3],'훑기는 3팀 묶음');assert.equal(sizes(on.posts,1).reduce((a,b)=>a+b),200);
- assert(sizes(on.posts,8).every(x=>x===1)&&sizes(on.posts,24).every(x=>x===1),'예선은 묶음 1(지금과 같음)');
+ assert(sizes(on.posts,7).every(x=>x===1)&&sizes(on.posts,24).every(x=>x===1),'예선은 묶음 1(지금과 같음)');
  assert.deepEqual(M[0].keys,teamsOf(hard).map(t=>keyOf(t.keys[3])),'훑기는 빠른 계산 순서 그대로 전부');
- assert(on.posts.filter(p=>p.req.n_runs===1).every(p=>!p.req.teams[0].options.raw_runs&&!p.req.teams[0].options.run_offset),'훑기는 raw 를 안 받음');
+ assert(on.posts.filter(p=>p.req.n_runs===1).every(p=>p.req.teams.every(t=>t.options.raw_runs===true&&!t.options.run_offset&&!t.options.merge_raw)),'훑기는 raw 를 받음(1차가 이어 씀)');
+ // 1차는 훑기 1판을 0번째 판으로 다시 씀: 그 팀의 훑기 raw 를 되돌려 보내고 run_offset 1 부터 7판(합친 값 = 8판 한 번, tests/screen_merge_test.py test_scan_reuse)
+ assert(on.posts.filter(p=>p.req.n_runs===7).every(p=>p.req.teams[0].options.run_offset===1&&p.req.teams[0].options.merge_raw==='[raw1]'&&!p.req.teams[0].options.raw_runs),'1차는 훑기 1판에 이어 돌림');
+ assert(onE.posts.filter(p=>p.req.n_runs===8).every(p=>p.req.teams[0].options.raw_runs===true&&!p.req.teams[0].options.run_offset),'쉬운 스테이지 1차는 지금처럼 8판 처음부터');
+ assert(Object.values(sc.res).every(r=>r.n===8),'1차 결과는 8판짜리');
  assert(on.posts.filter(p=>p.req.n_runs===24).every(p=>p.req.teams[0].options.run_offset===8&&p.req.teams[0].options.merge_raw),'2차는 1차 8판에 이어 돌림');
  assert.equal(sc.fullDone,true);assert.equal(sc.fullN,80);assert.equal(sc.pool.length,80);assert.equal(sc.total,80);
  const want=NAMES.slice(150).map(keyOf).reverse();
@@ -65,7 +69,7 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
  assert.equal(sc.done,true);assert.equal(sc.short,false);
  const of=n=>on.posts.filter(p=>p.req.n_runs===n);
  assert(of(1).slice(1).every(p=>/^후보 전체 훑는 중/.test(p.msg)),'훑는 동안 진행 문구');
- assert(of(8).slice(1).every(p=>/^후보 거르는 중/.test(p.msg)),'예선 진행 문구');
+ assert(of(7).slice(1).every(p=>/^후보 거르는 중/.test(p.msg)),'예선 진행 문구');
 }
 // 진행 문구: 훑는 동안 «후보 전체 훑는 중»
 {
@@ -106,7 +110,7 @@ async function bundleRun(vds){
   RecommendPipeline:require('../recommend_pipeline'),SCR_RK:0,rkQuickTop:()=>[],messages:[],
   Worker:class{postMessage(m){trace.push(plain(m));setImmediate(()=>{if(this.dead)return;const send=x=>this.onmessage({data:{...m,...x}});
    send({type:'stage',msg:'준비 끝'});for(const t of m.teams){const n=m.n_runs+(t.options?.run_offset||0),p=progOf(t.key)||0.5;
-   send({type:'team',key:t.key,result:{ver:'synthetic',n,clear:0,prog:p,progs:[p],...(t.options?.raw_runs?{raw:'[raw]'}:{})}})}send({type:'done'});});}terminate(){this.dead=true;}}});
+   send({type:'team',key:t.key,result:{ver:'synthetic',n,clear:0,prog:p,progs:[p],...(t.options?.raw_runs||t.options?.merge_raw?{raw:'[raw]'}:{})}})}send({type:'done'});});}terminate(){this.dead=true;}}});
  vm.runInContext(fs.readFileSync(path.join(ROOT,'search_executor.js'),'utf8'),ctx);
  vm.runInContext(section(html,'const SCR_WMAX=','// 이 기기의 시뮬 속도'),ctx);
  for(const [a,b] of [['const SCR_ROUNDS=','const scrKey='],['const scrCmp=','function scrNote('],['function recoScreenSequence(','function simWaiting(']])vm.runInContext(section(html,a,b),ctx);
@@ -124,7 +128,8 @@ async function bundleRun(vds){
 (async()=>{
  const on=await bundleRun(hard),onE=await bundleRun(easy);
  assert.deepEqual(legs(onE.trace.map(req=>({req}))).map(x=>[x.n,x.keys.length]),[[8,80],[24,20],[4,9]],'묶음 쉬운 스테이지: 예선 → 본선(훑기 없음)');
- assert.deepEqual(legs(on.trace.map(req=>({req}))).map(x=>[x.n,x.keys.length]),[[1,200],[8,80],[24,20],[4,9]],'묶음 전원 못 깸: 훑기 추가');
+ assert.deepEqual(legs(on.trace.map(req=>({req}))).map(x=>[x.n,x.keys.length]),[[1,200],[7,80],[24,20],[4,9]],'묶음 전원 못 깸: 훑기 추가(1차는 훑기 1판에 이어 7판)');
+ assert(on.trace.filter(m=>m.n_runs===7).every(m=>m.teams[0].options.run_offset===1&&m.teams[0].options.merge_raw==='[raw]'),'묶음 1차도 훑기 1판에 이어 돌림');
  assert(!('full' in onE.sc));assert.equal(on.sc.order[0],keyOf('t199'));
  assert.deepEqual(on.messages.slice(0,3),['후보 전체 훑는 중','예선','예선'],'진행 문구');
  assert.deepEqual(onE.messages.slice(0,2),['예선','예선']);

@@ -91,10 +91,10 @@ function recoScreenCalculate(snapshot,task,p,box){
   SIMQ.screening=true;task.message='예선 준비 중';
   return new Promise((resolve,reject)=>{
     const leg=(i,keys,next)=>{
-      // i = -1 은 후보 전체 훑기(scrFullInit, 전원 «못 깸» 스테이지만) — 1판, raw 안 받음
+      // i = -1 은 후보 전체 훑기(scrFullInit, 전원 «못 깸» 스테이지만) — 1판. 앞 단계 판 이어 쓰기는 화면과 같은 scrPrior·scrLegOpt
       const n=scrRoundN(i);sc.round=i;sc.left=keys.length;sc.got=0;
-      const jobs=keys.map(key=>{const t=by.get(key),raw=i>0?sc.res[key]?.raw:null;return {key,party:snapshot.party(t),runs:raw?n-SCR_ROUNDS[0].n:n,
-        options:{break_skill:snapshot.breakFor(t),...(raw?{run_offset:SCR_ROUNDS[0].n,merge_raw:raw}:i<0?{}:{raw_runs:true})}};});
+      const jobs=keys.map(key=>{const t=by.get(key),pr=scrPrior(sc,i,key);return {key,party:snapshot.party(t),runs:pr?n-pr.off:n,
+        options:{break_skill:snapshot.breakFor(t),...scrLegOpt(pr)}};});
       recoEvaluate(snapshot,task,jobs,n,{screen:true,...(i<0?{label:'후보 전체 훑는 중'}:{}),onTeam(j,r){(i<0?sc.res0:i?sc.res2:sc.res)[j.key]=r;sc.got++;}}).then(next,reject);
     };
     recoScreenSequence(sc,SCR_ROUNDS[1].top,by,leg,()=>{scrClose(sc);SIMQ.screening=false;resolve();});
