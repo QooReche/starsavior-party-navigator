@@ -82,8 +82,14 @@ def log_bounds(p):
         card.querySelector('.case-title').insertAdjacentHTML('afterend',scrAlertHtml('scan',sc));
         const log=card.querySelector('.fx-log'),code=log.querySelector('code'),r=log.getBoundingClientRect(),c=card.getBoundingClientRect();seen.add(log.dataset.line);
         if(r.left<c.left-.5||r.right>c.right+.5||code.scrollWidth>code.clientWidth+1||code.scrollHeight>code.clientHeight+1)failed.push(code.textContent);}
-      host.remove();return {failed,seen:seen.size,n};}""")
+      // Quick-scan lines shown for 0.8s before the alarm (data-alert=pre): step 1 [SCAN], step 2 adds [RESULT].
+      card.dataset.alert='pre';const pre=[];for(const left of [SCR_ALERT.preMs,1]){card.querySelectorAll('.scr-alert,.fx-log').forEach(x=>x.remove());
+        card.querySelector('.case-title').insertAdjacentHTML('afterend',scrAlertHtml('pre',{full:{length:all},alertAt:Date.now()+left}));
+        const log=card.querySelector('.fx-log'),code=log.querySelector('code'),r=log.getBoundingClientRect(),c=card.getBoundingClientRect();pre.push(log.dataset.line+':'+code.textContent);
+        if(r.left<c.left-.5||r.right>c.right+.5||code.scrollWidth>code.clientWidth+1||code.scrollHeight>code.clientHeight+1)failed.push(code.textContent);}
+      host.remove();return {failed,seen:seen.size,n,pre};}""")
     assert clipped['seen']==clipped['n'],clipped
+    assert clipped['pre']==['p1:[SCAN] 빠른 관측 — 후보 123,456,789개 판정 중…','p2:[SCAN] 빠른 관측 — 후보 123,456,789개 판정 중…[RESULT] 돌파 가능 0개'],clipped['pre']
     assert not clipped['failed'],clipped['failed']
 
 

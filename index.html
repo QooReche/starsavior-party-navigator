@@ -1178,23 +1178,33 @@ const scrLegOpt=pr=>pr?{run_offset:pr.off,merge_raw:pr.raw}:{raw_runs:true};
 //  'scan' = 훑는 중, 'found' = 훑기가 끝나 예선으로 넘어간 직후 foundMs 동안(전환 문구), '' = 평소. 멈추거나 끝나면(sc.done) ''.
 //  움직임은 전부 CSS(forced.css). JS 는 단계가 바뀔 때만 DOM 을 바꾸고, 숫자는 기존 진행 글자 갱신(PAINT_MS)에 얹는다.
 //  훑는 동안(scan)은 «강제 탐색»: 그웬 길이 폐허 장면으로 바뀌고(GwenLane forcedSync → body.is-forced) 진행 칸이 관측 단말 모양이 된다. 스위치 없음 — 이 상태 하나로만 정함.
-const SCR_ALERT={foundMs:3200,enterMs:1500,base:"추천 편성 확인 중",label:"세계선",
+//  빠른 관측('pre', 11/22): 훑기에 «처음» 들어간 직후 preMs 동안은 경보 대신 평소 진행 칸에 기록 줄 두 단계 — «[SCAN] 빠른 관측 — 후보 N개 판정 중…» → (preStepMs 뒤) «[RESULT] 돌파 가능 0개».
+//   빠른 계산(시뮬 없는 수치 판정)은 이미 끝났고 훑기 배차도 같은 순간 시작함 — 표시만 늦춤(계산 순서·결과·걸리는 시간 그대로). 그웬 길에는 넘기지 않음(scrAlertLane — 평소 SD 그웬, 경보로 넘어갈 때 뒷모습).
+//   멈췄다가 「끝까지 확인」으로 이어 훑을 때는 없음(바로 scan). 쉬운 스테이지는 훑기가 없으니 이 단계도 없음.
+const SCR_ALERT={foundMs:3200,enterMs:1500,preMs:800,preStepMs:450,base:"추천 편성 확인 중",label:"세계선",
+ pre:[n=>`[SCAN] 빠른 관측 — 후보 ${n}개 판정 중…`,"[RESULT] 돌파 가능 0개"],
  title:"⚠ 승리 좌표 미검출",sub:"강제 탐색 프로토콜 — 다른 세계선을 뒤지는 중",note:"빠른 계산으로는 깰 팀이 없어, 후보 전체를 한 판씩 직접 싸워 봄",
  found:n=>`✦ 돌파 가능성 있는 기억 ${n}개 회수 — 구원자 편성 다시 정렬`,
  deco:'<span class="al-deco" aria-hidden="true"><i></i><i></i><i></i><i></i></span>'};
-function scrAlertOf(sc,now=Date.now()){if(!sc||!sc.full||sc.done)return "";if(!sc.fullDone)return sc.round<0?"scan":"";return sc.foundAt&&now-sc.foundAt<SCR_ALERT.foundMs?"found":""}
+function scrAlertOf(sc,now=Date.now()){if(!sc||!sc.full||sc.done)return "";if(!sc.fullDone)return sc.round<0?(now<sc.alertAt?"pre":"scan"):"";return sc.foundAt&&now-sc.foundAt<SCR_ALERT.foundMs?"found":""}
 const scrAlertEnter=(sc,al)=>al==="scan"&&Date.now()-(sc.alertAt||0)<SCR_ALERT.enterMs;   // 들어온 직후에만 경보 깜빡임(다시 그려도 반복 안 함)
 // 진행 글자: 훑기 «세계선 3,412 / 10,626», 예선 «후보 거르는 중 3/80»
 const scrMsg=(i,got,all)=>i<0?`${SCR_ALERT.label} ${UiShared.numText(got)} / ${UiShared.numText(all)}`:`후보 거르는 중 ${got}/${all}`;
 // 단계 시작(화면·직접 편성 묶음 공통): i = -1 훑기 · 0 · 1
-function scrLegEnter(sc,i,n){sc.round=i;sc.left=n;sc.got=0;if(i<0)sc.alertAt=Date.now()}
+//  훑기에 처음 들어가면(1판 결과가 아직 없음) 경보 시작(sc.alertAt)을 preMs 뒤로 잡고, 두 전환 시각에 repaint(그 경로의 진행 칸 갱신)를 한 번씩 부름 — 작업자 소식이 없어도(엔진 준비 중) 넘어가게
+function scrLegEnter(sc,i,n,repaint){sc.round=i;sc.left=n;sc.got=0;if(i>=0)return;
+ const pre=!Object.keys(sc.res0||{}).length;sc.alertAt=Date.now()+(pre?SCR_ALERT.preMs:0);
+ if(pre&&repaint)for(const ms of [SCR_ALERT.preStepMs,SCR_ALERT.preMs])setTimeout(()=>{if(!sc.done&&sc.round<0)repaint()},ms+16)}
+const scrPreStep=(sc,now=Date.now())=>sc.alertAt-now>SCR_ALERT.preMs-SCR_ALERT.preStepMs?1:2;
+const scrAlertLane=al=>al==="pre"?"":al;   // 그웬 길·단계 줄에 넘기는 값: 빠른 관측 동안은 평소 그대로
 // 기록 줄: 시스템 메시지 한 줄(왼쪽 관측 표시 ◉ 는 CSS). 줄 번호가 바뀔 때만 DOM 을 바꿈
-function scrLogHtml(sc){const l=GwenLane.forcedLine(sc.got||0,sc.left||0);
+function scrLogHtml(sc,al){if(al==="pre"){const s=scrPreStep(sc);return `<div class="fx-log" data-k="fx-log" data-line="p${s}" aria-hidden="true"><code>${SCR_ALERT.pre[0](UiShared.numText(sc.full.length))}${s>1?`<br><b>${SCR_ALERT.pre[1]}</b>`:""}</code></div>`}
+ const l=GwenLane.forcedLine(sc.got||0,sc.left||0);
  return `<div class="fx-log" data-k="fx-log" data-line="${l.i}" aria-hidden="true"><code>${esc(l.text)}</code></div>`}
 function scrLogSync(card,html){const x=card.querySelector('[data-k="fx-log"]');if(x&&!html.includes(`data-line="${x.dataset.line}"`))x.outerHTML=html}
-function scrAlertHtml(al,sc){return al==="scan"?`<p class="scr-alert" data-k="scr-alert">${SCR_ALERT.sub}<small>${SCR_ALERT.note}</small></p>${scrLogHtml(sc)}`:al==="found"?`<p class="scr-alert" data-k="scr-alert" aria-live="polite">${SCR_ALERT.found(UiShared.numText(sc.pool.length))}</p>`:""}
+function scrAlertHtml(al,sc){return al==="pre"?scrLogHtml(sc,al):al==="scan"?`<p class="scr-alert" data-k="scr-alert">${SCR_ALERT.sub}<small>${SCR_ALERT.note}</small></p>${scrLogHtml(sc)}`:al==="found"?`<p class="scr-alert" data-k="scr-alert" aria-live="polite">${SCR_ALERT.found(UiShared.numText(sc.pool.length))}</p>`:""}
 // 이미 그려진 진행 칸(직접 편성 묶음 경로)에 경보를 켜고 끔. 상태가 같으면 DOM 을 안 건드림
-function scrAlertSync(card,sc){const al=scrAlertOf(sc);if((card.dataset.alert||"")===al){if(al==="scan")scrLogSync(card,scrLogHtml(sc));return al}
+function scrAlertSync(card,sc){const al=scrAlertOf(sc);if((card.dataset.alert||"")===al){if(al==="scan"||al==="pre")scrLogSync(card,scrLogHtml(sc,al));return al}
  card.querySelectorAll('[data-k="scr-alert"],[data-k="fx-log"],.al-deco').forEach(x=>x.remove());
  if(al)card.dataset.alert=al;else delete card.dataset.alert;card.toggleAttribute("data-alert-enter",scrAlertEnter(sc,al));
  const t=card.querySelector(".case-title");if(t){t.textContent=al==="scan"?SCR_ALERT.title:SCR_ALERT.base;t.insertAdjacentHTML("afterend",scrAlertHtml(al,sc))}
@@ -1246,7 +1256,7 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
  // 후보를 대기열(simDispatch)로 작업자들에 맡기고, 모두 끝나면 next. i = 단계(-1 훑기·0·1), 결과는 훑기 sc.res0 · 1차 sc.res · 2차 sc.res2
  // 2차는 1차의 8판을, 1차는 훑기의 1판을 다시 돌리지 않는다(scrPrior): 앞 단계 결과의 raw(판별 원시값, 작업자가 준 문자열 그대로)를 되돌려 보내 뒤쪽 판(run_offset 8·1)만 돌리고
  //  작업자(파이썬 web.merge_summary)가 합친다 — 합친 값은 32판을 한 번에 돌린 것과 같다(tests/screen_merge_test.py). raw 가 없으면(옛 엔진 묶음) 32판을 다 돈다
- const leg=(i,keys,next)=>{const n=scrRoundN(i),into=i<0?sc.res0:i?sc.res2:sc.res;scrLegEnter(sc,i,keys.length);{const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
+ const leg=(i,keys,next)=>{const n=scrRoundN(i),into=i<0?sc.res0:i?sc.res2:sc.res;{const sync=()=>{const pv=document.querySelector('[data-k="progress"]');if(pv&&SIMQ.screening)simProgressSync(pv,st)};scrLegEnter(sc,i,keys.length,sync);sync()}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
   const rid=id,live=()=>SIMQ.requestId===rid,ws=scrPool(keys.length);
   const prior=key=>scrPrior(sc,i,key),runsOf=key=>{const pr=prior(key);return pr?n-pr.off:n},per=keys.reduce((a,k)=>a+runsOf(k),0)/keys.length;
   // 남은 시간 = 예선 남은 몫(작업자 수로 나눔) + 본선
@@ -1319,7 +1329,7 @@ function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap
  const pct=all?Math.round(done/all*100):0;
  // 그웬 걷기 연출은 reco-gwen-stage(#out 밖 고정)가 맡으므로 여기엔 넣지 않음.
  const al=scrAlertOf(sc),state=sc?scrMsg(sc.round,done,all):`상위 팀 확인 중 ${done}/${all}`;
- recoGwenShow(true,all?done/all:0,null,JSON.stringify([p,SIMQ.screening,sc?.round]),al);
+ recoGwenShow(true,all?done/all:0,null,JSON.stringify([p,SIMQ.screening,sc?.round]),scrAlertLane(al));
  return `<div class="party progress" data-party="${p}" data-k="progress" data-state="running"${al?` data-alert="${al}"`:""}${scrAlertEnter(sc,al)?" data-alert-enter":""}>${al==="scan"?SCR_ALERT.deco:""}<b class="case-title">${al==="scan"?SCR_ALERT.title:SCR_ALERT.base}</b>${scrAlertHtml(al,sc)}${growthEnabled()?'<span class="tag growth-on">클리어 추천 육성 켜짐</span>':""}<div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="${all}" aria-valuenow="${done}"><i style="width:${pct}%"></i></div>
   <p><span data-k="simstate" title="후보 ${SCR_N}판 · 작업자 ${scrWorkers()}개">${state}</span></p>
   ${Ux.help("진행 방식","후보를 거른 뒤 상위 팀을 100판씩 모의 전투함. 남은 시간은 이 기기의 최근 계산 속도를 기준으로 표시함. 후보를 거르는 중에 「지금까지 결과로 보기」를 누르면 그때까지 확인한 팀으로 먼저 보여 주고, 나머지는 「끝까지 확인」으로 이어서 볼 수 있음.")}<p data-k="eta">${esc(simEtaText())}</p>

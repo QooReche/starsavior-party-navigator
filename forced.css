@@ -1,5 +1,6 @@
 /* ── 강제 탐색: 후보 전체 훑기 연출(party_template.html SCR_ALERT · gwen_lane.js FORCED) ──
    켜짐: body.is-forced(훑는 동안만) + .progress[data-alert=scan|found] · .gwen-lane[data-alert=scan|found] · #direct-steps li[data-alert].
+   훑기 진입 직후 0.8초는 .progress[data-alert=pre](빠른 관측 — 평소 진행 칸 + 기록 줄 두 단계, is-forced 없음), 그 뒤 scan.
    쉬운 스테이지에는 클래스·속성이 안 붙음. 끝나면 클래스 제거로 원래 화면.
    움직임은 transform·opacity 만(합성 단계) — 훑기 속도에 영향 없게. 길 전체를 덮는 큰 층(배경 흐름·고리 빛·안개·재·불씨)은 steps() 로 모두 1/6초 박자에 맞춰 갱신함 — 같은 순간에만 바뀌어 길 전체를 초당 6번만 다시 합성함(주기와 steps 수를 바꿀 때는 주기÷steps = 1/6초를 지킬 것). 그림은 assets/forced/ 에만 있고, 다 받으면 body[data-forced-art] 가 붙음.
    폴더가 없으면: 장면은 아래 CSS 바탕만.
@@ -84,6 +85,14 @@ body.is-forced{--r-panel:0;--r-box:0;--r-ctl:0;--brass:var(--fx-red);--line:#4a2
 .fx-log code{flex:1;min-width:0;font:12px/1.5 var(--font-mono);color:#ffd9e0;word-break:keep-all;overflow-wrap:anywhere;white-space:normal;background:none;padding:0}
 .fx-log code::after{content:"_";margin-left:2px;color:var(--fx-red);animation:fx-flicker 1.2s ease-in-out infinite}
 .fx-log::before{content:"◉";flex:none;color:var(--fx-red);font-size:13px;line-height:1;animation:fx-flicker 3.4s ease-in-out infinite}
+/* 빠른 관측(data-alert=pre, 훑기 진입 직후 0.8초): 평소 진행 칸 그대로 + 기록 줄만 평소 색. 1단계 «[SCAN] …», 2단계 «[RESULT] 돌파 가능 0개» 가 붙으며 줄이 붉게 번쩍(al-prehit) → 그다음 경보(scan) */
+.progress[data-alert=pre] .fx-log{align-items:flex-start;border-color:var(--line);border-left-color:var(--brass);background:rgba(6,10,24,.6);animation:none;transition:border-color .15s}
+.progress[data-alert=pre] .fx-log::before{color:var(--brass);line-height:1.5}
+.progress[data-alert=pre] .fx-log code{min-height:3em;color:var(--fg)}
+.progress[data-alert=pre] .fx-log code::after{color:var(--brass)}
+.progress[data-alert=pre] .fx-log code b{color:var(--fx-red);font-weight:700}
+.progress[data-alert=pre] .fx-log[data-line=p2]{border-color:rgba(255,68,102,.6);border-left-color:var(--fx-red);animation:al-prehit .35s ease-out}
+.progress[data-alert=pre] .fx-log[data-line=p2]::before,.progress[data-alert=pre] .fx-log[data-line=p2] code::after{color:var(--fx-red)}
 /* 진행 띠·숫자·단추도 같은 계열 */
 .is-forced .progress[data-alert=scan] .pbar{height:11px;border-radius:0;background:radial-gradient(circle,rgba(255,255,255,.3) 0 1px,transparent 1.7px) 0 50%/11px 11px repeat-x,rgba(8,6,24,.85);box-shadow:inset 0 0 0 1px rgba(255,68,102,.3)}
 .is-forced .progress[data-alert=scan] .pbar i{background:radial-gradient(circle,#fff 0 1.3px,var(--fx-gold) 1.9px,transparent 3px) 0 50%/11px 11px repeat-x,linear-gradient(90deg,rgba(183,140,255,.4),rgba(255,68,102,.45))}
@@ -117,6 +126,7 @@ body.is-forced{--r-panel:0;--r-box:0;--r-ctl:0;--brass:var(--fx-red);--line:#4a2
 
 @keyframes al-pulse{from{opacity:.35}to{opacity:.9}}
 @keyframes al-twinkle{from{opacity:.15}to{opacity:.85}}
+@keyframes al-prehit{0%{background:rgba(255,68,102,.45)}100%{background:rgba(6,10,24,.6)}}
 @keyframes al-alarm{0%{opacity:.9}100%{opacity:0}}
 @keyframes al-found{0%{opacity:0;transform:translateY(4px)}12%,82%{opacity:1;transform:none}100%{opacity:0;transform:none}}
 @keyframes fx-drift{from{translate:-1.2% 0;scale:1}to{translate:1.2% -.6%;scale:1.03}}

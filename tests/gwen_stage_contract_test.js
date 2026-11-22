@@ -74,7 +74,7 @@ for(const [file,from] of [
   ['party_template.html',"RECO_GWEN.progress(progress||0,'',{step,alert})"],
   ['direct_run.js','DIRECT_GWEN.update('],
   ['cosmo_direct_page.js',"GwenStage.mount(host,{mode:'cdirect'})"],
-  ['direct_bundle.js',"recoGwenShow(true,task.progress||0,null,GwenLane.resultId(task)+':'+task.request,alert)"],
+  ['direct_bundle.js',"recoGwenShow(true,task.progress||0,null,GwenLane.resultId(task)+':'+task.request,scrAlertLane(alert))"],
   ['party_template.html',"step:state.id+':'+state.phaseSerial"]
 ]){
   assert(sources[file].includes(from));

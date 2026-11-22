@@ -160,7 +160,7 @@ function directResultsPaint(){
   $('direct-progress').hidden=phase!=='work';
   const memberCount=DIRECT.draft.slots.filter(Boolean).length;
   $('direct-progress').value=RECO.task&&!RECO.task.done?Math.round((RECO.task.progress||0)*100):running?.progress||0;
-  DIRECT_GWEN.update({mode:'direct',phase,bundleRunning:!!bundling,result:validNow?(finalReport?'bundle-'+bundle.id:GwenLane.resultId(now.result)):null,step:bundling?bundle.current:null,alert:bundling&&bundle.current==='reco'&&RECO.task&&!RECO.task.done&&!RECO.task.cancelled?scrAlertOf(RECO.task.sc):'',recoHigher:finalReport&&compatible&&now.result[metric]<reco.result[metric],clear:now?.result?.clear,
+  DIRECT_GWEN.update({mode:'direct',phase,bundleRunning:!!bundling,result:validNow?(finalReport?'bundle-'+bundle.id:GwenLane.resultId(now.result)):null,step:bundling?bundle.current:null,alert:bundling&&bundle.current==='reco'&&RECO.task&&!RECO.task.done&&!RECO.task.cancelled?scrAlertLane(scrAlertOf(RECO.task.sc)):'',recoHigher:finalReport&&compatible&&now.result[metric]<reco.result[metric],clear:now?.result?.clear,
     progress:RECO.task&&!RECO.task.done?RECO.task.progress:running?.progress>0?running.progress/running.snapshot.runs:null,count:DIRECT.draft.slots.filter(Boolean).length,
     stale:past(now),better:compatible&&validNow&&now.result[metric]>reco.result[metric]});
 

@@ -92,7 +92,7 @@ function recoScreenCalculate(snapshot,task,p,box){
   return new Promise((resolve,reject)=>{
     const leg=(i,keys,next)=>{
       // i = -1 은 후보 전체 훑기(scrFullInit, 전원 «못 깸» 스테이지만) — 1판. 앞 단계 판 이어 쓰기는 화면과 같은 scrPrior·scrLegOpt
-      const n=scrRoundN(i);scrLegEnter(sc,i,keys.length);
+      const n=scrRoundN(i);scrLegEnter(sc,i,keys.length,()=>{if(RECO.task===task){recoProgressPaint(task);directResultsPaint();}});
       const jobs=keys.map(key=>{const t=by.get(key),pr=scrPrior(sc,i,key);return {key,party:snapshot.party(t),runs:pr?n-pr.off:n,
         options:{break_skill:snapshot.breakFor(t),...scrLegOpt(pr)}};});
       recoEvaluate(snapshot,task,jobs,n,{screen:true,...(i<0?{label:SCR_ALERT.label,text:(got,all)=>scrMsg(-1,got,all)}:{}),onTeam(j,r){(i<0?sc.res0:i?sc.res2:sc.res)[j.key]=r;sc.got++;}}).then(next,reject);

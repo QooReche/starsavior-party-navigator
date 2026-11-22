@@ -56,7 +56,7 @@ function recoProgressPaint(task){
   const alert=scrAlertSync(el,task.sc);   // 관측 경보(훑기) — 상태가 바뀔 때만 DOM 을 바꿈
   el.querySelector('[role=status]').textContent=task.message;
   const value=Math.round((task.progress||0)*100),bar=el.querySelector('.pbar');bar.setAttribute('aria-valuenow',value);bar.firstElementChild.style.width=value+'%';
-  recoGwenShow(true,task.progress||0,null,GwenLane.resultId(task)+':'+task.request,alert);
+  recoGwenShow(true,task.progress||0,null,GwenLane.resultId(task)+':'+task.request,scrAlertLane(alert));
 }
 async function directAwait(b,predicate,step){
   while(!predicate()){
@@ -149,7 +149,7 @@ function directBundlePaint(){
     const own=working&&step.kind==='direct'&&Object.values(DIRECT.rows).find(r=>r.status==='running');
     row.hidden=!expanded&&step.status==='done';
     // 관측 경보(훑기): 직접 편성 단계 줄에도 같은 표시(문구는 CSS attr 로)
-    const alert=working&&step.kind==='reco'&&!step.joined&&active&&!active.cancelled?scrAlertOf(active.sc):'';
+    const alert=working&&step.kind==='reco'&&!step.joined&&active&&!active.cancelled?scrAlertLane(scrAlertOf(active.sc)):'';
     if((row.dataset.alert||'')!==alert){if(alert){row.dataset.alert=alert;row.dataset.alertText=alert==='scan'?SCR_ALERT.title:SCR_ALERT.found(UiShared.numText(active.sc.pool.length));}else{delete row.dataset.alert;delete row.dataset.alertText;}}
     row.dataset.state=step.status;row.querySelector('[role=status]').textContent=own?`계산 중 · ${own.progress||0}/${own.snapshot.runs}판`:working&&step.kind!=='direct'&&!step.joined&&active?active.message:step.message||({waiting:'대기',running:'계산 중',done:'완료',error:'실패 · 다시 시도',cancelled:'중단함',skipped:'건너뜀'}[step.status]);
   }
