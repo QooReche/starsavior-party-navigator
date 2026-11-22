@@ -121,3 +121,35 @@ python -X utf8 -I tools/bench_fullscreen.py report
 python -X utf8 -I tools/profile_fullscreen.py --batch
 python -X utf8 -I tests/batch_identity_test.py
 ```
+
+## 작업자 2개(저사양 흉내) — 2026-11-22
+
+스위치 `recommendation.fullScreen`은 **기본 끔 그대로**임. 같은 PC·내 정보(11/21)·현재 엔진(다이어트 4단계 뒤)으로 작업자 수만 2개로 강제해 쟀음(`bench_fullscreen browser --browser-workers 2`). 비교용 작업자 8개 켬도 같은 조건으로 다시 쟀음. 원값(초·팀)은 비공개 폴더(`fullscreen/workers2/`)에만 둠.
+
+- 강제 방법: 페이지 스크립트보다 먼저 `navigator.hardwareConcurrency`를 3·`deviceMemory`를 8로 덮음(`scrWorkerCount` = 2). 공통 실행기는 로드 때 `scrWorkers` 함수를 `capacity`로 잡아 두므로 `window.scrWorkers`만 바꿔서는 작업자 수가 바뀌지 않음. 로드 뒤 계산값이 2인지 확인함.
+- **흉내의 한계**: 작업자 수만 줄였음. 코어 하나의 속도·메모리는 이 PC 그대로임. 실제 저사양 기기(느린 코어·모바일)는 이보다 느림(**미측정**).
+
+|스테이지|훑기 발동|끔(2개)|켬(2개)|켬의 훑기 단계(2개)|켬÷끔(2개)|켬(8개)|켬 시간 2개÷8개|
+|---|---|---|---|---|---|---|---|
+|회랑 FLOOR 580|예|1.5분|4.0분|2.3분|×2.7|1.5분|×2.7|
+|작전 SECTOR 44-6|예|0.7분|2.9분|2.0분|×4.0|1.1분|×2.7|
+|작전 36-36(쉬움)|아니오|1.1분|1.1분|—|×1.0|0.5분|×2.4|
+
+- 훑기 단계 = 첫 1판 요청부터 첫 8판(예선) 요청까지. 8개일 때는 0.6~0.7분이었음. 2개÷8개는 훑기 단계 ×3.2~3.3, 전체 ×2.4~2.7로 작업자 수 비(×4)보다 작음(메인 스레드·엔진 준비 몫이 작업자 수와 무관).
+- 앞 절 추정(«2개면 훑기만 약 3~5분»)보다 짧았음. 켬의 추가 시간은 끔 대비 약 2.2~2.5분임.
+- 화면 1~9안의 팀 순서는 작업자 2개·8개, 그리고 앞 절 묶은 뒤 측정(다이어트 전 엔진)과 세 스테이지 모두 같았음. 총 판 수도 같음.
+- 쉬운 스테이지(36-36)는 켬이어도 훑기가 발동하지 않았고 시간·판 수·1안이 같았음.
+- 훑기 도중 «지금까지 결과로 보기»를 누른 뒤 결과가 나오기까지 걸린 시간은 **미측정**. 첫 시도에서는 도구의 «훑기 시작» 감지 조건이 끝내 참이 되지 않아 대기 상한까지 멈췄음(도구 문제, 화면 문제인지는 미확인). 감지를 진행 문구 기준으로 고쳤지만(`--stop-after`), 공용 잠금이 다른 작업에 잡혀 있어 다시 재지 못했음.
+
+### 권고(작업자 2개 뒤)
+
+- 이 PC 코어 속도 기준으로는 작업자 2개여도 켬의 추가 시간이 약 2~2.5분, 켬 전체가 3~4분이었음. 품질 이득(+20~24%)과 견주면 기본 켬을 검토할 만한 크기임.
+- 기본 켬 전에 남은 것: ① 실제 저사양 기기(느린 코어·모바일 메모리) 1회 실측 ② 훑기 중 «지금까지 결과로 보기» 응답 시간 1회.
+
+### 재현(작업자 2개)
+
+```
+<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/workers2 --browser-workers 2 --only "회랑 580,작전 44-6,작전 36-36"
+<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/workers2/w8 --browser-workers 8 --only "회랑 580,작전 44-6,작전 36-36" --modes on
+<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/workers2/stop --browser-workers 2 --only "작전 44-6" --stop-after 30
+```
