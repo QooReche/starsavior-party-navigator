@@ -24,6 +24,17 @@ class Pieces(unittest.TestCase):
             self.assertEqual(S.def_rate_pen(dr, pen), max(0.0, dr - dr * min(1.0, pen)))
             self.assertEqual(S.def_rate_pen(dr, pen, cap=False), max(0.0, dr - dr * pen))
 
+    def test_def_k_read_at_call(self):
+        """rules.DEF_K 를 바꾸면 def_rate 가 따라감(tools/boss_hit_diagnostic.py boss_def_pvp 민감도 — import 때 묶이면 조용히 기본과 같아짐)."""
+        from battlesim import rules
+        old = rules.DEF_K
+        try:
+            rules.DEF_K = 300.0
+            self.assertEqual(S.def_rate(300), 0.5)
+        finally:
+            rules.DEF_K = old
+        self.assertEqual(S.def_rate(1000), 1000 / (1000 + DEF_K))
+
     def test_elem(self):
         els = list(ELEM_BEATS) + [None]
         for a in els:

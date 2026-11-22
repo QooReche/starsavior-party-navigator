@@ -11,13 +11,14 @@
 """
 import math
 
-from .rules import DEF_K, ELEM_BEATS, ELEM_LOSES
+from . import rules as _rules
+from .rules import ELEM_BEATS, ELEM_LOSES
 
 
 # ------------------------------------------------------------------ 피해식 조각(설계 fable_unify B1·B2) — 연산 순서를 옮겨 온 그대로
 def def_rate(de):
-    """방어율 = 방어 / (방어 + DEF_K)."""
-    return de / (de + DEF_K)
+    """방어율 = 방어 / (방어 + DEF_K). DEF_K 는 부를 때 rules 에서 읽음(tools/boss_hit_diagnostic.py PvP 민감도가 rules.DEF_K 를 바꿈)."""
+    return de / (de + _rules.DEF_K)
 
 
 def def_rate_pen(dr, pen, cap=True):

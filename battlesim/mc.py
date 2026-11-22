@@ -536,7 +536,14 @@ _MOD_ZERO = dict(atkp=0.0, spdp=0.0, spdf=0.0, cr=0.0, cd=0.0, inc=0.0, pen=0.0,
 
 class Unit:
     def __init__(self, d, side, pos, b, leader=False, fx=None):
-        d = normalized_definition(d)
+        src, d = d, normalized_definition(d)
+        if getattr(d, 'is_foe', False):
+            # 적 정의는 판·팀 사이에 공유됨. 등장 후 능력치 보정(Battle 의 적 전용 perm 처리)이 d.passive·d.spd_base 를
+            # 제자리에서 고치므로 유닛마다 stats·passive 사전을 따로 둔다(normalized_definition 의 copy.copy 는 stats 를 공유).
+            if d is src:
+                d = copy.copy(d)
+            d.stats = dict(d.stats)
+            d.passive = copy.copy(d.passive)
         self.d = d
         self._kind_index = None
         self.side, self.pos = side, pos
@@ -859,6 +866,10 @@ def _record_stat(a, v, amount):
     v.taken_stat = getattr(v, 'taken_stat', 0.0) + amount
 
 
+# chain_timing 허용 값(battlesim/rules/default.json value·alt). 기본 client_queue, immediate 는 unify 기준선(_imm 케이스)이 지키는 옛 경로
+CHAIN_TIMING_MODES = ('client_queue', 'client_mapped', 'immediate')
+
+
 # ------------------------------------------------------------------ 전투
 class Battle:
     def __init__(self, ally_defs, waves, rng, opts=None, mc=None, leader=None, fx=None, turn_limit=None, ally_fx=None,
@@ -872,6 +883,8 @@ class Battle:
         if unknown:   # 지운 스위치(엔진 다이어트 4단계)를 넘기면 조용히 무시하지 않음
             raise ValueError('모르는 MC 규칙 키: %s' % ', '.join(sorted(unknown)))
         self.mc.update(mc or {})
+        if self.mc['chain_timing'] not in CHAIN_TIMING_MODES:   # 오타가 조용히 즉시 경로로 가지 않게
+            raise ValueError('chain_timing 값은 %s 중 하나: %r' % ('·'.join(CHAIN_TIMING_MODES), self.mc['chain_timing']))
         self.battle_mode = battle_mode
         self.rng = rng
         # 공통 난수(선택): 아군 쪽(0)·적 쪽(1) 결정에 서로 다른 흐름을 쓴다. 같은 판 번호면 적의 대상 선택·치명 등이

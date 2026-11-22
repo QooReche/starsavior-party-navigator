@@ -39,6 +39,14 @@ class ChainQueueTest(unittest.TestCase):
     def test_default_rule(self):
         self.assertEqual(MC_OPTS['chain_timing'], 'client_queue')
 
+    def test_mode_checked(self):
+        # 허용 값 밖(오타)은 조용히 즉시 경로로 가지 않고 오류
+        for mode in ('client_queue', 'client_mapped', 'immediate'):
+            self.assertEqual(self.setup_foe(mode)[0].mc['chain_timing'], mode)
+        for bad in ('client-queue', 'queue', '', None):
+            with self.assertRaises(ValueError, msg=repr(bad)):
+                self.setup_foe(bad)
+
     def test_mapping_rows_are_clean(self):
         doc = json.loads((ROOT / 'data/chain_se.json').read_text(encoding='utf8'))
         self.assertEqual(chain_se.foes()[FOE_KEY][(FOE_SLOT, FOE_RAW)], {'buff': 2510, 'retarget': False})
