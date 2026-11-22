@@ -58,6 +58,8 @@ function suite(E){
   tick(500);f();assert.equal(n,3,'간격 지나면 바로');f();f.flush();assert.equal(n,4,'flush');f();f.cancel();tick(1000);assert.equal(n,4,'cancel');
   f();assert.equal(n,5);f();alive=false;tick(300);assert.equal(n,5,'live 거짓이면 버림');alive=true;
   let m=0;const g=E.throttle(()=>m++,200,undefined,{...env,trailing:false});tick(1000);g();g();g();assert.equal(m,1);assert.equal(q.length,0,'trailing:false 는 타이머 없음');tick(200);g();assert.equal(m,2);
+  // 시계가 뒤로 가도(1시간) 대기는 ms 이하 — 진행 표시가 멈추지 않음
+  let b=0;const h=E.throttle(()=>b++,200,undefined,env);h();assert.equal(b,1);clock-=3600000;h();assert.equal(q.length,1);assert.ok(q[0].at-clock<=200,'대기 상한 '+(q[0].at-clock));tick(200);assert.equal(b,2,'시계가 뒤로 가도 간격 끝에 한 번');
   assert.equal(E.PAINT_MS,200);}
 }
 suite(load(source));
@@ -68,7 +70,8 @@ const mutants=[
  ['묶음 크기 상한 없음',s=>s.replace('Math.min(50,Math.ceil(','Math.min(1e9,Math.ceil(')],
  ['팀마다 시계 갱신 안 함',s=>s.replace('lease.got.add(m.key);w._last=now();','lease.got.add(m.key);')],
  ['간격 제한 없음',s=>s.replace('if(wait<=0){run();return}','run();return;')],
- ['끝 호출 버림(항상)',s=>s.replace('if(trailing)timer=setTimer(run,wait)','')],
+ ['대기 상한 없음',s=>s.replace('setTimer(run,Math.min(ms,wait))','setTimer(run,wait)')],
+ ['끝 호출 버림(항상)',s=>s.replace('if(trailing)timer=setTimer(run,Math.min(ms,wait))','')],
 ];
 for(const [name,f] of mutants){const src=f(source);assert.notEqual(src,source,name+': 바꿀 곳 없음');assert.throws(()=>suite(load(src)),assert.AssertionError,name);}
-console.log('PASS executor batch: 크기·순서, key 거부·중복, done 조건, 머리 분리, 팀 단위 시계, 취소 보존, chunk 없음=지금, 크기 식, 갱신 간격 제한; mutations '+mutants.length+' rejected');
+console.log('PASS executor batch: 크기·순서, key 거부·중복, done 조건, 머리 분리, 팀 단위 시계, 취소 보존, chunk 없음=지금, 크기 식, 갱신 간격 제한(시계 역행 상한); mutations '+mutants.length+' rejected');

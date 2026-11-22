@@ -198,11 +198,12 @@ return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watc
     return {begin, update, estimate, summary, state: () => ({cur, st})};
   }
 // 화면 갱신 간격 제한(11/22, 훑기 A-1): 첫 호출은 바로, 그 뒤 ms 안의 호출은 끝에 한 번만(live() 가 거짓이면 버림).
+//  대기는 최대 ms — 시계가 뒤로 가도(last 가 미래) 진행 표시가 멈추지 않음.
 //  표시만 늦을 뿐 결과·순위·배차는 그대로. flush = 밀린 것 바로 실행, cancel = 버림. env.trailing=false 면 끝 호출을 버림(타이머 없음 — 다른 갱신이 곧 덮어쓸 때)
 function throttle(fn,ms=200,live=()=>true,env={}){const now=env.now||(()=>Date.now()),setTimer=env.setTimer||((...a)=>setTimeout(...a)),clearTimer=env.clearTimer||((...a)=>clearTimeout(...a)),trailing=env.trailing!==false;
  let last=-Infinity,timer=null;
  const run=()=>{timer=null;last=now();if(live())fn()};
- const f=()=>{if(timer!=null)return;const wait=last+ms-now();if(wait<=0){run();return}if(trailing)timer=setTimer(run,wait)};
+ const f=()=>{if(timer!=null)return;const wait=last+ms-now();if(wait<=0){run();return}if(trailing)timer=setTimer(run,Math.min(ms,wait))};
  f.flush=()=>{if(timer!=null){clearTimer(timer);run()}};f.cancel=()=>{if(timer!=null)clearTimer(timer);timer=null};return f}
 function timedWorker(env){
   const raw=createWorker();let timer=null,ready=false,runs=1;

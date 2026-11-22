@@ -7,6 +7,7 @@
   const ESC={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>ESC[c]);
   // 작은따옴표를 그대로 두고 null·undefined 를 글자 그대로("null") 쓰는 판 — party_template.html 의 esc
+  //  ⚠ 큰따옴표 속성(attr="…")·본문 전용. 작은따옴표 속성(attr='…')에 쓰면 뚫림 — 그런 곳은 esc 를 씀
   const escKeep=v=>String(v).replace(/[&<>"]/g,c=>ESC[c]);
   const num = n => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   // 반올림 + 한국어 천 단위 쉼표, 수가 아니면 «—»

@@ -70,6 +70,8 @@ def main():
     ap.add_argument('--engine', help='이 폴더의 battlesim 으로 계산')
     ap.add_argument('only', nargs='*')
     a = ap.parse_args()
+    if a.write and a.only:
+        ap.error('--write 는 전체 케이스로만')
     sys.path.insert(0, a.engine or ROOT)
     got = compute(a.only)
     if a.json:
