@@ -22,7 +22,7 @@ def expression(scene):
 
 
 def dialogue_geometry_audit(page):
-    page.emulate_media(reduced_motion='reduce');idle(page)
+    idle(page)
     changes=page.evaluate('''() => {
       const bubble=document.querySelector('#out .gwen-bubble');
       const selectors=['.gwen-poke','#reco-actions','#out'];
@@ -86,19 +86,6 @@ def idle_audit(page):
     # 호스트 부하/클릭 자동 대기 시간이 1.5초 반응 수명을 소비하지 않게 함.
     # 이후 가상 시간은 run_for로만 진행하고, 비동기 전환은 DOM 상태로 기다림.
     page.clock.pause_at(page.evaluate('Date.now() / 1000 + 1'))
-    page.emulate_media(reduced_motion='reduce')
-    expect(scene).to_have_attribute('data-gwen-paused','true')
-    expect(scene).to_have_attribute('data-gwen-expression','ready')
-    expect(scene.locator('img')).to_have_attribute('src',scene.locator('img').get_attribute('data-gwen-static'))
-    expect(scene.locator('img')).to_have_attribute('data-gwen-playing','false')
-    text=scene.locator('.gwen-bubble').inner_text()
-    page.clock.run_for(90000)
-    assert expression(scene)=='ready' and scene.locator('.gwen-bubble').inner_text()==text,'reduced motion rotated'
-    button.click()
-    expect(scene,'reduced motion blocks user feedback').to_have_attribute('data-gwen-expression','shy')
-    page.clock.run_for(3100)
-    expect(scene).to_have_attribute('data-gwen-expression','ready')
-    page.emulate_media(reduced_motion='no-preference')
 
 
 def cycle_audit(page):
@@ -257,7 +244,6 @@ def seasonal_errors_audit(page):
 
 
 def loading_audit(page,width,shots=False):
-    page.emulate_media(reduced_motion='reduce')
     held=[];page._gwen_held=held
     page.route('**/ready.png',lambda route:held.append(route))
     page.route('**/savior/*_face.webp',lambda route:held.append(route))
@@ -265,7 +251,9 @@ def loading_audit(page,width,shots=False):
     page.wait_for_timeout(200)
     page.evaluate('window.__shifts=[];window.__observer=new PerformanceObserver(l=>__shifts.push(...l.getEntries().map(e=>e.value)));__observer.observe({type:"layout-shift"})')
     selectors=['.gwen-poke','.idle-gwen-art','.idle-gwen .gwen-bubble','#reco-actions','#face-test img','#face-test','#out']
-    before={s:page.locator(s).bounding_box() for s in selectors}
+    # 배치 상자(offset*)로 잼: 숨쉬기 같은 변형(transform)은 배치를 안 바꾸므로 그림이 움직이는 중에도 값이 한 가지임
+    box=lambda s:page.locator(s).evaluate('(e)=>({x:e.offsetLeft,y:e.offsetTop,width:e.offsetWidth,height:e.offsetHeight})')
+    before={s:box(s) for s in selectors}
     assert all(before['.idle-gwen-art'][k]==before['.gwen-poke'][k] for k in ['width','height']),'fixed image space missing'
     for selector in ['.idle-gwen-art','#face-test img']:
         img=page.locator(selector)
@@ -277,7 +265,7 @@ def loading_audit(page,width,shots=False):
     held.clear()
     page.wait_for_function('document.querySelector(".idle-gwen-art").dataset.gwenLoaded==="true"&&document.querySelector("#face-test img").dataset.imageLoaded==="true"')
     page.wait_for_timeout(200)
-    after={s:page.locator(s).bounding_box() for s in selectors}
+    after={s:box(s) for s in selectors}
     assert before==after,f'loading geometry moved: {before} -> {after}'
     shifts=page.evaluate('__shifts')
     assert sum(shifts)==0,f'loading layout shifts: {shifts}'

@@ -34,7 +34,7 @@
 - **브레이크 허용 목록 2건(11/21)**: PC 26752678의 회복 템플릿·광역 수호 누적·팀 노바·예약 피해 분담을 추적했음. 큐브 생존자 회복·브레이크 수호를 고치고 예약 피해 분담을 기본으로 켰으며 개인 노바는 legacy 대안으로 구분함. 담당 두 키만 허용 목록에서 제거했음. 규칙 기본값은 `battlesim/rules/default.json`, 근거·시험·표준 육성/통제 입력 영향은 `docs/allowlist_break_1121.md`가 정본임.
 - **규칙 허용 목록 D 감사(브레이크 제외)**: PC 26752678과 일치하는 비공개 `decompiled/`로 30건을 조사했음. 판정·남긴 사유·근거·영향은 `docs/allowlist_rules_1121.md`, 목록은 `tests/fixtures/unsupported_allowlist.json`이 정본임. 웨이브·부활·소환·시전자 사망 규칙을 고쳤으며 기본값·legacy는 `battlesim/rules/default.json` 참조. 비활성 옛 옵션은 선택한 경로에 따라 가정으로 보고함.
 
-- **움직임 줄이기 없음(11/22)**: 화면·스타일·그웬 코드의 `prefers-reduced-motion` 분기를 모두 지웠음(동작 하나). e2e 중 `test_gwen_loading.py`·`test_gwen_ux.py` 는 아직 «움직임 줄이기»를 그림 고정 장치로 쓰는 검사가 남아 있음 — 실행하면서 고쳐야 함(다른 e2e 10개는 그 검사만 걷어 냈고 실행 확인은 안 했음).
+- **움직임 줄이기 없음(11/22)**: 화면·스타일·그웬 코드의 `prefers-reduced-motion` 분기를 모두 지웠음(동작 하나). e2e `test_gwen_loading.py`·`test_gwen_ux.py` 는 «움직임 줄이기» 없이 보도록 고쳐 두 파일 단독 통과를 확인했음(그림은 실제 `currentSrc`, 배치는 변형과 무관한 `offset*` 로 잼). 다른 e2e 10개는 그 검사만 걷어 냈고 실행 확인은 안 했음.
 
 - **역할 제한 폐지·배치 비교(role-free)**: 코스모의 역할 최소 인원 제거는 유지함. 길드는 `data/guild_defense.json`의 `search.newSearch`를 기본 꺼서 배포 전 main `200c2d3`의 후보 풀·직업 보충·역할 최소 인원·협공 제외·예선 지원 고정·단계별 탐색을 복원했음. 전원 학습 선별·지원 결합 비교는 이 스위치를 켜면 실행됨. 탐색 기본 배치와 배치×리더 전체 비교는 검증 결과에 따라 기본 끔으로 정리했음. 끔이면 디펜더·서포터 먼저→전투력 순, 첫 칸 리더이며 코스모 학습 특징량·작업 키·난이도/브레이크 확인도 기존 경로임. 일반 추천 직업 가감점·자리·리더 선택을 복원했고(직업 중립·배치 선택지 `recommendation.neutralRoles`·`placementBaseline`·`placementCompare` 는 11/22 스위치째 지움), 직접 편성의 24조건 비교·진행·취소는 유지함. 설정 정본은 `data/cosmo_raid.json`·`data/guild_defense.json`의 `search.placement`임. 계정 검증 결과는 비공개 보고서에만 둠.
 
