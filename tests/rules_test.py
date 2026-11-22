@@ -305,15 +305,10 @@ def test_index_uses_merged_opts():
 # 일부러 깨뜨리기: MC_NOTE_KEYS 를 빈 set() 로 바꾸면 note 키가 MC_OPTS 에 들어가 아래 test_mc_note_not_in_opts 가 실패한다.
 _EXPECTED_MC_OPTS_KEYS = frozenset([
     'auto_unable_break', 'auto_remove_filter', 'auto_se_reselect', 'auto_hp_float32', 'auto_empty_marker', 
-    'marker_se_flow', 'claire_preemptive_marker',
     'superarmor_damage_ban', 
-    'heal_cleanse_skill_end',
-    'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 
-    'skill_end_timing', 'se_independent_roll',
     'chain_stat_true', 
     'dmg_cap_scope',
     'fixed_true_formula', 'counter_slot_timing',
-    'buff_ban', 'battle_end_mode',
     'ally_init_cd', 'ally_variant_mapping', 
     'basic_tough', 
     'break_skill_atk_pct', 'break_skill_boss_points', 'break_skill_buff_turns',
@@ -326,7 +321,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'enemy_auto_target', 'enemy_cd_native',
     'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
     'enemy_same_formula', 'enemy_spawn', 
-    'guild_boss', 'guild_count', 'gauge_overflow', 'guard_mode', 
+    'guild_boss', 'gauge_overflow', 'guard_mode', 
     'heal_target', 'leader_speed', 'manual_burst', 
     'max_depth', 'max_events', 
     'power_penalty', 'rand_range', 
@@ -336,11 +331,10 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'chain_timing', 
     'turn_ticks', 'unknown_cond', 'clash_no_turn_limit',
     # 2026-11-04 클라 후보 스위치(break_point_hits·break_auto_blocked_cc 는 같은 날 기본 = 클라 값으로 전환)
-    'break_point_hits', 'dot_formula', 'react_hist_unit', 'break_auto_blocked_cc',
+    'dot_formula', 
     # 2026-11-05 길방 보스 속도·공격력 NV 합산
-    'guild_boss_nv_sum', 'guild_bridal_kill_reset',
     # 2026-11-06 코스모 게이트 시즌 전투(벨그라스·난이도 레벨·챌린지 효과)
-    'cosmo_raid_boss', 'belgras_stage_se',
+    'cosmo_raid_boss', 
     # 2026-11-14 클라 대조(해제·면역 16건)
 ])
 _NOTE_KEYS = frozenset({'enemy_skill_ai', 'break_skill_model', 'random_buff_draw'})

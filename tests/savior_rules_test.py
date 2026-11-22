@@ -25,22 +25,22 @@ from battlesim.starsavior import marker_se, savior_rules as R   # noqa: E402
 from battlesim.starsavior.data import get_db   # noqa: E402
 
 GOLDEN = os.path.join(ROOT, 'tests', 'golden', 'savior_rules_lines.json')
-RULESETS = {'default': None, 'off': {}}   # None = MC_OPTS(marker_se_flow·smile_waterbomb_scope 등 기본값)
+RULESETS = {'default': True}   # 전투 정규화(native). 옛 'off'(규칙 스위치 전부 옛 값)는 엔진 다이어트 4단계에서 정규화 스위치를 지워 뺌
 
 
-def lines_of(key, rules):
+def lines_of(key, native=True):
     from battlesim import api
     from battlesim.rules import MC_OPTS
     from battlesim.starsavior.mc_semantics import normalized_lines, after_active_se
     defs, _ = api._norm_party([key], get_db(), 'fixed', 'standard', MC_OPTS)
-    return defs[0], normalized_lines(defs[0], dict(MC_OPTS) if rules is None else rules), after_active_se
+    return defs[0], normalized_lines(defs[0], native), after_active_se
 
 
 def snapshot():
     out = {}
     for key in sorted(R.table_keys()):
-        for rn, rules in RULESETS.items():
-            _, ls, after = lines_of(key, rules)
+        for rn, native in RULESETS.items():
+            _, ls, after = lines_of(key, native)
             rows = [[ln.slot, ln.src_kind, ln.kind, ln.raw, list(ln.eff.items()), after(key, ln), marker_se.scope(key, ln)]
                     for ln in ls]
             s = json.dumps(rows, ensure_ascii=False, default=repr, separators=(',', ':'))
@@ -91,7 +91,7 @@ class SaviorRules(unittest.TestCase):
         """표의 행마다 그 구원자의 줄(원본 d.lines + 기본 규칙 정규화 결과) 중 맞는 것이 있다."""
         unused = []
         for key in sorted(R.table_keys()):
-            d, ls, _ = lines_of(key, None)
+            d, ls, _ = lines_of(key)
             pool = list(d.lines) + list(ls)
             for keys, cond in R.AFTER_ACTIVE:
                 if key in keys and not any(ln.src_kind == 'passive' and R.matches(ln, cond) for ln in pool):

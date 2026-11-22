@@ -51,19 +51,6 @@ def test_ceres_targets():
     return out == [3500, 7000, 10500, 17500, 17500], str(out)
 
 
-def test_lydia_targets():
-    """legacy per_hit 대체식 회귀. 원형 표지 경로는 marker_se_test에서 검사."""
-    out = []
-    for n, own_turn in [(1, True), (2, True), (5, True), (6, True), (2, False)]:
-        b, a, _ = setup('lydia-moon-caster', [unit('ally', skills=[dict(slot='기본기', dm=100, all=True)])],
-                        [unit(str(i), hp=1 if i == 0 else 10**9, sa=1000) for i in range(n)], mc={'marker_se_flow': 'legacy'})
-        actor = b.allies[1]
-        give(actor, '책임 전가(해제불가)')
-        actor.acting = own_turn
-        b.cast(actor, actor.d.skills['기본기'])
-        out.append(a.stack('퇴근 재촉(해제불가)'))
-    return out == [1, 2, 5, 5, 0], str(out)
-
 
 def test_smile_trigger():
     out = []
@@ -240,19 +227,6 @@ def test_trigger_reentry():
     return out == exp, str(out)
 
 
-def test_lydia_threshold():
-    b, a, _ = setup('lydia-moon-caster', [unit('actor', skills=[dict(slot='기본기', dm=100, all=True)])],
-                    [unit(str(i), hp=10**9, sa=1000) for i in range(2)], mc={'marker_se_flow': 'legacy'})
-    actor = b.allies[1]
-    give(actor, '책임 전가(해제불가)')
-    give(a, '퇴근 재촉(해제불가)', stacks=3).maxs = 10
-    actor.acting = True
-    b.cast(actor, actor.d.skills['기본기'])
-    first = (a.stack('퇴근 재촉(해제불가)'), a.gauge)
-    b.cast(actor, actor.d.skills['기본기'], extra=True)
-    second = (a.stack('퇴근 재촉(해제불가)'), a.gauge)
-    return (first, second) == ((5, 3000), (7, 3000)), str((first, second))
-
 
 def test_sunshine_target_selection():
     out = []
@@ -318,18 +292,6 @@ def test_fix2_count_damage():
         assert round(pre(b, a).inc, 3) == 0.15
     return out == [0.15, 0.25, 0.45, 0.65, 0.65], str(out)
 
-
-def test_fix2_shield_count():
-    out = []
-    for n in [0, 1, 3, 4]:
-        b, a, _ = setup('wedding-epindel', foes=[unit(str(i), hp=10**9, sa=1000) for i in range(4)], mc={'marker_se_flow': 'legacy'})
-        for f in b.foes[:n]:
-            give(f, '보호막').shield = 10000
-        c = pre(b, a, '궁극기')
-        out.append(round(c.inc, 3))
-        assert round(pre(b, a).inc, 3) == 0.15
-        assert not a.mods()['inc']
-    return out == [0.15, 0.3, 0.6, 0.6], str(out)
 
 
 def test_fix2_pre_marker():
@@ -531,18 +493,6 @@ def test_fix2_nested_marker():
     return out == [0.2, 0.4] and not a.has('귀족의 품격'), str(out)
 
 
-def test_fix2_shield_context():
-    b, a, f = setup('wedding-epindel', foes=[unit('plain', hp=10**9, sa=1000), unit('shield', hp=10**9, sa=1000)], mc={'marker_se_flow': 'legacy'})
-    shielded = b.foes[1]
-    give(shielded, '보호막').shield = 1
-    for x in b.foes:
-        x.gauge = 5000
-    b.roll_hit = lambda *args: True
-    c = b.cast(a, a.d.skills['궁극기'])
-    out = (round(c.inc, 3), [x.gauge for x in b.foes], [x.n_harmful() for x in b.foes])
-    c2 = pre(b, a, '궁극기')
-    return out == (0.3, [5000, 3000], [0, 0]) and round(c2.inc, 3) == .15, str((out, c2.inc))
-
 
 def test_fix3_variants():
     out = []
@@ -697,8 +647,7 @@ def test_fix3_delivery_duration_hot():
     out = []
     for key, dur in [('vera', 1), ('vera@개화(SSR)', 2)]:
         for selected in ['공격력 증가', '방어력 증가', '속도 증가', '지속 회복']:
-            b, a, _ = setup(key, [unit('buffed'), unit('plain')],
-                            mc={'buff_ban': 'suppress'})  # 옛 강화 억제 경로 고정(dot_hot_lifetime 은 스위치 삭제)
+            b, a, _ = setup(key, [unit('buffed'), unit('plain')])
             v = b.allies[1]
             give(v, '시험 강화', {'공격력%': 1})
             b.rng.choice = lambda names: selected
@@ -710,10 +659,6 @@ def test_fix3_delivery_duration_hot():
                 b._tick_dot_hot(v)
                 assert v.hp == 1600, v.hp
                 assert v.has(selected) == (dur == 2)   # 틱마다 수명 -1(지속 효과 수명은 클라 틱 기준)
-                if dur == 2:
-                    give(v, '강화 불가', harmful=True)
-                    b._tick_dot_hot(v)
-                    assert v.hp == 1600
             out.append((key, selected, v.eff[selected].dur if selected in v.eff else 0))
     return True, str(out)
 
@@ -738,7 +683,7 @@ def test_fix3_random_extra_target():
 
 
 def test_fix3_neutral_boost():
-    b, a, f = setup('luna', mc={'buff_ban': 'suppress'})   # 옛 동작(걸린 강화도 끔)을 고정하는 시험
+    b, a, f = setup('luna')
     b.fire(a, 'battle_start', Ctx(a, a, None))
     assert a.stack('통찰') == 2 and a.n_good() == 0 and a.n_harmful() == 0
     give(a, '강화 불가', harmful=True)
@@ -748,7 +693,7 @@ def test_fix3_neutral_boost():
     c = pre(b, a, '궁극기')
     assert c.cd == 0
     give(a, '시험 강화', {'공격력%': 10})
-    assert a.n_good() == 1 and a.mods()['atkp'] == 0
+    assert a.n_good() == 1   # 걸린 강화는 〈강화 불가〉에도 작동(클라, 옛 buff_ban=suppress 삭제)
     ctx = Ctx(a, a, a.d.skills['궁극기'])
     ctx.targets, ctx.target = [f], f
     b.run_line(a, Line('[스킬 사용 후] 스킬 대상에게 〈시험 카운팅 표지〉', '궁극기', 'active'), ctx)

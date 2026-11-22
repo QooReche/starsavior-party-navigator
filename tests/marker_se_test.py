@@ -20,10 +20,10 @@ from battlesim.starsavior.parser import UnitDef, Line
 from battlesim.starsavior import marker_se as m
 
 
-def setup(key, n=3, allies=(), mode='client'):
+def setup(key, n=3, allies=()):
     b = battle([UnitDef(get_db(), key), *allies],
                [unit(str(i), hp=10**9, sa=1000) for i in range(n)],
-               mc={m.RULE: mode}, opts={'coop': False, 'nova': False}, timeline=True)
+               opts={'coop': False, 'nova': False}, timeline=True)
     b.roll_hit = lambda *args: True
     return b, b.allies[0]
 
@@ -226,24 +226,6 @@ class MarkerSETest(unittest.TestCase):
                 b.run_line(a, ln, context(a, slot, b.foes))
             self.assertFalse(a.has('공격력 증가') or a.has('속도 감소'))
             self.assertTrue(all(a.has(x) for x in present))
-
-    def test_legacy_retains_replacements(self):
-        for key in ('ceres', 'lydia-moon-caster'):
-            b, a = setup(key, mode='legacy')
-            self.assertTrue(any(x.eff.get('per_hit') for x in b.lines_of(a)))
-            self.assertFalse(any(x.eff.get('native_se') for x in b.lines_of(a)))
-
-    def test_other_savior_forms_unchanged_with_real_progress(self):
-        encounter = {'waves': [[{'name': str(i), 'hp': 30000, 'atk': 500,
-                                 'def': 1000, 'spd': 100} for i in range(3)]], 'max_turns': 20}
-        for key in sorted(set(get_db().units) - m.KEYS):
-            results = []
-            for mode in ('legacy', 'client'):
-                r = simulate([key], encounter, {'build': 'standard', 'n_runs': 1, 'seed': 19,
-                              'rules_override': {m.RULE: mode}})
-                self.assertGreater(r['outcome']['progress'], 0, key)
-                results.append((r['outcome'], r['per_unit'], r['battle_stat']))
-            self.assertEqual(*results, msg=key)
 
 
 def mutations():

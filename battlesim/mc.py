@@ -234,17 +234,18 @@ REACT_TRIG = [
 ENGINE_CACHE = True      # 정의(UnitDef) 단위 의미 해석 캐시 사용 여부(동일성 시험이 끈 결과와 비교)
 
 
-def norm_lines_cached(d, modes=()):
-    """normalized_lines(d) 를 정의 객체에 붙여 둔다. 정의 객체가 사라지면 같이 사라지므로 키가 쌓이지 않는다(전역 사전 없음).
-    d.lines 가 바뀌거나(참조·길이) 복사본(copy.copy)에 딸려 온 값이면 다시 계산한다."""
+def norm_lines_cached(d, native=False):
+    """normalized_lines(d, native) 를 정의 객체에 붙여 둔다. 정의 객체가 사라지면 같이 사라지므로 키가 쌓이지 않는다(전역 사전 없음).
+    d.lines 가 바뀌거나(참조·길이) 복사본(copy.copy)에 딸려 온 값이면 다시 계산한다.
+    native=True 는 전투(숨은 표지 SE 를 폄), False 는 정적 지원 진단(support_report — 표지 줄을 설명문 그대로 검사)."""
     if not ENGINE_CACHE:
-        return normalized_lines(d, dict(modes))
+        return normalized_lines(d, native)
     e = d.__dict__.get('_pn_nl') if hasattr(d, '__dict__') else None
-    if e is not None and e[0] == id(d) and e[1] is d.lines and e[2] == len(d.lines) and e[4] == modes:
+    if e is not None and e[0] == id(d) and e[1] is d.lines and e[2] == len(d.lines) and e[4] == native:
         return e[3]
-    r = normalized_lines(d, dict(modes))
+    r = normalized_lines(d, native)
     try:
-        d._pn_nl = (id(d), d.lines, len(d.lines), r, modes)
+        d._pn_nl = (id(d), d.lines, len(d.lines), r, native)
     except AttributeError:
         pass
     return r
@@ -549,7 +550,9 @@ class Unit:
             parse_props(ln.raw.split('능력치:', 1)[1])[1].get('명중률', 0.0) / 100.0
             for ln in d.lines if ln.kind == 'perm' and '능력치:' in ln.raw
         )
-        self.ban_refuse = b.mc['buff_ban'] == 'refuse'   # 〈강화 불가〉: 새 강화만 거부(클라) / 걸린 강화도 끔(옛 동작)
+        # 〈강화 불가〉: 새 강화만 거부(클라). 옛 스위치 buff_ban=suppress 는 지웠고, 이 속성은 캐시 시험(accel·cosmo_speed)이
+        # 걸린 강화도 끄는 경로를 직접 켜 볼 때만 False 로 둠
+        self.ban_refuse = True
         st = d.stats
         self.fx = dict(fx or {})                 # 스테이지 효과(상시)
         hpp = d.passive['hpp'] + self.fx.get('생명력%', 0.0) / 100.0
@@ -704,7 +707,7 @@ class Unit:
             s = self.d.spd_base * (1 + m['spdp'] + p['spdp']) + m['spdf'] + p['spdf']
             if self.b.mc['stat_floor'] == 'client':
                 s = math.floor(s)
-        if st1 is None and getattr(self.d, 'bfb', None) and self.b.mc['guild_boss_nv_sum'] == 'client':
+        if st1 is None and getattr(self.d, 'bfb', None):
             s = math.floor(s + 1e-9)       # 클라 최종 스탯 (int)Math.Floor (NKM:18268-18280)
         if self.leader:
             s += self.b.mc['leader_speed']
@@ -869,7 +872,7 @@ class Battle:
         if unknown:   # 지운 스위치(엔진 다이어트 4단계)를 넘기면 조용히 무시하지 않음
             raise ValueError('모르는 MC 규칙 키: %s' % ', '.join(sorted(unknown)))
         self.mc.update(mc or {})
-        self.battle_mode = battle_mode if self.mc['battle_end_mode'] == 'data' else 'all_kill'
+        self.battle_mode = battle_mode
         self.rng = rng
         # 공통 난수(선택): 아군 쪽(0)·적 쪽(1) 결정에 서로 다른 흐름을 쓴다. 같은 판 번호면 적의 대상 선택·치명 등이
         # 아군 행동 수와 무관하게 같은 순서로 나와 팀끼리 비교할 때 운의 차이가 줄어든다(예선 전용, 기본 꺼짐)
@@ -970,9 +973,6 @@ class Battle:
             # 코스모 게이트 시즌 전투(starsavior/cosmo_raid.py): 길방 BFB 와 같은 훅 계약(self.gb)을 쓰는 다른 컨트롤러. 둘은 한 전투에 함께 안 나온다
             from .starsavior.cosmo_raid import Controller as CosmoController
             self.gb = CosmoController(self)
-        self.guild_count = self.mc['guild_count']      # BFB 질투의 시선이 세는 시전: all(협공·추가 발동 포함, 클라 코드) | main(본 행동만, 옛 가정)
-        if self.guild_count not in ('all', 'main'):
-            raise ValueError('guild_count 는 all|main')
 
     # ---------- 공용
     def tick(self):
@@ -1056,22 +1056,19 @@ class Battle:
     def lines_of(self, u):
         if u.side == 1 and not self.enemy_lines:
             return ()
-        modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow', 'claire_preemptive_marker', 'belgras_stage_se'))
+        # 전투는 숨은 표지 SE 를 클라 순서로 편다(native). 정규화 스위치 10개는 엔진 다이어트 4단계에서 지움.
         key = id(u.d)
         sc = self._semantic_cache
         if sc is not None:
             cached = sc.get(key)
-            if (cached is not None and cached[0] is u.d.lines and cached[1] == len(u.d.lines)
-                    and len(cached) > 3 and cached[3] == modes):
+            if cached is not None and cached[0] is u.d.lines and cached[1] == len(u.d.lines):
                 return cached[2]
-            result = (u.d.lines, len(u.d.lines), norm_lines_cached(u.d, modes), modes)
+            result = (u.d.lines, len(u.d.lines), norm_lines_cached(u.d, True))
             sc[key] = result
             return result[2]
         cached = self._semantic_lines.get(key)
-        if (cached is None or cached[0] is not u.d.lines or cached[1] != len(u.d.lines)
-                or cached[3] != modes):
-            cached = (u.d.lines, len(u.d.lines), norm_lines_cached(u.d, modes), modes)
+        if cached is None or cached[0] is not u.d.lines or cached[1] != len(u.d.lines):
+            cached = (u.d.lines, len(u.d.lines), norm_lines_cached(u.d, True))
             self._semantic_lines[key] = cached
         return cached[2]
 
@@ -1090,14 +1087,12 @@ class Battle:
         d = u.d
         raw = d.lines
         hit = u._kind_index
-        modes = tuple((k, self.mc[k]) for k in ('skill_end_timing', 'se_independent_roll',
-            'smile_waterbomb_scope', 'scarlet_pinball_marker', 'cristelle_ignite_targets', 'gauge_lock_order', 'heal_cleanse_skill_end', 'marker_se_flow', 'claire_preemptive_marker', 'belgras_stage_se'))
-        if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw) or hit[4] != modes:
+        if hit is None or hit[0] is not d or hit[1] is not raw or hit[2] != len(raw):
             grouped = {}
             for ln in self.lines_of(u):
                 grouped.setdefault(line_kind(ln), []).append(ln)
             index = {k: tuple(v) for k, v in grouped.items()}
-            hit = u._kind_index = (d, raw, len(raw), index, modes)
+            hit = u._kind_index = (d, raw, len(raw), index)
         return hit[3].get(kind, ())
 
     # ---------- 진행
@@ -1619,7 +1614,7 @@ class Battle:
         cost = self.mc['break_skill_cost']
         if not self.break_skill_enabled or self.break_skill_cd > 0 or self.break_points < cost:
             return
-        if (self.mc['break_auto_blocked_cc'] == 'on' and actor is not None
+        if (actor is not None
                 and (self.incapacitated(actor) or actor.has('도발'))):
             # build 26314877 NKM:1480-1491: 턴 유닛이 도발·기절·수면이면 오비탈 사용 불가(포인트·쿨 유지)
             self.rule_hits['break_auto_blocked_cc'] += 1
@@ -2418,13 +2413,12 @@ class Battle:
                          all=bool(sk.all), tgt_side=(t0.side if t0 is not None else None),
                          tgt_boss=bool(t0 is not None and getattr(t0.d, 'boss', False)))
             if not skip_lines:
-                if self.mc['skill_end_timing'] == 'client':
-                    for ln in self.lines_of(u):
-                        state = ln.eff.get('start_filter')
-                        if state and (not ln.bound or ln.slot == sk.slot):
-                            ctx.end_targets[id(ln)] = [x for x in ctx.targets
-                                if (x.shield_total() > 0 if state == 'shield' else x.has(state))]
-                            self.rule_hits['skill_end_timing'] += 1
+                for ln in self.lines_of(u):
+                    state = ln.eff.get('start_filter')
+                    if state and (not ln.bound or ln.slot == sk.slot):
+                        ctx.end_targets[id(ln)] = [x for x in ctx.targets
+                            if (x.shield_total() > 0 if state == 'shield' else x.has(state))]
+                        self.rule_hits['skill_end_timing'] += 1
                 self.run_own(u, ctx, 'own_pre')
             elif local_pre:   # 줄을 건너뛰는 트리거 시전이라도 그 스킬의 「이번 스킬에만」 피해 보정은 적용(프로페서M 브레이크 대상 +30%·스킬 레벨 +15%)
                 lines = [ln for ln in self.lines_of(u) if line_kind(ln) == 'own_pre' and ln.eff['kind'] == 'local' and ln.slot == sk.slot]
@@ -2475,7 +2469,7 @@ class Battle:
                     self.log(purify_nova=u.name, via=ctx.via, nova=self.nova_of(u))
             # NKM:15394-15396,15586-15593: SKILL_END 뒤, 협공보다 먼저 전원 정리.
             self._expire_checks(skill=True)
-            if self._has_belgras_stage and self.mc['belgras_stage_se'] == 'client':
+            if self._has_belgras_stage:
                 belgras_se.expire_marker(self, ctx)
             # 26752678 NKM:15825-15827,16017-16028,3968-3981.
             # Clear only taunts whose caster no longer lives. Other effects
@@ -2587,8 +2581,7 @@ class Battle:
                       [ln for ln in passive if after_active_se(u.key, ln)], potentials)
             if active and (passive or potentials):
                 self.rule_hits['passive_se_order'] += 1
-            if self.mc['skill_end_timing'] == 'client':
-                self.rule_hits['skill_end_timing'] += sum(ln.eff['kind'] == 'remove' for ln in lines)
+            self.rule_hits['skill_end_timing'] += sum(ln.eff['kind'] == 'remove' for ln in lines)
             for group in groups:
                 self.run_batch(u, group, ctx)
         elif lines:
@@ -3091,7 +3084,7 @@ class Battle:
     def tough_hit(self, a, v, ctx):
         """타격별 강인도 피해(클라 NKM:16754-16769). 옛 toughness_elem(db·video·on) 경로는 엔진 다이어트 4단계에서 지움.
         〈강인도 피해 무효〉·회피·스킬 피해 무효는 강인도를 깎지 않는다."""
-        if (v.broken and v in ctx.break_targets and self.mc['break_point_hits'] == 'window'
+        if (v.broken and v in ctx.break_targets
                 and v.side == 1 and self.break_skill_enabled):
             # build 26314877 NKM:8139-8149·16796-16811·15586-15596: 격파 뒤 강인도 -1은 이 스킬 종료까지 유지되고,
             # 그동안 같은 대상을 맞히는 타격마다 포인트를 다시 적립(상한은 break_skill_point_cap)
@@ -3802,7 +3795,7 @@ class Battle:
 
     def _react_key(self, owner, slot):
         """반응 예약 이력 키. unit = build 26314877 NKM:15534(HashSet<유닛>, 칸 무관) / slot = 기존 (유닛, 칸)."""
-        return (id(owner), None if self.mc['react_hist_unit'] == 'unit' else slot)
+        return (id(owner), None)
 
     def _live_or_random(self, target, side):
         """예약 때 고른 적이 실행 전에 쓰러졌으면 살아 있는 적 중 무작위(즉시 실행이면 그대로)"""
@@ -4396,7 +4389,7 @@ class Battle:
 
     def line_ok(self, owner, ln, ctx):
         rule = ln.eff.get('rule_key')
-        if rule and self.mc[rule] == 'client':
+        if rule:
             self.rule_hits[rule] += 1
         if ln.eff.get('auto_marker_candidate'):
             if owner.side != 0:
@@ -4606,7 +4599,7 @@ class Battle:
                     fn()
             return
         if kd in ('waterbomb_end', 'waterbomb_cleanup'):
-            if self.mc['smile_waterbomb_scope'] != 'client' or ctx.skill is None or ctx.skill.slot not in ('기본기', '궁극기'):
+            if ctx.skill is None or ctx.skill.slot not in ('기본기', '궁극기'):
                 return
             key = ('waterbomb', owner)
             if kd == 'waterbomb_end':
@@ -4642,10 +4635,9 @@ class Battle:
             return
         if kd == 'extend':
             # 설명문으로 효과 이름을 정하는 연장(mc_semantics, 크리스텔 등)도 같은 경로
-            if self.mc['se_independent_roll'] == 'client':
-                self.rule_hits['se_independent_roll'] += 1
-                if eff.get('chance', 1) < 1 and self.R(owner.side).random() >= eff['chance']:
-                    return
+            self.rule_hits['se_independent_roll'] += 1
+            if eff.get('chance', 1) < 1 and self.R(owner.side).random() >= eff['chance']:
+                return
             for x in self.resolve(owner, eff['target'], ctx) or []:
                 if eff['judge'] and not self.roll_hit(owner, ctx, x, None):
                     continue
@@ -4793,7 +4785,7 @@ class Battle:
                 self.unsup['local: ' + st] += 1
             return
         if kd == 'gauge':
-            snapshot = self.mc['skill_end_timing'] == 'client' and bool(eff.get('start_filter'))
+            snapshot = bool(eff.get('start_filter'))
             tg = ([x for x in ctx.end_targets.get(id(ln), []) if not x.dead] if snapshot
                   else self.resolve(owner, eff['target'], ctx))
             if not tg:
@@ -4935,9 +4927,6 @@ class Battle:
                 # 특수기 SE10172014는 MYTEAM_ALL_NOT_SELF이며 속성 제한이 없다.
                 if ln.slot == '고유 패시브' and line_kind(ln) == 'ally_pre' and dict(ln.params).get('시전자 속성') == '태양':
                     eff = dict(eff, times=1)
-                elif (ln.slot == '특수기' and eff['target'] == '자신 제외 아군 전체'
-                      and self.mc['cristelle_ignite_targets'] != 'client'):
-                    eff = dict(eff, target='자신 제외 태양 속성 아군 전체')
             if eff['name'] in IGNORED_NAMES:
                 return
             if eff['name'] in SELF_KILL_NAMES:
@@ -5508,8 +5497,7 @@ class Battle:
         repeat_buff = eff.get('repeat_buff') or bool(auto_spec and auto_spec.get('repeat_buff'))
         if (eff.get('times', 1) > 1
                 and not eff.get('consume') and not eff.get('per_hit') and not eff.get('per_crit')
-                and (reselect or (self.mc['se_independent_roll'] == 'client'
-                     and (eff.get('repeat_buff') or eff.get('chance', 1) < 1 or eff.get('judge'))))):
+                and (reselect or (eff.get('repeat_buff') or eff.get('chance', 1) < 1 or eff.get('judge')))):
             # Separate SEs keep rolling after failure. RepeatBuffCount stops
             # only when a whole iteration fails (NKM:16396-16438).
             # 확정 부여도 독립 SE마다 resolve부터 다시 호출(할리 점화).

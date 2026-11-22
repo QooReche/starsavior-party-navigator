@@ -321,11 +321,11 @@ class BreakSkillGlobalTest(unittest.TestCase):
         self.assertEqual((b.allies[0].actions, b.team_nova, b.break_skill_cd), (0, 0, 8))
 
     def test_early_return_dot_death_and_disabled_action(self):
-        # 기절 턴의 발동은 옛 동작(break_auto_blocked_cc=off, legacy) 기준. 기본 on 은 아래 시험이 지킴.
-        for death in (True, False):
+        # 기절 턴은 발동 안 함(break_auto_blocked_cc 스위치 삭제) — test_stunned_turn_blocks_by_default
+        for death in (True,):
             with self.subTest(death=death):
                 b = self.prepared('행성 정화', turns=1, roles=('스트라이커', '서포터'),
-                                  mc={'break_auto_blocked_cc': 'off'})
+                                  mc={})
                 a, other = b.allies
                 if death:
                     a.hp = 1

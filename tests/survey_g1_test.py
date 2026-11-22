@@ -153,32 +153,6 @@ class SurveyG1(unittest.TestCase):
                 self.assertEqual(a.stack(name), 1)
                 self.assertGreater(b.rule_hits['skill_end_timing'], 0)
 
-    def test_gauge_snapshot_then_end(self):
-        for key, slot, state in [('lydia', '특수기', '수배 전단'), ('wedding-epindel', '궁극기', '보호막')]:
-            with self.subTest(key=key):
-                b, a, v = setup(key)
-                # Preserve the old snapshot rule; native marker sets are tested in marker_se_test.
-                b.mc['marker_se_flow'] = 'legacy'
-                lines = [ln for ln in b.lines_of(a) if ln.eff.get('start_filter')]
-                self.assertTrue(lines)
-                state = lines[0].eff['start_filter']
-                mark = give(v, '보호막' if state == 'shield' else state)
-                if state == 'shield':
-                    mark.shield = 1
-                v.gauge = 9000
-                seen = []
-                original = b.deal
-                def deal(actor, ctx):
-                    seen.append(v.gauge)
-                    v.eff.clear()  # the hit destroys the start-time mark/barrier
-                    b.dirty(v)
-                    original(actor, ctx)
-                b.deal = deal
-                b.cast(a, a.d.skills[slot])
-                self.assertEqual(seen[0], 9000)
-                self.assertLess(v.gauge, 9000)
-                self.assertGreater(b.rule_hits['skill_end_timing'], 0)
-
     def test_passive_precedes_new_debuff_and_stack(self):
         b, a, v = setup('lydia')
         # Observe passive checks at SKILL_END before active effects execute.
@@ -240,10 +214,7 @@ class SurveyG1(unittest.TestCase):
         self.assertGreater(b.rule_hits['se_independent_roll'], 0)
 
 
-MUTATIONS = {
-    'skill_end_timing': ['test_stack_consumption_at_end', 'test_gauge_snapshot_then_end'],
-    'se_independent_roll': ['test_independent_cooling', 'test_independent_freeze_resistance', 'test_extend_probability_preserved'],
-}
+MUTATIONS = {}   # 옛 스위치 변이(skill_end_timing·se_independent_roll 등)는 엔진 다이어트 4단계에서 스위치를 지워 뺌
 
 def mutations(cls, cases):
     original = Battle.__init__

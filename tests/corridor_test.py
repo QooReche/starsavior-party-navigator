@@ -58,9 +58,9 @@ class CorridorTest(unittest.TestCase):
         self.assertNotIn(a, ctx.evaded)
 
     def test_boss_death_removes_minions_without_damage_and_fires_death(self):
-        for mode, dead in [('data', True), ('legacy', False)]:
+        for mode, dead in [('data', True)]:
             b = battle([unit()], [unit('boss'), unit('minion')],
-                       mc={'battle_end_mode': mode}, battle_mode='boss_kill')
+                       mc={}, battle_mode='boss_kill')
             boss, minion = b.foes
             boss.d.boss = True
             with patch.object(b, 'fire', wraps=b.fire) as fire:

@@ -102,19 +102,6 @@ class UnsupportedTest(unittest.TestCase):
             self.assertEqual(b._preemptive_check(a, ctx.targets, ctx), [guard])
         self.assertFalse(support_report([unit_def('bunny-claire@개화(SSR)')]))
 
-    def test_claire_legacy_and_semantic_cache(self):
-        b, a = setup('bunny-claire@개화(SSR)')
-        native = next(x for x in b.lines_of(a) if x.eff.get('name') == '선제 방어 무시')
-        self.assertTrue(native.eff.get('native_hidden'))
-        b.mc['claire_preemptive_marker'] = 'legacy'
-        legacy = next(x for x in b.lines_of(a) if x.eff.get('name') == '선제 방어 무시')
-        self.assertFalse(legacy.eff.get('native_hidden'))
-        ctx = context(a, '궁극기', b.foes[:1])
-        b.exec_line(a, legacy, ctx)
-        self.assertEqual(a.eff['선제 방어 무시'].category, 'buff')
-        b.mc['claire_preemptive_marker'] = 'client'
-        self.assertTrue(next(x for x in b.lines_of(a) if x.eff.get('name') == '선제 방어 무시').eff.get('native_hidden'))
-
     def test_random_buff_three_forms_equal_candidates(self):
         # NKM:16468-16477 AddCase(10000, item). All three use BuffCount=1.
         # Scarlet's three SEs each make a new draw, so duplicates are allowed.
@@ -196,8 +183,6 @@ def mutations():
          patch.object(Battle, 'line_auto_targets', lambda b, owner, spec, ctx: b.alive(1 - owner.side))),
         ('unrelated native scope leak', 'test_marker_unrelated_scope',
          mutated(Battle, 'line_spec', "(owner.key == 'sunshine-cat-smile' and ln.eff.get('native_target'))", "ln.eff.get('native_target')")),
-        ('claire native marker', 'test_claire_16093014_flag_lifetime_and_category',
-         patch.dict(MC_OPTS, claire_preemptive_marker='legacy')),
         ('claire flag removed', 'test_claire_16093014_flag_lifetime_and_category',
          mutated(Battle, '_preemptive_check', "if any(attacker.on(name) for name in rule['buffs']):", 'if False:')),
         ('claire lifetime removed', 'test_claire_16093014_flag_lifetime_and_category',

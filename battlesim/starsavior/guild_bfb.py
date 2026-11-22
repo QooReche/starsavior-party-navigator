@@ -14,7 +14,7 @@
   보호막을 깬 뒤 맞으면(55148) -> 상태 해제·아군 부케(공격 +30% 2턴)·아군 게이지 +100%·보스 게이지 -100%·보스 자신에게 최대 생명력 15% 연쇄 피해.
 - 신부의 응징(55521): 보호막 중 들러리에게 맞으면 들러리 전원에게 보스 생명력 30% 연쇄 피해.
 - 별의 도전(보스에게만): 스킬 후 피해 증가 중첩, 피격 후 타격자 최대 생명력 감소 중첩, 속도 증가, 시작 면역(약화 면역), 능력치 배율.
-카운트 기본값 guild_count=all 은 클라 유닛 시전 경로 기준임(main 은 본 행동만 세던 옛 가정).
+카운트는 클라 유닛 시전 경로 기준(협공·추가 발동 포함 — 옛 스위치 guild_count 는 엔진 다이어트 4단계에서 지움).
 가정(추정): 연쇄 피해 = 엔진 chain 공식(최대 생명력 x 계수 x 1.85 x 방어 감소),
 능력치 배율 = 1 + 표값/10000 을 배치 AddStat 보정 뒤에 곱함, 선택 효과 «쇠락»은 단계 효과와 별도 중첩."""
 import copy
@@ -161,8 +161,6 @@ class Controller(BaseController):
 
     def __init__(self, b):
         super().__init__(b)
-        if b.mc['guild_bridal_kill_reset'] not in ('client', 'off'):
-            raise ValueError('guild_bridal_kill_reset 은 client|off')
         self.count = 0          # 신부 경쟁 카운팅(BOSS_7)
         self.anim = False       # 정실 어필 상태(ANIMSET2)
         self.shield_hits = 0    # 보호막 중 공격 수(BOSS_3)
@@ -283,11 +281,7 @@ class Controller(BaseController):
         self.boss, self.cfg = boss, boss.d.bfb
         self.base = dict(boss.d.skills)
         d = self.cfg['data']
-        mode = self.b.mc['guild_boss_nv_sum']
-        if mode in ('client', 'stage'):
-            self._nv_sum_client(boss, d, stage=mode == 'stage')
-        elif mode != 'bake':
-            raise ValueError('guild_boss_nv_sum 은 stage|client|bake')
+        self._nv_sum_client(boss, d, stage=False)
         self._put(boss, PEN, {'방어 관통': d['pen'] / 100}, cat='marker')
         row = self.cfg['row']
         if row and row['speed']:
@@ -322,8 +316,7 @@ class Controller(BaseController):
             # 질투의 시선(58801 AfterEnemyAction): 클라 코드상 시전이 끝날 때마다 발행되고 협공·반격·반응·엔포스(추가 발동)도 같은 경로라
             # 시전 종류를 가리지 않는다(DoSkill.cs:3025·3695, 조건에 IsNotEnforceSkill 없음).
             # 소환체도 OBF_26401로 생성(NKM:5198)되어 SKILL_END → AfterEnemyAction 발행(NKM:15662·15705·16040~16079)에 포함.
-            # guild_count=main 이면 옛 가정(본 행동만) 재현
-            if not self.anim and (not extra and ctx.via is None or self.b.guild_count == 'all'):
+            if not self.anim:
                 self._compete()
             if sk.is_attack and self.anim and not self.barrier():
                 self._restore()                     # 37201
@@ -333,7 +326,7 @@ class Controller(BaseController):
         # PASSIVE1 04는 PASSIVE2(캣파이트)·정실 어필 반응 예약보다 먼저 처리.
         # NKM:10040-10152: 같은 공격 이력 대상의 사망 + TargetBuff를 함께 검사.
         # 엔진 kill()은 eff를 즉시 비우므로 pre_hit에서 B1 대상만 시전별로 보존함.
-        if (self.b.mc['guild_bridal_kill_reset'] == 'client' and sk.is_attack
+        if (sk.is_attack
                 and any(v.dead for v in getattr(ctx, 'guild_bridal_targets', ()))):
             reset = self.cfg['data']['bridal']['killReset']
             if reset['deleteCount'] != 0:
@@ -457,8 +450,7 @@ class Controller(BaseController):
     def pre_hit(self, a, v):
         """52204용 신부 경쟁 기록·신부의 응징(55521): 들러리 전원에게 연쇄 피해."""
         ctx = getattr(self.b, '_cast_ctx', None)
-        if (ctx is not None and a is self.boss and not v.dead and v.has(B1)
-                and self.b.mc['guild_bridal_kill_reset'] == 'client'):
+        if (ctx is not None and a is self.boss and not v.dead and v.has(B1)):
             ctx.guild_bridal_targets.add(v)
         if self.support != 'none':
             self._sup_pre_hit(a, v)

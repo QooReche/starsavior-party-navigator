@@ -115,9 +115,7 @@ class SurveyG3(unittest.TestCase):
         self.assertGreater(b.rule_hits['heal_cleanse_skill_end'], 0)
 
 
-CASES = {
- 'heal_cleanse_skill_end': ['test_carmen_heals_before_cleanse'],
-}
+CASES = {}   # 옛 스위치 변이는 엔진 다이어트 4단계에서 스위치를 지워 뺌
 if __name__ == '__main__':
     if '--mutate' in sys.argv:
         mutations(SurveyG3, CASES)

@@ -14,9 +14,8 @@ def is_stage(d):
             and d.name == '벨그라스')
 
 
-def normalize(d, lines, rules):
-    from ..rules import MC_OPTS
-    if not is_stage(d) or rules.get('belgras_stage_se', MC_OPTS['belgras_stage_se']) != 'client':
+def normalize(d, lines):
+    if not is_stage(d):
         return lines
     out = []
     for original in lines:

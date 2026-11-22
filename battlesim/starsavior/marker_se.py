@@ -21,8 +21,9 @@ def scope(key, ln):
     return cond is not None and matches(ln, cond)
 
 
-def enabled(d, rules):
-    return rules.get(RULE) == 'client' and d.key in KEYS
+def enabled(d, native):
+    """숨은 표지 SE 를 펴는가: 전투(native=True)이고 표에 오른 구원자. RULE 은 rule_hits·rule_key 이름(옛 스위치 marker_se_flow)."""
+    return bool(native) and d.key in KEYS
 
 
 def clone(ln):

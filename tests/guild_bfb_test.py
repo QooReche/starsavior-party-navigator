@@ -71,9 +71,9 @@ def test_switch_off_no_controller():
 
 
 def test_count_all_casts():
-    """질투의 시선(58801)은 시전 종류를 가리지 않는다(클라 DoSkill.cs:3025·3695): guild_count=all(기본)이면 협공·반격·추가 발동도 카운트, main 이면 본 행동만"""
-    for mode, extra_counts in (('all', True), ('main', False)):
-        b, _ = battle(mc={'guild_count': mode})
+    """질투의 시선(58801)은 시전 종류를 가리지 않는다(클라 DoSkill.cs:3025·3695): 협공·반격·추가 발동도 카운트(옛 guild_count=main 삭제)"""
+    for mode, extra_counts in (('all', True),):
+        b, _ = battle(mc={})
         to_boss(b)
         gb, a = b.gb, b.alive(0)[0]
         gb.after_cast(a, a.d.skills['기본기'], _Ctx(), False)
@@ -82,12 +82,6 @@ def test_count_all_casts():
             c = _Ctx(); c.via = via
             gb.after_cast(a, a.d.skills['기본기'], c, True)
         assert gb.count == (6 if extra_counts else 1), (mode, gb.count)
-    try:
-        battle(mc={'guild_count': 'x'})
-    except ValueError:
-        pass
-    else:
-        raise AssertionError('잘못된 guild_count 통과')
     print('OK test_count_all_casts')
 
 
@@ -117,7 +111,7 @@ def test_summoned_cast_count():
 
 
 def test_compete_and_appeal():
-    b, _ = battle(mc={'guild_count': 'main'})     # 옛 가정(본 행동만 셈)으로 고정 — all 은 test_count_all_casts
+    b, _ = battle()
     boss = to_boss(b)
     gb = b.gb
     allies = b.alive(0)
@@ -126,9 +120,6 @@ def test_compete_and_appeal():
     holder = [v for v in allies if v.has(G.B1)]
     assert len(holder) == 1 and holder[0].stack(G.B1) == 5 and gb.count == 5
     assert b.live_atk(holder[0]) == max(b.live_atk(v) for v in allies)
-    # main 모드: 협공·추가 발동(extra)은 세지 않음
-    gb.after_cast(allies[0], allies[0].d.skills['기본기'], _Ctx(), True)
-    assert gb.count == 5
     gb.after_cast(boss, boss.d.skills['기본기'], _Ctx(), False)       # 보스 공격 후 52093
     assert gb.anim and gb.barrier() and gb.mark is holder[0]
     assert boss.eff[G.B8].shield == math.floor(boss.maxhp * 0.225)
@@ -201,7 +192,7 @@ def test_challenge_effects():
 def test_appeal_deferred_to_reaction_queue():
     """정실 어필은 반응 스킬: 반응 큐가 열려 있으면 보스 시전 직후 바로 실행하지 않고 예약(반격이 먼저 나감). 큐 밖이면 바로 실행."""
     for queued in (True, False):
-        b, _ = battle(mc={'guild_count': 'main'})
+        b, _ = battle(mc={})
         boss = to_boss(b)
         gb, allies = b.gb, b.alive(0)
         for i in range(5):
@@ -221,7 +212,7 @@ def test_appeal_deferred_to_reaction_queue():
 
 def test_revive_clears_maid():
     """부활한 들러리는 정상 능력치로 돌아온다(클라 들러리 300872 는 사망 시 사라짐)"""
-    b, _ = battle(mc={'guild_count': 'main'})
+    b, _ = battle(mc={})
     to_boss(b)
     gb, allies = b.gb, b.alive(0)
     for i in range(5):
@@ -239,7 +230,7 @@ def test_revive_clears_maid():
 
 def test_maid_speed_def_zero():
     """들러리(300872 FixStats ATK·DEF·TURN_SPEED 0): 속도 0 이면 게이지가 차지 않고(0 나눗셈 없음), 방어력 비례 항도 0"""
-    b, _ = battle(mc={'guild_count': 'main'})
+    b, _ = battle(mc={})
     to_boss(b)
     gb, allies = b.gb, b.alive(0)
     for i in range(5):
@@ -278,7 +269,7 @@ def test_maid_speed_def_zero():
 
 def test_break_skill_breaks_barrier():
     """브레이크 스킬이 보호막을 깨면 부케(55148)가 나와 들러리·신부 경쟁이 풀린다. 보호막이 없었으면 아무 일 없음"""
-    b, _ = battle(mc={'guild_count': 'main'})
+    b, _ = battle(mc={})
     boss = to_boss(b)
     gb, allies = b.gb, b.alive(0)
     for i in range(5):
@@ -315,7 +306,7 @@ def test_break_skill_not_counted():
 
 def test_maid_extra_turn_not_blocked():
     """들러리(ImmuneSpeedGaugeUp)라도 추가 턴은 막히지 않는다: 클라 추가 턴은 턴 관리자 예약이고 면역 검사는 SpeedGaugeUp 버프에만 있음"""
-    b, _ = battle(mc={'guild_count': 'main'})
+    b, _ = battle(mc={})
     to_boss(b)
     gb, allies = b.gb, b.alive(0)
     for i in range(5):
@@ -335,7 +326,7 @@ def test_maid_extra_turn_not_blocked():
 
 def test_bouquet_chain_not_ally_damage():
     """부케 자해 연쇄(보스 최대 생명력 15%)는 보호막을 깬 아군의 딜로 세지 않는다(보스 생명력은 그대로 깎임)"""
-    b, _ = battle(mc={'guild_count': 'main'})
+    b, _ = battle(mc={})
     boss = to_boss(b)
     gb, allies = b.gb, b.alive(0)
     a = allies[0]
@@ -381,49 +372,22 @@ class _Ctx:
 
 
 def test_boss_nv_sum():
-    """11/11 stage(선택지, 기본은 client 유지 — ScaleFactor 단 미확인): 클라는 AddStat 1단·패시브 2단·버프 3단을 곱하고 마지막에 내림(NKM:18187-18216, 18266-18293).
-    기본 230, AddStat 속도 -25%: 7단계 +10% -> floor(189.75)=189, 8단계 +20% -> 207, 9단계 이상 +30% -> 224.
-    legacy client(11/05~11/11)는 한 합 floor(230×(1-0.25+버프)): 195·218·241. bake 는 172×(1+버프): 189.2·206.4·223.6."""
-    assert MC_OPTS['guild_boss_nv_sum'] == 'client', MC_OPTS['guild_boss_nv_sum']
+    """보스 능력치 합산(클라): 기본 230, AddStat 속도 -25% → 한 합 floor(230×(1-0.25+버프)): 7·8·9단계 195·218·241.
+    옛 스위치 guild_boss_nv_sum(stage·bake)은 엔진 다이어트 4단계에서 지움."""
     got, good = {}, {}
-    for mode in ('stage', 'client', 'bake'):
-        for level in (0, 7, 8, 9):
-            # bake 는 옛 근사(실수 결과)라 전역 정수화·단 구성(stat_floor·stat_stage, 2026-11-15)도 옛 값으로 둠
-            b, _ = battle(level=level, mc=dict({'guild_boss_nv_sum': mode}, **({'stat_floor': 'float', 'stat_stage': 'add'} if mode == 'bake' else {})))
-            boss = to_boss(b)
-            got[(mode, level)] = (boss.spd(), b.atk_stat(boss))
-            good[(mode, level)] = boss.n_good()
-    flat = got[('client', 0)][0] - 172            # 보스에 붙는 평탄 속도 가산
-    assert flat == 0, got                          # 현재 표에는 없음 — 생기면 아래 기대값의 단을 다시 확인
-    assert got[('bake', 0)][0] == 172 and got[('stage', 0)][0] == 172, got   # 버프 없는 0단계는 같음
-    assert [got[('stage', lv)][0] for lv in (7, 8, 9)] == [189, 207, 224], got
-    assert [got[('client', lv)][0] for lv in (7, 8, 9)] == [195, 218, 241], got
-    for lv, v in ((7, 189.2), (8, 206.4), (9, 223.6)):
-        assert abs(got[('bake', lv)][0] - v) < 1e-6, got
-    # 합산용 고정 효과가 보스의 강화 효과 개수(질투의 시선 등이 세는 n_good)를 바꾸지 않는다(리뷰 지적: marker)
     for level in (0, 7, 8, 9):
-        assert good[('client', level)] == good[('bake', level)] == good[('stage', level)], (level, good)
-    # 공격력은 어필 밖에서 세 방식이 같다(-17.5% 한 번)
-    for level in (0, 7, 8, 9):
-        a, c, st = got[('bake', level)][1], got[('client', level)][1], got[('stage', level)][1]
-        assert abs(a - c) <= 1.0 and abs(st - c) <= 1.0, (level, a, c, st)
-    # 3단 버프가 있으면 stage 는 곱, client 는 합: 공격력 +30%(독점 선언 크기)를 직접 걸어 비교
-    vals = {}
-    for mode in ('stage', 'client'):
-        b, _ = battle(level=9, mc={'guild_boss_nv_sum': mode})
+        b, _ = battle(level=level)
         boss = to_boss(b)
-        b.put_eff(boss, '시험 공격 강화', {'공격력%': 30}, dur=math.inf, src=boss, cat='buff', fixed=True)
-        vals[mode] = b.atk_stat(boss)
-    base = got[('client', 9)][1] / (1 - 0.175)
-    assert abs(vals['stage'] - base * (1 - 0.175) * 1.3) <= 1.0, vals
-    assert abs(vals['client'] - base * (1 - 0.175 + 0.3)) <= 1.0, vals
-    try:
-        b, _ = battle(mc={'guild_boss_nv_sum': 'wrong'})
-        to_boss(b)
-    except ValueError:
-        pass
-    else:
-        raise AssertionError('잘못된 guild_boss_nv_sum 통과')
+        got[level] = (boss.spd(), b.atk_stat(boss))
+        good[level] = boss.n_good()
+    assert got[0][0] == 172, got                   # 보스에 붙는 평탄 속도 가산 없음(현재 표)
+    assert [got[lv][0] for lv in (7, 8, 9)] == [195, 218, 241], got
+    # 3단 버프는 합: 공격력 +30%(독점 선언 크기)를 직접 걸어 비교
+    b, _ = battle(level=9)
+    boss = to_boss(b)
+    b.put_eff(boss, '시험 공격 강화', {'공격력%': 30}, dur=math.inf, src=boss, cat='buff', fixed=True)
+    base = got[9][1] / (1 - 0.175)
+    assert abs(b.atk_stat(boss) - base * (1 - 0.175 + 0.3)) <= 1.0, (b.atk_stat(boss), base)
 
 
 TESTS = [test_boss_nv_sum, test_waves_and_stats, test_switch_off_no_controller, test_count_all_casts, test_summoned_cast_count, test_compete_and_appeal, test_phase_timeout_enforces_hyper2,

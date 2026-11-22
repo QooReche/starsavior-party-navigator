@@ -292,7 +292,7 @@ def test_new_enemy_effects():
     out['blocked'] = (round(atk0, 2), round(F.mods()['atkp'], 2))
     b.run_line(A, Line('[웨이브 시작 시] 자신에게 〈궁극기 쿨타임 초기화〉', '고유 패시브', 'passive'), Ctx(A, A, None))
     out['reset'] = A.cd['궁극기']
-    exp = dict(gauge=0.0, chain=math.floor(10000 * 0.03 * 1.85 * (1 - 1000 / 4000)), cd=3, per=0.2, blocked=(0.2, 0.2), reset=0)   # 〈강화 불가〉는 걸린 강화를 끄지 않음(클라, buff_ban=refuse) — 옛 동작 (0.2, 0.0) 은 test_buff_ban_refuse 의 suppress
+    exp = dict(gauge=0.0, chain=math.floor(10000 * 0.03 * 1.85 * (1 - 1000 / 4000)), cd=3, per=0.2, blocked=(0.2, 0.2), reset=0)   # 〈강화 불가〉는 걸린 강화를 끄지 않음(클라) — 옛 동작 (0.2, 0.0) 은 test_buff_ban_refuse 의 suppress
     return out == exp, '%s (기대 %s)' % (out, exp)
 
 
@@ -453,18 +453,10 @@ def test_review_fixes():
     """codex P5 리뷰 차단 수정: 〈강화 불가〉면 불사·보호막·면역도 꺼짐 / 생명력이 1% 아래여도 「강제 회복」으로 1% /
     확률 줄의 재발동 제한은 실제 발동 때 기록 / NotTargetPositiveBuff 는 광역에서 대상마다 / 프로페서M 트리거도 「이번 스킬」 보정"""
     out = {}
+    # 〈강화 불가〉 옛 동작(buff_ban=suppress: 걸린 불사·보호막·면역도 끔) 부분은 스위치 삭제로 뺌 — 클라 동작은 test_buff_ban_refuse
     a, f = unit('a'), unit('foe', hp=10000)
-    b = battle([a], [f], mc={'buff_ban': 'suppress'})   # 옛 동작(걸린 강화도 끔)을 고정하는 시험 — 클라 동작은 test_buff_ban_refuse
-    A, F = b.allies[0], b.foes[0]
-    give(F, '불사', {})
-    give(F, '보호막', {})
-    F.eff['보호막'].shield = 5000.0
-    give(F, '면역', {})
-    give(F, '강화 불가', {}, src=A, harmful=True)
-    b.add_effect(A, F, dict(name='기절', props={}, dur=1, max=None, times=1, judge=False, chance=1.0), None)
-    out['stun'] = F.has('기절')
-    b.apply_damage(A, F, 20000, 'hit')
-    out['dead'] = F.dead
+    b = battle([a], [f])
+    A = b.allies[0]
     g = unit('g', hp=10000)
     b2 = battle([unit('x')], [g])
     G = b2.foes[0]
@@ -498,17 +490,17 @@ def test_review_fixes():
     E.sa = 0  # IsNotTargetSuperArmor는 broken 플래그 대신 현재 강인도를 읽음.
     ctx4 = b4.cast(P, pm.trigger_skills['특수기'], extra=True, skip_lines=True, target=E, via='trigger', local_pre=True)
     out['profm'] = (round(ctx4.inc, 2), round(ctx4.inc_break, 2))
-    exp = dict(stun=True, dead=True, forced=100.0, rec_before=0, rec_after=1, per_target=(0.0, 0.2, 0.0), profm=(0.15, 0.3))
+    exp = dict(forced=100.0, rec_before=0, rec_after=1, per_target=(0.0, 0.2, 0.0), profm=(0.15, 0.3))
     return out == exp, '%s (기대 %s)' % (out, exp)
 
 
 def test_buff_ban_refuse():
-    """〈강화 불가〉 클라 동작(buff_ban=refuse, 기본): 이미 걸린 보호막·공격력 버프는 그대로 작동하고 새 강화만 거부 /
+    """〈강화 불가〉 클라 동작(기본): 이미 걸린 보호막·공격력 버프는 그대로 작동하고 새 강화만 거부 /
     suppress(옛 동작)는 걸린 강화를 끄고 새 강화는 받아 둠 (NKM 버프 부여 함수 650줄, work/common_rules/notes_buffban.md)"""
     out = {}
-    for mode in ('refuse', 'suppress'):
+    for mode in ('refuse',):
         a, f = unit('a'), unit('foe', hp=10000)
-        b = battle([a], [f], mc={'buff_ban': mode})
+        b = battle([a], [f], mc={})
         A, F = b.allies[0], b.foes[0]
         give(F, '보호막', {})
         F.eff['보호막'].shield = 5000.0
@@ -519,7 +511,7 @@ def test_buff_ban_refuse():
         b.apply_damage(A, F, 3000, 'hit')
         b.add_effect(F, F, dict(name='새 강화', props={'공격력%': 5.0}, dur=2, max=None, times=1, judge=False, chance=1.0), None)
         out[mode] = (atk, round(F.eff['보호막'].shield), round(F.hp), F.has('새 강화'))
-    ok = out['refuse'] == (0.1, 2000, 10000, False) and out['suppress'] == (0.0, 5000, 7000, True)
+    ok = out['refuse'] == (0.1, 2000, 10000, False)
     return ok, str(out)
 
 

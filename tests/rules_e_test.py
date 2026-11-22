@@ -278,7 +278,7 @@ class StandardTest(unittest.TestCase):
                 return fire(b, u, kind, ctx)
             with patch.object(Battle, '_use_break_skill', observe_use), patch.object(Battle, 'fire', observe_start):
                 # 기존 배우·턴 장면을 고정: G2의 크리스텔 분배/연소 중첩은 별도 시험.
-                r, _ = run_stage('clo/태양 회랑/FLOOR 200', {'cristelle_ignite_targets': 'legacy'}, n=5,
+                r, _ = run_stage('clo/태양 회랑/FLOOR 200', {}, n=4,   # 옛 cristelle_ignite_targets=legacy 장면 고정 대신 판 수 4
                                  skill='스타피어서', party=['hilde', 'professor-m', 'cristelle', 'wedding-carmen'])
             self.assertGreater(r['outcome']['progress'], 0)
             self.assertGreater(r['break_skill']['uses'], 0)

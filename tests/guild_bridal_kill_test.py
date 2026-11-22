@@ -22,11 +22,11 @@ class BridalKillTest(unittest.TestCase):
         self.assertGreater(b.gb.boss.actions, 0)
 
     def test_actual_casts_and_cast_scope(self):
-        for mode in ('client', 'off'):
+        for mode in ('client',):
             for marked, lethal, via in ((True, True, None), (True, True, 'enforce'),
                                         (False, True, None), (True, False, None)):
                 with self.subTest(mode=mode, marked=marked, lethal=lethal, via=via):
-                    b, _ = battle(mc={'guild_bridal_kill_reset': mode})
+                    b, _ = battle(mc={})
                     boss = to_boss(b)
                     gb, target = b.gb, b.alive(0)[0]
                     gb.count = 4
@@ -52,8 +52,8 @@ class BridalKillTest(unittest.TestCase):
                         self.assertEqual(b.rule_hits['guild_bridal_kill_reset'], 1)
 
     def test_same_target_and_before_appeal(self):
-        for mode in ('client', 'off'):
-            b, _ = battle(mc={'guild_bridal_kill_reset': mode})
+        for mode in ('client',):
+            b, _ = battle(mc={})
             boss = to_boss(b)
             gb = b.gb
             holder, other = b.alive(0)[:2]
@@ -105,10 +105,6 @@ class BridalKillTest(unittest.TestCase):
         self.assertFalse(target.dead)
         self.assertEqual(gb.count, 4)
         self.assertEqual(b.rule_hits['guild_bridal_kill_reset'], 0)
-
-    def test_bad_mode(self):
-        with self.assertRaises(ValueError):
-            battle(mc={'guild_bridal_kill_reset': 'wrong'})
 
     def test_kill_in_shield_phase_keeps_catfight(self):
         b, boss, holder, maids = test_compete_and_appeal()

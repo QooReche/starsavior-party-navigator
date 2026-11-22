@@ -16,9 +16,9 @@ from battlesim.mc import Ctx, FORCE_BUFF_NAMES     # noqa: E402
 from battlesim.rules import MC_OPTS, MC_RULES      # noqa: E402
 
 # 기본 = 클라 값으로 전환한 스위치: (기본, legacy)
-SWITCHED = {'break_point_hits': ('window', 'once'), 'break_auto_blocked_cc': ('on', 'off'),
-            # 11/05 전환(dot_formula·react_hist_unit·immune_force_apply)
-            'dot_formula': ('client', 'legacy'), 'react_hist_unit': ('unit', 'slot')}
+# 나머지(preemptive_defense·toughness_elem·break_point_hits·break_auto_blocked_cc·react_hist_unit·immune_force_apply)는
+# 엔진 다이어트 4단계에서 스위치를 지움(항상 클라 동작)
+SWITCHED = {'dot_formula': ('client', 'legacy')}
 # 옛 값 유지(기본 == legacy): 없음
 KEPT = {}
 CUBE = {'name': '큐브 과부하', 'level': 1}
@@ -107,12 +107,9 @@ class PreemptiveClientMainTest(unittest.TestCase):
 class BreakPointWindowTest(unittest.TestCase):
     def test_repeat_hits_in_same_cast(self):
         got = {}
-        for mode in ('once', 'window', None):          # None = 규칙 기본값(window), once = legacy
+        for mode in ('window', None):
             foe = unit('f', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
-            mc = {}
-            if mode is not None:
-                mc['break_point_hits'] = mode
-            b = battle([unit('a')], [foe], break_skill=CUBE, mc=mc)
+            b = battle([unit('a')], [foe], break_skill=CUBE)
             a, f = b.allies[0], b.foes[0]
             sk = a.d.skills['기본기']
             sk.ab = 1
@@ -122,7 +119,6 @@ class BreakPointWindowTest(unittest.TestCase):
             b.deal(a, ctx)                     # 같은 시전의 재타격: window 면 +1
             hit(b, a, f)                       # 다른 시전: 이미 격파 상태라 둘 다 적립 없음
             got[mode] = (b.break_points_gained, b.rule_hits['break_point_window'], f.broken)
-        self.assertEqual(got['once'], (1, 0, True))
         self.assertEqual(got['window'], (2, 1, True))
         self.assertEqual(got[None], got['window'])
 
@@ -265,16 +261,14 @@ class DotGuardTest(unittest.TestCase):
 class ReactHistTest(unittest.TestCase):
     def test_unit_blocks_other_slot(self):
         got = {}
-        for mode in ('slot', 'unit'):
-            b = battle([unit('a', skills=[dict(slot='기본기', dm=100), dict(slot='특수기', dm=100)])], [unit('f')],
-                       mc={'react_hist_unit': mode})
+        for mode in ('unit',):
+            b = battle([unit('a', skills=[dict(slot='기본기', dm=100), dict(slot='특수기', dm=100)])], [unit('f')])
             a = b.allies[0]
             b._react_q, b._react_seen = [], set()
             b._react(a, a.d.skills['기본기'], None)
             b._react(a, a.d.skills['특수기'], None)
             b._react(a, a.d.skills['기본기'], None)
             got[mode] = (len(b._react_q), b.rule_hits['react_hist_unit'])
-        self.assertEqual(got['slot'], (2, 0))
         self.assertEqual(got['unit'], (1, 2))
 
 
@@ -336,9 +330,8 @@ class ImmuneForceTest(unittest.TestCase):
 class BreakBlockedCcTest(unittest.TestCase):
     def test_stun_and_taunt_block(self):
         for cc in ('기절', '수면', '도발'):
-            for mode, uses in [('off', 1), ('on', 0), (None, 0)]:     # None = 규칙 기본값(on), off = legacy
-                b = battle([unit('a')], [unit('f', hp=10 ** 9)], break_skill=CUBE,
-                           mc={} if mode is None else {'break_auto_blocked_cc': mode})
+            for mode, uses in [(None, 0)]:
+                b = battle([unit('a')], [unit('f', hp=10 ** 9)], break_skill=CUBE)
                 a = b.allies[0]
                 give(a, cc, harmful=True)
                 b.break_points = 3
@@ -357,8 +350,8 @@ class StageTest(unittest.TestCase):
         # 선제 방어(client_main)·면역(client)은 표준 편성에 확률/면역 보유자가 없어 합성 시험만 둠.
         cases = [({}, 'tough_client_lose', {}),                       # 규칙 기본값(client)이 실제 전투에서 탐
                  ({'dot_formula': 'client'}, 'dot_client', {}),
-                 ({'react_hist_unit': 'unit'}, 'react_hist_unit', {}),
-                 ({'break_auto_blocked_cc': 'on', 'break_point_hits': 'window'}, None, {'break_skill': CUBE})]
+                 ({}, 'react_hist_unit', {}),
+                 ({}, None, {'break_skill': CUBE})]
         report = {}
         for override, key, extra in cases:
             r, hits = run_stage(stage, override, **extra)

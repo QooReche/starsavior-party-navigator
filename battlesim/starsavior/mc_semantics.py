@@ -53,10 +53,9 @@ def trigger_rule(sk, lines):
     return None
 
 
-def normalized_lines(d, rules=None):
+def normalized_lines(d, native=False):
     """카운팅용 내부 효과를 원자적 승급/실제 타격 수로 치환한다."""
-    rules = rules or {}
-    native = marker_se.enabled(d, rules)
+    native = marker_se.enabled(d, native)
     lines = list(d.lines)
     # 최대 스택 -> 임시 표지 -> 소비/승급 -> 표지 삭제의 공통 패턴.
     for marker in list(lines):
@@ -114,7 +113,7 @@ def normalized_lines(d, rules=None):
                     continue
                 new.append(ln)
             lines = new + [count]
-    return belgras_se.normalize(d, description_lines(d, lines, rules), rules)
+    return belgras_se.normalize(d, description_lines(d, lines, native))
 
 
 def normalized_definition(d):
@@ -221,11 +220,10 @@ def unit_glossary(d):
     return out
 
 
-def description_lines(d, lines, rules=None):
+def description_lines(d, lines, native=False):
     """정본에 명시된 범위·순서를 ef에 보충한다. key별 예외를 만들지 않는다."""
-    rules = rules or {}
-    native = marker_se.enabled(d, rules)
-    if not native and rules.get('smile_waterbomb_scope') == 'client' and d.key == 'sunshine-cat-smile':
+    native = marker_se.enabled(d, native)
+    if not native and d.key == 'sunshine-cat-smile':
         # SE10464012..21: duplicated grant rows straddle the ultimate marker.
         # Preserve the marker state machine without manufacturing timed buffs.
         related = [ln for ln in lines if ln.src_kind == 'passive' and ln.kind == 'own_post'
@@ -268,8 +266,7 @@ def description_lines(d, lines, rules=None):
                       damage_type=ln.eff.get('damage_type', 'ADT_NORMAL'))
         e = ln.eff
         name = e.get('name') or ''
-        if (rules.get('claire_preemptive_marker') == 'client'
-                and d.key == 'bunny-claire@개화(SSR)' and ln.slot == '궁극기'
+        if (d.key == 'bunny-claire@개화(SSR)' and ln.slot == '궁극기'
                 and e['kind'] == 'buff' and name == '선제 방어 무시'):
             # SE16093014 / BI_MAID_SPEAR_SSR_2: NoPreemptiveDefend flag,
             # IsBuff=false, hidden, life 0. Not a preemptive-reduce stat.
@@ -287,8 +284,7 @@ def description_lines(d, lines, rules=None):
                     continue
                 elem = re.search(r'(태양|달|별|질서|혼돈) 속성 아군 (전체|한명)', sentence)
                 conditional = re.search(r'아군 대상이 (태양|달|별|질서|혼돈) 속성이라면', sentence)
-                client_ignite = (rules.get('cristelle_ignite_targets') == 'client'
-                    and d.key == 'cristelle' and ln.slot == '특수기' and name == '점화')
+                client_ignite = (d.key == 'cristelle' and ln.slot == '특수기' and name == '점화')
                 if client_ignite:
                     e.update(target='자신 제외 아군 전체', rule_key='cristelle_ignite_targets')
                 elif elem and '아군' in e.get('target', ''):
@@ -309,9 +305,8 @@ def description_lines(d, lines, rules=None):
                 e.update(target='스킬 대상', shield_only=True)
                 ln.params = []
                 ln.kind, ln.trig = 'own_pre', None
-                if rules.get('skill_end_timing') == 'client':
-                    ln.kind = 'own_post'
-                    e.update(start_filter='shield', rule_key='skill_end_timing')
+                ln.kind = 'own_post'
+                e.update(start_filter='shield', rule_key='skill_end_timing')
         if count and '1개당 위 수치만큼 적용' in ln.raw:
             named = re.search(r'\[([^]]+)\]', count[1])
             scope = ('shield_all' if count[1].startswith('적 전체') else 'self_good' if count[1].startswith('자신')
@@ -323,10 +318,9 @@ def description_lines(d, lines, rules=None):
             ext = re.search(r'(?:\[([^]]+)\]|모든 약화 효과)를 (\d+)턴 연장', desc)
             if ext:
                 ln.eff = dict(kind='extend', target='스킬 대상', name=ext[1], val=int(ext[2]), judge='효과 적중 판정' in ln.raw)
-                if rules.get('se_independent_roll') == 'client':
-                    chance = re.search(r'(\d+)% 확률로', ln.raw)
-                    ln.eff.update(chance=int(chance[1]) / 100 if chance else 1,
-                                  rule_key='se_independent_roll')
+                chance = re.search(r'(\d+)% 확률로', ln.raw)
+                ln.eff.update(chance=int(chance[1]) / 100 if chance else 1,
+                              rule_key='se_independent_roll')
         if '스킬 쿨타임' in ln.raw and '증가' in ln.raw:
             cd = re.search(r'(기본기|특수기|궁극기) 쿨타임을 (\d+)턴 증가', desc)
             if cd:
@@ -334,22 +328,13 @@ def description_lines(d, lines, rules=None):
         if re.search(r'강인도 격파 (?:후|시)', desc):
             ln.params = [('이번 타격 격파' if k == '대상 브레이크' else k, v) for k, v in ln.params]
         if '약화 효과를 모두 해제하고' in desc and '약화효과 해제' in ln.raw:
-            if rules.get('heal_cleanse_skill_end') == 'client' and d.key == 'wedding-carmen' and ln.phase == '스킬 사용 후':
+            if d.key == 'wedding-carmen' and ln.phase == '스킬 사용 후':
                 ln.kind, ln.bound = 'own_post', True
                 e['rule_key'] = 'heal_cleanse_skill_end'
             else:
                 ln.kind, ln.bound = 'before_heal', True
-        # 사용 시/타격 시 최대 스택 소거와 타격 후 부여는 서로 다른 단계다.
-        if (e['kind'] == 'remove' and e.get('target') == '자신' and ln.kind == 'own_post'
-                and rules.get('skill_end_timing') != 'client'):
-            for sentence in desc.split('. '):
-                before = re.search(r'(?:타격 시|사용 시).*?(?:모두 소거|모두 소거하고)', sentence)
-                if before and e['name'] in before[0] and not re.search(r'(?:타격 후|사용 후)', before[0]):
-                    ln.kind = 'own_pre'
-                    ln.trig = (ln.trig or '').replace('내 공격 후', '내 공격 시')
-                    break
         out.append(ln)
-    out = selection_lines(d, out, raws, rules)
+    out = selection_lines(d, out, raws, native)
     # 표지는 선행 조건용이며 지속 버프가 아니다. 명칭 대신 참조 관계로 식별.
     references = {n.strip() for ln in out for k, v in ln.params
                   if k in ('자신이 보유', '자신이 미보유', '대상이 보유', '시전자가 보유') for n in v.split(',')}
@@ -370,7 +355,7 @@ def description_lines(d, lines, rules=None):
                 and not any(k in ('자신이 보유', '자신이 미보유', '대상이 보유', '대상이 미보유')
                             and e['name'] in [n.strip() for n in v.split(',')] for k, v in ln.params)):
             e['pre_grant'] = True
-        if (rules.get('gauge_lock_order') == 'client' and d.key == 'lydia-moon-caster'
+        if (d.key == 'lydia-moon-caster'
                 and e.get('name') == '메이드 리디아 패시브 행게 카운팅 버프'):
             # 다음 TURN_START의 명시적 제거까지 유지하는 재발동 제한 표지.
             e.pop('cast_marker', None)
@@ -379,9 +364,8 @@ def description_lines(d, lines, rules=None):
     return marker_se.normalize(d, out) if native else out
 
 
-def selection_lines(d, lines, raws, rules=None):
+def selection_lines(d, lines, raws, native=False):
     """생사 분기, 상태 필터, 표식 이동, 무작위 효과의 범위/횟수를 정본에서 보충."""
-    rules = rules or {}
     out = []
     variants = {raw['n'] for _, _, raw in variant_specs(d)}
     references = {v for ln in lines for k, v in ln.params if '보유' in k}
@@ -391,7 +375,7 @@ def selection_lines(d, lines, raws, rules=None):
             random_markers.update(v for k, v in ln.params if k == '자신이 미보유' and '카운팅' in v)
     for ln in lines:
         desc = raws.get(ln.slot, {})
-        if marker_se.enabled(d, rules) and marker_se.scope(d.key, ln):
+        if marker_se.enabled(d, native) and marker_se.scope(d.key, ln):
             out.append(ln)
             continue
         desc = desc.get('dx') or desc.get('d1') or ''
@@ -421,11 +405,10 @@ def selection_lines(d, lines, raws, rules=None):
             if e['kind'] == 'gauge' and e.get('val', 0) < 0:
                 ln.kind, ln.trig = 'own_pre', None
                 e.update(target='적 전체', target_state=state[1])
-                if rules.get('skill_end_timing') == 'client':
-                    ln.kind, ln.params = 'own_post', []
-                    e.update(start_filter=state[1], rule_key='skill_end_timing')
+                ln.kind, ln.params = 'own_post', []
+                e.update(start_filter=state[1], rule_key='skill_end_timing')
         move = re.search(r'신규 \[([^]]+)\] 발생 시 기존의 \[\1\]을 해제', desc)
-        smile_scope = rules.get('smile_waterbomb_scope') == 'client' and d.key == 'sunshine-cat-smile'
+        smile_scope = d.key == 'sunshine-cat-smile'
         if move and e.get('target') == '「물폭탄」이 없던 공격 대상':
             e['target'] = '스킬 대상'
         # 적 표식 이동만 보정한다. 아군 자동 지정 버프의 부여·해제는 원래 줄을 따른다.
@@ -460,12 +443,12 @@ def selection_lines(d, lines, raws, rules=None):
             repeat = re.search(r'\[' + re.escape(bundle) + r'\]을 (\d+)회 발생', desc)
             if repeat:
                 e.update(random_times=int(repeat[1]), pre_grant=True)
-                if rules.get('scarlet_pinball_marker') != 'client' or d.key != 'scarlet':
+                if d.key != 'scarlet':
                     ln.params = []
                 else:
                     e['rule_key'] = 'scarlet_pinball_marker'
         if name in random_markers and '무작위 효과' not in ln.raw:
-            if rules.get('scarlet_pinball_marker') != 'client' or d.key != 'scarlet':
+            if d.key != 'scarlet':
                 continue
             e['persistent_marker'] = True
         # 역할별 증폭은 다른 대상의 피해에 섞이지 않는다.

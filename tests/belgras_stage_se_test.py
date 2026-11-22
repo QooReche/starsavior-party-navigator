@@ -36,24 +36,19 @@ def rot(boss, n):
 
 
 class StageSE(unittest.TestCase):
-    def test_all_fifty_rows_and_scope_and_legacy_cache(self):
+    def test_all_fifty_rows_and_scope_and_cache(self):
         for step in (1, 2, 3):
             d = definition(step)
-            out = S.normalize(d, d.lines, {})
+            out = S.normalize(d, d.lines)
             fixed = [ln for ln in out if ln.eff['kind'] == 'belgras_fixed']
             self.assertEqual(len(fixed), 50)
             self.assertEqual(sorted(ln.eff['value'] for ln in fixed), list(range(5000, 250001, 5000)))
             self.assertEqual(support_report([d]), [])
-            self.assertIs(S.normalize(d, d.lines, {'belgras_stage_se': 'legacy'}), d.lines)
             d.name = '다른 적'
-            self.assertIs(S.normalize(d, d.lines, {}), d.lines)
+            self.assertIs(S.normalize(d, d.lines), d.lines)
         b, boss = setup()
         def count():
             return sum(ln.eff['kind'] == 'belgras_fixed' for ln in b.lines_of(boss))
-        self.assertEqual(count(), 50)
-        b.mc['belgras_stage_se'] = 'legacy'
-        self.assertEqual(count(), 0)
-        b.mc['belgras_stage_se'] = 'client'
         self.assertEqual(count(), 50)
 
     def test_exactly_one_queued_self_hit_and_cast_snapshot(self):
