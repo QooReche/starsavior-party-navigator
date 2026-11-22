@@ -125,13 +125,13 @@ rule_hits 증가 수는 판 끝 `sum(rule_hits.values())`(일부는 `+= len(...)
 
 옛 동작 비교는 태그 `engine-legacy-final`(ed64b93) worktree 에서(설계 4절). 옛 값으로 돌리던 측정 도구(`tools/measure_*`·`check_followup_quick`·`web_leads_audit` before 모드 등)의 legacy 모드도 그 태그에서만 동작함(이 브랜치에서는 `simulate` 가 모르는 규칙 키로 거부). `tools/boss_hit_diagnostic.py` no_fx 모드는 명시적으로 막았고, `tools/boss_action_diagnostic.py` 는 지운 키 읽기를 뺌.
 
-### 남긴 code+legacy 스위치 21개
+### 남긴 code+legacy 스위치 21개 → 15개(최종 리뷰 반영 뒤)
 
 - 기대값 엔진 골든이 legacy 로 고정: `engine.ENGINE_MC_KEYS` 10개(dmg_cap_scope·turn_gauge·stat_stage·stat_floor·buff_maxhp·chain_round·chain_pen·chain_skill_damage_up·chain_stat_true·dot_formula).
 - 설계서 목록: power_penalty(화면 `rules_override`)·fixed_true_formula(값 legacy)·superarmor_damage_ban(off)·counter_slot_timing(end).
-- 측정 도구가 legacy 를 읽음: auto_unable_break·auto_remove_filter·auto_se_reselect·auto_hp_float32·auto_empty_marker(`tools/measure_autotarget_12.py`·`tests/autotarget_12_test.py`). 설계 초안 묶음엔 `auto_*` 가 있었으나 «남길 것» 목록과 겹쳐 남김(판단 필요).
+- ~~측정 도구가 legacy 를 읽음: auto_unable_break·auto_remove_filter·auto_se_reselect·auto_hp_float32·auto_empty_marker~~ — 최종 리뷰 반영(3ba2c12)으로 삭제. `tests/autotarget_12_test.py --mutate` 는 접힌 코드를 옛 동작으로 되돌린 소스 변이로 바꿨고(16건 KILLED), `tools/measure_autotarget_12.py` legacy 모드는 태그에서만.
 - unify 기준선이 옛 값 경로를 고정: chain_timing(`raidex_*_imm`·`guild_mountain_L1_imm` 케이스가 `immediate` 로 코스모·길드 즉시 연쇄 경로를 지킴).
-- 옛 경로만 가정·커뮤니티 등급 키를 읽음: enemy_auto_target(weighted 경로가 target_row_weight·target_defender_mult·target_mode 를 씀 — 이 셋은 «남길 것»(assumed·community)).
+- ~~옛 경로만 가정·커뮤니티 등급 키를 읽음: enemy_auto_target~~ — 최종 리뷰 반영(3ba2c12)으로 weighted 경로·`weighted_pick`·target_row_weight·target_defender_mult·target_mode 와 함께 삭제(셋은 table 일 때 이미 결과의 가정 목록에서 빠져 결과 JSON 같음). `tools/measure_rule_grades_1121.py --legacy-target` 은 태그에서만.
 - opts·formula 의 legacy(17개 안팎, `rank_check`·P1 골든)는 손대지 않음.
 
 ### 구조 변화

@@ -1,3 +1,13 @@
+## 2026-11-22 — 최종 리뷰(엔진·화면 갈래) 지적 반영
+
+리뷰 두 건(blocking 0)의 지적과 nit 을 반영했음. 엔진 결과는 묶음마다 diet 기준선 36건·unify 기준선 137건·`savior_rules_lines` 골든·`golden_check`·`mc_cache_test` 기본 해시가 바이트 일치했고 `unsupported_allowlist --diff` 는 D=12 E=0 그대로.
+- 화면·시험(fdbecd8): `search_executor.js` throttle 대기에 상한 `Math.min(ms, wait)`(시계가 1시간 뒤로 가면 3,600,200ms 대기로 진행 표시가 멈추던 것, 시험·변이 추가). `tools/diet_baseline.py --write` 에 케이스 필터를 주면 거부. `ui_shared.js` escKeep 에 작은따옴표 속성 금지 주석. `unify_baseline_test` 는 분기 표 구원자를 `savior_rules.table_keys()` 에서 읽음. 측정 문서 로컬 경로를 `<workspace>` 로.
+- 엔진 안전장치(bec9edd): 적 유닛은 정의의 stats·passive 사전을 따로 가짐(등장 후 능력치 보정이 공유 정의로 새지 않게, 새 시험 `foe_def_isolation_test`). `statcalc.def_rate` 가 `rules.DEF_K` 를 부를 때 읽음(`boss_hit_diagnostic` PvP 민감도가 다시 효과 있음). `chain_timing` 은 허용 값 셋 밖이면 `ValueError`.
+- 죽은 코드(428cb10): `Battle` 의 fx 인자·`self.fx`, `Battle._stage2`, `api._ally_stage_fx` 의 fx 인자, 지운 stage_fx_target 을 스위치처럼 적은 주석.
+- 도구(4d68f1c): 지운 키를 넘기던 `measure_allowlist_round2`·`measure_allowlist_followup`·`web_leads_audit` 의 옛 값 모드는 «태그 engine-legacy-final 에서만» 안내 후 종료.
+- 남긴 스위치 정리(3ba2c12): enemy_auto_target(weighted·`weighted_pick`·가정 규칙 3개)과 auto_* 5개 삭제, mc 절 69→60키. chain_timing 은 unify 기준선 `_imm` 경로라 남김. 지운 시험 함수: `p3_test.test_target_weights`(옛 가중 분포). 옛 값 부분만 뺀 시험: auto_target_test·rule_grades_1121_test·allowlist_rules_1121_test·cosmo_raid_test(auto_se_reselect legacy seed 5)·autotarget_12_test(모드 반복).
+- 반영 안 한 것: 리뷰 nit 의 `datafile.clear()` 가 `foe._FOE`·`_EXTRA_ON`·`data._DB` 를 비우지 않는 점, 화면 갈래 지적 3(`ux_ui.js` motionOwner 재지정, 미확인)·nit 2(`cosmo_direct_ui.js` num/pct)·nit 3(gwen_dom 시험 범위)은 이번 범위 밖.
+
 ## 2026-11-22 — 엔진 다이어트 4단계: legacy 스위치 168개 삭제
 
 설계(`fable_diet.md` 4단계)대로 기본값(client)과 다른 `legacy` 분기를 7묶음(26·24·24·28·23·25·18)으로 지웠음. 규칙 값은 그대로이고 분기만 지운 것이라 엔진 결과는 매 커밋 바이트 일치함(diet 기준선 36건·unify 기준선·`savior_rules_lines` 골든 기본 항목·`golden_check`·`mc_cache_test` 기본 해시, 로컬 광역 대조 5,338건). 결과·표는 `docs/engine_diet_1122.md` 4단계 절.
