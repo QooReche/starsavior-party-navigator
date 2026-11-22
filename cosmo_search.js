@@ -642,7 +642,7 @@
       const scr = st.learned ? `계정별 표본 학습·예측 선별·무작위 감사를 거쳐${st.audit.some(a=>a.fallback&&!a.expanded)?" 품질 미달 보스는 전수 확인으로 복귀하고":""} 후보를 ${st.screenRuns}판씩 확인하고` : st.halved ? `보스마다 조합 ${num(st.combos)}개를 ${st.firstRuns}판씩 훑고 첫 판 순위 상위 약 ${Math.round(100 * (st.passed / st.combos))}%(동점은 모두 포함, 보스당 최대 ${num(st.passed)}팀)만 ${st.screenRuns - st.firstRuns}판 더 돌려 ${st.screenRuns}판 평균으로 비교하고` : `보스마다 조합 ${num(st.combos)}개를 짧게 훑고`;
       body = `${old}${stale}${first}${rest}${btn("다시 찾기")}${opt}<details class="season-options" data-fold="cs-result-basis"><summary>탐색 결과 상세</summary>${lvInfo}<div class="mut gd-small">후보 ${st.pool}명${st.capped ? "(탐색 풀 제한 설정)" : "(보유 육성 구원자 전부)"} → ${scr}, 보스별 상위 ${st.keep}팀을 더 정확히 본 뒤, 겹치지 않는 3팀 중 합이 큰 ${st.triples}개 편성의 팀을 ${st.runs}판씩 다시 돌린 값임(표본이 작아 수천 점은 오차). ${MODES[st.mode]} 기준 합계가 가장 큰 순임. 확인한 후보 조합 중에서 골랐으므로 전체 조합의 수학적 최적은 아닐 수 있음.</div></details>`;
     } else body = `${btn("보스 3마리 편성 찾기")}<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>${opt}`;
-    return `<div class="gd-search" data-k="cs-search" data-state="${st.phase}">${head}${body}<details class="season-options" data-fold="cs-basis"><summary>계산 기준·예상 시간 ⓘ</summary><span class="gd-est">추정</span>${pre}${warn}</details></div>`;
+    return `<div class="gd-search" data-k="cs-search" data-state="${st.phase}">${head}${body}<details class="season-options" data-fold="cs-basis"><summary>계산 기준·예상 시간 <i class="ux-help-mark" aria-hidden="true"></i></summary><span class="gd-est">추정</span>${pre}${warn}</details></div>`;
   }
 
   // 작업자 수 자동 결정(순수 함수, 시험 대상). env = {cores: 논리 코어 수(navigator.hardwareConcurrency, 없으면 null), memGB: navigator.deviceMemory(없으면 null), mobile: 모바일 여부}

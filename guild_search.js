@@ -198,7 +198,7 @@
       body = `${stale}${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 리더 별도 표시)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>보스 깎음</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
 <div class="mut gd-small">후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값임(표본이 작아 한두 단계·수천 점은 오차). 고른 선택 효과 기준(기본 끔). 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순임. 점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받음.</div></details>`;
     } else body = btn("내 구원자로 편성 찾기") + '<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>'+coop;
-    return `<div class="gd-search" data-k="gd-search" data-state="${st.phase}">${head}${body}${st.phase === "done" ? unsupportedHtml(st.rows || [], esc) : ""}<details class="season-options" data-fold="gs-basis"><summary>계산 기준 ⓘ</summary><span class="gd-est">추정</span>${warn}</details></div>`;
+    return `<div class="gd-search" data-k="gd-search" data-state="${st.phase}">${head}${body}${st.phase === "done" ? unsupportedHtml(st.rows || [], esc) : ""}<details class="season-options" data-fold="gs-basis"><summary>계산 기준 <i class="ux-help-mark" aria-hidden="true"></i></summary><span class="gd-est">추정</span>${warn}</details></div>`;
   }
 
   const breakLabel = (t, esc) => `브레이크 스킬: ${esc(t.brk || "없음")}${t.brk ? ` Lv.${t.brkLv}` : ""}`;
