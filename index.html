@@ -1166,7 +1166,7 @@ const bigBossNote=r=>`<div class="bigboss" data-k="bigboss">큰 보스전 ${Ux.h
 // 시간(11/13, 정확도 우선): 전체 시간 상한이 없다 — 느린 기기에서도 줄이지 않고 끝까지 돈다. 멈추는 것은 사용자뿐(진행 화면 「지금까지 결과로 보기」).
 //  멈추면 그때까지 끝난 팀으로 순위를 정하고(scrClose) sc.short — 결과 위에 알리고 「끝까지 확인」(simScreen(p,true): 안 돈 것만 이어서).
 //  후보는 풀별 번갈아 순서(scrPick)라 중간에 멈춰도 풀마다 고르게 남는다. 안전망은 작업자별 무진행 상한뿐(simWatch: 일하는 작업자가 simTeamLimit 동안 소식이 없으면 오류로 멈춤)
-// 속도(11/13, 결과는 그대로): 작업자 수 = min(코어−1, 8, 메모리 예산)(scrWorkerCount) · 후보는 대기열로 하나씩 맡김(simDispatch) · 2차는 1차 8판을 다시 돌리지 않고 24판만 더 돌려 합침(leg 주석)
+// 속도(11/13, 결과는 그대로): 작업자 수 = min(코어−1, 8, 메모리 예산)(scrWorkerCount) · 후보는 대기열로 하나씩 맡김(simDispatch) · 2차는 1차 8판을, 1차는 훑기 1판을 다시 돌리지 않고 나머지만 더 돌려 합침(scrPrior)
 //  · 끝난 작업자는 끄지 않고 본선이 팀마다 나눠 다시 씀(scrPool). 다단 탈락(4→8→16→32판)은 하지 않는다 — 오탈락 위험(정확도 우선, HANDOFF 27번)
 const SCR_ROUNDS=[{n:8,q:80,v:40},{n:32,top:20}],SCR_N=SCR_ROUNDS.map(r=>r.n).join("→");
 // SCR_RK = 재점화 풀 크기(재점화>0 일 때만 후보에 더함, 0 이면 끔)
@@ -1189,6 +1189,11 @@ function scrFullInit(sc,all){const keys=scrFullKeys(all,sc.pool);if(keys){sc.ful
 // 훑기 결과 순위(끝난 팀만): scrCmp → 빠른 계산 순서
 function scrFullRank(sc){const pos=new Map(sc.full.map((k,i)=>[k,i]));return Object.keys(sc.res0).sort((a,b)=>scrCmp(sc.res0[a],sc.res0[b])||pos.get(a)-pos.get(b))}
 const scrRoundN=i=>i<0?SCR_FULL.n:SCR_ROUNDS[i].n;
+// 앞 단계 판 이어 쓰기(결과는 처음부터 한 번에 돈 것과 글자 그대로 같음 — tests/screen_merge_test.py): 1차는 훑기 1판(sc.res0 의 raw)에, 2차는 1차 8판(sc.res 의 raw)에
+//  이어 run_offset 부터만 돌린다. 훑기와 1차는 같은 시드·rng_streams·옵션이라 훑기 1판 = 1차 0번째 판(test_scan_reuse). 이을 raw 가 없으면(옛 엔진 묶음) 처음부터
+const scrPrior=(sc,i,key)=>{const r=i>0?sc.res[key]:i===0&&sc.res0?sc.res0[key]:null,off=i>0?SCR_ROUNDS[0].n:SCR_FULL.n;return r&&r.raw&&off<scrRoundN(i)?{raw:r.raw,off}:null};
+// 팀 options 의 판 몫: 이어 돌리면 run_offset·merge_raw(작업자가 합친 raw 도 돌려줌), 아니면 raw 를 받아 다음 단계가 이어 씀
+const scrLegOpt=pr=>pr?{run_offset:pr.off,merge_raw:pr.raw}:{raw_runs:true};
 // (목표가 다르면 예선 결과의 t60 유무·순위가 다르다 → 키에 starOf)
 const scrKey=(st,p)=>JSON.stringify([contents[$("content").value].key,st.tab,st.name,+p,rkOf(contents[$("content").value].key),starOf(contents[$("content").value].key),miMode()?MI.hash:"",SCROWN,MM||"",...recommendationPolicyTag(),...(typeof growthEnabled==="function"&&growthEnabled()?[growthCacheTag()]:[])]);
 let SCROWN="";
@@ -1231,15 +1236,15 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
  const el=()=>document.querySelector('[data-k="progress"] [data-k="simstate"]'),showDom=SearchExecutor.throttle(()=>{const x=el();if(x&&x.textContent!==SIMQ.msg)x.textContent=SIMQ.msg},SearchExecutor.PAINT_MS,undefined,{trailing:false}),show=m=>{SIMQ.msg=m;showDom()};   // 끝 글자는 paint(simProgressSync)·다음 단계가 다시 씀
  let id=0;
  // 후보를 대기열(simDispatch)로 작업자들에 맡기고, 모두 끝나면 next. i = 단계(-1 훑기·0·1), 결과는 훑기 sc.res0 · 1차 sc.res · 2차 sc.res2
- // 2차는 1차의 8판을 다시 돌리지 않는다: 1차 결과의 raw(판별 원시값, 작업자가 준 문자열 그대로)를 되돌려 보내 뒤쪽 24판(run_offset 8)만 돌리고
+ // 2차는 1차의 8판을, 1차는 훑기의 1판을 다시 돌리지 않는다(scrPrior): 앞 단계 결과의 raw(판별 원시값, 작업자가 준 문자열 그대로)를 되돌려 보내 뒤쪽 판(run_offset 8·1)만 돌리고
  //  작업자(파이썬 web.merge_summary)가 합친다 — 합친 값은 32판을 한 번에 돌린 것과 같다(tests/screen_merge_test.py). raw 가 없으면(옛 엔진 묶음) 32판을 다 돈다
  const leg=(i,keys,next)=>{const n=scrRoundN(i),into=i<0?sc.res0:i?sc.res2:sc.res,label=i<0?"후보 전체 훑는 중":"후보 거르는 중";sc.round=i;sc.left=keys.length;sc.got=0;{const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
   const rid=id,live=()=>SIMQ.requestId===rid,ws=scrPool(keys.length);
-  const prior=key=>i>0&&R0.n<n&&sc.res[key]?sc.res[key].raw:null,per=keys.reduce((a,k)=>a+(prior(k)?n-R0.n:n),0)/keys.length;
+  const prior=key=>scrPrior(sc,i,key),runsOf=key=>{const pr=prior(key);return pr?n-pr.off:n},per=keys.reduce((a,k)=>a+runsOf(k),0)/keys.length;
   // 남은 시간 = 예선 남은 몫(작업자 수로 나눔) + 본선
   // 본선 = 보이는 팀 수 × 판 수 × 본선 속도(모르면 예선 속도), 작업자에 나눔 + 화면 다시 계산 2번(예선 끝·본선 끝)
   const scrEta=()=>{const rs=SIMQ.rateS;if(!rs||!sc.allReady){SIMQ.eta=null;return}const nw=ws.length;
-   const n1=i<0?sc.fullN:sc.left,ms=(sc.left-(sc.got||0))*per*rs/nw+(i<0?n1*R0.n*rs/nw:0)+(i>0?0:Math.min(R1.top,n1)*(R1.n-R0.n)*rs/nw);
+   const n1=i<0?sc.fullN:sc.left,ms=(sc.left-(sc.got||0))*per*rs/nw+(i<0?n1*(R0.n-SCR_FULL.n)*rs/nw:0)+(i>0?0:Math.min(R1.top,n1)*(R1.n-R0.n)*rs/nw);
    const ord=i<0?[]:scrOrder(sc),k=ord.findIndex(x=>goalVal(sc.res2[x]||sc.res[x])>=0.5),nb=Math.max(1,Math.min(k<0?3:Math.floor(k/3)+1,Math.ceil(Math.min(9,box.total||3)/3)));
    SIMQ.eta=Date.now()+ms+nb*simBatchMs(SIMQ.n,simRate()||rs)};
   // 무진행 상한(작업자별, simWatch): 엔진 준비 전에는 내려받기 상한, 준비 뒤에는 팀 하나 상한. 전체 시간 상한은 없다
@@ -1251,9 +1256,9 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
   const opt=Object.assign({},simOpt(c.key),{rng_streams:true}),stage=c.key+"/"+st.tab+"/"+st.name;
   // 묶음(A-2): 팀 여러 개를 한 요청으로(SearchExecutor.chunkSize — 훑기 10,626팀·작업자 8개면 34팀, 예선 120팀이면 1팀). 결과는 팀마다 같은 시드라 그대로
   simDispatch(ws,keys,{id,live,arm,chunk:SearchExecutor.chunkSize(keys.length,ws.capacity),
-   msg:key=>{const t=byKey.get(key),bn=teamBreak(t)?.name||null,raw=prior(key);
-    return {type:"run",base,stage,n_runs:raw?n-R0.n:n,seed:SIMQ.seed,options:opt,
-     teams:[{key,party:simParty(t),options:Object.assign({break_skill:bn?{name:bn,level:brkLv(bn)}:null},raw?{run_offset:R0.n,merge_raw:raw}:i<0?{}:{raw_runs:true})}]}},
+   msg:key=>{const t=byKey.get(key),bn=teamBreak(t)?.name||null;
+    return {type:"run",base,stage,n_runs:runsOf(key),seed:SIMQ.seed,options:opt,
+     teams:[{key,party:simParty(t),options:Object.assign({break_skill:bn?{name:bn,level:brkLv(bn)}:null},scrLegOpt(prior(key)))}]}},
    stage(w,m){if(m.msg==="준비 끝")chk();if(/^시뮬 \d+\//.test(m.msg||""))w._t=Date.now();show(`${label} ${sc.got||0}/${sc.left}`)},
    team(key,m,w){into[key]=Object.assign(m.result,{n});sc.got++;if(w._t){simRateAdd((Date.now()-w._t)/w._n,"scr");w._t=0}
     show(`${label} ${sc.got}/${sc.left}`);paint()},

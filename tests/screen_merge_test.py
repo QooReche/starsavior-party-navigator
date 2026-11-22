@@ -10,6 +10,8 @@ battlesim/web.py merge_summary 로 합친다. 순위에 쓰는 값(clear·t60·p
   - web.merge_summary 의 prog 를 round(sum(prog) / n, 3) 으로, 또는 clear 를 올림으로 바꾼다
   - web.run_auto 에서 raw = (prior or []) + ... 의 prior 를 빼먹는다
   - api._simulate 의 raw_runs.append 에서 처치 턴을 round(…, 3) 으로 바꾼다
+훑기 1판 재사용(test_scan_reuse): 훑기 1판(묶음) + run_offset 1 의 7판 == 예선 1차 8판 한 번.
+  일부러 깨뜨리기: 시험의 run_offset=1 을 0 으로 / merge_raw 를 빼기 / 훑기 시드 +1 — 각각 실패해야 함.
 시험 안의 대조군: 판 번호를 안 밀고(run_offset 0) 합치면 달라져야 한다 — 같으면 이 시험이 아무것도 못 잡는다는 뜻."""
 import json
 import os
@@ -78,6 +80,40 @@ def test_merged_equals_direct():
     return ok, '%d건 중 다름 %d / 클리어율이 0~1 사이 %d건·0%% %d건·t60>0 %d건 / 대조군(판 번호 안 밂)이 달라진 건 %d %s' % (n, len(bad), mixed, zero, star, sensitive, bad[:1])
 
 
+def test_scan_reuse():
+    """훑기 1판 재사용(예선 1차 = 훑기 1판 + run_offset 1 의 7판) == 예선 1차 8판 한 번.
+    훑기는 묶음(run_auto_batch, 팀 여럿 한 요청)·n=1 로 돌고, 예선 1차는 팀 하나·n=8 로 돈다 — 둘 다 같은 시드·rng_streams·옵션.
+    (1) 훑기 1판(raw 받음) 요약 == raw 안 받은 훑기 1판(지금 훑기 순위가 그대로)
+    (2) 훑기 1판의 판별 원시값 == 예선 8판의 0번째 판
+    (3) 1 + 7(merge_raw) 요약·raw == 8판 한 번
+    대조군: 시드를 1 올린 훑기 1판을 이으면 달라져야 한다"""
+    bad, sensitive, n, by_stage = [], 0, 0, {}
+    for stage, party, opt in cases():
+        by_stage.setdefault(stage, []).append((party, opt))
+    for stage, rows in by_stage.items():
+        opt = rows[0][1]
+        parties = [{'key': str(i), 'party': p} for i, (p, _) in enumerate(rows)]
+        scan_old = dict(web.run_auto_batch(stage, parties, 1, 1, json.dumps(opt)))
+        scan_new = dict(web.run_auto_batch(stage, parties, 1, 1, json.dumps(dict(opt, raw_runs=True))))
+        scan_bad = dict(web.run_auto_batch(stage, parties, 1, 2, json.dumps(dict(opt, raw_runs=True))))
+        for t in parties:
+            n += 1
+            k, party = t['key'], t['party']
+            old, new = json.loads(scan_old[k]), json.loads(scan_new[k])
+            direct = run(stage, party, FIRST, dict(opt, raw_runs=True))
+            merged = run(stage, party, FIRST - 1, dict(opt, run_offset=1, merge_raw=new['raw']))
+            if pick(old) != pick(new):
+                bad.append((stage, k, 'scan changed by raw_runs'))
+            if json.loads(new['raw'])[0] != json.loads(direct['raw'])[0]:
+                bad.append((stage, k, 'scan run != screen run 0'))
+            if pick(merged) != pick(direct) or merged['raw'] != direct['raw'] or merged['merged'] != [1, FIRST - 1]:
+                bad.append((stage, k, 'merged 1+7 != 8', pick(merged), pick(direct)))
+            wrong = run(stage, party, FIRST - 1, dict(opt, run_offset=1, merge_raw=json.loads(scan_bad[k])['raw']))
+            sensitive += pick(wrong) != pick(direct)
+    ok = not bad and sensitive >= n // 2
+    return ok, '%d건 중 다름 %d / 대조군(시드+1 훑기)이 달라진 건 %d %s' % (n, len(bad), sensitive, bad[:1])
+
+
 def test_merge_guard():
     """merge_raw 의 판 수와 run_offset 이 다르면 거부(조용히 틀린 합을 내지 않음)"""
     stage, party, opt = next(iter(cases()))
@@ -90,7 +126,7 @@ def test_merge_guard():
     return refused, '판 수 불일치 거부 %s' % refused
 
 
-TESTS = [test_merged_equals_direct, test_merge_guard]
+TESTS = [test_merged_equals_direct, test_scan_reuse, test_merge_guard]
 
 
 def main():
