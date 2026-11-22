@@ -89,14 +89,6 @@ async function growthCandidates(c,st,alive,deadline,config={}){const original=co
     if(!config.profile){GROW.msg=`육성 후보 준비 ${targets.length}건`;growthPaint();}await new Promise(ok=>setTimeout(ok,0));
   }return targets;}
 async function growthEvaluate(jobs,n,seed,c,st,id,deadline,env={}){const state=env.state||GROW,paint=env.paint||growthPaint,live=env.live||(()=>GROW.id===id),owner=env.owner||'reco',version=env.version||GROW.versions.engine;
-  const placementStarted=Date.now();
-  if(env.final&&CFG.recommendation?.placementCompare)for(const j of jobs){
-    if(j.t&&PLACEMENT_CACHE.has(j.t.placementKey))continue;
-    const winner=await placementRun({party:j.party,stage:c.key+'/'+st.tab+'/'+st.name,options:env.options||simOpt(c.key),brk:j.options?.break_skill,owner,
-      live,register:f=>state.stop=f,onProgress:d=>{state.msg=`육성 배치·리더 비교 ${d}/24`;paint();}});
-    j.party=winner.party;if(j.t)rememberPlacement(j.t,j.t.placementKey,winner.p);state.stop=null;
-  }
-  if(env.final&&Number.isFinite(deadline))deadline+=Date.now()-placementStarted;
   return new Promise(resolve=>{
   const results={};if(!jobs.length||Date.now()>=deadline||!live()||state.errors.length){resolve(results);return;}
   // 작업자 풀·대기열은 추천 예선·본선과 같은 것(scrPool·simDispatch): 정상으로 끝나면 작업자를 살려 두고, 끊길 때(중단·시간 초과·오류)만 풀을 끈다

@@ -12,11 +12,11 @@ const inventory={
   'direct_bundle.js':[['role="progressbar"','reco'],['${own.progress||0}/${own.snapshot.runs}','direct'],['${Math.max(1,b.steps.findIndex(s=>s.kind===b.current)+1)}/${b.steps.length}','direct']],
   'direct_party.js':[['${members.length}/4','excluded: party size']],
   'direct_run.js':[['${running.progress||0}/${running.snapshot.runs}','direct'],['${row.progress||0}/${row.snapshot.runs}','direct']],
-  'growth_ui.js':[['${d}/24','producer: env.paint; default growth tab outside five owners'],['${Object.keys(results).length}/${jobs.length}','producer: env.paint; default growth tab outside five owners']],
+  'growth_ui.js':[['${Object.keys(results).length}/${jobs.length}','producer: env.paint; default growth tab outside five owners']],
   'guild_search.js':[['${st.total ? ` · ${st.done}/${st.total}','guildSearch']],
   'myinfo_view.js':[["${n}/${e?.parts||'?'}",'excluded: equipment set parts']],
   'party_template.html':[['<progress','direct'],['${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}','reco'],['${seen}/${sc.total}','excluded: stopped sample count'],['${sc.got||0}/${sc.left}','reco'],['${sc.got}/${sc.left}','reco'],['role="progressbar"','reco'],['${done}/${all}','reco'],['${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10','excluded: power score'],['${eq}/6','excluded: equipment slots']],
-  'placement_page.js':[['${DIRECT.placement.done||0}/24','레인 미연결(범위 밖)'],['${CDIRECT.placement.done||0}/24','레인 미연결(범위 밖)'],['${d}/24','레인 미연결(범위 밖)']],
+  'placement_page.js':[['${DIRECT.placement.done||0}/24','레인 미연결(범위 밖)'],['${CDIRECT.placement.done||0}/24','레인 미연결(범위 밖)']],
   'recommend_runtime.js':[['${got}/${jobs.length}','producer: recoProgressPaint / directResultsPaint']],
   'sim_worker.js':[['${i+1}/${m.teams.length}','producer: worker result consumers']]
 };

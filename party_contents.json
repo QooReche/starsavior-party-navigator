@@ -280,9 +280,6 @@
   "weightMob": 0.35
  },
  "recommendation": {
-  "neutralRoles": false,
-  "placementBaseline": false,
-  "placementCompare": false,
   "fullScreen": false
  }
 }

@@ -1,7 +1,4 @@
 // Page transport for the pure placement candidates; shares the physical worker pool.
-const PLACEMENT_CACHE=new Map();
-let placementEngine=null;
-function placementSetEngine(ver){if(ver!==placementEngine){PLACEMENT_CACHE.clear();placementEngine=ver;}}
 let placementSerial=0;
 function placementCompare(a,b){return b.cosmo&&a.cosmo?PlacementSearch.cmp(typeof CSR==='undefined'?'top':CSR.optMode||'top')(a,b):
   (b.t60??b.clear)-(a.t60??a.clear)||b.clear-a.clear||(b.prog||0)-(a.prog||0)||(a.ttk??Infinity)-(b.ttk??Infinity);}
@@ -54,20 +51,4 @@ async function cdArrangeSim(boss){
       live,register:f=>{state.cancel=()=>{if(CDIRECT.placement===state)CDIRECT.placement=null;f();paint();};},onProgress:d=>{state.done=d;paint();}});
     if(live()){CDIRECT.placement=null;cdChange({type:'draft',boss,action:{type:'arrange',order:winner.p.order,leaderKey:winner.p.leaderKey}},{record:true});}
   }catch(e){if(CDIRECT.placement===state){CDIRECT.error=e.message;cdPaint();}}finally{if(CDIRECT.placement===state)CDIRECT.placement=null;paint();}
-}
-function recommendationPlacementKey(t,party){const c=contents[$('content').value],st=cur?.[$('stage').value];
-  return JSON.stringify([PartyPlacement.VERSION,placementEngine,c.key,st?.tab,st?.name,simOpt(c.key),teamBreak(t),party.units.slice().sort((a,b)=>a.key.localeCompare(b.key))]);}
-function rememberPlacement(t,key,p){PLACEMENT_CACHE.set(key,p);t.placement=p;
-  const byEngine=new Map(t.combo.map(x=>[ekey(x.s.key),x.s.key]));
-  t.combo.placement={order:p.order.map(k=>byEngine.get(k)||k),leaderKey:byEngine.get(p.leaderKey)||p.leaderKey};}
-async function recommendationArrange(p,rows){
-  const id=++SIMQ.requestId;SIMQ.busy=p;SIMQ.msg='배치·리더 24조건 비교 중';run(true);
-  const live=()=>SIMQ.requestId===id;
-  try{await directManifest({});if(!live())return;for(const t of rows){const party=simParty(t),key=t.placementKey;if(PLACEMENT_CACHE.has(key))continue;
-    const c=contents[$('content').value],st=cur[$('stage').value];
-    const winner=await placementRun({party,stage:c.key+'/'+st.tab+'/'+st.name,options:simOpt(c.key),brk:teamBreak(t),owner:'reco',live,
-      onProgress:d=>{SIMQ.msg=`배치·리더 비교 ${d}/24`;simPaintProgress();}});
-    if(!live())return;rememberPlacement(t,key,winner.p);
-  }if(live()){SIMQ.busy=null;run(true);simStart(p);}}
-  catch(e){if(live())simStop(e.message,true);}
 }

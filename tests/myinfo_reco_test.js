@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const M=require('../myinfo_reco.js'),S=require('../myinfo_stats.js'),Q=require('../quick.js');
 const info=require('./fixtures/myinfo_synthetic.json'),growth=require('../data/growth.json');
 const roster=info.units.map(u=>({uid:u.id,key:String(u.id)}));
-const placementContext={CFG:{recommendation:{placementBaseline:true}},PartyPlacement:require('../party_placement'),PLACEMENT_CACHE:new Map(),recommendationPlacementKey:()=>''};
+const placementContext={CFG:{recommendation:{}}};
 const tests={
   mapping(){for(const ck of ['op','clo'])assert.equal(S.rule_for_content(ck),'normal');
     for(const ck of ['cosmo','rush'])assert.equal(S.rule_for_content(ck),'fixed200');
@@ -37,8 +37,8 @@ const tests={
     vm.runInContext(html.slice(start,end),ctx);ctx.t={combo:[],ek:keys,base:40000,b:finals};ctx.st={tab:'x',name:'y'};
     const party=JSON.parse(JSON.stringify(vm.runInContext('simParty(t)',ctx)));
     const byKey=Object.fromEntries(party.units.map(u=>[u.key,u]));
-    const baseline=placementContext.PartyPlacement.baseline(keys,Object.fromEntries(keys.map(k=>[k,{stats:{spd:100,...(profile.results[k]?.stats||{hp:1000,def:50})}}])));
-    assert.equal(party.units[party.leader].key,baseline.leaderKey);assert.deepEqual(party.units.map(u=>u.key),baseline.order);
+    // 화면 카드 순서 그대로(시뮬 칸 = DirectParty.toEngine), 리더 = 화면 리더
+    assert.equal(party.units[party.leader].key,'1002');assert.deepEqual(party.units.map(u=>u.key),require('../direct_party').toEngine(keys));
     assert.deepEqual(byKey['1002'],{key:'1002',build:'none',stats_override:profile.results['1002'].stats,stats_final:true,power:profile.results['1002'].power,myinfo_combat:profile.results['1002'].combat});
     assert.deepEqual(byKey['1001'],{key:'1001',build:'none',stats_override:profile.results['1001'].stats,stats_final:true,power:profile.results['1001'].power,myinfo_combat:profile.results['1001'].combat});
     assert.deepEqual(party.units[3],{key:'missing',stats_override:{atk:100,hp:1000,def:50}});

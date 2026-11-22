@@ -106,13 +106,6 @@ async function recoCalculate(snapshot,task){
     screen:(p,box)=>recoScreenCalculate(snapshot,task,p,box),more:snapshot.more,result:snapshot.result,goal:goalVal,first:snapshot.first,
     async final(p,box){
       SIMQ.busy=p;SIMQ.screening=false;task.message='본선 준비 중';
-      for(const t of (CFG.recommendation?.placementCompare?box.rows.filter(t=>!snapshot.result(t)):[])){
-        const party=snapshot.party(t),key=t.placementKey;if(PLACEMENT_CACHE.has(key))continue;
-        task.message='배치·리더 24조건 비교 중';recoProgressPaint(task);
-        const winner=await placementRun({party,stage:snapshot.c.key+'/'+snapshot.st.tab+'/'+snapshot.st.name,options:snapshot.options,brk:snapshot.breakFor(t),owner:task.owner,
-          live:()=>!task.cancelled&&snapshot.key===recoIdentity(),register:f=>task.stop=f,onProgress:d=>{task.progress=d/24;recoProgressPaint(task);}});
-        rememberPlacement(t,key,winner.p);task.stop=null;
-      }
       const jobs=box.rows.filter(t=>!snapshot.result(t)).map(t=>({key:snapshot.sig(t),party:snapshot.party(t),options:{break_skill:snapshot.breakFor(t)}}));
       await recoEvaluate(snapshot,task,jobs,snapshot.n,{onTeam(j,r){
         SIMQ.res[j.key]=r;const meta=JSON.parse(JSON.stringify(snapshot.meta));meta.parts[7].engine=r.ver;meta.condition=JSON.stringify(meta.parts);meta.recommendationKey=snapshot.key;(SIMQ.meta??={})[j.key]=meta;
