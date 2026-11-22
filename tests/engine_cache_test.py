@@ -186,7 +186,7 @@ class EngineCacheTest(unittest.TestCase):
         with Switch(False):
             ref_b = _run(b, 'belgras', 0)
         real = api._unit_key
-        api._unit_key = lambda u, db, mode, build, use_combat: (id(db), u['key'], mode, build, bool(use_combat))      # 일부러 틀린 키
+        api._unit_key = lambda u, db, mode, build: (id(db), u['key'], mode, build)      # 일부러 틀린 키
         try:
             with Switch(True):
                 _run(a, 'belgras', 0)

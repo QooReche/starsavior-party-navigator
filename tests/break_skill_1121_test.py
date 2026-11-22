@@ -16,7 +16,7 @@ import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [ROOT, os.path.join(ROOT, 'tests'), os.path.join(ROOT, 'tools')]
-from break_skill_test import legacy_setup
+from break_skill_test import setup as bskill_setup
 from battlesim.mc import break_skill_levels
 from battlesim.rules import MC_OPTS
 
@@ -112,7 +112,7 @@ class OrbitalTablePinTest(unittest.TestCase):
 
 class DomainTeamTest(unittest.TestCase):
     def test_domain_only_on_casting_team(self):
-        b = legacy_setup({'name': '스타피어서'}, roles=('스트라이커', '서포터'))
+        b = bskill_setup({'name': '스타피어서'}, roles=('스트라이커', '서포터'))
         for u in b.allies:
             u.d.skills.clear()
         f = b.foes[0]

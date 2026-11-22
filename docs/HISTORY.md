@@ -1,3 +1,102 @@
+## 2026-11-22 — 엔진 다이어트 4단계: legacy 스위치 168개 삭제
+
+설계(`fable_diet.md` 4단계)대로 기본값(client)과 다른 `legacy` 분기를 7묶음(26·24·24·28·23·25·18)으로 지웠음. 규칙 값은 그대로이고 분기만 지운 것이라 엔진 결과는 매 커밋 바이트 일치함(diet 기준선 36건·unify 기준선·`savior_rules_lines` 골든 기본 항목·`golden_check`·`mc_cache_test` 기본 해시, 로컬 광역 대조 5,338건). 결과·표는 `docs/engine_diet_1122.md` 4단계 절.
+- 남긴 code+legacy 스위치 21개: ENGINE_MC_KEYS 10, power_penalty·fixed_true_formula·superarmor_damage_ban·counter_slot_timing, `measure_autotarget_12` 가 읽는 auto_* 5, unify 기준선이 쓰는 chain_timing, 가정·커뮤니티 등급 키를 읽는 enemy_auto_target. opts·formula legacy 는 그대로.
+- `default.json`(mc 237→69키)·`default.min.json`·`sim/manifest.json` 재생성(`index.html` 도 다시 만들었으나 변화 없음 — 화면에 지운 스위치 이름 없음), 규칙 도장(`tools/gen_rules_stamp.json`) 묶음마다 «값 불변, 분기 삭제»로 인정, `unsupported_allowlist` 변화 없음, `rules_test._EXPECTED_MC_OPTS_KEYS` 갱신.
+- `Battle` 은 모르는 MC 규칙 키를 `ValueError` 로 막음. 정적 진단은 `normalized_lines(d, native=False)` 로 옛 진단 그대로(marker_se_flow 만 진단 차이가 있어 인자로 보존).
+- `mc_cache_test`: `_KEEP`(legacy 약 100개)·옛 해시 3개 삭제, 기본 프로필 해시 3개(7fb177a 에서 먼저 고정)만 남김. `savior_rules_lines` 골든: 옛 정규화 'off' 항목 15개 삭제, 기본 항목 15개 그대로.
+- 옛 값 비교·측정 도구의 legacy 모드는 태그 `engine-legacy-final` worktree 에서만 동작.
+- 판당 시간 6케이스 합 −13.7%(7fb177a 엔진 대비, 100판 최솟값). 전체 단위 시험 통과 269(실패 2건은 지운 이름을 쓰던 시험 — 고쳐 통과), e2e 24/24 통과.
+
+지운 시험 함수(옛 값 전용·기본값 확인·옛 값 비교, 153개 + 이름만 바꾼 8개). 기본값 시험으로 바꾼 것(장면 재선택·기대값 갱신)은 각 묶음 커밋 메시지와 `engine_diet_1122.md`:
+- `abs_hit_terms_test.py`: test_default_client, test_zero_values_unchanged
+- `accel_test.py`: test_owner_dot_stack_expiry_fresh_and_skip_tick
+- `allowlist_break_test.py`: test_cube_alive_sum_and_legacy, test_guard_single_dead_and_legacy
+- `allowlist_followup_test.py`: test_barrier_legacy_preserved, test_reaction_legacy_consumes_single_candidate
+- `ally_auto_lines_test.py`: test_off_switch_uses_description
+- `any_turn_clock_test.py`: test_rule_off_keeps_legacy_owner_clock
+- `auto_skill_1121_test.py`: test_legacy_float64
+- `auto_target_test.py`: test_off_restores_old_choice
+- `barrier_depletion_test.py`: test_default_client, test_depleted_with_props_kept_legacy
+- `battle_stat_test.py`: test_strike_nullified_stat_calc_is_quiet
+- `belgras_client_test.py`: test_legacy_enemy_all, test_off_and_no_supplier
+- `belgras_stage_se_test.py`: test_all_fifty_rows_and_scope_and_legacy_cache
+- `break_skill_test.py`: test_damage_scale, test_all_applies_reduction, test_invalid_clock, test_boss_next_ally_heal_and_durations, test_break_gauge_overflow_actor_and_dead, test_break_kill_wave_transition_preserves_ultimate, test_heal_reduction_dead_and_dispel, test_last_enemy_break_kill_before_dot, test_round_boundaries_and_speed_expiry, test_wave_carry
+- `bskill_nullify_test.py`: test_default_client, test_orbital_ignores_nullify_legacy
+- `buff_clock_test.py`: test_legacy_text_misses_the_nine, test_real_boss_chain_count_drops
+- `buff_step_test.py`: test_off_keeps_both
+- `casebook_mechanics_test.py`: test_speed_floor_and_legacy
+- `cc_immune_buff_test.py`: test_default_client, test_stun_immune_ignored_legacy
+- `chain_stat_true_test.py`: test_legacy_first_target
+- `check_turn_test.py`: test_legacy_action_ignores_turn
+- `clash_runtime_test.py`: test_legacy_does_not_resolve_forced_target
+- `client_recheck_reb_test.py`: test_legacy_order, test_legacy_no_cap, test_legacy_uses_current_rate, test_off_still_disables_revenge
+- `cond_count_bind_test.py`: test_last_key_never_fires
+- `dead_keep_default_test.py`: test_default_client
+- `debuff_ban_flag_test.py`: test_default_table, test_shien_ignored_legacy
+- `dispel_attack_names_test.py`: test_default_table, test_sloth_kept_legacy
+- `dispel_evade_test.py`: test_default_client, test_evaded_loses_buff_legacy
+- `dispel_instance_test.py`: test_default_client, test_one_removes_whole_name_legacy
+- `dispel_on_attack_test.py`: test_counter_keeps_retort_when_off, test_off_keeps_old_behavior
+- `dispel_order_test.py`: test_default_client
+- `dispel_shield_test.py`: test_default_client, test_dispel_all_keeps_shield_legacy
+- `dmg_terms_1114_test.py`: test_chain_guard_off, test_guard_tie_first
+- `dot_hit_result_test.py`: test_default_client
+- `eff_remaining_test.py`: test_vs_element_off
+- `effect_mapping_conn_test.py`: test_default, test_legacy_expected
+- `enemy_effects_test.py`: test_instant_damage_off_legacy
+- `enforce_timing_test.py`: test_both_modes_run, test_default_is_queue, test_enforce_target_default_exec, test_enforce_target_modes_run
+- `evade_ignore_resist_test.py`: test_default_client, test_evaded_passes_legacy
+- `external_rules_c_test.py`: test_extra_turn_survives, test_standard_wave_path
+- `foe_auto_test.py`: test_wendigo_off_keeps_old_choice
+- `foe_client_1121_test.py`: test_legacy_no_catch
+- `foe_react_test.py`: test_legacy_switch_disables, test_check_marker_counted_in_legacy, test_off_switch_disables, test_legacy_switch_disables, test_off_switch, test_off_preserves_old_behavior
+- `followup_d_test.py`: test_defaults
+- `gauge_cd_immune_test.py`: test_default_client, test_gauge_applied_legacy_and_plain
+- `gauge_up_immune_test.py`: test_default_client, test_detained_applied_legacy
+- `gille_conditions_test.py`: test_legacy_reproduces_premature_finale, test_single_name_and_literal_legacy
+- `guild_bridal_kill_test.py`: test_bad_mode
+- `heal_burst_test.py`: test_auto_manual_exact_prechange_results
+- `heal_tie_test.py`: test_default_client
+- `immune_group_resist_test.py`: test_default_client, test_ignore_resist_pierces_legacy
+- `level_buff_decrease_test.py`: test_default_is_on, test_explicit_decrease_ignores_legacy_inference_switch
+- `level_max_test.py`: test_legacy
+- `life0_cleanup_test.py`: test_defaults_client, test_life0_effect_kept_legacy
+- `marker_se_test.py`: test_legacy_retains_replacements, test_other_savior_forms_unchanged_with_real_progress
+- `mc_cache_test.py`: test_gwen_multiwave_hash_locked, test_gwen_rng_streams_hash_locked, test_pm_gwen_multiwave_hash_locked
+- `myinfo_combat_test.py`: test_legacy_and_shared_database_untouched
+- `nova_gauge_test.py`: test_legacy_switches_restore_omissions
+- `nullifier_count_test.py`: test_default_client, test_three_charges_once_legacy
+- `op4212_triggers_test.py`: test_legacy_removes_both, test_default_is_client, test_legacy_uses_action_starts
+- `op4212_wide_test.py`: test_legacy_includes_caster, test_legacy_off_refreshes_single
+- `p3_test.py`: test_ally_target_lowest
+- `p5_test.py`: test_tough_elem_and_fixed
+- `reaction_queue_test.py`: test_nested_legacy
+- `received_damage_test.py`: test_legacy_restores_critical_transfer
+- `rekindle_1112_test.py`: test_invalid_mode, test_rule
+- `revenge_test.py`: test_off
+- `review_legacy_test.py`: test_purify_legacy_timeline_and_cap
+- `rules_test.py`: test_ally_break_default, test_toughness_elem_no_legacy
+- `savior_fix_test.py`: test_fix2_shield_context, test_fix2_shield_count, test_lydia_targets, test_lydia_threshold
+- `savior_rules_test.py`: test_switches_exist
+- `se_force_apply_test.py`: test_default_client, test_forced_blocked_legacy_and_unforced
+- `sel_targeting_test.py`: test_enforce_off_reports_unsupported, test_off_switch_reports_unsupported
+- `self_enforce_target_test.py`: test_default_client
+- `skill_effects_b_test.py`: test_existing_variants_survive_legacy
+- `skill_order_test.py`: test_default_and_legacy_metadata, test_legacy_default
+- `sleep_wake_test.py`: test_default_client, test_hit_keeps_sleep_legacy, test_orbital_keeps_sleep_legacy
+- `stage_fx_target_test.py`: test_bad_value_rejected, test_default_is_allies_with_enemies_legacy, test_enemies_mode_is_legacy, test_modes_give_different_results, test_stage_without_fx_unchanged
+- `summon_test.py`: test_off_switch
+- `survey_g1_test.py`: test_gauge_snapshot_then_end
+- `survey_g2_test.py`: test_gauge_before_lock, test_shield_counts_enemies
+- `taunt_guard_test.py`: test_legacy_reproduces_immediate_reaction_expiry
+- `timing_audit_1121_test.py`: test_default_client, test_legacy_keeps_records, test_cool_up_legacy_uncapped, test_default_client, test_self_skill_cool_legacy_one_slot
+- `toughness_video_test.py`: test_coop_generalization_candidate, test_legacy_counterexample, test_observed_skills, test_once_per_cast_target
+- `turn_limit_test.py`: test_model_unit_legacy
+- `unsupported_26752678_test.py`: test_claire_legacy_and_semantic_cache, test_marker_legacy_and_unrelated_scope
+- `wave_gauge_test.py`: test_default_is_reset
+- `web_leads_test.py`: test_legacy_counts_names_and_keeps_old_damage
+
 ## 2026-11-22 — 엔진·빌더 공통 함수 통일(통일 설계 0·1·2·3·4·5·9단계)
 
 통일 설계(`fable_unify.md`)의 엔진·tools 쪽 단계를 했음. 모든 커밋에서 엔진 결과가 기준선과 바이트 일치함(diet 36케이스 + 새 보강 기준선 137케이스). 화면 파일은 손대지 않았음.
