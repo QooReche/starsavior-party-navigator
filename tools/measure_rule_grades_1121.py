@@ -1,7 +1,7 @@
 """남은 가정 등급 규칙의 기본 경로 실행 횟수·결과 계측(2026-11-21). 단일 프로세스, 공개 standard 입력만.
 
 python -X utf8 -I tools/measure_rule_grades_1121.py NAME
-  --legacy-target(옛 가중 추첨 enemy_auto_target=weighted)은 최종 리뷰 반영으로 지움 — 태그 engine-legacy-final 의 worktree 에서만 동작.
+  옛 --legacy-target(가중 추첨 enemy_auto_target=weighted)은 11/22 코드째 삭제 — 태그 engine-legacy-final 에만 있음.
   결과: local/rule-grades/NAME.json (무시 폴더). 표준 출력엔 시나리오별 진행도·클리어·계측만.
 
 계측(판 합계):
@@ -39,8 +39,6 @@ def main():
     name = sys.argv[1]
     rows = []
     counts = Counter()
-    if '--legacy-target' in sys.argv:
-        raise SystemExit('--legacy-target 은 태그 engine-legacy-final 의 worktree 에서만 동작 — 지운 규칙 키: enemy_auto_target·target_row_weight·target_defender_mult·target_mode')
     orig = dict(run=Battle.run, filt=Battle.filter_pick,
                 ranked=Battle.ranked_enemies, reset=Unit.reset_initial_cooldowns)
 

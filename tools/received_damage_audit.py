@@ -1,4 +1,4 @@
-"""보관 도구: 적·스킬·대상별 피해 분해와 video_comparison 독립 재현용임.
+"""보관 도구: 적·스킬·대상별 피해 분해. 옛 video_comparison(지운 tools/toughness_check.py 의 db 모델)은 11/22 삭제 — 태그 engine-legacy-final 에만 있음.
 입력: --myinfo로 지정한 계정 자료를 제자리에서 읽음. 원본 복사 없이 집계만 출력함.
 근거: docs/received_damage_audit.md, docs/ingame_samples.md.
 실행: python -X utf8 -I tools/received_damage_audit.py --myinfo <경로> --output local/received.json
@@ -138,37 +138,6 @@ def measure(stage, runs, seed, myinfo, override=None):
                 targets={k: dict(**{f: x / runs for f, x in v.items()},
                                  taken_share=v['taken'] / total if total else 0)
                          for k, v in units.items()})
-
-
-def video_comparison(runs=60):
-    """Recreate the documented 382k standard build, not the user's myinfo.
-
-    Guard pieces must be summed per cast: Haydee receives her own hit plus
-    three shared pieces. Her floating total is not one ordinary target hit.
-    """
-    import toughness_check
-    from battlesim import rules
-    original = Battle.final_dmg
-    rows = defaultdict(Counter)
-    defenses = defaultdict(set)
-
-    def final(b, a, v, base, ctx, crit, cdv, pen, r, hctx):
-        result = original(b, a, v, base, ctx, crit, cdv, pen, r, hctx)
-        if a.side == 1 and a.d.boss:
-            if not hasattr(b, '_video_first'):
-                b._video_first = ctx
-            if b._video_first is ctx:
-                part = 'direct' if v is ctx.target else 'guard'
-                rows[v.name][part] += result
-                local = hctx.local[v]['defp'] if hctx and hctx.local is not None else 0
-                defenses[v.name].add(b.def_stat(v, local))
-        return result
-
-    with patch.object(Battle, 'final_dmg', final), patch.dict(rules.MC_OPTS, guard_normal_hit=False):
-        toughness_check.video_run('db', runs)
-    return {name: dict(damage=sum(c.values()) / runs,
-                       direct=c['direct'] / runs, guard=c['guard'] / runs,
-                       defense=sorted(defenses[name])) for name, c in rows.items()}
 
 
 def main():

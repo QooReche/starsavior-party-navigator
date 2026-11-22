@@ -1,9 +1,8 @@
-"""Compare native debuff-object counting with legacy; derived metrics only.
+"""Cristelle damage/chain metrics under the current rules; derived metrics only.
 
 python -X utf8 tools/web_leads_audit.py --myinfo PATH --runs 60
 
-옛 값(before = debuff_instance_count off, 엔진 다이어트 4단계 3묶음에서 지운 스위치) 비교는 태그 engine-legacy-final 의 worktree 에서만 동작.
-이 브랜치에서는 main 이 바로 종료함. measure(..., legacy=False)(시험 web_leads_test 가 씀)는 그대로 동작.
+옛 before(지운 스위치 debuff_instance_count off) 비교는 11/22 코드째 삭제 — 태그 engine-legacy-final 에만 있음.
 """
 import argparse
 from collections import Counter
@@ -18,15 +17,8 @@ sys.path[:0] = [str(ROOT), str(ROOT / 'tools')]
 from battlesim.fileio import atomic_text
 from ingame_check import low_priority, run, SAMPLES
 from battlesim.mc import Battle
-from battlesim.rules import MC_OPTS
 
-LEGACY = {'debuff_instance_count': False}
-LEGACY_ONLY = '옛 값 비교(before)는 태그 engine-legacy-final 의 worktree 에서만 동작 — 지운 규칙 키: debuff_instance_count'
-
-
-def measure(stage, runs, seed, myinfo, legacy):
-    if legacy and any(k not in MC_OPTS for k in LEGACY):
-        raise SystemExit(LEGACY_ONLY)
+def measure(stage, runs, seed, myinfo):
     casts, damage, chains = Counter(), Counter(), Counter()
     original_cast, original_damage = Battle.cast, Battle.apply_damage
 
@@ -49,7 +41,7 @@ def measure(stage, runs, seed, myinfo, legacy):
         return result
 
     with patch.object(Battle, 'cast', cast), patch.object(Battle, 'apply_damage', apply_damage):
-        summary = run(stage, runs, dict(LEGACY) if legacy else {}, seed, True, myinfo)
+        summary = run(stage, runs, {}, seed, True, myinfo)
     per_cast = {slot: damage[slot] / n for slot, n in casts.items() if n}
     return dict(summary=summary, cristelle=dict(
         casts_per_run={k: n / runs for k, n in casts.items()},
@@ -67,21 +59,19 @@ def main():
     ap.add_argument('--seed', type=int, default=7)
     ap.add_argument('--output', type=Path, default=ROOT / 'docs/web_leads_results.json')
     args = ap.parse_args()
-    if any(k not in MC_OPTS for k in LEGACY):
-        raise SystemExit(LEGACY_ONLY)
     if args.runs < 1 or not args.output.resolve().is_relative_to(ROOT):
         ap.error('Positive runs and a workspace output path required')
     low_priority()
     files = ['battlesim/mc.py', 'battlesim/rules/default.json', 'rawdata/databook_main.json',
              'data/myinfo_combat.json', 'data/growth.json']
     result = dict(runs=args.runs, seed=args.seed,
-                  override_before=dict(LEGACY), override_after={},
+                  override_after={},
                   sha256={f: hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in files},
                   profiles={})
-    for profile in ('before', 'after'):
+    for profile in ('after',):
         result['profiles'][profile] = {}
         for stage in SAMPLES:
-            row = measure(stage, args.runs, args.seed, args.myinfo, profile == 'before')
+            row = measure(stage, args.runs, args.seed, args.myinfo)
             result['profiles'][profile][stage] = row
             print(profile, stage, row['summary']['sim_ratio'], flush=True)
     atomic_text(args.output, json.dumps(result, ensure_ascii=False, indent=2) + '\n')

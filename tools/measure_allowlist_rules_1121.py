@@ -1,4 +1,8 @@
-"""D 영역 변경의 공개 standard 입력 비교. 단일 프로세스, 계정 입력 없음."""
+"""D 영역 변경의 공개 standard 입력(현재 규칙). 단일 프로세스, 계정 입력 없음.
+
+python -X utf8 -I tools/measure_allowlist_rules_1121.py LABEL    # local/allow-d/LABEL.json
+옛 --legacy·--legacy-rule(지운 스위치 wave_foe_battle_start·revive_after_spawn·summon·caster_death)은 11/22 코드째 삭제 — 태그 engine-legacy-final 에만 있음.
+"""
 import json
 from pathlib import Path
 import sys
@@ -34,12 +38,6 @@ def main():
             counts['waves'] += max(0, b.wave_i)
             return result
         opts = dict(build='standard', n_runs=8, seed=20261121)
-        if '--legacy' in sys.argv:
-            opts['rules_override'] = dict(wave_foe_battle_start='all', revive_after_spawn='off', summon='data', caster_death='keep_buffs')
-        if '--legacy-rule' in sys.argv:
-            key = sys.argv[sys.argv.index('--legacy-rule') + 1]
-            old_values = dict(wave_foe_battle_start='all', revive_after_spawn='off', summon='data', caster_death='keep_buffs')
-            opts['rules_override'] = {key: old_values[key]}
         with patch.object(Battle, 'run', run):
             r = simulate(party, encounter, opts)
         assert r['outcome']['progress'] > 0, name

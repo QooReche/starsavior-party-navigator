@@ -1,8 +1,8 @@
 """시간·횟수 필드 전수 대조(11/21, docs/timing_audit_1121.md)에서 고친 두 규칙의 표준 육성 영향. 계정 입력 없음, 순차 실행.
 
-python -X utf8 -I tools/measure_timing_1121.py before|after [--runs N]
-before = revive_se_reset·skill_cool_change legacy, after = 기본(client).
-결과는 local/timing-1121/<mode>.json (gitignore 대상 local/).
+python -X utf8 -I tools/measure_timing_1121.py [--runs N]      # 현재 규칙(옛 after)
+옛 before(지운 스위치 revive_se_reset·skill_cool_change legacy)는 11/22 코드째 삭제 — 태그 engine-legacy-final 에만 있음.
+결과는 local/timing-1121/after.json (gitignore 대상 local/).
 """
 import argparse
 from collections import Counter
@@ -31,15 +31,10 @@ SAMPLES = [
     ('코스모 괴리의 표상 2단계', OP, {'stage': 'cosmo/괴리의 표상/괴리의 표상 2단계'}),
     ('코스모 괴리의 표상(시즌) 3단계 Lv0', OP, {'cosmo_raid': {'boss': '괴리의 표상', 'step': 3, 'level': 0}}),
 ]
-MODES = {
-    'before': {'revive_se_reset': 'legacy', 'skill_cool_change': 'legacy'},
-    'after': {},
-}
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('mode', choices=MODES)
     ap.add_argument('--runs', type=int, default=200)
     a = ap.parse_args()
     counts = Counter()
@@ -54,14 +49,14 @@ def main():
     with patch.object(Battle, 'run', run):
         for label, team, enc in SAMPLES:
             counts.clear()
-            r = simulate(team, enc, {'build': 'standard', 'n_runs': a.runs, 'seed': 20261121, 'rules_override': MODES[a.mode]})
+            r = simulate(team, enc, {'build': 'standard', 'n_runs': a.runs, 'seed': 20261121})
             row = dict(label=label, team=team, encounter=enc, runs=a.runs, clear=r['outcome']['n_clear'],
                        progress=round(r['outcome']['progress'] * 100, 3), counts=dict(counts))
             rows.append(row)
             print(json.dumps(row, ensure_ascii=False), flush=True)
     dest = ROOT / 'local' / 'timing-1121'
     dest.mkdir(parents=True, exist_ok=True)
-    (dest / (a.mode + '.json')).write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding='utf-8')
+    (dest / 'after.json').write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding='utf-8')
 
 
 if __name__ == '__main__':

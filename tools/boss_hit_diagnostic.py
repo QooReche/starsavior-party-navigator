@@ -125,8 +125,6 @@ def experiment(mode, runs, bs):
         return result
 
     ov = {'enemy_same_formula': False} if mode == 'all_enemy_no_185' else {}
-    if mode == 'no_fx':   # 스위치 stage_fx_target 은 엔진 다이어트 4단계에서 지움(항상 아군 적용)
-        raise SystemExit('no_fx 모드는 태그 engine-legacy-final 의 worktree 에서 실행')
     with patch.multiple(Battle, deal=deal, final_dmg=final, apply_damage=apply, lines_of=lines, spawn_wave=spawn):
         ratios = [check.run(name, runs, ov=ov, bs=bs) for name in check.SAMPLES]
     by_name = defaultdict(list)
@@ -143,9 +141,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--runs', type=int, default=100)
     ap.add_argument('--bs', action='store_true')
-    ap.add_argument('--modes', nargs='+', default=['baseline', 'boss_no_185', 'void_no_185', 'all_enemy_no_185',
-                    'boss_no_aoe_div', 'no_boss_atk_variant', 'boss_def_pvp', 'boss_no_element',
-                    'no_fx', 'no_gohang', 'no_boss_ramp'])
+    modes = ['baseline', 'boss_no_185', 'void_no_185', 'all_enemy_no_185', 'boss_no_aoe_div', 'no_boss_atk_variant',
+             'boss_def_pvp', 'boss_no_element', 'no_gohang', 'no_boss_ramp']   # 옛 no_fx(stage_fx_target) 는 태그 engine-legacy-final 에서만
+    ap.add_argument('--modes', nargs='+', default=modes, choices=modes)
     ap.add_argument('--out', type=Path, required=True)
     args = ap.parse_args()
     check.low_priority()

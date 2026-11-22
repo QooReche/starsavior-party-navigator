@@ -5,8 +5,7 @@ python -X utf8 -I tools/measure_autotarget_12.py after
 python -X utf8 -I tools/measure_autotarget_12.py compare
 결과는 local/autotarget/에만 저장. 골든 기대값은 쓰지 않음.
 
-legacy 모드(옛 스위치 auto_* 5개를 legacy 로 — 최종 리뷰 반영으로 지움)와 그 결과를 읽는 compare 는 태그 engine-legacy-final 의 worktree 에서만 동작.
-이 브랜치에서는 legacy 가 바로 종료함. before·after 는 그대로 동작.
+옛 legacy 모드(지운 스위치 auto_* 5개)는 11/22 코드째 삭제 — 태그 engine-legacy-final 에만 있음. compare 는 before·after 만 비교.
 """
 import argparse
 import json
@@ -19,11 +18,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from battlesim.api import simulate
 from battlesim.mc import Battle
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
 
-LEGACY = dict(auto_unable_break='legacy', auto_remove_filter='legacy',
-              auto_se_reselect='legacy', auto_hp_float32='legacy', auto_empty_marker='legacy')
+# 경로 확인용 rule_hits 카운터(스위치는 지웠고 카운터 이름만 남음)
+HIT_KEYS = ('auto_unable_break', 'auto_remove_filter', 'auto_se_reselect', 'auto_hp_float32', 'auto_empty_marker')
 TEAMS = {
     'professor-m': ['professor-m', 'gwen', 'serpang', 'dana'],
     'harley': ['harley', 'cristelle', 'bunny-charlotte', 'wedding-carmen'],
@@ -57,11 +55,9 @@ def measure(mode):
             original = Battle.run
             def run(b):
                 result = original(b)
-                hits.update({k: v for k, v in b.rule_hits.items() if k in LEGACY or k.startswith('auto_hp_float32')})
+                hits.update({k: v for k, v in b.rule_hits.items() if k in HIT_KEYS or k.startswith('auto_hp_float32')})
                 return result
             options = dict(seed=20261119, n_runs=6, build='standard')
-            if mode == 'legacy':
-                options['rules_override'] = LEGACY
             with patch.object(Battle, 'run', run):
                 result = simulate(party, encounter, options)
             key = team + '/' + content
@@ -76,13 +72,11 @@ def measure(mode):
 
 def compare():
     data = {m: json.loads((DEST / (m + '.json')).read_text(encoding='utf8'))
-            for m in ('before', 'after', 'legacy')}
+            for m in ('before', 'after')}
     changed = []
     contents, teams, units = Counter(), Counter(), Counter()
     progress_changes = []
     for key, old in data['before'].items():
-        for field in FIELDS:
-            assert old[field] == data['legacy'][key][field], ('legacy mismatch', key, field)
         new = data['after'][key]
         fields = [f for f in FIELDS if old[f] != new[f]]
         if fields:
@@ -94,7 +88,7 @@ def compare():
         if old['prog_runs'] != new['prog_runs']:
             progress_changes.append(dict(case=key, old=old['prog_runs'], new=new['prog_runs']))
     summary = dict(cases=len(data['before']), runs_per_mode=len(data['before'])*6,
-                   legacy_exact=True, changed=len(changed), by_content=dict(contents), by_team=dict(teams),
+                   changed=len(changed), by_content=dict(contents), by_team=dict(teams),
                    per_unit_changed=dict(units), changes=changed, progress_changes=progress_changes)
     (DEST / 'comparison.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding='utf8')
     print(json.dumps(summary, ensure_ascii=False, indent=2))
@@ -102,9 +96,6 @@ def compare():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('mode', choices=('before', 'after', 'legacy', 'compare'))
+    parser.add_argument('mode', choices=('before', 'after', 'compare'))
     mode = parser.parse_args().mode
-    gone = sorted(k for k in LEGACY if k not in MC_OPTS)
-    if mode == 'legacy' and gone:
-        raise SystemExit('legacy 모드는 태그 engine-legacy-final 의 worktree 에서만 동작 — 지운 규칙 키: %s' % ', '.join(gone))
     compare() if mode == 'compare' else measure(mode)

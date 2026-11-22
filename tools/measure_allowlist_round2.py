@@ -1,7 +1,7 @@
 """Public standard builds, paired seeds; no accounts, workers or browsers.
 
-옛 값 비교(before = OLD 의 evade_model·guard_precision 은 엔진 다이어트 4단계에서 지운 스위치)는 태그 engine-legacy-final 의 worktree 에서만 동작.
-이 브랜치에서는 기본 실행이 바로 종료함. --heal(치유 대상 조사)은 옛 값을 안 써서 그대로 동작.
+기본 실행 = 현재 규칙(옛 after)만. 옛 before(지운 스위치 evade_model·guard_precision·chain_timing)는 11/22 코드째 삭제 —
+태그 engine-legacy-final 에만 있음. --heal = 치유 대상 조사.
 """
 from collections import Counter
 import json
@@ -13,10 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from battlesim import api
 from battlesim.mc import Battle
-from battlesim.rules import MC_OPTS
 from battlesim.starsavior.data import get_db
 
-OLD = dict(evade_model='rate_minus_acc', guard_precision='legacy', chain_timing='immediate')
 CASES = [
     ('페이·회랑250', ['fei', 'amora', 'frey', 'claire'], {'stage': 'clo/태양 회랑/FLOOR 250'}),
     ('페이·모굴루스3', ['fei', 'amora', 'frey', 'claire'], {'cosmo_raid': {'boss': 'mogulus', 'step': 3, 'level': 0}}),
@@ -37,7 +35,7 @@ def measure():
     rows = []
     original, cast = Battle.run, Battle.cast
     for name, party, encounter in CASES:
-        for mode, overrides in [('before', OLD), ('after', {})]:
+        for mode in ('after',):
             counts = Counter()
             def run(b):
                 result = original(b)
@@ -49,8 +47,7 @@ def measure():
                     counts['enemy_evaded_targets'] += len(ctx.evaded)
                 return ctx
             with patch.object(Battle, 'run', run), patch.object(Battle, 'cast', observe):
-                r = api.simulate(party, encounter, dict(build='standard', n_runs=8, seed=20261121,
-                                                       rules_override=overrides))
+                r = api.simulate(party, encounter, dict(build='standard', n_runs=8, seed=20261121))
             assert r['outcome']['progress'] > 0, name
             scores = r.get('cosmo_raid', {}).get('score_runs') or [p * 100 for p in r['prog_runs']]
             row = dict(name=name, mode=mode, party=party, encounter=encounter,
@@ -92,9 +89,6 @@ def survey_heal():
 
 
 if __name__ == '__main__':
-    gone = sorted(k for k in OLD if k not in MC_OPTS)
-    if gone and '--heal' not in sys.argv:
-        raise SystemExit('옛 값 비교(before)는 %s — 지운 규칙 키: %s' % ('태그 engine-legacy-final 의 worktree 에서만 동작', ', '.join(gone)))
     out = ROOT / 'local/allow-d2'; out.mkdir(parents=True, exist_ok=True)
     result = survey_heal() if '--heal' in sys.argv else measure()
     name = 'heal_survey.json' if '--heal' in sys.argv else 'impact.json'

@@ -1,4 +1,7 @@
-"""브레이크 잔여 규칙 영향: 공개 표준 육성, 순차 8판. 계정 입력 없음."""
+"""브레이크 잔여 규칙 영향: 공개 표준 육성, 순차 8판. 계정 입력 없음.
+
+옛 --legacy·--break-only(지운 스위치 break_skill_residuals·add_damage_guard)는 11/22 코드째 삭제 — 태그 engine-legacy-final 에만 있음.
+"""
 import argparse
 from collections import Counter
 import json
@@ -18,8 +21,6 @@ PARTY = ['asherah-order-striker', 'gille', 'amora', 'wedding-carmen']
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('label')
-    ap.add_argument('--legacy', action='store_true')
-    ap.add_argument('--break-only', action='store_true')
     args = ap.parse_args()
     rows = []
     scenarios = [
@@ -61,10 +62,6 @@ def main():
             counts['fixed_guard_splits'] += b.rule_hits['add_damage_guard'] - before
             return result
         opts = dict(build='standard', n_runs=8, seed=20261121, break_skill={'name': skill, 'level': 1})
-        if args.legacy:
-            opts['rules_override'] = dict(break_skill_residuals='existing_model', add_damage_guard='off')
-        elif args.break_only:
-            opts['rules_override'] = dict(add_damage_guard='off')
         old = C._DATA_FILE
         try:
             if old_season:

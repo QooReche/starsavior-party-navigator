@@ -1,4 +1,8 @@
-"""Public standard-build samples. No account input; output is ignored local data."""
+"""Public standard-build samples. No account input; output is ignored local data.
+
+python -X utf8 -I tools/measure_casebook.py LABEL    # local/casebook/LABEL.json
+옛 --legacy(지운 스위치 fixstats_speed_zero·speed_min)는 11/22 코드째 삭제 — 태그 engine-legacy-final 에만 있음.
+"""
 import json
 from pathlib import Path
 import sys
@@ -22,12 +26,9 @@ def main():
     scenarios += [('baskerville', HEAL, {'cosmo_raid': {'boss': 'baskerville', 'step': 3, 'level': 0}})]
     scenarios += [('tyria', ['gwen', 'fei', 'smile', 'luna'],
                    {'cosmo_raid': {'boss': 'tyria', 'step': 3, 'level': 18}})]
-    legacy = '--legacy' in sys.argv
     for name, party, encounter in scenarios:
         old = C._DATA_FILE
         opts = {'build': 'standard', 'n_runs': 8, 'seed': 20261121}
-        if legacy:
-            opts['rules_override'] = {'fixstats_speed_zero': 'off', 'speed_min': 1}
         try:
             if name == 'tyria':
                 C.use_data(str(ROOT / 'tests/fixtures/cosmo_raid_1022.json'))

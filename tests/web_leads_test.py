@@ -39,7 +39,7 @@ def cristelle_cast(slot, burns=0, extra_debuffs=0):
     with patch.object(b, 'apply_damage', record):
         b.cast(a, a.d.skills[slot], target=v)
         assert not any(kind == 'chain' for kind, _ in pieces)
-        b.flush_chain_damage()
+        b.flush_add_damage()
     return b, pieces
 
 
@@ -144,7 +144,7 @@ class LeadContractsTest(unittest.TestCase):
 
     def test_audit_includes_main_hit_and_preserves_result(self):
         from tools.ingame_check import run
-        r = measure('36-36', 2, 7, None, False)
+        r = measure('36-36', 2, 7, None)
         self.assertEqual(r['summary'], run('36-36', 2, {}, 7, True, None))
         self.assertGreater(r['cristelle']['damage_per_cast']['궁극기'], 0)
         # A single un-debuffed cast has no chain: it must still be measured.
@@ -152,7 +152,7 @@ class LeadContractsTest(unittest.TestCase):
             b, _ = cristelle_cast('궁극기', 0)
             return {'damage': b.allies[0].dmg}
         with patch('tools.web_leads_audit.run', fake_run):
-            single = measure('36-36', 1, 7, None, False)
+            single = measure('36-36', 1, 7, None)
         self.assertEqual(single['cristelle']['damage_per_cast']['궁극기'], single['summary']['damage'])
 
 
