@@ -15,7 +15,7 @@ const inventory={
   'growth_ui.js':[['${Object.keys(results).length}/${jobs.length}','producer: env.paint; default growth tab outside five owners']],
   'guild_search.js':[['${st.total ? ` · ${st.done}/${st.total}','guildSearch']],
   'myinfo_view.js':[["${n}/${e?.parts||'?'}",'excluded: equipment set parts']],
-  'party_template.html':[['<progress','direct'],['${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}','reco'],['${seen}/${sc.total}','excluded: stopped sample count'],['${sc.got||0}/${sc.left}','reco'],['${sc.got}/${sc.left}','reco'],['role="progressbar"','reco'],['${done}/${all}','reco'],['${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10','excluded: power score'],['${eq}/6','excluded: equipment slots']],
+  'party_template.html':[['<progress','direct'],['${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}','reco'],['${got}/${all}','reco'],['${seen}/${sc.total}','excluded: stopped sample count'],['${done}/${all}','reco'],['role="progressbar"','reco'],['${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10','excluded: power score'],['${eq}/6','excluded: equipment slots']],
   'placement_page.js':[['${DIRECT.placement.done||0}/24','레인 미연결(범위 밖)'],['${CDIRECT.placement.done||0}/24','레인 미연결(범위 밖)']],
   'recommend_runtime.js':[['${got}/${jobs.length}','producer: recoProgressPaint / directResultsPaint']],
   'sim_worker.js':[['${i+1}/${m.teams.length}','producer: worker result consumers']]
@@ -57,7 +57,7 @@ function roundTrip(src){const lane=src['gwen_lane.js'],render=lane.slice(lane.in
   assert(!/x=0;actor\.style\.transform='translateX\(0px\)'/.test(render),'phase change teleports Gwen to the start');
   assert(render.includes('run.dir=-run.dir;'),'phase change does not reverse direction');
   assert(/workTarget\(run\)/.test(lane.slice(lane.indexOf('function progressMove('),lane.indexOf('function sync('))),'progress ignores walking direction');
-  assert(lane.includes('const api={PRIORITY,CHOICES,SAY,policy,travel,pingpong,'),'pingpong position not exported');
+  assert(lane.includes('const api={PRIORITY,CHOICES,SAY,FORCED,forcedLine,policy,travel,pingpong,'),'pingpong position not exported');
   // 화면 코드가 레인 배우를 직접 옮기면 공통 왕복을 우회함.
   for(const [file,s] of Object.entries(src))if(file!=='gwen_lane.js'&&s.includes('gwen-lane-actor'))assert(!/translateX/.test(s),file+' moves the lane actor itself');
 }
@@ -71,10 +71,10 @@ check(sources);
 for(const [file,from] of [
   ['party_template.html',"searchGwenPaint(p,'guildSearch',GSR)"],
   ['party_template.html',"searchGwenPaint(p,'cosmoSearch',CSR)"],
-  ['party_template.html',"RECO_GWEN.progress(progress||0,'',{step})"],
+  ['party_template.html',"RECO_GWEN.progress(progress||0,'',{step,alert})"],
   ['direct_run.js','DIRECT_GWEN.update('],
   ['cosmo_direct_page.js',"GwenStage.mount(host,{mode:'cdirect'})"],
-  ['direct_bundle.js',"recoGwenShow(true,task.progress||0,null,GwenLane.resultId(task)+':'+task.request)"],
+  ['direct_bundle.js',"recoGwenShow(true,task.progress||0,null,GwenLane.resultId(task)+':'+task.request,alert)"],
   ['party_template.html',"step:state.id+':'+state.phaseSerial"]
 ]){
   assert(sources[file].includes(from));

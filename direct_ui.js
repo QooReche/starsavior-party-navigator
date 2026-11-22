@@ -61,7 +61,7 @@ function directNavigate(mode,source){
   history[wasHome&&mode!=='home'?'pushState':'replaceState'](state,'',u);
   DIRECT.mode=mode;directRefresh();
   const target=$(mode==='direct'?(contents[$('content').value]?.key==='cosmo'?'cosmo-direct-panel':'direct-panel'):mode==='reco'?'out':'start-screen');
-  if(before&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+  if(before){
     const after=target.getBoundingClientRect();if(after.width&&after.height)target.animate([
       {transformOrigin:'top left',transform:`translate(${before.x-after.x}px,${before.y-after.y}px) scale(${before.width/after.width},${before.height/after.height})`,opacity:.6},
       {transformOrigin:'top left',transform:'none',opacity:1}],{duration:250,easing:'ease-out'});

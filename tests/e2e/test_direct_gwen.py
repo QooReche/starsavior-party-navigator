@@ -152,11 +152,6 @@ def timing(browser,base,width=1280):
     assert p.evaluate('GwenLane.mount().state.clock')==state['clock']
     assert p.evaluate('GwenLane.mount().state.art')==state['art']
     p.evaluate('delete document.hidden;document.dispatchEvent(new Event("visibilitychange"))')
-    p.emulate_media(reduced_motion='reduce')
-    p.evaluate("GwenLane.edit('put',0)")
-    assert not p.evaluate('GwenLane.mount().state.moving')
-    x=p.evaluate('GwenLane.mount().state.x');p.clock.run_for(1000)
-    assert p.evaluate('GwenLane.mount().state.x')==x
     # A genuinely offscreen lane must also stop its visible-time clock.
     p.set_viewport_size({'width':width,'height':300})
     p.evaluate('window.scrollTo(0,document.body.scrollHeight)');p.clock.run_for(100)
@@ -166,23 +161,16 @@ def timing(browser,base,width=1280):
     assert p.locator('#gwen-quiet').count()==0
     p.evaluate("localStorage.setItem('pn.gwen.quiet','true')")
     p.evaluate("GwenLane.edit('grown',0)")
-    assert not p.evaluate('GwenLane.mount().state.moving')
     assert p.locator(ACTOR).is_visible()
     shown(p)
-    p.wait_for_function("document.querySelector('.gwen-lane-image')?.dataset.gwenPlaying==='false'")
     p.evaluate("window.holdDirect=true;for(const s of R.filter(s=>MI.info.units.some(u=>u.id===s.uid)).slice(0,4))directChange({type:'put',key:s.key})")
     p.locator('#direct-run').click()
     p.wait_for_function("DIRECT.rows.now?.status==='running'");shown(p)
-    assert p.locator(ACTOR).is_visible(),'reduced motion hid calculation'
-    assert not p.evaluate('GwenLane.mount().state.moving')
-    first=p.evaluate('GwenLane.mount().state.art');p.clock.run_for(19000)
-    assert p.evaluate('GwenLane.mount().state.art')==first,'reduced cycle shorter than 20 seconds'
-    p.clock.run_for(1500)
-    assert p.evaluate('GwenLane.mount().state.art')!=first,'reduced cycle did not advance'
+    assert p.locator(ACTOR).is_visible(),'calculation hid the actor'
     p.locator('#direct-run').click()
     p.reload();p.wait_for_function('window._ready&&DIRECT.slots')
     assert p.locator('#gwen-quiet').count()==0
-    p.emulate_media(reduced_motion='no-preference');shown(p)
+    shown(p)
     p.clock.run_for(100)
     p.evaluate("GwenLane.edit('leader',3)")
     assert p.evaluate('GwenLane.mount().state.moving'), p.evaluate('GwenLane.mount().state')

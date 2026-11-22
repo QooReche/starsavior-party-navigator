@@ -58,7 +58,7 @@ function recoTaskCancel(message='중단함'){
   task.cancelled=true;task.abort?.();task.stop?.();simPoolDrop(task.owner);
   SIMQ.busy=null;SIMQ.screening=false;SIMQ.err=message;
 }
-function recoEvaluate(snapshot,task,jobs,n,{screen=false,label=null,onTeam=()=>{}}={}){
+function recoEvaluate(snapshot,task,jobs,n,{screen=false,label=null,text=null,onTeam=()=>{}}={}){
   return new Promise((resolve,reject)=>{
     if(!jobs.length){resolve();return;}
     const id=++task.request,ws=scrPool(jobs.length);let ended=false;
@@ -76,7 +76,7 @@ function recoEvaluate(snapshot,task,jobs,n,{screen=false,label=null,onTeam=()=>{
       stage(w,m){if(m.msg==='준비 끝')SIMQ.loaded=true;if(/^시뮬 \d+\//.test(m.msg||''))w._t=Date.now();},
       team(j,m,w){if(m.result.ver!==task.engine){finish('엔진 버전이 바뀜 · 다시 시도');return;}
         if(w._t)simRateAdd((Date.now()-w._t)/(j.runs||n),screen?'scr':'final');w._t=0;
-        onTeam(j,{...m.result,n});got++;task.progress=got/jobs.length;task.message=`${label||(screen?'예선':'본선')} ${got}/${jobs.length}팀`;
+        onTeam(j,{...m.result,n});got++;task.progress=got/jobs.length;task.message=text?text(got,jobs.length):`${label||(screen?'예선':'본선')} ${got}/${jobs.length}팀`;
         const rate=screen?SIMQ.rateS:SIMQ.rate;task.remaining=rate?(jobs.length-got)*n*rate/Math.max(1,ws.length):null;
         SIMQ.msg=task.message;paint();
       },done(){paint.flush();finish();},error:msg=>{paint.cancel();finish(msg);}});
@@ -88,14 +88,14 @@ function recoScreenCalculate(snapshot,task,p,box){
   let sc=SIMQ.scr[key];
   if(!sc||sc.done)sc=SIMQ.scr[key]=scrFullInit({done:false,order:[],n:pool.length,total:pool.length,pool,res:{},res2:{},up:null,round:0,left:pool.length},box.all);
   if(pool.length<=3){sc.done=true;sc.order=pool;return Promise.resolve();}
-  SIMQ.screening=true;task.message='예선 준비 중';
+  SIMQ.screening=true;task.message='예선 준비 중';task.sc=sc;   // 관측 경보(scrAlertOf)가 읽음
   return new Promise((resolve,reject)=>{
     const leg=(i,keys,next)=>{
       // i = -1 은 후보 전체 훑기(scrFullInit, 전원 «못 깸» 스테이지만) — 1판. 앞 단계 판 이어 쓰기는 화면과 같은 scrPrior·scrLegOpt
-      const n=scrRoundN(i);sc.round=i;sc.left=keys.length;sc.got=0;
+      const n=scrRoundN(i);scrLegEnter(sc,i,keys.length);
       const jobs=keys.map(key=>{const t=by.get(key),pr=scrPrior(sc,i,key);return {key,party:snapshot.party(t),runs:pr?n-pr.off:n,
         options:{break_skill:snapshot.breakFor(t),...scrLegOpt(pr)}};});
-      recoEvaluate(snapshot,task,jobs,n,{screen:true,...(i<0?{label:'후보 전체 훑는 중'}:{}),onTeam(j,r){(i<0?sc.res0:i?sc.res2:sc.res)[j.key]=r;sc.got++;}}).then(next,reject);
+      recoEvaluate(snapshot,task,jobs,n,{screen:true,...(i<0?{label:SCR_ALERT.label,text:(got,all)=>scrMsg(-1,got,all)}:{}),onTeam(j,r){(i<0?sc.res0:i?sc.res2:sc.res)[j.key]=r;sc.got++;}}).then(next,reject);
     };
     recoScreenSequence(sc,SCR_ROUNDS[1].top,by,leg,()=>{scrClose(sc);SIMQ.screening=false;resolve();});
   });

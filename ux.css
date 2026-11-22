@@ -36,7 +36,7 @@ button:focus-visible,summary:focus-visible{outline:2px solid var(--gold);outline
 .result-tabs [role=tab]:focus-visible{outline-offset:-4px}
 .result-tab-title{font-weight:700}.result-recommend{display:inline-flex;align-items:center;gap:4px;margin-left:6px;color:#ffd69a;font-size:11px}.result-recommend[hidden]{display:none}.result-recommend::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
 .result-tabs [data-state=running] [data-tab-metric]::before{content:'';display:inline-block;width:8px;height:8px;margin-right:5px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:tab-spin 1s linear infinite}
-@keyframes tab-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.result-tabs [data-state=running] [data-tab-metric]::before{animation:none}}
+@keyframes tab-spin{to{transform:rotate(360deg)}}
 @media(max-width:600px){.result-tabs [role=tab]{font-size:12px;padding:12px 6px}.result-tab-title{display:block}.result-tab-sep{display:none}.result-recommend{margin-left:4px;font-size:10px}.growth-todo{white-space:normal;overflow-wrap:anywhere}}
 
 .alternatives-more>summary{padding:8px 0;font-size:13px;color:var(--acc);cursor:pointer}.alternatives-more .less-label,.alternatives-more[open] .more-label{display:none}.alternatives-more[open] .less-label{display:inline}
@@ -179,10 +179,6 @@ button.ux-help.ux-help,.season-reference .ux-help{font-size:0;line-height:0;padd
 :is(.simbar,.bcstate):has(>.gwen-work)>[data-k=eta]{flex-basis:100%}
 #reco-actions{justify-content:center;align-items:center}
 @media(max-width:400px){.gwen-work{--gwen-size:120px}}
-@media(prefers-reduced-motion:reduce){
- .gwen-roam .gwen-traveler,.gwen-roam .gwen-scene,.gwen-work .gwen-worker{animation:none;transform:none}
- .gwen-roam .gwen-traveler{left:calc(50% - var(--gwen-size)/2)}
-}
 
 /* ── 그웬 말풍선 ─────────────────────────────────────────────────────────
    카드보다 살짝 밝은 바탕 + 얇은 황동 테두리. 꼬리는 --tx/--ty/--tr 로 그림 쪽을 향함(down·up·left·right).
@@ -213,10 +209,6 @@ button.ux-help.ux-help,.season-reference .ux-help{font-size:0;line-height:0;padd
 /* 휴대폰: 말풍선 줄만큼 여백·그림을 줄여 진행 칸 높이와 단추 위치를 그대로 둠. */
 @media(max-width:600px){.gwen-work:has(.gwen-say-lane){--gwen-size:120px;gap:4px;margin:4px auto}.gwen-say-lane{min-height:36px}}
 @media(max-width:400px){.gwen-bubble{font-size:12px;padding:7px 12px}.gwen-work:has(.gwen-say-lane){gap:0;margin:0 auto}.gwen-say-lane{position:relative;z-index:1;margin-bottom:-16px}}
-@media(prefers-reduced-motion:reduce){
- .gwen-bubble,.gwen-roam .gwen-bubble,.gwen-roam .gwen-bubble::after{animation:none}
- .gwen-roam .gwen-say-lane{align-items:center}
-}
 
 /* ── 대기 칸 그웬 ────────────────────────────────────────────────────────
    넓은 화면: 그림 | (말풍선 · 단추 · 체크박스) 가운데 묶음. 휴대폰: 단추 위에 작은 그림 + 말풍선 한 줄.
@@ -263,6 +255,5 @@ img[data-gwen-rest=true]{transform-origin:50% 100%;animation:gwen-breathe 3.6s e
 @keyframes gwen-sway{0%,65%,100%{rotate:0deg}72%{rotate:1deg}83%{rotate:-1deg}90%{rotate:0deg}}
 [data-gwen-paused=true] *,[data-gwen-paused=true] *::after,.gwen-paused img[data-gwen-art]{animation-play-state:paused!important}
 @media(max-width:600px){.idle-gwen>.gwen-bubble{width:100%;min-height:54px}.gwen-say-lane{height:56px;min-height:56px}}
-@media(prefers-reduced-motion:reduce){img[data-gwen-art]{animation:none!important;transform:none;scale:none;translate:none;rotate:none}img[data-gwen-art],img.gwen-head,.gwen-memo img,img.face,img.art{transition:none}}
 .guide-steps li{word-break:keep-all;overflow-wrap:anywhere}.guide-steps li:before{display:block;margin:0 0 4px}
 @media(max-width:600px){.guide-steps li{padding:12px 14px}.guide-steps li:before{display:inline-block;margin:0 8px 0 0}.guide-steps small{margin-top:4px}}

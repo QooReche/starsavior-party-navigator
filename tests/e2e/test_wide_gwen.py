@@ -52,9 +52,9 @@ def pause_roam(page, time):
     }''', time)
 
 
-def loading_audit(page, reduced=False, scope='#out'):
+def loading_audit(page, scope='#out'):
     if scope=='#out':
-        return lane_audit(page,reduced)
+        return lane_audit(page)
     mode='guildSearch' if scope=='#guild-search' else 'cosmoSearch'
     lane=scope+f' [data-gwen-slot="{mode}-board"]'
     actor=page.locator(lane+' .gwen-lane-actor')
@@ -65,27 +65,22 @@ def loading_audit(page, reduced=False, scope='#out'):
     a,b=actor.bounding_box(),page.locator(lane).bounding_box()
     assert b['x']-.5<=a['x'] and a['x']+a['width']<=b['x']+b['width']+.5, 'Gwen left reserved track'
     assert b['y']<=a['y'] and a['y']+a['height']<=b['y']+b['height'], 'Gwen outside search lane'
-    if reduced:
-        page.wait_for_function('!GwenLane.mount().state.moving')
-        page.wait_for_function('(e)=>e.currentSrc.endsWith(".png")',arg=actor.locator('img').element_handle())
-        assert actor.evaluate('(e)=>e.getAnimations().length')==0
-    else:
-        page.wait_for_function('(e)=>e.getAnimations().some(a=>a.effect.getTiming().duration<=600)',arg=actor.element_handle())
-        details=actor.evaluate('''e=>{
-          const a=e.getAnimations()[0],caption=e.closest('[id$="-search"]').querySelector('[data-k$="-prog"],.cs-progress');
-          a.pause();a.currentTime=0;
-          const before=e.getBoundingClientRect(),text=caption.getBoundingClientRect();
-          a.currentTime=a.effect.getTiming().duration;
-          const after=e.getBoundingClientRect();
-          return {duration:a.effect.getTiming().duration,frames:a.effect.getKeyframes(),
-            dx:Math.abs(after.x-before.x),captionStable:JSON.stringify(text)===JSON.stringify(caption.getBoundingClientRect()),
-            separated:after.bottom<=text.y};
-        }''')
-        assert 0<details['duration']<=600
-        assert all('transform' in f and 'left' not in f for f in details['frames'])
-        assert 1<details['dx']<=36.1, details
-        assert details['captionStable'], 'caption moved'
-        assert details['separated'], 'Gwen overlaps caption'
+    page.wait_for_function('(e)=>e.getAnimations().some(a=>a.effect.getTiming().duration<=600)',arg=actor.element_handle())
+    details=actor.evaluate('''e=>{
+      const a=e.getAnimations()[0],caption=e.closest('[id$="-search"]').querySelector('[data-k$="-prog"],.cs-progress');
+      a.pause();a.currentTime=0;
+      const before=e.getBoundingClientRect(),text=caption.getBoundingClientRect();
+      a.currentTime=a.effect.getTiming().duration;
+      const after=e.getBoundingClientRect();
+      return {duration:a.effect.getTiming().duration,frames:a.effect.getKeyframes(),
+        dx:Math.abs(after.x-before.x),captionStable:JSON.stringify(text)===JSON.stringify(caption.getBoundingClientRect()),
+        separated:after.bottom<=text.y};
+    }''')
+    assert 0<details['duration']<=600
+    assert all('transform' in f and 'left' not in f for f in details['frames'])
+    assert 1<details['dx']<=36.1, details
+    assert details['captionStable'], 'caption moved'
+    assert details['separated'], 'Gwen overlaps caption'
     fits(page)
 
 
@@ -126,11 +121,6 @@ def exercise(page, base, width, shots):
     if width==1280:
         mutation(page,'#reco-board-lane .gwen-lane-actor{top:-80px!important}',lambda:loading_audit(page))
         mutation(page,'#reco-board-lane .gwen-lane-actor{transform:translateX(-999px)!important}',lambda:loading_audit(page))
-    page.emulate_media(reduced_motion='reduce')
-    loading_audit(page,True)
-    if width==1280:
-        mutation(page,'#reco-board-lane .gwen-lane-actor{top:-80px!important}',lambda:loading_audit(page,True))
-    page.emulate_media(reduced_motion='no-preference')
     # Files stay centered, while progress and cancellation nodes survive updates.
     page.evaluate('''() => {SIMQ.screening=true;SIMQ.scr[scrKey(__loadSt,1)]={got:3,left:80};
       simProgressSync(document.querySelector('[data-k=progress]'),__loadSt);
@@ -161,9 +151,6 @@ def exercise(page, base, width, shots):
         loading_audit(page,scope='#'+kind+'-search')
         if width==1280:
             mutation(page,f'#{kind}-search .gwen-lane-actor{{transform:translateX(-999px)!important}}',lambda:loading_audit(page,scope='#'+kind+'-search'))
-        page.emulate_media(reduced_motion='reduce')
-        loading_audit(page,True,scope='#'+kind+'-search')
-        page.emulate_media(reduced_motion='no-preference')
         centered(page,f'#{kind}-search [data-{"gs" if kind=="guild" else "cs"}=cancel]','#'+kind+'-search')
         page.evaluate(f'''() => {{
           const order=R.slice(0,4).map(s=>s.key),stats={{top:10000,mean:9000,clear:.95,frac:.98,cap:.95}};
@@ -208,7 +195,7 @@ def main():
                     errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
                     exercise(page,base,width,args.shots)
                     assert not errors,errors
-                    print(f'PASS {width}px: width, result, centered loading, roam/flip/pause, reduced motion, guild/cosmo, roster',flush=True)
+                    print(f'PASS {width}px: width, result, centered loading, roam/flip/pause, guild/cosmo, roster',flush=True)
                 finally:
                     context.close()
             if args.video:

@@ -188,6 +188,7 @@ function checkLoading(page){
   LASTQ:{1:{rows:[{},{}]}},scrKey:()=> 's',simSig:()=> 'r',growthEnabled:()=>false,SCR_N:8,scrWorkers:()=>2,simEtaText:()=> '남은 시간 계산 중',esc:String,
   DIRECT:{mode:'reco'},GwenLane:{sync:o=>gwenCalls.push(o)},recoGwenShow:(show,p)=>gwenCalls.push({show,progress:p}),$:()=>null};
  const run=vm.createContext(state),start=page.indexOf('function simProgress(st)');
+ {const a=page.indexOf('const SCR_ALERT=');vm.runInContext(page.slice(a,page.indexOf('// 이미 그려진 진행 칸',a)),run);}   // 관측 경보(훑기) 상태·글자 — 평소 진행 칸은 그대로여야 함
  vm.runInContext(page.slice(start,page.indexOf('function buildCands(',start)),run);
  const paint=()=>{gwenCalls.length=0;return vm.runInContext('simProgress({})',run);};
  // 그웬 걷기 연출은 reco-gwen-stage(#out 밖 고정)가 맡아 simProgress HTML 에 없음.
@@ -210,17 +211,16 @@ function checkLoading(page){
  const result=h.c.GwenStage.mount(h.doc,{mode:'reco'}).elements.result;
  assert(result.classList.contains('gwen-summary-result'),'result summary layout class missing');
  assert(result.classList.contains('gwen-reaction'),'result portrait class missing');
- const css=page.match(/@media\(prefers-reduced-motion:reduce\)\{\.gwen-work[^}]+\}/)?.[0]||'';
- for(const rule of ['.gwen-worker','animation:none','transform:none'])assert(css.includes(rule),rule);
+ // 움직임 줄이기 분기는 없앴음(11/22, 동작을 하나로): 화면·스타일·그웬 코드 어디에도 남지 않음
+ for(const f of ['party_template.html','ux.css','direct.css','forced.css','gwen_lane.js','ux_ui.js','direct_drag.js','direct_ui.js'])assert(!/prefers-reduced-motion/.test(fs.readFileSync(require.resolve('../'+f),'utf8')),f+': prefers-reduced-motion 분기가 남음');
  assert.match(page,/\.gwen-scene\{[^}]*width:140px;height:140px;flex:0 0 140px/);
 }
 for(const file of ['party_template.html','index.html']){
  const page=fs.readFileSync(require.resolve('../'+file),'utf8');checkLoading(page);
  // simProgress 의 gwenWork 는 reco-gwen-stage(#out 밖 고정 무대)로 대체함.
- // 남은 변이: gwenError 와 CSS reduced-motion
+ // 남은 변이: gwenError(CSS reduced-motion 규칙은 11/22 에 없앰)
  for(const [from,to] of [
   ['${Ux.gwenError(SIMQ.cancelled?"cancel":"calculation")}<span class="bad"','<span class="bad"'],
-  ['.gwen-work .gwen-worker{animation:none;transform:none}', '.gwen-work .gwen-worker{animation:gwen-report 1s infinite;transform:none}'],
  ]){assert(page.includes(from));assert.throws(()=>checkLoading(page.replace(from,to)),{code:'ERR_ASSERTION'});}
  // reco-gwen-stage 가 HTML 에 존재하는지 확인
  assert(page.includes('id="reco-gwen-stage"'),`${file}: reco stage host must exist`);
@@ -271,8 +271,6 @@ function checkIdleCss(css){
   'body:has(#drawer.open) .idle-gwen>*{visibility:hidden}',
   '@media(max-width:600px){\n .idle:has(>.idle-gwen){grid-template-columns:64px minmax(0,1fr);gap:8px 10px}\n .gwen-poke{grid-row:1;width:64px;height:64px}\n .idle-gwen>.gwen-bubble{align-self:center;max-width:100%}\n .idle:has(>.idle-gwen)>#reco-actions{grid-column:1/-1}\n}',
  ])assert(css.includes(part),part);
- // 동작 줄이기: 말풍선 등장 연출 없음(그림은 mountGwen 이 정지 PNG 로 둠).
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\s*\.gwen-bubble,/);
  assert.doesNotMatch(css,/\.idle-gwen[^{}]*\{[^}]*animation/,'대기 그웬에 별도 반복 연출 없음');
 }
 // 말풍선 모양·연출(ux.css): 테마 색, 그림 쪽 꼬리 4방향, 1회 등장, 동작 줄이기에서는 즉시 표시, 좁은 화면 배치.
@@ -286,7 +284,6 @@ function checkBubbleCss(css){
  assert(base.includes('--tr:45deg'),'기본 꼬리는 아래(그림이 말풍선 아래)');
  assert.equal(rule('.gwen-bubble:empty'),'display:none');
  assert.match(css,/@keyframes gwen-bubble-pop\{0%\{opacity:0;scale:\.72\}60%\{opacity:1\}100%\{opacity:1;scale:1\}\}/);
- assert.match(css,/@media\(prefers-reduced-motion:reduce\)\{\s*\.gwen-bubble,\.gwen-roam \.gwen-bubble,\.gwen-roam \.gwen-bubble::after\{animation:none\}\s*\.gwen-roam \.gwen-say-lane\{align-items:center\}\s*\}/);
  // 걷는 그림: 말풍선과 꼬리가 그림과 같은 박자(12초, 같은 구간)로 움직임.
  const beat=name=>css.match(new RegExp('@keyframes '+name+'\{(0%,12%)\{[^}]*\}(40%,60%)\{[^}]*\}(88%,100%)\{'))?.slice(1).join(' ');
  for(const name of ['gwen-roam','gwen-say-roam','gwen-tail-roam'])assert.equal(beat(name),'0%,12% 40%,60% 88%,100%',name);
@@ -313,7 +310,6 @@ function checkBubbleCss(css){
  ]){assert(css.includes(from),from);assert.throws(()=>checkHelpOnce(page,css.replace(from,to),'party_template.html'),{code:'ERR_ASSERTION'},'mutation survived: '+from);}}
 {const css=fs.readFileSync(require.resolve('../ux.css'),'utf8').replace(/\r\n/g,'\n');checkBubbleCss(css);
  for(const [from,to] of [
-  [' .gwen-bubble,.gwen-roam .gwen-bubble,.gwen-roam .gwen-bubble::after{animation:none}',' .gwen-bubble{animation:none}'],
   ['animation:gwen-bubble-pop .38s cubic-bezier(.3,1.45,.5,1) 1 both}\n.gwen-bubble:empty','animation:gwen-bubble-pop .38s cubic-bezier(.3,1.45,.5,1) infinite both}\n.gwen-bubble:empty'],
   ['.gwen-bubble:empty{display:none}','.gwen-bubble:empty{display:block}'],
   ['.gwen-bubble[data-tail=left]{--tx:-.5px;--ty:50%;--tr:135deg','.gwen-bubble[data-tail=left]{--tx:-.5px;--ty:50%;--tr:45deg'],

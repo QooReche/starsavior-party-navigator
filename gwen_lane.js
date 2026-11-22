@@ -1,12 +1,12 @@
 // Presentation only. One movable actor, registered stages, and a visible-time clock.
 (function(root){
   'use strict';
-  const P=typeof module!=='undefined'&&module.exports?require('./gwen_policy'):root.GwenPolicy;
+  const node=typeof module!=='undefined'&&module.exports,P=node?require('./gwen_policy'):root.GwenPolicy,numText=(node?require('./ui_shared'):root.UiShared).numText;
   const PRIORITY={idle:0,edit:1,work:2,result:3,error:4};
   const CHOICES={home:['guide2','st_welcome','welcome'],empty:['ready','present'],
     ready:['ready'],vacant:['think','sulk','peek'],put:['present','shy'],remove:['surprised','sulk'],
     swap:['think'],leader:['verdict'],complete:['jump'],grown:['train'],
-    withReco:['files','board'],withGrowth:['train'],reco:['stakeout','magnify','files'],growth:['train','walk'],skip:['surprised'],recoHigher:['st_point','thoughtful'],brk:['charge'],work:['investigate','magnify','think','board','coffee','stakeout','stamp','files'],
+    withReco:['files','board'],withGrowth:['train'],reco:['stakeout','magnify','files'],growth:['train','walk'],skip:['surprised'],recoHigher:['st_point','thoughtful'],brk:['charge'],rift:['investigate'],riftFound:['present','stamp'],work:['investigate','magnify','think','board','coffee','stakeout','stamp','files'],
     high:['st_verdict','st_cheer','st_ok','st_reach'],medium:['st_point','thoughtful'],low:['st_cry','notes'],
     better:['st_wink','st_reach'],past:['think'],error:['cry','surprised','sulk'],wait:['wait'],doze:['doze'],wake:['wake']};
   const SAY={home:['단장님, 어떤 방법으로 골라 볼까?','후후후, 두 방법 다 나만 믿어!','천재 조사관은 준비 끝이야!'],
@@ -16,6 +16,10 @@
     complete:['네 명 다 모였어, 단장님!','후후후, 준비됐으면 나만 믿어!'],grown:['이만큼 키웠다고 치고 볼게!','단장님, 달라진 능력치도 확인해 봐!','스타링크까지 더해서 볼게!'],
     withReco:['후후후, 내 추천이랑 겨뤄 보자는 거지?','좋아, 내 추천도 같이 꺼내 올게!'],withGrowth:['키웠을 때 편성도 찾아볼게!'],reco:['이번엔 내 추천 차례야, 단장님!','후보를 하나씩 살펴볼게.'],growth:['키우면 누가 좋을지 보고 있어!'],skip:['알았어, 그건 넘어갈게!'],recoHigher:['내 추천 쪽이 조금 더 높네. 비교해 봐, 단장님!'],
     brk:['브레이크 준비, 확인했어!','단장님, 이 스킬로 볼게!'],
+    // 강제 탐색(훑기) 중: 귀여운 말투 대신 감정 없는 시스템 메시지. 진행률 순서대로 한 줄씩(forcedLine), 진행 칸의 기록 줄에 나옴
+    rift:['[SYSTEM] 현 세계선 돌파 확률 0.0% — 강제 탐색 프로토콜 실행','[ACK] 명령 확인. 감정 출력 정지.','[WARN] 관측 범위 외 기억 참조 중','[ROUTE] 루트 강제 개방… {all}개 중 {got}개 검증',
+      '[LOG] 이면 좌표 대조. 일치 없음. 속행.','[WARN] 침식률 상승 — 관리 권한 외 접근','[ROUTE] 잔여 세계선 {left}개. 검증 속행.','[SYSTEM] 마지막 기억 구역 진입. 결과 집계 준비.'],
+    riftFound:['찾았어, 단장님! 가능성 있는 기억이야!','후후후, 별빛이 다시 보여!'],
     work:['하나씩 꼼꼼히 살펴볼게.','단장님, 조금만 기다려!','끝까지 확인할 테니 나만 믿어!'],
     high:['후후후, 든든한 편성이네!','잘 골랐어, 단장님!','천재 조사관의 확인도 끝!'],medium:['아슬아슬하네. 숫자도 살펴봐!','단장님, 한 번 더 비교해 볼까?'],
     low:['으아앙, 쉽지 않겠는걸!','단장님, 육성도 같이 살펴보자.'],better:['후후후, 추천보다 높게 나왔어!','단장님, 멋진 선택이야!'],past:['편성이 바뀌었네. 지난 결과야!','지금 편성으로 다시 확인해 봐!'],
@@ -47,9 +51,9 @@
     }
     return {state:s,pick,event,poke};
   }
-  function travel(from,target,width,size,{run=false,mobile=false,reduced=false,home=false}={}){
+  function travel(from,target,width,size,{run=false,mobile=false,home=false}={}){
     const max=Math.max(0,width-size),end=Math.max(0,Math.min(max,target));
-    if(reduced||home&&mobile)return {x:Math.min(max,Math.max(0,from)),ms:0};
+    if(home&&mobile)return {x:Math.min(max,Math.max(0,from)),ms:0};
     const speed=(run?240:60)*(mobile?.5:1),distance=Math.min(Math.abs(end-from),speed*.6);
     return {x:Math.max(0,Math.min(max,from+Math.sign(end-from)*distance)),ms:distance/speed*1000};
   }
@@ -61,6 +65,37 @@
       target:x<max/2?max:0,run:random()<.25,
       duration:2000+random()*1000
     })};
+  }
+
+  // --- 강제 탐색(후보 전체 훑기) 연출 ---
+  // 켜고 끄는 것은 화면이 넘기는 alert 값('scan' → 'found' → '') 하나뿐임. 그림은 assets/forced/ 에만 있고 훑기에 들어갈 때 처음 받음.
+  // 폴더가 없으면 장면은 CSS 바탕만, 오염 그웬은 원래 그림 + CSS 색조로 보임(forced.css).
+  const FORCED={dir:'assets/forced/',arts:['charge','files','investigate','verdict'],scene:['scene.webp','scene_narrow.webp','gwen_back.webp'],
+    layers:'<i class="fx-bg"></i><i class="fx-glow"></i><i class="fx-gwen"></i><i class="fx-fog"></i><i class="fx-fog"></i><i class="fx-ash"></i><i class="fx-ember"></i><i class="fx-noise"></i>'};
+  // 진행률 → 시스템 메시지 한 줄 + 그 줄의 오염 그웬 그림. 숫자는 줄이 바뀔 때의 값(매 갱신마다 글자를 바꾸지 않게 i 로 비교)
+  function forcedLine(got,all){
+    const lines=SAY.rift,i=Math.min(lines.length-1,Math.floor((all?got/all:0)*lines.length)),art=FORCED.arts[i%FORCED.arts.length],base=FORCED.dir+'gwen/'+art;
+    return {i,art,text:lines[i].replace('{got}',numText(got)).replace('{all}',numText(all)).replace('{left}',numText(all-got)),src:base+'.webp',eyes:base+'_eyes.webp',fallback:'assets/ui_icons/gwen/'+art+'.png'};
+  }
+  const forcedOn=new Set();let forcedArt=null;
+  function forcedLoad(doc){   // 훑기에 처음 들어갈 때 한 번만 받음(평소 로딩에는 없음). 다 받으면 body[data-forced-art] → forced.css 가 그림으로 바꿈
+    if(forcedArt)return;
+    const load=file=>{const img=new root.Image();img.src=new URL(FORCED.dir+file,doc.baseURI).href;return img.decode();};
+    forcedArt=Promise.all([FORCED.scene[root.innerWidth<=760?1:0],FORCED.scene[2],...FORCED.arts.flatMap(art=>['gwen/'+art+'.webp','gwen/'+art+'_eyes.webp'])].map(load))
+      .then(()=>{doc.body.dataset.forcedArt='ready';},()=>{forcedArt=null;});
+  }
+  // 길(레인) 하나의 경보 상태를 맞춤: scan = 폐허 장면을 깔고 body.is-forced, found = 장면이 걷히는 중(정화), '' = 장면 치움
+  function forcedSync(mode,board,alert){
+    const doc=root.document;
+    if(alert==='scan')forcedOn.add(mode);else forcedOn.delete(mode);
+    doc.body.classList.toggle('is-forced',forcedOn.size>0);
+    if(!board||(board.dataset.alert||'')===alert)return;
+    if(alert)board.dataset.alert=alert;else delete board.dataset.alert;
+    let scene=board.querySelector('.fx-scene');
+    if(!alert){scene?.remove();return;}
+    if(alert!=='scan'||scene)return;
+    scene=doc.createElement('div');scene.className='fx-scene';scene.setAttribute('aria-hidden','true');scene.innerHTML=FORCED.layers;board.append(scene);
+    forcedLoad(doc);
   }
 
   // --- 무대 등록(register) ---
@@ -87,7 +122,7 @@
   function resultId(result){if(!resultIds.has(result))resultIds.set(result,++serial);return resultIds.get(result);}
   function mount(){
     if(controller||!root.document)return controller;
-    const doc=root.document,mq=root.matchMedia('(prefers-reduced-motion: reduce)'),p=policy(),play=playground(),resultArts=new Map();
+    const doc=root.document,p=policy(),play=playground(),resultArts=new Map();
     const WORK_POSE_MS=2500;   // 계산 중 걷는 포즈를 바꾸는 최소 간격(사용자 11/21: 너무 빨리 바뀜 → 2~3초)
     let actor=null,lane=null,current={},clock=0,last=performance.now(),idleAt=0,vacant=false,phaseKey='',cycleAt=0,
       restoreAt=0,bubbleUntil=0,speechShownAt=-Infinity,move=null,landing=0,pending=null,x=0,art='',lastEvent='',sleeping=false,workRestAt=0;
@@ -139,7 +174,7 @@
         bubble.style.left=Math.max(half-x,Math.min(actor.offsetWidth/2,lane.clientWidth-half-x))+'px';}}
     function display(e){if(!e)return;lastEvent=e.kind;image(e.art);actor.dataset.event=e.kind;actor.dataset.priority=String(e.priority);
       const bubble=actor.querySelector('.gwen-lane-speech');
-      if(e.speech&&clock-speechShownAt>=6000){const lines=SAY[e.kind]||SAY.work;bubble.textContent=lines[Math.floor(Math.random()*lines.length)];bubbleUntil=clock+2500;speechShownAt=clock;p.state.lastSpeech=clock;}
+      if(e.speech&&e.kind!=='rift'&&clock-speechShownAt>=6000){const lines=SAY[e.kind]||SAY.work;bubble.textContent=lines[Math.floor(Math.random()*lines.length)];bubbleUntil=clock+2500;speechShownAt=clock;p.state.lastSpeech=clock;}
       else bubbleUntil=0;
       bubble.hidden=clock>=bubbleUntil;positionSpeech();}
     function moveTo(target,{run=false,reaction=null,adjust=true}={}){
@@ -148,8 +183,8 @@
       if(mobile&&adjust)target=x+(target-x)*.5;
       const stage=stages.get(current.mode);
       const isHome=stage?.board===lane&&current.mode==='home';
-      const step=travel(x,target,lane.clientWidth,size,{run,mobile,reduced:mq.matches,home:isHome});
-      if(!step.ms){if(reaction)display(mq.matches&&reaction.art==='jump'?{...reaction,art:'ready'}:reaction);return;}
+      const step=travel(x,target,lane.clientWidth,size,{run,mobile,home:isHome});
+      if(!step.ms){if(reaction)display(reaction);return;}
       actor.querySelector('.gwen-lane-speech').hidden=true;image(run?'run':'walk');actor.dataset.moving='true';
       actor.querySelector('button').style.transform=target<x?'scaleX(-1)':'none';
       pending=reaction;const from=x;
@@ -163,6 +198,9 @@
     function base(){
       const stage=stages.get(current.mode);if(!stage)return [null,null];
       if(current.mode==='home')return ['home',stage.board];
+      // 관측 경보(후보 전체 훑기) 중에는 전용 표정·대사
+      if(current.phase==='work'&&current.alert==='scan')return ['rift',stage.board];
+      if(current.phase==='work'&&current.alert==='found')return ['riftFound',stage.board];
       if(current.phase==='work')return ['work',stage.board];
       if(current.phase==='error')return ['error',stage.result||stage.board];
       if(current.phase==='result')return [current.recoHigher?'recoHigher':current.better?'better':!Number.isFinite(current.clear)?'medium':current.clear>=.7?'high':current.clear>=.05?'medium':'low',stage.result||stage.board];
@@ -191,7 +229,7 @@
         if(!e){display({kind,art:resultArts.get(artKey),speech:false,priority:PRIORITY.result});p.state.priority=PRIORITY.result;}
       }
       if(level!=='result')delete actor.dataset.gwenReport;
-      cycleAt=clock+(mq.matches?20000:9000);restoreAt=0;resetPlay();
+      cycleAt=clock+9000;restoreAt=0;resetPlay();
     }
     // 한 계산(work 진입~결과) 안에서 단계가 바뀔 때마다 걷는 방향을 뒤집음(왕복).
     // 위치 = 방향 →: progress×폭, ←: (1−progress)×폭. 경계에서 진행도가 1→0이 되어도 위치는 끝에 그대로임.
@@ -200,7 +238,7 @@
       actor.dataset.direction=run?.dir<0?'back':'forward';
       if(!move&&(run||current.phase==='result'||current.phase==='error'))actor.querySelector('button').style.transform=run?.dir<0?'scaleX(-1)':'none';}
     function progressMove(){
-      if(current.phase!=='work'||!visible()||mq.matches||move||landing||restoreAt||clock<workRestAt)return;
+      if(current.phase!=='work'||current.alert==='scan'||!visible()||move||landing||restoreAt||clock<workRestAt)return;   // 강제 탐색 중에는 걷지 않음(레인은 폐허 장면)
       const run=runs.get(current.mode);
       if(!run||!Number.isFinite(current.progress))return;
       const target=workTarget(run),ahead=run.dir*(target-x);
@@ -232,7 +270,7 @@
       if(current.bundleRunning&&current.phase==='result')current.phase='work';
       syncBanner();
       if(!stages.has(current.mode)){++imageRequest;cancelMove();resetPlay();actor?.remove();lane=null;art='';phaseKey='';return;}
-      const key=JSON.stringify(current.phase==='work'?[current.mode,'work',current.step]:[current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
+      const key=JSON.stringify(current.phase==='work'?[current.mode,'work',current.step,current.alert||'']:[current.mode,current.phase,current.result,current.stale,current.better,current.recoHigher,current.step,innerWidth>=1200]);
       if(key!==phaseKey){
         // 같은 레인에서 work 가 이어지는 중인가(직전 표시도 같은 모드의 work 였는가).
         const continuous=!!phaseKey&&previous.mode===current.mode&&previous.phase==='work'&&actor?.parentElement===stages.get(current.mode)?.board;
@@ -271,7 +309,7 @@
     }
     function tick(){const now=performance.now(),on=visible(),delta=Math.max(0,now-last);last=now;
       if(!on){move?.animation.pause();if(actor)actor.dataset.lanePaused='true';return;}
-      clock+=Math.min(delta,1000);actor.dataset.lanePaused=String(mq.matches);if(move?.animation.playState==='paused')move.animation.play();
+      clock+=Math.min(delta,1000);actor.dataset.lanePaused='false';if(move?.animation.playState==='paused')move.animation.play();
       if(move&&move.animation.playState==='finished'){
         const m=move,reaction=pending;x=m.to;m.animation.cancel();move=null;actor.style.transform=`translateX(${x}px)`;
         if(Math.abs(m.target-x)>.5){moveTo(m.target,{run:m.run,reaction,adjust:false});}
@@ -283,7 +321,7 @@
       positionSpeech();
       if(restoreAt&&clock>=restoreAt&&!move&&!landing){restoreAt=0;settle();}
       if(current.phase==='work'&&clock>=cycleAt&&!move&&!landing&&!restoreAt){
-        request(base()[0],{level:'work',duration:Infinity});cycleAt=clock+(mq.matches?20000:9000);
+        request(base()[0],{level:'work',duration:Infinity});cycleAt=clock+9000;
       }
       progressMove();
       const stage=stages.get(current.mode);
@@ -291,7 +329,7 @@
         if(!sleeping&&clock-idleAt>=60000){sleeping=true;if(stage?.board){setLane(stage.board);lane.dataset.portrait='false';}request('doze',{level:'idle',target:0});}
         else if(!vacant&&!sleeping&&current.mode==='direct'&&current.count<4&&clock-idleAt>=20000){vacant=true;request('vacant',{level:'idle'});}
       }
-      if(current.mode==='direct'&&!['work','error','result'].includes(current.phase)&&!mq.matches&&!sleeping){
+      if(current.mode==='direct'&&!['work','error','result'].includes(current.phase)&&!sleeping){
         if(playing?.until&&clock>=playing.until){playing=null;image('ready');playAt=clock+play.delay();}
         if(!playing&&!move&&!landing&&!restoreAt&&clock>=playAt&&clock>=p.state.until){
           if(stage?.board)setLane(stage.board);lane.dataset.portrait='false';
@@ -307,7 +345,6 @@
     doc.addEventListener('visibilitychange',()=>{last=performance.now();if(doc.hidden)move?.animation.pause();syncBanner();});
     root.addEventListener('scroll',()=>{if(!visible())move?.animation.pause();},{passive:true,capture:true});
     root.addEventListener('resize',()=>{cancelMove();resetPlay();if(lane){x=Math.min(x,Math.max(0,lane.clientWidth-actor.offsetWidth));actor.style.transform=`translateX(${x}px)`;}sync(current);});
-    mq.addEventListener('change',()=>{cancelMove();resetPlay();cycleAt=clock+(mq.matches?20000:9000);syncBanner();});
     root.setInterval(tick,50);
     controller={sync,activate,rebind,edit,policy:p,get state(){return {clock,x,dir:current.phase==='work'?runs.get(current.mode)?.dir||1:1,moving:!!move,art,mode:current.mode,phase:current.phase,lane:lane?.id,playing:!!playing,playAt};}};return controller;
   }
@@ -365,13 +402,14 @@
           if(bubble.dataset.band!==band){bubble.dataset.band=band;bubble.innerHTML=root.Ux.gwenSay(band);}
         }
         if(elements.board)elements.board.dataset.phase=state.phase;
+        forcedSync(mode,elements.board,(state.phase==='work'||state.bundleRunning)&&state.alert||'');
         mount()?.sync(state);return handle;
       }
       handle={bind,update,
         progress:(p,msg='',extra={})=>update({...extra,phase:'work',progress:p,msg,count:extra.count??4}),
         done:(result,extra={})=>update({phase:'result',count:4,...extra,result:result&&typeof result==='object'?resultId(result):result,clear:extra.clear??result?.clear}),
         reset:()=>update({phase:'idle',count:0}),
-        destroy(){if(dead)return;dead=true;stages.delete(mode);components.delete(mode);mount()?.sync({mode,phase:'idle',count:0});
+        destroy(){if(dead)return;dead=true;forcedSync(mode,elements.board,'');stages.delete(mode);components.delete(mode);mount()?.sync({mode,phase:'idle',count:0});
           for(const part of ['board','result'])if(elements[part]){const slot=root.document.createElement('div');slot.dataset.gwenSlot=mode+'-'+part;elements[part].replaceWith(slot);}elements={};},
         get elements(){return elements;},get state(){return {...state};}};
       components.set(mode,handle);
@@ -381,7 +419,7 @@
   const Stage={mount:stageMount,slot:(mode,part)=>`<div data-gwen-slot="${mode}-${part}"></div>`,
     destroy:mode=>components.get(mode)?.destroy(),activate:mode=>mount()?.activate(mode)};
   // Low-level registration stays inside this module, including home.
-  const api={PRIORITY,CHOICES,SAY,policy,travel,pingpong,playground,bannerState:P.bannerState,bannerPicker:P.bannerPicker,BANNER_COPY:P.BANNER_COPY,mount,resultId,sync:s=>mount()?.sync(s),activate:mode=>mount()?.activate(mode),edit:(a,i)=>mount()?.edit(a,i),Stage};
+  const api={PRIORITY,CHOICES,SAY,FORCED,forcedLine,policy,travel,pingpong,playground,bannerState:P.bannerState,bannerPicker:P.bannerPicker,BANNER_COPY:P.BANNER_COPY,mount,resultId,sync:s=>mount()?.sync(s),activate:mode=>mount()?.activate(mode),edit:(a,i)=>mount()?.edit(a,i),Stage};
   root.GwenStage=Stage;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GwenLane=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -164,15 +164,6 @@ def contract(browser,base,width):
     p.set_viewport_size({'width':width,'height':1000})
     p.locator('#direct-board-lane').scroll_into_view_if_needed()
     assert p.locator('#gwen-quiet').count()==0
-    p.emulate_media(reduced_motion='reduce')
-    sync(p,phase='work',progress=1);working(p)
-    x=p.evaluate('GwenLane.mount().state.x')
-    p.wait_for_timeout(400)
-    assert not p.evaluate('GwenLane.mount().state.moving')
-    assert p.evaluate('GwenLane.mount().state.x')==x
-    sync(p,result=999);expect(p,'result')
-    assert p.locator(TITLE).evaluate('e=>getComputedStyle(e).animationName')=='none'
-    p.emulate_media(reduced_motion='no-preference')
     assert not p.errors,p.errors
     p.close()
     print('PASS banner contract',width,flush=True)
@@ -251,4 +242,4 @@ if __name__=='__main__':
         for width in [1280,1600,360]:contract(browser,base,width)
         bundle(browser,base);delayed(browser,base);mutations(browser,base)
         browser.close()
-    print('PASS case banners / reduced motion / hidden tab / fallback / mutations')
+    print('PASS case banners / hidden tab / fallback / mutations')

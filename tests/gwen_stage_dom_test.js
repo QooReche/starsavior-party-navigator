@@ -123,7 +123,7 @@ async function reactionOnce(code=ux){
   assert.equal(h.actor().dataset.announcements,'1');
 }
 async function bundlePhases(source=read('direct_bundle.js')){
-  const h=setup(),c=h.c;h.add('out');
+  const h=setup(),c=h.c;h.add('out');c.scrAlertSync=()=>'';   // 관측 경보(훑기)는 fullscreen_test.js 가 봄
   h.load(section(source,'function recoProgressPaint(','async function directAwait('));
   const task={owner:'reco-bundle',request:1,progress:.7,message:'예선'};
   c.recoProgressPaint(task);
