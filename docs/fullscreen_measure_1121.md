@@ -121,3 +121,26 @@ python -X utf8 -I tools/bench_fullscreen.py report
 python -X utf8 -I tools/profile_fullscreen.py --batch
 python -X utf8 -I tests/batch_identity_test.py
 ```
+
+## 훑기 진입 연출 «관측 경보» — 2026-11-22
+
+훑기에 들어가면 진행 글자만 바뀌던 것을, 진행 칸과 그웬 길이 눈에 띄게 바뀌도록 했음. 스위치(`recommendation.fullScreen`)와 계산은 그대로임.
+
+- **상태**: `scrAlertOf(sc)` 하나가 정함(`party_template.html` `SCR_ALERT`).
+  - `scan`: 훑는 중(`sc.full` 있고 `sc.round<0`).
+  - `found`: 훑기가 끝나 예선으로 넘어간 직후 약 3초.
+  - 그 밖(쉬운 스테이지·끝남·멈춤)은 꺼짐. 쉬운 스테이지는 `sc.full` 이 없어 진행 칸이 스위치 끔과 글자까지 같음.
+- **문구**
+  - 제목: «⚠ 관측 경보 — 이 세계선에 돌파 경로 없음»
+  - 설명: «성운 관측 · 다른 세계선의 기억을 찾는 중» / «빠른 계산으로는 깰 팀이 없어, 후보 전체를 한 판씩 직접 싸워 봄»
+  - 숫자: «세계선 3,412 / 10,626»(전에는 «후보 전체 훑는 중 n/N»)
+  - 끝: «✦ 돌파 가능성 있는 기억 N개 회수 — 구원자 편성 다시 정렬» 뒤 원래 화면
+  - 그웬: 훑는 동안 전용 표정·대사 3줄, 회수 때 2줄(`gwen_lane.js` `rift`·`riftFound`)
+- **모양**: 각진 경보 틀, 위쪽 경고 띠, 별 두 겹 반짝임, 스캔 선, 세로 균열 빛, 진입 때 2번 깜빡임. 진행 띠는 훑은 만큼 별이 밝아지는 별자리 모양임. 그림은 전부 CSS 임(이미지 없음).
+- **붙는 곳**: 일반 추천 진행 칸(`simProgress`), 직접 편성 묶음 진행 칸(`recoProgressPaint`), 직접 편성 단계 줄(`directBundlePaint`), 그웬 길(`.gwen-lane[data-alert]`).
+- **성능**
+  - 움직임은 CSS 애니메이션(transform·opacity)뿐임. JS 는 상태가 바뀔 때(진입·끝·멈춤)만 DOM 을 바꿈.
+  - 숫자는 기존 200ms 갱신(`SearchExecutor.PAINT_MS`)에 얹었음. 그웬 MutationObserver 범위는 그대로임(`data-alert` 는 감시 속성이 아님).
+  - `prefers-reduced-motion` 이면 깜빡임·움직임을 끄고 색·문구만 남김.
+- **시험**: `tests/fullscreen_test.js` 에 진입 시 켜짐 / 쉬운 스테이지 꺼짐 / 끝나거나 멈추면 꺼짐(화면·묶음 둘 다)을 넣었음. 일부러 깨뜨려 보기 5건에서 모두 실패를 확인했음.
+- **시간 영향(작전 44-6, 켬, 작업자 8개, 기준 3e3a694 와 번갈아 2회씩)**: 전체 시간 ×0.97, 훑기 구간 ×0.95(변경 후 ÷ 기준). 기준끼리 편차가 ×1.01 이라 «늘지 않음»으로 봄. 총 판 수와 화면 1안은 네 번 모두 같았음. 원값은 비공개 폴더(`fullscreen/alert_1122/`)에만 둠.
