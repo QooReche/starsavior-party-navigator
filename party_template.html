@@ -722,7 +722,8 @@ function partySyn(keys){const sw=CFG.synergy,hits=[];
  for(let i=0;i<keys.length;i++)for(let j=i+1;j<keys.length;j++){const a=keys[i],b=keys[j],k=a<b?a+"|"+b:b+"|"+a;
   for(const p of (SYN.get(k)||[]))hits.push({p,pts:sw.typeWeight[p.t]*p.s*(sw.confWeight[p.c]??0.6)})}
  return hits.sort((x,y)=>y.pts-x.pts)}
-function recommendationPolicyTag(){const r=CFG.recommendation;return r&&r.fullScreen?[JSON.stringify(r)]:[];}
+// 추천 정책 버전(캐시 키): 훑기 항상 켬(11/22)으로 올림 — 예전 끔 캐시(태그 없음)를 다시 쓰지 않게
+function recommendationPolicyTag(){return ["screen-full-2"];}
 function teamValue(combo,defPen){
  let v=combo.reduce((a,x)=>a+x.score,0);
  const g=CFG.weights;const roles=combo.map(x=>x.s.cls);
@@ -1174,13 +1175,13 @@ const SCR_RK=40;
 function scrPick(all,rkTop){const ck=t=>UiShared.teamKey(t.keys),R0=SCR_ROUNDS[0];
  const lists=[all.slice(0,R0.q).map(ck),all.slice().sort((a,b)=>b.v-a.v).slice(0,R0.v).map(ck),(rkTop||[]).map(ck)],out=[],seen=new Set(),m=Math.max(...lists.map(l=>l.length));
  for(let i=0;i<m;i++)for(const l of lists){const k=l[i];if(k!=null&&!seen.has(k)){seen.add(k);out.push(k)}}return out}
-// 후보 전체 훑기(11/21, 스위치 CFG.recommendation.fullScreen, 기본 끔 — docs/fullscreen_measure_1121.md):
+// 후보 전체 훑기(11/21 도입, 11/22 스위치 삭제·항상 켬 — docs/fullscreen_measure_1121.md):
 //  빠른 계산이 후보 «전원»을 못 깸(hard)으로 본 스테이지에서만, 예선 앞에 후보 풀 전체(box.all, 풀 24명이면 10,626팀)를 SCR_FULL.n판씩 돌려
 //  scrCmp 순(동률은 빠른 계산 순서) 상위 «지금 예선 후보 수»만큼을 예선 후보(sc.pool)로 바꾼다. 예선(8→32판)·본선은 그대로.
 //  빠른 계산은 내 정보의 실제 능력치·스킬·잠재력·세트·보호막/도발을 안 봐서 전원 hard 면 «필요 배수» 순이 되어 버티는 팀이 빠졌다(docs/casebook_search_check.md).
 //  깰 수 있는 팀이 하나라도 있으면(쉬운 스테이지) 아무것도 바꾸지 않는다(sc 에 필드도 안 붙임 — 기준선 대조 시험).
 const SCR_FULL={n:1};
-function scrFullKeys(all,pool){if(!CFG.recommendation?.fullScreen||!all||!all.length||all.some(t=>t.vd!=="hard"))return null;
+function scrFullKeys(all,pool){if(!all||!all.length||all.some(t=>t.vd!=="hard"))return null;
  const ck=t=>UiShared.teamKey(t.keys),out=UiShared.uniqBy(all,ck).map(ck);
  return out.length>pool.length?out:null}
 // sc 에 훑기 상태를 붙임: full = 훑을 키(빠른 계산 순), res0 = 1판 결과, fullN = 넘길 수, fullDone

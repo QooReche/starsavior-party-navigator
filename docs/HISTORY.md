@@ -1,3 +1,7 @@
+## 2026-11-22 — «후보 전체 훑기» 항상 켬(B1 결정)
+
+- `recommendation.fullScreen` 스위치 삭제, 훑기 항상 켬(근거: `fullscreen_measure_1121.md` «작업자 2개» — 어려운 스테이지 +2~2.5분, 품질 +20~24%, 쉬운 스테이지 불변, 도중 멈춤 가능). «못 깸»(빠른 계산 전원 hard) 조건은 그대로. 캐시 키 정책 태그를 `screen-full-2`로 고정해 예전 끔 캐시를 재사용하지 않음. `fullscreen_test.js`의 끔 경우는 «쉬운 스테이지 불변»으로 바꿈. `bench_fullscreen`의 끔 모드 삭제(끔 비교는 3e3a694 이전에서).
+
 ## 2026-11-22 — 미결 기능 정리 반영(inventory_decide 결정)
 
 «켤지 말지 안 정한 것» 전수 목록(56항목)의 결정을 반영했음. 스위치는 기본 경로만 남기고 분기째 지웠고, 묶음마다 diet 기준선 36건·unify 기준선(지운 `_imm` 제외 123건)·`savior_rules_lines` 골든·`mc_cache` 기본 해시·`batch_identity`·`unsupported_allowlist --diff`(D=12·E=0)가 그대로였음.

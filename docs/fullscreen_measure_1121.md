@@ -4,7 +4,7 @@
 
 ## 넣은 것
 
-- 스위치: `party_contents.json` → `recommendation.fullScreen`(기본 `false`).
+- 스위치: `party_contents.json` → `recommendation.fullScreen`(기본 `false`). **11/22 스위치 삭제·항상 켬**(아래 마지막 «권고»).
 - 켜면 **빠른 계산이 후보 전원(`LASTQ[p].all`, 풀 24명이면 10,626팀)을 `hard`로 본 스테이지에서만** 예선 앞에 «후보 전체 훑기»를 넣음. 이 단계는 전원을 1판씩(`SCR_FULL.n`) 돌리고, `scrCmp` 순(동률은 빠른 계산 순서)으로 상위 N팀을 예선 후보로 바꿈. N은 지금 예선 후보 수(`scrPick` 결과 수)와 같음. 그다음 예선(8판 → 상위 20팀 32판)과 본선은 지금과 같음.
 - 깰 수 있는 팀이 하나라도 있으면(쉬운 스테이지) 아무것도 바꾸지 않음. 예선 상태에 필드도 붙이지 않음.
 - 두 경로가 같은 순서 함수(`recoScreenSequence`)를 씀: 일반 화면(`simScreen`)과 직접 편성 묶음(`recoScreenCalculate`). 실행은 공통 실행기(`search_executor.js`)로 함. 그래서 워커 풀·대기열·무진행 상한·취소가 그대로 적용됨.
@@ -112,12 +112,13 @@ python -X utf8 -I tools/bench_fullscreen.py report
 
 - 품질 이득(+20~24%)은 그대로 두고, 켬의 추가 시간이 이 PC에서 «분 단위 → 1분 안팎»으로 줄었음. 기본값을 켤지는 저사양(작업자 1~2개) 실측 뒤에 정하기를 권함. 판 수가 그대로라 작업자 수에 반비례할 것이므로, 2개면 훑기만 약 3~5분으로 봄(**추정, 미측정**).
 - B(학습 선별)는 이제 «기본 켬»보다 저사양 기기용으로 의미가 큼. A 뒤 남은 비용은 판 수 자체임.
+- **결정(11/22): 스위치를 지우고 항상 켬.** 근거는 «작업자 2개» 측정(어려운 스테이지 +2~2.5분, 품질 +20~24%, 쉬운 스테이지 불변, 도중 멈춤 가능)임. «못 깸»(빠른 계산 전원 hard) 조건은 그대로라 쉬운 스테이지는 훑기 없음. 캐시 키 정책 버전을 올려 예전 끔 결과를 다시 쓰지 않음. `bench_fullscreen`의 끔 모드(`--modes off`)도 지웠으니 끔 비교는 3e3a694 이전에서 잼.
 
 ### 재현(묶은 뒤)
 
 ```
 <workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <비공개 myinfo.json> --out <비공개>/batch/final --profile
-<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/batch/a1full_chunk1 --profile --chunk 1 --modes on --only "작전 44-6,회랑 580"
+<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/batch/a1full_chunk1 --profile --chunk 1 --only "작전 44-6,회랑 580"
 python -X utf8 -I tools/profile_fullscreen.py --batch
 python -X utf8 -I tests/batch_identity_test.py
 ```

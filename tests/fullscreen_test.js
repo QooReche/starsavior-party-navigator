@@ -1,13 +1,13 @@
 // node tests/fullscreen_test.js
-// 후보 전체 훑기(CFG.recommendation.fullScreen, 기본 끔 — docs/fullscreen_measure_1121.md)
-//  끔: 요청·예선 상태가 지금과 같음(필드도 안 붙음). 켬 + 깰 수 있는 팀 있음(쉬운 스테이지): 끔과 같음.
-//  켬 + 전원 «못 깸»: 후보 전체 1판 → 상위 «예선 후보 수» → 예선 8판 → 32판(24판 이어 돌리기). 화면 경로(simScreen)·직접 편성 묶음 경로(recoCalculate) 둘 다.
+// 후보 전체 훑기(항상 켬, 스위치 없음 — docs/fullscreen_measure_1121.md)
+//  깰 수 있는 팀 있음(쉬운 스테이지): 훑기 없이 예선만(8판 → 32판), 예선 상태에 훑기 필드도 안 붙음.
+//  전원 «못 깸»: 후보 전체 1판 → 상위 «예선 후보 수» → 예선 8판 → 32판(24판 이어 돌리기). 화면 경로(simScreen)·직접 편성 묶음 경로(recoCalculate) 둘 다.
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const ROOT=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(ROOT,'party_template.html'),'utf8'),rt=fs.readFileSync(path.join(ROOT,'recommend_runtime.js'),'utf8');
 const section=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,'구간 없음: '+a);return s.slice(i,j)};
 const CFG0=require('../party_contents.json');
-assert.equal(CFG0.recommendation.fullScreen,false,'기본값은 끔');
+assert(!('recommendation' in CFG0),'스위치 없음(항상 켬)');
 const plain=x=>JSON.parse(JSON.stringify(x));
 const mk=(keys,vd,v)=>({keys,combo:keys.map(key=>({s:{key}})),vd,v,q:{rounds:1,left:0}});
 const NAMES=Array.from({length:200},(_,i)=>'t'+String(i).padStart(3,'0'));
@@ -17,8 +17,8 @@ const progOf=key=>{const m=key.match(/t(\d{3})/),i=+m[1];return i>=150?0.5+i/100
 function teamsOf(vds){return NAMES.map((k,i)=>mk(['a','b','c',k],vds(i),200-i))}
 
 // ── 화면 경로(simScreen) ── 가짜 작업자는 요청마다 바로 결과·done 을 돌려줌
-function screenRun(full,vds,{stopAfter=null}={}){
- const posts=[],teams=teamsOf(vds),CFG=plain(CFG0);CFG.recommendation.fullScreen=full;
+function screenRun(vds,{stopAfter=null}={}){
+ const posts=[],teams=teamsOf(vds),CFG=plain(CFG0);
  const c=vm.createContext({UiShared:require('../ui_shared'),CFG,recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
   SIMQ:{n:100,seed:1,busy:null,res:{},scr:{},LOAD_MS:180000,RUN_MS:240000},LASTQ:{1:{rows:teams.slice(0,3),all:teams,total:teams.length}},cur:[{tab:'a',name:'b'}],
   contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,starOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
@@ -39,26 +39,22 @@ function screenRun(full,vds,{stopAfter=null}={}){
 }
 // 요청 하나에 팀 여럿(묶음, A-2)일 수 있음 → 팀 단위로 펼쳐 비교
 const legs=posts=>{const out=[];for(const p of posts){const n=p.req.n_runs,last=out[out.length-1],ks=p.req.teams.map(t=>t.key);if(last&&last.n===n)last.keys.push(...ks);else out.push({n,keys:[...ks]})}return out};
-const reqs=posts=>plain(posts.flatMap(p=>p.req.teams.map(team=>({n:p.req.n_runs,team}))));
 const sizes=(posts,n)=>posts.filter(p=>p.req.n_runs===n).map(p=>p.req.teams.length);
 const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
 
 {
- const off=screenRun(false,hard),L=legs(off.posts);
- assert.deepEqual(L.map(x=>[x.n,x.keys.length]),[[8,80],[24,20]],'끔: 지금 예선(8판 80팀 → 24판 20팀)');
- assert(!('full' in off.sc())&&!('res0' in off.sc()),'끔: 예선 상태에 훑기 필드 없음');
- assert(!L[0].keys.includes(keyOf('t199')),'끔: 뒤쪽 강한 팀은 예선 후보 밖(시험 전제)');
- // 켬 + 깰 수 있는 팀 있음 = 끔과 요청·상태 모두 같음
- const offE=screenRun(false,easy),onE=screenRun(true,easy);
- assert.deepEqual(reqs(onE.posts),reqs(offE.posts),'켬 + 쉬운 스테이지: 요청 같음');
- assert.deepEqual(plain(onE.sc()),plain(offE.sc()),'켬 + 쉬운 스테이지: 예선 상태 같음');
- // 켬 + 전원 못 깸 = 훑기 단계 추가
- const on=screenRun(true,hard),M=legs(on.posts),sc=on.sc();
+ // 쉬운 스테이지(깰 수 있는 팀 있음) = 훑기 없이 예선만, 상태에 훑기 필드 없음
+ const onE=screenRun(easy),L=legs(onE.posts);
+ assert.deepEqual(L.map(x=>[x.n,x.keys.length]),[[8,80],[24,20]],'쉬운 스테이지: 예선만(8판 80팀 → 24판 20팀)');
+ assert(!('full' in onE.sc())&&!('res0' in onE.sc()),'쉬운 스테이지: 예선 상태에 훑기 필드 없음');
+ assert(!L[0].keys.includes(keyOf('t199')),'쉬운 스테이지: 뒤쪽 팀은 예선 후보 밖(빠른 계산 순 그대로)');
+ assert(sizes(onE.posts,8).every(x=>x===1),'쉬운 스테이지: 묶음 없음');
+ // 전원 못 깸 = 훑기 단계 추가
+ const on=screenRun(hard),M=legs(on.posts),sc=on.sc();
  assert.deepEqual(M.map(x=>[x.n,x.keys.length]),[[1,200],[8,80],[24,20]],'켬: 1판 200팀 → 8판 80팀 → 24판 20팀');
  // 묶음(A-2): 작업자 2개(코어 3) → 훑기 200팀은 ceil(200/80)=3팀씩, 예선 80팀·20팀은 1팀씩(지금과 같음)
  assert.deepEqual([...new Set(sizes(on.posts,1).slice(0,-1))],[3],'훑기는 3팀 묶음');assert.equal(sizes(on.posts,1).reduce((a,b)=>a+b),200);
  assert(sizes(on.posts,8).every(x=>x===1)&&sizes(on.posts,24).every(x=>x===1),'예선은 묶음 1(지금과 같음)');
- assert(sizes(off.posts,8).every(x=>x===1),'끔: 묶음 없음');
  assert.deepEqual(M[0].keys,teamsOf(hard).map(t=>keyOf(t.keys[3])),'훑기는 빠른 계산 순서 그대로 전부');
  assert(on.posts.filter(p=>p.req.n_runs===1).every(p=>!p.req.teams[0].options.raw_runs&&!p.req.teams[0].options.run_offset),'훑기는 raw 를 안 받음');
  assert(on.posts.filter(p=>p.req.n_runs===24).every(p=>p.req.teams[0].options.run_offset===8&&p.req.teams[0].options.merge_raw),'2차는 1차 8판에 이어 돌림');
@@ -73,7 +69,7 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
 }
 // 진행 문구: 훑는 동안 «후보 전체 훑는 중»
 {
- const on=screenRun(true,hard,{stopAfter:30});
+ const on=screenRun(hard,{stopAfter:30});
  assert.match(on.c.SIMQ.msg,/^후보 전체 훑는 중 \d+\/200$/);assert.equal(on.sc().round,-1);
  // 「지금까지 결과로 보기」: 1판 결과 순으로 닫고 short, 안내 문구
  on.ev('scrStop()');const sc=on.sc();
@@ -89,23 +85,22 @@ const hard=()=>'hard',easy=i=>i===5?'tight':'hard';
 }
 // 훑기 중 1판 결과가 하나도 없을 때 「지금까지 결과로 보기」 = 취소
 {
- const on=screenRun(true,hard,{stopAfter:0});on.ev('scrStop()');
+ const on=screenRun(hard,{stopAfter:0});on.ev('scrStop()');
  assert.equal(Object.keys(on.c.SIMQ.scr).length,0,'결과 없음 → 예선 상태 지움(지금과 같음)');
 }
 // 순수 함수: 조건
 {
  const c=vm.createContext({UiShared:require('../ui_shared'),CFG:plain(CFG0)});vm.runInContext(section(html,'const SCR_ROUNDS=','const scrKey='),c);
  const all=[mk(['a','b','c','d'],'hard',1),mk(['a','b','c','e'],'hard',1),mk(['a','b','c','f'],'hard',1)];
- c.all=all;assert.equal(vm.runInContext('scrFullKeys(all,["x"])',c),null,'끔');
- c.CFG.recommendation.fullScreen=true;assert.deepEqual(plain(vm.runInContext('scrFullKeys(all,["x"])',c)),['a,b,c,d','a,b,c,e','a,b,c,f']);
+ c.all=all;assert.deepEqual(plain(vm.runInContext('scrFullKeys(all,["x"])',c)),['a,b,c,d','a,b,c,e','a,b,c,f']);
  assert.equal(vm.runInContext('scrFullKeys(all,["x","y","z"])',c),null,'후보 전체가 예선 후보보다 많지 않으면 훑지 않음');
  all[2].vd='tight';assert.equal(vm.runInContext('scrFullKeys(all,["x"])',c),null,'깰 수 있는 팀 있음');
  assert.equal(vm.runInContext('scrFullKeys([],[])',c),null);
 }
 
 // ── 직접 편성 묶음 경로(recoCalculate → recoScreenCalculate → recoEvaluate, 실제 공통 실행기) ──
-async function bundleRun(full,vds){
- const trace=[],CFG=plain(CFG0);CFG.recommendation.fullScreen=full;
+async function bundleRun(vds){
+ const trace=[],CFG=plain(CFG0);
  const ctx=vm.createContext({UiShared:require('../ui_shared'),console,URL,Date,setTimeout,clearTimeout,CFG,navigator:{hardwareConcurrency:3},document:{hidden:false},location:{href:'https://synthetic.test/index.html'},
   SIMQ:{LOAD_MS:180000,res:{},scr:{},meta:{}},RECO:{},LASTQ:{},recoIdentity:()=> 'fixed',recoProgressPaint(){},directResultsPaint(){},simTeamLimit:()=>240000,simRateAdd(){},goalVal:r=>r?.clear,
   RecommendPipeline:require('../recommend_pipeline'),SCR_RK:0,rkQuickTop:()=>[],messages:[],
@@ -127,14 +122,11 @@ async function bundleRun(full,vds){
  return {trace,sc:plain(ctx.SIMQ.scr.scr),messages:ctx.messages};
 }
 (async()=>{
- const off=await bundleRun(false,hard),on=await bundleRun(true,hard),offE=await bundleRun(false,easy),onE=await bundleRun(true,easy);
- const strip=t=>t.flatMap(m=>m.teams.map(team=>({n:m.n_runs,team})));
- assert.deepEqual(legs(off.trace.map(req=>({req}))).map(x=>[x.n,x.keys.length]),[[8,80],[24,20],[4,9]],'묶음 끔: 예선 → 본선(목표 미달이라 9팀)');
- assert.deepEqual(legs(on.trace.map(req=>({req}))).map(x=>[x.n,x.keys.length]),[[1,200],[8,80],[24,20],[4,9]],'묶음 켬: 훑기 추가');
- assert.deepEqual(strip(onE.trace),strip(offE.trace),'묶음 켬 + 쉬운 스테이지: 요청 같음');
- assert.deepEqual(onE.sc,offE.sc,'묶음 켬 + 쉬운 스테이지: 예선 상태 같음');
- assert(!('full' in off.sc));assert.equal(on.sc.order[0],keyOf('t199'));
+ const on=await bundleRun(hard),onE=await bundleRun(easy);
+ assert.deepEqual(legs(onE.trace.map(req=>({req}))).map(x=>[x.n,x.keys.length]),[[8,80],[24,20],[4,9]],'묶음 쉬운 스테이지: 예선 → 본선(훑기 없음)');
+ assert.deepEqual(legs(on.trace.map(req=>({req}))).map(x=>[x.n,x.keys.length]),[[1,200],[8,80],[24,20],[4,9]],'묶음 전원 못 깸: 훑기 추가');
+ assert(!('full' in onE.sc));assert.equal(on.sc.order[0],keyOf('t199'));
  assert.deepEqual(on.messages.slice(0,3),['후보 전체 훑는 중','예선','예선'],'진행 문구');
- assert.deepEqual(off.messages.slice(0,2),['예선','예선']);
- console.log('PASS fullScreen: 끔=지금 그대로(필드 없음), 켬+쉬움=끔과 같음, 켬+전원 못 깸=1판 전체→8→32(화면·묶음), 멈춤·이어 하기, 조건');
+ assert.deepEqual(onE.messages.slice(0,2),['예선','예선']);
+ console.log('PASS fullScreen(항상 켬): 쉬운 스테이지=훑기 없음(필드 없음), 전원 못 깸=1판 전체→8→32(화면·묶음), 멈춤·이어 하기, 조건');
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-"""후보 전체 훑기(CFG.recommendation.fullScreen) 켬/끔 — 브라우저 실측 시간과 독립 재평가 품질.
+"""후보 전체 훑기(항상 켬) — 브라우저 실측 시간과 독립 재평가 품질.
+끔 비교(스위치 recommendation.fullScreen 끔/켬)는 커밋 3e3a694 이전의 이 도구로 잰다(11/22 스위치 삭제).
 
 browser: 실제 화면(index.html, Pyodide 작업자)을 Chromium 으로 열어 내 정보(비공개 파일)를 넣고, 스테이지마다
-  스위치 끔/켬으로 «추천 편성 보기»부터 예선·본선이 다 끝날 때까지의 시간을 잰다(매번 새 브라우저 문맥 = 엔진 준비 포함, 같은 조건).
+  «추천 편성 보기»부터 예선·본선이 다 끝날 때까지의 시간을 잰다(매번 새 브라우저 문맥 = 엔진 준비 포함, 같은 조건).
   작업자 수는 이 PC 의 기본값(scrWorkers). 판 수별 요청 수·시작 시각, 훑기 여부, 화면 1안의 시뮬 명세(simParty·브레이크)를 남긴다.
-  한 번에 한 스테이지·한 모드씩만 돈다(무거운 작업 동시 실행 금지). 이미 잰 (스테이지, 모드)는 건너뜀(이어 돌리기).
-eval: 화면 1안(끔·켬)을 네이티브 엔진(battlesim.web.run_auto = 작업자와 같은 함수)으로 시드 20261122·400판 독립 재평가.
-  평균 진행도·클리어율과 켬−끔 차의 부트스트랩 95% 구간. 1판 훑기로 고른 팀의 소표본 선택 편향은 이 독립 재평가로 판정한다.
-report: 공개용 비율 표(시간 배수·개선 폭 %)만 출력.
+  한 번에 한 스테이지씩만 돈다(무거운 작업 동시 실행 금지). 이미 잰 스테이지는 건너뜀(이어 돌리기).
+eval: 화면 1안을 네이티브 엔진(battlesim.web.run_auto = 작업자와 같은 함수)으로 시드 20261122·400판 독립 재평가.
+  평균 진행도·클리어율과 부트스트랩 95% 구간. 1판 훑기로 고른 팀의 소표본 선택 편향은 이 독립 재평가로 판정한다.
+report: 스테이지별 훑기 발동·시간·판 수·1안 진행도 표.
 
 계정 수치(원값)는 --out(기본 E:/AI_mk2/role-private/casebook_myinfo/site_reco/fullscreen)에만 쓴다.
 
@@ -63,13 +64,13 @@ COLLECT_JS = """() => {
   const vd={};for(const t of LASTQ[1].all)vd[t.vd]=(vd[t.vd]||0)+1;
   const byN={};for(const p of B.posts){const o=byN[p.n]||(byN[p.n]={posts:0,first:p.t-B.t0,last:0});o.posts++;o.last=p.t-B.t0}
   return {stage:st.tab+'|'+st.name,stageStr:c.key+'/'+st.tab+'/'+st.name,options:simOpt(c.key),workers:scrWorkers(),
-    fullFlag:!!CFG.recommendation.fullScreen,full:!!(sc&&sc.full),fullN:sc?.fullN??null,scanned:sc?.full?.length??null,poolN:sc?.pool?.length??null,
+    full:!!(sc&&sc.full),fullN:sc?.fullN??null,scanned:sc?.full?.length??null,poolN:sc?.pool?.length??null,
     short:!!sc?.short,candidates:LASTQ[1].all.length,vd,byN,runs:B.posts.reduce((s,p)=>s+p.n*p.teams,0),
     top:spec(top),rows:rows.map(spec),err:SIMQ.err||'',prof:window.__prof||null,rt:B.rt,rtN:B.rtN,teamsPosted:B.posts.reduce((s,p)=>s+p.teams,0)}
 }"""
 
 
-def browser(myinfo, out, only, modes, timeout, profile=False, chunk=None):
+def browser(myinfo, out, only, timeout, profile=False, chunk=None):
     os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', r'E:\AI_mk2\pw-browsers')
     sys.path.insert(0, str(ROOT / 'tests' / 'e2e'))
     import test_page as tp
@@ -78,15 +79,15 @@ def browser(myinfo, out, only, modes, timeout, profile=False, chunk=None):
     out.mkdir(parents=True, exist_ok=True)
     path = out / 'browser.json'
     res = json.loads(path.read_text(encoding='utf-8')) if path.exists() else []
-    have = {(r['name'], r['mode']) for r in res}
+    have = {r['name'] for r in res if r.get('mode', 'on') == 'on'}
     with tp.test_server() as base, sync_playwright() as p:
         br = p.chromium.launch()
         try:
             for name, ck, tab, sname in STAGES:
                 if only and name not in only:
                     continue
-                for mode in modes:
-                    if (name, mode) in have:
+                for mode in ('on',):
+                    if name in have:
                         continue
                     ctx = br.new_context(viewport={'width': 1280, 'height': 900})
                     page = ctx.new_page()
@@ -108,7 +109,6 @@ def browser(myinfo, out, only, modes, timeout, profile=False, chunk=None):
                     page.dispatch_event('#stage', 'change')
                     tp.settle(page)
                     assert page.evaluate("()=>cur[$('stage').value].name") == sname
-                    page.evaluate("on=>{CFG.recommendation.fullScreen=on}", mode == 'on')
                     if profile:
                         page.evaluate(PROF_JS)
                     if chunk:       # 묶음 크기 고정(1 = 묶기 전 배차, 단계별 측정용)
@@ -139,9 +139,9 @@ def run_team(task):
     return {k: r.get(k) for k in ('prog', 'clear', 'n', 'progs')}
 
 
-def boot(a, b, stat, n=2000, seed=7):
+def boot(a, stat, n=2000, seed=7):
     rnd = random.Random(seed)
-    d = sorted(stat([a[rnd.randrange(len(a))] for _ in a]) - stat([b[rnd.randrange(len(b))] for _ in b]) for _ in range(n))
+    d = sorted(stat([a[rnd.randrange(len(a))] for _ in a]) for _ in range(n))
     return d[int(n * .025)], d[int(n * .975)]
 
 
@@ -149,51 +149,41 @@ def mean(x):
     return sum(x) / len(x)
 
 
-def evaluate(out, runs, workers):
-    data = json.loads((out / 'browser.json').read_text(encoding='utf-8'))
+def latest(data):
+    """스테이지별 마지막 켬 측정(예전 파일의 'off' 줄은 무시)."""
     by = {}
     for r in data:
-        by.setdefault(r['name'], {})[r['mode']] = r
+        if r.get('mode', 'on') == 'on':
+            by[r['name']] = r
+    return by
+
+
+def evaluate(out, runs, workers):
+    by = latest(json.loads((out / 'browser.json').read_text(encoding='utf-8')))
     rep = []
     with ProcessPoolExecutor(workers) as ex:
-        for name, m in by.items():
-            if not ('off' in m and 'on' in m):
-                continue
-            ev = {}
-            for mode in ('off', 'on'):
-                r, t = m[mode], m[mode]['top']
-                opt = dict(r['options'], break_skill={'name': t['bname'], 'level': t['blv']} if t['bname'] else None)
-                ev[mode] = dict(keys=t['keys'], **run_team((r['stageStr'], t['party'], runs, SEED, opt)))
-            # 같은 팀이면 차이 0(다시 돌리지 않음과 같음)
-            same = sorted(ev['on']['keys']) == sorted(ev['off']['keys'])
-            a, b = ev['on']['progs'], ev['off']['progs']
-            ca, cb = [1.0 if p >= 1 else 0.0 for p in a], [1.0 if p >= 1 else 0.0 for p in b]
-            row = dict(name=name, same=same, off=ev['off'], on=ev['on'],
-                       prog_diff=mean(a) - mean(b), prog_ci=boot(a, b, mean), prog_rel=(mean(a) - mean(b)) / mean(b) if mean(b) else None,
-                       clear_diff=mean(ca) - mean(cb), clear_ci=boot(ca, cb, mean))
+        for name, r in by.items():
+            t = r['top']
+            opt = dict(r['options'], break_skill={'name': t['bname'], 'level': t['blv']} if t['bname'] else None)
+            ev = dict(keys=t['keys'], **run_team((r['stageStr'], t['party'], runs, SEED, opt)))
+            a = ev['progs']
+            ca = [1.0 if p >= 1 else 0.0 for p in a]
+            row = dict(name=name, on=ev, prog=mean(a), prog_ci=boot(a, mean), clear=mean(ca), clear_ci=boot(ca, mean))
             rep.append(row)
-            print(name, '같은 팀' if same else '다른 팀', '진행 %+.3f [%+.3f, %+.3f]' % (row['prog_diff'], *row['prog_ci']),
-                  '(%+.1f%%)' % (100 * row['prog_rel']) if row['prog_rel'] is not None else '', '클리어 %+.3f [%+.3f, %+.3f]' % (row['clear_diff'], *row['clear_ci']), flush=True)
+            print(name, '진행 %.3f [%.3f, %.3f]' % (row['prog'], *row['prog_ci']), '클리어 %.3f [%.3f, %.3f]' % (row['clear'], *row['clear_ci']), flush=True)
     (out / 'eval.json').write_text(json.dumps(rep, ensure_ascii=False, indent=1), encoding='utf-8')
 
 
 def report(out):
-    data = json.loads((out / 'browser.json').read_text(encoding='utf-8'))
+    by = latest(json.loads((out / 'browser.json').read_text(encoding='utf-8')))
     ev = {r['name']: r for r in json.loads((out / 'eval.json').read_text(encoding='utf-8'))} if (out / 'eval.json').exists() else {}
-    by = {}
-    for r in data:
-        by.setdefault(r['name'], {})[r['mode']] = r
-    print('|스테이지|훑기 발동|작업자|시간 끔→켬(초)|배수|판 수 배수|1안 같음|평균 진행도 차(끔 대비 %) [95%]|클리어율 차 [95%]|')
-    print('|---|---|---|---|---|---|---|---|---|')
-    for name, m in by.items():
-        if not ('off' in m and 'on' in m):
-            continue
-        a, b, e = m['off'], m['on'], ev.get(name)
-        base = e and e['off']['prog']
-        pr = ('%+.1f%% [%+.1f, %+.1f]' % (100 * e['prog_rel'], 100 * e['prog_ci'][0] / base, 100 * e['prog_ci'][1] / base)) if e and base else '–'
-        cl = ('%+.1f%%p [%+.1f, %+.1f]' % (100 * e['clear_diff'], 100 * e['clear_ci'][0], 100 * e['clear_ci'][1])) if e else '–'
-        print('|%s|%s|%d|%.0f→%.0f|×%.2f|×%.2f|%s|%s|%s|' % (name, '예' if b['full'] else '아니오', b['workers'], a['seconds'], b['seconds'], b['seconds'] / a['seconds'],
-                                                     b['runs'] / a['runs'], ('예' if e['same'] else '아니오') if e else '–', pr, cl))
+    print('|스테이지|훑기 발동|작업자|시간(초)|판 수|1안 평균 진행도 [95%]|1안 클리어율 [95%]|')
+    print('|---|---|---|---|---|---|---|')
+    for name, b in by.items():
+        e = ev.get(name)
+        pr = ('%.3f [%.3f, %.3f]' % (e['prog'], *e['prog_ci'])) if e and 'prog' in e else '–'
+        cl = ('%.1f%% [%.1f, %.1f]' % (100 * e['clear'], 100 * e['clear_ci'][0], 100 * e['clear_ci'][1])) if e and 'clear' in e else '–'
+        print('|%s|%s|%d|%.0f|%d|%s|%s|' % (name, '예' if b['full'] else '아니오', b['workers'], b['seconds'], b['runs'], pr, cl))
 
 
 def main():
@@ -202,7 +192,6 @@ def main():
     ap.add_argument('--myinfo')
     ap.add_argument('--out', default=str(OUT))
     ap.add_argument('--only', help='스테이지 이름을 , 로')
-    ap.add_argument('--modes', default='off,on')
     ap.add_argument('--timeout', type=int, default=7200)
     ap.add_argument('--runs', type=int, default=400)
     ap.add_argument('--workers', type=int, default=8)
@@ -211,7 +200,7 @@ def main():
     a = ap.parse_args()
     out = Path(a.out)
     if a.cmd == 'browser':
-        browser(a.myinfo, out, set(a.only.split(',')) if a.only else None, a.modes.split(','), a.timeout * 1000, a.profile, a.chunk)
+        browser(a.myinfo, out, set(a.only.split(',')) if a.only else None, a.timeout * 1000, a.profile, a.chunk)
     elif a.cmd == 'eval':
         evaluate(out, a.runs, a.workers)
     else:
