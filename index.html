@@ -1179,7 +1179,7 @@ const scrLegOpt=pr=>pr?{run_offset:pr.off,merge_raw:pr.raw}:{raw_runs:true};
 //  움직임은 전부 CSS(forced.css). JS 는 단계가 바뀔 때만 DOM 을 바꾸고, 숫자는 기존 진행 글자 갱신(PAINT_MS)에 얹는다.
 //  훑는 동안(scan)은 «강제 탐색»: 그웬 길이 폐허 장면으로 바뀌고(GwenLane forcedSync → body.is-forced) 진행 칸이 관측 단말 모양이 된다. 스위치 없음 — 이 상태 하나로만 정함.
 const SCR_ALERT={foundMs:3200,enterMs:1500,base:"추천 편성 확인 중",label:"세계선",
- title:"⚠ 관측 경보 — 이 세계선에 돌파 경로 없음",sub:"성운 관측 · 다른 세계선의 기억을 찾는 중",note:"빠른 계산으로는 깰 팀이 없어, 후보 전체를 한 판씩 직접 싸워 봄",
+ title:"⚠ 승리 좌표 미검출",sub:"강제 탐색 프로토콜 — 다른 세계선을 뒤지는 중",note:"빠른 계산으로는 깰 팀이 없어, 후보 전체를 한 판씩 직접 싸워 봄",
  found:n=>`✦ 돌파 가능성 있는 기억 ${n}개 회수 — 구원자 편성 다시 정렬`,
  deco:'<span class="al-deco" aria-hidden="true"><i></i><i></i><i></i><i></i></span>'};
 function scrAlertOf(sc,now=Date.now()){if(!sc||!sc.full||sc.done)return "";if(!sc.fullDone)return sc.round<0?"scan":"";return sc.foundAt&&now-sc.foundAt<SCR_ALERT.foundMs?"found":""}
@@ -1222,7 +1222,7 @@ function scrNote(p,st){const sc=SIMQ.scr[scrKey(st,p)];if(!sc||!sc.done||!sc.sho
  return `<div class="scr-short" data-k="scr-short" role="status"><span>${msg}</span>${SIMQ.busy==null?`<button type="button" class="sec" data-scrmore="${p}">끝까지 확인</button>`:""}</div>`}
 // 강제 탐색 판정(결과 위 한 줄): 훑기를 끝까지 한 스테이지에서만. 1안 클리어율 0 = «관리 실패», 0 초과 = «루트 확보». 훑기가 없었거나 중간에 멈췄으면 표시 없음
 function scrVerdict(sc,r){if(!sc||!sc.done||!sc.full||!sc.fullDone||sc.short||!r)return "";const ok=r.clear>0;
- return `<div class="scr-verdict" data-k="scr-verdict" data-verdict="${ok?"ok":"fail"}" role="status"><b>${ok?"루트 확보":"관리 실패"}</b><span>${ok?"다른 세계선의 기억에서 돌파 경로 회수":"현 전력으로 돌파 불가 — 성장 후 재관측 권장"}</span></div>`}
+ return `<div class="scr-verdict" data-k="scr-verdict" data-verdict="${ok?"ok":"fail"}" role="status"><b>${ok?"루트 확보":"관리 실패"}</b><span>${ok?"다른 세계선의 기억에서 승리로의 가능성 회수":"현 전력으로 돌파 불가 — 성장 후 재관측 권장"}</span></div>`}
 // 진행 화면의 「지금까지 결과로 보기」: 끝난 팀이 있으면 그 팀들로 순위를 정하고(simInvalidate 가 scrClose) 본선으로, 하나도 없으면 그냥 취소.
 // 옆의 「취소」(data-simcancel)는 본선으로 가지 않고 전부 멈춘다(끝난 팀 순위는 남고 「끝까지 확인」으로 이어 갈 수 있음)
 function scrStop(){const st=cur&&cur[$("stage").value],sc=st&&SIMQ.busy!=null?SIMQ.scr[scrKey(st,SIMQ.busy)]:null;
