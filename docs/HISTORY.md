@@ -1,3 +1,19 @@
+## 2026-11-22 — 미결 기능 정리 반영(inventory_decide 결정)
+
+«켤지 말지 안 정한 것» 전수 목록(56항목)의 결정을 반영했음. 스위치는 기본 경로만 남기고 분기째 지웠고, 묶음마다 diet 기준선 36건·unify 기준선(지운 `_imm` 제외 123건)·`savior_rules_lines` 골든·`mc_cache` 기본 해시·`batch_identity`·`unsupported_allowlist --diff`(D=12·E=0)가 그대로였음.
+- 엔진(53ca9ac): A1~A10 `engine.ENGINE_MC_KEYS` 10개(dmg_cap_scope·turn_gauge·stat_stage·stat_floor·buff_maxhp·chain_round·chain_pen·chain_skill_damage_up·chain_stat_true·dot_formula)와 A11 chain_timing(immediate·client_mapped, `controller.flush_damage`, 코스모 즉시 응징 큐·연쇄 사본, unify `_imm` 14건) 삭제. mc 절 60→49키. 기대값 엔진 골든 `sim_golden.json`(672값)·`sim_golden_p1.json`(712값)을 새 값으로 재고정 — 제품 기본 경로는 HEAD 사본과 규칙 덮어쓰기 없는 build_index·골든 capture 해시 3개 일치로 따로 확인.
+- 화면(ca2dc35): B2~B4 `recommendation.neutralRoles`·`placementBaseline`·`placementCompare` 삭제(JS·Python·`party_contents.json`). 직접 편성 24조건은 유지. `recommendation` 에는 B1 `fullScreen`(다른 측정으로 따로 결정)만 남음.
+- 코스모(18eee72): B8 «빠른 탐색(실험)»(대리 점수·감사·화면 체크), B9 rngStreams(끔 경로만), B10 workerReuse(켬 경로만) 스위치 삭제, `data/cosmo_raid.json` 재생성(search.speed 만 빠짐).
+- 측정: A15 바스커빌 밖 공개 데이터의 armor_ban = 1건(`data/foe_client.json` «시엔 고유 버프(해제불가)», 클라 버프 표 전체엔 SuperArmorDamageBan 11종) → 0건이 아니라 `superarmor_damage_ban` 그대로 둠. C7 build_foe_auto `unit_links(guild=)` 끔 1007종(= 현재 `data/foe_auto.json`)·켬 1015종(길드 적 8종 추가)으로 달라 인자 유지(d2678d8, docstring 만 고침).
+- 유지: A12 power_penalty(off 는 보정 없는 비교용 — `battlesim_design.md` 의 «off(기본)» 낡은 표기만 고침), A13·A14(서버 입력 확인 대기), B5·B6 길드 새 방식(별도 배포), B7 코스모 배치 비교(저사양 PC 감사·확대 비용 측정 전이라 이번엔 유지), B11·C1~C6.
+- 문서: E3(HANDOFF 남은 일 4 의 BFB `stage` 선택지 문장 — 스위치는 fc5f435 에서 지움), E8·A12, 남은 일 17(빠른 탐색 문장), `engine_diet_1122.md` 남은 스위치 15→4개 표.
+
+지우거나 옛 모드를 뺀 도구(옛 모드는 모두 **engine-legacy-final 태그에 있음**, 30525c0·53ca9ac·ca2dc35·18eee72):
+- 파일 삭제: `tools/measure_level_max.py`(D8)·`tools/toughness_check.py`(D10)·`tools/myinfo_combat_audit.py`(D11)·`tools/measure_allowlist_conn.py`·`tools/measure_conn_quick.py`(chain_timing 전후 비교)·`tools/measure_recommendation_roles.py`(neutralRoles 비교)·`tools/bench_cosmo_proxy.js`(대리 점수 격자).
+- 옛 모드만 제거: `boss_hit_diagnostic` no_fx(D1), `measure_allowlist_followup` before·reaction(D2), `measure_allowlist_round2` before(D3), `measure_autotarget_12` legacy(D4), `measure_rule_grades_1121` --legacy-target(D5), `web_leads_audit` before(D6), `measure_timing_1121` before(D7), `measure_op4212_wide` before(D9), `measure_casebook` --legacy(D12), `measure_allowlist_break` --legacy·--break-only(D13), `measure_allowlist_rules_1121` --legacy·--legacy-rule(D14), `ally_damage_audit` before 프로필, `received_damage_audit` video_comparison, `bench_cosmo_search.js` fast·crn·reuse·replay 변형.
+
+크기: `mc.py` 6,051→5,956줄, `engine.py` 1,245→1,162줄, `default.json` 67,053→56,693B, `default.min.json` 9,120→8,586B, 묶음(`sim/manifest.json` 62파일) 7,390,123→7,375,823B(gzip 934,255→929,912). 시험 함수 삭제 23개(4개는 기본값 시험으로 다시 씀)·JS 시험 파일 1개 삭제. 전체 시험·e2e 는 이 작업에서 돌리지 않음(관련 단위 시험만).
+
 ## 2026-11-22 — 최종 리뷰(엔진·화면 갈래) 지적 반영
 
 리뷰 두 건(blocking 0)의 지적과 nit 을 반영했음. 엔진 결과는 묶음마다 diet 기준선 36건·unify 기준선 137건·`savior_rules_lines` 골든·`golden_check`·`mc_cache_test` 기본 해시가 바이트 일치했고 `unsupported_allowlist --diff` 는 D=12 E=0 그대로.
