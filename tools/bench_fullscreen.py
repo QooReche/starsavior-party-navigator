@@ -58,14 +58,19 @@ PROF_JS = """() => {
 
 # --browser-workers: 페이지 스크립트보다 먼저 navigator 값을 덮음(scrWorkerCount = min(코어−1, 8, 메모리 예산))
 WORKERS_JS = "Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>%d,configurable:true});Object.defineProperty(navigator,'deviceMemory',{get:()=>8,configurable:true});"
-# --stop-after: 훑기(sc.round = -1)가 시작돼 결과가 하나 이상 들어왔는가 / 지금 훑기 진행 상태
-SCAN_JS = "()=>{const sc=SIMQ.scr[scrKey(cur[$('stage').value],1)];return !!(sc&&sc.full&&sc.round<0&&sc.res0&&Object.keys(sc.res0).length)}"
+# --stop-after: 훑기 진행 중인가 — 진행 문구(SIMQ.msg «후보 전체 훑는 중»)와 «지금까지 결과로 보기» 단추로 감지(상태 객체 키에 기대지 않음)
+SCAN_JS = "()=>String(SIMQ.msg||'').includes('후보 전체 훑는 중')&&!!document.querySelector('button[data-scrstop]')"
 STOP_WAIT = 600
 # 멈춘 뒤 결과가 보임 = 진행 화면이 닫히고 1파티 결과 줄이 있음(«중간에 멈춰서 …» 안내 scrNote 유무는 STOP_STATE_JS 로 기록)
 STOP_SHOWN_JS = "()=>!document.querySelector('[data-k=\"progress\"]')&&!!document.querySelector('.party[data-party=\"1\"] .qbox .qrow[data-key]')"
 STOP_STATE_JS = """()=>{const ss=document.querySelector('.party[data-party="1"] [data-k="simstate"]');
   return {busy:SIMQ.busy,simstate:ss?.dataset?.state||null,done:SIMQ.busy==null&&ss?.dataset?.state==='done',note:document.querySelector('[data-k="scr-short"]')?.textContent||'',err:SIMQ.err||''}}"""
-SCAN_STATE_JS ="()=>{const sc=SIMQ.scr[scrKey(cur[$('stage').value],1)];return {scanning:!!(sc&&sc.full&&sc.round<0&&!sc.done),scanned:Object.keys(sc?.res0||{}).length,all:sc?.full?.length??null}}"
+SCAN_STATE_JS = """()=>{const sc=Object.values(SIMQ.scr||{}).find(x=>x&&x.full)||null;
+  return {scanning:String(SIMQ.msg||'').includes('후보 전체 훑는 중')&&!!document.querySelector('button[data-scrstop]'),msg:SIMQ.msg||'',
+    scanned:Object.keys(sc?.res0||{}).length,all:sc?.full?.length??null}}"""
+SCAN_DEBUG_JS = """()=>({msg:SIMQ.msg||'',busy:SIMQ.busy,screening:!!SIMQ.screening,full:!!CFG.recommendation.fullScreen,workers:scrWorkers(),
+  scr:Object.entries(SIMQ.scr||{}).map(([k,x])=>({k:String(k).slice(0,40),full:x.full?x.full.length:null,round:x.round,done:!!x.done})),
+  stopBtn:!!document.querySelector('button[data-scrstop]'),progress:!!document.querySelector('[data-k="progress"]')})"""
 
 COLLECT_JS = """() => {
   const c=contents[$('content').value],st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)]||null,B=window.__bench;
@@ -140,7 +145,16 @@ def browser(myinfo, out, only, modes, timeout, profile=False, chunk=None, nworke
                     page.wait_for_selector('.party[data-party="1"] .qbox .qrow[data-key]', state='visible', timeout=timeout)
                     stop = None
                     if mode == 'stop':
-                        page.wait_for_function(SCAN_JS, timeout=timeout)
+                        try:
+                            page.wait_for_function(SCAN_JS, timeout=STOP_WAIT * 1000)
+                        except Exception:     # 훑기 시작을 못 봄 — 기다리지 않고 상태만 남김
+                            dbg = page.evaluate(SCAN_DEBUG_JS)
+                            print('  훑기 시작 감지 실패:', dbg, flush=True)
+                            ctx.close()
+                            res.append(dict(name=name, mode=mode, errors=errors, forced_workers=nworkers, stop=dict(scan_seen=False, debug=dbg)))
+                            path.with_suffix('.tmp').write_text(json.dumps(res, ensure_ascii=False), encoding='utf-8')
+                            os.replace(path.with_suffix('.tmp'), path)
+                            continue
                         ts = time.time()
                         page.wait_for_timeout(int(stop_after * 1000))
                         st0 = page.evaluate(SCAN_STATE_JS)
