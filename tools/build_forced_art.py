@@ -22,14 +22,20 @@ IDCARD = 256
 
 def build_scene(src):
     im = Image.open(src).convert('RGB')
-    im.resize((1800, round(im.height * 1800 / im.width)), Image.LANCZOS).save(OUT / 'scene.webp', quality=72, method=6)
+    wide = im.copy()
+    wide.thumbnail((1800, im.height), Image.LANCZOS)
+    wide.save(OUT / 'scene.webp', quality=72, method=6)
     x0, x1 = (round(im.width * t) for t in NARROW)
     part = im.crop((x0, 0, x1, im.height))
-    part.resize((800, round(part.height * 800 / part.width)), Image.LANCZOS).save(OUT / 'scene_narrow.webp', quality=72, method=6)
+    part.thumbnail((800, part.height), Image.LANCZOS)
+    part.save(OUT / 'scene_narrow.webp', quality=72, method=6)
 
 
 def build_back(src):
     im = Image.open(src).convert('RGBA')
+    # 생성 알파의 미세 잡음이 여백/비율을 늘리지 않게 정리함.
+    # 승인 그웬 빌더와 같은 기준이며 중간값의 가장자리 투명도는 보존함.
+    im.putalpha(im.getchannel('A').point(lambda a: 0 if a < 10 else 255 if a > 245 else a))
     im = im.crop(im.getbbox())
     im = im.crop((0, 0, im.width, round(im.height * BACK_KEEP)))
     im = im.crop(im.getbbox())

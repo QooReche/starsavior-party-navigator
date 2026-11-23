@@ -1,0 +1,415 @@
+{
+  "date": "2026-11-23",
+  "tool": "codex built-in image_gen",
+  "base_commit": "6ef9861f9b297a7f32dd387b7953acc9cf002183",
+  "meaning": "정식 그림은 사이트 채택본을 뜻함. 게임사의 공식 원화가 아닌 생성 팬 그림이며 원 캐릭터·디자인의 권리는 원 권리자에게 있음.",
+  "originals": "PNG originals and comparison sheet are stored outside the repository.",
+  "generation_calls": 10,
+  "retries": 1,
+  "reference_policy": "Repository-relative paths only. Historical forced art supplies composition or past costume; approved Gwen art defines identity and style.",
+  "inspected_references": [
+    "docs/forced_art.md",
+    "docs/fullscreen_measure_1121.md",
+    "tools/gwen_art/README.md",
+    "tools/gwen_art/art3.md",
+    "tools/gwen_art/art6.md",
+    "assets/forced/scene.webp (base commit)",
+    "assets/forced/gwen_back.webp (base commit)",
+    "assets/forced/gwen_idcard.webp (base commit; inspection only)",
+    "tools/gwen_art/masters5/st_point.webp",
+    "tools/gwen_art/masters2/confident.webp (inspection only)",
+    "assets/savior/gwen_art.webp",
+    "assets/forced/gwen_idcard.webp (506b228^; past appearance, direct generation reference)",
+    "lavistar_ruin_bg_v1.png (5e05a3f source; direct sky-edit reference; outside repository)",
+    "gwen_back_illust_1.png (outside repository; primary full-proportion Gwen style)",
+    "assets/forced/scene.webp (5e05a3f; composition and atmosphere)",
+    "lavistar_ruin_bg_v3.png (12d9262 source; outside repository; composition and ring placement)",
+    "recon/recon_office_bg_1.png (outside repository; ring silhouette only)",
+    "lavistar_ruin_bg_v4.png (c37b5f1 source; local sky edit target; outside repository)",
+    "before/scene.webp (initial temporary image; luminous trail quality only; no planet; outside repository)"
+  ],
+  "images": [
+    {
+      "output": "lavistar_ruin_bg_1.png",
+      "transparent_background": false,
+      "attempts": [
+        {
+          "prompt": "Use case: stylized-concept. Asset: finished panoramic background painting for a fantasy game's forced-exploration scene. Generate ONE landscape illustration, exact 3:1 canvas, ideally 3072x1024 or larger. Input image 1 is a COMPOSITION REFERENCE ONLY: preserve its major arrangement, horizon, perspective and crop-safe landmarks, repaint as refined Japanese/Korean anime game background art with delicate lines, soft cel-painted gradients and restrained texture. Night, viewed from inside a ruined room with broken masonry walls framing the outer edges and shattered floorboards/rubble along the bottom. An EMPTY wooden chair at x=29%, small wooden writing desk at x=20%, and fallen teddy bear at x=21% belong to the ruined room on the left. All three must remain visible inside the x=17% to x=65% narrow-screen crop. Beyond the missing wall, a misty European-inspired city with blue-gray mansard roofs, distant cathedral spires and a civic plaza with an equestrian statue fountain at x=57%. Large blue planet in the upper LEFT sky, beautiful luminous GOLD elliptical orbital trails sweeping across the upper middle. Deep indigo, muted slate blue, teal fog, subtle warm window lights and gold orbit accents. Keep the right foreground third relatively quiet, darker and free of prominent subjects so a separate rear-view character can be overlaid. Make the chair-to-fountain composition readable at a small banner size. Full-bleed image, no letterboxing. No humans or characters, no writing, no text, letters, numbers, logos or watermark. All ages. Do not reproduce any unrelated game character or real person.",
+          "references": [
+            "assets/forced/scene.webp (6ef9861; composition only)"
+          ],
+          "selected": false
+        },
+        {
+          "prompt": "Use case: precise-object-edit / stylized-concept. Edit target: supplied current lavistar_ruin_bg_1.png, a panoramic anime fantasy background. Redraw ONLY the sky, preserving the composition, exact aspect ratio 3:1 (2172x724 preferred), architecture, all foreground props and original delicate painted style. Completely REMOVE the blue planet and ALL its diagonal orbital trails; no planet, moon, spherical celestial body, or orbital swoosh anywhere. Replace them with ONE gigantic GOLDEN PROTECTIVE RING hanging across the upper LEFT-to-CENTER sky: a clearly readable closed circular shield perimeter seen in gentle perspective as a broad ellipse, centered around x=40%, y=19%, spanning approximately x=21%-61%, y=3%-38%. Its upper and lower arcs together must unmistakably read as one enclosing circle, not diagonal streaks and not a planet's orbit. This ring has guarded the world for ages and is NOW SHATTERING: deep cracks across its substantial luminous gold rim, missing segments and detached gold shards falling from the broken upper-left/central arcs; through the broken shield gaps reveal dark crimson-violet cosmic void. Sky itself breaks like enormous glass panes, subtle fractured spacetime and scattered falling stars/light splinters, apocalypse of the cosmos. Focus the most legible fracture around x=34%-43%, y=10%-22%, along the future character's upper-left gaze. Rich indigo/cool blue, restrained red-violet void and gold-white fractures; dramatic but balanced airy luminance so the misty city and foreground remain readable as a small top-of-screen banner. Keep the LOWER SCENE essentially unchanged: ruined room at left, empty wooden chair, small desk and teddy bear; central misty European city with equestrian statue plaza; preserve chair through plaza within x=17%-65% narrow-screen crop. Keep right foreground third quiet for a separate rear-view Gwen overlay; do not add Gwen or any character. Preserve existing perspective, horizon, furniture positions, masonry framing, blue roofs, warm windows, fog and floorboards. Full-bleed landscape, absolutely 3:1. No text, lettering, logos, watermark or labels. One edited background only.",
+          "references": [
+            "lavistar_ruin_bg_v1.png (5e05a3f source; edit target; outside repository)"
+          ],
+          "selected": false,
+          "date": "2026-11-23",
+          "base_commit": "5e05a3f"
+        },
+        {
+          "date": "2026-11-23",
+          "base_commit": "afa56b7",
+          "generation_calls": 1,
+          "retries": 0,
+          "prompt": "Use case: style-transfer. Create ONE finished panoramic fantasy game background at native 3:1 resolution, at least 1800x600, ideally 2160x720. Input 1 (office) is the PRIMARY STYLE and GOLD RING reference: match its clean visible dark outlines, flat shapes and only 2-3 cel shading tones. Inputs 2 and 3 are Gwen SD STYLE references: match the crisp outlines, navy/teal/gold palette, restrained shading, no painterly detail. Input 4 is COMPOSITION/CONTENT reference only: redraw that ruined room and city in the office/SD style. Same set as the office. Left: ruined room, EMPTY simple wooden chair near x29%, small writing desk near x20%, fallen teddy bear x21%, rubble and broken floorboards. Middle: misty simplified European city, equestrian statue fountain plaza near x57%. Right foreground third relatively empty for a separately composited back-facing Gwen, NO people in this image. Preserve these landmarks within horizontal x17%-65% crop. Sky: NO planet. One enormous circular GOLD SHIELD RING in perspective as a broad flattened ellipse, same simple solid golden band and angular breaks as office window ring, NO ornate engraving. Place entire ring between x22%-61%, y15%-44%, centered upper left-middle; this lower sky placement is essential for narrow-screen cropping. It is actively SHATTERING: obvious major rupture at x34% y22%, detached angular golden chunks falling, red-violet void visible through jagged cracks, sky cracking like glass, falling stars. Apocalyptic but all ages. Sky fissures and stars are clean graphic line shapes; no photographic nebula, no bloom or complex particles. Keep the city and room calm simple flat navy/teal shapes, gold accents. Visible clean dark contour lines around objects, 2-3 hard-edged tones. NO painterly strokes, texture, grain, gloss, realistic tiny details, gradients or ornate filigree. No text, lettering, logos, watermark. Output the native image, do not upscale.",
+          "references": [
+            "recon/recon_office_bg_1.png (outside repository; primary style and ring)",
+            "assets/ui_icons/gwen/investigate_512.png",
+            "assets/ui_icons/gwen/files_512.png",
+            "lavistar_ruin_bg_v2.png (outside repository; previous composition)"
+          ],
+          "transparent_background": false,
+          "selected": false,
+          "native_size": [
+            2172,
+            724
+          ],
+          "upscaled": false,
+          "ring_bounds_percent": {
+            "x": [
+              17.4,
+              61.6
+            ],
+            "y": [
+              14,
+              37
+            ],
+            "fragments_y_max": 47
+          },
+          "narrow": {
+            "crop_x_percent": [
+              17,
+              65
+            ],
+            "size": [
+              800,
+              555
+            ],
+            "css_anchor_y_percent": 12
+          },
+          "bytes": {
+            "scene": 107808,
+            "scene_narrow": 54332,
+            "all_forced": 198808
+          }
+        },
+        {
+          "date": "2026-11-23",
+          "base_commit": "12d9262",
+          "prompt": "Use case: style-transfer / stylized-concept. Create ONE replacement ultra-wide 3:1 game background; request 2172x724 PNG, preserve native generated pixels, no upscaling. No characters or text.\nReferences in priority order:\n1. gwen_back_illust_1.png: PRIMARY art-style reference ONLY. Match this full-proportion anime character's delicate clean linework, 3-4 value steps, selective smooth shading, softly graded colors, dimensional highlights. DO NOT draw Gwen; she will be composited later.\n2. previous_5e05a3f/scene.webp: scene/content and spatial atmosphere reference, but reduce its painterly realistic detail; DO NOT copy the planet or orbital trajectories.\n3. lavistar_ruin_bg_v3.png (12d9262): scene arrangement, cracked horizontal ring, red-purple void, shattered sky reference; do NOT copy its flat cartoon look, thick black outlines, large furniture or flat clipart ribbon.\n4. recon_office_bg_1.png: ONLY the horizontal elliptical broken golden ring silhouette/motif, NOT its SD/cartoon style.\nTarget style is BETWEEN the two background extremes: a refined cel-anime background naturally belonging behind the full-proportioned Gwen reference. Medium detail; clean fine colored contours, 3-4 shade values on walls/furniture, smooth indigo/cyan/violet sky gradients, delicate atmospheric depth, luminous bloom around a thick golden metallic/energy ring. No photoreal brushstrokes, no flat vector/clipart style.\n\nComposition: camera looks from a shattered upper-floor room over a European fantasy city with lit windows and an equestrian statue/fountain plaza. Small abandoned empty cross-back wooden chair, small desk/drawer cabinet, teddy bear and associated rubble must sit several steps BACK in the middle depth, not near camera. Chair fully inside horizontal x=24-32% (all legs within 20-35%), vertical y=42-66%, total height about 24% of canvas, NEVER above 28%. Desk left beside chair, proportional and small; teddy tiny nearby. Room furniture is secondary and visibly distant compared with the large foreground character to be composited. Raise the room's distant broken floor ledge appropriately and show a broad depth of floor between furniture and camera. Foreground contains ONLY floor rubble and broken wall edges. Keep right third's foreground, especially x=61-90%, free of furniture and tall objects for Gwen. Preserve skyline, distant rooftops, city plaza and statue at middle-right.\nThe gold protective ring floats horizontally above the city; its outer extent x=17-62%, y=14-37%. It is a dimensional thick elliptical metallic/energy ring, with bright emissive inner edges, shaded underside/beveled rim, restrained radiant bloom. Break it around x=33%, y=22% with cracks, detached golden shards falling, an ominous red-purple void exposed in broken sky, glasslike sky fissures and falling stars. No planet. No diagonal orbital loops.\nCritical mobile crop: only x=17-65% survives. Keep entire chair horizontally inside x=20-35%, ring silhouette inside x=17-62%. Keep sky/ring placement as specified. Furniture must be MUCH smaller and deeper than reference 3. Build believable perspective, not giant near-camera furniture. Full illustration only, no border, lettering, watermark or UI.\n",
+          "references": [
+            "gwen_back_illust_1.png (outside repository; primary full-proportion Gwen style)",
+            "assets/forced/scene.webp (5e05a3f; composition and atmosphere)",
+            "lavistar_ruin_bg_v3.png (12d9262 source; outside repository; composition and ring placement)",
+            "recon/recon_office_bg_1.png (outside repository; ring silhouette only)"
+          ],
+          "transparent_background": false,
+          "selected": false,
+          "native_size": [
+            2172,
+            724
+          ],
+          "upscaled": false,
+          "ring_bounds_percent_approx": {
+            "x": [
+              18.2,
+              59.2
+            ],
+            "y": [
+              13.3,
+              33.7
+            ]
+          },
+          "chair_bounds_percent_approx": {
+            "x": [
+              27.3,
+              31.1
+            ],
+            "y": [
+              54.7,
+              74.3
+            ]
+          },
+          "narrow": {
+            "crop_x_percent": [
+              17,
+              65
+            ],
+            "size": [
+              800,
+              555
+            ],
+            "css_anchor_y_percent": 12,
+            "css_lane_height": "max(190px,55vw)"
+          },
+          "gwen_scale": 0.92,
+          "gwen_bottom_below_lane_px": 6,
+          "bytes": {
+            "scene": 98902,
+            "scene_narrow": 49982,
+            "all_forced": 185552
+          },
+          "source_sha256": "af962b8a43742cf73b1754bb88807257de88e57d861db37e0cf5173c594de011"
+        },
+        {
+          "date": "2026-11-23",
+          "base_commit": "c37b5f1",
+          "working_head": "8a6216d",
+          "prompt": "Use case: precise-object-edit. Edit target: image 1, lavistar_ruin_bg_v4.png, current 2172x724 panoramic cel-anime city background. Reference image 2 before/scene.webp is ONLY a reference for wispy luminous orbital energy line quality, NOT its planet, painting style, furniture, or city.\nPerform a LOCAL SKY EDIT ONLY on image 1. Retain its exact 2172x724 size and 3:1 framing, unchanged composition and all existing pixels outside the edited sky. Never regenerate or redraw the whole scene. Preserve the city, architecture, skyline, ruins, small distant chair, cabinet, teddy bear, floor, perspective, colors, delicate cel linework, lighting and atmospheric depth exactly.\nReplace ONLY the thick solid gold metal ring and its solid metal chunks with THREE OR FOUR separate graceful hair-thin gold-white luminous orbital trails, like comet tails or fluid energy traces from reference 2. Vary their inclination slightly and their orbit sizes so these are multiple intersecting arcs, not a single band. Bright fine white-gold filament cores, delicate bloom, subtle teal trace, long tapering ends and small starburst twinkles at their tips. Open elongated elliptical orbits wrapping the sky, with a few breaks. All main orbit arcs contained around x=17%-62%, y=14%-37%; roughly same location/scale as old ring, entirely above the skyline. No thick ribbon, no metallic surface, no bevel or shaded underside, no solid bracelet, no single gold ring, no planet/moon/sphere. Do not copy reference planet.\nThe trails are BREAKING NOW: in several places interrupt the thin luminous filaments with gaps and drifting fragments of LIGHT and tiny sparks, never gold metal slabs. At breaks retain glasslike sky fissures opening onto the existing crimson-violet void. Keep existing shattered sky and falling stars atmosphere. Preserve the red-violet rift and surrounding sky outside this local motif; do not relocate it. Retain the original restrained overall brightness and palette.\nNo characters, no text, no watermark. Return ONE locally edited version of the first image, not a new composition.\n",
+          "references": [
+            "lavistar_ruin_bg_v4.png (c37b5f1 source; local sky edit target; outside repository)",
+            "before/scene.webp (initial temporary image; luminous trail quality only; no planet; outside repository)"
+          ],
+          "transparent_background": false,
+          "selected": true,
+          "edit_calls": 1,
+          "retries": 0,
+          "native_size": [
+            2172,
+            724
+          ],
+          "upscaled": false,
+          "ring_bounds_percent_approx": {
+            "x": [
+              17.8,
+              60.2
+            ],
+            "y": [
+              14,
+              37
+            ]
+          },
+          "trail_count_approx": 4,
+          "postprocess": {
+            "method": "Composite generated sky patch onto c37b5f1 native original; preserve all pixels outside polygon. Linear inward feather 12px, no resizing.",
+            "polygon_xy": [
+              [
+                330,
+                70
+              ],
+              [
+                1290,
+                70
+              ],
+              [
+                1330,
+                130
+              ],
+              [
+                1330,
+                240
+              ],
+              [
+                1090,
+                288
+              ],
+              [
+                835,
+                290
+              ],
+              [
+                812,
+                325
+              ],
+              [
+                798,
+                325
+              ],
+              [
+                790,
+                282
+              ],
+              [
+                778,
+                254
+              ],
+              [
+                770,
+                254
+              ],
+              [
+                755,
+                325
+              ],
+              [
+                670,
+                325
+              ],
+              [
+                610,
+                310
+              ],
+              [
+                555,
+                308
+              ],
+              [
+                530,
+                280
+              ],
+              [
+                355,
+                260
+              ],
+              [
+                320,
+                195
+              ]
+            ],
+            "skyline_guards_xywh": [
+              [
+                470,
+                237,
+                55,
+                100
+              ],
+              [
+                590,
+                288,
+                45,
+                60
+              ],
+              [
+                870,
+                280,
+                70,
+                70
+              ],
+              [
+                1260,
+                205,
+                90,
+                130
+              ]
+            ],
+            "feather_inward_px": 12,
+            "changed_bbox_xyxy": [
+              321,
+              71,
+              1330,
+              325
+            ],
+            "unchanged": "Outside sky polygon, including city skyline notch, furniture, ruins and floor; byte-identical decoded RGB. Office and Gwen assets unchanged."
+          },
+          "previous_source_sha256": "af962b8a43742cf73b1754bb88807257de88e57d861db37e0cf5173c594de011",
+          "generated_candidate_sha256": "4556698c27ba5a281ffaae3b32deefd8febf0740ddd6c2d60e4d6a3f190693b4",
+          "source_sha256": "e446905fc03f08993665fdb43ba7acd94c93a6481d995557a88379f331f475ee",
+          "bytes": {
+            "scene": 97904,
+            "scene_narrow": 49180,
+            "all_forced": 183752
+          },
+          "narrow": {
+            "crop_x_percent": [
+              17,
+              65
+            ],
+            "size": [
+              800,
+              555
+            ],
+            "css_anchor_y_percent": 12,
+            "css_lane_height": "max(190px,55vw)"
+          },
+          "preview": "layout_review.png (outside repository; left c37b5f1 / right selected; CSS static composition, effects excluded)",
+          "office_ring": "Deferred; office window will be covered by CSS light."
+        }
+      ]
+    },
+    {
+      "output": "gwen_back_illust_1.png",
+      "transparent_background": true,
+      "attempts": [
+        {
+          "prompt": "Use case: identity-preserve / stylized-concept. Generate ONE finished full-body character illustration of Gwen from Star Savior for this existing fan project, TRUE transparent RGBA background. Input image 1 (approved st_point sprite sheet) is PRIMARY identity/face/line/shading reference, use a single character, NOT a sheet. Input image 2 (official Gwen chair artwork) is costume/whole-body reference only. Input image 3 (temporary rear-view cutout) is POSE AND SILHOUETTE reference only, replace its harder glossy style with the soft approved art style. Full body, head to boots with modest transparent margins, approximately portrait 2:3 canvas. Gwen stands calmly with her BACK to the viewer in a slight three-quarter rear view; head gently turned toward the UPPER LEFT of the image, looking away over a distant city. Keep most of the face hidden, a small soft cheek/profile and one restrained golden eye if naturally visible, never looking at viewer. Keep the pose and costume silhouette close to reference 3, a narrow draped black/gold shoulder-back panel instead of a large cape. Adult anime woman, natural approved full-size proportions (not chibi), round soft face, short small chin, delicate outlines, soft cel shading plus restrained gradients. Dark INDIGO/PURPLE NAVY bob (#1E1B4B to #2A2560), teal inner hair behind ear, small gold bar hairpin on HER anatomical LEFT side (visible near image-left temple in this rear view). Royal-blue tailored military uniform, gold fringed epaulettes, teal neck ribbon with red diamond jewel (only visible as pose permits), white layered jabot at front (do not paste it onto the back), black double waist belt, teal sash, blue skirt/coat tails with white edging, pale tights and dark boots. White gloves with white frilled cuffs. Each sleeve has ONE BROAD WHITE BAND on its OUTER face from below shoulder all the way to just before wrist frill, no inner-sleeve stripes. Arms at ease, one gloved hand visible hanging on image-left, other naturally at waist. Upper 62 percent of the alpha-trimmed body (head through mid-thigh) will be cropped for production: prioritize perfect bob silhouette, epaulettes, upper-back uniform, sleeve stripe continuity, hands and waist. Soft cool night illumination and very subtle warm rim from upper left, keep royal blue and navy recognizable. No floor, cast ground shadow, scenery, background or fake checkerboard. No text, numbers, labels, logos or watermark. All ages; no sexualization, no real person, no unrelated game character. Exactly one character.",
+          "references": [
+            "tools/gwen_art/masters5/st_point.webp",
+            "assets/savior/gwen_art.webp",
+            "assets/forced/gwen_back.webp (6ef9861; pose only)"
+          ],
+          "selected": false
+        },
+        {
+          "prompt": "Use case: background-extraction / precise-object-edit. Edit the supplied rear-view full-body Gwen illustration. Preserve the SAME character, costume, hairstyle, gold pin, pose, hand anatomy, proportions, linework, blue/teal/gold colors and complete boots. Remove ALL of the diffuse cloudy gray/blue/purple/gold glow surrounding her. Output a CLEAN CHARACTER CUTOUT with genuine RGBA transparency: every pixel outside the physical silhouette of hair, epaulettes, clothing, hands, legs and boots must be fully transparent alpha=0. The character's solid interiors must be opaque alpha=255; only actual narrow anti-aliased edges may have partial alpha. NO ambient aura, NO haze, NO blurry halo, NO shadow, NO vignette, NO background, NO checkerboard baked into pixels. The transparent gaps between limbs must also be completely clear. Keep the existing delicate illustration shading inside the character, and keep full body plus small transparent margins. Only additional pose adjustment: lift her chin very slightly so her eye gaze clearly goes to UPPER LEFT, still looking away with her back to viewer. Do not add any object, text, logo or watermark. All ages. ONE character on a portrait transparent canvas.",
+          "references": [
+            "gwen_back_attempt1.png (first generated output; outside repository)"
+          ],
+          "selected": false
+        },
+        {
+          "prompt": "Use case: precise-object-edit. Edit target: the supplied approved rear-view Gwen PNG. LOCAL INPAINT ONLY, not a redraw or regeneration. Remove ONLY the turquoise dangling tassel earring attached to her visible LEFT ear (at approximately x=450-475, y=182-227 on the 1024x1536 canvas). Reconstruct the small exposed ear-lobe/adjacent hair/neck and transparent negative space naturally where that ornament was. She wears NO earrings. Preserve the exact original face profile, eye, gold bar hairpin, indigo bob, hair strands, head outline, neck outline, epaulettes, uniform, pose, proportions, hands, boots, canvas size and placement, colors, linework and shading everywhere else. Keep the original transparent RGBA background and all existing alpha outside this tiny edited area unchanged. Do not add a background or glow. The turquoise inner hair strands that are genuinely hair should stay; only the dangling jewelry is removed. Output one edited PNG at the original 1024x1536 size.",
+          "references": [
+            "gwen_back_illust_1_v1.png (506b228 source; edit target; outside repository)"
+          ],
+          "selected": true,
+          "date": "2026-11-23",
+          "base_commit": "506b228"
+        }
+      ]
+    },
+    {
+      "output": "gwen_idcard_illust_1.png",
+      "transparent_background": false,
+      "attempts": [
+        {
+          "prompt": "Use case: identity-preserve / stylized-concept. Create ONE square black-and-white aged identification portrait of Gwen from Star Savior for an existing fan project, no lettering. Input image 1 is the PRIMARY approved face and illustration-style reference (st_point sheet): take the open-eyed face, navy bob silhouette, small gold bar hairpin on HER LEFT = VIEWER RIGHT, soft rounded cheeks and small short chin; do not make a sprite sheet. Input image 2 is official costume reference. Front-facing straight-on head-and-upper-chest portrait, calm serious neutral expression, symmetrical relaxed shoulders, gaze toward camera, complete hair silhouette inside square crop, face large enough to recognize when reduced to 44-56 pixels. Preserve the same recognizable character, fine delicate anime linework and soft cel-painted gradients from approved art. Short dark indigo bob with subtle lighter inner strands (rendered in grayscale), large half-lidded ringed eyes translated into pale gray irises, gold bar hairpin translated to light gray. Correct military uniform: gold fringed epaulettes rendered gray, high collar, broad teal neck bow rendered gray with diamond jewel, white layered jabot. NO hat, NO beret, NO necktie, no replacement generic police costume. Make it look like a small old monochrome ID photograph printed on worn gray paper: subtle fibrous paper texture, restrained scratches and a few worn edges, slightly faded contrast, plain mid-gray photographic background. Keep scratches off important eyes and face. Strictly grayscale, square 1:1 approximately 1024x1024. Image only, no card layout or text fields. No text, numerals, logos, stamps, watermark or borders containing writing. All ages, no real person and no unrelated game character.",
+          "references": [
+            "tools/gwen_art/masters5/st_point.webp",
+            "assets/savior/gwen_art.webp"
+          ],
+          "selected": false
+        },
+        {
+          "prompt": "Use case: identity-preserve / stylized-concept. Create ONE square aged monochrome identification photograph of Gwen's PAST appearance. Input image 1 is the OLD ID PHOTO and is the PRIMARY DIRECT reference for outfit, hat, composition, expression, monochrome paper texture and historical appearance. Input image 2 is the APPROVED GWEN character sheet, used ONLY for recognizable facial identity, soft rounded cheeks, small short chin, half-lidded eyes, bob shape and delicate anime rendering; do NOT copy its current military uniform. Show one front-facing head-and-upper-chest portrait with a neutral unsmiling expression and relaxed symmetrical shoulders. Match the OLD PHOTO: black beret with a small insignia badge without writing, small bar hairpin on HER LEFT / viewer right, dark navy bob rendered dark grayscale, WHITE SHIRT, BLACK NECKTIE, DARK TAILORED JACKET WITH LAPELS. Absolutely NO fringed epaulettes, NO cravat, NO jabot, NO teal neck bow or diamond neck jewel. The same recognizable Gwen as the approved reference, wearing the old photo's past outfit. Keep a worn old black-and-white photographic print texture, restrained scratches, stains, worn corners and edges, slight fading and a plain gray background; don't obscure important facial features. Entirely grayscale, square composition 1:1, one photograph only. No text, letters, numerals, watermark, captions or card fields. No other characters. All ages.",
+          "references": [
+            "assets/forced/gwen_idcard.webp (506b228^; old photo, direct reference)",
+            "tools/gwen_art/masters5/st_point.webp (identity/style only)"
+          ],
+          "selected": true,
+          "date": "2026-11-23",
+          "base_commit": "506b228"
+        }
+      ]
+    }
+  ],
+  "revisions": [
+    {
+      "date": "2026-11-23",
+      "base_commit": "506b228",
+      "generation_calls": 2,
+      "retries": 0,
+      "reason": "PM 검수: 뒷모습 귀걸이 제거, 신분증 사진을 과거 모습으로 교정"
+    },
+    {
+      "date": "2026-11-23",
+      "base_commit": "5e05a3f",
+      "generation_calls": 1,
+      "retries": 0,
+      "reason": "PM 검수: 행성 제거, 깨지는 방패 고리와 멸망하는 하늘"
+    },
+    {
+      "date": "2026-11-23",
+      "base_commit": "afa56b7",
+      "generation_calls": 1,
+      "retries": 0,
+      "reason": "재조사 사무실·그웬 SD와 같은 셀 화풍, 좁은 화면 고리 보존"
+    },
+    {
+      "date": "2026-11-23",
+      "base_commit": "12d9262",
+      "generation_calls": 1,
+      "retries": 0,
+      "reason": "등신대 뒷모습 그웬의 선·명암으로 화풍 수정, 의자·책상을 중경으로 축소하고 좁은 띠에서 의자 전체 보존"
+    },
+    {
+      "date": "2026-11-23",
+      "base_commit": "c37b5f1",
+      "generation_calls": 1,
+      "retries": 0,
+      "reason": "하늘 고리만 초기 임시 그림의 가늘고 밝은 여러 궤적으로 국소 편집, 행성 없이 깨지는 빛·공허·별빛 끝 유지"
+    }
+  ]
+}
