@@ -78,7 +78,7 @@
     "assets/ui_icons/gwen/recon_nod.png"
   ],
   "postprocess": "Alpha <10 -> 0, >245 -> 255; preserve edge alpha. Crop transparent margins, shrink to 450px bounds, center in 512 canvas with feet at y482. Same ready palette (192 interior / 64 edge colors); 160px still uses existing RGB quantization with alpha preserved. No animation, no screen wiring.",
-  "preview": "recon/with_gwen_office.png (outside repository)",
+  "preview": "recon/gwen/with_gwen_office.png (outside repository)",
   "artifacts": [
     {
       "path": "assets/ui_icons/gwen/recon_look_512.png",
@@ -86,8 +86,8 @@
         512,
         512
       ],
-      "bytes": 65307,
-      "sha256": "7fa85389f2acdbc0a84e73f086dd8d2c017b5323f839203ff2f8c3a0878dce92"
+      "bytes": 66245,
+      "sha256": "cb967c4518e133cc90968f334140a11adce82fa041bc1e57fc09749f7b5d0a80"
     },
     {
       "path": "assets/ui_icons/gwen/recon_look.png",
@@ -95,8 +95,8 @@
         160,
         160
       ],
-      "bytes": 17893,
-      "sha256": "e0a587dcc73b34daff9b6c52a6d792aa3483d78aeebd030ef3b1526e42e1b377"
+      "bytes": 18413,
+      "sha256": "5a397681d20f0e567dae35335ef41d66d5c7e0bb1b073e16159b1abf9d5db9ac"
     },
     {
       "path": "assets/ui_icons/gwen/recon_pin_512.png",
@@ -104,8 +104,8 @@
         512,
         512
       ],
-      "bytes": 67091,
-      "sha256": "bf58b8d90bd7245748ad9eb42ff6dc690fb4be100a0258c3506047dafea6045b"
+      "bytes": 67455,
+      "sha256": "873ef8fd4c6580566cd7d3b552feb4cad7ca5f03bb7920b7e94cbc792ab10547"
     },
     {
       "path": "assets/ui_icons/gwen/recon_pin.png",
@@ -113,8 +113,8 @@
         160,
         160
       ],
-      "bytes": 19075,
-      "sha256": "bd34c21ca4a7ccde6ed46bcea79fb9f4b6097c61541aefae25d6e2a5cc275b0e"
+      "bytes": 19934,
+      "sha256": "a75ec8a2c8f825f68e3b37d9db91b1e9b8ba04fc338031d52cae79efc06d2a8d"
     },
     {
       "path": "assets/ui_icons/gwen/recon_nod_512.png",
@@ -122,8 +122,8 @@
         512,
         512
       ],
-      "bytes": 58773,
-      "sha256": "891afad1cc990a3cafc222b1a045f184cbdb39c67d39931a01bc42e5bcae23ea"
+      "bytes": 59730,
+      "sha256": "590112604c34384d44a9164544a9d06dc37c8f3c383dce376397efbe94429bb5"
     },
     {
       "path": "assets/ui_icons/gwen/recon_nod.png",
@@ -131,8 +131,8 @@
         160,
         160
       ],
-      "bytes": 14687,
-      "sha256": "1162e13a5c0a7ed6056daad64907fa78b979aae5cf54ba878408bf0bd4bb643b"
+      "bytes": 15449,
+      "sha256": "2d37e63208f883ce923890833c5f918fdb87e5bb1b4ca925cec9c7cf5db6a3d6"
     }
   ],
   "revisions": [
@@ -341,6 +341,208 @@
               "gwen_art6_test.py",
               "gwen_art_test.py"
             ]
+          }
+        }
+      }
+    },
+    {
+      "date": "2026-11-23",
+      "tool": "codex built-in image_gen",
+      "edit_calls": 3,
+      "retries": 0,
+      "transparent_background": true,
+      "images": [
+        {
+          "name": "recon_look",
+          "attempts": [
+            {
+              "prompt": "Use case: precise-object-edit.\nInput image: sole edit target, the existing finished SD Gwen sprite. LOCAL EDIT ONLY to the white upper-body blouse and its collar. Preserve the rest of the image precisely.\nReplace the tight high stand collar with a relaxed folded shirt collar with two small turned-down points. Undo ONLY the uppermost button, creating a small shallow opening showing just the base of the neck, ending ABOVE the collarbones. Fully clothed, all ages, no cleavage or chest exposure. The collar should clearly look slightly open, not a turtleneck or choker.\nGive the white blouse a little comfortable fabric ease instead of a tight bodysuit: subtly fuller sleeves and a few soft, simple fabric folds on the sleeves and upper torso where tucked into the corset. Keep the original body proportions; do not enlarge the chest. Keep long sleeves reaching the wrists, wrist cuffs, bare hands and their exact positions.\nSTRICT INVARIANTS: identical face, eyes, expression, hair, hairpin, head position and size, pose, hands, props, dark outlines and cel shading, original black underbust corset with EXACTLY TWO horizontal silver rectangular buckles, white frill skirt, stockings and shoes. No added accessories, no coat tails, no necktie, no ribbons. Full body and original framing/margins unchanged. Preserve genuinely transparent RGBA background. No text, watermark, background or ground shadow.\nPose lock: recon_look, looking through the magnifying glass at viewer left, other hand on waist. Keep magnifying glass and hands exact.",
+              "references": [
+                "recon/gwen/recon_look_v2.png (outside repository; edit target)"
+              ],
+              "selected": true
+            }
+          ],
+          "original": "recon/gwen/recon_look_v2.png (outside repository)",
+          "output": "recon/gwen/recon_look.png (outside repository)",
+          "native_size": [
+            1254,
+            1254
+          ],
+          "original_sha256": "bc542058168f96ae0276e152ac54c7ce5fec61980cc44f4f0da93d013eec3558",
+          "output_sha256": "2f7cc2a8e834df1d561a0d0cb903cea40ec4e1801608d92f1ed28b53ab312229"
+        },
+        {
+          "name": "recon_pin",
+          "attempts": [
+            {
+              "prompt": "Use case: precise-object-edit.\nInput image: sole edit target, the existing finished SD Gwen sprite. LOCAL EDIT ONLY to the white upper-body blouse and its collar. Preserve the rest of the image precisely.\nReplace the tight high stand collar with a relaxed folded shirt collar with two small turned-down points. Undo ONLY the uppermost button, creating a small shallow opening showing just the base of the neck, ending ABOVE the collarbones. Fully clothed, all ages, no cleavage or chest exposure. The collar should clearly look slightly open, not a turtleneck or choker.\nGive the white blouse a little comfortable fabric ease instead of a tight bodysuit: subtly fuller sleeves and a few soft, simple fabric folds on the sleeves and upper torso where tucked into the corset. Keep the original body proportions; do not enlarge the chest. Keep long sleeves reaching the wrists, wrist cuffs, bare hands and their exact positions.\nSTRICT INVARIANTS: identical face, eyes, expression, hair, hairpin, head position and size, pose, hands, props, dark outlines and cel shading, original black underbust corset with EXACTLY TWO horizontal silver rectangular buckles, white frill skirt, stockings and shoes. No added accessories, no coat tails, no necktie, no ribbons. Full body and original framing/margins unchanged. Preserve genuinely transparent RGBA background. No text, watermark, background or ground shadow.\nPose lock: recon_pin, reaching diagonally up to viewer left to pin the photo. Preserve the photo, pin and both hands exactly.",
+              "references": [
+                "recon/gwen/recon_pin_v2.png (outside repository; edit target)"
+              ],
+              "selected": true
+            }
+          ],
+          "original": "recon/gwen/recon_pin_v2.png (outside repository)",
+          "output": "recon/gwen/recon_pin.png (outside repository)",
+          "native_size": [
+            1254,
+            1254
+          ],
+          "original_sha256": "06ba349e3bd699b4e646d90866143645a1c70a46a6315d5beb5025da32c87491",
+          "output_sha256": "e472d13d49d9d6d7dfc33a01f5afaf6cd3f1c652c7396d50871928c7d302a09e"
+        },
+        {
+          "name": "recon_nod",
+          "attempts": [
+            {
+              "prompt": "Use case: precise-object-edit.\nInput image: sole edit target, the existing finished SD Gwen sprite. LOCAL EDIT ONLY to the white upper-body blouse and its collar. Preserve the rest of the image precisely.\nReplace the tight high stand collar with a relaxed folded shirt collar with two small turned-down points. Undo ONLY the uppermost button, creating a small shallow opening showing just the base of the neck, ending ABOVE the collarbones. Fully clothed, all ages, no cleavage or chest exposure. The collar should clearly look slightly open, not a turtleneck or choker.\nGive the white blouse a little comfortable fabric ease instead of a tight bodysuit: subtly fuller sleeves and a few soft, simple fabric folds on the sleeves and upper torso where tucked into the corset. Keep the original body proportions; do not enlarge the chest. Keep long sleeves reaching the wrists, wrist cuffs, bare hands and their exact positions.\nSTRICT INVARIANTS: identical face, eyes, expression, hair, hairpin, head position and size, pose, hands, props, dark outlines and cel shading, original black underbust corset with EXACTLY TWO horizontal silver rectangular buckles, white frill skirt, stockings and shoes. No added accessories, no coat tails, no necktie, no ribbons. Full body and original framing/margins unchanged. Preserve genuinely transparent RGBA background. No text, watermark, background or ground shadow.\nPose lock: recon_nod, arms folded in the exact existing pose, same confident smile. Preserve crossed hands and the two visible corset buckles below the arms.",
+              "references": [
+                "recon/gwen/recon_nod_v2.png (outside repository; edit target)"
+              ],
+              "selected": true
+            }
+          ],
+          "original": "recon/gwen/recon_nod_v2.png (outside repository)",
+          "output": "recon/gwen/recon_nod.png (outside repository)",
+          "native_size": [
+            1254,
+            1254
+          ],
+          "original_sha256": "d2d8c77b8fe9168910dbbd6509c5ededdb2645b6e1fb139ab16eca6832764e09",
+          "output_sha256": "e6094551feb58c8b9ef10e4e9cc1388126d2bfc5ebf11a85913588e4b883bd64"
+        }
+      ],
+      "base_commit": "4e5a63070fba4650d406c25e0e1ae0d00afa3406",
+      "continues": "8a6216d",
+      "summary": "상반신 흰 블라우스만 국소 편집했음. 맨 윗단추 하나 푼 접힌 셔츠 칼라·작은 목 트임·소매와 몸통의 여유 및 부드러운 주름을 적용했음. 긴소매·손목 커프스·맨손·검은 코르셋과 은색 버클 두 줄·흰 프릴 치마·얼굴·머리·자세·소품·스타킹·신발·투명 배경을 유지했음.",
+      "preview": "recon/gwen/with_gwen_office.png (outside repository)",
+      "preview_location_note": "이번 작업의 쓰기 허용 범위에 맞춰 기존 recon/with_gwen_office.png 대신 recon/gwen/with_gwen_office.png에 재생성했음.",
+      "previous_artifacts": [
+        {
+          "path": "assets/ui_icons/gwen/recon_look_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 65307,
+          "sha256": "7fa85389f2acdbc0a84e73f086dd8d2c017b5323f839203ff2f8c3a0878dce92"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_look.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 17893,
+          "sha256": "e0a587dcc73b34daff9b6c52a6d792aa3483d78aeebd030ef3b1526e42e1b377"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_pin_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 67091,
+          "sha256": "bf58b8d90bd7245748ad9eb42ff6dc690fb4be100a0258c3506047dafea6045b"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_pin.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 19075,
+          "sha256": "bd34c21ca4a7ccde6ed46bcea79fb9f4b6097c61541aefae25d6e2a5cc275b0e"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_nod_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 58773,
+          "sha256": "891afad1cc990a3cafc222b1a045f184cbdb39c67d39931a01bc42e5bcae23ea"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_nod.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 14687,
+          "sha256": "1162e13a5c0a7ed6056daad64907fa78b979aae5cf54ba878408bf0bd4bb643b"
+        }
+      ],
+      "artifacts": [
+        {
+          "path": "assets/ui_icons/gwen/recon_look_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 66245,
+          "sha256": "cb967c4518e133cc90968f334140a11adce82fa041bc1e57fc09749f7b5d0a80"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_look.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 18413,
+          "sha256": "5a397681d20f0e567dae35335ef41d66d5c7e0bb1b073e16159b1abf9d5db9ac"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_pin_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 67455,
+          "sha256": "873ef8fd4c6580566cd7d3b552feb4cad7ca5f03bb7920b7e94cbc792ab10547"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_pin.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 19934,
+          "sha256": "a75ec8a2c8f825f68e3b37d9db91b1e9b8ba04fc338031d52cae79efc06d2a8d"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_nod_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 59730,
+          "sha256": "590112604c34384d44a9164544a9d06dc37c8f3c383dce376397efbe94429bb5"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_nod.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 15449,
+          "sha256": "2d37e63208f883ce923890833c5f918fdb87e5bb1b4ca925cec9c7cf5db6a3d6"
+        }
+      ],
+      "validation": {
+        "visual_review": "원본 3종·편집본 3종을 대조했음. 접힌 칼라·얕은 목 트임·블라우스 주름을 확인했고, 코르셋·버클 두 줄·얼굴·머리·자세·소품·하의·신발은 유지됐음. 체커보드 512px 축소본·어두운 배경의 실제 160px·사무실 3행 합성을 검수했음.",
+        "build": "build_recon.py --import-dir: sizes, alpha, soft edges, margins, per-file and served-byte budgets passed.",
+        "rebuild": "Six output SHA-256 hashes identical after rebuilding from committed-size masters.",
+        "tests": {
+          "full_baseline": {
+            "passed": 273,
+            "failed": 0,
+            "environment_skips": 6
+          },
+          "sequential_forced_gwen_after_edit": {
+            "passed": 16,
+            "failed": 0
           }
         }
       }
