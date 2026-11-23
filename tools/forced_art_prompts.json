@@ -4,7 +4,7 @@
   "base_commit": "6ef9861f9b297a7f32dd387b7953acc9cf002183",
   "meaning": "정식 그림은 사이트 채택본을 뜻함. 게임사의 공식 원화가 아닌 생성 팬 그림이며 원 캐릭터·디자인의 권리는 원 권리자에게 있음.",
   "originals": "PNG originals and comparison sheet are stored outside the repository.",
-  "generation_calls": 6,
+  "generation_calls": 7,
   "retries": 1,
   "reference_policy": "Repository-relative paths only. Historical forced art supplies composition or past costume; approved Gwen art defines identity and style.",
   "inspected_references": [
@@ -19,7 +19,8 @@
     "tools/gwen_art/masters5/st_point.webp",
     "tools/gwen_art/masters2/confident.webp (inspection only)",
     "assets/savior/gwen_art.webp",
-    "assets/forced/gwen_idcard.webp (506b228^; past appearance, direct generation reference)"
+    "assets/forced/gwen_idcard.webp (506b228^; past appearance, direct generation reference)",
+    "lavistar_ruin_bg_v1.png (5e05a3f source; direct sky-edit reference; outside repository)"
   ],
   "images": [
     {
@@ -31,7 +32,16 @@
           "references": [
             "assets/forced/scene.webp (6ef9861; composition only)"
           ],
-          "selected": true
+          "selected": false
+        },
+        {
+          "prompt": "Use case: precise-object-edit / stylized-concept. Edit target: supplied current lavistar_ruin_bg_1.png, a panoramic anime fantasy background. Redraw ONLY the sky, preserving the composition, exact aspect ratio 3:1 (2172x724 preferred), architecture, all foreground props and original delicate painted style. Completely REMOVE the blue planet and ALL its diagonal orbital trails; no planet, moon, spherical celestial body, or orbital swoosh anywhere. Replace them with ONE gigantic GOLDEN PROTECTIVE RING hanging across the upper LEFT-to-CENTER sky: a clearly readable closed circular shield perimeter seen in gentle perspective as a broad ellipse, centered around x=40%, y=19%, spanning approximately x=21%-61%, y=3%-38%. Its upper and lower arcs together must unmistakably read as one enclosing circle, not diagonal streaks and not a planet's orbit. This ring has guarded the world for ages and is NOW SHATTERING: deep cracks across its substantial luminous gold rim, missing segments and detached gold shards falling from the broken upper-left/central arcs; through the broken shield gaps reveal dark crimson-violet cosmic void. Sky itself breaks like enormous glass panes, subtle fractured spacetime and scattered falling stars/light splinters, apocalypse of the cosmos. Focus the most legible fracture around x=34%-43%, y=10%-22%, along the future character's upper-left gaze. Rich indigo/cool blue, restrained red-violet void and gold-white fractures; dramatic but balanced airy luminance so the misty city and foreground remain readable as a small top-of-screen banner. Keep the LOWER SCENE essentially unchanged: ruined room at left, empty wooden chair, small desk and teddy bear; central misty European city with equestrian statue plaza; preserve chair through plaza within x=17%-65% narrow-screen crop. Keep right foreground third quiet for a separate rear-view Gwen overlay; do not add Gwen or any character. Preserve existing perspective, horizon, furniture positions, masonry framing, blue roofs, warm windows, fog and floorboards. Full-bleed landscape, absolutely 3:1. No text, lettering, logos, watermark or labels. One edited background only.",
+          "references": [
+            "lavistar_ruin_bg_v1.png (5e05a3f source; edit target; outside repository)"
+          ],
+          "selected": true,
+          "date": "2026-11-23",
+          "base_commit": "5e05a3f"
         }
       ]
     },
@@ -98,6 +108,13 @@
       "generation_calls": 2,
       "retries": 0,
       "reason": "PM 검수: 뒷모습 귀걸이 제거, 신분증 사진을 과거 모습으로 교정"
+    },
+    {
+      "date": "2026-11-23",
+      "base_commit": "5e05a3f",
+      "generation_calls": 1,
+      "retries": 0,
+      "reason": "PM 검수: 행성 제거, 깨지는 방패 고리와 멸망하는 하늘"
     }
   ]
 }
