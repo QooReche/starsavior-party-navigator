@@ -2,10 +2,10 @@
   "date": "2026-11-23",
   "tool": "codex built-in image_gen",
   "use_case": "stylized-concept",
-  "status": "준비 중 — 원본·검수 미리보기만 저장소 밖에 보관했음. 배포용 자산과 화면 연결은 만들지 않았음.",
+  "status": "준비 중 — PM 검수 수정본·비교·그웬 합성 검수를 recon 보관 폴더에 저장했음. 배포용 자산·화면 연결은 미구현임.",
   "base_commit": "fa71bd5dc0da4482d14153dcbb574e24edc4dca7",
-  "generation_calls": 2,
-  "retries": 1,
+  "generation_calls": 4,
+  "retries": 2,
   "reference_policy": "로컬 절대 경로를 기록하지 않음. 외부 원본은 파일 이름으로만 식별함.",
   "references": [
     {
@@ -22,7 +22,7 @@
   ],
   "images": [
     {
-      "output": "recon_office_bg_1.png",
+      "output": "recon_office_bg_v1.png",
       "location": "outside repository, recon archive",
       "transparent_background": false,
       "native_size": [
@@ -182,7 +182,7 @@
       },
       "previews": [
         {
-          "file": "recon_office_preview_1800x600.webp",
+          "file": "recon_office_preview_1800x600_v1.webp",
           "size": [
             1800,
             600
@@ -193,13 +193,13 @@
           "webp_method": 6
         },
         {
-          "file": "recon_office_preview_narrow_800x555.webp",
+          "file": "recon_office_preview_narrow_800x555_v1.webp",
           "size": [
             800,
             555
           ],
           "location": "outside repository, recon archive",
-          "crop_source": "recon_office_bg_1.png",
+          "crop_source": "recon_office_bg_v1.png",
           "crop_xyxy": [
             864,
             0,
@@ -216,7 +216,262 @@
           "note": "사진 4칸 우선 크롭임. 창·고리 오른쪽 일부와 스탠드가 잘림. 화면용 최종 크롭이 아닌 검수 미리보기임."
         }
       ],
-      "review": "사진 4칸의 빈 내부·붉은 실·지도/도시 사진·돋보기·차·스탠드·오른쪽 빈 바닥·창밖 기마상·금 간 고리를 육안 확인했음. 실화면/CSS 중첩·애니메이션은 미검수임."
+      "review": "사진 4칸의 빈 내부·붉은 실·지도/도시 사진·돋보기·차·스탠드·오른쪽 빈 바닥·창밖 기마상·금 간 고리를 육안 확인했음. 실화면/CSS 중첩·애니메이션은 미검수임.",
+      "superseded": true
     }
-  ]
+  ],
+  "revisions": [
+    {
+      "date": "2026-11-23",
+      "base_commit": "4be3838",
+      "tool": "codex built-in image_gen",
+      "tool_cache_note": "내장 도구가 자동 사본을 지정 보관 폴더 밖 기본 캐시에 남겼음. 최종 원본·검수 산출물은 recon 보관 폴더에 복사·저장했음.",
+      "use_case": "style-transfer",
+      "generation_calls": 2,
+      "retries": 1,
+      "output": "recon_office_bg_1.png",
+      "previous_output": "recon_office_bg_v1.png",
+      "native_size": [
+        2172,
+        724
+      ],
+      "saved_size": [
+        2172,
+        724
+      ],
+      "resolution_note": "생성 원본 그대로 보관했음. 보간 확대 없음.",
+      "references": [
+        {
+          "file": "assets/ui_icons/gwen/investigate_512.png",
+          "role": "최우선 화풍 기준: 그웬 SD의 선화·2~3단 명암·팔레트"
+        },
+        {
+          "file": "assets/ui_icons/gwen/files_512.png",
+          "role": "최우선 화풍 기준: 그웬 SD의 선화·2~3단 명암·팔레트"
+        },
+        {
+          "file": "assets/ui_icons/gwen/report_512.png",
+          "role": "최우선 화풍 기준: 그웬 SD의 선화·2~3단 명암·팔레트"
+        },
+        {
+          "file": "recon_office_bg_v1.png",
+          "role": "기존 사무실 구도만"
+        },
+        {
+          "file": "assets/forced/scene.webp",
+          "role": "강제 탐색의 도시·금 간 고리 모티프만"
+        }
+      ],
+      "attempts": [
+        {
+          "number": 1,
+          "prompt": "Use case: style-transfer. Redraw the detective office in reference 4 as ONE full-bleed 3:1 panoramic game background, target 3000x1000 (or native supported 3:1 size; no interpolation). Reference 1, 2, 3 are the SAME approved chibi Gwen sprite: these are the HIGHEST PRIORITY STYLE REFERENCES, not characters to draw. Match their clean visible dark ink outlines, broad simple flat color shapes and only 2-3 cel-shaded value steps. Navy/indigo, muted teal, restrained warm ochre-gold palette. The scene must feel like the same animation production as these sprites, NOT a rendered concept painting. Reference 4 is COMPOSITION ONLY, abandon its ornamentation, polish and symmetric staging. Reference 5 is CITY AND CRACKED GOLD RING MOTIF ONLY, do not copy its detailed rendering. NO people or characters in the output; a real sprite will be composited later.\nComposition: wide lived-in detective office, slight off-axis perspective and subtly uneven furniture, no perfectly orthographic showroom. Large plain wooden evidence board at x16-54%, y10-64%, large simple iron-framed window x59-83%, y5-72%; both stay entirely within x15-85%. Plain dark teal wallpaper, modest worn wood furniture, no patterned wallpaper. Desk fills left and center foreground, no desk on right. Keep x68-91%, y72-100% open quiet matte floor to receive Gwen. Chair with navy coat draped over its back sits left of center, NOT in the right foreground. Desk: uneven piles of loose case papers, folded map, crumpled note, plain cold mug and a visible cup-ring stain, magnifying glass. One or two loose papers on the floor at left/middle. Sparse hand-drawn scuffs only, no photographic grain or dense wood textures.\nBoard: recovered clues, with simple legible miniature illustrations on crooked pinned photographic prints, not random decorative photos: (a) solitary EMPTY wooden chair inside ruined walls, (b) HORSE-AND-RIDER statue in a European city plaza, (c) CLOSEUP OF A CRACKED GOLDEN RING in the sky, (d) a hand-drawn city street plan with NO writing. Put these around board margins. In board center EXACTLY FOUR traces where portrait photos were REMOVED: close irregular 2x2 arrangement, approximate centers (33%,28%), (40%,29%), (33%,47%), (40%,48%), each about 5% canvas width x15% height. They are faded lighter rectangular patches ON THE BOARD SURFACE, slightly rotated differently, small remnants of torn tape and one exposed pin each; no paper sheet, frame, white photo border, inset molding or outlined empty placeholder. The board surface is continuous across them, and these four patches must remain empty for team faces. Only 3-4 red threads, meaningful lines from evidence prints toward the central missing-photo cluster; no dense decorative web.\nLighting: ONE switched-on desk lamp at left center casting a localized warm pool up onto board and down onto the papers; the rest of the room dark with clear simple shadow shapes. No wall sconces, no other interior lights. Secondary focus is window sky with a suspended cracked GOLDEN CIRCULAR SHIELD RING seen as a horizontal ellipse, center around (71%,26%), bounds x63-79%, y17-35%, separated from the skyline and not cut by mullions. Distinct crack and broken gap, still hanging together. Simplify reference city's slate-blue roofs, towers, and equestrian plaza into clean readable cel shapes. Very restrained sky glow, no sparkling star field. Matte floor, NO glossy reflections, no cinematic gradients or bloom. Remove ALL fleur-de-lis, heraldry, flags, gold filigree, carved trim, decorative cloth, repeated motifs and ornate borders. Gold is used mainly for lamp light and ring. Character-compatible elegant clean line art with imperfect lived-in arrangement, not gritty realism. No text, lettering, digits, logos, watermark, UI or panel borders. All ages.",
+          "references": [
+            "assets/ui_icons/gwen/investigate_512.png",
+            "assets/ui_icons/gwen/files_512.png",
+            "assets/ui_icons/gwen/report_512.png",
+            "recon_office_bg_v1.png",
+            "assets/forced/scene.webp"
+          ],
+          "native_output": "recon_office_refine_attempt1_native.png",
+          "native_size": [
+            2172,
+            724
+          ],
+          "selected": false,
+          "review": "그웬 합성에서 화풍 일치 확인했음. 창 오른쪽이 85%를 넘고 흔적이 종이처럼 보여 보정했음."
+        },
+        {
+          "number": 2,
+          "prompt": "Use case: precise-object-edit. Correct ONLY placement and missing-photo traces in this supplied cel-animation detective office. Preserve the clean visible dark outlines, simple 2-3 step cel shading, navy/teal/ochre palette, uneven lived-in office, single desk-lamp light, matte surfaces, recovered evidence pictures of ruined empty chair / horse statue / cracked ring / city plan, coat, paper clutter, cup stain, empty right foreground. The current style matches approved Gwen and must not change. Keep full-bleed exact 3:1 native landscape, target 3000x1000 if supported, do not upscale. 1) Slightly compress and reposition the board to fit wholly within x16%-54% (currently extends to59%). Keep all four evidence images and central traces clearly legible. Move/compress the window to fit wholly within x59%-84%, its ring center at71%, the complete ring within x63%-79%; no mullion through ring. Keep an open gap of dark wall between board and window. 2) Exactly FOUR central marks, close irregular 2x2, must be actual FADED COLOR PATCHES on continuous cork surface, NOT sheets of paper. Delete their torn paper silhouettes, paper rims, edges, thickness and drop shadows. Replace with slightly lighter brown rectangles whose edges are soft irregular discoloration and whose interior shares the same board surface. A few tiny separate tape fragments OUTSIDE each patch and an exposed pin at top indicate removed photos. Centers about (33%,27%), (39%,28%), (33%,46%), (39%,47%); small different tilts. Do not add white or gold outlines. Red evidence threads end at exposed pins next to this missing cluster. 3) Deepen the unlit board upper/right and room periphery shadows slightly so the lamp's warm pool on lower-left board is the primary light. Keep the sky/ring secondary. No added lights, grain, glow, ornamental patterns, text, letters, logos, people or characters. Do not make the scene photorealistic or painterly.",
+          "references": [
+            "recon_office_refine_attempt1_native.png"
+          ],
+          "native_output": "recon_office_refine_attempt2_native.png",
+          "native_size": [
+            2172,
+            724
+          ],
+          "selected": true
+        }
+      ],
+      "placement": {
+        "units": "전체 그림 기준 %, 좌상단 (0,0), 육안 추정",
+        "board_bounds": {
+          "x": [
+            16.4,
+            52.8
+          ],
+          "y": [
+            8.1,
+            70.9
+          ]
+        },
+        "removed_photo_marks": [
+          {
+            "id": "top_left",
+            "center": [
+              32.3,
+              29.4
+            ],
+            "bounds": {
+              "x": [
+                30.6,
+                34.1
+              ],
+              "y": [
+                22.5,
+                36.3
+              ]
+            }
+          },
+          {
+            "id": "top_right",
+            "center": [
+              36.9,
+              29.6
+            ],
+            "bounds": {
+              "x": [
+                35,
+                38.8
+              ],
+              "y": [
+                22.8,
+                36.4
+              ]
+            }
+          },
+          {
+            "id": "bottom_left",
+            "center": [
+              32.3,
+              46
+            ],
+            "bounds": {
+              "x": [
+                30.6,
+                34.1
+              ],
+              "y": [
+                39.5,
+                52.4
+              ]
+            }
+          },
+          {
+            "id": "bottom_right",
+            "center": [
+              36.8,
+              46.3
+            ],
+            "bounds": {
+              "x": [
+                34.9,
+                38.8
+              ],
+              "y": [
+                39.5,
+                53.1
+              ]
+            }
+          }
+        ],
+        "window": {
+          "center": [
+            70.5,
+            37.4
+          ],
+          "bounds": {
+            "x": [
+              57.6,
+              83.3
+            ],
+            "y": [
+              1.9,
+              72.9
+            ]
+          }
+        },
+        "ring": {
+          "center": [
+            70.3,
+            28
+          ],
+          "bounds": {
+            "x": [
+              62.8,
+              77.7
+            ],
+            "y": [
+              22.5,
+              33.5
+            ]
+          }
+        },
+        "gwen": {
+          "source": "assets/ui_icons/gwen/investigate_512.png",
+          "horizontal_center_percent": 79,
+          "feet_y_percent": 97,
+          "max_height_percent": 60,
+          "preview": "with_gwen.png",
+          "note": "기존 투명 SD를 그대로 합성해 선화·색·명암을 검수했음. 배경에 인물은 없음."
+        }
+      },
+      "review": "금 장식·백합·벽등·광택을 제거하고 그웬과 같은 셀 선화로 단순화했음. 폐허 속 빈 의자·기마상·금 간 고리·도시 약도 4자료, 중앙 핀·테이프·탈색 흔적 4곳, 붉은 실 4가닥, 코트·구겨진 메모·접힌 지도·컵 자국·바닥 종이를 확인했음. 2차 그웬 합성으로 최종 검수함. 좁은 크롭은 흔적 4곳 우선으로 창·고리 오른쪽이 일부 잘림. 실화면·CSS 연출은 미검수임.",
+      "previews": [
+        {
+          "file": "recon_office_preview_1800x600.webp",
+          "size": [
+            1800,
+            600
+          ],
+          "resize": "Lanczos downsample"
+        },
+        {
+          "file": "recon_office_preview_narrow_800x555.webp",
+          "size": [
+            800,
+            555
+          ],
+          "crop_xyxy": [
+            600,
+            0,
+            1644,
+            724
+          ],
+          "crop_x_percent": [
+            27.62,
+            75.69
+          ],
+          "resize": "Lanczos downsample",
+          "note": "흔적 4곳 우선 크롭. 창·고리 오른쪽 일부가 잘림."
+        },
+        {
+          "file": "compare_office.png",
+          "size": [
+            3600,
+            640
+          ],
+          "layout": "left: previous / right: current; both downsampled to 1800x600"
+        },
+        {
+          "file": "with_gwen.png",
+          "size": [
+            2172,
+            724
+          ],
+          "sprite_position_xy": [
+            1510,
+            268
+          ],
+          "sprite_size": [
+            411,
+            434
+          ]
+        }
+      ]
+    }
+  ],
+  "current_output": "recon_office_bg_1.png"
 }
