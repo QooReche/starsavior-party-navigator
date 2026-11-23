@@ -23,7 +23,7 @@ body.is-forced{--r-panel:0;--r-box:0;--r-ctl:0;--brass:var(--fx-red);--line:#4a2
 [data-forced-art] .fx-scene .fx-glow{background:radial-gradient(ellipse 13% 30% at 49% 13%,rgba(255,214,140,.34),transparent 70%),radial-gradient(ellipse 16% 3% at 43% 19%,rgba(111,240,220,.4),transparent 75%);animation:fx-shimmer 10s steps(12) infinite}
 /* 뒷모습 그웬(gwen_back.webp — 그림을 바꿔 끼울 때는 이 파일만): 가까운 앞쪽 인물. 그림이 머리~허벅지까지라 발치는 띠 아래로 잘린 것처럼 보임.
    크기 = 띠 높이 × --fx-gs, 가로 자리 = --fx-gx(인물 가운데). 아래 끝은 띠 아래 끝보다 6px 밑(장면은 띠보다 커서 42% 지점을 기준으로 환산). 바람에 아주 살짝 흔들림 */
-[data-forced-art] .fx-scene .fx-gwen{inset:auto auto calc(42% - var(--fx-h)*.42 - 6px) var(--fx-gx);height:calc(var(--fx-h)*var(--fx-gs));aspect-ratio:270/520;translate:-50% 0;background:url(assets/forced/gwen_back.webp) center/contain no-repeat;transform-origin:50% 100%;
+[data-forced-art] .fx-scene .fx-gwen{inset:auto auto calc(42% - var(--fx-h)*.42 - 6px) var(--fx-gx);height:calc(var(--fx-h)*var(--fx-gs));aspect-ratio:271/520;translate:-50% 0;background:url(assets/forced/gwen_back.webp) center/contain no-repeat;transform-origin:50% 100%;
  filter:brightness(.84) drop-shadow(0 0 2px rgba(111,240,220,.5)) drop-shadow(0 0 7px rgba(111,240,220,.22));animation:fx-sway 7.5s ease-in-out infinite}
 /* 안개 두 겹(서로 반대로 흐름) */
 .fx-scene .fx-fog{inset:38% -60% -6% -60%;animation:fx-fog 74s steps(444) infinite alternate;

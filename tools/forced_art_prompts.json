@@ -4,9 +4,9 @@
   "base_commit": "6ef9861f9b297a7f32dd387b7953acc9cf002183",
   "meaning": "정식 그림은 사이트 채택본을 뜻함. 게임사의 공식 원화가 아닌 생성 팬 그림이며 원 캐릭터·디자인의 권리는 원 권리자에게 있음.",
   "originals": "PNG originals and comparison sheet are stored outside the repository.",
-  "generation_calls": 4,
+  "generation_calls": 6,
   "retries": 1,
-  "reference_policy": "Repository-relative paths only. Temporary forced art is read from the base commit for reproduction; approved Gwen art defines identity and style.",
+  "reference_policy": "Repository-relative paths only. Historical forced art supplies composition or past costume; approved Gwen art defines identity and style.",
   "inspected_references": [
     "docs/forced_art.md",
     "docs/fullscreen_measure_1121.md",
@@ -18,7 +18,8 @@
     "assets/forced/gwen_idcard.webp (base commit; inspection only)",
     "tools/gwen_art/masters5/st_point.webp",
     "tools/gwen_art/masters2/confident.webp (inspection only)",
-    "assets/savior/gwen_art.webp"
+    "assets/savior/gwen_art.webp",
+    "assets/forced/gwen_idcard.webp (506b228^; past appearance, direct generation reference)"
   ],
   "images": [
     {
@@ -52,7 +53,16 @@
           "references": [
             "gwen_back_attempt1.png (first generated output; outside repository)"
           ],
-          "selected": true
+          "selected": false
+        },
+        {
+          "prompt": "Use case: precise-object-edit. Edit target: the supplied approved rear-view Gwen PNG. LOCAL INPAINT ONLY, not a redraw or regeneration. Remove ONLY the turquoise dangling tassel earring attached to her visible LEFT ear (at approximately x=450-475, y=182-227 on the 1024x1536 canvas). Reconstruct the small exposed ear-lobe/adjacent hair/neck and transparent negative space naturally where that ornament was. She wears NO earrings. Preserve the exact original face profile, eye, gold bar hairpin, indigo bob, hair strands, head outline, neck outline, epaulettes, uniform, pose, proportions, hands, boots, canvas size and placement, colors, linework and shading everywhere else. Keep the original transparent RGBA background and all existing alpha outside this tiny edited area unchanged. Do not add a background or glow. The turquoise inner hair strands that are genuinely hair should stay; only the dangling jewelry is removed. Output one edited PNG at the original 1024x1536 size.",
+          "references": [
+            "gwen_back_illust_1_v1.png (506b228 source; edit target; outside repository)"
+          ],
+          "selected": true,
+          "date": "2026-11-23",
+          "base_commit": "506b228"
         }
       ]
     },
@@ -66,9 +76,28 @@
             "tools/gwen_art/masters5/st_point.webp",
             "assets/savior/gwen_art.webp"
           ],
-          "selected": true
+          "selected": false
+        },
+        {
+          "prompt": "Use case: identity-preserve / stylized-concept. Create ONE square aged monochrome identification photograph of Gwen's PAST appearance. Input image 1 is the OLD ID PHOTO and is the PRIMARY DIRECT reference for outfit, hat, composition, expression, monochrome paper texture and historical appearance. Input image 2 is the APPROVED GWEN character sheet, used ONLY for recognizable facial identity, soft rounded cheeks, small short chin, half-lidded eyes, bob shape and delicate anime rendering; do NOT copy its current military uniform. Show one front-facing head-and-upper-chest portrait with a neutral unsmiling expression and relaxed symmetrical shoulders. Match the OLD PHOTO: black beret with a small insignia badge without writing, small bar hairpin on HER LEFT / viewer right, dark navy bob rendered dark grayscale, WHITE SHIRT, BLACK NECKTIE, DARK TAILORED JACKET WITH LAPELS. Absolutely NO fringed epaulettes, NO cravat, NO jabot, NO teal neck bow or diamond neck jewel. The same recognizable Gwen as the approved reference, wearing the old photo's past outfit. Keep a worn old black-and-white photographic print texture, restrained scratches, stains, worn corners and edges, slight fading and a plain gray background; don't obscure important facial features. Entirely grayscale, square composition 1:1, one photograph only. No text, letters, numerals, watermark, captions or card fields. No other characters. All ages.",
+          "references": [
+            "assets/forced/gwen_idcard.webp (506b228^; old photo, direct reference)",
+            "tools/gwen_art/masters5/st_point.webp (identity/style only)"
+          ],
+          "selected": true,
+          "date": "2026-11-23",
+          "base_commit": "506b228"
         }
       ]
+    }
+  ],
+  "revisions": [
+    {
+      "date": "2026-11-23",
+      "base_commit": "506b228",
+      "generation_calls": 2,
+      "retries": 0,
+      "reason": "PM 검수: 뒷모습 귀걸이 제거, 신분증 사진을 과거 모습으로 교정"
     }
   ]
 }
