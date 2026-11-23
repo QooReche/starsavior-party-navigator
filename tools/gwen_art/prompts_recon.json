@@ -86,8 +86,8 @@
         512,
         512
       ],
-      "bytes": 67672,
-      "sha256": "e2a5eb9295bdf1bf21159b791636433bef1fb85162d4ff7c910d13bf84fa50c4"
+      "bytes": 65307,
+      "sha256": "7fa85389f2acdbc0a84e73f086dd8d2c017b5323f839203ff2f8c3a0878dce92"
     },
     {
       "path": "assets/ui_icons/gwen/recon_look.png",
@@ -95,8 +95,8 @@
         160,
         160
       ],
-      "bytes": 19681,
-      "sha256": "4ec84e38331de22c1495a60d5d0acfd80aadee8416308879cf5aa508ddd40437"
+      "bytes": 17893,
+      "sha256": "e0a587dcc73b34daff9b6c52a6d792aa3483d78aeebd030ef3b1526e42e1b377"
     },
     {
       "path": "assets/ui_icons/gwen/recon_pin_512.png",
@@ -104,8 +104,8 @@
         512,
         512
       ],
-      "bytes": 68379,
-      "sha256": "4548e611057ea222815fc5dea8d9fb8292925adb00e14bb6ed408fb786016808"
+      "bytes": 67091,
+      "sha256": "bf58b8d90bd7245748ad9eb42ff6dc690fb4be100a0258c3506047dafea6045b"
     },
     {
       "path": "assets/ui_icons/gwen/recon_pin.png",
@@ -113,8 +113,8 @@
         160,
         160
       ],
-      "bytes": 20882,
-      "sha256": "f90d2286adcd6b95d7681deb19319540ffcf322be2432aeb852704d4885e3ff5"
+      "bytes": 19075,
+      "sha256": "bd34c21ca4a7ccde6ed46bcea79fb9f4b6097c61541aefae25d6e2a5cc275b0e"
     },
     {
       "path": "assets/ui_icons/gwen/recon_nod_512.png",
@@ -122,8 +122,8 @@
         512,
         512
       ],
-      "bytes": 62329,
-      "sha256": "a679b15740ec9c3facb84c80281fb7ae75ef4e3dcc1dee3ef95de28c22827524"
+      "bytes": 58773,
+      "sha256": "891afad1cc990a3cafc222b1a045f184cbdb39c67d39931a01bc42e5bcae23ea"
     },
     {
       "path": "assets/ui_icons/gwen/recon_nod.png",
@@ -131,8 +131,219 @@
         160,
         160
       ],
-      "bytes": 18080,
-      "sha256": "1f6c88ac8e35c6204f60df44bb59e5b3a39851a3359a2c2b9c17811960f96254"
+      "bytes": 14687,
+      "sha256": "1162e13a5c0a7ed6056daad64907fa78b979aae5cf54ba878408bf0bd4bb643b"
+    }
+  ],
+  "revisions": [
+    {
+      "date": "2026-11-23",
+      "tool": "codex built-in image_gen",
+      "base_commit": "022e018",
+      "parent_commit": "c37b5f1",
+      "mode": "precise-object-edit",
+      "editing_calls": 3,
+      "retries": 0,
+      "transparent_background": true,
+      "images": [
+        {
+          "name": "recon_look",
+          "attempts": [
+            {
+              "prompt": "Use case: precise-object-edit, identity-preserve. EDIT TARGET: the supplied existing transparent SD Gwen sprite. Perform a LOCAL COSTUME EDIT ONLY, not a full regeneration. Keep the canvas, exact head, face, eyes, mouth, hair, gold hairpin, pose, proportions, limb positions, props, stockings, shoes and line style unchanged.\nRemove ALL royal-blue/navy coat-tail fabric visible beside AND behind the white frill skirt, including its gold/black striped borders and the dark rear flap visible between/behind the legs. Leave only a naturally continuous WHITE layered frill skirt with the same modest hem and chibi silhouette. Remove the teal waist sash, large hip bow and hanging ribbons, chest teal bow/tie and jewel, and the white frilled chest jabot.\nNeck: plain undecorated HIGH WHITE STAND COLLAR on an opaque white blouse, no neck ribbon or jabot. Over the blouse from just below the chest to just above the hips add a modest MATTE BLACK HIGH-WAIST UNDERBUST CORSET, clean cel-shaded black leather/cloth. Exactly TWO horizontal black belts across its front, upper and lower, each with a clearly readable SILVER RECTANGULAR BUCKLE. Preserve the tiny SD torso with no waist cinching or body emphasis. White blouse remains visible above the corset all the way to the neck.\nExtend BOTH currently rolled sleeves into proper FULL-LENGTH WHITE SLEEVES reaching the wrists, with neat small cuffs; no rolled elbow cuffs, no bare forearms. Remove white gloves and show BARE HANDS with the same hand shapes, gestures and positions, natural skin matching the face.\nAll ages, fully clothed, no exposure or anatomy emphasis. Preserve genuine transparent RGBA background and original transparent margins, full body uncropped. Preserve exact face/hair/pose/props/stockings/shoes without redesign. Keep clean dark outlines and simple cel shading. No background, floor, shadow, text or watermark.\nPose lock: recon_look, magnifying glass at viewer left eye, other hand on hip. Preserve lens contents and face exactly.",
+              "references": [
+                "recon/gwen/recon_look_v1.png (outside repository; edit target)"
+              ],
+              "selected": true
+            }
+          ],
+          "original": "recon/gwen/recon_look_v1.png (outside repository)",
+          "output": "recon/gwen/recon_look.png (outside repository)",
+          "native_size": [
+            1254,
+            1254
+          ],
+          "original_sha256": "a68498de0d862cd7bf1a645934c18dcee3b3ef2d7df4534b48a106bacb288d62",
+          "output_sha256": "bc542058168f96ae0276e152ac54c7ce5fec61980cc44f4f0da93d013eec3558"
+        },
+        {
+          "name": "recon_pin",
+          "attempts": [
+            {
+              "prompt": "Use case: precise-object-edit, identity-preserve. EDIT TARGET: the supplied existing transparent SD Gwen sprite. Perform a LOCAL COSTUME EDIT ONLY, not a full regeneration. Keep the canvas, exact head, face, eyes, mouth, hair, gold hairpin, pose, proportions, limb positions, props, stockings, shoes and line style unchanged.\nRemove ALL royal-blue/navy coat-tail fabric visible beside AND behind the white frill skirt, including its gold/black striped borders and the dark rear flap visible between/behind the legs. Leave only a naturally continuous WHITE layered frill skirt with the same modest hem and chibi silhouette. Remove the teal waist sash, large hip bow and hanging ribbons, chest teal bow/tie and jewel, and the white frilled chest jabot.\nNeck: plain undecorated HIGH WHITE STAND COLLAR on an opaque white blouse, no neck ribbon or jabot. Over the blouse from just below the chest to just above the hips add a modest MATTE BLACK HIGH-WAIST UNDERBUST CORSET, clean cel-shaded black leather/cloth. Exactly TWO horizontal black belts across its front, upper and lower, each with a clearly readable SILVER RECTANGULAR BUCKLE. Preserve the tiny SD torso with no waist cinching or body emphasis. White blouse remains visible above the corset all the way to the neck.\nExtend BOTH currently rolled sleeves into proper FULL-LENGTH WHITE SLEEVES reaching the wrists, with neat small cuffs; no rolled elbow cuffs, no bare forearms. Remove white gloves and show BARE HANDS with the same hand shapes, gestures and positions, natural skin matching the face.\nAll ages, fully clothed, no exposure or anatomy emphasis. Preserve genuine transparent RGBA background and original transparent margins, full body uncropped. Preserve exact face/hair/pose/props/stockings/shoes without redesign. Keep clean dark outlines and simple cel shading. No background, floor, shadow, text or watermark.\nPose lock: recon_pin, both hands holding/pinning the existing photograph at viewer left. Preserve photo, gold pin, both arm positions and face exactly. Belts and silver buckles remain visible where not naturally covered by the foreground arm.",
+              "references": [
+                "recon/gwen/recon_pin_v1.png (outside repository; edit target)"
+              ],
+              "selected": true
+            }
+          ],
+          "original": "recon/gwen/recon_pin_v1.png (outside repository)",
+          "output": "recon/gwen/recon_pin.png (outside repository)",
+          "native_size": [
+            1254,
+            1254
+          ],
+          "original_sha256": "ad3ef1002457bcfb61d28466481e4d033c1f9f9ddc4f23863f36ccf85de1e4c7",
+          "output_sha256": "06ba349e3bd699b4e646d90866143645a1c70a46a6315d5beb5025da32c87491"
+        },
+        {
+          "name": "recon_nod",
+          "attempts": [
+            {
+              "prompt": "Use case: precise-object-edit, identity-preserve. EDIT TARGET: the supplied existing transparent SD Gwen sprite. Perform a LOCAL COSTUME EDIT ONLY, not a full regeneration. Keep the canvas, exact head, face, eyes, mouth, hair, gold hairpin, pose, proportions, limb positions, props, stockings, shoes and line style unchanged.\nRemove ALL royal-blue/navy coat-tail fabric visible beside AND behind the white frill skirt, including its gold/black striped borders and the dark rear flap visible between/behind the legs. Leave only a naturally continuous WHITE layered frill skirt with the same modest hem and chibi silhouette. Remove the teal waist sash, large hip bow and hanging ribbons, chest teal bow/tie and jewel, and the white frilled chest jabot.\nNeck: plain undecorated HIGH WHITE STAND COLLAR on an opaque white blouse, no neck ribbon or jabot. Over the blouse from just below the chest to just above the hips add a modest MATTE BLACK HIGH-WAIST UNDERBUST CORSET, clean cel-shaded black leather/cloth. Exactly TWO horizontal black belts across its front, upper and lower, each with a clearly readable SILVER RECTANGULAR BUCKLE. Preserve the tiny SD torso with no waist cinching or body emphasis. White blouse remains visible above the corset all the way to the neck.\nExtend BOTH currently rolled sleeves into proper FULL-LENGTH WHITE SLEEVES reaching the wrists, with neat small cuffs; no rolled elbow cuffs, no bare forearms. Remove white gloves and show BARE HANDS with the same hand shapes, gestures and positions, natural skin matching the face.\nAll ages, fully clothed, no exposure or anatomy emphasis. Preserve genuine transparent RGBA background and original transparent margins, full body uncropped. Preserve exact face/hair/pose/props/stockings/shoes without redesign. Keep clean dark outlines and simple cel shading. No background, floor, shadow, text or watermark.\nPose lock: recon_nod, arms folded in the EXACT existing pose and same confident smile. Preserve hand gestures and positions. The crossed arms naturally overlap the corset's upper area; fit its TWO silver rectangular front belt buckles visibly in the small torso area below the arms without lengthening the body or moving the arms.",
+              "references": [
+                "recon/gwen/recon_nod_v1.png (outside repository; edit target)"
+              ],
+              "selected": true
+            }
+          ],
+          "original": "recon/gwen/recon_nod_v1.png (outside repository)",
+          "output": "recon/gwen/recon_nod.png (outside repository)",
+          "native_size": [
+            1254,
+            1254
+          ],
+          "original_sha256": "aa9f163ab483aaea6e12c227f82322da9f72142b5dc2b256256ab630a023c41b",
+          "output_sha256": "d2d8c77b8fe9168910dbbd6509c5ededdb2645b6e1fb139ab16eca6832764e09"
+        }
+      ],
+      "summary": "코트 자락·금색/검은 줄·청록 띠/리본·타이/자보 제거, 흰 스탠드 칼라·긴소매·맨손·은색 사각 버클 두 줄 검은 언더버스트 코르셋으로 국소 편집함. 얼굴·머리·자세·소품·스타킹·신발·투명 배경 유지.",
+      "preview": "recon/with_gwen_office.png (outside repository)",
+      "previous_artifacts": [
+        {
+          "path": "assets/ui_icons/gwen/recon_look_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 67672,
+          "sha256": "e2a5eb9295bdf1bf21159b791636433bef1fb85162d4ff7c910d13bf84fa50c4"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_look.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 19681,
+          "sha256": "4ec84e38331de22c1495a60d5d0acfd80aadee8416308879cf5aa508ddd40437"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_pin_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 68379,
+          "sha256": "4548e611057ea222815fc5dea8d9fb8292925adb00e14bb6ed408fb786016808"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_pin.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 20882,
+          "sha256": "f90d2286adcd6b95d7681deb19319540ffcf322be2432aeb852704d4885e3ff5"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_nod_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 62329,
+          "sha256": "a679b15740ec9c3facb84c80281fb7ae75ef4e3dcc1dee3ef95de28c22827524"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_nod.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 18080,
+          "sha256": "1f6c88ac8e35c6204f60df44bb59e5b3a39851a3359a2c2b9c17811960f96254"
+        }
+      ],
+      "artifacts": [
+        {
+          "path": "assets/ui_icons/gwen/recon_look_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 65307,
+          "sha256": "7fa85389f2acdbc0a84e73f086dd8d2c017b5323f839203ff2f8c3a0878dce92"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_look.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 17893,
+          "sha256": "e0a587dcc73b34daff9b6c52a6d792aa3483d78aeebd030ef3b1526e42e1b377"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_pin_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 67091,
+          "sha256": "bf58b8d90bd7245748ad9eb42ff6dc690fb4be100a0258c3506047dafea6045b"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_pin.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 19075,
+          "sha256": "bd34c21ca4a7ccde6ed46bcea79fb9f4b6097c61541aefae25d6e2a5cc275b0e"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_nod_512.png",
+          "size": [
+            512,
+            512
+          ],
+          "bytes": 58773,
+          "sha256": "891afad1cc990a3cafc222b1a045f184cbdb39c67d39931a01bc42e5bcae23ea"
+        },
+        {
+          "path": "assets/ui_icons/gwen/recon_nod.png",
+          "size": [
+            160,
+            160
+          ],
+          "bytes": 14687,
+          "sha256": "1162e13a5c0a7ed6056daad64907fa78b979aae5cf54ba878408bf0bd4bb643b"
+        }
+      ],
+      "validation": {
+        "visual_review": "?? 3?, 512px/160px ?? ?? ??, ??? 3? ??? ????.",
+        "build": "build_recon.py --import-dir: sizes, alpha, soft edges, margins, per-file and served-byte budgets passed.",
+        "rebuild": "Six output SHA-256 hashes identical after rebuilding from committed-size masters.",
+        "tests": {
+          "full_suite": {
+            "passed": 270,
+            "failed": 3,
+            "environment_skips": 6,
+            "failure_cause": "Overlapping full and focused test runs raced while rebuilding existing art."
+          },
+          "sequential_forced_gwen_rerun": {
+            "passed": 16,
+            "failed": 0,
+            "resolved_failures": [
+              "gwen_art11_test.py",
+              "gwen_art5_test.py",
+              "gwen_art6_test.py",
+              "gwen_art_test.py"
+            ]
+          }
+        }
+      }
     }
   ]
 }
