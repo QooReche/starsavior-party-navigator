@@ -30,6 +30,9 @@ def build_scene(src):
 
 def build_back(src):
     im = Image.open(src).convert('RGBA')
+    # 생성 알파의 미세 잡음이 여백/비율을 늘리지 않게 정리함.
+    # 승인 그웬 빌더와 같은 기준이며 중간값의 가장자리 투명도는 보존함.
+    im.putalpha(im.getchannel('A').point(lambda a: 0 if a < 10 else 255 if a > 245 else a))
     im = im.crop(im.getbbox())
     im = im.crop((0, 0, im.width, round(im.height * BACK_KEEP)))
     im = im.crop(im.getbbox())

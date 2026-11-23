@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-23",
+  "tool": "codex built-in image_gen",
+  "base_commit": "6ef9861f9b297a7f32dd387b7953acc9cf002183",
+  "meaning": "정식 그림은 사이트 채택본을 뜻함. 게임사의 공식 원화가 아닌 생성 팬 그림이며 원 캐릭터·디자인의 권리는 원 권리자에게 있음.",
+  "originals": "PNG originals and comparison sheet are stored outside the repository.",
+  "generation_calls": 4,
+  "retries": 1,
+  "reference_policy": "Repository-relative paths only. Temporary forced art is read from the base commit for reproduction; approved Gwen art defines identity and style.",
+  "inspected_references": [
+    "docs/forced_art.md",
+    "docs/fullscreen_measure_1121.md",
+    "tools/gwen_art/README.md",
+    "tools/gwen_art/art3.md",
+    "tools/gwen_art/art6.md",
+    "assets/forced/scene.webp (base commit)",
+    "assets/forced/gwen_back.webp (base commit)",
+    "assets/forced/gwen_idcard.webp (base commit; inspection only)",
+    "tools/gwen_art/masters5/st_point.webp",
+    "tools/gwen_art/masters2/confident.webp (inspection only)",
+    "assets/savior/gwen_art.webp"
+  ],
+  "images": [
+    {
+      "output": "lavistar_ruin_bg_1.png",
+      "transparent_background": false,
+      "attempts": [
+        {
+          "prompt": "Use case: stylized-concept. Asset: finished panoramic background painting for a fantasy game's forced-exploration scene. Generate ONE landscape illustration, exact 3:1 canvas, ideally 3072x1024 or larger. Input image 1 is a COMPOSITION REFERENCE ONLY: preserve its major arrangement, horizon, perspective and crop-safe landmarks, repaint as refined Japanese/Korean anime game background art with delicate lines, soft cel-painted gradients and restrained texture. Night, viewed from inside a ruined room with broken masonry walls framing the outer edges and shattered floorboards/rubble along the bottom. An EMPTY wooden chair at x=29%, small wooden writing desk at x=20%, and fallen teddy bear at x=21% belong to the ruined room on the left. All three must remain visible inside the x=17% to x=65% narrow-screen crop. Beyond the missing wall, a misty European-inspired city with blue-gray mansard roofs, distant cathedral spires and a civic plaza with an equestrian statue fountain at x=57%. Large blue planet in the upper LEFT sky, beautiful luminous GOLD elliptical orbital trails sweeping across the upper middle. Deep indigo, muted slate blue, teal fog, subtle warm window lights and gold orbit accents. Keep the right foreground third relatively quiet, darker and free of prominent subjects so a separate rear-view character can be overlaid. Make the chair-to-fountain composition readable at a small banner size. Full-bleed image, no letterboxing. No humans or characters, no writing, no text, letters, numbers, logos or watermark. All ages. Do not reproduce any unrelated game character or real person.",
+          "references": [
+            "assets/forced/scene.webp (6ef9861; composition only)"
+          ],
+          "selected": true
+        }
+      ]
+    },
+    {
+      "output": "gwen_back_illust_1.png",
+      "transparent_background": true,
+      "attempts": [
+        {
+          "prompt": "Use case: identity-preserve / stylized-concept. Generate ONE finished full-body character illustration of Gwen from Star Savior for this existing fan project, TRUE transparent RGBA background. Input image 1 (approved st_point sprite sheet) is PRIMARY identity/face/line/shading reference, use a single character, NOT a sheet. Input image 2 (official Gwen chair artwork) is costume/whole-body reference only. Input image 3 (temporary rear-view cutout) is POSE AND SILHOUETTE reference only, replace its harder glossy style with the soft approved art style. Full body, head to boots with modest transparent margins, approximately portrait 2:3 canvas. Gwen stands calmly with her BACK to the viewer in a slight three-quarter rear view; head gently turned toward the UPPER LEFT of the image, looking away over a distant city. Keep most of the face hidden, a small soft cheek/profile and one restrained golden eye if naturally visible, never looking at viewer. Keep the pose and costume silhouette close to reference 3, a narrow draped black/gold shoulder-back panel instead of a large cape. Adult anime woman, natural approved full-size proportions (not chibi), round soft face, short small chin, delicate outlines, soft cel shading plus restrained gradients. Dark INDIGO/PURPLE NAVY bob (#1E1B4B to #2A2560), teal inner hair behind ear, small gold bar hairpin on HER anatomical LEFT side (visible near image-left temple in this rear view). Royal-blue tailored military uniform, gold fringed epaulettes, teal neck ribbon with red diamond jewel (only visible as pose permits), white layered jabot at front (do not paste it onto the back), black double waist belt, teal sash, blue skirt/coat tails with white edging, pale tights and dark boots. White gloves with white frilled cuffs. Each sleeve has ONE BROAD WHITE BAND on its OUTER face from below shoulder all the way to just before wrist frill, no inner-sleeve stripes. Arms at ease, one gloved hand visible hanging on image-left, other naturally at waist. Upper 62 percent of the alpha-trimmed body (head through mid-thigh) will be cropped for production: prioritize perfect bob silhouette, epaulettes, upper-back uniform, sleeve stripe continuity, hands and waist. Soft cool night illumination and very subtle warm rim from upper left, keep royal blue and navy recognizable. No floor, cast ground shadow, scenery, background or fake checkerboard. No text, numbers, labels, logos or watermark. All ages; no sexualization, no real person, no unrelated game character. Exactly one character.",
+          "references": [
+            "tools/gwen_art/masters5/st_point.webp",
+            "assets/savior/gwen_art.webp",
+            "assets/forced/gwen_back.webp (6ef9861; pose only)"
+          ],
+          "selected": false
+        },
+        {
+          "prompt": "Use case: background-extraction / precise-object-edit. Edit the supplied rear-view full-body Gwen illustration. Preserve the SAME character, costume, hairstyle, gold pin, pose, hand anatomy, proportions, linework, blue/teal/gold colors and complete boots. Remove ALL of the diffuse cloudy gray/blue/purple/gold glow surrounding her. Output a CLEAN CHARACTER CUTOUT with genuine RGBA transparency: every pixel outside the physical silhouette of hair, epaulettes, clothing, hands, legs and boots must be fully transparent alpha=0. The character's solid interiors must be opaque alpha=255; only actual narrow anti-aliased edges may have partial alpha. NO ambient aura, NO haze, NO blurry halo, NO shadow, NO vignette, NO background, NO checkerboard baked into pixels. The transparent gaps between limbs must also be completely clear. Keep the existing delicate illustration shading inside the character, and keep full body plus small transparent margins. Only additional pose adjustment: lift her chin very slightly so her eye gaze clearly goes to UPPER LEFT, still looking away with her back to viewer. Do not add any object, text, logo or watermark. All ages. ONE character on a portrait transparent canvas.",
+          "references": [
+            "gwen_back_attempt1.png (first generated output; outside repository)"
+          ],
+          "selected": true
+        }
+      ]
+    },
+    {
+      "output": "gwen_idcard_illust_1.png",
+      "transparent_background": false,
+      "attempts": [
+        {
+          "prompt": "Use case: identity-preserve / stylized-concept. Create ONE square black-and-white aged identification portrait of Gwen from Star Savior for an existing fan project, no lettering. Input image 1 is the PRIMARY approved face and illustration-style reference (st_point sheet): take the open-eyed face, navy bob silhouette, small gold bar hairpin on HER LEFT = VIEWER RIGHT, soft rounded cheeks and small short chin; do not make a sprite sheet. Input image 2 is official costume reference. Front-facing straight-on head-and-upper-chest portrait, calm serious neutral expression, symmetrical relaxed shoulders, gaze toward camera, complete hair silhouette inside square crop, face large enough to recognize when reduced to 44-56 pixels. Preserve the same recognizable character, fine delicate anime linework and soft cel-painted gradients from approved art. Short dark indigo bob with subtle lighter inner strands (rendered in grayscale), large half-lidded ringed eyes translated into pale gray irises, gold bar hairpin translated to light gray. Correct military uniform: gold fringed epaulettes rendered gray, high collar, broad teal neck bow rendered gray with diamond jewel, white layered jabot. NO hat, NO beret, NO necktie, no replacement generic police costume. Make it look like a small old monochrome ID photograph printed on worn gray paper: subtle fibrous paper texture, restrained scratches and a few worn edges, slightly faded contrast, plain mid-gray photographic background. Keep scratches off important eyes and face. Strictly grayscale, square 1:1 approximately 1024x1024. Image only, no card layout or text fields. No text, numerals, logos, stamps, watermark or borders containing writing. All ages, no real person and no unrelated game character.",
+          "references": [
+            "tools/gwen_art/masters5/st_point.webp",
+            "assets/savior/gwen_art.webp"
+          ],
+          "selected": true
+        }
+      ]
+    }
+  ]
+}

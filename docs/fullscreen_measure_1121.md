@@ -191,7 +191,7 @@ python -X utf8 -I tests/batch_identity_test.py
   - 훑기가 없었거나(쉬운 스테이지) 중간에 멈췄으면 표시 없음. 결과 표·단추를 가리지 않는 흐름 안의 한 줄임.
   - 도장이 있으면 바로 위 «조사 결과» 라벨이 «관측 기록»으로 바뀜(낱말만).
   - 이스터에그: «관리 실패» 줄 오른쪽 끝에 낡은 신분증 사진(56px, 400px 이하 44px). 그 결과에서는 사진이 그웬 한 명이라 같은 요약의 결과 자리 그웬을 숨김. 결과 자리가 없는 요약(둘째 편성부터)이나 그림을 못 받은 때에는 사진이 없고 그웬이 그대로 나옴.
-- **그림**: `assets/forced/` 4개(약 220KB). 만드는 법·바꿔 끼우는 법은 [forced_art.md](forced_art.md). 훑기에 처음 들어갈 때만 받고, 다 받으면 `body[data-forced-art]` 가 붙어 그림으로 바뀜. 폴더가 없으면 CSS 바탕만 보임.
+- **그림**: `assets/forced/` 4개. 현재 용량·출처·만드는 법·바꿔 끼우는 법은 [forced_art.md](forced_art.md). 훑기에 처음 들어갈 때만 받고, 다 받으면 `body[data-forced-art]` 가 붙어 그림으로 바뀜. 폴더가 없으면 CSS 바탕만 보임.
 - **붙는 곳**: 일반 추천 진행 칸(`simProgress`), 직접 편성 묶음 진행 칸(`recoProgressPaint`), 직접 편성 단계 줄(`directBundlePaint`), 그웬 길(`.gwen-lane[data-alert]`). 스타일은 `forced.css` 한 파일임. 색·모서리·고정폭 글꼴은 사이트 공용 변수(`:root`)를 쓰고, 훑는 동안 `body.is-forced` 가 `--r-panel`·`--r-box`·`--r-ctl`·`--brass`·`--line` 값만 바꿔 주변(입력 칸·모드 단추·머리글 줄)도 각진 적색 계열이 됨.
 - **성능**
   - 움직임은 CSS 애니메이션(transform·opacity)뿐임. JS 는 상태가 바뀔 때(진입·끝·멈춤)와 기록 줄 번호가 바뀔 때(한 번 훑기에 8번)만 DOM 을 바꿈.
