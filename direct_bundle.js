@@ -70,6 +70,7 @@ function directRecoReady(){
   if(!st||SIMQ.busy!=null||SIMQ.screening)return false;
   for(let p=1;p<=(c.parties||1);p++){
     const box=LASTQ[p];if(!box?.rows?.length||box.rows.some(t=>!SIMQ.res[simSig(st,t)]))return false;
+    if(typeof simArrangeDone==='function'&&!simArrangeDone(box.rows))return false;   // 본선 끝 ~ 자리·리더 비교 시작 사이 틈을 «준비됨»으로 보지 않음
     if((c.parties||1)===1&&!SIMQ.scr[scrKey(st,p)]?.done)return false;
     if(box.rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<.5)&&box.rows.length<Math.min(9,box.total))return false;
   }

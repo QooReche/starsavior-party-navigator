@@ -393,6 +393,12 @@ def test_sim_timeout_partial(browser, ctx):
       if(Object.keys(SIMQ.res).length!==1 || SIMQ.busy!==1)throw Error('늦은 결과가 현재 요청을 바꿈');
       __ready();for(let g=0;g<20&&__busy().length;g++)__serve(__busy()[0]);
     }""")
+    # 본선 뒤 자리·리더 비교(현장 재조사)도 같은 가짜 작업자로 끝낸다
+    for _ in range(200):
+        if page.evaluate(SIM_DONE_JS, [1]):
+            break
+        page.evaluate("() => {__ready();for(let g=0;g<50&&__busy().length;g++)__serve(__busy()[0])}")
+        page.clock.run_for(500)
     wait_sim_done(page, timeout=10000)
     assert page.locator('.party[data-party="1"] .qrow[data-key] .qsim').count() == 2
     assert '75%' in page.locator('.party[data-party="1"] .mi-verdict').inner_text()

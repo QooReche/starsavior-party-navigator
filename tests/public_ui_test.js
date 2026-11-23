@@ -186,7 +186,7 @@ function checkLoading(page){
  const Ux=require('../ux_ui'),gwenCalls=[];
  const state={Ux,SIMQ:{busy:1,res:{},scr:{s:{got:2,left:80}},screening:true,loaded:true},
   LASTQ:{1:{rows:[{},{}]}},scrKey:()=> 's',simSig:()=> 'r',growthEnabled:()=>false,SCR_N:8,scrWorkers:()=>2,simEtaText:()=> '남은 시간 계산 중',esc:String,
-  DIRECT:{mode:'reco'},GwenLane:{sync:o=>gwenCalls.push(o)},recoGwenShow:(show,p)=>gwenCalls.push({show,progress:p}),$:()=>null};
+  DIRECT:{mode:'reco'},RECHECK:{},RECO:{},SearchExecutor:{throttle:f=>f,PAINT_MS:0},GwenLane:{sync:o=>gwenCalls.push(o)},recoGwenShow:(show,p)=>gwenCalls.push({show,progress:p}),$:()=>null};
  const run=vm.createContext(state),start=page.indexOf('function simProgress(st)');
  {const a=page.indexOf('const SCR_ALERT=');vm.runInContext(page.slice(a,page.indexOf('// 이미 그려진 진행 칸',a)),run);}   // 관측 경보(훑기) 상태·글자 — 평소 진행 칸은 그대로여야 함
  vm.runInContext(page.slice(start,page.indexOf('function buildCands(',start)),run);

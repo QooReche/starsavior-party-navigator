@@ -76,7 +76,7 @@ async function slotStart(){if(SIMQ.busy!=null||StarLink.availability(MI.info))re
   finally{if(alive()){SIMQ.busy=null;slotPaint();}}   // 작업자 풀은 살려 둔다(scrPool 주석)
 }
 function slotPaint(){if(!miMode()||!MI.info||!REQ)return;
-  let el=$('star-link-result');if(!el){el=document.createElement('details');el.id='star-link-result';el.className='party slot-details';$('out').append(el);}
+  let el=$('star-link-result');if(!el){el=document.createElement('details');el.id='star-link-result';el.className='party slot-details';el.open=!!slotPaint.open;el.addEventListener('toggle',()=>{slotPaint.open=el.open});$('out').append(el);}
   const summary=document.querySelector('[data-k="growth-slot-summary"]');if(summary)summary.append(el);
   else if($('growth-result')&&$('out').contains($('growth-result')))$('growth-result').after(el);
   else $('out').append(el); // Seasonal growth cards live outside this result area's lifecycle.

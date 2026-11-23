@@ -999,7 +999,7 @@ function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
  return `<span class="qsim" data-sim="${simCls(r)}" title="${esc(simTitle(r))}">클리어 ${Math.round(r.clear*100)}%${r.t60!=null?` · ${r.t60n||STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:""}</span>`}
 function simBar(p,rows,st,hasMore,shown=rows[0]){
  // 자동 확인 중이면 자리·리더 비교(recoArrangeKick)까지 끝나야 «완료» — 본선 끝과 비교 시작 사이 틈에 완료로 보이지 않게
- const all=rows.every(t=>SIMQ.res[simSig(st,t)])&&(typeof recoArrangeKick!=="function"||!simAutoOn()||(()=>{const id=recoIdentity();return rows.every(t=>arrGet(id,UiShared.teamKey(t.keys)))})());
+ const all=rows.every(t=>SIMQ.res[simSig(st,t)])&&simArrangeDone(rows);
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
  // 현장 재조사 중(recoArrangeKick)이면 진행·취소는 결과 판 맨 위 재조사 칸이 맡음 — 여기엔 상태만(숨김)
  const st8=SIMQ.busy===p&&recheckBusy()?`<span class="mut" data-k="simstate" data-state="running" hidden>${esc(SIMQ.msg)}</span>`:
@@ -1008,6 +1008,8 @@ function simBar(p,rows,st,hasMore,shown=rows[0]){
   all?`<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">모의 전투 실행</button>`;
  return `<div class="qrow simbar">${st8}</div>`}
+// 자동 확인 중이면 보이는 팀 모두 자리·리더 비교 기록이 있어야 끝(simBar «완료»·직접 편성 묶음 directRecoReady 공통)
+function simArrangeDone(rows){if(typeof recoArrangeKick!=="function"||!simAutoOn())return true;const id=recoIdentity();return rows.every(t=>arrGet(id,UiShared.teamKey(t.keys)))}
 function simInvalidate(){if(typeof recoTaskCancel==='function')recoTaskCancel('입력이 바뀜');if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;if(Object.keys(x.res).length||x.res0&&Object.keys(x.res0).length)scrClose(x);else delete SIMQ.scr[k]}simPoolDrop();SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
 function simStop(msg,cancelled=false){SIMQ.cancelled=cancelled;const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=msg;SIMQ.err=/취소|중단/.test(msg)?"중단함":/엔진 준비 시간 초과/.test(msg)?"계산 엔진 준비가 오래 걸려 멈췄음 · 네트워크를 확인하고 다시 시도 필요":/시간 초과/.test(msg)?"계산이 오래 걸려 멈췄음 · 다시 시도하면 끝난 팀은 이어서 계산함":"자료를 불러오지 못했음. 다시 시도 필요";SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
