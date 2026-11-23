@@ -4,6 +4,8 @@
 
 ## 현재 상태
 
+- **자리·리더 비교(11/23)**: 자동 추천 본선 뒤 클리어 100%가 아닌 보이는 팀마다 24가지 자리·리더를 돌려 확실히 좋을 때만 교체(`party_placement.js` raceMany·reco*, `recommend_runtime.js` recoArrange). 어려운 스테이지 시간 약 3~3.5배. 상세 HISTORY 11/23.
+
 - **공략 사례 기준 탐색 검사(단계 ②)**: 표준 육성·전체 보유로 화면 탐색 정책(코스모 3보스·길드 찾기, 작전·회랑은 근사 후보)과 사례 편성을 같은 400판으로 재평가했음. «탐색이 놓침» 0건, 엔진 의심 0건임. 다만 표준 육성은 사례 단계에서 2~5턴 안에 전멸해 장기 운영 전술이 돌아가는 구간의 판정은 미확인이고, 작전·회랑 사례는 진행도 1% 미만이라 비교 불가였음. 강한 가정 육성으로 재검사하는 것이 다음 후보임. 정책·기본값 불변. 사례별 표·한계는 `docs/casebook_search_check.md`, 도구는 `tools/casebook_search_check.py`.
 
 - **공략 사례 18건 엔진 감사**: 사례별 동작·클라 근거·시험은 `docs/casebook_engine_check.md`. 몰락한 사념의 고정 속도 전달과 일반 속도 하한을 고쳤음. 규칙은 `battlesim/rules/default.json`의 `fixstats_speed_zero`·`speed_min`이 정본이며 legacy 유지. 공략의 수동 순서·그림 미확인 입력은 엔진 결함으로 세지 않음. 근거 줄 번호는 설치 26752678 DLL 10개와 일치하는 재추출본 기준이며 이 PC `E:\AI_mk2\decomp_26752678\casebook_1121\`에 보관함. 비공개 static-data 저장소의 `decompiled/`도 26752678판으로 갱신됨(static-data 62bb6b6, 2026-11-21).

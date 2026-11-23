@@ -144,7 +144,7 @@ function directResultsPaint(){
     const step=bundle?.steps.find(s=>s.kind===kind),r=row?.result,working=['waiting','running'].includes(row?.status),state=working?(row.status==='waiting'?'대기 중 · 먼저 실행한 팀이 끝나면 계산':`계산 중 · ${row.progress||0}/${row.snapshot.runs}판`):row?.status==='error'?`계산 실패 · 다시 시도`:row?.status==='cancelled'?row.error:r?'계산 완료':step?.message||(kind==='grown'&&!expected.grown?'육성했다면을 켠 칸 없음':'미계산');
     const diff=r&&!stale&&validNow&&kind!=='now'?directDifference(r,now.result,metric):'';
     const rowMetric=stale?(row.snapshot?(row.snapshot.options.star_turns?'t60':'clear'):row.metric):metric;
-    const keys=['reco','growth'].includes(kind)?(row?.team?arrangeOf(row.team.combo).order:[]):DirectParty.toScreen(row?.snapshot?.draft?.slots||DIRECT.draft.slots).filter(Boolean).map(m=>m.key);
+    const keys=['reco','growth'].includes(kind)?(row?.team?arrangeOf(row.team.combo,kind==='growth').order:[]):DirectParty.toScreen(row?.snapshot?.draft?.slots||DIRECT.draft.slots).filter(Boolean).map(m=>m.key);
     const shortDiff=diff?(diff.startsWith('거의 같음')?'거의 같음':diff.split(' · ')[0]):'';
     const open=openRows.has(kind);
     return `<tr data-direct-row="${kind}" class="${stale?'direct-past':''}"><td><button type="button" class="sec direct-compare-toggle" data-direct-action="compare-toggle" data-kind="${kind}" aria-expanded="${open}" aria-controls="direct-row-${kind}"><span class="direct-row-name" title="${label}">${label}${stale?' · 지난 결과':''}</span><b>${r?Math.round((r[rowMetric]??r.clear)*100)+'%':'—'}</b><span class="direct-row-diff">${shortDiff||(!r?esc(state):'')}</span><span class="direct-compare-faces">${keys.map(k=>face(BYKEY[k])).join('')}</span></button>

@@ -49,7 +49,7 @@ COLLECT_JS = """() => {
   const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)]||null;
   const pick=r=>r?{clear:r.clear,t60:r.t60??null,prog:r.prog??null,ttk:r.ttk??null,n:r.n}:null;
   const map=o=>Object.fromEntries(Object.entries(o||{}).map(([k,v])=>[k,pick(v)]));
-  const rows=LASTQ[1].rows.map(t=>{const r=SIMQ.res[simSig(st,t)];return {key:t.keys.slice().sort().join(','),
+  const rows=LASTQ[1].rows.map(t=>{const r=SIMQ.res[simSig(st,t)];return {key:t.keys.slice().sort().join(','),arr:arrangeOf(t.combo),
     res:r?{clear:r.clear,t60:r.t60??null,prog:r.prog??null,ttk:r.ttk??null,ta:r.ta??null,n:r.n,ci:r.ci,wipe:r.wipe,timeout:r.timeout,u:r.u}:null}});
   const B=window.__bench;
   return {stage:st.tab+'|'+st.name,screen:sc&&{done:sc.done,short:!!sc.short,total:sc.total,pool:sc.pool,order:sc.order,up:sc.up||null,res:map(sc.res),res2:map(sc.res2)},

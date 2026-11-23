@@ -43,7 +43,7 @@ function growthGoalTurns(kind){return typeof starOf==='function'&&growthStageKin
 // 목표 지표 값: 3별 목표 결과(t60 있음)면 N턴 내 클리어율, 아니면 클리어율 — 예선 순위(scrCmp)의 첫 기준과 같다
 function growthGoal(r){return r?(r.t60??r.clear):null;}
 function growthJob(t,id,c=contents[$('content').value]){const bn=breakChoice(t.combo,c).name||null;
-  return {id,t,party:simParty(t),options:{break_skill:bn?{name:bn,level:brkLv(bn)}:null},breakName:bn};}
+  return {id,t,party:simParty(t,ekey,arrangeOf(t.combo,true)),options:{break_skill:bn?{name:bn,level:brkLv(bn)}:null},breakName:bn};}
 function growthScoreEnv(env,fn){if(!env)return fn();const saved=[GIMACT,SBACT,DMW];
   try{GIMACT=env.gim;SBACT=env.season;DMW=env.damage;return fn();}
   finally{[GIMACT,SBACT,DMW]=saved;}}
@@ -400,7 +400,7 @@ function growthPaint(){
   let body='';
   if(c.key==='cosmo')body=r.best.teams.map(t=>`<div class="growth-score-card"><div class="season-chips"><b>${esc(csBoss(t.boss))}</b><span class="tag">난이도 ${t.level}</span><span class="tag">${esc(t.brk||'브레이크 없음')}${t.brkLv?' · Lv.'+t.brkLv:''}</span></div>${cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.leaderKey||t.order[0])}</div>`).join('');
   else if(c.key==='guild'){const t=r.best;body=`<div class="season-chips"><span class="tag">${t.level}단계</span><span class="tag">${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</span></div>`+cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.leaderKey||t.order[0]);}
-  else if(r.team){const ar=arrangeOf(r.team.t.combo);body=cards(ar.order,ar.lead)+`<p class="mut">${esc(r.team.breakName||'브레이크 없음')}</p>`;}
+  else if(r.team){const ar=arrangeOf(r.team.t.combo,true);body=cards(ar.order,ar.lead)+`<p class="mut">${esc(r.team.breakName||'브레이크 없음')}</p>`;}
   const keys=c.key==='cosmo'?r.best.teams.flatMap(t=>t.keys||t.order):c.key==='guild'?(r.best.keys||r.best.order):r.team?.t.keys||[];
   const grown=keys.reduce((sum,k)=>sum+(r.snapshot.profile.results[k]?.power||0),0);
   const currentKeys=c.key==='cosmo'?r.baseline?.teams?.flatMap(t=>t.keys||t.order):c.key==='guild'?(r.baseline?.keys||r.baseline?.order):[...document.querySelectorAll('.party[data-party="1"] .gc')].map(e=>e.dataset.key);

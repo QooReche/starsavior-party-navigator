@@ -8,7 +8,10 @@
       if(!box?.all?.length)throw Error(`파티 ${p}: 후보가 4명 미만임`);
       if(env.screened&&!env.screenState(p)?.done){await env.screen(p,box);alive(env);box=env.plan(p);}
       while(true){
-        alive(env);await env.final(p,box);alive(env);box=env.plan(p);
+        alive(env);await env.final(p,box);alive(env);
+        // 자리·리더 비교(있으면): 바뀐 팀은 결과 서명이 달라져 다음 final 이 표준 본선으로 다시 잰다
+        if(env.arrange){await env.arrange(p,box);alive(env);box=env.plan(p);await env.final(p,box);alive(env);}
+        box=env.plan(p);
         if(!box.rows.every(t=>env.goal(env.result(t))<.5)||box.rows.length>=9||box.rows.length>=box.total)break;
         env.more(p,box.rows.length+3);box=env.plan(p);
       }

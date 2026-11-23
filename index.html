@@ -836,7 +836,15 @@ function breakCard(br,r,p,t,st){
 const SCORE_CONTROLS=$("score-controls"),GRAPH_WRAP=$("graphwrap");
 window.PN={last:null};
 const ckey=combo=>UiShared.teamKey(combo.map(x=>x.s.key));
-function arrangeOf(combo){const [fr,bk]=place(combo),L=leaderPick(combo);return {order:[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key),lead:L?L.x.s.key:null}}
+function arrangeRule(combo){const [fr,bk]=place(combo),L=leaderPick(combo);return {order:[bk[0],fr[0],fr[1],bk[1]].map(x=>x.s.key),lead:L?L.x.s.key:null}}
+// 자동 추천 끝의 자리·리더 비교 결과(recommend_runtime.js recoArrange). 키 = teamKey → (추천 조건 recoIdentity → {order,lead,changed}).
+// 조건이 바뀌면 조회가 안 맞아 규칙 자리로 돌아간다(무효화 불필요). rule=true 면 비교 결과를 무시하고 규칙 자리(육성 탐색 등)
+const RECO_ARR=new Map();
+function arrGet(ident,k){return RECO_ARR.get(k)?.get(ident)||null}
+function arrSet(ident,k,v){let m=RECO_ARR.get(k);if(!m)RECO_ARR.set(k,m=new Map());m.delete(ident);m.set(ident,v);if(m.size>20)m.delete(m.keys().next().value)}
+function arrangeOf(combo,rule=false){
+ if(!rule&&RECO_ARR.size&&typeof recoIdentity==="function"){const m=RECO_ARR.get(ckey(combo));if(m){let id=null;try{id=recoIdentity()}catch(e){}const v=id!=null&&m.get(id);if(v)return {order:v.order.slice(),lead:v.lead}}}
+ return arrangeRule(combo)}
 // 관문 순위(build_sim_results.gate_key 와 같은 규칙): 계산 가능 -> 클리어 확률 5%p 묶음 -> 처치 턴 -> 근사 점수
 function cmpArr(x,y){for(let i=0;i<x.length;i++){if(x[i]<y[i])return -1;if(x[i]>y[i])return 1}return 0}
 function teamName(key){return key.split(",").map(k=>BYKEY[k]?BYKEY[k].name:k).join("·")}
@@ -933,7 +941,7 @@ const STAR_TURNS={equip:60,clash:60};   // 3별 미션 «N턴 이내 승리»(BM
 const starOf=ck=>STAR_TURNS[ck]&&(document.getElementById("goal")||{}).value!=="0"?STAR_TURNS[ck]:0;   // 옵션 «3별 목표»가 «클리어만»이면 0
 const starNote=ck=>{const n=starOf(ck);return n?`<div class="mut" data-k="starnote">${n}턴 내 클리어(3별) ${Ux.help('3별 목표',`3별(소탕) 조건인 ${n}턴 이내 승리 가능성을 먼저 보고 순위를 매김. 클리어만 필요하면 ⋯ 메뉴의 3별 목표에서 변경 가능.`)}</div>`:''};
 const simOpt=ck=>{const rk=rkOf(ck),st=starOf(ck),o=st?Object.assign({},SIMOPT,{star_turns:st}):SIMOPT;return rk?Object.assign({},o,{rekindle:rk}):o};
-function simParty(t,engineKey=ekey){const ar=arrangeOf(t.combo),sv=QK.d.sv;
+function simParty(t,engineKey=ekey,arr=null){const ar=arr||arrangeOf(t.combo),sv=QK.d.sv;
  // 육성 가정 = 기준(Lv200·표준 육성) 공·생·방 × k (전투력이 공·생·방에 비례하는 식이라 엔진이 계산하는 전투력 = 가정한 전투력)
  // 구원자별 전투력 = quick.js evaluate 와 같은 배분(입력값, 없으면 base × 기준 전투력 비율). 반올림 = 버림(x+0.5) — 파이썬 gen_quick_calib 와 같게
  let rs=0;for(const x of t.ek)rs+=sv[x][5];const base=t.base||rs*Quick.MUL;
@@ -944,12 +952,14 @@ function simParty(t,engineKey=ekey){const ar=arrangeOf(t.combo),sv=QK.d.sv;
   const P=pw?pw:base*u[5]/rs;const kk=P/(u[5]*Quick.MUL);const R=x=>Math.floor(x+0.5);
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
  const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null};}
-const simSigB=(st,t,bname,n=SIMQ.n,context=null)=>{const ck=contents[$("content").value].key;
- const x=context||{ck,rk:rkOf(ck),sn:starOf(ck),account:miMode()?MI.hash:null,growth:typeof growthEnabled==="function"&&growthEnabled()?growthCacheTag():null,party:simParty};
+const simSigB=(st,t,bname,n=SIMQ.n,context=null,party=simParty)=>{const ck=contents[$("content").value].key;
+ const x=context||{ck,rk:rkOf(ck),sn:starOf(ck),account:miMode()?MI.hash:null,growth:typeof growthEnabled==="function"&&growthEnabled()?growthCacheTag():null,party};
  return simSignature(x,st,t,bname,n,SIMQ.refined);};
 function simSignature(x,st,t,bname,n,refined){const parts=[x.ck,st.tab,st.name,x.party(t),n,"auto",bname].concat(x.rk?[x.rk]:[],x.sn?["t"+x.sn]:[],x.account!=null?[x.account]:[],x.growth?[x.growth]:[]);
  if(n===100&&refined?.has(JSON.stringify(parts)))parts[4]=300;return JSON.stringify(parts)}
 const simSig=(st,t)=>simSigB(st,t,teamBreak(t)?.name||null);
+// 규칙 자리(자리·리더 비교 무시)의 결과 서명 — 비교로 바꾼 자리가 표준 본선에서 규칙 자리보다 낮게 나오면 되돌리는 데 씀(recoArrangeRevert)
+const simSigRule=(st,t)=>simSigB(st,t,teamBreak(t)?.name||null,SIMQ.n,null,t=>simParty(t,ekey,arrangeOf(t.combo,true)));
 // 표시 상태는 결과 캐시와 분리한다. 다른 팀/스테이지에서 돌아오면 완성된 비교만 복원한다.
 const BRCMP={seen:new Set(),open:{}};
 const breakTargets=(have=breakOwned())=>[null,...have].map(name=>({name,supported:name===null||CFG.breakSupported.includes(name)}));
@@ -987,7 +997,8 @@ function simTitle(r){return `${r.n}판 · 95% 구간 ${(r.ci||[]).map(v=>Math.ro
 function simCell(p,t,st){const r=SIMQ.res[simSig(st,t)];if(!r)return "";
  return `<span class="qsim" data-sim="${simCls(r)}" title="${esc(simTitle(r))}">클리어 ${Math.round(r.clear*100)}%${r.t60!=null?` · ${r.t60n||STAR_TURNS.equip}턴 내 ${Math.round(r.t60*100)}%`:""}</span>`}
 function simBar(p,rows,st,hasMore,shown=rows[0]){
- const all=rows.every(t=>SIMQ.res[simSig(st,t)]);
+ // 자동 확인 중이면 자리·리더 비교(recoArrangeKick)까지 끝나야 «완료» — 본선 끝과 비교 시작 사이 틈에 완료로 보이지 않게
+ const all=rows.every(t=>SIMQ.res[simSig(st,t)])&&(typeof recoArrangeKick!=="function"||!simAutoOn()||(()=>{const id=recoIdentity();return rows.every(t=>arrGet(id,UiShared.teamKey(t.keys)))})());
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
  const st8=SIMQ.busy===p&&!SIMQ.compareKey?`${Ux.gwenWork("inspect")}<span class="mut" data-k="simstate" data-state="running">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
   SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`${Ux.gwenError(SIMQ.cancelled?"cancel":"calculation")}<span class="bad" data-k="simstate" data-state="error">모의 전투 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
@@ -1000,6 +1011,10 @@ function simStop(msg,cancelled=false){SIMQ.cancelled=cancelled;const compare=!!S
 function simQueue(start){const id=SIMQ.requestId;clearTimeout(SIMQ.startTimer);SIMQ.startTimer=setTimeout(()=>{if(SIMQ.requestId===id&&REQ&&!RECO.timer)start()},0)}
 function simAutoKick(){if(RECO.task&&!RECO.task.done||DIRECT.bundle?.running&&!DIRECT.bundle.legacyJoined)return;if(!simAutoOn()||SIMQ.busy!=null||(miMode()&&MI.pending))return;const st=cur&&cur[$("stage").value];if(!st)return;const sk=st.tab+"|"+st.name;if(SIMQ.err&&SIMQ.errStage===sk)return;
  for(const p of Object.keys(LASTQ).map(Number).sort()){const b=LASTQ[p];if(b&&scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done){simQueue(()=>{if(simScreen(p)===false)run()});return}if(b&&b.rows.some(t=>!SIMQ.res[simSig(st,t)])){simQueue(()=>simStart(p));return}
+  // 자리·리더 비교(recommend_runtime.js recoArrangeKick → recoArrange, 직접 편성 묶음 길과 같은 함수): 본선이 끝난 보이는 팀 중 아직 비교 안 한 팀
+  if(b&&typeof recoArrangeKick==="function"){const id=recoIdentity();
+   if(recoArrangeRevert(id,b.rows,t=>SIMQ.res[simSig(st,t)],t=>SIMQ.res[simSigRule(st,t)])){run();return}
+   if(b.rows.some(t=>!arrGet(id,UiShared.teamKey(t.keys)))){simQueue(()=>recoArrangeKick(p));return}}
   // 보여 준 팀이 모두 시뮬에서 목표 지표(goalVal: 3별 목표면 N턴 내 클리어율, 아니면 클리어율) 50% 미만이면, 넘는 편성이 나오거나 9팀이 될 때까지 다음 3팀을 자동으로 더 시뮬한다(1안이 근사 순위의 앞 3팀에 갇히지 않게)
   if(b&&b.rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&b.rows.length<9&&b.total>b.rows.length){const k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run(true);simQueue(()=>simStart(p));return}}}
 function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("content").value],st=cur&&cur[$("stage").value];if(!st||SIMQ.busy||(miMode()&&MI.pending))return false;
@@ -1406,7 +1421,8 @@ function runCore(skipAuto=false){
   const party=pick.combo;party.shareParty=p;party.forEach(x=>used.add(x.s.key));allParties.push(party);
   const v=pick.v;
   const qr=LASTQ[p]&&LASTQ[p].rows.find(t=>UiShared.teamKey(t.keys)===pick.key),sr=qr&&SIMQ.res[simSig(st,qr)];
-  const [fr,bk]=place(party);const LD=leaderPick(party);LEADKEY=LD?LD.x.s.key:null;
+  // 카드 자리·리더 = 시뮬과 같은 arrangeOf(자리·리더 비교 결과가 있으면 그것)
+  const AR=arrangeOf(party),byK=new Map(party.map(x=>[x.s.key,x])),[bk0,fr0,fr1,bk1]=AR.order.map(k=>byK.get(k)),fr=[fr0,fr1],bk=[bk0,bk1];LEADKEY=AR.lead;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
   const br=breakChoice(party,c,have);
   // 이 팀의 브라우저 시뮬 결과(있으면): 카드에 피해 기여·쓰러질 확률
