@@ -4,7 +4,7 @@
   "base_commit": "6ef9861f9b297a7f32dd387b7953acc9cf002183",
   "meaning": "정식 그림은 사이트 채택본을 뜻함. 게임사의 공식 원화가 아닌 생성 팬 그림이며 원 캐릭터·디자인의 권리는 원 권리자에게 있음.",
   "originals": "PNG originals and comparison sheet are stored outside the repository.",
-  "generation_calls": 9,
+  "generation_calls": 10,
   "retries": 1,
   "reference_policy": "Repository-relative paths only. Historical forced art supplies composition or past costume; approved Gwen art defines identity and style.",
   "inspected_references": [
@@ -24,7 +24,9 @@
     "gwen_back_illust_1.png (outside repository; primary full-proportion Gwen style)",
     "assets/forced/scene.webp (5e05a3f; composition and atmosphere)",
     "lavistar_ruin_bg_v3.png (12d9262 source; outside repository; composition and ring placement)",
-    "recon/recon_office_bg_1.png (outside repository; ring silhouette only)"
+    "recon/recon_office_bg_1.png (outside repository; ring silhouette only)",
+    "lavistar_ruin_bg_v4.png (c37b5f1 source; local sky edit target; outside repository)",
+    "before/scene.webp (initial temporary image; luminous trail quality only; no planet; outside repository)"
   ],
   "images": [
     {
@@ -105,7 +107,7 @@
             "recon/recon_office_bg_1.png (outside repository; ring silhouette only)"
           ],
           "transparent_background": false,
-          "selected": true,
+          "selected": false,
           "native_size": [
             2172,
             724
@@ -151,6 +153,169 @@
             "all_forced": 185552
           },
           "source_sha256": "af962b8a43742cf73b1754bb88807257de88e57d861db37e0cf5173c594de011"
+        },
+        {
+          "date": "2026-11-23",
+          "base_commit": "c37b5f1",
+          "working_head": "8a6216d",
+          "prompt": "Use case: precise-object-edit. Edit target: image 1, lavistar_ruin_bg_v4.png, current 2172x724 panoramic cel-anime city background. Reference image 2 before/scene.webp is ONLY a reference for wispy luminous orbital energy line quality, NOT its planet, painting style, furniture, or city.\nPerform a LOCAL SKY EDIT ONLY on image 1. Retain its exact 2172x724 size and 3:1 framing, unchanged composition and all existing pixels outside the edited sky. Never regenerate or redraw the whole scene. Preserve the city, architecture, skyline, ruins, small distant chair, cabinet, teddy bear, floor, perspective, colors, delicate cel linework, lighting and atmospheric depth exactly.\nReplace ONLY the thick solid gold metal ring and its solid metal chunks with THREE OR FOUR separate graceful hair-thin gold-white luminous orbital trails, like comet tails or fluid energy traces from reference 2. Vary their inclination slightly and their orbit sizes so these are multiple intersecting arcs, not a single band. Bright fine white-gold filament cores, delicate bloom, subtle teal trace, long tapering ends and small starburst twinkles at their tips. Open elongated elliptical orbits wrapping the sky, with a few breaks. All main orbit arcs contained around x=17%-62%, y=14%-37%; roughly same location/scale as old ring, entirely above the skyline. No thick ribbon, no metallic surface, no bevel or shaded underside, no solid bracelet, no single gold ring, no planet/moon/sphere. Do not copy reference planet.\nThe trails are BREAKING NOW: in several places interrupt the thin luminous filaments with gaps and drifting fragments of LIGHT and tiny sparks, never gold metal slabs. At breaks retain glasslike sky fissures opening onto the existing crimson-violet void. Keep existing shattered sky and falling stars atmosphere. Preserve the red-violet rift and surrounding sky outside this local motif; do not relocate it. Retain the original restrained overall brightness and palette.\nNo characters, no text, no watermark. Return ONE locally edited version of the first image, not a new composition.\n",
+          "references": [
+            "lavistar_ruin_bg_v4.png (c37b5f1 source; local sky edit target; outside repository)",
+            "before/scene.webp (initial temporary image; luminous trail quality only; no planet; outside repository)"
+          ],
+          "transparent_background": false,
+          "selected": true,
+          "edit_calls": 1,
+          "retries": 0,
+          "native_size": [
+            2172,
+            724
+          ],
+          "upscaled": false,
+          "ring_bounds_percent_approx": {
+            "x": [
+              17.8,
+              60.2
+            ],
+            "y": [
+              14,
+              37
+            ]
+          },
+          "trail_count_approx": 4,
+          "postprocess": {
+            "method": "Composite generated sky patch onto c37b5f1 native original; preserve all pixels outside polygon. Linear inward feather 12px, no resizing.",
+            "polygon_xy": [
+              [
+                330,
+                70
+              ],
+              [
+                1290,
+                70
+              ],
+              [
+                1330,
+                130
+              ],
+              [
+                1330,
+                240
+              ],
+              [
+                1090,
+                288
+              ],
+              [
+                835,
+                290
+              ],
+              [
+                812,
+                325
+              ],
+              [
+                798,
+                325
+              ],
+              [
+                790,
+                282
+              ],
+              [
+                778,
+                254
+              ],
+              [
+                770,
+                254
+              ],
+              [
+                755,
+                325
+              ],
+              [
+                670,
+                325
+              ],
+              [
+                610,
+                310
+              ],
+              [
+                555,
+                308
+              ],
+              [
+                530,
+                280
+              ],
+              [
+                355,
+                260
+              ],
+              [
+                320,
+                195
+              ]
+            ],
+            "skyline_guards_xywh": [
+              [
+                470,
+                237,
+                55,
+                100
+              ],
+              [
+                590,
+                288,
+                45,
+                60
+              ],
+              [
+                870,
+                280,
+                70,
+                70
+              ],
+              [
+                1260,
+                205,
+                90,
+                130
+              ]
+            ],
+            "feather_inward_px": 12,
+            "changed_bbox_xyxy": [
+              321,
+              71,
+              1330,
+              325
+            ],
+            "unchanged": "Outside sky polygon, including city skyline notch, furniture, ruins and floor; byte-identical decoded RGB. Office and Gwen assets unchanged."
+          },
+          "previous_source_sha256": "af962b8a43742cf73b1754bb88807257de88e57d861db37e0cf5173c594de011",
+          "generated_candidate_sha256": "4556698c27ba5a281ffaae3b32deefd8febf0740ddd6c2d60e4d6a3f190693b4",
+          "source_sha256": "e446905fc03f08993665fdb43ba7acd94c93a6481d995557a88379f331f475ee",
+          "bytes": {
+            "scene": 97904,
+            "scene_narrow": 49180,
+            "all_forced": 183752
+          },
+          "narrow": {
+            "crop_x_percent": [
+              17,
+              65
+            ],
+            "size": [
+              800,
+              555
+            ],
+            "css_anchor_y_percent": 12,
+            "css_lane_height": "max(190px,55vw)"
+          },
+          "preview": "layout_review.png (outside repository; left c37b5f1 / right selected; CSS static composition, effects excluded)",
+          "office_ring": "Deferred; office window will be covered by CSS light."
         }
       ]
     },
@@ -238,6 +403,13 @@
       "generation_calls": 1,
       "retries": 0,
       "reason": "등신대 뒷모습 그웬의 선·명암으로 화풍 수정, 의자·책상을 중경으로 축소하고 좁은 띠에서 의자 전체 보존"
+    },
+    {
+      "date": "2026-11-23",
+      "base_commit": "c37b5f1",
+      "generation_calls": 1,
+      "retries": 0,
+      "reason": "하늘 고리만 초기 임시 그림의 가늘고 밝은 여러 궤적으로 국소 편집, 행성 없이 깨지는 빛·공허·별빛 끝 유지"
     }
   ]
 }

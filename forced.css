@@ -19,8 +19,8 @@ body.is-forced{--r-panel:0;--r-box:0;--r-ctl:0;--brass:var(--fx-red);--line:#4a2
  background:radial-gradient(circle at 12% 22%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 31% 9%,#cfe6ff 0 1px,transparent 1.7px),radial-gradient(circle at 54% 27%,#fff 0 .9px,transparent 1.5px),radial-gradient(circle at 73% 12%,#ffe9b0 0 1.1px,transparent 1.8px),radial-gradient(circle at 90% 31%,#fff 0 1px,transparent 1.6px),
   linear-gradient(180deg,#030a2c,#0b2a6e 38%,#3a3f8f 62%,#5a4a8e 78%,#141433 79%,#0a0c22)}
 [data-forced-art] .fx-scene .fx-bg{background:url(assets/forced/scene.webp) center/100% 100% no-repeat}
-/* 깨지는 방패 고리의 파손부와 아래쪽 테두리 빛. 색·주기는 유지하고 원본 고리에 위치·크기만 맞춤 */
-[data-forced-art] .fx-scene .fx-glow{background:radial-gradient(ellipse 12% 15% at 32% 20%,rgba(255,214,140,.34),transparent 70%),radial-gradient(ellipse 20% 3% at 46% 34%,rgba(111,240,220,.4),transparent 75%);animation:fx-shimmer 10s steps(12) infinite}
+/* 깨지는 빛 궤적의 파손부·아래쪽 선. 원본 (35,19)·(46,32)%에 배경 inset -3%를 반영함 */
+[data-forced-art] .fx-scene .fx-glow{background:radial-gradient(ellipse 12% 15% at 34.1% 17.1%,rgba(255,214,140,.34),transparent 70%),radial-gradient(ellipse 20% 2.5% at 45.8% 30.9%,rgba(111,240,220,.4),transparent 75%);animation:fx-shimmer 10s steps(12) infinite}
 /* 뒷모습 그웬(gwen_back.webp — 그림을 바꿔 끼울 때는 이 파일만): 가까운 앞쪽 인물. 그림이 머리~허벅지까지라 발치는 띠 아래로 잘린 것처럼 보임.
    크기 = 띠 높이 × --fx-gs, 가로 자리 = --fx-gx(인물 가운데). 아래 끝은 띠 아래 끝보다 6px 밑(장면은 띠보다 커서 42% 지점을 기준으로 환산). 바람에 아주 살짝 흔들림 */
 [data-forced-art] .fx-scene .fx-gwen{inset:auto auto var(--fx-gbottom,calc(42% - var(--fx-h)*.42 - 6px)) var(--fx-gx);height:calc(var(--fx-h)*var(--fx-gs));aspect-ratio:271/520;translate:-50% 0;background:url(assets/forced/gwen_back.webp) center/contain no-repeat;transform-origin:50% 100%;
@@ -48,7 +48,7 @@ body.is-forced{--r-panel:0;--r-box:0;--r-ctl:0;--brass:var(--fx-red);--line:#4a2
  /* 하늘 기준점 12%를 유지하고 띠 높이를 늘려 안쪽 의자 다리까지 보존함. 그웬은 띠 아래 6px 위치를 유지함 */
  .fx-scene{top:12%;translate:calc(var(--fx-x)*-1) -12%}
  [data-forced-art] .fx-scene .fx-bg{background-image:url(assets/forced/scene_narrow.webp)}
- [data-forced-art] .fx-scene .fx-glow{background:radial-gradient(ellipse 25% 15% at 32.3% 20%,rgba(255,214,140,.34),transparent 70%),radial-gradient(ellipse 41.7% 3% at 61% 34%,rgba(111,240,220,.4),transparent 75%)}}
+ [data-forced-art] .fx-scene .fx-glow{background:radial-gradient(ellipse 25% 15% at 36.8% 17.1%,rgba(255,214,140,.34),transparent 70%),radial-gradient(ellipse 41.7% 2.5% at 61.1% 30.9%,rgba(111,240,220,.4),transparent 75%)}}
 
 /* 2. 진행 칸 → 관측 단말: 각진 틀·모서리 브래킷·위 상태줄·기록 줄. DOM 순서·단추 자리는 그대로 */
 .is-forced .progress[data-alert=scan]{position:relative;isolation:isolate;overflow:hidden;padding-top:34px;border:1px solid rgba(255,68,102,.55);border-radius:0;box-shadow:none;
