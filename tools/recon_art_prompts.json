@@ -2,9 +2,9 @@
   "date": "2026-11-23",
   "tool": "codex built-in image_gen",
   "use_case": "stylized-concept",
-  "status": "준비 중 — PM 검수 수정본·비교·그웬 합성 검수를 recon 보관 폴더에 저장했음. 배포용 자산·화면 연결은 미구현임.",
+  "status": "준비 중 — 창밖 고리를 가는 금백색 빛의 궤적으로 국소 교체하고 미리보기·최신 그웬 3종 합성을 검수했음. 배포용 자산·화면 연결은 미구현임.",
   "base_commit": "fa71bd5dc0da4482d14153dcbb574e24edc4dca7",
-  "generation_calls": 4,
+  "generation_calls": 5,
   "retries": 2,
   "reference_policy": "로컬 절대 경로를 기록하지 않음. 외부 원본은 파일 이름으로만 식별함.",
   "references": [
@@ -469,6 +469,265 @@
             411,
             434
           ]
+        }
+      ]
+    },
+    {
+      "date": "2026-11-23",
+      "base_commit": "e512097",
+      "tool": "codex built-in image_gen",
+      "use_case": "precise-object-edit",
+      "generation_calls": 1,
+      "retries": 0,
+      "output": "recon_office_bg_1.png",
+      "previous_output": "recon_office_bg_v2.png",
+      "native_output": "recon_office_sky_attempt1_native.png",
+      "native_size": [
+        2172,
+        724
+      ],
+      "saved_size": [
+        2172,
+        724
+      ],
+      "references": [
+        {
+          "file": "recon_office_bg_v2.png",
+          "role": "국소 편집 대상; 창밖 하늘 밖 원본 픽셀 보존"
+        },
+        {
+          "file": "lavistar_ruin_bg_1.png",
+          "commit": "4e5a630",
+          "role": "가는 금백색 궤적·혜성 꼬리·별빛 끝 형태만 참조; 사무실은 귀환 뒤의 조용한 하늘"
+        }
+      ],
+      "attempts": [
+        {
+          "number": 1,
+          "prompt": "Use case: precise-object-edit. Image 1 is the EDIT TARGET: preserve this exact 2172x724 cel-animation detective-office background and its exact framing. Image 2 is ONLY the shape reference for thin celestial light trajectories; do not adopt its painterly style or dramatic rift. Perform a LOCAL INPAINT ONLY in the open sky visible inside the right arched window, around x62%-79%, y16%-36% of the whole office image. Replace the thick solid golden metal ring with THREE or FOUR delicate GOLDEN-WHITE LIGHT TRAJECTORIES, overlapping incomplete orbital curves at different inclinations, each hairline luminous with a slender comet tail tapering away and tiny star glint at its leading endpoint. Follow the airy ethereal orbit strokes in reference 2. NO thick bands, no solid ring surfaces, no faceted edges, no black outlines on the light, no jewelry, no planet. Light trajectories centered about (70.5%,26%), entirely inside x63%-78%, y18%-34%, completely clear of window frame and city. The office depicts the calm aftermath AFTER returning from another worldline: mostly peaceful deep blue sky, just a VERY TINY faint red-violet healed crack/void remnant near (71%,24%), at most 1.5% of total canvas width, plus 2 or 3 very small meteors. No spreading cracks, no ominous cloud vortex, no large purple void. Restrained fine warm glow; the office desk lamp stays primary light.\nSTRICT INVARIANTS: all window frame, arch, mullions, clouds outside the small edit, buildings, skyline, rooftops, equestrian statue, corkboard and every pinned picture (including the old gold ring evidence PHOTO), four removed-photo traces, red threads, desk lamp, papers, mug, floor, shelves, chair and coat stay EXACTLY as in image 1. Do NOT redraw the whole scene. Do NOT change line art, 2-3-step cel shading, palette, perspective, lighting or crop. Only edit this small window-sky area. Output one full-bleed 3:1 office image, same dimensions if possible, no text, no watermark.",
+          "selected": true
+        }
+      ],
+      "placement": {
+        "units": "전체 2172×724 원본 기준 %, 좌상단 (0,0); 육안 추정, 번짐 제외",
+        "light_trajectories": {
+          "count": 3,
+          "center": [
+            70.5,
+            29.6
+          ],
+          "bounds": {
+            "x": [
+              63.3,
+              77.6
+            ],
+            "y": [
+              22.5,
+              36.5
+            ]
+          }
+        }
+      },
+      "review": "금속 띠를 서로 다른 기울기의 가는 금백색 빛 3가닥으로 교체했음. 가늘어지는 꼬리·끝의 별빛·유성 3개·아주 작은 붉은 보라 흔적을 확인했음. 창틀·도시·실내·보드 증거 사진은 원본 픽셀 보존. 좁은 크롭은 이전과 같아 오른쪽 궤적 일부가 잘림. 최신 칼라 수정 그웬 3종으로 정지 합성 검수했음. CSS 연출은 미연결·미검수.",
+      "cache_policy": "내장 도구의 기본 캐시 자동 저장 허용; 산출물은 recon 보관 폴더에 복사했음.",
+      "location": "outside repository, recon archive",
+      "compositing": {
+        "polygon_xy": [
+          [
+            1333,
+            115
+          ],
+          [
+            1650,
+            115
+          ],
+          [
+            1712,
+            159
+          ],
+          [
+            1762,
+            200
+          ],
+          [
+            1760,
+            220
+          ],
+          [
+            1690,
+            258
+          ],
+          [
+            1640,
+            275
+          ],
+          [
+            1460,
+            273
+          ],
+          [
+            1400,
+            267
+          ],
+          [
+            1360,
+            270
+          ],
+          [
+            1310,
+            250
+          ],
+          [
+            1285,
+            220
+          ],
+          [
+            1290,
+            175
+          ]
+        ],
+        "feather": "17px minimum filter then Gaussian radius 4; clipped to hard polygon",
+        "changed_pixels": 60688,
+        "changed_pixels_outside_sky": 0,
+        "script": "finalize_office_sky.py (outside repository, recon archive)"
+      },
+      "files": {
+        "recon_office_bg_v2.png": {
+          "size": [
+            2172,
+            724
+          ],
+          "bytes": 1876240,
+          "sha256": "eefb5b04299712075725280288688dc7a2552117199b86cd52064bb9d58dd285"
+        },
+        "recon_office_bg_1.png": {
+          "size": [
+            2172,
+            724
+          ],
+          "bytes": 1758780,
+          "sha256": "1950b62dbf945b97a5e02d8877893305485d0f1112c7cdfce0b8d344bb53f6fb"
+        },
+        "recon_office_sky_attempt1_native.png": {
+          "size": [
+            2172,
+            724
+          ],
+          "bytes": 1899649,
+          "sha256": "5c0213aa2f5a0f883d33d5d92a37bd742ec185a8f32f491da9f6d73c98db26ad"
+        },
+        "recon_office_sky_mask.png": {
+          "size": [
+            2172,
+            724
+          ],
+          "bytes": 7056,
+          "sha256": "34286e3582fc78b13f2bb97d8213c9886077b11f4d03294526cecb9bb770f00b"
+        },
+        "recon_office_preview_1800x600.webp": {
+          "size": [
+            1800,
+            600
+          ],
+          "bytes": 149188,
+          "sha256": "5fc6f51ed6331d2f901c3842fecd6b0f6dd9ee5edc6d569aefdbd44b95a12023"
+        },
+        "recon_office_preview_narrow_800x555.webp": {
+          "size": [
+            800,
+            555
+          ],
+          "bytes": 65330,
+          "sha256": "da13245f4bbaeefa7fe4ee5f4792893a0d27da3bb62da0a238fab37910c01599"
+        },
+        "with_gwen_office.png": {
+          "size": [
+            1800,
+            1980
+          ],
+          "bytes": 4050649,
+          "sha256": "01072390a31e52b5832c7732d80ab88ef25cc8e8b9a5a096dfee8ca2da92be3d"
+        },
+        "compare_office.png": {
+          "size": [
+            3600,
+            640
+          ],
+          "bytes": 1427537,
+          "sha256": "f3b5da8d59632518daaf9c2f02e3c377107e9cbd1d1ea3e07874dfaa49e4c3e5"
+        }
+      },
+      "gwen_sources": [
+        {
+          "file": "assets/ui_icons/gwen/recon_look_512.png",
+          "sha256": "cb967c4518e133cc90968f334140a11adce82fa041bc1e57fc09749f7b5d0a80",
+          "position_xy": [
+            1222,
+            200
+          ],
+          "size": [
+            400,
+            400
+          ]
+        },
+        {
+          "file": "assets/ui_icons/gwen/recon_pin_512.png",
+          "sha256": "873ef8fd4c6580566cd7d3b552feb4cad7ca5f03bb7920b7e94cbc792ab10547",
+          "position_xy": [
+            871,
+            200
+          ],
+          "size": [
+            400,
+            400
+          ]
+        },
+        {
+          "file": "assets/ui_icons/gwen/recon_nod_512.png",
+          "sha256": "590112604c34384d44a9164544a9d06dc37c8f3c383dce376397efbe94429bb5",
+          "position_xy": [
+            1222,
+            200
+          ],
+          "size": [
+            400,
+            400
+          ]
+        }
+      ],
+      "previews": [
+        {
+          "file": "recon_office_preview_1800x600.webp",
+          "size": [
+            1800,
+            600
+          ],
+          "webp_quality": 90,
+          "webp_method": 6
+        },
+        {
+          "file": "recon_office_preview_narrow_800x555.webp",
+          "size": [
+            800,
+            555
+          ],
+          "crop_xyxy": [
+            600,
+            0,
+            1644,
+            724
+          ],
+          "webp_quality": 90,
+          "webp_method": 6,
+          "note": "기존 크롭 유지; 오른쪽 궤적 일부 잘림"
+        },
+        {
+          "file": "with_gwen_office.png",
+          "size": [
+            1800,
+            1980
+          ],
+          "layout": "latest recon_look / recon_pin / recon_nod, one row each"
         }
       ]
     }
