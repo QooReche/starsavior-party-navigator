@@ -4,7 +4,7 @@
   "base_commit": "6ef9861f9b297a7f32dd387b7953acc9cf002183",
   "meaning": "정식 그림은 사이트 채택본을 뜻함. 게임사의 공식 원화가 아닌 생성 팬 그림이며 원 캐릭터·디자인의 권리는 원 권리자에게 있음.",
   "originals": "PNG originals and comparison sheet are stored outside the repository.",
-  "generation_calls": 7,
+  "generation_calls": 8,
   "retries": 1,
   "reference_policy": "Repository-relative paths only. Historical forced art supplies composition or past costume; approved Gwen art defines identity and style.",
   "inspected_references": [
@@ -39,9 +39,56 @@
           "references": [
             "lavistar_ruin_bg_v1.png (5e05a3f source; edit target; outside repository)"
           ],
-          "selected": true,
+          "selected": false,
           "date": "2026-11-23",
           "base_commit": "5e05a3f"
+        },
+        {
+          "date": "2026-11-23",
+          "base_commit": "afa56b7",
+          "generation_calls": 1,
+          "retries": 0,
+          "prompt": "Use case: style-transfer. Create ONE finished panoramic fantasy game background at native 3:1 resolution, at least 1800x600, ideally 2160x720. Input 1 (office) is the PRIMARY STYLE and GOLD RING reference: match its clean visible dark outlines, flat shapes and only 2-3 cel shading tones. Inputs 2 and 3 are Gwen SD STYLE references: match the crisp outlines, navy/teal/gold palette, restrained shading, no painterly detail. Input 4 is COMPOSITION/CONTENT reference only: redraw that ruined room and city in the office/SD style. Same set as the office. Left: ruined room, EMPTY simple wooden chair near x29%, small writing desk near x20%, fallen teddy bear x21%, rubble and broken floorboards. Middle: misty simplified European city, equestrian statue fountain plaza near x57%. Right foreground third relatively empty for a separately composited back-facing Gwen, NO people in this image. Preserve these landmarks within horizontal x17%-65% crop. Sky: NO planet. One enormous circular GOLD SHIELD RING in perspective as a broad flattened ellipse, same simple solid golden band and angular breaks as office window ring, NO ornate engraving. Place entire ring between x22%-61%, y15%-44%, centered upper left-middle; this lower sky placement is essential for narrow-screen cropping. It is actively SHATTERING: obvious major rupture at x34% y22%, detached angular golden chunks falling, red-violet void visible through jagged cracks, sky cracking like glass, falling stars. Apocalyptic but all ages. Sky fissures and stars are clean graphic line shapes; no photographic nebula, no bloom or complex particles. Keep the city and room calm simple flat navy/teal shapes, gold accents. Visible clean dark contour lines around objects, 2-3 hard-edged tones. NO painterly strokes, texture, grain, gloss, realistic tiny details, gradients or ornate filigree. No text, lettering, logos, watermark. Output the native image, do not upscale.",
+          "references": [
+            "recon/recon_office_bg_1.png (outside repository; primary style and ring)",
+            "assets/ui_icons/gwen/investigate_512.png",
+            "assets/ui_icons/gwen/files_512.png",
+            "lavistar_ruin_bg_v2.png (outside repository; previous composition)"
+          ],
+          "transparent_background": false,
+          "selected": true,
+          "native_size": [
+            2172,
+            724
+          ],
+          "upscaled": false,
+          "ring_bounds_percent": {
+            "x": [
+              17.4,
+              61.6
+            ],
+            "y": [
+              14,
+              37
+            ],
+            "fragments_y_max": 47
+          },
+          "narrow": {
+            "crop_x_percent": [
+              17,
+              65
+            ],
+            "size": [
+              800,
+              555
+            ],
+            "css_anchor_y_percent": 12
+          },
+          "bytes": {
+            "scene": 107808,
+            "scene_narrow": 54332,
+            "all_forced": 198808
+          }
         }
       ]
     },
@@ -115,6 +162,13 @@
       "generation_calls": 1,
       "retries": 0,
       "reason": "PM 검수: 행성 제거, 깨지는 방패 고리와 멸망하는 하늘"
+    },
+    {
+      "date": "2026-11-23",
+      "base_commit": "afa56b7",
+      "generation_calls": 1,
+      "retries": 0,
+      "reason": "재조사 사무실·그웬 SD와 같은 셀 화풍, 좁은 화면 고리 보존"
     }
   ]
 }
