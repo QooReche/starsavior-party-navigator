@@ -4,7 +4,7 @@
   "base_commit": "6ef9861f9b297a7f32dd387b7953acc9cf002183",
   "meaning": "정식 그림은 사이트 채택본을 뜻함. 게임사의 공식 원화가 아닌 생성 팬 그림이며 원 캐릭터·디자인의 권리는 원 권리자에게 있음.",
   "originals": "PNG originals and comparison sheet are stored outside the repository.",
-  "generation_calls": 8,
+  "generation_calls": 9,
   "retries": 1,
   "reference_policy": "Repository-relative paths only. Historical forced art supplies composition or past costume; approved Gwen art defines identity and style.",
   "inspected_references": [
@@ -20,7 +20,11 @@
     "tools/gwen_art/masters2/confident.webp (inspection only)",
     "assets/savior/gwen_art.webp",
     "assets/forced/gwen_idcard.webp (506b228^; past appearance, direct generation reference)",
-    "lavistar_ruin_bg_v1.png (5e05a3f source; direct sky-edit reference; outside repository)"
+    "lavistar_ruin_bg_v1.png (5e05a3f source; direct sky-edit reference; outside repository)",
+    "gwen_back_illust_1.png (outside repository; primary full-proportion Gwen style)",
+    "assets/forced/scene.webp (5e05a3f; composition and atmosphere)",
+    "lavistar_ruin_bg_v3.png (12d9262 source; outside repository; composition and ring placement)",
+    "recon/recon_office_bg_1.png (outside repository; ring silhouette only)"
   ],
   "images": [
     {
@@ -56,7 +60,7 @@
             "lavistar_ruin_bg_v2.png (outside repository; previous composition)"
           ],
           "transparent_background": false,
-          "selected": true,
+          "selected": false,
           "native_size": [
             2172,
             724
@@ -89,6 +93,64 @@
             "scene_narrow": 54332,
             "all_forced": 198808
           }
+        },
+        {
+          "date": "2026-11-23",
+          "base_commit": "12d9262",
+          "prompt": "Use case: style-transfer / stylized-concept. Create ONE replacement ultra-wide 3:1 game background; request 2172x724 PNG, preserve native generated pixels, no upscaling. No characters or text.\nReferences in priority order:\n1. gwen_back_illust_1.png: PRIMARY art-style reference ONLY. Match this full-proportion anime character's delicate clean linework, 3-4 value steps, selective smooth shading, softly graded colors, dimensional highlights. DO NOT draw Gwen; she will be composited later.\n2. previous_5e05a3f/scene.webp: scene/content and spatial atmosphere reference, but reduce its painterly realistic detail; DO NOT copy the planet or orbital trajectories.\n3. lavistar_ruin_bg_v3.png (12d9262): scene arrangement, cracked horizontal ring, red-purple void, shattered sky reference; do NOT copy its flat cartoon look, thick black outlines, large furniture or flat clipart ribbon.\n4. recon_office_bg_1.png: ONLY the horizontal elliptical broken golden ring silhouette/motif, NOT its SD/cartoon style.\nTarget style is BETWEEN the two background extremes: a refined cel-anime background naturally belonging behind the full-proportioned Gwen reference. Medium detail; clean fine colored contours, 3-4 shade values on walls/furniture, smooth indigo/cyan/violet sky gradients, delicate atmospheric depth, luminous bloom around a thick golden metallic/energy ring. No photoreal brushstrokes, no flat vector/clipart style.\n\nComposition: camera looks from a shattered upper-floor room over a European fantasy city with lit windows and an equestrian statue/fountain plaza. Small abandoned empty cross-back wooden chair, small desk/drawer cabinet, teddy bear and associated rubble must sit several steps BACK in the middle depth, not near camera. Chair fully inside horizontal x=24-32% (all legs within 20-35%), vertical y=42-66%, total height about 24% of canvas, NEVER above 28%. Desk left beside chair, proportional and small; teddy tiny nearby. Room furniture is secondary and visibly distant compared with the large foreground character to be composited. Raise the room's distant broken floor ledge appropriately and show a broad depth of floor between furniture and camera. Foreground contains ONLY floor rubble and broken wall edges. Keep right third's foreground, especially x=61-90%, free of furniture and tall objects for Gwen. Preserve skyline, distant rooftops, city plaza and statue at middle-right.\nThe gold protective ring floats horizontally above the city; its outer extent x=17-62%, y=14-37%. It is a dimensional thick elliptical metallic/energy ring, with bright emissive inner edges, shaded underside/beveled rim, restrained radiant bloom. Break it around x=33%, y=22% with cracks, detached golden shards falling, an ominous red-purple void exposed in broken sky, glasslike sky fissures and falling stars. No planet. No diagonal orbital loops.\nCritical mobile crop: only x=17-65% survives. Keep entire chair horizontally inside x=20-35%, ring silhouette inside x=17-62%. Keep sky/ring placement as specified. Furniture must be MUCH smaller and deeper than reference 3. Build believable perspective, not giant near-camera furniture. Full illustration only, no border, lettering, watermark or UI.\n",
+          "references": [
+            "gwen_back_illust_1.png (outside repository; primary full-proportion Gwen style)",
+            "assets/forced/scene.webp (5e05a3f; composition and atmosphere)",
+            "lavistar_ruin_bg_v3.png (12d9262 source; outside repository; composition and ring placement)",
+            "recon/recon_office_bg_1.png (outside repository; ring silhouette only)"
+          ],
+          "transparent_background": false,
+          "selected": true,
+          "native_size": [
+            2172,
+            724
+          ],
+          "upscaled": false,
+          "ring_bounds_percent_approx": {
+            "x": [
+              18.2,
+              59.2
+            ],
+            "y": [
+              13.3,
+              33.7
+            ]
+          },
+          "chair_bounds_percent_approx": {
+            "x": [
+              27.3,
+              31.1
+            ],
+            "y": [
+              54.7,
+              74.3
+            ]
+          },
+          "narrow": {
+            "crop_x_percent": [
+              17,
+              65
+            ],
+            "size": [
+              800,
+              555
+            ],
+            "css_anchor_y_percent": 12,
+            "css_lane_height": "max(190px,55vw)"
+          },
+          "gwen_scale": 0.92,
+          "gwen_bottom_below_lane_px": 6,
+          "bytes": {
+            "scene": 98902,
+            "scene_narrow": 49982,
+            "all_forced": 185552
+          },
+          "source_sha256": "af962b8a43742cf73b1754bb88807257de88e57d861db37e0cf5173c594de011"
         }
       ]
     },
@@ -169,6 +231,13 @@
       "generation_calls": 1,
       "retries": 0,
       "reason": "재조사 사무실·그웬 SD와 같은 셀 화풍, 좁은 화면 고리 보존"
+    },
+    {
+      "date": "2026-11-23",
+      "base_commit": "12d9262",
+      "generation_calls": 1,
+      "retries": 0,
+      "reason": "등신대 뒷모습 그웬의 선·명암으로 화풍 수정, 의자·책상을 중경으로 축소하고 좁은 띠에서 의자 전체 보존"
     }
   ]
 }

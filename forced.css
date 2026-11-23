@@ -9,7 +9,7 @@
 body.is-forced{--r-panel:0;--r-box:0;--r-ctl:0;--brass:var(--fx-red);--line:#4a2a48}
 
 /* 1. 그웬 길 → 폐허 장면. SD 그웬은 숨기고(걷기 정지는 gwen_lane.js), 뒷모습 그웬이 그 한 명(그웬은 화면에 한 곳 — docs/gwen_stage.md). 환경만 움직임 */
-.gwen-lane[data-alert]{transition:height .35s ease;--fx-h:240px;--fx-ar:3;--fx-x:38%;--fx-gx:66%;--fx-gs:.84}
+.gwen-lane[data-alert]{transition:height .35s ease;--fx-h:240px;--fx-ar:3;--fx-x:38%;--fx-gx:66%;--fx-gs:.92}
 .is-forced :is(#reco-board-lane,#direct-board-lane)[data-alert=scan]{height:var(--fx-h);background:var(--fx-ink)}
 .gwen-lane[data-alert=scan] :is(.gwen-lane-actor,.gwen-stage-banner){clip-path:inset(50%)}
 .fx-scene{position:absolute;z-index:3;left:var(--fx-x);top:58%;width:max(100%,calc(var(--fx-h)*var(--fx-ar)));aspect-ratio:var(--fx-ar);translate:calc(var(--fx-x)*-1) -58%;overflow:hidden;pointer-events:none;background:var(--fx-ink)}
@@ -44,8 +44,8 @@ body.is-forced{--r-panel:0;--r-box:0;--r-ctl:0;--brass:var(--fx-red);--line:#4a2
 .gwen-lane[data-alert=found] .fx-scene{animation:fx-purify 1.3s ease-out forwards}
 .gwen-lane[data-alert=found]::after{content:"";position:absolute;z-index:4;inset:0 auto 0 -40%;width:40%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,236,170,.5) 45%,rgba(255,255,255,.75) 50%,rgba(255,236,170,.5) 55%,transparent);animation:fx-sweep 1.1s ease-out forwards}
 @media(min-width:1200px){.gwen-lane[data-alert]{--fx-h:300px}}
-@media(max-width:760px){.gwen-lane[data-alert]{--fx-h:190px;--fx-ar:1.44;--fx-x:50%;--fx-gx:82%;--fx-gbottom:calc(88% - var(--fx-h)*.88 - 6px)}
- /* 낮은 띠에서도 고리·파손부가 보이게 하늘 쪽으로 맞춤. 그웬은 띠 아래 6px 위치를 유지함 */
+@media(max-width:760px){.gwen-lane[data-alert]{--fx-h:max(190px,55vw);--fx-ar:1.44;--fx-x:50%;--fx-gx:82%;--fx-gbottom:calc(88% - var(--fx-h)*.88 - 6px)}
+ /* 하늘 기준점 12%를 유지하고 띠 높이를 늘려 안쪽 의자 다리까지 보존함. 그웬은 띠 아래 6px 위치를 유지함 */
  .fx-scene{top:12%;translate:calc(var(--fx-x)*-1) -12%}
  [data-forced-art] .fx-scene .fx-bg{background-image:url(assets/forced/scene_narrow.webp)}
  [data-forced-art] .fx-scene .fx-glow{background:radial-gradient(ellipse 25% 15% at 32.3% 20%,rgba(255,214,140,.34),transparent 70%),radial-gradient(ellipse 41.7% 3% at 61% 34%,rgba(111,240,220,.4),transparent 75%)}}
