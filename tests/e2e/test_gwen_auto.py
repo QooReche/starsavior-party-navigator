@@ -76,7 +76,9 @@ def result_audit(page):
     assert page.locator('#reco-gwen-stage .gwen-lane-actor').count() == 0, 'duplicate result lane actor'
     page.evaluate("$('reco-result-lane').replaceWith($('reco-result-lane').cloneNode(false));GwenStage.mount(document,{mode:'reco'})")
     assert page.locator('#reco-gwen-stage .gwen-lane-actor').count() == 0, 'result rebind restored lane actor'
-    assert page.locator('#reco-lane-banner').is_visible(), 'completion banner missing'
+    # 결과가 나오면 위쪽 길을 접음(완료 배너 없음, 11/23)
+    page.wait_for_function("document.querySelector('#reco-board-lane').getBoundingClientRect().height<1")
+    assert page.locator('#reco-lane-banner').is_hidden(), 'completion banner must be gone'
     portrait.scroll_into_view_if_needed()
     page.wait_for_function('document.querySelector("#out .gwen-reaction img").dataset.gwenLoaded==="true"')
     assert abs(portrait.locator('img').bounding_box()['height']-(240 if page.viewport_size['width']>=1200 else 112))<1

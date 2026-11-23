@@ -3,12 +3,13 @@ const G=require('../gwen_lane'),P=require('../gwen_policy');
 const base={mode:'direct',phase:'idle',count:4};
 for(const phase of ['idle','work','result','error']){
   assert.equal(G.bannerState({...base,phase},true),'','actor must hide banner');
-  assert.equal(G.bannerState({...base,phase},false),['idle','work'].includes(phase)?'':phase);
+  // 자동 추천·직접 편성은 결과 배너 없음(11/23 — 결과가 나오면 위쪽 길을 접음). 오류 «수사 난항…»은 남김
+  assert.equal(G.bannerState({...base,phase},false),phase==='error'?'error':'');
   assert.equal(G.bannerState({...base,mode:'home',phase},false),'');
+  assert.equal(G.bannerState({...base,mode:'cdirect',phase},false),['idle','work'].includes(phase)?'':phase,'코스모 직접 편성은 종전 배너');
 }
-// reco 무대도 배너 표시
 for(const phase of ['idle','work','result','error']){
-  assert.equal(P.bannerState({...base,mode:'reco',phase},false),['idle','work'].includes(phase)?'':phase);
+  assert.equal(P.bannerState({...base,mode:'reco',phase},false),phase==='error'?'error':'');
 }
 for(const count of [0,1,2,3,4])assert.equal(G.bannerState({...base,count},false),'');
 assert.equal(G.bannerState({...base,phase:'result',stale:true},false),'');

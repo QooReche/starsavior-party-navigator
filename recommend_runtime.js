@@ -51,7 +51,8 @@ function recoSnapshot(){
   const meta=directRecoMeta(c,st,n);
   return {key:recoIdentity(),c,st,info,profile,qi,scoring,defPen,own,breakFor,party:x.party,sig,
     partyAt:(t,arr)=>simParty(t,engineKey,arr),partyRule:t=>simParty(t,engineKey,arrangeOf(t.combo,true)),
-    sigRule:t=>simSignature({...x,party:t2=>simParty(t2,engineKey,arrangeOf(t2.combo,true))},st,t,breakFor(t)?.name||null,n,refined),screenKey,n,seed,options:copy(simOpt(c.key)),plan,result,meta,
+    sigRule:t=>simSignature({...x,party:t2=>simParty(t2,engineKey,arrangeOf(t2.combo,true))},st,t,breakFor(t)?.name||null,n,refined),
+    sigAt:(t,arr)=>simSignature({...x,party:t2=>simParty(t2,engineKey,arr)},st,t,breakFor(t)?.name||null,n,refined),screenKey,n,seed,options:copy(simOpt(c.key)),plan,result,meta,
     more(p,n){more[p]=n;SIMQ.more[moreKey(st,p)]=n;},excluded:[...EXCL],priority:copy(D.journeyPriority),growth:MI.growth,
     first(){const t=boxes[1]?.rows[0];return t&&result(t)?{team:t,result:result(t),sig:sig(t)}:null;}};
 }
@@ -102,6 +103,42 @@ function recoScreenCalculate(snapshot,task,p,box){
     recoScreenSequence(sc,SCR_ROUNDS[1].top,by,leg,()=>{scrClose(sc);SIMQ.screening=false;resolve();});
   });
 }
+// ── 현장 재조사(11/23): 아래 자리·리더 비교를 화면에 보여 주는 상태 하나. recoArrange 가 단계·끝난 조합 수를 알리고(recheckNote),
+// 결과 판 맨 위 재조사 칸·그웬 길(사무실 장면)이 읽는다(party_template.html recheckPaint·recheckLane, recheck_ui.js, gwen_lane.js recheckSync).
+// state: work(비교 중) → done(바뀜 changed / 그대로 same) · cancel(«지금 자리로 확정») · error. 비교할 팀이 없으면(보이는 팀이 모두 클리어 100%) 켜지지 않음.
+// hold = 화면 «자동 추천» 길(recoArrangeKick)에서 끝날 때까지 카드·수치를 규칙 자리로 둠(arrangeOf) — 끝나는 순간 한 번에 미끄러져 바뀜(slide).
+const RECHECK={key:'',p:0,state:'',stage:'',got:0,all:0,teams:0,rows:[],hold:false,forced:false,deep:false,endAt:0,outcome:'',slide:false,view:''};
+function recheckNote(key,p,info,{hold=false,forced=false}={}){
+  if(info.stage==='enter'){
+    recheckTimerClear();
+    if(RECHECK.state!=='work'||RECHECK.key!==key||RECHECK.p!==p)Object.assign(RECHECK,{key,p,state:'work',got:0,all:0,hold,forced,deep:false,endAt:0,outcome:'',slide:false,view:''});
+    Object.assign(RECHECK,{stage:'enter',teams:info.teams||RECHECK.teams,rows:info.rows||RECHECK.rows});
+  }else{if(RECHECK.state!=='work'||RECHECK.key!==key)return;
+    Object.assign(RECHECK,{stage:info.stage,got:info.got||0,all:info.all||0});if(info.stage==='final200'||info.deep)RECHECK.deep=true;}
+  if(typeof recheckPaint==='function')recheckPaint();
+}
+// 끝: 화면을 다시 그리는 것은 부른 쪽(run) — 여기서 그리면 카드 미끄러짐이 두 번 그려져 끊김. state '' = 조용히 치움(조건 변경·건너뛰기)
+const recheckTimerClear=()=>{if(typeof recheckLane==='function'&&recheckLane.timer){clearTimeout(recheckLane.timer);recheckLane.timer=0;}};   // 끝 장면 타이머(party_template.html)
+function recheckEnd(key,state,outcome=''){
+  if(RECHECK.state!=='work'||RECHECK.key!==key)return;
+  recheckTimerClear();
+  if(!state){RECHECK.state='';RECHECK.hold=false;return;}
+  Object.assign(RECHECK,{state,outcome,endAt:Date.now(),slide:state==='done'&&outcome==='changed'&&RECHECK.hold,hold:false});
+}
+const recheckHold=ident=>RECHECK.hold&&RECHECK.state==='work'&&RECHECK.key===ident;
+function recheckOutcome(key,box){return box.rows.some(t=>arrGet(key,UiShared.teamKey(t.keys))?.changed)?'changed':'same';}
+// 비교 대상(재조사에 들어갈 팀 수): recoArrange 의 건너뛰기 조건과 같음(이미 비교했거나 규칙 자리 본선이 목표·클리어 100%)
+function recoArrangeNeed(snapshot,box){
+  return box.rows.filter(t=>{const now=snapshot.result(t);return !arrGet(snapshot.key,UiShared.teamKey(t.keys))&&!(now&&goalVal(now)>=1&&now.clear>=1);}).map(t=>UiShared.teamKey(t.keys));
+}
+// «지금 자리로 확정»: 비교를 멈추고 규칙 자리로 끝냄(recoArrangeKick 의 catch 가 남은 팀을 규칙 자리로 기록)
+function recheckConfirm(){
+  const task=RECO.task;if(!task||task.done||task.owner!=='reco-arrange')return false;
+  task.confirm=true;task.cancelled=true;task.abort?.();task.stop?.();simPoolDrop(task.owner);return true;
+}
+function recoMeta(snapshot,key,r){
+  const meta=JSON.parse(JSON.stringify(snapshot.meta));meta.parts[7].engine=r.ver;meta.condition=JSON.stringify(meta.parts);meta.recommendationKey=snapshot.key;(SIMQ.meta??={})[key]=meta;
+}
 // ── 자리·리더 비교(11/23): 본선이 끝난 «보이는 팀»마다 전열 6조합 × 리더 4명 = 24가지를 짧게 거르고(RECO_ARR_SCREEN 판)
 // 상위 RECO_ARR_KEEP 개 + 규칙 자리를 RECO_ARR_FINAL 판(같은 시드)으로 다시 비교한다. 규칙 자리보다 여유폭 이상 좋을 때만 바꾼다
 // (PartyPlacement.race + recoDecide — 흐름·판정은 party_placement.js 한 곳). 결과는 RECO_ARR(party_template.html)에 저장 → arrangeOf·simParty·카드·직접 편집이 같은 자리를 쓴다.
@@ -117,26 +154,31 @@ async function recoArrange(snapshot,task,box,notify=()=>{}){
     const keys=t.keys.slice(),tk=UiShared.teamKey(keys);if(arrGet(snapshot.key,tk))continue;
     const rule=arrangeOf(t.combo,true),brk=snapshot.breakFor(t),now=snapshot.result(t);
     // 규칙 자리 본선이 이미 목표·클리어 100% 면 어떤 자리도 여유폭을 넘을 수 없다(recoBetter) → 비교 없이 유지
-    if(now&&goalVal(now)>=1&&now.clear>=1){arrSet(snapshot.key,tk,{order:rule.order,lead:rule.lead,changed:false});continue;}
+    if(now&&goalVal(now)>=1&&now.clear>=1){arrSet(snapshot.key,tk,{order:rule.order,lead:rule.lead,changed:false,skip:true});continue;}
     const job=(p,extra={})=>({key:P.executionKey(keys,p),p,...extra,
       party:snapshot.partyAt(t,{order:DirectParty.toScreen(p.order),lead:p.leaderKey}),options:{break_skill:brk}});
     groups.push({tk,rule,jobs:P.all(keys).map(p=>job(p)),incumbent:job({order:DirectParty.toEngine(rule.order),leaderKey:rule.lead},{rule:true})});
   }
   if(!groups.length)return;
   if(task.cancelled||snapshot.key!==recoIdentity())throw Error('취소');
+  notify({stage:'enter',teams:groups.length,rows:groups.map(g=>g.tk)});
   // 팀들을 단계마다 한 번에 돌린다(PartyPlacement.raceMany): 예선 24×팀 수, 결선 (상위 3 + 규칙 자리)×팀 수
   const label=`자리·리더 비교 · ${groups.length}팀`;
   // 비교 판은 판별 난수(rng_streams)로 돌려 이어 붙이기가 «한 번에 돌린 것»과 같게 한다. 1단계 결선은 raw 를 받아 2단계가 이어 쓴다.
   // n 은 판별 값 길이로 다시 적는다(recoEvaluate 는 이번에 돌린 판 수를 적음 — 이어 붙인 결과는 합친 판 수가 맞음)
-  const run=(jobs,n,seed,prior)=>{const res={};return recoEvaluate(snapshot,task,jobs.map(j=>({...j,runs:n,seed:snapshot.seed+seed,
+  // 현장 재조사 표시(RECHECK): 단계 = 예선(screen, 24가지 훑기) → 결선 1단계(check100) → 2단계(final200, 이어 돌림) → 판정(fix). 끝난 조합 수를 같이 알림
+  const run=(jobs,n,seed,prior)=>{const res={},stage=n===RECO_ARR_SCREEN?'screen':prior?'final200':'check100';let got=0;
+    notify({stage,got,all:jobs.length,teams:groups.length});
+    return recoEvaluate(snapshot,task,jobs.map(j=>({...j,runs:n,seed:snapshot.seed+seed,
       options:{...j.options,rng_streams:true,...(prior?{run_offset:prior[j.key].progs.length,merge_raw:prior[j.key].raw}:n===RECO_ARR_CHECK?{raw_runs:true}:{})}})),n,
-    {label,onTeam(j,r){res[j.key]={...r,n:r.progs?.length||r.n};notify();}}).then(()=>res);};
+    {label,onTeam(j,r){res[j.key]={...r,n:r.progs?.length||r.n};notify({stage,got:++got,all:jobs.length,teams:groups.length});}}).then(()=>res);};
   const out=await P.raceMany({groups,run,compare:P.recoCompare,valid:r=>Number.isFinite(r?.clear),
     runs:RECO_ARR_FINAL,screenRuns:RECO_ARR_SCREEN,keep:RECO_ARR_KEEP,seed:RECO_ARR_SEED,decide:P.recoDecide,checkRuns:RECO_ARR_CHECK,stop:P.recoStop});
   if(task.cancelled||snapshot.key!==recoIdentity())throw Error('취소');
   groups.forEach((g,i)=>{const {pick,results}=out[i],rule=g.rule;
     arrSet(snapshot.key,g.tk,pick.rule?{order:rule.order,lead:rule.lead,changed:false}:
       {order:DirectParty.toScreen(pick.p.order),lead:pick.p.leaderKey,changed:true,rule:{order:rule.order,lead:rule.lead},why:{rule:results[g.incumbent.key],pick:results[pick.key]}});});
+  notify({stage:'fix',got:0,all:0,teams:groups.length,deep:out.some(o=>!o.stopped)});
 }
 // 바꾼 자리를 표준 본선(SIMQ.n판·표준 시드)으로 다시 잰 값이 규칙 자리의 표준 본선보다 낮으면(목표 지표, 같으면 클리어율) 규칙 자리로 되돌린다.
 // 비교 판과 표준 본선은 시드가 달라 운으로 뒤집힐 수 있다 — 화면에 «바꿨더니 더 낮은» 수치를 내지 않기 위함. 되돌린 수 반환.
@@ -153,29 +195,49 @@ function recoArrangeRevert(ident,rows,result,ruleResult){
 function recoArrangeKick(p){
   const box=LASTQ[p];if(!box||typeof PartyPlacement==='undefined')return false;
   const snapshot=recoSnapshot(),task={key:snapshot.key,owner:'reco-arrange',request:0,cancelled:false,done:false,message:'자리·리더 비교 준비 중'};
+  const need=recoArrangeNeed(snapshot,box),opt={hold:true,forced:!!SIMQ.scr[snapshot.screenKey(p)]?.full};
+  // 결과 판을 그대로 둔 채 재조사 칸·사무실 장면으로 들어감(진행 칸으로 바꾸지 않음 — simWaiting)
+  if(need.length)recheckNote(snapshot.key,p,{stage:'enter',teams:need.length,rows:need},opt);
   RECO.task=task;SIMQ.busy=p;SIMQ.msg=task.message;run(true);
   task.promise=(async()=>{try{
     task.engine=(await directManifest(task)).ver;
     if(task.cancelled||snapshot.key!==recoIdentity())throw Error('취소');
-    await recoArrange(snapshot,task,box,()=>{const el=document.querySelector(`.party[data-party="${p}"] [data-k="simstate"]`);if(el)el.textContent=task.message;});
+    await recoArrange(snapshot,task,box,info=>{recheckNote(snapshot.key,p,info,opt);const el=document.querySelector(`.party[data-party="${p}"] [data-k="simstate"]`);if(el)el.textContent=task.message;});
+    await recoArrangeMeasure(snapshot,task,box);
+    recheckEnd(snapshot.key,'done',recheckOutcome(snapshot.key,box));
   }catch(e){
-    if(!task.cancelled&&snapshot.key===recoIdentity())for(const t of box.rows){const k=UiShared.teamKey(t.keys);
-      if(!arrGet(snapshot.key,k)){const r=arrangeOf(t.combo,true);arrSet(snapshot.key,k,{order:r.order,lead:r.lead,changed:false,error:e.message});}}
+    // 오류·«지금 자리로 확정»이면 아직 안 정한 팀과 바꾼 팀(표준 본선을 이미 쟀어도 되돌림 판정 전)을 모두 규칙 자리로 기록 —
+    // 칸의 «규칙 자리 유지»와 카드가 맞고, 무한 재시도도 막음
+    if((task.confirm||!task.cancelled)&&snapshot.key===recoIdentity())for(const t of box.rows){const k=UiShared.teamKey(t.keys),v=arrGet(snapshot.key,k);
+      if(!v||v.changed){const r=arrangeOf(t.combo,true);arrSet(snapshot.key,k,{order:r.order,lead:r.lead,changed:false,...(task.confirm?{confirm:true}:{error:e.message})});}}
+    recheckEnd(snapshot.key,task.confirm?'cancel':task.cancelled?'':'error');
   }finally{task.done=true;if(RECO.task===task){SIMQ.busy=null;SIMQ.msg='';run();}}})();
   return true;
 }
+// 바꾼 팀은 표준 본선(SIMQ.n판·표준 시드)으로 다시 잰 뒤 되돌림(recoArrangeRevert)까지 같은 작업 안에서 끝냄 — 재조사 칸이 판정까지 «진행 중»이고,
+// 화면 카드는 그동안 규칙 자리(hold)라 «바꿨다가 되돌림»이 화면에 움직임으로 나오지 않음(카드 이동은 되돌림 판정 뒤에만)
+async function recoArrangeMeasure(snapshot,task,box){
+  const now=t=>{const v=arrGet(snapshot.key,UiShared.teamKey(t.keys));return v?.changed?v:null;};
+  const jobs=box.rows.filter(t=>now(t)&&!SIMQ.res[snapshot.sigAt(t,now(t))]).map(t=>({key:snapshot.sigAt(t,now(t)),party:snapshot.partyAt(t,now(t)),options:{break_skill:snapshot.breakFor(t)}}));
+  if(jobs.length)await recoEvaluate(snapshot,task,jobs,snapshot.n,{label:'재조사 판정',onTeam(j,r){SIMQ.res[j.key]=r;recoMeta(snapshot,j.key,r);}});
+  if(task.cancelled||snapshot.key!==recoIdentity())throw Error('취소');
+  recoArrangeRevert(snapshot.key,box.rows,t=>now(t)&&SIMQ.res[snapshot.sigAt(t,now(t))],t=>SIMQ.res[snapshot.sigRule(t)]);
+}
 async function recoCalculate(snapshot,task){
   return RecommendPipeline.recommendation({parties:snapshot.c.parties||1,screened:(snapshot.c.parties||1)===1,
-    arrange:(p,box)=>recoArrange(snapshot,task,box),
+    arrange:(p,box)=>{if(typeof PartyPlacement==='undefined')return;const need=recoArrangeNeed(snapshot,box),opt={forced:!!SIMQ.scr[snapshot.screenKey(p)]?.full};
+      if(need.length)recheckNote(snapshot.key,p,{stage:'enter',teams:need.length,rows:need},opt);
+      return recoArrange(snapshot,task,box,info=>recheckNote(snapshot.key,p,info,opt));},
     live:()=>!task.cancelled&&snapshot.key===recoIdentity(),plan:snapshot.plan,screenState:p=>SIMQ.scr[snapshot.screenKey(p)],
     screen:(p,box)=>recoScreenCalculate(snapshot,task,p,box),more:snapshot.more,result:snapshot.result,goal:goalVal,first:snapshot.first,
     async final(p,box){
       SIMQ.busy=p;SIMQ.screening=false;task.message='본선 준비 중';
       const jobs=box.rows.filter(t=>!snapshot.result(t)).map(t=>({key:snapshot.sig(t),party:snapshot.party(t),options:{break_skill:snapshot.breakFor(t)}}));
       await recoEvaluate(snapshot,task,jobs,snapshot.n,{onTeam(j,r){
-        SIMQ.res[j.key]=r;const meta=JSON.parse(JSON.stringify(snapshot.meta));meta.parts[7].engine=r.ver;meta.condition=JSON.stringify(meta.parts);meta.recommendationKey=snapshot.key;(SIMQ.meta??={})[j.key]=meta;
+        SIMQ.res[j.key]=r;recoMeta(snapshot,j.key,r);
       }});
       recoArrangeRevert(snapshot.key,box.rows,snapshot.result,t=>SIMQ.res[snapshot.sigRule(t)]);
+      if(RECHECK.state==='work')recheckEnd(snapshot.key,'done',recheckOutcome(snapshot.key,box));   // 재조사가 켜져 있었으면(묶음 길) 판정 뒤 끝
     }});
 }
 async function recoEnsure(){
@@ -188,7 +250,8 @@ async function recoEnsure(){
     const manifest=await directManifest(task);task.engine=manifest.ver;
     if(task.cancelled||snapshot.key!==recoIdentity())throw Error('입력이 바뀜');
     return await recoCalculate(snapshot,task);
-  }finally{task.done=true;if(RECO.task===task){SIMQ.busy=null;SIMQ.screening=false;run(true);}}})();
+  }finally{recheckEnd(snapshot.key,task.cancelled?'':'error');   // 끝나지 않은 재조사만(끝난 것은 그대로)
+    task.done=true;if(RECO.task===task){SIMQ.busy=null;SIMQ.screening=false;run(true);}}})();
   return task.promise;
 }
 async function recoGrowthEnsure(){

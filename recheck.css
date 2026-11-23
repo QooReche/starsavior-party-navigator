@@ -1,0 +1,162 @@
+/* ── 현장 재조사: 자동 추천 끝의 자리·리더 비교 연출(recommend_runtime.js RECHECK · recheck_ui.js · gwen_lane.js recheckSync) ──
+   켜짐: 그웬 길 .gwen-lane[data-recheck=work|end|fold](+ data-rc-enter 들어올 때, data-rc-end=changed|same 끝 장면) · 결과 판 .rc-strip · 카드 .rowcards[data-rc=work] · .gc[data-rc-move].
+   그림은 assets/recon/ 에만 있고 재조사에 처음 들어갈 때 받음 → body[data-recheck-art]. 못 받으면 CSS 바탕 + 길의 그웬 배우가 그대로(그웬은 화면에 한 곳 — docs/gwen_stage.md).
+   움직임은 transform·opacity 연속 애니메이션만(steps 없음). 큰 층(사무실 배경)은 정지이고 들어올 때 opacity 한 번만. 계속 움직이는 것은 작은 층뿐:
+   보드 사진 4장(얼굴 크기)·창밖 고리의 빛 한 점·SD 그웬의 작은 흔들림·카드 줄의 세로 선(3px).
+   그림 좌표(그림 기준 %): 보드 빈 4칸 중심 (32.3,29.3)(36.85,29.3)(32.3,46.0)(36.85,46.0) · 창밖 고리 x 62.8~77.7 y 22.5~33.5 · 바닥 y 88%.
+   좁은 그림(≤520px)은 가로 27~87% 구간(tools/build_recon_art.py NARROW)이라 x 를 (x−27)/0.6 으로 환산함. */
+:root{--rc-teal:111,211,207}
+
+/* 1. 길 → 사무실 장면. 높이는 강제 탐색과 같은 규칙(넓은 300 · 보통 240 · 좁은 clamp(190px,55vw,240px)), 0.35초 전환. 결과가 나오면 접힘(direct.css [data-fold]) */
+#reco-board-lane,#direct-board-lane{transition:height .35s ease,padding .35s ease}
+:is(#reco-board-lane,#direct-board-lane)[data-recheck]:not([data-recheck=fold]){--rc-h:240px;height:var(--rc-h);padding-top:0;background:#0b1222}
+@media(min-width:1200px){:is(#reco-board-lane,#direct-board-lane)[data-recheck]:not([data-recheck=fold]){--rc-h:300px}}
+@media(max-width:760px){:is(#reco-board-lane,#direct-board-lane)[data-recheck]:not([data-recheck=fold]){--rc-h:clamp(190px,55vw,240px)}}
+/* 그림을 받았으면 장면 속 SD 그웬이 그 한 명 → 배우 숨김. 못 받았으면 배우가 장면 위에 서 있음 */
+.gwen-lane[data-recheck] .gwen-lane-actor{z-index:1}
+[data-recheck-art] .gwen-lane[data-recheck] :is(.gwen-lane-actor){clip-path:inset(50%)}
+/* 장면 상자 = 그림 비율 그대로(가로는 길 폭 이상, 세로 기준점 --rc-ay 를 길의 같은 높이에 맞춤) — 안의 사진·고리·그웬은 모두 그림 기준 % 라 폭이 바뀌어도 제자리 */
+.rc-scene{--rc-ar:3;--rc-ay:70%;--rc-px:30.8%;--rc-pw:3%;--rc-ph:11.6%;--rc-dx:151.7%;--rc-dy:144%;--rc-rx:62.8%;--rc-rw:14.9%;--rc-gx:86%;--rc-gy:88%;
+ position:absolute;z-index:0;left:50%;top:var(--rc-ay);width:max(100%,calc(var(--rc-h)*var(--rc-ar)));aspect-ratio:var(--rc-ar);translate:-50% calc(var(--rc-ay)*-1);overflow:hidden;pointer-events:none;
+ animation:rc-in .6s ease-out both}
+.gwen-lane[data-rc-enter=forced] .rc-scene{animation-duration:.9s}
+.rc-scene>*{position:absolute;display:block}
+/* 바탕: 그림이 없으면 어두운 방(벽·바닥)과 스탠드 빛만 */
+.rc-bg{inset:0;background:radial-gradient(ellipse 22% 42% at 17% 62%,rgba(255,186,100,.22),transparent 70%),linear-gradient(180deg,#172338 0,#101b2e 80%,#2a1f1a 80.5%,#17110e)}
+[data-recheck-art] .rc-bg{background:url(assets/recon/office.webp) center/100% 100% no-repeat}
+
+/* 2. 코르크 보드의 빈 4칸 = 작전판. 위 2칸 전열, 아래 2칸 후열, 리더 사진에 금색 표시. 대조 중엔 사진이 칸을 바꿔 가며 미끄러짐(시계 방향, 8초 한 바퀴), 끝나면 최종 자리에 꽂힘 */
+.rc-board{inset:0}
+.rc-photo{position:absolute;display:block;left:var(--rc-px);top:calc(29.3% - var(--rc-ph)/2);width:var(--rc-pw);height:var(--rc-ph);padding:2px 2px 6px;box-sizing:border-box;background:#f3ecdc;rotate:-2deg;box-shadow:0 2px 3px rgba(0,0,0,.5)}
+.rc-photo:nth-child(even){rotate:2.5deg}
+.rc-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 30%;background:#28324a}
+.rc-photo::before{content:"";position:absolute;z-index:1;left:50%;top:-3px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff1bf,#d4a23a 55%,#7a5310)}
+.rc-photo[data-lead]::after{content:"♛";position:absolute;right:-5px;bottom:-6px;font-size:11px;line-height:1;color:var(--gold);text-shadow:0 0 2px #3a2400,0 1px 2px #000}
+.rc-photo[data-slot="1"]{--rc-d:-2s;transform:translate(var(--rc-dx),0)}
+.rc-photo[data-slot="2"]{--rc-d:-6s;transform:translate(0,var(--rc-dy))}
+.rc-photo[data-slot="3"]{--rc-d:-4s;transform:translate(var(--rc-dx),var(--rc-dy))}
+.rc-board[data-phase=work] .rc-photo{animation:rc-cycle 8s ease-in-out var(--rc-d,0s) infinite,rc-pin .45s ease-out both}
+.rc-board[data-phase=end] .rc-photo{animation:rc-pin .5s cubic-bezier(.2,1.4,.4,1) both}
+
+/* 3. 창밖 고리 복구: 그림의 빛의 궤적 위에 가는 선 두 줄 — 진행도(--rc-p)만큼 밝아지고 이어짐. 빛 한 점이 고리를 돎. 바뀜으로 끝나면 한 번 부풀었다 가라앉음 */
+.rc-ring{--rc-p:0;left:var(--rc-rx);top:22.5%;width:var(--rc-rw);height:11%;opacity:calc(.2 + .8*var(--rc-p));transition:opacity .5s ease-out}
+.rc-ring>b,.rc-orbit{position:absolute;left:0;right:0;top:50%;aspect-ratio:1;translate:0 -50%;border-radius:50%}
+.rc-ring>b{border:1.5px solid rgba(255,238,196,.85);box-shadow:0 0 5px rgba(255,210,130,.5);transform:rotate(-8deg) scaleY(.22) scaleX(calc(.62 + .38*var(--rc-p)));transition:transform .6s ease-out}
+.rc-ring>b+b{border-color:rgba(var(--rc-teal),.7);box-shadow:0 0 4px rgba(var(--rc-teal),.45);transform:rotate(7deg) scaleY(.15) scaleX(calc(.5 + .36*var(--rc-p)))}
+.rc-orbit{transform:rotate(-8deg) scaleY(.22)}
+.rc-orbit>i{position:absolute;inset:0;animation:rc-spin 7s linear infinite}
+.rc-orbit>i::after{content:"";position:absolute;right:-6px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:radial-gradient(circle,#fff 0 18%,rgba(255,226,150,.85) 38%,transparent 70%)}
+.gwen-lane[data-rc-end=changed] .rc-ring{opacity:1;animation:rc-flash 1.1s ease-out}
+.gwen-lane[data-rc-end] .rc-orbit>i{animation-duration:14s}
+
+/* 4. SD 그웬(코트 벗은 3종: 훑기 look · 정밀 대조 pin · 끝 nod). 사무실 오른쪽 1/3 바닥에 서 있음 — 책상·의자와 같은 깊이, 키 = 길 높이의 약 65%(정사각 그림의 88%), 발끝(그림 94%)이 바닥 선 */
+.rc-gwen,.rc-say{display:none}
+[data-recheck-art] .rc-gwen{display:block;left:var(--rc-gx);top:var(--rc-gy);height:calc(var(--rc-h)*.74);aspect-ratio:1;translate:-50% -94%;transform-origin:50% 94%;
+ background:url(assets/recon/gwen_look.webp) center/contain no-repeat;filter:drop-shadow(0 3px 2px rgba(0,0,0,.5));animation:rc-bob 3.6s ease-in-out infinite}
+.rc-scene[data-pose=pin] .rc-gwen{background-image:url(assets/recon/gwen_pin.webp)}
+.rc-scene[data-pose=nod] .rc-gwen{background-image:url(assets/recon/gwen_nod.webp);animation:rc-nod .9s ease-out both}
+[data-recheck-art] .rc-say{display:block;z-index:2;left:var(--rc-gx);top:calc(var(--rc-gy) - var(--rc-h)*.74*.86);translate:-50% -100%;width:max-content;max-width:min(240px,62vw);padding:3px 8px;word-break:keep-all;
+ font-size:11px;line-height:15px;text-align:center;color:var(--fg);background:var(--ink);border:1px solid rgba(var(--rc-teal),.5);border-radius:6px;animation:rc-say 5s ease-out forwards}
+.gwen-lane[data-recheck=end] .rc-say{animation:rc-pop .4s ease-out both}
+.gwen-lane[data-recheck=fold] :is(.rc-gwen,.rc-say){display:none}
+
+/* 5. 전환: 들어올 때 청록 빛 띠 1회(«그 세계선으로 재진입»), 바뀜으로 끝나면 금빛 띠 1회(강제 탐색 «정화»와 같은 손짓). 그대로면 조용히 */
+.gwen-lane[data-recheck=work][data-rc-enter]::after,.gwen-lane[data-recheck=end][data-rc-end=changed]::after{content:"";position:absolute;z-index:5;inset:0 auto 0 -40%;width:40%;pointer-events:none;
+ background:linear-gradient(100deg,transparent,rgba(var(--rc-teal),.35) 45%,rgba(220,255,252,.6) 50%,rgba(var(--rc-teal),.35) 55%,transparent);animation:rc-sweep .9s ease-out forwards}
+.gwen-lane[data-recheck=end][data-rc-end=changed]::after{background:linear-gradient(100deg,transparent,rgba(255,236,170,.5) 45%,rgba(255,255,255,.75) 50%,rgba(255,236,170,.5) 55%,transparent);animation-duration:1.1s}
+.gwen-lane[data-recheck=fold] .rc-scene{animation:rc-out .35s ease-in forwards}
+
+@media(max-width:520px){
+ .rc-scene{--rc-ar:1.8;--rc-ay:60%;--rc-px:5.3%;--rc-pw:7%;--rc-ph:15%;--rc-dx:108.3%;--rc-dy:111.3%;--rc-rx:59.7%;--rc-rw:24.8%;--rc-gx:47.5%}
+ [data-recheck-art] .rc-bg{background-image:url(assets/recon/office_narrow.webp)}
+ .rc-photo{padding:1px 1px 4px}
+ [data-recheck-art] .rc-say{top:calc(var(--rc-gy) - var(--rc-h)*.74*.8)}.rc-photo::before{width:5px;height:5px;margin-left:-2.5px;top:-2px}
+}
+
+/* 6. 결과 판 맨 위 재조사 칸: 진행 중(제목·단계 3칸·scaleX 막대·기록 줄·«지금 자리로 확정») → 끝나도 같은 높이의 기록 줄(바뀜 금색 · 그대로 초록 · 중단/오류 회색) */
+.rc-strip{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 16px;align-items:center;min-height:76px;box-sizing:border-box;margin:0 0 14px;padding:10px 14px 10px 17px;
+ border:1px solid rgba(var(--rc-teal),.4);border-radius:var(--r-box);background:linear-gradient(90deg,rgba(var(--rc-teal),.09),rgba(15,22,38,.6) 60%);overflow:hidden}
+.rc-strip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--acc)}
+.rc-head{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rc-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;white-space:nowrap}
+.rc-tick{position:relative;flex:none;width:12px;height:12px;border:2px solid var(--acc);border-radius:50%}
+.rc-tick::after{content:"";position:absolute;left:10px;top:11px;width:6px;height:2px;background:var(--acc);transform:rotate(45deg);transform-origin:left center}
+.rc-sub{font-size:12px;color:var(--mut);word-break:keep-all}
+.rc-mid{display:flex;flex-direction:column;gap:6px;min-width:0}
+.rc-steps{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--mut)}
+.rc-steps span{padding:1px 8px;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
+.rc-steps em{font-style:normal;font-variant-numeric:tabular-nums}
+.rc-steps span[data-s=done]{color:var(--good);border-color:rgba(98,219,163,.45)}
+.rc-steps span[data-s=now]{color:var(--acc);border-color:var(--acc);background:rgba(var(--rc-teal),.1)}
+.rc-pbar{height:6px;border-radius:3px;background:rgba(127,127,127,.2);overflow:hidden}
+.rc-pbar i{display:block;width:100%;height:100%;background:linear-gradient(90deg,var(--acc),#bfeee9);transform-origin:left center;transition:transform .3s ease-out}
+.rc-log{display:block;font:12px/1.4 var(--font-mono);color:#bfe9e6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;padding:0;animation:rc-pop .35s ease-out}
+.rc-log::before{content:"◎ ";color:var(--acc)}
+.rc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:12px;color:var(--mut);white-space:nowrap}
+.rc-side button{padding:5px 10px;font-size:12px}
+.rc-strip[data-end]{grid-template-columns:minmax(0,1fr) auto}
+.rc-strip[data-end=changed]{border-color:rgba(243,207,116,.55);background:linear-gradient(90deg,rgba(243,207,116,.1),rgba(15,22,38,.6) 60%)}
+.rc-strip[data-end=changed]::before{background:var(--gold)}
+.rc-strip[data-end=same]{border-color:var(--line);background:rgba(15,22,38,.6)}
+.rc-strip[data-end=same]::before{background:var(--good)}
+.rc-strip:is([data-end=cancel],[data-end=error]){border-color:var(--line);background:rgba(15,22,38,.5);color:var(--mut)}
+.rc-strip:is([data-end=cancel],[data-end=error])::before{background:var(--mut)}
+.rc-end{display:flex;flex-direction:column;gap:3px;min-width:0}
+.rc-end b{font-size:15px;word-break:keep-all}.rc-end b em{font-style:normal;color:var(--gold);white-space:nowrap}
+.rc-end>span{font-size:12px;color:var(--mut);word-break:keep-all}
+.rc-stamp{display:inline-block;margin-right:8px;padding:1px 8px;border:2px solid var(--gold);border-radius:4px;color:var(--gold);font-weight:900;font-size:13px;letter-spacing:.08em;rotate:-3deg}
+.rc-strip[data-end=same] .rc-stamp{border-color:var(--good);color:var(--good)}
+.rc-strip[data-new] .rc-stamp{animation:rc-stamp .5s cubic-bezier(.2,1.5,.4,1) .1s backwards}
+.rc-strip[data-new] .rc-end{animation:rc-pop .4s ease-out}
+.party.progress .rc-strip{margin:10px 0;text-align:left}
+
+/* 7. 카드: 진행 중 대상 팀 = 위 알림 + 세로 측량 선 하나(3px, 카드 줄 폭만큼 오감). 끝 = 바뀐 카드 금색 테두리 + 칩(«후열 → 전열 · 리더»), 0.7초 미끄러짐은 recheck_ui.js flip */
+.rowcards[data-rc=work]{position:relative;container-type:inline-size}
+.rowcards[data-rc=work]::before{content:"이 자리와 리더를 다시 대조하는 중";position:absolute;z-index:4;left:50%;top:-10px;translate:-50% 0;padding:1px 10px;font-size:11px;font-weight:700;color:var(--acc);white-space:nowrap;
+ background:var(--ink);border:1px solid rgba(var(--rc-teal),.55);border-radius:999px}
+.rowcards[data-rc=work]::after{content:"";position:absolute;z-index:3;top:0;bottom:0;left:0;width:3px;border-radius:2px;pointer-events:none;
+ background:linear-gradient(180deg,transparent,rgba(var(--rc-teal),.95) 20%,rgba(var(--rc-teal),.95) 80%,transparent);animation:rc-probe 3.4s ease-in-out infinite alternate}
+.gc[data-rc-move] .card{border-color:var(--gold)!important;box-shadow:0 0 0 1px var(--gold)}
+.rc-chip{position:absolute;z-index:3;left:6px;right:6px;bottom:6px;padding:3px 4px;font-size:11px;font-weight:700;line-height:1.3;text-align:center;color:var(--gold);white-space:nowrap;overflow:hidden;
+ background:rgba(15,22,38,.85);border:1px solid rgba(243,207,116,.6);border-radius:6px}
+.rc-tag{display:inline-block;margin-right:6px;padding:0 7px;font-size:11px;line-height:18px;border:1px solid var(--line);border-radius:999px;color:var(--mut);white-space:nowrap}
+.rc-tag[data-t=work]{color:var(--acc);border-color:rgba(var(--rc-teal),.5)}
+.rc-tag[data-t=skip]{color:var(--good);border-color:rgba(98,219,163,.45)}
+.rc-tag[data-t=up]{color:var(--gold);border-color:rgba(243,207,116,.55)}
+
+/* 8. 요약의 이전 → 지금 줄(얼굴 4개 두 묶음: 테두리 주황 = 전열, 파랑 = 후열, 금색 = 리더) */
+.rc-swap{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;margin:6px 0 10px;padding:8px 6px;border:1px dashed rgba(243,207,116,.45);border-radius:var(--r-ctl)}
+.rc-was,.rc-now{display:flex;flex-direction:column;align-items:center;gap:2px}
+.rc-swap small{font-size:11px;color:var(--mut)}
+.rc-row{display:flex;gap:3px}
+.rc-was .rc-row{opacity:.6}
+.rc-f{width:30px;height:30px;border-radius:50%;overflow:hidden;box-sizing:border-box;border:2px solid var(--back);background:#28324a}
+.rc-f[data-pos=front]{border-color:var(--front)}
+.rc-f[data-lead]{box-shadow:0 0 0 2px var(--gold)}
+.rc-f img{display:block;width:100%;height:100%;object-fit:cover}
+.rc-to{color:var(--gold);font-weight:800}
+.rc-num{flex-basis:100%;text-align:center;font-size:14px;color:var(--gold)}.rc-num s{color:var(--mut);font-weight:400}
+
+@media(max-width:760px){
+ .rc-strip,.rc-strip[data-end]{grid-template-columns:minmax(0,1fr);min-height:150px;align-content:center;padding:10px 12px 10px 15px}
+ .rc-title{white-space:normal}
+ .rc-side{flex-direction:row;align-items:center;justify-content:space-between}
+ .rc-end b{font-size:14px}
+ .rc-steps span{padding:0 6px;font-size:11px}
+ .rc-from{display:none}
+ .rc-chip{left:3px;right:3px;bottom:3px;font-size:10px}
+}
+
+@keyframes rc-in{from{opacity:0}to{opacity:1}}
+@keyframes rc-out{from{opacity:1}to{opacity:0}}
+@keyframes rc-sweep{from{transform:none}to{transform:translateX(360%)}}
+@keyframes rc-spin{to{transform:rotate(360deg)}}
+@keyframes rc-cycle{0%,16%{transform:none}25%,41%{transform:translate(var(--rc-dx),0)}50%,66%{transform:translate(var(--rc-dx),var(--rc-dy))}75%,91%{transform:translate(0,var(--rc-dy))}100%{transform:none}}
+@keyframes rc-pin{from{opacity:0;scale:1.35}to{opacity:1;scale:1}}
+@keyframes rc-flash{0%{scale:1}35%{scale:1.06}100%{scale:1}}
+@keyframes rc-bob{0%,100%{transform:none}50%{transform:translateY(-1.5%)}}
+@keyframes rc-nod{0%{transform:none}30%{transform:translateY(2%) rotate(-1deg)}60%{transform:translateY(-1%)}100%{transform:none}}
+@keyframes rc-say{0%{opacity:0;transform:translateY(4px)}8%,82%{opacity:1;transform:none}100%{opacity:0;transform:none}}
+@keyframes rc-pop{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@keyframes rc-stamp{0%{opacity:0;scale:1.8}60%{opacity:1;scale:.94}100%{opacity:1;scale:1}}
+@keyframes rc-probe{from{transform:none}to{transform:translateX(calc(100cqw - 3px))}}

@@ -36,10 +36,11 @@ assert.equal(P.resultArt(NaN,{portrait:true}),'st_point');
 assert.equal(P.resultArt(undefined,{kind:'score',portrait:false}),'report');
 
 // --- bannerState ---
-assert.equal(P.bannerState({mode:'direct',phase:'result',count:4},false),'result');
+assert.equal(P.bannerState({mode:'direct',phase:'result',count:4},false),'','직접 편성: 결과 배너 없음(길을 접음)');
 assert.equal(P.bannerState({mode:'cdirect',phase:'result',count:4},false),'result');
 assert.equal(P.bannerState({mode:'cdirect',phase:'work',count:4},true),'');
-assert.equal(P.bannerState({mode:'reco',phase:'result',count:4},false),'result');
+assert.equal(P.bannerState({mode:'reco',phase:'result',count:4},false),'','자동 추천: 결과 배너 없음(길을 접음)');
+assert.deepEqual(P.FOLDED,['reco','direct']);
 assert.equal(P.bannerState({mode:'reco',phase:'error',count:4},false),'error');
 assert.equal(P.bannerState({mode:'reco',phase:'work',count:4},false),'');
 assert.equal(P.bannerState({mode:'home',phase:'result',count:4},false),'');

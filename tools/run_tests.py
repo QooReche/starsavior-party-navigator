@@ -63,6 +63,7 @@ def main():
         tests.append(('e2e/test_cosmo_direct.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_cosmo_direct.py']))
         tests.append(('e2e/test_cosmo_construction.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_cosmo_construction.py']))
         tests.append(('e2e/test_gwen_auto.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_auto.py']))
+        tests.append(('e2e/test_recheck.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_recheck.py', '--mutations']))
         tests.append(('e2e/test_gwen_guild_owner.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_guild_owner.py']))
         tests.append(('e2e/test_gwen_search_stage.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_search_stage.py']))
         tests.append(('e2e/test_gwen_shadow.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_gwen_shadow.py']))

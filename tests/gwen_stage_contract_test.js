@@ -17,6 +17,7 @@ const inventory={
   'myinfo_view.js':[["${n}/${e?.parts||'?'}",'excluded: equipment set parts']],
   'party_template.html':[['<progress','direct'],['${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}','reco'],['${got}/${all}','reco'],['${seen}/${sc.total}','excluded: stopped sample count'],['${done}/${all}','reco'],['role="progressbar"','reco'],['${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10','excluded: power score'],['${eq}/6','excluded: equipment slots']],
   'placement_page.js':[['${DIRECT.placement.done||0}/24','레인 미연결(범위 밖)'],['${CDIRECT.placement.done||0}/24','레인 미연결(범위 밖)']],
+  'recheck_ui.js':[['${screened(r)}/24','reco'],['role="progressbar"','reco']],   // 현장 재조사 칸: recheckPaint 가 recoGwenShow(재조사 장면)와 같이 갱신
   'recommend_runtime.js':[['${got}/${jobs.length}','producer: recoProgressPaint / directResultsPaint']],
   'sim_worker.js':[['${i+1}/${m.teams.length}','producer: worker result consumers']]
 };
@@ -71,7 +72,7 @@ check(sources);
 for(const [file,from] of [
   ['party_template.html',"searchGwenPaint(p,'guildSearch',GSR)"],
   ['party_template.html',"searchGwenPaint(p,'cosmoSearch',CSR)"],
-  ['party_template.html',"RECO_GWEN.progress(progress||0,'',{step,alert})"],
+  ['party_template.html',"RECO_GWEN.progress(progress||0,'',{step,alert,recheck:alert||typeof recheckLane!=='function'?null:recheckLane()})"],
   ['direct_run.js','DIRECT_GWEN.update('],
   ['cosmo_direct_page.js',"GwenStage.mount(host,{mode:'cdirect'})"],
   ['direct_bundle.js',"recoGwenShow(true,task.progress||0,null,GwenLane.resultId(task)+':'+task.request,scrAlertLane(alert))"],

@@ -281,7 +281,7 @@ summary{padding:9px 4px}
 @keyframes gwen-report{from{transform:translateY(6px);opacity:.4}to{transform:none;opacity:1}}
 @media(max-width:400px){.gwen-work{gap:6px;min-height:120px}.gwen-scene{width:120px;height:120px;flex-basis:120px}}
 
-</style><link rel="stylesheet" href="ux.css"><link rel="stylesheet" href="forced.css"></head><body><main>
+</style><link rel="stylesheet" href="ux.css"><link rel="stylesheet" href="forced.css"><link rel="stylesheet" href="recheck.css"></head><body><main>
 <header class="site-head"><h1><img class="gwen-head" src="assets/ui_icons/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true"><span>파티 편성 네비게이터 <small>베타</small></span></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button></span>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천</button><button id="tab-info" type="button" aria-pressed="false">내 구원자</button></nav></header>
 <p class="notice update-notice" data-k="update-notice">📢 11/19 업데이트 · 코스모 시즌 8 · 코스모 3파티 직접 편성 · 자동 대상 클라 기준 교정 <a href="#update-history" onclick="document.getElementById('update-history').open=true">자세히</a></p>
@@ -439,6 +439,7 @@ summary{padding:9px 4px}
 <script src="direct_run.js"></script>
 <script src="cosmo_direct_page.js"></script>
 <script src="recommend_runtime.js"></script>
+<script src="recheck_ui.js"></script>
 <script src="direct_bundle.js"></script>
 <link rel="stylesheet" href="direct.css">
 <link rel="stylesheet" href="cosmo_direct.css">
@@ -843,7 +844,7 @@ const RECO_ARR=new Map();
 function arrGet(ident,k){return RECO_ARR.get(k)?.get(ident)||null}
 function arrSet(ident,k,v){let m=RECO_ARR.get(k);if(!m)RECO_ARR.set(k,m=new Map());m.delete(ident);m.set(ident,v);if(m.size>20)m.delete(m.keys().next().value)}
 function arrangeOf(combo,rule=false){
- if(!rule&&RECO_ARR.size&&typeof recoIdentity==="function"){const m=RECO_ARR.get(ckey(combo));if(m){let id=null;try{id=recoIdentity()}catch(e){}const v=id!=null&&m.get(id);if(v)return {order:v.order.slice(),lead:v.lead}}}
+ if(!rule&&RECO_ARR.size&&typeof recoIdentity==="function"){const m=RECO_ARR.get(ckey(combo));if(m){let id=null;try{id=recoIdentity()}catch(e){}const v=id!=null&&m.get(id);if(v&&!recheckHold(id))return {order:v.order.slice(),lead:v.lead}}}
  return arrangeRule(combo)}
 // 관문 순위(build_sim_results.gate_key 와 같은 규칙): 계산 가능 -> 클리어 확률 5%p 묶음 -> 처치 턴 -> 근사 점수
 function cmpArr(x,y){for(let i=0;i<x.length;i++){if(x[i]<y[i])return -1;if(x[i]>y[i])return 1}return 0}
@@ -1000,7 +1001,9 @@ function simBar(p,rows,st,hasMore,shown=rows[0]){
  // 자동 확인 중이면 자리·리더 비교(recoArrangeKick)까지 끝나야 «완료» — 본선 끝과 비교 시작 사이 틈에 완료로 보이지 않게
  const all=rows.every(t=>SIMQ.res[simSig(st,t)])&&(typeof recoArrangeKick!=="function"||!simAutoOn()||(()=>{const id=recoIdentity();return rows.every(t=>arrGet(id,UiShared.teamKey(t.keys)))})());
  const counts=[...new Set(rows.map(t=>SIMQ.res[simSig(st,t)]?.n).filter(Boolean))].sort((a,b)=>a-b).join("·")||SIMQ.n;
- const st8=SIMQ.busy===p&&!SIMQ.compareKey?`${Ux.gwenWork("inspect")}<span class="mut" data-k="simstate" data-state="running">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
+ // 현장 재조사 중(recoArrangeKick)이면 진행·취소는 결과 판 맨 위 재조사 칸이 맡음 — 여기엔 상태만(숨김)
+ const st8=SIMQ.busy===p&&recheckBusy()?`<span class="mut" data-k="simstate" data-state="running" hidden>${esc(SIMQ.msg)}</span>`:
+  SIMQ.busy===p&&!SIMQ.compareKey?`${Ux.gwenWork("inspect")}<span class="mut" data-k="simstate" data-state="running">${esc(SIMQ.msg)}</span> <span class="mut" data-k="eta">${esc(simEtaText())}</span> <button type="button" class="sec" data-simcancel="1">취소</button>`:
   SIMQ.err&&SIMQ.errP===p&&!SIMQ.errCompare?`${Ux.gwenError(SIMQ.cancelled?"cancel":"calculation")}<span class="bad" data-k="simstate" data-state="error">모의 전투 실패: ${esc(SIMQ.err)}</span> <button type="button" class="sec" data-sim="${p}">다시 시도</button>`:
   all?`<span class="mut" data-k="simstate" data-state="done" hidden title="${counts}판">계산 완료</span>${rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&rows.length<9&&hasMore?` <button type="button" class="sec" data-more="${p}">모의 전투 실행</button>`:""}`:
   `<button type="button" class="sec" data-sim="${p}" title="${rows.length}팀 · 팀당 ${SIMQ.n}판 · 첫 실행 시 계산 엔진 약 14MB">모의 전투 실행</button>`;
@@ -1142,6 +1145,8 @@ $("out").addEventListener("click",e=>{const b=e.target.closest("button[data-sim]
  const mo=e.target.closest("button[data-more]");if(mo){const st=cur&&cur[$("stage").value],p=+mo.dataset.more,k=moreKey(st,p);SIMQ.more[k]=(SIMQ.more[k]||3)+3;run();simStart(p);return}
  const sm=e.target.closest("button[data-scrmore]");if(sm){simAuto(true);if(simScreen(+sm.dataset.scrmore,true))run();return}
  if(e.target.closest("button[data-scrstop]")){scrStop();return}
+ if(e.target.closest("button[data-recheck-stop]")){recheckConfirm();return}
+ if(e.target.closest("button[data-recheck-view]")){RECHECK.view=RECHECK.view==='rule'?'':'rule';RECHECK.slide=true;run(true);return}
  if(e.target.closest("button[data-simcancel]"))simStop("취소함",true)});
 $("out").addEventListener("change",e=>{const s=e.target.closest("select.bsel");if(!s)return;
  breakEquip(s.dataset.bkey,s.value)});
@@ -1312,7 +1317,7 @@ function recoScreenSequence(sc,top,byKey,leg,end){
  const pick=()=>{sc.pool=scrFullRank(sc).filter(x=>byKey.has(x)).slice(0,sc.fullN);sc.total=sc.pool.length;sc.fullDone=true;sc.foundAt=Date.now();first();};
  const todo=sc.full.filter(x=>!sc.res0[x]&&byKey.has(x));if(todo.length)leg(-1,todo,pick);else pick();
 }
-function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.busy!=null&&!SIMQ.compareKey)return true;
+function simWaiting(st){if(!REQ||!simAutoOn()||SIMQ.err)return false;if(SIMQ.busy!=null&&!SIMQ.compareKey&&!recheckBusy())return true;
  for(const p of Object.keys(LASTQ)){const b=LASTQ[p];if(!b)continue;if(scrOn()&&!SIMQ.scr[scrKey(st,p)]?.done)return true;if(b.rows.some(t=>!SIMQ.res[simSig(st,t)]))return true;
   if(b.rows.every(t=>goalVal(SIMQ.res[simSig(st,t)])<0.5)&&b.rows.length<9&&b.total>b.rows.length)return true}
  return false}
@@ -1335,7 +1340,7 @@ function recoGwenShow(show,progress,result=null,step=null,alert=""){
  const phase=show?'work':result?'result':'idle';
  if(show&&host.dataset.phase!=='work'||result&&RECO_GWEN.state.result!==GwenLane.resultId(result))guildGwenClaim('reco');
  host.dataset.phase=phase;GwenStage.mount(document,{mode:'reco'});
- if(show)RECO_GWEN.progress(progress||0,'',{step,alert});else if(result)RECO_GWEN.done(result);else if(contents[$('content').value]?.key==='guild'&&REQ)RECO_GWEN.update({phase:'idle',count:4});else RECO_GWEN.reset();
+ if(show)RECO_GWEN.progress(progress||0,'',{step,alert,recheck:alert||typeof recheckLane!=='function'?null:recheckLane()});else if(result)RECO_GWEN.done(result);else if(contents[$('content').value]?.key==='guild'&&REQ)RECO_GWEN.update({phase:'idle',count:4});else RECO_GWEN.reset();
  if(DIRECT.mode==='reco'&&$('mi-panel').hidden&&contents[$('content').value]?.key==='guild')GwenStage.activate(guildGwenMode());
  recoGwenVisibility();
 }
@@ -1350,6 +1355,56 @@ function simProgress(st){const rows=Object.values(LASTQ).filter(Boolean).flatMap
   ${Ux.help("진행 방식","후보를 거른 뒤 상위 팀을 100판씩 모의 전투함. 남은 시간은 이 기기의 최근 계산 속도를 기준으로 표시함. 후보를 거르는 중에 「지금까지 결과로 보기」를 누르면 그때까지 확인한 팀으로 먼저 보여 주고, 나머지는 「끝까지 확인」으로 이어서 볼 수 있음.")}<p data-k="eta">${esc(simEtaText())}</p>
   ${sc?'<button type="button" class="sec" data-scrstop="1">지금까지 결과로 보기</button> <button type="button" class="sec" data-simcancel="1">취소</button>':'<button type="button" class="sec" data-simcancel="1">중단하고 결과 보기</button>'}</div>`}
 
+// ── 현장 재조사 화면(11/23): 상태 RECHECK·흐름은 recommend_runtime.js, 조각은 recheck_ui.js, 장면은 gwen_lane.js recheckSync, 스타일은 recheck.css.
+// 재조사 중에는 결과 판을 그대로 두고(simWaiting) 맨 위 재조사 칸만 갱신(recheckPaint — 기존 진행 갱신 간격 PAINT_MS). 끝나면 같은 자리·같은 높이의 기록 줄.
+function recheckIdent(){try{return recoIdentity()}catch(e){return null}}
+const recheckMine=p=>!!RECHECK.state&&RECHECK.p===p&&RECHECK.key===recheckIdent();
+const recheckBusy=()=>RECHECK.state==='work'&&RECHECK.hold&&RECO.task?.owner==='reco-arrange'&&!RECO.task.done;
+const recheckView=p=>recheckMine(p)&&RECHECK.state==='done'&&RECHECK.outcome==='changed'?RECHECK.view:'';
+// 바뀐 팀: [{t,label,rule,now,from,to}] — 수치는 표준 본선(규칙 자리 simSigRule ↔ 바뀐 자리 simSig), 비교 판(why) 값 아님
+function recheckChanges(st,p){const box=LASTQ[p],id=RECHECK.key;if(!box)return [];
+ return box.rows.map((t,i)=>({t,i,v:arrGet(id,UiShared.teamKey(t.keys))})).filter(x=>x.v?.changed)
+  .map(({t,i,v})=>({t,label:(i+1)+'안',rule:v.rule,now:{order:v.order,lead:v.lead},from:SIMQ.res[simSigRule(st,t)],to:SIMQ.res[simSig(st,t)]}));}
+function recheckStrip(p,st,team){if(!recheckMine(p))return "";const r=RECHECK,rows=LASTQ[p]?.rows||[],ch=r.state==='done'?recheckChanges(st,p):[];
+ const v=t=>arrGet(r.key,UiShared.teamKey(t.keys)),skipped=rows.filter(t=>v(t)?.skip).map(t=>(rows.indexOf(t)+1)+'안');
+ const shown=ch.find(x=>UiShared.teamKey(x.t.keys)===team)||ch[0];
+ return RecheckUi.strip(r,{rows:ch,story:shown?RecheckUi.story(shown.rule,shown.now,k=>BYKEY[k]?.name||k):'',teams:r.teams,view:r.view,
+  reverted:rows.some(t=>v(t)?.reverted),skipped:skipped.length?skipped.join('·')+'은 클리어 100%라 건너뜀':'',fresh:Date.now()-r.endAt<RecheckUi.END_MS})}
+// 다시 그린 뒤: 카드 칩·요약 이전→지금 줄·대안 줄 표시, 끝나는 순간 한 번 카드 미끄러짐
+function recheckDecorate(st,flipFrom){const p=RECHECK.p,el=document.querySelector(`#out .party[data-party="${p}"]`);if(!el||!recheckMine(p))return;
+ const box=LASTQ[p],id=RECHECK.key,tags={};
+ if(RECHECK.state==='work'){for(const t of box?.rows||[]){const k=UiShared.teamKey(t.keys),v=arrGet(id,k);tags[k]=v?.skip?['skip','확정 · 재조사 건너뜀']:['work','자리 재조사 중'];}
+  el.querySelector('.rowcards')?.setAttribute('data-rc','work');RecheckUi.decorate(el,{tags});return}
+ if(RECHECK.state!=='done')return;
+ const ch=recheckChanges(st,p),team=el.dataset.team,mine=ch.find(x=>UiShared.teamKey(x.t.keys)===team),view=recheckView(p);
+ for(const x of ch)if(x!==mine)tags[UiShared.teamKey(x.t.keys)]=['up',(x.now.lead!==x.rule.lead?'리더':'자리')+' 변경'];
+ RecheckUi.decorate(el,{chips:mine&&view!=='rule'?RecheckUi.moves(mine.rule,mine.now):null,tags});
+ if(mine&&view!=='rule'){const at=el.querySelector('.result-summary .mi-verdict');
+  if(at)at.insertAdjacentHTML('afterend',RecheckUi.swap(mine.rule,mine.now,k=>BYKEY[k]?.img||'',{from:mine.from,to:mine.to}));}
+ if(flipFrom)RecheckUi.flip(el,flipFrom)}
+// 길(사무실 장면)에 넘길 값. 끝 장면(END_MS) 동안은 phase end, 그 뒤 null(→ 결과 자리 그웬). 끝 장면이 지나면 한 번 다시 그림
+function recheckLane(){const r=RECHECK,p=r.p;if(!recheckMine(p))return null;
+ const left=r.state==='done'?r.endAt+RecheckUi.END_MS-Date.now():0;
+ if(r.state!=='work'&&!(left>0))return null;
+ if(left>0&&!recheckLane.timer)recheckLane.timer=setTimeout(()=>{recheckLane.timer=0;if(!RECO.task||RECO.task.done)run(true);},left+30);
+ const rows=LASTQ[p]?.rows||[],targets=rows.filter(t=>r.rows.includes(UiShared.teamKey(t.keys)));
+ let t;if(r.state==='work'){const f=r.all?Math.min(.999,r.got/r.all):0;t=targets[Math.floor(f*targets.length)]||targets[0]||rows[0];}
+ else t=rows.find(x=>arrGet(r.key,UiShared.teamKey(x.keys))?.changed)||targets[0]||rows[0];
+ if(!t)return null;
+ const ar=r.state==='work'?arrangeOf(t.combo,true):arrangeOf(t.combo);
+ return {phase:r.state==='work'?'work':'end',stage:r.stage,progress:RecheckUi.progress(r),forced:r.forced,outcome:r.outcome,team:UiShared.teamKey(t.keys),
+  faces:ar.order.map((k,i)=>({key:k,src:BYKEY[k]?.img||'',front:i===1||i===2,lead:k===ar.lead}))}}
+// 진행 알림마다(recheckNote) — 재조사 칸 숫자·단계·기록 줄과 길만 고침(결과 판은 다시 그리지 않음). 묶음 길은 진행 칸 안에 같은 칸
+const recheckPaint=SearchExecutor.throttle(()=>{
+ const strip=document.querySelector('#out .rc-strip[data-state="work"]');if(strip&&!strip.closest('[data-bundle-progress]'))RecheckUi.sync(strip,RECHECK);
+ const bundle=document.querySelector('#out [data-bundle-progress]');if(bundle){recheckBundle(bundle);return}
+ if(RECHECK.state==='work'&&recheckMine(RECHECK.p)){const rl=recheckLane();if(rl)recoGwenShow(true,rl.progress,null,'recheck:work','');}
+},SearchExecutor.PAINT_MS);
+// 직접 편성 묶음 길(recoCalculate.arrange): 진행 칸(recoProgressPaint) 안에 같은 재조사 칸(취소 단추 없음 — 묶음의 «건너뛰기»)
+function recheckBundle(card){const el=card.querySelector('.rc-strip'),on=RECHECK.state==='work'&&recheckMine(RECHECK.p);
+ if(!on){el?.remove();return}
+ if(!el){card.querySelector('.pbar')?.insertAdjacentHTML('beforebegin',RecheckUi.strip(RECHECK,{bundle:true}));return}
+ RecheckUi.sync(el,RECHECK)}
 function buildCands(ranked){return ranked.slice(0,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
 // 남은 시간 표시는 1초마다 다시 그린다(화면 전체를 다시 그리지 않고 글자만)
 setInterval(()=>{if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
@@ -1422,7 +1477,7 @@ function runCore(skipAuto=false){
   const v=pick.v;
   const qr=LASTQ[p]&&LASTQ[p].rows.find(t=>UiShared.teamKey(t.keys)===pick.key),sr=qr&&SIMQ.res[simSig(st,qr)];
   // 카드 자리·리더 = 시뮬과 같은 arrangeOf(자리·리더 비교 결과가 있으면 그것)
-  const AR=arrangeOf(party),byK=new Map(party.map(x=>[x.s.key,x])),[bk0,fr0,fr1,bk1]=AR.order.map(k=>byK.get(k)),fr=[fr0,fr1],bk=[bk0,bk1];LEADKEY=AR.lead;
+  const AR=recheckView(p)==='rule'?arrangeOf(party,true):arrangeOf(party),byK=new Map(party.map(x=>[x.s.key,x])),[bk0,fr0,fr1,bk1]=AR.order.map(k=>byK.get(k)),fr=[fr0,fr1],bk=[bk0,bk1];LEADKEY=AR.lead;
   const alt=m=>{const rest=party.filter(y=>y!==m);return cands.filter(x=>!used.has(x.s.key)).map(x=>[teamValue([...rest,x],defPen)[0],x]).sort((a,b)=>b[0]-a[0]).slice(0,2).map(a=>a[1])};
   const br=breakChoice(party,c,have);
   // 이 팀의 브라우저 시뮬 결과(있으면): 카드에 피해 기여·쓰러질 확률
@@ -1431,13 +1486,16 @@ function runCore(skipAuto=false){
   const r=sr&&sr.u?{g:true,u:sr.u}:null;
   const main=`<div class="rowcards">${card(bk[0],"back",r)}${card(fr[0],"front",r)}${card(fr[1],"front",r)}${card(bk[1],"back",r)}</div>${breakCard(br,sr,p,qr,st)}${gimNote(party,c,st,p)}`;
   const tail=`${altChips(party,alt,p)}<details class="score-details" data-fold="score-${p}"><summary>더 보기</summary><div class="unit-metrics">${party.map(x=>`<div>${esc(x.s.name)}${simUnit(r,x.s.key)}</div>`).join("")}</div>${miFlags(qr?.b.assumed)}${starNote(c.key)}${bigBoss(c,st)?bigBossNote(bigBoss(c,st)):""}${p===1?'<div data-controls="score"></div><div data-controls="graph"></div>':""}<div class="scoredata">추천 점수 ${v.toFixed(1)} · 화력 지표 ${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10${party.map(x=>`<div>${esc(x.s.name)}: ${Object.entries(x.parts).map(([k,v])=>`${esc(k)} ${v.toFixed(1)}`).join(" · ")}</div>`).join("")}${synSummary(party)}</div></details>`;
-  html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}">${quickBox(p,qt,qi,st,pick.key,main,tail)}</div>`}
+  html+=`<div class="party" data-party="${p}" data-team="${esc(pick.key)}">${recheckStrip(p,st,pick.key)}${quickBox(p,qt,qi,st,pick.key,main,tail)}</div>`}
 
+ const flipFrom=RECHECK.slide?RecheckUi.snap(document.querySelector(`#out .party[data-party="${RECHECK.p}"]`)):null;RECHECK.slide=false;
  $("out").innerHTML=html;
+ recheckDecorate(st,flipFrom);
  document.querySelectorAll('#out .party[data-party]').forEach(p=>{const more=p.querySelector('.score-details');if(more)p.querySelectorAll('.break-extra,.gimbox,.gimavoid').forEach(e=>more.append(e));if(allParties.length>1)p.insertAdjacentHTML('afterbegin',`<h2 class="party-label">파티 ${p.dataset.party}</h2>`);});
  if(skipAuto!==true)simAutoKick();
  if(SIMQ.busy!=="growth"&&simWaiting(st)){$("out").innerHTML=simProgress(st);if(window.onParties)onParties(allParties);return}
- recoGwenShow(false,null,gwenResult);
+ // 현장 재조사 중·끝 장면(끄덕임)이면 그웬은 길(사무실)에 남고, 끝 장면이 지나면 결과 자리로(recheckLane)
+ const rl=recheckLane();if(rl)recoGwenShow(true,rl.progress,null,'recheck:'+rl.phase,'');else recoGwenShow(false,null,gwenResult);
  slotRemember(c,st);growthMaybe(c,st);slotPaint();
  for(const p of Object.keys(BRCMP.open))if(!document.querySelector(`.party[data-party="${p}"] .bcompare`))delete BRCMP.open[p];
  // 비교가 도는 중 1안 팀이 바뀌어 비교 목록이 사라졌으면, 그 파티의 시뮬 줄에 진행 상태와 취소를 대신 보인다(멈춘 채 다른 시뮬이 막히지 않게)

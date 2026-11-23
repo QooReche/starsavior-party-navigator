@@ -50,9 +50,10 @@ assert(U.GWEN_SCENES.st_reach,'st_reach must exist in GWEN_SCENES');
 assert.equal(G.bannerState,P.bannerState,'bannerState re-exported from policy');
 assert.equal(G.bannerPicker,P.bannerPicker,'bannerPicker re-exported from policy');
 assert.deepEqual(G.BANNER_COPY,P.BANNER_COPY,'BANNER_COPY re-exported from policy');
-// bannerState: direct·reco 무대 모두 지원
-assert.equal(P.bannerState({mode:'direct',phase:'result',count:4},false),'result');
-assert.equal(P.bannerState({mode:'reco',phase:'result',count:4},false),'result');
+// bannerState: direct·reco 무대는 결과 배너 없음(위쪽 길을 접음, 11/23), 오류만
+assert.equal(P.bannerState({mode:'direct',phase:'result',count:4},false),'');
+assert.equal(P.bannerState({mode:'reco',phase:'result',count:4},false),'');
+assert.equal(P.bannerState({mode:'reco',phase:'error',count:4},false),'error');
 assert.equal(P.bannerState({mode:'home',phase:'result',count:4},false),'');
 // 결과 후보에 SD 변종 없음(항상 st_* 등신대)
 assert(!G.CHOICES.highSD,'highSD removed — always st_*');

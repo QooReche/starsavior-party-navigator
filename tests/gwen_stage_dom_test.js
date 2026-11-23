@@ -28,7 +28,8 @@ async function remount(code=lane){
   assert.equal(actor.dataset.announcements,report,'host replacement replayed report');
   assert.equal(actor.querySelector('.gwen-lane-speech').textContent,speech);
   assert.equal(g.mount().policy.state.lastSpeech,state.lastSpeech);
-  assert.equal(banner.hidden,false);assert.equal(banner.dataset.state,'result');assert.equal(banner.dataset.phrase,phrase);
+  // 자동 추천 결과: 완료 배너 없이 위쪽 길을 접음(11/23 — gwen_policy.js FOLDED), 교체된 자리에서도 같음
+  assert.equal(banner.hidden,true,'result banner removed');assert.equal(banner.dataset.state,'');assert.equal(h.c.$('reco-board-lane').dataset.fold,'','board folds on result');
   assert(g.mount().state.x>=0&&g.mount().state.x<=60,'position exceeds replacement lane');
   // Pending old decode must not commit, even if it completes before the new request.
   h.c.recoGwenShow(true,.9);await h.tick(300);assert(g.mount().state.moving);
@@ -85,7 +86,7 @@ async function lateResponse(template=html,executor=read('search_executor.js')){
 async function persistent(template=html,code=lane){
   const h=setup(code,template),result={score:100};h.c.recoGwenShow(false,null,result);await h.flush();
   const actor=h.actor();assert.equal(actor.parentElement,h.c.$('reco-result-lane'));
-  assert.equal(h.host.hidden,false);assert.equal(h.c.$('reco-lane-banner').hidden,false);
+  assert.equal(h.host.hidden,false);assert.equal(h.c.$('reco-lane-banner').hidden,true,'no completion banner (lane folds)');
   assert(['st_point','thoughtful'].includes(actor.dataset.gwenExpression),'score-only result must be neutral');
   await h.tick(1900);h.c.recoGwenShow(false,null,result);await h.tick(61000);
   assert.equal(actor.parentElement,h.c.$('reco-result-lane'),'result must remain beyond report and idle timers');

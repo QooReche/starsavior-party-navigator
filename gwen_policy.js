@@ -36,10 +36,12 @@
 
   // --- 배너 ---
 
+  const FOLDED=['reco','direct'];
   function bannerState(state,onBoard){
     if(!['direct','cdirect','reco','cosmoSearch','guildSearch'].includes(state.mode)||onBoard)return '';
     if(state.bundleRunning||state.phase==='work')return '';
-    if(state.phase==='result'&&!state.stale)return 'result';
+    // 자동 추천·직접 편성은 결과가 나오면 위쪽 길을 접음(완료 배너 없음, 11/23 — 그웬은 결과 자리로 감). 오류 «수사 난항…»은 남김
+    if(state.phase==='result'&&!state.stale)return FOLDED.includes(state.mode)?'':'result';
     return state.phase==='error'?'error':'';
   }
 
@@ -67,6 +69,6 @@
     ).join('');
   }
 
-  const api={resultCandidates,resultCandidatesSD,resultArt,bannerState,BANNER_COPY,bannerPicker,bannerMarkup};
+  const api={resultCandidates,resultCandidatesSD,resultArt,bannerState,FOLDED,BANNER_COPY,bannerPicker,bannerMarkup};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GwenPolicy=api;
 })(typeof window!=='undefined'?window:globalThis);

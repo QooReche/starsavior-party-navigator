@@ -1,4 +1,5 @@
-"""Empty-board detective banners, using the real page and synthetic workers."""
+"""Empty-board detective banners, using the real page and synthetic workers.
+직접 편성은 결과가 나오면 위쪽 길을 접고 완료 배너를 내지 않음(11/23 — gwen_policy.js FOLDED). 오류 «수사 난항…» 배너만 남아 그 배너로 문구·대체 글자·자리를 확인함."""
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from test_direct_party import ready, enter, pick_four
@@ -39,7 +40,8 @@ def shot(p, name, width):
 
 
 def sync(p, **state):
-    p.evaluate('s=>GwenLane.sync({mode:"direct",count:4,phase:"result",result:987,clear:.82,...s})',state)
+    # 공통 무대 핸들(GwenStage update)로 넘김 — 길 접기(data-fold)도 여기서 정해짐
+    p.evaluate('s=>DIRECT_GWEN.update({count:4,phase:"result",result:987,clear:.82,...s})',state)
 
 
 def working(p):
@@ -56,10 +58,15 @@ def left(p):
     assert p.locator(B).evaluate('e=>e.getAnimations({subtree:true}).length')==0,'banner competed with Gwen for motion'
 
 
+def folded(p):
+    try:p.wait_for_function("document.querySelector('#direct-board-lane').getBoundingClientRect().height<1",timeout=5000)
+    except Exception as e:raise AssertionError('result lane not folded') from e
+    assert p.locator(B).is_hidden(),'completion banner visible'
+
+
 def completion(p):
     for result in [901,902]:
-        sync(p,result=result);expect(p,'result')
-        assert p.locator(B).get_attribute('data-phrase')=='inquiry', 'completion banner changed phrase'
+        sync(p,result=result);expect(p,'');folded(p)
 
 
 def progress(p,n):
@@ -110,39 +117,38 @@ def contract(browser,base,width):
     assert p.evaluate('workShifts.reduce((a,b)=>a+b.value,0)')==0,p.evaluate('workShifts')
     p.locator('#direct-run').click()
     p.evaluate('window.holdDirect=false;window.directDelay=100;void directRun()')
-    done(p);expect(p,'result');left(p)
-    p.wait_for_function('document.querySelector("#direct-lane-banner .gwen-banner-title:not([hidden])").dataset.imageReady==="true"')
-    first=p.locator(B).get_attribute('data-phrase')
-    assert first=='inquiry', 'completion banner changed phrase'
+    done(p);expect(p,'');folded(p);left(p)
     first_report=p.locator('#direct-result-lane .gwen-lane-actor').get_attribute('data-gwen-report')
-    assert p.locator(TITLE+' .gwen-banner-fallback').is_hidden()
     shot(p,'result',width)
-    p.evaluate('directResultsPaint();directResultsPaint()')
-    assert p.locator(B).get_attribute('data-phrase')==first
-    assert p.locator(TITLE).evaluate('e=>e.getAnimations().length')==0
-    p.evaluate('DIRECT.cache.clear();void directRun()');done(p);expect(p,'result')
-    assert p.locator(B).get_attribute('data-phrase')==first, 'completion banner changed phrase'
+    p.evaluate('directResultsPaint();directResultsPaint()');expect(p,'')
+    p.evaluate('DIRECT.cache.clear();void directRun()');done(p);expect(p,'');folded(p)
     assert p.locator('#direct-result-lane .gwen-lane-actor').get_attribute('data-gwen-report')!=first_report, 'new calculation reused the previous report'
-    # Geometry remains fixed through pending image, decode and error.
+    p.evaluate("directChange({type:'leader',key:DIRECT.draft.slots[1].key})")
+    expect(p,'')
+    p.wait_for_function('GwenLane.mount().state.lane==="direct-board-lane"')
+    p.wait_for_function("document.querySelector('#direct-board-lane').getBoundingClientRect().height>60",timeout=5000)   # 편집하면 길이 다시 펼쳐짐
+    p.evaluate('window.failCase=true;void directRun()')
+    p.wait_for_function('!DIRECT.active&&DIRECT.rows.now.status==="error"')
+    expect(p,'error');left(p)
+    # 오류 배너(«수사 난항…»): 문구 고정, 그림이 없어도 대체 글자로 같은 자리
+    p.wait_for_function('document.querySelector("#direct-lane-banner .gwen-banner-title:not([hidden])").dataset.imageReady==="true"')
+    assert p.locator(B).get_attribute('data-phrase')=='error'
+    assert p.locator(TITLE+' .gwen-banner-fallback').is_hidden()
+    assert p.locator(TITLE).evaluate('e=>e.getAnimations().length')==0
+    p.wait_for_timeout(450)   # 길 펼침 전환(0.35초)이 끝난 뒤 자리를 잼
     lane=p.locator('#direct-board-lane').bounding_box();board=p.locator('#direct-board').bounding_box()
     img=p.locator(TITLE+' img');fallback=p.locator(TITLE+' .gwen-banner-fallback')
     img.evaluate('e=>e.src="assets/missing-case-banner.webp"')
     p.wait_for_function('!document.querySelector("#direct-lane-banner .gwen-banner-title:not([hidden])").dataset.imageReady')
-    assert fallback.is_visible() and fallback.inner_text() in ['조사 완료!','수사 완료!','계산 완료!']
+    assert fallback.is_visible() and fallback.inner_text()=='수사 난항…'
     assert p.locator('#direct-board-lane').bounding_box()==lane
     assert p.locator('#direct-board').bounding_box()==board
     geometry(p)
-    p.evaluate("directChange({type:'leader',key:DIRECT.draft.slots[1].key})")
-    expect(p,'')
-    p.wait_for_function('GwenLane.mount().state.lane==="direct-board-lane"')
-    p.evaluate('window.failCase=true;void directRun()')
-    p.wait_for_function('!DIRECT.active&&DIRECT.rows.now.status==="error"')
-    expect(p,'error');left(p)
     if width==1280:shot(p,'error',width)
     # Same production controller handles intermediate bundle results.
     for step in ['now','reco','growth']:
         sync(p,bundleRunning=True,step=step);working(p)
-    sync(p,bundleRunning=False);expect(p,'result')
+    sync(p,bundleRunning=False);expect(p,'');folded(p)
     sync(p,stale=True);expect(p,'')
     sync(p,phase='error');expect(p,'error')
     sync(p,phase='work',progress=.8);working(p)
@@ -175,7 +181,7 @@ def bundle(browser,base):
     for step in ['reco','growth']:
         p.wait_for_function('s=>DIRECT.bundle.current===s&&DIRECT.bundle.running',arg=step,timeout=120000)
         working(p)
-    finished(p);expect(p,'result')
+    finished(p);expect(p,'');folded(p)
     assert p.evaluate('DIRECT.bundle.steps.every(s=>s.status==="done")')
     assert not p.errors,p.errors
     p.close();print('PASS real bundle progression',flush=True)
@@ -187,7 +193,7 @@ def delayed(browser,base):
     p.route('**/case_banner_*.webp?delay',lambda r:pending.append(r))
     p.locator(B+' img').evaluate_all('xs=>xs.forEach(e=>{delete e.parentElement.dataset.imageReady;e.src+="?delay"})')
     p.wait_for_timeout(100)
-    sync(p);expect(p,'result')
+    sync(p,phase='error');expect(p,'error')
     assert p.locator(TITLE+' .gwen-banner-fallback').is_visible()
     assert pending
     before=p.locator('#direct-board').bounding_box()
@@ -205,7 +211,7 @@ def delayed(browser,base):
 def mutations(browser,base):
     source=(ROOT/'gwen_lane.js').read_text(encoding='utf-8')
     cases=[('work lane',"return ['work',stage.board]", "return ['work',stage.result]",working),
-           ('result phrase',"state==='result'?'inquiry':pickBanner(state,current.result)","pickBanner(state,current.result)",completion),
+           ('result fold',"if(P.FOLDED.includes(mode)&&state.phase==='result'&&!state.bundleRunning)elements.board.dataset.fold=''","if(false)elements.board.dataset.fold=''",completion),
            ('progress disabled',"if(ahead>.5){run.seek=false;moveTo(target", "if(false){run.seek=false;moveTo(target",None)]
     for name,old,new,check in cases:
         assert old in source
@@ -230,7 +236,7 @@ def mutations(browser,base):
         working(p);progress(p,50)
         p.wait_for_function('GwenLane.mount().state.x>0')
         bounds(p);p.close()
-    # The fixed completion copy must also hold after restoring the production source.
+    # Folding on completion must also hold after restoring the production source.
     p=ready(browser,base,setup=fake);enter(p);pick_four(p)
     completion(p);p.close()
 

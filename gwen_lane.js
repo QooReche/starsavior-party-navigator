@@ -6,7 +6,7 @@
   const CHOICES={home:['guide2','st_welcome','welcome'],empty:['ready','present'],
     ready:['ready'],vacant:['think','sulk','peek'],put:['present','shy'],remove:['surprised','sulk'],
     swap:['think'],leader:['verdict'],complete:['jump'],grown:['train'],
-    withReco:['files','board'],withGrowth:['train'],reco:['stakeout','magnify','files'],growth:['train','walk'],skip:['surprised'],recoHigher:['st_point','thoughtful'],brk:['charge'],rift:['investigate'],riftFound:['present','stamp'],work:['investigate','magnify','think','board','coffee','stakeout','stamp','files'],
+    withReco:['files','board'],withGrowth:['train'],reco:['stakeout','magnify','files'],growth:['train','walk'],skip:['surprised'],recoHigher:['st_point','thoughtful'],brk:['charge'],rift:['investigate'],recheck:['magnify','investigate'],riftFound:['present','stamp'],work:['investigate','magnify','think','board','coffee','stakeout','stamp','files'],
     high:['st_verdict','st_cheer','st_ok','st_reach'],medium:['st_point','thoughtful'],low:['st_cry','notes'],
     better:['st_wink','st_reach'],past:['think'],error:['cry','surprised','sulk'],wait:['wait'],doze:['doze'],wake:['wake']};
   const SAY={home:['단장님, 어떤 방법으로 골라 볼까?','후후후, 두 방법 다 나만 믿어!','천재 조사관은 준비 끝이야!'],
@@ -20,6 +20,9 @@
     rift:['[SYSTEM] 현 세계선 돌파 확률 0.0% — 강제 탐색 프로토콜 실행','[ACK] 명령 확인. 감정 출력 정지.','[WARN] 관측 범위 외 기억 참조 중','[ROUTE] 루트 강제 개방… {all}개 중 {got}개 검증',
       '[LOG] 이면 좌표 대조. 일치 없음. 속행.','[WARN] 침식률 상승 — 관리 권한 외 접근','[ROUTE] 잔여 세계선 {left}개. 검증 속행.','[SYSTEM] 마지막 기억 구역 진입. 결과 집계 준비.'],
     riftFound:['찾았어, 단장님! 가능성 있는 기억이야!','후후후, 별빛이 다시 보여!'],
+    // 현장 재조사(자리·리더 비교): 단계 순서대로 한 줄씩(recheckSay) — 사무실 장면의 말풍선. 끝은 바뀜/그대로
+    recheck:['현장으로 돌아왔어. 자리만 다시 볼게!','누가 앞에 서야 하는지 다시 보는 중!','리더도 한 번씩 바꿔 볼게.'],
+    recheckChanged:['자리만 바꿨는데 이만큼 올랐어!'],recheckSame:['다시 봐도 지금 자리가 정답이야!'],
     work:['하나씩 꼼꼼히 살펴볼게.','단장님, 조금만 기다려!','끝까지 확인할 테니 나만 믿어!'],
     high:['후후후, 든든한 편성이네!','잘 골랐어, 단장님!','천재 조사관의 확인도 끝!'],medium:['아슬아슬하네. 숫자도 살펴봐!','단장님, 한 번 더 비교해 볼까?'],
     low:['으아앙, 쉽지 않겠는걸!','단장님, 육성도 같이 살펴보자.'],better:['후후후, 추천보다 높게 나왔어!','단장님, 멋진 선택이야!'],past:['편성이 바뀌었네. 지난 결과야!','지금 편성으로 다시 확인해 봐!'],
@@ -96,6 +99,50 @@
     if(alert!=='scan'||scene)return;
     scene=doc.createElement('div');scene.className='fx-scene';scene.setAttribute('aria-hidden','true');scene.innerHTML=FORCED.layers;board.append(scene);
     forcedLoad(doc);
+  }
+
+  // --- 현장 재조사(자동 추천 끝의 자리·리더 비교) 연출 ---
+  // 켜고 끄는 것은 화면이 넘기는 recheck 값 하나: {phase:'work'|'end',stage,progress,team,faces:[{key,src,front,lead}],outcome,forced} 또는 null.
+  // 장면 = 탐정 사무실 그림(assets/recon/ — 재조사에 처음 들어갈 때만 받음 → body[data-recheck-art]) + 보드 빈 4칸의 얼굴 사진 + 창밖 고리 빛 + 코트 벗은 SD 그웬.
+  // 그웬은 화면에 한 곳 — 그림을 받았으면 장면 속 SD 그웬이 그 한 명(배우는 recheck.css 가 숨김), 못 받았으면 배우가 길에 그대로 남음.
+  // 결과로 넘어가면(null) 장면을 접는 중(fold)으로 두었다가 길이 다 접힌 뒤 치움. 움직임·크기는 recheck.css.
+  const RECHECK_ART={dir:'assets/recon/',scene:['office.webp','office_narrow.webp','gwen_look.webp','gwen_pin.webp','gwen_nod.webp'],narrow:520,foldMs:450,
+    layers:'<i class="rc-bg"></i><i class="rc-ring"><b></b><b></b><i class="rc-orbit"><i></i></i></i><span class="rc-board"></span><i class="rc-gwen"></i><span class="rc-say"></span>'};
+  let recheckArt=null;
+  function recheckLoad(doc){
+    if(recheckArt)return;const narrow=root.innerWidth<=RECHECK_ART.narrow;
+    const load=file=>{const img=new root.Image();img.src=new URL(RECHECK_ART.dir+file,doc.baseURI).href;return img.decode();};
+    recheckArt=Promise.all(RECHECK_ART.scene.filter((f,i)=>i>1||i===(narrow?1:0)).map(load)).then(()=>{doc.body.dataset.recheckArt='ready';},()=>{recheckArt=null;});
+  }
+  // 단계 → 말풍선 한 줄(단계가 바뀔 때만 바뀜)
+  function recheckSay(rc){
+    if(rc.phase==='end')return rc.outcome==='changed'?['changed',SAY.recheckChanged[0]]:['same',SAY.recheckSame[0]];
+    const i=rc.stage==='check100'?1:rc.stage==='final200'||rc.stage==='fix'?2:0;return ['s'+i,SAY.recheck[i]];
+  }
+  // 사진 자리: 0·1 = 보드 위 2칸(전열), 2·3 = 아래 2칸(후열). faces 순서는 화면 자리 순서([후열, 전열, 전열, 후열])
+  function recheckSlots(faces){let f=0,b=2;return faces.map(x=>x.front?f++:b++);}
+  const attr=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  function recheckSync(board,rc){
+    if(!board)return;const doc=root.document;let scene=board.querySelector('.rc-scene');
+    if(!rc){
+      if(scene&&board.dataset.recheck!=='fold'){board.dataset.recheck='fold';
+        board._rcFold=root.setTimeout(()=>{board._rcFold=0;board.querySelector('.rc-scene')?.remove();for(const k of ['recheck','rcEnd','rcEnter'])delete board.dataset[k];},RECHECK_ART.foldMs);}
+      return;
+    }
+    if(board._rcFold){root.clearTimeout(board._rcFold);board._rcFold=0;}
+    if(!scene){scene=doc.createElement('div');scene.className='rc-scene';scene.setAttribute('aria-hidden','true');scene.innerHTML=RECHECK_ART.layers;board.append(scene);recheckLoad(doc);}
+    if(!['work','end'].includes(board.dataset.recheck))board.dataset.rcEnter=rc.forced?'forced':'plain';   // 들어오는 순간 청록 빛 띠 1회
+    board.dataset.recheck=rc.phase;
+    if(rc.phase==='end')board.dataset.rcEnd=rc.outcome==='changed'?'changed':'same';else delete board.dataset.rcEnd;
+    scene.dataset.pose=rc.phase==='end'?'nod':['enter','screen'].includes(rc.stage)?'look':'pin';
+    // 창밖 고리: 진행도만큼 빛이 이어짐(작은 층의 opacity 만 — recheck.css 가 --rc-p 를 읽음)
+    const ring=scene.querySelector('.rc-ring');if(ring?.style.setProperty)ring.style.setProperty('--rc-p',Math.max(0,Math.min(1,rc.progress||0)).toFixed(2));
+    const holder=scene.querySelector('.rc-board'),faces=rc.faces||[],slots=recheckSlots(faces);
+    const sig=[rc.phase,rc.team,...faces.map(x=>x.key+(x.front?'+':'-')+(x.lead?'*':''))].join('|');
+    if(holder&&holder.dataset.sig!==sig){holder.dataset.sig=sig;holder.dataset.phase=rc.phase;
+      holder.innerHTML=faces.map((x,i)=>`<span class="rc-photo" data-slot="${slots[i]}"${x.lead?' data-lead=""':''}>${x.src?`<img src="${attr(x.src)}" alt="" decoding="async">`:''}</span>`).join('');}
+    const say=scene.querySelector('.rc-say'),[line,text]=recheckSay(rc);
+    if(say&&say.dataset.line!==line){const next=doc.createElement('span');next.className='rc-say';next.dataset.line=line;next.textContent=text;say.replaceWith(next);}
   }
 
   // --- 무대 등록(register) ---
@@ -201,6 +248,7 @@
       // 관측 경보(후보 전체 훑기) 중에는 전용 표정·대사
       if(current.phase==='work'&&current.alert==='scan')return ['rift',stage.board];
       if(current.phase==='work'&&current.alert==='found')return ['riftFound',stage.board];
+      if(current.phase==='work'&&current.recheck)return ['recheck',stage.board];
       if(current.phase==='work')return ['work',stage.board];
       if(current.phase==='error')return ['error',stage.result||stage.board];
       if(current.phase==='result')return [current.recoHigher?'recoHigher':current.better?'better':!Number.isFinite(current.clear)?'medium':current.clear>=.7?'high':current.clear>=.05?'medium':'low',stage.result||stage.board];
@@ -238,7 +286,7 @@
       actor.dataset.direction=run?.dir<0?'back':'forward';
       if(!move&&(run||current.phase==='result'||current.phase==='error'))actor.querySelector('button').style.transform=run?.dir<0?'scaleX(-1)':'none';}
     function progressMove(){
-      if(current.phase!=='work'||current.alert==='scan'||!visible()||move||landing||restoreAt||clock<workRestAt)return;   // 강제 탐색 중에는 걷지 않음(레인은 폐허 장면)
+      if(current.phase!=='work'||current.alert==='scan'||!visible()||current.recheck||move||landing||restoreAt||clock<workRestAt)return;   // 강제 탐색·현장 재조사 중에는 걷지 않음(레인은 장면)
       const run=runs.get(current.mode);
       if(!run||!Number.isFinite(current.progress))return;
       const target=workTarget(run),ahead=run.dir*(target-x);
@@ -401,15 +449,18 @@
           const band=root.Ux.gwenSayBand(state.clear);
           if(bubble.dataset.band!==band){bubble.dataset.band=band;bubble.innerHTML=root.Ux.gwenSay(band);}
         }
-        if(elements.board)elements.board.dataset.phase=state.phase;
+        if(elements.board){elements.board.dataset.phase=state.phase;
+          // 자동 추천·직접 편성: 결과가 나오면 위쪽 길을 접음(direct.css [data-fold]). 묶음 실행 중의 결과는 아직 진행 중이라 접지 않음
+          if(P.FOLDED.includes(mode)&&state.phase==='result'&&!state.bundleRunning)elements.board.dataset.fold='';else delete elements.board.dataset.fold;}
         forcedSync(mode,elements.board,(state.phase==='work'||state.bundleRunning)&&state.alert||'');
+        recheckSync(elements.board,state.phase==='work'&&!state.alert&&state.recheck||null);
         mount()?.sync(state);return handle;
       }
       handle={bind,update,
         progress:(p,msg='',extra={})=>update({...extra,phase:'work',progress:p,msg,count:extra.count??4}),
         done:(result,extra={})=>update({phase:'result',count:4,...extra,result:result&&typeof result==='object'?resultId(result):result,clear:extra.clear??result?.clear}),
         reset:()=>update({phase:'idle',count:0}),
-        destroy(){if(dead)return;dead=true;forcedSync(mode,elements.board,'');stages.delete(mode);components.delete(mode);mount()?.sync({mode,phase:'idle',count:0});
+        destroy(){if(dead)return;dead=true;forcedSync(mode,elements.board,'');recheckSync(elements.board,null);stages.delete(mode);components.delete(mode);mount()?.sync({mode,phase:'idle',count:0});
           for(const part of ['board','result'])if(elements[part]){const slot=root.document.createElement('div');slot.dataset.gwenSlot=mode+'-'+part;elements[part].replaceWith(slot);}elements={};},
         get elements(){return elements;},get state(){return {...state};}};
       components.set(mode,handle);
@@ -419,7 +470,7 @@
   const Stage={mount:stageMount,slot:(mode,part)=>`<div data-gwen-slot="${mode}-${part}"></div>`,
     destroy:mode=>components.get(mode)?.destroy(),activate:mode=>mount()?.activate(mode)};
   // Low-level registration stays inside this module, including home.
-  const api={PRIORITY,CHOICES,SAY,FORCED,forcedLine,policy,travel,pingpong,playground,bannerState:P.bannerState,bannerPicker:P.bannerPicker,BANNER_COPY:P.BANNER_COPY,mount,resultId,sync:s=>mount()?.sync(s),activate:mode=>mount()?.activate(mode),edit:(a,i)=>mount()?.edit(a,i),Stage};
+  const api={PRIORITY,CHOICES,SAY,FORCED,forcedLine,policy,travel,pingpong,playground,bannerState:P.bannerState,bannerPicker:P.bannerPicker,BANNER_COPY:P.BANNER_COPY,mount,resultId,sync:s=>mount()?.sync(s),activate:mode=>mount()?.activate(mode),edit:(a,i)=>mount()?.edit(a,i),Stage,RECHECK_ART,recheckSlots};
   root.GwenStage=Stage;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GwenLane=api;
 })(typeof window!=='undefined'?window:globalThis);
