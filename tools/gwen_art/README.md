@@ -1,5 +1,21 @@
 # 그웬 SD 팬 그림
 
+## 재조사 사무실용 — 코트 벗은 SD 3종
+
+2026-11-23 내장 image_gen으로 `recon_look`(왼쪽 돋보기 관찰), `recon_pin`(왼쪽 위 사진 고정), `recon_nod`(팔짱·자신만만한 끄덕임) 정지 자세를 만들었음. 기존 investigate·files·report·ready 512px 그림을 직접 참조했음. 군복 코트만 벗고 흰 블라우스의 긴소매를 팔꿈치까지 걷었으며 청록 리본·금색 머리핀·남색 단발·금색 눈·기존 치마·스타킹·신발·장갑을 유지했음. 전연령·문자 없음·실제 투명 RGBA임.
+
+생성은 look 2회(시선 방향 보정 1회), pin·nod 각 1회로 총 4회였음. 원본은 모두 **1254×1254**, 확대 없이 저장소 밖 `recon/gwen/`에 보관했음. 전체 호출 프롬프트·참조·선정 결과는 [prompts_recon.json](prompts_recon.json)에 있음.
+
+`python -B -X utf8 tools/gwen_art/build_recon.py --import-dir <원본 PNG 폴더>`로 최초 가져오고, 이후에는 옵션 없이 커밋된 512px 파일에서 재현함. ready와 같은 알파 정리(10 미만 0·245 초과 255), 가장자리 중간 알파 보존, 450px 이내 축소·512px 캔버스·발끝 y482·192색 본체/64색 가장자리 팔레트를 썼음. 160px PNG는 기존 정지본 방식으로 색을 줄이고 알파를 보존했음.
+
+출력은 `assets/ui_icons/gwen/recon_look_512.png`·`recon_look.png`, `recon_pin_512.png`·`recon_pin.png`, `recon_nod_512.png`·`recon_nod.png` 6개임. 각각 512×512와 160×160, 합계 257,023바이트(160px 3개 58,643바이트)이며 파일당 80,000바이트 안에 있음. 빌더에서 크기·투명도·가장자리·여백·기존 전체 용량 한도를 검사함. **화면 연결·애니메이션은 추가하지 않았음.**
+
+보관 폴더의 `recon/with_gwen_office.png`는 사무실 위에 각 동작을 한 번씩 얹은 3행 정지 합성임. `recon/gwen/alpha_style_review.png`에서 기존 investigate와 같은 크기의 선·색·비율, 체커보드 알파와 어두운 배경의 실제 160px 정지본을 검수했음.
+
+검증: `python -X utf8 -I tools/run_tests.py forced gwen` 16통과·0실패. 옵션 없는 재빌드 전후 6파일 SHA-256이 같고, 호출 수·선정본·프롬프트의 로컬 절대 경로 부재를 확인했음.
+
+## 기존 SD 제작 기록
+
 새 SD 13종·깜빡임·용량·재현 기록: [art3.md](art3.md).
 
 2026-11-15 `ready`를 **화면 오른쪽의 «추천 편성 보기» 단추를 가리키는 자세**로 다시 만들었음. 기존 investigate·files·report·surprised·welcome의 512px 그림과 공식 21.webp·22.png를 `view_image`로 먼저 확인했음. 내장 `image_gen`에 welcome·investigate·report를 직접 참조로 넣고, 같은 SD 비율·굵은 윤곽선·남색/청록/금색 채색, 정면 몸, 한 손은 허리, 다른 팔과 검지는 보는 사람 기준 오른쪽으로 뻗은 자세, 자신만만한 미소를 요청했음. 전연령·문자 없음·투명 배경임. 이번 교체 생성 1회, 추가 재시도 0회임. 전체 프롬프트와 참조 목록은 [ready_prompt.json](ready_prompt.json)에 있음.

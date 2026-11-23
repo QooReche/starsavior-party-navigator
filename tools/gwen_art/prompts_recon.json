@@ -1,0 +1,138 @@
+{
+  "date": "2026-11-23",
+  "tool": "codex built-in image_gen",
+  "base_commit": "12d9262",
+  "generation_calls": 4,
+  "retries": 1,
+  "transparent_background": true,
+  "originals": "recon/gwen (outside repository)",
+  "native_size": [
+    1254,
+    1254
+  ],
+  "upscaled": false,
+  "screen_integration": false,
+  "images": [
+    {
+      "name": "recon_look",
+      "attempts": [
+        {
+          "prompt": "Use case: identity-preserve. Asset: one full-body SD/chibi Gwen sprite for a detective office game UI. Generate ONE character on a genuinely transparent RGBA background, square canvas at native 1024x1024 or larger, complete silhouette with generous transparent margins, no sheet, no labels. Reference images investigate, files, report and ready define the SAME EXACT CHARACTER, chibi proportions, face, bold clean outline thickness and flat 2-3 tone cel shading. Match the large head and tiny body, straight navy-purple bob with muted violet single highlight, short bangs, rectangular gold hairpin on viewer RIGHT, large half-lidded golden eyes with simple thick dark upper lids, small confident mouth. Office outfit: she has removed ONLY her military jacket/coat. Plain fully opaque WHITE long-sleeved blouse, sleeves ROLLED UP TO ELBOWS, modest high collar with TEAL RIBBON TIE and small gold/red jewel as in references. NO jacket, coat, epaulettes, shoulder gold fringe, corset or military bodice. Keep the SAME layered white ruffle skirt with navy/gold skirt border, teal waistband/ribbon, opaque pale lavender stockings and small black/navy shoes with gold trim exactly like existing SD references. Keep the existing white gloves. No bare torso, no cleavage, no thigh exposure; all ages. Preserve crisp smooth dark outline and flat navy/teal/gold/white palette, no airbrush, texture, realism, glossy shading, added sparkles or motion marks. Only requested props; no background, floor, board, backdrop, drop shadow, text, letters, logo, watermark. Pose: investigative ongoing work. Turn the face and upper body slightly to the VIEWER'S LEFT. Hold a magnifying glass in the left side of the image in front of her gaze, leaning slightly forward and looking THROUGH it toward the off-canvas evidence board at viewer left. Other hand relaxed at waist. Glass must not cover or distort her whole face. Tiny full body standing, both feet visible. Focused calm half-lidded golden eyes.",
+          "references": [
+            "assets/ui_icons/gwen/investigate_512.png",
+            "assets/ui_icons/gwen/files_512.png",
+            "assets/ui_icons/gwen/report_512.png",
+            "assets/ui_icons/gwen/ready_512.png"
+          ],
+          "selected": false,
+          "reason": "시선이 정면에 가까워 왼쪽 돋보기 관찰 자세로 보정함"
+        },
+        {
+          "prompt": "Use case: identity-preserve, targeted pose correction. Edit this transparent Gwen sprite. Keep the EXACT same character face design, oversized SD head and tiny body, navy bob and gold hairpin, golden eyes, clean thick outline, flat cel colors, white opaque blouse with sleeves rolled to elbows, teal ribbon tie, white gloves, layered ruffle skirt, opaque pale lavender stockings, tiny black/gold shoes. Change ONLY the investigative pose and direction: she must visibly be peering THROUGH the magnifying glass toward the VIEWER'S LEFT, not facing the camera holding it out. Turn head and upper torso about 40 degrees toward viewer LEFT, lean the small body slightly left, lift the glass close in front of the left-facing eye at face height; gaze clearly directed left through the lens toward an off-image evidence board. Keep face recognizable, no extreme lens enlargement or distortion. Other hand resting on waist. Keep entire full body inside square canvas with transparent padding. Absolutely no military jacket, epaulettes, background, board, text, motion marks, sparkles, floor or shadow. Preserve genuine RGBA transparency. All ages. Native resolution at least 1024x1024.",
+          "references": [
+            "recon/gwen/recon_look_attempt1.png (outside repository)"
+          ],
+          "selected": true
+        }
+      ]
+    },
+    {
+      "name": "recon_pin",
+      "attempts": [
+        {
+          "prompt": "Use case: identity-preserve. Asset: one full-body SD/chibi Gwen sprite for a detective office game UI. Generate ONE character on a genuinely transparent RGBA background, square canvas at native 1024x1024 or larger, complete silhouette with generous transparent margins, no sheet, no labels. Reference images investigate, files, report and ready define the SAME EXACT CHARACTER, chibi proportions, face, bold clean outline thickness and flat 2-3 tone cel shading. Match the large head and tiny body, straight navy-purple bob with muted violet single highlight, short bangs, rectangular gold hairpin on viewer RIGHT, large half-lidded golden eyes with simple thick dark upper lids, small confident mouth. Office outfit: she has removed ONLY her military jacket/coat. Plain fully opaque WHITE long-sleeved blouse, sleeves ROLLED UP TO ELBOWS, modest high collar with TEAL RIBBON TIE and small gold/red jewel as in references. NO jacket, coat, epaulettes, shoulder gold fringe, corset or military bodice. Keep the SAME layered white ruffle skirt with navy/gold skirt border, teal waistband/ribbon, opaque pale lavender stockings and small black/navy shoes with gold trim exactly like existing SD references. Keep the existing white gloves. No bare torso, no cleavage, no thigh exposure; all ages. Preserve crisp smooth dark outline and flat navy/teal/gold/white palette, no airbrush, texture, realism, glossy shading, added sparkles or motion marks. Only requested props; no background, floor, board, backdrop, drop shadow, text, letters, logo, watermark. Pose: pinning one photo onto an OFF-CANVAS evidence board to the VIEWER'S UPPER LEFT. Three-quarter body facing viewer left, face and gold eyes visible. Reach one arm diagonally up toward the upper LEFT, gloved fingertips pressing a single small rectangular photo with a tiny gold pin at its upper corner; other hand supports its lower edge. The photo has only a simple blue-gray silhouette of a ruined city, no letters. No visible board or background. Both feet visible, confident focused expression. Input 5 is the approved coat-off office outfit reference; match it exactly, while the first four define original SD identity/style.",
+          "references": [
+            "assets/ui_icons/gwen/investigate_512.png",
+            "assets/ui_icons/gwen/files_512.png",
+            "assets/ui_icons/gwen/report_512.png",
+            "assets/ui_icons/gwen/ready_512.png",
+            "recon/gwen/recon_look.png (outside repository; selected office costume)"
+          ],
+          "selected": true
+        }
+      ]
+    },
+    {
+      "name": "recon_nod",
+      "attempts": [
+        {
+          "prompt": "Use case: identity-preserve. Asset: one full-body SD/chibi Gwen sprite for a detective office game UI. Generate ONE character on a genuinely transparent RGBA background, square canvas at native 1024x1024 or larger, complete silhouette with generous transparent margins, no sheet, no labels. Reference images investigate, files, report and ready define the SAME EXACT CHARACTER, chibi proportions, face, bold clean outline thickness and flat 2-3 tone cel shading. Match the large head and tiny body, straight navy-purple bob with muted violet single highlight, short bangs, rectangular gold hairpin on viewer RIGHT, large half-lidded golden eyes with simple thick dark upper lids, small confident mouth. Office outfit: she has removed ONLY her military jacket/coat. Plain fully opaque WHITE long-sleeved blouse, sleeves ROLLED UP TO ELBOWS, modest high collar with TEAL RIBBON TIE and small gold/red jewel as in references. NO jacket, coat, epaulettes, shoulder gold fringe, corset or military bodice. Keep the SAME layered white ruffle skirt with navy/gold skirt border, teal waistband/ribbon, opaque pale lavender stockings and small black/navy shoes with gold trim exactly like existing SD references. Keep the existing white gloves. No bare torso, no cleavage, no thigh exposure; all ages. Preserve crisp smooth dark outline and flat navy/teal/gold/white palette, no airbrush, texture, realism, glossy shading, added sparkles or motion marks. Only requested props; no background, floor, board, backdrop, drop shadow, text, letters, logo, watermark. Pose: investigation finished. Stand full body with arms folded across the white blouse and a small self-confident smile. Chin dipped slightly in a satisfied nod, half-lidded GOLDEN eyes visible and directed slightly toward viewer LEFT. Both feet grounded and visible. No props, motion lines or symbols. Input 5 is the approved coat-off office outfit reference; match it exactly, while the first four define original SD identity/style.",
+          "references": [
+            "assets/ui_icons/gwen/investigate_512.png",
+            "assets/ui_icons/gwen/files_512.png",
+            "assets/ui_icons/gwen/report_512.png",
+            "assets/ui_icons/gwen/ready_512.png",
+            "recon/gwen/recon_look.png (outside repository; selected office costume)"
+          ],
+          "selected": true
+        }
+      ]
+    }
+  ],
+  "outputs": [
+    "assets/ui_icons/gwen/recon_look_512.png",
+    "assets/ui_icons/gwen/recon_look.png",
+    "assets/ui_icons/gwen/recon_pin_512.png",
+    "assets/ui_icons/gwen/recon_pin.png",
+    "assets/ui_icons/gwen/recon_nod_512.png",
+    "assets/ui_icons/gwen/recon_nod.png"
+  ],
+  "postprocess": "Alpha <10 -> 0, >245 -> 255; preserve edge alpha. Crop transparent margins, shrink to 450px bounds, center in 512 canvas with feet at y482. Same ready palette (192 interior / 64 edge colors); 160px still uses existing RGB quantization with alpha preserved. No animation, no screen wiring.",
+  "preview": "recon/with_gwen_office.png (outside repository)",
+  "artifacts": [
+    {
+      "path": "assets/ui_icons/gwen/recon_look_512.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 67672,
+      "sha256": "e2a5eb9295bdf1bf21159b791636433bef1fb85162d4ff7c910d13bf84fa50c4"
+    },
+    {
+      "path": "assets/ui_icons/gwen/recon_look.png",
+      "size": [
+        160,
+        160
+      ],
+      "bytes": 19681,
+      "sha256": "4ec84e38331de22c1495a60d5d0acfd80aadee8416308879cf5aa508ddd40437"
+    },
+    {
+      "path": "assets/ui_icons/gwen/recon_pin_512.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 68379,
+      "sha256": "4548e611057ea222815fc5dea8d9fb8292925adb00e14bb6ed408fb786016808"
+    },
+    {
+      "path": "assets/ui_icons/gwen/recon_pin.png",
+      "size": [
+        160,
+        160
+      ],
+      "bytes": 20882,
+      "sha256": "f90d2286adcd6b95d7681deb19319540ffcf322be2432aeb852704d4885e3ff5"
+    },
+    {
+      "path": "assets/ui_icons/gwen/recon_nod_512.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 62329,
+      "sha256": "a679b15740ec9c3facb84c80281fb7ae75ef4e3dcc1dee3ef95de28c22827524"
+    },
+    {
+      "path": "assets/ui_icons/gwen/recon_nod.png",
+      "size": [
+        160,
+        160
+      ],
+      "bytes": 18080,
+      "sha256": "1f6c88ac8e35c6204f60df44bb59e5b3a39851a3359a2c2b9c17811960f96254"
+    }
+  ]
+}
