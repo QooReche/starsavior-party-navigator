@@ -54,7 +54,7 @@ def main():
             tests.append((f, py + (['tests/run_workspace_test.py'] if f in WORKSPACE else []) + ['tests/' + f]))
         elif f.endswith('_test.js'):
             tests.append((f, ['node', 'tests/' + f] + (['--mutations'] if f in {
-                'assumed_guide_test.js', 'guide_bundle_test.js', 'review_guides_test.js'} else [])))
+                'assumed_guide_test.js', 'guide_bundle_test.js', 'review_guides_test.js', 'reco_plan_test.js'} else [])))
     if a.only:
         tests = [t for t in tests if any(w in t[0] for w in a.only)]
     if a.e2e:

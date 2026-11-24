@@ -22,7 +22,8 @@ vm.runInContext(section('function simStart(','document.querySelectorAll(\'input[
 const ev=s=>vm.runInContext(s,ctx);
 // 작업자는 팀을 하나씩 받는다(대기열 simDispatch): w.req = 지금 맡은 팀, 그 팀의 done 을 보내야 다음 팀이 온다. 보낼 전체 목록 = SIMQ.lastReq.req.teams
 // (이 맥락에는 navigator 가 없어 작업자 1개)
-const start=teams=>{ctx.LASTQ[1]={rows:teams};ctx.SIMQ.busy=null;stops.length=0;assert.equal(ev('simStart(1)'),true);
+const start=(teams,jobs=false)=>{ctx.LASTQ[1]={rows:teams};ctx.SIMQ.busy=null;stops.length=0;
+ assert.equal(ev(jobs?'simStart(1,LASTQ[1].rows.map(t=>({key:UiShared.teamKey(t.keys),t,bname:null,sig:simSig(cur[$("stage").value],t)})))':'simStart(1)'),true);
  const w=ctx.SIMQ.w,msg=m=>w.onmessage({data:Object.assign({id:w.req.id,job:w.req.job},m)});
  return {w,req:w.req,all:Array.from(ev('SIMQ.lastReq.req.teams')),msg,team:result=>{msg({type:'team',key:w.req.teams[0].key,result});msg({type:'done'})}}};
 const T=[mk(['a','b','c','d']),mk(['a','b','c','e']),mk(['a','b','c','f'])];
@@ -40,9 +41,14 @@ assert.equal(Math.round(ev('SIMQ.rate')),2000); // 1판당 2초로 잼
 
 // 3) 잰 속도가 느리면 팀 하나 상한도 늘어난다(3배): 1판 2초 × 100판 × 3 = 600초
 assert.equal(ev('simTeamLimit(100)'),600000);
-// 남은 시간: 새 요청에서 팀 시작 직후 = 남은 팀 수 × 100판 × 2초
+// 남은 시간: 자동 추천 본선(작업 목록 없이 부름)은 전체 진행 줄(recoPlanPaint)이 맡아 여기서는 세지 않음
 for(const t of T)for(const k of Object.keys(ctx.SIMQ.res))delete ctx.SIMQ.res[k];
 r=start(T);r.msg({type:'stage',msg:'시뮬 1/1팀 (100판)'});
+assert.equal(ev('SIMQ.eta'),null);assert.equal(ev('simEtaText()'),'');
+for(let i=0;i<3;i++){if(i)r.msg({type:'stage',msg:'시뮬 1/1팀 (100판)'});r.team({n:100,clear:0.5})}
+for(const k of Object.keys(ctx.SIMQ.res))delete ctx.SIMQ.res[k];
+// 따로 도는 작업(정밀 확인처럼 작업 목록을 넘김) = 남은 팀 수 × 100판 × 2초
+r=start(T,true);r.msg({type:'stage',msg:'시뮬 1/1팀 (100판)'});
 assert.equal(ev('SIMQ.eta')-now,600000);assert.match(ev('simEtaText()'),/완료까지 약 10분/);assert.match(ev('simEtaText()'),/오래 걸릴 수 있음/);
 advance(300000);assert.equal(ev('SIMQ.eta')-now,300000);
 
@@ -225,9 +231,8 @@ console.log('PASS 예선 상한 없음·준비 지연/실패·작업자별 무�
  // 본선: 살아 있는 작업자 셋에 팀을 하나씩 — 새로 띄우지 않는다
  assert.equal(h.ev('simStart(1)'),true);assert.equal(h.ws.length,3);
  assert.equal(sent(h).length,3);assert.equal(new Set(sentOf(h).map(p=>p.w)).size,3);assert(sentOf(h).every(p=>p.req.n_runs===100));
- // 남은 시간: 팀 3 × 100판 × 1판 2초 ÷ 작업자 3
  h.c.SIMQ.rate=2000;for(const w of h.ws)h.send(w,{type:'stage',msg:'시뮬 1/1팀 (100판)'});
- assert.equal(h.c.SIMQ.eta-h.c.Date.now(),200000);
+ assert.equal(h.c.SIMQ.eta,null,'자동 추천 본선의 남은 시간은 전체 진행 줄이 맡음');
  finishAll(h,0.9);assert.equal(h.c.SIMQ.busy,null);assert.equal(Object.keys(h.c.SIMQ.res).length,3);assert(h.ws.every(w=>!w.stopped));
  // 무효화(조건 변경·취소)에서는 모두 끈다
  h.ev('simInvalidate()');assert(h.ws.every(w=>w.stopped));assert.equal(h.c.SIMQ.pool,null);assert.equal(h.c.SIMQ.w,null);

@@ -15,7 +15,7 @@ const inventory={
   'growth_ui.js':[['${Object.keys(results).length}/${jobs.length}','producer: env.paint; default growth tab outside five owners']],
   'guild_search.js':[['${st.total ? ` · ${st.done}/${st.total}','guildSearch']],
   'myinfo_view.js':[["${n}/${e?.parts||'?'}",'excluded: equipment set parts']],
-  'party_template.html':[['<progress','direct'],['${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}','reco'],['${got}/${all}','reco'],['${seen}/${sc.total}','excluded: stopped sample count'],['${done}/${all}','reco'],['role="progressbar"','reco'],['${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10','excluded: power score'],['${eq}/6','excluded: equipment slots']],
+  'party_template.html':[['role="progressbar"','reco plan: recoPlanPaint 전체 진행 줄(그웬 길 아래, reco-gwen-stage 안)'],['<progress','direct'],['${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}','reco'],['${got}/${all}','reco'],['${seen}/${sc.total}','excluded: stopped sample count'],['${done}/${all}','reco'],['role="progressbar"','reco'],['${v.step+1}/${v.steps.length}','reco plan'],['${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10','excluded: power score'],['${eq}/6','excluded: equipment slots']],
   'placement_page.js':[['${DIRECT.placement.done||0}/24','레인 미연결(범위 밖)'],['${CDIRECT.placement.done||0}/24','레인 미연결(범위 밖)']],
   'recheck_ui.js':[['${screened(r)}/24','reco'],['role="progressbar"','reco']],   // 현장 재조사 칸: recheckPaint 가 recoGwenShow(재조사 장면)와 같이 갱신
   'recommend_runtime.js':[['${got}/${jobs.length}','producer: recoProgressPaint / directResultsPaint']],

@@ -329,6 +329,7 @@ summary{padding:9px 4px}
 <section id="cosmo-search" class="panel" aria-label="코스모 게이트 3보스 편성 찾기" hidden></section>
 <div id="reco-gwen-stage" class="reco-gwen-stage" hidden>
  <div data-gwen-slot="reco-board"></div>
+ <div class="reco-plan" data-k="plan" hidden><div class="rp-bar" role="progressbar" aria-label="자동 추천 전체 진행" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div><p><b data-k="plan-step"></b><span data-k="plan-eta" aria-live="off"></span></p></div>
 </div>
 <div id="out"></div>
 <section id="cosmo-direct-panel" class="party cd-panel" aria-label="코스모 게이트 직접 편성" hidden></section>
@@ -440,6 +441,7 @@ summary{padding:9px 4px}
 <script src="cosmo_direct_page.js"></script>
 <script src="recommend_runtime.js"></script>
 <script src="recheck_ui.js"></script>
+<script src="reco_plan.js"></script>
 <script src="direct_bundle.js"></script>
 <link rel="stylesheet" href="direct.css">
 <link rel="stylesheet" href="cosmo_direct.css">
@@ -1033,11 +1035,10 @@ function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("c
  // 엔진 준비 전 = LOAD_MS, 준비 뒤 = 팀 하나 상한(simTeamLimit: 이 기기에서 잰 속도의 3배, 최소 RUN_MS)
  const live=()=>SIMQ.requestId===id;
  const arm=simWatch(ws,()=>simTeamLimit(runs),live,ready=>simStop(ready?"모의 전투 시간 초과":"엔진 준비 시간 초과"));
- // 남은 시간 = (남은 팀 × 판 수 × 속도 − 돌고 있는 팀이 이미 쓴 시간) ÷ 작업자 수
- const eta=()=>{const left=rows.filter(j=>!SIMQ.res[j.sig]).length,r=simRate(),now=Date.now();
-  const done=rows.filter(j=>SIMQ.res[j.sig]),more=!jobs&&box.total>box.rows.length&&box.rows.length<9&&done.length&&done.every(j=>goalVal(SIMQ.res[j.sig])<0.5)?Math.ceil((Math.min(9,box.total)-box.rows.length)/3):0;
+ // 남은 시간 = (남은 팀 × 판 수 × 속도 − 돌고 있는 팀이 이미 쓴 시간) ÷ 작업자 수 — 스킬 비교·정밀 확인(jobs·compareKey)만. 자동 추천 본선은 전체 진행 줄(recoPlanPaint)
+ const eta=()=>{if(!jobs&&!compareKey)return;const left=rows.filter(j=>!SIMQ.res[j.sig]).length,r=simRate(),now=Date.now();
   const spent=ws.reduce((a,w)=>a+(w._job!=null&&w._t?now-w._t:0),0);
-  SIMQ.eta=r&&SIMQ.loaded?now+Math.max(0,left*runs*r-spent)/ws.length+(SIMQ.runMs||0)+more*simBatchMs(runs,r):null};
+  SIMQ.eta=r&&SIMQ.loaded?now+Math.max(0,left*runs*r-spent)/ws.length+(SIMQ.runMs||0):null};
  SIMQ.eta=null;
  const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,"");
  const teams=rows.map(j=>({key:j.key,party:simParty(j.t),options:{break_skill:j.bname?{name:j.bname,level:brkLv(j.bname)}:null}}));
@@ -1087,8 +1088,6 @@ function simRelease(w,kill=false){return SIM_EXEC.release(w,kill)}
 function simRateAdd(r,kind){if(!(r>0))return;const k=kind==="scr"?"rateS":"rate";SIMQ[k]=SIMQ[k]?SIMQ[k]*0.5+r*0.5:r}
 function simRate(){return SIMQ.rate}
 // 화면 다시 계산(run) 한 번의 시간 — 저사양 기기에서는 이것도 길다
-// 본선 한 묶음(3팀) 예상 시간 = 계산(작업자에 나눔) + 화면 다시 계산 2번
-function simBatchMs(runs,rate){return 3*runs*rate/Math.min(3,scrWorkers())+2*(SIMQ.runMs||0)}
 function simRunAdd(ms){if(ms>=0)SIMQ.runMs=SIMQ.runMs?SIMQ.runMs*0.5+ms*0.5:ms}
 // 진행 칸 갱신: 모양이 같으면(같은 단추·같은 표시) 단추 DOM 은 그대로 두고 글자·막대만 바꾼다.
 // 통째로 다시 그리면 누르는 중이던 단추가 사라져 클릭이 안 먹는다(팀 결과·단계 전환 때마다 다시 그리던 것, 11/13 리뷰)
@@ -1106,8 +1105,9 @@ function simPaintProgress(){const pv=typeof document!=="undefined"&&document.que
 // 팀 하나의 시간 상한: 잰 속도로 예상한 시간의 3배(저사양 기기 배려), 최소 RUN_MS
 function simTeamLimit(runs){const r=simRate();return Math.max(SIMQ.RUN_MS,r?3*r*runs:0)}
 const fmtDur=UiShared.durText;
+// 남은 시간 글자는 스킬 비교·300판 정밀 확인처럼 따로 도는 작은 작업만. 자동 추천 흐름(예선·본선·재조사)의 시간은 전체 진행 줄(recoPlanPaint) 한 곳
 function simEtaText(){if(SIMQ.busy==null)return "";if(!SIMQ.loaded)return "계산 엔진 준비 중(처음 한 번 · 기기·네트워크에 따라 1~3분)";
- if(!SIMQ.eta)return "남은 시간 계산 중";const left=SIMQ.eta-Date.now();
+ if(!SIMQ.compareKey&&!SIMQ.eta)return "";if(!SIMQ.eta)return "남은 시간 계산 중";const left=SIMQ.eta-Date.now();
  return left<-30000?"예상보다 오래 걸리고 있음 · 계산은 계속 진행 중":left<5000?"곧 끝남":`완료까지 약 ${fmtDur(left)}`+(left>120000?" · 이 기기에서는 오래 걸릴 수 있음. 탭을 연 채로 대기 필요":"")}
 function simRefine(p,key){const st=cur&&cur[$("stage").value],t=LASTQ[p]?.rows.find(t=>ckey(t.combo)===key);if(!st||!t||SIMQ.busy)return;
  const r=SIMQ.res[simSig(st,t)],rate=r&&r.clear;if(!r||r.n>=300||rate<0.35||rate>0.65)return;
@@ -1262,7 +1262,7 @@ function scrStop(){const st=cur&&cur[$("stage").value],sc=st&&SIMQ.busy!=null?SI
 function scrHasRes(sc){return Object.keys(sc.res).length>0||!!(sc.res0&&Object.keys(sc.res0).length)}
 function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("stage").value],box=LASTQ[p];if(!st||!box||SIMQ.busy!=null)return false;
  const k=scrKey(st,p),ck=t=>UiShared.teamKey(t.keys),byKey=new Map(box.all.map(t=>[ck(t),t]));
- const R0=SCR_ROUNDS[0],R1=SCR_ROUNDS[1];let sc=SIMQ.scr[k];
+ const R1=SCR_ROUNDS[1];let sc=SIMQ.scr[k];
  if(more){if(!sc||!sc.done||!sc.short)return false;sc.pool=sc.pool.filter(x=>byKey.has(x));sc.total=sc.pool.length;sc.done=false;sc.free=true;sc.allReady=false}
  else{const pool=scrPick(box.all,SCR_RK&&rkOf(c.key)?rkQuickTop(c,st,box.all,SCR_RK):null);
   if(pool.length<=3){SIMQ.scr[k]={done:true,order:pool,n:pool.length,total:pool.length,pool,res:{},res2:{}};return false}
@@ -1280,18 +1280,12 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
  //  작업자(파이썬 web.merge_summary)가 합친다 — 합친 값은 32판을 한 번에 돌린 것과 같다(tests/screen_merge_test.py). raw 가 없으면(옛 엔진 묶음) 32판을 다 돈다
  const leg=(i,keys,next)=>{const n=scrRoundN(i),into=i<0?sc.res0:i?sc.res2:sc.res;{const sync=()=>{const pv=document.querySelector('[data-k="progress"]');if(pv&&SIMQ.screening)simProgressSync(pv,st)};scrLegEnter(sc,i,keys.length,sync);sync()}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
   const rid=id,live=()=>SIMQ.requestId===rid,ws=scrPool(keys.length);
-  const prior=key=>scrPrior(sc,i,key),runsOf=key=>{const pr=prior(key);return pr?n-pr.off:n},per=keys.reduce((a,k)=>a+runsOf(k),0)/keys.length;
-  // 남은 시간 = 예선 남은 몫(작업자 수로 나눔) + 본선
-  // 본선 = 보이는 팀 수 × 판 수 × 본선 속도(모르면 예선 속도), 작업자에 나눔 + 화면 다시 계산 2번(예선 끝·본선 끝)
-  const scrEta=()=>{const rs=SIMQ.rateS;if(!rs||!sc.allReady){SIMQ.eta=null;return}const nw=ws.length;
-   const n1=i<0?sc.fullN:sc.left,ms=(sc.left-(sc.got||0))*per*rs/nw+(i<0?n1*(R0.n-SCR_FULL.n)*rs/nw:0)+(i>0?0:Math.min(R1.top,n1)*(R1.n-R0.n)*rs/nw);
-   const ord=i<0?[]:scrOrder(sc),k=ord.findIndex(x=>goalVal(sc.res2[x]||sc.res[x])>=0.5),nb=Math.max(1,Math.min(k<0?3:Math.floor(k/3)+1,Math.ceil(Math.min(9,box.total||3)/3)));
-   SIMQ.eta=Date.now()+ms+nb*simBatchMs(SIMQ.n,simRate()||rs)};
+  const prior=key=>scrPrior(sc,i,key),runsOf=key=>{const pr=prior(key);return pr?n-pr.off:n};
   // 무진행 상한(작업자별, simWatch): 엔진 준비 전에는 내려받기 상한, 준비 뒤에는 팀 하나 상한. 전체 시간 상한은 없다
   const arm=simWatch(ws,()=>simTeamLimit(n),live,ready=>{SIMQ.screening=false;simStop(ready?"모의 전투 시간 초과":"엔진 준비 시간 초과")});
-  // 남은 시간(scrEta)·진행 칸 갱신은 SearchExecutor.PAINT_MS(200ms) 간격으로만(SearchExecutor.throttle — 훑기 10,626팀마다 정렬·DOM 을 다시 하면 배차를 겸하는 메인이 막힘). 단계 끝(done)에는 다음 단계 시작이 진행 칸을 다시 그린다
-  const paint=SearchExecutor.throttle(()=>{scrEta();const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)},SearchExecutor.PAINT_MS,live);
-  // 남은 시간은 작업자가 «모두» 엔진을 준비한 뒤부터 보인다
+  // 진행 칸 갱신은 SearchExecutor.PAINT_MS(200ms) 간격으로만(SearchExecutor.throttle — 훑기 10,626팀마다 정렬·DOM 을 다시 하면 배차를 겸하는 메인이 막힘). 단계 끝(done)에는 다음 단계 시작이 진행 칸을 다시 그린다
+  const paint=SearchExecutor.throttle(()=>{const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)},SearchExecutor.PAINT_MS,live);
+  // 엔진 준비 끝(sc.allReady) = 작업자 «모두» 준비
   const chk=()=>{if(!sc.allReady&&ws.every(x=>x._ready)){sc.allReady=true;SIMQ.loaded=true}};
   const opt=Object.assign({},simOpt(c.key),{rng_streams:true}),stage=c.key+"/"+st.tab+"/"+st.name;
   // 묶음(A-2): 팀 여러 개를 한 요청으로(SearchExecutor.chunkSize — 훑기 10,626팀·작업자 8개면 34팀, 예선 120팀이면 1팀). 결과는 팀마다 같은 시드라 그대로
@@ -1408,8 +1402,51 @@ function recheckBundle(card){const el=card.querySelector('.rc-strip'),on=RECHECK
  if(!el){card.querySelector('.pbar')?.insertAdjacentHTML('beforebegin',RecheckUi.strip(RECHECK,{bundle:true}));return}
  RecheckUi.sync(el,RECHECK)}
 function buildCands(ranked){return ranked.slice(0,10).map((x,i)=>({combo:x.combo,v:x.v,got:x.got,rank:i,key:ckey(x.combo)}))}
-// 남은 시간 표시는 1초마다 다시 그린다(화면 전체를 다시 그리지 않고 글자만)
-setInterval(()=>{if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
+// ── 전체 진행·남은 시간(11/24, reco_plan.js): 끝날 때까지의 단계(후보 거르기 → 상위 팀 확인 → 현장 재조사)를 지금 상태에서 다시 세어 그웬 길 아래 한 줄로.
+// 화면 길(simScreen·simStart·recoArrangeKick)·묶음 길(recoCalculate)이 같은 상태(SIMQ.scr·SIMQ.res·RECHECK·RECO_ARR)를 쓰므로 둘 다 여기서 셈.
+// 단계 = {id,step,jobs,done,runs,chunk,kind,p}. 모르는 앞일: 예선 후보 수 = 규칙 수(R0.q+R0.v), 재조사 팀 = 클리어 100%가 아닌 보이는 팀, 재조사 200판·재측정 = 늘 셈(p 1, 반만 세면 실측보다 짧음 — reco_plan.js 머리말)
+const RECO_PLAN=RecoPlan.tracker(LS.get("reco.plan.v1")||{});
+// 저장은 배운 값이 바뀔 때만 — 처음 그릴 때 빈 기록을 쓰지 않음(다른 작업 중 저장소를 건드리면 안 됨: test_page test_star_link_slots)
+recoPlanPaint.saved=JSON.stringify(RECO_PLAN.learned());
+function recoPlanStages(st){
+ if(!st)return null;const out=[],R0=SCR_ROUNDS[0],R1=SCR_ROUNDS[1],W=scrWorkers(),ck=n=>SearchExecutor.chunkSize(n,W),ps=Object.keys(LASTQ).map(Number).sort(),multi=ps.length>1,id=recheckIdent();
+ for(const p of ps){const b=LASTQ[p];if(!b)continue;const tag=multi?`파티 ${p} · `:"",S=tag+"후보 거르기",F=tag+"상위 팀 확인",R=tag+"현장 재조사";
+  const sc=SIMQ.scr[scrKey(st,p)],add=(k,step,jobs,done,runs,kind="run",chunk=1)=>{if(jobs>0)out.push({id:p+":"+k,step,jobs,done:Math.min(done,jobs),runs,chunk,kind})};
+  // 끝난 단계도 목록에 남김(단계 번호 «n/3»이 줄지 않게) — 시간 0
+  if(scrOn()&&sc?.done)add("pre",S,1,1,0);
+  if(scrOn()&&!sc?.done){const r=sc?.round,full=sc?.full&&(!sc.fullDone||r!=null);
+   if(sc?.full&&!sc.fullDone)add("scan",S,sc.full.length,r===-1?sc.got||0:0,SCR_FULL.n,"scan",ck(sc.full.length));
+   const n0=r===0?sc.left:sc?.full?sc.fullN:sc?.pool?.length||R0.q+R0.v;
+   if(!(r>0))add("pre1",S,n0,r===0?sc.got||0:0,R0.n-(full?SCR_FULL.n:0),"pre",ck(n0));
+   const n1=r===1?sc.left:Math.min(R1.top,n0);add("pre2",S,n1,r===1?sc.got||0:0,R1.n-R0.n,"pre",ck(n1));}
+  const rows=b.rows||[];add("final",F,rows.length,rows.filter(t=>SIMQ.res[simSig(st,t)]).length,SIMQ.n);
+  if(typeof PartyPlacement==="undefined")continue;
+  const rc=RECHECK.state==="work"&&RECHECK.p===p&&RECHECK.key===id?RECHECK:null;
+  if(!rc&&rows.every(t=>arrGet(id,UiShared.teamKey(t.keys))))continue;
+  // 재조사 팀 = 아직 비교 안 했고 클리어 100%가 아닌 팀(recoArrangeNeed 와 같은 조건). 본선 결과가 없으면 예선 결과(32판·8판)로, 그것도 없으면 빠른 계산 판정(vd)으로
+  //  짐작한 확률(여유 0.2·빠듯 0.6·못 깸 1)을 단계에 실음(p) — 쉬운 스테이지는 대부분 건너뛰어 «3팀 다 한다»고 치면 50초짜리가 «약 2분 50초»로 나옴
+  const like=rc?null:rows.map(t=>{const k=UiShared.teamKey(t.keys),r=SIMQ.res[simSig(st,t)]||sc?.res2?.[k]||sc?.res?.[k];
+   return arrGet(id,k)?0:r?(goalVal(r)>=1&&r.clear>=1?0:1):({safe:0.2,tight:0.6}[t.vd]??1)});
+  const T=rc?rc.teams:like.filter(x=>x>0).length,pr=rc?1:T?like.reduce((a,x)=>a+x,0)/T:0;
+  if(!T){add("rc0",R,1,1,0);continue}   // 재조사 없을 것 같아도 단계 번호(n/3)는 그대로
+  const at=rc?{enter:0,screen:0,check100:1,final200:2,fix:3}[rc.stage]??0:-1,got=k=>at>k?Infinity:at===k&&rc.stage!=="enter"&&rc.stage!=="fix"?rc.got||0:0;
+  const n0=out.length;add("rc1",R,24*T,got(0),RECO_ARR_SCREEN,"run",ck(24*T));add("rc2",R,(RECO_ARR_KEEP+1)*T,got(1),RECO_ARR_CHECK);
+  add("rc3",R,(RECO_ARR_KEEP+1)*T,got(2),RECO_ARR_FINAL-RECO_ARR_CHECK);   // 200판 이어 확인은 100판에서 갈리지 않을 때만(PartyPlacement.recoStop) — 그래도 늘 셈(건너뛰면 일찍 끝남)
+  add("rc4",R,T,got(3),SIMQ.n);   // 재측정은 자리를 바꾼 팀만 — 늘 셈(위와 같은 이유)
+  for(const x of out.slice(n0))x.p=(x.p??1)*pr;}
+ return out}
+// 자동 추천만: SIMQ.busy 가 파티 번호일 때 — 글자 값 둘은 뺌(슬롯 찾기 'slots'·육성 'growth' 는 다른 작업 — 그 시간을 배우면 속도가 틀어지고 저장소도 바뀜, 11/24 test_star_link_slots)
+function recoPlanPaint(){const el=document.querySelector('#reco-gwen-stage [data-k="plan"]');if(!el)return;
+ const st=cur&&cur[$("stage").value],busy=SIMQ.busy!=null&&SIMQ.busy!=="slots"&&SIMQ.busy!=="growth"&&!SIMQ.compareKey||!!(RECO.task&&!RECO.task.done&&RECO.task.owner!=="growth-bundle");
+ let v=null;try{v=RECO_PLAN.update(busy?recoPlanStages(st):null,{key:recheckIdent(),workers:scrWorkers(),busy,loading:!SIMQ.loaded,now:Date.now(),fallback:{run:SIMQ.rate}})}catch(e){v=null}
+ el.hidden=!v||!v.steps.length;if(el.hidden)return;
+ const step=`${v.step+1}/${v.steps.length} ${v.steps[v.step]||""}`,eta=v.text||RecoPlan.etaText(v.remain,fmtDur);
+ const s=el.querySelector('[data-k="plan-step"]'),e=el.querySelector('[data-k="plan-eta"]'),bar=el.querySelector('.rp-bar');
+ if(s.textContent!==step)s.textContent=step;if(e.textContent!==eta)e.textContent=eta;
+ bar.setAttribute("aria-valuenow",Math.round(v.frac*100));bar.firstElementChild.style.transform=`scaleX(${v.frac.toFixed(3)})`;
+ const l=JSON.stringify(RECO_PLAN.learned());if(l!==recoPlanPaint.saved){recoPlanPaint.saved=l;LS.set("reco.plan.v1",JSON.parse(l))}}   // 다음 실행의 첫 추정용(같은 기기)
+// 1초마다: 전체 진행 줄 + (스킬 비교 등 따로 도는 작은 작업의) 남은 시간 글자. 화면 전체를 다시 그리지 않고 글자만
+setInterval(()=>{recoPlanPaint();if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
 // 추천은 버튼으로 시작한다. 시험용 URL과 공유 링크만 자동으로 시작한다.
 const AUTO=!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'&&/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
 const RECO={timer:null,revision:0,standard:false,sharedPending:!!SHARE.c&&!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'};

@@ -118,6 +118,12 @@ body[data-guild-gwen-owner=guildSearch] #out .idle{display:block}
 #direct-lane-banner,#reco-lane-banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;text-align:center}
 #direct-lane-banner[hidden],#direct-lane-banner [hidden],#reco-lane-banner[hidden],#reco-lane-banner [hidden]{display:none}
 .reco-gwen-stage{margin-bottom:8px;transition:margin .35s ease}.reco-gwen-stage[hidden]{display:none}
+/* 전체 진행 줄(party_template.html recoPlanPaint, reco_plan.js): 그웬 길 바로 아래. 막대는 1초마다 받은 값으로 1초 동안 이어 움직임(transform 만) */
+.reco-plan{display:flex;align-items:center;gap:10px;margin:6px 2px 0;font-size:12px;color:var(--mut)}.reco-plan[hidden]{display:none}
+.reco-plan .rp-bar{flex:1;min-width:60px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+.reco-plan .rp-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),#bfeee9);transform-origin:left;transform:scaleX(0);transition:transform 1s linear}
+.reco-plan p{margin:0;display:flex;gap:8px;white-space:nowrap}.reco-plan b{color:var(--fg);font-weight:600}
+@media(max-width:520px){.reco-plan{flex-wrap:wrap;gap:4px 8px}.reco-plan .rp-bar{flex-basis:100%}.reco-plan p{white-space:normal}}
 /* 자동 추천·직접 편성: 결과가 나오면 위쪽 길을 접음(완료 배너 없음, 11/23 — gwen_policy.js FOLDED). 오류 «수사 난항…»은 남김. 0.35초 전환은 recheck.css */
 .reco-gwen-stage:has(#reco-board-lane[data-fold]){margin-bottom:0}
 .reco-gwen-stage #reco-board-lane[data-fold],#direct-board-lane[data-fold]{height:0;padding-top:0;background:none}

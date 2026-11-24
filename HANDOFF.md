@@ -1,9 +1,10 @@
 # 인수인계
 
-갱신 2026-11-21. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md) — 코드·note·문서에 남은 «HANDOFF 의 ○○ 절» 참조도 거기서 찾음.
+갱신 2026-11-24. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md) — 코드·note·문서에 남은 «HANDOFF 의 ○○ 절» 참조도 거기서 찾음.
 
 ## 현재 상태
 
+- **자동 추천 전체 진행 줄(11/24)**: 그웬 길 아래 한 줄로 끝날 때까지의 단계(후보 거르기 → 상위 팀 확인 → 현장 재조사)·남은 시간·막대를 보여 줌. 단계별 남은 시간·재조사 미포함이던 옛 표시를 대신함. 계산 `reco_plan.js`, 화면 `party_template.html` recoPlanStages·recoPlanPaint. 작업자 2개 실측 38-36 에서 표시 ÷ 실제 0.91~1.17. 상세 HISTORY 11/24.
 - **현장 재조사(11/23)**: 자리·리더 비교 동안 결과 판을 그대로 두고 맨 위 재조사 칸(단계 3칸·막대·기록 줄·«지금 자리로 확정»)과 그웬 길의 탐정 사무실 장면(보드 빈 4칸의 얼굴 사진·창밖 고리 빛·코트 벗은 SD 그웬)을 보여 줌. 바뀐 팀은 같은 작업 안에서 표준 본선 재측정·되돌림 판정까지 끝낸 뒤 카드가 한 번 미끄러짐(그동안 카드·수치는 규칙 자리). 자동 추천·직접 편성의 위쪽 완료 배너는 없애고 결과가 나오면 길을 접음(코스모 직접 편성·코스모 3보스 찾기·길드 찾기 배너는 그대로). 상태 `recommend_runtime.js` RECHECK, 조각 `recheck_ui.js`, 장면 `gwen_lane.js` recheckSync, 스타일 `recheck.css`, 그림 `tools/build_recon_art.py` → `assets/recon/`. 상세 HISTORY 11/23.
 - **자리·리더 비교(11/23)**: 자동 추천 본선 뒤 클리어 100%가 아닌 보이는 팀마다 24가지 자리·리더를 돌려 확실히 좋을 때만 교체(`party_placement.js` raceMany·reco*, `recommend_runtime.js` recoArrange). 어려운 스테이지 시간 약 3~3.5배. 상세 HISTORY 11/23.
 - **재조사용 SD 그웬 준비**: `recon_look`·`recon_pin`·`recon_nod`의 흰 블라우스를 맨 윗단추 하나 푼 접힌 셔츠 칼라와 소매·몸통에 부드러운 주름이 있는 여유로운 핏으로 고쳤음. 긴소매·손목 커프스·맨손·은색 사각 버클 두 줄의 검은 언더버스트 코르셋·흰 프릴 치마를 유지했음. 512px PNG·160px 정지본 6개의 배경 합성·알파를 검수했고 화면에는 `assets/recon/gwen_*.webp`(240px, `tools/build_recon_art.py`)로 연결했음(위 «현장 재조사»). 재현 빌더·전체 프롬프트·용량은 `tools/gwen_art/README.md`의 재조사 절을 참조함.
