@@ -1019,7 +1019,7 @@ def test_myinfo_import_clear(browser, ctx):
     page.wait_for_selector('#out .party .qbox .qrow[data-key]')
     choose(page, '작전 (일반)', 'SECTOR 1-3')
     assert page.input_value('#grow') == 'myinfo'
-    assert page.locator('#share-mi').is_checked()
+    assert page.locator('#mi-send').is_visible()
     assert len([u for u in requests if '/data/growth.json' in u]) == 1
     keys = page.evaluate('() => MyInfoImport.mapOwned(MI.info, R).keys.sort()')
     own = page.evaluate("() => [...document.querySelectorAll('#own input:checked')].map(x => x.dataset.k).sort()")
@@ -1173,7 +1173,8 @@ def test_myinfo_sim(browser, ctx):
 
 
 def test_share_link(browser, ctx):
-    """링크 복사: 조건(c·s·rk·b)만, 「내 정보 포함」이면 #shared= — 받는 쪽은 그 정보로 보되 저장 안 함(#shared-bar), 자기 내 정보는 그대로, 옛 g/p·잘못된 값 무시."""
+    """링크 복사(⋯ 메뉴): 조건(c·s·rk·b)만. 「내 정보 보내기»(헤더): 조건 없이 #shared= 만 — 받는 쪽은 자동 시작 없이 그 정보로 보고
+    (저장 안 함, #shared-bar) 휴대폰에서 스테이지를 직접 골라 돌림. 자기 내 정보는 그대로, 옛 g/p·잘못된 값 무시."""
     from urllib.parse import urlsplit, parse_qs
     page = open_page(browser, ctx, viewport={'width': 390, 'height': 844}, info=SYNTH)
     choose(page, '작전 (일반)', '37-3')
@@ -1183,14 +1184,10 @@ def test_share_link(browser, ctx):
     settle(page)
     page.click('.party[data-party="1"] .score-details > summary')
     page.select_option('.party[data-party="1"] .bsel', '')
-    expected = page.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,$("rk").value]')
-    # 1) 「내 정보 포함」 끔: 조건만
+    # 1) 링크 복사: 조건만(내 정보 없음, 포함 체크 자체가 없음)
     if not page.locator('#optbox').evaluate('e => e.open'):
         page.click('#optbox > summary')
-    assert page.locator('#share-mi').is_visible()
-    page.uncheck('#share-mi')
-    if not page.locator('#optbox').evaluate('e => e.open'):
-        page.click('#optbox > summary')
+    assert page.locator('#share-mi').count() == 0
     page.click('#share-link')
     page.wait_for_function('() => !!window.copied')
     url = page.evaluate('() => window.copied')
@@ -1198,16 +1195,17 @@ def test_share_link(browser, ctx):
     assert set(params) == {'c', 's', 'rk', 'b', 'ag', 'ao'}, params
     assert params['ag'] == ['0'] and params['ao'] == ['0'] and 'ae' not in params
     assert not urlsplit(url).fragment
-    # 2) 「내 정보 포함」: 해시 #shared=
-    page.check('#share-mi')
+    # 2) 내 정보 보내기: 헤더 «새로 불러오기(내 정보)» 옆, 조건 없이 #shared= 만
     page.evaluate('() => { window.copied = null }')
-    if not page.locator('#optbox').evaluate('e => e.open'):
-        page.click('#optbox > summary')
-    page.click('#share-link')
+    send = page.locator('header.site-head #mi-send')
+    assert send.is_visible() and send.get_attribute('aria-label') == '내 정보 보내기' and send.inner_text() == '보내기'   # 390px 은 짧게
+    send.click()
     page.wait_for_function('() => !!window.copied')
     mi_url = page.evaluate('() => window.copied')
-    assert parse_qs(urlsplit(mi_url).query, keep_blank_values=True) == params
+    page.wait_for_function('() => document.querySelector("#mi-send").textContent==="내 정보 보내기"', timeout=5000)   # «복사됨» 뒤 글자 복원
+    assert not urlsplit(mi_url).query, mi_url
     assert urlsplit(mi_url).fragment.startswith('shared=')
+    assert page.evaluate('() => document.documentElement.scrollWidth<=innerWidth')
     page.close()
     prefs = {'pn.rk': '"5"', 'pn.mode': '"auto"', 'pn.excl': '[]', 'pn.simauto': '0'}
     # 받는 쪽 A: 내 정보 없음 → 공유받은 정보로 보기, 저장 안 함
@@ -1218,9 +1216,10 @@ def test_share_link(browser, ctx):
     target.goto(mi_url)
     target.wait_for_function('() => window._ready && MI.info && MI.shared && MI.growth && !MI.pending', timeout=60000)
     settle(target)
-    # 비동기 공유 계정의 자동 시작·육성 결과는 test_auto_calculation_shared_growth에서 검사한다.
-    shared_view = 'idle' if target.locator('#out [data-k="idle"]').count() else 'computed'
-    assert target.evaluate('() => [contents[$("content").value].key,cur[$("stage").value].name,$("rk").value]') == expected
+    # 조건이 없으니 자동으로 돌지 않고 시작 화면(자동 추천/직접 편성 고르기), 재점화 등은 받는 사람 설정(rk 5) 그대로
+    assert target.locator('#start-screen').is_visible() and target.locator('#out').is_hidden()
+    assert target.evaluate('() => !RECO.sharedPending && !RECO.timer && !REQ && $("rk").value') == '5'
+    assert target.is_hidden('#mi-send')
     assert target.evaluate('() => MI.info.units.length') == 8
     assert target.evaluate('() => localStorage.getItem("pn.myinfo")') is None
     assert target.is_visible('#shared-bar') and '공유받은' in target.inner_text('#shared-bar')
@@ -1230,6 +1229,13 @@ def test_share_link(browser, ctx):
     assert got == prefs, got
     assert target.evaluate('() => document.documentElement.scrollWidth<=innerWidth')
     target.screenshot(path=os.path.join(ctx.shots, 'share_recipient_mobile.png'), full_page=False)
+    # 휴대폰에서 스테이지를 직접 골라 공유받은 정보로 돌림
+    target.locator('#start-screen [data-pn-mode=reco]').click()
+    choose(target, '작전 (일반)', 'SECTOR 1-3')
+    target.locator('#out [data-k="idle"] [data-go]').click()
+    wait_sim_done(target)
+    assert target.locator('#out .party[data-party="1"]').count() == 1
+    assert target.evaluate('() => MI.shared && MI.info.units.length===8 && localStorage.getItem("pn.myinfo")===null')
     # 저장하지 않았으므로 다시 열면 내 정보 없음 안내
     target.goto(ctx.base + '/index.html?auto=1')
     target.wait_for_function('() => window._ready')
@@ -1258,7 +1264,7 @@ def test_share_link(browser, ctx):
     target.wait_for_function('() => !MI.shared && MI.info && MI.info.units.length===57 && !MI.pending', timeout=60000)
     assert mine == 57 and target.is_hidden('#shared-bar')
     recipient.close()
-    return True, '받는 쪽 첫 화면 %s · ' % shared_view + '조건만/내 정보 포함 링크·받는 쪽 저장 안 함·공유 표시·자기 정보 복귀·잘못된 값·옛 g/p 무시·390px'
+    return True, '조건만 링크/내 정보 보내기 링크·받는 쪽 자동 시작 없음·직접 스테이지 계산·받는 쪽 저장 안 함·공유 표시·자기 정보 복귀·잘못된 값·옛 g/p 무시·390px'
 
 
 def test_sim_runs(browser, ctx):
@@ -2187,7 +2193,7 @@ def test_assumed_growth(browser, ctx):
     assert page.evaluate('GROW.result.baseline.clear') == expected
     page.locator(f'button[data-pick="1"][data-key="{before}"]').click()
     assert page.locator('#out > [data-party="1"]').get_attribute('data-team') == before
-    shared = page.evaluate('''async () => {const u=new URL(await shareUrlMi());
+    shared = page.evaluate('''async () => {const u=new URL(miSendUrl(await MyInfoImport.toHash(MI.info)));
       const info=await MyInfoImport.fromHash(u.hash.replace('#shared=','#myinfo='));return JSON.stringify(info)===overwriteOriginal;}''')
     assert shared
     # A pending background pass is canceled without touching the owned card.

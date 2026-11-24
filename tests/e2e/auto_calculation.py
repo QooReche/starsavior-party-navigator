@@ -193,7 +193,7 @@ def test_auto_calculation_shared_growth(browser, ctx):
     page = open_page(browser, ctx, query='?auto=0', info=SYNTH, simauto='0', wait=False, setup=fake_setup)
     wait_myinfo(page)
     # The shared account arrives asynchronously, after normal page startup.
-    url = page.evaluate("async()=>{const u=new URL(await shareUrlMi());u.searchParams.set('ag','1');return u.href}")
+    url = page.evaluate("async()=>{const u=new URL(shareUrl().replace(/#.*$/,'')+'#shared='+await MyInfoImport.toHash(MI.info));u.searchParams.set('ag','1');return u.href}")
     saved = page.evaluate("JSON.stringify([LS.get('myinfo'),LS.get('growth.options'),LS.get('growth.history')])")
     page.goto(url)
     page.wait_for_function('MI.shared&&!!MI.growth&&!MI.pending')
@@ -246,7 +246,7 @@ def test_auto_calculation_stop_buttons(browser, ctx):
     예선 진행 칸의 「취소」(전체 취소)와 클리어 추천 육성의 「중단」."""
     page = open_page(browser, ctx, query='?auto=0', info=SYNTH, simauto='0', wait=False, setup=fake_setup)
     wait_myinfo(page)
-    url = page.evaluate("async()=>{const u=new URL(await shareUrlMi());u.searchParams.set('ag','1');return u.href}")
+    url = page.evaluate("async()=>{const u=new URL(shareUrl().replace(/#.*$/,'')+'#shared='+await MyInfoImport.toHash(MI.info));u.searchParams.set('ag','1');return u.href}")
     page.goto(url)
     page.wait_for_function('MI.shared&&!!MI.growth&&!MI.pending')
     page.wait_for_function('autoJobs.length>0&&SIMQ.screening')

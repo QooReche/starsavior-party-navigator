@@ -116,7 +116,7 @@ for(const file of ['party_template.html','index.html']){
  assert(summary,`${file}: summary steps exist`);
  assert.deepEqual([...summary[1].matchAll(/<li><b>([^<]+)<\/b>/g)].map(m=>m[1]),['게임 끄기','PowerShell 열기','명령 붙여넣기','관리자 확인','게임 실행','자동 반영'],`${file}: summary matches six steps`);
  // Execute the real renderer through empty -> loaded -> cleared states.
- const nodes=Object.fromEntries(['mi-chip','mi-panel','option-chips','content','rk','mi-open-import','share-mi','share-link','mi-view','mi-clear','mi-panel-clear'].map(id=>[id,{dataset:{},classList:{toggle(){}},closest(){return this;}}]));
+ const nodes=Object.fromEntries(['mi-chip','mi-panel','option-chips','content','rk','mi-open-import','mi-send','share-link','mi-view','mi-clear','mi-panel-clear'].map(id=>[id,{dataset:{},classList:{toggle(){}},closest(){return this;}}]));
  nodes.content.value='op';nodes['mi-panel'].hidden=true;
  const state={MI:{info:null},EXCL:new Set(),$:id=>nodes[id],document:{querySelector:()=>({})},contents:{op:{key:'op'}},rkOf:()=>false,MM:'',simAutoOn:()=>true,esc:String};
  const chip=vm.createContext(state),start=page.indexOf('function renderChip()');

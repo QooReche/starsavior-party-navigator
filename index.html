@@ -34,7 +34,7 @@ details summary{cursor:pointer;color:var(--fg)}
 #dbtn{position:fixed;left:0;top:38%;z-index:40;padding:10px 8px;border-radius:0 10px 10px 0;background:var(--acc);color:#fff;font-size:13px;line-height:1.3;box-shadow:2px 2px 8px #0006}
 #dbtn span{display:block;margin-top:2px;font-size:12px;opacity:.9}
 #drawer{position:fixed;left:50%;top:50%;width:min(560px,94vw);max-height:88vh;z-index:60;background:rgba(10,15,31,.97);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 40px #000a;padding:16px 18px;overflow:auto;transform:translate(-50%,-46%);visibility:hidden;transition:transform .15s}
-.mi-head{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}.mi-import{font-size:12px;padding:5px 10px}.mi-chip{font-size:12px;color:var(--mut);margin-right:6px}.mi-chip b{color:var(--fg)}.mi-chip.none{color:var(--warn)}
+.mi-head{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}@media(max-width:600px){.mi-head{gap:6px}.mi-send-long{display:none}#mi-send{padding:5px 8px}}.mi-import{font-size:12px;padding:5px 10px}.mi-chip{font-size:12px;color:var(--mut);margin-right:6px}.mi-chip b{color:var(--fg)}.mi-chip.none{color:var(--warn)}
 .guide{padding:18px}.guide h3{margin:0 0 6px}.guide .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .ic{width:16px;height:16px;flex:none;vertical-align:-3px;color:var(--gold)}.ic.in{width:13px;height:13px;margin-right:2px}
 .mi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:10px}
@@ -282,7 +282,7 @@ summary{padding:9px 4px}
 @media(max-width:400px){.gwen-work{gap:6px;min-height:120px}.gwen-scene{width:120px;height:120px;flex-basis:120px}}
 
 </style><link rel="stylesheet" href="ux.css"><link rel="stylesheet" href="forced.css"><link rel="stylesheet" href="recheck.css"></head><body><main>
-<header class="site-head"><h1><img class="gwen-head" src="assets/ui_icons/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true"><span>파티 편성 네비게이터 <small>베타</small></span></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button></span>
+<header class="site-head"><h1><img class="gwen-head" src="assets/ui_icons/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true"><span>파티 편성 네비게이터 <small>베타</small></span></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button><button id="mi-send" type="button" class="sec mi-import" aria-live="polite" aria-label="내 정보 보내기" title="내 구원자 정보만 담은 링크를 복사함. 받은 사람은 휴대폰에서 열어 스테이지를 직접 골라 계산" hidden><span class="mi-send-long">내 정보 </span>보내기</button></span>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천</button><button id="tab-info" type="button" aria-pressed="false">내 구원자</button></nav></header>
 <p class="notice update-notice" data-k="update-notice">📢 11/19 업데이트 · 코스모 시즌 8 · 코스모 3파티 직접 편성 · 자동 대상 클라 기준 교정 <a href="#update-history" onclick="document.getElementById('update-history').open=true">자세히</a></p>
 <p class="notice" data-k="notice">모의 전투 결과라 실제 플레이와 다를 수 있음 <button type="button" class="ux-help" aria-label="계산 방식 설명" aria-expanded="false" data-help="내 구원자 수치로 모의 전투를 여러 판 돌려 클리어한 비율을 보여줌. 계산에 쓰는 성장표와 게임 패치는 차이가 있을 수 있음. 가정·출처·근거는 각 결과의 ⓘ와 더 보기에서 확인 가능.">ⓘ</button></p>
@@ -306,7 +306,7 @@ summary{padding:9px 4px}
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;font-size:12px;color:var(--mut);gap:3px" title="작전을 며칠 못 깨면 붙는 버프(작전 화면 「재점화 버프」). 작전에만 반영됨.">작전 재점화 버프<select id="rk"><option value="0">없음</option><option value="1">1단계 (주는 피해 +3%, 받는 피해 −3%)</option><option value="2">2단계 (+7% / −7%)</option><option value="3">3단계 (+12% / −12%)</option><option value="4">4단계 (+18% / −18%)</option><option value="5">5단계 (+25% / −25%)</option></select></label></div>
   <div style="margin-top:10px"><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px">상성<select id="mmode"><option value="">균형</option><option value="avoid">역상성 회피</option></select></label></div>
   <div id="goalbox" style="margin-top:10px" hidden><label style="display:inline-flex;flex-direction:column;max-width:100%;font-size:12px;color:var(--mut);gap:3px" title="장비 탐사·격전 의뢰는 60턴 안에 이겨야 3별이 되어 소탕이 열림. 모의 전투의 턴 수는 실제와 차이가 있을 수 있음.">3별 목표<select id="goal"><option value="60">60턴 안에 클리어 (3별·소탕)</option><option value="0">클리어만 하면 됨 (턴 무관)</option></select></label></div>
-<div class="menu-share"><button id="share-link" type="button" class="sec" aria-live="polite">링크 복사</button><label class="mi-use"><input type="checkbox" id="share-mi" checked> 내 구원자 수치 포함</label></div></details>
+<div class="menu-share"><button id="share-link" type="button" class="sec" aria-live="polite">링크 복사</button></div></details>
 <div id="option-chips" class="option-chips"></div>
 <div id="growth-control-home"><span id="growth-control"><label><input type="checkbox" id="assume-growth"> 클리어를 위한 추천 육성도 같이 보기</label><button id="growth-hint" type="button" class="ux-help" aria-label="클리어 추천 육성 설명" aria-expanded="false" data-help="덜 키운 구원자를 맞췄다고 치고 함께 찾음. 더 잘 깨는 편성이 있으면 결과 아래에 보여줌. 목표는 프리셋 기준이며 최소 육성치를 찾는 기능은 아님.">ⓘ</button><span id="growth-requires-info" class="tag">내 정보 필요</span></span></div>
 </div>
@@ -1565,7 +1565,7 @@ function syncBrk(){const lv=MI.info?MyInfoImport.mapBreak(MI.info):null;MI.brkLv
  pruneBreakSel()}
 function renderChip(){const e=$("mi-chip");if(!e)return;const i=MI.info;e.classList.toggle("none",!i);
  e.dataset.state=i?"loaded":"empty";e.innerHTML=i?`${MI.shared?"공유받은 ":""}<b>보유 ${i.units.length}명</b>${i.exported_at?` · ${esc(String(i.exported_at).slice(5,10).replace("-","/"))} 갱신`:""}${EXCL.size?` · 제외 ${EXCL.size}명`:""}`:"";document.querySelector(".input-panel").hidden=!$("mi-panel").hidden;$("option-chips").innerHTML=[rkOf(contents[$("content").value]?.key)?`재점화 ${$("rk").value}단계`:"",MM==="avoid"?"불리한 속성 피하기":""].filter(Boolean).map(x=>`<span class="tag">${x}</span>`).join("");
- $("mi-open-import").textContent=i?"새로 불러오기(내 정보)":"내 정보 불러오기";$("share-mi").closest("label").hidden=!i;for(const id of ["mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i;$("share-link").hidden=false}
+ $("mi-open-import").textContent=i?"새로 불러오기(내 정보)":"내 정보 불러오기";$("mi-send").hidden=!i||!!MI.shared;for(const id of ["mi-view","mi-clear","mi-panel-clear"])$(id).hidden=!i;$("share-link").hidden=false}
 function saveSel(){LS.set("owned",[...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));LS.set("brk",[...document.querySelectorAll("#brk input:checked")].map(x=>x.dataset.b))}
 (function restore(){const o=LS.get("owned"),b=LS.get("brk");
  syncOwn();
@@ -1723,12 +1723,17 @@ function shareUrl(){const c=contents[$("content").value],s=cur&&cur[$("stage").v
  if(DIRECT.mode==='direct'){state.pm='direct';if(c.key==='cosmo')state.cd=CosmoDirect.share(CDIRECT.state);else state.dp=DirectParty.share(DIRECT.draft);}
  document.querySelectorAll(".party[data-party] .bsel").forEach(el=>{state[el.closest(".party").dataset.party==="2"?"b2":"b"]=el.value});
  return ShareState.url(location.href,state)}
-async function shareUrlMi(){let url=shareUrl();if(!MI.info||!$("share-mi").checked)return url;
- try{url=url.replace(/#.*$/,"")+"#shared="+await MyInfoImport.toHash(MI.info)}catch(e){}return url}
-$("share-link").onclick=async()=>{const b=$("share-link"),url=await shareUrlMi();try{await navigator.clipboard.writeText(url);b.textContent="복사됨"}
+// 「링크 복사」(⋯ 메뉴) = 조건만(콘텐츠·스테이지·재점화 등, 내 정보 없음). 「내 정보 보내기」(헤더) = 내 정보만(조건·자동 시작 없음):
+//  받은 사람이 휴대폰에서 열어 스테이지를 직접 골라 돌림(11/24 PM). 공유받은 정보로 보는 중에는 다시 보내지 않음.
+function miSendUrl(hash){return location.origin+location.pathname+"#shared="+hash}
+async function copyLink(b,url){const restore=b.dataset.label||(b.dataset.label=b.innerHTML);if(url==null){b.textContent="복사 실패";setTimeout(()=>b.innerHTML=restore,2000);return}
+ try{await navigator.clipboard.writeText(url);b.textContent="복사됨"}
  catch(e){const field=document.createElement("textarea");field.value=url;field.style.cssText="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0";document.body.append(field);field.select();
   try{b.textContent=document.execCommand("copy")?"복사됨":"복사 실패"}catch(e){b.textContent="복사 실패"}field.remove()}
- setTimeout(()=>b.textContent="링크 복사",2000)};
+ setTimeout(()=>b.innerHTML=restore,2000)}
+$("share-link").onclick=()=>copyLink($("share-link"),shareUrl());
+$("mi-send").onclick=async()=>{if(!MI.info||MI.shared)return;let url=null;try{url=miSendUrl(await MyInfoImport.toHash(MI.info))}catch(e){}
+ copyLink($("mi-send"),url)};
 function applyShare(){
  if(SHARE.c){$("content").value=String(contents.findIndex(c=>c.key===SHARE.c));refreshTabs();
   const stage=contents[$("content").value].stages.find(s=>s.tab+"|"+s.name===SHARE.s);
