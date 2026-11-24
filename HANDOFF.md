@@ -10,9 +10,9 @@
 3. **신규 구원자·잠재력**: PORTING §4 «패치 때마다 먼저 확인» — 가이드 DB `SAVIORS` 확인 → `savior_reco.json`·`saviors_index.json`·그림(자동 갱신 안 됨, 10/29 누락 사고) → `tools/fetch_sources.py` → `tools/update.py` → `--static` 빌더(연쇄 피해 `build_chain_damage.py`·`build_auto_skill.py`). 잠재력 목록은 `tools/potential_catalog.py`. 새 문구가 엔진에 안 맞으면 미지원 관문(`tools/unsupported_allowlist.py --diff`)에 뜸 → 클라 근거로 확정하거나 사유 등록.
 4. **신규 콘텐츠·보스**: 일반 스테이지 적은 `tools/build_foe*.py`(격전 `build_foe_clash`, 코스모 `build_foe_cosmo`) → `update.py`. 시즌제는 PORTING §4-1 길드(`data/guild_defense.json`)·§4-2 코스모(`tools/build_cosmo_raid.py --season`, 새 `SET_NN`·`BOSS_SCRIPT_KEY`). 새 콘텐츠 종류는 `party_contents.json`.
 5. **검증·배포**: `tools/build_simpack.py`(엔진 고쳤으면) → `python -X utf8 -I tools/run_tests.py`(11/24 276통과) → e2e `tests/e2e/test_page.py`(11/24 71/72, `test_ux_step12` 그림 로딩 검사는 배포본에서도 실패 — 미해결) → `build_party_html.py index.html` → 커밋·푸시. 페이지 «업데이트 내역»(`#update-history`, 마지막 11/21)과 상단 공지(`data-k="update-notice"`, 11/19) 날짜도 갱신.
-6. **공지 글**: 아카라이브 패치 원고 = `E:\AI_mk2\아카라이브-파티네비게이터\패치내역_YYYYMMDD_*.txt`(마지막 11/24, 그웬·UI 제외판). 그웬 그림 사본 = `C:\Users\yunsu\Desktop\그웬\사이트그림_1124`.
+6. **공지 글**: 아카라이브 패치 원고 = `E:\AI_mk2\아카라이브-파티네비게이터\패치내역_YYYYMMDD_*.txt`(마지막 11/24 게시함, 그웬·UI 제외판). 그웬 그림 사본 = `C:\Users\yunsu\Desktop\그웬\사이트그림_1124`.
 - 작업 PC가 느리면 작업자 2개·한 번에 하나씩(11/24 강제 종료 사고). 사용량 기록 = `E:\AI_mk2\token-usage\`(10/20~11/24 약 212시간, 토큰 76억).
-- 11/24 정리로 옮긴 임시 폴더(`_inbox`·`_calibration_keys`·`_forced_gen`·옛 `star-savior-decompiled`·저장소 `_tmp`) = `E:\AI_mk2\_archive\_trash-20261124\`(MANIFEST, PM 확인 전 비우지 않음).
+- 11/24 정리로 옮긴 임시 폴더(`_inbox`·`_calibration_keys`·`_forced_gen`·옛 `star-savior-decompiled`·저장소 `_tmp`) 은 PM 지시로 11/24 삭제함(옛 3월판 디컴파일본 포함 — 근거는 static-data `decompiled/`).
 
 ## 현재 상태
 
