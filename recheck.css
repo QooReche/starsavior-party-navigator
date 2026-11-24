@@ -16,7 +16,7 @@
 .gwen-lane[data-recheck] .gwen-lane-actor{z-index:1}
 [data-recheck-art] .gwen-lane[data-recheck] :is(.gwen-lane-actor){clip-path:inset(50%)}
 /* 장면 상자 = 그림 비율 그대로(가로는 길 폭 이상, 세로 기준점 --rc-ay 를 길의 같은 높이에 맞춤) — 안의 사진·고리·그웬은 모두 그림 기준 % 라 폭이 바뀌어도 제자리 */
-.rc-scene{--rc-ar:3;--rc-ay:70%;--rc-px:30.8%;--rc-pw:3%;--rc-ph:11.6%;--rc-dx:151.7%;--rc-dy:144%;--rc-rx:62.8%;--rc-rw:14.9%;--rc-gx:86%;--rc-gy:88%;
+.rc-scene{--rc-ar:3;--rc-ay:70%;--rc-px:30.8%;--rc-pw:3%;--rc-ph:11.6%;--rc-dx:151.7%;--rc-dy:144%;--rc-rx:62.8%;--rc-rw:14.9%;--rc-gx:60.5%;--rc-gy:88%;
  position:absolute;z-index:0;left:50%;top:var(--rc-ay);width:max(100%,calc(var(--rc-h)*var(--rc-ar)));aspect-ratio:var(--rc-ar);translate:-50% calc(var(--rc-ay)*-1);overflow:hidden;pointer-events:none;
  animation:rc-in .6s ease-out both}
 .gwen-lane[data-rc-enter=forced] .rc-scene{animation-duration:.9s}
@@ -67,7 +67,7 @@
 .gwen-lane[data-recheck=fold] .rc-scene{animation:rc-out .35s ease-in forwards}
 
 @media(max-width:520px){
- .rc-scene{--rc-ar:1.8;--rc-ay:60%;--rc-px:5.3%;--rc-pw:7%;--rc-ph:15%;--rc-dx:108.3%;--rc-dy:111.3%;--rc-rx:59.7%;--rc-rw:24.8%;--rc-gx:47.5%}
+ .rc-scene{--rc-ar:1.8;--rc-ay:60%;--rc-px:5.3%;--rc-pw:7%;--rc-ph:15%;--rc-dx:108.3%;--rc-dy:111.3%;--rc-rx:59.7%;--rc-rw:24.8%;--rc-gx:58%}
  [data-recheck-art] .rc-bg{background-image:url(assets/recon/office_narrow.webp)}
  .rc-photo{padding:1px 1px 4px}
  [data-recheck-art] .rc-say{top:calc(var(--rc-gy) - var(--rc-h)*.74*.8)}.rc-photo::before{width:5px;height:5px;margin-left:-2.5px;top:-2px}
