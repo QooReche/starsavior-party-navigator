@@ -60,6 +60,11 @@ class Tables(BaseTables):
         self.damage_scale = self._find_const('DamageScale') / 10000
 
 
+def lf_digest(path):
+    """파일 해시 — 저장소는 eol=lf 라 CRLF 작업 폴더에서 만든 값도 같아지게 줄바꿈을 LF 로 맞춰 잰다."""
+    return hashlib.sha256(Path(path).read_bytes().replace(b'\r\n', b'\n')).hexdigest()
+
+
 def digest(value):
     return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
@@ -82,8 +87,7 @@ class Extractor:
         self.dependencies = {}
         for name in FIXED:
             if name.startswith(('data/guild_', 'battlesim/')): continue
-            with (ROOT/name).open('rb') as f:
-                self.dependencies[name] = hashlib.file_digest(f,'sha256').hexdigest()
+            self.dependencies[name] = lf_digest(ROOT/name)
 
     def rows(self, name):
         path = self.static / 'tables' / (name + '.json')
@@ -368,7 +372,7 @@ def main():
                 if not target.exists():
                     write(target, json.loads((ROOT / 'data' / (name + '.json')).read_text(encoding='utf-8')))
                 g['assets'][name] = dict(path='guild_seasons/30111/' + name,
-                                        sha256=hashlib.sha256(target.read_bytes()).hexdigest())
+                                        sha256=lf_digest(target))
         else:
             g = generated
         g.pop('dataVersion', None)

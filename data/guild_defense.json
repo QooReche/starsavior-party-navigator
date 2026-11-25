@@ -3753,11 +3753,11 @@
  "assets": {
   "guild_bfb": {
    "path": "guild_seasons/30111/guild_bfb",
-   "sha256": "1f75d46351d2c2de858de9ed8b96ad4b46747b9ac010608255e0679b72c145b1"
+   "sha256": "d14a503467aad61f7b45119153b39384032c9aaf176c968a6e28c261d37d8811"
   },
   "guild_sim": {
    "path": "guild_seasons/30111/guild_sim",
-   "sha256": "f78476b7b072d645f004fca9c78df0a4cbdf8ca4eb36978ea8e9f76f5c066f79"
+   "sha256": "be634199b6aca5449213d167462593270b075029a2d47308f91b8998ea502922"
   }
  },
  "dependencies": {

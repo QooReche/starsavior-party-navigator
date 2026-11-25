@@ -25,8 +25,7 @@ def load(season_id=None, src=SRC):
 def check_dependencies(src, entries):
     for name, expected in entries:
         with open(os.path.join(src,name),'rb') as f:
-            h = hashlib.sha256()
-            for block in iter(lambda:f.read(65536), b''): h.update(block)
+            h = hashlib.sha256(f.read().replace(b'\r\n', b'\n'))  # 저장소는 eol=lf — 줄바꿈 무관 해시
         if h.hexdigest() != expected:
             raise ValueError('길드 실행 자료가 바뀜: 시즌 재추출 필요 ('+name+')')
 

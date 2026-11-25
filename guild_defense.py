@@ -288,7 +288,7 @@ def sim_payload(g, path=SIM_PATH):
         # 최초 BFB 표는 정의에 보관한 파일 해시로만 승인한다.
         import hashlib
         expected = g.get('assets',{}).get('guild_sim',{}).get('sha256')
-        with open(path,'rb') as f: actual = hashlib.sha256(f.read()).hexdigest()
+        with open(path,'rb') as f: actual = hashlib.sha256(f.read().replace(b'\r\n', b'\n')).hexdigest()  # 저장소는 eol=lf — 줄바꿈 무관 해시
         if not expected or actual != expected: return None
     return {"runs": s["runs"], "recPower": s["recPower"], "growth": s["growth"], "levels": s["levels"], "passP": s["pass_p"],
             "basis": s["basis"], "summary": s["summary"], "supports": s.get("supports", ["none"]),
