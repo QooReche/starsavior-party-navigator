@@ -42,6 +42,12 @@ class EquipTest(unittest.TestCase):
         write_json(cls.root / 'data/foe_equip.json', cls.frag)
         for name in ('foe_clash', 'foe_cosmo_extra'):
             shutil.copyfile(ROOT / 'data' / (name + '.json'), cls.root / 'data' / (name + '.json'))
+        # 데이터북과 겹치지 않는 단계가 있어야 코스모 병합 누락/순서 역전을 잡는다.
+        cosmo_path = cls.root / 'data/foe_cosmo_extra.json'
+        cosmo = json.loads(cosmo_path.read_text(encoding='utf-8'))
+        tab = cosmo['g'][0]['tabs'][0]
+        tab['s'].append(dict(tab['s'][0], n='합성 코스모 병합 단계'))
+        write_json(cosmo_path, cosmo)
         (cls.root / 'rawdata').mkdir()
         (cls.root / 'rawdata/foe.js').write_text('__SSD.foe=' + json.dumps(cls.raw, ensure_ascii=False), encoding='utf-8')
 
@@ -65,14 +71,15 @@ class EquipTest(unittest.TestCase):
     def test_generated_values_and_engine(self):
         self.assert_six(self.frag)
         for i, tab in enumerate(self.frag['g'][0]['tabs'], 1):
-            for n, st in zip((21, 22), tab['s']):
+            for st in tab['s']:
                 got, waves = foe.stage_waves('equip', tab['t'], st['n'], str(self.root))
-                self.assertEqual((got['lv'], got['bp'], got['lt']), (n, 1000+i*100+n, 77))
+                self.assertEqual((got['lv'], got['bp']), (3321, 517205))
+                self.assertNotIn('lt', got)
                 self.assertEqual(list(map(len, waves)), [1, 1])
                 d, last = waves[0][0], waves[1][0]
                 self.assertEqual((d.name, d.role, d.element, d.boss), ('합성 시험 적', '디펜더', ('태양','달','별')[i-1], True))
                 self.assertEqual((d.stats['hp'], d.stats['atk'], d.stats['hit'], d.stats['evade']),
-                                 (int((100+10*(n-1))*1.5), 20+2*(n-1), 9800, 700))
+                                 (int((100+10*(3321-1))*1.5), 20+2*(3321-1), 9800, 700))
                 self.assertEqual((d.game_slot, last.game_slot, last.level), (2, 4, 30))
                 self.assertEqual((d.spawn, last.spawn), ('A', 'S'))
                 self.assertEqual(d.skills['기본기'].cf, [12500, 0, 0, 0])
@@ -80,7 +87,7 @@ class EquipTest(unittest.TestCase):
                 self.assertEqual(d.auto['기본기'], {'rows':[{'c':[], 'f':['high_atk']}]})
                 self.assertEqual(d.lines[0].eff['kind'], 'buff')
                 self.assertEqual(len(d.force_lines), 1)
-                self.assertEqual('equip|%s|%s' % (tab['t'], st['n']) in foe.battle_end(str(self.root)), n == 21)
+                self.assertIn('equip|%s|%s' % (tab['t'], st['n']), foe.battle_end(str(self.root)))
 
     def test_existing_stages_unchanged_and_idempotent(self):
         merged = copy.deepcopy(self.raw)
@@ -102,7 +109,7 @@ class EquipTest(unittest.TestCase):
         from battlesim.metrics import unit_def
         st, waves = foe.stage_waves('equip', '뒤틀린 감정', '뒤틀린 감정 XXII', str(self.root))
         b = Battle([unit_def(k) for k in ('luna', 'carnelia', 'bell', 'emily')], waves,
-                   random.Random(3), turn_limit=st['lt'])
+                   random.Random(3), turn_limit=st.get('lt'))
         b.run()
         self.assertGreater(b.progress(), 0)
         self.assertEqual(b.result, 'clear')
@@ -115,6 +122,11 @@ class EquipTest(unittest.TestCase):
         code = (ROOT / 'tools/build_foe.py').read_text(encoding='utf-8')
         scope = {'__file__': str(self.root / 'tools/build_foe.py'), '__name__': '__equip_build__'}
         exec(compile(code, scope['__file__'], 'exec'), scope)
+        web_raw = json.loads((self.root / 'tools/raw/foe_raw.json').read_text(encoding='utf-8'))
+        engine_raw = foe.load_foe(str(self.root))
+        self.assertEqual(web_raw, engine_raw, '웹/엔진의 조각 병합 순서와 인덱스가 달라짐')
+        self.assertTrue(any(st['n'] == '합성 코스모 병합 단계'
+                            for g in web_raw['g'] for t in g['tabs'] for st in t['s']))
         import party_reco as pr
         import build_party_html as page
         with patch.object(pr, 'FOE', str(self.root / 'data/foe_stages.json')):
@@ -165,6 +177,30 @@ process.stdout.write(JSON.stringify(result));
         with self.assertRaisesRegex(ValueError, '승리 조건'):
             B.generate(*args)
 
+    def test_unknown_battle_fields_rejected(self):
+        tb = B.Tables(self.static)
+        for stage in (20, 21):  # 데이터북에 이미 있는 단계도 검사한다.
+            for field, value in (('FutureBattleRule', 0), ('BattleEffectData', {}), ('LimitTurn', 77)):
+                with self.subTest(stage=stage, field=field):
+                    battles = copy.deepcopy(self.fixture['tables']['BATTLE_TEMPLET_NORMAL'])
+                    next(r for r in battles if r['OrderList'] == stage)[field] = value
+                    with self.assertRaisesRegex(ValueError, '장비 전투 필드 미지원.*' + field):
+                        B.generate(tb, battles, self.fixture['tables']['BATTLE_TAB_TEMPLET'],
+                                   self.fixture['scripts'].__getitem__,
+                                   {r['Id']: r for r in self.fixture['tables']['Plain/AUTO_SKILL_TEMPLET']}, self.raw)
+
+    def test_all_kill_mode(self):
+        tb = B.Tables(self.static)
+        battles = copy.deepcopy(self.fixture['tables']['BATTLE_TEMPLET_NORMAL'])
+        row = next(r for r in battles if r['OrderList'] == 21)
+        row['BattleMode'] = 'BM_ALL_KILL'
+        frag = B.generate(tb, battles, self.fixture['tables']['BATTLE_TAB_TEMPLET'],
+                          self.fixture['scripts'].__getitem__,
+                          {r['Id']: r for r in self.fixture['tables']['Plain/AUTO_SKILL_TEMPLET']}, self.raw)
+        self.assert_six(frag)
+        self.assertEqual(len(frag['boss_kill']), 5)
+        self.assertNotIn('equip|뒤틀린 감정|뒤틀린 감정 XXI', frag['boss_kill'])
+
     def test_comparison_reports_additions_separately(self):
         from tools.compare_foe_equip import compare
         old = dict(self.raw, g=[g for g in self.raw['g'] if g['k'] != 'equip'])
@@ -191,18 +227,43 @@ process.stdout.write(JSON.stringify(result));
             legacy = {k: v for k, v in unit.items() if k not in ('hit', 'evade')}
             self.assertEqual(hit_stats.rates(self.raw, legacy, None), (10000, 0))
 
-    def test_disabled_generation_and_merge_are_detected(self):
-        # 생성/병합을 실제로 꺼서 위 검증이 실패하는지 확인(작업 파일은 바꾸지 않음).
-        with patch.object(B, 'generate', return_value={'g': []}):
-            with self.assertRaises(AssertionError):
-                self.assert_six(B.build(self.static, self.raw))
-        with patch.object(foe, 'merge_extra', return_value=False):
-            with self.assertRaises(KeyError):
-                foe.stage_waves('equip', '뒤틀린 감정', '뒤틀린 감정 XXI', str(self.root))
+    def test_generation_and_merge_pipeline(self):
+        # 실제 생성기와 병합기를 실행하고 최종 목록을 검사한다.
+        # 둘 중 하나를 no-op으로 바꾸면 이 시험 자체가 실패해야 한다.
+        merged = copy.deepcopy(self.raw)
+        frag = B.build(self.static, self.raw)
+        self.assertTrue(foe.merge_extra(merged, frag))
+        for title in ('뒤틀린 감정', '혹한의 습격', '잊혀진 맹세'):
+            tab = next(t for g in merged['g'] if g['k'] == 'equip' for t in g['tabs'] if t['t'] == title)
+            self.assertEqual(len(tab['s']), 22)
+            self.assertEqual([s['n'] for s in tab['s'][-2:]], [title + ' XXI', title + ' XXII'])
 
 
 @unittest.skipIf(static_path_or_none(ROOT) is None, '비공개 클라 표 없음')
 class EquipClientTest(unittest.TestCase):
+    def test_fixture_matches_client_row_shape(self):
+        static = static_path_or_none(ROOT)
+        rows = B.jsonc(static / 'tables/BATTLE_TEMPLET_NORMAL.json')['Data']
+        rows = [r for r in rows if re.fullmatch(r'NORMAL_BATTLE_EXPLORE_EQUIP[123]_\d+', r['BattleStrID'])]
+        self.assertEqual(len(rows), 60)
+        self.assertEqual(set().union(*(set(r) for r in rows)), B.BATTLE_FIELDS)
+        fixture = json.loads((ROOT / 'tests/fixtures/equip_client_stages.json').read_text(encoding='utf-8'))
+        for row in fixture['tables']['BATTLE_TEMPLET_NORMAL']:
+            with self.subTest(battle=row['BattleStrID']):
+                original = next(r for r in rows if r['BattleStrID'] == row['BattleStrID'][:-3] + '020')
+                expected = copy.deepcopy(original)
+                n = row['OrderList']
+                expected.update(BattleID=original['BattleID'] + n - 20,
+                                BattleStrID=original['BattleStrID'][:-3] + f'{n:03}', OrderList=n,
+                                BattleName=original['BattleName'][:-3] + f'{n:03}',
+                                BattleTempletFileName=original['BattleTempletFileName'][:-7] + f'{n:03}.txt')
+                expected['BattleUnlockData'][-1]['BattleUnlockReqId'] = expected['BattleID'] - 1
+                self.assertEqual(row, expected)
+                self.assertIn(row['BattleName'], fixture['strings'])
+                script = B.jsonc(static / 'tables/BattleScript' / original['BattleTempletFileName'].replace('.txt', '.json'))['Data']
+                self.assertTrue(all(w['MapPosType'] == script['Waves'][0]['MapPosType']
+                                    for w in fixture['scripts'][row['BattleTempletFileName']]['Waves']))
+
     def test_existing_twenty_stages_match_client(self):
         from tools.compare_foe_equip import compare
         raw = B.databook()

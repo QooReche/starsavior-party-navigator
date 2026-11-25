@@ -21,6 +21,20 @@ from tools.build_foe_auto import (filters, conds, is_self_enforce, self_enforce_
                                  AUTO_ENEMY, AUTO_ALLY, ENFORCE_SLOT)
 
 
+# 빌드 26752678 BATTLE_TEMPLET_NORMAL의 EXPLORE_EQUIP 60행 필드 합집합.
+# 새 필드는 값이 비어 있어도 클라 조사 전에는 허용하지 않는다.
+BATTLE_FIELDS = frozenset({
+    'ContentsTag', 'BattleID', 'BattleStrID', 'OrderList', 'BattleTabId', 'IsSweep',
+    'DeckSlotMax', 'BattleTempletFileName', 'BattleMapStrID', 'BattleType', 'BattleMode',
+    'BattleTitleName', 'BattleName', 'BattleDesc', 'BattleIcon', 'Difficulty',
+    'SafePartyCount', 'BattleLevel', 'MusicName', 'BattlePower', 'ReqNormalItem',
+    'ReqNormalItemCount', 'NormalRewardUserExp', 'NormalRewardGold',
+    'AllClearMissionItemId', 'AllClearMissionItemCount', 'BattleMissionBonusType',
+    'WeakAdjustData', 'BattleUnlockData', 'NormalRewardData', 'BattleMissionData',
+    'FirstClearNormalRewardData',
+})
+
+
 def databook(root=ROOT):
     text = (Path(root) / 'rawdata/foe.js').read_text(encoding='utf-8')
     return json.JSONDecoder().raw_decode(text.split('__SSD.foe=', 1)[1])[0]
@@ -172,15 +186,14 @@ def generate(tb, battles, tabs, script, auto, raw, *, all_stages=False):
     selected = [r for r in battles if re.fullmatch(r'NORMAL_BATTLE_EXPLORE_EQUIP[123]_\d+', r['BattleStrID'])]
     groups = {}
     for r in sorted(selected, key=lambda r: (tab_rows[r['BattleTabId']]['OrderList'], r['OrderList'])):
+        if set(r) - BATTLE_FIELDS:
+            raise ValueError('장비 전투 필드 미지원: ' + str(sorted(set(r) - BATTLE_FIELDS)))
         tab = ko(tab_rows[r['BattleTabId']]['BattleTabName'])
         name = ko(r['BattleName'])
         if not all_stages and (tab, name) in existing:
             continue
         if r['BattleMode'] not in ('BM_BOSS_KILL', 'BM_ALL_KILL'):
             raise ValueError('승리 조건 미지원: ' + r['BattleMode'])
-        for field in ('BattleEffectData', 'DifficultyGroupId', 'SuddenDeathGroupId', 'FixUnitLevel', 'FixUnitResonance', 'RaiseUnitLevel', 'BattleDeckId'):
-            if r.get(field):
-                raise ValueError('장비 전투 필드 미지원: ' + field)
         bs = script(r['BattleTempletFileName'])
         if set(bs) != {'Waves'} or any(set(w) - {'MapPosType', 'TeamBSpawnList'} for w in bs['Waves']):
             raise ValueError('장비 전투 스크립트 구조 변경: ' + name)
@@ -188,8 +201,6 @@ def generate(tb, battles, tabs, script, auto, raw, *, all_stages=False):
         if not spawns or any(not w for w in spawns):
             raise ValueError('빈 장비 웨이브: ' + name)
         st = dict(n=name, lv=r['BattleLevel'], bp=r['BattlePower'], w=[[entry(sp) for sp in w] for w in spawns])
-        if r.get('LimitTurn'):
-            st['lt'] = r['LimitTurn']
         key = 'equip|%s|%s' % (tab, name)
         if any(s['n'] == name for s in groups.get(tab, [])):
             raise ValueError('중복 장비 단계: ' + key)

@@ -1,5 +1,5 @@
 {
-  "_note": "합성 입력. 실제 21·22단계 수치나 비공개 원문 표가 아님. 20단계는 기존 자료 우선 검사용.",
+  "_note": "26752678의 각 장비 _020 전투 행 구조·값을 복제하고 20·21·22 식별자와 문자열 키를 연결한 합성 입력. 실제 21·22단계 수치가 아님. 배치·유닛·스킬은 경로 검사용 합성 값이며 20단계는 기존 자료 우선 검사용.",
   "strings": {
     "UNIT": {
       "ko": "합성 시험 적"
@@ -19,37 +19,37 @@
     "TAB1": {
       "ko": "뒤틀린 감정"
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP1_20": {
-      "ko": "뒤틀린 감정 XX"
-    },
-    "NORMAL_BATTLE_EXPLORE_EQUIP1_21": {
-      "ko": "뒤틀린 감정 XXI"
-    },
-    "NORMAL_BATTLE_EXPLORE_EQUIP1_22": {
-      "ko": "뒤틀린 감정 XXII"
-    },
     "TAB2": {
       "ko": "혹한의 습격"
-    },
-    "NORMAL_BATTLE_EXPLORE_EQUIP2_20": {
-      "ko": "혹한의 습격 XX"
-    },
-    "NORMAL_BATTLE_EXPLORE_EQUIP2_21": {
-      "ko": "혹한의 습격 XXI"
-    },
-    "NORMAL_BATTLE_EXPLORE_EQUIP2_22": {
-      "ko": "혹한의 습격 XXII"
     },
     "TAB3": {
       "ko": "잊혀진 맹세"
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP3_20": {
+    "SI_EXPLORE_EQUIP1_STAGE_020": {
+      "ko": "뒤틀린 감정 XX"
+    },
+    "SI_EXPLORE_EQUIP1_STAGE_021": {
+      "ko": "뒤틀린 감정 XXI"
+    },
+    "SI_EXPLORE_EQUIP1_STAGE_022": {
+      "ko": "뒤틀린 감정 XXII"
+    },
+    "SI_EXPLORE_EQUIP2_STAGE_020": {
+      "ko": "혹한의 습격 XX"
+    },
+    "SI_EXPLORE_EQUIP2_STAGE_021": {
+      "ko": "혹한의 습격 XXI"
+    },
+    "SI_EXPLORE_EQUIP2_STAGE_022": {
+      "ko": "혹한의 습격 XXII"
+    },
+    "SI_EXPLORE_EQUIP3_STAGE_020": {
       "ko": "잊혀진 맹세 XX"
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP3_21": {
+    "SI_EXPLORE_EQUIP3_STAGE_021": {
       "ko": "잊혀진 맹세 XXI"
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP3_22": {
+    "SI_EXPLORE_EQUIP3_STAGE_022": {
       "ko": "잊혀진 맹세 XXII"
     }
   },
@@ -181,118 +181,784 @@
     },
     "BATTLE_TEMPLET_NORMAL": [
       {
-        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP1_20",
-        "BattleTabId": 1,
+        "ContentsTag": "MAIN_OPEN",
+        "BattleID": 10201020,
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP1_020",
         "OrderList": 20,
-        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP1_20",
+        "BattleTabId": 10201,
+        "IsSweep": true,
+        "DeckSlotMax": "BATTLE_SLOT_4",
+        "BattleTempletFileName": "JSON_NORMAL_BATTLE_EXPLORE_EQUIP1_020.txt",
+        "BattleMapStrID": "MAP_BATTLE_CELLAR_CORRIDOR_DAY",
+        "BattleType": "NBT_PVE_NORMAL",
         "BattleMode": "BM_BOSS_KILL",
-        "BattleLevel": 20,
-        "BattlePower": 1120,
-        "LimitTurn": 77,
-        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP1_20.txt"
+        "BattleTitleName": "SI_SPECIAL_RAID",
+        "BattleName": "SI_EXPLORE_EQUIP1_STAGE_020",
+        "BattleDesc": "SI_NORMAL_BATTLE_DESC_EXPLORE_EQUIP1",
+        "BattleIcon": "UFS_NKM_UNIT_MON_STALKER_SKELETON_BLACK.png",
+        "Difficulty": "NORMAL",
+        "SafePartyCount": 4,
+        "BattleLevel": 3321,
+        "MusicName": "MUSIC_BATTLE_MOTIVATOR.mp3",
+        "BattlePower": 517205,
+        "ReqNormalItem": 102,
+        "ReqNormalItemCount": 30,
+        "NormalRewardUserExp": 300,
+        "NormalRewardGold": 12750,
+        "AllClearMissionItemId": 0,
+        "AllClearMissionItemCount": 0,
+        "BattleMissionBonusType": "NONE",
+        "WeakAdjustData": [
+          {
+            "WeakAdjustType": "NUAT_MOON"
+          }
+        ],
+        "BattleUnlockData": [
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 11040036
+          },
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 10201019
+          }
+        ],
+        "NormalRewardData": [
+          {
+            "NormalRewardGroup": 1090001
+          },
+          {
+            "NormalRewardGroup": 1020100102
+          },
+          {
+            "NormalRewardGroup": 1020102003
+          },
+          {
+            "NormalRewardGroup": 1020100111
+          },
+          {
+            "NormalRewardGroup": 1020102004
+          },
+          {
+            "NormalRewardGroup": 1020102004
+          }
+        ],
+        "BattleMissionData": [
+          {
+            "BattleMissionType": "BMT_WIN",
+            "BattleMissionTask": 1
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 65
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 60
+          }
+        ],
+        "FirstClearNormalRewardData": [
+          {
+            "FirstClearNormalRewardType": "RT_NORMAL_ITEM",
+            "FirstClearNormalRewardID": 103,
+            "FirstClearNormalRewardValue": 30
+          }
+        ]
       },
       {
-        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP1_21",
-        "BattleTabId": 1,
+        "ContentsTag": "MAIN_OPEN",
+        "BattleID": 10201021,
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP1_021",
         "OrderList": 21,
-        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP1_21",
+        "BattleTabId": 10201,
+        "IsSweep": true,
+        "DeckSlotMax": "BATTLE_SLOT_4",
+        "BattleTempletFileName": "JSON_NORMAL_BATTLE_EXPLORE_EQUIP1_021.txt",
+        "BattleMapStrID": "MAP_BATTLE_CELLAR_CORRIDOR_DAY",
+        "BattleType": "NBT_PVE_NORMAL",
         "BattleMode": "BM_BOSS_KILL",
-        "BattleLevel": 21,
-        "BattlePower": 1121,
-        "LimitTurn": 77,
-        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP1_21.txt"
+        "BattleTitleName": "SI_SPECIAL_RAID",
+        "BattleName": "SI_EXPLORE_EQUIP1_STAGE_021",
+        "BattleDesc": "SI_NORMAL_BATTLE_DESC_EXPLORE_EQUIP1",
+        "BattleIcon": "UFS_NKM_UNIT_MON_STALKER_SKELETON_BLACK.png",
+        "Difficulty": "NORMAL",
+        "SafePartyCount": 4,
+        "BattleLevel": 3321,
+        "MusicName": "MUSIC_BATTLE_MOTIVATOR.mp3",
+        "BattlePower": 517205,
+        "ReqNormalItem": 102,
+        "ReqNormalItemCount": 30,
+        "NormalRewardUserExp": 300,
+        "NormalRewardGold": 12750,
+        "AllClearMissionItemId": 0,
+        "AllClearMissionItemCount": 0,
+        "BattleMissionBonusType": "NONE",
+        "WeakAdjustData": [
+          {
+            "WeakAdjustType": "NUAT_MOON"
+          }
+        ],
+        "BattleUnlockData": [
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 11040036
+          },
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 10201020
+          }
+        ],
+        "NormalRewardData": [
+          {
+            "NormalRewardGroup": 1090001
+          },
+          {
+            "NormalRewardGroup": 1020100102
+          },
+          {
+            "NormalRewardGroup": 1020102003
+          },
+          {
+            "NormalRewardGroup": 1020100111
+          },
+          {
+            "NormalRewardGroup": 1020102004
+          },
+          {
+            "NormalRewardGroup": 1020102004
+          }
+        ],
+        "BattleMissionData": [
+          {
+            "BattleMissionType": "BMT_WIN",
+            "BattleMissionTask": 1
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 65
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 60
+          }
+        ],
+        "FirstClearNormalRewardData": [
+          {
+            "FirstClearNormalRewardType": "RT_NORMAL_ITEM",
+            "FirstClearNormalRewardID": 103,
+            "FirstClearNormalRewardValue": 30
+          }
+        ]
       },
       {
-        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP1_22",
-        "BattleTabId": 1,
+        "ContentsTag": "MAIN_OPEN",
+        "BattleID": 10201022,
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP1_022",
         "OrderList": 22,
-        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP1_22",
-        "BattleMode": "BM_ALL_KILL",
-        "BattleLevel": 22,
-        "BattlePower": 1122,
-        "LimitTurn": 77,
-        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP1_22.txt"
+        "BattleTabId": 10201,
+        "IsSweep": true,
+        "DeckSlotMax": "BATTLE_SLOT_4",
+        "BattleTempletFileName": "JSON_NORMAL_BATTLE_EXPLORE_EQUIP1_022.txt",
+        "BattleMapStrID": "MAP_BATTLE_CELLAR_CORRIDOR_DAY",
+        "BattleType": "NBT_PVE_NORMAL",
+        "BattleMode": "BM_BOSS_KILL",
+        "BattleTitleName": "SI_SPECIAL_RAID",
+        "BattleName": "SI_EXPLORE_EQUIP1_STAGE_022",
+        "BattleDesc": "SI_NORMAL_BATTLE_DESC_EXPLORE_EQUIP1",
+        "BattleIcon": "UFS_NKM_UNIT_MON_STALKER_SKELETON_BLACK.png",
+        "Difficulty": "NORMAL",
+        "SafePartyCount": 4,
+        "BattleLevel": 3321,
+        "MusicName": "MUSIC_BATTLE_MOTIVATOR.mp3",
+        "BattlePower": 517205,
+        "ReqNormalItem": 102,
+        "ReqNormalItemCount": 30,
+        "NormalRewardUserExp": 300,
+        "NormalRewardGold": 12750,
+        "AllClearMissionItemId": 0,
+        "AllClearMissionItemCount": 0,
+        "BattleMissionBonusType": "NONE",
+        "WeakAdjustData": [
+          {
+            "WeakAdjustType": "NUAT_MOON"
+          }
+        ],
+        "BattleUnlockData": [
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 11040036
+          },
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 10201021
+          }
+        ],
+        "NormalRewardData": [
+          {
+            "NormalRewardGroup": 1090001
+          },
+          {
+            "NormalRewardGroup": 1020100102
+          },
+          {
+            "NormalRewardGroup": 1020102003
+          },
+          {
+            "NormalRewardGroup": 1020100111
+          },
+          {
+            "NormalRewardGroup": 1020102004
+          },
+          {
+            "NormalRewardGroup": 1020102004
+          }
+        ],
+        "BattleMissionData": [
+          {
+            "BattleMissionType": "BMT_WIN",
+            "BattleMissionTask": 1
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 65
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 60
+          }
+        ],
+        "FirstClearNormalRewardData": [
+          {
+            "FirstClearNormalRewardType": "RT_NORMAL_ITEM",
+            "FirstClearNormalRewardID": 103,
+            "FirstClearNormalRewardValue": 30
+          }
+        ]
       },
       {
-        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP2_20",
-        "BattleTabId": 2,
+        "ContentsTag": "MAIN_OPEN",
+        "BattleID": 10202020,
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP2_020",
         "OrderList": 20,
-        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP2_20",
+        "BattleTabId": 10202,
+        "IsSweep": true,
+        "DeckSlotMax": "BATTLE_SLOT_4",
+        "BattleTempletFileName": "JSON_NORMAL_BATTLE_EXPLORE_EQUIP2_020.txt",
+        "BattleMapStrID": "MAP_BATTLE_FROZEN_TYPE_A_DAY",
+        "BattleType": "NBT_PVE_NORMAL",
         "BattleMode": "BM_BOSS_KILL",
-        "BattleLevel": 20,
-        "BattlePower": 1220,
-        "LimitTurn": 77,
-        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP2_20.txt"
+        "BattleTitleName": "SI_SPECIAL_RAID",
+        "BattleName": "SI_EXPLORE_EQUIP2_STAGE_020",
+        "BattleDesc": "SI_NORMAL_BATTLE_DESC_EXPLORE_EQUIP2",
+        "BattleIcon": "UFS_NKM_UNIT_MON_STALKER_SKELETON_BLACK.png",
+        "Difficulty": "NORMAL",
+        "SafePartyCount": 4,
+        "BattleLevel": 3321,
+        "MusicName": "MUSIC_BATTLE_WENDIGO.mp3",
+        "BattlePower": 517205,
+        "ReqNormalItem": 102,
+        "ReqNormalItemCount": 30,
+        "NormalRewardUserExp": 300,
+        "NormalRewardGold": 12750,
+        "AllClearMissionItemId": 0,
+        "AllClearMissionItemCount": 0,
+        "BattleMissionBonusType": "NONE",
+        "WeakAdjustData": [
+          {
+            "WeakAdjustType": "NUAT_STAR"
+          }
+        ],
+        "BattleUnlockData": [
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 11040036
+          },
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 10202019
+          }
+        ],
+        "NormalRewardData": [
+          {
+            "NormalRewardGroup": 1090001
+          },
+          {
+            "NormalRewardGroup": 1020100102
+          },
+          {
+            "NormalRewardGroup": 1020202003
+          },
+          {
+            "NormalRewardGroup": 1020100111
+          },
+          {
+            "NormalRewardGroup": 1020202004
+          },
+          {
+            "NormalRewardGroup": 1020202004
+          }
+        ],
+        "BattleMissionData": [
+          {
+            "BattleMissionType": "BMT_WIN",
+            "BattleMissionTask": 1
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 65
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 60
+          }
+        ],
+        "FirstClearNormalRewardData": [
+          {
+            "FirstClearNormalRewardType": "RT_NORMAL_ITEM",
+            "FirstClearNormalRewardID": 103,
+            "FirstClearNormalRewardValue": 30
+          }
+        ]
       },
       {
-        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP2_21",
-        "BattleTabId": 2,
+        "ContentsTag": "MAIN_OPEN",
+        "BattleID": 10202021,
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP2_021",
         "OrderList": 21,
-        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP2_21",
+        "BattleTabId": 10202,
+        "IsSweep": true,
+        "DeckSlotMax": "BATTLE_SLOT_4",
+        "BattleTempletFileName": "JSON_NORMAL_BATTLE_EXPLORE_EQUIP2_021.txt",
+        "BattleMapStrID": "MAP_BATTLE_FROZEN_TYPE_A_DAY",
+        "BattleType": "NBT_PVE_NORMAL",
         "BattleMode": "BM_BOSS_KILL",
-        "BattleLevel": 21,
-        "BattlePower": 1221,
-        "LimitTurn": 77,
-        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP2_21.txt"
+        "BattleTitleName": "SI_SPECIAL_RAID",
+        "BattleName": "SI_EXPLORE_EQUIP2_STAGE_021",
+        "BattleDesc": "SI_NORMAL_BATTLE_DESC_EXPLORE_EQUIP2",
+        "BattleIcon": "UFS_NKM_UNIT_MON_STALKER_SKELETON_BLACK.png",
+        "Difficulty": "NORMAL",
+        "SafePartyCount": 4,
+        "BattleLevel": 3321,
+        "MusicName": "MUSIC_BATTLE_WENDIGO.mp3",
+        "BattlePower": 517205,
+        "ReqNormalItem": 102,
+        "ReqNormalItemCount": 30,
+        "NormalRewardUserExp": 300,
+        "NormalRewardGold": 12750,
+        "AllClearMissionItemId": 0,
+        "AllClearMissionItemCount": 0,
+        "BattleMissionBonusType": "NONE",
+        "WeakAdjustData": [
+          {
+            "WeakAdjustType": "NUAT_STAR"
+          }
+        ],
+        "BattleUnlockData": [
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 11040036
+          },
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 10202020
+          }
+        ],
+        "NormalRewardData": [
+          {
+            "NormalRewardGroup": 1090001
+          },
+          {
+            "NormalRewardGroup": 1020100102
+          },
+          {
+            "NormalRewardGroup": 1020202003
+          },
+          {
+            "NormalRewardGroup": 1020100111
+          },
+          {
+            "NormalRewardGroup": 1020202004
+          },
+          {
+            "NormalRewardGroup": 1020202004
+          }
+        ],
+        "BattleMissionData": [
+          {
+            "BattleMissionType": "BMT_WIN",
+            "BattleMissionTask": 1
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 65
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 60
+          }
+        ],
+        "FirstClearNormalRewardData": [
+          {
+            "FirstClearNormalRewardType": "RT_NORMAL_ITEM",
+            "FirstClearNormalRewardID": 103,
+            "FirstClearNormalRewardValue": 30
+          }
+        ]
       },
       {
-        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP2_22",
-        "BattleTabId": 2,
+        "ContentsTag": "MAIN_OPEN",
+        "BattleID": 10202022,
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP2_022",
         "OrderList": 22,
-        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP2_22",
-        "BattleMode": "BM_ALL_KILL",
-        "BattleLevel": 22,
-        "BattlePower": 1222,
-        "LimitTurn": 77,
-        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP2_22.txt"
+        "BattleTabId": 10202,
+        "IsSweep": true,
+        "DeckSlotMax": "BATTLE_SLOT_4",
+        "BattleTempletFileName": "JSON_NORMAL_BATTLE_EXPLORE_EQUIP2_022.txt",
+        "BattleMapStrID": "MAP_BATTLE_FROZEN_TYPE_A_DAY",
+        "BattleType": "NBT_PVE_NORMAL",
+        "BattleMode": "BM_BOSS_KILL",
+        "BattleTitleName": "SI_SPECIAL_RAID",
+        "BattleName": "SI_EXPLORE_EQUIP2_STAGE_022",
+        "BattleDesc": "SI_NORMAL_BATTLE_DESC_EXPLORE_EQUIP2",
+        "BattleIcon": "UFS_NKM_UNIT_MON_STALKER_SKELETON_BLACK.png",
+        "Difficulty": "NORMAL",
+        "SafePartyCount": 4,
+        "BattleLevel": 3321,
+        "MusicName": "MUSIC_BATTLE_WENDIGO.mp3",
+        "BattlePower": 517205,
+        "ReqNormalItem": 102,
+        "ReqNormalItemCount": 30,
+        "NormalRewardUserExp": 300,
+        "NormalRewardGold": 12750,
+        "AllClearMissionItemId": 0,
+        "AllClearMissionItemCount": 0,
+        "BattleMissionBonusType": "NONE",
+        "WeakAdjustData": [
+          {
+            "WeakAdjustType": "NUAT_STAR"
+          }
+        ],
+        "BattleUnlockData": [
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 11040036
+          },
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 10202021
+          }
+        ],
+        "NormalRewardData": [
+          {
+            "NormalRewardGroup": 1090001
+          },
+          {
+            "NormalRewardGroup": 1020100102
+          },
+          {
+            "NormalRewardGroup": 1020202003
+          },
+          {
+            "NormalRewardGroup": 1020100111
+          },
+          {
+            "NormalRewardGroup": 1020202004
+          },
+          {
+            "NormalRewardGroup": 1020202004
+          }
+        ],
+        "BattleMissionData": [
+          {
+            "BattleMissionType": "BMT_WIN",
+            "BattleMissionTask": 1
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 65
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 60
+          }
+        ],
+        "FirstClearNormalRewardData": [
+          {
+            "FirstClearNormalRewardType": "RT_NORMAL_ITEM",
+            "FirstClearNormalRewardID": 103,
+            "FirstClearNormalRewardValue": 30
+          }
+        ]
       },
       {
-        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP3_20",
-        "BattleTabId": 3,
+        "ContentsTag": "MAIN_OPEN",
+        "BattleID": 10203020,
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP3_020",
         "OrderList": 20,
-        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP3_20",
+        "BattleTabId": 10203,
+        "IsSweep": true,
+        "DeckSlotMax": "BATTLE_SLOT_4",
+        "BattleTempletFileName": "JSON_NORMAL_BATTLE_EXPLORE_EQUIP3_020.txt",
+        "BattleMapStrID": "MAP_BATTLE_ANCIENT_SITE_TYPE_A_DAY",
+        "BattleType": "NBT_PVE_NORMAL",
         "BattleMode": "BM_BOSS_KILL",
-        "BattleLevel": 20,
-        "BattlePower": 1320,
-        "LimitTurn": 77,
-        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP3_20.txt"
+        "BattleTitleName": "SI_SPECIAL_RAID",
+        "BattleName": "SI_EXPLORE_EQUIP3_STAGE_020",
+        "BattleDesc": "SI_NORMAL_BATTLE_DESC_EXPLORE_EQUIP3",
+        "BattleIcon": "UFS_NKM_UNIT_MON_STALKER_SKELETON_BLACK.png",
+        "Difficulty": "NORMAL",
+        "SafePartyCount": 4,
+        "BattleLevel": 3321,
+        "MusicName": "MUSIC_BATTLE_PERSES.mp3",
+        "BattlePower": 517205,
+        "ReqNormalItem": 102,
+        "ReqNormalItemCount": 30,
+        "NormalRewardUserExp": 300,
+        "NormalRewardGold": 12750,
+        "AllClearMissionItemId": 0,
+        "AllClearMissionItemCount": 0,
+        "BattleMissionBonusType": "NONE",
+        "WeakAdjustData": [
+          {
+            "WeakAdjustType": "NUAT_SUN"
+          }
+        ],
+        "BattleUnlockData": [
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 11040036
+          },
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 10203019
+          }
+        ],
+        "NormalRewardData": [
+          {
+            "NormalRewardGroup": 1090001
+          },
+          {
+            "NormalRewardGroup": 1020100102
+          },
+          {
+            "NormalRewardGroup": 1020302003
+          },
+          {
+            "NormalRewardGroup": 1020100111
+          },
+          {
+            "NormalRewardGroup": 1020302004
+          },
+          {
+            "NormalRewardGroup": 1020302004
+          }
+        ],
+        "BattleMissionData": [
+          {
+            "BattleMissionType": "BMT_WIN",
+            "BattleMissionTask": 1
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 65
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 60
+          }
+        ],
+        "FirstClearNormalRewardData": [
+          {
+            "FirstClearNormalRewardType": "RT_NORMAL_ITEM",
+            "FirstClearNormalRewardID": 103,
+            "FirstClearNormalRewardValue": 30
+          }
+        ]
       },
       {
-        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP3_21",
-        "BattleTabId": 3,
+        "ContentsTag": "MAIN_OPEN",
+        "BattleID": 10203021,
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP3_021",
         "OrderList": 21,
-        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP3_21",
+        "BattleTabId": 10203,
+        "IsSweep": true,
+        "DeckSlotMax": "BATTLE_SLOT_4",
+        "BattleTempletFileName": "JSON_NORMAL_BATTLE_EXPLORE_EQUIP3_021.txt",
+        "BattleMapStrID": "MAP_BATTLE_ANCIENT_SITE_TYPE_A_DAY",
+        "BattleType": "NBT_PVE_NORMAL",
         "BattleMode": "BM_BOSS_KILL",
-        "BattleLevel": 21,
-        "BattlePower": 1321,
-        "LimitTurn": 77,
-        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP3_21.txt"
+        "BattleTitleName": "SI_SPECIAL_RAID",
+        "BattleName": "SI_EXPLORE_EQUIP3_STAGE_021",
+        "BattleDesc": "SI_NORMAL_BATTLE_DESC_EXPLORE_EQUIP3",
+        "BattleIcon": "UFS_NKM_UNIT_MON_STALKER_SKELETON_BLACK.png",
+        "Difficulty": "NORMAL",
+        "SafePartyCount": 4,
+        "BattleLevel": 3321,
+        "MusicName": "MUSIC_BATTLE_PERSES.mp3",
+        "BattlePower": 517205,
+        "ReqNormalItem": 102,
+        "ReqNormalItemCount": 30,
+        "NormalRewardUserExp": 300,
+        "NormalRewardGold": 12750,
+        "AllClearMissionItemId": 0,
+        "AllClearMissionItemCount": 0,
+        "BattleMissionBonusType": "NONE",
+        "WeakAdjustData": [
+          {
+            "WeakAdjustType": "NUAT_SUN"
+          }
+        ],
+        "BattleUnlockData": [
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 11040036
+          },
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 10203020
+          }
+        ],
+        "NormalRewardData": [
+          {
+            "NormalRewardGroup": 1090001
+          },
+          {
+            "NormalRewardGroup": 1020100102
+          },
+          {
+            "NormalRewardGroup": 1020302003
+          },
+          {
+            "NormalRewardGroup": 1020100111
+          },
+          {
+            "NormalRewardGroup": 1020302004
+          },
+          {
+            "NormalRewardGroup": 1020302004
+          }
+        ],
+        "BattleMissionData": [
+          {
+            "BattleMissionType": "BMT_WIN",
+            "BattleMissionTask": 1
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 65
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 60
+          }
+        ],
+        "FirstClearNormalRewardData": [
+          {
+            "FirstClearNormalRewardType": "RT_NORMAL_ITEM",
+            "FirstClearNormalRewardID": 103,
+            "FirstClearNormalRewardValue": 30
+          }
+        ]
       },
       {
-        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP3_22",
-        "BattleTabId": 3,
+        "ContentsTag": "MAIN_OPEN",
+        "BattleID": 10203022,
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP3_022",
         "OrderList": 22,
-        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP3_22",
-        "BattleMode": "BM_ALL_KILL",
-        "BattleLevel": 22,
-        "BattlePower": 1322,
-        "LimitTurn": 77,
-        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP3_22.txt"
+        "BattleTabId": 10203,
+        "IsSweep": true,
+        "DeckSlotMax": "BATTLE_SLOT_4",
+        "BattleTempletFileName": "JSON_NORMAL_BATTLE_EXPLORE_EQUIP3_022.txt",
+        "BattleMapStrID": "MAP_BATTLE_ANCIENT_SITE_TYPE_A_DAY",
+        "BattleType": "NBT_PVE_NORMAL",
+        "BattleMode": "BM_BOSS_KILL",
+        "BattleTitleName": "SI_SPECIAL_RAID",
+        "BattleName": "SI_EXPLORE_EQUIP3_STAGE_022",
+        "BattleDesc": "SI_NORMAL_BATTLE_DESC_EXPLORE_EQUIP3",
+        "BattleIcon": "UFS_NKM_UNIT_MON_STALKER_SKELETON_BLACK.png",
+        "Difficulty": "NORMAL",
+        "SafePartyCount": 4,
+        "BattleLevel": 3321,
+        "MusicName": "MUSIC_BATTLE_PERSES.mp3",
+        "BattlePower": 517205,
+        "ReqNormalItem": 102,
+        "ReqNormalItemCount": 30,
+        "NormalRewardUserExp": 300,
+        "NormalRewardGold": 12750,
+        "AllClearMissionItemId": 0,
+        "AllClearMissionItemCount": 0,
+        "BattleMissionBonusType": "NONE",
+        "WeakAdjustData": [
+          {
+            "WeakAdjustType": "NUAT_SUN"
+          }
+        ],
+        "BattleUnlockData": [
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 11040036
+          },
+          {
+            "BattleUnlockType": "BATTLE_CLEAR",
+            "BattleUnlockReqId": 10203021
+          }
+        ],
+        "NormalRewardData": [
+          {
+            "NormalRewardGroup": 1090001
+          },
+          {
+            "NormalRewardGroup": 1020100102
+          },
+          {
+            "NormalRewardGroup": 1020302003
+          },
+          {
+            "NormalRewardGroup": 1020100111
+          },
+          {
+            "NormalRewardGroup": 1020302004
+          },
+          {
+            "NormalRewardGroup": 1020302004
+          }
+        ],
+        "BattleMissionData": [
+          {
+            "BattleMissionType": "BMT_WIN",
+            "BattleMissionTask": 1
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 65
+          },
+          {
+            "BattleMissionType": "BMT_LIMIT_TURN",
+            "BattleMissionTask": 60
+          }
+        ],
+        "FirstClearNormalRewardData": [
+          {
+            "FirstClearNormalRewardType": "RT_NORMAL_ITEM",
+            "FirstClearNormalRewardID": 103,
+            "FirstClearNormalRewardValue": 30
+          }
+        ]
       }
     ],
     "BATTLE_TAB_TEMPLET": [
       {
-        "BattleTabID": 1,
+        "BattleTabID": 10201,
         "BattleTabName": "TAB1",
         "OrderList": 1
       },
       {
-        "BattleTabID": 2,
+        "BattleTabID": 10202,
         "BattleTabName": "TAB2",
         "OrderList": 2
       },
       {
-        "BattleTabID": 3,
+        "BattleTabID": 10203,
         "BattleTabName": "TAB3",
         "OrderList": 3
       }
@@ -305,10 +971,10 @@
     "UNIT_TEMPLET_BASE4": []
   },
   "scripts": {
-    "NORMAL_BATTLE_EXPLORE_EQUIP1_20.txt": {
+    "JSON_NORMAL_BATTLE_EXPLORE_EQUIP1_020.txt": {
       "Waves": [
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -323,7 +989,7 @@
           ]
         },
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -336,10 +1002,10 @@
         }
       ]
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP1_21.txt": {
+    "JSON_NORMAL_BATTLE_EXPLORE_EQUIP1_021.txt": {
       "Waves": [
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -354,7 +1020,7 @@
           ]
         },
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -367,10 +1033,10 @@
         }
       ]
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP1_22.txt": {
+    "JSON_NORMAL_BATTLE_EXPLORE_EQUIP1_022.txt": {
       "Waves": [
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -385,7 +1051,7 @@
           ]
         },
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -398,10 +1064,10 @@
         }
       ]
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP2_20.txt": {
+    "JSON_NORMAL_BATTLE_EXPLORE_EQUIP2_020.txt": {
       "Waves": [
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -416,7 +1082,7 @@
           ]
         },
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -429,10 +1095,10 @@
         }
       ]
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP2_21.txt": {
+    "JSON_NORMAL_BATTLE_EXPLORE_EQUIP2_021.txt": {
       "Waves": [
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -447,7 +1113,7 @@
           ]
         },
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -460,10 +1126,10 @@
         }
       ]
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP2_22.txt": {
+    "JSON_NORMAL_BATTLE_EXPLORE_EQUIP2_022.txt": {
       "Waves": [
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -478,7 +1144,7 @@
           ]
         },
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -491,10 +1157,10 @@
         }
       ]
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP3_20.txt": {
+    "JSON_NORMAL_BATTLE_EXPLORE_EQUIP3_020.txt": {
       "Waves": [
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -509,7 +1175,7 @@
           ]
         },
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -522,10 +1188,10 @@
         }
       ]
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP3_21.txt": {
+    "JSON_NORMAL_BATTLE_EXPLORE_EQUIP3_021.txt": {
       "Waves": [
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -540,7 +1206,7 @@
           ]
         },
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -553,10 +1219,10 @@
         }
       ]
     },
-    "NORMAL_BATTLE_EXPLORE_EQUIP3_22.txt": {
+    "JSON_NORMAL_BATTLE_EXPLORE_EQUIP3_022.txt": {
       "Waves": [
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
@@ -571,7 +1237,7 @@
           ]
         },
         {
-          "MapPosType": "BMPT_CENTER",
+          "MapPosType": "NMPT_BATTLE_SLOT_4_BOSS_A",
           "TeamBSpawnList": [
             {
               "UnitStrId": "FIXTURE_UNIT",
