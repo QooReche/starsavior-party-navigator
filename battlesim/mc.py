@@ -1384,6 +1384,8 @@ class Battle:
             self._tick_cooldowns(u)
         if not u.dead:
             self.fire(u, 'own_ts', Ctx(u, u, None))
+            if self.gb is not None:
+                self.gb.turn_start(u)
         for v in self.alive(u.side):
             if v is not u:
                 self.fire(v, 'ally_ts', Ctx(v, u, None))
@@ -1901,6 +1903,8 @@ class Battle:
         """자신이 시전하는 추가 발동 줄의 클라 대상 규칙(mc.self_enforce_target=client): 적 = data/foe_auto.json enforce_self,
         구원자 = data/auto_skill.json self_enforce. 자료가 없는 줄은 None(옛 동작: 자신이 최근에 때린 적·설명문 표지)."""
         if ln is None:
+            return None
+        if getattr(owner.d,'khan_added_enforce',False) and self.mc['khan_passives'] != 'client':
             return None
         if owner.side == 1:
             return (getattr(owner.d, 'enforce_self', None) or {}).get((ln.slot, ln.raw))
@@ -2883,6 +2887,8 @@ class Battle:
             self.rule_hits['potential_11026_vampirism'] += 1
         # build 26610546 NKM:15669-15689: remember all skill victims before
         # DAMAGE_START or any hit. AddDamage/DoT do not write this memory.
+        if self.gb is not None:
+            self.gb.hit_start(a, ctx)
         for v in ctx.targets:
             if not v.dead and a.side != v.side:
                 v.last_damager = a
@@ -5417,8 +5423,13 @@ class Battle:
                     self.dirty(x)
             return
         applied = False
+        # 칸은 표에서 ActiveRate=BuffActiveRate=10000을 검증해 대상 종류를 보관함.
+        # NKM:16504,16420-16432,16606-16616: SELF/TARGET는 확정 BuffRate 추첨 없음.
+        ln = self._cur_line
+        khan_single = (self.mc['khan_passives'] == 'client' and owner.name == '카본펑크 칸' and ln is not None
+                       and getattr(owner.d,'se_meta',{}).get((ln.slot,ln.raw)) in ('NSETT_SELF','NSETT_TARGET'))
         for x in tg:
-            if self.R(owner.side).random() >= eff['chance']:
+            if not khan_single and self.R(owner.side).random() >= eff['chance']:
                 continue
             self._fired(owner)
             if self.add_effect(owner, x, eff, ctx, hot=hot, fixed='해제 불가' in raw):
@@ -5590,6 +5601,13 @@ class Battle:
                 self.rule_hits['se_force_apply'] += 1
             else:
                 return     # 회피한 대상에는 약화가 걸리지 않음(공식 2026-06-04 오류 수정 공지)
+        # 칸 효과 적중은 CantGetMoreDebuff보다 먼저 검사함(NKM:4363-4379→4394-4398).
+        # 고유 면역·회피가 먼저인 기존 roll_hit 경계는 유지함.
+        khan_hit = self.mc['khan_passives'] == 'client' and owner.name == '카본펑크 칸'
+        immune_name = name in getattr(x.d, 'immune', ())
+        needs_hit = resist and (eff.get('judge') or (immune_name and not forced))
+        if khan_hit and needs_hit and not self.roll_hit(owner,ctx,x,None if forced else name):
+            return
         # build 26314877 NKM:4339-4343: CantGetMoreDebuff는 비양성·비DeleteBuff·비ForceApply 효과만 IMMUNE 거부
         # (효과 저항 무시 여부와 무관). 통과 이름 = data/buff_immune_pass.json(IsPositive|DeleteBuff|ForceApplyEffect,
         # 같은 이름 행이 모두 통과일 때만). 이름만으로 못 가르는 혼재 이름·표에 없는 효과·SE 행 강제 4건은 거부로 둠.
@@ -5605,7 +5623,7 @@ class Battle:
         immune_name = name in getattr(x.d, 'immune', ())
         if forced and immune_name and resist:
             self.rule_hits['se_force_apply'] += 1      # 강제 적용은 유닛 면역 목록 통과(NKM:4318), 효과 적중 판정은 별개
-        if resist and (eff.get('judge') or (immune_name and not forced)):
+        if not khan_hit and needs_hit:
             if not self.roll_hit(owner, ctx, x, None if forced else name):
                 return
         if not forced and self._cc_immune(x, name):

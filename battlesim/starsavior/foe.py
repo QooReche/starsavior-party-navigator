@@ -353,6 +353,11 @@ class FoeDef:
                 self.unmodeled.append('적 트리거 스킬 미반영: %s' % tsk.name)
         # 게임 자동 대상 규칙(mc.foe_auto): 스킬 칸 -> 규칙 행, (칸, 효과 줄 원문) -> 효과 줄 자동 대상. 같은 원문에 다른 규칙이면 버림
         rules = foe_auto().get(self.key) or {}
+        self.khan_added_enforce = rules.get('khanAdded',False)
+        self.se_meta = {}
+        for k,target_type in rules.get('se',{}).items():
+            si,li = map(int,k.split(':'));sd=raw['s'][si]
+            self.se_meta[(sd['sl'],sd['ef'][li])] = target_type
         self.auto = rules.get('skills', {})
         self.skill_order = rules.get('order', ())
         self.auto_lines, clash = {}, set()

@@ -2,6 +2,36 @@
  "schema": 1,
  "asOf": "2026-11-25",
  "gameBuild": "26752678",
+ "dependencies": {
+  "rawdata/databook_main.json": "f3ee1bd5eae0aa7440cbe897a17d6f838cd33998cf3cc467609fb2530a54c88c",
+  "rawdata/foe.js": "541b46868ebb4412e8929f7a0918e1914b85794d7286f52c4b54d808d4c0e0df",
+  "data/foe_spawn.json": "3a990aff04dbd831583406b8bfdb537e7db050f69feec4698953babce5b9d418",
+  "rawdata/guide_app-core.js": "291dda6534d94bcd8b436688913ee954bded98efc27ee2c982ee9caed0b1bcfd",
+  "data/synergy_tags.json": "e371e238936fb3dc7be0548164848d775ebb7ea33a713d14d227fae436f4e099",
+  "data/myinfo_combat.json": "196489dd8e12ed52f17e9db41d15fc5fff5f72376ddbb27ef07dafdafb11552c",
+  "data/auto_skill.json": "d99a7f7545e9d9b1dfeb91631587817b2c81e9477a9494aad54e6fc0ced3c127",
+  "data/foe_auto.json": "ec8f66408a11358ed30713f02c996d24dc24794aee5c72a885db064d06a5b775",
+  "data/sudden_death.json": "0da632157637737f14f30fac226441805d44c69160b8e3526dadd728ea370d8f",
+  "data/stage_fx.json": "1a9be6f8dab52d6435afcd24c01717f4e2302387f6d059d306ff14f0d8e5dab9",
+  "data/battle_end.json": "cf178d68198e24d2231e0a06994cf293b81603170a2df4d6cfced30ee4b49169",
+  "data/chain_damage.json": "7e445b92a418813add668d7d0cbf009083f90ebd7c8f69c7d1703a11f4b2be01",
+  "data/hit_stats.json": "8f7687e743e2d96e617a015554e741223559c325a6d4e0e655ec6a1856cce404",
+  "data/chain_se.json": "eaa362ad956d18c6adf9a13bfff58b3188605066de11e8fba8d18e345b5eff95",
+  "data/break_skill_levels.json": "d560776b8e90a2119c6ef84a0aefa857fe7a3e7e74248b11fe73cea460193cda",
+  "data/buff_count.json": "691f4b02f66c6316f86695e322580ffa7f1f7f77a427d2618f1ff5b9b6f07eb1",
+  "data/buff_step.json": "f4562d313622763a5516588c932842e4e80f57e94b56061544b7ba236b506bb1",
+  "data/buff_force.json": "81caffee715e2526935ce228ca0b6aee960d67d43cb2ae592a816cff2187d5bf",
+  "data/buff_immune_pass.json": "8e3d0b7ff54fcc3be2c8bb00a2eb3984f708ee2dac5402ecace5aaabc0eedc9d",
+  "data/buff_global_turn.json": "3ac595ad8b8434975e6768ab03b27ee76803dfc012519a68b440d78a386e3894",
+  "data/foe_react.json": "cdaeb1c0ad0d08448f834529c1e8669fbdd234dc9ad1780ebc7f19fadc84fef4",
+  "data/foe_client.json": "396a60fd35ca2b0cf9b3dacd7579a16dbf8321ce7f276b4c31101d553fa49bb9",
+  "data/foe_summon.json": "2de72c067589e64d3685dd455ea9d2e67237446858d67a9d55de25122a0b2d94",
+  "data/foe_clash.json": "6690437446774d128a485a0ad1ef231ef197390750b726d448c7986081a29504",
+  "data/buff_dead_keep.json": "6e79b9a906705e79c631fda2ecfb0f1d37f0722c3e5364f6d6da6d08c71a71db",
+  "data/buff_flags.json": "98f0d768d7b53dee5b92847a3058ee73d01570f36d818a41d41a7d5ecb7c79bc",
+  "data/cosmo_raid.json": "d62bd3bd41f4178ba3c619c09b2a2e19cf7ead5f00df283bd22ded4eed9515de",
+  "data/foe_cosmo_extra.json": "7474b8ee3394a3ac13dc77e081994e25b8b81992c304b4e22cece47c492ff2cb"
+ },
  "provenance": {
   "kind": "current-client-extraction",
   "build": "26752678",
@@ -22,7 +52,11 @@
    "role": "스트라이커",
    "roleKey": "striker",
    "engine": "client"
-  }
+  },
+  "conf": "확인",
+  "src": [
+   "client"
+  ]
  },
  "steps": [
   {
@@ -66,10 +100,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 1,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111509",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_01",
@@ -95,10 +142,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 2,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111719",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_01",
@@ -124,10 +195,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 3,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111509",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ],
     [
@@ -155,10 +239,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 0,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111719",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_01",
@@ -188,10 +296,161 @@
       "role": "스트라이커",
       "name": "카본펑크 칸",
       "boss": true,
+      "elite": false,
       "slot": 2,
       "spawn": "S",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114449",
-      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076"
+      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         {
+          "slot": "궁극기",
+          "eat": 4,
+          "f": [],
+          "cool": 0,
+          "cond": 52039
+         }
+        ]
+       ],
+       "force": [],
+       "se": [
+        [
+         "기본기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (1턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 미보유: 오버히트(해제불가)]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 적 전체에게 〈공격력 감소〉 (2턴 / 공격력% -30%) {효과 적중 판정}",
+         "NSETT_ENEMY_ALL"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 자신에게 〈속도 증가〉 (2턴 / 속도% +20%)",
+         "NSETT_SELF"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 행동 게이지 20%p 감소 {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (2턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정, 2회 부여}",
+         "NSETT_TARGET"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [추가발동 스킬이 아님: 예]) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [스킬 대상 유형: 적 전체]) 자신에게 〈오버히트(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 행동 게이지를 0%로 설정",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 〈과열 상태〉 (1턴 / 피해 감소 -15% / 기절)",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[웨이브 시작 시] 자신에게 〈궁극기 쿨타임 초기화〉",
+         "NSETT_SELF"
+        ]
+       ]
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_01",
@@ -217,10 +476,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 4,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111719",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ]
    ],
@@ -269,10 +552,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 1,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111539",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_02",
@@ -298,10 +594,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 2,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111749",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_02",
@@ -327,10 +647,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 3,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111539",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ],
     [
@@ -358,10 +691,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 0,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111749",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_02",
@@ -391,10 +748,161 @@
       "role": "스트라이커",
       "name": "카본펑크 칸",
       "boss": true,
+      "elite": false,
       "slot": 2,
       "spawn": "S",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114480",
-      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076"
+      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         {
+          "slot": "궁극기",
+          "eat": 4,
+          "f": [],
+          "cool": 0,
+          "cond": 52039
+         }
+        ]
+       ],
+       "force": [],
+       "se": [
+        [
+         "기본기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (1턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 미보유: 오버히트(해제불가)]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 적 전체에게 〈공격력 감소〉 (2턴 / 공격력% -30%) {효과 적중 판정}",
+         "NSETT_ENEMY_ALL"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 자신에게 〈속도 증가〉 (2턴 / 속도% +20%)",
+         "NSETT_SELF"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 행동 게이지 20%p 감소 {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (2턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정, 2회 부여}",
+         "NSETT_TARGET"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [추가발동 스킬이 아님: 예]) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [스킬 대상 유형: 적 전체]) 자신에게 〈오버히트(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 행동 게이지를 0%로 설정",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 〈과열 상태〉 (1턴 / 피해 감소 -15% / 기절)",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[웨이브 시작 시] 자신에게 〈궁극기 쿨타임 초기화〉",
+         "NSETT_SELF"
+        ]
+       ]
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_02",
@@ -420,10 +928,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 4,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111749",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ]
    ],
@@ -472,10 +1004,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 1,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111569",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_03",
@@ -501,10 +1046,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 2,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111779",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_03",
@@ -530,10 +1099,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 3,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111569",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ],
     [
@@ -561,10 +1143,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 0,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111779",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_03",
@@ -594,10 +1200,161 @@
       "role": "스트라이커",
       "name": "카본펑크 칸",
       "boss": true,
+      "elite": false,
       "slot": 2,
       "spawn": "S",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114511",
-      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076"
+      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         {
+          "slot": "궁극기",
+          "eat": 4,
+          "f": [],
+          "cool": 0,
+          "cond": 52039
+         }
+        ]
+       ],
+       "force": [],
+       "se": [
+        [
+         "기본기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (1턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 미보유: 오버히트(해제불가)]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 적 전체에게 〈공격력 감소〉 (2턴 / 공격력% -30%) {효과 적중 판정}",
+         "NSETT_ENEMY_ALL"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 자신에게 〈속도 증가〉 (2턴 / 속도% +20%)",
+         "NSETT_SELF"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 행동 게이지 20%p 감소 {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (2턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정, 2회 부여}",
+         "NSETT_TARGET"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [추가발동 스킬이 아님: 예]) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [스킬 대상 유형: 적 전체]) 자신에게 〈오버히트(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 행동 게이지를 0%로 설정",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 〈과열 상태〉 (1턴 / 피해 감소 -15% / 기절)",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[웨이브 시작 시] 자신에게 〈궁극기 쿨타임 초기화〉",
+         "NSETT_SELF"
+        ]
+       ]
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_03",
@@ -623,10 +1380,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 4,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111779",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ]
    ],
@@ -675,10 +1456,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 1,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111599",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_04",
@@ -704,10 +1498,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 2,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111809",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_04",
@@ -733,10 +1551,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 3,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111599",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ],
     [
@@ -764,10 +1595,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 0,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111809",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_04",
@@ -797,10 +1652,161 @@
       "role": "스트라이커",
       "name": "카본펑크 칸",
       "boss": true,
+      "elite": false,
       "slot": 2,
       "spawn": "S",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114542",
-      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076"
+      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         {
+          "slot": "궁극기",
+          "eat": 4,
+          "f": [],
+          "cool": 0,
+          "cond": 52039
+         }
+        ]
+       ],
+       "force": [],
+       "se": [
+        [
+         "기본기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (1턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 미보유: 오버히트(해제불가)]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 적 전체에게 〈공격력 감소〉 (2턴 / 공격력% -30%) {효과 적중 판정}",
+         "NSETT_ENEMY_ALL"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 자신에게 〈속도 증가〉 (2턴 / 속도% +20%)",
+         "NSETT_SELF"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 행동 게이지 20%p 감소 {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (2턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정, 2회 부여}",
+         "NSETT_TARGET"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [추가발동 스킬이 아님: 예]) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [스킬 대상 유형: 적 전체]) 자신에게 〈오버히트(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 행동 게이지를 0%로 설정",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 〈과열 상태〉 (1턴 / 피해 감소 -15% / 기절)",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[웨이브 시작 시] 자신에게 〈궁극기 쿨타임 초기화〉",
+         "NSETT_SELF"
+        ]
+       ]
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_04",
@@ -826,10 +1832,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 4,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111809",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ]
    ],
@@ -878,10 +1908,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 1,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111629",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_05",
@@ -907,10 +1950,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 2,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111839",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_05",
@@ -936,10 +2003,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 3,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111629",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ],
     [
@@ -967,10 +2047,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 0,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111839",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_05",
@@ -1000,10 +2104,161 @@
       "role": "스트라이커",
       "name": "카본펑크 칸",
       "boss": true,
+      "elite": false,
       "slot": 2,
       "spawn": "S",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114573",
-      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076"
+      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         {
+          "slot": "궁극기",
+          "eat": 4,
+          "f": [],
+          "cool": 0,
+          "cond": 52039
+         }
+        ]
+       ],
+       "force": [],
+       "se": [
+        [
+         "기본기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (1턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 미보유: 오버히트(해제불가)]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 적 전체에게 〈공격력 감소〉 (2턴 / 공격력% -30%) {효과 적중 판정}",
+         "NSETT_ENEMY_ALL"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 자신에게 〈속도 증가〉 (2턴 / 속도% +20%)",
+         "NSETT_SELF"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 행동 게이지 20%p 감소 {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (2턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정, 2회 부여}",
+         "NSETT_TARGET"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [추가발동 스킬이 아님: 예]) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [스킬 대상 유형: 적 전체]) 자신에게 〈오버히트(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 행동 게이지를 0%로 설정",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 〈과열 상태〉 (1턴 / 피해 감소 -15% / 기절)",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[웨이브 시작 시] 자신에게 〈궁극기 쿨타임 초기화〉",
+         "NSETT_SELF"
+        ]
+       ]
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_05",
@@ -1029,10 +2284,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 4,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111839",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ]
    ],
@@ -1081,10 +2360,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 1,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111659",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_06",
@@ -1110,10 +2402,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 2,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111869",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_06",
@@ -1139,10 +2455,23 @@
       "role": "스트라이커",
       "name": "노상 강도 폭력배",
       "boss": false,
+      "elite": false,
       "slot": 3,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111659",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa"
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ],
     [
@@ -1170,10 +2499,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 0,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111869",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      },
      {
       "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_06",
@@ -1203,10 +2556,161 @@
       "role": "스트라이커",
       "name": "카본펑크 칸",
       "boss": true,
+      "elite": false,
       "slot": 2,
       "spawn": "S",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114604",
-      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076"
+      "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         {
+          "slot": "궁극기",
+          "eat": 4,
+          "f": [],
+          "cool": 0,
+          "cond": 52039
+         }
+        ]
+       ],
+       "force": [],
+       "se": [
+        [
+         "기본기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (1턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 미보유: 오버히트(해제불가)]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "기본기",
+         "[스킬 사용 시작 시] (조건: 내 공격 시 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 능력치 보정 피해 증가 +10% {이번 스킬에만 적용}",
+         "NSETT_SELF"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 적 전체에게 〈공격력 감소〉 (2턴 / 공격력% -30%) {효과 적중 판정}",
+         "NSETT_ENEMY_ALL"
+        ],
+        [
+         "특수기",
+         "[스킬 사용 후] 자신에게 〈속도 증가〉 (2턴 / 속도% +20%)",
+         "NSETT_SELF"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 행동 게이지 20%p 감소 {효과 적중 판정}",
+         "NSETT_TARGET"
+        ],
+        [
+         "궁극기",
+         "[스킬 사용 후] 스킬 대상에게 〈연소〉 (2턴) ‹턴마다 공격력×20% ×1.85 피해(방어력 적용)› {효과 적중 판정, 2회 부여}",
+         "NSETT_TARGET"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [추가발동 스킬이 아님: 예]) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후) 자신에게 〈오버클럭(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [스킬 대상 유형: 적 전체]) 자신에게 〈오버히트(해제불가)〉 (지속 무한) {해제 불가, 최대 5중첩}",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 궁극기 추가 발동",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버클럭(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 행동 게이지를 0%로 설정",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 〈과열 상태〉 (1턴 / 피해 감소 -15% / 기절)",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버클럭(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[피해 처리 후] (조건: 내가 피격될 때 [자신이 보유: 오버히트(해제불가); 중첩수: 5]) 자신에게 '오버히트(해제불가)' 해제",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 미보유: 오버히트(해제불가)]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 1]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[스킬 사용 후] (조건: 아군 행동 후 [자신이 보유: 오버히트(해제불가); 중첩수: 2]) 자신에게 행동 게이지 20%p 증가",
+         "NSETT_SELF"
+        ],
+        [
+         "패시브",
+         "[웨이브 시작 시] 자신에게 〈궁극기 쿨타임 초기화〉",
+         "NSETT_SELF"
+        ]
+       ]
+      }
      },
      {
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_06",
@@ -1232,10 +2736,34 @@
       "role": "서포터",
       "name": "노상 강도 방화범",
       "boss": false,
+      "elite": false,
       "slot": 4,
       "spawn": "A",
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:111869",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a"
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+      "clientRules": {
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      }
      }
     ]
    ],
@@ -1876,7 +3404,15 @@
   "conf": "확인",
   "src": [
    "client"
-  ]
+  ],
+  "effectText": {
+   "skillStack": "보스가 스킬을 쓸 때마다 이후 주는 피해 +{v}%씩 쌓임(최대 10회)",
+   "hpDrain": "보스에게 맞은 뒤 때린 쪽의 최대 생명력 -{v}%씩 쌓임(최대 10회)",
+   "speed": "보스 속도 +{v}%",
+   "immune": "전투 시작 시 보스가 {v}턴 면역(해제 불가)"
+  },
+  "note": "클라 난이도 그룹 연결에서 추출함.",
+  "statNote": ""
  },
  "supports": [
   {
@@ -1899,7 +3435,21 @@
       }
      ],
      "maxStacks": 1,
-     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1567"
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1567",
+     "execution": {
+      "op": "stat",
+      "checks": {},
+      "hpOver": null,
+      "hpLess": null,
+      "cooldown": 0,
+      "permanent": true,
+      "positive": false,
+      "fixed": true,
+      "buffCount": false,
+      "props": {
+       "치명타 피해": 50.0
+      }
+     }
     },
     {
      "id": "COND_BATTLE_EFFECT_GUILD_RAID_STRIKER_BUFF_ITEM_PROMOTION_02_02",
@@ -1915,7 +3465,21 @@
       }
      ],
      "maxStacks": 1,
-     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1588"
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1588",
+     "execution": {
+      "op": "stat",
+      "checks": {},
+      "hpOver": null,
+      "hpLess": null,
+      "cooldown": 0,
+      "permanent": false,
+      "positive": false,
+      "fixed": false,
+      "buffCount": true,
+      "props": {
+       "피해 증가": 10.0
+      }
+     }
     }
    ],
    "source": "tables/BATTLE_EFFECT_TEMPLET.json:1173"
@@ -1940,7 +3504,21 @@
       }
      ],
      "maxStacks": 1,
-     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:923"
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:923",
+     "execution": {
+      "op": "stat",
+      "checks": {},
+      "hpOver": null,
+      "hpLess": null,
+      "cooldown": 0,
+      "permanent": true,
+      "positive": false,
+      "fixed": true,
+      "buffCount": false,
+      "props": {
+       "공격력%": 30.0
+      }
+     }
     },
     {
      "id": "COND_BATTLE_EFFECT_GUILD_RAID_RANGER_BUFF_ITEM_02_02",
@@ -1956,7 +3534,24 @@
       }
      ],
      "maxStacks": 1,
-     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:944"
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:944",
+     "execution": {
+      "op": "stat",
+      "checks": {
+       "event": "MyEffectiveDamageStart",
+       "EnemyNegativeBuff": true
+      },
+      "hpOver": null,
+      "hpLess": null,
+      "cooldown": 0,
+      "permanent": false,
+      "positive": false,
+      "fixed": false,
+      "buffCount": false,
+      "props": {
+       "받는 피해 감소": 30.0
+      }
+     }
     }
    ],
    "source": "tables/BATTLE_EFFECT_TEMPLET.json:1017"
@@ -1981,7 +3576,21 @@
       }
      ],
      "maxStacks": 1,
-     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:966"
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:966",
+     "execution": {
+      "op": "stat",
+      "checks": {},
+      "hpOver": null,
+      "hpLess": null,
+      "cooldown": 0,
+      "permanent": true,
+      "positive": false,
+      "fixed": true,
+      "buffCount": false,
+      "props": {
+       "공격력%": 30.0
+      }
+     }
     },
     {
      "id": "COND_BATTLE_EFFECT_GUILD_RAID_CASTER_BUFF_ITEM_02_02",
@@ -1997,7 +3606,24 @@
       }
      ],
      "maxStacks": 1,
-     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:987"
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:987",
+     "execution": {
+      "op": "stat",
+      "checks": {
+       "event": "OnMyAttack",
+       "IsNotTargetSuperArmor": true
+      },
+      "hpOver": null,
+      "hpLess": null,
+      "cooldown": 0,
+      "permanent": false,
+      "positive": false,
+      "fixed": false,
+      "buffCount": false,
+      "props": {
+       "브레이크 대상 피해 증가": 30.0
+      }
+     }
     }
    ],
    "source": "tables/BATTLE_EFFECT_TEMPLET.json:1027"
@@ -2022,7 +3648,21 @@
       }
      ],
      "maxStacks": 1,
-     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1244"
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1244",
+     "execution": {
+      "op": "stat",
+      "checks": {},
+      "hpOver": null,
+      "hpLess": null,
+      "cooldown": 0,
+      "permanent": true,
+      "positive": false,
+      "fixed": true,
+      "buffCount": false,
+      "props": {
+       "치명타 확률": 15.0
+      }
+     }
     },
     {
      "id": "COND_BATTLE_EFFECT_GUILD_RAID_PARTY_BUFF_ITEM_03_02",
@@ -2038,7 +3678,21 @@
       }
      ],
      "maxStacks": 1,
-     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1265"
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1265",
+     "execution": {
+      "op": "stat",
+      "checks": {},
+      "hpOver": null,
+      "hpLess": null,
+      "cooldown": 0,
+      "permanent": true,
+      "positive": false,
+      "fixed": true,
+      "buffCount": false,
+      "props": {
+       "치명타 피해": 15.0
+      }
+     }
     }
    ],
    "source": "tables/BATTLE_EFFECT_TEMPLET.json:1095"
@@ -2063,7 +3717,21 @@
       }
      ],
      "maxStacks": 1,
-     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1286"
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1286",
+     "execution": {
+      "op": "stat",
+      "checks": {},
+      "hpOver": 5000,
+      "hpLess": null,
+      "cooldown": 0,
+      "permanent": false,
+      "positive": false,
+      "fixed": false,
+      "buffCount": false,
+      "props": {
+       "피해 증가": 10.0
+      }
+     }
     },
     {
      "id": "COND_BATTLE_EFFECT_GUILD_RAID_PARTY_BUFF_ITEM_04_02",
@@ -2079,7 +3747,21 @@
       }
      ],
      "maxStacks": 1,
-     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1308"
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1308",
+     "execution": {
+      "op": "stat",
+      "checks": {},
+      "hpOver": null,
+      "hpLess": 5000,
+      "cooldown": 0,
+      "permanent": false,
+      "positive": false,
+      "fixed": false,
+      "buffCount": false,
+      "props": {
+       "받는 피해 감소": 10.0
+      }
+     }
     }
    ],
    "source": "tables/BATTLE_EFFECT_TEMPLET.json:1104"
@@ -2089,7 +3771,235 @@
  "stepsMeta": {
   "minions": 5,
   "waveCount": 2,
-  "bossWave": 1
+  "bossCount": 1,
+  "eliteCount": 0,
+  "bossWave": 1,
+  "conf": "확인",
+  "src": [
+   "client"
+  ],
+  "minionsNote": "현재 클라의 원래 웨이브·배치 기준"
  },
- "dataVersion": "0b82b05f3a9ee3e3ef1a1a1c3558cb98a501da216968405d91621f03ca0e0fd1"
+ "sources": {
+  "client": {
+   "name": "26752678 PC 클라 추출",
+   "url": ""
+  }
+ },
+ "sets": {
+  "scope": "가정 계산용",
+  "conf": "확인",
+  "src": [
+   "client"
+  ],
+  "note": "길방에 선택 효과 없음(클라 확인, 서버 처리는 미확인). 클라 표에 효과별 추가 점수(5/10/15%, 4개 최대 +60%)는 정의돼 있으나 길방 화면·전투에는 연결돼 있지 않아 기본은 끔이고, 아래 선택은 가정 계산용임.",
+  "items": [
+   {
+    "name": "소멸",
+    "tiers": [
+     {
+      "add": 5,
+      "text": "보스가 주는 피해 +10%"
+     },
+     {
+      "add": 10,
+      "text": "보스가 주는 피해 +20%"
+     },
+     {
+      "add": 15,
+      "text": "보스가 주는 피해 +30%"
+     }
+    ]
+   },
+   {
+    "name": "불멸",
+    "tiers": [
+     {
+      "add": 5,
+      "text": "보스가 받는 피해 -20%"
+     },
+     {
+      "add": 10,
+      "text": "보스가 받는 피해 -30%"
+     },
+     {
+      "add": 15,
+      "text": "보스가 받는 피해 -40%"
+     }
+    ]
+   },
+   {
+    "name": "쇠락",
+    "tiers": [
+     {
+      "add": 5,
+      "text": "보스에게 맞은 뒤 최대 생명력 -3%"
+     },
+     {
+      "add": 10,
+      "text": "보스에게 맞은 뒤 최대 생명력 -4%"
+     },
+     {
+      "add": 15,
+      "text": "보스에게 맞은 뒤 최대 생명력 -5%"
+     }
+    ]
+   },
+   {
+    "name": "허무",
+    "tiers": [
+     {
+      "add": 5,
+      "text": "보스가 1턴 면역"
+     },
+     {
+      "add": 10,
+      "text": "보스가 2턴 면역"
+     },
+     {
+      "add": 15,
+      "text": "보스가 3턴 면역"
+     }
+    ]
+   }
+  ]
+ },
+ "search": {
+  "_note": "기본은 200c2d3 길드 탐색. newSearch=true면 전원 학습 선별·지원 결합 비교를 켜며 전투력 풀·직업 보충·역할 최소 인원·협공 제외·예선 지원 고정을 적용하지 않음. 새 방식은 32.5분 이내와 독립 재평가 품질을 확인한 뒤 별도 배포하기로 함.",
+  "poolSize": 40,
+  "minPowerRatio": 0.8,
+  "minRole": {
+   "서포터": 6,
+   "디펜더": 3
+  },
+  "minFront": 1,
+  "minDealer": 1,
+  "screen": {
+   "level": 6,
+   "runs": 2,
+   "supporter": "none",
+   "other": "none",
+   "support": "none"
+  },
+  "screen2": {
+   "keep": 400,
+   "runs": 10
+  },
+  "finalists": 12,
+  "final": {
+   "runs": 40,
+   "levels": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "supports": [
+    "none",
+    "40112",
+    "40121",
+    "40131",
+    "45031",
+    "45041"
+   ]
+  },
+  "supportRole": {
+   "40112": "스트라이커",
+   "40121": "레인저",
+   "40131": "캐스터"
+  },
+  "excludeText": [],
+  "excludeKeys": [],
+  "notes": [],
+  "excludeWhy": "",
+  "newSearch": false,
+  "execution": {
+   "chunk": 1
+  },
+  "learned": {
+   "value": true,
+   "S": 3000,
+   "m": 8,
+   "K": 4000,
+   "M": 8,
+   "A": 256,
+   "overlapStarts": 10,
+   "overlapKeep": 8,
+   "folds": 3,
+   "epochs": 40,
+   "ridge": 10,
+   "minCorrelation": 0.1,
+   "missThreshold": 0.04,
+   "note": "계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀.",
+   "maxScoreCombos": 2000000,
+   "maxOverlapChecks": 2000000,
+   "fallbackMultiplier": 4
+  },
+  "placement": {
+   "baseline": false,
+   "enabled": false,
+   "screenRuns": 2,
+   "keep": 2,
+   "auditTeams": 12
+  },
+  "banCoop": false
+ },
+ "rules": {
+  "turnLimit": 50,
+  "partyCount": 1,
+  "partySize": 4,
+  "conf": "확인",
+  "src": [
+   "client"
+  ]
+ },
+ "score": {
+  "conf": "추정",
+  "src": [
+   "client"
+  ],
+  "note": "클라 기본 점수는 실제 처치·보스별 체력 비율로 계산. 추가 점수 배율의 서버 반올림은 미확인.",
+  "hypotheses": [
+   {
+    "id": "A",
+    "name": "클리어 점수",
+    "desc": "기본 점수 합계 × 추가 점수 배율",
+    "bossExcluded": false
+   }
+  ]
+ },
+ "gimmicks": {
+  "conf": "확인",
+  "src": [
+   "client"
+  ],
+  "items": []
+ },
+ "community": {
+  "conf": "낮음",
+  "src": [],
+  "items": [],
+  "note": "이 시즌의 추가 공략 자료 없음"
+ },
+ "exBoss": {
+  "hp": 200000,
+  "atk": 14500,
+  "def": 4500,
+  "speed": 210,
+  "superArmor": 13,
+  "conf": "확인",
+  "src": [
+   "client"
+  ]
+ },
+ "dataVersion": "fcd58df01bf64d8e892e798ff1883cf1ce80ae96e3967dca4b7ac7c5349a4091"
 }

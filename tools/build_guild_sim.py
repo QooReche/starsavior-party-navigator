@@ -54,19 +54,27 @@ def parse_sets(value):
     return presets
 
 
-def sim_tables(units, leader, growth, sups, tiers, runs, seed):
-    tables = {key: {s: {} for s in sups} for key in ('bySupport', 'progBySupport', 'fracBySupport')}
+def sim_tables(units, leader, growth, sups, tiers, runs, seed, season=None):
+    from battlesim.starsavior.guild import load
+    import guild_defense as GD
+    g=load(season)
+    levels=list(range(len(g["challenge"]["levels"])+1))
+    tables = {key: {s: {} for s in sups} for key in ('bySupport', 'progBySupport', 'fracBySupport', 'scoreBySupport')}
     for sup in sups:
-        row, prow, frow = [], [], []
-        for lv in LEVELS:
-            r = simulate({'units': units, 'leader': leader}, {'guild': {'level': lv, 'support': sup, 'sets': tiers}},
+        row, prow, frow, srow = [], [], [], []
+        for lv in levels:
+            r = simulate({'units': units, 'leader': leader}, {'guild': {'seasonId':g['season']['id'],'dataVersion':g['dataVersion'],'level': lv, 'support': sup, 'sets': tiers}},
                          {'seed': seed, 'n_runs': runs, 'build': 'standard', 'rules_override': {'power_penalty': 'model'}})
             row.append(r['outcome']['clear_p'])
             prow.append(r['outcome']['progress'])
             # 평균 진행도를 절단하지 않고 판마다 보스 깎은 비율을 계산한다.
             pr = r['prog_runs']
-            frow.append(round(sum(max(0.0, min(1.0, 2 * p - 1)) for p in pr) / len(pr), 4))
-        for key, values in zip(tables, (row, prow, frow)):
+            frow.append(round(sum(max(0.0, min(1.0, GD.prog_parts(g,p)[1])) for p in pr) / len(pr), 4))
+
+            pct=GD.extra_pct(g,lv,tiers)
+            scores=[(v*(100+pct)+50)//100 for v in r['guild']['base_scores']] if r.get('guild') else [GD.score_from_prog(g,pct,p) for p in pr]
+            srow.append(sum(scores)/len(scores))
+        for key, values in zip(tables, (row, prow, frow, srow)):
             tables[key][sup][growth] = values
     return tables
 
@@ -83,7 +91,7 @@ def run_jobs(jobs, workers):
                 yield future.result()
 
 
-def summarize(teams, growth, sups, preset='off'):
+def summarize(teams, growth, sups, preset='off', levels=LEVELS):
     summary = {}
     for g in growth:
         best = None
@@ -91,7 +99,7 @@ def summarize(teams, growth, sups, preset='off'):
             tab = t if preset == 'off' else t['bySets'][preset]
             for sup in sups:
                 rr = tab['bySupport'][sup][g]
-                ok = [(lv, p) for lv, p in zip(LEVELS, rr) if p >= PASS]
+                ok = [(lv, p) for lv, p in zip(levels, rr) if p >= PASS]
                 if ok:
                     top, p = max(ok)
                     if best is None or (top, p) > (best['level'], best['p']):
@@ -100,10 +108,14 @@ def summarize(teams, growth, sups, preset='off'):
     return summary
 
 
-def reco_teams(k):
+def reco_teams(k, gd=None):
     roster, growth, mains, cfg, tags = PR.load()
     c = cfg['contents'][CONTENT]
-    tab, st = PR.find_stages(CONTENT, '7단계')[0]
+    if gd is None:
+        tab, st = PR.find_stages(CONTENT, '7단계')[0]
+    else:
+        from guild_defense import foe_content
+        t=foe_content(gd)['tabs'][0];tab,st=t['tab'],t['stages'][0]
     enemies = PR.stage_enemies(st)
     def_pen = c.get('defenderPenalty', cfg['weights']['defenderPenalty'])
     # recommend() 와 같은 전처리(근사 점수의 화력 가중·시즌 보너스·기믹)
@@ -124,8 +136,8 @@ def reco_teams(k):
     return out
 
 
-def scaled_units(db, keys, leader, target):
-    base = simulate({'units': keys, 'leader': leader}, {'guild': {'level': 0}}, {'n_runs': 1, 'build': 'standard'})['party']['power']
+def scaled_units(db, keys, leader, target, season=None):
+    base = simulate({'units': keys, 'leader': leader}, {'guild': {'seasonId':season,'level': 0}}, {'n_runs': 1, 'build': 'standard'})['party']['power']
     k = target / base
     units = []
     for key in keys:
@@ -140,23 +152,27 @@ def main():
     ap.add_argument('--teams', type=int, default=4)
     ap.add_argument('--growth', default='1,1.5,2,2.5,3')
     ap.add_argument('--sets', type=parse_sets, default='off,max')
-    ap.add_argument('--workers', type=int, default=min(4, os.cpu_count() or 1), help='독립 칸 병렬 계산 수(1 = 순차)')
+    ap.add_argument('--workers', type=int, default=1, help='독립 칸 병렬 계산 수(1 = 순차)')
     ap.add_argument('--seed', type=int, default=7)
-    ap.add_argument('--supports', default=','.join(SUPPORTS))
+    ap.add_argument('--supports')
+    ap.add_argument('--season',type=int)
     ap.add_argument('--out', default=str(ROOT / 'data' / 'guild_sim.json'))
     a = ap.parse_args()
     if a.workers < 1:
         ap.error('--workers 는 1 이상')
     db = get_db()
-    gd = json.loads((ROOT / 'data' / 'guild_defense.json').read_text(encoding='utf-8'))
-    bfb = json.loads((ROOT / 'data' / 'guild_bfb.json').read_text(encoding='utf-8'))
-    rec = bfb['power']
+    from battlesim.starsavior.guild import load
+    from guild_defense import ex_step
+    gd=load(a.season)
+    levels=list(range(len(gd['challenge']['levels'])+1))
+    supports=SUPPORTS if gd['season']['boss']['engine']=='bfb' else ['none']+[str(x['id']) for x in gd['supports']]
+    rec=ex_step(gd)['power']
     growth = ['%g' % float(x) for x in a.growth.split(',')]   # 키 = '1', '1.5', '2'(JS String(숫자) 와 같게 문자열로 둠)
-    sups = [s for s in a.supports.split(',') if s]
-    if any(s not in SUPPORTS for s in sups) or 'none' not in sups:
-        raise SystemExit('--supports 는 none 을 포함한 %s 의 부분집합' % SUPPORTS)
-    teams = reco_teams(a.teams)
-    if COMMUNITY not in [t['keys'] for t in teams]:
+    sups = [s for s in (a.supports or ','.join(supports)).split(',') if s]
+    if any(s not in supports for s in sups) or 'none' not in sups:
+        raise SystemExit('--supports 는 none 을 포함한 %s 의 부분집합' % supports)
+    teams = reco_teams(a.teams,gd)
+    if gd['season']['boss']['engine']=='bfb' and COMMUNITY not in [t['keys'] for t in teams]:
         teams.append(dict(src='community', keys=COMMUNITY, leader=0))
     t0 = time.time()
     jobs, slots = [], []
@@ -164,9 +180,9 @@ def main():
         t['names'] = [db.units[k]['n'] for k in t['keys']]
         t['bySets'] = {name: {} for name in a.sets if name != 'off'}
         for g in growth:
-            units = scaled_units(db, t['keys'], t['leader'], rec * float(g))
+            units = scaled_units(db, t['keys'], t['leader'], rec * float(g),gd['season']['id'])
             for name, tiers in a.sets.items():
-                jobs.append((units, t['leader'], g, sups, tiers, a.runs, a.seed))
+                jobs.append((units, t['leader'], g, sups, tiers, a.runs, a.seed,gd['season']['id']))
                 slots.append((t, g, name))
     print('계산', len(jobs), '칸, workers', a.workers, flush=True)
     for (t, g, name), tables in zip(slots, run_jobs(jobs, a.workers)):
@@ -177,13 +193,13 @@ def main():
         print(t['src'], ','.join(t['keys']), 'x' + g, name, '%.0fs' % (time.time() - t0), flush=True)
     for t in teams:
         t['rates'] = t['bySupport']['none']      # 호환: 지원을 안 고른 경우
-    summary = summarize(teams, growth, sups)
+    summary = summarize(teams, growth, sups,levels=levels)
     out = dict(
         _note='tools/build_guild_sim.py 가 만든 시뮬 추정(실측 대조 없음). rates[육성 배수] = 별의 도전 0~12단계 클리어율(0단계 = 별의 도전 없음, 알리시아 지원 안 고름), bySupport[지원][육성 배수] = 같은 값을 지원별로.',
-        asOf=gd['asOf'], season=gd['season']['id'], runs=a.runs, seed=a.seed, recPower=rec, growth=growth, levels=LEVELS, pass_p=PASS,
+        asOf=gd['asOf'], season=gd['season']['id'], dataVersion=gd['dataVersion'], runs=a.runs, seed=a.seed, recPower=rec, growth=growth, levels=levels, pass_p=PASS,
         basis='표준 육성을 파티 전투력 = 권장 전투력 x 배수로 맞춤, 오토 전투, 선택 효과 프리셋 비교, 전투력 보정 적용, 브레이크 스킬 미장착',
         supports=sups, sets=a.sets, teams=teams, summary=summary,
-        summaryBySets={name: summarize(teams, growth, sups, name) for name in a.sets if name != 'off'})
+        summaryBySets={name: summarize(teams, growth, sups, name,levels=levels) for name in a.sets if name != 'off'})
     atomic_json(a.out, out, indent=1)
     print('저장', a.out, '%.0fs' % (time.time() - t0))
     if os.path.abspath(a.out) == str(ROOT / 'data' / 'guild_sim.json'):

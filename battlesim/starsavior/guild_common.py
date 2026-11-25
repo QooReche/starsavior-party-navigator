@@ -154,30 +154,44 @@ class GuildController(BaseController):
 
 class Controller(GuildController):
     """적 스킬·자동 대상은 범용 엔진이 실행하며 길드 효과만 더한다."""
+    def __init__(self, b):
+        super().__init__(b)
+        from .guild_support import Support
+        cfg = next(d.guild for w in b.waves for d in w if getattr(d, 'guild', None))
+        self.client_support = Support(b, cfg['supportDefinition'])
+
     def on_wave(self):
-        self._sup_start()
+        self.client_support.start()
         self.bosses = [u for u in self.b.foes if u.d.boss]
         for boss in self.bosses:
             self.boss, self.cfg = boss, boss.d.guild
             self._challenge_start()
 
     def after_cast(self, u, sk, ctx, extra):
-        if self.support != 'none':
-            self._sup_after_cast(u, sk, extra)
+        self.client_support.event('NSEAT_SKILL_END',u,ctx,ctx.target,ctx)
+        self.client_support.clear(ctx)
         if u in getattr(self, 'bosses', ()) and not u.dead:
             self.boss, self.cfg = u, u.d.guild
             self._challenge_after_cast()
 
     def pre_hit(self, a, v):
-        if self.support != 'none':
-            self._sup_pre_hit(a, v)
+        ctx = self._cur_ctx()
+        self.client_support.event('NSEAT_DAMAGE_START',v,ctx,a,('hit',id(v)))
+
+    def hit_start(self, a, ctx):
+        self.client_support.event('NSEAT_HIT',a,ctx,ctx.target,ctx)
 
     def post_hit(self, a, v):
-        if self.support != 'none':
-            self._sup_post_hit(a, v)
+        self.client_support.clear(('hit',id(v)))
         if v in getattr(self, 'bosses', ()) and a is not None and a.side == 0 and not v.dead:
             self.boss, self.cfg = v, v.d.guild
             self._challenge_post_hit(a)
+
+    def skill_start(self, u, sk, ctx):
+        self.client_support.event('NSEAT_SKILL_START',u,ctx,ctx.target,ctx)
+
+    def turn_start(self, u):
+        self.client_support.event('NSEAT_TURN_START',u)
 
 
 def scale_stats(stats, row):
@@ -195,12 +209,13 @@ def config(g, options, st):
         raise ValueError('이 단계의 별의 도전 범위: 0~%d' % len(levels))
     support = options.get('support') or 'none'
     ids = {'gust': 40152, 'focus': 40031, 'strike': 40111, 'mountain': 45041, 'fire': 45011}
-    allowed = {s['id'] for s in g['supports']}
-    if support != 'none' and ids.get(support) not in allowed:
+    sid = ids.get(support, int(support) if str(support).isdigit() else None)
+    definition = next((s for s in g['supports'] if s['id'] == sid), None)
+    if support != 'none' and definition is None:
         raise ValueError('이 시즌에서 실행할 수 없는 지원: ' + str(support))
     sets = list(options.get('sets') or [0, 0, 0, 0])
     if len(sets) != 4 or any(type(x) is not int or not 0 <= x <= 3 for x in sets):
         raise ValueError('선택 효과는 0~3 정수 4개')
-    return dict(level=level, row=levels[level-1] if level else None, support=support, sets=sets,
+    return dict(level=level, row=levels[level-1] if level else None, support=support, supportDefinition=definition, sets=sets,
                 set_dmg=(0, 10, 20, 30)[sets[0]], set_red=(0, 20, 30, 40)[sets[1]],
                 set_drain=(0, 3, 4, 5)[sets[2]], set_immune=sets[3])

@@ -18,6 +18,9 @@ class BaseController:
     def on_wave(self):
         return
 
+    def turn_start(self, u):
+        return
+
     def before_cast(self, u, sk, ctx):
         return
 
@@ -29,6 +32,9 @@ class BaseController:
         return
 
     def pre_hit(self, a, v):
+        return
+
+    def hit_start(self, a, ctx):
         return
 
     def post_hit(self, a, v):

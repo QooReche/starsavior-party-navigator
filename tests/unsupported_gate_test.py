@@ -23,7 +23,7 @@ class UnsupportedGateTest(unittest.TestCase):
     def test_current_inventory(self):
         gate.assert_gate(self.found, self.document)
         self.assertEqual(self.stats['static_builds'], self.stats['saviors'] * 2)
-        self.assertEqual(self.stats['scenarios'], self.stats['saviors'] * 5 + 4)
+        self.assertEqual(self.stats['scenarios'], self.stats['saviors'] * 5 + 4 + self.stats['guild_archives'])
         self.assertEqual(self.stats['runs'], self.stats['scenarios'] * 3)
 
     def test_added_line_mutations_all_areas(self):

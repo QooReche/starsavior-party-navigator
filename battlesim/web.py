@@ -30,6 +30,10 @@ def _enc(stage, o):
     """길방 EX 선택(options.guild = {level, sets, support})이 있으면 BFB 전투, 없으면 기존 스테이지. guild 키는 simulate 옵션에서 뺀다."""
     g = o.pop('guild', None)
     if g:
+        import re
+        if isinstance(stage,str) and stage.startswith('guild/') and 'step' not in g:
+            m = re.match(r'(\d+)단계',stage.rsplit('/',1)[-1])
+            if m: g = dict(g,step=int(m[1]))
         return {'guild': g}
     c = o.pop('cosmo_raid', None)       # 코스모 게이트 시즌 전투: {boss, step, level} — api 의 encounter.cosmo_raid
     return {'cosmo_raid': c} if c else {'stage': stage}
@@ -95,11 +99,16 @@ def run_auto(stage, party, n, seed, extra=None, _shared=None):
     r = simulate(party, _enc(stage, op), op, **({'shared': _shared} if _shared is not None else {}))
     o = r['outcome']
     extra_out = {'cosmo': cosmo_summary(r['cosmo_raid'], top_q)} if r.get('cosmo_raid') else {}
+    if r.get('guild'):
+        extra_out['guild'] = r['guild']
     extra_out.update(_potential_unsupported(r))
     first = sorted(((v.get('first_death_p') or 0, k) for k, v in r['per_unit'].items()), reverse=True)
     st = r.get('star_turn')
     if op.get('raw_runs'):
         raw = (prior or []) + r['raw_runs']
+        if r.get('guild'):
+            if any(len(row)<5 for row in raw): raise ValueError('길드 병합 원시값에 판별 점수가 없음')
+            extra_out['guild'] = {'base_scores':[row[4] for row in raw]}
         extra_out['raw'] = json.dumps(raw)      # 문자열로 낸다: 화면(JS)을 거치며 1.0 이 1 로 바뀌면 합의 끝자리가 달라질 수 있다
     out = dict(clear=o['clear_p'], t60=(st['p'] if st else None), prog=o.get('progress'), progs=r.get('prog_runs'), via=r.get('ally_via') or {}, wipe=o['wipe_p'], timeout=o['timeout_p'], ci=o['ci95']['clear'], n=o['n_runs'],
                ttk=o['ttk_median'], ta=o.get('ttk_actions_median'), first=(first[0][1] if first and first[0][0] > 0 else None),

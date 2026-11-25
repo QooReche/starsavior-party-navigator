@@ -61,11 +61,12 @@
   // 상위 점수 = 판별 점수 상위 TOP_Q 비율(올림) 판의 평균(여러 번 도전해 잘 나온 판), 상한 도달률 = 보스를 처치(진행도 1)한 판의 비율.
   // 정렬: 상위 점수 큰 순 -> 상한 도달률 큰 순 -> 평균 큰 순 -> 키. 평균 진행도를 점수식에 넣지 않고 판마다 계산한다.
   const TOP_Q = 0.2, CAP_EPS = 1e-9;
-  function rankStats(V, G, level, tiers, prog, progs, clear) {
+  function rankStats(V, G, level, tiers, prog, progs, clear, guild) {
     const pct = V.extraPct(G, level, tiers);
     const has = Array.isArray(progs) && progs.length;
     const ps = has ? progs : [prog == null ? 0 : prog];
-    const sc = ps.map(p => V.scoreFromProg(G, pct, p)).sort((a, b) => b - a);
+    if(G.season?.boss?.engine==='client'&&guild?.base_scores?.length!==ps.length)throw Error('길드 판별 점수 자료가 누락됨');
+    const sc = (guild?.base_scores?.length ? guild.base_scores.map(n=>Math.floor((n*(100+pct)+50)/100)) : ps.map(p => V.scoreFromProg(G, pct, p))).sort((a, b) => b - a);
     const m = Math.max(1, Math.ceil(sc.length * TOP_Q - CAP_EPS));
     const top = Math.round(sc.slice(0, m).reduce((a, b) => a + b, 0) / m);
     const mean = Math.round(sc.reduce((a, b) => a + b, 0) / sc.length);
@@ -81,7 +82,7 @@
 
   const BREAK_CHECK = {teams: 8, runs: 40, version: 1};
   const breakSignature = breaks => JSON.stringify([BREAK_CHECK.version, breaks.map(b => [b.name, b.level]).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] - b[1])]);
-  const jobKey = (keys, level, sup, tiers, brk = null, p = null) => !p?.leaderKey ? [keys.join("+"), level, sup, (tiers || []).join(""), JSON.stringify(brk && [brk.name, brk.level])].join("|") : JSON.stringify([Placement.executionKey(keys,p),level,sup,tiers||[],brk&&[brk.name,brk.level]]);
+  const jobKey = (keys, level, sup, tiers, brk = null, p = null, G = null) => (G?.season||G?.seasonId ? JSON.stringify([G.season?.id??G.seasonId,G.dataVersion])+':' : '') + (!p?.leaderKey ? [keys.join("+"), level, sup, (tiers || []).join(""), JSON.stringify(brk && [brk.name, brk.level])].join("|") : JSON.stringify([Placement.executionKey(keys,p),level,sup,tiers||[],brk&&[brk.name,brk.level]]));
 
   // 작업 목록 → 작업자 수만큼 나눈 묶음(라운드 로빈). job = {key, party, options:{guild}}
   const split = (jobs,n) => Executor.split(jobs,n);
@@ -89,7 +90,7 @@
   function screenJobs(S, G, V, list, results, cls, tiers) {
     return list.map(keys => {
       const sup = screenSupport(S, keys, cls), p = party(keys, results, cls);
-      return {key: jobKey(keys, S.screen.level, sup, tiers, null, p), keys, level: S.screen.level, sup, party: p.spec, order: p.order, leaderKey:p.leaderKey, options: {guild: {level: S.screen.level, sets: tiers.slice(), support: sup}}};
+      return {key: jobKey(keys, S.screen.level, sup, tiers, null, p, G), keys, level: S.screen.level, sup, party: p.spec, order: p.order, leaderKey:p.leaderKey, options: {guild: {seasonId:G?.season?.id,dataVersion:G?.dataVersion,level: S.screen.level, sets: tiers.slice(), support: sup}}};
     });
   }
   function finalJobs(S, G, V, finalists, results, cls, tiers) {
@@ -97,22 +98,22 @@
     for (const keys of finalists) {
       const p = party(keys, results, cls);
       for (const level of S.final.levels) for (const sup of finalSupports(S, keys, cls))
-        jobs.push({key: jobKey(keys, level, sup, tiers, null, p), keys, level, sup, party: p.spec, order: p.order, leaderKey:p.leaderKey, options: {guild: {level, sets: tiers.slice(), support: sup}}});
+        jobs.push({key: jobKey(keys, level, sup, tiers, null, p, G), keys, level, sup, party: p.spec, order: p.order, leaderKey:p.leaderKey, options: {guild: {seasonId:G?.season?.id,dataVersion:G?.dataVersion,level, sets: tiers.slice(), support: sup}}});
     }
     return jobs;
   }
 
   // 본선 상위 팀의 최적 지원은 고정. 최적 단계±1에서 미장착과 보유·지원 스킬을 같은 시드/판수로 비교한다.
-  function breakJobs(ranked, breaks, results, cls, tiers) {
+  function breakJobs(ranked, breaks, results, cls, tiers, G) {
     if (!breaks.length) return [];
     const jobs = [];
     for (const r of ranked.slice(0, BREAK_CHECK.teams)) {
       const p = party(r.keys, results, cls, r.leaderKey?r:undefined);
-      for (let level = Math.max(0, r.level - 1); level <= Math.min(12, r.level + 1); level++) {
+      for (let level = Math.max(0, r.level - 1); level <= Math.min(G?.challenge?.levels.length??12, r.level + 1); level++) {
         for (const brk of [null, ...breaks]) jobs.push({
-          key: jobKey(r.keys, level, r.sup, tiers, brk, p), keys: r.keys, level, sup: r.sup,
+          key: jobKey(r.keys, level, r.sup, tiers, brk, p, G), keys: r.keys, level, sup: r.sup,
           party: p.spec, order: p.order, leaderKey:p.leaderKey,
-          options: {guild: {level, sets: tiers.slice(), support: r.sup}, break_skill: brk}
+          options: {guild: {seasonId:G?.season?.id,dataVersion:G?.dataVersion,level, sets: tiers.slice(), support: r.sup}, break_skill: brk}
         });
       }
     }
@@ -136,7 +137,7 @@
 
   // 예선 결과 → 상위 n 팀(상위 점수 → 상한 도달률 → 평균 순, 같으면 키 순). res = {jobKey: {prog, clear, progs}}
   function pickTop(V, G, jobs, res, tiers, n, S) {
-    const sc = jobs.filter(j => res[j.key] && !coopHit(S || {}, res[j.key])).map(j => ({keys: j.keys, ...rankStats(V, G, j.level, tiers, res[j.key].prog, res[j.key].progs, res[j.key].clear)}));
+    const sc = jobs.filter(j => res[j.key] && !coopHit(S || {}, res[j.key])).map(j => ({keys: j.keys, ...rankStats(V, G, j.level, tiers, res[j.key].prog, res[j.key].progs, res[j.key].clear, res[j.key].guild)}));
     sc.sort((a, b) => byRank(a, b) || (a.keys.join() < b.keys.join() ? -1 : 1));
     if (S?.newSearch !== true) return sc.slice(0, n).map(x => x.keys);
     return [...new Map(sc.map(x=>[Placement.id(x.keys),x.keys])).values()].slice(0,n);
@@ -148,8 +149,8 @@
     const best = new Map();
     for (const j of jobs) {
       const r = res[j.key]; if (!r || coopHit(S || {}, r)) continue;
-      const st = rankStats(V, G, j.level, tiers, r.prog, r.progs, r.clear), id = teamId(j.keys), cur = best.get(id);
-      if (!cur || byRank(st, {top: cur.score, cap: cur.cap, mean: cur.mean}) < 0) best.set(id, {keys: j.keys, order: j.order, leaderKey:j.leaderKey, level: j.level, sup: j.sup, brk: j.options?.break_skill?.name || null, brkLv: j.options?.break_skill?.level || null, score: st.top, mean: st.mean, cap: st.cap, clear: r.clear, prog: r.prog, frac: Math.max(0, Math.min(1, 2 * r.prog - 1)), n: r.n, ...unsupportedFields(r)});
+      const st = rankStats(V, G, j.level, tiers, r.prog, r.progs, r.clear, r.guild), id = teamId(j.keys), cur = best.get(id);
+      if (!cur || byRank(st, {top: cur.score, cap: cur.cap, mean: cur.mean}) < 0) best.set(id, {keys: j.keys, order: j.order, leaderKey:j.leaderKey, level: j.level, sup: j.sup, brk: j.options?.break_skill?.name || null, brkLv: j.options?.break_skill?.level || null, score: st.top, mean: st.mean, cap: st.cap, clear: r.clear, prog: r.prog, frac: G.season?.boss?.engine==="client"?r.prog:V.progParts(G,r.prog).f, n: r.n, ...unsupportedFields(r)});
     }
     return [...best.values()].sort((a, b) => b.score - a.score || b.cap - a.cap || b.mean - a.mean || (a.order.join() < b.order.join() ? -1 : 1)).slice(0, top || 5);
   }
@@ -160,7 +161,7 @@
   // 작업자는 run 메시지를 여러 번 받을 수 있다(sim_worker.js 가 메시지마다 처리). 안 주면 예전처럼 정적 분할.
   // 한 탐색이 소유하는 풀. 동시에 두 단계를 실행하지 않는다. 취소/오류/탐색 종료 때 close.
   const workerPool = makeWorker => Executor.workerPool(makeWorker);
-  const runPhase = o => Executor.runPhase({...o,project:r=>({prog:r.prog==null?0:r.prog,clear:r.clear,n:r.n,via:r.via||{},progs:r.progs||null,cosmo:r.cosmo||null,...unsupportedFields(r)})});
+  const runPhase = o => Executor.runPhase({...o,project:r=>({prog:r.prog==null?0:r.prog,clear:r.clear,n:r.n,via:r.via||{},progs:r.progs||null,cosmo:r.cosmo||null,guild:r.guild||null,...unsupportedFields(r)})});
 
   const BASIS = {client: "클라 자료 확인", community: "커뮤니티 근거(중간 신뢰)", inference: "추정"};
   // «제외·주의 구원자» 접이식 목록. notes = [{key, kind: exclude|caution, basis, why}], 제외는 체크박스를 켠 때만 실제로 빠진다
@@ -192,11 +193,11 @@
     else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">${error(st.errorCause||"other")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;
     else if (st.phase === "done") {
       const stale = st.sig !== cx.sig ? '<div class="gd-warn" data-k="gd-search-stale">계산 조건이 바뀌었음. 아래 결과는 이전 선택 기준이므로 다시 찾기 필요.</div>' : "";
-      const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))+(k===(r.leaderKey||r.order[0])?" (리더)":"")).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${r.level}단계</td><td>${esc(SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
+      const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))+(k===(r.leaderKey||r.order[0])?" (리더)":"")).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${r.level}단계</td><td>${esc(cx.supportNames?.[r.sup] || SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
       const best=st.rows[0];
-      const result=best?`<div class="season-result" data-k="gs-best"><div class="season-score"><span>상위 점수</span><b data-k="gs-score">${num(best.score)}</b><small>점</small></div><div class="season-chips"><span class="tag">${best.level}단계</span><span class="tag">${esc(SUP_NAME[best.sup]||best.sup)}</span><span class="tag">클리어 ${Math.round(best.clear*100)}%</span></div>${cx.team?cx.team(best):''}</div>`:'';
-      body = `${stale}${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 리더 별도 표시)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>보스 깎음</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
-<div class="mut gd-small">후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값임(표본이 작아 한두 단계·수천 점은 오차). 고른 선택 효과 기준(기본 끔). 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순임. 점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받음.</div></details>`;
+      const result=best?`<div class="season-result" data-k="gs-best"><div class="season-score"><span>상위 점수</span><b data-k="gs-score">${num(best.score)}</b><small>점</small></div><div class="season-chips"><span class="tag">${best.level}단계</span><span class="tag">${esc(cx.supportNames?.[best.sup]||SUP_NAME[best.sup]||best.sup)}</span><span class="tag">클리어 ${Math.round(best.clear*100)}%</span></div>${cx.team?cx.team(best):''}</div>`:'';
+      body = `${stale}${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 리더 별도 표시)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>${cx.clientSeason?"전체 진행도":"보스 깎음"}</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
+<div class="mut gd-small">후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값임(표본이 작아 한두 단계·수천 점은 오차). 고른 선택 효과 기준(기본 끔). 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순임. ${cx.clientSeason?"점수는 판마다 실제 일반·정예 처치와 보스별 생명력 감소를 합산함. 추가 배율의 서버 반올림은 미확인임.":"점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받음."}</div></details>`;
     } else body = btn("내 구원자로 편성 찾기") + '<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>'+coop;
     return `<div class="gd-search" data-k="gd-search" data-state="${st.phase}">${head}${body}${st.phase === "done" ? unsupportedHtml(st.rows || [], esc) : ""}<details class="season-options" data-fold="gs-basis"><summary>계산 기준 <i class="ux-help-mark" aria-hidden="true"></i></summary><span class="gd-est">추정</span>${warn}</details></div>`;
   }

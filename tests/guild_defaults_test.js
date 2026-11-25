@@ -41,6 +41,13 @@ async function run(legacy,{small,banCoop,breaks,tiers,newSearch=false}){
  assert.equal(ctx.GSR.phase,'done',ctx.GSR.msg);
  assert.equal(life.active,0);assert.equal(life.max,1);assert(out.rows.length&&out.rows.every(r=>r.prog>0&&r.score>0));
  assert(trace.every(m=>m.teams.length));
+ // 시즌 식별자 추가만 비교에서 분리한다. 전투 입력·후보·순서·시드·결과는 그대로 비교함.
+ if(!legacy)for(const m of trace)for(const t of m.teams){
+   assert.equal(t.options.guild.seasonId,G.season.id);assert.equal(t.options.guild.dataVersion,G.dataVersion);
+   assert(t.key.startsWith(JSON.stringify([G.season.id,G.dataVersion])+':'));
+   delete t.options.guild.seasonId;delete t.options.guild.dataVersion;
+   t.key=t.key.slice((JSON.stringify([G.season.id,G.dataVersion])+':').length);
+ }
  return plain({out:fields(out),trace});
 }
 (async()=>{
@@ -61,7 +68,7 @@ async function run(legacy,{small,banCoop,breaks,tiers,newSearch=false}){
  assert(GS.html({phase:'idle'},cx).includes('data-gs="coop"'));
  assert(!GS.html({phase:'idle'},{...cx,newSearch:true}).includes('data-gs="coop"'));
  const sigSource=currentHtml.slice(currentHtml.indexOf('function searchPlacementTag('),currentHtml.indexOf('const gsLabel='));
- const sigContext={D:{guild:{search:structuredClone(G.search)}},MI:{hash:'synthetic'},EXCL:new Set(),gsTiers:()=>[],GSR:{banCoop:true},GuildSearch:GS,ownedSimBreaks:()=>[]};
+ const sigContext={D:{guild:{search:structuredClone(G.search)}},guildIdentity:()=>({seasonId:G.season.id,dataVersion:G.dataVersion}),MI:{hash:'synthetic'},EXCL:new Set(),gsTiers:()=>[],GSR:{banCoop:true},GuildSearch:GS,ownedSimBreaks:()=>[]};
  vm.runInNewContext(sigSource+';globalThis.signature=gsSig',sigContext);
  const offSig=sigContext.signature();sigContext.D.guild.search.newSearch=true;assert.notEqual(sigContext.signature(),offSig);
  sigContext.D.guild.search.newSearch=false;assert.equal(sigContext.signature(),offSig);

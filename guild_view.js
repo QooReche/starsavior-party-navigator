@@ -11,8 +11,8 @@
     const state = nowMs < s ? "upcoming" : nowMs < e ? "active" : nowMs < d ? "settling" : "ended";
     return {state, needsUpdate: nowMs >= e};
   }
-  function exStep(G) { return G.steps.find(s => s.ex); }
-  function baseTotal(G) { const ex = exStep(G); return ex.base + G.stepsMeta.minions * ex.kill + ex.bossKill; }
+  function exStep(G) { return G.steps.find(s => s.step===G.defaultStep) || G.steps.find(s => s.ex); }
+  function baseTotal(G) { return scoreAt(G,0,1); }
   function extraPct(G, level, tiers) {
     let pct = level ? G.challenge.levels[level - 1].score : 0;
     G.sets.items.forEach((it, i) => { const t = (tiers || [])[i] || 0; if (t) pct += it.tiers[t - 1].add; });
@@ -28,13 +28,15 @@
   function scoreAt(G, pct, f, kills) {
     const ex = exStep(G), n = G.stepsMeta.minions;
     const k = kills == null ? n : Math.max(0, Math.min(n, Math.trunc(kills)));
-    return Math.floor(((ex.base + k * ex.kill + bossPoints(G, f)) * (100 + pct) + 50) / 100);
+    const elites=kills==null?(G.stepsMeta.eliteCount||0):0;
+    return Math.floor(((ex.base + (k-elites) * ex.kill + elites*(ex.eliteKill||0) + bossPoints(G, f)*(G.stepsMeta.bossCount??1)) * (100 + pct) + 50) / 100);
   }
   // 판별 진행도 -> {k, f}. 졸개전(prog<0.5)은 깎은 체력 d=2p 에서 k=floor(졸개 수×d)로 근사(같은 체력·차례로 처치 가정), 보스 비율 0
   function progParts(G, prog) {
     const n = G.stepsMeta.minions, p = Math.max(0, Math.min(1, prog));
-    if (p >= 0.5) return {k: n, f: Math.max(0, Math.min(1, 2 * p - 1))};
-    return {k: Math.min(n, Math.floor(n * 2 * p + 1e-9)), f: 0};
+    const threshold=(G.stepsMeta.bossWave??1)/(G.stepsMeta.waveCount??2);
+    if (p >= threshold) return {k: n, f: Math.max(0, Math.min(1, (p-threshold)/(1-threshold)))};
+    return {k: Math.min(n, Math.floor(n*p/threshold+1e-9)), f: 0};
   }
   function scoreFromProg(G, pct, prog) { const r = progParts(G, prog); return scoreAt(G, pct, r.f, r.k); }
   function score(G, pct) {
@@ -75,9 +77,10 @@
     const S=G.sim;
     if(!S)return '<p class="mut">단계·점수 자료 없음</p>';
     const g=S.growth.find(x=>Number(x)===2)??S.growth[0], b=simBest(S,g), e=simExpect(G,S,g);
-    const level=b=>b?(b.level?b.level+'단계':'EX 기본'):'EX도 어려움';
+    const baseLabel=exStep(G).ex?'EX':exStep(G).step+'단계',supportName=id=>(G.supports||[]).find(s=>String(s.id)===id)?.name||SUP_NAME[id]||id;
+    const level=b=>b?(b.level?b.level+'단계':baseLabel+' 기본'):baseLabel+'도 어려움';
     const power=g=>'약 '+Math.round(S.recPower*g/10000)+'만';
-    const detail=(b,expect)=>b?`${expect?'별의 도전 '+b.level+'단계 · ':''}클리어 ${pct(b.p)} · 지원 ${SUP_NAME[b.support]||b.support}`:'클리어 기준 미달';
+    const detail=(b,expect)=>b?`${expect?'별의 도전 '+b.level+'단계 · ':''}클리어 ${pct(b.p)} · 지원 ${supportName(b.support)}`:'클리어 기준 미달';
     const rows=S.growth.map(g=>{const b=simBest(S,g),e=simExpect(G,S,g);return `<tr><th>${power(g)}</th><td><b>${level(b)}</b><small>${b?pct(b.p):'—'} ${help('클리어 편성·지원',b?S.teams[b.team].names.join(' · ')+' · '+detail(b,false):'클리어 기준 미달',esc)}</small></td><td><b>${e?num(e.m):'—'}</b><small>${e?level(e)+' · '+pct(e.p):'—'} ${help('점수 편성·지원',e?S.teams[e.team].names.join(' · ')+' · '+detail(e,true):'자료 없음',esc)}</small></td></tr>`;}).join('');
     return `<div data-k="gd-overview"><p class="season-basis">기준표 · 전투력 ${power(g)} ${help('기준표','내 계정 결과가 아닌 표준 육성 후보의 모의 전투 기준임. 두 지표는 서로 다른 편성·단계·지원일 수 있음. 지원과 편성은 각 ⓘ에서 확인 가능. 내 구원자는 편성 찾기로 계산함.',esc)}</p>
 <div class="season-kpis"><div><span>최고 클리어 단계</span><b data-k="gd-clear-kpi">${level(b)}</b><small>${b?'클리어 '+pct(b.p):'기준 미달'}</small></div><div><span>최대 기대 점수</span><b data-k="gd-score-kpi">${e?num(e.m):'—'}</b><small>${e?level(e)+' · 클리어 '+pct(e.p):'자료 없음'}</small></div></div>
@@ -138,7 +141,7 @@
         S.levels.forEach((lv, i) => {
           const pc = extraPct(G, lv, tiers);
           const f = fr ? fr[i] : pr ? Math.max(0, Math.min(1, 2 * pr[i] - 1)) : r[i];
-          const v = fr || pr ? scoreAt(G, pc, f) : Math.round(scoreAt(G, pc, 1) * r[i]);
+          const v = tab.scoreBySupport?.[sup]?.[String(g)]?.[i] ?? (fr || pr ? scoreAt(G, pc, f) : Math.round(scoreAt(G, pc, 1) * r[i]));
           if (r[i] >= 0 && (!best || v > best.m)) best = {m: v, team: ti, support: sup, level: lv, set, p: r[i], f, e: {A: v}};
         });
       });
@@ -180,6 +183,16 @@ ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율 (선�
   }
   function panelHtml(G, sel0, step, nowMs, esc) {
     const sel = normSel(G, sel0), ex = exStep(G);
+    if(G.season.boss.engine==='client'){
+      const st=G.steps.find(s=>s.step===step),pct=extraPct(G,sel.level,sel.tiers);
+      return `<div class="gd-head"><b>길드 방어전 · ${esc(G.season.label)} · ${esc(G.season.boss.name)}</b></div>`+
+        `<p class="mut">${st.step}단계 · 최대 ${st.turnLimit}턴 · ${st.waves.length}웨이브 · 현재 클라에서 추출한 시즌 정의</p>`+
+        (step===ex.step?overview(G,esc):'')+
+        `<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary>`+
+        (step===ex.step?selectBox(G,sel)+`<p>클리어 기준 점수 ${num(scoreAt(G,pct,1))}</p>`+levelTable(G,sel,esc):'')+
+        `<p>${esc(G.sets.note)}</p><p>시즌 지원: ${(G.supports||[]).map(s=>esc(s.name)).join(' · ')}</p></details>`+
+        `<details class="season-options" data-fold="gd-rules"><summary>전투·점수 자료</summary>${stepsTable(G,step,esc)}<p>${esc(G.score.note)}</p></details></div>`;
+    }
     let html = seasonBox(G, nowMs, esc)+(step===ex.step?overview(G,esc):'');
     if(step!==ex.step)html+=`<p class="mut">${step}단계 · 별의 도전 없음. 편성 탐색은 EX(${ex.step}단계)를 선택해야 함.</p>`;
     html += '<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary><div class="gd-dev" data-k="gd-dev" role="note"><b>개발 중 · 테스트 중인 기능임</b><br>점수 계산과 고단계 수치는 확인되지 않았고, 시뮬 추정은 실제 플레이와 대조하지 않았음. 참고용으로만 활용.</div>';

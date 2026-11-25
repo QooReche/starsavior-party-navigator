@@ -250,6 +250,17 @@ def build(static):
     se = se_rows(tables, skills)
     raw = F.load_foe(str(ROOT))
     link = unit_links(static, raw, units)
+    # 같은 6스킬을 쓰는 길드/플래시 포인트 칸. 스테이지 후보에서 빠진 길드 배치도
+    # 명시적 클라 유닛과 대조하고, 아래 variants 일치 관문을 그대로 거친다.
+    khan = [u for u in units.values() if re.fullmatch(
+        r'NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_(?:GUILDRAID_0[1-7]|RUSH_0[1-3])',u['m_UnitStrID'])]
+    if len(khan) != 10 or len({tuple(u['m_listSkill']) for u in khan}) != 1:
+        raise ValueError('칸 길드/플래시 포인트 스킬 연결이 변경됨')
+    for ui,u in enumerate(raw['u']):
+        if u['n'] == '카본펑크 칸':
+            if [raw['s'][si]['n'] for si in u['sk']] != ['고출력 광선','제어장 폭발','죽음의 손아귀','탑 기어','파워트레인','불타는 엔진']:
+                raise ValueError('칸 데이터북 스킬 연결이 변경됨')
+            link[(ui,None)].update(u['m_UnitStrID'] for u in khan)
     out = {}
     for (ui, xi), gids in sorted(link.items(), key=lambda kv: (kv[0][0], -1 if kv[0][1] is None else kv[0][1])):
         u = raw['u'][ui]
@@ -264,6 +275,8 @@ def build(static):
             REPORT['한 유닛에 다른 규칙(제외)' if None not in variants else '모르는 어휘로 유닛 제외'] += 1
             continue
         rules = json.loads(variants[0])
+        if u['n'] == '카본펑크 칸' and xi is None:
+            rules['khanAdded'] = True  # 종전 무변형 키에는 enforce 메타가 없었음.
         if rules['skills'] or rules['lines'] or rules.get('order') or rules.get('enforce_self') or rules.get('force'):
             out['foe:%d' % ui + (':%d' % xi if xi is not None else '')] = rules
     return out
@@ -314,6 +327,19 @@ def unit_links(static, raw, units, guild=False):
 
 def unit_rules(u, raw, gu, skills, auto, target, se, bname):
     res = {'skills': {}, 'lines': {}}
+    if u['n'] == '카본펑크 칸':
+        res['se'] = {}
+        if len(u['sk']) != len(gu['m_listSkill']): raise ValueError('칸 스킬 수 불일치')
+        for si,sid in zip(u['sk'],gu['m_listSkill']):
+            pairs = pair_lines(raw['s'][si].get('ef',[]),se.get(sid,[]))
+            if pairs is None: raise ValueError('칸 효과 줄 연결 실패: '+sid)
+            for li,row in pairs:
+                if row['m_Condition']['m_fActiveRate'] != 10000 or row.get('m_fBuffActiveRate',10000) != 10000:
+                    raise ValueError('칸 효과 확률 변경: '+row['m_SEStrID'])
+                key='%d:%d'%(si,li)
+                target_type=row['m_BuffTargetType']
+                if key in res['se'] and res['se'][key] != target_type: raise ValueError('칸 효과 대상 혼재')
+                res['se'][key]=target_type
     if gu.get('SkillOrderList'):
         try:
             res['order'] = [NSI[s] for s in gu['SkillOrderList']]

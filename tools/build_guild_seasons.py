@@ -9,6 +9,7 @@ import hashlib
 import json
 import sys
 import re
+import datetime
 from collections import defaultdict
 from pathlib import Path
 
@@ -69,13 +70,20 @@ def write(path, value):
 
 
 class Extractor:
-    def __init__(self, static, build):
+    def __init__(self, static, build, as_of=None):
         self.static, self.build = Path(static), build
+        self.as_of = as_of or datetime.date.today().isoformat()
         self.tb = Tables(static)
         self.raw = load_foe(str(ROOT))
         self.be = {r['BattleEffectId']: r for r in self.rows('BATTLE_EFFECT_TEMPLET')}
         self.be_name = {r['BattleEffectStrId']: r for r in self.be.values()}
         self.se = {r['m_SEStrID']: r for r in self.rows('SE_TEMPLET_BATTLE_EFFECT')}
+        from tools.build_simpack import FIXED
+        self.dependencies = {}
+        for name in FIXED:
+            if name.startswith(('data/guild_', 'battlesim/')): continue
+            with (ROOT/name).open('rb') as f:
+                self.dependencies[name] = hashlib.file_digest(f,'sha256').hexdigest()
 
     def rows(self, name):
         path = self.static / 'tables' / (name + '.json')
@@ -107,6 +115,11 @@ class Extractor:
                             maxStacks=b.get('BuffLevelMax', 1),
                             source=self.source('SE_TEMPLET_BATTLE_EFFECT', 'm_SEStrID', sid)))
         return out
+
+    def support_effects(self, row):
+        from tools.build_guild_support import compile_effect
+        self.tb.load_effects(self.static)
+        return [dict(e, execution=compile_effect(self.se[e['id']], self.tb)) for e in self.effects(row)]
 
     def challenge(self, group):
         levels = []
@@ -166,12 +179,33 @@ class Extractor:
         out = dict(unit=sp['UnitStrId'], foe=ui, skills=u['m_listSkill'],
                     stats=stats, level=lev, element=ELEM.get(sp.get('ChangeAdjustType'), ELEM[u['NKM_UNIT_ADJUST_TYPE']]),
                     role=ROLE[u['m_NKM_UNIT_ROLE_TYPE']], name=tb.ko(u['m_UnitNameString']),
-                    boss=bool(sp.get('IsBoss')), slot=sp['SpawnPosIndex'], spawn=spawn_flag(sp),
+                    boss=bool(sp.get('IsBoss')), elite=u['NKM_UNIT_GRADE']=='NUG_ELITE', slot=sp['SpawnPosIndex'], spawn=spawn_flag(sp),
+                    hitStats={k:st['m_StatData'].get(k,0) for k in ('NST_RATE_HIT','NST_RATE_EVADE')},
                     source=self.source('UNIT_TEMPLET_BASE2', 'm_UnitStrID', sp['UnitStrId']))
         if ui is None:
             out['definition'] = self.definition(u, base)
         else:
             out['foeSignature'] = digest([raw['u'][ui]['n'], [raw['s'][si] for si in raw['u'][ui]['sk']]])
+        # 시즌의 실제 UnitStrId로 자동 대상·강제 적용·추가 행동을 연결함.
+        tb.load_effects(self.static)
+        from tools.build_foe_auto import unit_rules
+        definition = out.get('definition') or raw
+        unit = definition['u'][0 if ui is None else ui]
+        se = {}
+        for sid in u['m_listSkill']:
+            values = {tuple(r.get('SkillLevelSE',[])) for r in tb.level[tb.skill[sid]['SkillLevelGroup']]}
+            if len(values) != 1: raise ValueError('길드 적 스킬 레벨별 효과가 다름: '+sid)
+            se[sid] = [tb.se[n] for n in values.pop()]
+        rules = unit_rules(unit,definition,u,tb.skill,tb.auto_skill,tb.auto_target,se,
+                           {bid:tb.buff_name(bid) for bid in tb.buff})
+        def line(k):
+            si,li=map(int,k.split(':'));sk=definition['s'][si]
+            return [sk['sl'],sk['ef'][li]]
+        out['clientRules'] = dict(skills=rules['skills'],order=rules.get('order',[]),
+            lines=[line(k)+[v] for k,v in rules['lines'].items()],
+            enforceSelf=[line(k)+[v] for k,v in rules.get('enforce_self',{}).items()],
+            force=[line(k) for k in rules.get('force',[])],
+            se=[line(k)+[v] for k,v in rules.get('se',{}).items()])
         return out
 
     def definition(self, u, base):
@@ -232,9 +266,9 @@ class Extractor:
         for key, name, special in items:
             be = self.be_name[key]
             supports.append(dict(id=be['BattleEffectId'], name=self.tb.ko(name), special=special,
-                                 role=ROLE.get(be.get('TargetRoleType')), effects=self.effects(be),
+                                 role=ROLE.get(be.get('TargetRoleType')), effects=self.support_effects(be),
                                  source=self.source('BATTLE_EFFECT_TEMPLET', 'BattleEffectStrId', key)))
-        return dict(schema=1, asOf='2026-11-25', gameBuild=self.build,
+        result = dict(schema=1, asOf=self.as_of, gameBuild=self.build, dependencies=self.dependencies,
                     provenance=dict(kind='current-client-extraction', build=self.build,
                                     note='%s 클라에서 추출. 당시 빌드 재현본이 아님.' % self.build,
                                     source=self.source('GUILD_DUNGEON_SEASON_TEMPLET', 'GuildDungeonSeasonId', sid)),
@@ -246,20 +280,75 @@ class Extractor:
                     defaultStep=steps[-1]['step'],
                     stepsMeta=dict(minions=sum(not u['boss'] for w in steps[-1]['waves'] for u in w),
                                    waveCount=len(steps[-1]['waves']),
+                                   bossCount=sum(u['boss'] for w in steps[-1]['waves'] for u in w),
+                                   eliteCount=sum(u['elite'] and not u['boss'] for w in steps[-1]['waves'] for u in w),
                                    bossWave=next(i for i,w in enumerate(steps[-1]['waves']) if any(u['boss'] for u in w))))
+        # 표시·탐색 기본값은 계산 설정이며 게임 규칙의 근거로 사용하지 않는다.
+        template_path = ROOT/'data/guild_seasons/30111.json'
+        template = json.loads(template_path.read_text(encoding='utf-8'))
+        result['sources'] = {'client': {'name': self.build+' PC 클라 추출', 'url':''}}
+        result['sets'] = copy.deepcopy(template['sets'])
+        result['sets'].update(src=['client'],scope='가정 계산용')
+        result['search'] = copy.deepcopy(template['search'])
+        search = result['search']; n = len(result['challenge']['levels'])
+        search.update(excludeText=[],excludeKeys=[],notes=[],excludeWhy='',banCoop=False)
+        search['screen'].update(level=min(6,n),supporter='none',other='none',support='none')
+        search['final'].update(levels=list(range(n+1)),supports=['none']+[str(s['id']) for s in supports])
+        search['supportRole'] = {str(s['id']):s['role'] for s in supports if s['role']}
+        result['challenge'].update(effectText=template['challenge']['effectText'],note='클라 난이도 그룹 연결에서 추출함.',statNote='')
+        result['rules'] = dict(turnLimit=steps[-1]['turnLimit'],partyCount=1,partySize=int(steps[-1]['deck'].rsplit('_',1)[1]),conf='확인',src=['client'])
+        result['score'] = dict(conf='추정',src=['client'],note='클라 기본 점수는 실제 처치·보스별 체력 비율로 계산. 추가 점수 배율의 서버 반올림은 미확인.',
+                               hypotheses=[dict(id='A',name='클리어 점수',desc='기본 점수 합계 × 추가 점수 배율',bossExcluded=False)])
+        result['gimmicks'] = dict(conf='확인',src=['client'],items=[])
+        result['community'] = dict(conf='낮음',src=[],items=[],note='이 시즌의 추가 공략 자료 없음')
+        result['exBoss'] = dict(hp=boss['stats']['hp'],atk=boss['stats']['atk'],**{'def':boss['stats']['def']},speed=boss['stats']['spd'],superArmor=boss['stats']['tough'],conf='확인',src=['client'])
+        result['stepsMeta'].update(conf='확인',src=['client'],minionsNote='현재 클라의 원래 웨이브·배치 기준')
+        result['season'].update(conf='확인',src=['client'])
+        return result
+
+
+def select_current(current=None):
+    dest = ROOT/'data/guild_seasons'
+    index_path = ROOT / 'data/guild_current.json'
+    current = current or (json.loads(index_path.read_text(encoding='utf-8'))['seasonId'] if index_path.exists() else 30111)
+    selected = json.loads((dest / ('%d.json' % current)).read_text(encoding='utf-8'))
+    # 날짜·표시 메타를 채운 뒤에도 정본 전체의 자료 버전을 다시 계산함.
+    selected.pop('dataVersion',None)
+    selected['dataVersion'] = digest(selected)
+    write(dest/('%d.json'%current),selected)
+    write(index_path, dict(seasonId=current))
+    write(ROOT / 'data/guild_defense.json', selected)
+    path = ROOT/'party_contents.json'
+    contents = json.loads(path.read_text(encoding='utf-8'))
+    boss = selected['season']['boss']
+    contents['contents']['길드방어전']['bosses'] = {boss['name']:dict(enemies=[boss['element']],role=boss['role'],atk='미확인',note='시즌 '+str(current)+' · data/guild_seasons/'+str(current)+'.json')}
+    write(path,contents)
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--static', type=Path)
-    ap.add_argument('--build', default='26752678')
+    ap.add_argument('--build', help='BUILD.md 마지막 절과 같아야 함(기본: 해당 기록)')
     ap.add_argument('--season', type=int, action='append')
+    ap.add_argument('--as-of', help='표시용 자료 확인일(기본: 오늘, 재현 추출 시 원래 날짜)')
     ap.add_argument('--current', type=int, help='명시적으로 현재 시즌 선택')
     ap.add_argument('--extract-only', action='store_true', help='시즌 파일만 추출하고 현재 시즌 사본은 갱신하지 않음')
+    ap.add_argument('--select-only', action='store_true', help='표 재추출 없이 정본의 현재 시즌 사본만 생성')
     a = ap.parse_args()
-    ex = Extractor(static_path(a.static), a.build)
+    if a.select_only:
+        if a.extract_only or a.season: ap.error('--select-only와 추출 옵션을 함께 쓰지 않음')
+        select_current(a.current)
+        return
+    static = static_path(a.static)
+    recorded = (static/'decompiled/BUILD.md').read_text(encoding='utf-8')
+    recorded = re.search(r'buildid\s*\**\s*(\d{6,})',recorded[recorded.rfind('\n## '):]).group(1)
+    if a.build and a.build != recorded: ap.error('--build와 BUILD.md 마지막 기록 불일치')
+    ex = Extractor(static, recorded,a.as_of)
     dest = ROOT / 'data/guild_seasons'
-    for row in ex.rows('GUILD_DUNGEON_SEASON_TEMPLET'):
+    rows = ex.rows('GUILD_DUNGEON_SEASON_TEMPLET')
+    missing = set(a.season or ()) - {r['GuildDungeonSeasonId'] for r in rows}
+    if missing: raise ValueError('현재 클라에 없는 시즌: '+str(sorted(missing)))
+    for row in rows:
         sid = row['GuildDungeonSeasonId']
         if a.season and sid not in a.season: continue
         generated = ex.season(row)
@@ -270,6 +359,7 @@ def main():
             g['season']['boss'].update(engine='bfb', roleKey='ranger')
             g['provenance'] = generated['provenance']
             g['client'] = generated
+            g['dependencies'] = ex.dependencies
             g['defaultStep'] = 7
             g['stepsMeta'].update(waveCount=2, bossWave=1)
             g['assets'] = {}
@@ -287,11 +377,7 @@ def main():
         print(sid, g['season']['boss']['name'], len(g['steps']), g['dataVersion'][:12])
     if a.extract_only:
         return
-    index_path = ROOT / 'data/guild_current.json'
-    current = a.current or (json.loads(index_path.read_text(encoding='utf-8'))['seasonId'] if index_path.exists() else 30111)
-    selected = json.loads((dest / ('%d.json' % current)).read_text(encoding='utf-8'))
-    write(index_path, dict(seasonId=current))
-    write(ROOT / 'data/guild_defense.json', selected)
+    select_current(a.current)
 
 
 if __name__ == '__main__':

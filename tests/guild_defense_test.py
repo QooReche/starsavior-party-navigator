@@ -238,6 +238,10 @@ def test_sim_presets_payload():
             t.pop('bySets')
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(raw, f)
+        assert gd.sim_payload(G, path) is None, '자료 버전 없는 임의 변경 표를 재사용하면 안 됨'
+        raw['dataVersion'] = G['dataVersion']
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(raw, f)
         old = gd.sim_payload(G, path)
         assert old['sets'] == {'off': [0]*4} and old['summaryBySets'] == {}
         assert all(t['bySets'] == {} for t in old['teams'])

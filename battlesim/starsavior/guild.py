@@ -1,7 +1,8 @@
 """길드 시즌 정본과 보스 실행기. 날짜는 실행기 선택에 관여하지 않는다."""
 import hashlib
 import json
-import math
+import os
+from functools import lru_cache
 
 from .. import datafile
 from .data import SRC
@@ -13,9 +14,21 @@ def load(season_id=None, src=SRC):
     if isinstance(season_id, bool) or not str(season_id).isdigit():
         raise ValueError('길드 시즌 id는 양의 정수: %r' % season_id)
     try:
-        return datafile.load('guild_seasons/%d' % int(season_id), src)
+        g = datafile.load('guild_seasons/%d' % int(season_id), src)
+        check_dependencies(src, tuple(g.get('dependencies', {}).items()))
+        return g
     except FileNotFoundError:
         raise ValueError('보관되지 않은 길드 시즌: %s' % season_id) from None
+
+
+@lru_cache(maxsize=16)
+def check_dependencies(src, entries):
+    for name, expected in entries:
+        with open(os.path.join(src,name),'rb') as f:
+            h = hashlib.sha256()
+            for block in iter(lambda:f.read(65536), b''): h.update(block)
+        if h.hexdigest() != expected:
+            raise ValueError('길드 실행 자료가 바뀜: 시즌 재추출 필요 ('+name+')')
 
 
 def identity(options, src=SRC):
@@ -80,9 +93,18 @@ def client_waves(g, options, step, src):
                 d.auto = {s['sl']:s['auto'] for s in custom['s'] if s.get('auto')}
                 d.auto_lines, d.force_lines, d.enforce_self, d.skill_order = {}, set(), {}, ()
                 d.unmodeled.extend('길드 효과 미반영: %s — %s' % (u['se'],u['reason']) for u in custom['unmodeled'])
+            if member.get('clientRules'):
+                rules = member['clientRules']
+                d.auto, d.skill_order = rules['skills'],rules['order']
+                d.auto_lines = {(sl,text):spec for sl,text,spec in rules['lines']}
+                d.enforce_self = {(sl,text):spec for sl,text,spec in rules['enforceSelf']}
+                d.force_lines = {tuple(row) for row in rules['force']}
+                d.se_meta = {(sl,text):target_type for sl,text,target_type in rules['se']}
             d.name, d.role, d.element = member['name'], member['role'], member['element']
+            if 'hitStats' in member:
+                d.stats.update(hit=member['hitStats']['NST_RATE_HIT'], evade=member['hitStats']['NST_RATE_EVADE'])
             d.boss = member['boss']
-            d.grade = '보스' if d.boss else '일반'
+            d.grade = '보스' if d.boss else ('정예' if member.get('elite') else '일반')
             d.spawn, d.slot = member['spawn'], member['slot']
             d.game_slot, d.game_deck = member['slot'], st['deck']
             d.guild = cfg
@@ -93,7 +115,21 @@ def client_waves(g, options, step, src):
         raise ValueError('미지원 길드 승리 조건: ' + st['mode'])
     return waves, dict(content='guild', tab='길드 방어전', name='%s %d단계' % (g['season']['label'],step),
                        level=st['battleLevel'], recommended_power=st['power'], wave_count=len(waves),
-                       battle_mode=mode, turn_limit=st['turnLimit'], guild=dict(options, seasonId=g['season']['id'], step=step))
+                       battle_mode=mode, turn_limit=st['turnLimit'], guild=dict(options, seasonId=g['season']['id'], step=step),
+                       guild_score={k:st[k] for k in ('base','bossKill','kill','eliteKill')})
+
+
+def base_points(battle, points):
+    """NKM:17376-17392. 보스마다 비율 정수화, 일반·엘리트는 실제 처치 수."""
+    total = points['base']
+    for u in battle.all_foes:
+        if u.d.boss:
+            maximum = int(u.maxhp)
+            lost = maximum - max(0, int(u.hp))
+            total += points['bossKill'] * (lost * 10000 // maximum) // 10000
+        elif u.dead:
+            total += points['eliteKill'] if u.d.grade == '정예' else points['kill']
+    return total
 
 
 ENGINES = {'bfb': bfb_waves, 'client': client_waves}

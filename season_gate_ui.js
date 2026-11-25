@@ -1,6 +1,6 @@
 const SEASON_KEYS=['guild','cosmo','clash'];
 function seasonData(key){return key==='guild'?D.guild?.season:key==='cosmo'?D.cosmoRaid?.seasonPeriod:key==='clash'?D.contents.find(c=>c.key==='clash')?.seasonPeriod:null;}
-function seasonStatus(key){return SEASON_KEYS.includes(key)?SeasonGate.state(seasonData(key),Date.now(),location.search):{blocked:false,label:'',message:''};}
+function seasonStatus(key){if(key==='guild'&&typeof SHARE!=='undefined'&&SHARE.guildExpired)return {blocked:true,label:'지난 시즌 링크',message:`이 링크는 길드 시즌 ${SHARE.gs} 기준임. 현재 시즌 ${D.guild.season.id}로 바꾸려면 주소의 조건을 지우고 다시 선택해야 함.`};return SEASON_KEYS.includes(key)?SeasonGate.state(seasonData(key),Date.now(),location.search):{blocked:false,label:'',message:''};}
 function seasonBlocked(key){return seasonStatus(key).blocked;}
 function seasonPaint(){
   const key=contents[$('content').value]?.key,state=seasonStatus(key),s=seasonData(key);

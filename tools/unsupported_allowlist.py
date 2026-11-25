@@ -108,6 +108,19 @@ def collect(db=None, scenarios=None):
                 '표본 encounter와 spec 불일치')
         covered.add(name)
     require(covered == set(season_encs), '현 시즌 적 runtime 표본 누락')
+    # 현재 선택과 무관하게 보관된 과거 보스 실행 경로도 매번 검사함.
+    from battlesim.starsavior.guild import load as guild_load
+    historical = [int(p.stem) for p in sorted((ROOT/'data/guild_seasons').glob('*.json'))
+                  if guild_load(int(p.stem))['season']['boss']['engine'] == 'client']
+    stats['guild_archives'] = len(historical)
+    for sid in historical:
+        encounter = {'guild': {'seasonId':sid,'level':0}}
+        name = 'guild:'+str(sid)
+        run(['gwen','fei','professor-m','amora'],encounter,'C',('runtime',name))
+        waves = api._norm_encounter_raw(encounter)[0]
+        require(bool(waves) and all(waves), '길드 보관 시즌 waves 누락: '+name)
+        found['C'].update(key('static',name,static_key(row))
+                          for row in support_report([d for wave in waves for d in wave]))
     stats['runtime_seconds'] = round(time.perf_counter() - runtime_started, 3)
 
     for name, encounter in season_encs.items():

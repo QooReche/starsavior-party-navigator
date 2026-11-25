@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""길드 방어전(시즌제) 자료 도우미. 시즌·단계·별의 도전·선택 효과·점수 가설은 data/guild_defense.json 한 곳에만 둔다.
+"""길드 방어전(시즌제) 자료 도우미. 정본은 data/guild_seasons/<id>.json, 현재 시즌 사본은 data/guild_defense.json임.
 이 모듈은 그 자료를 (1) 추천 로직이 읽는 스테이지 모양(foe_stages.json 과 같은 형식)으로 바꾸고, (2) 점수 범위를 계산하고,
 (3) 시즌 종료 여부로 「갱신 대기」를 판정하고, (4) 자료 일관성을 검사한다. 화면 쪽 계산은 guild_view.js 가 같은 규칙으로 한다
 (tests/guild_defense_test.py 가 두 구현의 일치를 확인)."""
@@ -31,6 +31,8 @@ def parse_time(s):
 
 def range_label(g):
     """'시즌4 10/29~11/05' (시작·끝 날짜는 한국 시간 기준, 끝이 04:00 이전이면 전날이 아니라 공지 표기대로 끝 날짜)"""
+    if not g['season'].get('start') or not g['season'].get('end'):
+        return g['season']['label']
     s, e = parse_time(g["season"]["start"]).astimezone(KST), parse_time(g["season"]["end"]).astimezone(KST)
     return f'{g["season"]["label"]} {s.month:02d}/{s.day:02d}~{e.month:02d}/{e.day:02d}'
 
@@ -43,6 +45,8 @@ def season_state(g, now):
     """now(aware datetime) 기준 시즌 상태. state = upcoming / active / settling / ended.
     needs_update = 시즌 종료 시각이 지나 이 자료가 지난 시즌 것일 수 있음(갱신 대기)."""
     se = g["season"]
+    if not all(se.get(k) for k in ('start','end','settleEnd')):
+        return {'state':'unknown','needs_update':False}
     start, end, settle = parse_time(se["start"]), parse_time(se["end"]), parse_time(se["settleEnd"])
     if now < start:
         st = "upcoming"
@@ -56,13 +60,13 @@ def season_state(g, now):
 
 
 def ex_step(g):
-    return next(s for s in g["steps"] if s["ex"])
+    return next(s for s in g['steps'] if s['step'] == g.get('defaultStep', EX_STEP))
 
 
 def base_total(g):
     """EX 기본 합계 = 기본 점수 + 졸개 처치 점수 + 보스 처치 점수."""
     ex = ex_step(g)
-    return ex["base"] + g["stepsMeta"]["minions"] * ex["kill"] + ex["bossKill"]
+    return score_at(g,0)
 
 
 def extra_pct(g, level, tiers=(0, 0, 0, 0)):
@@ -93,7 +97,8 @@ def score_at(g, pct, boss_frac=1.0, kills=None):
     ex = ex_step(g)
     n = g["stepsMeta"]["minions"]
     k = n if kills is None else max(0, min(n, int(kills)))
-    raw = ex["base"] + k * ex["kill"] + boss_points(g, boss_frac)
+    elites = g['stepsMeta'].get('eliteCount',0) if kills is None else 0
+    raw = ex["base"] + (k-elites) * ex["kill"] + elites*ex.get('eliteKill',0) + boss_points(g, boss_frac)*g['stepsMeta'].get('bossCount',1)
     return (raw * (100 + pct) + 50) // 100   # 정수 연산(Python round 는 짝수 반올림이라 JS Math.round 와 다름)
 
 
@@ -104,9 +109,11 @@ def prog_parts(g, prog):
     졸개전에서 지면 보스 비율은 0. guild_view.js progParts 와 같다."""
     n = g["stepsMeta"]["minions"]
     p = max(0.0, min(1.0, prog))
-    if p >= 0.5:
-        return n, max(0.0, min(1.0, 2 * p - 1))
-    return min(n, math.floor(n * 2 * p + 1e-9)), 0.0
+    waves = g['stepsMeta'].get('waveCount',2)
+    threshold = g['stepsMeta'].get('bossWave',1)/waves
+    if p >= threshold:
+        return n, max(0.0,min(1.0,(p-threshold)/(1-threshold)))
+    return min(n, math.floor(n*p/threshold+1e-9)),0.0
 
 
 def score_from_prog(g, pct, prog):
@@ -130,13 +137,24 @@ def foe_content(g):
     tab = range_label(g)
     stages = []
     for s in sorted(g["steps"], key=lambda x: -x["step"]):
-        n = 1 + g["stepsMeta"]["minions"]
+        if s.get('unavailable'): continue
+        members = [u for w in s.get('waves',[]) for u in w]
+        n = len(members) if members else 1 + g["stepsMeta"]["minions"]
+        role = boss.get('roleKey','ranger')
         stages.append({
-            "name": stage_name(s), "level": s["battleLevel"], "recommended_power": s["power"], "wave_count": 2,
+            "name": stage_name(s), "level": s["battleLevel"], "recommended_power": s["power"], "wave_count": len(s['waves']) if 'waves' in s else g['stepsMeta'].get('waveCount',2),
             "enemy_total": n, "dominant_element": boss["element"], "element_counts": {boss["element"]: 1},
-            "role_counts": {"ranger": 1}, "aoe_ratio": 0.0, "defender_ratio": 0.0, "has_boss": True,
-            "enemies": [{"name": boss["name"], "title": "", "element": boss["element"], "role": "ranger", "role_kr": boss["role"],
+            "role_counts": {role: 1}, "aoe_ratio": 0.0, "defender_ratio": 0.0, "has_boss": True,
+            "enemies": [{"name": boss["name"], "title": "", "element": boss["element"], "role": role, "role_kr": boss["role"],
                          "attackType": "", "boss": True, "elite": False, "level": s["battleLevel"], "count": 1}]})
+        if members:
+            from collections import Counter
+            roles = dict(스트라이커='striker',레인저='ranger',캐스터='caster',어쌔신='assassin',디펜더='defender',서포터='supporter')
+            enemies = [dict(name=u['name'],title='',element=u['element'],role=roles[u['role']],role_kr=u['role'],
+                            attackType='',boss=u['boss'],elite=u['elite'],level=u['level'],count=1) for u in members]
+            stages[-1].update(enemies=enemies,element_counts=dict(Counter(u['element'] for u in members)),
+                               role_counts=dict(Counter(roles[u['role']] for u in members)),
+                               defender_ratio=sum(u['role']=='디펜더' for u in members)/n)
     return {"key": CONTENT_KEY, "tabs": [{"tab": tab, "section": None, "stages": stages}]}
 
 
@@ -159,12 +177,14 @@ def validate(g, grules=None):
     """자료 일관성 검사. 문제 문장 목록(비면 정상)."""
     bad = []
     se = g["season"]
+    client = se['boss'].get('engine') == 'client'
     try:
         s, e, d = parse_time(se["start"]), parse_time(se["end"]), parse_time(se["settleEnd"])
         if not s < e < d:
             bad.append("시즌 시작 < 종료 < 결산 종료 순서가 아님")
     except (ValueError, KeyError) as ex:
-        bad.append(f"시즌 날짜 형식 오류: {ex}")
+        if not client or any(se.get(k) for k in ('start','end','settleEnd')):
+            bad.append(f"시즌 날짜 형식 오류: {ex}")
     for k in ("asOf", "gameBuild"):
         if not g.get(k):
             bad.append(f"{k} 없음")
@@ -185,10 +205,10 @@ def validate(g, grules=None):
     steps = g["steps"]
     if [x["step"] for x in steps] != list(range(1, len(steps) + 1)):
         bad.append("단계 번호가 1부터 연속이 아님")
-    if sum(1 for x in steps if x["ex"]) != 1 or not steps[-1]["ex"]:
+    if not client and (sum(1 for x in steps if x["ex"]) != 1 or not steps[-1]["ex"]):
         bad.append("EX 단계는 마지막 하나여야 함")
     for a, b in zip(steps, steps[1:]):
-        if b["bossKill"] <= a["bossKill"] or b["power"] <= a["power"] or b["battleLevel"] <= a["battleLevel"]:
+        if not client and (b["bossKill"] <= a["bossKill"] or b["power"] <= a["power"] or b["battleLevel"] <= a["battleLevel"]):
             bad.append(f'{b["step"]}단계 값이 앞 단계보다 커지지 않음')
     levels = g["challenge"]["levels"]
     if [x["level"] for x in levels] != list(range(1, len(levels) + 1)):
@@ -221,11 +241,15 @@ def page_payload(g):
     """화면에 실을 자료(출처 이름은 화면용으로 풀어 둠). 내부 표 이름·코드는 싣지 않는다."""
     keep = {k: g[k] for k in ("asOf", "season", "rules", "steps", "stepsMeta", "exBoss", "challenge", "sets", "score", "community")}
     keep["title"] = content_title(g)
+    keep['dataVersion'] = g['dataVersion']
+    keep['defaultStep'] = g['defaultStep']
+    keep['supports'] = g.get('supports', g.get('client',{}).get('supports',[]))
     keep["tab"] = range_label(g)
     keep["bestSet"] = list(best_selection(g)[1])
     keep["baseTotal"] = base_total(g)
     keep["sources"] = {k: {"name": v["name"], "url": v["url"]} for k, v in g["sources"].items() if k != "client"}
     keep["search"] = dict(g["search"], excluded=excluded_units(g["search"].get("excludeText") or [], g["search"].get("excludeKeys") or []))
+    keep['search'].update(seasonId=g['season']['id'],dataVersion=g['dataVersion'],maxLevel=len(g['challenge']['levels']))
     sim = sim_payload(g)
     if sim:
         keep["sim"] = sim
@@ -254,12 +278,22 @@ def sim_payload(g, path=SIM_PATH):
         return None
     with open(path, encoding="utf-8") as f:
         s = json.load(f)
+    if path == SIM_PATH and s.get('dataVersion') != g.get('dataVersion') and g.get('assets',{}).get('guild_sim'):
+        path = os.path.join(HERE,'data',g['assets']['guild_sim']['path']+'.json')
+        with open(path,encoding='utf-8') as f:
+            s = json.load(f)
     if s.get("season") != g["season"]["id"]:
         return None
+    if s.get('dataVersion') != g.get('dataVersion'):
+        # 최초 BFB 표는 정의에 보관한 파일 해시로만 승인한다.
+        import hashlib
+        expected = g.get('assets',{}).get('guild_sim',{}).get('sha256')
+        with open(path,'rb') as f: actual = hashlib.sha256(f.read()).hexdigest()
+        if not expected or actual != expected: return None
     return {"runs": s["runs"], "recPower": s["recPower"], "growth": s["growth"], "levels": s["levels"], "passP": s["pass_p"],
             "basis": s["basis"], "summary": s["summary"], "supports": s.get("supports", ["none"]),
             "sets": s.get("sets", {"off": [0, 0, 0, 0]}), "summaryBySets": s.get("summaryBySets", {}),
-            "teams": [{"names": t["names"], "src": t["src"], "rates": t["rates"], "bySupport": t.get("bySupport"), "progBySupport": t.get("progBySupport"), "fracBySupport": t.get("fracBySupport"), "bySets": t.get("bySets", {})} for t in s["teams"]]}
+            "teams": [{"names": t["names"], "src": t["src"], "rates": t["rates"], "bySupport": t.get("bySupport"), "progBySupport": t.get("progBySupport"), "fracBySupport": t.get("fracBySupport"), "scoreBySupport": t.get('scoreBySupport'), "bySets": t.get("bySets", {})} for t in s["teams"]]}
 
 
 def sim_best(sim, growth_key):

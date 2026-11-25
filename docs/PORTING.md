@@ -46,13 +46,18 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 - `fetch_sources.py` 는 사이트 구조가 바뀌면 정규식이 실패할 수 있다(`--dry` 로 주소만 확인 가능). 실패하면 브라우저로 직접 받아 `rawdata/` 에 넣고 `tools/unwrap_ssd.py <main.js>` 를 쓴다.
 - 이어서 `docs/gimmick_review.md`·`docs/synergy_pairs_review.md` 의 변경 요약을 확인해 새 구원자/기믹을 검수한다.
 
-### 4-1. 길드 방어전 시즌 갱신(시즌제 콘텐츠)
-길드 방어전은 시즌이 바뀌면 보스·단계 점수·별의 도전이 달라질 수 있어, 시즌 정의를 `data/guild_defense.json` **한 곳**에만 둔다(시즌 id·기간·결산·단계 표·별의 도전·선택 효과·점수 가설·출처/신뢰도). 콘텐츠 이름의 «(시즌4 10/29~11/05)» 는 이 파일의 시작·끝 날짜에서 자동으로 만든다.
-- 화면은 열 때의 시각을 시즌 끝(`season.end`)과 비교해 «진행 중 / 결산 중 / 종료», 끝난 뒤에는 «갱신 대기» 경고를 띄운다(`guild_view.js`, 파이썬 쪽 `guild_defense.season_state`). «이 시즌 정보는 ○/○ 기준» 은 `asOf`.
-- 갱신 절차: `data/guild_defense.json` 의 `howToUpdate` 참고(시즌·날짜, 단계 표, 별의 도전, 보스, 점수 가설) → `python -X utf8 -I tests/guild_defense_test.py`(일관성·화면 계산 일치·만든 index.html 최신 여부) → `python -X utf8 -I build_party_html.py index.html`.
-- 단계 표 값은 클라 표 `GUILD_DUNGEON` 전투 표의 새 시즌 행(`static-data/tables`)에서, 날짜·별의 도전 문구는 공식 공지에서 확인한다. 점수 계산식이 확인되면 `score.hypotheses` 를 하나로 줄이고 `conf` 를 «확인» 으로.
-- 추천 연결: 콘텐츠는 `party_contents.json` 의 «길드방어전»(`seasonal`, 보스 BFB 별(배치 ChangeAdjustType)), 스테이지·기믹은 시즌 파일에서 만든다(`guild_defense.foe_content`, `stage_gimmicks`). `data/foe_stages.json`·`stage_gimmicks.json` 은 건드리지 않는다.
-- 미지원 관문: `python -X utf8 -I tools/unsupported_allowlist.py --diff` → 새 항목은 클라 확정 또는 사유 등록(해소된 항목은 삭제) → `python -X utf8 -I tools/run_tests.py`. 고정 편성·시즌 보스 갱신 기준은 [관문 문서](unsupported_gate.md) 참조.
+### 4-1. 길드 방어전 패치 후 새 시즌 추가
+정본은 `data/guild_seasons/<seasonId>.json`, 현재 선택은 `data/guild_current.json`의 명시적 ID임. `data/guild_defense.json`은 빌더가 만든 현재 시즌 사본임. 날짜는 상태 표시에만 쓰고 시즌을 자동 선택하지 않음. 30111은 BFB 전용 실행기와 당시 공개 `guild_bfb`·`guild_sim` 자료를 함께 보관했음. 30101~30110은 빌드 26752678에서 추출한 과거 시즌 정의이며 당시 빌드 재현본이 아님.
+
+1. static-data의 `check_build.py`로 설치본·DLL 일치를 확인하고, 패치됐다면 `DECOMPILE.md`에 따라 표·디컴파일을 다시 추출함. `STARSAVIOR_STATIC`을 해당 폴더로 지정함. 일반 적 자료를 갱신했다면 시즌 정의의 의존 자료 해시도 다시 추출해야 함.
+2. `python -X utf8 -I tools/build_guild_seasons.py --season 30112 --extract-only`로 새 시즌을 생성함. 시즌 행 → 전투 행 → 원래 배치 스크립트·유닛 레벨/스탯·스킬 → 난이도 그룹·지원 SE를 연결함. 없는 시즌·해석하지 못하는 지원 효과는 중단하며, 없는 배치 스크립트는 해당 단계에 실행 불가 사유를 남김. 다른 시즌 배치에 새 유닛을 끼워 만들지 않음.
+3. 생성된 시즌 파일의 `season.start/end/settleEnd`, `asOf`, 표시 문구·출처를 확인한 값으로 채움. 실제 전투 값과 보스 실행기(`client`/`bfb`)를 확인함. 선택 효과 `sets`는 계속 가정 계산용임. 보스별 실제 처치·체력 감소가 기본 점수이고, 추가 점수 배율의 서버 반올림은 미확인임.
+4. `python -X utf8 -I tools/build_guild_seasons.py --current 30112 --select-only`로 현재 시즌을 전환함. 정본의 `dataVersion` 재계산, 현재 사본, `party_contents.json`의 보스 항목을 함께 생성함. 현재 기본은 30111이며 패치 행 확인 전에는 바꾸지 않음.
+5. `python -X utf8 -I tools/build_guild_sim.py --season 30112 --workers 1`로 현재 시즌 시뮬 표를 생성함. 지원·도전 범위·기준 전투력은 시즌 정의에서 읽음. 새 표의 시즌·자료 버전이 다르면 화면에 싣지 않음. 30111 보관 자산을 새 시즌 표로 덮어쓰지 않음.
+6. `python -X utf8 -I tools/unsupported_allowlist.py --diff` → `python -X utf8 -I tools/run_tests.py --rebuild` → Playwright의 `tests/e2e/test_page.py`·길드 관련 시험을 실행함. 관문은 보관된 client 시즌도 검사함. 새 미지원은 클라로 확정하거나 근거와 사유를 등록함. BFB 78조건 골든·108조건 훅/타임라인 회귀도 확인함.
+
+공유 링크는 `c=guild&gs=<seasonId>`임. `gs` 없는 옛 링크는 30111로 해석하고, 현재 선택과 다르면 안내 후 실행을 막음. 검색·저장·결과 캐시는 시즌과 자료 버전을 포함함. 일반 적 정의 등 의존 자료가 달라지면 보관 정의를 조용히 다른 데이터로 실행하지 않고 오류로 알림.
+칸 대조 근거·잔여 제한은 [칸 검증 문서](guild_khan_1125.md), 미지원 관문 운영은 [관문 문서](unsupported_gate.md)에 정리했음.
 
 ### 4-2. 코스모 게이트 시즌 갱신(시즌제 콘텐츠)
 시즌 값(보스 3종·Step 스탯·난이도 레벨 표·챌린지 효과·시즌 전투 버프·점수 상수·벨그라스 수치)은 `data/cosmo_raid.json` **한 곳**에 있고 코드(`battlesim/starsavior/cosmo_raid.py`, `cosmo_raid.js`)는 시즌 공통이다. 자세한 근사 목록은 `docs/cosmo_raid.md`.

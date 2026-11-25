@@ -524,6 +524,7 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared=None
     per_run = [] if o.get('per_run') else None
     raw_runs = [] if o.get('raw_runs') else None
     raid_runs = [] if meta.get('cosmo_raid') else None     # 판별 점수 재료: 깎은 보스 HP 비율·남은 턴·생존 구원자 수·클리어
+    guild_scores = [] if meta.get('guild_score') else None
     raid_ctl = defaultdict(int)                             # 컨트롤러 경로 횟수 합계(시험이 «경로가 실제로 탔는지» 확인하는 용도)
     prog = []   # 판마다 적 진척도(0~1): 끝낸 웨이브 수 + 현재 웨이브에서 깎은 체력 비율, 웨이브 수로 나눔. 클리어 0% 팀끼리 순위를 가르는 데 쓴다
     via_tot = defaultdict(int)   # 아군 시전 경로별 합계(coop 등), 결과에는 판당 평균
@@ -553,8 +554,12 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared=None
             ttk.append(b.clear_t / b.turn_ticks)
             ttk_actions.append(sum(u.actions for u in b.allies) + sum(u.actions for u in b.all_foes))
         prog.append(b.progress())
+        if guild_scores is not None:
+            from .starsavior.guild import base_points
+            guild_scores.append(base_points(b, meta['guild_score']))
         if raw_runs is not None:    # 요약(outcome·star_turn·progress)이 쓰는 값 그대로: 아래 ttk·ttk_actions·prog 에 넣은 것과 같은 객체
             raw_runs.append([b.result, ttk[-1] if b.result == 'clear' else None, ttk_actions[-1] if b.result == 'clear' else None, prog[-1]])
+            if guild_scores is not None: raw_runs[-1].append(guild_scores[-1])
         if raid_runs is not None:
             for k, v in getattr(b.gb, 'stats', {}).items():
                 raid_ctl[k] += v
@@ -654,6 +659,8 @@ def _simulate(party_spec, encounter_spec, o, seed, n_runs, mc, opts, shared=None
         runtime_ms_per_run=round(elapsed * 1000 / max(1, n), 2),
         seed=seed,
     )
+    if guild_scores is not None:
+        res['guild'] = {'base_scores': guild_scores}
     if raid_runs is not None:
         from .starsavior.cosmo_raid import cosmo_score, load as cosmo_load
         cr = meta['cosmo_raid']

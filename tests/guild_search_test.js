@@ -77,7 +77,7 @@ const tests = {
     const list = [['d0', 'd1', 's0', 'f0'], ['d2', 'd3', 's1', 'f1']];
     const jobsA = S.screenJobs(SE, G, V, list, results, cls, tiers);
     assert.equal(jobsA.length, 2);
-    assert.deepEqual(jobsA[0].options.guild, {level: SE.screen.level, sets: tiers, support: SE.screen.supporter});
+    assert.deepEqual(jobsA[0].options.guild, {seasonId:G.season.id,dataVersion:G.dataVersion,level: SE.screen.level, sets: tiers, support: SE.screen.supporter});
     const resA = {[jobsA[0].key]: {prog: 0.6, clear: 0}, [jobsA[1].key]: {prog: 0.9, clear: 0.1}};
     const fin = S.pickFinalists({...SE, finalists: 1}, V, G, jobsA, resA, tiers);
     assert.deepEqual(S.pickTop(V, G, jobsA, resA, tiers, 2), [list[1], list[0]]);

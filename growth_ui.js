@@ -143,10 +143,10 @@ function growthTodoRow(r,name){if(r.source!=='owned')return '';const chips=Ux.to
 function growthDisplay(a){const c=contents[$('content').value].key,content=c==='guild'?'op':c;
   let cached=growthDisplays.get(a);if(!cached||cached.content!==content||cached.info!==MI.info){cached={content,info:MI.info,value:Ux.member(a,MI.info,MI.growth,content,D.archiveGrades,D.growthView)};growthDisplays.set(a,cached);}return cached.value;}
 // Seasonal passes share the lock and each content's existing worker budget.
-function growthSeasonContent(){const c=contents[$('content').value];return c?.key==='cosmo'||(c?.key==='guild'&&parseInt(cur?.[$('stage').value]?.name,10)===D.guild.steps.find(s=>s.ex)?.step)?c:null;}
+function growthSeasonContent(){const c=contents[$('content').value];return c?.key==='cosmo'||(c?.key==='guild'&&parseInt(cur?.[$('stage').value]?.name,10)===D.guild.defaultStep)?c:null;}
 function growthConditions(c,trackTeams=true){const rules=simOpt(c.key);
   if(c.key==='guild')return {rules,season:D.guild?.season,
-    ...(D.guild.search?.newSearch===true?{newSearch:true}:{}),difficulty:GuildView.normSel(D.guild,GS.sel||LS.get('guild.v2')),banCoop:GSR.banCoop,ranking:'guild-top-cap-mean',breakCheck:GuildSearch.breakSignature(ownedSimBreaks()),
+    ...(D.guild.search?.newSearch===true?{newSearch:true}:{}),difficulty:GuildView.normSel(D.guild,GS.sel||LS.get(guildStoreKey())),banCoop:GSR.banCoop,ranking:'guild-top-cap-mean',breakCheck:GuildSearch.breakSignature(ownedSimBreaks()),
     teams:GSR.rows.map(r=>[r.keys,r.order,r.sup,r.level,r.brk,r.brkLv])};
   if(c.key==='cosmo')return {rules,season:D.cosmoRaid?.season,
     difficulty:CSR.optLevel,ranking:CSR.optMode,...(CSR.optLearned?{learned:true}:{}),

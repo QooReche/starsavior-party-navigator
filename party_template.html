@@ -494,20 +494,22 @@ function miSelect(){const v=$("grow").value;LS.set("grow.v2",v);if(+v>0)LS.set("
 function manualSelect(){$("grow").value="manual";if(typeof SHARE!=="undefined")delete SHARE.p;LS.set("grow.v2","manual")}
 let cur=null;
 // 길드 방어전(시즌제) 안내 패널: 선택(별의 도전 단계·선택 효과)은 이 브라우저에만 기억. 처음엔 최고 점수 조합(선택 효과는 길방에 없어 끔; 옛 저장값은 guild.v2 로 바꾸며 버림)
+const guildIdentity=()=>({seasonId:D.guild.season.id,dataVersion:D.guild.dataVersion});
+const guildStoreKey=()=>`guild.v3.${D.guild.season.id}.${D.guild.dataVersion}`;
 const GS={sel:null};
 function renderGuild(){const c=contents[$("content").value],p=$("guild-panel"),s=cur&&cur[$("stage").value];
  const extra=$("guild-extra");
  if(!c||!c.seasonal||!s||!window.GuildView||!D.guild){p.hidden=true;p.innerHTML="";extra.hidden=true;extra.innerHTML="";renderGuildSearch(false);return}
- if(!GS.sel)GS.sel=LS.get("guild.v2");
+ if(!GS.sel)GS.sel=LS.get(guildStoreKey());
  if(!GS.watch){GS.watch=1;gsWatch()}
  const folds=seasonFoldState(extra);
  p.hidden=false;p.innerHTML=GuildView.panelHtml(D.guild,GS.sel,parseInt(s.name,10),Date.now(),esc);
  extra.hidden=false;extra.replaceChildren(p.querySelector('[data-k="gd-details"]'));seasonRestoreFolds(extra,folds);
- const ex=D.guild.steps.find(x=>x.ex);renderGuildSearch(!!ex&&parseInt(s.name,10)===ex.step)}
+ const ex=D.guild.steps.find(x=>x.step===D.guild.defaultStep);renderGuildSearch(!!ex&&parseInt(s.name,10)===ex.step)}
 $("guild-extra").addEventListener("change",e=>{const t=e.target.closest("select[data-g]");if(!t)return;
  const sel=GuildView.normSel(D.guild,GS.sel);if(t.dataset.g==="level")sel.level=+t.value;else sel.tiers[+t.dataset.i]=+t.value;
- GS.sel=sel;LS.set("guild.v2",sel);growthCancel();renderGuild();growthPaint()});
-$("guild-extra").addEventListener("click",e=>{if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove("guild.v2");growthCancel();renderGuild();growthPaint()});
+ GS.sel=sel;LS.set(guildStoreKey(),sel);growthCancel();renderGuild();growthPaint()});
+$("guild-extra").addEventListener("click",e=>{if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove(guildStoreKey());growthCancel();renderGuild();growthPaint()});
 // Keep an explicitly opened settings fold open through input/progress repaint.
 function seasonFoldState(p){return [...p.querySelectorAll('details[data-fold]')].map(d=>[d.dataset.fold,d.open]);}
 function seasonRestoreFolds(p,state){for(const [key,open] of state){const d=p.querySelector(`details[data-fold="${key}"]`);if(d)d.open=open;}}
@@ -518,9 +520,9 @@ function gsWatch(){if(!D.guild||!D.guild.season||!window.GuildView)return;const 
 document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!$("guild-panel").hidden)renderGuild()});
 // ── 길방 «내 정보로 최고 점수 편성 찾기»(guild_search.js): 예선(전 조합 짧게) → 본선(상위 팀을 단계·지원별로). 작업자는 시뮬 창구(sim_worker.js)를 그대로 쓴다
 const GSR={banCoop:true,phase:"idle",msg:"",done:0,total:0,rows:[],sig:"",handle:null,id:0};
-const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get("guild.v2")).tiers;
+const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get(guildStoreKey())).tiers;
 function searchPlacementTag(kind){const p=(kind==='guild'?D.guild:D.cosmoRaid)?.search?.placement;return [...(kind==='guild'&&D.guild.search.newSearch===true?['guild-new-search']:[]),...(p?.baseline||p?.enabled?[PartyPlacement.VERSION,!!p.baseline,!!p.enabled]:[])];}
-const gsSig=() => JSON.stringify([MI.hash,[...EXCL].sort(),gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks()),...searchPlacementTag('guild')]);
+const gsSig=() => JSON.stringify([guildIdentity(),MI.hash,[...EXCL].sort(),gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks()),...searchPlacementTag('guild')]);
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
 function searchGwenPaint(host,mode,state){
  if(!host.querySelector('[data-gwen-slot]')){GwenStage.destroy(mode);return;}
@@ -539,7 +541,7 @@ function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}if(GSR.phase==="run"){GSR.phase="idle";GSR.id++}GwenStage.destroy('guildSearch');p.hidden=true;p.innerHTML="";return}
  const prog=p.querySelector('[data-k="gd-search-prog"]');
  if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);searchGwenPaint(p,'guildSearch',GSR);return}
- const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:()=>GwenStage.slot('guildSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('guildSearch','board')+GwenStage.slot('guildSearch','result'),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,newSearch:D.guild.search.newSearch,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild');searchGwenPaint(p,'guildSearch',GSR)}
+ const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:()=>GwenStage.slot('guildSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('guildSearch','board')+GwenStage.slot('guildSearch','result'),clientSeason:D.guild.season.boss.engine==="client",supportNames:Object.fromEntries((D.guild.supports||[]).map(s=>[s.id,s.name])),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,newSearch:D.guild.search.newSearch,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild');searchGwenPaint(p,'guildSearch',GSR)}
 function gsTeam(t){LEADKEY=t.leaderKey||t.order[0];return seasonBreakBar(t,true)+`<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
 async function guildSearchStart(target=GSR,profileOverride=null){
  if(seasonBlocked('guild'))return;
@@ -943,7 +945,7 @@ const SIMOPT={build:"standard",rules_override:{power_penalty:"model"}};
 const STAR_TURNS={equip:60,clash:60};   // 3별 미션 «N턴 이내 승리»(BMT_LIMIT_TURN, 표 BATTLE_TEMPLET_NORMAL: 장비 탐사 60곳·격전 의뢰 SS_EVENT_CLASH 18곳 모두 65·60턴). 3별이 돼야 소탕이 열림
 const starOf=ck=>STAR_TURNS[ck]&&(document.getElementById("goal")||{}).value!=="0"?STAR_TURNS[ck]:0;   // 옵션 «3별 목표»가 «클리어만»이면 0
 const starNote=ck=>{const n=starOf(ck);return n?`<div class="mut" data-k="starnote">${n}턴 내 클리어(3별) ${Ux.help('3별 목표',`3별(소탕) 조건인 ${n}턴 이내 승리 가능성을 먼저 보고 순위를 매김. 클리어만 필요하면 ⋯ 메뉴의 3별 목표에서 변경 가능.`)}</div>`:''};
-const simOpt=ck=>{const rk=rkOf(ck),st=starOf(ck),o=st?Object.assign({},SIMOPT,{star_turns:st}):SIMOPT;return rk?Object.assign({},o,{rekindle:rk}):o};
+const simOpt=ck=>{const rk=rkOf(ck),st=starOf(ck),o=st?Object.assign({},SIMOPT,{star_turns:st}):SIMOPT;const v=rk?Object.assign({},o,{rekindle:rk}):o;return ck==='guild'?Object.assign({},v,{guild:guildIdentity()}):v};
 function simParty(t,engineKey=ekey,arr=null){const ar=arr||arrangeOf(t.combo),sv=QK.d.sv;
  // 육성 가정 = 기준(Lv200·표준 육성) 공·생·방 × k (전투력이 공·생·방에 비례하는 식이라 엔진이 계산하는 전투력 = 가정한 전투력)
  // 구원자별 전투력 = quick.js evaluate 와 같은 배분(입력값, 없으면 base × 기준 전투력 비율). 반올림 = 버림(x+0.5) — 파이썬 gen_quick_calib 와 같게
@@ -956,9 +958,9 @@ function simParty(t,engineKey=ekey,arr=null){const ar=arr||arrangeOf(t.combo),sv
   return {key:k,stats_override:{atk:R(u[1]*kk),hp:R(u[2]*kk),def:R(u[3]*kk)}}});
  const li=so.indexOf(ar.lead);return {units,leader:li>=0?li:null};}
 const simSigB=(st,t,bname,n=SIMQ.n,context=null,party=simParty)=>{const ck=contents[$("content").value].key;
- const x=context||{ck,rk:rkOf(ck),sn:starOf(ck),account:miMode()?MI.hash:null,growth:typeof growthEnabled==="function"&&growthEnabled()?growthCacheTag():null,party};
+ const x=context||{ck,guild:ck==='guild'?guildIdentity():null,rk:rkOf(ck),sn:starOf(ck),account:miMode()?MI.hash:null,growth:typeof growthEnabled==="function"&&growthEnabled()?growthCacheTag():null,party};
  return simSignature(x,st,t,bname,n,SIMQ.refined);};
-function simSignature(x,st,t,bname,n,refined){const parts=[x.ck,st.tab,st.name,x.party(t),n,"auto",bname].concat(x.rk?[x.rk]:[],x.sn?["t"+x.sn]:[],x.account!=null?[x.account]:[],x.growth?[x.growth]:[]);
+function simSignature(x,st,t,bname,n,refined){const parts=[x.ck,st.tab,st.name,x.party(t),n,"auto",bname].concat(x.guild?[x.guild]:[],x.rk?[x.rk]:[],x.sn?["t"+x.sn]:[],x.account!=null?[x.account]:[],x.growth?[x.growth]:[]);
  if(n===100&&refined?.has(JSON.stringify(parts)))parts[4]=300;return JSON.stringify(parts)}
 const simSig=(st,t)=>simSigB(st,t,teamBreak(t)?.name||null);
 // 규칙 자리(자리·리더 비교 무시)의 결과 서명 — 비교로 바꾼 자리가 표준 본선에서 규칙 자리보다 낮게 나오면 되돌리는 데 씀(recoArrangeRevert)
@@ -1719,7 +1721,7 @@ function drawGraph(){
  setTimeout(()=>{if(cy){cy.resize();cy.fit(undefined,30)}},50)}
 ["gmode","gcenter","gmin","gconf"].forEach(id=>$(id).onchange=()=>{graphDirty=true;drawGraph()});
 window.onParties=ps=>{lastParties=ps;if($("gmode").value==="party"){graphDirty=true;drawGraph()}};
-function shareUrl(){const c=contents[$("content").value],s=cur&&cur[$("stage").value],state={c:c.key,s:s?s.tab+"|"+s.name:"",rk:+$("rk").value,ag:growthOptions().growth,ao:growthOptions().owned};
+function shareUrl(){const c=contents[$("content").value],s=cur&&cur[$("stage").value],state={c:c.key,gs:SHARE.guildExpired?SHARE.gs:D.guild.season.id,s:s?s.tab+"|"+s.name:"",rk:+$("rk").value,ag:growthOptions().growth,ao:growthOptions().owned};
  if(DIRECT.mode==='direct'){state.pm='direct';if(c.key==='cosmo')state.cd=CosmoDirect.share(CDIRECT.state);else state.dp=DirectParty.share(DIRECT.draft);}
  document.querySelectorAll(".party[data-party] .bsel").forEach(el=>{state[el.closest(".party").dataset.party==="2"?"b2":"b"]=el.value});
  return ShareState.url(location.href,state)}
