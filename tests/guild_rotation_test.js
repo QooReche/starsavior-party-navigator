@@ -28,4 +28,15 @@ assert.notEqual(sig({seasonId:30101,dataVersion:'a'}),sig({seasonId:30101,dataVe
 const mutant={};vm.createContext(mutant);vm.runInContext(sigCode.replace('x.guild?[x.guild]:[]','[]'),mutant);
 assert.equal(mutant.simSignature({ck:'guild',guild:{seasonId:1},party:()=>keys},{tab:'a',name:'b'},null,null,100),
              mutant.simSignature({ck:'guild',guild:{seasonId:2},party:()=>keys},{tab:'a',name:'b'},null,null,100));
-console.log('PASS guild season share, worker identity, scores, precise cache and mutation');
+(async()=>{
+  const guild={seasonId:30101,base_scores:[1,11]};
+  const phase=Search.runPhase({jobs:[job],runs:2,seed:1,workers:1,stage:'guild/S1/6단계',base:'',
+    makeWorker:()=>({terminate(){},postMessage(m){setImmediate(()=>{
+      this.onmessage({data:{type:'team',id:m.id,key:job.key,result:{prog:.5,progs:[.2,.8],n:2,via:{},guild}}});
+      this.onmessage({data:{type:'done',id:m.id}});
+    });}})});
+  const received=(await phase.promise)[job.key];
+  assert.deepEqual(received.guild,guild);
+  assert.deepEqual(Search.rankStats(View,G,0,[1,0,0,0],received.prog,received.progs,0,received.guild),rank);
+  console.log('PASS guild season share, worker identity/score transport, scores, precise cache and mutation');
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -27,6 +27,21 @@ async function capture(){
    ['guild-unfiltered',()=>guild.run(false,{small:true,banCoop:false,breaks:[],tiers:[0,0,0,0]})],
    ['guild-learned',()=>guild.run(false,{small:true,banCoop:true,newSearch:true,breaks:[{name:'스타피어서',level:7}],tiers:[0,0,0,0]})]]){
     phases.length=0;out[name]={result:await fn(),phases:plain(phases)};
+    // 새 시즌 식별자를 검증한 뒤 옛 30111 실행 정책 골든과 비교함.
+    // 후보·입력·시드·순서·결과는 그대로 둠.
+    if(name.startsWith('guild-')){
+      const G=require('../data/guild_defense.json'),prefix=JSON.stringify([G.season.id,G.dataVersion])+':';
+      for(const phase of out[name].phases){
+        for(const job of phase.jobs){
+          assert(job.key.startsWith(prefix));
+          assert.equal(job.options.guild.seasonId,30111);
+          assert.equal(job.options.guild.dataVersion,G.dataVersion);
+          job.key=job.key.slice(prefix.length);
+          delete job.options.guild.seasonId;delete job.options.guild.dataVersion;
+        }
+        for(const result of phase.results){assert(result[0].startsWith(prefix));result[0]=result[0].slice(prefix.length);}
+      }
+    }
   }
  }finally{GS.runPhase=phase;}
  const P=require('../party_placement'),variants=P.variants;

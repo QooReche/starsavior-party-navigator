@@ -327,7 +327,7 @@ def unit_links(static, raw, units, guild=False):
 
 def unit_rules(u, raw, gu, skills, auto, target, se, bname):
     res = {'skills': {}, 'lines': {}}
-    if u['n'] == '카본펑크 칸':
+    if u.get('n') == '카본펑크 칸':
         res['se'] = {}
         if len(u['sk']) != len(gu['m_listSkill']): raise ValueError('칸 스킬 수 불일치')
         for si,sid in zip(u['sk'],gu['m_listSkill']):

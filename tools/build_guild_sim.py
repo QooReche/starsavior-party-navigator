@@ -195,7 +195,7 @@ def main():
         t['rates'] = t['bySupport']['none']      # 호환: 지원을 안 고른 경우
     summary = summarize(teams, growth, sups,levels=levels)
     out = dict(
-        _note='tools/build_guild_sim.py 가 만든 시뮬 추정(실측 대조 없음). rates[육성 배수] = 별의 도전 0~12단계 클리어율(0단계 = 별의 도전 없음, 알리시아 지원 안 고름), bySupport[지원][육성 배수] = 같은 값을 지원별로.',
+        _note='tools/build_guild_sim.py 가 만든 시뮬 추정(실측 대조 없음). rates[육성 배수] = levels 순서의 별의 도전 클리어율(0단계 = 별의 도전 없음, 알리시아 지원 안 고름), bySupport[지원][육성 배수] = 같은 값을 지원별로.',
         asOf=gd['asOf'], season=gd['season']['id'], dataVersion=gd['dataVersion'], runs=a.runs, seed=a.seed, recPower=rec, growth=growth, levels=levels, pass_p=PASS,
         basis='표준 육성을 파티 전투력 = 권장 전투력 x 배수로 맞춤, 오토 전투, 선택 효과 프리셋 비교, 전투력 보정 적용, 브레이크 스킬 미장착',
         supports=sups, sets=a.sets, teams=teams, summary=summary,
