@@ -1,6 +1,6 @@
-# 인수인계
+﻿# 인수인계
 
-갱신 2026-11-24. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md) — 코드·note·문서에 남은 «HANDOFF 의 ○○ 절» 참조도 거기서 찾음.
+갱신 2026-11-26. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md) — 코드·note·문서에 남은 «HANDOFF 의 ○○ 절» 참조도 거기서 찾음.
 
 ## 다시 꺼낼 때 (11/24 마무리 — 신규 구원자·잠재력·콘텐츠·보스 패치 대응)
 
@@ -8,13 +8,16 @@
 1. **최신 받기**: 이 저장소·`starsavior-static-data`(비공개)·`starsavior-myinfo`·`starsavior-packet-ref` 를 `git pull`. 다른 PC면 [docs/PORTING.md](docs/PORTING.md) §1~§3·§5.
 2. **클라 재추출·디컴파일**(게임 PC): static-data `DECOMPILE.md`·`INDEX.md` 2b → 표 갱신. 전투 코드 차이는 직전 빌드 디컴파일(`E:\AI_mk2\decomp_26752678`·`rebuild_26752678`, 도구 `E:\AI_mk2\tools\ilspy`·`dotnet`)과 대조(11/19 방식, HISTORY «11/19 패치 대조»).
 3. **신규 구원자·잠재력**: PORTING §4 «패치 때마다 먼저 확인» — 가이드 DB `SAVIORS` 확인 → `savior_reco.json`·`saviors_index.json`·그림(자동 갱신 안 됨, 10/29 누락 사고) → `tools/fetch_sources.py` → `tools/update.py` → `--static` 빌더(연쇄 피해 `build_chain_damage.py`·`build_auto_skill.py`). 잠재력 목록은 `tools/potential_catalog.py`. 새 문구가 엔진에 안 맞으면 미지원 관문(`tools/unsupported_allowlist.py --diff`)에 뜸 → 클라 근거로 확정하거나 사유 등록.
-4. **신규 콘텐츠·보스**: 일반 스테이지 적은 `tools/build_foe*.py`(격전 `build_foe_clash`, 코스모 `build_foe_cosmo`) → `update.py`. 시즌제는 PORTING §4-1 길드(`data/guild_defense.json`)·§4-2 코스모(`tools/build_cosmo_raid.py --season`, 새 `SET_NN`·`BOSS_SCRIPT_KEY`). 새 콘텐츠 종류는 `party_contents.json`.
+4. **신규 콘텐츠·보스**: 일반 스테이지 적은 `tools/build_foe*.py`(격전 `build_foe_clash`, 코스모 `build_foe_cosmo`) → `update.py`. 시즌제는 PORTING §4-1 길드(11/25부터 시즌 보관 `data/guild_seasons/<id>.json` + 현재 시즌 `data/guild_current.json`, `guild_defense.json` 은 생성 사본 — 새 시즌 = `tools/build_guild_seasons.py` 추출 → 현재 시즌 전환 → `tools/build_guild_sim.py` → 시험)·§4-2 코스모(`tools/build_cosmo_raid.py --season`, 새 `SET_NN`·`BOSS_SCRIPT_KEY`). 새 콘텐츠 종류는 `party_contents.json`.
 5. **검증·배포**: `tools/build_simpack.py`(엔진 고쳤으면) → `python -X utf8 -I tools/run_tests.py`(11/24 276통과) → e2e `tests/e2e/test_page.py`(11/24 71/72, `test_ux_step12` 그림 로딩 검사는 배포본에서도 실패 — 미해결) → `build_party_html.py index.html` → 커밋·푸시. 페이지 «업데이트 내역»(`#update-history`, 마지막 11/21)과 상단 공지(`data-k="update-notice"`, 11/19) 날짜도 갱신.
 6. **공지 글**: 아카라이브 패치 원고 = `E:\AI_mk2\아카라이브-파티네비게이터\패치내역_YYYYMMDD_*.txt`(마지막 11/24 게시함, 그웬·UI 제외판). 그웬 그림 사본 = `C:\Users\yunsu\Desktop\그웬\사이트그림_1124`.
 - 작업 PC가 느리면 작업자 2개·한 번에 하나씩(11/24 강제 종료 사고). 사용량 기록 = `E:\AI_mk2\token-usage\`(10/20~11/24 약 212시간, 토큰 76억).
 - 11/24 정리로 옮긴 임시 폴더(`_inbox`·`_calibration_keys`·`_forced_gen`·옛 `star-savior-decompiled`·저장소 `_tmp`) 은 PM 지시로 11/24 삭제함(옛 3월판 디컴파일본 포함 — 근거는 static-data `decompiled/`).
 
 ## 현재 상태
+
+- **길드 보스 로테이션 준비(11/25, 11/26 패치 전)**: 시즌 30101~30111 을 26752678 클라에서 추출해 `data/guild_seasons/` 에 보관(당시 빌드 재현본 아님). 현재 시즌은 30111(BFB) 그대로 — 패치 후 30112(칸) 추출·전환이 남음. 보스 실행기 = `bfb`(기존 `guild_bfb.py`, 결과 불변: 골든 78/78·훅 108/108) / `client`(클라 길드 배치 스크립트, 승리 조건 BattleMode·LimitTurn·시작 쿨 그대로). 도전·지원 공통 층 `guild_common.py`·`guild_support.py`. 화면→API 시즌 id 전달, 공유 링크 `gs`(옛 링크는 30111 고정, 현재 시즌과 다르면 만료 표시). 칸 엔진 수정(SE 순차 재평가·과열 행동 차단·추가 궁극기·효과 적중 난수 순서, 스위치 `khan_passives`) — 플래시 포인트 칸에도 적용, 빠른 계산 재보정(rush 스테이지 분할 검증 86.5%→80.0%). 근거 `docs/guild_khan_1125.md`. 미확인: 누락 배치 G3_04·TIENSIEN_04, 과거 시즌 점수의 엘리트 판정·보스 처치 일괄 처치 점수·지원 효과 범주(독립 리뷰 의심), 서버 점수 반올림.
+- **장비 던전 21·22단계(11/26 패치)**: 클라 직행 단계 생성 작업 중(브랜치 `feat/equip-client-stages`).
 
 - **자동 추천 전체 진행 줄(11/24)**: 그웬 길 아래 한 줄로 끝날 때까지의 단계(후보 거르기 → 상위 팀 확인 → 현장 재조사)·남은 시간·막대를 보여 줌. 단계별 남은 시간·재조사 미포함이던 옛 표시를 대신함. 계산 `reco_plan.js`, 화면 `party_template.html` recoPlanStages·recoPlanPaint. 작업자 2개 실측 38-36 에서 표시 ÷ 실제 0.91~1.17. 상세 HISTORY 11/24.
 - **현장 재조사(11/23)**: 자리·리더 비교 동안 결과 판을 그대로 두고 맨 위 재조사 칸(단계 3칸·막대·기록 줄·«지금 자리로 확정»)과 그웬 길의 탐정 사무실 장면(보드 빈 4칸의 얼굴 사진·창밖 고리 빛·코트 벗은 SD 그웬)을 보여 줌. 바뀐 팀은 같은 작업 안에서 표준 본선 재측정·되돌림 판정까지 끝낸 뒤 카드가 한 번 미끄러짐(그동안 카드·수치는 규칙 자리). 자동 추천·직접 편성의 위쪽 완료 배너는 없애고 결과가 나오면 길을 접음(코스모 직접 편성·코스모 3보스 찾기·길드 찾기 배너는 그대로). 상태 `recommend_runtime.js` RECHECK, 조각 `recheck_ui.js`, 장면 `gwen_lane.js` recheckSync, 스타일 `recheck.css`, 그림 `tools/build_recon_art.py` → `assets/recon/`. 상세 HISTORY 11/23.
