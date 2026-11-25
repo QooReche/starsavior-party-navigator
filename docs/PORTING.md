@@ -46,6 +46,8 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 - `fetch_sources.py` 는 사이트 구조가 바뀌면 정규식이 실패할 수 있다(`--dry` 로 주소만 확인 가능). 실패하면 브라우저로 직접 받아 `rawdata/` 에 넣고 `tools/unwrap_ssd.py <main.js>` 를 쓴다.
 - 이어서 `docs/gimmick_review.md`·`docs/synergy_pairs_review.md` 의 변경 요약을 확인해 새 구원자/기믹을 검수한다.
 
+장비 던전 단계 확장 때는 `check_build.py` 확인 → `DECOMPILE.md`·`INDEX.md`에 따라 표/문자열/배치 재추출 → `$env:STARSAVIOR_STATIC='<static-data 경로>'` 지정 → `python -X utf8 -I tools/build_foe_equip.py` → `python -X utf8 -I tools/update.py` → `python -X utf8 -I tools/unsupported_allowlist.py --diff` → `python -X utf8 -I tools/run_tests.py --rebuild` 순서로 실행함. 생성기는 클라 `BattleName`을 쓰고 데이터북에 없는 탭·단계만 `data/foe_equip.json`에 담으며, 기존 1~20단계는 그대로 둠. 현재 표에 실제 21·22단계가 없으면 빈 조각이 정상임. 패치 뒤 세 탭의 신규 6단계·스킬·소환·화면 목록을 확인하고, 새 효과 때문에 생성이 실패하면 원인을 클라에서 확인한 뒤 변환기를 확장함. 기존 단계 대조는 `python -X utf8 -I tools/compare_foe_equip.py --out local/equip-compare.json`이며 범위·차이 판정은 [장비 단계 검증](equip_client_stages.md)에 정리함. 새 장비 등급(예: `EquipTier=3`)이 생기면 체크: □ `tools/build_growth.py`의 표준 장비 등급 선택(기존 84줄) □ 같은 파일의 아이템·세트 매핑(기존 254줄) □ `battlesim/starsavior/build.py`의 표준 육성 등급 인덱스(기존 24줄) □ 내정보 아이템 ID·세트 매핑 및 `myinfo_stats.py`/JS 계산 일치. 등급 번호만 보고 수치를 추정하지 않음.
+
 ### 4-1. 길드 방어전 패치 후 새 시즌 추가
 정본은 `data/guild_seasons/<seasonId>.json`, 현재 선택은 `data/guild_current.json`의 명시적 ID임. `data/guild_defense.json`은 빌더가 만든 현재 시즌 사본임. 날짜는 상태 표시에만 쓰고 시즌을 자동 선택하지 않음. 30111은 BFB 전용 실행기와 당시 공개 `guild_bfb`·`guild_sim` 자료를 함께 보관했음. 30101~30110은 빌드 26752678에서 추출한 과거 시즌 정의이며 당시 빌드 재현본이 아님.
 

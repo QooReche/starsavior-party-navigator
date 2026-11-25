@@ -1,0 +1,588 @@
+{
+  "_note": "합성 입력. 실제 21·22단계 수치나 비공개 원문 표가 아님. 20단계는 기존 자료 우선 검사용.",
+  "strings": {
+    "UNIT": {
+      "ko": "합성 시험 적"
+    },
+    "SKILL": {
+      "ko": "합성 타격"
+    },
+    "DESC": {
+      "ko": "합성 공격"
+    },
+    "BUFF": {
+      "ko": "속도 감소"
+    },
+    "BUFF_DESC": {
+      "ko": "속도 감소 시험"
+    },
+    "TAB1": {
+      "ko": "뒤틀린 감정"
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP1_20": {
+      "ko": "뒤틀린 감정 XX"
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP1_21": {
+      "ko": "뒤틀린 감정 XXI"
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP1_22": {
+      "ko": "뒤틀린 감정 XXII"
+    },
+    "TAB2": {
+      "ko": "혹한의 습격"
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP2_20": {
+      "ko": "혹한의 습격 XX"
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP2_21": {
+      "ko": "혹한의 습격 XXI"
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP2_22": {
+      "ko": "혹한의 습격 XXII"
+    },
+    "TAB3": {
+      "ko": "잊혀진 맹세"
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP3_20": {
+      "ko": "잊혀진 맹세 XX"
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP3_21": {
+      "ko": "잊혀진 맹세 XXI"
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP3_22": {
+      "ko": "잊혀진 맹세 XXII"
+    }
+  },
+  "tables": {
+    "BUFF_TEMPLET": [
+      {
+        "m_BuffStrID": "FIXTURE_SLOW",
+        "m_BuffName": "BUFF",
+        "m_BuffDesc": "BUFF_DESC",
+        "m_bShowBuffInfo": true,
+        "Stats": [
+          {
+            "NKM_STAT_TYPE": "NST_NV_RATE_TURN_SPEED",
+            "NKM_STAT_TYPE_RATE": -2000
+          }
+        ]
+      }
+    ],
+    "SE_TEMPLET_SKILL_1": [
+      {
+        "m_SEStrID": "FIXTURE_SE",
+        "m_BuffStrID": "FIXTURE_SLOW",
+        "m_Condition": {
+          "m_ActiveType": "NSEAT_SKILL_END",
+          "m_fActiveRate": 10000
+        },
+        "m_BuffTargetType": "NSETT_TARGET",
+        "m_BuffLifeTurn": 2,
+        "ForceApplyEffect": true
+      }
+    ],
+    "SKILL_TEMPLET_1": [
+      {
+        "m_SkillStrID": "FIXTURE_ATTACK",
+        "m_SkillName": "SKILL",
+        "m_NKM_SKILL_TYPE": "NST_ACTIVE",
+        "m_TARGET_TYPE": "NSTT_ENEMY_ONE",
+        "SkillLevelGroup": 1,
+        "DTStrID": "FIXTURE_DT",
+        "SuperArmorBreakValue": 2,
+        "AutoSkillId": 1
+      }
+    ],
+    "SKILL_LEVEL_GROUP_TEMPLET_1": [
+      {
+        "SkillLevelGroupID": 1,
+        "SkillLevelValue": 1,
+        "SkillLevelDesc": "DESC",
+        "SkillLevelSE": [
+          "FIXTURE_SE"
+        ]
+      }
+    ],
+    "Plain/SKILL_CONDITION_TEMPLET": [],
+    "DAMAGE_TEMPLET": [
+      {
+        "DTStrID": "FIXTURE_DT",
+        "AtkFactor": 12500
+      }
+    ],
+    "Plain/AUTO_SKILL_TARGET_TEMPLET": [
+      {
+        "Id": 1,
+        "TargetCondition": {
+          "IsHighAtk": true
+        }
+      }
+    ],
+    "Plain/AUTO_SKILL_TEMPLET": [
+      {
+        "Id": 1,
+        "SkillConditions": [
+          {
+            "Condition": {},
+            "TargetConditionId": 1
+          }
+        ]
+      }
+    ],
+    "Plain/SUMMON_TEMPLET": [],
+    "BUFF_IMMUNE_TEMPLET": [],
+    "UNIT_TEMPLET_BASE1": [
+      {
+        "m_UnitID": 1,
+        "m_UnitStrID": "FIXTURE_UNIT",
+        "m_UnitNameString": "UNIT",
+        "NKM_UNIT_GRADE": "NUG_NORMAL",
+        "NKM_UNIT_ADJUST_TYPE": "NUAT_CHAOS",
+        "m_NKM_UNIT_ROLE_TYPE": "NURT_DEFENDER",
+        "UnitAttackTagType": "UAT_ELEMENT",
+        "m_StatStrID": "FIXTURE_STATS",
+        "m_listSkill": [
+          "FIXTURE_ATTACK"
+        ]
+      }
+    ],
+    "UNIT_STAT_TEMPLET2": [
+      {
+        "m_StatStrID": "FIXTURE_STATS",
+        "m_StatAddPerLevelStrID": "FIXTURE_GROWTH",
+        "m_StatData": {
+          "NST_HP": 100,
+          "NST_ATK": 20,
+          "NST_DEF": 10,
+          "NST_TURN_SPEED": 88,
+          "NST_RATE_CRITICAL": 1500,
+          "NST_RATE_CRITICAL_DAMAGE": 3000,
+          "NST_RATE_EFFECT_HIT": 10000,
+          "NST_RATE_EFFECT_EVADE": 0,
+          "NST_RATE_DEFINITE_EFFECT_EVADE": 0,
+          "NST_SUPER_ARMOR": 5,
+          "NST_RATE_HIT": 9800,
+          "NST_RATE_EVADE": 700
+        }
+      }
+    ],
+    "STAT_ADD_PER_LEVEL2": [
+      {
+        "StatAddPerLevelStrID": "FIXTURE_GROWTH",
+        "StatAddPerLevelData": {
+          "NST_HP": 10,
+          "NST_ATK": 2,
+          "NST_DEF": 1
+        }
+      }
+    ],
+    "Plain/CLIENT_CONST_TEMPLET": {
+      "DamageScale": 18500
+    },
+    "BATTLE_TEMPLET_NORMAL": [
+      {
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP1_20",
+        "BattleTabId": 1,
+        "OrderList": 20,
+        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP1_20",
+        "BattleMode": "BM_BOSS_KILL",
+        "BattleLevel": 20,
+        "BattlePower": 1120,
+        "LimitTurn": 77,
+        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP1_20.txt"
+      },
+      {
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP1_21",
+        "BattleTabId": 1,
+        "OrderList": 21,
+        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP1_21",
+        "BattleMode": "BM_BOSS_KILL",
+        "BattleLevel": 21,
+        "BattlePower": 1121,
+        "LimitTurn": 77,
+        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP1_21.txt"
+      },
+      {
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP1_22",
+        "BattleTabId": 1,
+        "OrderList": 22,
+        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP1_22",
+        "BattleMode": "BM_ALL_KILL",
+        "BattleLevel": 22,
+        "BattlePower": 1122,
+        "LimitTurn": 77,
+        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP1_22.txt"
+      },
+      {
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP2_20",
+        "BattleTabId": 2,
+        "OrderList": 20,
+        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP2_20",
+        "BattleMode": "BM_BOSS_KILL",
+        "BattleLevel": 20,
+        "BattlePower": 1220,
+        "LimitTurn": 77,
+        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP2_20.txt"
+      },
+      {
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP2_21",
+        "BattleTabId": 2,
+        "OrderList": 21,
+        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP2_21",
+        "BattleMode": "BM_BOSS_KILL",
+        "BattleLevel": 21,
+        "BattlePower": 1221,
+        "LimitTurn": 77,
+        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP2_21.txt"
+      },
+      {
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP2_22",
+        "BattleTabId": 2,
+        "OrderList": 22,
+        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP2_22",
+        "BattleMode": "BM_ALL_KILL",
+        "BattleLevel": 22,
+        "BattlePower": 1222,
+        "LimitTurn": 77,
+        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP2_22.txt"
+      },
+      {
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP3_20",
+        "BattleTabId": 3,
+        "OrderList": 20,
+        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP3_20",
+        "BattleMode": "BM_BOSS_KILL",
+        "BattleLevel": 20,
+        "BattlePower": 1320,
+        "LimitTurn": 77,
+        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP3_20.txt"
+      },
+      {
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP3_21",
+        "BattleTabId": 3,
+        "OrderList": 21,
+        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP3_21",
+        "BattleMode": "BM_BOSS_KILL",
+        "BattleLevel": 21,
+        "BattlePower": 1321,
+        "LimitTurn": 77,
+        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP3_21.txt"
+      },
+      {
+        "BattleStrID": "NORMAL_BATTLE_EXPLORE_EQUIP3_22",
+        "BattleTabId": 3,
+        "OrderList": 22,
+        "BattleName": "NORMAL_BATTLE_EXPLORE_EQUIP3_22",
+        "BattleMode": "BM_ALL_KILL",
+        "BattleLevel": 22,
+        "BattlePower": 1322,
+        "LimitTurn": 77,
+        "BattleTempletFileName": "NORMAL_BATTLE_EXPLORE_EQUIP3_22.txt"
+      }
+    ],
+    "BATTLE_TAB_TEMPLET": [
+      {
+        "BattleTabID": 1,
+        "BattleTabName": "TAB1",
+        "OrderList": 1
+      },
+      {
+        "BattleTabID": 2,
+        "BattleTabName": "TAB2",
+        "OrderList": 2
+      },
+      {
+        "BattleTabID": 3,
+        "BattleTabName": "TAB3",
+        "OrderList": 3
+      }
+    ],
+    "SE_TEMPLET_SKILL_2": [],
+    "SKILL_TEMPLET_2": [],
+    "SKILL_LEVEL_GROUP_TEMPLET_2": [],
+    "UNIT_TEMPLET_BASE2": [],
+    "UNIT_TEMPLET_BASE3": [],
+    "UNIT_TEMPLET_BASE4": []
+  },
+  "scripts": {
+    "NORMAL_BATTLE_EXPLORE_EQUIP1_20.txt": {
+      "Waves": [
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 2,
+              "IsBoss": true,
+              "ChangeAdjustType": "NUAT_SUN",
+              "AllSkillAvailable": true,
+              "AddStatData": {
+                "NST_NV_RATE_HP": 5000
+              }
+            }
+          ]
+        },
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 4,
+              "IsBoss": true,
+              "UnitLevel": 30,
+              "SpecialSkillAvailable": true
+            }
+          ]
+        }
+      ]
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP1_21.txt": {
+      "Waves": [
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 2,
+              "IsBoss": true,
+              "ChangeAdjustType": "NUAT_SUN",
+              "AllSkillAvailable": true,
+              "AddStatData": {
+                "NST_NV_RATE_HP": 5000
+              }
+            }
+          ]
+        },
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 4,
+              "IsBoss": true,
+              "UnitLevel": 30,
+              "SpecialSkillAvailable": true
+            }
+          ]
+        }
+      ]
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP1_22.txt": {
+      "Waves": [
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 2,
+              "IsBoss": true,
+              "ChangeAdjustType": "NUAT_SUN",
+              "AllSkillAvailable": true,
+              "AddStatData": {
+                "NST_NV_RATE_HP": 5000
+              }
+            }
+          ]
+        },
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 4,
+              "IsBoss": true,
+              "UnitLevel": 30,
+              "SpecialSkillAvailable": true
+            }
+          ]
+        }
+      ]
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP2_20.txt": {
+      "Waves": [
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 2,
+              "IsBoss": true,
+              "ChangeAdjustType": "NUAT_MOON",
+              "AllSkillAvailable": true,
+              "AddStatData": {
+                "NST_NV_RATE_HP": 5000
+              }
+            }
+          ]
+        },
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 4,
+              "IsBoss": true,
+              "UnitLevel": 30,
+              "SpecialSkillAvailable": true
+            }
+          ]
+        }
+      ]
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP2_21.txt": {
+      "Waves": [
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 2,
+              "IsBoss": true,
+              "ChangeAdjustType": "NUAT_MOON",
+              "AllSkillAvailable": true,
+              "AddStatData": {
+                "NST_NV_RATE_HP": 5000
+              }
+            }
+          ]
+        },
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 4,
+              "IsBoss": true,
+              "UnitLevel": 30,
+              "SpecialSkillAvailable": true
+            }
+          ]
+        }
+      ]
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP2_22.txt": {
+      "Waves": [
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 2,
+              "IsBoss": true,
+              "ChangeAdjustType": "NUAT_MOON",
+              "AllSkillAvailable": true,
+              "AddStatData": {
+                "NST_NV_RATE_HP": 5000
+              }
+            }
+          ]
+        },
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 4,
+              "IsBoss": true,
+              "UnitLevel": 30,
+              "SpecialSkillAvailable": true
+            }
+          ]
+        }
+      ]
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP3_20.txt": {
+      "Waves": [
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 2,
+              "IsBoss": true,
+              "ChangeAdjustType": "NUAT_STAR",
+              "AllSkillAvailable": true,
+              "AddStatData": {
+                "NST_NV_RATE_HP": 5000
+              }
+            }
+          ]
+        },
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 4,
+              "IsBoss": true,
+              "UnitLevel": 30,
+              "SpecialSkillAvailable": true
+            }
+          ]
+        }
+      ]
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP3_21.txt": {
+      "Waves": [
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 2,
+              "IsBoss": true,
+              "ChangeAdjustType": "NUAT_STAR",
+              "AllSkillAvailable": true,
+              "AddStatData": {
+                "NST_NV_RATE_HP": 5000
+              }
+            }
+          ]
+        },
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 4,
+              "IsBoss": true,
+              "UnitLevel": 30,
+              "SpecialSkillAvailable": true
+            }
+          ]
+        }
+      ]
+    },
+    "NORMAL_BATTLE_EXPLORE_EQUIP3_22.txt": {
+      "Waves": [
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 2,
+              "IsBoss": true,
+              "ChangeAdjustType": "NUAT_STAR",
+              "AllSkillAvailable": true,
+              "AddStatData": {
+                "NST_NV_RATE_HP": 5000
+              }
+            }
+          ]
+        },
+        {
+          "MapPosType": "BMPT_CENTER",
+          "TeamBSpawnList": [
+            {
+              "UnitStrId": "FIXTURE_UNIT",
+              "SpawnPosIndex": 4,
+              "IsBoss": true,
+              "UnitLevel": 30,
+              "SpecialSkillAvailable": true
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -17,7 +17,8 @@ from tools.tables import jsonc
 from tools.runtime import static_path, low_priority
 from tools.build_foe_clash import (Tables, SkillBuilder, SeConverter, db_shapes,
     ROLE, ELEM, ATTACK_KIND, GRADE, SLOT, SKILL_TY, TARGET_TG, clean_markup, fnum, spawn_flag)
-from tools.build_foe_auto import filters, conds
+from tools.build_foe_auto import (filters, conds, is_self_enforce, self_enforce_spec,
+                                 AUTO_ENEMY, AUTO_ALLY, ENFORCE_SLOT)
 
 
 def databook(root=ROOT):
@@ -62,6 +63,8 @@ def generate(tb, battles, tabs, script, auto, raw, *, all_stages=False):
         m = re.search(r'_(ATTACK|SPECIAL|HYPER)$', sid)
         if not m and sk['m_NKM_SKILL_TYPE'] != 'NST_PASSIVE':
             raise ValueError('장비 적 스킬 칸 미지원: ' + sid)
+        if len(sb.level_row(sk)) != 1:
+            raise ValueError('장비 적 복수 스킬 레벨 선택 미확인: ' + sid)
         ef, gl, _, lv = sb.ef_for(sid)
         if sb.unmodeled:
             raise ValueError('장비 적 효과 변환 실패: ' + json.dumps(sb.unmodeled, ensure_ascii=False))
@@ -88,10 +91,24 @@ def generate(tb, battles, tabs, script, auto, raw, *, all_stages=False):
             if item.get('meta'):
                 raise ValueError('전용 실행기가 필요한 장비 효과: ' + se_id)
             meta = {}
-            if row.get('AutoTargetId'):
-                meta['auto'] = dict(one=row['m_BuffTargetType'].endswith('_ONE'),
-                                    f=filters(tb.auto_target[row['AutoTargetId']], bnames))
-            if row.get('ForceApplyEffect') or tb.buff[row['m_BuffStrID']].get('ForceApplyEffect'):
+            tt = row.get('m_BuffTargetType')
+            if is_self_enforce(row):
+                meta['enforce_self'] = self_enforce_spec(row, tb.auto_target, bnames, 1001)
+            elif row.get('AutoTargetId'):
+                coop = tt == 'NSETT_AUTO_ALLY_ONE_NOT_SELF' and row['m_BuffStrID'] == 'BI_FORCE_CROSS_ATTACK'
+                if tt not in AUTO_ENEMY and tt not in AUTO_ALLY and not coop:
+                    raise ValueError('자동 대상 종류 미지원: ' + se_id)
+                meta['auto'] = dict(one=True if coop else {**AUTO_ENEMY, **AUTO_ALLY}[tt],
+                                    f=filters(tb.auto_target[row['AutoTargetId']], bnames, forced_coop=coop))
+                if tt in AUTO_ALLY or coop:
+                    meta['auto']['ally'] = True
+                if coop:
+                    meta['auto']['exclude_self'] = True
+                if row['m_BuffStrID'] == 'BI_ENFORCE':
+                    meta['auto']['enforce'] = dict(slot=ENFORCE_SLOT[row['EnforceSkillIndex']],
+                        enemy_f=filters(tb.auto_target[row['EnforceAutoTargetId']], bnames) if row.get('EnforceAutoTargetId') else [])
+            # 버프 자체 강제 적용은 기존 엔진의 buff_flags에서 처리한다.
+            if row.get('ForceApplyEffect'):
                 meta['force'] = True
             if meta:
                 if item['line'] not in ef:
@@ -113,6 +130,7 @@ def generate(tb, battles, tabs, script, auto, raw, *, all_stages=False):
                  g=GRADE[r['NKM_UNIT_GRADE']], el=ELEM[r['NKM_UNIT_ADJUST_TYPE']],
                  r=ROLE[r['m_NKM_UNIT_ROLE_TYPE']], k=ATTACK_KIND[r['UnitAttackTagType']],
                  b=[stats['m_StatData'][k] for k in SK_NST], gw=[growth[k] for k in SK_NST[:3]],
+                 hit=stats['m_StatData'].get('NST_RATE_HIT', 0), evade=stats['m_StatData'].get('NST_RATE_EVADE', 0),
                  sk=[skill(sid) for sid in r['m_listSkill']], im=[])
         for row in tb.immune.get(r.get('ImmuneGroupId'), []):
             for bid in row['ImmuneBuffIdList']:
@@ -194,7 +212,15 @@ def generate(tb, battles, tabs, script, auto, raw, *, all_stages=False):
                         summons = tb.summon[gid]['SummonData']
                         st.setdefault('sm', []).append([gid, out['u'][unit(sp['UnitStrId'])]['n'],
                                                        [entry(sd) + [1] for sd in summons]])
-                        out['aux']['summon_groups'][str(gid)] = dict(slots=[dict(pos=sd['SpawnPosIndex'], flag=spawn_flag(sd)) for sd in summons])
+                        slots = []
+                        for sd in summons:
+                            slot = dict(pos=sd['SpawnPosIndex'], flag=spawn_flag(sd))
+                            if sd.get('ChangeAdjustType') in ELEM:
+                                slot['element'] = ELEM[sd['ChangeAdjustType']]
+                            if any(sd.get('AddStatData', {}).values()):
+                                slot['stats'] = sd['AddStatData']
+                            slots.append(slot)
+                        out['aux']['summon_groups'][str(gid)] = dict(slots=slots)
                         out['aux']['summon_stages'][key] = dict(wave_slots=out['aux']['slots'][key])
     if groups:
         out['g'] = [dict(k='equip', t='장비 탐사', tabs=[dict(t=t, s=s) for t, s in groups.items()])]

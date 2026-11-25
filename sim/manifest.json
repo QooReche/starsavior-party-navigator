@@ -1,6 +1,6 @@
 {
  "_note": "브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시",
- "ver": "4564422e906a",
+ "ver": "949771a893e4",
  "files": [
   "battlesim/__init__.py",
   "battlesim/api.py",
@@ -67,6 +67,7 @@
   "data/guild_defense.json",
   "data/cosmo_raid.json",
   "data/foe_cosmo_extra.json",
+  "data/foe_equip.json",
   "data/guild_current.json",
   "data/guild_seasons/30101.json",
   "data/guild_seasons/30102.json",
@@ -82,5 +83,5 @@
   "data/guild_seasons/30111/guild_bfb.json",
   "data/guild_seasons/30111/guild_sim.json"
  ],
- "bytes": 8605967
+ "bytes": 8606791
 }

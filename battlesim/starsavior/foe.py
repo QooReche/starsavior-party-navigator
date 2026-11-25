@@ -149,7 +149,7 @@ def merge_extra(raw, frag):
 
 
 def load_foe(src=SRC):
-    """foe.js 원본에 격전·코스모 조각의 새 스테이지를 덧붙인 것. 한 번만 읽는다."""
+    """foe.js 원본에 격전·장비·코스모 조각의 새 스테이지를 덧붙인 것. 한 번만 읽는다."""
     global _FOE
     if _FOE is None or _FOE[0] != src:
         with open(os.path.join(src, 'rawdata', 'foe.js'), encoding='utf-8') as f:
@@ -157,10 +157,11 @@ def load_foe(src=SRC):
         m = re.search(r'__SSD\.foe=', s)
         d, _ = json.JSONDecoder().raw_decode(s[m.end():])
         _EXTRA_ON[src] = merge_extra(d, load_extra(src))
-        _EXTRA_ON[src] = merge_extra(d, datafile.load('foe_equip', src, None)) or _EXTRA_ON[src]
         extra = datafile.load('foe_cosmo_extra', src, None)
         if extra is not None:
             _EXTRA_ON[src] = merge_extra(d, extra) or _EXTRA_ON[src]
+        # 기존 조각의 유닛/스킬 인덱스를 보존하도록 새 장비 조각은 마지막에 붙인다.
+        _EXTRA_ON[src] = merge_extra(d, datafile.load('foe_equip', src, None)) or _EXTRA_ON[src]
         _FOE = (src, d)
     return _FOE[1]
 
@@ -391,6 +392,8 @@ class FoeDef:
         self.auto.update(client_auto)
         self.auto_lines.update(client_lines)
         self.force_lines.update(client_force)
+        self.enforce_self.update({key: meta['enforce_self'] for key, meta in self.client_se.items()
+                                  if 'enforce_self' in meta})
 
 
 def find_raw_stage(content, tab, name, src=SRC):

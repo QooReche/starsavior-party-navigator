@@ -17,7 +17,9 @@ def rates(raw, unit, variant):
     key = signature(unit['n'], unit['b'])
     # Custom raw fixtures may explicitly supply rates. Public definitions must
     # be verified by the builder; do not silently use another unit's stats.
-    hit, evade = data().get(key, (unit.get('hit', 10000), unit.get('evade', 0)))
+    mapped_hit, mapped_evade = data().get(key, (10000, 0))
+    # 클라 직행 조각의 명시 값은 옛 데이터북 지문 매핑보다 우선한다.
+    hit, evade = unit.get('hit', mapped_hit), unit.get('evade', mapped_evade)
     for index, value in (variant or {}).get('a', []):
         stat = raw['ak'][index][1]
         if stat == 'NST_RATE_HIT': hit += value
