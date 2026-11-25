@@ -1,4 +1,4 @@
-﻿# 인수인계
+# 인수인계
 
 갱신 2026-11-26. 읽는 순서: 이 파일 → README.md → docs/DEVELOPMENT.md. AI 작업 규칙은 [AGENTS.md](AGENTS.md). 옛 기록은 [docs/HISTORY.md](docs/HISTORY.md) — 코드·note·문서에 남은 «HANDOFF 의 ○○ 절» 참조도 거기서 찾음.
 
