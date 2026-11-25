@@ -21,7 +21,7 @@ def register(h):
         page.goto(ctx.base+'/index.html?pm=reco&c=guild&gs=30101&season=force')
         page.wait_for_function('window._ready && !!QK.d')
         assert page.evaluate('D.guild.season.id')==30101
-        assert '카본펑크 칸' in page.locator('#guild-extra').inner_text()
+        assert '카본펑크 칸' in page.locator('#guild-panel').inner_text()
         assert page.evaluate('guildStoreKey().includes(D.guild.dataVersion)')
         assert page.evaluate('!seasonBlocked("guild")')
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')

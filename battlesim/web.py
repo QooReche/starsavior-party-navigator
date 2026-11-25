@@ -27,7 +27,7 @@ def _opts(extra, **kw):
 
 
 def _enc(stage, o):
-    """길방 EX 선택(options.guild = {level, sets, support})이 있으면 BFB 전투, 없으면 기존 스테이지. guild 키는 simulate 옵션에서 뺀다."""
+    """options.guild의 시즌·단계·도전·지원으로 길드 전투를 선택한다. guild 키는 simulate 옵션에서 뺀다."""
     g = o.pop('guild', None)
     if g:
         import re

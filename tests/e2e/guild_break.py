@@ -23,7 +23,9 @@ def register(h):
               setTimeout(()=>{
                 if(this.dead)return;
                 for(const t of req.teams){
-                  const id=t.key.split('|')[0];if(!gbIds.includes(id))gbIds.push(id);
+                  const prefix=JSON.stringify([D.guild.season.id,D.guild.dataVersion])+':';
+                  if(!t.key.startsWith(prefix))throw Error('길드 시즌 작업 키 누락');
+                  const id=t.key.slice(prefix.length).split('|')[0];if(!gbIds.includes(id))gbIds.push(id);
                   const ix=gbIds.indexOf(id),b=t.options.break_skill;
                   const win=req.n_runs===40&&ix===4&&b?.name==='스타피어서'&&b.level===7&&t.options.guild.level===5;
                   const progs=win?[...Array(8).fill(1),...Array(32).fill(0)]:Array(req.n_runs).fill(.9-ix*.02);

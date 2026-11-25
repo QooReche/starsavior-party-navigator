@@ -426,15 +426,16 @@ def test_screen_stop_notice(browser, ctx):
       window.__workers=[];window.__posts=[];
       window.Worker=class {
         constructor(){__workers.push(this)}
-        postMessage(req){this.req=req;__posts.push({w:this,req})}
+        postMessage(req){this.req=req;this.cursor=0;__posts.push({w:this,req})}
         terminate(){this.stopped=true}
       };
-      // 작업자는 팀을 하나씩 받는다(대기열): __serve = 지금 맡은 팀의 결과 + done → 다음 팀을 받는다
+      // __serve는 현재 묶음의 다음 팀 하나를 완료한다. 묶음 끝의 done 뒤 다음 요청을 받는다.
       window.__busy=()=>__workers.filter(w=>!w.stopped&&w._job!=null);
       window.__ready=()=>__workers.forEach(w=>{if(!w.stopped&&w.req)w.onmessage({data:{type:'stage',msg:'준비 끝'}})});
       window.__sent=id=>__posts.filter(p=>p.req.id===id);
-      window.__serve=(w,clear=0.25)=>{const r=w.req;w.onmessage({data:{type:'team',id:r.id,job:r.job,key:r.teams[0].key,
-        result:{n:r.n_runs,clear,prog:0.6,progs:[0.6],via:{coop:0},ci:[0.1,0.4],ttk:30,raw:'[]'}}});w.onmessage({data:{type:'done',id:r.id,job:r.job}})};
+      // 적은 워커에서는 요청 하나에 여러 팀이 묶임. 한 팀씩 응답하고 묶음 끝에만 done을 보냄.
+      window.__serve=(w,clear=0.25)=>{const r=w.req,t=r.teams[w.cursor++];w.onmessage({data:{type:'team',id:r.id,job:r.job,key:t.key,
+        result:{n:r.n_runs,clear,prog:0.6,progs:Array(r.n_runs).fill(.6),via:{coop:0},ci:[0.1,0.4],ttk:30,raw:'[]'}}});if(w.cursor===r.teams.length)w.onmessage({data:{type:'done',id:r.id,job:r.job}})};
       // 지금 단계(요청 하나)의 일을 모두 끝낸다
       window.__finishAll=()=>{const id=SIMQ.requestId;__ready();for(let g=0;g<2000&&SIMQ.requestId===id&&__busy().length;g++)__serve(__busy()[0])};
       simAuto(true);run();
@@ -448,7 +449,7 @@ def test_screen_stop_notice(browser, ctx):
         pass
     first = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)],id=SIMQ.requestId;
       const pg=document.querySelector('#out [data-k="progress"]'),bt=pg&&pg.querySelector('button[data-scrstop]'),r=bt&&bt.getBoundingClientRect();
-      return {sent:new Set(__sent(id).map(p=>p.req.teams[0].key)).size-__busy().length,total:sc.total,runs:[...new Set(__sent(id).map(p=>p.req.n_runs))],
+      return {sent:Object.keys(sc.res).length,total:sc.total,runs:[...new Set(__sent(id).map(p=>p.req.n_runs))],
         bar:!!(pg&&pg.querySelector('.pbar')),eta:!!(pg&&pg.querySelector('[data-k="eta"]')),state:pg?pg.querySelector('[data-k="simstate"]').textContent:'',
         stop:bt?bt.textContent:'',right:r?r.right:999,inner:innerWidth}}""")
     page.screenshot(path=os.path.join(ctx.shots, 'screen_progress_390.png'), full_page=False)
@@ -475,7 +476,7 @@ def test_screen_stop_notice(browser, ctx):
     page.evaluate("() => {window.__aId=SIMQ.requestId}")
     # 누르고 있는 사이 1차가 끝나 2차로 넘어간다(진행 칸이 갱신됨) → 단추가 그대로라 클릭이 먹고, 2차 0팀에서 멈춘다
     press(page, '#out [data-k="progress"] button[data-scrstop]', "() => __finishAll()")
-    a_sent = page.evaluate("() => ({sent:new Set(__sent(__aId).map(p=>p.req.teams[0].key)).size,runs:[...new Set(__sent(__aId).map(p=>p.req.n_runs))]})")
+    a_sent = page.evaluate("() => ({sent:new Set(__sent(__aId).flatMap(p=>p.req.teams.map(t=>t.key))).size,runs:[...new Set(__sent(__aId).map(p=>p.req.n_runs))]})")
     mid = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)];
       return {done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,up:(sc.up||[]).length,r2:Object.keys(sc.res2).length,order:sc.order.length,err:SIMQ.err}}""")
     for _ in range(40):
@@ -487,8 +488,8 @@ def test_screen_stop_notice(browser, ctx):
     page.click('[data-k="scr-short"] button[data-scrmore]')
     page.wait_for_function('() => SIMQ.screening && __busy().length>0', timeout=10000)
     more = page.evaluate("""() => {const st=cur[$('stage').value],sc=SIMQ.scr[scrKey(st,1)],id=SIMQ.requestId;
-      __finishAll();const b={sent:new Set(__sent(id).map(p=>p.req.teams[0].key)).size,runs:[...new Set(__sent(id).map(p=>p.req.n_runs))],
-        merge:__sent(id).every(p=>p.req.teams[0].options.run_offset===8&&p.req.teams[0].options.merge_raw==='[]')};
+      __finishAll();const b={sent:new Set(__sent(id).flatMap(p=>p.req.teams.map(t=>t.key))).size,runs:[...new Set(__sent(id).map(p=>p.req.n_runs))],
+        merge:__sent(id).every(p=>p.req.teams.every(t=>t.options.run_offset===8&&t.options.merge_raw==='[]'))};
       return {b,done:sc.done,short:sc.short,seen:Object.keys(sc.res).length,up:Object.keys(sc.res2).length,total:sc.total}}""")
     more['a'] = a_sent
     for _ in range(40):
