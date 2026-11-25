@@ -35,7 +35,8 @@ FIXED = [SLIM_RULES, 'battlesim/rules/builds.json', 'rawdata/databook_main.json'
 def files():
     py = sorted(p.replace(os.sep, '/') for p in glob.glob('battlesim/**/*.py', root_dir=ROOT, recursive=True)
                 if '__pycache__' not in p)
-    return [p for p in py if p not in EXCLUDE_PY] + FIXED
+    seasons = sorted(p.replace(os.sep, '/') for p in glob.glob('data/guild_seasons/**/*.json', root_dir=ROOT, recursive=True))
+    return [p for p in py if p not in EXCLUDE_PY] + FIXED + ['data/guild_current.json'] + seasons
 
 
 def slim_rules():

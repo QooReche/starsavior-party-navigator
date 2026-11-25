@@ -1,0 +1,1788 @@
+{
+ "schema": 1,
+ "asOf": "2026-11-25",
+ "gameBuild": "26752678",
+ "provenance": {
+  "kind": "current-client-extraction",
+  "build": "26752678",
+  "note": "26752678 클라에서 추출. 당시 빌드 재현본이 아님.",
+  "source": "tables/GUILD_DUNGEON_SEASON_TEMPLET.json:188"
+ },
+ "season": {
+  "id": 30105,
+  "label": "30105",
+  "name": "30105",
+  "intervals": {
+   "play": "DATE_GUILD_DUNGEON_SEASON_G3",
+   "settlement": "DATE_GUILD_DUNGEON_REWARD_SEASON_G3"
+  },
+  "boss": {
+   "name": "티엔",
+   "element": "moon",
+   "role": "스트라이커",
+   "roleKey": "striker",
+   "engine": "client"
+  }
+ },
+ "steps": [
+  {
+   "step": 1,
+   "ex": false,
+   "battleId": 3010501,
+   "battle": "GUILD_DUNGEON_G3_01",
+   "script": "JSON_GUILD_DUNGEON_G3_01",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 45,
+   "power": 8300,
+   "base": 1500,
+   "bossKill": 500,
+   "kill": 100,
+   "eliteKill": 200,
+   "difficultyGroupId": null,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_01",
+      "foe": 1642,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
+      ],
+      "stats": {
+       "hp": 1500,
+       "atk": 360,
+       "def": 200,
+       "spd": 85,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "element": "달",
+      "role": "어쌔신",
+      "name": "원한맹 비연수",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112769",
+      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_STAFF_BLACK_GUILDRAID_01",
+      "foe": 1643,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_STAFF_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_STAFF_SPECIAL"
+      ],
+      "stats": {
+       "hp": 1500,
+       "atk": 360,
+       "def": 200,
+       "spd": 85,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "원한맹 척결자",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112559",
+      "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_01",
+      "foe": 1642,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
+      ],
+      "stats": {
+       "hp": 1500,
+       "atk": 360,
+       "def": 200,
+       "spd": 85,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "element": "달",
+      "role": "어쌔신",
+      "name": "원한맹 비연수",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112769",
+      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_GREEN_BOSS_GUILDRAID_01",
+      "foe": 1644,
+      "skills": [
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_ATTACK",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_SPECIAL",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_HYPER",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 20000,
+       "atk": 800,
+       "def": 400,
+       "spd": 95,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 8
+      },
+      "level": 45,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "티엔",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114883",
+      "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d"
+     },
+     {
+      "unit": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_GREEN_BOSS_GUILDRAID_01",
+      "foe": 1645,
+      "skills": [
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_ATTACK",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_SPECIAL",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_HYPER",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 20000,
+       "atk": 800,
+       "def": 400,
+       "spd": 95,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 8
+      },
+      "level": 45,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "시엔",
+      "boss": false,
+      "slot": 3,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115114",
+      "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:682"
+  },
+  {
+   "step": 2,
+   "ex": false,
+   "battleId": 3010502,
+   "battle": "GUILD_DUNGEON_G3_02",
+   "script": "JSON_GUILD_DUNGEON_G3_02",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 120,
+   "power": 21000,
+   "base": 1500,
+   "bossKill": 1000,
+   "kill": 100,
+   "eliteKill": 200,
+   "difficultyGroupId": null,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_02",
+      "foe": 1642,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
+      ],
+      "stats": {
+       "hp": 2500,
+       "atk": 735,
+       "def": 350,
+       "spd": 95,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "element": "달",
+      "role": "어쌔신",
+      "name": "원한맹 비연수",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112799",
+      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_STAFF_BLACK_GUILDRAID_02",
+      "foe": 1643,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_STAFF_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_STAFF_SPECIAL"
+      ],
+      "stats": {
+       "hp": 2500,
+       "atk": 735,
+       "def": 350,
+       "spd": 95,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "원한맹 척결자",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112589",
+      "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_02",
+      "foe": 1642,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
+      ],
+      "stats": {
+       "hp": 2500,
+       "atk": 735,
+       "def": 350,
+       "spd": 95,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "element": "달",
+      "role": "어쌔신",
+      "name": "원한맹 비연수",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112799",
+      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_GREEN_BOSS_GUILDRAID_02",
+      "foe": 1644,
+      "skills": [
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_ATTACK",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_SPECIAL",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_HYPER",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 35000,
+       "atk": 1600,
+       "def": 700,
+       "spd": 120,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 8
+      },
+      "level": 120,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "티엔",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114916",
+      "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d"
+     },
+     {
+      "unit": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_GREEN_BOSS_GUILDRAID_02",
+      "foe": 1645,
+      "skills": [
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_ATTACK",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_SPECIAL",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_HYPER",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 35000,
+       "atk": 1600,
+       "def": 700,
+       "spd": 120,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 8
+      },
+      "level": 120,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "시엔",
+      "boss": false,
+      "slot": 3,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115147",
+      "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:710"
+  },
+  {
+   "step": 3,
+   "ex": false,
+   "battleId": 3010503,
+   "battle": "GUILD_DUNGEON_G3_03",
+   "script": "JSON_GUILD_DUNGEON_G3_03",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 175,
+   "power": 29500,
+   "base": 1500,
+   "bossKill": 1000,
+   "kill": 200,
+   "eliteKill": 400,
+   "difficultyGroupId": null,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_03",
+      "foe": 1642,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
+      ],
+      "stats": {
+       "hp": 3500,
+       "atk": 1050,
+       "def": 500,
+       "spd": 110,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 12000,
+       "evade": 2000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 175,
+      "element": "달",
+      "role": "어쌔신",
+      "name": "원한맹 비연수",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112829",
+      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_STAFF_BLACK_GUILDRAID_03",
+      "foe": 1643,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_STAFF_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_STAFF_SPECIAL"
+      ],
+      "stats": {
+       "hp": 3500,
+       "atk": 1050,
+       "def": 500,
+       "spd": 110,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 12000,
+       "evade": 2000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 175,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "원한맹 척결자",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112619",
+      "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_03",
+      "foe": 1642,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
+      ],
+      "stats": {
+       "hp": 3500,
+       "atk": 1050,
+       "def": 500,
+       "spd": 110,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 12000,
+       "evade": 2000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 175,
+      "element": "달",
+      "role": "어쌔신",
+      "name": "원한맹 비연수",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112829",
+      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_GREEN_BOSS_GUILDRAID_03",
+      "foe": 1644,
+      "skills": [
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_ATTACK",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_SPECIAL",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_HYPER",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 60000,
+       "atk": 2200,
+       "def": 1000,
+       "spd": 130,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 9
+      },
+      "level": 175,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "티엔",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114949",
+      "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d"
+     },
+     {
+      "unit": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_GREEN_BOSS_GUILDRAID_03",
+      "foe": 1645,
+      "skills": [
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_ATTACK",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_SPECIAL",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_HYPER",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 60000,
+       "atk": 2200,
+       "def": 1000,
+       "spd": 130,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 9
+      },
+      "level": 175,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "시엔",
+      "boss": false,
+      "slot": 3,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115180",
+      "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:738"
+  },
+  {
+   "step": 4,
+   "ex": false,
+   "battleId": 3010504,
+   "battle": "GUILD_DUNGEON_G3_04",
+   "script": "JSON_GUILD_DUNGEON_G3_04",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 400,
+   "power": 64500,
+   "base": 1500,
+   "bossKill": 2000,
+   "kill": 200,
+   "eliteKill": 400,
+   "difficultyGroupId": null,
+   "waves": [],
+   "unavailable": "배치 스크립트 추출본 없음: JSON_GUILD_DUNGEON_G3_04",
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:766"
+  },
+  {
+   "step": 5,
+   "ex": false,
+   "battleId": 3010505,
+   "battle": "GUILD_DUNGEON_G3_05",
+   "script": "JSON_GUILD_DUNGEON_G3_05",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 665,
+   "power": 105500,
+   "base": 1500,
+   "bossKill": 2000,
+   "kill": 400,
+   "eliteKill": 800,
+   "difficultyGroupId": null,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_05",
+      "foe": 1642,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
+      ],
+      "stats": {
+       "hp": 13500,
+       "atk": 3500,
+       "def": 1500,
+       "spd": 130,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 665,
+      "element": "달",
+      "role": "어쌔신",
+      "name": "원한맹 비연수",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112889",
+      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_STAFF_BLACK_GUILDRAID_05",
+      "foe": 1643,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_STAFF_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_STAFF_SPECIAL"
+      ],
+      "stats": {
+       "hp": 13500,
+       "atk": 3500,
+       "def": 1500,
+       "spd": 130,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 665,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "원한맹 척결자",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112679",
+      "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_05",
+      "foe": 1642,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
+      ],
+      "stats": {
+       "hp": 13500,
+       "atk": 3500,
+       "def": 1500,
+       "spd": 130,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 665,
+      "element": "달",
+      "role": "어쌔신",
+      "name": "원한맹 비연수",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112889",
+      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_GREEN_BOSS_GUILDRAID_05",
+      "foe": 1644,
+      "skills": [
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_ATTACK",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_SPECIAL",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_HYPER",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 150000,
+       "atk": 9200,
+       "def": 3000,
+       "spd": 170,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 20000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 11
+      },
+      "level": 665,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "티엔",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115015",
+      "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d"
+     },
+     {
+      "unit": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_GREEN_BOSS_GUILDRAID_05",
+      "foe": 1645,
+      "skills": [
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_ATTACK",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_SPECIAL",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_HYPER",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 150000,
+       "atk": 9200,
+       "def": 3000,
+       "spd": 170,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 20000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 11
+      },
+      "level": 665,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "시엔",
+      "boss": false,
+      "slot": 3,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115246",
+      "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:794"
+  },
+  {
+   "step": 6,
+   "ex": true,
+   "battleId": 3010506,
+   "battle": "GUILD_DUNGEON_G3_06",
+   "script": "JSON_GUILD_DUNGEON_G3_06",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 1047,
+   "power": 164800,
+   "base": 1500,
+   "bossKill": 4000,
+   "kill": 400,
+   "eliteKill": 800,
+   "difficultyGroupId": 2001,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_06",
+      "foe": 1642,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
+      ],
+      "stats": {
+       "hp": 16500,
+       "atk": 5410,
+       "def": 2500,
+       "spd": 150,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "어쌔신",
+      "name": "원한맹 비연수",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112919",
+      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_STAFF_BLACK_GUILDRAID_06",
+      "foe": 1643,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_STAFF_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_STAFF_SPECIAL"
+      ],
+      "stats": {
+       "hp": 16500,
+       "atk": 5410,
+       "def": 2500,
+       "spd": 150,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "원한맹 척결자",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112709",
+      "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_06",
+      "foe": 1642,
+      "skills": [
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
+       "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
+      ],
+      "stats": {
+       "hp": 16500,
+       "atk": 5410,
+       "def": 2500,
+       "spd": 150,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "어쌔신",
+      "name": "원한맹 비연수",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112919",
+      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_GREEN_BOSS_GUILDRAID_06",
+      "foe": 1644,
+      "skills": [
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_ATTACK",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_SPECIAL",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_HYPER",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 200000,
+       "atk": 14500,
+       "def": 4500,
+       "spd": 210,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 22000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 13
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "티엔",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115048",
+      "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d"
+     },
+     {
+      "unit": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_GREEN_BOSS_GUILDRAID_06",
+      "foe": 1645,
+      "skills": [
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_ATTACK",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_SPECIAL",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_HYPER",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 200000,
+       "atk": 14500,
+       "def": 4500,
+       "spd": 210,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 22000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 13
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "시엔",
+      "boss": false,
+      "slot": 3,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115279",
+      "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:822"
+  }
+ ],
+ "challenge": {
+  "group": 2001,
+  "levels": [
+   {
+    "level": 1,
+    "atk": 10.0,
+    "hp": 5.0,
+    "def": 5.0,
+    "score": 10.0,
+    "skillStack": 3.0,
+    "hpDrain": 0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01_03",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 300
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6655"
+     }
+    ]
+   },
+   {
+    "level": 2,
+    "atk": 20.0,
+    "hp": 10.0,
+    "def": 10.0,
+    "score": 20.0,
+    "skillStack": 4.0,
+    "hpDrain": 0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01_02",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 400
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6634"
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "atk": 30.0,
+    "hp": 15.0,
+    "def": 15.0,
+    "score": 30.0,
+    "skillStack": 5.0,
+    "hpDrain": 0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "atk": 40.0,
+    "hp": 20.0,
+    "def": 20.0,
+    "score": 40.0,
+    "skillStack": 5.0,
+    "hpDrain": 3.0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02_03",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -300
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6720"
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "atk": 50.0,
+    "hp": 25.0,
+    "def": 25.0,
+    "score": 50.0,
+    "skillStack": 5.0,
+    "hpDrain": 4.0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -400
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6698"
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "atk": 60.0,
+    "hp": 30.0,
+    "def": 30.0,
+    "score": 60.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "atk": 80.0,
+    "hp": 40.0,
+    "def": 40.0,
+    "score": 70.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 10.0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_01",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 1000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6223"
+     }
+    ]
+   },
+   {
+    "level": 8,
+    "atk": 100.0,
+    "hp": 50.0,
+    "def": 50.0,
+    "score": 80.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 20.0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_02",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 2000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6244"
+     }
+    ]
+   },
+   {
+    "level": 9,
+    "atk": 120.0,
+    "hp": 60.0,
+    "def": 60.0,
+    "score": 90.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 30.0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_03",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 3000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6265"
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "atk": 140.0,
+    "hp": 70.0,
+    "def": 70.0,
+    "score": 100.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 30.0,
+    "immune": 1,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_03",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 3000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6265"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_04_01",
+      "buff": "BI_DEBUFFBAN_CAN_NOT_DISPEL",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6286"
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "atk": 160.0,
+    "hp": 80.0,
+    "def": 80.0,
+    "score": 110.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 30.0,
+    "immune": 2,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_03",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 3000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6265"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_04_02",
+      "buff": "BI_DEBUFFBAN_CAN_NOT_DISPEL",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 2,
+      "stats": [],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6301"
+     }
+    ]
+   },
+   {
+    "level": 12,
+    "atk": 180.0,
+    "hp": 90.0,
+    "def": 90.0,
+    "score": 120.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 30.0,
+    "immune": 3,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_03",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 3000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6265"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_04_03",
+      "buff": "BI_DEBUFFBAN_CAN_NOT_DISPEL",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 3,
+      "stats": [],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6316"
+     }
+    ]
+   }
+  ],
+  "cumulative": true,
+  "conf": "확인",
+  "src": [
+   "client"
+  ]
+ },
+ "supports": [
+  {
+   "id": 40142,
+   "name": "잔혹한 응수",
+   "special": true,
+   "role": "어쌔신",
+   "effects": [
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_ASSASSIN_BUFF_ITEM_PROMOTION_02_01",
+     "buff": "BI_STAT_NST_RATE_EVADE_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 3000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1695"
+    },
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_ASSASSIN_BUFF_ITEM_PROMOTION_02_02",
+     "buff": "BI_STAT_NST_RATE_DAMAGE_VAMPIRISM",
+     "phase": "NSEAT_HIT",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 0,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 3000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1716"
+    }
+   ],
+   "source": "tables/BATTLE_EFFECT_TEMPLET.json:1203"
+  },
+  {
+   "id": 40011,
+   "name": "솟아 오르는 힘",
+   "special": false,
+   "role": "스트라이커",
+   "effects": [
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_STRIKER_BUFF_ITEM_01_01",
+     "buff": "BI_STAT_NST_NV_RATE_ATK_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 3000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:644"
+    },
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_STRIKER_BUFF_ITEM_01_02",
+     "buff": "BI_STAT_NST_RATE_REVENGE_ATTACK_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 5000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 5000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:665"
+    }
+   ],
+   "source": "tables/BATTLE_EFFECT_TEMPLET.json:947"
+  },
+  {
+   "id": 40021,
+   "name": "가벼운 발놀림",
+   "special": false,
+   "role": "레인저",
+   "effects": [
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_RANGER_BUFF_ITEM_01_01",
+     "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 1000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:686"
+    },
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_RANGER_BUFF_ITEM_01_02",
+     "buff": "BI_STAT_NST_RATE_DAMAGE_UP",
+     "phase": "NSEAT_SKILL_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": 1007,
+     "duration": 0,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 3000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:707"
+    }
+   ],
+   "source": "tables/BATTLE_EFFECT_TEMPLET.json:957"
+  },
+  {
+   "id": 45011,
+   "name": "불의 고동",
+   "special": false,
+   "role": null,
+   "effects": [
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_PARTY_BUFF_ITEM_01_01",
+     "buff": "BI_STAT_NST_NV_RATE_ATK_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 1500
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1172"
+    },
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_PARTY_BUFF_ITEM_01_02",
+     "buff": "BI_GUILD_PARTY_BUFF_ITEM_01_01",
+     "phase": "NSEAT_SKILL_END",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE": "NST_RATE_EFFECT_HIT",
+       "NKM_STAT_TYPE_RATE": 600
+      }
+     ],
+     "maxStacks": 5,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1193"
+    }
+   ],
+   "source": "tables/BATTLE_EFFECT_TEMPLET.json:1077"
+  },
+  {
+   "id": 45041,
+   "name": "태산의 의지",
+   "special": false,
+   "role": null,
+   "effects": [
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_PARTY_BUFF_ITEM_04_01",
+     "buff": "BI_STAT_NST_RATE_DAMAGE_UP",
+     "phase": "NSEAT_SKILL_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 0,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 1000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1286"
+    },
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_PARTY_BUFF_ITEM_04_02",
+     "buff": "BI_STAT_NST_RATE_DAMAGE_REDUCE",
+     "phase": "NSEAT_DAMAGE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 0,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 1000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1308"
+    }
+   ],
+   "source": "tables/BATTLE_EFFECT_TEMPLET.json:1104"
+  }
+ ],
+ "defaultStep": 6,
+ "stepsMeta": {
+  "minions": 4,
+  "waveCount": 2,
+  "bossWave": 1
+ },
+ "dataVersion": "6e398d6bce68fd7881df15e81fc3a805d807fb964b87bc62c37d9e71c04a6ca9"
+}

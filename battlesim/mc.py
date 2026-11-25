@@ -966,6 +966,9 @@ class Battle:
         if self.mc['guild_boss'] == 'on' and any(getattr(d, 'bfb', None) for w in waves for d in w):
             from .starsavior.guild_bfb import Controller
             self.gb = Controller(self)
+        elif self.mc['guild_boss'] == 'on' and any(getattr(d, 'guild', None) for w in waves for d in w):
+            from .starsavior.guild_common import Controller
+            self.gb = Controller(self)
         elif self.mc['guild_boss'] not in ('on', 'off'):
             raise ValueError('guild_boss 는 on|off')
         if self.mc['cosmo_raid_boss'] not in ('on', 'off'):
@@ -1405,7 +1408,7 @@ class Battle:
         try:
             cast_ctx = None
             if not u.dead:
-                if any(u.has(n) for n in HARD_CC):
+                if self.incapacitated(u):
                     self.log(actor=u.name, skip='행동 불가')
                 else:
                     taunt = u.eff.get('도발')
@@ -2470,7 +2473,10 @@ class Battle:
 
     def incapacitated(self, u):
         """행동 불능(기절·수면). 강인도 격파(브레이크)는 행동 불능이 아니다(게이지 0 초기화로 차례가 늦어질 뿐)."""
-        return any(u.has(n) for n in HARD_CC)
+        names = HARD_CC
+        if self.mc['khan_passives'] == 'client' and u.name == '카본펑크 칸':
+            names = tuple(buff_flags()['cc']['stun']['effects']) + tuple(buff_flags()['sleep'])
+        return any(u.has(n) for n in names)
 
     def no_react(self, u):
         """협공·강제 협공·반응·트리거 스킬 불가: 기절·수면 또는 강인도 격파(공식 2026-09-10 NOA 가이드). 추가 발동은 격파와 무관."""
@@ -4361,7 +4367,8 @@ class Battle:
             return
         if marker_se.run_batch(self, owner, lines, ctx):
             return
-        if (getattr(owner.d, 'client_model', None) == 'baskerville' or
+        if ((self.mc['khan_passives'] == 'client' and owner.name == '카본펑크 칸') or
+                getattr(owner.d, 'client_model', None) == 'baskerville' or
                 all(line_kind(ln) in getattr(owner.d, 'client_sequential_events', ()) for ln in lines)):
             # NKM:16103-16116,16374-16405,16526-16528: 같은 사건에서도 SE마다 즉시 재판정.
             for ln in lines:

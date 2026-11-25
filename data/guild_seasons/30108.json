@@ -1,0 +1,2295 @@
+{
+ "schema": 1,
+ "asOf": "2026-11-25",
+ "gameBuild": "26752678",
+ "provenance": {
+  "kind": "current-client-extraction",
+  "build": "26752678",
+  "note": "26752678 클라에서 추출. 당시 빌드 재현본이 아님.",
+  "source": "tables/GUILD_DUNGEON_SEASON_TEMPLET.json:323"
+ },
+ "season": {
+  "id": 30108,
+  "label": "30108",
+  "name": "30108",
+  "intervals": {
+   "play": "DATE_GUILD_DUNGEON_SEASON_P1",
+   "settlement": "DATE_GUILD_DUNGEON_REWARD_SEASON_P1"
+  },
+  "boss": {
+   "name": "레타르기아의 마술사",
+   "element": "moon",
+   "role": "캐스터",
+   "roleKey": "caster",
+   "engine": "client"
+  }
+ },
+ "steps": [
+  {
+   "step": 1,
+   "ex": false,
+   "battleId": 3010801,
+   "battle": "GUILD_DUNGEON_P1_01",
+   "script": "JSON_GUILD_DUNGEON_MAGICIAN_HYPNOSIS_01",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 45,
+   "power": 8300,
+   "base": 2000,
+   "bossKill": 375,
+   "kill": 200,
+   "eliteKill": 200,
+   "difficultyGroupId": null,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_01",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 1500,
+       "atk": 360,
+       "def": 200,
+       "spd": 85,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113819",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_01",
+      "foe": 1619,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
+       "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
+      ],
+      "stats": {
+       "hp": 1500,
+       "atk": 360,
+       "def": 200,
+       "spd": 85,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "element": "달",
+      "role": "디펜더",
+      "name": "카지노 바운서",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113609",
+      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_01",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 1500,
+       "atk": 360,
+       "def": 200,
+       "spd": 85,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113819",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_01",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 16500,
+       "atk": 360,
+       "def": 200,
+       "spd": -914,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 0,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114029",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_01",
+      "foe": 106,
+      "skills": [
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_HYPER",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 30000,
+       "atk": 680,
+       "def": 600,
+       "spd": 100,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 8
+      },
+      "level": 45,
+      "element": "달",
+      "role": "캐스터",
+      "name": "레타르기아의 마술사",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114666",
+      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_01",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 16500,
+       "atk": 360,
+       "def": 200,
+       "spd": -914,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114029",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:1218"
+  },
+  {
+   "step": 2,
+   "ex": false,
+   "battleId": 3010802,
+   "battle": "GUILD_DUNGEON_P1_02",
+   "script": "JSON_GUILD_DUNGEON_MAGICIAN_HYPNOSIS_02",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 120,
+   "power": 21000,
+   "base": 2000,
+   "bossKill": 750,
+   "kill": 200,
+   "eliteKill": 200,
+   "difficultyGroupId": null,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_02",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 2500,
+       "atk": 735,
+       "def": 350,
+       "spd": 95,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113849",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_02",
+      "foe": 1619,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
+       "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
+      ],
+      "stats": {
+       "hp": 2500,
+       "atk": 735,
+       "def": 350,
+       "spd": 95,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "element": "달",
+      "role": "디펜더",
+      "name": "카지노 바운서",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113639",
+      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_02",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 2500,
+       "atk": 735,
+       "def": 350,
+       "spd": 95,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113849",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_02",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 27500,
+       "atk": 735,
+       "def": 350,
+       "spd": -904,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 0,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114059",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_02",
+      "foe": 106,
+      "skills": [
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_HYPER",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 52500,
+       "atk": 1360,
+       "def": 1050,
+       "spd": 110,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 8
+      },
+      "level": 120,
+      "element": "달",
+      "role": "캐스터",
+      "name": "레타르기아의 마술사",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114697",
+      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_02",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 27500,
+       "atk": 735,
+       "def": 350,
+       "spd": -904,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114059",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:1246"
+  },
+  {
+   "step": 3,
+   "ex": false,
+   "battleId": 3010803,
+   "battle": "GUILD_DUNGEON_P1_03",
+   "script": "JSON_GUILD_DUNGEON_MAGICIAN_HYPNOSIS_03",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 175,
+   "power": 29500,
+   "base": 2000,
+   "bossKill": 1500,
+   "kill": 200,
+   "eliteKill": 200,
+   "difficultyGroupId": null,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_03",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 3500,
+       "atk": 1050,
+       "def": 500,
+       "spd": 110,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 12000,
+       "evade": 2000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 175,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113879",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_03",
+      "foe": 1619,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
+       "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
+      ],
+      "stats": {
+       "hp": 3500,
+       "atk": 1050,
+       "def": 500,
+       "spd": 110,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 12000,
+       "evade": 2000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 175,
+      "element": "달",
+      "role": "디펜더",
+      "name": "카지노 바운서",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113669",
+      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_03",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 3500,
+       "atk": 1050,
+       "def": 500,
+       "spd": 110,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 12000,
+       "evade": 2000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 175,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113879",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_03",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 38500,
+       "atk": 1050,
+       "def": 500,
+       "spd": -889,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 12000,
+       "evade": 2000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 175,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 0,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114089",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_03",
+      "foe": 106,
+      "skills": [
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_HYPER",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 90000,
+       "atk": 1870,
+       "def": 1500,
+       "spd": 120,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 9
+      },
+      "level": 175,
+      "element": "달",
+      "role": "캐스터",
+      "name": "레타르기아의 마술사",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114728",
+      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_03",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 38500,
+       "atk": 1050,
+       "def": 500,
+       "spd": -889,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 12000,
+       "evade": 2000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 175,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114089",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:1274"
+  },
+  {
+   "step": 4,
+   "ex": false,
+   "battleId": 3010804,
+   "battle": "GUILD_DUNGEON_P1_04",
+   "script": "JSON_GUILD_DUNGEON_MAGICIAN_HYPNOSIS_04",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 400,
+   "power": 64500,
+   "base": 2000,
+   "bossKill": 3000,
+   "kill": 200,
+   "eliteKill": 200,
+   "difficultyGroupId": null,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_04",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 9000,
+       "atk": 2175,
+       "def": 1000,
+       "spd": 120,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 13000,
+       "evade": 3000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 400,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113909",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_04",
+      "foe": 1619,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
+       "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
+      ],
+      "stats": {
+       "hp": 9000,
+       "atk": 2175,
+       "def": 1000,
+       "spd": 120,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 13000,
+       "evade": 3000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 400,
+      "element": "달",
+      "role": "디펜더",
+      "name": "카지노 바운서",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113699",
+      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_04",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 9000,
+       "atk": 2175,
+       "def": 1000,
+       "spd": 120,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 13000,
+       "evade": 3000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 400,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113909",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_04",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 99000,
+       "atk": 2175,
+       "def": 1000,
+       "spd": -879,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 13000,
+       "evade": 3000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 400,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 0,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114119",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_04",
+      "foe": 106,
+      "skills": [
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_HYPER",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 150000,
+       "atk": 4930,
+       "def": 3000,
+       "spd": 140,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 18000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 10
+      },
+      "level": 400,
+      "element": "달",
+      "role": "캐스터",
+      "name": "레타르기아의 마술사",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114759",
+      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_04",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 99000,
+       "atk": 2175,
+       "def": 1000,
+       "spd": -879,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 13000,
+       "evade": 3000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 400,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114119",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:1302"
+  },
+  {
+   "step": 5,
+   "ex": false,
+   "battleId": 3010805,
+   "battle": "GUILD_DUNGEON_P1_05",
+   "script": "JSON_GUILD_DUNGEON_MAGICIAN_HYPNOSIS_05",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 665,
+   "power": 105500,
+   "base": 2000,
+   "bossKill": 6000,
+   "kill": 200,
+   "eliteKill": 200,
+   "difficultyGroupId": null,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_05",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 13500,
+       "atk": 3500,
+       "def": 1500,
+       "spd": 130,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 665,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113939",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_05",
+      "foe": 1619,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
+       "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
+      ],
+      "stats": {
+       "hp": 13500,
+       "atk": 3500,
+       "def": 1500,
+       "spd": 130,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 665,
+      "element": "달",
+      "role": "디펜더",
+      "name": "카지노 바운서",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113729",
+      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_05",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 13500,
+       "atk": 3500,
+       "def": 1500,
+       "spd": 130,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 665,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113939",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_05",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 148500,
+       "atk": 3500,
+       "def": 1500,
+       "spd": -869,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 665,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 0,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114149",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_05",
+      "foe": 106,
+      "skills": [
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_HYPER",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 225000,
+       "atk": 7820,
+       "def": 4500,
+       "spd": 160,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 20000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 11
+      },
+      "level": 665,
+      "element": "달",
+      "role": "캐스터",
+      "name": "레타르기아의 마술사",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114790",
+      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_05",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 148500,
+       "atk": 3500,
+       "def": 1500,
+       "spd": -869,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 665,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114149",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:1330"
+  },
+  {
+   "step": 6,
+   "ex": false,
+   "battleId": 3010806,
+   "battle": "GUILD_DUNGEON_P1_06",
+   "script": "JSON_GUILD_DUNGEON_MAGICIAN_HYPNOSIS_06",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 1047,
+   "power": 164800,
+   "base": 2000,
+   "bossKill": 12000,
+   "kill": 200,
+   "eliteKill": 200,
+   "difficultyGroupId": null,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_06",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 16500,
+       "atk": 5410,
+       "def": 2500,
+       "spd": 150,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113969",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_06",
+      "foe": 1619,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
+       "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
+      ],
+      "stats": {
+       "hp": 16500,
+       "atk": 5410,
+       "def": 2500,
+       "spd": 150,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "디펜더",
+      "name": "카지노 바운서",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113759",
+      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_06",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 16500,
+       "atk": 5410,
+       "def": 2500,
+       "spd": 150,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113969",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_06",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 181500,
+       "atk": 5410,
+       "def": 2500,
+       "spd": -849,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 0,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114179",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_06",
+      "foe": 106,
+      "skills": [
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_HYPER",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 300000,
+       "atk": 12325,
+       "def": 6750,
+       "spd": 200,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 22000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 13
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "캐스터",
+      "name": "레타르기아의 마술사",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114821",
+      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_06",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 181500,
+       "atk": 5410,
+       "def": 2500,
+       "spd": -849,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1047,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114179",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:1358"
+  },
+  {
+   "step": 7,
+   "ex": true,
+   "battleId": 3010807,
+   "battle": "GUILD_DUNGEON_P1_07",
+   "script": "JSON_GUILD_DUNGEON_MAGICIAN_HYPNOSIS_07",
+   "mode": "BM_BOSS_KILL",
+   "turnLimit": 50,
+   "battleLevel": 1275,
+   "power": 200075,
+   "base": 2500,
+   "bossKill": 25000,
+   "kill": 500,
+   "eliteKill": 500,
+   "difficultyGroupId": 2001,
+   "waves": [
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_07",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 22500,
+       "atk": 7500,
+       "def": 4000,
+       "spd": 160,
+       "crit": 1500,
+       "critdmg": 2000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1275,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 1,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113999",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_07",
+      "foe": 1619,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
+       "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
+      ],
+      "stats": {
+       "hp": 22500,
+       "atk": 7500,
+       "def": 4000,
+       "spd": 160,
+       "crit": 1500,
+       "critdmg": 2000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1275,
+      "element": "달",
+      "role": "디펜더",
+      "name": "카지노 바운서",
+      "boss": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113789",
+      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_07",
+      "foe": 48,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
+       "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
+      ],
+      "stats": {
+       "hp": 22500,
+       "atk": 7500,
+       "def": 4000,
+       "spd": 160,
+       "crit": 1500,
+       "critdmg": 2000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1275,
+      "element": "달",
+      "role": "레인저",
+      "name": "카지노 픽서",
+      "boss": false,
+      "slot": 3,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113999",
+      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd"
+     }
+    ],
+    [
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_07",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 247500,
+       "atk": 7500,
+       "def": 4000,
+       "spd": -839,
+       "crit": 1500,
+       "critdmg": 2000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1275,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 0,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114209",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     },
+     {
+      "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_07",
+      "foe": 106,
+      "skills": [
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_HYPER",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 390000,
+       "atk": 14450,
+       "def": 6975,
+       "spd": 220,
+       "crit": 2000,
+       "critdmg": 3500,
+       "hit": 22000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 14
+      },
+      "level": 1275,
+      "element": "달",
+      "role": "캐스터",
+      "name": "레타르기아의 마술사",
+      "boss": true,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114852",
+      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f"
+     },
+     {
+      "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_07",
+      "foe": 105,
+      "skills": [
+       "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
+       "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
+      ],
+      "stats": {
+       "hp": 247500,
+       "atk": 7500,
+       "def": 4000,
+       "spd": -839,
+       "crit": 1500,
+       "critdmg": 2000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1275,
+      "element": "달",
+      "role": "스트라이커",
+      "name": "카지노 가드",
+      "boss": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:114209",
+      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35"
+     }
+    ]
+   ],
+   "unavailable": null,
+   "deck": "BATTLE_SLOT_4",
+   "source": "tables/BATTLE_TEMPLET_GUILD_DUNGEON.json:1386"
+  }
+ ],
+ "challenge": {
+  "group": 2001,
+  "levels": [
+   {
+    "level": 1,
+    "atk": 10.0,
+    "hp": 5.0,
+    "def": 5.0,
+    "score": 10.0,
+    "skillStack": 3.0,
+    "hpDrain": 0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01_03",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 300
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6655"
+     }
+    ]
+   },
+   {
+    "level": 2,
+    "atk": 20.0,
+    "hp": 10.0,
+    "def": 10.0,
+    "score": 20.0,
+    "skillStack": 4.0,
+    "hpDrain": 0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01_02",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 400
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6634"
+     }
+    ]
+   },
+   {
+    "level": 3,
+    "atk": 30.0,
+    "hp": 15.0,
+    "def": 15.0,
+    "score": 30.0,
+    "skillStack": 5.0,
+    "hpDrain": 0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     }
+    ]
+   },
+   {
+    "level": 4,
+    "atk": 40.0,
+    "hp": 20.0,
+    "def": 20.0,
+    "score": 40.0,
+    "skillStack": 5.0,
+    "hpDrain": 3.0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02_03",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -300
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6720"
+     }
+    ]
+   },
+   {
+    "level": 5,
+    "atk": 50.0,
+    "hp": 25.0,
+    "def": 25.0,
+    "score": 50.0,
+    "skillStack": 5.0,
+    "hpDrain": 4.0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -400
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6698"
+     }
+    ]
+   },
+   {
+    "level": 6,
+    "atk": 60.0,
+    "hp": 30.0,
+    "def": 30.0,
+    "score": 60.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     }
+    ]
+   },
+   {
+    "level": 7,
+    "atk": 80.0,
+    "hp": 40.0,
+    "def": 40.0,
+    "score": 70.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 10.0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_01",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 1000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6223"
+     }
+    ]
+   },
+   {
+    "level": 8,
+    "atk": 100.0,
+    "hp": 50.0,
+    "def": 50.0,
+    "score": 80.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 20.0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_02",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 2000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6244"
+     }
+    ]
+   },
+   {
+    "level": 9,
+    "atk": 120.0,
+    "hp": 60.0,
+    "def": 60.0,
+    "score": 90.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 30.0,
+    "immune": 0,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_03",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 3000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6265"
+     }
+    ]
+   },
+   {
+    "level": 10,
+    "atk": 140.0,
+    "hp": 70.0,
+    "def": 70.0,
+    "score": 100.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 30.0,
+    "immune": 1,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_03",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 3000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6265"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_04_01",
+      "buff": "BI_DEBUFFBAN_CAN_NOT_DISPEL",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6286"
+     }
+    ]
+   },
+   {
+    "level": 11,
+    "atk": 160.0,
+    "hp": 80.0,
+    "def": 80.0,
+    "score": 110.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 30.0,
+    "immune": 2,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_03",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 3000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6265"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_04_02",
+      "buff": "BI_DEBUFFBAN_CAN_NOT_DISPEL",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 2,
+      "stats": [],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6301"
+     }
+    ]
+   },
+   {
+    "level": 12,
+    "atk": 180.0,
+    "hp": 90.0,
+    "def": 90.0,
+    "score": 120.0,
+    "skillStack": 5.0,
+    "hpDrain": 5.0,
+    "speed": 30.0,
+    "immune": 3,
+    "effects": [
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_01",
+      "buff": "BI_STAR_CHALLENGE_EX_1",
+      "phase": "NSEAT_SKILL_END",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6613"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_EX_CHALLENGE_COSMOGATE_SET_02",
+      "buff": "BI_STAR_CHALLENGE_EX_2",
+      "phase": "NSEAT_DAMAGE_END",
+      "chance": 10000,
+      "target": "NSETT_AUTO_ENEMY_ONE",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": -500
+       }
+      ],
+      "maxStacks": 10,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6676"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_03_03",
+      "buff": "BI_STAT_NST_NV_RATE_TURN_SPEED_INFINITE",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 1,
+      "stats": [
+       {
+        "NKM_STAT_TYPE_RATE": 3000
+       }
+      ],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6265"
+     },
+     {
+      "id": "COND_BATTLE_EFFECT_STAR_CHALLENGE_GUILDCOND_BATTLE_SET_04_03",
+      "buff": "BI_DEBUFFBAN_CAN_NOT_DISPEL",
+      "phase": "NSEAT_WAVE_START",
+      "chance": 10000,
+      "target": "NSETT_SELF",
+      "condition": null,
+      "duration": 3,
+      "stats": [],
+      "maxStacks": 1,
+      "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:6316"
+     }
+    ]
+   }
+  ],
+  "cumulative": true,
+  "conf": "확인",
+  "src": [
+   "client"
+  ]
+ },
+ "supports": [
+  {
+   "id": 40242,
+   "name": "치명적인 기교",
+   "special": true,
+   "role": "어쌔신",
+   "effects": [
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_ASSASSIN_BUFF_ITEM_PROMOTION_03_01",
+     "buff": "BI_STAT_NST_NV_RATE_ATK_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 5000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1815"
+    },
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_ASSASSIN_BUFF_ITEM_PROMOTION_03_02",
+     "buff": "BI_STAT_NST_RATE_DAMAGE_UP",
+     "phase": "NSEAT_SKILL_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": 31067,
+     "duration": 0,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 2000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1836"
+    }
+   ],
+   "source": "tables/BATTLE_EFFECT_TEMPLET.json:1233"
+  },
+  {
+   "id": 40161,
+   "name": "보호의 기운",
+   "special": false,
+   "role": "디펜더",
+   "effects": [
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_DEFENDER_BUFF_ITEM_02_01",
+     "buff": "BI_STAT_NST_NV_RATE_HP_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 3000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1089"
+    },
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_DEFENDER_BUFF_ITEM_02_02",
+     "buff": "BI_BARRIER",
+     "phase": "NSEAT_SKILL_END",
+     "chance": 10000,
+     "target": "NSETT_AUTO_ALLY_ONE",
+     "condition": null,
+     "duration": 1,
+     "stats": [],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1110"
+    }
+   ],
+   "source": "tables/BATTLE_EFFECT_TEMPLET.json:1057"
+  },
+  {
+   "id": 40111,
+   "name": "강인한 타격",
+   "special": false,
+   "role": "스트라이커",
+   "effects": [
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_STRIKER_BUFF_ITEM_02_01",
+     "buff": "BI_STAT_NST_RATE_CRITICAL_DAMAGE_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 3000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:881"
+    },
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_STRIKER_BUFF_ITEM_02_02",
+     "buff": "BI_STAT_NST_RATE_DAMAGE_UP_SELF_BUFF_COUNT",
+     "phase": "NSEAT_SKILL_START",
+     "chance": 5000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 0,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 1000
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:902"
+    }
+   ],
+   "source": "tables/BATTLE_EFFECT_TEMPLET.json:1007"
+  },
+  {
+   "id": 45021,
+   "name": "숲의 숨결",
+   "special": false,
+   "role": null,
+   "effects": [
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_PARTY_BUFF_ITEM_02_01",
+     "buff": "BI_STAT_NST_NV_RATE_HP_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 1500
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1208"
+    },
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_PARTY_BUFF_ITEM_02_02",
+     "buff": "BI_GUILD_PARTY_BUFF_ITEM_02_01",
+     "phase": "NSEAT_DAMAGE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE": "NST_RATE_EFFECT_EVADE",
+       "NKM_STAT_TYPE_RATE": 600
+      }
+     ],
+     "maxStacks": 5,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1229"
+    }
+   ],
+   "source": "tables/BATTLE_EFFECT_TEMPLET.json:1086"
+  },
+  {
+   "id": 45031,
+   "name": "바람의 흐름",
+   "special": false,
+   "role": null,
+   "effects": [
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_PARTY_BUFF_ITEM_03_01",
+     "buff": "BI_STAT_NST_RATE_CRITICAL_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 1500
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1244"
+    },
+    {
+     "id": "COND_BATTLE_EFFECT_GUILD_RAID_PARTY_BUFF_ITEM_03_02",
+     "buff": "BI_STAT_NST_RATE_CRITICAL_DAMAGE_INFINITE",
+     "phase": "NSEAT_BATTLE_START",
+     "chance": 10000,
+     "target": "NSETT_SELF",
+     "condition": null,
+     "duration": 1,
+     "stats": [
+      {
+       "NKM_STAT_TYPE_RATE": 1500
+      }
+     ],
+     "maxStacks": 1,
+     "source": "tables/SE_TEMPLET_BATTLE_EFFECT.json:1265"
+    }
+   ],
+   "source": "tables/BATTLE_EFFECT_TEMPLET.json:1095"
+  }
+ ],
+ "defaultStep": 7,
+ "stepsMeta": {
+  "minions": 5,
+  "waveCount": 2,
+  "bossWave": 1
+ },
+ "dataVersion": "203066dcedb5a4e49bd169d3eeb4be2f977401eaefeb6fea807ebe7d6a903298"
+}

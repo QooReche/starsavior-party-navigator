@@ -23,13 +23,15 @@ import math
 
 from .. import datafile
 from .. import statcalc as _stat
-from .controller import BaseController
+from .guild_common import GuildController, _stats
 from .data import SRC
 from .foe_base import FoeBase, make_skill
 from .parser import Line
 
 
-def load(src=SRC):
+def load(src=SRC, season=None):
+    if season is not None:
+        return datafile.load(season['assets']['guild_bfb']['path'], src), season
     return datafile.load('guild_bfb', src), datafile.load('guild_defense', src)
 
 
@@ -75,15 +77,6 @@ def _skill(slot, name, coef, cd, tough, all_=False, tg='적 단일', lines=()):
                       lines=[Line(r, slot, 'active') for r in lines])
 
 
-def _stats(u, scale=(0, 0, 0)):
-    s = dict(u['stats'])
-    a = u['addStat']
-    hp = math.floor(s['hp'] * (1 + a['hpp'] / 10000) * (1 + scale[1] / 10000))
-    atk = math.floor(s['atk'] * (1 + a['atkp'] / 10000) * (1 + scale[0] / 10000))
-    df = math.floor(s['def'] * (1 + a['defp'] / 10000) * (1 + scale[2] / 10000))
-    spd = math.floor(s['spd'] * (1 + a['spdp'] / 10000) + 1e-9)
-    return dict(hp=hp, atk=atk, **{'def': df}, spd=spd, cr=s['cr'], cd=s['cd'], eh=s['eh'], er=s['er'], der=s['der'], sa=s['sa'])
-
 
 def level_row(level, src=SRC):
     """별의 도전 단계 행(data/guild_defense.json challenge.levels). 0 = 없음"""
@@ -96,14 +89,16 @@ def level_row(level, src=SRC):
     return rows[level - 1]
 
 
-def build_waves(level=0, sets=None, src=SRC, support=None):
+def build_waves(level=0, sets=None, src=SRC, support=None, season=None):
     """EX(7단계) 배치 -> (waves[[GuildFoe]], meta). level = 별의 도전 0~12, sets = 선택 효과 단계 [소멸, 불멸, 쇠락, 허무](0~3),
     support = 알리시아의 지원 none|gust|focus|strike|mountain|fire(None = none)."""
     support = support or 'none'
     if support not in SUPPORTS:
         raise ValueError('지원은 %s: %r' % ('|'.join(SUPPORTS), support))
-    bfb, gd = load(src)
-    lv = level_row(level, src)
+    bfb, gd = load(src, season)
+    if not 0 <= level <= len(gd['challenge']['levels']):
+        raise ValueError('별의 도전 범위 오류')
+    lv = gd['challenge']['levels'][level - 1] if level else None
     sets = list(sets or [0, 0, 0, 0])
     if len(sets) != 4 or any(not isinstance(t, int) or not 0 <= t <= 3 for t in sets):
         raise ValueError('선택 효과는 0~3 정수 4개: %r' % (sets,))
@@ -155,7 +150,7 @@ def _set_value(item, tier):
     return int(re.findall(r'\d+', item['tiers'][tier - 1]['text'])[-1])
 
 
-class Controller(BaseController):
+class Controller(GuildController):
     """mc.Battle 훅(controller.BaseController 계약): on_wave / pick_target / after_cast / pre_hit / post_hit / barrier /
     after_break_skill. Battle 이 guild_boss=on 일 때만 만든다."""
 
@@ -166,10 +161,7 @@ class Controller(BaseController):
         self.shield_hits = 0    # 보호막 중 공격 수(BOSS_3)
         self.mark = None        # 보호막 중 우선 공격 대상(BOSS_6)
         self.stats = dict(appeal=0, shield_break=0, shield_timeout=0, punish=0)
-        self.support = next((d.bfb['support'] for w in b.waves for d in w if getattr(d, 'bfb', None)), 'none')
-        self.sup_done = False
-        self.focus_turn = {}    # 날카로운 집중력: 유닛별 «1턴에 1번» 기록
-        self.strike_roll = {}   # 강인한 타격: 유닛별 이번 시전 발동 여부(50%)
+
 
     # ---------- 효과 도우미
     def _nv_sum_client(self, boss, d, stage=False):
@@ -188,86 +180,11 @@ class Controller(BaseController):
         # marker: 강화 효과 개수(n_good)에 세지 않음(합산은 mods() 가 category 와 무관하게 더함)
         self._put(boss, NV_ADD, {'속도%': a['spdp'] / 100, '공격력%': a['atkp'] / 100}, cat='marker')
 
-    def _put(self, x, name, props, dur=math.inf, cat='buff', fixed=True, maxs=1, add=1):
-        return self.b.put_eff(x, name, props, dur=dur, maxs=maxs, add=add, src=self.boss, cat=cat, fixed=fixed)
-
-    def _drop(self, x, name):
-        if x.eff.pop(name, None) is not None:
-            self.b.dirty(x)
-
     def barrier(self):
         e = self.boss.eff.get(B8) if self.boss is not None else None
         return e is not None and e.shield > 0
 
     # ---------- 알리시아의 지원
-    def _sup_has(self, u):
-        """이 유닛에 걸리는 지원인가(직업 전용은 해당 직업만. 대상 필터는 TargetRoleType 근거, 표 해석은 추정)"""
-        s = self.support
-        if s in ('mountain', 'fire'):
-            return True
-        return u.role == {'gust': '서포터', 'focus': '캐스터', 'strike': '스트라이커'}.get(s)
-
-    def _sup_put(self, x, name, props, maxs=1):
-        """지원 효과. 강화 효과 개수에 안 세도록 marker(보스 관통 표지와 같은 방식)"""
-        self.b.put_eff(x, name, props, maxs=maxs, src=x, cat='marker')
-
-    def _sup_start(self):
-        """전투 시작 시 한 번: 방어·치명·공격 상승(40152 방어 +50%, 40031 치명 +30%, 40111 치명 피해 +30%, 45011 공격 +15%)"""
-        if self.sup_done or self.support == 'none':
-            return
-        self.sup_done = True
-        props = {'gust': {'방어력%': 50}, 'focus': {'치명타 확률': 30}, 'strike': {'치명타 피해': 30},
-                 'fire': {'공격력%': 15}}.get(self.support)
-        if props:
-            for u in self.b.allies:
-                if self._sup_has(u):
-                    self._sup_put(u, SUP_STAT, props)
-
-    def _sup_after_cast(self, u, sk, extra):
-        s = self.support
-        if u.side != 0 or u.dead or not self._sup_has(u):
-            return
-        if s == 'gust' and not sk.is_attack:
-            for x in self.b.alive(0):         # 4015202: 비타격 스킬 후 자신 제외 아군 전체 행동 게이지 +30%
-                if x is not u:
-                    self.b.set_gauge(x, x.gauge + 3000)
-        elif s == 'focus' and sk.slot == '기본기' and self.focus_turn.get(id(u)) != self.b.global_turns:
-            self.focus_turn[id(u)] = self.b.global_turns
-            for slot in u.cd:                 # 기본기 사용 시 모든 스킬 쿨 -1(1턴에 1번)
-                u.cd[slot] = max(0.0, u.cd[slot] - 1)
-        elif s == 'fire':
-            self._sup_put(u, SUP_HIT, {'효과 적중': 6}, maxs=5)
-
-    def _sup_pre_hit(self, a, v):
-        s = self.support
-        if s == 'strike' and a is not None and a.side == 0 and self._sup_has(a):
-            # 강인한 타격(4011102): 스킬 시작 때 m_fActiveRate 5000 = 50% 로 굴려(NKM 16466 BuffActivateRate) 그 시전 동안 강화 효과 개수당 피해 +10%.
-            # 시전마다 한 번 굴림 — 지금 시전(Battle._cast_ctx)이 바뀌면 다시 굴림(겹친 추가 발동도 따로)
-            cur = getattr(self.b, '_cast_ctx', None)
-            got = self.strike_roll.get(id(a))
-            if got is None or got[0] is not cur:
-                got = self.strike_roll[id(a)] = (cur, self.b.R(0).random() < 0.5)
-            ok = got[1]
-            n = a.n_good() if ok else 0
-            if n:
-                self._sup_put_tmp(a, SUP_TMP_INC, {'피해 증가': 10 * n})
-            else:
-                a.eff.pop(SUP_TMP_INC, None)
-        elif s == 'mountain':
-            if a is not None and a.side == 0 and a.hp * 2 > a.maxhp:
-                self._sup_put_tmp(a, SUP_TMP_INC, {'피해 증가': 10})              # 45041: 생명력 50% 초과면 피해 +10%
-            if v.side == 0 and v.hp * 2 < v.maxhp:
-                self._sup_put_tmp(v, SUP_TMP_RED, {'받는 피해 감소': 10})         # 피격 시 50% 미만이면 받는 피해 -10%
-
-    def _sup_put_tmp(self, x, name, props):
-        x.eff.pop(name, None)
-        self._sup_put(x, name, props)
-
-    def _sup_post_hit(self, a, v):
-        for x in (a, v):
-            if x is not None and (x.eff.pop(SUP_TMP_INC, None) is not None or x.eff.pop(SUP_TMP_RED, None) is not None):
-                self.b.dirty(x)
-
     # ---------- 웨이브
     def on_wave(self):
         b = self.b
@@ -283,17 +200,7 @@ class Controller(BaseController):
         d = self.cfg['data']
         self._nv_sum_client(boss, d, stage=False)
         self._put(boss, PEN, {'방어 관통': d['pen'] / 100}, cat='marker')
-        row = self.cfg['row']
-        if row and row['speed']:
-            self._put(boss, SPEED, {'속도%': row['speed']})
-        immune = max(row['immune'] if row else 0, self.cfg['set_immune'])
-        if immune:
-            self._put(boss, IMMUNE, {}, dur=immune)
-        if self.cfg['set_dmg']:
-            self._put(boss, SET_DMG, {'피해 증가': self.cfg['set_dmg']})
-        if self.cfg['set_red']:
-            self._put(boss, SET_RED, {'받는 피해 감소': self.cfg['set_red']})
-
+        self._challenge_start()
     # ---------- 대상
     def is_boss(self, u):
         return u is self.boss
@@ -333,9 +240,7 @@ class Controller(BaseController):
                 raise ValueError('BFB 52204 삭제 수량 변경: 빌더·상태 기계 확인 필요')
             self.count = 0  # BuffDeleteCount=0: 제한 없이 특정 버프 전체 삭제(NKM:4175-4198,4325-4333)
             self.b.rule_hits['guild_bridal_kill_reset'] += 1
-        row = self.cfg['row']
-        if row and row['skillStack']:
-            self._put(boss, STACK, {'피해 증가': row['skillStack']}, maxs=10)    # 940001~3
+        self._challenge_after_cast()
         if sk is self.cfg['alt']['hyper2']:
             self._restore(full=True)               # 2144
             return
@@ -467,11 +372,7 @@ class Controller(BaseController):
         boss = self.boss
         if v is not boss or a is None or a.side != 0 or boss.dead:
             return
-        row = self.cfg['row']
-        if row and row['hpDrain'] and not a.dead:
-            self._put(a, DRAIN, {'생명력%': -row['hpDrain']}, cat='debuff', maxs=10)     # 940011~13
-        if self.cfg['set_drain'] and not a.dead:
-            self._put(a, DRAIN_SET, {'생명력%': -self.cfg['set_drain']}, cat='debuff', maxs=10)
+        self._challenge_post_hit(a)
         if self.anim and not self.barrier():
             self._drop(boss, TOUGH_BAN)
             if boss.eff.get(B8) is not None:

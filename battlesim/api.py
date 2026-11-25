@@ -198,6 +198,9 @@ def _norm_encounter(enc):
     if 'cosmo_raid' in enc:
         from .starsavior.cosmo_raid import data_path
         k += '|' + data_path()        # 시즌 자료 파일이 바뀌면(시험 fixture 등) 다른 키
+    if 'guild' in enc:
+        from .starsavior.guild import identity
+        k += '|' + identity(enc['guild'] or {})
     hit = _ENC_CACHE.get(k)
     if hit is None:
         hit = _norm_encounter_raw(enc)
@@ -212,9 +215,9 @@ def _norm_encounter_raw(enc):
     fx_texts = enc.get('stage_fx')
     if 'guild' in enc:
         # 길드 방어전 EX(BFB): {"guild": {"level": 0~12(별의 도전), "sets": [소멸, 불멸, 쇠락, 허무](0~3)}} — starsavior/guild_bfb.py
-        from .starsavior.guild_bfb import build_waves
+        from .starsavior.guild import build_waves
         g = enc['guild'] or {}
-        waves, meta = build_waves(int(g.get('level', 0)), g.get('sets'), support=g.get('support'))
+        waves, meta = build_waves(g)
         if turn_limit is None:
             turn_limit = meta['turn_limit']
         fx, unknown = parse_fx(fx_texts or [])

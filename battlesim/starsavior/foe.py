@@ -244,12 +244,14 @@ class FoeDef:
     stats 단위: hp/atk/def/spd 정수, cr/cd/eh/er/der 1/10000(구원자와 같음), sa = 강인도."""
     is_foe = True
 
-    def __init__(self, raw, ui, xi=None, st=None, stats_override=None):
+    def __init__(self, raw, ui, xi=None, st=None, stats_override=None, key_override=None):
         u = raw['u'][ui]
         x = raw['x'][xi] if xi is not None else None
         st = st or {}
         self.ui, self.xi = ui, xi
         self.key = 'foe:%d' % ui + (':%d' % xi if xi is not None else '')
+        if key_override is not None:
+            self.key = key_override
         self.name = u['n']
         self.id, self.variant = ui, '적'
         self.role = u['r']

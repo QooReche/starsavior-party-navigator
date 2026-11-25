@@ -320,7 +320,7 @@ _EXPECTED_MC_OPTS_KEYS = frozenset([
     'enemy_cd_native',
     'enemy_cd_tick', 'enemy_hit_buff_cmp', 'enemy_init_cd', 'enemy_init_cd_special',
     'enemy_same_formula', 'enemy_spawn', 
-    'guild_boss', 'gauge_overflow', 'guard_mode', 
+    'guild_boss', 'gauge_overflow', 'guard_mode', 'khan_passives',
     'heal_target', 'leader_speed', 'manual_burst', 
     'max_depth', 'max_events', 
     'power_penalty', 'rand_range', 
