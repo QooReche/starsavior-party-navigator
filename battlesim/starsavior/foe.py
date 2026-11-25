@@ -157,6 +157,7 @@ def load_foe(src=SRC):
         m = re.search(r'__SSD\.foe=', s)
         d, _ = json.JSONDecoder().raw_decode(s[m.end():])
         _EXTRA_ON[src] = merge_extra(d, load_extra(src))
+        _EXTRA_ON[src] = merge_extra(d, datafile.load('foe_equip', src, None)) or _EXTRA_ON[src]
         extra = datafile.load('foe_cosmo_extra', src, None)
         if extra is not None:
             _EXTRA_ON[src] = merge_extra(d, extra) or _EXTRA_ON[src]
