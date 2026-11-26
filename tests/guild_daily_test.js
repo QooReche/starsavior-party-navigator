@@ -52,6 +52,13 @@ async function scenario({daily=Daily,count=8,follows=0,stopRound=0,weak=false,mo
     assert(phases.slice(phaseStart).every((p,i)=>p.stage===i),'stage indices stay ordered');
   }}finally{session.close();assert.equal(life.active,0);}
   assert.equal(life.max,1);assert.equal(life.created,stop&&follows>stopRound?2:1,'same pool; canceled worker is replaced on retry');
+  assert(trace.length>0,'season key checks must see actual jobs');
+  for(const m of trace)for(const t of m.teams){
+    assert(t.key.startsWith(JSON.stringify([f.G.season.id,f.G.dataVersion])+':'),'daily job must retain the shared season/version prefix');
+    assert(t.key.endsWith('|step:'+t.options.guild.step),'daily stages must have distinct job keys');
+    assert.equal(t.options.guild.seasonId,f.G.season.id);
+    assert.equal(t.options.guild.dataVersion,f.G.dataVersion);
+  }
   if(!growth&&!(stop&&follows>stopRound)){const ranges=new Map();for(const m of trace){assert.equal(m.seed,f.S.daily.seed);for(const t of m.teams){
     const end=ranges.get(t.key)||0;assert.equal(t.options.run_offset||0,end,'no duplicate seed/game, including no-break and ineffective support');ranges.set(t.key,end+m.n_runs);
   }}}
@@ -155,6 +162,7 @@ async function main(){
   }finally{Daily.search=old;}
   const src=fs.readFileSync(require.resolve('../guild_daily'),'utf8');
   const mutations=[
+    ["GS.jobKey(keys,level,effectiveSupport,sets,brk,party,G)+'|step:'+step","step+':'+GS.jobKey(keys,level,effectiveSupport,sets,brk,party,G)",checks],
     ['Math.abs(value(incumbent))*margin','0',margins],
     ["placeScope='ex';reductions.push","placeScope='all';reductions.push",caps],
     ['cx.roster.filter(r=>!units.has(r.key))','cx.roster',checks],

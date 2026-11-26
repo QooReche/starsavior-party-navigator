@@ -187,7 +187,7 @@
       const party=GS.party(keys,cx.results,cls,p),step=kind==='ex'?exStep:condition,level=kind==='ex'?condition:0;
       const effectiveSupport=GS.finalSupports(S,keys,cls).includes(sup)?sup:'none';
       const sets=kind==='ex'?tiers:tiers.map(()=>0);
-      const key=step+':'+GS.jobKey(keys,level,effectiveSupport,sets,brk,party,G);
+      const key=GS.jobKey(keys,level,effectiveSupport,sets,brk,party,G)+'|step:'+step;
       return {key,id:key+'|assign:'+sup,keys,kind,step,level,sup,effectiveSupport,order:party.order,leaderKey:party.leaderKey,
         party:party.spec,options:{guild:{seasonId:G.season.id,dataVersion:G.dataVersion,step,level,sets,support:effectiveSupport},break_skill:brk}};
     }
