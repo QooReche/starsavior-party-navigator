@@ -16,12 +16,14 @@ function comparison(a,b,draws=4000){
  return {point,ci95,method:'paired percentile bootstrap over independent battle seeds; top 20% recalculated per draw',draws};
 }
 async function main(){
- const [input,output,...searchDirs]=process.argv.slice(2);if(!input||!output||!searchDirs.length)throw Error('ACCOUNT PRIVATE_DIR SEARCH_DIR ...');
+ const args=process.argv.slice(2);let batches=50,startBatch=0;
+ for(const [flag,set] of [['--batches',v=>batches=v],['--start-batch',v=>startBatch=v]]){const i=args.indexOf(flag);if(i>=0){const v=Number(args[i+1]);if(!Number.isSafeInteger(v)||v<(flag==='--batches'?1:0))throw Error('invalid '+flag);set(v);args.splice(i,2);}}
+ const [input,output,...searchDirs]=args;if(!input||!output||!searchDirs.length)throw Error('ACCOUNT PRIVATE_DIR SEARCH_DIR ... [--batches N] [--start-batch N]');
  const dir=privateDir(output),selections=searchDirs.map(d=>({name:path.basename(d),search:read(path.join(d,'result.json'))})),cx=context(input,selections[0].search.pins.season.id);
  for(const s of selections){if(s.search.pins.accountHash!==hash(fs.readFileSync(input))||s.search.pins.profileHash!==hash(cx.results)||JSON.stringify(s.search.pins.tiers)!==JSON.stringify(cx.tiers)||s.search.pins.stage!==cx.stage||s.search.pins.seasonHash!==hash(cx.G)||s.search.pins.seedOffset!==selections[0].search.pins.seedOffset||s.search.pins.sources['sim/manifest.json']!==hash(fs.readFileSync(path.join(__dirname,'../sim/manifest.json'))))throw Error('holdout account/conditions/engine mismatch');}
  const cls=Object.fromEntries(cx.roster.map(r=>[r.key,r.cls]));
  const jobs=selections.map(({name,search})=>{const t=search.result.rows[0],j=Planner.job(cx.S,t.keys,cx.results,cls,cx.tiers,t.level,t.sup,t.brk?{name:t.brk,level:t.brkLv}:null,{order:t.order,leaderKey:t.leaderKey||t.order[0]});return {...j,key:name};});
- const pins={accountHash:hash(fs.readFileSync(input)),profileHash:hash(cx.results),seasonHash:hash(cx.G),jobs,engine:hash(fs.readFileSync(path.join(__dirname,'../sim/manifest.json'))),tool:hash(fs.readFileSync(__filename)),seedStart:20270101+(selections[0].search.pins.seedOffset||0),batches:50,runsPerBatch:20};
+ const pins={accountHash:hash(fs.readFileSync(input)),profileHash:hash(cx.results),seasonHash:hash(cx.G),jobs,engine:hash(fs.readFileSync(path.join(__dirname,'../sim/manifest.json'))),tool:hash(fs.readFileSync(__filename)),seedStart:20270101+(selections[0].search.pins.seedOffset||0)+startBatch,batches,runsPerBatch:20};
  if(fs.existsSync(path.join(dir,'result.json'))){if(JSON.stringify(read(path.join(dir,'result.json')).pins)!==JSON.stringify(pins))throw Error('completed holdout input/source mismatch');console.error('existing complete holdout');return;}
  const T=instrument(dir,pins),pool=GS.workerPool(T.makeWorker),evaluated=Object.fromEntries(jobs.map(j=>[j.key,{scores:[],clears:[],caps:[],selected:selections.find(s=>s.name===j.key).search.result.rows[0]}]));
  try{

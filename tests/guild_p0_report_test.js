@@ -1,5 +1,5 @@
 'use strict';
-const assert=require('node:assert/strict'),{compare,accepted}=require('../tools/report_guild_p0');
+const assert=require('node:assert/strict'),{compare,accepted,boundary,gameCount,median}=require('../tools/report_guild_p0');
 const r=(scores,caps)=>({scores,caps,clears:caps});
 const a=[r([50,100,100,100,100],[0,1,1,1,1]),r([40,100,100,100,100],[0,1,1,1,1])];
 const same=compare(a,a,100);
@@ -10,4 +10,9 @@ assert(accepted(good,1.1,true));assert(!accepted(good,1.1001,true));assert(!acce
 assert(!accepted({ci95:{...good.ci95,topRatio:[.9949,1]}},1,true));
 assert(!accepted({ci95:{...good.ci95,meanRatio:[.9799,1.02],capDifference:[.01,.1]}},1,true));
 assert.throws(()=>compare(a,[a[0]],100));
+assert(!boundary(same),'exact equality is not a straddling interval');
+assert(boundary({ci95:{topRatio:[.994,1],meanRatio:[1,1],capDifference:[0,0]}}));
+assert(boundary({ci95:{topRatio:[1,1],meanRatio:[.999,1.001],capDifference:[0,0]}}));
+assert.equal(gameCount({submitted:20,phases:[{jobs:10,runs:2,cached:5},{jobs:1,runs:40,cached:1}]}),60,'cached battles still count toward search cost');
+assert.equal(median([3,1]),2);assert.equal(median([3,1,2]),2);assert.equal(median([]),null);
 console.log('PASS P0 report: paired strata, no-gain rejection, frozen threshold boundaries, invalid timing');
