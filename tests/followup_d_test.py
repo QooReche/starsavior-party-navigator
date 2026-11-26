@@ -141,7 +141,7 @@ class FollowupTest(unittest.TestCase):
                        ally_fx=[({'공격력%': 20}, None, None)])
             owner, target = b.allies
             c = C.Controller(b)
-            c.boss, c.cfg, c.fx = b.foes[0], {'model': 'test'}, {'drain': {'pct': 5, 'max': 10}}
+            c.boss, c.cfg, c.fx = b.foes[0], {'model': 'test', 'mechanics': []}, {'drain': {'pct': 5, 'max': 10}}
             for _ in range(3):
                 c.post_hit(target, c.boss)
             self.assertTrue(target.eff[C.CH_DRAIN].dead_keep)

@@ -386,6 +386,19 @@ def test_power_penalty_default():
         MC_OPTS['power_penalty'], entry.get('legacy'), entry.get('alt'), r['party']['penalty'])
 
 
+def _registered_boss_switches():
+    """Only profiles actually referenced by a monster/model consume a switch."""
+    from battlesim import datafile
+    catalog = datafile.load('boss_catalog')
+    used = {}
+    for registration in [*catalog['monsters'].values(), *catalog['clientModels'].values()]:
+        for profile in registration.get('profiles', []):
+            for spec in catalog['behaviorProfiles'][profile].values():
+                if isinstance(spec, dict) and 'switch' in spec:
+                    used.setdefault(spec['switch'], set()).add(spec['value'])
+    return used
+
+
 def test_note_keys_not_in_code():
     """note 키는 battlesim/*.py·tools/*.py·sim_worker.js·party_template.html 에서 읽지 않아야 한다.
     grep 기반: 키 이름이 문자열로 나타나면 안 됨(JSON 의 키 정의 자체는 제외, 파이썬·JS 소비 코드만 체크)."""
@@ -405,7 +418,8 @@ def test_note_keys_not_in_code():
     found = []
     for path in sources:
         try:
-            text = open(path, encoding='utf-8', errors='replace').read()
+            with open(path, encoding='utf-8', errors='replace') as f:
+                text = f.read()
         except OSError:
             continue
         for k in _NOTE_KEYS:
@@ -413,13 +427,14 @@ def test_note_keys_not_in_code():
             pat = r"""(?:mc\s*\[|mc\.get\s*\()\s*['"]""" + re.escape(k) + r"""['"]"""
             if re.search(pat, text):
                 found.append('%s:%s' % (os.path.basename(path), k))
+    found += ['boss_catalog:' + k for k in _registered_boss_switches() if k in _NOTE_KEYS]
     ok = not found
     return ok, '코드에서 note 키 소비: %s' % found
 
 
 def test_alt_legacy_keys_in_code():
     """alt 또는 legacy 가 있는 mc 키는 battlesim/*.py·tools/*.py·sim_worker.js·party_template.html 중
-    한 곳 이상에서 읽어야 한다(grep 기반: 코드에 없으면 dead 스위치)."""
+    한 곳 이상 또는 실제 보스에 등록된 profile에서 읽어야 한다."""
     import re
     check_dirs = [os.path.join(ROOT, 'battlesim'), os.path.join(ROOT, 'tools')]
     check_files = [os.path.join(ROOT, 'sim_worker.js'), os.path.join(ROOT, 'party_template.html')]
@@ -435,17 +450,22 @@ def test_alt_legacy_keys_in_code():
     combined = ''
     for path in sources:
         try:
-            combined += open(path, encoding='utf-8', errors='replace').read()
+            with open(path, encoding='utf-8', errors='replace') as f:
+                combined += f.read()
         except OSError:
             pass
     alt_legacy_keys = [k for k, v in MC_RULES.items()
                        if ('alt' in v or 'legacy' in v) and k not in MC_NOTE_KEYS]
+    registered = _registered_boss_switches()
+    bad = [k for k, values in registered.items()
+           if k not in MC_OPTS or not values <= set([MC_RULES[k]['value'], MC_RULES[k].get('legacy'),
+                                                     *MC_RULES[k].get('alt', [])])]
     missing = []
     for k in alt_legacy_keys:
-        if not re.search(r"""['"]""" + re.escape(k) + r"""['"]""", combined):
+        if k not in registered and not re.search(r"""['"]""" + re.escape(k) + r"""['"]""", combined):
             missing.append(k)
-    ok = not missing
-    return ok, 'alt/legacy 키인데 코드에 없음: %s' % missing
+    ok = not missing and not bad
+    return ok, 'alt/legacy 소비 없음: %s / 보스 등록 키·값 오류: %s' % (missing, bad)
 
 
 TESTS = [test_coop_trigger, test_coop_single, test_nova_policy, test_nova_pool, test_debuff_hit_resist, test_forced_coop_target,

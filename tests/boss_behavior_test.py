@@ -30,6 +30,18 @@ class BossBehaviorTest(unittest.TestCase):
         C.use_data(None)
         api.clear_engine_caches()
 
+    def test_registered_switch_audit_detects_removed_registration(self):
+        from rules_test import test_alt_legacy_keys_in_code
+        catalog = copy.deepcopy(datafile.load('boss_catalog'))
+        with catalog_with(catalog):
+            self.assertTrue(test_alt_legacy_keys_in_code()[0])
+            spec = catalog['behaviorProfiles']['overclock_heat']['stun_flags']
+            spec['value'] = 'invalid-value'
+            self.assertFalse(test_alt_legacy_keys_in_code()[0])
+            spec['value'] = 'client'
+            catalog['monsters']['카본펑크 칸']['profiles'] = []
+            self.assertFalse(test_alt_legacy_keys_in_code()[0])
+
     def test_registered_other_name_runs_overclock_heat_and_se(self):
         catalog = copy.deepcopy(datafile.load('boss_catalog'))
         alias = '등록 시험 보스'
