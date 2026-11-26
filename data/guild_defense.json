@@ -4467,7 +4467,8 @@
     "top": 10
    },
    "final": {
-    "runs": 40
+    "runs": 40,
+    "closeRuns": 80
    },
    "retry": {
     "keepMultipliers": [
@@ -4486,7 +4487,7 @@
      200
     ],
     "keep": 3,
-    "margin": 0.01,
+    "margin": 0.025,
     "recheckRuns": 10
    },
    "workers": {

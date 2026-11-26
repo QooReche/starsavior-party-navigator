@@ -37,6 +37,19 @@
     const value=incumbent.score===candidate.score?r=>r.mean:r=>r.score;
     return PS.incumbentWithMargin(incumbent,candidate,value,Math.abs(value(incumbent))*margin);
   }
+  function standardError(xs){
+    if(xs.length<2)return 0;
+    const mean=xs.reduce((s,x)=>s+x,0)/xs.length;
+    return Math.sqrt(xs.reduce((s,x)=>s+(x-mean)**2,0)/(xs.length*(xs.length-1)));
+  }
+  function closeFinalists(rows){
+    if(!rows.length)return [];
+    const first=rows[0];
+    return rows.filter(r=>{
+      const tied=r.score===first.score,metric=tied?'mean':'score',se=tied?'meanSE':'scoreSE';
+      return first[metric]-r[metric]<=2*Math.hypot(first[se]||0,r[se]||0);
+    });
+  }
   function signature(cx,day,pl=plan(cx)){
     return JSON.stringify(['guild-daily-v2',cx.G.season.id,cx.G.dataVersion,day.date,cx.seals??cx.S.daily.seals.default,cx.split||null,
       cx.S,cx.tiers||[],cx.breaks||[],cx.roster,cx.results,cx.growthResults||null,
@@ -93,7 +106,7 @@
       // saturated case every screened team advances; budget that upper bound.
       const games=[0,combos*sweeps*D.screen.runs,combos*sweeps*(D.rerank.runs-D.screen.runs),
         probe*conditions*(supports+1)*D.probe.runs,0,
-        options.length*D.combine.top*teamCount*((D.final.runs-D.probe.runs)+nBrk*D.final.runs),
+        options.length*D.combine.top*teamCount*((D.final.closeRuns-D.probe.runs)+nBrk*D.final.closeRuns),
         placeTeams*(25*D.place.runs[0]+(D.place.keep+1)*(D.place.runs[2]-D.place.runs[0])+
           Math.max(D.probe.levels.length,D.probe.steps.length)*(supports+1)*D.place.recheckRuns+(nBrk+1)*D.final.runs)];
       const jobs=[0,combos*sweeps,combos*sweeps,probe*conditions*(supports+1),1,options.length*D.combine.top*teamCount,placeTeams];
@@ -159,7 +172,7 @@
       return current;
     }
     function make(keys,kind,condition,sup='none',brk=null,placement){
-      const base=placement||GS.party(keys,cx.results,cls),p={order:base.order,leaderKey:base.leaderKey||base.order[0]};
+      const base=placement||P.baseline(keys,cx.results),p={order:base.order,leaderKey:base.leaderKey||base.order[0]};
       const party=GS.party(keys,cx.results,cls,p),step=kind==='ex'?exStep:condition,level=kind==='ex'?condition:0;
       const effectiveSupport=GS.finalSupports(S,keys,cls).includes(sup)?sup:'none';
       const sets=kind==='ex'?tiers:tiers.map(()=>0);
@@ -177,7 +190,11 @@
           guild:full.guild?{base_scores:raw.map(x=>x[4])}:undefined}:full;
         const scoreG=j.kind==='ex'?G:{...G,defaultStep:j.step};
         const st=GS.rankStats(V,scoreG,j.level,j.options.guild.sets,r.prog,r.progs,r.clear,r.guild);
+        const pct=V.extraPct(scoreG,j.level,j.options.guild.sets);
+        const scores=r.guild?.base_scores?.map(x=>Math.floor((x*(100+pct)+50)/100))||r.progs.map(x=>V.scoreFromProg(scoreG,pct,x));
+        const sorted=scores.slice().sort((a,b)=>b-a),q=Math.ceil(scores.length*.2-1e-9)/scores.length,cut=sorted[Math.ceil(scores.length*.2-1e-9)-1];
         return {...j,score:st.top,mean:st.mean,cap:st.cap,clear:r.clear,prog:r.prog,n:r.n,brk:j.options.break_skill?.name||null,brkLv:j.options.break_skill?.level||null,
+          meanSE:standardError(scores),scoreSE:standardError(scores.map(x=>Math.max(0,x-cut)/q)),
           ...(r.unsupported?.length?{unsupported:r.unsupported}:{})};
       }).sort(compare);
     }
@@ -248,10 +265,23 @@
       const jobs=[...new Map(bundles.flatMap(b=>b.teams).map(t=>[t.id,t])).values()];await run(jobs,D.final.runs,6);
       const breaks=jobs.flatMap(t=>[null,...(cx.breaks||[])].map(brk=>make(t.keys,t.kind,t.kind==='ex'?t.level:t.step,t.sup,brk,t)));
       await run(breaks,D.final.runs,6,'결선·브레이크');
-      const best=new Map();for(const t of ranked(breaks,D.final.runs)){const id=P.id(t.keys)+'|'+t.kind+'|'+t.step+'|'+t.level+'|'+t.sup;if(!best.has(id))best.set(id,t);}
-      return bundles.flatMap(b=>{const teams=b.teams.map(t=>best.get(P.id(t.keys)+'|'+t.kind+'|'+t.step+'|'+t.level+'|'+t.sup));
-        return teams.every(Boolean)?[{teams,sum:teams.reduce((s,t)=>s+t.score,0)}]:[];
-      }).sort(bundleCompare);
+      const teamId=t=>P.id(t.keys)+'|'+t.kind+'|'+t.step+'|'+t.level+'|'+t.sup;
+      function pack(rows,source){
+        const best=new Map();for(const t of rows)if(!best.has(teamId(t)))best.set(teamId(t),t);
+        return source.flatMap(b=>{const teams=b.teams.map(t=>best.get(teamId(t)));
+          return teams.every(Boolean)?[{teams,sum:teams.reduce((s,t)=>s+t.score,0),score:teams.reduce((s,t)=>s+t.score,0),mean:teams.reduce((s,t)=>s+t.mean,0),
+            scoreSE:Math.hypot(...teams.map(t=>t.scoreSE)),meanSE:Math.hypot(...teams.map(t=>t.meanSE))}]:[];
+        }).sort(bundleCompare);
+      }
+      const ranked40=ranked(breaks,D.final.runs),finals=pack(ranked40,bundles),near=closeFinalists(finals);
+      if(near.length<2||D.final.closeRuns<=D.final.runs)return {rows:finals,complete:finals.length===bundles.length};
+      const ids=new Set(near.flatMap(b=>b.teams.map(teamId))),extra=[];
+      for(const id of ids)extra.push(...closeFinalists(ranked40.filter(t=>teamId(t)===id)));
+      await run(extra,D.final.closeRuns,6,'근접 결선 80판 확인');
+      const confirmed=pack(ranked(extra,D.final.closeRuns),near);
+      // Dropping distant bundles is intentional, not a coop exclusion requiring
+      // candidate recovery. Only invalid teams trigger the outer repack loop.
+      return {rows:confirmed,complete:finals.length===bundles.length&&confirmed.length===near.length};
     }
     async function solve(requested){
       let split=fitSplit(requested,Math.floor(rows.length/4));selectedSplit=split;
@@ -263,12 +293,16 @@
         for(;;){
           const bundles=await combine(split);if(!bundles.length)return best;
           if(checkpointStage<6){checkpoint=bundles[0];checkpointStage=5;}
-          const finals=await finalBundles(bundles);
+          const final=await finalBundles(bundles),finals=final.rows;
+          // A previously retained 40-game winner can fail coop at 80 games.
+          const invalid=b=>b?.teams.some(t=>GS.coopHit(S,cache.get(t.key)));
+          if(invalid(best))best=null;
+          if(invalid(checkpoint))checkpoint=null;
           if(finals.length){
             if(!best||bundleCompare(finals[0],best)<0)best=finals[0];
             if(checkpointStage<6||!checkpoint||bundleCompare(best,checkpoint)<0){checkpoint=best;checkpointStage=6;}
           }
-          if(finals.length===bundles.length)return best;
+          if(final.complete)return best;
           if(checkpointStage<6)checkpoint=null;
         }
       }
@@ -368,6 +402,6 @@
       return output(phase>=4?checkpoint:null,true);
     }
   }
-  const api={search,plan,splits,fitSplit,normalMaximum,choosePlacement,signature};
+  const api={search,plan,splits,fitSplit,normalMaximum,choosePlacement,closeFinalists,standardError,signature};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GuildDaily=api;
 })(typeof window!=='undefined'?window:globalThis);

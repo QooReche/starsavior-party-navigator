@@ -108,7 +108,7 @@ async function checks(daily=Daily){
 }
 async function regression(daily=Daily){
   const partial=await scenario({daily,seals:2,weak:true,stopWhen:({phase,trace})=>phase===6&&trace.at(-1).teams[0].options.guild.step!==7});
-  valid(partial.out,1);assert.equal(partial.out.split.ex,1);assert.equal(partial.out.teams[0].n,40);assert.equal(partial.out.coverage.selectedStage,6);
+  valid(partial.out,1);assert.equal(partial.out.split.ex,1);assert.equal(partial.out.teams[0].n,defaults.daily.final.closeRuns);assert.equal(partial.out.coverage.selectedStage,6);
   assert(partial.out.evaluation.breakComplete&&partial.out.evaluation.stageSupportComplete);
   const capped=await scenario({daily,seals:2,timeOutStage:6});assert(capped.out.partial&&capped.out.timeCapped);
   const clearIncumbent=await scenario({daily,seals:2,scoreFn:t=>{
@@ -150,7 +150,8 @@ async function regression(daily=Daily){
     assert(m.teams.every(t=>!forbidden.includes(t.options.guild.support)),'recheck excludes other teams supports');
   }
   assert.equal(visited.size,2);assert(after.phases.some(p=>p.label==='바뀐 조건 40판 확인'));assert(after.phases.some(p=>p.label==='바뀐 조건 브레이크 재비교'));
-  assert.equal(after.phases.filter(p=>p.label==='자리·리더 비교'&&p.runs===20).length,2,'one placement search per team, no loop back');
+  // An 80-game incumbent also appends 20 games; count only fresh layout rounds.
+  assert.equal(new Set(after.trace.filter(m=>m.label==='자리·리더 비교'&&m.n_runs===20&&m.teams.some(t=>!t.options.run_offset)).map(m=>m.phase+'|'+m.teams[0].party.units.map(u=>u.key).sort().join())).size,2,'one placement search per team, no loop back');
 }
 async function main(){
   packing();margins();caps();await checks();await regression();const scenarios=scenarioCount;

@@ -20,7 +20,7 @@ function context(input,seasonId){
  const ex=G.steps.find(s=>s.ex);
  return {G,S:structuredClone(G.search),V,results:profile.results,roster:D.roster,tiers:[0,0,0,0],breaks,stage:'guild/'+G.tab+'/'+ex.step+'단계 EX',base:'',workers:2};
 }
-function instrument(dir,pins,seedOffset=0){
+function instrument(dir,pins,seedOffset=0,workers=2){
  const pinFile=path.join(dir,'pins.json'),journal=path.join(dir,'events.jsonl');
  if(fs.existsSync(pinFile)&&JSON.stringify(read(pinFile))!==JSON.stringify(pins))throw Error('checkpoint input/source mismatch: use a new directory');
  save(pinFile,pins);
@@ -32,7 +32,7 @@ function instrument(dir,pins,seedOffset=0){
  let phase=null,phaseIndex=0,active,submitted=0,phaseName='',lastProgress=0;
  const phases=[],start=performance.now();
  function makeWorker(){
-  if(children.size>=2)throw Error('worker limit exceeded');
+  if(children.size>=workers)throw Error('worker limit exceeded');
   const child=cp.spawn('python',['-X','utf8','-I',path.join(__dirname,'bench_cosmo_search.py'),'--worker'],{stdio:['pipe','pipe','inherit']});children.add(child);
   let busy=null,assignedPhase=null;
   const w={postMessage(m){busy=performance.now();assignedPhase=phase;child.stdin.write(JSON.stringify(m)+'\n');},terminate(){children.delete(child);child.kill();}};
@@ -46,9 +46,9 @@ function instrument(dir,pins,seedOffset=0){
   const missing=o.jobs.filter(j=>!cached[j.key]),begin=performance.now();
   phase={index,name:phaseName,jobs:o.jobs.length,runs:o.runs,seed:o.seed,cached:Object.keys(cached).length,busyMs:0,gapMs:begin-(phases.at(-1)?.endMs??start)};const record=phase;phases.push(record);
   submitted+=missing.length*o.runs;emit({type:'phase',...record});
-  const h=phaseOriginal({...o,jobs:missing,workers:2,onResult:(key,result)=>{const value={prog:result.prog??0,clear:result.clear,n:result.n,via:result.via||{},progs:result.progs||null,cosmo:result.cosmo||null,...(result.guild?{guild:result.guild}:{}),...GS.unsupportedFields(result)};cached[key]=value;emit({type:'result',phase:index,id:ids.get(key),key,result:value});o.onResult?.(key,result);},onProgress:(done,total)=>{o.onProgress?.(done+record.cached,o.jobs.length);if(Date.now()-lastProgress>60000){lastProgress=Date.now();console.error('progress',index,done,'/',total);}}});
+  const h=phaseOriginal({...o,jobs:missing,workers,onResult:(key,result)=>{const value={prog:result.prog??0,clear:result.clear,n:result.n,via:result.via||{},progs:result.progs||null,cosmo:result.cosmo||null,...(result.guild?{guild:result.guild}:{}),...GS.unsupportedFields(result)};cached[key]=value;emit({type:'result',phase:index,id:ids.get(key),key,result:value});o.onResult?.(key,result);},onProgress:(done,total)=>{o.onProgress?.(done+record.cached,o.jobs.length);if(Date.now()-lastProgress>60000){lastProgress=Date.now();console.error('progress',index,done,'/',total);}}});
   active=h;
-  return {cancel:()=>h.cancel(),promise:h.promise.then(res=>{record.endMs=performance.now();record.elapsedMs=record.endMs-begin;record.idleMs=Math.max(0,2*record.elapsedMs-record.busyMs);emit({type:'phaseDone',...record});save(path.join(dir,'progress.json'),{phases,submitted,resumed,seconds:(performance.now()-start)/1000});return {...cached,...res};})};
+  return {cancel:()=>h.cancel(),snapshot:()=>({...cached,...h.snapshot()}),promise:h.promise.then(res=>{record.endMs=performance.now();record.elapsedMs=record.endMs-begin;record.idleMs=Math.max(0,workers*record.elapsedMs-record.busyMs);emit({type:'phaseDone',...record});save(path.join(dir,'progress.json'),{phases,submitted,resumed,seconds:(performance.now()-start)/1000});return {...cached,...res};})};
  };
  return {makeWorker,onPhase(name,jobs){phaseName=name;console.error(name,jobs);},summary:()=>({phases,submitted,resumed,seconds:(performance.now()-start)/1000}),close(){active?.cancel();for(const c of children)c.kill();GS.runPhase=phaseOriginal;fs.closeSync(fd);}};
 }

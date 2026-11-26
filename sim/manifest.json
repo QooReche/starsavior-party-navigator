@@ -1,6 +1,6 @@
 {
  "_note": "브라우저 시뮬 파일 목록(tools/build_simpack.py). ver = 경로+내용 해시",
- "ver": "684213146d3f",
+ "ver": "287bd41e02bb",
  "files": [
   "battlesim/__init__.py",
   "battlesim/api.py",
@@ -131,5 +131,5 @@
   "data/cosmo_seasons/1022.json",
   "data/cosmo_seasons/1023.json"
  ],
- "bytes": 8536832
+ "bytes": 8539314
 }
