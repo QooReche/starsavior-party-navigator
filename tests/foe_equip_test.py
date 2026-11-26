@@ -245,7 +245,7 @@ class EquipClientTest(unittest.TestCase):
         static = static_path_or_none(ROOT)
         rows = B.jsonc(static / 'tables/BATTLE_TEMPLET_NORMAL.json')['Data']
         rows = [r for r in rows if re.fullmatch(r'NORMAL_BATTLE_EXPLORE_EQUIP[123]_\d+', r['BattleStrID'])]
-        self.assertEqual(len(rows), 60)
+        self.assertEqual(len(rows), 66)
         self.assertEqual(set().union(*(set(r) for r in rows)), B.BATTLE_FIELDS)
         fixture = json.loads((ROOT / 'tests/fixtures/equip_client_stages.json').read_text(encoding='utf-8'))
         for row in fixture['tables']['BATTLE_TEMPLET_NORMAL']:
@@ -274,6 +274,52 @@ class EquipClientTest(unittest.TestCase):
         self.assertEqual(result['summons'], 40)
         self.assertGreater(result['lines'], 900)
         self.assertEqual(result['differences'], {}, result['examples'])
+
+
+class Equip1126Test(unittest.TestCase):
+    def test_released_stages_and_summon_execution(self):
+        from battlesim.api import _norm_encounter
+        from battlesim.mc import Battle
+        sys.path.insert(0, str(ROOT / 'tests'))
+        from simkit import unit
+        frag = json.loads((ROOT / 'data/foe_equip.json').read_text(encoding='utf-8'))
+        self.assertEqual(len(frag['u']), 8)
+        self.assertEqual(len(frag['s']), 22)
+        for tab in frag['g'][0]['tabs']:
+            for n, st in zip((21, 22), tab['s']):
+                with self.subTest(tab=tab['t'], stage=n):
+                    self.assertEqual((st['lv'], st['bp']),
+                                     (3549, 552545) if n == 21 else (3777, 587885))
+                    waves, limit, _, _, meta = _norm_encounter(
+                        {'stage': 'equip/%s/%s' % (tab['t'], st['n'])})
+                    self.assertEqual(meta['battle_mode'], 'boss_kill')
+                    b = Battle([unit('합성 표적', hp=10**9, atk=10000, sa=10000)], waves,
+                               random.Random(7), timeline=True, battle_mode=meta['battle_mode'], turn_limit=limit)
+                    b.spawn_wave()
+                    boss = next(u for u in b.foes if u.d.boss)
+                    self.assertFalse(boss.d.unmodeled)
+                    if tab['t'] == '잊혀진 맹세':
+                        self.assertEqual(boss.d.summon_groups[0]['group_id'], str(1000 + n))
+                        self.assertEqual(len(b.foes), 1)
+                        self.assertEqual(boss.d.skills['특수기'].cd, 4)
+                        ln = next(l for l in boss.d.lines if l.eff['kind'] == 'summon')
+                        self.assertEqual(ln.phase, '스킬 사용 후')
+                        b.cast(boss, boss.d.skills['특수기'])
+                        soldiers = [u for u in b.foes if u.summoned]
+                        self.assertEqual([u.pos for u in soldiers], [0, 4])
+                        self.assertEqual(b.rule_hits['summon'], 2)
+                        for u in soldiers:
+                            self.assertEqual(u.cd['특수기'], 0)
+                            self.assertEqual(u.d.stats['sa'], 7 if n == 21 else 8)
+                            growth = foe.load_foe()['u'][u.d.ui]['gw'][1]
+                            self.assertEqual(u.d.stats['atk'], int((180 + growth * (st['lv'] - 1)) * 1.5))
+                        b.cast(boss, boss.d.skills['특수기'])
+                        self.assertEqual(b.rule_hits['summon'], 2, '이미 점유된 슬롯에는 추가 소환하지 않음')
+                    b.cast(b.allies[0], b.allies[0].d.skills['기본기'], target=boss)
+                    self.assertGreater(b.progress(), 0)
+                    self.assertFalse(b.unsup)
+                    b.kill(boss, b.allies[0])
+                    self.assertFalse(b.alive(1), '보스 처치로 졸개도 종료됨')
 
 
 if __name__ == '__main__':
