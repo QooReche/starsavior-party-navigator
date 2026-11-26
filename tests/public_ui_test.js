@@ -7,8 +7,8 @@ function checkNotice(page,file){
  assert(latest,`${file}: dated update history`);
  assert.equal(latest[1],latest[2]);
  assert(text.startsWith(`📢 ${latest[1]} 업데이트 ·`));
- // 11/26 release copy includes the daily search update as well as the season and stages.
- assert([...text].length<=80,`${file}: notice including details stays within 80 characters`);
+ // Match the browser's compact notice budget, including its details link.
+ assert([...text].length<=60,`${file}: notice including details stays within 60 characters`);
  assert.match(update[1],/<a href="#update-history"[^>]*>자세히<\/a>/);
  assert.match(page,/<details class="note" id="update-history"><summary>업데이트 내역/);
  const css=page.match(/\.notice\.update-notice\{([^}]+)\}/)?.[1]||'';
