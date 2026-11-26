@@ -16,7 +16,7 @@ class GrowthStage23Test(unittest.TestCase):
     def check_metric(self, progs, level=0, tiers=None, tiny=False):
         tiers = tiers or [0, 0, 0, 0]
         script = """
-const fs=require('fs'),G=require('./growth_guide'),S=require('./guild_search'),V=require('./guild_view'),D=require('./data/guild_defense.json');
+const fs=require('fs'),G=require('./growth_guide'),S=require('./guild_search'),V=require('./guild_view'),D=require('./tests/guild_fixture')(30111);
 const x=JSON.parse(fs.readFileSync(0,'utf8'));
 if(x.tiny)Object.assign(D.steps.find(s=>s.ex),{base:0,kill:0,bossKill:1});
 const m=G.guildMetric(S,V,D,x.level,x.tiers);
@@ -25,7 +25,7 @@ console.log(JSON.stringify(m.prepare({n:x.ps.length,progs:x.ps,prog:x.ps.reduce(
         p = subprocess.run(['node', '-e', script], cwd=ROOT, input=json.dumps(dict(ps=progs, level=level, tiers=tiers, tiny=tiny)),
                            text=True, encoding='utf-8', capture_output=True, check=True)
         result = json.loads(p.stdout)
-        data = gd.load()
+        data = gd.load(ROOT / 'data/guild_seasons/30111.json')
         if tiny:
             next(s for s in data['steps'] if s.get('ex')).update(base=0, kill=0, bossKill=1)
         pct = gd.extra_pct(data, level, tiers)

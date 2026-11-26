@@ -5,7 +5,7 @@ const V = require('../guild_view.js'), G = require('../data/guild_defense.json')
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const unsupported = [{unit:'합성 구원자',slot:'잠재력',reason:'data',raw:'재난 대응 프로토콜 <검사>',critical:false}];
 const result = {prog:.8,progs:[.6,1],via:{},clear:.5,n:2,
-  cosmo:{top:100,mean:80,clear:.5,frac:.8,n:2},unsupported};
+  guild:{base_scores:[60,100]},cosmo:{top:100,mean:80,clear:.5,frac:.8,n:2},unsupported};
 const keys = ['a','b','c','d'], job = {key:'j',keys,order:keys,level:0,sup:'none',party:{units:keys}};
 
 function worker() { return {

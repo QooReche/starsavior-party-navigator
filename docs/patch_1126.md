@@ -25,7 +25,7 @@
 | ARCANA_TEMPLET | 7102001·7106101의 AST_ATK는 분류 태그임(`:272,992`). 내 정보 계산·빌더에서 이 열 사용 없음. 실제 스탯 표를 계산하므로 결과 변경 없음 |
 | RANKING_RAID_SEASON_TEMPLET / BATTLE_TAB_TEMPLET / BATTLE_TEMPLET_RANKING_RAID | 1023은 MAIN_OPEN이며 기존 현재 시즌임(`RANKING_RAID_SEASON_TEMPLET.json:467`). 현재 표를 다시 읽어 보스·3단계·난이도·시즌 버프를 기존 자료와 전수 비교해 동일했음. 바스커빌 3배치 조각도 재생성 값과 동일함 |
 | BATTLE_EFFECT_TEMPLET / DIFFICULTY_LEVEL_GROUP / SE_TEMPLET_BATTLE_EFFECT | 이전 코스모 효과·난이도 연결은 위 재생성 대조에서 동일함. 길드 2001의 잠금 메타 변경은 실제 단계 수·효과를 추출하는 경로에서 처리함. 이번 지원 4011202만 확률 변경으로 구분함 |
-| BUFF_TEMPLET | 301157의 m_bShowBuffText 표시 메타 변화임. 전투 수치 변화 없음 |
+| BUFF_TEMPLET | 301157의 m_bShowBuffText 표시 메타 변화임. 추가로 현재 번역과 공용 버프 이름 표의 불일치 2개를 고쳤음. 기존 ID 301067의 «패시브 3»→«끝나지 않는 사냥», 301157의 «패시브 카운트 버프»→«인과의 반향»임. 수치/플래그 변경은 없음 |
 | CRAFT_REWARD_TEMPLET / NORMAL_ITEM_TEMPLET_1 | 제작·보상/일반 아이템 연결. 구원자 능력치·장비 아이템·장비 세트 계산 변경 없음 |
 | EVENT_CUBE_POINT_REWARD_TEMPLET / EVENT_CUBE_SKILL_REROLL_GROUP_TEMPLET / EVENT_CUBE_TOTAL_POINT_REWARD_TEMPLET | 큐브 보상·재추첨 연결. 네비게이터 계산 콘텐츠 밖이므로 전투 엔진에 옮기지 않았음 |
 | PVP_SEASON_GROUP_TEMPLET | 맵·시즌·강화 그룹 연결. 네비게이터 계산 콘텐츠 밖임. 공개 여부를 추정해 미공개로 단정하지 않음 |
@@ -37,5 +37,7 @@
 - 장비는 공용 foe 병합·콘텐츠 필터·직접 편성 경로로 21·22단계를 노출함. 기존 1~20단계와 코스모·격전·플래시 포인트는 같은 정의를 유지함. 길드 적의 한글 속성명을 추천용 영문 키로 변환하는 누락을 고쳤음.
 - 내 정보 계산에 쓰는 성장표·장비/세트·아르카나 실제 수치가 같으므로 계정 수치 마이그레이션은 없음. 합성 내 정보로 새 단계의 현재/육성 스냅샷·직접 편성 경로를 검사함.
 - 보스 모듈의 내용 해시가 다르면 새 정의로 등록하고 옛 파일을 보존함. 공통 foe·규칙·빠른 계산 자료를 복제하지 않으며 길드·코스모 시즌은 모듈을 선택함. 절차와 재등장 시험은 [PORTING](PORTING.md)의 모듈 절을 따름.
+
+버프 이름 연결의 근거는 `BUFF_TEMPLET.json:51225,54695`와 `Strings/STRING_COMMON_ko_en.json:1`의 해당 m_BuffName 키임. 301067은 바스커빌 공개 시즌 1023의 패시브 SE(`SE_TEMPLET_SKILL_2.json:33934`)와 기존 foe 조각에 이미 연결돼 있음. 301157은 기존 EP8 전투 22401007/22401008의 MAIN_OPEN 행(`BATTLE_TEMPLET_NORMAL.json:213003,213064`), 배치 `JSON_NORMAL_BATTLE_MAINSTREAM_NORMAL_EP8_007.json:14`·`008.json:13`, 유닛 스킬과 SE(`SE_TEMPLET_SKILL_2.json:17049`)에 연결됨. 새 전투를 추가한 것이 아니며 이벤트 기간을 추정해 새 콘텐츠를 노출하지 않았음. 공용 면역 통과·버프 분류/중첩·사망 보존 표만 같은 ID의 현재 이름으로 생성했음. 이를 반영한 뒤에도 위 151조건의 결과 차이 목록은 동일했음.
 
 전후 비교·최종 시험 수치는 `HISTORY.md`의 같은 날짜 절에 기록함. 서버 최종 점수의 배율 적용 후 반올림, 실제 점검 종료 시각 등 기존 미확인 사항을 이 패치로 확인됐다고 바꾸지 않았음.

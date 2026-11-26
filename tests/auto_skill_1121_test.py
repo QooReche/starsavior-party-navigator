@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """오토 스킬 사용 교정(2026-11-21, docs/auto_skill_1121.md). python -X utf8 -I tests/auto_skill_1121_test.py
 
-1. 오토 회복 조건 AllyHpRateLessThan의 float32 경계·임계 0(PC 26752678 NKM:7484-7500,2191-2198).
+1. 오토 회복 조건 AllyHpRateLessThan의 float32 경계·임계 0(PC 26935738 NKM:7484-7500,2191-2198).
 2. 오토(nova_policy=auto)는 노바 버스트를 쓰지 않음 — 클라 확정이라 assumptions_used에서 빠지고,
    사람 운영 대체 정책(manual/heal)을 고르면 assumed로 보고함.
 3. 비공개 디컴파일이 있으면 근거 줄의 핵심 표지를 확인함(없으면 그 시험만 건너뜀).
@@ -107,16 +107,16 @@ class ClientEvidenceTest(unittest.TestCase):
         self.assertIn('AllyHpRateLessThan', nkm[7491 - 1])
         self.assertIn('10000f', nkm[7495 - 1])
         self.assertIn('NST_ACTIVE', nkm[7107 - 1])
-        level_up = [i + 1 for i, s in enumerate(nkm) if s.strip().endswith('.OBF_30259.OBF_2049();')]
-        self.assertEqual(level_up, [14466])   # 노바 버스트 레벨 증가는 요청 처리기 한 곳뿐
-        self.assertIn('OBF_20247(OBF_14896, OBF_24910: true)', nkm[13098 - 1])
+        level_up = [i + 1 for i, s in enumerate(nkm) if s.strip().endswith('.OBF_21608.OBF_22416();')]
+        self.assertEqual(level_up, [14456])   # 노바 버스트 레벨 증가는 요청 처리기 한 곳뿐
+        self.assertIn('OBF_33134(OBF_3346, OBF_0173: true)', nkm[13088 - 1])
 
     def test_nkc_lines(self):
         nkc = self._lines('NKC')
-        self.assertIn('NBIT_NOVA_BURST', nkc[248397 - 1])
-        self.assertIn('TS_WAIT_SKILL_INPUT', nkc[248397 - 1])
-        self.assertIn('new OBF_23947()', nkc[33408 - 1])
-        self.assertIn('TS_IDLE', nkc[33127 - 1])
+        self.assertIn('NBIT_NOVA_BURST', nkc[153985 - 1])
+        self.assertIn('TS_WAIT_SKILL_INPUT', nkc[153985 - 1])
+        self.assertIn('new OBF_33043()', nkc[27288 - 1])
+        self.assertIn('TS_IDLE', nkc[27009 - 1])
 
 
 if __name__ == '__main__':

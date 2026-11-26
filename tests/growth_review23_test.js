@@ -1,7 +1,7 @@
 // Review regressions exercise production UI signatures, persistence and scheduling.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {readSrc}=require('./helpers/page');
-const G=require('../growth_guide'),GS=require('../guild_search'),V=require('../guild_view'),D=require('../data/guild_defense.json');
+const G=require('../growth_guide'),GS=require('../guild_search'),V=require('../guild_view'),D=require('./guild_fixture')(30111);
 const ui=readSrc('growth_ui.js'),source=readSrc('growth_guide.js');
 function context(code=ui,storage={}){
   const ctx={UiShared:require('../ui_shared'),GrowthGuide:G,GuildView:V,GuildSearch:GS,ownedSimBreaks:()=>[],MI:{hash:'synthetic',info:{},growth:{assumed:{version:'test'}}},

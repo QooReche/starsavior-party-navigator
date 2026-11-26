@@ -30,7 +30,7 @@ async function capture(){
     // 새 시즌 식별자를 검증한 뒤 옛 30111 실행 정책 골든과 비교함.
     // 후보·입력·시드·순서·결과는 그대로 둠.
     if(name.startsWith('guild-')){
-      const G=require('../data/guild_defense.json'),prefix=JSON.stringify([G.season.id,G.dataVersion])+':';
+      const G=require('./guild_fixture')(30111),prefix=JSON.stringify([G.season.id,G.dataVersion])+':';
       for(const phase of out[name].phases){
         for(const job of phase.jobs){
           assert(job.key.startsWith(prefix));
@@ -92,7 +92,7 @@ async function runtime({legacy=false,screen=false}={}){
  }
  const direct=read('direct_run.js');
  Object.assign(ctx,{DIRECT:{draft:{},revision:1,requestId:0,rows:{},cache:new Map(),expected:{now:{sig:'now',revision:1,runs:4,seed:20261121,stage:'op/a/b',party:{units:[{key:'u0'}]},options:{},versions:{engine:'synthetic'}}}},
-  MI:{},D:{},QK:{},MyInfoReco:{hash:()=> 'synthetic'},DirectParty:{validate:()=>({ok:true})},directContext:()=>({}),directSync(){},directValues:()=>({errors:[]}),directInputKey:()=> 'fixed',directCopy:plain,directManifest:async()=>({ver:'synthetic'})});
+  MI:{},D:{},QK:{},contents:[{key:'op'}],$:()=>({value:0}),seasonBlocked:()=>false,MyInfoReco:{hash:()=> 'synthetic'},DirectParty:{validate:()=>({ok:true})},directContext:()=>({}),directSync(){},directValues:()=>({errors:[]}),directInputKey:()=> 'fixed',directCopy:plain,directManifest:async()=>({ver:'synthetic'})});
  vm.runInContext(cut(direct,'async function directRunRows(','// Only the completed first'),ctx);
  await ctx.directRunRows();while(ctx.DIRECT.active)await new Promise(setImmediate);
  const directCount=trace.length;await ctx.directRunRows();assert.equal(trace.length,directCount,'cached direct resubmitted');

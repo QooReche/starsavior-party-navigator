@@ -15,7 +15,7 @@
      "spec": {"cosmo_raid": {"boss": "disparity", "step": 3, "level": 8}},
      "options": {"break_skill": {"name": "큐브 과부하", "level": 1}}},
     {"encounter": "guild", "party": ["wedding-carmen", "ceres-sun-supporter", "amora", "tyria"], "leader": 0,
-     "spec": {"guild": {"level": 0, "support": "fire"}},
+     "spec": {"guild": {"seasonId": 30111, "level": 0, "support": "fire"}},
      "options": {"break_skill": {"name": "행성 정화", "level": 1}}}
   ]
 }

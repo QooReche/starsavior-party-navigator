@@ -1,7 +1,7 @@
 // Invented teams only. Mutations alter isolated module instances, never source files.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {readSrc,loadModule}=require('./helpers/page');
-const G=require('../growth_guide'),GS=require('../guild_search'),V=require('../guild_view'),CS=require('../cosmo_search'),D=require('../data/guild_defense.json');
+const G=require('../growth_guide'),GS=require('../guild_search'),V=require('../guild_view'),CS=require('../cosmo_search'),D=require('./guild_fixture')(30111);
 const source=readSrc('growth_guide.js');
 const load=code=>loadModule(code);
 function signature(g=G){const s={account:'synthetic',options:{growth:true},targets:['x'],content:['guild','EX'],excluded:[],

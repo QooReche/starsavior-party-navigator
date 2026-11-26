@@ -18,16 +18,16 @@
   "data/hit_stats.json": "8f7687e743e2d96e617a015554e741223559c325a6d4e0e655ec6a1856cce404",
   "data/chain_se.json": "eaa362ad956d18c6adf9a13bfff58b3188605066de11e8fba8d18e345b5eff95",
   "data/break_skill_levels.json": "d560776b8e90a2119c6ef84a0aefa857fe7a3e7e74248b11fe73cea460193cda",
-  "data/buff_count.json": "691f4b02f66c6316f86695e322580ffa7f1f7f77a427d2618f1ff5b9b6f07eb1",
+  "data/buff_count.json": "81f71b71ddf3ed9bb9f516deb52ad7a38d13a2fcb9e4a88fb7fa7b9415e8f3ed",
   "data/buff_step.json": "f4562d313622763a5516588c932842e4e80f57e94b56061544b7ba236b506bb1",
   "data/buff_force.json": "81caffee715e2526935ce228ca0b6aee960d67d43cb2ae592a816cff2187d5bf",
-  "data/buff_immune_pass.json": "8e3d0b7ff54fcc3be2c8bb00a2eb3984f708ee2dac5402ecace5aaabc0eedc9d",
+  "data/buff_immune_pass.json": "cdbf6d63e97db968448965ee9c839c93235a4ebbaad9c4e7fb8caaf6544210b9",
   "data/buff_global_turn.json": "3ac595ad8b8434975e6768ab03b27ee76803dfc012519a68b440d78a386e3894",
   "data/foe_react.json": "cdaeb1c0ad0d08448f834529c1e8669fbdd234dc9ad1780ebc7f19fadc84fef4",
   "data/foe_client.json": "396a60fd35ca2b0cf9b3dacd7579a16dbf8321ce7f276b4c31101d553fa49bb9",
   "data/foe_summon.json": "2de72c067589e64d3685dd455ea9d2e67237446858d67a9d55de25122a0b2d94",
   "data/foe_clash.json": "6690437446774d128a485a0ad1ef231ef197390750b726d448c7986081a29504",
-  "data/buff_dead_keep.json": "6e79b9a906705e79c631fda2ecfb0f1d37f0722c3e5364f6d6da6d08c71a71db",
+  "data/buff_dead_keep.json": "a2b113099c4ccde9d614eb72311bb726872da0d454e590ff1d8274fbf428869d",
   "data/buff_flags.json": "98f0d768d7b53dee5b92847a3058ee73d01570f36d818a41d41a7d5ecb7c79bc",
   "data/cosmo_raid.json": "d62bd3bd41f4178ba3c619c09b2a2e19cf7ead5f00df283bd22ded4eed9515de",
   "data/foe_cosmo_extra.json": "7474b8ee3394a3ac13dc77e081994e25b8b81992c304b4e22cece47c492ff2cb",
@@ -1664,11 +1664,6 @@
     "45041"
    ]
   },
-  "supportRole": {
-   "40042": "어쌔신",
-   "40031": "캐스터",
-   "40021": "레인저"
-  },
   "excludeText": [],
   "excludeKeys": [],
   "notes": [],
@@ -1703,7 +1698,12 @@
    "keep": 2,
    "auditTeams": 12
   },
-  "banCoop": false
+  "banCoop": false,
+  "supportRole": {
+   "40042": "어쌔신",
+   "40031": "캐스터",
+   "40021": "레인저"
+  }
  },
  "rules": {
   "turnLimit": 50,
@@ -1749,5 +1749,5 @@
    "client"
   ]
  },
- "dataVersion": "61d355c4845dff79a29e66201fca740be8ce24f01cd8ac555dfae649823e6707"
+ "dataVersion": "ea62caac8c3ff09fa63657e4fc376cc41805505753c6313526265c1414a4dae4"
 }
