@@ -3268,8 +3268,9 @@ def test_ux_step3(browser, ctx):
     page.select_option('#guild-extra [data-g="level"]','6')
     assert page.locator('[data-fold="gd-effects"]').evaluate('e=>e.open')
     assert page.evaluate('GS.sel.level') == 6
-    page.select_option('#guild-extra [data-g="set"][data-i="0"]','1')
-    assert page.evaluate('gsTiers()[0]') == 1
+    # 선택 효과는 시즌 플래그(sets.ui=false)로 숨김 — 드롭다운 없음, 계산 값은 항상 끔.
+    assert page.locator('#guild-extra [data-g="set"]').count() == 0
+    assert page.evaluate('gsTiers().every(x=>x===0)')
     page.click('#guild-extra [data-g="best"]')
     assert page.evaluate('gsTiers().every(x=>x===0)')
     page.locator('[data-fold="gd-effects"] > summary').click()
