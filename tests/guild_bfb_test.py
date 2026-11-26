@@ -337,7 +337,7 @@ def test_bouquet_chain_not_ally_damage():
 
 
 def test_simulate_runs():
-    r = simulate(PARTY, {'guild': {'level': 0}}, {'seed': 1, 'n_runs': 3, 'build': 'standard', 'timeline': True})
+    r = simulate(PARTY, {'guild': {'seasonId': 30111, 'level': 0}}, {'seed': 1, 'n_runs': 3, 'build': 'standard', 'timeline': True})
     assert r['encounter']['content'] == 'guild' and r['encounter']['turn_limit'] == 50
     assert any(e.get('skill_name') == '정실 어필' for e in r['timeline']), '정실 어필 발동 안 함'
     assert r['unsupported']['gate_ok']
@@ -345,7 +345,7 @@ def test_simulate_runs():
 
 def test_ally_via_reported():
     """결과 outcome.ally_via 에 아군 시전 경로별 판당 평균이 실린다(길방 편성 찾기가 협공 발생 팀을 거르는 데 씀)"""
-    r = simulate(PARTY + [], {'guild': {'level': 0}}, {'seed': 1, 'n_runs': 4, 'build': 'standard'})
+    r = simulate(PARTY + [], {'guild': {'seasonId': 30111, 'level': 0}}, {'seed': 1, 'n_runs': 4, 'build': 'standard'})
     v = r['ally_via']
     assert isinstance(v, dict) and all(isinstance(x, float) or isinstance(x, int) for x in v.values()), v
     print('OK test_ally_via_reported', v)

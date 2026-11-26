@@ -180,6 +180,8 @@ def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", exc
     if os.environ.get('PN_E2E_LOW_MEMORY') == '1':
         # 실제 시뮬은 워커 2개로 제한해 전체 e2e의 메모리와 실행 시간을 함께 관리함.
         page.add_init_script("Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>3});Object.defineProperty(navigator,'deviceMemory',{get:()=>2});")
+    if os.environ.get('PN_E2E_WORKERS') == '1':
+        page.add_init_script("Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>2});Object.defineProperty(navigator,'deviceMemory',{get:()=>1});")
     attach(page, ctx)
     seed(page, info, simauto, excl)
     if manual_sim if manual_sim is not None else simauto == "0":
@@ -1510,7 +1512,7 @@ def test_guild_defense(browser, ctx):
     panel = page.locator("#guild-extra")
     shown = panel.is_visible()
     text = panel.text_content()
-    sim_sets = panel.locator('[data-k="gd-sim-set"]').all_text_contents()
+    reference_rows = panel.locator('[data-k="gd-summary-table"] tbody tr').count()
     sim_data_ok = page.evaluate("""() => D.guild.sim.growth.join(',') === '1,1.5,2,2.5,3'
         && D.guild.sim.sets.max.join(',') === '3,3,3,3'
         && D.guild.sim.teams.every(t => !!t.bySets.max.fracBySupport)
@@ -1519,13 +1521,13 @@ def test_guild_defense(browser, ctx):
     gim = page.locator('.party[data-party="1"] .gimrow[data-code="TARGET_PRIORITY"]').count()
     open_fold(page, "gd-effects")
     page.select_option('#guild-extra select[data-g="level"]', "6")
-    page.wait_for_function("() => document.querySelector('#guild-extra .gd-now').textContent.includes('추가 점수 60%')")
-    sel6 = panel.locator('[data-k="gd-now"]').inner_text()
+    page.wait_for_function("() => document.querySelector('#guild-extra [data-k=gd-levels] tr.cur').firstElementChild.textContent==='6'")
+    sel6 = panel.locator('[data-k="gd-levels"] tr.cur').inner_text()
     page.click('#guild-extra button[data-g="best"]')
-    best_back = "(최고 조합)" in panel.locator('[data-k="gd-now"]').inner_text()
+    best_back = panel.locator('select[data-g="level"]').input_value() == '12'
     # 시즌 종료 뒤 표시: 화면 함수에 시즌 끝난 시각을 넣어 본다(실제 오늘 날짜와 무관하게 판정)
-    stale = page.evaluate("() => GuildView.panelHtml(D.guild, null, 7, Date.parse('2026-11-06T00:00:00+09:00'), esc)")
-    live = page.evaluate("() => GuildView.panelHtml(D.guild, null, 7, Date.parse('2026-10-30T12:00:00+09:00'), esc)")
+    stale = page.evaluate("() => GuildView.panelHtml(D.guild, null, 7, Date.parse('2026-12-03T04:00:00+09:00'), esc)")
+    live = page.evaluate("() => GuildView.panelHtml(D.guild, null, 7, Date.parse('2026-11-27T12:00:00+09:00'), esc)")
     page.select_option("#stage", index=1)
     page.dispatch_event("#stage", "change")
     settle(page)
@@ -1535,13 +1537,11 @@ def test_guild_defense(browser, ctx):
     errs = list(ctx.errors)
     page.close()
     # 현재 날짜에 따른 미오픈 접미사는 test_season_gate에서 별도로 검사함.
-    ok = (name.removesuffix(" [미오픈]") == "길드방어전(시즌4 10/29~11/05)" and first_stage.startswith("7단계 EX") and shown and cards == 4 and gim == 1
-          and "최고 점수가 나오는 조합" in text and "보스를 깎은 비율" in text and "가설 B" not in text and "추정" in text
-          and "시뮬 추정: 깰 수 있는 최고 단계" in text and "개발 중" in text
-          and sim_data_ok and len(sim_sets) == 5 and all(s in ('선택 효과 끔', '모두 최대') for s in sim_sets)
-          and '×2.5' in text and '×3' in text and '지원별 클리어 가능 최고 단계 (×2)' in text
-          and "일일 초기화 전까지" in text and "기준" in text and "추가 점수 60%" in sel6 and best_back
-          and "갱신 대기" in stale and "갱신 대기" not in live and "6단계에는 별의 도전이 없음" in lower
+    ok = (name.removesuffix(" [미오픈]") == "길드방어전(시즌5 11/26~12/03)" and first_stage.startswith("7단계 EX") and shown and cards == 4
+          and "카본펑크 칸" in text and "최대 기대 점수" in text and "최고 클리어 단계" in text
+          and sim_data_ok and reference_rows == 5
+          and "기준" in text and "+60%" in sel6 and best_back
+          and "갱신 대기" in stale and "갱신 대기" not in live and "6단계" in lower
           and hidden and not errs)
     return ok, "%s / %s / 카드 %d / 기믹줄 %d / 패널 %s / 오류 %s" % (name, first_stage, cards, gim, shown, errs[:2])
 
@@ -1549,7 +1549,7 @@ def test_guild_defense(browser, ctx):
 def test_guild_season_rollover(browser, ctx):
     """시즌 종료 시각(11/05 04:00)을 넘기면 열어 둔 화면도 «갱신 대기»로 바뀜(가짜 시계로 03:59:50 에 열고 20초 진행)"""
     ctx.errors.clear()
-    page = open_page(browser, ctx, setup=lambda pg: pg.clock.install(time=_dt.datetime(2026, 11, 5, 3, 59, 50, tzinfo=_dt.timezone(_dt.timedelta(hours=9)))))
+    page = open_page(browser, ctx, setup=lambda pg: pg.clock.install(time=_dt.datetime(2026, 12, 3, 3, 59, 50, tzinfo=_dt.timezone(_dt.timedelta(hours=9)))))
     names = page.eval_on_selector("#content", "s => [...s.options].map(o => o.textContent)")
     page.select_option("#content", label=next(n for n in names if n.startswith("길드방어전")))
     settle(page)
@@ -1574,7 +1574,7 @@ def test_guild_search(browser, ctx):
     shown = page.locator("#guild-search").is_visible()
     has_btn = page.locator('#guild-search button[data-gs="start"]').count()
     # 탐색 크기를 줄인다(풀 8명·상위 2팀·단계 4 하나·판수 2) — 로직은 그대로
-    page.evaluate("""() => {const S=D.guild.search;S.poolSize=8;S.minRole={'서포터':1,'디펜더':1};S.minPowerRatio=0;S.screen2={keep:3,runs:2};S.finalists=2;S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['fire','gust']}""")
+    page.evaluate("""() => {const S=D.guild.search;S.poolSize=8;S.minRole={'서포터':1,'디펜더':1};S.minPowerRatio=0;S.screen2={keep:3,runs:2};S.finalists=2;S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['none','40051']}""")
     page.click('#guild-search button[data-gs="start"]')
     page.wait_for_selector('#guild-search [data-k="gs-best"]', timeout=540000)
     open_fold(page, 'gs-results')
@@ -1604,9 +1604,9 @@ def test_guild_search_dropped(browser, ctx):
     page.evaluate("""() => {
       MI.brkLv={};  // 브레이크 미보유의 기존 3단계 경로. 4단계는 test_guild_break_search.
       const S=D.guild.search;
-      Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,
+      Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,banCoop:true,
         screen2:{keep:5,runs:2},finalists:5});
-      S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['fire','gust'];
+      S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['none','40051'];
       window.__jobs=[];window.__banned=null;
       window.Worker=class {
         postMessage(req){
@@ -1616,7 +1616,8 @@ def test_guild_search_dropped(browser, ctx):
             if(!__banned)__banned=key;
             const banned=key===__banned;
             const result={n:req.n_runs,clear:banned?1:0.5,prog:banned?1:0.5,
-              progs:banned?[1,1]:[0,1],via:banned?{forced_coop:0.1}:{trigger:1}};
+              progs:banned?[1,1]:[0,1],via:banned?{forced_coop:0.1}:{trigger:1},
+              guild:{seasonId:D.guild.season.id,base_scores:(banned?[1,1]:[0,1]).map(p=>GuildView.scoreAt(D.guild,0,p))}};
             setTimeout(()=>{if(!this.dead)this.onmessage({data:{id:req.id,type:'team',key:t.key,result}})},0);
           }
           setTimeout(()=>{if(!this.dead)this.onmessage({data:{id:req.id,type:'done'}})},0);
@@ -2383,6 +2384,7 @@ def test_growth_stage23(browser, ctx):
             const bi=D.cosmoRaid.bosses.findIndex(b=>b.key===t.options?.cosmo_raid?.boss),wanted=stage23Keys.slice(bi*4,bi*4+4),
               score=Math.round(value*1000)+t.party.units.filter(u=>wanted.includes(u.key)).length*1000;
             const result={ver:stage23Version,n:req.n_runs,clear:0,prog:value,progs:Array(req.n_runs).fill(value),via:{trigger:1},
+              guild:{seasonId:D.guild.season.id,base_scores:Array(req.n_runs).fill(Math.round(value*1000))},
               cosmo:{top:score,mean:score,n:req.n_runs,clear:0,frac:value}};
             this.onmessage({data:{id:req.id,type:'team',key:t.key,result}});
           }this.onmessage({data:{id:req.id,type:'done'}});
@@ -2390,7 +2392,7 @@ def test_growth_stage23(browser, ctx):
         terminate(){if(!this.dead){this.dead=true;stage23Active--;}}
       };
       const S=D.guild.search;Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,screen2:{keep:3,runs:2},finalists:2});
-      S.screen.runs=2;S.final.runs=2;S.final.levels=[0];S.final.supports=['fire','gust'];
+      S.screen.runs=2;S.final.runs=2;S.final.levels=[0];S.final.supports=['none','40051'];
       const C=D.cosmoRaid.search;C.minFront=0;C.minDealer=0;C.screen.runs=2;C.rerank.runs=2;C.final.runs=2;
       C.poolSize=12;C.maxPool=12;C.rerank.keep=18;
       $('assume-growth').checked=true;condChanged();
@@ -2570,7 +2572,102 @@ def test_season_gate(browser, ctx):
     return True, '미오픈 칩·탐색/육성 차단·dev 우회·기간 미확인·시작 전·종료 경계·390px'
 
 
-TESTS = [test_season_gate, test_growth_controls, test_growth_stage23, test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
+def test_patch1126_direct(browser, ctx):
+    """Real direct editor/worker: released guild and equipment, storage, links and stale results."""
+    from urllib.parse import urlsplit
+    page = open_page(browser, ctx, query='?pm=direct&auto=0', info=None, wait=False,
+        setup=lambda pg: pg.add_init_script("localStorage.setItem('pn.guild.v2',JSON.stringify({level:1,support:'fire'}))"))
+    page.wait_for_function('DIRECT.slots && DIRECT.mode==="direct"')
+    page.evaluate("""() => {
+      SIMQ.n=2;
+      for(const [slot,key] of ['gwen','fei','professor-m','amora'].entries())directChange({type:'put',slot,key});
+    }""")
+    def run(page=page):
+        page.click('#direct-run')
+        page.wait_for_function('!DIRECT.active && DIRECT.rows.now?.status==="done" && DIRECT.rows.now.sig===DIRECT.expected.now?.sig', timeout=240000)
+        result = page.evaluate('DIRECT.rows.now.result')
+        assert result['n'] == 2
+        assert '%' in page.locator('#direct-result-summary').inner_text()
+        assert not page.evaluate('DIRECT.runError')
+        return result
+
+    names = page.locator('#content option').all_text_contents()
+    page.select_option('#content', label=next(n for n in names if n.startswith('길드방어전')))
+    page.wait_for_function('directContext().content==="guild" && !document.querySelector("#guild-extra").hidden')
+    assert page.evaluate('parseInt(cur[$("stage").value].name)===D.guild.defaultStep')
+    assert page.evaluate('simOpt("guild").guild.level===D.guild.challenge.levels.length')
+    support = page.evaluate('String(D.guild.supports[0].id)')
+    open_fold(page, 'gd-effects')
+    page.select_option('#guild-extra [data-g="level"]', '3')
+    page.select_option('#guild-extra [data-g="support"]', support)
+    first = run()
+    assert page.evaluate('DIRECT.rows.now.snapshot.options.guild.seasonId === D.guild.season.id')
+    assert len(first['guild']['base_scores']) == 2
+    assert page.locator('[data-direct-guild-score]').count() == 1
+    assert page.evaluate('DIRECT.rows.now.snapshot.options.guild.level===3')
+    share = page.evaluate('shareUrl()')
+    snap = page.evaluate('DIRECT.rows.now.snapshot.options.guild')
+    saved = page.evaluate('LS.get(guildStoreKey())')
+    assert saved['support'] == support and saved['level'] == 3
+    # A fresh browser context receives the selected options and party, with no local account.
+    target = open_page(browser, ctx, query='?' + urlsplit(share).query+'&auto=0', info=None, wait=False)
+    target.wait_for_function('DIRECT.slots && DIRECT.mode==="direct"')
+    assert target.evaluate('simOpt("guild").guild') == snap
+    assert target.evaluate('DIRECT.draft.slots.every(Boolean)')
+    target.close()
+    stages = page.eval_on_selector('#stage', 's=>[...s.options].map(o=>({value:o.value,text:o.textContent}))')
+    assert len(stages) == page.evaluate('D.guild.steps.length')
+    positive = False
+    for option in reversed(stages):
+        page.select_option('#stage', option['value'])
+        opts = page.evaluate('simOpt("guild").guild')
+        assert opts['support'] == support
+        if opts['step'] != page.evaluate('D.guild.defaultStep'):
+            assert opts['level'] == 0 and opts['sets'] == [0,0,0,0]
+        result = run()
+        positive |= result['prog'] > 0
+    assert positive
+    old = open_page(browser, ctx, query='?pm=direct&c=guild&gs=30111&auto=0', info=None, wait=False)
+    old.wait_for_function('DIRECT.slots')
+    old.evaluate('d=>{DIRECT.draft=d;directPaint()}',page.evaluate('DIRECT.draft'))
+    assert old.evaluate('SHARE.guildExpired && seasonBlocked("guild")')
+    assert old.locator('#direct-run').is_disabled()
+    old.close()
+    # Each equipment tab exposes both new stages through the ordinary filters.
+    idx = page.evaluate('contents.findIndex(c=>c.key==="equip")')
+    page.select_option('#content', str(idx))
+    targets = page.evaluate('contents[$("content").value].stages.filter(s=>/ (XXI|XXII)$/.test(s.name)).map(s=>({tab:s.tab,name:s.name}))')
+    assert len(targets) == 6, targets
+    for stage in targets:
+        page.fill('#q', stage['name'])
+        page.select_option('#stage', index=0)
+        assert page.evaluate('cur[$("stage").value].name') == stage['name']
+        result = run()
+        assert result['prog'] > 0, stage
+        link = page.evaluate('shareUrl()')
+        target = open_page(browser, ctx, query='?' + urlsplit(link).query+'&auto=0', info=None, wait=False)
+        target.wait_for_function('DIRECT.slots')
+        assert target.evaluate('cur[$("stage").value].name') == stage['name']
+        assert target.evaluate('DIRECT.draft.slots.every(Boolean)')
+        target.close()
+    # Synthetic myinfo uses the same new stages, exact owned stats, and grown snapshots.
+    from test_direct_party import pick_four
+    target = open_page(browser,ctx,query='?pm=direct&c=equip&auto=0',info=SYNTH,wait=False)
+    wait_myinfo(target)
+    target.wait_for_function('DIRECT.slots && DIRECT.values')
+    pick_four(target)
+    target.fill('#q',targets[0]['name'])
+    target.select_option('#stage',index=0)
+    target.evaluate("SIMQ.n=2;directChange({type:'grown',slot:0,value:true})")
+    run(target)
+    assert target.evaluate('DIRECT.rows.now.snapshot.party.units.every(u=>u.stats_override) && !!DIRECT.expected.grown')
+    target.close()
+    assert not ctx.errors, ctx.errors
+    page.close()
+    return True, '직접 편성: 길드 전 단계·지원·도전·실제 시뮬·만료·저장·공유, 장비 6단계 실제 시뮬·공유'
+
+
+TESTS = [test_patch1126_direct, test_season_gate, test_growth_controls, test_growth_stage23, test_star_link_slots, test_assumed_growth, test_assumed_legacy, test_assumed_corridor, test_load_no_errors, test_quick_default, test_quick_owned_small, test_browser_sim,
          test_browser_sim_blocked, test_sim_auto_and_override, test_manual_mode, test_cosmo_joint, test_rekindle_ui, test_mobile_layout, test_python_js_topk_parity]
 TESTS.append(test_cosmo_auto_level)
 TESTS.append(test_guild_search)
@@ -3133,10 +3230,11 @@ def test_ux_step3(browser, ctx):
         assert page.locator('#guild-extra select[data-g="level"]').is_hidden()
         page.screenshot(path=os.path.join(ctx.shots,f'ui3_guild_{suffix}.png'),full_page=True)
     # Check the two independent metrics against the same reference row.
-    expected = page.evaluate("""() => ({level:GuildView.simBest(D.guild.sim,2).level,
+    expected = page.evaluate("""() => ({level:GuildView.simBest(D.guild.sim,2)?.level??null,
       score:Math.round(GuildView.simExpect(D.guild,D.guild.sim,2).m)})""")
     def guild_numbers():
-        assert page.inner_text('[data-k="gd-clear-kpi"]') == (str(expected['level'])+'단계' if expected['level'] else 'EX 기본')
+        label = 'EX도 어려움' if expected['level'] is None else (str(expected['level'])+'단계' if expected['level'] else 'EX 기본')
+        assert page.inner_text('[data-k="gd-clear-kpi"]') == label
         assert page.inner_text('[data-k="gd-score-kpi"]') == format(expected['score'],',')
     guild_numbers()
     caught("document.querySelector('[data-k=gd-clear-kpi]').textContent='99단계'",guild_numbers,'renderGuild()')
@@ -3154,7 +3252,7 @@ def test_ux_step3(browser, ctx):
     assert page.evaluate('gsTiers().every(x=>x===0)')
     page.locator('[data-fold="gd-effects"] > summary').click()
     assert page.locator('[data-gs="coop"]').count()==1
-    assert page.evaluate("D.guild.search.excluded.includes('professor-m')&&D.guild.search.excluded.includes('waltz-asherah')")
+    assert page.evaluate("D.guild.season.id===30112 && D.guild.search.excluded.length===0 && !D.guild.search.banCoop")
 
     # The real search entry and cancel handlers must stop their workers, with no late result.
     page.evaluate("""() => {window.ui3Created=0;window.ui3Stopped=0;

@@ -25,7 +25,7 @@
   function storage(state){return state.shared?null:draft(state.draft);}
   function validate(d,{roster=[],info=null,restrict=null,content='op'}={}){
     const errors=[],members=d.slots.filter(Boolean),byKey=new Map(roster.map(s=>[s.key,s]));
-    if(['guild','cosmo'].includes(content))errors.push({code:'unsupported',message:'아직 안 됨 · 이 콘텐츠의 직접 편성은 준비 중'});
+    if(content==='cosmo')errors.push({code:'unsupported',message:'코스모 전용 직접 편성에서 선택'});
     if(members.length!==4)errors.push({code:'count',message:`4명 미만 · ${members.length}/4명 편성 중`});
     const seen=new Set();
     d.slots.forEach((m,i)=>{if(!m)return;const s=byKey.get(m.key);

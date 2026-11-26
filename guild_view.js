@@ -50,7 +50,17 @@
     const b = bestSelection(G);
     const level = Number.isInteger(sel && sel.level) && sel.level >= 0 && sel.level <= b.level ? sel.level : b.level;
     const tiers = G.sets.items.map((_, i) => { const t = sel && sel.tiers && sel.tiers[i]; return Number.isInteger(t) && t >= 0 && t <= MAX_TIER ? t : b.tiers[i]; });
-    return {level, tiers};
+    const supports = supportChoices(G);
+    const support = supports.some(s=>s.id===String(sel?.support))?String(sel.support):'none';
+    return {level, tiers, support};
+  }
+  function supportChoices(G) {
+    const ids=G.search?.final?.supports||['none',...(G.supports||[]).map(s=>String(s.id))];
+    return ids.map(id=>({id:String(id),name:(G.supports||[]).find(s=>String(s.id)===String(id))?.name||SUP_NAME[id]||String(id)}));
+  }
+  function battleOptions(G, sel, step) {
+    const s=normSel(G,sel),ex=exStep(G);
+    return {seasonId:G.season.id,dataVersion:G.dataVersion,step,level:step===ex.step?s.level:0,sets:step===ex.step?s.tiers:G.sets.items.map(()=>0),support:s.support};
   }
   function range(sc) { const v = Object.values(sc); return [Math.min(...v), Math.max(...v)]; }
   function rangeText(sc) { const [a, b] = range(sc); return a === b ? num(a) : num(a) + " ~ " + num(b); }
@@ -104,7 +114,7 @@
     const rows = G.challenge.levels.map(lv => {
       const sc = score(G, extraPct(G, lv.level, [0, 0, 0, 0]));
       const big = lv.level >= 7;
-      const tip = big ? ` title="공지 표(옛 값): 공격 +${lv.noticeAtk}%, 생명력·방어 +${lv.noticeHp}%"` : "";
+      const tip = big && Number.isFinite(lv.noticeAtk) && Number.isFinite(lv.noticeHp) ? ` title="공지 표(옛 값): 공격 +${lv.noticeAtk}%, 생명력·방어 +${lv.noticeHp}%"` : "";
       return `<tr${lv.level === sel.level ? ' class="cur"' : ""}><td>${lv.level}</td><td${tip}>공격 +${lv.atk}% · 생명력·방어 +${lv.hp}%</td><td>+${lv.score}%</td><td>${rangeText(sc)}</td><td class="gd-fx">${levelEffects(G, lv).map(esc).join("<br>")}</td></tr>`;
     }).join("");
     return `<div class="gd-scroll"><table class="gd-levels" data-k="gd-levels"><thead><tr><th>단계</th><th>보스 능력치</th><th>추가 점수</th><th>점수(보스 다 깎음)</th><th>누적 효과</th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -185,8 +195,9 @@ ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율 (선�
     const sel = normSel(G, sel0), ex = exStep(G);
     if(G.season.boss.engine==='client'){
       const st=G.steps.find(s=>s.step===step),pct=extraPct(G,sel.level,sel.tiers);
-      return `<div class="gd-head"><b>길드 방어전 · ${esc(G.season.label)} · ${esc(G.season.boss.name)}</b></div>`+
-        `<p class="mut">${st.step}단계 · 최대 ${st.turnLimit}턴 · ${st.waves.length}웨이브 · 현재 클라에서 추출한 시즌 정의</p>`+
+      return (G.season.start&&G.season.end&&G.season.settleEnd?seasonBox(G,nowMs,esc):
+        `<div class="gd-head"><b>길드 방어전 · ${esc(G.season.label)}</b></div>`)+
+        `<p class="mut">${esc(G.season.boss.name)} · ${st.step}단계 · 최대 ${st.turnLimit}턴 · ${st.waves.length}웨이브</p>`+
         (step===ex.step?overview(G,esc):'')+
         `<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary>`+
         (step===ex.step?selectBox(G,sel)+`<p>클리어 기준 점수 ${num(scoreAt(G,pct,1))}</p>`+levelTable(G,sel,esc):'')+
@@ -218,6 +229,6 @@ ${simBox(G, esc)}${selectBox(G, sel)}
 <details class="gd-src"><summary>출처</summary><div class="gd-small">${src}</div></details>`;
     return html+'</details></div>';
   }
-  const api = {num, parseTime, seasonState, baseTotal, extraPct, score, scoreAt, bossPoints, progParts, scoreFromProg, bestSelection, normSel, rangeText, levelEffects, simBest, simExpect, simBox, panelHtml};
+  const api = {num, parseTime, seasonState, baseTotal, extraPct, score, scoreAt, bossPoints, progParts, scoreFromProg, bestSelection, normSel, supportChoices, battleOptions, rangeText, levelEffects, simBest, simExpect, simBox, panelHtml};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildView = api;
 })(typeof window !== "undefined" ? window : globalThis);

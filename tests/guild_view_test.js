@@ -1,7 +1,7 @@
 // 길드 방어전 패널 시험: 점수 범위, 시즌 종료 표시(갱신 대기), 단계별 안내, 화면 용어, 이스케이프.
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 const V = require('../guild_view.js');
-const G = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_defense.json'), 'utf8'));
+const G = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_seasons', '30111.json'), 'utf8'));
 // 화면에 싣는 자료와 같은 모양(내부 출처 제외)
 const P = {...G, title: '길드방어전(시즌4 10/29~11/05)', tab: '시즌4 10/29~11/05',
   sources: Object.fromEntries(Object.entries(G.sources).filter(([k]) => k !== 'client'))};
@@ -14,8 +14,8 @@ const tests = {
     assert.deepEqual(V.score(P, 0), {A: 30000});
     assert.equal(V.rangeText({A: 66000, B: 36000}), '36,000 ~ 66,000');   // 범위 표시 함수 자체는 그대로(값이 둘일 때)
     assert.equal(V.rangeText({A: 5, B: 5}), '5');
-    assert.deepEqual(V.normSel(P, null), {level: 12, tiers: [0, 0, 0, 0]}, '선택 효과는 길방에 없어 기본 끔');
-    assert.deepEqual(V.normSel(P, {level: 99, tiers: [9, -1, 'x', 2]}), {level: 12, tiers: [0, 0, 0, 2]});
+    assert.deepEqual(V.normSel(P, null), {level: 12, tiers: [0, 0, 0, 0], support:'none'}, '선택 효과는 길방에 없어 기본 끔');
+    assert.deepEqual(V.normSel(P, {level: 99, tiers: [9, -1, 'x', 2]}), {level: 12, tiers: [0, 0, 0, 2], support:'none'});
     assert.deepEqual(V.bestSelection(P), {level: 12, tiers: [0, 0, 0, 0]});
   },
   state() {
@@ -78,7 +78,7 @@ const tests = {
   },
   sim() {
     // 화면 자료 = guild_defense.page_payload 의 sim(tools/build_guild_sim.py 결과를 줄인 것)
-    const raw = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_sim.json'), 'utf8'));
+    const raw = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_seasons', '30111', 'guild_sim.json'), 'utf8'));
     const S = {runs: raw.runs, recPower: raw.recPower, growth: raw.growth, levels: raw.levels, passP: raw.pass_p, basis: raw.basis,
       summary: raw.summary, sets: raw.sets, summaryBySets: raw.summaryBySets, supports: raw.supports, teams: raw.teams};
     // summary 는 rates 에서 다시 계산한 것과 같아야 한다(최고 단계 = 클리어율 passP 이상인 가장 높은 단계)

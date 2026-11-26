@@ -37,7 +37,8 @@ test('validation: count, duplicate uid, owned, element, leader, unsupported',()=
   const missing=roster.find(s=>!raw.units.some(u=>u.id===s.uid));d.slots[1]={key:missing.key};
   assert(P.validate(d,{roster,info:raw}).errors.some(e=>e.code==='unowned'));
   assert(P.validate(full(),{roster,restrict:'chaos'}).errors.some(e=>e.code==='element'));
-  for(const content of ['guild','cosmo'])assert(P.validate(full(),{roster,content}).errors.some(e=>e.code==='unsupported'));
+  assert(P.validate(full(),{roster,content:'guild'}).ok);
+  assert(P.validate(full(),{roster,content:'cosmo'}).errors.some(e=>e.code==='unsupported'));
   assert.throws(()=>P.serialize(P.empty()));assert.throws(()=>P.serialize(draftDuplicate()));
   function draftDuplicate(){const d=full();d.slots[1]=d.slots[0];return d;}
 });

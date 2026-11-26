@@ -1,6 +1,19 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const Share=require('../share_state'),Search=require('../guild_search'),View=require('../guild_view');
 const G=require('../data/guild_seasons/30101.json');
+const current=require('../data/guild_seasons/30112.json');
+current.title='길드방어전(시즌5 11/26~12/03)';
+const released=[{key:'guild',seasonId:current.season.id,stages:[]}];
+assert.equal(Share.parse(Share.stringify({c:'guild',gs:30112}),released,[]).guildExpired,false);
+assert.equal(Share.parse('?c=guild&gs=30111',released,[]).guildExpired,true);
+assert.equal(Share.parse('?c=guild',released,[]).guildExpired,true);
+const escape=s=>String(s);
+const play=View.panelHtml(current,null,7,Date.parse('2026-12-03T03:59:59+09:00'),escape);
+const settled=View.panelHtml(current,null,7,Date.parse('2026-12-03T04:00:00+09:00'),escape);
+assert.match(play,/진행 중/);assert.doesNotMatch(play,/gd-stale/);
+assert.match(settled,/결산 중/);assert.match(settled,/gd-stale/);
+assert.match(play,/카본펑크 칸/);
+assert.doesNotMatch(play,/undefined/);
 const contents=[{key:'guild',seasonId:30101,stages:[{tab:'S1',name:'6단계'}]}];
 const old=Share.parse('?c=guild&s=old',contents,[]);
 assert.equal(old.gs,30111);assert.equal(old.guildExpired,true);assert.equal(old.s,'old');
@@ -20,6 +33,20 @@ const pct=View.extraPct(G,0,[1,0,0,0]);
 const scores=[1,11].map(n=>Math.floor((n*(100+pct)+50)/100));
 assert.equal(rank.top,scores[1]);assert.equal(rank.mean,Math.round((scores[0]+scores[1])/2));
 const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
+// All editors share stage/support normalization, and links preserve only validated options.
+{
+  const current=require('../data/guild_defense.json'),sup=String(current.supports[0].id);
+  const selection={level:3,tiers:[1,0,0,0],support:sup};
+  const opts=View.battleOptions(current,selection,current.defaultStep);
+  assert.equal(opts.seasonId,current.season.id);assert.equal(opts.level,3);assert.equal(opts.support,sup);
+  const lower=View.battleOptions(current,selection,current.steps[0].step);
+  assert.equal(lower.level,0);assert.deepEqual(lower.sets,[0,0,0,0]);assert.equal(lower.support,sup);
+  assert.equal(View.normSel(current,{support:'stale'}).support,'none');
+  const ss=require('../share_state'),contents=[{key:'guild',seasonId:current.season.id,stages:[]}];
+  const round=ss.parse(ss.stringify({c:'guild',gs:current.season.id,go:selection}),contents,[]);
+  assert.deepEqual(round.go,selection);assert.equal(round.guildExpired,false);
+  assert(ss.parse('?c=guild',contents,[]).guildExpired);
+}
 const sigCode=html.slice(html.indexOf('function simSignature('),html.indexOf('const simSig=('));
 const c={};vm.createContext(c);vm.runInContext(sigCode,c);
 const sig=guild=>c.simSignature({ck:'guild',guild,party:()=>({units:keys})},{tab:'same',name:'same'},null,null,100);

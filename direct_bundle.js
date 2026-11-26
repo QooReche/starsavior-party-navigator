@@ -78,6 +78,7 @@ function directRecoReady(){
 }
 async function directRun(only=null){
   if(DIRECT.bundle?.running){directBundleCancel();return;}
+  if(seasonBlocked(contents[$('content').value]?.key))return;
   if(!directRecoSupported())return;
   if(only==='now'||only==='grown'||!only&&!DIRECT.withReco){DIRECT.bundle=null;return directRunRows(only);}
   if(only==='growth'&&!growthEnabled()&&MI.info){$('assume-growth').checked=true;$('assume-growth').dispatchEvent(new Event('change'));}

@@ -15,6 +15,7 @@
       if(c.key==='guild'){
         out.gs=q.has('gs')?(/^\d+$/.test(q.get('gs'))?Number(q.get('gs')):0):30111;
         out.guildExpired=out.gs!==(c.seasonId??30111);
+        if(q.has('go')&&q.get('go').length<1024)try{out.go=guildSelection(JSON.parse(q.get('go')));}catch(e){}
       }
       const s=c.stages.find(s=>s.tab+"|"+s.name===q.get("s"))||c.stages[0];
       if(out.guildExpired)out.s=q.get('s')||'';else if(s)out.s=s.tab+"|"+s.name;
@@ -37,13 +38,18 @@
     if(state.cd)q.set('cd',JSON.stringify(Cosmo.share(state.cd)));
     if(state.dp)q.set('dp',JSON.stringify(Direct.share(state.dp)));
     for(const key of ["c","s","g","rk"])if(state[key]!=null)q.set(key,String(state[key]));
-    if(state.c==='guild')q.set('gs',String(state.gs??30111));
+    if(state.c==='guild'){q.set('gs',String(state.gs??30111));if(state.go)q.set('go',JSON.stringify(guildSelection(state.go)));}
     for(const key of ['ag','ao'])if(typeof state[key]==='boolean')q.set(key,state[key]?'1':'0');
     if(state.g==="manual"&&Number.isSafeInteger(state.p)&&state.p>0&&state.p<1e12)q.set("p",String(state.p));
     for(const key of ["b","b2"])if(typeof state[key]==="string")q.set(key,state[key]);
     return q.toString();
   }
   function url(base,state){const u=new URL(base);u.search=stringify(state);u.hash="";return u.href}
+  function guildSelection(raw){
+    return {level:Number.isInteger(raw?.level)&&raw.level>=0?raw.level:0,
+      tiers:Array.isArray(raw?.tiers)?raw.tiers.slice(0,4).map(v=>Number.isInteger(v)&&v>=0&&v<=3?v:0):[],
+      support:typeof raw?.support==='string'&&/^[a-z0-9]{1,20}$/.test(raw.support)?raw.support:'none'};
+  }
   const api={parse,stringify,url};
   if(typeof module!=="undefined"&&module.exports)module.exports=api;else root.ShareState=api;
 })(typeof window!=="undefined"?window:globalThis);

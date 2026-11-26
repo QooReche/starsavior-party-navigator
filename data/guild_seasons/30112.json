@@ -4367,11 +4367,6 @@
     "45031"
    ]
   },
-  "supportRole": {
-   "40112": "스트라이커",
-   "40131": "캐스터",
-   "40051": "서포터"
-  },
   "excludeText": [],
   "excludeKeys": [],
   "notes": [],
@@ -4406,7 +4401,12 @@
    "keep": 2,
    "auditTeams": 12
   },
-  "banCoop": false
+  "banCoop": false,
+  "supportRole": {
+   "40112": "스트라이커",
+   "40131": "캐스터",
+   "40051": "서포터"
+  }
  },
  "rules": {
   "turnLimit": 50,

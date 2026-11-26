@@ -24,7 +24,7 @@ def run(support, runs=6, level=1):
 
     gb.Controller._sup_put = put
     try:
-        r = simulate({'units': TEAM, 'leader': 0}, {'guild': {'level': level, 'support': support}},
+        r = simulate({'units': TEAM, 'leader': 0}, {'guild': {'seasonId': 30111, 'level': level, 'support': support}},
                      {'n_runs': runs, 'build': 'standard', 'seed': 3})
     finally:
         gb.Controller._sup_put = orig_put
@@ -126,7 +126,7 @@ def test_web_run_auto_guild():
     import json
     from battlesim import web
     party = {'units': TEAM, 'leader': 0}
-    extra = json.dumps({'build': 'standard', 'guild': {'level': 1, 'sets': [0, 0, 0, 0], 'support': 'fire'}})
+    extra = json.dumps({'build': 'standard', 'guild': {'seasonId': 30111, 'level': 1, 'sets': [0, 0, 0, 0], 'support': 'fire'}})
     r1 = json.loads(web.run_auto('길드방어전/x/7', party, 4, 3, extra))
     r2 = json.loads(web.run_auto('길드방어전/x/7', party, 4, 3, extra))
     assert r1['n'] == 4 and r1 == r2, '같은 시드 → 같은 결과'

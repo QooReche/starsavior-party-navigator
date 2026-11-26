@@ -52,7 +52,7 @@
 #direct-picker-dialog{max-width:600px;width:calc(100% - 24px);max-height:80dvh;border:1px solid var(--line);border-radius:16px;background:var(--ink);color:var(--fg);padding:12px;box-sizing:border-box}
 .direct-picker-head{display:flex;justify-content:space-between;align-items:center}#direct-picker-dialog::backdrop{background:#0009}
 #direct-picker-open{display:none}.direct-state{margin:12px 0;font-size:13px;overflow-wrap:anywhere}
-body[data-party-mode=direct] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-search,#season-note),body[data-party-mode=home] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-search,#season-note){display:none!important}
+body[data-party-mode=direct] :is(#guild-search,#cosmo-search),body[data-party-mode=home] :is(#guild-panel,#guild-search,#guild-extra,#cosmo-search,#season-note){display:none!important}
 @media(max-width:760px){
  .direct-leader-toggle{top:0;right:0;background:transparent!important;border-color:transparent!important;font-size:16px}
  .direct-leader-toggle::before{content:'';position:absolute;inset:8px;z-index:-1;border-radius:50%;border:1px solid transparent;background:#181c29ed}

@@ -3,12 +3,12 @@ Object.assign(DIRECT,{requestId:0,active:null,cache:new Map(),rows:{},versions:n
 const directCopy=x=>JSON.parse(JSON.stringify(x));
 function directRecoSupported(){return !DirectParty.validate(DIRECT.draft,directContext()).errors.some(e=>e.code==='unsupported');}
 function directInputKey(){const c=contents[$('content').value],st=cur?.[$('stage').value];
-  return JSON.stringify([DIRECT.draft,MI.hash,MI.error,c.key,st?.tab,st?.name,simOpt(c.key),SIMQ.seed,SIMQ.n,ownedSimBreaks(),MI.growth?.assumed?.version]);}
+  return JSON.stringify([DIRECT.draft,MI.hash,MI.error,c.key,st?.tab,st?.name,simOpt(c.key),seasonBlocked(c.key),SIMQ.seed,SIMQ.n,ownedSimBreaks(),MI.growth?.assumed?.version]);}
 function directConditions(c,st,versions=DIRECT.versions){return JSON.stringify([c.key,st.tab,st.name,MI.hash||null,simOpt(c.key),SIMQ.seed,SIMQ.n,versions,MyInfoReco.OVERWRITE_VERSION]);}
 function directRecoMeta(c,st,runs){const versions={engine:null,data:MyInfoReco.hash([D,QK.d,MI.growth])};return {parts:JSON.parse(directConditions(c,st,versions)),seed:SIMQ.seed,runs,recommendationKey:typeof recoIdentity==='function'?recoIdentity():null};}
 function directSnapshots(){
   const ctx=directContext(),c=contents[$('content').value],st=cur?.[$('stage').value],values=directValues();
-  if(!st||!values||!DIRECT.versions||!DirectParty.validate(DIRECT.draft,ctx).ok||MI.error||DIRECT.error||values.errors.length)return {};
+  if(!st||seasonBlocked(c.key)||!values||!DIRECT.versions||!DirectParty.validate(DIRECT.draft,ctx).ok||MI.error||DIRECT.error||values.errors.length)return {};
   const draft=DirectParty.draft(DIRECT.draft),account=directCopy(MI.info),original=account?MyInfoReco.profile(account,R,MI.growth,c.key):null;
   const combo=draft.slots.map(m=>({s:BYKEY[m.key]}));
   const automatic=pickBreak(combo,c.name,ownedSimBreaks().map(b=>b.name));
@@ -58,6 +58,7 @@ async function directManifest(active){
   finally{clearTimeout(timer);delete active.abort;}
 }
 async function directRunRows(only=null){
+  if(seasonBlocked(contents[$('content').value]?.key))return;
   if(DIRECT.active){directCancel();return;}
   directSync();
   let values=null;try{values=directValues();}catch(e){DIRECT.error=e.message;}
@@ -123,7 +124,7 @@ function directResultsPaint(){
   let values=null;try{values=directValues();}catch(e){DIRECT.error=e.message;}
   const runnable=!!DirectParty.validate(DIRECT.draft,directContext()).ok&&!MI.error&&!DIRECT.error&&!!values&&!values.errors.length;
   const bundle=DIRECT.bundle,bundling=!!bundle?.running;
-  $('direct-run').disabled=!DIRECT.active&&!bundling&&!runnable;
+  $('direct-run').disabled=!DIRECT.active&&!bundling&&(!runnable||seasonBlocked(contents[$('content').value]?.key));
   $('direct-run').textContent=DIRECT.active||bundling?'취소':now&&!validNow?'다시 실행':'모의 전투 실행';
   const error=MI.error?'내 정보 계산 자료를 불러오지 못했음 · '+MI.error+' · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.':DIRECT.runError;
   const activeRows=Object.values(DIRECT.rows),waiting=activeRows.some(r=>r.status==='waiting'),running=activeRows.find(r=>r.status==='running');
@@ -133,6 +134,11 @@ function directResultsPaint(){
   summary.dataset.state='done';
   summary.classList.toggle('direct-past',past(now));
   summary.innerHTML=`${past(now)?'<div class="direct-past-band">지난 결과 · 현재 편성과 다를 수 있음</div>':''}<div class="verdict-main"><b class="verdict-number"><small>클리어</small>${now?.result?Math.round(now.result.clear*100)+'%':'조사 대기'}</b>${now?.result?`<span class="tag">${Ux.verdict(now.result.clear)[1]}</span>`:''}</div><div class="verdict-stats"><div><b>${now?.result?.ta??now?.result?.ttk??'—'}</b><small>예상 턴</small></div><div><b id="direct-summary-power">${miNum(values?.total||0)}</b><small>편성 전투력</small></div></div>`;
+  if(now?.result?.guild){
+    const r=now.result,g=now.snapshot.options.guild;
+    const score=GuildSearch.rankStats(GuildView,D.guild,g.level,g.sets,r.prog,r.progs,r.clear,r.guild);
+    summary.insertAdjacentHTML('beforeend',`<p data-direct-guild-score>기대 점수 ${miNum(score.mean)} · 진행도 ${Math.round(r.prog*100)}%</p>`);
+  }
   const entries=['now','grown'].map(k=>({kind:k,label:k==='now'?'내 편성·지금':'내 편성·육성 가정',row:DIRECT.rows[k],stale:past(DIRECT.rows[k],k)}));
   const c=contents[$('content').value],st=cur?.[$('stage').value],reco=DIRECT.compare,compatible=!!reco&&!!st&&reco.condition===directConditions(c,st)&&(!reco.recommendationKey||reco.recommendationKey===recoIdentity());
   entries.push({kind:'reco',label:'자동 추천 1안'+(c.parties>1?' (파티 1)':''),row:reco?{...reco,status:'done'}:null,stale:!!reco&&!compatible});

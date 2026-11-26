@@ -288,7 +288,7 @@ class Extractor:
                                    eliteCount=sum(u['elite'] and not u['boss'] for w in steps[-1]['waves'] for u in w),
                                    bossWave=next(i for i,w in enumerate(steps[-1]['waves']) if any(u['boss'] for u in w))))
         # 표시·탐색 기본값은 계산 설정이며 게임 규칙의 근거로 사용하지 않는다.
-        template_path = ROOT/'data/guild_seasons/30111.json'
+        template_path = ROOT/'data/guild_defaults.json'
         template = json.loads(template_path.read_text(encoding='utf-8'))
         result['sources'] = {'client': {'name': self.build+' PC 클라 추출', 'url':''}}
         result['sets'] = copy.deepcopy(template['sets'])
@@ -299,7 +299,7 @@ class Extractor:
         search['screen'].update(level=min(6,n),supporter='none',other='none',support='none')
         search['final'].update(levels=list(range(n+1)),supports=['none']+[str(s['id']) for s in supports])
         search['supportRole'] = {str(s['id']):s['role'] for s in supports if s['role']}
-        result['challenge'].update(effectText=template['challenge']['effectText'],note='클라 난이도 그룹 연결에서 추출함.',statNote='')
+        result['challenge'].update(effectText=template['effectText'],note='클라 난이도 그룹 연결에서 추출함.',statNote='')
         result['rules'] = dict(turnLimit=steps[-1]['turnLimit'],partyCount=1,partySize=int(steps[-1]['deck'].rsplit('_',1)[1]),conf='확인',src=['client'])
         result['score'] = dict(conf='추정',src=['client'],note='클라 기본 점수는 실제 처치·보스별 체력 비율로 계산. 추가 점수 배율의 서버 반올림은 미확인.',
                                hypotheses=[dict(id='A',name='클리어 점수',desc='기본 점수 합계 × 추가 점수 배율',bossExcluded=False)])
@@ -314,7 +314,7 @@ class Extractor:
 def select_current(current=None):
     dest = ROOT/'data/guild_seasons'
     index_path = ROOT / 'data/guild_current.json'
-    current = current or (json.loads(index_path.read_text(encoding='utf-8'))['seasonId'] if index_path.exists() else 30111)
+    current = current or json.loads(index_path.read_text(encoding='utf-8'))['seasonId']
     selected = json.loads((dest / ('%d.json' % current)).read_text(encoding='utf-8'))
     # 날짜·표시 메타를 채운 뒤에도 정본 전체의 자료 버전을 다시 계산함.
     selected.pop('dataVersion',None)
@@ -356,25 +356,26 @@ def main():
         sid = row['GuildDungeonSeasonId']
         if a.season and sid not in a.season: continue
         generated = ex.season(row)
-        if sid == 30111:
+        source = dest / ('%d.json' % sid)
+        prior = json.loads(source.read_text(encoding='utf-8')) if source.exists() else None
+        if prior and prior['season']['boss']['engine'] == 'bfb':
             # 최초 보관 이후에는 정본의 사용자 설정/기존 BFB 수치·시뮬을 덮어쓰지 않는다.
-            source = dest / '30111.json'
-            g = json.loads((source if source.exists() else ROOT / 'data/guild_defense.json').read_text(encoding='utf-8'))
-            g['season']['boss'].update(engine='bfb', roleKey='ranger')
+            g = prior
             g['provenance'] = generated['provenance']
             g['client'] = generated
             g['dependencies'] = ex.dependencies
-            g['defaultStep'] = 7
-            g['stepsMeta'].update(waveCount=2, bossWave=1)
-            g['assets'] = {}
-            for name in ('guild_bfb', 'guild_sim'):
-                target = dest / '30111' / (name + '.json')
-                if not target.exists():
-                    write(target, json.loads((ROOT / 'data' / (name + '.json')).read_text(encoding='utf-8')))
-                g['assets'][name] = dict(path='guild_seasons/30111/' + name,
-                                        sha256=lf_digest(target))
+            for asset in g['assets'].values():
+                asset['sha256'] = lf_digest(ROOT / 'data' / (asset['path'] + '.json'))
         else:
             g = generated
+            if prior:
+                # Public dates come from notices, not interval keys. Preserve reviewed metadata on re-extraction.
+                for key in ('label','name','start','end','settleEnd','note','src'):
+                    if key in prior['season']: g['season'][key] = prior['season'][key]
+                for key,value in prior.get('sources',{}).items():
+                    if key != 'client': g['sources'][key] = value
+                for key in ('entryDaysEx','entryItemEx','skipEx','src'):
+                    if key in prior.get('rules',{}): g['rules'][key] = prior['rules'][key]
         g.pop('dataVersion', None)
         g['dataVersion'] = digest(g)
         write(dest / ('%d.json' % sid), g)

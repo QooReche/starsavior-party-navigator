@@ -15,6 +15,7 @@ CONTENT_KEY = "guild"        # 화면·추천 안에서 쓰는 콘텐츠 키(foe
 CONTENT_NAME = "길드방어전"  # party_contents.json 의 콘텐츠 이름(시즌과 무관한 고정 이름)
 EX_STEP = 7
 MAX_SET_TIER = 3
+ELEMENT = dict(zip(('태양', '달', '별', '질서', '혼돈'), ('sun', 'moon', 'star', 'order', 'chaos')))
 
 
 def load(path=PATH):
@@ -150,9 +151,9 @@ def foe_content(g):
         if members:
             from collections import Counter
             roles = dict(스트라이커='striker',레인저='ranger',캐스터='caster',어쌔신='assassin',디펜더='defender',서포터='supporter')
-            enemies = [dict(name=u['name'],title='',element=u['element'],role=roles[u['role']],role_kr=u['role'],
+            enemies = [dict(name=u['name'],title='',element=ELEMENT[u['element']],role=roles[u['role']],role_kr=u['role'],
                             attackType='',boss=u['boss'],elite=u['elite'],level=u['level'],count=1) for u in members]
-            stages[-1].update(enemies=enemies,element_counts=dict(Counter(u['element'] for u in members)),
+            stages[-1].update(enemies=enemies,element_counts=dict(Counter(u['element'] for u in enemies)),
                                role_counts=dict(Counter(roles[u['role']] for u in members)),
                                defender_ratio=sum(u['role']=='디펜더' for u in members)/n)
     return {"key": CONTENT_KEY, "tabs": [{"tab": tab, "section": None, "stages": stages}]}

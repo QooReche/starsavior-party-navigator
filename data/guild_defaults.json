@@ -1,0 +1,163 @@
+{
+  "sets": {
+    "scope": "가정 계산용",
+    "conf": "확인",
+    "src": [
+      "client"
+    ],
+    "note": "길방에 선택 효과 없음(클라 확인, 서버 처리는 미확인). 클라 표에 효과별 추가 점수(5/10/15%, 4개 최대 +60%)는 정의돼 있으나 길방 화면·전투에는 연결돼 있지 않아 기본은 끔이고, 아래 선택은 가정 계산용임.",
+    "items": [
+      {
+        "name": "소멸",
+        "tiers": [
+          {
+            "add": 5,
+            "text": "보스가 주는 피해 +10%"
+          },
+          {
+            "add": 10,
+            "text": "보스가 주는 피해 +20%"
+          },
+          {
+            "add": 15,
+            "text": "보스가 주는 피해 +30%"
+          }
+        ]
+      },
+      {
+        "name": "불멸",
+        "tiers": [
+          {
+            "add": 5,
+            "text": "보스가 받는 피해 -20%"
+          },
+          {
+            "add": 10,
+            "text": "보스가 받는 피해 -30%"
+          },
+          {
+            "add": 15,
+            "text": "보스가 받는 피해 -40%"
+          }
+        ]
+      },
+      {
+        "name": "쇠락",
+        "tiers": [
+          {
+            "add": 5,
+            "text": "보스에게 맞은 뒤 최대 생명력 -3%"
+          },
+          {
+            "add": 10,
+            "text": "보스에게 맞은 뒤 최대 생명력 -4%"
+          },
+          {
+            "add": 15,
+            "text": "보스에게 맞은 뒤 최대 생명력 -5%"
+          }
+        ]
+      },
+      {
+        "name": "허무",
+        "tiers": [
+          {
+            "add": 5,
+            "text": "보스가 1턴 면역"
+          },
+          {
+            "add": 10,
+            "text": "보스가 2턴 면역"
+          },
+          {
+            "add": 15,
+            "text": "보스가 3턴 면역"
+          }
+        ]
+      }
+    ]
+  },
+  "search": {
+    "_note": "기본은 200c2d3 길드 탐색. newSearch=true면 전원 학습 선별·지원 결합 비교를 켜며 전투력 풀·직업 보충·역할 최소 인원·협공 제외·예선 지원 고정을 적용하지 않음. 새 방식은 32.5분 이내와 독립 재평가 품질을 확인한 뒤 별도 배포하기로 함.",
+    "poolSize": 40,
+    "minPowerRatio": 0.8,
+    "minRole": {
+      "서포터": 6,
+      "디펜더": 3
+    },
+    "minFront": 1,
+    "minDealer": 1,
+    "screen": {
+      "level": 6,
+      "runs": 2,
+      "supporter": "none",
+      "other": "none",
+      "support": "none"
+    },
+    "screen2": {
+      "keep": 400,
+      "runs": 10
+    },
+    "finalists": 12,
+    "final": {
+      "runs": 40,
+      "levels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "supports": []
+    },
+    "excludeText": [],
+    "excludeKeys": [],
+    "notes": [],
+    "excludeWhy": "",
+    "newSearch": false,
+    "execution": {
+      "chunk": 1
+    },
+    "learned": {
+      "value": true,
+      "S": 3000,
+      "m": 8,
+      "K": 4000,
+      "M": 8,
+      "A": 256,
+      "overlapStarts": 10,
+      "overlapKeep": 8,
+      "folds": 3,
+      "epochs": 40,
+      "ridge": 10,
+      "minCorrelation": 0.1,
+      "missThreshold": 0.04,
+      "note": "계정·보스별 점수 학습 선별. 품질 미달 보스는 전수 상한 이하면 전수, 초과면 후보 확대 복귀.",
+      "maxScoreCombos": 2000000,
+      "maxOverlapChecks": 2000000,
+      "fallbackMultiplier": 4
+    },
+    "placement": {
+      "baseline": false,
+      "enabled": false,
+      "screenRuns": 2,
+      "keep": 2,
+      "auditTeams": 12
+    },
+    "banCoop": false
+  },
+  "effectText": {
+    "skillStack": "보스가 스킬을 쓸 때마다 이후 주는 피해 +{v}%씩 쌓임(최대 10회)",
+    "hpDrain": "보스에게 맞은 뒤 때린 쪽의 최대 생명력 -{v}%씩 쌓임(최대 10회)",
+    "speed": "보스 속도 +{v}%",
+    "immune": "전투 시작 시 보스가 {v}턴 면역(해제 불가)"
+  }
+}

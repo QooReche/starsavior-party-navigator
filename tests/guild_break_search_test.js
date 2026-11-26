@@ -1,6 +1,6 @@
 // Production learned guild planner: real result fields, layout/support/break interaction, cancellation.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const GS=require('../guild_search'),Planner=require('../guild_planner'),P=require('../party_placement'),V=require('../guild_view'),G=require('../data/guild_defense.json');
+const GS=require('../guild_search'),Planner=require('../guild_planner'),P=require('../party_placement'),V=require('../guild_view'),G=require('../data/guild_seasons/30111.json');
 const roster=Array.from({length:8},(_,i)=>({key:'u'+i,cls:i===0?'서포터':'캐스터'}));
 const results=Object.fromEntries(roster.map((r,i)=>[r.key,{power:100-i,stats:{hp:100-i,def:0,spd:10+i}}]));
 const skill={name:'큐브 과부하',level:7};

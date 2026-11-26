@@ -149,7 +149,7 @@ class KhanTest(unittest.TestCase):
             self.assertEqual([u.hp for u in b.allies] == before, expect)
 
     def test_real_seasons(self):
-        for sid in (30101, 30102, 30104):
+        for sid in (30101, 30102, 30104, 30112):
             w, meta = build_waves({'seasonId': sid, 'step': 6})
             self.assertEqual(meta['battle_mode'], 'boss_kill')
             self.assertEqual(meta['turn_limit'], 50)

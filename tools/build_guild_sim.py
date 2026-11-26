@@ -29,9 +29,7 @@ CONTENT = '길드방어전'
 # 커뮤니티 EX 12단 클리어 사례(arca 187456382: 웨딩 카르멘 + 아모라 + 메레스 + 티리아). «메레스» = 신규 구원자 메이드 세레스
 # (세레스, 유닛 1059, 키 ceres-sun-supporter; 사용자 확인 2026-10-30).
 COMMUNITY =['wedding-carmen', 'ceres-sun-supporter', 'amora', 'tyria']
-LEVELS = list(range(0, 13))
 PASS = 0.5     # «클리어 가능» = 클리어율 50% 이상(표시 기준, 가정)
-SUPPORTS = ['none', 'gust', 'focus', 'strike', 'mountain', 'fire']   # 알리시아의 지원(none = 안 고름)
 SETS = {'off': [0, 0, 0, 0], 'max': [3, 3, 3, 3]}
 
 
@@ -91,7 +89,7 @@ def run_jobs(jobs, workers):
                 yield future.result()
 
 
-def summarize(teams, growth, sups, preset='off', levels=LEVELS):
+def summarize(teams, growth, sups, preset='off', levels=None):
     summary = {}
     for g in growth:
         best = None
@@ -99,7 +97,7 @@ def summarize(teams, growth, sups, preset='off', levels=LEVELS):
             tab = t if preset == 'off' else t['bySets'][preset]
             for sup in sups:
                 rr = tab['bySupport'][sup][g]
-                ok = [(lv, p) for lv, p in zip(levels, rr) if p >= PASS]
+                ok = [(lv, p) for lv, p in zip(levels if levels is not None else range(len(rr)), rr) if p >= PASS]
                 if ok:
                     top, p = max(ok)
                     if best is None or (top, p) > (best['level'], best['p']):
@@ -165,7 +163,7 @@ def main():
     from guild_defense import ex_step
     gd=load(a.season)
     levels=list(range(len(gd['challenge']['levels'])+1))
-    supports=SUPPORTS if gd['season']['boss']['engine']=='bfb' else ['none']+[str(x['id']) for x in gd['supports']]
+    supports=list(dict.fromkeys(['none', *gd['search']['final']['supports']]))
     rec=ex_step(gd)['power']
     growth = ['%g' % float(x) for x in a.growth.split(',')]   # 키 = '1', '1.5', '2'(JS String(숫자) 와 같게 문자열로 둠)
     sups = [s for s in (a.supports or ','.join(supports)).split(',') if s]

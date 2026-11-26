@@ -422,7 +422,8 @@ def recommend(content, boss=None, owned=None, have_break=None, out=print, stage=
         b = c["bosses"][boss]
         enemies, note = b["enemies"], f'{boss}: {EL[b["enemies"][0]]} {b["role"]} {b["atk"]} {b.get("note", "")}'
     if c.get("seasonal") and not stage:
-        stage = "7단계"  # 시즌제 콘텐츠(길드 방어전)는 스테이지를 안 주면 최고 단계(EX)
+        import guild_defense as gd
+        stage = gd.stage_name(gd.ex_step(gd.load()))
     rest = None  # 속성 제한 콘텐츠(예: 태양 회랑은 태양 속성만)
     if stage:
         hits = find_stages(content, stage)

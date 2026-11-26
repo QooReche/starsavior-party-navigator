@@ -24,19 +24,38 @@ def support(sid, ident, role):
 
 
 class GuildRotationTest(unittest.TestCase):
+    def test_released_season_1126(self):
+        import guild_defense as gd
+        g = load(30112)
+        self.assertEqual(g['season']['boss']['engine'], 'client')
+        self.assertEqual(gd.range_label(g), '시즌5 11/26~12/03')
+        self.assertEqual(len(g['steps']), 7)
+        self.assertEqual(g['challenge']['group'], 2001)
+        for step in g['steps']:
+            waves, meta = build_waves({'seasonId': 30112, 'step': step['step']})
+            self.assertEqual((step['mode'], meta['battle_mode'], meta['turn_limit']), ('BM_BOSS_KILL', 'boss_kill', 50))
+            self.assertEqual(len(waves), 2)
+            boss = next(u for u in waves[-1] if u.boss)
+            self.assertEqual((boss.name, boss.game_slot, boss.element), ('카본펑크 칸', 2, '달'))
+            self.assertTrue(all(not u.unmodeled for wave in waves for u in wave))
+        effect = next(e for s in g['supports'] for e in s['effects']
+                      if e['id'] == 'COND_BATTLE_EFFECT_GUILD_RAID_STRIKER_BUFF_ITEM_PROMOTION_02_02')
+        self.assertEqual(effect['chance'], 10000)
+        self.assertTrue(effect['execution']['buffCount'])
+
     def test_archives_and_version_gate(self):
         import guild_defense as gd
-        for sid in range(30101,30112):
+        for sid in range(30101,30113):
             g=load(sid)
             self.assertEqual(g['season']['id'],sid)
-            self.assertEqual(g['provenance']['build'],'26752678')
+            self.assertEqual(g['provenance']['build'],'26935738')
             self.assertEqual(gd.validate(g),[])
             self.assertIn('dataVersion',gd.page_payload(g))
-        self.assertEqual(load()['season']['id'],30111)
+        self.assertEqual(load()['season']['id'],30112)
         with self.assertRaisesRegex(ValueError,'자료 버전'):
             build_waves({'seasonId':30101,'dataVersion':'wrong'})
         with self.assertRaisesRegex(ValueError,'보관되지 않은'):
-            build_waves({'seasonId':30112})
+            build_waves({'seasonId':99999})
 
     def test_boss_kill_actual_original_layout_and_mutation(self):
         for sid in (30101,30102,30104):
@@ -55,7 +74,7 @@ class GuildRotationTest(unittest.TestCase):
 
     def test_all_bosses_and_all_support_ids_smoke(self):
         # 서로 다른 보스·배치·지원으로 실제 경로를 실행한다.
-        for sid in range(30101,30111):
+        for sid in [*range(30101,30111), 30112]:
             g=load(sid)
             for sup in ['none']+[str(s['id']) for s in g['supports']]:
                 r=simulate(['gwen','fei','professor-m','amora'],{'guild':{'seasonId':sid,'support':sup}},

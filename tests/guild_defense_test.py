@@ -18,7 +18,8 @@ import guild_defense as gd  # noqa: E402
 import party_reco as pr  # noqa: E402
 
 KST = gd.KST
-G = gd.load()
+# 시즌4 전용 수치/가설 회귀는 보관 정의로 고정함. 현재 화면은 별도 검사함.
+G = gd.load(os.path.join(ROOT, 'data/guild_seasons/30111.json'))
 RULES = json.load(open(os.path.join(ROOT, "data", "gimmick_rules.json"), encoding="utf-8"))["types"]
 
 
@@ -117,9 +118,11 @@ def test_season_state_and_update_flag():
 
 
 def test_content_registration():
+    G = gd.load()
     cfg = pr._json(pr.CONT)
     c = cfg["contents"][gd.CONTENT_NAME]
-    assert c.get("seasonal") and c["boss"] and "BFB" in c["bosses"] and c["bosses"]["BFB"]["enemies"] == ["star"]
+    boss = G['season']['boss']
+    assert c.get("seasonal") and c["boss"] and c['bosses'][boss['name']]['enemies'] == [boss['element']]
     assert pr.FOE_KEYS[gd.CONTENT_NAME] == gd.CONTENT_KEY
     hits = pr.find_stages(gd.CONTENT_NAME, "EX")
     assert len(hits) == 1 and hits[0][1]["name"] == "7단계 EX" and hits[0][1]["level"] == 1275
@@ -131,14 +134,14 @@ def test_content_registration():
     rules, merged = pr.gimmick_rules()
     base = json.load(open(pr.GSTAGE, encoding="utf-8"))
     assert all(merged[k] == v for k, v in base.items()), "기존 스테이지 기믹이 바뀜"
-    gk = f"guild|{gd.range_label(G)}|7단계 EX"
-    assert merged[gk] == {"TARGET_PRIORITY": 3, "SHIELD_GEN": 2, "PCT_HP_DAMAGE": 2}, merged.get(gk)
-    assert len(merged) - len(base) == 7 and not (set(base) & set(gd.stage_gimmicks(G)))
+    current_gimmicks = gd.stage_gimmicks(G)
+    assert all(merged[k] == v for k, v in current_gimmicks.items())
+    assert len(merged) - len(base) == len(current_gimmicks) and not (set(base) & set(current_gimmicks))
     # 추천이 실제로 돈다(보스 속성 별, 기믹 줄 포함)
     lines = []
     pr.recommend(gd.CONTENT_NAME, out=lines.append)
     txt = "\n".join(lines)
-    assert "적 속성: 별" in txt and "우선 공격 대상 지정" in txt and txt.count("[전열]") == 2 and txt.count("[후열]") == 2, txt
+    assert "적 속성: 달" in txt and txt.count("[전열]") == 2 and txt.count("[후열]") == 2, txt
     lines2 = []
     pr.recommend(gd.CONTENT_NAME, stage="3단계", out=lines2.append)
     assert "3단계" in "\n".join(lines2) and "보호막 생성" not in "\n".join(lines2)
@@ -187,6 +190,7 @@ def _existing_contents_unchanged():
 
 def test_sim_payload():
     """시뮬 추정 표: 같은 시즌만 화면에 싣고, 요약(최고 단계)이 클리어율 표와 맞는다. 다른 시즌 파일이면 싣지 않는다."""
+    G = gd.load()
     s = gd.sim_payload(G)
     assert s and set(s["summary"]) == {str(g) for g in s["growth"]} and len(s["levels"]) == 13
     for g in s["growth"]:
@@ -209,6 +213,7 @@ def test_sim_payload():
 
 
 def test_sim_presets_payload():
+    G = gd.load()
     raw = json.load(open(gd.SIM_PATH, encoding='utf-8'))
     s = gd.sim_payload(G)
     assert s['growth'] == ['1', '1.5', '2', '2.5', '3']
@@ -236,6 +241,7 @@ def test_sim_presets_payload():
             raw.pop(k)
         for t in raw['teams']:
             t.pop('bySets')
+        raw.pop('dataVersion', None)
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(raw, f)
         assert gd.sim_payload(G, path) is None, '자료 버전 없는 임의 변경 표를 재사용하면 안 됨'
@@ -253,7 +259,7 @@ def test_js_parity():
         skip_note("guild_defense_test.test_js_parity: node 없음")
         return
     combos = [[lv, list(t)] for lv in range(0, 13) for t in itertools.product(range(4), repeat=4)]
-    js = node_json("const V=require('./guild_view.js'),G=JSON.parse(require('fs').readFileSync('data/guild_defense.json','utf8'));"
+    js = node_json("const V=require('./guild_view.js'),G=JSON.parse(require('fs').readFileSync('data/guild_seasons/30111.json','utf8'));"
                    "const C=[];for(let l=0;l<=12;l++)for(let a=0;a<4;a++)for(let b=0;b<4;b++)for(let c=0;c<4;c++)for(let d=0;d<4;d++)C.push([l,[a,b,c,d]]);"
                    "console.log(JSON.stringify(C.map(([l,t])=>{const p=V.extraPct(G,l,t);return [p,V.score(G,p)]})))")
     assert len(js) == len(combos) == 13 * 256
@@ -262,23 +268,23 @@ def test_js_parity():
         assert p == pp and s == gd.score(G, pp), (lv, t, p, s, pp)
     fractions = [-1, 0, 0.00002, 0.5, 0.999, 1, 2]  # 0.00002는 5000.5점 경계
     pcs = [gd.extra_pct(G, lv, tiers) for lv in (0, 6, 12) for tiers in ([0]*4, [3]*4, [3,3,3,0])]
-    values = node_json("const V=require('./guild_view.js'),G=require('./data/guild_defense.json');"
+    values = node_json("const V=require('./guild_view.js'),G=require('./data/guild_seasons/30111.json');"
                        + "console.log(JSON.stringify(" + json.dumps(pcs) + ".map(p=>"
                        + json.dumps(fractions) + ".map(f=>V.scoreAt(G,p,f)))))")
     assert values == [[gd.score_at(G, pc, f) for f in fractions] for pc in pcs]
     ks = [None, 0, 1, 2, 5]
     fr2 = [0, 0.00005, 0.0001, 0.00015, 0.29, 0.5, 0.9999, 1]
-    vals = node_json("const V=require('./guild_view.js'),G=require('./data/guild_defense.json');"
+    vals = node_json("const V=require('./guild_view.js'),G=require('./data/guild_seasons/30111.json');"
                      "const out=[];for(const p of [0,60,120])for(const k of " + json.dumps(ks) + ")for(const f of " + json.dumps(fr2) + ")out.push(V.scoreAt(G,p,f,k));"
                      "console.log(JSON.stringify(out))")
     assert vals == [gd.score_at(G, p, f, k) for p in (0, 60, 120) for k in ks for f in fr2]
     progs = [-1, 0, 0.1, 0.24, 0.25, 0.3, 0.4999, 0.5, 0.75, 0.999, 1, 2]
-    pv = node_json("const V=require('./guild_view.js'),G=require('./data/guild_defense.json');"
+    pv = node_json("const V=require('./guild_view.js'),G=require('./data/guild_seasons/30111.json');"
                    "console.log(JSON.stringify(" + json.dumps(progs) + ".map(p=>[V.progParts(G,p),V.scoreFromProg(G,60,p)])))")
     for p, (parts, sc) in zip(progs, pv):
         k, f = gd.prog_parts(G, p)
         assert parts["k"] == k and abs(parts["f"] - f) < 1e-12 and sc == gd.score_from_prog(G, 60, p), (p, parts, sc)
-    st = node_json("const V=require('./guild_view.js'),G=JSON.parse(require('fs').readFileSync('data/guild_defense.json','utf8'));"
+    st = node_json("const V=require('./guild_view.js'),G=JSON.parse(require('fs').readFileSync('data/guild_seasons/30111.json','utf8'));"
                    "const T=['2026-10-28T12:00:00+09:00','2026-10-29T00:00:00+09:00','2026-11-05T03:59:59+09:00','2026-11-05T04:00:00+09:00','2026-11-12T03:59:59+09:00','2026-11-12T04:00:00+09:00'];"
                    "console.log(JSON.stringify(T.map(t=>V.seasonState(G.season,Date.parse(t)))))")
     exp = [gd.season_state(G, at(t)) for t in ("2026-10-28T12:00:00+09:00", "2026-10-29T00:00:00+09:00", "2026-11-05T03:59:59+09:00",
@@ -287,6 +293,7 @@ def test_js_parity():
 
 
 def test_built_page_is_current():
+    G = gd.load()
     import build_party_html as bp
     with tempfile.TemporaryDirectory() as d:
         out = os.path.join(d, "index.html")

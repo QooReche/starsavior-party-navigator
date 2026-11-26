@@ -2,6 +2,7 @@
 """길방 시뮬 표 프리셋 입력·판별 평균·실제 엔진 선택 효과 회귀 시험."""
 import argparse
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -27,7 +28,7 @@ class GuildSimTest(unittest.TestCase):
         db = SimpleNamespace(units={k: {'n': k} for k in B.COMMUNITY})
         with tempfile.TemporaryDirectory() as d:
             out = str(Path(d) / 'sim.json')
-            with patch.object(sys, 'argv', ['build_guild_sim.py', '--out', out, '--workers', '1']), \
+            with patch.object(sys, 'argv', ['build_guild_sim.py', '--season', '30111', '--out', out, '--workers', '1']), \
                     patch.object(B, 'get_db', return_value=db), \
                     patch.object(B, 'reco_teams', return_value=[]), \
                     patch.object(B, 'scaled_units', return_value=[]), \
@@ -47,7 +48,7 @@ class GuildSimTest(unittest.TestCase):
                 for tab in (t, t['bySets']['max']):
                     for sup in raw['supports']:
                         self.assertEqual(tab['fracBySupport'][sup][g], [0.5]*13)
-            payload = gd.sim_payload(gd.load(), out)
+            payload = gd.sim_payload(gd.load(ROOT / 'data/guild_seasons/30111.json'), out)
             self.assertEqual(payload['sets'], raw['sets'])
             self.assertEqual(payload['summaryBySets'], raw['summaryBySets'])
             self.assertEqual(payload['teams'][0]['bySets'], t['bySets'])
@@ -67,7 +68,7 @@ class GuildSimTest(unittest.TestCase):
             p = 0.5 if stage['guild']['level'] <= 6 else 0
             return dict(outcome=dict(clear_p=p, progress=0.6), prog_runs=[0.2, 1])
         with patch.object(B, 'simulate', side_effect=fake):
-            tab = B.sim_tables([], 0, '2.5', ['none', 'fire'], [3]*4, 2, 7)
+            tab = B.sim_tables([], 0, '2.5', ['none', 'fire'], [3]*4, 2, 7, 30111)
         self.assertEqual(tab['fracBySupport']['fire']['2.5'], [0.5]*13)
         self.assertEqual(tab['progBySupport']['none']['2.5'], [0.6]*13)
         off = {'bySupport': {s: {'2.5': [0]*13} for s in ['none', 'fire']}, 'bySets': {'max': tab}}
@@ -78,11 +79,11 @@ class GuildSimTest(unittest.TestCase):
     def test_engine_sets_change_progress(self):
         db = B.get_db()
         rec = json.loads((ROOT / 'data/guild_bfb.json').read_text(encoding='utf-8'))['power']
-        units = B.scaled_units(db, B.COMMUNITY, 0, rec * 2)
+        units = B.scaled_units(db, B.COMMUNITY, 0, rec * 2, 30111)
         outcomes = []
         for tiers in ([0]*4, [3]*4):
             r = B.simulate({'units': units, 'leader': 0},
-                           {'guild': {'level': 6, 'support': 'fire', 'sets': tiers}},
+                           {'guild': {'seasonId': 30111, 'level': 6, 'support': 'fire', 'sets': tiers}},
                            {'seed': 7, 'n_runs': 12, 'build': 'standard', 'rules_override': {'power_penalty': 'model'}})
             self.assertGreater(r['outcome']['progress'], 0)
             outcomes.append(r['outcome'])
@@ -91,12 +92,20 @@ class GuildSimTest(unittest.TestCase):
 
     def test_parallel_matches_sequential(self):
         rec = json.loads((ROOT / 'data/guild_bfb.json').read_text(encoding='utf-8'))['power']
-        units = B.scaled_units(B.get_db(), B.COMMUNITY, 0, rec * 2)
-        jobs = [(units, 0, '2', ['fire'], tiers, 2, 7) for tiers in ([0]*4, [3]*4)]
+        units = B.scaled_units(B.get_db(), B.COMMUNITY, 0, rec * 2, 30111)
+        jobs = [(units, 0, '2', ['fire'], tiers, 2, 7, 30111) for tiers in ([0]*4, [3]*4)]
         sequential = list(B.run_jobs(jobs, 1))
-        self.assertEqual(list(B.run_jobs(jobs, 2)), sequential)
+        # 메모리가 작은 PC에서도 프로세스 경계·직렬화는 실제 풀로 확인함.
+        workers = int(os.environ.get('PN_TEST_WORKERS', '2'))
+        self.assertEqual(list(B.run_jobs(jobs, workers) if workers > 1 else
+                              self._single_process_pool(jobs)), sequential)
         self.assertTrue(all(max(t['progBySupport']['fire']['2']) > 0 for t in sequential))
         self.assertNotEqual(sequential[0], sequential[1])
+
+    @staticmethod
+    def _single_process_pool(jobs):
+        with B.ProcessPoolExecutor(max_workers=1) as pool:
+            return [pool.submit(B.sim_tables, *job).result() for job in jobs]
 
 
 if __name__ == '__main__':

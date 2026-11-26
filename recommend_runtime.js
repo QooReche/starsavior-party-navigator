@@ -22,7 +22,7 @@ function recoSnapshot(){
   };
   const bloom=copy(BLOOM),sv=QK.d.sv,engineKey=k=>!(profile?.results[k])&&bloom[k]&&sv[k+BLV]?k+BLV:k;
   const qi=copy(quickIn(c,st));if(!info){qi.growth=1;qi.power=null;}
-  const x={ck:c.key,guild:c.key==='guild'?copy(guildIdentity()):null,rk:rkOf(c.key),sn:starOf(c.key),account:profile?MI.hash:null,growth:growthEnabled()?growthCacheTag():null,party:t=>simParty(t,engineKey)};
+  const x={ck:c.key,guild:c.key==='guild'?copy(guildOptions()):null,rk:rkOf(c.key),sn:starOf(c.key),account:profile?MI.hash:null,growth:growthEnabled()?growthCacheTag():null,party:t=>simParty(t,engineKey)};
   const scrown=scrownOf(own,have),mm=MM||'';
   const screenKey=p=>JSON.stringify([c.key,st.tab,st.name,...(x.guild?[x.guild]:[]),+p,x.rk,x.sn,x.account||'',scrown,mm,...recommendationPolicyTag(),...(x.growth?[x.growth]:[])]);
   const n=SIMQ.n,seed=SIMQ.seed,refined=new Set(SIMQ.refined||[]);

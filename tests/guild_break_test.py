@@ -11,7 +11,7 @@ from battlesim import simulate
 from battlesim import web
 
 PARTY = {'units': ['wedding-carmen', 'bunny-charlotte', 'amora', 'tyria']}
-GUILD = {'level': 0, 'sets': [0, 0, 0, 0], 'support': 'gust'}
+GUILD = {'seasonId': 30111, 'level': 0, 'sets': [0, 0, 0, 0], 'support': 'gust'}
 SKILL = {'name': '스타피어서', 'level': 5}
 
 
