@@ -37,9 +37,28 @@
     const value=incumbent.score===candidate.score?r=>r.mean:r=>r.score;
     return PS.incumbentWithMargin(incumbent,candidate,value,Math.abs(value(incumbent))*margin);
   }
-  function signature(cx,day){
-    return JSON.stringify(['guild-daily-v1',cx.G.season.id,cx.G.dataVersion,day.date,cx.seals??cx.S.daily.seals.default,cx.split||null,
-      cx.S,cx.tiers||[],cx.breaks||[],cx.roster,cx.results,cx.growthResults||null]);
+  function signature(cx,day,pl=plan(cx)){
+    return JSON.stringify(['guild-daily-v2',cx.G.season.id,cx.G.dataVersion,day.date,cx.seals??cx.S.daily.seals.default,cx.split||null,
+      cx.S,cx.tiers||[],cx.breaks||[],cx.roster,cx.results,cx.growthResults||null,
+      {poolLimit:pl.poolLimit,policy:pl.D,placeScope:pl.placeScope,maxCombineChecks:cx.maxCombineChecks??2000000}]);
+  }
+  function trimPool(S,rows,limit,maxTeams){
+    const floor=(rows[0]?.power||0)*(S.minPowerRatio||0);
+    const base=new Set(rows.filter(r=>r.power>=floor).slice(0,S.poolSize).map(r=>r.key));
+    // Preserve every GS.pool supplement, then the role capacity of all requested teams.
+    const keep=new Set(rows.filter(r=>!base.has(r.key)).map(r=>r.key));
+    const reserve=(pred,n)=>rows.filter(pred).slice(0,n).forEach(r=>keep.add(r.key));
+    for(const [cls,n] of Object.entries(S.minRole||{}))reserve(r=>r.cls===cls,n);
+    reserve(r=>GS.FRONT.includes(r.cls),(S.minFront||0)*maxTeams);
+    reserve(r=>!GS.FRONT.includes(r.cls),(S.minDealer||0)*maxTeams);
+    for(const r of rows){if(keep.size>=limit)break;keep.add(r.key);}
+    return rows.filter(r=>keep.has(r.key));
+  }
+  function comboCount(S,rows){
+    const choose=(n,k)=>{if(k>n)return 0;let v=1;for(let i=1;i<=k;i++)v=v*(n-i+1)/i;return v;};
+    const front=rows.filter(r=>GS.FRONT.includes(r.cls)).length;
+    let count=0;for(let f=S.minFront||0;f<=4-(S.minDealer||0);f++)count+=choose(front,f)*choose(rows.length-front,4-f);
+    return count;
   }
   function plan(cx){
     const S={...cx.S,newSearch:false},D=clone(S.daily),day=V.gameDay({...cx.G,search:S},cx.nowMs??Date.now());
@@ -47,19 +66,26 @@
     const requested=cx.split?allowed.find(s=>s.ex===cx.split.ex&&s.normal===cx.split.normal):allowed[0];
     if(!requested)throw Error('오늘 사용할 수 없는 인장 나눔');
     const options=cx.split?[requested]:allowed;
+    const maxTeams=Math.max(...options.map(s=>s.ex+s.normal));
     let rows=GS.pool(S,cx.results,cx.roster);
     const growthRows=cx.growthResults?GS.pool(S,cx.growthResults,cx.roster):[];
     const initialPool=Math.max(rows.length,growthRows.length),passes=cx.growthResults?2:1;
     let poolLimit=initialPool,placeScope='all';const reductions=[];
-    // Seconds per game is wall time at the chosen worker count, from the caller's
-    // device measurement. An unmeasured device uses a conservative 1s estimate.
-    const secondsPerGame=Number.isFinite(cx.secondsPerGame)&&cx.secondsPerGame>0?cx.secondsPerGame:1;
+    const poolFloor=Math.min(initialPool,Math.max(20,maxTeams*4+4,
+      trimPool(S,rows,0,maxTeams).length,trimPool(S,growthRows,0,maxTeams).length));
+    // Wall seconds/game, including worker reuse: measured 744-game browser batch,
+    // docs/cosmo_speed_rd_1110.md, browser table (1/2/4/8 workers). Approximate
+    // startup prior only; prefer caller measurement or saved cosmo.speed.v2 data.
+    const workers=cx.workers??CS.workerCount(D,cx.env),saved=CS.priorFrom(cx.cosmoSpeed,workers);
+    const rate=workers>=8?125.34:workers>=4?103.42:workers>=2?70.19:39.95;
+    const measured=Number.isFinite(cx.secondsPerGame)&&cx.secondsPerGame>0;
+    const secondsPerGame=measured?cx.secondsPerGame:saved?Math.max(...saved):1/rate;
     const kinds=cx.split?new Set(slots(requested)):new Set(options.flatMap(slots));
     const nBrk=(cx.breaks||[]).length,supports=S.final.supports.filter(s=>s!=='none').length;
     function estimate(){
-      const n=poolLimit,combos=n<4?0:n*(n-1)*(n-2)*(n-3)/24;
-      const maxTeams=Math.min(Math.floor(n/4),Math.max(...options.map(s=>s.ex+s.normal)));
-      const placeTeams=placeScope==='all'?maxTeams:Math.min(Math.floor(n/4),requested.ex);
+      const n=poolLimit,combos=Math.max(comboCount(S,trimPool(S,rows,n,maxTeams)),comboCount(S,trimPool(S,growthRows,n,maxTeams)));
+      const teamCount=Math.min(Math.floor(n/4),maxTeams);
+      const placeTeams=placeScope==='all'?teamCount:Math.min(Math.floor(n/4),requested.ex);
       const sweeps=kinds.size,conditions=(kinds.has('ex')?D.probe.levels.length:0)+(kinds.has('normal')?D.probe.steps.length:0);
       const retry=Math.max(...D.retry.keepMultipliers),keep=Math.min(combos,D.rerank.keep*retry);
       const probe=Math.min(combos,D.probe.teams*D.retry.keepMultipliers.reduce((a,b)=>a+b,0));
@@ -67,23 +93,23 @@
       // saturated case every screened team advances; budget that upper bound.
       const games=[0,combos*sweeps*D.screen.runs,combos*sweeps*(D.rerank.runs-D.screen.runs),
         probe*conditions*(supports+1)*D.probe.runs,0,
-        options.length*D.combine.top*maxTeams*((D.final.runs-D.probe.runs)+nBrk*D.final.runs),
+        options.length*D.combine.top*teamCount*((D.final.runs-D.probe.runs)+nBrk*D.final.runs),
         placeTeams*(25*D.place.runs[0]+(D.place.keep+1)*(D.place.runs[2]-D.place.runs[0])+
           Math.max(D.probe.levels.length,D.probe.steps.length)*(supports+1)*D.place.recheckRuns+(nBrk+1)*D.final.runs)];
-      const jobs=[0,combos*sweeps,combos*sweeps,probe*conditions*(supports+1),1,options.length*D.combine.top*maxTeams,placeTeams];
+      const jobs=[0,combos*sweeps,combos*sweeps,probe*conditions*(supports+1),1,options.length*D.combine.top*teamCount,placeTeams];
       return {combos,jobs,games,total:games.reduce((a,b)=>a+b,0)*passes};
     }
     const over=()=>estimate().total*secondsPerGame>=D.timeCapMin*60;
     if(over()){placeScope='ex';reductions.push('자리·리더 대상: EX 팀만');}
     if(over()&&D.probe.teams>8){D.probe.teams=8;reductions.push('조건 비교: 상위 8팀');}
     if(over()&&D.rerank.keep>200){D.rerank.keep=200;reductions.push('정밀: 상위 200팀');}
-    while(over()&&poolLimit>4)poolLimit--;
+    while(over()&&poolLimit>poolFloor)poolLimit--;
     if(poolLimit<initialPool)reductions.push(`풀: ${initialPool}명 → ${poolLimit}명`);
     const est=estimate(),stages=E.planStages(names.map((name,i)=>({id:i+1,name,jobs:est.jobs[i],runs:est.jobs[i]?est.games[i]/est.jobs[i]:0,upper:true,
-      condition:i===6?'결선 완료 후, 변경 팀만 조건 재확인':i>=1&&i<=3?'필요한 EX·일반 훑기, 약한 EX이면 일반 추가':undefined})));
+      condition:i===6?'결선 완료 후, 변경 팀만 조건 재확인':i>=1&&i<=3?'EX 위주 합산이 일반 전체 상한 미만이면 모든 나눔 비교':undefined})));
     const availableTeams=Math.floor(Math.min(rows.length,poolLimit)/4),effectiveSplit=fitSplit(requested,availableTeams);
     return {version:1,preset:'daily',stages,total:est.total,estimatedSec:est.total*secondsPerGame,secondsPerGame,
-      estimateFallback:secondsPerGame===1&&!(cx.secondsPerGame>0),withinCap:!over(),reductions,D,day,seals,requested,options,poolLimit,placeScope,passes,
+      estimateFallback:!measured&&!saved,withinCap:!over(),reductions,D,day,seals,requested,options,poolLimit,poolFloor,maxTeams,placeScope,passes,
       effectiveSplit,availableTeams,warnings:effectiveSplit.ex+effectiveSplit.normal<requested.ex+requested.normal?['구원자가 부족해 만들 수 있는 팀 수로 줄였음']:[]};
   }
   async function search(cx){
@@ -103,7 +129,7 @@
   }
   async function searchOne(cx,pl,deadline,shared,pass){
     const {G}=cx,D=pl.D,S={...cx.S,newSearch:false},cls=Object.fromEntries(cx.roster.map(r=>[r.key,r.cls]));
-    const rows=GS.pool(S,cx.results,cx.roster).slice(0,pl.poolLimit),list=GS.combos(S,rows),supports=S.final.supports.filter(s=>s!=='none');
+    const rows=trimPool(S,GS.pool(S,cx.results,cx.roster),pl.poolLimit,pl.maxTeams),list=GS.combos(S,rows),supports=S.final.supports.filter(s=>s!=='none');
     if(!list.length)throw Object.assign(Error('육성된 보유 구원자 4명 이상 필요'),{gwenCause:'few'});
     const workers=cx.workers??CS.workerCount(D,cx.env),pool=shared.pool,cache=new Map(),hist=[],sweeps=new Map(),warnings=[],executionStages=shared.stages;
     const now=cx.clock||Date.now,tiers=(cx.tiers||G.sets.items.map(()=>0)).slice(),exStep=G.steps.find(s=>s.ex).step;
@@ -223,22 +249,35 @@
       const breaks=jobs.flatMap(t=>[null,...(cx.breaks||[])].map(brk=>make(t.keys,t.kind,t.kind==='ex'?t.level:t.step,t.sup,brk,t)));
       await run(breaks,D.final.runs,6,'결선·브레이크');
       const best=new Map();for(const t of ranked(breaks,D.final.runs)){const id=P.id(t.keys)+'|'+t.kind+'|'+t.step+'|'+t.level+'|'+t.sup;if(!best.has(id))best.set(id,t);}
-      return bundles.map(b=>{const teams=b.teams.map(t=>best.get(P.id(t.keys)+'|'+t.kind+'|'+t.step+'|'+t.level+'|'+t.sup));return {teams,sum:teams.reduce((s,t)=>s+t.score,0)};}).sort(bundleCompare);
+      return bundles.flatMap(b=>{const teams=b.teams.map(t=>best.get(P.id(t.keys)+'|'+t.kind+'|'+t.step+'|'+t.level+'|'+t.sup));
+        return teams.every(Boolean)?[{teams,sum:teams.reduce((s,t)=>s+t.score,0)}]:[];
+      }).sort(bundleCompare);
     }
     async function solve(requested){
       let split=fitSplit(requested,Math.floor(rows.length/4));selectedSplit=split;
       const retry=CS.retryPlan({rerank:{keep:D.probe.teams,runs:D.rerank.runs},retry:{...D.retry,maxCandidatesPerBoss:list.length,maxRerankGames:3*list.length*D.rerank.runs,maxTripleChecks:cx.maxCombineChecks??2000000}},list.length);
-      let bundles=[];
+      async function validFinal(){
+        // Excluded 40-game candidates disappear from table() too. Repack the
+        // remaining conditions until a valid finalist or candidate exhaustion.
+        let best=null;
+        for(;;){
+          const bundles=await combine(split);if(!bundles.length)return best;
+          if(checkpointStage<6){checkpoint=bundles[0];checkpointStage=5;}
+          const finals=await finalBundles(bundles);
+          if(finals.length){
+            if(!best||bundleCompare(finals[0],best)<0)best=finals[0];
+            if(checkpointStage<6||!checkpoint||bundleCompare(best,checkpoint)<0){checkpoint=best;checkpointStage=6;}
+          }
+          if(finals.length===bundles.length)return best;
+          if(checkpointStage<6)checkpoint=null;
+        }
+      }
       for(let i=0;i<retry.limits.length;i++){
         const mult=D.retry.keepMultipliers[i];for(const kind of new Set(slots(split)))await sweep(kind,mult);
-        bundles=await combine(split);if(bundles.length)break;
+        const best=await validFinal();if(best)return best;
       }
-      while(!bundles.length&&split.ex+split.normal>1){split=fitSplit(split,split.ex+split.normal-1);selectedSplit=split;bundles=await combine(split);}
-      if(!bundles.length)return null;
-      if(checkpointStage<6){checkpoint=bundles[0];checkpointStage=5;}
-      const finals=await finalBundles(bundles);
-      if(checkpointStage<6||bundleCompare(finals[0],checkpoint)<0){checkpoint=finals[0];checkpointStage=6;}
-      return finals[0];
+      while(split.ex+split.normal>1){split=fitSplit(split,split.ex+split.normal-1);selectedSplit=split;const best=await validFinal();if(best)return best;}
+      return null;
     }
     async function placement(bundle){
       const teams=bundle.teams.slice();
@@ -247,26 +286,38 @@
         const brk=original.options.break_skill,condition=original.kind==='ex'?original.level:original.step;
         const layouts=unique([...P.all(original.keys).map(p=>make(original.keys,original.kind,condition,original.sup,brk,p)),original]);
         await run(layouts,D.place.runs[0],7);
-        const finalists=[...ranked(layouts,D.place.runs[0]).filter(t=>t.key!==original.key).slice(0,D.place.keep),original];
-        await run(finalists,D.place.runs[1],7);
-        let rr=ranked(finalists,D.place.runs[1]),inc=rr.find(t=>t.key===original.key),pick=choosePlacement(inc,rr[0],D.place.margin);
+        async function advance(runs){
+          for(;;){
+            const eligible=ranked(layouts,D.place.runs[0]),inc=eligible.find(t=>t.key===original.key);
+            const finalists=[...eligible.filter(t=>t.key!==original.key).slice(0,D.place.keep),...(inc?[inc]:[])];
+            if(!finalists.length)return [];
+            await run(finalists,runs,7);
+            const rr=ranked(finalists,runs);
+            if(rr.length===finalists.length)return rr;
+          }
+        }
+        let rr=await advance(D.place.runs[1]),inc=rr.find(t=>t.key===original.key)||rr[0];
+        if(!inc){teams[i]=null;continue;}
+        let pick=choosePlacement(inc,rr[0],D.place.margin);
         // Close results get the last paired round; a clear improvement can stop at 100.
         const challenger=rr.find(t=>t.key!==inc.key);
-        if(pick===inc&&challenger&&choosePlacement(challenger,inc,D.place.margin)===challenger){await run(finalists,D.place.runs[2],7);rr=ranked(finalists,D.place.runs[2]);inc=rr.find(t=>t.key===original.key);pick=choosePlacement(inc,rr[0],D.place.margin);}
+        if(pick===inc&&challenger&&choosePlacement(challenger,inc,D.place.margin)===challenger){rr=await advance(D.place.runs[2]);inc=rr.find(t=>t.key===original.key)||rr[0];if(!inc){teams[i]=null;continue;}pick=choosePlacement(inc,rr[0],D.place.margin);}
         if(pick.key===original.key){teams[i]={...inc,placementChanged:false};continue;}
-        const taken=new Set(teams.filter((_,j)=>j!==i).map(t=>t.sup)),allowed=supports.filter(s=>!taken.has(s));
+        const taken=new Set(teams.filter((t,j)=>t&&j!==i).map(t=>t.sup)),allowed=supports.filter(s=>!taken.has(s));
         const recheck=conditionJobs(pick,allowed,brk);await run(recheck,D.place.recheckRuns,7,'바뀐 자리의 스테이지·지원 재확인');
         const next=ranked(recheck,D.place.recheckRuns)[0];let chosen=pick;
         if(next&&(next.level!==pick.level||next.step!==pick.step||next.sup!==pick.sup)){
           await run([pick,next],D.final.runs,7,'바뀐 조건 40판 확인');
           const confirmed=ranked([pick,next],D.final.runs)[0];
+          if(!confirmed){teams[i]=null;continue;}
           const checks=[null,...(cx.breaks||[])].map(b=>make(confirmed.keys,confirmed.kind,confirmed.kind==='ex'?confirmed.level:confirmed.step,confirmed.sup,b,confirmed));
           await run(checks,D.final.runs,7,'바뀐 조건 브레이크 재비교');chosen=ranked(checks,D.final.runs)[0];
         }
-        teams[i]={...chosen,placementChanged:true};
+        teams[i]=chosen?{...chosen,placementChanged:true}:null;
       }
-      placeComplete=pl.placeScope==='all'||teams.every(t=>t.kind==='ex');
-      return {teams,sum:teams.reduce((s,t)=>s+t.score,0)};
+      const valid=teams.filter(Boolean);
+      placeComplete=pl.placeScope==='all'||valid.every(t=>t.kind==='ex');
+      return {teams:valid,sum:valid.reduce((s,t)=>s+t.score,0)};
     }
     let reason='';
     function output(bundle,partial){
@@ -283,14 +334,15 @@
       if(teams.length<pl.requested.ex+pl.requested.normal)warnings.push(`${pl.requested.ex+pl.requested.normal}팀 중 ${teams.length}팀만 만들었음 · 인장 ${pl.seals-used}장 남음`);
       return {preset:'daily',rows:teams,teams,sum:bundle?.sum||0,mean:teams.reduce((s,t)=>s+t.mean,0),reason,flags,partial,timeCapped,
         seals:{requested:pl.seals,used,remaining:pl.seals-used},split:{ex:teams.filter(t=>t.kind==='ex').length,normal:teams.filter(t=>t.kind==='normal').length},
-        warnings,plan:pl,signature:signature(cx,pl.day),pool:rows.length,combos:list.length,runs:D.final.runs,
+        warnings,plan:pl,signature:signature(cx,pl.day,pl),pool:rows.length,combos:list.length,runs:D.final.runs,
         coverage:{version:1,selectedStage:teams.length?selectedStage:0,stages:hist},evaluation};
     }
     try{
       check();let best=await solve(pl.requested);
+      const skipNormal=D.split.exFirst&&best&&best.sum>=pl.seals/D.seals.costNormal*normalMaximum(G);
       if(!cx.split){
         for(const option of pl.options.slice(1)){
-          if(D.split.exFirst&&best&&!best.teams.some(t=>t.kind==='ex'&&t.score<normalMaximum(G)*D.seals.costEx/D.seals.costNormal*D.split.weakExRatio))break;
+          if(skipNormal)break;
           const prior=best;const alternative=await solve(option);
           if(alternative&&(!best||bundleCompare(alternative,best)<0))best=alternative;
           // An unsuccessful alternate must not replace the safe final checkpoint.
@@ -301,9 +353,8 @@
       if(cx.split)reason='지정한 인장 나눔을 계산했음';
       else if(!pl.day.exOpen)reason='오늘은 EX가 닫혀 일반 팀을 골랐음';
       else if(!pl.requested.ex)reason='사용할 인장 수에 맞춰 일반 팀을 골랐음';
-      else if(best?.teams.some(t=>t.kind==='ex'&&t.score<normalMaximum(G)*2*D.split.weakExRatio))reason='EX 팀 점수가 낮아 일반 나눔도 비교했고 EX 묶음 합산이 더 높았음';
-      else if(best?.teams.filter(t=>t.kind==='ex').length<pl.requested.ex)reason=`EX 팀 점수가 낮아 일반 ${best.teams.filter(t=>t.kind==='normal').length}팀이 더 높았음`;
-      else reason='EX 한 팀 점수가 일반 두 팀 최대치보다 높아 EX를 골랐음';
+      else if(skipNormal)reason='EX 위주 합산이 인장 수 × 일반 최고 단계 만점 이상이라 일반 나눔 비교를 생략했음';
+      else reason='가능한 인장 나눔을 모두 비교해 합산이 가장 큰 묶음을 골랐음';
       checkpoint=best;
       if(best)best=await placement(best);
       check();return output(best,false);

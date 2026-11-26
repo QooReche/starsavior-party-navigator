@@ -21,9 +21,9 @@ function score(t,{weak=false,move=false}={}){
   return (g.step===7?(weak?400:5000):900)+(block?100:0)+(g.support==='s0'?30:0)+
     (t.options.break_skill?15:0)+(move&&leader===t.party.units.map(u=>u.key).sort().at(-1)?300:0)+(g.level===1?10:0);
 }
-async function scenario({daily=Daily,count=8,seals=3,weak=false,move=false,settings,stop,stopWhen,staleAt,timeOutStage,clock,scoreFn,viaFn,split,growth=false,day='2026-11-26T05:00:00+09:00'}={}){
+async function scenario({daily=Daily,count=8,seals=3,weak=false,move=false,settings,setup,stop,stopWhen,staleAt,timeOutStage,clock,scoreFn,viaFn,split,growth=false,day='2026-11-26T05:00:00+09:00'}={}){
   scenarioCount++;
-  const f=fixture(count);settings?.(f.S);const trace=[],phases=[],plans=[],life={active:0,max:0,created:0};
+  const f=fixture(count);settings?.(f.S);setup?.(f);const trace=[],phases=[],plans=[],life={active:0,max:0,created:0};
   let phase=0,label='',partial=false,invalid=false,handle,fakeNow=0;
   const cx={...f,seals,split,nowMs:Date.parse(day),tiers:[],breaks:[{name:'synthetic',level:1}],workers:1,secondsPerGame:.0001,stage:'guild/test/7단계',base:'',clock,
     growthResults:growth?structuredClone(f.results):undefined,stale:()=>invalid,...(timeOutStage?{clock:()=>fakeNow}:{}),
@@ -39,7 +39,7 @@ async function scenario({daily=Daily,count=8,seals=3,weak=false,move=false,setti
         for(const t of m.teams){if(dead)return;
           const prior=t.options.merge_raw?JSON.parse(t.options.merge_raw):[],off=t.options.run_offset||0;
           assert.equal(prior.length,off);const raw=prior.concat(Array.from({length:m.n_runs},(_,i)=>['wipe',10,20,.6,(scoreFn||((t)=>score(t,{weak,move})))(t,i+off)]));
-          send({type:'team',key:t.key,result:{n:raw.length,prog:.6,progs:raw.map(x=>x[3]),clear:0,via:viaFn?viaFn(t,off):{trigger:1},guild:{base_scores:raw.map(x=>x[4])},raw:JSON.stringify(raw)}});
+          send({type:'team',key:t.key,result:{n:raw.length,prog:.6,progs:raw.map(x=>x[3]),clear:0,via:viaFn?viaFn(t,off,{phase,label,runs:m.n_runs}):{trigger:1},guild:{base_scores:raw.map(x=>x[4])},raw:JSON.stringify(raw)}});
         }if(!dead)send({type:'done'});
       });}};
     }};
@@ -71,12 +71,12 @@ function margins(daily=Daily){
 }
 function caps(daily=Daily){
   const f=fixture(40);f.S.daily=structuredClone(defaults.daily);
-  const p=daily.plan({...f,seals:4,nowMs:Date.parse('2026-11-26T05:00:00+09:00'),secondsPerGame:.05,breaks:[]});
+  const p=daily.plan({...f,seals:4,nowMs:Date.parse('2026-11-26T05:00:00+09:00'),secondsPerGame:.01,breaks:[]});
   assert.equal(p.placeScope,'ex');assert(p.withinCap);assert(p.estimatedSec<5400);assert.deepEqual(plain(p.reductions.slice(0,3)),['자리·리더 대상: EX 팀만','조건 비교: 상위 8팀','정밀: 상위 200팀']);
   assert(p.poolLimit<40);assert.equal(p.D.screen.runs,2);
   const combinations=p.poolLimit*(p.poolLimit-1)*(p.poolLimit-2)*(p.poolLimit-3)/24;
   assert.equal(p.stages[2].games,combinations*2*18,'estimate includes all boundary ties');
-  const growth=daily.plan({...f,seals:4,nowMs:Date.parse('2026-11-26T05:00:00+09:00'),secondsPerGame:.05,growthResults:f.results});
+  const growth=daily.plan({...f,seals:4,nowMs:Date.parse('2026-11-26T05:00:00+09:00'),secondsPerGame:.01,growthResults:f.results});
   assert(growth.estimatedSec<5400);assert(growth.poolLimit<=p.poolLimit);assert.equal(growth.passes,2);
 }
 async function checks(daily=Daily){
@@ -85,7 +85,7 @@ async function checks(daily=Daily){
   assert(strong.trace.some(m=>m.n_runs===30&&m.teams.some(t=>t.options.run_offset===10)));
   const multi=await scenario({daily});valid(multi.out,2);assert(multi.out.teams.some(t=>t.sup!=='s0'&&t.effectiveSupport==='none'),'mismatched support is assigned');
   assert(!multi.out.partial);assert(multi.out.evaluation.placementComplete);
-  const weak=await scenario({daily,seals:2,weak:true});valid(weak.out,2);assert.equal(weak.out.split.normal,2);assert(weak.out.reason.includes('EX 팀 점수가 낮아 일반 2팀'));
+  const weak=await scenario({daily,seals:2,weak:true});valid(weak.out,2);assert.equal(weak.out.split.normal,2);assert(weak.out.reason.includes('가능한 인장 나눔을 모두 비교'));
   const ex2=await scenario({daily,seals:4});valid(ex2.out,2);assert.equal(ex2.out.split.ex,2);
   const few=await scenario({daily,seals:4,day:'2026-11-25T05:00:00+09:00'});valid(few.out,2);assert.equal(few.out.seals.remaining,2);assert(few.out.warnings.some(s=>s.includes('4팀 중 2팀')));
   const retry=await scenario({daily,seals:4,settings:S=>{S.daily.probe.teams=1;}});valid(retry.out,2);assert(retry.phases.filter(p=>p.policyStage===4).length>1,'candidate expansion executes');
@@ -158,7 +158,7 @@ async function main(){
     ["placeScope='ex';reductions.push","placeScope='all';reductions.push",caps],
     ["effectiveSupport=GS.finalSupports(S,keys,cls).includes(sup)?sup:'none'","effectiveSupport=sup",async d=>{const r=await scenario({daily:d});assert(r.out.teams.some(t=>t.sup!=='s0'&&t.effectiveSupport==='none'));}],
     ["support:[t.sup]","support:[]",async d=>valid((await scenario({daily:d})).out,2)],
-    ['t.score<normalMaximum(G)*D.seals.costEx/D.seals.costNormal*D.split.weakExRatio','false',async d=>assert.equal((await scenario({daily:d,seals:2,weak:true})).out.split.normal,2)],
+    ['if(skipNormal)break;','if(true)break;',async d=>assert.equal((await scenario({daily:d,seals:2,weak:true})).out.split.normal,2)],
     ['if(pick.key===original.key)','if(true)',async d=>assert((await scenario({daily:d,move:true})).out.teams.some(t=>t.placementChanged))],
     ['combos*sweeps*(D.rerank.runs-D.screen.runs)','keep*sweeps*(D.rerank.runs-D.screen.runs)',caps],
     ['const full=cache.get(j.key);','const full=cache.get(j.key); n=full.n;',regression],
