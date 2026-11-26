@@ -1,0 +1,10 @@
+{
+ "key": "mogulus",
+ "name": "불사왕 모굴루스",
+ "element": "혼돈",
+ "role": "스트라이커",
+ "title": "공허체",
+ "attackKind": "참격",
+ "unitId": 110023,
+ "immuneGroup": 1001
+}

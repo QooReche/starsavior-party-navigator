@@ -1,7 +1,7 @@
 // 길드 방어전 패널 시험: 점수 범위, 시즌 종료 표시(갱신 대기), 단계별 안내, 화면 용어, 이스케이프.
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 const V = require('../guild_view.js');
-const G = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_seasons', '30111.json'), 'utf8'));
+const G = require('./guild_fixture')(30111);
 // 화면에 싣는 자료와 같은 모양(내부 출처 제외)
 const P = {...G, title: '길드방어전(시즌4 10/29~11/05)', tab: '시즌4 10/29~11/05',
   sources: Object.fromEntries(Object.entries(G.sources).filter(([k]) => k !== 'client'))};

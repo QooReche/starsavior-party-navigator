@@ -1,0 +1,19 @@
+{
+ "foe": 48,
+ "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "카지노 픽서",
+ "role": "레인저",
+ "element": "달"
+}

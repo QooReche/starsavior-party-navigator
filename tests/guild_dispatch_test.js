@@ -1,6 +1,6 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
-const GS=require('../guild_search'),Planner=require('../guild_planner'),G=require('../data/guild_seasons/30111.json'),V=require('../guild_view');
+const GS=require('../guild_search'),Planner=require('../guild_planner'),G=require('./guild_fixture')(30111),V=require('../guild_view');
 const roster=Array.from({length:7},(_,i)=>({key:'u'+i,cls:i%2?'캐스터':'서포터'}));
 const results=Object.fromEntries(roster.map((r,i)=>[r.key,{power:1000-i,stats:{hp:1000,atk:100,def:100,spd:100},combat:{}}]));
 async function run(planner,chunk,workers=2,cancel=false){

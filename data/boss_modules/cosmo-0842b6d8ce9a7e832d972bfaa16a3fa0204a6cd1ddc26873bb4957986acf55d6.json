@@ -1,0 +1,10 @@
+{
+ "key": "tyria",
+ "name": "티리아",
+ "element": "태양",
+ "role": "스트라이커",
+ "title": "집행자",
+ "attackKind": "참격",
+ "unitId": 110063,
+ "immuneGroup": 1001
+}

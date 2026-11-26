@@ -1,0 +1,19 @@
+{
+ "foe": 1644,
+ "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "티엔",
+ "role": "스트라이커",
+ "element": "달"
+}

@@ -48,11 +48,7 @@
    "settlement": "DATE_GUILD_DUNGEON_REWARD_SEASON_G5"
   },
   "boss": {
-   "name": "매니저 그레고리",
-   "element": "sun",
-   "role": "스트라이커",
-   "roleKey": "striker",
-   "engine": "client"
+   "$module": "guild-b143bf4d0faef32f43fad472639886f48172f2f6b6acb2319979a15bb8c41e61"
   },
   "conf": "확인",
   "src": [
@@ -79,7 +75,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_01",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -97,31 +92,15 @@
        "tough": 3
       },
       "level": 45,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114821",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_RED_GUILDRAID_01",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -139,31 +118,15 @@
        "tough": 3
       },
       "level": 45,
-      "element": "태양",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114611",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-b47ea748091d7eb45f80aea82badc5db707091d4eb947585de0f616e5bfdf7bd"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_01",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -181,33 +144,17 @@
        "tough": 3
       },
       "level": 45,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114821",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_01",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -225,31 +172,15 @@
        "tough": 3
       },
       "level": 45,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114821",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_BODYGUARD_HANDS_BLACK_BOSS_GUILDRAID_01",
-      "foe": 49,
       "skills": [
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_ATTACK",
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_SPECIAL",
@@ -271,31 +202,15 @@
        "tough": 10
       },
       "level": 45,
-      "element": "태양",
-      "role": "스트라이커",
-      "name": "매니저 그레고리",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117019",
-      "foeSignature": "c5bcb971873079c9ae331ad9c72c59ba39a28fc608e4e1ce1a8a0a776434b867",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-7c0b9123343f1ff8db6c496a13e3ffae82df80b4b129825c219f395b86b2a38e"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_01",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -313,27 +228,12 @@
        "tough": 3
       },
       "level": 45,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114821",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ]
    ],
@@ -360,7 +260,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_02",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -378,31 +277,15 @@
        "tough": 3
       },
       "level": 120,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114851",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_RED_GUILDRAID_02",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -420,31 +303,15 @@
        "tough": 3
       },
       "level": 120,
-      "element": "태양",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114641",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-b47ea748091d7eb45f80aea82badc5db707091d4eb947585de0f616e5bfdf7bd"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_02",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -462,33 +329,17 @@
        "tough": 3
       },
       "level": 120,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114851",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_02",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -506,31 +357,15 @@
        "tough": 3
       },
       "level": 120,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114851",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_BODYGUARD_HANDS_BLACK_BOSS_GUILDRAID_02",
-      "foe": 49,
       "skills": [
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_ATTACK",
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_SPECIAL",
@@ -552,31 +387,15 @@
        "tough": 10
       },
       "level": 120,
-      "element": "태양",
-      "role": "스트라이커",
-      "name": "매니저 그레고리",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117051",
-      "foeSignature": "c5bcb971873079c9ae331ad9c72c59ba39a28fc608e4e1ce1a8a0a776434b867",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-7c0b9123343f1ff8db6c496a13e3ffae82df80b4b129825c219f395b86b2a38e"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_02",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -594,27 +413,12 @@
        "tough": 3
       },
       "level": 120,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114851",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ]
    ],
@@ -641,7 +445,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_03",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -659,31 +462,15 @@
        "tough": 3
       },
       "level": 175,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114881",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_RED_GUILDRAID_03",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -701,31 +488,15 @@
        "tough": 3
       },
       "level": 175,
-      "element": "태양",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114671",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-b47ea748091d7eb45f80aea82badc5db707091d4eb947585de0f616e5bfdf7bd"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_03",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -743,33 +514,17 @@
        "tough": 3
       },
       "level": 175,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114881",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_03",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -787,31 +542,15 @@
        "tough": 3
       },
       "level": 175,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114881",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_BODYGUARD_HANDS_BLACK_BOSS_GUILDRAID_03",
-      "foe": 49,
       "skills": [
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_ATTACK",
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_SPECIAL",
@@ -833,31 +572,15 @@
        "tough": 11
       },
       "level": 175,
-      "element": "태양",
-      "role": "스트라이커",
-      "name": "매니저 그레고리",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117083",
-      "foeSignature": "c5bcb971873079c9ae331ad9c72c59ba39a28fc608e4e1ce1a8a0a776434b867",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-7c0b9123343f1ff8db6c496a13e3ffae82df80b4b129825c219f395b86b2a38e"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_03",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -875,27 +598,12 @@
        "tough": 3
       },
       "level": 175,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114881",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ]
    ],
@@ -922,7 +630,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_04",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -940,31 +647,15 @@
        "tough": 3
       },
       "level": 400,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114911",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_RED_GUILDRAID_04",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -982,31 +673,15 @@
        "tough": 3
       },
       "level": 400,
-      "element": "태양",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114701",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-b47ea748091d7eb45f80aea82badc5db707091d4eb947585de0f616e5bfdf7bd"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_04",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1024,33 +699,17 @@
        "tough": 3
       },
       "level": 400,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114911",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_04",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1068,31 +727,15 @@
        "tough": 3
       },
       "level": 400,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114911",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_BODYGUARD_HANDS_BLACK_BOSS_GUILDRAID_04",
-      "foe": 49,
       "skills": [
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_ATTACK",
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_SPECIAL",
@@ -1114,31 +757,15 @@
        "tough": 12
       },
       "level": 400,
-      "element": "태양",
-      "role": "스트라이커",
-      "name": "매니저 그레고리",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117115",
-      "foeSignature": "c5bcb971873079c9ae331ad9c72c59ba39a28fc608e4e1ce1a8a0a776434b867",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-7c0b9123343f1ff8db6c496a13e3ffae82df80b4b129825c219f395b86b2a38e"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_04",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1156,27 +783,12 @@
        "tough": 3
       },
       "level": 400,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114911",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ]
    ],
@@ -1203,7 +815,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_05",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1221,31 +832,15 @@
        "tough": 4
       },
       "level": 665,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114941",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_RED_GUILDRAID_05",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -1263,31 +858,15 @@
        "tough": 4
       },
       "level": 665,
-      "element": "태양",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114731",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-b47ea748091d7eb45f80aea82badc5db707091d4eb947585de0f616e5bfdf7bd"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_05",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1305,33 +884,17 @@
        "tough": 4
       },
       "level": 665,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114941",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_05",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1349,31 +912,15 @@
        "tough": 4
       },
       "level": 665,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114941",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_BODYGUARD_HANDS_BLACK_BOSS_GUILDRAID_05",
-      "foe": 49,
       "skills": [
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_ATTACK",
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_SPECIAL",
@@ -1395,31 +942,15 @@
        "tough": 13
       },
       "level": 665,
-      "element": "태양",
-      "role": "스트라이커",
-      "name": "매니저 그레고리",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117147",
-      "foeSignature": "c5bcb971873079c9ae331ad9c72c59ba39a28fc608e4e1ce1a8a0a776434b867",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-7c0b9123343f1ff8db6c496a13e3ffae82df80b4b129825c219f395b86b2a38e"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_05",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1437,27 +968,12 @@
        "tough": 4
       },
       "level": 665,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114941",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ]
    ],
@@ -1484,7 +1000,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_06",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1502,31 +1017,15 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114971",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_RED_GUILDRAID_06",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -1544,31 +1043,15 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "태양",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114761",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-b47ea748091d7eb45f80aea82badc5db707091d4eb947585de0f616e5bfdf7bd"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_06",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1586,33 +1069,17 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114971",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_06",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1630,31 +1097,15 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114971",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_BODYGUARD_HANDS_BLACK_BOSS_GUILDRAID_06",
-      "foe": 49,
       "skills": [
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_ATTACK",
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_SPECIAL",
@@ -1676,31 +1127,15 @@
        "tough": 15
       },
       "level": 1047,
-      "element": "태양",
-      "role": "스트라이커",
-      "name": "매니저 그레고리",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117179",
-      "foeSignature": "c5bcb971873079c9ae331ad9c72c59ba39a28fc608e4e1ce1a8a0a776434b867",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-7c0b9123343f1ff8db6c496a13e3ffae82df80b4b129825c219f395b86b2a38e"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_06",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1718,27 +1153,12 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114971",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ]
    ],
@@ -1765,7 +1185,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_07",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1783,31 +1202,15 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115001",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_RED_GUILDRAID_07",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -1825,31 +1228,15 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "태양",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114791",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-b47ea748091d7eb45f80aea82badc5db707091d4eb947585de0f616e5bfdf7bd"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_07",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1867,33 +1254,17 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115001",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_07",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1911,31 +1282,15 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115001",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      },
      {
       "unit": "NKM_UNIT_MON_BODYGUARD_HANDS_BLACK_BOSS_GUILDRAID_07",
-      "foe": 49,
       "skills": [
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_ATTACK",
        "NKM_UNIT_MON_BODYGUARD_HANDS_BOSS_CHALLENGE_SPECIAL",
@@ -1957,31 +1312,15 @@
        "tough": 16
       },
       "level": 1275,
-      "element": "태양",
-      "role": "스트라이커",
-      "name": "매니저 그레고리",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117211",
-      "foeSignature": "c5bcb971873079c9ae331ad9c72c59ba39a28fc608e4e1ce1a8a0a776434b867",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-7c0b9123343f1ff8db6c496a13e3ffae82df80b4b129825c219f395b86b2a38e"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_RED_GUILDRAID_07",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1999,27 +1338,12 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "태양",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115001",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-80fe58ff708abb5a8c63c6cca44a26b23a73a2238024c15307ee6e48e80c42ef"
      }
     ]
    ],
@@ -3235,11 +2559,7 @@
   ]
  },
  "gimmicks": {
-  "conf": "확인",
-  "src": [
-   "client"
-  ],
-  "items": []
+  "$module": "gimmicks-60c9f75e8968fc347d7486db4f34bdee5726009c6a9b8e0785da933d428d70a4"
  },
  "community": {
   "conf": "낮음",

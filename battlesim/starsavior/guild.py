@@ -6,15 +6,17 @@ from functools import lru_cache
 
 from .. import datafile
 from .data import SRC
+from .boss_registry import expand, guild_waves
 
 
+@datafile.cached
 def load(season_id=None, src=SRC):
     if season_id is None:
         season_id = datafile.load('guild_current', src)['seasonId']
     if isinstance(season_id, bool) or not str(season_id).isdigit():
         raise ValueError('길드 시즌 id는 양의 정수: %r' % season_id)
     try:
-        g = datafile.load('guild_seasons/%d' % int(season_id), src)
+        g = expand(datafile.load('guild_seasons/%d' % int(season_id), src), src)
         check_dependencies(src, tuple(g.get('dependencies', {}).items()))
         return g
     except FileNotFoundError:
@@ -42,12 +44,7 @@ def build_waves(options, src=SRC):
     identity(options, src)
     g = load(options.get('seasonId'), src)
     step = int(options.get('step', g['defaultStep']))
-    engine = g['season']['boss']['engine']
-    if engine == 'bfb' and step != g['defaultStep']:
-        return client_waves(g['client'], options, step, src)
-    if engine not in ENGINES:
-        raise ValueError('미지원 길드 보스 실행기: ' + engine)
-    return ENGINES[engine](g, options, step, src)
+    return guild_waves(g, options, step, src)
 
 
 def bfb_waves(g, options, step, src):
@@ -129,6 +126,3 @@ def base_points(battle, points):
         elif u.dead:
             total += points['eliteKill'] if u.d.grade == '정예' else points['kill']
     return total
-
-
-ENGINES = {'bfb': bfb_waves, 'client': client_waves}

@@ -1,0 +1,7 @@
+{
+ "name": "BFB",
+ "element": "star",
+ "role": "레인저",
+ "roleKey": "ranger",
+ "engine": "client"
+}

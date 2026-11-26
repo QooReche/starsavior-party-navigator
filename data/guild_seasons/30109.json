@@ -48,11 +48,7 @@
    "settlement": "DATE_GUILD_DUNGEON_REWARD_SEASON_P2"
   },
   "boss": {
-   "name": "심해의 폭군",
-   "element": "chaos",
-   "role": "스트라이커",
-   "roleKey": "striker",
-   "engine": "client"
+   "$module": "guild-bb4692dd10c23771abd80f7d77bce7e7cc2f0159876bf08c38c85efa4bcc86b5"
   },
   "conf": "확인",
   "src": [
@@ -79,7 +75,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_01",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -97,31 +92,15 @@
        "tough": 3
       },
       "level": 45,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115661",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      },
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_01",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -139,33 +118,17 @@
        "tough": 3
       },
       "level": 45,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115661",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_SHARK_CHAIN_BLUE_BOSS_GUILDRAID_01",
-      "foe": 1722,
       "skills": [
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_ATTACK",
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_SPECIAL",
@@ -187,27 +150,12 @@
        "tough": 8
       },
       "level": 45,
-      "element": "혼돈",
-      "role": "스트라이커",
-      "name": "심해의 폭군",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117243",
-      "foeSignature": "a78ea6f46f985a093cbea13b2561cde826fa40846a4d45b3a8c9122c00529eb1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-970dbf8b66a89c79e54cc2c2f6a01e641f795ac599ecca9c819caa3e9854c298"
      }
     ]
    ],
@@ -234,7 +182,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_02",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -252,31 +199,15 @@
        "tough": 3
       },
       "level": 120,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115691",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      },
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_02",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -294,33 +225,17 @@
        "tough": 3
       },
       "level": 120,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115691",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_SHARK_CHAIN_BLUE_BOSS_GUILDRAID_02",
-      "foe": 1722,
       "skills": [
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_ATTACK",
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_SPECIAL",
@@ -342,27 +257,12 @@
        "tough": 8
       },
       "level": 120,
-      "element": "혼돈",
-      "role": "스트라이커",
-      "name": "심해의 폭군",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117275",
-      "foeSignature": "a78ea6f46f985a093cbea13b2561cde826fa40846a4d45b3a8c9122c00529eb1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-970dbf8b66a89c79e54cc2c2f6a01e641f795ac599ecca9c819caa3e9854c298"
      }
     ]
    ],
@@ -389,7 +289,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_03",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -407,31 +306,15 @@
        "tough": 3
       },
       "level": 175,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115721",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      },
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_03",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -449,33 +332,17 @@
        "tough": 3
       },
       "level": 175,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115721",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_SHARK_CHAIN_BLUE_BOSS_GUILDRAID_03",
-      "foe": 1722,
       "skills": [
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_ATTACK",
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_SPECIAL",
@@ -497,27 +364,12 @@
        "tough": 9
       },
       "level": 175,
-      "element": "혼돈",
-      "role": "스트라이커",
-      "name": "심해의 폭군",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117307",
-      "foeSignature": "a78ea6f46f985a093cbea13b2561cde826fa40846a4d45b3a8c9122c00529eb1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-970dbf8b66a89c79e54cc2c2f6a01e641f795ac599ecca9c819caa3e9854c298"
      }
     ]
    ],
@@ -544,7 +396,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_04",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -562,31 +413,15 @@
        "tough": 3
       },
       "level": 400,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115751",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      },
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_04",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -604,33 +439,17 @@
        "tough": 3
       },
       "level": 400,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115751",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_SHARK_CHAIN_BLUE_BOSS_GUILDRAID_04",
-      "foe": 1722,
       "skills": [
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_ATTACK",
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_SPECIAL",
@@ -652,27 +471,12 @@
        "tough": 10
       },
       "level": 400,
-      "element": "혼돈",
-      "role": "스트라이커",
-      "name": "심해의 폭군",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117339",
-      "foeSignature": "a78ea6f46f985a093cbea13b2561cde826fa40846a4d45b3a8c9122c00529eb1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-970dbf8b66a89c79e54cc2c2f6a01e641f795ac599ecca9c819caa3e9854c298"
      }
     ]
    ],
@@ -699,7 +503,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_05",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -717,31 +520,15 @@
        "tough": 4
       },
       "level": 665,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115781",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      },
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_05",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -759,33 +546,17 @@
        "tough": 4
       },
       "level": 665,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115781",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_SHARK_CHAIN_BLUE_BOSS_GUILDRAID_05",
-      "foe": 1722,
       "skills": [
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_ATTACK",
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_SPECIAL",
@@ -807,27 +578,12 @@
        "tough": 11
       },
       "level": 665,
-      "element": "혼돈",
-      "role": "스트라이커",
-      "name": "심해의 폭군",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117371",
-      "foeSignature": "a78ea6f46f985a093cbea13b2561cde826fa40846a4d45b3a8c9122c00529eb1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-970dbf8b66a89c79e54cc2c2f6a01e641f795ac599ecca9c819caa3e9854c298"
      }
     ]
    ],
@@ -854,7 +610,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_06",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -872,31 +627,15 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115811",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      },
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_06",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -914,33 +653,17 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115811",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_SHARK_CHAIN_BLUE_BOSS_GUILDRAID_06",
-      "foe": 1722,
       "skills": [
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_ATTACK",
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_SPECIAL",
@@ -962,27 +685,12 @@
        "tough": 13
       },
       "level": 1047,
-      "element": "혼돈",
-      "role": "스트라이커",
-      "name": "심해의 폭군",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117403",
-      "foeSignature": "a78ea6f46f985a093cbea13b2561cde826fa40846a4d45b3a8c9122c00529eb1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-970dbf8b66a89c79e54cc2c2f6a01e641f795ac599ecca9c819caa3e9854c298"
      }
     ]
    ],
@@ -1009,7 +717,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_07",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -1027,31 +734,15 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115841",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      },
      {
       "unit": "NKM_UNIT_MON_PIRATE_SWORD_RED_GUILDRAID_07",
-      "foe": 1721,
       "skills": [
        "NKM_UNIT_MON_PIRATE_SWORD_ATTACK",
        "NKM_UNIT_MON_PIRATE_SWORD_SPECIAL"
@@ -1069,33 +760,17 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "혼돈",
-      "role": "디펜더",
-      "name": "베테랑 해적단원",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115841",
-      "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-93951cd42f79f11e3facd28f2ec2f84e34a74ac657cc4c8aac8a65295bb6510c"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_SHARK_CHAIN_BLUE_BOSS_GUILDRAID_07",
-      "foe": 1722,
       "skills": [
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_ATTACK",
        "NKM_UNIT_MON_SHARK_CHAIN_BOSS_EVENT_SPECIAL",
@@ -1117,27 +792,12 @@
        "tough": 14
       },
       "level": 1275,
-      "element": "혼돈",
-      "role": "스트라이커",
-      "name": "심해의 폭군",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:117435",
-      "foeSignature": "a78ea6f46f985a093cbea13b2561cde826fa40846a4d45b3a8c9122c00529eb1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-970dbf8b66a89c79e54cc2c2f6a01e641f795ac599ecca9c819caa3e9854c298"
      }
     ]
    ],
@@ -2349,11 +2009,7 @@
   ]
  },
  "gimmicks": {
-  "conf": "확인",
-  "src": [
-   "client"
-  ],
-  "items": []
+  "$module": "gimmicks-60c9f75e8968fc347d7486db4f34bdee5726009c6a9b8e0785da933d428d70a4"
  },
  "community": {
   "conf": "낮음",

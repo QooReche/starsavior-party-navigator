@@ -63,6 +63,7 @@ def batches():
     # 길방: 팀마다 다른 EX 선택(레벨·지원·세트 = 다른 조우·BFB 상태 기계)을 한 묶음에
     gd = [({'level': 6, 'support': 'fire', 'sets': [0] * 4}), ({'level': 6, 'support': 'fire', 'sets': [3] * 4}),
           ({'level': 2, 'support': 'none', 'sets': [0] * 4}), ({'level': 6, 'support': 'fire', 'sets': [0] * 4})]
+    gd = [dict(g, seasonId=30111) for g in gd]
     out.append(('guild/x/EX', 2, dict(BASE), [{'key': 'g%d' % i, 'party': parties[i % 3], 'options': {'guild': g}} for i, g in enumerate(gd)]))
     return out
 

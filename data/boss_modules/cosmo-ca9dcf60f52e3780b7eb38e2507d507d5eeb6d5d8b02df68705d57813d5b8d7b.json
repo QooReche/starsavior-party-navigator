@@ -1,0 +1,10 @@
+{
+ "key": "carnelia",
+ "name": "카넬리아",
+ "element": "혼돈",
+ "role": "캐스터",
+ "title": "방랑자",
+ "attackKind": "정신",
+ "unitId": 110133,
+ "immuneGroup": 1001
+}

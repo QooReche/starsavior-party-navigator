@@ -1,0 +1,149 @@
+{
+ "foe": 106,
+ "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
+ "clientRules": {
+  "skills": {
+   "기본기": {
+    "rows": [
+     {
+      "c": [
+       [
+        "self_has",
+        [
+         "토끼(해제불가)"
+        ]
+       ]
+      ],
+      "f": [
+       "high_max_hp"
+      ]
+     },
+     {
+      "c": [
+       [
+        "self_has",
+        [
+         "비둘기(해제불가)"
+        ]
+       ]
+      ],
+      "f": [
+       "high_atk"
+      ]
+     },
+     {
+      "c": [
+       [
+        "self_has",
+        [
+         "펑!(해제불가)"
+        ]
+       ]
+      ],
+      "f": [
+       "high_gauge"
+      ]
+     }
+    ]
+   },
+   "특수기": {
+    "rows": [
+     {
+      "c": [
+       [
+        "self_has",
+        [
+         "토끼(해제불가)"
+        ]
+       ]
+      ],
+      "f": [
+       "high_max_hp"
+      ]
+     },
+     {
+      "c": [
+       [
+        "self_has",
+        [
+         "비둘기(해제불가)"
+        ]
+       ]
+      ],
+      "f": [
+       "high_atk"
+      ]
+     },
+     {
+      "c": [
+       [
+        "self_has",
+        [
+         "펑!(해제불가)"
+        ]
+       ]
+      ],
+      "f": [
+       "high_gauge"
+      ]
+     }
+    ]
+   },
+   "궁극기": {
+    "rows": [
+     {
+      "c": [
+       [
+        "self_has",
+        [
+         "토끼(해제불가)"
+        ]
+       ]
+      ],
+      "f": [
+       "high_max_hp"
+      ]
+     },
+     {
+      "c": [
+       [
+        "self_has",
+        [
+         "비둘기(해제불가)"
+        ]
+       ]
+      ],
+      "f": [
+       "high_atk"
+      ]
+     },
+     {
+      "c": [
+       [
+        "self_has",
+        [
+         "펑!(해제불가)"
+        ]
+       ]
+      ],
+      "f": [
+       "high_gauge"
+      ]
+     }
+    ]
+   }
+  },
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "레타르기아의 마술사",
+ "role": "캐스터",
+ "element": "별"
+}

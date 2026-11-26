@@ -1,0 +1,19 @@
+{
+ "foe": 1721,
+ "foeSignature": "b49fcbbb80b3dce583758148b46b21b255fb2ea3b00febbc0a3da34fea401748",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "베테랑 해적단원",
+ "role": "디펜더",
+ "element": "혼돈"
+}

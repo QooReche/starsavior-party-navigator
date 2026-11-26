@@ -259,7 +259,7 @@ def test_js_parity():
         skip_note("guild_defense_test.test_js_parity: node 없음")
         return
     combos = [[lv, list(t)] for lv in range(0, 13) for t in itertools.product(range(4), repeat=4)]
-    js = node_json("const V=require('./guild_view.js'),G=JSON.parse(require('fs').readFileSync('data/guild_seasons/30111.json','utf8'));"
+    js = node_json("const V=require('./guild_view.js'),G=require('./tests/guild_fixture')(30111);"
                    "const C=[];for(let l=0;l<=12;l++)for(let a=0;a<4;a++)for(let b=0;b<4;b++)for(let c=0;c<4;c++)for(let d=0;d<4;d++)C.push([l,[a,b,c,d]]);"
                    "console.log(JSON.stringify(C.map(([l,t])=>{const p=V.extraPct(G,l,t);return [p,V.score(G,p)]})))")
     assert len(js) == len(combos) == 13 * 256
@@ -268,23 +268,23 @@ def test_js_parity():
         assert p == pp and s == gd.score(G, pp), (lv, t, p, s, pp)
     fractions = [-1, 0, 0.00002, 0.5, 0.999, 1, 2]  # 0.00002는 5000.5점 경계
     pcs = [gd.extra_pct(G, lv, tiers) for lv in (0, 6, 12) for tiers in ([0]*4, [3]*4, [3,3,3,0])]
-    values = node_json("const V=require('./guild_view.js'),G=require('./data/guild_seasons/30111.json');"
+    values = node_json("const V=require('./guild_view.js'),G=require('./tests/guild_fixture')(30111);"
                        + "console.log(JSON.stringify(" + json.dumps(pcs) + ".map(p=>"
                        + json.dumps(fractions) + ".map(f=>V.scoreAt(G,p,f)))))")
     assert values == [[gd.score_at(G, pc, f) for f in fractions] for pc in pcs]
     ks = [None, 0, 1, 2, 5]
     fr2 = [0, 0.00005, 0.0001, 0.00015, 0.29, 0.5, 0.9999, 1]
-    vals = node_json("const V=require('./guild_view.js'),G=require('./data/guild_seasons/30111.json');"
+    vals = node_json("const V=require('./guild_view.js'),G=require('./tests/guild_fixture')(30111);"
                      "const out=[];for(const p of [0,60,120])for(const k of " + json.dumps(ks) + ")for(const f of " + json.dumps(fr2) + ")out.push(V.scoreAt(G,p,f,k));"
                      "console.log(JSON.stringify(out))")
     assert vals == [gd.score_at(G, p, f, k) for p in (0, 60, 120) for k in ks for f in fr2]
     progs = [-1, 0, 0.1, 0.24, 0.25, 0.3, 0.4999, 0.5, 0.75, 0.999, 1, 2]
-    pv = node_json("const V=require('./guild_view.js'),G=require('./data/guild_seasons/30111.json');"
+    pv = node_json("const V=require('./guild_view.js'),G=require('./tests/guild_fixture')(30111);"
                    "console.log(JSON.stringify(" + json.dumps(progs) + ".map(p=>[V.progParts(G,p),V.scoreFromProg(G,60,p)])))")
     for p, (parts, sc) in zip(progs, pv):
         k, f = gd.prog_parts(G, p)
         assert parts["k"] == k and abs(parts["f"] - f) < 1e-12 and sc == gd.score_from_prog(G, 60, p), (p, parts, sc)
-    st = node_json("const V=require('./guild_view.js'),G=JSON.parse(require('fs').readFileSync('data/guild_seasons/30111.json','utf8'));"
+    st = node_json("const V=require('./guild_view.js'),G=require('./tests/guild_fixture')(30111);"
                    "const T=['2026-10-28T12:00:00+09:00','2026-10-29T00:00:00+09:00','2026-11-05T03:59:59+09:00','2026-11-05T04:00:00+09:00','2026-11-12T03:59:59+09:00','2026-11-12T04:00:00+09:00'];"
                    "console.log(JSON.stringify(T.map(t=>V.seasonState(G.season,Date.parse(t)))))")
     exp = [gd.season_state(G, at(t)) for t in ("2026-10-28T12:00:00+09:00", "2026-10-29T00:00:00+09:00", "2026-11-05T03:59:59+09:00",

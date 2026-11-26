@@ -1,0 +1,19 @@
+{
+ "foe": 49,
+ "foeSignature": "c5bcb971873079c9ae331ad9c72c59ba39a28fc608e4e1ce1a8a0a776434b867",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "매니저 그레고리",
+ "role": "스트라이커",
+ "element": "태양"
+}

@@ -1,0 +1,10 @@
+{
+ "cosmo": {
+  "belgras": {"script": "CORRUPTED_TREE", "adapter": "belgras", "rule": "cosmo_raid_boss"},
+  "tyria": {"script": "TYRIA", "adapter": "stage", "rule": "cosmo_raid_boss"},
+  "carnelia": {"script": "CARNELIA", "adapter": "stage", "rule": "cosmo_raid_boss"},
+  "mogulus": {"script": "MOGULUS", "adapter": "stage", "rule": "cosmo_raid_boss"},
+  "disparity": {"script": "DISPARITY_OF_REPRESENTATION", "adapter": "stage", "rule": "cosmo_raid_boss"},
+  "baskerville": {"script": "DOOMSDAY_BEAST", "adapter": "stage", "rule": "cosmo_raid_boss"}
+ }
+}

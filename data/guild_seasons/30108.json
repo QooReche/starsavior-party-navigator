@@ -48,11 +48,7 @@
    "settlement": "DATE_GUILD_DUNGEON_REWARD_SEASON_P1"
   },
   "boss": {
-   "name": "레타르기아의 마술사",
-   "element": "moon",
-   "role": "캐스터",
-   "roleKey": "caster",
-   "engine": "client"
+   "$module": "guild-9756946a56aac550ee7e83918e1ab9a9b89f09f1b63f26b68eb32e29b866f6a2"
   },
   "conf": "확인",
   "src": [
@@ -79,7 +75,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_01",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -97,31 +92,15 @@
        "tough": 3
       },
       "level": 45,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115241",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_01",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -139,31 +118,15 @@
        "tough": 3
       },
       "level": 45,
-      "element": "달",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115031",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-6345eb30a30c049581501a2c154d64733a091a32aff310c930233d1de8ae3b55"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_01",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -181,33 +144,17 @@
        "tough": 3
       },
       "level": 45,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115241",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_01",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -225,31 +172,15 @@
        "tough": 3
       },
       "level": 45,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115451",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      },
      {
       "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_01",
-      "foe": 106,
       "skills": [
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
@@ -271,161 +202,15 @@
        "tough": 8
       },
       "level": 45,
-      "element": "달",
-      "role": "캐스터",
-      "name": "레타르기아의 마술사",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116095",
-      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
-      "clientRules": {
-       "skills": {
-        "기본기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "특수기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "궁극기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-bfea1e57b1b121e805783a1190dcbb15019a6bc144bff0c69f1cc7abd3b19cd9"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_01",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -443,27 +228,12 @@
        "tough": 3
       },
       "level": 45,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115451",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      }
     ]
    ],
@@ -490,7 +260,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_02",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -508,31 +277,15 @@
        "tough": 3
       },
       "level": 120,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115271",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_02",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -550,31 +303,15 @@
        "tough": 3
       },
       "level": 120,
-      "element": "달",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115061",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-6345eb30a30c049581501a2c154d64733a091a32aff310c930233d1de8ae3b55"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_02",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -592,33 +329,17 @@
        "tough": 3
       },
       "level": 120,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115271",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_02",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -636,31 +357,15 @@
        "tough": 3
       },
       "level": 120,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115481",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      },
      {
       "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_02",
-      "foe": 106,
       "skills": [
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
@@ -682,161 +387,15 @@
        "tough": 8
       },
       "level": 120,
-      "element": "달",
-      "role": "캐스터",
-      "name": "레타르기아의 마술사",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116127",
-      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
-      "clientRules": {
-       "skills": {
-        "기본기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "특수기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "궁극기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-bfea1e57b1b121e805783a1190dcbb15019a6bc144bff0c69f1cc7abd3b19cd9"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_02",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -854,27 +413,12 @@
        "tough": 3
       },
       "level": 120,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115481",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      }
     ]
    ],
@@ -901,7 +445,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_03",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -919,31 +462,15 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115301",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_03",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -961,31 +488,15 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115091",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-6345eb30a30c049581501a2c154d64733a091a32aff310c930233d1de8ae3b55"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_03",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1003,33 +514,17 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115301",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_03",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -1047,31 +542,15 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115511",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      },
      {
       "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_03",
-      "foe": 106,
       "skills": [
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
@@ -1093,161 +572,15 @@
        "tough": 9
       },
       "level": 175,
-      "element": "달",
-      "role": "캐스터",
-      "name": "레타르기아의 마술사",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116159",
-      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
-      "clientRules": {
-       "skills": {
-        "기본기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "특수기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "궁극기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-bfea1e57b1b121e805783a1190dcbb15019a6bc144bff0c69f1cc7abd3b19cd9"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_03",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -1265,27 +598,12 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115511",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      }
     ]
    ],
@@ -1312,7 +630,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_04",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1330,31 +647,15 @@
        "tough": 3
       },
       "level": 400,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115331",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_04",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -1372,31 +673,15 @@
        "tough": 3
       },
       "level": 400,
-      "element": "달",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115121",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-6345eb30a30c049581501a2c154d64733a091a32aff310c930233d1de8ae3b55"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_04",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1414,33 +699,17 @@
        "tough": 3
       },
       "level": 400,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115331",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_04",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -1458,31 +727,15 @@
        "tough": 3
       },
       "level": 400,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115541",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      },
      {
       "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_04",
-      "foe": 106,
       "skills": [
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
@@ -1504,161 +757,15 @@
        "tough": 10
       },
       "level": 400,
-      "element": "달",
-      "role": "캐스터",
-      "name": "레타르기아의 마술사",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116191",
-      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
-      "clientRules": {
-       "skills": {
-        "기본기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "특수기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "궁극기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-bfea1e57b1b121e805783a1190dcbb15019a6bc144bff0c69f1cc7abd3b19cd9"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_04",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -1676,27 +783,12 @@
        "tough": 3
       },
       "level": 400,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115541",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      }
     ]
    ],
@@ -1723,7 +815,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_05",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1741,31 +832,15 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115361",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_05",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -1783,31 +858,15 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115151",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-6345eb30a30c049581501a2c154d64733a091a32aff310c930233d1de8ae3b55"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_05",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -1825,33 +884,17 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115361",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_05",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -1869,31 +912,15 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115571",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      },
      {
       "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_05",
-      "foe": 106,
       "skills": [
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
@@ -1915,161 +942,15 @@
        "tough": 11
       },
       "level": 665,
-      "element": "달",
-      "role": "캐스터",
-      "name": "레타르기아의 마술사",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116223",
-      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
-      "clientRules": {
-       "skills": {
-        "기본기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "특수기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "궁극기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-bfea1e57b1b121e805783a1190dcbb15019a6bc144bff0c69f1cc7abd3b19cd9"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_05",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -2087,27 +968,12 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115571",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      }
     ]
    ],
@@ -2134,7 +1000,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_06",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -2152,31 +1017,15 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115391",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_06",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -2194,31 +1043,15 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115181",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-6345eb30a30c049581501a2c154d64733a091a32aff310c930233d1de8ae3b55"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_06",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -2236,33 +1069,17 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115391",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_06",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -2280,31 +1097,15 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115601",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      },
      {
       "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_06",
-      "foe": 106,
       "skills": [
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
@@ -2326,161 +1127,15 @@
        "tough": 13
       },
       "level": 1047,
-      "element": "달",
-      "role": "캐스터",
-      "name": "레타르기아의 마술사",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116255",
-      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
-      "clientRules": {
-       "skills": {
-        "기본기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "특수기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "궁극기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-bfea1e57b1b121e805783a1190dcbb15019a6bc144bff0c69f1cc7abd3b19cd9"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_06",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -2498,27 +1153,12 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115601",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      }
     ]
    ],
@@ -2545,7 +1185,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_07",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -2563,31 +1202,15 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115421",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_FIGHTER_BLUE_GUILDRAID_07",
-      "foe": 1619,
       "skills": [
        "NKM_UNIT_MON_CASINO_FIGHTER_ATTACK",
        "NKM_UNIT_MON_CASINO_FIGHTER_SPECIAL"
@@ -2605,31 +1228,15 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "달",
-      "role": "디펜더",
-      "name": "카지노 바운서",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115211",
-      "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-6345eb30a30c049581501a2c154d64733a091a32aff310c930233d1de8ae3b55"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO_PISTOL_BLUE_GUILDRAID_07",
-      "foe": 48,
       "skills": [
        "NKM_UNIT_MON_CASINO_PISTOL_ATTACK",
        "NKM_UNIT_MON_CASINO_PISTOL_SPECIAL"
@@ -2647,33 +1254,17 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "달",
-      "role": "레인저",
-      "name": "카지노 픽서",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115421",
-      "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-e64de5daa61e85e272cd2eed2a95bf79690fb0322e90c80b94851e687b246719"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_07",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -2691,31 +1282,15 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115631",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      },
      {
       "unit": "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_GUILDRAID_07",
-      "foe": 106,
       "skills": [
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_ATTACK",
        "NKM_UNIT_MON_MAGICIAN_HYPNOSIS_WHITE_BOSS_SPECIAL",
@@ -2737,161 +1312,15 @@
        "tough": 14
       },
       "level": 1275,
-      "element": "달",
-      "role": "캐스터",
-      "name": "레타르기아의 마술사",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116287",
-      "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
-      "clientRules": {
-       "skills": {
-        "기본기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "특수기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        },
-        "궁극기": {
-         "rows": [
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "토끼(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_max_hp"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "비둘기(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_atk"
-           ]
-          },
-          {
-           "c": [
-            [
-             "self_has",
-             [
-              "펑!(해제불가)"
-             ]
-            ]
-           ],
-           "f": [
-            "high_gauge"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-bfea1e57b1b121e805783a1190dcbb15019a6bc144bff0c69f1cc7abd3b19cd9"
      },
      {
       "unit": "NKM_UNIT_MON_CASINO2_SHOTGUN_BLUE_GUILDRAID_07",
-      "foe": 105,
       "skills": [
        "NKM_UNIT_MON_CASINO_SHOTGUN_ATTACK",
        "NKM_UNIT_MON_CASINO2_SHOTGUN_PASSIVE"
@@ -2909,27 +1338,12 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카지노 가드",
       "boss": false,
       "elite": false,
       "slot": 4,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:115631",
-      "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-35cc6a478a10ef25f2c7fbfbcf1006650851d88920e4ed6d9bcbfcad33bdf1d4"
      }
     ]
    ],
@@ -4140,11 +2554,7 @@
   ]
  },
  "gimmicks": {
-  "conf": "확인",
-  "src": [
-   "client"
-  ],
-  "items": []
+  "$module": "gimmicks-60c9f75e8968fc347d7486db4f34bdee5726009c6a9b8e0785da933d428d70a4"
  },
  "community": {
   "conf": "낮음",

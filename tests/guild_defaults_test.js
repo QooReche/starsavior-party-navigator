@@ -1,6 +1,6 @@
 // 200c2d3's actual page function and module are the oracle, not a rewritten pipeline.
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),cp=require('node:child_process');
-const GS=require('../guild_search'),Planner=require('../guild_planner'),V=require('../guild_view'),G=require('../data/guild_seasons/30111.json');
+const GS=require('../guild_search'),Planner=require('../guild_planner'),V=require('../guild_view'),G=require('./guild_fixture')(30111);
 const old=p=>cp.execFileSync('git',['show','200c2d3:'+p],{cwd:require('node:path').resolve(__dirname,'..'),encoding:'utf8'});
 const oldG=JSON.parse(old('data/guild_defense.json')),plain=x=>JSON.parse(JSON.stringify(x));
 const mod={exports:{}};

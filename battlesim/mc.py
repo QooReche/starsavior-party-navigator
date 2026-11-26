@@ -962,21 +962,8 @@ class Battle:
         if self.break_skill_enabled and self.mc['break_skill_cd_unit'] not in ('ally_turn', 'round'):
             raise ValueError('break_skill_cd_unit 은 ally_turn|round')
         # 길드 방어전 BFB 상태 기계(starsavior/guild_bfb.py): 스위치가 켜져 있고 BFB 정의가 웨이브에 있을 때만
-        self.gb = None
-        if self.mc['guild_boss'] == 'on' and any(getattr(d, 'bfb', None) for w in waves for d in w):
-            from .starsavior.guild_bfb import Controller
-            self.gb = Controller(self)
-        elif self.mc['guild_boss'] == 'on' and any(getattr(d, 'guild', None) for w in waves for d in w):
-            from .starsavior.guild_common import Controller
-            self.gb = Controller(self)
-        elif self.mc['guild_boss'] not in ('on', 'off'):
-            raise ValueError('guild_boss 는 on|off')
-        if self.mc['cosmo_raid_boss'] not in ('on', 'off'):
-            raise ValueError('cosmo_raid_boss 는 on|off')
-        if self.gb is None and self.mc['cosmo_raid_boss'] == 'on' and any(getattr(d, 'cosmo', None) for w in waves for d in w):
-            # 코스모 게이트 시즌 전투(starsavior/cosmo_raid.py): 길방 BFB 와 같은 훅 계약(self.gb)을 쓰는 다른 컨트롤러. 둘은 한 전투에 함께 안 나온다
-            from .starsavior.cosmo_raid import Controller as CosmoController
-            self.gb = CosmoController(self)
+        from .starsavior.boss_registry import controller
+        self.gb = controller(self, waves)
 
     # ---------- 공용
     def tick(self):

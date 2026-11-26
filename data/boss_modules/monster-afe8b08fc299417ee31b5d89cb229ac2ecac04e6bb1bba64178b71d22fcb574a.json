@@ -1,0 +1,30 @@
+{
+ "foe": 54,
+ "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
+ "clientRules": {
+  "skills": {
+   "특수기": {
+    "rows": [
+     {
+      "c": [],
+      "f": [
+       "high_atk"
+      ]
+     }
+    ]
+   }
+  },
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "노상 강도 방화범",
+ "role": "서포터",
+ "element": "태양"
+}

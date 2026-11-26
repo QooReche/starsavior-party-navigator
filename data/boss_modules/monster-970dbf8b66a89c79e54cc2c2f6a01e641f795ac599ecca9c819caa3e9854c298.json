@@ -1,0 +1,19 @@
+{
+ "foe": 1722,
+ "foeSignature": "a78ea6f46f985a093cbea13b2561cde826fa40846a4d45b3a8c9122c00529eb1",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "심해의 폭군",
+ "role": "스트라이커",
+ "element": "혼돈"
+}

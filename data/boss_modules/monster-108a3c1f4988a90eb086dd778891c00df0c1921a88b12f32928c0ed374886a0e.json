@@ -1,0 +1,19 @@
+{
+ "foe": 1600,
+ "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "노상 강도 폭력배",
+ "role": "스트라이커",
+ "element": "태양"
+}

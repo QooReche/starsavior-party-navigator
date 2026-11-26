@@ -1,0 +1,19 @@
+{
+ "foe": 1619,
+ "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "카지노 바운서",
+ "role": "디펜더",
+ "element": "별"
+}

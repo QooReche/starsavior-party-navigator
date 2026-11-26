@@ -1,0 +1,124 @@
+{
+ "skills": {
+  "attack": {
+   "coef": 160.0,
+   "cd": 0,
+   "tough": 1
+  },
+  "special": {
+   "cd": 4
+  },
+  "hyper": {
+   "coef": 260.0,
+   "cd": 4,
+   "tough": 2
+  }
+ },
+ "erosion": {
+  "perSpecial": 35,
+  "max": 35,
+  "speedPct": 1.0,
+  "defPct": 5.0,
+  "hyperIncPct": 5.0,
+  "decaySingle": 1,
+  "decayNonAttack": 5,
+  "decayAoe": 17
+ },
+ "rot": {
+  "max": 50,
+  "defPct": -1.0,
+  "gainSingle": 1,
+  "gainAoe": 5
+ },
+ "root": {
+  "turns": 1,
+  "speedPct": 50.0
+ },
+ "hyperTrueDamage": {
+  "perStack": 5000,
+  "max": 50,
+  "target": "self",
+  "timing": "skill_start",
+  "condition": "rot_stacks_equal"
+ },
+ "hyperGauge": {
+  "self": 30.0,
+  "enemy": -30.0
+ },
+ "thorn": {
+  "atkRatePct": 10.0,
+  "turns": 3
+ },
+ "growth": {
+  "incPct": 5.0,
+  "max": 99
+ },
+ "passive1": {
+  "waveGaugePct": 50.0,
+  "thornHitGaugePct": 20.0
+ },
+ "minions": {
+  "recorder": {
+   "unit": {
+    "id": 105023,
+    "name": "기록자",
+    "title": "공허체",
+    "element": "태양",
+    "role": "디펜더",
+    "attackKind": "공허",
+    "immuneGroup": null
+   },
+   "stats": {
+    "hp": 10000,
+    "atk": 0,
+    "def": 1000,
+    "spd": 0,
+    "sa": 4,
+    "cr": 2000,
+    "cd": 3500,
+    "eh": 17000,
+    "er": 7000,
+    "der": 0
+   },
+   "pos": 0
+  },
+  "executioner": {
+   "unit": {
+    "id": 105033,
+    "name": "처단자",
+    "title": "공허체",
+    "element": "태양",
+    "role": "어쌔신",
+    "attackKind": "공허",
+    "immuneGroup": null
+   },
+   "stats": {
+    "hp": 10000,
+    "atk": 0,
+    "def": 1000,
+    "spd": 0,
+    "sa": 4,
+    "cr": 2000,
+    "cd": 3500,
+    "eh": 17000,
+    "er": 7000,
+    "der": 0
+   },
+   "pos": 4
+  },
+  "stacks": 5,
+  "initStacks": 5,
+  "decaySingle": 1,
+  "decayAoe": 3,
+  "regen": 5,
+  "overfeedTurns": 10,
+  "attackAmpPct": 50.0,
+  "attackAmpTurnsHit": 3,
+  "attackAmpTurnsBoss": 2,
+  "barrierHpPct": 25.0,
+  "bossBarrierHpPct": 1.0,
+  "barrierTurns": 2,
+  "invincible": true,
+  "speedFixed": 0
+ }
+}

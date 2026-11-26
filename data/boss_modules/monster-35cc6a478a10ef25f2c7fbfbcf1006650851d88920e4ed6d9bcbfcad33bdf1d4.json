@@ -1,0 +1,19 @@
+{
+ "foe": 105,
+ "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "카지노 가드",
+ "role": "스트라이커",
+ "element": "달"
+}

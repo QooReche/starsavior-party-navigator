@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const Share=require('../share_state'),Search=require('../guild_search'),View=require('../guild_view');
-const G=require('../data/guild_seasons/30101.json');
-const current=require('../data/guild_seasons/30112.json');
+const G=require('./guild_fixture')(30101);
+const current=require('./guild_fixture')(30112);
 current.title='길드방어전(시즌5 11/26~12/03)';
 const released=[{key:'guild',seasonId:current.season.id,stages:[]}];
 assert.equal(Share.parse(Share.stringify({c:'guild',gs:30112}),released,[]).guildExpired,false);

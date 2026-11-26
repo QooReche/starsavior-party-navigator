@@ -1,0 +1,10 @@
+{
+ "key": "belgras",
+ "name": "벨그라스",
+ "element": "태양",
+ "role": "레인저",
+ "title": "공허체",
+ "attackKind": "공허",
+ "unitId": 110123,
+ "immuneGroup": 1001
+}

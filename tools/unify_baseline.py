@@ -58,7 +58,7 @@ def _cases():
                     [CHAIN_PARTY, BELGRAS_PARTY, SAVIOR_PARTIES[2]], (1, 2), old))
     for sup in ('none', 'gust', 'focus', 'strike', 'mountain', 'fire'):
         for level in (1, 5):
-            g = {'level': level, 'sets': [0, 0, 0, 0], 'support': sup}
+            g = {'seasonId': 30111, 'level': level, 'sets': [0, 0, 0, 0], 'support': sup}
             out.append(('guild_%s_L%d' % (sup, level), {'guild': g}, 'x', {'guild': g},
                         [GUILD_PARTY] + ([SAVIOR_PARTIES[1], SAVIOR_PARTIES[2]] if level == 1 else []), (1, 2), False))
     return out

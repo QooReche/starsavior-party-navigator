@@ -49,7 +49,7 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 장비 던전 단계 확장 때는 `check_build.py` 확인 → `DECOMPILE.md`·`INDEX.md`에 따라 표/문자열/배치 재추출 → `$env:STARSAVIOR_STATIC='<static-data 경로>'` 지정 → `python -X utf8 -I tools/build_foe_equip.py` → `python -X utf8 -I tools/update.py` → `python -X utf8 -I tools/unsupported_allowlist.py --diff` → `python -X utf8 -I tools/run_tests.py --rebuild` 순서로 실행함. 생성기는 클라 `BattleName`을 쓰고 데이터북에 없는 탭·단계만 `data/foe_equip.json`에 담으며, 기존 1~20단계는 그대로 둠. 현재 표에 실제 21·22단계가 없으면 빈 조각이 정상임. 패치 뒤 세 탭의 신규 6단계·스킬·소환·화면 목록을 확인하고, 새 효과 때문에 생성이 실패하면 원인을 클라에서 확인한 뒤 변환기를 확장함. 기존 단계 대조는 `python -X utf8 -I tools/compare_foe_equip.py --out local/equip-compare.json`이며 범위·차이 판정은 [장비 단계 검증](equip_client_stages.md)에 정리함. 새 장비 등급(예: `EquipTier=3`)이 생기면 체크: □ `tools/build_growth.py`의 표준 장비 등급 선택(기존 84줄) □ 같은 파일의 아이템·세트 매핑(기존 254줄) □ `battlesim/starsavior/build.py`의 표준 육성 등급 인덱스(기존 24줄) □ 내정보 아이템 ID·세트 매핑 및 `myinfo_stats.py`/JS 계산 일치. 등급 번호만 보고 수치를 추정하지 않음.
 
 ### 4-1. 길드 방어전 패치 후 새 시즌 추가
-정본은 `data/guild_seasons/<seasonId>.json`, 현재 선택은 `data/guild_current.json`의 명시적 ID임. `data/guild_defense.json`은 빌더가 만든 현재 시즌 사본임. 날짜는 상태 표시에만 쓰고 시즌을 자동 선택하지 않음. 30111은 BFB 전용 실행기와 당시 공개 `guild_bfb`·`guild_sim` 자료를 함께 보관했음. 30101~30110은 빌드 26752678에서 추출한 과거 시즌 정의이며 당시 빌드 재현본이 아님.
+정본은 `data/guild_seasons/<seasonId>.json`, 현재 선택은 `data/guild_current.json`의 명시적 ID임. `data/guild_defense.json`은 모듈을 펼친 현재 화면용 생성 사본임. 날짜는 상태 표시에만 쓰고 시즌을 자동 선택하지 않음. 30111은 BFB 전용 실행기와 당시 공개 `guild_bfb`·`guild_sim` 자료를 함께 보관했음. 보관 시즌은 현재 빌드에서 다시 추출한 정의이며 당시 빌드 재현본이 아님.
 
 1. static-data의 `check_build.py`로 설치본·DLL 일치를 확인하고, 패치됐다면 `DECOMPILE.md`에 따라 표·디컴파일을 다시 추출함. `STARSAVIOR_STATIC`을 해당 폴더로 지정함. 일반 적 자료를 갱신했다면 시즌 정의의 의존 자료 해시도 다시 추출해야 함.
 2. `python -X utf8 -I tools/build_guild_seasons.py --season 30112 --extract-only`로 새 시즌을 생성함. 시즌 행 → 전투 행 → 원래 배치 스크립트·유닛 레벨/스탯·스킬 → 난이도 그룹·지원 SE를 연결함. 없는 시즌·해석하지 못하는 지원 효과는 중단하며, 없는 배치 스크립트는 해당 단계에 실행 불가 사유를 남김. 다른 시즌 배치에 새 유닛을 끼워 만들지 않음.
@@ -63,11 +63,20 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 11/26처럼 일반 적 조각이 추가되면 보관 시즌도 현재 클라에서 다시 추출해 의존 자료·근거 줄을 갱신함. 30111의 BFB 설정·`data/guild_seasons/30111/` 보관 자산은 생성기가 유지하며 과거 빌드 재현본으로 부르지 않음. 마지막에 현재 시즌의 날짜·공식 출처를 확인하고 `--select-only` → `build_guild_sim.py` 순서로 자료 버전을 맞춤. 시즌 전용 시험은 해당 보관 ID를 명시하고 현재 시즌 시험과 구분함.
 칸 대조 근거·잔여 제한은 [칸 검증 문서](guild_khan_1125.md), 미지원 관문 운영은 [관문 문서](unsupported_gate.md)에 정리했음.
 
+#### 보스·몬스터 모듈의 등록과 재등장
+
+- `data/boss_modules/`는 보스 표시·실행기, 몬스터의 스킬/패시브/자동 대상/디버프 정의와 기믹을 내용 해시로 보관함. 동일 정의는 같은 파일을 재사용하고, 변경된 정의는 새 파일이므로 과거 시즌의 모듈을 덮어쓰지 않음. 기존 일반 적은 공용 foe 정의와 서명 참조를 재사용하며 원문 표를 복사하지 않음. 시즌에는 `$module` 참조와 배치·단계 능력치·점수·난이도·지원 연결을 남김.
+- 읽는 곳은 `battlesim/starsavior/boss_registry.py`의 `expand`임. 길드 `load`와 화면 빌더가 같은 펼친 자료를 사용함. BFB 전용 `guild_bfb`·공통 `guild_common`·코스모 컨트롤러 선택도 이 등록 경로에 모았음. 전투 규칙·빠른 계산의 공통 정본(`rules/default.json`·`foe`·`quick.json`)을 모듈마다 복제하지 않음.
+- 새 보스: 공개 연결 확인 → 기존 추출기로 수치·효과 생성 → `tools/boss_modules.py`의 등록/재사용 → 시즌 파일 참조 → 현재 시즌 선택 → simpack·시뮬 표·화면 생성 → 진행도/미지원·기존 보스 불변 시험 순서임. 기존 효과로 표현되지 않는 새 동작만 클라 근거를 조사해 어댑터/스위치를 추가함.
+- 재등장 보스: 이전 `$module`과 전용 자산 참조를 그대로 고르고 새 시즌의 배치·단계·점수·지원 값을 추출함. BFB의 `bfb` 실행기와 자산도 보관돼 있음. 지원 방식·배치가 달라졌다면 옛 수치를 그대로 적용하지 않고 새 추출본으로 대조함.
+- 코스모 배치 식별자는 `data/boss_catalog.json`의 `cosmo` 등록만 사용함. `build_cosmo_raid.py`는 보스 모듈과 `data/cosmo_seasons/<id>.json`을 저장하고 화면용 `cosmo_raid.json`을 생성함. 기존 보관 시즌 선택은 `--season <id> --select-only`로 함. 벨그라스의 모델·기록자·처단자는 1022 모듈에 보관돼 있으며 현재 보스 목록에서 빠졌어도 삭제하지 않음.
+- 확인: `tests/boss_modules_test.py`는 30109(심해의 폭군)를 현재 시즌으로 임시 지정해 실행·화면 자료를 만들고 실제 현재값 30112 복원을 검사함. 1022 벨그라스도 모듈 시즌 파일만 선택해 보관 fixture와 결과를 비교함. 모듈 해석 비활성화·해시 훼손은 실패해야 함. e2e의 과거 시즌 화면도 30109를 사용함. 같은 보스/효과의 다음 로테이션은 추출 도구 → 모듈/시즌 데이터 → 시험으로 처리하며 시즌 번호별 코드를 추가하지 않음.
+
 ### 4-2. 코스모 게이트 시즌 갱신(시즌제 콘텐츠)
 시즌 값(보스 3종·Step 스탯·난이도 레벨 표·챌린지 효과·시즌 전투 버프·점수 상수·벨그라스 수치)은 `data/cosmo_raid.json` **한 곳**에 있고 코드(`battlesim/starsavior/cosmo_raid.py`, `cosmo_raid.js`)는 시즌 공통이다. 자세한 근사 목록은 `docs/cosmo_raid.md`.
 - 새 시즌 표를 추출한 폴더(파일명 `CLIENT_` 접두, 문자열 `hard/STRING_COMMON.json`, 배치 스크립트 `plain/`)를 만든다. 비공개 static-data 에 새 표를 반영하는 일과는 별개이며 빌더는 폴더를 인자로 받는다.
 - `python -X utf8 -I tools/build_cosmo_raid.py --tables <폴더> --season <RankingRaidSeasonId> --build <빌드>` → `data/cosmo_raid.json`. 기대한 표 구조(벨그라스 스킬·버프·SE)와 다르면 `Changed` 로 멈춘다 — 그때는 상태 기계(`Controller`)를 사람이 다시 확인한다. 새 챌린지 효과 번호(`SET_NN`)는 `EFFECT_KIND` 에 추가하고 엔진 처리(`on_wave`/`after_cast`/`post_hit`)를 넣는다(없으면 `kind=null` → 시뮬 결과 `unsupported.runtime` 에 «미지원 챌린지 효과» 로 남음).
-- 보스가 바뀌면 `BOSS_SCRIPT_KEY`(배치 스크립트 이름 → key)에 추가한다. databook 에 cosmo «이름 N단계» 적 정의가 있는 보스는 그대로 재사용되고, 없으면 빌더가 `sim=false`(엔진·화면이 사유와 함께 막음)로 둔다. 벨그라스처럼 전용 모델이 필요하면 엔진의 보스 정의(`build_waves`)를 추가한다.
+- 새 보스의 배치 식별자는 `data/boss_catalog.json`에 등록함. 공용 foe에 cosmo «이름 N단계» 적 정의가 있으면 재사용하고, 없으면 빌더가 `sim=false`로 사유와 함께 막음. 전용 모델도 등록된 어댑터 뒤에서 실행함. 재등장 때는 보관 모듈·시즌 데이터만 선택함(위 모듈 절).
 - 시즌을 바꾸기 전에 지금 자료를 `tests/fixtures/cosmo_raid_<시즌>.json` 으로 동결할지 본다 — 그 시즌 전용 모델·효과의 회귀 시험은 fixture 로 돌린다(`tests/cosmo_fixture.py`, 1022 선례). foe 자료는 `tools/update.py` 로 먼저 갱신.
 - «3보스 최고 점수 편성 찾기» 설정(풀 크기·판 수·K 등)은 `data/cosmo_raid.json` 의 `search`(빌더 `tools/build_cosmo_raid.py` 의 `SEARCH` 상수에서 옴). 시즌이 바뀌어도 값은 그대로 두되, 판 시간이 달라지면 조정(`docs/cosmo_raid.md` 2단계).
 - `python -X utf8 -I tools/build_simpack.py`(`data/cosmo_raid.json` 은 시뮬 파일 목록에 포함) → `python -X utf8 -I tests/cosmo_raid_test.py`(`COSMO_TABLES=<폴더>` 를 주면 표에서 다시 뽑은 값과 대조) → `tools/run_tests.py --rebuild`.

@@ -1,0 +1,19 @@
+{
+ "foe": 1645,
+ "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "시엔",
+ "role": "스트라이커",
+ "element": "달"
+}

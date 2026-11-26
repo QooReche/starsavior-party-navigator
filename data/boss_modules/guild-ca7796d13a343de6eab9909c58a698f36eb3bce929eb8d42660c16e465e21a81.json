@@ -1,0 +1,12 @@
+{
+ "name": "BFB",
+ "element": "star",
+ "role": "레인저",
+ "conf": "확인",
+ "src": [
+  "notice1029",
+  "client"
+ ],
+ "engine": "bfb",
+ "roleKey": "ranger"
+}

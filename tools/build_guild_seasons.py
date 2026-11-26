@@ -20,6 +20,8 @@ from tools.tables import jsonc, table, strings
 from tools.build_foe_clash import (Tables as BaseTables, ROLE, ELEM, ATTACK_KIND, spawn_flag,
                                  SkillBuilder, SeConverter, db_shapes, SKILL_TY, TARGET_TG, clean_markup)
 from battlesim.starsavior.foe import load_foe, foe_stats, SK_NST
+from tools.boss_modules import pack_guild
+from battlesim.starsavior.boss_registry import expand
 
 ELEMENT = dict(zip(('태양', '달', '별', '질서', '혼돈'), ('sun', 'moon', 'star', 'order', 'chaos')))
 ROLE_KEY = dict(zip(('스트라이커', '캐스터', '어쌔신', '레인저', '디펜더', '서포터'),
@@ -315,11 +317,11 @@ def select_current(current=None):
     dest = ROOT/'data/guild_seasons'
     index_path = ROOT / 'data/guild_current.json'
     current = current or json.loads(index_path.read_text(encoding='utf-8'))['seasonId']
-    selected = json.loads((dest / ('%d.json' % current)).read_text(encoding='utf-8'))
+    selected = expand(json.loads((dest / ('%d.json' % current)).read_text(encoding='utf-8')), str(ROOT))
     # 날짜·표시 메타를 채운 뒤에도 정본 전체의 자료 버전을 다시 계산함.
     selected.pop('dataVersion',None)
     selected['dataVersion'] = digest(selected)
-    write(dest/('%d.json'%current),selected)
+    write(dest/('%d.json'%current),pack_guild(selected))
     write(index_path, dict(seasonId=current))
     write(ROOT / 'data/guild_defense.json', selected)
     path = ROOT/'party_contents.json'
@@ -357,7 +359,7 @@ def main():
         if a.season and sid not in a.season: continue
         generated = ex.season(row)
         source = dest / ('%d.json' % sid)
-        prior = json.loads(source.read_text(encoding='utf-8')) if source.exists() else None
+        prior = expand(json.loads(source.read_text(encoding='utf-8')), str(ROOT)) if source.exists() else None
         if prior and prior['season']['boss']['engine'] == 'bfb':
             # 최초 보관 이후에는 정본의 사용자 설정/기존 BFB 수치·시뮬을 덮어쓰지 않는다.
             g = prior
@@ -378,7 +380,7 @@ def main():
                     if key in prior.get('rules',{}): g['rules'][key] = prior['rules'][key]
         g.pop('dataVersion', None)
         g['dataVersion'] = digest(g)
-        write(dest / ('%d.json' % sid), g)
+        write(dest / ('%d.json' % sid), pack_guild(g))
         print(sid, g['season']['boss']['name'], len(g['steps']), g['dataVersion'][:12])
     if a.extract_only:
         return

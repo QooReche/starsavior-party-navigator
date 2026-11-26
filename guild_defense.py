@@ -19,8 +19,9 @@ ELEMENT = dict(zip(('태양', '달', '별', '질서', '혼돈'), ('sun', 'moon',
 
 
 def load(path=PATH):
+    from battlesim.starsavior.boss_registry import expand
     with open(path, encoding="utf-8") as f:
-        return json.load(f)
+        return expand(json.load(f), HERE)
 
 
 def parse_time(s):

@@ -9,7 +9,8 @@ def register(h):
         import build_party_html
         import guild_defense
         root=Path(h.ROOT)
-        season=json.loads((root/'data/guild_seasons/30101.json').read_text(encoding='utf-8'))
+        from guild_defense import load
+        season=load(root/'data/guild_seasons/30109.json')
         preview=root/'local/guild-rotation/preview.html'
         preview.parent.mkdir(parents=True,exist_ok=True)
         with patch.object(guild_defense,'load',return_value=season):
@@ -18,10 +19,10 @@ def register(h):
         page=browser.new_page(viewport={'width':390,'height':844})
         h.attach(page,ctx)
         page.route('**/index.html*',lambda route:route.fulfill(body=html,content_type='text/html'))
-        page.goto(ctx.base+'/index.html?pm=reco&c=guild&gs=30101&season=force')
+        page.goto(ctx.base+'/index.html?pm=reco&c=guild&gs=30109&season=force')
         page.wait_for_function('window._ready && !!QK.d')
-        assert page.evaluate('D.guild.season.id')==30101
-        assert '카본펑크 칸' in page.locator('#guild-panel').inner_text()
+        assert page.evaluate('D.guild.season.id')==30109
+        assert season['season']['boss']['name'] in page.locator('#guild-panel').inner_text()
         assert page.evaluate('guildStoreKey().includes(D.guild.dataVersion)')
         assert page.evaluate('!seasonBlocked("guild")')
         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')

@@ -1,0 +1,19 @@
+{
+ "foe": 1666,
+ "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "난폭한 신부 지원자",
+ "role": "스트라이커",
+ "element": "별"
+}

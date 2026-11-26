@@ -54,16 +54,7 @@
   ],
   "note": "시작은 10/29 점검 후(시각 미확인). 결산 중에는 플레이할 수 없고, 04:00 를 넘기면 진행 중이던 전투는 무효(갤럭시 시즌 1 공지 기준).",
   "boss": {
-   "name": "BFB",
-   "element": "star",
-   "role": "레인저",
-   "conf": "확인",
-   "src": [
-    "notice1029",
-    "client"
-   ],
-   "engine": "bfb",
-   "roleKey": "ranger"
+   "$module": "guild-ca7796d13a343de6eab9909c58a698f36eb3bce929eb8d42660c16e465e21a81"
   }
  },
  "rules": {
@@ -438,62 +429,7 @@
   ]
  },
  "gimmicks": {
-  "conf": "낮음",
-  "note": "추천 점수에 약하게 반영하는 특징(커뮤니티 주장). 심각도 1~3.",
-  "items": [
-   {
-    "code": "TARGET_PRIORITY",
-    "steps": [
-     1,
-     2,
-     3,
-     4,
-     5,
-     6
-    ],
-    "severity": 2,
-    "src": [
-     "arca187413171",
-     "arca187484690"
-    ],
-    "text": "보스가 1명을 강제로 지정해 공격(피해 감소·보호가 없으면 딜러가 한 번에 쓰러짐)"
-   },
-   {
-    "code": "TARGET_PRIORITY",
-    "steps": [
-     7
-    ],
-    "severity": 3,
-    "src": [
-     "arca187413171",
-     "arca187484690"
-    ],
-    "text": "보스가 1명을 강제로 지정해 공격(피해 감소·보호가 없으면 딜러가 한 번에 쓰러짐)"
-   },
-   {
-    "code": "SHIELD_GEN",
-    "steps": [
-     7
-    ],
-    "severity": 2,
-    "src": [
-     "arca187484690",
-     "arca187456382"
-    ],
-    "text": "보스 보호막이 매우 큼"
-   },
-   {
-    "code": "PCT_HP_DAMAGE",
-    "steps": [
-     7
-    ],
-    "severity": 2,
-    "src": [
-     "client"
-    ],
-    "text": "별의 도전 4단계부터 맞은 뒤 최대 생명력이 줄어듦"
-   }
-  ]
+  "$module": "gimmicks-b52289e3e913dcdf27980e35e7f27040cbfdd9bfc2dd48740899fa29d67552b0"
  },
  "community": {
   "conf": "낮음",
@@ -704,11 +640,7 @@
     "settlement": "DATE_GUILD_DUNGEON_REWARD_SEASON_P4"
    },
    "boss": {
-    "name": "BFB",
-    "element": "star",
-    "role": "레인저",
-    "roleKey": "ranger",
-    "engine": "client"
+    "$module": "guild-a90a4710880646dac734d5048d34917bdf0eb599a31db9ec470cc182386581d7"
    },
    "conf": "확인",
    "src": [
@@ -735,7 +667,6 @@
      [
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_01",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -753,31 +684,15 @@
         "tough": 3
        },
        "level": 45,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 1,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114401",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       },
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_01",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -795,33 +710,17 @@
         "tough": 3
        },
        "level": 45,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 2,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114401",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       }
      ],
      [
       {
        "unit": "NKM_UNIT_MON_AUTOMATON_MINIGUN_BLACK_BOSS_GUILDRAID_01",
-       "foe": 1667,
        "skills": [
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_ATTACK",
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_SPECIAL",
@@ -843,131 +742,12 @@
         "tough": 8
        },
        "level": 45,
-       "element": "별",
-       "role": "레인저",
-       "name": "BFB",
        "boss": true,
        "elite": false,
        "slot": 2,
        "spawn": "S",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:116795",
-       "foeSignature": "63fa236f7f35fba2d2a0d84173fcd670797a6a78c69e96b638a3fcd8a8489d0d",
-       "clientRules": {
-        "skills": {
-         "기본기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         },
-         "궁극기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         }
-        },
-        "order": [],
-        "lines": [
-         [
-          "패시브",
-          "[피해 처리 직전] (조건: 내가 피해를 받기 직전 [자신이 보유: 보호막, 보호막(해제불가), 공허 방패(해제불가), 저항 장막(해제불가), 파프닐의 강림(해제불가); 시전자가 보유: 들러리(해제불가)]) 「들러리(해제불가)」 상태인 적 전체에게 연쇄 피해 = 자신 생명력×30% (×1.85, 방어력 적용)",
-          {
-           "one": false,
-           "f": [
-            [
-             "has",
-             [
-              "들러리(해제불가)"
-             ]
-            ]
-           ]
-          }
-         ]
-        ],
-        "enforceSelf": [
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 정실 어필; 중첩수: 5]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52094
-          }
-         ],
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예; 자신이 보유: 정실 어필]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52095
-          }
-         ]
-        ],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-dc096e491938ad631ee29d9684942c858223ac6790e946ce0d5f561779446ae0"
       }
      ]
     ],
@@ -994,7 +774,6 @@
      [
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_02",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -1012,31 +791,15 @@
         "tough": 3
        },
        "level": 120,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 1,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114431",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       },
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_02",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -1054,33 +817,17 @@
         "tough": 3
        },
        "level": 120,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 2,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114431",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       }
      ],
      [
       {
        "unit": "NKM_UNIT_MON_AUTOMATON_MINIGUN_BLACK_BOSS_GUILDRAID_02",
-       "foe": 1667,
        "skills": [
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_ATTACK",
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_SPECIAL",
@@ -1102,131 +849,12 @@
         "tough": 8
        },
        "level": 120,
-       "element": "별",
-       "role": "레인저",
-       "name": "BFB",
        "boss": true,
        "elite": false,
        "slot": 2,
        "spawn": "S",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:116827",
-       "foeSignature": "63fa236f7f35fba2d2a0d84173fcd670797a6a78c69e96b638a3fcd8a8489d0d",
-       "clientRules": {
-        "skills": {
-         "기본기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         },
-         "궁극기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         }
-        },
-        "order": [],
-        "lines": [
-         [
-          "패시브",
-          "[피해 처리 직전] (조건: 내가 피해를 받기 직전 [자신이 보유: 보호막, 보호막(해제불가), 공허 방패(해제불가), 저항 장막(해제불가), 파프닐의 강림(해제불가); 시전자가 보유: 들러리(해제불가)]) 「들러리(해제불가)」 상태인 적 전체에게 연쇄 피해 = 자신 생명력×30% (×1.85, 방어력 적용)",
-          {
-           "one": false,
-           "f": [
-            [
-             "has",
-             [
-              "들러리(해제불가)"
-             ]
-            ]
-           ]
-          }
-         ]
-        ],
-        "enforceSelf": [
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 정실 어필; 중첩수: 5]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52094
-          }
-         ],
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예; 자신이 보유: 정실 어필]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52095
-          }
-         ]
-        ],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-dc096e491938ad631ee29d9684942c858223ac6790e946ce0d5f561779446ae0"
       }
      ]
     ],
@@ -1253,7 +881,6 @@
      [
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_03",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -1271,31 +898,15 @@
         "tough": 3
        },
        "level": 175,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 1,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114461",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       },
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_03",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -1313,33 +924,17 @@
         "tough": 3
        },
        "level": 175,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 2,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114461",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       }
      ],
      [
       {
        "unit": "NKM_UNIT_MON_AUTOMATON_MINIGUN_BLACK_BOSS_GUILDRAID_03",
-       "foe": 1667,
        "skills": [
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_ATTACK",
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_SPECIAL",
@@ -1361,131 +956,12 @@
         "tough": 9
        },
        "level": 175,
-       "element": "별",
-       "role": "레인저",
-       "name": "BFB",
        "boss": true,
        "elite": false,
        "slot": 2,
        "spawn": "S",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:116859",
-       "foeSignature": "63fa236f7f35fba2d2a0d84173fcd670797a6a78c69e96b638a3fcd8a8489d0d",
-       "clientRules": {
-        "skills": {
-         "기본기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         },
-         "궁극기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         }
-        },
-        "order": [],
-        "lines": [
-         [
-          "패시브",
-          "[피해 처리 직전] (조건: 내가 피해를 받기 직전 [자신이 보유: 보호막, 보호막(해제불가), 공허 방패(해제불가), 저항 장막(해제불가), 파프닐의 강림(해제불가); 시전자가 보유: 들러리(해제불가)]) 「들러리(해제불가)」 상태인 적 전체에게 연쇄 피해 = 자신 생명력×30% (×1.85, 방어력 적용)",
-          {
-           "one": false,
-           "f": [
-            [
-             "has",
-             [
-              "들러리(해제불가)"
-             ]
-            ]
-           ]
-          }
-         ]
-        ],
-        "enforceSelf": [
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 정실 어필; 중첩수: 5]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52094
-          }
-         ],
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예; 자신이 보유: 정실 어필]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52095
-          }
-         ]
-        ],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-dc096e491938ad631ee29d9684942c858223ac6790e946ce0d5f561779446ae0"
       }
      ]
     ],
@@ -1512,7 +988,6 @@
      [
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_04",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -1530,31 +1005,15 @@
         "tough": 3
        },
        "level": 400,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 1,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114491",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       },
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_04",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -1572,33 +1031,17 @@
         "tough": 3
        },
        "level": 400,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 2,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114491",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       }
      ],
      [
       {
        "unit": "NKM_UNIT_MON_AUTOMATON_MINIGUN_BLACK_BOSS_GUILDRAID_04",
-       "foe": 1667,
        "skills": [
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_ATTACK",
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_SPECIAL",
@@ -1620,131 +1063,12 @@
         "tough": 10
        },
        "level": 400,
-       "element": "별",
-       "role": "레인저",
-       "name": "BFB",
        "boss": true,
        "elite": false,
        "slot": 2,
        "spawn": "S",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:116891",
-       "foeSignature": "63fa236f7f35fba2d2a0d84173fcd670797a6a78c69e96b638a3fcd8a8489d0d",
-       "clientRules": {
-        "skills": {
-         "기본기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         },
-         "궁극기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         }
-        },
-        "order": [],
-        "lines": [
-         [
-          "패시브",
-          "[피해 처리 직전] (조건: 내가 피해를 받기 직전 [자신이 보유: 보호막, 보호막(해제불가), 공허 방패(해제불가), 저항 장막(해제불가), 파프닐의 강림(해제불가); 시전자가 보유: 들러리(해제불가)]) 「들러리(해제불가)」 상태인 적 전체에게 연쇄 피해 = 자신 생명력×30% (×1.85, 방어력 적용)",
-          {
-           "one": false,
-           "f": [
-            [
-             "has",
-             [
-              "들러리(해제불가)"
-             ]
-            ]
-           ]
-          }
-         ]
-        ],
-        "enforceSelf": [
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 정실 어필; 중첩수: 5]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52094
-          }
-         ],
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예; 자신이 보유: 정실 어필]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52095
-          }
-         ]
-        ],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-dc096e491938ad631ee29d9684942c858223ac6790e946ce0d5f561779446ae0"
       }
      ]
     ],
@@ -1771,7 +1095,6 @@
      [
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_05",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -1789,31 +1112,15 @@
         "tough": 4
        },
        "level": 665,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 1,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114521",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       },
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_05",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -1831,33 +1138,17 @@
         "tough": 4
        },
        "level": 665,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 2,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114521",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       }
      ],
      [
       {
        "unit": "NKM_UNIT_MON_AUTOMATON_MINIGUN_BLACK_BOSS_GUILDRAID_05",
-       "foe": 1667,
        "skills": [
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_ATTACK",
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_SPECIAL",
@@ -1879,131 +1170,12 @@
         "tough": 11
        },
        "level": 665,
-       "element": "별",
-       "role": "레인저",
-       "name": "BFB",
        "boss": true,
        "elite": false,
        "slot": 2,
        "spawn": "S",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:116923",
-       "foeSignature": "63fa236f7f35fba2d2a0d84173fcd670797a6a78c69e96b638a3fcd8a8489d0d",
-       "clientRules": {
-        "skills": {
-         "기본기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         },
-         "궁극기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         }
-        },
-        "order": [],
-        "lines": [
-         [
-          "패시브",
-          "[피해 처리 직전] (조건: 내가 피해를 받기 직전 [자신이 보유: 보호막, 보호막(해제불가), 공허 방패(해제불가), 저항 장막(해제불가), 파프닐의 강림(해제불가); 시전자가 보유: 들러리(해제불가)]) 「들러리(해제불가)」 상태인 적 전체에게 연쇄 피해 = 자신 생명력×30% (×1.85, 방어력 적용)",
-          {
-           "one": false,
-           "f": [
-            [
-             "has",
-             [
-              "들러리(해제불가)"
-             ]
-            ]
-           ]
-          }
-         ]
-        ],
-        "enforceSelf": [
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 정실 어필; 중첩수: 5]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52094
-          }
-         ],
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예; 자신이 보유: 정실 어필]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52095
-          }
-         ]
-        ],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-dc096e491938ad631ee29d9684942c858223ac6790e946ce0d5f561779446ae0"
       }
      ]
     ],
@@ -2030,7 +1202,6 @@
      [
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_06",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -2048,31 +1219,15 @@
         "tough": 4
        },
        "level": 1047,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 1,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114551",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       },
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_06",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -2090,33 +1245,17 @@
         "tough": 4
        },
        "level": 1047,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 2,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114551",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       }
      ],
      [
       {
        "unit": "NKM_UNIT_MON_AUTOMATON_MINIGUN_BLACK_BOSS_GUILDRAID_06",
-       "foe": 1667,
        "skills": [
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_ATTACK",
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_SPECIAL",
@@ -2138,131 +1277,12 @@
         "tough": 13
        },
        "level": 1047,
-       "element": "별",
-       "role": "레인저",
-       "name": "BFB",
        "boss": true,
        "elite": false,
        "slot": 2,
        "spawn": "S",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:116955",
-       "foeSignature": "63fa236f7f35fba2d2a0d84173fcd670797a6a78c69e96b638a3fcd8a8489d0d",
-       "clientRules": {
-        "skills": {
-         "기본기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         },
-         "궁극기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         }
-        },
-        "order": [],
-        "lines": [
-         [
-          "패시브",
-          "[피해 처리 직전] (조건: 내가 피해를 받기 직전 [자신이 보유: 보호막, 보호막(해제불가), 공허 방패(해제불가), 저항 장막(해제불가), 파프닐의 강림(해제불가); 시전자가 보유: 들러리(해제불가)]) 「들러리(해제불가)」 상태인 적 전체에게 연쇄 피해 = 자신 생명력×30% (×1.85, 방어력 적용)",
-          {
-           "one": false,
-           "f": [
-            [
-             "has",
-             [
-              "들러리(해제불가)"
-             ]
-            ]
-           ]
-          }
-         ]
-        ],
-        "enforceSelf": [
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 정실 어필; 중첩수: 5]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52094
-          }
-         ],
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예; 자신이 보유: 정실 어필]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52095
-          }
-         ]
-        ],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-dc096e491938ad631ee29d9684942c858223ac6790e946ce0d5f561779446ae0"
       }
      ]
     ],
@@ -2289,7 +1309,6 @@
      [
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_07",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -2307,31 +1326,15 @@
         "tough": 4
        },
        "level": 1275,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 1,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114581",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       },
       {
        "unit": "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_GUILDRAID_07",
-       "foe": 1666,
        "skills": [
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_ATTACK",
         "NKM_UNIT_MON_BRIDE_CROWBAR_WHITE_SPECIAL"
@@ -2349,33 +1352,17 @@
         "tough": 4
        },
        "level": 1275,
-       "element": "별",
-       "role": "스트라이커",
-       "name": "난폭한 신부 지원자",
        "boss": false,
        "elite": false,
        "slot": 2,
        "spawn": "A",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:114581",
-       "foeSignature": "436c97e2983dec96e13ed53c309c5ff0d3df6a45c8a64b45255cabb5d7afc6a9",
-       "clientRules": {
-        "skills": {},
-        "order": [],
-        "lines": [],
-        "enforceSelf": [],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-1ece58ea954f942ee966075e5abe855c502e64beabc587d0db139873acdba831"
       }
      ],
      [
       {
        "unit": "NKM_UNIT_MON_AUTOMATON_MINIGUN_BLACK_BOSS_GUILDRAID_07",
-       "foe": 1667,
        "skills": [
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_ATTACK",
         "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_SPECIAL",
@@ -2397,131 +1384,12 @@
         "tough": 14
        },
        "level": 1275,
-       "element": "별",
-       "role": "레인저",
-       "name": "BFB",
        "boss": true,
        "elite": false,
        "slot": 2,
        "spawn": "S",
-       "hitStats": {
-        "NST_RATE_HIT": 10000,
-        "NST_RATE_EVADE": 0
-       },
        "source": "tables/UNIT_TEMPLET_BASE2.json:116987",
-       "foeSignature": "63fa236f7f35fba2d2a0d84173fcd670797a6a78c69e96b638a3fcd8a8489d0d",
-       "clientRules": {
-        "skills": {
-         "기본기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         },
-         "궁극기": {
-          "rows": [
-           {
-            "c": [],
-            "f": [
-             [
-              "has",
-              [
-               "신부 경쟁 확인용 버프"
-              ]
-             ],
-             [
-              "front",
-              0.8
-             ],
-             [
-              "디펜더",
-              0.8
-             ]
-            ]
-           }
-          ]
-         }
-        },
-        "order": [],
-        "lines": [
-         [
-          "패시브",
-          "[피해 처리 직전] (조건: 내가 피해를 받기 직전 [자신이 보유: 보호막, 보호막(해제불가), 공허 방패(해제불가), 저항 장막(해제불가), 파프닐의 강림(해제불가); 시전자가 보유: 들러리(해제불가)]) 「들러리(해제불가)」 상태인 적 전체에게 연쇄 피해 = 자신 생명력×30% (×1.85, 방어력 적용)",
-          {
-           "one": false,
-           "f": [
-            [
-             "has",
-             [
-              "들러리(해제불가)"
-             ]
-            ]
-           ]
-          }
-         ]
-        ],
-        "enforceSelf": [
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [자신이 보유: 정실 어필; 중첩수: 5]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52094
-          }
-         ],
-         [
-          "패시브",
-          "[스킬 사용 후] (조건: 내 공격 후 [적 처치: 예; 자신이 보유: 정실 어필]) 자신에게 궁극기 추가 발동",
-          {
-           "slot": "궁극기",
-           "eat": 1001,
-           "f": [
-            [
-             "front",
-             0.8
-            ],
-            [
-             "디펜더",
-             0.8
-            ]
-           ],
-           "cool": 0,
-           "cond": 52095
-          }
-         ]
-        ],
-        "force": [],
-        "se": []
-       }
+       "$module": "monster-dc096e491938ad631ee29d9684942c858223ac6790e946ce0d5f561779446ae0"
       }
      ]
     ],
@@ -3726,11 +2594,7 @@
    ]
   },
   "gimmicks": {
-   "conf": "확인",
-   "src": [
-    "client"
-   ],
-   "items": []
+   "$module": "gimmicks-60c9f75e8968fc347d7486db4f34bdee5726009c6a9b8e0785da933d428d70a4"
   },
   "community": {
    "conf": "낮음",

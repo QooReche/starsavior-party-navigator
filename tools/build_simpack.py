@@ -36,7 +36,9 @@ def files():
     py = sorted(p.replace(os.sep, '/') for p in glob.glob('battlesim/**/*.py', root_dir=ROOT, recursive=True)
                 if '__pycache__' not in p)
     seasons = sorted(p.replace(os.sep, '/') for p in glob.glob('data/guild_seasons/**/*.json', root_dir=ROOT, recursive=True))
-    return [p for p in py if p not in EXCLUDE_PY] + FIXED + ['data/guild_current.json'] + seasons
+    seasons += sorted(p.replace(os.sep, '/') for pattern in ('data/boss_modules/*.json', 'data/cosmo_seasons/*.json')
+                      for p in glob.glob(pattern, root_dir=ROOT))
+    return [p for p in py if p not in EXCLUDE_PY] + FIXED + ['data/guild_current.json', 'data/boss_catalog.json'] + seasons
 
 
 def slim_rules():

@@ -1,0 +1,19 @@
+{
+ "foe": 1642,
+ "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "원한맹 비연수",
+ "role": "어쌔신",
+ "element": "달"
+}

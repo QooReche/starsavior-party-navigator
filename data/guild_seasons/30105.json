@@ -48,11 +48,7 @@
    "settlement": "DATE_GUILD_DUNGEON_REWARD_SEASON_G3"
   },
   "boss": {
-   "name": "티엔",
-   "element": "moon",
-   "role": "스트라이커",
-   "roleKey": "striker",
-   "engine": "client"
+   "$module": "guild-72109981f9fa91b216c843338ece1c2cee35396edca41f62581c9d8a9fd38351"
   },
   "conf": "확인",
   "src": [
@@ -79,7 +75,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_01",
-      "foe": 1642,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
@@ -97,31 +92,15 @@
        "tough": 3
       },
       "level": 45,
-      "element": "달",
-      "role": "어쌔신",
-      "name": "원한맹 비연수",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114191",
-      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-cf140ddbe5e7074d3e1c016107838123c348250683cf8bb44df7fd9d40f44782"
      },
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_STAFF_BLACK_GUILDRAID_01",
-      "foe": 1643,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_STAFF_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_STAFF_SPECIAL"
@@ -139,31 +118,15 @@
        "tough": 3
       },
       "level": 45,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "원한맹 척결자",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:113981",
-      "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-394992e0373e380f268a3e9136378611734d319ea1d608d587a55fb72e2b394d"
      },
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_01",
-      "foe": 1642,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
@@ -181,33 +144,17 @@
        "tough": 3
       },
       "level": 45,
-      "element": "달",
-      "role": "어쌔신",
-      "name": "원한맹 비연수",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114191",
-      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-cf140ddbe5e7074d3e1c016107838123c348250683cf8bb44df7fd9d40f44782"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_GREEN_BOSS_GUILDRAID_01",
-      "foe": 1644,
       "skills": [
        "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_ATTACK",
        "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_SPECIAL",
@@ -229,31 +176,15 @@
        "tough": 8
       },
       "level": 45,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "티엔",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116319",
-      "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-d50a06e13a5192581cdfe6e413bcda7f9ef542d47c2ec86200d43afb007bad02"
      },
      {
       "unit": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_GREEN_BOSS_GUILDRAID_01",
-      "foe": 1645,
       "skills": [
        "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_ATTACK",
        "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_SPECIAL",
@@ -275,27 +206,12 @@
        "tough": 8
       },
       "level": 45,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "시엔",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116557",
-      "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-9263f1b2c1904a1e5ca46a729c87b167926661306fc1d93a2e5014af7fde166b"
      }
     ]
    ],
@@ -322,7 +238,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_02",
-      "foe": 1642,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
@@ -340,31 +255,15 @@
        "tough": 3
       },
       "level": 120,
-      "element": "달",
-      "role": "어쌔신",
-      "name": "원한맹 비연수",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114221",
-      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-cf140ddbe5e7074d3e1c016107838123c348250683cf8bb44df7fd9d40f44782"
      },
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_STAFF_BLACK_GUILDRAID_02",
-      "foe": 1643,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_STAFF_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_STAFF_SPECIAL"
@@ -382,31 +281,15 @@
        "tough": 3
       },
       "level": 120,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "원한맹 척결자",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114011",
-      "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-394992e0373e380f268a3e9136378611734d319ea1d608d587a55fb72e2b394d"
      },
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_02",
-      "foe": 1642,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
@@ -424,33 +307,17 @@
        "tough": 3
       },
       "level": 120,
-      "element": "달",
-      "role": "어쌔신",
-      "name": "원한맹 비연수",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114221",
-      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-cf140ddbe5e7074d3e1c016107838123c348250683cf8bb44df7fd9d40f44782"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_GREEN_BOSS_GUILDRAID_02",
-      "foe": 1644,
       "skills": [
        "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_ATTACK",
        "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_SPECIAL",
@@ -472,31 +339,15 @@
        "tough": 8
       },
       "level": 120,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "티엔",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116353",
-      "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-d50a06e13a5192581cdfe6e413bcda7f9ef542d47c2ec86200d43afb007bad02"
      },
      {
       "unit": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_GREEN_BOSS_GUILDRAID_02",
-      "foe": 1645,
       "skills": [
        "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_ATTACK",
        "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_SPECIAL",
@@ -518,27 +369,12 @@
        "tough": 8
       },
       "level": 120,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "시엔",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116591",
-      "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-9263f1b2c1904a1e5ca46a729c87b167926661306fc1d93a2e5014af7fde166b"
      }
     ]
    ],
@@ -565,7 +401,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_03",
-      "foe": 1642,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
@@ -583,31 +418,15 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "어쌔신",
-      "name": "원한맹 비연수",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114251",
-      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-cf140ddbe5e7074d3e1c016107838123c348250683cf8bb44df7fd9d40f44782"
      },
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_STAFF_BLACK_GUILDRAID_03",
-      "foe": 1643,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_STAFF_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_STAFF_SPECIAL"
@@ -625,31 +444,15 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "원한맹 척결자",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114041",
-      "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-394992e0373e380f268a3e9136378611734d319ea1d608d587a55fb72e2b394d"
      },
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_03",
-      "foe": 1642,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
@@ -667,33 +470,17 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "어쌔신",
-      "name": "원한맹 비연수",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114251",
-      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-cf140ddbe5e7074d3e1c016107838123c348250683cf8bb44df7fd9d40f44782"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_GREEN_BOSS_GUILDRAID_03",
-      "foe": 1644,
       "skills": [
        "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_ATTACK",
        "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_SPECIAL",
@@ -715,31 +502,15 @@
        "tough": 9
       },
       "level": 175,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "티엔",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116387",
-      "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-d50a06e13a5192581cdfe6e413bcda7f9ef542d47c2ec86200d43afb007bad02"
      },
      {
       "unit": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_GREEN_BOSS_GUILDRAID_03",
-      "foe": 1645,
       "skills": [
        "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_ATTACK",
        "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_SPECIAL",
@@ -761,27 +532,12 @@
        "tough": 9
       },
       "level": 175,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "시엔",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116625",
-      "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-9263f1b2c1904a1e5ca46a729c87b167926661306fc1d93a2e5014af7fde166b"
      }
     ]
    ],
@@ -828,7 +584,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_05",
-      "foe": 1642,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
@@ -846,31 +601,15 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "어쌔신",
-      "name": "원한맹 비연수",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114311",
-      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-cf140ddbe5e7074d3e1c016107838123c348250683cf8bb44df7fd9d40f44782"
      },
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_STAFF_BLACK_GUILDRAID_05",
-      "foe": 1643,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_STAFF_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_STAFF_SPECIAL"
@@ -888,31 +627,15 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "원한맹 척결자",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114101",
-      "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-394992e0373e380f268a3e9136378611734d319ea1d608d587a55fb72e2b394d"
      },
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_05",
-      "foe": 1642,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
@@ -930,33 +653,17 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "어쌔신",
-      "name": "원한맹 비연수",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114311",
-      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-cf140ddbe5e7074d3e1c016107838123c348250683cf8bb44df7fd9d40f44782"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_GREEN_BOSS_GUILDRAID_05",
-      "foe": 1644,
       "skills": [
        "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_ATTACK",
        "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_SPECIAL",
@@ -978,31 +685,15 @@
        "tough": 11
       },
       "level": 665,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "티엔",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116455",
-      "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-d50a06e13a5192581cdfe6e413bcda7f9ef542d47c2ec86200d43afb007bad02"
      },
      {
       "unit": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_GREEN_BOSS_GUILDRAID_05",
-      "foe": 1645,
       "skills": [
        "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_ATTACK",
        "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_SPECIAL",
@@ -1024,27 +715,12 @@
        "tough": 11
       },
       "level": 665,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "시엔",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116693",
-      "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-9263f1b2c1904a1e5ca46a729c87b167926661306fc1d93a2e5014af7fde166b"
      }
     ]
    ],
@@ -1071,7 +747,6 @@
     [
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_06",
-      "foe": 1642,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
@@ -1089,31 +764,15 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "어쌔신",
-      "name": "원한맹 비연수",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114341",
-      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-cf140ddbe5e7074d3e1c016107838123c348250683cf8bb44df7fd9d40f44782"
      },
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_STAFF_BLACK_GUILDRAID_06",
-      "foe": 1643,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_STAFF_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_STAFF_SPECIAL"
@@ -1131,31 +790,15 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "원한맹 척결자",
       "boss": false,
       "elite": false,
       "slot": 2,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114131",
-      "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-394992e0373e380f268a3e9136378611734d319ea1d608d587a55fb72e2b394d"
      },
      {
       "unit": "NKM_UNIT_MON_MARTIALIST_SICKLE_BLACK_GUILDRAID_06",
-      "foe": 1642,
       "skills": [
        "NKM_UNIT_MON_MARTIALIST_SICKLE_ATTACK",
        "NKM_UNIT_MON_MARTIALIST_SICKLE_SPECIAL"
@@ -1173,33 +816,17 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "어쌔신",
-      "name": "원한맹 비연수",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:114341",
-      "foeSignature": "c405406eb4c55bfb899720dce8c1efa5a17c5b14c8bbaf2a603f7ad755b2adbd",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-cf140ddbe5e7074d3e1c016107838123c348250683cf8bb44df7fd9d40f44782"
      }
     ],
     [
      {
       "unit": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_GREEN_BOSS_GUILDRAID_06",
-      "foe": 1644,
       "skills": [
        "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_ATTACK",
        "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_SPECIAL",
@@ -1221,31 +848,15 @@
        "tough": 13
       },
       "level": 1047,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "티엔",
       "boss": true,
       "elite": false,
       "slot": 2,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116489",
-      "foeSignature": "000246b02833d0951e4d55ba1c78356c93bdfc67c342b424602196ce74738b6d",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-d50a06e13a5192581cdfe6e413bcda7f9ef542d47c2ec86200d43afb007bad02"
      },
      {
       "unit": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_GREEN_BOSS_GUILDRAID_06",
-      "foe": 1645,
       "skills": [
        "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_ATTACK",
        "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_SPECIAL",
@@ -1267,27 +878,12 @@
        "tough": 13
       },
       "level": 1047,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "시엔",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
       "source": "tables/UNIT_TEMPLET_BASE2.json:116727",
-      "foeSignature": "a66d13a7e611859faf95e2182a3ebeb0c7327c67ae1d4986edac1256e7b00438",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "$module": "monster-9263f1b2c1904a1e5ca46a729c87b167926661306fc1d93a2e5014af7fde166b"
      }
     ]
    ],
@@ -2500,11 +2096,7 @@
   ]
  },
  "gimmicks": {
-  "conf": "확인",
-  "src": [
-   "client"
-  ],
-  "items": []
+  "$module": "gimmicks-60c9f75e8968fc347d7486db4f34bdee5726009c6a9b8e0785da933d428d70a4"
  },
  "community": {
   "conf": "낮음",

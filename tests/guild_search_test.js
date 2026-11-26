@@ -1,7 +1,7 @@
 // 길방 «내 정보로 최고 점수 편성 찾기» 로직 시험: 후보 풀·조합 규칙·작업 배분·순위·가짜 작업자 실행·화면 조각.
 const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
 const S = require('../guild_search.js'), V = require('../guild_view.js');
-const G = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_seasons', '30111.json'), 'utf8'));
+const G = require('./guild_fixture')(30111);
 const SE = G.search;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 

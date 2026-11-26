@@ -31,6 +31,7 @@ from .. import datafile
 from .controller import BaseController
 from .data import SRC
 from .foe_base import FoeBase, make_skill
+from .boss_registry import cosmo_adapter, expand
 
 _DATA = datafile._CACHE   # 경로 -> 자료(datafile.load_path 캐시 그대로). 시험이 data_path() 열쇠로 바꿔 끼운다
 
@@ -75,7 +76,13 @@ def data_path(src=SRC):
 
 
 def load(src=SRC):
-    return datafile.load_path(data_path(src))   # 경로가 캐시 열쇠 — use_data 로 바꾼 fixture 와 실자료가 섞이지 않는다
+    raw = datafile.load_path(data_path(src))
+    return expanded_data(data_path(src), src) if any('$module' in b for b in raw['bosses']) else raw
+
+
+@datafile.cached
+def expanded_data(path, src):
+    return expand(datafile.load_path(path), src)
 
 
 def boss_data(key, src=SRC):
@@ -195,8 +202,8 @@ def build_waves(boss, step, level=0, src=SRC):
     st = b['steps'][step - 1]
     G = load(src)
     cfg = dict(boss=b['key'], step=step, level=level, row=row, season_buffs=b['seasonBuffs'], effects=effect_table(src),
-               model='belgras' if b['key'] == 'belgras' else 'stage', bel=G.get('belgras'))
-    if b['key'] == 'belgras':
+               model=cosmo_adapter(b['key'], src), bel=G.get('belgras'))
+    if cfg['model'] == 'belgras':
         bm = cfg['bel']
         sk = bm['skills']
         skills = {'기본기': _skill('기본기', '연쇄 파열', sk['attack']['coef'], sk['attack']['cd'], sk['attack']['tough'], all_=True),

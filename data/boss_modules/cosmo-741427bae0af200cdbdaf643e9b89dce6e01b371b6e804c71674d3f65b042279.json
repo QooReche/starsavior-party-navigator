@@ -1,0 +1,10 @@
+{
+ "key": "disparity",
+ "name": "괴리의 표상",
+ "element": "질서",
+ "role": "스트라이커",
+ "title": "환상체",
+ "attackKind": "정신",
+ "unitId": 110093,
+ "immuneGroup": 1001
+}

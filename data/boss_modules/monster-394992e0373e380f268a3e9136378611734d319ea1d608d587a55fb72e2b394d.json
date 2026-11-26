@@ -1,0 +1,19 @@
+{
+ "foe": 1643,
+ "foeSignature": "e1d42ba1e40285165547bf69ab231190166455f701f77552c5c31a5e4d2587e1",
+ "clientRules": {
+  "skills": {},
+  "order": [],
+  "lines": [],
+  "enforceSelf": [],
+  "force": [],
+  "se": []
+ },
+ "hitStats": {
+  "NST_RATE_HIT": 10000,
+  "NST_RATE_EVADE": 0
+ },
+ "name": "원한맹 척결자",
+ "role": "스트라이커",
+ "element": "달"
+}

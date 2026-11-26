@@ -1,0 +1,10 @@
+{
+ "key": "baskerville",
+ "name": "바스커빌의 괴수",
+ "element": "질서",
+ "role": "스트라이커",
+ "title": "마수",
+ "attackKind": "원소",
+ "unitId": 110103,
+ "immuneGroup": 1001
+}

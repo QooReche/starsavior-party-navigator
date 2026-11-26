@@ -48,7 +48,7 @@ console.log(JSON.stringify(m.prepare({n:x.ps.length,progs:x.ps,prog:x.ps.reduce(
                 r = json.loads(run_auto('guild/test/EX',
                     {'units': ['gwen', 'fei', 'professor-m', 'amora'], 'leader': 0}, n, seed,
                     {'build': 'standard', 'rng_streams': True,
-                     'guild': {'level': 0, 'support': 'gust', 'sets': [0, 0, 0, 0]}}))
+                     'guild': {'seasonId': 30111, 'level': 0, 'support': 'gust', 'sets': [0, 0, 0, 0]}}))
                 self.assertGreater(r['prog'], 0)
                 self.assertEqual(r['n'], n)
                 self.assertEqual(len(r['progs']), n)

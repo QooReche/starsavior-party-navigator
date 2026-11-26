@@ -1,0 +1,7 @@
+{
+ "name": "레타르기아의 마술사",
+ "element": "moon",
+ "role": "캐스터",
+ "roleKey": "caster",
+ "engine": "client"
+}

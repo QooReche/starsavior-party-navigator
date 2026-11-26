@@ -30,7 +30,7 @@ CASES = [
     ('clo_sun250', {'stage': 'clo/태양 회랑/FLOOR 250'}, 'clo/태양 회랑/FLOOR 250', {}),
     ('cosmo_gille1', {'stage': 'cosmo/길레/길레 1단계'}, 'cosmo/길레/길레 1단계', {}),
     ('cosmo_raid_bask3', {'cosmo_raid': {'boss': 'baskerville', 'step': 3, 'level': 0}}, 'x', {'cosmo_raid': {'boss': 'baskerville', 'step': 3, 'level': 0}}),
-    ('guild_l1', {'guild': {'level': 1, 'sets': [0, 0, 0, 0], 'support': 'fire'}}, 'x', {'guild': {'level': 1, 'sets': [0, 0, 0, 0], 'support': 'fire'}}),
+    ('guild_l1', {'guild': {'seasonId': 30111, 'level': 1, 'sets': [0, 0, 0, 0], 'support': 'fire'}}, 'x', {'guild': {'seasonId': 30111, 'level': 1, 'sets': [0, 0, 0, 0], 'support': 'fire'}}),
 ]
 PARTIES = [('A', PARTY_A), ('B', PARTY_B)]
 SEEDS = [1, 2, 3]

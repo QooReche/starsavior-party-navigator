@@ -49,8 +49,8 @@ EFFECT_KIND = {2: 'drain', 3: 'speed', 6: 'immune', 10: 'bleed', 11: 'tough', 18
                1: 'grow', 4: 'armor', 7: 'hit_gauge', 21: 'debuff_amp', 22: 'ult_cd',
                24: 'no_shield_amp', 25: 'no_shield_chain', 28: 'strip', 33: 'few_buff_guard'}
 # Step 3 배치 스크립트 이름 조각 -> 보스 key(엔진·화면이 쓰는 이름). 모르는 스크립트는 Changed
-BOSS_SCRIPT_KEY = {'CORRUPTED_TREE': 'belgras', 'TYRIA': 'tyria', 'CARNELIA': 'carnelia',
-                   'MOGULUS': 'mogulus', 'DISPARITY_OF_REPRESENTATION': 'disparity', 'DOOMSDAY_BEAST': 'baskerville'}
+from battlesim.starsavior.boss_registry import cosmo_key, cosmo_adapter, expand
+from tools.boss_modules import pack_cosmo
 # kind -> 설명문에서 수치를 읽는 정규식(순서대로 params 의 이름). 설명이 바뀌면 Changed.
 EFFECT_RX = {
     'drain': (r'최대 생명력을 (\d+)%씩 감소.*최대 (\d+)회', ('pct', 'max')),
@@ -349,19 +349,19 @@ def build(T, season_id, game_build):
             kind, val = BCT[b['BuffTarget']]
             sbuffs.append(dict(id=b['BuffId'], target=b['BuffTarget'], filter={kind: val}, name=plain(bt.get('m_BuffName')),
                                desc=plain(bt.get('m_BuffDesc')), props=props))
-        key = next((v for k, v in BOSS_SCRIPT_KEY.items() if k in r3['BattleTempletFileName']), '')
+        key = cosmo_key(r3['BattleTempletFileName'])
         need(key, '모르는 보스 스크립트: %s' % r3['BattleTempletFileName'])
         # 계산 가능 여부: 벨그라스는 전용 모델, 그 밖은 공개 databook 의 cosmo «<이름> N단계» 적 정의를 재사용한다(엔진 build_waves).
         # 데이터북 또는 PC 클라 조각으로 세 단계 정의를 모두 로드할 수 있어야 계산한다.
         name = plain(r3['BattleName'])
-        sim = key == 'belgras' or all(databook_stage_ok(name, s) for s in (1, 2, 3))
+        sim = cosmo_adapter(key) != 'stage' or all(databook_stage_ok(name, s) for s in (1, 2, 3))
         bosses.append(dict(key=key, name=name, sim=sim,
                            simNote=None if sim else '%s은(는) 공개 데이터북에 적 정의(스킬·패턴)가 없어 아직 계산할 수 없음' % name, raidGroupId=gid, element=boss_meta['element'], role=boss_meta['role'],
                            title=boss_meta['title'], attackKind=boss_meta['attackKind'], unitId=boss_meta['id'],
                            immuneGroup=boss_meta['immuneGroup'], map=r3['BattleMapStrID'], difficultyGroupId=dg,
                            steps=steps, levels=levels, seasonBuffs=sbuffs, spawn=spawn3))
     # 벨그라스 전용 모델(기록자·처단자·침식)은 벨그라스가 있는 시즌에만 만든다(시즌 23 = 모굴루스·바스커빌의 괴수·괴리의 표상)
-    bel = next((b for b in bosses if b['key'] == 'belgras'), None)
+    bel = next((b for b in bosses if cosmo_adapter(b['key']) == 'belgras'), None)
     model = belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row, unit_meta, plain, ko, need, sk_coef, sk_ses) if bel else None
     return season, bosses, effects, model
 
@@ -488,6 +488,7 @@ def main():
     ap.add_argument('--season', type=int, required=True, help='RankingRaidSeasonId (예: 1022)')
     ap.add_argument('--build', default=None, help='표 빌드 번호(기록용)')
     ap.add_argument('--out', default=str(ROOT / 'data' / 'cosmo_raid.json'))
+    ap.add_argument('--select-only', action='store_true', help='보관된 모듈 시즌을 현재 화면/엔진 자료로 선택')
     ap.add_argument('--season-dates-only', action='store_true', help='기존 공개 자료의 시즌 날짜만 갱신(정규화된 static-data 표 지원)')
     ap.add_argument('--start', default=None, help='공지로 확인한 시즌 시작(ISO, 예 2026-11-05T14:00:00+09:00). --season-dates-only 와 함께')
     ap.add_argument('--end', default=None, help='공지로 확인한 플레이 종료(ISO). 결산 중에는 플레이 불가라 게이트는 이 값을 «종료»로 본다')
@@ -495,6 +496,10 @@ def main():
     ap.add_argument('--period-src', default='notice', help='날짜 출처 표시(기본 notice)')
     a = ap.parse_args()
     low_priority()
+    if a.select_only:
+        archive = ROOT/'data/cosmo_seasons'/('%d.json' % a.season)
+        atomic_json(a.out, expand(json.loads(archive.read_text(encoding='utf-8'))))
+        return
     if a.season_dates_only:
         out = json.loads(Path(a.out).read_text(encoding='utf-8'))
         need(out['season']['id'] == a.season, '기존 공개 자료와 요청 시즌이 다름')
@@ -505,7 +510,7 @@ def main():
         else:
             need(a.tables, '--tables 필요')
             out['season'].update(season_period(a.tables, out['season']['playableInterval']))
-        atomic_json(a.out, out)
+        save_season(out, a.out)
         print('시즌 날짜 저장', a.out, out['season']['start'], out['season']['end'])
         return
     season, bosses, effects, bel = build(a.tables, a.season, a.build)
@@ -530,10 +535,18 @@ def main():
         belgras=bel, search=SEARCH,
         howToUpdate=['새 시즌 표를 추출한 폴더로: python -X utf8 -I tools/build_cosmo_raid.py --tables <폴더> --season <RankingRaidSeasonId> --build <빌드>',
                      'Changed 오류가 나면 표 구조(벨그라스 스킬/버프/SE)가 바뀐 것이니 battlesim/starsavior/cosmo_raid.py 의 상태 기계를 사람이 다시 확인한다',
-                     '보스가 벨그라스가 아닌 시즌은 bosses 의 key 가 다르므로 build() 의 key 매핑과 엔진 보스 정의를 추가한다',
+                     '새 보스는 data/boss_catalog.json에 등록하고 재등장은 보관 모듈을 시즌 파일에서 선택한다',
                      'python -X utf8 -I tests/cosmo_raid_test.py 로 일관성 확인'])
-    atomic_json(a.out, out)
+    save_season(out, a.out)
     print('저장', a.out, '보스', [b['key'] for b in bosses], '효과', len(effects))
+
+
+def save_season(out, path):
+    if Path(path).resolve() == (ROOT/'data/cosmo_raid.json').resolve():
+        archive = ROOT/'data/cosmo_seasons'/('%d.json' % out['season']['id'])
+        archive.parent.mkdir(parents=True, exist_ok=True)
+        atomic_json(archive, pack_cosmo(out))
+    atomic_json(path, out)
 
 
 if __name__ == '__main__':
