@@ -453,6 +453,7 @@ summary{padding:9px 4px}
 <script src="placement_search.js"></script>
 <script src="guild_planner.js"></script>
 <script src="placement_page.js"></script>
+<script src="score_combinations.js"></script>
 <script src="cosmo_search.js"></script>
 <script src="skill_view.js"></script>
 <script>
@@ -546,7 +547,7 @@ function renderGuildSearch(on){const p=$("guild-search");
  const prog=p.querySelector('[data-k="gd-search-prog"]');
  if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);GuildSearch.progressPaint(p,GSR);searchGwenPaint(p,'guildSearch',GSR);return}
  const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:()=>GwenStage.slot('guildSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('guildSearch','board')+GwenStage.slot('guildSearch','result'),clientSeason:D.guild.season.boss.engine==="client",supportNames:Object.fromEntries((D.guild.supports||[]).map(s=>[s.id,s.name])),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,newSearch:D.guild.search.newSearch,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild');GuildSearch.progressPaint(p,GSR);searchGwenPaint(p,'guildSearch',GSR)}
-function gsTeam(t){LEADKEY=t.leaderKey||t.order[0];return seasonBreakBar(t,true)+`<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
+function gsTeam(t){return seasonTeam(t,true);}
 async function guildSearchStart(target=GSR,profileOverride=null){
  if(seasonBlocked('guild'))return;
  const GSR=target;
@@ -606,9 +607,9 @@ function csOpt(){const C=D.cosmoRaid;
  if(CSR.optLevel==null){const v=LS.get("cosmo.level");CSR.optLevel=Number.isInteger(v)&&v>=-1&&v<=C.levelMax?v:C.search.defaultLevel}
  if(CSR.optMode==null){const v=LS.get("cosmo.mode");CSR.optMode=CosmoSearch.MODES[v]?v:C.search.defaultMode}}
 // 코스모 결과 한 팀: 기존 추천 카드와 같은 모양(앞열 2·뒤열 2, 리더 왕관, 브레이크 스킬 줄). 시뮬이 가정한 칸 순서 = order(앞열 먼저), 리더는 leaderKey
-function csTeam(t){LEADKEY=t.leaderKey||t.order[0];const xs=t.order.map(k=>({s:BYKEY[k]}));
- const cards=`<div class="rowcards cs-cards">${card(xs[2],"back")}${card(xs[0],"front")}${card(xs[1],"front")}${card(xs[3],"back")}</div>`;
- return seasonBreakBar(t)+cards}
+function csTeam(t){return seasonTeam(t);}
+function seasonTeam(t,compact=false){LEADKEY=t.leaderKey||t.order[0];
+ return seasonBreakBar(t,compact)+`<div class="rowcards${compact?'':' cs-cards'}">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
 function seasonBreakBar(t,compact=false){
  if(t.brkTie)return '<div class="bbar"><div class="bbody"><b>브레이크 스킬: 점수 차이 없음(아무거나 장착 가능)</b></div></div>';
  if(compact)return `<div class="bbar"><div class="bbody">${GuildSearch.breakLabel(t,esc)}</div></div>`;

@@ -107,7 +107,8 @@ async function workerContract(){const ui=readSrc('growth_ui.js');let active=0,pe
     ['three boss screening','screenPlan(targets,Math.max(0,...targets.map(t=>t.candidates?.length||0)))','screenPlan(targets)',scheduling],
     ['new owned baseline','const finalOwned=lists(allOwned,fr)','const finalOwned=lists(owned.flat(),fr)',scheduling]
   ]){assert(source.includes(from),name);const mutant=load(source.replace(from,to));let failed=false;try{await test(mutant);}catch{failed=true;}assert(failed,'mutation survived: '+name);console.log('MUTATION caught + restored:',name);}
-  const csSource=readSrc('cosmo_search.js');
-  assert.throws(()=>triples(G,loadModule(csSource.replace('if (x[w] & y[w])','if (false)'))));console.log('MUTATION caught + restored: savior overlap');
+  const csSource=readSrc('score_combinations.js');
+  const mutant=loadModule(csSource.replace('if (x[w] & y[w])','if (false)'));
+  assert.throws(()=>triples(G,{...CS,bestTriples:mutant.bestSets}));console.log('MUTATION caught + restored: savior overlap');
   signature();guild();triples();await scheduling();await guildSchedule();console.log('ALL OK growth stage23');
 })().catch(e=>{console.error(e);process.exitCode=1;});

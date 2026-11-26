@@ -3,6 +3,7 @@
 // 시즌 값(풀 크기·판 수·K 등)은 data/cosmo_raid.json 의 search. 점수는 시뮬 쪽(battlesim/web.py cosmo_summary)이 판마다 점수식에 넣어 요약값으로 돌려준다.
 (function (root) {
   "use strict";
+  const Combinations=typeof module!=='undefined'&&module.exports?require('./score_combinations.js'):root.ScoreCombinations;
   const SS=typeof module!=='undefined'&&module.exports?require('./score_search.js'):root.ScoreSearch;
   const Executor = typeof module !== "undefined" && module.exports ? require("./search_executor.js") : root.SearchExecutor;
   const {num, teamId, pctText, durTextSec} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
@@ -99,60 +100,9 @@
 
   // 겹치지 않는 (A,B,C) 삼중 중 합이 큰 순 n 개(분기한정). lists = 보스별 항목 배열(각각 pickTop 처럼 점수 큰 순 정렬), 항목 = {keys, score}
   // 같은 합이면 세 팀 id 문자열이 작은 순. 구원자는 비트 마스크(30비트 단위)로 겹침을 확인한다.
-  function* tripleSteps(lists, n, budget) {
-    if (lists.length !== BOSSES || lists.some(l => !l.length)) return [];
-    const index = new Map();
-    lists.forEach(l => l.forEach(e => e.keys.forEach(k => { if (!index.has(k)) index.set(k, index.size); })));
-    const W = Math.max(1, Math.ceil(index.size / 30));
-    const mk = e => { const m = new Array(W).fill(0); e.keys.forEach(k => { const i = index.get(k); m[(i / 30) | 0] |= 1 << (i % 30); }); return m; };
-    const L = lists.map(l => l.map(e => ({e, m: mk(e), id: idOf(e.keys)})));
-    const top = [], idOfT = t => t.map(x => x.id).join("/");
-    const better = (a, b) => { const ia = idOfT(a.t), ib = idOfT(b.t); return a.sum - b.sum || (ia < ib ? 1 : ia > ib ? -1 : 0); };   // >0 이면 a 가 더 좋음(합이 크거나, 같으면 id 가 작음)
-    const floor = () => top.length < n ? -Infinity : top[top.length - 1].sum;
-    const hit = (x, y) => { for (let w = 0; w < W; w++) if (x[w] & y[w]) return true; return false; };
-    function put(sum, t) {
-      const c = {sum, t};
-      let i = top.length;
-      while (i > 0 && better(c, top[i - 1]) > 0) i--;
-      top.splice(i, 0, c);
-      if (top.length > n) top.pop();
-    }
-    const c0 = L[2][0].e.score, b0 = L[1][0].e.score;
-    const visit = () => !budget || (budget.remaining-- > 0 || (budget.exhausted = true, false));
-    let checks = 0;
-    search: for (let ai = 0; ai < L[0].length; ai++) {
-      yield; // 호환 목록 구성도 a마다 화면에 제어를 돌려줄 수 있게 함.
-      const a = L[0][ai];
-      if (a.e.score + b0 + c0 < floor()) break;
-      const Ba = L[1].filter(b => !hit(a.m, b.m)), Ca = L[2].filter(c => !hit(a.m, c.m));
-      // 이 경계는 a에 종속됨. 다음 a의 호환 최고점은 더 높을 수 있으므로 break 금지.
-      if (!Ba.length || !Ca.length || a.e.score + Ba[0].e.score + Ca[0].e.score < floor()) continue;
-      const ca0 = Ca[0].e.score;
-      const stop = (bi, ci) => {
-        // 현재 c 꼬리 / 다음 b / 다음 a. 다음 a는 아직 거르지 않았으므로 전역 최고점 사용.
-        const tail = a.e.score + Ba[bi].e.score + Ca[ci == null ? 0 : ci].e.score;
-        const nextB = bi + 1 < Ba.length ? a.e.score + Ba[bi + 1].e.score + ca0 : -Infinity;
-        const nextA = ai + 1 < L[0].length ? L[0][ai + 1].e.score + b0 + c0 : -Infinity;
-        budget.upperBound = Math.max(tail, nextB, nextA);
-        budget.position = {a: ai, b: bi, c: ci}; // b·c는 호환 목록 안의 0부터 세는 위치.
-      };
-      for (let bi = 0; bi < Ba.length; bi++) {
-        if (++checks % 4096 === 0) yield;
-        const b = Ba[bi];
-        if (!visit()) { stop(bi, null); break search; }
-        if (a.e.score + b.e.score + ca0 < floor()) break;
-        const base = a.e.score + b.e.score;
-        for (let ci = 0; ci < Ca.length; ci++) {
-          if (++checks % 4096 === 0) yield;
-          const c = Ca[ci];
-          if (!visit()) { stop(bi, ci); break search; }
-          if (base + c.e.score < floor()) break;
-          if (hit(b.m, c.m)) continue; // a와의 겹침은 Ca에서 이미 제거했음.
-          put(base + c.e.score, [a, b, c].map(x => ({id: x.id, e: x.e})));
-        }
-      }
-    }
-    return top.map(x => ({sum: x.sum, teams: x.t.map(y => y.e)}));
+  function* tripleSteps(lists,n,budget){
+    if(lists.length!==BOSSES)return [];
+    return yield* Combinations.steps(lists,n,budget,{id:e=>idOf(e.keys)});
   }
   function bestTriples(lists, n, budget) {
     const steps = tripleSteps(lists, n, budget);

@@ -44,8 +44,9 @@ async function check(s=S){
   const mutations=[['v||key(a,b)','key(a,b)'],['r.t60??r.clear','r.clear'],['0x6D2B79F5','1'],['rng()*seen','rng()'],['replace||!seen.has(id(r))','!seen.has(id(r))'],['ties(rows[end],edge)===0','false'],['!valid(results[j.key])','true'],['value(r)>=edge','value(r)>edge'],['await evaluate(jobs);',''],['K:c.K*f','K:c.K']];
   for(const [from,to] of mutations){assert(source.includes(from));const ctx={module:{exports:{}}};vm.runInNewContext(source.replace(from,to),ctx);await assert.rejects(()=>check(ctx.module.exports),/./);}
   const ctx=vm.createContext({setTimeout,clearTimeout,performance}),page=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
-  const modules=['ui_shared.js','score_search.js','search_executor.js','party_placement.js','guild_search.js','cosmo_learned.js','placement_search.js','guild_planner.js','cosmo_search.js'];
+  const modules=['ui_shared.js','score_search.js','score_combinations.js','search_executor.js','party_placement.js','guild_search.js','cosmo_learned.js','placement_search.js','guild_planner.js','cosmo_search.js'];
   for(const m of [...page.matchAll(/<script src="([^"]+)"/g)].map(m=>m[1]).filter(m=>modules.includes(m)))vm.runInContext(fs.readFileSync(require.resolve('../'+m),'utf8'),ctx,{filename:m});
   assert.equal(ctx.PartyPlacement.goalOf({t60:0,clear:1}),0);assert.equal(typeof ctx.GuildPlanner.search,'function');
+  assert.equal(ctx.CosmoSearch.bestTriples(['a','b','c'].map(k=>[{keys:[k],score:1}]),1)[0].sum,3);
   console.log('PASS score parts: rank/ties/goal/RNG/reservoir/reuse/audit/learning/keys/chunks/browser loading; 10 mutations');
 })().catch(e=>{console.error(e);process.exitCode=1;});
