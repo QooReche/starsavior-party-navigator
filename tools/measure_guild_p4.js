@@ -1,5 +1,5 @@
 // P4 reduced scope: daily 2 seals, then fixed 30 x 20 independent evaluations.
-// node tools/measure_guild_p4.js ACCOUNT PRIVATE_DIR P0_DIR BROWSER_ENV_JSON
+// node tools/measure_guild_p4.js ACCOUNT PRIVATE_DIR P0_DIR BROWSER_ENV_JSON [0|100]
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {context,instrument,privateDir,save,hash}=require('./measure_guild_time');
@@ -13,7 +13,8 @@ function constraints(r){
  assert(r.teams.every(t=>t.sup&&t.sup!=='none'));assert.equal(r.seals.remaining,0);
 }
 async function main(){
- const [account,output,p0dir,envfile]=process.argv.slice(2),dir=privateDir(output),environment=read(envfile);
+ const [account,output,p0dir,envfile,only]=process.argv.slice(2),dir=privateDir(output),environment=read(envfile);
+ assert(only===undefined||['0','100'].includes(only),'optional offset must be 0 or 100');
  const original=read(path.join(p0dir,'experiment-pins.json'));
  assert.equal(hash(fs.readFileSync(account)),original.accountHash);
  for(const [f,h] of Object.entries(original.sources))if(f.startsWith('battlesim/')||(f.startsWith('data/')&&!['data/guild_defaults.json','data/guild_defense.json','data/guild_seasons/30112.json'].includes(f)))assert.equal(hash(fs.readFileSync(path.join(ROOT,f))),h,'P0 engine/data changed: '+f);
@@ -43,7 +44,8 @@ async function main(){
   assert.equal(hash(cx.results),p0.pins.profileHash);
   const strip=g=>{g=structuredClone(g);delete g.search;return g;};
   const pins={accountHash:original.accountHash,profileHash:hash(cx.results),seasonHash:hash(strip(cx.G)),seedOffset:offset,seals,split:cx.split,settings:cx.S,environment,
-   sources:Object.fromEntries(['guild_daily.js','guild_search.js','party_placement.js','sim/manifest.json','tools/measure_guild_p4.js'].map(f=>[f,hash(fs.readFileSync(path.join(ROOT,f)))]))};
+   sources:Object.fromEntries(['guild_daily.js','guild_search.js','party_placement.js','sim/manifest.json','tools/measure_guild_p4.js','tools/measure_guild_time.js','tools/bench_cosmo_search.py'].map(f=>[f,hash(fs.readFileSync(path.join(ROOT,f)))]))};
+  if(only!==undefined&&offset!==Number(only)&&!fs.existsSync(path.join(runDir,'holdout/result.json')))continue;
   let measured;
   if(fs.existsSync(path.join(runDir,'result.json'))){measured=read(path.join(runDir,'result.json'));assert.deepEqual(measured.pins,pins);}
   else{
@@ -74,6 +76,7 @@ async function main(){
   }
   all[offset+'-'+seals]={measured,evaluated};
  }
+ if(Object.keys(all).length!==2){console.log(JSON.stringify({completed:Object.keys(all),pending:true}));return;}
  const a=reference.A,e=reference.E;
  const ex=n=>[0,100].map(o=>{const t=all[o+'-'+n].evaluated.find(x=>x.selected.kind==='ex');assert(t,'EX team required');return t;});
  const two=ex(2),vsA=compare(a,two),vsE=compare(e,two);
