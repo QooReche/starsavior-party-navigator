@@ -4,6 +4,7 @@
   const L=typeof module!=='undefined'&&module.exports?require('./cosmo_learned.js'):root.CosmoLearned;
   const P=typeof module!=='undefined'&&module.exports?require('./party_placement.js'):root.PartyPlacement;
   const E=typeof module!=='undefined'&&module.exports?require('./search_executor.js'):root.SearchExecutor;
+  const PS=typeof module!=='undefined'&&module.exports?require('./placement_search.js'):root.PlacementSearch;
   function plan(S,combos,nBrk){
     const second=Math.min(combos,S.screen2.keep),finalists=Math.min(second,S.finalists);
     const stages=E.planStages([
@@ -125,21 +126,18 @@
         const winner=ranked(second.filter(j=>P.id(j.keys)===P.id(keys)),rr)[0];
         const supports=GS.finalSupports(S,keys,cls),brks=[null,...(cx.breaks||[])];
         const pre=[...new Set([0,...S.final.levels])].flatMap(level=>supports.map(sup=>make(keys,level,sup,null,winner)));
-        const pr=await run(pre,Math.min(10,S.final.runs),4,'길드 단계·지원 예비 비교');
-        const levels=P.levels(ranked(pre,pr).map(j=>({level:j.level,score:j.top})),G.challenge.levels.length,boundary,2);
-        const joint=[];
-        for(const p of (S.placement?.enabled?[...P.all(keys),winner]:[winner]))for(const level of levels)for(const sup of supports)for(const brk of brks)joint.push(make(keys,level,sup,brk,p));
-        const unique=[...new Map(joint.map(j=>[j.key,j])).values()];conditions+=unique.length;
-        const jr=await run(unique,S.placement?.screenRuns||2,5,'길드 배치·리더·단계·지원·브레이크 결합 비교');
-        const selected=ranked(unique,jr).slice(0,S.placement?.keep||2);
-        const refined=await run(selected,S.final.runs,6,'길드 결합 후보 정밀 비교'),best=ranked(selected,refined)[0];
-        const revisit=Array.from({length:G.challenge.levels.length+1},(_,level)=>make(keys,level,best.sup,best.options.break_skill,best));
-        const rv=await run(revisit,Math.min(10,S.final.runs),7,'길드 개선 배치로 전체 단계 재확인'),next=ranked(revisit,rv)[0];
-        if(next.level!==best.level){const extra=[];moved++;
-          for(const p of (S.placement?.enabled?P.all(keys):[winner]))for(const sup of supports)for(const brk of brks)extra.push(make(keys,next.level,sup,brk,p));
-          const er=await run(extra,S.placement?.screenRuns||2,8,'길드 변경 단계 결합 재비교');selected.push(...ranked(extra,er).slice(0,S.placement?.keep||2));
-        }
-        keep.push(...selected);
+        const stages={probe:[Math.min(10,S.final.runs),4,'길드 단계·지원 예비 비교'],screen:[S.placement?.screenRuns||2,5,'길드 배치·리더·단계·지원·브레이크 결합 비교'],refine:[S.final.runs,6,'길드 결합 후보 정밀 비교'],revisit:[Math.min(10,S.final.runs),7,'길드 개선 배치로 전체 단계 재확인'],moved:[S.placement?.screenRuns||2,8,'길드 변경 단계 결합 재비교']};
+        const joint=await PS.joint({teams:[winner],probeJobs:pre,rank:ranked,group:j=>P.id(j.keys),keep:S.placement?.keep||2,
+          runStage:(stage,jobs)=>run(jobs,...stages[stage]),
+          jointJobs:(_,pre,pr)=>{
+            const levels=P.levels(ranked(pre,pr).map(j=>({level:j.level,score:j.top})),G.challenge.levels.length,boundary,2),jobs=[];
+            for(const p of (S.placement?.enabled?[...P.all(keys),winner]:[winner]))for(const level of levels)for(const sup of supports)for(const brk of brks)jobs.push(make(keys,level,sup,brk,p));
+            return [...new Map(jobs.map(j=>[j.key,j])).values()];
+          },
+          revisitJobs:([best])=>Array.from({length:G.challenge.levels.length+1},(_,level)=>make(keys,level,best.sup,best.options.break_skill,best)),
+          movedJobs:changed=>changed.flatMap(next=>(S.placement?.enabled?P.all(keys):[winner]).flatMap(p=>supports.flatMap(sup=>brks.map(brk=>make(keys,next.level,sup,brk,p)))))
+        });
+        conditions+=joint.conditions;moved+=joint.changed;keep.push(...joint.selected,...joint.extra);
       }
       const finalJobs=[...new Map(keep.map(j=>[j.key,j])).values()];
       const final=await run(finalJobs,S.final.runs,9,'길드 결합 후보 정밀 비교');
