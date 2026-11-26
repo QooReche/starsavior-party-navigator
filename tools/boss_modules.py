@@ -3,19 +3,24 @@ import copy
 import json
 from pathlib import Path
 from battlesim.starsavior.boss_registry import fingerprint, expand
+from battlesim.fileio import atomic_text
 
 ROOT = Path(__file__).resolve().parents[1]
 MONSTER_FIELDS = ('foe', 'foeSignature', 'definition', 'clientRules', 'hitStats',
                   'name', 'role', 'element')
 
 
+def write(path, value):
+    """One serialization for module archives and their expanded projections."""
+    atomic_text(path, json.dumps(value, ensure_ascii=False, indent=1) + '\n')
+
+
 def register(kind, definition, root=ROOT):
     key = kind + '-' + fingerprint(definition)
     path = root / 'data/boss_modules' / (key + '.json')
     path.parent.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(definition, ensure_ascii=False, indent=1) + '\n'
     if not path.exists():
-        path.write_text(text, encoding='utf-8')
+        write(path, definition)
     elif json.loads(path.read_text(encoding='utf-8')) != definition:
         raise ValueError('보스 모듈 충돌: ' + key)
     return {'$module': key}
@@ -59,7 +64,7 @@ def migrate(root=ROOT):
         original = json.loads(path.read_text(encoding='utf-8'))
         packed = pack_guild(original, root)
         assert expand(packed, str(root)) == expand(original, str(root))
-        path.write_text(json.dumps(packed, ensure_ascii=False, indent=1)+'\n', encoding='utf-8')
+        write(path, packed)
     # Current cosmo projection stays compatible; the season archive is the source.
     paths = [root/'data/cosmo_raid.json', *sorted((root/'tests/fixtures').glob('cosmo_raid_*.json'))]
     for path in paths:
@@ -68,5 +73,5 @@ def migrate(root=ROOT):
         assert expand(packed, str(root)) == original
         target = root/'data/cosmo_seasons'/('%s.json' % original['season']['id'])
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(packed, ensure_ascii=False, indent=1)+'\n', encoding='utf-8')
+        write(target, packed)
     print('Module migration: expanded values unchanged, guild', len(paths))

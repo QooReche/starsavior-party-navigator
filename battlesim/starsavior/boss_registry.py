@@ -6,6 +6,7 @@ archived season. Expanded projections keep the existing engine/UI contracts.
 import copy
 import hashlib
 import json
+from pathlib import Path
 from .. import datafile
 from .data import SRC
 
@@ -13,6 +14,30 @@ from .data import SRC
 def fingerprint(value):
     return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True,
                                     separators=(',', ':')).encode()).hexdigest()
+
+
+# Shared execution inputs, independent of the browser's distribution manifest.
+# Current raid projections are not inputs to archived guild battles.
+GUILD_DEPENDENCIES = (
+    'rawdata/databook_main.json', 'rawdata/foe.js', 'data/foe_spawn.json',
+    'rawdata/guide_app-core.js', 'data/synergy_tags.json', 'data/myinfo_combat.json',
+    'data/auto_skill.json', 'data/foe_auto.json', 'data/sudden_death.json',
+    'data/stage_fx.json', 'data/battle_end.json', 'data/chain_damage.json',
+    'data/hit_stats.json', 'data/chain_se.json', 'data/break_skill_levels.json',
+    'data/buff_count.json', 'data/buff_step.json', 'data/buff_force.json',
+    'data/buff_immune_pass.json', 'data/buff_global_turn.json', 'data/foe_react.json',
+    'data/foe_client.json', 'data/foe_summon.json', 'data/foe_clash.json',
+    'data/buff_dead_keep.json', 'data/buff_flags.json', 'data/foe_cosmo_extra.json',
+    'data/foe_equip.json',
+)
+
+
+def dependency_digest(path):
+    """JSON identity is content, not indentation/key order; JS remains LF bytes."""
+    path = Path(path)
+    if path.suffix == '.json':
+        return 'json:' + fingerprint(json.loads(path.read_text(encoding='utf-8')))
+    return hashlib.sha256(path.read_bytes().replace(b'\r\n', b'\n')).hexdigest()
 
 
 def cosmo_adapter(key, src=SRC):

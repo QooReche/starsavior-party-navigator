@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import low_priority   # noqa: E402
 from tools.tables import rows   # noqa: E402
-from battlesim.fileio import atomic_json  # noqa: E402
+from tools.boss_modules import write  # noqa: E402
 
 NUAT = {'NUAT_ORDER': '질서', 'NUAT_SUN': '태양', 'NUAT_MOON': '달', 'NUAT_STAR': '별', 'NUAT_CHAOS': '혼돈'}
 ROLE = {'NURT_STRIKER': '스트라이커', 'NURT_CASTER': '캐스터', 'NURT_ASSASSIN': '어쌔신', 'NURT_RANGER': '레인저',
@@ -498,7 +498,7 @@ def main():
     low_priority()
     if a.select_only:
         archive = ROOT/'data/cosmo_seasons'/('%d.json' % a.season)
-        atomic_json(a.out, expand(json.loads(archive.read_text(encoding='utf-8'))))
+        write(a.out, expand(json.loads(archive.read_text(encoding='utf-8'))))
         return
     if a.season_dates_only:
         out = json.loads(Path(a.out).read_text(encoding='utf-8'))
@@ -545,8 +545,8 @@ def save_season(out, path):
     if Path(path).resolve() == (ROOT/'data/cosmo_raid.json').resolve():
         archive = ROOT/'data/cosmo_seasons'/('%d.json' % out['season']['id'])
         archive.parent.mkdir(parents=True, exist_ok=True)
-        atomic_json(archive, pack_cosmo(out))
-    atomic_json(path, out)
+        write(archive, pack_cosmo(out))
+    write(path, out)
 
 
 if __name__ == '__main__':

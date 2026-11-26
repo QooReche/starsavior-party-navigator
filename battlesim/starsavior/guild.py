@@ -2,11 +2,10 @@
 import hashlib
 import json
 import os
-from functools import lru_cache
 
 from .. import datafile
 from .data import SRC
-from .boss_registry import expand, guild_waves
+from .boss_registry import expand, guild_waves, dependency_digest
 
 
 @datafile.cached
@@ -23,12 +22,10 @@ def load(season_id=None, src=SRC):
         raise ValueError('보관되지 않은 길드 시즌: %s' % season_id) from None
 
 
-@lru_cache(maxsize=16)
+@datafile.cached
 def check_dependencies(src, entries):
     for name, expected in entries:
-        with open(os.path.join(src,name),'rb') as f:
-            h = hashlib.sha256(f.read().replace(b'\r\n', b'\n'))  # 저장소는 eol=lf — 줄바꿈 무관 해시
-        if h.hexdigest() != expected:
+        if dependency_digest(os.path.join(src, name)) != expected:
             raise ValueError('길드 실행 자료가 바뀜: 시즌 재추출 필요 ('+name+')')
 
 

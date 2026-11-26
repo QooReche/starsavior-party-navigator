@@ -20,8 +20,8 @@ from tools.tables import jsonc, table, strings
 from tools.build_foe_clash import (Tables as BaseTables, ROLE, ELEM, ATTACK_KIND, spawn_flag,
                                  SkillBuilder, SeConverter, db_shapes, SKILL_TY, TARGET_TG, clean_markup)
 from battlesim.starsavior.foe import load_foe, foe_stats, SK_NST
-from tools.boss_modules import pack_guild
-from battlesim.starsavior.boss_registry import expand
+from tools.boss_modules import pack_guild, write
+from battlesim.starsavior.boss_registry import expand, GUILD_DEPENDENCIES, dependency_digest
 
 ELEMENT = dict(zip(('태양', '달', '별', '질서', '혼돈'), ('sun', 'moon', 'star', 'order', 'chaos')))
 ROLE_KEY = dict(zip(('스트라이커', '캐스터', '어쌔신', '레인저', '디펜더', '서포터'),
@@ -71,11 +71,6 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
-def write(path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
-
-
 class Extractor:
     def __init__(self, static, build, as_of=None):
         self.static, self.build = Path(static), build
@@ -85,11 +80,7 @@ class Extractor:
         self.be = {r['BattleEffectId']: r for r in self.rows('BATTLE_EFFECT_TEMPLET')}
         self.be_name = {r['BattleEffectStrId']: r for r in self.be.values()}
         self.se = {r['m_SEStrID']: r for r in self.rows('SE_TEMPLET_BATTLE_EFFECT')}
-        from tools.build_simpack import FIXED
-        self.dependencies = {}
-        for name in FIXED:
-            if name.startswith(('data/guild_', 'battlesim/')): continue
-            self.dependencies[name] = lf_digest(ROOT/name)
+        self.dependencies = {name: dependency_digest(ROOT/name) for name in GUILD_DEPENDENCIES}
 
     def rows(self, name):
         path = self.static / 'tables' / (name + '.json')

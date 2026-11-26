@@ -2,7 +2,7 @@
  "_note": "tools/build_guild_sim.py 가 만든 시뮬 추정(실측 대조 없음). rates[육성 배수] = levels 순서의 별의 도전 클리어율(0단계 = 별의 도전 없음, 알리시아 지원 안 고름), bySupport[지원][육성 배수] = 같은 값을 지원별로.",
  "asOf": "2026-11-26",
  "season": 30112,
- "dataVersion": "f965a374f25a657077c3d630bd454a252efcf20b71f22f787c6b0c78db1c782b",
+ "dataVersion": "c14151bef8d9485792fe6b8a55e79365a20c839fefdbbc7cb42cf44a5ae10ea6",
  "runs": 20,
  "seed": 7,
  "recPower": 200075,
