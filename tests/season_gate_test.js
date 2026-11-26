@@ -17,10 +17,11 @@ function audit(g){
 }
 function mutation(name,from,to){assert(source.includes(from));assert.throws(()=>audit(load(source.replace(from,to))),{code:'ERR_ASSERTION'});console.log('MUTATION caught:',name);}
 async function entryGuards(){
-  const page=fs.readFileSync('party_template.html','utf8'),ui=fs.readFileSync('growth_ui.js','utf8');
+  const page=fs.readFileSync('party_template.html','utf8'),ui=fs.readFileSync('growth_ui.js','utf8'),daily=fs.readFileSync('guild_daily_page.js','utf8');
   // The real entry guard must return before any account/worker setup is touched.
-  for(const [code,start,end,args] of [
+  for(const [code,start,end,args,preset='legacy'] of [
     [page,'async function guildSearchStart','$("guild-search").addEventListener', [{},{}]],
+    [page,'async function guildSearchStart','$("guild-search").addEventListener', [{},{}],'daily'],
     [page,'async function cosmoSearchStart','$("cosmo-search").addEventListener', [{},{}]],
     [ui,'async function growthStart','function growthBaseline',[{key:'guild'},{}]],
     [page,'function showReco','function run(',[]],
@@ -28,8 +29,9 @@ async function entryGuards(){
     // Only evaluate the function declaration; stop at the first following top-level declaration/listener.
     let fn=code.slice(code.indexOf(start),code.indexOf(end,code.indexOf(start)));
     if(start==='function runCore')fn=fn.slice(0,fn.indexOf('\nfunction ',1));
-    const name=start.split('function ')[1],ctx={seasonBlocked:()=>true,contents:[{key:'guild'}],$:()=>({value:0})};
+    const name=start.split('function ')[1],ctx={D:{guild:{search:{preset}}},seasonBlocked:()=>true,contents:[{key:'guild'}],$:()=>({value:0})};
     vm.createContext(ctx);vm.runInContext(fn,ctx);
+    if(preset==='daily')vm.runInContext(daily,ctx);
     await ctx[name](...args);
     ctx.seasonBlocked=()=>false;
     await assert.rejects(async()=>ctx[name](...args),e=>e.name==='ReferenceError');
