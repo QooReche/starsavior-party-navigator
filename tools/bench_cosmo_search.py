@@ -39,7 +39,7 @@ def worker():
                 opts['rules_override'] = dict(m.get('options', {}).get('rules_override') or {},
                                               **(t.get('options', {}).get('rules_override') or {}))
                 r = json.loads(run_auto(m['stage'], t['party'], m['n_runs'], m['seed'], opts))
-                r = {k: r[k] for k in ('prog', 'clear', 'n', 'via', 'progs', 'cosmo', 'guild', 'unsupported') if k in r}
+                r = {k: r[k] for k in ('prog', 'clear', 'n', 'via', 'progs', 'raw', 'cosmo', 'guild', 'unsupported') if k in r}
                 print(json.dumps(dict(type='team', id=m['id'], key=t['key'], result=r)), flush=True)
             print(json.dumps(dict(type='done', id=m['id'])), flush=True)
         except Exception as exc:
