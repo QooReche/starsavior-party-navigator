@@ -4,6 +4,7 @@
   const node=typeof module!=='undefined'&&module.exports;
   const U=node?require('./ui_shared'):root.UiShared,V=node?require('./guild_view'):root.GuildView;
   const Daily=node?require('./guild_daily'):root.GuildDaily;
+  const GS=node?require('./guild_search'):root.GuildSearch;
   const splitText=s=>[s.ex?`EX ${s.ex}팀`:'',s.normal?`일반 ${s.normal}팀`:''].filter(Boolean).join(' + ')||'팀 없음';
   function chips(G,t){
     const ex=t.kind==='ex',pct=G.challenge.levels.find(l=>l.level===t.level)?.score??G.challenge.levels[t.level-1]?.score??0;
@@ -27,7 +28,7 @@
       <div class="season-chips"><span class="tag">인장 ${st.seals.used}장 사용</span><span class="tag">${splitText(st.split)}</span><span class="tag">지원 겹침 없음</span></div>${st.partial?'<div class="gd-warn">중단 · 부분 결과</div>':''}${warn(st.flags)}${warn(st.warnings)}<p class="gd-small">${esc(st.reason||'팀마다 평가한 후보 중 최고 점수를 골랐음.')}</p>
       ${teams.map((t,i)=>{const role=G.search.supportRole?.[t.sup],support=G.supports.find(s=>String(s.id)===String(t.sup));
         return `<section class="cs-boss" data-gs-team="${i}"><div class="cs-bh"><b>${i+1}팀</b>${chips(G,t)}<span class="tag">인장 ${t.kind==='ex'?G.search.daily.seals.costEx:G.search.daily.seals.costNormal}장</span></div>${t.evaluation?.partial?'<div class="gd-warn">중단 · 부분 결과</div>':''}${warn(flags(t))}
-          <p class="cs-sc">상위 점수 ${U.num(t.score)} · 평균 ${U.num(t.mean)} · 클리어 ${Math.round(t.clear*100)}%</p>${cx.cards(t)}
+          <p class="cs-sc">상위 점수 ${U.num(t.score)} · 평균 ${U.num(t.mean)} · 클리어 ${Math.round(t.clear*100)}%</p>${cx.cards(t,grown?st.snapshot:null)}${GS.unsupportedHtml([t],esc)}
           <div class="season-chips"><span class="tag">${esc(support?.name||t.sup)} <small class="${role?'warn':'mut'}">${esc(role?role+' 한정':'파티 전체')}${t.effectiveSupport==='none'?' · 해당 직업 없음, 효과 없음':''}</small></span><span class="tag">리더 ${esc(cx.label(t.leaderKey||t.order[0]))} · ${t.order.indexOf(t.leaderKey||t.order[0])<2?'전열':'후열'}</span></div>
           ${cx.breakBar(t)}<button type="button" class="sec" data-gs="edit" data-team="${i}" data-grown="${grown}">${i+1}팀을 직접 편성에서 고치기</button></section>`;
       }).join('')}</div>`;

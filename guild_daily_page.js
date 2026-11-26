@@ -12,9 +12,12 @@ function guildDailyPreview(){
   if(growthEnabled())cx.growthResults=profile.results;
   return GuildDaily.plan(cx);
 }
-function guildDailyCards(t){
+function guildDailyCards(t,snapshot=null){
   const before=LEADKEY;LEADKEY=t.leaderKey||t.order[0];
-  try{return `<div class="rowcards gs-compact cs-cards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}finally{LEADKEY=before;}
+  const order=[2,0,1,3].map(ix=>t.order[ix]),marks=snapshot?.changes||{};
+  try{return `<div class="rowcards gs-compact cs-cards">${order.map((k,i)=>card({s:BYKEY[k]},i===0||i===3?'back':'front',null,marks[k]||null,
+    snapshot&&!marks[k]?{leader:LEADKEY,final:snapshot.profile.results[k]}:null)).join('')}</div>`+
+    (snapshot?`<div class="growth-tasks">${order.map(k=>marks[k]?growthTodoRow(marks[k],BYKEY[k].name):'').join('')}</div>`:'');}finally{LEADKEY=before;}
 }
 function guildDailyHtml(){return GuildDailyUI.html(GSR,{G:D.guild,esc,hasInfo:!!MI.info,sig:guildDailySig(),plan:guildDailyPreview(),
   cards:guildDailyCards,breakBar:t=>seasonBreakBar(t,true),label:k=>BYKEY[k]?.name||k,say:Ux.gwenSay,
@@ -37,10 +40,11 @@ async function guildDailyStart(target=GSR,profileOverride=null,follow=false){
   try{
     const growth=await miGrowth();if(stale())return;
     const profile=profileOverride||MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,'op'));
-    let growthResults=null;
+    let growthResults=null,growthSnapshot=null;
     if(growthEnabled()&&!profileOverride){
       const slots=await fetch('data/myinfo_slots.json').then(r=>{if(!r.ok)throw Error('장비 부위 확인 실패');return r.json();});if(stale())return;
-      growthResults=MyInfoReco.overwrite(MI.info,R,growth,'op',{excluded:[...EXCL],slots,priority:D.journeyPriority}).profile.results;
+      growthSnapshot=MyInfoReco.overwrite(MI.info,R,growth,'op',{excluded:[...EXCL],slots,priority:D.journeyPriority});
+      growthResults=growthSnapshot.profile.results;
     }
     if(target.stopRequested){if(previous)Object.assign(target,previous,{id,following:false,handle:null});else{target.phase='idle';guildDailyRelease(target);}paint();return;}
     const out=await GuildPlanner.search({...cx,session,previous,results:profile.results,growthResults,cosmoSpeed:LS.get("cosmo.speed.v2"),
@@ -52,6 +56,7 @@ async function guildDailyStart(target=GSR,profileOverride=null,follow=false){
       onPhase:(msg,total,meta)=>{if(stale())return;target.phaseSerial=(target.phaseSerial||0)+1;Object.assign(target,{msg,done:0,total,stageIndex:meta.stage,runs:meta.runs});paint();},
       onProgress:(done,total)=>{if(stale())return;Object.assign(target,{done,total});tick();}});
     if(stale())return;tick.cancel();
+    if(out.growth)out.growth.snapshot=growthSnapshot||previous?.growth?.snapshot;
     Object.assign(target,out,{sig,eta:null,handle:null,following:false,phase:out.rows.length?'done':'idle'});
     if(!out.seals.remaining||!out.rows.length)guildDailyRelease(target);paint();return target;
   }catch(e){if(stale())return;if(previous){Object.assign(target,previous,{id,following:false,handle:null,followError:e.message||String(e)});paint();return;}guildDailyRelease(target);target.handle=null;target.errorCause=e.gwenCause||'other';target.phase=e.gwenCause==='cancel'?'idle':'err';target.msg=e.message||String(e);paint();}

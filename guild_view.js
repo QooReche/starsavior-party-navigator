@@ -217,7 +217,7 @@ ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율${sets
         `<details class="season-options" data-fold="gd-rules"><summary>전투·점수 자료</summary>${stepsTable(G,step,esc)}<p>${esc(G.score.note)}</p></details></div>`;
     }
     let html = seasonBox(G, nowMs, esc)+(step===ex.step?overview(G,esc):'');
-    if(step!==ex.step)html+=`<p class="mut">${step}단계 · 별의 도전 없음. 편성 탐색은 EX(${ex.step}단계)를 선택해야 함.</p>`;
+    if(step!==ex.step)html+=`<p class="mut">스테이지 ${step}단계 · 별의 도전 없음. ${G.search?.preset==='daily'?'오늘 편성 찾기에서 출정 날짜에 맞는 스테이지를 비교함.':`편성 탐색은 EX(스테이지 ${ex.step}단계)를 선택해야 함.`}</p>`;
     html += `<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary><div class="gd-dev" data-k="gd-dev" role="note"><b>개발 중 · 테스트 중인 기능임</b><br>점수 계산과 고단계 수치는 확인되지 않았음.${simUi(G)?' 시뮬 추정은 실제 플레이와 대조하지 않았음.':''} 참고용으로만 활용.</div>`;
     if (step === ex.step) {
       const pct = extraPct(G, sel.level, sel.tiers), sc = score(G, pct), b = bestSelection(G), bsc = score(G, extraPct(G, b.level, b.tiers));
@@ -231,7 +231,7 @@ ${simBox(G, esc)}${selectBox(G, sel)}
     } else {
       const s = G.steps.find(x => x.step === step);
       const total = s.base + G.stepsMeta.minions * s.kill + s.bossKill;
-      html += `<div class="gd-now" data-k="gd-now">${step}단계에는 별의 도전이 없음. 기본 ${num(s.base)} + 졸개 처치 ${num(G.stepsMeta.minions * s.kill)} + 보스 처치 ${num(s.bossKill)} = <b>${num(total)}</b><br><span class="mut">최고 점수는 EX(${ex.step}단계)에서 나옴. 스테이지에서 EX를 선택해야 함.</span></div>`;
+      html += `<div class="gd-now" data-k="gd-now">스테이지 ${step}단계에는 별의 도전이 없음. 기본 ${num(s.base)} + 졸개 처치 ${num(G.stepsMeta.minions * s.kill)} + 보스 처치 ${num(s.bossKill)} = <b>${num(total)}</b><br><span class="mut">${G.search?.preset==='daily'?'오늘 편성 찾기는 EX가 열린 날 EX 1팀부터, 닫힌 날 일반 1팀부터 찾음. 남은 인장으로 일반 팀을 이어서 찾을 수 있음.':`최고 점수는 EX(스테이지 ${ex.step}단계)에서 나옴. 스테이지에서 EX를 선택해야 함.`}</span></div>`;
     }
     html += '</details><details class="season-options" data-fold="gd-rules"><summary>입장 규칙·점수 계산 방식·출처</summary>'+rulesBox(G, esc) + stepsTable(G, step, esc);
     const b = G.exBoss;

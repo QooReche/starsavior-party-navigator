@@ -25,7 +25,10 @@ function growthInit(){const o=GrowthGuide.options(LS.get('growth.options')||{},S
   $('assume-growth').setAttribute('aria-describedby','growth-hint');
   growthControls();
   $('assume-growth').onchange=()=>{
-    if(!MI.shared)LS.set('growth.options',growthOptions());condChanged();};}
+    if(!MI.shared)LS.set('growth.options',growthOptions());condChanged();
+    if(D.guild?.search?.preset==='daily'){
+      guildDailyInput();if(contents[$('content').value]?.key==='guild')renderGuildSearch(true);
+    }};}
 function growthTargets(c,st){const opts=growthOptions(),restrict=(CFG.restrict[c.name]||{})[st.tab],owned=(c.key==='guild'?MyInfoReco.profile(MI.info,R,MI.growth,'op'):miProfile()).units;
   const targets=[];for(const s of R){if(EXCL.has(s.key)||(restrict&&s.el!==restrict))continue;
     if(opts.growth&&owned[s.key]){
@@ -207,8 +210,6 @@ function growthBetter(kind,baseline,result){
   const metric=r=>kind==='guild'?r?.score:r?.sum;
   return Number.isFinite(metric(result))&&metric(result)>(metric(baseline)??0);
 }
-// Same load/idle limits as the normal stage simulator, per seasonal worker.
-function growthWorker(){return SearchExecutor.timedWorker({limit:runs=>simTeamLimit(runs,'auto'),loadMs:()=>SIMQ.LOAD_MS})}
 async function growthStageSearch(c,st,profile,id,env={}){
   const live=env.live||(()=>GROW.id===id),seed=env.seed??SIMQ.seed,n=env.n??SIMQ.n;
   const restrict=(CFG.restrict[c.name]||{})[st.tab],qi=env.qi||quickIn(c,st);
@@ -366,6 +367,7 @@ function growthPaint(){
   let el=$('growth-result');
   if(!growthEnabled()||!MI.info){growthTabs?.reset();el?.remove();return;}
   const c=contents[$('content').value],r=GROW.result,stage=growthStageKind(c.key);
+  if(c.key==='guild'&&D.guild?.search?.preset==='daily'){growthTabs?.reset();el?.remove();return;}
   if(seasonBlocked(c.key)){growthTabs?.reset();el?.remove();return;}   // 기간이 끝난 시즌 콘텐츠는 화면 자체가 «기간 종료» 안내(결과·켜짐 표시 없음)
   if(r&&stage&&!r.baselineFirst)r.baseline=growthBaseline(c,cur[$('stage').value]);
   const show=r&&growthBetter(c.key,r.baseline,r.best);

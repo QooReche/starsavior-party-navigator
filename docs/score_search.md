@@ -33,7 +33,8 @@
 
 - `guild_daily_page.js`가 날짜·계정·설정을 세션 서명으로 묶고 `GuildDaily.plan/search`에 전달함. `guild_daily_ui.js`는 결과의 합산·지원 배정·선택 이유·미평가 표식을 그대로 표시함. `guild_daily.css`는 스테이지/별의 도전 칩·모바일 4장 카드만 추가함. 찾는 동안 P1 막대·그웬 소유자를 재사용하며 진행 글자·목록 노드만 갱신함.
 - 직접 편성은 `GuildDailyUI.draft`로 엔진 순서·후열 리더·브레이크·육성 가정을 옮기고 기존 `GS.sel`·스테이지·`directNavigate`를 사용함. 결과와 출처 표식은 세션에 남으며 공유 `go`·기존 `guild.v3.*`·`direct.v1` 허용 목록은 유지함. 날짜가 바뀌면 결과를 지우지 않고 출정 날짜를 표시함. 숨긴 `sets.ui`·`sim.ui`는 그대로임.
-- 육성 포함은 daily API의 `growthResults`로 한 번에 실행해 같은 작업자 풀·시간 상한을 적용함. 옛 `growthStart`가 daily 결과를 단일 팀으로 오해해 다시 실행하지 않도록 막았음. 현재/육성 묶음은 각각의 합산·가져오기를 사용함. 일반 자동 추천과 legacy 육성 흐름은 그대로임.
+- 육성 포함은 daily API의 `growthResults`로 한 번에 실행해 같은 작업자 풀·시간 상한을 적용함. daily에서는 옛 `growthStart`와 `growthPaint` 패널을 막고 현재/육성 묶음의 합산·가져오기로 통일했음. 육성 프로필·변경 내역을 결과 세션에 보존해 카드의 가정 전투력과 할 일을 표시함. 육성 체크 변경은 서명을 다시 확인해 완료 세션을 닫고 이어서 찾기·다시 찾기 안내·예상 시간을 즉시 갱신함.
+- 일반 «추천 편성 보기»는 기존 GSR·CSR·SIMQ 실행 상태를 확인한 뒤에만 그웬 소유권과 작업을 넘겨받음. daily 팀별 미지원 효과는 legacy `unsupportedHtml`로 표시함. 일반 추천 계산·legacy 육성 정책은 유지하며, daily의 일반 스테이지 안내는 EX 선택을 요구하지 않음.
 - 관련 Node 10파일(`guild_daily_ui`, `guild_daily`, `guild_daily_config`, `guild_progress`, `guild_view`, `guild_search`, `guild_defaults`, `search_freeze`, `gwen_stage_contract`, `direct_party`)과 e2e 4흐름(`test_guild_daily_ui`, `test_gwen_guild_owner`의 각 1280/390)을 순차 통과했음. 합성 작업자만 사용했고 8899·전체 시험·실제 Pyodide 측정은 사용하지 않았음. daily 시험은 결과→가져오기→복귀·부분 표식·중단 전/후·날짜 경계·육성 포함·저장 키·공유·390px 가로 넘침을 검사함.
 - 지시 밖 처리: 기존 그웬 e2e 합성 작업자에 누락된 `guild.base_scores`를 보완했음. 수정 전 b958a91에서도 «길드 판별 점수 자료가 누락됨»으로 실패함을 확인했음. 제품 동작·시험 기대값은 바꾸지 않았음. 페이지 업데이트 내역은 추가하지 않았음.
 - 독립 커밋 범위 리뷰에서 데스크톱 `.cs-cards` 배치, 검색 필터 밖 스테이지 가져오기, 첫 날짜 검사 오표시를 확인해 수정했음. 각각 왼쪽 카드 열·필터 해제 후 EX 가져오기·첫 tick 경고 없음 회귀 검사를 추가했음. 기각한 지적은 없음.
