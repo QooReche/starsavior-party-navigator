@@ -69,6 +69,7 @@
   }
   async function search(cx){
     cx={...cx,S:{...cx.S,seasonId:cx.G.season?.id,dataVersion:cx.G.dataVersion}};
+    if(cx.S.preset==='daily')return (typeof module!=='undefined'&&module.exports?require('./guild_daily.js'):root.GuildDaily).search(cx);
     if(cx.S.newSearch !== true)return searchLegacy(cx);
     const {S,G,V,results,roster,tiers}=cx,rows=GS.pool(S,results,roster),cls=Object.fromEntries(roster.map(r=>[r.key,r.cls]));
     if(rows.length<4)throw Object.assign(Error('육성된 보유 구원자 4명 이상 필요'),{gwenCause:'few'});

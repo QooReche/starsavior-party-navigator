@@ -1,19 +1,21 @@
 // Non-overlapping N-team combinations; sorted candidate lists and additive scores.
 (function(root){
   'use strict';
-  function* steps(lists, n, budget, {id=e=>e.keys.slice().sort().join('+'),resources=e=>({units:e.keys})}={}) {
+  function* steps(lists, n, budget, {id=e=>e.keys.slice().sort().join('+'),resources=e=>({units:e.keys}),secondary=()=>0,setId=null}={}) {
     if (!lists.length || n<=0 || lists.some(l => !l.length)) return [];
     const index=new Map();
     const tokens=lists.map(l=>l.map(e=>({e,id:id(e),tokens:Object.entries(resources(e)).flatMap(([kind,values])=>values.map(value=>JSON.stringify([kind,value])))})));
     for(const list of tokens)for(const row of list)for(const k of row.tokens)if(!index.has(k))index.set(k,index.size);
     const W=Math.max(1,Math.ceil(index.size/30));
     const L=tokens.map(l=>l.map(({e,id,tokens})=>{const m=new Array(W).fill(0);for(const k of tokens){const i=index.get(k);m[(i/30)|0]|=1<<(i%30);}return {e,id,m};}));
-    const top = [], idOfT = t => t.map(x => x.id).join("/");
-    const better = (a, b) => { const ia = idOfT(a.t), ib = idOfT(b.t); return a.sum - b.sum || (ia < ib ? 1 : ia > ib ? -1 : 0); };   // >0 이면 a 가 더 좋음(합이 크거나, 같으면 id 가 작음)
+    const top = [], idOfT = t => setId?setId(t.map(x=>x.e)):t.map(x => x.id).join("/");
+    const better = (a, b) => { const ia = idOfT(a.t), ib = idOfT(b.t); return a.sum - b.sum || a.secondary-b.secondary || (ia < ib ? 1 : ia > ib ? -1 : 0); };   // >0 이면 a 가 더 좋음(합이 크거나, 같으면 id 가 작음)
     const floor = () => top.length < n ? -Infinity : top[top.length - 1].sum;
     const hit = (x, y) => { for (let w = 0; w < W; w++) if (x[w] & y[w]) return true; return false; };
     function put(sum, t) {
-      const c = {sum, t};
+      const key=setId?.(t.map(x=>x.e));
+      if(setId&&top.some(x=>x.key===key))return;
+      const c = {sum, t, key, secondary:t.reduce((s,x)=>s+secondary(x.e),0)};
       let i = top.length;
       while (i > 0 && better(c, top[i - 1]) > 0) i--;
       top.splice(i, 0, c);

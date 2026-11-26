@@ -162,7 +162,7 @@
   // 작업자는 run 메시지를 여러 번 받을 수 있다(sim_worker.js 가 메시지마다 처리). 안 주면 예전처럼 정적 분할.
   // 한 탐색이 소유하는 풀. 동시에 두 단계를 실행하지 않는다. 취소/오류/탐색 종료 때 close.
   const workerPool = makeWorker => Executor.workerPool(makeWorker);
-  const runPhase = o => Executor.runPhase({...o,project:r=>({prog:r.prog==null?0:r.prog,clear:r.clear,n:r.n,via:r.via||{},progs:r.progs||null,cosmo:r.cosmo||null,...(r.guild?{guild:r.guild}:{}),...unsupportedFields(r)})});
+  const runPhase = o => Executor.runPhase({...o,project:r=>({prog:r.prog==null?0:r.prog,clear:r.clear,n:r.n,via:r.via||{},progs:r.progs||null,cosmo:r.cosmo||null,...(o.retainRaw?{raw:r.raw}:{}),...(r.guild?{guild:r.guild}:{}),...unsupportedFields(r)})});
 
   const BASIS = {client: "클라 자료 확인", community: "커뮤니티 근거(중간 신뢰)", inference: "추정"};
   // «제외·주의 구원자» 접이식 목록. notes = [{key, kind: exclude|caution, basis, why}], 제외는 체크박스를 켠 때만 실제로 빠진다

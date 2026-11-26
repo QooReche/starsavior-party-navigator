@@ -608,5 +608,6 @@
   }
 
   const api = {MODES, pushAll, searchSettings, workerCount, pickPass, passCount, mergeSummary, shuffled, poolAll, countCombos, feasibility, effKeep, plan, etaNew, priorFrom, fmtDur, etaLine, preText, progText, metric, idOf, jobKey, bossJobs, pickTop, pickDiverse, bestTriples, bestTriplesAsync, triplesLimited, finalJobs, finalRank, finalRankBrk, search, html, table};
+  api.retryPlan=retryPlan;
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.CosmoSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);
