@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.runtime import static_path
+from tools.guild_version import season_version
 from tools.tables import jsonc, table, strings
 from tools.build_foe_clash import (Tables as BaseTables, ROLE, ELEM, ATTACK_KIND, spawn_flag,
                                  SkillBuilder, SeConverter, db_shapes, SKILL_TY, TARGET_TG, clean_markup)
@@ -309,9 +310,8 @@ def select_current(current=None):
     index_path = ROOT / 'data/guild_current.json'
     current = current or json.loads(index_path.read_text(encoding='utf-8'))['seasonId']
     selected = expand(json.loads((dest / ('%d.json' % current)).read_text(encoding='utf-8')), str(ROOT))
-    # 날짜·표시 메타를 채운 뒤에도 정본 전체의 자료 버전을 다시 계산함.
-    selected.pop('dataVersion',None)
-    selected['dataVersion'] = digest(selected)
+    # 추출/선택 모두 같은 계산 입력 투영을 사용함. 표시 수정은 버전 불변.
+    selected['dataVersion'] = season_version(selected)
     write(dest/('%d.json'%current),pack_guild(selected))
     write(index_path, dict(seasonId=current))
     write(ROOT / 'data/guild_defense.json', selected)
@@ -373,8 +373,7 @@ def main():
                     if key != 'client': g['sources'][key] = value
                 for key in ('entryDaysEx','entryItemEx','skipEx','src'):
                     if key in prior.get('rules',{}): g['rules'][key] = prior['rules'][key]
-        g.pop('dataVersion', None)
-        g['dataVersion'] = digest(g)
+        g['dataVersion'] = season_version(g)
         write(dest / ('%d.json' % sid), pack_guild(g))
         print(sid, g['season']['boss']['name'], len(g['steps']), g['dataVersion'][:12])
     if a.extract_only:
