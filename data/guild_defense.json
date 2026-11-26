@@ -83,8 +83,24 @@
    "waves": [
     [
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_01",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_01",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -102,60 +118,14 @@
        "tough": 3
       },
       "level": 45,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:112931",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112931"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_01",
       "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 1500,
-       "atk": 360,
-       "def": 200,
-       "spd": 85,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 11000,
-       "evade": 1000,
-       "abs_evade": 0,
-       "tough": 3
-      },
-      "level": 45,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 2,
-      "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113141",
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -175,11 +145,57 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_01",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 1500,
+       "atk": 360,
+       "def": 200,
+       "spd": 85,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "boss": false,
+      "elite": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113141"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_01",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_01",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -197,62 +213,16 @@
        "tough": 3
       },
       "level": 45,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:112931",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112931"
      }
     ],
     [
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_01",
       "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 1500,
-       "atk": 360,
-       "def": 200,
-       "spd": 85,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 11000,
-       "evade": 1000,
-       "abs_evade": 0,
-       "tough": 3
-      },
-      "level": 45,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 0,
-      "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113141",
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -272,44 +242,40 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
-     },
-     {
-      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_01",
-      "foe": 55,
-      "skills": [
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
-      ],
-      "stats": {
-       "hp": 20000,
-       "atk": 800,
-       "def": 400,
-       "spd": 95,
-       "crit": 1500,
-       "critdmg": 3000,
-       "hit": 14000,
-       "evade": 4000,
-       "abs_evade": 0,
-       "tough": 8
       },
-      "level": 45,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카본펑크 칸",
-      "boss": true,
-      "elite": false,
-      "slot": 2,
-      "spawn": "S",
       "hitStats": {
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:115871",
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_01",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 1500,
+       "atk": 360,
+       "def": 200,
+       "spd": 85,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "boss": false,
+      "elite": false,
+      "slot": 0,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113141"
+     },
+     {
+      "foe": 55,
       "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
       "clientRules": {
        "skills": {},
@@ -456,40 +422,44 @@
          "NSETT_SELF"
         ]
        ]
-      }
-     },
-     {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_01",
-      "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 1500,
-       "atk": 360,
-       "def": 200,
-       "spd": 85,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 11000,
-       "evade": 1000,
-       "abs_evade": 0,
-       "tough": 3
       },
-      "level": 45,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 4,
-      "spawn": "A",
       "hitStats": {
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113141",
+      "name": "카본펑크 칸",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_01",
+      "skills": [
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 20000,
+       "atk": 800,
+       "def": 400,
+       "spd": 95,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 8
+      },
+      "level": 45,
+      "boss": true,
+      "elite": false,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115871"
+     },
+     {
+      "foe": 54,
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -509,7 +479,37 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_01",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 1500,
+       "atk": 360,
+       "def": 200,
+       "spd": 85,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 45,
+      "boss": false,
+      "elite": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113141"
      }
     ]
    ],
@@ -535,8 +535,24 @@
    "waves": [
     [
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_02",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_02",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -554,60 +570,14 @@
        "tough": 3
       },
       "level": 120,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:112961",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112961"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_02",
       "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 2500,
-       "atk": 735,
-       "def": 350,
-       "spd": 95,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 11000,
-       "evade": 1000,
-       "abs_evade": 0,
-       "tough": 3
-      },
-      "level": 120,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 2,
-      "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113171",
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -627,11 +597,57 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_02",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 2500,
+       "atk": 735,
+       "def": 350,
+       "spd": 95,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "boss": false,
+      "elite": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113171"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_02",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_02",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -649,62 +665,16 @@
        "tough": 3
       },
       "level": 120,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:112961",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112961"
      }
     ],
     [
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_02",
       "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 2500,
-       "atk": 735,
-       "def": 350,
-       "spd": 95,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 11000,
-       "evade": 1000,
-       "abs_evade": 0,
-       "tough": 3
-      },
-      "level": 120,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 0,
-      "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113171",
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -724,44 +694,40 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
-     },
-     {
-      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_02",
-      "foe": 55,
-      "skills": [
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
-      ],
-      "stats": {
-       "hp": 35000,
-       "atk": 1600,
-       "def": 700,
-       "spd": 120,
-       "crit": 1500,
-       "critdmg": 3000,
-       "hit": 14000,
-       "evade": 4000,
-       "abs_evade": 0,
-       "tough": 8
       },
-      "level": 120,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카본펑크 칸",
-      "boss": true,
-      "elite": false,
-      "slot": 2,
-      "spawn": "S",
       "hitStats": {
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:115903",
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_02",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 2500,
+       "atk": 735,
+       "def": 350,
+       "spd": 95,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "boss": false,
+      "elite": false,
+      "slot": 0,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113171"
+     },
+     {
+      "foe": 55,
       "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
       "clientRules": {
        "skills": {},
@@ -908,40 +874,44 @@
          "NSETT_SELF"
         ]
        ]
-      }
-     },
-     {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_02",
-      "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 2500,
-       "atk": 735,
-       "def": 350,
-       "spd": 95,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 11000,
-       "evade": 1000,
-       "abs_evade": 0,
-       "tough": 3
       },
-      "level": 120,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 4,
-      "spawn": "A",
       "hitStats": {
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113171",
+      "name": "카본펑크 칸",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_02",
+      "skills": [
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 35000,
+       "atk": 1600,
+       "def": 700,
+       "spd": 120,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 8
+      },
+      "level": 120,
+      "boss": true,
+      "elite": false,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115903"
+     },
+     {
+      "foe": 54,
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -961,7 +931,37 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_02",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 2500,
+       "atk": 735,
+       "def": 350,
+       "spd": 95,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 11000,
+       "evade": 1000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 120,
+      "boss": false,
+      "elite": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113171"
      }
     ]
    ],
@@ -987,8 +987,24 @@
    "waves": [
     [
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_03",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_03",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -1006,60 +1022,14 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:112991",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112991"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_03",
       "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 3500,
-       "atk": 1050,
-       "def": 500,
-       "spd": 110,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 12000,
-       "evade": 2000,
-       "abs_evade": 0,
-       "tough": 3
-      },
-      "level": 175,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 2,
-      "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113201",
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -1079,11 +1049,57 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_03",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 3500,
+       "atk": 1050,
+       "def": 500,
+       "spd": 110,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 12000,
+       "evade": 2000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 175,
+      "boss": false,
+      "elite": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113201"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_03",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_03",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -1101,33 +1117,44 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:112991",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:112991"
+     }
+    ],
+    [
+     {
+      "foe": 54,
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
-       "skills": {},
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
        "order": [],
        "lines": [],
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
-     }
-    ],
-    [
-     {
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_03",
-      "foe": 54,
       "skills": [
        "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
        "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
@@ -1145,75 +1172,14 @@
        "tough": 3
       },
       "level": 175,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113201",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
-      "clientRules": {
-       "skills": {
-        "특수기": {
-         "rows": [
-          {
-           "c": [],
-           "f": [
-            "high_atk"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113201"
      },
      {
-      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_03",
       "foe": 55,
-      "skills": [
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
-      ],
-      "stats": {
-       "hp": 60000,
-       "atk": 2200,
-       "def": 1000,
-       "spd": 130,
-       "crit": 1500,
-       "critdmg": 3000,
-       "hit": 16000,
-       "evade": 6000,
-       "abs_evade": 0,
-       "tough": 9
-      },
-      "level": 175,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카본펑크 칸",
-      "boss": true,
-      "elite": false,
-      "slot": 2,
-      "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:115935",
       "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
       "clientRules": {
        "skills": {},
@@ -1360,40 +1326,44 @@
          "NSETT_SELF"
         ]
        ]
-      }
-     },
-     {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_03",
-      "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 3500,
-       "atk": 1050,
-       "def": 500,
-       "spd": 125,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 12000,
-       "evade": 2000,
-       "abs_evade": 0,
-       "tough": 3
       },
-      "level": 175,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 4,
-      "spawn": "A",
       "hitStats": {
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113201",
+      "name": "카본펑크 칸",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_03",
+      "skills": [
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 60000,
+       "atk": 2200,
+       "def": 1000,
+       "spd": 130,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 9
+      },
+      "level": 175,
+      "boss": true,
+      "elite": false,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115935"
+     },
+     {
+      "foe": 54,
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -1413,7 +1383,37 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_03",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 3500,
+       "atk": 1050,
+       "def": 500,
+       "spd": 125,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 12000,
+       "evade": 2000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 175,
+      "boss": false,
+      "elite": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113201"
      }
     ]
    ],
@@ -1439,8 +1439,24 @@
    "waves": [
     [
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_04",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_04",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -1458,60 +1474,14 @@
        "tough": 3
       },
       "level": 400,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113021",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113021"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_04",
       "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 9000,
-       "atk": 2175,
-       "def": 1000,
-       "spd": 120,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 13000,
-       "evade": 3000,
-       "abs_evade": 0,
-       "tough": 3
-      },
-      "level": 400,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 2,
-      "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113231",
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -1531,11 +1501,57 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_04",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 9000,
+       "atk": 2175,
+       "def": 1000,
+       "spd": 120,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 13000,
+       "evade": 3000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 400,
+      "boss": false,
+      "elite": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113231"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_04",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_04",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -1553,33 +1569,44 @@
        "tough": 3
       },
       "level": 400,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113021",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113021"
+     }
+    ],
+    [
+     {
+      "foe": 54,
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
-       "skills": {},
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
        "order": [],
        "lines": [],
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
-     }
-    ],
-    [
-     {
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_04",
-      "foe": 54,
       "skills": [
        "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
        "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
@@ -1597,75 +1624,14 @@
        "tough": 3
       },
       "level": 400,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113231",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
-      "clientRules": {
-       "skills": {
-        "특수기": {
-         "rows": [
-          {
-           "c": [],
-           "f": [
-            "high_atk"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113231"
      },
      {
-      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_04",
       "foe": 55,
-      "skills": [
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
-      ],
-      "stats": {
-       "hp": 100000,
-       "atk": 5800,
-       "def": 2000,
-       "spd": 150,
-       "crit": 1500,
-       "critdmg": 3000,
-       "hit": 18000,
-       "evade": 8000,
-       "abs_evade": 0,
-       "tough": 10
-      },
-      "level": 400,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카본펑크 칸",
-      "boss": true,
-      "elite": false,
-      "slot": 2,
-      "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:115967",
       "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
       "clientRules": {
        "skills": {},
@@ -1812,40 +1778,44 @@
          "NSETT_SELF"
         ]
        ]
-      }
-     },
-     {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_04",
-      "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 9000,
-       "atk": 2175,
-       "def": 1000,
-       "spd": 135,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 13000,
-       "evade": 3000,
-       "abs_evade": 0,
-       "tough": 3
       },
-      "level": 400,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 4,
-      "spawn": "A",
       "hitStats": {
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113231",
+      "name": "카본펑크 칸",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_04",
+      "skills": [
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 100000,
+       "atk": 5800,
+       "def": 2000,
+       "spd": 150,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 18000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 10
+      },
+      "level": 400,
+      "boss": true,
+      "elite": false,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115967"
+     },
+     {
+      "foe": 54,
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -1865,7 +1835,37 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_04",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 9000,
+       "atk": 2175,
+       "def": 1000,
+       "spd": 135,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 13000,
+       "evade": 3000,
+       "abs_evade": 0,
+       "tough": 3
+      },
+      "level": 400,
+      "boss": false,
+      "elite": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113231"
      }
     ]
    ],
@@ -1891,8 +1891,24 @@
    "waves": [
     [
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_05",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_05",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -1910,60 +1926,14 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113051",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113051"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_05",
       "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 13500,
-       "atk": 3500,
-       "def": 1500,
-       "spd": 130,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 14000,
-       "evade": 4000,
-       "abs_evade": 0,
-       "tough": 4
-      },
-      "level": 665,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 2,
-      "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113261",
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -1983,11 +1953,57 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_05",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 13500,
+       "atk": 3500,
+       "def": 1500,
+       "spd": 130,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 665,
+      "boss": false,
+      "elite": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113261"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_05",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_05",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -2005,33 +2021,44 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113051",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113051"
+     }
+    ],
+    [
+     {
+      "foe": 54,
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
-       "skills": {},
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
        "order": [],
        "lines": [],
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
-     }
-    ],
-    [
-     {
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_05",
-      "foe": 54,
       "skills": [
        "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
        "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
@@ -2049,75 +2076,14 @@
        "tough": 4
       },
       "level": 665,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113261",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
-      "clientRules": {
-       "skills": {
-        "특수기": {
-         "rows": [
-          {
-           "c": [],
-           "f": [
-            "high_atk"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113261"
      },
      {
-      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_05",
       "foe": 55,
-      "skills": [
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
-      ],
-      "stats": {
-       "hp": 150000,
-       "atk": 9200,
-       "def": 3000,
-       "spd": 170,
-       "crit": 1500,
-       "critdmg": 3000,
-       "hit": 20000,
-       "evade": 8000,
-       "abs_evade": 0,
-       "tough": 11
-      },
-      "level": 665,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카본펑크 칸",
-      "boss": true,
-      "elite": false,
-      "slot": 2,
-      "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:115999",
       "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
       "clientRules": {
        "skills": {},
@@ -2264,40 +2230,44 @@
          "NSETT_SELF"
         ]
        ]
-      }
-     },
-     {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_05",
-      "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 13500,
-       "atk": 3500,
-       "def": 1500,
-       "spd": 145,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 14000,
-       "evade": 4000,
-       "abs_evade": 0,
-       "tough": 4
       },
-      "level": 665,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 4,
-      "spawn": "A",
       "hitStats": {
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113261",
+      "name": "카본펑크 칸",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_05",
+      "skills": [
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 150000,
+       "atk": 9200,
+       "def": 3000,
+       "spd": 170,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 20000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 11
+      },
+      "level": 665,
+      "boss": true,
+      "elite": false,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115999"
+     },
+     {
+      "foe": 54,
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -2317,7 +2287,37 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_05",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 13500,
+       "atk": 3500,
+       "def": 1500,
+       "spd": 145,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 14000,
+       "evade": 4000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 665,
+      "boss": false,
+      "elite": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113261"
      }
     ]
    ],
@@ -2343,8 +2343,24 @@
    "waves": [
     [
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_06",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_06",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -2362,60 +2378,14 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113081",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113081"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_06",
       "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 16500,
-       "atk": 5410,
-       "def": 2500,
-       "spd": 150,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 16000,
-       "evade": 6000,
-       "abs_evade": 0,
-       "tough": 4
-      },
-      "level": 1047,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 2,
-      "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113291",
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -2435,11 +2405,57 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_06",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 16500,
+       "atk": 5410,
+       "def": 2500,
+       "spd": 150,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1047,
+      "boss": false,
+      "elite": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113291"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_06",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_06",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -2457,33 +2473,44 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113081",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113081"
+     }
+    ],
+    [
+     {
+      "foe": 54,
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
-       "skills": {},
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
        "order": [],
        "lines": [],
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
-     }
-    ],
-    [
-     {
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_06",
-      "foe": 54,
       "skills": [
        "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
        "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
@@ -2501,75 +2528,14 @@
        "tough": 4
       },
       "level": 1047,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113291",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
-      "clientRules": {
-       "skills": {
-        "특수기": {
-         "rows": [
-          {
-           "c": [],
-           "f": [
-            "high_atk"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113291"
      },
      {
-      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_06",
       "foe": 55,
-      "skills": [
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
-      ],
-      "stats": {
-       "hp": 200000,
-       "atk": 14500,
-       "def": 4500,
-       "spd": 210,
-       "crit": 1500,
-       "critdmg": 3000,
-       "hit": 22000,
-       "evade": 8000,
-       "abs_evade": 0,
-       "tough": 13
-      },
-      "level": 1047,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카본펑크 칸",
-      "boss": true,
-      "elite": false,
-      "slot": 2,
-      "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:116031",
       "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
       "clientRules": {
        "skills": {},
@@ -2716,40 +2682,44 @@
          "NSETT_SELF"
         ]
        ]
-      }
-     },
-     {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_06",
-      "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 16500,
-       "atk": 5410,
-       "def": 2500,
-       "spd": 165,
-       "crit": 1000,
-       "critdmg": 1500,
-       "hit": 16000,
-       "evade": 6000,
-       "abs_evade": 0,
-       "tough": 4
       },
-      "level": 1047,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 4,
-      "spawn": "A",
       "hitStats": {
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113291",
+      "name": "카본펑크 칸",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_06",
+      "skills": [
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 200000,
+       "atk": 14500,
+       "def": 4500,
+       "spd": 210,
+       "crit": 1500,
+       "critdmg": 3000,
+       "hit": 22000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 13
+      },
+      "level": 1047,
+      "boss": true,
+      "elite": false,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:116031"
+     },
+     {
+      "foe": 54,
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -2769,7 +2739,37 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_06",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 16500,
+       "atk": 5410,
+       "def": 2500,
+       "spd": 165,
+       "crit": 1000,
+       "critdmg": 1500,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1047,
+      "boss": false,
+      "elite": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113291"
      }
     ]
    ],
@@ -2795,8 +2795,24 @@
    "waves": [
     [
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_07",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_07",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -2814,60 +2830,14 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 1,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113111",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
-      "clientRules": {
-       "skills": {},
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113111"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_07",
       "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 22500,
-       "atk": 7500,
-       "def": 4000,
-       "spd": 160,
-       "crit": 1500,
-       "critdmg": 2000,
-       "hit": 16000,
-       "evade": 6000,
-       "abs_evade": 0,
-       "tough": 4
-      },
-      "level": 1275,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 2,
-      "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113321",
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -2887,11 +2857,57 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_07",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 22500,
+       "atk": 7500,
+       "def": 4000,
+       "spd": 160,
+       "crit": 1500,
+       "critdmg": 2000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1275,
+      "boss": false,
+      "elite": false,
+      "slot": 2,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113321"
      },
      {
-      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_07",
       "foe": 1600,
+      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "clientRules": {
+       "skills": {},
+       "order": [],
+       "lines": [],
+       "enforceSelf": [],
+       "force": [],
+       "se": []
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 폭력배",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_CROWBAR_BLACK_GUILDRAID_07",
       "skills": [
        "NKM_UNIT_MON_HOODLUM_CROWBAR_ATTACK",
        "NKM_UNIT_MON_HOODLUM_CROWBAR_SPECIAL"
@@ -2909,33 +2925,44 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "노상 강도 폭력배",
       "boss": false,
       "elite": false,
       "slot": 3,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113111",
-      "foeSignature": "e2a39d4cefc272af52b4bef9993746a4a575514a7e046a8ad2715ec696aac4aa",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113111"
+     }
+    ],
+    [
+     {
+      "foe": 54,
+      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
-       "skills": {},
+       "skills": {
+        "특수기": {
+         "rows": [
+          {
+           "c": [],
+           "f": [
+            "high_atk"
+           ]
+          }
+         ]
+        }
+       },
        "order": [],
        "lines": [],
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
-     }
-    ],
-    [
-     {
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
       "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_07",
-      "foe": 54,
       "skills": [
        "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
        "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
@@ -2953,75 +2980,14 @@
        "tough": 4
       },
       "level": 1275,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
       "boss": false,
       "elite": false,
       "slot": 0,
       "spawn": "A",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113321",
-      "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
-      "clientRules": {
-       "skills": {
-        "특수기": {
-         "rows": [
-          {
-           "c": [],
-           "f": [
-            "high_atk"
-           ]
-          }
-         ]
-        }
-       },
-       "order": [],
-       "lines": [],
-       "enforceSelf": [],
-       "force": [],
-       "se": []
-      }
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113321"
      },
      {
-      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_07",
       "foe": 55,
-      "skills": [
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
-       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
-      ],
-      "stats": {
-       "hp": 260000,
-       "atk": 17000,
-       "def": 4650,
-       "spd": 230,
-       "crit": 2000,
-       "critdmg": 3500,
-       "hit": 22000,
-       "evade": 8000,
-       "abs_evade": 0,
-       "tough": 14
-      },
-      "level": 1275,
-      "element": "달",
-      "role": "스트라이커",
-      "name": "카본펑크 칸",
-      "boss": true,
-      "elite": false,
-      "slot": 2,
-      "spawn": "S",
-      "hitStats": {
-       "NST_RATE_HIT": 10000,
-       "NST_RATE_EVADE": 0
-      },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:116063",
       "foeSignature": "3ee88ac8c5f373343177928fb32b18b6ff1a58f5a353a79ebfb795e04d7e9076",
       "clientRules": {
        "skills": {},
@@ -3168,40 +3134,44 @@
          "NSETT_SELF"
         ]
        ]
-      }
-     },
-     {
-      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_07",
-      "foe": 54,
-      "skills": [
-       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
-       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
-      ],
-      "stats": {
-       "hp": 22500,
-       "atk": 7500,
-       "def": 4000,
-       "spd": 175,
-       "crit": 1500,
-       "critdmg": 2000,
-       "hit": 16000,
-       "evade": 6000,
-       "abs_evade": 0,
-       "tough": 4
       },
-      "level": 1275,
-      "element": "달",
-      "role": "서포터",
-      "name": "노상 강도 방화범",
-      "boss": false,
-      "elite": false,
-      "slot": 4,
-      "spawn": "A",
       "hitStats": {
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113321",
+      "name": "카본펑크 칸",
+      "role": "스트라이커",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_GUILDRAID_07",
+      "skills": [
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_ATTACK",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_SPECIAL",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_HYPER",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE1",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE2",
+       "NKM_UNIT_MON_CARBONPUNK_LORD_BOSS_PASSIVE3"
+      ],
+      "stats": {
+       "hp": 260000,
+       "atk": 17000,
+       "def": 4650,
+       "spd": 230,
+       "crit": 2000,
+       "critdmg": 3500,
+       "hit": 22000,
+       "evade": 8000,
+       "abs_evade": 0,
+       "tough": 14
+      },
+      "level": 1275,
+      "boss": true,
+      "elite": false,
+      "slot": 2,
+      "spawn": "S",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:116063"
+     },
+     {
+      "foe": 54,
       "foeSignature": "e5fd92b946f270204047529f1b8b4276367c1ab0f9e5b75d31bd694ff28e975a",
       "clientRules": {
        "skills": {
@@ -3221,7 +3191,37 @@
        "enforceSelf": [],
        "force": [],
        "se": []
-      }
+      },
+      "hitStats": {
+       "NST_RATE_HIT": 10000,
+       "NST_RATE_EVADE": 0
+      },
+      "name": "노상 강도 방화범",
+      "role": "서포터",
+      "element": "달",
+      "unit": "NKM_UNIT_MON_HOODLUM_TORCH_BLACK_GUILDRAID_07",
+      "skills": [
+       "NKM_UNIT_MON_HOODLUM_TORCH_ATTACK",
+       "NKM_UNIT_MON_HOODLUM_TORCH_SPECIAL"
+      ],
+      "stats": {
+       "hp": 22500,
+       "atk": 7500,
+       "def": 4000,
+       "spd": 175,
+       "crit": 1500,
+       "critdmg": 2000,
+       "hit": 16000,
+       "evade": 6000,
+       "abs_evade": 0,
+       "tough": 4
+      },
+      "level": 1275,
+      "boss": false,
+      "elite": false,
+      "slot": 4,
+      "spawn": "A",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:113321"
      }
     ]
    ],

@@ -73,7 +73,7 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 - 확인: `tests/boss_modules_test.py`는 30109(심해의 폭군)를 현재 시즌으로 임시 지정해 실행·화면 자료를 만들고 실제 현재값 30112 복원을 검사함. 1022 벨그라스도 모듈 시즌 파일만 선택해 보관 fixture와 결과를 비교함. 모듈 해석 비활성화·해시 훼손은 실패해야 함. e2e의 과거 시즌 화면도 30109를 사용함. 같은 보스/효과의 다음 로테이션은 추출 도구 → 모듈/시즌 데이터 → 시험으로 처리하며 시즌 번호별 코드를 추가하지 않음.
 
 ### 4-2. 코스모 게이트 시즌 갱신(시즌제 콘텐츠)
-시즌 값(보스 3종·Step 스탯·난이도 레벨 표·챌린지 효과·시즌 전투 버프·점수 상수·벨그라스 수치)은 `data/cosmo_raid.json` **한 곳**에 있고 코드(`battlesim/starsavior/cosmo_raid.py`, `cosmo_raid.js`)는 시즌 공통이다. 자세한 근사 목록은 `docs/cosmo_raid.md`.
+시즌 값(보스 3종·Step 스탯·난이도 레벨 표·챌린지 효과·시즌 전투 버프·점수 상수)은 `data/cosmo_seasons/<id>.json`에, 재사용 보스 정의는 참조한 모듈에 있음. `data/cosmo_raid.json`은 이를 펼친 현재 화면/엔진용 생성 사본이며 코드(`battlesim/starsavior/cosmo_raid.py`, `cosmo_raid.js`)는 시즌 공통임. 자세한 근사 목록은 `docs/cosmo_raid.md`.
 - 새 시즌 표를 추출한 폴더(파일명 `CLIENT_` 접두, 문자열 `hard/STRING_COMMON.json`, 배치 스크립트 `plain/`)를 만든다. 비공개 static-data 에 새 표를 반영하는 일과는 별개이며 빌더는 폴더를 인자로 받는다.
 - `python -X utf8 -I tools/build_cosmo_raid.py --tables <폴더> --season <RankingRaidSeasonId> --build <빌드>` → `data/cosmo_raid.json`. 기대한 표 구조(벨그라스 스킬·버프·SE)와 다르면 `Changed` 로 멈춘다 — 그때는 상태 기계(`Controller`)를 사람이 다시 확인한다. 새 챌린지 효과 번호(`SET_NN`)는 `EFFECT_KIND` 에 추가하고 엔진 처리(`on_wave`/`after_cast`/`post_hit`)를 넣는다(없으면 `kind=null` → 시뮬 결과 `unsupported.runtime` 에 «미지원 챌린지 효과» 로 남음).
 - 새 보스의 배치 식별자는 `data/boss_catalog.json`에 등록함. 공용 foe에 cosmo «이름 N단계» 적 정의가 있으면 재사용하고, 없으면 빌더가 `sim=false`로 사유와 함께 막음. 전용 모델도 등록된 어댑터 뒤에서 실행함. 재등장 때는 보관 모듈·시즌 데이터만 선택함(위 모듈 절).

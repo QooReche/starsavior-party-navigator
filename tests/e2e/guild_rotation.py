@@ -37,12 +37,12 @@ def register(h):
         })""")
         assert result['prog']>0 and result['gate']
         assert len(result['guild']['base_scores'])==1 and result['guild']['base_scores'][0]>0
-        page.screenshot(path=str(Path(ctx.shots)/'guild_rotation_30101.png'),full_page=True)
+        page.screenshot(path=str(Path(ctx.shots)/'guild_rotation_30109.png'),full_page=True)
         page.goto(ctx.base+'/index.html?pm=reco&c=guild&season=force')
         page.wait_for_function('window._ready && !!QK.d')
         assert page.evaluate('SHARE.gs===30111 && SHARE.guildExpired && seasonBlocked("guild")')
         assert '30111' in page.locator('#season-note').inner_text()
         assert not ctx.errors,ctx.errors
         page.close()
-        return True,'30101 mobile page, version storage, real single-worker score, old link explicitly 30111 and blocked'
+        return True,'30109 mobile page, version storage, real single-worker score, old link explicitly 30111 and blocked'
     return [test_guild_rotation_client]

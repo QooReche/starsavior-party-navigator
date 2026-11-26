@@ -177,11 +177,11 @@ def open_page(browser, ctx, query="", viewport=None, info=FULL, simauto="0", exc
     수동 계산 시험은 자동 예약 함수만 대체함. 실제 자동 실행 검증은 manual_sim=False로 연다.
     기존 호출의 simauto="0"은 수동 시험 예약 방식의 기본값으로만 사용하며 제품 저장값 동작과 무관함."""
     page = browser.new_page(viewport=viewport or {"width": 1280, "height": 900}, has_touch=has_touch)
-    if os.environ.get('PN_E2E_LOW_MEMORY') == '1':
-        # 실제 시뮬은 워커 2개로 제한해 전체 e2e의 메모리와 실행 시간을 함께 관리함.
-        page.add_init_script("Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>3});Object.defineProperty(navigator,'deviceMemory',{get:()=>2});")
     if os.environ.get('PN_E2E_WORKERS') == '1':
         page.add_init_script("Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>2});Object.defineProperty(navigator,'deviceMemory',{get:()=>1});")
+    elif os.environ.get('PN_E2E_LOW_MEMORY') == '1':
+        # 실제 시뮬은 워커 2개로 제한해 전체 e2e의 메모리와 실행 시간을 함께 관리함.
+        page.add_init_script("Object.defineProperty(navigator,'hardwareConcurrency',{get:()=>3});Object.defineProperty(navigator,'deviceMemory',{get:()=>2});")
     attach(page, ctx)
     seed(page, info, simauto, excl)
     if manual_sim if manual_sim is not None else simauto == "0":
@@ -2634,9 +2634,18 @@ def test_patch1126_direct(browser, ctx):
     assert old.locator('#direct-run').is_disabled()
     old.close()
     # Each equipment tab exposes both new stages through the ordinary filters.
+    # Standard level 200 dies before damaging these level 3549/3777 enemies.
+    # Use a deliberately strong synthetic account so a disabled battle path fails.
+    strong = load_json(FULL)
+    strong['star_link_level'] = 4000
+    strong['star_link']['level'] = 4000
+    for unit in strong['units']:
+        unit['level'] = 4000
+    assert page.evaluate('(info)=>miApply(info)', strong)
+    wait_myinfo(page)
     idx = page.evaluate('contents.findIndex(c=>c.key==="equip")')
     page.select_option('#content', str(idx))
-    targets = page.evaluate('contents[$("content").value].stages.filter(s=>/ (XXI|XXII)$/.test(s.name)).map(s=>({tab:s.tab,name:s.name}))')
+    targets = page.evaluate('contents[$("content").value].stages.filter(s=>/ (XXI|XXII)$/.test(s.name.normalize("NFKC"))).map(s=>({tab:s.tab,name:s.name}))')
     assert len(targets) == 6, targets
     for stage in targets:
         page.fill('#q', stage['name'])
@@ -2652,7 +2661,12 @@ def test_patch1126_direct(browser, ctx):
         target.close()
     # Synthetic myinfo uses the same new stages, exact owned stats, and grown snapshots.
     from test_direct_party import pick_four
-    target = open_page(browser,ctx,query='?pm=direct&c=equip&auto=0',info=SYNTH,wait=False)
+    groups = list(load_json(os.path.join(ROOT, 'data/growth.json'))['tactics'])
+    def complete_tactics(pg):
+        pg.add_init_script('''(() => {const i=JSON.parse(localStorage.getItem('pn.myinfo'));
+          for(const k of %s)i.tactics.groups[k]={level:0,attack:0,defense:0,hp:0};
+          localStorage.setItem('pn.myinfo',JSON.stringify(i));})()''' % json.dumps(groups))
+    target = open_page(browser,ctx,query='?pm=direct&c=equip&auto=0',info=SYNTH,wait=False,setup=complete_tactics)
     wait_myinfo(target)
     target.wait_for_function('DIRECT.slots && DIRECT.values')
     pick_four(target)
