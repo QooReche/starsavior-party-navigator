@@ -127,6 +127,7 @@
     "notes": [],
     "excludeWhy": "",
     "newSearch": false,
+    "legacyBaseline": false,
     "execution": {
       "chunk": 1
     },

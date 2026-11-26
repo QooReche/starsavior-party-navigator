@@ -1,0 +1,13 @@
+'use strict';
+const assert=require('node:assert/strict'),{compare,accepted}=require('../tools/report_guild_p0');
+const r=(scores,caps)=>({scores,caps,clears:caps});
+const a=[r([50,100,100,100,100],[0,1,1,1,1]),r([40,100,100,100,100],[0,1,1,1,1])];
+const same=compare(a,a,100);
+assert.deepEqual(same.ci95,{topRatio:[1,1],meanRatio:[1,1],capDifference:[0,0],clearDifference:[0,0]});
+assert.equal(accepted(same,1,true),false,'no measurable gain is not adoption');
+const good={ci95:{topRatio:[.995,1],meanRatio:[1.001,1.02],capDifference:[0,.1]}};
+assert(accepted(good,1.1,true));assert(!accepted(good,1.1001,true));assert(!accepted(good,1,false));
+assert(!accepted({ci95:{...good.ci95,topRatio:[.9949,1]}},1,true));
+assert(!accepted({ci95:{...good.ci95,meanRatio:[.9799,1.02],capDifference:[.01,.1]}},1,true));
+assert.throws(()=>compare(a,[a[0]],100));
+console.log('PASS P0 report: paired strata, no-gain rejection, frozen threshold boundaries, invalid timing');

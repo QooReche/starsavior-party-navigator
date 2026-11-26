@@ -524,7 +524,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden&&!$("guild
 // ── 길방 «내 정보로 최고 점수 편성 찾기»(guild_search.js): 예선(전 조합 짧게) → 본선(상위 팀을 단계·지원별로). 작업자는 시뮬 창구(sim_worker.js)를 그대로 쓴다
 const GSR={banCoop:true,phase:"idle",msg:"",done:0,total:0,rows:[],sig:"",handle:null,id:0};
 const gsTiers=()=>GuildView.normSel(D.guild,GS.sel||LS.get(guildStoreKey())).tiers;
-function searchPlacementTag(kind){const p=(kind==='guild'?D.guild:D.cosmoRaid)?.search?.placement;return [...(kind==='guild'&&D.guild.search.newSearch===true?['guild-new-search']:[]),...(p?.baseline||p?.enabled?[PartyPlacement.VERSION,!!p.baseline,!!p.enabled]:[])];}
+function searchPlacementTag(kind){const p=(kind==='guild'?D.guild:D.cosmoRaid)?.search?.placement;return [...(kind==='guild'&&D.guild.search.newSearch===true?['guild-new-search']:[]),...(kind==='guild'&&D.guild.search.legacyBaseline===true?['guild-legacy-baseline-v1']:[]),...(p?.baseline||p?.enabled?[PartyPlacement.VERSION,!!p.baseline,!!p.enabled]:[])];}
 const gsSig=() => JSON.stringify([guildIdentity(),MI.hash,[...EXCL].sort(),gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks()),...searchPlacementTag('guild')]);
 const gsLabel=k=>{const s=BYKEY[k];return s?`${s.name}${s.sub?"("+s.sub+")":""} · ${s.cls}`:k};
 function searchGwenPaint(host,mode,state){

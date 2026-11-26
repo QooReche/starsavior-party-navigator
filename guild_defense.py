@@ -252,6 +252,8 @@ def page_payload(g):
     keep["sources"] = {k: {"name": v["name"], "url": v["url"]} for k, v in g["sources"].items() if k != "client"}
     keep["search"] = dict(g["search"], excluded=excluded_units(g["search"].get("excludeText") or [], g["search"].get("excludeKeys") or []))
     keep['search'].update(seasonId=g['season']['id'],dataVersion=g['dataVersion'],maxLevel=len(g['challenge']['levels']))
+    with open(os.path.join(HERE, "data", "guild_defaults.json"), encoding="utf-8") as f:
+        keep['search']['legacyBaseline'] = json.load(f)['search'].get('legacyBaseline', False)
     sim = sim_payload(g)
     if sim:
         # 참고표 표시만 공통 기본값으로 제어함. 시즌·시뮬 원본과 계산 입력은 보존.

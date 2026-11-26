@@ -89,14 +89,14 @@
 
   function screenJobs(S, G, V, list, results, cls, tiers) {
     return list.map(keys => {
-      const sup = screenSupport(S, keys, cls), p = party(keys, results, cls);
+      const sup = screenSupport(S, keys, cls), p = party(keys, results, cls, S.legacyBaseline === true ? Placement.baseline(keys, results) : undefined);
       return {key: jobKey(keys, S.screen.level, sup, tiers, null, p, G), keys, level: S.screen.level, sup, party: p.spec, order: p.order, leaderKey:p.leaderKey, options: {guild: {seasonId:G?.season?.id,dataVersion:G?.dataVersion,level: S.screen.level, sets: tiers.slice(), support: sup}}};
     });
   }
   function finalJobs(S, G, V, finalists, results, cls, tiers) {
     const jobs = [];
     for (const keys of finalists) {
-      const p = party(keys, results, cls);
+      const p = party(keys, results, cls, S.legacyBaseline === true ? Placement.baseline(keys, results) : undefined);
       for (const level of S.final.levels) for (const sup of finalSupports(S, keys, cls))
         jobs.push({key: jobKey(keys, level, sup, tiers, null, p, G), keys, level, sup, party: p.spec, order: p.order, leaderKey:p.leaderKey, options: {guild: {seasonId:G?.season?.id,dataVersion:G?.dataVersion,level, sets: tiers.slice(), support: sup}}});
     }
