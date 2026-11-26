@@ -1,4 +1,7 @@
 {
+  "sim": {
+    "ui": false
+  },
   "sets": {
     "ui": false,
     "scope": "가정 계산용",

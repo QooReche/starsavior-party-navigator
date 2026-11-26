@@ -1538,8 +1538,8 @@ def test_guild_defense(browser, ctx):
     page.close()
     # 현재 날짜에 따른 미오픈 접미사는 test_season_gate에서 별도로 검사함.
     ok = (name.removesuffix(" [미오픈]") == "길드방어전(시즌5 11/26~12/03)" and first_stage.startswith("7단계 EX") and shown and cards == 4
-          and "카본펑크 칸" in text and "최대 기대 점수" in text and "최고 클리어 단계" in text
-          and sim_data_ok and reference_rows == 5
+          and "카본펑크 칸" in text and "최대 기대 점수" not in text and "최고 클리어 단계" not in text
+          and sim_data_ok and reference_rows == 0
           and "기준" in text and "+60%" in sel6 and best_back
           and "갱신 대기" in stale and "갱신 대기" not in live and "6단계" in lower
           and hidden and not errs)
@@ -3245,13 +3245,22 @@ def test_ux_step3(browser, ctx):
             page.evaluate(restore)
 
     select('guild')
+    def guild_reference_hidden():
+        assert page.locator('[data-k="gd-overview"], [data-k="gd-clear-kpi"], [data-k="gd-score-kpi"], [data-k="gd-summary-table"], [data-k="gd-sim"]').count() == 0
+        text = page.locator('#guild-panel').text_content()+page.locator('#guild-extra').text_content()
+        assert '기준표' not in text and '시뮬 추정' not in text
+    assert page.evaluate('D.guild.sim.ui===false')
     for width, height, suffix in [(1280,900,'d'),(390,844,'m')]:
         page.set_viewport_size({'width':width,'height':height})
         first_screen('guild')
-        assert page.locator('[data-k="gd-summary-table"] tbody tr').count() == 5
+        guild_reference_hidden()
         assert page.locator('#guild-extra select[data-g="level"]').is_hidden()
         page.screenshot(path=os.path.join(ctx.shots,f'ui3_guild_{suffix}.png'),full_page=True)
-    # Check the two independent metrics against the same reference row.
+    caught('D.guild.sim.ui=true;renderGuild()',guild_reference_hidden,'D.guild.sim.ui=false;renderGuild()')
+    caught("document.querySelector('#guild-search').style.marginTop='2400px'",lambda:first_screen('guild'),"$('guild-search').style.marginTop=''")
+    # Explicit opt-in restores both independent metrics and their help.
+    page.evaluate('D.guild.sim.ui=true;renderGuild()')
+    assert page.locator('[data-k="gd-summary-table"] tbody tr').count() == 5
     expected = page.evaluate("""() => ({level:GuildView.simBest(D.guild.sim,2)?.level??null,
       score:Math.round(GuildView.simExpect(D.guild,D.guild.sim,2).m)})""")
     def guild_numbers():
@@ -3260,10 +3269,11 @@ def test_ux_step3(browser, ctx):
         assert page.inner_text('[data-k="gd-score-kpi"]') == format(expected['score'],',')
     guild_numbers()
     caught("document.querySelector('[data-k=gd-clear-kpi]').textContent='99단계'",guild_numbers,'renderGuild()')
-    caught("document.querySelector('#guild-search').style.marginTop='2400px'",lambda:first_screen('guild'),"$('guild-search').style.marginTop=''")
     page.locator('[data-k="gd-summary-table"] .ux-help[aria-label="점수 편성·지원 설명"]').first.click()
     assert page.locator('#ux-popover').is_visible() and '지원' in page.inner_text('#ux-popover')
     page.keyboard.press('Escape')
+    page.evaluate('D.guild.sim.ui=false;renderGuild()')
+    guild_reference_hidden()
     open_fold(page,'gd-effects')
     page.select_option('#guild-extra [data-g="level"]','6')
     assert page.locator('[data-fold="gd-effects"]').evaluate('e=>e.open')
@@ -3331,6 +3341,38 @@ def test_ux_step3(browser, ctx):
 
 
 TESTS.append(test_ux_step3)
+
+
+def test_guild_reference_visibility(browser, ctx):
+    """내 정보가 없어도 참고표는 숨김. 현재·보관 시즌 모두 같은 표시 플래그로 복원."""
+    from guild_rotation import season_setup
+    for sid in (30112, 30111):
+        setup = season_setup(sys.modules[__name__], sid) if sid == 30111 else None
+        page = open_page(browser, ctx, '?auto=0', info=None, wait=False, setup=setup)
+        page.select_option('#content', value=page.evaluate("String(contents.findIndex(c=>c.key==='guild'))"))
+        settle(page)
+        assert page.evaluate('D.guild.sim.ui===false && D.guild.sim.teams.length>0')
+        before = page.evaluate('JSON.stringify(guildOptions())')
+        for width in (1280, 390):
+            page.set_viewport_size({'width':width,'height':900})
+            assert page.locator('[data-k="gd-overview"], [data-k="gd-sim"]').count() == 0
+            text = page.locator('#guild-panel').text_content()+page.locator('#guild-extra').text_content()
+            assert all(s not in text for s in ('기준표','시뮬 추정','단계·점수 자료 없음'))
+            assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+            page.screenshot(path=os.path.join(ctx.shots,f'guild_ref_hidden_{sid}_{width}.png'))
+        page.evaluate('D.guild.sim.ui=true;renderGuild()')
+        assert page.locator('[data-k="gd-overview"]').count() == 1
+        assert page.locator('[data-k="gd-summary-table"] tbody tr').count() == 5
+        assert page.locator('[data-k="gd-sim"]').count() == (1 if sid == 30111 else 0)
+        assert page.evaluate('JSON.stringify(guildOptions())') == before
+        page.evaluate('D.guild.sim.ui=false;renderGuild()')
+        assert page.locator('[data-k="gd-overview"], [data-k="gd-sim"]').count() == 0
+        assert not ctx.errors, ctx.errors
+        page.close()
+    return True, 'current/archive, no account, desktop/mobile hidden, true restores, battle options unchanged'
+
+
+TESTS.append(test_guild_reference_visibility)
 
 from auto_calculation import register as register_auto_calculation
 TESTS.extend(register_auto_calculation(sys.modules[__name__]))

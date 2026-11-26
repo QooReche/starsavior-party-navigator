@@ -254,7 +254,10 @@ def page_payload(g):
     keep['search'].update(seasonId=g['season']['id'],dataVersion=g['dataVersion'],maxLevel=len(g['challenge']['levels']))
     sim = sim_payload(g)
     if sim:
-        keep["sim"] = sim
+        # 참고표 표시만 공통 기본값으로 제어함. 시즌·시뮬 원본과 계산 입력은 보존.
+        with open(os.path.join(HERE, "data", "guild_defaults.json"), encoding="utf-8") as f:
+            ui = json.load(f).get("sim", {}).get("ui") is True
+        keep["sim"] = dict(sim, ui=ui)
     return keep
 
 

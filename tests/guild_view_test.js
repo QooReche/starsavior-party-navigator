@@ -79,7 +79,7 @@ const tests = {
   sim() {
     // 화면 자료 = guild_defense.page_payload 의 sim(tools/build_guild_sim.py 결과를 줄인 것)
     const raw = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'guild_seasons', '30111', 'guild_sim.json'), 'utf8'));
-    const S = {runs: raw.runs, recPower: raw.recPower, growth: raw.growth, levels: raw.levels, passP: raw.pass_p, basis: raw.basis,
+    const S = {ui:true, runs: raw.runs, recPower: raw.recPower, growth: raw.growth, levels: raw.levels, passP: raw.pass_p, basis: raw.basis,
       summary: raw.summary, sets: raw.sets, summaryBySets: raw.summaryBySets, supports: raw.supports, teams: raw.teams};
     // summary 는 rates 에서 다시 계산한 것과 같아야 한다(최고 단계 = 클리어율 passP 이상인 가장 높은 단계)
     for (const g of S.growth) {
@@ -123,7 +123,7 @@ const tests = {
     // 클리어율과 평균 진행도를 같게 둬도 판별 frac와 선택 효과 가산으로 승자가 바뀐다.
     const tab = f => ({bySupport: {none: {'2': [0.5]}}, progBySupport: {none: {'2': [0.6]}}, fracBySupport: {none: {'2': [f]}}});
     const t = {...tab(0.7), rates: {'2': [0.5]}, names: ['시험 팀'], src: 'reco', bySets: {max: tab(0.6)}};
-    const S = {teams: [t], growth: ['2'], levels: [0], supports: ['none'], sets: {off: [0,0,0,0], max: [3,3,3,3]},
+    const S = {ui:true, teams: [t], growth: ['2'], levels: [0], supports: ['none'], sets: {off: [0,0,0,0], max: [3,3,3,3]},
       summary: {'2': {level: 0, team: 0, p: 0.5}}, passP: 0.5, runs: 2, recPower: 1, basis: ''};
     assert.equal(V.simExpect(P, S, 2).set, 'off', '기본은 선택 효과 끔만 비교(길방에 선택 효과 없음)');
     assert.equal(V.simExpect(P, S, 2, {allSets: true}).set, 'max');
@@ -146,6 +146,47 @@ const tests = {
     assert.equal(V.simExpect(P, S, 2).m, 15000, '옛 클리어율 전용 자료');
     delete t.bySupport;
     assert.equal(V.simExpect(P, S, 2).m, 15000, 'rates 전용 자료');
+  },
+  sim_ui() {
+    const defaults = JSON.parse(fs.readFileSync(path.join(__dirname,'../data/guild_defaults.json'),'utf8'));
+    assert.equal(defaults.sim.ui,false);
+    const raw = JSON.parse(fs.readFileSync(path.join(__dirname,'../data/guild_seasons/30111/guild_sim.json'),'utf8'));
+    const S = {...raw,passP:raw.pass_p,...defaults.sim};
+    function check(view) {
+      for (const g of [P, require('./guild_fixture')(30112)]) {
+        const off = {...g,sim:S}, on = {...g,sim:{...S,ui:true}};
+        const render = x => view.panelHtml(x,null,x.defaultStep,Date.now(),esc);
+        const h = render(off), visible = render(on);
+        for (const text of ['gd-overview','gd-clear-kpi','gd-score-kpi','gd-summary-table','gd-sim','기준표','시뮬 추정','단계·점수 자료 없음'])
+          assert(!h.includes(text), text);
+        assert.equal(view.simBox(off,esc),'');
+        for (const key of ['gd-overview','gd-clear-kpi','gd-score-kpi','gd-summary-table']) assert(visible.includes(`data-k="${key}"`),key);
+        assert(view.simBox(on,esc).includes('data-k="gd-sim"'));
+        assert.equal(visible.includes('data-k="gd-sim"'),g.season.boss.engine!=='client');
+        assert(h.includes('data-g="level"') && h.includes('data-k="gd-details"'));
+        assert.deepEqual(view.battleOptions(off,null,g.defaultStep),view.battleOptions(on,null,g.defaultStep));
+        assert.deepEqual(view.simBest(off.sim,2),view.simBest(on.sim,2));
+        assert.deepEqual(view.simExpect(off,off.sim,2),view.simExpect(on,on.sim,2));
+        const missing = {...g,sim:{...S}};delete missing.sim.ui;
+        assert.equal(render(missing),h,'플래그 누락도 숨김');
+        const absent = {...g};delete absent.sim;
+        assert(!render(absent).includes('단계·점수 자료 없음'));
+      }
+    }
+    check(V);
+    const source=fs.readFileSync(require.resolve('../guild_view'),'utf8');
+    for (const [before,after] of [
+      ['return G.sim?.ui === true;','return true;'],
+      ['return G.sim?.ui === true;','return false;'],
+      ["function overview(G, esc) {\n    if (!simUi(G)) return '';",'function overview(G, esc) {'],
+      ["function simBox(G, esc) {\n    if (!simUi(G)) return '';",'function simBox(G, esc) {'],
+    ]) {
+      const normalized=source.replace(/\r\n/g,'\n');
+      assert(normalized.includes(before));
+      const m={exports:{}};
+      require('node:vm').runInThisContext('(function(module,require){'+normalized.replace(before,after)+'\n})')(m,n=>require('../'+n.slice(2)));
+      assert.throws(()=>check(m.exports),'표시 관문 변이가 검출되어야 함');
+    }
   },
   sets_ui() {
     function check(view) {

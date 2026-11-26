@@ -1,7 +1,9 @@
 """표시 변경은 버전을 유지하고 계산 입력·알 수 없는 필드는 반드시 반영함."""
 import copy
+import json
 import sys
 import unittest
+from unittest.mock import mock_open, patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,6 +13,43 @@ from battlesim.starsavior.guild import load
 
 
 class GuildVersionTest(unittest.TestCase):
+    def test_sim_ui_defaults_and_payload(self):
+        import guild_defense as gd
+        defaults = json.loads((ROOT/'data/guild_defaults.json').read_text(encoding='utf-8'))
+        self.assertIs(defaults['sim']['ui'], False)
+        for sid in (30111, 30112):
+            g = load(sid)
+            sim = gd.sim_payload(g)
+            self.assertTrue(sim['teams'])
+            before = copy.deepcopy(sim)
+            self.assertEqual(gd.page_payload(g)['sim'], dict(sim, ui=False))
+            for ui in (False, True):
+                edited = copy.deepcopy(defaults)
+                edited['sim']['ui'] = ui
+                with patch.object(gd, 'sim_payload', return_value=sim), \
+                        patch.object(gd, 'open', mock_open(read_data=json.dumps(edited)), create=True):
+                    payload = gd.page_payload(g)
+                self.assertEqual(payload['sim'], dict(before, ui=ui))
+                self.assertEqual(payload['dataVersion'], g['dataVersion'])
+                self.assertEqual(sim, before)
+
+    def test_sim_ui_hash(self):
+        from tools import guild_version as version
+        def check():
+            for prefix in ({}, {'client': {}}):
+                base = copy.deepcopy(prefix)
+                target = base.get('client', base)
+                target['sim'] = {'ui': False, 'runs': 20}
+                edited = copy.deepcopy(base)
+                edited.get('client', edited)['sim']['ui'] = True
+                self.assertEqual(season_version(base), season_version(edited))
+                edited.get('client', edited)['sim']['runs'] = 21
+                self.assertNotEqual(season_version(base), season_version(edited))
+        check()
+        with patch.object(version, 'DISPLAY_PATHS', version.DISPLAY_PATHS - {('sim', 'ui')}):
+            with self.assertRaises(AssertionError):
+                check()
+
     def test_display_only(self):
         for sid in (30111, 30112):
             g = copy.deepcopy(load(sid))

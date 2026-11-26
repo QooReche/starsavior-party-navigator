@@ -51,8 +51,8 @@ button:focus-visible,summary:focus-visible{outline:2px solid var(--gold);outline
 @media(max-width:760px){.rowcards{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:16px}}
 @media(max-width:360px){.gc .simu{font-size:10px;padding-left:2px;padding-right:2px}.gc .simu .dot{display:none}}
 
-/* Seasonal content: reference numbers, then the action; optional detail follows. */
-#guild-panel{padding:16px 16px 0;margin-bottom:0;border-bottom:0;border-radius:12px 12px 0 0}#guild-search{padding:12px 16px 16px;border-top:0;border-radius:0 0 12px 12px}
+/* Seasonal content: season information, search action, then optional details. */
+#guild-panel{padding:16px}#guild-search{padding:12px 16px 16px}
 main:has(#guild-panel:not([hidden])) .season-basis{display:inline-block;margin:0 0 4px}main:has(#guild-panel:not([hidden])) [data-k=gd-stale]{display:inline;margin-right:8px}
 main:has(#tab-info[aria-pressed=true]) :is(#guild-panel,#guild-search,#guild-extra,#cosmo-search,#growth-result,#season-note){display:none}
 .season-title{font-size:18px;margin:0 0 16px}.season-basis{font-size:12px;color:var(--mut);margin:8px 0}

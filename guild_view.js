@@ -84,7 +84,9 @@
   }
   const help = (title, text, esc) => `<button type="button" class="ux-help" aria-label="${esc(title)} 설명" aria-expanded="false" data-help="${esc(text)}">ⓘ</button>`;
   // Reference table only: never present preset power as the user's account result.
+  function simUi(G) { return G.sim?.ui === true; }
   function overview(G, esc) {
+    if (!simUi(G)) return '';
     const S=G.sim;
     if(!S)return '<p class="mut">단계·점수 자료 없음</p>';
     const g=S.growth.find(x=>Number(x)===2)??S.growth[0], b=simBest(S,g), e=simExpect(G,S,g);
@@ -161,6 +163,7 @@
   }
   const pct = pctText;
   function simBox(G, esc) {
+    if (!simUi(G)) return '';
     const S = G.sim;
     if (!S) return "";
     const lines = S.growth.map(g => {
@@ -207,13 +210,13 @@ ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율${sets
     }
     let html = seasonBox(G, nowMs, esc)+(step===ex.step?overview(G,esc):'');
     if(step!==ex.step)html+=`<p class="mut">${step}단계 · 별의 도전 없음. 편성 탐색은 EX(${ex.step}단계)를 선택해야 함.</p>`;
-    html += '<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary><div class="gd-dev" data-k="gd-dev" role="note"><b>개발 중 · 테스트 중인 기능임</b><br>점수 계산과 고단계 수치는 확인되지 않았고, 시뮬 추정은 실제 플레이와 대조하지 않았음. 참고용으로만 활용.</div>';
+    html += `<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary><div class="gd-dev" data-k="gd-dev" role="note"><b>개발 중 · 테스트 중인 기능임</b><br>점수 계산과 고단계 수치는 확인되지 않았음.${simUi(G)?' 시뮬 추정은 실제 플레이와 대조하지 않았음.':''} 참고용으로만 활용.</div>`;
     if (step === ex.step) {
       const pct = extraPct(G, sel.level, sel.tiers), sc = score(G, pct), b = bestSelection(G), bsc = score(G, extraPct(G, b.level, b.tiers));
       const hyp = G.score.hypotheses.map(h => `${h.name} ${num(sc[h.id])}`).join(" · ");   // 보스를 다 깎았을 때 점수
       const isBest = sel.level === b.level && sel.tiers.every((t, i) => t === b.tiers[i]);
       html += `<div class="gd-best" data-k="gd-best"><b>최고 점수가 나오는 조합</b>: 별의 도전 ${b.level}단계${setsUi(G)?' + 선택 효과 끔':''}(추가 점수 ${extraPct(G, b.level, b.tiers)}%) → 보스를 다 깎으면 점수 ${rangeText(bsc)}<br>
-<span class="mut">패배해도 보스를 깎은 비율만큼 보스 점수(최대 ${num(ex.bossKill)})를 받고, 추가 점수는 합계 전체에 곱해짐(실제 영상으로 확인). 그래서 못 깰 단계라도 높은 단계가 점수에 유리할 수 있음. 추천 파티는 단계와 관계없이 보스 속성·특징 기준임. 단계별 기대 점수는 아래 «시뮬 추정»에서 확인.</span></div>
+<span class="mut">패배해도 보스를 깎은 비율만큼 보스 점수(최대 ${num(ex.bossKill)})를 받고, 추가 점수는 합계 전체에 곱해짐(실제 영상으로 확인). 그래서 못 깰 단계라도 높은 단계가 점수에 유리할 수 있음. 추천 파티는 단계와 관계없이 보스 속성·특징 기준임.${simUi(G)?' 단계별 기대 점수는 아래 «시뮬 추정»에서 확인.':''}</span></div>
 ${simBox(G, esc)}${selectBox(G, sel)}
 <div class="gd-now" data-k="gd-now">고른 조합: 추가 점수 ${pct}% → 보스를 다 깎으면 <b>${rangeText(sc)}</b>${isBest ? " (최고 조합)" : ""}<br><span class="mut">${esc(hyp)} · ${esc(G.score.hypotheses.map(h => h.name + ": " + h.desc).join(" / "))}</span></div>
 <div class="mut gd-small">${esc(G.score.note)}${setsUi(G)?' '+esc(G.sets.note):''}</div>${levelTable(G, sel, esc)}`;
