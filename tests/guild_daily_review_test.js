@@ -23,8 +23,8 @@ test('EX 31,500 + normal 3,000 loses to three normal 15,000 teams',async()=>{
 test('pool floor preserves maximum split plus spare units, including unknown speed',()=>{
   const f=fixture(40);f.S.daily=structuredClone(defaults.daily);
   for(const secondsPerGame of [undefined,.05]){
-    const p=Daily.plan({...f,seals:4,nowMs,secondsPerGame});
-    assert(p.poolLimit>=20);assert.equal(p.availableTeams>=4,true);
+    const p=Daily.plan({...f,seals:3,nowMs,secondsPerGame});
+    assert(p.poolLimit>=20);assert.equal(p.availableTeams>=3,true);
   }
 });
 test('pool reduction preserves role supplements and front/dealer requirements',async()=>{
@@ -35,35 +35,35 @@ test('pool reduction preserves role supplements and front/dealer requirements',a
     seen=true;assert(rows.some(r=>r.key==='u39'));assert(rows.some(r=>r.key==='u38'));
     assert(old(S,rows).length>0);throw Error('pool checked');
   };
-  try{await assert.rejects(()=>Daily.search({...f,seals:4,nowMs,secondsPerGame:.05}),/pool checked/);assert(seen);}
+  try{await assert.rejects(()=>Daily.search({...f,seals:3,nowMs,secondsPerGame:.05}),/pool checked/);assert(seen);}
   finally{GS.combos=old;}
 });
 test('unknown speed uses measured browser order of magnitude',()=>{
-  const p=Daily.plan({...fixture(40),seals:4,nowMs,workers:1});
+  const p=Daily.plan({...fixture(40),seals:3,nowMs,workers:1});
   assert(p.secondsPerGame>0&&p.secondsPerGame<.1);assert(p.estimateFallback);
 });
 test('saved cosmo speed is worker-adjusted and explicit measurement takes precedence',()=>{
-  const cx={...fixture(40),nowMs,seals:4,workers:2,cosmoSpeed:{sec:[.01,.02,.03,.04],workers:1}};
+  const cx={...fixture(40),nowMs,seals:3,workers:2,cosmoSpeed:{sec:[.01,.02,.03,.04],workers:1}};
   const p=Daily.plan(cx);assert.equal(p.secondsPerGame,.02);assert.equal(p.estimateFallback,false);
   assert.equal(Daily.plan({...cx,secondsPerGame:.003}).secondsPerGame,.003);
 });
 test('slow device refuses over-cap plan without cutting below floor',()=>{
   const f=fixture(40);f.S.daily=structuredClone(defaults.daily);
-  const p=Daily.plan({...f,nowMs,seals:4,secondsPerGame:1});
+  const p=Daily.plan({...f,nowMs,seals:3,secondsPerGame:1});
   assert.equal(p.poolLimit,20);assert.equal(p.withinCap,false);
   assert.deepEqual(p.reductions.slice(0,3),['자리·리더 대상: EX 팀만','조건 비교: 상위 8팀','정밀: 상위 200팀']);
-  assert.equal(Daily.plan({...fixture(12),nowMs,seals:4,secondsPerGame:1}).poolLimit,12);
+  assert.equal(Daily.plan({...fixture(12),nowMs,seals:3,secondsPerGame:1}).poolLimit,12);
 });
-test('four seals compare every split when initial EX total is below normal ceiling',async()=>{
+test('three seals compare every split when initial EX total is below normal ceiling',async()=>{
   const C=require('../score_combinations'),old=C.steps,seen=new Set();
   C.steps=function(lists,...rest){seen.add(lists.length);return old(lists,...rest);};
   try{
-    const {out}=await scenario({count:16,seals:4,scoreFn:t=>{
+    const {out}=await scenario({count:12,seals:3,scoreFn:t=>{
       const keys=t.party.units.map(u=>Number(u.key.slice(1)));
       return keys.every(k=>Math.floor(k/4)===Math.floor(keys[0]/4))?(t.options.guild.step===7?1999:1000):1;
     }});
-    assert.equal(out.sum,4000);assert.equal(out.split.normal,4);
-    for(const n of [2,3,4])assert(seen.has(n));
+    assert.equal(out.sum,3000);assert.equal(out.split.normal,3);
+    for(const n of [2,3])assert(seen.has(n));
   }finally{C.steps=old;}
 });
 test('EX total equal to normal ceiling skips normal sweep',async()=>{
@@ -102,7 +102,7 @@ test('placement coop exhaustion returns shortage',async()=>{
   assert.equal(out.teams.length,0);assert.equal(out.seals.remaining,2);assert(out.warnings.some(s=>s.includes('팀만')));
 });
 test('signature separates effective pool, policy, and combination limit',()=>{
-  const cx={...fixture(40),seals:4,nowMs,secondsPerGame:.0001},day=Daily.plan(cx).day;
+  const cx={...fixture(40),seals:3,nowMs,secondsPerGame:.0001},day=Daily.plan(cx).day;
   const base=Daily.signature(cx,day);
   assert.notEqual(base,Daily.signature({...cx,secondsPerGame:.05},day));
   assert.notEqual(base,Daily.signature({...cx,maxCombineChecks:17},day));

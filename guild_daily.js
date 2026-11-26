@@ -14,7 +14,7 @@
   const bundleCompare=(a,b)=>b.sum-a.sum||b.teams.reduce((s,t)=>s+t.mean,0)-a.teams.reduce((s,t)=>s+t.mean,0)||bundleId(a).localeCompare(bundleId(b));
 
   function splits(D,seals,open){
-    if(!Number.isInteger(seals)||seals<D.seals.min||seals>D.seals.max)throw Error('인장은 1~4장 범위여야 함');
+    if(!Number.isInteger(seals)||seals<D.seals.min||seals>D.seals.max)throw Error(`인장은 ${D.seals.min}~${D.seals.max}장 범위여야 함`);
     const out=[];
     for(let ex=open?Math.floor(seals/D.seals.costEx):0;ex>=0;ex--){
       const normal=(seals-ex*D.seals.costEx)/D.seals.costNormal;

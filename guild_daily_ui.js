@@ -19,8 +19,8 @@
     if(st.phase==='done')return st.warnings?.length?'guildShort':'guildDone';
     if(pl?.warnings.length)return 'guildShort';
     if(!day.exOpen)return 'guildClosed';
-    if(seals===4)return 'guildCharge';
-    if(seals<3)return 'guildFew';
+    if(seals===3)return 'guildCharge';
+    if(seals===1)return 'guildFew';
     return st.splitChoice?'guildIdle':'guildPlan';
   }
   function result(st,cx,grown=false){
@@ -35,7 +35,7 @@
       }).join('')}</div>`;
   }
   function html(st,cx){
-    const {G,esc}=cx,pl=cx.plan,day=V.gameDay(G,cx.nowMs),seals=st.sealCount??G.search.daily.seals.default;
+    const {G,esc}=cx,pl=cx.plan,day=V.gameDay(G,cx.nowMs),sealConfig=G.search.daily.seals,seals=st.sealCount??sealConfig.default;
     const choices=Daily.splits(G.search.daily,seals,day.exOpen),choice=st.splitChoice||choices[0],effective=pl?.effectiveSplit||choice;
     const count=effective.ex+effective.normal,disabled=st.phase==='run'?' disabled':'';
     const dayline=`${day.day}요일 · EX ${day.exOpen?'열림':`닫힘${day.nextEx?' · 다음 EX는 '+day.nextEx+'요일':''}`}`;
@@ -45,7 +45,7 @@
     if(st.phase==='run')body=`${cx.work()}${U.planHtml('길드 오늘 편성 찾기 전체 진행')}<p data-k="gd-search-prog"></p><ol class="gd-small" data-k="gs-stages"></ol><button type="button" class="sec" data-gs="partial">중단</button>`;
     else if(st.phase==='done')body=`${stale}${cx.report()}${result(st,cx)}${st.growth?`<details class="season-options" data-fold="gs-grown"><summary>육성했다면 · 합산 점수 ${U.num(st.growth.sum)}</summary>${result(st.growth,cx,true)}</details>`:''}`;
     else if(st.phase==='err')body=`${cx.error(st.errorCause||'other')}<p class="bad">찾지 못했음: ${esc(st.msg||'')}</p>`;
-    const input=`<div class="gd-small">오늘 쓸 인장</div><div class="seal-stepper"><button type="button" data-gs="minus" aria-label="인장 한 장 줄이기"${seals<=1?' disabled':disabled}>−</button><output aria-live="polite">${seals}장</output><button type="button" data-gs="plus" aria-label="인장 한 장 늘리기"${seals>=4?' disabled':disabled}>+</button></div>${seals===4?'<span class="tag" style="color:var(--gold)">충전 1회 = 성광석 30개</span>':''}
+    const input=`<div class="gd-small">오늘 쓸 인장</div><div class="seal-stepper"><button type="button" data-gs="minus" aria-label="인장 한 장 줄이기"${seals<=sealConfig.min?' disabled':disabled}>−</button><output aria-live="polite">${seals}장</output><button type="button" data-gs="plus" aria-label="인장 한 장 늘리기"${seals>=sealConfig.max?' disabled':disabled}>+</button></div>${seals>sealConfig.grantCap?`<span class="tag" style="color:var(--gold)">구매 1회 = 성광석 ${sealConfig.purchaseCost}</span>`:''}
       <p class="${day.exOpen?'good':'warn'}" data-k="gs-day">${dayline}</p><p class="gd-small">출정 날짜는 한국시간 새벽 4시에 바뀜.${!day.exOpen?' 오늘은 일반 스테이지만 찾음.':seals===1?' EX 스테이지는 인장 2장이 필요함.':''}</p>
       <div class="option-chips" role="group" aria-label="인장 나누기"><label><input type="radio" name="gs-split" data-gs="split" value="auto"${!st.splitChoice?' checked':''}${disabled}>자동(추천)</label>${choices.map(s=>`<label><input type="radio" name="gs-split" data-gs="split" value="${s.ex}"${st.splitChoice?.ex===s.ex?' checked':''}${disabled}>${splitText(s)}</label>`).join('')}</div>
       <p class="gd-small">인장 ${seals}장 → ${splitText(effective)} · 구원자 ${count*4}명 필요${pl?`(현재 풀로 최대 ${pl.availableTeams}팀)`:''}${!st.splitChoice&&day.exOpen&&choice.ex?' · EX 우선, 약하면 일반 나눔도 비교':''}</p>

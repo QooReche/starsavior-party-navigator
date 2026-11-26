@@ -4412,12 +4412,14 @@
   "daily": {
    "seals": {
     "min": 1,
-    "max": 4,
-    "default": 3,
+    "max": 3,
+    "default": 2,
     "costNormal": 1,
     "costEx": 2,
-    "rechargeMax": 1,
-    "rechargeCost": 30
+    "dailyGrant": 2,
+    "grantCap": 2,
+    "purchaseMax": 1,
+    "purchaseCost": 30
    },
    "reset": {
     "utcOffsetHours": 9,

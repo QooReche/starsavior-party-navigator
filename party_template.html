@@ -582,7 +582,7 @@ async function guildSearchStart(target=GSR,profileOverride=null){
 $("guild-search").addEventListener("change",e=>{const split=e.target.closest('input[data-gs="split"]');if(split&&GSR.phase!=="run"){GSR.splitChoice=split.value==='auto'?null:GuildDaily.splits(D.guild.search.daily,GSR.sealCount??D.guild.search.daily.seals.default,GuildView.gameDay(D.guild).exOpen).find(s=>s.ex===+split.value);growthCancel();renderGuildSearch(true);return;}const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
 $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[data-gs]");if(!b)return;
  if(b.dataset.gs==='edit'){guildDailyFromSearch(+b.dataset.team,b.dataset.grown==='true');return;}
- if(['minus','plus'].includes(b.dataset.gs)){if(GSR.phase==='run')return;GSR.sealCount=Math.max(1,Math.min(4,(GSR.sealCount??D.guild.search.daily.seals.default)+(b.dataset.gs==='plus'?1:-1)));GSR.splitChoice=null;growthCancel();renderGuildSearch(true);return;}
+ if(['minus','plus'].includes(b.dataset.gs)){if(GSR.phase==='run')return;const seals=D.guild.search.daily.seals;GSR.sealCount=Math.max(seals.min,Math.min(seals.max,(GSR.sealCount??seals.default)+(b.dataset.gs==='plus'?1:-1)));GSR.splitChoice=null;growthCancel();renderGuildSearch(true);return;}
  if(b.dataset.gs==="start")guildSearchStart();
  else if(b.dataset.gs==="partial"){if(GSR.phase!=="run")return;GSR.stopRequested=true;GSR.handle?.cancel();renderGuildSearch(true)}
  else if(b.dataset.gs==="cancel"){GSR.id++;if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";renderGuildSearch(true)}});

@@ -71,26 +71,25 @@ function margins(daily=Daily){
 }
 function caps(daily=Daily){
   const f=fixture(40);f.S.daily=structuredClone(defaults.daily);
-  const p=daily.plan({...f,seals:4,nowMs:Date.parse('2026-11-26T05:00:00+09:00'),secondsPerGame:.01,breaks:[]});
+  const p=daily.plan({...f,seals:3,nowMs:Date.parse('2026-11-26T05:00:00+09:00'),secondsPerGame:.01,breaks:[]});
   assert.equal(p.placeScope,'ex');assert(p.withinCap);assert(p.estimatedSec<5400);assert.deepEqual(plain(p.reductions.slice(0,3)),['자리·리더 대상: EX 팀만','조건 비교: 상위 8팀','정밀: 상위 200팀']);
   assert(p.poolLimit<40);assert.equal(p.D.screen.runs,2);
   const combinations=p.poolLimit*(p.poolLimit-1)*(p.poolLimit-2)*(p.poolLimit-3)/24;
   assert.equal(p.stages[2].games,combinations*2*18,'estimate includes all boundary ties');
-  const growth=daily.plan({...f,seals:4,nowMs:Date.parse('2026-11-26T05:00:00+09:00'),secondsPerGame:.01,growthResults:f.results});
+  const growth=daily.plan({...f,seals:3,nowMs:Date.parse('2026-11-26T05:00:00+09:00'),secondsPerGame:.01,growthResults:f.results});
   assert(growth.estimatedSec<5400);assert(growth.poolLimit<=p.poolLimit);assert.equal(growth.passes,2);
 }
 async function checks(daily=Daily){
   const strong=await scenario({daily,seals:2});valid(strong.out,1);assert.equal(strong.out.split.ex,1);assert(!strong.trace.some(m=>m.teams.some(t=>t.options.guild.step!==7)),'strong EX skips normal sweep');
   assert(strong.trace.some(m=>m.n_runs===18&&m.teams.some(t=>t.options.run_offset===2)));
   assert(strong.trace.some(m=>m.n_runs===30&&m.teams.some(t=>t.options.run_offset===10)));
-  const multi=await scenario({daily});valid(multi.out,2);assert(multi.out.teams.some(t=>t.sup!=='s0'&&t.effectiveSupport==='none'),'mismatched support is assigned');
+  const multi=await scenario({daily});valid(multi.out,2);assert.deepEqual(plain(multi.out.split),{ex:1,normal:1});assert(multi.out.teams.some(t=>t.sup!=='s0'&&t.effectiveSupport==='none'),'mismatched support is assigned');
   assert(!multi.out.partial);assert(multi.out.evaluation.placementComplete);
   const weak=await scenario({daily,seals:2,weak:true});valid(weak.out,2);assert.equal(weak.out.split.normal,2);assert(weak.out.reason.includes('가능한 인장 나눔을 모두 비교'));
-  const ex2=await scenario({daily,seals:4});valid(ex2.out,2);assert.equal(ex2.out.split.ex,2);
-  const few=await scenario({daily,seals:4,day:'2026-11-25T05:00:00+09:00'});valid(few.out,2);assert.equal(few.out.seals.remaining,2);assert(few.out.warnings.some(s=>s.includes('4팀 중 2팀')));
-  const retry=await scenario({daily,seals:4,settings:S=>{S.daily.probe.teams=1;}});valid(retry.out,2);assert(retry.phases.filter(p=>p.policyStage===4).length>1,'candidate expansion executes');
-  const shortage=await scenario({daily,seals:4,settings:S=>{S.daily.probe.teams=1;},scoreFn:t=>t.party.units.some(u=>u.key==='u00')?5000:1});
-  valid(shortage.out,1);assert.equal(shortage.out.seals.remaining,2);
+  const few=await scenario({daily,seals:3,day:'2026-11-25T05:00:00+09:00'});valid(few.out,2);assert.equal(few.out.seals.remaining,1);assert(few.out.warnings.some(s=>s.includes('3팀 중 2팀')));
+  const retry=await scenario({daily,seals:3,settings:S=>{S.daily.probe.teams=1;}});valid(retry.out,2);assert(retry.phases.filter(p=>p.policyStage===4).length>1,'candidate expansion executes');
+  const shortage=await scenario({daily,seals:3,settings:S=>{S.daily.probe.teams=1;},scoreFn:t=>t.party.units.some(u=>u.key==='u00')?5000:1});
+  valid(shortage.out,1);assert.equal(shortage.out.seals.remaining,1);
   const moved=await scenario({daily,move:true});valid(moved.out,2);assert(moved.out.teams.some(t=>t.placementChanged));
   const firstPlace=moved.phases.find(p=>p.policyStage===7),firstPlan=moved.plans.find(p=>p.stages[firstPlace.stage]?.policyStage===7);
   assert(firstPlan.stages.slice(firstPlace.stage+1).some(s=>s.games>0),'placement screen is not the last work in the ETA');
@@ -126,8 +125,13 @@ async function regression(daily=Daily){
   CS.pickPass=(jobs,res,...rest)=>{seen.push(plain(res));return oldPass(jobs,res,...rest);};
   C.steps=(lists,...rest)=>{assert(lists.flat().every(t=>t.n===10),'all packing candidates use exactly 10 games, even after another final');return oldSteps(lists,...rest);};
   try{
-    await scenario({daily,seals:4,settings:S=>{S.daily.probe.teams=1;},scoreFn:(t,i)=>score(t)+(i<2?5000:0)});
-    assert(seen.length>1);for(const [key,r] of Object.entries(seen[1]))assert.deepEqual(r,seen[0][key],'retry screening always uses first 2 games');
+    await scenario({daily,seals:3,settings:S=>{S.daily.probe.teams=1;},scoreFn:(t,i)=>score(t)+(i<2?5000:0)});
+    assert(seen.length>2);const first=new Map();let repeated=0;
+    for(const summaries of seen)for(const [key,r] of Object.entries(summaries)){
+      if(first.has(key)){assert.deepEqual(r,first.get(key),'retry screening always uses first 2 games');repeated++;}
+      else first.set(key,r);
+    }
+    assert(repeated>0,'retry revisits screened candidates');
     await scenario({daily,seals:2,weak:true});
   }finally{CS.pickPass=oldPass;C.steps=oldSteps;}
   const scoreFn=t=>{
