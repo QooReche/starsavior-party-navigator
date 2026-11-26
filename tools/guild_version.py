@@ -15,7 +15,7 @@ DISPLAY_KEYS = frozenset({
 DISPLAY_PATHS = frozenset({
     ('season', 'label'), ('season', 'name'), ('season', 'start'),
     ('season', 'end'), ('season', 'settleEnd'), ('season', 'intervals'),
-    ('sets', 'scope'), ('sets', 'items', '*', 'name'),
+    ('sets', 'scope'), ('sets', 'ui'), ('sets', 'items', '*', 'name'),
     ('supports', '*', 'name'),
     ('score', 'hypotheses', '*', 'name'), ('score', 'hypotheses', '*', 'desc'),
     ('search', 'excludeWhy'),

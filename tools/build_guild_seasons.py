@@ -356,6 +356,7 @@ def main():
             g = prior
             g['provenance'] = generated['provenance']
             g['client'] = generated
+            g['sets']['ui'] = generated['sets']['ui']
             g['challenge']['effectText'] = copy.deepcopy(generated['challenge']['effectText'])
             for item, default in zip(g['sets']['items'], generated['sets']['items']):
                 for tier, current in zip(item['tiers'], default['tiers']):

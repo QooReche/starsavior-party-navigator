@@ -1565,7 +1565,7 @@ def test_guild_season_rollover(browser, ctx):
 
 def test_guild_search(browser, ctx):
     """길방 «내 정보로 최고 점수 편성 찾기»: 내 정보가 없으면 버튼 없음 안내, 있으면 예선→본선을 브라우저 작업자로 끝까지 돌려
-    기대 점수 순위 표가 나오고, 위에서 선택 효과를 바꾸면 낡은 결과 경고, 길방이 아닌 스테이지에서는 숨김. (시험 속도를 위해 탐색 크기만 줄여 돌린다)"""
+    기대 점수 순위 표가 나오고, 옛 선택 효과는 요청에서 0이며 화면에 없음. 길방이 아닌 스테이지에서는 숨김. (시험 속도를 위해 탐색 크기만 줄여 돌린다)"""
     ctx.errors.clear()
     page = open_page(browser, ctx)
     names = page.eval_on_selector("#content", "s => [...s.options].map(o => o.textContent)")
@@ -1575,16 +1575,24 @@ def test_guild_search(browser, ctx):
     has_btn = page.locator('#guild-search button[data-gs="start"]').count()
     # 탐색 크기를 줄인다(풀 8명·상위 2팀·단계 4 하나·판수 2) — 로직은 그대로
     page.evaluate("""() => {const S=D.guild.search;S.poolSize=8;S.minRole={'서포터':1,'디펜더':1};S.minPowerRatio=0;S.screen2={keep:3,runs:2};S.finalists=2;S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['none','40051']}""")
+    page.evaluate("""() => {
+      GS.sel={level:3,tiers:[3,2,1,3],support:'none'};window.__guildSets=[];
+      const post=Worker.prototype.postMessage;
+      Worker.prototype.postMessage=function(m,...rest){for(const t of m.teams||[])if(t.options?.guild)__guildSets.push(t.options.guild.sets);return post.call(this,m,...rest)};
+    }""")
     page.click('#guild-search button[data-gs="start"]')
     page.wait_for_selector('#guild-search [data-k="gs-best"]', timeout=540000)
     open_fold(page, 'gs-results')
     rows = page.locator('#guild-search [data-k="gd-search-table"] tbody tr').count()
     txt = page.locator('#guild-search').text_content()
     score_ok = page.evaluate("""() => [...document.querySelectorAll('#guild-search tbody tr')].every(tr => /^[0-9,]+$/.test(tr.children[4].innerText.trim()) && +tr.children[4].innerText.replace(/,/g,'') > 0)""")
-    # 선택 효과를 바꾸면 낡은 결과 경고
+    assert page.evaluate('__guildSets.length>0 && __guildSets.every(s=>s.length===4 && s.every(v=>v===0))')
+    assert '선택 효과' not in txt and '(가정)' not in txt
+    # 숨긴 효과의 옛 저장값만 바뀌어도 같은 계산 조건임.
     open_fold(page, "gd-effects")
-    page.select_option('#guild-extra select[data-g="set"][data-i="0"]', "1")
-    page.wait_for_function("() => !!document.querySelector('#guild-search [data-k=gd-search-stale]')")
+    assert page.locator('#guild-extra select[data-g="set"]').count()==0
+    page.evaluate('GS.sel.tiers=[1,1,1,1];renderGuild()')
+    assert page.locator('#guild-search [data-k=gd-search-stale]').count()==0
     page.select_option("#stage", index=1)
     page.dispatch_event("#stage", "change")
     settle(page)

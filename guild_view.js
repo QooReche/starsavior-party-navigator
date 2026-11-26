@@ -44,12 +44,13 @@
     for (const h of G.score.hypotheses) out[h.id] = scoreAt(G, pct, 1);
     return out;
   }
-  // 선택 효과는 클라에서 길방에 연결돼 있지 않아(서버 처리 미확인) 기본·최고 조합 모두 끔
+  // 클라 길드 요청은 선택 목록을 보내지 않음. UI 재개는 시즌 플래그로만 허용함.
+  function setsUi(G) { return G.sets.ui === true; }
   function bestSelection(G) { return {level: G.challenge.levels.length, tiers: G.sets.items.map(() => 0)}; }
   function normSel(G, sel) {
     const b = bestSelection(G);
     const level = Number.isInteger(sel && sel.level) && sel.level >= 0 && sel.level <= b.level ? sel.level : b.level;
-    const tiers = G.sets.items.map((_, i) => { const t = sel && sel.tiers && sel.tiers[i]; return Number.isInteger(t) && t >= 0 && t <= MAX_TIER ? t : b.tiers[i]; });
+    const tiers = G.sets.items.map((_, i) => { const t = sel && sel.tiers && sel.tiers[i]; return setsUi(G) && Number.isInteger(t) && t >= 0 && t <= MAX_TIER ? t : b.tiers[i]; });
     const supports = supportChoices(G);
     const support = supports.some(s=>s.id===String(sel?.support))?String(sel.support):'none';
     return {level, tiers, support};
@@ -124,7 +125,7 @@
     const opt = (n, cur, label) => `<option value="${n}"${n === cur ? " selected" : ""}>${label}</option>`;
     const lv = `<label>별의 도전<select data-g="level">${opt(0, sel.level, "없음")}${G.challenge.levels.map(l => opt(l.level, sel.level, l.level + "단계")).join("")}</select></label>`;
     const sets = G.sets.items.map((it, i) => `<label>${it.name}<select data-g="set" data-i="${i}">${opt(0, sel.tiers[i], "끔")}${it.tiers.map((t, j) => opt(j + 1, sel.tiers[i], (j + 1) + "단계 +" + t.add + "% · " + t.text)).join("")}</select></label>`).join("");
-    return `<div class="gd-sel">${lv}${sets}<button type="button" class="sec" data-g="best">최고 점수 조합으로</button></div>`;
+    return `<div class="gd-sel">${lv}${setsUi(G)?sets:''}<button type="button" class="sec" data-g="best">최고 점수 조합으로</button></div>`;
   }
   // 시뮬 추정(tools/build_guild_sim.py → G.sim): 육성 배수마다 클리어율 passP 이상인 최고 단계와 그 단계 점수 범위(선택 효과 끔)
   const SUP_NAME = {none: "지원 안 고름", gust: "격돌의 돌풍", focus: "날카로운 집중력", strike: "강인한 타격", mountain: "태산의 의지", fire: "불의 고동"};
@@ -173,7 +174,7 @@
       if (!e) return "";
       const t = S.teams[e.team];
       const label = e.set === "off" ? "선택 효과 끔" : e.set === "max" ? "모두 최대(가정)" : "선택 효과 " + S.sets[e.set].join("·") + "(가정)";
-      return `<li>×${g}: 별의 도전 <b>${e.level}단계</b> · 기대 점수 <b>${rangeText(e.e)}</b> <span class="gd-state" data-k="gd-sim-set">${esc(label)}</span> <span class="mut">(${esc(t.names.join("·"))} · «${SUP_NAME[e.support]}» · 보스 평균 ${pct(e.f)} 깎음 · 클리어 ${pct(e.p)})</span></li>`;
+      return `<li>×${g}: 별의 도전 <b>${e.level}단계</b> · 기대 점수 <b>${rangeText(e.e)}</b> ${setsUi(G)?`<span class="gd-state" data-k="gd-sim-set">${esc(label)}</span> `:''}<span class="mut">(${esc(t.names.join("·"))} · «${SUP_NAME[e.support]}» · 보스 평균 ${pct(e.f)} 깎음 · 클리어 ${pct(e.p)})</span></li>`;
     }).join("");
     const head = S.levels.map(l => `<th>${l}</th>`).join("");
     const sups = S.supports || ["none"];
@@ -185,11 +186,11 @@
     }).join("")).join("");
     const gMid = S.growth.find(g => Number(g) === 2) || S.growth[S.growth.length - 1]; // 지원 비교는 기존 ×2 유지
     const supRows = S.teams.map(t => `<tr><td>${esc(t.names.join("·"))}</td>${sups.map(s => { const r = simRates(S, t, s, gMid); const m = r ? topLv(r) : -1; return `<td>${m < 0 ? "-" : m + "단계"}</td>`; }).join("")}</tr>`).join("");
-    const supTab = sups.length > 1 ? `<details class="gd-simtab"><summary>알리시아 지원별 클리어 가능 최고 단계 (×${gMid}) · 선택 효과 끔</summary><div class="gd-scroll"><table><thead><tr><th>파티</th>${sups.map(s => `<th>${SUP_NAME[s]}</th>`).join("")}</tr></thead><tbody>${supRows}</tbody></table></div></details>` : "";
-    return `<div class="gd-sim" data-k="gd-sim"><b>시뮬 추정: 깰 수 있는 최고 단계</b> ${EST} <span class="mut">선택 효과 끔</span><ul>${lines}</ul>
-${ex ? `<b>기대 점수가 가장 큰 단계</b> ${EST} <span class="mut">선택 효과 없음(클라 기준) · 졸개 2기 처치로 계산</span><ul>${ex}</ul>` : ""}
+    const supTab = sups.length > 1 ? `<details class="gd-simtab"><summary>알리시아 지원별 클리어 가능 최고 단계 (×${gMid})${setsUi(G)?' · 선택 효과 끔':''}</summary><div class="gd-scroll"><table><thead><tr><th>파티</th>${sups.map(s => `<th>${SUP_NAME[s]}</th>`).join("")}</tr></thead><tbody>${supRows}</tbody></table></div></details>` : "";
+    return `<div class="gd-sim" data-k="gd-sim"><b>시뮬 추정: 깰 수 있는 최고 단계</b> ${EST} ${setsUi(G)?'<span class="mut">선택 효과 끔</span> ':''}<ul>${lines}</ul>
+${ex ? `<b>기대 점수가 가장 큰 단계</b> ${EST} <span class="mut">${setsUi(G)?'선택 효과 끔 · ':''}졸개 2기 처치로 계산</span><ul>${ex}</ul>` : ""}
 <div class="mut gd-small">${esc(S.basis)} · 오토 전투 기준 · 단계당 ${S.runs}판(표본이 작아 한 단계쯤은 오차) · 클리어율 ${pct(S.passP)} 이상을 «깰 수 있음»으로 봄 · 기대 점수 = 시뮬에서 보스를 깎은 평균 비율을 영상으로 확인한 점수식에 넣은 값(패배해도 깎은 만큼 받음). 점수식은 실제 플레이 1판으로 확인했지만 시뮬 결과는 아직 실제와 대조 중. 수동 조작(행동 게이지 조절·브레이크 타이밍)은 반영하지 않아 실제보다 낮게 나올 수 있음. 알리시아 지원은 게임 표 값으로 넣었고 일부 해석(발동 확률·경계값)은 추정임.</div>
-${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율 (선택 효과 끔)</summary><div class="gd-scroll"><table><thead><tr><th>파티</th><th>육성</th><th>지원</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></details></div>`;
+${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율${setsUi(G)?' (선택 효과 끔)':''}</summary><div class="gd-scroll"><table><thead><tr><th>파티</th><th>육성</th><th>지원</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></details></div>`;
   }
   function panelHtml(G, sel0, step, nowMs, esc) {
     const sel = normSel(G, sel0), ex = exStep(G);
@@ -201,7 +202,7 @@ ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율 (선�
         (step===ex.step?overview(G,esc):'')+
         `<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary>`+
         (step===ex.step?selectBox(G,sel)+`<p>클리어 기준 점수 ${num(scoreAt(G,pct,1))}</p>`+levelTable(G,sel,esc):'')+
-        `<p>${esc(G.sets.note)}</p><p>시즌 지원: ${(G.supports||[]).map(s=>esc(s.name)).join(' · ')}</p></details>`+
+        (setsUi(G)?`<p>${esc(G.sets.note)}</p>`:'')+`<p>시즌 지원: ${(G.supports||[]).map(s=>esc(s.name)).join(' · ')}</p></details>`+
         `<details class="season-options" data-fold="gd-rules"><summary>전투·점수 자료</summary>${stepsTable(G,step,esc)}<p>${esc(G.score.note)}</p></details></div>`;
     }
     let html = seasonBox(G, nowMs, esc)+(step===ex.step?overview(G,esc):'');
@@ -211,11 +212,11 @@ ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율 (선�
       const pct = extraPct(G, sel.level, sel.tiers), sc = score(G, pct), b = bestSelection(G), bsc = score(G, extraPct(G, b.level, b.tiers));
       const hyp = G.score.hypotheses.map(h => `${h.name} ${num(sc[h.id])}`).join(" · ");   // 보스를 다 깎았을 때 점수
       const isBest = sel.level === b.level && sel.tiers.every((t, i) => t === b.tiers[i]);
-      html += `<div class="gd-best" data-k="gd-best"><b>최고 점수가 나오는 조합</b>: 별의 도전 ${b.level}단계 + 선택 효과 없음(클라 확인, 서버 처리는 미확인; 추가 점수 ${extraPct(G, b.level, b.tiers)}%) → 보스를 다 깎으면 점수 ${rangeText(bsc)}<br>
+      html += `<div class="gd-best" data-k="gd-best"><b>최고 점수가 나오는 조합</b>: 별의 도전 ${b.level}단계${setsUi(G)?' + 선택 효과 끔':''}(추가 점수 ${extraPct(G, b.level, b.tiers)}%) → 보스를 다 깎으면 점수 ${rangeText(bsc)}<br>
 <span class="mut">패배해도 보스를 깎은 비율만큼 보스 점수(최대 ${num(ex.bossKill)})를 받고, 추가 점수는 합계 전체에 곱해짐(실제 영상으로 확인). 그래서 못 깰 단계라도 높은 단계가 점수에 유리할 수 있음. 추천 파티는 단계와 관계없이 보스 속성·특징 기준임. 단계별 기대 점수는 아래 «시뮬 추정»에서 확인.</span></div>
 ${simBox(G, esc)}${selectBox(G, sel)}
 <div class="gd-now" data-k="gd-now">고른 조합: 추가 점수 ${pct}% → 보스를 다 깎으면 <b>${rangeText(sc)}</b>${isBest ? " (최고 조합)" : ""}<br><span class="mut">${esc(hyp)} · ${esc(G.score.hypotheses.map(h => h.name + ": " + h.desc).join(" / "))}</span></div>
-<div class="mut gd-small">${esc(G.score.note)} ${esc(G.sets.note)}</div>${levelTable(G, sel, esc)}`;
+<div class="mut gd-small">${esc(G.score.note)}${setsUi(G)?' '+esc(G.sets.note):''}</div>${levelTable(G, sel, esc)}`;
     } else {
       const s = G.steps.find(x => x.step === step);
       const total = s.base + G.stepsMeta.minions * s.kill + s.bossKill;

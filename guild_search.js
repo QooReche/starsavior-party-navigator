@@ -181,7 +181,7 @@
     const esc = cx.esc;
     const work = (...args) => cx.work ? cx.work(...args) : "";
     const error = cause => cx.error ? cx.error(cause) : work("error");
-    const warn = '<div class="mut gd-small">오토 전투 기준 · 내 정보의 실제 최종 능력치 · 선택 효과는 길방에 없다는 클라 확인에 따라 기본 끔(서버 처리는 미확인) · 시뮬 전체가 아직 실제 플레이와 충분히 대조되지 않았음(참고용). 시즌이 바뀌면 보스·규칙이 달라지니 새 시즌 값이 반영된 뒤에 사용해야 함.</div>';
+    const warn = '<div class="mut gd-small">오토 전투 기준 · 내 정보의 실제 최종 능력치 · 시뮬 전체가 아직 실제 플레이와 충분히 대조되지 않았음(참고용). 시즌이 바뀌면 보스·규칙이 달라지니 새 시즌 값이 반영된 뒤에 사용해야 함.</div>';
     const head = '';
     if (!cx.hasInfo) return `<div class="gd-search" data-k="gd-search">${head}<div class="mut gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자 불러오기 필요. 불러온 구원자 중에서 기대 점수가 가장 큰 4인 편성을 찾음.</div></div>`;
     const btn = (label) => `<button type="button" data-gs="start">${label}</button>`;
@@ -197,7 +197,7 @@
       const best=st.rows[0];
       const result=best?`<div class="season-result" data-k="gs-best"><div class="season-score"><span>상위 점수</span><b data-k="gs-score">${num(best.score)}</b><small>점</small></div><div class="season-chips"><span class="tag">${best.level}단계</span><span class="tag">${esc(cx.supportNames?.[best.sup]||SUP_NAME[best.sup]||best.sup)}</span><span class="tag">클리어 ${Math.round(best.clear*100)}%</span></div>${cx.team?cx.team(best):''}</div>`:'';
       body = `${stale}${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 리더 별도 표시)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>${cx.clientSeason?"전체 진행도":"보스 깎음"}</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
-<div class="mut gd-small">후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값임(표본이 작아 한두 단계·수천 점은 오차). 고른 선택 효과 기준(기본 끔). 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순임. ${cx.clientSeason?"점수는 판마다 실제 일반·정예 처치와 보스별 생명력 감소를 합산함. 추가 배율의 서버 반올림은 미확인임.":"점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받음."}</div></details>`;
+<div class="mut gd-small">후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값임(표본이 작아 한두 단계·수천 점은 오차). 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순임. ${cx.clientSeason?"점수는 판마다 실제 일반·정예 처치와 보스별 생명력 감소를 합산함. 추가 배율의 서버 반올림은 미확인임.":"점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받음."}</div></details>`;
     } else body = btn("내 구원자로 편성 찾기") + '<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>'+coop;
     return `<div class="gd-search" data-k="gd-search" data-state="${st.phase}">${head}${body}${st.phase === "done" ? unsupportedHtml(st.rows || [], esc) : ""}<details class="season-options" data-fold="gs-basis"><summary>계산 기준 <i class="ux-help-mark" aria-hidden="true"></i></summary><span class="gd-est">추정</span>${warn}</details></div>`;
   }

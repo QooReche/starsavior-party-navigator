@@ -15,7 +15,7 @@ const tests = {
     assert.equal(V.rangeText({A: 66000, B: 36000}), '36,000 ~ 66,000');   // 범위 표시 함수 자체는 그대로(값이 둘일 때)
     assert.equal(V.rangeText({A: 5, B: 5}), '5');
     assert.deepEqual(V.normSel(P, null), {level: 12, tiers: [0, 0, 0, 0], support:'none'}, '선택 효과는 길방에 없어 기본 끔');
-    assert.deepEqual(V.normSel(P, {level: 99, tiers: [9, -1, 'x', 2]}), {level: 12, tiers: [0, 0, 0, 2], support:'none'});
+    assert.deepEqual(V.normSel(P, {level: 99, tiers: [9, -1, 'x', 2]}), {level: 12, tiers: [0, 0, 0, 0], support:'none'});
     assert.deepEqual(V.bestSelection(P), {level: 12, tiers: [0, 0, 0, 0]});
   },
   state() {
@@ -128,10 +128,10 @@ const tests = {
     assert.equal(V.simExpect(P, S, 2).set, 'off', '기본은 선택 효과 끔만 비교(길방에 선택 효과 없음)');
     assert.equal(V.simExpect(P, S, 2, {allSets: true}).set, 'max');
     assert.equal(V.simExpect(P, S, 2, {allSets: true}).m, V.scoreAt(P, 60, 0.6));
-    assert(V.simBox({...P, sim:S}, esc).includes('>선택 효과 끔</span>') && !V.simBox({...P, sim:S}, esc).includes('모두 최대'));
+    assert(!V.simBox({...P, sim:S}, esc).includes('선택 효과') && !V.simBox({...P, sim:S}, esc).includes('(가정)'));
     t.bySets.max = tab(0.1);
     assert.equal(V.simExpect(P, S, 2, {allSets: true}).set, 'off', 'max의 실제 frac로 평가해야 함');
-    assert(V.simBox({...P, sim:S}, esc).includes('>선택 효과 끔</span>'));
+    assert(!V.simBox({...P, sim:S}, esc).includes('선택 효과'));
     S.sets.no_void = [3,3,3,0]; t.bySets.no_void = tab(1);
     assert.equal(V.simExpect(P, S, 2).set, 'off');
     assert.equal(V.simExpect(P, S, 2, {allSets: true}).set, 'no_void', '추가 프리셋도 비교(옵션)');
@@ -146,6 +146,36 @@ const tests = {
     assert.equal(V.simExpect(P, S, 2).m, 15000, '옛 클리어율 전용 자료');
     delete t.bySupport;
     assert.equal(V.simExpect(P, S, 2).m, 15000, 'rates 전용 자료');
+  },
+  sets_ui() {
+    function check(view) {
+      for (const g of [P, require('./guild_fixture')(30112)]) {
+        assert.equal(g.sets.ui, false, '공통 기본값이 보관 시즌에도 반영됨');
+        const old = {level:3, tiers:[1,2,3,1], support:V.supportChoices(g)[1].id};
+        const off = view.normSel(g, old);
+        assert.deepEqual(off, {...old, tiers:[0,0,0,0]});
+        assert.deepEqual(view.battleOptions(g,old,g.defaultStep).sets, [0,0,0,0]);
+        assert.deepEqual(view.bestSelection(g).tiers, [0,0,0,0]);
+        const h = view.panelHtml(g,old,g.defaultStep,Date.now(),esc);
+        for (const text of ['data-g="set"', '선택 효과', '(가정)', g.sets.note]) assert(!h.includes(text), text);
+        assert(h.includes('data-g="level"') && h.includes('시즌 지원') === (g.season.boss.engine === 'client'));
+        const on = {...g, sets:{...g.sets,ui:true}};
+        assert.deepEqual(view.normSel(on,old), old);
+        assert.deepEqual(view.battleOptions(on,old,g.defaultStep).sets, old.tiers);
+        assert.equal((view.panelHtml(on,old,g.defaultStep,Date.now(),esc).match(/data-g="set"/g)||[]).length,4);
+        assert(view.panelHtml(on,old,g.defaultStep,Date.now(),esc).includes(esc(g.sets.note)));
+        const missing = {...g,sets:{...g.sets}};delete missing.sets.ui;
+        assert.deepEqual(view.normSel(missing,old).tiers,[0,0,0,0]);
+      }
+    }
+    check(V);
+    const source=fs.readFileSync(require.resolve('../guild_view'),'utf8');
+    for (const [before,after] of [['setsUi(G) && Number.isInteger(t)','Number.isInteger(t)'], ["${setsUi(G)?sets:''}",'${sets}']]) {
+      assert(source.includes(before));
+      const m={exports:{}};
+      require('node:vm').runInThisContext('(function(module,require){'+source.replace(before,after)+'\n})')(m,n=>require('../'+n.slice(2)));
+      assert.throws(()=>check(m.exports), 'normalization/render mutation must fail');
+    }
   },
   mutation() {
     const orig = V.score;

@@ -24,8 +24,10 @@ class GuildVersionTest(unittest.TestCase):
             edited['season']['label'] = '표시 시즌'
             edited['season']['start'] = '2099-01-01'
             edited['sets']['items'][0]['name'] = '표시 이름'
+            edited['sets']['ui'] = not g['sets']['ui']
             if 'client' in edited:
                 edited['client']['challenge']['effectText']['hpDrain'] = '표시 수정'
+                edited['client']['sets']['ui'] = not g['client']['sets']['ui']
             self.assertEqual(season_version(g), season_version(edited))
 
     def test_calculation_inputs(self):

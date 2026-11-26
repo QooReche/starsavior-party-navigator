@@ -39,12 +39,17 @@ const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
   const selection={level:3,tiers:[1,0,0,0],support:sup};
   const opts=View.battleOptions(current,selection,current.defaultStep);
   assert.equal(opts.seasonId,current.season.id);assert.equal(opts.level,3);assert.equal(opts.support,sup);
+  assert.deepEqual(opts.sets,[0,0,0,0]);
   const lower=View.battleOptions(current,selection,current.steps[0].step);
   assert.equal(lower.level,0);assert.deepEqual(lower.sets,[0,0,0,0]);assert.equal(lower.support,sup);
   assert.equal(View.normSel(current,{support:'stale'}).support,'none');
   const ss=require('../share_state'),contents=[{key:'guild',seasonId:current.season.id,stages:[]}];
   const round=ss.parse(ss.stringify({c:'guild',gs:current.season.id,go:selection}),contents,[]);
   assert.deepEqual(round.go,selection);assert.equal(round.guildExpired,false);
+  // The page normalizes parsed links with the active season before storage/run/share.
+  const normalized=View.normSel(current,round.go);
+  assert.deepEqual(normalized,{...selection,tiers:[0,0,0,0]});
+  assert.deepEqual(ss.parse(ss.stringify({c:'guild',gs:current.season.id,go:normalized}),contents,[]).go,normalized);
   assert(ss.parse('?c=guild',contents,[]).guildExpired);
 }
 const sigCode=html.slice(html.indexOf('function simSignature('),html.indexOf('const simSig=('));
