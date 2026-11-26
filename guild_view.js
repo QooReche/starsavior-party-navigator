@@ -117,7 +117,7 @@
   function stepsTable(G, cur, esc) {
     const rows = G.steps.slice().reverse().map(s => {
       const total = s.base + G.stepsMeta.minions * s.kill + s.bossKill;
-      return `<tr${s.step === cur ? ' class="cur"' : ""}><td>${s.step}단계${s.ex ? " EX" : ""}</td><td>${num(s.power)}</td><td>${num(total)}</td></tr>`;
+      return `<tr${s.step === cur ? ' class="cur"' : ""}><td>${s.ex?'EX 스테이지':'스테이지 '+s.step+'단계'}</td><td>${num(s.power)}</td><td>${num(total)}</td></tr>`;
     }).join("");
     return `<details class="gd-steps"><summary>단계별 기본 점수</summary><div class="gd-scroll"><table><thead><tr><th>단계</th><th>권장 전투력</th><th>기본+졸개+보스 처치</th></tr></thead><tbody>${rows}</tbody></table></div><div class="mut gd-small">${esc(G.stepsMeta.minionsNote)}</div></details>`;
   }
@@ -128,12 +128,12 @@
       const tip = big && Number.isFinite(lv.noticeAtk) && Number.isFinite(lv.noticeHp) ? ` title="공지 표(옛 값): 공격 +${lv.noticeAtk}%, 생명력·방어 +${lv.noticeHp}%"` : "";
       return `<tr${lv.level === sel.level ? ' class="cur"' : ""}><td>${lv.level}</td><td${tip}>공격 +${lv.atk}% · 생명력·방어 +${lv.hp}%</td><td>+${lv.score}%</td><td>${rangeText(sc)}</td><td class="gd-fx">${levelEffects(G, lv).map(esc).join("<br>")}</td></tr>`;
     }).join("");
-    return `<div class="gd-scroll"><table class="gd-levels" data-k="gd-levels"><thead><tr><th>단계</th><th>보스 능력치</th><th>추가 점수</th><th>점수(보스 다 깎음)</th><th>누적 효과</th></tr></thead><tbody>${rows}</tbody></table></div>
+    return `<div class="gd-scroll"><table class="gd-levels" data-k="gd-levels"><thead><tr><th>★ 별의 도전</th><th>보스 능력치</th><th>추가 점수</th><th>점수(보스 다 깎음)</th><th>누적 효과</th></tr></thead><tbody>${rows}</tbody></table></div>
 <div class="mut gd-small">${esc(G.challenge.note)} ${esc(G.challenge.statNote)}</div>`;
   }
   function selectBox(G, sel) {
     const opt = (n, cur, label) => `<option value="${n}"${n === cur ? " selected" : ""}>${label}</option>`;
-    const lv = `<label>별의 도전<select data-g="level">${opt(0, sel.level, "없음")}${G.challenge.levels.map(l => opt(l.level, sel.level, l.level + "단계")).join("")}</select></label>`;
+    const lv = `<label>별의 도전<select data-g="level">${opt(0, sel.level, "★ 별의 도전 없음")}${G.challenge.levels.map(l => opt(l.level, sel.level, "★ 별의 도전 " + l.level + " · 추가 점수 +" + l.score + "%")).join("")}</select></label>`;
     const sets = G.sets.items.map((it, i) => `<label>${it.name}<select data-g="set" data-i="${i}">${opt(0, sel.tiers[i], "끔")}${it.tiers.map((t, j) => opt(j + 1, sel.tiers[i], (j + 1) + "단계 +" + t.add + "% · " + t.text)).join("")}</select></label>`).join("");
     return `<div class="gd-sel">${lv}${setsUi(G)?sets:''}<button type="button" class="sec" data-g="best">최고 점수 조합으로</button></div>`;
   }
@@ -209,7 +209,7 @@ ${supTab}<details class="gd-simtab"><summary>후보별 단계 클리어율${sets
       const st=G.steps.find(s=>s.step===step),pct=extraPct(G,sel.level,sel.tiers);
       return (G.season.start&&G.season.end&&G.season.settleEnd?seasonBox(G,nowMs,esc):
         `<div class="gd-head"><b>길드 방어전 · ${esc(G.season.label)}</b></div>`)+
-        `<p class="mut">${esc(G.season.boss.name)} · ${st.step}단계 · 최대 ${st.turnLimit}턴 · ${st.waves.length}웨이브</p>`+
+        `<p class="mut">${esc(G.season.boss.name)} · ${st.ex?'EX 스테이지':'스테이지 '+st.step+'단계'} · 최대 ${st.turnLimit}턴 · ${st.waves.length}웨이브</p>`+
         (step===ex.step?overview(G,esc):'')+
         `<div data-k="gd-details"><details class="season-options" data-fold="gd-effects"><summary>단계별 보스 능력치·효과·지원</summary>`+
         (step===ex.step?selectBox(G,sel)+`<p>클리어 기준 점수 ${num(scoreAt(G,pct,1))}</p>`+levelTable(G,sel,esc):'')+

@@ -1,0 +1,19 @@
+.seal-stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--ink);overflow:hidden;margin:4px 12px 8px 0}
+.seal-stepper button{width:44px;min-height:44px;padding:0;border-radius:0;background:transparent;color:var(--acc);font-size:20px}.seal-stepper button:disabled{opacity:.35}.seal-stepper output{min-width:64px;text-align:center;font-size:22px;font-weight:700}
+.gs-stage{display:inline-block;border:1px solid var(--brass);border-radius:4px;padding:2px 8px;color:var(--brass);font-size:12px}.gs-stage.ex{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:700}
+.gs-star{display:inline-block;border:1px solid var(--acc);border-radius:999px;padding:2px 8px;color:var(--acc);font-size:12px}.gs-star.mut{border-color:var(--line);color:var(--mut)}
+#guild-search [data-daily] .season-boss-summary{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}#guild-search [data-daily] .tag{white-space:normal;overflow-wrap:anywhere}#guild-search [data-daily] .warn{color:var(--warn)}
+#guild-search [data-k="gs-stages"] [data-current="true"]{color:var(--acc);font-weight:700}
+#guild-search [data-k="gs-daily-result"]{display:block}
+#guild-search [data-daily] .option-chips label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;background:var(--ink);cursor:pointer}
+#guild-search [data-daily] .option-chips label:has(input:checked){border-color:var(--acc);color:var(--acc)}
+@media(min-width:1200px){#guild-search [data-daily] .cs-boss>.cs-cards{grid-row:1/8}}
+@media(max-width:600px){
+ #guild-search [data-daily] .option-chips{display:flex;flex-direction:column}#guild-search [data-daily] .option-chips label{min-height:44px}
+ #guild-search [data-daily] button[data-gs="start"],#guild-search [data-daily] button[data-gs="edit"]{width:100%;min-height:48px;white-space:normal}
+ #guild-search [data-daily] .season-wait{display:block;margin:8px 0}#guild-search [data-daily] .season-boss-summary{grid-template-columns:1fr}
+ #guild-search [data-k="gs-stages"] [data-current="false"]{display:none}
+ .rowcards.gs-compact{grid-template-columns:repeat(4,minmax(0,1fr));column-gap:5px}.rowcards.gs-compact .gc{min-width:0;grid-row:auto;grid-template-rows:auto}
+ .rowcards.gs-compact .gc .ico,.rowcards.gs-compact .gc .tg,.rowcards.gs-compact .gc .why{display:none}.rowcards.gs-compact .crown span{display:none}
+ .rowcards.gs-compact .name{font-size:11px;overflow-wrap:anywhere}.rowcards.gs-compact .mi-chips{font-size:10px;overflow-wrap:anywhere}
+}

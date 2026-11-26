@@ -28,7 +28,7 @@ async function partialChecks(planner=P){
   assert.equal(out.coverage.stages.at(-1).done,1);assert.equal(out.coverage.stages.at(-1).complete,false);
   assert.equal(out.coverage.stages.filter(s=>s.complete).length,stop-1);
   assert(out.rows.every(r=>r.evaluation.partial&&r.evaluation.stage===stop));assert.equal(out.rows[0].evaluation.stageSupportComplete,stop===4);
-  const text=GS.coverageText(out);assert(text.includes('부분 결과'));if(stop<3)assert(text.includes('별의 도전 단계·지원 미평가(6단계·지원 없음 기준)'));
+  const text=GS.coverageText(out);assert(text.includes('부분 결과'));if(stop<3)assert(text.includes('스테이지·지원 미평가(★ 별의 도전 6·지원 없음 기준)'));
   if(stop===3)assert(text.includes('일부만 평가'));if(stop===4)assert(text.includes('브레이크 비교 미완료'));
   assert.equal(progress.at(-1)[0],stop);
  }

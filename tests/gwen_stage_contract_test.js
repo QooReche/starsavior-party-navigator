@@ -13,6 +13,7 @@ const inventory={
   'direct_party.js':[['${members.length}/4','excluded: party size']],
   'direct_run.js':[['${running.progress||0}/${running.snapshot.runs}','direct'],['${row.progress||0}/${row.snapshot.runs}','direct']],
   'growth_ui.js':[['${Object.keys(results).length}/${jobs.length}','producer: env.paint; default growth tab outside five owners']],
+  'guild_daily_ui.js':[], // Daily uses UiShared.planHtml and the guildSearch owner; no second progress producer.
   'guild_search.js':[['${st.total ? ` · ${st.done}/${st.total}','guildSearch'],['${index+1}/${active.length}','guildSearch']],
   'myinfo_view.js':[["${n}/${e?.parts||'?'}",'excluded: equipment set parts']],
   'party_template.html':[['role="progressbar"','reco plan: recoPlanPaint 전체 진행 줄(그웬 길 아래, reco-gwen-stage 안)'],['<progress','direct'],['${rows.filter(j=>SIMQ.res[j.sig]).length}/${rows.length}','reco'],['${got}/${all}','reco'],['${seen}/${sc.total}','excluded: stopped sample count'],['${done}/${all}','reco'],['role="progressbar"','reco'],['${v.step+1}/${v.steps.length}','reco plan'],['${dmgScore(party.map(x=>x.s.key),DMW[0]).toFixed(1)}/10','excluded: power score'],['${eq}/6','excluded: equipment slots']],
@@ -43,7 +44,7 @@ function check(src){
   assert.match(html,/const DIRECT_GWEN=GwenStage\.mount\(document,\{mode:'direct'\}\)/);
   assert.match(html,/const RECO_GWEN=GwenStage\.mount\(document,\{mode:'reco'\}\)/);
   assert.match(body(html,'csTick'),/searchGwenPaint\(\$\('cosmo-search'\),'cosmoSearch',CSR\)/);
-  assert.match(body(html,'renderGuildSearch'),/GuildSearch\.progressPaint\(p,GSR\);searchGwenPaint\(p,'guildSearch',GSR\);return/,'guild fast repaint lost common progress/owner');
+  assert.match(body(html,'renderGuildSearch'),/GuildSearch\.progressPaint\(p,GSR\);if\(D.guild.search.preset==='daily'\)GuildDailyUI\.progressPaint\(p,GSR\);searchGwenPaint\(p,'guildSearch',GSR\);return/,'guild fast repaint lost common progress/owner');
   assert.match(body(html,'recoPlanPaint'),/UiShared\.planPaint\(/);
   assert.match(src['guild_search.js'],/planHtml\('길드 편성 찾기 전체 진행'\)/);
   assert.match(body(src['guild_search.js'],'progressPaint'),/planPaint\(el,step,eta,frac\)/);

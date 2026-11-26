@@ -186,7 +186,7 @@
   function progressPaint(host,st){
     const el=host.querySelector('[data-k="plan"]');if(!el)return;
     const active=st.plan?.stages.filter(s=>s.jobs>0&&s.p>0)||[],s=st.plan?.stages[st.stageIndex],index=active.indexOf(s);
-    const step=index<0?'탐색 준비 중':`${index+1}/${active.length} ${s.name}`;
+    const step=index<0?'탐색 준비 중':`${index+1}/${active.length}단계 · ${s.name}`;
     const est=st.eta?.estimate(Date.now()/1000),eta=est?.ready?'남은 시간 '+durTextSec(est.remainSec):'남은 시간 계산 중';
     const frac=index<0?0:Math.min(.99,(index+(st.total?st.done/st.total:0))/active.length);
     planPaint(el,step,eta,frac);
@@ -194,13 +194,13 @@
   }
   function coverageText(st){
     const c=st.coverage;if(!c)return '';
-    const done=c.stages.filter(s=>s.complete).map(s=>s.stage+'단계').join('·')||'없음';
-    const live=c.stages.find(s=>!s.complete),part=live?` · ${live.stage}단계 ${num(live.done)}개 / ${num(live.jobs)}개 작업 완료(작업당 ${live.runs}판)`:'';
+    const done=c.stages.filter(s=>s.complete).map(s=>'탐색 '+s.stage+'번째').join('·')||'없음';
+    const live=c.stages.find(s=>!s.complete),part=live?` · 탐색 ${live.stage}번째 ${num(live.done)}개 / ${num(live.jobs)}개 작업 완료(작업당 ${live.runs}판)`:'';
     if(!st.partial)return `완료 범위: ${done}`;
     const row=st.rows?.[0],stage=c.selectedStage;
-    const unevaluated=stage<3?` · 별의 도전 단계·지원 미평가(${row?.level??6}단계·${row?.sup&&row.sup!=='none'?(SUP_NAME[row.sup]||row.sup):'지원 없음'} 기준)`:
+    const unevaluated=stage<3?` · 스테이지·지원 미평가(★ 별의 도전 ${row?.level??6}·${row?.sup&&row.sup!=='none'?(SUP_NAME[row.sup]||row.sup):'지원 없음'} 기준)`:
       !c.stages.find(s=>s.stage===3)?.complete?' · 별의 도전 단계·지원 일부만 평가':' · 브레이크 비교 미완료';
-    return `부분 결과 · 완료 범위: ${done}${part}${unevaluated}${row?' · '+stage+'단계에서 받은 후보 기준':' · 완료된 적격 후보 없음'}`;
+    return `부분 결과 · 완료 범위: ${done}${part}${unevaluated}${row?' · 탐색 '+stage+'번째에서 받은 후보 기준':' · 완료된 적격 후보 없음'}`;
   }
   function html(st, cx) {
     const esc = cx.esc;
@@ -218,9 +218,9 @@
     else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">${error(st.errorCause||"other")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;
     else if (st.phase === "done") {
       const stale = st.sig !== cx.sig ? '<div class="gd-warn" data-k="gd-search-stale">계산 조건이 바뀌었음. 아래 결과는 이전 선택 기준이므로 다시 찾기 필요.</div>' : "";
-      const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))+(k===(r.leaderKey||r.order[0])?" (리더)":"")).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${r.level}단계</td><td>${esc(cx.supportNames?.[r.sup] || SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
+      const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))+(k===(r.leaderKey||r.order[0])?" (리더)":"")).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${esc(cx.levelText?.(r.level)||("★ 별의 도전 "+r.level))}</td><td>${esc(cx.supportNames?.[r.sup] || SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
       const best=st.rows[0];
-      const result=best?`<div class="season-result" data-k="gs-best"><div class="season-score"><span>상위 점수</span><b data-k="gs-score">${num(best.score)}</b><small>점</small></div><div class="season-chips"><span class="tag">${best.level}단계</span><span class="tag">${esc(cx.supportNames?.[best.sup]||SUP_NAME[best.sup]||best.sup)}</span><span class="tag">클리어 ${Math.round(best.clear*100)}%</span></div>${cx.team?cx.team(best):''}</div>`:'';
+      const result=best?`<div class="season-result" data-k="gs-best"><div class="season-score"><span>상위 점수</span><b data-k="gs-score">${num(best.score)}</b><small>점</small></div><div class="season-chips"><span class="tag">${esc(cx.levelText?.(best.level)||("★ 별의 도전 "+best.level))}</span><span class="tag">${esc(cx.supportNames?.[best.sup]||SUP_NAME[best.sup]||best.sup)}</span><span class="tag">클리어 ${Math.round(best.clear*100)}%</span></div>${cx.team?cx.team(best):''}</div>`:'';
       body = `${stale}<div class="gd-small" data-k="gd-search-coverage">${esc(coverageText(st))}</div>${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 리더 별도 표시)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>${cx.clientSeason?"전체 진행도":"보스 깎음"}</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
 <div class="mut gd-small">${st.partial?'중단할 때까지 받은 후보만 비교한 값임. 전체 후보·조건 비교를 완료한 결과가 아님.':`후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값임(표본이 작아 한두 단계·수천 점은 오차).`} 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순임. ${cx.clientSeason?"점수는 판마다 실제 일반·정예 처치와 보스별 생명력 감소를 합산함. 추가 배율의 서버 반올림은 미확인임.":"점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받음."}</div></details>`;
     } else body = btn("내 구원자로 편성 찾기") + '<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>'+coop;

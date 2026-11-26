@@ -2,7 +2,7 @@
 
 ## 길드 daily 조립 (P3)
 
-`GuildPlanner.search({...cx,S:{...S,preset:'daily'},seals,split?,nowMs?,secondsPerGame?,growthResults?})`로 선택함. 기본은 `legacy`이며 화면은 옛 경로를 유지함. `split={ex,normal}` 생략 시 EX 최대부터 약할 때만 일반 나눔을 비교함. `secondsPerGame`은 선택한 작업자 수에서 측정한 벽시계 초/판이며, 미측정이면 보수적 1초로 예상함. P4 실측·기본 전환과 P5 화면·가져오기는 별도임.
+`GuildPlanner.search({...cx,S:{...S,preset:'daily'},seals,split?,nowMs?,secondsPerGame?,growthResults?})`로 선택함. 기본은 `legacy`이며 화면도 프리셋 하나로 전환함. `split={ex,normal}` 생략 시 EX 최대부터 약할 때만 일반 나눔을 비교함. `secondsPerGame`은 선택한 작업자 수에서 측정한 벽시계 초/판이며, 미측정이면 보수적 1초로 예상함. P4 실측·기본 전환은 별도임.
 
 | 명세 | daily 조립·재사용 |
 |---|---|
@@ -24,6 +24,15 @@
 사이드 이펙트: 자동 추천 길드 줄·직접 편성·공유 `go`·기존 저장 키·옛 결과 서명은 그대로임. daily 서명은 날짜·인장·나눔·설정·계정 능력치·육성·브레이크를 구분하며 저장소에 기록하지 않음. 공통 조합기의 평균 동점·순열 중복 옵션과 `runPhase` 원시값 보존은 daily에서만 요청함. 지시 밖 처리: 별도 기능 추가 없음. 독립 리뷰로 발견한 시간 예상·판 수 혼합·중단 checkpoint·단계 내부 ETA를 수정하고 회귀·변이 검사에 넣었음.
 
 새 시험은 가짜 작업자 24개 시나리오·daily 변이 14건, 날짜 경계 4건·변이 1건을 검사함. 옛 동결 기대값은 수정하지 않았음. 관련 Node 22파일·자료 버전 Python 7개를 직렬로 통과했음. 전체 run_tests·실제 시뮬·Pyodide·e2e는 실행하지 않았음.
+
+## P5 화면 연결
+
+- `guild_daily_page.js`가 날짜·인장·나눔·계정·설정을 세션 서명으로 묶고 `GuildDaily.plan/search`에 전달함. `guild_daily_ui.js`는 결과의 합산·지원 배정·나눔 이유·미평가 표식을 그대로 표시함. `guild_daily.css`는 인장 조작·스테이지/별의 도전 칩·모바일 4장 카드만 추가함. 찾는 동안 P1 막대·그웬 소유자를 재사용하며 진행 글자·목록 노드만 갱신함.
+- 직접 편성은 `GuildDailyUI.draft`로 엔진 순서·후열 리더·브레이크·육성 가정을 옮기고 기존 `GS.sel`·스테이지·`directNavigate`를 사용함. 결과와 출처 표식은 세션에 남으며 공유 `go`·기존 `guild.v3.*`·`direct.v1` 허용 목록은 유지함. 날짜가 바뀌면 결과를 지우지 않고 출정 날짜를 표시함. 숨긴 `sets.ui`·`sim.ui`는 그대로임.
+- 육성 포함은 daily API의 `growthResults`로 한 번에 실행해 같은 작업자 풀·시간 상한을 적용함. 옛 `growthStart`가 daily 결과를 단일 팀으로 오해해 다시 실행하지 않도록 막았음. 현재/육성 묶음은 각각의 합산·가져오기를 사용함. 일반 자동 추천과 legacy 육성 흐름은 그대로임.
+- 관련 Node 10파일(`guild_daily_ui`, `guild_daily`, `guild_daily_config`, `guild_progress`, `guild_view`, `guild_search`, `guild_defaults`, `search_freeze`, `gwen_stage_contract`, `direct_party`)과 e2e 4흐름(`test_guild_daily_ui`, `test_gwen_guild_owner`의 각 1280/390)을 순차 통과했음. 합성 작업자만 사용했고 8899·전체 시험·실제 Pyodide 측정은 사용하지 않았음. daily 시험은 결과→가져오기→복귀·부분 표식·중단 전/후·날짜 경계·육성 포함·저장 키·공유·390px 가로 넘침을 검사함.
+- 지시 밖 처리: 기존 그웬 e2e 합성 작업자에 누락된 `guild.base_scores`를 보완했음. 수정 전 b958a91에서도 «길드 판별 점수 자료가 누락됨»으로 실패함을 확인했음. 제품 동작·시험 기대값은 바꾸지 않았음. 페이지 업데이트 내역은 추가하지 않았음.
+- 독립 커밋 범위 리뷰에서 데스크톱 `.cs-cards` 배치, 검색 필터 밖 스테이지 가져오기, 첫 날짜 검사 오표시를 확인해 수정했음. 각각 왼쪽 카드 열·필터 해제 후 EX 가져오기·첫 tick 경고 없음 회귀 검사를 추가했음. 기각한 지적은 없음.
 
 ## P2 추출 범위
 

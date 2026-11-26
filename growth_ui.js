@@ -253,6 +253,7 @@ async function growthStageSearch(c,st,profile,id,env={}){
 }
 async function growthStart(c,st){
   if(seasonBlocked(c.key))return;
+  if(c.key==='guild'&&D.guild.search.preset==='daily')return; // Daily owns one shared deadline for both passes.
   if(!growthEnabled()||GROW.phase==='running'||SIMQ.busy!=null||GSR.phase==='run'||CSR.phase==='run'||!MI.growth||!QK.d)return;
   const seasonal=['guild','cosmo'].includes(c.key);
   if(seasonal&&!growthSeasonReady(c))return;
@@ -399,7 +400,7 @@ function growthPaint(){
   const cards=(order,lead)=>{LEADKEY=lead;return `<div class="rowcards">${order.map((k,i)=>card({s:BYKEY[k]},i===0||i===3?'back':'front',null,marks[k]||null)).join('')}</div><div class="growth-tasks">${order.map(k=>marks[k]?growthTodoRow(marks[k],BYKEY[k].name):'').join('')}</div>`;};
   let body='';
   if(c.key==='cosmo')body=r.best.teams.map(t=>`<div class="growth-score-card"><div class="season-chips"><b>${esc(csBoss(t.boss))}</b><span class="tag">난이도 ${t.level}</span><span class="tag">${esc(t.brk||'브레이크 없음')}${t.brkLv?' · Lv.'+t.brkLv:''}</span></div>${cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.leaderKey||t.order[0])}</div>`).join('');
-  else if(c.key==='guild'){const t=r.best;body=`<div class="season-chips"><span class="tag">${t.level}단계</span><span class="tag">${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</span></div>`+cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.leaderKey||t.order[0]);}
+  else if(c.key==='guild'){const t=r.best;body=`<div class="season-chips"><span class="tag">★ 별의 도전 ${t.level} · 추가 점수 +${GuildView.extraPct(D.guild,t.level,[])}%</span><span class="tag">${esc(GuildSearch.SUP_NAME[t.sup]||t.sup)}</span></div>`+cards([t.order[2],t.order[0],t.order[1],t.order[3]],t.leaderKey||t.order[0]);}
   else if(r.team){const ar=arrangeOf(r.team.t.combo,true);body=cards(ar.order,ar.lead)+`<p class="mut">${esc(r.team.breakName||'브레이크 없음')}</p>`;}
   const keys=c.key==='cosmo'?r.best.teams.flatMap(t=>t.keys||t.order):c.key==='guild'?(r.best.keys||r.best.order):r.team?.t.keys||[];
   const grown=keys.reduce((sum,k)=>sum+(r.snapshot.profile.results[k]?.power||0),0);

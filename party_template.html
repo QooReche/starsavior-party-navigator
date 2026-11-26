@@ -281,7 +281,7 @@ summary{padding:9px 4px}
 @keyframes gwen-report{from{transform:translateY(6px);opacity:.4}to{transform:none;opacity:1}}
 @media(max-width:400px){.gwen-work{gap:6px;min-height:120px}.gwen-scene{width:120px;height:120px;flex-basis:120px}}
 
-</style><link rel="stylesheet" href="ux.css"><link rel="stylesheet" href="forced.css"><link rel="stylesheet" href="recheck.css"></head><body><main>
+</style><link rel="stylesheet" href="ux.css"><link rel="stylesheet" href="forced.css"><link rel="stylesheet" href="recheck.css"><link rel="stylesheet" href="guild_daily.css"></head><body><main>
 <header class="site-head"><h1><img class="gwen-head" src="assets/ui_icons/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true"><span>파티 편성 네비게이터 <small>베타</small></span></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button><button id="mi-send" type="button" class="sec mi-import" aria-live="polite" aria-label="내 정보 보내기" title="내 구원자 정보만 담은 링크를 복사함. 받은 사람은 휴대폰에서 열어 스테이지를 직접 골라 계산" hidden><span class="mi-send-long">내 정보 </span>보내기</button></span>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천</button><button id="tab-info" type="button" aria-pressed="false">내 구원자</button></nav></header>
 <p class="notice update-notice" data-k="update-notice">📢 11/26 업데이트 · 길드 방어전 시즌 5(카본펑크 칸) · 토벌 의뢰 21·22단계 반영 <a href="#update-history" onclick="document.getElementById('update-history').open=true">자세히</a></p>
@@ -456,6 +456,8 @@ summary{padding:9px 4px}
 <script src="score_combinations.js"></script>
 <script src="cosmo_search.js"></script>
 <script src="guild_daily.js"></script>
+<script src="guild_daily_ui.js"></script>
+<script src="guild_daily_page.js"></script>
 <script src="skill_view.js"></script>
 <script>
 const D=/*DATA*/null;
@@ -511,7 +513,7 @@ function renderGuild(){const c=contents[$("content").value],p=$("guild-panel"),s
  extra.hidden=false;extra.replaceChildren(p.querySelector('[data-k="gd-details"]'));seasonRestoreFolds(extra,folds);
  const sel=GuildView.normSel(D.guild,GS.sel);
  extra.insertAdjacentHTML('afterbegin',`<label>시즌 지원<select data-g="support">${GuildView.supportChoices(D.guild).map(s=>`<option value="${esc(s.id)}"${s.id===sel.support?' selected':''}>${esc(s.name)}</option>`).join('')}</select></label>`);
- const ex=D.guild.steps.find(x=>x.step===D.guild.defaultStep);renderGuildSearch(!!ex&&parseInt(s.name,10)===ex.step)}
+ const ex=D.guild.steps.find(x=>x.step===D.guild.defaultStep);renderGuildSearch(D.guild.search.preset==='daily'||!!ex&&parseInt(s.name,10)===ex.step)}
 $("guild-extra").addEventListener("change",e=>{const t=e.target.closest("select[data-g]");if(!t)return;
  const sel=GuildView.normSel(D.guild,GS.sel);if(t.dataset.g==="level")sel.level=+t.value;else if(t.dataset.g==='support')sel.support=t.value;else sel.tiers[+t.dataset.i]=+t.value;
  GS.sel=sel;LS.set(guildStoreKey(),sel);growthCancel();simInvalidate();renderGuild();growthPaint();directRefresh()});
@@ -545,11 +547,13 @@ function searchGwenPaint(host,mode,state){
 }
 function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}if(GSR.phase==="run"){GSR.phase="idle";GSR.id++}GwenStage.destroy('guildSearch');p.hidden=true;p.innerHTML="";return}
+ if(D.guild.search.preset==='daily')guildDailyInput();
  const prog=p.querySelector('[data-k="gd-search-prog"]');
- if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);GuildSearch.progressPaint(p,GSR);searchGwenPaint(p,'guildSearch',GSR);return}
- const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:()=>GwenStage.slot('guildSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('guildSearch','board')+GwenStage.slot('guildSearch','result'),clientSeason:D.guild.season.boss.engine==="client",supportNames:Object.fromEntries((D.guild.supports||[]).map(s=>[s.id,s.name])),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,newSearch:D.guild.search.newSearch,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild');GuildSearch.progressPaint(p,GSR);searchGwenPaint(p,'guildSearch',GSR)}
+ if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);GuildSearch.progressPaint(p,GSR);if(D.guild.search.preset==='daily')GuildDailyUI.progressPaint(p,GSR);searchGwenPaint(p,'guildSearch',GSR);return}
+ const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=D.guild.search.preset==='daily'?guildDailyHtml():GuildSearch.html(GSR,{work:()=>GwenStage.slot('guildSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('guildSearch','board')+GwenStage.slot('guildSearch','result'),clientSeason:D.guild.season.boss.engine==="client",levelText:level=>level?`★ 별의 도전 ${level} · 추가 점수 +${GuildView.extraPct(D.guild,level,[])}%`:"★ 별의 도전 없음",supportNames:Object.fromEntries((D.guild.supports||[]).map(s=>[s.id,s.name])),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,newSearch:D.guild.search.newSearch,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild');GuildSearch.progressPaint(p,GSR);searchGwenPaint(p,'guildSearch',GSR)}
 function gsTeam(t){return seasonTeam(t,true);}
 async function guildSearchStart(target=GSR,profileOverride=null){
+ if(D.guild.search.preset==='daily')return guildDailyStart(target,profileOverride);
  if(seasonBlocked('guild'))return;
  const GSR=target;
  if(!MI.info||GSR.phase==="run"||(SIMQ.busy!=null&&!profileOverride)||CSR.phase==="run")return;
@@ -575,8 +579,10 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   Object.assign(GSR,out,{sig,eta:null});
   GSR.context=context;GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&!GSR.partial&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
  }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.errorCause=e.gwenCause||"other";GSR.phase=GSR.errorCause==="cancel"?"idle":"err";GSR.msg=e.message||String(e);paint()}finally{tick.cancel()}}
-$("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
+$("guild-search").addEventListener("change",e=>{const split=e.target.closest('input[data-gs="split"]');if(split&&GSR.phase!=="run"){GSR.splitChoice=split.value==='auto'?null:GuildDaily.splits(D.guild.search.daily,GSR.sealCount??D.guild.search.daily.seals.default,GuildView.gameDay(D.guild).exOpen).find(s=>s.ex===+split.value);growthCancel();renderGuildSearch(true);return;}const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
 $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[data-gs]");if(!b)return;
+ if(b.dataset.gs==='edit'){guildDailyFromSearch(+b.dataset.team,b.dataset.grown==='true');return;}
+ if(['minus','plus'].includes(b.dataset.gs)){if(GSR.phase==='run')return;GSR.sealCount=Math.max(1,Math.min(4,(GSR.sealCount??D.guild.search.daily.seals.default)+(b.dataset.gs==='plus'?1:-1)));GSR.splitChoice=null;growthCancel();renderGuildSearch(true);return;}
  if(b.dataset.gs==="start")guildSearchStart();
  else if(b.dataset.gs==="partial"){if(GSR.phase!=="run")return;GSR.stopRequested=true;GSR.handle?.cancel();renderGuildSearch(true)}
  else if(b.dataset.gs==="cancel"){GSR.id++;if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";renderGuildSearch(true)}});
@@ -1461,7 +1467,7 @@ function recoPlanPaint(){const el=document.querySelector('#reco-gwen-stage [data
  UiShared.planPaint(el,step,eta,v.frac);
  const l=JSON.stringify(RECO_PLAN.learned());if(l!==recoPlanPaint.saved){recoPlanPaint.saved=l;LS.set("reco.plan.v1",JSON.parse(l))}}   // 다음 실행의 첫 추정용(같은 기기)
 // 1초마다: 전체 진행 줄 + (스킬 비교 등 따로 도는 작은 작업의) 남은 시간 글자. 화면 전체를 다시 그리지 않고 글자만
-setInterval(()=>{recoPlanPaint();if(GSR.phase==='run')GuildSearch.progressPaint($('guild-search'),GSR);if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
+setInterval(()=>{guildDailyDateTick();recoPlanPaint();if(GSR.phase==='run')GuildSearch.progressPaint($('guild-search'),GSR);if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
 // 추천은 버튼으로 시작한다. 시험용 URL과 공유 링크만 자동으로 시작한다.
 const AUTO=!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'&&/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
 const RECO={timer:null,revision:0,standard:false,sharedPending:!!SHARE.c&&!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'};
@@ -1647,7 +1653,7 @@ $("mi-list").addEventListener("change",e=>{const x=e.target.closest("input[data-
  gsReset();LS.set("excl",[...EXCL]);syncOwn();saveSel();updCount();renderMi();rerun()});
 $("mi-excl").addEventListener("click",e=>{if(!e.target.closest("button[data-exclclear]"))return;gsReset();EXCL.clear();LS.set("excl",[]);syncOwn();saveSel();updCount();renderMi();rerun()});
 function gsReset(){try{csReset()}catch(e){}if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.id++;GSR.phase="idle";GSR.rows=[];GSR.msg=""}   // 내 정보·추천 제외가 바뀌면 이전 편성 찾기 결과·진행을 버림
-function miReset(info){GROW.history={};simInvalidate();gsReset();SIMQ.res={};SIMQ.scr={};SIMQ.refined=new Set();SIMQ.more={};SIMQ.err="";BRCMP.seen.clear();BRCMP.open={};for(const k in PICK)delete PICK[k];
+function miReset(info){GROW.history={};simInvalidate();gsReset();DIRECT.guildSearchSource=null;SIMQ.res={};SIMQ.scr={};SIMQ.refined=new Set();SIMQ.more={};SIMQ.err="";BRCMP.seen.clear();BRCMP.open={};for(const k in PICK)delete PICK[k];
  MI.info=info;REQ=!!info&&(REQ||AUTO);MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
  if(info)$("grow").value="myinfo";else if($("grow").value==="myinfo")$("grow").value="1";
  miSelect();rerun()}

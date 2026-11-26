@@ -23,7 +23,7 @@ FAKE='''() => {
   window.stageFlush=()=>{stageAuto=true;const next=()=>{for(let i=0;i<100&&stageQueue.length;i++)stageStep();if(stageAuto)setTimeout(next,10);};next();};
   window.Worker=class {
     postMessage(m){stagePosts.push(m);const send=data=>this.onmessage?.({data:{id:m.id,...data}});
-      for(const t of m.teams)stageQueue.push(()=>send({type:'team',key:t.key,result:{n:m.n_runs,clear:.8,prog:.9,progs:[.8,1],via:{},u:{},
+      for(const t of m.teams)stageQueue.push(()=>send({type:'team',key:t.key,result:{n:m.n_runs,clear:.8,prog:.9,progs:[.8,1],via:{},u:{},guild:{base_scores:Array(m.n_runs).fill(10000)},
         cosmo:{mean:10000,top:12000,n:m.n_runs,clear:.8,frac:.9}}}));
       stageQueue.push(()=>send({type:'done'}));
     }

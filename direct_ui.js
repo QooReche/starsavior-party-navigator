@@ -113,7 +113,7 @@ function directRefresh(){
   // A reserved auto/share recommendation has not started yet. Switching away
   // must not launch it later; already running jobs/results remain untouched.
   if(DIRECT.mode!=='reco'&&RECO.timer){recoClearTimer();RECO.sharedPending=false;}
-  directHome();directVisibility();cdRefresh();
+  directHome();directVisibility();cdRefresh();guildDailySourcePaint();
   if(DIRECT.mode==='direct'&&contents[$('content').value]?.key!=='cosmo'){
     if(!DIRECT.slots&&!DIRECT.loading&&!DIRECT.error){
       DIRECT.loading=Promise.all([MI.info?miGrowth():Promise.resolve(),fetch('data/myinfo_slots.json').then(r=>{if(!r.ok)throw Error('장비 부위 자료 오류');return r.json();})])
