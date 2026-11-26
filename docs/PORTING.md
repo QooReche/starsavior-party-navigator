@@ -61,6 +61,8 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 
 공유 링크는 `c=guild&gs=<seasonId>`임. `gs` 없는 옛 링크는 30111로 해석하고, 현재 선택과 다르면 안내 후 실행을 막음. 검색·저장·결과 캐시는 시즌과 자료 버전을 포함함. 일반 적 정의 등 의존 자료가 달라지면 보관 정의를 조용히 다른 데이터로 실행하지 않고 오류로 알림.
 
+길드 탐색 기본값은 `data/guild_defaults.json`의 `search.preset`이 정본임. 현재 daily는 EX 1팀(닫힌 날 일반 1팀)을 찾고 남은 인장으로 일반 팀을 이어서 찾음. `legacy`는 명시적 프리셋으로 유지함. `preset/daily` 변경은 `build_guild_seasons.py --select-only` → `build_party_html.py index.html` 순서로 현재 시즌·생성 사본에 반영하며 전투 자료 버전·시뮬 표 재계산은 필요하지 않음. 탐색 계약·P4 근거는 [score_search.md](score_search.md)·[guild_time.md](guild_time.md)를 따름.
+
 11/26처럼 일반 적 조각이 추가되면 보관 시즌도 현재 클라에서 다시 추출해 의존 자료·근거 줄을 갱신함. 30111의 BFB 설정·`data/guild_seasons/30111/` 보관 자산은 생성기가 유지하며 과거 빌드 재현본으로 부르지 않음. 마지막에 현재 시즌의 날짜·공식 출처를 확인하고 `--select-only` → `build_guild_sim.py` 순서로 자료 버전을 맞춤. 시즌 전용 시험은 해당 보관 ID를 명시하고 현재 시즌 시험과 구분함.
 칸 대조 근거·잔여 제한은 [칸 검증 문서](guild_khan_1125.md), 미지원 관문 운영은 [관문 문서](unsupported_gate.md)에 정리했음.
 
