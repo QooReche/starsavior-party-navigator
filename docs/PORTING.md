@@ -56,6 +56,7 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 3. 생성된 시즌 파일의 `season.start/end/settleEnd`, `asOf`, 표시 문구·출처를 확인한 값으로 채움. 실제 전투 값과 보스 실행기(`client`/`bfb`)를 확인함. 선택 효과 `sets`는 계속 가정 계산용임. 보스별 실제 처치·체력 감소가 기본 점수이고, 추가 점수 배율의 서버 반올림은 미확인임.
 4. `python -X utf8 -I tools/build_guild_seasons.py --current 30112 --select-only`로 현재 시즌을 전환함. 정본의 `dataVersion` 재계산, 현재 사본, `party_contents.json`의 보스 항목을 함께 생성함. 현재 기본은 `data/guild_current.json`이 정본임. 11/26 공개 행 확인 뒤 30112로 전환했음.
 5. `python -X utf8 -I tools/build_guild_sim.py --season 30112 --workers 1`로 현재 시즌 시뮬 표를 생성함. 지원·도전 범위·기준 전투력은 시즌 정의에서 읽음. 새 표의 시즌·자료 버전이 다르면 화면에 싣지 않음. 30111 보관 자산을 새 시즌 표로 덮어쓰지 않음.
+   표시 문구는 `guild_defaults.json`에서 고친 뒤 보관 시즌을 재생성함. 자료 버전은 `tools/guild_version.py`의 계산 입력만 해시하며 `sets.items[].tiers[].text`·`search.excludeText`는 계산 입력으로 유지함([근거](guild_display_1126.md)). 결과 비교를 위한 재생성은 기존 표의 팀 수·판수·시드도 유지함(현재 30112 표: `--teams 2 --runs 20 --seed 7`).
 6. `python -X utf8 -I tools/unsupported_allowlist.py --diff` → `python -X utf8 -I tools/run_tests.py --rebuild` → Playwright의 `tests/e2e/test_page.py`·길드 관련 시험을 실행함. 관문은 보관된 client 시즌도 검사함. 새 미지원은 클라로 확정하거나 근거와 사유를 등록함. BFB 78조건 골든·108조건 훅/타임라인 회귀도 확인함.
 
 공유 링크는 `c=guild&gs=<seasonId>`임. `gs` 없는 옛 링크는 30111로 해석하고, 현재 선택과 다르면 안내 후 실행을 막음. 검색·저장·결과 캐시는 시즌과 자료 버전을 포함함. 일반 적 정의 등 의존 자료가 달라지면 보관 정의를 조용히 다른 데이터로 실행하지 않고 오류로 알림.
