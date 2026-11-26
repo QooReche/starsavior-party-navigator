@@ -137,6 +137,7 @@
 
   // 예선 결과 → 상위 n 팀(상위 점수 → 상한 도달률 → 평균 순, 같으면 키 순). res = {jobKey: {prog, clear, progs}}
   function pickTop(V, G, jobs, res, tiers, n, S) {
+    if(jobs.some(j=>!res[j.key]))throw new Error('길드 계산 결과가 누락됨');
     const sc = jobs.filter(j => res[j.key] && !coopHit(S || {}, res[j.key])).map(j => ({keys: j.keys, ...rankStats(V, G, j.level, tiers, res[j.key].prog, res[j.key].progs, res[j.key].clear, res[j.key].guild)}));
     sc.sort((a, b) => byRank(a, b) || (a.keys.join() < b.keys.join() ? -1 : 1));
     if (S?.newSearch !== true) return sc.slice(0, n).map(x => x.keys);

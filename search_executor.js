@@ -83,7 +83,12 @@ function simDispatch(ws,jobs,o){const b={ws,jobs,o,owner:o.owner||'reco',next:0,
  SIMPOOL.batches.push(b);simPump();return b}
 // 무진행 감시(작업자별): 일하는 작업자마다 «마지막 소식(w._last) + 상한»을 넘기면 stop(그 작업자가 엔진을 준비했는가). 상한 = 엔진 준비 전 LOAD_MS, 준비 뒤 limit().
 //  가려진 탭이거나 타이머가 예정보다 크게 늦게 돌았으면(탭 동결·절전 복귀 — 그동안 계산도 멈춤) 끝내지 않고 다시 잰다. 늦게 돈 경우 그동안 잰 팀 시간(w._t)은 속도 표본에서 버린다
-function simWatch(ws,limit,live,stop){let timer;const lim=w=>w._ready?limit():env.loadMs();
+function simWatch(ws,limit,live,stop){return watchWorkers(ws,limit,live,stop,{...env,now,setTimer,clearTimer})}
+return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watch:simWatch,release:simRelease,chunkSize};
+}
+function watchWorkers(ws,limit,live,stop,env={}){
+ const now=env.now||(()=>Date.now()),setTimer=env.setTimer||((...args)=>setTimeout(...args)),clearTimer=env.clearTimer||((...args)=>clearTimeout(...args));
+ let timer;const lim=w=>w._ready?limit():env.loadMs();
  const arm=()=>{clearTimer(timer);const busy=ws.filter(w=>w._job!=null);if(!busy.length)return;
   const wait=Math.max(1,Math.min(...busy.map(w=>w._last+lim(w)))-now()),due=now()+wait;
   timer=setTimer(()=>{if(!live())return;const late=now()-due>5000;
@@ -91,8 +96,6 @@ function simWatch(ws,limit,live,stop){let timer;const lim=w=>w._ready?limit():en
    const dead=ws.find(w=>w._job!=null&&now()-w._last>=lim(w));if(!dead){arm();return}
    stop(!!dead._ready)},wait)};
  arm.cancel=()=>clearTimer(timer);return arm}
-return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watch:simWatch,release:simRelease,chunkSize};
-}
   function split(jobs, n) {
     const out = Array.from({length: Math.max(1, Math.min(n, jobs.length))}, () => []);
     jobs.forEach((j, i) => out[i % out.length].push(j));
@@ -108,12 +111,17 @@ return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watc
       close() { if (closed) return; closed = true; ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; w.terminate(); }); }
     };
   }
-  function runPhase({makeWorker, pool, jobs, workers, runs, seed, stage, base, onProgress, chunk, options, onResult, project=x=>x}) {
+  function runPhase({makeWorker, pool, jobs, workers, runs, seed, stage, base, onProgress, chunk, options, onResult, project=x=>x, watch={}}) {
     const resources=pool||workerPool(makeWorker);
     const dyn = chunk > 0;
     const parts = dyn ? Array.from({length: Math.max(1, Math.min(workers, Math.ceil(jobs.length / chunk)))}, () => []) : split(jobs, workers), res = {}, ws = [];
     let done = 0, finished = 0, dead = false, rejectFn, next = 0, seq = 0;
+    const now=watch.now||(()=>Date.now());
+    const arm=watchWorkers(ws,()=>watch.limit?watch.limit(runs):240000,()=>!dead,
+      ready=>fail(Object.assign(new Error(ready?'모의 전투 무진행 시간 초과':'계산 엔진 준비 시간 초과'),{gwenCause:'timeout'})),
+      {...watch,loadMs:watch.loadMs||(()=>180000)});
     const clean = fatal => {
+      arm.cancel();ws.forEach(w=>w._job=null);
       if (!pool || fatal) resources.close();
       else ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; });
     };
@@ -124,26 +132,41 @@ return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watc
       try { parts.forEach((part, wi) => {
         if (dead) return;
         const w = resources.get(wi); ws.push(w);
-        let requestId;
+        let requestId,pending=new Map(),left=0,active=false;
         const send = list => {
           requestId = pool ? pool.nextId() : ++seq;
+          pending=new Map();for(const j of list)pending.set(j.key,(pending.get(j.key)||0)+1);
+          left=list.length;active=true;w._job=requestId;w._last=now();arm();
           try { w.postMessage({type: "run", id: requestId, base, stage, n_runs: runs, seed, options: options || {build: "standard", rules_override: {power_penalty: "model"}},
             teams: list.map(j => ({key: j.key, party: j.party, options: j.options}))}); }
           catch (e) { fail(e); }
         };
         w.onmessage = e => {
-          const m = e.data; if (dead || (m.id != null && m.id !== requestId)) return;
-          if (m.type === "team") { res[m.key] = project(m.result); if(onResult)onResult(m.key,m.result); done++; if (onProgress) onProgress(done, jobs.length); }
-          else if (m.type === "done" && dyn && next < jobs.length) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); }
-          else if (m.type === "done") { if (++finished === parts.length) { dead = true; clean(false); resolve(res); } }
-          else if (m.type === "error") fail(new Error(m.msg || "작업자 오류"));
+          const m = e.data; if (dead || !active || (m.id != null && m.id !== requestId) || (m.requestId!=null&&m.requestId!==requestId)) return;
+          try{
+            if((m.type==='team'||m.type==='done')&&m.id!==requestId)throw new Error('요청 id가 없는 계산 응답');
+            if(m.type==='stage'){if(m.msg==='준비 끝')w._ready=true;w._last=now();arm();}
+            else if (m.type === "team") {
+              if(!(pending.get(m.key)>0)||!m.result||typeof m.result!=='object')throw new Error('누락·중복 또는 요청 밖 계산 결과');
+              pending.set(m.key,pending.get(m.key)-1);left--;
+              res[m.key] = project(m.result);w._ready=true;w._last=now();arm();
+              if(onResult)onResult(m.key,m.result); done++; if (onProgress) onProgress(done, jobs.length);
+            }
+            else if (m.type === "done") {
+              if(left)throw new Error('계산 결과가 누락된 채 작업이 끝남');
+              active=false;w._job=null;arm();
+              if(dyn&&next<jobs.length){const l=jobs.slice(next,next+chunk);next+=l.length;send(l);}
+              else if(++finished===parts.length){dead=true;clean(false);resolve(res);}
+            }
+            else if (m.type === "error") fail(new Error(m.msg || "작업자 오류"));
+          }catch(err){fail(err);}
         };
         w.onerror = ev => fail(new Error("작업자 오류: " + (ev && ev.message || "알 수 없음")));
         if (dyn) { const l = jobs.slice(next, next + chunk); next += l.length; send(l); return; }
         send(part);
       }); } catch (e) { fail(e); }
     });
-    return {promise: p, cancel() { if (dead) { if (pool) pool.close(); return; } fail(Object.assign(new Error("취소"),{gwenCause:"cancel"})); }};
+    return {promise: p, snapshot:()=>({...res}), cancel() { if (dead) { if (pool) pool.close(); return; } fail(Object.assign(new Error("취소"),{gwenCause:"cancel"})); }};
   }
   function etaNew(o) {
     const W = o.weights.slice(), warm = o.warmup == null ? 3 : o.warmup, win = o.window == null ? 20 : o.window, prior = o.prior || null, GAP = 0.25, blend = o.blend == null ? 0 : o.blend, frac = o.winFrac == null ? 0 : o.winFrac;

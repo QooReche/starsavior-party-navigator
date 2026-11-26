@@ -364,7 +364,7 @@
     const run = async (jobs, runs, seed, msg, idx, carry = 0, expected = jobs.length + carry) => {
       if (cx.onPhase) cx.onPhase(msg, expected, {stage: idx, teams: expected, runs, games: expected * runs});
       if (carry && cx.onProgress) cx.onProgress(carry, expected);
-      const h = GS.runPhase({makeWorker: cx.makeWorker, pool: workersPool, jobs, workers: cx.workers, runs, seed, stage: cx.stage, base: cx.base,
+      const h = GS.runPhase({makeWorker: cx.makeWorker, pool: workersPool, jobs, workers: cx.workers, runs, seed, stage: cx.stage, base: cx.base, watch:cx.watch,
         onProgress: cx.onProgress ? d => cx.onProgress(d + carry, expected) : null, chunk: Math.max(1, Math.min(50, Math.ceil(jobs.length / (cx.workers * 40))))});
       if (cx.onHandle) cx.onHandle(h);
       return h.promise;

@@ -29,7 +29,7 @@
     const run=async(jobs,runs,seed,msg)=>{
       if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});
       const stage=phase++;cx.onPhase?.(msg,jobs.length,{stage,jobs:jobs.length,teams:jobs.length,runs,games:jobs.length*runs});
-      const h=GS.runPhase({makeWorker:cx.makeWorker,jobs,workers:Math.max(1,Math.min(2,cx.workers||2)),runs,seed,stage:cx.stage,base:cx.base,onProgress:cx.onProgress});
+      const h=GS.runPhase({makeWorker:cx.makeWorker,jobs,workers:Math.max(1,Math.min(2,cx.workers||2)),runs,seed,stage:cx.stage,base:cx.base,watch:cx.watch,onProgress:cx.onProgress});
       cx.onHandle?.(h);const res=await h.promise;
       if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});
       return res;
@@ -59,7 +59,7 @@
     const pool=GS.workerPool(cx.makeWorker),stale=cx.stale||(()=>false);
     const run=async(jobs,runs,seed,msg)=>{
       if(stale())throw Error('취소');cx.onPhase?.(msg,jobs.length);
-      const h=GS.runPhase({makeWorker:cx.makeWorker,pool,jobs,workers:Math.max(1,Math.min(2,cx.workers||2)),runs,seed,stage:cx.stage,base:cx.base,chunk:S.execution?.chunk||8,onProgress:cx.onProgress});cx.onHandle?.(h);
+      const h=GS.runPhase({makeWorker:cx.makeWorker,pool,jobs,workers:Math.max(1,Math.min(2,cx.workers||2)),runs,seed,stage:cx.stage,base:cx.base,watch:cx.watch,chunk:S.execution?.chunk||8,onProgress:cx.onProgress});cx.onHandle?.(h);
       const r=await h.promise;if(stale())throw Error('취소');if(jobs.some(j=>!Number.isFinite(r[j.key]?.prog)||!Array.isArray(r[j.key]?.progs)))throw Error('길드 계산 결과가 누락됨');return r;
     };
     const make=(keys,level=S.screen.level,sup=S.screen.support||'none',brk=null,p)=>job(S,keys,results,cls,tiers,level,sup,brk,p);
