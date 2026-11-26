@@ -1,3 +1,9 @@
+## 2026-11-27 — daily 전환 후 최종 전체 검증
+
+- 수정 완료 뒤 전체 e2e `tests/e2e/test_page.py`를 1회 실행해 78통과·0실패, 이어서 `python -X utf8 -I tools/run_tests.py`를 1회 실행해 304파일 통과·0실패를 확인했음. 기존 환경 의존 검사 6건은 건너뜀(비공개 표·클라 대조 자료 경로 없음). 원문은 worktree의 `local/final-fix-e2e.txt`·`local/final-fix-runtests.txt`.
+- `test_screen_stop_notice`는 수정하지 않았음. 기준선과 겹친 실행 3회는 2통과·1실패, 다른 전체 시험을 끝낸 뒤 독립 실행 3회도 2통과·1실패였음. 둘 다 두 번째 중단 뒤 `scr-short` 요소 대기 실패였고 최종 전체 e2e에서는 통과했음. 간헐 실패가 남아 있음을 기록함(`local/fix-stop-isolated-1.txt`~`3.txt`).
+- 기대값 완화·timeout 연장·push 없음. manifest 갱신 때 index는 불변이었고, 공지 요약 변경 때만 index를 재생성했음. 전체 실행 뒤 생성물 변경 없음. 독립 리뷰는 고정 커밋 범위로 2회 수행했음.
+
 ## 2026-11-26 — 최종 시험 복구: 상단 공지 길이
 
 - 상단 공지 요약을 줄여 기존 60자 기준을 지켰음. 길드 시즌·오늘 편성 찾기 개편·토벌 의뢰 단계를 유지하고 보스명 등 자세한 내용은 업데이트 내역에 남겼음. `index.html` 재생성했음.
