@@ -1,6 +1,7 @@
 // Candidate generation only: tactics are hypotheses; simulation chooses the winner.
 (function(root){
   'use strict';
+  const SS=typeof module!=='undefined'&&module.exports?require('./score_search.js'):root.ScoreSearch;
   const VERSION='placement-ehp-joint-v1';
   const {teamId:id}=typeof module!=='undefined'&&module.exports?require('./ui_shared.js'):root.UiShared;
   const stats=(results,k)=>results[k]?.stats||{};
@@ -35,6 +36,7 @@
     return orders.flatMap(order=>k.map(leaderKey=>({order:order.slice(),leaderKey})));
   }
   const executionKey=(keys,p)=>JSON.stringify([VERSION,id(keys),p.order,p.leaderKey]);
+  const jobKey=(keys,p,legacy,dimensions,prefix='')=>!p?.leaderKey?legacy():prefix+JSON.stringify([executionKey(keys,p),...dimensions]);
   const boundaries=levels=>levels.filter((l,i)=>JSON.stringify(l.effects||[])!==JSON.stringify(levels[i-1]?.effects||[])).map(l=>l.level);
   function reorder(spec,p){const byKey=new Map(spec.units.map(u=>[u.key,u]));validate([...byKey.keys()],p);return {units:p.order.map(k=>byKey.get(k)),leader:p.order.indexOf(p.leaderKey)};}
   function best(jobs,res,compare,valid=Boolean){
@@ -76,8 +78,8 @@
   // 일반 자동 추천 끝의 자리·리더 비교(11/23). 결과 r = 웹 요약({t60?,clear,prog,progs}).
   // 24개 중 최대값을 고르면 운으로 부푼다(승자의 저주) → 규칙 자리와 같은 판 수·시드로 비교해 «여유폭»을 넘을 때만 바꾼다.
   // 여유폭 = max(1%p, z × 표준오차), z=2.4(대안 최대 3개의 다중 비교 보정 근사). 목표 지표가 조금이라도 나빠지면 바꾸지 않는다.
-  const goalOf=r=>r.t60??r.clear;
-  function recoCompare(a,b){return goalOf(b)-goalOf(a)||b.clear-a.clear||(b.prog||0)-(a.prog||0);}
+  const goalOf=SS.goal;
+  const recoCompare=SS.recoRank;
   // 같은 시드로 돌린 두 결과는 판끼리 짝지어 비교한다(짝 차이의 표준오차가 독립 표본식보다 작다 — 같은 판 수로 더 작은 이득도 잡음).
   //   판별 클리어 = progs 가 1(모든 웨이브 처치). N턴 내 클리어(t60)는 판별 값이 없어 독립 표본식을 쓴다(보수적).
   const pairOk=(a,b)=>Array.isArray(a.progs)&&Array.isArray(b.progs)&&a.progs.length===b.progs.length&&a.progs.length>0;
@@ -106,6 +108,6 @@
     rows.sort((a,b)=>recoCompare(res[a.key],res[b.key])||Number(!!b.rule)-Number(!!a.rule)||a.key.localeCompare(b.key));
     const top=rows[0];return top.rule||!recoBetter(res[top.key],res[rule.key],z)?rule:top;
   }
-  const api={VERSION,id,ehp,baseline,validate,party,variants,all,executionKey,reorder,best,race,raceMany,levels,boundaries,recoCompare,recoBetter,recoDecide,recoStop};
+  const api={VERSION,id,ehp,baseline,validate,party,variants,all,executionKey,jobKey,reorder,best,race,raceMany,levels,boundaries,goalOf,recoCompare,recoBetter,recoDecide,recoStop};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PartyPlacement=api;
 })(typeof window!=='undefined'?window:globalThis);

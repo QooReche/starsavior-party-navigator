@@ -3,6 +3,7 @@
 // 시즌 값(풀 크기·판 수·K 등)은 data/cosmo_raid.json 의 search. 점수는 시뮬 쪽(battlesim/web.py cosmo_summary)이 판마다 점수식에 넣어 요약값으로 돌려준다.
 (function (root) {
   "use strict";
+  const SS=typeof module!=='undefined'&&module.exports?require('./score_search.js'):root.ScoreSearch;
   const Executor = typeof module !== "undefined" && module.exports ? require("./search_executor.js") : root.SearchExecutor;
   const {num, teamId, pctText, durTextSec} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const GS = typeof require !== "undefined" ? require("./guild_search.js") : root.GuildSearch;
@@ -20,11 +21,11 @@
   // 순위 값: 기준 점수 -> 반대 점수 -> 클리어율. 평균 진행도 같은 중간값을 비선형 식에 넣지 않고 작업자가 낸 점수 요약을 그대로 쓴다
   const metric = (st, mode) => mode === "top" ? st.top : st.mean;
   const other = (st, mode) => mode === "top" ? st.mean : st.top;
-  const byRank = mode => (a, b) => metric(b.st, mode) - metric(a.st, mode) || other(b.st, mode) - other(a.st, mode) || (b.st.clear || 0) - (a.st.clear || 0);
+  const byRank = mode => {const cmp=SS.cosmoRank(mode);return (a,b)=>cmp(a.st,b.st);};
   const idOf = teamId;
 
   const AUTO = -1;   // 난이도 선택값: 자동(가장 점수가 높은 난이도)
-  const jobKey = (boss, keys, level, brk, p=null) => !p?.leaderKey ? [boss,idOf(keys),level].concat(brk?[brk.name]:[]).join("|") : boss+"|"+JSON.stringify([Placement.executionKey(keys,p),level,brk?[brk.name,brk.level]:null]);
+  const jobKey = (boss, keys, level, brk, p=null) => Placement.jobKey(keys,p,()=>[boss,idOf(keys),level].concat(brk?[brk.name]:[]).join('|'),[level,brk?[brk.name,brk.level]:null],boss+'|');
 
   // 보스 하나의 작업 목록. 구원자 칸 순서·능력치는 guild_search.party 와 같다(leaderKey 별도)
   function bossJobs(S, boss, level, list, results, cls, brk, placement) {
@@ -39,10 +40,8 @@
   function pickTop(jobs, res, mode, n, uniqueTeams=false) {
     const rows = jobs.filter(j => res[j.key] && res[j.key].cosmo).map(j => ({keys: j.keys, order: j.order, leaderKey:j.leaderKey, boss: j.boss, st: res[j.key].cosmo}));
     const cmp = byRank(mode);
-    rows.sort((a, b) => cmp(a, b) || (idOf(a.keys) < idOf(b.keys) ? -1 : 1));
-    if(!uniqueTeams)return n==null?rows:rows.slice(0,n);
-    const seen=new Set(),unique=rows.filter(r=>{const k=idOf(r.keys);if(seen.has(k))return false;seen.add(k);return true;});
-    return n == null ? unique : unique.slice(0,n);
+    rows.sort(SS.compareBy(cmp,(a,b)=>idOf(a.keys)<idOf(b.keys)?-1:1));
+    return SS.topRows(rows,n,uniqueTeams?{id:r=>idOf(r.keys)}:{});
   }
 
   // 1단계 «순차 반감»: 모든 조합을 firstRuns 판만 돌려 순위를 매긴 뒤 상위 n 팀(경계 동점은 전부 포함)만 남은 판을 더 돌린다.
@@ -52,8 +51,8 @@
   function pickPass(jobs, res, mode, n) {
     const all = pickTop(jobs, res, mode);
     if (all.length <= n) return all;
-    const cmp = byRank(mode), keep = new Array(all.length).fill(false), edge = all[Math.max(0, n - 1)];
-    for (let i = 0; i < all.length && (i < n || cmp(all[i], edge) === 0); i++) keep[i] = true;
+    const cmp = byRank(mode), keep = new Array(all.length).fill(false);
+    SS.topRows(all,n,{ties:cmp}).forEach((_,i)=>{keep[i]=true;});
     const units = new Set(); all.forEach(e => e.keys.forEach(k => units.add(k)));
     const m = Math.max(1, Math.ceil(0.25 * n / Math.max(1, units.size))), cnt = new Map(), edgeOf = new Map();
     all.forEach((e, i) => {
@@ -199,7 +198,7 @@
           const r = res[jobKey(bosses[i], e.keys, lv, b, e.leaderKey?e:undefined)];
           return r?.cosmo ? [{st:r.cosmo,brk:b?.name||null,brkLv:b?.level||null,...GS.unsupportedFields(r)}] : [];
         });
-        candidates.sort((a,b) => metric(b.st,mode)-metric(a.st,mode) || other(b.st,mode)-other(a.st,mode) || (b.st.clear||0)-(a.st.clear||0));
+        candidates.sort(byRank(mode));
         const pick=candidates[0];
         // 미장착 포함 전체 후보를 확인했을 때만 선언함. 후보 하나·결과 누락은 동점 근거가 아님.
         const brkTie=candidates.length>1 && candidates.length===brks.length && brks.includes(null)
@@ -335,8 +334,8 @@
   // 작업 순서를 고정 시드로 섞는다. 조합이 전투력 순으로 나열돼 있으면 앞쪽(강한 팀, 오래 싸움)과 뒤쪽(약한 팀, 빨리 끝남)의 판당 시간이 달라
   // 남은 시간이 초반에 한쪽으로 치우친다(실측: 초반 +70%). 결과는 팀 키로 모으므로 순서와 무관하고, 같은 입력이면 같은 순서다.
   function shuffled(jobs, seed) {
-    const a = jobs.slice(); let s = seed >>> 0;
-    const rnd = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const a = jobs.slice();
+    const rnd = SS.random(seed);
     for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const x = a[i]; a[i] = a[j]; a[j] = x; }
     return a;
   }
@@ -365,7 +364,7 @@
       if (cx.onPhase) cx.onPhase(msg, expected, {stage: idx, teams: expected, runs, games: expected * runs});
       if (carry && cx.onProgress) cx.onProgress(carry, expected);
       const h = GS.runPhase({makeWorker: cx.makeWorker, pool: workersPool, jobs, workers: cx.workers, runs, seed, stage: cx.stage, base: cx.base, watch:cx.watch,
-        onProgress: cx.onProgress ? d => cx.onProgress(d + carry, expected) : null, chunk: Math.max(1, Math.min(50, Math.ceil(jobs.length / (cx.workers * 40))))});
+        onProgress: cx.onProgress ? d => cx.onProgress(d + carry, expected) : null, chunk: Executor.chunkSize(jobs.length,cx.workers)});
       if (cx.onHandle) cx.onHandle(h);
       return h.promise;
     };
@@ -378,15 +377,14 @@
       const c=S.learned, fr=S.screen.firstRuns||1, res1={}, models=[], selections=[], enc=Learned.encoder(rows,results,roster,S.placement);
       let completed=0, stageTeams=pl.stages[0].teams;
       const evaluate=async (jobs,msg)=>{
-        const missing=jobs.filter(j=>!res1[j.key]?.cosmo);
-        if(missing.length){Object.assign(res1,await run(missing,fr,1,msg,0,completed,stageTeams));completed+=missing.length;}
+        completed+=await SS.evaluateMissing(jobs,res1,r=>!!r?.cosmo,missing=>run(missing,fr,1,msg,0,completed,stageTeams));
         if(stale())throw Object.assign(new Error('취소'),{gwenCause:'cancel'});
         if(jobs.some(j=>!res1[j.key]?.cosmo))throw new Error('학습 선별 결과가 누락됨');
       };
       for(let b=0;b<3;b++){
-        const sample=await Learned.sample(S,rows,(cx.sampleSeed||20261119)+b,stale),jobs=bossJobs(S,bosses[b],level,sample,results,cls);
-        await evaluate(jobs,`표본 학습: ${bossName(bosses[b])} · ${num(sample.length)}팀`);
-        const model=await Learned.train(enc,sample,jobs.map(j=>metric(res1[j.key].cosmo,mode)),c,stale);models.push(model);
+        const {model}=await SS.fitScreen({learner:Learned,S,rows,seed:(cx.sampleSeed||20261119)+b,stale,encoder:()=>enc,
+          makeJobs:sample=>bossJobs(S,bosses[b],level,sample,results,cls),
+          evaluate:jobs=>evaluate(jobs,`표본 학습: ${bossName(bosses[b])} · ${num(jobs.length)}팀`),value:j=>metric(res1[j.key].cosmo,mode)});models.push(model);
         if(cx.onPhase)cx.onPhase(`예측 채점: ${bossName(bosses[b])} · 전체 ${num(pl.combos)}조합`,stageTeams,{stage:0,teams:stageTeams,runs:fr,games:stageTeams*fr});
         if(cx.onProgress)cx.onProgress(completed,stageTeams);
         selections.push(await Learned.select(S,rows,model,stale));
@@ -409,7 +407,7 @@
         auditInfo.push(record);
         if(info.fallback && S.maxCombos > 0 && pl.combos > S.maxCombos){
           const factor=c.fallbackMultiplier;
-          const expanded={...S,learned:{...c,K:c.K*factor,M:c.M*factor,A:c.A*factor}};
+          const expanded=SS.expandedSettings(S);
           if(cx.onPhase)cx.onPhase(`후보 확대 복귀: ${bossName(bosses[b])} · 예측 재선별 ${num(factor)}배`,stageTeams,{stage:0,teams:stageTeams,runs:fr,games:stageTeams*fr});
           if(cx.onProgress)cx.onProgress(completed,stageTeams);
           const wider=await Learned.select(expanded,rows,models[b],stale);
@@ -480,9 +478,9 @@
       const rng=Learned.random((cx.sampleSeed||20261119)+900+bi),n=S.placement?.auditTeams??12;
       const ranked=pickTop(jobsK.filter(j=>j.boss===b),resA,mode),boundary=ranked.slice(pl.keep,pl.keep+Math.floor(n/2)).map(t=>t.keys),randomN=n-boundary.length;let seen=0;
       for(const keys of GS.iterateCombos({...S,newSearch:true},rows))if(!selected.has(idOf(keys))){
-        ++seen;if(samples.length<randomN)samples.push(keys);else {const i=Math.floor(rng()*seen);if(i<randomN)samples[i]=keys;}
+        SS.reservoir(samples,keys,randomN,++seen,rng);
       }
-      const randomIds=new Set(samples.map(idOf));pushAll(samples,boundary);
+      const random=samples.slice();pushAll(samples,boundary);
       const levels=auto?[...new Set([0,level,cx.levelMax,...(cx.boundaries?.[b]||[])])]:[level],auditJobs=[];
       for(const keys of samples)for(const p of Placement.variants(keys,results,traits))for(const leaderKey of keys)for(const l of levels)
         pushAll(auditJobs,bossJobs(S,b,l,[keys],results,cls,null,leaderKey?{...p,leaderKey}:undefined));
@@ -491,13 +489,14 @@
       if(stale())return null;
       if(auditJobs.some(j=>!ar[j.key]?.cosmo))throw Error('배치 감사 결과가 누락됨');
       const edge=metric(ranked[Math.min(pl.keep,ranked.length)-1]?.st||{},mode)||0;
-      const misses=pickTop(auditJobs,ar,mode,undefined,true).filter(t=>metric(t.st,mode)>=edge);
+      const audit=SS.placementAudit({sampled:samples,boundary,random,ranked:pickTop(auditJobs,ar,mode,undefined,true),
+        id:t=>idOf(Array.isArray(t)?t:t.keys),value:t=>metric(t.st,mode),edge}),misses=audit.misses;
       // Recover sampled tactical teams at the representative level before reranking.
       tacticalByBoss.set(b,misses);
       const recovered=bossJobs(S,b,level,misses.map(t=>t.keys),results,cls);
       if(recovered.length){const rr=await run(recovered,S.screen.runs,12,'감사에서 찾은 후보 복귀',null);Object.assign(resA,rr);
         for(const target of new Set([jobsK,allJobs])){const existing=new Set(target.map(j=>j.key));pushAll(target,recovered.filter(j=>!existing.has(j.key)));}}
-      representative.push({boss:b,sampled:samples.length,misses:misses.length,rate:misses.length/samples.length,randomSampled:randomIds.size,randomMisses:misses.filter(t=>randomIds.has(idOf(t.keys))).length,boundarySampled:boundary.length,expanded:misses.length/samples.length>(S.learned?.missThreshold??.04)});
+      representative.push({boss:b,...audit.summary,expanded:audit.summary.rate>(S.learned?.missThreshold??.04)});
     }
     const searchS=representative.some(a=>a.expanded)?{...S,rerank:{...S.rerank,keep:S.rerank.keep*2}}:S;
     const retry = retryPlan(searchS, list.length), budget = {remaining: retry.maxChecks, exhausted: false};

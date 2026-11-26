@@ -1,5 +1,6 @@
 (function(root){
   'use strict';
+  const SS=typeof module!=='undefined'&&module.exports?require('./score_search.js'):root.ScoreSearch;
   const GS=typeof module!=='undefined'&&module.exports?require('./guild_search.js'):root.GuildSearch;
   const L=typeof module!=='undefined'&&module.exports?require('./cosmo_learned.js'):root.CosmoLearned;
   const P=typeof module!=='undefined'&&module.exports?require('./party_placement.js'):root.PartyPlacement;
@@ -81,18 +82,19 @@
     };
     const make=(keys,level=S.screen.level,sup=S.screen.support||'none',brk=null,p)=>job(S,keys,results,cls,tiers,level,sup,brk,p);
     const score=(j,r)=>GS.rankStats(V,G,j.level,tiers,r.prog,r.progs,r.clear,r.guild);
-    const ranked=(jobs,res)=>jobs.map(j=>({...j,...score(j,res[j.key])})).sort((a,b)=>b.top-a.top||b.cap-a.cap||b.mean-a.mean||a.key.localeCompare(b.key));
+    const ranked=(jobs,res)=>jobs.map(j=>({...j,...score(j,res[j.key])})).sort(SS.compareBy(SS.guildRank,(a,b)=>a.key.localeCompare(b.key)));
     try{
-      const sample=await L.sample(S,rows,cx.sampleSeed||20261120,stale),sj=sample.map(k=>make(k));
-      const sr=await run(sj,S.screen.runs,1,'길드 전원 표본 학습');
-      const model=await L.train(L.encoder(rows,results,roster,S.placement),sample,sj.map(j=>score(j,sr[j.key]).top),S.learned,stale);
+      let sr;
+      const {jobs:sj,model}=await SS.fitScreen({learner:L,S,rows,seed:cx.sampleSeed||20261120,stale,
+        encoder:()=>L.encoder(rows,results,roster,S.placement),makeJobs:sample=>sample.map(k=>make(k)),
+        evaluate:async jobs=>{sr=await run(jobs,S.screen.runs,1,'길드 전원 표본 학습');},value:j=>score(j,sr[j.key]).top});
       let selection=await L.select(S,rows,model,stale),audit=await L.auditSample(S,rows,selection,(cx.sampleSeed||20261120)+1,stale);
       let jobs=[...selection.core.values()].map(e=>make(e.keys)),aj=audit.teams.map(k=>make(k)),res={...sr};
-      const evaluate=async list=>{const missing=list.filter(j=>!res[j.key]);if(missing.length)Object.assign(res,await run(missing,S.screen.runs,1,'길드 학습 후보·감사'));};
+      const evaluate=list=>SS.evaluateMissing(list,res,Boolean,missing=>run(missing,S.screen.runs,1,'길드 학습 후보·감사'));
       await evaluate([...jobs,...aj]);
       const quality=L.audit(S.learned,model.rho,jobs.map(j=>score(j,res[j.key]).top),aj.map(j=>score(j,res[j.key]).top),aj.length,audit.excluded,S.screen2.keep);
       if(quality.fallback){
-        const c=S.learned,f=c.fallbackMultiplier,expanded={...S,learned:{...c,K:c.K*f,M:c.M*f,A:c.A*f}};
+        const expanded=SS.expandedSettings(S);
         selection=await L.select(expanded,rows,model,stale);
         jobs=[...selection.core.values()].map(e=>make(e.keys));
         const more=await L.auditSample(expanded,rows,selection,(cx.sampleSeed||20261120)+2,stale);
@@ -108,9 +110,9 @@
       const random=aj.filter(j=>!selected.has(P.id(j.keys))&&!boundaryIds.has(P.id(j.keys))).slice(0,auditN-auditBoundary.length),sampled=[...auditBoundary,...random],auditJobs=[];
       for(const j of sampled)for(const p of P.variants(j.keys,results,Object.fromEntries(roster.map(r=>[r.key,r.placementTraits||[]]))))for(const leaderKey of j.keys)for(const level of [0,S.screen.level,G.challenge.levels.length])for(const sup of GS.finalSupports(S,j.keys,cls))auditJobs.push(make(j.keys,level,sup,null,leaderKey?{...p,leaderKey}:undefined));
       let representative={sampled:sampled.length,misses:0,rate:0};const rescued=[];
-      if(auditJobs.length){const ar=await run(auditJobs,S.screen.runs,1,'길드 대표 단계·지원·배치 놓침 감사'),edge=ranked(known,res)[Math.min(S.screen2.keep,known.length)-1]?.top||0,miss=new Map();
-        for(const j of ranked(auditJobs,ar))if(j.top>=edge)miss.set(P.id(j.keys),j.keys);
-        representative={sampled:sampled.length,misses:miss.size,rate:miss.size/sampled.length,boundarySampled:auditBoundary.length,randomSampled:random.length,randomMisses:random.filter(j=>miss.has(P.id(j.keys))).length};for(const k of miss.values()){top.push(k);rescued.push(k);}
+      if(auditJobs.length){const ar=await run(auditJobs,S.screen.runs,1,'길드 대표 단계·지원·배치 놓침 감사'),edge=ranked(known,res)[Math.min(S.screen2.keep,known.length)-1]?.top||0;
+        const auditResult=SS.placementAudit({sampled,boundary:auditBoundary,random,ranked:ranked(auditJobs,ar),id:j=>P.id(j.keys),value:j=>j.top,edge});
+        representative=auditResult.summary;for(const j of auditResult.misses){top.push(j.keys);rescued.push(j.keys);}
         if(representative.rate>S.learned.missThreshold){for(const j of rankedKnown.slice(0,S.screen2.keep*2))if(!top.some(k=>P.id(k)===P.id(j.keys)))top.push(j.keys);representative.expanded=true;}
       }
       const traits=Object.fromEntries(roster.map(r=>[r.key,r.placementTraits||[]]));

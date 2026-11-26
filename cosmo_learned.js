@@ -1,9 +1,10 @@
 // 계정·보스별 즉석 점수 회귀. 전투력 합·quick 분류기는 사용하지 않음.
 (function(root) {
   'use strict';
+  const SS=typeof module!=='undefined'&&module.exports?require('./score_search.js'):root.ScoreSearch;
   const GS = typeof module !== 'undefined' && module.exports ? require('./guild_search.js') : root.GuildSearch;
   const {teamId: id} = typeof module !== 'undefined' && module.exports ? require('./ui_shared.js') : root.UiShared;
-  function random(seed) { let s=seed>>>0; return () => {s=(s+0x6D2B79F5)>>>0;let t=s;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;}; }
+  const {random,reservoir}=SS;
   function config(S, units) {
     const c=S.learned;
     for(const k of ['S','m','K','M','A','overlapStarts','overlapKeep','folds','epochs','maxScoreCombos','fallbackMultiplier'])
@@ -20,7 +21,7 @@
       if(better(e,a[0])<=0)return;a[0]=e;let i=0;for(;;){let j=2*i+1;if(j>=a.length)break;if(j+1<a.length&&better(a[j+1],a[j])<0)j++;if(better(a[i],a[j])<=0)break;[a[i],a[j]]=[a[j],a[i]];i=j;}}
     sorted(){return this.a.slice().sort((a,b)=>better(b,a));}
   }
-  function reservoir(a,e,n,seen,rng){if(a.length<n)a.push(e);else{const j=Math.floor(rng()*seen);if(j<n)a[j]=e;}}
+
   const pause=()=>new Promise(r=>setTimeout(r,0));
   async function scan(S,rows,visit,stale){const check=()=>{if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});};check();let n=0;for(const keys of GS.iterateCombos({...S,newSearch:true},rows)){visit(keys);if(++n%4096===0){await pause();check();}}check();return n;}
   // 균등 reservoir + 구원자별 reservoir. 전원을 m회 포함하는 예약분을 먼저 두고 S까지 균등 표본으로 채움.

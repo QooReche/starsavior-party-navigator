@@ -104,7 +104,7 @@ async function stop(src){
 
 // ②-b 추천 본선: 보여 준 팀이 모두 목표 지표 50% 미만이면 「더 보기」(다음 3팀). ④ 예선 캐시 키
 function mainStop(src){
- const mk=(mode,res)=>{const ctx=vm.createContext({UiShared:require('../ui_shared'),Ux:require('../ux_ui'),MODE:mode,SIMQ:{res,n:100,busy:null,err:''},simSig:(st,t)=>t.k,esc:String,simEtaText:()=>''});
+ const mk=(mode,res)=>{const ctx=vm.createContext({PartyPlacement:require('../party_placement'),UiShared:require('../ui_shared'),Ux:require('../ux_ui'),MODE:mode,SIMQ:{res,n:100,busy:null,err:''},simSig:(st,t)=>t.k,esc:String,simEtaText:()=>''});
   for(const s of [line(src.html,'const goalVal='),cut(src.html,'function simBar(','function simInvalidate(')])vm.runInContext(s,ctx);return ctx};
  const rows=[{k:'a'},{k:'b'},{k:'c'}],more=(mode,r)=>/data-more/.test(mk(mode,{a:r,b:r,c:r}).simBar(1,rows,{},true));
  assert(more('auto',{clear:.9,t60:.4,n:100}),'클리어율 90% 여도 60턴 내 40% 면 더 본다');
@@ -255,7 +255,7 @@ async function suite(src=SRC){better(src);await stop(src);mainStop(src);fixed();
   '자료 없음을 오류로 던짐':m('ui',"if(!qi)return {best:null,runs:0,reason:'quick'};","if(!qi)throw Error('빠른 계산 자료 없음');"),
   '3별 문구를 클리어율 기준으로':m('ui',"star=prob&&turns>0&&(b?.t60!=null||r?.best?.t60!=null);\n  if(r?.reason==='few')","star=false;\n  if(r?.reason==='few')"),
   '요약 숫자를 클리어율로':m('ui',"→ <small>맞추면</small>${pct(growthGoal(r.best))}</b>","→ <small>맞추면</small>${pct(r.best.clear)}</b>"),
-  '추천 본선 멈춤을 클리어율로':m('html',"const goalVal=r=>r?(r.t60??r.clear):null;","const goalVal=r=>r?r.clear:null;"),
+  '추천 본선 멈춤을 클리어율로':m('html',"const goalVal=PartyPlacement.goalOf;","const goalVal=r=>r?r.clear:null;"),
   '예선 캐시 키에 목표 없음':m('html',"rkOf(contents[$(\"content\").value].key),starOf(contents[$(\"content\").value].key),","rkOf(contents[$(\"content\").value].key),"),
   '탭을 클리어율로':m('ux',"const goal=r=>goalTurns&&r?.t60!=null?r.t60:r?.clear;","const goal=r=>r?.clear;"),
   '탭: 스테이지형 = 작전·성간 회랑':m('ux',"const probability=kind!=='guild'&&kind!=='cosmo'","const probability=kind==='op'||kind==='clo'")};

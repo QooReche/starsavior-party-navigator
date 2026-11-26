@@ -446,6 +446,7 @@ summary{padding:9px 4px}
 <link rel="stylesheet" href="direct.css">
 <link rel="stylesheet" href="cosmo_direct.css">
 <script src="guild_view.js"></script>
+<script src="score_search.js"></script>
 <script src="party_placement.js"></script>
 <script src="guild_search.js"></script>
 <script src="cosmo_learned.js"></script>
@@ -1073,7 +1074,7 @@ function simStart(p,jobs=null,compareKey=null,runs=SIMQ.n){const c=contents[$("c
   done(){SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null;run(!!jobs)},
   error:(msg,w,crash)=>simStop(crash?"작업자 오류: "+msg:msg)});
  run(!!compareKey);return true}
-const goalVal=r=>r?(r.t60??r.clear):null;   // 목표 지표 = scrCmp 의 첫 기준(simCls 옆 주석)
+const goalVal=PartyPlacement.goalOf;   // 목표 지표 = scrCmp 의 첫 기준(simCls 옆 주석)
 // ── 작업자 풀·작업 대기열(예선·본선·클리어 추천 육성이 함께 쓴다) ──
 // 작업자 수(순수 함수, 시험 대상) = min(논리 코어 − 1, SCR_WMAX, 메모리 예산). env = {cores: navigator.hardwareConcurrency, memGB: navigator.deviceMemory(브라우저가 최대 8 로 잘라 알려 줌), mobile}
 //  메모리 예산 = 기기 메모리의 절반 ÷ 작업자 하나 SCR_WMB(MB) — 풀은 계산이 끝나도 살아 있으므로(아래 scrPool) 상주 풀 전체가 이 예산 안이다.

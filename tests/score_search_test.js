@@ -1,0 +1,51 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const S=require('../score_search'),P=require('../party_placement'),E=require('../search_executor');
+const plain=x=>JSON.parse(JSON.stringify(x));
+async function check(s=S){
+  const a={top:5,cap:0,mean:1,clear:0},b={top:4,cap:1,mean:10,clear:1};
+  assert(s.guildRank(a,b)<0);assert(s.guildRank({...a,top:4},b)>0);
+  assert(s.guildRank({...a,top:4,cap:1},b)>0);
+  assert(s.cosmoRank('top')(a,b)<0);assert(s.cosmoRank('mean')(a,b)>0);
+  assert(s.cosmoRank('top')({...a,top:4,mean:10},b)>0);
+  assert.equal(s.goal({t60:0,clear:1}),0);assert.equal(s.goal({clear:.5}),.5);assert.equal(s.goal(null),null);
+  assert(s.recoRank({t60:0,clear:1},{t60:.1,clear:0})>0);
+  assert(s.recoRank({clear:.5,prog:1},{clear:.5,prog:.8})<0);
+  assert.equal(s.compareBy(()=>NaN,()=>0,()=>-1)({},{}),-1);
+  const rows=[{id:'a',v:3},{id:'b',v:2},{id:'b',v:2},{id:'c',v:2},{id:'d',v:1}],cmp=(a,b)=>b.v-a.v;
+  assert.deepEqual(plain(s.topRows(rows,2)),rows.slice(0,2));
+  assert.deepEqual(plain(s.topRows(rows,2,{ties:cmp})),rows.slice(0,4));
+  assert.deepEqual(plain(s.topRows(rows,3,{id:r=>r.id})),[rows[0],rows[1],rows[3]]);
+  const duplicates=[{id:'a',v:2},{id:'a',v:1}];
+  assert.equal(s.topRows(duplicates,1,{id:r=>r.id})[0],duplicates[0]);
+  assert.equal(s.topRows(duplicates,1,{id:r=>r.id,replace:true})[0],duplicates[1]);
+  const rng=s.random(1);assert.deepEqual(Array.from({length:4},rng),[.6270739405881613,.002735721180215478,.5274470399599522,.9810509674716741]);
+  const sample=[],r=s.random(7);for(let i=1;i<=20;i++)s.reservoir(sample,i,3,i,r);assert.deepEqual(sample,[5,2,15]);
+  const zero=[];s.reservoir(zero,1,0,1,()=>.1);assert.deepEqual(zero,[]);
+  const settings={learned:{K:2,M:3,A:4,fallbackMultiplier:3},screen:{runs:2}};
+  assert.deepEqual(plain(s.expandedSettings(settings)),{...settings,learned:{...settings.learned,K:6,M:9,A:12}});assert.equal(settings.learned.K,2);
+  const jobs=[{key:'a'},{key:'b'},{key:'b'}],results={a:{score:5},b:null};let sent;
+  assert.equal(await s.evaluateMissing(jobs,results,r=>!!r?.score,async list=>{sent=list;return {b:{score:2,via:{coop:1},progs:[.5]}};}),2);
+  assert.deepEqual(sent,[jobs[1],jobs[2]]);assert.equal(results.a.score,5);assert.deepEqual(results.b.via,{coop:1});
+  await s.evaluateMissing(jobs,results,Boolean,()=>{throw Error('cached jobs rerun');});
+  const audit=s.placementAudit({sampled:rows,boundary:rows.slice(0,1),random:rows.slice(1),ranked:rows,id:r=>r.id,value:r=>r.v,edge:2});
+  assert.deepEqual(plain(audit.summary),{sampled:5,misses:3,rate:.6,boundarySampled:1,randomSampled:4,randomMisses:3});
+  assert.deepEqual(plain(audit.misses),[rows[0],rows[2],rows[3]]);
+  const trace=[],learner={sample:async(S,rows,seed,stale)=>{assert.equal(seed,7);assert.equal(stale(),false);trace.push('sample');return [['a']];},train:async(enc,sample,values,c)=>{assert.equal(enc,'encoder');assert.deepEqual(plain(values),[2]);assert.equal(c,settings.learned);trace.push('train');return {rho:.8};}};
+  const fitted=await s.fitScreen({learner,S:settings,rows:[],seed:7,stale:()=>false,encoder:()=>{trace.push('encoder');return 'encoder';},makeJobs:sample=>sample.map(keys=>({key:keys[0]})),evaluate:async jobs=>{assert.equal(jobs[0].key,'a');trace.push('evaluate');},value:()=>2});
+  assert.deepEqual(trace,['sample','evaluate','encoder','train']);assert.equal(fitted.model.rho,.8);
+}
+(async()=>{
+  await check();
+  const keys=['a','b','c','d'],p={order:keys,leaderKey:'d'};
+  assert.equal(P.jobKey(keys,null,()=> 'legacy',[1]),'legacy');
+  assert.equal(P.jobKey(keys,p,()=>{throw Error('legacy called');},[2,'sup'],'boss|'),'boss|'+JSON.stringify([P.executionKey(keys,p),2,'sup']));
+  for(const n of [0,1,39,40,41,2001])for(const w of [1,2,4])assert.equal(E.chunkSize(n,w),Math.max(1,Math.min(50,Math.ceil(n/(w*40)))));
+  const source=fs.readFileSync(require.resolve('../score_search'),'utf8');
+  const mutations=[['v||key(a,b)','key(a,b)'],['r.t60??r.clear','r.clear'],['0x6D2B79F5','1'],['rng()*seen','rng()'],['replace||!seen.has(id(r))','!seen.has(id(r))'],['ties(rows[end],edge)===0','false'],['!valid(results[j.key])','true'],['value(r)>=edge','value(r)>edge'],['await evaluate(jobs);',''],['K:c.K*f','K:c.K']];
+  for(const [from,to] of mutations){assert(source.includes(from));const ctx={module:{exports:{}}};vm.runInNewContext(source.replace(from,to),ctx);await assert.rejects(()=>check(ctx.module.exports),/./);}
+  const ctx=vm.createContext({setTimeout,clearTimeout,performance}),page=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
+  const modules=['ui_shared.js','score_search.js','search_executor.js','party_placement.js','guild_search.js','cosmo_learned.js','placement_search.js','guild_planner.js','cosmo_search.js'];
+  for(const m of [...page.matchAll(/<script src="([^"]+)"/g)].map(m=>m[1]).filter(m=>modules.includes(m)))vm.runInContext(fs.readFileSync(require.resolve('../'+m),'utf8'),ctx,{filename:m});
+  assert.equal(ctx.PartyPlacement.goalOf({t60:0,clear:1}),0);assert.equal(typeof ctx.GuildPlanner.search,'function');
+  console.log('PASS score parts: rank/ties/goal/RNG/reservoir/reuse/audit/learning/keys/chunks/browser loading; 10 mutations');
+})().catch(e=>{console.error(e);process.exitCode=1;});

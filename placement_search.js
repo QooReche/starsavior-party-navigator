@@ -1,9 +1,10 @@
 // Joint layout/leader/difficulty/break evaluation. No engine or UI dependencies.
 (function(root){
   'use strict';
+  const SS=typeof module!=='undefined'&&module.exports?require('./score_search.js'):root.ScoreSearch;
   const P=typeof module!=='undefined'&&module.exports?require('./party_placement.js'):root.PartyPlacement;
   const group=j=>j.boss+'|'+P.id(j.keys);
-  const cmp=mode=>(a,b)=>{const x=a.cosmo,y=b.cosmo,k=mode==='top'?'top':'mean',o=k==='top'?'mean':'top';return y[k]-x[k]||y[o]-x[o]||(y.clear||0)-(x.clear||0);};
+  const cmp=mode=>{const compare=SS.cosmoRank(mode);return (a,b)=>compare(a.cosmo,b.cosmo);};
   // Adapters own candidate dimensions, ranking (including ties), seeds and run counts.
   // The caller chooses the batch boundary: one guild team or all cosmo teams.
   function perGroup(ranked,group,keep=1,grouped=true){

@@ -3,6 +3,7 @@
 // 시뮬 자체는 battlesim(guild 옵션)이 하고, 이 파일은 «어떤 팀을 어떤 조건으로 돌릴지»와 «결과를 어떻게 순위 매길지»만 정한다.
 (function (root) {
   "use strict";
+  const SS=typeof module!=='undefined'&&module.exports?require('./score_search.js'):root.ScoreSearch;
   const {num, teamId, durTextSec, planHtml, planPaint} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const Placement = typeof module !== "undefined" && module.exports ? require("./party_placement.js") : root.PartyPlacement;
   const Executor = typeof module !== "undefined" && module.exports ? require("./search_executor.js") : root.SearchExecutor;
@@ -73,7 +74,7 @@
     const cap = has ? ps.filter(p => p >= 1 - CAP_EPS).length / ps.length : (clear == null ? (prog >= 1 - CAP_EPS ? 1 : 0) : clear);
     return {top, mean, cap};
   }
-  const byRank = (a, b) => b.top - a.top || b.cap - a.cap || b.mean - a.mean;
+  const byRank = SS.guildRank;
   const unsupportedFields = r => r.unsupported?.length ? {unsupported: r.unsupported} : {};
   function unsupportedHtml(rows, esc) {
     const messages = [...new Set(rows.flatMap(r => (r.unsupported || []).map(x => `${x.unit || ""} · ${x.raw}`)))];
@@ -82,7 +83,7 @@
 
   const BREAK_CHECK = {teams: 8, runs: 40, version: 1};
   const breakSignature = breaks => JSON.stringify([BREAK_CHECK.version, breaks.map(b => [b.name, b.level]).sort((a, b) => a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : a[1] - b[1])]);
-  const jobKey = (keys, level, sup, tiers, brk = null, p = null, G = null) => (G?.season||G?.seasonId ? JSON.stringify([G.season?.id??G.seasonId,G.dataVersion])+':' : '') + (!p?.leaderKey ? [keys.join("+"), level, sup, (tiers || []).join(""), JSON.stringify(brk && [brk.name, brk.level])].join("|") : JSON.stringify([Placement.executionKey(keys,p),level,sup,tiers||[],brk&&[brk.name,brk.level]]));
+  const jobKey = (keys, level, sup, tiers, brk = null, p = null, G = null) => (G?.season||G?.seasonId ? JSON.stringify([G.season?.id??G.seasonId,G.dataVersion])+':' : '') + Placement.jobKey(keys,p,()=>[keys.join('+'),level,sup,(tiers||[]).join(''),JSON.stringify(brk&&[brk.name,brk.level])].join('|'),[level,sup,tiers||[],brk&&[brk.name,brk.level]]);
 
   // 작업 목록 → 작업자 수만큼 나눈 묶음(라운드 로빈). job = {key, party, options:{guild}}
   const split = (jobs,n) => Executor.split(jobs,n);
@@ -139,9 +140,8 @@
   function pickTop(V, G, jobs, res, tiers, n, S) {
     if(jobs.some(j=>!res[j.key]))throw new Error('길드 계산 결과가 누락됨');
     const sc = jobs.filter(j => res[j.key] && !coopHit(S || {}, res[j.key])).map(j => ({keys: j.keys, ...rankStats(V, G, j.level, tiers, res[j.key].prog, res[j.key].progs, res[j.key].clear, res[j.key].guild)}));
-    sc.sort((a, b) => byRank(a, b) || (a.keys.join() < b.keys.join() ? -1 : 1));
-    if (S?.newSearch !== true) return sc.slice(0, n).map(x => x.keys);
-    return [...new Map(sc.map(x=>[Placement.id(x.keys),x.keys])).values()].slice(0,n);
+    sc.sort(SS.compareBy(byRank,(a,b)=>a.keys.join()<b.keys.join()?-1:1));
+    return SS.topRows(sc,n,S?.newSearch===true?{id:x=>Placement.id(x.keys),replace:true}:{}).map(x=>x.keys);
   }
   const pickFinalists = (S, V, G, jobs, res, tiers) => pickTop(V, G, jobs, res, tiers, S.finalists, S);
 
@@ -153,7 +153,7 @@
       const st = rankStats(V, G, j.level, tiers, r.prog, r.progs, r.clear, r.guild), id = teamId(j.keys), cur = best.get(id);
       if (!cur || byRank(st, {top: cur.score, cap: cur.cap, mean: cur.mean}) < 0) best.set(id, {keys: j.keys, order: j.order, leaderKey:j.leaderKey, level: j.level, sup: j.sup, brk: j.options?.break_skill?.name || null, brkLv: j.options?.break_skill?.level || null, score: st.top, mean: st.mean, cap: st.cap, clear: r.clear, prog: r.prog, frac: G.season?.boss?.engine==="client"?r.prog:V.progParts(G,r.prog).f, n: r.n, ...unsupportedFields(r)});
     }
-    return [...best.values()].sort((a, b) => b.score - a.score || b.cap - a.cap || b.mean - a.mean || (a.order.join() < b.order.join() ? -1 : 1)).slice(0, top || 5);
+    return [...best.values()].sort((a, b) => byRank({...a,top:a.score},{...b,top:b.score}) || (a.order.join() < b.order.join() ? -1 : 1)).slice(0, top || 5);
   }
 
   // 작업자 풀로 한 단계 실행. makeWorker() → Worker 호환 객체(postMessage/onmessage/terminate). 결과 res[key] = {prog, clear, n}
