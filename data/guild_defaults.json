@@ -157,7 +157,97 @@
       "keep": 2,
       "auditTeams": 12
     },
-    "banCoop": false
+    "banCoop": false,
+    "preset": "legacy",
+    "daily": {
+      "seals": {
+        "min": 1,
+        "max": 4,
+        "default": 3,
+        "costNormal": 1,
+        "costEx": 2,
+        "rechargeMax": 1,
+        "rechargeCost": 30
+      },
+      "reset": {
+        "utcOffsetHours": 9,
+        "hour": 4
+      },
+      "exDays": "rules.entryDaysEx",
+      "seed": 1,
+      "screen": {
+        "runs": 2,
+        "exLevel": 6,
+        "normalStep": 6
+      },
+      "rerank": {
+        "keep": 300,
+        "runs": 20
+      },
+      "probe": {
+        "teams": 12,
+        "runs": 10,
+        "levels": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "steps": [
+          6,
+          5,
+          4,
+          3,
+          2,
+          1
+        ]
+      },
+      "combine": {
+        "top": 10
+      },
+      "final": {
+        "runs": 40
+      },
+      "retry": {
+        "keepMultipliers": [
+          1,
+          3
+        ]
+      },
+      "split": {
+        "exFirst": true,
+        "weakExRatio": 1.0
+      },
+      "place": {
+        "runs": [
+          20,
+          100,
+          200
+        ],
+        "keep": 3,
+        "margin": 0.01,
+        "recheckRuns": 10
+      },
+      "workers": {
+        "coreFrac": 0.75,
+        "memFrac": 0.5,
+        "perWorkerMB": 250,
+        "unknownMemGB": 4,
+        "min": 1,
+        "max": 24,
+        "mobileMax": 2
+      },
+      "timeCapMin": 90
+    }
   },
   "effectText": {
     "skillStack": "보스가 스킬을 쓸 때마다 이후 주는 피해 +{v}%씩 쌓임(최대 10회)",

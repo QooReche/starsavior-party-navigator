@@ -2,6 +2,14 @@
 (function (root) {
   "use strict";
   const MAX_TIER = 3;
+  // Game day is KST 04:00, independent of the browser's local timezone.
+  function gameDay(G, nowMs=Date.now()) {
+    const reset=G.search.daily.reset, names=['일','월','화','수','목','금','토'];
+    const d=new Date(nowMs+(reset.utcOffsetHours-reset.hour)*3600000), weekday=d.getUTCDay();
+    const days=G.rules.entryDaysEx||[];
+    let next=1;while(next<=7&&!days.includes(names[(weekday+next)%7]))next++;
+    return {date:d.toISOString().slice(0,10),weekday,day:names[weekday],exOpen:days.includes(names[weekday]),nextEx:next<=7?names[(weekday+next)%7]:null};
+  }
   const {num, pctText} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   function parseTime(s) { return Date.parse(/T/.test(s) ? s : s + "T00:00:00+09:00"); }
   function md(s) { const d = new Date(parseTime(s) + 9 * 3600 * 1000); return String(d.getUTCMonth() + 1).padStart(2, "0") + "/" + String(d.getUTCDate()).padStart(2, "0"); }
@@ -233,6 +241,6 @@ ${simBox(G, esc)}${selectBox(G, sel)}
 <details class="gd-src"><summary>출처</summary><div class="gd-small">${src}</div></details>`;
     return html+'</details></div>';
   }
-  const api = {num, parseTime, seasonState, baseTotal, extraPct, score, scoreAt, bossPoints, progParts, scoreFromProg, bestSelection, normSel, supportChoices, battleOptions, rangeText, levelEffects, simBest, simExpect, simBox, panelHtml};
+  const api = {gameDay, num, parseTime, seasonState, baseTotal, extraPct, score, scoreAt, bossPoints, progParts, scoreFromProg, bestSelection, normSel, supportChoices, battleOptions, rangeText, levelEffects, simBest, simExpect, simBox, panelHtml};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildView = api;
 })(typeof window !== "undefined" ? window : globalThis);

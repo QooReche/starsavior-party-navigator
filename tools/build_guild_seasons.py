@@ -310,6 +310,9 @@ def select_current(current=None):
     index_path = ROOT / 'data/guild_current.json'
     current = current or json.loads(index_path.read_text(encoding='utf-8'))['seasonId']
     selected = expand(json.loads((dest / ('%d.json' % current)).read_text(encoding='utf-8')), str(ROOT))
+    defaults = json.loads((ROOT / 'data/guild_defaults.json').read_text(encoding='utf-8'))['search']
+    for key in ('preset', 'daily'):
+        selected['search'][key] = copy.deepcopy(defaults[key])
     # 추출/선택 모두 같은 계산 입력 투영을 사용함. 표시 수정은 버전 불변.
     selected['dataVersion'] = season_version(selected)
     write(dest/('%d.json'%current),pack_guild(selected))

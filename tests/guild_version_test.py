@@ -13,6 +13,13 @@ from battlesim.starsavior.guild import load
 
 
 class GuildVersionTest(unittest.TestCase):
+    def test_daily_search_policy_not_battle_input(self):
+        g = copy.deepcopy(load(30112))
+        edited = copy.deepcopy(g)
+        edited['search']['preset'] = 'daily'
+        edited['search']['daily'] = {'seed': 3, 'timeCapMin': 60}
+        self.assertEqual(season_version(g), season_version(edited))
+
     def test_sim_ui_defaults_and_payload(self):
         import guild_defense as gd
         defaults = json.loads((ROOT/'data/guild_defaults.json').read_text(encoding='utf-8'))

@@ -20,6 +20,8 @@ DISPLAY_PATHS = frozenset({
     ('supports', '*', 'name'),
     ('score', 'hypotheses', '*', 'name'), ('score', 'hypotheses', '*', 'desc'),
     ('search', 'excludeWhy'),
+    # Daily policy is search planning, not battle input. Preserve legacy hashes.
+    ('search', 'preset'), ('search', 'daily'),
 })
 
 
