@@ -4,7 +4,7 @@ const root=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(root,'par
 const section=(start,end)=>html.slice(html.indexOf(start),html.indexOf(end,html.indexOf(start)));
 let owned=['특이점 관측','스타피어서','큐브 과부하'],saved={},handlers={},workers=[];
 const rules=JSON.parse(fs.readFileSync(path.join(root,'battlesim/rules/default.json'),'utf8'));
-const ctx=vm.createContext({UiShared:require('../ui_shared'),Ux:require('../ux_ui'),console,URL,JSON,Number,Promise,
+const ctx=vm.createContext({UiShared:require('../ui_shared'),Ux:require('../ux_ui'),PartyPlacement:require('../party_placement'),console,URL,JSON,Number,Promise,
  localStorage:{getItem:k=>saved[k]??null,setItem:(k,v)=>{saved[k]=v}},
  document:{querySelectorAll:()=>owned.map(b=>({dataset:{b}})),querySelector:()=>null},
  $:id=>id==='out'?{addEventListener:(ev,fn)=>{handlers[ev]=fn}}:{value:'0'},

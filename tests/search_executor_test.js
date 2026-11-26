@@ -18,4 +18,18 @@ const E=require('../search_executor'),made=[];
 const pool=E.workerPool(()=>{const w={terminate(){this.ended=(this.ended||0)+1}};made.push(w);return w;});
 assert.equal(pool.get(0),pool.get(0));pool.get(1);pool.drop(made[0]);pool.drop(made[0]);pool.close();pool.close();
 assert.deepEqual(made.map(w=>w.ended),[1,1]);assert.throws(()=>pool.get(0),/닫힌/);
-console.log('PASS late clock installation (2 mutations), common pool reuse/drop/close lifecycle');
+const growthSource=fs.readFileSync(require.resolve('../growth_ui.js'),'utf8');
+function growthDelegation(src=growthSource){
+ const worker={},calls=[];let limits;
+ const c=vm.createContext({SIMQ:{LOAD_MS:180000},simTeamLimit:(n,mode)=>{calls.push([n,mode]);return n*1000;},
+  localWorker:()=>({}),SearchExecutor:{timedWorker:env=>{limits=env;return worker;}}});
+ vm.runInContext(src,c);
+ assert.equal(typeof c.growthWorker,'function','seasonal worker adapter must remain available');
+ assert.equal(c.growthWorker(),worker,'adapter must return the executor-owned worker');
+ assert.equal(limits.limit(24),24000);assert.deepEqual(calls,[[24,'auto']]);
+ assert.equal(limits.loadMs(),180000);c.SIMQ.LOAD_MS=90000;assert.equal(limits.loadMs(),90000);
+}
+growthDelegation();
+assert.throws(()=>growthDelegation(growthSource.replace('return SearchExecutor.timedWorker(', 'return localWorker(')),assert.AssertionError);
+assert.throws(()=>growthDelegation(growthSource.replace("simTeamLimit(runs,'auto')",'simTeamLimit(runs)')),assert.AssertionError);
+console.log('PASS late clock installation (2 mutations), common pool lifecycle, growth executor delegation (2 mutations)');

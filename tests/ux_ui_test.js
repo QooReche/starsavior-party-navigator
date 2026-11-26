@@ -141,7 +141,8 @@ function checkGwenWork(u=U){
 }
 // 그웬 말풍선: 대사 표 한곳, 상황별 2~4개·한 줄(30자 이내)·반말, 방문당 하나 고정, 장식이라 aria-hidden.
 function checkGwenSay(u=U){
-  const keys=['inspect','screen','long','report','error','high','shaky','hard','low','best','welcome','import','empty','idle','verdict','cheer','cry','sulk','shy','doze','think','magnify','stamp','board','coffee','stakeout','zap','poke'];
+  const keys=['guildPlan','guildFollow','guildClosed','guildDone','guildShort','guildPartial','guildReset',
+    'inspect','screen','long','report','error','high','shaky','hard','low','best','welcome','import','empty','idle','verdict','cheer','cry','sulk','shy','doze','think','magnify','stamp','board','coffee','stakeout','zap','poke'];
   assert.deepEqual(Object.keys(u.GWEN_SAY),keys);
   for(const key of keys){const lines=u.GWEN_SAY[key];
     assert(lines.length>=5&&lines.length<=8,key);assert.equal(new Set(lines).size,lines.length,key);

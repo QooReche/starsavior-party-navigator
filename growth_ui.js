@@ -210,6 +210,8 @@ function growthBetter(kind,baseline,result){
   const metric=r=>kind==='guild'?r?.score:r?.sum;
   return Number.isFinite(metric(result))&&metric(result)>(metric(baseline)??0);
 }
+// Keep the seasonal worker adapter: executor ownership and limits are a public contract.
+function growthWorker(){return SearchExecutor.timedWorker({limit:runs=>simTeamLimit(runs,'auto'),loadMs:()=>SIMQ.LOAD_MS})}
 async function growthStageSearch(c,st,profile,id,env={}){
   const live=env.live||(()=>GROW.id===id),seed=env.seed??SIMQ.seed,n=env.n??SIMQ.n;
   const restrict=(CFG.restrict[c.name]||{})[st.tab],qi=env.qi||quickIn(c,st);

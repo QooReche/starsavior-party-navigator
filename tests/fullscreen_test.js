@@ -24,7 +24,7 @@ function screenRun(vds,{stopAfter=null,clock=null}={}){
  // clock = 가짜 시계({t}) — 빠른 관측처럼 시간으로 넘어가는 단계를 시험이 직접 넘김. timers = 걸린 setTimeout(ms) 기록
  const FakeDate=clock?class extends Date{static now(){return clock.t}}:Date,timers=[],dom={n:0};
  const posts=[],teams=teamsOf(vds),CFG=plain(CFG0);
- const c=vm.createContext({UiShared:require('../ui_shared'),GwenLane:require('../gwen_lane'),CFG,recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
+ const c=vm.createContext({UiShared:require('../ui_shared'),PartyPlacement:require('../party_placement'),GwenLane:require('../gwen_lane'),CFG,recommendationPolicyTag:()=>[],PLACEMENT_CACHE:{has:()=>true},console,MODE:'auto',MM:'',MI:{pending:null},miMode:()=>false,
   SIMQ:{n:100,seed:1,busy:null,res:{},scr:{},LOAD_MS:180000,RUN_MS:240000},LASTQ:{1:{rows:teams.slice(0,3),all:teams,total:teams.length}},cur:[{tab:'a',name:'b'}],
   contents:[{key:'op'}],$:()=>({value:'0'}),rkOf:()=>0,starOf:()=>0,simParty:t=>({units:t.keys}),teamBreak:()=>null,brkLv:()=>1,
   simMain:r=>r,simCls:()=>'',esc:String,simOpt:()=>({}),document:{querySelector:()=>{dom.n++;return null},hidden:false},

@@ -9,6 +9,7 @@ function check(code=source){
   const strip=h.add('mode-strip');strip.innerHTML=template.match(/<nav id="mode-strip"[^>]*>([\s\S]*?)<\/nav>/)[1];
   Object.assign(c,{contents:[{key:'cosmo'},{key:'op'},{key:'cube'},{key:'guild'}],MI:{info:null},
     Ux:require('../ux_ui'),RECO:{},recoGwenVisibility(){},growthControlPlace(){},cdRefresh(){c.cosmoRefresh++},cosmoRefresh:0,
+    guildDailySourcePaint(){c.dailyRefresh++},dailyRefresh:0,
     GwenStage:{activate:m=>c.activeStage=m,mount(){}},
     history:{state:{},replaceState(){c.navigations++},pushState(){c.navigations++}},
     location:{href:'http://test/?c=cosmo&pm=direct'},navigations:0});
@@ -16,7 +17,7 @@ function check(code=source){
   h.load("DIRECT.draft={v:1,slots:[null,null,null,null]};DIRECT.mode='direct';DIRECT.slots={};directSync=()=>{};directResultsPaint=()=>{};directPaintInput=()=>'';directPaint=()=>{painted++};");
   c.painted=0;c.directRefresh();
   assert.equal(c.$('cosmo-direct-panel').hidden,false);assert.equal(c.$('direct-panel').hidden,true);assert.equal(c.activeStage,'cdirect');
-  assert.equal(c.painted,0);assert(c.cosmoRefresh>0);
+  assert.equal(c.painted,0);assert(c.cosmoRefresh>0);assert.equal(c.dailyRefresh,1);
   for(const host of [strip,c.$('start-screen')])assert(!host.querySelector('[data-pn-mode="direct"]').disabled);
   c.directNavigate('direct');assert.equal(c.navigations,1,'cosmo entry allowed');
   for(const index of [1,2,3,0,1]){
