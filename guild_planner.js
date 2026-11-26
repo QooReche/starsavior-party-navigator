@@ -3,6 +3,17 @@
   const GS=typeof module!=='undefined'&&module.exports?require('./guild_search.js'):root.GuildSearch;
   const L=typeof module!=='undefined'&&module.exports?require('./cosmo_learned.js'):root.CosmoLearned;
   const P=typeof module!=='undefined'&&module.exports?require('./party_placement.js'):root.PartyPlacement;
+  const E=typeof module!=='undefined'&&module.exports?require('./search_executor.js'):root.SearchExecutor;
+  function plan(S,combos,nBrk){
+    const second=Math.min(combos,S.screen2.keep),finalists=Math.min(second,S.finalists);
+    const stages=E.planStages([
+      {id:1,name:'조합 훑기',jobs:combos,runs:S.screen.runs},
+      {id:2,name:'상위 후보 확인',jobs:second,runs:S.screen2.runs,upper:true},
+      {id:3,name:'별의 도전 단계·지원 비교',jobs:finalists*S.final.levels.length*S.final.supports.length,runs:S.final.runs,upper:true},
+      {id:4,name:'브레이크 비교',jobs:nBrk?Math.min(GS.BREAK_CHECK.teams,finalists)*3*(1+nBrk):0,runs:GS.BREAK_CHECK.runs,upper:true,p:nBrk?1:0,condition:'보유 브레이크와 적격 후보가 있을 때'}
+    ]);
+    return {version:1,stages,total:stages.reduce((n,s)=>n+s.games,0)};
+  }
   function job(S,keys,results,cls,tiers,level,sup,brk,p){
     const party=GS.party(keys,results,cls,(p?.leaderKey?p:undefined)||(S.placement?.baseline?P.baseline(keys,results):undefined));
     return {key:GS.jobKey(keys,level,sup,tiers,brk,party,S),keys,order:party.order,leaderKey:party.leaderKey,level,sup,party:party.spec,options:{guild:{seasonId:S.seasonId,dataVersion:S.dataVersion,level,sets:tiers.slice(),support:sup},break_skill:brk}};
@@ -13,9 +24,11 @@
     const rows=GS.pool(S,results,roster),combos=GS.combos(S,rows);
     if(!combos.length)throw Object.assign(Error('편성할 수 있는 구원자가 부족함(내 정보에 육성된 구원자 4명 이상 필요)'),{gwenCause:'few'});
     const stale=cx.stale||(()=>false);
+    const pl=plan(S,combos.length,(cx.breaks||[]).length);cx.onPlan?.(pl);
+    let phase=0;
     const run=async(jobs,runs,seed,msg)=>{
       if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});
-      cx.onPhase?.(msg,jobs.length);
+      const stage=phase++;cx.onPhase?.(msg,jobs.length,{stage,jobs:jobs.length,teams:jobs.length,runs,games:jobs.length*runs});
       const h=GS.runPhase({makeWorker:cx.makeWorker,jobs,workers:Math.max(1,Math.min(2,cx.workers||2)),runs,seed,stage:cx.stage,base:cx.base,onProgress:cx.onProgress});
       cx.onHandle?.(h);const res=await h.promise;
       if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});
@@ -117,5 +130,5 @@
       return {rows:GS.rank(V,G,finalJobs,final,tiers,5,S),dropped:0,pool:rows.length,combos,finalists:finalists.length,runs:S.final.runs,audit:quality,representative,placement:{version:P.VERSION,conditions,moved},growthOwned:second.map(j=>({...j,result:rr[j.key]}))};
     }finally{pool.close();}
   }
-  const api={search,job};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GuildPlanner=api;
+  const api={search,job,plan};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GuildPlanner=api;
 })(typeof window!=='undefined'?window:globalThis);

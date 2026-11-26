@@ -1,3 +1,8 @@
+## 2026-11-26 — 길드 찾기 P1 진행층
+
+- 단계 계획 계약을 `SearchExecutor.planStages`로 정의했음. 일반 추천의 `id/step/jobs/done/runs/chunk/kind/p`에 이름·상한과 코스모 호환 `teams/games`를 붙였음. 길드 기본 흐름은 실행 전 4단계 상한, 단계 시작 때 실제 작업·판 수를 전달함. 코스모 연결은 P2 범위이며 계획 변환만 검증했음.
+- 후보·순서·시드·판 수·작업자 배분은 유지했음. `guild_defaults_test.js`·`search_freeze_test.js` 정답과 정규화는 수정하지 않았음.
+
 ## 2026-11-26 — 빌드 26935738 패치 반영
 
 - 공통 `guild_defaults.json`의 `sim.ui=false`로 길드 전투력별 기준표·KPI·상세 시뮬 추정과 관련 안내를 숨겼음(true로 복원). 표 데이터·빌더·엔진·추천 계산은 보존하고 표시 플래그는 자료 버전 해시에서 제외했음.

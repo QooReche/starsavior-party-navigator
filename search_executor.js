@@ -2,6 +2,14 @@
 (function(root){
  'use strict';
  function createWorker(){return new root.Worker('sim_worker.js')}
+ // RecoPlan input + score-search aliases. upper means jobs/games is a ceiling;
+ // p is occurrence probability (unknown conditional work conservatively uses 1).
+ // This only describes work: it never schedules, filters or reorders it.
+ function planStages(stages){return stages.map((s,i)=>{
+  const jobs=s.jobs??s.teams??0,runs=s.runs??0;
+  return {...s,id:s.id??i+1,step:s.step??s.name??String(s.id??i+1),name:s.name??s.step??String(s.id??i+1),
+   jobs,teams:jobs,runs,games:jobs*runs,done:s.done??0,chunk:s.chunk??1,kind:s.kind??'run',p:s.p??1,upper:!!s.upper};
+ })}
 function shared(env){
  const now=env.now||(()=>Date.now()),setTimer=env.setTimer||((...args)=>setTimeout(...args)),clearTimer=env.clearTimer||((...args)=>clearTimeout(...args));
  // Same resource owner as phase execution; scheduling/retention remain caller contracts.
@@ -218,6 +226,6 @@ function timedWorker(env){
  // 묶음 크기(훑기·예선): 코스모 식 min(50, ceil(팀 수/(작업자×40))) — 작업자마다 40묶음 이상 남겨 끝이 고르게. 8개·10,626팀이면 34팀, 120팀이면 1팀(지금과 같음)
  const chunkSize=(teams,workers)=>Math.max(1,Math.min(50,Math.ceil(teams/(Math.max(1,workers)*40))));
  const PAINT_MS=200;      // 훑기·예선 진행 표시 갱신 간격(ms, throttle)
- const api={createWorker,shared,split,workerPool,runPhase,etaNew,timedWorker,throttle,chunkSize,PAINT_MS};
+ const api={createWorker,planStages,shared,split,workerPool,runPhase,etaNew,timedWorker,throttle,chunkSize,PAINT_MS};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SearchExecutor=api;
 })(typeof window!=='undefined'?window:globalThis);
