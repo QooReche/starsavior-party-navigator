@@ -114,7 +114,8 @@ def register(api):
         tag = page.locator('#out .growth-on').count()
         page.evaluate("() => {$('assume-growth').checked=false;growthCancel();run(true)}")
         off = text()
-        page.evaluate("() => {$('assume-growth').checked=true}")
+        # Legacy alone restricts seasonal growth to EX. Daily runs its own growth pass on every stage.
+        page.evaluate("() => {$('assume-growth').checked=true;D.guild.search.preset='legacy'}")
         choose(page, '길드방어전', '3단계')
         if page.locator('button[data-go]').count():
             page.click('button[data-go]')

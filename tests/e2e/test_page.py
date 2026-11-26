@@ -2363,7 +2363,7 @@ def test_star_link_slots(browser, ctx):
 
 
 def test_growth_stage23(browser, ctx):
-    """Same seasonal search for both accounts, deterministic worker results from input stats."""
+    """Legacy guild/cosmo growth tabs: same search for both accounts, results from input stats."""
     page = open_page(browser, ctx, info=SYNTH, raid_ui=True, setup=lambda pg: pg.clock.install())
     page.evaluate('''async () => {
       const now=Date.now(),start=new Date(now-10000).toISOString();
@@ -2398,7 +2398,7 @@ def test_growth_stage23(browser, ctx):
         },0);}
         terminate(){if(!this.dead){this.dead=true;stage23Active--;}}
       };
-      const S=D.guild.search;Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,screen2:{keep:3,runs:2},finalists:2});
+      const S=D.guild.search;Object.assign(S,{preset:'legacy',poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,screen2:{keep:3,runs:2},finalists:2});
       S.screen.runs=2;S.final.runs=2;S.final.levels=[0];S.final.supports=['none','40051'];
       const C=D.cosmoRaid.search;C.minFront=0;C.minDealer=0;C.screen.runs=2;C.rerank.runs=2;C.final.runs=2;
       C.poolSize=12;C.maxPool=12;C.rerank.keep=18;
