@@ -51,7 +51,7 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 ### 4-1. 길드 방어전 패치 후 새 시즌 추가
 정본은 `data/guild_seasons/<seasonId>.json`, 현재 선택은 `data/guild_current.json`의 명시적 ID임. `data/guild_defense.json`은 모듈을 펼친 현재 화면용 생성 사본임. 날짜는 상태 표시에만 쓰고 시즌을 자동 선택하지 않음. 30111은 BFB 전용 실행기와 당시 공개 `guild_bfb`·`guild_sim` 자료를 함께 보관했음. 보관 시즌은 현재 빌드에서 다시 추출한 정의이며 당시 빌드 재현본이 아님.
 
-1. static-data의 `check_build.py`로 설치본·DLL 일치를 확인하고, 패치됐다면 `DECOMPILE.md`에 따라 표·디컴파일을 다시 추출함. `STARSAVIOR_STATIC`을 해당 폴더로 지정함. 일반 적 자료를 갱신했다면 시즌 정의의 의존 자료 해시도 다시 추출해야 함.
+1. static-data의 `check_build.py`로 설치본·DLL 일치를 확인하고, 패치됐다면 `DECOMPILE.md`에 따라 표·디컴파일을 다시 추출함. `STARSAVIOR_STATIC`을 해당 폴더로 지정함. 일반 적·버프 등 공용 자료 생성과 현재 번역 이름 연결 검사를 먼저 마친 뒤 시즌을 추출함. 공용 자료를 뒤늦게 갱신하면 시즌 정의의 의존 자료 해시와 시뮬 표도 다시 생성해야 함.
 2. `python -X utf8 -I tools/build_guild_seasons.py --season 30112 --extract-only`로 새 시즌을 생성함. 시즌 행 → 전투 행 → 원래 배치 스크립트·유닛 레벨/스탯·스킬 → 난이도 그룹·지원 SE를 연결함. 없는 시즌·해석하지 못하는 지원 효과는 중단하며, 없는 배치 스크립트는 해당 단계에 실행 불가 사유를 남김. 다른 시즌 배치에 새 유닛을 끼워 만들지 않음.
 3. 생성된 시즌 파일의 `season.start/end/settleEnd`, `asOf`, 표시 문구·출처를 확인한 값으로 채움. 실제 전투 값과 보스 실행기(`client`/`bfb`)를 확인함. 선택 효과 `sets`는 계속 가정 계산용임. 보스별 실제 처치·체력 감소가 기본 점수이고, 추가 점수 배율의 서버 반올림은 미확인임.
 4. `python -X utf8 -I tools/build_guild_seasons.py --current 30112 --select-only`로 현재 시즌을 전환함. 정본의 `dataVersion` 재계산, 현재 사본, `party_contents.json`의 보스 항목을 함께 생성함. 현재 기본은 `data/guild_current.json`이 정본임. 11/26 공개 행 확인 뒤 30112로 전환했음.
