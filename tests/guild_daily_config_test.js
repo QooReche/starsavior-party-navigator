@@ -10,12 +10,10 @@ function dates(view=V){
 }
 dates();
 const Daily=require('../guild_daily'),D=defaults.search.daily;
-assert.deepEqual(D.seals,{min:1,max:3,default:2,costNormal:1,costEx:2,dailyGrant:2,grantCap:2,purchaseMax:1,purchaseCost:30});
-assert.deepEqual(Daily.splits(D,3,true),[{ex:1,normal:1},{ex:0,normal:3}]);
-assert.deepEqual(Daily.splits(D,3,false),[{ex:0,normal:3}]);
-assert.equal(Daily.plan({G,S:G.search,roster:[],results:{},nowMs:Date.parse('2026-11-26T05:00:00+09:00')}).seals,2);
-for(const n of [0,4,1.5])assert.throws(()=>Daily.splits(D,n,true),/인장은 1~3장/);
-assert.throws(()=>Daily.splits({...D,seals:{...D.seals,min:2,max:2}},1,true),/인장은 2~2장/);
+assert.deepEqual(D.seals,{max:3,costNormal:1,costEx:2,dailyGrant:2,grantCap:2,purchaseMax:1,purchaseCost:30});
+assert.equal(D.split,undefined);assert.equal(Daily.splits,undefined);
+assert.equal(Daily.plan({G,S:G.search,roster:[],results:{},nowMs:Date.parse('2026-11-26T05:00:00+09:00')}).kind,'ex');
+assert.equal(Daily.plan({G,S:G.search,roster:[],results:{},nowMs:Date.parse('2026-11-27T04:00:00+09:00')}).kind,'normal');
 assert.equal(defaults.search.preset,'legacy');
 assert.deepEqual(G.search.daily,defaults.search.daily);
 assert.deepEqual(require('../data/guild_defense.json').search.daily,defaults.search.daily);
@@ -24,4 +22,4 @@ const src=fs.readFileSync(require.resolve('../guild_view'),'utf8');
 const ctx={module:{exports:{}},require:n=>require('../'+n)};
 vm.runInNewContext(src.replace('reset.utcOffsetHours-reset.hour','reset.utcOffsetHours'),ctx);
 assert.throws(()=>dates(ctx.module.exports),assert.AssertionError);
-console.log('PASS daily config: seal rules/default/splits/bounds, defaults/copies/workers, 4 KST boundary cases, reset mutation');
+console.log('PASS daily config: seal costs/cap/single-team defaults, defaults/copies/workers, 4 KST boundary cases, reset mutation');

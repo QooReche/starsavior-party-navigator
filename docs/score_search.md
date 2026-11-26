@@ -2,36 +2,36 @@
 
 ## 길드 daily 조립 (P3)
 
-`GuildPlanner.search({...cx,S:{...S,preset:'daily'},seals,split?,nowMs?,secondsPerGame?,cosmoSpeed?,growthResults?})`로 선택함. 기본은 `legacy`이며 화면은 옛 경로를 유지함. `split={ex,normal}` 생략 시 EX 최대 나눔부터 계산하고, 그 합산이 인장 수 × 일반 최고 단계 만점 이상일 때만 일반 비교를 생략함. 미만이면 가능한 나눔을 모두 비교함. 이전 `weakExRatio` 설정은 호환용으로만 보존함. P4 실측·기본 전환과 P5 화면·가져오기는 별도임.
+`GuildPlanner.search({...cx,S:{...S,preset:'daily'},previous?,session?,nowMs?,secondsPerGame?,cosmoSpeed?,growthResults?})`로 선택함. 기본 프리셋은 `legacy`이며 전환은 별도임. daily는 EX 1팀(닫힌 날 일반 1팀)을 찾고, 결과를 `previous`로 전달하면 앞 팀을 고정한 채 일반 1팀을 추가함. 총 인장은 3장 이하(EX 포함 2팀, 일반만 3팀). 인장 입력·나눔 자동 비교·관련 설정은 제거했음.
 
 `secondsPerGame`은 선택한 작업자 수에서 측정한 벽시계 초/판임. 없으면 호출자가 전달한 `cosmoSpeed`(`cosmo.speed.v2` 저장 객체)를 `CosmoSearch.priorFrom`으로 작업자 수에 맞춰 환산함. 둘 다 없으면 [기존 브라우저 744판·워커 재사용 실측](cosmo_speed_rd_1110.md)의 1/2/4/8작업자 처리량을 근사 초기값으로 사용함(1작업자 약 0.025초/판). 다른 기기·길드 전체 탐색 시간의 검증값은 아니며 실제 시간 상한은 별도로 유지함.
 
 | 명세 | daily 조립·재사용 |
 |---|---|
 | §2 1~3 | `GS.pool/combos` → 전수 훑기 → `CosmoSearch.pickPass`(동점·구원자별 대안) → 정밀. 학습 선별 없음 |
-| §2 4~6·§3 | 지원마다 최선 조건 → `ScoreCombinations.steps`의 구원자·지원 제약 → 상위 묶음 결선·브레이크. 합산 동점은 평균 합→키, 같은 슬롯 순열은 한 묶음으로 셈 |
-| §3 재시도 | `CosmoSearch.retryPlan`으로 후보 확대, 이미 받은 판 재사용. 끝내 부족하면 팀 수 감소·남는 인장 반환 |
+| §2 4~6·§3 | 앞 팀의 구원자·지원 제외 → 남은 지원마다 최선 조건 → 이번 1팀 후보 결선·브레이크. 동점은 평균→키 |
+| §3 재시도 | `CosmoSearch.retryPlan`으로 후보 확대, 이미 받은 판 재사용. 끝내 없으면 앞 팀 보존·인장 추가 사용 없음 |
 | §4 | 1위 묶음만 `PartyPlacement.all`+기존 자리, 20→상위 3+기존 자리 100→경계면 200판. `PlacementSearch.incumbentWithMargin`으로 판정. 바뀐 팀만 자기+미사용 지원 재확인·40판 확인·브레이크, 자리로 되돌아가지 않음 |
 | §2·§6 실행 | `GS.runPhase`·공통 풀·`chunkSize`·코스모 `workerCount`. 육성 포함도 풀 하나·기한 하나. 통일 시드·`run_offset/merge_raw`로 판을 이어 돌림. 상위 20%는 원시값에서 재집계함(`mergeSummary`의 다판 근사 평균은 사용하지 않음) |
 | §6 날짜·설정 | `GuildView.gameDay`가 KST 04:00과 `rules.entryDaysEx`를 참조함. 정본 `guild_defaults.json`, `build_guild_seasons.py --select-only`와 페이지 payload로 반영함. `preset/daily`는 전투 입력이 아니므로 자료 버전 해시에서 제외함 |
 
 `GuildDaily.plan(cx)`는 예상 판 수·시간·축소 목록·팀 부족 안내를 반환함. 시간 상한은 자리 대상→조건 비교 팀 수→정밀 수→풀 순으로 줄임. 풀은 `GS.pool`의 직업 보충과 최대 팀 수에 필요한 `minFront/minDealer` 인원을 보존하고 나머지만 전투력순으로 채움. 하한은 원래 풀과 `max(20, 최대 팀 수 × 4 + 4, 보존 인원)` 중 작은 값임. 예상 조합 수에도 역할 조건을 적용하고 `pickPass`의 전원 동점까지 상한에 포함함. 최소 풀도 예상 상한을 넘으면 실행 전에 사유를 반환함. 실제 실행의 절대 기한과 시간·품질 채택 판정(P4)은 유지함.
 
-결선에서 협공 제외된 묶음은 버리고 남은 조건을 다시 묶으며, 후보 확대 후에도 부족하면 팀 수를 줄임. 자리 고판수 평가에서도 제외된 후보만큼 나머지 자리를 승격함. 기존 자리가 제외됐으면 다음 유효 자리를 기준으로 비교하고, 모든 자리가 제외되면 팀 부족 결과를 반환함.
+결선에서 협공 제외된 묶음은 버리고 남은 조건을 다시 묶으며, 후보 확대 후에도 없으면 새 팀 없이 반환함. 자리 고판수 평가에서도 제외된 후보만큼 나머지 자리를 승격함. 기존 자리가 제외됐으면 다음 유효 자리를 기준으로 비교하고, 모든 자리가 제외되면 팀 부족 결과를 반환함.
 
 진행은 P1의 `planStages`·`etaNew`를 씀. `onPlan`은 시작·조건부 단계·완료 때 갱신되며 `eta`도 전달함. `onPhase.meta.stage`는 실행 순서대로 증가하고 `policyStage`는 명세의 1~7임. 현재 단계의 남은 고판수·브레이크·다른 팀·육성 작업도 ETA에 남김. `onProgress(done,total,estimate)`의 세 번째 인자는 선택적 ETA임. 완료 때 계획의 `complete`, 중단 때 `stopped`를 표시함.
 
-결과는 `teams/rows`, `sum/mean`, `split`, `seals`, `reason`, `warnings`, `flags`, `coverage`, 팀별 `evaluation`과 입력 `signature`를 가짐. 직업 불일치는 배정 지원 `sup`를 유지하며 `effectiveSupport:'none'` 계산을 공유함. 중단은 4단계부터 가능한 부분 묶음을 반환하고, 자리 비교 중에는 6단계 묶음을 반환함. 일반 대안 탐색 중 중단해도 앞서 완료한 결선을 유지함. 육성 결과는 `growth`이며 미완료면 전체에도 `partial`을 표시함.
+결과는 `teams/rows`, `sum/mean`, `split`, `seals`, `reason`, `warnings`, `flags`, `coverage`, 팀별 `evaluation`과 입력 `signature`를 가짐. 직업 불일치는 배정 지원 `sup`를 유지하며 `effectiveSupport:'none'` 계산을 공유함. 중단은 4단계부터 가능한 부분 묶음을 반환하고, 자리 비교 중에는 6단계 묶음을 반환함. 이어서 찾기 중 중단해도 앞 팀을 유지하고 팀별 evaluation을 보존함. 육성 결과는 `growth`이며 미완료면 전체에도 `partial`을 표시함.
 
 클라 근거(설치 빌드 **26935738**, `check_build.py` DLL 10개 일치 확인): 비공개 `decompiled/NKC/NKC.decompiled.cs:408935`의 `SelectDungeonBuffSlot.SetBuffSlot`, `:408991`의 선택 잠금은 `OBF_6480`만 검사함. `:151518`→`:405948`은 지원 재사용 여부, 출전 `:71370`→`:71397`→`:151528`→`:405957`은 남은 지원이 있을 때 선택 ID가 양수인지 검사함. 팀 직업 인자를 받거나 비교하지 않아 **직업 불일치 지원 선택을 클라가 허용함**. 서버 실행 확인은 별도임.
 
-사이드 이펙트: 자동 추천 길드 줄·직접 편성·공유 `go`·기존 저장 키·옛 결과 서명은 그대로임. daily v2 서명은 날짜·인장·나눔·설정·계정 능력치·육성·브레이크와 실제 축소 계획(`poolLimit`, 축소 정책, 자리 대상, 조합 검사 상한)을 구분하며 저장소에 기록하지 않음. 공통 조합기의 평균 동점·순열 중복 옵션과 `runPhase` 원시값 보존은 daily에서만 요청함. 지시 밖 처리: 별도 기능 추가 없음. 독립 리뷰로 발견한 시간 예상·판 수 혼합·중단 checkpoint·단계 내부 ETA를 수정하고 회귀·변이 검사에 넣었음.
+사이드 이펙트: 자동 추천 길드 줄·직접 편성·공유 `go`·기존 저장 키·옛 결과 서명은 그대로임. daily v3 결과 서명은 날짜·설정·계정 능력치·육성·브레이크·실제 축소 계획과 앞 팀 서명을 구분함. `inputSignature`는 이어서 찾기의 조건 변경을 막음. `createSession(makeWorker)`의 같은 풀·패스별 캐시를 이어 쓰며 `close()`는 다시 찾기·조건 변경·인장 소진·초기 오류 때 호출함. 세션은 영구 저장하지 않음. 지시 밖 처리: 별도 기능 추가 없음. 독립 리뷰로 발견한 시간 예상·판 수 혼합·중단 checkpoint·단계 내부 ETA를 수정하고 회귀·변이 검사에 넣었음.
 
 새 시험은 가짜 작업자 24개 시나리오·daily 변이 14건, 날짜 경계 4건·변이 1건을 검사함. 옛 동결 기대값은 수정하지 않았음. 관련 Node 22파일·자료 버전 Python 7개를 직렬로 통과했음. 전체 run_tests·실제 시뮬·Pyodide·e2e는 실행하지 않았음.
 
 ## P5 화면 연결
 
-- `guild_daily_page.js`가 날짜·인장·나눔·계정·설정을 세션 서명으로 묶고 `GuildDaily.plan/search`에 전달함. `guild_daily_ui.js`는 결과의 합산·지원 배정·나눔 이유·미평가 표식을 그대로 표시함. `guild_daily.css`는 인장 조작·스테이지/별의 도전 칩·모바일 4장 카드만 추가함. 찾는 동안 P1 막대·그웬 소유자를 재사용하며 진행 글자·목록 노드만 갱신함.
+- `guild_daily_page.js`가 날짜·계정·설정을 세션 서명으로 묶고 `GuildDaily.plan/search`에 전달함. `guild_daily_ui.js`는 결과의 합산·지원 배정·선택 이유·미평가 표식을 그대로 표시함. `guild_daily.css`는 스테이지/별의 도전 칩·모바일 4장 카드만 추가함. 찾는 동안 P1 막대·그웬 소유자를 재사용하며 진행 글자·목록 노드만 갱신함.
 - 직접 편성은 `GuildDailyUI.draft`로 엔진 순서·후열 리더·브레이크·육성 가정을 옮기고 기존 `GS.sel`·스테이지·`directNavigate`를 사용함. 결과와 출처 표식은 세션에 남으며 공유 `go`·기존 `guild.v3.*`·`direct.v1` 허용 목록은 유지함. 날짜가 바뀌면 결과를 지우지 않고 출정 날짜를 표시함. 숨긴 `sets.ui`·`sim.ui`는 그대로임.
 - 육성 포함은 daily API의 `growthResults`로 한 번에 실행해 같은 작업자 풀·시간 상한을 적용함. 옛 `growthStart`가 daily 결과를 단일 팀으로 오해해 다시 실행하지 않도록 막았음. 현재/육성 묶음은 각각의 합산·가져오기를 사용함. 일반 자동 추천과 legacy 육성 흐름은 그대로임.
 - 관련 Node 10파일(`guild_daily_ui`, `guild_daily`, `guild_daily_config`, `guild_progress`, `guild_view`, `guild_search`, `guild_defaults`, `search_freeze`, `gwen_stage_contract`, `direct_party`)과 e2e 4흐름(`test_guild_daily_ui`, `test_gwen_guild_owner`의 각 1280/390)을 순차 통과했음. 합성 작업자만 사용했고 8899·전체 시험·실제 Pyodide 측정은 사용하지 않았음. daily 시험은 결과→가져오기→복귀·부분 표식·중단 전/후·날짜 경계·육성 포함·저장 키·공유·390px 가로 넘침을 검사함.

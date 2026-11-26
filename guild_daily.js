@@ -4,34 +4,34 @@
   'use strict';
   const dep=(file,name)=>typeof module!=='undefined'&&module.exports?require('./'+file):root[name];
   const GS=dep('guild_search.js','GuildSearch'),V=dep('guild_view.js','GuildView');
-  const CS=dep('cosmo_search.js','CosmoSearch'),C=dep('score_combinations.js','ScoreCombinations');
+  const CS=dep('cosmo_search.js','CosmoSearch');
   const P=dep('party_placement.js','PartyPlacement'),PS=dep('placement_search.js','PlacementSearch');
   const E=dep('search_executor.js','SearchExecutor');
-  const names=['능력치 계산','전체 조합 훑기','후보 정밀','스테이지·별의 도전·지원 비교','겹치지 않는 팀 묶기','결선·브레이크','자리·리더 비교'];
+  const names=['능력치 계산','전체 조합 훑기','후보 정밀','스테이지·별의 도전·지원 비교','남은 지원 배정','결선·브레이크','자리·리더 비교'];
   const clone=x=>JSON.parse(JSON.stringify(x)),unique=xs=>[...new Map(xs.map(j=>[j.key,j])).values()];
   const compare=(a,b)=>b.score-a.score||b.mean-a.mean||a.id.localeCompare(b.id);
   const bundleId=b=>b.teams.map(t=>t.id).sort().join('/');
   const bundleCompare=(a,b)=>b.sum-a.sum||b.teams.reduce((s,t)=>s+t.mean,0)-a.teams.reduce((s,t)=>s+t.mean,0)||bundleId(a).localeCompare(bundleId(b));
 
-  function splits(D,seals,open){
-    if(!Number.isInteger(seals)||seals<D.seals.min||seals>D.seals.max)throw Error(`인장은 ${D.seals.min}~${D.seals.max}장 범위여야 함`);
-    const out=[];
-    for(let ex=open?Math.floor(seals/D.seals.costEx):0;ex>=0;ex--){
-      const normal=(seals-ex*D.seals.costEx)/D.seals.costNormal;
-      if(Number.isInteger(normal))out.push({ex,normal});
-    }
-    return D.split.exFirst?out:out.reverse();
+  const usedSeals=(teams,D)=>teams.reduce((n,t)=>n+(t.kind==='ex'?D.seals.costEx:D.seals.costNormal),0);
+  function remaining(cx){
+    const teams=cx.previous?.teams||[],units=new Set(teams.flatMap(t=>t.keys)),supports=new Set(teams.map(t=>t.sup));
+    return {...cx,roster:cx.roster.filter(r=>!units.has(r.key)),
+      S:{...cx.S,final:{...cx.S.final,supports:cx.S.final.supports.filter(s=>!supports.has(s))}}};
   }
-  const slots=s=>[...Array(s.ex).fill('ex'),...Array(s.normal).fill('normal')];
-  function fitSplit(split,available){
-    const s={...split};while(s.ex+s.normal>available){if(s.normal)s.normal--;else s.ex--;}
-    return s;
+  function createSession(makeWorker){
+    const newPool=()=>{
+      const pool=GS.workerPool(makeWorker),close=pool.close;
+      pool.close=()=>{pool.closed=true;close();};return pool;
+    };
+    const session={pool:newPool(),caches:new Map(),closed:false,
+      resume(){if(this.pool.closed)this.pool=newPool();},
+      close(){this.pool.close();this.caches.clear();this.closed=true;}};
+    return session;
   }
-  // Actual client wave rows distinguish bosses and elites (unlike EX-only UI metadata).
-  function normalMaximum(G){
-    const normal=G.steps.filter(s=>!s.ex).sort((a,b)=>b.step-a.step)[0];
-    if(!normal)throw Error('일반 스테이지 점수 자료가 없음');
-    return normal.base+normal.waves.flat().reduce((sum,u)=>sum+(u.boss?normal.bossKill:u.elite?normal.eliteKill:normal.kill),0);
+  function inputSignature(cx,day){
+    return JSON.stringify(['guild-follow-v1',cx.G.season.id,cx.G.dataVersion,day.date,cx.S,
+      cx.tiers||[],cx.breaks||[],cx.roster,cx.results,cx.growthResults||null]);
   }
   function choosePlacement(incumbent,candidate,margin){
     const value=incumbent.score===candidate.score?r=>r.mean:r=>r.score;
@@ -51,9 +51,9 @@
     });
   }
   function signature(cx,day,pl=plan(cx)){
-    return JSON.stringify(['guild-daily-v2',cx.G.season.id,cx.G.dataVersion,day.date,cx.seals??cx.S.daily.seals.default,cx.split||null,
+    return JSON.stringify(['guild-daily-v3',cx.G.season.id,cx.G.dataVersion,day.date,(cx.previous?.teams||[]).map(t=>t.signature||t.id),
       cx.S,cx.tiers||[],cx.breaks||[],cx.roster,cx.results,cx.growthResults||null,
-      {poolLimit:pl.poolLimit,policy:pl.D,placeScope:pl.placeScope,maxCombineChecks:cx.maxCombineChecks??2000000}]);
+      {poolLimit:pl.poolLimit,policy:pl.D,placeScope:pl.placeScope}]);
   }
   function trimPool(S,rows,limit,maxTeams){
     const floor=(rows[0]?.power||0)*(S.minPowerRatio||0);
@@ -74,12 +74,11 @@
     return count;
   }
   function plan(cx){
+    const source=cx;cx=remaining(cx);
     const S={...cx.S,newSearch:false},D=clone(S.daily),day=V.gameDay({...cx.G,search:S},cx.nowMs??Date.now());
-    const seals=cx.seals??D.seals.default,allowed=splits(D,seals,day.exOpen);
-    const requested=cx.split?allowed.find(s=>s.ex===cx.split.ex&&s.normal===cx.split.normal):allowed[0];
-    if(!requested)throw Error('오늘 사용할 수 없는 인장 나눔');
-    const options=cx.split?[requested]:allowed;
-    const maxTeams=Math.max(...options.map(s=>s.ex+s.normal));
+    const used=usedSeals(source.previous?.teams||[],D),kind=source.previous||!day.exOpen?'normal':'ex';
+    if(used+(kind==='ex'?D.seals.costEx:D.seals.costNormal)>D.seals.max)throw Error('인장 3장을 모두 사용했음');
+    const maxTeams=1;
     let rows=GS.pool(S,cx.results,cx.roster);
     const growthRows=cx.growthResults?GS.pool(S,cx.growthResults,cx.roster):[];
     const initialPool=Math.max(rows.length,growthRows.length),passes=cx.growthResults?2:1;
@@ -93,12 +92,12 @@
     const rate=workers>=8?125.34:workers>=4?103.42:workers>=2?70.19:39.95;
     const measured=Number.isFinite(cx.secondsPerGame)&&cx.secondsPerGame>0;
     const secondsPerGame=measured?cx.secondsPerGame:saved?Math.max(...saved):1/rate;
-    const kinds=cx.split?new Set(slots(requested)):new Set(options.flatMap(slots));
+    const kinds=new Set([kind]);
     const nBrk=(cx.breaks||[]).length,supports=S.final.supports.filter(s=>s!=='none').length;
     function estimate(){
       const n=poolLimit,combos=Math.max(comboCount(S,trimPool(S,rows,n,maxTeams)),comboCount(S,trimPool(S,growthRows,n,maxTeams)));
       const teamCount=Math.min(Math.floor(n/4),maxTeams);
-      const placeTeams=placeScope==='all'?teamCount:Math.min(Math.floor(n/4),requested.ex);
+      const placeTeams=placeScope==='all'?teamCount:Math.min(Math.floor(n/4),(kind==='ex'?1:0));
       const sweeps=kinds.size,conditions=(kinds.has('ex')?D.probe.levels.length:0)+(kinds.has('normal')?D.probe.steps.length:0);
       const retry=Math.max(...D.retry.keepMultipliers),keep=Math.min(combos,D.rerank.keep*retry);
       const probe=Math.min(combos,D.probe.teams*D.retry.keepMultipliers.reduce((a,b)=>a+b,0));
@@ -106,10 +105,10 @@
       // saturated case every screened team advances; budget that upper bound.
       const games=[0,combos*sweeps*D.screen.runs,combos*sweeps*(D.rerank.runs-D.screen.runs),
         probe*conditions*(supports+1)*D.probe.runs,0,
-        options.length*D.combine.top*teamCount*((D.final.closeRuns-D.probe.runs)+nBrk*D.final.closeRuns),
+        D.combine.top*teamCount*((D.final.closeRuns-D.probe.runs)+nBrk*D.final.closeRuns),
         placeTeams*(25*D.place.runs[0]+(D.place.keep+1)*(D.place.runs[2]-D.place.runs[0])+
           Math.max(D.probe.levels.length,D.probe.steps.length)*(supports+1)*D.place.recheckRuns+(nBrk+1)*D.final.runs)];
-      const jobs=[0,combos*sweeps,combos*sweeps,probe*conditions*(supports+1),1,options.length*D.combine.top*teamCount,placeTeams];
+      const jobs=[0,combos*sweeps,combos*sweeps,probe*conditions*(supports+1),1,D.combine.top*teamCount,placeTeams];
       return {combos,jobs,games,total:games.reduce((a,b)=>a+b,0)*passes};
     }
     const over=()=>estimate().total*secondsPerGame>=D.timeCapMin*60;
@@ -119,34 +118,47 @@
     while(over()&&poolLimit>poolFloor)poolLimit--;
     if(poolLimit<initialPool)reductions.push(`풀: ${initialPool}명 → ${poolLimit}명`);
     const est=estimate(),stages=E.planStages(names.map((name,i)=>({id:i+1,name,jobs:est.jobs[i],runs:est.jobs[i]?est.games[i]/est.jobs[i]:0,upper:true,
-      condition:i===6?'결선 완료 후, 변경 팀만 조건 재확인':i>=1&&i<=3?'EX 위주 합산이 일반 전체 상한 미만이면 모든 나눔 비교':undefined})));
-    const availableTeams=Math.floor(Math.min(rows.length,poolLimit)/4),effectiveSplit=fitSplit(requested,availableTeams);
+      condition:i===6?'결선 완료 후, 변경 팀만 조건 재확인':undefined})));
+    const availableTeams=Math.floor(Math.min(rows.length,poolLimit)/4);
     return {version:1,preset:'daily',stages,total:est.total,estimatedSec:est.total*secondsPerGame,secondsPerGame,
-      estimateFallback:!measured&&!saved,withinCap:!over(),reductions,D,day,seals,requested,options,poolLimit,poolFloor,maxTeams,placeScope,passes,
-      effectiveSplit,availableTeams,warnings:effectiveSplit.ex+effectiveSplit.normal<requested.ex+requested.normal?['구원자가 부족해 만들 수 있는 팀 수로 줄였음']:[]};
+      estimateFallback:!measured&&!saved,withinCap:!over(),reductions,D,day,kind,used,poolLimit,poolFloor,maxTeams,placeScope,passes,
+      availableTeams,warnings:availableTeams<1?['남은 구원자 4명 이상 필요']:[]};
   }
   async function search(cx){
     const pl=plan(cx);cx.onPlan?.(pl);
     if(!pl.withinCap)throw Object.assign(Error('최소 편성도 예상 시간 상한을 넘음'),{plan:pl,gwenCause:'timeCap'});
     const deadline=(cx.clock||Date.now)()+pl.D.timeCapMin*60000;
-    const shared={pool:GS.workerPool(cx.makeWorker),stages:[],eta:null};
+    const inputSig=inputSignature(cx,pl.day);
+    if(cx.previous&&(cx.previous.inputSignature!==inputSig||!cx.previous.teams?.length))throw Error('계산 조건이 바뀌었음. 다시 찾기 필요');
+    const session=cx.session||createSession(cx.makeWorker);
+    if(session.closed)throw Error('찾기 세션이 끝났음. 다시 찾기 필요');
+    session.resume(); // runPhase closes its pool on cancellation; keep completed cached jobs.
+    if(session.signature!==inputSig){session.caches.clear();session.signature=inputSig;}
+    const shared={pool:session.pool,caches:session.caches,stages:[],eta:null};
     try{
       const result=await searchOne(cx,pl,deadline,shared,0);
-      if(cx.growthResults&&!result.partial){
-        const growth=await searchOne({...cx,results:cx.growthResults,growthResults:null},pl,deadline,shared,1);
+      if(cx.growthResults&&!result.followPartial&&(!cx.previous||cx.previous.growth?.teams.length)){
+        const grownCx={...cx,results:cx.growthResults,growthResults:null,previous:cx.previous?.growth};
+        const growth=await searchOne(grownCx,plan(grownCx),deadline,shared,1);
         result.growth=growth;
         if(growth.partial){result.partial=true;result.timeCapped ||= growth.timeCapped;result.flags=[...result.flags,'육성 포함 미평가'];}
+      }else if(cx.growthResults){
+        if(cx.previous?.growth)result.growth=cx.previous.growth;
+        result.partial=true;result.flags=[...result.flags,'육성 포함 미평가'];
       }
+      result.inputSignature=inputSig;
       return result;
-    }finally{shared.pool.close();}
+    }finally{if(!cx.session)session.close();}
   }
   async function searchOne(cx,pl,deadline,shared,pass){
+    const previous=cx.previous;cx=remaining(cx);
     const {G}=cx,D=pl.D,S={...cx.S,newSearch:false},cls=Object.fromEntries(cx.roster.map(r=>[r.key,r.cls]));
     const rows=trimPool(S,GS.pool(S,cx.results,cx.roster),pl.poolLimit,pl.maxTeams),list=GS.combos(S,rows),supports=S.final.supports.filter(s=>s!=='none');
     if(!list.length)throw Object.assign(Error('육성된 보유 구원자 4명 이상 필요'),{gwenCause:'few'});
-    const workers=cx.workers??CS.workerCount(D,cx.env),pool=shared.pool,cache=new Map(),hist=[],sweeps=new Map(),warnings=[],executionStages=shared.stages;
+    const workers=cx.workers??CS.workerCount(D,cx.env),pool=shared.pool,cache=shared.caches.get(pass)||new Map(),hist=[],sweeps=new Map(),warnings=[],executionStages=shared.stages;
+    shared.caches.set(pass,cache);
     const now=cx.clock||Date.now,tiers=(cx.tiers||G.sets.items.map(()=>0)).slice(),exStep=G.steps.find(s=>s.ex).step;
-    let phase=1,checkpoint=null,checkpointStage=0,selectedSplit=fitSplit(pl.requested,Math.floor(rows.length/4)),activeConditions=[],timeCapped=false,placeComplete=false,eta=shared.eta,splitsComplete=false;
+    let phase=1,checkpoint=null,checkpointStage=0,activeConditions=[],timeCapped=false,placeComplete=false,eta=shared.eta;
     const growthForecast=()=>cx.growthResults?E.planStages([{id:'growth',name:'육성 포함 편성 찾기',jobs:1,runs:pl.total/pl.passes,upper:true}]):[];
     const cancel=()=>Object.assign(Error('취소'),{gwenCause:'cancel'});
     const check=()=>{if(cx.stale?.())throw cancel();if(now()>=deadline){timeCapped=true;throw cancel();}if(cx.partialRequested?.())throw cancel();};
@@ -154,9 +166,8 @@
       const index=executionStages.length;
       const current=E.planStages([{id:'daily-'+index,name,jobs,runs,pass}])[0];current.games=games;current.policyStage=stage;
       executionStages.push(current);
-      const pendingSweep=!splitsComplete&&pl.options.some(s=>s.normal)&&!sweeps.get('normal')?.multiplier;
       const future=pl.stages.flatMap(s=>{
-        if(s.id<stage&&!(pendingSweep&&s.id>=2&&s.id<=4))return [];
+        if(s.id<stage)return [];
         const spent=executionStages.filter(x=>x.pass===pass&&x.policyStage===s.id).reduce((sum,x)=>sum+x.games,0),remaining=Math.max(0,s.games-spent);
         return remaining?[{...s,id:'remaining-'+s.id,jobs:1,runs:remaining,games:remaining,done:0}]:[];
       });
@@ -251,15 +262,11 @@
       await run(data.conditions,D.probe.runs,4,(kind==='ex'?'EX':'일반')+' 스테이지·별의 도전·지원 비교');
       data.multiplier=multiplier;
     }
-    async function combine(split,recovery=false){
+    async function combine(recovery=false){
       let progressStage;if(!recovery){check();phase=5;progressStage=announce(5,names[4],1,0);}
-      const lists=slots(split).map(kind=>table((sweeps.get(kind)?.conditions||[])));
-      const budget={remaining:cx.maxCombineChecks??2000000};
-      const it=C.steps(lists,D.combine.top,budget,{id:t=>t.id,resources:t=>({units:t.keys,support:[t.sup]}),secondary:t=>t.mean,setId:ts=>ts.map(t=>t.id).sort().join('/')});
-      let next,last=now();do{next=it.next();if(!recovery)check();if(now()-last>16){await new Promise(r=>setTimeout(r,0));last=now();}}while(!next.done);
-      if(budget.exhausted&&!warnings.includes('묶음 조합 계산 상한에 도달함'))warnings.push('묶음 조합 계산 상한에 도달함');
+      const teams=table(sweeps.get(pl.kind)?.conditions||[]).slice(0,D.combine.top);
       if(progressStage)progressStage.done=1;
-      return next.value.sort(bundleCompare);
+      return teams.map(t=>({teams:[t],sum:t.score}));
     }
     async function finalBundles(bundles){
       const jobs=[...new Map(bundles.flatMap(b=>b.teams).map(t=>[t.id,t])).values()];await run(jobs,D.final.runs,6);
@@ -283,15 +290,14 @@
       // candidate recovery. Only invalid teams trigger the outer repack loop.
       return {rows:confirmed,complete:finals.length===bundles.length&&confirmed.length===near.length};
     }
-    async function solve(requested){
-      let split=fitSplit(requested,Math.floor(rows.length/4));selectedSplit=split;
-      const retry=CS.retryPlan({rerank:{keep:D.probe.teams,runs:D.rerank.runs},retry:{...D.retry,maxCandidatesPerBoss:list.length,maxRerankGames:3*list.length*D.rerank.runs,maxTripleChecks:cx.maxCombineChecks??2000000}},list.length);
+    async function solve(){
+      const retry=CS.retryPlan({rerank:{keep:D.probe.teams,runs:D.rerank.runs},retry:{...D.retry,maxCandidatesPerBoss:list.length,maxRerankGames:3*list.length*D.rerank.runs,maxTripleChecks:2000000}},list.length);
       async function validFinal(){
         // Excluded 40-game candidates disappear from table() too. Repack the
         // remaining conditions until a valid finalist or candidate exhaustion.
         let best=null;
         for(;;){
-          const bundles=await combine(split);if(!bundles.length)return best;
+          const bundles=await combine();if(!bundles.length)return best;
           if(checkpointStage<6){checkpoint=bundles[0];checkpointStage=5;}
           const final=await finalBundles(bundles),finals=final.rows;
           // A previously retained 40-game winner can fail coop at 80 games.
@@ -307,10 +313,9 @@
         }
       }
       for(let i=0;i<retry.limits.length;i++){
-        const mult=D.retry.keepMultipliers[i];for(const kind of new Set(slots(split)))await sweep(kind,mult);
+        const mult=D.retry.keepMultipliers[i];await sweep(pl.kind,mult);
         const best=await validFinal();if(best)return best;
       }
-      while(split.ex+split.normal>1){split=fitSplit(split,split.ex+split.normal-1);selectedSplit=split;const best=await validFinal();if(best)return best;}
       return null;
     }
     async function placement(bundle){
@@ -364,44 +369,31 @@
       const selectedStage=partial?checkpointStage:phase;
       const evaluation={partial,stage:selectedStage,stageSupportComplete:supportComplete,breakComplete:checkpointStage>=6,placementComplete:placeComplete};
       const flags=[...(!supportComplete?['스테이지·지원 미평가']:[]),...(!placeComplete?['자리·리더 미평가']:[])];
-      const teams=(bundle?.teams||[]).map(t=>({...t,evaluation:{...evaluation}})),used=teams.reduce((s,t)=>s+(t.kind==='ex'?D.seals.costEx:D.seals.costNormal),0);
-      if(teams.length<pl.requested.ex+pl.requested.normal)warnings.push(`${pl.requested.ex+pl.requested.normal}팀 중 ${teams.length}팀만 만들었음 · 인장 ${pl.seals-used}장 남음`);
-      return {preset:'daily',rows:teams,teams,sum:bundle?.sum||0,mean:teams.reduce((s,t)=>s+t.mean,0),reason,flags,partial,timeCapped,
-        seals:{requested:pl.seals,used,remaining:pl.seals-used},split:{ex:teams.filter(t=>t.kind==='ex').length,normal:teams.filter(t=>t.kind==='normal').length},
-        warnings,plan:pl,signature:signature(cx,pl.day,pl),pool:rows.length,combos:list.length,runs:D.final.runs,
-        coverage:{version:1,selectedStage:teams.length?selectedStage:0,stages:hist},evaluation};
+      const teamSig=signature({...cx,previous},pl.day,pl);
+      const added=(bundle?.teams||[]).map(t=>({...t,tiers:t.options.guild.sets,evaluation:{...evaluation},signature:JSON.stringify([teamSig,t.id]),date:pl.day.date}));
+      const teams=[...(previous?.teams||[]),...added],used=usedSeals(teams,D);
+      if(!added.length)warnings.push('새 팀을 만들지 못했음 · 인장 '+(D.seals.max-used)+'장 남음');
+      return {preset:'daily',rows:teams,teams,sum:teams.reduce((s,t)=>s+t.score,0),mean:teams.reduce((s,t)=>s+t.mean,0),reason,flags,
+        partial:partial||teams.some(t=>t.evaluation?.partial),followPartial:partial,timeCapped,
+        seals:{used,remaining:D.seals.max-used},split:{ex:teams.filter(t=>t.kind==='ex').length,normal:teams.filter(t=>t.kind==='normal').length},
+        warnings,plan:pl,signature:JSON.stringify(teams.map(t=>t.signature)),pool:rows.length,combos:list.length,runs:D.final.runs,
+        coverage:{version:1,selectedStage:added.length?selectedStage:0,stages:hist},evaluation};
     }
     try{
-      check();let best=await solve(pl.requested);
-      const skipNormal=D.split.exFirst&&best&&best.sum>=pl.seals/D.seals.costNormal*normalMaximum(G);
-      if(!cx.split){
-        for(const option of pl.options.slice(1)){
-          if(skipNormal)break;
-          const prior=best;const alternative=await solve(option);
-          if(alternative&&(!best||bundleCompare(alternative,best)<0))best=alternative;
-          // An unsuccessful alternate must not replace the safe final checkpoint.
-          checkpoint=best||prior;
-        }
-      }
-      splitsComplete=true;
-      if(cx.split)reason='지정한 인장 나눔을 계산했음';
-      else if(!pl.day.exOpen)reason='오늘은 EX가 닫혀 일반 팀을 골랐음';
-      else if(!pl.requested.ex)reason='사용할 인장 수에 맞춰 일반 팀을 골랐음';
-      else if(skipNormal)reason='EX 위주 합산이 인장 수 × 일반 최고 단계 만점 이상이라 일반 나눔 비교를 생략했음';
-      else reason='가능한 인장 나눔을 모두 비교해 합산이 가장 큰 묶음을 골랐음';
+      check();let best=await solve();
+      reason=previous?'앞 팀을 유지하고 남은 구원자로 일반 한 팀을 골랐음':pl.day.exOpen?'오늘 EX 한 팀을 골랐음':'오늘은 EX가 닫혀 일반 한 팀을 골랐음';
       checkpoint=best;
       if(best)best=await placement(best);
       check();return output(best,false);
     }catch(e){
       if(cx.stale?.()||e.gwenCause!=='cancel'||(!cx.partialRequested?.()&&!timeCapped))throw e;
       if(!checkpoint&&phase>=4&&activeConditions.length){
-        let split=selectedSplit,bundles=await combine(split,true);
-        while(!bundles.length&&split.ex+split.normal>1){split=fitSplit(split,split.ex+split.normal-1);bundles=await combine(split,true);}
+        const bundles=await combine(true);
         checkpoint=bundles[0]||null;checkpointStage=4;
       }
       return output(phase>=4?checkpoint:null,true);
     }
   }
-  const api={search,plan,splits,fitSplit,normalMaximum,choosePlacement,closeFinalists,standardError,signature};
+  const api={search,plan,createSession,inputSignature,choosePlacement,closeFinalists,standardError,signature};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.GuildDaily=api;
 })(typeof window!=='undefined'?window:globalThis);

@@ -1,9 +1,9 @@
 // Page adapter for the opt-in daily preset. No new persistent selection/result keys.
 function guildDailyOptions(){return {S:{...D.guild.search,banCoop:GSR.banCoop},G:D.guild,V:GuildView,
-  seals:GSR.sealCount??D.guild.search.daily.seals.default,split:GSR.splitChoice||undefined,nowMs:Date.now(),
+  nowMs:Date.now(),
   roster:R.filter(s=>!EXCL.has(s.key)),tiers:gsTiers(),breaks:ownedSimBreaks()};}
 function guildDailySig(){return JSON.stringify(['daily',guildIdentity(),GuildView.gameDay(D.guild).date,MI.hash,[...EXCL].sort(),
-  GSR.sealCount??D.guild.search.daily.seals.default,GSR.splitChoice||null,gsTiers(),GSR.banCoop,ownedSimBreaks(),D.guild.search,growthOptions()]);}
+  gsTiers(),GSR.banCoop,ownedSimBreaks(),D.guild.search,growthOptions()]);}
 function guildDailyPreview(){
   if(!MI.info||!MI.growth)return null;
   const profile=MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,MI.growth,'op'));
@@ -19,16 +19,21 @@ function guildDailyCards(t){
 function guildDailyHtml(){return GuildDailyUI.html(GSR,{G:D.guild,esc,hasInfo:!!MI.info,sig:guildDailySig(),plan:guildDailyPreview(),
   cards:guildDailyCards,breakBar:t=>seasonBreakBar(t,true),label:k=>BYKEY[k]?.name||k,say:Ux.gwenSay,
   work:()=>GwenStage.slot('guildSearch','board'),report:()=>GwenStage.slot('guildSearch','board')+GwenStage.slot('guildSearch','result'),error:Ux.gwenError});}
+function guildDailyRelease(target=GSR){target.session?.close();target.session=null;}
 function guildDailyInput(){
-  const day=GuildView.gameDay(D.guild),choices=GuildDaily.splits(D.guild.search.daily,GSR.sealCount??D.guild.search.daily.seals.default,day.exOpen);
-  if(GSR.splitChoice&&!choices.some(s=>s.ex===GSR.splitChoice.ex&&s.normal===GSR.splitChoice.normal))GSR.splitChoice=null;
+  if(GSR.session&&GSR.phase!=='run'&&GSR.sig!==guildDailySig())guildDailyRelease();
 }
-async function guildDailyStart(target=GSR,profileOverride=null){
+async function guildDailyStart(target=GSR,profileOverride=null,follow=false){
   if(seasonBlocked('guild')||!MI.info||target.phase==='run'||SIMQ.busy!=null||CSR.phase==='run')return;
-  growthCancel();guildGwenClaim('guildSearch');guildDailyInput();
+  if(follow&&(target.phase!=='done'||target.sig!==guildDailySig()||!target.teams?.length||target.seals.remaining<1))return;
+  const previous=follow?{...target}:null;
+  if(!follow)guildDailyRelease(target);
+  target.session ||= GuildDaily.createSession(()=>SearchExecutor.createWorker());
+  const session=target.session;
+  growthCancel();guildGwenClaim('guildSearch');
   const id=++target.id,stale=()=>target.id!==id,paint=()=>renderGuildSearch(true),sig=guildDailySig(),cx=guildDailyOptions();
   const tick=SearchExecutor.throttle(paint,SearchExecutor.PAINT_MS,()=>!stale()&&target.phase==='run');
-  Object.assign(target,{phase:'run',msg:'내 구원자 능력치 계산 중',done:0,total:0,rows:[],teams:[],growth:null,plan:null,eta:null,partial:false,coverage:null,stopRequested:false,stageIndex:null,sig});paint();
+  Object.assign(target,{phase:'run',msg:'내 구원자 능력치 계산 중',done:0,total:0,rows:previous?.rows||[],teams:previous?.teams||[],growth:previous?.growth||null,following:follow,followError:null,plan:previous?.plan||null,eta:null,partial:false,coverage:null,stopRequested:false,stageIndex:null,sig});paint();
   try{
     const growth=await miGrowth();if(stale())return;
     const profile=profileOverride||MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,'op'));
@@ -37,8 +42,8 @@ async function guildDailyStart(target=GSR,profileOverride=null){
       const slots=await fetch('data/myinfo_slots.json').then(r=>{if(!r.ok)throw Error('장비 부위 확인 실패');return r.json();});if(stale())return;
       growthResults=MyInfoReco.overwrite(MI.info,R,growth,'op',{excluded:[...EXCL],slots,priority:D.journeyPriority}).profile.results;
     }
-    if(target.stopRequested){target.phase='idle';paint();return;}
-    const out=await GuildPlanner.search({...cx,results:profile.results,growthResults,cosmoSpeed:LS.get("cosmo.speed.v2"),
+    if(target.stopRequested){if(previous)Object.assign(target,previous,{id,following:false,handle:null});else{target.phase='idle';guildDailyRelease(target);}paint();return;}
+    const out=await GuildPlanner.search({...cx,session,previous,results:profile.results,growthResults,cosmoSpeed:LS.get("cosmo.speed.v2"),
       base:location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),stage:'guild',
       env:{cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory,mobile:csMobile()},makeWorker:()=>SearchExecutor.createWorker(),stale,partialRequested:()=>target.stopRequested,
       watch:{hidden:()=>document.hidden,limit:r=>simTeamLimit(r),loadMs:()=>SIMQ.LOAD_MS||180000},
@@ -47,9 +52,10 @@ async function guildDailyStart(target=GSR,profileOverride=null){
       onPhase:(msg,total,meta)=>{if(stale())return;target.phaseSerial=(target.phaseSerial||0)+1;Object.assign(target,{msg,done:0,total,stageIndex:meta.stage,runs:meta.runs});paint();},
       onProgress:(done,total)=>{if(stale())return;Object.assign(target,{done,total});tick();}});
     if(stale())return;tick.cancel();
-    Object.assign(target,out,{sig,eta:null,handle:null,phase:out.rows.length?'done':'idle'});paint();return target;
-  }catch(e){if(stale())return;target.handle=null;target.errorCause=e.gwenCause||'other';target.phase=e.gwenCause==='cancel'?'idle':'err';target.msg=e.message||String(e);paint();}
-  finally{tick.cancel();}
+    Object.assign(target,out,{sig,eta:null,handle:null,following:false,phase:out.rows.length?'done':'idle'});
+    if(!out.seals.remaining||!out.rows.length)guildDailyRelease(target);paint();return target;
+  }catch(e){if(stale())return;if(previous){Object.assign(target,previous,{id,following:false,handle:null,followError:e.message||String(e)});paint();return;}guildDailyRelease(target);target.handle=null;target.errorCause=e.gwenCause||'other';target.phase=e.gwenCause==='cancel'?'idle':'err';target.msg=e.message||String(e);paint();}
+  finally{tick.cancel();if(stale()){session.close();if(target.session===session)target.session=null;}}
 }
 function guildDailyFromSearch(index,grown=false){
   const source=grown?GSR.growth:GSR,t=source?.teams?.[index];if(!t)return;
@@ -60,7 +66,7 @@ function guildDailyFromSearch(index,grown=false){
   $('stage').value=String(stageIndex);
   GS.sel=GuildView.normSel(D.guild,{level:t.level,tiers:t.tiers,support:t.sup});LS.set(guildStoreKey(),GS.sel);
   DIRECT.undo=DIRECT.draft;DIRECT.draft=DirectParty.draft(GuildDailyUI.draft(t,grown));DIRECT.revision++;
-  DIRECT.guildSearchSource={season:D.guild.season.id,date:source.plan.day.date,flags:GuildDailyUI.flags(t),partial:source.partial};
+  DIRECT.guildSearchSource={season:D.guild.season.id,date:t.date||source.plan.day.date,flags:GuildDailyUI.flags(t),partial:!!t.evaluation?.partial,signature:t.signature};
   directSave();saveSel();showInfo();showPow();condChanged();directNavigate('direct');guildDailySourcePaint();
 }
 function guildDailySourcePaint(){

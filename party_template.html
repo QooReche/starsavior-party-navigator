@@ -579,10 +579,10 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   Object.assign(GSR,out,{sig,eta:null});
   GSR.context=context;GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&!GSR.partial&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
  }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.errorCause=e.gwenCause||"other";GSR.phase=GSR.errorCause==="cancel"?"idle":"err";GSR.msg=e.message||String(e);paint()}finally{tick.cancel()}}
-$("guild-search").addEventListener("change",e=>{const split=e.target.closest('input[data-gs="split"]');if(split&&GSR.phase!=="run"){GSR.splitChoice=split.value==='auto'?null:GuildDaily.splits(D.guild.search.daily,GSR.sealCount??D.guild.search.daily.seals.default,GuildView.gameDay(D.guild).exOpen).find(s=>s.ex===+split.value);growthCancel();renderGuildSearch(true);return;}const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
+$("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
 $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[data-gs]");if(!b)return;
  if(b.dataset.gs==='edit'){guildDailyFromSearch(+b.dataset.team,b.dataset.grown==='true');return;}
- if(['minus','plus'].includes(b.dataset.gs)){if(GSR.phase==='run')return;const seals=D.guild.search.daily.seals;GSR.sealCount=Math.max(seals.min,Math.min(seals.max,(GSR.sealCount??seals.default)+(b.dataset.gs==='plus'?1:-1)));GSR.splitChoice=null;growthCancel();renderGuildSearch(true);return;}
+ if(b.dataset.gs==='follow'){guildDailyStart(GSR,null,true);return;}
  if(b.dataset.gs==="start")guildSearchStart();
  else if(b.dataset.gs==="partial"){if(GSR.phase!=="run")return;GSR.stopRequested=true;GSR.handle?.cancel();renderGuildSearch(true)}
  else if(b.dataset.gs==="cancel"){GSR.id++;if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";renderGuildSearch(true)}});
@@ -1652,7 +1652,7 @@ $("mi-q").oninput=()=>renderMi();
 $("mi-list").addEventListener("change",e=>{const x=e.target.closest("input[data-use]");if(!x)return;if(x.checked)EXCL.delete(x.dataset.use);else EXCL.add(x.dataset.use);
  gsReset();LS.set("excl",[...EXCL]);syncOwn();saveSel();updCount();renderMi();rerun()});
 $("mi-excl").addEventListener("click",e=>{if(!e.target.closest("button[data-exclclear]"))return;gsReset();EXCL.clear();LS.set("excl",[]);syncOwn();saveSel();updCount();renderMi();rerun()});
-function gsReset(){try{csReset()}catch(e){}if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.id++;GSR.phase="idle";GSR.rows=[];GSR.msg=""}   // 내 정보·추천 제외가 바뀌면 이전 편성 찾기 결과·진행을 버림
+function gsReset(){try{csReset()}catch(e){}guildDailyRelease();GSR.teams=[];GSR.growth=null;if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.id++;GSR.phase="idle";GSR.rows=[];GSR.msg=""}   // 내 정보·추천 제외가 바뀌면 이전 편성 찾기 결과·진행을 버림
 function miReset(info){GROW.history={};simInvalidate();gsReset();DIRECT.guildSearchSource=null;SIMQ.res={};SIMQ.scr={};SIMQ.refined=new Set();SIMQ.more={};SIMQ.err="";BRCMP.seen.clear();BRCMP.open={};for(const k in PICK)delete PICK[k];
  MI.info=info;REQ=!!info&&(REQ||AUTO);MI.hash=info?MyInfoReco.hash(info):"";MI.profiles={};
  if(info)$("grow").value="myinfo";else if($("grow").value==="myinfo")$("grow").value="1";

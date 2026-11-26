@@ -22,10 +22,8 @@
   const gwenLine=mode=>{const lines=GWEN_LINES[mode];return lines?lines[Math.floor(gwenSeed*lines.length)]:'';};
   // 그웬 대사는 상황별 6개. 보이는 동안 12초마다 다음 줄, 읽기 도구는 클릭 반응만 알림.
   const GWEN_SAY={
-    guildIdle:["단장님, 오늘 인장은 몇 장 쓸 거야?","인장 수만 알려 줘. 팀은 내가 짤게"],
-    guildPlan:["두 장이면 EX 한 번이야"],
-    guildFew:["인장 한 장이면 일반 한 번이야","EX는 두 장이 들어, 단장님"],
-    guildCharge:["한 장 사면 일반 한 번 더 갈 수 있어"],
+    guildPlan:["오늘 EX 한 팀부터 찾아볼게","단장님, EX부터 조사해 볼까?"],
+    guildFollow:["남은 애들로 한 팀 더 짜 볼까?"],
     guildClosed:["오늘은 EX가 닫혔어. 일반 스테이지로 가자"],
     guildDone:["오늘 출전 명단, 완성이야!","단장님, 팀마다 파일을 나눠 놨어"],
     guildShort:["으… 인원이 모자라. 짤 수 있는 팀만 짤게"],

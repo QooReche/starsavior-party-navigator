@@ -51,10 +51,8 @@ def flow(browser,base,width,partial=False):
         assert p.locator('#guild-search').is_visible()
         assert p.locator('#guild-extra [data-g=set]').count()==0
         assert p.locator('#guild-panel [data-k=gd-sim]').count()==0
-        assert '3장' in p.locator('.seal-stepper output').inner_text()
-        p.locator('[data-gs=plus]').click();assert '성광석 30개' in p.locator('#guild-search').inner_text()
-        p.locator('[data-gs=minus]').click()
-        if partial:p.evaluate('dailyStopStage=7')
+        assert p.locator('.seal-stepper').count()==0
+        assert '3장째는 구매 1회 성광석 30' in p.locator('#guild-search').inner_text()
         before=p.evaluate('Object.keys(localStorage).sort()')
         p.locator('[data-gs=start]').click()
         p.wait_for_function('dailyQueue.length>0||GSR.phase==="err"')
@@ -66,11 +64,17 @@ def flow(browser,base,width,partial=False):
         assert p.evaluate('stopNode===document.querySelector("[data-gs=partial]")'),'progress replaced controls'
         assert p.locator('#guild-search [role=progressbar]').count()==1
         p.evaluate('dailyFlush()')
+        p.wait_for_function('GSR.phase==="done"',timeout=20000)
+        assert p.evaluate('GSR.teams.length===1 && GSR.teams[0].kind==="ex"')
+        first=p.evaluate('JSON.stringify(GSR.teams[0])')
+        if partial:p.evaluate('dailyStopStage=7')
+        p.locator('[data-gs=follow]').click()
         if partial:
             p.wait_for_function('GSR.plan?.stages[GSR.stageIndex]?.policyStage===7 && !dailyAuto',timeout=20000)
             p.locator('[data-gs=partial]').click()
-        p.wait_for_function('GSR.phase!=="run"',timeout=20000)
-        assert p.evaluate('GSR.phase==="done"'),p.evaluate('GSR.msg')
+        p.wait_for_function('GSR.phase==="done"',timeout=20000)
+        assert p.evaluate('JSON.stringify(GSR.teams[0])')==first
+        assert p.locator('[data-gs=follow]').count()==0
         assert p.evaluate('GSR.sum>0 && GSR.teams.length===2'),p.evaluate('({sum:GSR.sum,teams:GSR.teams.length,plan:GSR.plan,warnings:GSR.warnings,rows:GSR.rows.map(t=>({keys:t.keys,score:t.score}))})')
         assert p.locator('#guild-search .cs-boss').count()==2
         assert p.evaluate('Object.keys(localStorage).sort()')==before,'daily added persistence'
@@ -103,7 +107,7 @@ def flow(browser,base,width,partial=False):
         assert '금요일 · EX 닫힘' in p.locator('[data-k=gs-day]').inner_text()
         assert '다음 EX는 토요일' in p.locator('[data-k=gs-day]').inner_text()
         p.evaluate('dailyAuto=false;dailyQueue=[];D.guild.search.poolSize=4;GSR.phase="idle";renderGuildSearch(true)')
-        assert '구원자가 부족' in p.locator('#guild-search').inner_text()
+        assert '오늘 편성 찾기 (1팀)' in p.locator('#guild-search').inner_text()
         # Early stop has no fake partial result.
         p.locator('[data-gs=start]').click();p.wait_for_function('dailyQueue.length>0')
         p.locator('[data-gs=partial]').click();p.wait_for_function('GSR.phase==="idle"')

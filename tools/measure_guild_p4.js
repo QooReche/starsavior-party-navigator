@@ -6,11 +6,19 @@ const {context,instrument,privateDir,save,hash}=require('./measure_guild_time');
 const {stats,battleScores}=require('./evaluate_guild_time'),{compare}=require('./report_guild_p0');
 const Daily=require('../guild_daily'),GS=require('../guild_search'),V=require('../guild_view');
 const ROOT=path.resolve(__dirname,'..'),read=f=>JSON.parse(fs.readFileSync(f,'utf8'));
-function constraints(r){
+function constraints(r,used=2){
  assert(!r.partial&&!r.timeCapped,'incomplete search');assert(r.teams.length>0);
  assert.equal(new Set(r.teams.flatMap(t=>t.keys)).size,r.teams.length*4);
  assert.equal(new Set(r.teams.map(t=>t.sup)).size,r.teams.length);
- assert(r.teams.every(t=>t.sup&&t.sup!=='none'));assert.equal(r.seals.remaining,0);
+ assert(r.teams.every(t=>t.sup&&t.sup!=='none'));assert.equal(r.seals.used,used);assert.equal(r.seals.remaining,3-used);
+}
+async function searchDaily(cx,follow=false){
+ const session=Daily.createSession(cx.makeWorker);
+ try{
+  let result=await Daily.search({...cx,session});constraints(result);
+  if(follow){result=await Daily.search({...cx,session,previous:result});constraints(result,3);}
+  return result;
+ }finally{session.close();}
 }
 async function main(){
  const [account,output,p0dir,envfile]=process.argv.slice(2),dir=privateDir(output),environment=read(envfile);
@@ -37,7 +45,7 @@ async function main(){
  }
  const all={};
  for(const offset of [0,100])for(const seals of [2,3]){
-  const cx=context(account,30112);cx.S.preset='daily';cx.seals=seals;cx.nowMs=Date.parse('2026-11-26T12:00:00+09:00');
+  const cx=context(account,30112);cx.S.preset='daily';cx.nowMs=Date.parse('2026-11-26T12:00:00+09:00');
   cx.secondsPerGame=environment.secondsPerGame;cx.env=environment.env;cx.workers=environment.workers;
   const runDir=privateDir(path.join(dir,String(offset),String(seals))),p0=read(path.join(p0dir,'30112',String(offset),'A/result.json'));
   assert.equal(hash(cx.results),p0.pins.profileHash);
@@ -49,10 +57,10 @@ async function main(){
   else{
    assert(!fs.existsSync(path.join(runDir,'events.jsonl')),'fresh timing required; use a new output folder');
    const t=instrument(runDir,pins,offset,environment.workers);
-   try{const result=await Daily.search({...cx,makeWorker:t.makeWorker,onPhase:t.onPhase});constraints(result);measured={pins,result,...t.summary()};save(path.join(runDir,'result.json'),measured);}
+   try{const result=await searchDaily({...cx,makeWorker:t.makeWorker,onPhase:t.onPhase},seals===3);measured={pins,result,...t.summary()};save(path.join(runDir,'result.json'),measured);}
    finally{t.close();}
   }
-  constraints(measured.result);
+  constraints(measured.result,seals);
   const holdDir=privateDir(path.join(runDir,'holdout')),hp={pins,selected:measured.result.teams,seedStart:20270101+offset,batches:30,runs:20};
   let evaluated;
   if(fs.existsSync(path.join(holdDir,'result.json'))){const h=read(path.join(holdDir,'result.json'));assert.deepEqual(h.pins,hp);evaluated=h.evaluated;}
@@ -82,4 +90,4 @@ async function main(){
   runs:Object.entries(all).map(([id,{measured:m,evaluated:v}])=>({id,seconds:m.seconds,resumed:m.resumed,split:m.result.split,reason:m.result.reason,searchSum:m.result.sum,holdoutTopSum:v.reduce((s,t)=>s+t.summary.top,0),holdoutMeanSum:v.reduce((s,t)=>s+t.summary.mean,0),teams:v.map(t=>({kind:t.selected.kind,summary:t.summary})),reductions:m.result.plan.reductions}))};
  save(path.join(dir,'report.json'),report);console.log(JSON.stringify({quality,threeQuality:report.threeQuality,constraints:true}));
 }
-module.exports={constraints};if(require.main===module)main().catch(e=>{console.error(e);process.exitCode=1;});
+module.exports={constraints,searchDaily};if(require.main===module)main().catch(e=>{console.error(e);process.exitCode=1;});
