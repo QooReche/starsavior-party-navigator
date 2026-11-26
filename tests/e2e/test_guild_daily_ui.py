@@ -7,10 +7,11 @@ from test_direct_party import ready
 ROOT=Path(__file__).resolve().parents[2]
 SETUP=r'''() => {
   const start=Date.parse('2026-11-26T12:00:00+09:00'),at=performance.now();Date.now=()=>start+performance.now()-at;
-  const S=D.guild.search;Object.assign(S,{preset:'daily',poolSize:8,minPowerRatio:0,minRole:{},minFront:0,minDealer:0});
+  const S=D.guild.search;if(S.preset!=='daily')throw Error('기본 daily 진입 누락');
+  Object.assign(S,{poolSize:8,minPowerRatio:0,minRole:{},minFront:0,minDealer:0});
   S.excluded=[];S.daily.workers.max=1;S.daily.screen.runs=1;Object.assign(S.daily.rerank,{runs:2,keep:4});
   Object.assign(S.daily.probe,{runs:2,teams:4,levels:[0,1],steps:[6]});S.daily.final.runs=3;S.daily.combine.top=1;
-  Object.assign(S.daily.place,{runs:[1,2,3],keep:1,recheckRuns:1});MI.brkLv={};
+  Object.assign(S.daily.place,{runs:[1,2,3],keep:1,recheckRuns:1});MI.brkLv={'스타피어서':7};
   const pool=GuildSearch.pool(S,MI.profiles.op.results,R);window.dailyBlocks=[pool.slice(0,4).map(x=>x.key),pool.slice(4,8).map(x=>x.key)];
   SIMQ.auto=false;simAutoKick=()=>{};window.dailyQueue=[];window.dailyAuto=false;window.dailyPosts=[];window.dailyStopStage=0;
   const search=GuildPlanner.search;
@@ -18,9 +19,14 @@ SETUP=r'''() => {
   window.Worker=class {
     postMessage(m){dailyPosts.push(m);const send=data=>this.onmessage?.({data:{id:m.id,...data}});
       for(const t of m.teams)dailyQueue.push(()=>{if(this.dead)return;
+        const prefix=JSON.stringify([D.guild.season.id,D.guild.dataVersion])+':';
+        if(!t.key.startsWith(prefix))throw Error('길드 시즌 작업 키 누락');
+        if(!t.key.endsWith('|step:'+t.options.guild.step))throw Error('길드 단계 작업 키 누락');
+        if(t.options.guild.seasonId!==D.guild.season.id||t.options.guild.dataVersion!==D.guild.dataVersion)throw Error('길드 시즌 요청 불일치');
         const prior=t.options.merge_raw?JSON.parse(t.options.merge_raw):[];
         const block=dailyBlocks.some(xs=>t.party.units.every(u=>xs.includes(u.key)));
-        const score=block?(t.options.guild.step===7?100000:1000):1;
+        const score=(block?(t.options.guild.step===7?100000:1000):1)+(t.options.break_skill?.name==='스타피어서'?100:0)
+          +Math.round(t.party.units.reduce((sum,u)=>sum+u.stats_override.atk,0)/100);
         const raw=prior.concat(Array.from({length:m.n_runs},()=>['clear',10,20,1,score]));
         send({type:'team',key:t.key,result:{n:raw.length,clear:1,prog:1,progs:raw.map(x=>x[3]),via:{},u:{},guild:{base_scores:raw.map(x=>x[4])},raw:JSON.stringify(raw)}});
       });dailyQueue.push(()=>{if(!this.dead)send({type:'done'});});
@@ -66,6 +72,8 @@ def flow(browser,base,width,partial=False):
         p.evaluate('dailyFlush()')
         p.wait_for_function('GSR.phase==="done"',timeout=20000)
         assert p.evaluate('GSR.teams.length===1 && GSR.teams[0].kind==="ex"')
+        assert p.evaluate("GSR.teams[0].prog>0 && GSR.teams[0].brk==='스타피어서' && GSR.teams[0].brkLv===7")
+        assert p.evaluate("dailyPosts.some(m=>m.teams.some(t=>t.options.break_skill?.name==='스타피어서'&&t.options.break_skill.level===7))")
         first=p.evaluate('JSON.stringify(GSR.teams[0])')
         if partial:p.evaluate('dailyStopStage=7')
         p.locator('[data-gs=follow]').click()
@@ -113,11 +121,18 @@ def flow(browser,base,width,partial=False):
         p.locator('[data-gs=partial]').click();p.wait_for_function('GSR.phase==="idle"')
         assert p.locator('[data-k=gs-daily-result]').count()==0
         if width==1280:
-            p.evaluate('dailyQueue=[];$("assume-growth").checked=true;renderGuildSearch(true)')
+            # Compare the same four saviors so the block bonus cannot outweigh growth stats.
+            p.evaluate('EXCL=new Set(R.filter(s=>!dailyBlocks[0].includes(s.key)).map(s=>s.key));window.dailyOriginal=JSON.stringify(MI.info);dailyPosts=[];dailyQueue=[];$("assume-growth").checked=true;renderGuildSearch(true)')
             p.locator('[data-gs=start]').click();p.wait_for_function('dailyQueue.length>0')
             p.evaluate('dailyFlush()');p.wait_for_function('GSR.phase==="done"',timeout=20000)
             assert p.evaluate('GSR.growth?.sum>0 && GROW.phase!=="running"'),'growth must use the daily shared run'
-            p.locator('[data-fold=gs-grown] summary').click()
+            assert p.evaluate('GSR.growth.teams.every(t=>t.prog>0) && GSR.growth.snapshot.errors.length===0')
+            assert p.evaluate('JSON.stringify(MI.info)===dailyOriginal'),'growth changed the original account'
+            assert p.locator('#growth-result').count()==0,'daily must not leave an obsolete growth tab'
+            assert p.evaluate('GSR.growth.sum>GSR.sum'),'grown input stats must improve the synthetic score'
+            p.locator('[data-fold=gs-grown] > summary').click()
+            assert p.locator('[data-fold=gs-grown] .gc').count()==4
+            assert p.locator('[data-fold=gs-grown] .growth-tasks').is_visible()
             p.locator('[data-gs=edit][data-grown=true]').click()
             assert p.evaluate('DIRECT.draft.slots.every(s=>s.grown)')
         assert not p.errors,p.errors

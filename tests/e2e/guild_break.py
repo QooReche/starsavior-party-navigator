@@ -11,7 +11,7 @@ def register(h):
         page.evaluate("""() => {
           MI.brkLv={'스타피어서':7,'미지원 시험 스킬':9};
           const S=D.guild.search;
-          Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,
+          Object.assign(S,{preset:'legacy',poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,
             screen2:{keep:5,runs:3},finalists:5});
           S.screen.runs=2;S.final={runs:4,levels:[4],supports:['fire']};
           window.gbRequests=[];window.gbWorkers=[];window.gbIds=[];window.gbHold=false;
@@ -79,7 +79,7 @@ def register(h):
           MI.profiles.op={results:Object.fromEntries(keys.map(key=>[key,{power:1000,stats:{hp:1000,atk:100,def:100,spd:100},combat:{}}]))};
           MI.brkLv={};
           const S=D.guild.search;
-          Object.assign(S,{poolSize:4,minPowerRatio:1,minRole:{},minFront:0,minDealer:0,screen2:{keep:5,runs:2},finalists:1});
+          Object.assign(S,{preset:'legacy',poolSize:4,minPowerRatio:1,minRole:{},minFront:0,minDealer:0,screen2:{keep:5,runs:2},finalists:1});
           Object.assign(S.learned,{S:15,m:1,K:15,M:1,A:4,epochs:3,minCorrelation:-1,missThreshold:1});
           S.screen.runs=2;S.final={runs:2,levels:[4],supports:['fire']};
           window.switchTrace=[];window.switchActive=0;window.switchMax=0;

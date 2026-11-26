@@ -1574,7 +1574,7 @@ def test_guild_search(browser, ctx):
     shown = page.locator("#guild-search").is_visible()
     has_btn = page.locator('#guild-search button[data-gs="start"]').count()
     # 탐색 크기를 줄인다(풀 8명·상위 2팀·단계 4 하나·판수 2) — 로직은 그대로
-    page.evaluate("""() => {const S=D.guild.search;S.poolSize=8;S.minRole={'서포터':1,'디펜더':1};S.minPowerRatio=0;S.screen2={keep:3,runs:2};S.finalists=2;S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['none','40051']}""")
+    page.evaluate("""() => {const S=D.guild.search;S.preset='legacy';S.poolSize=8;S.minRole={'서포터':1,'디펜더':1};S.minPowerRatio=0;S.screen2={keep:3,runs:2};S.finalists=2;S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['none','40051']}""")
     page.evaluate("""() => {
       GS.sel={level:3,tiers:[3,2,1,3],support:'none'};window.__guildSets=[];
       const post=Worker.prototype.postMessage;
@@ -1612,7 +1612,7 @@ def test_guild_search_dropped(browser, ctx):
     page.evaluate("""() => {
       MI.brkLv={};  // 브레이크 미보유의 기존 3단계 경로. 4단계는 test_guild_break_search.
       const S=D.guild.search;
-      Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,banCoop:true,
+      Object.assign(S,{preset:'legacy',poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,banCoop:true,
         screen2:{keep:5,runs:2},finalists:5});
       S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['none',S.final.supports[0]];
       window.__jobs=[];window.__banned=null;
@@ -3306,7 +3306,8 @@ def test_ux_step3(browser, ctx):
         count=page.evaluate('ui3Created')
         page.click(f'[data-{prefix}="start"]')
         page.wait_for_function(f"ui3Created>{count}&&{state}.handle!=null")
-        page.click(f'[data-{prefix}="cancel"]')
+        action = 'partial' if kind == 'guild' else 'cancel'
+        page.click(f'[data-{prefix}="{action}"]')
         page.wait_for_timeout(100)
         assert page.evaluate(f"{state}.phase==='idle'&&{state}.handle===null&&ui3Stopped===ui3Created")
 
@@ -3384,6 +3385,21 @@ TESTS.extend(register_guild_rotation(sys.modules[__name__]))
 
 from growth_all import register as register_growth_all
 TESTS.extend(register_growth_all(sys.modules[__name__]))
+
+
+def test_guild_daily_desktop(browser, ctx):
+    from test_guild_daily_ui import flow
+    flow(browser, ctx.base, 1280)
+    return True, '기본 daily: EX→일반·브레이크·시즌 키·중단·날짜·육성·직접 편성'
+
+
+def test_guild_daily_mobile(browser, ctx):
+    from test_guild_daily_ui import flow
+    flow(browser, ctx.base, 390, partial=True)
+    return True, '390px daily: 이어서 찾기·부분 중단·미평가·직접 편성·비중복'
+
+
+TESTS.extend([test_guild_daily_desktop, test_guild_daily_mobile])
 
 
 def test_public_tone(browser, ctx):
