@@ -3,12 +3,14 @@
   'use strict';
   const node=typeof module!=='undefined'&&module.exports;
   const U=node?require('./ui_shared'):root.UiShared,V=node?require('./guild_view'):root.GuildView;
-  const Daily=node?require('./guild_daily'):root.GuildDaily;
+  const Recheck=node?require('./recheck_ui'):root.RecheckUi,Result=U.seasonUi;
   const GS=node?require('./guild_search'):root.GuildSearch;
   const splitText=s=>[s.ex?`EX ${s.ex}팀`:'',s.normal?`일반 ${s.normal}팀`:''].filter(Boolean).join(' + ')||'팀 없음';
   function chips(G,t){
-    const ex=t.kind==='ex',pct=G.challenge.levels.find(l=>l.level===t.level)?.score??G.challenge.levels[t.level-1]?.score??0;
-    return `<span class="gs-stage${ex?' ex':''}">${ex?'EX 스테이지':`스테이지 ${t.step}단계`}</span><span class="gs-star${ex&&t.level?'':' mut'}">★ 별의 도전 ${ex&&t.level?`${t.level} · 추가 점수 +${pct}%`:'없음'}</span>`;
+    const support=G.supports.find(s=>String(s.id)===String(t.sup)),role=G.search.supportRole?.[t.sup];
+    const scope=t.effectiveSupport==='none'?'해당 직업 없음':role?role+' 한정':'파티 전체';
+    return Result.chip(U.esc(t.kind==='ex'?`★ 별의 도전 ${t.level}`:`스테이지 ${t.step}단계`))+
+      Result.chip(t.sup==='none'?'지원 없음':`알리시아 지원 · ${U.esc(support?.name||t.sup)} · ${U.esc(scope)}`);
   }
   function flags(t){
     const e=t.evaluation;
@@ -23,15 +25,23 @@
     return day.exOpen?'guildPlan':'guildClosed';
   }
   function result(st,cx,grown=false){
-    const {G,esc}=cx,teams=st.teams||st.rows||[],warn=xs=>(xs||[]).map(x=>`<div class="gd-warn">${esc(x)}</div>`).join('');
-    return `<div class="season-result" data-k="gs-daily-result"><div class="season-score"><span>${grown?'육성했다면 · ':''}${teams.length}팀 합산 점수 · 팀별로 이어서 선택</span><b data-k="gs-score">${U.num(st.sum)}</b><small>점 · 상위 점수 기준</small></div>
-      <div class="season-chips"><span class="tag">인장 ${st.seals.used}장 사용</span><span class="tag">${splitText(st.split)}</span><span class="tag">지원 겹침 없음</span></div>${st.partial?'<div class="gd-warn">중단 · 부분 결과</div>':''}${warn(st.flags)}${warn(st.warnings)}<p class="gd-small">${esc(st.reason||'팀마다 평가한 후보 중 최고 점수를 골랐음.')}</p>
-      ${teams.map((t,i)=>{const role=G.search.supportRole?.[t.sup],support=G.supports.find(s=>String(s.id)===String(t.sup));
-        return `<section class="cs-boss" data-gs-team="${i}"><div class="cs-bh"><b>${i+1}팀</b>${chips(G,t)}<span class="tag">인장 ${t.kind==='ex'?G.search.daily.seals.costEx:G.search.daily.seals.costNormal}장</span></div>${t.evaluation?.partial?'<div class="gd-warn">중단 · 부분 결과</div>':''}${warn(flags(t))}
-          <p class="cs-sc">상위 점수 ${U.num(t.score)} · 평균 ${U.num(t.mean)} · 클리어 ${Math.round(t.clear*100)}%</p>${cx.cards(t,grown?st.snapshot:null)}${GS.unsupportedHtml([t],esc)}
-          <div class="season-chips"><span class="tag">${esc(support?.name||t.sup)} <small class="${role?'warn':'mut'}">${esc(role?role+' 한정':'파티 전체')}${t.effectiveSupport==='none'?' · 해당 직업 없음, 효과 없음':''}</small></span><span class="tag">리더 ${esc(cx.label(t.leaderKey||t.order[0]))} · ${t.order.indexOf(t.leaderKey||t.order[0])<2?'전열':'후열'}</span></div>
-          ${cx.breakBar(t)}<button type="button" class="sec" data-gs="edit" data-team="${i}" data-grown="${grown}">${i+1}팀을 직접 편성에서 고치기</button></section>`;
-      }).join('')}</div>`;
+    const {G,esc}=cx,teams=st.teams||st.rows||[],warn=xs=>(xs||[]).map(x=>Result.warning(esc(x))).join('');
+    const blocks=teams.map((t,i)=>Result.team({title:`${i+1}팀`,attrs:`data-gs-team="${i}"`,chips:chips(G,t),
+      score:`상위 점수 <b>${U.num(t.score)}</b> · 평균 점수 ${U.num(t.mean)} · 클리어율 ${U.pctText(t.clear)}`,
+      body:GS.unsupportedHtml([t],esc)+(t.evaluation?.partial?Result.warning('중단 · 부분 결과'):'')+warn(flags(t))+
+        cx.cards(t,grown?st.snapshot:null)+cx.breakBar(t)+placementResult(t)+
+        Result.edit(`data-gs="edit" data-team="${i}" data-grown="${grown}"`)
+    })).join('');
+    const detail=`<div class="mut gd-small">인장 ${st.seals.used}장 사용 · ${splitText(st.split)} · 지원 겹침 없음<br>${esc(st.reason||'팀마다 평가한 후보 중 최고 점수를 골랐음.')}${teams.map((t,i)=>`<br>${i+1}팀: ${esc(t.kind==='ex'?`★ 별의 도전 ${t.level} · 추가 점수 +${V.extraPct(G,t.level,t.tiers||[])}%`:`스테이지 ${t.step}단계`)}`).join('')}</div>`;
+    return `<div data-k="gs-daily-result">${Result.score(`${grown?'육성했다면 · ':''}${teams.length}팀 합산 점수`,U.num(st.sum),'gs-score','상위 점수 기준')}${st.partial?Result.warning('중단 · 부분 결과'):''}${warn(st.flags)}${warn(st.warnings)}${blocks}${Result.basis(grown?'gs-grown-detail':'gs-result-detail',detail,'탐색 결과 상세')}</div>`;
+  }
+  function placementResult(t){
+    // 결과에 완료 여부와 실제 선택이 남아 있을 때만 유지/변경으로 표시함.
+    if(!t.evaluation?.placementComplete||typeof t.placementChanged!=='boolean')return '';
+    const changed=t.placementChanged;
+    return Recheck.strip({state:'done',outcome:changed?'changed':'same',teams:1},{readonly:true,
+      summary:changed?'자리·리더 비교 결과 적용':'지금 자리·리더 그대로',
+      record:changed?'현장 재조사 기록: 후보를 대조해 선택한 자리·리더로 바꿈':'현장 재조사 기록: 후보를 대조했고 확실히 더 좋은 자리는 없었음'});
   }
   function html(st,cx){
     const {G,esc}=cx,pl=cx.plan,day=V.gameDay(G,cx.nowMs),sealConfig=G.search.daily.seals;
@@ -51,7 +61,7 @@
       <p class="gd-small">${ex?'EX 1팀 · 인장 2장':'일반 1팀 · 가장 점수 높은 스테이지'} · 구원자 4명 필요</p>
       ${(pl?.warnings||[]).map(w=>`<p class="gd-warn">${esc(w)}</p>`).join('')}`;
     const start=st.phase==='run'?'':`<button type="button" data-gs="start"${pl&&!pl.withinCap?' disabled':''}>${st.phase==='done'?'다시 찾기 · ':''}오늘 편성 찾기 (${count}팀)</button><span class="season-wait">${pl?'약 '+U.durTextSec(pl.estimatedSec)+' 예상':'시작하면 예상 시간 표시'} · 탭을 열어 둬야 함</span>${pl&&!pl.withinCap?'<p class="gd-warn">예상 시간이 상한을 넘음. 탐색 대상을 줄여야 함.</p>':''}`;
-    return `<div class="gd-search" data-k="gd-search" data-daily="true" data-state="${st.phase}"><h3 class="season-title">오늘 편성 찾기</h3>${cx.say(changed?'guildReset':sayKey(st,pl,day))}${changed}${cx.hasInfo?input:'<p class="gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자 불러오기 필요.</p>'}${cx.hasInfo?body+start:''}<details class="season-options" data-fold="gs-basis"><summary>계산 기준</summary><span class="gd-est">추정</span><p class="gd-small">오토 전투 · 내 정보의 최종 능력치와 지금 낀 장비 기준. 구원자와 지원이 팀끼리 겹치지 않음. 판별 점수 상위 20% 평균을 팀마다 구해 합산함. 평가한 후보 중 최고이며 전체 최적을 보장하지 않음. 실제 플레이 대조와 서버 반올림은 미확인임.</p>${(st.plan?.reductions||pl?.reductions||[]).map(x=>`<p class="gd-small">${esc(x)}</p>`).join('')}</details></div>`;
+    return `<div class="gd-search" data-k="gd-search" data-daily="true" data-state="${st.phase}"><h3 class="season-title">오늘 편성 찾기</h3>${cx.say(changed?'guildReset':sayKey(st,pl,day))}${changed}${cx.hasInfo?input:'<p class="gd-small">먼저 «내 계정 정보 불러오기»로 내 구원자 불러오기 필요.</p>'}${cx.hasInfo?body+start:''}${Result.basis('gs-basis',`<span class="gd-est">추정</span><p class="mut gd-small">오토 전투 · 내 정보의 최종 능력치와 지금 낀 장비 기준. 구원자와 지원이 팀끼리 겹치지 않음. 판별 점수 상위 20% 평균을 팀마다 구해 합산함. 평가한 후보 중 최고이며 전체 최적을 보장하지 않음. 실제 플레이 대조와 서버 반올림은 미확인임.</p>${(st.plan?.reductions||pl?.reductions||[]).map(x=>`<p class="gd-small">${esc(x)}</p>`).join('')}`)}</div>`;
   }
   function progressPaint(host,st){
     const stop=host.querySelector('[data-gs="partial"]');if(stop)stop.disabled=!!st.stopRequested;
@@ -62,6 +72,6 @@
     while(list.children.length>stages.length)list.lastElementChild.remove();
     stages.forEach((s,i)=>{const el=list.children[i];el.textContent=(i<st.stageIndex?'✓ ':'')+s.name;el.dataset.current=String(i===st.stageIndex);});
   }
-  const api={splitText,chips,flags,draft,sayKey,result,html,progressPaint};
+  const api={splitText,chips,flags,draft,sayKey,result,placementResult,html,progressPaint};
   if(node)module.exports=api;else root.GuildDailyUI=api;
 })(typeof window!=='undefined'?window:globalThis);

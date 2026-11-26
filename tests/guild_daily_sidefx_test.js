@@ -66,7 +66,7 @@ test('grown search retains snapshot and passes changed cards, final powers and t
 });
 test('each daily team reuses escaped unsupported-effect warnings',()=>{
   const unsupported=[{unit:'a',raw:'<effect>'}],out=UI.result({...done(),teams:[{...team,unsupported},team]},cx);
-  const sections=out.split('<section').slice(1);
+  const sections=out.split(/<div class="cs-boss" data-gs-team="\d+">/).slice(1);
   assert(sections[0].includes('data-k="potential-unsupported"'));assert(sections[0].includes('&lt;effect&gt;'));
   assert(!sections[1].includes('data-k="potential-unsupported"'));
 });

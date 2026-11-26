@@ -1,3 +1,5 @@
+- 2026-11-26: 길드 daily 결과의 합산·팀 머리·난이도·점수·직접 편성·계산 기준을 코스모 조각으로 공통화하고 알리시아 지원 칩과 기존 재조사 결과를 연결했음. `.gs-stage`·`.gs-star`를 삭제했으며 계산·결과값은 유지함. 코스모 72건·일반 재조사 16건 HTML 바이트 동일, 직접 가져오기·390px 줄바꿈·1280px 배치 확인, 독립 리뷰 반영했음. Node 19파일 중 18통과(동결 4파일 포함), `search_executor_contract`의 삭제된 growthWorker/timedWorker 요구는 시작 HEAD 28b689a에서도 실패함을 확인해 무수정으로 남겼음.
+
 ## 2026-11-26 — 브랜치 체인의 시험 환경 누락 수정
 
 - 커밋별 원본 JS·JSON·HTML을 읽어 재현했음. `growth_overwrite_review_test`는 3c06e36·93fbf76·dd7f497 통과, 1bab4f7부터 895a2e4·f4afb12·a5f80cc 실패: 작업 감시에 추가된 `simTeamLimit` 모의 의존성을 보완하고 실제 전달도 검사함. `season_gate_test`는 8eeba84 통과, 8dcef2c부터 919a51c·9de20d3·07bb6a7·1c00e3b·c4f7014 실패: daily 분기 설정 `D`와 실제 daily 진입 함수를 제공해 legacy·daily 차단을 함께 검사함. 기대값·정규화·기존 변이 검사는 유지했음. 두 시험 및 동결 4파일 통과, 제품 코드는 변경 없음.

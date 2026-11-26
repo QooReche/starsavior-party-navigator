@@ -41,11 +41,11 @@
 <div class="rc-mid"><div class="rc-steps" data-rc="steps">${steps(r)}</div><div class="rc-pbar" role="progressbar" aria-label="현장 재조사 진행" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(p*100)}"><i style="transform:scaleX(${p.toFixed(3)})"></i></div><code class="rc-log" data-log="${logKey(r)}">${LOG[logKey(r)]}</code></div>
 <div class="rc-side"><span>${d.teams||r.teams}팀 · 팀마다 24가지</span>${d.bundle?'':'<button type="button" class="sec" data-recheck-stop>지금 자리로 확정</button>'}</div></div>`;}
     if(r.state==='done'&&r.outcome==='changed'){
-      const nums=(d.rows||[]).map(x=>`${esc(x.label)} 클리어 <em>${pct(x.from)} → ${pct(x.to)}</em>`).join(' · ');
-      return `<div ${head} data-end="changed"><div class="rc-end"><b><span class="rc-stamp">진형 재정렬</span>${nums}</b><span>현장 재조사 기록: 24가지 대조 → 유력 3개 ${r.deep?200:100}판 확인.${d.story?' '+esc(d.story):''}</span></div>
-<div class="rc-side"><button type="button" class="sec" data-recheck-view>${d.view==='rule'?'지금 자리로 보기':'이전 자리로 보기'}</button></div></div>`;}
+      const nums=d.summary!=null?esc(d.summary):(d.rows||[]).map(x=>`${esc(x.label)} 클리어 <em>${pct(x.from)} → ${pct(x.to)}</em>`).join(' · ');
+      return `<div ${head} data-end="changed"><div class="rc-end"><b><span class="rc-stamp">진형 재정렬</span>${nums}</b><span>${d.record?esc(d.record):`현장 재조사 기록: 24가지 대조 → 유력 3개 ${r.deep?200:100}판 확인.${d.story?' '+esc(d.story):''}`}</span></div>
+${d.readonly?'':`<div class="rc-side"><button type="button" class="sec" data-recheck-view>${d.view==='rule'?'지금 자리로 보기':'이전 자리로 보기'}</button></div>`}</div>`;}
     if(r.state==='done'){const t=d.teams||r.teams;
-      return `<div ${head} data-end="same"><div class="rc-end"><b><span class="rc-stamp">현 진형 유지</span>${d.reverted?'지금 자리·리더 그대로':'지금 자리·리더가 가장 좋음'}</b><span>${d.reverted
+      return `<div ${head} data-end="same"><div class="rc-end"><b><span class="rc-stamp">현 진형 유지</span>${d.summary!=null?esc(d.summary):d.reverted?'지금 자리·리더 그대로':'지금 자리·리더가 가장 좋음'}</b><span>${d.record?esc(d.record):d.reverted
         ?`현장 재조사 기록: ${t}팀 × 24가지를 대조함. 바꾼 자리가 표준 판정에서 높지 않아 지금 자리로 되돌림`
         :`현장 재조사 기록: ${t}팀 × 24가지를 대조했고 확실히 더 좋은 자리는 없었음`}</span></div>${d.skipped?`<div class="rc-side"><span>${esc(d.skipped)}</span></div>`:''}</div>`;}
     return `<div ${head} data-end="${r.state==='cancel'?'cancel':'error'}"><div class="rc-end"><b>${r.state==='cancel'?'재조사 중단 — 규칙 자리 유지':'재조사를 끝내지 못함 — 규칙 자리 유지'}</b><span>${r.state==='cancel'?'«지금 자리로 확정»으로 비교를 멈췄음':'자리·리더 비교 중 오류가 나서 원래 자리로 표시함'}</span></div></div>`;

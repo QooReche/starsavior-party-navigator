@@ -1,9 +1,5 @@
-.gs-stage{display:inline-block;border:1px solid var(--brass);border-radius:4px;padding:2px 8px;color:var(--brass);font-size:12px}.gs-stage.ex{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:700}
-.gs-star{display:inline-block;border:1px solid var(--acc);border-radius:999px;padding:2px 8px;color:var(--acc);font-size:12px}.gs-star.mut{border-color:var(--line);color:var(--mut)}
-#guild-search [data-daily] .tag{white-space:normal;overflow-wrap:anywhere}#guild-search [data-daily] .warn{color:var(--warn)}
+#guild-search [data-daily] .cs-lv{max-width:100%;overflow-wrap:anywhere}
 #guild-search [data-k="gs-stages"] [data-current="true"]{color:var(--acc);font-weight:700}
-#guild-search [data-k="gs-daily-result"]{display:block}
-@media(min-width:1200px){#guild-search [data-daily] .cs-boss>.cs-cards{grid-row:1/8}}
 @media(max-width:600px){
  #guild-search [data-daily] button[data-gs="start"],#guild-search [data-daily] button[data-gs="follow"],#guild-search [data-daily] button[data-gs="edit"]{width:100%;min-height:48px;white-space:normal}
  #guild-search [data-daily] .season-wait{display:block;margin:8px 0}
