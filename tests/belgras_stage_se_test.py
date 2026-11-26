@@ -45,6 +45,8 @@ class StageSE(unittest.TestCase):
             self.assertEqual(sorted(ln.eff['value'] for ln in fixed), list(range(5000, 250001, 5000)))
             self.assertEqual(support_report([d]), [])
             d.name = '다른 적'
+            self.assertEqual(sum(ln.eff['kind'] == 'belgras_fixed' for ln in S.normalize(d, d.lines)), 50)
+            d.boss_behaviors = {}
             self.assertIs(S.normalize(d, d.lines), d.lines)
         b, boss = setup()
         def count():

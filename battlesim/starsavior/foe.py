@@ -278,6 +278,8 @@ class FoeDef:
         self.gear_atkp = 0.0
         self.effect_info = {}
         self.client_model = u.get('client_model')
+        from .boss_registry import monster_behaviors
+        self.boss_behaviors = monster_behaviors(self.name, self.client_model)
         self.client_skills, self.client_se = {}, {}
         self.client_cards = {}
         client_auto, client_lines, client_force = {}, {}, set()

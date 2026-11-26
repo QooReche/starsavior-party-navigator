@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT))
 from tools.tables import rows, buff_names, strings as table_strings
 from tools.build_foe_react import translate_conds, TIMING, TARGET_TYPE
 from tools.build_foe_auto import conds as auto_conds, filters
+from battlesim import datafile
 
 
 def build(static):
@@ -21,14 +22,18 @@ def build(static):
     skill_by_id = {s['m_SkillStrID']: s for s in skills}
     auto = {r['Id']: r for r in rows(tables / 'Plain/AUTO_SKILL_TEMPLET.json')}
     targets = {r['Id']: r['TargetCondition'] for r in rows(tables / 'Plain/AUTO_SKILL_TARGET_TEMPLET.json')}
-    out = {'units': {'심해의 폭군': {'sequential_events': ['enemy_ts']}}, 'buffs': {}}
-    se = next(r for r in rows(tables / 'SE_TEMPLET_SKILL_2.json') if r['m_SEID'] == 130056301)
-    buff = next(b for b in rows(tables / 'BUFF_TEMPLET.json') if b['m_BuffStrID'] == se['m_BuffStrID'])
-    assert not buff['AddDamage']
-    out['units']['공허결집자'] = {'local_damage_only': se['Stats'][0]['NKM_STAT_TYPE_RATE'] / 100}
-    for name, prefix in [('시엔', 'NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_'),
-                         ('티엔', 'NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_'),
-                         ('BFB', 'NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_')]:
+    out = {'units': {}, 'buffs': {}}
+    for name, registration in datafile.load('boss_catalog')['monsters'].items():
+        if registration.get('clientRules'):
+            out['units'][name] = dict(registration['clientRules'])
+        if registration.get('localDamageSe'):
+            se = next(r for r in rows(tables / 'SE_TEMPLET_SKILL_2.json') if r['m_SEID'] == registration['localDamageSe'])
+            buff = next(b for b in rows(tables / 'BUFF_TEMPLET.json') if b['m_BuffStrID'] == se['m_BuffStrID'])
+            assert not buff['AddDamage']
+            out['units'].setdefault(name, {})['local_damage_only'] = se['Stats'][0]['NKM_STAT_TYPE_RATE'] / 100
+        prefix = registration.get('skillPrefix')
+        if not prefix:
+            continue
         rules, meta, changes = {}, {}, []
         for sk in skills:
             sid = sk['m_SkillStrID']
@@ -61,9 +66,7 @@ def build(static):
             if before and before.startswith(prefix):
                 assert se['m_BuffStrID'] == 'BI_CHANGE_SKILL'
                 changes.append([strings[skill_by_id[s]['m_SkillName']]['ko'] for s in (before, after)])
-        out['units'][name] = {'react': rules, 'skills': meta, 'changes': changes}
-        if name in ('BFB', '티엔'):
-            out['units'][name]['sequential_events'] = ['own_post', 'ally_post', 'foe_post']
+        out['units'].setdefault(name, {}).update(react=rules, skills=meta, changes=changes)
     for buff in rows(tables / 'BUFF_TEMPLET.json'):
         if buff['m_BuffStrID'] not in ('BI_NEXT_TURN', 'BI_SHARK_CHAIN_BOSS_5', 'BI_WHITEDRAGON_METEORWHIP_BOSS_1',
                                      'BI_WHITEDRAGON_WINDFAN_BOSS_1', 'BI_WHITEDRAGON_WINDFAN_BOSS_2'):

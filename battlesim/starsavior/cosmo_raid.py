@@ -31,7 +31,7 @@ from .. import datafile
 from .controller import BaseController
 from .data import SRC
 from .foe_base import FoeBase, make_skill
-from .boss_registry import cosmo_adapter, expand
+from .boss_registry import cosmo_registration, cosmo_waves, expand, behavior_enabled
 
 _DATA = datafile._CACHE   # 경로 -> 자료(datafile.load_path 캐시 그대로). 시험이 data_path() 열쇠로 바꿔 끼운다
 
@@ -201,42 +201,50 @@ def build_waves(boss, step, level=0, src=SRC):
     row = level_row(b, level)
     st = b['steps'][step - 1]
     G = load(src)
+    registration = cosmo_registration(b['key'], src)
     cfg = dict(boss=b['key'], step=step, level=level, row=row, season_buffs=b['seasonBuffs'], effects=effect_table(src),
-               model=cosmo_adapter(b['key'], src), bel=G.get('belgras'))
-    if cfg['model'] == 'belgras':
-        bm = cfg['bel']
-        sk = bm['skills']
-        skills = {'기본기': _skill('기본기', '연쇄 파열', sk['attack']['coef'], sk['attack']['cd'], sk['attack']['tough'], all_=True),
-                  '특수기': _skill('특수기', '생기 약탈', 0, sk['special']['cd'], 0, attack=False, tg='자신'),
-                  '궁극기': _skill('궁극기', '공허 붕괴', sk['hyper']['coef'], sk['hyper']['cd'], sk['hyper']['tough'], all_=True)}
-        spawn = 'B' if st['bossSpecial'] and st['bossHyper'] else ('S' if st['bossSpecial'] else 'H' if st['bossHyper'] else 'N')
-        boss_def = CosmoFoe('cosmo:belgras', '벨그라스', dict(role=b['role'], element=b['element'], attackKind=b['attackKind']),
-                            _scale_stats(st['stats'], row), skills, True, spawn, 2, immune=_donor_immune(b, src), cosmo=cfg)
-        mm = bm['minions']
-        foes = []
-        for kind, nm in (('recorder', '기록자'), ('executioner', '처단자')):
-            m = mm[kind]
-            d = CosmoFoe('cosmo:' + kind, nm, m['unit'], dict(m['stats']), {'기본기': _skill('기본기', nm, 0, 0, 0, attack=False, tg='자신')},
-                         False, 'N', m['pos'], cosmo=dict(model='minion', kind=kind, mm=mm))
-            foes.append(d)
-        waves = [[foes[0], boss_def, foes[1]]]
-    else:
-        from .foe import stage_waves
-        nm = b['name']
-        _, w = stage_waves('cosmo', nm, '%s %d단계' % (nm, step), src)
-        d = w[0][0]
-        need = dict(hp=st['stats']['hp'], atk=st['stats']['atk'], **{'def': st['stats']['def']}, spd=st['stats']['spd'])
-        for k, v in need.items():
-            if d.stats[k] != v:       # 공개 databook 스탯이 표와 다르면(패치) 표를 따른다
-                d.stats[k] = v
-        d.stats.update(_scale_stats({k: d.stats[k] for k in ('hp', 'atk', 'def')}, row))
-        d.spd_base = d.stats['spd']
-        d.cosmo = cfg
-        waves = [[d]]
+               model=registration['adapter'], bel=G.get(registration.get('modelData')),
+               mechanics=registration.get('mechanics', []), isBoss=True)
+    waves = cosmo_waves(b, cfg, st, row, src)
     meta = dict(content='cosmo_raid', tab=b['name'], name='%s Step %d%s' % (b['name'], step, (' Lv%d' % level) if level else ''),
                 level=None, recommended_power=st['battlePower'], wave_count=1, battle_mode='boss_kill', turn_limit=st['turnLimit'],
                 cosmo_raid=dict(boss=b['key'], step=step, level=level, season=G['season']['id']))
     return waves, meta
+
+
+def erosion_waves(b, cfg, st, row, src):
+    """Reusable erosion/rot model, including its two support minions."""
+    bm = cfg['bel']
+    sk = bm['skills']
+    skills = {'기본기': _skill('기본기', '연쇄 파열', sk['attack']['coef'], sk['attack']['cd'], sk['attack']['tough'], all_=True),
+              '특수기': _skill('특수기', '생기 약탈', 0, sk['special']['cd'], 0, attack=False, tg='자신'),
+              '궁극기': _skill('궁극기', '공허 붕괴', sk['hyper']['coef'], sk['hyper']['cd'], sk['hyper']['tough'], all_=True)}
+    spawn = 'B' if st['bossSpecial'] and st['bossHyper'] else ('S' if st['bossSpecial'] else 'H' if st['bossHyper'] else 'N')
+    boss_def = CosmoFoe('cosmo:' + b['key'], b['name'], dict(role=b['role'], element=b['element'], attackKind=b['attackKind']),
+                        _scale_stats(st['stats'], row), skills, True, spawn, 2, immune=_donor_immune(b, src), cosmo=cfg)
+    mm = bm['minions']
+    foes = []
+    for kind, nm in (('recorder', '기록자'), ('executioner', '처단자')):
+        m = mm[kind]
+        d = CosmoFoe('cosmo:' + kind, nm, m['unit'], dict(m['stats']), {'기본기': _skill('기본기', nm, 0, 0, 0, attack=False, tg='자신')},
+                     False, 'N', m['pos'], cosmo=dict(model='minion', kind=kind, mm=mm))
+        foes.append(d)
+    return [[foes[0], boss_def, foes[1]]]
+
+
+def stage_model_waves(b, cfg, st, row, src):
+    from .foe import stage_waves
+    nm = b['name']
+    _, w = stage_waves('cosmo', nm, '%s %d단계' % (nm, cfg['step']), src)
+    d = w[0][0]
+    need = dict(hp=st['stats']['hp'], atk=st['stats']['atk'], **{'def': st['stats']['def']}, spd=st['stats']['spd'])
+    for k, v in need.items():
+        if d.stats[k] != v:       # 공개 databook 스탯이 표와 다르면(패치) 표를 따른다
+            d.stats[k] = v
+    d.stats.update(_scale_stats({k: d.stats[k] for k in ('hp', 'atk', 'def')}, row))
+    d.spd_base = d.stats['spd']
+    d.cosmo = cfg
+    return [[d]]
 
 
 # ---------------------------------------------------------------- 상태 기계
@@ -255,7 +263,7 @@ class Controller(BaseController):
         self._guard_ctx = None        # few_buff_guard: 시전당 한 번만 판정
 
     def before_cast(self, u, sk, ctx):
-        if (u is self.boss and self.cfg['model'] == 'belgras' and sk.slot == '궁극기'):
+        if (u is self.boss and 'erosion' in self.cfg['mechanics'] and sk.slot == '궁극기'):
             p = self.cfg['bel']['hyperTrueDamage']
             n = min(self._stacks(u, ROT), p['max'])
             if n > 0:
@@ -272,7 +280,7 @@ class Controller(BaseController):
 
     def execute_se(self, owner, ln, ctx):
         """조각에서 실행 담당이 cosmo인 SE만 처리. 일반 버프·회복·게이지는 mc가 실행함."""
-        if getattr(owner.d, 'client_model', None) != 'baskerville':
+        if not behavior_enabled(owner.d, 'cosmo_se', self.b.mc):
             raise ValueError('코스모 SE의 적 정의가 다름')
         b, p = self.b, ln.eff['meta']
         op = p['op']
@@ -368,12 +376,11 @@ class Controller(BaseController):
     # ---------- 웨이브
     def on_wave(self):
         b = self.b
-        boss = next((u for u in b.foes if getattr(u.d, 'cosmo', None) and u.d.cosmo.get('model') in ('stage', 'belgras')), None)
+        boss = next((u for u in b.foes if getattr(u.d, 'cosmo', None) and u.d.cosmo.get('isBoss')), None)
         if boss is None:
             return
         self.boss, self.cfg = boss, boss.d.cosmo
-        if getattr(boss.d, 'client_model', None) == 'baskerville':
-            b.mc['superarmor_damage_ban'] = 'client'
+        b.mc.update(getattr(boss.d, 'boss_behaviors', {}).get('battleRules', {}))
         cfg = self.cfg
         # 시즌 전투 보너스 BUFF: 조건(속성/직업)에 맞는 아군에게 상시 효과(마커: 강화 개수·해제에 안 셈)
         for sb in cfg['season_buffs']:
@@ -405,7 +412,7 @@ class Controller(BaseController):
                 self.fx[k] = p
             else:
                 b.unsup['cosmo_raid: 미지원 챌린지 효과 %s' % e['name']] += 1
-        if cfg['model'] == 'belgras':
+        if 'erosion' in cfg['mechanics']:
             self._belgras_start()
 
     def _belgras_start(self):
@@ -457,7 +464,7 @@ class Controller(BaseController):
         if boss is None:
             return
         b = self.b
-        if self.cfg['model'] == 'belgras':
+        if 'erosion' in self.cfg['mechanics']:
             self._minion_tick()
         if boss.eff.get(CH_GUARD) is not None:
             self._drop(boss, CH_GUARD)            # few_buff_guard: 지속 0턴 — 그 시전 동안만
@@ -467,7 +474,7 @@ class Controller(BaseController):
             if 'hit_gauge' in self.fx and sk.is_attack and not boss.dead and boss in (getattr(ctx, 'targets', None) or []):
                 self.stats['hit_gauge'] += 1
                 b.set_gauge(boss, boss.gauge + self.fx['hit_gauge']['pct'] * 100)
-            if self.cfg['model'] == 'belgras' and not boss.dead and not sk.is_attack:
+            if 'erosion' in self.cfg['mechanics'] and not boss.dead and not sk.is_attack:
                 bm = self.cfg['bel']
                 self._ensure_belgras_eff()
                 self._erode(bm['erosion']['decayNonAttack'], bm['rot']['gainAoe'])      # 적이 공격이 아닌 스킬 사용 후: 침식 -5, 썩은 의지 +5(발생 조건 동일)
@@ -531,7 +538,7 @@ class Controller(BaseController):
         if 'grow' in fx and not boss.dead:
             self._put(boss, CH_GROW_EX, {'피해 증가': fx['grow']['pct']}, maxs=fx['grow']['max'])
             self.stats['grow'] += 1
-        if self.cfg['model'] == 'belgras':
+        if 'erosion' in self.cfg['mechanics']:
             self._belgras_cast(sk, ctx, hit)
 
     def _thorn(self, x, ctx, times, turns):
@@ -658,7 +665,7 @@ class Controller(BaseController):
             if 'backflow' in fx and a.n_harmful() > 0:
                 self.stats['backflow'] += 1
                 b.set_gauge(boss, boss.gauge + fx['backflow']['pct'] * 100)
-            if self.cfg['model'] == 'belgras' and sk is not None and sk.is_attack:
+            if 'erosion' in self.cfg['mechanics'] and sk is not None and sk.is_attack:
                 bm = self.cfg['bel']
                 self._ensure_belgras_eff()
                 single = not sk.all
@@ -667,5 +674,5 @@ class Controller(BaseController):
                 if single and a.has(THORN):
                     self.stats['thorn_gauge'] += 1
                     b.set_gauge(boss, boss.gauge + bm['passive1']['thornHitGaugePct'] * 100)    # 패시브1: 가시 상태 적의 단일 공격에 피격 후 게이지 +20%
-        elif a.side == 0 and v.side == 1 and self.cfg['model'] == 'belgras' and getattr(v.d, 'cosmo', None) and v.d.cosmo.get('model') == 'minion':
+        elif a.side == 0 and v.side == 1 and 'erosion' in self.cfg['mechanics'] and getattr(v.d, 'cosmo', None) and v.d.cosmo.get('model') == 'minion':
             self._minion_hit(a, v)

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from battlesim.starsavior.boss_registry import fingerprint, expand
 from battlesim.fileio import atomic_text
+from battlesim import datafile
 
 ROOT = Path(__file__).resolve().parents[1]
 MONSTER_FIELDS = ('foe', 'foeSignature', 'definition', 'clientRules', 'hitStats',
@@ -53,8 +54,11 @@ def pack_cosmo(value, root=ROOT):
             continue
         definition = {k: boss.pop(k) for k in fields if k in boss}
         boss.update(register('cosmo', definition, root))
-    if g.get('belgras') and '$module' not in g['belgras']:
-        g['belgras'] = register('model', g['belgras'], root)
+    fields = {row['modelData'] for row in datafile.load('boss_catalog', str(root))['cosmo'].values()
+              if row.get('modelData')}
+    for field in fields:
+        if g.get(field) and '$module' not in g[field]:
+            g[field] = register('model', g[field], root)
     return g
 
 

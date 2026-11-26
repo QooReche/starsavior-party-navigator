@@ -1,10 +1,45 @@
 {
  "cosmo": {
-  "belgras": {"script": "CORRUPTED_TREE", "adapter": "belgras", "rule": "cosmo_raid_boss"},
+  "belgras": {"script": "CORRUPTED_TREE", "adapter": "erosion", "modelData": "belgras", "rule": "cosmo_raid_boss", "mechanics": ["erosion"], "approx": ["벨그라스: 썩은 의지 발생 체크 버프(BOSS_6)는 변화 전 상태로 판정하는 근사", "벨그라스: 공허 붕괴 추가 고정 피해를 타격한 아군 각각에게 방어 무시·보호막 적용으로 근사(범위·보호막 적용 미확인)", "벨그라스: 기록자·처단자 응집된 생기 재충전은 영양 과잉이 끝난 뒤 다음 시전 종료 때로 근사"]},
   "tyria": {"script": "TYRIA", "adapter": "stage", "rule": "cosmo_raid_boss"},
   "carnelia": {"script": "CARNELIA", "adapter": "stage", "rule": "cosmo_raid_boss"},
   "mogulus": {"script": "MOGULUS", "adapter": "stage", "rule": "cosmo_raid_boss"},
   "disparity": {"script": "DISPARITY_OF_REPRESENTATION", "adapter": "stage", "rule": "cosmo_raid_boss"},
   "baskerville": {"script": "DOOMSDAY_BEAST", "adapter": "stage", "rule": "cosmo_raid_boss"}
+ },
+ "behaviorProfiles": {
+  "overclock_heat": {
+   "stun_flags": {"switch": "khan_passives", "value": "client"},
+   "sequential_se": {"switch": "khan_passives", "value": "client"},
+   "certain_single_se": {"switch": "khan_passives", "value": "client"},
+   "hit_before_debuff_immunity": {"switch": "khan_passives", "value": "client"},
+   "added_enforce": {"switch": "khan_passives", "value": "client"}
+  },
+  "erosion_stage": {"erosion_stage_se": true},
+  "client_skill_effects": {"sequential_se": true, "unique_buff_instances": true, "cosmo_se": true, "battleRules": {"superarmor_damage_ban": "client"}}
+ },
+ "monsters": {
+  "카본펑크 칸": {
+   "profiles": ["overclock_heat"],
+   "extract": {
+    "certainSe": true, "addedEnforce": true,
+    "unitPattern": "NKM_UNIT_MON_CARBONPUNK_LORD_BLACK_BOSS_(?:GUILDRAID_0[1-7]|RUSH_0[1-3])",
+    "unitCount": 10,
+    "skills": ["고출력 광선", "제어장 폭발", "죽음의 손아귀", "탑 기어", "파워트레인", "불타는 엔진"]
+   }
+  },
+  "벨그라스": {"profiles": ["erosion_stage"]},
+  "심해의 폭군": {"clientRules": {"sequential_events": ["enemy_ts"]}},
+  "공허결집자": {"localDamageSe": 130056301},
+  "시엔": {"skillPrefix": "NKM_UNIT_MON_WHITEDRAGON_METEORWHIP_BOSS_"},
+  "티엔": {"skillPrefix": "NKM_UNIT_MON_WHITEDRAGON_WINDFAN_BOSS_", "clientRules": {"sequential_events": ["own_post", "ally_post", "foe_post"]}},
+  "BFB": {"skillPrefix": "NKM_UNIT_MON_AUTOMATON_MINIGUN_BOSS_EVENT_", "clientRules": {"sequential_events": ["own_post", "ally_post", "foe_post"]}}
+ },
+ "clientModels": {
+  "baskerville": {"profiles": ["client_skill_effects"]}
+ },
+ "effectExtraction": {
+  "zeroTurnPrefixes": ["BI_DOOMSDAY_BEAST_"],
+  "unlimitedStacks": ["BI_DOOMSDAY_BEAST_BOSS_7"]
  }
 }

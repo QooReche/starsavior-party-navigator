@@ -28,7 +28,7 @@ GUILD_DEPENDENCIES = (
     'data/buff_immune_pass.json', 'data/buff_global_turn.json', 'data/foe_react.json',
     'data/foe_client.json', 'data/foe_summon.json', 'data/foe_clash.json',
     'data/buff_dead_keep.json', 'data/buff_flags.json', 'data/foe_cosmo_extra.json',
-    'data/foe_equip.json',
+    'data/foe_equip.json', 'data/boss_catalog.json',
 )
 
 
@@ -41,7 +41,40 @@ def dependency_digest(path):
 
 
 def cosmo_adapter(key, src=SRC):
-    return datafile.load('boss_catalog', src)['cosmo'][key]['adapter']
+    return cosmo_registration(key, src)['adapter']
+
+
+def cosmo_registration(key, src=SRC):
+    return datafile.load('boss_catalog', src)['cosmo'][key]
+
+
+def monster_registration(name, src=SRC):
+    return datafile.load('boss_catalog', src)['monsters'].get(name, {})
+
+
+def monster_behaviors(name, client_model=None, src=SRC):
+    catalog = datafile.load('boss_catalog', src)
+    registrations = [catalog['monsters'].get(name, {})]
+    if client_model is not None:
+        registrations.append(catalog['clientModels'][client_model])
+    result = {}
+    for row in registrations:
+        for profile in row.get('profiles', []):
+            result.update(catalog['behaviorProfiles'][profile])
+    return result
+
+
+def behavior_enabled(definition, feature, rules):
+    spec = getattr(definition, 'boss_behaviors', {}).get(feature, False)
+    if isinstance(spec, dict):
+        return rules[spec['switch']] == spec['value']
+    return spec
+
+
+def cosmo_waves(boss, cfg, stage, row, src):
+    from .cosmo_raid import erosion_waves, stage_model_waves
+    adapters = {'erosion': erosion_waves, 'stage': stage_model_waves}
+    return adapters[cfg['model']](boss, cfg, stage, row, src)
 
 
 def cosmo_key(script, src=SRC):

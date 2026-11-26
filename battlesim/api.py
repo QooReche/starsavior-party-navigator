@@ -341,10 +341,8 @@ def cosmo_approx(boss):
            '난이도 배율: 서버가 적용해 전송하고 클라는 표시만 함. 엔진 현행 능력치 x (1 + ScaleFactor/10000) 유지',
            '시즌 버프: BCT 속성/직업 매핑은 클라 확인, 아군만 적용(PM 확정). 중도 소환물 적용은 미확인',
            '전투력 보정: 코스모에도 적용됨(클라 확인). 배율 산출과 기준 전투력 선택은 서버']
-    if boss == 'belgras':
-        out += ['벨그라스: 썩은 의지 발생 체크 버프(BOSS_6)는 변화 전 상태로 판정하는 근사',
-                '벨그라스: 공허 붕괴 추가 고정 피해를 타격한 아군 각각에게 방어 무시·보호막 적용으로 근사(범위·보호막 적용 미확인)',
-                '벨그라스: 기록자·처단자 응집된 생기 재충전은 영양 과잉이 끝난 뒤 다음 시전 종료 때로 근사']
+    from .starsavior.boss_registry import cosmo_registration
+    out += cosmo_registration(boss).get('approx', [])
     return out
 
 

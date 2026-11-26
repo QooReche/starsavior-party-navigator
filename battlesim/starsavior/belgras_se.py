@@ -11,7 +11,7 @@ CHECK = '썩은 의지 발생 방지 버프'
 
 def is_stage(d):
     return (getattr(d, 'is_foe', False) and d.key.startswith('foe:')
-            and d.name == '벨그라스')
+            and getattr(d, 'boss_behaviors', {}).get('erosion_stage_se', False))
 
 
 def normalize(d, lines):

@@ -67,10 +67,14 @@ python -X utf8 -I tools/update.py                         # 태그·연계·분�
 
 - `data/boss_modules/`는 보스 표시·실행기, 몬스터의 스킬/패시브/자동 대상/디버프 정의와 기믹을 내용 해시로 보관함. 동일 정의는 같은 파일을 재사용하고, 변경된 정의는 새 파일이므로 과거 시즌의 모듈을 덮어쓰지 않음. 기존 일반 적은 공용 foe 정의와 서명 참조를 재사용하며 원문 표를 복사하지 않음. 시즌에는 `$module` 참조와 배치·단계 능력치·점수·난이도·지원 연결을 남김.
 - 읽는 곳은 `battlesim/starsavior/boss_registry.py`의 `expand`임. 길드 `load`와 화면 빌더가 같은 펼친 자료를 사용함. BFB 전용 `guild_bfb`·공통 `guild_common`·코스모 컨트롤러 선택도 이 등록 경로에 모았음. 전투 규칙·빠른 계산의 공통 정본(`rules/default.json`·`foe`·`quick.json`)을 모듈마다 복제하지 않음.
+- 이름과 동작의 연결은 `data/boss_catalog.json`이 정본임. `monsters`/`clientModels`의 `profiles`가 `behaviorProfiles`의 기능·스위치를 고르고, `FoeDef.boss_behaviors`를 통해 엔진에 전달함. 칸의 순차 SE·과열 기절·확정 단일 SE·면역 전 적중·legacy 추가 발동 경계, 일반 벨그라스 SE, 바스커빌의 클라 효과 실행은 표시 이름을 비교하지 않음. 같은 기믹의 다른 이름은 기존 profile을 등록하면 됨. `monsters.extract`의 클라 유닛 패턴·개수·스킬 목록·확정 SE 검증과 `skillPrefix`/`clientRules`도 추출기가 읽음. 클라 연결과 확률이 달라지면 기존 검증에서 중단함.
+- 코스모는 등록의 `adapter`로 웨이브 생성기(`stage`/`erosion`)를 선택하고 `modelData`로 보관 모델, `mechanics`로 상태 기계 기능을 연결함. 침식 모델의 표시 이름·key는 시즌 보스 정의에서 받음. 새로운 이름으로 기존 모델을 재사용할 때 엔진 분기를 추가하지 않음. 새로운 종류의 동작은 클라 근거를 확인한 어댑터 구현과 등록을 함께 추가해야 함. 모델 내부의 SE ID/스킬 구조 검증과 효과 종류 분기는 유지함.
+- 모듈·보관 시즌·현재 사본은 `tools/boss_modules.py:write` 하나로 UTF-8/LF 직렬화함. 길드 의존 입력은 `boss_registry.GUILD_DEPENDENCIES`로 관리하며 현재 코스모/길드 사본은 포함하지 않음. JSON 의존성은 정규화한 내용 해시(`json:`), 원본 JS는 LF 바이트 해시로 검사함. 보스 등록표 변경도 길드 의존성 변경이므로 보관 시즌을 확인·재추출하고 시뮬 표의 자료 버전을 맞춰야 함. 기존 보관 시즌 선택만으로 다른 콘텐츠의 의존 해시가 바뀌지 않음.
 - 새 보스: 공개 연결 확인 → 기존 추출기로 수치·효과 생성 → `tools/boss_modules.py`의 등록/재사용 → 시즌 파일 참조 → 현재 시즌 선택 → simpack·시뮬 표·화면 생성 → 진행도/미지원·기존 보스 불변 시험 순서임. 기존 효과로 표현되지 않는 새 동작만 클라 근거를 조사해 어댑터/스위치를 추가함.
 - 재등장 보스: 이전 `$module`과 전용 자산 참조를 그대로 고르고 새 시즌의 배치·단계·점수·지원 값을 추출함. BFB의 `bfb` 실행기와 자산도 보관돼 있음. 지원 방식·배치가 달라졌다면 옛 수치를 그대로 적용하지 않고 새 추출본으로 대조함.
 - 코스모 배치 식별자는 `data/boss_catalog.json`의 `cosmo` 등록만 사용함. `build_cosmo_raid.py`는 보스 모듈과 `data/cosmo_seasons/<id>.json`을 저장하고 화면용 `cosmo_raid.json`을 생성함. 기존 보관 시즌 선택은 `--season <id> --select-only`로 함. 벨그라스의 모델·기록자·처단자는 1022 모듈에 보관돼 있으며 현재 보스 목록에서 빠졌어도 삭제하지 않음.
 - 확인: `tests/boss_modules_test.py`는 30109(심해의 폭군)를 현재 시즌으로 임시 지정해 실행·화면 자료를 만들고 실제 현재값 30112 복원을 검사함. 1022 벨그라스도 모듈 시즌 파일만 선택해 보관 fixture와 결과를 비교함. 모듈 해석 비활성화·해시 훼손은 실패해야 함. e2e의 과거 시즌 화면도 30109를 사용함. 같은 보스/효과의 다음 로테이션은 추출 도구 → 모듈/시즌 데이터 → 시험으로 처리하며 시즌 번호별 코드를 추가하지 않음.
+- 선택기 회귀는 `tests/season_selector_test.py`임. worktree 안 임시 복사에서 실제 CLI로 코스모 1022→1023→1023·길드 30109→30112→30112를 선택하고 웨이브·시뮬·결과 불변·직렬화 일치를 검사함. `tests/boss_behavior_test.py`는 다른 이름/모델 등록으로 칸·일반 침식·코스모 침식·클라 효과 profile을 재사용하며, 기능 등록 제거 변이를 검사함.
 
 ### 4-2. 코스모 게이트 시즌 갱신(시즌제 콘텐츠)
 시즌 값(보스 3종·Step 스탯·난이도 레벨 표·챌린지 효과·시즌 전투 버프·점수 상수)은 `data/cosmo_seasons/<id>.json`에, 재사용 보스 정의는 참조한 모듈에 있음. `data/cosmo_raid.json`은 이를 펼친 현재 화면/엔진용 생성 사본이며 코드(`battlesim/starsavior/cosmo_raid.py`, `cosmo_raid.js`)는 시즌 공통임. 자세한 근사 목록은 `docs/cosmo_raid.md`.

@@ -30,7 +30,8 @@
   "data/buff_dead_keep.json": "json:c24fde31ea20317c8ccb5860bf4b8197735963ab736b18e7380f298b4aeab716",
   "data/buff_flags.json": "json:78ae940570f51521946b6b8bfc85b5066de120e0ab55f40a1c1aa075415bc280",
   "data/foe_cosmo_extra.json": "json:d1cb14d8ef7eb1df8732d15b37a3c124923e6e5512c3bc200334b2e10eefc495",
-  "data/foe_equip.json": "json:f1c7df512fb6ff5724599ff022a88386a55e41f2592b2fbaf7c3fc0def433b4b"
+  "data/foe_equip.json": "json:f1c7df512fb6ff5724599ff022a88386a55e41f2592b2fbaf7c3fc0def433b4b",
+  "data/boss_catalog.json": "json:90e8383665f62eebe9f9f974a27704ac66d40231d5d4c1f8b2010d9cd0e4f09d"
  },
  "provenance": {
   "kind": "current-client-extraction",
@@ -1748,5 +1749,5 @@
    "client"
   ]
  },
- "dataVersion": "f634e10d56d58866ba493abead25fe55cc3cf62bcbc0886e689af65184361b73"
+ "dataVersion": "df361c718cca75cac87bea791d1e8389f9c1a43f7e42f0da21a0294ff2bacdee"
 }

@@ -24,6 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from tools.tables import jsonc, strings as table_strings   # noqa: E402
 from tools.runtime import static_path, low_priority   # noqa: E402
+from battlesim import datafile
 
 ROLE = {'NURT_STRIKER': '스트라이커', 'NURT_CASTER': '캐스터', 'NURT_ASSASSIN': '어쌔신', 'NURT_RANGER': '레인저',
         'NURT_DEFENDER': '디펜더', 'NURT_SUPPORTER': '서포터'}
@@ -486,7 +487,8 @@ class SeConverter:
         stats = self.stats_of(row)
         life = 'TurnInfinite' in buff and buff.get('TurnInfinite')
         dur = '지속 무한' if life else '%d턴' % row['m_BuffLifeTurn']
-        if not life and row['m_BuffLifeTurn'] <= 0 and not bid.startswith('BI_DOOMSDAY_BEAST_'):
+        extraction = datafile.load('boss_catalog')['effectExtraction']
+        if not life and row['m_BuffLifeTurn'] <= 0 and not bid.startswith(tuple(extraction['zeroTurnPrefixes'])):
             raise Unconvertible('버프 %s 지속 턴 0' % bid)
         props = self.props_text(stats) if stats else ''
         dot = self.dot_text(buff)
@@ -499,7 +501,7 @@ class SeConverter:
         if buff.get('CanNotDispel'):
             flags.append('해제 불가')
         if buff.get('IsLevel'):
-            if not buff.get('BuffLevelMax') and bid != 'BI_DOOMSDAY_BEAST_BOSS_7':
+            if not buff.get('BuffLevelMax') and bid not in extraction['unlimitedStacks']:
                 raise Unconvertible('버프 %s IsLevel 인데 BuffLevelMax 없음' % bid)
             flags.append('최대 %d중첩' % buff['BuffLevelMax'] if buff.get('BuffLevelMax') else '중첩 상한 없음')
         if row.get('EffectHitCheck', buff.get('EffectHitCheck')):

@@ -29,6 +29,7 @@ from .starsavior import foe as _foe
 from .starsavior.parser import Line, _map_prop, parse_props, split_head, supported_trigger, explicit_target
 from .starsavior.mc_semantics import normalized_lines, normalized_definition, trigger_rule, variant_rules, after_active_se
 from .starsavior import marker_se, belgras_se, chain_se, savior_rules
+from .starsavior.boss_registry import behavior_enabled as boss_behavior
 
 FORCE_BUFF_NAMES = frozenset(datafile.load('buff_force'))
 IMMUNE_PASS_NAMES = frozenset(datafile.load('buff_immune_pass'))
@@ -1891,7 +1892,7 @@ class Battle:
         구원자 = data/auto_skill.json self_enforce. 자료가 없는 줄은 None(옛 동작: 자신이 최근에 때린 적·설명문 표지)."""
         if ln is None:
             return None
-        if getattr(owner.d,'khan_added_enforce',False) and self.mc['khan_passives'] != 'client':
+        if getattr(owner.d,'khan_added_enforce',False) and not boss_behavior(owner.d, 'added_enforce', self.mc):
             return None
         if owner.side == 1:
             return (getattr(owner.d, 'enforce_self', None) or {}).get((ln.slot, ln.raw))
@@ -2465,7 +2466,7 @@ class Battle:
     def incapacitated(self, u):
         """행동 불능(기절·수면). 강인도 격파(브레이크)는 행동 불능이 아니다(게이지 0 초기화로 차례가 늦어질 뿐)."""
         names = HARD_CC
-        if self.mc['khan_passives'] == 'client' and u.name == '카본펑크 칸':
+        if boss_behavior(u.d, 'stun_flags', self.mc):
             names = tuple(buff_flags()['cc']['stun']['effects']) + tuple(buff_flags()['sleep'])
         return any(u.has(n) for n in names)
 
@@ -4360,8 +4361,7 @@ class Battle:
             return
         if marker_se.run_batch(self, owner, lines, ctx):
             return
-        if ((self.mc['khan_passives'] == 'client' and owner.name == '카본펑크 칸') or
-                getattr(owner.d, 'client_model', None) == 'baskerville' or
+        if (boss_behavior(owner.d, 'sequential_se', self.mc) or
                 all(line_kind(ln) in getattr(owner.d, 'client_sequential_events', ()) for ln in lines)):
             # NKM:16103-16116,16374-16405,16526-16528: 같은 사건에서도 SE마다 즉시 재판정.
             for ln in lines:
@@ -5413,7 +5413,7 @@ class Battle:
         # 칸은 표에서 ActiveRate=BuffActiveRate=10000을 검증해 대상 종류를 보관함.
         # NKM:16504,16420-16432,16606-16616: SELF/TARGET는 확정 BuffRate 추첨 없음.
         ln = self._cur_line
-        khan_single = (self.mc['khan_passives'] == 'client' and owner.name == '카본펑크 칸' and ln is not None
+        khan_single = (boss_behavior(owner.d, 'certain_single_se', self.mc) and ln is not None
                        and getattr(owner.d,'se_meta',{}).get((ln.slot,ln.raw)) in ('NSETT_SELF','NSETT_TARGET'))
         for x in tg:
             if not khan_single and self.R(owner.side).random() >= eff['chance']:
@@ -5590,7 +5590,7 @@ class Battle:
                 return     # 회피한 대상에는 약화가 걸리지 않음(공식 2026-06-04 오류 수정 공지)
         # 칸 효과 적중은 CantGetMoreDebuff보다 먼저 검사함(NKM:4363-4379→4394-4398).
         # 고유 면역·회피가 먼저인 기존 roll_hit 경계는 유지함.
-        khan_hit = self.mc['khan_passives'] == 'client' and owner.name == '카본펑크 칸'
+        khan_hit = boss_behavior(owner.d, 'hit_before_debuff_immunity', self.mc)
         immune_name = name in getattr(x.d, 'immune', ())
         needs_hit = resist and (eff.get('judge') or (immune_name and not forced))
         if khan_hit and needs_hit and not self.roll_hit(owner,ctx,x,None if forced else name):
@@ -5627,7 +5627,7 @@ class Battle:
         e = x.eff.get(name)
         independent_cap = None
         unlimited_dot = False
-        unique_cosmo = (getattr(owner.d, 'client_model', None) == 'baskerville' and info.get('unique'))
+        unique_cosmo = (boss_behavior(owner.d, 'unique_buff_instances', self.mc) and info.get('unique'))
         if unique_cosmo:
             # NKM:4505-4524,16396-16405: 반복 부여마다 독립 객체. 묶음 안에 개별 수명·순번 보존.
             independent_cap = math.inf

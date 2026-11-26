@@ -49,7 +49,7 @@ EFFECT_KIND = {2: 'drain', 3: 'speed', 6: 'immune', 10: 'bleed', 11: 'tough', 18
                1: 'grow', 4: 'armor', 7: 'hit_gauge', 21: 'debuff_amp', 22: 'ult_cd',
                24: 'no_shield_amp', 25: 'no_shield_chain', 28: 'strip', 33: 'few_buff_guard'}
 # Step 3 배치 스크립트 이름 조각 -> 보스 key(엔진·화면이 쓰는 이름). 모르는 스크립트는 Changed
-from battlesim.starsavior.boss_registry import cosmo_key, cosmo_adapter, expand
+from battlesim.starsavior.boss_registry import cosmo_key, cosmo_adapter, cosmo_registration, expand
 from tools.boss_modules import pack_cosmo
 # kind -> 설명문에서 수치를 읽는 정규식(순서대로 params 의 이름). 설명이 바뀌면 Changed.
 EFFECT_RX = {
@@ -361,7 +361,7 @@ def build(T, season_id, game_build):
                            immuneGroup=boss_meta['immuneGroup'], map=r3['BattleMapStrID'], difficultyGroupId=dg,
                            steps=steps, levels=levels, seasonBuffs=sbuffs, spawn=spawn3))
     # 벨그라스 전용 모델(기록자·처단자·침식)은 벨그라스가 있는 시즌에만 만든다(시즌 23 = 모굴루스·바스커빌의 괴수·괴리의 표상)
-    bel = next((b for b in bosses if cosmo_adapter(b['key']) == 'belgras'), None)
+    bel = next((b for b in bosses if cosmo_registration(b['key']).get('modelData')), None)
     model = belgras_model(T, bel, skills, sk_lv, ses, dmg, buffs, units, stats, unit_row, unit_meta, plain, ko, need, sk_coef, sk_ses) if bel else None
     return season, bosses, effects, model
 
