@@ -1,5 +1,32 @@
 # 점수형 탐색 부품 (P2, 2026-11-26)
 
+## 길드 daily 조립 (P3)
+
+`GuildPlanner.search({...cx,S:{...S,preset:'daily'},seals,split?,nowMs?,secondsPerGame?,growthResults?})`로 선택함. 기본은 `legacy`이며 화면은 옛 경로를 유지함. `split={ex,normal}` 생략 시 EX 최대부터 약할 때만 일반 나눔을 비교함. `secondsPerGame`은 선택한 작업자 수에서 측정한 벽시계 초/판이며, 미측정이면 보수적 1초로 예상함. P4 실측·기본 전환과 P5 화면·가져오기는 별도임.
+
+| 명세 | daily 조립·재사용 |
+|---|---|
+| §2 1~3 | `GS.pool/combos` → 전수 훑기 → `CosmoSearch.pickPass`(동점·구원자별 대안) → 정밀. 학습 선별 없음 |
+| §2 4~6·§3 | 지원마다 최선 조건 → `ScoreCombinations.steps`의 구원자·지원 제약 → 상위 묶음 결선·브레이크. 합산 동점은 평균 합→키, 같은 슬롯 순열은 한 묶음으로 셈 |
+| §3 재시도 | `CosmoSearch.retryPlan`으로 후보 확대, 이미 받은 판 재사용. 끝내 부족하면 팀 수 감소·남는 인장 반환 |
+| §4 | 1위 묶음만 `PartyPlacement.all`+기존 자리, 20→상위 3+기존 자리 100→경계면 200판. `PlacementSearch.incumbentWithMargin`으로 판정. 바뀐 팀만 자기+미사용 지원 재확인·40판 확인·브레이크, 자리로 되돌아가지 않음 |
+| §2·§6 실행 | `GS.runPhase`·공통 풀·`chunkSize`·코스모 `workerCount`. 육성 포함도 풀 하나·기한 하나. 통일 시드·`run_offset/merge_raw`로 판을 이어 돌림. 상위 20%는 원시값에서 재집계함(`mergeSummary`의 다판 근사 평균은 사용하지 않음) |
+| §6 날짜·설정 | `GuildView.gameDay`가 KST 04:00과 `rules.entryDaysEx`를 참조함. 정본 `guild_defaults.json`, `build_guild_seasons.py --select-only`와 페이지 payload로 반영함. `preset/daily`는 전투 입력이 아니므로 자료 버전 해시에서 제외함 |
+
+`GuildDaily.plan(cx)`는 예상 판 수·시간·축소 목록·팀 부족 안내를 반환함. 시간 상한은 자리 대상→조건 비교 팀 수→정밀 수→풀 순으로 줄임. `pickPass`의 전원 동점까지 예상 상한에 포함하고, 실제 실행에도 같은 절대 기한을 둠. 최소 풀도 예상 상한을 넘으면 실행 전에 사유를 반환함. 실제 시간·품질 채택 판정은 P4에 남겼음.
+
+진행은 P1의 `planStages`·`etaNew`를 씀. `onPlan`은 시작·조건부 단계·완료 때 갱신되며 `eta`도 전달함. `onPhase.meta.stage`는 실행 순서대로 증가하고 `policyStage`는 명세의 1~7임. 현재 단계의 남은 고판수·브레이크·다른 팀·육성 작업도 ETA에 남김. `onProgress(done,total,estimate)`의 세 번째 인자는 선택적 ETA임. 완료 때 계획의 `complete`, 중단 때 `stopped`를 표시함.
+
+결과는 `teams/rows`, `sum/mean`, `split`, `seals`, `reason`, `warnings`, `flags`, `coverage`, 팀별 `evaluation`과 입력 `signature`를 가짐. 직업 불일치는 배정 지원 `sup`를 유지하며 `effectiveSupport:'none'` 계산을 공유함. 중단은 4단계부터 가능한 부분 묶음을 반환하고, 자리 비교 중에는 6단계 묶음을 반환함. 일반 대안 탐색 중 중단해도 앞서 완료한 결선을 유지함. 육성 결과는 `growth`이며 미완료면 전체에도 `partial`을 표시함.
+
+클라 근거(설치 빌드 **26935738**, `check_build.py` DLL 10개 일치 확인): 비공개 `decompiled/NKC/NKC.decompiled.cs:408935`의 `SelectDungeonBuffSlot.SetBuffSlot`, `:408991`의 선택 잠금은 `OBF_6480`만 검사함. `:151518`→`:405948`은 지원 재사용 여부, 출전 `:71370`→`:71397`→`:151528`→`:405957`은 남은 지원이 있을 때 선택 ID가 양수인지 검사함. 팀 직업 인자를 받거나 비교하지 않아 **직업 불일치 지원 선택을 클라가 허용함**. 서버 실행 확인은 별도임.
+
+사이드 이펙트: 자동 추천 길드 줄·직접 편성·공유 `go`·기존 저장 키·옛 결과 서명은 그대로임. daily 서명은 날짜·인장·나눔·설정·계정 능력치·육성·브레이크를 구분하며 저장소에 기록하지 않음. 공통 조합기의 평균 동점·순열 중복 옵션과 `runPhase` 원시값 보존은 daily에서만 요청함. 지시 밖 처리: 별도 기능 추가 없음. 독립 리뷰로 발견한 시간 예상·판 수 혼합·중단 checkpoint·단계 내부 ETA를 수정하고 회귀·변이 검사에 넣었음.
+
+새 시험은 가짜 작업자 24개 시나리오·daily 변이 14건, 날짜 경계 4건·변이 1건을 검사함. 옛 동결 기대값은 수정하지 않았음. 관련 Node 22파일·자료 버전 Python 7개를 직렬로 통과했음. 전체 run_tests·실제 시뮬·Pyodide·e2e는 실행하지 않았음.
+
+## P2 추출 범위
+
 정책·결과 불변 추출임. 설정·후보·작업 순서·시드·판 수·동점 처리·완주 결과·공유 서명을 바꾸지 않았음. 일반 추천의 흐름은 옮기지 않았음. 모든 탐색 실행은 기존 `GS.runPhase`를 거침. 진행·부분 결과 계약은 [search_progress.md](search_progress.md)를 그대로 따름.
 
 ## 부품과 조립
