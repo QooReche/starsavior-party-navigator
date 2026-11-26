@@ -124,13 +124,13 @@
   "길드방어전": {
    "main": null,
    "bosses": {
-    "BFB": {
+    "카본펑크 칸": {
      "enemies": [
-      "star"
+      "moon"
      ],
-     "role": "레인저",
+     "role": "스트라이커",
      "atk": "미확인",
-     "note": "시즌 30111 · data/guild_seasons/30111.json"
+     "note": "시즌 30112 · data/guild_seasons/30112.json"
     }
    },
    "boss": true,

@@ -1,7 +1,7 @@
 {
  "schema": 1,
- "asOf": "2026-11-25",
- "gameBuild": "26752678",
+ "asOf": "2026-11-26",
+ "gameBuild": "26935738",
  "dependencies": {
   "rawdata/databook_main.json": "f3ee1bd5eae0aa7440cbe897a17d6f838cd33998cf3cc467609fb2530a54c88c",
   "rawdata/foe.js": "541b46868ebb4412e8929f7a0918e1914b85794d7286f52c4b54d808d4c0e0df",
@@ -30,12 +30,13 @@
   "data/buff_dead_keep.json": "6e79b9a906705e79c631fda2ecfb0f1d37f0722c3e5364f6d6da6d08c71a71db",
   "data/buff_flags.json": "98f0d768d7b53dee5b92847a3058ee73d01570f36d818a41d41a7d5ecb7c79bc",
   "data/cosmo_raid.json": "d62bd3bd41f4178ba3c619c09b2a2e19cf7ead5f00df283bd22ded4eed9515de",
-  "data/foe_cosmo_extra.json": "7474b8ee3394a3ac13dc77e081994e25b8b81992c304b4e22cece47c492ff2cb"
+  "data/foe_cosmo_extra.json": "7474b8ee3394a3ac13dc77e081994e25b8b81992c304b4e22cece47c492ff2cb",
+  "data/foe_equip.json": "0b201f3f155a0c502b5f548f2de89b7dc70a793bd6654a3cbb9352dd901b6ddf"
  },
  "provenance": {
   "kind": "current-client-extraction",
-  "build": "26752678",
-  "note": "26752678 클라에서 추출. 당시 빌드 재현본이 아님.",
+  "build": "26935738",
+  "note": "26935738 클라에서 추출. 당시 빌드 재현본이 아님.",
   "source": "tables/GUILD_DUNGEON_SEASON_TEMPLET.json:323"
  },
  "season": {
@@ -107,7 +108,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113819",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115241",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -149,7 +150,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113609",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115031",
       "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
       "clientRules": {
        "skills": {},
@@ -191,7 +192,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113819",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115241",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -235,7 +236,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114029",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115451",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -281,7 +282,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114666",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:116095",
       "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
       "clientRules": {
        "skills": {
@@ -453,7 +454,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114029",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115451",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -518,7 +519,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113849",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115271",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -560,7 +561,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113639",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115061",
       "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
       "clientRules": {
        "skills": {},
@@ -602,7 +603,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113849",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115271",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -646,7 +647,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114059",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115481",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -692,7 +693,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114697",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:116127",
       "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
       "clientRules": {
        "skills": {
@@ -864,7 +865,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114059",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115481",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -929,7 +930,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113879",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115301",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -971,7 +972,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113669",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115091",
       "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
       "clientRules": {
        "skills": {},
@@ -1013,7 +1014,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113879",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115301",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -1057,7 +1058,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114089",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115511",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -1103,7 +1104,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114728",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:116159",
       "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
       "clientRules": {
        "skills": {
@@ -1275,7 +1276,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114089",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115511",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -1340,7 +1341,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113909",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115331",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -1382,7 +1383,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113699",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115121",
       "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
       "clientRules": {
        "skills": {},
@@ -1424,7 +1425,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113909",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115331",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -1468,7 +1469,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114119",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115541",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -1514,7 +1515,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114759",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:116191",
       "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
       "clientRules": {
        "skills": {
@@ -1686,7 +1687,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114119",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115541",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -1751,7 +1752,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113939",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115361",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -1793,7 +1794,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113729",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115151",
       "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
       "clientRules": {
        "skills": {},
@@ -1835,7 +1836,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113939",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115361",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -1879,7 +1880,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114149",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115571",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -1925,7 +1926,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114790",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:116223",
       "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
       "clientRules": {
        "skills": {
@@ -2097,7 +2098,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114149",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115571",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -2162,7 +2163,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113969",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115391",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -2204,7 +2205,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113759",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115181",
       "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
       "clientRules": {
        "skills": {},
@@ -2246,7 +2247,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113969",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115391",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -2290,7 +2291,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114179",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115601",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -2336,7 +2337,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114821",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:116255",
       "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
       "clientRules": {
        "skills": {
@@ -2508,7 +2509,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114179",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115601",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -2573,7 +2574,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113999",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115421",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -2615,7 +2616,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113789",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115211",
       "foeSignature": "20bbfd7be3a66fd5b19c5c2d5b1424503851e22cb8ff2cdd782a9bd3ffb58ff3",
       "clientRules": {
        "skills": {},
@@ -2657,7 +2658,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:113999",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115421",
       "foeSignature": "4d3d02ee444f679df0c228785c3675a7e2838fe613b0053c008eae9a8de36cdd",
       "clientRules": {
        "skills": {},
@@ -2701,7 +2702,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114209",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115631",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -2747,7 +2748,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114852",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:116287",
       "foeSignature": "c28629fadfedb7b82f6513a2d439ec01c01563c7a4c7cb9e5793a8fed743c86f",
       "clientRules": {
        "skills": {
@@ -2919,7 +2920,7 @@
        "NST_RATE_HIT": 10000,
        "NST_RATE_EVADE": 0
       },
-      "source": "tables/UNIT_TEMPLET_BASE2.json:114209",
+      "source": "tables/UNIT_TEMPLET_BASE2.json:115631",
       "foeSignature": "0b7a4e0d1f69e300332e76b9d50965e23077d39b467c5e9a68453fb9f90b4a35",
       "clientRules": {
        "skills": {},
@@ -3943,7 +3944,7 @@
  },
  "sources": {
   "client": {
-   "name": "26752678 PC 클라 추출",
+   "name": "26935738 PC 클라 추출",
    "url": ""
   }
  },
@@ -4162,5 +4163,5 @@
    "client"
   ]
  },
- "dataVersion": "68624e0da07714bb5eab0fe9c9394458cd85b2fbc539ba47e754c2cf4b6212b0"
+ "dataVersion": "9d68df939bf613184fee1779d9d31ada0388bc6ed24b3d0ab1c525926500616e"
 }
