@@ -38,7 +38,7 @@ async function guildDailyStart(target=GSR,profileOverride=null){
       growthResults=MyInfoReco.overwrite(MI.info,R,growth,'op',{excluded:[...EXCL],slots,priority:D.journeyPriority}).profile.results;
     }
     if(target.stopRequested){target.phase='idle';paint();return;}
-    const out=await GuildPlanner.search({...cx,results:profile.results,growthResults,
+    const out=await GuildPlanner.search({...cx,results:profile.results,growthResults,cosmoSpeed:LS.get("cosmo.speed.v2"),
       base:location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),stage:'guild',
       env:{cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory,mobile:csMobile()},makeWorker:()=>SearchExecutor.createWorker(),stale,partialRequested:()=>target.stopRequested,
       watch:{hidden:()=>document.hidden,limit:r=>simTeamLimit(r),loadMs:()=>SIMQ.LOAD_MS||180000},
