@@ -255,10 +255,10 @@ def test_auto_calculation_stop_buttons(browser, ctx):
     buttons = page.locator('#out [data-k="progress"] button').all_inner_texts()
     press(page, '#out [data-k="progress"] button[data-simcancel]', "() => finishAutoJob(autoJobs.find(j=>!j.finished&&!j.worker.stopped))")
     stopped = page.evaluate("({all:autoJobs.every(j=>j.worker.stopped),busy:SIMQ.busy,err:SIMQ.err,screening:SIMQ.screening})")
+    assert stopped == {'all': True, 'busy': None, 'err': '중단함', 'screening': False}, stopped
     page.wait_for_timeout(450)
     assert page.evaluate('SIMQ.busy===null'), 'cancel must not immediately restart'
     assert buttons[-2:] == ['지금까지 결과로 보기', '취소'], buttons
-    assert stopped == {'all': True, 'busy': None, 'err': '중단함', 'screening': False}, stopped
     # 2) 다시 시작해 추천을 끝내면 육성 탐색이 돈다. 「중단」을 누르는 사이 팀 결과(진행 글자 갱신)가 와도 중단된다
     page.locator('[data-sim]').first.click()
     for _ in range(100):

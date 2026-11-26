@@ -1511,8 +1511,8 @@ def test_guild_defense(browser, ctx):
     first_stage = page.eval_on_selector("#stage", "s => s.selectedOptions[0].textContent")
     panel = page.locator("#guild-extra")
     shown = panel.is_visible()
-    text = panel.text_content()
-    reference_rows = panel.locator('[data-k="gd-summary-table"] tbody tr').count()
+    text = page.locator('#guild-panel').text_content() + panel.text_content()
+    reference_rows = page.locator('#guild-panel [data-k="gd-summary-table"] tbody tr').count()
     sim_data_ok = page.evaluate("""() => D.guild.sim.growth.join(',') === '1,1.5,2,2.5,3'
         && D.guild.sim.sets.max.join(',') === '3,3,3,3'
         && D.guild.sim.teams.every(t => !!t.bySets.max.fracBySupport)
@@ -1596,8 +1596,8 @@ def test_guild_search(browser, ctx):
 
 
 def test_guild_search_dropped(browser, ctx):
-    """Worker 메시지→3단계 탐색→협공 제외 수/점수/화면. 제외 해제하면 해당 팀도 복귀."""
-    page = open_page(browser, ctx)
+    """BFB 보관 시즌: Worker 메시지→3단계 탐색→협공 제외·점수·해제 후 복귀."""
+    page = open_page(browser, ctx, setup=season_setup(sys.modules[__name__], 30111))
     names = page.locator('#content option').all_text_contents()
     page.select_option('#content', label=next(n for n in names if n.startswith('길드방어전')))
     settle(page)
@@ -1606,7 +1606,7 @@ def test_guild_search_dropped(browser, ctx):
       const S=D.guild.search;
       Object.assign(S,{poolSize:5,minPowerRatio:0,minRole:{},minFront:0,minDealer:0,banCoop:true,
         screen2:{keep:5,runs:2},finalists:5});
-      S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['none','40051'];
+      S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['none',S.final.supports[0]];
       window.__jobs=[];window.__banned=null;
       window.Worker=class {
         postMessage(req){
@@ -1616,8 +1616,7 @@ def test_guild_search_dropped(browser, ctx):
             if(!__banned)__banned=key;
             const banned=key===__banned;
             const result={n:req.n_runs,clear:banned?1:0.5,prog:banned?1:0.5,
-              progs:banned?[1,1]:[0,1],via:banned?{forced_coop:0.1}:{trigger:1},
-              guild:{seasonId:D.guild.season.id,base_scores:(banned?[1,1]:[0,1]).map(p=>GuildView.scoreAt(D.guild,0,p))}};
+              progs:banned?[1,1]:[0,1],via:banned?{forced_coop:0.1}:{trigger:1}};
             setTimeout(()=>{if(!this.dead)this.onmessage({data:{id:req.id,type:'team',key:t.key,result}})},0);
           }
           setTimeout(()=>{if(!this.dead)this.onmessage({data:{id:req.id,type:'done'}})},0);
@@ -2950,7 +2949,8 @@ def test_ux_step12(browser, ctx):
             }''')
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), state
             # 그웬 그림은 실제로 보일 때까지 주소(src)를 받지 않는다(닫힌 서랍·숨긴 탭). 주소가 있거나 보이는 그림만 깨졌는지 본다
-            assert page.evaluate("[...document.images].filter(i=>i.getBoundingClientRect().width&&(i.hasAttribute('src')||i.checkVisibility({visibilityProperty:true}))).every(i=>i.naturalWidth>0)"), state
+            # 위 스크롤의 IntersectionObserver가 정지/움직임 그림을 교체한 뒤의 로딩도 기다린다.
+            page.wait_for_function("[...document.images].filter(i=>i.getBoundingClientRect().width&&(i.hasAttribute('src')||i.checkVisibility({visibilityProperty:true}))).every(i=>i.complete&&i.naturalWidth>0)", timeout=15000)
             compact_layout(state)
             if state == 'result':
                 card_audit()
@@ -3253,7 +3253,7 @@ def test_ux_step3(browser, ctx):
     guild_numbers()
     caught("document.querySelector('[data-k=gd-clear-kpi]').textContent='99단계'",guild_numbers,'renderGuild()')
     caught("document.querySelector('#guild-search').style.marginTop='2400px'",lambda:first_screen('guild'),"$('guild-search').style.marginTop=''")
-    page.locator('[data-k="gd-summary-table"] .ux-help').first.click()
+    page.locator('[data-k="gd-summary-table"] .ux-help[aria-label="점수 편성·지원 설명"]').first.click()
     assert page.locator('#ux-popover').is_visible() and '지원' in page.inner_text('#ux-popover')
     page.keyboard.press('Escape')
     open_fold(page,'gd-effects')
@@ -3265,7 +3265,7 @@ def test_ux_step3(browser, ctx):
     page.click('#guild-extra [data-g="best"]')
     assert page.evaluate('gsTiers().every(x=>x===0)')
     page.locator('[data-fold="gd-effects"] > summary').click()
-    assert page.locator('[data-gs="coop"]').count()==1
+    assert page.locator('[data-gs="coop"]').count()==0
     assert page.evaluate("D.guild.season.id===30112 && D.guild.search.excluded.length===0 && !D.guild.search.banCoop")
 
     # The real search entry and cancel handlers must stop their workers, with no late result.
@@ -3328,7 +3328,7 @@ TESTS.extend(register_auto_calculation(sys.modules[__name__]))
 
 from guild_break import register as register_guild_break
 TESTS.extend(register_guild_break(sys.modules[__name__]))
-from guild_rotation import register as register_guild_rotation
+from guild_rotation import register as register_guild_rotation, season_setup
 TESTS.extend(register_guild_rotation(sys.modules[__name__]))
 
 from growth_all import register as register_growth_all

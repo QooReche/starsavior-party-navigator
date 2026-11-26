@@ -171,7 +171,7 @@
     const esc = cx.esc, on = !cx.newSearch && st.banCoop !== false;
     const row = n => `<li data-k="gd-note-${esc(n.key)}"><b>${esc(cx.label(n.key))}</b> <span class="mut">[${!cx.newSearch && n.kind === "exclude" ? (on ? "제외" : "제외 해제됨") : "주의"} · ${esc(BASIS[n.basis] || n.basis)}]</span><br>${esc(n.why)}</li>`;
     const dropped = !cx.newSearch && st.dropped ? `<div class="gd-small" data-k="gd-search-dropped">시뮬에서 협공이 나가 결과에서 뺀 팀: ${st.dropped}개</div>` : "";
-    return `<details class="gd-small" data-k="gd-notes"><summary>${cx.newSearch ? "기믹 주의" : "제외·주의"} 구원자 ${notes.length}명 (보스·맵 기믹 때문)</summary><ul>${notes.map(row).join("")}</ul>${dropped}<div class="mut">길방 보스는 정실 어필 뒤 신부 경쟁 보유자 한 명만 정상이고 나머지는 «들러리»가 됨. 보호막이 있는 보스를 들러리가 치면 들러리 전원이 큰 연쇄 피해를 받아서, 내 턴이 아닐 때 공격하는 구원자가 위험함. 클라 표에 «협공 금지» 규칙 자체는 없고 이 기믹의 결과임. 시즌이 바뀌면 보스가 달라져 이 목록도 다시 봐야 함.</div></details>`;
+    return `<details class="gd-small" data-k="gd-notes"><summary>${cx.newSearch ? "기믹 주의" : "제외·주의"} 구원자 ${notes.length}명 (보스·맵 기믹 때문)</summary><ul>${notes.map(row).join("")}</ul>${dropped}</details>`;
   }
 
   const SUP_NAME = {none: "지원 안 고름", gust: "격돌의 돌풍", focus: "날카로운 집중력", strike: "강인한 타격", mountain: "태산의 의지", fire: "불의 고동"};
@@ -187,7 +187,7 @@
     const btn = (label) => `<button type="button" data-gs="start">${label}</button>`;
     const ex = cx.excluded || [];
     const notes = notesHtml(st, cx);
-    const coop = cx.newSearch ? notes : ex.length ? `<details class="season-options" data-fold="gs-options"><summary>협공 제외·주의 구원자 <span class="tag">${st.banCoop===false?'제외 꺼짐':'제외 켜짐'}</span></summary>${notes}<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 길방 EX는 협공 금지라는 글이 많음(스킬 문구로 먼저 빼고, 시뮬에서 협공이 나간 팀도 거름)</span></label></details>` : "";
+    const coop = cx.newSearch ? notes : ex.length ? `<details class="season-options" data-fold="gs-options"><summary>협공 제외·주의 구원자 <span class="tag">${st.banCoop===false?'제외 꺼짐':'제외 켜짐'}</span></summary>${notes}<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 목록의 구원자와 시뮬에서 협공이 나온 팀을 제외함</span></label></details>` : "";
     let body;
     if (st.phase === "run") body = `<div data-k="gd-search-progress">${work(cx.workMode || "long")}<span data-k="gd-search-prog">${esc(progText(st))}</span> <button type="button" class="sec" data-gs="cancel">취소</button></div>`;
     else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">${error(st.errorCause||"other")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;

@@ -1,10 +1,11 @@
 """시즌4 가짜 결과로 4단계 표시·취소·레벨 서명을 확인한다."""
 import os
+from guild_rotation import season_setup
 
 
 def register(h):
     def test_guild_break_search(browser, ctx):
-        page = h.open_page(browser, ctx)
+        page = h.open_page(browser, ctx, setup=season_setup(h, 30111))
         page.select_option('#content', value=page.evaluate("String(contents.findIndex(c=>c.key==='guild'))"))
         h.settle(page)
         page.evaluate("""() => {
@@ -70,7 +71,7 @@ def register(h):
         return True, '브레이크 순위 역전·Lv 표시·기록 만료·4단계 취소·미보유/미지원 생략'
 
     def test_guild_search_switch(browser, ctx):
-        page = h.open_page(browser, ctx)
+        page = h.open_page(browser, ctx, setup=season_setup(h, 30111))
         page.select_option('#content', value=page.evaluate("String(contents.findIndex(c=>c.key==='guild'))"))
         h.settle(page)
         page.evaluate("""() => {
