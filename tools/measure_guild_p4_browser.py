@@ -37,11 +37,15 @@ RUN = r"""async ({info,mode})=>{
   return {...h,promise:h.promise.then(r=>{row.seconds=(performance.now()-beg)/1000;recordP4({type:'phaseDone',...row});return r;})};};
  try{
   const common={S,results,roster:R,workers,makeWorker,breaks,base:location.origin+'/',onPhase:m=>name=m};
-  const result=daily?await GuildDaily.search({...common,G,env,seals:Number(mode.slice(-1)),...(mode==='daily2'?{split:{ex:1,normal:0}}:{}),nowMs:Date.parse('2026-11-26T12:00:00+09:00'),tiers:[0,0,0,0],stage:'guild'}):
-   await CosmoSearch.search({...common,bosses:G.bosses.map(b=>b.key),bossName:csBoss,level:G.search.defaultLevel,mode:G.search.defaultMode,levelMax:G.levelMax,
+  let result;
+  if(daily){
+   const session=GuildDaily.createSession(makeWorker),cx={...common,G,env,session,nowMs:Date.parse('2026-11-26T12:00:00+09:00'),tiers:[0,0,0,0],stage:'guild'};
+   try{result=await GuildDaily.search(cx);if(mode==='daily3'&&!result.partial&&!result.timeCapped)result=await GuildDaily.search({...cx,previous:result});}
+   finally{session.close();}
+  }else result=await CosmoSearch.search({...common,bosses:G.bosses.map(b=>b.key),bossName:csBoss,level:G.search.defaultLevel,mode:G.search.defaultMode,levelMax:G.levelMax,
     boundaries:Object.fromEntries(G.bosses.map(b=>[b.key,b.boundaries||[]])),stage:'코스모 게이트'});
-  if(daily){if(result.partial||result.timeCapped||result.seals.remaining)throw Error('incomplete daily result');
-   if(mode==='daily2'&&(result.teams.length!==1||result.teams[0].kind!=='ex'))throw Error('EX one-team condition failed');
+  if(daily){const used=Number(mode.slice(-1));if(result.partial||result.timeCapped||result.seals.used!==used||result.seals.remaining!==3-used)throw Error('incomplete daily result');
+   if(JSON.stringify(result.teams.map(t=>t.kind))!==JSON.stringify(mode==='daily2'?['ex']:['ex','normal']))throw Error('EX one-team/follow condition failed');
    if(new Set(result.teams.flatMap(t=>t.keys)).size!==result.teams.length*4||new Set(result.teams.map(t=>t.sup)).size!==result.teams.length||result.teams.some(t=>!t.sup||t.sup==='none'))throw Error('bundle constraint failed');}
   if(!result.rows.length||active)throw Error('empty result or worker leak');
   delete result.growthOwned;
