@@ -1,3 +1,7 @@
+## 2026-11-26 — 최종 시험 복구: 시뮬 manifest
+
+- daily 기본 전환 뒤 낡아 있던 시뮬 manifest를 `tools/build_simpack.py`로 갱신했음. `cleanup_test.py` 15개 통과. `index.html`도 재생성해 내용 변화 없음을 확인했음.
+
 ## 2026-11-26 — 길드 탐색 문서 정리·Node 검증
 
 - 병합 전후 `guild_time.md`를 대조해 빠진 3장 자동 나눔 폐기·EX 한 팀 뒤 이어서 찾기 설명을 복원했음. 코스모 신규 측정은 후속 범위로 남기고 기존 P4 수치·시간·판정은 그대로 보존했음. 현재 daily 기본과 당시 legacy 측정 기록을 구분하고 `score_search.md`·`PORTING.md`의 기본값·생성 경로도 맞췄음.
