@@ -14,7 +14,9 @@ assert.deepEqual(D.seals,{max:3,costNormal:1,costEx:2,dailyGrant:2,grantCap:2,pu
 assert.equal(D.split,undefined);assert.equal(Daily.splits,undefined);
 assert.equal(Daily.plan({G,S:G.search,roster:[],results:{},nowMs:Date.parse('2026-11-26T05:00:00+09:00')}).kind,'ex');
 assert.equal(Daily.plan({G,S:G.search,roster:[],results:{},nowMs:Date.parse('2026-11-27T04:00:00+09:00')}).kind,'normal');
-assert.equal(defaults.search.preset,'legacy');
+assert.equal(defaults.search.preset,'daily');
+assert.equal(G.search.preset,defaults.search.preset);
+assert.equal(require('../data/guild_defense.json').search.preset,defaults.search.preset);
 assert.deepEqual(G.search.daily,defaults.search.daily);
 assert.deepEqual(require('../data/guild_defense.json').search.daily,defaults.search.daily);
 assert.deepEqual(G.search.daily.workers,require('../data/cosmo_raid.json').search.workers);

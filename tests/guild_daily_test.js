@@ -145,8 +145,14 @@ async function regression(daily=Daily){
 }
 async function main(){
   packing();margins();caps();const measured=await checks();await regression();const scenarios=scenarioCount;
-  const old=Daily.search;let dispatched=false;Daily.search=async()=>{dispatched=true;return {};};
-  try{await Planner.search({...fixture(),S:{...defaults,preset:'daily'}});assert(dispatched);}finally{Daily.search=old;}
+  const {cx}=await scenario(),old=Daily.search;let dispatched=false;Daily.search=async()=>{dispatched=true;return {};};
+  try{
+    await Planner.search({...fixture(),S:defaults});assert(dispatched,'default dispatches daily');
+    dispatched=false;
+    const legacy=await Planner.search({...fixture(),S:{...cx.S,preset:'legacy'},V,tiers:[],breaks:[],makeWorker:cx.makeWorker,workers:1});
+    assert(!dispatched,'explicit legacy does not dispatch daily');
+    assert(legacy.rows.length>0&&legacy.rows.every(r=>r.prog>0),'legacy returns evaluated teams');
+  }finally{Daily.search=old;}
   const src=fs.readFileSync(require.resolve('../guild_daily'),'utf8');
   const mutations=[
     ['Math.abs(value(incumbent))*margin','0',margins],

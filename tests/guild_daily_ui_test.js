@@ -52,5 +52,5 @@ for(const [from,to] of [["leader:t.leaderKey||t.order[0]","leader:t.order[0]"],[
   assert(source.includes(from));const context={module:{exports:{}},require:require('node:module').createRequire(require.resolve('../guild_daily_ui'))};vm.runInNewContext(source.replace(from,to),context);assert.throws(()=>contracts(context.module.exports));
 }
 for(const k of ['guildPlan','guildFollow','guildClosed','guildDone','guildShort','guildPartial','guildReset'])assert(Ux.GWEN_SAY[k].every(s=>/[가-힣]/.test(s)&&!s.includes('???')));
-assert.equal(require('../data/guild_defaults.json').search.preset,'legacy');
-console.log('PASS daily UI: presentation/import/follow, cosmo header/support/basis, placement outcomes, 7 mutations, 7 Gwen keys, legacy default');
+assert.equal(require('../data/guild_defaults.json').search.preset,'daily');
+console.log('PASS daily UI: presentation/import/follow, cosmo header/support/basis, placement outcomes, 7 mutations, 7 Gwen keys, daily default');

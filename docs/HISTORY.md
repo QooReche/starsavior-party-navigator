@@ -1,3 +1,8 @@
+## 2026-11-26 — 길드 오늘 편성 찾기 기본 전환
+
+- P4 최종 통과 뒤 `data/guild_defaults.json`의 기본 프리셋을 daily로 전환했음. `build_guild_seasons.py --select-only`로 현재 시즌·화면 사본을 만들고 `build_party_html.py index.html`을 재생성했음.
+- 기본값 기대만 갱신하고 기본 daily 진입·명시적 legacy 실행의 양수 진행을 검사했음. 옛 프리셋 동결 시험과 기대값은 수정하지 않았음. daily·설정·화면 시험 통과, 전체 Python·e2e는 메인 검증에 남겼음.
+
 ## 2026-11-26 — P4 측정 어댑터 병합 복구
 
 - 병합에서 빠진 `searchDaily`를 복원하고 네이티브·브라우저 측정을 현재 daily API에 맞췄음. 기본은 EX 1팀·인장 2장 사용·1장 잔여이며, 선택적인 후속 실행만 같은 세션의 `previous`로 일반 1팀을 추가함. 옛 `seals/split` 입력을 제거했음.

@@ -4408,7 +4408,7 @@
    "40131": "캐스터",
    "40051": "서포터"
   },
-  "preset": "legacy",
+  "preset": "daily",
   "daily": {
    "seals": {
     "max": 3,

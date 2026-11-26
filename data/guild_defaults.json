@@ -158,7 +158,7 @@
       "auditTeams": 12
     },
     "banCoop": false,
-    "preset": "legacy",
+    "preset": "daily",
     "daily": {
       "seals": {
         "max": 3,
