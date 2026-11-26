@@ -25,20 +25,25 @@
     if(!combos.length)throw Object.assign(Error('편성할 수 있는 구원자가 부족함(내 정보에 육성된 구원자 4명 이상 필요)'),{gwenCause:'few'});
     const stale=cx.stale||(()=>false);
     const pl=plan(S,combos.length,(cx.breaks||[]).length);cx.onPlan?.(pl);
-    let phase=0;
+    let phase=0,fin=[],history=[];
     const run=async(jobs,runs,seed,msg)=>{
       if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});
+      if(cx.partialRequested?.())throw Object.assign(Error('취소'),{gwenCause:'cancel'});
       const stage=phase++;cx.onPhase?.(msg,jobs.length,{stage,jobs:jobs.length,teams:jobs.length,runs,games:jobs.length*runs});
       const h=GS.runPhase({makeWorker:cx.makeWorker,jobs,workers:Math.max(1,Math.min(2,cx.workers||2)),runs,seed,stage:cx.stage,base:cx.base,watch:cx.watch,onProgress:cx.onProgress});
-      cx.onHandle?.(h);const res=await h.promise;
+      const record={jobs,runs,seed,stage,handle:h,res:null};history.push(record);
+      cx.onHandle?.(h);const res=await h.promise;record.res=res;
       if(stale())throw Object.assign(Error('취소'),{gwenCause:'cancel'});
       return res;
     };
+    const coverage=selectedStage=>({version:1,selectedStage,stages:history.map(r=>{const res=r.res||r.handle.snapshot();return {stage:r.stage+1,name:pl.stages[r.stage].name,jobs:r.jobs.length,
+      done:r.jobs.filter(j=>res[j.key]).length,runs:r.runs,seed:r.seed,complete:!!r.res};})});
+    try{
     const jobsA=GS.screenJobs(S,G,V,combos,results,cls,tiers,G);
     const resA=await run(jobsA,S.screen.runs,1,`1단계: 조합 ${jobsA.length}개 훑어보는 중(처음 한 번은 계산 엔진을 내려받느라 1~3분 더 걸림)`);
     const keep2=GS.pickTop(V,G,jobsA,resA,tiers,S.screen2.keep,S),jobsA2=GS.screenJobs(S,G,V,keep2,results,cls,tiers,G);
     const resA2=await run(jobsA2,S.screen2.runs,3,`2단계: 상위 ${jobsA2.length}팀을 더 정확히 확인 중`);
-    const fin=GS.pickFinalists(S,V,G,jobsA2,resA2,tiers),jobsB=GS.finalJobs(S,G,V,fin,results,cls,tiers,G);
+    fin=GS.pickFinalists(S,V,G,jobsA2,resA2,tiers);const jobsB=GS.finalJobs(S,G,V,fin,results,cls,tiers,G);
     const resB=await run(jobsB,S.final.runs,2,`3단계: 상위 ${fin.length}팀을 단계·지원별로 확인 중`);
     const pairs=[[jobsA,resA],[jobsA2,resA2],[jobsB,resB]];
     let ranked=GS.rank(V,G,jobsB,resB,tiers,GS.BREAK_CHECK.teams,S);
@@ -47,7 +52,18 @@
       const resC=await run(jobsC,GS.BREAK_CHECK.runs,2,'4단계: 브레이크 스킬 확인 중');
       pairs.push([jobsC,resC]);ranked=GS.rank(V,G,jobsC,resC,tiers,5,S);
     }
-    return {rows:ranked.slice(0,5),dropped:GS.countDropped(S,pairs),pool:rows.length,combos:combos.length,finalists:fin.length,runs:jobsC.length?GS.BREAK_CHECK.runs:S.final.runs};
+    return {rows:ranked.slice(0,5),dropped:GS.countDropped(S,pairs),pool:rows.length,combos:combos.length,finalists:fin.length,runs:jobsC.length?GS.BREAK_CHECK.runs:S.final.runs,partial:false,coverage:coverage(jobsC.length?4:3)};
+    }catch(e){
+      if(stale()||e.gwenCause!=='cancel'||!cx.partialRequested?.())throw e;
+      const pairs=history.map(r=>[r.jobs,r.res||r.handle.snapshot()]);let selected=null,ranked=[];
+      for(let i=history.length-1;i>=0;i--){
+        const [jobs,res]=pairs[i];ranked=GS.rank(V,G,jobs.filter(j=>res[j.key]),res,tiers,5,S);
+        if(ranked.length){selected=history[i];break;}
+      }
+      const evaluation={partial:true,stage:(selected?.stage??-1)+1,stageSupportComplete:!!history[2]?.res,breakComplete:!!history[3]?.res};
+      return {rows:ranked.map(r=>({...r,evaluation:{...evaluation}})),dropped:GS.countDropped(S,pairs),pool:rows.length,combos:combos.length,
+        finalists:fin.length,runs:selected?.runs||0,partial:true,coverage:coverage(evaluation.stage)};
+    }
   }
   async function search(cx){
     cx={...cx,S:{...cx.S,seasonId:cx.G.season?.id,dataVersion:cx.G.dataVersion}};

@@ -3,7 +3,7 @@
 // 시뮬 자체는 battlesim(guild 옵션)이 하고, 이 파일은 «어떤 팀을 어떤 조건으로 돌릴지»와 «결과를 어떻게 순위 매길지»만 정한다.
 (function (root) {
   "use strict";
-  const {num, teamId} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
+  const {num, teamId, durTextSec, planHtml, planPaint} = typeof module !== "undefined" && module.exports ? require("./ui_shared.js") : root.UiShared;
   const Placement = typeof module !== "undefined" && module.exports ? require("./party_placement.js") : root.PartyPlacement;
   const Executor = typeof module !== "undefined" && module.exports ? require("./search_executor.js") : root.SearchExecutor;
   const FRONT = ["디펜더", "서포터"];
@@ -178,6 +178,30 @@
   const SUP_NAME = {none: "지원 안 고름", gust: "격돌의 돌풍", focus: "날카로운 집중력", strike: "강인한 타격", mountain: "태산의 의지", fire: "불의 고동"};
   // 화면 조각. st = {phase: idle|run|done|err, msg, done, total, rows, sig}, cx = {hasInfo, sig(현재 고른 선택 효과), label(key), esc}
   const progText = st => `${st.msg || ""}${st.total ? ` · ${st.done}/${st.total}` : ""}`;
+  const SPEED_KEY='guild.speed.v1'; // Device throughput only: no season/account/data identity.
+  function progressNew(pl,workers,saved){
+    const prior=saved&&saved.workers>0&&Array.isArray(saved.sec)&&saved.sec.length===pl.stages.length&&saved.sec.every(n=>Number.isFinite(n)&&n>0)?saved.sec.map(n=>n*saved.workers/workers):null;
+    return Executor.etaNew({stages:pl.stages,weights:pl.stages.map(()=>1),prior});
+  }
+  function progressPaint(host,st){
+    const el=host.querySelector('[data-k="plan"]');if(!el)return;
+    const active=st.plan?.stages.filter(s=>s.jobs>0&&s.p>0)||[],s=st.plan?.stages[st.stageIndex],index=active.indexOf(s);
+    const step=index<0?'탐색 준비 중':`${index+1}/${active.length} ${s.name}`;
+    const est=st.eta?.estimate(Date.now()/1000),eta=est?.ready?'남은 시간 '+durTextSec(est.remainSec):'남은 시간 계산 중';
+    const frac=index<0?0:Math.min(.99,(index+(st.total?st.done/st.total:0))/active.length);
+    planPaint(el,step,eta,frac);
+    const stop=host.querySelector('[data-gs="partial"]');if(stop)stop.disabled=!st.plan||st.stopRequested;
+  }
+  function coverageText(st){
+    const c=st.coverage;if(!c)return '';
+    const done=c.stages.filter(s=>s.complete).map(s=>s.stage+'단계').join('·')||'없음';
+    const live=c.stages.find(s=>!s.complete),part=live?` · ${live.stage}단계 ${num(live.done)}개 / ${num(live.jobs)}개 작업 완료(작업당 ${live.runs}판)`:'';
+    if(!st.partial)return `완료 범위: ${done}`;
+    const row=st.rows?.[0],stage=c.selectedStage;
+    const unevaluated=stage<3?` · 별의 도전 단계·지원 미평가(${row?.level??6}단계·${row?.sup&&row.sup!=='none'?(SUP_NAME[row.sup]||row.sup):'지원 없음'} 기준)`:
+      !c.stages.find(s=>s.stage===3)?.complete?' · 별의 도전 단계·지원 일부만 평가':' · 브레이크 비교 미완료';
+    return `부분 결과 · 완료 범위: ${done}${part}${unevaluated}${row?' · '+stage+'단계에서 받은 후보 기준':' · 완료된 적격 후보 없음'}`;
+  }
   function html(st, cx) {
     const esc = cx.esc;
     const work = (...args) => cx.work ? cx.work(...args) : "";
@@ -190,15 +214,15 @@
     const notes = notesHtml(st, cx);
     const coop = cx.newSearch ? notes : ex.length ? `<details class="season-options" data-fold="gs-options"><summary>협공 제외·주의 구원자 <span class="tag">${st.banCoop===false?'제외 꺼짐':'제외 켜짐'}</span></summary>${notes}<label class="gd-small" data-k="gd-search-coop"><input type="checkbox" data-gs="coop"${st.banCoop === false ? "" : " checked"}> 협공 구원자 제외(${ex.map(k => esc(cx.label(k))).join(", ")}) <span class="mut">— 목록의 구원자와 시뮬에서 협공이 나온 팀을 제외함</span></label></details>` : "";
     let body;
-    if (st.phase === "run") body = `<div data-k="gd-search-progress">${work(cx.workMode || "long")}<span data-k="gd-search-prog">${esc(progText(st))}</span> <button type="button" class="sec" data-gs="cancel">취소</button></div>`;
+    if (st.phase === "run") body = `<div data-k="gd-search-progress">${work(cx.workMode || "long")}${cx.newSearch?'':planHtml('길드 편성 찾기 전체 진행')}<span data-k="gd-search-prog">${esc(progText(st))}</span> ${cx.newSearch?'':'<button type="button" class="sec" data-gs="partial">지금까지 결과로 보기</button>'}<button type="button" class="sec" data-gs="cancel">취소</button></div>`;
     else if (st.phase === "err") body = `<div class="bad" data-k="gd-search-err">${error(st.errorCause||"other")}찾지 못했음: ${esc(st.msg || "")}</div>${btn("다시 시도")}`;
     else if (st.phase === "done") {
       const stale = st.sig !== cx.sig ? '<div class="gd-warn" data-k="gd-search-stale">계산 조건이 바뀌었음. 아래 결과는 이전 선택 기준이므로 다시 찾기 필요.</div>' : "";
       const rows = st.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${r.order.map(k => esc(cx.label(k))+(k===(r.leaderKey||r.order[0])?" (리더)":"")).join("<br>")}<br>${breakLabel(r, esc)}</td><td>${r.level}단계</td><td>${esc(cx.supportNames?.[r.sup] || SUP_NAME[r.sup] || r.sup)}</td><td><b>${num(r.score)}</b></td><td>${Math.round(r.clear * 100)}%</td><td>${Math.round(r.frac * 100)}%</td><td>${Math.round((r.cap == null ? r.clear : r.cap) * 100)}%</td><td>${r.mean == null ? "-" : num(r.mean)}</td></tr>`).join("");
       const best=st.rows[0];
       const result=best?`<div class="season-result" data-k="gs-best"><div class="season-score"><span>상위 점수</span><b data-k="gs-score">${num(best.score)}</b><small>점</small></div><div class="season-chips"><span class="tag">${best.level}단계</span><span class="tag">${esc(cx.supportNames?.[best.sup]||SUP_NAME[best.sup]||best.sup)}</span><span class="tag">클리어 ${Math.round(best.clear*100)}%</span></div>${cx.team?cx.team(best):''}</div>`:'';
-      body = `${stale}${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 리더 별도 표시)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>${cx.clientSeason?"전체 진행도":"보스 깎음"}</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
-<div class="mut gd-small">후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값임(표본이 작아 한두 단계·수천 점은 오차). 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순임. ${cx.clientSeason?"점수는 판마다 실제 일반·정예 처치와 보스별 생명력 감소를 합산함. 추가 배율의 서버 반올림은 미확인임.":"점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받음."}</div></details>`;
+      body = `${stale}<div class="gd-small" data-k="gd-search-coverage">${esc(coverageText(st))}</div>${st.rows.length?(cx.report?.(st.rows)||""):error("empty")}${result}${btn("다시 찾기")}${coop}<details class="season-options" data-fold="gs-results"><summary>다른 편성·점수 상세</summary><div class="gd-scroll"><table data-k="gd-search-table"><thead><tr><th>순위</th><th>편성(앞열 → 뒤열, 리더 별도 표시)</th><th>별의 도전</th><th>알리시아 지원</th><th>상위 점수</th><th>클리어</th><th>${cx.clientSeason?"전체 진행도":"보스 깎음"}</th><th>상한 도달률</th><th>평균 점수</th></tr></thead><tbody>${rows || '<tr><td colspan="9">결과 없음</td></tr>'}</tbody></table></div>
+<div class="mut gd-small">${st.partial?'중단할 때까지 받은 후보만 비교한 값임. 전체 후보·조건 비교를 완료한 결과가 아님.':`후보 ${st.pool}명 → 조합 ${st.combos}개를 짧게 두 번 걸러 상위 ${st.finalists}팀을 고른 뒤, 단계·지원별로 ${st.runs}판씩 돌린 값임(표본이 작아 한두 단계·수천 점은 오차).`} 길방은 재도전할 수 있고 단계마다 점수 상한이 있어 평균이 아니라 <b>상위 점수</b>(판별 점수 상위 20%의 평균) 순으로 줄을 세우고, 같으면 <b>상한 도달률</b>(보스를 처치한 판 비율), 그다음 평균 점수 순임. ${cx.clientSeason?"점수는 판마다 실제 일반·정예 처치와 보스별 생명력 감소를 합산함. 추가 배율의 서버 반올림은 미확인임.":"점수는 판마다 확인된 점수식에 넣어 계산하며, 졸개전에서 진 판은 처치한 졸개 수(깎은 체력에서 추정한 근사)만큼만 받음."}</div></details>`;
     } else body = btn("내 구원자로 편성 찾기") + '<span class="mut season-wait">몇 분 걸림 · 탭을 열어 둬야 함</span>'+coop;
     return `<div class="gd-search" data-k="gd-search" data-state="${st.phase}">${head}${body}${st.phase === "done" ? unsupportedHtml(st.rows || [], esc) : ""}<details class="season-options" data-fold="gs-basis"><summary>계산 기준 <i class="ux-help-mark" aria-hidden="true"></i></summary><span class="gd-est">추정</span>${warn}</details></div>`;
   }
@@ -206,5 +230,6 @@
   const breakLabel = (t, esc) => `브레이크 스킬: ${esc(t.brk || "없음")}${t.brk ? ` Lv.${t.brkLv}` : ""}`;
   const api = {baseline:Placement.baseline, FRONT, TOP_Q, BREAK_CHECK, breakSignature, breakJobs, breakLabel, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, progText, SUP_NAME, countDropped, notesHtml, BASIS, unsupportedFields, unsupportedHtml};
   api.iterateCombos = iterateCombos;
+  Object.assign(api,{SPEED_KEY,progressNew,progressPaint,coverageText});
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

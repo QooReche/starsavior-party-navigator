@@ -38,9 +38,9 @@ function factory(log, score = fakeScore) {
       setTimeout(() => {
         for (const t of m.teams) {
           const keys = t.party.units.map(u => u.key), boss = t.options.cosmo_raid.boss, s = score(boss, keys, t.options.cosmo_raid.level, t.options.break_skill && t.options.break_skill.name);
-          this.onmessage({data: {type: 'team', key: t.key, result: {prog: 0.5, clear: 0.4, n: m.n_runs, via: {}, progs: null, cosmo: {mean: s, top: fakeTop(s), clear: 0.4, frac: 0.5, n: m.n_runs}}}});
+          this.onmessage({data: {type: 'team', id: m.id, key: t.key, result: {prog: 0.5, clear: 0.4, n: m.n_runs, via: {}, progs: null, cosmo: {mean: s, top: fakeTop(s), clear: 0.4, frac: 0.5, n: m.n_runs}}}});
         }
-        this.onmessage({data: {type: 'done'}});
+        this.onmessage({data: {type: 'done', id: m.id}});
       }, 1);
     }
   });

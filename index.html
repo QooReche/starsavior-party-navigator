@@ -543,8 +543,8 @@ function searchGwenPaint(host,mode,state){
 function renderGuildSearch(on){const p=$("guild-search");
  if(!on||!D.guild||!D.guild.search||!window.GuildSearch){if(GSR.handle){GSR.handle.cancel();GSR.handle=null}if(GSR.phase==="run"){GSR.phase="idle";GSR.id++}GwenStage.destroy('guildSearch');p.hidden=true;p.innerHTML="";return}
  const prog=p.querySelector('[data-k="gd-search-prog"]');
- if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);searchGwenPaint(p,'guildSearch',GSR);return}
- const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:()=>GwenStage.slot('guildSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('guildSearch','board')+GwenStage.slot('guildSearch','result'),clientSeason:D.guild.season.boss.engine==="client",supportNames:Object.fromEntries((D.guild.supports||[]).map(s=>[s.id,s.name])),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,newSearch:D.guild.search.newSearch,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild');searchGwenPaint(p,'guildSearch',GSR)}
+ if(GSR.phase==="run"&&prog){prog.textContent=GuildSearch.progText(GSR);GuildSearch.progressPaint(p,GSR);searchGwenPaint(p,'guildSearch',GSR);return}
+ const folds=seasonFoldState(p);p.hidden=false;p.innerHTML=GuildSearch.html(GSR,{work:()=>GwenStage.slot('guildSearch','board'),error:Ux.gwenError,report:()=>GwenStage.slot('guildSearch','board')+GwenStage.slot('guildSearch','result'),clientSeason:D.guild.season.boss.engine==="client",supportNames:Object.fromEntries((D.guild.supports||[]).map(s=>[s.id,s.name])),hasInfo:!!MI.info,sig:gsSig(),label:gsLabel,esc,team:gsTeam,newSearch:D.guild.search.newSearch,excluded:D.guild.search.excluded,notes:D.guild.search.notes});seasonRestoreFolds(p,folds);seasonApplyPanel(p,'guild');GuildSearch.progressPaint(p,GSR);searchGwenPaint(p,'guildSearch',GSR)}
 function gsTeam(t){LEADKEY=t.leaderKey||t.order[0];return seasonBreakBar(t,true)+`<div class="rowcards">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
 async function guildSearchStart(target=GSR,profileOverride=null){
  if(seasonBlocked('guild'))return;
@@ -553,21 +553,29 @@ async function guildSearchStart(target=GSR,profileOverride=null){
  if(!profileOverride){growthCancel();guildGwenClaim('guildSearch');}
  const S={...D.guild.search,banCoop:GSR.banCoop};const V=GuildView,G=D.guild,id=++GSR.id,c=contents[$("content").value],st=cur&&cur[$("stage").value];
  const stale=()=>GSR.id!==id,paint=()=>profileOverride?growthPaint():renderGuildSearch(true);
+ const tick=SearchExecutor.throttle(paint,SearchExecutor.PAINT_MS,()=>!stale()&&GSR.phase==='run');
  try{
+  Object.assign(GSR,{plan:null,eta:null,coverage:null,partial:false,stopRequested:false,stageIndex:null});
   GSR.phase="run";GSR.msg="내 구원자 능력치 계산 중";GSR.done=0;GSR.total=0;paint();
   const growth=await miGrowth();if(stale())return;
   const profile=profileOverride||MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
   const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers(),breaks=ownedSimBreaks(),sig=gsSig(),context=growthOwnedContext('guild');
   const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>SearchExecutor.createWorker();
-  const out=await GuildPlanner.search({S,G,V,results,roster:R.filter(s=>!EXCL.has(s.key)),tiers,breaks,stage,base,workers:Math.max(1,Math.min(2,(navigator.hardwareConcurrency||4)-1)),makeWorker:mk,stale,
+  const out=await GuildPlanner.search({S,G,V,results,roster:R.filter(s=>!EXCL.has(s.key)),tiers,breaks,stage,base,workers:Math.max(1,Math.min(2,(navigator.hardwareConcurrency||4)-1)),makeWorker:mk,stale,partialRequested:()=>GSR.stopRequested,
     watch:{hidden:()=>typeof document!=="undefined"&&document.hidden,limit:r=>typeof simTeamLimit==="function"?simTeamLimit(r):240000,loadMs:()=>SIMQ.LOAD_MS||180000},
-    onHandle:h=>GSR.handle=h,onPhase:(msg,total)=>{if(stale())return;GSR.phaseSerial=(GSR.phaseSerial||0)+1;GSR.msg=msg;GSR.done=0;GSR.total=total;paint();},onProgress:(d,t)=>{if(!stale()){GSR.done=d;GSR.total=t;paint();}}});
-  if(stale())return;Object.assign(GSR,out,{sig});
-  GSR.context=context;GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
- }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.errorCause=e.gwenCause||"other";GSR.phase=GSR.errorCause==="cancel"?"idle":"err";GSR.msg=e.message||String(e);paint()}}
+    onPlan:pl=>{if(stale())return;GSR.plan=pl;GSR.eta=GuildSearch.progressNew(pl,Math.max(1,Math.min(2,(navigator.hardwareConcurrency||4)-1)),typeof LS==='undefined'?null:LS.get(GuildSearch.SPEED_KEY));},
+    onHandle:h=>{if(stale()){h.cancel();return}GSR.handle=h;if(GSR.stopRequested)h.cancel();},
+    onPhase:(msg,total,info)=>{if(stale())return;GSR.phaseSerial=(GSR.phaseSerial||0)+1;GSR.msg=msg;GSR.done=0;GSR.total=total;GSR.stageIndex=info?.stage;GSR.runs=info?.runs||1;if(info&&GSR.eta)GSR.eta.begin(info.stage,info.games,Date.now()/1000);paint();},
+    onProgress:(d,t)=>{if(!stale()){GSR.done=d;GSR.total=t;GSR.eta?.update(d*GSR.runs,Date.now()/1000);tick();}}});
+  if(stale())return;tick.cancel();
+  const speed=GSR.eta?.summary();if(speed&&!profileOverride&&typeof LS!=='undefined')LS.set(GuildSearch.SPEED_KEY,{sec:speed,workers:Math.max(1,Math.min(2,(navigator.hardwareConcurrency||4)-1))});
+  Object.assign(GSR,out,{sig,eta:null});
+  GSR.context=context;GSR.phase="done";GSR.handle=null;paint();if(!profileOverride&&!GSR.partial&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return GSR
+ }catch(e){if(profileOverride)throw e;if(stale())return;GSR.handle=null;GSR.errorCause=e.gwenCause||"other";GSR.phase=GSR.errorCause==="cancel"?"idle":"err";GSR.msg=e.message||String(e);paint()}finally{tick.cancel()}}
 $("guild-search").addEventListener("change",e=>{const c=e.target.closest('input[data-gs="coop"]');if(!c)return;GSR.banCoop=c.checked;growthCancel();if(GSR.phase!=="run")renderGuildSearch(true);growthPaint()});
 $("guild-search").addEventListener("click",e=>{const b=e.target.closest("button[data-gs]");if(!b)return;
  if(b.dataset.gs==="start")guildSearchStart();
+ else if(b.dataset.gs==="partial"){if(GSR.phase!=="run")return;GSR.stopRequested=true;GSR.handle?.cancel();renderGuildSearch(true)}
  else if(b.dataset.gs==="cancel"){GSR.id++;if(GSR.handle){GSR.handle.cancel();GSR.handle=null}GSR.phase="idle";renderGuildSearch(true)}});
 // ── 코스모 게이트 «3보스 최고 점수 편성 찾기»(cosmo_search.js): 보스별 전 조합 짧게 → 상위 팀 정확히 → 겹침 없는 3팀 최대 합 → 상위 편성 재확인. 난이도 레벨(Step 3)은 사용자가 고름
 const CSR={phase:"idle",msg:"",done:0,total:0,rows:[],handle:null,id:0,optLevel:null,optMode:null,sig:"",etaText:"",eta:null,runs:1};
@@ -1447,12 +1455,10 @@ function recoPlanPaint(){const el=document.querySelector('#reco-gwen-stage [data
  let v=null;try{v=RECO_PLAN.update(busy?recoPlanStages(st):null,{key:recheckIdent(),workers:scrWorkers(),busy,loading:!SIMQ.loaded,now:Date.now(),fallback:{run:SIMQ.rate}})}catch(e){v=null}
  el.hidden=!v||!v.steps.length;if(el.hidden)return;
  const step=`${v.step+1}/${v.steps.length} ${v.steps[v.step]||""}`,eta=v.text||RecoPlan.etaText(v.remain,fmtDur);
- const s=el.querySelector('[data-k="plan-step"]'),e=el.querySelector('[data-k="plan-eta"]'),bar=el.querySelector('.rp-bar');
- if(s.textContent!==step)s.textContent=step;if(e.textContent!==eta)e.textContent=eta;
- bar.setAttribute("aria-valuenow",Math.round(v.frac*100));bar.firstElementChild.style.transform=`scaleX(${v.frac.toFixed(3)})`;
+ UiShared.planPaint(el,step,eta,v.frac);
  const l=JSON.stringify(RECO_PLAN.learned());if(l!==recoPlanPaint.saved){recoPlanPaint.saved=l;LS.set("reco.plan.v1",JSON.parse(l))}}   // 다음 실행의 첫 추정용(같은 기기)
 // 1초마다: 전체 진행 줄 + (스킬 비교 등 따로 도는 작은 작업의) 남은 시간 글자. 화면 전체를 다시 그리지 않고 글자만
-setInterval(()=>{recoPlanPaint();if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
+setInterval(()=>{recoPlanPaint();if(GSR.phase==='run')GuildSearch.progressPaint($('guild-search'),GSR);if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
 // 추천은 버튼으로 시작한다. 시험용 URL과 공유 링크만 자동으로 시작한다.
 const AUTO=!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'&&/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
 const RECO={timer:null,revision:0,standard:false,sharedPending:!!SHARE.c&&!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'};

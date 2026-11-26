@@ -195,7 +195,7 @@ function growthRankPaint(){const el=$('growth-priority');if(!el)return;
     `<details><summary>${ordered.length>5?'나머지 '+(ordered.length-5)+'명 · ':''}상세</summary>`+
     ordered.slice(5).map(row).join('')+'<p class="mut">보조 추천에 나온 콘텐츠 종류 수 · 함께 키운 팀 기준</p></details>';
 }
-function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&GSR.context===growthOwnedContext('guild'):
+function growthSeasonReady(c){return c.key==='guild'?GSR.phase==='done'&&!GSR.partial&&GSR.context===growthOwnedContext('guild'):
   CSR.phase==='done'&&CSR.context===growthOwnedContext('cosmo');}
 function growthOwnedContext(kind){return JSON.stringify([MI.hash,[...EXCL].sort(),kind==='guild'?[gsTiers(),GSR.banCoop,GuildSearch.breakSignature(ownedSimBreaks())]:[CSR.optLevel,CSR.optMode,csBreaks(),...(CSR.optLearned?['learned']:[])],simOpt(kind),...searchPlacementTag(kind)]);}
 // Whole-account pass: the owned recommendation and its caches remain untouched.

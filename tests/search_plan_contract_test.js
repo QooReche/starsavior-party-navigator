@@ -17,7 +17,10 @@ for(const list of [pl.stages,stages]){
  assert(list.every(s=>s.name&&s.step&&s.jobs===s.teams&&s.games===s.jobs*s.runs&&s.p>=0&&s.p<=1));
  assert(R.remain(list,{workers:1,rate:{run:1},gap:0,now:0}).remain>0);
 }
-// Deliberately break an upper bound: the contract check must detect it.
-const check=x=>assert(x.stages[3].jobs>=8*3*3);
-check(pl);assert.throws(()=>check({...pl,stages:pl.stages.map(s=>s.id===4?{...s,jobs:8*2*3}:s)}));
+// Deliberately break the production upper-bound calculation, then restore it.
+const check=api=>assert(api.plan(S,1000,2).stages[3].jobs>=8*3*3);
+const fs=require('node:fs'),vm=require('node:vm'),source=fs.readFileSync(require.resolve('../guild_planner'),'utf8');
+assert(source.includes('*3*(1+nBrk)'));const ctx={module:{exports:{}},require:n=>require('../'+n)};
+vm.runInNewContext(source.replace('*3*(1+nBrk)','*2*(1+nBrk)'),ctx);
+check(P);assert.throws(()=>check(ctx.module.exports),assert.AssertionError);check(P);
 console.log('PASS 12 stage plan contracts: guild ceilings, conditional break, RecoPlan/cosmo adapter, bound mutation');
