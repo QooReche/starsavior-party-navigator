@@ -8,6 +8,7 @@
 1. `git pull` — 이 저장소와 비공개 `starsavior-static-data` **둘 다**. static-data 가 옛 빌드면 시험이 틀린 이유로 깨지고, 리뷰·조사가 옛 표로 오판함.
 2. `HANDOFF.md` 맨 위(«현재 상태»·«남은 일») → `README.md` → `docs/DEVELOPMENT.md`.
 3. 시험 기준선: `python -X utf8 -I tools/run_tests.py` — 고치기 전에 이미 깨진 시험이 있는지 먼저 앎.
+4. 작업 기록·임시물은 저장소 밖 `<workspace>\accel-golden\`(진행 중만 위에, 끝난 건 `_done\MMDD\`)와 worktree 의 `local/`. 옛 임시 작업 폴더는 `<workspace>\_work\partynavigator\`. `<workspace>` 루트에 로그·스크립트를 두지 않음.
 
 ## 엔진 규칙을 바꿀 때
 

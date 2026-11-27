@@ -153,7 +153,7 @@
 
 - 회사 PC는 공개 저장소와 `<workspace>/starsavior-static-data`를 함께 pull하기로 함. 추출 도구 작업이면 `starsavior-packet-ref`도 확인.
 - 회사 PC codex 실행은 `-Sandbox danger-full-access`, e2e는 `<workspace>/venv-pw\Scripts\python -X utf8 tests\e2e\test_page.py` 기준임. 옛 PC 경로·시험 개수는 당시 기록임.
-- 게임 PC의 내 정보·영상 판독·work 메모·임시물은 `AI\temp\partynavigator\` 기준이며 `INDEX.md`로 찾기로 함. 계정 자료 사본은 비공개 static-data/samples에만 둠.
+- 게임 PC의 내 정보·영상 판독·work 메모·임시물은 `<workspace>\_work\partynavigator\` 기준이며(11/27 옮김 — 옛 문서·주석의 `AI\temp\partynavigator\…` 는 이 폴더) `INDEX.md`로 찾기로 함. 계정 자료 사본은 비공개 static-data/samples에만 둠.
 - 공개 저장소·Pages에 계정 수치·내 정보 원본·클라 원본 표를 추가하지 않기로 함. 공개 화면은 가공한 일반 자료만 사용함. 계정 기준 시뮬 수치는 11/08 정리에서 일부 걷어내 비공개 폴더(`AI\temp\partynavigator\private_results\`·`work\`) 안내로 바꿨고, 남은 옛 수치는 당시 기록임(git 기록에는 남음).
 - Git 신원은 `QooReche <87477643+QooReche@users.noreply.github.com>`만 사용하기로 함.
 - **공략 DB·데이터북을 참조하는 작업**은 시작 때 `python -X utf8 -I tools/fetch_sources.py --dry` → 실제 받기로 최신을 확인함(사용자 11/14). 받기에 실패하면 지금 rawdata 사본으로 진행하고 실패 사실만 기록·보고(`rawdata/sources.json` 의 fetched·last_attempt·error). 받은 rawdata 가 바뀌면 별도 커밋. 공략 DB 는 늦게 갱신될 수 있으므로 DB 에 없는 구원자는 직업 기본값으로 대체하되 화면·자료에 «공략 DB 미반영»을 표시함(조용한 대체 금지 — `data/journey_priority.json` 의 fallback, 도구·빌드·시험이 «DB 에 없는 구원자 N명»을 알림).
