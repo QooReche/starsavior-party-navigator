@@ -1226,7 +1226,10 @@ class Battle:
                 self.clear_t = self.t
                 break
             living = self.alive(0) + self.alive(1)
-            best, bt = self.pick_next(living)
+            # Speeds are constant until an action or round boundary changes effects.
+            # Keep this local: _tick_break_skill below can expire a speed domain.
+            speeds = {x: x.spd() for x in living}
+            best, bt = self.pick_next(living, speeds)
             round_tick = False
             if self.break_skill_enabled and self.mc['break_skill_cd_unit'] == 'round':
                 boundary = (self._break_round + 1) * self.turn_ticks
@@ -1246,12 +1249,12 @@ class Battle:
                     if bt > 0:
                         if x._g0 is None:
                             x._g0, x._gacc = x.gauge, 0.0
-                        x._gacc += x.spd() * bt
+                        x._gacc += speeds[x] * bt
                         self.set_gauge(x, x._g0 + (x._gacc if round_tick else _gauge.int_gain(x._gacc)), keep_frac=round_tick)
             if not round_tick:
                 for x in living:
                     x._g0 = None
-                best = min(living, key=self._turn_key)
+                best = min(living, key=lambda x: self._turn_key(x, speeds[x]))
                 self.rule_hits['turn_gauge'] += 1
             self.t += bt
             if round_tick:
@@ -1303,26 +1306,26 @@ class Battle:
         if not keep_frac:
             u.gauge = float(int(u.gauge))     # 클라 게이지는 정수 저장(NKM:5113-5115 (int) 변환 뒤 저장)
 
-    def pick_next(self, living):
+    def pick_next(self, living, speeds=None):
         """다음 행동 유닛과 그때까지 걸리는 틱. 동시 100% 는 _tie_before 순서"""
         best, bt = None, None
         for x in living:
-            sp = x.spd()
+            sp = x.spd() if speeds is None else speeds[x]
             need = 0.0 if x.gauge >= 10000 else ((10000 - x.gauge) / sp if sp > 0 else math.inf)
             if bt is None or need < bt - 1e-9:
                 best, bt = x, need
-            elif abs(need - bt) <= 1e-9 and self._tie_before(x, best):
+            elif abs(need - bt) <= 1e-9 and self._tie_before(x, best, speeds):
                 best = x
         return best, bt
 
-    def _turn_key(self, x):
+    def _turn_key(self, x, speed=None):
         """행동 정렬 키(NKM:12332-12364 CompareTo): 추가 턴 먼저, 게이지 높은 순, 속도 높은 순,
         PC 26752678: 확정 다음 턴·부여 순번은 추가 턴과 게이지 사이에 비교함."""
         pr = x._turn_prio
         if pr is None:
             pr = x._turn_prio = self._roll_prio()
         caught = [e.seq for e in x.eff.values() if e.next_turn_catch and e.stacks > 0]
-        return _gauge.turn_key(x.extra_turn, x.gauge, x.spd(), pr,
+        return _gauge.turn_key(x.extra_turn, x.gauge, x.spd() if speed is None else speed, pr,
                                min(caught) if caught else None)
 
     def _roll_prio(self):
@@ -1333,14 +1336,15 @@ class Battle:
             self._prio_rng = random.Random(hash(st[:8]) ^ 0x5EED1962)
         return self._prio_rng.randrange(10000)
 
-    def _tie_before(self, x, y):
+    def _tie_before(self, x, y, speeds=None):
         """동시 100%: 추가 턴 > 게이지 높은 순 > 속도 높은 순 > 고정 순서(아군 먼저, 칸 순)"""
         if x.extra_turn != y.extra_turn:
             return x.extra_turn
         if abs(x.gauge - y.gauge) > 1e-9:
             return x.gauge > y.gauge
-        if abs(x.spd() - y.spd()) > 1e-9:
-            return x.spd() > y.spd()
+        sx, sy = (x.spd(), y.spd()) if speeds is None else (speeds[x], speeds[y])
+        if abs(sx - sy) > 1e-9:
+            return sx > sy
         return (x.side, x.pos) < (y.side, y.pos)
 
     # ---------- 행동
