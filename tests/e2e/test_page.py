@@ -1547,17 +1547,23 @@ def test_guild_defense(browser, ctx):
 
 
 def test_guild_season_rollover(browser, ctx):
-    """시즌 종료 시각(11/05 04:00)을 넘기면 열어 둔 화면도 «갱신 대기»로 바뀜(가짜 시계로 03:59:50 에 열고 20초 진행)"""
+    """시즌 종료 시각(12/03 04:00)을 넘기면 daily의 시즌 안내도 갱신됨(03:59:50에서 20초 진행)."""
     ctx.errors.clear()
-    page = open_page(browser, ctx, setup=lambda pg: pg.clock.install(time=_dt.datetime(2026, 12, 3, 3, 59, 50, tzinfo=_dt.timezone(_dt.timedelta(hours=9)))))
+    page = open_page(browser, ctx, season_bypass=False, setup=lambda pg: pg.clock.install(time=_dt.datetime(2026, 12, 3, 3, 59, 50, tzinfo=_dt.timezone(_dt.timedelta(hours=9)))))
     names = page.eval_on_selector("#content", "s => [...s.options].map(o => o.textContent)")
     page.select_option("#content", label=next(n for n in names if n.startswith("길드방어전")))
     settle(page)
-    page.wait_for_selector("#guild-panel .gd-head", timeout=30000)
-    before = page.locator("#guild-panel [data-k=gd-stale]").count()
+    page.wait_for_selector('#guild-search [data-gs="start"]', timeout=30000)
+    assert page.locator('#guild-panel').is_hidden()
+    before = page.locator('#season-note').is_visible()
+    assert page.locator('#season-chip').is_hidden()
+    assert page.locator('#guild-search [data-gs="start"]').is_enabled()
     page.clock.fast_forward(20000)
-    page.wait_for_selector("#guild-panel [data-k=gd-stale]", timeout=10000)
-    after = page.locator("#guild-panel [data-k=gd-stale]").count()
+    page.wait_for_function("document.querySelector('#season-note').textContent.includes('시즌 종료')", timeout=10000)
+    after = page.locator('#season-note').is_visible()
+    assert page.locator('#season-chip').inner_text() == '미오픈'
+    assert '새 시즌 자료 반영 전' in page.locator('#season-note').inner_text()
+    assert page.locator('#guild-search [data-gs="start"]').is_disabled()
     errs = list(ctx.errors)
     page.close()
     return before == 0 and after == 1 and not errs, "전 %d / 후 %d / 오류 %s" % (before, after, errs[:2])
