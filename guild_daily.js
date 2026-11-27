@@ -134,7 +134,8 @@
     if(session.closed)throw Error('찾기 세션이 끝났음. 다시 찾기 필요');
     session.resume(); // runPhase closes its pool on cancellation; keep completed cached jobs.
     if(session.signature!==inputSig){session.caches.clear();session.signature=inputSig;}
-    const shared={pool:session.pool,caches:session.caches,stages:[],eta:null};
+    const shared={pool:session.pool,caches:session.caches,stages:[],eta:null,
+      battles:cx.growthResults?new Map():null};
     try{
       const result=await searchOne(cx,pl,deadline,shared,0);
       if(cx.growthResults&&!result.followPartial&&(!cx.previous||cx.previous.growth?.teams.length)){
@@ -219,21 +220,44 @@
       }
       if(!pending.length)return;
       for(const [n,batch] of groups){
-        check();const record={stage,name:label,jobs:batch.length,done:0,runs:n,seed:D.seed,complete:false};hist.push(record);
-        const progressStage=announce(stage,label,batch.length,n);
+        check();
+        // jobKey omits stats. Share only an identical worker request, including
+        // the exact seed interval and merge input; never substitute a longer run.
+        const battleKeys=shared.battles?new Map(batch.map(j=>[j.key,JSON.stringify([
+          cx.base,cx.stage,D.seed,n,j.party,j.options])])):null;
         const old=new Map(batch.map(j=>[j.key,cache.get(j.key)]));
-        const h=GS.runPhase({makeWorker:cx.makeWorker,pool,jobs:batch,workers,runs:n,seed:D.seed,stage:cx.stage,base:cx.base,watch:cx.watch,
-          retainRaw:true,chunk:E.chunkSize(batch.length,workers),onProgress:d=>{record.done=d;progressStage.done=d;eta.update(d*n,now()/1000);cx.onProgress?.(d,batch.length,eta.estimate(now()/1000));}});
-        cx.onHandle?.(h);
-        const timer=setTimeout(()=>{timeCapped=true;h.cancel();},Math.max(1,deadline-now()));
-        function save(res){for(const j of batch){const r=res[j.key];if(!r)continue;
+        function saveOne(j,r){
           if(r.n!==runs||r.progs?.length!==runs||typeof r.raw!=='string'||!Number.isFinite(r.prog))throw Error('길드 판별 결과가 누락됨');
+          // Keep the worker's interval via before applying this pass's weighted rate.
+          if(battleKeys&&pass===0)shared.battles.set(battleKeys.get(j.key),{...r});
           const prev=old.get(j.key);
           // web.merge_summary carries scores/raw exactly; via describes only the
           // appended games, so preserve its weighted rate for coop filtering.
           if(prev){const via={};for(const k of new Set([...Object.keys(prev.via||{}),...Object.keys(r.via||{})]))via[k]=((prev.via[k]||0)*prev.n+(r.via[k]||0)*n)/runs;r.via=via;}
           cache.set(j.key,r);
-        }}
+        }
+        function save(res){for(const j of batch){const r=res[j.key];if(r)saveOne(j,r);}}
+        const reused=[],todo=batch.filter(j=>{
+          const hit=pass>0&&battleKeys&&shared.battles.get(battleKeys.get(j.key));
+          if(!hit)return true;reused.push([j,{...hit}]);return false;
+        });
+        const record={stage,name:label,jobs:batch.length,done:0,runs:n,seed:D.seed,complete:false};hist.push(record);
+        const progressStage=announce(stage,label,batch.length,n);
+        const progress=d=>{record.done=d;progressStage.done=d;eta.update(d*n,now()/1000);cx.onProgress?.(d,batch.length,eta.estimate(now()/1000));};
+        let reusedCount=0,reuseCanceled=false;
+        if(reused.length){
+          cx.onHandle?.({cancel(){reuseCanceled=true;}});
+          for(const [j,result] of reused){
+            saveOne(j,result);progress(++reusedCount);
+            if(reusedCount%256===0)await new Promise(resolve=>setTimeout(resolve,0));
+            check();if(reuseCanceled)throw cancel();
+          }
+        }
+        if(!todo.length){record.complete=true;continue;}
+        const h=GS.runPhase({makeWorker:cx.makeWorker,pool,jobs:todo,workers,runs:n,seed:D.seed,stage:cx.stage,base:cx.base,watch:cx.watch,
+          retainRaw:true,chunk:E.chunkSize(todo.length,workers),onProgress:d=>progress(d+reusedCount)});
+        cx.onHandle?.(h);
+        const timer=setTimeout(()=>{timeCapped=true;h.cancel();},Math.max(1,deadline-now()));
         try{save(await h.promise);record.complete=true;}catch(e){save(h.snapshot());throw e;}finally{clearTimeout(timer);}
         check();
       }
