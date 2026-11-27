@@ -2605,8 +2605,8 @@ def test_patch1126_direct(browser, ctx):
     assert page.evaluate('simOpt("guild").guild.level===D.guild.challenge.levels.length')
     support = page.evaluate('String(D.guild.supports[0].id)')
     open_fold(page, 'gd-effects')
-    page.select_option('#guild-extra [data-g="level"]', '3')
-    page.select_option('#guild-extra [data-g="support"]', support)
+    page.select_option('#direct-guild-controls [data-g="level"]', '3')
+    page.select_option('#direct-guild-controls [data-g="support"]', support)
     first = run()
     assert page.evaluate('DIRECT.rows.now.snapshot.options.guild.seasonId === D.guild.season.id')
     assert len(first['guild']['base_scores']) == 2
