@@ -62,17 +62,18 @@
   // 상위 점수 = 판별 점수 상위 TOP_Q 비율(올림) 판의 평균(여러 번 도전해 잘 나온 판), 상한 도달률 = 보스를 처치(진행도 1)한 판의 비율.
   // 정렬: 상위 점수 큰 순 -> 상한 도달률 큰 순 -> 평균 큰 순 -> 키. 평균 진행도를 점수식에 넣지 않고 판마다 계산한다.
   const TOP_Q = 0.2, CAP_EPS = 1e-9;
-  function rankStats(V, G, level, tiers, prog, progs, clear, guild) {
+  function rankStats(V, G, level, tiers, prog, progs, clear, guild, details=false) {
     const pct = V.extraPct(G, level, tiers);
     const has = Array.isArray(progs) && progs.length;
     const ps = has ? progs : [prog == null ? 0 : prog];
     if(G.season?.boss?.engine==='client'&&guild?.base_scores?.length!==ps.length)throw Error('길드 판별 점수 자료가 누락됨');
-    const sc = (guild?.base_scores?.length ? guild.base_scores.map(n=>Math.floor((n*(100+pct)+50)/100)) : ps.map(p => V.scoreFromProg(G, pct, p))).sort((a, b) => b - a);
+    const scores = guild?.base_scores?.length ? guild.base_scores.map(n=>Math.floor((n*(100+pct)+50)/100)) : ps.map(p => V.scoreFromProg(G, pct, p));
+    const sc = (details?scores.slice():scores).sort((a, b) => b - a);
     const m = Math.max(1, Math.ceil(sc.length * TOP_Q - CAP_EPS));
     const top = Math.round(sc.slice(0, m).reduce((a, b) => a + b, 0) / m);
     const mean = Math.round(sc.reduce((a, b) => a + b, 0) / sc.length);
     const cap = has ? ps.filter(p => p >= 1 - CAP_EPS).length / ps.length : (clear == null ? (prog >= 1 - CAP_EPS ? 1 : 0) : clear);
-    return {top, mean, cap};
+    return details?{top,mean,cap,scores,sorted:sc}:{top,mean,cap};
   }
   const byRank = SS.guildRank;
   const unsupportedFields = r => r.unsupported?.length ? {unsupported: r.unsupported} : {};

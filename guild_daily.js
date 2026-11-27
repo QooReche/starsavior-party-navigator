@@ -94,7 +94,11 @@
     const secondsPerGame=measured?cx.secondsPerGame:saved?Math.max(...saved):1/rate;
     const kinds=new Set([kind]);
     const nBrk=(cx.breaks||[]).length,supports=S.final.supports.filter(s=>s!=='none').length;
+    let estimateKey,estimateValue;
     function estimate(){
+      const key=JSON.stringify([poolLimit,placeScope,D.probe.teams,D.rerank.keep]);
+      if(key===estimateKey)return estimateValue;
+      estimateKey=key;
       const n=poolLimit,combos=Math.max(comboCount(S,trimPool(S,rows,n,maxTeams)),comboCount(S,trimPool(S,growthRows,n,maxTeams)));
       const teamCount=Math.min(Math.floor(n/4),maxTeams);
       const placeTeams=placeScope==='all'?teamCount:Math.min(teamCount,Math.max(1,kind==='ex'?1:0));
@@ -109,7 +113,7 @@
         placeTeams*(25*D.place.runs[0]+(D.place.keep+1)*(D.place.runs[2]-D.place.runs[0])+
           Math.max(D.probe.levels.length,D.probe.steps.length)*(supports+1)*D.place.recheckRuns+(nBrk+1)*D.final.runs)];
       const jobs=[0,combos*sweeps,combos*sweeps,probe*conditions*(supports+1),1,D.combine.top*teamCount,placeTeams];
-      return {combos,jobs,games,total:games.reduce((a,b)=>a+b,0)*passes};
+      return estimateValue={combos,jobs,games,total:games.reduce((a,b)=>a+b,0)*passes};
     }
     const over=()=>estimate().total*secondsPerGame>=D.timeCapMin*60;
     if(over()&&maxTeams>1){placeScope='ex';reductions.push('자리·리더 대상: 첫 팀과 EX 팀');}
@@ -201,10 +205,8 @@
         const r=raw?{...full,n,progs:raw.map(x=>x[3]),prog:raw.reduce((s,x)=>s+x[3],0)/n,clear:raw.filter(x=>x[0]==='clear').length/n,
           guild:full.guild?{base_scores:raw.map(x=>x[4])}:undefined}:full;
         const scoreG=j.kind==='ex'?G:{...G,defaultStep:j.step};
-        const st=GS.rankStats(V,scoreG,j.level,j.options.guild.sets,r.prog,r.progs,r.clear,r.guild);
-        const pct=V.extraPct(scoreG,j.level,j.options.guild.sets);
-        const scores=r.guild?.base_scores?.map(x=>Math.floor((x*(100+pct)+50)/100))||r.progs.map(x=>V.scoreFromProg(scoreG,pct,x));
-        const sorted=scores.slice().sort((a,b)=>b-a),q=Math.ceil(scores.length*.2-1e-9)/scores.length,cut=sorted[Math.ceil(scores.length*.2-1e-9)-1];
+        const st=GS.rankStats(V,scoreG,j.level,j.options.guild.sets,r.prog,r.progs,r.clear,r.guild,true);
+        const {scores,sorted}=st,q=Math.ceil(scores.length*.2-1e-9)/scores.length,cut=sorted[Math.ceil(scores.length*.2-1e-9)-1];
         return {...j,score:st.top,mean:st.mean,cap:st.cap,clear:r.clear,prog:r.prog,n:r.n,brk:j.options.break_skill?.name||null,brkLv:j.options.break_skill?.level||null,
           meanSE:standardError(scores),scoreSE:standardError(scores.map(x=>Math.max(0,x-cut)/q)),
           ...(r.unsupported?.length?{unsupported:r.unsupported}:{})};
@@ -243,7 +245,7 @@
         });
         const record={stage,name:label,jobs:batch.length,done:0,runs:n,seed:D.seed,complete:false};hist.push(record);
         const progressStage=announce(stage,label,batch.length,n);
-        const progress=d=>{record.done=d;progressStage.done=d;eta.update(d*n,now()/1000);cx.onProgress?.(d,batch.length,eta.estimate(now()/1000));};
+        const progress=d=>{record.done=d;progressStage.done=d;eta.update(d*n,now()/1000);cx.onProgress?.(d,batch.length,cx.progressEta===false?undefined:eta.estimate(now()/1000));};
         let reusedCount=0,reuseCanceled=false;
         if(reused.length){
           cx.onHandle?.({cancel(){reuseCanceled=true;}});

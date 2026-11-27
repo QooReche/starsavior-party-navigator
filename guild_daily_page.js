@@ -10,7 +10,9 @@ function guildDailyPreview(){
   const cx={...guildDailyOptions(),results:profile.results};
   // Budget the optional second pass too, before its detailed profile is loaded.
   if(growthEnabled())cx.growthResults=profile.results;
-  return GuildDaily.plan(cx);
+  const sig=JSON.stringify([guildDailySig(),cx.roster,profile.results,!!cx.growthResults]);
+  if(guildDailyPreview.cached?.sig===sig)return guildDailyPreview.cached.plan;
+  const plan=GuildDaily.plan(cx);guildDailyPreview.cached={sig,plan};return plan;
 }
 function guildDailySummary(st,gwen=''){
   const teams=st.teams||[],names=GuildDailyUI.teamNames(teams);
@@ -50,7 +52,7 @@ async function guildDailyStart(target=GSR,profileOverride=null,follow=false){
     }
     if(target.stopRequested){if(previous)Object.assign(target,previous,{id,following:false,handle:null});else{target.phase='idle';guildDailyRelease(target);}paint();return;}
     if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();
-    const out=await GuildPlanner.search({...cx,session,previous,results:profile.results,growthResults,cosmoSpeed:LS.get("cosmo.speed.v2"),
+    const out=await GuildPlanner.search({...cx,session,previous,results:profile.results,growthResults,progressEta:false,cosmoSpeed:LS.get("cosmo.speed.v2"),
       base:location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),stage:'guild',
       env:{cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory,mobile:csMobile()},makeWorker:()=>SearchExecutor.createWorker(),stale,partialRequested:()=>target.stopRequested,
       watch:{hidden:()=>document.hidden,limit:r=>simTeamLimit(r),loadMs:()=>SIMQ.LOAD_MS||180000},
