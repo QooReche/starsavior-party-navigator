@@ -208,3 +208,5 @@ body[data-guild-gwen-owner=guildSearch] #out .idle{display:block}
 
 /* Cropped large portraits retain their original shadow treatment; compact actors need ground contact. */
 @media(min-width:1200px){.gwen-lane-actor:has(.gwen-lane-image:is([data-gwen-expression^="st_"],[data-gwen-expression=confident],[data-gwen-expression=thoughtful],[data-gwen-expression=notes]))::before{content:none}}
+
+body[data-guild-daily="1"][data-party-mode=reco] :is(.stage-filter,.search-filter,#guild-panel,#guild-extra,#out,#reco-gwen-stage){display:none!important}body[data-guild-daily="1"][data-party-mode=direct] #guild-panel{display:none!important}

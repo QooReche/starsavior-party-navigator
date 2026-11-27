@@ -6,14 +6,18 @@ function check(code=source){
   const h=harness(),{c}=h;
   for(const id of ['content','mi-panel','start-screen','direct-panel','cosmo-direct-panel','out','growth-control-home','growth-control','direct-picker-dialog'])h.add(id);
   c.$=id=>h.doc.getElementById(id);c.$('content').value=0;c.$('mi-panel').hidden=true;
+  const input=h.add('inputs'),stage=h.add('stage-filter',input),count=h.add('dcount',input),controls=h.add('direct-guild-controls');
+  stage.className='stage-filter';stage.firstChild={textContent:'스테이지'};
+  count.before=el=>{el.remove();el.parentElement=input;input.children.splice(input.children.indexOf(count),0,el);};
+  controls.prepend=el=>{el.remove();el.parentElement=controls;controls.children.unshift(el);};
   const strip=h.add('mode-strip');strip.innerHTML=template.match(/<nav id="mode-strip"[^>]*>([\s\S]*?)<\/nav>/)[1];
-  Object.assign(c,{contents:[{key:'cosmo'},{key:'op'},{key:'cube'},{key:'guild'}],MI:{info:null},
+  Object.assign(c,{contents:[{key:'cosmo'},{key:'op'},{key:'cube'},{key:'guild'}],D:{guild:{search:{preset:'daily'}}},MI:{info:null},
     Ux:require('../ux_ui'),RECO:{},recoGwenVisibility(){},growthControlPlace(){},cdRefresh(){c.cosmoRefresh++},cosmoRefresh:0,
     guildDailySourcePaint(){c.dailyRefresh++},dailyRefresh:0,
     GwenStage:{activate:m=>c.activeStage=m,mount(){}},
     history:{state:{},replaceState(){c.navigations++},pushState(){c.navigations++}},
     location:{href:'http://test/?c=cosmo&pm=direct'},navigations:0});
-  h.load(code);
+  h.load(template.match(/^const guildDailyUi=.*$/m)[0]);h.load(code);
   h.load("DIRECT.draft={v:1,slots:[null,null,null,null]};DIRECT.mode='direct';DIRECT.slots={};directSync=()=>{};directResultsPaint=()=>{};directPaintInput=()=>'';directPaint=()=>{painted++};");
   c.painted=0;c.directRefresh();
   assert.equal(c.$('cosmo-direct-panel').hidden,false);assert.equal(c.$('direct-panel').hidden,true);assert.equal(c.activeStage,'cdirect');
@@ -23,6 +27,8 @@ function check(code=source){
   for(const index of [1,2,3,0,1]){
     c.$('content').value=index;c.directRefresh();
     assert.equal(c.$('cosmo-direct-panel').hidden,index!==0);assert.equal(c.$('direct-panel').hidden,index===0);
+    assert.equal(stage.parentElement,index===3?controls:input);
+    assert.equal(stage.firstChild.textContent,index===3?'단계':'스테이지');
   }
   assert(c.painted>0);assert(!template.includes('direct-construction'));
   c.$('content').value=0;c.directNavigate('reco');assert.equal(c.$('cosmo-direct-panel').hidden,true);

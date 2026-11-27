@@ -18,7 +18,7 @@ function dailyContext(){
   vm.createContext(c);vm.runInContext(read('guild_daily_page.js'),c);return c;
 }
 test('recommendation entry preserves daily Gwen owner and queues no work',()=>{
-  const calls=[],c={seasonBlocked:()=>false,contents:[{key:'guild'}],$:()=>({value:0,scrollIntoView(){}}),MI:{info:{}},REQ:false,
+  const calls=[],c={guildDailyUi:()=>false,DIRECT:{mode:'reco'},seasonBlocked:()=>false,contents:[{key:'guild'}],$:()=>({value:0,scrollIntoView(){}}),MI:{info:{}},REQ:false,
     SIMQ:{busy:null},GSR:{phase:'run'},CSR:{phase:'idle'},guildGwenClaim:x=>calls.push(x),recoClearTimer(){},setDrawer(){},run:()=>calls.push('work')};
   vm.runInNewContext(fn(page,'showReco','function run('),c);
   c.showReco();assert.deepEqual(calls,[]);assert.equal(c.REQ,false);

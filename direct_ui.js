@@ -78,6 +78,12 @@ function directVisibility(){
   if(cosmo&&$('direct-picker-dialog').open)$('direct-picker-dialog').close();
   $('mode-strip').hidden=info||DIRECT.mode==='home';$('out').hidden=info||DIRECT.mode!=='reco';
   document.body.dataset.partyMode=DIRECT.mode;
+  const stage=document.querySelector('.stage-filter'),controls=$('direct-guild-controls');
+  const daily=guildDailyUi(contents[$('content').value]);
+  controls.hidden=!daily||DIRECT.mode!=='direct';
+  if(daily&&DIRECT.mode==='direct')controls.prepend(stage);
+  else $('dcount').before(stage);
+  stage.firstChild.textContent=daily&&DIRECT.mode==='direct'?'단계':'스테이지';
   for(const b of $('mode-strip').querySelectorAll('[data-pn-mode]'))b.setAttribute('aria-pressed',String(b.dataset.pnMode===DIRECT.mode));
   if($('result-tabs'))$('result-tabs').hidden=info||DIRECT.mode!=='reco';
   const searchMode=cosmo?'cosmoSearch':contents[$('content').value]?.key==='guild'?'guildSearch':null;

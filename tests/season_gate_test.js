@@ -29,8 +29,8 @@ async function entryGuards(){
     // Only evaluate the function declaration; stop at the first following top-level declaration/listener.
     let fn=code.slice(code.indexOf(start),code.indexOf(end,code.indexOf(start)));
     if(start==='function runCore')fn=fn.slice(0,fn.indexOf('\nfunction ',1));
-    const name=start.split('function ')[1],ctx={D:{guild:{search:{preset}}},seasonBlocked:()=>true,contents:[{key:'guild'}],$:()=>({value:0})};
-    vm.createContext(ctx);vm.runInContext(fn,ctx);
+    const name=start.split('function ')[1],ctx={D:{guild:{search:{preset}}},DIRECT:{mode:'direct'},seasonBlocked:()=>true,contents:[{key:'guild'}],$:()=>({value:0})};
+    vm.createContext(ctx);vm.runInContext(page.match(/^const guildDailyUi=.*$/m)[0],ctx);vm.runInContext(fn,ctx);
     if(preset==='daily')vm.runInContext(daily,ctx);
     await ctx[name](...args);
     ctx.seasonBlocked=()=>false;

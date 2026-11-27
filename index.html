@@ -348,6 +348,7 @@ summary{padding:9px 4px}
    <div data-gwen-slot="direct-board"></div>
    <p class="mut direct-drag-help">끌어서 넣고 바꿈 · ☆로 리더 · ☐ 육성했다면 체크</p>
    <div id="direct-board" aria-label="편성판"></div>
+   <div id="direct-guild-controls" class="cg-controls" hidden></div>
    <div id="direct-selection" hidden></div><div id="direct-drop-remove" hidden>여기 놓으면 빼기</div>
    <label class="direct-break-label">브레이크 스킬 <select id="direct-break"><option>자동 선택</option></select></label>
    <div class="direct-board-footer"><b>편성 합계 <span id="direct-total">—</span></b><button type="button" class="sec" id="direct-arrange" data-direct-action="arrange">자리 자동 배치</button><button type="button" class="sec" data-direct-action="clear">비우기</button><button type="button" class="sec" id="direct-undo" data-direct-action="undo" disabled>되돌리기</button></div>
@@ -505,6 +506,8 @@ const GS={sel:null};
 function guildOptions(){const st=cur?.[$('stage').value];return GuildView.battleOptions(D.guild,GS.sel||LS.get(guildStoreKey()),parseInt(st?.name,10)||D.guild.defaultStep);}
 function renderGuild(){const c=contents[$("content").value],p=$("guild-panel"),s=cur&&cur[$("stage").value];
  const extra=$("guild-extra");
+ const controls=$("direct-guild-controls");
+ controls.querySelectorAll('label:not(.stage-filter)').forEach(el=>el.remove());
  if(!c||!c.seasonal||!s||!window.GuildView||!D.guild){p.hidden=true;p.innerHTML="";extra.hidden=true;extra.innerHTML="";renderGuildSearch(false);return}
  if(!GS.sel)GS.sel=LS.get(guildStoreKey());
  if(!GS.watch){GS.watch=1;gsWatch()}
@@ -512,12 +515,15 @@ function renderGuild(){const c=contents[$("content").value],p=$("guild-panel"),s
  p.hidden=false;p.innerHTML=GuildView.panelHtml(D.guild,GS.sel,parseInt(s.name,10),Date.now(),esc);
  extra.hidden=false;extra.replaceChildren(p.querySelector('[data-k="gd-details"]'));seasonRestoreFolds(extra,folds);
  const sel=GuildView.normSel(D.guild,GS.sel);
- extra.insertAdjacentHTML('afterbegin',`<label>시즌 지원<select data-g="support">${GuildView.supportChoices(D.guild).map(s=>`<option value="${esc(s.id)}"${s.id===sel.support?' selected':''}>${esc(s.name)}</option>`).join('')}</select></label>`);
+ const target=guildDailyUi(c)?controls:extra;
+ if(guildDailyUi(c)&&parseInt(s.name,10)===D.guild.defaultStep)controls.insertAdjacentHTML('beforeend',`<label><span>EX 레벨</span><select data-g="level">${Array.from({length:D.guild.challenge.levels.length+1},(_,i)=>`<option value="${i}"${i===sel.level?' selected':''}>${i}</option>`).join('')}</select></label>`);
+ target.insertAdjacentHTML(guildDailyUi(c)?'beforeend':'afterbegin',`<label><span>${guildDailyUi(c)?'알리시아 지원':'시즌 지원'}</span><select data-g="support">${GuildView.supportChoices(D.guild).map(s=>`<option value="${esc(s.id)}"${s.id===sel.support?' selected':''}>${esc(s.name)}</option>`).join('')}</select></label>`);
  const ex=D.guild.steps.find(x=>x.step===D.guild.defaultStep);renderGuildSearch(D.guild.search.preset==='daily'||!!ex&&parseInt(s.name,10)===ex.step)}
-$("guild-extra").addEventListener("change",e=>{const t=e.target.closest("select[data-g]");if(!t)return;
+function guildControlChange(e){const t=e.target.closest("select[data-g]");if(!t)return;
  const sel=GuildView.normSel(D.guild,GS.sel);if(t.dataset.g==="level")sel.level=+t.value;else if(t.dataset.g==='support')sel.support=t.value;else sel.tiers[+t.dataset.i]=+t.value;
- GS.sel=sel;LS.set(guildStoreKey(),sel);growthCancel();simInvalidate();renderGuild();growthPaint();directRefresh()});
-$("guild-extra").addEventListener("click",e=>{if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove(guildStoreKey());growthCancel();simInvalidate();renderGuild();growthPaint();directRefresh()});
+ GS.sel=sel;LS.set(guildStoreKey(),sel);growthCancel();simInvalidate();renderGuild();growthPaint();directRefresh()}
+function guildControlClick(e){if(!e.target.closest('button[data-g="best"]'))return;GS.sel=null;LS.remove(guildStoreKey());growthCancel();simInvalidate();renderGuild();growthPaint();directRefresh()}
+for(const id of ['guild-extra','direct-guild-controls']){$(id).addEventListener('change',guildControlChange);$(id).addEventListener('click',guildControlClick)}
 // Keep an explicitly opened settings fold open through input/progress repaint.
 function seasonFoldState(p){return [...p.querySelectorAll('details[data-fold]')].map(d=>[d.dataset.fold,d.open]);}
 function seasonRestoreFolds(p,state){for(const [key,open] of state){const d=p.querySelector(`details[data-fold="${key}"]`);if(d)d.open=open;}}
@@ -666,7 +672,9 @@ $("cosmo-search").addEventListener("click",e=>{const b=e.target.closest("button[
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.title||c.name)}</option>`).join("");
 const SEARCH_MIN=20;   // 스테이지가 이보다 적으면 검색창을 숨긴다(길드 방어전 등 — 목록이 짧아 검색이 필요 없음)
 const raidUi=c=>!!c.raid&&!window.__legacyRaid;   // 시즌제 화면(코스모): 섹터·스테이지 선택과 보스별 추천을 숨김. 시험만 __legacyRaid 로 옛 화면을 씀
+const guildDailyUi=c=>c?.key==='guild'&&D.guild?.search?.preset==='daily';
 function refreshTabs(){const c=contents[$("content").value];$("goalbox").hidden=!STAR_TURNS[c.key];
+ document.body.dataset.guildDaily=guildDailyUi(c)?'1':'';
  $("filters").hidden=raidUi(c);document.querySelector(".stage-filter").hidden=raidUi(c);document.querySelector(".search-filter").hidden=raidUi(c)||c.stages.length<=SEARCH_MIN;if($("q").hidden||document.querySelector(".search-filter").hidden)$("q").value="";
  refreshStages()}
 function refreshStages(){
@@ -1470,7 +1478,7 @@ function recoPlanPaint(){const el=document.querySelector('#reco-gwen-stage [data
 setInterval(()=>{guildDailyDateTick();recoPlanPaint();if(GSR.phase==='run')GuildSearch.progressPaint($('guild-search'),GSR);if(SIMQ.busy==null)return;const t=simEtaText();document.querySelectorAll('[data-k="eta"]').forEach(x=>{if(x.textContent!==t)x.textContent=t})},1000);
 // 추천은 버튼으로 시작한다. 시험용 URL과 공유 링크만 자동으로 시작한다.
 const AUTO=!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'&&/[?&]auto=1(&|$)/.test(location.search);let REQ=false;
-const RECO={timer:null,revision:0,standard:false,sharedPending:!!SHARE.c&&!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'};
+const RECO={timer:null,revision:0,standard:false,sharedPending:!!SHARE.c&&!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'&&!guildDailyUi(contents.find(c=>c.key===SHARE.c))};
 function recoClearTimer(){clearTimeout(RECO.timer);RECO.timer=null;RECO.revision++}
 function idleView(){
  recoGwenShow(false);
@@ -1479,7 +1487,7 @@ function idleView(){
  if(now&&now.dataset.k==="idle"&&now.dataset.kind===kind){growthControlPlace();return}
  out.innerHTML=`<div class="party idle" data-k="idle" data-kind="${kind}">${waiting?Ux.gwenWork("inspect"):Ux.gwenIdle()}<div id="reco-actions">${waiting?'<span role="status">계산 준비 중</span>'+(RECO.sharedPending?'<button type="button" class="sec" data-recocancel>중단</button>':''):'<button type="button" data-go="1" title="현재 조건과 내 정보로 추천함">추천 편성 보기</button>'}</div></div>`;growthControlPlace()}
 function condChanged(){
- const canRun=!!MI.info||RECO.standard,requested=canRun&&DIRECT.mode==='reco'&&(AUTO||RECO.sharedPending);
+ const canRun=!!MI.info||RECO.standard,requested=canRun&&DIRECT.mode==='reco'&&!guildDailyUi(contents[$('content').value])&&(AUTO||RECO.sharedPending);
  recoClearTimer();clearTimeout(_rt);REQ=false;SIMQ.kick=false;
  simInvalidate(); // cancel old selection immediately
  for(const k in LASTQ)delete LASTQ[k];
@@ -1495,8 +1503,8 @@ function miEmpty(){return `<div class="mi-empty" data-k="mi-empty">${Ux.gwenWork
 function miGuide(){return `<div class="party guide case-request" data-k="miguide" data-state="needs-info"><img class="case-clip" src="assets/ui_icons/office_clip.svg" width="18" height="30" alt="" aria-hidden="true"><p class="case-tag">사건 의뢰서 · 접수 대기</p><h3>내 구원자로 깰 파티 찾기</h3>
  <p class="mut">계정 정보를 맡기면 그웬이 내 구원자에 맞춰 조사해 추천함. 정보 없이도 표준 육성으로 살펴볼 수 있음.</p><ol class="guide-steps"><li><b>게임 끄기</b><small>켜져 있다면 완전히 종료</small></li><li><b>PowerShell 열기</b><small>Windows+R → powershell</small></li><li><b>명령 붙여넣기</b><small>명령 복사 → 붙여넣고 Enter</small></li><li><b>관리자 확인</b><small>확인 창에서 [예]</small></li><li><b>게임 실행</b><small>로비 진입 후 관리자 PowerShell 창에 Enter</small></li><li><b>자동 반영</b><small>이 화면에 바로 표시</small></li></ol>
  <div class="acts"><button type="button" data-miopen="1">계정 정보 불러오기</button></div><p class="account-safe">캡처 파일은 계정 정보가 들어 있으므로 다른 사람에게 공유 금지</p><div class="gwen-guide-footer"><div><p class="mut">내 정보는 이 브라우저에만 저장됨</p><button type="button" class="sec" data-go="1">표준 육성으로 추천 보기</button></div>${Ux.gwenSay("welcome","right")}${Ux.gwenImage("welcome","gwen-guide-art")}</div></div>`}
-function showReco(){if(seasonBlocked(contents[$('content').value]?.key)||GSR.phase==='run'||CSR.phase==='run'||SIMQ.busy!=null)return;guildGwenClaim('reco');recoClearTimer();if(!MI.info){RECO.standard=true;$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
-function run(skipAuto=false){directRefresh();seasonPaint();growthControlPlace(true);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
+function showReco(){if(guildDailyUi(contents[$('content').value])&&DIRECT.mode==='reco')return;if(seasonBlocked(contents[$('content').value]?.key)||GSR.phase==='run'||CSR.phase==='run'||SIMQ.busy!=null)return;guildGwenClaim('reco');recoClearTimer();if(!MI.info){RECO.standard=true;$("grow").value="1";if(!document.querySelector("#own input:checked"))document.querySelectorAll("#own input").forEach(x=>x.checked=!EXCL.has(x.dataset.k));updCount()}REQ=true;SIMQ.kick=true;SIMQ.err="";setDrawer(false);run();$("out").scrollIntoView({block:"start"})}
+function run(skipAuto=false){directRefresh();seasonPaint();growthControlPlace(true);$("control-home").append(SCORE_CONTROLS,GRAPH_WRAP);renderChip();if(guildDailyUi(contents[$("content").value])&&DIRECT.mode==='reco'){renderMi();$("out").innerHTML="";return}if(raidUi(contents[$("content").value])){renderMi();$("out").innerHTML="";growthPaint();return}if(seasonBlocked(contents[$('content').value]?.key)){renderMi();idleView();seasonApplyPanel($('out'),contents[$('content').value].key);return}if(!MI.info&&!REQ){renderMi();$("out").innerHTML=miGuide();return}
  if(MI.error&&!MI.growth){renderMi();$("out").innerHTML=`<div class="party guide" data-k="mierror">${Ux.gwenError("other")}<h3>내 정보 계산 자료를 불러오지 못했음</h3><p class="mut">${esc(MI.error)} · 평균 육성으로 대신 계산하지 않음. 네트워크를 확인한 뒤 다시 시도 필요.</p><div class="acts"><button type="button" data-miretry="1">다시 시도</button></div></div>`;return}if(!REQ){renderMi();idleView();return}const t0=Date.now();runCore(skipAuto);directResultsPaint();if(!MI.pending)RECO.sharedPending=false;simRunAdd(Date.now()-t0)}
 function recoCandidates(c,st,own,used,defPen,qi,profile=null,scoreEnv=null){
  const restrict=(CFG.restrict[c.name]||{})[st.tab];
@@ -1670,7 +1678,7 @@ async function miApply(info,opt={}){
  const {unknown}=MyInfoImport.mapOwned(info,R);
  MI.saved=false;MI.invalid=false;MI.shared=!!opt.shared;miReset(info);syncOwn();
  MI.saved=opt.shared?false:LS.set("myinfo",info);if(!opt.shared)saveSel();updCount();renderMi();sharedBar();
- if(opt.shared&&SHARE.c&&!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home')RECO.sharedPending=true;rerun();
+ if(opt.shared&&SHARE.c&&!SHARE.dp&&SHARE.pm!=='direct'&&SHARE.pm!=='home'&&!guildDailyUi(contents[$('content').value]))RECO.sharedPending=true;rerun();
  miStatus(miSummary(info,unknown.length)+(MI.saved?"":" · 저장 안 됨"),!MI.saved);return true}
 $("mi-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
  try{await miApply(JSON.parse(await f.text()))}catch(err){miStatus("바탕화면 내정보.json을 선택해야 함.",true)}});
@@ -1771,7 +1779,7 @@ function applyShare(){
 
  else if(gv&&gv!=="myinfo"&&[...$("grow").options].some(o=>o.value===gv))$("grow").value=gv;
  if(!SHARE.g)LS.set("grow.v2",$("grow").value)}
-{const gv=LS.get("goal");if(gv==="0"||gv==="60"){$("goal").value=gv;if(gv==="0")$("optbox").open=true}}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}growthInit();updCount();refreshTabs();applyShare();directInit();miLoad();condChanged();window._ready=true;if(LS.get("why"))drawGraph();
+{const gv=LS.get("goal");if(gv==="0"||gv==="60"){$("goal").value=gv;if(gv==="0")$("optbox").open=true}}{const rv=LS.get("rk");if(rv&&[...$("rk").options].some(o=>o.value===rv)){$("rk").value=rv;if(rv!=="0")$("optbox").open=true}}{const mm=LS.get("mm");if(mm){MM=mm;$("mmode").value=mm;$("optbox").open=true}}growthInit();updCount();refreshTabs();applyShare();if(guildDailyUi(contents[$('content').value]))RECO.sharedPending=false;directInit();miLoad();condChanged();window._ready=true;if(LS.get("why"))drawGraph();
 seasonRefresh();setInterval(seasonRefresh,1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)seasonRefresh()});
 </script></body></html>

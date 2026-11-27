@@ -47,13 +47,38 @@ def layout(p,width):
         boxes=p.locator('#guild-search .rowcards.gs-compact').first.locator('.gc').evaluate_all('(xs)=>xs.map(x=>x.getBoundingClientRect().y)')
         assert len(boxes)==4 and max(boxes)-min(boxes)<2,boxes
 
+def share_flow(browser,base):
+    from urllib.parse import urlencode
+    p=ready(browser,base,1280,info=FULL,query='?pm=reco&season=force')
+    p.select_option('#content',p.evaluate('String(contents.findIndex(c=>c.key==="guild"))'))
+    args=p.evaluate("""() => {const s=contents[$('content').value].stages.find(s=>parseInt(s.name,10)===7);return {c:'guild',gs:String(D.guild.season.id),s:s.tab+'|'+s.name,go:JSON.stringify({level:2,tiers:[],support:GuildView.supportChoices(D.guild)[1].id}),auto:'1',pm:'reco',season:'force'};}""")
+    p.close()
+    p=ready(browser,base,1280,info=FULL,query='?'+urlencode(args))
+    try:
+        assert p.evaluate('RECO.timer===null && REQ===false && !RECO.sharedPending && $("out").innerHTML===""')
+        expected=p.evaluate('guildOptions()')
+        assert expected['step']==7 and expected['level']==2
+        assert expected['support']==__import__('json').loads(args['go'])['support']
+        p.evaluate("directNavigate('direct')")
+        assert p.locator('#direct-guild-controls #stage').is_visible()
+        assert p.locator('#direct-guild-controls [data-g=level]').input_value()=='2'
+        p.evaluate("directNavigate('home')")
+        assert p.evaluate('document.querySelector(".stage-filter").parentElement===$("dcount").parentElement')
+        p.evaluate("directNavigate('direct')")
+        p.go_back();p.wait_for_function('DIRECT.mode==="home"')
+        assert p.evaluate('document.querySelector(".stage-filter").parentElement===$("dcount").parentElement')
+        assert not p.errors,p.errors
+    finally:p.close()
+
 def flow(browser,base,width,partial=False):
     p=ready(browser,base,width,info=FULL,query='?pm=reco&season=force')
     try:
         p.select_option('#content',p.evaluate('String(contents.findIndex(c=>c.key==="guild"))'))
         p.evaluate(SETUP)
         # Any selected stage must show daily, without exposing sets/sim tables.
-        p.select_option('#stage','0')
+        p.evaluate('$("stage").value="0";showInfo()')
+        assert p.locator('.stage-filter').is_hidden()
+        assert p.locator('#guild-extra').is_hidden()
         assert p.locator('#guild-search').is_visible()
         assert p.locator('#guild-extra [data-g=set]').count()==0
         assert p.locator('#guild-panel [data-k=gd-sim]').count()==0
@@ -93,6 +118,8 @@ def flow(browser,base,width,partial=False):
         p.wait_for_function('DIRECT.mode==="direct" && !!DIRECT.values')
         assert p.evaluate('JSON.stringify(DIRECT.draft.slots.map(s=>s.key))===JSON.stringify(GSR.teams[1].order)')
         assert p.evaluate('DIRECT.draft.leader===GSR.teams[1].leaderKey')
+        assert p.locator('#direct-guild-controls #stage').is_visible()
+        assert p.locator('#direct-guild-controls [data-g=support]').is_visible()
         assert p.evaluate('guildOptions().step===GSR.teams[1].step && guildOptions().support===GSR.teams[1].sup')
         assert p.evaluate('guildOptions().level===GSR.teams[1].level')
         assert p.evaluate('DIRECT.draft.brk===null || DIRECT.draft.brk.name===GSR.teams[1].brk')
@@ -143,6 +170,7 @@ if __name__=='__main__':
     with test_server() as base,sync_playwright() as pw:
         browser=pw.chromium.launch()
         try:
+            share_flow(browser,base);print('PASS daily share/auto/navigation',flush=True)
             for width,partial in [(1280,False),(390,True)]:
                 flow(browser,base,width,partial);print('PASS daily flow',width,'partial',partial,flush=True)
         finally:browser.close()

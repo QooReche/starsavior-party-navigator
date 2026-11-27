@@ -4,11 +4,12 @@ const html=fs.readFileSync(require.resolve('../party_template.html'),'utf8');
 const section=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a)));
 function boot(saved,info=null){
   const option={disabled:true},grow={value:'1',options:['myinfo','1','0.8','1.25','manual'].map(value=>({value})),querySelector:()=>option};
-  const els={grow,mypow:{value:''},rk:{value:'0',options:[]},mmode:{value:''},optbox:{},go:{}};
-  const ctx=vm.createContext({$:id=>els[id],MI:{info},PW:saved.pw||{},SHARE:{},applyShare(){},
+  const els={grow,mypow:{value:''},rk:{value:'0',options:[]},mmode:{value:''},optbox:{},go:{},content:{value:0}};
+  const ctx=vm.createContext({$:id=>els[id],contents:[{key:'op'}],D:{},MI:{info},PW:saved.pw||{},SHARE:{},applyShare(){},
     LS:{get:k=>saved[k]??null,set:(k,v)=>{saved[k]=v}},miLoad(){},renderMi(){},growthInit(){},updCount(){},run(){},refreshTabs(){},drawGraph(){},
     seasonRefresh(){},condChanged(){},directInit(){},setInterval(){},document:{addEventListener(){}},
     AUTO:false,SIMQ:{},REQ:false,RECO:{standard:false},window:{Quick:true},QK:{d:{st:{op:{'tab|stage':{bp:80000}}},params:{}}},rkOf:()=>0});
+  vm.runInContext(section('const guildDailyUi=','function refreshTabs'),ctx);
   vm.runInContext(section('function miSelect(','let cur='),ctx);
   vm.runInContext(section('{const gv=LS.get(', '</script>'),ctx);
   vm.runInContext(section('function quickIn(', 'const qBase='),ctx);
@@ -23,10 +24,11 @@ const tests={
   legacy_reco_auto_ignored(){
     for(const saved of [undefined,false,true]){
       let invalidated=0,rendered=0;
-      const ctx=vm.createContext({location:{search:''},SHARE:{},MI:{info:{}},SIMQ:{kick:true},LASTQ:{old:{}},_rt:null,DIRECT:{mode:'reco'},
+      const ctx=vm.createContext({location:{search:''},SHARE:{},MI:{info:{}},SIMQ:{kick:true},LASTQ:{old:{}},_rt:null,DIRECT:{mode:'reco'},D:{},contents:[{key:'op'}],$:()=>({value:0}),
         LS:{get:k=>{assert.notEqual(k,'reco.auto','must not read the retired preference');return saved}},
         clearTimeout(){},setTimeout(){assert.fail('normal selection must not schedule recommendation')},
         simInvalidate(){invalidated++},run(skip){assert.equal(skip,true);rendered++}});
+      vm.runInContext(section('const guildDailyUi=','function refreshTabs'),ctx);
       vm.runInContext(section('const AUTO=', 'function miGuide('),ctx);
       vm.runInContext('REQ=true;condChanged()',ctx);
       assert.equal(vm.runInContext('!REQ&&RECO.timer===null&&RECO.revision===1&&!SIMQ.kick&&Object.keys(LASTQ).length===0',ctx),true);
