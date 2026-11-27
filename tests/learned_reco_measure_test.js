@@ -14,7 +14,7 @@ async function check(M){
  assert.equal(r.winner.keys[0],'fixed');assert.equal(r.result.prog,.2);
  assert.equal(r.diagnostics[0].result.prog,.9);assert.deepEqual(seen,['fixed','diagnostic']);
 }
-async function integration(M){
+async function integration(M,union=false){
  const vm=require('node:vm'),html=fs.readFileSync(path.resolve(__dirname,'../party_template.html'),'utf8'),rt=fs.readFileSync(path.resolve(__dirname,'../recommend_runtime.js'),'utf8');
  const ctx=vm.createContext({UiShared:require('../ui_shared.js')});
  const cut=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i);return s.slice(i,j);};
@@ -37,6 +37,25 @@ async function integration(M){
  async function ev(jobs){trace.push(structuredClone(jobs));return jobs.map(j=>{const n=j.runs+(j.options.run_offset||0),clear=n>1?1:0,prog=clear?1:.5;
    return {n,clear,prog,ttk:20,via:{},progs:Array(n).fill(prog),raw:JSON.stringify(Array.from({length:n},()=>[clear?'clear':'wipe',20,20,prog]))};});}
  const f=await M.run(input,D,S,'F',7,ev),ft=trace.splice(0);
+ if(union){
+   for(const key of ['g','h','i','j','k','l']){input.cands.push({s:{key,cls:'서포터',el:'sun'},score:0});input.unitQuick[key]=[0,100,100,100,100,100];}
+   for(const method of ['U120','U360']){
+     trace.length=0;
+     const u=await M.run(input,D,S,method,7,ev),full=u.phases.find(p=>p.label==='full'),outside=u.phases.find(p=>p.label==='outside');
+     assert.equal(u.fullN,f.fullN);assert.equal(u.fallback,false);
+     assert.deepEqual(u.screen,f.screen,'Tied outside candidates must not displace F');
+     assert.deepEqual(u.winner,f.winner);
+     assert.equal(full.runs,ft[0].length);assert.deepEqual(trace.find(j=>j.length===ft[0].length),ft[0]);
+     assert.equal(outside.runs,Number(method.slice(1)));
+     assert.equal(u.searchGames,f.searchGames+u.learned.sampled+outside.runs);
+     assert(u.learned.outside.every(k=>k.split(',').some(x=>!input.pool.includes(x))));
+     // Actual one-run results, not predictions, must be able to win promotion.
+     const strong=async jobs=>(await ev(jobs)).map((r,i)=>jobs[i].runs===1&&jobs[i].party.units.some(x=>!input.pool.includes(x.key))?{...r,prog:.9}:r);
+     const win=await M.run(input,D,S,method,7,strong,()=>{},{selectionOnly:true});
+     assert(win.learned.promotedOutside.length>0);assert.equal(win.sc.pool.length,f.fullN);
+   }
+   return;
+ }
  const c=await M.run(input,D,S,'C',7,ev);
  assert(c.fallback);assert.deepEqual(c.screen,f.screen);assert.deepEqual(c.winner,f.winner);
  assert.deepEqual(trace.slice(-ft.length),ft,'Fallback must restore every F request including seed/order/offset/options');
@@ -47,6 +66,15 @@ async function integration(M){
 (async()=>{
  await check(load(source));
  await integration(load(source));
+ await integration(load(source),true);
+ for(const [before,after] of [
+   ['sc.full.push(k);sc.res0[k]={...extra[i],n:1}', 'sc.full.push(k);sc.res0[k]={...extra[i],prog:2,n:1}'],
+   ['sc.pool=r.scrFullRank(sc).slice(0,sc.fullN)', 'sc.pool=r.scrFullRank(sc).slice(0,sc.fullN+1)'],
+   ["if(keys.some(k=>!pool.has(k)))top.put", "if(true)top.put"]]){
+   assert(source.includes(before));let failed=false;
+   try{await integration(load(source.replace(before,after)),true);}catch(e){if(e instanceof assert.AssertionError)failed=true;else throw e;}
+   assert(failed,'Union mutation survived: '+before);
+ }
  for(const [before,after] of [
    ['rho<c.minCorrelation','rho>c.minCorrelation'],
    ['rate>c.missThreshold','rate<c.missThreshold'],
@@ -58,5 +86,5 @@ async function integration(M){
  let rejected=false;const needle='if(audit.fallback){sc=full();';assert(source.includes(needle));
  try{await integration(load(source.replace(needle,'if(audit.fallback){seed++;sc=full();')));}catch(e){if(e instanceof assert.AssertionError)rejected=true;else throw e;}
  assert(rejected,'Fallback seed mutation survived');
- console.log('OK fallback boundaries + exact F replay + winner lock; 4 mutations rejected');
+ console.log('OK fallback + F replay + winner lock + union budget/promotion/ties; 7 mutations rejected');
 })().catch(e=>{console.error(e);process.exitCode=1;});

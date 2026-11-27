@@ -74,13 +74,30 @@ async function run(input,D,settings,method,seed,evaluate,onPhase=()=>{},{selecti
  let sc=full(),audit=null,learned=null;
  if(!sc.full)return {excluded:'quick_not_all_hard',method,seed,id:input.id,private:input.private,stage:input.c.key+'/'+input.st.tab+'/'+input.st.name};
  const job=(keys,runs=1,options={},s=seed)=>{const t=r.team(keys);return {key:id(keys),party:r.simParty(t),runs,seed:s,screen:runs<=32&&!!options.rng_streams,options:{...input.options,break_skill:r.teamBreak(t),...options}};};
+ const outsideN=method==='U120'?120:method==='U360'?360:0;
+ if(!['F','A','C','U120','U360'].includes(method))throw Error('Unknown measurement method');
  if(method!=='F'){
    const S=structuredClone(settings);S.learned.K=sc.fullN;
-   const pool=new Set(input.pool),rows=input.cands.filter(x=>method==='C'||pool.has(x.s.key)).map(x=>({key:x.s.key,cls:x.s.cls,el:x.s.el}));
+   const pool=new Set(input.pool),rows=input.cands.filter(x=>method==='C'||outsideN||pool.has(x.s.key)).map(x=>({key:x.s.key,cls:x.s.cls,el:x.s.el}));
    const c=L.config(S,rows.length),observed=new Map(),lt=performance.now();
    async function observe(teams,label){const todo=teams.filter(k=>!observed.has(id(k))),res=await ev(todo.map(k=>job(k,1,{rng_streams:true,raw_runs:true})),label);todo.forEach((k,i)=>observed.set(id(k),{keys:k,result:res[i]}));}
    const sample=await L.sample(S,rows,seed);await observe(sample,'sample');
    const model=await L.train(encoder(rows,r),sample,sample.map(k=>observed.get(id(k)).result.prog),c);
+   if(outsideN){
+     // Same C sample/fit; only outside-pool predictions compete for this fixed extra budget.
+     const top=new L.Heap(outsideN);
+     await L.scan(S,rows,keys=>{if(keys.some(k=>!pool.has(k)))top.put({keys,id:L.id(keys),score:model.predict(keys)});},()=>false);
+     const outside=top.sorted();
+     // Charge all sample + N_out games separately, even when a selected team was sampled.
+     const extra=await ev(outside.map(x=>job(x.keys,1,{rng_streams:true,...r.scrLegOpt(null)})),'outside');
+     const baseKeys=sc.full.slice(),base=await ev(baseKeys.map(k=>job(k.split(','),1,{rng_streams:true,...r.scrLegOpt(null)})),'full');
+     baseKeys.forEach((k,i)=>sc.res0[k]={...base[i],n:1});
+     outside.forEach((x,i)=>{r.add(x.keys);const k=id(x.keys);sc.full.push(k);sc.res0[k]={...extra[i],n:1};});
+     // Original F tie positions precede extras; promotion count and comparator are unchanged.
+     sc.pool=r.scrFullRank(sc).slice(0,sc.fullN);sc.total=sc.pool.length;sc.fullDone=true;
+     learned={settings:c,roster:rows.length,sampled:sample.length,outsideN,selected:outside.length,rho:model.rho,
+       outside:outside.map(x=>id(x.keys)),promotedOutside:sc.pool.filter(k=>k.split(',').some(x=>!pool.has(x))),seconds:(performance.now()-lt)/1000};
+   }else{
    const sel=await L.select(S,rows,model);await observe([...sel.core.values()].map(x=>x.keys),'selected');
    const a=await L.auditSample(S,rows,sel,seed+100003);await observe(a.teams,'audit');
    audit=L.audit(c,model.rho,[...sel.core.values()].map(x=>observed.get(id(x.keys)).result.prog),a.teams.map(k=>observed.get(id(k)).result.prog),a.teams.length,a.excluded,sc.fullN);
@@ -92,6 +109,7 @@ async function run(input,D,settings,method,seed,evaluate,onPhase=()=>{},{selecti
      candidates.sort((a,b)=>r.scrCmp(a.result,b.result)||id(a.keys).localeCompare(id(b.keys)));
      const promoted=candidates.slice(0,sc.fullN);promoted.forEach(x=>r.add(x.keys));
      sc={...sc,full:promoted.map(x=>id(x.keys)),fullDone:true,pool:promoted.map(x=>id(x.keys)),res0:Object.fromEntries(promoted.map(x=>[id(x.keys),x.result]))};
+   }
    }
  }
  if(selectionOnly)return {sc,learned,fallback:!!audit?.fallback,additions:r.qt.slice(input.qt.length).map(t=>t.keys),phases,searchGames:games};

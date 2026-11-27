@@ -9,6 +9,8 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+WORKSPACE = Path(os.environ.get('STARSAVIOR_WORKSPACE', ROOT.parent.parent if ROOT.parent.name == '_worktrees' else ROOT.parent))
+PRIVATE = WORKSPACE / '_private' / 'role-private'
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'tools'))
 
@@ -54,7 +56,7 @@ def browser(a):
     from stage_reco_check import serve
     from bench_screen import MemPeak
     from playwright.sync_api import sync_playwright
-    os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', r'E:\AI_mk2\_env\pw-browsers')
+    os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', str(WORKSPACE / '_env' / 'pw-browsers'))
     rows = json.loads(Path(a.collect).read_text(encoding='utf-8'))
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -130,7 +132,7 @@ def browser(a):
 
 
 def check_output(row, out):
-    private = Path('E:/AI_mk2/_private/role-private/learned_reco').resolve()
+    private = (PRIVATE / 'learned_reco').resolve()
     if row.get('private') and not out.resolve().is_relative_to(private):
         raise ValueError('Account results must stay in the designated private directory')
 
@@ -149,7 +151,7 @@ def native(a):
                 if file.exists():
                     continue
                 memory_guard()
-                proc = subprocess.Popen(['node', str(ROOT / 'tools/learned_reco_measure_cli.js'), a.collect, a.out, a.python, method, seed, row['id']], cwd=ROOT)
+                proc = subprocess.Popen(['node', str(ROOT / 'tools/learned_reco_measure_cli.js'), a.collect, a.out, a.python, method, seed, row['id'], str(a.workers)], cwd=ROOT)
                 peak = 0
                 while proc.poll() is None:
                     try:
@@ -188,6 +190,14 @@ def compare(a):
             rows.append({k: r.get(k) for k in ('id', 'method', 'seed', 'excluded')})
             continue
         f = next(x for x in data if x['id'] == r['id'] and x['seed'] == r['seed'] and x['method'] == 'F')
+        if r['method'].startswith('U'):
+            n_out = int(r['method'][1:])
+            assert r['fullN'] == f['fullN'], 'Union promotion count differs from F'
+            assert r['learned']['selected'] == n_out, 'Union outside budget differs'
+            assert all(any(k not in pools[r['id']] for k in team.split(',')) for team in r['learned']['outside'])
+            phase_runs = {p['label']: p['runs'] for p in r['phases'] if p['label'] in ('sample', 'outside', 'full')}
+            assert phase_runs == dict(sample=r['learned']['sampled'], outside=n_out,
+                                      full=next(p['runs'] for p in f['phases'] if p['label'] == 'full')), 'Union first-pass cost differs'
         if r['fallback']:
             learning_games = sum(p['runs'] for p in r['phases'] if p['label'] in ('sample', 'selected', 'audit'))
             assert r['screen'] == f['screen'], 'Fallback screening differs from F'
@@ -234,6 +244,8 @@ def compare(a):
             assert json.loads(r['result']['raw']) == json.loads(br['result']['raw']), 'Native/browser raw result mismatch'
         near_zero = max(x[3] for x in raw + ref) < .01 or ci[0] is None
         verdict = 'excluded_near_zero' if near_zero else 'b' if ci[0] > 0 else 'a' if ci[0] > -1 and br and fb and br['seconds'] < fb['seconds'] else 'insufficient'
+        if r['method'].startswith('U') and not near_zero:
+            verdict = 'superior' if ci[0] > 0 else 'noninferior' if ci[0] > -1 else 'insufficient'
         if r['method'] == 'F' and not near_zero:
             verdict = 'reference'
         diagnostic = max([dict(team=r['winner'], result=r['result']), *r['diagnostics']],
@@ -244,16 +256,44 @@ def compare(a):
                    verdict=verdict, fallback=r['fallback'], games=r['searchGames'], evaluation_games=r['evaluationGames'], native_seconds=r['seconds'],
                    browser_seconds=br and br['seconds'], native_peakMB=r['peakMB'], browser_peakMB=br and br['peakMB'],
                    outside_pool=[k for k in r['winner']['keys'] if k not in pools[r['id']]],
+                   same_as_f=r['winner']['party'] == f['winner']['party'] and r['winner']['brk'] == f['winner']['brk'],
+                   games_ratio=r['searchGames']/f['searchGames'], native_ratio=r['seconds']/f['seconds'],
+                   browser_ratio=br['seconds']/fb['seconds'] if br and fb else None,
                    diagnostic_best=diagnostic['result'], diagnostic_keys=diagnostic['team']['keys'])
         rows.append(row)
     save_json(out / 'summary.json', rows)
+    union = {}
+    for method in ('U120', 'U360'):
+        selected = [r for r in rows if r['method'] == method]
+        if not selected:
+            continue
+        complete = {(r['id'], r['seed']) for r in selected} == {(r['id'], s) for r in collected for s in (1, 2, 3)}
+        quality = complete and all(r.get('verdict') in ('noninferior', 'superior') for r in selected) and any(r['verdict'] == 'superior' for r in selected)
+        union[method] = dict(complete=complete, native_quality_pass=quality,
+                             browser_eligible=quality,
+                             browser_max_ratio=max((r['browser_ratio'] for r in selected if r.get('browser_ratio') is not None), default=None))
+    save_json(out / 'union_verdict.json', union)
+    if union:
+        compact = ['# 합집합 U 측정', '',
+                   '주지표 차와 시간·판 수 비율은 같은 대상·탐색 시드의 새 F 대비임. 같은 1위는 구성원뿐 아니라 자리·리더·브레이크까지 같음을 뜻함. 독립 평가는 고정 1위 400판과 나머지 팀 진단을 포함함.', '',
+                   '| 대상 | 시드 | 방식 | F와 같은 1위 | 풀 밖 포함 | 주지표 차 [95%] | 탐색/독립 판 수 | 판 수 비 | 시간 비 N/B | 행 판정 |',
+                   '|---|---:|---|---|---|---:|---:|---:|---:|---|']
+        for r in sorted((r for r in rows if r['method'].startswith('U') and not r.get('excluded')), key=lambda r: (r['id'], r['seed'], r['method'])):
+            unit = '%' if r['metric'] == 'progress_relative_pct' else '%p'
+            diff = f"{r['delta']:+.2f} [{r['ci'][0]:+.2f}, {r['ci'][1]:+.2f}]{unit}" if r['ci'][0] is not None else '정의 불가'
+            bt = '미측정' if r['browser_ratio'] is None else f"{r['browser_ratio']:.3f}"
+            compact.append(f"| {r['stage']} | {r['seed']} | {r['method']} | {'예' if r['same_as_f'] else '아니오'} | {'예' if r['outside_pool'] else '아니오'} | {diff} | {r['games']}/{r['evaluation_games']} | {r['games_ratio']:.3f} | {r['native_ratio']:.3f}/{bt} | {r['verdict']} |")
+        compact += ['', '전체 품질 판정(세 곳 × 세 시드 모두 하한 > −1, 하나 이상 하한 > 0):']
+        for method, verdict in union.items():
+            compact.append(f"- {method}: {'미완료' if not verdict['complete'] else '통과' if verdict['native_quality_pass'] else '근거 부족'}. 브라우저 측정 대상: {'예' if verdict['browser_eligible'] else '아니오'}.")
+        (out / 'union_report.md').write_text('\n'.join(compact) + '\n', encoding='utf-8')
     labels = {s['s']['key']: s['s']['name'] for c in collected for s in c['cands']}
     labels['gille'] = '구원자 길레'
     lines = ['# 일반 추천 학습 선별 측정 결과', '',
              '시간은 탐색 전체(학습·복귀·예선·본선·자리 비교) 기준임. 판 수는 탐색/독립을 분리했으며 독립은 고정 1위 400판과 나머지 최대 4팀 진단을 합한 값임. 독립 평가는 탐색 시간에서 제외함. 메모리는 독립 평가를 포함한 실행의 최대 private commit임.', '',
              '| 대상 | 시드 | 방식 | 고정 1위 (엔진 순서 / 리더 / 브레이크) | 주지표 차 [95%] | 복귀 | 탐색/독립 판 수 | 네이티브/브라우저 초 | 최대 MB (N/B) | 판정 |',
              '|---|---:|---|---|---|---|---:|---:|---:|---|']
-    for r in sorted(rows, key=lambda r:(r['id'], r['seed'], 'FAC'.index(r['method']))):
+    for r in sorted(rows, key=lambda r:(r['id'], r['seed'], ['F','A','C','U120','U360'].index(r['method']))):
         if r.get('excluded'):
             lines.append(f"| {r['id']} | {r['seed']} | {r['method']} | — | — | — | — | — | — | 제외: {r['excluded']} |")
             continue
@@ -271,7 +311,7 @@ def compare(a):
               '아래 최댓값은 재선택·채택 판정에 사용하지 않았음. 각 방식이 실제로 본선에서 보여 준 팀만 포함함.', '',
               '| 대상 | 시드 | 방식 | 진단 최고 팀 | 클리어율 | 평균 진행도 |',
               '|---|---:|---|---|---:|---:|']
-    for r in sorted(rows, key=lambda r:(r['id'], r['seed'], 'FAC'.index(r['method']))):
+    for r in sorted(rows, key=lambda r:(r['id'], r['seed'], ['F','A','C','U120','U360'].index(r['method']))):
         if r.get('excluded'):
             continue
         d = r['diagnostic_best']
@@ -291,8 +331,9 @@ def main():
     ap.add_argument('--methods', default='F,A,C')
     ap.add_argument('--seeds', default='1,2,3')
     ap.add_argument('--ids', default='')
-    ap.add_argument('--python', default=sys.executable, help='전투 작업자 Python (Pyodide 대조에는 CPython 3.12 32-bit)')
-    ap.add_argument('--myinfo', default='E:/AI_mk2/_private/role-private/op4212/myinfo_1121.json')
+    ap.add_argument('--python', default=sys.executable, help='전투 작업자 Python (명시적 32비트 튜플 해시 사용)')
+    ap.add_argument('--workers', type=int, default=8)
+    ap.add_argument('--myinfo', default=str(PRIVATE / 'op4212' / 'myinfo_1121.json'))
     a = ap.parse_args()
     if a.cmd == 'worker':
         worker()

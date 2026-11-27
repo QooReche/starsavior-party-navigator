@@ -7,7 +7,7 @@ window.runLearnedRecoBrowser=async function(input,method,seed,onPhase){
  const augment=all=>{const seen=new Set(all.map(t=>uid(t.keys)));for(const [key,t] of additions)if(!seen.has(key))all.push(t);};
  // run(true) rebuilds candidates after completion. Keep the measured outside-pool teams visible
  // for this one measurement, otherwise the final page redraw would silently drop C's winner.
- if(method==='C')recoCandidates=(...args)=>{const result=originalCandidates(...args);
+ if(method==='C'||method.startsWith('U'))recoCandidates=(...args)=>{const result=originalCandidates(...args);
    if(args[0].key===input.c.key&&args[1].tab===input.st.tab&&args[1].name===input.st.name&&result.qt)augment(result.qt);
    return result;};
  SIMQ.seed=seed;SIMQ.n=100;
