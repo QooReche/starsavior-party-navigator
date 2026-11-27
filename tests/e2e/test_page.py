@@ -386,12 +386,13 @@ def test_sim_timeout_partial(browser, ctx):
     assert page.locator('[data-k="progress"]').count() == 0
     assert '75%' in page.locator('.party[data-party="1"] .mi-verdict').inner_text()
     assert page.locator('.party[data-party="1"] .alternatives .qrow .qt:has-text("계산 전")').count() == 2
-    assert page.evaluate('() => __workers.every(w=>w.stopped) && SIMQ.busy===null && SIMQ.pool===null')
+    # 멈춘(바쁜) 작업자만 끄고, 팀을 끝내고 놀던 작업자는 다음 계산이 다시 쓴다(HANDOFF 27②)
+    assert page.evaluate('() => __workers.slice(1).every(w=>w.stopped) && !__workers[0].stopped && SIMQ.busy===null && SIMQ.pool.length===1')
     page.click('.party[data-party="1"] [data-sim="1"]')
     assert page.evaluate("""() => SIMQ.lastReq.req.teams.length===2 && !SIMQ.lastReq.req.teams.some(t=>t.key===__firstKey)
       && __workers.length>__firstWorkers.length""")
     page.evaluate("""() => {
-      const old=__firstWorkers.find(w=>w.req&&w.req.teams[0].key!==__firstKey);__serve(old);   // 끊긴 요청의 작업자가 늦게 보낸 결과·done
+      const old=__firstWorkers.find(w=>w.stopped&&w.req&&w.req.teams[0].key!==__firstKey);if(!old)throw Error('끊긴 작업자 없음');__serve(old);   // 끊긴(꺼진) 요청의 작업자가 늦게 보낸 결과·done — 놀던 작업자는 재사용돼 현재 요청을 맡고 있음
       if(Object.keys(SIMQ.res).length!==1 || SIMQ.busy!==1)throw Error('늦은 결과가 현재 요청을 바꿈');
       __ready();for(let g=0;g<20&&__busy().length;g++)__serve(__busy()[0]);
     }""")
