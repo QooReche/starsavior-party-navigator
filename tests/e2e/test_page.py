@@ -1568,13 +1568,16 @@ def test_guild_search(browser, ctx):
     기대 점수 순위 표가 나오고, 옛 선택 효과는 요청에서 0이며 화면에 없음. 길방이 아닌 스테이지에서는 숨김. (시험 속도를 위해 탐색 크기만 줄여 돌린다)"""
     ctx.errors.clear()
     page = open_page(browser, ctx)
+    # 이 시험은 legacy 예선/본선 경로를 검사함. 콘텐츠를 열기 전에 프리셋을 정해
+    # 참고 접힘·단계 선택도 해당 경로로 그린다(daily에서는 직접 편성에만 있음).
+    page.evaluate("D.guild.search.preset='legacy'")
     names = page.eval_on_selector("#content", "s => [...s.options].map(o => o.textContent)")
     page.select_option("#content", label=next(n for n in names if n.startswith("길드방어전")))
     settle(page)
     shown = page.locator("#guild-search").is_visible()
     has_btn = page.locator('#guild-search button[data-gs="start"]').count()
     # 탐색 크기를 줄인다(풀 8명·상위 2팀·단계 4 하나·판수 2) — 로직은 그대로
-    page.evaluate("""() => {const S=D.guild.search;S.preset='legacy';S.poolSize=8;S.minRole={'서포터':1,'디펜더':1};S.minPowerRatio=0;S.screen2={keep:3,runs:2};S.finalists=2;S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['none','40051']}""")
+    page.evaluate("""() => {const S=D.guild.search;S.poolSize=8;S.minRole={'서포터':1,'디펜더':1};S.minPowerRatio=0;S.screen2={keep:3,runs:2};S.finalists=2;S.screen.runs=2;S.final.runs=2;S.final.levels=[4];S.final.supports=['none','40051']}""")
     page.evaluate("""() => {
       GS.sel={level:3,tiers:[3,2,1,3],support:'none'};window.__guildSets=[];
       const post=Worker.prototype.postMessage;
