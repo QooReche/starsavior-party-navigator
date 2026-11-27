@@ -14,6 +14,7 @@ function harness(src=source){
     seasonBlocked:()=>false,growthCancel(){},guildGwenClaim(){},miGrowth:async()=>({}),
     renderGuildSearch(){},csMobile:()=>false,navigator:{hardwareConcurrency:2},location:{href:'https://example.test/index.html'},
     document:{hidden:false},LS:{get:()=>null,set:(k,v)=>writes.push([k,plain(v)])},
+    fetch:async()=>({ok:true,json:async()=>({ver:'synthetic-engine'})}),
     SearchExecutor:{PAINT_MS:0,throttle:()=>Object.assign(()=>{},{cancel(){}})},
     GuildDaily:{createSession(){const session={closed:false,resets:0,reset(){this.resets++;},close(){this.closed=true;}};sessions.push(session);return session;}},
     GuildPlanner:{async search(cx){calls.push(cx);if(c.failure)throw Error(c.failure);
@@ -64,10 +65,11 @@ async function checks(src=source){
   const pending=race.c.guildDailyStart();race.c.GSR.id++;const newer=race.c.GuildDaily.createSession();race.c.GSR.session=newer;
   release({});await pending;assert(race.sessions[0].closed);assert(!newer.closed,'old completion cannot close newer search');
 }
-(async()=>{
+if(require.main===module)(async()=>{
   await checks();
   for(const [from,to] of [["partial:!!t.evaluation?.partial","partial:source.partial"],["session.close();if(target.session===session)target.session=null;","guildDailyRelease(target);"],["target.seals.remaining<1","false"],["{id,following:false,handle:null}","{following:false,handle:null}"],["{id,following:false,handle:null,followError:","{following:false,handle:null,followError:"]]){
     assert(source.includes(from));await assert.rejects(()=>checks(source.replace(from,to)),undefined,from);
   }
   console.log('PASS daily page: follow/session/cap/error/stale/import/storage/race contracts, 5 killed mutations');
 })().catch(e=>{console.error(e);process.exitCode=1;});
+module.exports={harness};

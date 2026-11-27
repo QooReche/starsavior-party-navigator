@@ -52,7 +52,7 @@ test('grown search retains snapshot and passes changed cards, final powers and t
   const c=dailyContext(),marks={a:{key:'a',source:'owned',overwrite:true,changedFields:['skills']}};
   const snapshot={profile:{results:Object.fromEntries(team.order.map(k=>[k,{power:200}]))},changes:marks,errors:[]};
   Object.assign(c,{SIMQ:{busy:null},CSR:{phase:'idle'},seasonBlocked:()=>false,growthCancel(){},guildGwenClaim(){},miGrowth:async()=>({}),
-    renderGuildSearch(){},growthEnabled:()=>true,fetch:async()=>({ok:true,json:async()=>({})}),MyInfoReco:{overwrite:()=>snapshot},
+    renderGuildSearch(){},growthEnabled:()=>true,fetch:async url=>({ok:true,json:async()=>url==='sim/manifest.json'?{ver:'synthetic-engine'}:{}}),MyInfoReco:{overwrite:()=>snapshot},
     SearchExecutor:{PAINT_MS:0,throttle:()=>Object.assign(()=>{},{cancel(){}})},
     GuildDaily:{...c.GuildDaily,createSession:()=>({close(){}})},GuildPlanner:{search:async x=>{assert.equal(x.growthResults,snapshot.profile.results);return {...done(),growth:done()};}},
     LS:{get:()=>null},location:{href:'https://example.test/'},navigator:{hardwareConcurrency:2},csMobile:()=>false,document:{hidden:false},

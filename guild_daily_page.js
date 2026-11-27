@@ -50,9 +50,14 @@ async function guildDailyStart(target=GSR,profileOverride=null,follow=false){
       growthSnapshot=MyInfoReco.overwrite(MI.info,R,growth,'op',{excluded:[...EXCL],slots,priority:D.journeyPriority});
       growthResults=growthSnapshot.profile.results;
     }
+    // Revalidate on every click: guild data can stay identical across engine deployments.
+    const response=await fetch('sim/manifest.json',{cache:'no-cache'});
+    if(!response.ok)throw Error('계산 엔진 버전 확인 실패');
+    const manifest=await response.json();if(stale())return;
+    if(typeof manifest.ver!=='string'||!manifest.ver)throw Error('계산 엔진 버전 확인 실패');
     if(target.stopRequested){if(previous)Object.assign(target,previous,{id,following:false,handle:null});else{target.phase='idle';guildDailyRelease(target);}paint();return;}
     if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();
-    const out=await GuildPlanner.search({...cx,session,previous,results:profile.results,growthResults,progressEta:false,cosmoSpeed:LS.get("cosmo.speed.v2"),
+    const out=await GuildPlanner.search({...cx,session,previous,engineVersion:manifest.ver,results:profile.results,growthResults,progressEta:false,cosmoSpeed:LS.get("cosmo.speed.v2"),
       base:location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),stage:'guild',
       env:{cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory,mobile:csMobile()},makeWorker:()=>SearchExecutor.createWorker(),stale,partialRequested:()=>target.stopRequested,
       watch:{hidden:()=>document.hidden,limit:r=>simTeamLimit(r),loadMs:()=>SIMQ.LOAD_MS||180000},

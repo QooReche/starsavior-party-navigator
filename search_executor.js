@@ -14,6 +14,7 @@ function shared(env){
  const now=env.now||(()=>Date.now()),setTimer=env.setTimer||((...args)=>setTimeout(...args)),clearTimer=env.clearTimer||((...args)=>clearTimeout(...args));
  // Same resource owner as phase execution; scheduling/retention remain caller contracts.
  const resources=workerPool(()=>{
+  env.beforeCreateWorker?.();
   const w=(env.makeWorker||createWorker)();w.onmessage=e=>simReceive(w,e.data);
   w.onerror=e=>{const b=w._lease?.batch;if(b&&!b.closed&&b.o.live())b.o.error(e.message||'알 수 없음',w,true)};
   return w;

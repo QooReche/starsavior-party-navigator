@@ -1111,6 +1111,7 @@ function scrWorkers(){return typeof navigator==="undefined"?1:scrWorkerCount({co
 // 정상 종료는 반환·재사용, 취소는 owner/requestId/group에 속한 작업자만 종료함.
 // SIMQ.w/pool은 기존 진단용 별칭이며 메시지 핸들러·타이머 소유권은 없음.
 const SIM_EXEC=SearchExecutor.shared({capacity:scrWorkers,loadMs:()=>SIMQ.LOAD_MS,
+ beforeCreateWorker:()=>{if(GSR.phase!=='run')guildDailyRelease();},
  priority:owner=>['direct','cdirect'].includes(owner),hidden:()=>typeof document!=="undefined"&&document.hidden,
  sync:workers=>{SIMQ.pool=workers.length?workers:null;SIMQ.w=workers[0]||null;SIMQ.loaded=!!SIMQ.w?._ready;}});
 const SIMPOOL=SIM_EXEC.state;
