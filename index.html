@@ -614,7 +614,9 @@ function csTick(force){   // 진행 글자만 200ms 이상 간격으로 갱신(�
  const a=document.querySelector('#cosmo-search [data-k="cs-prog"]'),b=document.querySelector('#cosmo-search [data-k="cs-eta"]');
  searchGwenPaint($('cosmo-search'),'cosmoSearch',CSR);
  if(a)a.textContent=CosmoSearch.progText(CSR);if(b)b.textContent=CSR.etaText}
+function csSessionRelease(target=CSR){target.session?.close();target.session=null;}
 function csReset(){   // 내 정보 다시 불러오기·제외 목록 변경: 진행 중인 검색은 취소(끝난 결과는 남기되 서명이 달라 «낡은 결과»로 표시)
+ csSessionRelease();
  if(CSR.phase==="run"){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.id++;CSR.phase="idle";CSR.eta=null}}
 function csOpt(){const C=D.cosmoRaid;
  if(CSR.optLearned==null){const v=LS.get("cosmo.learned");CSR.optLearned=typeof v==="boolean"?v:!!C.search.learned?.value}
@@ -637,7 +639,7 @@ function ownedSimBreaks(){const lv=MI.brkLv||null,have=lv?Object.keys(lv):breakO
 function csBreaks(){return ownedSimBreaks()}
 const csBoss=k=>((D.cosmoRaid.bosses.find(b=>b.key===k))||{}).name||k;
 function renderCosmoSearch(){const p=$("cosmo-search"),c=contents[$("content").value];
- if(!c||c.key!=="cosmo"||!D.cosmoRaid||!window.CosmoSearch){if(CSR.handle){CSR.handle.cancel();CSR.handle=null}if(CSR.phase==="run"){CSR.phase="idle";CSR.id++}GwenStage.destroy('cosmoSearch');p.hidden=true;p.innerHTML="";return}
+ if(!c||c.key!=="cosmo"||!D.cosmoRaid||!window.CosmoSearch){csSessionRelease();if(CSR.handle){CSR.handle.cancel();CSR.handle=null}if(CSR.phase==="run"){CSR.phase="idle";CSR.id++}GwenStage.destroy('cosmoSearch');p.hidden=true;p.innerHTML="";return}
  csOpt();p.hidden=false;
  if(CSR.phase==="run"&&CSR.sig!==csSig())csReset();
  if(CSR.phase==="run"&&p.querySelector('[data-k="cs-progress"]')){csTick(true);return}   // 진행 중이면 버튼을 다시 만들지 않고 글자만
@@ -647,6 +649,12 @@ async function cosmoSearchStart(target=CSR,profileOverride=null){
  const CSR=target;
  if(!MI.info||CSR.phase==="run"||(SIMQ.busy!=null&&!profileOverride)||GSR.phase==="run")return;
  if(!profileOverride)growthCancel();
+ if(CSR.session?.closed)CSR.session=null;
+ CSR.session ||= SearchExecutor.createSession(()=>SearchExecutor.createWorker(),()=>{
+  if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();
+  if(typeof GSR!=='undefined'&&GSR.phase!=='run'&&typeof guildDailyRelease==='function')guildDailyRelease();
+ });
+ const session=CSR.session;if(!profileOverride)session.reset();session.active=true;
  const C=D.cosmoRaid,id=++CSR.id,stale=()=>CSR.id!==id,paint=()=>profileOverride?growthPaint():renderCosmoSearch(),level=CSR.optLevel,mode=CSR.optMode;
  try{
   CSR.phase="run";CSR.sig=csSig();CSR.msg="내 구원자 능력치 계산 중";CSR.done=0;CSR.total=0;CSR.eta=null;CSR.etaText="";CSR.runs=1;paint();
@@ -655,8 +663,13 @@ async function cosmoSearchStart(target=CSR,profileOverride=null){
   const growth=await miGrowth();if(stale())return;
   const profile=profileOverride||MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,growth,"cosmo"));
   const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=CosmoSearch.searchSettings(C.search,CSR.optLearned);
+  const response=await fetch('sim/manifest.json',{cache:'no-cache'});
+  if(!response.ok)throw Error('계산 엔진 버전 확인 실패');
+  const manifest=await response.json();if(stale())return;
+  if(typeof manifest.ver!=='string'||!manifest.ver)throw Error('계산 엔진 버전 확인 실패');
+  if(typeof GSR!=='undefined'&&GSR.phase!=='run'&&typeof guildDailyRelease==='function')guildDailyRelease();
   if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();
-  const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),bossName:csBoss,level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
+  const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),session,engineVersion:manifest.ver,dataVersion:JSON.stringify(C),reuseBattles:!!profileOverride||growthEnabled(),bossName:csBoss,level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
    makeWorker:()=>SearchExecutor.createWorker(),watch:{hidden:()=>document.hidden,limit:simTeamLimit,loadMs:()=>SIMQ.LOAD_MS},workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,boundaries:Object.fromEntries(C.bosses.map(b=>[b.key,b.boundaries||[]])),breaks:csBreaks(),
    onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed.v2"),workers)})},
    onPhase:(m,t,info)=>{if(stale())return;CSR.phaseSerial=(CSR.phaseSerial||0)+1;CSR.msg=m;CSR.done=0;CSR.total=t;CSR.runs=info.runs;if(info.stage==null){const sm=CSR.eta&&CSR.eta.summary();if(sm&&!profileOverride)LS.set("cosmo.speed.v2",{sec:sm,workers});CSR.eta=null;CSR.etaText="배치·리더 등 추가 비교가 포함돼 남은 시간은 표시하지 않음"}else if(CSR.eta)CSR.eta.begin(info.stage,info.games,csNow());paint();if(!profileOverride)csTick(true)},
@@ -664,7 +677,8 @@ async function cosmoSearchStart(target=CSR,profileOverride=null){
   if(!out||stale())return;
   const sum=CSR.eta&&CSR.eta.summary();if(sum&&!profileOverride)LS.set("cosmo.speed.v2",{sec:sum,workers});   // 이 PC 속도 저장(다음 실행의 시작 전 예상용)
   Object.assign(CSR,{learned:false,audit:null},out,{phase:"done",handle:null,eta:null});CSR.context=growthOwnedContext('cosmo');paint();if(!profileOverride&&growthEnabled())growthStart(contents[$('content').value],cur[$('stage').value]);return CSR
- }catch(e){if(profileOverride)throw e;if(stale())return;CSR.handle=null;CSR.eta=null;CSR.errorCause=e.gwenCause||"other";CSR.phase=CSR.errorCause==="cancel"?"idle":"err";CSR.msg=e.message||String(e);paint()}}
+ }catch(e){session.close();if(CSR.session===session)CSR.session=null;if(profileOverride)throw e;if(stale())return;CSR.handle=null;CSR.eta=null;CSR.errorCause=e.gwenCause||"other";CSR.phase=CSR.errorCause==="cancel"?"idle":"err";CSR.msg=e.message||String(e);paint()}
+ finally{session.active=false;if(stale()){session.close();if(CSR.session===session)CSR.session=null;}}}
 $("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("[data-cs]");if(!t)return;
  if(t.dataset.cs==="learned"){CSR.optLearned=t.checked;LS.set("cosmo.learned",CSR.optLearned)}
  else if(t.dataset.cs==="level"){CSR.optLevel=+t.value;LS.set("cosmo.level",CSR.optLevel)}else if(t.dataset.cs==="mode"){CSR.optMode=t.value;LS.set("cosmo.mode",CSR.optMode)}
@@ -672,7 +686,7 @@ $("cosmo-search").addEventListener("change",e=>{const t=e.target.closest("[data-
 $("cosmo-search").addEventListener("click",e=>{const b=e.target.closest("button[data-cs]");if(!b)return;
  if(b.dataset.cs==="edit")cdFromSearch(CSR.rows?.[Number(b.dataset.row)]);
  else if(b.dataset.cs==="start")cosmoSearchStart();
- else if(b.dataset.cs==="cancel"){CSR.id++;if(CSR.handle){CSR.handle.cancel();CSR.handle=null}CSR.phase="idle";CSR.eta=null;renderCosmoSearch()}});
+ else if(b.dataset.cs==="cancel"){CSR.id++;if(CSR.handle){CSR.handle.cancel();CSR.handle=null}csSessionRelease();CSR.phase="idle";CSR.eta=null;renderCosmoSearch()}});
 
 $("content").innerHTML=contents.map((c,i)=>`<option value="${i}">${esc(c.title||c.name)}</option>`).join("");
 const SEARCH_MIN=20;   // 스테이지가 이보다 적으면 검색창을 숨긴다(길드 방어전 등 — 목록이 짧아 검색이 필요 없음)
@@ -1111,7 +1125,7 @@ function scrWorkers(){return typeof navigator==="undefined"?1:scrWorkerCount({co
 // 정상 종료는 반환·재사용, 취소는 owner/requestId/group에 속한 작업자만 종료함.
 // SIMQ.w/pool은 기존 진단용 별칭이며 메시지 핸들러·타이머 소유권은 없음.
 const SIM_EXEC=SearchExecutor.shared({capacity:scrWorkers,loadMs:()=>SIMQ.LOAD_MS,
- beforeCreateWorker:()=>{if(typeof GSR!=='undefined'&&GSR.phase!=='run'&&typeof guildDailyRelease==='function')guildDailyRelease();},   // 공용 풀 작업자를 새로 띄우기 전 놀던 길드 세션 풀 회수(S2)
+ beforeCreateWorker:()=>{if(typeof GSR!=='undefined'&&GSR.phase!=='run'&&typeof guildDailyRelease==='function')guildDailyRelease();if(typeof CSR!=='undefined'&&CSR.phase!=='run'&&!CSR.session?.active&&typeof csSessionRelease==='function')csSessionRelease();},   // 공용 풀 작업자를 새로 띄우기 전 놀던 탐색 세션 풀 회수(S2)
  priority:owner=>['direct','cdirect'].includes(owner),hidden:()=>typeof document!=="undefined"&&document.hidden,
  sync:workers=>{SIMQ.pool=workers.length?workers:null;SIMQ.w=workers[0]||null;SIMQ.loaded=!!SIMQ.w?._ready;}});
 const SIMPOOL=SIM_EXEC.state;

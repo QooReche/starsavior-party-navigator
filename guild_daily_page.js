@@ -35,7 +35,10 @@ async function guildDailyStart(target=GSR,profileOverride=null,follow=false){
   if(follow&&(target.phase!=='done'||target.sig!==guildDailySig()||!target.teams?.length||target.seals.remaining<1))return;
   const previous=follow?{...target}:null;
   if(!follow)target.session?.reset();
-  target.session ||= GuildDaily.createSession(()=>SearchExecutor.createWorker());
+  target.session ||= GuildDaily.createSession(()=>SearchExecutor.createWorker(),()=>{
+    if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();
+    if(typeof CSR!=='undefined'&&CSR.phase!=='run'&&!CSR.session?.active&&typeof csSessionRelease==='function')csSessionRelease();
+  });
   const session=target.session;
   growthCancel();guildGwenClaim('guildSearch');
   const id=++target.id,stale=()=>target.id!==id,paint=()=>renderGuildSearch(true),sig=guildDailySig(),cx=guildDailyOptions();
@@ -56,6 +59,7 @@ async function guildDailyStart(target=GSR,profileOverride=null,follow=false){
     const manifest=await response.json();if(stale())return;
     if(typeof manifest.ver!=='string'||!manifest.ver)throw Error('계산 엔진 버전 확인 실패');
     if(target.stopRequested){if(previous)Object.assign(target,previous,{id,following:false,handle:null});else{target.phase='idle';guildDailyRelease(target);}paint();return;}
+    if(typeof CSR!=='undefined'&&CSR.phase!=='run'&&!CSR.session?.active&&typeof csSessionRelease==='function')csSessionRelease();
     if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();
     const out=await GuildPlanner.search({...cx,session,previous,engineVersion:manifest.ver,results:profile.results,growthResults,progressEta:false,cosmoSpeed:LS.get("cosmo.speed.v2"),
       base:location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),stage:'guild',

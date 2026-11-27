@@ -90,8 +90,8 @@ async function main(){
   const mutations=[
     [engineChange,{pageSource:page.replace('engineVersion:manifest.ver,','')},/engine-only deployment/],
     [poolHandoff,{executorSource:executor.replace('env.beforeCreateWorker?.();','')},/retains only one pool/],
-    [poolHandoff,{templateSource:template.replace("beforeCreateWorker:()=>{if(typeof GSR!=='undefined'&&GSR.phase!=='run'&&typeof guildDailyRelease==='function')guildDailyRelease();},   // 공용 풀 작업자를 새로 띄우기 전 놀던 길드 세션 풀 회수(S2)",'')},/retains only one pool/],
-    [poolHandoff,{templateSource:template.replace("if(typeof GSR!=='undefined'&&GSR.phase!=='run'&&typeof guildDailyRelease==='function')guildDailyRelease();",'guildDailyRelease();')},/running guild search/]
+    [poolHandoff,{templateSource:template.replace(/^ beforeCreateWorker:.*$/m,'')},/retains only one pool/],
+    [poolHandoff,{templateSource:template.replaceAll("if(typeof GSR!=='undefined'&&GSR.phase!=='run'&&typeof guildDailyRelease==='function')guildDailyRelease();",'guildDailyRelease();')},/running guild search/]
   ];
   for(const [check,source,error] of mutations)await assert.rejects(()=>check(source),error);
   console.log('PASS S2 page integration: engine-only change, identical results, idle pool handoff both ways, active guard, manifest failure; 4 killed mutations');

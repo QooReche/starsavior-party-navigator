@@ -92,7 +92,8 @@ async function speed(code=page){
     const writes=[],state={id:0,phase:'idle',optLevel:0,optMode:'mean'};
     const ctx={seasonBlocked:()=>false,CSR:state,MI:{info:{},profiles:{}},SIMQ:{busy:null},GSR:{phase:'idle'},D:{cosmoRaid:{search:{},bosses:[],levelMax:18}},R:[],EXCL:new Set(),
       location:{href:'http://example.test/'},LS:{get:()=>({sec:{old:1}}),set:(k,v)=>writes.push([k,v])},
-      simTeamLimit:()=>240000,
+      simTeamLimit:()=>240000,SearchExecutor:require('../search_executor'),
+      fetch:async()=>({ok:true,json:async()=>({ver:'synthetic-engine'})}),
       csSig:()=>'',csBoss:k=>'boss '+k,csWorkers:()=>2,csBreaks:()=>[],csNow:()=>1,csTick(){},growthCancel(){},growthPaint(){},renderCosmoSearch(){},growthEnabled:()=>false,growthOwnedContext:()=>'',
       miGrowth:async()=>growth,MyInfoReco:{profile:()=>({results:{}})},
       CosmoSearch:{searchSettings:s=>s,priorFrom:v=>v,etaNew:()=>({summary:()=>({new:2}),begin(){},update(){}}),

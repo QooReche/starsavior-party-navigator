@@ -274,11 +274,13 @@ async function growthStart(c,st){
       const owned=c.key==='guild'?GSR:CSR;
       baseline=owned.rows[0]||null;
       const state={...owned,id:0,phase:'idle',rows:[],handle:null};
-      GROW.stop=()=>{state.id++;state.handle?.cancel();};
+      GROW.stop=()=>{state.id++;state.handle?.cancel();state.session?.close();};
       // Existing search functions own their phase deadlines and worker-count policy.
-      const out=await (c.key==='guild'?guildSearchStart:cosmoSearchStart)(state,snapshot.profile);
-      if(!out||out.phase!=='done')throw Error('미완료');
-      result={best:out.rows[0]||null,runs:out.runs};
+      try{
+        const out=await (c.key==='guild'?guildSearchStart:cosmoSearchStart)(state,snapshot.profile);
+        if(!out||out.phase!=='done')throw Error('미완료');
+        result={best:out.rows[0]||null,runs:out.runs};
+      }finally{if(state.session!==owned.session)state.session?.close();}
     }else{
       baseline=growthBaseline(c,st);
       result=await growthStageSearch(c,st,snapshot.profile,id);

@@ -116,7 +116,7 @@ function trimWiring(page,daily){
  assert.match(page,/function simPoolTrimIdle\(\)\{return SIM_EXEC\.trimIdle\(\)\}/);}
 const PAGE=fs.readFileSync(require.resolve('../party_template.html'),'utf8'),DAILY=fs.readFileSync(require.resolve('../guild_daily_page.js'),'utf8');
 trimWiring(PAGE,DAILY);
-for(const [name,f,g] of [['daily trim 없음',x=>x,x=>x.replace("if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();\n",'')],
+for(const [name,f,g] of [['daily trim 없음',x=>x,x=>x.replace(/if\(typeof simPoolTrimIdle==='function'\)simPoolTrimIdle\(\);\n(\s*const out=await GuildPlanner.search)/,'$1')],
  ['코스모 trim 없음',x=>x.replace(/if\(typeof simPoolTrimIdle==='function'\)simPoolTrimIdle\(\);\n(  const out=await CosmoSearch)/,'$1'),x=>x]]){
  const p2=f(PAGE),d2=g(DAILY);assert.ok(p2!==PAGE||d2!==DAILY,name+': 바꿀 곳 없음');assert.throws(()=>trimWiring(p2,d2),assert.AssertionError,name)}
 for(const [name,f] of mutants){const src=f(source);assert.notEqual(src,source,name+': 바꿀 곳 없음');assert.throws(()=>suite(load(src)),assert.AssertionError,name);}

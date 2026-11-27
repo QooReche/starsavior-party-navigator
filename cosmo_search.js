@@ -308,15 +308,35 @@
     if (comboCap > 0 && pl.combos > comboCap) throw new Error(`4인 조합이 ${num(pl.combos)}개로 안전 상한(${num(comboCap)}개)을 넘음. 추천에서 뺄 구원자를 늘리거나 설정의 ${learned ? 'learned.maxScoreCombos' : 'maxPool/maxCombos'} 를 조정해야 함`);
     const list = learned ? {length:pl.combos} : GS.combos({...S,newSearch:true}, rows), cls = Object.fromEntries(roster.map(s => [s.key, s.cls]));
     if (cx.onPlan) cx.onPlan(pl);
-    const workersPool = GS.workerPool(cx.makeWorker);   // 단계 사이 워커 재사용(docs/cosmo_speed_rd_1110.md)
+    const session=cx.session||Executor.createSession(cx.makeWorker);
+    session.resume(JSON.stringify([cx.base,cx.dataVersion,cx.engineVersion]));
+    const workersPool=session.pool;
+    const battles=cx.battles||(cx.reuseBattles?(session.caches.get('battles')||new Map()):null);
+    if(cx.reuseBattles)session.caches.set('battles',battles);
+    let completed=false;
     try {
     const run = async (jobs, runs, seed, msg, idx, carry = 0, expected = jobs.length + carry) => {
       if (cx.onPhase) cx.onPhase(msg, expected, {stage: idx, teams: expected, runs, games: expected * runs});
       if (carry && cx.onProgress) cx.onProgress(carry, expected);
-      const h = GS.runPhase({makeWorker: cx.makeWorker, pool: workersPool, jobs, workers: cx.workers, runs, seed, stage: cx.stage, base: cx.base, watch:cx.watch,
-        onProgress: cx.onProgress ? d => cx.onProgress(d + carry, expected) : null, chunk: Executor.chunkSize(jobs.length,cx.workers)});
+      const cache=battles?SS.battleCache(battles,{base:cx.base,stage:cx.stage,seed,runs}):null;
+      const reused={},todo=[],hits=[];
+      for(const j of jobs){const hit=cache?.get(j);if(hit)hits.push([j,hit]);else todo.push(j);}
+      let completed=0,canceled=false;
+      if(hits.length){
+        cx.onHandle?.({cancel(){canceled=true;}});
+        for(const [j,hit] of hits){
+          reused[j.key]=hit;completed++;cx.onProgress?.(completed+carry,expected);
+          if(completed%256===0)await new Promise(resolve=>setTimeout(resolve,0));
+          if(canceled||cx.stale?.())throw Object.assign(new Error('취소'),{gwenCause:'cancel'});
+        }
+      }
+      if(!todo.length)return reused;
+      const h = GS.runPhase({makeWorker: cx.makeWorker, pool: workersPool, jobs:todo, workers: cx.workers, runs, seed, stage: cx.stage, base: cx.base, watch:cx.watch,
+        onProgress: cx.onProgress ? d => cx.onProgress(d + completed + carry, expected) : null, chunk: Executor.chunkSize(todo.length,cx.workers)});
       if (cx.onHandle) cx.onHandle(h);
-      return h.promise;
+      const fresh=await h.promise;
+      if(cache)for(const j of todo)if(fresh[j.key])cache.set(j,fresh[j.key]);
+      return Object.assign(reused,fresh);
     };
     const stale = () => cx.stale && cx.stale();
     let jobsA = learned ? [] : [].concat(...bosses.map(b => bossJobs(S, b, level, list, results, cls))), auditInfo = null;
@@ -542,10 +562,11 @@
     if (stale()) return null;
     rows2 = finalRankBrk(triples, bosses, levelOf, brks, resC, mode, S.combine.show);
     }
+    completed=true;
     return {rows: rows2, growthOwned: jobsB.map(j=>({...j,result:resB[j.key]})), pool: rows.length, capped: !learned && S.maxPool > 0, combos: list.length, keep: kept, attempts, combineLimited: triplesLimited(triples, S.combine.topTriples, budget)||(finalBudget?triplesLimited(rows2,S.combine.show,finalBudget):false), triples: triples.length, runs: S.final.runs, level: auto ? null : level, reqLevel: cx.level, probe, mode, bosses: bosses.slice(),
       halved: pl.halved, ...(joint?{representative,placement:{version:Placement.VERSION,conditions:joint.conditions,moved:joint.moved}}:{}), firstRuns: pl.halved ? S.screen.firstRuns : S.screen.runs, screenRuns: S.screen.runs, passed,
       ...(learned ? {learned:true,audit:auditInfo} : {})};
-    } finally { if (workersPool) workersPool.close(); }
+    } finally { if (!cx.session||!completed) session.close(); }
   }
 
   // 큰 배열을 push(...arr) 로 넘기면 함수 인자 한도(약 12만~)를 넘어 RangeError — 하나씩 넣는다
