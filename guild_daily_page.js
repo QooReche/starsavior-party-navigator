@@ -17,7 +17,7 @@ function guildDailySummary(st,gwen=''){
   const bosses=teams.map((t,i)=>({key:'t'+i,name:names[i],short:names[i],label:names[i]}));
   const state={active:'t0',teams:Object.fromEntries(teams.map((t,i)=>['t'+i,{level:0,draft:GuildDailyUI.draft(t)}]))};
   const summary={total:st.sum,done:teams.length,teams:Object.fromEntries(teams.map((t,i)=>['t'+i,
-    {status:'done',score:t.score,clear:t.clear,mode:'top',other:t.mean,levelText:GuildDailyUI.levelText(t)}]))};
+    {status:'done',score:t.score,clear:t.clear,mode:'top',other:t.mean,levelText:GuildDailyUI.levelText(t),brk:t.brk?{name:t.brk,level:t.brkLv}:null}]))};
   return CosmoDirectUI.summaryHtml({state,season:{bosses,levelMax:0},roster:R,summary},
     {gwen,sumKey:'gs-score',tabsKey:'gs-team-summary',totalLabel:`${teams.length}팀 합계`});
 }
