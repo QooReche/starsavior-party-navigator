@@ -97,7 +97,7 @@
     function estimate(){
       const n=poolLimit,combos=Math.max(comboCount(S,trimPool(S,rows,n,maxTeams)),comboCount(S,trimPool(S,growthRows,n,maxTeams)));
       const teamCount=Math.min(Math.floor(n/4),maxTeams);
-      const placeTeams=placeScope==='all'?teamCount:Math.min(Math.floor(n/4),(kind==='ex'?1:0));
+      const placeTeams=placeScope==='all'?teamCount:Math.min(teamCount,Math.max(1,kind==='ex'?1:0));
       const sweeps=kinds.size,conditions=(kinds.has('ex')?D.probe.levels.length:0)+(kinds.has('normal')?D.probe.steps.length:0);
       const retry=Math.max(...D.retry.keepMultipliers),keep=Math.min(combos,D.rerank.keep*retry);
       const probe=Math.min(combos,D.probe.teams*D.retry.keepMultipliers.reduce((a,b)=>a+b,0));
@@ -112,7 +112,7 @@
       return {combos,jobs,games,total:games.reduce((a,b)=>a+b,0)*passes};
     }
     const over=()=>estimate().total*secondsPerGame>=D.timeCapMin*60;
-    if(over()){placeScope='ex';reductions.push('자리·리더 대상: EX 팀만');}
+    if(over()&&maxTeams>1){placeScope='ex';reductions.push('자리·리더 대상: 첫 팀과 EX 팀');}
     if(over()&&D.probe.teams>8){D.probe.teams=8;reductions.push('조건 비교: 상위 8팀');}
     if(over()&&D.rerank.keep>200){D.rerank.keep=200;reductions.push('정밀: 상위 200팀');}
     while(over()&&poolLimit>poolFloor)poolLimit--;
@@ -321,7 +321,7 @@
     async function placement(bundle){
       const teams=bundle.teams.slice();
       for(let i=0;i<teams.length;i++){
-        const original=teams[i];if(pl.placeScope==='ex'&&original.kind!=='ex')continue;
+        const original=teams[i];if(pl.placeScope==='ex'&&original.kind!=='ex'&&i>0)continue;
         const brk=original.options.break_skill,condition=original.kind==='ex'?original.level:original.step;
         const layouts=unique([...P.all(original.keys).map(p=>make(original.keys,original.kind,condition,original.sup,brk,p)),original]);
         await run(layouts,D.place.runs[0],7);
@@ -355,7 +355,7 @@
         teams[i]=chosen?{...chosen,placementChanged:true}:null;
       }
       const valid=teams.filter(Boolean);
-      placeComplete=pl.placeScope==='all'||valid.every(t=>t.kind==='ex');
+      placeComplete=pl.placeScope==='all'||teams.every((t,i)=>!t||i===0||t.kind==='ex');
       return {teams:valid,sum:valid.reduce((s,t)=>s+t.score,0)};
     }
     let reason='';

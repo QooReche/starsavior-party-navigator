@@ -38,7 +38,8 @@ test('slow device refuses over-cap plan without cutting below floor',()=>{
   const f=fixture(40);f.S.daily=structuredClone(defaults.daily);
   const p=Daily.plan({...f,nowMs,secondsPerGame:1});
   assert.equal(p.poolLimit,20);assert.equal(p.withinCap,false);
-  assert.deepEqual(p.reductions.slice(0,3),['자리·리더 대상: EX 팀만','조건 비교: 상위 8팀','정밀: 상위 200팀']);
+  assert.deepEqual(p.reductions,['조건 비교: 상위 8팀','정밀: 상위 200팀','풀: 40명 → 20명']);
+  assert.equal(p.placeScope,'all');
   assert.equal(Daily.plan({...fixture(12),nowMs,secondsPerGame:1}).poolLimit,12);
 });
 test('final coop exclusion replaces invalid finalists',async()=>{

@@ -85,7 +85,8 @@ function margins(daily=Daily){
 function caps(daily=Daily){
   const f=fixture(40);f.S.daily=structuredClone(defaults.daily);
   const p=daily.plan({...f,nowMs:Date.parse('2026-11-26T05:00:00+09:00'),secondsPerGame:.01,breaks:[]});
-  assert.equal(p.placeScope,'ex');assert(p.withinCap);assert(p.estimatedSec<5400);assert.deepEqual(plain(p.reductions.slice(0,3)),['자리·리더 대상: EX 팀만','조건 비교: 상위 8팀','정밀: 상위 200팀']);
+  assert.equal(p.placeScope,'all');assert(p.withinCap);assert(p.estimatedSec<5400);assert.deepEqual(plain(p.reductions.slice(0,2)),['조건 비교: 상위 8팀','정밀: 상위 200팀']);
+  assert(!p.reductions.some(x=>x.startsWith('자리·리더 대상:')));
   assert(p.poolLimit<40);assert.equal(p.D.screen.runs,2);
   const combinations=p.poolLimit*(p.poolLimit-1)*(p.poolLimit-2)*(p.poolLimit-3)/24;
   assert.equal(p.stages[2].games,combinations*18,'estimate includes all boundary ties');
@@ -164,7 +165,7 @@ async function main(){
   const mutations=[
     ["GS.jobKey(keys,level,effectiveSupport,sets,brk,party,G)+'|step:'+step","step+':'+GS.jobKey(keys,level,effectiveSupport,sets,brk,party,G)",checks],
     ['Math.abs(value(incumbent))*margin','0',margins],
-    ["placeScope='ex';reductions.push","placeScope='all';reductions.push",caps],
+    ['if(over()&&maxTeams>1)','if(over())',caps],
     ['cx.roster.filter(r=>!units.has(r.key))','cx.roster',checks],
     ['cx.S.final.supports.filter(s=>!supports.has(s))','cx.S.final.supports',checks],
     ['>D.seals.max','>99',checks],
