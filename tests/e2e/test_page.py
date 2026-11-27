@@ -1507,6 +1507,11 @@ def test_guild_defense(browser, ctx):
     name = next(n for n in names if n.startswith("길드방어전"))
     page.select_option("#content", label=name)
     settle(page)
+    # daily에서 삭제한 옛 추천 칸을 되살리지 않는다. 같은 추천·계산은 legacy로 검사.
+    assert page.locator('#out').is_hidden() and page.locator('#out > *').count() == 0
+    assert page.locator('#stage').is_hidden() and page.locator('#guild-panel').is_hidden()
+    page.evaluate("D.guild.search.preset='legacy';refreshTabs()")
+    settle(page)
     page.wait_for_selector('#out .party[data-party="1"] .rowcards .gc', timeout=30000)
     first_stage = page.eval_on_selector("#stage", "s => s.selectedOptions[0].textContent")
     panel = page.locator("#guild-extra")
