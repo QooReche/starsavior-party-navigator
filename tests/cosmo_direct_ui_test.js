@@ -3,6 +3,18 @@
 // 끝에 변이 검사: 부품 코드를 한 군데씩 망가뜨린 사본으로 같은 시험을 돌려 전부 실패하는지 본다(--no-mutations 로 생략).
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const SRC=fs.readFileSync(path.join(__dirname,'..','cosmo_direct_ui.js'),'utf8');
+{
+  const UI=require('../cosmo_direct_ui'),{loadModule}=require('./helpers/page');
+  const old=loadModule(require('node:child_process').execFileSync('git',['show','5c3fe4b:cosmo_direct_ui.js'],{encoding:'utf8'}));
+  const bosses=['a','b','c'].map(key=>({key,name:key,element:'sun'}));
+  const view={season:{bosses},state:{active:'a',teams:{}},summary:{total:123,teams:{}}};
+  assert.equal(UI.summaryHtml(view),old.summaryHtml(view),'default Cosmo output stays byte-identical');
+  const guild={...view,season:{bosses:[{key:'a',name:'일반 1팀',label:'일반 1팀'}]},summary:{total:123,teams:{a:{status:'done',score:123,clear:1,levelText:'6단계',other:100,mode:'top'}}}};
+  const html=UI.summaryHtml(guild,{sumKey:'gs-score',tabsKey:'gs-team-summary',totalLabel:'1팀 합계'});
+  assert(html.includes('data-k="gs-score">123'));assert(html.includes('data-k="gs-team-summary"'));
+  assert(html.includes('aria-label="1팀 합계"'));assert(html.includes('>6단계</span>'));
+  assert(html.includes('aria-label="일반 1팀 ·'));assert(!html.includes('attr_undefined'));assert(!html.includes('일반 1팀 팀'));
+}
 
 // ── 시험용 작은 DOM: 부품이 쓰는 것(innerHTML·querySelector·closest·속성·이벤트 등록)만 흉내 ──
 const VOID=new Set(['img','input','br','hr','path','rect']);

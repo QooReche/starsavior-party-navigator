@@ -257,3 +257,9 @@ img[data-gwen-rest=true]{transform-origin:50% 100%;animation:gwen-breathe 3.6s e
 @media(max-width:600px){.idle-gwen>.gwen-bubble{width:100%;min-height:54px}.gwen-say-lane{height:56px;min-height:56px}}
 .guide-steps li{word-break:keep-all;overflow-wrap:anywhere}.guide-steps li:before{display:block;margin:0 0 4px}
 @media(max-width:600px){.guide-steps li{padding:12px 14px}.guide-steps li:before{display:inline-block;margin:0 8px 0 0}.guide-steps small{margin-top:4px}}
+
+.season-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 16px}.season-actions>p,.season-actions>details{flex-basis:100%;margin:0}
+.cs-foot{display:flex;flex-direction:column;gap:8px}
+@media(max-width:600px){.season-actions>button{flex:1 1 100%;min-height:48px}}
+
+.cs-boss>.growth-tasks{grid-column:1/-1}

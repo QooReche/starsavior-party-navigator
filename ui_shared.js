@@ -33,6 +33,7 @@
   }
   // 코스모 결과의 HTML 조각. 본문·속성은 호출부에서 escape한 HTML을 전달함.
   const seasonUi={
+    actions:(buttons,fold='',note='')=>`<div class="season-actions">${note?`<p class="mut">${note}</p>`:''}${buttons}${fold}</div>`,
     chip:html=>`<span class="cs-lv">${html}</span>`,
     score:(label,value,key,small)=>`<div class="season-score"><span>${label}</span><b data-k="${key}">${value}</b><small>${small}</small></div>`,
     scoreLine:html=>`<span class="cs-sc">${html}</span>`,

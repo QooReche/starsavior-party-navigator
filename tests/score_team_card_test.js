@@ -11,7 +11,7 @@ function check(src){for(const fn of ['gsTeam','csTeam'])for(const leaderKey of [
   const t={order:['a','b','c','d'],leaderKey};assert.equal(render(src,t,fn),render(old,t,fn));
 }}
 check(source);
-for(const [from,to] of [['[2,0,1,3]','[0,1,2,3]'],['function seasonTeam(t,compact=false){LEADKEY=t.leaderKey||t.order[0];','function seasonTeam(t,compact=false){LEADKEY=t.order[0];']]){
+for(const [from,to] of [['[2,0,1,3]','[0,1,2,3]'],['const before=LEADKEY;LEADKEY=t.leaderKey||t.order[0];','const before=LEADKEY;LEADKEY=t.order[0];']]){
   assert(source.includes(from));assert.throws(()=>check(source.replace(from,to)),{code:'ERR_ASSERTION'});
 }
 console.log('PASS guild/cosmo team-card bytes, leader/slot order, 2 mutations');

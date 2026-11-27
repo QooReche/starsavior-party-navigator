@@ -183,12 +183,16 @@
     const prior=saved&&saved.workers>0&&Array.isArray(saved.sec)&&saved.sec.length===pl.stages.length&&saved.sec.every(n=>Number.isFinite(n)&&n>0)?saved.sec.map(n=>n*saved.workers/workers):null;
     return Executor.etaNew({stages:pl.stages,weights:pl.stages.map(()=>1),prior});
   }
-  function progressPaint(host,st){
-    const el=host.querySelector('[data-k="plan"]');if(!el)return;
+  function progressInfo(st){
     const active=st.plan?.stages.filter(s=>s.jobs>0&&s.p>0)||[],s=st.plan?.stages[st.stageIndex],index=active.indexOf(s);
     const step=index<0?'탐색 준비 중':`${index+1}/${active.length}단계 · ${s.name}`;
     const est=st.eta?.estimate(Date.now()/1000),eta=est?.ready?'남은 시간 '+durTextSec(est.remainSec):'남은 시간 계산 중';
     const frac=index<0?0:Math.min(.99,(index+(st.total?st.done/st.total:0))/active.length);
+    return {step,eta,frac};
+  }
+  function progressPaint(host,st){
+    const el=host.querySelector('[data-k="plan"]');if(!el)return;
+    const {step,eta,frac}=progressInfo(st);
     planPaint(el,step,eta,frac);
     const stop=host.querySelector('[data-gs="partial"]');if(stop)stop.disabled=!st.plan||st.stopRequested;
   }
@@ -230,6 +234,6 @@
   const breakLabel = (t, esc) => `브레이크 스킬: ${esc(t.brk || "없음")}${t.brk ? ` Lv.${t.brkLv}` : ""}`;
   const api = {baseline:Placement.baseline, FRONT, TOP_Q, BREAK_CHECK, breakSignature, breakJobs, breakLabel, rankStats, pool, combos, party, coopHit, hasSupporter, screenSupport, finalSupports, expected, jobKey, split, screenJobs, finalJobs, pickFinalists, pickTop, rank, workerPool, runPhase, html, progText, SUP_NAME, countDropped, notesHtml, BASIS, unsupportedFields, unsupportedHtml};
   api.iterateCombos = iterateCombos;
-  Object.assign(api,{SPEED_KEY,progressNew,progressPaint,coverageText});
+  Object.assign(api,{SPEED_KEY,progressNew,progressInfo,progressPaint,coverageText});
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.GuildSearch = api;
 })(typeof window !== "undefined" ? window : globalThis);

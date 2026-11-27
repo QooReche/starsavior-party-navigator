@@ -16,6 +16,7 @@
 /* 보스 카드(탭) + 합계 상자 */
 .cg-top{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;align-items:stretch;margin:0 0 16px}
 .cg-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}
+@media(min-width:601px){.cg-summary .cg-tabs:has(>.cg-tab:only-child){grid-template-columns:minmax(0,1fr)}.cg-summary .cg-tabs:has(>.cg-tab:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}}
 .cg-tab{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"face head" "face count" "face score";gap:1px 12px;align-items:center;text-align:left;min-width:0;padding:10px 12px!important;border:1px solid var(--line)!important;border-radius:var(--r-box);background:var(--ink)!important;color:var(--fg)!important;position:relative}
 .cg-tab[aria-selected=true]{border-color:var(--acc)!important;box-shadow:0 0 0 2px var(--acc) inset}
 .cg-tab[aria-selected=true]::after{content:'';position:absolute;left:50%;bottom:-9px;width:14px;height:14px;transform:translateX(-50%) rotate(45deg);background:var(--ink);border-right:3px solid var(--acc);border-bottom:3px solid var(--acc);box-sizing:border-box}

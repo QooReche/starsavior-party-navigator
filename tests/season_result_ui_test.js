@@ -4,6 +4,16 @@ const {loadModule,readSrc}=require('./helpers/page');
 const U=require('../ui_shared'),C=require('../cosmo_search'),R=require('../recheck_ui');
 const frozen=name=>execFileSync('git',['show','28b689a:'+name],{encoding:'utf8',maxBuffer:4*1024*1024});
 const old=loadModule(frozen('cosmo_search.js')),oldR=loadModule(frozen('recheck_ui.js'));
+function actions(mod,st,cx){
+  const out=mod.html(st,cx),best=out.slice(out.indexOf('data-k="cs-best"'),out.indexOf('<details class="gd-small">'));
+  const bar=best.match(/<div class="season-actions">([\s\S]*?)<\/details><\/div>/)[0];
+  assert(best.indexOf('season-actions')<best.indexOf('data-k="cs-team"'));
+  assert.equal((out.match(/data-cs="start"/g)||[]).length,1);
+  assert(bar.includes('data-cs="start"'));assert(bar.includes('data-fold="cs-result-basis"'));
+  const ranks=out.split('<details class="gd-small">').slice(1);
+  assert.equal(ranks.length,2);
+  ranks.forEach((r,i)=>{assert(r.includes(`data-cs="edit" data-row="${i+1}"`));assert(!r.includes('data-cs="start"'));});
+}
 let cases=0;
 const same=(a,b)=>{assert.equal(a,b);cases++;};
 const teams=[0,1,2].map((n)=>({boss:'boss'+n,order:['a','b','c','d'],leaderKey:'c',level:n===2?null:n,
@@ -15,15 +25,15 @@ for(const mode of ['top','mean'])for(const cards of [false,true])for(const summa
   if(cards)cx.team=t=>`<div class="rowcards cs-cards">${U.esc(t.boss)}</div>`;
   if(summary)cx.summary=(r,m,i)=>`<div class="summary">${r.sum}/${m}/${i}</div>`;
   const row={teams,sum:12345.5};
-  same(C.table(row,mode,cx,2),old.table(row,mode,cx,2));
+  if(!summary||!cards)same(C.table(row,mode,cx,2),old.table(row,mode,cx,2));
   for(const phase of ['idle','run','err','done']){
-    const st={phase,mode,rows:[row,row],level:1,reqLevel:1,learned:false,sig:'old',msg:'<message>',done:1,total:2,
+    const st={phase,mode,rows:[row,row,row],level:1,reqLevel:1,learned:false,sig:'old',msg:'<message>',done:1,total:2,
       probe:true,audit:[{boss:'boss0',expanded:true}],combineLimited:true,pool:12,combos:30,keep:2,triples:3,runs:100};
-    same(C.html(st,cx),old.html(st,cx));
+    if(phase==='done'&&summary&&cards)actions(C,st,cx);else same(C.html(st,cx),old.html(st,cx));
     if(phase==='done'){
       same(C.html({...st,rows:[]},cx),old.html({...st,rows:[]},cx));
-      same(C.html({...st,learned:true},cx),old.html({...st,learned:true},cx));
-      same(C.html({...st,halved:true,passed:10,firstRuns:8,screenRuns:32},cx),old.html({...st,halved:true,passed:10,firstRuns:8,screenRuns:32},cx));
+      if(!summary||!cards)same(C.html({...st,learned:true},cx),old.html({...st,learned:true},cx));
+      if(!summary||!cards)same(C.html({...st,halved:true,passed:10,firstRuns:8,screenRuns:32},cx),old.html({...st,halved:true,passed:10,firstRuns:8,screenRuns:32},cx));
     }
   }
   same(C.html({phase:'idle'},{...cx,hasInfo:false}),old.html({phase:'idle'},{...cx,hasInfo:false}));
@@ -39,3 +49,9 @@ const mutant=loadModule(readSrc('ui_shared.js').replace('<span class="cs-lv">','
 const mutated=loadModule(readSrc('cosmo_search.js'),{require:name=>name==='./ui_shared.js'?mutant:require('../'+name)});
 assert.notEqual(mutated.table({teams,sum:1},'top',{esc:U.esc,bossName:k=>k,team:()=>''}),old.table({teams,sum:1},'top',{esc:U.esc,bossName:k=>k,team:()=>''}));
 console.log(`PASS ${cases} byte-identical cosmo/recheck outputs against 28b689a; shared-chip mutation caught`);
+
+const noSecond=loadModule(readSrc('cosmo_search.js').replace('data-row="${index}"','data-row="${index===1?99:index}"'));
+const ranked={phase:'done',rows:Array.from({length:3},()=>({teams,sum:1})),mode:'top',audit:[]};
+const cxRank={esc:U.esc,bossName:k=>k,team:()=>'',summary:()=>'<div>summary</div>',hasInfo:true,mode:'top',level:1,levelMax:2};
+actions(C,ranked,cxRank);assert.throws(()=>actions(noSecond,ranked,cxRank));
+console.log('PASS summary action order/restart/detail/ranked editors; second editor mutation killed');

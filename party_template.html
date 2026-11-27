@@ -621,8 +621,11 @@ function csOpt(){const C=D.cosmoRaid;
  if(CSR.optMode==null){const v=LS.get("cosmo.mode");CSR.optMode=CosmoSearch.MODES[v]?v:C.search.defaultMode}}
 // 코스모 결과 한 팀: 기존 추천 카드와 같은 모양(앞열 2·뒤열 2, 리더 왕관, 브레이크 스킬 줄). 시뮬이 가정한 칸 순서 = order(앞열 먼저), 리더는 leaderKey
 function csTeam(t){return seasonTeam(t);}
-function seasonTeam(t,compact=false){LEADKEY=t.leaderKey||t.order[0];
- return seasonBreakBar(t,compact)+`<div class="rowcards${compact?'':' cs-cards'}">${[2,0,1,3].map((ix,i)=>card({s:BYKEY[t.order[ix]]},i===0||i===3?'back':'front')).join('')}</div>`;}
+function seasonTeam(t,compact=false,snapshot=null){const before=LEADKEY;LEADKEY=t.leaderKey||t.order[0];
+ const order=[2,0,1,3].map(ix=>t.order[ix]),marks=snapshot?.changes||{};
+ try{return seasonBreakBar(t,compact)+`<div class="rowcards${compact?'':' cs-cards'}">${order.map((k,i)=>card({s:BYKEY[k]},i===0||i===3?'back':'front',null,marks[k]||null,
+   snapshot&&!marks[k]?{leader:LEADKEY,final:snapshot.profile.results[k]}:null)).join('')}</div>`+
+   (snapshot?`<div class="growth-tasks">${order.map(k=>marks[k]?growthTodoRow(marks[k],BYKEY[k].name):'').join('')}</div>`:'');}finally{LEADKEY=before;}}
 function seasonBreakBar(t,compact=false){
  if(t.brkTie)return '<div class="bbar"><div class="bbody"><b>브레이크 스킬: 점수 차이 없음(아무거나 장착 가능)</b></div></div>';
  if(compact)return `<div class="bbar"><div class="bbody">${GuildSearch.breakLabel(t,esc)}</div></div>`;

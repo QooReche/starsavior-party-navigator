@@ -121,6 +121,10 @@ def flow(browser,base,width):
     }""")
     assert p.locator('[data-k=cs-best] [data-k=cs-boss-summary] .cg-tab').count()==3
     assert p.locator('[data-k=cs-best] [data-k=cs-team]').count()==3
+    actions=p.locator('[data-k=cs-best] .season-actions')
+    assert actions.locator('[data-cs=start]').count()==1
+    assert actions.locator('[data-fold=cs-result-basis]').count()==1
+    assert actions.bounding_box()['y']<p.locator('[data-k=cs-best] [data-k=cs-team]').first.bounding_box()['y']
     # 위 카드에 있는 기준 점수·클리어율은 팀 머리에서 다시 쓰지 않고, 카드에 없는 값(난이도·다른 점수·보스 깎음)만 남김
     heads=p.locator('[data-k=cs-best] .cs-bh').all_inner_texts()
     assert len(heads)==3 and all('난이도' in h and '상위 점수' in h and '보스 깎음' in h and '클리어율' not in h and '평균 점수' not in h for h in heads),heads
