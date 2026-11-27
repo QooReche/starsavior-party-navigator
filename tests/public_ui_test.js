@@ -87,7 +87,7 @@ for(const file of ['party_template.html','index.html']){
   ['<button id="growth-hint" type="button" class="ux-help"','<button type="button" class="ux-help" data-help="중복">ⓘ</button><button id="growth-hint" type="button" class="ux-help"',checkHelp],
   ['게임 이미지·만화의 권리는','게임 이미지의 권리는',checkGwen],
   ['class="notice update-notice"','class="notice"',checkNotice],
-  ['첫 팀 자리·리더 비교 보장','첫 팀 자리·리더 비교 보장 및 모든 신규 적과 스킬 상세 안내와 탐색 단계별 설명',checkNotice],
+  ['자리·리더 비교 누락 수정','자리·리더 비교 누락 수정 및 모든 신규 적과 스킬 상세 안내와 탐색 단계별 설명',checkNotice],
   ['background:color-mix','color:color-mix',checkNotice],
   ['border:1px solid var(--acc);border-radius:8px','border:0;border-radius:0',checkNotice],
   ["document.getElementById('update-history').open=true","document.getElementById('update-history').open=false",checkNotice],
