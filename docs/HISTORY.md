@@ -1,3 +1,5 @@
+> 2026-11-27 저장소 밖 폴더 재배치(`<workspace>\README.md`)에 맞춰 이 문서의 `E:\AI_mk2\…` 경로를 새 위치로 일괄 정정했음(당시 명령과 경로만 다름). 루트 없이 적힌 `rebuild_26752678/T`·`decomp_26752678` = `_builds\26752678\rebuild|decomp`, `AI\temp\partynavigator` = `_records\partynavigator-temp`.
+
 ## 2026-11-27 — 코스모 틀 전환 후 e2e 경로 정리
 
 - `test_patch1126_direct`·`test_guild_sets_hidden`의 EX 레벨·지원 선택을 `#direct-guild-controls`로 옮겼음. 실제 시뮬·저장·공유·선택 효과 0 검사는 유지했음.

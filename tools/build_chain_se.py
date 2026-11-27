@@ -179,7 +179,7 @@ def build_fixed(tables):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument('--tables', required=True, type=Path, help='rebuild_26752678/T (CLIENT_ 접두)')
+    ap.add_argument('--tables', required=True, type=Path, help='<workspace>/_builds/26752678/rebuild/T (CLIENT_ 접두)')
     ap.add_argument('--view', required=True, type=Path, help='tools/client_view.py 출력 폴더(같은 T에서 만든 것)')
     args = ap.parse_args()
     foes, report = build_foes(args.view)
