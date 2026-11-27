@@ -25,7 +25,12 @@
       pool.close=()=>{pool.closed=true;close();};return pool;
     };
     const session={pool:newPool(),caches:new Map(),closed:false,
-      resume(){if(this.pool.closed)this.pool=newPool();},
+      reset(){this.caches.clear();this.signature=null;},
+      resume(version){
+        if(this.version!==undefined&&this.version!==version){this.pool.close();this.reset();}
+        this.version=version;
+        if(this.pool.closed)this.pool=newPool();
+      },
       close(){this.pool.close();this.caches.clear();this.closed=true;}};
     return session;
   }
@@ -136,7 +141,8 @@
     if(cx.previous&&(cx.previous.inputSignature!==inputSig||!cx.previous.teams?.length))throw Error('계산 조건이 바뀌었음. 다시 찾기 필요');
     const session=cx.session||createSession(cx.makeWorker);
     if(session.closed)throw Error('찾기 세션이 끝났음. 다시 찾기 필요');
-    session.resume(); // runPhase closes its pool on cancellation; keep completed cached jobs.
+    // Cancellation replaces workers; changed data also invalidates their loaded engine.
+    session.resume(JSON.stringify([cx.base,cx.G.season.id,cx.G.dataVersion,cx.engineVersion]));
     if(session.signature!==inputSig){session.caches.clear();session.signature=inputSig;}
     const shared={pool:session.pool,caches:session.caches,stages:[],eta:null,
       battles:cx.growthResults?new Map():null};

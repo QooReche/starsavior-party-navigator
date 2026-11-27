@@ -34,7 +34,7 @@ async function guildDailyStart(target=GSR,profileOverride=null,follow=false){
   if(seasonBlocked('guild')||!MI.info||target.phase==='run'||SIMQ.busy!=null||CSR.phase==='run')return;
   if(follow&&(target.phase!=='done'||target.sig!==guildDailySig()||!target.teams?.length||target.seals.remaining<1))return;
   const previous=follow?{...target}:null;
-  if(!follow)guildDailyRelease(target);
+  if(!follow)target.session?.reset();
   target.session ||= GuildDaily.createSession(()=>SearchExecutor.createWorker());
   const session=target.session;
   growthCancel();guildGwenClaim('guildSearch');
@@ -63,7 +63,7 @@ async function guildDailyStart(target=GSR,profileOverride=null,follow=false){
     if(stale())return;tick.cancel();
     if(out.growth)out.growth.snapshot=growthSnapshot||previous?.growth?.snapshot;
     Object.assign(target,out,{sig,eta:null,handle:null,following:false,phase:out.rows.length?'done':'idle'});
-    if(!out.seals.remaining||!out.rows.length)guildDailyRelease(target);paint();return target;
+    if(!out.rows.length)guildDailyRelease(target);paint();return target;
   }catch(e){if(stale())return;if(previous){Object.assign(target,previous,{id,following:false,handle:null,followError:e.message||String(e)});paint();return;}guildDailyRelease(target);target.handle=null;target.errorCause=e.gwenCause||'other';target.phase=e.gwenCause==='cancel'?'idle':'err';target.msg=e.message||String(e);paint();}
   finally{tick.cancel();if(stale()){session.close();if(target.session===session)target.session=null;}}
 }

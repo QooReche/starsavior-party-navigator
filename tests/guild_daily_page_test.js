@@ -15,7 +15,7 @@ function harness(src=source){
     renderGuildSearch(){},csMobile:()=>false,navigator:{hardwareConcurrency:2},location:{href:'https://example.test/index.html'},
     document:{hidden:false},LS:{get:()=>null,set:(k,v)=>writes.push([k,plain(v)])},
     SearchExecutor:{PAINT_MS:0,throttle:()=>Object.assign(()=>{},{cancel(){}})},
-    GuildDaily:{createSession(){const session={closed:false,close(){this.closed=true;}};sessions.push(session);return session;}},
+    GuildDaily:{createSession(){const session={closed:false,resets:0,reset(){this.resets++;},close(){this.closed=true;}};sessions.push(session);return session;}},
     GuildPlanner:{async search(cx){calls.push(cx);if(c.failure)throw Error(c.failure);
       const i=cx.previous?.teams.length||0,t={keys:['a','b','c','d'].map(k=>k+i),order:['c','a','b','d'].map(k=>k+i),leaderKey:'d'+i,
         kind:i?'normal':'ex',step:i?6:7,level:i?0:3,tiers:i?[0]:[2],sup:'s'+i,brk:'break'+i,brkLv:2,
@@ -34,7 +34,7 @@ async function checks(src=source){
   await c.guildDailyStart();assert.equal(c.GSR.teams.length,1);assert.equal(sessions.length,1);assert(!sessions[0].closed);
   const first=plain(c.GSR.teams[0]);c.stopTeam=true;
   await c.guildDailyStart(c.GSR,null,true);assert.equal(c.GSR.teams.length,2);assert.deepEqual(plain(c.GSR.teams[0]),first);
-  assert.equal(calls[0].session,calls[1].session);assert.equal(calls[1].previous.teams.length,1);assert(sessions[0].closed);
+  assert.equal(calls[0].session,calls[1].session);assert.equal(calls[1].previous.teams.length,1);assert(!sessions[0].closed);
   assert.equal(writes.length,0,'search adds no persistent keys');
   await c.guildDailyStart(c.GSR,null,true);assert.equal(calls.length,2,'cap blocks extra click');
   for(const i of [0,1]){
@@ -46,6 +46,8 @@ async function checks(src=source){
   }
   assert(writes.every(([k])=>['guild.v3.30112','direct.v1'].includes(k)));
   assert(!('signature' in writes.find(([k])=>k==='direct.v1')[1]),'session metadata does not leak to stored/shared draft');
+  await c.guildDailyStart();assert.equal(sessions.length,1);assert.equal(sessions[0].resets,1);
+  assert.equal(calls.at(-1).previous,null,'restart clears previous teams, keeps workers');
   const bad=harness(src);await bad.c.guildDailyStart();bad.c.failure='남은 구원자 부족';const saved=plain(bad.c.GSR.teams);
   await bad.c.guildDailyStart(bad.c.GSR,null,true);assert.equal(bad.c.GSR.phase,'done');assert.deepEqual(plain(bad.c.GSR.teams),saved);
   assert.equal(bad.c.GSR.seals.used,2);assert.match(bad.c.GSR.followError,/구원자 부족/);

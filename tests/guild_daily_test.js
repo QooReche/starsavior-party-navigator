@@ -170,7 +170,7 @@ async function main(){
     ['cx.S.final.supports.filter(s=>!supports.has(s))','cx.S.final.supports',checks],
     ['>D.seals.max','>99',checks],
     ['cache=shared.caches.get(pass)||new Map()','cache=new Map()',checks],
-    ['session.resume();','',checks],
+    ['session.resume(JSON.stringify([cx.base,cx.G.season.id,cx.G.dataVersion,cx.engineVersion]));','',checks],
     ['partial:partial||teams.some(t=>t.evaluation?.partial)','partial:partial||!!previous?.partial',checks],
     ["effectiveSupport=GS.finalSupports(S,keys,cls).includes(sup)?sup:'none'","effectiveSupport=sup",checks],
     ['if(pick.key===original.key)','if(true)',checks],
